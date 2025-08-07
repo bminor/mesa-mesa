@@ -10,7 +10,6 @@
  * \brief Main compiler interface.
  */
 
-#include "compiler/list.h"
 #include "compiler/glsl_types.h"
 #include "nir_serialize.h"
 #include "pco.h"
@@ -96,7 +95,7 @@ pco_shader *pco_shader_create(pco_ctx *ctx, nir_shader *nir, void *mem_ctx)
    shader->name = ralloc_strdup(shader, nir->info.name);
    shader->is_internal = nir->info.internal;
    shader->is_grouped = false;
-   exec_list_make_empty(&shader->funcs);
+   list_inithead(&shader->funcs);
 
    return shader;
 }
@@ -134,15 +133,15 @@ pco_func *pco_func_create(pco_shader *shader,
     */
    if (type == PCO_FUNC_TYPE_PREAMBLE) {
       assert(!preamble);
-      exec_list_push_head(&shader->funcs, &func->node);
+      list_add(&func->link, &shader->funcs);
    } else if (type == PCO_FUNC_TYPE_ENTRYPOINT) {
       assert(!pco_entrypoint(shader));
       if (!preamble)
-         exec_list_push_head(&shader->funcs, &func->node);
+         list_add(&func->link, &shader->funcs);
       else
-         exec_node_insert_after(&func->node, &preamble->node);
+         list_add(&func->link, &preamble->link);
    } else {
-      exec_list_push_tail(&shader->funcs, &func->node);
+      list_addtail(&func->link, &shader->funcs);
    }
 
    init_cf_node(&func->cf_node, PCO_CF_NODE_TYPE_FUNC);
@@ -150,7 +149,7 @@ pco_func *pco_func_create(pco_shader *shader,
    func->type = type;
    func->index = shader->next_func++;
 
-   exec_list_make_empty(&func->body);
+   list_inithead(&func->body);
 
    func->num_params = num_params;
    if (num_params) {
@@ -177,7 +176,7 @@ pco_block *pco_block_create(pco_func *func)
 
    init_cf_node(&block->cf_node, PCO_CF_NODE_TYPE_BLOCK);
    block->parent_func = func;
-   exec_list_make_empty(&block->instrs);
+   list_inithead(&block->instrs);
    block->index = func->next_block++;
 
    return block;
@@ -195,11 +194,11 @@ pco_if *pco_if_create(pco_func *func)
 
    init_cf_node(&pif->cf_node, PCO_CF_NODE_TYPE_IF);
    pif->parent_func = func;
-   exec_list_make_empty(&pif->prologue);
-   exec_list_make_empty(&pif->then_body);
-   exec_list_make_empty(&pif->interlogue);
-   exec_list_make_empty(&pif->else_body);
-   exec_list_make_empty(&pif->epilogue);
+   list_inithead(&pif->prologue);
+   list_inithead(&pif->then_body);
+   list_inithead(&pif->interlogue);
+   list_inithead(&pif->else_body);
+   list_inithead(&pif->epilogue);
    pif->index = func->next_if++;
 
    return pif;
@@ -217,10 +216,10 @@ pco_loop *pco_loop_create(pco_func *func)
 
    init_cf_node(&loop->cf_node, PCO_CF_NODE_TYPE_LOOP);
    loop->parent_func = func;
-   exec_list_make_empty(&loop->prologue);
-   exec_list_make_empty(&loop->body);
-   exec_list_make_empty(&loop->interlogue);
-   exec_list_make_empty(&loop->epilogue);
+   list_inithead(&loop->prologue);
+   list_inithead(&loop->body);
+   list_inithead(&loop->interlogue);
+   list_inithead(&loop->epilogue);
    loop->index = func->next_loop++;
 
    return loop;
@@ -282,7 +281,7 @@ pco_igrp *pco_igrp_create(pco_func *func)
  */
 void pco_instr_delete(pco_instr *instr)
 {
-   exec_node_remove(&instr->node);
+   list_del(&instr->link);
    ralloc_free(instr);
 }
 

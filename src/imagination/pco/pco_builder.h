@@ -13,9 +13,9 @@
  * \\brief PCO builder header.
  */
 
-#include "compiler/list.h"
 #include "pco.h"
 #include "pco_internal.h"
+#include "util/list.h"
 #include "util/macros.h"
 
 #include <stdbool.h>
@@ -100,26 +100,25 @@ static inline pco_cursor pco_cursor_after_block(pco_block *block)
 }
 
 /**
- * \brief Returns a cursor set to before an exec_list.
+ * \brief Returns a cursor set to before a list.
  *
- * \param[in] exec_list The exec_list.
+ * \param[in] list The list.
  * \return The cursor.
  */
-static inline pco_cursor
-pco_cursor_before_exec_list(struct exec_list *exec_list)
+static inline pco_cursor pco_cursor_before_list(struct list_head *list)
 {
-   return pco_cursor_before_cf_node(pco_cf_node_head(exec_list));
+   return pco_cursor_before_cf_node(pco_cf_node_head(list));
 }
 
 /**
  * \brief Returns a cursor set to after an exec_list.
  *
- * \param[in] block The exec_list.
- * \return The exec_list.
+ * \param[in] list The list.
+ * \return The list.
  */
-static inline pco_cursor pco_cursor_after_exec_list(struct exec_list *exec_list)
+static inline pco_cursor pco_cursor_after_list(struct list_head *list)
 {
-   return pco_cursor_after_cf_node(pco_cf_node_tail(exec_list));
+   return pco_cursor_after_cf_node(pco_cf_node_tail(list));
 }
 
 /**
@@ -413,14 +412,14 @@ static inline void pco_builder_insert_instr(pco_builder *b, pco_instr *instr)
 
    if (cursor_instr) {
       if (before)
-         exec_node_insert_node_before(&cursor_instr->node, &instr->node);
+         list_add(&instr->link, cursor_instr->link.prev);
       else
-         exec_node_insert_after(&cursor_instr->node, &instr->node);
+         list_add(&instr->link, &cursor_instr->link);
    } else {
       if (before)
-         exec_list_push_head(&block->instrs, &instr->node);
+         list_add(&instr->link, &block->instrs);
       else
-         exec_list_push_tail(&block->instrs, &instr->node);
+         list_addtail(&instr->link, &block->instrs);
    }
 
    b->cursor = pco_cursor_after_instr(instr);
@@ -442,14 +441,14 @@ static inline void pco_builder_insert_igrp(pco_builder *b, pco_igrp *igrp)
 
    if (cursor_igrp) {
       if (before)
-         exec_node_insert_node_before(&cursor_igrp->node, &igrp->node);
+         list_add(&igrp->link, cursor_igrp->link.prev);
       else
-         exec_node_insert_after(&cursor_igrp->node, &igrp->node);
+         list_add(&igrp->link, &cursor_igrp->link);
    } else {
       if (before)
-         exec_list_push_head(&block->instrs, &igrp->node);
+         list_add(&igrp->link, &block->instrs);
       else
-         exec_list_push_tail(&block->instrs, &igrp->node);
+         list_addtail(&igrp->link, &block->instrs);
    }
 
    b->cursor = pco_cursor_after_igrp(igrp);

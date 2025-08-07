@@ -13,7 +13,6 @@
  * \brief PCO internal header.
  */
 
-#include "compiler/list.h"
 #include "compiler/spirv/nir_spirv.h"
 #include "hwdef/rogue_hw_utils.h"
 #include "pco.h"
@@ -142,7 +141,7 @@ typedef struct _pco_phi_src {
 
 /** PCO instruction group. */
 typedef struct _pco_igrp {
-   struct exec_node node; /** Node in pco_block::instrs. */
+   struct list_head link; /** Node in pco_block::instrs. */
    pco_block *parent_block; /** Basic block containing the igrp. */
    pco_func *parent_func; /** Parent function. */
 
@@ -225,7 +224,7 @@ typedef struct _pco_igrp {
 typedef struct _pco_instr {
    union {
       struct {
-         struct exec_node node; /** Node in pco_block::instrs. */
+         struct list_head link; /** Node in pco_block::instrs. */
          pco_block *parent_block; /** Basic block containing the instruction. */
       };
 
@@ -278,7 +277,7 @@ enum pco_cf_node_flag {
 
 /** PCO control-flow node. */
 typedef struct _pco_cf_node {
-   struct exec_node node; /** Node in lists of pco_cf_nodes. */
+   struct list_head link; /** Node in lists of pco_cf_nodes. */
    enum pco_cf_node_type type; /** CF node type. */
    struct _pco_cf_node *parent; /** Parent cf node. */
    enum pco_cf_node_flag flag; /** Implementation-defined flag. */
@@ -288,7 +287,7 @@ typedef struct _pco_cf_node {
 typedef struct _pco_block {
    pco_cf_node cf_node; /** Control flow node. */
    pco_func *parent_func; /** Parent function. */
-   struct exec_list instrs; /** Instruction/group list. */
+   struct list_head instrs; /** Instruction/group list. */
    unsigned index; /** Block index. */
 } pco_block;
 
@@ -298,11 +297,11 @@ typedef struct _pco_if {
    pco_func *parent_func; /** Parent function. */
    pco_ref cond; /** If condition. */
    bool pred_exec; /** Whether this if construct uses predicated execution. */
-   struct exec_list prologue; /** List of pco_cf_nodes for if prologue. */
-   struct exec_list then_body; /** List of pco_cf_nodes for if body. */
-   struct exec_list interlogue; /** List of pco_cf_nodes for if interlogue. */
-   struct exec_list else_body; /** List of pco_cf_nodes for else body. */
-   struct exec_list epilogue; /** List of pco_cf_nodes for if epilogue. */
+   struct list_head prologue; /** List of pco_cf_nodes for if prologue. */
+   struct list_head then_body; /** List of pco_cf_nodes for if body. */
+   struct list_head interlogue; /** List of pco_cf_nodes for if interlogue. */
+   struct list_head else_body; /** List of pco_cf_nodes for else body. */
+   struct list_head epilogue; /** List of pco_cf_nodes for if epilogue. */
    unsigned index; /** If index. */
 } pco_if;
 
@@ -310,10 +309,10 @@ typedef struct _pco_if {
 typedef struct _pco_loop {
    pco_cf_node cf_node; /** CF node. */
    pco_func *parent_func; /** Parent function. */
-   struct exec_list prologue; /** List of pco_cf_nodes for loop prologue. */
-   struct exec_list body; /** List of pco_cf_nodes for loop body. */
-   struct exec_list interlogue; /** List of pco_cf_nodes for loop interlogue. */
-   struct exec_list epilogue; /** List of pco_cf_nodes for loop epilogue. */
+   struct list_head prologue; /** List of pco_cf_nodes for loop prologue. */
+   struct list_head body; /** List of pco_cf_nodes for loop body. */
+   struct list_head interlogue; /** List of pco_cf_nodes for loop interlogue. */
+   struct list_head epilogue; /** List of pco_cf_nodes for loop epilogue. */
    unsigned index; /** Loop index. */
 } pco_loop;
 
@@ -328,7 +327,7 @@ typedef struct _pco_vec_info {
 
 /** PCO function. */
 typedef struct _pco_func {
-   struct exec_node node; /** Node in pco_shader::funcs. */
+   struct list_head link; /** Node in pco_shader::funcs. */
    pco_cf_node cf_node; /** Control flow node. */
 
    pco_shader *parent_shader; /** Shader containing the function. */
@@ -337,7 +336,7 @@ typedef struct _pco_func {
    unsigned index; /** Function index. */
    const char *name; /** Function name. */
 
-   struct exec_list body; /** List of pco_cf_nodes for function body. */
+   struct list_head body; /** List of pco_cf_nodes for function body. */
 
    unsigned num_params;
    pco_ref *params;
@@ -370,7 +369,7 @@ typedef struct _pco_shader {
    bool is_grouped; /** Whether the shader uses igrps. */
    bool is_legalized; /** Whether the shader has been legalized. */
 
-   struct exec_list funcs; /** List of functions. */
+   struct list_head funcs; /** List of functions. */
    unsigned next_func; /** Next function index. */
 
    pco_data data; /** Shader data. */
@@ -443,7 +442,7 @@ void pco_instr_delete(pco_instr *instr);
    static inline out_type *name(const in_type *parent)                          \
    {                                                                            \
       assert(parent && parent->type_field == type_value);                       \
-      return exec_node_data(out_type, parent, field);                           \
+      return list_entry(parent, out_type, field);                               \
    }
 
 PCO_DEFINE_CAST(pco_cf_node_as_block,
@@ -475,45 +474,45 @@ PCO_DEFINE_CAST(pco_cf_node_as_func,
 
 /* Iterators. */
 #define pco_foreach_func_in_shader(func, shader) \
-   foreach_list_typed (pco_func, func, node, &(shader)->funcs)
+   list_for_each_entry (pco_func, func, &(shader)->funcs, link)
 
 #define pco_foreach_func_in_shader_rev(func, shader) \
-   foreach_list_typed_reverse (pco_func, func, node, &(shader)->funcs)
+   list_for_each_entry_rev (pco_func, func, &(shader)->funcs, link)
 
 #define pco_foreach_cf_node_in_if_prologue(cf_node, _if) \
-   foreach_list_typed (pco_cf_node, cf_node, node, &(_if)->prologue)
+   list_for_each_entry (pco_cf_node, cf_node, &(_if)->prologue, link)
 
 #define pco_foreach_cf_node_in_if_then(cf_node, _if) \
-   foreach_list_typed (pco_cf_node, cf_node, node, &(_if)->then_body)
+   list_for_each_entry (pco_cf_node, cf_node, &(_if)->then_body, link)
 
 #define pco_foreach_cf_node_in_if_interlogue(cf_node, _if) \
-   foreach_list_typed (pco_cf_node, cf_node, node, &(_if)->interlogue)
+   list_for_each_entry (pco_cf_node, cf_node, &(_if)->interlogue, link)
 
 #define pco_foreach_cf_node_in_if_else(cf_node, _if) \
-   foreach_list_typed (pco_cf_node, cf_node, node, &(_if)->else_body)
+   list_for_each_entry (pco_cf_node, cf_node, &(_if)->else_body, link)
 
 #define pco_foreach_cf_node_in_if_epilogue(cf_node, _if) \
-   foreach_list_typed (pco_cf_node, cf_node, node, &(_if)->epilogue)
+   list_for_each_entry (pco_cf_node, cf_node, &(_if)->epilogue, link)
 
 #define pco_foreach_cf_node_in_loop_prologue(cf_node, loop) \
-   foreach_list_typed (pco_cf_node, cf_node, node, &(loop)->prologue)
+   list_for_each_entry (pco_cf_node, cf_node, &(loop)->prologue, link)
 
 #define pco_foreach_cf_node_in_loop(cf_node, loop) \
-   foreach_list_typed (pco_cf_node, cf_node, node, &(loop)->body)
+   list_for_each_entry (pco_cf_node, cf_node, &(loop)->body, link)
 
 #define pco_foreach_cf_node_in_loop_interlogue(cf_node, loop) \
-   foreach_list_typed (pco_cf_node, cf_node, node, &(loop)->interlogue)
+   list_for_each_entry (pco_cf_node, cf_node, &(loop)->interlogue, link)
 
 #define pco_foreach_cf_node_in_loop_epilogue(cf_node, loop) \
-   foreach_list_typed (pco_cf_node, cf_node, node, &(loop)->epilogue)
+   list_for_each_entry (pco_cf_node, cf_node, &(loop)->epilogue, link)
 
 #define pco_foreach_cf_node_in_func(cf_node, func) \
-   foreach_list_typed (pco_cf_node, cf_node, node, &(func)->body)
+   list_for_each_entry (pco_cf_node, cf_node, &(func)->body, link)
 
 #define pco_foreach_cf_node_in_func_structured(cf_node,           \
                                                cf_node_completed, \
                                                func)              \
-   for (pco_cf_node *cf_node = pco_first_func_cf_node(func),      \
+   for (pco_cf_node *cf_node = pco_cf_node_head(&(func)->body),   \
                     *cf_node_completed = NULL;                    \
         cf_node != NULL;                                          \
         cf_node = pco_next_cf_node(cf_node, &cf_node_completed))
@@ -585,7 +584,7 @@ PCO_DEFINE_CAST(pco_cf_node_as_func,
         loop = pco_prev_loop(loop))
 
 #define pco_foreach_instr_in_block(instr, block) \
-   foreach_list_typed (pco_instr, instr, node, &(block)->instrs)
+   list_for_each_entry (pco_instr, instr, &(block)->instrs, link)
 
 #define pco_foreach_instr_in_block_from(instr, block, from) \
    foreach_list_typed_from (pco_instr, instr, node, _, &from->node)
@@ -594,16 +593,16 @@ PCO_DEFINE_CAST(pco_cf_node_as_func,
    foreach_list_typed_from_reverse (pco_instr, instr, node, _, &from->node)
 
 #define pco_foreach_instr_in_block_safe(instr, block) \
-   foreach_list_typed_safe (pco_instr, instr, node, &(block)->instrs)
+   list_for_each_entry_safe (pco_instr, instr, &(block)->instrs, link)
 
 #define pco_foreach_instr_in_block_rev(instr, block) \
-   foreach_list_typed_reverse (pco_instr, instr, node, &(block)->instrs)
+   list_for_each_entry_rev (pco_instr, instr, &(block)->instrs, link)
 
 #define pco_foreach_instr_in_block_safe_rev(instr, block) \
-   foreach_list_typed_reverse_safe (pco_instr, instr, node, &(block)->instrs)
+   list_for_each_entry_safe_rev (pco_instr, instr, &(block)->instrs, link)
 
 #define pco_foreach_igrp_in_block(igrp, block) \
-   foreach_list_typed (pco_igrp, igrp, node, &(block)->instrs)
+   list_for_each_entry (pco_igrp, igrp, &(block)->instrs, link)
 
 #define pco_foreach_phi_src_in_instr(phi_src, instr) \
    list_for_each_entry (pco_phi_src, phi_src, &(instr)->phi_srcs, link)
@@ -731,12 +730,8 @@ PCO_DEFINE_CAST(pco_cf_node_as_func,
    pco_foreach_instr_src (psrc, instr)           \
       if (pco_ref_is_hwreg(*psrc))
 
-#define pco_cf_node_head(list) exec_node_data_head(pco_cf_node, list, node)
-#define pco_cf_node_tail(list) exec_node_data_tail(pco_cf_node, list, node)
-#define pco_cf_node_next(cf_node) \
-   exec_node_data_next(pco_cf_node, cf_node, node)
-#define pco_cf_node_prev(cf_node) \
-   exec_node_data_prev(pco_cf_node, cf_node, node)
+#define pco_cf_node_head(list) list_first_entry(list, pco_cf_node, link)
+#define pco_cf_node_tail(list) list_last_entry(list, pco_cf_node, link)
 
 /**
  * \brief Returns the preamble function of a PCO shader.
@@ -746,10 +741,10 @@ PCO_DEFINE_CAST(pco_cf_node_as_func,
  */
 static inline pco_func *pco_preamble(pco_shader *shader)
 {
-   if (exec_list_is_empty(&shader->funcs))
+   if (list_is_empty(&shader->funcs))
       return NULL;
 
-   pco_func *func = exec_node_data_head(pco_func, &shader->funcs, node);
+   pco_func *func = list_first_entry(&shader->funcs, pco_func, link);
    if (func->type == PCO_FUNC_TYPE_PREAMBLE)
       return func;
 
@@ -764,16 +759,15 @@ static inline pco_func *pco_preamble(pco_shader *shader)
  */
 static inline pco_func *pco_entrypoint(pco_shader *shader)
 {
-   if (exec_list_is_empty(&shader->funcs))
+   if (list_is_empty(&shader->funcs))
       return NULL;
 
    /* Entrypoint will either be the first or second function in the shader,
     * depending on whether or not there is a preamble.
     */
    pco_func *preamble = pco_preamble(shader);
-   pco_func *func = !preamble
-                       ? exec_node_data_head(pco_func, &shader->funcs, node)
-                       : exec_node_data_next(pco_func, preamble, node);
+   pco_func *func = !preamble ? list_first_entry(&shader->funcs, pco_func, link)
+                              : list_entry(preamble->link.next, pco_func, link);
 
    if (func->type == PCO_FUNC_TYPE_ENTRYPOINT)
       return func;
@@ -819,7 +813,7 @@ static inline unsigned pco_igrp_variant(const pco_igrp *igrp,
  */
 static inline pco_cf_node *pco_first_func_cf_node(pco_func *func)
 {
-   if (!exec_list_is_empty(&func->body))
+   if (!list_is_empty(&func->body))
       return pco_cf_node_head(&func->body);
 
    UNREACHABLE("Empty function.");
@@ -833,7 +827,7 @@ static inline pco_cf_node *pco_first_func_cf_node(pco_func *func)
  */
 static inline pco_cf_node *pco_last_func_cf_node(pco_func *func)
 {
-   if (!exec_list_is_empty(&func->body))
+   if (!list_is_empty(&func->body))
       return pco_cf_node_tail(&func->body);
 
    UNREACHABLE("Empty function.");
@@ -847,19 +841,19 @@ static inline pco_cf_node *pco_last_func_cf_node(pco_func *func)
  */
 static inline pco_cf_node *pco_first_if_cf_node(pco_if *pif)
 {
-   if (!exec_list_is_empty(&pif->prologue))
+   if (!list_is_empty(&pif->prologue))
       return pco_cf_node_head(&pif->prologue);
 
-   if (!exec_list_is_empty(&pif->then_body))
+   if (!list_is_empty(&pif->then_body))
       return pco_cf_node_head(&pif->then_body);
 
-   if (!exec_list_is_empty(&pif->interlogue))
+   if (!list_is_empty(&pif->interlogue))
       return pco_cf_node_head(&pif->interlogue);
 
-   if (!exec_list_is_empty(&pif->else_body))
+   if (!list_is_empty(&pif->else_body))
       return pco_cf_node_head(&pif->else_body);
 
-   if (!exec_list_is_empty(&pif->epilogue))
+   if (!list_is_empty(&pif->epilogue))
       return pco_cf_node_head(&pif->epilogue);
 
    UNREACHABLE("Empty if.");
@@ -873,19 +867,19 @@ static inline pco_cf_node *pco_first_if_cf_node(pco_if *pif)
  */
 static inline pco_cf_node *pco_last_if_cf_node(pco_if *pif)
 {
-   if (!exec_list_is_empty(&pif->epilogue))
+   if (!list_is_empty(&pif->epilogue))
       return pco_cf_node_tail(&pif->epilogue);
 
-   if (!exec_list_is_empty(&pif->else_body))
+   if (!list_is_empty(&pif->else_body))
       return pco_cf_node_tail(&pif->else_body);
 
-   if (!exec_list_is_empty(&pif->interlogue))
+   if (!list_is_empty(&pif->interlogue))
       return pco_cf_node_tail(&pif->interlogue);
 
-   if (!exec_list_is_empty(&pif->then_body))
+   if (!list_is_empty(&pif->then_body))
       return pco_cf_node_tail(&pif->then_body);
 
-   if (!exec_list_is_empty(&pif->prologue))
+   if (!list_is_empty(&pif->prologue))
       return pco_cf_node_tail(&pif->prologue);
 
    UNREACHABLE("Empty if.");
@@ -903,25 +897,25 @@ static inline pco_cf_node *pco_next_if_cf_node(pco_cf_node *cf_node)
 
    switch (cf_node->flag) {
    case PCO_CF_NODE_FLAG_PROLOGUE:
-      if (!exec_list_is_empty(&pif->then_body))
+      if (!list_is_empty(&pif->then_body))
          return pco_cf_node_head(&pif->then_body);
 
       FALLTHROUGH;
 
    case PCO_CF_NODE_FLAG_IF_THEN:
-      if (!exec_list_is_empty(&pif->interlogue))
+      if (!list_is_empty(&pif->interlogue))
          return pco_cf_node_head(&pif->interlogue);
 
       FALLTHROUGH;
 
    case PCO_CF_NODE_FLAG_INTERLOGUE:
-      if (!exec_list_is_empty(&pif->else_body))
+      if (!list_is_empty(&pif->else_body))
          return pco_cf_node_head(&pif->else_body);
 
       FALLTHROUGH;
 
    case PCO_CF_NODE_FLAG_IF_ELSE:
-      if (!exec_list_is_empty(&pif->epilogue))
+      if (!list_is_empty(&pif->epilogue))
          return pco_cf_node_head(&pif->epilogue);
 
       FALLTHROUGH;
@@ -948,25 +942,25 @@ static inline pco_cf_node *pco_prev_if_cf_node(pco_cf_node *cf_node)
 
    switch (cf_node->flag) {
    case PCO_CF_NODE_FLAG_EPILOGUE:
-      if (!exec_list_is_empty(&pif->else_body))
+      if (!list_is_empty(&pif->else_body))
          return pco_cf_node_tail(&pif->else_body);
 
       FALLTHROUGH;
 
    case PCO_CF_NODE_FLAG_IF_ELSE:
-      if (!exec_list_is_empty(&pif->interlogue))
+      if (!list_is_empty(&pif->interlogue))
          return pco_cf_node_tail(&pif->interlogue);
 
       FALLTHROUGH;
 
    case PCO_CF_NODE_FLAG_INTERLOGUE:
-      if (!exec_list_is_empty(&pif->then_body))
+      if (!list_is_empty(&pif->then_body))
          return pco_cf_node_tail(&pif->then_body);
 
       FALLTHROUGH;
 
    case PCO_CF_NODE_FLAG_IF_THEN:
-      if (!exec_list_is_empty(&pif->prologue))
+      if (!list_is_empty(&pif->prologue))
          return pco_cf_node_tail(&pif->prologue);
 
       FALLTHROUGH;
@@ -989,16 +983,16 @@ static inline pco_cf_node *pco_prev_if_cf_node(pco_cf_node *cf_node)
  */
 static inline pco_cf_node *pco_first_loop_cf_node(pco_loop *loop)
 {
-   if (!exec_list_is_empty(&loop->prologue))
+   if (!list_is_empty(&loop->prologue))
       return pco_cf_node_head(&loop->prologue);
 
-   if (!exec_list_is_empty(&loop->body))
+   if (!list_is_empty(&loop->body))
       return pco_cf_node_head(&loop->body);
 
-   if (!exec_list_is_empty(&loop->interlogue))
+   if (!list_is_empty(&loop->interlogue))
       return pco_cf_node_head(&loop->interlogue);
 
-   if (!exec_list_is_empty(&loop->epilogue))
+   if (!list_is_empty(&loop->epilogue))
       return pco_cf_node_head(&loop->epilogue);
 
    UNREACHABLE("Empty loop.");
@@ -1012,16 +1006,16 @@ static inline pco_cf_node *pco_first_loop_cf_node(pco_loop *loop)
  */
 static inline pco_cf_node *pco_last_loop_cf_node(pco_loop *loop)
 {
-   if (!exec_list_is_empty(&loop->epilogue))
+   if (!list_is_empty(&loop->epilogue))
       return pco_cf_node_tail(&loop->epilogue);
 
-   if (!exec_list_is_empty(&loop->interlogue))
+   if (!list_is_empty(&loop->interlogue))
       return pco_cf_node_tail(&loop->interlogue);
 
-   if (!exec_list_is_empty(&loop->body))
+   if (!list_is_empty(&loop->body))
       return pco_cf_node_tail(&loop->body);
 
-   if (!exec_list_is_empty(&loop->prologue))
+   if (!list_is_empty(&loop->prologue))
       return pco_cf_node_tail(&loop->prologue);
 
    UNREACHABLE("Empty loop.");
@@ -1039,19 +1033,19 @@ static inline pco_cf_node *pco_next_loop_cf_node(pco_cf_node *cf_node)
 
    switch (cf_node->flag) {
    case PCO_CF_NODE_FLAG_PROLOGUE:
-      if (!exec_list_is_empty(&loop->body))
+      if (!list_is_empty(&loop->body))
          return pco_cf_node_head(&loop->body);
 
       FALLTHROUGH;
 
    case PCO_CF_NODE_FLAG_BODY:
-      if (!exec_list_is_empty(&loop->interlogue))
+      if (!list_is_empty(&loop->interlogue))
          return pco_cf_node_head(&loop->interlogue);
 
       FALLTHROUGH;
 
    case PCO_CF_NODE_FLAG_INTERLOGUE:
-      if (!exec_list_is_empty(&loop->epilogue))
+      if (!list_is_empty(&loop->epilogue))
          return pco_cf_node_head(&loop->epilogue);
 
       FALLTHROUGH;
@@ -1078,19 +1072,19 @@ static inline pco_cf_node *pco_prev_loop_cf_node(pco_cf_node *cf_node)
 
    switch (cf_node->flag) {
    case PCO_CF_NODE_FLAG_EPILOGUE:
-      if (!exec_list_is_empty(&loop->interlogue))
+      if (!list_is_empty(&loop->interlogue))
          return pco_cf_node_tail(&loop->interlogue);
 
       FALLTHROUGH;
 
    case PCO_CF_NODE_FLAG_INTERLOGUE:
-      if (!exec_list_is_empty(&loop->body))
+      if (!list_is_empty(&loop->body))
          return pco_cf_node_tail(&loop->body);
 
       FALLTHROUGH;
 
    case PCO_CF_NODE_FLAG_BODY:
-      if (!exec_list_is_empty(&loop->prologue))
+      if (!list_is_empty(&loop->prologue))
          return pco_cf_node_tail(&loop->prologue);
 
       FALLTHROUGH;
@@ -1105,6 +1099,69 @@ static inline pco_cf_node *pco_prev_loop_cf_node(pco_cf_node *cf_node)
    UNREACHABLE("");
 }
 
+static inline struct list_head *pco_parent_if_head(pco_cf_node *cf_node)
+{
+   pco_if *parent = pco_cf_node_as_if(cf_node->parent);
+
+   switch (cf_node->flag) {
+   case PCO_CF_NODE_FLAG_PROLOGUE:
+      return &parent->prologue;
+   case PCO_CF_NODE_FLAG_IF_THEN:
+      return &parent->then_body;
+   case PCO_CF_NODE_FLAG_INTERLOGUE:
+      return &parent->interlogue;
+   case PCO_CF_NODE_FLAG_IF_ELSE:
+      return &parent->else_body;
+   case PCO_CF_NODE_FLAG_EPILOGUE:
+      return &parent->epilogue;
+   default:
+      UNREACHABLE("");
+   }
+}
+
+static inline struct list_head *pco_parent_loop_head(pco_cf_node *cf_node)
+{
+   pco_loop *parent = pco_cf_node_as_loop(cf_node->parent);
+   switch (cf_node->flag) {
+   case PCO_CF_NODE_FLAG_PROLOGUE:
+      return &parent->prologue;
+   case PCO_CF_NODE_FLAG_BODY:
+      return &parent->body;
+   case PCO_CF_NODE_FLAG_INTERLOGUE:
+      return &parent->interlogue;
+   case PCO_CF_NODE_FLAG_EPILOGUE:
+      return &parent->epilogue;
+   default:
+      UNREACHABLE("");
+   }
+}
+
+static inline struct list_head *pco_parent_func_head(pco_cf_node *cf_node)
+{
+   pco_func *parent = pco_cf_node_as_func(cf_node->parent);
+   switch (cf_node->flag) {
+   case PCO_CF_NODE_FLAG_BODY:
+      return &parent->body;
+   default:
+      UNREACHABLE("");
+   }
+}
+
+static inline struct list_head *pco_parent_cf_node_head(pco_cf_node *cf_node)
+{
+   pco_cf_node *parent_cf_node = cf_node->parent;
+   switch (parent_cf_node->type) {
+   case PCO_CF_NODE_TYPE_IF:
+      return pco_parent_if_head(cf_node);
+   case PCO_CF_NODE_TYPE_LOOP:
+      return pco_parent_loop_head(cf_node);
+   case PCO_CF_NODE_TYPE_FUNC:
+      return pco_parent_func_head(cf_node);
+   default:
+      UNREACHABLE("");
+   }
+}
+
 /**
  * \brief Returns the next CF node.
  *
@@ -1116,6 +1173,9 @@ static inline pco_cf_node *pco_prev_loop_cf_node(pco_cf_node *cf_node)
 static inline pco_cf_node *pco_next_cf_node(pco_cf_node *cf_node,
                                             pco_cf_node **cf_node_completed)
 {
+#define pco_cf_node_next(cf_node) \
+   list_entry((cf_node)->link.next, pco_cf_node, link)
+
    if (cf_node_completed)
       *cf_node_completed = NULL;
 
@@ -1124,11 +1184,11 @@ static inline pco_cf_node *pco_next_cf_node(pco_cf_node *cf_node,
 
    switch (cf_node->type) {
    case PCO_CF_NODE_TYPE_BLOCK: {
-      pco_cf_node *next_cf_node = pco_cf_node_next(cf_node);
+      struct list_head *parent_list = pco_parent_cf_node_head(cf_node);
 
       /* Not yet reached the end of the list, return the next cf node. */
-      if (next_cf_node)
-         return next_cf_node;
+      if (cf_node != pco_cf_node_tail(parent_list))
+         return pco_cf_node_next(cf_node);
 
       break;
    }
@@ -1177,6 +1237,7 @@ static inline pco_cf_node *pco_next_cf_node(pco_cf_node *cf_node,
       *cf_node_completed = parent_cf_node;
 
    return pco_cf_node_next(parent_cf_node);
+#undef pco_cf_node_next
 }
 
 /**
@@ -1190,6 +1251,9 @@ static inline pco_cf_node *pco_next_cf_node(pco_cf_node *cf_node,
 static inline pco_cf_node *pco_prev_cf_node(pco_cf_node *cf_node,
                                             pco_cf_node **cf_node_completed)
 {
+#define pco_cf_node_prev(cf_node) \
+   list_entry((cf_node)->link.prev, pco_cf_node, link)
+
    if (cf_node_completed)
       *cf_node_completed = NULL;
 
@@ -1198,11 +1262,11 @@ static inline pco_cf_node *pco_prev_cf_node(pco_cf_node *cf_node,
 
    switch (cf_node->type) {
    case PCO_CF_NODE_TYPE_BLOCK: {
-      pco_cf_node *prev_cf_node = pco_cf_node_prev(cf_node);
+      struct list_head *parent_list = pco_parent_cf_node_head(cf_node);
 
       /* Not yet reached the start of the list, return the previous cf node. */
-      if (prev_cf_node)
-         return prev_cf_node;
+      if (cf_node != pco_cf_node_head(parent_list))
+         return pco_cf_node_prev(cf_node);
 
       break;
    }
@@ -1251,6 +1315,7 @@ static inline pco_cf_node *pco_prev_cf_node(pco_cf_node *cf_node,
       *cf_node_completed = parent_cf_node;
 
    return pco_cf_node_prev(parent_cf_node);
+#undef pco_cf_node_prev
 }
 
 /**
@@ -1280,7 +1345,7 @@ static inline pco_cf_node *pco_next_cf_node_type(pco_cf_node *cf_node,
 static inline pco_cf_node *
 pco_func_first_cf_node_type(pco_func *func, enum pco_cf_node_type type)
 {
-   assert(!exec_list_is_empty(&func->body));
+   assert(!list_is_empty(&func->body));
 
    pco_cf_node *cf_node = pco_cf_node_head(&func->body);
    if (cf_node->type == type)
@@ -1316,7 +1381,7 @@ static inline pco_cf_node *pco_prev_cf_node_type(pco_cf_node *cf_node,
 static inline pco_cf_node *
 pco_func_last_cf_node_type(pco_func *func, enum pco_cf_node_type type)
 {
-   assert(!exec_list_is_empty(&func->body));
+   assert(!list_is_empty(&func->body));
 
    pco_cf_node *cf_node = pco_cf_node_tail(&func->body);
    if (cf_node->type == type)
@@ -1371,7 +1436,7 @@ static inline pco_block *pco_next_block_nonempty(pco_block *block)
    block = pco_next_block(block);
 
    /* Skip over empty blocks. */
-   while (block && exec_list_is_empty(&block->instrs))
+   while (block && list_is_empty(&block->instrs))
       block = pco_next_block(block);
 
    return block;
@@ -1389,7 +1454,7 @@ static inline pco_block *pco_prev_block_nonempty(pco_block *block)
    block = pco_prev_block(block);
 
    /* Skip over empty blocks. */
-   while (block && exec_list_is_empty(&block->instrs))
+   while (block && list_is_empty(&block->instrs))
       block = pco_prev_block(block);
 
    return block;
@@ -1403,7 +1468,10 @@ static inline pco_block *pco_prev_block_nonempty(pco_block *block)
  */
 static inline pco_instr *pco_first_instr(pco_block *block)
 {
-   return exec_node_data_head(pco_instr, &block->instrs, node);
+   if (list_is_empty(&block->instrs))
+      return NULL;
+
+   return list_first_entry(&block->instrs, pco_instr, link);
 }
 
 /**
@@ -1414,7 +1482,10 @@ static inline pco_instr *pco_first_instr(pco_block *block)
  */
 static inline pco_instr *pco_last_instr(pco_block *block)
 {
-   return exec_node_data_tail(pco_instr, &block->instrs, node);
+   if (list_is_empty(&block->instrs))
+      return NULL;
+
+   return list_last_entry(&block->instrs, pco_instr, link);
 }
 
 /**
@@ -1429,9 +1500,8 @@ static inline pco_instr *pco_next_instr(pco_instr *instr)
    if (!instr)
       return NULL;
 
-   pco_instr *next_instr = exec_node_data_next(pco_instr, instr, node);
-   if (next_instr)
-      return next_instr;
+   if (instr != pco_last_instr(instr->parent_block))
+      return list_entry(instr->link.next, pco_instr, link);
 
    pco_block *block = pco_next_block_nonempty(instr->parent_block);
    return !block ? NULL : pco_first_instr(block);
@@ -1449,9 +1519,8 @@ static inline pco_instr *pco_prev_instr(pco_instr *instr)
    if (!instr)
       return NULL;
 
-   pco_instr *prev_instr = exec_node_data_prev(pco_instr, instr, node);
-   if (prev_instr)
-      return prev_instr;
+   if (instr != pco_first_instr(instr->parent_block))
+      return list_entry(instr->link.prev, pco_instr, link);
 
    pco_block *block = pco_prev_block_nonempty(instr->parent_block);
    return !block ? NULL : pco_last_instr(block);
@@ -1465,7 +1534,7 @@ static inline pco_instr *pco_prev_instr(pco_instr *instr)
  */
 static inline pco_igrp *pco_first_igrp(pco_block *block)
 {
-   return exec_node_data_head(pco_igrp, &block->instrs, node);
+   return list_first_entry(&block->instrs, pco_igrp, link);
 }
 
 /**
@@ -1476,7 +1545,7 @@ static inline pco_igrp *pco_first_igrp(pco_block *block)
  */
 static inline pco_igrp *pco_last_igrp(pco_block *block)
 {
-   return exec_node_data_tail(pco_igrp, &block->instrs, node);
+   return list_first_entry(&block->instrs, pco_igrp, link);
 }
 
 /**
@@ -1491,9 +1560,8 @@ static inline pco_igrp *pco_next_igrp(pco_igrp *igrp)
    if (!igrp)
       return NULL;
 
-   pco_igrp *next_igrp = exec_node_data_next(pco_igrp, igrp, node);
-   if (next_igrp)
-      return next_igrp;
+   if (igrp != pco_last_igrp(igrp->parent_block))
+      return list_entry(igrp->link.next, pco_igrp, link);
 
    pco_block *block = pco_next_block(igrp->parent_block);
    return !block ? NULL : pco_first_igrp(block);
@@ -1511,9 +1579,8 @@ static inline pco_igrp *pco_prev_igrp(pco_igrp *igrp)
    if (!igrp)
       return NULL;
 
-   pco_igrp *prev_igrp = exec_node_data_prev(pco_igrp, igrp, node);
-   if (prev_igrp)
-      return prev_igrp;
+   if (igrp != pco_first_igrp(igrp->parent_block))
+      return list_entry(igrp->link.prev, pco_igrp, link);
 
    pco_block *block = pco_prev_block(igrp->parent_block);
    return !block ? NULL : pco_last_igrp(block);

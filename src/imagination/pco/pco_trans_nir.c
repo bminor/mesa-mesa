@@ -10,13 +10,13 @@
  * \brief NIR translation functions.
  */
 
-#include "compiler/list.h"
 #include "compiler/shader_enums.h"
 #include "hwdef/rogue_hw_defs.h"
 #include "pco.h"
 #include "pco_builder.h"
 #include "pco_internal.h"
 #include "util/bitset.h"
+#include "util/list.h"
 #include "util/macros.h"
 #include "util/ralloc.h"
 
@@ -40,7 +40,7 @@ typedef struct _trans_ctx {
 /* Forward declarations. */
 static pco_block *trans_cf_nodes(trans_ctx *tctx,
                                  pco_cf_node *parent_cf_node,
-                                 struct exec_list *cf_node_list,
+                                 struct list_head *cf_node_list,
                                  struct exec_list *nir_cf_node_list);
 
 static inline void pco_fence(pco_builder *b)
@@ -3111,14 +3111,14 @@ static pco_instr *trans_instr(trans_ctx *tctx, nir_instr *ninstr)
  */
 static pco_block *trans_block(trans_ctx *tctx,
                               pco_cf_node *parent_cf_node,
-                              struct exec_list *cf_node_list,
+                              struct list_head *cf_node_list,
                               nir_block *nblock)
 {
    pco_block *block = pco_block_create(tctx->func);
 
    block->cf_node.flag = tctx->flag;
    block->cf_node.parent = parent_cf_node;
-   exec_list_push_tail(cf_node_list, &block->cf_node.node);
+   list_addtail(&block->cf_node.link, cf_node_list);
 
    tctx->b = pco_builder_create(tctx->func, pco_cursor_after_block(block));
 
@@ -3139,14 +3139,14 @@ static pco_block *trans_block(trans_ctx *tctx,
  */
 static void trans_if(trans_ctx *tctx,
                      pco_cf_node *parent_cf_node,
-                     struct exec_list *cf_node_list,
+                     struct list_head *cf_node_list,
                      nir_if *nif)
 {
    pco_if *pif = pco_if_create(tctx->func);
 
    pif->cf_node.flag = tctx->flag;
    pif->cf_node.parent = parent_cf_node;
-   exec_list_push_tail(cf_node_list, &pif->cf_node.node);
+   list_addtail(&pif->cf_node.link, cf_node_list);
 
    pif->cond = pco_ref_nir_src_t(&nif->condition, tctx);
    assert(pco_ref_is_scalar(pif->cond));
@@ -3179,14 +3179,14 @@ static void trans_if(trans_ctx *tctx,
  */
 static void trans_loop(trans_ctx *tctx,
                        pco_cf_node *parent_cf_node,
-                       struct exec_list *cf_node_list,
+                       struct list_head *cf_node_list,
                        nir_loop *nloop)
 {
    pco_loop *loop = pco_loop_create(tctx->func);
 
    loop->cf_node.flag = tctx->flag;
    loop->cf_node.parent = parent_cf_node;
-   exec_list_push_tail(cf_node_list, &loop->cf_node.node);
+   list_addtail(&loop->cf_node.link, cf_node_list);
 
    assert(!nir_cf_list_is_empty_block(&nloop->body));
    assert(!nir_loop_has_continue_construct(nloop));
@@ -3252,7 +3252,7 @@ static pco_func *trans_func(trans_ctx *tctx, nir_function_impl *impl)
  */
 static pco_block *trans_cf_nodes(trans_ctx *tctx,
                                  pco_cf_node *parent_cf_node,
-                                 struct exec_list *cf_node_list,
+                                 struct list_head *cf_node_list,
                                  struct exec_list *nir_cf_node_list)
 {
    pco_block *start_block = NULL;

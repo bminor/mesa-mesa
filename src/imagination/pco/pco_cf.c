@@ -10,11 +10,11 @@
  * \brief PCO control-flow passes.
  */
 
-#include "compiler/list.h"
 #include "pco.h"
 #include "pco_builder.h"
 #include "util/bitscan.h"
 #include "util/bitset.h"
+#include "util/list.h"
 #include "util/macros.h"
 #include "util/ralloc.h"
 #include "util/u_dynarray.h"
@@ -42,7 +42,7 @@ static pco_ref emc_ref(pco_func *func, pco_builder *b)
 
 static inline pco_block *cf_section_create(pco_func *func,
                                            pco_cf_node *parent_cf_node,
-                                           struct exec_list *cf_node_list,
+                                           struct list_head *cf_node_list,
                                            enum pco_cf_node_flag flag)
 {
    assert(flag == PCO_CF_NODE_FLAG_PROLOGUE ||
@@ -52,14 +52,14 @@ static inline pco_block *cf_section_create(pco_func *func,
    pco_block *block = pco_block_create(func);
    block->cf_node.parent = parent_cf_node;
    block->cf_node.flag = flag;
-   exec_list_push_tail(cf_node_list, &block->cf_node.node);
+   list_addtail(&block->cf_node.link, cf_node_list);
 
    return block;
 }
 
-static inline bool body_has_non_preds(struct exec_list *body)
+static inline bool body_has_non_preds(struct list_head *body)
 {
-   if (exec_list_is_empty(body))
+   if (list_is_empty(body))
       return false;
 
    pco_block *block = pco_cf_node_as_block(pco_cf_node_head(body));
@@ -95,10 +95,8 @@ static inline bool can_pred_exec(pco_if *pif)
       return false;
 
    /* Skip if there is any nesting. */
-   if (exec_list_length(&pif->then_body) > 1 ||
-       exec_list_length(&pif->else_body) > 1) {
+   if (list_length(&pif->then_body) > 1 || list_length(&pif->else_body) > 1)
       return false;
-   }
 
    /* Skip if then/else blocks end with a branch, or contain non-predicatable
     * instructions.
@@ -113,10 +111,10 @@ static inline bool can_pred_exec(pco_if *pif)
    return true;
 }
 
-static inline void set_body_exec_cnd(struct exec_list *body,
+static inline void set_body_exec_cnd(struct list_head *body,
                                      enum pco_exec_cnd exec_cnd)
 {
-   assert(!exec_list_is_empty(body));
+   assert(!list_is_empty(body));
 
    pco_block *block = pco_cf_node_as_block(pco_cf_node_head(body));
    pco_foreach_instr_in_block (instr, block) {
@@ -223,18 +221,18 @@ lower_if_cond_exec(pco_if *pif, pco_func *func, bool has_else, bool invert_cond)
 static inline void lower_if(pco_if *pif, pco_func *func)
 {
    assert(!pco_ref_is_null(pif->cond));
-   assert(exec_list_is_empty(&pif->prologue));
-   assert(exec_list_is_empty(&pif->interlogue));
-   assert(exec_list_is_empty(&pif->epilogue));
+   assert(list_is_empty(&pif->prologue));
+   assert(list_is_empty(&pif->interlogue));
+   assert(list_is_empty(&pif->epilogue));
 
-   bool has_then = !exec_list_is_empty(&pif->then_body);
-   bool has_else = !exec_list_is_empty(&pif->else_body);
+   bool has_then = !list_is_empty(&pif->then_body);
+   bool has_else = !list_is_empty(&pif->else_body);
    assert(has_then || has_else);
 
    /* If we only have an else body, invert the condition and bodies. */
    bool invert_cond = false;
    if (!has_then && has_else) {
-      struct exec_list temp;
+      struct list_head temp;
       memcpy(&temp, &pif->then_body, sizeof(pif->then_body));
       memcpy(&pif->then_body, &pif->else_body, sizeof(pif->else_body));
       memcpy(&pif->else_body, &pif->then_body, sizeof(pif->then_body));
@@ -256,9 +254,9 @@ static inline void lower_if(pco_if *pif, pco_func *func)
 
 static inline void lower_loop(pco_loop *loop, pco_func *func)
 {
-   assert(exec_list_is_empty(&loop->prologue));
-   assert(exec_list_is_empty(&loop->interlogue));
-   assert(exec_list_is_empty(&loop->epilogue));
+   assert(list_is_empty(&loop->prologue));
+   assert(list_is_empty(&loop->interlogue));
+   assert(list_is_empty(&loop->epilogue));
 
    pco_block *prologue = cf_section_create(func,
                                            &loop->cf_node,

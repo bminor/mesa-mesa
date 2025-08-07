@@ -10,7 +10,6 @@
  * \brief PCO instruction grouping pass.
  */
 
-#include "compiler/list.h"
 #include "hwdef/rogue_hw_defs.h"
 #include "pco.h"
 #include "pco_builder.h"

@@ -746,7 +746,7 @@ bool pco_opt_comp_only_vecs(pco_shader *shader)
    bool progress = false;
 
    pco_foreach_func_in_shader (func, shader) {
-      pco_foreach_instr_in_func_safe (vec, func) {
+      pco_foreach_instr_in_func (vec, func) {
          if (vec->op != PCO_OP_VEC)
             continue;
 
