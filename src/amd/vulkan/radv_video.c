@@ -646,14 +646,14 @@ radv_CreateVideoSessionParametersKHR(VkDevice _device, const VkVideoSessionParam
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
 
-   struct radv_video_session_params *params =
+   struct vk_video_session_parameters *params =
       vk_video_session_parameters_create(&device->vk, pCreateInfo, pAllocator, sizeof(*params));
    if (!params)
       return vk_error(instance, VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   radv_video_patch_session_parameters(device, &params->vk);
+   radv_video_patch_session_parameters(device, params);
 
-   *pVideoSessionParameters = radv_video_session_params_to_handle(params);
+   *pVideoSessionParameters = vk_video_session_parameters_to_handle(params);
    return VK_SUCCESS;
 }
 
@@ -662,9 +662,9 @@ radv_DestroyVideoSessionParametersKHR(VkDevice _device, VkVideoSessionParameters
                                       const VkAllocationCallbacks *pAllocator)
 {
    VK_FROM_HANDLE(radv_device, device, _device);
-   VK_FROM_HANDLE(radv_video_session_params, params, _params);
+   VK_FROM_HANDLE(vk_video_session_parameters, params, _params);
 
-   vk_video_session_parameters_destroy(&device->vk, pAllocator, &params->vk);
+   vk_video_session_parameters_destroy(&device->vk, pAllocator, params);
 }
 
 static VkResult
@@ -1336,12 +1336,12 @@ radv_UpdateVideoSessionParametersKHR(VkDevice _device, VkVideoSessionParametersK
                                      const VkVideoSessionParametersUpdateInfoKHR *pUpdateInfo)
 {
    VK_FROM_HANDLE(radv_device, device, _device);
-   VK_FROM_HANDLE(radv_video_session_params, params, videoSessionParameters);
+   VK_FROM_HANDLE(vk_video_session_parameters, params, videoSessionParameters);
 
-   VkResult result = vk_video_session_parameters_update(&params->vk, pUpdateInfo);
+   VkResult result = vk_video_session_parameters_update(params, pUpdateInfo);
    if (result != VK_SUCCESS)
       return result;
-   radv_video_patch_session_parameters(device, &params->vk);
+   radv_video_patch_session_parameters(device, params);
    return result;
 }
 
@@ -1516,7 +1516,7 @@ update_h264_scaling(unsigned char scaling_list_4x4[6][16], unsigned char scaling
 }
 
 static rvcn_dec_message_avc_t
-get_h264_msg(struct radv_video_session *vid, struct radv_video_session_params *params,
+get_h264_msg(struct radv_video_session *vid, struct vk_video_session_parameters *params,
              const struct VkVideoDecodeInfoKHR *frame_info, uint32_t *slice_offset, uint32_t *width_in_samples,
              uint32_t *height_in_samples, void *it_ptr)
 {
@@ -1527,7 +1527,7 @@ get_h264_msg(struct radv_video_session *vid, struct radv_video_session_params *p
    const StdVideoH264SequenceParameterSet *sps;
    const StdVideoH264PictureParameterSet *pps;
 
-   vk_video_get_h264_parameters(&vid->vk, params ? &params->vk : NULL, frame_info, h264_pic_info, &sps, &pps);
+   vk_video_get_h264_parameters(&vid->vk, params, frame_info, h264_pic_info, &sps, &pps);
 
    *slice_offset = h264_pic_info->pSliceOffsets[0];
 
@@ -1645,7 +1645,7 @@ get_h264_msg(struct radv_video_session *vid, struct radv_video_session_params *p
 }
 
 static rvcn_dec_message_hevc_t
-get_h265_msg(struct radv_device *device, struct radv_video_session *vid, struct radv_video_session_params *params,
+get_h265_msg(struct radv_device *device, struct radv_video_session *vid, struct vk_video_session_parameters *params,
              const struct VkVideoDecodeInfoKHR *frame_info, uint32_t *width_in_samples, uint32_t *height_in_samples,
              void *it_ptr)
 {
@@ -1658,7 +1658,7 @@ get_h265_msg(struct radv_device *device, struct radv_video_session *vid, struct 
    const StdVideoH265SequenceParameterSet *sps = NULL;
    const StdVideoH265PictureParameterSet *pps = NULL;
 
-   vk_video_get_h265_parameters(&vid->vk, params ? &params->vk : NULL, frame_info, h265_pic_info, &sps, &pps);
+   vk_video_get_h265_parameters(&vid->vk, params, frame_info, h265_pic_info, &sps, &pps);
 
    result.sps_info_flags = 0;
    result.sps_info_flags |= sps->flags.scaling_list_enabled_flag << 0;
@@ -1790,7 +1790,7 @@ get_h265_msg(struct radv_device *device, struct radv_video_session *vid, struct 
 }
 
 static rvcn_dec_message_vp9_t
-get_vp9_msg(struct radv_device *device, struct radv_video_session *vid, struct radv_video_session_params *params,
+get_vp9_msg(struct radv_device *device, struct radv_video_session *vid, struct vk_video_session_parameters *params,
             const struct VkVideoDecodeInfoKHR *frame_info, void *probs_ptr, int *update_reference_slot)
 {
    rvcn_dec_message_vp9_t result;
@@ -1961,7 +1961,7 @@ get_vp9_msg(struct radv_device *device, struct radv_video_session *vid, struct r
 #define AV1_SUPERRES_DENOM_MIN 9
 
 static rvcn_dec_message_av1_t
-get_av1_msg(struct radv_device *device, struct radv_video_session *vid, struct radv_video_session_params *params,
+get_av1_msg(struct radv_device *device, struct radv_video_session *vid, struct vk_video_session_parameters *params,
             const struct VkVideoDecodeInfoKHR *frame_info, void *probs_ptr, int *update_reference_slot)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -1973,7 +1973,7 @@ get_av1_msg(struct radv_device *device, struct radv_video_session *vid, struct r
 
    const StdVideoAV1SequenceHeader *seq_hdr = NULL;
 
-   vk_video_get_av1_parameters(&vid->vk, params ? &params->vk : NULL, frame_info, &seq_hdr);
+   vk_video_get_av1_parameters(&vid->vk, params, frame_info, &seq_hdr);
 
    memset(&result, 0, sizeof(result));
 
@@ -2361,7 +2361,7 @@ fill_ref_buffer(rvcn_dec_ref_buffer_t *ref, struct radv_image *img, uint32_t sli
 
 static bool
 rvcn_dec_message_decode(struct radv_cmd_buffer *cmd_buffer, struct radv_video_session *vid,
-                        struct radv_video_session_params *params, void *ptr, void *it_probs_ptr, uint32_t *slice_offset,
+                        struct vk_video_session_parameters *params, void *ptr, void *it_probs_ptr, uint32_t *slice_offset,
                         const struct VkVideoDecodeInfoKHR *frame_info)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
@@ -2688,7 +2688,7 @@ rvcn_dec_message_decode(struct radv_cmd_buffer *cmd_buffer, struct radv_video_se
 }
 
 static struct ruvd_h264
-get_uvd_h264_msg(struct radv_video_session *vid, struct radv_video_session_params *params,
+get_uvd_h264_msg(struct radv_video_session *vid, struct vk_video_session_parameters *params,
                  const struct VkVideoDecodeInfoKHR *frame_info, uint32_t *slice_offset, uint32_t *width_in_samples,
                  uint32_t *height_in_samples, void *it_ptr)
 {
@@ -2699,7 +2699,7 @@ get_uvd_h264_msg(struct radv_video_session *vid, struct radv_video_session_param
    const StdVideoH264SequenceParameterSet *sps;
    const StdVideoH264PictureParameterSet *pps;
 
-   vk_video_get_h264_parameters(&vid->vk, params ? &params->vk : NULL, frame_info, h264_pic_info, &sps, &pps);
+   vk_video_get_h264_parameters(&vid->vk, params, frame_info, h264_pic_info, &sps, &pps);
 
    *slice_offset = h264_pic_info->pSliceOffsets[0];
 
@@ -2802,7 +2802,7 @@ get_uvd_h264_msg(struct radv_video_session *vid, struct radv_video_session_param
 }
 
 static struct ruvd_h265
-get_uvd_h265_msg(struct radv_device *device, struct radv_video_session *vid, struct radv_video_session_params *params,
+get_uvd_h265_msg(struct radv_device *device, struct radv_video_session *vid, struct vk_video_session_parameters *params,
                  const struct VkVideoDecodeInfoKHR *frame_info, uint32_t *width_in_samples, uint32_t *height_in_samples,
                  void *it_ptr)
 {
@@ -2817,7 +2817,7 @@ get_uvd_h265_msg(struct radv_device *device, struct radv_video_session *vid, str
    const StdVideoH265SequenceParameterSet *sps = NULL;
    const StdVideoH265PictureParameterSet *pps = NULL;
 
-   vk_video_get_h265_parameters(&vid->vk, params ? &params->vk : NULL, frame_info, h265_pic_info, &sps, &pps);
+   vk_video_get_h265_parameters(&vid->vk, params, frame_info, h265_pic_info, &sps, &pps);
 
    result.sps_info_flags = 0;
    result.sps_info_flags |= sps->flags.scaling_list_enabled_flag << 0;
@@ -2954,7 +2954,7 @@ texture_offset_legacy(struct radeon_surf *surface, unsigned layer)
 
 static bool
 ruvd_dec_message_decode(struct radv_device *device, struct radv_video_session *vid,
-                        struct radv_video_session_params *params, void *ptr, void *it_ptr, uint32_t *slice_offset,
+                        struct vk_video_session_parameters *params, void *ptr, void *it_ptr, uint32_t *slice_offset,
                         const struct VkVideoDecodeInfoKHR *frame_info)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -3087,7 +3087,7 @@ radv_CmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoBeginCod
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(radv_video_session, vid, pBeginInfo->videoSession);
-   VK_FROM_HANDLE(radv_video_session_params, params, pBeginInfo->videoSessionParameters);
+   VK_FROM_HANDLE(vk_video_session_parameters, params, pBeginInfo->videoSessionParameters);
 
    cmd_buffer->video.vid = vid;
    cmd_buffer->video.params = params;
@@ -3198,7 +3198,7 @@ radv_uvd_decode_video(struct radv_cmd_buffer *cmd_buffer, const VkVideoDecodeInf
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radv_video_session *vid = cmd_buffer->video.vid;
-   struct radv_video_session_params *params = cmd_buffer->video.params;
+   struct vk_video_session_parameters *params = cmd_buffer->video.params;
    unsigned size = sizeof(struct ruvd_msg);
    void *ptr, *fb_ptr, *it_probs_ptr = NULL;
    uint32_t out_offset, fb_offset, it_probs_offset = 0;
@@ -3257,7 +3257,7 @@ radv_vcn_decode_video(struct radv_cmd_buffer *cmd_buffer, const VkVideoDecodeInf
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radv_video_session *vid = cmd_buffer->video.vid;
-   struct radv_video_session_params *params = cmd_buffer->video.params;
+   struct vk_video_session_parameters *params = cmd_buffer->video.params;
    unsigned size = 0;
    void *ptr, *fb_ptr, *it_probs_ptr = NULL;
    uint32_t out_offset, fb_offset, it_probs_offset = 0;

@@ -656,7 +656,7 @@ struct radv_cmd_buffer {
 
    struct {
       struct radv_video_session *vid;
-      struct radv_video_session_params *params;
+      struct vk_video_session_parameters *params;
       struct rvcn_sq_var sq;
       struct rvcn_decode_buffer_s *decode_buffer;
       struct radv_enc_state enc;

@@ -71,13 +71,6 @@ struct radv_video_session {
 
 VK_DEFINE_NONDISP_HANDLE_CASTS(radv_video_session, vk.base, VkVideoSessionKHR, VK_OBJECT_TYPE_VIDEO_SESSION_KHR)
 
-struct radv_video_session_params {
-   struct vk_video_session_parameters vk;
-};
-
-VK_DEFINE_NONDISP_HANDLE_CASTS(radv_video_session_params, vk.base, VkVideoSessionParametersKHR,
-                               VK_OBJECT_TYPE_VIDEO_SESSION_PARAMETERS_KHR)
-
 void radv_init_physical_device_decoder(struct radv_physical_device *pdev);
 
 void radv_video_get_profile_alignments(struct radv_physical_device *pdev, const VkVideoProfileListInfoKHR *profile_list,
