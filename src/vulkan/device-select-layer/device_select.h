@@ -30,27 +30,35 @@
 /* We don't use `drmPciDeviceInfo` because it uses 16-bit ids,
  * instead of Vulkan's 32-bit ones. */
 struct device_info {
-  uint32_t vendor_id;
-  uint32_t device_id;
+   uint32_t vendor_id;
+   uint32_t device_id;
 };
 
 struct device_pci_info {
-  struct device_info dev_info;
-  drmPciBusInfo bus_info;
-  bool has_bus_info;
-  bool cpu_device;
+   struct device_info dev_info;
+   drmPciBusInfo bus_info;
+   bool has_bus_info;
+   bool cpu_device;
 };
 
 #ifdef VK_USE_PLATFORM_XCB_KHR
 int device_select_find_xcb_pci_default(struct device_pci_info *devices, uint32_t device_count);
 #else
-static inline int device_select_find_xcb_pci_default(struct device_pci_info *devices, uint32_t device_count) { return -1; }
+static inline int
+device_select_find_xcb_pci_default(struct device_pci_info *devices, uint32_t device_count)
+{
+   return -1;
+}
 #endif
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 int device_select_find_wayland_pci_default(struct device_pci_info *devices, uint32_t device_count);
 #else
-static inline int device_select_find_wayland_pci_default(struct device_pci_info *devices, uint32_t device_count) { return -1; }
+static inline int
+device_select_find_wayland_pci_default(struct device_pci_info *devices, uint32_t device_count)
+{
+   return -1;
+}
 #endif
 
 #endif
