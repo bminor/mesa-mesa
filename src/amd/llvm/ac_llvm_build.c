@@ -2313,7 +2313,7 @@ LLVMTypeRef ac_arg_type_to_pointee_type(struct ac_llvm_context *ctx, enum ac_arg
       return ctx->f32;
       break;
    case AC_ARG_CONST_PTR_PTR:
-      return ac_array_in_const32_addr_space(ctx);
+      return LLVMPointerTypeInContext(ctx->context, AC_ADDR_SPACE_CONST_32BIT);
       break;
    case AC_ARG_CONST_DESC_PTR:
       return ctx->v4i32;
@@ -2325,16 +2325,6 @@ LLVMTypeRef ac_arg_type_to_pointee_type(struct ac_llvm_context *ctx, enum ac_arg
       assert(false);
       return NULL;
    }
-}
-
-LLVMTypeRef ac_array_in_const_addr_space(struct ac_llvm_context *ctx)
-{
-   return LLVMPointerTypeInContext(ctx->context, AC_ADDR_SPACE_CONST);
-}
-
-LLVMTypeRef ac_array_in_const32_addr_space(struct ac_llvm_context *ctx)
-{
-   return LLVMPointerTypeInContext(ctx->context, AC_ADDR_SPACE_CONST_32BIT);
 }
 
 static struct ac_llvm_flow *get_current_flow(struct ac_llvm_context *ctx)
@@ -3617,10 +3607,10 @@ static LLVMTypeRef arg_llvm_type(enum ac_arg_type type, unsigned size, struct ac
    }
 
    if (size == 1) {
-      return ac_array_in_const32_addr_space(ctx);
+      return LLVMPointerTypeInContext(ctx->context, AC_ADDR_SPACE_CONST_32BIT);
    } else {
       assert(size == 2);
-      return ac_array_in_const_addr_space(ctx);
+      return LLVMPointerTypeInContext(ctx->context, AC_ADDR_SPACE_CONST);
    }
 }
 
