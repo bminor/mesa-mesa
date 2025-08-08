@@ -1959,7 +1959,7 @@ anv_image_finish(struct anv_image *image)
    }
 
    for (uint32_t b = 0; b < ARRAY_SIZE(image->bindings); b++) {
-      if (image->bindings[b].host_map != NULL) {
+      if (image->bindings[b].host_map != NULL && !image->bindings[b].address.bo->from_host_ptr) {
          anv_device_unmap_bo(device,
                              image->bindings[b].address.bo,
                              image->bindings[b].host_map,
@@ -2675,21 +2675,28 @@ anv_image_bind_address(struct anv_device *device,
    if (image->vk.usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) {
       uint64_t offset = image->bindings[binding].address.offset +
                         image->bindings[binding].memory_range.offset;
-      uint64_t map_offset, map_size;
-      anv_sanitize_map_params(device, image->bindings[binding].address.bo, offset,
-                              image->bindings[binding].memory_range.size,
-                              &map_offset, &map_size);
 
-      VkResult result = anv_device_map_bo(device,
-                                          image->bindings[binding].address.bo,
-                                          map_offset, map_size,
-                                          NULL /* placed_addr */,
-                                          &image->bindings[binding].host_map);
-      if (result != VK_SUCCESS)
-         return result;
+      if (address.bo->from_host_ptr) {
+         image->bindings[binding].host_map = address.bo->map + address.bo->offset;
+         image->bindings[binding].map_size = address.bo->size;
+         image->bindings[binding].map_delta = 0;
+      } else {
+         uint64_t map_offset, map_size;
+         anv_sanitize_map_params(device, image->bindings[binding].address.bo, offset,
+                                 image->bindings[binding].memory_range.size,
+                                 &map_offset, &map_size);
 
-      image->bindings[binding].map_delta = (offset - map_offset);
-      image->bindings[binding].map_size = map_size;
+         VkResult result = anv_device_map_bo(device,
+                                             image->bindings[binding].address.bo,
+                                             map_offset, map_size,
+                                             NULL /* placed_addr */,
+                                             &image->bindings[binding].host_map);
+         if (result != VK_SUCCESS)
+            return result;
+
+         image->bindings[binding].map_delta = (offset - map_offset);
+         image->bindings[binding].map_size = map_size;
+      }
    }
 
    ANV_RMV(image_bind, device, image, binding);
