@@ -153,8 +153,6 @@ public:
 
    static const std::set<AluModifiers> empty;
    static const std::set<AluModifiers> write;
-   static const std::set<AluModifiers> last;
-   static const std::set<AluModifiers> last_write;
 
    std::tuple<PRegister, bool, PRegister> indirect_addr() const;
    void update_indirect_addr(PRegister old_reg, PRegister reg) override;

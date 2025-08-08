@@ -149,8 +149,7 @@ GeometryShader::do_allocate_reserved_registers()
 
    for (int i = 0; i < 4; ++i) {
       m_export_base[i] = value_factory().temp_register(0, false);
-      emit_instruction(
-         new AluInstr(op1_mov, m_export_base[i], zero, AluInstr::last_write));
+      emit_instruction(new AluInstr(op1_mov, m_export_base[i], zero, AluInstr::write));
    }
 
    m_ring_item_sizes[0] = m_next_input_ring_offset;
@@ -214,7 +213,7 @@ GeometryShader::emit_vertex(nir_intrinsic_instr *instr, bool cut)
                              m_export_base[stream],
                              m_export_base[stream],
                              value_factory().literal(m_noutputs),
-                             AluInstr::last_write);
+                             AluInstr::write);
       emit_instruction(ir);
    }
 
@@ -288,7 +287,6 @@ GeometryShader::store_output(nir_intrinsic_instr *instr)
                emit_instruction(ir);
             }
          }
-         ir->set_alu_flag(alu_last_instr);
          m_streamout_data[location] = new MemRingOutInstr(cf_mem_ring,
                                                           MemRingOutInstr::mem_write_ind,
                                                           tmp,
@@ -396,7 +394,7 @@ GeometryShader::emit_adj_fix()
                                  adjhelp0,
                                  m_primitive_id,
                                  value_factory().one_i(),
-                                 AluInstr::last_write));
+                                 AluInstr::write));
 
    int reg_indices[R600_GS_VERTEX_INDIRECT_TOTAL];
    int rotate_indices[R600_GS_VERTEX_INDIRECT_TOTAL] = {4, 5, 0, 1, 2, 3};
@@ -418,7 +416,6 @@ GeometryShader::emit_adj_fix()
 
       emit_instruction(ir);
    }
-   ir->set_alu_flag(alu_last_instr);
 
    for (int i = 0; i < R600_GS_VERTEX_INDIRECT_TOTAL; i++)
       m_per_vertex_offsets[i] = adjhelp[i];

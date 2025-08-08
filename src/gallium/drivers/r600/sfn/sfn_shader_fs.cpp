@@ -72,7 +72,7 @@ FragmentShader::load_input(nir_intrinsic_instr *intr)
                              vf.dest(intr->def, 0, pin_none),
                              m_face_input,
                              vf.inline_const(ALU_SRC_0, 0),
-                             AluInstr::last_write);
+                             AluInstr::write);
       emit_instruction(ir);
       return true;
    }
@@ -143,7 +143,7 @@ FragmentShader::process_stage_intrinsic(nir_intrinsic_instr *intr)
                                     nullptr,
                                     value_factory().src(intr->src[0], 0),
                                     value_factory().zero(),
-                                    {AluInstr::last}));
+                                    AluInstr::empty));
 
       return true;
    case nir_intrinsic_terminate:
@@ -152,7 +152,7 @@ FragmentShader::process_stage_intrinsic(nir_intrinsic_instr *intr)
                                     nullptr,
                                     value_factory().zero(),
                                     value_factory().zero(),
-                                    {AluInstr::last}));
+                                    AluInstr::empty));
       return true;
    case nir_intrinsic_load_sample_mask_in:
       if (m_apply_sample_mask) {
@@ -286,9 +286,9 @@ FragmentShader::emit_load_sample_mask_in(nir_intrinsic_instr *instr)
    assert(m_sample_mask_reg);
 
    emit_instruction(
-      new AluInstr(op2_lshl_int, tmp, vf.one_i(), m_sample_id_reg, AluInstr::last_write));
+      new AluInstr(op2_lshl_int, tmp, vf.one_i(), m_sample_id_reg, AluInstr::write));
    emit_instruction(
-      new AluInstr(op2_and_int, dest, tmp, m_sample_mask_reg, AluInstr::last_write));
+      new AluInstr(op2_and_int, dest, tmp, m_sample_mask_reg, AluInstr::write));
    return true;
 }
 
@@ -298,7 +298,7 @@ FragmentShader::emit_load_helper_invocation(nir_intrinsic_instr *instr)
    assert(m_helper_invocation);
    auto& vf = value_factory();
    emit_instruction(
-      new AluInstr(op1_mov, m_helper_invocation, vf.literal(-1), AluInstr::last_write));
+      new AluInstr(op1_mov, m_helper_invocation, vf.literal(-1), AluInstr::write));
    RegisterVec4 destvec{m_helper_invocation, nullptr, nullptr, nullptr, pin_group};
 
    auto vtx = new LoadFromBuffer(destvec,
@@ -312,7 +312,7 @@ FragmentShader::emit_load_helper_invocation(nir_intrinsic_instr *instr)
    vtx->set_fetch_flag(FetchInstr::use_tc);
    vtx->set_always_keep();
    auto dst = value_factory().dest(instr->def, 0, pin_free);
-   auto ir = new AluInstr(op1_mov, dst, m_helper_invocation, AluInstr::last_write);
+   auto ir = new AluInstr(op1_mov, dst, m_helper_invocation, AluInstr::write);
    ir->add_required_instr(vtx);
    emit_instruction(vtx);
    emit_instruction(ir);
@@ -647,7 +647,6 @@ bool
 FragmentShaderR600::load_input_hw(nir_intrinsic_instr *intr)
 {
    auto& vf = value_factory();
-   AluInstr *ir = nullptr;
    for (unsigned i = 0; i < intr->def.num_components; ++i) {
       sfn_log << SfnLog::io << "Inject register "
               << *m_interpolated_inputs[nir_intrinsic_base(intr)][i] << "\n";
@@ -657,8 +656,6 @@ FragmentShaderR600::load_input_hw(nir_intrinsic_instr *intr)
                       i,
                       m_interpolated_inputs[nir_intrinsic_base(intr)][index]);
    }
-   if (ir)
-      ir->set_alu_flag(alu_last_instr);
    return true;
 }
 
@@ -697,10 +694,10 @@ FragmentShaderEG::load_input_hw(nir_intrinsic_instr *intr)
             new AluInstr(op1_interp_load_p0,
                          tmp,
                          new InlineConstant(ALU_SRC_PARAM_BASE + io.lds_pos(), i + comp),
-                         AluInstr::last_write);
+                         AluInstr::write);
          emit_instruction(ir);
-         emit_instruction(new AluInstr(
-            op1_mov, vf.dest(intr->def, i, pin_chan), tmp, AluInstr::last_write));
+         emit_instruction(
+            new AluInstr(op1_mov, vf.dest(intr->def, i, pin_chan), tmp, AluInstr::write));
       } else {
 
          ir = new AluInstr(op1_interp_load_p0,
@@ -710,7 +707,6 @@ FragmentShaderEG::load_input_hw(nir_intrinsic_instr *intr)
          emit_instruction(ir);
       }
    }
-   ir->set_alu_flag(alu_last_instr);
    return true;
 }
 
@@ -793,7 +789,6 @@ FragmentShaderEG::load_interpolated_input_hw(nir_intrinsic_instr *intr)
          emit_instruction(ir);
       }
       assert(ir);
-      ir->set_alu_flag(alu_last_instr);
    }
 
    return true;
@@ -895,22 +890,22 @@ FragmentShaderEG::load_barycentric_at_sample(nir_intrinsic_instr *instr)
    auto tmp1 = vf.temp_register();
 
    emit_instruction(
-      new AluInstr(op3_muladd, tmp0, grad[0], slope[2], interpolator.j, {alu_write}));
-   emit_instruction(new AluInstr(
-      op3_muladd, tmp1, grad[1], slope[2], interpolator.i, {alu_write, alu_last_instr}));
+      new AluInstr(op3_muladd, tmp0, grad[0], slope[2], interpolator.j, AluInstr::write));
+   emit_instruction(
+      new AluInstr(op3_muladd, tmp1, grad[1], slope[2], interpolator.i, AluInstr::write));
 
    emit_instruction(new AluInstr(op3_muladd,
                                  vf.dest(instr->def, 0, pin_none),
                                  grad[3],
                                  slope[3],
                                  tmp1,
-                                 {alu_write}));
+                                 AluInstr::write));
    emit_instruction(new AluInstr(op3_muladd,
                                  vf.dest(instr->def, 1, pin_none),
                                  grad[2],
                                  slope[3],
                                  tmp0,
-                                 {alu_write, alu_last_instr}));
+                                 AluInstr::write));
 
    return true;
 }
@@ -947,17 +942,21 @@ FragmentShaderEG::load_barycentric_at_offset(nir_intrinsic_instr *instr)
    auto tmp0 = vf.temp_register();
    auto tmp1 = vf.temp_register();
    emit_instruction(
-      new AluInstr(op3_muladd, tmp0, help[0], ofs_x, interpolator.j, {alu_write}));
-   emit_instruction(new AluInstr(
-      op3_muladd, tmp1, help[1], ofs_x, interpolator.i, {alu_write, alu_last_instr}));
-   emit_instruction(new AluInstr(
-      op3_muladd, vf.dest(instr->def, 0, pin_none), help[3], ofs_y, tmp1, {alu_write}));
+      new AluInstr(op3_muladd, tmp0, help[0], ofs_x, interpolator.j, AluInstr::write));
+   emit_instruction(
+      new AluInstr(op3_muladd, tmp1, help[1], ofs_x, interpolator.i, AluInstr::write));
+   emit_instruction(new AluInstr(op3_muladd,
+                                 vf.dest(instr->def, 0, pin_none),
+                                 help[3],
+                                 ofs_y,
+                                 tmp1,
+                                 AluInstr::write));
    emit_instruction(new AluInstr(op3_muladd,
                                  vf.dest(instr->def, 1, pin_none),
                                  help[2],
                                  ofs_y,
                                  tmp0,
-                                 {alu_write, alu_last_instr}));
+                                 AluInstr::write));
 
    return true;
 }
@@ -980,12 +979,11 @@ FragmentShaderEG::load_interpolated_one_comp(RegisterVec4& dest,
                         dest[chan],
                         i & 1 ? params.j : params.i,
                         new InlineConstant(ALU_SRC_PARAM_BASE + params.base, chan),
-                        i == 0 ? AluInstr::write : AluInstr::last);
+                        i == 0 ? AluInstr::write : AluInstr::empty);
 
       ir->set_bank_swizzle(alu_vec_210);
       success = group->add_instruction(ir);
    }
-   ir->set_alu_flag(alu_last_instr);
    if (success)
       emit_instruction(group);
    return success;
@@ -1012,7 +1010,6 @@ FragmentShaderEG::load_interpolated_two_comp(RegisterVec4& dest,
       ir->set_bank_swizzle(alu_vec_210);
       success = group->add_instruction(ir);
    }
-   ir->set_alu_flag(alu_last_instr);
    if (success)
       emit_instruction(group);
    return success;
@@ -1037,7 +1034,6 @@ FragmentShaderEG::load_interpolated_two_comp_for_one(RegisterVec4& dest,
       ir->set_bank_swizzle(alu_vec_210);
       success = group->add_instruction(ir);
    }
-   ir->set_alu_flag(alu_last_instr);
    if (success)
       emit_instruction(group);
 

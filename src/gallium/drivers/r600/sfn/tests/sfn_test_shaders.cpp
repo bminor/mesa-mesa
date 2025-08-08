@@ -125,17 +125,50 @@ PROP WRITE_ALL_COLORS:1
 PROP COLOR_EXPORT_MASK:15
 OUTPUT LOC:0 FRAG_RESULT:2 MASK:15
 SHADER
-ALU MOV S0.x@free : L[0xbf000000] {WL}
-ALU MOV S1.x@free : I[0] {WL}
+ALU MOV S0.x@free : L[0xbf000000] {W}
+ALU MOV S1.x@free : I[0] {W}
+ALU MOV S2.x : KC0[0].x {W}
+ALU MOV S2.y : KC0[0].y {W}
+ALU MOV S2.z : KC0[0].z {W}
+ALU MOV S2.w : KC0[0].w {W}
+ALU ADD S3.x@free : S0.x@free S2.x {W}
+ALU MOV S4.x@group : S3.x@free {W}
+ALU MOV S4.y@group : S2.y {W}
+ALU MOV S4.z@group : S2.z {W}
+ALU MOV S4.w@group : S2.w {W}
+EXPORT_DONE PIXEL 0 S4.xyzw
+)";
+
+const char *add_add_1_expect_from_nir_scheduled =
+   R"(FS
+CHIPCLASS EVERGREEN
+PROP MAX_COLOR_EXPORTS:1
+PROP COLOR_EXPORTS:1
+PROP WRITE_ALL_COLORS:1
+PROP COLOR_EXPORT_MASK:15
+OUTPUT LOC:0 FRAG_RESULT:2 MASK:15
+SHADER
+ALU_GROUP_BEGIN
+ALU MOV S0.x@chan : L[0xbf000000] {WL}
+ALU_GROUP_END
+ALU_GROUP_BEGIN
+ALU MOV S1.x@chan : I[0] {WL}
+ALU_GROUP_END
+ALU_GROUP_BEGIN
 ALU MOV S2.x : KC0[0].x {W}
 ALU MOV S2.y : KC0[0].y {W}
 ALU MOV S2.z : KC0[0].z {W}
 ALU MOV S2.w : KC0[0].w {WL}
-ALU ADD S3.x@free : S0.x@free S2.x {WL}
-ALU MOV S4.x@group : S3.x@free {W}
-ALU MOV S4.y@group : S2.y {W}
-ALU MOV S4.z@group : S2.z {W}
-ALU MOV S4.w@group : S2.w {WL}
+ALU_GROUP_END
+ALU_GROUP_BEGIN
+ALU ADD S3.x@chan : S0.x@free S2.x {WL}
+ALU_GROUP_END
+ALU_GROUP_BEGIN
+ALU MOV S4.x@chgr : S3.x@free {W}
+ALU MOV S4.y@chgr : S2.y {W}
+ALU MOV S4.z@chgr : S2.z {W}
+ALU MOV S4.w@chgr : S2.w {WL}
+ALU_GROUP_END
 EXPORT_DONE PIXEL 0 S4.xyzw
 )";
 
@@ -149,17 +182,17 @@ PROP WRITE_ALL_COLORS:1
 PROP COLOR_EXPORT_MASK:15
 OUTPUT LOC:0 FRAG_RESULT:2 MASK:15
 SHADER
-ALU MOV S0.x@free : L[0xbf000000] {WL}
-ALU MOV S1.x@free : I[0] {WL}
+ALU MOV S0.x@free : L[0xbf000000] {W}
+ALU MOV S1.x@free : I[0] {W}
 ALU MOV S2.x : KC0[0].x {W}
 ALU MOV S2.y : KC0[0].y {W}
 ALU MOV S2.z : KC0[0].z {W}
-ALU MOV S2.w : KC0[0].w {WL}
-ALU ADD S3.x@free : L[0xbf000000] KC0[0].x {WL}
+ALU MOV S2.w : KC0[0].w {W}
+ALU ADD S3.x@free : L[0xbf000000] KC0[0].x {W}
 ALU MOV S4.x@group : S3.x@free {W}
 ALU MOV S4.y@group : KC0[0].y {W}
 ALU MOV S4.z@group : KC0[0].z {W}
-ALU MOV S4.w@group : KC0[0].w {WL}
+ALU MOV S4.w@group : KC0[0].w {W}
 EXPORT_DONE PIXEL 0 S4.xyzw
 )";
 
@@ -173,11 +206,11 @@ PROP WRITE_ALL_COLORS:1
 PROP COLOR_EXPORT_MASK:15
 OUTPUT LOC:0 FRAG_RESULT:2 MASK:15
 SHADER
-ALU ADD S3.x@free : L[0xbf000000] KC0[0].x {WL}
+ALU ADD S3.x@free : L[0xbf000000] KC0[0].x {W}
 ALU MOV S4.x@group : S3.x@free {W}
 ALU MOV S4.y@group : KC0[0].y {W}
 ALU MOV S4.z@group : KC0[0].z {W}
-ALU MOV S4.w@group : KC0[0].w {WL}
+ALU MOV S4.w@group : KC0[0].w {W}
 EXPORT_DONE PIXEL 0 S4.xyzw
 )";
 
@@ -195,7 +228,7 @@ SHADER
 ALU ADD S4.x@group : L[0xbf000000] KC0[0].x {W}
 ALU MOV S4.y@group : KC0[0].y {W}
 ALU MOV S4.z@group : KC0[0].z {W}
-ALU MOV S4.w@group : KC0[0].w {WL}
+ALU MOV S4.w@group : KC0[0].w {W}
 EXPORT_DONE PIXEL 0 S4.xyzw
 )";
 
@@ -1056,63 +1089,63 @@ OUTPUT LOC:1 VARYING_SLOT:1 MASK:15
 SYSVALUES R1.xyzw
 REGISTERS R2.x R3.x R4.x R5.x R6.x R7.x R8.x
 SHADER
-ALU MOV S9.x@free : I[0] {WL}
-ALU MOV S10.x@free : I[-1] {WL}
-ALU MOV S11.x@free : I[0] {WL}
-ALU MOV S12.x@free : I[1] {WL}
+ALU MOV S9.x@free : I[0] {W}
+ALU MOV S10.x@free : I[-1] {W}
+ALU MOV S11.x@free : I[0] {W}
+ALU MOV S12.x@free : I[1] {W}
 ALU MOV S13.x : I[1.0] {W}
 ALU MOV S13.y : I[1.0] {W}
 ALU MOV S13.z : I[0] {W}
-ALU MOV S13.w : I[1.0] {WL}
-ALU MOV S14.x@free : L[0x2] {WL}
-ALU MOV S15.x@free : KC0[0].x {WL}
-ALU SETE_INT S16.x@free : S15.x@free S12.x@free {WL}
+ALU MOV S13.w : I[1.0] {W}
+ALU MOV S14.x@free : L[0x2] {W}
+ALU MOV S15.x@free : KC0[0].x {W}
+ALU SETE_INT S16.x@free : S15.x@free S12.x@free {W}
 IF (( ALU PRED_SETNE_INT __.x@free : S16.x@free I[0] {LEP} PUSH_BEFORE ))
-  ALU MOV S18.x@free : KC0[2].x {WL}
-  ALU SETNE_INT S19.x@free : S18.x@free S12.x {WL}
+  ALU MOV S18.x@free : KC0[2].x {W}
+  ALU SETNE_INT S19.x@free : S18.x@free S12.x {W}
   IF (( ALU PRED_SETNE_INT __.y@free : S19.x@free I[0] {LEP} PUSH_BEFORE ))
-    ALU MOV R3.x : S12.x@free {WL}
-    ALU MOV R2.x : S9.x@free {WL}
+    ALU MOV R3.x : S12.x@free {W}
+    ALU MOV R2.x : S9.x@free {W}
     LOOP_BEGIN
-      ALU INT_TO_FLT R4.x : R2.x {WL}
-      ALU MOV S21.x@free : KC0[1].x {WL}
-      ALU SETNE_INT S22.x@free : S21.x@free S14.x@free {WL}
+      ALU INT_TO_FLT R4.x : R2.x {W}
+      ALU MOV S21.x@free : KC0[1].x {W}
+      ALU SETNE_INT S22.x@free : S21.x@free S14.x@free {W}
       IF (( ALU PRED_SETNE_INT __.z@free : S22.x@free I[0] {LEP} PUSH_BEFORE ))
         BREAK
       ENDIF
-      ALU ADD_INT R5.x@free : R3.x S12.x@free {WL}
-      ALU MOV R2.x : R3.x {WL}
-      ALU MOV R3.x : R5.x {WL}
+      ALU ADD_INT R5.x@free : R3.x S12.x@free {W}
+      ALU MOV R2.x : R3.x {W}
+      ALU MOV R3.x : R5.x {W}
     LOOP_END
-    ALU MOV S24.x@free : I[1.0] {WL}
-    ALU MOV R8.x : S24.x@free {WL}
-    ALU MOV R7.x : R8.x {WL}
-    ALU MOV R6.x : S10.x@free {WL}
+    ALU MOV S24.x@free : I[1.0] {W}
+    ALU MOV R8.x : S24.x@free {W}
+    ALU MOV R7.x : R8.x {W}
+    ALU MOV R6.x : S10.x@free {W}
   ELSE
-    ALU MOV S25.x@free : I[1.0] {WL}
-    ALU MOV R8.x : S25.x@free {WL}
-    ALU MOV R7.x : S9.x {WL}
-    ALU MOV R4.x : R8.x {WL}
-    ALU MOV R6.x : S11.x@free {WL}
+    ALU MOV S25.x@free : I[1.0] {W}
+    ALU MOV R8.x : S25.x@free {W}
+    ALU MOV R7.x : S9.x {W}
+    ALU MOV R4.x : R8.x {W}
+    ALU MOV R6.x : S11.x@free {W}
   ENDIF
 ELSE
-  ALU MOV S26.x@free : I[1.0] {WL}
-  ALU MOV R8.x : S26.x@free {WL}
-  ALU MOV R7.x : S9.x {WL}
-  ALU MOV R4.x : R8.x {WL}
-  ALU MOV R6.x : S10.x@free {WL}
+  ALU MOV S26.x@free : I[1.0] {W}
+  ALU MOV R8.x : S26.x@free {W}
+  ALU MOV R7.x : S9.x {W}
+  ALU MOV R4.x : R8.x {W}
+  ALU MOV R6.x : S10.x@free {W}
 ENDIF
-ALU CNDE_INT S27.x@free : R6.x S13.x R4.x {WL}
-ALU CNDE_INT S28.x@free : R6.x S13.y R7.x {WL}
-ALU CNDE_INT S29.x@free : R6.x S13.w R8.x {WL}
+ALU CNDE_INT S27.x@free : R6.x S13.x R4.x {W}
+ALU CNDE_INT S28.x@free : R6.x S13.y R7.x {W}
+ALU CNDE_INT S29.x@free : R6.x S13.w R8.x {W}
 EXPORT_DONE POS 0 R1.xyzw
-ALU MOV CLAMP S31.x@free : S27.x@free {WL}
-ALU MOV CLAMP S32.x@free : S28.x@free {WL}
-ALU MOV CLAMP S33.x@free : S29.x@free {WL}
+ALU MOV CLAMP S31.x@free : S27.x@free {W}
+ALU MOV CLAMP S32.x@free : S28.x@free {W}
+ALU MOV CLAMP S33.x@free : S29.x@free {W}
 ALU MOV S34.x@group : S31.x@free {W}
 ALU MOV S34.y@group : S32.x@free {W}
 ALU MOV S34.z@group : S9.x@free {W}
-ALU MOV S34.w@group : S33.x@free {WL}
+ALU MOV S34.w@group : S33.x@free {W}
 EXPORT_DONE PARAM 0 S34.xyzw
 )";
 
@@ -1128,39 +1161,39 @@ REGISTERS R2.x@free R3.x@free R4.x@free R5.x@free R6.x@free R7.x@free R8.x@free
 SHADER
 IF (( ALU PREDE_INT __.x@free : KC0[0].x I[1] {LEP} PUSH_BEFORE ))
   IF (( ALU PRED_SETNE_INT __.y@free : KC0[2].x I[1]  {LEP} PUSH_BEFORE ))
-    ALU MOV R3.x : I[1] {WL}
-    ALU MOV R2.x : I[0] {WL}
+    ALU MOV R3.x : I[1] {W}
+    ALU MOV R2.x : I[0] {W}
     LOOP_BEGIN
-      ALU INT_TO_FLT R4.x : R2.x {WL}
+      ALU INT_TO_FLT R4.x : R2.x {W}
       IF (( ALU PRED_SETNE_INT __.z@free : KC0[1].x L[0x2] {LEP} PUSH_BEFORE ))
         BREAK
       ENDIF
-      ALU ADD_INT R5.x : R3.x I[1] {WL}
-      ALU MOV R2.x : R3.x {WL}
-      ALU MOV R3.x : R5.x {WL}
+      ALU ADD_INT R5.x : R3.x I[1] {W}
+      ALU MOV R2.x : R3.x {W}
+      ALU MOV R3.x : R5.x {W}
     LOOP_END
-    ALU MOV R8.x : I[1.0] {WL}
-    ALU MOV R7.x : I[1.0] {WL}
-    ALU MOV R6.x : I[-1] {WL}
+    ALU MOV R8.x : I[1.0] {W}
+    ALU MOV R7.x : I[1.0] {W}
+    ALU MOV R6.x : I[-1] {W}
   ELSE
-    ALU MOV R8.x : I[1.0] {WL}
-    ALU MOV R7.x : I[0] {WL}
-    ALU MOV R4.x : I[1.0] {WL}
-    ALU MOV R6.x : I[0] {WL}
+    ALU MOV R8.x : I[1.0] {W}
+    ALU MOV R7.x : I[0] {W}
+    ALU MOV R4.x : I[1.0] {W}
+    ALU MOV R6.x : I[0] {W}
   ENDIF
 ELSE
-  ALU MOV R8.x : I[1.0] {WL}
-  ALU MOV R7.x : I[0] {WL}
-  ALU MOV R4.x : I[1.0] {WL}
-  ALU MOV R6.x : I[-1] {WL}
+  ALU MOV R8.x : I[1.0] {W}
+  ALU MOV R7.x : I[0] {W}
+  ALU MOV R4.x : I[1.0] {W}
+  ALU MOV R6.x : I[-1] {W}
 ENDIF
-ALU CNDE_INT S27.x@free : R6.x I[1.0] R4.x {WL}
-ALU CNDE_INT S28.x@free : R6.x I[1.0] R7.x {WL}
-ALU CNDE_INT S29.x@free : R6.x I[1.0] R8.x {WL}
+ALU CNDE_INT S27.x@free : R6.x I[1.0] R4.x {W}
+ALU CNDE_INT S28.x@free : R6.x I[1.0] R7.x {W}
+ALU CNDE_INT S29.x@free : R6.x I[1.0] R8.x {W}
 EXPORT_DONE POS 0 R1.xyzw
 ALU MOV CLAMP S34.x@group : S27.x@free {W}
 ALU MOV CLAMP S34.y@group : S28.x@free {W}
-ALU MOV CLAMP S34.w@group : S29.x@free {WL}
+ALU MOV CLAMP S34.w@group : S29.x@free {W}
 EXPORT_DONE PARAM 0 S34.xy0w
 )";
 

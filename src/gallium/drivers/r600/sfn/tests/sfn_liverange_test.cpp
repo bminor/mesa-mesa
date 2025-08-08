@@ -79,11 +79,11 @@ TEST_F(LiveRangeTests, SimpleAdd)
    RegisterVec4::Swizzle dummy;
 
    ValueFactory vf;
-   Register *r0x = vf.dest_from_string("S0.x@free");
-   Register *r1x = vf.dest_from_string("S1.x@free");
+   Register *r0x = vf.dest_from_string("S0.x@chan");
+   Register *r1x = vf.dest_from_string("S1.x@chan");
    RegisterVec4 r2 = vf.dest_vec4_from_string("S2.xyzw", dummy, pin_none);
-   Register *r3x = vf.dest_from_string("S3.x@free");
-   RegisterVec4 r4 = vf.dest_vec4_from_string("S4.xyzw", dummy, pin_group);
+   Register *r3x = vf.dest_from_string("S3.x@chan");
+   RegisterVec4 r4 = vf.dest_vec4_from_string("S4.xyzw", dummy, pin_chgr);
 
    LiveRangeMap expect = vf.prepare_live_range_map();
 
@@ -98,7 +98,7 @@ TEST_F(LiveRangeTests, SimpleAdd)
    for (int i = 0; i < 4; ++i)
       expect.set_life_range(*r4[i], 5, 6);
 
-   check(add_add_1_expect_from_nir, expect);
+   check(add_add_1_expect_from_nir_scheduled, expect);
 }
 
 TEST_F(LiveRangeTests, SimpleAInterpolation)

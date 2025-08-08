@@ -51,7 +51,7 @@ TEST_F(TestInstrFromString, test_alu_lds_read_ret)
 {
    add_dest_from_string("R1999.x");
 
-   AluInstr expect(DS_OP_READ_RET, {new Register(1999, 0, pin_none)}, {});
+   AluInstr expect(DS_OP_READ_RET, {new Register(1999, 0, pin_none)}, AluInstr::empty);
 
    check("ALU LDS READ_RET __.x : R1999.x {}", expect);
 }
@@ -96,7 +96,7 @@ TEST_F(TestInstrFromString, test_alu_mov_neg_abs)
    AluInstr expect(op1_mov,
                    new Register(2000, 1, pin_none),
                    new Register(1999, 0, pin_none),
-                   {alu_write});
+                   AluInstr::write);
    expect.set_source_mod(0, AluInstr::mod_abs);
    expect.set_source_mod(0, AluInstr::mod_neg);
 
@@ -351,7 +351,7 @@ TEST_F(TestInstrFromString, test_alu_interp_xy)
                    new Register(1024, 2, pin_chan),
                    r0y,
                    new InlineConstant(ALU_SRC_PARAM_BASE, 2),
-                   {alu_write});
+                   AluInstr::write);
    expect.set_bank_swizzle(alu_vec_210);
 
    check(init, expect);
@@ -369,7 +369,7 @@ TEST_F(TestInstrFromString, test_alu_interp_xy_no_write)
                    new Register(1024, 0, pin_chan),
                    r0x,
                    new InlineConstant(ALU_SRC_PARAM_BASE, 2),
-                   {});
+                   AluInstr::empty);
    expect.set_bank_swizzle(alu_vec_210);
 
    check(init, expect);

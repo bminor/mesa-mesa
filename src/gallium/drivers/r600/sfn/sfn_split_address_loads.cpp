@@ -185,7 +185,8 @@ auto AddressSplitVisitor::load_index_register_eg(Instr *instr,
 
       const EAluOp idx_op[2] = {op1_set_cf_idx0, op1_set_cf_idx1};
 
-      m_last_idx_load[idx_id] = new AluInstr(idx_op[idx_id], idx, m_vf.addr(), {});
+      m_last_idx_load[idx_id] =
+         new AluInstr(idx_op[idx_id], idx, m_vf.addr(), AluInstr::empty);
       m_current_block->insert(m_block_iterator, m_last_idx_load[idx_id]);
       for (auto&& i : m_last_idx_use[idx_id])
          m_last_ar_load->add_required_instr(i);
@@ -208,7 +209,7 @@ auto AddressSplitVisitor::load_index_register_ca(PRegister index)  -> int
    if (idx_id < 0) {
       idx_id = pick_idx();
       auto idx = m_vf.idx_reg(idx_id);
-      m_last_idx_load[idx_id] = new AluInstr(op1_mova_int, idx, index, {});
+      m_last_idx_load[idx_id] = new AluInstr(op1_mova_int, idx, index, AluInstr::empty);
 
       m_current_block->insert(m_block_iterator, m_last_idx_load[idx_id]);
       for (auto&& i : m_last_idx_use[idx_id])
@@ -249,7 +250,7 @@ void AddressSplitVisitor::load_ar(Instr *instr, PRegister addr)
 {
    auto ar = m_vf.addr();
 
-   m_last_ar_load = new AluInstr(op1_mova_int, ar, addr, {});
+   m_last_ar_load = new AluInstr(op1_mova_int, ar, addr, AluInstr::empty);
    m_current_block->insert(m_block_iterator, m_last_ar_load);
    ar->add_use(instr);
    m_current_addr = addr;
