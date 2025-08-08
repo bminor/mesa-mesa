@@ -3914,7 +3914,7 @@
         "description": "ac,radv,radeonsi: fix programming PA_SU_PRIM_FILTER_CNTL on GFX12",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null

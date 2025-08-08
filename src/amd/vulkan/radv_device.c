@@ -1024,7 +1024,7 @@ radv_emit_default_sample_locations(const struct radv_physical_device *pdev, stru
     * pixel boundary (-8 sample offset). It's currently always TRUE because the driver doesn't
     * support 16 samples.
     */
-   if (pdev->info.gfx_level >= GFX7) {
+   if (pdev->info.gfx_level >= GFX7 && pdev->info.gfx_level < GFX12) {
       radeon_set_context_reg(R_02882C_PA_SU_PRIM_FILTER_CNTL,
                              S_02882C_XMAX_RIGHT_EXCLUSION(1) | S_02882C_YMAX_BOTTOM_EXCLUSION(1));
    }

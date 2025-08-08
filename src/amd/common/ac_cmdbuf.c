@@ -808,6 +808,12 @@ gfx12_init_graphics_preamble_state(const struct ac_preamble_state *state,
    ac_pm4_set_reg(pm4, R_030A00_PA_SU_LINE_STIPPLE_VALUE, 0);
    ac_pm4_set_reg(pm4, R_030A04_PA_SC_LINE_STIPPLE_STATE, 0);
 
+   /* On GFX12, this seems to behave slightly differently. Programming the
+    * EXCLUSION fields to TRUE causes zero-area triangles to not pass the
+    * primitive clipping stage.
+    */
+   ac_pm4_set_reg(pm4, R_02882C_PA_SU_PRIM_FILTER_CNTL, 0);
+
    ac_pm4_set_reg(pm4, R_031128_SPI_GRP_LAUNCH_GUARANTEE_ENABLE,
                   S_031128_ENABLE(1) |
                   S_031128_GS_ASSIST_EN(1) |
