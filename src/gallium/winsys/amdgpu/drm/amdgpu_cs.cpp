@@ -238,6 +238,9 @@ bool amdgpu_fence_wait(struct pipe_fence_handle *fence, uint64_t timeout,
                               abs_timeout, 0, NULL))
       return false;
 
+   if (user_fence_cpu)
+      assert(*user_fence_cpu >= afence->seq_no);
+
    afence->signalled = true;
    return true;
 }
