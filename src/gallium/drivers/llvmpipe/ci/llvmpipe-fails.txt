@@ -106,4 +106,3 @@ KHR-GL45.direct_state_access.vertex_arrays_vertex_buffers_errors,Fail
 
 # src/compiler/nir/nir.h:2850: nir_src_comp_as_uint: Assertion `nir_src_is_const(src)' failed.
 spec@glsl-1.50@execution@geometry@dynamic_input_array_index,Crash
-spec@glsl-1.50@execution@variable-indexing@gs-input-array-vec4-index-rd,Fail
