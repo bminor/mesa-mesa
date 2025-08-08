@@ -2853,32 +2853,6 @@ visit_store_buffer(isel_context* ctx, nir_intrinsic_instr* intrin)
    }
 }
 
-void
-visit_load_smem(isel_context* ctx, nir_intrinsic_instr* instr)
-{
-   Builder bld(ctx->program, ctx->block);
-   Temp dst = get_ssa_temp(ctx, &instr->def);
-   Temp base = bld.as_uniform(get_ssa_temp(ctx, instr->src[0].ssa));
-   Temp offset = bld.as_uniform(get_ssa_temp(ctx, instr->src[1].ssa));
-
-   assert(base.bytes() == 8);
-
-   aco_opcode opcode;
-   unsigned size;
-   assert(dst.bytes() <= 64);
-   std::tie(opcode, size) = get_smem_opcode(ctx->program->gfx_level, dst.bytes(), false, false);
-   size = util_next_power_of_two(size);
-
-   if (dst.size() != DIV_ROUND_UP(size, 4)) {
-      bld.pseudo(aco_opcode::p_extract_vector, Definition(dst),
-                 bld.smem(opcode, bld.def(RegClass::get(RegType::sgpr, size)), base, offset),
-                 Operand::c32(0u));
-   } else {
-      bld.smem(opcode, Definition(dst), base, offset);
-   }
-   emit_split_vector(ctx, dst, instr->def.num_components);
-}
-
 sync_scope
 translate_nir_scope(mesa_scope scope)
 {
@@ -4090,7 +4064,6 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
    case nir_intrinsic_load_typed_buffer_amd:
    case nir_intrinsic_load_buffer_amd: visit_load_buffer(ctx, instr); break;
    case nir_intrinsic_store_buffer_amd: visit_store_buffer(ctx, instr); break;
-   case nir_intrinsic_load_smem_amd: visit_load_smem(ctx, instr); break;
    case nir_intrinsic_load_global_amd: visit_load_global(ctx, instr); break;
    case nir_intrinsic_store_global_amd: visit_store_global(ctx, instr); break;
    case nir_intrinsic_global_atomic_amd:

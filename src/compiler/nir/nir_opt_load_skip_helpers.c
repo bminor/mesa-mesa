@@ -178,7 +178,6 @@ nir_opt_load_skip_helpers(nir_shader *shader, nir_opt_load_skip_helpers_options 
                        add_load_to_worklist(&hs, instr)) {
                switch (intr->intrinsic) {
                case nir_intrinsic_load_global_amd:
-               case nir_intrinsic_load_smem_amd:
                   break;
                default: {
                   /* Even if this load is skipped for helpers, the handle must

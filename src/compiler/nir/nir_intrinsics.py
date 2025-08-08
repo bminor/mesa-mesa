@@ -1953,15 +1953,6 @@ intrinsic("load_vector_arg_amd", dest_comp=0, bit_sizes=[32],
 store("scalar_arg_amd", [], [BASE])
 store("vector_arg_amd", [], [BASE])
 
-# src[] = { 32/64-bit base address, 32-bit offset }.
-#
-# Similar to load_global_constant, the memory accessed must be read-only. This
-# restriction justifies the CAN_REORDER flag. Additionally, the base/offset must
-# be subgroup uniform.
-intrinsic("load_smem_amd", src_comp=[1, 1], dest_comp=0, bit_sizes=[32],
-                           indices=[ALIGN_MUL, ALIGN_OFFSET, ACCESS],
-                           flags=[CAN_ELIMINATE, CAN_REORDER])
-
 # src[] = { offset }.
 intrinsic("load_shared2_amd", [1], dest_comp=2, indices=[ACCESS, OFFSET0, OFFSET1, ST64], flags=[CAN_ELIMINATE])
 

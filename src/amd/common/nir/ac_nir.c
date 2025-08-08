@@ -490,7 +490,6 @@ ac_nir_mem_vectorize_callback(unsigned align_mul, unsigned align_offset, unsigne
    bool uses_smem = (nir_intrinsic_has_access(low) &&
                      nir_intrinsic_access(low) & ACCESS_SMEM_AMD) ||
                     /* These don't have the "access" field. */
-                    low->intrinsic == nir_intrinsic_load_smem_amd ||
                     low->intrinsic == nir_intrinsic_load_push_constant;
    bool is_store = !nir_intrinsic_infos[low->intrinsic].has_dest;
    bool swizzled = low->intrinsic == nir_intrinsic_load_stack ||
@@ -513,12 +512,11 @@ ac_nir_mem_vectorize_callback(unsigned align_mul, unsigned align_offset, unsigne
           nir_deref_mode_is(nir_src_as_deref(low->src[0]), nir_var_mem_shared));
 
    /* Don't vectorize descriptor loads for LLVM due to excessive SGPR and VGPR spilling. */
-   if (!config->uses_aco && low->intrinsic == nir_intrinsic_load_smem_amd)
+   if (!config->uses_aco && low->intrinsic == nir_intrinsic_load_global && uses_smem)
       return false;
 
    /* Reject opcodes we don't vectorize. */
    switch (low->intrinsic) {
-   case nir_intrinsic_load_smem_amd:
    case nir_intrinsic_load_push_constant:
    case nir_intrinsic_load_ubo:
    case nir_intrinsic_load_stack:

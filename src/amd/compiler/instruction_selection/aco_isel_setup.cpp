@@ -202,8 +202,7 @@ apply_nuw_to_offsets(isel_context* ctx, nir_function_impl* impl)
                apply_nuw_to_ssa(ctx, intrin->src[2].ssa);
             break;
          case nir_intrinsic_load_scratch: apply_nuw_to_ssa(ctx, intrin->src[0].ssa); break;
-         case nir_intrinsic_store_scratch:
-         case nir_intrinsic_load_smem_amd: apply_nuw_to_ssa(ctx, intrin->src[1].ssa); break;
+         case nir_intrinsic_store_scratch: apply_nuw_to_ssa(ctx, intrin->src[1].ssa); break;
          case nir_intrinsic_load_global_amd:
             if (nir_intrinsic_access(intrin) & ACCESS_SMEM_AMD)
                apply_nuw_to_ssa(ctx, intrin->src[1].ssa);
@@ -566,7 +565,6 @@ init_context(isel_context* ctx, nir_shader* shader)
                case nir_intrinsic_ballot_relaxed:
                case nir_intrinsic_bindless_image_samples:
                case nir_intrinsic_load_scalar_arg_amd:
-               case nir_intrinsic_load_smem_amd:
                case nir_intrinsic_unit_test_uniform_amd: type = RegType::sgpr; break;
                case nir_intrinsic_load_input:
                case nir_intrinsic_load_per_primitive_input:

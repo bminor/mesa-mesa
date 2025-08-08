@@ -30,7 +30,6 @@ can_remat_instr(nir_instr *instr)
       case nir_intrinsic_load_vulkan_descriptor:
       case nir_intrinsic_load_push_constant:
       case nir_intrinsic_load_global_constant:
-      case nir_intrinsic_load_smem_amd:
       case nir_intrinsic_load_scalar_arg_amd:
       case nir_intrinsic_load_vector_arg_amd:
          return true;

@@ -119,7 +119,6 @@ get_info(nir_intrinsic_op op)
       STORE(nir_var_uniform, const_ir3, -1, -1, -1, 0, 4)
       INFO(nir_var_mem_shared, shared_append_amd, true, -1, -1, -1, -1, 1)
       INFO(nir_var_mem_shared, shared_consume_amd, true, -1, -1, -1, -1, 1)
-      LOAD(nir_var_mem_global, smem_amd, 0, 1, -1, 1)
       LOAD(0, buffer_amd, 0, 1, -1, 1)
       STORE(0, buffer_amd, 1, 2, -1, 0, 1)
    default:

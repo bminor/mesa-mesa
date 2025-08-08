@@ -973,7 +973,6 @@ nir_get_io_offset_src_number(const nir_intrinsic_instr *instr)
    case nir_intrinsic_load_per_view_output:
    case nir_intrinsic_load_per_primitive_output:
    case nir_intrinsic_load_interpolated_input:
-   case nir_intrinsic_load_smem_amd:
    case nir_intrinsic_load_global_amd:
    case nir_intrinsic_store_output:
    case nir_intrinsic_store_shared:
@@ -1051,7 +1050,6 @@ nir_get_io_index_src_number(const nir_intrinsic_instr *instr)
    case nir_intrinsic_load_per_view_output:
    case nir_intrinsic_load_per_primitive_output:
    case nir_intrinsic_load_interpolated_input:
-   case nir_intrinsic_load_smem_amd:
    case nir_intrinsic_load_global_amd:
    case nir_intrinsic_global_atomic_amd:
    case nir_intrinsic_global_atomic_swap_amd:
