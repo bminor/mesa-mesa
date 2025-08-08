@@ -77,7 +77,7 @@ static nir_def *load_ubo_desc(nir_builder *b, nir_def *index,
    index = nir_iadd_imm(b, index, SI_NUM_SHADER_BUFFERS);
 
    nir_def *offset = nir_ishl_imm(b, index, 4);
-   return nir_load_smem_amd(b, 4, addr, offset, .access = ACCESS_CAN_SPECULATE);
+   return ac_nir_load_smem(b, 4, addr, offset, 16, ACCESS_CAN_SPECULATE);
 }
 
 static nir_def *load_ssbo_desc(nir_builder *b, nir_src *index,
@@ -98,7 +98,7 @@ static nir_def *load_ssbo_desc(nir_builder *b, nir_src *index,
    slot = nir_isub_imm(b, SI_NUM_SHADER_BUFFERS - 1, slot);
 
    nir_def *offset = nir_ishl_imm(b, slot, 4);
-   return nir_load_smem_amd(b, 4, addr, offset, .access = ACCESS_CAN_SPECULATE);
+   return ac_nir_load_smem(b, 4, addr, offset, 16, ACCESS_CAN_SPECULATE);
 }
 
 static nir_def *fixup_image_desc(nir_builder *b, nir_def *rsrc, bool uses_store,
@@ -155,8 +155,8 @@ static nir_def *load_image_desc(nir_builder *b, nir_def *list, nir_def *index,
       num_channels = 8;
    }
 
-   nir_def *rsrc = nir_load_smem_amd(b, num_channels, list, offset,
-                                     .access = bindless ? 0 : ACCESS_CAN_SPECULATE);
+   nir_def *rsrc = ac_nir_load_smem(b, num_channels, list, offset, 16,
+                                    bindless ? 0 : ACCESS_CAN_SPECULATE);
 
    if (desc_type == AC_DESC_IMAGE)
       rsrc = fixup_image_desc(b, rsrc, uses_store, s);
@@ -434,8 +434,8 @@ static nir_def *load_sampler_desc(nir_builder *b, nir_def *list, nir_def *index,
       break;
    }
 
-   return nir_load_smem_amd(b, num_channels, list, offset,
-                            .access = bindless ? 0 : ACCESS_CAN_SPECULATE);
+   return ac_nir_load_smem(b, num_channels, list, offset, 16,
+                           bindless ? 0 : ACCESS_CAN_SPECULATE);
 }
 
 static nir_def *load_deref_sampler_desc(nir_builder *b, nir_deref_instr *deref,

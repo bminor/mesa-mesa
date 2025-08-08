@@ -39,8 +39,8 @@ nir_def *si_nir_load_internal_binding(struct si_screen *sscreen, nir_builder *b,
                                       unsigned num_components)
 {
    nir_def *addr = si_nir_load_addr32_arg(sscreen, args, b, args->internal_bindings);
-   return nir_load_smem_amd(b, num_components, addr, nir_imm_int(b, slot * 16),
-                            .access = ACCESS_CAN_SPECULATE);
+   return ac_nir_load_smem(b, num_components, addr, nir_imm_int(b, slot * 16), 16,
+                           ACCESS_CAN_SPECULATE);
 }
 
 static nir_def *build_attr_ring_desc(nir_builder *b, struct si_shader *shader,
@@ -334,22 +334,22 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
    case nir_intrinsic_load_clip_half_line_width_amd: {
       nir_def *addr = si_nir_load_addr32_arg(s->shader->selector->screen, s->args,
                                              b, args->small_prim_cull_info);
-      replacement = nir_load_smem_amd(b, 2, addr, nir_imm_int(b, 32),
-                                      .access = ACCESS_CAN_SPECULATE);
+      replacement = ac_nir_load_smem(b, 2, addr, nir_imm_int(b, 32), 16,
+                                     ACCESS_CAN_SPECULATE);
       break;
    }
    case nir_intrinsic_load_cull_triangle_viewport_xy_scale_and_offset_amd: {
       nir_def *addr = si_nir_load_addr32_arg(s->shader->selector->screen, s->args,
                                              b, args->small_prim_cull_info);
-      replacement = nir_load_smem_amd(b, 4, addr, nir_imm_int(b, 0),
-                                      .access = ACCESS_CAN_SPECULATE);
+      replacement = ac_nir_load_smem(b, 4, addr, nir_imm_int(b, 0), 16,
+                                     ACCESS_CAN_SPECULATE);
       break;
    }
    case nir_intrinsic_load_cull_line_viewport_xy_scale_and_offset_amd: {
       nir_def *addr = si_nir_load_addr32_arg(s->shader->selector->screen, s->args,
                                              b, args->small_prim_cull_info);
-      replacement = nir_load_smem_amd(b, 4, addr, nir_imm_int(b, 16),
-                                      .access = ACCESS_CAN_SPECULATE);
+      replacement = ac_nir_load_smem(b, 4, addr, nir_imm_int(b, 16), 16,
+                                     ACCESS_CAN_SPECULATE);
       break;
    }
    case nir_intrinsic_load_num_vertices_per_primitive_amd:

@@ -76,6 +76,10 @@ nir_def *
 ac_nir_unpack_arg(nir_builder *b, const struct ac_shader_args *ac_args, struct ac_arg arg,
                   unsigned rshift, unsigned bitwidth);
 
+nir_def *
+ac_nir_load_smem(nir_builder *b, unsigned num_components, nir_def *addr, nir_def *offset,
+                 unsigned align_mul, enum gl_access_qualifier access);
+
 bool ac_nir_lower_sin_cos(nir_shader *shader);
 
 bool ac_nir_lower_intrinsics_to_args(nir_shader *shader, const enum amd_gfx_level gfx_level,

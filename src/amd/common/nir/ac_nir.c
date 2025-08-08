@@ -309,6 +309,19 @@ ac_get_global_ids(nir_builder *b, unsigned num_components, unsigned bit_size)
    return nir_iadd(b, nir_imul(b, block_ids, block_size), local_ids);
 }
 
+nir_def *
+ac_nir_load_smem(nir_builder *b, unsigned num_components, nir_def *addr, nir_def *offset,
+                 unsigned align_mul, enum gl_access_qualifier access)
+{
+   /* Only 1 flag is allowed. */
+   assert(!(access & ~ACCESS_CAN_SPECULATE));
+   assert(align_mul >= 4 && util_is_power_of_two_nonzero(align_mul));
+
+   return nir_load_smem_amd(b, num_components, addr, offset,
+                            .align_mul = align_mul,
+                            .access = access | ACCESS_CAN_REORDER | ACCESS_NON_WRITEABLE);
+}
+
 unsigned
 ac_nir_varying_expression_max_cost(nir_shader *producer, nir_shader *consumer)
 {

@@ -368,10 +368,10 @@ load_sbt_entry(nir_builder *b, const struct rt_variables *vars, nir_def *idx, en
 {
    nir_def *desc_base_addr = nir_load_sbt_base_amd(b);
 
-   nir_def *desc = nir_pack_64_2x32(b, nir_load_smem_amd(b, 2, desc_base_addr, nir_imm_int(b, binding)));
+   nir_def *desc = nir_pack_64_2x32(b, ac_nir_load_smem(b, 2, desc_base_addr, nir_imm_int(b, binding), 4, 0));
 
    nir_def *stride_offset = nir_imm_int(b, binding + (binding == SBT_RAYGEN ? 8 : 16));
-   nir_def *stride = nir_load_smem_amd(b, 1, desc_base_addr, stride_offset);
+   nir_def *stride = ac_nir_load_smem(b, 1, desc_base_addr, stride_offset, 4, 0);
 
    nir_def *addr = nir_iadd(b, desc, nir_u2u64(b, nir_iadd_imm(b, nir_imul(b, idx, stride), offset)));
 
@@ -927,8 +927,8 @@ radv_build_end_trace_token(nir_builder *b, struct rt_variables *vars, nir_def *t
       dst_addr = nir_iadd_imm(b, dst_addr, 8);
 
       nir_def *dispatch_indices =
-         nir_load_smem_amd(b, 2, nir_imm_int64(b, vars->device->rra_trace.ray_history_addr),
-                           nir_imm_int(b, offsetof(struct radv_ray_history_header, dispatch_index)), .align_mul = 4);
+         ac_nir_load_smem(b, 2, nir_imm_int64(b, vars->device->rra_trace.ray_history_addr),
+                          nir_imm_int(b, offsetof(struct radv_ray_history_header, dispatch_index)), 4, 0);
       nir_def *dispatch_index = nir_iadd(b, nir_channel(b, dispatch_indices, 0), nir_channel(b, dispatch_indices, 1));
       nir_def *dispatch_and_flags = nir_iand_imm(b, nir_load_var(b, vars->cull_mask_and_flags), 0xFFFF);
       dispatch_and_flags = nir_ior(b, dispatch_and_flags, dispatch_index);

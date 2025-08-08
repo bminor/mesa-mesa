@@ -50,7 +50,7 @@ load_desc_ptr(nir_builder *b, apply_layout_state *state, unsigned set)
    if (user_sgprs_locs->shader_data[AC_UD_INDIRECT_DESCRIPTOR_SETS].sgpr_idx != -1) {
       nir_def *addr = get_scalar_arg(b, 1, state->args->descriptor_sets[0]);
       addr = convert_pointer_to_64_bit(b, state, addr);
-      return nir_load_smem_amd(b, 1, addr, nir_imm_int(b, set * 4));
+      return ac_nir_load_smem(b, 1, addr, nir_imm_int(b, set * 4), 4, 0);
    }
 
    assert(state->args->descriptor_sets[set].used);
@@ -168,7 +168,7 @@ load_buffer_descriptor(nir_builder *b, apply_layout_state *state, nir_def *rsrc,
       return nir_iadd(b, nir_channel(b, rsrc, 0), nir_channel(b, rsrc, 1));
 
    nir_def *desc_set = convert_pointer_to_64_bit(b, state, nir_channel(b, rsrc, 0));
-   return nir_load_smem_amd(b, 4, desc_set, nir_channel(b, rsrc, 1), .align_mul = 16);
+   return ac_nir_load_smem(b, 4, desc_set, nir_channel(b, rsrc, 1), 16, 0);
 }
 
 static void
@@ -186,7 +186,7 @@ visit_get_ssbo_size(nir_builder *b, apply_layout_state *state, nir_intrinsic_ins
    } else {
       /* load the entire descriptor so it can be CSE'd */
       nir_def *ptr = convert_pointer_to_64_bit(b, state, nir_channel(b, rsrc, 0));
-      nir_def *desc = nir_load_smem_amd(b, 4, ptr, nir_channel(b, rsrc, 1), .align_mul = 16);
+      nir_def *desc = ac_nir_load_smem(b, 4, ptr, nir_channel(b, rsrc, 1), 16, 0);
       size = nir_channel(b, desc, 2);
    }
 
@@ -280,7 +280,7 @@ get_sampler_desc(nir_builder *b, apply_layout_state *state, nir_deref_instr *der
       return nir_iadd(b, load_desc_ptr(b, state, desc_set), index_offset);
 
    nir_def *addr = convert_pointer_to_64_bit(b, state, load_desc_ptr(b, state, desc_set));
-   nir_def *desc = nir_load_smem_amd(b, size, addr, index_offset, .align_mul = size * 4u);
+   nir_def *desc = ac_nir_load_smem(b, size, addr, index_offset, size * 4u, 0);
 
    if (desc_type == AC_DESC_IMAGE && state->has_image_load_dcc_bug && !tex && !write) {
       nir_def *comp[8];
@@ -395,7 +395,7 @@ load_push_constant(nir_builder *b, apply_layout_state *state, nir_intrinsic_inst
       if (size < (count - start) && can_increase_load_size(intrin, start * 4, size, size * 2))
          size *= 2;
 
-      data[num_loads++] = nir_load_smem_amd(b, size, addr, nir_iadd_imm_nuw(b, offset, start * 4));
+      data[num_loads++] = ac_nir_load_smem(b, size, addr, nir_iadd_imm_nuw(b, offset, start * 4), 4, 0);
       start += size;
    }
    return nir_extract_bits(b, data, num_loads, 0, intrin->def.num_components, bit_size);
