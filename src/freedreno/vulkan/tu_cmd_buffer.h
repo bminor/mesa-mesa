@@ -549,6 +549,7 @@ struct tu_cmd_state
    bool stencil_front_write;
    bool stencil_back_write;
    bool stencil_written_on_depth_fail;
+   bool stencil_written_based_on_depth_test;
    bool pipeline_sysmem_single_prim_mode;
    bool pipeline_has_tess;
    bool pipeline_disable_gmem;

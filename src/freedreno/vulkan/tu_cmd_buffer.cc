@@ -6225,6 +6225,31 @@ tu6_stencil_written_on_depth_fail(
    }
 }
 
+/* Returns true if the stencil write result may change based on the result of a
+ * depth test.
+ */
+static bool
+tu6_stencil_written_based_on_depth_test(
+   const struct vk_stencil_test_face_state *face)
+{
+   switch (face->op.compare) {
+   case VK_COMPARE_OP_ALWAYS:
+      /* The stencil op always passes, no need to worry about failOp. */
+      return face->op.depth_fail != VK_STENCIL_OP_KEEP ||
+             face->op.pass != VK_STENCIL_OP_KEEP;
+   case VK_COMPARE_OP_NEVER:
+      /* The stencil op always fails, so failOp will always be used. */
+      return face->op.fail != VK_STENCIL_OP_KEEP;
+   default:
+      /* If the stencil test fails, depth may fail as well, so we can write
+       * stencil when the depth fails if failOp is not VK_STENCIL_OP_KEEP.
+       */
+      return face->op.fail != VK_STENCIL_OP_KEEP ||
+             face->op.pass != VK_STENCIL_OP_KEEP ||
+             face->op.depth_fail != VK_STENCIL_OP_KEEP;
+   }
+}
+
 /* Various frontends (ANGLE, zink at least) will enable stencil testing with
  * what works out to be no-op writes.  Simplify what they give us into flags
  * that LRZ can use.
@@ -6240,6 +6265,7 @@ tu6_update_simplified_stencil_state(struct tu_cmd_buffer *cmd)
       cmd->state.stencil_front_write = false;
       cmd->state.stencil_back_write = false;
       cmd->state.stencil_written_on_depth_fail = false;
+      cmd->state.stencil_written_based_on_depth_test = false;
       return;
    }
 
@@ -6272,6 +6298,11 @@ tu6_update_simplified_stencil_state(struct tu_cmd_buffer *cmd)
        tu6_stencil_written_on_depth_fail(&ds->stencil.front)) ||
       (cmd->state.stencil_back_write &&
        tu6_stencil_written_on_depth_fail(&ds->stencil.back));
+   cmd->state.stencil_written_based_on_depth_test =
+      (cmd->state.stencil_front_write &&
+       tu6_stencil_written_based_on_depth_test(&ds->stencil.front)) ||
+      (cmd->state.stencil_back_write &&
+       tu6_stencil_written_based_on_depth_test(&ds->stencil.back));
 }
 
 static bool

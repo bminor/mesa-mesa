@@ -964,6 +964,23 @@ tu6_calculate_lrz_state(struct tu_cmd_buffer *cmd,
       }
    }
 
+   /* If the stencil test behavior depends on the result of the depth test, we
+    * have to skip LRZ for the rest of the RP for basically the same reason as
+    * the blending case above (LRZ testing enabled on previous draws may result
+    * in skipping their Z changes which feed into this draw, so we can't let
+    * later Z writes affect any of them).
+    *
+    * Because the LRZ test runs first, failing the LRZ test may result in
+    * skipping the stencil test and subsequent stencil write. This is ok if
+    * stencil is only written when the depth test passes, because then the LRZ
+    * test will also pass, but if it may be written when the depth or stencil
+    * test fails then we need to disable the LRZ test for the draw as well.
+    */
+   if (cmd->state.stencil_written_based_on_depth_test) {
+      tu_lrz_write_disable_reason(cmd, "stencil write based on depth test");
+      cmd->state.lrz.disable_write_for_rp = true;
+   }
+
    if (disable_lrz)
       cmd->state.lrz.valid = false;
 
