@@ -155,8 +155,8 @@ device_select_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
                  debug_get_bool_option("DRI_PRIME_DEBUG", false);
    info->selection = getenv("MESA_VK_DEVICE_SELECT");
    info->dri_prime = getenv("DRI_PRIME");
-   const char *force_default_device = getenv("MESA_VK_DEVICE_SELECT_FORCE_DEFAULT_DEVICE");
-   info->force_default_device = force_default_device && !strcmp(force_default_device, "1");
+   info->force_default_device =
+      debug_get_bool_option("MESA_VK_DEVICE_SELECT_FORCE_DEFAULT_DEVICE", false);
    info->selection = info->selection ? strdup(info->selection) : NULL;
    info->dri_prime = info->dri_prime ? strdup(info->dri_prime) : NULL;
 
