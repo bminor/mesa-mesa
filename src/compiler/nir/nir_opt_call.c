@@ -34,6 +34,10 @@ can_remat_instr(nir_instr *instr)
       case nir_intrinsic_load_scalar_arg_amd:
       case nir_intrinsic_load_vector_arg_amd:
          return true;
+      case nir_intrinsic_load_global:
+      case nir_intrinsic_load_global_amd:
+         return nir_intrinsic_access(nir_instr_as_intrinsic(instr)) &
+                ACCESS_CAN_SPECULATE;
       default:
          return false;
       }
