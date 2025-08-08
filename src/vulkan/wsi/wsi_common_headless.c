@@ -24,27 +24,17 @@
 /** VK_EXT_headless_surface */
 
 #include "util/macros.h"
-#include "util/hash_table.h"
 #include "util/timespec.h"
-#include "util/u_thread.h"
-#include "util/xmlconfig.h"
 #include "vk_util.h"
-#include "vk_enum_to_str.h"
 #include "vk_instance.h"
 #include "vk_physical_device.h"
 #include "wsi_common_entrypoints.h"
 #include "wsi_common_private.h"
-#include "wsi_common_queue.h"
 
 #include "drm-uapi/drm_fourcc.h"
 
 struct wsi_headless {
    struct wsi_interface base;
-
-   struct wsi_device *wsi;
-
-   const VkAllocationCallbacks *alloc;
-   VkPhysicalDevice physical_device;
 };
 
 static VkResult
@@ -137,12 +127,9 @@ wsi_headless_surface_get_formats(VkIcdSurfaceBase *icd_surface,
                                  uint32_t* pSurfaceFormatCount,
                                  VkSurfaceFormatKHR* pSurfaceFormats)
 {
-   struct wsi_headless *wsi =
-      (struct wsi_headless *)wsi_device->wsi[VK_ICD_WSI_PLATFORM_HEADLESS];
-
    VK_OUTARRAY_MAKE_TYPED(VkSurfaceFormatKHR, out, pSurfaceFormats, pSurfaceFormatCount);
 
-   if (wsi->wsi->force_bgra8_unorm_first) {
+   if (wsi_device->force_bgra8_unorm_first) {
       vk_outarray_append_typed(VkSurfaceFormatKHR, &out, out_fmt) {
          out_fmt->format = VK_FORMAT_B8G8R8A8_UNORM;
          out_fmt->colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
@@ -172,12 +159,9 @@ wsi_headless_surface_get_formats2(VkIcdSurfaceBase *icd_surface,
                                   uint32_t* pSurfaceFormatCount,
                                   VkSurfaceFormat2KHR* pSurfaceFormats)
 {
-   struct wsi_headless *wsi =
-      (struct wsi_headless *)wsi_device->wsi[VK_ICD_WSI_PLATFORM_HEADLESS];
-
    VK_OUTARRAY_MAKE_TYPED(VkSurfaceFormat2KHR, out, pSurfaceFormats, pSurfaceFormatCount);
 
-   if (wsi->wsi->force_bgra8_unorm_first) {
+   if (wsi_device->force_bgra8_unorm_first) {
       vk_outarray_append_typed(VkSurfaceFormat2KHR, &out, out_fmt) {
          out_fmt->surfaceFormat.format = VK_FORMAT_B8G8R8A8_UNORM;
          out_fmt->surfaceFormat.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
@@ -453,10 +437,6 @@ wsi_headless_init_wsi(struct wsi_device *wsi_device,
       result = VK_ERROR_OUT_OF_HOST_MEMORY;
       goto fail;
    }
-
-   wsi->physical_device = physical_device;
-   wsi->alloc = alloc;
-   wsi->wsi = wsi_device;
 
    wsi->base.get_support = wsi_headless_surface_get_support;
    wsi->base.get_capabilities2 = wsi_headless_surface_get_capabilities2;
