@@ -31,7 +31,7 @@ radeon_check_space(struct radeon_winsys *ws, struct radeon_cmdbuf *cs, unsigned 
    struct radv_cmd_stream *__cs = (cs);                                                                                \
    uint32_t __cs_num = __cs->b->cdw;                                                                                   \
    UNUSED uint32_t __cs_reserved_dw = __cs->b->reserved_dw;                                                            \
-   uint32_t *__cs_buf = __cs->b->buf
+   UNUSED uint32_t *__cs_buf = __cs->b->buf
 
 #define radeon_end()                                                                                                   \
    do {                                                                                                                \
@@ -293,13 +293,12 @@ radeon_check_space(struct radeon_winsys *ws, struct radeon_cmdbuf *cs, unsigned 
    } while (0)
 
 /* GFX12 generic packet building helpers for buffered registers. Don't use these directly. */
-#define __gfx12_push_reg(cmd_stream, reg, value, base_offset)                                                          \
+#define __gfx12_push_reg(reg, value, base_offset)                                                                      \
    do {                                                                                                                \
-      struct radv_cmd_stream *__cmd_stream = (cmd_stream);                                                             \
-      unsigned __i = __cmd_stream->num_buffered_sh_regs++;                                                             \
-      assert(__i < ARRAY_SIZE(__cmd_stream->gfx12.buffered_sh_regs));                                                  \
-      __cmd_stream->gfx12.buffered_sh_regs[__i].reg_offset = ((reg) - (base_offset)) >> 2;                             \
-      __cmd_stream->gfx12.buffered_sh_regs[__i].reg_value = value;                                                     \
+      unsigned __i = __cs->num_buffered_sh_regs++;                                                                     \
+      assert(__i < ARRAY_SIZE(__cs->gfx12.buffered_sh_regs));                                                          \
+      __cs->gfx12.buffered_sh_regs[__i].reg_offset = ((reg) - (base_offset)) >> 2;                                     \
+      __cs->gfx12.buffered_sh_regs[__i].reg_value = value;                                                             \
    } while (0)
 
 /* GFX12 packet building helpers for PAIRS packets. */
@@ -315,12 +314,12 @@ radeon_check_space(struct radeon_winsys *ws, struct radeon_cmdbuf *cs, unsigned 
 #define gfx12_end_context_regs() __gfx12_end_regs(__cs_context_reg_header, PKT3_SET_CONTEXT_REG_PAIRS)
 
 /* GFX12 packet building helpers for buffered registers. */
-#define gfx12_push_sh_reg(cmd_stream, reg, value) __gfx12_push_reg(cmd_stream, reg, value, SI_SH_REG_OFFSET)
+#define gfx12_push_sh_reg(reg, value) __gfx12_push_reg(reg, value, SI_SH_REG_OFFSET)
 
-#define gfx12_push_32bit_pointer(cmd_stream, sh_offset, va, info)                                                      \
+#define gfx12_push_32bit_pointer(sh_offset, va, info)                                                                  \
    do {                                                                                                                \
       assert((va) == 0 || ((va) >> 32) == (info)->address32_hi);                                                       \
-      gfx12_push_sh_reg(cmd_stream, sh_offset, va);                                                                    \
+      gfx12_push_sh_reg(sh_offset, va);                                                                                \
    } while (0)
 
 #define gfx12_emit_buffered_sh_regs()                                                                                  \
