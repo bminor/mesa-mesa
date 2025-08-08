@@ -25,7 +25,7 @@ spec@ext_external_objects@.*
 # These are too random.
 spec@arb_shader_clock@execution@clock.*
 
-# These run OOM and migth hang?
+# These run OOM and might hang?
 spec@arb_texture_buffer_object@texture-buffer-size-clamp.*
 spec@arb_uniform_buffer_object@maxuniformblocksize.*
 
