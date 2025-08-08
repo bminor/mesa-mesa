@@ -4999,7 +4999,7 @@ static void si_init_graphics_preamble_state(struct si_context *sctx,
 
    ac_init_graphics_preamble_state(&preamble_state, &pm4->base);
 
-   if (sctx->gfx_level >= GFX7) {
+   if (sctx->gfx_level >= GFX7 && sctx->gfx_level < GFX12) {
       /* If any sample location uses the -8 coordinate, the EXCLUSION fields should be set to 0. */
       ac_pm4_set_reg(&pm4->base, R_02882C_PA_SU_PRIM_FILTER_CNTL,
                      S_02882C_XMAX_RIGHT_EXCLUSION(1) |
