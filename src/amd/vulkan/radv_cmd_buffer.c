@@ -1264,7 +1264,7 @@ radv_emit_sample_locations(struct radv_cmd_buffer *cmd_buffer)
    radeon_emit(centroid_priority);
    radeon_emit(centroid_priority >> 32);
 
-   if (pdev->info.gfx_level >= GFX7) {
+   if (pdev->info.gfx_level >= GFX7 && pdev->info.gfx_level < GFX12) {
       /* The exclusion bits can be set to improve rasterization efficiency if no sample lies on the pixel boundary
        * (-8 sample offset).
        */
