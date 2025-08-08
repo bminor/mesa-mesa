@@ -240,22 +240,13 @@ wsi_headless_surface_get_present_rectangles(VkIcdSurfaceBase *surface,
 }
 
 struct wsi_headless_image {
-   struct wsi_image                             base;
-   bool                                         busy;
+   struct wsi_image base;
+   bool busy;
 };
 
 struct wsi_headless_swapchain {
-   struct wsi_swapchain                        base;
-
-   VkExtent2D                                  extent;
-   VkFormat                                    vk_format;
-
-   struct u_vector                             modifiers;
-
-   VkPresentModeKHR                            present_mode;
-   bool                                        fifo_ready;
-
-   struct wsi_headless_image                       images[0];
+   struct wsi_swapchain base;
+   struct wsi_headless_image images[0];
 };
 VK_DEFINE_NONDISP_HANDLE_CASTS(wsi_headless_swapchain, base.base, VkSwapchainKHR,
                                VK_OBJECT_TYPE_SWAPCHAIN_KHR)
@@ -330,8 +321,6 @@ wsi_headless_swapchain_destroy(struct wsi_swapchain *wsi_chain,
       if (chain->images[i].base.image != VK_NULL_HANDLE)
          wsi_destroy_image(&chain->base, &chain->images[i].base);
    }
-
-   u_vector_finish(&chain->modifiers);
 
    wsi_swapchain_finish(&chain->base);
 
@@ -502,8 +491,6 @@ wsi_headless_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
    chain->base.queue_present = wsi_headless_swapchain_queue_present;
    chain->base.present_mode = wsi_swapchain_get_present_mode(wsi_device, pCreateInfo);
    chain->base.image_count = num_images;
-   chain->extent = pCreateInfo->imageExtent;
-   chain->vk_format = pCreateInfo->imageFormat;
    chain->base.image_info.create_mem = wsi_create_null_image_mem;
    chain->base.image_info.finish_create = NULL;
 
