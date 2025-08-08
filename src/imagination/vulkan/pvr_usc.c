@@ -16,10 +16,12 @@
 #include "nir/nir_format_convert.h"
 #include "nir/nir_conversion_builder.h"
 #include "pco/pco.h"
+#include "pco/pco_common.h"
 #include "pco/pco_data.h"
 #include "pco_uscgen_programs.h"
 #include "pvr_common.h"
 #include "pvr_formats.h"
+#include "pvr_private.h"
 #include "pvr_usc.h"
 #include "usc/pvr_uscgen.h"
 #include "util/macros.h"
@@ -1223,6 +1225,74 @@ pco_shader *pvr_uscgen_loadop(pco_ctx *ctx, struct pvr_load_op *load_op)
 
    load_op->const_shareds_count = shared_regs;
    load_op->shareds_count = shared_regs;
+
+   return build_shader(ctx, b.shader, &data);
+}
+
+pco_shader *pvr_uscgen_clear_attach(pco_ctx *ctx,
+                                    struct pvr_clear_attach_props *props)
+{
+   pco_data data = { 0 };
+
+   nir_builder b = nir_builder_init_simple_shader(
+      MESA_SHADER_FRAGMENT,
+      pco_nir_options(),
+      "clear_attach(%s, %u dwords, %u offset)",
+      props->uses_tile_buffer ? "tiled" : "register",
+      props->dword_count,
+      props->offset);
+
+   assert(props->dword_count + props->offset <= 4);
+
+   if (props->uses_tile_buffer) {
+      nir_def *valid_mask = nir_load_savmsk_vm_pco(&b);
+
+      nir_def *tile_addr_lo =
+         nir_load_preamble(&b,
+                           1,
+                           32,
+                           .base = PVR_CLEAR_ATTACH_DATA_TILE_ADDR_LO);
+      nir_def *tile_addr_hi =
+         nir_load_preamble(&b,
+                           1,
+                           32,
+                           .base = PVR_CLEAR_ATTACH_DATA_TILE_ADDR_HI);
+
+      for (unsigned u = 0; u < props->dword_count; ++u) {
+         nir_def *tiled_offset =
+            nir_load_tiled_offset_pco(&b, .component = u + props->offset);
+
+         nir_def *addr =
+            nir_uadd64_32(&b, tile_addr_lo, tile_addr_hi, tiled_offset);
+
+         nir_def *data =
+            nir_load_preamble(&b,
+                              1,
+                              32,
+                              .base = PVR_CLEAR_ATTACH_DATA_DWORD0 + u);
+
+         nir_def *addr_data = nir_vec3(&b,
+                                       nir_channel(&b, addr, 0),
+                                       nir_channel(&b, addr, 1),
+                                       data);
+
+         nir_dma_st_tiled_pco(&b, addr_data, valid_mask);
+      }
+
+      nir_dummy_load_store_pco(&b);
+   } else {
+      for (unsigned u = 0; u < props->dword_count; ++u) {
+         nir_def *data =
+            nir_load_preamble(&b,
+                              1,
+                              32,
+                              .base = PVR_CLEAR_ATTACH_DATA_DWORD0 + u);
+
+         nir_frag_store_pco(&b, data, u + props->offset);
+      }
+   }
+
+   nir_jump(&b, nir_jump_return);
 
    return build_shader(ctx, b.shader, &data);
 }

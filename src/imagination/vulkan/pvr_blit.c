@@ -33,9 +33,8 @@
 #include "pvr_formats.h"
 #include "pvr_job_transfer.h"
 #include "pvr_private.h"
-#include "usc/programs/pvr_shader_factory.h"
-#include "usc/programs/pvr_static_shaders.h"
 #include "pvr_types.h"
+#include "pvr_usc.h"
 #include "util/bitscan.h"
 #include "util/list.h"
 #include "util/macros.h"
@@ -1513,75 +1512,45 @@ pvr_clear_needs_rt_id_output(struct pvr_device_info *dev_info,
 
 static VkResult pvr_clear_color_attachment_static_create_consts_buffer(
    struct pvr_cmd_buffer *cmd_buffer,
-   const struct pvr_shader_factory_info *shader_info,
+   const struct pvr_clear_attach_props *props,
    const uint32_t clear_color[static const PVR_CLEAR_COLOR_ARRAY_SIZE],
-   ASSERTED bool uses_tile_buffer,
+   bool uses_tile_buffer,
    uint32_t tile_buffer_idx,
    struct pvr_suballoc_bo **const const_shareds_buffer_out)
 {
    struct pvr_device *device = cmd_buffer->device;
    struct pvr_suballoc_bo *const_shareds_buffer;
    struct pvr_bo *tile_buffer;
-   uint64_t tile_dev_addr;
+   uint64_t tile_dev_addr = 0;
    uint32_t *buffer;
    VkResult result;
 
    /* TODO: This doesn't need to be aligned to slc size. Alignment to 4 is fine.
     * Change pvr_cmd_buffer_alloc_mem() to take in an alignment?
     */
-   result =
-      pvr_cmd_buffer_alloc_mem(cmd_buffer,
-                               device->heaps.general_heap,
-                               PVR_DW_TO_BYTES(shader_info->const_shared_regs),
-                               &const_shareds_buffer);
+   /* TODO: only allocate what's needed, not always
+    * _PVR_CLEAR_ATTACH_DATA_COUNT? */
+   result = pvr_cmd_buffer_alloc_mem(cmd_buffer,
+                                     device->heaps.general_heap,
+                                     _PVR_CLEAR_ATTACH_DATA_COUNT,
+                                     &const_shareds_buffer);
    if (result != VK_SUCCESS)
       return result;
 
    buffer = pvr_bo_suballoc_get_map_addr(const_shareds_buffer);
 
-   for (uint32_t i = 0; i < PVR_CLEAR_ATTACHMENT_CONST_COUNT; i++) {
-      uint32_t dest_idx = shader_info->driver_const_location_map[i];
+   buffer[PVR_CLEAR_ATTACH_DATA_DWORD0] = clear_color[0];
+   buffer[PVR_CLEAR_ATTACH_DATA_DWORD1] = clear_color[1];
+   buffer[PVR_CLEAR_ATTACH_DATA_DWORD2] = clear_color[2];
+   buffer[PVR_CLEAR_ATTACH_DATA_DWORD3] = clear_color[3];
 
-      if (dest_idx == PVR_CLEAR_ATTACHMENT_DEST_ID_UNUSED)
-         continue;
-
-      assert(dest_idx < shader_info->const_shared_regs);
-
-      switch (i) {
-      case PVR_CLEAR_ATTACHMENT_CONST_COMPONENT_0:
-      case PVR_CLEAR_ATTACHMENT_CONST_COMPONENT_1:
-      case PVR_CLEAR_ATTACHMENT_CONST_COMPONENT_2:
-      case PVR_CLEAR_ATTACHMENT_CONST_COMPONENT_3:
-         buffer[dest_idx] = clear_color[i];
-         break;
-
-      case PVR_CLEAR_ATTACHMENT_CONST_TILE_BUFFER_UPPER:
-         assert(uses_tile_buffer);
-         tile_buffer = device->tile_buffer_state.buffers[tile_buffer_idx];
-         tile_dev_addr = tile_buffer->vma->dev_addr.addr;
-         buffer[dest_idx] = (uint32_t)(tile_dev_addr >> 32);
-         break;
-
-      case PVR_CLEAR_ATTACHMENT_CONST_TILE_BUFFER_LOWER:
-         assert(uses_tile_buffer);
-         tile_buffer = device->tile_buffer_state.buffers[tile_buffer_idx];
-         tile_dev_addr = tile_buffer->vma->dev_addr.addr;
-         buffer[dest_idx] = (uint32_t)tile_dev_addr;
-         break;
-
-      default:
-         UNREACHABLE("Unsupported clear attachment const type.");
-      }
+   if (uses_tile_buffer) {
+      tile_buffer = device->tile_buffer_state.buffers[tile_buffer_idx];
+      tile_dev_addr = tile_buffer->vma->dev_addr.addr;
    }
 
-   for (uint32_t i = 0; i < shader_info->num_static_const; i++) {
-      const struct pvr_static_buffer *static_buff =
-         &shader_info->static_const_buffer[i];
-
-      assert(static_buff->dst_idx < shader_info->const_shared_regs);
-
-      buffer[static_buff->dst_idx] = static_buff->value;
-   }
+   buffer[PVR_CLEAR_ATTACH_DATA_TILE_ADDR_LO] = tile_dev_addr & 0xffffffff;
+   buffer[PVR_CLEAR_ATTACH_DATA_TILE_ADDR_HI] = tile_dev_addr >> 32;
 
    *const_shareds_buffer_out = const_shareds_buffer;
 
@@ -1608,7 +1577,6 @@ static VkResult pvr_clear_color_attachment_static(
    const struct pvr_pds_clear_attachment_program_info *clear_attachment_program;
    struct pvr_pds_pixel_shader_sa_program texture_program;
    uint32_t pds_state[PVR_STATIC_CLEAR_PDS_STATE_COUNT];
-   const struct pvr_shader_factory_info *shader_info;
    struct pvr_suballoc_bo *pds_texture_program_bo;
    struct pvr_static_clear_ppp_template template;
    struct pvr_suballoc_bo *const_shareds_buffer;
@@ -1633,15 +1601,17 @@ static VkResult pvr_clear_color_attachment_static(
 
    assert(has_eight_output_registers || out_reg_count + output_offset <= 4);
 
-   program_idx = pvr_get_clear_attachment_program_index(out_reg_count,
-                                                        output_offset,
-                                                        uses_tile_buffer);
+   struct pvr_clear_attach_props props = {
+      .dword_count = out_reg_count,
+      .offset = output_offset,
+      .uses_tile_buffer = uses_tile_buffer,
+   };
 
-   shader_info = clear_attachment_collection[program_idx].info;
+   program_idx = pvr_uscgen_clear_attach_index(&props);
 
    result = pvr_clear_color_attachment_static_create_consts_buffer(
       cmd_buffer,
-      shader_info,
+      &props,
       clear_color,
       uses_tile_buffer,
       tile_buffer_idx,
@@ -1649,20 +1619,18 @@ static VkResult pvr_clear_color_attachment_static(
    if (result != VK_SUCCESS)
       return result;
 
-   /* clang-format off */
-   texture_program = (struct pvr_pds_pixel_shader_sa_program){
-      .num_texture_dma_kicks = 1,
-      .texture_dma_address = {
-         [0] = const_shareds_buffer->dev_addr.addr,
-      }
-   };
-   /* clang-format on */
+   texture_program =
+      (struct pvr_pds_pixel_shader_sa_program){ .num_texture_dma_kicks = 1,
+                                                .texture_dma_address = {
+                                                   [0] = const_shareds_buffer
+                                                            ->dev_addr.addr,
+                                                } };
 
    pvr_csb_pack (&texture_program.texture_dma_control[0],
                  PDSINST_DOUT_FIELDS_DOUTD_SRC1,
                  doutd_src1) {
       doutd_src1.dest = ROGUE_PDSINST_DOUTD_DEST_COMMON_STORE;
-      doutd_src1.bsize = shader_info->const_shared_regs;
+      doutd_src1.bsize = _PVR_CLEAR_ATTACH_DATA_COUNT;
    }
 
    clear_attachment_program =
@@ -1720,7 +1688,7 @@ static VkResult pvr_clear_color_attachment_static(
                  TA_STATE_PDS_SIZEINFO2,
                  sizeinfo2) {
       sizeinfo2.usc_sharedsize =
-         DIV_ROUND_UP(shader_info->const_shared_regs,
+         DIV_ROUND_UP(_PVR_CLEAR_ATTACH_DATA_COUNT,
                       ROGUE_TA_STATE_PDS_SIZEINFO2_USC_SHAREDSIZE_UNIT_SIZE);
    }
 

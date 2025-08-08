@@ -58,4 +58,17 @@ enum pvr_query_reset_data {
    _PVR_QUERY_RESET_DATA_COUNT,
 };
 
+/** Clear attachment shader data; shared registers. */
+enum pvr_clear_attach_data {
+   PVR_CLEAR_ATTACH_DATA_DWORD0,
+   PVR_CLEAR_ATTACH_DATA_DWORD1,
+   PVR_CLEAR_ATTACH_DATA_DWORD2,
+   PVR_CLEAR_ATTACH_DATA_DWORD3,
+
+   PVR_CLEAR_ATTACH_DATA_TILE_ADDR_LO,
+   PVR_CLEAR_ATTACH_DATA_TILE_ADDR_HI,
+
+   _PVR_CLEAR_ATTACH_DATA_COUNT,
+};
+
 #endif /* PVR_IFACE_H */

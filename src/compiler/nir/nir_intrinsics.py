@@ -2765,8 +2765,17 @@ intrinsic("load_vtxin_pco", src_comp=[1], dest_comp=0, bit_sizes=[32])
 # load_coeff_pco(offset)
 intrinsic("load_coeff_pco", src_comp=[1], dest_comp=0, bit_sizes=[32])
 
+# frag_store_pco(data, offset/base)
+intrinsic("frag_store_pco", src_comp=[1], indices=[BASE], bit_sizes=[32])
+
 # dma_ld_pco(address)
 intrinsic("dma_ld_pco", src_comp=[2], dest_comp=0, flags=[CAN_ELIMINATE], bit_sizes=[32])
 
 # dma_st_pco(address_data)
 intrinsic("dma_st_pco", src_comp=[0], bit_sizes=[32])
+
+# dma_st_tiled_pco(address_data, valid_mask)
+intrinsic("dma_st_tiled_pco", src_comp=[3, 1], bit_sizes=[32])
+
+# load_tiled_offset_pco(component, is_store)
+intrinsic("load_tiled_offset_pco", dest_comp=1, indices=[COMPONENT, FLAGS], bit_sizes=[32])

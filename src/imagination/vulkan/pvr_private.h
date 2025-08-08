@@ -50,6 +50,7 @@
 #include "pvr_job_render.h"
 #include "pvr_limits.h"
 #include "pvr_pds.h"
+#include "pvr_usc.h"
 #include "usc/programs/pvr_shader_factory.h"
 #include "pvr_spm.h"
 #include "pvr_types.h"
@@ -252,8 +253,7 @@ struct pvr_device {
          uint32_t texture_program_pds_temps_count;
          /* Size in dwords. */
          uint32_t texture_program_data_size;
-      } pds_clear_attachment_program_info
-         [PVR_CLEAR_ATTACHMENT_PROGRAM_COUNT_WITH_HOLES];
+      } pds_clear_attachment_program_info[PVR_NUM_CLEAR_ATTACH_SHADERS];
    } static_clear_state;
 
    struct {

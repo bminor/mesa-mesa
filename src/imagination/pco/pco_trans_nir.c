@@ -280,6 +280,24 @@ static pco_instr *trans_load_reg(trans_ctx *tctx,
    return pco_mov(&tctx->b, dest, src, .rpt = chans);
 }
 
+static pco_instr *trans_load_tiled_offset(trans_ctx *tctx,
+                                          nir_intrinsic_instr *intr,
+                                          pco_ref dest)
+{
+   unsigned component = nir_intrinsic_component(intr);
+   bool store = !!nir_intrinsic_flags(intr);
+
+   unsigned base0 = store ? PCO_SR_TILED_ST_COMP0 : PCO_SR_TILED_LD_COMP0;
+   unsigned base4 = store ? PCO_SR_TILED_ST_COMP4 : PCO_SR_TILED_LD_COMP4;
+
+   unsigned sr_index = component < 4 ? component + base0
+                                     : component + base4 - 4;
+
+   pco_ref tiled_offset = pco_ref_hwreg(sr_index, PCO_REG_CLASS_SPEC);
+
+   return pco_mov(&tctx->b, dest, tiled_offset, .olchk = tctx->olchk);
+}
+
 static inline pco_instr *build_itr(pco_builder *b,
                                    pco_ref dest,
                                    enum pco_drc drc,
@@ -1699,6 +1717,18 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
       instr = trans_load_reg(tctx, intr, dest, src[0], PCO_REG_CLASS_COEFF);
       break;
 
+   case nir_intrinsic_load_tiled_offset_pco:
+      instr = trans_load_tiled_offset(tctx, intr, dest);
+      break;
+
+   case nir_intrinsic_frag_store_pco: {
+      unsigned base = nir_intrinsic_base(intr);
+
+      pco_ref dest = pco_ref_hwreg(base, PCO_REG_CLASS_PIXOUT);
+      instr = pco_mov(&tctx->b, dest, src[0], .olchk = tctx->olchk);
+      break;
+   }
+
    case nir_intrinsic_load_output:
       assert(tctx->stage == MESA_SHADER_FRAGMENT);
       instr = trans_load_output_fs(tctx, intr, dest);
@@ -1826,6 +1856,25 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
                        pco_ref_imm8(chans),
                        src[0],
                        pco_ref_null());
+
+      break;
+   }
+
+   case nir_intrinsic_dma_st_tiled_pco: {
+      unsigned chans = pco_ref_get_chans(src[0]) - 2;
+
+      pco_ref data_comp =
+         pco_ref_new_ssa(tctx->func, pco_ref_get_bits(src[0]), chans);
+      pco_comp(&tctx->b, data_comp, src[0], pco_ref_val16(2));
+
+      instr = pco_st_tiled(&tctx->b,
+                           data_comp,
+                           pco_ref_imm8(PCO_DSIZE_32BIT),
+                           pco_ref_drc(PCO_DRC_0),
+                           pco_ref_imm8(chans),
+                           src[0],
+                           src[1],
+                           .olchk = tctx->olchk);
 
       break;
    }

@@ -30,8 +30,7 @@
 #include "pvr_clear.h"
 #include "pvr_pds.h"
 #include "pvr_private.h"
-#include "usc/programs/pvr_shader_factory.h"
-#include "usc/programs/pvr_static_shaders.h"
+#include "pvr_usc.h"
 #include "pvr_types.h"
 #include "vk_alloc.h"
 #include "vk_log.h"
@@ -244,43 +243,35 @@ pvr_device_init_clear_attachment_programs(struct pvr_device *device)
    struct pvr_device_static_clear_state *clear_state =
       &device->static_clear_state;
    const struct pvr_device_info *dev_info = &device->pdevice->dev_info;
-   uint32_t pds_texture_program_offsets[PVR_CLEAR_ATTACHMENT_PROGRAM_COUNT];
-   uint32_t pds_pixel_program_offsets[PVR_CLEAR_ATTACHMENT_PROGRAM_COUNT];
-   uint32_t usc_program_offsets[PVR_CLEAR_ATTACHMENT_PROGRAM_COUNT];
+   uint32_t pds_texture_program_offsets[PVR_NUM_CLEAR_ATTACH_SHADERS];
+   uint32_t pds_pixel_program_offsets[PVR_NUM_CLEAR_ATTACH_SHADERS];
+   uint32_t usc_program_offsets[PVR_NUM_CLEAR_ATTACH_SHADERS];
+   pco_shader *shaders[PVR_NUM_CLEAR_ATTACH_SHADERS];
+   struct pvr_clear_attach_props props;
    uint64_t usc_upload_offset;
    uint64_t pds_upload_offset;
    uint32_t alloc_size = 0;
    VkResult result;
    uint8_t *ptr;
 
-#if !defined(NDEBUG)
-   uint32_t clear_attachment_info_count = 0;
+   /* Build and upload USC fragment shaders. */
+   for (unsigned dword_count = 1; dword_count <= 4; ++dword_count) {
+      for (unsigned offset = 0; offset <= 3; ++offset) {
+         for (unsigned uses_tile_buffer = 0; uses_tile_buffer <= 1;
+              ++uses_tile_buffer) {
+            if (dword_count + offset > 4)
+               continue;
 
-   for (uint32_t i = 0; i < ARRAY_SIZE(clear_attachment_collection); i++) {
-      if (!clear_attachment_collection[i].info)
-         continue;
+            props.dword_count = dword_count;
+            props.offset = offset;
+            props.uses_tile_buffer = uses_tile_buffer;
 
-      clear_attachment_info_count++;
-   }
-
-   assert(clear_attachment_info_count == PVR_CLEAR_ATTACHMENT_PROGRAM_COUNT);
-#endif
-
-   /* Upload USC fragment shaders. */
-
-   for (uint32_t i = 0, offset_idx = 0;
-        i < ARRAY_SIZE(clear_attachment_collection);
-        i++) {
-      if (!clear_attachment_collection[i].info)
-         continue;
-
-      usc_program_offsets[offset_idx] = alloc_size;
-      /* TODO: The compiler will likely give us a pre-aligned size for the USC
-       * shader so don't bother aligning here when it's hooked up.
-       */
-      alloc_size += ALIGN_POT(clear_attachment_collection[i].size, 4);
-
-      offset_idx++;
+            unsigned u = pvr_uscgen_clear_attach_index(&props);
+            shaders[u] =
+               pvr_uscgen_clear_attach(device->pdevice->pco_ctx, &props);
+            alloc_size += pco_shader_binary_size(shaders[u]);
+         }
+      }
    }
 
    result = pvr_bo_suballoc(&device->suballoc_usc,
@@ -294,55 +285,46 @@ pvr_device_init_clear_attachment_programs(struct pvr_device *device)
    usc_upload_offset =
       clear_state->usc_clear_attachment_programs->dev_addr.addr -
       device->heaps.usc_heap->base_addr.addr;
+
    ptr = (uint8_t *)pvr_bo_suballoc_get_map_addr(
       clear_state->usc_clear_attachment_programs);
 
-   for (uint32_t i = 0, offset_idx = 0;
-        i < ARRAY_SIZE(clear_attachment_collection);
-        i++) {
-      if (!clear_attachment_collection[i].info)
-         continue;
+   unsigned offset = 0;
+   for (unsigned u = 0; u < ARRAY_SIZE(shaders); ++u) {
+      unsigned shader_size = pco_shader_binary_size(shaders[u]);
 
-      memcpy(ptr + usc_program_offsets[offset_idx],
-             clear_attachment_collection[i].code,
-             clear_attachment_collection[i].size);
+      usc_program_offsets[u] = offset;
+      memcpy(&ptr[offset], pco_shader_binary_data(shaders[u]), shader_size);
 
-      offset_idx++;
+      offset += shader_size;
    }
 
    /* Upload PDS programs. */
 
    alloc_size = 0;
 
-   for (uint32_t i = 0, offset_idx = 0;
-        i < ARRAY_SIZE(clear_attachment_collection);
-        i++) {
+   for (unsigned u = 0; u < ARRAY_SIZE(shaders); ++u) {
       struct pvr_pds_pixel_shader_sa_program texture_pds_program;
       struct pvr_pds_kickusc_program pixel_shader_pds_program;
       uint32_t program_size;
 
-      if (!clear_attachment_collection[i].info)
-         continue;
-
       /* Texture program to load colors. */
-
       texture_pds_program = (struct pvr_pds_pixel_shader_sa_program){
          .num_texture_dma_kicks = 1,
       };
 
       pvr_pds_set_sizes_pixel_shader_uniform_texture_code(&texture_pds_program);
 
-      pds_texture_program_offsets[offset_idx] = alloc_size;
+      pds_texture_program_offsets[u] = alloc_size;
       alloc_size += ALIGN_POT(PVR_DW_TO_BYTES(texture_pds_program.code_size),
                               pds_prog_alignment);
 
       /* Pixel program to load fragment shader. */
-
       pixel_shader_pds_program = (struct pvr_pds_kickusc_program){ 0 };
 
       pvr_pds_setup_doutu(&pixel_shader_pds_program.usc_task_control,
-                          usc_upload_offset + usc_program_offsets[offset_idx],
-                          clear_attachment_collection[i].info->temps_required,
+                          usc_upload_offset + usc_program_offsets[u],
+                          pco_shader_data(shaders[u])->common.temps,
                           ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE,
                           false);
 
@@ -352,10 +334,8 @@ pvr_device_init_clear_attachment_programs(struct pvr_device *device)
                      pixel_shader_pds_program.data_size;
       program_size = PVR_DW_TO_BYTES(program_size);
 
-      pds_pixel_program_offsets[offset_idx] = alloc_size;
+      pds_pixel_program_offsets[u] = alloc_size;
       alloc_size += ALIGN_POT(program_size, pds_prog_alignment);
-
-      offset_idx++;
    }
 
    result = pvr_bo_suballoc(&device->suballoc_pds,
@@ -371,64 +351,54 @@ pvr_device_init_clear_attachment_programs(struct pvr_device *device)
    pds_upload_offset =
       clear_state->pds_clear_attachment_programs->dev_addr.addr -
       device->heaps.pds_heap->base_addr.addr;
+
    ptr =
       pvr_bo_suballoc_get_map_addr(clear_state->pds_clear_attachment_programs);
 
-   for (uint32_t i = 0, offset_idx = 0;
-        i < ARRAY_SIZE(clear_attachment_collection);
-        i++) {
+   for (unsigned u = 0; u < ARRAY_SIZE(shaders); ++u) {
       struct pvr_pds_pixel_shader_sa_program texture_pds_program;
       struct pvr_pds_kickusc_program pixel_shader_pds_program;
 
-      if (!clear_attachment_collection[i].info) {
-         clear_state->pds_clear_attachment_program_info[i] =
-            (struct pvr_pds_clear_attachment_program_info){ 0 };
-
-         continue;
-      }
-
       /* Texture program to load colors. */
-
       texture_pds_program = (struct pvr_pds_pixel_shader_sa_program){
          .num_texture_dma_kicks = 1,
       };
 
       pvr_pds_generate_pixel_shader_sa_code_segment(
          &texture_pds_program,
-         (uint32_t *)(ptr + pds_texture_program_offsets[offset_idx]));
+         (uint32_t *)(ptr + pds_texture_program_offsets[u]));
 
       /* Pixel program to load fragment shader. */
-
       pixel_shader_pds_program = (struct pvr_pds_kickusc_program){ 0 };
 
       pvr_pds_setup_doutu(&pixel_shader_pds_program.usc_task_control,
-                          usc_upload_offset + usc_program_offsets[offset_idx],
-                          clear_attachment_collection[i].info->temps_required,
+                          usc_upload_offset + usc_program_offsets[u],
+                          pco_shader_data(shaders[u])->common.temps,
                           ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE,
                           false);
 
       pvr_pds_generate_pixel_shader_program(
          &pixel_shader_pds_program,
-         (uint32_t *)(ptr + pds_pixel_program_offsets[offset_idx]));
+         (uint32_t *)(ptr + pds_pixel_program_offsets[u]));
 
       /* Setup the PDS program info. */
-
       pvr_pds_set_sizes_pixel_shader_sa_texture_data(&texture_pds_program,
                                                      dev_info);
 
-      clear_state->pds_clear_attachment_program_info[i] =
+      clear_state->pds_clear_attachment_program_info[u] =
          (struct pvr_pds_clear_attachment_program_info){
-            .texture_program_offset = PVR_DEV_ADDR(
-               pds_upload_offset + pds_texture_program_offsets[offset_idx]),
-            .pixel_program_offset = PVR_DEV_ADDR(
-               pds_upload_offset + pds_pixel_program_offsets[offset_idx]),
+            .texture_program_offset =
+               PVR_DEV_ADDR(pds_upload_offset + pds_texture_program_offsets[u]),
+            .pixel_program_offset =
+               PVR_DEV_ADDR(pds_upload_offset + pds_pixel_program_offsets[u]),
 
             .texture_program_pds_temps_count = texture_pds_program.temps_used,
             .texture_program_data_size = texture_pds_program.data_size,
          };
-
-      offset_idx++;
    }
+
+   for (unsigned u = 0; u < ARRAY_SIZE(shaders); ++u)
+      ralloc_free(shaders[u]);
 
    return VK_SUCCESS;
 }
