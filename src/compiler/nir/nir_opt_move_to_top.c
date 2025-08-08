@@ -72,9 +72,16 @@ can_move_src_to_top(nir_src *src, void *_state)
       case nir_intrinsic_load_interpolated_input:
       case nir_intrinsic_load_per_primitive_input:
       case nir_intrinsic_load_per_vertex_input:
-      /* load_smem_amd and its sources. */
+      /* nir_move_to_top_load_smem_amd and its sources. */
       case nir_intrinsic_load_scalar_arg_amd:
       case nir_intrinsic_load_smem_amd:
+         break;
+      case nir_intrinsic_load_global_amd:
+         if (!(nir_intrinsic_access(nir_instr_as_intrinsic(instr)) &
+               ACCESS_SMEM_AMD)) {
+            instr->pass_flags |= PASS_FLAG_CANT_MOVE;
+            return false;
+         }
          break;
       default:
          instr->pass_flags |= PASS_FLAG_CANT_MOVE;
@@ -139,7 +146,9 @@ handle_load(nir_builder *b, nir_intrinsic_instr *intr, void *_state)
            !nir_is_output_load(intr);
 
    move |= state->options & nir_move_to_top_load_smem_amd &&
-           intr->intrinsic == nir_intrinsic_load_smem_amd;
+           ((intr->intrinsic == nir_intrinsic_load_global_amd &&
+             nir_intrinsic_access(intr) & ACCESS_SMEM_AMD) ||
+            intr->intrinsic == nir_intrinsic_load_smem_amd);
 
    if (!move)
       return false;
