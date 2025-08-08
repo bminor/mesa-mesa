@@ -856,6 +856,7 @@ unsigned ir3_block_get_pred_index(struct ir3_block *block,
 
 void ir3_calc_dominance(struct ir3 *ir);
 bool ir3_block_dominates(struct ir3_block *a, struct ir3_block *b);
+struct ir3_block *ir3_dominance_lca(struct ir3_block *b1, struct ir3_block *b2);
 
 struct ir3_shader_variant;
 
