@@ -152,6 +152,11 @@ def is_number(str):
 	except ValueError:
 		return False
 
+def sanitize_variant(variant):
+	if variant and "-" in variant:
+		return variant[:variant.index("-")]
+	return variant
+
 class Bitset(object):
 	def __init__(self, name, template):
 		self.name = name
@@ -471,7 +476,7 @@ class Parser(object):
 
 	def prefix(self, variant=None):
 		if self.current_prefix_type == "variant" and variant:
-			return variant
+			return sanitize_variant(variant)
 		elif self.current_stripe:
 			return self.current_stripe + "_" + self.current_domain
 		elif self.current_prefix:
@@ -519,13 +524,20 @@ class Parser(object):
 	def parse_variants(self, attrs):
 		if "variants" not in attrs:
 				return None
-		variant = attrs["variants"].split(",")[0]
-		if "-" in variant:
-			variant = variant[:variant.index("-")]
 
+		variant = attrs["variants"].split(",")[0]
 		varset = self.parse_varset(attrs)
 
-		assert varset.has_name(variant)
+		if "-" in variant:
+			# if we have a range, validate that both the start and end
+			# of the range are valid enums:
+			start = variant[:variant.index("-")]
+			end = variant[variant.index("-") + 1:]
+			assert varset.has_name(start)
+			if end != "":
+				assert varset.has_name(end)
+		else:
+			assert varset.has_name(variant)
 
 		return variant
 
@@ -657,7 +669,7 @@ class Parser(object):
 		elif name == "domain":
 			self.current_domain = attrs["name"]
 			if "prefix" in attrs:
-				self.current_prefix = self.parse_variants(attrs)
+				self.current_prefix = sanitize_variant(self.parse_variants(attrs))
 				self.current_prefix_type = attrs["prefix"]
 			else:
 				self.current_prefix = None
@@ -665,7 +677,7 @@ class Parser(object):
 			if "varset" in attrs:
 				self.current_varset = self.enums[attrs["varset"]]
 		elif name == "stripe":
-			self.current_stripe = self.parse_variants(attrs)
+			self.current_stripe = sanitize_variant(self.parse_variants(attrs))
 		elif name == "enum":
 			self.current_enum_value = 0
 			self.current_enum = Enum(attrs["name"])
@@ -734,10 +746,10 @@ class Parser(object):
 				if variants:
 					for variant, vreg in variants.items():
 						if reg == vreg:
-							d[(usage, variant)].append(reg)
+							d[(usage, sanitize_variant(variant))].append(reg)
 				else:
 					for variant in self.variants:
-						d[(usage, variant)].append(reg)
+						d[(usage, sanitize_variant(variant))].append(reg)
 
 		print("#ifdef __cplusplus")
 
@@ -850,11 +862,20 @@ class Parser(object):
 			xtravar = "__i, "
 		print("__%s(%sstruct __%s fields) {" % (regname, xtra, regname))
 		for variant in variants.keys():
-			print("  if (%s == %s) {" % (varenum.upper(), variant))
+			if "-" in variant:
+				start = variant[:variant.index("-")]
+				end = variant[variant.index("-") + 1:]
+				if end != "":
+					print("  if ((%s >= %s) && (%s <= %s)) {" % (varenum.upper(), start, varenum.upper(), end))
+				else:
+					print("  if (%s >= %s) {" % (varenum.upper(), start))
+			else:
+				print("  if (%s == %s) {" % (varenum.upper(), variant))
 			reg = variants[variant]
 			reg.dump_regpair_builder()
 			print("  } else")
 		print("    assert(!\"invalid variant\");")
+		print("  return (struct fd_reg_pair){};")
 		print("}")
 
 		if bit_size == 64:
