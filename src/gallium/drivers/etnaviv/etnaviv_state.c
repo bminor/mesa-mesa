@@ -30,6 +30,8 @@
 #include "etnaviv_blend.h"
 #include "etnaviv_clear_blit.h"
 #include "etnaviv_context.h"
+#include "etnaviv_compiler.h"
+#include "etnaviv_emit.h"
 #include "etnaviv_format.h"
 #include "etnaviv_rasterizer.h"
 #include "etnaviv_screen.h"
@@ -37,6 +39,7 @@
 #include "etnaviv_translate.h"
 #include "etnaviv_util.h"
 #include "etnaviv_zsa.h"
+#include "nir/nir_xfb_info.h"
 #include "util/u_framebuffer.h"
 #include "util/u_helpers.h"
 #include "util/u_inlines.h"
@@ -769,6 +772,17 @@ etna_set_stream_output_targets(struct pipe_context *pctx,
 
    so->num_targets = num_targets;
 
+   if (num_targets > 0) {
+      so->xfb_should_be_active = true;
+      ctx->dirty |= ETNA_DIRTY_STREAMOUT_CMD;
+   } else {
+      if (so->xfb_hw_state == ETNA_XFB_HW_ACTIVE) {
+         etna_set_state(ctx->stream, VIVS_TFB_COMMAND, TFB_COMMAND_DISABLE);
+         so->xfb_hw_state = ETNA_XFB_HW_PAUSED;
+      }
+      so->xfb_should_be_active = false;
+   }
+
    /* There is no need to emit streamout information unless it is active. */
    if (so->num_targets > 0)
       ctx->dirty |= ETNA_DIRTY_STREAMOUT;
@@ -1005,6 +1019,110 @@ etna_record_flush_resources(struct etna_context *ctx)
    return true;
 }
 
+static int
+compare_xfb_outputs(const void *a, const void *b) {
+   const nir_xfb_output_info *out_a = a;
+   const nir_xfb_output_info *out_b = b;
+
+   if (out_a->buffer != out_b->buffer)
+      return out_a->buffer - out_b->buffer;
+
+   return out_a->offset - out_b->offset;
+}
+
+static signed
+find_register_for_components(const struct etna_shader_variant *fs, const nir_xfb_output_info *output)
+{
+   /* pos is hardcoded to register 0 for fs */
+   if (output->location == VARYING_SLOT_POS)
+      return 0;
+
+   /* psize is the last register for fs */
+   if (output->location == VARYING_SLOT_PSIZ)
+      return fs->infile.num_reg + 1;
+
+   for (int j = 0; j < fs->infile.num_reg; j++) {
+      if (fs->infile.reg[j].slot == output->location) {
+         return fs->infile.reg[j].reg;
+      }
+   }
+
+   return -1;
+}
+
+static bool
+etna_update_hwxfb(struct etna_context *ctx)
+{
+   if (!VIV_FEATURE(ctx->screen, ETNA_FEATURE_HWTFB))
+      return true;
+
+   const struct etna_shader_variant *vs = ctx->shader.vs;
+   const struct etna_shader_variant *fs = ctx->shader.fs;
+   struct nir_xfb_info *xfb_info = vs->shader->nir->xfb_info;
+
+   if (!xfb_info)
+      return true;
+
+   assert(xfb_info->streams_written == 1);
+   assert(fs);
+
+   for (unsigned i = 0; i < 4; i++)
+      ctx->streamout.TFB_DESCRIPTOR_COUNT[i] = 0;
+
+   if (ctx->streamout.num_targets == 0) {
+      for (unsigned buffer = 0; buffer < 4; buffer++) {
+         ctx->streamout.TFB_BUFFER_STRIDE[buffer] = 0;
+         ctx->streamout.TFB_BUFFER_ADDR[buffer].bo = NULL;
+      }
+
+      return true;
+   }
+
+   u_foreach_bit(buffer, xfb_info->buffers_written) {
+      const struct pipe_stream_output_target *target = ctx->streamout.targets[buffer];
+      const nir_xfb_buffer_info *buf_info = &xfb_info->buffers[buffer];
+
+      assert(ctx->streamout.targets[buffer]);
+
+      ctx->streamout.TFB_BUFFER_SIZE[buffer] = target->buffer_size;
+      ctx->streamout.TFB_BUFFER_STRIDE[buffer] = buf_info->stride;
+
+      ctx->streamout.TFB_BUFFER_ADDR[buffer].bo = etna_buffer_resource(target->buffer)->bo;
+      ctx->streamout.TFB_BUFFER_ADDR[buffer].offset = target->buffer_offset;
+      ctx->streamout.TFB_BUFFER_ADDR[buffer].flags = ETNA_RELOC_WRITE;
+   }
+
+   /* We need to sort our xfb outputs based on buffer and offset to ensure
+    * that we write at the correct offsets.
+    */
+   qsort(xfb_info->outputs, xfb_info->output_count, sizeof(nir_xfb_output_info),
+         compare_xfb_outputs);
+
+   for (unsigned i = 0; i < xfb_info->output_count; i++) {
+      const nir_xfb_output_info *output = &xfb_info->outputs[i];
+
+      assert(output->component_offset < 4);
+
+      ctx->streamout.TFB_DESCRIPTOR_COUNT[output->buffer / 128]++;
+
+      /* Hardware expects that we provide the fs input register
+       * numbers for each vs xfb output.
+       */
+      const int32_t reg = find_register_for_components(fs, output);
+      assert(reg != -1);
+
+      ctx->streamout.TFB_DESCRIPTOR[i] =
+         VIVS_TFB_DESCRIPTOR_OUTPUT_BUFFER(output->buffer) |
+         VIVS_TFB_DESCRIPTOR_INPUT_REGISTER(reg) |
+         VIVS_TFB_DESCRIPTOR_COMPONENT_OFFSET(output->component_offset) |
+         COND(output->component_mask != 0xf, VIVS_TFB_DESCRIPTOR_COMPONENT_MASK(util_bitcount(output->component_mask)));
+   }
+
+   ctx->streamout.num_descriptors = xfb_info->output_count;
+
+   return true;
+}
+
 struct etna_state_updater {
    bool (*update)(struct etna_context *ctx);
    uint32_t dirty;
@@ -1036,6 +1154,8 @@ static const struct etna_state_updater etna_state_updates[] = {
    },
    {
       etna_record_flush_resources, ETNA_DIRTY_FRAMEBUFFER,
+   }, {
+      etna_update_hwxfb, ETNA_DIRTY_STREAMOUT,
    }
 };
 

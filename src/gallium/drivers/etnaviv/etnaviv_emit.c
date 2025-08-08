@@ -606,9 +606,46 @@ etna_emit_state(struct etna_context *ctx)
       }
    }
 
-   if (unlikely(VIV_FEATURE(screen, ETNA_FEATURE_HWTFB) &&
-                (dirty & ETNA_DIRTY_RASTERIZER))) {
-      /*1C000*/ EMIT_STATE(TFB_CONFIG, etna_rasterizer_state(ctx->rasterizer)->TFB_CONFIG);
+   if (unlikely(VIV_FEATURE(screen, ETNA_FEATURE_HWTFB))) {
+      if (unlikely(dirty & ETNA_DIRTY_RASTERIZER)) {
+         /*1C000*/ EMIT_STATE(TFB_CONFIG, etna_rasterizer_state(ctx->rasterizer)->TFB_CONFIG);
+      }
+
+      if (unlikely(dirty & ETNA_DIRTY_STREAMOUT)) {
+         const struct etna_reloc context_buffer = {
+            .bo = etna_buffer_resource(ctx->streamout.context_buffer)->bo,
+            .flags = ETNA_RELOC_READ | ETNA_RELOC_WRITE
+         };
+
+         /*1C008*/ EMIT_STATE_RELOC(TFB_CONTEXT_BUFFER, &context_buffer);
+
+         for (int i = 0; i < 4; i++) {
+            /*1C040*/ EMIT_STATE_RELOC(TFB_BUFFER_ADDR(i), &ctx->streamout.TFB_BUFFER_ADDR[i]);
+            /*1C080*/ EMIT_STATE(TFB_BUFFER_SIZE(i), ctx->streamout.TFB_BUFFER_SIZE[i]);
+            /*1C0C0*/ EMIT_STATE(TFB_BUFFER_STRIDE(i), ctx->streamout.TFB_BUFFER_STRIDE[i]);
+         }
+
+         for (int i = 0; i < 4; i++) {
+            /*1C100*/ EMIT_STATE(TFB_DESCRIPTOR_COUNT(i), ctx->streamout.TFB_DESCRIPTOR_COUNT[i]);
+         }
+
+         for (int i = 0; i < ctx->streamout.num_descriptors; i++) {
+            /*1C800*/ EMIT_STATE(TFB_DESCRIPTOR(i), ctx->streamout.TFB_DESCRIPTOR[i]);
+         }
+      }
+
+      if (unlikely(dirty & ETNA_DIRTY_STREAMOUT_CMD)) {
+         struct etna_streamout *so = &ctx->streamout;
+
+         if (so->xfb_should_be_active && so->xfb_hw_state != ETNA_XFB_HW_ACTIVE) {
+            uint32_t cmd = (so->xfb_hw_state == ETNA_XFB_HW_PAUSED) ?
+                           TFB_COMMAND_RESUME :
+                           TFB_COMMAND_ENABLE;
+
+            /*1C004*/ EMIT_STATE(TFB_COMMAND, cmd);
+            so->xfb_hw_state = ETNA_XFB_HW_ACTIVE;
+         }
+      }
    }
 
    etna_coalesce_end(stream, &coalesce);

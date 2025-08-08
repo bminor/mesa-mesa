@@ -92,9 +92,28 @@ struct etna_shader_state {
    struct etna_shader_variant *vs, *fs;
 };
 
+enum etna_xfb_hw_state {
+   ETNA_XFB_HW_IDLE,
+   ETNA_XFB_HW_ACTIVE,
+   ETNA_XFB_HW_PAUSED,
+};
+
 struct etna_streamout {
+   struct pipe_resource *context_buffer;
+
    struct pipe_stream_output_target *targets[PIPE_MAX_SO_BUFFERS];
    unsigned num_targets;
+
+   bool xfb_should_be_active;
+   enum etna_xfb_hw_state xfb_hw_state;
+
+   uint32_t TFB_BUFFER_SIZE[PIPE_MAX_SO_BUFFERS];
+   uint32_t TFB_BUFFER_STRIDE[PIPE_MAX_SO_BUFFERS];
+   struct etna_reloc TFB_BUFFER_ADDR[PIPE_MAX_SO_BUFFERS];
+
+   unsigned num_descriptors;
+   uint32_t TFB_DESCRIPTOR_COUNT[VIVS_TFB_DESCRIPTOR_COUNT__LEN];
+   uint32_t TFB_DESCRIPTOR[VIVS_TFB_DESCRIPTOR__LEN];
 };
 
 enum etna_uniform_contents {
@@ -157,6 +176,7 @@ struct etna_context {
       ETNA_DIRTY_SCISSOR_CLIP    = (1 << 20),
       ETNA_DIRTY_SHADER_CACHES   = (1 << 21),
       ETNA_DIRTY_STREAMOUT       = (1 << 22),
+      ETNA_DIRTY_STREAMOUT_CMD   = (1 << 23)
    } dirty;
 
    struct slab_child_pool transfer_pool;

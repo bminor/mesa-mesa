@@ -104,6 +104,9 @@ etna_context_destroy(struct pipe_context *pctx)
 {
    struct etna_context *ctx = etna_context(pctx);
 
+   if (VIV_FEATURE(ctx->screen, ETNA_FEATURE_HWTFB))
+      pipe_resource_reference(&ctx->streamout.context_buffer, NULL);
+
    if (ctx->pending_resources)
       _mesa_hash_table_destroy(ctx->pending_resources, NULL);
 
@@ -595,6 +598,14 @@ etna_flush(struct pipe_context *pctx, struct pipe_fence_handle **fence,
 
    ctx->stats.flushes++;
 
+   if (VIV_FEATURE(ctx->screen, ETNA_FEATURE_HWTFB)) {
+      if (ctx->streamout.xfb_hw_state == ETNA_XFB_HW_ACTIVE)
+         etna_set_state(ctx->stream, VIVS_TFB_COMMAND, TFB_COMMAND_DISABLE);
+
+      ctx->streamout.xfb_hw_state = ETNA_XFB_HW_IDLE;
+      ctx->streamout.xfb_should_be_active = false;
+   }
+
    list_for_each_entry(struct etna_acc_query, aq, &ctx->active_acc_queries, node)
       etna_acc_query_suspend(aq, ctx);
 
@@ -763,6 +774,14 @@ etna_context_create(struct pipe_screen *pscreen, void *priv, unsigned flags)
 
    slab_create_child(&ctx->transfer_pool, &screen->transfer_pool);
    list_inithead(&ctx->active_acc_queries);
+
+   if (VIV_FEATURE(ctx->screen, ETNA_FEATURE_HWTFB)) {
+      ctx->streamout.context_buffer =
+         pipe_buffer_create(&ctx->screen->base, PIPE_BIND_QUERY_BUFFER, 0, 64);
+
+      if (!ctx->streamout.context_buffer)
+         goto fail;
+   }
 
    return pctx;
 
