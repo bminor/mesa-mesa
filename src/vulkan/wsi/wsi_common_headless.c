@@ -347,97 +347,6 @@ wsi_headless_swapchain_destroy(struct wsi_swapchain *wsi_chain,
    return VK_SUCCESS;
 }
 
-static const struct VkDrmFormatModifierPropertiesEXT *
-get_modifier_props(const struct wsi_image_info *info, uint64_t modifier)
-{
-   for (uint32_t i = 0; i < info->modifier_prop_count; i++) {
-      if (info->modifier_props[i].drmFormatModifier == modifier)
-         return &info->modifier_props[i];
-   }
-   return NULL;
-}
-
-static VkResult
-wsi_create_null_image_mem(const struct wsi_swapchain *chain,
-                          const struct wsi_image_info *info,
-                          struct wsi_image *image)
-{
-   const struct wsi_device *wsi = chain->wsi;
-   VkResult result;
-
-   VkMemoryRequirements reqs;
-   wsi->GetImageMemoryRequirements(chain->device, image->image, &reqs);
-
-   const VkMemoryDedicatedAllocateInfo memory_dedicated_info = {
-      .sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO,
-      .pNext = NULL,
-      .image = image->image,
-      .buffer = VK_NULL_HANDLE,
-   };
-   const VkMemoryAllocateInfo memory_info = {
-      .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-      .pNext = &memory_dedicated_info,
-      .allocationSize = reqs.size,
-      .memoryTypeIndex =
-         wsi_select_device_memory_type(wsi, reqs.memoryTypeBits),
-   };
-   result = wsi->AllocateMemory(chain->device, &memory_info,
-                                &chain->alloc, &image->memory);
-   if (result != VK_SUCCESS)
-      return result;
-
-   image->dma_buf_fd = -1;
-
-   if (info->drm_mod_list.drmFormatModifierCount > 0) {
-      VkImageDrmFormatModifierPropertiesEXT image_mod_props = {
-         .sType = VK_STRUCTURE_TYPE_IMAGE_DRM_FORMAT_MODIFIER_PROPERTIES_EXT,
-      };
-      result = wsi->GetImageDrmFormatModifierPropertiesEXT(chain->device,
-                                                           image->image,
-                                                           &image_mod_props);
-      if (result != VK_SUCCESS)
-         return result;
-
-      image->drm_modifier = image_mod_props.drmFormatModifier;
-      assert(image->drm_modifier != DRM_FORMAT_MOD_INVALID);
-
-      const struct VkDrmFormatModifierPropertiesEXT *mod_props =
-         get_modifier_props(info, image->drm_modifier);
-      image->num_planes = mod_props->drmFormatModifierPlaneCount;
-
-      for (uint32_t p = 0; p < image->num_planes; p++) {
-         const VkImageSubresource image_subresource = {
-            .aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT << p,
-            .mipLevel = 0,
-            .arrayLayer = 0,
-         };
-         VkSubresourceLayout image_layout;
-         wsi->GetImageSubresourceLayout(chain->device, image->image,
-                                        &image_subresource, &image_layout);
-         image->sizes[p] = image_layout.size;
-         image->row_pitches[p] = image_layout.rowPitch;
-         image->offsets[p] = image_layout.offset;
-      }
-   } else {
-      const VkImageSubresource image_subresource = {
-         .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-         .mipLevel = 0,
-         .arrayLayer = 0,
-      };
-      VkSubresourceLayout image_layout;
-      wsi->GetImageSubresourceLayout(chain->device, image->image,
-                                     &image_subresource, &image_layout);
-
-      image->drm_modifier = DRM_FORMAT_MOD_INVALID;
-      image->num_planes = 1;
-      image->sizes[0] = reqs.size;
-      image->row_pitches[0] = image_layout.rowPitch;
-      image->offsets[0] = 0;
-   }
-
-   return VK_SUCCESS;
-}
-
 static VkResult
 wsi_headless_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
                                       VkDevice device,
@@ -509,9 +418,6 @@ wsi_headless_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
    chain->base.queue_present = wsi_headless_swapchain_queue_present;
    chain->base.present_mode = wsi_swapchain_get_present_mode(wsi_device, pCreateInfo);
    chain->base.image_count = num_images;
-   chain->base.image_info.create_mem = wsi_create_null_image_mem;
-   chain->base.image_info.finish_create = NULL;
-
 
    for (uint32_t i = 0; i < chain->base.image_count; i++) {
       result = wsi_create_image(&chain->base, &chain->base.image_info,
