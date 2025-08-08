@@ -293,8 +293,8 @@ device_select_EnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalD
          exit(0);
    }
 
-   unsigned selected_index = device_select_get_default(info, physical_device_count,
-                                                       physical_devices, &expose_only_one_dev);
+   unsigned selected_index =
+      device_select_get_first(info, physical_device_count, physical_devices, &expose_only_one_dev);
    selected_physical_device_count = physical_device_count;
    selected_physical_devices[0] = physical_devices[selected_index];
    for (unsigned i = 0; i < physical_device_count - 1; ++i) {

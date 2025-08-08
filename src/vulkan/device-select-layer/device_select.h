@@ -84,7 +84,7 @@ device_select_find_wayland_pci_default(struct device_pci_info *devices, uint32_t
 void device_select_get_properties(const struct instance_info *info, VkPhysicalDevice device,
                                   VkPhysicalDeviceProperties2 *properties);
 
-uint32_t device_select_get_default(const struct instance_info *info, uint32_t physical_device_count,
-                                   VkPhysicalDevice *pPhysicalDevices, bool *expose_only_one_dev);
+uint32_t device_select_get_first(const struct instance_info *info, uint32_t physical_device_count,
+                                 VkPhysicalDevice *pPhysicalDevices, bool *expose_only_one_dev);
 
 #endif
