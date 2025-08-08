@@ -1177,8 +1177,11 @@ emit_intrinsic_load_ubo_ldc(struct ir3_context *ctx, nir_intrinsic_instr *intr,
    assert(nir_intrinsic_base(intr) == 0);
 
    unsigned ncomp = intr->num_components;
-   struct ir3_instruction *offset = ir3_get_src(ctx, &intr->src[1])[0];
-   struct ir3_instruction *idx = ir3_get_src(ctx, &intr->src[0])[0];
+   bool use_shared = !intr->def.divergent && ctx->compiler->has_scalar_alu;
+   struct ir3_instruction *offset =
+      ir3_get_src_shared(ctx, &intr->src[1], use_shared)[0];
+   struct ir3_instruction *idx =
+      ir3_get_src_shared(ctx, &intr->src[0], use_shared)[0];
    struct ir3_instruction *ldc = ir3_LDC(b, idx, 0, offset, 0);
    ldc->dsts[0]->wrmask = MASK(ncomp);
    ldc->cat6.iim_val = ncomp;
@@ -1190,8 +1193,7 @@ emit_intrinsic_load_ubo_ldc(struct ir3_context *ctx, nir_intrinsic_instr *intr,
       ctx->so->bindless_ubo = true;
    ir3_handle_nonuniform(ldc, intr);
 
-   if (!intr->def.divergent &&
-       ctx->compiler->has_scalar_alu) {
+   if (use_shared) {
       ldc->dsts[0]->flags |= IR3_REG_SHARED;
       ldc->flags |= IR3_INSTR_U;
    }
