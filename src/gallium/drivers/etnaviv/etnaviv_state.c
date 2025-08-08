@@ -812,7 +812,8 @@ etna_update_clipping(struct etna_context *ctx)
    const struct etna_rasterizer_state *rasterizer = etna_rasterizer_state(ctx->rasterizer);
    const struct pipe_framebuffer_state *fb = &ctx->framebuffer_s;
 
-   if (ctx->rasterizer->rasterizer_discard) {
+   if (!VIV_FEATURE(ctx->screen, ETNA_FEATURE_HWTFB) &&
+       ctx->rasterizer->rasterizer_discard) {
       ctx->clipping.minx = 0;
       ctx->clipping.miny = 0;
       ctx->clipping.maxx = 0;

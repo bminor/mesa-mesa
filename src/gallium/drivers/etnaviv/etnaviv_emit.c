@@ -606,6 +606,11 @@ etna_emit_state(struct etna_context *ctx)
       }
    }
 
+   if (unlikely(VIV_FEATURE(screen, ETNA_FEATURE_HWTFB) &&
+                (dirty & ETNA_DIRTY_RASTERIZER))) {
+      /*1C000*/ EMIT_STATE(TFB_CONFIG, etna_rasterizer_state(ctx->rasterizer)->TFB_CONFIG);
+   }
+
    etna_coalesce_end(stream, &coalesce);
    /* end only EMIT_STATE */
 
