@@ -666,6 +666,9 @@ genX(emit_simple_shader_dispatch)(struct anv_simple_shader *state,
       anv_batch_emit(batch, GENX(COMPUTE_WALKER), cw) {
          cw.body = body;
       }
+
+      genX(cmd_buffer_state_cache_inval_wa_14025112257)(state->cmd_buffer);
+
 #else /* GFX_VERx10 < 125 */
       const uint32_t vfe_curbe_allocation =
          ALIGN(prog_data->push.per_thread.regs * dispatch.threads +

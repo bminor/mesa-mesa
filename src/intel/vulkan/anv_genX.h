@@ -173,6 +173,22 @@ genX(cmd_buffer_set_coarse_pixel_active)(struct anv_cmd_buffer *cmd_buffer,
 #endif
 }
 
+/*
+ * TDOD: Add INTEL_NEEDS_WA_14025112257 check once HSD is propogated for all
+ * other impacted platforms.
+ */
+static inline void
+genX(cmd_buffer_state_cache_inval_wa_14025112257)(
+      struct anv_cmd_buffer *cmd_buffer)
+{
+   if (cmd_buffer->device->info->ver >= 20 &&
+       anv_cmd_buffer_is_compute_queue(cmd_buffer)) {
+      anv_add_pending_pipe_bits(cmd_buffer,
+                                ANV_PIPE_STATE_CACHE_INVALIDATE_BIT,
+                                "WA_14025112257");
+   }
+}
+
 void genX(emit_so_memcpy_init)(struct anv_memcpy_state *state,
                                struct anv_device *device,
                                struct anv_cmd_buffer *cmd_buffer,

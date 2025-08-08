@@ -461,6 +461,8 @@ emit_indirect_compute_walker(struct anv_cmd_buffer *cmd_buffer,
          .MOCS                       = anv_mocs(cmd_buffer->device,
                                                 indirect_addr.bo, 0),
       );
+
+   genX(cmd_buffer_state_cache_inval_wa_14025112257)(cmd_buffer);
 }
 
 static inline void
@@ -527,6 +529,8 @@ emit_compute_walker(struct anv_cmd_buffer *cmd_buffer,
          .SystolicModeEnable             = prog_data->uses_systolic,
 #endif
       );
+
+   genX(cmd_buffer_state_cache_inval_wa_14025112257)(cmd_buffer);
 }
 
 #else /* #if GFX_VERx10 >= 125 */
@@ -1307,6 +1311,8 @@ cmd_buffer_trace_rays(struct anv_cmd_buffer *cmd_buffer,
          .PredicateEnable          = false,
          .body                     = body,
       );
+
+   genX(cmd_buffer_state_cache_inval_wa_14025112257)(cmd_buffer);
 
    trace_intel_end_rays(&cmd_buffer->trace,
                         params->launch_size[0],
