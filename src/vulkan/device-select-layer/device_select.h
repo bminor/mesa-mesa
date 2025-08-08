@@ -23,9 +23,24 @@
 #ifndef DEVICE_SELECT_H
 #define DEVICE_SELECT_H
 
+#include <vulkan/vulkan.h>
+
 #include <stdbool.h>
 #include <stdint.h>
 #include "xf86drm.h"
+
+struct instance_info {
+   PFN_vkDestroyInstance DestroyInstance;
+   PFN_vkEnumeratePhysicalDevices EnumeratePhysicalDevices;
+   PFN_vkEnumeratePhysicalDeviceGroups EnumeratePhysicalDeviceGroups;
+   PFN_vkGetInstanceProcAddr GetInstanceProcAddr;
+   PFN_vkEnumerateDeviceExtensionProperties EnumerateDeviceExtensionProperties;
+   PFN_vkGetPhysicalDeviceProperties GetPhysicalDeviceProperties;
+   PFN_vkGetPhysicalDeviceProperties2 GetPhysicalDeviceProperties2;
+   bool has_pci_bus, has_vulkan11;
+   bool has_wayland, has_xcb;
+   bool zink, xwayland, xserver;
+};
 
 /* We don't use `drmPciDeviceInfo` because it uses 16-bit ids,
  * instead of Vulkan's 32-bit ones. */
@@ -60,5 +75,14 @@ device_select_find_wayland_pci_default(struct device_pci_info *devices, uint32_t
    return -1;
 }
 #endif
+
+bool device_select_should_debug(void);
+
+void device_select_get_properties(const struct instance_info *info, VkPhysicalDevice device,
+                                  VkPhysicalDeviceProperties2 *properties);
+
+uint32_t device_select_get_default(const struct instance_info *info, const char *selection,
+                                   uint32_t physical_device_count,
+                                   VkPhysicalDevice *pPhysicalDevices, bool *expose_only_one_dev);
 
 #endif

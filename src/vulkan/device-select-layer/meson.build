@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 vklayer_files = files(
+  'device_select.c',
   'device_select_layer.c',
 )
 
