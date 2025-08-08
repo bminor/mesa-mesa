@@ -1818,6 +1818,15 @@ blorp_exec_compute(struct blorp_batch *batch, const struct blorp_params *params)
       cw.body = body;
    }
 
+   /*
+    * TDOD: Add INTEL_NEEDS_WA_14025112257 check once HSD is propogated for all
+    * other impacted platforms.
+    */
+   if (devinfo->ver >= 20) {
+      blorp_emit(batch, GENX(PIPE_CONTROL), pc) {
+         pc.StateCacheInvalidationEnable = true;
+      }
+   }
 #else
 
    /* The MEDIA_VFE_STATE documentation for Gfx8+ says:
