@@ -77,6 +77,7 @@ dEQP-VK.pipeline.monolithic.sampler.separate_stencil_usage.view_type.cube_array.
 dEQP-VK.pipeline.monolithic.sampler.view_type.3d.format.r32_sfloat.min_filter.nearest
 dEQP-VK.pipeline.monolithic.stencil.format.d32_sfloat_s8_uint.states.fail_wrap.pass_repl.dfail_incc.comp_less.any
 dEQP-VK.pipeline.monolithic.vertex_input.multiple_attributes.out_of_order.binding_one_to_many.attributes_sequential.f16vec3.f16vec4.mat3
+dEQP-VK.pipeline.pipeline_library.blend.dual_source.format.r8_snorm.output_variable.states.color_1msc_1ms1a_add_alpha_1mdc_1msa_sub-color_dc_1ms1c_rsub_alpha_z_1mdc_sub-color_ca_1ms1c_min_alpha_sas_ca_rsub-color_1ms1c_s1c_add_alpha_z_1mda_add
 dEQP-VK.pipeline.pipeline_library.render_to_image.dedicated_allocation.2d.mipmap.a1r5g5b5_unorm_pack16_d16_unorm
 dEQP-VK.pipeline.pipeline_library.sampler.separate_stencil_usage.view_type.2d_array.format.d16_unorm_s8_uint.mipmap.linear.lod.select_bias_2_5
 dEQP-VK.pipeline.shader_object_linked_binary.image.suballocation.sampling_type.separate.view_type.1d_array.format.r8_srgb.count_1.size.443x1_array_of_3
