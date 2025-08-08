@@ -1931,8 +1931,8 @@ static void set_mem_op_alignment(LLVMValueRef instr, nir_intrinsic_instr *intr, 
 
 static void set_coherent_volatile(LLVMValueRef instr, nir_intrinsic_instr *intr)
 {
-   if ((intr->intrinsic == nir_intrinsic_load_global ||
-        intr->intrinsic == nir_intrinsic_store_global) &&
+   if ((intr->intrinsic == nir_intrinsic_load_global_amd ||
+        intr->intrinsic == nir_intrinsic_store_global_amd) &&
        nir_intrinsic_access(intr) & (ACCESS_COHERENT | ACCESS_VOLATILE))
       LLVMSetOrdering(instr, LLVMAtomicOrderingMonotonic);
 }
