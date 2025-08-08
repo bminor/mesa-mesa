@@ -68,3 +68,6 @@ x11-dEQP-EGL.functional.sharing.gles2.multithread.simple.programs.link
 
 spec@amd_pinned_memory@offset=0
 spec@amd_pinned_memory@map-buffer offset=0
+
+KHR-GL46.direct_state_access.renderbuffers_storage_multisample
+KHR-Single-GL46.arrays_of_arrays_gl.SubroutineArgumentAliasing1_var_type_index_12

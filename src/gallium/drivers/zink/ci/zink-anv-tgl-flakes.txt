@@ -87,3 +87,6 @@ glx@glx-multithread-buffer-busy-tracking-bug
 glx@glx-query-drawable-glx_width
 glx@glx-query-drawable-glxpixmap-glx_width
 glx@glx-swap-pixmap
+
+# deqp-egl-x11: ../src/gallium/drivers/zink/zink_context.c:1339: update_res_bind_count: Assertion `res->bind_count[is_compute]' failed.
+x11-dEQP-EGL.functional.sharing.gles2.multithread.simple.buffers.buffersubdata_render
