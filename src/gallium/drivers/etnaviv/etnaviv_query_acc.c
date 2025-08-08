@@ -38,11 +38,13 @@
 
 extern const struct etna_acc_sample_provider occlusion_provider;
 extern const struct etna_acc_sample_provider perfmon_provider;
+extern const struct etna_acc_sample_provider xfb_provider;
 
 static const struct etna_acc_sample_provider *acc_sample_provider[] =
 {
    &occlusion_provider,
    &perfmon_provider,
+   &xfb_provider,
 };
 
 static void
