@@ -18,6 +18,7 @@ KHR-GLES31.core.vertex_attrib_binding.advanced-iterations,Fail
 dEQP-GLES2.functional.texture.mipmap.cube.projected.nearest_linear,Fail
 dEQP-GLES3.functional.polygon_offset.fixed16_render_with_units,Fail
 
+dEQP-VK.glsl.builtin.precision.reflect.highp.scalar,Fail
 
 gmem-dEQP-VK.clipping.user_defined.clip_cull_distance_dynamic_index.vert_geom.6_2,Fail
 gmem-dEQP-VK.clipping.user_defined.clip_cull_distance_dynamic_index.vert_geom.6_2_fragmentshader_read,Fail
