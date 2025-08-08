@@ -148,6 +148,7 @@ can_sink_instr(nir_instr *instr, nir_move_options options, bool *can_mov_out_of_
          return false;
 
       if (intrin->intrinsic == nir_intrinsic_load_global ||
+          intrin->intrinsic == nir_intrinsic_load_global_amd ||
           intrin->intrinsic == nir_intrinsic_load_ubo ||
           intrin->intrinsic == nir_intrinsic_load_ssbo ||
           intrin->intrinsic == nir_intrinsic_load_smem_amd) {
@@ -200,6 +201,7 @@ can_sink_instr(nir_instr *instr, nir_move_options options, bool *can_mov_out_of_
          return options & nir_move_load_input;
 
       case nir_intrinsic_load_global:
+      case nir_intrinsic_load_global_amd:
       case nir_intrinsic_load_smem_amd: /* = global + convergent */
          return options & nir_move_load_global;
 
