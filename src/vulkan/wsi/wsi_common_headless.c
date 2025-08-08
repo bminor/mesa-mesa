@@ -451,13 +451,46 @@ wsi_headless_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
    if (chain == NULL)
       return VK_ERROR_OUT_OF_HOST_MEMORY;
 
+   VkDrmFormatModifierPropertiesListEXT mod_list = {
+      .sType = VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT,
+   };
+   VkFormatProperties2 props = {
+      .sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2,
+      .pNext = &mod_list,
+   };
+   if (wsi_device->supports_modifiers) {
+      wsi_device->GetPhysicalDeviceFormatProperties2(
+         wsi_device->pdevice, pCreateInfo->imageFormat, &props);
+      assert(mod_list.drmFormatModifierCount > 0);
+   }
+
+   STACK_ARRAY(VkDrmFormatModifierPropertiesEXT, mod_props,
+               mod_list.drmFormatModifierCount);
+   STACK_ARRAY(uint64_t, mods, mod_list.drmFormatModifierCount);
+
+   if (mod_list.drmFormatModifierCount > 0) {
+      mod_list.pDrmFormatModifierProperties = mod_props;
+      wsi_device->GetPhysicalDeviceFormatProperties2(
+         wsi_device->pdevice, pCreateInfo->imageFormat, &props);
+
+      for (uint32_t i = 0; i < mod_list.drmFormatModifierCount; i++)
+         mods[i] = mod_props[i].drmFormatModifier;
+   }
+
    struct wsi_drm_image_params drm_params = {
       .base.image_type = WSI_IMAGE_TYPE_DRM,
       .same_gpu = true,
+      .num_modifier_lists = mod_list.drmFormatModifierCount > 0 ? 1 : 0,
+      .num_modifiers = &mod_list.drmFormatModifierCount,
+      .modifiers = (const uint64_t **)&mods,
    };
 
    result = wsi_swapchain_init(wsi_device, &chain->base, device,
                                pCreateInfo, &drm_params.base, pAllocator);
+
+   STACK_ARRAY_FINISH(mods);
+   STACK_ARRAY_FINISH(mod_props);
+
    if (result != VK_SUCCESS) {
       vk_free(pAllocator, chain);
       return result;
