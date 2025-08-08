@@ -46,34 +46,14 @@ static struct hash_table *device_select_instance_ht = NULL;
 static simple_mtx_t device_select_mutex = SIMPLE_MTX_INITIALIZER;
 
 static void
-device_select_init_instances(void)
-{
-   simple_mtx_lock(&device_select_mutex);
-   if (!device_select_instance_ht)
-      device_select_instance_ht =
-         _mesa_hash_table_create(NULL, _mesa_hash_pointer, _mesa_key_pointer_equal);
-   simple_mtx_unlock(&device_select_mutex);
-}
-
-static void
-device_select_try_free_ht(void)
-{
-   simple_mtx_lock(&device_select_mutex);
-   if (device_select_instance_ht) {
-      if (_mesa_hash_table_num_entries(device_select_instance_ht) == 0) {
-         _mesa_hash_table_destroy(device_select_instance_ht, NULL);
-         device_select_instance_ht = NULL;
-      }
-   }
-   simple_mtx_unlock(&device_select_mutex);
-}
-
-static void
 device_select_layer_add_instance(VkInstance instance, struct instance_info *info)
 {
-   device_select_init_instances();
    simple_mtx_lock(&device_select_mutex);
+
+   if (!device_select_instance_ht)
+      device_select_instance_ht = _mesa_pointer_hash_table_create(NULL);
    _mesa_hash_table_insert(device_select_instance_ht, instance, info);
+
    simple_mtx_unlock(&device_select_mutex);
 }
 
@@ -94,9 +74,15 @@ static void
 device_select_layer_remove_instance(VkInstance instance)
 {
    simple_mtx_lock(&device_select_mutex);
+
    _mesa_hash_table_remove_key(device_select_instance_ht, instance);
+
+   if (_mesa_hash_table_num_entries(device_select_instance_ht) == 0) {
+      _mesa_hash_table_destroy(device_select_instance_ht, NULL);
+      device_select_instance_ht = NULL;
+   }
+
    simple_mtx_unlock(&device_select_mutex);
-   device_select_try_free_ht();
 }
 
 static VkResult
