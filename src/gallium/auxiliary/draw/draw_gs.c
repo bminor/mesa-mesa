@@ -71,6 +71,7 @@ draw_gs_get_input_index(int semantic, int index,
 static inline bool
 draw_gs_should_flush(struct draw_geometry_shader *shader)
 {
+   /* TODO: should not have to switch to scalar mode for instanced GS */
    return (shader->fetched_prim_count == shader->vector_length || shader->num_invocations > 1);
 }
 
@@ -421,7 +422,7 @@ gs_flush(struct draw_geometry_shader *shader)
    unsigned input_primitives = shader->fetched_prim_count;
 
    if (shader->draw->collect_statistics) {
-      shader->draw->statistics.gs_invocations += input_primitives;
+      shader->draw->statistics.gs_invocations += input_primitives * shader->num_invocations;
    }
 
    assert(input_primitives > 0 &&
