@@ -1184,8 +1184,8 @@ radv_image_create_layout(struct radv_device *device, struct radv_image_create_in
       if (!device->vk.enabled_features.videoMaintenance1)
          assert(profile_list);
 
-      const bool is_linear =
-         image->vk.tiling == VK_IMAGE_TILING_LINEAR || image->planes[0].surface.modifier == DRM_FORMAT_MOD_LINEAR;
+      const bool is_linear = RADEON_SURF_GET(image->planes[0].surface.flags, MODE) == RADEON_SURF_MODE_LINEAR_ALIGNED ||
+                             image->planes[0].surface.modifier == DRM_FORMAT_MOD_LINEAR;
 
       /* Only linear decode target requires the custom alignment. */
       if (is_linear || !(image->vk.usage & VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR)) {

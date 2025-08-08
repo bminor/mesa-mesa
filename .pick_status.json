@@ -4594,7 +4594,7 @@
         "description": "radv: Fix alignment for linear video decode dst images",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2d06b432920637f6c40bb4f7650afcacfcf23a00",
         "notes": null
