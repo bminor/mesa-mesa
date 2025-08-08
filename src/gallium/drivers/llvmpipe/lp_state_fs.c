@@ -1100,9 +1100,6 @@ generate_fs_loop(struct gallivm_state *gallivm,
    params.ssbo_ptr = ssbo_ptr;
    params.image = image;
 
-   /* Build the actual shader */
-   lp_build_nir_soa(gallivm, nir, &params, outputs);
-
    /*
     * Must not count ps invocations if there's a null shader.
     * (It would be ok to count with null shader if there's d/s tests,
@@ -1115,6 +1112,9 @@ generate_fs_loop(struct gallivm_state *gallivm,
       LLVMValueRef invocs = lp_jit_thread_data_ps_invocations(gallivm, thread_data_type, thread_data_ptr);
       lp_build_occlusion_count(gallivm, type, lp_build_mask_value(&mask), invocs);
    }
+
+   /* Build the actual shader */
+   lp_build_nir_soa(gallivm, nir, &params, outputs);
 
    /* Alpha test */
    if (key->alpha.enabled) {
