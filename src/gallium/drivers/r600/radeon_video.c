@@ -212,10 +212,6 @@ int rvid_get_video_param(struct pipe_screen *screen,
 			return 1152;
 		case PIPE_VIDEO_CAP_PREFERRED_FORMAT:
 			return PIPE_FORMAT_NV12;
-		case PIPE_VIDEO_CAP_PREFERS_INTERLACED:
-			return false;
-		case PIPE_VIDEO_CAP_SUPPORTS_INTERLACED:
-			return false;
 		case PIPE_VIDEO_CAP_SUPPORTS_PROGRESSIVE:
 			return true;
 		case PIPE_VIDEO_CAP_STACKED_FRAMES:
@@ -253,20 +249,6 @@ int rvid_get_video_param(struct pipe_screen *screen,
 	case PIPE_VIDEO_CAP_PREFERRED_FORMAT:
 		return PIPE_FORMAT_NV12;
 
-	case PIPE_VIDEO_CAP_PREFERS_INTERLACED:
-	case PIPE_VIDEO_CAP_SUPPORTS_INTERLACED:
-		if (rscreen->family < CHIP_PALM) {
-			/* MPEG2 only with shaders and no support for
-			   interlacing on R6xx style UVD */
-			return codec != PIPE_VIDEO_FORMAT_MPEG12 &&
-			       rscreen->family > CHIP_RV770;
-		} else {
-			enum pipe_video_format format = u_reduce_video_profile(profile);
-
-			if (format == PIPE_VIDEO_FORMAT_JPEG)
-				return false;
-			return true;
-		}
 	case PIPE_VIDEO_CAP_SUPPORTS_PROGRESSIVE:
 		return true;
 	case PIPE_VIDEO_CAP_MAX_LEVEL:
