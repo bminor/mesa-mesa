@@ -92,6 +92,11 @@ struct etna_shader_state {
    struct etna_shader_variant *vs, *fs;
 };
 
+struct etna_streamout {
+   struct pipe_stream_output_target *targets[PIPE_MAX_SO_BUFFERS];
+   unsigned num_targets;
+};
+
 enum etna_uniform_contents {
    ETNA_UNIFORM_UNUSED = 0,
    ETNA_UNIFORM_CONSTANT,
@@ -151,6 +156,7 @@ struct etna_context {
       ETNA_DIRTY_DERIVE_TS       = (1 << 19),
       ETNA_DIRTY_SCISSOR_CLIP    = (1 << 20),
       ETNA_DIRTY_SHADER_CACHES   = (1 << 21),
+      ETNA_DIRTY_STREAMOUT       = (1 << 22),
    } dirty;
 
    struct slab_child_pool transfer_pool;
@@ -221,6 +227,8 @@ struct etna_context {
    struct pipe_query *cond_query;
    bool cond_cond; /* inverted rendering condition */
    uint cond_mode;
+
+   struct etna_streamout streamout;
 };
 
 static inline struct etna_context *

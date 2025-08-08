@@ -385,6 +385,13 @@ etna_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
       etna_update_sampler_source(ctx->sampler_view[i], i);
    }
 
+   /* Mark streamout buffers as being written. */
+   if (ctx->dirty & ETNA_DIRTY_STREAMOUT) {
+      for (unsigned i = 0; i < ctx->streamout.num_targets; i++) {
+         resource_written(ctx, ctx->streamout.targets[i]->buffer);
+      }
+   }
+
    if (indirect) {
       /*
        * When the indirect buffer is written by the GPU, e.g. by a compute shader,

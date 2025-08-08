@@ -719,13 +719,59 @@ etna_vertex_elements_state_bind(struct pipe_context *pctx, void *ve)
    ctx->dirty |= ETNA_DIRTY_VERTEX_ELEMENTS;
 }
 
+static struct pipe_stream_output_target *
+etna_create_stream_output_target(struct pipe_context *pctx,
+      struct pipe_resource *prsc,
+      unsigned buffer_offset,
+      unsigned buffer_size)
+{
+   struct pipe_stream_output_target *target;
+
+   target = CALLOC_STRUCT(pipe_stream_output_target);
+   if (!target)
+      return NULL;
+
+   pipe_reference_init(&target->reference, 1);
+   pipe_resource_reference(&target->buffer, prsc);
+
+   target->context = pctx;
+   target->buffer_offset = buffer_offset;
+   target->buffer_size = buffer_size;
+
+   return target;
+}
+
+static void
+etna_stream_output_target_destroy(UNUSED struct pipe_context *ctx,
+      struct pipe_stream_output_target *state)
+{
+   pipe_resource_reference(&state->buffer, NULL);
+
+   FREE(state);
+}
+
 static void
 etna_set_stream_output_targets(struct pipe_context *pctx,
       unsigned num_targets, struct pipe_stream_output_target **targets,
-      const unsigned *offsets,
-      enum mesa_prim output_prim)
+      UNUSED const unsigned *offsets,
+      UNUSED enum mesa_prim output_prim)
 {
-   /* stub */
+   struct etna_context *ctx = etna_context(pctx);
+   struct etna_streamout *so = &ctx->streamout;
+
+   assert(num_targets <= ARRAY_SIZE(so->targets));
+
+   for (unsigned i = 0; i < num_targets; i++)
+      pipe_so_target_reference(&so->targets[i], targets[i]);
+
+   for (unsigned i = num_targets; i < so->num_targets; i++)
+      pipe_so_target_reference(&so->targets[i], NULL);
+
+   so->num_targets = num_targets;
+
+   /* There is no need to emit streamout information unless it is active. */
+   if (so->num_targets > 0)
+      ctx->dirty |= ETNA_DIRTY_STREAMOUT;
 }
 
 static bool
@@ -1032,5 +1078,7 @@ etna_state_init(struct pipe_context *pctx)
    pctx->delete_vertex_elements_state = etna_vertex_elements_state_delete;
    pctx->bind_vertex_elements_state = etna_vertex_elements_state_bind;
 
+   pctx->create_stream_output_target = etna_create_stream_output_target;
+   pctx->stream_output_target_destroy = etna_stream_output_target_destroy;
    pctx->set_stream_output_targets = etna_set_stream_output_targets;
 }
