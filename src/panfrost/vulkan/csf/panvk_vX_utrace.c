@@ -34,12 +34,12 @@ cmd_write_timestamp(const struct panvk_device *dev, struct cs_builder *b,
 
 static void
 cmd_copy_data(struct cs_builder *b, uint64_t dst_addr, uint64_t src_addr,
-              uint32_t size)
+              uint32_t size, bool wait_for_timestamp)
 {
    assert((dst_addr | src_addr | size) % sizeof(uint32_t) == 0);
 
-   /* wait for timestamp writes */
-   cs_wait_slot(b, SB_ID(DEFERRED_SYNC));
+   if (wait_for_timestamp)
+      cs_wait_slot(b, SB_ID(DEFERRED_SYNC));
 
    /* Depending on where this is called from, we could potentially use SR
     * registers or copy with a compute job.
@@ -72,8 +72,6 @@ cmd_copy_data(struct cs_builder *b, uint64_t dst_addr, uint64_t src_addr,
       src_addr += offset;
       size -= offset;
    }
-
-   cs_wait_slot(b, SB_ID(LS));
 }
 
 static struct cs_builder *
@@ -117,7 +115,8 @@ panvk_utrace_capture_data(struct u_trace *ut, void *cs, void *dst_buffer,
    /* src_offset_B is absolute */
    assert(!src_buffer);
 
-   cmd_copy_data(b, dst_addr, src_addr, size_B);
+   cmd_copy_data(b, dst_addr, src_addr, size_B,
+                 cs_info->capture_data_wait_for_ts);
 }
 
 void
@@ -149,7 +148,7 @@ panvk_per_arch(utrace_copy_buffer)(struct u_trace_context *utctx,
    const uint64_t src_addr = src_bo->addr.dev + from_offset;
    const uint64_t dst_addr = dst_bo->addr.dev + to_offset;
 
-   cmd_copy_data(b, dst_addr, src_addr, size_B);
+   cmd_copy_data(b, dst_addr, src_addr, size_B, false);
 }
 
 void
