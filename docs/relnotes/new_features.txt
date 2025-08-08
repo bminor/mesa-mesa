@@ -3,3 +3,4 @@ GL_ARB_robust_buffer_access_behavior, GL_KHR_robust_buffer_access_behavior and G
 VK_EXT_mutable_descriptor_type on panvk/v9+
 GL_KHR_robustness on v3d
 VK_ARM_shader_core_builtins on panvk
+VK_KHR_shader_untyped_pointers on anv

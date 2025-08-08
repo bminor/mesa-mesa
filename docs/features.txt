@@ -572,6 +572,7 @@ Khronos extensions that are not part of any Vulkan version:
   VK_KHR_shader_relaxed_extended_instruction            DONE (anv, hasvk, hk, nvk, panvk, radv, tu, v3dv, vn)
   VK_KHR_shader_subgroup_uniform_control_flow           DONE (anv, hasvk, hk, nvk, panvk/v10+, radv, tu, vn)
   VK_KHR_shader_quad_control                            DONE (anv, hk, nvk, panvk/v10+, radv, vn)
+  VK_KHR_shader_untyped_pointers                        DONE (anv)
   VK_KHR_shared_presentable_image                       not started
   VK_KHR_surface                                        DONE (anv, dzn, hasvk, hk, lvp, nvk, panvk, pvr, radv, tu, v3dv, vn)
   VK_KHR_surface_protected_capabilities                 DONE (anv, hk, lvp, nvk, radv, tu, v3dv, vn)
