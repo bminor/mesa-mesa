@@ -78,7 +78,7 @@ panvk_device_init_mempools(struct panvk_device *dev)
       .prealloc = false,
    };
 
-   panvk_pool_init(&dev->mempools.rw, dev, NULL, &rw_pool_props);
+   panvk_pool_init(&dev->mempools.rw, dev, NULL, NULL, &rw_pool_props);
 
    struct panvk_pool_properties rw_nc_pool_props = {
       .create_flags = PAN_ARCH <= 9 ? 0 : PAN_KMOD_BO_FLAG_GPU_UNCACHED,
@@ -89,7 +89,7 @@ panvk_device_init_mempools(struct panvk_device *dev)
       .prealloc = false,
    };
 
-   panvk_pool_init(&dev->mempools.rw_nc, dev, NULL, &rw_nc_pool_props);
+   panvk_pool_init(&dev->mempools.rw_nc, dev, NULL, NULL, &rw_nc_pool_props);
 
    struct panvk_pool_properties exec_pool_props = {
       .create_flags = PAN_KMOD_BO_FLAG_EXECUTABLE,
@@ -100,7 +100,7 @@ panvk_device_init_mempools(struct panvk_device *dev)
       .prealloc = false,
    };
 
-   panvk_pool_init(&dev->mempools.exec, dev, NULL, &exec_pool_props);
+   panvk_pool_init(&dev->mempools.exec, dev, NULL, NULL, &exec_pool_props);
 }
 
 static void

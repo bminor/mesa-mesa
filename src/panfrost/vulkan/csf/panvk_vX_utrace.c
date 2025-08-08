@@ -206,7 +206,7 @@ panvk_per_arch(utrace_clone_init_pool)(struct panvk_pool *pool,
       .label = "utrace clone pool",
       .owns_bos = true,
    };
-   panvk_pool_init(pool, dev, NULL, &pool_props);
+   panvk_pool_init(pool, dev, NULL, NULL, &pool_props);
 }
 
 static struct cs_buffer
