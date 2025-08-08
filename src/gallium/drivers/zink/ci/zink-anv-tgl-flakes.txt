@@ -78,3 +78,12 @@ spec@arb_gpu_shader_fp64@execution@arb_gpu_shader_fp64-vs-getuniformdv
 
 # Fails in the pre-merge job and passes in the nightly
 KHR-GL46.shader_viewport_layer_array.ShaderViewportIndexTestCase
+
+# Found an i915 error state at /sys/devices/pci0000:00/0000:00:02.0/drm/card0/error size=27622.
+# Saved to the job artifacts at /first.i915_error_state
+# https://gitlab.freedesktop.org/mesa/mesa/-/jobs/82125802#L5135
+glx@glx-context-flush-control
+glx@glx-multithread-buffer-busy-tracking-bug
+glx@glx-query-drawable-glx_width
+glx@glx-query-drawable-glxpixmap-glx_width
+glx@glx-swap-pixmap

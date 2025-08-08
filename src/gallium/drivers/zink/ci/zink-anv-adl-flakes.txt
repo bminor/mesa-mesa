@@ -65,3 +65,6 @@ spec@arb_shader_storage_buffer_object@max-ssbo-size@vsexceed
 KHR-Single-GL46.arrays_of_arrays_gl.InteractionFunctionCalls1_var_type_index_13
 
 dEQP-EGL.functional.sharing.gles2.multithread.simple.programs.link
+
+spec@amd_pinned_memory@offset=0
+spec@amd_pinned_memory@map-buffer offset=0
