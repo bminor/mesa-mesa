@@ -121,7 +121,7 @@ radv_emit_sqtt_userdata(const struct radv_cmd_buffer *cmd_buffer, const void *da
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const enum amd_gfx_level gfx_level = pdev->info.gfx_level;
    const enum amd_ip_type ring = radv_queue_family_to_ring(pdev, cmd_buffer->qf);
-   const struct radv_cmd_stream *cs = cmd_buffer->cs;
+   struct radv_cmd_stream *cs = cmd_buffer->cs;
    const uint32_t *dwords = (uint32_t *)data;
 
    /* SQTT user data packets aren't supported on SDMA queues. */
