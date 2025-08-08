@@ -87,7 +87,7 @@ enum vpe_plane_addr_type {
  */
 struct vpe_plane_address {
     enum vpe_plane_addr_type type; /**< Type of the plane address */
-    bool tmz_surface;              /**< Boolean to determine if the surface is allocated from tmz */
+    uint8_t tmz_surface;           /**< uint8_t to determine if the surface is allocated from tmz */
     /** @union
      *  @brief Union of plane address types
      */
