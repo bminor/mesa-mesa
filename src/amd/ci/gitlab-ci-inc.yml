@@ -347,9 +347,9 @@
 .ci-tron-test-amdgpu:
   variables:
     CI_TRON_PATTERN__JOB_WARN__REGEX: 'ring .* timeout'
-    CI_TRON_KERNEL__URL: "https://fs.mupuf.org/linux/v6.15.3/linux-x86_64"
-    CI_TRON_INITRAMFS__DEPMOD__URL: "https://fs.mupuf.org/linux/v6.15.3/linux-x86_64.depmod.cpio.xz"
-    CI_TRON_INITRAMFS__GPU__URL: "https://fs.mupuf.org/linux/v6.15.3/linux-x86_64.gpu.cpio"
+    CI_TRON_KERNEL__URL: "https://fs.mupuf.org/radv/linux-6.15.9/linux-x86_64"
+    CI_TRON_INITRAMFS__DEPMOD__URL: "https://fs.mupuf.org/radv/linux-6.15.9/linux-x86_64.depmod.cpio.xz"
+    CI_TRON_INITRAMFS__GPU__URL: "https://fs.mupuf.org/radv/linux-6.15.9/linux-x86_64.gpu.cpio"
     CI_TRON_INITRAMFS__GPU__FORMAT__0__ARCHIVE__KEEP__0__PATH: "(lib/(modules|firmware/amdgpu)/.*)"
     CI_TRON_KERNEL_CMDLINE__LOAD_MODULES: 'modules_load=amdgpu'
 
