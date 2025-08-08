@@ -24,6 +24,7 @@ dEQP-GLES3.functional.default_vertex_attrib.mat3x2.vertex_attrib_4f
 dEQP-GLES3.functional.fbo.multiview.samples_1
 dEQP-GLES3.functional.fbo.multiview.samples_2
 dEQP-GLES3.functional.fbo.multiview.samples_4
+dEQP-GLES3.functional.fragment_ops.interaction.basic_shader.46
 dEQP-GLES31.functional.copy_image.mixed.viewclass_64_bits_mixed.rg32ui_signed_r11_eac.cubemap_to_cubemap
 dEQP-GLES31.functional.copy_image.mixed.viewclass_64_bits_mixed.signed_r11_eac_rg32i.cubemap_to_texture2d_array
 dEQP-GLES31.functional.draw_indirect.compute_interop.large.drawelements_separate_grid_100x100_drawcount_200
@@ -75,6 +76,7 @@ spec@arb_timer_query@timestamp-get
 spec@ext_framebuffer_multisample@clip-and-scissor-blit 6 normal
 spec@ext_framebuffer_multisample@clip-and-scissor-blit 8 downsample
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_yuyv
+spec@ext_texture_shared_exponent@texwrap formats
 spec@ext_transform_feedback@discard-bitmap
 spec@glsl-1.50@execution@geometry@point-size-out
 spec@glsl-1.50@execution@redeclare-pervertex-out-subset-gs

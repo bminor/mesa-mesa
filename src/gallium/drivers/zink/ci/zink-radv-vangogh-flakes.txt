@@ -12,6 +12,7 @@ KHR-GL46.gpu_shader_fp64.builtin.modf_double
 KHR-GL46.gpu_shader_fp64.builtin.notequal_dvec4
 KHR-GL46.gpu_shader_fp64.builtin.outerproduct_dmat3x4
 KHR-GL46.gpu_shader_fp64.builtin.smoothstep_against_scalar_dvec3
+KHR-GL46.gpu_shader_fp64.builtin.trunc_dvec4
 KHR-GL46.layout_binding.buffer_layout_binding_atomicAdd_ComputeShader
 KHR-GL46.layout_binding.sampler2D_layout_binding_texture_ComputeShader
 KHR-GL46.layout_location.image_2d_array
@@ -73,6 +74,7 @@ dEQP-GLES3.functional.draw.random.71
 dEQP-GLES3.functional.fbo.multiview.samples_1
 dEQP-GLES3.functional.fbo.multiview.samples_2
 dEQP-GLES3.functional.fbo.multiview.samples_4
+dEQP-GLES3.functional.occlusion_query.depth_clear
 dEQP-GLES3.functional.texture.filtering.cube.combinations.linear_linear_mirror_mirror
 dEQP-GLES3.functional.texture.filtering.cube.combinations.linear_mipmap_nearest_linear_repeat_repeat
 dEQP-GLES3.functional.texture.shadow.cube.linear_mipmap_nearest.greater_depth_component32f
@@ -95,8 +97,10 @@ spec@!opengl 1.0@rasterpos
 spec@!opengl 1.0@rasterpos@glsl_vs_gs_linked
 spec@!opengl 1.0@rasterpos@glsl_vs_tes_linked
 spec@!opengl 1.1@depthstencil-default_fb-blit samples=4
+spec@!opengl 1.1@getteximage-formats
 spec@!opengl 1.1@max-texture-size
 spec@!opengl 1.1@ppgtt_memory_alignment
+spec@amd_pinned_memory@map-buffer offset=0
 spec@amd_shader_trinary_minmax@execution@built-in-functions@tcs-mid3-int-int-int
 spec@arb_compute_shader@zero-dispatch-size
 spec@arb_depth_buffer_float@texwrap formats
@@ -105,8 +109,10 @@ spec@arb_fragment_shader_interlock@arb_fragment_shader_interlock-image-load-stor
 spec@arb_instanced_arrays@arb_instanced_arrays-instanced_arrays-vbo
 spec@arb_map_buffer_range@copybuffersubdata increment-offset
 spec@arb_pipeline_statistics_query@arb_pipeline_statistics_query-comp
+spec@arb_point_parameters@arb_point_parameters-point-attenuation
 spec@arb_program_interface_query@arb_program_interface_query-resource-query
 spec@arb_shader_atomic_counters@semantics
+spec@arb_shader_atomic_counters@unused-result
 spec@arb_shader_image_load_store@shader-mem-barrier
 spec@arb_shader_image_load_store@shader-mem-barrier@Fragment shader/'coherent' qualifier memory barrier test/modulus=16
 spec@arb_shader_image_load_store@shader-mem-barrier@Fragment shader/'coherent' qualifier memory barrier test/modulus=64
@@ -147,6 +153,7 @@ spec@ext_texture_srgb@texwrap formats
 spec@ext_texture_srgb@texwrap formats bordercolor
 spec@glsl-1.10@execution@built-in-functions@fs-op-ge-float-float-using-if
 spec@glsl-1.10@execution@built-in-functions@vs-equal-vec2-vec2
+spec@glsl-1.10@execution@builtins@glsl-fs-atan-3
 spec@glsl-1.10@execution@variable-indexing@fs-temp-array-mat3-index-row-rd
 spec@glsl-1.30@execution@tex-miplevel-selection texturelod 1dshadow
 spec@glsl-1.30@execution@texelfetch fs sampler2darray 1x129x9-98x129x9

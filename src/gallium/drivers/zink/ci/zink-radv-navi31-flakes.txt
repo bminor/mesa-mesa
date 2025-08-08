@@ -24,6 +24,7 @@ dEQP-GLES3.functional.default_vertex_attrib.mat3x2.vertex_attrib_4f
 dEQP-GLES3.functional.fbo.multiview.samples_1
 dEQP-GLES3.functional.fbo.multiview.samples_2
 dEQP-GLES3.functional.fbo.multiview.samples_4
+dEQP-GLES3.functional.transform_feedback.array_element.interleaved.lines.mediump_mat2x3
 dEQP-GLES31.functional.copy_image.mixed.viewclass_64_bits_mixed.rg32ui_signed_r11_eac.cubemap_to_cubemap
 dEQP-GLES31.functional.copy_image.mixed.viewclass_64_bits_mixed.signed_r11_eac_rg32i.cubemap_to_texture2d_array
 dEQP-GLES31.functional.draw_indirect.compute_interop.large.drawelements_separate_grid_100x100_drawcount_200
@@ -38,6 +39,7 @@ spec@!opengl 1.0@rasterpos
 spec@!opengl 1.1@depthstencil-default_fb-blit samples=4
 spec@!opengl 1.1@depthstencil-default_fb-blit samples=6
 spec@!opengl 1.1@depthstencil-default_fb-copypixels samples=6
+spec@!opengl 1.1@draw-sync
 spec@!opengl 1.1@ppgtt_memory_alignment
 spec@arb_compute_shader@local-id-explosion
 spec@arb_depth_texture@fbo-depth-gl_depth_component16-blit
@@ -72,10 +74,13 @@ spec@arb_texture_multisample@arb_texture_multisample-dsa-texelfetch
 spec@arb_texture_multisample@arb_texture_multisample-dsa-texelfetch@Texture type: GL_RGB9_E5
 spec@arb_texture_rg@texture-rg
 spec@arb_timer_query@timestamp-get
+spec@egl_mesa_configless_context@basic
 spec@ext_framebuffer_multisample@clip-and-scissor-blit 6 normal
 spec@ext_framebuffer_multisample@clip-and-scissor-blit 8 downsample
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_yuyv
+spec@ext_texture_lod_bias@lodbias
 spec@ext_transform_feedback@discard-bitmap
+spec@glsl-1.30@execution@texelfetch fs sampler3d 1x129x9-98x129x9
 spec@glsl-1.50@execution@geometry@point-size-out
 spec@glsl-1.50@execution@redeclare-pervertex-out-subset-gs
 
