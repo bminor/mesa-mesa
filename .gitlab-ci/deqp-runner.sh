@@ -74,10 +74,11 @@ add_if_exists() {
   fi
 }
 
-for prefix in \
-  "$DRIVER_NAME" \
-  "$GPU_VERSION" \
-  ; do
+# remove duplicate values to avoid reading the same file multiple times
+{
+  echo "$DRIVER_NAME"
+  echo "$GPU_VERSION"
+} | sort -u | while read -r prefix; do
   add_if_exists "$prefix" flakes
   add_if_exists "$prefix" skips
 done
