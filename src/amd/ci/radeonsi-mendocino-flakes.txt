@@ -46,6 +46,8 @@ spec@arb_shader_image_load_store@coherency@Tessellation evaluation-Fragment shad
 
 spec@arb_tessellation_shader@arb_tessellation_shader-tes-gs-max-output -small -scan 1 50
 spec@arb_texture_multisample@arb_texture_multisample-dsa-texelfetch
+spec@arb_timer_query@query gl_timestamp
+spec@arb_timer_query@timestamp-get
 spec@egl_chromium_sync_control@conformance
 spec@egl_chromium_sync_control@conformance@eglGetSyncValuesCHROMIUM_msc_and_sbc_test
 spec@ext_external_objects@vk-ping-pong-single-sem

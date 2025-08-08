@@ -42,6 +42,7 @@ dEQP-GLES31.functional.shaders.opaque_type_indexing.sampler.uniform.fragment.sam
 
 glx@glx-visuals-stencil
 spec@!opengl 1.0@gl-1.0-ortho-pos
+spec@!opengl 1.0@gl-1.0-readpixsanity
 spec@!opengl 1.1@draw-pixels
 spec@!opengl 1.2@texture-packed-formats
 spec@amd_shader_trinary_minmax@execution@built-in-functions@fs-mid3-vec4-vec4-vec4
@@ -95,3 +96,4 @@ spec@glsl-1.30@execution@tex-miplevel-selection textureprojgradoffset 1d
 spec@glsl-1.30@execution@texturesize@fs-texturesize-sampler2darrayshadow
 spec@glsl-4.30@execution@built-in-functions@cs-op-bitxor-uvec3-uint
 spec@nv_copy_image@nv_copy_image-formats --samples=4
+spec@nv_copy_image@nv_copy_image-formats --samples=8
