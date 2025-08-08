@@ -232,18 +232,15 @@ ends_with_exclamation_mark(const char *str)
 }
 
 uint32_t
-device_select_get_default(const struct instance_info *info, const char *selection,
-                   uint32_t physical_device_count, VkPhysicalDevice *pPhysicalDevices,
-                   bool *expose_only_one_dev)
+device_select_get_default(const struct instance_info *info, uint32_t physical_device_count,
+                          VkPhysicalDevice *pPhysicalDevices, bool *expose_only_one_dev)
 {
    int default_idx = -1;
-   const char *dri_prime = getenv("DRI_PRIME");
-   bool debug = device_select_should_debug();
    int dri_prime_as_int = -1;
    int cpu_count = 0;
-   if (dri_prime) {
-      if (strchr(dri_prime, ':') == NULL)
-         dri_prime_as_int = atoi(dri_prime);
+   if (info->dri_prime) {
+      if (strchr(info->dri_prime, ':') == NULL)
+         dri_prime_as_int = atoi(info->dri_prime);
 
       if (dri_prime_as_int < 0)
          dri_prime_as_int = 0;
@@ -258,22 +255,22 @@ device_select_get_default(const struct instance_info *info, const char *selectio
       cpu_count += fill_drm_device_info(info, &pci_infos[i], pPhysicalDevices[i]) ? 1 : 0;
    }
 
-   if (selection)
+   if (info->selection)
       default_idx =
-         device_select_find_explicit_default(pci_infos, physical_device_count, selection);
+         device_select_find_explicit_default(pci_infos, physical_device_count, info->selection);
    if (default_idx != -1) {
-      *expose_only_one_dev = ends_with_exclamation_mark(selection);
+      *expose_only_one_dev = ends_with_exclamation_mark(info->selection);
    }
 
-   if (default_idx == -1 && dri_prime && dri_prime_as_int == 0) {
+   if (default_idx == -1 && info->dri_prime && dri_prime_as_int == 0) {
       /* Try DRI_PRIME=vendor_id:device_id */
       default_idx =
-         device_select_find_explicit_default(pci_infos, physical_device_count, dri_prime);
+         device_select_find_explicit_default(pci_infos, physical_device_count, info->dri_prime);
       if (default_idx != -1) {
-         if (debug)
+         if (info->debug)
             fprintf(stderr, "device-select: device_select_find_explicit_default selected %i\n",
                     default_idx);
-         *expose_only_one_dev = ends_with_exclamation_mark(dri_prime);
+         *expose_only_one_dev = ends_with_exclamation_mark(info->dri_prime);
       }
 
       if (default_idx == -1) {
@@ -282,26 +279,26 @@ device_select_get_default(const struct instance_info *info, const char *selectio
             fprintf(stderr, "device-select: cannot correctly use DRI_PRIME tag\n");
          else
             default_idx = device_select_find_dri_prime_tag_default(pci_infos, physical_device_count,
-                                                                   dri_prime);
+                                                                   info->dri_prime);
 
          if (default_idx != -1) {
-            if (debug)
+            if (info->debug)
                fprintf(stderr,
                        "device-select: device_select_find_dri_prime_tag_default selected %i\n",
                        default_idx);
-            *expose_only_one_dev = ends_with_exclamation_mark(dri_prime);
+            *expose_only_one_dev = ends_with_exclamation_mark(info->dri_prime);
          }
       }
    }
    if (default_idx == -1 && info->has_wayland) {
       default_idx = device_select_find_wayland_pci_default(pci_infos, physical_device_count);
-      if (debug && default_idx != -1)
+      if (info->debug && default_idx != -1)
          fprintf(stderr, "device-select: device_select_find_wayland_pci_default selected %i\n",
                  default_idx);
    }
    if (default_idx == -1 && info->has_xcb) {
       default_idx = device_select_find_xcb_pci_default(pci_infos, physical_device_count);
-      if (debug && default_idx != -1)
+      if (info->debug && default_idx != -1)
          fprintf(stderr, "device-select: device_select_find_xcb_pci_default selected %i\n",
                  default_idx);
    }
@@ -310,12 +307,12 @@ device_select_get_default(const struct instance_info *info, const char *selectio
          default_idx = device_select_find_boot_vga_default(pci_infos, physical_device_count);
       else
          default_idx = device_select_find_boot_vga_vid_did(pci_infos, physical_device_count);
-      if (debug && default_idx != -1)
+      if (info->debug && default_idx != -1)
          fprintf(stderr, "device-select: device_select_find_boot_vga selected %i\n", default_idx);
    }
    if (default_idx == -1 && cpu_count) {
       default_idx = device_select_find_non_cpu(pci_infos, physical_device_count);
-      if (debug && default_idx != -1)
+      if (info->debug && default_idx != -1)
          fprintf(stderr, "device-select: device_select_find_non_cpu selected %i\n", default_idx);
    }
    /* If no GPU has been selected so far, select the first non-CPU device. If none are available,
@@ -324,14 +321,14 @@ device_select_get_default(const struct instance_info *info, const char *selectio
    if (default_idx == -1) {
       default_idx = device_select_find_non_cpu(pci_infos, physical_device_count);
       if (default_idx != -1) {
-         if (debug)
+         if (info->debug)
             fprintf(stderr, "device-select: device_select_find_non_cpu selected %i\n", default_idx);
       } else if (cpu_count) {
          default_idx = 0;
       }
    }
    /* DRI_PRIME=n handling - pick any other device than default. */
-   if (dri_prime_as_int > 0 && debug)
+   if (dri_prime_as_int > 0 && info->debug)
       fprintf(stderr, "device-select: DRI_PRIME=%d, default_idx so far: %i\n", dri_prime_as_int,
               default_idx);
    if (dri_prime_as_int > 0 && physical_device_count > (cpu_count + 1)) {
@@ -339,9 +336,9 @@ device_select_get_default(const struct instance_info *info, const char *selectio
          default_idx =
             find_non_cpu_skip(pci_infos, physical_device_count, default_idx, dri_prime_as_int);
          if (default_idx != -1) {
-            if (debug)
+            if (info->debug)
                fprintf(stderr, "device-select: find_non_cpu_skip selected %i\n", default_idx);
-            *expose_only_one_dev = ends_with_exclamation_mark(dri_prime);
+            *expose_only_one_dev = ends_with_exclamation_mark(info->dri_prime);
          }
       }
    }

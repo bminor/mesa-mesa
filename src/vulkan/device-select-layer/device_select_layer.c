@@ -151,6 +151,15 @@ device_select_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
    info->has_vulkan11 = pCreateInfo->pApplicationInfo &&
                         pCreateInfo->pApplicationInfo->apiVersion >= VK_MAKE_VERSION(1, 1, 0);
 
+   info->debug = debug_get_bool_option("MESA_VK_DEVICE_SELECT_DEBUG", false) ||
+                 debug_get_bool_option("DRI_PRIME_DEBUG", false);
+   info->selection = getenv("MESA_VK_DEVICE_SELECT");
+   info->dri_prime = getenv("DRI_PRIME");
+   const char *force_default_device = getenv("MESA_VK_DEVICE_SELECT_FORCE_DEFAULT_DEVICE");
+   info->force_default_device = force_default_device && !strcmp(force_default_device, "1");
+   info->selection = info->selection ? strdup(info->selection) : NULL;
+   info->dri_prime = info->dri_prime ? strdup(info->dri_prime) : NULL;
+
 #define DEVSEL_GET_CB(func)                                                                        \
    info->func = (PFN_vk##func)info->GetInstanceProcAddr(*pInstance, "vk" #func)
    DEVSEL_GET_CB(DestroyInstance);
@@ -174,14 +183,9 @@ device_select_DestroyInstance(VkInstance instance, const VkAllocationCallbacks *
 
    device_select_layer_remove_instance(instance);
    info->DestroyInstance(instance, pAllocator);
+   free(info->dri_prime);
+   free(info->selection);
    free(info);
-}
-
-bool
-device_select_should_debug(void)
-{
-   return debug_get_bool_option("MESA_VK_DEVICE_SELECT_DEBUG", false) ||
-          debug_get_bool_option("DRI_PRIME_DEBUG", false);
 }
 
 void
@@ -243,7 +247,6 @@ device_select_EnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalD
    struct instance_info *info = device_select_layer_get_instance(instance);
    uint32_t physical_device_count = 0;
    uint32_t selected_physical_device_count = 0;
-   const char *selection = getenv("MESA_VK_DEVICE_SELECT");
    bool expose_only_one_dev = false;
    if (info->zink && info->xwayland)
       return info->EnumeratePhysicalDevices(instance, pPhysicalDeviceCount, pPhysicalDevices);
@@ -281,16 +284,16 @@ device_select_EnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalD
          free(extensions);
       }
    }
-   if (device_select_should_debug() || (selection && strcmp(selection, "list") == 0)) {
+   if (info->debug || (info->selection && strcmp(info->selection, "list") == 0)) {
       fprintf(stderr, "selectable devices:\n");
       for (unsigned i = 0; i < physical_device_count; ++i)
          print_gpu(info, i, physical_devices[i]);
 
-      if (selection && strcmp(selection, "list") == 0)
+      if (info->selection && strcmp(info->selection, "list") == 0)
          exit(0);
    }
 
-   unsigned selected_index = device_select_get_default(info, selection, physical_device_count,
+   unsigned selected_index = device_select_get_default(info, physical_device_count,
                                                        physical_devices, &expose_only_one_dev);
    selected_physical_device_count = physical_device_count;
    selected_physical_devices[0] = physical_devices[selected_index];
@@ -306,9 +309,7 @@ device_select_EnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalD
    assert(result == VK_SUCCESS);
 
    /* do not give multiple device option to app if force default device */
-   const char *force_default_device = getenv("MESA_VK_DEVICE_SELECT_FORCE_DEFAULT_DEVICE");
-   if (force_default_device && !strcmp(force_default_device, "1") &&
-       selected_physical_device_count != 0)
+   if (info->force_default_device && selected_physical_device_count != 0)
       expose_only_one_dev = true;
 
    if (expose_only_one_dev)

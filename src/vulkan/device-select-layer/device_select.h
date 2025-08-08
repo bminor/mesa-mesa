@@ -40,6 +40,11 @@ struct instance_info {
    bool has_pci_bus, has_vulkan11;
    bool has_wayland, has_xcb;
    bool zink, xwayland, xserver;
+
+   bool debug;
+   char *selection;
+   char *dri_prime;
+   bool force_default_device;
 };
 
 /* We don't use `drmPciDeviceInfo` because it uses 16-bit ids,
@@ -76,13 +81,10 @@ device_select_find_wayland_pci_default(struct device_pci_info *devices, uint32_t
 }
 #endif
 
-bool device_select_should_debug(void);
-
 void device_select_get_properties(const struct instance_info *info, VkPhysicalDevice device,
                                   VkPhysicalDeviceProperties2 *properties);
 
-uint32_t device_select_get_default(const struct instance_info *info, const char *selection,
-                                   uint32_t physical_device_count,
+uint32_t device_select_get_default(const struct instance_info *info, uint32_t physical_device_count,
                                    VkPhysicalDevice *pPhysicalDevices, bool *expose_only_one_dev);
 
 #endif
