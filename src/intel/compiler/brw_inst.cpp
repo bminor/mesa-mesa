@@ -81,17 +81,11 @@ brw_inst::brw_inst(const brw_inst &that)
    initialize_sources(this, that.src, that.sources);
 }
 
-brw_inst::~brw_inst()
-{
-   if (this->src != this->builtin_src)
-      delete[] this->src;
-}
-
 static void
 initialize_sources(brw_inst *inst, const brw_reg src[], uint8_t num_sources)
 {
    if (num_sources > ARRAY_SIZE(inst->builtin_src))
-      inst->src = new brw_reg[num_sources];
+      inst->src = ralloc_array(inst, brw_reg, num_sources);
    else
       inst->src = inst->builtin_src;
 
@@ -114,7 +108,7 @@ brw_inst::resize_sources(uint8_t num_sources)
 
    if (old_src == this->builtin_src) {
       if (num_sources > builtin_size) {
-         new_src = new brw_reg[num_sources];
+         new_src = ralloc_array(this, brw_reg, num_sources);
          for (unsigned i = 0; i < this->sources; i++)
             new_src[i] = old_src[i];
 
@@ -132,13 +126,10 @@ brw_inst::resize_sources(uint8_t num_sources)
          new_src = old_src;
 
       } else {
-         new_src = new brw_reg[num_sources];
+         new_src = ralloc_array(this, brw_reg, num_sources);
          for (unsigned i = 0; i < this->sources; i++)
             new_src[i] = old_src[i];
       }
-
-      if (old_src != new_src)
-         delete[] old_src;
    }
 
    this->sources = num_sources;

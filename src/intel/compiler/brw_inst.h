@@ -51,7 +51,6 @@ public:
    brw_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
            const brw_reg src[], unsigned sources);
    brw_inst(const brw_inst &that);
-   ~brw_inst();
 
    void resize_sources(uint8_t num_sources);
 
