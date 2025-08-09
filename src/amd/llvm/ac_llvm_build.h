@@ -481,14 +481,7 @@ struct ac_ngg_prim {
    LLVMValueRef passthrough;
 };
 
-static inline LLVMValueRef ac_get_arg(struct ac_llvm_context *ctx, struct ac_arg arg)
-{
-   assert(arg.used);
-   if (arg.arg_index == ctx->ring_offsets_index)
-      return ctx->ring_offsets;
-   int offset = arg.arg_index > ctx->ring_offsets_index ? -1 : 0;
-   return LLVMGetParam(ctx->main_function.value, arg.arg_index + offset);
-}
+LLVMValueRef ac_get_arg(struct ac_llvm_context *ctx, struct ac_arg arg);
 
 enum ac_llvm_calling_convention
 {
