@@ -308,6 +308,9 @@ bo_create_internal(struct zink_screen *screen,
       goto fail;
    }
 
+   VkImportMemoryHostPointerInfoEXT *hpi = vk_find_struct(&mai, IMPORT_MEMORY_HOST_POINTER_INFO_EXT);
+   bo->u.real.is_user_ptr = hpi && hpi->pHostPointer;
+
    if (init_pb_cache) {
       bo->u.real.use_reusable_pool = true;
       pb_cache_init_entry(&screen->pb.bo_cache, bo->cache_entry, &bo->base.base, mem_type_idx);
