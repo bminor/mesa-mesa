@@ -115,7 +115,8 @@ nir_metadata_invalidate(nir_shader *shader)
          }
          block->live_in = block->live_out = NULL;
 
-         if (impl->valid_metadata & nir_metadata_dominance)
+         if (impl->valid_metadata & nir_metadata_dominance &&
+             block->dom_children != block->_dom_children_storage)
             ralloc_free(block->dom_children);
          block->dom_children = NULL;
          block->num_dom_children = 1;

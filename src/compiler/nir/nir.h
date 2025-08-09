@@ -3089,6 +3089,15 @@ typedef struct nir_block {
    unsigned num_dom_children;
    nir_block **dom_children;
 
+   /* This is the backing storage for "dom_children" if the array is small
+    * enough to fit in it, so that we don't have to ralloc the array.
+    *
+    * 99.99996% of blocks in my GLSL shader-db have between 1 and 3 dom
+    * children, the remaning 0.00004% have 4, and none have more than 4.
+    * This reduces ralloc overhead for allocating "dom_children" to basically 0.
+    */
+   nir_block *_dom_children_storage[3];
+
    /* Set of nir_blocks on the dominance frontier of this block */
    struct set *dom_frontier;
 

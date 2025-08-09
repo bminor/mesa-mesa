@@ -139,8 +139,13 @@ calc_dom_children(nir_function_impl *impl)
          block->dom_children = NULL;
          continue;
       }
-      block->dom_children = ralloc_array(mem_ctx, nir_block *,
-                                         block->num_dom_children);
+
+      if (block->num_dom_children <= 3) {
+         block->dom_children = block->_dom_children_storage;
+      } else {
+         block->dom_children = ralloc_array(mem_ctx, nir_block *,
+                                            block->num_dom_children);
+      }
       block->num_dom_children = 0;
    }
 

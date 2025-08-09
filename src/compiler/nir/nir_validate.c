@@ -1748,7 +1748,8 @@ validate_dominance(nir_function_impl *impl, validate_state *state)
       nir_block *block = (nir_block *)entry->key;
       block_dom_metadata *md = &blocks[entry - state->blocks->table];
 
-      ralloc_free(block->dom_children);
+      if (block->dom_children != block->_dom_children_storage)
+         ralloc_free(block->dom_children);
       ralloc_free(block->dom_frontier);
 
       block->index = md->index;
