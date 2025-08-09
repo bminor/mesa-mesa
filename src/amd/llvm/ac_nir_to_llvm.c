@@ -2761,8 +2761,11 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
       if (ctx->abi->load_grid_size_from_user_sgpr) {
          result = ac_get_arg(&ctx->ac, ctx->args->num_work_groups);
       } else {
-         result = ac_build_load_invariant(&ctx->ac,
-            ac_get_ptr_arg(&ctx->ac, ctx->args, ctx->args->num_work_groups), ctx->ac.i32_0);
+         struct ac_llvm_pointer ptr;
+         ptr.pointee_type = ctx->ac.v3i32;
+         ptr.value = ac_get_arg(&ctx->ac, ctx->args->num_work_groups);
+
+         result = ac_build_load_invariant(&ctx->ac, ptr, ctx->ac.i32_0);
       }
       break;
    case nir_intrinsic_load_subgroup_id:
