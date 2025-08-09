@@ -137,6 +137,14 @@ _mesa_set_init(struct set *ht, void *mem_ctx,
    return ht->table != NULL;
 }
 
+bool
+_mesa_pointer_set_init(struct set *ht, void *mem_ctx)
+{
+   return _mesa_set_init(ht, mem_ctx, _mesa_hash_pointer,
+                         _mesa_key_pointer_equal);
+}
+
+/* It's preferred to use _mesa_set_init instead of this to skip ralloc. */
 struct set *
 _mesa_set_create(void *mem_ctx,
                  uint32_t (*key_hash_function)(const void *key),
@@ -170,7 +178,14 @@ key_u32_equals(const void *a, const void *b)
    return (uint32_t)(uintptr_t)a == (uint32_t)(uintptr_t)b;
 }
 
+bool
+_mesa_u32_set_init(struct set *ht, void *mem_ctx)
+{
+   return _mesa_set_init(ht, mem_ctx, key_u32_hash, key_u32_equals);
+}
+
 /* key == 0 and key == deleted_key are not allowed */
+/* It's preferred to use _mesa_u32_set_init instead of this to skip ralloc. */
 struct set *
 _mesa_set_create_u32_keys(void *mem_ctx)
 {
@@ -200,6 +215,26 @@ _mesa_set_clone(struct set *set, void *dst_mem_ctx)
 }
 
 /**
+ * Deallocates the internal table. This is optional and doesn't need to be
+ * called when:
+ * - you don't need to call delete_function
+ * - the initial ralloc context is non-NULL, meaning it gets freed
+ *   automatically when the ralloc parent is freed.
+ */
+void
+_mesa_set_fini(struct set *ht,
+               void (*delete_function)(struct set_entry *entry))
+{
+   if (delete_function) {
+      set_foreach (ht, entry) {
+         delete_function(entry);
+      }
+   }
+   ralloc_free(ht->table);
+   ht->table = NULL;
+}
+
+/**
  * Frees the given set.
  *
  * If delete_function is passed, it gets called on each entry present before
@@ -211,12 +246,7 @@ _mesa_set_destroy(struct set *ht, void (*delete_function)(struct set_entry *entr
    if (!ht)
       return;
 
-   if (delete_function) {
-      set_foreach (ht, entry) {
-         delete_function(entry);
-      }
-   }
-   ralloc_free(ht->table);
+   _mesa_set_fini(ht, delete_function);
    ralloc_free(ht);
 }
 
@@ -605,6 +635,7 @@ _mesa_set_next_entry(const struct set *ht, struct set_entry *entry)
 }
 
 /**
+ * It's preferred to use _mesa_pointer_set_init instead of this to skip ralloc.
  * Helper to create a set with pointer keys.
  */
 struct set *
