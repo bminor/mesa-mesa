@@ -916,10 +916,10 @@ nvk_image_init(struct nvk_device *dev,
          ycbcr_info->planes[plane].denominator_scales[1] : 1;
 
       if (image->separate_zs) {
-	 if (plane == 0)
-	    format = vk_format_depth_only(format);
-	 else if (plane == 1)
-	    format = vk_format_stencil_only(format);
+         if (plane == 0)
+            format = vk_format_depth_only(format);
+         else if (plane == 1)
+            format = vk_format_stencil_only(format);
       }
 
       nil_info[plane] = (struct nil_image_init_info) {
@@ -1113,20 +1113,14 @@ nvk_CreateImage(VkDevice _device,
 
    for (uint8_t plane = 0; plane < image->plane_count; plane++) {
       result = nvk_image_plane_alloc_va(dev, image, &image->planes[plane]);
-      if (result != VK_SUCCESS) {
-         nvk_image_finish(dev, image, pAllocator);
-         vk_free2(&dev->vk.alloc, pAllocator, image);
-         return result;
-      }
+      if (result != VK_SUCCESS)
+         goto fail;
    }
 
    if (image->stencil_copy_temp.nil.size_B > 0) {
       result = nvk_image_plane_alloc_va(dev, image, &image->stencil_copy_temp);
-      if (result != VK_SUCCESS) {
-         nvk_image_finish(dev, image, pAllocator);
-         vk_free2(&dev->vk.alloc, pAllocator, image);
-         return result;
-      }
+      if (result != VK_SUCCESS)
+         goto fail;
    }
 
    if (image->linear_tiled_shadow.nil.size_B > 0) {
@@ -1136,11 +1130,9 @@ nvk_CreateImage(VkDevice _device,
                                          shadow->nil.pte_kind, shadow->nil.tile_mode,
                                          NVKMD_MEM_LOCAL,
                                          &image->linear_tiled_shadow_mem);
-      if (result != VK_SUCCESS) {
-         nvk_image_finish(dev, image, pAllocator);
-         vk_free2(&dev->vk.alloc, pAllocator, image);
-         return result;
-      }
+      if (result != VK_SUCCESS)
+         goto fail;
+
       shadow->addr = image->linear_tiled_shadow_mem->va->addr;
    }
 
@@ -1148,16 +1140,18 @@ nvk_CreateImage(VkDevice _device,
    if (vk_image_is_android_native_buffer(&image->vk)) {
       result = vk_android_import_anb(&dev->vk, pCreateInfo, pAllocator,
                                      &image->vk);
-      if (result != VK_SUCCESS) {
-         nvk_image_finish(dev, image, pAllocator);
-         vk_free2(&dev->vk.alloc, pAllocator, image);
-         return result;
-      }
+      if (result != VK_SUCCESS)
+         goto fail;
    }
 
    *pImage = nvk_image_to_handle(image);
 
    return VK_SUCCESS;
+
+fail:
+   nvk_image_finish(dev, image, pAllocator);
+   vk_free2(&dev->vk.alloc, pAllocator, image);
+   return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL
