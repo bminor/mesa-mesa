@@ -1409,7 +1409,7 @@ opt_copy_propagation_local(brw_shader &s, linear_ctx *lin_ctx,
    const struct intel_device_info *devinfo = s.devinfo;
    bool progress = false;
 
-   foreach_inst_in_block(brw_inst, inst, block) {
+   foreach_inst_in_block_safe(brw_inst, inst, block) {
       /* The non-defs copy propagation passes should not be called while
        * LOAD_REG instructions still exist.
        */

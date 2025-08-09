@@ -80,19 +80,37 @@ brw_clone_inst(brw_shader &s, const brw_inst *inst)
    return clone;
 }
 
-void
-brw_inst::resize_sources(uint8_t num_sources)
+static unsigned
+brw_num_sources_for_opcode(const brw_shader &s, enum opcode opcode)
 {
-   if (this->sources < num_sources) {
-      brw_reg *new_src = ralloc_array(this, brw_reg, num_sources);
+   const struct opcode_desc *desc =
+      brw_opcode_desc(&s.compiler->isa, opcode);
+   if (desc)
+      return desc->nsrc;
+   if (opcode == SHADER_OPCODE_SEND)
+      return SEND_NUM_SRCS;
+   return -1;
+}
 
-      for (unsigned i = 0; i < this->sources; i++)
-         new_src[i] = this->src[i];
+brw_inst *
+brw_transform_inst(brw_shader &s, brw_inst *inst, enum opcode new_opcode,
+                   unsigned new_num_sources)
+{
+   inst->opcode = new_opcode;
+   if (new_num_sources == UINT_MAX)
+      new_num_sources = brw_num_sources_for_opcode(s, new_opcode);
+   assert(new_num_sources != UINT_MAX);
 
-      this->src = new_src;
+   if (new_num_sources > inst->sources) {
+      brw_reg *new_src = ralloc_array(inst, brw_reg, new_num_sources);
+      for (unsigned i = 0; i < inst->sources; i++)
+         new_src[i] = inst->src[i];
+      inst->src = new_src;
    }
 
-   this->sources = num_sources;
+   inst->sources = new_num_sources;
+
+   return inst;
 }
 
 bool

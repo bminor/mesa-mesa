@@ -162,10 +162,9 @@ brw_lower_csel(brw_shader &s)
          ibld.CMP(retype(brw_null_reg(), orig_type),
                   inst->src[2], zero, inst->conditional_mod);
 
-         inst->opcode = BRW_OPCODE_SEL;
+         inst = brw_transform_inst(s, inst, BRW_OPCODE_SEL, 2);
          inst->predicate = BRW_PREDICATE_NORMAL;
          inst->conditional_mod = BRW_CONDITIONAL_NONE;
-         inst->resize_sources(2);
          progress = true;
       } else if (new_type != orig_type) {
          inst->src[0].type = new_type;
@@ -364,10 +363,9 @@ lower_derivative(brw_shader &s, brw_inst *inst,
    ubld.emit(SHADER_OPCODE_QUAD_SWIZZLE, tmp0, inst->src[0], brw_imm_ud(swz0));
    ubld.emit(SHADER_OPCODE_QUAD_SWIZZLE, tmp1, inst->src[0], brw_imm_ud(swz1));
 
-   inst->resize_sources(2);
+   inst = brw_transform_inst(s, inst, BRW_OPCODE_ADD);
    inst->src[0] = negate(tmp0);
    inst->src[1] = tmp1;
-   inst->opcode = BRW_OPCODE_ADD;
 
    return true;
 }
@@ -384,7 +382,7 @@ brw_lower_derivatives(brw_shader &s)
    if (s.devinfo->verx10 < 125)
       return false;
 
-   foreach_block_and_inst(block, brw_inst, inst, s.cfg) {
+   foreach_block_and_inst_safe(block, brw_inst, inst, s.cfg) {
       if (inst->opcode == FS_OPCODE_DDX_COARSE)
          progress |= lower_derivative(s, inst,
                                       BRW_SWIZZLE_XXXX, BRW_SWIZZLE_YYYY);
@@ -615,8 +613,7 @@ brw_lower_bfloat_conversion(brw_shader &s, brw_inst *inst)
        * not work since it doesn't preserve -0.0f!
        */
       assert(inst->src[0].type == BRW_TYPE_F);
-      inst->resize_sources(2);
-      inst->opcode = BRW_OPCODE_ADD;
+      inst = brw_transform_inst(s, inst, BRW_OPCODE_ADD);
       inst->src[1] = brw_imm_f(-0.0f);
       return true;
 

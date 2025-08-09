@@ -1321,11 +1321,10 @@ brw_assign_urb_setup(brw_shader &s)
    /* Offset all the urb_setup[] index by the actual position of the
     * setup regs, now that the location of the constants has been chosen.
     */
-   foreach_block_and_inst(block, brw_inst, inst, s.cfg) {
+   foreach_block_and_inst_safe(block, brw_inst, inst, s.cfg) {
       if (inst->opcode == FS_OPCODE_READ_ATTRIBUTE_PAYLOAD) {
          brw_reg offset = inst->src[0];
-         inst->resize_sources(3);
-         inst->opcode = SHADER_OPCODE_MOV_INDIRECT;
+         inst = brw_transform_inst(s, inst, SHADER_OPCODE_MOV_INDIRECT, 3);
          inst->src[0] = retype(brw_vec8_grf(urb_start, 0), BRW_TYPE_UD);
          inst->src[1] = offset;
          inst->src[2] = brw_imm_ud(REG_SIZE * 2 * 32);

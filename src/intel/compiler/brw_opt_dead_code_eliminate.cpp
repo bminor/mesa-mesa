@@ -134,7 +134,7 @@ brw_opt_dead_code_eliminate(brw_shader &s)
          if (inst->dst.is_null() && can_eliminate(devinfo, inst, flag_live) &&
              !(inst->opcode == BRW_OPCODE_NOP &&
                brw_exec_list_is_singular(&block->instructions))) {
-            inst->opcode = BRW_OPCODE_NOP;
+            inst = brw_transform_inst(s, inst, BRW_OPCODE_NOP);
             progress = true;
          }
 

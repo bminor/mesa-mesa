@@ -50,7 +50,7 @@ lower_urb_read_logical_send(const brw_builder &bld, brw_inst *inst)
    brw_reg payload = retype(brw_allocate_vgrf_units(*bld.shader, header_size), BRW_TYPE_F);
    bld.LOAD_PAYLOAD(payload, payload_sources, header_size, header_size);
 
-   inst->opcode = SHADER_OPCODE_SEND;
+   inst = brw_transform_inst(bld, inst, SHADER_OPCODE_SEND);
    inst->header_size = header_size;
 
    inst->sfid = BRW_SFID_URB;
@@ -64,8 +64,6 @@ lower_urb_read_logical_send(const brw_builder &bld, brw_inst *inst)
    inst->ex_desc = 0;
    inst->ex_mlen = 0;
    inst->send_is_volatile = true;
-
-   inst->resize_sources(SEND_NUM_SRCS);
 
    inst->src[SEND_SRC_DESC]     = brw_imm_ud(0);
    inst->src[SEND_SRC_EX_DESC]  = brw_imm_ud(0);
@@ -116,14 +114,13 @@ lower_urb_read_logical_send_xe2(const brw_builder &bld, brw_inst *inst)
                              LSC_CACHE(devinfo, LOAD, L1UC_L3UC));
 
    /* Update the original instruction. */
-   inst->opcode = SHADER_OPCODE_SEND;
+   inst = brw_transform_inst(bld, inst, SHADER_OPCODE_SEND);
+
    inst->mlen = lsc_msg_addr_len(devinfo, LSC_ADDR_SIZE_A32, inst->exec_size);
    inst->ex_mlen = 0;
    inst->header_size = 0;
    inst->send_has_side_effects = true;
    inst->send_is_volatile = false;
-
-   inst->resize_sources(SEND_NUM_SRCS);
 
    inst->src[SEND_SRC_DESC]     = brw_imm_ud(0);
    inst->src[SEND_SRC_EX_DESC]  = brw_imm_ud(0);
@@ -169,7 +166,7 @@ lower_urb_write_logical_send(const brw_builder &bld, brw_inst *inst)
 
    delete [] payload_sources;
 
-   inst->opcode = SHADER_OPCODE_SEND;
+   inst = brw_transform_inst(bld, inst, SHADER_OPCODE_SEND);
    inst->header_size = header_size;
    inst->dst = brw_null_reg();
 
@@ -184,8 +181,6 @@ lower_urb_write_logical_send(const brw_builder &bld, brw_inst *inst)
    inst->ex_desc = 0;
    inst->ex_mlen = 0;
    inst->send_has_side_effects = true;
-
-   inst->resize_sources(SEND_NUM_SRCS);
 
    inst->src[SEND_SRC_DESC]     = brw_imm_ud(0);
    inst->src[SEND_SRC_EX_DESC]  = brw_imm_ud(0);
@@ -254,14 +249,12 @@ lower_urb_write_logical_send_xe2(const brw_builder &bld, brw_inst *inst)
 
 
    /* Update the original instruction. */
-   inst->opcode = SHADER_OPCODE_SEND;
+   inst = brw_transform_inst(bld, inst, SHADER_OPCODE_SEND);
    inst->mlen = lsc_msg_addr_len(devinfo, LSC_ADDR_SIZE_A32, inst->exec_size);
    inst->ex_mlen = ex_mlen;
    inst->header_size = 0;
    inst->send_has_side_effects = true;
    inst->send_is_volatile = false;
-
-   inst->resize_sources(SEND_NUM_SRCS);
 
    inst->src[SEND_SRC_DESC]     = desc;
    inst->src[SEND_SRC_EX_DESC]  = brw_imm_ud(0);
@@ -502,9 +495,9 @@ lower_fb_write_logical_send(const brw_builder &bld, brw_inst *inst,
    }
    inst->ex_desc = ex_desc;
 
-   inst->opcode = SHADER_OPCODE_SEND;
+   inst = brw_transform_inst(bld, inst, SHADER_OPCODE_SEND);
    inst->sfid = BRW_SFID_RENDER_CACHE;
-   inst->resize_sources(SEND_NUM_SRCS);
+
    inst->src[SEND_SRC_DESC] = desc;
    inst->src[SEND_SRC_EX_DESC] = brw_imm_ud(0);
    inst->src[SEND_SRC_PAYLOAD1] = payload;
@@ -588,8 +581,7 @@ lower_fb_read_logical_send(const brw_builder &bld, brw_inst *inst,
                         component(header, 0),
                         brw_imm_ud(~INTEL_MASK(14, 11)));
 
-   inst->opcode = SHADER_OPCODE_SEND;
-   inst->resize_sources(SEND_NUM_SRCS);
+   inst = brw_transform_inst(bld, inst, SHADER_OPCODE_SEND);
    inst->src[SEND_SRC_DESC]     = brw_imm_ud(0);
    inst->src[SEND_SRC_EX_DESC]  = brw_imm_ud(0);
    inst->src[SEND_SRC_PAYLOAD1] = header;
@@ -1172,8 +1164,8 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst,
    }
 
    /* Generate the SEND. */
-   inst->opcode = SHADER_OPCODE_SEND;
-   inst->resize_sources(SEND_NUM_SRCS);
+   inst = brw_transform_inst(bld, inst, SHADER_OPCODE_SEND);
+
    inst->mlen = mlen;
    inst->header_size = header_size;
    inst->sfid = BRW_SFID_SAMPLER;
@@ -1681,15 +1673,15 @@ lower_lsc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
 
    setup_lsc_surface_descriptors(bld, inst, inst->desc, binding, base_offset);
 
-   inst->opcode = SHADER_OPCODE_SEND;
+
+   inst = brw_transform_inst(bld, inst, SHADER_OPCODE_SEND);
+
    inst->mlen = lsc_msg_addr_len(devinfo, addr_size,
                                  inst->exec_size * coord_components);
    inst->ex_mlen = ex_mlen;
    inst->header_size = 0;
    inst->send_has_side_effects = has_side_effects;
    inst->send_is_volatile = !has_side_effects || volatile_access;
-
-   inst->resize_sources(SEND_NUM_SRCS);
 
    /* Finally, the payload */
    inst->src[SEND_SRC_PAYLOAD1] = payload;
@@ -1965,7 +1957,7 @@ lower_hdc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
    assert(sfid);
 
    /* Update the original instruction. */
-   inst->opcode = SHADER_OPCODE_SEND;
+   inst = brw_transform_inst(bld, inst, SHADER_OPCODE_SEND);
    inst->sfid = sfid;
    inst->mlen = mlen;
    inst->ex_mlen = ex_mlen;
@@ -1977,8 +1969,6 @@ lower_hdc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
       assert(inst->force_writemask_all);
       inst->exec_size = components > 8 ? 16 : 8;
    }
-
-   inst->resize_sources(SEND_NUM_SRCS);
 
    /* Set up descriptors */
    switch (binding_type) {
@@ -2046,9 +2036,9 @@ lower_lsc_varying_pull_constant_logical_send(const brw_builder &bld,
    assert(alignment_B.file == IMM);
    unsigned alignment = alignment_B.ud;
 
-   inst->opcode = SHADER_OPCODE_SEND;
+   inst = brw_transform_inst(bld, inst, SHADER_OPCODE_SEND);
+
    inst->sfid = BRW_SFID_UGM;
-   inst->resize_sources(SEND_NUM_SRCS);
    inst->send_ex_bso = surf_type == LSC_ADDR_SURFTYPE_BSS &&
                        compiler->extended_bindless_surface_offset;
 
@@ -2130,9 +2120,9 @@ lower_varying_pull_constant_logical_send(const brw_builder &bld, brw_inst *inst)
    assert(inst->src[PULL_VARYING_CONSTANT_SRC_ALIGNMENT].file == IMM);
    unsigned alignment = inst->src[PULL_VARYING_CONSTANT_SRC_ALIGNMENT].ud;
 
-   inst->opcode = SHADER_OPCODE_SEND;
+   inst = brw_transform_inst(bld, inst, SHADER_OPCODE_SEND);
+
    inst->mlen = inst->exec_size / 8;
-   inst->resize_sources(SEND_NUM_SRCS);
 
    /* src[SEND_SRC_DESC/EX_DESC] are filled by setup_surface_descriptors() */
    inst->src[SEND_SRC_PAYLOAD1] = ubo_offset;
@@ -2300,7 +2290,7 @@ lower_interpolator_logical_send(const brw_builder &bld, brw_inst *inst,
       }
    }
 
-   inst->opcode = SHADER_OPCODE_SEND;
+   inst = brw_transform_inst(bld, inst, SHADER_OPCODE_SEND);
    inst->sfid = BRW_SFID_PIXEL_INTERPOLATOR;
    inst->desc = desc_imm;
    inst->ex_desc = 0;
@@ -2308,8 +2298,6 @@ lower_interpolator_logical_send(const brw_builder &bld, brw_inst *inst,
    inst->ex_mlen = 0;
    inst->send_has_side_effects = false;
    inst->send_is_volatile = false;
-
-   inst->resize_sources(SEND_NUM_SRCS);
 
    inst->src[SEND_SRC_DESC]     = component(desc, 0);
    inst->src[SEND_SRC_EX_DESC]  = brw_imm_ud(0);
@@ -2379,7 +2367,7 @@ lower_btd_logical_send(const brw_builder &bld, brw_inst *inst)
    }
 
    /* Update the original instruction. */
-   inst->opcode = SHADER_OPCODE_SEND;
+   inst = brw_transform_inst(bld, inst, SHADER_OPCODE_SEND);
    inst->mlen = mlen;
    inst->ex_mlen = ex_mlen;
    inst->header_size = 0; /* HW docs require has_header = false */
@@ -2390,8 +2378,6 @@ lower_btd_logical_send(const brw_builder &bld, brw_inst *inst)
    inst->sfid = BRW_SFID_BINDLESS_THREAD_DISPATCH;
    inst->desc = brw_btd_spawn_desc(devinfo, inst->exec_size,
                                    GEN_RT_BTD_MESSAGE_SPAWN);
-
-   inst->resize_sources(SEND_NUM_SRCS);
 
    inst->src[SEND_SRC_DESC]     = brw_imm_ud(0);
    inst->src[SEND_SRC_EX_DESC]  = brw_imm_ud(0);
@@ -2487,7 +2473,8 @@ lower_trace_ray_logical_send(const brw_builder &bld, brw_inst *inst)
    }
 
    /* Update the original instruction. */
-   inst->opcode = SHADER_OPCODE_SEND;
+   inst = brw_transform_inst(bld, inst, SHADER_OPCODE_SEND);
+
    inst->mlen = mlen;
    inst->ex_mlen = ex_mlen;
    inst->header_size = 0; /* HW docs require has_header = false */
@@ -2497,8 +2484,6 @@ lower_trace_ray_logical_send(const brw_builder &bld, brw_inst *inst)
    /* Set up SFID and descriptors */
    inst->sfid = BRW_SFID_RAY_TRACE_ACCELERATOR;
    inst->desc = brw_rt_trace_ray_desc(devinfo, inst->exec_size);
-
-   inst->resize_sources(SEND_NUM_SRCS);
 
    inst->src[SEND_SRC_DESC]     = brw_imm_ud(0);
    inst->src[SEND_SRC_EX_DESC]  = brw_imm_ud(0);
@@ -2519,9 +2504,9 @@ lower_get_buffer_size(const brw_builder &bld, brw_inst *inst)
    brw_reg surface_handle = inst->src[GET_BUFFER_SIZE_SRC_SURFACE_HANDLE];
    brw_reg lod = bld.move_to_vgrf(inst->src[GET_BUFFER_SIZE_SRC_LOD], 1);
 
-   inst->opcode = SHADER_OPCODE_SEND;
+   inst = brw_transform_inst(bld, inst, SHADER_OPCODE_SEND);
+
    inst->mlen = inst->exec_size / 8;
-   inst->resize_sources(SEND_NUM_SRCS);
    inst->ex_mlen = 0;
    inst->ex_desc = 0;
 
@@ -2555,8 +2540,8 @@ lower_lsc_memory_fence_and_interlock(const brw_builder &bld, brw_inst *inst)
 
    assert(inst->size_written == reg_unit(devinfo) * REG_SIZE);
 
-   inst->opcode = SHADER_OPCODE_SEND;
-   inst->resize_sources(SEND_NUM_SRCS);
+   inst = brw_transform_inst(bld, inst, SHADER_OPCODE_SEND);
+
    inst->check_tdr = interlock;
    inst->send_has_side_effects = true;
 
@@ -2631,8 +2616,8 @@ lower_hdc_memory_fence_and_interlock(const brw_builder &bld, brw_inst *inst)
 
    assert(inst->size_written == (commit_enable ? REG_SIZE : 0));
 
-   inst->opcode = SHADER_OPCODE_SEND;
-   inst->resize_sources(SEND_NUM_SRCS);
+   inst = brw_transform_inst(bld, inst, SHADER_OPCODE_SEND);
+
    inst->check_tdr = interlock;
    inst->send_has_side_effects = true;
 
@@ -2824,7 +2809,8 @@ brw_lower_uniform_pull_constant_loads(brw_shader &s)
                                    LSC_CACHE(devinfo, LOAD, L1STATE_L3MOCS));
 
          /* Update the original instruction. */
-         inst->opcode = SHADER_OPCODE_SEND;
+         inst = brw_transform_inst(ubld, inst, SHADER_OPCODE_SEND);
+
          inst->mlen = lsc_msg_addr_len(devinfo, LSC_ADDR_SIZE_A32, 1);
          inst->send_ex_bso = surface_handle.file != BAD_FILE &&
                              s.compiler->extended_bindless_surface_offset;
@@ -2835,8 +2821,6 @@ brw_lower_uniform_pull_constant_loads(brw_shader &s)
          inst->exec_size = 1;
 
          /* Finally, the payload */
-
-         inst->resize_sources(SEND_NUM_SRCS);
          setup_lsc_surface_descriptors(ubld, inst, inst->desc,
                                        surface.file != BAD_FILE ?
                                        surface : surface_handle, 0);
@@ -2854,16 +2838,15 @@ brw_lower_uniform_pull_constant_loads(brw_shader &s)
          ubld.group(1, 0).MOV(component(header, 2),
                               brw_imm_ud(offset_B.ud / 16));
 
+         inst = brw_transform_inst(ubld, inst, SHADER_OPCODE_SEND);
+
          inst->sfid = BRW_SFID_HDC_READ_ONLY;
-         inst->opcode = SHADER_OPCODE_SEND;
          inst->header_size = 1;
          inst->mlen = 1;
 
          uint32_t desc =
             brw_dp_oword_block_rw_desc(devinfo, true /* align_16B */,
                                        size_B.ud / 4, false /* write */);
-
-         inst->resize_sources(SEND_NUM_SRCS);
 
          setup_surface_descriptors(ubld, inst, desc, surface, surface_handle);
 

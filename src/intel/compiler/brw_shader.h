@@ -374,3 +374,14 @@ bool brw_lower_load_reg(brw_shader &s);
 brw_inst *brw_new_inst(brw_shader &s, enum opcode opcode, unsigned exec_size,
                        const brw_reg &dst, unsigned num_srcs);
 brw_inst *brw_clone_inst(brw_shader &s, const brw_inst *inst);
+
+/* Transform the opcode/num_sources of an instruction.  All the fields in
+ * brw_inst are maintained and any previous sources still visible.  Additional
+ * sources will be uninitialized.
+ *
+ * If new_num_srcs is UINT_MAX a default will be picked based on the opcode.
+ * Not all opcodes have a default.
+ */
+brw_inst *brw_transform_inst(brw_shader &s, brw_inst *inst, enum opcode new_opcode,
+                             unsigned new_num_srcs = UINT_MAX);
+

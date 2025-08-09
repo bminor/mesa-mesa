@@ -37,6 +37,7 @@
 #define MAX_VGRF_SIZE(devinfo) ((devinfo)->ver >= 20 ? 40 : 20)
 
 struct bblock_t;
+struct brw_shader;
 
 struct brw_inst : public brw_exec_node {
 public:
@@ -46,8 +47,6 @@ public:
    /* Enable usage of placement new. */
    static void* operator new(size_t size, void *ptr) { return ptr; }
    static void operator delete(void *p) {}
-
-   void resize_sources(uint8_t num_sources);
 
    bool is_send() const;
    bool is_payload(unsigned arg) const;

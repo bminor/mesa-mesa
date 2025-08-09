@@ -1069,3 +1069,11 @@ void
 brw_check_dynamic_msaa_flag(const brw_builder &bld,
                             const struct brw_wm_prog_data *wm_prog_data,
                             enum intel_msaa_flags flag);
+
+inline brw_inst *
+brw_transform_inst(const brw_builder &bld, brw_inst *inst,
+                   enum opcode new_opcode,
+                   unsigned new_num_srcs = UINT_MAX)
+{
+   return brw_transform_inst(*bld.shader, inst, new_opcode, new_num_srcs);
+}

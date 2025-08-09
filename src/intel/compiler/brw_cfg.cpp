@@ -94,8 +94,7 @@ void
 bblock_t::remove(brw_inst *inst)
 {
    if (brw_exec_list_is_singular(&instructions)) {
-      inst->opcode = BRW_OPCODE_NOP;
-      inst->resize_sources(0);
+      inst = brw_transform_inst(*cfg->s, inst, BRW_OPCODE_NOP);
       inst->dst = brw_reg();
       inst->size_written = 0;
       return;

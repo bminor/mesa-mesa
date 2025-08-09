@@ -500,9 +500,8 @@ brw_opt_eliminate_find_live_channel(brw_shader &s)
 
       case SHADER_OPCODE_FIND_LIVE_CHANNEL:
          if (depth == 0) {
-            inst->opcode = BRW_OPCODE_MOV;
+            inst = brw_transform_inst(s, inst, BRW_OPCODE_MOV);
 
-            inst->resize_sources(1);
             inst->src[0] = brw_imm_ud(0u);
             inst->force_writemask_all = true;
 
@@ -528,14 +527,15 @@ brw_opt_eliminate_find_live_channel(brw_shader &s)
                 inst->dst.file == bcast->src[1].file &&
                 inst->dst.nr == bcast->src[1].nr &&
                 inst->dst.offset == bcast->src[1].offset) {
-               bcast->opcode = BRW_OPCODE_MOV;
+
+               bcast = brw_transform_inst(s, bcast, BRW_OPCODE_MOV);
+
                if (!is_uniform(bcast->src[0]))
                   bcast->src[0] = component(bcast->src[0], 0);
 
                bcast->force_writemask_all = true;
                bcast->exec_size = 8 * reg_unit(s.devinfo);
                assert(bcast->size_written == bcast->dst.component_size(bcast->exec_size));
-               bcast->resize_sources(1);
             }
          }
          break;
@@ -645,7 +645,9 @@ brw_opt_send_to_send_gather(brw_shader &s)
          continue;
       }
 
-      inst->resize_sources(SEND_GATHER_SRC_PAYLOAD + num_payload_sources);
+      inst = brw_transform_inst(s, inst, SHADER_OPCODE_SEND_GATHER,
+                                SEND_GATHER_SRC_PAYLOAD + num_payload_sources);
+
       /* Sources 0 and 1 remain the same.  Source 2 will be filled
        * after register allocation.
        */
@@ -660,7 +662,6 @@ brw_opt_send_to_send_gather(brw_shader &s)
       }
       assert(idx == inst->sources);
 
-      inst->opcode = SHADER_OPCODE_SEND_GATHER;
       inst->mlen = 0;
       inst->ex_mlen = 0;
 
@@ -763,8 +764,8 @@ brw_opt_send_gather_to_send(brw_shader &s)
             continue;
       }
 
-      inst->resize_sources(SEND_NUM_SRCS);
-      inst->opcode  = SHADER_OPCODE_SEND;
+      inst = brw_transform_inst(s, inst, SHADER_OPCODE_SEND);
+
       inst->src[SEND_SRC_PAYLOAD1] = payload1;
       inst->src[SEND_SRC_PAYLOAD2] = payload2;
       inst->mlen    = payload1_len * unit;
