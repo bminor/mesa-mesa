@@ -38,9 +38,9 @@ static void declare_const_and_shader_buffers(struct si_shader_args *args, struct
    enum ac_arg_type const_shader_buf_type;
 
    if (info->num_ubos == 1 && info->num_ssbos == 0)
-      const_shader_buf_type = AC_ARG_CONST_FLOAT_PTR;
+      const_shader_buf_type = AC_ARG_CONST_ADDR;
    else
-      const_shader_buf_type = AC_ARG_CONST_DESC_PTR;
+      const_shader_buf_type = AC_ARG_CONST_ADDR;
 
    ac_add_arg(
       &args->ac, AC_ARG_SGPR, 1, const_shader_buf_type,
@@ -49,7 +49,7 @@ static void declare_const_and_shader_buffers(struct si_shader_args *args, struct
 
 static void declare_samplers_and_images(struct si_shader_args *args, bool assign_params)
 {
-   ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_CONST_IMAGE_PTR,
+   ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_CONST_ADDR,
               assign_params ? &args->samplers_and_images : &args->other_samplers_and_images);
 }
 
@@ -62,15 +62,15 @@ static void declare_per_stage_desc_pointers(struct si_shader_args *args, struct 
 
 static void declare_global_desc_pointers(struct si_shader_args *args)
 {
-   ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_CONST_DESC_PTR, &args->internal_bindings);
-   ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_CONST_IMAGE_PTR,
+   ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_CONST_ADDR, &args->internal_bindings);
+   ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_CONST_ADDR,
               &args->bindless_samplers_and_images);
 }
 
 static void declare_vb_descriptor_input_sgprs(struct si_shader_args *args,
                                               struct si_shader *shader)
 {
-   ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_CONST_DESC_PTR, &args->ac.vertex_buffers);
+   ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_CONST_ADDR, &args->ac.vertex_buffers);
 
    unsigned num_vbos_in_user_sgprs = shader->selector->info.num_vbos_in_user_sgprs;
    if (num_vbos_in_user_sgprs) {
@@ -347,7 +347,7 @@ void si_init_shader_args(struct si_shader *shader, struct si_shader_args *args,
             ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, NULL); /* unused */
          }
 
-         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_CONST_DESC_PTR, &args->small_prim_cull_info);
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_CONST_ADDR, &args->small_prim_cull_info);
          if (sel->screen->info.gfx_level >= GFX11)
             ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->gs_attr_address);
          else

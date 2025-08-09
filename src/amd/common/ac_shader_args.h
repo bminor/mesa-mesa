@@ -26,11 +26,7 @@ enum ac_arg_type
    AC_ARG_INVALID = -1,
    AC_ARG_FLOAT,
    AC_ARG_INT,
-   AC_ARG_CONST_PTR,       /* Pointer to i8 array */
-   AC_ARG_CONST_FLOAT_PTR, /* Pointer to f32 array */
-   AC_ARG_CONST_PTR_PTR,   /* Pointer to pointer to i8 array */
-   AC_ARG_CONST_DESC_PTR,  /* Pointer to v4i32 array */
-   AC_ARG_CONST_IMAGE_PTR, /* Pointer to v8i32 array */
+   AC_ARG_CONST_ADDR,
 };
 
 struct ac_arg {

@@ -3572,11 +3572,7 @@ static LLVMTypeRef arg_llvm_type(enum ac_arg_type type, unsigned size, struct ac
          return size == 1 ? ctx->f32 : LLVMVectorType(ctx->f32, size);
       case AC_ARG_INT:
          return size == 1 ? ctx->i32 : LLVMVectorType(ctx->i32, size);
-      case AC_ARG_CONST_PTR:
-      case AC_ARG_CONST_FLOAT_PTR:
-      case AC_ARG_CONST_PTR_PTR:
-      case AC_ARG_CONST_DESC_PTR:
-      case AC_ARG_CONST_IMAGE_PTR:
+      case AC_ARG_CONST_ADDR:
          break;
       default:
          assert(false);
