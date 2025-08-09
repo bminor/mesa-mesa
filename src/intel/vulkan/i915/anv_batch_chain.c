@@ -714,9 +714,9 @@ anv_i915_debug_submit(const struct anv_execbuf *execbuf)
    for (uint32_t i = 0; i < execbuf->bo_count; i++) {
       const struct anv_bo *bo = execbuf->bos[i];
 
-      fprintf(stderr, "   BO: addr=0x%016"PRIx64"-0x%016"PRIx64" size=%7"PRIu64
+      fprintf(stderr, "   BO: addr=0x%016"PRIx64"-0x%016"PRIx64" map=%16p size=%7"PRIu64
               "KB handle=%05u capture=%u vram_only=%u name=%s\n",
-              bo->offset, bo->offset + bo->size - 1, bo->size / 1024,
+              bo->offset, bo->offset + bo->size - 1, bo->map, bo->size / 1024,
               bo->gem_handle, (bo->flags & EXEC_OBJECT_CAPTURE) != 0,
               anv_bo_is_vram_only(bo), bo->name);
    }
