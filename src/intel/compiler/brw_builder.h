@@ -292,6 +292,12 @@ public:
       return emit(opcode, brw_reg(), NULL, 0);
    }
 
+   brw_inst *
+   emit(enum opcode opcode, unsigned num_srcs) const
+   {
+      return emit(brw_new_inst(*shader, opcode, dispatch_width(), brw_reg(), num_srcs));
+   }
+
    /**
     * Create and insert a nullary instruction into the program.
     */
