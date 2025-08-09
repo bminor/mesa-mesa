@@ -924,15 +924,29 @@ prog_python = find_program('python3', 'python', version : '>= 3.9')
 has_mako = run_command(
   prog_python, '-c',
   '''
+import sys
+
 try:
-  from packaging.version import Version
+    try:
+        from packaging.version import Version
+    except:
+        from distutils.version import StrictVersion as Version
 except:
-  from distutils.version import StrictVersion as Version
-import mako
-assert Version(mako.__version__) >= Version("0.8.0")
-  ''', check: false)
-if has_mako.returncode() != 0
+    sys.exit(2)
+
+try:
+    import mako
+except:
+    sys.exit(1)
+
+if Version(mako.__version__) < Version("0.8.0"):
+    sys.exit(1)
+''', check: false)
+
+if has_mako.returncode() == 1
   error('Python (3.x) mako module >= 0.8.0 required to build mesa.')
+elif has_mako.returncode() == 2
+  error('One of Python (3.x) packaging or distutils module is required.')
 endif
 
 has_yaml = run_command(
