@@ -2304,29 +2304,6 @@ LLVMValueRef ac_find_lsb(struct ac_llvm_context *ctx, LLVMTypeRef dst_type, LLVM
                           LLVMConstInt(ctx->i32, -1, 0), lsb, "");
 }
 
-LLVMTypeRef ac_arg_type_to_pointee_type(struct ac_llvm_context *ctx, enum ac_arg_type type) {
-   switch (type) {
-   case AC_ARG_CONST_PTR:
-      return ctx->i8;
-      break;
-   case AC_ARG_CONST_FLOAT_PTR:
-      return ctx->f32;
-      break;
-   case AC_ARG_CONST_PTR_PTR:
-      return LLVMPointerTypeInContext(ctx->context, AC_ADDR_SPACE_CONST_32BIT);
-      break;
-   case AC_ARG_CONST_DESC_PTR:
-      return ctx->v4i32;
-      break;
-   case AC_ARG_CONST_IMAGE_PTR:
-      return ctx->v8i32;
-   default:
-      /* Other ac_arg_type values aren't pointers. */
-      assert(false);
-      return NULL;
-   }
-}
-
 static struct ac_llvm_flow *get_current_flow(struct ac_llvm_context *ctx)
 {
    if (ctx->flow->depth > 0)

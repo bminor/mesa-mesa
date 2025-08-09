@@ -481,8 +481,6 @@ struct ac_ngg_prim {
    LLVMValueRef passthrough;
 };
 
-LLVMTypeRef ac_arg_type_to_pointee_type(struct ac_llvm_context *ctx, enum ac_arg_type type);
-
 static inline LLVMValueRef ac_get_arg(struct ac_llvm_context *ctx, struct ac_arg arg)
 {
    assert(arg.used);
@@ -490,15 +488,6 @@ static inline LLVMValueRef ac_get_arg(struct ac_llvm_context *ctx, struct ac_arg
       return ctx->ring_offsets;
    int offset = arg.arg_index > ctx->ring_offsets_index ? -1 : 0;
    return LLVMGetParam(ctx->main_function.value, arg.arg_index + offset);
-}
-
-static inline struct ac_llvm_pointer
-ac_get_ptr_arg(struct ac_llvm_context *ctx, const struct ac_shader_args *args, struct ac_arg arg)
-{
-   struct ac_llvm_pointer ptr;
-   ptr.pointee_type = ac_arg_type_to_pointee_type(ctx, args->args[arg.arg_index].type);
-   ptr.value = ac_get_arg(ctx, arg);
-   return ptr;
 }
 
 enum ac_llvm_calling_convention
