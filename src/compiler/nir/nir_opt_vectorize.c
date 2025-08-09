@@ -530,16 +530,16 @@ instr_try_combine(struct set *instr_set, nir_instr *instr1, nir_instr *instr2)
    }
 }
 
-static struct set *
-vec_instr_set_create(void)
+static void
+vec_instr_set_init(struct set *instr_set)
 {
-   return _mesa_set_create(NULL, hash_instr, instrs_equal);
+   _mesa_set_init(instr_set, NULL, hash_instr, instrs_equal);
 }
 
 static void
-vec_instr_set_destroy(struct set *instr_set)
+vec_instr_set_fini(struct set *instr_set)
 {
-   _mesa_set_destroy(instr_set, NULL);
+   _mesa_set_fini(instr_set, NULL);
 }
 
 static bool
@@ -584,7 +584,8 @@ static bool
 nir_opt_vectorize_impl(nir_function_impl *impl,
                        nir_vectorize_cb filter, void *data)
 {
-   struct set *instr_set = vec_instr_set_create();
+   struct set instr_set;
+   vec_instr_set_init(&instr_set);
 
    nir_metadata_require(impl, nir_metadata_control_flow);
 
@@ -592,13 +593,13 @@ nir_opt_vectorize_impl(nir_function_impl *impl,
 
    nir_foreach_block(block, impl) {
       nir_foreach_instr_safe(instr, block) {
-         progress |= vec_instr_set_add_or_rewrite(instr_set, instr, filter, data);
+         progress |= vec_instr_set_add_or_rewrite(&instr_set, instr, filter, data);
       }
    }
 
    nir_progress(progress, impl, nir_metadata_control_flow);
 
-   vec_instr_set_destroy(instr_set);
+   vec_instr_set_fini(&instr_set);
    return progress;
 }
 
