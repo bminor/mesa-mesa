@@ -54,12 +54,6 @@ VKAPI_ATTR VkResult VKAPI_CALL
 panvk_BindBufferMemory2(VkDevice _device, uint32_t bindInfoCount,
                         const VkBindBufferMemoryInfo *pBindInfos)
 {
-   VK_FROM_HANDLE(panvk_device, device, _device);
-   const struct panvk_physical_device *phys_dev =
-      to_panvk_physical_device(device->vk.physical);
-   const unsigned arch = pan_arch(phys_dev->kmod.props.gpu_id);
-   VkResult result = VK_SUCCESS;
-
    for (uint32_t i = 0; i < bindInfoCount; i++) {
       VK_FROM_HANDLE(panvk_device_memory, mem, pBindInfos[i].memory);
       VK_FROM_HANDLE(panvk_buffer, buffer, pBindInfos[i].buffer);
@@ -73,35 +67,8 @@ panvk_BindBufferMemory2(VkDevice _device, uint32_t bindInfoCount,
       assert(buffer->vk.device_address == 0);
 
       buffer->vk.device_address = mem->addr.dev + pBindInfos[i].memoryOffset;
-
-      /* FIXME: Only host map for index buffers so we can do the min/max
-       * index retrieval on the CPU. This is all broken anyway and the
-       * min/max search should be done with a compute shader that also
-       * patches the job descriptor accordingly (basically an indirect draw).
-       *
-       * Make sure this goes away as soon as we fixed indirect draws.
-       */
-      if (arch < 9 && (buffer->vk.usage & VK_BUFFER_USAGE_INDEX_BUFFER_BIT)) {
-         VkDeviceSize offset = pBindInfos[i].memoryOffset;
-         VkDeviceSize pgsize = getpagesize();
-         off_t map_start = offset & ~(pgsize - 1);
-         off_t map_end = offset + buffer->vk.size;
-         void *map_addr =
-            pan_kmod_bo_mmap(mem->bo, map_start, map_end - map_start,
-                             PROT_WRITE, MAP_SHARED, NULL);
-
-         if (map_addr == MAP_FAILED) {
-            result = panvk_errorf(device, VK_ERROR_OUT_OF_HOST_MEMORY,
-                                  "Failed to CPU map index buffer");
-            if (bind_status)
-               *bind_status->pResult = result;
-            continue;
-         }
-
-         buffer->host_ptr = map_addr + (offset & pgsize);
-      }
    }
-   return result;
+   return VK_SUCCESS;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
