@@ -40,9 +40,9 @@ struct deref_node {
    nir_deref_path path;
    struct exec_node direct_derefs_link;
 
-   struct set *loads;
-   struct set *stores;
-   struct set *copies;
+   struct set loads;
+   struct set stores;
+   struct set copies;
 
    struct nir_phi_builder_value *pb_value;
 
@@ -445,10 +445,10 @@ register_load_instr(nir_intrinsic_instr *load_instr,
       return true;
    }
 
-   if (node->loads == NULL)
-      node->loads = _mesa_pointer_set_create(state->dead_ctx);
+   if (node->loads.table == NULL)
+      _mesa_pointer_set_init(&node->loads, state->dead_ctx);
 
-   _mesa_set_add(node->loads, load_instr);
+   _mesa_set_add(&node->loads, load_instr);
 
    return false;
 }
@@ -472,10 +472,10 @@ register_store_instr(nir_intrinsic_instr *store_instr,
    if (node == NULL)
       return false;
 
-   if (node->stores == NULL)
-      node->stores = _mesa_pointer_set_create(state->dead_ctx);
+   if (node->stores.table == NULL)
+      _mesa_pointer_set_init(&node->stores, state->dead_ctx);
 
-   _mesa_set_add(node->stores, store_instr);
+   _mesa_set_add(&node->stores, store_instr);
 
    return false;
 }
@@ -490,10 +490,10 @@ register_copy_instr(nir_intrinsic_instr *copy_instr,
       if (node == NULL || node == UNDEF_NODE)
          continue;
 
-      if (node->copies == NULL)
-         node->copies = _mesa_pointer_set_create(state->dead_ctx);
+      if (node->copies.table == NULL)
+         _mesa_pointer_set_init(&node->copies, state->dead_ctx);
 
-      _mesa_set_add(node->copies, copy_instr);
+      _mesa_set_add(&node->copies, copy_instr);
    }
 }
 
@@ -553,12 +553,12 @@ static void
 lower_copies_to_load_store(struct deref_node *node,
                            struct lower_variables_state *state)
 {
-   if (!node->copies)
+   if (!node->copies.table)
       return;
 
    nir_builder b = nir_builder_create(state->impl);
 
-   set_foreach(node->copies, copy_entry) {
+   set_foreach(&node->copies, copy_entry) {
       nir_intrinsic_instr *copy = (void *)copy_entry->key;
 
       nir_lower_deref_copy_instr(&b, copy);
@@ -571,15 +571,15 @@ lower_copies_to_load_store(struct deref_node *node,
          if (arg_node == NULL || arg_node == node)
             continue;
 
-         struct set_entry *arg_entry = _mesa_set_search(arg_node->copies, copy);
+         struct set_entry *arg_entry = _mesa_set_search(&arg_node->copies, copy);
          assert(arg_entry);
-         _mesa_set_remove(arg_node->copies, arg_entry);
+         _mesa_set_remove(&arg_node->copies, arg_entry);
       }
 
       nir_instr_remove(&copy->instr);
    }
 
-   node->copies = NULL;
+   _mesa_set_fini(&node->copies, NULL);
 }
 
 static nir_def *
@@ -862,8 +862,8 @@ nir_lower_vars_to_ssa_impl(nir_function_impl *impl)
       assert(node->path.path[0]->var->constant_initializer == NULL &&
              node->path.path[0]->var->pointer_initializer == NULL);
 
-      if (node->stores) {
-         set_foreach(node->stores, store_entry) {
+      if (node->stores.table) {
+         set_foreach(&node->stores, store_entry) {
             nir_intrinsic_instr *store =
                (nir_intrinsic_instr *)store_entry->key;
             BITSET_SET(store_blocks, store->instr.block->index);
