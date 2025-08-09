@@ -100,6 +100,7 @@ brw_inst::brw_inst(enum opcode opcode, uint8_t exec_width, const brw_reg &dst,
 brw_inst::brw_inst(const brw_inst &that)
 {
    memcpy((void*)this, &that, sizeof(that));
+   brw_exec_node_init(this);
    initialize_sources(this, that.src, that.sources);
 }
 
