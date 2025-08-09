@@ -35,7 +35,7 @@
 static nir_def *lower_barrier(nir_builder *b, nir_instr *instr, void *cb_data)
 {
    struct shader_info *info = &b->shader->info;
-   bool *barrier_emitted = cb_data;
+   bool *uses_usclib = cb_data;
 
    nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
    mesa_scope exec_scope = nir_intrinsic_execution_scope(intr);
@@ -51,7 +51,7 @@ static nir_def *lower_barrier(nir_builder *b, nir_instr *instr, void *cb_data)
    info->shared_size += sizeof(uint32_t);
    info->zero_initialize_shared_memory = true;
 
-   *barrier_emitted = true;
+   *uses_usclib = true;
 
    unsigned num_slots = DIV_ROUND_UP(wg_size, ROGUE_MAX_INSTANCES_PER_TASK);
 
@@ -82,17 +82,13 @@ static bool is_barrier(const nir_instr *instr, UNUSED const void *cb_data)
  * \param[in,out] shader NIR shader.
  * \return True if the pass made progress.
  */
-bool pco_nir_lower_barriers(nir_shader *shader,
-                            pco_data *data,
-                            bool *uses_usclib)
+bool pco_nir_lower_barriers(nir_shader *shader, pco_data *data)
 {
-   bool barrier_emitted = false;
    bool progress = nir_shader_lower_instructions(shader,
                                                  is_barrier,
                                                  lower_barrier,
-                                                 &barrier_emitted);
+                                                 &data->common.uses.usclib);
 
-   *uses_usclib |= barrier_emitted;
    data->common.uses.barriers |= progress;
 
    return progress;
@@ -143,10 +139,10 @@ static bool is_lowerable_atomic(const nir_instr *instr,
  * \param[in,out] shader NIR shader.
  * \return True if the pass made progress.
  */
-bool pco_nir_lower_atomics(nir_shader *shader, bool *uses_usclib)
+bool pco_nir_lower_atomics(nir_shader *shader, pco_data *data)
 {
    return nir_shader_lower_instructions(shader,
                                         is_lowerable_atomic,
                                         lower_atomic,
-                                        uses_usclib);
+                                        &data->common.uses.usclib);
 }

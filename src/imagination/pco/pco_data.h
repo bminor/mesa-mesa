@@ -216,6 +216,7 @@ typedef struct _pco_common_data {
       bool empty; /** Whether the shader is empty. */
       bool point_sampler; /** Whether the shader uses a point sampler. */
       bool ia_sampler; /** Does the shader use an input attachment sampler? */
+      bool usclib; /** Does the shader use usclib functions? */
    } uses;
 
    bool robust_buffer_access;

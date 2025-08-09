@@ -731,8 +731,6 @@ static bool robustness_filter(const nir_intrinsic_instr *intr,
  */
 void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
 {
-   bool uses_usclib = false;
-
    NIR_PASS(_,
             nir,
             nir_opt_access,
@@ -740,7 +738,7 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
 
    NIR_PASS(_, nir, nir_opt_barrier_modes);
    NIR_PASS(_, nir, nir_opt_combine_barriers, NULL, NULL);
-   NIR_PASS(_, nir, pco_nir_lower_barriers, data, &uses_usclib);
+   NIR_PASS(_, nir, pco_nir_lower_barriers, data);
 
    NIR_PASS(_, nir, nir_lower_memory_model);
 
@@ -788,7 +786,7 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
 
    NIR_PASS(_, nir, pco_nir_lower_vk, data);
    NIR_PASS(_, nir, pco_nir_lower_io);
-   NIR_PASS(_, nir, pco_nir_lower_atomics, &uses_usclib);
+   NIR_PASS(_, nir, pco_nir_lower_atomics, data);
 
    NIR_PASS(_, nir, nir_opt_constant_folding);
 
@@ -869,7 +867,7 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
       NIR_PASS(_, nir, pco_nir_pvi, &data->vs);
    }
 
-   if (uses_usclib) {
+   if (data->common.uses.usclib) {
       assert(ctx->usclib);
 
       nir_link_shader_functions(nir, ctx->usclib);
