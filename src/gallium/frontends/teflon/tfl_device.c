@@ -269,6 +269,10 @@ fill_operation(struct teflon_delegate *delegate, TfLiteContext *tf_context, TfLi
 
       break;
    }
+   case kTfLiteBuiltinResizeNearestNeighbor: {
+      operation->type = PIPE_ML_OPERATION_TYPE_RESIZE;
+      break;
+   }
    default:
       return false;
    }
@@ -419,6 +423,9 @@ dump_graph(struct pipe_tensor *tensors, unsigned tensor_count, struct pipe_ml_op
          break;
       case PIPE_ML_OPERATION_TYPE_STRIDED_SLICE:
          teflon_debug("%-6s ", "STRIDED_SLICE");
+         break;
+      case PIPE_ML_OPERATION_TYPE_RESIZE:
+         teflon_debug("%-6s ", "RESIZE");
          break;
       }
 
@@ -629,6 +636,8 @@ tflite_builtin_op_name(TfLiteBuiltinOperator op)
       return "MEAN";
    case kTfLiteBuiltinStridedSlice:
       return "STRIDED_SLICE";
+   case kTfLiteBuiltinResizeNearestNeighbor:
+      return "RESIZE";
    default:
       return "unknown";
    }
