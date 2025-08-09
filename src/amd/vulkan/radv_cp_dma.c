@@ -132,6 +132,24 @@ radv_emit_cp_dma(struct radv_cmd_buffer *cmd_buffer, uint64_t dst_va, uint64_t s
       radv_cmd_buffer_trace_emit(cmd_buffer);
 }
 
+/* Emit a CP DMA prefetch.
+ * This is useful for warming up caches before draw commands,
+ * for example we use it to load shader binaries and VBO descriptors into the cache.
+ * Implemented by starting a CP DMA copy where the source and destination are the same.
+ *
+ * On GPUs where CP DMA uses L2, it loads binaries into L2.
+ * On GPUs that have MALL (infinity cache), it loads binaries into MALL.
+ *
+ * More specifically:
+ *
+ * | GPU generation  | CP DMA L2 | MALL | Prefetch location |
+ * | --------------- | --------- | ---- | ----------------- |
+ * | GFX6            | -         | -    | -                 |
+ * | GFX7 - 10       | yes       | -    | L2                |
+ * | GFX10.3 - 11.5  | yes       | yes  | L2, MALL          |
+ * | GFX12           | -         | yes  | MALL              |
+ *
+ */
 void
 radv_cs_cp_dma_prefetch(const struct radv_device *device, struct radv_cmd_stream *cs, uint64_t va, unsigned size,
                         bool predicating)
