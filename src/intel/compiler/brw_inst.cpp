@@ -11,6 +11,19 @@
 #include "brw_inst.h"
 #include "brw_isa_info.h"
 
+brw_inst *
+brw_new_inst(brw_shader &s, enum opcode opcode, unsigned exec_size,
+             const brw_reg &dst, const brw_reg srcs[], unsigned num_srcs)
+{
+   return new (s.mem_ctx) brw_inst(opcode, exec_size, dst, srcs, num_srcs);
+}
+
+brw_inst *
+brw_clone_inst(brw_shader &s, const brw_inst *inst)
+{
+   return new (s.mem_ctx) brw_inst(*inst);
+}
+
 static void
 initialize_sources(brw_inst *inst, const brw_reg src[], uint8_t num_sources);
 
@@ -53,42 +66,6 @@ brw_inst::init(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
    }
 
    this->writes_accumulator = false;
-}
-
-brw_inst::brw_inst()
-{
-   init(BRW_OPCODE_NOP, 8, dst, NULL, 0);
-}
-
-brw_inst::brw_inst(enum opcode opcode, uint8_t exec_size)
-{
-   init(opcode, exec_size, reg_undef, NULL, 0);
-}
-
-brw_inst::brw_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst)
-{
-   init(opcode, exec_size, dst, NULL, 0);
-}
-
-brw_inst::brw_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
-                 const brw_reg &src0)
-{
-   const brw_reg src[1] = { src0 };
-   init(opcode, exec_size, dst, src, 1);
-}
-
-brw_inst::brw_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
-                 const brw_reg &src0, const brw_reg &src1)
-{
-   const brw_reg src[2] = { src0, src1 };
-   init(opcode, exec_size, dst, src, 2);
-}
-
-brw_inst::brw_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
-                 const brw_reg &src0, const brw_reg &src1, const brw_reg &src2)
-{
-   const brw_reg src[3] = { src0, src1, src2 };
-   init(opcode, exec_size, dst, src, 3);
 }
 
 brw_inst::brw_inst(enum opcode opcode, uint8_t exec_width, const brw_reg &dst,

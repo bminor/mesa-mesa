@@ -744,19 +744,19 @@ namespace {
       tmp = horiz_stride(tmp, inst->dst.stride);
 
       for (unsigned j = 0; j < n; j++) {
-         brw_inst sub_inst = *inst;
+         brw_inst *sub_inst = brw_clone_inst(*v, inst);
 
          for (unsigned i = 0; i < inst->sources; i++) {
             if (mask & (1u << i)) {
                assert(inst->src[i].type == inst->dst.type);
-               sub_inst.src[i] = subscript(inst->src[i], raw_type, j);
+               sub_inst->src[i] = subscript(inst->src[i], raw_type, j);
             }
          }
 
-         sub_inst.dst = subscript(tmp, raw_type, j);
+         sub_inst->dst = subscript(tmp, raw_type, j);
 
-         assert(sub_inst.size_written == sub_inst.dst.component_size(sub_inst.exec_size));
-         assert(!sub_inst.flags_written(v->devinfo) && !sub_inst.saturate);
+         assert(sub_inst->size_written == sub_inst->dst.component_size(sub_inst->exec_size));
+         assert(!sub_inst->flags_written(v->devinfo) && !sub_inst->saturate);
          ibld.emit(sub_inst);
 
          brw_inst *mov = ibld.MOV(subscript(inst->dst, raw_type, j),

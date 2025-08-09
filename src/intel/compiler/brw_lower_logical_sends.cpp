@@ -522,13 +522,14 @@ lower_fb_write_logical_send(const brw_builder &bld, brw_inst *inst,
                                   INTEL_MSAA_FLAG_COARSE_RT_WRITES);
       bld.IF(BRW_PREDICATE_NORMAL);
       {
-         brw_inst *coarse_inst = bld.emit(*inst);
+         brw_inst *coarse_inst = brw_clone_inst(*bld.shader, inst);
          coarse_inst->desc |= brw_fb_write_desc(devinfo, target, msg_ctl, last_rt,
                                                 true);
+         bld.emit(coarse_inst);
       }
       bld.ELSE();
       {
-         bld.emit(*inst);
+         bld.emit(brw_clone_inst(*bld.shader, inst));
       }
       bld.ENDIF();
       inst->remove();
@@ -2097,7 +2098,7 @@ lower_lsc_varying_pull_constant_logical_send(const brw_builder &bld,
           * it.  Because this loop starts at 1, we will emit copies for the
           * first 3 and the final one will be the modified instruction.
           */
-         bld.emit(*inst);
+         bld.emit(brw_clone_inst(*bld.shader, inst));
 
          /* Offset the source */
          inst->src[SEND_SRC_PAYLOAD1] = bld.vgrf(BRW_TYPE_UD);
@@ -2176,7 +2177,7 @@ lower_varying_pull_constant_logical_send(const brw_builder &bld, brw_inst *inst)
           * it.  Because this loop starts at 1, we will emit copies for the
           * first 3 and the final one will be the modified instruction.
           */
-         bld.emit(*inst);
+         bld.emit(brw_clone_inst(*bld.shader, inst));
 
          /* Offset the source */
          inst->src[SEND_SRC_PAYLOAD1] = bld.vgrf(BRW_TYPE_UD);

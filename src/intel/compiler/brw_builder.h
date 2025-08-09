@@ -284,21 +284,12 @@ public:
    }
 
    /**
-    * Insert an instruction into the program.
-    */
-   brw_inst *
-   emit(const brw_inst &inst) const
-   {
-      return emit(new(shader->mem_ctx) brw_inst(inst));
-   }
-
-   /**
     * Create and insert a nullary control instruction into the program.
     */
    brw_inst *
    emit(enum opcode opcode) const
    {
-      return emit(brw_inst(opcode, dispatch_width()));
+      return emit(opcode, brw_reg(), NULL, 0);
    }
 
    /**
@@ -307,7 +298,7 @@ public:
    brw_inst *
    emit(enum opcode opcode, const brw_reg &dst) const
    {
-      return emit(brw_inst(opcode, dispatch_width(), dst));
+      return emit(opcode, dst, NULL, 0);
    }
 
    /**
@@ -316,7 +307,7 @@ public:
    brw_inst *
    emit(enum opcode opcode, const brw_reg &dst, const brw_reg &src0) const
    {
-      return emit(brw_inst(opcode, dispatch_width(), dst, src0));
+      return emit(opcode, dst, &src0, 1);
    }
 
    /**
@@ -326,8 +317,8 @@ public:
    emit(enum opcode opcode, const brw_reg &dst, const brw_reg &src0,
         const brw_reg &src1) const
    {
-      return emit(brw_inst(opcode, dispatch_width(), dst,
-                              src0, src1));
+      const brw_reg srcs[] = { src0, src1 };
+      return emit(opcode, dst, srcs, 2);
    }
 
    /**
@@ -337,22 +328,23 @@ public:
    emit(enum opcode opcode, const brw_reg &dst, const brw_reg &src0,
         const brw_reg &src1, const brw_reg &src2) const
    {
+      brw_reg srcs[] = { src0, src1, src2 };
+
       switch (opcode) {
       case BRW_OPCODE_BFE:
       case BRW_OPCODE_BFI2:
       case BRW_OPCODE_MAD:
-      case BRW_OPCODE_LRP: {
-         brw_reg fixed0 = fix_3src_operand(src0);
-         brw_reg fixed1 = fix_3src_operand(src1);
-         brw_reg fixed2 = fix_3src_operand(src2);
-         return emit(brw_inst(opcode, dispatch_width(), dst,
-                              fixed0, fixed1, fixed2));
-      }
+      case BRW_OPCODE_LRP:
+         for (int i = 0; i < 3; i++)
+            srcs[i] = fix_3src_operand(srcs[i]);
+         break;
 
       default:
-         return emit(brw_inst(opcode, dispatch_width(), dst,
-                                 src0, src1, src2));
+         /* Nothing to do. */
+         break;
       }
+
+      return emit(brw_new_inst(*shader, opcode, dispatch_width(), dst, srcs, 3));
    }
 
    /**
@@ -361,15 +353,15 @@ public:
     */
    brw_inst *
    emit(enum opcode opcode, const brw_reg &dst, const brw_reg srcs[],
-        unsigned n) const
+        unsigned num_srcs) const
    {
       /* Use the emit() methods for specific operand counts to ensure that
        * opcode-specific operand fixups occur.
        */
-      if (n == 3) {
+      if (num_srcs == 3) {
          return emit(opcode, dst, srcs[0], srcs[1], srcs[2]);
       } else {
-         return emit(brw_inst(opcode, dispatch_width(), dst, srcs, n));
+         return emit(brw_new_inst(*shader, opcode, dispatch_width(), dst, srcs, num_srcs));
       }
    }
 

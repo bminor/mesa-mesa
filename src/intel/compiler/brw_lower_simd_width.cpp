@@ -731,9 +731,9 @@ brw_lower_simd_width(brw_shader &s)
           * If the EOT flag was set throw it away except for the last
           * instruction to avoid killing the thread prematurely.
           */
-         brw_inst split_inst = *inst;
-         split_inst.exec_size = lower_width;
-         split_inst.eot = inst->eot && i == int(n - 1);
+         brw_inst *split_inst = brw_clone_inst(s, inst);
+         split_inst->exec_size = lower_width;
+         split_inst->eot = inst->eot && i == int(n - 1);
 
          /* Select the correct channel enables for the i-th group, then
           * transform the sources and destination and emit the lowered
@@ -743,12 +743,12 @@ brw_lower_simd_width(brw_shader &s)
          const brw_builder lbld_after = zip_bld.group(lower_width, i);
 
          for (unsigned j = 0; j < inst->sources; j++)
-            split_inst.src[j] = emit_unzip(lbld.before(inst), inst, j);
+            split_inst->src[j] = emit_unzip(lbld.before(inst), inst, j);
 
-         split_inst.dst = emit_zip(lbld.before(inst),
+         split_inst->dst = emit_zip(lbld.before(inst),
                                    lbld_after, inst);
-         split_inst.size_written =
-            split_inst.dst.component_size(lower_width) * dst_size +
+         split_inst->size_written =
+            split_inst->dst.component_size(lower_width) * dst_size +
             residency_size;
 
          lbld.after(inst).emit(split_inst);

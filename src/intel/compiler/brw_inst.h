@@ -48,15 +48,6 @@ private:
 public:
    DECLARE_RALLOC_CXX_OPERATORS(brw_inst)
 
-   brw_inst();
-   brw_inst(enum opcode opcode, uint8_t exec_size);
-   brw_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst);
-   brw_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
-           const brw_reg &src0);
-   brw_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
-           const brw_reg &src0, const brw_reg &src1);
-   brw_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
-           const brw_reg &src0, const brw_reg &src1, const brw_reg &src2);
    brw_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
            const brw_reg src[], unsigned sources);
    brw_inst(const brw_inst &that);
