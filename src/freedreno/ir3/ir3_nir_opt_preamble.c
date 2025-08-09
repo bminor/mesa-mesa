@@ -690,7 +690,9 @@ ir3_nir_opt_prefetch_descriptors(nir_shader *nir, struct ir3_shader_variant *v)
    const struct ir3_const_state *const_state = ir3_const_state(v);
 
    nir_function_impl *main = nir_shader_get_entrypoint(nir);
-   struct set *instr_set = nir_instr_set_create(NULL);
+   struct set instr_set;
+   nir_instr_set_init(&instr_set, NULL);
+
    nir_function_impl *preamble = main->preamble ? main->preamble->impl : NULL;
    nir_builder b;
    bool progress = false;
@@ -777,7 +779,7 @@ ir3_nir_opt_prefetch_descriptors(nir_shader *nir, struct ir3_shader_variant *v)
                continue;
 
             preamble_descs[i] =
-               ir3_rematerialize_def_for_preamble(&b, descs[i], instr_set,
+               ir3_rematerialize_def_for_preamble(&b, descs[i], &instr_set,
                                                   preamble_defs);
          }
 
@@ -799,7 +801,7 @@ finished:
                    nir_metadata_block_index | nir_metadata_dominance);
    }
 
-   nir_instr_set_destroy(instr_set);
+   nir_instr_set_fini(&instr_set);
    free(preamble_defs);
    return progress;
 }

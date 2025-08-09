@@ -831,18 +831,20 @@ opt_gcm_impl(nir_shader *shader, nir_function_impl *impl, bool value_number)
     * on both sides of the same if/else block, we allow them to be moved.
     * This cleans up a lot of mess without being -too- aggressive.
     */
-   struct set *gvn_set = nir_instr_set_create(NULL);
+   struct set gvn_set;
+   nir_instr_set_init(&gvn_set, NULL);
+
    foreach_list_typed_safe(nir_instr, instr, node, &state.instrs) {
       if (instr->pass_flags & GCM_INSTR_PINNED)
          continue;
 
-      if (nir_instr_set_add_or_rewrite(gvn_set, instr,
+      if (nir_instr_set_add_or_rewrite(&gvn_set, instr,
                                        value_number ? NULL : weak_gvn)) {
          state.progress = true;
          nir_instr_remove(instr);
       }
    }
-   nir_instr_set_destroy(gvn_set);
+   nir_instr_set_fini(&gvn_set);
 
    foreach_list_typed(nir_instr, instr, node, &state.instrs)
       gcm_schedule_early_instr(instr, &state);

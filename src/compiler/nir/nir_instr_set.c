@@ -771,16 +771,16 @@ cmp_func(const void *data1, const void *data2)
    return nir_instrs_equal(data1, data2);
 }
 
-struct set *
-nir_instr_set_create(void *mem_ctx)
+void
+nir_instr_set_init(struct set *s, void *mem_ctx)
 {
-   return _mesa_set_create(mem_ctx, hash_instr, cmp_func);
+   _mesa_set_init(s, mem_ctx, hash_instr, cmp_func);
 }
 
 void
-nir_instr_set_destroy(struct set *instr_set)
+nir_instr_set_fini(struct set *instr_set)
 {
-   _mesa_set_destroy(instr_set, NULL);
+   _mesa_set_fini(instr_set, NULL);
 }
 
 nir_instr *
