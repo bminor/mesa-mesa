@@ -257,6 +257,18 @@ fill_operation(struct teflon_delegate *delegate, TfLiteContext *tf_context, TfLi
       memcpy(operation->transpose.perm, perm, 4 * sizeof(*operation->transpose.perm));
       break;
    }
+   case kTfLiteBuiltinStridedSlice: {
+      int *begin = tf_context->tensors[node->inputs->data[1]].data.data;
+      int *end = tf_context->tensors[node->inputs->data[2]].data.data;
+      int *strides = tf_context->tensors[node->inputs->data[3]].data.data;
+
+      operation->type = PIPE_ML_OPERATION_TYPE_STRIDED_SLICE;
+      memcpy(operation->slice.begin, begin, sizeof(operation->slice.begin));
+      memcpy(operation->slice.end, end, sizeof(operation->slice.end));
+      memcpy(operation->slice.strides, strides, sizeof(operation->slice.strides));
+
+      break;
+   }
    default:
       return false;
    }
@@ -404,6 +416,9 @@ dump_graph(struct pipe_tensor *tensors, unsigned tensor_count, struct pipe_ml_op
          break;
       case PIPE_ML_OPERATION_TYPE_TRANSPOSE:
          teflon_debug("%-6s ", "TRANSPOSE");
+         break;
+      case PIPE_ML_OPERATION_TYPE_STRIDED_SLICE:
+         teflon_debug("%-6s ", "STRIDED_SLICE");
          break;
       }
 
@@ -612,6 +627,8 @@ tflite_builtin_op_name(TfLiteBuiltinOperator op)
       return "FC";
    case kTfLiteBuiltinMean:
       return "MEAN";
+   case kTfLiteBuiltinStridedSlice:
+      return "STRIDED_SLICE";
    default:
       return "unknown";
    }

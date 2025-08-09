@@ -1054,6 +1054,7 @@ enum pipe_ml_operation_type {
    PIPE_ML_OPERATION_TYPE_LOGISTIC,
    PIPE_ML_OPERATION_TYPE_SUBTRACT,
    PIPE_ML_OPERATION_TYPE_TRANSPOSE,
+   PIPE_ML_OPERATION_TYPE_STRIDED_SLICE,
 };
 
 enum pipe_ml_pooling_type {
@@ -1232,6 +1233,12 @@ struct pipe_ml_operation
       struct {
          unsigned perm[4];
       } transpose;
+
+      struct {
+         int begin[4];
+         int end[4];
+         int strides[4];
+      } slice;
    };
 };
 
