@@ -1080,8 +1080,9 @@ nir_shader_gather_info(nir_shader *shader, nir_function_impl *entrypoint)
       shader->info.writes_memory = shader->info.has_transform_feedback_varyings;
 
    void *dead_ctx = ralloc_context(NULL);
-   struct set *visited_funcs = _mesa_pointer_set_create(dead_ctx);
-   gather_func_info(entrypoint, shader, visited_funcs, dead_ctx);
+   struct set visited_funcs;
+   _mesa_pointer_set_init(&visited_funcs, dead_ctx);
+   gather_func_info(entrypoint, shader, &visited_funcs, dead_ctx);
    ralloc_free(dead_ctx);
 
    shader->info.per_view_outputs = 0;
