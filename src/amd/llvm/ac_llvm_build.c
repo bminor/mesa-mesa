@@ -3568,7 +3568,7 @@ void ac_export_mrt_z(struct ac_llvm_context *ctx, LLVMValueRef depth, LLVMValueR
 static LLVMTypeRef arg_llvm_type(enum ac_arg_type type, unsigned size, struct ac_llvm_context *ctx)
 {
    switch (type) {
-      case AC_ARG_INT:
+      case AC_ARG_VALUE:
          return size == 1 ? ctx->i32 : LLVMVectorType(ctx->i32, size);
       case AC_ARG_CONST_ADDR:
          break;

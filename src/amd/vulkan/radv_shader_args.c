@@ -105,7 +105,7 @@ declare_global_input_sgprs(const enum amd_gfx_level gfx_level, const struct radv
       }
 
       for (unsigned i = 0; i < util_bitcount64(user_sgpr_info->inline_push_constant_mask); i++) {
-         add_ud_arg(args, 1, AC_ARG_INT, &args->ac.inline_push_consts[i], AC_UD_INLINE_PUSH_CONSTANTS);
+         add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.inline_push_consts[i], AC_UD_INLINE_PUSH_CONSTANTS);
       }
       args->ac.inline_push_const_mask = user_sgpr_info->inline_push_constant_mask;
    }
@@ -128,19 +128,19 @@ static void
 declare_vs_specific_input_sgprs(const struct radv_shader_info *info, struct radv_shader_args *args)
 {
    if (info->vs.has_prolog)
-      add_ud_arg(args, 2, AC_ARG_INT, &args->prolog_inputs, AC_UD_VS_PROLOG_INPUTS);
+      add_ud_arg(args, 2, AC_ARG_VALUE, &args->prolog_inputs, AC_UD_VS_PROLOG_INPUTS);
 
    if (info->type != RADV_SHADER_TYPE_GS_COPY) {
       if (info->vs.vb_desc_usage_mask) {
          add_ud_arg(args, 1, AC_ARG_CONST_ADDR, &args->ac.vertex_buffers, AC_UD_VS_VERTEX_BUFFERS);
       }
 
-      add_ud_arg(args, 1, AC_ARG_INT, &args->ac.base_vertex, AC_UD_VS_BASE_VERTEX_START_INSTANCE);
+      add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.base_vertex, AC_UD_VS_BASE_VERTEX_START_INSTANCE);
       if (info->vs.needs_draw_id) {
-         add_ud_arg(args, 1, AC_ARG_INT, &args->ac.draw_id, AC_UD_VS_BASE_VERTEX_START_INSTANCE);
+         add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.draw_id, AC_UD_VS_BASE_VERTEX_START_INSTANCE);
       }
       if (info->vs.needs_base_instance) {
-         add_ud_arg(args, 1, AC_ARG_INT, &args->ac.start_instance, AC_UD_VS_BASE_VERTEX_START_INSTANCE);
+         add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.start_instance, AC_UD_VS_BASE_VERTEX_START_INSTANCE);
       }
    }
 }
@@ -149,39 +149,39 @@ static void
 declare_vs_input_vgprs(enum amd_gfx_level gfx_level, const struct radv_shader_info *info, struct radv_shader_args *args,
                        bool merged_vs_tcs)
 {
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.vertex_id);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.vertex_id);
    if (info->type != RADV_SHADER_TYPE_GS_COPY) {
       if (gfx_level >= GFX12) {
-         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.instance_id);
+         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.instance_id);
       } else if (info->vs.as_ls || merged_vs_tcs) {
          if (gfx_level >= GFX11) {
-            ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, NULL); /* user VGPR */
-            ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, NULL); /* user VGPR */
-            ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.instance_id);
+            ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, NULL); /* user VGPR */
+            ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, NULL); /* user VGPR */
+            ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.instance_id);
          } else if (gfx_level >= GFX10) {
-            ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.vs_rel_patch_id);
-            ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, NULL); /* user vgpr */
-            ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.instance_id);
+            ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.vs_rel_patch_id);
+            ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, NULL); /* user vgpr */
+            ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.instance_id);
          } else {
-            ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.vs_rel_patch_id);
-            ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.instance_id);
-            ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, NULL); /* unused */
+            ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.vs_rel_patch_id);
+            ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.instance_id);
+            ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, NULL); /* unused */
          }
       } else {
          if (gfx_level >= GFX10) {
             if (info->is_ngg) {
-               ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, NULL); /* user vgpr */
-               ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, NULL); /* user vgpr */
-               ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.instance_id);
+               ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, NULL); /* user vgpr */
+               ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, NULL); /* user vgpr */
+               ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.instance_id);
             } else {
-               ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, NULL); /* unused */
-               ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.vs_prim_id);
-               ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.instance_id);
+               ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, NULL); /* unused */
+               ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.vs_prim_id);
+               ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.instance_id);
             }
          } else {
-            ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.instance_id);
-            ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.vs_prim_id);
-            ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, NULL); /* unused */
+            ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.instance_id);
+            ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.vs_prim_id);
+            ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, NULL); /* unused */
          }
       }
    }
@@ -190,7 +190,7 @@ declare_vs_input_vgprs(enum amd_gfx_level gfx_level, const struct radv_shader_in
       assert(info->vs.use_per_attribute_vb_descs);
       unsigned num_attributes = util_last_bit(info->vs.input_slot_usage_mask);
       for (unsigned i = 0; i < num_attributes; i++) {
-         ac_add_arg(&args->ac, AC_ARG_VGPR, 4, AC_ARG_INT, &args->vs_inputs[i]);
+         ac_add_arg(&args->ac, AC_ARG_VGPR, 4, AC_ARG_VALUE, &args->vs_inputs[i]);
          args->ac.args[args->vs_inputs[i].arg_index].pending_vmem = true;
       }
    }
@@ -205,10 +205,10 @@ declare_streamout_sgprs(const struct radv_shader_info *info, struct radv_shader_
    if (info->so.enabled_stream_buffers_mask) {
       assert(stage == MESA_SHADER_VERTEX || stage == MESA_SHADER_TESS_EVAL);
 
-      ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.streamout_config);
-      ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.streamout_write_index);
+      ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.streamout_config);
+      ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.streamout_write_index);
    } else if (stage == MESA_SHADER_TESS_EVAL) {
-      ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, NULL);
+      ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, NULL);
    }
 
    /* A streamout buffer offset is loaded if the stride is non-zero. */
@@ -216,30 +216,30 @@ declare_streamout_sgprs(const struct radv_shader_info *info, struct radv_shader_
       if (!info->so.strides[i])
          continue;
 
-      ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.streamout_offset[i]);
+      ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.streamout_offset[i]);
    }
 }
 
 static void
 declare_tes_input_vgprs(struct radv_shader_args *args)
 {
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_FLOAT, &args->ac.tes_u);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_FLOAT, &args->ac.tes_v);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.tes_rel_patch_id);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.tes_patch_id);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.tes_u);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.tes_v);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.tes_rel_patch_id);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.tes_patch_id);
 }
 
 static void
 declare_ms_input_sgprs(const struct radv_shader_info *info, struct radv_shader_args *args)
 {
    if (info->cs.uses_grid_size) {
-      add_ud_arg(args, 3, AC_ARG_INT, &args->ac.num_work_groups, AC_UD_VS_BASE_VERTEX_START_INSTANCE);
+      add_ud_arg(args, 3, AC_ARG_VALUE, &args->ac.num_work_groups, AC_UD_VS_BASE_VERTEX_START_INSTANCE);
    }
    if (info->vs.needs_draw_id) {
-      add_ud_arg(args, 1, AC_ARG_INT, &args->ac.draw_id, AC_UD_VS_BASE_VERTEX_START_INSTANCE);
+      add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.draw_id, AC_UD_VS_BASE_VERTEX_START_INSTANCE);
    }
    if (info->ms.has_task) {
-      add_ud_arg(args, 1, AC_ARG_INT, &args->ac.task_ring_entry, AC_UD_TASK_RING_ENTRY);
+      add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.task_ring_entry, AC_UD_TASK_RING_ENTRY);
    }
 }
 
@@ -249,34 +249,34 @@ declare_ms_input_vgprs(const struct radv_device *device, struct radv_shader_args
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
    if (pdev->info.mesh_fast_launch_2) {
-      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.local_invocation_ids_packed);
+      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.local_invocation_ids_packed);
    } else {
-      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.vertex_id);
-      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, NULL); /* user vgpr */
-      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, NULL); /* user vgpr */
-      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, NULL); /* instance_id */
+      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.vertex_id);
+      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, NULL); /* user vgpr */
+      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, NULL); /* user vgpr */
+      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, NULL); /* instance_id */
    }
 }
 
 static void
 declare_ps_input_vgprs(const struct radv_shader_info *info, struct radv_shader_args *args)
 {
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 2, AC_ARG_INT, &args->ac.persp_sample);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 2, AC_ARG_INT, &args->ac.persp_center);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 2, AC_ARG_INT, &args->ac.persp_centroid);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 3, AC_ARG_INT, &args->ac.pull_model);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 2, AC_ARG_INT, &args->ac.linear_sample);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 2, AC_ARG_INT, &args->ac.linear_center);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 2, AC_ARG_INT, &args->ac.linear_centroid);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_FLOAT, NULL); /* line stipple tex */
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_FLOAT, &args->ac.frag_pos[0]);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_FLOAT, &args->ac.frag_pos[1]);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_FLOAT, &args->ac.frag_pos[2]);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_FLOAT, &args->ac.frag_pos[3]);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.front_face);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.ancillary);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.sample_coverage);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.pos_fixed_pt);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 2, AC_ARG_VALUE, &args->ac.persp_sample);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 2, AC_ARG_VALUE, &args->ac.persp_center);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 2, AC_ARG_VALUE, &args->ac.persp_centroid);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 3, AC_ARG_VALUE, &args->ac.pull_model);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 2, AC_ARG_VALUE, &args->ac.linear_sample);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 2, AC_ARG_VALUE, &args->ac.linear_center);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 2, AC_ARG_VALUE, &args->ac.linear_centroid);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, NULL); /* line stipple tex */
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.frag_pos[0]);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.frag_pos[1]);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.frag_pos[2]);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.frag_pos[3]);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.front_face);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.ancillary);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.sample_coverage);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.pos_fixed_pt);
 
    if (args->remap_spi_ps_input)
       ac_compact_ps_vgpr_args(&args->ac, info->ps.spi_ps_input_ena);
@@ -285,17 +285,17 @@ declare_ps_input_vgprs(const struct radv_shader_info *info, struct radv_shader_a
 static void
 declare_ngg_sgprs(const struct radv_shader_info *info, struct radv_shader_args *args, bool ngg_needs_state_sgpr)
 {
-   add_ud_arg(args, 1, AC_ARG_INT, &args->ngg_lds_layout, AC_UD_NGG_LDS_LAYOUT);
+   add_ud_arg(args, 1, AC_ARG_VALUE, &args->ngg_lds_layout, AC_UD_NGG_LDS_LAYOUT);
 
    if (ngg_needs_state_sgpr)
-      add_ud_arg(args, 1, AC_ARG_INT, &args->ngg_state, AC_UD_NGG_STATE);
+      add_ud_arg(args, 1, AC_ARG_VALUE, &args->ngg_state, AC_UD_NGG_STATE);
 
    if (info->has_ngg_culling) {
-      add_ud_arg(args, 1, AC_ARG_INT, &args->ngg_culling_settings, AC_UD_NGG_CULLING_SETTINGS);
-      add_ud_arg(args, 1, AC_ARG_INT, &args->ngg_viewport_scale[0], AC_UD_NGG_VIEWPORT);
-      add_ud_arg(args, 1, AC_ARG_INT, &args->ngg_viewport_scale[1], AC_UD_NGG_VIEWPORT);
-      add_ud_arg(args, 1, AC_ARG_INT, &args->ngg_viewport_translate[0], AC_UD_NGG_VIEWPORT);
-      add_ud_arg(args, 1, AC_ARG_INT, &args->ngg_viewport_translate[1], AC_UD_NGG_VIEWPORT);
+      add_ud_arg(args, 1, AC_ARG_VALUE, &args->ngg_culling_settings, AC_UD_NGG_CULLING_SETTINGS);
+      add_ud_arg(args, 1, AC_ARG_VALUE, &args->ngg_viewport_scale[0], AC_UD_NGG_VIEWPORT);
+      add_ud_arg(args, 1, AC_ARG_VALUE, &args->ngg_viewport_scale[1], AC_UD_NGG_VIEWPORT);
+      add_ud_arg(args, 1, AC_ARG_VALUE, &args->ngg_viewport_translate[0], AC_UD_NGG_VIEWPORT);
+      add_ud_arg(args, 1, AC_ARG_VALUE, &args->ngg_viewport_translate[1], AC_UD_NGG_VIEWPORT);
    }
 }
 
@@ -325,37 +325,37 @@ radv_declare_rt_shader_args(enum amd_gfx_level gfx_level, struct radv_shader_arg
    ac_add_arg(&args->ac, AC_ARG_SGPR, 2, AC_ARG_CONST_ADDR, &args->ac.rt.traversal_shader_addr);
 
    for (uint32_t i = 0; i < ARRAY_SIZE(args->ac.rt.launch_sizes); i++)
-      ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.rt.launch_sizes[i]);
+      ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.rt.launch_sizes[i]);
 
    if (gfx_level < GFX9) {
-      ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.scratch_offset);
+      ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.scratch_offset);
       ac_add_arg(&args->ac, AC_ARG_SGPR, 2, AC_ARG_CONST_ADDR, &args->ac.ring_offsets);
    }
 
    for (uint32_t i = 0; i < ARRAY_SIZE(args->ac.rt.launch_ids); i++)
-      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.rt.launch_ids[i]);
+      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.rt.launch_ids[i]);
 
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.rt.dynamic_callable_stack_base);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.rt.dynamic_callable_stack_base);
    ac_add_arg(&args->ac, AC_ARG_VGPR, 2, AC_ARG_CONST_ADDR, &args->ac.rt.shader_addr);
    ac_add_arg(&args->ac, AC_ARG_VGPR, 2, AC_ARG_CONST_ADDR, &args->ac.rt.shader_record);
 
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.rt.payload_offset);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 3, AC_ARG_FLOAT, &args->ac.rt.ray_origin);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 3, AC_ARG_FLOAT, &args->ac.rt.ray_direction);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_FLOAT, &args->ac.rt.ray_tmin);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_FLOAT, &args->ac.rt.ray_tmax);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.rt.cull_mask_and_flags);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.rt.payload_offset);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 3, AC_ARG_VALUE, &args->ac.rt.ray_origin);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 3, AC_ARG_VALUE, &args->ac.rt.ray_direction);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.rt.ray_tmin);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.rt.ray_tmax);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.rt.cull_mask_and_flags);
 
    ac_add_arg(&args->ac, AC_ARG_VGPR, 2, AC_ARG_CONST_ADDR, &args->ac.rt.accel_struct);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.rt.sbt_offset);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.rt.sbt_stride);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.rt.miss_index);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.rt.sbt_offset);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.rt.sbt_stride);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.rt.miss_index);
 
    ac_add_arg(&args->ac, AC_ARG_VGPR, 2, AC_ARG_CONST_ADDR, &args->ac.rt.instance_addr);
    ac_add_arg(&args->ac, AC_ARG_VGPR, 2, AC_ARG_CONST_ADDR, &args->ac.rt.primitive_addr);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.rt.primitive_id);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.rt.geometry_id_and_flags);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.rt.hit_kind);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.rt.primitive_id);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.rt.geometry_id_and_flags);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.rt.hit_kind);
 }
 
 static bool
@@ -396,22 +396,22 @@ declare_unmerged_vs_tcs_args(const enum amd_gfx_level gfx_level, const struct ra
                              const struct user_sgpr_info *user_sgpr_info, struct radv_shader_args *args)
 {
    /* SGPRs */
-   add_ud_arg(args, 2, AC_ARG_INT, &args->prolog_inputs, AC_UD_VS_PROLOG_INPUTS);
+   add_ud_arg(args, 2, AC_ARG_VALUE, &args->prolog_inputs, AC_UD_VS_PROLOG_INPUTS);
    add_ud_arg(args, 1, AC_ARG_CONST_ADDR, &args->ac.vertex_buffers, AC_UD_VS_VERTEX_BUFFERS);
-   add_ud_arg(args, 1, AC_ARG_INT, &args->ac.base_vertex, AC_UD_VS_BASE_VERTEX_START_INSTANCE);
-   add_ud_arg(args, 1, AC_ARG_INT, &args->ac.draw_id, AC_UD_VS_BASE_VERTEX_START_INSTANCE);
-   add_ud_arg(args, 1, AC_ARG_INT, &args->ac.start_instance, AC_UD_VS_BASE_VERTEX_START_INSTANCE);
+   add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.base_vertex, AC_UD_VS_BASE_VERTEX_START_INSTANCE);
+   add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.draw_id, AC_UD_VS_BASE_VERTEX_START_INSTANCE);
+   add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.start_instance, AC_UD_VS_BASE_VERTEX_START_INSTANCE);
 
    declare_global_input_sgprs(gfx_level, info, user_sgpr_info, args);
 
-   add_ud_arg(args, 1, AC_ARG_INT, &args->ac.view_index, AC_UD_VIEW_INDEX);
-   add_ud_arg(args, 1, AC_ARG_INT, &args->ac.tcs_offchip_layout, AC_UD_TCS_OFFCHIP_LAYOUT);
-   add_ud_arg(args, 1, AC_ARG_INT, &args->epilog_pc, AC_UD_EPILOG_PC);
-   add_ud_arg(args, 1, AC_ARG_INT, &args->next_stage_pc, AC_UD_NEXT_STAGE_PC);
+   add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.view_index, AC_UD_VIEW_INDEX);
+   add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.tcs_offchip_layout, AC_UD_TCS_OFFCHIP_LAYOUT);
+   add_ud_arg(args, 1, AC_ARG_VALUE, &args->epilog_pc, AC_UD_EPILOG_PC);
+   add_ud_arg(args, 1, AC_ARG_VALUE, &args->next_stage_pc, AC_UD_NEXT_STAGE_PC);
 
    /* VGPRs (TCS first, then VS) */
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.tcs_patch_id);
-   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.tcs_rel_ids);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.tcs_patch_id);
+   ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.tcs_rel_ids);
 
    declare_vs_input_vgprs(gfx_level, info, args, true);
 
@@ -443,37 +443,37 @@ declare_unmerged_vs_tes_gs_args(const enum amd_gfx_level gfx_level, const struct
                                 const struct user_sgpr_info *user_sgpr_info, struct radv_shader_args *args)
 {
    /* SGPRs */
-   add_ud_arg(args, 2, AC_ARG_INT, &args->prolog_inputs, AC_UD_VS_PROLOG_INPUTS);
+   add_ud_arg(args, 2, AC_ARG_VALUE, &args->prolog_inputs, AC_UD_VS_PROLOG_INPUTS);
    add_ud_arg(args, 1, AC_ARG_CONST_ADDR, &args->ac.vertex_buffers, AC_UD_VS_VERTEX_BUFFERS);
-   add_ud_arg(args, 1, AC_ARG_INT, &args->ac.base_vertex, AC_UD_VS_BASE_VERTEX_START_INSTANCE);
-   add_ud_arg(args, 1, AC_ARG_INT, &args->ac.draw_id, AC_UD_VS_BASE_VERTEX_START_INSTANCE);
-   add_ud_arg(args, 1, AC_ARG_INT, &args->ac.start_instance, AC_UD_VS_BASE_VERTEX_START_INSTANCE);
+   add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.base_vertex, AC_UD_VS_BASE_VERTEX_START_INSTANCE);
+   add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.draw_id, AC_UD_VS_BASE_VERTEX_START_INSTANCE);
+   add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.start_instance, AC_UD_VS_BASE_VERTEX_START_INSTANCE);
 
    declare_global_input_sgprs(gfx_level, info, user_sgpr_info, args);
 
-   add_ud_arg(args, 1, AC_ARG_INT, &args->ac.view_index, AC_UD_VIEW_INDEX);
-   add_ud_arg(args, 1, AC_ARG_INT, &args->ac.tcs_offchip_layout, AC_UD_TCS_OFFCHIP_LAYOUT);
+   add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.view_index, AC_UD_VIEW_INDEX);
+   add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.tcs_offchip_layout, AC_UD_TCS_OFFCHIP_LAYOUT);
 
    if (info->is_ngg) {
-      add_ud_arg(args, 1, AC_ARG_INT, &args->ngg_state, AC_UD_NGG_STATE);
+      add_ud_arg(args, 1, AC_ARG_VALUE, &args->ngg_state, AC_UD_NGG_STATE);
       if (gfx_level >= GFX11)
-         add_ud_arg(args, 1, AC_ARG_INT, &args->ngg_query_buf_va, AC_UD_NGG_QUERY_BUF_VA);
+         add_ud_arg(args, 1, AC_ARG_VALUE, &args->ngg_query_buf_va, AC_UD_NGG_QUERY_BUF_VA);
    }
-   add_ud_arg(args, 1, AC_ARG_INT, &args->vgt_esgs_ring_itemsize, AC_UD_VGT_ESGS_RING_ITEMSIZE);
-   add_ud_arg(args, 1, AC_ARG_INT, &args->ngg_lds_layout, AC_UD_NGG_LDS_LAYOUT);
-   add_ud_arg(args, 1, AC_ARG_INT, &args->next_stage_pc, AC_UD_NEXT_STAGE_PC);
+   add_ud_arg(args, 1, AC_ARG_VALUE, &args->vgt_esgs_ring_itemsize, AC_UD_VGT_ESGS_RING_ITEMSIZE);
+   add_ud_arg(args, 1, AC_ARG_VALUE, &args->ngg_lds_layout, AC_UD_NGG_LDS_LAYOUT);
+   add_ud_arg(args, 1, AC_ARG_VALUE, &args->next_stage_pc, AC_UD_NEXT_STAGE_PC);
 
    /* VGPRs (GS) */
    if (gfx_level >= GFX12) {
-      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.gs_vtx_offset[0]);
-      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.gs_prim_id);
-      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.gs_vtx_offset[1]);
+      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.gs_vtx_offset[0]);
+      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.gs_prim_id);
+      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.gs_vtx_offset[1]);
    } else {
-      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.gs_vtx_offset[0]);
-      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.gs_vtx_offset[1]);
-      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.gs_prim_id);
-      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.gs_invocation_id);
-      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.gs_vtx_offset[2]);
+      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.gs_vtx_offset[0]);
+      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.gs_vtx_offset[1]);
+      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.gs_prim_id);
+      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.gs_invocation_id);
+      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.gs_vtx_offset[2]);
    }
 
    /* Preserved SGPRs */
@@ -581,7 +581,7 @@ declare_shader_args(const struct radv_device *device, const struct radv_graphics
 
       if (info->cs.uses_grid_size) {
          if (args->load_grid_size_from_user_sgpr)
-            add_ud_arg(args, 3, AC_ARG_INT, &args->ac.num_work_groups, AC_UD_CS_GRID_SIZE);
+            add_ud_arg(args, 3, AC_ARG_VALUE, &args->ac.num_work_groups, AC_UD_CS_GRID_SIZE);
          else
             add_ud_arg(args, 2, AC_ARG_CONST_ADDR, &args->ac.num_work_groups, AC_UD_CS_GRID_SIZE);
       }
@@ -590,19 +590,19 @@ declare_shader_args(const struct radv_device *device, const struct radv_graphics
          add_ud_arg(args, 2, AC_ARG_CONST_ADDR, &args->ac.rt.sbt_descriptors, AC_UD_CS_SBT_DESCRIPTORS);
          add_ud_arg(args, 2, AC_ARG_CONST_ADDR, &args->ac.rt.traversal_shader_addr, AC_UD_CS_TRAVERSAL_SHADER_ADDR);
          add_ud_arg(args, 2, AC_ARG_CONST_ADDR, &args->ac.rt.launch_size_addr, AC_UD_CS_RAY_LAUNCH_SIZE_ADDR);
-         add_ud_arg(args, 1, AC_ARG_INT, &args->ac.rt.dynamic_callable_stack_base,
+         add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.rt.dynamic_callable_stack_base,
                     AC_UD_CS_RAY_DYNAMIC_CALLABLE_STACK_BASE);
       }
 
       if (info->vs.needs_draw_id) {
-         add_ud_arg(args, 1, AC_ARG_INT, &args->ac.draw_id, AC_UD_CS_TASK_DRAW_ID);
+         add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.draw_id, AC_UD_CS_TASK_DRAW_ID);
       }
 
       if (stage == MESA_SHADER_TASK) {
-         add_ud_arg(args, 1, AC_ARG_INT, &args->ac.task_ring_entry, AC_UD_TASK_RING_ENTRY);
+         add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.task_ring_entry, AC_UD_TASK_RING_ENTRY);
 
          if (has_shader_query) {
-            add_ud_arg(args, 1, AC_ARG_INT, &args->task_state, AC_UD_TASK_STATE);
+            add_ud_arg(args, 1, AC_ARG_VALUE, &args->task_state, AC_UD_TASK_STATE);
          }
       }
 
@@ -611,24 +611,24 @@ declare_shader_args(const struct radv_device *device, const struct radv_graphics
             if (gfx_level >= GFX12)
                args->ac.workgroup_ids[i].used = true;
             else
-               ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.workgroup_ids[i]);
+               ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.workgroup_ids[i]);
          }
       }
 
       if (info->cs.uses_local_invocation_idx) {
-         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.tg_size);
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.tg_size);
       }
 
       if (args->explicit_scratch_args && gfx_level < GFX11) {
-         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.scratch_offset);
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.scratch_offset);
       }
 
       if (gfx_level >= GFX11 || (!pdev->info.has_graphics && pdev->info.family >= CHIP_MI200)) {
-         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.local_invocation_ids_packed);
+         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.local_invocation_ids_packed);
       } else {
-         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.local_invocation_id_x);
-         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.local_invocation_id_y);
-         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.local_invocation_id_z);
+         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.local_invocation_id_x);
+         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.local_invocation_id_y);
+         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.local_invocation_id_z);
       }
       break;
    case MESA_SHADER_VERTEX:
@@ -640,15 +640,15 @@ declare_shader_args(const struct radv_device *device, const struct radv_graphics
       declare_global_input_sgprs(gfx_level, info, user_sgpr_info, args);
 
       if (info->uses_view_index) {
-         add_ud_arg(args, 1, AC_ARG_INT, &args->ac.view_index, AC_UD_VIEW_INDEX);
+         add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.view_index, AC_UD_VIEW_INDEX);
       }
 
       if (info->force_vrs_per_vertex) {
-         add_ud_arg(args, 1, AC_ARG_INT, &args->ac.force_vrs_rates, AC_UD_FORCE_VRS_RATES);
+         add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.force_vrs_rates, AC_UD_FORCE_VRS_RATES);
       }
 
       if (info->vs.as_es) {
-         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.es2gs_offset);
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.es2gs_offset);
       } else if (info->vs.as_ls) {
          /* no extra parameters */
       } else {
@@ -656,7 +656,7 @@ declare_shader_args(const struct radv_device *device, const struct radv_graphics
       }
 
       if (args->explicit_scratch_args) {
-         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.scratch_offset);
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.scratch_offset);
       }
 
       declare_vs_input_vgprs(gfx_level, info, args, false);
@@ -664,18 +664,18 @@ declare_shader_args(const struct radv_device *device, const struct radv_graphics
    case MESA_SHADER_TESS_CTRL:
       if (previous_stage != MESA_SHADER_NONE) {
          // First 6 system regs
-         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.tess_offchip_offset);
-         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.merged_wave_info);
-         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.tcs_factor_offset);
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.tess_offchip_offset);
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.merged_wave_info);
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.tcs_factor_offset);
 
          if (gfx_level >= GFX11) {
-            ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.tcs_wave_id);
+            ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.tcs_wave_id);
          } else {
-            ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.scratch_offset);
+            ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.scratch_offset);
          }
 
-         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, NULL); // unknown
-         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, NULL); // unknown
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, NULL); // unknown
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, NULL); // unknown
 
          if (info->merged_shader_compiled_separately) {
             declare_unmerged_vs_tcs_args(gfx_level, info, user_sgpr_info, args);
@@ -685,15 +685,15 @@ declare_shader_args(const struct radv_device *device, const struct radv_graphics
             declare_global_input_sgprs(gfx_level, info, user_sgpr_info, args);
 
             if (info->uses_view_index) {
-               add_ud_arg(args, 1, AC_ARG_INT, &args->ac.view_index, AC_UD_VIEW_INDEX);
+               add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.view_index, AC_UD_VIEW_INDEX);
             }
 
             if (radv_tcs_needs_state_sgpr(info, gfx_state)) {
-               add_ud_arg(args, 1, AC_ARG_INT, &args->ac.tcs_offchip_layout, AC_UD_TCS_OFFCHIP_LAYOUT);
+               add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.tcs_offchip_layout, AC_UD_TCS_OFFCHIP_LAYOUT);
             }
 
-            ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.tcs_patch_id);
-            ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.tcs_rel_ids);
+            ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.tcs_patch_id);
+            ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.tcs_rel_ids);
 
             declare_vs_input_vgprs(gfx_level, info, args, true);
          }
@@ -701,20 +701,20 @@ declare_shader_args(const struct radv_device *device, const struct radv_graphics
          declare_global_input_sgprs(gfx_level, info, user_sgpr_info, args);
 
          if (info->uses_view_index) {
-            add_ud_arg(args, 1, AC_ARG_INT, &args->ac.view_index, AC_UD_VIEW_INDEX);
+            add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.view_index, AC_UD_VIEW_INDEX);
          }
 
          if (radv_tcs_needs_state_sgpr(info, gfx_state)) {
-            add_ud_arg(args, 1, AC_ARG_INT, &args->ac.tcs_offchip_layout, AC_UD_TCS_OFFCHIP_LAYOUT);
+            add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.tcs_offchip_layout, AC_UD_TCS_OFFCHIP_LAYOUT);
          }
 
-         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.tess_offchip_offset);
-         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.tcs_factor_offset);
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.tess_offchip_offset);
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.tcs_factor_offset);
          if (args->explicit_scratch_args) {
-            ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.scratch_offset);
+            ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.scratch_offset);
          }
-         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.tcs_patch_id);
-         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.tcs_rel_ids);
+         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.tcs_patch_id);
+         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.tcs_rel_ids);
       }
       break;
    case MESA_SHADER_TESS_EVAL:
@@ -724,21 +724,21 @@ declare_shader_args(const struct radv_device *device, const struct radv_graphics
       declare_global_input_sgprs(gfx_level, info, user_sgpr_info, args);
 
       if (info->uses_view_index)
-         add_ud_arg(args, 1, AC_ARG_INT, &args->ac.view_index, AC_UD_VIEW_INDEX);
+         add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.view_index, AC_UD_VIEW_INDEX);
 
       if (radv_tes_needs_state_sgpr(info))
-         add_ud_arg(args, 1, AC_ARG_INT, &args->ac.tcs_offchip_layout, AC_UD_TCS_OFFCHIP_LAYOUT);
+         add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.tcs_offchip_layout, AC_UD_TCS_OFFCHIP_LAYOUT);
 
       if (info->tes.as_es) {
-         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.tess_offchip_offset);
-         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, NULL);
-         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.es2gs_offset);
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.tess_offchip_offset);
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, NULL);
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.es2gs_offset);
       } else {
          declare_streamout_sgprs(info, args, stage);
-         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.tess_offchip_offset);
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.tess_offchip_offset);
       }
       if (args->explicit_scratch_args) {
-         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.scratch_offset);
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.scratch_offset);
       }
       declare_tes_input_vgprs(args);
       break;
@@ -746,22 +746,22 @@ declare_shader_args(const struct radv_device *device, const struct radv_graphics
       if (previous_stage != MESA_SHADER_NONE) {
          // First 6 system regs
          if (info->is_ngg) {
-            ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.gs_tg_info);
+            ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.gs_tg_info);
          } else {
-            ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.gs2vs_offset);
+            ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.gs2vs_offset);
          }
 
-         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.merged_wave_info);
-         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.tess_offchip_offset);
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.merged_wave_info);
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.tess_offchip_offset);
 
          if (gfx_level >= GFX11) {
-            ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.gs_attr_offset);
+            ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.gs_attr_offset);
          } else {
-            ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.scratch_offset);
+            ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.scratch_offset);
          }
 
-         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, NULL); // unknown
-         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, NULL); // unknown
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, NULL); // unknown
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, NULL); // unknown
 
          if (info->merged_shader_compiled_separately) {
             declare_unmerged_vs_tes_gs_args(gfx_level, info, user_sgpr_info, args);
@@ -775,15 +775,15 @@ declare_shader_args(const struct radv_device *device, const struct radv_graphics
             declare_global_input_sgprs(gfx_level, info, user_sgpr_info, args);
 
             if (info->uses_view_index) {
-               add_ud_arg(args, 1, AC_ARG_INT, &args->ac.view_index, AC_UD_VIEW_INDEX);
+               add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.view_index, AC_UD_VIEW_INDEX);
             }
 
             if (previous_stage == MESA_SHADER_TESS_EVAL && radv_tes_needs_state_sgpr(info))
-               add_ud_arg(args, 1, AC_ARG_INT, &args->ac.tcs_offchip_layout, AC_UD_TCS_OFFCHIP_LAYOUT);
+               add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.tcs_offchip_layout, AC_UD_TCS_OFFCHIP_LAYOUT);
 
             /* Legacy GS force vrs is handled by GS copy shader. */
             if (info->force_vrs_per_vertex && info->is_ngg) {
-               add_ud_arg(args, 1, AC_ARG_INT, &args->ac.force_vrs_rates, AC_UD_FORCE_VRS_RATES);
+               add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.force_vrs_rates, AC_UD_FORCE_VRS_RATES);
             }
 
             if (info->is_ngg) {
@@ -794,20 +794,20 @@ declare_shader_args(const struct radv_device *device, const struct radv_graphics
                declare_ngg_sgprs(info, args, ngg_needs_state_sgpr);
 
                if (pdev->info.gfx_level >= GFX11 && has_shader_query)
-                  add_ud_arg(args, 1, AC_ARG_INT, &args->ngg_query_buf_va, AC_UD_NGG_QUERY_BUF_VA);
+                  add_ud_arg(args, 1, AC_ARG_VALUE, &args->ngg_query_buf_va, AC_UD_NGG_QUERY_BUF_VA);
             }
 
             if (previous_stage != MESA_SHADER_MESH || !pdev->info.mesh_fast_launch_2) {
                if (gfx_level >= GFX12) {
-                  ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.gs_vtx_offset[0]);
-                  ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.gs_prim_id);
-                  ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.gs_vtx_offset[1]);
+                  ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.gs_vtx_offset[0]);
+                  ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.gs_prim_id);
+                  ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.gs_vtx_offset[1]);
                } else {
-                  ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.gs_vtx_offset[0]);
-                  ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.gs_vtx_offset[1]);
-                  ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.gs_prim_id);
-                  ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.gs_invocation_id);
-                  ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.gs_vtx_offset[2]);
+                  ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.gs_vtx_offset[0]);
+                  ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.gs_vtx_offset[1]);
+                  ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.gs_prim_id);
+                  ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.gs_invocation_id);
+                  ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.gs_vtx_offset[2]);
                }
             }
          }
@@ -823,50 +823,50 @@ declare_shader_args(const struct radv_device *device, const struct radv_graphics
          declare_global_input_sgprs(gfx_level, info, user_sgpr_info, args);
 
          if (info->uses_view_index) {
-            add_ud_arg(args, 1, AC_ARG_INT, &args->ac.view_index, AC_UD_VIEW_INDEX);
+            add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.view_index, AC_UD_VIEW_INDEX);
          }
 
          if (info->force_vrs_per_vertex) {
-            add_ud_arg(args, 1, AC_ARG_INT, &args->ac.force_vrs_rates, AC_UD_FORCE_VRS_RATES);
+            add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.force_vrs_rates, AC_UD_FORCE_VRS_RATES);
          }
 
-         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.gs2vs_offset);
-         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.gs_wave_id);
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.gs2vs_offset);
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.gs_wave_id);
          if (args->explicit_scratch_args) {
-            ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.scratch_offset);
+            ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.scratch_offset);
          }
-         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.gs_vtx_offset[0]);
-         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.gs_vtx_offset[1]);
-         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.gs_prim_id);
-         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.gs_vtx_offset[2]);
-         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.gs_vtx_offset[3]);
-         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.gs_vtx_offset[4]);
-         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.gs_vtx_offset[5]);
-         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_INT, &args->ac.gs_invocation_id);
+         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.gs_vtx_offset[0]);
+         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.gs_vtx_offset[1]);
+         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.gs_prim_id);
+         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.gs_vtx_offset[2]);
+         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.gs_vtx_offset[3]);
+         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.gs_vtx_offset[4]);
+         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.gs_vtx_offset[5]);
+         ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->ac.gs_invocation_id);
       }
       break;
    case MESA_SHADER_FRAGMENT:
       declare_global_input_sgprs(gfx_level, info, user_sgpr_info, args);
 
       if (info->ps.has_epilog) {
-         add_ud_arg(args, 1, AC_ARG_INT, &args->epilog_pc, AC_UD_EPILOG_PC);
+         add_ud_arg(args, 1, AC_ARG_VALUE, &args->epilog_pc, AC_UD_EPILOG_PC);
       }
 
       if (radv_ps_needs_state_sgpr(info, gfx_state))
-         add_ud_arg(args, 1, AC_ARG_INT, &args->ps_state, AC_UD_PS_STATE);
+         add_ud_arg(args, 1, AC_ARG_VALUE, &args->ps_state, AC_UD_PS_STATE);
 
-      ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.prim_mask);
+      ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.prim_mask);
 
       if (info->ps.pops && gfx_level < GFX11) {
-         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.pops_collision_wave_id);
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.pops_collision_wave_id);
       }
 
       if (info->ps.load_provoking_vtx) {
-         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.load_provoking_vtx);
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.load_provoking_vtx);
       }
 
       if (args->explicit_scratch_args && gfx_level < GFX11) {
-         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_INT, &args->ac.scratch_offset);
+         ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.scratch_offset);
       }
 
       declare_ps_input_vgprs(info, args);
@@ -922,21 +922,21 @@ radv_declare_ps_epilog_args(const struct radv_device *device, const struct radv_
 
    /* Declare VGPR arguments for depth/stencil/sample exports. */
    if (key->export_depth)
-      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_FLOAT, &args->depth);
+      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->depth);
    if (key->export_stencil)
-      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_FLOAT, &args->stencil);
+      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->stencil);
    if (key->export_sample_mask)
-      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_FLOAT, &args->sample_mask);
+      ac_add_arg(&args->ac, AC_ARG_VGPR, 1, AC_ARG_VALUE, &args->sample_mask);
 
    /* Declare VGPR arguments for color exports. */
    for (unsigned i = 0; i < MAX_RTS; i++) {
       const uint8_t color = (key->colors_written >> (i * 4) & 0xf);
 
       if (!color) {
-         ac_add_arg(&args->ac, AC_ARG_VGPR, 4, AC_ARG_FLOAT, NULL);
+         ac_add_arg(&args->ac, AC_ARG_VGPR, 4, AC_ARG_VALUE, NULL);
          continue;
       }
 
-      ac_add_arg(&args->ac, AC_ARG_VGPR, 4, AC_ARG_FLOAT, &args->colors[i]);
+      ac_add_arg(&args->ac, AC_ARG_VGPR, 4, AC_ARG_VALUE, &args->colors[i]);
    }
 }
