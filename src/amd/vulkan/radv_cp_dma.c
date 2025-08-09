@@ -232,6 +232,11 @@ radv_cp_dma_copy_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t src_va, uin
    uint64_t main_src_va, main_dest_va;
    uint64_t skipped_size = 0, realign_size = 0;
 
+   if (!(pdev->info.cp_dma_use_L2 && pdev->info.gfx_level >= GFX9)) {
+      /* Invalidate L2 in case "src_va" or "dest_va" were previously written through L2. */
+      cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_INV_L2;
+   }
+
    /* Assume that we are not going to sync after the last DMA operation. */
    cmd_buffer->state.dma_is_busy = true;
 
@@ -296,9 +301,6 @@ radv_cp_dma_copy_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t src_va, uin
    }
    if (realign_size)
       radv_cp_dma_realign_engine(cmd_buffer, realign_size);
-
-   if (pdev->info.cp_sdma_ge_use_system_memory_scope)
-      cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_INV_L2;
 }
 
 void
@@ -309,6 +311,11 @@ radv_cp_dma_fill_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t va, uint64_
 
    if (!size)
       return;
+
+   if (!(pdev->info.cp_dma_use_L2 && pdev->info.gfx_level >= GFX9)) {
+      /* Invalidate L2 in case "va" was previously written through L2. */
+      cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_INV_L2;
+   }
 
    assert(va % 4 == 0 && size % 4 == 0);
 
@@ -339,9 +346,6 @@ radv_cp_dma_fill_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t va, uint64_
       size -= byte_count;
       va += byte_count;
    }
-
-   if (pdev->info.cp_sdma_ge_use_system_memory_scope)
-      cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_INV_L2;
 }
 
 void

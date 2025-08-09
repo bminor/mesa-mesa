@@ -5084,7 +5084,7 @@
         "description": "radv: Flush L2 before CP DMA copy/fill when CP DMA doesn't use L2",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
