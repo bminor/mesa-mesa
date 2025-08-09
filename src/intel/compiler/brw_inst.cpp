@@ -84,10 +84,7 @@ brw_inst::brw_inst(const brw_inst &that)
 static void
 initialize_sources(brw_inst *inst, const brw_reg src[], uint8_t num_sources)
 {
-   if (num_sources > ARRAY_SIZE(inst->builtin_src))
-      inst->src = ralloc_array(inst, brw_reg, num_sources);
-   else
-      inst->src = inst->builtin_src;
+   inst->src = ralloc_array(inst, brw_reg, num_sources);
 
    for (unsigned i = 0; i < num_sources; i++)
       inst->src[i] = src[i];
@@ -98,42 +95,16 @@ initialize_sources(brw_inst *inst, const brw_reg src[], uint8_t num_sources)
 void
 brw_inst::resize_sources(uint8_t num_sources)
 {
-   if (this->sources == num_sources)
-      return;
+   if (this->sources < num_sources) {
+      brw_reg *new_src = ralloc_array(this, brw_reg, num_sources);
 
-   brw_reg *old_src = this->src;
-   brw_reg *new_src;
+      for (unsigned i = 0; i < this->sources; i++)
+         new_src[i] = this->src[i];
 
-   const unsigned builtin_size = ARRAY_SIZE(this->builtin_src);
-
-   if (old_src == this->builtin_src) {
-      if (num_sources > builtin_size) {
-         new_src = ralloc_array(this, brw_reg, num_sources);
-         for (unsigned i = 0; i < this->sources; i++)
-            new_src[i] = old_src[i];
-
-      } else {
-         new_src = old_src;
-      }
-   } else {
-      if (num_sources <= builtin_size) {
-         new_src = this->builtin_src;
-         assert(this->sources > num_sources);
-         for (unsigned i = 0; i < num_sources; i++)
-            new_src[i] = old_src[i];
-
-      } else if (num_sources < this->sources) {
-         new_src = old_src;
-
-      } else {
-         new_src = ralloc_array(this, brw_reg, num_sources);
-         for (unsigned i = 0; i < this->sources; i++)
-            new_src[i] = old_src[i];
-      }
+      this->src = new_src;
    }
 
    this->sources = num_sources;
-   this->src = new_src;
 }
 
 bool

@@ -221,7 +221,6 @@ public:
 
    brw_reg dst;
    brw_reg *src;
-   brw_reg builtin_src[4];
 
 #ifndef NDEBUG
    /** @{
