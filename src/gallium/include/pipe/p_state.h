@@ -1056,6 +1056,11 @@ enum pipe_ml_operation_type {
    PIPE_ML_OPERATION_TYPE_TRANSPOSE,
 };
 
+enum pipe_ml_pooling_type {
+   PIPE_ML_POOLING_TYPE_AVG,
+   PIPE_ML_POOLING_TYPE_MAX,
+};
+
 /**
  * Information about a single operation inside a ML subgraph.
  */
@@ -1124,6 +1129,12 @@ struct pipe_ml_operation
          unsigned dilation_height_factor;
       } conv;
       struct {
+
+         /**
+          * Type of pooling operation.
+          */
+         enum pipe_ml_pooling_type type;
+
          /**
           * Stride used to access the input tensor on the x axis.
           */
