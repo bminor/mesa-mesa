@@ -39,18 +39,13 @@
 struct bblock_t;
 
 struct brw_inst : public brw_exec_node {
-private:
-   brw_inst &operator=(const brw_inst &);
-
-   void init(enum opcode opcode, uint8_t exec_width, const brw_reg &dst,
-             const brw_reg *src, unsigned sources);
-
 public:
-   DECLARE_RALLOC_CXX_OPERATORS(brw_inst)
+   brw_inst() = delete;
+   brw_inst(const brw_inst&) = delete;
 
-   brw_inst(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
-           const brw_reg src[], unsigned sources);
-   brw_inst(const brw_inst &that);
+   /* Enable usage of placement new. */
+   static void* operator new(size_t size, void *ptr) { return ptr; }
+   static void operator delete(void *p) {}
 
    void resize_sources(uint8_t num_sources);
 

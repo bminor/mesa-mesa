@@ -11,42 +11,38 @@
 #include "brw_inst.h"
 #include "brw_isa_info.h"
 
+static brw_inst *
+brw_alloc_inst(brw_shader &s, unsigned num_srcs)
+{
+   STATIC_ASSERT((sizeof(brw_inst) % alignof(brw_reg)) == 0);
+
+   void *mem = ralloc_size(s.mem_ctx, sizeof(brw_inst) + num_srcs * sizeof(brw_reg));
+   memset(mem, 0, sizeof(brw_inst));
+
+   brw_inst *inst = (brw_inst *)mem;
+   if (num_srcs)
+      inst->src = (brw_reg *)((char*)mem + sizeof(brw_inst));
+   inst->sources = num_srcs;
+
+   return inst;
+}
+
 brw_inst *
 brw_new_inst(brw_shader &s, enum opcode opcode, unsigned exec_size,
              const brw_reg &dst, const brw_reg srcs[], unsigned num_srcs)
 {
-   return new (s.mem_ctx) brw_inst(opcode, exec_size, dst, srcs, num_srcs);
-}
-
-brw_inst *
-brw_clone_inst(brw_shader &s, const brw_inst *inst)
-{
-   return new (s.mem_ctx) brw_inst(*inst);
-}
-
-static void
-initialize_sources(brw_inst *inst, const brw_reg src[], uint8_t num_sources);
-
-void
-brw_inst::init(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
-              const brw_reg *src, unsigned sources)
-{
-   memset((void*)this, 0, sizeof(*this));
-
-   initialize_sources(this, src, sources);
-
-   for (unsigned i = 0; i < sources; i++)
-      this->src[i] = src[i];
-
-   this->opcode = opcode;
-   this->dst = dst;
-   this->exec_size = exec_size;
-
+   assert(exec_size != 0);
    assert(dst.file != IMM && dst.file != UNIFORM);
 
-   assert(this->exec_size != 0);
+   brw_inst *inst = brw_alloc_inst(s, num_srcs);
 
-   this->conditional_mod = BRW_CONDITIONAL_NONE;
+   for (unsigned i = 0; i < num_srcs; i++)
+      inst->src[i] = srcs[i];
+
+   inst->opcode = opcode;
+   inst->dst = dst;
+   inst->exec_size = exec_size;
+   inst->conditional_mod = BRW_CONDITIONAL_NONE;
 
    /* This will be the case for almost all instructions. */
    switch (dst.file) {
@@ -55,41 +51,36 @@ brw_inst::init(enum opcode opcode, uint8_t exec_size, const brw_reg &dst,
    case ARF:
    case FIXED_GRF:
    case ATTR:
-      this->size_written = dst.component_size(exec_size);
+      inst->size_written = dst.component_size(exec_size);
       break;
    case BAD_FILE:
-      this->size_written = 0;
+      inst->size_written = 0;
       break;
    case IMM:
    case UNIFORM:
       UNREACHABLE("Invalid destination register file");
    }
 
-   this->writes_accumulator = false;
+   return inst;
 }
 
-brw_inst::brw_inst(enum opcode opcode, uint8_t exec_width, const brw_reg &dst,
-                 const brw_reg src[], unsigned sources)
+brw_inst *
+brw_clone_inst(brw_shader &s, const brw_inst *inst)
 {
-   init(opcode, exec_width, dst, src, sources);
-}
+   brw_inst *clone = brw_alloc_inst(s, inst->sources);
+   brw_reg *cloned_src = clone->src;
 
-brw_inst::brw_inst(const brw_inst &that)
-{
-   memcpy((void*)this, &that, sizeof(that));
-   brw_exec_node_init(this);
-   initialize_sources(this, that.src, that.sources);
-}
+   memcpy((void*)clone, inst, sizeof(brw_inst));
 
-static void
-initialize_sources(brw_inst *inst, const brw_reg src[], uint8_t num_sources)
-{
-   inst->src = ralloc_array(inst, brw_reg, num_sources);
+   brw_exec_node_init(clone);
+   clone->src = cloned_src;
 
-   for (unsigned i = 0; i < num_sources; i++)
-      inst->src[i] = src[i];
+   if (clone->sources) {
+      for (unsigned i = 0; i < clone->sources; i++)
+         clone->src[i] = inst->src[i];
+   }
 
-   inst->sources = num_sources;
+   return clone;
 }
 
 void
