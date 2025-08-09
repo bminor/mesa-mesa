@@ -236,7 +236,7 @@ convert_loop_exit_for_ssa(nir_def *def, void *void_state)
    /* Create a phi node with as many sources pointing to the same ssa_def as
     * the block has predecessors.
     */
-   uint32_t num_exits = state->block_after_loop->predecessors->entries;
+   uint32_t num_exits = state->block_after_loop->predecessors.entries;
    for (uint32_t i = 0; i < num_exits; i++) {
       nir_phi_instr_add_src(phi, state->exit_blocks[i], def);
    }
@@ -339,7 +339,7 @@ convert_to_lcssa(nir_cf_node *cf_node, lcssa_state *state)
           * The variance then depends on all (nested) break conditions.
           * We don't consider this, but assume all not_invariant.
           */
-         if (nir_loop_first_block(loop)->predecessors->entries == 1)
+         if (nir_loop_first_block(loop)->predecessors.entries == 1)
             goto end;
 
          nir_foreach_block_in_cf_node(block, cf_node) {

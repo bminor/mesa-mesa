@@ -3077,7 +3077,7 @@ typedef struct nir_block {
    nir_block *successors[2];
 
    /* Set of nir_block predecessors in the CFG */
-   struct set *predecessors;
+   struct set predecessors;
 
    /*
     * this node's immediate dominator in the dominance tree - set to NULL for
@@ -3099,7 +3099,7 @@ typedef struct nir_block {
    nir_block *_dom_children_storage[3];
 
    /* Set of nir_blocks on the dominance frontier of this block */
-   struct set *dom_frontier;
+   struct set dom_frontier;
 
    /*
     * These two indices have the property that dom_{pre,post}_index for each

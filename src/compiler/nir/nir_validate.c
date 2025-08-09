@@ -1055,7 +1055,7 @@ validate_phi_instr(nir_phi_instr *instr, validate_state *state)
 
    exec_list_validate(&instr->srcs);
    validate_assert(state, exec_list_length(&instr->srcs) ==
-                             state->block->predecessors->entries);
+                             state->block->predecessors.entries);
 }
 
 static void
@@ -1294,16 +1294,16 @@ validate_block_predecessors(nir_block *block, validate_state *state)
 
       /* And we have to be in our successor's predecessors set */
       validate_assert(state,
-                      _mesa_set_search(block->successors[i]->predecessors, block));
+                      _mesa_set_search(&block->successors[i]->predecessors, block));
 
       validate_phi_srcs(block, block->successors[i], state);
    }
 
    /* The start block cannot have any predecessors */
    if (block == nir_start_block(state->impl))
-      validate_assert(state, block->predecessors->entries == 0);
+      validate_assert(state, block->predecessors.entries == 0);
 
-   set_foreach(block->predecessors, entry) {
+   set_foreach(&block->predecessors, entry) {
       const nir_block *pred = entry->key;
       validate_assert(state, _mesa_set_search(state->blocks, pred));
       validate_assert(state, pred->successors[0] == block ||
@@ -1682,7 +1682,7 @@ typedef struct {
    uint32_t index;
    unsigned num_dom_children;
    struct nir_block **dom_children;
-   struct set *dom_frontier;
+   struct set dom_frontier;
    uint32_t dom_pre_index, dom_post_index;
 } block_dom_metadata;
 
@@ -1703,9 +1703,10 @@ validate_dominance(nir_function_impl *impl, validate_state *state)
       md->dom_post_index = block->dom_post_index;
       md->dom_children = block->dom_children;
       md->dom_frontier = block->dom_frontier;
+      memset(&block->dom_frontier, 0, sizeof(struct set));
 
       block->dom_children = NULL;
-      block->dom_frontier = _mesa_pointer_set_create(block);
+      _mesa_pointer_set_init(&block->dom_frontier, block);
    }
 
    /* Call metadata passes and compare it against the preserved metadata and call SSA dominance
@@ -1731,9 +1732,9 @@ validate_dominance(nir_function_impl *impl, validate_state *state)
                                            block->num_dom_children * sizeof(md->dom_children[0])));
          }
 
-         validate_assert(state, block->dom_frontier->entries == md->dom_frontier->entries);
-         set_foreach(block->dom_frontier, entry) {
-            validate_assert(state, _mesa_set_search_pre_hashed(md->dom_frontier,
+         validate_assert(state, block->dom_frontier.entries == md->dom_frontier.entries);
+         set_foreach(&block->dom_frontier, entry) {
+            validate_assert(state, _mesa_set_search_pre_hashed(&md->dom_frontier,
                                                                entry->hash, entry->key));
          }
       }
@@ -1750,7 +1751,7 @@ validate_dominance(nir_function_impl *impl, validate_state *state)
 
       if (block->dom_children != block->_dom_children_storage)
          ralloc_free(block->dom_children);
-      ralloc_free(block->dom_frontier);
+      _mesa_set_fini(&block->dom_frontier, NULL);
 
       block->index = md->index;
       block->num_dom_children = md->num_dom_children;

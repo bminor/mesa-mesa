@@ -1065,7 +1065,7 @@ ir3_nir_lower_gs(nir_shader *shader)
     * them to this new if statement, rather than emitting this code at every
     * return statement.
     */
-   assert(impl->end_block->predecessors->entries == 1);
+   assert(impl->end_block->predecessors.entries == 1);
    nir_block *block = nir_impl_last_block(impl);
    b.cursor = nir_after_block_before_jump(block);
 

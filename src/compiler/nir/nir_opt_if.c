@@ -42,9 +42,9 @@ find_continue_block(nir_loop *loop)
    nir_block *prev_block =
       nir_cf_node_as_block(nir_cf_node_prev(&loop->cf_node));
 
-   assert(header_block->predecessors->entries == 2);
+   assert(header_block->predecessors.entries == 2);
 
-   set_foreach(header_block->predecessors, pred_entry) {
+   set_foreach(&header_block->predecessors, pred_entry) {
       if (pred_entry->key != prev_block)
          return (nir_block *)pred_entry->key;
    }
@@ -143,13 +143,13 @@ opt_peel_loop_initial_if(nir_loop *loop)
       nir_cf_node_as_block(nir_cf_node_prev(&loop->cf_node));
 
    /* It would be insane if this were not true */
-   assert(_mesa_set_search(header_block->predecessors, prev_block));
+   assert(_mesa_set_search(&header_block->predecessors, prev_block));
 
    /* The loop must have exactly one continue block which could be a block
     * ending in a continue instruction or the "natural" continue from the
     * last block in the loop back to the top.
     */
-   if (header_block->predecessors->entries != 2)
+   if (header_block->predecessors.entries != 2)
       return false;
 
    nir_cf_node *if_node = nir_cf_node_next(&header_block->cf_node);
@@ -375,13 +375,13 @@ opt_split_alu_of_phi(nir_builder *b, nir_loop *loop, nir_opt_if_options options)
       nir_cf_node_as_block(nir_cf_node_prev(&loop->cf_node));
 
    /* It would be insane if this were not true */
-   assert(_mesa_set_search(header_block->predecessors, prev_block));
+   assert(_mesa_set_search(&header_block->predecessors, prev_block));
 
    /* The loop must have exactly one continue block which could be a block
     * ending in a continue instruction or the "natural" continue from the
     * last block in the loop back to the top.
     */
-   if (header_block->predecessors->entries != 2)
+   if (header_block->predecessors.entries != 2)
       return false;
 
    nir_block *continue_block = find_continue_block(loop);
@@ -613,13 +613,13 @@ opt_simplify_bcsel_of_phi(nir_builder *b, nir_loop *loop)
       nir_cf_node_as_block(nir_cf_node_prev(&loop->cf_node));
 
    /* It would be insane if this were not true */
-   assert(_mesa_set_search(header_block->predecessors, prev_block));
+   assert(_mesa_set_search(&header_block->predecessors, prev_block));
 
    /* The loop must have exactly one continue block which could be a block
     * ending in a continue instruction or the "natural" continue from the
     * last block in the loop back to the top.
     */
-   if (header_block->predecessors->entries != 2)
+   if (header_block->predecessors.entries != 2)
       return false;
 
    /* We can move any bcsel that can guaranteed to execut on every iteration

@@ -2087,7 +2087,7 @@ print_phi_instr(nir_phi_instr *instr, print_state *state)
    nir_block **preds =
       state->preds ? state->preds : nir_block_get_predecessors_sorted(instr->instr.block, NULL);
 
-   for (unsigned i = 0; i < instr->instr.block->predecessors->entries; i++) {
+   for (unsigned i = 0; i < instr->instr.block->predecessors.entries; i++) {
       nir_phi_src *src = nir_phi_get_src_from_block(instr, preds[i]);
       if (i != 0)
          fprintf(fp, ", ");
@@ -2248,7 +2248,7 @@ static void
 print_block_preds(nir_block *block, print_state *state)
 {
    FILE *fp = state->fp;
-   for (unsigned i = 0; i < block->predecessors->entries; i++) {
+   for (unsigned i = 0; i < block->predecessors.entries; i++) {
       fprintf(fp, " b%u", state->preds[i]->index);
    }
 }

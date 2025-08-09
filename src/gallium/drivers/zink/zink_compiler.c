@@ -2552,7 +2552,7 @@ clamp_layer_output(nir_shader *vs, nir_shader *fs, unsigned *next_location)
       nir_builder b;
       nir_function_impl *impl = nir_shader_get_entrypoint(vs);
       b = nir_builder_at(nir_after_impl(impl));
-      assert(impl->end_block->predecessors->entries == 1);
+      assert(impl->end_block->predecessors.entries == 1);
       clamp_layer_output_emit(&b, &state);
       nir_progress(true, impl, nir_metadata_dominance);
    }

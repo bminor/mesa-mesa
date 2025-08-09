@@ -703,7 +703,7 @@ nir_function_impl_create_bare(nir_shader *shader)
    exec_list_push_tail(&impl->body, &start_block->cf_node.node);
 
    start_block->successors[0] = end_block;
-   _mesa_set_add(end_block->predecessors, start_block);
+   _mesa_set_add(&end_block->predecessors, start_block);
    return impl;
 }
 
@@ -725,17 +725,9 @@ nir_block_create(nir_shader *shader)
    cf_init(&block->cf_node, nir_cf_node_block);
 
    block->successors[0] = block->successors[1] = NULL;
-   block->predecessors = _mesa_pointer_set_create(block);
+   _mesa_pointer_set_init(&block->predecessors, block);
    block->imm_dom = NULL;
-   /* XXX maybe it would be worth it to defer allocation?  This
-    * way it doesn't get allocated for shader refs that never run
-    * nir_calc_dominance?  For example, state-tracker creates an
-    * initial IR, clones that, runs appropriate lowering pass, passes
-    * to driver which does common lowering/opt, and then stores ref
-    * which is later used to do state specific lowering and futher
-    * opt.  Do any of the references not need dominance metadata?
-    */
-   block->dom_frontier = _mesa_pointer_set_create(block);
+   _mesa_pointer_set_init(&block->dom_frontier, block);
 
    exec_list_make_empty(&block->instr_list);
 
@@ -787,7 +779,7 @@ nir_loop_create(nir_shader *shader)
    body->cf_node.parent = &loop->cf_node;
 
    body->successors[0] = body;
-   _mesa_set_add(body->predecessors, body);
+   _mesa_set_add(&body->predecessors, body);
 
    exec_list_make_empty(&loop->continue_list);
 
@@ -2132,14 +2124,14 @@ nir_block **
 nir_block_get_predecessors_sorted(const nir_block *block, void *mem_ctx)
 {
    nir_block **preds =
-      ralloc_array(mem_ctx, nir_block *, block->predecessors->entries);
+      ralloc_array(mem_ctx, nir_block *, block->predecessors.entries);
 
    unsigned i = 0;
-   set_foreach(block->predecessors, entry)
+   set_foreach(&block->predecessors, entry)
       preds[i++] = (nir_block *)entry->key;
-   assert(i == block->predecessors->entries);
+   assert(i == block->predecessors.entries);
 
-   qsort(preds, block->predecessors->entries, sizeof(nir_block *),
+   qsort(preds, block->predecessors.entries, sizeof(nir_block *),
          compare_block_index);
 
    return preds;

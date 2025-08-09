@@ -858,7 +858,7 @@ visit_loop(isel_context* ctx, nir_loop* loop)
    loop_context lc;
    begin_loop(ctx, &lc);
    ctx->cf_info.parent_loop.has_divergent_break =
-      loop->divergent_break && nir_loop_first_block(loop)->predecessors->entries > 1;
+      loop->divergent_break && nir_loop_first_block(loop)->predecessors.entries > 1;
    ctx->cf_info.in_divergent_cf |= ctx->cf_info.parent_loop.has_divergent_break;
 
    visit_cf_list(ctx, &loop->body);

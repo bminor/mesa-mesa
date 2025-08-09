@@ -4617,13 +4617,13 @@ has_nontrivial_continue(nir_loop *nloop)
     * is more than one backedge from inside the loop (so more than 2 total
     * edges) then one must be a nontrivial continue.
     */
-   if (nstart->predecessors->entries > 2)
+   if (nstart->predecessors.entries > 2)
       return true;
 
    /* Check whether the one backedge is a nontrivial continue. This can happen
     * if the loop ends with a break.
     */
-   set_foreach (nstart->predecessors, entry) {
+   set_foreach (&nstart->predecessors, entry) {
       nir_block *pred = (nir_block*)entry->key;
       if (pred == nir_loop_last_block(nloop) ||
           pred == nir_cf_node_as_block(nir_cf_node_prev(&nloop->cf_node)))

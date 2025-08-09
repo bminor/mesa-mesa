@@ -38,10 +38,10 @@ lower_loop_continue_block(nir_builder *b, nir_loop *loop, bool *repair_ssa)
    /* count continue statements excluding unreachable ones */
    unsigned num_continue = 0;
    nir_block *single_predecessor = NULL;
-   set_foreach(cont->predecessors, entry) {
+   set_foreach(&cont->predecessors, entry) {
       nir_block *pred = (nir_block *)entry->key;
       /* If the continue block has no predecessors, it is unreachable. */
-      if (pred->predecessors->entries == 0)
+      if (pred->predecessors.entries == 0)
          continue;
 
       single_predecessor = pred;

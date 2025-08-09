@@ -57,7 +57,7 @@ static bool
 should_optimize_loop(nir_loop *loop)
 {
    /* Ignore loops without back-edge */
-   if (nir_loop_first_block(loop)->predecessors->entries == 1)
+   if (nir_loop_first_block(loop)->predecessors.entries == 1)
       return false;
 
    nir_foreach_block_in_cf_node(block, &loop->cf_node) {
