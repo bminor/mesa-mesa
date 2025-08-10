@@ -390,7 +390,8 @@ brw_opt_split_sends(brw_shader &s)
       lp1->dst = retype(brw_allocate_vgrf_units(s, lp1->size_written / REG_SIZE), lp1->dst.type);
       lp2->dst = retype(brw_allocate_vgrf_units(s, lp2->size_written / REG_SIZE), lp2->dst.type);
 
-      send->resize_sources(SEND_NUM_SRCS);
+      assert(send->sources == SEND_NUM_SRCS);
+
       send->src[SEND_SRC_PAYLOAD1] = lp1->dst;
       send->src[SEND_SRC_PAYLOAD2] = lp2->dst;
       send->ex_mlen = lp2->size_written / REG_SIZE;
