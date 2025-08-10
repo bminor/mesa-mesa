@@ -59,9 +59,24 @@ static const struct {
    { max_entries, size, rehash, \
       REMAINDER_MAGIC(size), REMAINDER_MAGIC(rehash) }
 
+   /* Starting with only 2 entries at initialization causes a lot of set
+    * reallocations and rehashing while growing the set.
+    *
+    * Below are results from counting reallocations when compiling
+    * my GLSL shader-db on radeonsi+ACO.
+    *
+    * 2 entries is the baseline.
+    * Starting with  4 entries reduces reallocations to 55%.
+    * Starting with  8 entries reduces reallocations to 37%.
+    * Starting with 16 entries reduces reallocations to 28%.
+    * Starting with 32 entries reduces reallocations to 23%.
+    * Starting with 64 entries reduces reallocations to 21%.
+    */
+#if 0 /* Start with 16 entries. */
    ENTRY(2,            5,            3            ),
    ENTRY(4,            7,            5            ),
    ENTRY(8,            13,           11           ),
+#endif
    ENTRY(16,           19,           17           ),
    ENTRY(32,           43,           41           ),
    ENTRY(64,           73,           71           ),
