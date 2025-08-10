@@ -2308,9 +2308,6 @@ static void
 lower_btd_logical_send(const brw_builder &bld, brw_inst *inst)
 {
    const intel_device_info *devinfo = bld.shader->devinfo;
-   brw_reg global_addr = inst->src[0];
-   const brw_reg btd_record = inst->src[1];
-
    const unsigned unit = reg_unit(devinfo);
    const unsigned mlen = 2 * unit;
    const brw_builder ubld = bld.exec_all();
@@ -2318,7 +2315,8 @@ lower_btd_logical_send(const brw_builder &bld, brw_inst *inst)
 
    ubld.MOV(header, brw_imm_ud(0));
    switch (inst->opcode) {
-   case SHADER_OPCODE_BTD_SPAWN_LOGICAL:
+   case SHADER_OPCODE_BTD_SPAWN_LOGICAL: {
+      brw_reg global_addr = inst->src[0];
       assert(brw_type_size_bytes(global_addr.type) == 8 &&
              global_addr.stride == 0);
       global_addr.type = BRW_TYPE_UD;
@@ -2333,6 +2331,7 @@ lower_btd_logical_send(const brw_builder &bld, brw_inst *inst)
        *       structure of the callee.
        */
       break;
+   }
 
    case SHADER_OPCODE_BTD_RETIRE_LOGICAL:
       /* The bottom bit is the Stack ID release bit */
@@ -2353,6 +2352,7 @@ lower_btd_logical_send(const brw_builder &bld, brw_inst *inst)
    unsigned ex_mlen = 0;
    brw_reg payload;
    if (inst->opcode == SHADER_OPCODE_BTD_SPAWN_LOGICAL) {
+      const brw_reg btd_record = inst->src[1];
       ex_mlen = 2 * (inst->exec_size / 8);
       payload = bld.move_to_vgrf(btd_record, 1);
    } else {
