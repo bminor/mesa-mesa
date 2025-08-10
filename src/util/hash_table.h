@@ -44,6 +44,7 @@ struct hash_entry {
 };
 
 struct hash_table {
+   void *mem_ctx;
    struct hash_entry *table;
    uint32_t (*key_hash_function)(const void *key);
    bool (*key_equals_function)(const void *a, const void *b);
@@ -56,6 +57,15 @@ struct hash_table {
    uint32_t size_index;
    uint32_t entries;
    uint32_t deleted_entries;
+
+   /* "table" points to here at first. A bigger storage is allocated separately
+    * when a bigger size is needed.
+    */
+   struct hash_entry _initial_storage[19]; /* hash_sizes[0].size */
+
+   /* Don't insert any new fields here. All other fields must be before
+    * _initial_storage.
+    */
 };
 
 struct hash_table *
