@@ -328,15 +328,18 @@ public:
    emit(enum opcode opcode, const brw_reg &dst, const brw_reg &src0,
         const brw_reg &src1, const brw_reg &src2) const
    {
-      brw_reg srcs[] = { src0, src1, src2 };
+      brw_inst *inst = brw_new_inst(*shader, opcode, dispatch_width(), dst, 3);
+      inst->src[0] = src0;
+      inst->src[1] = src1;
+      inst->src[2] = src2;
 
       switch (opcode) {
       case BRW_OPCODE_BFE:
       case BRW_OPCODE_BFI2:
       case BRW_OPCODE_MAD:
       case BRW_OPCODE_LRP:
-         for (int i = 0; i < 3; i++)
-            srcs[i] = fix_3src_operand(srcs[i]);
+         for (unsigned i = 0; i < 3; i++)
+            inst->src[i] = fix_3src_operand(inst->src[i]);
          break;
 
       default:
@@ -344,7 +347,7 @@ public:
          break;
       }
 
-      return emit(brw_new_inst(*shader, opcode, dispatch_width(), dst, srcs, 3));
+      return emit(inst);
    }
 
    /**
@@ -361,7 +364,10 @@ public:
       if (num_srcs == 3) {
          return emit(opcode, dst, srcs[0], srcs[1], srcs[2]);
       } else {
-         return emit(brw_new_inst(*shader, opcode, dispatch_width(), dst, srcs, num_srcs));
+         brw_inst *inst = brw_new_inst(*shader, opcode, dispatch_width(), dst, num_srcs);
+         for (unsigned i = 0; i < num_srcs; i++)
+            inst->src[i] = srcs[i];
+         return emit(inst);
       }
    }
 

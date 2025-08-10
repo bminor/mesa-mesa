@@ -372,5 +372,5 @@ bool brw_insert_load_reg(brw_shader &s);
 bool brw_lower_load_reg(brw_shader &s);
 
 brw_inst *brw_new_inst(brw_shader &s, enum opcode opcode, unsigned exec_size,
-                       const brw_reg &dst, const brw_reg srcs[], unsigned num_srcs);
+                       const brw_reg &dst, unsigned num_srcs);
 brw_inst *brw_clone_inst(brw_shader &s, const brw_inst *inst);

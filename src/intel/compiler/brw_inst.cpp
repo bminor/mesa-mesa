@@ -29,15 +29,12 @@ brw_alloc_inst(brw_shader &s, unsigned num_srcs)
 
 brw_inst *
 brw_new_inst(brw_shader &s, enum opcode opcode, unsigned exec_size,
-             const brw_reg &dst, const brw_reg srcs[], unsigned num_srcs)
+             const brw_reg &dst, unsigned num_srcs)
 {
    assert(exec_size != 0);
    assert(dst.file != IMM && dst.file != UNIFORM);
 
    brw_inst *inst = brw_alloc_inst(s, num_srcs);
-
-   for (unsigned i = 0; i < num_srcs; i++)
-      inst->src[i] = srcs[i];
 
    inst->opcode = opcode;
    inst->dst = dst;
