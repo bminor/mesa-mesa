@@ -443,17 +443,35 @@ brw_shader::brw_shader(const brw_shader_params *params)
    this->gs.control_data_bits_per_vertex = 0;
    this->gs.control_data_header_size_bits = 0;
 
-
    if (params->per_primitive_offsets) {
       assert(stage == MESA_SHADER_FRAGMENT);
       memcpy(this->fs.per_primitive_offsets, params->per_primitive_offsets,
              sizeof(this->fs.per_primitive_offsets));
+   }
+
+   {
+      unsigned inst_count = 0;
+      if (nir_shader_get_entrypoint(nir)) {
+         nir_foreach_block(block, nir_shader_get_entrypoint(nir)) {
+            nir_foreach_instr(instr, block)
+               inst_count++;
+         }
+      }
+
+      const unsigned estimate = inst_count * (sizeof(brw_inst) + 2 * sizeof(brw_reg));
+
+      inst_arena.mem_ctx = ralloc_context(NULL);
+      inst_arena.cap = estimate;
+      inst_arena.beg = (char *) ralloc_size(mem_ctx, inst_arena.cap);
+      inst_arena.end = inst_arena.beg + inst_arena.cap;
+      inst_arena.total_cap = inst_arena.cap;
    }
 }
 
 brw_shader::~brw_shader()
 {
    delete this->payload_;
+   ralloc_free(inst_arena.mem_ctx);
 }
 
 void

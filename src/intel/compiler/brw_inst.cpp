@@ -29,14 +29,51 @@ brw_inst_kind_size(brw_inst_kind kind)
                                 : sizeof(brw_send_inst);
 }
 
+static inline unsigned
+brw_inst_kind_align(brw_inst_kind kind)
+{
+   STATIC_ASSERT(alignof(brw_send_inst) >= alignof(brw_tex_inst));
+   STATIC_ASSERT(alignof(brw_send_inst) >= alignof(brw_mem_inst));
+   STATIC_ASSERT(alignof(brw_send_inst) >= alignof(brw_dpas_inst));
+   STATIC_ASSERT(alignof(brw_send_inst) >= alignof(brw_load_payload_inst));
+   STATIC_ASSERT(alignof(brw_send_inst) >= alignof(brw_urb_inst));
+   STATIC_ASSERT(alignof(brw_send_inst) >= alignof(brw_fb_write_inst));
+
+   /* See brw_inst_kind_size(). */
+
+   return kind == BRW_KIND_BASE ? alignof(brw_inst)
+                                : alignof(brw_send_inst);
+}
+
+static void *
+brw_alloc_size(brw_shader &s, unsigned size, unsigned align)
+{
+   unsigned padding = -(uintptr_t)s.inst_arena.beg & (align - 1);
+
+   /* If doesn't fit, create a larger one. */
+   if (s.inst_arena.end - s.inst_arena.beg - padding < size) {
+      unsigned new_cap = MAX2(s.inst_arena.total_cap / 2, size);
+      s.inst_arena.beg = (char *)ralloc_size(s.inst_arena.mem_ctx, new_cap);
+      s.inst_arena.end = s.inst_arena.beg + new_cap;
+      s.inst_arena.cap = new_cap;
+      s.inst_arena.total_cap += new_cap;
+      padding = 0;
+   }
+
+   void *mem = s.inst_arena.beg + padding;
+   s.inst_arena.beg += padding + size;
+   return mem;
+}
+
 static brw_inst *
 brw_alloc_inst(brw_shader &s, brw_inst_kind kind, unsigned num_srcs)
 {
    const unsigned inst_size = brw_inst_kind_size(kind);
+   const unsigned inst_align = brw_inst_kind_align(kind);
 
    assert((inst_size % alignof(brw_reg)) == 0);
 
-   void *mem = ralloc_size(s.mem_ctx, inst_size + num_srcs * sizeof(brw_reg));
+   void *mem = brw_alloc_size(s, inst_size + num_srcs * sizeof(brw_reg), inst_align);
    memset(mem, 0, inst_size);
 
    brw_inst *inst = (brw_inst *)mem;
@@ -131,7 +168,8 @@ brw_transform_inst(brw_shader &s, brw_inst *inst, enum opcode new_opcode,
    assert(new_num_sources != UINT_MAX);
 
    if (new_num_sources > inst->sources) {
-      brw_reg *new_src = ralloc_array(inst, brw_reg, new_num_sources);
+      brw_reg *new_src = (brw_reg *)
+         brw_alloc_size(s, sizeof(brw_reg) * new_num_sources, alignof(brw_reg));
       for (unsigned i = 0; i < inst->sources; i++)
          new_src[i] = inst->src[i];
       inst->src = new_src;

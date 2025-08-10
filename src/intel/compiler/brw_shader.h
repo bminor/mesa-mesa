@@ -226,6 +226,16 @@ public:
    void debug_optimizer(const nir_shader *nir,
                         const char *pass_name,
                         int iteration, int pass_num) const;
+
+   /* Used to allocate instructions, see brw_new_inst() and brw_clone_inst(). */
+   struct {
+      void *mem_ctx;
+      unsigned cap;
+      char *beg;
+      char *end;
+
+      unsigned total_cap;
+   } inst_arena;
 };
 
 void brw_print_instructions(const brw_shader &s, FILE *file = stderr);
