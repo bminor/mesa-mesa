@@ -137,6 +137,7 @@ _mesa_set_init(struct set *ht, void *mem_ctx,
                  bool (*key_equals_function)(const void *a,
                                              const void *b))
 {
+   ht->mem_ctx = mem_ctx;
    ht->size_index = 0;
    ht->size = hash_sizes[ht->size_index].size;
    ht->rehash = hash_sizes[ht->size_index].rehash;
@@ -145,7 +146,9 @@ _mesa_set_init(struct set *ht, void *mem_ctx,
    ht->max_entries = hash_sizes[ht->size_index].max_entries;
    ht->key_hash_function = key_hash_function;
    ht->key_equals_function = key_equals_function;
-   ht->table = rzalloc_array(mem_ctx, struct set_entry, ht->size);
+   assert(ht->size == ARRAY_SIZE(ht->_initial_storage));
+   ht->table = ht->_initial_storage;
+   memset(ht->table, 0, sizeof(ht->_initial_storage));
    ht->entries = 0;
    ht->deleted_entries = 0;
 
@@ -216,15 +219,22 @@ _mesa_set_clone(struct set *set, void *dst_mem_ctx)
    if (clone == NULL)
       return NULL;
 
-   memcpy(clone, set, sizeof(struct set));
+   /* Copy the whole structure except the initial storage. */
+   memcpy(clone, set, offsetof(struct set, _initial_storage));
+   clone->mem_ctx = dst_mem_ctx;
 
-   clone->table = ralloc_array(clone, struct set_entry, clone->size);
-   if (clone->table == NULL) {
-      ralloc_free(clone);
-      return NULL;
+   if (set->table != set->_initial_storage) {
+      clone->table = ralloc_array(dst_mem_ctx, struct set_entry, clone->size);
+      if (clone->table == NULL) {
+         ralloc_free(clone);
+         return NULL;
+      }
+
+      memcpy(clone->table, set->table, clone->size * sizeof(struct set_entry));
+   } else {
+      clone->table = clone->_initial_storage;
+      memcpy(clone->table, set->_initial_storage, sizeof(set->_initial_storage));
    }
-
-   memcpy(clone->table, set->table, clone->size * sizeof(struct set_entry));
 
    return clone;
 }
@@ -245,7 +255,8 @@ _mesa_set_fini(struct set *ht,
          delete_function(entry);
       }
    }
-   ralloc_free(ht->table);
+   if (ht->table != ht->_initial_storage)
+      ralloc_free(ht->table);
    ht->table = NULL;
 }
 
@@ -387,12 +398,19 @@ set_rehash(struct set *ht, unsigned new_size_index)
    if (new_size_index >= ARRAY_SIZE(hash_sizes))
       return;
 
-   table = rzalloc_array(ralloc_parent(ht->table), struct set_entry,
+   table = rzalloc_array(ht->mem_ctx, struct set_entry,
                          hash_sizes[new_size_index].size);
    if (table == NULL)
       return;
 
-   old_ht = *ht;
+   if (ht->table == ht->_initial_storage) {
+      /* Copy the whole structure including the initial storage. */
+      old_ht = *ht;
+      old_ht.table = old_ht._initial_storage;
+   } else {
+      /* Copy everything except the initial storage. */
+      memcpy(&old_ht, ht, offsetof(struct set, _initial_storage));
+   }
 
    ht->table = table;
    ht->size_index = new_size_index;
@@ -410,7 +428,8 @@ set_rehash(struct set *ht, unsigned new_size_index)
 
    ht->entries = old_ht.entries;
 
-   ralloc_free(old_ht.table);
+   if (old_ht.table != old_ht._initial_storage)
+      ralloc_free(old_ht.table);
 }
 
 void
