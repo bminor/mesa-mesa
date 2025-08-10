@@ -131,7 +131,7 @@ entry_is_present(struct set_entry *entry)
    return entry->key != NULL && entry->key != deleted_key;
 }
 
-bool
+void
 _mesa_set_init(struct set *ht, void *mem_ctx,
                  uint32_t (*key_hash_function)(const void *key),
                  bool (*key_equals_function)(const void *a,
@@ -151,15 +151,12 @@ _mesa_set_init(struct set *ht, void *mem_ctx,
    memset(ht->table, 0, sizeof(ht->_initial_storage));
    ht->entries = 0;
    ht->deleted_entries = 0;
-
-   return ht->table != NULL;
 }
 
-bool
+void
 _mesa_pointer_set_init(struct set *ht, void *mem_ctx)
 {
-   return _mesa_set_init(ht, mem_ctx, _mesa_hash_pointer,
-                         _mesa_key_pointer_equal);
+   _mesa_set_init(ht, mem_ctx, _mesa_hash_pointer, _mesa_key_pointer_equal);
 }
 
 /* It's preferred to use _mesa_set_init instead of this to skip ralloc. */
@@ -175,11 +172,7 @@ _mesa_set_create(void *mem_ctx,
    if (ht == NULL)
       return NULL;
 
-   if (!_mesa_set_init(ht, ht, key_hash_function, key_equals_function)) {
-      ralloc_free(ht);
-      return NULL;
-   }
-
+   _mesa_set_init(ht, ht, key_hash_function, key_equals_function);
    return ht;
 }
 
@@ -196,10 +189,10 @@ key_u32_equals(const void *a, const void *b)
    return (uint32_t)(uintptr_t)a == (uint32_t)(uintptr_t)b;
 }
 
-bool
+void
 _mesa_u32_set_init(struct set *ht, void *mem_ctx)
 {
-   return _mesa_set_init(ht, mem_ctx, key_u32_hash, key_u32_equals);
+   _mesa_set_init(ht, mem_ctx, key_u32_hash, key_u32_equals);
 }
 
 /* key == 0 and key == deleted_key are not allowed */

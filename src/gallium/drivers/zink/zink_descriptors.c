@@ -1671,8 +1671,7 @@ zink_descriptor_layouts_init(struct zink_screen *screen)
    for (unsigned i = 0; i < ZINK_DESCRIPTOR_BASE_TYPES; i++) {
       if (!_mesa_hash_table_init(&screen->desc_set_layouts[i], screen, hash_descriptor_layout, equals_descriptor_layout))
          return false;
-      if (!_mesa_set_init(&screen->desc_pool_keys[i], screen, hash_descriptor_pool_key, equals_descriptor_pool_key))
-         return false;
+      _mesa_set_init(&screen->desc_pool_keys[i], screen, hash_descriptor_pool_key, equals_descriptor_pool_key);
    }
    simple_mtx_init(&screen->desc_set_layouts_lock, mtx_plain);
    simple_mtx_init(&screen->desc_pool_keys_lock, mtx_plain);

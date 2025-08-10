@@ -2870,14 +2870,12 @@ fail:
    return NULL;
 }
 
-bool
+void
 radv_shader_part_cache_init(struct radv_shader_part_cache *cache, struct radv_shader_part_cache_ops *ops)
 {
    cache->ops = ops;
-   if (!_mesa_set_init(&cache->entries, NULL, cache->ops->hash, cache->ops->equals))
-      return false;
+   _mesa_set_init(&cache->entries, NULL, cache->ops->hash, cache->ops->equals);
    simple_mtx_init(&cache->lock, mtx_plain);
-   return true;
 }
 
 void

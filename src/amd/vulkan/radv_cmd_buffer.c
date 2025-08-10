@@ -302,18 +302,13 @@ radv_cmd_buffer_finish_shader_part_cache(struct radv_cmd_buffer *cmd_buffer)
    _mesa_set_fini(&cmd_buffer->ps_epilogs, NULL);
 }
 
-static bool
+static void
 radv_cmd_buffer_init_shader_part_cache(struct radv_device *device, struct radv_cmd_buffer *cmd_buffer)
 {
-   if (device->vs_prologs.ops) {
-      if (!_mesa_set_init(&cmd_buffer->vs_prologs, NULL, device->vs_prologs.ops->hash, device->vs_prologs.ops->equals))
-         return false;
-   }
-   if (device->ps_epilogs.ops) {
-      if (!_mesa_set_init(&cmd_buffer->ps_epilogs, NULL, device->ps_epilogs.ops->hash, device->ps_epilogs.ops->equals))
-         return false;
-   }
-   return true;
+   if (device->vs_prologs.ops)
+      _mesa_set_init(&cmd_buffer->vs_prologs, NULL, device->vs_prologs.ops->hash, device->vs_prologs.ops->equals);
+   if (device->ps_epilogs.ops)
+      _mesa_set_init(&cmd_buffer->ps_epilogs, NULL, device->ps_epilogs.ops->hash, device->ps_epilogs.ops->equals);
 }
 
 static void
@@ -386,11 +381,7 @@ radv_create_cmd_buffer(struct vk_command_pool *pool, VkCommandBufferLevel level,
    if (cmd_buffer->qf != RADV_QUEUE_SPARSE) {
       list_inithead(&cmd_buffer->upload.list);
 
-      if (!radv_cmd_buffer_init_shader_part_cache(device, cmd_buffer)) {
-         radv_destroy_cmd_buffer(&cmd_buffer->vk);
-         return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
-      }
-
+      radv_cmd_buffer_init_shader_part_cache(device, cmd_buffer);
       result = radv_create_cmd_stream(device, cmd_buffer->qf, cmd_buffer->vk.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY,
                                       &cmd_buffer->cs);
       if (result != VK_SUCCESS) {

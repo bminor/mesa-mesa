@@ -590,7 +590,7 @@ struct radv_shader_part *radv_create_ps_epilog(struct radv_device *device, const
 
 void radv_shader_part_destroy(struct radv_device *device, struct radv_shader_part *shader_part);
 
-bool radv_shader_part_cache_init(struct radv_shader_part_cache *cache, struct radv_shader_part_cache_ops *ops);
+void radv_shader_part_cache_init(struct radv_shader_part_cache *cache, struct radv_shader_part_cache_ops *ops);
 void radv_shader_part_cache_finish(struct radv_device *device, struct radv_shader_part_cache *cache);
 struct radv_shader_part *radv_shader_part_cache_get(struct radv_device *device, struct radv_shader_part_cache *cache,
                                                     struct set *local_entries, const void *key);

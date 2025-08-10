@@ -359,15 +359,14 @@ create_batch_state(struct zink_context *ctx)
    zink_label_cmd_buffer(ctx, screen->dev, cmdbufs[0], "zink cmdbuf");
    zink_label_cmd_buffer(ctx, screen->dev, cmdbufs[1], "zink barrier cmdbuf");
 
-#define SET_CREATE_OR_FAIL(ptr) \
-   if (!_mesa_set_init(ptr, bs, _mesa_hash_pointer, _mesa_key_pointer_equal)) \
-      goto fail
+#define SET_CREATE(ptr) \
+   _mesa_set_init(ptr, bs, _mesa_hash_pointer, _mesa_key_pointer_equal)
 
    bs->ctx = ctx;
 
-   SET_CREATE_OR_FAIL(&bs->programs);
-   SET_CREATE_OR_FAIL(&bs->active_queries);
-   SET_CREATE_OR_FAIL(&bs->dmabuf_exports);
+   SET_CREATE(&bs->programs);
+   SET_CREATE(&bs->active_queries);
+   SET_CREATE(&bs->dmabuf_exports);
    util_dynarray_init(&bs->signal_semaphores, NULL);
    util_dynarray_init(&bs->user_signal_semaphores, NULL);
    util_dynarray_init(&bs->user_signal_semaphore_values, NULL);

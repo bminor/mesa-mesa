@@ -64,7 +64,7 @@ struct set {
     */
 };
 
-bool
+void
 _mesa_set_init(struct set *ht, void *mem_ctx,
                  uint32_t (*key_hash_function)(const void *key),
                  bool (*key_equals_function)(const void *a,
@@ -74,10 +74,10 @@ void
 _mesa_set_fini(struct set *ht,
                void (*delete_function)(struct set_entry *entry));
 
-bool
+void
 _mesa_pointer_set_init(struct set *ht, void *mem_ctx);
 
-bool
+void
 _mesa_u32_set_init(struct set *ht, void *mem_ctx);
 
 struct set *

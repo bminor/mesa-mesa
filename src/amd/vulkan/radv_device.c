@@ -191,8 +191,7 @@ radv_device_init_vs_prologs(struct radv_device *device)
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
 
-   if (!radv_shader_part_cache_init(&device->vs_prologs, &vs_prolog_ops))
-      return vk_error(instance, VK_ERROR_OUT_OF_HOST_MEMORY);
+   radv_shader_part_cache_init(&device->vs_prologs, &vs_prolog_ops);
 
    /* don't pre-compile prologs if we want to print them */
    if (instance->debug_flags & RADV_DEBUG_DUMP_PROLOGS)
@@ -1359,12 +1358,8 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
        device->vk.enabled_features.extendedDynamicState3ColorBlendEnable ||
        device->vk.enabled_features.extendedDynamicState3ColorWriteMask ||
        device->vk.enabled_features.extendedDynamicState3AlphaToCoverageEnable ||
-       device->vk.enabled_features.extendedDynamicState3ColorBlendEquation) {
-      if (!radv_shader_part_cache_init(&device->ps_epilogs, &ps_epilog_ops)) {
-         result = VK_ERROR_OUT_OF_HOST_MEMORY;
-         goto fail;
-      }
-   }
+       device->vk.enabled_features.extendedDynamicState3ColorBlendEquation)
+      radv_shader_part_cache_init(&device->ps_epilogs, &ps_epilog_ops);
 
    if (pdev->info.has_graphics && !(instance->debug_flags & RADV_DEBUG_NO_IBS))
       radv_create_gfx_preamble(device);
