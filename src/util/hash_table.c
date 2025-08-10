@@ -160,7 +160,7 @@ entry_is_present(const struct hash_table *ht, struct hash_entry *entry)
    return entry->key != NULL && entry->key != ht->deleted_key;
 }
 
-bool
+void
 _mesa_hash_table_init(struct hash_table *ht,
                       void *mem_ctx,
                       uint32_t (*key_hash_function)(const void *key),
@@ -182,8 +182,6 @@ _mesa_hash_table_init(struct hash_table *ht,
    ht->entries = 0;
    ht->deleted_entries = 0;
    ht->deleted_key = &deleted_key_value;
-
-   return true;
 }
 
 /* It's preferred to use _mesa_hash_table_init instead of this to skip ralloc. */
@@ -202,11 +200,7 @@ _mesa_hash_table_create(void *mem_ctx,
    if (ht == NULL)
       return NULL;
 
-   if (!_mesa_hash_table_init(ht, ht, key_hash_function, key_equals_function)) {
-      ralloc_free(ht);
-      return NULL;
-   }
-
+   _mesa_hash_table_init(ht, ht, key_hash_function, key_equals_function);
    return ht;
 }
 
@@ -231,10 +225,10 @@ _mesa_hash_table_create_u32_keys(void *mem_ctx)
    return _mesa_hash_table_create(mem_ctx, key_u32_hash, key_u32_equals);
 }
 
-bool
+void
 _mesa_hash_table_init_u32_keys(struct hash_table *ht, void *mem_ctx)
 {
-   return _mesa_hash_table_init(ht, mem_ctx, key_u32_hash, key_u32_equals);
+   _mesa_hash_table_init(ht, mem_ctx, key_u32_hash, key_u32_equals);
 }
 
 struct hash_table *
@@ -807,11 +801,11 @@ _mesa_pointer_hash_table_create(void *mem_ctx)
                                   _mesa_key_pointer_equal);
 }
 
-bool
+void
 _mesa_pointer_hash_table_init(struct hash_table *ht, void *mem_ctx)
 {
-   return _mesa_hash_table_init(ht, mem_ctx, _mesa_hash_pointer,
-                                _mesa_key_pointer_equal);
+   _mesa_hash_table_init(ht, mem_ctx, _mesa_hash_pointer,
+                         _mesa_key_pointer_equal);
 }
 
 /* It's preferred to use _mesa_string_hash_table_init instead of this to skip ralloc. */
@@ -822,11 +816,11 @@ _mesa_string_hash_table_create(void *mem_ctx)
                                   _mesa_key_string_equal);
 }
 
-bool
+void
 _mesa_string_hash_table_init(struct hash_table *ht, void *mem_ctx)
 {
-   return _mesa_hash_table_init(ht, mem_ctx, _mesa_hash_string,
-                                _mesa_key_string_equal);
+   _mesa_hash_table_init(ht, mem_ctx, _mesa_hash_string,
+                         _mesa_key_string_equal);
 }
 
 bool

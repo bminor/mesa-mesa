@@ -74,7 +74,7 @@ _mesa_hash_table_create(void *mem_ctx,
                         bool (*key_equals_function)(const void *a,
                                                     const void *b));
 
-bool
+void
 _mesa_hash_table_init(struct hash_table *ht,
                       void *mem_ctx,
                       uint32_t (*key_hash_function)(const void *key),
@@ -88,7 +88,7 @@ _mesa_hash_table_fini(struct hash_table *ht,
 struct hash_table *
 _mesa_hash_table_create_u32_keys(void *mem_ctx);
 
-bool
+void
 _mesa_hash_table_init_u32_keys(struct hash_table *ht, void *mem_ctx);
 
 struct hash_table *
@@ -149,13 +149,13 @@ bool _mesa_key_pointer_equal(const void *a, const void *b);
 struct hash_table *
 _mesa_pointer_hash_table_create(void *mem_ctx);
 
-bool
+void
 _mesa_pointer_hash_table_init(struct hash_table *ht, void *mem_ctx);
 
 struct hash_table *
 _mesa_string_hash_table_create(void *mem_ctx);
 
-bool
+void
 _mesa_string_hash_table_init(struct hash_table *ht, void *mem_ctx);
 
 bool
@@ -210,9 +210,9 @@ hash_table_call_foreach(struct hash_table *ht,
       return _mesa_hash_table_create(memctx, T##_hash, T##_equal);             \
    }                                                                           \
                                                                                \
-   static UNUSED inline bool T##_table_init(struct hash_table *ht, void *memctx) \
+   static UNUSED inline void T##_table_init(struct hash_table *ht, void *memctx) \
    {                                                                           \
-      return _mesa_hash_table_init(ht, memctx, T##_hash, T##_equal);           \
+      _mesa_hash_table_init(ht, memctx, T##_hash, T##_equal);                  \
    }                                                                           \
 
 /**
