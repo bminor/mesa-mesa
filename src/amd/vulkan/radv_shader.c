@@ -2886,7 +2886,7 @@ radv_shader_part_cache_finish(struct radv_device *device, struct radv_shader_par
    set_foreach (&cache->entries, entry)
       radv_shader_part_unref(device, radv_shader_part_from_cache_entry(entry->key));
    simple_mtx_destroy(&cache->lock);
-   ralloc_free(cache->entries.table);
+   _mesa_set_fini(&cache->entries, NULL);
 }
 
 /*

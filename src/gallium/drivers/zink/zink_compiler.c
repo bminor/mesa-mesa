@@ -6029,7 +6029,7 @@ trivial_revectorize(nir_shader *nir)
       nir_instr *instr = (void*)entry->key;
       nir_instr_remove(instr);
    }
-   ralloc_free(deletions.table);
+   _mesa_set_fini(&deletions, NULL);
    return progress;
 }
 

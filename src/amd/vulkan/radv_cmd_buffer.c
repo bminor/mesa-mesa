@@ -298,8 +298,8 @@ radv_emit_clear_data(struct radv_cmd_buffer *cmd_buffer, unsigned engine_sel, ui
 static void
 radv_cmd_buffer_finish_shader_part_cache(struct radv_cmd_buffer *cmd_buffer)
 {
-   ralloc_free(cmd_buffer->vs_prologs.table);
-   ralloc_free(cmd_buffer->ps_epilogs.table);
+   _mesa_set_fini(&cmd_buffer->vs_prologs, NULL);
+   _mesa_set_fini(&cmd_buffer->ps_epilogs, NULL);
 }
 
 static bool

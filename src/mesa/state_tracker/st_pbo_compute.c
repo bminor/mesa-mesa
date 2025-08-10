@@ -1360,7 +1360,7 @@ st_pbo_compute_deinit(struct st_context *st)
             }
             free(spec);
          }
-         ralloc_free(async->specialized.table);
+         _mesa_set_fini(&async->specialized, NULL);
          free(async);
       } else {
          st->pipe->delete_compute_state(st->pipe, entry->data);

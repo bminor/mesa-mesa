@@ -1539,8 +1539,7 @@ zink_destroy_screen(struct pipe_screen *pscreen)
          }
       }
       if (!device_table.entries) {
-         ralloc_free(device_table.table);
-         device_table.table = NULL;
+         _mesa_set_fini(&device_table, NULL);
       }
       simple_mtx_unlock(&device_lock);
    }

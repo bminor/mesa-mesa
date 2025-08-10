@@ -1035,7 +1035,7 @@ zink_gfx_lib_cache_unref(struct zink_screen *screen, struct zink_gfx_lib_cache *
       VKSCR(DestroyPipeline)(screen->dev, gkey->pipeline, NULL);
       FREE(gkey);
    }
-   ralloc_free(libs->libs.table);
+   _mesa_set_fini(&libs->libs, NULL);
    FREE(libs);
 }
 

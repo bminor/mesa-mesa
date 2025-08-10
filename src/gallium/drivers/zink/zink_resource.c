@@ -207,14 +207,14 @@ zink_destroy_resource_surface_cache(struct zink_screen *screen, struct set *ht, 
          VKSCR(DestroyBufferView)(screen->dev, bv->buffer_view, NULL);
          FREE(bv);
       }
-      ralloc_free(ht->table);
+      _mesa_set_fini(ht, NULL);
    } else {
       set_foreach_remove(ht, he) {
          struct zink_surface *surf = (void*)he->key;
          VKSCR(DestroyImageView)(screen->dev, surf->image_view, NULL);
          FREE(surf);
       }
-      ralloc_free(ht->table);
+      _mesa_set_fini(ht, NULL);
    }
 }
 
