@@ -252,7 +252,6 @@ if with_platform_android
   files_debug_stack = files('u_debug_stack_android.cpp')
 else
   files_debug_stack = files(
-    'dbghelp.h',
     'u_debug_stack.c',
     'u_debug_symbol.c',
     'u_debug_symbol.h',
