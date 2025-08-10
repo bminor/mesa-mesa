@@ -498,6 +498,8 @@ brw_opt_eliminate_find_live_channel(brw_shader &s)
       case SHADER_OPCODE_FIND_LIVE_CHANNEL:
          if (depth == 0) {
             inst->opcode = BRW_OPCODE_MOV;
+
+            inst->resize_sources(1);
             inst->src[0] = brw_imm_ud(0u);
             inst->force_writemask_all = true;
 
@@ -508,7 +510,6 @@ brw_opt_eliminate_find_live_channel(brw_shader &s)
             if (inst->size_written == inst->dst.component_size(8 * reg_unit(s.devinfo)))
                inst->exec_size = 8 * reg_unit(s.devinfo);
 
-            inst->resize_sources(1);
             progress = true;
 
             /* emit_uniformize() frequently emits FIND_LIVE_CHANNEL paired
