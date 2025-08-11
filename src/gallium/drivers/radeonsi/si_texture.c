@@ -254,7 +254,16 @@ static int si_init_surface(struct si_screen *sscreen, struct radeon_surf *surfac
              (ptex->bind & PIPE_BIND_SHARED) || is_imported) {
             flags |= RADEON_SURF_NO_HTILE;
          } else if (tc_compatible_htile &&
-                    (sscreen->info.gfx_level >= GFX9 || array_mode == RADEON_SURF_MODE_2D)) {
+                    (sscreen->info.gfx_level >= GFX9 || array_mode == RADEON_SURF_MODE_2D) &&
+                    !(sscreen->info.has_htile_stencil_mipmap_bug &&
+                      sscreen->info.has_htile_tc_z_clear_bug_without_stencil &&
+                      ptex->last_level > 0)) {
+            /* On GFX1013, TILE_STENCIL_DISABLE = 0 is needed to work around the hardware bug that
+             * may cause the Z clear value used by TC to be inverted, but stencil texturing with
+             * HTILE doesn't work with mipmapping on GFX10, so not enabling TC-compatible HTILE on
+             * GFX1013 if both bugs checked above can't be worked around at once (with mipmaps).
+             */
+
             /* TC-compatible HTILE only supports Z32_FLOAT.
              * GFX9 also supports Z16_UNORM.
              * On GFX8, promote Z16 to Z32. DB->CB copies will convert
