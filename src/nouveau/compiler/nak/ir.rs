@@ -1404,6 +1404,7 @@ pub struct OpFoldData<'a> {
 }
 
 impl OpFoldData<'_> {
+    #[allow(dead_code)]
     pub fn get_pred_src(&self, op: &impl SrcsAsSlice, src: &Src) -> bool {
         let i = op.src_idx(src);
         let b = match src.src_ref {
@@ -1437,6 +1438,7 @@ impl OpFoldData<'_> {
         }
     }
 
+    #[allow(dead_code)]
     pub fn get_u32_bnot_src(&self, op: &impl SrcsAsSlice, src: &Src) -> u32 {
         let x = self.get_u32_src(op, src);
         if src.src_mod.is_bnot() {
@@ -1446,6 +1448,7 @@ impl OpFoldData<'_> {
         }
     }
 
+    #[allow(dead_code)]
     pub fn get_carry_src(&self, op: &impl SrcsAsSlice, src: &Src) -> bool {
         assert!(src.src_ref.as_ssa().is_some());
         let i = op.src_idx(src);
@@ -1479,10 +1482,12 @@ impl OpFoldData<'_> {
         }
     }
 
+    #[allow(dead_code)]
     pub fn set_pred_dst(&mut self, op: &impl DstsAsSlice, dst: &Dst, b: bool) {
         self.dsts[op.dst_idx(dst)] = FoldData::Pred(b);
     }
 
+    #[allow(dead_code)]
     pub fn set_carry_dst(&mut self, op: &impl DstsAsSlice, dst: &Dst, b: bool) {
         self.dsts[op.dst_idx(dst)] = FoldData::Carry(b);
     }
@@ -1556,6 +1561,7 @@ pub enum PredSetOp {
 }
 
 impl PredSetOp {
+    #[allow(dead_code)]
     pub fn eval(&self, a: bool, b: bool) -> bool {
         match self {
             PredSetOp::And => a & b,
@@ -5658,6 +5664,7 @@ impl SuClampRound {
         }
     }
 
+    #[allow(dead_code)]
     pub fn to_mask(&self) -> u32 {
         !(self.to_int() as u32 - 1)
     }
@@ -6074,6 +6081,7 @@ impl IMadSpSrcType {
         }
     }
 
+    #[allow(dead_code)]
     fn cast(&self, v: u32) -> i64 {
         use IMadSpSrcType::*;
         match self {
