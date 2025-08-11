@@ -12,6 +12,7 @@
 #include "panvk_cmd_pool.h"
 #include "panvk_device.h"
 #include "panvk_entrypoints.h"
+#include "vk_common_entrypoints.h"
 
 #include "vk_alloc.h"
 #include "vk_log.h"
@@ -72,4 +73,19 @@ panvk_DestroyCommandPool(VkDevice _device, VkCommandPool commandPool,
    }
 
    vk_free2(&device->vk.alloc, pAllocator, pool);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL
+panvk_ResetCommandPool(VkDevice _device, VkCommandPool commandPool,
+                       VkCommandPoolResetFlags flags)
+{
+   VK_FROM_HANDLE(panvk_cmd_pool, pool, commandPool);
+
+   const bool release_resources =
+      (flags & VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT) != 0;
+   if (release_resources) {
+      panvk_bo_pool_cleanup(&pool->tls_big_bo_pool);
+   }
+
+   return vk_common_ResetCommandPool(_device, commandPool, flags);
 }
