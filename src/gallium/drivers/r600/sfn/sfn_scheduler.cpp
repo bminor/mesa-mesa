@@ -526,6 +526,7 @@ BlockScheduler::schedule_alu(Shader::ShaderBlocks& out_blocks)
 {
    bool success = false;
    AluGroup *group = nullptr;
+   int expected_ar_uses = m_current_block->expected_ar_uses();
 
    sfn_log << SfnLog::schedule << "Schedule alu with " <<
               m_current_block->expected_ar_uses()
@@ -544,6 +545,7 @@ BlockScheduler::schedule_alu(Shader::ShaderBlocks& out_blocks)
       if (m_current_block->type() != Block::alu) {
          start_new_block(out_blocks, Block::alu);
          m_alu_groups_scheduled = 0;
+         expected_ar_uses = 0;
       }
    }
 
@@ -565,7 +567,7 @@ BlockScheduler::schedule_alu(Shader::ShaderBlocks& out_blocks)
             alu_groups_ready.erase(alu_groups_ready.begin());
             success = true;
          } else {
-            if (m_current_block->expected_ar_uses() == 0) {
+            if (expected_ar_uses == 0) {
                start_new_block(out_blocks, Block::alu);
 
                if (!m_current_block->try_reserve_kcache(*group))
@@ -621,7 +623,9 @@ BlockScheduler::schedule_alu(Shader::ShaderBlocks& out_blocks)
 
          // AR is loaded but not all uses are done, we don't want
          // to start a new CF here
-         assert(m_current_block->expected_ar_uses() ==0);
+         // TODO this can explode, if kcache reservation fails with
+         // an instruction that also requires AR
+         assert(expected_ar_uses == 0);
 
          // kcache reservation failed, so we have to start a new CF
          start_new_block(out_blocks, Block::alu);
@@ -649,13 +653,13 @@ BlockScheduler::schedule_alu(Shader::ShaderBlocks& out_blocks)
    if (is_index) {
       if (addr->sel() == AddressRegister::idx0 && m_idx0_pending) {
          assert(!group->has_lds_group_start());
-         assert(m_current_block->expected_ar_uses() == 0);
+         assert(expected_ar_uses == 0);
          start_new_block(out_blocks, Block::alu);
          m_current_block->try_reserve_kcache(*group);
       }
       if (addr->sel() == AddressRegister::idx1 && m_idx1_pending) {
          assert(!group->has_lds_group_start());
-         assert(m_current_block->expected_ar_uses() == 0);
+         assert(expected_ar_uses == 0);
          start_new_block(out_blocks, Block::alu);
          m_current_block->try_reserve_kcache(*group);
       }
@@ -671,8 +675,7 @@ BlockScheduler::schedule_alu(Shader::ShaderBlocks& out_blocks)
    m_idx1_pending |= m_idx1_loading;
    m_idx1_loading = false;
 
-   if (!m_current_block->lds_group_active() &&
-       m_current_block->expected_ar_uses() == 0 &&
+   if (!m_current_block->lds_group_active() && expected_ar_uses == 0 &&
        (!addr || is_index)) {
       group->set_instr_flag(Instr::no_lds_or_addr_group);
    }
@@ -685,7 +688,7 @@ BlockScheduler::schedule_alu(Shader::ShaderBlocks& out_blocks)
 
    if (group->has_kill_op()) {
       assert(!group->has_lds_group_start());
-      assert(m_current_block->expected_ar_uses() == 0);
+      assert(expected_ar_uses == 0);
       start_new_block(out_blocks, Block::alu);
    }
    group->update_readport_reserver();
