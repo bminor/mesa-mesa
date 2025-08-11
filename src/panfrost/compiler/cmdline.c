@@ -31,6 +31,8 @@
 #include "valhall/disassemble.h"
 #include "panfrost/lib/pan_props.h"
 
+#include "util/os_file.h"
+
 unsigned gpu_id = 0x72120000;
 int verbose = 0;
 
@@ -44,17 +46,12 @@ disassemble(const char *filename)
    FILE *fp = fopen(filename, "rb");
    assert(fp);
 
-   fseek(fp, 0, SEEK_END);
-   unsigned filesize = ftell(fp);
-   rewind(fp);
-
-   uint32_t *code = malloc(filesize);
-   unsigned res = fread(code, 1, filesize, fp);
-   if (res != filesize) {
-      printf("Couldn't read full file\n");
+   size_t filesize = 0;
+   uint32_t *code = (uint32_t *)os_read_file(filename, &filesize);
+   if (!code) {
+      fprintf(stderr, "Couldn't read full file\n");
+      return;
    }
-
-   fclose(fp);
 
    void *entrypoint = code;
 
