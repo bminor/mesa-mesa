@@ -180,6 +180,8 @@ brw_compile_cs(const struct brw_compiler *compiler,
       prog_data->local_size[2] = nir->info.workgroup_size[2];
    }
 
+   brw_postprocess_nir_opts(nir, compiler, key->base.robust_flags);
+
    brw_simd_selection_state simd_state{
       .devinfo = compiler->devinfo,
       .prog_data = prog_data,
@@ -206,13 +208,9 @@ brw_compile_cs(const struct brw_compiler *compiler,
 
       NIR_PASS(_, shader, brw_nir_lower_simd, dispatch_width);
 
-      /* Clean up after the local index and ID calculations. */
-      NIR_PASS(_, shader, nir_opt_constant_folding);
-      NIR_PASS(_, shader, nir_opt_dce);
-
-      brw_postprocess_nir(shader, compiler, dispatch_width,
-                          params->base.archiver, debug_enabled,
-                          key->base.robust_flags);
+      brw_nir_optimize(shader, devinfo);
+      brw_postprocess_nir_out_of_ssa(shader, dispatch_width,
+                                     params->base.archiver, debug_enabled);
 
       const brw_shader_params shader_params = {
          .compiler                = compiler,

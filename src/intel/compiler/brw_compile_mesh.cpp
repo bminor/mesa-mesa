@@ -384,6 +384,8 @@ brw_compile_task(const struct brw_compiler *compiler,
    prog_data->base.uses_inline_data = brw_nir_uses_inline_data(nir) ||
                                       key->base.uses_inline_push_addr;
 
+   brw_postprocess_nir_opts(nir, compiler, key->base.robust_flags);
+
    brw_simd_selection_state simd_state{
       .devinfo = compiler->devinfo,
       .prog_data = &prog_data->base,
@@ -409,9 +411,9 @@ brw_compile_task(const struct brw_compiler *compiler,
 
       NIR_PASS(_, shader, brw_nir_lower_simd, dispatch_width);
 
-      brw_postprocess_nir(shader, compiler, dispatch_width,
-                          params->base.archiver, debug_enabled,
-                          key->base.robust_flags);
+      brw_nir_optimize(shader, devinfo);
+      brw_postprocess_nir_out_of_ssa(shader, dispatch_width,
+                                     params->base.archiver, debug_enabled);
 
       const brw_shader_params shader_params = {
          .compiler                = compiler,
@@ -1234,6 +1236,8 @@ brw_compile_mesh(const struct brw_compiler *compiler,
    prog_data->base.uses_inline_data = brw_nir_uses_inline_data(nir) ||
                                       key->base.uses_inline_push_addr;
 
+   brw_postprocess_nir_opts(nir, compiler, key->base.robust_flags);
+
    brw_simd_selection_state simd_state{
       .devinfo = compiler->devinfo,
       .prog_data = &prog_data->base,
@@ -1271,9 +1275,9 @@ brw_compile_mesh(const struct brw_compiler *compiler,
 
       NIR_PASS(_, shader, brw_nir_lower_simd, dispatch_width);
 
-      brw_postprocess_nir(shader, compiler, dispatch_width,
-                          params->base.archiver, debug_enabled,
-                          key->base.robust_flags);
+      brw_nir_optimize(shader, devinfo);
+      brw_postprocess_nir_out_of_ssa(shader, dispatch_width,
+                                     params->base.archiver, debug_enabled);
 
       const brw_shader_params shader_params = {
          .compiler                = compiler,
