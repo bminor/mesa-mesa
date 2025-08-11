@@ -1319,7 +1319,7 @@ TEST_F(ComputeTest, log)
    }\n";
    auto inout = ShaderArg<float>({ 0.0f, 1.0f, 2.0f, 3.0f }, SHADER_ARG_INOUT);
    const float expected[] = {
-      log(0.0f), log(1.0f), log(2.0f), log(3.0f)
+      logf(0.0f), logf(1.0f), logf(2.0f), logf(3.0f)
    };
    run_shader(kernel_source, inout.size(), 1, 1, inout);
    for (size_t i = 0; i < inout.size(); ++i)
@@ -1335,7 +1335,7 @@ TEST_F(ComputeTest, log10)
    }\n";
    auto inout = ShaderArg<float>({ 0.0f, 1.0f, 2.0f, 3.0f }, SHADER_ARG_INOUT);
    const float expected[] = {
-      log10(0.0f), log10(1.0f), log10(2.0f), log10(3.0f)
+      log10f(0.0f), log10f(1.0f), log10f(2.0f), log10f(3.0f)
    };
    run_shader(kernel_source, inout.size(), 1, 1, inout);
    for (size_t i = 0; i < inout.size(); ++i)
@@ -1351,7 +1351,7 @@ TEST_F(ComputeTest, log2)
    }\n";
    auto inout = ShaderArg<float>({ 0.0f, 1.0f, 2.0f, 3.0f }, SHADER_ARG_INOUT);
    const float expected[] = {
-      log(0.0f) / log(2.0f), log(1.0f) / log(2.0f), log(2.0f) / log(2.0f), log(3.0f) / log(2.0f)
+      logf(0.0f) / logf(2.0f), logf(1.0f) / logf(2.0f), logf(2.0f) / logf(2.0f), logf(3.0f) / logf(2.0f)
    };
    run_shader(kernel_source, inout.size(), 1, 1, inout);
    for (size_t i = 0; i < inout.size(); ++i)
