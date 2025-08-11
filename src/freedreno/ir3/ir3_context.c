@@ -558,12 +558,6 @@ ir3_create_array_store(struct ir3_context *ctx, struct ir3_array *arr, int n,
       ir3_instr_set_address(mov, address);
 
    arr->last_write = dst;
-
-   /* the array store may only matter to something in an earlier
-    * block (ie. loops), but since arrays are not in SSA, depth
-    * pass won't know this.. so keep all array stores:
-    */
-   array_insert(block, block->keeps, mov);
 }
 
 void
