@@ -1291,8 +1291,11 @@ gl_nir_link_uniform_blocks(const struct gl_constants *consts,
       prog->data->linked_stages |= 1 << stage;
 
       /* Copy ubo blocks to linked shader list */
-      linked->Program->sh.UniformBlocks =
-         ralloc_array(linked, struct gl_uniform_block *, num_ubo_blocks);
+      linked->Program->sh.UniformBlocks = NULL;
+      if (num_ubo_blocks) {
+         linked->Program->sh.UniformBlocks =
+            ralloc_array(linked, struct gl_uniform_block *, num_ubo_blocks);
+      }
       ralloc_steal(linked, ubo_blocks);
       linked->Program->sh.NumUniformBlocks = num_ubo_blocks;
       for (unsigned i = 0; i < num_ubo_blocks; i++) {
@@ -1307,8 +1310,11 @@ gl_nir_link_uniform_blocks(const struct gl_constants *consts,
       linked->Program->info.num_ubos = num_ubo_blocks;
 
       /* Copy ssbo blocks to linked shader list */
-      linked->Program->sh.ShaderStorageBlocks =
-         ralloc_array(linked, struct gl_uniform_block *, num_ssbo_blocks);
+      linked->Program->sh.ShaderStorageBlocks = NULL;
+      if (num_ssbo_blocks) {
+         linked->Program->sh.ShaderStorageBlocks =
+            ralloc_array(linked, struct gl_uniform_block *, num_ssbo_blocks);
+      }
       ralloc_steal(linked, ssbo_blocks);
       for (unsigned i = 0; i < num_ssbo_blocks; i++) {
          linked->Program->sh.ShaderStorageBlocks[i] = &ssbo_blocks[i];
