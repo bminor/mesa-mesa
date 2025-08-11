@@ -128,6 +128,8 @@ d3d12_wgl_framebuffer_resize(stw_winsys_framebuffer *fb,
    case PIPE_FORMAT_R8G8B8X8_UNORM:
       framebuffer->pformat = PIPE_FORMAT_R8G8B8A8_UNORM;
       break;
+   default:
+      break;
    }
 
    if (!framebuffer->swapchain) {
