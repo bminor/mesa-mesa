@@ -350,7 +350,7 @@ static void *virgl_create_blend_state(struct pipe_context *ctx,
    handle = virgl_object_assign_handle();
 
    virgl_encode_blend_state(vctx, handle, blend_state);
-   return (void *)(unsigned long)handle;
+   return (void *)(uintptr_t)handle;
 
 }
 
@@ -358,7 +358,7 @@ static void virgl_bind_blend_state(struct pipe_context *ctx,
                                            void *blend_state)
 {
    struct virgl_context *vctx = virgl_context(ctx);
-   uint32_t handle = (unsigned long)blend_state;
+   uint32_t handle = (uintptr_t)blend_state;
    virgl_encode_bind_object(vctx, handle, VIRGL_OBJECT_BLEND);
 }
 
@@ -366,7 +366,7 @@ static void virgl_delete_blend_state(struct pipe_context *ctx,
                                      void *blend_state)
 {
    struct virgl_context *vctx = virgl_context(ctx);
-   uint32_t handle = (unsigned long)blend_state;
+   uint32_t handle = (uintptr_t)blend_state;
    virgl_encode_delete_object(vctx, handle, VIRGL_OBJECT_BLEND);
 }
 
@@ -378,14 +378,14 @@ static void *virgl_create_depth_stencil_alpha_state(struct pipe_context *ctx,
    handle = virgl_object_assign_handle();
 
    virgl_encode_dsa_state(vctx, handle, blend_state);
-   return (void *)(unsigned long)handle;
+   return (void *)(uintptr_t)handle;
 }
 
 static void virgl_bind_depth_stencil_alpha_state(struct pipe_context *ctx,
                                                 void *blend_state)
 {
    struct virgl_context *vctx = virgl_context(ctx);
-   uint32_t handle = (unsigned long)blend_state;
+   uint32_t handle = (uintptr_t)blend_state;
    virgl_encode_bind_object(vctx, handle, VIRGL_OBJECT_DSA);
 }
 
@@ -393,7 +393,7 @@ static void virgl_delete_depth_stencil_alpha_state(struct pipe_context *ctx,
                                                   void *dsa_state)
 {
    struct virgl_context *vctx = virgl_context(ctx);
-   uint32_t handle = (unsigned long)dsa_state;
+   uint32_t handle = (uintptr_t)dsa_state;
    virgl_encode_delete_object(vctx, handle, VIRGL_OBJECT_DSA);
 }
 
@@ -770,7 +770,7 @@ static void *virgl_shader_encoder(struct pipe_context *ctx,
 
    FREE((void *)ntt_tokens);
    FREE(new_tokens);
-   return (void *)(unsigned long)handle;
+   return (void *)(uintptr_t)handle;
 
 }
 static void *virgl_create_vs_state(struct pipe_context *ctx,
@@ -807,7 +807,7 @@ static void
 virgl_delete_fs_state(struct pipe_context *ctx,
                      void *fs)
 {
-   uint32_t handle = (unsigned long)fs;
+   uint32_t handle = (uintptr_t)fs;
    struct virgl_context *vctx = virgl_context(ctx);
 
    virgl_encode_delete_object(vctx, handle, VIRGL_OBJECT_SHADER);
@@ -817,7 +817,7 @@ static void
 virgl_delete_gs_state(struct pipe_context *ctx,
                      void *gs)
 {
-   uint32_t handle = (unsigned long)gs;
+   uint32_t handle = (uintptr_t)gs;
    struct virgl_context *vctx = virgl_context(ctx);
 
    virgl_encode_delete_object(vctx, handle, VIRGL_OBJECT_SHADER);
@@ -827,7 +827,7 @@ static void
 virgl_delete_vs_state(struct pipe_context *ctx,
                      void *vs)
 {
-   uint32_t handle = (unsigned long)vs;
+   uint32_t handle = (uintptr_t)vs;
    struct virgl_context *vctx = virgl_context(ctx);
 
    virgl_encode_delete_object(vctx, handle, VIRGL_OBJECT_SHADER);
@@ -837,7 +837,7 @@ static void
 virgl_delete_tcs_state(struct pipe_context *ctx,
                        void *tcs)
 {
-   uint32_t handle = (unsigned long)tcs;
+   uint32_t handle = (uintptr_t)tcs;
    struct virgl_context *vctx = virgl_context(ctx);
 
    virgl_encode_delete_object(vctx, handle, VIRGL_OBJECT_SHADER);
@@ -847,7 +847,7 @@ static void
 virgl_delete_tes_state(struct pipe_context *ctx,
                       void *tes)
 {
-   uint32_t handle = (unsigned long)tes;
+   uint32_t handle = (uintptr_t)tes;
    struct virgl_context *vctx = virgl_context(ctx);
 
    virgl_encode_delete_object(vctx, handle, VIRGL_OBJECT_SHADER);
@@ -856,7 +856,7 @@ virgl_delete_tes_state(struct pipe_context *ctx,
 static void virgl_bind_vs_state(struct pipe_context *ctx,
                                         void *vss)
 {
-   uint32_t handle = (unsigned long)vss;
+   uint32_t handle = (uintptr_t)vss;
    struct virgl_context *vctx = virgl_context(ctx);
 
    virgl_encode_bind_shader(vctx, handle, MESA_SHADER_VERTEX);
@@ -865,7 +865,7 @@ static void virgl_bind_vs_state(struct pipe_context *ctx,
 static void virgl_bind_tcs_state(struct pipe_context *ctx,
                                void *vss)
 {
-   uint32_t handle = (unsigned long)vss;
+   uint32_t handle = (uintptr_t)vss;
    struct virgl_context *vctx = virgl_context(ctx);
 
    virgl_encode_bind_shader(vctx, handle, MESA_SHADER_TESS_CTRL);
@@ -874,7 +874,7 @@ static void virgl_bind_tcs_state(struct pipe_context *ctx,
 static void virgl_bind_tes_state(struct pipe_context *ctx,
                                void *vss)
 {
-   uint32_t handle = (unsigned long)vss;
+   uint32_t handle = (uintptr_t)vss;
    struct virgl_context *vctx = virgl_context(ctx);
 
    virgl_encode_bind_shader(vctx, handle, MESA_SHADER_TESS_EVAL);
@@ -883,7 +883,7 @@ static void virgl_bind_tes_state(struct pipe_context *ctx,
 static void virgl_bind_gs_state(struct pipe_context *ctx,
                                void *vss)
 {
-   uint32_t handle = (unsigned long)vss;
+   uint32_t handle = (uintptr_t)vss;
    struct virgl_context *vctx = virgl_context(ctx);
 
    virgl_encode_bind_shader(vctx, handle, MESA_SHADER_GEOMETRY);
@@ -893,7 +893,7 @@ static void virgl_bind_gs_state(struct pipe_context *ctx,
 static void virgl_bind_fs_state(struct pipe_context *ctx,
                                         void *vss)
 {
-   uint32_t handle = (unsigned long)vss;
+   uint32_t handle = (uintptr_t)vss;
    struct virgl_context *vctx = virgl_context(ctx);
 
    virgl_encode_bind_shader(vctx, handle, MESA_SHADER_FRAGMENT);
@@ -1227,14 +1227,14 @@ static void *virgl_create_sampler_state(struct pipe_context *ctx,
    handle = virgl_object_assign_handle();
 
    virgl_encode_sampler_state(vctx, handle, state);
-   return (void *)(unsigned long)handle;
+   return (void *)(uintptr_t)handle;
 }
 
 static void virgl_delete_sampler_state(struct pipe_context *ctx,
                                       void *ss)
 {
    struct virgl_context *vctx = virgl_context(ctx);
-   uint32_t handle = (unsigned long)ss;
+   uint32_t handle = (uintptr_t)ss;
 
    virgl_encode_delete_object(vctx, handle, VIRGL_OBJECT_SAMPLER_STATE);
 }
@@ -1249,7 +1249,7 @@ static void virgl_bind_sampler_states(struct pipe_context *ctx,
    uint32_t handles[PIPE_MAX_SAMPLERS];
    int i;
    for (i = 0; i < num_samplers; i++) {
-      handles[i] = (unsigned long)(samplers[i]);
+      handles[i] = (uintptr_t)(samplers[i]);
    }
    virgl_encode_bind_sampler_states(vctx, shader, start_slot, num_samplers, handles);
 }
@@ -1531,12 +1531,12 @@ static void *virgl_create_compute_state(struct pipe_context *ctx,
    FREE((void *)ntt_tokens);
    FREE(new_tokens);
 
-   return (void *)(unsigned long)handle;
+   return (void *)(uintptr_t)handle;
 }
 
 static void virgl_bind_compute_state(struct pipe_context *ctx, void *state)
 {
-   uint32_t handle = (unsigned long)state;
+   uint32_t handle = (uintptr_t)state;
    struct virgl_context *vctx = virgl_context(ctx);
 
    virgl_encode_bind_shader(vctx, handle, MESA_SHADER_COMPUTE);
@@ -1544,7 +1544,7 @@ static void virgl_bind_compute_state(struct pipe_context *ctx, void *state)
 
 static void virgl_delete_compute_state(struct pipe_context *ctx, void *state)
 {
-   uint32_t handle = (unsigned long)state;
+   uint32_t handle = (uintptr_t)state;
    struct virgl_context *vctx = virgl_context(ctx);
 
    virgl_encode_delete_object(vctx, handle, VIRGL_OBJECT_SHADER);
