@@ -43,7 +43,7 @@ typedef struct {
    struct blob *blob;
 
    /* maps pointer to index */
-   struct hash_table *remap_table;
+   struct hash_table remap_table;
 
    /* the next index to assign to a NIR in-memory object */
    uint32_t next_idx;
@@ -90,7 +90,7 @@ typedef struct {
    const struct glsl_type *last_interface_type;
    struct nir_variable_data last_var_data;
 
-   struct hash_table *strings;
+   struct hash_table strings;
 } read_ctx;
 
 static void
@@ -98,13 +98,13 @@ write_add_object(write_ctx *ctx, const void *obj)
 {
    uint32_t index = ctx->next_idx++;
    assert(index != MAX_OBJECT_IDS);
-   _mesa_hash_table_insert(ctx->remap_table, obj, (void *)(uintptr_t)index);
+   _mesa_hash_table_insert(&ctx->remap_table, obj, (void *)(uintptr_t)index);
 }
 
 static uint32_t
 write_lookup_object(write_ctx *ctx, const void *obj)
 {
-   struct hash_entry *entry = _mesa_hash_table_search(ctx->remap_table, obj);
+   struct hash_entry *entry = _mesa_hash_table_search(&ctx->remap_table, obj);
    assert(entry);
    return (uint32_t)(uintptr_t)entry->data;
 }
@@ -1651,24 +1651,24 @@ read_debug_info(read_ctx *ctx, nir_instr_debug_info *debug_info)
    if (flags & NIR_SERIALIZE_FILENAME) {
       const char *filename = blob_read_string(ctx->blob);
 
-      struct hash_entry *entry = _mesa_hash_table_search(ctx->strings, filename);
+      struct hash_entry *entry = _mesa_hash_table_search(&ctx->strings, filename);
       if (entry) {
          debug_info->filename = entry->data;
       } else {
          debug_info->filename = ralloc_strdup(ctx->nir, filename);
-         _mesa_hash_table_insert(ctx->strings, filename, debug_info->filename);
+         _mesa_hash_table_insert(&ctx->strings, filename, debug_info->filename);
       }
    }
 
    if (flags & NIR_SERIALIZE_VARIABLE_NAME) {
       const char *variable_name = blob_read_string(ctx->blob);
 
-      struct hash_entry *entry = _mesa_hash_table_search(ctx->strings, variable_name);
+      struct hash_entry *entry = _mesa_hash_table_search(&ctx->strings, variable_name);
       if (entry) {
          debug_info->variable_name = entry->data;
       } else {
          debug_info->variable_name = ralloc_strdup(ctx->nir, variable_name);
-         _mesa_hash_table_insert(ctx->strings, variable_name, debug_info->variable_name);
+         _mesa_hash_table_insert(&ctx->strings, variable_name, debug_info->variable_name);
       }
    }
 }
@@ -2128,7 +2128,7 @@ void
 nir_serialize_function(struct blob *blob, const nir_function *fxn)
 {
    write_ctx ctx = { 0 };
-   ctx.remap_table = _mesa_pointer_hash_table_create(NULL);
+   _mesa_pointer_hash_table_init(&ctx.remap_table, NULL);
    ctx.blob = blob;
    ctx.nir = fxn->shader;
    ctx.strip = true;
@@ -2141,7 +2141,7 @@ nir_serialize_function(struct blob *blob, const nir_function *fxn)
 
    blob_overwrite_uint32(blob, idx_size_offset, ctx.next_idx);
 
-   _mesa_hash_table_destroy(ctx.remap_table, NULL);
+   _mesa_hash_table_fini(&ctx.remap_table, NULL);
    util_dynarray_fini(&ctx.phi_fixups);
 }
 
@@ -2156,7 +2156,7 @@ void
 nir_serialize(struct blob *blob, const nir_shader *nir, bool strip)
 {
    write_ctx ctx = { 0 };
-   ctx.remap_table = _mesa_pointer_hash_table_create(NULL);
+   _mesa_pointer_hash_table_init(&ctx.remap_table, NULL);
    ctx.blob = blob;
    ctx.nir = nir;
    ctx.strip = strip;
@@ -2210,7 +2210,7 @@ nir_serialize(struct blob *blob, const nir_shader *nir, bool strip)
 
    blob_overwrite_uint32(blob, idx_size_offset, ctx.next_idx);
 
-   _mesa_hash_table_destroy(ctx.remap_table, NULL);
+   _mesa_hash_table_fini(&ctx.remap_table, NULL);
    util_dynarray_fini(&ctx.phi_fixups);
 }
 
@@ -2236,7 +2236,7 @@ nir_deserialize(void *mem_ctx,
 
    ctx.nir->has_debug_info = !!(flags & NIR_SERIALIZE_DEBUG_INFO);
    if (ctx.nir->has_debug_info)
-      ctx.strings = _mesa_hash_table_create(NULL, _mesa_hash_string, _mesa_key_string_equal);
+      _mesa_hash_table_init(&ctx.strings, NULL, _mesa_hash_string, _mesa_key_string_equal);
 
    info.name = name ? ralloc_strdup(ctx.nir, name) : NULL;
    info.label = label ? ralloc_strdup(ctx.nir, label) : NULL;
@@ -2276,7 +2276,7 @@ nir_deserialize(void *mem_ctx,
    }
 
    free(ctx.idx_table);
-   _mesa_hash_table_destroy(ctx.strings, NULL);
+   _mesa_hash_table_fini(&ctx.strings, NULL);
 
    nir_validate_shader(ctx.nir, "after deserialize");
 
