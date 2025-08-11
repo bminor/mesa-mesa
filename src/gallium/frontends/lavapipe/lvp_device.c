@@ -1870,7 +1870,7 @@ VKAPI_ATTR void VKAPI_CALL lvp_DestroyDevice(
 
    if (device->queue.last_fence)
       device->pscreen->fence_reference(device->pscreen, &device->queue.last_fence, NULL);
-   ralloc_free(device->bda.table);
+   _mesa_hash_table_fini(&device->bda, NULL);
    simple_mtx_destroy(&device->bda_lock);
    pipe_resource_reference(&device->zero_buffer, NULL);
 

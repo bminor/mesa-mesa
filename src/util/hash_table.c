@@ -183,6 +183,7 @@ _mesa_hash_table_init(struct hash_table *ht,
    return ht->table != NULL;
 }
 
+/* It's preferred to use _mesa_hash_table_init instead of this to skip ralloc. */
 struct hash_table *
 _mesa_hash_table_create(void *mem_ctx,
                         uint32_t (*key_hash_function)(const void *key),
@@ -220,10 +221,17 @@ key_u32_equals(const void *a, const void *b)
 }
 
 /* key == 0 and key == deleted_key are not allowed */
+/* It's preferred to use _mesa_hash_table_init_u32_keys instead of this to skip ralloc. */
 struct hash_table *
 _mesa_hash_table_create_u32_keys(void *mem_ctx)
 {
    return _mesa_hash_table_create(mem_ctx, key_u32_hash, key_u32_equals);
+}
+
+bool
+_mesa_hash_table_init_u32_keys(struct hash_table *ht, void *mem_ctx)
+{
+   return _mesa_hash_table_init(ht, mem_ctx, key_u32_hash, key_u32_equals);
 }
 
 struct hash_table *
@@ -249,6 +257,26 @@ _mesa_hash_table_clone(struct hash_table *src, void *dst_mem_ctx)
 }
 
 /**
+ * Deallocates the internal table. This is optional and doesn't need to be
+ * called when:
+ * - you don't need to call delete_function
+ * - the initial ralloc context is non-NULL, meaning it gets freed
+ *   automatically when the ralloc parent is freed.
+ */
+void
+_mesa_hash_table_fini(struct hash_table *ht,
+                      void (*delete_function)(struct hash_entry *entry))
+{
+   if (delete_function) {
+      hash_table_foreach(ht, entry) {
+         delete_function(entry);
+      }
+   }
+   ralloc_free(ht->table);
+   ht->table = NULL;
+}
+
+/**
  * Frees the given hash table.
  *
  * If delete_function is passed, it gets called on each entry present before
@@ -261,11 +289,7 @@ _mesa_hash_table_destroy(struct hash_table *ht,
    if (!ht)
       return;
 
-   if (delete_function) {
-      hash_table_foreach(ht, entry) {
-         delete_function(entry);
-      }
-   }
+   _mesa_hash_table_fini(ht, delete_function);
    ralloc_free(ht);
 }
 
@@ -738,7 +762,7 @@ _mesa_key_u64_equal(const void *a, const void *b)
 
 /**
  * String compare function for use as the comparison callback in
- * _mesa_hash_table_create().
+ * _mesa_hash_table_create() and _mesa_hash_table_init().
  */
 bool
 _mesa_key_string_equal(const void *a, const void *b)
@@ -753,6 +777,7 @@ _mesa_key_pointer_equal(const void *a, const void *b)
 }
 
 /**
+ * It's preferred to use _mesa_pointer_hash_table_init instead of this to skip ralloc.
  * Helper to create a hash table with pointer keys.
  */
 struct hash_table *
@@ -762,6 +787,27 @@ _mesa_pointer_hash_table_create(void *mem_ctx)
                                   _mesa_key_pointer_equal);
 }
 
+bool
+_mesa_pointer_hash_table_init(struct hash_table *ht, void *mem_ctx)
+{
+   return _mesa_hash_table_init(ht, mem_ctx, _mesa_hash_pointer,
+                                _mesa_key_pointer_equal);
+}
+
+/* It's preferred to use _mesa_string_hash_table_init instead of this to skip ralloc. */
+struct hash_table *
+_mesa_string_hash_table_create(void *mem_ctx)
+{
+   return _mesa_hash_table_create(mem_ctx, _mesa_hash_string,
+                                  _mesa_key_string_equal);
+}
+
+bool
+_mesa_string_hash_table_init(struct hash_table *ht, void *mem_ctx)
+{
+   return _mesa_hash_table_init(ht, mem_ctx, _mesa_hash_string,
+                                _mesa_key_string_equal);
+}
 
 bool
 _mesa_hash_table_reserve(struct hash_table *ht, unsigned size)

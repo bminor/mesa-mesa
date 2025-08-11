@@ -71,8 +71,15 @@ _mesa_hash_table_init(struct hash_table *ht,
                       bool (*key_equals_function)(const void *a,
                                                   const void *b));
 
+void
+_mesa_hash_table_fini(struct hash_table *ht,
+                      void (*delete_function)(struct hash_entry *entry));
+
 struct hash_table *
 _mesa_hash_table_create_u32_keys(void *mem_ctx);
+
+bool
+_mesa_hash_table_init_u32_keys(struct hash_table *ht, void *mem_ctx);
 
 struct hash_table *
 _mesa_hash_table_clone(struct hash_table *src, void *dst_mem_ctx);
@@ -132,12 +139,14 @@ bool _mesa_key_pointer_equal(const void *a, const void *b);
 struct hash_table *
 _mesa_pointer_hash_table_create(void *mem_ctx);
 
-static inline struct hash_table *
-_mesa_string_hash_table_create(void *mem_ctx)
-{
-   return _mesa_hash_table_create(mem_ctx, _mesa_hash_string,
-                                  _mesa_key_string_equal);
-}
+bool
+_mesa_pointer_hash_table_init(struct hash_table *ht, void *mem_ctx);
+
+struct hash_table *
+_mesa_string_hash_table_create(void *mem_ctx);
+
+bool
+_mesa_string_hash_table_init(struct hash_table *ht, void *mem_ctx);
 
 bool
 _mesa_hash_table_reserve(struct hash_table *ht, unsigned size);
@@ -186,10 +195,15 @@ hash_table_call_foreach(struct hash_table *ht,
       return memcmp(a, b, sizeof(struct T)) == 0;                              \
    }                                                                           \
                                                                                \
-   static struct hash_table *T##_table_create(void *memctx)                    \
+   static UNUSED inline struct hash_table *T##_table_create(void *memctx)      \
    {                                                                           \
       return _mesa_hash_table_create(memctx, T##_hash, T##_equal);             \
-   }
+   }                                                                           \
+                                                                               \
+   static UNUSED inline bool T##_table_init(struct hash_table *ht, void *memctx) \
+   {                                                                           \
+      return _mesa_hash_table_init(ht, memctx, T##_hash, T##_equal);           \
+   }                                                                           \
 
 /**
  * Hash table wrapper which supports 64-bit keys.
