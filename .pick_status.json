@@ -4474,7 +4474,7 @@
         "description": "ci: track changes to new src/x11/ folder",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4095fac72b6b99f0a68ca77b845c9344a01388d0",
         "notes": null

@@ -68,6 +68,7 @@
         - src/mesa/**/*.h
         - src/tool/**/*
         - src/util/**/*
+        - src/x11/**/*
       when: on_success
 
 # Same core dependencies for doing manual runs.
