@@ -789,6 +789,7 @@ void BlockScheduler::maybe_split_alu_block(Shader::ShaderBlocks& out_blocks)
          next_block_start->set_instr_flag(Instr::force_cf);
          used_slots = pending_slots;
          pending_slots = cur_group->slots();
+         next_block_start = cur_group;
       }
    }
 
