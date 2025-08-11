@@ -38,14 +38,14 @@
 ir_variable_refcount_visitor::ir_variable_refcount_visitor()
 {
    this->linalloc = linear_context(ralloc_context(NULL));
-   this->ht = _mesa_pointer_hash_table_create(NULL);
+   _mesa_pointer_hash_table_init(&this->ht, NULL);
    this->global = true;
 }
 
 ir_variable_refcount_visitor::~ir_variable_refcount_visitor()
 {
    ralloc_free(ralloc_parent_of_linear_context(this->linalloc));
-   _mesa_hash_table_destroy(this->ht, NULL);
+   _mesa_hash_table_fini(&this->ht, NULL);
 }
 
 // constructor
@@ -63,13 +63,13 @@ ir_variable_refcount_visitor::get_variable_entry(ir_variable *var)
 {
    assert(var);
 
-   struct hash_entry *e = _mesa_hash_table_search(this->ht, var);
+   struct hash_entry *e = _mesa_hash_table_search(&this->ht, var);
    if (e)
       return (ir_variable_refcount_entry *)e->data;
 
    ir_variable_refcount_entry *entry = new(linalloc) ir_variable_refcount_entry(var);
    assert(entry->referenced_count == 0);
-   _mesa_hash_table_insert(this->ht, var, entry);
+   _mesa_hash_table_insert(&this->ht, var, entry);
 
    return entry;
 }
