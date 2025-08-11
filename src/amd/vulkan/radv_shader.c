@@ -1352,7 +1352,7 @@ radv_destroy_shader_upload_queue(struct radv_device *device)
 
    list_for_each_entry_safe (struct radv_shader_dma_submission, submission, &device->shader_dma_submissions, list) {
       if (submission->cs)
-         radv_finalize_cmd_stream(device, submission->cs);
+         radv_destroy_cmd_stream(device, submission->cs);
       if (submission->bo)
          radv_bo_destroy(device, NULL, submission->bo);
       list_del(&submission->list);
