@@ -412,7 +412,7 @@ void si_destroy_sqtt(struct si_context *sctx)
 
    ac_sqtt_finish(sctx->sqtt);
 
-   hash_table_foreach (sctx->sqtt->pipeline_bos->table, entry) {
+   hash_table_foreach (&sctx->sqtt->pipeline_bos->table, entry) {
       struct si_sqtt_fake_pipeline *pipeline =
          (struct si_sqtt_fake_pipeline *)entry->data;
       si_resource_reference(&pipeline->bo, NULL);

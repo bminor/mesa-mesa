@@ -763,7 +763,7 @@ dzn_meta_blits_finish(struct dzn_device *device)
    }
 
    if (meta->contexts) {
-      hash_table_foreach(meta->contexts->table, he)
+      hash_table_foreach(&meta->contexts->table, he)
          dzn_meta_blit_destroy(device, he->data);
       _mesa_hash_table_u64_destroy(meta->contexts);
    }

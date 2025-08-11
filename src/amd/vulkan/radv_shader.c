@@ -1186,13 +1186,13 @@ radv_free_shader_memory(struct radv_device *device, union radv_shader_arena_bloc
 
       if (device->capture_replay_arena_vas) {
          struct hash_entry *arena_entry = NULL;
-         hash_table_foreach (device->capture_replay_arena_vas->table, entry) {
+         hash_table_foreach (&device->capture_replay_arena_vas->table, entry) {
             if (entry->data == arena) {
                arena_entry = entry;
                break;
             }
          }
-         _mesa_hash_table_remove(device->capture_replay_arena_vas->table, arena_entry);
+         _mesa_hash_table_remove(&device->capture_replay_arena_vas->table, arena_entry);
       }
 
       free(arena);

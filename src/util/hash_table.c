@@ -882,11 +882,10 @@ _mesa_hash_table_u64_create(void *mem_ctx)
       return NULL;
 
    if (sizeof(void *) == 8) {
-      ht->table = _mesa_hash_table_create(ht, _mesa_hash_pointer,
-                                          _mesa_key_pointer_equal);
+      _mesa_hash_table_init(&ht->table, ht, _mesa_hash_pointer,
+                            _mesa_key_pointer_equal);
    } else {
-      ht->table = _mesa_hash_table_create(ht, key_u64_hash,
-                                          key_u64_equals);
+      _mesa_hash_table_init(&ht->table, ht, key_u64_hash, key_u64_equals);
 
       /* Allocate a ralloc sub-context which takes the u64 hash table
        * as a parent and attach a destructor to it so we can free the
@@ -894,28 +893,25 @@ _mesa_hash_table_u64_create(void *mem_ctx)
        * _mesa_hash_table_u64_insert().
        *
        * The order of creation of this sub-context is crucial: it needs
-       * to happen after the _mesa_hash_table_create() call to guarantee
+       * to happen after the _mesa_hash_table_init() call to guarantee
        * that the destructor is called before ht->table and its children
        * are freed, otherwise the _mesa_hash_table_u64_clear() call in the
        * destructor leads to a use-after-free situation.
        */
-      if (ht->table) {
-         void *dummy_ctx = ralloc_context(ht);
+      void *dummy_ctx = ralloc_context(ht);
 
-         /* If we can't allocate a sub-context, free the hash table
-          * immediately and return NULL to avoid future leaks.
-          */
-         if (!dummy_ctx) {
-            ralloc_free(ht);
-            return NULL;
-         }
-
-         ralloc_set_destructor(dummy_ctx, _mesa_hash_table_u64_delete_keys);
+      /* If we can't allocate a sub-context, free the hash table
+       * immediately and return NULL to avoid future leaks.
+       */
+      if (!dummy_ctx) {
+         ralloc_free(ht);
+         return NULL;
       }
+
+      ralloc_set_destructor(dummy_ctx, _mesa_hash_table_u64_delete_keys);
    }
 
-   if (ht->table)
-      _mesa_hash_table_set_deleted_key(ht->table, uint_key(DELETED_KEY_VALUE));
+   _mesa_hash_table_set_deleted_key(&ht->table, uint_key(DELETED_KEY_VALUE));
 
    return ht;
 }
@@ -938,7 +934,7 @@ _mesa_hash_table_u64_clear(struct hash_table_u64 *ht)
    if (!ht)
       return;
 
-   _mesa_hash_table_clear(ht->table, _mesa_hash_table_u64_delete_key);
+   _mesa_hash_table_clear(&ht->table, _mesa_hash_table_u64_delete_key);
    ht->freed_key_data = NULL;
    ht->deleted_key_data = NULL;
 }
@@ -946,8 +942,6 @@ _mesa_hash_table_u64_clear(struct hash_table_u64 *ht)
 void
 _mesa_hash_table_u64_destroy(struct hash_table_u64 *ht)
 {
-   if (!ht)
-      return;
    ralloc_free(ht);
 }
 
@@ -966,7 +960,7 @@ _mesa_hash_table_u64_insert(struct hash_table_u64 *ht, uint64_t key,
    }
 
    if (sizeof(void *) == 8) {
-      _mesa_hash_table_insert(ht->table, (void *)(uintptr_t)key, data);
+      _mesa_hash_table_insert(&ht->table, (void *)(uintptr_t)key, data);
    } else {
       struct hash_key_u64 *_key = CALLOC_STRUCT(hash_key_u64);
 
@@ -975,7 +969,7 @@ _mesa_hash_table_u64_insert(struct hash_table_u64 *ht, uint64_t key,
       _key->value = key;
 
       struct hash_entry *entry =
-         hash_table_get_entry(ht->table, key_u64_hash(_key), _key);
+         hash_table_get_entry(&ht->table, key_u64_hash(_key), _key);
 
       if (!entry) {
          FREE(_key);
@@ -983,7 +977,7 @@ _mesa_hash_table_u64_insert(struct hash_table_u64 *ht, uint64_t key,
       }
 
       entry->data = data;
-      if (!entry_is_present(ht->table, entry))
+      if (!entry_is_present(&ht->table, entry))
          entry->key = _key;
       else
          FREE(_key);
@@ -994,10 +988,10 @@ static struct hash_entry *
 hash_table_u64_search(struct hash_table_u64 *ht, uint64_t key)
 {
    if (sizeof(void *) == 8) {
-      return _mesa_hash_table_search(ht->table, (void *)(uintptr_t)key);
+      return _mesa_hash_table_search(&ht->table, (void *)(uintptr_t)key);
    } else {
       struct hash_key_u64 _key = { .value = key };
-      return _mesa_hash_table_search(ht->table, &_key);
+      return _mesa_hash_table_search(&ht->table, &_key);
    }
 }
 
@@ -1039,11 +1033,11 @@ _mesa_hash_table_u64_remove(struct hash_table_u64 *ht, uint64_t key)
       return;
 
    if (sizeof(void *) == 8) {
-      _mesa_hash_table_remove(ht->table, entry);
+      _mesa_hash_table_remove(&ht->table, entry);
    } else {
       struct hash_key *_key = (struct hash_key *)entry->key;
 
-      _mesa_hash_table_remove(ht->table, entry);
+      _mesa_hash_table_remove(&ht->table, entry);
       FREE(_key);
    }
 }
@@ -1074,7 +1068,7 @@ _mesa_hash_table_u64_next_entry(struct hash_table_u64 *ht,
 
    /* All other entries: regular */
    struct hash_entry *next =
-      _mesa_hash_table_next_entry(ht->table, ent ? ent->_entry : NULL);
+      _mesa_hash_table_next_entry(&ht->table, ent ? ent->_entry : NULL);
 
    if (!next)
       return (struct hash_entry_u64){.data = NULL};

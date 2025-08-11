@@ -219,7 +219,7 @@ hash_table_call_foreach(struct hash_table *ht,
  * Hash table wrapper which supports 64-bit keys.
  */
 struct hash_table_u64 {
-   struct hash_table *table;
+   struct hash_table table;
    void *freed_key_data;
    void *deleted_key_data;
 };
@@ -262,7 +262,7 @@ static inline uint32_t
 _mesa_hash_table_u64_num_entries(struct hash_table_u64 *ht)
 {
    return (!!ht->freed_key_data) + (!!ht->deleted_key_data) +
-          _mesa_hash_table_num_entries(ht->table);
+          _mesa_hash_table_num_entries(&ht->table);
 }
 
 /**

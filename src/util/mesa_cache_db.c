@@ -296,9 +296,9 @@ mesa_db_update_index(struct mesa_cache_db *db)
    if (!mesa_db_seek(db->index.file, db->index.offset))
       return false;
 
-   old_entries = _mesa_hash_table_num_entries(db->index_db->table);
+   old_entries = _mesa_hash_table_num_entries(&db->index_db->table);
    new_entries = (file_length - db->index.offset) / sizeof(*index_entries);
-   _mesa_hash_table_reserve(db->index_db->table, old_entries + new_entries);
+   _mesa_hash_table_reserve(&db->index_db->table, old_entries + new_entries);
 
    new_index_size = new_entries * sizeof(*index_entries);
    index_entries = malloc(new_index_size);
@@ -542,7 +542,7 @@ mesa_db_compact(struct mesa_cache_db *db, int64_t blob_size,
    if (!remove_entry && !mesa_db_reload(db))
       return false;
 
-   num_entries = _mesa_hash_table_num_entries(db->index_db->table);
+   num_entries = _mesa_hash_table_num_entries(&db->index_db->table);
    if (!num_entries)
       return true;
 
@@ -563,7 +563,7 @@ mesa_db_compact(struct mesa_cache_db *db, int64_t blob_size,
        index_header.uuid != db->uuid)
       goto cleanup;
 
-   hash_table_foreach(db->index_db->table, entry) {
+   hash_table_foreach(&db->index_db->table, entry) {
       entries[i] = entry->data;
       entries[i]->evicted = (entries[i] == remove_entry);
       buffer_size = MAX2(buffer_size, blob_file_size(entries[i]->size));
@@ -1037,12 +1037,12 @@ mesa_cache_db_eviction_score(struct mesa_cache_db *db)
    if (!mesa_db_reload(db))
       goto fail_fatal;
 
-   num_entries = _mesa_hash_table_num_entries(db->index_db->table);
+   num_entries = _mesa_hash_table_num_entries(&db->index_db->table);
    entries = calloc(num_entries, sizeof(*entries));
    if (!entries)
       goto fail;
 
-   hash_table_foreach(db->index_db->table, entry)
+   hash_table_foreach(&db->index_db->table, entry)
       entries[i++] = entry->data;
 
    util_qsort_r(entries, num_entries, sizeof(*entries),

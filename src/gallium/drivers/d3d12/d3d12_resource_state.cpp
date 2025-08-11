@@ -205,7 +205,7 @@ d3d12_context_state_table_init(struct d3d12_context *ctx)
 void
 d3d12_context_state_table_destroy(struct d3d12_context *ctx)
 {
-   hash_table_foreach(ctx->bo_state_table->table, entry) {
+   hash_table_foreach(&ctx->bo_state_table->table, entry) {
       d3d12_destroy_context_state_table_entry((d3d12_context_state_table_entry *)entry->data);
       free(entry->data);
    }
