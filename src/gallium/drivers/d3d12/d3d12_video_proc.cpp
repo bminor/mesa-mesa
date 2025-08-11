@@ -276,8 +276,8 @@ d3d12_video_processor_process_frame(struct pipe_video_codec *codec,
     };
 
     debug_printf("ProcessFrame InArgs Orientation %d \n\tSrc top: %d left: %d right: %d bottom: %d\n\tDst top: %d left: %d right: %d bottom: %d\n", InputArguments.Transform.Orientation, 
-        InputArguments.Transform.SourceRectangle.top, InputArguments.Transform.SourceRectangle.left, InputArguments.Transform.SourceRectangle.right, InputArguments.Transform.SourceRectangle.bottom,
-        InputArguments.Transform.DestinationRectangle.top, InputArguments.Transform.DestinationRectangle.left, InputArguments.Transform.DestinationRectangle.right, InputArguments.Transform.DestinationRectangle.bottom);
+        (int)InputArguments.Transform.SourceRectangle.top, (int)InputArguments.Transform.SourceRectangle.left, (int)InputArguments.Transform.SourceRectangle.right, (int)InputArguments.Transform.SourceRectangle.bottom,
+        (int)InputArguments.Transform.DestinationRectangle.top, (int)InputArguments.Transform.DestinationRectangle.left, (int)InputArguments.Transform.DestinationRectangle.right, (int)InputArguments.Transform.DestinationRectangle.bottom);
 
     pD3D12Proc->m_ProcessInputs.push_back(InputArguments);    
     pD3D12Proc->m_InputBuffers.push_back(pInputVideoBuffer);
