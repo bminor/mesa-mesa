@@ -203,6 +203,29 @@ _mesa_set_create_u32_keys(void *mem_ctx)
    return _mesa_set_create(mem_ctx, key_u32_hash, key_u32_equals);
 }
 
+/* Copy the set from src to dst. */
+bool
+_mesa_set_copy(struct set *dst, struct set *src, void *dst_mem_ctx)
+{
+   /* Copy the structure except the initial storage. */
+   memcpy(dst, src, offsetof(struct set, _initial_storage));
+   dst->mem_ctx = dst_mem_ctx;
+
+   if (src->table != src->_initial_storage) {
+      dst->table = ralloc_array(dst_mem_ctx, struct set_entry, dst->size);
+      if (dst->table == NULL)
+         return false;
+
+      memcpy(dst->table, src->table, dst->size * sizeof(struct set_entry));
+   } else {
+      dst->table = dst->_initial_storage;
+      memcpy(dst->table, src->_initial_storage, sizeof(src->_initial_storage));
+   }
+
+   return true;
+}
+
+/* It's preferred to use _mesa_set_copy instead of this to skip ralloc. */
 struct set *
 _mesa_set_clone(struct set *set, void *dst_mem_ctx)
 {
@@ -212,21 +235,9 @@ _mesa_set_clone(struct set *set, void *dst_mem_ctx)
    if (clone == NULL)
       return NULL;
 
-   /* Copy the whole structure except the initial storage. */
-   memcpy(clone, set, offsetof(struct set, _initial_storage));
-   clone->mem_ctx = dst_mem_ctx;
-
-   if (set->table != set->_initial_storage) {
-      clone->table = ralloc_array(dst_mem_ctx, struct set_entry, clone->size);
-      if (clone->table == NULL) {
-         ralloc_free(clone);
-         return NULL;
-      }
-
-      memcpy(clone->table, set->table, clone->size * sizeof(struct set_entry));
-   } else {
-      clone->table = clone->_initial_storage;
-      memcpy(clone->table, set->_initial_storage, sizeof(set->_initial_storage));
+   if (!_mesa_set_copy(clone, set, dst_mem_ctx)) {
+      ralloc_free(clone);
+      return NULL;
    }
 
    return clone;
