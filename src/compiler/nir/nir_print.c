@@ -2051,6 +2051,20 @@ print_call_instr(nir_call_instr *instr, print_state *state)
    }
 }
 
+static const char *
+get_cmat_call_op_str(nir_cmat_call_op op)
+{
+   switch (op) {
+   case nir_cmat_call_op_reduce:
+      return "cmat_call_reduce";
+   case nir_cmat_call_op_reduce_finish:
+      return "cmat_call_reduce_finish";
+   case nir_cmat_call_op_reduce_2x2:
+      return "cmat_call_reduce_2x2";
+   }
+   UNREACHABLE("Unknown cmat call op");
+}
+
 static void
 print_cmat_call_instr(nir_cmat_call_instr *instr, print_state *state)
 {
@@ -2058,7 +2072,7 @@ print_cmat_call_instr(nir_cmat_call_instr *instr, print_state *state)
 
    print_no_dest_padding(state);
 
-   fprintf(fp, "cmat_call %s ", instr->callee->name);
+   fprintf(fp, "%s %s ", get_cmat_call_op_str(instr->op), instr->callee->name);
 
    for (unsigned i = 0; i < instr->num_params; i++) {
       if (i != 0)

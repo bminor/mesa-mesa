@@ -910,9 +910,14 @@ int
 nir_cmat_call_op_params(nir_cmat_call_op op, nir_function *callee)
 {
    switch (op) {
-   default:
-      return callee->num_params;
+   case nir_cmat_call_op_reduce:
+      return 2;
+   case nir_cmat_call_op_reduce_finish:
+      return 3;
+   case nir_cmat_call_op_reduce_2x2:
+      return 5;
    }
+   UNREACHABLE("Invalid cmat call op");
 }
 
 nir_cmat_call_instr *
