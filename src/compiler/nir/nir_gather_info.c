@@ -414,8 +414,7 @@ intrinsic_is_bindless(nir_intrinsic_instr *instr)
 }
 
 static void
-gather_intrinsic_info(nir_intrinsic_instr *instr, nir_shader *shader,
-                      void *dead_ctx)
+gather_intrinsic_info(nir_intrinsic_instr *instr, nir_shader *shader)
 {
    uint64_t slot_mask = 0;
    uint16_t slot_mask_16bit = 0;
@@ -952,7 +951,7 @@ gather_alu_info(nir_alu_instr *instr, nir_shader *shader)
 
 static void
 gather_func_info(nir_function_impl *func, nir_shader *shader,
-                 struct set *visited_funcs, void *dead_ctx)
+                 struct set *visited_funcs)
 {
    if (_mesa_set_search(visited_funcs, func))
       return;
@@ -966,7 +965,7 @@ gather_func_info(nir_function_impl *func, nir_shader *shader,
             gather_alu_info(nir_instr_as_alu(instr), shader);
             break;
          case nir_instr_type_intrinsic:
-            gather_intrinsic_info(nir_instr_as_intrinsic(instr), shader, dead_ctx);
+            gather_intrinsic_info(nir_instr_as_intrinsic(instr), shader);
             break;
          case nir_instr_type_tex:
             gather_tex_info(nir_instr_as_tex(instr), shader);
@@ -978,7 +977,7 @@ gather_func_info(nir_function_impl *func, nir_shader *shader,
             if (!call->indirect_callee.ssa)
                assert(impl || !"nir_shader_gather_info only works with linked shaders");
             if (impl)
-               gather_func_info(impl, shader, visited_funcs, dead_ctx);
+               gather_func_info(impl, shader, visited_funcs);
             break;
          }
          default:
@@ -1079,11 +1078,10 @@ nir_shader_gather_info(nir_shader *shader, nir_function_impl *entrypoint)
    if (shader->info.stage != MESA_SHADER_FRAGMENT)
       shader->info.writes_memory = shader->info.has_transform_feedback_varyings;
 
-   void *dead_ctx = ralloc_context(NULL);
    struct set visited_funcs;
-   _mesa_pointer_set_init(&visited_funcs, dead_ctx);
-   gather_func_info(entrypoint, shader, &visited_funcs, dead_ctx);
-   ralloc_free(dead_ctx);
+   _mesa_pointer_set_init(&visited_funcs, NULL);
+   gather_func_info(entrypoint, shader, &visited_funcs);
+   _mesa_set_fini(&visited_funcs, NULL);
 
    shader->info.per_view_outputs = 0;
    nir_foreach_shader_out_variable(var, shader) {
