@@ -594,7 +594,7 @@ d3d12_video_encoder_negotiate_current_av1_tiles_configuration(struct d3d12_video
                                                            sizeof(capDataTilesSupport));
    if (FAILED(hr) || !capDataTilesSupport.IsSupported) {
       debug_printf("D3D12_FEATURE_VIDEO_ENCODER_SUBREGION_TILES_SUPPORT HR (0x%x) error or IsSupported: (%d).\n",
-                   hr,
+                   (unsigned)hr,
                    capDataTilesSupport.IsSupported);
       return false;
    }
@@ -1075,7 +1075,7 @@ d3d12_video_encoder_update_current_encoder_config_state_av1(struct d3d12_video_e
                                                           &pD3D12Enc->m_currentEncodeConfig.m_encodeFormatInfo,
                                                           sizeof(pD3D12Enc->m_currentEncodeConfig.m_encodeFormatInfo));
    if (FAILED(hr)) {
-      debug_printf("CheckFeatureSupport failed with HR 0x%x\n", hr);
+      debug_printf("CheckFeatureSupport failed with HR 0x%x\n", (unsigned)hr);
       return false;
    }
 

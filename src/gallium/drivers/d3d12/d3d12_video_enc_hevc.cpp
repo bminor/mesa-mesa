@@ -1302,7 +1302,7 @@ d3d12_video_encoder_update_current_encoder_config_state_hevc(struct d3d12_video_
                                                           &pD3D12Enc->m_currentEncodeConfig.m_encodeFormatInfo,
                                                           sizeof(pD3D12Enc->m_currentEncodeConfig.m_encodeFormatInfo));
    if (FAILED(hr)) {
-      debug_printf("CheckFeatureSupport failed with HR %x\n", hr);
+      debug_printf("CheckFeatureSupport failed with HR %x\n", (unsigned)hr);
       return false;
    }
 

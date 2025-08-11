@@ -138,7 +138,7 @@ d3d12_video_encoder_flush(struct pipe_video_codec *codec)
          debug_printf("[d3d12_video_encoder] d3d12_video_encoder_flush"
                          " - D3D12Device was removed BEFORE commandlist "
                          "execution with HR %x.\n",
-                         hr);
+                         (unsigned)hr);
          goto flush_fail;
       }
 
@@ -150,7 +150,7 @@ d3d12_video_encoder_flush(struct pipe_video_codec *codec)
 
       hr = pD3D12Enc->m_spEncodeCommandList->Close();
       if (FAILED(hr)) {
-         debug_printf("[d3d12_video_encoder] d3d12_video_encoder_flush - Can't close command list with HR %x\n", hr);
+         debug_printf("[d3d12_video_encoder] d3d12_video_encoder_flush - Can't close command list with HR %x\n", (unsigned)hr);
          goto flush_fail;
       }
 
@@ -164,7 +164,7 @@ d3d12_video_encoder_flush(struct pipe_video_codec *codec)
          debug_printf("[d3d12_video_encoder] d3d12_video_encoder_flush" 
                          " - D3D12Device was removed AFTER commandlist "
                          "execution with HR %x, but wasn't before.\n",
-                         hr);
+                         (unsigned)hr);
          goto flush_fail;
       }
 
@@ -199,7 +199,7 @@ d3d12_video_encoder_sync_completion(struct pipe_video_codec *codec,
          pool_entry.m_spCommandAllocator.Get());
       hr = pool_entry.m_spCommandAllocator->Reset();
       if(FAILED(hr)) {
-         debug_printf("failed with %x.\n", hr);
+         debug_printf("failed with %x.\n", (unsigned)hr);
          goto sync_with_token_fail;
       }
 
@@ -215,7 +215,7 @@ d3d12_video_encoder_sync_completion(struct pipe_video_codec *codec,
          debug_printf("[d3d12_video_encoder] d3d12_video_encoder_sync_completion"
                          " - D3D12Device was removed AFTER d3d12_video_encoder_ensure_fence_finished "
                          "execution with HR %x, but wasn't before.\n",
-                         hr);
+                         (unsigned)hr);
          goto sync_with_token_fail;
       }
 
@@ -866,7 +866,7 @@ d3d12_video_encoder_reconfigure_encoder_objects(struct d3d12_video_encoder *pD3D
       HRESULT hr = pD3D12Enc->m_spD3D12VideoDevice->CreateVideoEncoder(&encoderDesc,
                                                              IID_PPV_ARGS(pD3D12Enc->m_spVideoEncoder.GetAddressOf()));
       if (FAILED(hr)) {
-         debug_printf("CreateVideoEncoder failed with HR %x\n", hr);
+         debug_printf("CreateVideoEncoder failed with HR %x\n", (unsigned)hr);
          return false;
       }
    }
@@ -980,7 +980,7 @@ d3d12_video_encoder_reconfigure_encoder_objects(struct d3d12_video_encoder *pD3D
       }
 
       if (FAILED(hr)) {
-         debug_printf("CreateVideoEncoderHeap failed with HR %x\n", hr);
+         debug_printf("CreateVideoEncoderHeap failed with HR %x\n", (unsigned)hr);
          return false;
       }
    }
@@ -1957,7 +1957,7 @@ bool d3d12_video_encoder_query_d3d12_driver_caps(struct d3d12_video_encoder *pD3
                                                                      sizeof(capEncoderSupportData1));
 
    if (FAILED(hr)) {
-      debug_printf("CheckFeatureSupport D3D12_FEATURE_VIDEO_ENCODER_SUPPORT2 failed with HR %x\n", hr);
+      debug_printf("CheckFeatureSupport D3D12_FEATURE_VIDEO_ENCODER_SUPPORT2 failed with HR %x\n", (unsigned)hr);
       debug_printf("Falling back to check previous query version D3D12_FEATURE_VIDEO_ENCODER_SUPPORT1...\n");
 
       // D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT2 extends D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT1
@@ -1975,7 +1975,7 @@ bool d3d12_video_encoder_query_d3d12_driver_caps(struct d3d12_video_encoder *pD3
 #endif
 
    if (FAILED(hr)) {
-      debug_printf("CheckFeatureSupport D3D12_FEATURE_VIDEO_ENCODER_SUPPORT1 failed with HR %x\n", hr);
+      debug_printf("CheckFeatureSupport D3D12_FEATURE_VIDEO_ENCODER_SUPPORT1 failed with HR %x\n", (unsigned)hr);
       debug_printf("Falling back to check previous query version D3D12_FEATURE_VIDEO_ENCODER_SUPPORT...\n");
 
       // D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT1 extends D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT
@@ -1999,7 +1999,7 @@ bool d3d12_video_encoder_query_d3d12_driver_caps(struct d3d12_video_encoder *pD3
                                                                          casted_down_cap_data,
                                                                          sizeof(D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT));
       if (FAILED(hr)) {
-         debug_printf("CheckFeatureSupport D3D12_FEATURE_VIDEO_ENCODER_SUPPORT failed with HR %x\n", hr);
+         debug_printf("CheckFeatureSupport D3D12_FEATURE_VIDEO_ENCODER_SUPPORT failed with HR %x\n", (unsigned)hr);
          return false;
       }
    }
@@ -2051,7 +2051,7 @@ bool d3d12_video_encoder_query_d3d12_driver_caps(struct d3d12_video_encoder *pD3
                                                                 sizeof(pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.capInputLayoutDirtyRegion));
 
       if (FAILED(hr)) {
-         debug_printf("CheckFeatureSupport D3D12_FEATURE_VIDEO_ENCODER_RESOLVE_INPUT_PARAM_LAYOUT failed with HR %x\n", hr);
+         debug_printf("CheckFeatureSupport D3D12_FEATURE_VIDEO_ENCODER_RESOLVE_INPUT_PARAM_LAYOUT failed with HR %x\n", (unsigned)hr);
          return false;
       }
    }
@@ -2089,7 +2089,7 @@ bool d3d12_video_encoder_query_d3d12_driver_caps(struct d3d12_video_encoder *pD3
                                                                 sizeof(pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.GPUInput.capInputLayoutQPMap));
 
       if (FAILED(hr)) {
-         debug_printf("CheckFeatureSupport D3D12_FEATURE_VIDEO_ENCODER_RESOLVE_INPUT_PARAM_LAYOUT failed with HR %x\n", hr);
+         debug_printf("CheckFeatureSupport D3D12_FEATURE_VIDEO_ENCODER_RESOLVE_INPUT_PARAM_LAYOUT failed with HR %x\n", (unsigned)hr);
          return false;
       }
    }
@@ -2127,7 +2127,7 @@ bool d3d12_video_encoder_query_d3d12_driver_caps(struct d3d12_video_encoder *pD3
                                                                 sizeof(pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.capInputLayoutMotionVectors));
 
       if (FAILED(hr)) {
-         debug_printf("CheckFeatureSupport D3D12_FEATURE_VIDEO_ENCODER_RESOLVE_INPUT_PARAM_LAYOUT failed with HR %x\n", hr);
+         debug_printf("CheckFeatureSupport D3D12_FEATURE_VIDEO_ENCODER_RESOLVE_INPUT_PARAM_LAYOUT failed with HR %x\n", (unsigned)hr);
          return false;
       }
    }
@@ -2148,7 +2148,7 @@ bool d3d12_video_encoder_check_subregion_mode_support(struct d3d12_video_encoder
    capDataSubregionLayout.SubregionMode = requestedSlicesMode;
    HRESULT hr = pD3D12Enc->m_spD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE, &capDataSubregionLayout, sizeof(capDataSubregionLayout));
    if (FAILED(hr)) {
-      debug_printf("CheckFeatureSupport failed with HR %x\n", hr);
+      debug_printf("CheckFeatureSupport failed with HR %x\n", (unsigned)hr);
       return false;
    }
    return capDataSubregionLayout.IsSupported;
@@ -2326,7 +2326,7 @@ d3d12_video_encoder_create_command_objects(struct d3d12_video_encoder *pD3D12Enc
    if (FAILED(hr)) {
       debug_printf("[d3d12_video_encoder] d3d12_video_encoder_create_command_objects - Call to CreateCommandQueue "
                       "failed with HR %x\n",
-                      hr);
+                      (unsigned)hr);
       return false;
    }
 
@@ -2334,7 +2334,7 @@ d3d12_video_encoder_create_command_objects(struct d3d12_video_encoder *pD3D12Enc
    if (FAILED(hr)) {
       debug_printf(
          "[d3d12_video_encoder] d3d12_video_encoder_create_command_objects - Call to CreateFence failed with HR %x\n",
-         hr);
+         (unsigned)hr);
       return false;
    }
 
@@ -2348,7 +2348,7 @@ d3d12_video_encoder_create_command_objects(struct d3d12_video_encoder *pD3D12Enc
       if (FAILED(hr)) {
          debug_printf("[d3d12_video_encoder] d3d12_video_encoder_create_command_objects - Call to "
                         "CreateCommandAllocator failed with HR %x\n",
-                        hr);
+                        (unsigned)hr);
          return false;
       }
 
@@ -2372,7 +2372,7 @@ d3d12_video_encoder_create_command_objects(struct d3d12_video_encoder *pD3D12Enc
    if (FAILED(hr)) {
       debug_printf("[d3d12_video_encoder] d3d12_video_encoder_create_command_objects - Call to CreateCommandList "
                       "failed with HR %x\n",
-                      hr);
+                      (unsigned)hr);
       return false;
    }
 
@@ -2486,7 +2486,7 @@ d3d12_video_encoder_prepare_output_buffers(struct d3d12_video_encoder *pD3D12Enc
       sizeof(pD3D12Enc->m_currentEncodeCapabilities.m_ResourceRequirementsCaps));
 
    if (FAILED(hr)) {
-      debug_printf("CheckFeatureSupport D3D12_FEATURE_VIDEO_ENCODER_RESOURCE_REQUIREMENTS1 failed with HR %x\n", hr);
+      debug_printf("CheckFeatureSupport D3D12_FEATURE_VIDEO_ENCODER_RESOURCE_REQUIREMENTS1 failed with HR %x\n", (unsigned)hr);
       debug_printf("Falling back to check previous query version D3D12_FEATURE_VIDEO_ENCODER_RESOURCE_REQUIREMENTS...\n");
 
       // D3D12_FEATURE_VIDEO_ENCODER_RESOURCE_REQUIREMENTS1 extends D3D12_FEATURE_VIDEO_ENCODER_RESOURCE_REQUIREMENTS
@@ -2504,7 +2504,7 @@ d3d12_video_encoder_prepare_output_buffers(struct d3d12_video_encoder *pD3D12Enc
 #endif
 
    if (FAILED(hr)) {
-      debug_printf("CheckFeatureSupport failed with HR %x\n", hr);
+      debug_printf("CheckFeatureSupport failed with HR %x\n", (unsigned)hr);
       return false;
    }
 
@@ -2538,7 +2538,7 @@ d3d12_video_encoder_prepare_output_buffers(struct d3d12_video_encoder *pD3D12Enc
          IID_PPV_ARGS(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spBuffer.GetAddressOf()));
 
       if (FAILED(hr)) {
-         debug_printf("CreateCommittedResource failed with HR %x\n", hr);
+         debug_printf("CreateCommittedResource failed with HR %x\n", (unsigned)hr);
          return false;
       }
    }
@@ -2559,7 +2559,7 @@ d3d12_video_encoder_prepare_output_buffers(struct d3d12_video_encoder *pD3D12Enc
          IID_PPV_ARGS(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_spMetadataOutputBuffer.GetAddressOf()));
 
       if (FAILED(hr)) {
-         debug_printf("CreateCommittedResource failed with HR %x\n", hr);
+         debug_printf("CreateCommittedResource failed with HR %x\n", (unsigned)hr);
          return false;
       }
    }
@@ -2592,7 +2592,7 @@ d3d12_video_encoder_prepare_input_buffers(struct d3d12_video_encoder *pD3D12Enc)
             IID_PPV_ARGS(&pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spDirtyRectsResolvedOpaqueMap));
          if (FAILED(hr))
          {
-            debug_printf("CreateCommittedResource for m_spDirtyRectsResolvedOpaqueMap failed with HR %x\n", hr);
+            debug_printf("CreateCommittedResource for m_spDirtyRectsResolvedOpaqueMap failed with HR %x\n", (unsigned)hr);
          }
       }
    }
@@ -2617,7 +2617,7 @@ d3d12_video_encoder_prepare_input_buffers(struct d3d12_video_encoder *pD3D12Enc)
             IID_PPV_ARGS(&pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spQPMapResolvedOpaqueMap));
          if (FAILED(hr))
          {
-            debug_printf("CreateCommittedResource for m_spQPMapResolvedOpaqueMap failed with HR %x\n", hr);
+            debug_printf("CreateCommittedResource for m_spQPMapResolvedOpaqueMap failed with HR %x\n", (unsigned)hr);
          }
       }
    }
@@ -2639,7 +2639,7 @@ d3d12_video_encoder_prepare_input_buffers(struct d3d12_video_encoder *pD3D12Enc)
             IID_PPV_ARGS(&pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spMotionVectorsResolvedOpaqueMap));
          if (FAILED(hr))
          {
-            debug_printf("CreateCommittedResource for m_spMotionVectorsResolvedOpaqueMap failed with HR %x\n", hr);
+            debug_printf("CreateCommittedResource for m_spMotionVectorsResolvedOpaqueMap failed with HR %x\n", (unsigned)hr);
          }
       }
    }
@@ -2723,7 +2723,7 @@ d3d12_video_encoder_begin_frame(struct pipe_video_codec * codec,
    if (FAILED(hr)) {
       debug_printf(
          "[d3d12_video_encoder] d3d12_video_encoder_flush - resetting ID3D12GraphicsCommandList failed with HR %x\n",
-         hr);
+         (unsigned)hr);
       goto fail;
    }
 
@@ -2846,7 +2846,7 @@ d3d12_video_encoder_get_slice_bitstream_data(struct pipe_video_codec *codec,
       if (hr != S_OK) {
          debug_printf("Error: d3d12_video_encoder_get_slice_bitstream_data for Encode GPU command for fence %" PRIu64 " failed with GetDeviceRemovedReason: %x\n",
                         requested_metadata_fence,
-                        hr);
+                        (unsigned)hr);
          assert(false);
          if (codec_unit_metadata_count)
             *codec_unit_metadata_count = 0u;
@@ -3197,7 +3197,7 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                IID_PPV_ARGS(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spStagingBitstreams[slice_idx].GetAddressOf()));
 
             if (FAILED(hr)) {
-               debug_printf("CreateCommittedResource failed with HR %x\n", hr);
+               debug_printf("CreateCommittedResource failed with HR %x\n", (unsigned)hr);
                pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;
                pD3D12Enc->m_spEncodedFrameMetadata[d3d12_video_encoder_metadata_current_index(pD3D12Enc)].encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;
                assert(false);
@@ -4195,7 +4195,7 @@ d3d12_video_encoder_get_feedback(struct pipe_video_codec *codec,
       opt_metadata.encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;
       debug_printf("Error: d3d12_video_encoder_get_feedback for Encode GPU command for fence %" PRIu64 " failed with GetDeviceRemovedReason: %x\n",
                      requested_metadata_fence,
-                     hr);
+                     (unsigned)hr);
       assert(false);
       if(pMetadata)
          *pMetadata = opt_metadata;

@@ -52,7 +52,7 @@ get_dxcore_factory()
    IDXCoreAdapterFactory *factory = NULL;
    HRESULT hr = DXCoreCreateAdapterFactory(IID_IDXCoreAdapterFactory, (void **)&factory);
    if (FAILED(hr)) {
-      debug_printf("D3D12: DXCoreCreateAdapterFactory failed: %08x\n", hr);
+      debug_printf("D3D12: DXCoreCreateAdapterFactory failed: %08x\n", (unsigned)hr);
       return NULL;
    }
 

@@ -127,7 +127,7 @@ d3d12_video_create_decoder(struct pipe_context *context, const struct pipe_video
                                                             &pD3D12Dec->m_decodeFormatInfo,
                                                             sizeof(pD3D12Dec->m_decodeFormatInfo));
    if (FAILED(hr)) {
-      debug_printf("CheckFeatureSupport failed with HR %x\n", hr);
+      debug_printf("CheckFeatureSupport failed with HR %x\n", (unsigned)hr);
       goto failed;
    }
 
@@ -212,7 +212,7 @@ d3d12_video_decoder_begin_frame(struct pipe_video_codec *codec,
    HRESULT hr = pD3D12Dec->m_spDecodeCommandList->Reset(
       pD3D12Dec->m_inflightResourcesPool[d3d12_video_decoder_pool_current_index(pD3D12Dec)].m_spCommandAllocator.Get());
    if (FAILED(hr)) {
-      debug_printf("[d3d12_video_decoder] resetting ID3D12GraphicsCommandList failed with HR %x\n", hr);
+      debug_printf("[d3d12_video_decoder] resetting ID3D12GraphicsCommandList failed with HR %x\n", (unsigned)hr);
       assert(false);
    }
 
@@ -772,7 +772,7 @@ d3d12_video_decoder_flush(struct pipe_video_codec *codec)
          debug_printf("[d3d12_video_decoder] d3d12_video_decoder_flush"
                       " - D3D12Device was removed BEFORE commandlist "
                       "execution with HR %x.\n",
-                      hr);
+                      (unsigned)hr);
          goto flush_fail;
       }
 
@@ -784,7 +784,7 @@ d3d12_video_decoder_flush(struct pipe_video_codec *codec)
 
       hr = pD3D12Dec->m_spDecodeCommandList->Close();
       if (FAILED(hr)) {
-         debug_printf("[d3d12_video_decoder] d3d12_video_decoder_flush - Can't close command list with HR %x\n", hr);
+         debug_printf("[d3d12_video_decoder] d3d12_video_decoder_flush - Can't close command list with HR %x\n", (unsigned)hr);
          goto flush_fail;
       }
 
@@ -801,7 +801,7 @@ d3d12_video_decoder_flush(struct pipe_video_codec *codec)
          debug_printf("[d3d12_video_decoder] d3d12_video_decoder_flush"
                       " - D3D12Device was removed AFTER commandlist "
                       "execution with HR %x, but wasn't before.\n",
-                      hr);
+                      (unsigned)hr);
          goto flush_fail;
       }
 
@@ -829,7 +829,7 @@ d3d12_video_decoder_create_command_objects(const struct d3d12_screen *pD3D12Scre
    if (FAILED(hr)) {
       debug_printf("[d3d12_video_decoder] d3d12_video_decoder_create_command_objects - Call to CreateCommandQueue "
                    "failed with HR %x\n",
-                   hr);
+                   (unsigned)hr);
       return false;
    }
 
@@ -837,7 +837,7 @@ d3d12_video_decoder_create_command_objects(const struct d3d12_screen *pD3D12Scre
    if (FAILED(hr)) {
       debug_printf(
          "[d3d12_video_decoder] d3d12_video_decoder_create_command_objects - Call to CreateFence failed with HR %x\n",
-         hr);
+         (unsigned)hr);
       return false;
    }
 
@@ -849,7 +849,7 @@ d3d12_video_decoder_create_command_objects(const struct d3d12_screen *pD3D12Scre
       if (FAILED(hr)) {
          debug_printf("[d3d12_video_decoder] d3d12_video_decoder_create_command_objects - Call to "
                       "CreateCommandAllocator failed with HR %x\n",
-                      hr);
+                      (unsigned)hr);
          return false;
       }
 
@@ -872,7 +872,7 @@ d3d12_video_decoder_create_command_objects(const struct d3d12_screen *pD3D12Scre
    if (FAILED(hr)) {
       debug_printf("[d3d12_video_decoder] d3d12_video_decoder_create_command_objects - Call to CreateCommandList "
                    "failed with HR %x\n",
-                   hr);
+                   (unsigned)hr);
       return false;
    }
 
@@ -908,7 +908,7 @@ d3d12_video_decoder_check_caps_and_create_decoder(const struct d3d12_screen *pD3
    if (FAILED(hr)) {
       debug_printf("[d3d12_video_decoder] d3d12_video_decoder_check_caps_and_create_decoder - CheckFeatureSupport "
                    "failed with HR %x\n",
-                   hr);
+                   (unsigned)hr);
       return false;
    }
 
@@ -942,7 +942,7 @@ d3d12_video_decoder_check_caps_and_create_decoder(const struct d3d12_screen *pD3
    if (FAILED(hr)) {
       debug_printf("[d3d12_video_decoder] d3d12_video_decoder_check_caps_and_create_decoder - CreateVideoDecoder "
                    "failed with HR %x\n",
-                   hr);
+                   (unsigned)hr);
       return false;
    }
 
@@ -988,7 +988,7 @@ d3d12_video_decoder_create_staging_bitstream_buffer(const struct d3d12_screen *p
    if (FAILED(hr)) {
       debug_printf("[d3d12_video_decoder] d3d12_video_decoder_create_staging_bitstream_buffer - "
                    "CreateCommittedResource failed with HR %x\n",
-                   hr);
+                   (unsigned)hr);
       return false;
    }
 
@@ -1151,7 +1151,7 @@ d3d12_video_decoder_reconfigure_dpb(struct d3d12_video_decoder *pD3D12Dec,
       if (FAILED(hr)) {
          debug_printf(
             "[d3d12_video_decoder] d3d12_video_decoder_reconfigure_dpb - CreateVideoDecoder failed with HR %x\n",
-            hr);
+            (unsigned)hr);
          return false;
       }
       // Update state after CreateVideoDecoder succeeds only.
@@ -1203,7 +1203,7 @@ d3d12_video_decoder_reconfigure_dpb(struct d3d12_video_decoder *pD3D12Dec,
       if (FAILED(hr)) {
          debug_printf(
             "[d3d12_video_decoder] d3d12_video_decoder_reconfigure_dpb - CreateVideoDecoderHeap failed with HR %x\n",
-            hr);
+            (unsigned)hr);
          return false;
       }
       // Update pD3D12Dec after CreateVideoDecoderHeap succeeds only.
@@ -1655,7 +1655,7 @@ d3d12_video_decoder_sync_completion(struct pipe_video_codec *codec,
 
    hr = pool_entry.m_spCommandAllocator->Reset();
    if (FAILED(hr)) {
-      debug_printf("failed with %x.\n", hr);
+      debug_printf("failed with %x.\n", (unsigned)hr);
       goto sync_with_token_fail;
    }
 
@@ -1665,7 +1665,7 @@ d3d12_video_decoder_sync_completion(struct pipe_video_codec *codec,
       debug_printf("[d3d12_video_decoder] d3d12_video_decoder_sync_completion"
                    " - D3D12Device was removed AFTER d3d12_video_decoder_ensure_fence_finished "
                    "execution with HR %x, but wasn't before.\n",
-                   hr);
+                   (unsigned)hr);
       goto sync_with_token_fail;
    }
 

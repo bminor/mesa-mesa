@@ -576,7 +576,7 @@ d3d12_resource_from_handle(struct pipe_screen *pscreen,
 
          if (FAILED(hr)) {
             debug_printf("d3d12: Error %x - Couldn't export incoming resource com_obj "
-                         "(%p) via shared NT handle.\n", hr, handle->com_obj);
+                         "(%p) via shared NT handle.\n", (unsigned)hr, handle->com_obj);
             return NULL;
          }
       }
