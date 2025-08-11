@@ -2371,6 +2371,14 @@ brw_postprocess_nir(nir_shader *nir, const struct brw_compiler *compiler,
 
    OPT(nir_lower_locals_to_regs, 32);
 
+   nir_validate_ssa_dominance(nir, "before nir_convert_from_ssa");
+
+   /* Rerun the divergence analysis before convert_from_ssa as this pass has
+    * some assert on consistent divergence flags.
+    */
+   NIR_PASS(_, nir, nir_convert_to_lcssa, true, true);
+   nir_divergence_analysis(nir);
+
    if (unlikely(debug_enabled || archiver)) {
       /* Re-index SSA defs so we print more sensible numbers. */
       nir_foreach_function_impl(impl, nir) {
@@ -2386,14 +2394,6 @@ brw_postprocess_nir(nir_shader *nir, const struct brw_compiler *compiler,
       if (unlikely(archiver))
          brw_debug_archive_nir(archiver, nir, dispatch_width, "ssa");
    }
-
-   nir_validate_ssa_dominance(nir, "before nir_convert_from_ssa");
-
-   /* Rerun the divergence analysis before convert_from_ssa as this pass has
-    * some assert on consistent divergence flags.
-    */
-   NIR_PASS(_, nir, nir_convert_to_lcssa, true, true);
-   nir_divergence_analysis(nir);
 
    OPT(nir_convert_from_ssa, true, true);
 
