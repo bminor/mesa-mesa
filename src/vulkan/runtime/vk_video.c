@@ -105,6 +105,8 @@ vk_video_session_init(struct vk_device *device,
        vid->op == VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR) {
       const struct VkVideoEncodeUsageInfoKHR *encode_usage_profile =
          vk_find_struct_const(create_info->pVideoProfile->pNext, VIDEO_ENCODE_USAGE_INFO_KHR);
+      const struct VkVideoEncodeSessionIntraRefreshCreateInfoKHR *intra_refresh =
+         vk_find_struct_const(create_info->pNext, VIDEO_ENCODE_SESSION_INTRA_REFRESH_CREATE_INFO_KHR);
       if (encode_usage_profile) {
          vid->enc_usage.video_usage_hints = encode_usage_profile->videoUsageHints;
          vid->enc_usage.video_content_hints = encode_usage_profile->videoContentHints;
@@ -114,6 +116,8 @@ vk_video_session_init(struct vk_device *device,
          vid->enc_usage.video_content_hints = VK_VIDEO_ENCODE_CONTENT_DEFAULT_KHR;
          vid->enc_usage.tuning_mode = VK_VIDEO_ENCODE_TUNING_MODE_DEFAULT_KHR;
       }
+      if (intra_refresh)
+         vid->intra_refresh_mode = intra_refresh->intraRefreshMode;
    }
 
    return VK_SUCCESS;

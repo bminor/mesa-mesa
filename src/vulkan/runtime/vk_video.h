@@ -88,6 +88,7 @@ struct vk_video_session {
    VkFormat ref_format;
    uint32_t max_dpb_slots;
    uint32_t max_active_ref_pics;
+   VkVideoEncodeIntraRefreshModeFlagBitsKHR intra_refresh_mode;
 
    struct {
       VkVideoEncodeUsageFlagsKHR video_usage_hints;
