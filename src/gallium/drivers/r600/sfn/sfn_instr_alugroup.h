@@ -48,6 +48,8 @@ public:
 
    auto addr() const { return std::make_pair(m_addr_used, m_addr_is_index); }
 
+   bool empty() const { return m_free_slots == s_all_slot_mask;}
+
    uint32_t slots() const override;
    uint8_t free_slot_mask() const
    {
@@ -103,6 +105,7 @@ private:
    AluReadportReservation m_readports_reserver;
 
    static int s_max_slots;
+   static int s_all_slot_mask;
    static r600_chip_class s_chip_class;
 
    PRegister m_addr_used{nullptr};

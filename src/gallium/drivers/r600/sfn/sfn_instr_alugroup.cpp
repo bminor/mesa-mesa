@@ -540,8 +540,10 @@ AluGroup::set_chipclass(r600_chip_class chip_class)
 {
    s_chip_class = chip_class;
    s_max_slots = chip_class == ISA_CC_CAYMAN ? 4 : 5;
+   s_all_slot_mask = (1 << s_max_slots) - 1;
 }
 
 int AluGroup::s_max_slots = 5;
+int AluGroup::s_all_slot_mask = 0x1f;
 r600_chip_class AluGroup::s_chip_class = ISA_CC_EVERGREEN;
 } // namespace r600

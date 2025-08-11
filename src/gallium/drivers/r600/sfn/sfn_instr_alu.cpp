@@ -379,6 +379,30 @@ void ReplaceIndirectArrayAddr::visit(UniformValue& value)
    }
 }
 
+int
+AluInstr::required_channels_mask() const
+{
+   if (m_alu_slots == 1)
+      return BITSET_BIT(dest_chan());
+
+   switch (m_opcode) {
+   case op1_max4:
+   case op2_dot4:
+   case op2_dot4_ieee:
+      return 0xf;
+   default:
+      if (has_alu_flag(alu_is_cayman_trans)) {
+         return (1 << m_alu_slots) - 1;
+      }
+   }
+   /* TODO: handle cases where the slot pair doesn't reside in
+    * naighboring channels.
+    */
+   int mask = ((1 << m_alu_slots) - 1) << dest_chan();
+   assert(mask < 0x10);
+   return mask;
+}
+
 void AluInstr::update_indirect_addr(UNUSED PRegister old_reg, PRegister reg)
 {
    ReplaceIndirectArrayAddr visitor;
@@ -847,18 +871,48 @@ AluInstr::split(ValueFactory& vf, AluGroup& group)
 
    sfn_log << SfnLog::instr << "Split " << *this << "\n";
 
+   AluReadportReservation rr = group.readport_reserver();
+
+   unsigned nsrc = alu_ops.at(m_opcode).nsrc;
+   assert(nsrc * m_alu_slots == m_src.size());
+
+   for (int s = 0; s < m_alu_slots; ++s) {
+      PVirtualValue src[3];
+      auto ireg = m_src.begin() + s * nsrc;
+
+      for (unsigned i = 0; i < nsrc; ++i, ++ireg)
+         src[i] = *ireg;
+
+      AluBankSwizzle bs = alu_vec_012;
+      while (bs != alu_vec_unknown) {
+         AluReadportReservation rpr = rr;
+         if (rpr.schedule_vec_src(src, nsrc, bs)) {
+            rr = rpr;
+            break;
+         }
+         ++bs;
+      }
+
+      if (bs == alu_vec_unknown) {
+         if (group.empty())
+            UNREACHABLE("multi-slot ALU op violated readpport configuration");
+         else
+            return false;
+      }
+   }
+
    m_dest->del_parent(this);
 
    auto [last_opcode, start_slot] =
       r600_multislot_get_last_opcode_and_slot(m_opcode, m_dest->chan());
 
    for (int k = 0; k < m_alu_slots; ++k) {
-      int s = k + start_slot;
+      int dest_slot = k + start_slot;
 
-      PRegister dst = m_dest->chan() == s ? m_dest : vf.dummy_dest(s);
+      PRegister dst = m_dest->chan() == dest_slot ? m_dest : vf.dummy_dest(dest_slot);
       if (dst->pin() != pin_chgr) {
          auto pin = pin_chan;
-         if (dst->pin() == pin_group && m_dest->chan() == s)
+         if (dst->pin() == pin_group && m_dest->chan() == dest_slot)
             pin = pin_chgr;
          dst->set_pin(pin);
       }
@@ -901,11 +955,10 @@ AluInstr::split(ValueFactory& vf, AluGroup& group)
       if (has_alu_flag(alu_dst_clamp))
          instr->set_alu_flag(alu_dst_clamp);
 
-      if (s == m_dest->chan())
+      if (dest_slot == m_dest->chan())
          instr->set_alu_flag(alu_write);
 
       m_dest->add_parent(instr);
-      sfn_log << SfnLog::instr << "   " << *instr << "\n";
 
       if (!group.add_instruction(instr)) {
          std::cerr << "Unable to schedule '" << *instr << "' into\n" << group << "\n";

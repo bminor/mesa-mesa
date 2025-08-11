@@ -159,6 +159,8 @@ public:
 
    void add_extra_dependency(PVirtualValue reg);
 
+   int required_channels_mask() const;
+
    void set_required_slots(int nslots) { m_required_slots = nslots; }
    unsigned required_slots() const { return m_required_slots; }
 

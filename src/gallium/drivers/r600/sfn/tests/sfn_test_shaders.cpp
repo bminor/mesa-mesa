@@ -1533,14 +1533,14 @@ ALU_GROUP_BEGIN
   ALU SETNE S13.y@chan : KC0[4].y KC0[0].y {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU SETNE S14.z@chan : KC0[4].z KC0[0].z {W}
-  ALU SETNE S15.w@chan : KC0[4].w KC0[0].w {WL}
+  ALU SETNE S15.x@chan : KC0[4].w KC0[0].w {W}
+  ALU SETNE S14.y@chan : KC0[4].z KC0[0].z {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
   ALU MAX4 S16.x@chan : S12.x@chan {W}
   ALU MAX4 __.y@chan : S13.y@chan {}
-  ALU MAX4 __.z@chan : S14.z@chan {}
-  ALU MAX4 __.w@chan : S15.w@chan {L}
+  ALU MAX4 __.z@chan : S14.y@chan {}
+  ALU MAX4 __.w@chan : S15.x@chan {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
   ALU SETE_DX10 S17.x@free : S16.x@chan I[1.0] {WL}
