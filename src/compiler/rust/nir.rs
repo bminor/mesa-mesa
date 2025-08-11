@@ -406,7 +406,7 @@ impl nir_phi_src {
 }
 
 impl nir_phi_instr {
-    pub fn iter_srcs(&self) -> ExecListIter<nir_phi_src> {
+    pub fn iter_srcs(&self) -> ExecListIter<'_, nir_phi_src> {
         ExecListIter::new(&self.srcs, offset_of!(nir_phi_src, node))
     }
 }
@@ -494,7 +494,7 @@ impl nir_instr {
 }
 
 impl nir_block {
-    pub fn iter_instr_list(&self) -> ExecListIter<nir_instr> {
+    pub fn iter_instr_list(&self) -> ExecListIter<'_, nir_instr> {
         ExecListIter::new(&self.instr_list, offset_of!(nir_instr, node))
     }
 
@@ -529,11 +529,11 @@ impl nir_if {
         self.iter_else_list().next().unwrap().as_block().unwrap()
     }
 
-    pub fn iter_then_list(&self) -> ExecListIter<nir_cf_node> {
+    pub fn iter_then_list(&self) -> ExecListIter<'_, nir_cf_node> {
         ExecListIter::new(&self.then_list, offset_of!(nir_cf_node, node))
     }
 
-    pub fn iter_else_list(&self) -> ExecListIter<nir_cf_node> {
+    pub fn iter_else_list(&self) -> ExecListIter<'_, nir_cf_node> {
         ExecListIter::new(&self.else_list, offset_of!(nir_cf_node, node))
     }
 
@@ -543,7 +543,7 @@ impl nir_if {
 }
 
 impl nir_loop {
-    pub fn iter_body(&self) -> ExecListIter<nir_cf_node> {
+    pub fn iter_body(&self) -> ExecListIter<'_, nir_cf_node> {
         ExecListIter::new(&self.body, offset_of!(nir_cf_node, node))
     }
 
@@ -599,7 +599,7 @@ impl nir_cf_node {
 }
 
 impl nir_function_impl {
-    pub fn iter_body(&self) -> ExecListIter<nir_cf_node> {
+    pub fn iter_body(&self) -> ExecListIter<'_, nir_cf_node> {
         ExecListIter::new(&self.body, offset_of!(nir_cf_node, node))
     }
 
@@ -619,11 +619,11 @@ impl nir_function {
 }
 
 impl nir_shader {
-    pub fn iter_functions(&self) -> ExecListIter<nir_function> {
+    pub fn iter_functions(&self) -> ExecListIter<'_, nir_function> {
         ExecListIter::new(&self.functions, offset_of!(nir_function, node))
     }
 
-    pub fn iter_variables(&self) -> ExecListIter<nir_variable> {
+    pub fn iter_variables(&self) -> ExecListIter<'_, nir_variable> {
         ExecListIter::new(&self.variables, offset_of!(nir_variable, node))
     }
 }

@@ -275,12 +275,12 @@ impl<N> CFG<N> {
     }
 
     /// Returns an iterator over the nodes.
-    pub fn iter(&self) -> slice::Iter<CFGNode<N>> {
+    pub fn iter(&self) -> slice::Iter<'_, CFGNode<N>> {
         self.nodes.iter()
     }
 
     /// Returns a mutable iterator over the nodes.
-    pub fn iter_mut(&mut self) -> slice::IterMut<CFGNode<N>> {
+    pub fn iter_mut(&mut self) -> slice::IterMut<'_, CFGNode<N>> {
         self.nodes.iter_mut()
     }
 
