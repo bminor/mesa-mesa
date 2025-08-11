@@ -839,15 +839,13 @@ r600_multislot_get_last_opcode_and_slot(EAluOp opcode, int dest_chan)
    }
 }
 
-AluGroup *
-AluInstr::split(ValueFactory& vf)
+bool
+AluInstr::split(ValueFactory& vf, AluGroup& group)
 {
    if (m_alu_slots == 1)
-      return nullptr;
+      return false;
 
    sfn_log << SfnLog::instr << "Split " << *this << "\n";
-
-   auto group = new AluGroup();
 
    m_dest->del_parent(this);
 
@@ -909,13 +907,12 @@ AluInstr::split(ValueFactory& vf)
       m_dest->add_parent(instr);
       sfn_log << SfnLog::instr << "   " << *instr << "\n";
 
-      if (!group->add_instruction(instr)) {
-         std::cerr << "Unable to schedule '" << *instr << "' into\n" << *group << "\n";
-
+      if (!group.add_instruction(instr)) {
+         std::cerr << "Unable to schedule '" << *instr << "' into\n" << group << "\n";
          UNREACHABLE("Invalid group instruction");
       }
    }
-   group->set_blockid(block_id(), index());
+   group.set_blockid(block_id(), index());
 
    for (auto s : m_src) {
       auto r = s->as_register();
@@ -923,9 +920,9 @@ AluInstr::split(ValueFactory& vf)
          r->del_use(this);
       }
    }
-   group->set_origin(this);
+   set_scheduled();
 
-   return group;
+   return true;
 }
 
 /* Alu instructions that have SSA dest registers increase the  regietsr

@@ -39,8 +39,11 @@ public:
       else {
          if (instr->alu_slots() == 1)
             alu_vec.push_back(instr);
-         else
-            alu_groups.push_back(instr->split(m_value_factory));
+         else {
+            auto group = new AluGroup();
+            instr->split(m_value_factory, *group);
+            alu_groups.push_back(group);
+         }
       }
    }
    void visit(AluGroup *instr) override { alu_groups.push_back(instr); }

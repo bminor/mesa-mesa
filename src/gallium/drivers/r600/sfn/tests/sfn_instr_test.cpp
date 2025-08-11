@@ -333,9 +333,10 @@ TEST_F(InstrTest, test_alu_dot4_grouped)
    EXPECT_EQ(alu, alu);
 
    ValueFactory vf;
-   auto group = alu.split(vf);
+   auto group = new AluGroup();
+   bool result = alu.split(vf, *group);
    group->fix_last_flag();
-   ASSERT_TRUE(group);
+   ASSERT_TRUE(result);
 
    auto i = group->begin();
    EXPECT_NE(i, group->end());

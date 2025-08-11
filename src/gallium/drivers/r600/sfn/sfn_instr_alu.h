@@ -147,7 +147,7 @@ public:
 
    int alu_slots() const { return m_alu_slots; }
 
-   AluGroup *split(ValueFactory& vf);
+   bool split(ValueFactory& vf, AluGroup& dest_group);
 
    bool end_group() const override { return m_alu_flags.test(alu_last_instr); }
 
