@@ -266,11 +266,11 @@ impl<N> CFG<N> {
         self.nodes.get_mut(idx).map(|n| &mut n.node)
     }
 
-    pub fn iter(&self) -> slice::Iter<CFGNode<N>> {
+    pub fn iter(&self) -> slice::Iter<'_, CFGNode<N>> {
         self.nodes.iter()
     }
 
-    pub fn iter_mut(&mut self) -> slice::IterMut<CFGNode<N>> {
+    pub fn iter_mut(&mut self) -> slice::IterMut<'_, CFGNode<N>> {
         self.nodes.iter_mut()
     }
 

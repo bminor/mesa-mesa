@@ -320,11 +320,11 @@ impl<T> PerRegFile<T> {
         }
     }
 
-    pub fn values(&self) -> slice::Iter<T> {
+    pub fn values(&self) -> slice::Iter<'_, T> {
         self.per_file.iter()
     }
 
-    pub fn values_mut(&mut self) -> slice::IterMut<T> {
+    pub fn values_mut(&mut self) -> slice::IterMut<'_, T> {
         self.per_file.iter_mut()
     }
 }
