@@ -522,6 +522,9 @@ create_entry_key_from_offset(void *mem_ctx, nir_def *base, uint64_t base_mul, ui
    struct entry_key *key = ralloc(mem_ctx, struct entry_key);
    key->resource = NULL;
    key->var = NULL;
+   key->offset_defs = NULL;
+   key->offset_defs_mul = NULL;
+
    if (base) {
       nir_scalar offset_defs[32];
       uint64_t offset_defs_mul[32];
@@ -531,14 +534,14 @@ create_entry_key_from_offset(void *mem_ctx, nir_def *base, uint64_t base_mul, ui
       nir_scalar scalar = { .def = base, .comp = 0 };
       key->offset_def_count = parse_entry_key_from_offset(key, 0, 32, scalar, base_mul, offset);
 
-      key->offset_defs = ralloc_array(mem_ctx, nir_scalar, key->offset_def_count);
-      key->offset_defs_mul = ralloc_array(mem_ctx, uint64_t, key->offset_def_count);
-      memcpy(key->offset_defs, offset_defs, key->offset_def_count * sizeof(nir_scalar));
-      memcpy(key->offset_defs_mul, offset_defs_mul, key->offset_def_count * sizeof(uint64_t));
+      if (key->offset_def_count) {
+         key->offset_defs = ralloc_array(mem_ctx, nir_scalar, key->offset_def_count);
+         key->offset_defs_mul = ralloc_array(mem_ctx, uint64_t, key->offset_def_count);
+         memcpy(key->offset_defs, offset_defs, key->offset_def_count * sizeof(nir_scalar));
+         memcpy(key->offset_defs_mul, offset_defs_mul, key->offset_def_count * sizeof(uint64_t));
+      }
    } else {
       key->offset_def_count = 0;
-      key->offset_defs = NULL;
-      key->offset_defs_mul = NULL;
    }
    return key;
 }
