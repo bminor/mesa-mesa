@@ -55,7 +55,6 @@ DEPS=(
     libpciaccess-dev
     libunwind-dev
     libva-dev
-    libvdpau-dev
     libvulkan-dev
     libx11-dev
     libx11-xcb-dev

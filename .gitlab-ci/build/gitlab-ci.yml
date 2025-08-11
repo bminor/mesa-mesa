@@ -192,7 +192,6 @@ debian-build-x86_64:
       -D platforms=x11,wayland
     GALLIUM_ST: >
       -D gallium-extra-hud=true
-      -D gallium-vdpau=enabled
       -D gallium-va=enabled
       -D gallium-rusticl=false
       -D legacy-wayland=bind-wayland-display
@@ -225,7 +224,6 @@ debian-release:
       -D platforms=x11,wayland
     GALLIUM_ST: >
       -D gallium-extra-hud=true
-      -D gallium-vdpau=enabled
       -D gallium-va=enabled
       -D gallium-rusticl=false
       -D llvm=enabled
@@ -265,7 +263,6 @@ alpine-build-testing:
     GALLIUM_DRIVERS: "crocus,etnaviv,freedreno,iris,lima,nouveau,panfrost,r300,r600,radeonsi,svga,llvmpipe,softpipe,tegra,v3d,vc4,virgl,zink"
     GALLIUM_ST: >
       -D gallium-extra-hud=true
-      -D gallium-vdpau=disabled
       -D gallium-va=enabled
       -D gallium-rusticl=false
       -D gles1=disabled
@@ -315,7 +312,6 @@ fedora-release:
     GALLIUM_DRIVERS: "crocus,etnaviv,freedreno,i915,iris,lima,nouveau,panfrost,r300,r600,radeonsi,svga,llvmpipe,softpipe,tegra,v3d,vc4,virgl,zink"
     GALLIUM_ST: >
       -D gallium-extra-hud=true
-      -D gallium-vdpau=enabled
       -D gallium-va=enabled
       -D gallium-rusticl=true
       -D gles1=disabled
@@ -366,7 +362,6 @@ debian-android:
       -D mesa-clc=system
       -D precomp-compiler=system
     GALLIUM_ST: >
-      -D gallium-vdpau=disabled
       -D gallium-va=disabled
       -D gallium-rusticl=false
     PKG_CONFIG_LIBDIR: "/disable/non/android/system/pc/files"
@@ -414,7 +409,6 @@ debian-android:
       -D egl=enabled
       -D platforms=x11,wayland
     GALLIUM_ST: >
-      -D gallium-vdpau=disabled
       -D gallium-va=disabled
 
 .meson-arm:
@@ -627,7 +621,6 @@ debian-clang:
       -D platforms=x11,wayland
     GALLIUM_ST: >
       -D gallium-extra-hud=true
-      -D gallium-vdpau=enabled
       -D gallium-va=enabled
       -D gles1=enabled
       -D gles2=enabled
@@ -676,7 +669,6 @@ debian-clang-release:
       -D platforms=x11,wayland
     GALLIUM_ST: >
       -D gallium-extra-hud=true
-      -D gallium-vdpau=enabled
       -D gallium-va=enabled
       -D gles1=disabled
       -D gles2=disabled
@@ -714,7 +706,6 @@ debian-vulkan:
       -D glvnd=disabled
       -D platforms=x11,wayland
     GALLIUM_ST: >
-      -D gallium-vdpau=disabled
       -D gallium-va=disabled
       -D gallium-rusticl=false
       -D b_sanitize=undefined

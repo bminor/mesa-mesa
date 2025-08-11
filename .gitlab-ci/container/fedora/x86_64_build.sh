@@ -51,7 +51,6 @@ DEPS=(
     "pkgconfig(libglvnd)"
     "pkgconfig(libva)"
     "pkgconfig(pciaccess)"
-    "pkgconfig(vdpau)"
     "pkgconfig(vulkan)"
     "pkgconfig(x11)"
     "pkgconfig(x11-xcb)"
