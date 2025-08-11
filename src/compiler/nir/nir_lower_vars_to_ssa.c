@@ -70,7 +70,7 @@ struct lower_variables_state {
    nir_function_impl *impl;
 
    /* A hash table mapping variables to deref_node data */
-   struct hash_table *deref_var_nodes;
+   struct hash_table deref_var_nodes;
 
    /* A hash table mapping fully-qualified direct dereferences, i.e.
     * dereferences with no indirect or wildcard array dereferences, to
@@ -125,13 +125,13 @@ get_deref_node_for_var(nir_variable *var, struct lower_variables_state *state)
    struct deref_node *node;
 
    struct hash_entry *var_entry =
-      _mesa_hash_table_search(state->deref_var_nodes, var);
+      _mesa_hash_table_search(&state->deref_var_nodes, var);
 
    if (var_entry) {
       return var_entry->data;
    } else {
       node = deref_node_create(NULL, var->type, true, state->dead_ctx);
-      _mesa_hash_table_insert(state->deref_var_nodes, var, node);
+      _mesa_hash_table_insert(&state->deref_var_nodes, var, node);
       return node;
    }
 }
@@ -799,7 +799,7 @@ nir_lower_vars_to_ssa_impl(nir_function_impl *impl)
    state.dead_ctx = ralloc_context(state.shader);
    state.impl = impl;
 
-   state.deref_var_nodes = _mesa_pointer_hash_table_create(state.dead_ctx);
+   _mesa_pointer_hash_table_init(&state.deref_var_nodes, state.dead_ctx);
    exec_list_make_empty(&state.direct_deref_nodes);
 
    /* Build the initial deref structures and direct_deref_nodes table */
