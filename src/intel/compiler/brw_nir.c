@@ -2118,16 +2118,11 @@ nir_shader_has_local_variables(const nir_shader *nir)
 /* Prepare the given shader for codegen
  *
  * This function is intended to be called right before going into the actual
- * backend and is highly backend-specific.  Also, once this function has been
- * called on a shader, it will no longer be in SSA form so most optimizations
- * will not work.
+ * backend and is highly backend-specific.
  */
 void
-brw_postprocess_nir(nir_shader *nir, const struct brw_compiler *compiler,
-                    unsigned dispatch_width,
-                    debug_archiver *archiver,
-                    bool debug_enabled,
-                    enum brw_robustness_flags robust_flags)
+brw_postprocess_nir_opts(nir_shader *nir, const struct brw_compiler *compiler,
+                         enum brw_robustness_flags robust_flags)
 {
    const struct intel_device_info *devinfo = compiler->devinfo;
 
@@ -2344,6 +2339,15 @@ brw_postprocess_nir(nir_shader *nir, const struct brw_compiler *compiler,
 
       OPT(nir_lower_subgroups, &subgroups_options);
    }
+}
+
+void
+brw_postprocess_nir_out_of_ssa(nir_shader *nir,
+                               unsigned dispatch_width,
+                               debug_archiver *archiver,
+                               bool debug_enabled)
+{
+   UNUSED bool progress; /* Written by OPT */
 
    /* Run fsign lowering again after the last time brw_nir_optimize is called.
     * As is the case with conversion lowering (below), brw_nir_optimize can

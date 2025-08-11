@@ -232,12 +232,27 @@ bool brw_nir_lower_mem_access_bit_sizes(nir_shader *shader,
 
 bool brw_nir_lower_simd(nir_shader *nir, unsigned dispatch_width);
 
-void brw_postprocess_nir(nir_shader *nir,
-                         const struct brw_compiler *compiler,
-                         unsigned dispatch_width,
-                         debug_archiver *archiver,
-                         bool debug_enabled,
-                         enum brw_robustness_flags robust_flags);
+void brw_postprocess_nir_opts(nir_shader *nir,
+                              const struct brw_compiler *compiler,
+                              enum brw_robustness_flags robust_flags);
+
+void brw_postprocess_nir_out_of_ssa(nir_shader *nir,
+                                    unsigned dispatch_width,
+                                    debug_archiver *archiver,
+                                    bool debug_enabled);
+
+static inline void
+brw_postprocess_nir(nir_shader *nir,
+                    const struct brw_compiler *compiler,
+                    unsigned dispatch_width,
+                    debug_archiver *archiver,
+                    bool debug_enabled,
+                    enum brw_robustness_flags robust_flags)
+{
+   brw_postprocess_nir_opts(nir, compiler, robust_flags);
+   brw_postprocess_nir_out_of_ssa(nir, dispatch_width, archiver,
+                                  debug_enabled);
+}
 
 bool brw_nir_apply_attribute_workarounds(nir_shader *nir,
                                          const uint8_t *attrib_wa_flags);
