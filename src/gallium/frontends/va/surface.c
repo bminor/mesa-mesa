@@ -906,11 +906,9 @@ surface_from_external_win32_memory(VADriverContextP ctx, vlVaSurface *surface,
                              struct pipe_video_buffer *templat)
 {
    vlVaDriver *drv;
-   struct pipe_screen *pscreen;
    struct winsys_handle whandle;
    VAStatus result;
 
-   pscreen = VL_VA_PSCREEN(ctx);
    drv = VL_VA_DRIVER(ctx);
 
    templat->buffer_format = surface->templat.buffer_format;
