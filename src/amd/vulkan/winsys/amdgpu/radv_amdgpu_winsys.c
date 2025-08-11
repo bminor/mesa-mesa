@@ -170,6 +170,13 @@ radv_amdgpu_winsys_get_sync_types(struct radeon_winsys *rws)
    return ws->sync_types;
 }
 
+static uint64_t
+radv_amdgpu_winsys_filter_perftest_flags(uint64_t perftest_flags)
+{
+   return perftest_flags & (RADV_PERFTEST_LOCAL_BOS | RADV_PERFTEST_NO_SAM |
+                            RADV_PERFTEST_SAM | RADV_PERFTEST_BO_LIST);
+}
+
 VkResult
 radv_amdgpu_winsys_create(int fd, uint64_t debug_flags, uint64_t perftest_flags, bool reserve_vmid, bool is_virtio,
                           struct radeon_winsys **winsys)
@@ -179,6 +186,8 @@ radv_amdgpu_winsys_create(int fd, uint64_t debug_flags, uint64_t perftest_flags,
    uint32_t drm_major, drm_minor, r;
    ac_drm_device *dev;
    struct radv_amdgpu_winsys *ws = NULL;
+
+   perftest_flags = radv_amdgpu_winsys_filter_perftest_flags(perftest_flags);
 
    r = ac_drm_device_initialize(fd, is_virtio, &drm_major, &drm_minor, &dev);
    if (r) {
