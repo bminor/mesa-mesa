@@ -1203,7 +1203,8 @@ ir_function_signature::constant_expression_value(linear_ctx *linalloc,
     * We expect the correctness of the number of parameters to have
     * been checked earlier.
     */
-   hash_table *deref_hash = _mesa_pointer_hash_table_create(NULL);
+   hash_table deref_hash;
+   _mesa_pointer_hash_table_init(&deref_hash, NULL);
 
    /* If "origin" is non-NULL, then the function body is there.  So we
     * have to use the variable objects from the object with the body,
@@ -1215,13 +1216,13 @@ ir_function_signature::constant_expression_value(linear_ctx *linalloc,
       ir_constant *constant =
          n->constant_expression_value(linalloc, variable_context);
       if (constant == NULL) {
-         _mesa_hash_table_destroy(deref_hash, NULL);
+         _mesa_hash_table_fini(&deref_hash, NULL);
          return NULL;
       }
 
 
       ir_variable *var = (ir_variable *)parameter_info;
-      _mesa_hash_table_insert(deref_hash, var, constant);
+      _mesa_hash_table_insert(&deref_hash, var, constant);
 
       parameter_info = parameter_info->next;
    }
@@ -1231,11 +1232,11 @@ ir_function_signature::constant_expression_value(linear_ctx *linalloc,
    /* Now run the builtin function until something non-constant
     * happens or we get the result.
     */
-   if (constant_expression_evaluate_expression_list(linalloc, origin ? origin->body : body, deref_hash, &result) &&
+   if (constant_expression_evaluate_expression_list(linalloc, origin ? origin->body : body, &deref_hash, &result) &&
        result)
       result = result->clone(linalloc, NULL);
 
-   _mesa_hash_table_destroy(deref_hash, NULL);
+   _mesa_hash_table_fini(&deref_hash, NULL);
 
    return result;
 }
