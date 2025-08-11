@@ -354,8 +354,8 @@ bool
 nir_split_struct_vars(nir_shader *shader, nir_variable_mode modes)
 {
    void *mem_ctx = ralloc_context(NULL);
-   struct hash_table *var_field_map =
-      _mesa_pointer_hash_table_create(mem_ctx);
+   struct hash_table var_field_map;
+   _mesa_pointer_hash_table_init(&var_field_map, mem_ctx);
    struct set *complex_vars = NULL;
 
    bool has_global_splits = false;
@@ -364,7 +364,7 @@ nir_split_struct_vars(nir_shader *shader, nir_variable_mode modes)
       has_global_splits = split_var_list_structs(shader, NULL,
                                                  &shader->variables,
                                                  global_modes,
-                                                 var_field_map,
+                                                 &var_field_map,
                                                  &complex_vars,
                                                  mem_ctx);
    }
@@ -376,13 +376,13 @@ nir_split_struct_vars(nir_shader *shader, nir_variable_mode modes)
          has_local_splits = split_var_list_structs(shader, impl,
                                                    &impl->locals,
                                                    nir_var_function_temp,
-                                                   var_field_map,
+                                                   &var_field_map,
                                                    &complex_vars,
                                                    mem_ctx);
       }
 
       if (has_global_splits || has_local_splits) {
-         split_struct_derefs_impl(impl, var_field_map,
+         split_struct_derefs_impl(impl, &var_field_map,
                                   modes, mem_ctx);
 
          progress = nir_progress(true, impl, nir_metadata_control_flow);
@@ -915,15 +915,17 @@ bool
 nir_split_array_vars(nir_shader *shader, nir_variable_mode modes)
 {
    void *mem_ctx = ralloc_context(NULL);
-   struct hash_table *var_info_map = _mesa_pointer_hash_table_create(mem_ctx);
+   struct hash_table var_info_map;
    struct set *complex_vars = NULL;
+
+   _mesa_pointer_hash_table_init(&var_info_map, mem_ctx);
 
    bool has_global_array = false;
    if (modes & (~nir_var_function_temp)) {
       has_global_array = init_var_list_array_infos(shader,
                                                    &shader->variables,
                                                    modes,
-                                                   var_info_map,
+                                                   &var_info_map,
                                                    &complex_vars,
                                                    mem_ctx);
    }
@@ -935,14 +937,14 @@ nir_split_array_vars(nir_shader *shader, nir_variable_mode modes)
          has_local_array = init_var_list_array_infos(shader,
                                                      &impl->locals,
                                                      nir_var_function_temp,
-                                                     var_info_map,
+                                                     &var_info_map,
                                                      &complex_vars,
                                                      mem_ctx);
       }
 
       if (has_global_array || has_local_array) {
          has_any_array = true;
-         mark_array_usage_impl(impl, var_info_map, modes, mem_ctx);
+         mark_array_usage_impl(impl, &var_info_map, modes, mem_ctx);
       }
    }
 
@@ -958,7 +960,7 @@ nir_split_array_vars(nir_shader *shader, nir_variable_mode modes)
       has_global_splits = split_var_list_arrays(shader, NULL,
                                                 &shader->variables,
                                                 modes,
-                                                var_info_map, mem_ctx);
+                                                &var_info_map, mem_ctx);
    }
 
    bool progress = false;
@@ -968,12 +970,12 @@ nir_split_array_vars(nir_shader *shader, nir_variable_mode modes)
          has_local_splits = split_var_list_arrays(shader, impl,
                                                   &impl->locals,
                                                   nir_var_function_temp,
-                                                  var_info_map, mem_ctx);
+                                                  &var_info_map, mem_ctx);
       }
 
       if (has_global_splits || has_local_splits) {
-         split_array_copies_impl(impl, var_info_map, modes, mem_ctx);
-         split_array_access_impl(impl, var_info_map, modes, mem_ctx);
+         split_array_copies_impl(impl, &var_info_map, modes, mem_ctx);
+         split_array_access_impl(impl, &var_info_map, modes, mem_ctx);
 
          progress = nir_progress(true, impl, nir_metadata_control_flow);
       } else {
@@ -1691,8 +1693,8 @@ nir_shrink_vec_array_vars(nir_shader *shader, nir_variable_mode modes)
 
    void *mem_ctx = ralloc_context(NULL);
 
-   struct hash_table *var_usage_map =
-      _mesa_pointer_hash_table_create(mem_ctx);
+   struct hash_table var_usage_map;
+   _mesa_pointer_hash_table_init(&var_usage_map, mem_ctx);
 
    bool has_vars_to_shrink = false;
    nir_foreach_function_impl(impl, shader) {
@@ -1702,7 +1704,7 @@ nir_shrink_vec_array_vars(nir_shader *shader, nir_variable_mode modes)
        */
       if (function_impl_has_vars_with_modes(impl, modes)) {
          has_vars_to_shrink = true;
-         find_used_components_impl(impl, var_usage_map,
+         find_used_components_impl(impl, &var_usage_map,
                                    modes, mem_ctx);
       }
    }
@@ -1716,7 +1718,7 @@ nir_shrink_vec_array_vars(nir_shader *shader, nir_variable_mode modes)
    if (modes & nir_var_shader_temp) {
       globals_shrunk = shrink_vec_var_list(&shader->variables,
                                            nir_var_shader_temp,
-                                           var_usage_map);
+                                           &var_usage_map);
    }
 
    bool progress = false;
@@ -1725,11 +1727,11 @@ nir_shrink_vec_array_vars(nir_shader *shader, nir_variable_mode modes)
       if (modes & nir_var_function_temp) {
          locals_shrunk = shrink_vec_var_list(&impl->locals,
                                              nir_var_function_temp,
-                                             var_usage_map);
+                                             &var_usage_map);
       }
 
       if (globals_shrunk || locals_shrunk) {
-         shrink_vec_var_access_impl(impl, var_usage_map, modes);
+         shrink_vec_var_access_impl(impl, &var_usage_map, modes);
 
          progress = nir_progress(true, impl, nir_metadata_control_flow);
       } else {
