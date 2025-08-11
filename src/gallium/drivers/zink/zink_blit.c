@@ -541,8 +541,9 @@ zink_blit_begin(struct zink_context *ctx, enum zink_blit_flags flags)
    util_blitter_save_vertex_elements(ctx->blitter, ctx->element_state);
    util_blitter_save_viewport(ctx->blitter, ctx->vp_state.viewport_states);
 
-   util_blitter_save_vertex_buffers(ctx->blitter, ctx->vertex_buffers,
-                                    util_last_bit(ctx->gfx_pipeline_state.vertex_buffers_enabled_mask));
+   if (ctx->element_state)
+      util_blitter_save_vertex_buffers(ctx->blitter, ctx->vertex_buffers,
+                                       ctx->element_state->hw_state.num_bindings);
    util_blitter_save_vertex_shader(ctx->blitter, ctx->gfx_stages[MESA_SHADER_VERTEX]);
    util_blitter_save_tessctrl_shader(ctx->blitter, ctx->gfx_stages[MESA_SHADER_TESS_CTRL]);
    util_blitter_save_tesseval_shader(ctx->blitter, ctx->gfx_stages[MESA_SHADER_TESS_EVAL]);
