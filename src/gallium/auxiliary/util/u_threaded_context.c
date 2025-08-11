@@ -1670,23 +1670,14 @@ tc_set_constant_buffer(struct pipe_context *_pipe,
       return;
    }
 
-   struct pipe_resource *buffer;
-   unsigned offset;
-
+   /* frontend must handle this */
+   assert(!cb->user_buffer);
    if (cb->user_buffer) {
-      /* This must be done before adding set_constant_buffer, because it could
-       * generate e.g. transfer_unmap and flush partially-uninitialized
-       * set_constant_buffer to the driver if it was done afterwards.
-       */
-      buffer = NULL;
-      u_upload_data(tc->base.const_uploader, 0, cb->buffer_size,
-                    tc->ubo_alignment, cb->user_buffer, &offset, &buffer);
-      u_upload_unmap(tc->base.const_uploader);
-      take_ownership = true;
-   } else {
-      buffer = cb->buffer;
-      offset = cb->buffer_offset;
+      UNREACHABLE("tc: unhandled frontend cbuf0 user buffer!");
+      return;
    }
+   struct pipe_resource *buffer = cb->buffer;
+   unsigned offset = cb->buffer_offset;
 
    struct tc_constant_buffer *p =
       tc_add_call(tc, TC_CALL_set_constant_buffer, tc_constant_buffer);
@@ -1696,11 +1687,7 @@ tc_set_constant_buffer(struct pipe_context *_pipe,
    p->cb.user_buffer = NULL;
    p->cb.buffer_offset = offset;
    p->cb.buffer_size = cb->buffer_size;
-
-   if (take_ownership)
-      p->cb.buffer = buffer;
-   else
-      tc_set_resource_reference(&p->cb.buffer, buffer);
+   p->cb.buffer = buffer;
 
    if (buffer) {
       tc_bind_buffer(&tc->const_buffers[shader][index],
