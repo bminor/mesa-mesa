@@ -4621,7 +4621,8 @@ radv_update_zrange_precision(struct radv_cmd_buffer *cmd_buffer, struct radv_ds_
    uint32_t db_z_info = ds->ac.db_z_info;
    uint32_t db_z_info_reg;
 
-   if (!pdev->info.has_tc_compat_zrange_bug || !radv_tc_compat_htile_enabled(image, iview->vk.base_mip_level))
+   if (!radv_image_has_tc_compat_zrange_metadata(device, image) ||
+       !radv_tc_compat_htile_enabled(image, iview->vk.base_mip_level))
       return;
 
    db_z_info &= C_028040_ZRANGE_PRECISION;
@@ -4979,10 +4980,9 @@ radv_set_tc_compat_zrange_metadata(struct radv_cmd_buffer *cmd_buffer, struct ra
                                    const VkImageSubresourceRange *range, uint32_t value)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radv_cmd_stream *cs = cmd_buffer->cs;
 
-   if (!pdev->info.has_tc_compat_zrange_bug)
+   if (!radv_image_has_tc_compat_zrange_metadata(device, image))
       return;
 
    uint64_t va = radv_get_tc_compat_zrange_va(image, range->baseMipLevel);

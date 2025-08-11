@@ -199,16 +199,32 @@ radv_tc_compat_htile_enabled(const struct radv_image *image, unsigned level)
 static inline bool
 radv_image_tile_stencil_disabled(const struct radv_device *device, const struct radv_image *image)
 {
+   if (vk_format_has_stencil(image->vk.format))
+      return false;
+
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
-   if (pdev->info.gfx_level >= GFX9) {
-      return !vk_format_has_stencil(image->vk.format) && !radv_image_has_vrs_htile(device, image);
-   } else {
-      /* Due to a hw bug, TILE_STENCIL_DISABLE must be set to 0 for
-       * the TC-compat ZRANGE issue even if no stencil is used.
-       */
-      return !vk_format_has_stencil(image->vk.format) && !radv_image_is_tc_compat_htile(image);
-   }
+   /* Need to use the base and delta Z encoding for the workaround. */
+   if (pdev->info.has_htile_tc_z_clear_bug_without_stencil && radv_image_is_tc_compat_htile(image))
+      return false;
+
+   return !radv_image_has_vrs_htile(device, image);
+}
+
+/**
+ * Return whether the image requires setting ZRANGE_PRECISION based on the last depth clear value to work around the
+ * hardware bug that may cause the HTILE depth clear value used by the TC to be changed.
+ */
+static inline bool
+radv_image_has_tc_compat_zrange_metadata(const struct radv_device *device, const struct radv_image *image)
+{
+   if (!radv_image_is_tc_compat_htile(image))
+      return false;
+
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+
+   return radv_image_tile_stencil_disabled(device, image) ? pdev->info.has_htile_tc_z_clear_bug_without_stencil
+                                                          : pdev->info.has_htile_tc_z_clear_bug_with_stencil;
 }
 
 static inline bool

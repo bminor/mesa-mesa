@@ -884,7 +884,7 @@ radv_image_alloc_values(const struct radv_device *device, struct radv_image *ima
       image->size += 8 * image->vk.mip_levels;
    }
 
-   if (radv_image_is_tc_compat_htile(image) && pdev->info.has_tc_compat_zrange_bug) {
+   if (radv_image_has_tc_compat_zrange_metadata(device, image)) {
       /* Metadata for the TC-compatible HTILE hardware bug which
        * have to be fixed by updating ZRANGE_PRECISION when doing
        * fast depth clears to 0.0f.

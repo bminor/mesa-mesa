@@ -938,7 +938,29 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    /* Stencil texturing with HTILE doesn't work with mipmapping on Navi10-14. */
    info->has_htile_stencil_mipmap_bug = info->gfx_level == GFX10;
 
-   info->has_tc_compat_zrange_bug = info->gfx_level >= GFX8 && info->gfx_level <= GFX9;
+   /* When drawing, if all samples covered in a cleared tile in HTILE are discarded (by the fragment
+    * shader, alpha to coverage, etc.), the tile stays cleared, but on the chips with this bug, the
+    * Z range in the tile still gets expanded by the depth test, and that may flip the upper bit of
+    * the HTILE encoding (of the maximum Z without stencil, or the base Z with stencil), inverting
+    * the clear value that texture reads will use for the tile.
+    *
+    * has_htile_tc_z_clear_bug_without/with_stencil indicate whether the TILE_STENCIL_DISABLE =
+    * 1 and 0 HTILE encodings respectively are subject to this bug.
+    *
+    * One possible workaround is to use the depth/stencil HTILE that encodes the Z range as base and
+    * delta, setting ZRANGE_PRECISION to 0 (base Z is min Z) when the depth is cleared to 0, and to
+    * 1 (base Z is max Z) when it's cleared to 1, so the Z delta gets expanded, but the base Z,
+    * which contains the TC clear value bit, stays the same.
+    * See DepthStencilView::UpdateZRangePrecision in PAL.
+    *
+    * Affects dEQP-VK.dynamic_state.*.discard.depth on has_htile_tc_z_clear_bug_without_stencil = 1
+    * chips as of the CTS commit 698abf5f6b7073562cc951617a58e5803c7ead3f (clearing a depth-only
+    * image to 0, drawing geometry with Z = 1 to it discarding all fragments in the shader, then
+    * reading it in vkCmdCopyImageToBuffer fetching 1 where 0 is supposed to be).
+    */
+   info->has_htile_tc_z_clear_bug_without_stencil = info->gfx_level == GFX8;
+   info->has_htile_tc_z_clear_bug_with_stencil = info->has_htile_tc_z_clear_bug_without_stencil ||
+                                                 info->gfx_level == GFX9;
 
    info->has_small_prim_filter_sample_loc_bug =
       (info->family >= CHIP_POLARIS10 && info->family <= CHIP_POLARIS12) ||
@@ -1714,7 +1736,8 @@ void ac_print_gpu_info(const struct radeon_info *info, FILE *f)
    fprintf(f, "    cpdma_prefetch_writes_memory = %u\n", info->cpdma_prefetch_writes_memory);
    fprintf(f, "    has_gfx9_scissor_bug = %i\n", info->has_gfx9_scissor_bug);
    fprintf(f, "    has_htile_stencil_mipmap_bug = %i\n", info->has_htile_stencil_mipmap_bug);
-   fprintf(f, "    has_tc_compat_zrange_bug = %i\n", info->has_tc_compat_zrange_bug);
+   fprintf(f, "    has_htile_tc_z_clear_bug_without_stencil = %i\n", info->has_htile_tc_z_clear_bug_without_stencil);
+   fprintf(f, "    has_htile_tc_z_clear_bug_with_stencil = %i\n", info->has_htile_tc_z_clear_bug_with_stencil);
    fprintf(f, "    has_small_prim_filter_sample_loc_bug = %i\n", info->has_small_prim_filter_sample_loc_bug);
    fprintf(f, "    has_ls_vgpr_init_bug = %i\n", info->has_ls_vgpr_init_bug);
    fprintf(f, "    has_pops_missed_overlap_bug = %i\n", info->has_pops_missed_overlap_bug);
