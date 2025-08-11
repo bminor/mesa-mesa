@@ -297,7 +297,7 @@ public:
       buffer->current_idx = 0;
    }
 
-   bool operator==(const monotonic_buffer_resource& other) { return buffer == other.buffer; }
+   bool operator==(const monotonic_buffer_resource& other) const { return buffer == other.buffer; }
 
 private:
    struct Buffer {

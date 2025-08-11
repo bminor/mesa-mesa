@@ -45,7 +45,7 @@ struct NOP_ctx_gfx6 {
       }
    }
 
-   bool operator==(const NOP_ctx_gfx6& other)
+   bool operator==(const NOP_ctx_gfx6& other) const
    {
       return set_vskip_mode_then_vector == other.set_vskip_mode_then_vector &&
              valu_wr_vcc_then_div_fmas == other.valu_wr_vcc_then_div_fmas &&
@@ -152,7 +152,7 @@ struct NOP_ctx_gfx10 {
       waits_since_fp_atomic = std::min(waits_since_fp_atomic, other.waits_since_fp_atomic);
    }
 
-   bool operator==(const NOP_ctx_gfx10& other)
+   bool operator==(const NOP_ctx_gfx10& other) const
    {
       return has_VOPC_write_exec == other.has_VOPC_write_exec &&
              has_nonVALU_exec_read == other.has_nonVALU_exec_read && has_VMEM == other.has_VMEM &&
@@ -292,7 +292,7 @@ struct NOP_ctx_gfx11 {
       sgpr_read_by_valu_then_wr_by_salu.join_min(other.sgpr_read_by_valu_then_wr_by_salu);
    }
 
-   bool operator==(const NOP_ctx_gfx11& other)
+   bool operator==(const NOP_ctx_gfx11& other) const
    {
       return has_Vcmpx == other.has_Vcmpx &&
              vgpr_used_by_vmem_load == other.vgpr_used_by_vmem_load &&
