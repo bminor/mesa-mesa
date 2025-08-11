@@ -497,8 +497,6 @@ dEQP-GLES31.functional.state_query.texture.texture_2d_multisample_array.texture_
 dEQP-GLES31.functional.state_query.texture.texture_2d_multisample_array.texture_immutable_levels_integer,Fail
 dEQP-GLES31.functional.state_query.texture.texture_2d_multisample_array.texture_immutable_levels_pure_int,Fail
 dEQP-GLES31.functional.state_query.texture.texture_2d_multisample_array.texture_immutable_levels_pure_uint,Fail
-dEQP-GLES31.functional.texture.border_clamp.depth_compare_mode.depth32f_stencil8.linear_size_npot,Fail
-dEQP-GLES31.functional.texture.border_clamp.depth_compare_mode.depth32f_stencil8.linear_size_pot,Fail
 dEQP-GLES31.functional.texture.filtering.cube_array.formats.rgb10_a2_linear_mipmap_linear,Fail
 dEQP-GLES31.functional.texture.filtering.cube_array.formats.rgb10_a2_nearest_mipmap_linear,Fail
 dEQP-GLES31.functional.texture.filtering.cube_array.sizes.128x128x12_linear,Fail
