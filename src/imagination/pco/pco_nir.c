@@ -59,6 +59,11 @@ static const nir_shader_compiler_options nir_options = {
    .compact_arrays = true,
    .scalarize_ddx = true,
 
+   .lower_int64_options = ~0U,
+   .lower_pack_64_2x32 = true,
+   .lower_pack_64_2x32_split = true,
+   .lower_unpack_64_2x32_split = true,
+
    .max_unroll_iterations = 16,
 
    .io_options = nir_io_vectorizer_ignores_types,
@@ -443,6 +448,9 @@ static void pco_nir_opt(pco_ctx *ctx, nir_shader *nir)
          .expensive_alu_ok = true,
       };
       NIR_PASS(progress, nir, nir_opt_peephole_select, &peep_opts);
+
+      NIR_PASS(progress, nir, nir_lower_int64);
+
       NIR_PASS(progress, nir, nir_opt_phi_precision);
       NIR_PASS(progress, nir, nir_lower_alu);
       NIR_PASS(progress, nir, nir_lower_pack);

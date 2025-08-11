@@ -18,23 +18,12 @@
 #include "pco_builder.h"
 #include "pco_common.h"
 #include "pco_internal.h"
+#include "pco_usclib.h"
 #include "util/macros.h"
 
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
-
-/* State word unpacking helpers. */
-#define STATE_UNPACK(b, state_word, word, start_bit, num_bits) \
-   nir_ubitfield_extract_imm(b, state_word[word], start_bit, num_bits)
-
-#define STATE_UNPACK_ADD(b, state_word, word, start_bit, num_bits, val) \
-   nir_iadd_imm(b, STATE_UNPACK(b, state_word, word, start_bit, num_bits), val)
-
-#define STATE_UNPACK_SHIFT(b, state_word, word, start_bit, num_bits, val) \
-   nir_ishl(b,                                                            \
-            nir_imm_int(b, val),                                          \
-            STATE_UNPACK(b, state_word, word, start_bit, num_bits))
 
 static inline nir_def *get_src_def(nir_tex_instr *tex,
                                    nir_tex_src_type src_type)
@@ -54,21 +43,17 @@ static inline nir_def *get_src_def(nir_tex_instr *tex,
 static nir_def *lower_tex_query_basic(nir_builder *b,
                                       nir_tex_instr *tex,
                                       nir_def *tex_state,
-                                      nir_def *tex_meta)
+                                      nir_def *tex_meta,
+                                      pco_data *data)
 {
-   nir_def *tex_state_word[] = {
-      [0] = nir_channel(b, tex_state, 0),
-      [1] = nir_channel(b, tex_state, 1),
-      [2] = nir_channel(b, tex_state, 2),
-      [3] = nir_channel(b, tex_state, 3),
-   };
-
    switch (tex->op) {
    case nir_texop_query_levels:
-      return STATE_UNPACK(b, tex_state_word, 2, 0, 4);
+      data->common.uses.usclib = true;
+      return usclib_tex_state_levels(b, tex_state);
 
    case nir_texop_texture_samples:
-      return STATE_UNPACK_SHIFT(b, tex_state_word, 1, 30, 2, 1);
+      data->common.uses.usclib = true;
+      return usclib_tex_state_samples(b, tex_state);
 
    case nir_texop_txs: {
       if (tex->sampler_dim == GLSL_SAMPLER_DIM_BUF) {
@@ -78,28 +63,16 @@ static nir_def *lower_tex_query_basic(nir_builder *b,
          return nir_channel(b, tex_meta, PCO_IMAGE_META_BUFFER_ELEMS);
       }
 
-      unsigned num_comps = tex->def.num_components;
-      if (tex->is_array)
-         --num_comps;
-
-      nir_def *size_comps[] = {
-         [0] = STATE_UNPACK_ADD(b, tex_state_word, 1, 2, 14, 1),
-         [1] = STATE_UNPACK_ADD(b, tex_state_word, 1, 16, 14, 1),
-         [2] = STATE_UNPACK_ADD(b, tex_state_word, 2, 4, 11, 1),
-      };
-
-      nir_def *base_level = STATE_UNPACK(b, tex_state_word, 3, 28, 4);
+      nir_def *num_comps = nir_imm_int(b, tex->def.num_components);
+      nir_def *is_1d = nir_imm_bool(b, tex->sampler_dim == GLSL_SAMPLER_DIM_1D);
+      nir_def *is_array = nir_imm_bool(b, tex->is_array);
       nir_def *lod = get_src_def(tex, nir_tex_src_lod);
-      assert(lod);
-      lod = nir_iadd(b, lod, base_level);
+      nir_def *size_comps =
+         usclib_tex_state_size(b, tex_state, num_comps, is_1d, is_array, lod);
 
-      for (unsigned c = 0; c < num_comps; ++c)
-         size_comps[c] = nir_umax_imm(b, nir_ushr(b, size_comps[c], lod), 1);
+      data->common.uses.usclib = true;
 
-      if (tex->sampler_dim == GLSL_SAMPLER_DIM_1D && tex->is_array)
-         size_comps[1] = size_comps[2];
-
-      return nir_vec(b, size_comps, tex->def.num_components);
+      return nir_trim_vector(b, size_comps, tex->def.num_components);
    }
 
    default:
@@ -218,26 +191,6 @@ static inline bool tex_src_is_float(nir_tex_instr *tex,
    return nir_tex_instr_src_type(tex, src_idx) == nir_type_float;
 }
 
-/* 40-bit address, shifted right by two: */
-static inline void unpack_base_addr(nir_builder *b,
-                                    nir_def *tex_state_word[static 4],
-                                    nir_def **base_addr_lo,
-                                    nir_def **base_addr_hi)
-{
-   *base_addr_lo = nir_imm_int(b, 0);
-
-   /* addr_lo[17..2] */
-   nir_def *lo_17_2 = STATE_UNPACK(b, tex_state_word, 2, 16, 16);
-   *base_addr_lo = nir_bitfield_insert_imm(b, *base_addr_lo, lo_17_2, 2, 16);
-
-   /* addr_lo[31..18] */
-   nir_def *lo_31_18 = STATE_UNPACK(b, tex_state_word, 3, 0, 14);
-   *base_addr_lo = nir_bitfield_insert_imm(b, *base_addr_lo, lo_31_18, 18, 14);
-
-   /* addr_hi[7..0] */
-   *base_addr_hi = STATE_UNPACK(b, tex_state_word, 3, 14, 8);
-}
-
 nir_intrinsic_instr *pco_emit_nir_smp(nir_builder *b, pco_smp_params *params)
 {
    nir_def *comps[NIR_MAX_VEC_COMPONENTS];
@@ -315,8 +268,12 @@ nir_intrinsic_instr *pco_emit_nir_smp(nir_builder *b, pco_smp_params *params)
       nir_def *lookup = nir_imm_int(b, 0);
 
       if (params->offset) {
-         const unsigned packed_offset_start[] = { 0, 6, 12 };
-         const unsigned packed_offset_size[] = { 6, 6, 4 };
+         const unsigned packed_offset_start[] = { ROGUE_SMP_LOOKUP_U_OFF_START,
+                                                  ROGUE_SMP_LOOKUP_V_OFF_START,
+                                                  ROGUE_SMP_LOOKUP_W_OFF_START };
+         const unsigned packed_offset_size[] = { ROGUE_SMP_LOOKUP_U_OFF_BITS,
+                                                 ROGUE_SMP_LOOKUP_V_OFF_BITS,
+                                                 ROGUE_SMP_LOOKUP_W_OFF_BITS };
 
          for (unsigned c = 0; c < params->offset->num_components; ++c) {
             lookup = nir_bitfield_insert(b,
@@ -330,11 +287,12 @@ nir_intrinsic_instr *pco_emit_nir_smp(nir_builder *b, pco_smp_params *params)
       }
 
       if (params->ms_index) {
-         lookup = nir_bitfield_insert(b,
-                                      lookup,
-                                      params->ms_index,
-                                      nir_imm_int(b, 16),
-                                      nir_imm_int(b, 3));
+         lookup =
+            nir_bitfield_insert(b,
+                                lookup,
+                                params->ms_index,
+                                nir_imm_int(b, ROGUE_SMP_LOOKUP_MS_NUM_START),
+                                nir_imm_int(b, ROGUE_SMP_LOOKUP_MS_NUM_BITS));
 
          smp_flags.sno = true;
       }
@@ -516,7 +474,7 @@ static nir_def *lower_tex(nir_builder *b, nir_instr *instr, void *cb_data)
                                              .binding = tex_binding);
 
    if (nir_tex_instr_is_query(tex) && tex->op != nir_texop_lod)
-      return lower_tex_query_basic(b, tex, tex_state, tex_meta);
+      return lower_tex_query_basic(b, tex, tex_state, tex_meta, data);
 
    nir_def *smp_state =
       nir_load_smp_state_pco(b,
@@ -657,21 +615,10 @@ static nir_def *lower_tex(nir_builder *b, nir_instr *instr, void *cb_data)
       if (hw_array_support) {
          params.array_index = int_array_index;
       } else {
-         nir_def *tex_state_word[] = {
-            [0] = nir_channel(b, tex_state, 0),
-            [1] = nir_channel(b, tex_state, 1),
-            [2] = nir_channel(b, tex_state, 2),
-            [3] = nir_channel(b, tex_state, 3),
-         };
-
-         nir_def *base_addr_lo;
-         nir_def *base_addr_hi;
-         unpack_base_addr(b, tex_state_word, &base_addr_lo, &base_addr_hi);
-
          nir_def *array_index = int_array_index;
          assert(array_index);
 
-         nir_def *array_max = STATE_UNPACK(b, tex_state_word, 2, 4, 11);
+         nir_def *array_max = usclib_tex_state_array_max(b, tex_state);
          array_index = nir_uclamp(b, array_index, nir_imm_int(b, 0), array_max);
          if (is_cube_array)
             array_index = nir_imul_imm(b, array_index, 6);
@@ -687,11 +634,17 @@ static nir_def *lower_tex(nir_builder *b, nir_instr *instr, void *cb_data)
 
          nir_def *array_offset = nir_imul(b, array_index, array_stride);
 
+         nir_def *base_addr = usclib_tex_state_address(b, tex_state);
+         nir_def *base_addr_lo = nir_channel(b, base_addr, 0);
+         nir_def *base_addr_hi = nir_channel(b, base_addr, 1);
+
          nir_def *addr =
             nir_uadd64_32(b, base_addr_lo, base_addr_hi, array_offset);
 
          params.addr_lo = nir_channel(b, addr, 0);
          params.addr_hi = nir_channel(b, addr, 1);
+
+         data->common.uses.usclib = true;
       }
    }
 
@@ -877,33 +830,15 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
                                                   .desc_set = desc_set,
                                                   .binding = binding);
 
-      nir_def *tex_state_word[] = {
-         [0] = nir_channel(b, tex_state, 0),
-         [1] = nir_channel(b, tex_state, 1),
-         [2] = nir_channel(b, tex_state, 2),
-         [3] = nir_channel(b, tex_state, 3),
-      };
+      nir_def *num_comps = nir_imm_int(b, intr->def.num_components);
+      nir_def *is_1d = nir_imm_bool(b, image_dim == GLSL_SAMPLER_DIM_1D);
+      nir_def *is_array_ = nir_imm_bool(b, is_array);
+      nir_def *size_comps =
+         usclib_tex_state_size(b, tex_state, num_comps, is_1d, is_array_, lod);
 
-      unsigned num_comps = intr->def.num_components;
-      if (is_array)
-         --num_comps;
+      data->common.uses.usclib = true;
 
-      nir_def *size_comps[] = {
-         [0] = STATE_UNPACK_ADD(b, tex_state_word, 1, 2, 14, 1),
-         [1] = STATE_UNPACK_ADD(b, tex_state_word, 1, 16, 14, 1),
-         [2] = STATE_UNPACK_ADD(b, tex_state_word, 2, 4, 11, 1),
-      };
-
-      nir_def *base_level = STATE_UNPACK(b, tex_state_word, 3, 28, 4);
-      lod = nir_iadd(b, lod, base_level);
-
-      for (unsigned c = 0; c < num_comps; ++c)
-         size_comps[c] = nir_umax_imm(b, nir_ushr(b, size_comps[c], lod), 1);
-
-      if (image_dim == GLSL_SAMPLER_DIM_1D && is_array)
-         size_comps[1] = size_comps[2];
-
-      return nir_vec(b, size_comps, intr->def.num_components);
+      return nir_trim_vector(b, size_comps, intr->def.num_components);
    }
 
    nir_alu_type type = nir_type_invalid;
@@ -1196,17 +1131,6 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
       assert(util_format_get_blockdepth(format) == 1);
       assert(util_format_get_blocksize(format) == sizeof(uint32_t));
 
-      nir_def *tex_state_word[] = {
-         [0] = nir_channel(b, tex_state, 0),
-         [1] = nir_channel(b, tex_state, 1),
-         [2] = nir_channel(b, tex_state, 2),
-         [3] = nir_channel(b, tex_state, 3),
-      };
-
-      nir_def *base_addr_lo;
-      nir_def *base_addr_hi;
-      unpack_base_addr(b, tex_state_word, &base_addr_lo, &base_addr_hi);
-
       /* Calculate untwiddled offset. */
       nir_def *x = nir_i2i16(b, nir_channel(b, coords, 0));
       nir_def *y = nir_i2i16(b, nir_channel(b, coords, 1));
@@ -1215,14 +1139,20 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
          nir_imul_imm(b, twiddled_offset, util_format_get_blocksize(format));
 
       /* Offset the address by the co-ordinates. */
+      nir_def *base_addr = usclib_tex_state_address(b, tex_state);
+      nir_def *base_addr_lo = nir_channel(b, base_addr, 0);
+      nir_def *base_addr_hi = nir_channel(b, base_addr, 1);
+
       nir_def *addr =
          nir_uadd64_32(b, base_addr_lo, base_addr_hi, twiddled_offset);
 
       nir_def *addr_lo = nir_channel(b, addr, 0);
       nir_def *addr_hi = nir_channel(b, addr, 1);
-      nir_def *data = intr->src[3].ssa;
+      nir_def *dma_data = intr->src[3].ssa;
 
-      nir_def *addr_data = nir_vec3(b, addr_lo, addr_hi, data);
+      nir_def *addr_data = nir_vec3(b, addr_lo, addr_hi, dma_data);
+
+      data->common.uses.usclib = true;
 
       return nir_global_atomic_pco(b,
                                    addr_data,
@@ -1327,21 +1257,10 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
       if (hw_array_support) {
          params.array_index = int_array_index;
       } else {
-         nir_def *tex_state_word[] = {
-            [0] = nir_channel(b, tex_state, 0),
-            [1] = nir_channel(b, tex_state, 1),
-            [2] = nir_channel(b, tex_state, 2),
-            [3] = nir_channel(b, tex_state, 3),
-         };
-
-         nir_def *base_addr_lo;
-         nir_def *base_addr_hi;
-         unpack_base_addr(b, tex_state_word, &base_addr_lo, &base_addr_hi);
-
          nir_def *array_index = int_array_index;
          assert(array_index);
 
-         nir_def *array_max = STATE_UNPACK(b, tex_state_word, 2, 4, 11);
+         nir_def *array_max = usclib_tex_state_array_max(b, tex_state);
          array_index = nir_uclamp(b, array_index, nir_imm_int(b, 0), array_max);
          if (is_cube_array)
             array_index = nir_imul_imm(b, array_index, 6);
@@ -1357,11 +1276,17 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
 
          nir_def *array_offset = nir_imul(b, array_index, array_stride);
 
+         nir_def *base_addr = usclib_tex_state_address(b, tex_state);
+         nir_def *base_addr_lo = nir_channel(b, base_addr, 0);
+         nir_def *base_addr_hi = nir_channel(b, base_addr, 1);
+
          nir_def *addr =
             nir_uadd64_32(b, base_addr_lo, base_addr_hi, array_offset);
 
          params.addr_lo = nir_channel(b, addr, 0);
          params.addr_hi = nir_channel(b, addr, 1);
+
+         data->common.uses.usclib = true;
       }
    }
 

@@ -4,6 +4,7 @@
 pco_usclib_shader_files = files(
   'common.cl',
   'sync.cl',
+  'tex.cl',
 )
 
 pco_usclib_spv = custom_target(
