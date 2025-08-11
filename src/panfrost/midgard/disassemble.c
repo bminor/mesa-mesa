@@ -1649,6 +1649,12 @@ partial_exection_mode(enum midgard_partial_execution mode)
    }
 }
 
+static int
+s4_to_int(int val) {
+   int sign_bit = val & 8;
+   return (val ^ sign_bit) - sign_bit;
+}
+
 static void
 print_texture_word(disassemble_context *ctx, FILE *fp, const uint32_t *word,
                    unsigned tabs, unsigned in_reg_base, unsigned out_reg_base)
@@ -1759,9 +1765,9 @@ print_texture_word(disassemble_context *ctx, FILE *fp, const uint32_t *word,
    } else if (texture->offset) {
       /* Only select ops allow negative immediate offsets, verify */
 
-      signed offset_x = (texture->offset & 0xF);
-      signed offset_y = ((texture->offset >> 4) & 0xF);
-      signed offset_z = ((texture->offset >> 8) & 0xF);
+      int offset_x = s4_to_int(texture->offset & 0xF);
+      int offset_y = s4_to_int((texture->offset >> 4) & 0xF);
+      int offset_z = s4_to_int((texture->offset >> 8) & 0xF);
 
       bool neg_x = offset_x < 0;
       bool neg_y = offset_y < 0;
