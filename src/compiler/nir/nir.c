@@ -1425,17 +1425,18 @@ nir_instr_dce_add_dead_ssa_srcs(nir_instr_worklist *wl, nir_instr *instr)
 nir_cursor
 nir_instr_free_and_dce(nir_instr *instr)
 {
-   nir_instr_worklist *worklist = nir_instr_worklist_create();
+   nir_instr_worklist worklist;
+   nir_instr_worklist_init(&worklist);
 
-   nir_instr_dce_add_dead_ssa_srcs(worklist, instr);
+   nir_instr_dce_add_dead_ssa_srcs(&worklist, instr);
    nir_cursor c = nir_instr_remove(instr);
 
    struct exec_list to_free;
    exec_list_make_empty(&to_free);
 
    nir_instr *dce_instr;
-   while ((dce_instr = nir_instr_worklist_pop_head(worklist))) {
-      nir_instr_dce_add_dead_ssa_srcs(worklist, dce_instr);
+   while ((dce_instr = nir_instr_worklist_pop_head(&worklist))) {
+      nir_instr_dce_add_dead_ssa_srcs(&worklist, dce_instr);
 
       /* If we're removing the instr where our cursor is, then we have to
        * point the cursor elsewhere.
@@ -1451,7 +1452,7 @@ nir_instr_free_and_dce(nir_instr *instr)
 
    nir_instr_free_list(&to_free);
 
-   nir_instr_worklist_destroy(worklist);
+   nir_instr_worklist_fini(&worklist);
 
    return c;
 }

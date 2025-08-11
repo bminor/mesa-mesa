@@ -2397,15 +2397,16 @@ propagate_input_to_output_dependencies(struct dxil_module *mod, nir_intrinsic_in
    if (!set_input_bits(mod, load_intr, input_bits, &tables, &table_sizes))
       return false;
 
-   nir_instr_worklist *worklist = nir_instr_worklist_create();
-   nir_instr_worklist_push_tail(worklist, &load_intr->instr);
+   nir_instr_worklist worklist;
+   nir_instr_worklist_init(&worklist);
+   nir_instr_worklist_push_tail(&worklist, &load_intr->instr);
    bool any_bits_set = false;
-   nir_foreach_instr_in_worklist(instr, worklist) {
+   nir_foreach_instr_in_worklist(instr, &worklist) {
       if (instr->pass_flags)
          continue;
 
       instr->pass_flags = 1;
-      nir_foreach_def(instr, add_def_to_worklist, worklist);
+      nir_foreach_def(instr, add_def_to_worklist, &worklist);
       switch (instr->type) {
       case nir_instr_type_jump: {
          nir_jump_instr *jump = nir_instr_as_jump(instr);
@@ -2417,7 +2418,7 @@ propagate_input_to_output_dependencies(struct dxil_module *mod, nir_intrinsic_in
                parent = parent->parent;
             nir_foreach_block_in_cf_node(block, parent)
                nir_foreach_instr(i, block)
-               nir_instr_worklist_push_tail(worklist, i);
+               nir_instr_worklist_push_tail(&worklist, i);
             }
             break;
          default:
@@ -2443,7 +2444,7 @@ propagate_input_to_output_dependencies(struct dxil_module *mod, nir_intrinsic_in
       }
    }
 
-   nir_instr_worklist_destroy(worklist);
+   nir_instr_worklist_fini(&worklist);
    return any_bits_set;
 }
 

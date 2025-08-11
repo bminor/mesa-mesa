@@ -659,20 +659,21 @@ nir_algebraic_update_automaton(nir_instr *new_instr,
                                const struct per_op_table *pass_op_table)
 {
 
-   nir_instr_worklist *automaton_worklist = nir_instr_worklist_create();
+   nir_instr_worklist automaton_worklist;
+   nir_instr_worklist_init(&automaton_worklist);
 
    /* Walk through the tree of uses of our new instruction's SSA value,
     * recursively updating the automaton state until it stabilizes.
     */
-   add_uses_to_worklist(new_instr, automaton_worklist, states, pass_op_table);
+   add_uses_to_worklist(new_instr, &automaton_worklist, states, pass_op_table);
 
    nir_instr *instr;
-   while ((instr = nir_instr_worklist_pop_head(automaton_worklist))) {
+   while ((instr = nir_instr_worklist_pop_head(&automaton_worklist))) {
       nir_instr_worklist_push_tail(algebraic_worklist, instr);
-      add_uses_to_worklist(instr, automaton_worklist, states, pass_op_table);
+      add_uses_to_worklist(instr, &automaton_worklist, states, pass_op_table);
    }
 
-   nir_instr_worklist_destroy(automaton_worklist);
+   nir_instr_worklist_fini(&automaton_worklist);
 }
 
 static nir_def *
@@ -913,7 +914,8 @@ nir_algebraic_impl(nir_function_impl *impl,
    struct hash_table range_ht;
    _mesa_pointer_hash_table_init(&range_ht, NULL);
 
-   nir_instr_worklist *worklist = nir_instr_worklist_create();
+   nir_instr_worklist worklist;
+   nir_instr_worklist_init(&worklist);
 
    /* Walk top-to-bottom setting up the automaton state. */
    nir_foreach_block(block, impl) {
@@ -930,7 +932,7 @@ nir_algebraic_impl(nir_function_impl *impl,
       nir_foreach_instr_reverse(instr, block) {
          instr->pass_flags = 0;
          if (instr->type == nir_instr_type_alu)
-            nir_instr_worklist_push_tail(worklist, instr);
+            nir_instr_worklist_push_tail(&worklist, instr);
       }
    }
 
@@ -938,7 +940,7 @@ nir_algebraic_impl(nir_function_impl *impl,
    exec_list_make_empty(&dead_instrs);
 
    nir_instr *instr;
-   while ((instr = nir_instr_worklist_pop_head(worklist))) {
+   while ((instr = nir_instr_worklist_pop_head(&worklist))) {
       /* The worklist can have an instr pushed to it multiple times if it was
        * the src of multiple instrs that also got optimized, so make sure that
        * we don't try to re-optimize an instr we already handled.
@@ -948,12 +950,12 @@ nir_algebraic_impl(nir_function_impl *impl,
 
       progress |= nir_algebraic_instr(&build, instr,
                                       &range_ht, condition_flags,
-                                      table, &states, worklist, &dead_instrs);
+                                      table, &states, &worklist, &dead_instrs);
    }
 
    nir_instr_free_list(&dead_instrs);
 
-   nir_instr_worklist_destroy(worklist);
+   nir_instr_worklist_fini(&worklist);
    _mesa_hash_table_fini(&range_ht, NULL);
    util_dynarray_fini(&states);
 

@@ -47,8 +47,8 @@ instr_never_needs_helpers(nir_instr *instr)
 
 struct helper_state {
    BITSET_WORD *needs_helpers;
-   nir_instr_worklist *worklist;
-   nir_instr_worklist *load_instrs;
+   nir_instr_worklist worklist;
+   nir_instr_worklist load_instrs;
    nir_opt_load_skip_helpers_options *options;
 };
 
@@ -66,7 +66,7 @@ set_src_needs_helpers(nir_src *src, void *_data)
    if (!BITSET_TEST(hs->needs_helpers, src->ssa->index) &&
        !instr_never_needs_helpers(src->ssa->parent_instr)) {
       BITSET_SET(hs->needs_helpers, src->ssa->index);
-      nir_instr_worklist_push_tail(hs->worklist, src->ssa->parent_instr);
+      nir_instr_worklist_push_tail(&hs->worklist, src->ssa->parent_instr);
    }
    return true;
 }
@@ -83,10 +83,10 @@ nir_opt_load_skip_helpers(nir_shader *shader, nir_opt_load_skip_helpers_options 
    struct helper_state hs = {
       .needs_helpers = rzalloc_array(NULL, BITSET_WORD,
                                      BITSET_WORDS(impl->ssa_alloc)),
-      .worklist = nir_instr_worklist_create(),
-      .load_instrs = nir_instr_worklist_create(),
       .options = options,
    };
+   nir_instr_worklist_init(&hs.worklist);
+   nir_instr_worklist_init(&hs.load_instrs);
 
    /* First, add subgroup ops and anything that might cause side effects */
    nir_foreach_block(block, impl) {
@@ -106,7 +106,7 @@ nir_opt_load_skip_helpers(nir_shader *shader, nir_opt_load_skip_helpers_options 
             /* Stash texture instructions so we don't have to walk the whole
              * shader again just to set the skip_helpers bit.
              */
-            nir_instr_worklist_push_tail(hs.load_instrs, instr);
+            nir_instr_worklist_push_tail(&hs.load_instrs, instr);
 
             for (uint32_t i = 0; i < tex->num_srcs; i++) {
                switch (tex->src[i].src_type) {
@@ -158,7 +158,7 @@ nir_opt_load_skip_helpers(nir_shader *shader, nir_opt_load_skip_helpers_options 
                continue;
             } else if (hs.options->intrinsic_cb &&
                        hs.options->intrinsic_cb(intr, hs.options->intrinsic_cb_data)) {
-               nir_instr_worklist_push_tail(hs.load_instrs, instr);
+               nir_instr_worklist_push_tail(&hs.load_instrs, instr);
             } else {
                /* All I/O addresses need helpers because getting them wrong
                 * may cause a fault.
@@ -182,15 +182,15 @@ nir_opt_load_skip_helpers(nir_shader *shader, nir_opt_load_skip_helpers_options 
    bool progress = false;
 
    /* We only need to run the worklist if we have loads */
-   if (!nir_instr_worklist_is_empty(hs.load_instrs)) {
-      while (!nir_instr_worklist_is_empty(hs.worklist)) {
-         nir_instr *instr = nir_instr_worklist_pop_head(hs.worklist);
+   if (!nir_instr_worklist_is_empty(&hs.load_instrs)) {
+      while (!nir_instr_worklist_is_empty(&hs.worklist)) {
+         nir_instr *instr = nir_instr_worklist_pop_head(&hs.worklist);
          assert(nir_foreach_def(instr, def_needs_helpers, &hs));
          nir_foreach_src(instr, set_src_needs_helpers, &hs);
       }
 
-      while (!nir_instr_worklist_is_empty(hs.load_instrs)) {
-         nir_instr *instr = nir_instr_worklist_pop_head(hs.load_instrs);
+      while (!nir_instr_worklist_is_empty(&hs.load_instrs)) {
+         nir_instr *instr = nir_instr_worklist_pop_head(&hs.load_instrs);
          nir_def *def = nir_instr_def(instr);
 
          /* If a load is uniform, we don't want to set skip_helpers because
@@ -227,8 +227,8 @@ nir_opt_load_skip_helpers(nir_shader *shader, nir_opt_load_skip_helpers_options 
       }
    }
 
-   nir_instr_worklist_destroy(hs.load_instrs);
-   nir_instr_worklist_destroy(hs.worklist);
+   nir_instr_worklist_fini(&hs.load_instrs);
+   nir_instr_worklist_fini(&hs.worklist);
    ralloc_free(hs.needs_helpers);
 
    return nir_progress(progress, impl, nir_metadata_all);

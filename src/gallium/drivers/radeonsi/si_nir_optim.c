@@ -35,12 +35,13 @@ check_instr_depends_on_tex(nir_intrinsic_instr *store)
    int texunit = -1;
    struct set *instrs = _mesa_set_create(NULL, _mesa_hash_pointer,
                                          _mesa_key_pointer_equal);
-   nir_instr_worklist *work = nir_instr_worklist_create();
+   nir_instr_worklist work;
+   nir_instr_worklist_init(&work);
 
    _mesa_set_add(instrs, &store->instr);
-   add_src_instr_to_worklist(&store->src[0], work);
+   add_src_instr_to_worklist(&store->src[0], &work);
 
-   nir_foreach_instr_in_worklist(instr, work) {
+   nir_foreach_instr_in_worklist(instr, &work) {
       /* Don't process an instruction twice */
       if (_mesa_set_search(instrs, instr))
          continue;
@@ -50,7 +51,7 @@ check_instr_depends_on_tex(nir_intrinsic_instr *store)
       if (instr->type == nir_instr_type_alu ||
           instr->type == nir_instr_type_load_const) {
          /* TODO: ubo, etc */
-         if (!nir_foreach_src(instr, add_src_instr_to_worklist, work))
+         if (!nir_foreach_src(instr, add_src_instr_to_worklist, &work))
             break;
          continue;
       } else if (instr->type == nir_instr_type_tex) {
@@ -67,7 +68,7 @@ check_instr_depends_on_tex(nir_intrinsic_instr *store)
       }
    }
 
-   nir_instr_worklist_destroy(work);
+   nir_instr_worklist_fini(&work);
    _mesa_set_destroy(instrs, NULL);
    return texunit;
 }
