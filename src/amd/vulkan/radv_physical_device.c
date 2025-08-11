@@ -654,6 +654,7 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
       .KHR_video_encode_h265 = VIDEO_CODEC_H265ENC && pdev->video_encode_enabled,
       .KHR_video_encode_av1 =
          (radv_video_encode_av1_supported(pdev) && VIDEO_CODEC_AV1ENC && pdev->video_encode_enabled),
+      .KHR_video_encode_intra_refresh = pdev->video_encode_enabled,
       .KHR_video_encode_queue = pdev->video_encode_enabled,
       .KHR_vulkan_memory_model = true,
       .KHR_workgroup_memory_explicit_layout = true,
@@ -1382,6 +1383,9 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
 
       /* VK_KHR_present_wait2 */
       .presentWait2 = true,
+
+      /* VK_KHR_video_encode_intra_refresh */
+      .videoEncodeIntraRefresh = true,
    };
 }
 

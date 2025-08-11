@@ -871,6 +871,8 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
    } else {
       enc_caps =
          (struct VkVideoEncodeCapabilitiesKHR *)vk_find_struct(pCapabilities->pNext, VIDEO_ENCODE_CAPABILITIES_KHR);
+      struct VkVideoEncodeIntraRefreshCapabilitiesKHR *intra_refresh_caps =
+         vk_find_struct(pCapabilities->pNext, VIDEO_ENCODE_INTRA_REFRESH_CAPABILITIES_KHR);
 
       if (enc_caps) {
          enc_caps->flags = 0;
@@ -883,6 +885,15 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
          enc_caps->encodeInputPictureGranularity = pCapabilities->pictureAccessGranularity;
          enc_caps->supportedEncodeFeedbackFlags = VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR |
                                                   VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR;
+      }
+      if (intra_refresh_caps) {
+         intra_refresh_caps->intraRefreshModes = VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_BLOCK_BASED_BIT_KHR |
+                                                 VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_BLOCK_ROW_BASED_BIT_KHR |
+                                                 VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_BLOCK_COLUMN_BASED_BIT_KHR;
+         intra_refresh_caps->maxIntraRefreshCycleDuration = 256;
+         intra_refresh_caps->maxIntraRefreshActiveReferencePictures = 1;
+         intra_refresh_caps->partitionIndependentIntraRefreshRegions = true;
+         intra_refresh_caps->nonRectangularIntraRefreshRegions = false;
       }
       pCapabilities->minBitstreamBufferOffsetAlignment = 256;
       pCapabilities->minBitstreamBufferSizeAlignment = 8;

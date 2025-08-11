@@ -1651,15 +1651,59 @@ radv_enc_feedback(struct radv_cmd_buffer *cmd_buffer, uint64_t feedback_query_va
 }
 
 static void
-radv_enc_intra_refresh(struct radv_cmd_buffer *cmd_buffer)
+radv_enc_intra_refresh(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *enc_info)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
+   struct radv_video_session *vid = cmd_buffer->video.vid;
+   const struct VkVideoEncodeIntraRefreshInfoKHR *intra_refresh =
+      vk_find_struct_const(enc_info->pNext, VIDEO_ENCODE_INTRA_REFRESH_INFO_KHR);
 
    RADEON_ENC_BEGIN(pdev->vcn_enc_cmds.intra_refresh);
-   RADEON_ENC_CS(0); // intra refresh mode
-   RADEON_ENC_CS(0); // intra ref offset
-   RADEON_ENC_CS(0); // intra region size
+   if (enc_info->flags & VK_VIDEO_ENCODE_INTRA_REFRESH_BIT_KHR && intra_refresh) {
+      const uint32_t block_size = vid->vk.op == VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR ? 16 : 64;
+      uint32_t size_in_blocks = 0;
+      bool overlap = true;
+
+      if (vid->vk.op == VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR) {
+         const struct VkVideoEncodeH264PictureInfoKHR *h264_picture_info =
+            vk_find_struct_const(enc_info->pNext, VIDEO_ENCODE_H264_PICTURE_INFO_KHR);
+         const VkVideoEncodeH264NaluSliceInfoKHR *h264_slice = &h264_picture_info->pNaluSliceEntries[0];
+         const StdVideoEncodeH264SliceHeader *slice = h264_slice->pStdSliceHeader;
+
+         overlap = slice->disable_deblocking_filter_idc != STD_VIDEO_H264_DISABLE_DEBLOCKING_FILTER_IDC_DISABLED;
+      } else if (vid->vk.op == VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR) {
+         const struct VkVideoEncodeH265PictureInfoKHR *h265_picture_info =
+            vk_find_struct_const(enc_info->pNext, VIDEO_ENCODE_H265_PICTURE_INFO_KHR);
+         const VkVideoEncodeH265NaluSliceSegmentInfoKHR *h265_slice = &h265_picture_info->pNaluSliceSegmentEntries[0];
+         const StdVideoEncodeH265SliceSegmentHeader *slice = h265_slice->pStdSliceSegmentHeader;
+
+         overlap = slice->flags.slice_deblocking_filter_disabled_flag == 0;
+      } /* AV1 always needs overlap */
+
+      switch (vid->vk.intra_refresh_mode) {
+      case VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_BLOCK_BASED_BIT_KHR:
+      case VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_BLOCK_ROW_BASED_BIT_KHR:
+         size_in_blocks = DIV_ROUND_UP(enc_info->srcPictureResource.codedExtent.height, block_size);
+         RADEON_ENC_CS(RENCODE_INTRA_REFRESH_MODE_CTB_MB_ROWS);
+         break;
+      case VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_BLOCK_COLUMN_BASED_BIT_KHR:
+         size_in_blocks = DIV_ROUND_UP(enc_info->srcPictureResource.codedExtent.width, block_size);
+         RADEON_ENC_CS(RENCODE_INTRA_REFRESH_MODE_CTB_MB_COLUMNS);
+         break;
+      default:
+         assert(0);
+         break;
+      }
+
+      const uint32_t region_size = DIV_ROUND_UP(size_in_blocks, intra_refresh->intraRefreshCycleDuration);
+      RADEON_ENC_CS(region_size * intra_refresh->intraRefreshIndex);
+      RADEON_ENC_CS(region_size + (overlap ? 1 : 0));
+   } else {
+      RADEON_ENC_CS(0);
+      RADEON_ENC_CS(0);
+      RADEON_ENC_CS(0);
+   }
    RADEON_ENC_END();
 }
 
@@ -2731,7 +2775,7 @@ radv_vcn_encode_video(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInf
    if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_2) {
    }
    // intra_refresh
-   radv_enc_intra_refresh(cmd_buffer);
+   radv_enc_intra_refresh(cmd_buffer, enc_info);
    // v2 input format
    if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_2) {
       radv_enc_input_format(cmd_buffer);
