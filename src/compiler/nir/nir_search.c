@@ -910,7 +910,8 @@ nir_algebraic_impl(nir_function_impl *impl,
    }
    memset(states.data, 0, states.size);
 
-   struct hash_table *range_ht = _mesa_pointer_hash_table_create(NULL);
+   struct hash_table range_ht;
+   _mesa_pointer_hash_table_init(&range_ht, NULL);
 
    nir_instr_worklist *worklist = nir_instr_worklist_create();
 
@@ -946,14 +947,14 @@ nir_algebraic_impl(nir_function_impl *impl,
          continue;
 
       progress |= nir_algebraic_instr(&build, instr,
-                                      range_ht, condition_flags,
+                                      &range_ht, condition_flags,
                                       table, &states, worklist, &dead_instrs);
    }
 
    nir_instr_free_list(&dead_instrs);
 
    nir_instr_worklist_destroy(worklist);
-   ralloc_free(range_ht);
+   _mesa_hash_table_fini(&range_ht, NULL);
    util_dynarray_fini(&states);
 
    return nir_progress(progress, impl, nir_metadata_control_flow);
