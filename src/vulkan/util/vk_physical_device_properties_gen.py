@@ -151,6 +151,7 @@ TEMPLATE_H = Template(COPYRIGHT + """
 #ifndef VK_PROPERTIES_H
 #define VK_PROPERTIES_H
 
+#include "vulkan/vulkan.h"
 #if DETECT_OS_ANDROID
 #include "vulkan/vk_android_native_buffer.h"
 #endif /* DETECT_OS_ANDROID */
