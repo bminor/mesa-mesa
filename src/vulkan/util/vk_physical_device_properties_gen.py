@@ -82,9 +82,8 @@ class Property:
     name: str
     actual_name: str
     length: str
-    is_android: bool
 
-    def __init__(self, p, property_struct_name, is_android=False):
+    def __init__(self, p, property_struct_name):
         self.decl = ""
         for element in p:
             if element.tag != "comment":
@@ -99,8 +98,6 @@ class Property:
         self.length = RENAMED_PROPERTIES.get((property_struct_name, length), length)
 
         self.decl = self.decl.replace(self.name, self.actual_name)
-
-        self.is_android = is_android
 
 @dataclass
 class PropertyStruct:
@@ -162,13 +159,7 @@ extern "C" {
 
 struct vk_properties {
 % for prop in all_properties:
-% if prop.is_android:
-#if DETECT_OS_ANDROID
-% endif
    ${prop.decl};
-% if prop.is_android:
-#endif /* DETECT_OS_ANDROID */
-% endif
 % endfor
 };
 
@@ -331,7 +322,7 @@ def get_property_structs(doc, api, beta):
             elif m_name == "sType":
                 s_type = p.attrib.get("values")
             else:
-                properties.append(Property(p, name, is_android))
+                properties.append(Property(p, name))
 
         property_struct = PropertyStruct(c_type=full_name, s_type=s_type,
             name=name, properties=properties, is_android=is_android)
