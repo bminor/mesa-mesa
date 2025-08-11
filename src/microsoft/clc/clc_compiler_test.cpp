@@ -347,6 +347,7 @@ TEST_F(ComputeTest, ret_private_ptr)
    run_shader(kernel_source, out.size(), 1, 1, out);
    for (int i = 0; i < out.size(); ++i) {
       EXPECT_EQ(out[i].ptr, expected_ptr[i]);
+      EXPECT_EQ(out[i].value, expected_value[i]);
    }
 }
 
@@ -1239,8 +1240,8 @@ TEST_F(ComputeTest, sin)
    };
    run_shader(kernel_source, inout.size(), 1, 1, inout);
    for (int i = 0; i < inout.size(); ++i) {
-      EXPECT_FLOAT_EQ(inout[i].in, inout[i].in);
-      EXPECT_FLOAT_EQ(inout[i].clc, inout[i].clc);
+      EXPECT_FLOAT_EQ(inout[i].in, expected[i].in);
+      EXPECT_FLOAT_EQ(inout[i].clc, expected[i].clc);
       EXPECT_NEAR(inout[i].clc, inout[i].native, 0.008f); // range from DXIL spec
    }
 }
