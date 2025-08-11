@@ -1885,6 +1885,8 @@ get_av1_msg(struct radv_device *device, struct radv_video_session *vid, struct r
       result.tile_info[i].size = av1_pic_info->pTileSizes[i];
    }
 
+   result.av1_intrabc_workaround = pdev->info.family == CHIP_GFX1153;
+
    return result;
 }
 
