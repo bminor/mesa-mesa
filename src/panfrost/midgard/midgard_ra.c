@@ -621,6 +621,7 @@ mir_compute_interference(compiler_context *ctx, struct lcra_state *l)
             break;
       }
 
+      assert(r1w != ~0);
       mir_foreach_instr_global(ctx, ins) {
          if (ins->dest < ctx->temp_count)
             lcra_add_node_interference(l, ins->dest, mir_bytemask(ins), r1w,
