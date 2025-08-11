@@ -115,7 +115,7 @@ struct copy_prop_var_state {
    /* Maps nodes to vars_written.  Used to invalidate copy entries when
     * visiting each node.
     */
-   struct hash_table *vars_written_map;
+   struct hash_table vars_written_map;
 
    /* List of copy structures ready for reuse */
    struct list_head unused_copy_structs_list;
@@ -303,7 +303,7 @@ gather_vars_written(struct copy_prop_var_state *state,
             }
          }
       }
-      _mesa_hash_table_insert(state->vars_written_map, cf_node, new_written);
+      _mesa_hash_table_insert(&state->vars_written_map, cf_node, new_written);
    }
 }
 
@@ -903,7 +903,7 @@ invalidate_copies_for_cf_node(struct copy_prop_var_state *state,
                               struct copies *copies,
                               nir_cf_node *cf_node)
 {
-   struct hash_entry *ht_entry = _mesa_hash_table_search(state->vars_written_map, cf_node);
+   struct hash_entry *ht_entry = _mesa_hash_table_search(&state->vars_written_map, cf_node);
    assert(ht_entry);
 
    struct vars_written *written = ht_entry->data;
@@ -1500,9 +1500,8 @@ nir_copy_prop_vars_impl(nir_function_impl *impl)
       .impl = impl,
       .mem_ctx = mem_ctx,
       .lin_ctx = linear_context(mem_ctx),
-
-      .vars_written_map = _mesa_pointer_hash_table_create(mem_ctx),
    };
+   _mesa_pointer_hash_table_init(&state.vars_written_map, mem_ctx);
    list_inithead(&state.unused_copy_structs_list);
 
    gather_vars_written(&state, NULL, &impl->cf_node);
