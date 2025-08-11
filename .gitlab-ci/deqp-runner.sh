@@ -67,14 +67,6 @@ fi
 touch $INSTALL/$GPU_VERSION-flakes.txt
 
 
-if [ -n "$VK_DRIVER" ] && [ -e "$INSTALL/$VK_DRIVER-skips.txt" ]; then
-    DEQP_SKIPS="$DEQP_SKIPS $INSTALL/$VK_DRIVER-skips.txt"
-fi
-
-if [ -n "$GALLIUM_DRIVER" ] && [ -e "$INSTALL/$GALLIUM_DRIVER-skips.txt" ]; then
-    DEQP_SKIPS="$DEQP_SKIPS $INSTALL/$GALLIUM_DRIVER-skips.txt"
-fi
-
 if [ -n "$DRIVER_NAME" ] && [ -e "$INSTALL/$DRIVER_NAME-skips.txt" ]; then
     DEQP_SKIPS="$DEQP_SKIPS $INSTALL/$DRIVER_NAME-skips.txt"
 fi
