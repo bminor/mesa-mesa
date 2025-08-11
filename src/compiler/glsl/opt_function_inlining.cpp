@@ -139,9 +139,9 @@ ir_call::generate_inline(ir_instruction *next_ir)
    ir_variable **parameters;
    unsigned num_parameters;
    int i;
-   struct hash_table *ht;
+   struct hash_table ht;
 
-   ht = _mesa_pointer_hash_table_create(NULL);
+   _mesa_pointer_hash_table_init(&ht, NULL);
 
    num_parameters = this->callee->parameters.length();
    parameters = new ir_variable *[num_parameters];
@@ -161,7 +161,7 @@ ir_call::generate_inline(ir_instruction *next_ir)
          /* Actual replacement happens below */
 	 parameters[i] = NULL;
       } else {
-	 parameters[i] = sig_param->clone(linalloc, ht);
+	 parameters[i] = sig_param->clone(linalloc, &ht);
 	 parameters[i]->data.mode = ir_var_temporary;
 
 	 /* Remove the read-only decoration because we're going to write
@@ -226,7 +226,7 @@ ir_call::generate_inline(ir_instruction *next_ir)
 
    /* Generate the inlined body of the function to a new list */
    ir_foreach_in_list(ir_instruction, ir, &callee->body) {
-      ir_instruction *new_ir = ir->clone(linalloc, ht);
+      ir_instruction *new_ir = ir->clone(linalloc, &ht);
 
       new_instructions.push_tail(new_ir);
       visit_tree(new_ir, replace_return_with_assignment, this->return_deref);
@@ -273,7 +273,7 @@ ir_call::generate_inline(ir_instruction *next_ir)
 
    delete [] parameters;
 
-   _mesa_hash_table_destroy(ht, NULL);
+   _mesa_hash_table_fini(&ht, NULL);
 }
 
 /**
