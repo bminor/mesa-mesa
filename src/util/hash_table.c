@@ -231,6 +231,30 @@ _mesa_hash_table_init_u32_keys(struct hash_table *ht, void *mem_ctx)
    _mesa_hash_table_init(ht, mem_ctx, key_u32_hash, key_u32_equals);
 }
 
+/* Copy the hash table from src to dst. */
+bool
+_mesa_hash_table_copy(struct hash_table *dst, struct hash_table *src,
+                      void *dst_mem_ctx)
+{
+   /* Copy the whole structure except the initial storage. */
+   memcpy(dst, src, offsetof(struct hash_table, _initial_storage));
+   dst->mem_ctx = dst_mem_ctx;
+
+   if (src->table != src->_initial_storage) {
+      dst->table = ralloc_array(dst_mem_ctx, struct hash_entry, dst->size);
+      if (dst->table == NULL)
+         return false;
+
+      memcpy(dst->table, src->table, dst->size * sizeof(struct hash_entry));
+   } else {
+      dst->table = dst->_initial_storage;
+      memcpy(dst->table, src->_initial_storage, sizeof(src->_initial_storage));
+   }
+
+   return true;
+}
+
+/* It's preferred to use _mesa_hash_table_copy instead of this to skip ralloc. */
 struct hash_table *
 _mesa_hash_table_clone(struct hash_table *src, void *dst_mem_ctx)
 {
@@ -240,21 +264,9 @@ _mesa_hash_table_clone(struct hash_table *src, void *dst_mem_ctx)
    if (ht == NULL)
       return NULL;
 
-   /* Copy the whole structure except the initial storage. */
-   memcpy(ht, src, offsetof(struct hash_table, _initial_storage));
-   ht->mem_ctx = dst_mem_ctx;
-
-   if (src->table != src->_initial_storage) {
-      ht->table = ralloc_array(dst_mem_ctx, struct hash_entry, ht->size);
-      if (ht->table == NULL) {
-         ralloc_free(ht);
-         return NULL;
-      }
-
-      memcpy(ht->table, src->table, ht->size * sizeof(struct hash_entry));
-   } else {
-      ht->table = ht->_initial_storage;
-      memcpy(ht->table, src->_initial_storage, sizeof(src->_initial_storage));
+   if (!_mesa_hash_table_copy(ht, src, dst_mem_ctx)) {
+      ralloc_free(ht);
+      return NULL;
    }
 
    return ht;
