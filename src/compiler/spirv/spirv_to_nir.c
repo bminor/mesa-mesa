@@ -7347,6 +7347,23 @@ spirv_to_nir(const uint32_t *words, size_t word_count,
    /* structurize the CFG */
    nir_lower_goto_ifs(b->shader);
 
+   /* Work around validation errors for RT raygen and miss shaders
+    * that define ray hit attribute variables. Per the SPV_KHR_ray_tracing
+    * spec, these variables are invalid for these stages:
+    *
+    * "Variables declared with this storage class are allowed only in
+    * IntersectionKHR, AnyHitKHR and ClosestHitKHR execution models."
+    *
+    * https://gitlab.freedesktop.org/mesa/mesa/-/issues/13677
+    */
+   if (b->shader->info.stage == MESA_SHADER_RAYGEN ||
+       b->shader->info.stage == MESA_SHADER_MISS) {
+      /* Can't use NIR_PASS macro because it calls `nir_validate_shader` and
+       * the shaders may require other workarounds to pass validation.
+       */
+      nir_remove_dead_variables(b->shader, nir_var_ray_hit_attrib, NULL);
+   }
+
    /* Work around applications that declare shader_call_data variables inside
     * ray generation shaders or multiple shader_call_data variables in callable
     * shaders. This needs to happen before validation.
