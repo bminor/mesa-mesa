@@ -311,6 +311,10 @@ nir_def *brw_nir_load_global_const(nir_builder *b,
                                        nir_def *base_addr,
                                        unsigned off);
 
+void brw_nir_quick_pressure_estimate(nir_shader *nir,
+                                     const struct intel_device_info *devinfo,
+                                     unsigned simd_est[3]);
+
 const struct glsl_type *brw_nir_get_var_type(const struct nir_shader *nir,
                                              nir_variable *var);
 

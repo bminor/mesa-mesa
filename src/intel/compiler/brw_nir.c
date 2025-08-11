@@ -2952,3 +2952,176 @@ brw_nir_find_complete_variable_with_location(nir_shader *shader,
 
    return best_var;
 }
+
+struct brw_quick_pressure_state {
+   uint8_t *convergent_size;
+   uint8_t *divergent_size;
+   BITSET_WORD *live;
+   unsigned curr_convergent_size;
+   unsigned curr_divergent_size;
+};
+
+static inline bool
+record_def_size(nir_def *def, void *v_state)
+{
+   struct brw_quick_pressure_state *state = v_state;
+
+   unsigned num_components = def->num_components;
+
+   /* Texturing has return length reduction */
+   if (def->parent_instr->type == nir_instr_type_tex)
+      num_components = util_last_bit(nir_def_components_read(def));
+
+   /* Assume tightly packed */
+   unsigned size = DIV_ROUND_UP(num_components * def->bit_size, 32);
+
+   nir_op alu_op =
+      def->parent_instr->type == nir_instr_type_alu ?
+      nir_def_as_alu(def)->op : nir_num_opcodes;
+
+   /* Assume these are handled via source modifiers */
+   if (alu_op == nir_op_fneg || alu_op == nir_op_ineg ||
+       alu_op == nir_op_fabs || alu_op == nir_op_iabs)
+      size = 0;
+
+   if (nir_def_is_unused(def))
+      size = 0;
+
+   if (def->divergent) {
+      state->convergent_size[def->index] = 0;
+      state->divergent_size[def->index]  = size;
+   } else {
+      state->convergent_size[def->index] = size;
+      state->divergent_size[def->index]  = 0;
+   }
+   return true;
+}
+
+static bool
+set_src_live(nir_src *src, void *v_state)
+{
+   struct brw_quick_pressure_state *state = v_state;
+
+   /* undefined variables are never live */
+   if (nir_src_is_undef(*src))
+      return true;
+
+   if (!BITSET_TEST(state->live, src->ssa->index)) {
+      BITSET_SET(state->live, src->ssa->index);
+
+      /* This value just became live, add its size */
+      state->curr_convergent_size += state->convergent_size[src->ssa->index];
+      state->curr_divergent_size  += state->divergent_size[src->ssa->index];
+   }
+
+   return true;
+}
+
+static bool
+set_def_dead(nir_def *def, void *v_state)
+{
+   struct brw_quick_pressure_state *state = v_state;
+   if (BITSET_TEST(state->live, def->index)) {
+      BITSET_CLEAR(state->live, def->index);
+
+      /* This value just became dead, subtract its size */
+      state->curr_convergent_size -= state->convergent_size[def->index];
+      state->curr_divergent_size  -= state->divergent_size[def->index];
+   }
+
+   return true;
+}
+
+static void
+quick_pressure_estimate(nir_shader *nir,
+                        unsigned *out_convergent_size,
+                        unsigned *out_divergent_size)
+{
+   nir_function_impl *impl = nir_shader_get_entrypoint(nir);
+   nir_metadata_require(impl, nir_metadata_divergence |
+                              nir_metadata_live_defs);
+
+   const unsigned bitset_words = BITSET_WORDS(impl->ssa_alloc);
+
+   struct brw_quick_pressure_state state = {
+      .convergent_size = calloc(impl->ssa_alloc, sizeof(uint8_t)),
+      .divergent_size  = calloc(impl->ssa_alloc, sizeof(uint8_t)),
+      .live = calloc(bitset_words, sizeof(BITSET_WORD)),
+   };
+
+   unsigned max_convergent_size = 0, max_divergent_size = 0;
+
+   nir_foreach_block(block, impl) {
+      nir_foreach_instr(instr, block) {
+         nir_foreach_def(instr, record_def_size, &state);
+      }
+
+      state.curr_convergent_size = 0;
+      state.curr_divergent_size = 0;
+
+      /* Start with sizes for anything live-out from the block */
+
+      unsigned i;
+      BITSET_FOREACH_SET(i, block->live_out, impl->ssa_alloc) {
+         state.curr_convergent_size += state.convergent_size[i];
+         state.curr_divergent_size  += state.divergent_size[i];
+      }
+
+      /* Walk backwards, add source sizes on first sight, subtract on def */
+      for (i = 0; i < bitset_words; i++)
+         state.live[i] = block->live_out[i];
+
+      nir_foreach_instr_reverse(instr, block) {
+         if (instr->type == nir_instr_type_phi)
+            break;
+
+         nir_foreach_def(instr, set_def_dead, &state);
+         nir_foreach_src(instr, set_src_live, &state);
+
+         max_convergent_size =
+            MAX2(max_convergent_size, state.curr_convergent_size);
+         max_divergent_size =
+            MAX2(max_divergent_size, state.curr_divergent_size);
+      }
+   }
+
+   *out_convergent_size = max_convergent_size;
+   *out_divergent_size  = max_divergent_size;
+
+   free(state.convergent_size);
+   free(state.divergent_size);
+   free(state.live);
+}
+
+/**
+ * This pass performs a quick/rough estimate of register pressure in
+ * SIMD8/16/32 modes, based on how many convergent and divergent values
+ * exist in the SSA NIR program.  Divergent values scale up with SIMD
+ * width, while convergent ones do not.
+ *
+ * This is fundamentally inaccurate, and can't model everything properly.
+ * We try to err toward underestimating the register pressure.  The hope
+ * is to use this for things like "is it worth even trying to compile a
+ * SIMD<X> shader, or will it ultimately fail?"  If a lower bound on the
+ * pressure is too high, we can skip all the CPU overhead from invoking
+ * the backend compiler to try.  If it's close though, we'd rather say
+ * to go ahead and try it rather than lose out on potential benefits of
+ * larger SIMD sizes.
+ */
+void
+brw_nir_quick_pressure_estimate(nir_shader *nir,
+                                const struct intel_device_info *devinfo,
+                                unsigned simd_estimate[3])
+{
+   unsigned convergent_size, divergent_size;
+   quick_pressure_estimate(nir, &convergent_size, &divergent_size);
+
+   /* Xe2 starts at SIMD16, rather than SIMD8 */
+   simd_estimate[0] = 0;
+   unsigned base_simd = devinfo->ver >= 20 ? 1 : 0;
+
+   for (unsigned i = base_simd; i < 3; i++) {
+      simd_estimate[i] = DIV_ROUND_UP(convergent_size, 8 << base_simd) +
+                         divergent_size * (1 << (i - base_simd));
+   }
+}
