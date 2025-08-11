@@ -327,16 +327,19 @@ bool AluGroup::replace_source(PRegister old_src, PVirtualValue new_src)
 
       auto& srcs = m_slots[slot]->sources();
 
-      PVirtualValue test_src[3];
-      std::transform(srcs.begin(), srcs.end(), test_src,
+      std::array<PVirtualValue, 3> test_src;
+      std::transform(srcs.begin(),
+                     srcs.end(),
+                     test_src.begin(),
                      [old_src, new_src](PVirtualValue s) {
-         return old_src->equal_to(*s) ? new_src : s;
-      });
+                        return old_src->equal_to(*s) ? new_src : s;
+                     });
 
       AluBankSwizzle bs = alu_vec_012;
       while (bs != alu_vec_unknown) {
          AluReadportReservation rpr = rpr_sum;
-         if (rpr.schedule_vec_src(test_src,srcs.size(), bs)) {
+         unsigned nsrc = srcs.size();
+         if (rpr.schedule_vec_src(test_src, nsrc, bs) == nsrc) {
             rpr_sum = rpr;
             break;
          }

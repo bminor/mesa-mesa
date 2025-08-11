@@ -711,7 +711,7 @@ AluInstr::check_readport_validation(PRegister old_src, PVirtualValue new_src) co
    assert(nsrc * m_alu_slots == m_src.size());
 
    for (int s = 0; s < m_alu_slots && success; ++s) {
-      PVirtualValue src[3];
+      std::array<PVirtualValue, 3> src;
       auto ireg = m_src.begin() + s * nsrc;
 
       for (unsigned i = 0; i < nsrc; ++i, ++ireg)
@@ -720,7 +720,7 @@ AluInstr::check_readport_validation(PRegister old_src, PVirtualValue new_src) co
       AluBankSwizzle bs = alu_vec_012;
       while (bs != alu_vec_unknown) {
          AluReadportReservation rpr = rpr_sum;
-         if (rpr.schedule_vec_src(src, nsrc, bs)) {
+         if (rpr.schedule_vec_src(src, nsrc, bs) == nsrc) {
             rpr_sum = rpr;
             break;
          }
@@ -877,7 +877,7 @@ AluInstr::split(ValueFactory& vf, AluGroup& group)
    assert(nsrc * m_alu_slots == m_src.size());
 
    for (int s = 0; s < m_alu_slots; ++s) {
-      PVirtualValue src[3];
+      std::array<PVirtualValue, 3> src;
       auto ireg = m_src.begin() + s * nsrc;
 
       for (unsigned i = 0; i < nsrc; ++i, ++ireg)
@@ -886,7 +886,7 @@ AluInstr::split(ValueFactory& vf, AluGroup& group)
       AluBankSwizzle bs = alu_vec_012;
       while (bs != alu_vec_unknown) {
          AluReadportReservation rpr = rr;
-         if (rpr.schedule_vec_src(src, nsrc, bs)) {
+         if (rpr.schedule_vec_src(src, nsrc, bs) == nsrc) {
             rr = rpr;
             break;
          }

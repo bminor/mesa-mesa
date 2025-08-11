@@ -71,8 +71,8 @@ public:
    void visit(const UniformValue& value) override;
 };
 
-bool
-AluReadportReservation::schedule_vec_src(PVirtualValue src[3],
+unsigned
+AluReadportReservation::schedule_vec_src(const std::array<PVirtualValue, 3>& src,
                                          int nsrc,
                                          AluBankSwizzle swz)
 {
@@ -90,9 +90,12 @@ AluReadportReservation::schedule_vec_src(PVirtualValue src[3],
       visitor.cycle = cycle_vec(swz, i);
       visitor.isrc = i;
       src[i]->accept(visitor);
+      if (!visitor.success) {
+         return i;
+      }
    }
 
-   return visitor.success;
+   return nsrc;
 }
 
 bool
