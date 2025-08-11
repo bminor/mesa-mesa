@@ -7904,7 +7904,7 @@
         "description": "r600/sfn: Fix AR use tracking off-by-one error",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d617052db6b2f359d7242875013603ec63b069fc",
         "notes": null
