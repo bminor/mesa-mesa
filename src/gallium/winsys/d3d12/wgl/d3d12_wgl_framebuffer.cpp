@@ -83,7 +83,7 @@ d3d12_wgl_framebuffer_destroy(struct stw_winsys_framebuffer *fb,
       }
    }
 
-   for (int i = 0; i < num_buffers; ++i) {
+   for (uint32_t i = 0; i < num_buffers; ++i) {
       if (framebuffer->buffers[i]) {
          d3d12_resource_release(d3d12_resource(framebuffer->buffers[i]));
          pipe_resource_reference(&framebuffer->buffers[i], NULL);
@@ -165,7 +165,7 @@ d3d12_wgl_framebuffer_resize(stw_winsys_framebuffer *fb,
          ctx->screen->fence_reference(ctx->screen, &fence, NULL);
       }
 
-      for (int i = 0; i < num_buffers; ++i) {
+      for (uint32_t i = 0; i < num_buffers; ++i) {
          if (framebuffer->buffers[i]) {
             d3d12_resource_release(d3d12_resource(framebuffer->buffers[i]));
             pipe_resource_reference(&framebuffer->buffers[i], NULL);
