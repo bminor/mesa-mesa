@@ -11,7 +11,7 @@ section_start vkd3d-proton "Building vkd3d-proton"
 # setting up the environment variables locally
 ci_tag_build_time_check "VKD3D_PROTON_TAG"
 
-VKD3D_PROTON_COMMIT="f0a3820468b5f18d502fb84d219ca19c148c2422"
+VKD3D_PROTON_COMMIT="0845d1b69c6b474debe39d25f0137bf108a42b92"
 
 VKD3D_PROTON_DST_DIR="/vkd3d-proton-tests"
 VKD3D_PROTON_SRC_DIR="/vkd3d-proton-src"

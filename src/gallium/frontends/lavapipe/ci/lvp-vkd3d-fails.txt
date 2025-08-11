@@ -18,3 +18,6 @@ test_raytracing,Fail
 
 test_sampler_rounding,Fail
 test_view_min_lod,Fail
+
+test_null_descriptor_resinfo_dxbc,Fail
+test_null_descriptor_resinfo_dxil,Fail
