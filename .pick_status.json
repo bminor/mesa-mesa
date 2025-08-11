@@ -5384,7 +5384,7 @@
         "description": "zink: zero dynamic rendering resolve views on rp end",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": null,
         "notes": null
