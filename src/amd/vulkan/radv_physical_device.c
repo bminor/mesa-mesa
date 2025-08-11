@@ -2996,58 +2996,84 @@ radv_GetPhysicalDeviceToolProperties(VkPhysicalDevice physicalDevice, uint32_t *
    return vk_outarray_status(&out);
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL
-radv_GetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
-                                                     VkCooperativeMatrixPropertiesKHR *pProperties)
+struct matrix_prop {
+   VkComponentTypeKHR a_type;
+   VkComponentTypeKHR b_type;
+   VkComponentTypeKHR c_type;
+   VkComponentTypeKHR r_type;
+   bool saturate;
+};
+
+static void fill_matrix_prop_khr(struct __vk_outarray *base,
+                                 struct matrix_prop *prop)
 {
-   VK_FROM_HANDLE(radv_physical_device, pdev, physicalDevice);
-   VK_OUTARRAY_MAKE_TYPED(VkCooperativeMatrixPropertiesKHR, out, pProperties, pPropertyCount);
+   vk_outarray(VkCooperativeMatrixPropertiesKHR) *out = (void *)base;
+
+   vk_outarray_append_typed(VkCooperativeMatrixPropertiesKHR, out, p)
+   {
+      *p = (struct VkCooperativeMatrixPropertiesKHR){
+         .sType = VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_KHR,
+         .MSize = 16,
+         .NSize = 16,
+         .KSize = 16,
+         .AType = prop->a_type,
+         .BType = prop->b_type,
+         .CType = prop->c_type,
+         .ResultType = prop->r_type,
+         .saturatingAccumulation = prop->saturate,
+         .scope = VK_SCOPE_SUBGROUP_KHR};
+   }
+}
+
+static void fill_flexible_matrix_prop_nv(struct __vk_outarray *base,
+                                         struct matrix_prop *prop)
+{
+   vk_outarray(VkCooperativeMatrixFlexibleDimensionsPropertiesNV) *out = (void *)base;
+
+   vk_outarray_append_typed(VkCooperativeMatrixFlexibleDimensionsPropertiesNV, out, p)
+   {
+      *p = (struct VkCooperativeMatrixFlexibleDimensionsPropertiesNV){
+         .sType = VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_FLEXIBLE_DIMENSIONS_PROPERTIES_NV,
+         .MGranularity = 16,
+         .NGranularity = 16,
+         .KGranularity = 16,
+         .AType = prop->a_type,
+         .BType = prop->b_type,
+         .CType = prop->c_type,
+         .ResultType = prop->r_type,
+         .saturatingAccumulation = prop->saturate,
+         .scope = VK_SCOPE_SUBGROUP_KHR};
+   }
+}
+
+static void fill_array_sizes_structs(const struct radv_physical_device *pdev,
+                                     struct __vk_outarray *base,
+                                     void (*array_size_cb)(struct __vk_outarray *base, struct matrix_prop *prop))
+{
+   struct matrix_prop prop;
 
    if (pdev->info.gfx_level >= GFX12) {
       for (unsigned e5m2_a = 0; e5m2_a < 2; e5m2_a++) {
          for (unsigned e5m2_b = 0; e5m2_b < 2; e5m2_b++) {
-            VkComponentTypeKHR a_type = e5m2_a ? VK_COMPONENT_TYPE_FLOAT8_E5M2_EXT : VK_COMPONENT_TYPE_FLOAT8_E4M3_EXT;
-            VkComponentTypeKHR b_type = e5m2_b ? VK_COMPONENT_TYPE_FLOAT8_E5M2_EXT : VK_COMPONENT_TYPE_FLOAT8_E4M3_EXT;
-
-            vk_outarray_append_typed(VkCooperativeMatrixPropertiesKHR, &out, p)
-            {
-               *p = (struct VkCooperativeMatrixPropertiesKHR){
-                  .sType = VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_KHR,
-                  .MSize = 16,
-                  .NSize = 16,
-                  .KSize = 16,
-                  .AType = a_type,
-                  .BType = b_type,
-                  .CType = VK_COMPONENT_TYPE_FLOAT32_KHR,
-                  .ResultType = VK_COMPONENT_TYPE_FLOAT32_KHR,
-                  .saturatingAccumulation = false,
-                  .scope = VK_SCOPE_SUBGROUP_KHR};
-            }
+            prop.saturate = false;
+            prop.a_type = e5m2_a ? VK_COMPONENT_TYPE_FLOAT8_E5M2_EXT : VK_COMPONENT_TYPE_FLOAT8_E4M3_EXT;
+            prop.b_type = e5m2_b ? VK_COMPONENT_TYPE_FLOAT8_E5M2_EXT : VK_COMPONENT_TYPE_FLOAT8_E4M3_EXT;
+            prop.c_type = prop.r_type = VK_COMPONENT_TYPE_FLOAT32_KHR;
+            (*array_size_cb)(base, &prop);
          }
       }
    }
 
    for (unsigned bfloat = 0; bfloat < 2; bfloat++) {
       for (unsigned fp32 = 0; fp32 < 2; fp32++) {
-         VkComponentTypeKHR ab_type = bfloat ? VK_COMPONENT_TYPE_BFLOAT16_KHR : VK_COMPONENT_TYPE_FLOAT16_KHR;
-         VkComponentTypeKHR cd_type = fp32 ? VK_COMPONENT_TYPE_FLOAT32_KHR : ab_type;
+         prop.saturate = false;
+         prop.a_type = prop.b_type = bfloat ? VK_COMPONENT_TYPE_BFLOAT16_KHR : VK_COMPONENT_TYPE_FLOAT16_KHR;
+         prop.c_type = prop.r_type = fp32 ? VK_COMPONENT_TYPE_FLOAT32_KHR : prop.a_type;
 
          if (pdev->info.gfx_level < GFX12 && bfloat)
             continue; /* BF16 isn't working precisely on GFX11. */
 
-         vk_outarray_append_typed(VkCooperativeMatrixPropertiesKHR, &out, p)
-         {
-            *p = (struct VkCooperativeMatrixPropertiesKHR){.sType = VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_KHR,
-                                                           .MSize = 16,
-                                                           .NSize = 16,
-                                                           .KSize = 16,
-                                                           .AType = ab_type,
-                                                           .BType = ab_type,
-                                                           .CType = cd_type,
-                                                           .ResultType = cd_type,
-                                                           .saturatingAccumulation = false,
-                                                           .scope = VK_SCOPE_SUBGROUP_KHR};
-         }
+         (*array_size_cb)(base, &prop);
       }
    }
 
@@ -3057,25 +3083,26 @@ radv_GetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevice physicalDe
             for (unsigned saturate = 0; saturate < 2; saturate++) {
                if (!csigned && saturate)
                   continue; /* The HW only supports signed acc. */
-               vk_outarray_append_typed(VkCooperativeMatrixPropertiesKHR, &out, p)
-               {
-                  *p = (struct VkCooperativeMatrixPropertiesKHR){
-                     .sType = VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_KHR,
-                     .MSize = 16,
-                     .NSize = 16,
-                     .KSize = 16,
-                     .AType = asigned ? VK_COMPONENT_TYPE_SINT8_KHR : VK_COMPONENT_TYPE_UINT8_KHR,
-                     .BType = bsigned ? VK_COMPONENT_TYPE_SINT8_KHR : VK_COMPONENT_TYPE_UINT8_KHR,
-                     .CType = csigned ? VK_COMPONENT_TYPE_SINT32_KHR : VK_COMPONENT_TYPE_UINT32_KHR,
-                     .ResultType = csigned ? VK_COMPONENT_TYPE_SINT32_KHR : VK_COMPONENT_TYPE_UINT32_KHR,
-                     .saturatingAccumulation = saturate,
-                     .scope = VK_SCOPE_SUBGROUP_KHR};
-               }
+
+               prop.saturate = saturate;
+               prop.a_type = asigned ? VK_COMPONENT_TYPE_SINT8_KHR : VK_COMPONENT_TYPE_UINT8_KHR;
+               prop.b_type = bsigned ? VK_COMPONENT_TYPE_SINT8_KHR : VK_COMPONENT_TYPE_UINT8_KHR;
+               prop.c_type = prop.r_type = csigned ? VK_COMPONENT_TYPE_SINT32_KHR : VK_COMPONENT_TYPE_UINT32_KHR;
+
+               (*array_size_cb)(base, &prop);
             }
          }
       }
    }
+}
 
+VKAPI_ATTR VkResult VKAPI_CALL
+radv_GetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
+                                                     VkCooperativeMatrixPropertiesKHR *pProperties)
+{
+   VK_FROM_HANDLE(radv_physical_device, pdev, physicalDevice);
+   VK_OUTARRAY_MAKE_TYPED(VkCooperativeMatrixPropertiesKHR, out, pProperties, pPropertyCount);
+   fill_array_sizes_structs(pdev, &out.base, fill_matrix_prop_khr);
    return vk_outarray_status(&out);
 }
 
@@ -3085,79 +3112,6 @@ radv_GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(VkPhysical
 {
    VK_FROM_HANDLE(radv_physical_device, pdev, physicalDevice);
    VK_OUTARRAY_MAKE_TYPED(VkCooperativeMatrixFlexibleDimensionsPropertiesNV, out, pProperties, pPropertyCount);
-
-   if (pdev->info.gfx_level >= GFX12) {
-      for (unsigned e5m2_a = 0; e5m2_a < 2; e5m2_a++) {
-         for (unsigned e5m2_b = 0; e5m2_b < 2; e5m2_b++) {
-            VkComponentTypeKHR a_type = e5m2_a ? VK_COMPONENT_TYPE_FLOAT8_E5M2_EXT : VK_COMPONENT_TYPE_FLOAT8_E4M3_EXT;
-            VkComponentTypeKHR b_type = e5m2_b ? VK_COMPONENT_TYPE_FLOAT8_E5M2_EXT : VK_COMPONENT_TYPE_FLOAT8_E4M3_EXT;
-
-            vk_outarray_append_typed(VkCooperativeMatrixFlexibleDimensionsPropertiesNV, &out, p)
-            {
-               *p = (struct VkCooperativeMatrixFlexibleDimensionsPropertiesNV){
-                  .sType = VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_FLEXIBLE_DIMENSIONS_PROPERTIES_NV,
-                  .MGranularity = 16,
-                  .NGranularity = 16,
-                  .KGranularity = 16,
-                  .AType = a_type,
-                  .BType = b_type,
-                  .CType = VK_COMPONENT_TYPE_FLOAT32_KHR,
-                  .ResultType = VK_COMPONENT_TYPE_FLOAT32_KHR,
-                  .saturatingAccumulation = false,
-                  .scope = VK_SCOPE_SUBGROUP_KHR};
-            }
-         }
-      }
-   }
-
-   for (unsigned bfloat = 0; bfloat < 2; bfloat++) {
-      for (unsigned fp32 = 0; fp32 < 2; fp32++) {
-         VkComponentTypeKHR ab_type = bfloat ? VK_COMPONENT_TYPE_BFLOAT16_KHR : VK_COMPONENT_TYPE_FLOAT16_KHR;
-         VkComponentTypeKHR cd_type = fp32 ? VK_COMPONENT_TYPE_FLOAT32_KHR : ab_type;
-
-         if (pdev->info.gfx_level < GFX12 && bfloat)
-            continue; /* BF16 isn't working precisely on GFX11. */
-
-         vk_outarray_append_typed(VkCooperativeMatrixFlexibleDimensionsPropertiesNV, &out, p)
-         {
-            *p = (struct VkCooperativeMatrixFlexibleDimensionsPropertiesNV){.sType = VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_FLEXIBLE_DIMENSIONS_PROPERTIES_NV,
-                                                           .MGranularity = 16,
-                                                           .NGranularity = 16,
-                                                           .KGranularity = 16,
-                                                           .AType = ab_type,
-                                                           .BType = ab_type,
-                                                           .CType = cd_type,
-                                                           .ResultType = cd_type,
-                                                           .saturatingAccumulation = false,
-                                                           .scope = VK_SCOPE_SUBGROUP_KHR};
-         }
-      }
-   }
-
-   for (unsigned asigned = 0; asigned < 2; asigned++) {
-      for (unsigned bsigned = 0; bsigned < 2; bsigned++) {
-         for (unsigned csigned = 0; csigned < 2; csigned++) {
-            for (unsigned saturate = 0; saturate < 2; saturate++) {
-               if (!csigned && saturate)
-                  continue; /* The HW only supports signed acc. */
-               vk_outarray_append_typed(VkCooperativeMatrixFlexibleDimensionsPropertiesNV, &out, p)
-               {
-                  *p = (struct VkCooperativeMatrixFlexibleDimensionsPropertiesNV){
-                     .sType = VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_FLEXIBLE_DIMENSIONS_PROPERTIES_NV,
-                     .MGranularity = 16,
-                     .NGranularity = 16,
-                     .KGranularity = 16,
-                     .AType = asigned ? VK_COMPONENT_TYPE_SINT8_KHR : VK_COMPONENT_TYPE_UINT8_KHR,
-                     .BType = bsigned ? VK_COMPONENT_TYPE_SINT8_KHR : VK_COMPONENT_TYPE_UINT8_KHR,
-                     .CType = csigned ? VK_COMPONENT_TYPE_SINT32_KHR : VK_COMPONENT_TYPE_UINT32_KHR,
-                     .ResultType = csigned ? VK_COMPONENT_TYPE_SINT32_KHR : VK_COMPONENT_TYPE_UINT32_KHR,
-                     .saturatingAccumulation = saturate,
-                     .scope = VK_SCOPE_SUBGROUP_KHR};
-               }
-            }
-         }
-      }
-   }
-
+   fill_array_sizes_structs(pdev, &out.base, fill_flexible_matrix_prop_nv);
    return vk_outarray_status(&out);
 }
