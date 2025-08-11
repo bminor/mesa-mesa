@@ -715,6 +715,7 @@ static rvcn_dec_message_av1_t get_av1_msg(struct radeon_decoder *dec,
                                           struct pipe_video_buffer *target,
                                           struct pipe_av1_picture_desc *pic)
 {
+   struct si_screen *sscreen = (struct si_screen *)dec->screen;
    rvcn_dec_message_av1_t result;
    unsigned i, j, num_refs = 0, valid_ref = UINT32_MAX;
    uint16_t tile_count = pic->picture_parameter.tile_cols * pic->picture_parameter.tile_rows;
@@ -1092,6 +1093,8 @@ static rvcn_dec_message_av1_t get_av1_msg(struct radeon_decoder *dec,
          dec->ref_codec.bufs[dec->ref_codec.num_refs++].index = result.curr_pic_idx;
       }
    }
+
+   result.av1_intrabc_workaround = sscreen->info.family == CHIP_GFX1153;
 
    return result;
 }
