@@ -70,6 +70,7 @@ struct brw_simd_selection_state {
 
    bool compiled[SIMD_COUNT];
    bool spilled[SIMD_COUNT];
+   bool beyond_threshold[SIMD_COUNT];
 };
 
 inline int brw_simd_first_compiled(const brw_simd_selection_state &state)

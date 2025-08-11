@@ -1558,8 +1558,19 @@ brw_compile_fs(const struct brw_compiler *compiler,
       NIR_PASS(_, nir, nir_inline_sysval, nir_intrinsic_load_fs_msaa_intel, f);
    }
 
-   brw_postprocess_nir(nir, compiler, 0, params->base.archiver,
-                       debug_enabled, key->base.robust_flags);
+   brw_postprocess_nir_opts(nir, compiler, key->base.robust_flags);
+
+   unsigned pressure[SIMD_COUNT];
+   brw_nir_quick_pressure_estimate(nir, devinfo, pressure);
+
+   bool beyond_threshold[SIMD_COUNT] = {};
+   for (unsigned i = (devinfo->ver >= 20 ? 2 : 1); i < SIMD_COUNT; i++) {
+      beyond_threshold[i] =
+         pressure[i] > compiler->register_pressure_threshold;
+   }
+
+   brw_postprocess_nir_out_of_ssa(nir, 0, params->base.archiver,
+                                  debug_enabled);
 
    int per_primitive_offsets[VARYING_SLOT_MAX];
    memset(per_primitive_offsets, -1, sizeof(per_primitive_offsets));
@@ -1749,7 +1760,8 @@ brw_compile_fs(const struct brw_compiler *compiler,
       }
 
    } else {
-      if ((!has_spilled && dispatch_width_limit >= 16 && INTEL_SIMD(FS, 16)) ||
+      if ((!has_spilled && dispatch_width_limit >= 16 &&
+           !beyond_threshold[1] && INTEL_SIMD(FS, 16)) ||
           reqd_dispatch_width == 16) {
          /* Try a SIMD16 compile */
          brw_shader_params shader_params = base_shader_params;
@@ -1783,6 +1795,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
       /* Currently, the compiler only supports SIMD32 on SNB+ */
       if (!has_spilled &&
           dispatch_width_limit >= 32 &&
+          !beyond_threshold[2] &&
           reqd_dispatch_width == 0 &&
           !simd16_failed && INTEL_SIMD(FS, 32) &&
           !prog_data->base.ray_queries) {
@@ -1821,7 +1834,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
           reqd_dispatch_width == 0) {
 
          if (devinfo->ver >= 20 && max_polygons >= 4 &&
-             dispatch_width_limit >= 32 &&
+             dispatch_width_limit >= 32 && !beyond_threshold[2] &&
              4 * prog_data->num_varying_inputs <= MAX_VARYING &&
              INTEL_SIMD(FS, 4X8)) {
             /* Try a quad-SIMD8 compile */
@@ -1841,7 +1854,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
          }
 
          if (!vmulti && devinfo->ver >= 20 &&
-             dispatch_width_limit >= 32 &&
+             dispatch_width_limit >= 32 && !beyond_threshold[2] &&
              2 * prog_data->num_varying_inputs <= MAX_VARYING &&
              INTEL_SIMD(FS, 2X16)) {
             /* Try a dual-SIMD16 compile */
@@ -1860,7 +1873,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
             }
          }
 
-         if (!vmulti && dispatch_width_limit >= 16 &&
+         if (!vmulti && dispatch_width_limit >= 16 && !beyond_threshold[1] &&
              2 * prog_data->num_varying_inputs <= MAX_VARYING &&
              INTEL_SIMD(FS, 2X8)) {
             /* Try a dual-SIMD8 compile */

@@ -152,6 +152,18 @@ struct brw_compiler {
    int spilling_rate;
 
    /**
+    * We perform a quick register pressure estimate at the NIR level before
+    * attempting backend compilation at various SIMD widths.  If the estimated
+    * register pressure for a given SIMD width is beyond this threshold, we
+    * will skip FS and CS compilation at that width.
+    *
+    * This is vaguely the number of GRFs supported by the hardware, with a
+    * bit of a fudge factor because we are only estimating, and sometimes
+    * backend IR scheduling can reduce register pressure.
+    */
+   unsigned register_pressure_threshold;
+
+   /**
     * A list of storage formats to lower from the matching return HW format.
     *
     * This list is used to build the lowering of read without format in

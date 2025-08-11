@@ -394,6 +394,14 @@ brw_compile_task(const struct brw_compiler *compiler,
 
    brw_debug_archive_nir(params->base.archiver, nir, 0, "before-simd");
 
+   unsigned pressure[SIMD_COUNT];
+   brw_nir_quick_pressure_estimate(nir, devinfo, pressure);
+
+   for (unsigned i = 0; i < SIMD_COUNT; i++) {
+      simd_state.beyond_threshold[i] =
+         pressure[i] > compiler->register_pressure_threshold;
+   }
+
    std::unique_ptr<brw_shader> v[3];
 
    for (unsigned i = 0; i < 3; i++) {

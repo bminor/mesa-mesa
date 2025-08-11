@@ -188,6 +188,14 @@ brw_compile_cs(const struct brw_compiler *compiler,
       .required_width = brw_required_dispatch_width(&nir->info),
    };
 
+   unsigned pressure[SIMD_COUNT];
+   brw_nir_quick_pressure_estimate(nir, devinfo, pressure);
+
+   for (unsigned i = 0; i < SIMD_COUNT; i++) {
+      simd_state.beyond_threshold[i] =
+         pressure[i] > compiler->register_pressure_threshold;
+   }
+
    prog_data->uses_sampler = brw_nir_uses_sampler(params->base.nir);
 
    std::unique_ptr<brw_shader> v[3];

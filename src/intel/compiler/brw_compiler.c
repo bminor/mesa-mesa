@@ -115,6 +115,22 @@ brw_compiler_create(void *mem_ctx, const struct intel_device_info *devinfo)
    compiler->optimistic_simd_heuristic =
       debug_get_bool_option("INTEL_SIMD_OPTIMISTIC", false);
 
+   /* We have 128 GRFs on Xe2 and earlier, and up to 256 on Xe3.  But we add
+    * a bit of a fudge factor here to allow shaders that are borderline
+    * allocatable to at least try, so we don't lose out on performance.
+    *
+    * On Xe2, 134 seems to be the sweet spot where we get most of the CPU
+    * gains for discarding expensive compilation, but only a few outliers
+    * have a higher pressure and yet manage to succeed at SIMD32 compilation.
+    *
+    * On Xe3 with VRT we can have double the registers thanks to VRT, and
+    * very few shaders fail to compile.  We set the threshold to ~2x the Xe2
+    * value, which still catches something like 80% of the failing shaders
+    * while letting almost all through to the backend for more detailed
+    * throughput analysis.
+    */
+   compiler->register_pressure_threshold = devinfo->ver >= 30 ? 268 : 134;
+
    nir_lower_int64_options int64_options =
       nir_lower_imul64 |
       nir_lower_isign64 |
