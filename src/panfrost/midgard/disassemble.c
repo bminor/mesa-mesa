@@ -1829,7 +1829,7 @@ disassemble_midgard(FILE *fp, const void *code, size_t size, unsigned gpu_id,
 
    bool branch_forward = false;
 
-   int last_next_tag = -1;
+   unsigned last_next_tag = TAG_BREAK;
 
    unsigned i = 0;
 
