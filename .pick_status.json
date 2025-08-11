@@ -7914,7 +7914,7 @@
         "description": "r600/sfn: When splitting an ALU CF update possible start of next CF",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6aafa2bb4903db20269b3062dfa73b3fe781facd",
         "notes": null
