@@ -57,7 +57,7 @@ struct copies {
    struct list_head node;
 
    /* Hash table of copies referenced by variables */
-   struct hash_table *ht;
+   struct hash_table ht;
 
    /* Array of derefs that can't be chased back to a variable */
    struct util_dynarray arr;
@@ -365,13 +365,13 @@ static struct copies_dynarray *
 copies_array_for_var(struct copy_prop_var_state *state,
                      struct copies *copies, nir_variable *var)
 {
-   struct hash_entry *entry = _mesa_hash_table_search(copies->ht, var);
+   struct hash_entry *entry = _mesa_hash_table_search(&copies->ht, var);
    if (entry != NULL)
       return get_copies_array_from_ht_entry(state, copies, entry);
 
    struct copies_dynarray *copies_array = get_copies_dynarray(state);
    copies_array->owner = copies;
-   _mesa_hash_table_insert(copies->ht, var, copies_array);
+   _mesa_hash_table_insert(&copies->ht, var, copies_array);
 
    return copies_array;
 }
@@ -520,7 +520,7 @@ lookup_entry_and_kill_aliases(struct copy_prop_var_state *state,
        deref->_path->path[0]->var->data.mode == nir_var_mem_ssbo ||
        deref->_path->path[0]->var->data.mode == nir_var_mem_shared) {
 
-      hash_table_foreach(copies->ht, ht_entry) {
+      hash_table_foreach(&copies->ht, ht_entry) {
          nir_variable *var = (nir_variable *)ht_entry->key;
          if (deref->_path->path[0]->deref_type == nir_deref_type_var &&
              var->data.mode != deref->_path->path[0]->var->data.mode)
@@ -535,7 +535,7 @@ lookup_entry_and_kill_aliases(struct copy_prop_var_state *state,
                                                   &entry_removed);
 
          if (copies_array->arr.size == 0) {
-            _mesa_hash_table_remove(copies->ht, ht_entry);
+            _mesa_hash_table_remove(&copies->ht, ht_entry);
          }
       }
 
@@ -552,7 +552,7 @@ lookup_entry_and_kill_aliases(struct copy_prop_var_state *state,
                                                &entry, &entry_removed);
 
       if (copies_array->size == 0) {
-         _mesa_hash_table_remove_key(copies->ht, deref->_path->path[0]->var);
+         _mesa_hash_table_remove_key(&copies->ht, deref->_path->path[0]->var);
       }
    }
 
@@ -601,7 +601,7 @@ static void
 apply_barrier_for_modes(struct copy_prop_var_state *state,
                         struct copies *copies, nir_variable_mode modes)
 {
-   hash_table_foreach(copies->ht, ht_entry) {
+   hash_table_foreach(&copies->ht, ht_entry) {
       struct copies_dynarray *copies_array =
          get_copies_array_from_ht_entry(state, copies, ht_entry);
 
@@ -908,7 +908,7 @@ invalidate_copies_for_cf_node(struct copy_prop_var_state *state,
 
    struct vars_written *written = ht_entry->data;
    if (written->modes) {
-      hash_table_foreach(copies->ht, ht_entry) {
+      hash_table_foreach(&copies->ht, ht_entry) {
          struct copies_dynarray *copies_array =
             get_copies_array_from_ht_entry(state, copies, ht_entry);
 
@@ -918,7 +918,7 @@ invalidate_copies_for_cf_node(struct copy_prop_var_state *state,
          }
 
          if (copies_array->arr.size == 0) {
-            _mesa_hash_table_remove(copies->ht, ht_entry);
+            _mesa_hash_table_remove(&copies->ht, ht_entry);
          }
       }
 
@@ -981,7 +981,7 @@ dump_instr(nir_instr *instr)
 static void
 dump_copy_entries(struct copies *copies)
 {
-   hash_table_foreach(copies->ht, ht_entry) {
+   hash_table_foreach(&copies->ht, ht_entry) {
       struct util_dynarray *copies_array =
          &((struct copies_dynarray *)ht_entry->data)->arr;
 
@@ -1356,8 +1356,8 @@ clone_copies(struct copy_prop_var_state *state, struct copies *clones,
     * rebuild it and is needed to avoid slow compilation of very large shaders.
     * If needed we will clone the data later if it is ever looked up.
     */
-   assert(clones->ht == NULL);
-   clones->ht = _mesa_hash_table_clone(copies->ht, state->mem_ctx);
+   assert(clones->ht.table == NULL);
+   _mesa_hash_table_copy(&clones->ht, &copies->ht, state->mem_ctx);
 
    util_dynarray_clone(&clones->arr, state->mem_ctx, &copies->arr);
 }
@@ -1372,7 +1372,7 @@ get_copies_structure(struct copy_prop_var_state *state)
    struct copies *copies;
    if (list_is_empty(&state->unused_copy_structs_list)) {
       copies = ralloc(state->mem_ctx, struct copies);
-      copies->ht = NULL;
+      copies->ht.table = NULL;
       util_dynarray_init(&copies->arr, state->mem_ctx);
    } else {
       copies = list_entry(state->unused_copy_structs_list.next,
@@ -1387,8 +1387,7 @@ static void
 clear_copies_structure(struct copy_prop_var_state *state,
                        struct copies *copies)
 {
-   ralloc_free(copies->ht);
-   copies->ht = NULL;
+   _mesa_hash_table_fini(&copies->ht, NULL);
 
    list_add(&copies->node, &state->unused_copy_structs_list);
 }
@@ -1402,9 +1401,8 @@ copy_prop_vars_cf_node(struct copy_prop_var_state *state,
       nir_function_impl *impl = nir_cf_node_as_function(cf_node);
 
       struct copies *impl_copies = get_copies_structure(state);
-      impl_copies->ht = _mesa_hash_table_create(state->mem_ctx,
-                                                _mesa_hash_pointer,
-                                                _mesa_key_pointer_equal);
+      _mesa_hash_table_init(&impl_copies->ht, state->mem_ctx,
+                            _mesa_hash_pointer, _mesa_key_pointer_equal);
 
       foreach_list_typed_safe(nir_cf_node, cf_node, node, &impl->body)
          copy_prop_vars_cf_node(state, impl_copies, cf_node);
