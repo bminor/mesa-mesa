@@ -2201,7 +2201,8 @@ emit_alu_fma_64bit(const nir_alu_instr& alu, EAluOp opcode, Shader& shader)
                         value_factory.src64(alu.src[1], 0, chan),
                         value_factory.src64(alu.src[2], 0, chan),
                         i < 2 ? AluInstr::write : AluInstr::empty);
-      group->add_instruction(ir);
+      if (!group->add_instruction(ir))
+         UNREACHABLE("Unable to emit group, likely because of a readport conflict\n");
    }
    shader.emit_instruction(group);
    return true;
