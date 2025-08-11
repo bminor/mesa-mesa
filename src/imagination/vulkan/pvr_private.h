@@ -51,7 +51,6 @@
 #include "pvr_limits.h"
 #include "pvr_pds.h"
 #include "pvr_usc.h"
-#include "usc/programs/pvr_shader_factory.h"
 #include "pvr_spm.h"
 #include "pvr_types.h"
 #include "pvr_winsys.h"
@@ -266,7 +265,7 @@ struct pvr_device {
 
          uint32_t pds_texture_program_data_size;
          uint32_t pds_texture_program_temps_count;
-      } load_program[PVR_SPM_LOAD_PROGRAM_COUNT];
+      } load_program[PVR_NUM_SPM_LOAD_SHADERS];
    } spm_load_state;
 
    struct pvr_device_tile_buffer_state {

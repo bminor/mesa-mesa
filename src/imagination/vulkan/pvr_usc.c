@@ -1319,3 +1319,132 @@ pvr_usc_zero_init_wg_mem(pco_ctx *ctx, unsigned start, unsigned count)
 
    return build_shader(ctx, b.shader, &data);
 }
+
+pco_shader *pvr_uscgen_spm_load(pco_ctx *ctx, struct pvr_spm_load_props *props)
+{
+   pco_data data = { 0 };
+
+   nir_builder b = nir_builder_init_simple_shader(
+      MESA_SHADER_FRAGMENT,
+      pco_nir_options(),
+      "spm_load(%u output regs, %u tile buffers, %s)",
+      props->output_reg_count,
+      props->tile_buffer_count,
+      props->is_multisampled ? "ms" : "non-ms");
+
+   b.shader->info.fs.uses_sample_shading = props->is_multisampled;
+
+   nir_variable *pos = nir_get_variable_with_location(b.shader,
+                                                      nir_var_shader_in,
+                                                      VARYING_SLOT_POS,
+                                                      glsl_vec4_type());
+   pos->data.interpolation = INTERP_MODE_NOPERSPECTIVE;
+
+   nir_def *coords = nir_channels(&b, nir_load_var(&b, pos), 0b11);
+   nir_def *ms_index = props->is_multisampled ? nir_load_sample_id(&b) : NULL;
+
+   nir_def *smp_state = nir_load_preamble(&b,
+                                          ROGUE_NUM_TEXSTATE_DWORDS,
+                                          32,
+                                          .base = PVR_SPM_LOAD_DATA_SMP);
+
+   /* Initialize common params. */
+   pco_smp_params params = {
+      .smp_state = smp_state,
+      .dest_type = nir_type_uint32,
+      .sampler_dim = GLSL_SAMPLER_DIM_2D,
+      .coords = coords,
+      .lod_replace = nir_imm_int(&b, 0),
+      .ms_index = ms_index,
+   };
+
+   nir_def *valid_mask = nir_load_savmsk_vm_pco(&b);
+   nir_intrinsic_instr *smp;
+
+   /* Emit tile buffer sample + writes. */
+   /* TODO: emit nir_store_outputs instead, needs backend to handle
+    * discontiguous tile buffer locations.
+    */
+   for (unsigned buffer = 0; buffer < props->tile_buffer_count; ++buffer) {
+      unsigned tex_base = pvr_uscgen_spm_buffer_data(buffer, false);
+      params.tex_state =
+         nir_load_preamble(&b, ROGUE_NUM_TEXSTATE_DWORDS, 32, .base = tex_base);
+      params.sample_components = 4;
+
+      smp = pco_emit_nir_smp(&b, &params);
+
+      unsigned tile_addr_base = pvr_uscgen_spm_buffer_data(buffer, true);
+      nir_def *tile_addr_lo =
+         nir_load_preamble(&b, 1, 32, .base = tile_addr_base);
+      nir_def *tile_addr_hi =
+         nir_load_preamble(&b, 1, 32, .base = tile_addr_base + 1);
+
+      for (unsigned u = 0; u < params.sample_components; ++u) {
+         nir_def *tiled_offset = nir_load_tiled_offset_pco(&b, .component = u);
+
+         nir_def *addr =
+            nir_uadd64_32(&b, tile_addr_lo, tile_addr_hi, tiled_offset);
+
+         nir_def *data = nir_channel(&b, &smp->def, u);
+
+         nir_def *addr_data = nir_vec3(&b,
+                                       nir_channel(&b, addr, 0),
+                                       nir_channel(&b, addr, 1),
+                                       data);
+
+         nir_dma_st_tiled_pco(&b, addr_data, valid_mask);
+      }
+   }
+
+   /* Emit output reg sample + write. */
+   switch (props->output_reg_count) {
+   case 1:
+      data.fs.output_formats[FRAG_RESULT_DATA0] = PIPE_FORMAT_R32_UINT;
+      break;
+
+   case 2:
+      data.fs.output_formats[FRAG_RESULT_DATA0] = PIPE_FORMAT_R32G32_UINT;
+      break;
+
+   case 4:
+      data.fs.output_formats[FRAG_RESULT_DATA0] = PIPE_FORMAT_R32G32B32A32_UINT;
+      break;
+
+   default:
+      UNREACHABLE("");
+   }
+
+   data.fs.outputs[FRAG_RESULT_DATA0] = (pco_range){
+      .start = 0,
+      .count = props->output_reg_count,
+   };
+
+   nir_create_variable_with_location(b.shader,
+                                     nir_var_shader_out,
+                                     FRAG_RESULT_DATA0,
+                                     glsl_uvec_type(props->output_reg_count));
+
+   params.tex_state = nir_load_preamble(&b,
+                                        ROGUE_NUM_TEXSTATE_DWORDS,
+                                        32,
+                                        .base = PVR_SPM_LOAD_DATA_REG_TEX);
+   params.sample_components = props->output_reg_count;
+
+   smp = pco_emit_nir_smp(&b, &params);
+
+   for (unsigned u = 0; u < props->output_reg_count; ++u) {
+      nir_store_output(&b,
+                       nir_channel(&b, &smp->def, u),
+                       nir_imm_int(&b, 0),
+                       .base = 0,
+                       .component = u,
+                       .src_type = nir_type_invalid | 32,
+                       .write_mask = 1,
+                       .io_semantics.location = FRAG_RESULT_DATA0,
+                       .io_semantics.num_slots = 1);
+   }
+
+   nir_jump(&b, nir_jump_return);
+
+   return build_shader(ctx, b.shader, &data);
+}

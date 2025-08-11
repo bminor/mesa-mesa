@@ -3104,21 +3104,17 @@ VkResult pvr_CreateFramebuffer(VkDevice _device,
       goto err_finish_render_targets;
 
    for (uint32_t i = 0; i < pass->hw_setup->render_count; i++) {
-      uint32_t emit_count;
-
       result = pvr_spm_init_eot_state(device,
                                       &spm_eot_state_per_render[i],
                                       framebuffer,
-                                      &pass->hw_setup->renders[i],
-                                      &emit_count);
+                                      &pass->hw_setup->renders[i]);
       if (result != VK_SUCCESS)
          goto err_finish_eot_state;
 
       result = pvr_spm_init_bgobj_state(device,
                                         &spm_bgobj_state_per_render[i],
                                         framebuffer,
-                                        &pass->hw_setup->renders[i],
-                                        emit_count);
+                                        &pass->hw_setup->renders[i]);
       if (result != VK_SUCCESS)
          goto err_finish_bgobj_state;
 
