@@ -324,6 +324,7 @@ va_optimize_forward(bi_context *ctx)
    }
 
    free(uses);
+   free(lut);
    free(multiple);
 }
 
