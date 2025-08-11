@@ -935,6 +935,9 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
 
    info->has_gfx9_scissor_bug = info->family == CHIP_VEGA10 || info->family == CHIP_RAVEN;
 
+   /* Stencil texturing with HTILE doesn't work with mipmapping on Navi10-14. */
+   info->has_htile_stencil_mipmap_bug = info->gfx_level == GFX10;
+
    info->has_tc_compat_zrange_bug = info->gfx_level >= GFX8 && info->gfx_level <= GFX9;
 
    info->has_small_prim_filter_sample_loc_bug =
@@ -1710,6 +1713,7 @@ void ac_print_gpu_info(const struct radeon_info *info, FILE *f)
    fprintf(f, "    has_out_of_order_rast = %u\n", info->has_out_of_order_rast);
    fprintf(f, "    cpdma_prefetch_writes_memory = %u\n", info->cpdma_prefetch_writes_memory);
    fprintf(f, "    has_gfx9_scissor_bug = %i\n", info->has_gfx9_scissor_bug);
+   fprintf(f, "    has_htile_stencil_mipmap_bug = %i\n", info->has_htile_stencil_mipmap_bug);
    fprintf(f, "    has_tc_compat_zrange_bug = %i\n", info->has_tc_compat_zrange_bug);
    fprintf(f, "    has_small_prim_filter_sample_loc_bug = %i\n", info->has_small_prim_filter_sample_loc_bug);
    fprintf(f, "    has_ls_vgpr_init_bug = %i\n", info->has_ls_vgpr_init_bug);
