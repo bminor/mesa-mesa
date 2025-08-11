@@ -75,7 +75,7 @@ struct vars_written {
    nir_variable_mode modes;
 
    /* Key is deref and value is the uintptr_t with the write mask. */
-   struct hash_table *derefs;
+   struct hash_table derefs;
 };
 
 struct value {
@@ -144,7 +144,7 @@ create_vars_written(struct copy_prop_var_state *state)
 {
    struct vars_written *written =
       linear_zalloc_child(state->lin_ctx, sizeof(struct vars_written));
-   written->derefs = _mesa_pointer_hash_table_create(state->mem_ctx);
+   _mesa_pointer_hash_table_init(&written->derefs, state->mem_ctx);
    return written;
 }
 
@@ -204,11 +204,11 @@ gather_vars_written(struct copy_prop_var_state *state,
             nir_component_mask_t mask = (1 << glsl_get_vector_elements(payload->type)) - 1;
 
             struct hash_entry *ht_entry =
-               _mesa_hash_table_search(written->derefs, payload);
+               _mesa_hash_table_search(&written->derefs, payload);
             if (ht_entry) {
                ht_entry->data = (void *)(mask | (uintptr_t)ht_entry->data);
             } else {
-               _mesa_hash_table_insert(written->derefs, payload,
+               _mesa_hash_table_insert(&written->derefs, payload,
                                        (void *)(uintptr_t)mask);
             }
             break;
@@ -238,11 +238,11 @@ gather_vars_written(struct copy_prop_var_state *state,
 
             uintptr_t mask = intrin->intrinsic == nir_intrinsic_store_deref ? nir_intrinsic_write_mask(intrin) : (1 << glsl_get_vector_elements(dst->type)) - 1;
 
-            struct hash_entry *ht_entry = _mesa_hash_table_search(written->derefs, dst);
+            struct hash_entry *ht_entry = _mesa_hash_table_search(&written->derefs, dst);
             if (ht_entry)
                ht_entry->data = (void *)(mask | (uintptr_t)ht_entry->data);
             else
-               _mesa_hash_table_insert(written->derefs, dst, (void *)mask);
+               _mesa_hash_table_insert(&written->derefs, dst, (void *)mask);
 
             break;
          }
@@ -289,16 +289,16 @@ gather_vars_written(struct copy_prop_var_state *state,
       /* Merge new information to the parent control flow node. */
       if (written) {
          written->modes |= new_written->modes;
-         hash_table_foreach(new_written->derefs, new_entry) {
+         hash_table_foreach(&new_written->derefs, new_entry) {
             struct hash_entry *old_entry =
-               _mesa_hash_table_search_pre_hashed(written->derefs, new_entry->hash,
+               _mesa_hash_table_search_pre_hashed(&written->derefs, new_entry->hash,
                                                   new_entry->key);
             if (old_entry) {
                nir_component_mask_t merged = (uintptr_t)new_entry->data |
                                              (uintptr_t)old_entry->data;
                old_entry->data = (void *)((uintptr_t)merged);
             } else {
-               _mesa_hash_table_insert_pre_hashed(written->derefs, new_entry->hash,
+               _mesa_hash_table_insert_pre_hashed(&written->derefs, new_entry->hash,
                                                   new_entry->key, new_entry->data);
             }
          }
@@ -928,7 +928,7 @@ invalidate_copies_for_cf_node(struct copy_prop_var_state *state,
       }
    }
 
-   hash_table_foreach(written->derefs, entry) {
+   hash_table_foreach(&written->derefs, entry) {
       nir_deref_instr *deref_written = (nir_deref_instr *)entry->key;
       nir_deref_and_path deref = { deref_written, NULL };
       kill_aliases(state, copies, &deref, (uintptr_t)entry->data);
