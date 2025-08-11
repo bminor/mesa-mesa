@@ -1125,9 +1125,9 @@ BlockScheduler::collect_ready_alu_vec(std::list<AluInstr *>& ready,
    }
 
    int max_check = 0;
-   while (i != e && max_check++ < 64) {
-      if (ready.size() < 64 && (*i)->ready()) {
+   while (i != e && max_check++ < 64 && ready.size() < 64) {
 
+      if ((*i)->ready()) {
          int priority = 0;
          /* LDS fetches that use static offsets are usually ready ery fast,
           * so that they would get schedules early, and this leaves the
