@@ -1125,7 +1125,7 @@ void virgl_flush_eq(struct virgl_context *ctx, void *closure,
 
 static void virgl_flush_from_st(struct pipe_context *ctx,
                                struct pipe_fence_handle **fence,
-                               enum pipe_flush_flags flags)
+                               unsigned flags)
 {
    struct virgl_context *vctx = virgl_context(ctx);
 
