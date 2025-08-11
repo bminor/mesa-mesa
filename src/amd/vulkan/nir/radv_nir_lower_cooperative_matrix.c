@@ -734,6 +734,245 @@ lower_cmat_copy(nir_builder *b, nir_intrinsic_instr *intr)
 }
 
 static bool
+lower_cmat_reduce_finish_call(nir_builder *b, nir_cmat_call_instr *call, const lower_cmat_params *params)
+{
+   nir_deref_instr *dst_deref = nir_src_as_deref(call->params[0]);
+   nir_deref_instr *src0_deref = nir_src_as_deref(call->params[1]);
+   nir_function *fnptr = call->callee;
+   nir_cmat_reduce reduce = nir_cmat_call_reduce_flags(call);
+   struct glsl_cmat_description src_desc = *glsl_get_cmat_description(src0_deref->type);
+
+   nir_def *src0 = radv_nir_load_cmat(b, params, call->params[1].ssa);
+   nir_def *src1 = radv_nir_load_cmat(b, params, call->params[2].ssa);
+
+   unsigned length = radv_nir_cmat_length(src_desc, params);
+   unsigned mul = radv_nir_cmat_length_mul(src_desc, params);
+   nir_def *vars[NIR_MAX_VEC_COMPONENTS];
+
+   assert(src_desc.use == GLSL_CMAT_USE_ACCUMULATOR);
+
+   if (mul > 1) {
+      for (unsigned i = 0; i < length; ++i)
+         if (i % mul != 0)
+            vars[i] = nir_undef(b, 1, radv_nir_cmat_bits(src_desc));
+   }
+
+   if (reduce & NIR_CMAT_REDUCE_COLUMN) {
+      nir_variable *col_tmp = nir_local_variable_create(b->impl, glsl_get_bare_type(fnptr->params[0].type), "col_tmp");
+      /* All of the rows contains the same data, so just reduce both first rows. */
+      nir_def *row_accum0 = nir_channel(b, src0, 0);
+      nir_def *row_accum1 = nir_channel(b, src1, 0);
+
+      nir_deref_instr *col_tmp_deref = nir_build_deref_var(b, col_tmp);
+
+      nir_call(b, fnptr, &col_tmp_deref->def, row_accum0, row_accum1);
+
+      nir_def *first_col = nir_load_deref(b, col_tmp_deref);
+
+      for (unsigned i = 0; i < length / mul; i++)
+         vars[i * mul] = first_col;
+   } else if (reduce & NIR_CMAT_REDUCE_ROW) {
+      /* All of the columns contain the same data, but not the rows, so across all components. */
+      for (unsigned i = 0; i < length / mul; ++i) {
+         nir_def *row0_accum = nir_channel(b, src0, i * mul);
+         nir_def *row1_accum = nir_channel(b, src1, i * mul);
+
+         nir_variable *row_tmp = nir_local_variable_create(b->impl, glsl_get_bare_type(fnptr->params[0].type), "row_tmp");
+         nir_deref_instr *row_tmp_deref = nir_build_deref_var(b, row_tmp);
+
+         nir_call(b, fnptr, &row_tmp_deref->def, row0_accum, row1_accum);
+
+         nir_def *row = nir_load_deref(b, row_tmp_deref);
+         vars[i * mul] = row;
+      }
+   }
+
+   nir_def *mat = nir_vec(b, vars, length);
+   nir_store_deref(b, dst_deref, mat, nir_component_mask(mat->num_components));
+   nir_instr_remove(&call->instr);
+   return true;
+}
+
+static bool
+lower_cmat_reduce_call(nir_builder *b, nir_cmat_call_instr *call, const lower_cmat_params *params)
+{
+   nir_deref_instr *dst_deref = nir_src_as_deref(call->params[0]);
+   nir_deref_instr *src_deref = nir_src_as_deref(call->params[1]);
+   struct glsl_cmat_description src_desc = *glsl_get_cmat_description(src_deref->type);
+   nir_def *src = radv_nir_load_cmat(b, params, call->params[1].ssa);
+   nir_function *fnptr = call->callee;
+
+   nir_cmat_reduce reduce = nir_cmat_call_reduce_flags(call);
+
+   unsigned length = radv_nir_cmat_length(src_desc, params);
+   unsigned mul = radv_nir_cmat_length_mul(src_desc, params);
+   nir_def *vars[16];
+
+   assert(src_desc.use == GLSL_CMAT_USE_ACCUMULATOR);
+
+   for (unsigned i = 0; i < length; ++i) {
+      if (mul > 1 && (i % mul != 0))
+         vars[i] = nir_undef(b, 1, radv_nir_cmat_bits(src_desc));
+      else
+         vars[i] = nir_channel(b, src, i);
+   }
+
+   if (reduce & NIR_CMAT_REDUCE_COLUMN) {
+      nir_variable *col_tmp = nir_local_variable_create(b->impl, glsl_get_bare_type(fnptr->params[0].type), "col_tmp");
+
+      nir_deref_instr *col_tmp_deref = nir_build_deref_var(b, col_tmp);
+      nir_store_deref(b, col_tmp_deref, vars[0], 1);
+
+      for (unsigned i = 1; i < (length / mul); i++) {
+         nir_def *col_accum_val = nir_load_deref(b, col_tmp_deref);
+         nir_call(b, fnptr, &col_tmp_deref->def, col_accum_val, vars[i * mul]);
+      }
+
+      for (unsigned x_mask = 16; x_mask < params->wave_size; x_mask *= 2) {
+         nir_def *col_accum_val = nir_load_deref(b, col_tmp_deref);
+         nir_def *other_row = shuffle_xor_imm(b, col_accum_val, x_mask);
+         nir_call(b, fnptr, &col_tmp_deref->def, col_accum_val, other_row);
+      }
+      for (unsigned i = 0; i < length / mul; i++)
+         vars[i * mul] = nir_load_deref(b, col_tmp_deref);
+   }
+
+   if (reduce & NIR_CMAT_REDUCE_ROW) {
+      for (unsigned i = 0; i < length / mul; ++i) {
+         nir_def *row_accum = vars[i * mul];
+
+         nir_variable *row_tmp = nir_local_variable_create(b->impl, glsl_get_bare_type(fnptr->params[0].type), "row_tmp");
+         nir_deref_instr *row_tmp_deref = nir_build_deref_var(b, row_tmp);
+         nir_store_deref(b, row_tmp_deref, row_accum, 1);
+
+         /* 4 steps for 16 wide reduction */
+         for (unsigned j = 1; j < 16; j *= 2) {
+            nir_def *prev_row_accum_val = nir_load_deref(b, row_tmp_deref);
+
+            nir_def *this_row = shuffle_xor_imm(b, prev_row_accum_val, j);
+
+            nir_call(b, fnptr, &row_tmp_deref->def, prev_row_accum_val, this_row);
+         }
+         row_tmp_deref = nir_build_deref_var(b, row_tmp);
+         vars[i * mul] = nir_load_deref(b, row_tmp_deref);
+      }
+   }
+
+   /* this should be lowered earlier */
+   assert(!(reduce & NIR_CMAT_REDUCE_2X2));
+   nir_def *mat = nir_vec(b, vars, length);
+   nir_store_deref(b, dst_deref, mat, nir_component_mask(mat->num_components));
+   nir_instr_remove(&call->instr);
+   return true;
+}
+
+static bool
+lower_cmat_reduce_2x2_call(nir_builder *b, nir_cmat_call_instr *call, const lower_cmat_params *params)
+{
+   nir_deref_instr *dst_deref = nir_src_as_deref(call->params[0]);
+   nir_deref_instr *src_deref = nir_src_as_deref(call->params[1]);
+   struct glsl_cmat_description src_desc = *glsl_get_cmat_description(src_deref->type);
+   nir_function *fnptr = call->callee;
+
+   unsigned length = radv_nir_cmat_length(src_desc, params);
+   unsigned mul = radv_nir_cmat_length_mul(src_desc, params);
+
+   assert(src_desc.use == GLSL_CMAT_USE_ACCUMULATOR);
+
+   nir_def *src_components[4][NIR_MAX_VEC_COMPONENTS];
+   for (unsigned m = 0; m < 4; m++) {
+      nir_def *src = radv_nir_load_cmat(b, params, call->params[m + 1].ssa);
+      for (unsigned i = 0; i < length / mul; i++) {
+         src_components[m][i] = nir_channel(b, src, i * mul);
+      }
+   }
+
+   nir_variable *qd_tmp = nir_local_variable_create(b->impl, glsl_get_bare_type(fnptr->params[0].type), "qd_tmp");
+   nir_deref_instr *qd_tmp_deref = nir_build_deref_var(b, qd_tmp);
+
+   nir_def *low16 = nir_inverse_ballot_imm(b, 0xffff0000ffff, params->wave_size);
+   for (unsigned m = 0; m < 4; m++) {
+      for (unsigned i = 0; i < length / mul / 2; i++) {
+         if (params->gfx_level >= GFX12) {
+            /* The neighboring row is in the VGPR next to us */
+            nir_call(b, fnptr, &qd_tmp_deref->def, src_components[m][i * 2], src_components[m][i * 2 + 1]);
+            src_components[m][i] = nir_load_deref(b, qd_tmp_deref);
+         } else {
+            /* The neighboring row is in the upper 16 lanes */
+            for (unsigned j = 0; j < 2; j++) {
+               nir_def *other_row = shuffle_xor_imm(b, src_components[m][i * 2 + j], 16);
+               nir_call(b, fnptr, &qd_tmp_deref->def, src_components[m][i * 2 + j], other_row);
+               src_components[m][i * 2 + j] = nir_load_deref(b, qd_tmp_deref);
+            }
+
+            /* Fill the duplicated space with the rows from the next VGPR */
+            src_components[m][i] = nir_bcsel(b, low16, src_components[m][i * 2], src_components[m][i * 2 + 1]);
+         }
+
+         /* Get data from the neighboring column */
+         nir_def *other_col = shuffle_xor_imm(b, src_components[m][i], 1);
+         nir_call(b, fnptr, &qd_tmp_deref->def, src_components[m][i], other_col);
+         src_components[m][i] = nir_load_deref(b, qd_tmp_deref);
+      }
+   }
+
+   nir_def *vars[NIR_MAX_VEC_COMPONENTS];
+
+   /* Combine the matrices into one matrix. */
+   nir_def *even = nir_inverse_ballot_imm(b, 0x5555555555555555, params->wave_size);
+   for (unsigned m = 0; m < 2; m++) {
+      for (unsigned i = 0; i < length / mul / 2; i++) {
+         nir_def *m0_comp = src_components[m * 2][i];
+         nir_def *m1_comp = src_components[m * 2 + 1][i];
+
+         nir_def *combined = nir_bcsel(b, even, m0_comp, m1_comp);
+         vars[m * (length / mul / 2) + i] = combined;
+      }
+   }
+
+   /* In each row, every second element needs to be moved to the end, and the others to the front.
+    * This can be done with v_permlane16_b32.
+    */
+   nir_def *perm_low = nir_imm_int(b, 0xeca86420);
+   nir_def *perm_high = nir_imm_int(b, 0xfdb97531);
+   for (unsigned i = 0; i < length / mul; i++)
+      vars[i] = nir_lane_permute_16_amd(b, vars[i], perm_low, perm_high);
+
+   if (params->gfx_level >= GFX12) {
+      /* For GFX12, we still have to swap the row(s) in upper half coming from the bottom two
+       * matrices with low row(s) in the from other two matrices.
+       */
+      nir_def *low = nir_inverse_ballot_imm(b, BITFIELD64_MASK(params->wave_size / 2), params->wave_size);
+      for (unsigned i = 0; i < length / mul / 2; i++) {
+         nir_def **comp0 = &vars[i];
+         nir_def **comp1 = &vars[length / mul / 2 + i];
+         nir_def *comp0x = shuffle_xor_imm(b, *comp0, params->wave_size / 2);
+         nir_def *comp1x = shuffle_xor_imm(b, *comp1, params->wave_size / 2);
+         *comp0 = nir_bcsel(b, low, *comp0, comp1x);
+         *comp1 = nir_bcsel(b, low, comp0x, *comp1);
+      }
+   }
+
+   if (params->wave_size == 64) {
+      /* For wave64, we also need to swap the inner two rows. */
+      nir_def *keep = nir_inverse_ballot_imm(b, 0xffff00000000ffff, params->wave_size);
+      for (unsigned i = 0; i < length / mul; i++)
+         vars[i] = nir_bcsel(b, keep, vars[i], shuffle_xor_imm(b, vars[i], 0x30));
+   }
+
+   for (int i = length / mul - 1; i >= 0; i--) {
+      vars[i * mul] = vars[i];
+      for (unsigned j = 1; j < mul; j++)
+         vars[i * mul + j] = nir_undef(b, 1, radv_nir_cmat_bits(src_desc));
+   }
+
+   nir_def *mat = nir_vec(b, vars, length);
+   nir_store_deref(b, dst_deref, mat, nir_component_mask(mat->num_components));
+   nir_instr_remove(&call->instr);
+   return true;
+}
+
+static bool
 lower_cmat_deref(nir_deref_instr *deref, struct hash_table *type_map, const lower_cmat_params *params)
 {
    const struct glsl_type *new_type = radv_nir_translate_matrix_type(deref->type, type_map, params);
@@ -833,6 +1072,23 @@ radv_nir_lower_cooperative_matrix(nir_shader *shader, enum amd_gfx_level gfx_lev
          case nir_instr_type_deref:
             progress |= lower_cmat_deref(nir_instr_as_deref(instr), type_map, &params);
             break;
+         case nir_instr_type_cmat_call: {
+            nir_cmat_call_instr *call = nir_instr_as_cmat_call(instr);
+            switch (call->op) {
+            case nir_cmat_call_op_reduce_finish:
+               progress |= lower_cmat_reduce_finish_call(&b, call, &params);
+               break;
+            case nir_cmat_call_op_reduce:
+               progress |= lower_cmat_reduce_call(&b, call, &params);
+               break;
+            case nir_cmat_call_op_reduce_2x2:
+               progress |= lower_cmat_reduce_2x2_call(&b, call, &params);
+               break;
+            default:
+               break;
+            }
+            break;
+         }
          default:
             continue;
          }
@@ -840,6 +1096,9 @@ radv_nir_lower_cooperative_matrix(nir_shader *shader, enum amd_gfx_level gfx_lev
    }
 
    _mesa_hash_table_destroy(type_map, NULL);
+
+   nir_foreach_function_impl(fnim, shader)
+      nir_progress(progress, fnim, 0);
 
    return nir_progress(progress, func->impl, 0);
 }

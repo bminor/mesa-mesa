@@ -536,8 +536,8 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
       }
       NIR_PASS(_, nir, nir_opt_deref);
 
-      /* Pick off the single entrypoint that we want */
-      nir_remove_non_entrypoints(nir);
+      /* Pick off the single entrypoint that we want - leave cmat call functions */
+      nir_remove_non_cmat_call_entrypoints(nir);
 
       /* Make sure we lower constant initializers on output variables so that
        * nir_remove_dead_variables below sees the corresponding stores
@@ -558,7 +558,19 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
          NIR_PASS(_, nir, nir_opt_dce);
          NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_function_temp | nir_var_shader_temp, NULL);
       }
-      NIR_PASS(_, nir, radv_nir_lower_cooperative_matrix, pdev->info.gfx_level, nir->info.max_subgroup_size);
+
+      NIR_PASS(progress, nir, radv_nir_lower_cooperative_matrix, pdev->info.gfx_level, nir->info.max_subgroup_size);
+      if (progress) {
+         NIR_PASS(_, nir, nir_opt_dce);
+         NIR_PASS(progress, nir, nir_inline_functions);
+         nir_remove_non_entrypoints(nir); /* remove the late inlined functions */
+         if (progress) {
+            NIR_PASS(_, nir, nir_opt_copy_prop_vars);
+            NIR_PASS(_, nir, nir_opt_copy_prop);
+         }
+         NIR_PASS(_, nir, nir_opt_deref);
+         NIR_PASS(_, nir, nir_opt_dce);
+      }
 
       /* Split member structs.  We do this before lower_io_to_temporaries so that
        * it doesn't lower system values to temporaries by accident.
