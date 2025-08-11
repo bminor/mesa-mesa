@@ -337,12 +337,12 @@ impl<T> PerRegFile<T> {
     }
 
     /// Iterates over the values in this container.
-    pub fn values(&self) -> slice::Iter<T> {
+    pub fn values(&self) -> slice::Iter<'_, T> {
         self.per_file.iter()
     }
 
     /// Iterates over the mutable values in this container.
-    pub fn values_mut(&mut self) -> slice::IterMut<T> {
+    pub fn values_mut(&mut self) -> slice::IterMut<'_, T> {
         self.per_file.iter_mut()
     }
 }
