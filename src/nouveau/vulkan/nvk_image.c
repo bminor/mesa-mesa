@@ -1081,7 +1081,7 @@ nvk_CreateImage(VkDevice _device,
                 VkImage *pImage)
 {
    VK_FROM_HANDLE(nvk_device, dev, _device);
-   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
+   UNUSED const struct nvk_physical_device *pdev = nvk_device_physical(dev);
    struct nvk_image *image;
    VkResult result;
 
