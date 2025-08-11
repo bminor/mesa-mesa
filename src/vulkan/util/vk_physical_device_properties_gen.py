@@ -72,6 +72,9 @@ SPECIALIZED_PROPERTY_STRUCTS = [
 
 # Properties not extending VkPhysicalDeviceProperties2 in the XML,
 # but which might still be present (in Android for instance)
+#
+# TODO: remove the workaround after spec registry fix is merged:
+# https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7587
 ANDROID_PROPERTIES = [
     "VkPhysicalDevicePresentationPropertiesANDROID",
 ]
@@ -104,7 +107,7 @@ class PropertyStruct:
     c_type: str
     s_type: str
     name: str
-    is_android: bool
+    guard: str
     properties: typing.List[Property]
 
 ARRAY_COPY_TEMPLATE = Template("""
@@ -149,9 +152,9 @@ TEMPLATE_H = Template(COPYRIGHT + """
 #define VK_PROPERTIES_H
 
 #include "vulkan/vulkan.h"
-#if DETECT_OS_ANDROID
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
 #include "vulkan/vk_android_native_buffer.h"
-#endif /* DETECT_OS_ANDROID */
+#endif /* VK_USE_PLATFORM_ANDROID_KHR */
 
 #ifdef __cplusplus
 extern "C" {
@@ -196,8 +199,8 @@ vk_common_GetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
    vk_foreach_struct(ext, pProperties->pNext) {
       switch ((int32_t)ext->sType) {
 % for property_struct in property_structs:
-% if property_struct.is_android:
-#if DETECT_OS_ANDROID
+% if property_struct.guard != None:
+#ifdef ${property_struct.guard}
 % endif
 % if property_struct.name not in SPECIALIZED_PROPERTY_STRUCTS:
       case ${property_struct.s_type}: {
@@ -207,8 +210,8 @@ vk_common_GetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
 % endfor
          break;
       }
-% if property_struct.is_android:
-#endif /* DETECT_OS_ANDROID */
+% if property_struct.guard != None:
+#endif /* ${property_struct.guard} */
 % endif
 % endif
 % endfor
@@ -235,8 +238,8 @@ vk_set_physical_device_properties_struct(struct vk_properties *all_properties,
       }
 
 % for property_struct in property_structs:
-% if property_struct.is_android:
-#if DETECT_OS_ANDROID
+% if property_struct.guard != None:
+#ifdef ${property_struct.guard}
 % endif
 % if property_struct.name not in SPECIALIZED_PROPERTY_STRUCTS:
       case ${property_struct.s_type}: {
@@ -246,8 +249,8 @@ vk_set_physical_device_properties_struct(struct vk_properties *all_properties,
 % endfor
          break;
       }
-% if property_struct.is_android:
-#endif /* DETECT_OS_ANDROID */
+% if property_struct.guard != None:
+#endif /* ${property_struct.guard} */
 % endif
 % endif
 % endfor
@@ -293,13 +296,10 @@ def get_property_structs(doc, api, beta):
             continue
 
         guard = required[full_name].guard
-        is_android = full_name in ANDROID_PROPERTIES
-
         if (guard is not None
             # Skip beta extensions if not enabled
             and (guard != "VK_ENABLE_BETA_EXTENSIONS" or beta != "true")
-            # Include android properties if included in ANDROID_PROPERTIES
-            and not is_android):
+            and not guard.startswith("VK_USE_PLATFORM")):
             continue
 
         # find Vulkan structure type
@@ -325,7 +325,7 @@ def get_property_structs(doc, api, beta):
                 properties.append(Property(p, name))
 
         property_struct = PropertyStruct(c_type=full_name, s_type=s_type,
-            name=name, properties=properties, is_android=is_android)
+            name=name, properties=properties, guard=guard)
         property_structs[property_struct.c_type] = property_struct
 
     return property_structs.values()
