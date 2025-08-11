@@ -306,6 +306,9 @@ va_optimize_forward(bi_context *ctx)
    bi_instr **uses = calloc(count, sizeof(*uses));
    BITSET_WORD *multiple = calloc(BITSET_WORDS(count), sizeof(*multiple));
 
+   if (!lut || !uses || !multiple)
+      goto out;
+
    /* Record usage across blocks */
    bi_foreach_block(ctx, block) {
       bi_foreach_instr_in_block(block, I) {
@@ -323,6 +326,7 @@ va_optimize_forward(bi_context *ctx)
       va_fuse_cmp(ctx, lut, multiple, I);
    }
 
+out:
    free(uses);
    free(lut);
    free(multiple);
