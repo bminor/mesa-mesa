@@ -977,6 +977,29 @@ init_program_resource_list(struct gl_shader_program *prog)
    }
 }
 
+static void
+find_first_and_last_stage(const struct gl_shader_program *prog,
+                          unsigned *first, unsigned *last)
+{
+   static const mesa_shader_stage index_to_stage[] = {
+      MESA_SHADER_TASK, MESA_SHADER_MESH, MESA_SHADER_VERTEX,
+      MESA_SHADER_TESS_CTRL, MESA_SHADER_TESS_EVAL, MESA_SHADER_GEOMETRY,
+      MESA_SHADER_FRAGMENT, MESA_SHADER_COMPUTE
+   };
+
+   *first = MESA_SHADER_MESH_STAGES;
+   *last = 0;
+
+   for (unsigned i = 0; i < ARRAY_SIZE(index_to_stage); i++) {
+      mesa_shader_stage stage = index_to_stage[i];
+      if (!prog->_LinkedShaders[stage])
+         continue;
+      if (*first == MESA_SHADER_MESH_STAGES)
+         *first = stage;
+      *last = stage;
+   }
+}
+
 void
 nir_build_program_resource_list(const struct gl_constants *consts,
                                 struct gl_shader_program *prog,
@@ -986,19 +1009,12 @@ nir_build_program_resource_list(const struct gl_constants *consts,
    if (rebuild_resourse_list)
       init_program_resource_list(prog);
 
-   int input_stage = MESA_SHADER_MESH_STAGES, output_stage = 0;
-
    /* Determine first input and final output stage. These are used to
     * detect which variables should be enumerated in the resource list
     * for GL_PROGRAM_INPUT and GL_PROGRAM_OUTPUT.
     */
-   for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
-      if (!prog->_LinkedShaders[i])
-         continue;
-      if (input_stage == MESA_SHADER_MESH_STAGES)
-         input_stage = i;
-      output_stage = i;
-   }
+   unsigned input_stage, output_stage;
+   find_first_and_last_stage(prog, &input_stage, &output_stage);
 
    /* Empty shader, no resources. */
    if (input_stage == MESA_SHADER_MESH_STAGES && output_stage == 0)
