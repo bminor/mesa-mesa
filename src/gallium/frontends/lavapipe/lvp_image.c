@@ -38,9 +38,11 @@ lvp_image_create(VkDevice _device,
    LVP_FROM_HANDLE(lvp_device, device, _device);
    struct lvp_image *image;
    VkResult result = VK_SUCCESS;
+#ifdef HAVE_LIBDRM
    bool android_surface = false;
    const VkSubresourceLayout *layouts = NULL;
    uint64_t modifier;
+#endif
    assert(pCreateInfo->sType == VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO);
 
 #ifdef HAVE_LIBDRM
@@ -78,6 +80,7 @@ lvp_image_create(VkDevice _device,
    image->disjoint = image->plane_count > 1 &&
                      (pCreateInfo->flags & VK_IMAGE_CREATE_DISJOINT_BIT);
 
+#ifdef HAVE_LIBDRM
    /* This section is removed by the optimizer for non-ANDROID builds */
    VkImageDrmFormatModifierExplicitCreateInfoEXT eci;
    VkSubresourceLayout a_plane_layouts[LVP_MAX_PLANE_COUNT];
@@ -91,6 +94,7 @@ lvp_image_create(VkDevice _device,
       layouts = a_plane_layouts;
       android_surface = true;
    }
+#endif
 
    const struct vk_format_ycbcr_info *ycbcr_info =
       vk_format_get_ycbcr_info(pCreateInfo->format);
