@@ -991,6 +991,8 @@ va_pack_instr(const bi_instr *I, unsigned arch)
       /* Target */
       if (I->branch_offset & 0x7)
          invalid_instruction(I, "unaligned branch");
+      if (I->branch_offset > 2040)
+         invalid_instruction(I, "too large branch-offset");
       hex |= ((I->branch_offset >> 3) << 8);
 
       /* Source 2 - coverage mask */
