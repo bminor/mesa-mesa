@@ -235,6 +235,7 @@ crocus_init_screen_caps(struct crocus_screen *screen)
 
    u_init_pipe_screen_caps(&screen->base, 1);
 
+   caps->prefer_real_buffer_in_constbuf0 = true;
    caps->npot_textures = true;
    caps->anisotropic_filter = true;
    caps->occlusion_query = true;

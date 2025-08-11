@@ -5452,6 +5452,9 @@ threaded_context_create(struct pipe_context *pipe,
       return NULL;
    }
 
+   /* drivers must set this */
+   assert(pipe->screen->caps.prefer_real_buffer_in_constbuf0);
+
    if (options) {
       /* this is unimplementable */
       assert(!(options->parse_renderpass_info && options->driver_calls_flush_notify));

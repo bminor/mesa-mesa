@@ -404,6 +404,7 @@ static void r600_init_screen_caps(struct r600_screen *rscreen)
 	enum radeon_family family = rscreen->b.family;
 
 	/* Supported features (boolean caps). */
+	caps->prefer_real_buffer_in_constbuf0 = true;
 	caps->npot_textures = true;
 	caps->mixed_framebuffer_sizes = true;
 	caps->mixed_color_depth_bits = true;

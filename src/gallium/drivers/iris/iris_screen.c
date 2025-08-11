@@ -285,6 +285,7 @@ iris_init_screen_caps(struct iris_screen *screen)
 
    const struct intel_device_info *devinfo = screen->devinfo;
 
+   caps->prefer_real_buffer_in_constbuf0 = true;
    caps->npot_textures = true;
    caps->anisotropic_filter = true;
    caps->occlusion_query = true;

@@ -232,6 +232,7 @@ d3d12_init_screen_caps(struct d3d12_screen *screen)
 
    u_init_pipe_screen_caps(&screen->base, caps->accelerated);
 
+   caps->prefer_real_buffer_in_constbuf0 = true;
    caps->npot_textures = true;
 
    /* D3D12 only supports dual-source blending for a single
