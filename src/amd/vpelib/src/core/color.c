@@ -275,6 +275,18 @@ static bool color_update_input_cs(struct vpe_priv *vpe_priv, enum color_space in
     return true;
 }
 
+static bool can_bypass_degamma(const struct stream_ctx *stream_ctx)
+{
+    if (vpe_is_fp16(stream_ctx->stream.surface_info.format))
+        return true;
+    if ((stream_ctx->stream.tm_params.UID != 0) || (stream_ctx->stream.tm_params.enable_3dlut))
+        return true;
+    if (stream_ctx->geometric_scaling)
+        return true;
+
+    return false;
+}
+
 bool vpe_use_csc_adjust(const struct vpe_color_adjust *adjustments)
 {
     float epsilon = 0.001f; // steps are 1.0f or 0.01f, so should be plenty
@@ -651,9 +663,7 @@ enum vpe_status vpe_color_update_color_space_and_tf(
             if (stream_ctx->dirty_bits.transfer_function) {
                 vpe_color_update_degamma_tf(vpe_priv, stream_ctx->tf,
                     vpe_priv->stream_ctx->tf_scaling_factor, y_scale, vpe_fixpt_zero,
-                    is_3dlut_enable || geometric_scaling ||
-                        vpe_is_fp16(stream_ctx->stream.surface_info.format),
-                    stream_ctx->input_tf);
+                    can_bypass_degamma(stream_ctx), stream_ctx->input_tf);
             }
 
             if (stream_ctx->dirty_bits.color_space || output_ctx->dirty_bits.color_space) {
