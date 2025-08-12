@@ -7216,7 +7216,7 @@ void ResourceTracker::on_vkGetPhysicalDeviceExternalBufferProperties_common(
     VkExternalBufferProperties* pExternalBufferProperties) {
     VkEncoder* enc = (VkEncoder*)context;
 
-#if defined(ANDROID)
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
     // Older versions of Goldfish's Gralloc did not support allocating AHARDWAREBUFFER_FORMAT_BLOB
     // with GPU usage (b/299520213).
     if (mGralloc->treatBlobAsImage() &&
