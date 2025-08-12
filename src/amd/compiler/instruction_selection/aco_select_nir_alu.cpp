@@ -322,9 +322,9 @@ emit_pk_shift(isel_context* ctx, nir_alu_instr* instr, aco_opcode op, Temp dst)
          } else if (nir_scalar_is_alu(s) &&
                     (nir_scalar_alu_op(s) == nir_op_u2u32 ||
                      nir_scalar_alu_op(s) == nir_op_i2i32) &&
-                    nir_instr_as_alu(s.def->parent_instr)->src[0].src.ssa->bit_size == 16) {
+                    nir_def_as_alu(s.def)->src[0].src.ssa->bit_size == 16) {
             assert(s.def->num_components == 1);
-            Temp comp = get_alu_src(ctx, nir_instr_as_alu(s.def->parent_instr)->src[0]);
+            Temp comp = get_alu_src(ctx, nir_def_as_alu(s.def)->src[0]);
             comps[i] = Operand(emit_extract_vector(ctx, comp, 0, v2b));
          } else {
             Temp vec = get_ssa_temp(ctx, instr->src[1].src.ssa);

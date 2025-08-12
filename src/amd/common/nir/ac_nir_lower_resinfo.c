@@ -260,7 +260,7 @@ static bool lower_resinfo(nir_builder *b, nir_instr *instr, void *data)
 
       case nir_intrinsic_image_deref_size:
       case nir_intrinsic_image_deref_samples:
-         type = nir_instr_as_deref(intr->src[0].ssa->parent_instr)->type;
+         type = nir_def_as_deref(intr->src[0].ssa)->type;
          dim = glsl_get_sampler_dim(type);
          is_array = glsl_sampler_type_is_array(type);
          desc = nir_image_deref_descriptor_amd(b, dim == GLSL_SAMPLER_DIM_BUF ? 4 : 8,

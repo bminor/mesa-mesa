@@ -80,7 +80,7 @@ build_atomic(nir_builder *b, nir_intrinsic_instr *intr)
       nir_def *before = &phi->def;
       nir_def *expected = nir_build_alu2(
          b, nir_atomic_op_to_alu(nir_intrinsic_atomic_op(intr)), before, data);
-      nir_alu_instr *op = nir_instr_as_alu(expected->parent_instr);
+      nir_alu_instr *op = nir_def_as_alu(expected);
       op->exact = true;
       op->fp_fast_math = 0;
       switch (intr->intrinsic) {

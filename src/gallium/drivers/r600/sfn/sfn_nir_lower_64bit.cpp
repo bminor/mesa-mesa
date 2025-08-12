@@ -368,7 +368,7 @@ LowerSplit64BitVar::~LowerSplit64BitVar()
 nir_def *
 LowerSplit64BitVar::split_double_store_deref(nir_intrinsic_instr *intr)
 {
-   auto deref = nir_instr_as_deref(intr->src[0].ssa->parent_instr);
+   auto deref = nir_def_as_deref(intr->src[0].ssa);
    if (deref->deref_type == nir_deref_type_var)
       return split_store_deref_var(intr, deref);
    else if (deref->deref_type == nir_deref_type_array)
@@ -381,7 +381,7 @@ LowerSplit64BitVar::split_double_store_deref(nir_intrinsic_instr *intr)
 nir_def *
 LowerSplit64BitVar::split_double_load_deref(nir_intrinsic_instr *intr)
 {
-   auto deref = nir_instr_as_deref(intr->src[0].ssa->parent_instr);
+   auto deref = nir_def_as_deref(intr->src[0].ssa);
    if (deref->deref_type == nir_deref_type_var)
       return split_load_deref_var(intr);
    else if (deref->deref_type == nir_deref_type_array)
@@ -954,7 +954,7 @@ Lower64BitToVec2::lower(nir_instr *instr)
 nir_def *
 Lower64BitToVec2::load_deref_64_to_vec2(nir_intrinsic_instr *intr)
 {
-   auto deref = nir_instr_as_deref(intr->src[0].ssa->parent_instr);
+   auto deref = nir_def_as_deref(intr->src[0].ssa);
    auto var = nir_intrinsic_get_var(intr, 0);
    unsigned components = glsl_get_components(glsl_without_array(var->type));
    if (glsl_get_bit_size(glsl_without_array(var->type)) == 64) {
@@ -973,7 +973,7 @@ Lower64BitToVec2::load_deref_64_to_vec2(nir_intrinsic_instr *intr)
    }
    deref->type = var->type;
    if (deref->deref_type == nir_deref_type_array) {
-      auto deref_array = nir_instr_as_deref(deref->parent.ssa->parent_instr);
+      auto deref_array = nir_def_as_deref(deref->parent.ssa);
       deref_array->type = var->type;
       deref->type = glsl_without_array(deref_array->type);
    }
@@ -987,7 +987,7 @@ Lower64BitToVec2::load_deref_64_to_vec2(nir_intrinsic_instr *intr)
 nir_def *
 Lower64BitToVec2::store_64_to_vec2(nir_intrinsic_instr *intr)
 {
-   auto deref = nir_instr_as_deref(intr->src[0].ssa->parent_instr);
+   auto deref = nir_def_as_deref(intr->src[0].ssa);
    auto var = nir_intrinsic_get_var(intr, 0);
 
    unsigned components = glsl_get_components(glsl_without_array(var->type));
@@ -1006,7 +1006,7 @@ Lower64BitToVec2::store_64_to_vec2(nir_intrinsic_instr *intr)
    }
    deref->type = var->type;
    if (deref->deref_type == nir_deref_type_array) {
-      auto deref_array = nir_instr_as_deref(deref->parent.ssa->parent_instr);
+      auto deref_array = nir_def_as_deref(deref->parent.ssa);
       deref_array->type = var->type;
       deref->type = glsl_without_array(deref_array->type);
    }

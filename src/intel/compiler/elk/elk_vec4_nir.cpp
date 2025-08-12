@@ -797,8 +797,7 @@ vec4_visitor::optimize_predicate(nir_alu_instr *instr,
    if (instr->src[0].src.ssa->parent_instr->type != nir_instr_type_alu)
       return false;
 
-   nir_alu_instr *cmp_instr =
-      nir_instr_as_alu(instr->src[0].src.ssa->parent_instr);
+   nir_alu_instr *cmp_instr = nir_def_as_alu(instr->src[0].src.ssa);
 
    switch (cmp_instr->op) {
    case nir_op_b32any_fnequal2:

@@ -235,7 +235,7 @@ TEST_P(rgba, pack)
 
       nir_def *packed_ssa = uses[i]->src[0].ssa;
       const nir_const_value *packed =
-         nir_instr_as_load_const(packed_ssa->parent_instr)->value;
+         nir_def_as_load_const(packed_ssa)->value;
       if (packed_ssa->num_components == 1) {
          switch (packed_ssa->bit_size) {
          case 8:
@@ -299,8 +299,7 @@ TEST_P(rgba, unpack)
       assert(rgba_ssa->bit_size == 32);
       assert(rgba_ssa->num_components == 4);
 
-      const nir_const_value *rgba =
-         nir_instr_as_load_const(rgba_ssa->parent_instr)->value;
+      const nir_const_value *rgba = nir_def_as_load_const(rgba_ssa)->value;
 
       if (util_format_is_pure_integer(format)) {
          uint32_t *exp_u32 = (uint32_t *)expected;

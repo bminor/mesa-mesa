@@ -87,7 +87,7 @@ TEST_F(nir_opt_shrink_vectors_test, opt_shrink_vectors_load_const_trailing_compo
    nir_def *imm_vec = nir_imm_vec4(b, 1.0, 2.0, 3.0, 4.0);
 
    nir_def *alu_result = nir_build_alu1(b, nir_op_mov, imm_vec);
-   nir_alu_instr *alu_instr = nir_instr_as_alu(alu_result->parent_instr);
+   nir_alu_instr *alu_instr = nir_def_as_alu(alu_result);
    set_swizzle(&alu_instr->src[0], "x");
    alu_result->num_components = 1;
 
@@ -98,7 +98,7 @@ TEST_F(nir_opt_shrink_vectors_test, opt_shrink_vectors_load_const_trailing_compo
    nir_validate_shader(b->shader, NULL);
 
    ASSERT_TRUE(imm_vec->num_components == 1);
-   nir_load_const_instr * imm_vec_instr = nir_instr_as_load_const(imm_vec->parent_instr);
+   nir_load_const_instr *imm_vec_instr = nir_def_as_load_const(imm_vec);
    ASSERT_TRUE(nir_const_value_as_float(imm_vec_instr->value[0], 32) == 1.0);
 
    ASSERT_FALSE(nir_opt_shrink_vectors(b->shader, true));
@@ -119,12 +119,12 @@ TEST_F(nir_opt_shrink_vectors_test, opt_shrink_vectors_alu_trailing_component_on
     */
 
    nir_def *alu_result = nir_build_alu1(b, nir_op_mov, in_def);
-   nir_alu_instr *alu_instr = nir_instr_as_alu(alu_result->parent_instr);
+   nir_alu_instr *alu_instr = nir_def_as_alu(alu_result);
    alu_result->num_components = 4;
    set_swizzle(&alu_instr->src[0], "xyxx");
 
    nir_def *alu2_result = nir_build_alu1(b, nir_op_mov, alu_result);
-   nir_alu_instr *alu2_instr = nir_instr_as_alu(alu2_result->parent_instr);
+   nir_alu_instr *alu2_instr = nir_def_as_alu(alu2_result);
    set_swizzle(&alu2_instr->src[0], "x");
    alu2_result->num_components = 1;
 
@@ -158,13 +158,13 @@ TEST_F(nir_opt_shrink_vectors_test, opt_shrink_vectors_simple)
    nir_def *imm_vec = nir_imm_vec4(b, 3.0, 1.0, 2.0, 1.0);
 
    nir_def *alu_result = nir_build_alu2(b, nir_op_fadd, in_def, imm_vec);
-   nir_alu_instr *alu_instr = nir_instr_as_alu(alu_result->parent_instr);
+   nir_alu_instr *alu_instr = nir_def_as_alu(alu_result);
    alu_result->num_components = 4;
    set_swizzle(&alu_instr->src[0], "xxxy");
    set_swizzle(&alu_instr->src[1], "ywyz");
 
    nir_def *alu2_result = nir_build_alu2(b, nir_op_fdot3, alu_result, alu_result);
-   nir_alu_instr *alu2_instr = nir_instr_as_alu(alu2_result->parent_instr);
+   nir_alu_instr *alu2_instr = nir_def_as_alu(alu2_result);
    set_swizzle(&alu2_instr->src[0], "xzw");
    set_swizzle(&alu2_instr->src[1], "xzw");
 
@@ -175,7 +175,7 @@ TEST_F(nir_opt_shrink_vectors_test, opt_shrink_vectors_simple)
    nir_validate_shader(b->shader, NULL);
 
    ASSERT_TRUE(imm_vec->num_components == 2);
-   nir_load_const_instr * imm_vec_instr = nir_instr_as_load_const(imm_vec->parent_instr);
+   nir_load_const_instr *imm_vec_instr = nir_def_as_load_const(imm_vec);
    ASSERT_TRUE(nir_const_value_as_float(imm_vec_instr->value[0], 32) == 1.0);
    ASSERT_TRUE(nir_const_value_as_float(imm_vec_instr->value[1], 32) == 2.0);
 
@@ -223,13 +223,13 @@ TEST_F(nir_opt_shrink_vectors_test, opt_shrink_vectors_vec8)
    nir_def *imm_vec = nir_build_imm(b, 8, 32, v);
 
    nir_def *alu_result = nir_build_alu2(b, nir_op_fadd, in_def, imm_vec);
-   nir_alu_instr *alu_instr = nir_instr_as_alu(alu_result->parent_instr);
+   nir_alu_instr *alu_instr = nir_def_as_alu(alu_result);
    alu_result->num_components = 8;
    set_swizzle(&alu_instr->src[0], "xxxxxxxy");
    set_swizzle(&alu_instr->src[1], "afhdefgh");
 
    nir_def *alu2_result = nir_build_alu2(b, nir_op_fdot8, alu_result, alu_result);
-   nir_alu_instr *alu2_instr = nir_instr_as_alu(alu2_result->parent_instr);
+   nir_alu_instr *alu2_instr = nir_def_as_alu(alu2_result);
    set_swizzle(&alu2_instr->src[0], "accdefgh");
    set_swizzle(&alu2_instr->src[1], "accdefgh");
 
@@ -240,7 +240,7 @@ TEST_F(nir_opt_shrink_vectors_test, opt_shrink_vectors_vec8)
    nir_validate_shader(b->shader, NULL);
 
    ASSERT_TRUE(imm_vec->num_components == 8);
-   nir_load_const_instr * imm_vec_instr = nir_instr_as_load_const(imm_vec->parent_instr);
+   nir_load_const_instr *imm_vec_instr = nir_def_as_load_const(imm_vec);
    ASSERT_TRUE(nir_const_value_as_float(imm_vec_instr->value[0], 32) == 1.0);
    ASSERT_TRUE(nir_const_value_as_float(imm_vec_instr->value[1], 32) == 3.0);
    ASSERT_TRUE(nir_const_value_as_float(imm_vec_instr->value[2], 32) == 4.0);
@@ -285,7 +285,7 @@ TEST_F(nir_opt_shrink_vectors_test, opt_shrink_phis_loop_simple)
    nir_phi_instr_add_src(phi, v->parent_instr->block, v);
 
    nir_def *fge = nir_fge(b, phi_def, loop_max);
-   nir_alu_instr *fge_alu_instr = nir_instr_as_alu(fge->parent_instr);
+   nir_alu_instr *fge_alu_instr = nir_def_as_alu(fge);
    fge->num_components = 1;
    fge_alu_instr->src[0].swizzle[0] = 1;
 
@@ -297,7 +297,7 @@ TEST_F(nir_opt_shrink_vectors_test, opt_shrink_phis_loop_simple)
    nir_pop_if(b, nif);
 
    nir_def *fadd = nir_fadd(b, phi_def, increment);
-   nir_alu_instr *fadd_alu_instr = nir_instr_as_alu(fadd->parent_instr);
+   nir_alu_instr *fadd_alu_instr = nir_def_as_alu(fadd);
    fadd->num_components = 1;
    fadd_alu_instr->src[0].swizzle[0] = 1;
 
@@ -389,7 +389,7 @@ TEST_F(nir_opt_shrink_vectors_test, opt_shrink_phis_loop_swizzle)
    nir_phi_instr_add_src(phi, v->parent_instr->block, v);
 
    nir_def *fge = nir_fge(b, phi_def, loop_max);
-   nir_alu_instr *fge_alu_instr = nir_instr_as_alu(fge->parent_instr);
+   nir_alu_instr *fge_alu_instr = nir_def_as_alu(fge);
    fge->num_components = 1;
    fge_alu_instr->src[0].swizzle[0] = 2;
 
@@ -401,7 +401,7 @@ TEST_F(nir_opt_shrink_vectors_test, opt_shrink_phis_loop_swizzle)
    nir_pop_if(b, nif);
 
    nir_def *fadd = nir_fadd(b, phi_def, increment);
-   nir_alu_instr *fadd_alu_instr = nir_instr_as_alu(fadd->parent_instr);
+   nir_alu_instr *fadd_alu_instr = nir_def_as_alu(fadd);
    fadd->num_components = 1;
    fadd_alu_instr->src[0].swizzle[0] = 2;
 
@@ -494,7 +494,7 @@ TEST_F(nir_opt_shrink_vectors_test, opt_shrink_phis_loop_phi_out)
    nir_phi_instr_add_src(phi, v->parent_instr->block, v);
 
    nir_def *fge = nir_fge(b, phi_def, loop_max);
-   nir_alu_instr *fge_alu_instr = nir_instr_as_alu(fge->parent_instr);
+   nir_alu_instr *fge_alu_instr = nir_def_as_alu(fge);
    fge->num_components = 1;
    fge_alu_instr->src[0].swizzle[0] = 1;
 
@@ -506,7 +506,7 @@ TEST_F(nir_opt_shrink_vectors_test, opt_shrink_phis_loop_phi_out)
    nir_pop_if(b, nif);
 
    nir_def *fadd = nir_fadd(b, phi_def, increment);
-   nir_alu_instr *fadd_alu_instr = nir_instr_as_alu(fadd->parent_instr);
+   nir_alu_instr *fadd_alu_instr = nir_def_as_alu(fadd);
    fadd->num_components = 1;
    fadd_alu_instr->src[0].swizzle[0] = 1;
 

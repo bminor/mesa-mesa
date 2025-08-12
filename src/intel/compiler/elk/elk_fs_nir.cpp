@@ -487,8 +487,7 @@ optimize_extract_to_float(nir_to_elk_state &ntb, nir_alu_instr *instr,
    if (instr->src[0].src.ssa->parent_instr->type != nir_instr_type_alu)
       return false;
 
-   nir_alu_instr *src0 =
-      nir_instr_as_alu(instr->src[0].src.ssa->parent_instr);
+   nir_alu_instr *src0 = nir_def_as_alu(instr->src[0].src.ssa);
 
    unsigned bytes;
    bool is_signed;
@@ -3932,8 +3931,7 @@ fs_nir_emit_fs_intrinsic(nir_to_elk_state &ntb,
    case nir_intrinsic_load_interpolated_input: {
       assert(instr->src[0].ssa &&
              instr->src[0].ssa->parent_instr->type == nir_instr_type_intrinsic);
-      nir_intrinsic_instr *bary_intrinsic =
-         nir_instr_as_intrinsic(instr->src[0].ssa->parent_instr);
+      nir_intrinsic_instr *bary_intrinsic = nir_def_as_intrinsic(instr->src[0].ssa);
       nir_intrinsic_op bary_intrin = bary_intrinsic->intrinsic;
       elk_fs_reg dst_xy;
 

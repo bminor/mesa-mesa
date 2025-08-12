@@ -138,7 +138,7 @@ nir_def *FixKcacheIndirectRead::lower(nir_instr *instr)
 			 intr->def.bit_size,
 			 test_bufid,
 			 intr->src[1].ssa);
-      auto direct_load = nir_instr_as_intrinsic(direct_value->parent_instr);
+      auto direct_load = nir_def_as_intrinsic(direct_value);
       nir_intrinsic_copy_const_indices(direct_load, intr);
       result = nir_bcsel(b,
 			 nir_ieq(b, test_bufid, intr->src[0].ssa),

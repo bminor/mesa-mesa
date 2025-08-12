@@ -237,7 +237,7 @@ nir_load_store_vectorize_test::create_indirect_load(
    }
 
    nir_builder_instr_insert(b, &load->instr);
-   nir_alu_instr *mov = nir_instr_as_alu(nir_mov(b, &load->def)->parent_instr);
+   nir_alu_instr *mov = nir_def_as_alu(nir_mov(b, &load->def));
    movs[id] = mov;
    loads[id] = &mov->src[0];
 
@@ -304,7 +304,7 @@ void nir_load_store_vectorize_test::create_shared_load(
    nir_deref_instr *deref, uint32_t id, unsigned bit_size, unsigned components)
 {
    nir_def *load = nir_load_deref(b, deref);
-   nir_alu_instr *mov = nir_instr_as_alu(nir_mov(b, load)->parent_instr);
+   nir_alu_instr *mov = nir_def_as_alu(nir_mov(b, load));
    movs[id] = mov;
    loads[id] = &mov->src[0];
 }
@@ -616,9 +616,9 @@ TEST_F(nir_load_store_vectorize_test, ssbo_load_adjacent_indirect_neg_stride)
 
    /* nir_opt_algebraic optimizes the imul */
    ASSERT_TRUE(test_alu(load->src[1].ssa->parent_instr, nir_op_ineg));
-   nir_def *offset = nir_instr_as_alu(load->src[1].ssa->parent_instr)->src[0].src.ssa;
+   nir_def *offset = nir_def_as_alu(load->src[1].ssa)->src[0].src.ssa;
    ASSERT_TRUE(test_alu(offset->parent_instr, nir_op_ishl));
-   nir_alu_instr *shl = nir_instr_as_alu(offset->parent_instr);
+   nir_alu_instr *shl = nir_def_as_alu(offset);
    ASSERT_EQ(shl->src[0].src.ssa, inv_plus_one);
    ASSERT_EQ(nir_src_as_uint(shl->src[1].src), 2);
 }
@@ -732,7 +732,7 @@ TEST_F(nir_load_store_vectorize_test, ssbo_store_adjacent)
    nir_def *val = store->src[0].ssa;
    ASSERT_EQ(val->bit_size, 32);
    ASSERT_EQ(val->num_components, 2);
-   nir_const_value *cv = nir_instr_as_load_const(val->parent_instr)->value;
+   nir_const_value *cv = nir_def_as_load_const(val)->value;
    ASSERT_EQ(nir_const_value_as_uint(cv[0], 32), 0x10);
    ASSERT_EQ(nir_const_value_as_uint(cv[1], 32), 0x20);
 }
@@ -755,7 +755,7 @@ TEST_F(nir_load_store_vectorize_test, ssbo_store_intersecting)
    nir_def *val = store->src[0].ssa;
    ASSERT_EQ(val->bit_size, 32);
    ASSERT_EQ(val->num_components, 3);
-   nir_const_value *cv = nir_instr_as_load_const(val->parent_instr)->value;
+   nir_const_value *cv = nir_def_as_load_const(val)->value;
    ASSERT_EQ(nir_const_value_as_uint(cv[0], 32), 0x10);
    ASSERT_EQ(nir_const_value_as_uint(cv[1], 32), 0x20);
    ASSERT_EQ(nir_const_value_as_uint(cv[2], 32), 0x21);
@@ -958,10 +958,10 @@ TEST_F(nir_load_store_vectorize_test, ssbo_load_adjacent_8_8_16)
    ASSERT_EQ(val->bit_size, 16);
    ASSERT_EQ(val->num_components, 1);
    ASSERT_TRUE(test_alu(val->parent_instr, nir_op_ior));
-   nir_def *low = nir_instr_as_alu(val->parent_instr)->src[0].src.ssa;
-   nir_def *high = nir_instr_as_alu(val->parent_instr)->src[1].src.ssa;
+   nir_def *low = nir_def_as_alu(val)->src[0].src.ssa;
+   nir_def *high = nir_def_as_alu(val)->src[1].src.ssa;
    ASSERT_TRUE(test_alu(high->parent_instr, nir_op_ishl));
-   high = nir_instr_as_alu(high->parent_instr)->src[0].src.ssa;
+   high = nir_def_as_alu(high)->src[0].src.ssa;
    ASSERT_TRUE(test_alu(low->parent_instr, nir_op_u2u16));
    ASSERT_TRUE(test_alu(high->parent_instr, nir_op_u2u16));
    ASSERT_TRUE(test_alu_def(low->parent_instr, 0, &load->def, 2));
@@ -990,7 +990,7 @@ TEST_F(nir_load_store_vectorize_test, ssbo_load_adjacent_32_32_64)
    ASSERT_EQ(val->bit_size, 64);
    ASSERT_EQ(val->num_components, 1);
    ASSERT_TRUE(test_alu(val->parent_instr, nir_op_pack_64_2x32));
-   nir_alu_instr *pack = nir_instr_as_alu(val->parent_instr);
+   nir_alu_instr *pack = nir_def_as_alu(val);
    EXPECT_INSTR_SWIZZLES(pack, load, "zw");
 }
 
@@ -1017,14 +1017,14 @@ TEST_F(nir_load_store_vectorize_test, ssbo_load_adjacent_32_32_64_64)
    ASSERT_EQ(val->bit_size, 64);
    ASSERT_EQ(val->num_components, 1);
    ASSERT_TRUE(test_alu(val->parent_instr, nir_op_mov));
-   nir_alu_instr *mov = nir_instr_as_alu(val->parent_instr);
+   nir_alu_instr *mov = nir_def_as_alu(val);
    EXPECT_INSTR_SWIZZLES(mov, load, "y");
 
    val = loads[0x1]->src.ssa;
    ASSERT_EQ(val->bit_size, 32);
    ASSERT_EQ(val->num_components, 2);
    ASSERT_TRUE(test_alu(val->parent_instr, nir_op_unpack_64_2x32));
-   nir_alu_instr *unpack = nir_instr_as_alu(val->parent_instr);
+   nir_alu_instr *unpack = nir_def_as_alu(val);
    EXPECT_INSTR_SWIZZLES(unpack, load, "x");
 }
 
@@ -1050,7 +1050,7 @@ TEST_F(nir_load_store_vectorize_test, ssbo_load_intersecting_32_32_64)
    ASSERT_EQ(val->bit_size, 64);
    ASSERT_EQ(val->num_components, 1);
    ASSERT_TRUE(test_alu(val->parent_instr, nir_op_pack_64_2x32));
-   nir_alu_instr *pack = nir_instr_as_alu(val->parent_instr);
+   nir_alu_instr *pack = nir_def_as_alu(val);
    EXPECT_INSTR_SWIZZLES(pack, load, "yz");
 }
 
@@ -1073,7 +1073,7 @@ TEST_F(nir_load_store_vectorize_test, ssbo_store_adjacent_8_8_16)
    nir_def *val = store->src[0].ssa;
    ASSERT_EQ(val->bit_size, 8);
    ASSERT_EQ(val->num_components, 4);
-   nir_const_value *cv = nir_instr_as_load_const(val->parent_instr)->value;
+   nir_const_value *cv = nir_def_as_load_const(val)->value;
    ASSERT_EQ(nir_const_value_as_uint(cv[0], 8), 0x10);
    ASSERT_EQ(nir_const_value_as_uint(cv[1], 8), 0x20);
    ASSERT_EQ(nir_const_value_as_uint(cv[2], 8), 0x30);
@@ -1098,7 +1098,7 @@ TEST_F(nir_load_store_vectorize_test, ssbo_store_adjacent_32_32_64)
    nir_def *val = store->src[0].ssa;
    ASSERT_EQ(val->bit_size, 32);
    ASSERT_EQ(val->num_components, 4);
-   nir_const_value *cv = nir_instr_as_load_const(val->parent_instr)->value;
+   nir_const_value *cv = nir_def_as_load_const(val)->value;
    ASSERT_EQ(nir_const_value_as_uint(cv[0], 32), 0x10);
    ASSERT_EQ(nir_const_value_as_uint(cv[1], 32), 0x11);
    ASSERT_EQ(nir_const_value_as_uint(cv[2], 32), 0x20);
@@ -1124,7 +1124,7 @@ TEST_F(nir_load_store_vectorize_test, ssbo_store_adjacent_32_32_64_64)
    nir_def *val = store->src[0].ssa;
    ASSERT_EQ(val->bit_size, 64);
    ASSERT_EQ(val->num_components, 3);
-   nir_const_value *cv = nir_instr_as_load_const(val->parent_instr)->value;
+   nir_const_value *cv = nir_def_as_load_const(val)->value;
    ASSERT_EQ(nir_const_value_as_uint(cv[0], 64), 0x1100000010ull);
    ASSERT_EQ(nir_const_value_as_uint(cv[1], 64), 0x20);
    ASSERT_EQ(nir_const_value_as_uint(cv[2], 64), 0x30);
@@ -1148,7 +1148,7 @@ TEST_F(nir_load_store_vectorize_test, ssbo_store_intersecting_32_32_64)
    nir_def *val = store->src[0].ssa;
    ASSERT_EQ(val->bit_size, 32);
    ASSERT_EQ(val->num_components, 3);
-   nir_const_value *cv = nir_instr_as_load_const(val->parent_instr)->value;
+   nir_const_value *cv = nir_def_as_load_const(val)->value;
    ASSERT_EQ(nir_const_value_as_uint(cv[0], 32), 0x10);
    ASSERT_EQ(nir_const_value_as_uint(cv[1], 32), 0x20);
    ASSERT_EQ(nir_const_value_as_uint(cv[2], 32), 0x0);
@@ -1185,7 +1185,7 @@ TEST_F(nir_load_store_vectorize_test, ssbo_store_identical_wrmask)
    nir_def *val = store->src[0].ssa;
    ASSERT_EQ(val->bit_size, 32);
    ASSERT_EQ(val->num_components, 4);
-   nir_const_value *cv = nir_instr_as_load_const(val->parent_instr)->value;
+   nir_const_value *cv = nir_def_as_load_const(val)->value;
    ASSERT_EQ(nir_const_value_as_uint(cv[0], 32), 0x10);
    ASSERT_EQ(nir_const_value_as_uint(cv[1], 32), 0x21);
    ASSERT_EQ(nir_const_value_as_uint(cv[2], 32), 0x22);
@@ -1536,7 +1536,7 @@ TEST_F(nir_load_store_vectorize_test, shared_store_adjacent)
    nir_def *val = store->src[1].ssa;
    ASSERT_EQ(val->bit_size, 32);
    ASSERT_EQ(val->num_components, 2);
-   nir_const_value *cv = nir_instr_as_load_const(val->parent_instr)->value;
+   nir_const_value *cv = nir_def_as_load_const(val)->value;
    ASSERT_EQ(nir_const_value_as_uint(cv[0], 32), 0x10);
    ASSERT_EQ(nir_const_value_as_uint(cv[1], 32), 0x20);
 
@@ -1711,7 +1711,7 @@ TEST_F(nir_load_store_vectorize_test, DISABLED_ssbo_alias4)
    /* TODO: try to combine these loads */
    nir_def *index_base = nir_load_local_invocation_index(b);
    nir_def *offset = nir_iadd_imm(b, nir_imul_imm(b, index_base, 16), 16);
-   nir_instr_as_alu(offset->parent_instr)->no_unsigned_wrap = true;
+   nir_def_as_alu(offset)->no_unsigned_wrap = true;
    create_indirect_load(nir_var_mem_ssbo, 0, offset, 0x1);
    create_store(nir_var_mem_ssbo, 0, 0, 0x2);
    create_indirect_load(nir_var_mem_ssbo, 0, offset, 0x3);

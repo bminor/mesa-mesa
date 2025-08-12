@@ -549,8 +549,7 @@ build_image_copy_shader(const struct vk_meta_image_copy_key *key)
                value1 = nir_txf(b, src_coord, .texture_deref = deref);
             }
 
-            nir_instr_as_tex(value1->parent_instr)->backend_flags =
-               AGX_TEXTURE_FLAG_NO_CLAMP;
+            nir_def_as_tex(value1)->backend_flags = AGX_TEXTURE_FLAG_NO_CLAMP;
 
             /* Munge according to the implicit conversions so we get a bit copy */
             if (key->src_format != key->dst_format) {

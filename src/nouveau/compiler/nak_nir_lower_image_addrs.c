@@ -454,7 +454,7 @@ lower_image_access(nir_builder *b, nir_intrinsic_instr *intrin)
                                        .access = nir_intrinsic_access(intrin),
                                        .flags = offset_mode);
 
-      nir_intrinsic_instr *parent = nir_instr_as_intrinsic(new_ssa->parent_instr);
+      nir_intrinsic_instr *parent = nir_def_as_intrinsic(new_ssa);
       new_ssa = lower_formatted_image_load(b, parent, format);
       nir_def_rewrite_uses(&intrin->def, new_ssa);
 

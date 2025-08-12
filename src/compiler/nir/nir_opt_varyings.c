@@ -3580,8 +3580,7 @@ try_move_postdominator(struct linkage_info *linkage,
       }
 
       if (baryc != first_load->src[0].ssa) {
-         nir_intrinsic_instr *baryc_i =
-            nir_instr_as_intrinsic(baryc->parent_instr);
+         nir_intrinsic_instr *baryc_i = nir_def_as_intrinsic(baryc);
 
          if (alu_interp == FLAG_INTERP_LINEAR_PIXEL ||
              alu_interp == FLAG_INTERP_LINEAR_CENTROID ||
@@ -3723,7 +3722,7 @@ try_move_postdominator(struct linkage_info *linkage,
       list_for_each_entry(struct list_node, iter, &slot->consumer.loads,
                           head) {
          assert(i < 3);
-         iter->instr = nir_instr_as_intrinsic(new_tes_loads[i]->parent_instr);
+         iter->instr = nir_def_as_intrinsic(new_tes_loads[i]);
          i++;
       }
 
@@ -3731,11 +3730,11 @@ try_move_postdominator(struct linkage_info *linkage,
       assert(postdom_def->bit_size != 1);
 
       slot->consumer.tes_interp_load =
-         nir_instr_as_alu(new_input->parent_instr);
+         nir_def_as_alu(new_input);
    } else {
       assert(list_is_singular(&slot->consumer.loads));
       list_first_entry(&slot->consumer.loads, struct list_node, head)->instr =
-         nir_instr_as_intrinsic(new_input->parent_instr);
+         nir_def_as_intrinsic(new_input);
 
       /* The input is a bigger type even if the post-dominator is boolean. */
       if (postdom_def->bit_size == 1)
@@ -4303,7 +4302,7 @@ relocate_slot(struct linkage_info *linkage, struct scalar_slot *slot,
                               .dest_type = nir_intrinsic_dest_type(intr));
 
             nir_def_rewrite_uses(&intr->def, load);
-            iter->instr = nir_instr_as_intrinsic(load->parent_instr);
+            iter->instr = nir_def_as_intrinsic(load);
             nir_instr_remove(&intr->instr);
             *progress |= nir_progress_consumer;
 

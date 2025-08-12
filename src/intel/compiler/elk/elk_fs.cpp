@@ -6501,7 +6501,7 @@ elk_nir_move_interpolation_to_top(nir_shader *nir)
             if (intrin->intrinsic != nir_intrinsic_load_interpolated_input)
                continue;
             nir_intrinsic_instr *bary_intrinsic =
-               nir_instr_as_intrinsic(intrin->src[0].ssa->parent_instr);
+               nir_def_as_intrinsic(intrin->src[0].ssa);
             nir_intrinsic_op op = bary_intrinsic->intrinsic;
 
             /* Leave interpolateAtSample/Offset() where they are. */

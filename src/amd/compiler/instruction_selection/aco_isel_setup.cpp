@@ -160,7 +160,7 @@ apply_nuw_to_ssa(isel_context* ctx, nir_def* ssa)
    if (!nir_scalar_is_alu(scalar) || nir_scalar_alu_op(scalar) != nir_op_iadd)
       return;
 
-   nir_alu_instr* add = nir_instr_as_alu(ssa->parent_instr);
+   nir_alu_instr* add = nir_def_as_alu(ssa);
 
    if (add->no_unsigned_wrap)
       return;

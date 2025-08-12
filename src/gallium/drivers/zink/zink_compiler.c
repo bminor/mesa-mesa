@@ -2118,7 +2118,7 @@ rewrite_bo_access_instr(nir_builder *b, nir_instr *instr, void *data)
                load[i] = nir_load_ssbo(b, 1, 32, intr->src[0].ssa, nir_iadd_imm(b, intr->src[1].ssa, i), .align_mul = 4, .align_offset = 0);
             else
                load[i] = nir_load_ubo(b, 1, 32, intr->src[0].ssa, nir_iadd_imm(b, intr->src[1].ssa, i), .align_mul = 4, .align_offset = 0, .range = 4);
-            nir_intrinsic_set_access(nir_instr_as_intrinsic(load[i]->parent_instr), nir_intrinsic_access(intr));
+            nir_intrinsic_set_access(nir_def_as_intrinsic(load[i]), nir_intrinsic_access(intr));
          }
          /* cast back to 64bit */
          nir_def *casted = nir_pack_64_2x32_split(b, load[0], load[1]);

@@ -4559,8 +4559,7 @@ brw_from_nir_emit_fs_intrinsic(nir_to_brw_state &ntb,
    case nir_intrinsic_load_interpolated_input: {
       assert(instr->src[0].ssa &&
              instr->src[0].ssa->parent_instr->type == nir_instr_type_intrinsic);
-      nir_intrinsic_instr *bary_intrinsic =
-         nir_instr_as_intrinsic(instr->src[0].ssa->parent_instr);
+      nir_intrinsic_instr *bary_intrinsic = nir_def_as_intrinsic(instr->src[0].ssa);
       nir_intrinsic_op bary_intrin = bary_intrinsic->intrinsic;
       brw_reg dst_xy;
 

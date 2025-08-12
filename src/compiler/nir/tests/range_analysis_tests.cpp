@@ -56,7 +56,7 @@ ssa_def_bits_used_test::build_alu_instr(nir_op op,
    if (def == NULL)
       return NULL;
 
-   nir_alu_instr *alu = nir_instr_as_alu(def->parent_instr);
+   nir_alu_instr *alu = nir_def_as_alu(def);
 
    if (alu == NULL)
       return NULL;

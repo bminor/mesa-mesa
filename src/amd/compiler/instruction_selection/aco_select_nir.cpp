@@ -737,7 +737,7 @@ get_phi_operand(isel_context* ctx, nir_def* ssa, RegClass rc)
    if (ssa->parent_instr->type == nir_instr_type_undef) {
       return Operand(rc);
    } else if (ssa->bit_size == 1 && ssa->parent_instr->type == nir_instr_type_load_const) {
-      bool val = nir_instr_as_load_const(ssa->parent_instr)->value[0].b;
+      bool val = nir_def_as_load_const(ssa)->value[0].b;
       return Operand::c32_or_c64(val ? -1 : 0, ctx->program->lane_mask == s2);
    } else {
       return Operand(tmp);

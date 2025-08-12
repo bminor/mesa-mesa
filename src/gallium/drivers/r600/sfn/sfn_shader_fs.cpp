@@ -361,7 +361,7 @@ FragmentShader::scan_input(nir_intrinsic_instr *intr, int index_src_id)
 
    if (index_src_id > 0) {
       glsl_interp_mode mode = INTERP_MODE_NONE;
-      auto parent = nir_instr_as_intrinsic(intr->src[0].ssa->parent_instr);
+      auto parent = nir_def_as_intrinsic(intr->src[0].ssa);
       mode = (glsl_interp_mode)nir_intrinsic_interp_mode(parent);
       switch (parent->intrinsic) {
       case nir_intrinsic_load_barycentric_sample:
