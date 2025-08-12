@@ -82,6 +82,13 @@ operator|(brw_analysis_dependency_class x, brw_analysis_dependency_class y)
       static_cast<unsigned>(x) | static_cast<unsigned>(y));
 }
 
+inline brw_analysis_dependency_class
+operator|=(brw_analysis_dependency_class x, brw_analysis_dependency_class y)
+{
+   return static_cast<brw_analysis_dependency_class>(
+      static_cast<unsigned>(x) | static_cast<unsigned>(y));
+}
+
 /**
  * Instantiate a program analysis class \p L which can calculate an object of
  * type \p T as result.  \p C is a closure that encapsulates whatever
