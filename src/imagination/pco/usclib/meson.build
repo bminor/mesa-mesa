@@ -6,10 +6,6 @@ pco_usclib_shader_files = files(
   'sync.cl',
 )
 
-# We need to set -fmacro-prefix-map properly for reproducability.
-fs = import('fs')
-relative_dir = fs.relative_to(meson.global_source_root(), meson.global_build_root()) + '/'
-
 pco_usclib_spv = custom_target(
   'pco_usclib.spv',
   input : pco_usclib_shader_files,
@@ -18,14 +14,12 @@ pco_usclib_spv = custom_target(
     prog_mesa_clc,
     '-o', '@OUTPUT@', '--depfile', '@DEPFILE@',
     pco_usclib_shader_files, '--',
-    '-cl-std=cl2.0', '-D__OPENCL_VERSION__=200',
     '-I' + join_paths(meson.project_source_root(), 'include'),
     '-I' + join_paths(meson.project_source_root(), 'src/compiler/libcl'),
     '-I' + join_paths(meson.current_source_dir(), '.'),
     '-I' + join_paths(meson.current_source_dir(), '../../../'),
-    '-fmacro-prefix-map=@0@='.format(relative_dir),
-    ],
-  env: ['MESA_SHADER_CACHE_DISABLE=true'],
+    cl_args,
+  ],
   depfile : 'pco_usclib.h.d',
 )
 
