@@ -95,10 +95,16 @@ brw_compile_tes(const struct brw_compiler *compiler,
       return NULL;
    }
 
-   prog_data->base.clip_distance_mask =
-      ((1 << nir->info.clip_distance_array_size) - 1);
+   const bool has_clip_cull_dist =
+      nir->info.outputs_written & (VARYING_BIT_CLIP_DIST0 |
+                                   VARYING_BIT_CLIP_DIST1 |
+                                   VARYING_BIT_CULL_DIST0 |
+                                   VARYING_BIT_CULL_DIST1);
+   prog_data->base.clip_distance_mask = has_clip_cull_dist ?
+      ((1 << nir->info.clip_distance_array_size) - 1) : 0;
    prog_data->base.cull_distance_mask =
-      ((1 << nir->info.cull_distance_array_size) - 1) <<
+      (has_clip_cull_dist ?
+       ((1 << nir->info.cull_distance_array_size) - 1) : 0) <<
       nir->info.clip_distance_array_size;
 
    prog_data->include_primitive_id =
