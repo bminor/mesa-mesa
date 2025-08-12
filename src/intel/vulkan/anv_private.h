@@ -3693,12 +3693,14 @@ typedef enum anv_cmd_dirty_bits anv_cmd_dirty_mask_t;
       ANV_CMD_DIRTY_DS |                          \
       ANV_CMD_DIRTY_GS |                          \
       ANV_CMD_DIRTY_PS)
+/* Excluse Task from the list as it's always Mesh that dictates graphics
+ * programming in the pipeline (VUE layout, clipping, etc...)
+ */
 #define ANV_CMD_DIRTY_PRERASTER_SHADERS (         \
       ANV_CMD_DIRTY_VS |                          \
       ANV_CMD_DIRTY_HS |                          \
       ANV_CMD_DIRTY_DS |                          \
       ANV_CMD_DIRTY_GS |                          \
-      ANV_CMD_DIRTY_TASK |                        \
       ANV_CMD_DIRTY_MESH)
 #define ANV_CMD_DIRTY_ALL_SHADERS(device)               \
    (((device)->vk.enabled_features.meshShader ?         \
