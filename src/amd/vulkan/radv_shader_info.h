@@ -80,6 +80,7 @@ struct gfx10_ngg_info {
 
 struct radv_shader_info {
    uint64_t inline_push_constant_mask;
+   uint32_t push_constant_size;
    bool can_inline_all_push_constants;
    bool loads_push_constants;
    bool loads_dynamic_offsets;

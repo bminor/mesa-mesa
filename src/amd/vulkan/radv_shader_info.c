@@ -190,14 +190,25 @@ gather_intrinsic_store_output_info(const nir_shader *nir, const nir_intrinsic_in
 static void
 gather_push_constant_info(const nir_shader *nir, const nir_intrinsic_instr *instr, struct radv_shader_info *info)
 {
+   uint32_t offset, size;
+
+   if (nir_src_is_const(instr->src[0])) {
+      offset = nir_intrinsic_base(instr) + nir_src_as_uint(instr->src[0]);
+      size = instr->num_components * (instr->def.bit_size / 8u);
+   } else {
+      offset = nir_intrinsic_base(instr);
+      size = nir_intrinsic_range(instr);
+   }
+
    info->loads_push_constants = true;
+   info->push_constant_size = MAX2(info->push_constant_size, offset + size);
 
    if (nir_src_is_const(instr->src[0]) && instr->def.bit_size >= 32) {
-      uint32_t start = (nir_intrinsic_base(instr) + nir_src_as_uint(instr->src[0])) / 4u;
-      uint32_t size = instr->num_components * (instr->def.bit_size / 32u);
+      const uint32_t start_dw = offset / 4;
+      const uint32_t size_dw = size / 4;
 
-      if (start + size <= (MAX_PUSH_CONSTANTS_SIZE / 4u)) {
-         info->inline_push_constant_mask |= BITFIELD64_RANGE(start, size);
+      if (start_dw + size_dw <= (MAX_PUSH_CONSTANTS_SIZE / 4u)) {
+         info->inline_push_constant_mask |= BITFIELD64_RANGE(start_dw, size_dw);
          return;
       }
    }
@@ -1546,6 +1557,8 @@ radv_nir_shader_info_merge(const struct radv_shader_stage *src, struct radv_shad
 
    /* Only inline all push constants if both allows it. */
    dst_info->can_inline_all_push_constants &= src_info->can_inline_all_push_constants;
+
+   dst_info->push_constant_size = MAX2(dst_info->push_constant_size, src_info->push_constant_size);
 
    if (src->stage == MESA_SHADER_VERTEX) {
       dst_info->vs = src_info->vs;
