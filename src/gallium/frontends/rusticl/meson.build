@@ -94,6 +94,12 @@ rusticl_args = [
   '-Aclippy::type_complexity',
 ]
 
+# Disable warnings from future rustc versions.
+# TODO: replace with rustc.get_supported_arguments when requiring meson-1.8+
+if rustc.version().version_compare('>= 1.89')
+  rusticl_args += ['-Amismatched_lifetime_syntaxes']
+endif
+
 rusticl_drivers_enable = get_option('gallium-rusticl-enable-drivers')
 foreach driver : rusticl_drivers_enable
   rusticl_args += [
