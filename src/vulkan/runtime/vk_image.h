@@ -28,7 +28,7 @@
 #include "util/detect_os.h"
 #include "util/u_math.h"
 
-#if DETECT_OS_ANDROID
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
 enum android_buffer_type {
    ANDROID_BUFFER_NONE = 0,
    ANDROID_BUFFER_NATIVE,
@@ -88,7 +88,7 @@ struct vk_image {
    uint64_t drm_format_mod;
 #endif
 
-#if DETECT_OS_ANDROID
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
    enum android_buffer_type android_buffer_type;
    VkDeviceMemory anb_memory;
 
@@ -412,7 +412,7 @@ VkImageLayout vk_att_ref_stencil_layout(const VkAttachmentReference2 *att_ref,
 VkImageLayout vk_att_desc_stencil_layout(const VkAttachmentDescription2 *att_desc,
                                            bool final);
 
-#if DETECT_OS_ANDROID
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
 static inline bool
 vk_image_is_android_native_buffer(struct vk_image *image)
 {
@@ -424,9 +424,9 @@ vk_image_is_android_native_buffer(struct vk_image *image)
 {
    return false;
 }
-#endif /* DETECT_OS_ANDROID */
+#endif /* VK_USE_PLATFORM_ANDROID_KHR */
 
-#if DETECT_OS_ANDROID && ANDROID_API_LEVEL >= 26
+#if defined(VK_USE_PLATFORM_ANDROID_KHR) && ANDROID_API_LEVEL >= 26
 static inline bool
 vk_image_is_android_hardware_buffer(struct vk_image *image)
 {

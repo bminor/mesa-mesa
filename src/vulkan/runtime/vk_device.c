@@ -218,10 +218,10 @@ vk_device_init(struct vk_device *device,
       UNREACHABLE("Invalid timeline mode");
    }
 
-#if DETECT_OS_ANDROID
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
    mtx_init(&device->swapchain_private_mtx, mtx_plain);
    device->swapchain_private = NULL;
-#endif /* DETECT_OS_ANDROID */
+#endif /* VK_USE_PLATFORM_ANDROID_KHR */
 
    simple_mtx_init(&device->trace_mtx, mtx_plain);
 
@@ -284,13 +284,13 @@ vk_device_finish(struct vk_device *device)
    vk_device_memory_report_finish(device);
    vk_memory_trace_finish(device);
 
-#if DETECT_OS_ANDROID
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
    if (device->swapchain_private) {
       hash_table_foreach(device->swapchain_private, entry)
          util_sparse_array_finish(entry->data);
       ralloc_free(device->swapchain_private);
    }
-#endif /* DETECT_OS_ANDROID */
+#endif /* VK_USE_PLATFORM_ANDROID_KHR */
 
    simple_mtx_destroy(&device->trace_mtx);
 

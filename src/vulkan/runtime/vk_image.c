@@ -38,7 +38,7 @@
 #include "vk_util.h"
 #include "vulkan/wsi/wsi_common.h"
 
-#if DETECT_OS_ANDROID
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
 #include "vk_android.h"
 #include <vulkan/vulkan_android.h>
 #endif
@@ -100,7 +100,7 @@ vk_image_init(struct vk_device *device,
    image->drm_format_mod = ((1ULL << 56) - 1) /* DRM_FORMAT_MOD_INVALID */;
 #endif
 
-#if DETECT_OS_ANDROID
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
    if (image->external_handle_types &
              VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID)
       image->android_buffer_type = ANDROID_BUFFER_HARDWARE;
@@ -159,7 +159,7 @@ vk_image_destroy(struct vk_device *device,
                  const VkAllocationCallbacks *alloc,
                  struct vk_image *image)
 {
-#if DETECT_OS_ANDROID
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
    if (image->anb_memory) {
       device->dispatch_table.FreeMemory(
          (VkDevice)device, image->anb_memory, alloc);
