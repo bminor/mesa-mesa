@@ -46,6 +46,7 @@
 #include "nir.h"
 #include "nir_builder.h"
 #include "nir_deref.h"
+#include "nir_range_analysis.h"
 #include "nir_worklist.h"
 
 #include <stdlib.h>
@@ -172,6 +173,7 @@ struct entry {
 struct vectorize_ctx {
    nir_shader *shader;
    const nir_load_store_vectorize_options *options;
+   struct hash_table *numlsb_ht;
    struct list_head entries[nir_num_variable_modes];
    struct hash_table *loads[nir_num_variable_modes];
    struct hash_table *stores[nir_num_variable_modes];
@@ -1250,8 +1252,11 @@ check_for_robustness(struct vectorize_ctx *ctx, struct entry *low, uint64_t high
     * are not guaranteed to be power-of-2.
     */
    uint64_t stride = 0;
-   for (unsigned i = 0; i < low->key->offset_def_count; i++)
-      stride = calc_gcd(low->key->offset_defs_mul[i], stride);
+   for (unsigned i = 0; i < low->key->offset_def_count; i++) {
+      unsigned lsb_zero = nir_def_num_lsb_zero(ctx->numlsb_ht, low->key->offset_defs[i]);
+      if (lsb_zero != 64)
+         stride = calc_gcd(low->key->offset_defs_mul[i] << lsb_zero, stride);
+   }
 
    unsigned addition_bits = low->intrin->src[low->info->base_src].ssa->bit_size;
    /* low's offset must be a multiple of "stride" plus "low->offset". */
@@ -1702,6 +1707,7 @@ nir_opt_load_store_vectorize(nir_shader *shader, const nir_load_store_vectorize_
 
    struct vectorize_ctx *ctx = rzalloc(NULL, struct vectorize_ctx);
    ctx->shader = shader;
+   ctx->numlsb_ht = _mesa_pointer_hash_table_create(ctx);
    ctx->options = options;
 
    nir_shader_index_vars(shader, options->modes);
