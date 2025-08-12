@@ -153,6 +153,24 @@ meson_subprojects=(
   roxmltree-0.20-rs
   rustc-hash-2-rs
   indexmap-2-rs
+  bitflags-2-rs
+  cfg-if-1-rs
+  equivalent-1-rs
+  errno-0.3-rs
+  hashbrown-0.14-rs
+  indexmap-2-rs
+  libc-0.2-rs
+  log-0.4-rs
+  once_cell-1-rs
+  proc-macro2-1-rs
+  quote-1-rs
+  remain-0.2-rs
+  rustix-1-rs
+  thiserror-2-rs
+  thiserror-impl-2-rs
+  ucd-trie-0.1-rs
+  unicode-ident-1-rs
+  zerocopy-derive-0.8-rs
   ${FORCE_FALLBACK_FOR:-}
 )
 
