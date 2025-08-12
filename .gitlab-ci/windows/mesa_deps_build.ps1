@@ -56,7 +56,7 @@ if (!$buildstatus) {
 }
 
 Get-Date
-Write-Host "Cloning LLVM release/15.x"
+Write-Host "Cloning LLVM"
 git clone -b llvmorg-19.1.6 --depth=1 https://github.com/llvm/llvm-project deps/llvm-project
 if (!$?) {
   Write-Host "Failed to clone LLVM repository"
