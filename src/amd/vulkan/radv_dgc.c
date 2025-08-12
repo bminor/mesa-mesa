@@ -447,7 +447,7 @@ radv_get_sequence_size(const struct radv_indirect_command_layout *layout, const 
       }
 
       if (need_copy) {
-         *upload_size += align(pipeline_layout->push_constant_size, 16);
+         *upload_size += pipeline_layout->push_constant_size;
       }
    }
 
