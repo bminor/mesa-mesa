@@ -163,7 +163,7 @@ where
         self.ptrs.contains_key(&ptr)
     }
 
-    pub fn entry(&mut self, ptr: P) -> Entry<P, T> {
+    pub fn entry(&mut self, ptr: P) -> Entry<'_, P, T> {
         self.ptrs.entry(ptr)
     }
 
