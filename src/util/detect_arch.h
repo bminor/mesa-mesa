@@ -91,6 +91,10 @@
 #define DETECT_ARCH_AARCH64 1
 #endif
 
+#if defined(_M_ARM64EC)
+#define DETECT_ARCH_ARM64EC 1
+#endif
+
 #if defined(__mips64) && defined(__LP64__)
 #define DETECT_ARCH_MIPS64 1
 #endif
@@ -152,6 +156,10 @@
 
 #ifndef DETECT_ARCH_AARCH64
 #define DETECT_ARCH_AARCH64 0
+#endif
+
+#ifndef DETECT_ARCH_ARM64EC
+#define DETECT_ARCH_ARM64EC 0
 #endif
 
 #ifndef DETECT_ARCH_MIPS64
