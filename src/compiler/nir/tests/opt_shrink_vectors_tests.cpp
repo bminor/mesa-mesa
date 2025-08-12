@@ -282,7 +282,7 @@ TEST_F(nir_opt_shrink_vectors_test, opt_shrink_phis_loop_simple)
 
    nir_def_init(&phi->instr, &phi->def, v->num_components, v->bit_size);
 
-   nir_phi_instr_add_src(phi, v->parent_instr->block, v);
+   nir_phi_instr_add_src(phi, nir_def_block(v), v);
 
    nir_def *fge = nir_fge(b, phi_def, loop_max);
    nir_alu_instr *fge_alu_instr = nir_def_as_alu(fge);
@@ -308,7 +308,7 @@ TEST_F(nir_opt_shrink_vectors_test, opt_shrink_phis_loop_simple)
    srcs[1] = nir_get_scalar(fadd, 0);
    nir_def *vec = nir_vec_scalars(b, srcs, 4);
 
-   nir_phi_instr_add_src(phi, vec->parent_instr->block, vec);
+   nir_phi_instr_add_src(phi, nir_def_block(vec), vec);
 
    nir_pop_loop(b, loop);
 
@@ -386,7 +386,7 @@ TEST_F(nir_opt_shrink_vectors_test, opt_shrink_phis_loop_swizzle)
 
    nir_def_init(&phi->instr, &phi->def, v->num_components, v->bit_size);
 
-   nir_phi_instr_add_src(phi, v->parent_instr->block, v);
+   nir_phi_instr_add_src(phi, nir_def_block(v), v);
 
    nir_def *fge = nir_fge(b, phi_def, loop_max);
    nir_alu_instr *fge_alu_instr = nir_def_as_alu(fge);
@@ -412,7 +412,7 @@ TEST_F(nir_opt_shrink_vectors_test, opt_shrink_phis_loop_swizzle)
    srcs[3] = nir_get_scalar(phi_def, 3);
    nir_def *vec = nir_vec_scalars(b, srcs, 4);
 
-   nir_phi_instr_add_src(phi, vec->parent_instr->block, vec);
+   nir_phi_instr_add_src(phi, nir_def_block(vec), vec);
 
    nir_pop_loop(b, loop);
 
@@ -491,7 +491,7 @@ TEST_F(nir_opt_shrink_vectors_test, opt_shrink_phis_loop_phi_out)
 
    nir_def_init(&phi->instr, &phi->def, v->num_components, v->bit_size);
 
-   nir_phi_instr_add_src(phi, v->parent_instr->block, v);
+   nir_phi_instr_add_src(phi, nir_def_block(v), v);
 
    nir_def *fge = nir_fge(b, phi_def, loop_max);
    nir_alu_instr *fge_alu_instr = nir_def_as_alu(fge);
@@ -517,7 +517,7 @@ TEST_F(nir_opt_shrink_vectors_test, opt_shrink_phis_loop_phi_out)
    srcs[1] = nir_get_scalar(fadd, 0);
    nir_def *vec = nir_vec_scalars(b, srcs, 4);
 
-   nir_phi_instr_add_src(phi, vec->parent_instr->block, vec);
+   nir_phi_instr_add_src(phi, nir_def_block(vec), vec);
 
    nir_pop_loop(b, loop);
 

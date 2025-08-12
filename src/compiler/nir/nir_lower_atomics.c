@@ -76,7 +76,7 @@ build_atomic(nir_builder *b, nir_intrinsic_instr *intr)
    {
       nir_phi_instr *phi = nir_phi_instr_create(b->shader);
       nir_def_init(&phi->instr, &phi->def, 1, intr->def.bit_size);
-      nir_phi_instr_add_src(phi, load->parent_instr->block, load);
+      nir_phi_instr_add_src(phi, nir_def_block(load), load);
       nir_def *before = &phi->def;
       nir_def *expected = nir_build_alu2(
          b, nir_atomic_op_to_alu(nir_intrinsic_atomic_op(intr)), before, data);

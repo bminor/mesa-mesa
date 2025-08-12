@@ -285,8 +285,8 @@ TEST_F(unsigned_upper_bound_test, loop_phi_bcsel)
    nir_def *sel = nir_bcsel(b, cond, &phi->def, two);
    nir_pop_loop(b, NULL);
 
-   nir_phi_instr_add_src(phi, zero->parent_instr->block, zero);
-   nir_phi_instr_add_src(phi, sel->parent_instr->block, sel);
+   nir_phi_instr_add_src(phi, nir_def_block(zero), zero);
+   nir_phi_instr_add_src(phi, nir_def_block(sel), sel);
    b->cursor = nir_before_instr(sel->parent_instr);
    nir_builder_instr_insert(b, &phi->instr);
 
