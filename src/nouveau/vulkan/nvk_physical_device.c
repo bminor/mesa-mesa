@@ -86,8 +86,8 @@ nvk_is_conformant(const struct nv_device_info *info)
    if (info->type != NV_DEVICE_TYPE_DIS)
       return false;
 
-   /* Everything Maxwell through Ada is conformant */
-   if (info->cls_eng3d >= MAXWELL_A && info->cls_eng3d <= ADA_A)
+   /* Everything Kepler through Ada is conformant */
+   if (info->cls_eng3d >= KEPLER_A && info->cls_eng3d <= ADA_A)
       return true;
 
    /* And also Blackwell B */
