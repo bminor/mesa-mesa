@@ -3424,7 +3424,7 @@
         "description": "brw: compute consistent clip/cull distance masks with VUE",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2d396f608500d88fa00eeb99d14ed5727f1cece9",
         "notes": null
