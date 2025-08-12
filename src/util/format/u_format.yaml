@@ -2189,6 +2189,27 @@
   block: {width: 1, height: 1, depth: 1}
   channels: []
   swizzles: [X, Y, Z, W]
+- name: Y8_V8U8_422_UNORM
+  alias: NV61
+  layout: planar2
+  colorspace: YUV
+  block: {width: 1, height: 1, depth: 1}
+  channels: []
+  swizzles: [X, Y, Z, W]
+- name: Y8_U8V8_444_UNORM
+  alias: NV24
+  layout: planar2
+  colorspace: YUV
+  block: {width: 1, height: 1, depth: 1}
+  channels: []
+  swizzles: [X, Y, Z, W]
+- name: Y8_V8U8_444_UNORM
+  alias: NV42
+  layout: planar2
+  colorspace: YUV
+  block: {width: 1, height: 1, depth: 1}
+  channels: []
+  swizzles: [X, Y, Z, W]
 - name: Y8_U8_V8_444_UNORM
   layout: planar3
   colorspace: YUV

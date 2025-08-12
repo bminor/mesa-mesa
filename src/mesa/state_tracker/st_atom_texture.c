@@ -215,6 +215,17 @@ st_get_sampler_views(struct st_context *st,
                pipe->create_sampler_view(pipe, stObj->pt->next, &tmpl);
          (*extra_sampler_views) |= 1 << extra;
          break;
+      case PIPE_FORMAT_NV61:
+      case PIPE_FORMAT_NV24:
+      case PIPE_FORMAT_NV42:
+         /* we need one additional R8G8 view: */
+         tmpl.format = PIPE_FORMAT_RG88_UNORM;
+         tmpl.swizzle_g = PIPE_SWIZZLE_Y;   /* tmpl from Y plane is R8 */
+         extra = u_bit_scan(&free_slots);
+         sampler_views[extra] =
+               pipe->create_sampler_view(pipe, stObj->pt->next, &tmpl);
+         (*extra_sampler_views) |= 1 << extra;
+         break;
       case PIPE_FORMAT_P010:
       case PIPE_FORMAT_P012:
       case PIPE_FORMAT_P016:

@@ -389,6 +389,10 @@ st_get_sampler_view_format(const struct st_context *st,
          format = texObj->pt->format;
          break;
       }
+      FALLTHROUGH;
+   case PIPE_FORMAT_NV61:
+   case PIPE_FORMAT_NV24:
+   case PIPE_FORMAT_NV42:
       format = PIPE_FORMAT_R8_UNORM;
       break;
    case PIPE_FORMAT_NV15:

@@ -2201,6 +2201,8 @@ dri2_num_fourcc_format_planes(EGLint format)
    case DRM_FORMAT_NV21:
    case DRM_FORMAT_NV16:
    case DRM_FORMAT_NV61:
+   case DRM_FORMAT_NV24:
+   case DRM_FORMAT_NV42:
    case DRM_FORMAT_NV15:
    case DRM_FORMAT_NV20:
    case DRM_FORMAT_NV30:

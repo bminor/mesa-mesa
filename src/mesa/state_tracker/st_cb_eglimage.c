@@ -72,6 +72,9 @@ is_format_supported(struct pipe_screen *screen, enum pipe_format format,
       case PIPE_FORMAT_NV12:
       case PIPE_FORMAT_NV21:
       case PIPE_FORMAT_NV16:
+      case PIPE_FORMAT_NV61:
+      case PIPE_FORMAT_NV24:
+      case PIPE_FORMAT_NV42:
          supported = screen->is_format_supported(screen, PIPE_FORMAT_R8_UNORM,
                                                  PIPE_TEXTURE_2D, nr_samples,
                                                  nr_storage_samples, usage) &&
@@ -492,6 +495,12 @@ st_bind_egl_image(struct gl_context *ctx,
             texFormat = MESA_FORMAT_R_UNORM8;
             texObj->RequiredTextureImageUnits = 2;
          }
+         break;
+      case PIPE_FORMAT_NV61:
+      case PIPE_FORMAT_NV24:
+      case PIPE_FORMAT_NV42:
+         texFormat = MESA_FORMAT_R_UNORM8;
+         texObj->RequiredTextureImageUnits = 2;
          break;
       case PIPE_FORMAT_NV15:
          if (stimg->texture->format == PIPE_FORMAT_R10_G10B10_420_UNORM) {
