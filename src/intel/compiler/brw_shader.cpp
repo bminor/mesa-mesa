@@ -850,6 +850,8 @@ brw_shader::assign_curb_setup()
 
    /* This may be updated in assign_urb_setup or assign_vs_urb_setup. */
    this->first_non_payload_grf = payload().num_regs + prog_data->curb_read_length;
+
+   this->debug_optimizer(this->nir, "assign_curb_setup", 90, 0);
 }
 
 /*

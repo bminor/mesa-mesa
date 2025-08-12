@@ -1366,6 +1366,8 @@ brw_assign_urb_setup(brw_shader &s)
     */
    assert(prog_data->num_per_primitive_inputs % 2 == 0);
    s.first_non_payload_grf += prog_data->num_per_primitive_inputs / 2 * s.max_polygons;
+
+   s.debug_optimizer(s.nir, "urb_setup", 91, 0);
 }
 
 static bool
@@ -1435,9 +1437,6 @@ run_fs(brw_shader &s, bool allow_spilling, bool do_rep_send)
          gfx9_ps_header_only_workaround(wm_prog_data);
 
       brw_assign_urb_setup(s);
-
-      s.debug_optimizer(nir, "urb_setup", 89, 0);
-
 
       brw_lower_3src_null_dest(s);
       brw_workaround_emit_dummy_mov_instruction(s);
