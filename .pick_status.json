@@ -7124,7 +7124,7 @@
         "description": "brw: fix analysis dirtying with pulled constants",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5c1729908471a1b000fa4ab0b29ac9f79a8b7394",
         "notes": null
