@@ -1,5 +1,165 @@
 [
     {
+        "sha": "47ef0d24703dc33ab318f49f53f5bb825876d2ad",
+        "description": "nvk: Allow kepler in nvk_is_conformant()",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "f4b01bbfe7dc2d9f2cebebcc6410eff512ed3670",
+        "notes": null
+    },
+    {
+        "sha": "3f995bf8170efa28ef817324ad7141f3e792dd54",
+        "description": "anv: Enable G8_B8_R8_3PLANE_422 and G8_B8_R8_3PLANE_444 formats",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ba1ddb6b62191c2d72deca15ea89508802552fde",
+        "description": "vulkan/radix_sort: Fix subgroup invocation id",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1abe0d38d1a47a17f576e0c341f64ac19306f866",
+        "description": "vulkan/util: update common properties code gen to use platform guard",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9999cd3967bde637eaabbaf9a3d63586c7fc7f90",
+        "description": "vulkan/util: no need to hide ANB property itself behind Android",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "567cff487cdfe9f653152cc01c1e3a856f3f41ed",
+        "description": "vulkan/util: add missing vulkan header",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "23d7c3fbd565c8d249d09ed814a7a92434546abd",
+        "description": "vulkan/util: update pd feature codegen to use platform guards",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7a71e2e41b91acb06e7ebbf2cd8e60ef48c9b2b0",
+        "description": "ci: Separate build and test container tags",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "796e11008d3e497fccab45d67e1a7c245583ac33",
+        "description": "vulkan/wsi: No commandPool allocation required for WSI_SWAPCHAIN_NO_BLIT",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8c65da0c9dfa3ac0ff1f068417846716cae365ef",
+        "description": "r600/sfn: cleanup GS shader emission",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "eccd178f0b273eff440bc9cbc58e6dd74f256f14",
+        "description": "r600/sfn: Lower all GS indirect input loads after lowering IO",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "356bc41797411f439f3e9de89809d6d5bb39d214",
+        "description": "r600/sfn: resolve constant indices into local arrays better",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "874005aeb72801d5494a605bcb3e433ed18bc828",
+        "description": "r00/sfn: Fix copy propagation into buffer load address",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "79ca456b4837b3bc21cf9ef3c03c505c4b4909f6",
+        "notes": null
+    },
+    {
+        "sha": "39543f6b5cc9b77119c31daaf0954e209c5f5bde",
+        "description": "r600/sfn: Handle indirect access to GS input arrays",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "37ae4df3e4d90a2a474e313d4a563a0bb4c00cfe",
+        "notes": null
+    },
+    {
+        "sha": "9c8d8cfa07ad077f67133e476bf412fedb0b98ae",
+        "description": "r600/sfn: factor out adding an input in GS",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "37ae4df3e4d90a2a474e313d4a563a0bb4c00cfe",
+        "notes": null
+    },
+    {
+        "sha": "b94add29778e0d5bf4c7a6ddc865e58712807fc0",
+        "description": "dril: Skip some pipe formats to avoid breaking X",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "642c4cf2b2f3dcd2cc1506a8ff3e143be396444a",
+        "notes": null
+    },
+    {
         "sha": "0d4d73a78073ed45c39618683330748145e0ac79",
         "description": "radv: implement an alternative workaround for HiZ on GFX12",
         "nominated": false,
