@@ -443,6 +443,10 @@ Struct("intel_device_info",
 
                Thread count * number of EUs per subslice""")),
 
+        Member("unsigned", "num_geom_pipes", comment="Number of geometry pipes"),
+        Member("unsigned", "num_depth_pipes", comment="Number of depth pipes"),
+        Member("unsigned", "num_color_pipes", comment="Number of color pipes"),
+
         Member("unsigned", "max_cs_workgroup_threads", compiler_field=True,
                comment=dedent("""\
                Maximum number of threads per workgroup supported by the GPGPU_WALKER or
