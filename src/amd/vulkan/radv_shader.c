@@ -625,6 +625,8 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
     */
    NIR_PASS(_, nir, nir_lower_var_copies);
 
+   NIR_PASS(_, nir, nir_lower_memcpy);
+
    unsigned lower_flrp = (nir->options->lower_flrp16 ? 16 : 0) | (nir->options->lower_flrp32 ? 32 : 0) |
                          (nir->options->lower_flrp64 ? 64 : 0);
    if (lower_flrp != 0) {
