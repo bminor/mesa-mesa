@@ -3494,7 +3494,7 @@
         "description": "nvk: Allow kepler in nvk_is_conformant()",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f4b01bbfe7dc2d9f2cebebcc6410eff512ed3670",
         "notes": null
