@@ -313,6 +313,7 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_load_btd_global_arg_addr_intel:
    case nir_intrinsic_load_btd_local_arg_addr_intel:
    case nir_intrinsic_load_inline_data_intel:
+   case nir_intrinsic_load_simd_width_intel:
    case nir_intrinsic_load_ray_num_dss_rt_stacks_intel:
    case nir_intrinsic_load_lshs_vertex_stride_amd:
    case nir_intrinsic_load_esgs_vertex_stride_amd:

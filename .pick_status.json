@@ -134,7 +134,7 @@
         "description": "nir: Add load_simd_width_intel to divergence analysis",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
