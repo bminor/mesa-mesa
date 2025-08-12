@@ -678,6 +678,8 @@ brw_shader::assign_curb_setup()
                               brw_imm_ud(INTEL_MASK(31, 6)));
       }
 
+      brw_analysis_dependency_class dirty_bits = BRW_DEPENDENCY_INSTRUCTIONS;
+
       /* On Gfx12-HP we load constants at the start of the program using A32
        * stateless messages.
        */
@@ -691,6 +693,7 @@ brw_shader::assign_curb_setup()
 
          if (i != 0) {
             if (pull_constants_a64) {
+               dirty_bits |= BRW_DEPENDENCY_VARIABLES;
                /* We need to do the carry manually as when this pass is run,
                 * we're not expecting any 64bit ALUs. Unfortunately all the
                 * 64bit lowering is done in NIR.
@@ -752,7 +755,7 @@ brw_shader::assign_curb_setup()
          i += num_regs;
       }
 
-      invalidate_analysis(BRW_DEPENDENCY_INSTRUCTIONS);
+      invalidate_analysis(dirty_bits);
    }
 
    /* Map the offsets in the UNIFORM file to fixed HW regs. */
