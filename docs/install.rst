@@ -29,8 +29,10 @@ you're willing to maintain support for other compiler get in touch.
 
 - GCC 8.0.0 or later (some parts of Mesa may require later versions)
 - Clang 5.0 or later (some parts of Mesa may require later versions)
-- Microsoft Visual Studio 2019 Version 16.11 or later and
-  Windows SDK of at least 20348 is required, for building on Windows.
+- Microsoft Visual C++ compiler
+  - Windows SDK of at least 20348 is required
+  - Visual Studio 2019 Version 16.11 or later for (ARM, X86, X64)
+  - Visual Studio 2022 version 17.8.6 or later for (AARCH64, ARM64EC)
 
 Third party/extra tools.
 ^^^^^^^^^^^^^^^^^^^^^^^^
