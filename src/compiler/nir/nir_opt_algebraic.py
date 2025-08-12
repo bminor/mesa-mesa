@@ -606,8 +606,7 @@ optimizations.extend([
     (('ushr@32', ('ubfe', a, '#b', '#c'), '#d(is_5lsb_not_zero)'),
      ubfe_ubfe(a, b, c, d, 31)),
 
-    (('iand', ('ishl', 'a@32', '#b(is_first_5_bits_uge_2)'), -4), ('ishl', a, b)),
-    (('iand', ('imul', a, '#b(is_unsigned_multiple_of_4)'), -4), ('imul', a, b)),
+    (('iand', 'a(is_unsigned_multiple_of_4)', -4), a),
 ])
 
 for log2 in range(1, 7): # powers of two from 2 to 64

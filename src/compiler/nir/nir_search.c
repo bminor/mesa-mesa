@@ -889,6 +889,8 @@ nir_algebraic_instr(nir_builder *build, nir_instr *instr,
                             &table->values[xform->replace].value, worklist, dead_instrs)) {
          if (state->range_ht->entries)
             _mesa_hash_table_clear(state->range_ht, NULL);
+         if (state->numlsb_ht->entries)
+            _mesa_hash_table_clear(state->numlsb_ht, NULL);
          return true;
       }
    }
@@ -918,8 +920,12 @@ nir_algebraic_impl(nir_function_impl *impl,
    struct hash_table range_ht;
    _mesa_pointer_hash_table_init(&range_ht, NULL);
 
+   struct hash_table numlsb_ht;
+   _mesa_pointer_hash_table_init(&numlsb_ht, NULL);
+
    nir_search_state state;
    state.range_ht = &range_ht;
+   state.numlsb_ht = &numlsb_ht;
 
    nir_instr_worklist worklist;
    nir_instr_worklist_init(&worklist);
@@ -963,6 +969,7 @@ nir_algebraic_impl(nir_function_impl *impl,
    nir_instr_free_list(&dead_instrs);
 
    nir_instr_worklist_fini(&worklist);
+   _mesa_hash_table_fini(&numlsb_ht, NULL);
    _mesa_hash_table_fini(&range_ht, NULL);
    util_dynarray_fini(&states);
 

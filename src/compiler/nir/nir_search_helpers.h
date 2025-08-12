@@ -163,24 +163,21 @@ is_any_comp_nan(UNUSED const nir_search_state *state, const nir_alu_instr *instr
    return false;
 }
 
-#define MULTIPLE(test)                                                         \
-   static inline bool                                                          \
-      is_unsigned_multiple_of_##test(UNUSED const nir_search_state *state,     \
-                                     const nir_alu_instr *instr,               \
-                                     unsigned src, unsigned num_components,    \
-                                     const uint8_t *swizzle)                   \
-   {                                                                           \
-      /* only constant srcs: */                                                \
-      if (!nir_src_is_const(instr->src[src].src))                              \
-         return false;                                                         \
-                                                                               \
-      for (unsigned i = 0; i < num_components; i++) {                          \
-         uint64_t val = nir_src_comp_as_uint(instr->src[src].src, swizzle[i]); \
-         if (val % test != 0)                                                  \
-            return false;                                                      \
-      }                                                                        \
-                                                                               \
-      return true;                                                             \
+#define MULTIPLE(test)                                                       \
+   static inline bool                                                        \
+      is_unsigned_multiple_of_##test(const nir_search_state *state,          \
+                                     const nir_alu_instr *instr,             \
+                                     unsigned src, unsigned num_components,  \
+                                     const uint8_t *swizzle)                 \
+   {                                                                         \
+      unsigned num = ffs(test) - 1;                                          \
+      for (unsigned i = 0; i < num_components; i++) {                        \
+         nir_scalar s = nir_get_scalar(instr->src[src].src.ssa, swizzle[i]); \
+         if (nir_def_num_lsb_zero(state->numlsb_ht, s) < num)                \
+            return false;                                                    \
+      }                                                                      \
+                                                                             \
+      return true;                                                           \
    }
 
 MULTIPLE(2)

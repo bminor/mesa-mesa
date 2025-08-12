@@ -206,6 +206,7 @@ typedef union {
 
 typedef struct {
    struct hash_table *range_ht;
+   struct hash_table *numlsb_ht;
 } nir_search_state;
 
 typedef bool (*nir_search_expression_cond)(const nir_alu_instr *instr);
