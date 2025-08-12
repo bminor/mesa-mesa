@@ -479,6 +479,9 @@ struct intel_perf_config {
       uint64_t n_l3_banks;          /** $L3BankTotalCount */
       uint64_t n_l3_nodes;          /** $L3NodeTotalCount */
       uint64_t n_sq_idis;           /** $SqidiTotalCount */
+      uint64_t n_depth_pipes;       /** $DepthPipeTotalCount */
+      uint64_t n_geom_pipes;        /** $GeometryPipeTotalCount */
+      uint64_t n_color_pipes;       /** $ColorPipeTotalCount */
       uint64_t slice_mask;          /** $SliceMask */
       uint64_t subslice_mask;       /** $SubsliceMask */
       uint64_t gt_min_freq;         /** $GpuMinFrequency */

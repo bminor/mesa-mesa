@@ -325,6 +325,9 @@ compute_topology_builtins(struct intel_perf_config *perf)
    perf->sys_vars.n_l3_banks = devinfo->l3_banks;
    perf->sys_vars.n_l3_nodes = devinfo->l3_banks / 4;
    perf->sys_vars.n_sq_idis =  devinfo->num_slices;
+   perf->sys_vars.n_depth_pipes = devinfo->num_depth_pipes;
+   perf->sys_vars.n_geom_pipes = devinfo->num_geom_pipes;
+   perf->sys_vars.n_color_pipes = devinfo->num_color_pipes;
 
    perf->sys_vars.n_eu_slice0123 = 0;
    for (int s = 0; s < MIN2(4, devinfo->max_slices); s++) {
