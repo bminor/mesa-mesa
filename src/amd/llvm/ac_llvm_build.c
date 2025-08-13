@@ -991,7 +991,7 @@ LLVMValueRef ac_build_buffer_load(struct ac_llvm_context *ctx, LLVMValueRef rsrc
             rsrc,
             offset,
             LLVMConstInt(ctx->i32, get_cache_flags(ctx, access | ACCESS_TYPE_LOAD |
-                                                        ACCESS_TYPE_SMEM), 0),
+                                                        ACCESS_SMEM_AMD), 0),
          };
          result[i] = ac_build_intrinsic(ctx, name, channel_type, args, 3, AC_ATTR_INVARIANT_LOAD);
       }

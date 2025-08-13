@@ -42,11 +42,6 @@ enum {
    ACCESS_TYPE_STORE           = BITFIELD_BIT(28),
    ACCESS_TYPE_ATOMIC          = BITFIELD_BIT(29),
 
-   /* This access is expected to use an SMEM instruction if source operands are non-divergent.
-    * Only loads can set this.
-    */
-   ACCESS_TYPE_SMEM            = BITFIELD_BIT(30),
-
    /* Whether a store offset or size alignment is less than 4. */
    ACCESS_MAY_STORE_SUBDWORD   = BITFIELD_BIT(31),
 };

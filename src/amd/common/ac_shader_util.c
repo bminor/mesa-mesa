@@ -1093,8 +1093,8 @@ union ac_hw_cache_flags ac_get_hw_cache_flags(enum amd_gfx_level gfx_level,
 
    assert(util_bitcount(access & (ACCESS_TYPE_LOAD | ACCESS_TYPE_STORE |
                                   ACCESS_TYPE_ATOMIC)) == 1);
-   assert(!(access & ACCESS_TYPE_SMEM) || access & ACCESS_TYPE_LOAD);
-   assert(!(access & ACCESS_IS_SWIZZLED_AMD) || !(access & ACCESS_TYPE_SMEM));
+   assert(!(access & ACCESS_SMEM_AMD) || access & ACCESS_TYPE_LOAD);
+   assert(!(access & ACCESS_IS_SWIZZLED_AMD) || !(access & ACCESS_SMEM_AMD));
    assert(!(access & ACCESS_MAY_STORE_SUBDWORD) || access & ACCESS_TYPE_STORE);
 
    bool scope_is_device = access & (ACCESS_COHERENT | ACCESS_VOLATILE);
@@ -1113,7 +1113,7 @@ union ac_hw_cache_flags ac_get_hw_cache_flags(enum amd_gfx_level gfx_level,
       if (access & ACCESS_NON_TEMPORAL) {
          if (access & ACCESS_TYPE_LOAD) {
             /* Don't use non_temporal for SMEM because it can't set regular_temporal for MALL. */
-            if (!(access & ACCESS_TYPE_SMEM))
+            if (!(access & ACCESS_SMEM_AMD))
                result.gfx12.temporal_hint = gfx12_load_near_non_temporal_far_regular_temporal;
          } else if (access & ACCESS_TYPE_STORE) {
             result.gfx12.temporal_hint = gfx12_store_near_non_temporal_far_regular_temporal;
@@ -1133,7 +1133,7 @@ union ac_hw_cache_flags ac_get_hw_cache_flags(enum amd_gfx_level gfx_level,
       if (access & ACCESS_TYPE_LOAD && scope_is_device)
          result.value |= ac_glc;
 
-      if (access & ACCESS_NON_TEMPORAL && !(access & ACCESS_TYPE_SMEM))
+      if (access & ACCESS_NON_TEMPORAL && !(access & ACCESS_SMEM_AMD))
          result.value |= ac_slc;
    } else if (gfx_level >= GFX10) {
       /* GFX10-10.3:
@@ -1165,7 +1165,7 @@ union ac_hw_cache_flags ac_get_hw_cache_flags(enum amd_gfx_level gfx_level,
       if (scope_is_device && !(access & ACCESS_TYPE_ATOMIC))
          result.value |= ac_glc | (access & ACCESS_TYPE_LOAD ? ac_dlc : 0);
 
-      if (access & ACCESS_NON_TEMPORAL && !(access & ACCESS_TYPE_SMEM))
+      if (access & ACCESS_NON_TEMPORAL && !(access & ACCESS_SMEM_AMD))
          result.value |= ac_slc;
    } else {
       /* GFX6-GFX9:
@@ -1189,11 +1189,11 @@ union ac_hw_cache_flags ac_get_hw_cache_flags(enum amd_gfx_level gfx_level,
        */
       if (scope_is_device && !(access & ACCESS_TYPE_ATOMIC)) {
          /* SMEM doesn't support the device scope on GFX6-7. */
-         assert(gfx_level >= GFX8 || !(access & ACCESS_TYPE_SMEM));
+         assert(gfx_level >= GFX8 || !(access & ACCESS_SMEM_AMD));
          result.value |= ac_glc;
       }
 
-      if (access & ACCESS_NON_TEMPORAL && !(access & ACCESS_TYPE_SMEM))
+      if (access & ACCESS_NON_TEMPORAL && !(access & ACCESS_SMEM_AMD))
          result.value |= ac_slc;
 
       /* GFX6 has a TC L1 bug causing corruption of 8bit/16bit stores. All store opcodes not

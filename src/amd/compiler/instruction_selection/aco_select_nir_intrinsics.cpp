@@ -1710,7 +1710,7 @@ load_buffer(isel_context* ctx, unsigned num_components, unsigned component_size,
    }
 
    LoadEmitInfo info = {Operand(offset), dst, num_components, component_size, rsrc};
-   info.cache = get_cache_flags(ctx, access | ACCESS_TYPE_LOAD | (use_smem ? ACCESS_TYPE_SMEM : 0));
+   info.cache = get_cache_flags(ctx, access | ACCESS_TYPE_LOAD);
    info.sync = sync;
    info.align_mul = align_mul;
    info.align_offset = align_offset;
@@ -2558,7 +2558,7 @@ visit_load_global(isel_context* ctx, nir_intrinsic_instr* instr)
       if (info.resource.id())
          info.resource = bld.as_uniform(info.resource);
       info.offset = Operand(bld.as_uniform(info.offset));
-      info.cache = get_cache_flags(ctx, access | ACCESS_TYPE_SMEM);
+      info.cache = get_cache_flags(ctx, access);
       EmitLoadParameters params = smem_load_params;
       params.max_const_offset = ctx->program->dev.smem_offset_max;
       emit_load(ctx, bld, info, params);
