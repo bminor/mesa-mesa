@@ -354,7 +354,7 @@
         "description": "kopper: unwrap screen before checking cpu flag",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "316bf3bd8a9743bdc6b80668affccc1c0c64845c",
         "notes": null
