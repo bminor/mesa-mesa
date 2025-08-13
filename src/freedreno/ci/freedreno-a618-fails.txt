@@ -237,7 +237,7 @@ KHR-GL46.texture_lod_basic.lod_selection,Fail
 KHR-GL46.shading_language_420pack.binding_images_texture_type_1D,Fail
 KHR-GLES3.framebuffer_blit.multisampled_to_singlesampled_blit_depth_config_test,Fail
 
-dEQP-EGL.functional.image.modify.tex_rgb5_a1_renderbuffer_clear_color,Fail
+x11-dEQP-EGL.functional.image.modify.tex_rgb5_a1_renderbuffer_clear_color,Fail
 wayland-dEQP-EGL.functional.image.modify.tex_rgb5_a1_renderbuffer_clear_color,Fail
 
 # GL tests above, Vulkan tests below
