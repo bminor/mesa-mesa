@@ -402,21 +402,14 @@ Shader::allocate_reserved_registers()
    }
 
    if (m_flags.test(sh_needs_sbo_ret_address)) {
-      m_rat_return_address = value_factory().temp_register(0);
-      auto temp0 = value_factory().temp_register(0);
-      auto temp1 = value_factory().temp_register(1);
-      auto temp2 = value_factory().temp_register(2);
+      m_rat_return_address = value_factory().temp_register(-1);
+      auto thread_pos = value_factory().temp_register(0);
+      auto temp2 = value_factory().temp_register(-1);
+      auto mask = value_factory().literal(-1);
+      auto src = {mask, mask};
+      emit_instruction(
+         new AluInstr(op1_mbcnt_32lo_accum_prev_int, thread_pos, src, AluInstr::write, 2));
 
-      auto group = new AluGroup();
-      group->add_instruction(new AluInstr(op1_mbcnt_32lo_accum_prev_int,
-                                          temp0,
-                                          value_factory().literal(-1),
-                                          AluInstr::write));
-      group->add_instruction(new AluInstr(op1_mbcnt_32hi_int,
-                                          temp1,
-                                          value_factory().literal(-1),
-                                          AluInstr::write));
-      emit_instruction(group);
       emit_instruction(new AluInstr(op3_muladd_uint24,
                                     temp2,
                                     value_factory().inline_const(ALU_SRC_SE_ID, 0),
@@ -427,7 +420,7 @@ Shader::allocate_reserved_registers()
                                     m_rat_return_address,
                                     temp2,
                                     value_factory().literal(0x40),
-                                    temp0,
+                                    thread_pos,
                                     AluInstr::write));
    }
 }

@@ -26,6 +26,8 @@ static int
 get_dest_mask(EAluOp opcode, int slots, bool is_cayman_trans)
 {
    switch (opcode) {
+   case op1_mbcnt_32lo_accum_prev_int:
+      return BITSET_BIT(PIPE_SWIZZLE_X);
    case op2_dot_ieee:
       return (1 << (5 - slots)) - 1;
    case op2_dot4:
@@ -830,7 +832,8 @@ r600_multislot_get_last_opcode_and_slot(EAluOp opcode, int dest_chan)
    case op1_recipsqrt_clamped:
    case op1_recipsqrt_ff:
       return std::make_pair(opcode, 0);
-
+   case op1_mbcnt_32lo_accum_prev_int:
+      return std::make_pair(op1_mbcnt_32hi_int, 0);
    default:
       return std::make_pair(opcode, dest_chan);
    }
