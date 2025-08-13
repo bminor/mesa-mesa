@@ -762,7 +762,7 @@ static void
 anv_cmd_buffer_maybe_dirty_descriptor_mode(struct anv_cmd_buffer *cmd_buffer,
                                            enum anv_cmd_descriptor_buffer_mode new_mode)
 {
-   if (cmd_buffer->state.current_db_mode == new_mode)
+   if (cmd_buffer->state.pending_db_mode == new_mode)
       return;
 
    /* Ensure we program the STATE_BASE_ADDRESS properly at least once */
