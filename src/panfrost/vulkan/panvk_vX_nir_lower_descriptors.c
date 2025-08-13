@@ -801,14 +801,14 @@ lower_tex(nir_builder *b, nir_tex_instr *tex, const struct lower_desc_ctx *ctx)
       struct panvk_subdesc_info subdesc =
          get_sampler_subdesc_info(bind_layout->type, plane);
       uint32_t desc_stride = get_desc_array_stride(bind_layout, subdesc.type);
-
-      tex->sampler_index =
-         shader_desc_idx(set, binding, subdesc, ctx) +
-         index_imm * desc_stride;
+      uint32_t sampler_index = shader_desc_idx(set, binding, subdesc, ctx) + index_imm * desc_stride;
 
       if (index_ssa != NULL) {
          nir_def *offset = nir_imul_imm(b, index_ssa, desc_stride);
+         offset = nir_iadd_imm(b, offset, sampler_index);
          nir_tex_instr_add_src(tex, nir_tex_src_sampler_offset, offset);
+      } else {
+         tex->sampler_index = sampler_index;
       }
       progress = true;
    } else {
@@ -834,14 +834,14 @@ lower_tex(nir_builder *b, nir_tex_instr *tex, const struct lower_desc_ctx *ctx)
       struct panvk_subdesc_info subdesc =
          get_tex_subdesc_info(bind_layout->type,  plane);
       uint32_t desc_stride = get_desc_array_stride(bind_layout, subdesc.type);
-
-      tex->texture_index =
-         shader_desc_idx(set, binding, subdesc, ctx) +
-         index_imm * desc_stride;
+      uint32_t texture_index = shader_desc_idx(set, binding, subdesc, ctx) + index_imm * desc_stride;
 
       if (index_ssa != NULL) {
          nir_def *offset = nir_imul_imm(b, index_ssa, desc_stride);
+         offset = nir_iadd_imm(b, offset, texture_index);
          nir_tex_instr_add_src(tex, nir_tex_src_texture_offset, offset);
+      } else {
+         tex->texture_index = texture_index;
       }
       progress = true;
    }
