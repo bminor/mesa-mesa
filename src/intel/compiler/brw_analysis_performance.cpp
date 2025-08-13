@@ -936,26 +936,24 @@ namespace {
       }
 
       /* Stall on any write dependencies. */
-      if (!inst->no_dd_check) {
-         if (inst->dst.file != BAD_FILE && !inst->dst.is_null()) {
-            for (unsigned j = 0; j < regs_written(inst); j++)
-               stall_on_dependency(
-                  st, reg_dependency_id(devinfo, inst->dst, j));
-         }
+      if (inst->dst.file != BAD_FILE && !inst->dst.is_null()) {
+         for (unsigned j = 0; j < regs_written(inst); j++)
+            stall_on_dependency(
+               st, reg_dependency_id(devinfo, inst->dst, j));
+      }
 
-         if (inst->writes_accumulator_implicitly(devinfo)) {
-            for (unsigned j = accum_reg_of_channel(devinfo, inst, info.tx, 0);
-                 j <= accum_reg_of_channel(devinfo, inst, info.tx,
-                                           inst->exec_size - 1); j++)
-               stall_on_dependency(
-                  st, reg_dependency_id(devinfo, brw_acc_reg(8), j));
-         }
+      if (inst->writes_accumulator_implicitly(devinfo)) {
+         for (unsigned j = accum_reg_of_channel(devinfo, inst, info.tx, 0);
+              j <= accum_reg_of_channel(devinfo, inst, info.tx,
+                                        inst->exec_size - 1); j++)
+            stall_on_dependency(
+               st, reg_dependency_id(devinfo, brw_acc_reg(8), j));
+      }
 
-         if (const unsigned mask = inst->flags_written(devinfo)) {
-            for (unsigned i = 0; i < sizeof(mask) * CHAR_BIT; i++) {
-               if (mask & (1 << i))
-                  stall_on_dependency(st, flag_dependency_id(i));
-            }
+      if (const unsigned mask = inst->flags_written(devinfo)) {
+         for (unsigned i = 0; i < sizeof(mask) * CHAR_BIT; i++) {
+            if (mask & (1 << i))
+               stall_on_dependency(st, flag_dependency_id(i));
          }
       }
 

@@ -1354,19 +1354,15 @@ brw_generator::generate_code(const brw_shader &s,
       if (multiple_instructions_emitted)
          continue;
 
-      if (inst->no_dd_clear || inst->no_dd_check || inst->conditional_mod) {
+      if (inst->conditional_mod) {
          assert(p->next_insn_offset == last_insn_offset + 16 ||
-                !"conditional_mod, no_dd_check, or no_dd_clear set for IR "
+                !"conditional_mod for IR "
                  "emitting more than 1 instruction");
 
          brw_eu_inst *last = &p->store[last_insn_offset / 16];
 
          if (inst->conditional_mod)
             brw_eu_inst_set_cond_modifier(p->devinfo, last, inst->conditional_mod);
-         if (devinfo->ver < 12) {
-            brw_eu_inst_set_no_dd_clear(p->devinfo, last, inst->no_dd_clear);
-            brw_eu_inst_set_no_dd_check(p->devinfo, last, inst->no_dd_check);
-         }
       }
 
       /* When enabled, insert sync NOP after every instruction and make sure

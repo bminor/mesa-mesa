@@ -194,8 +194,6 @@ public:
          bool predicate_inverse:1;
          bool writes_accumulator:1; /**< instruction implicitly writes accumulator */
          bool force_writemask_all:1;
-         bool no_dd_clear:1;
-         bool no_dd_check:1;
          bool saturate:1;
          bool check_tdr:1; /**< Only valid for SEND; turns it into a SENDC */
          bool send_has_side_effects:1; /**< Only valid for SHADER_OPCODE_SEND */

@@ -1272,41 +1272,39 @@ namespace {
             add_dependency(ids, deps[ip],
                            dependency(TGL_SBID_SET, ip, exec_all));
 
-         if (!inst->no_dd_check) {
-            if (inst->dst.file != BAD_FILE && !inst->dst.is_null() &&
-                !inst->dst.is_accumulator()) {
-               for (unsigned j = 0; j < regs_written(inst); j++) {
-                  add_dependency(ids, deps[ip], dependency_for_write(devinfo, inst,
-                     sb.get(byte_offset(inst->dst, REG_SIZE * j))));
-               }
+         if (inst->dst.file != BAD_FILE && !inst->dst.is_null() &&
+             !inst->dst.is_accumulator()) {
+            for (unsigned j = 0; j < regs_written(inst); j++) {
+               add_dependency(ids, deps[ip], dependency_for_write(devinfo, inst,
+                  sb.get(byte_offset(inst->dst, REG_SIZE * j))));
             }
+         }
 
-            if (inst->writes_accumulator_implicitly(devinfo) ||
-                inst->dst.is_accumulator()) {
-               /* Wa_22012725308:
-                *
-                * "When the accumulator registers are used as source and/or
-                *  destination, hardware does not ensure prevention of write
-                *  after read hazard across execution pipes."
-                */
-               const dependency dep = sb.get(brw_acc_reg(8));
+         if (inst->writes_accumulator_implicitly(devinfo) ||
+             inst->dst.is_accumulator()) {
+            /* Wa_22012725308:
+             *
+             * "When the accumulator registers are used as source and/or
+             *  destination, hardware does not ensure prevention of write
+             *  after read hazard across execution pipes."
+             */
+            const dependency dep = sb.get(brw_acc_reg(8));
+            if (dep.ordered && !is_single_pipe(dep.jp, p))
+               add_dependency(ids, deps[ip], dep);
+         }
+
+         /* flags_written returns a bit set per byte of the flags register
+          * file that is writtten.
+          */
+         unsigned flags = inst->flags_written(devinfo);
+         for (unsigned i = 0; flags != 0; i++) {
+            if ((flags & 0x0f) != 0) {
+               const dependency dep = sb.get(brw_flag_reg(i, 0));
                if (dep.ordered && !is_single_pipe(dep.jp, p))
                   add_dependency(ids, deps[ip], dep);
             }
 
-            /* flags_written returns a bit set per byte of the flags register
-             * file that is writtten.
-             */
-            unsigned flags = inst->flags_written(devinfo);
-            for (unsigned i = 0; flags != 0; i++) {
-               if ((flags & 0x0f) != 0) {
-                  const dependency dep = sb.get(brw_flag_reg(i, 0));
-                  if (dep.ordered && !is_single_pipe(dep.jp, p))
-                     add_dependency(ids, deps[ip], dep);
-               }
-
-               flags >>= 4;
-            }
+            flags >>= 4;
          }
 
          update_inst_scoreboard(shader, jps, inst, ip, sb);
@@ -1439,7 +1437,6 @@ namespace {
 
          /* Update the IR. */
          inst->sched = swsb;
-         inst->no_dd_check = inst->no_dd_clear = false;
          ip++;
       }
 

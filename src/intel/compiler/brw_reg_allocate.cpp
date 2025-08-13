@@ -1275,14 +1275,6 @@ brw_reg_alloc::spill_reg(unsigned spill_reg)
           */
          inst->dst.offset %= REG_SIZE * reg_unit(devinfo);
 
-         /* If we're immediately spilling the register, we should not use
-          * destination dependency hints.  Doing so will cause the GPU do
-          * try to read and write the register at the same time and may
-          * hang the GPU.
-          */
-         inst->no_dd_clear = false;
-         inst->no_dd_check = false;
-
          /* Calculate the execution width of the scratch messages (which work
           * in terms of 32 bit components so we have a fixed number of eight
           * channels per spilled register).  We attempt to write one
