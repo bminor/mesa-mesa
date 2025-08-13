@@ -80,6 +80,9 @@ struct tu_bo_array {
 
 #define TU_COND_EXEC_STACK_SIZE 4
 
+struct tu_pkt;
+struct tu_crb;
+
 struct tu_cs
 {
    uint32_t *start;
@@ -111,6 +114,10 @@ struct tu_cs
    uint32_t *cond_dwords[TU_COND_EXEC_STACK_SIZE];
 
    uint32_t breadcrumb_emit_after;
+
+   tu_pkt *pkt;
+
+   tu_crb crb(uint32_t nregs);
 };
 
 void
@@ -327,6 +334,7 @@ tu_cs_reserve(struct tu_cs *cs, uint32_t reserved_size)
 static inline void
 tu_cs_emit_pkt4(struct tu_cs *cs, uint16_t regindx, uint16_t cnt)
 {
+   assert(!cs->pkt); /* No mixing with the packet builders.*/
    tu_cs_reserve(cs, cnt + 1);
    tu_cs_emit(cs, pm4_pkt4_hdr(regindx, cnt));
 }
@@ -337,6 +345,7 @@ tu_cs_emit_pkt4(struct tu_cs *cs, uint16_t regindx, uint16_t cnt)
 static inline void
 tu_cs_emit_pkt7(struct tu_cs *cs, uint8_t opcode, uint16_t cnt)
 {
+   assert(!cs->pkt); /* No mixing with the packet builders.*/
 #if TU_BREADCRUMBS_ENABLED
    tu_cs_emit_sync_breadcrumb(cs, opcode, cnt + 1);
 #endif
@@ -656,5 +665,141 @@ struct tu_reg_value {
    __ONE_REG(15, regs);                                 \
    (cs)->cur = p;                                         \
    } while (0)
+
+/**
+ * Helper base class for any pkt building.
+ */
+struct tu_pkt {
+ protected:
+   tu_pkt(tu_cs *cs, enum adreno_pm4_type3_packets pkt, unsigned ndwords)
+       : cs(cs), pkt(pkt)
+   {
+      tu_cs_reserve(cs, ndwords + 1);
+      start = cs->cur;
+      cs->cur++; /* Leave a slot for the packet header when we're done. */
+      assert(!cs->pkt);
+#if !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpragmas"
+#pragma GCC diagnostic ignored "-Wdangling-pointer="
+#endif
+      /* Safe because destructor calls flush() which clears the potentially
+       * dangling pointer:
+       */
+      cs->pkt = this;
+#if !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+   }
+
+   ~tu_pkt()
+   {
+      flush();
+   }
+
+   void append(uint32_t value)
+   {
+      tu_cs_emit(cs, value);
+   }
+
+   void append(const uint32_t *dwords, uint32_t sizedwords)
+   {
+      tu_cs_emit_array(cs, dwords, sizedwords);
+   }
+
+ public:
+   void flush()
+   {
+      bool skip_empty = (pkt == CP_CONTEXT_REG_BUNCH);
+
+      if (!cs) {
+         /* Skip double flushing, such as an early flush and then going out of
+          * scope later.
+          */
+         return;
+      }
+
+      assert(start);
+      assert(cs->pkt == this);
+
+      unsigned cnt = cs->cur - start - 1;
+
+      if (skip_empty && !cnt) {
+         /* rewind the start pointer to the start of the packet. */
+         cs->cur = start;
+      } else {
+         *start = pm4_pkt7_hdr(pkt, cnt);
+      }
+      cs->pkt = NULL;
+      cs = NULL;
+   }
+
+ private:
+   tu_cs *cs;
+   enum adreno_pm4_type3_packets pkt;
+   uint32_t *start;
+};
+
+/**
+ * A builder for CP_CONTEXT_REG_BUNCH.  This packet can write an arbitrary
+ * sequence of registers (payload consists of pairs of offset,value).  It should
+ * be as fast as a pkt4 packet writing a consecutive sequence of registers,
+ * without the constraint of the registers being sequential, making it easier to
+ * use when cmdstream emit involves if/else/loops.  And should be less brittle
+ * if registers shift around between generations.  This builder intentionally
+ * encourages use of tu_reg_value.
+ *
+ * For TU_CS_MODE_GROW command streams (cmd->cs, cmd->draw_cs), you have to pass
+ * the maximum number of regs you might emit in the CONTEXT_REG_BUNCH.  For
+ * external/sub-stream CSes, you don't need to bother, and overflow of the
+ * preallocated space will be caught by tu_cs_emit().
+ */
+struct tu_crb : public tu_pkt {
+ public:
+   /* Constructor to use with tu_cs: */
+   tu_crb(tu_cs *cs, unsigned nregs)
+       : tu_pkt(cs, CP_CONTEXT_REG_BUNCH, nregs * 2)
+   {
+      assert(nregs != 0 || cs->mode != TU_CS_MODE_GROW);
+   }
+
+   tu_crb(tu_cs *cs): tu_pkt(cs, CP_CONTEXT_REG_BUNCH, 0)
+   {
+      assert(cs->mode != TU_CS_MODE_GROW);
+   }
+
+   /* Append a <reg32> to CRB: */
+   tu_crb &add(struct tu_reg_value reg)
+   {
+      append(reg.reg);
+      append(reg.value);
+      return *this;
+   }
+
+   /* Append a <reg64> to CRB: */
+   tu_crb &add(struct tu_reg_value reg_lo, struct tu_reg_value reg_hi)
+   {
+      __assert_eq(reg_hi.reg, 0);
+      uint64_t val = reg_lo.value;
+      append(reg_lo.reg);
+      append(val);
+      append(reg_lo.reg + 1);
+      append(val >> 32);
+      return *this;
+   }
+
+   /* for with_crb() */
+   bool first = true;
+
+private:
+   /* Disallow copy constructor to prevent mistakes with using tu_crb instead
+    * of tu_crb& as function param:
+    */
+   tu_crb(const tu_crb &);
+};
+
+
+#define with_crb(...) \
+   for (tu_crb crb(__VA_ARGS__); crb.first; crb.first = false)
 
 #endif /* TU_CS_H */

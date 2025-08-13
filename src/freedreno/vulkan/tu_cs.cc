@@ -628,3 +628,9 @@ tu_cs_trace_end(struct u_trace_context *utctx, void *cs, const char *fmt, ...)
    tu_cs_emit_debug_magic_strv((struct tu_cs *) cs, CP_NOP_END, fmt, args);
    va_end(args);
 }
+
+tu_crb
+tu_cs::crb(uint32_t nregs)
+{
+   return tu_crb(this, nregs);
+}
