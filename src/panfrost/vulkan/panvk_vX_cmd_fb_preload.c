@@ -57,28 +57,6 @@ texel_fetch(nir_builder *b, VkImageViewType view_type,
    return &tex->def;
 }
 
-static nir_variable *
-color_output_var(nir_builder *b, VkImageViewType view_type,
-                 VkImageAspectFlags aspect, VkSampleCountFlagBits samples,
-                 nir_alu_type fmt_type, unsigned rt)
-{
-   enum glsl_base_type base_type =
-      nir_get_glsl_base_type_for_nir_type(fmt_type);
-   const struct glsl_type *var_type = glsl_vector_type(base_type, 4);
-   static const char *var_names[] = {
-      "gl_FragData[0]", "gl_FragData[1]", "gl_FragData[2]", "gl_FragData[3]",
-      "gl_FragData[4]", "gl_FragData[5]", "gl_FragData[6]", "gl_FragData[7]",
-   };
-
-   assert(rt < ARRAY_SIZE(var_names));
-
-   nir_variable *var = nir_variable_create(b->shader, nir_var_shader_out,
-                                           var_type, var_names[rt]);
-   var->data.location = FRAG_RESULT_DATA0 + rt;
-
-   return var;
-}
-
 static nir_def *
 get_layer_id(nir_builder *b)
 {
