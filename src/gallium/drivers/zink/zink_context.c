@@ -1337,6 +1337,8 @@ resource_release(struct zink_context *ctx, struct zink_resource *res)
 {
    if (zink_resource_has_usage(res) && !zink_resource_usage_check_completion_fast(zink_screen(ctx->base.screen), res, ZINK_RESOURCE_ACCESS_RW))
       zink_batch_reference_resource(ctx, res);
+   _mesa_set_remove_key(ctx->need_barriers[0], res);
+   _mesa_set_remove_key(ctx->need_barriers[1], res);
    zink_resource_reference(&res, NULL);
 }
 
@@ -1359,8 +1361,7 @@ update_buf_bind_count(struct zink_context *ctx, struct zink_resource *res, bool 
    assert(res->obj->is_buffer);
    if (decrement) {
       assert(res->bind_count[is_compute]);
-      if (!--res->bind_count[is_compute])
-         _mesa_set_remove_key(ctx->need_barriers[is_compute], res);
+      --res->bind_count[is_compute];
       /* if hit while blitting, this will be triggered again after blitting */
       if (res->deleted && !res->all_binds && !ctx->blitting)
          resource_release(ctx, res);
