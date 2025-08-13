@@ -612,7 +612,7 @@ optimizations.extend([
 for log2 in range(1, 7): # powers of two from 2 to 64
    v = 1 << log2
    mask = 0xffffffff & ~(v - 1)
-   b_is_multiple = '#b(is_unsigned_multiple_of_{})'.format(v)
+   b_is_multiple = 'b(is_unsigned_multiple_of_{})'.format(v)
 
    optimizations.extend([
        # Reassociate for improved CSE
