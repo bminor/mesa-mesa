@@ -3591,6 +3591,7 @@ emit_tex(struct ir3_context *ctx, nir_tex_instr *tex)
    struct ir3_instruction *lod, *compare, *proj, *sample_index;
    struct tex_src_info info = {0};
    bool has_bias = false, has_lod = false, has_proj = false, has_off = false;
+   bool lod_zero = false;
    unsigned i, coords, flags, ncomp;
    unsigned nsrc0 = 0, nsrc1 = 0;
    type_t type;
@@ -3615,6 +3616,8 @@ emit_tex(struct ir3_context *ctx, nir_tex_instr *tex)
       case nir_tex_src_lod:
          lod = ir3_get_src(ctx, &tex->src[i].src)[0];
          has_lod = true;
+         lod_zero = nir_src_is_const(tex->src[i].src) &&
+                    nir_src_as_uint(tex->src[i].src) == 0;
          break;
       case nir_tex_src_comparator: /* shadow comparator */
          compare = ir3_get_src(ctx, &tex->src[i].src)[0];
@@ -3683,7 +3686,11 @@ emit_tex(struct ir3_context *ctx, nir_tex_instr *tex)
       opc = OPC_SAMGQ;
       break;
    case nir_texop_txf:
-      opc = OPC_ISAML;
+      /* isaml with LOD 0 is equivalent to isam. Use isam if possible because it
+       * needs one less src register.
+       */
+      opc = lod_zero ? OPC_ISAM : OPC_ISAML;
+      has_lod = !lod_zero;
       break;
    case nir_texop_lod:
       opc = OPC_GETLOD;
