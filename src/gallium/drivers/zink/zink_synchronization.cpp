@@ -199,7 +199,7 @@ resource_defer_image_barrier(struct zink_context *ctx, struct zink_resource *res
    if (res->bind_count[!is_compute])
       _mesa_set_add(ctx->need_barriers[!is_compute], res);
    /* also queue a layout change if this is a non-shader layout */
-   if (res->bind_count[is_compute] && !is_shader)
+   if (res->bind_count[is_compute] && !is_shader && !is_compute)
       _mesa_set_add(ctx->need_barriers[is_compute], res);
 
 }
@@ -215,7 +215,7 @@ resource_check_defer_image_barrier(struct zink_context *ctx, struct zink_resourc
        !res->bind_count[!is_compute] && (!is_compute || !res->fb_bind_count))
       return;
 
-   if (res->bind_count[!is_compute] && is_shader) {
+   if ((res->bind_count[1] && is_shader) || (res->bind_count[0] && is_compute)) {
       /* if the layout is the same between gfx and compute, do nothing */
       if (layout == zink_descriptor_util_image_layout_eval(ctx, res, !is_compute))
          return;
