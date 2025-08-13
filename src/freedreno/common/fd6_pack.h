@@ -15,7 +15,6 @@ struct fd_reg_pair {
    uint64_t value;
    struct fd_bo *bo;
    bool is_address;
-   bool bo_write;
    uint32_t bo_offset;
    uint32_t bo_shift;
    uint32_t bo_low;

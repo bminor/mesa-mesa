@@ -222,8 +222,6 @@ class Bitset(object):
         if address:
             print("        .bo = fields.bo,")
             print("        .is_address = true,")
-            if f.type == "waddress":
-                print("        .bo_write = true,")
             print("        .bo_offset = fields.bo_offset,")
             print("        .bo_shift = %d," % address.shr)
             print("        .bo_low = %d," % address.low)
