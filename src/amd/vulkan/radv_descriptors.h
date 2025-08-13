@@ -205,8 +205,9 @@ radv_write_image_descriptor_impl(struct radv_device *device, struct radv_cmd_buf
 }
 
 static ALWAYS_INLINE void
-radv_write_image_descriptor_ycbcr(unsigned *dst, const VkDescriptorImageInfo *image_info)
+radv_write_image_descriptor_ycbcr(struct radv_device *device, unsigned *dst, const VkDescriptorImageInfo *image_info)
 {
+   const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radv_image_view *iview = NULL;
 
    if (image_info)
@@ -218,10 +219,12 @@ radv_write_image_descriptor_ycbcr(unsigned *dst, const VkDescriptorImageInfo *im
    }
 
    const uint32_t plane_count = vk_format_get_plane_count(iview->vk.format);
+   const uint32_t stride = radv_get_combined_image_sampler_desc_size(pdev) / 4;
 
    for (uint32_t i = 0; i < plane_count; i++) {
       memcpy(dst, iview->descriptor.plane_descriptors[i], 32);
-      dst += RADV_COMBINED_IMAGE_SAMPLER_DESC_SIZE / 4;
+
+      dst += stride;
    }
 }
 
@@ -231,7 +234,7 @@ radv_write_image_descriptor_ycbcr_impl(struct radv_device *device, struct radv_c
 {
    VK_FROM_HANDLE(radv_image_view, iview, image_info->imageView);
 
-   radv_write_image_descriptor_ycbcr(dst, image_info);
+   radv_write_image_descriptor_ycbcr(device, dst, image_info);
 
    if (device->use_global_bo_list)
       return;
@@ -273,7 +276,7 @@ radv_write_combined_image_sampler_descriptor(struct radv_device *device, struct 
    radv_write_image_descriptor_impl(device, cmd_buffer, desc_size, dst, buffer_list, descriptor_type, image_info);
    /* copy over sampler state */
    if (has_sampler) {
-      const uint32_t sampler_offset = RADV_COMBINED_IMAGE_SAMPLER_DESC_SAMPLER_OFFSET;
+      const uint32_t sampler_offset = radv_get_combined_image_sampler_offset(pdev);
 
       radv_write_sampler_descriptor(dst + sampler_offset / sizeof(*dst), image_info->sampler);
    }

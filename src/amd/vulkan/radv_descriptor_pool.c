@@ -119,7 +119,7 @@ radv_create_descriptor_pool(struct radv_device *device, const VkDescriptorPoolCr
          }
          break;
       case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-         bo_size += RADV_COMBINED_IMAGE_SAMPLER_DESC_SIZE * pCreateInfo->pPoolSizes[i].descriptorCount;
+         bo_size += pCreateInfo->pPoolSizes[i].descriptorCount * radv_get_combined_image_sampler_desc_size(pdev);
          break;
       case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
          bo_size += pCreateInfo->pPoolSizes[i].descriptorCount;

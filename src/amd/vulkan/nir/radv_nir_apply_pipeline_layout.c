@@ -19,6 +19,8 @@
 typedef struct {
    enum amd_gfx_level gfx_level;
    uint32_t address32_hi;
+   uint32_t combined_image_sampler_desc_size;
+   uint32_t combined_image_sampler_offset;
    bool disable_aniso_single_level;
    bool has_image_load_dcc_bug;
    bool disable_tg4_trunc_coord;
@@ -235,18 +237,18 @@ get_sampler_desc(nir_builder *b, apply_layout_state *state, nir_deref_instr *der
       offset += 32;
       break;
    case AC_DESC_PLANE_1:
-      offset += RADV_COMBINED_IMAGE_SAMPLER_DESC_SIZE;
+      offset += state->combined_image_sampler_desc_size;
       break;
    case AC_DESC_SAMPLER:
       size = RADV_SAMPLER_DESC_SIZE / 4;
       if (binding->type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
-         offset += RADV_COMBINED_IMAGE_SAMPLER_DESC_SAMPLER_OFFSET;
+         offset += state->combined_image_sampler_offset;
       break;
    case AC_DESC_BUFFER:
       size = RADV_BUFFER_DESC_SIZE / 4;
       break;
    case AC_DESC_PLANE_2:
-      offset += 2 * RADV_COMBINED_IMAGE_SAMPLER_DESC_SIZE;
+      offset += 2 * state->combined_image_sampler_desc_size;
       break;
    }
 
@@ -549,6 +551,8 @@ radv_nir_apply_pipeline_layout(nir_shader *shader, struct radv_device *device, c
    apply_layout_state state = {
       .gfx_level = pdev->info.gfx_level,
       .address32_hi = pdev->info.address32_hi,
+      .combined_image_sampler_desc_size = radv_get_combined_image_sampler_desc_size(pdev),
+      .combined_image_sampler_offset = radv_get_combined_image_sampler_offset(pdev),
       .disable_aniso_single_level = instance->drirc.disable_aniso_single_level,
       .has_image_load_dcc_bug = pdev->info.has_image_load_dcc_bug,
       .disable_tg4_trunc_coord = !pdev->info.conformant_trunc_coord && !instance->drirc.disable_trunc_coord,

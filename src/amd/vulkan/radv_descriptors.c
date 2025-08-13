@@ -132,15 +132,15 @@ radv_GetDescriptorEXT(VkDevice _device, const VkDescriptorGetInfoEXT *pDescripto
          VK_FROM_HANDLE(radv_sampler, sampler, pDescriptorInfo->data.pCombinedImageSampler->sampler);
 
          if (sampler->vk.ycbcr_conversion) {
-            radv_write_image_descriptor_ycbcr(pDescriptor, pDescriptorInfo->data.pCombinedImageSampler);
+            radv_write_image_descriptor_ycbcr(device, pDescriptor, pDescriptorInfo->data.pCombinedImageSampler);
          } else {
             radv_write_image_descriptor(pDescriptor, radv_get_sampled_image_desc_size(pdev), pDescriptorInfo->type,
                                         pDescriptorInfo->data.pCombinedImageSampler);
-            radv_write_sampler_descriptor((uint32_t *)pDescriptor + RADV_COMBINED_IMAGE_SAMPLER_DESC_SAMPLER_OFFSET / 4,
+            radv_write_sampler_descriptor((uint32_t *)pDescriptor + radv_get_combined_image_sampler_offset(pdev) / 4,
                                           pDescriptorInfo->data.pCombinedImageSampler->sampler);
          }
       } else {
-         memset(pDescriptor, 0, RADV_COMBINED_IMAGE_SAMPLER_DESC_SIZE);
+         memset(pDescriptor, 0, radv_get_combined_image_sampler_desc_size(pdev));
       }
       break;
    }
