@@ -255,6 +255,13 @@ radv_write_image_descriptor_ycbcr_impl(struct radv_device *device, struct radv_c
 }
 
 static ALWAYS_INLINE void
+radv_write_sampler_descriptor(unsigned *dst, VkSampler _sampler)
+{
+   VK_FROM_HANDLE(radv_sampler, sampler, _sampler);
+   memcpy(dst, sampler->state, RADV_SAMPLER_DESC_SIZE);
+}
+
+static ALWAYS_INLINE void
 radv_write_combined_image_sampler_descriptor(struct radv_device *device, struct radv_cmd_buffer *cmd_buffer,
                                              unsigned *dst, struct radeon_winsys_bo **buffer_list,
                                              VkDescriptorType descriptor_type, const VkDescriptorImageInfo *image_info,
@@ -263,18 +270,10 @@ radv_write_combined_image_sampler_descriptor(struct radv_device *device, struct 
    radv_write_image_descriptor_impl(device, cmd_buffer, 64, dst, buffer_list, descriptor_type, image_info);
    /* copy over sampler state */
    if (has_sampler) {
-      VK_FROM_HANDLE(radv_sampler, sampler, image_info->sampler);
       const uint32_t sampler_offset = RADV_COMBINED_IMAGE_SAMPLER_DESC_SAMPLER_OFFSET;
 
-      memcpy(dst + sampler_offset / sizeof(*dst), sampler->state, RADV_SAMPLER_DESC_SIZE);
+      radv_write_sampler_descriptor(dst + sampler_offset / sizeof(*dst), image_info->sampler);
    }
-}
-
-static ALWAYS_INLINE void
-radv_write_sampler_descriptor(unsigned *dst, VkSampler _sampler)
-{
-   VK_FROM_HANDLE(radv_sampler, sampler, _sampler);
-   memcpy(dst, sampler->state, RADV_SAMPLER_DESC_SIZE);
 }
 
 static ALWAYS_INLINE void
