@@ -5995,11 +5995,10 @@ bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
    };
    NIR_PASS(_, nir, nir_lower_ssbo, &ssbo_opts);
 
-   NIR_PASS(_, nir, pan_lower_sample_pos);
-
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       NIR_PASS(_, nir, nir_lower_is_helper_invocation);
       NIR_PASS(_, nir, pan_lower_helper_invocation);
+      NIR_PASS(_, nir, pan_lower_sample_pos);
    }
 
    /*
