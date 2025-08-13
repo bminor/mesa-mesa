@@ -1574,7 +1574,8 @@ static void visit_store_ssbo(struct ac_nir_context *ctx, nir_intrinsic_instr *in
    LLVMValueRef src_data = get_src(ctx, instr->src[0]);
    int elem_size_bytes = ac_get_elem_bits(&ctx->ac, LLVMTypeOf(src_data)) / 8;
    unsigned writemask = nir_intrinsic_write_mask(instr);
-   enum gl_access_qualifier access = ac_nir_get_mem_access_flags(instr);
+   enum gl_access_qualifier access = nir_intrinsic_access(instr);
+   bool may_subdword = ac_nir_store_may_be_subdword(instr);
 
    struct waterfall_context wctx;
    LLVMValueRef rsrc_base = enter_waterfall_ssbo(ctx, &wctx, instr, instr->src[1]);
@@ -1655,7 +1656,7 @@ static void visit_store_ssbo(struct ac_nir_context *ctx, nir_intrinsic_instr *in
          data = LLVMBuildBitCast(ctx->ac.builder, data, data_type, "");
 
          ac_build_buffer_store_dword(&ctx->ac, rsrc, data, NULL, offset,
-                                     ctx->ac.i32_0, access);
+                                     ctx->ac.i32_0, access, may_subdword);
       }
    }
 
@@ -1797,7 +1798,7 @@ static LLVMValueRef visit_atomic_ssbo(struct ac_nir_context *ctx, nir_intrinsic_
 
       unsigned cache_flags =
          ac_get_hw_cache_flags(ctx->ac.gfx_level,
-			       ac_nir_get_mem_access_flags(instr) | ACCESS_TYPE_ATOMIC).value;
+                               nir_intrinsic_access(instr), ac_access_type_atomic).value;
 
       params[arg_count++] = data;
       params[arg_count++] = descriptor;
@@ -1825,7 +1826,7 @@ static LLVMValueRef visit_load_buffer(struct ac_nir_context *ctx, nir_intrinsic_
 
    int elem_size_bytes = instr->def.bit_size / 8;
    int num_components = instr->num_components;
-   enum gl_access_qualifier access = ac_nir_get_mem_access_flags(instr);
+   enum gl_access_qualifier access = nir_intrinsic_access(instr);
 
    LLVMValueRef offset = get_src(ctx, instr->src[1]);
    LLVMValueRef rsrc = ctx->abi->load_ssbo ?
@@ -2230,7 +2231,7 @@ static LLVMValueRef visit_image_load(struct ac_nir_context *ctx, const nir_intri
 
    struct ac_image_args args = {0};
 
-   args.access = ac_nir_get_mem_access_flags(instr);
+   args.access = nir_intrinsic_access(instr);
    args.tfe = instr->intrinsic == nir_intrinsic_bindless_image_sparse_load;
 
    if (dim == GLSL_SAMPLER_DIM_BUF) {
@@ -2316,7 +2317,7 @@ static void visit_image_store(struct ac_nir_context *ctx, const nir_intrinsic_in
    LLVMValueRef dynamic_index = enter_waterfall_image(ctx, &wctx, instr);
 
    struct ac_image_args args = {0};
-   args.access = ac_nir_get_mem_access_flags(instr);
+   args.access = nir_intrinsic_access(instr);
 
    LLVMValueRef src = get_src(ctx, instr->src[3]);
    if (instr->src[3].ssa->bit_size == 64) {
@@ -2338,7 +2339,7 @@ static void visit_image_store(struct ac_nir_context *ctx, const nir_intrinsic_in
       vindex =
          LLVMBuildExtractElement(ctx->ac.builder, get_src(ctx, instr->src[1]), ctx->ac.i32_0, "");
 
-      ac_build_buffer_store_format(&ctx->ac, rsrc, src, vindex, ctx->ac.i32_0, args.access);
+      ac_build_buffer_store_format(&ctx->ac, rsrc, src, vindex, ctx->ac.i32_0, args.access, true);
    } else {
       bool level_zero = nir_src_is_const(instr->src[4]) && nir_src_as_uint(instr->src[4]) == 0;
 
@@ -2447,7 +2448,7 @@ static LLVMValueRef visit_image_atomic(struct ac_nir_context *ctx, const nir_int
          char type[8];
          unsigned cache_flags =
             ac_get_hw_cache_flags(ctx->ac.gfx_level,
-				  ac_nir_get_mem_access_flags(instr) | ACCESS_TYPE_ATOMIC).value;
+                                  nir_intrinsic_access(instr), ac_access_type_atomic).value;
 
          params[param_count++] = ctx->ac.i32_0; /* soffset */
          params[param_count++] = LLVMConstInt(ctx->ac.i32, cache_flags, 0);
@@ -2471,7 +2472,7 @@ static LLVMValueRef visit_image_atomic(struct ac_nir_context *ctx, const nir_int
       get_image_coords(ctx, instr, dynamic_index, &args, dim, is_array);
       args.dim = ac_get_image_dim(ctx->ac.gfx_level, dim, is_array);
       args.a16 = ac_get_elem_bits(&ctx->ac, LLVMTypeOf(args.coords[0])) == 16;
-      args.access = ac_nir_get_mem_access_flags(instr);
+      args.access = nir_intrinsic_access(instr);
 
       result = ac_build_image_opcode(&ctx->ac, &args);
    }
@@ -3085,7 +3086,7 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
       unsigned num_components = instr->def.num_components;
       unsigned const_offset = nir_intrinsic_base(instr);
       bool reorder = nir_intrinsic_can_reorder(instr);
-      enum gl_access_qualifier access = ac_nir_get_mem_access_flags(instr);
+      enum gl_access_qualifier access = nir_intrinsic_access(instr);
       bool uses_format = access & ACCESS_USES_FORMAT_AMD;
 
       LLVMValueRef voffset = LLVMBuildAdd(ctx->ac.builder, addr_voffset,
@@ -3099,7 +3100,7 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
          result = ac_to_integer(&ctx->ac, result);
       } else if (instr->intrinsic == nir_intrinsic_store_buffer_amd && uses_format) {
          assert(instr->src[0].ssa->bit_size == 16 || instr->src[0].ssa->bit_size == 32);
-         ac_build_buffer_store_format(&ctx->ac, descriptor, store_data, vidx, voffset, access);
+         ac_build_buffer_store_format(&ctx->ac, descriptor, store_data, vidx, voffset, access, true);
       } else if (instr->intrinsic == nir_intrinsic_load_buffer_amd ||
                  instr->intrinsic == nir_intrinsic_load_typed_buffer_amd) {
          /* LLVM is unable to select instructions for larger than 32-bit channel types.
@@ -3152,7 +3153,7 @@ static bool visit_intrinsic(struct ac_nir_context *ctx, nir_intrinsic_instr *ins
 
             LLVMValueRef data = extract_vector_range(&ctx->ac, store_data, start, count);
             ac_build_buffer_store_dword(&ctx->ac, descriptor, data, vidx, voffset, addr_soffset,
-                                        access);
+                                        access, ac_nir_store_may_be_subdword(instr));
          }
       }
       break;

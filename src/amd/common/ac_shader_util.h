@@ -36,14 +36,12 @@ extern "C" {
 /* An extension of gl_access_qualifier describing other aspects of memory operations
  * for code generation.
  */
-enum {
-   /* Only one of LOAD/STORE/ATOMIC can be set. */
-   ACCESS_TYPE_LOAD            = BITFIELD_BIT(27),
-   ACCESS_TYPE_STORE           = BITFIELD_BIT(28),
-   ACCESS_TYPE_ATOMIC          = BITFIELD_BIT(29),
-
+enum ac_access_type {
+   ac_access_type_load,
+   ac_access_type_store,
    /* Whether a store offset or size alignment is less than 4. */
-   ACCESS_MAY_STORE_SUBDWORD   = BITFIELD_BIT(31),
+   ac_access_type_store_subdword,
+   ac_access_type_atomic,
 };
 
 /* GFX6-11. The meaning of these enums is different between chips. They match LLVM definitions,
@@ -307,7 +305,8 @@ ac_ngg_get_scratch_lds_size(mesa_shader_stage stage,
                             bool compact_primitives);
 
 union ac_hw_cache_flags ac_get_hw_cache_flags(enum amd_gfx_level gfx_level,
-                                              enum gl_access_qualifier access);
+                                              enum gl_access_qualifier access,
+                                              enum ac_access_type type);
 
 unsigned ac_get_all_edge_flag_bits(enum amd_gfx_level gfx_level);
 
