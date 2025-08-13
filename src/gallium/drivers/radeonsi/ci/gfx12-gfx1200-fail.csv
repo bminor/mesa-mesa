@@ -27,7 +27,6 @@ spec@!opengl 1.0@rasterpos@glsl_vs_tes_linked,Fail
 spec@glsl-es-1.00@linker@glsl-mismatched-uniform-precision-unused,Fail
 
 # glcts failures
-KHR-GL46.geometry_shader.primitive_counter.triangles_to_line_strip_rp,Fail
 ## Test issue - https://github.com/KhronosGroup/VK-GL-CTS/issues/251
 ## Fail because GFX10+ removed MS texture support (see si_get_sparse_texture_virtual_page_size)
 KHR-GL46.sparse_texture2_tests.SparseTexture2Allocation,Fail
