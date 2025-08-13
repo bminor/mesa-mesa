@@ -1064,9 +1064,6 @@ void anv_CmdBindDescriptorBuffersEXT(
          state->descriptor_buffers.offsets_dirty = ~0;
       }
    }
-
-   anv_cmd_buffer_maybe_dirty_descriptor_mode(cmd_buffer,
-                                              ANV_CMD_DESCRIPTOR_BUFFER_MODE_BUFFER);
 }
 
 static void
@@ -1135,6 +1132,9 @@ void anv_CmdSetDescriptorBufferOffsets2EXT(
                                                    pSetDescriptorBufferOffsetsInfo->pOffsets,
                                                    pSetDescriptorBufferOffsetsInfo->pBufferIndices);
    }
+
+   anv_cmd_buffer_maybe_dirty_descriptor_mode(cmd_buffer,
+                                              ANV_CMD_DESCRIPTOR_BUFFER_MODE_BUFFER);
 }
 
 void anv_CmdBindDescriptorBufferEmbeddedSamplers2EXT(
