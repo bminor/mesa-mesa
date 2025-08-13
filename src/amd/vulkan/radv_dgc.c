@@ -171,43 +171,34 @@ radv_get_sequence_size_compute(const struct radv_indirect_command_layout *layout
                                uint32_t *upload_size)
 {
    const struct radv_device *device = container_of(layout->vk.base.device, struct radv_device, vk);
-   const struct radv_physical_device *pdev = radv_device_physical(device);
 
    const VkGeneratedCommandsPipelineInfoEXT *pipeline_info =
       vk_find_struct_const(pNext, GENERATED_COMMANDS_PIPELINE_INFO_EXT);
    const VkGeneratedCommandsShaderInfoEXT *eso_info = vk_find_struct_const(pNext, GENERATED_COMMANDS_SHADER_INFO_EXT);
 
    struct radv_shader *cs = radv_dgc_get_shader(pipeline_info, eso_info, MESA_SHADER_COMPUTE);
+   bool uses_grid_base_sgpr;
 
    /* dispatch */
    *cmd_size += 5 * 4;
 
    if (cs) {
       const struct radv_userdata_info *loc = radv_get_user_sgpr_info(cs, AC_UD_CS_GRID_SIZE);
-      if (loc->sgpr_idx != -1) {
-         if (device->load_grid_size_from_user_sgpr) {
-            /* PKT3_SET_SH_REG for immediate values */
-            *cmd_size += 5 * 4;
-         } else {
-            /* PKT3_SET_SH_REG for pointer */
-            *cmd_size += 4 * 4;
-         }
-      }
-   } else {
-      /* COMPUTE_PGM_{LO,RSRC1,RSRC2} */
-      *cmd_size += 7 * 4;
 
-      if (pdev->info.gfx_level >= GFX10) {
-         /* COMPUTE_PGM_RSRC3 */
+      uses_grid_base_sgpr = loc->sgpr_idx != -1;
+   } else {
+      /* precomputed CS size */
+      *cmd_size += ies->cs_num_dw * 4;
+
+      if (ies->uses_indirect_desc_sets_sgpr) {
+         /* PKT3_SET_SH_REG for indirect descriptor sets pointer */
          *cmd_size += 3 * 4;
       }
 
-      /* COMPUTE_{RESOURCE_LIMITS,NUM_THREADS_X} */
-      *cmd_size += 8 * 4;
+      uses_grid_base_sgpr = ies->uses_grid_base_sgpr;
+   }
 
-      /* Assume the compute shader needs grid size because we can't know the information for
-       * indirect pipelines.
-       */
+   if (uses_grid_base_sgpr) {
       if (device->load_grid_size_from_user_sgpr) {
          /* PKT3_SET_SH_REG for immediate values */
          *cmd_size += 5 * 4;
@@ -215,9 +206,6 @@ radv_get_sequence_size_compute(const struct radv_indirect_command_layout *layout
          /* PKT3_SET_SH_REG for pointer */
          *cmd_size += 4 * 4;
       }
-
-      /* PKT3_SET_SH_REG for indirect descriptor sets pointer */
-      *cmd_size += 3 * 4;
    }
 
    if (device->sqtt.bo) {
@@ -388,13 +376,12 @@ radv_get_sequence_size(const struct radv_indirect_command_layout *layout, const 
       bool need_copy = false;
 
       if (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_IES)) {
-         /* Assume the compute shader needs both user SGPRs because we can't know the information
-          * for indirect pipelines.
-          */
-         *cmd_size += 3 * 4;
-         need_copy = true;
+         if (ies->uses_upload_sgpr) {
+            *cmd_size += 3 * 4;
+            need_copy = true;
+         }
 
-         *cmd_size += (3 * (pipeline_layout->push_constant_size / 4)) * 4;
+         *cmd_size += (3 * util_bitcount64(ies->inline_push_const_mask)) * 4;
       } else {
          struct radv_shader *shaders[MESA_VULKAN_SHADER_STAGES] = {0};
          if (pipeline_info) {
