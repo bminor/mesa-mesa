@@ -654,61 +654,6 @@ static bool si_vid_is_format_supported(struct pipe_screen *screen, enum pipe_for
    return vl_video_buffer_is_format_supported(screen, format, profile, entrypoint);
 }
 
-static bool si_vid_is_target_buffer_supported(struct pipe_screen *screen,
-                                              enum pipe_format format,
-                                              struct pipe_video_buffer *target,
-                                              enum pipe_video_profile profile,
-                                              enum pipe_video_entrypoint entrypoint)
-{
-   struct si_screen *sscreen = (struct si_screen *)screen;
-   struct si_texture *tex = (struct si_texture *)((struct vl_video_buffer *)target)->resources[0];
-   const bool is_dcc = tex->surface.meta_offset;
-   const bool is_format_conversion = format != target->buffer_format;
-
-   switch (entrypoint) {
-   case PIPE_VIDEO_ENTRYPOINT_BITSTREAM:
-      if (is_dcc || is_format_conversion)
-         return false;
-      break;
-
-   case PIPE_VIDEO_ENTRYPOINT_ENCODE:
-      if (is_dcc)
-         return false;
-
-      /* EFC */
-      if (is_format_conversion) {
-         const bool input_8bit =
-            target->buffer_format == PIPE_FORMAT_B8G8R8A8_UNORM ||
-            target->buffer_format == PIPE_FORMAT_B8G8R8X8_UNORM ||
-            target->buffer_format == PIPE_FORMAT_R8G8B8A8_UNORM ||
-            target->buffer_format == PIPE_FORMAT_R8G8B8X8_UNORM;
-         const bool input_10bit =
-            target->buffer_format == PIPE_FORMAT_B10G10R10A2_UNORM ||
-            target->buffer_format == PIPE_FORMAT_B10G10R10X2_UNORM ||
-            target->buffer_format == PIPE_FORMAT_R10G10B10A2_UNORM ||
-            target->buffer_format == PIPE_FORMAT_R10G10B10X2_UNORM;
-
-         if (sscreen->info.vcn_ip_version < VCN_2_0_0 ||
-             sscreen->info.vcn_ip_version == VCN_2_2_0 ||
-             sscreen->multimedia_debug_flags & DBG(NO_EFC))
-            return false;
-
-         if (input_8bit && format != PIPE_FORMAT_NV12)
-            return false;
-         if (input_10bit && format != PIPE_FORMAT_NV12 && format != PIPE_FORMAT_P010)
-            return false;
-      }
-      break;
-
-   default:
-      if (is_format_conversion)
-         return false;
-      break;
-   }
-
-   return si_vid_is_format_supported(screen, format, profile, entrypoint);
-}
-
 static uint64_t si_get_timestamp(struct pipe_screen *screen)
 {
    struct si_screen *sscreen = (struct si_screen *)screen;
@@ -841,7 +786,6 @@ void si_init_screen_get_functions(struct si_screen *sscreen)
        sscreen->info.ip[AMD_IP_VPE].num_queues) {
       sscreen->b.get_video_param = si_get_video_param;
       sscreen->b.is_video_format_supported = si_vid_is_format_supported;
-      sscreen->b.is_video_target_buffer_supported = si_vid_is_target_buffer_supported;
    }
 
    si_init_renderer_string(sscreen);
