@@ -844,7 +844,7 @@ AluInstr::split(ValueFactory& vf)
       auto instr = new AluInstr(opcode, dst, src, {}, 1);
       instr->set_blockid(block_id(), index());
 
-      if (s == 0 || !m_alu_flags.test(alu_64bit_op)) {
+      if (k == 0 || !m_alu_flags.test(alu_64bit_op)) {
          if (has_source_mod(nsrc * k + 0, mod_neg))
             instr->set_source_mod(0, mod_neg);
          if (has_source_mod(nsrc * k + 1, mod_neg))
