@@ -5137,12 +5137,6 @@ va_gather_stats(bi_context *ctx, unsigned size, struct valhall_stats *out)
       MAX2(MAX3(out->fma, out->cvt, out->sfu), MAX3(out->v, out->t, out->ls));
 }
 
-static int
-glsl_type_size(const struct glsl_type *type, bool bindless)
-{
-   return glsl_count_attribute_slots(type, false);
-}
-
 /* Split stores to memory. We don't split stores to vertex outputs, since
  * nir_lower_io_vars_to_temporaries will ensure there's only a single write.
  */
@@ -5954,19 +5948,6 @@ void
 bifrost_postprocess_nir(nir_shader *nir, unsigned gpu_id)
 {
    MESA_TRACE_FUNC();
-   NIR_PASS(_, nir, nir_lower_io, nir_var_shader_in | nir_var_shader_out,
-            glsl_type_size, nir_lower_io_use_interpolated_input_intrinsics);
-
-   if (nir->info.stage == MESA_SHADER_VERTEX)
-      NIR_PASS(_, nir, pan_nir_lower_noperspective_vs);
-   if (nir->info.stage == MESA_SHADER_FRAGMENT)
-      NIR_PASS(_, nir, pan_nir_lower_noperspective_fs);
-
-   /* nir_lower[_explicit]_io is lazy and emits mul+add chains even for
-    * offsets it could figure out are constant.  Do some constant folding
-    * before bifrost_nir_lower_store_component below.
-    */
-   NIR_PASS(_, nir, nir_opt_constant_folding);
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       NIR_PASS(_, nir, nir_lower_mediump_io,

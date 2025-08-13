@@ -467,6 +467,12 @@ panfrost_bind_fs_state(struct pipe_context *pctx, void *hwcso)
    panfrost_update_shader_variant(ctx, MESA_SHADER_VERTEX);
 }
 
+static int
+glsl_type_size(const struct glsl_type *type, bool bindless)
+{
+   return glsl_count_attribute_slots(type, false);
+}
+
 static void *
 panfrost_create_shader_state(struct pipe_context *pctx,
                              const struct pipe_shader_state *cso)
@@ -499,6 +505,21 @@ panfrost_create_shader_state(struct pipe_context *pctx,
    /* Then run the suite of lowering and optimization, including I/O lowering */
    struct panfrost_device *dev = pan_device(pctx->screen);
    pan_shader_preprocess(nir, panfrost_device_gpu_id(dev));
+
+   NIR_PASS(_, nir, nir_lower_io, nir_var_shader_in | nir_var_shader_out,
+            glsl_type_size, nir_lower_io_use_interpolated_input_intrinsics);
+
+   if (dev->arch >= 6 && nir->info.stage == MESA_SHADER_VERTEX)
+      NIR_PASS(_, nir, pan_nir_lower_noperspective_vs);
+   if (dev->arch >= 6 && nir->info.stage == MESA_SHADER_FRAGMENT)
+      NIR_PASS(_, nir, pan_nir_lower_noperspective_fs);
+
+   /* nir_lower[_explicit]_io is lazy and emits mul+add chains even for
+    * offsets it could figure out are constant.  Do some constant folding
+    * before bifrost_nir_lower_store_component below.
+    */
+   NIR_PASS(_, nir, nir_opt_constant_folding);
+
    pan_shader_postprocess(nir, panfrost_device_gpu_id(dev));
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT)

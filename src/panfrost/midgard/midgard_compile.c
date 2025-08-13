@@ -210,12 +210,6 @@ attach_constants(compiler_context *ctx, midgard_instruction *ins,
    memcpy(&ins->constants, constants, 16);
 }
 
-static int
-glsl_type_size(const struct glsl_type *type, bool bindless)
-{
-   return glsl_count_attribute_slots(type, false);
-}
-
 static bool
 midgard_nir_lower_global_load_instr(nir_builder *b, nir_intrinsic_instr *intr,
                                     void *data)
@@ -402,9 +396,6 @@ void
 midgard_postprocess_nir(nir_shader *nir, unsigned gpu_id)
 {
    unsigned quirks = midgard_get_quirks(gpu_id);
-
-   NIR_PASS(_, nir, nir_lower_io, nir_var_shader_in | nir_var_shader_out,
-            glsl_type_size, nir_lower_io_use_interpolated_input_intrinsics);
 
    if (nir->info.stage == MESA_SHADER_VERTEX) {
       /* nir_lower[_explicit]_io is lazy and emits mul+add chains even
