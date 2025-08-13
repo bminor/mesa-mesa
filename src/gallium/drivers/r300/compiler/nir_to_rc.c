@@ -33,7 +33,6 @@ struct ntr_insn {
    struct ureg_dst dst[2];
    struct ureg_src src[4];
    enum tgsi_texture_type tex_target;
-   enum tgsi_return_type tex_return_type;
    struct tgsi_texture_offset tex_offset[4];
 
    unsigned mem_qualifier;
@@ -1426,21 +1425,6 @@ ntr_emit_texture(struct ntr_compile *c, nir_tex_instr *instr)
 
    s.srcs[s.i++] = sampler;
 
-   enum tgsi_return_type tex_type;
-   switch (instr->dest_type) {
-   case nir_type_float32:
-      tex_type = TGSI_RETURN_TYPE_FLOAT;
-      break;
-   case nir_type_int32:
-      tex_type = TGSI_RETURN_TYPE_SINT;
-      break;
-   case nir_type_uint32:
-      tex_type = TGSI_RETURN_TYPE_UINT;
-      break;
-   default:
-      UNREACHABLE("unknown texture type");
-   }
-
    struct ureg_dst tex_dst;
    if (instr->op == nir_texop_query_levels)
       tex_dst = ureg_writemask(ntr_temp(c), TGSI_WRITEMASK_W);
@@ -1453,7 +1437,6 @@ ntr_emit_texture(struct ntr_compile *c, nir_tex_instr *instr)
    struct ntr_insn *insn =
       ntr_insn(c, tex_opcode, tex_dst, s.srcs[0], s.srcs[1], s.srcs[2], s.srcs[3]);
    insn->tex_target = target;
-   insn->tex_return_type = tex_type;
    insn->is_tex = true;
 
    int tex_offset_src = nir_tex_instr_src_index(instr, nir_tex_src_offset);
@@ -1676,8 +1659,7 @@ ntr_emit_block_ureg(struct ntr_compile *c, struct nir_block *block)
                   num_offsets = i + 1;
             }
             ureg_tex_insn(c->ureg, insn->opcode, insn->dst, opcode_info->num_dst, insn->tex_target,
-                          insn->tex_return_type, insn->tex_offset, num_offsets, insn->src,
-                          opcode_info->num_src);
+                          insn->tex_offset, num_offsets, insn->src, opcode_info->num_src);
          } else {
             ureg_insn(c->ureg, insn->opcode, insn->dst, opcode_info->num_dst, insn->src,
                       opcode_info->num_src, insn->precise);

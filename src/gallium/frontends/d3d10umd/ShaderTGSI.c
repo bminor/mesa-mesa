@@ -1195,7 +1195,6 @@ sample_ureg_emit(struct ureg_program *ureg,
                  tgsi_opcode,
                  &dst, 1,
                  TGSI_TEXTURE_UNKNOWN,
-                 TGSI_RETURN_TYPE_UNKNOWN,
                  &texoffsets, num_offsets,
                  src, num_src);
 }

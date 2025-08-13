@@ -231,7 +231,6 @@ enum tgsi_return_type {
    TGSI_RETURN_TYPE_SINT,
    TGSI_RETURN_TYPE_UINT,
    TGSI_RETURN_TYPE_FLOAT,
-   TGSI_RETURN_TYPE_UNKNOWN,
    TGSI_RETURN_TYPE_COUNT
 };
 
@@ -701,8 +700,7 @@ struct tgsi_instruction_texture
 {
    unsigned Texture  : 8;    /* TGSI_TEXTURE_ */
    unsigned NumOffsets : 4;
-   unsigned ReturnType : 3; /* TGSI_RETURN_TYPE_x */
-   unsigned Padding : 17;
+   unsigned Padding : 20;
 };
 
 /* for texture offsets in GLSL and DirectX.
