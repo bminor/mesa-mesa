@@ -644,7 +644,7 @@ static uint32_t radeon_enc_ref_swizzle_mode(struct radeon_encoder *enc)
 {
    /* return RENCODE_REC_SWIZZLE_MODE_LINEAR; for debugging purpose */
    if (enc->enc_pic.bit_depth_luma_minus8 != 0)
-      return RENCODE_REC_SWIZZLE_MODE_8x8_1D_THIN_12_24BPP;
+      return RENCODE_REC_SWIZZLE_MODE_8x8_1D_THIN_12_24BPP_VCN4;
    else
       return RENCODE_REC_SWIZZLE_MODE_256B_D;
 }
