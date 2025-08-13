@@ -1,12 +1,12 @@
-dEQP-EGL.functional.robustness.reset_context.shaders.infinite_loop.query_status.compute,Fail
-dEQP-EGL.functional.robustness.reset_context.shaders.infinite_loop.query_status.vertex,Fail
-dEQP-EGL.functional.robustness.reset_context.shaders.infinite_loop.query_status.vertex_and_fragment,Fail
-dEQP-EGL.functional.robustness.reset_context.shaders.infinite_loop.reset_status.compute,Fail
-dEQP-EGL.functional.robustness.reset_context.shaders.infinite_loop.reset_status.vertex,Fail
-dEQP-EGL.functional.robustness.reset_context.shaders.infinite_loop.reset_status.vertex_and_fragment,Fail
-dEQP-EGL.functional.robustness.reset_context.shaders.infinite_loop.sync_status.compute,Fail
-dEQP-EGL.functional.robustness.reset_context.shaders.infinite_loop.sync_status.vertex,Fail
-dEQP-EGL.functional.robustness.reset_context.shaders.infinite_loop.sync_status.vertex_and_fragment,Fail
+x11-dEQP-EGL.functional.robustness.reset_context.shaders.infinite_loop.query_status.compute,Fail
+x11-dEQP-EGL.functional.robustness.reset_context.shaders.infinite_loop.query_status.vertex,Fail
+x11-dEQP-EGL.functional.robustness.reset_context.shaders.infinite_loop.query_status.vertex_and_fragment,Fail
+x11-dEQP-EGL.functional.robustness.reset_context.shaders.infinite_loop.reset_status.compute,Fail
+x11-dEQP-EGL.functional.robustness.reset_context.shaders.infinite_loop.reset_status.vertex,Fail
+x11-dEQP-EGL.functional.robustness.reset_context.shaders.infinite_loop.reset_status.vertex_and_fragment,Fail
+x11-dEQP-EGL.functional.robustness.reset_context.shaders.infinite_loop.sync_status.compute,Fail
+x11-dEQP-EGL.functional.robustness.reset_context.shaders.infinite_loop.sync_status.vertex,Fail
+x11-dEQP-EGL.functional.robustness.reset_context.shaders.infinite_loop.sync_status.vertex_and_fragment,Fail
 
 spec@glsl-1.20@compiler@invalid-vec4-array-to-vec3-array-conversion.vert,Fail
 spec@oes_shader_io_blocks@compiler@layout-location-aliasing.vert,Fail
