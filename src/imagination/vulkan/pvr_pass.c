@@ -33,7 +33,6 @@
 #include "pvr_private.h"
 #include "pvr_types.h"
 #include "pvr_usc.h"
-#include "usc/programs/pvr_usc_fragment_shader.h"
 #include "util/macros.h"
 #include "vk_alloc.h"
 #include "vk_format.h"

@@ -35,7 +35,6 @@ pvr_files = files(
   'pvr_dump_bo.c',
   'pvr_dump_csb.c',
   'pvr_formats.c',
-  'pvr_hardcode.c',
   'pvr_hw_pass.c',
   'pvr_image.c',
   'pvr_job_common.c',

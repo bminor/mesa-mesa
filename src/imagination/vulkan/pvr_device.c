@@ -52,7 +52,6 @@
 #include "pvr_debug.h"
 #include "pvr_device_info.h"
 #include "pvr_dump_info.h"
-#include "pvr_hardcode.h"
 #include "pvr_job_render.h"
 #include "pvr_limits.h"
 #include "pvr_pds.h"
@@ -69,7 +68,6 @@
 #include "util/macros.h"
 #include "util/mesa-sha1.h"
 #include "util/os_misc.h"
-#include "util/u_dynarray.h"
 #include "util/u_math.h"
 #include "vk_alloc.h"
 #include "vk_extensions.h"
@@ -1651,37 +1649,28 @@ static VkResult pvr_device_init_compute_idfwdf_state(struct pvr_device *device)
 {
    struct pvr_sampler_descriptor sampler_state;
    struct pvr_image_descriptor image_state;
-   struct util_dynarray usc_program;
    struct pvr_texture_state_info tex_info;
+   const pco_precomp_data *precomp_data;
    uint32_t *dword_ptr;
-   uint32_t usc_shareds;
-   uint32_t usc_temps;
    VkResult result;
 
-   util_dynarray_init(&usc_program, NULL);
-   pvr_hard_code_get_idfwdf_program(&device->pdevice->dev_info,
-                                    &usc_program,
-                                    &usc_shareds,
-                                    &usc_temps);
-
-   device->idfwdf_state.usc_shareds = usc_shareds;
+   precomp_data = (pco_precomp_data *)pco_usclib_common[CS_IDFWDF_COMMON];
+   device->idfwdf_state.usc_shareds = _PVR_IDFWDF_DATA_COUNT;
 
    /* FIXME: Figure out the define for alignment of 16. */
    result = pvr_gpu_upload_usc(device,
-                               usc_program.data,
-                               usc_program.size,
+                               precomp_data->binary,
+                               precomp_data->size_dwords * sizeof(uint32_t),
                                16,
                                &device->idfwdf_state.usc);
-   util_dynarray_fini(&usc_program);
 
    if (result != VK_SUCCESS)
       return result;
 
-   /* TODO: Get the store buffer size from the compiler? */
-   /* TODO: How was the size derived here? */
    result = pvr_bo_alloc(device,
                          device->heaps.general_heap,
-                         4 * sizeof(float) * 4 * 2,
+                         PVR_IDFWDF_TEX_WIDTH * PVR_IDFWDF_TEX_HEIGHT *
+                            vk_format_get_blocksize(PVR_IDFWDF_TEX_FORMAT),
                          4,
                          0,
                          &device->idfwdf_state.store_bo);
@@ -1690,7 +1679,7 @@ static VkResult pvr_device_init_compute_idfwdf_state(struct pvr_device *device)
 
    result = pvr_bo_alloc(device,
                          device->heaps.general_heap,
-                         usc_shareds * ROGUE_REG_SIZE_BYTES,
+                         _PVR_IDFWDF_DATA_COUNT * ROGUE_REG_SIZE_BYTES,
                          ROGUE_REG_SIZE_BYTES,
                          PVR_BO_ALLOC_FLAG_CPU_MAPPED,
                          &device->idfwdf_state.shareds_bo);
@@ -1711,14 +1700,15 @@ static VkResult pvr_device_init_compute_idfwdf_state(struct pvr_device *device)
    /* clang-format on */
 
    tex_info = (struct pvr_texture_state_info){
-      .format = VK_FORMAT_R32G32B32A32_SFLOAT,
+      .format = PVR_IDFWDF_TEX_FORMAT,
       .mem_layout = PVR_MEMLAYOUT_LINEAR,
       .flags = PVR_TEXFLAGS_INDEX_LOOKUP,
       .type = VK_IMAGE_VIEW_TYPE_2D,
-      .extent = { .width = 4, .height = 2, .depth = 0 },
+      .extent = { .width = PVR_IDFWDF_TEX_WIDTH,
+                  .height = PVR_IDFWDF_TEX_HEIGHT },
       .mip_levels = 1,
       .sample_count = 1,
-      .stride = 4,
+      .stride = PVR_IDFWDF_TEX_STRIDE,
       .swizzle = { PIPE_SWIZZLE_X,
                    PIPE_SWIZZLE_Y,
                    PIPE_SWIZZLE_Z,
@@ -1731,36 +1721,19 @@ static VkResult pvr_device_init_compute_idfwdf_state(struct pvr_device *device)
       goto err_free_shareds_buffer;
 
    /* Fill the shareds buffer. */
-
    dword_ptr = (uint32_t *)device->idfwdf_state.shareds_bo->bo->map;
 
-#define HIGH_32(val) ((uint32_t)((val) >> 32U))
-#define LOW_32(val) ((uint32_t)(val))
+   memcpy(&dword_ptr[PVR_IDFWDF_DATA_TEX],
+          image_state.words,
+          sizeof(image_state.words));
+   memcpy(&dword_ptr[PVR_IDFWDF_DATA_SMP],
+          sampler_state.words,
+          sizeof(sampler_state.words));
 
-   /* TODO: Should we use compiler info to setup the shareds data instead of
-    * assuming there's always 12 and this is how they should be setup?
-    */
-
-   dword_ptr[0] = HIGH_32(device->idfwdf_state.store_bo->vma->dev_addr.addr);
-   dword_ptr[1] = LOW_32(device->idfwdf_state.store_bo->vma->dev_addr.addr);
-
-   /* Pad the shareds as the texture/sample state words are 128 bit aligned. */
-   dword_ptr[2] = 0U;
-   dword_ptr[3] = 0U;
-
-   dword_ptr[4] = LOW_32(image_state.words[0]);
-   dword_ptr[5] = HIGH_32(image_state.words[0]);
-   dword_ptr[6] = LOW_32(image_state.words[1]);
-   dword_ptr[7] = HIGH_32(image_state.words[1]);
-
-   dword_ptr[8] = LOW_32(sampler_state.words[0]);
-   dword_ptr[9] = HIGH_32(sampler_state.words[0]);
-   dword_ptr[10] = LOW_32(sampler_state.words[1]);
-   dword_ptr[11] = HIGH_32(sampler_state.words[1]);
-   assert(11 + 1 == usc_shareds);
-
-#undef HIGH_32
-#undef LOW_32
+   dword_ptr[PVR_IDFWDF_DATA_ADDR_LO] =
+      device->idfwdf_state.store_bo->vma->dev_addr.addr & 0xffffffff;
+   dword_ptr[PVR_IDFWDF_DATA_ADDR_HI] =
+      device->idfwdf_state.store_bo->vma->dev_addr.addr >> 32;
 
    pvr_bo_cpu_unmap(device, device->idfwdf_state.shareds_bo);
    dword_ptr = NULL;
@@ -1769,11 +1742,12 @@ static VkResult pvr_device_init_compute_idfwdf_state(struct pvr_device *device)
    result = pvr_pds_idfwdf_programs_create_and_upload(
       device,
       device->idfwdf_state.usc->dev_addr,
-      usc_shareds,
-      usc_temps,
+      _PVR_IDFWDF_DATA_COUNT,
+      precomp_data->temps,
       device->idfwdf_state.shareds_bo->vma->dev_addr,
       &device->idfwdf_state.pds,
       &device->idfwdf_state.sw_compute_barrier_pds);
+
    if (result != VK_SUCCESS)
       goto err_free_shareds_buffer;
 

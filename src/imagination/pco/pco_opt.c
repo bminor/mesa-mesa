@@ -582,6 +582,11 @@ static inline bool instr_has_side_effects(pco_instr *instr)
    case PCO_OP_FDSX:
    case PCO_OP_FDSY:
 
+   /* TODO: we don't really want to mark this as having side-effects, but
+    * idfwdf does smp without using the results.
+    */
+   case PCO_OP_SMP:
+
    case PCO_OP_IADD32_ATOMIC:
    case PCO_OP_XCHG_ATOMIC:
    case PCO_OP_CMPXCHG_ATOMIC:

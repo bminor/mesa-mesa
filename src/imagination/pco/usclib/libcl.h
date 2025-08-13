@@ -72,26 +72,44 @@ uint4 nir_load_preamble__4(uint base, uint preamble_class);
 
 #define nir_load_preamble(n, ...) CAT2(nir_load_preamble__, n)(__VA_ARGS__)
 
-void nir_store_preamble(uint data, uint base, uint preamble_class);
+void nir_store_preamble_dynamic(uint data, uint offset, uint preamble_class);
 
 uint nir_dma_ld_pco__1(uint2 addr);
 uint2 nir_dma_ld_pco__2(uint2 addr);
 uint3 nir_dma_ld_pco__3(uint2 addr);
 uint4 nir_dma_ld_pco__4(uint2 addr);
+uint16 nir_dma_ld_pco__16(uint2 addr);
 
 #define nir_dma_ld_pco(n, ...) CAT2(nir_dma_ld_pco__, n)(__VA_ARGS__)
 
-void nir_dma_st_pco__1(uint3 addr_data);
-void nir_dma_st_pco__2(uint4 addr_data);
+void nir_dma_st_pco__1(uint3 addr_data, uint flags);
+void nir_dma_st_pco__2(uint4 addr_data, uint flags);
 
-#define SELECT_ARGS_ST(addr, ...) \
-   ((CAT2(uint, NUM_ARGS_PLUS_2(__VA_ARGS__)))(addr, __VA_ARGS__))
+#define SELECT_ARGS_ST(flags, addr, ...) \
+   ((CAT2(uint, NUM_ARGS_PLUS_2(__VA_ARGS__)))(addr, __VA_ARGS__), flags)
 
 /* clang-format off */
-#define nir_dma_st_pco(addr, ...) SELECT_NAME(nir_dma_st_pco, __, __VA_ARGS__)SELECT_ARGS_ST(addr, __VA_ARGS__)
+#define nir_dma_st_pco(flags, addr, ...) SELECT_NAME(nir_dma_st_pco, __, __VA_ARGS__)SELECT_ARGS_ST(flags, addr, __VA_ARGS__)
 /* clang-format on */
+
+void nir_dma_st_shregs_pco(uint2 addr,
+                           uint burst_len,
+                           uint shreg_offset,
+                           uint flags);
+
+void nir_dma_ld_shregs_pco(uint2 addr, uint burst_len, uint shreg_offset);
+
+void nir_dma_idf_pco(uint2 addr);
 
 uint2 nir_uadd64_32(uint lo, uint hi, uint offset);
 uint nir_imad(uint a, uint b, uint c);
 uint2 nir_umad64_32(uint a, uint b, uint lo, uint hi);
+
+uint nir_load_shared_reg_alloc_size_pco(void);
+
+uint nir_smp_pco(uint16 data,
+                 uint4 tex_state,
+                 uint4 smp_state,
+                 uint smp_flags,
+                 uint range);
 #endif /* PCO_LIBCL_H */

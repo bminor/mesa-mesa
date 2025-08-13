@@ -1363,6 +1363,9 @@ load("preamble", [], indices=[BASE, PREAMBLE_CLASS],
      flags=[CAN_ELIMINATE, CAN_REORDER])
 store("preamble", [], indices=[BASE, PREAMBLE_CLASS])
 
+# src[] = { value, offset }.
+store("preamble_dynamic", [1], indices=[PREAMBLE_CLASS])
+
 # A 64-bit bitfield indexed by I/O location storing 1 in bits corresponding to
 # varyings that have the flat interpolation specifier in the fragment shader and
 # 0 otherwise
@@ -2771,11 +2774,19 @@ intrinsic("frag_store_pco", src_comp=[1], indices=[BASE], bit_sizes=[32])
 # dma_ld_pco(address)
 intrinsic("dma_ld_pco", src_comp=[2], dest_comp=0, flags=[CAN_ELIMINATE], bit_sizes=[32])
 
-# dma_st_pco(address_data)
-intrinsic("dma_st_pco", src_comp=[0], bit_sizes=[32])
+# dma_st_pco(address_data, emit_idf)
+intrinsic("dma_st_pco", src_comp=[0], indices=[FLAGS], bit_sizes=[32])
 
 # dma_st_tiled_pco(address_data, valid_mask)
 intrinsic("dma_st_tiled_pco", src_comp=[3, 1], bit_sizes=[32])
 
 # load_tiled_offset_pco(component, is_store)
 intrinsic("load_tiled_offset_pco", dest_comp=1, indices=[COMPONENT, FLAGS], bit_sizes=[32])
+
+intrinsic("load_shared_reg_alloc_size_pco", dest_comp=1, bit_sizes=[32])
+
+# dma_ld_shregs_pco(address, burst_len, shreg_offset)
+intrinsic("dma_ld_shregs_pco", src_comp=[2, 1, 1], bit_sizes=[32])
+
+# dma_st_shregs_pco(address, burst_len, shreg_offset, emit_idf)
+intrinsic("dma_st_shregs_pco", src_comp=[2, 1, 1], indices=[FLAGS], bit_sizes=[32])

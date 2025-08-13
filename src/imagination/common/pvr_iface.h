@@ -101,4 +101,31 @@ enum pvr_spm_load_data {
    _PVR_SPM_LOAD_DATA_COUNT = 50,
 };
 
+/** Load/store sr shader data; vertex input registers. */
+enum pvr_load_store_sr_data {
+   PVR_LOAD_STORE_SR_DATA_SIZE_ADDR_LO,
+   PVR_LOAD_STORE_SR_DATA_SIZE_ADDR_HI,
+
+   PVR_LOAD_STORE_SR_DATA_STORE_ADDR_LO,
+   PVR_LOAD_STORE_SR_DATA_STORE_ADDR_HI,
+
+   _PVR_LOAD_STORE_SR_DATA_COUNT,
+};
+
+/** IDFWDF shader data; shared registers. */
+enum pvr_idfwdf_sr_data {
+   PVR_IDFWDF_DATA_TEX = 0,
+   PVR_IDFWDF_DATA_SMP = 4,
+
+   PVR_IDFWDF_DATA_ADDR_LO,
+   PVR_IDFWDF_DATA_ADDR_HI,
+
+   _PVR_IDFWDF_DATA_COUNT,
+};
+
+#define PVR_IDFWDF_TEX_FORMAT VK_FORMAT_R32G32B32A32_SFLOAT
+#define PVR_IDFWDF_TEX_WIDTH 4U
+#define PVR_IDFWDF_TEX_HEIGHT 2U
+#define PVR_IDFWDF_TEX_STRIDE 4U
+
 #endif /* PVR_IFACE_H */

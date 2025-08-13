@@ -1756,6 +1756,29 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
                       .rpt = pco_ref_get_chans(dest));
       break;
 
+   case nir_intrinsic_store_preamble:
+      instr = pco_mov(&tctx->b,
+                      pco_ref_hwreg_vec(nir_intrinsic_base(intr),
+                                        PCO_REG_CLASS_SHARED,
+                                        pco_ref_get_chans(src[0])),
+                      src[0],
+                      .rpt = pco_ref_get_chans(src[0]));
+      break;
+
+   case nir_intrinsic_store_preamble_dynamic: {
+      unsigned idx_reg_num = 0;
+      pco_ref idx_reg =
+         pco_ref_hwreg_idx(idx_reg_num, idx_reg_num, PCO_REG_CLASS_INDEX);
+
+      pco_mov(&tctx->b, idx_reg, src[1]);
+
+      pco_ref dest = pco_ref_hwreg(0, PCO_REG_CLASS_SHARED);
+      dest = pco_ref_hwreg_idx_from(idx_reg_num, dest);
+
+      instr = pco_mov(&tctx->b, dest, src[0], .rpt = pco_ref_get_chans(src[0]));
+      break;
+   }
+
    case nir_intrinsic_load_push_constant:
       instr =
          trans_load_common_store(tctx,
@@ -1845,6 +1868,7 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
 
    case nir_intrinsic_dma_st_pco: {
       unsigned chans = pco_ref_get_chans(src[0]) - 2;
+      unsigned flags = nir_intrinsic_flags(intr);
 
       pco_ref data_comp =
          pco_ref_new_ssa(tctx->func, pco_ref_get_bits(src[0]), chans);
@@ -1855,7 +1879,54 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
                        pco_ref_drc(PCO_DRC_0),
                        pco_ref_imm8(chans),
                        src[0],
-                       pco_ref_null());
+                       pco_ref_null(),
+                       .idf = !!flags);
+
+      break;
+   }
+
+   case nir_intrinsic_dma_ld_shregs_pco: {
+      pco_ref addr = src[0];
+      pco_ref burst_len = src[1];
+      pco_ref dynsrc_offset = src[2];
+
+      unsigned idx_reg_num = 0;
+      pco_ref idx_reg =
+         pco_ref_hwreg_idx(idx_reg_num, idx_reg_num, PCO_REG_CLASS_INDEX);
+
+      pco_mov(&tctx->b, idx_reg, dynsrc_offset);
+
+      pco_ref dest = pco_ref_hwreg(0, PCO_REG_CLASS_SHARED);
+      dest = pco_ref_hwreg_idx_from(idx_reg_num, dest);
+
+      instr =
+         pco_ld_regbl(&tctx->b, dest, pco_ref_drc(PCO_DRC_0), burst_len, addr);
+
+      break;
+   }
+
+   case nir_intrinsic_dma_st_shregs_pco: {
+      pco_ref addr = src[0];
+      pco_ref burst_len = src[1];
+      pco_ref dynsrc_offset = src[2];
+      unsigned flags = nir_intrinsic_flags(intr);
+
+      unsigned idx_reg_num = 0;
+      pco_ref idx_reg =
+         pco_ref_hwreg_idx(idx_reg_num, idx_reg_num, PCO_REG_CLASS_INDEX);
+
+      pco_mov(&tctx->b, idx_reg, dynsrc_offset);
+
+      pco_ref data = pco_ref_hwreg(0, PCO_REG_CLASS_SHARED);
+      data = pco_ref_hwreg_idx_from(idx_reg_num, data);
+
+      instr = pco_st32_regbl(&tctx->b,
+                             data,
+                             pco_ref_drc(PCO_DRC_0),
+                             burst_len,
+                             addr,
+                             pco_ref_null(),
+                             .idf = !!flags);
 
       break;
    }
@@ -1999,6 +2070,12 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
       instr = pco_mov(&tctx->b,
                       dest,
                       pco_ref_hwreg(PCO_SR_INST_NUM, PCO_REG_CLASS_SPEC));
+      break;
+
+   case nir_intrinsic_load_shared_reg_alloc_size_pco:
+      instr = pco_mov(&tctx->b,
+                      dest,
+                      pco_ref_hwreg(PCO_SR_SH_ALLOC_SIZE, PCO_REG_CLASS_SPEC));
       break;
 
    case nir_intrinsic_load_sample_id:

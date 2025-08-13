@@ -113,8 +113,6 @@
  */
 #define ROGUE_LLS_SHARED_REGS_RESERVE_SIZE 48U
 
-#define ROGUE_USC_TASK_PROGRAM_SIZE 512U
-
 #define ROGUE_CSRM_LINE_SIZE_IN_DWORDS (64U * 4U * 4U)
 
 /* The maximum amount of local memory which can be allocated by a single kernel
