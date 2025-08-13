@@ -139,8 +139,8 @@ radv_create_group_handles(struct radv_device *device, const VkRayTracingPipeline
             groups[i].handle.any_hit_index = handle_from_stages(device, stage->sha1, capture_replay);
          }
          break;
-      case VK_SHADER_GROUP_SHADER_MAX_ENUM_KHR:
-         UNREACHABLE("VK_SHADER_GROUP_SHADER_MAX_ENUM_KHR");
+      default:
+         UNREACHABLE("Invalid RT shader group type");
       }
 
       if (group_info->pShaderGroupCaptureReplayHandle) {
