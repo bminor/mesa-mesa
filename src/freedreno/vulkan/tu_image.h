@@ -126,6 +126,9 @@ template <chip CHIP>
 void
 tu_cs_image_ref_2d(struct tu_cs *cs, const struct fdl6_view *iview, uint32_t layer, bool src);
 
+uint64_t
+tu_layer_flag_address(const struct fdl6_view *iview, uint32_t layer);
+
 void
 tu_cs_image_flag_ref(struct tu_cs *cs, const struct fdl6_view *iview, uint32_t layer);
 

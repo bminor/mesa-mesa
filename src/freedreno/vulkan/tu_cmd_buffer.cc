@@ -719,6 +719,8 @@ tu6_emit_mrt(struct tu_cmd_buffer *cmd,
 
    enum a6xx_format mrt0_format = FMT6_NONE;
 
+   tu_crb crb = cs->crb(10 * MAX_RTS + 6);
+
    uint32_t written = 0;
    for (uint32_t i = 0; i < subpass->color_count; ++i) {
       uint32_t a = subpass->color_attachments[i].attachment;
@@ -729,21 +731,21 @@ tu6_emit_mrt(struct tu_cmd_buffer *cmd,
 
       const struct tu_image_view *iview = cmd->state.attachments[a];
 
-      tu_cs_emit_regs(cs,
-         RB_MRT_BUF_INFO(CHIP, remapped, .dword = iview->view.RB_MRT_BUF_INFO),
-         A6XX_RB_MRT_PITCH(remapped, iview->view.pitch),
-         A6XX_RB_MRT_ARRAY_PITCH(remapped, iview->view.layer_size),
-         A6XX_RB_MRT_BASE(remapped, .qword = tu_layer_address(&iview->view, 0)),
-         A6XX_RB_MRT_BASE_GMEM(remapped,
-            tu_attachment_gmem_offset(cmd, &cmd->state.pass->attachments[a], 0)
-         ),
-      );
-
-      tu_cs_emit_regs(cs,
-                      A6XX_SP_PS_MRT_REG(remapped, .dword = iview->view.SP_PS_MRT_REG));
-
-      tu_cs_emit_pkt4(cs, REG_A6XX_RB_COLOR_FLAG_BUFFER_ADDR(remapped), 3);
-      tu_cs_image_flag_ref(cs, &iview->view, 0);
+      crb.add(RB_MRT_BUF_INFO(CHIP, remapped,
+                              .dword = iview->view.RB_MRT_BUF_INFO));
+      crb.add(A6XX_RB_MRT_PITCH(remapped, iview->view.pitch));
+      crb.add(A6XX_RB_MRT_ARRAY_PITCH(remapped, iview->view.layer_size));
+      crb.add(A6XX_RB_MRT_BASE(remapped,
+                               .qword = tu_layer_address(&iview->view, 0)));
+      crb.add(A6XX_RB_MRT_BASE_GMEM(
+         remapped, tu_attachment_gmem_offset(
+                      cmd, &cmd->state.pass->attachments[a], 0)));
+      crb.add(
+         A6XX_SP_PS_MRT_REG(remapped, .dword = iview->view.SP_PS_MRT_REG));
+      crb.add(A6XX_RB_COLOR_FLAG_BUFFER_ADDR(
+         remapped, .qword = tu_layer_flag_address(&iview->view, 0)));
+      crb.add(A6XX_RB_COLOR_FLAG_BUFFER_PITCH(
+         remapped, .dword = iview->view.FLAG_BUFFER_PITCH));
 
       if (remapped == 0)
          mrt0_format = (enum a6xx_format) (iview->view.SP_PS_MRT_REG & 0xff);
@@ -771,19 +773,15 @@ tu6_emit_mrt(struct tu_cmd_buffer *cmd,
        * write to attachments beyond those that exist in the render pass, so
        * we have all attachments not written up to MAX_RTS.
        */
-       tu_cs_emit_regs(cs,
-         RB_MRT_BUF_INFO(CHIP, i),
-         A6XX_RB_MRT_PITCH(i),
-         A6XX_RB_MRT_ARRAY_PITCH(i),
-         A6XX_RB_MRT_BASE(i),
-         A6XX_RB_MRT_BASE_GMEM(i),
-       );
-
-       tu_cs_emit_regs(cs,
-                       A6XX_SP_PS_MRT_REG(i, .dword = 0));
+      crb.add(RB_MRT_BUF_INFO(CHIP, i));
+      crb.add(A6XX_RB_MRT_PITCH(i));
+      crb.add(A6XX_RB_MRT_ARRAY_PITCH(i));
+      crb.add(A6XX_RB_MRT_BASE(i));
+      crb.add(A6XX_RB_MRT_BASE_GMEM(i));
+      crb.add(A6XX_SP_PS_MRT_REG(i, .dword = 0));
    }
 
-   tu_cs_emit_regs(cs, GRAS_LRZ_MRT_BUFFER_INFO_0(CHIP, .color_format = mrt0_format));
+   crb.add(GRAS_LRZ_MRT_BUFFER_INFO_0(CHIP, .color_format = mrt0_format));
 
    const bool dither = subpass->legacy_dithering_enabled;
    const uint32_t dither_cntl =
@@ -797,18 +795,15 @@ tu6_emit_mrt(struct tu_cmd_buffer *cmd,
             .dither_mode_mrt6 = dither ? DITHER_ALWAYS : DITHER_DISABLE,
             .dither_mode_mrt7 = dither ? DITHER_ALWAYS : DITHER_DISABLE, )
          .value;
-   tu_cs_emit_regs(cs, A6XX_RB_DITHER_CNTL(.dword = dither_cntl));
+   crb.add(A6XX_RB_DITHER_CNTL(.dword = dither_cntl));
    if (CHIP >= A7XX) {
-      tu_cs_emit_regs(cs, SP_DITHER_CNTL(CHIP, .dword = dither_cntl));
+      crb.add(SP_DITHER_CNTL(CHIP, .dword = dither_cntl));
    }
 
-   tu_cs_emit_regs(cs,
-                   A6XX_RB_SRGB_CNTL(.dword = subpass->srgb_cntl));
-   tu_cs_emit_regs(cs,
-                   A6XX_SP_SRGB_CNTL(.dword = subpass->srgb_cntl));
-
+   crb.add(A6XX_RB_SRGB_CNTL(.dword = subpass->srgb_cntl));
+   crb.add(A6XX_SP_SRGB_CNTL(.dword = subpass->srgb_cntl));
    unsigned layers = MAX2(fb->layers, util_logbase2(subpass->multiview_mask) + 1);
-   tu_cs_emit_regs(cs, GRAS_CL_ARRAY_SIZE(CHIP, layers - 1));
+   crb.add(GRAS_CL_ARRAY_SIZE(CHIP, layers - 1));
 }
 
 struct tu_bin_size_params {

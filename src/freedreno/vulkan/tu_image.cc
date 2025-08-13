@@ -141,6 +141,12 @@ tu_layer_address(const struct fdl6_view *iview, uint32_t layer)
    return iview->base_addr + iview->layer_size * layer;
 }
 
+uint64_t
+tu_layer_flag_address(const struct fdl6_view *iview, uint32_t layer)
+{
+   return iview->ubwc_addr + iview->ubwc_layer_size * layer;
+}
+
 void
 tu_cs_image_ref(struct tu_cs *cs, const struct fdl6_view *iview, uint32_t layer)
 {
@@ -181,7 +187,7 @@ TU_GENX(tu_cs_image_ref_2d);
 void
 tu_cs_image_flag_ref(struct tu_cs *cs, const struct fdl6_view *iview, uint32_t layer)
 {
-   tu_cs_emit_qw(cs, iview->ubwc_addr + iview->ubwc_layer_size * layer);
+   tu_cs_emit_qw(cs, tu_layer_flag_address(iview, layer));
    tu_cs_emit(cs, iview->FLAG_BUFFER_PITCH);
 }
 
