@@ -368,7 +368,7 @@ radv_get_sequence_size(const struct radv_indirect_command_layout *layout, const 
          *cmd_size += 3 * 4;
          need_copy = true;
 
-         *cmd_size += (3 * util_bitcount64(layout->push_constant_mask)) * 4;
+         *cmd_size += (3 * (pipeline_layout->push_constant_size / 4)) * 4;
       } else {
          struct radv_shader *shaders[MESA_VULKAN_SHADER_STAGES] = {0};
          if (pipeline_info) {
