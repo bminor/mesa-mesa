@@ -5854,7 +5854,7 @@
         "description": "zink: remove UNSYNCHRONIZED map flag during unmap flush for non-subdata calls",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8ee0d6dd711e639fc713a6f6b87d9879f1cf1599",
         "notes": null

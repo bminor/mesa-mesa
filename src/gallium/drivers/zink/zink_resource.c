@@ -2635,6 +2635,7 @@ zink_image_subdata(struct pipe_context *pctx,
    struct zink_context *ctx = zink_context(pctx);
    struct zink_resource *res = zink_resource(pres);
 
+   res->subdata = true;
    /* flush clears to avoid subdata conflict */
    if (!(usage & TC_TRANSFER_MAP_THREADED_UNSYNC) &&
        (res->obj->vkusage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT))
@@ -2719,10 +2720,12 @@ zink_image_subdata(struct pipe_context *pctx,
       }
       /* make sure image is marked as having data */
       res->valid = true;
+      res->subdata = false;
       return;
    }
    /* fallback case for per-resource unsupported or device-level unsupported */
    u_default_texture_subdata(pctx, pres, level, usage, box, data, stride, layer_stride);
+   res->subdata = false;
 }
 
 static void
@@ -3011,6 +3014,10 @@ transfer_unmap(struct pipe_context *pctx, struct pipe_transfer *ptrans)
       /* flush_region is relative to the mapped region: use only the extents */
       struct pipe_box box = ptrans->box;
       box.x = box.y = box.z = 0;
+      /* only subdata calls can potentially trigger an unmap directly from the frontend */
+      struct zink_resource *res = zink_resource(trans->base.b.resource);
+      if (!res->subdata)
+         trans->base.b.usage &= ~PIPE_MAP_UNSYNCHRONIZED;
       zink_transfer_flush_region(pctx, ptrans, &box);
    }
 
@@ -3065,9 +3072,11 @@ zink_buffer_subdata(struct pipe_context *ctx, struct pipe_resource *buffer,
                     unsigned usage, unsigned offset, unsigned size, const void *data)
 {
    struct pipe_transfer *transfer = NULL;
+   struct zink_resource *res = zink_resource(buffer);
    struct pipe_box box;
    uint8_t *map = NULL;
 
+   res->subdata = true;
    usage |= PIPE_MAP_WRITE;
 
    if (!(usage & PIPE_MAP_DIRECTLY))
@@ -3075,11 +3084,11 @@ zink_buffer_subdata(struct pipe_context *ctx, struct pipe_resource *buffer,
 
    u_box_1d(offset, size, &box);
    map = zink_buffer_map(ctx, buffer, 0, usage, &box, &transfer);
-   if (!map)
-      return;
-
-   memcpy(map, data, size);
-   zink_buffer_unmap(ctx, transfer);
+   if (map) {
+      memcpy(map, data, size);
+      zink_buffer_unmap(ctx, transfer);
+   }
+   res->subdata = false;
 }
 
 static struct pipe_resource *

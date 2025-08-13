@@ -1357,6 +1357,7 @@ struct zink_resource {
    bool copies_warned;
    bool swapchain;
    bool dmabuf;
+   bool subdata; //doing subdata call
    unsigned dt_stride;
 
    uint8_t modifiers_count;
