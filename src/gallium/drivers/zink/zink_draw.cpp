@@ -450,6 +450,7 @@ zink_draw(struct pipe_context *pctx,
                                 0, 1, &mb, 0, NULL, 0, NULL);
    }
 
+   unsigned rp_state = ctx->gfx_pipeline_state.rp_state;
    zink_batch_rp(ctx);
    /* check dead swapchain */
    if (unlikely(!ctx->in_rp))
@@ -520,7 +521,9 @@ zink_draw(struct pipe_context *pctx,
    if (have_streamout && ctx->dirty_so_targets)
       zink_emit_stream_output_targets(pctx);
 
-   bool pipeline_changed = update_gfx_pipeline<DYNAMIC_STATE, BATCH_CHANGED>(ctx, bs, mode);
+   bool pipeline_changed = rp_state != ctx->gfx_pipeline_state.rp_state || ctx->gfx_dirty || ctx->dirty_gfx_stages || prim_changed || BATCH_CHANGED ?
+                           update_gfx_pipeline<DYNAMIC_STATE, BATCH_CHANGED>(ctx, bs, mode) :
+                           false;
 
    if (BATCH_CHANGED || ctx->vp_state_changed || (DYNAMIC_STATE == ZINK_NO_DYNAMIC_STATE && pipeline_changed)) {
       VkViewport viewports[PIPE_MAX_VIEWPORTS];
