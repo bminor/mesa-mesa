@@ -2974,7 +2974,7 @@
         "description": "nak/kepler: Refine instruction scheduling",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c35990c4bcb821eb82fff1d5c23dc8c13424be2c",
         "notes": null

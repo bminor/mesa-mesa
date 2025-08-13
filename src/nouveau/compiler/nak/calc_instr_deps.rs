@@ -764,6 +764,15 @@ fn calc_delays(f: &mut Function, sm: &dyn ShaderModel) -> u32 {
             uses.for_each_instr_src_mut(instr, |i, c| {
                 c.add_read((ip, i));
             });
+            // Kepler A membar conflicts with predicate writes
+            if sm.is_kepler_a() && matches!(&instr.op, Op::MemBar(_)) {
+                uses.for_each_pred(|c| {
+                    c.add_read((ip, usize::MAX));
+                });
+                uses.for_each_carry(|c| {
+                    c.add_read((ip, usize::MAX));
+                });
+            }
             for (bar, c) in bars.iter_mut().enumerate() {
                 if instr.deps.wt_bar_mask & (1 << bar) != 0 {
                     *c = min_start;
