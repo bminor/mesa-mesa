@@ -80,7 +80,7 @@ void radv_video_get_profile_alignments(struct radv_physical_device *pdev, const 
 
 void radv_vcn_sq_header(struct radv_cmd_stream *cs, struct rvcn_sq_var *sq, unsigned type, bool skip_signature);
 void radv_vcn_sq_tail(struct radv_cmd_stream *cs, struct rvcn_sq_var *sq);
-void radv_vcn_write_event(struct radv_cmd_buffer *cmd_buffer, struct radv_event *event, unsigned value);
+void radv_vcn_write_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t va, unsigned value);
 
 void radv_init_physical_device_encoder(struct radv_physical_device *pdevice);
 void radv_probe_video_decode(struct radv_physical_device *pdev);

@@ -14422,14 +14422,14 @@ write_event(struct radv_cmd_buffer *cmd_buffer, struct radv_event *event, VkPipe
    struct radv_cmd_stream *cs = cmd_buffer->cs;
    uint64_t va = radv_buffer_get_va(event->bo);
 
+   radv_cs_add_buffer(device->ws, cs->b, event->bo);
+
    if (cmd_buffer->qf == RADV_QUEUE_VIDEO_DEC || cmd_buffer->qf == RADV_QUEUE_VIDEO_ENC) {
-      radv_vcn_write_event(cmd_buffer, event, value);
+      radv_vcn_write_memory(cmd_buffer, va, value);
       return;
    }
 
    radv_emit_cache_flush(cmd_buffer);
-
-   radv_cs_add_buffer(device->ws, cs->b, event->bo);
 
    ASSERTED unsigned cdw_max = radeon_check_space(device->ws, cs->b, 28);
 

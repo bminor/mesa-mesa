@@ -143,7 +143,7 @@ radv_vcn_sq_tail(struct radv_cmd_stream *cs, struct rvcn_sq_var *sq)
 }
 
 void
-radv_vcn_write_event(struct radv_cmd_buffer *cmd_buffer, struct radv_event *event, unsigned value)
+radv_vcn_write_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t va, unsigned value)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_physical_device *pdev = radv_device_physical(device);
@@ -153,9 +153,6 @@ radv_vcn_write_event(struct radv_cmd_buffer *cmd_buffer, struct radv_event *even
    /* UVD doesn't support events, and probably never will */
    if (pdev->vid_decode_ip == AMD_IP_UVD)
       return;
-
-   radv_cs_add_buffer(device->ws, cs->b, event->bo);
-   uint64_t va = radv_buffer_get_va(event->bo);
 
    bool separate_queue = pdev->vid_decode_ip != AMD_IP_VCN_UNIFIED;
    if (cmd_buffer->qf == RADV_QUEUE_VIDEO_DEC && separate_queue && pdev->vid_dec_reg.data2) {
