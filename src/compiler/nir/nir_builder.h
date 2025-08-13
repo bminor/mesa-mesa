@@ -560,6 +560,32 @@ nir_imm_ivec4(nir_builder *build, int x, int y, int z, int w)
    return nir_imm_ivec4_intN(build, x, y, z, w, 32);
 }
 
+static inline nir_def *
+nir_imm_uvec8_intN(nir_builder *build, unsigned a, unsigned b, unsigned c,
+                   unsigned d, unsigned e, unsigned f, unsigned g, unsigned h,
+                   unsigned bit_size)
+{
+   nir_const_value v[8] = {
+      nir_const_value_for_uint(a, bit_size),
+      nir_const_value_for_uint(b, bit_size),
+      nir_const_value_for_uint(c, bit_size),
+      nir_const_value_for_uint(d, bit_size),
+      nir_const_value_for_uint(e, bit_size),
+      nir_const_value_for_uint(f, bit_size),
+      nir_const_value_for_uint(g, bit_size),
+      nir_const_value_for_uint(h, bit_size),
+   };
+
+   return nir_build_imm(build, 8, bit_size, v);
+}
+
+static inline nir_def *
+nir_imm_uvec8(nir_builder *build, unsigned a, unsigned b, unsigned c,
+              unsigned d, unsigned e, unsigned f, unsigned g, unsigned h)
+{
+   return nir_imm_uvec8_intN(build, a, b, c, d, e, f, g, h, 32);
+}
+
 nir_def *
 nir_builder_alu_instr_finish_and_insert(nir_builder *build, nir_alu_instr *instr);
 
