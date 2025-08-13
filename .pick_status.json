@@ -7964,7 +7964,7 @@
         "description": "anv: check for pending_db_mode when dirtying descriptor mode",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ab7641b8dcbfee419b761abb27fe6fed476b4e05",
         "notes": null
