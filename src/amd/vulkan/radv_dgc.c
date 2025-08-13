@@ -3377,6 +3377,11 @@ radv_update_ies_shader(struct radv_device *device, struct radv_indirect_executio
    memcpy(ptr, cs.b->buf, cs.b->cdw * sizeof(uint32_t));
    ptr += cs.b->cdw * sizeof(uint32_t);
 
+   set->cs_num_dw = MAX2(set->cs_num_dw, cs.b->cdw);
+   set->uses_grid_base_sgpr |= md.grid_base_sgpr;
+   set->uses_upload_sgpr |= !!(md.push_const_sgpr & 0xffff);
+   set->uses_indirect_desc_sets_sgpr |= md.indirect_desc_sets_sgpr;
+   set->inline_push_const_mask |= md.inline_push_const_mask;
    set->compute_scratch_size_per_wave = MAX2(set->compute_scratch_size_per_wave, shader->config.scratch_bytes_per_wave);
    set->compute_scratch_waves = MAX2(set->compute_scratch_waves, radv_get_max_scratch_waves(device, shader));
 
