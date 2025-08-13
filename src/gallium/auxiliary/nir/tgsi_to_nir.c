@@ -622,12 +622,6 @@ ttn_src_for_file_and_index(struct ttn_compile *c, unsigned file, unsigned index,
       case TGSI_SEMANTIC_CS_USER_DATA_AMD:
          load = nir_load_user_data_amd(b);
          break;
-      case TGSI_SEMANTIC_TESS_DEFAULT_INNER_LEVEL:
-         load = nir_load_tess_level_inner_default(b);
-         break;
-      case TGSI_SEMANTIC_TESS_DEFAULT_OUTER_LEVEL:
-         load = nir_load_tess_level_outer_default(b);
-         break;
       case TGSI_SEMANTIC_SAMPLEID:
          load = nir_load_sample_id(b);
          b->shader->info.fs.uses_sample_shading = true;
