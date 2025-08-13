@@ -251,7 +251,7 @@ libvulkan_radeon = shared_library(
     libamd_common, libamd_common_llvm, libamdgpu_addrlib,
   ],
   dependencies : [
-    dep_llvm, dep_thread, dep_elf, dep_dl, dep_m,
+    dep_llvm, dep_libdrm_amdgpu, dep_thread, dep_elf, dep_dl, dep_m,
     dep_valgrind, radv_deps, idep_aco,
     idep_mesautil, idep_nir, idep_vulkan_util, idep_vulkan_wsi,
     idep_vulkan_runtime, idep_amdgfxregs_h, idep_xmlconfig,
