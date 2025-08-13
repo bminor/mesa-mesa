@@ -440,6 +440,7 @@ cso_unbind_context(struct cso_context *cso)
          ctx->base.pipe->bind_ms_state(ctx->base.pipe, NULL);
       }
       ctx->base.pipe->bind_vertex_elements_state(ctx->base.pipe, NULL);
+      ctx->base.pipe->set_vertex_buffers(ctx->base.pipe, 0, NULL);
 
       if (ctx->has_streamout)
          ctx->base.pipe->set_stream_output_targets(ctx->base.pipe, 0, NULL, NULL, 0);
