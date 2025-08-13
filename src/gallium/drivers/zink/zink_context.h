@@ -132,6 +132,17 @@ zink_update_fbfetch(struct zink_context *ctx);
 bool
 zink_resource_access_is_write(VkAccessFlags flags);
 
+static ALWAYS_INLINE void
+zink_buffer_barrier(struct zink_context *ctx, struct zink_resource *res, VkAccessFlags flags, VkPipelineStageFlags pipeline)
+{
+   if (res->obj->access) {
+      zink_screen(ctx->base.screen)->buffer_barrier(ctx, res, flags, pipeline);
+   } else {
+      res->obj->access = res->obj->unordered_access = flags;
+      res->obj->access_stage = res->obj->unordered_access_stage = pipeline;
+   }
+}
+
 void
 zink_resource_image_barrier_init(VkImageMemoryBarrier *imb, struct zink_resource *res, VkImageLayout new_layout, VkAccessFlags flags, VkPipelineStageFlags pipeline);
 void

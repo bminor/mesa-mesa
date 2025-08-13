@@ -93,7 +93,7 @@ check_buffer_barrier(struct zink_context *ctx, struct pipe_resource *pres, VkAcc
    struct zink_resource *res = zink_resource(pres);
    /* fastpath for viewperf */
    if (res->obj->access != flags || res->obj->access_stage != pipeline)
-      zink_screen(ctx->base.screen)->buffer_barrier(ctx, res, flags, pipeline);
+      zink_buffer_barrier(ctx, res, flags, pipeline);
    if (!ctx->unordered_blitting)
       res->obj->unordered_read = false;
 }

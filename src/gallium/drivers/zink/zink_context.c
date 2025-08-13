@@ -1498,8 +1498,7 @@ zink_set_vertex_buffers_internal(struct pipe_context *pctx,
          /* fastpath for viewperf */
          if (res->obj->access != VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT || res->obj->access_stage != VK_PIPELINE_STAGE_VERTEX_INPUT_BIT)
             /* always barrier before possible rebind */
-            zink_screen(ctx->base.screen)->buffer_barrier(ctx, res, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
-                                       VK_PIPELINE_STAGE_VERTEX_INPUT_BIT);
+            zink_buffer_barrier(ctx, res, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT);
          zink_batch_resource_usage_set(ctx->bs, res, false, true);
          res->obj->unordered_read = false;
       } else {
