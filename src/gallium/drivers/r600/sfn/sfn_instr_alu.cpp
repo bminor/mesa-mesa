@@ -22,6 +22,19 @@ using std::istream;
 using std::string;
 using std::vector;
 
+static int
+get_desk_mask(EAluOp opcode, int slots, bool is_cayman_trans)
+{
+   switch (opcode) {
+   case op2_dot_ieee:
+      return (1 << (5 - slots)) - 1;
+   default:
+      if (is_cayman_trans)
+         return (1 << slots) - 1;
+   }
+   UNREACHABLE("dest_mask_from_opcode_and_slots: Some opscodes not handeld");
+}
+
 AluInstr::AluInstr(EAluOp opcode,
                    PRegister dest,
                    SrcValues src,
@@ -50,16 +63,10 @@ AluInstr::AluInstr(EAluOp opcode,
 
    update_uses();
 
-   if (dest && slots > 1) {
-      switch (m_opcode) {
-      case op2_dot_ieee: m_allowed_dest_mask = (1 << (5 - slots)) - 1;
-         break;
-      default:
-         if (has_alu_flag(alu_is_cayman_trans)) {
-            m_allowed_dest_mask = (1 << slots) - 1;
-         }
-      }
-   }
+   if (dest && slots > 1)
+      m_allowed_dest_mask =
+         get_desk_mask(m_opcode, slots, has_alu_flag(alu_is_cayman_trans));
+
    assert(!dest || (m_allowed_dest_mask & (1 << dest->chan())));
 }
 
@@ -788,6 +795,17 @@ AluInstr::indirect_addr() const
    return {visitor.addr, visitor.addr_is_for_dest, visitor.index};
 }
 
+static inline auto
+r600_multislot_get_last_opcode_and_slot(EAluOp opcode, int dest_chan)
+{
+   switch (opcode) {
+   case op2_dot_ieee:
+      return std::make_pair(op2_mul_ieee, dest_chan);
+   default:
+      return std::make_pair(opcode, dest_chan);
+   }
+}
+
 AluGroup *
 AluInstr::split(ValueFactory& vf)
 {
@@ -800,15 +818,8 @@ AluInstr::split(ValueFactory& vf)
 
    m_dest->del_parent(this);
 
-   int start_slot = 0;
-   bool is_dot = m_opcode == op2_dot_ieee;
-   auto last_opcode = m_opcode;
-
-   if (is_dot) {
-      start_slot = m_dest->chan();
-      last_opcode = op2_mul_ieee;
-   }
-
+   auto [last_opcode, start_slot] =
+      r600_multislot_get_last_opcode_and_slot(m_opcode, m_dest->chan());
 
    for (int k = 0; k < m_alu_slots; ++k) {
       int s = k + start_slot;
@@ -2291,7 +2302,8 @@ emit_dot(const nir_alu_instr& alu, int n, Shader& shader)
    const nir_alu_src& src0 = alu.src[0];
    const nir_alu_src& src1 = alu.src[1];
 
-   auto dest = value_factory.dest(alu.def, 0, pin_chan);
+   auto dest = value_factory.dest(alu.def, 0, pin_free,
+                                  get_desk_mask(op2_dot_ieee, n, false));
 
    AluInstr::SrcValues srcs(2 * n);
 
