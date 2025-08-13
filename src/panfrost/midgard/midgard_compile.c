@@ -393,10 +393,8 @@ midgard_preprocess_nir(nir_shader *nir, UNUSED unsigned gpu_id)
 }
 
 void
-midgard_postprocess_nir(nir_shader *nir, unsigned gpu_id)
+midgard_postprocess_nir(nir_shader *nir, UNUSED unsigned gpu_id)
 {
-   unsigned quirks = midgard_get_quirks(gpu_id);
-
    if (nir->info.stage == MESA_SHADER_VERTEX) {
       /* nir_lower[_explicit]_io is lazy and emits mul+add chains even
        * for offsets it could figure out are constant.  Do some
@@ -434,21 +432,20 @@ midgard_postprocess_nir(nir_shader *nir, unsigned gpu_id)
 
    NIR_PASS(_, nir, nir_lower_idiv, &idiv_options);
 
-   nir_lower_tex_options lower_tex_options = {
-      .lower_txs_lod = true,
-      .lower_txp = ~0,
-      .lower_tg4_broadcom_swizzle = true,
-      .lower_txd = true,
-      .lower_invalid_implicit_lod = true,
-   };
+   NIR_PASS(_, nir, midgard_nir_lower_algebraic_early);
+   NIR_PASS(_, nir, nir_lower_alu_to_scalar, mdg_should_scalarize, NULL);
+   NIR_PASS(_, nir, nir_lower_flrp, 16 | 32 | 64, false /* always_precise */);
+   NIR_PASS(_, nir, nir_lower_var_copies);
+}
 
-   NIR_PASS(_, nir, nir_lower_tex, &lower_tex_options);
+void midgard_lower_texture_nir(nir_shader *nir, unsigned gpu_id)
+{
    NIR_PASS(_, nir, nir_lower_image_atomics_to_global, NULL, NULL);
 
    /* TEX_GRAD fails to apply sampler descriptor settings on some
     * implementations, requiring a lowering.
     */
-   if (quirks & MIDGARD_BROKEN_LOD)
+   if (midgard_get_quirks(gpu_id) & MIDGARD_BROKEN_LOD)
       NIR_PASS(_, nir, midgard_nir_lod_errata);
 
    /* lower MSAA image operations to 3D load before coordinate lowering */
@@ -463,12 +460,8 @@ midgard_postprocess_nir(nir_shader *nir, unsigned gpu_id)
       NIR_PASS(_, nir, pan_lower_helper_invocation);
       NIR_PASS(_, nir, pan_lower_sample_pos);
    }
-
-   NIR_PASS(_, nir, midgard_nir_lower_algebraic_early);
-   NIR_PASS(_, nir, nir_lower_alu_to_scalar, mdg_should_scalarize, NULL);
-   NIR_PASS(_, nir, nir_lower_flrp, 16 | 32 | 64, false /* always_precise */);
-   NIR_PASS(_, nir, nir_lower_var_copies);
 }
+
 
 static void
 optimise_nir(nir_shader *nir, unsigned quirks, bool is_blend)

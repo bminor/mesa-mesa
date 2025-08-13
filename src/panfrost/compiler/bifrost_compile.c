@@ -5982,12 +5982,6 @@ bifrost_postprocess_nir(nir_shader *nir, unsigned gpu_id)
    };
    NIR_PASS(_, nir, nir_lower_ssbo, &ssbo_opts);
 
-   if (nir->info.stage == MESA_SHADER_FRAGMENT) {
-      NIR_PASS(_, nir, nir_lower_is_helper_invocation);
-      NIR_PASS(_, nir, pan_lower_helper_invocation);
-      NIR_PASS(_, nir, pan_lower_sample_pos);
-   }
-
    /*
     * Lower subgroups ops before lowering int64: nir_lower_int64 doesn't know
     * how to lower imul reductions and scans.
@@ -6038,22 +6032,6 @@ bifrost_postprocess_nir(nir_shader *nir, unsigned gpu_id)
    NIR_PASS(_, nir, nir_lower_idiv,
             &(nir_lower_idiv_options){.allow_fp16 = true});
 
-   NIR_PASS(_, nir, nir_lower_tex,
-            &(nir_lower_tex_options){
-               .lower_txs_lod = true,
-               .lower_txp = ~0,
-               .lower_tg4_broadcom_swizzle = true,
-               .lower_txd_cube_map = true,
-               .lower_invalid_implicit_lod = true,
-               .lower_index_to_offset = true,
-            });
-
-   NIR_PASS(_, nir, nir_lower_image_atomics_to_global, NULL, NULL);
-
-   /* on bifrost, lower MSAA load/stores to 3D load/stores */
-   if (pan_arch(gpu_id) < 9)
-      NIR_PASS(_, nir, pan_nir_lower_image_ms);
-
    NIR_PASS(_, nir, nir_shader_alu_pass, bi_lower_ldexp16,
             nir_metadata_control_flow, NULL);
 
@@ -6065,6 +6043,21 @@ bifrost_postprocess_nir(nir_shader *nir, unsigned gpu_id)
    NIR_PASS(_, nir, nir_lower_alu);
    NIR_PASS(_, nir, nir_lower_frag_coord_to_pixel_coord);
    NIR_PASS(_, nir, pan_nir_lower_frag_coord_zw);
+}
+
+void bifrost_lower_texture_nir(nir_shader *nir, unsigned gpu_id)
+{
+   NIR_PASS(_, nir, nir_lower_image_atomics_to_global, NULL, NULL);
+
+   /* on Bifrost, lower MSAA load/stores to 3D load/stores */
+   if (pan_arch(gpu_id) < 9)
+      NIR_PASS(_, nir, pan_nir_lower_image_ms);
+
+   if (nir->info.stage == MESA_SHADER_FRAGMENT) {
+      NIR_PASS(_, nir, nir_lower_is_helper_invocation);
+      NIR_PASS(_, nir, pan_lower_helper_invocation);
+      NIR_PASS(_, nir, pan_lower_sample_pos);
+   }
 }
 
 static bi_context *
