@@ -73,6 +73,9 @@ spec@egl_chromium_sync_control@conformance
 
 KHR-GL46.sparse_texture2_tests.SparseTexture2Lookup_texture_2d_multisample_*
 
+spec@amd_pinned_memory@offset=0
+spec@amd_pinned_memory@map-buffer offset=0
+
 spec@arb_gpu_shader_fp64@execution@arb_gpu_shader_fp64-gs-getuniformdv
 spec@arb_gpu_shader_fp64@execution@arb_gpu_shader_fp64-vs-getuniformdv
 
