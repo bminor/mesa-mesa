@@ -151,6 +151,9 @@ typedef struct {
    /** Replacement contracts an expression */
    bool contract : 1;
 
+   /** Whether the second source is a nir_search_value_constant */
+   bool src1_is_const : 1;
+
    /** Whether the use of the instruction should have a swizzle. */
    int16_t swizzle : 5;
 

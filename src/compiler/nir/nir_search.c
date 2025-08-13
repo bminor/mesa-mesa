@@ -426,11 +426,14 @@ match_expression(const nir_algebraic_table *table, const nir_search_expression *
 
    bool matched = true;
    for (unsigned i = 0; i < nir_op_infos[instr->op].num_inputs; i++) {
+      /* If src1 of the search expression is a constant, check that first since it's faster. */
+      unsigned src_idx = i < 2 ? i ^ expr->src1_is_const : i;
+
       /* 2src_commutative instructions that have 3 sources are only commutative
        * in the first two sources.  Source 2 is always source 2.
        */
-      if (!match_value(table, &state->table->values[expr->srcs[i]].value, instr,
-                       i < 2 ? i ^ comm_op_flip : i,
+      if (!match_value(table, &state->table->values[expr->srcs[src_idx]].value, instr,
+                       i < 2 ? src_idx ^ comm_op_flip : src_idx,
                        num_components, swizzle, state)) {
          matched = false;
          break;
