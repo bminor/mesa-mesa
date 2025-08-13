@@ -136,8 +136,10 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
     * Compute CSOs call this function during create time, so preprocessing
     * happens at CSO create time regardless.
     */
-   if (mesa_shader_stage_is_compute(s->info.stage))
+   if (mesa_shader_stage_is_compute(s->info.stage)) {
       pan_shader_preprocess(s, panfrost_device_gpu_id(dev));
+      pan_shader_postprocess(s, panfrost_device_gpu_id(dev));
+   }
 
    struct pan_compile_inputs inputs = {
       .gpu_id = panfrost_device_gpu_id(dev),
@@ -497,6 +499,7 @@ panfrost_create_shader_state(struct pipe_context *pctx,
    /* Then run the suite of lowering and optimization, including I/O lowering */
    struct panfrost_device *dev = pan_device(pctx->screen);
    pan_shader_preprocess(nir, panfrost_device_gpu_id(dev));
+   pan_shader_postprocess(nir, panfrost_device_gpu_id(dev));
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT)
       so->noperspective_varyings =

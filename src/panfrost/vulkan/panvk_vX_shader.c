@@ -918,6 +918,7 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
    }
 
    pan_shader_preprocess(nir, compile_input->gpu_id);
+   pan_shader_postprocess(nir, compile_input->gpu_id);
 
    if (stage == MESA_SHADER_VERTEX)
       NIR_PASS(_, nir, nir_shader_intrinsics_pass, panvk_lower_load_vs_input,

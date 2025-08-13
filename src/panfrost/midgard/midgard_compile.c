@@ -371,10 +371,8 @@ lower_vec816_alu(const nir_instr *instr, const void *cb_data)
 }
 
 void
-midgard_preprocess_nir(nir_shader *nir, unsigned gpu_id)
+midgard_preprocess_nir(nir_shader *nir, UNUSED unsigned gpu_id)
 {
-   unsigned quirks = midgard_get_quirks(gpu_id);
-
    /* Ensure that halt are translated to returns and get ride of them */
    NIR_PASS(_, nir, nir_lower_halt_to_return);
    NIR_PASS(_, nir, nir_lower_returns);
@@ -398,6 +396,12 @@ midgard_preprocess_nir(nir_shader *nir, unsigned gpu_id)
    NIR_PASS(_, nir, nir_lower_global_vars_to_local);
    NIR_PASS(_, nir, nir_lower_var_copies);
    NIR_PASS(_, nir, nir_lower_vars_to_ssa);
+}
+
+void
+midgard_postprocess_nir(nir_shader *nir, unsigned gpu_id)
+{
+   unsigned quirks = midgard_get_quirks(gpu_id);
 
    NIR_PASS(_, nir, nir_lower_io, nir_var_shader_in | nir_var_shader_out,
             glsl_type_size, nir_lower_io_use_interpolated_input_intrinsics);

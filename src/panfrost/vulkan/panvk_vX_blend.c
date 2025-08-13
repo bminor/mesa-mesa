@@ -97,6 +97,7 @@ get_blend_shader(struct panvk_device *dev,
    };
 
    pan_shader_preprocess(nir, inputs.gpu_id);
+   pan_shader_postprocess(nir, inputs.gpu_id);
 
    enum pipe_format rt_formats[8] = {0};
    rt_formats[rt] = key.info.format;

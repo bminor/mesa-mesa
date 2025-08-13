@@ -35,7 +35,9 @@
 #include "panfrost/util/pan_lower_framebuffer.h"
 
 void bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id);
+void bifrost_postprocess_nir(nir_shader *nir, unsigned gpu_id);
 void midgard_preprocess_nir(nir_shader *nir, unsigned gpu_id);
+void midgard_postprocess_nir(nir_shader *nir, unsigned gpu_id);
 
 static unsigned
 pan_get_fixed_varying_mask(unsigned varyings_used)
@@ -51,6 +53,15 @@ pan_shader_preprocess(nir_shader *nir, unsigned gpu_id)
       bifrost_preprocess_nir(nir, gpu_id);
    else
       midgard_preprocess_nir(nir, gpu_id);
+}
+
+static inline void
+pan_shader_postprocess(nir_shader *nir, unsigned gpu_id)
+{
+   if (pan_arch(gpu_id) >= 6)
+      bifrost_postprocess_nir(nir, gpu_id);
+   else
+      midgard_postprocess_nir(nir, gpu_id);
 }
 
 static inline void

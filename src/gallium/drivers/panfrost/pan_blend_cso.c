@@ -110,6 +110,7 @@ GENX(pan_blend_get_shader_locked)(struct pan_blend_shader_cache *cache,
 
    struct pan_shader_info info;
    pan_shader_preprocess(nir, inputs.gpu_id);
+   pan_shader_postprocess(nir, inputs.gpu_id);
 
 #if PAN_ARCH >= 6
    NIR_PASS(_, nir, GENX(pan_inline_rt_conversion), rt_formats);

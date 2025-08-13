@@ -299,6 +299,7 @@ panvk_meta_desc_copy_rsd(struct panvk_device *dev)
    };
 
    pan_shader_preprocess(b.shader, inputs.gpu_id);
+   pan_shader_postprocess(b.shader, inputs.gpu_id);
 
    VkResult result = panvk_per_arch(create_internal_shader)(
       dev, b.shader, &inputs, &shader);
