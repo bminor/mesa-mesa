@@ -33,6 +33,8 @@ struct radv_cmd_stream;
 #define RADV_BIND_ENCODE_QP_MAP        3
 #define RADV_BIND_ENCODE_AV1_CDF_STORE RADV_BIND_DECODER_CTX
 
+#define RADV_ENC_FEEDBACK_STATUS_IDX 10
+
 struct radv_vid_mem {
    struct radv_device_memory *mem;
    VkDeviceSize offset;

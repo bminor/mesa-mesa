@@ -2392,12 +2392,13 @@ radv_GetQueryPoolResults(VkDevice _device, VkQueryPool queryPool, uint32_t first
       }
       case VK_QUERY_TYPE_VIDEO_ENCODE_FEEDBACK_KHR: {
          uint32_t *src32 = (uint32_t *)src;
+         uint32_t ready_idx = radv_video_write_memory_supported(pdev) ? RADV_ENC_FEEDBACK_STATUS_IDX : 1;
          uint32_t value;
          do {
-            value = p_atomic_read(&src32[1]);
+            value = p_atomic_read(&src32[ready_idx]);
          } while (value != 1 && (flags & VK_QUERY_RESULT_WAIT_BIT) && !(timed_out = (atimeout < os_time_get_nano())));
 
-         available = value != 0;
+         available = value == 1;
 
          if (timed_out)
             result = VK_ERROR_DEVICE_LOST;

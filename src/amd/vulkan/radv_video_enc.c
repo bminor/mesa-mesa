@@ -2763,8 +2763,10 @@ radv_vcn_encode_video(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInf
    if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_5)
       radv_enc_qp_map_input(cmd_buffer, enc_info);
 
-   if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_4)
-      radv_vcn_sq_header(cs, &cmd_buffer->video.sq, RADEON_VCN_ENGINE_TYPE_ENCODE, false);
+   if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_2) {
+      radv_vcn_sq_header(cs, &cmd_buffer->video.sq, RADEON_VCN_ENGINE_TYPE_ENCODE,
+                         pdev->enc_hw_ver < RADV_VIDEO_ENC_HW_4);
+   }
 
    const struct VkVideoInlineQueryInfoKHR *inline_queries = NULL;
    if (vid->vk.flags & VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR) {
@@ -2857,8 +2859,10 @@ radv_vcn_encode_video(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInf
 
    *enc->p_task_size = enc->total_task_size;
 
-   if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_4)
+   if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_2) {
       radv_vcn_sq_tail(cs, &cmd_buffer->video.sq);
+      radv_vcn_write_memory(cmd_buffer, feedback_query_va + RADV_ENC_FEEDBACK_STATUS_IDX * sizeof(uint32_t), 1);
+   }
 }
 
 static void
