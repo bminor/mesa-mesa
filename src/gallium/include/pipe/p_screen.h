@@ -799,24 +799,6 @@ struct pipe_screen {
                                        int max, uint64_t *modifiers, int *count);
 
    /**
-    * Check if the given \p target buffer is supported as output (or input for
-    * encode) for this \p profile and \p entrypoint.
-    *
-    * If \p format is different from target->buffer_format this function
-    * checks if the \p target buffer can be converted to \p format as part
-    * of the given operation (eg. encoder accepts RGB input and converts
-    * it to YUV).
-    *
-    * \return true if the buffer is supported for given operation, false
-    *         otherwise.
-    */
-   bool (*is_video_target_buffer_supported)(struct pipe_screen *screen,
-                                            enum pipe_format format,
-                                            struct pipe_video_buffer *target,
-                                            enum pipe_video_profile profile,
-                                            enum pipe_video_entrypoint entrypoint);
-
-   /**
     * Allocates a cut-out in the GPU's VM space.
     */
    struct pipe_vm_allocation *(*alloc_vm)(struct pipe_screen *screen,
