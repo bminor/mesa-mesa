@@ -267,7 +267,10 @@ radv_write_combined_image_sampler_descriptor(struct radv_device *device, struct 
                                              VkDescriptorType descriptor_type, const VkDescriptorImageInfo *image_info,
                                              bool has_sampler)
 {
-   radv_write_image_descriptor_impl(device, cmd_buffer, 64, dst, buffer_list, descriptor_type, image_info);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   const uint32_t desc_size = radv_get_sampled_image_desc_size(pdev);
+
+   radv_write_image_descriptor_impl(device, cmd_buffer, desc_size, dst, buffer_list, descriptor_type, image_info);
    /* copy over sampler state */
    if (has_sampler) {
       const uint32_t sampler_offset = RADV_COMBINED_IMAGE_SAMPLER_DESC_SAMPLER_OFFSET;

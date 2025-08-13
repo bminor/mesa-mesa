@@ -134,7 +134,7 @@ radv_GetDescriptorEXT(VkDevice _device, const VkDescriptorGetInfoEXT *pDescripto
          if (sampler->vk.ycbcr_conversion) {
             radv_write_image_descriptor_ycbcr(pDescriptor, pDescriptorInfo->data.pCombinedImageSampler);
          } else {
-            radv_write_image_descriptor(pDescriptor, 64, pDescriptorInfo->type,
+            radv_write_image_descriptor(pDescriptor, radv_get_sampled_image_desc_size(pdev), pDescriptorInfo->type,
                                         pDescriptorInfo->data.pCombinedImageSampler);
             radv_write_sampler_descriptor((uint32_t *)pDescriptor + RADV_COMBINED_IMAGE_SAMPLER_DESC_SAMPLER_OFFSET / 4,
                                           pDescriptorInfo->data.pCombinedImageSampler->sampler);
