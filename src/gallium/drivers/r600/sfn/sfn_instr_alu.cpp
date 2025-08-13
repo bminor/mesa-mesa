@@ -23,11 +23,21 @@ using std::string;
 using std::vector;
 
 static int
-get_desk_mask(EAluOp opcode, int slots, bool is_cayman_trans)
+get_dest_mask(EAluOp opcode, int slots, bool is_cayman_trans)
 {
    switch (opcode) {
    case op2_dot_ieee:
       return (1 << (5 - slots)) - 1;
+   case op2_dot4:
+   case op2_dot4_ieee:
+   case op1_max4:
+      return 0xf;
+   case op2_sete_64:
+   case op2_setge_64:
+   case op2_setgt_64:
+   case op2_setne_64:
+   case op1v_flt64_to_flt32:
+      return BITSET_BIT(PIPE_SWIZZLE_X) | BITSET_BIT(PIPE_SWIZZLE_Z);
    default:
       if (is_cayman_trans)
          return (1 << slots) - 1;
@@ -65,7 +75,7 @@ AluInstr::AluInstr(EAluOp opcode,
 
    if (dest && slots > 1)
       m_allowed_dest_mask =
-         get_desk_mask(m_opcode, slots, has_alu_flag(alu_is_cayman_trans));
+         get_dest_mask(m_opcode, slots, has_alu_flag(alu_is_cayman_trans));
 
    assert(!dest || (m_allowed_dest_mask & (1 << dest->chan())));
 }
@@ -801,6 +811,26 @@ r600_multislot_get_last_opcode_and_slot(EAluOp opcode, int dest_chan)
    switch (opcode) {
    case op2_dot_ieee:
       return std::make_pair(op2_mul_ieee, dest_chan);
+   case op2_dot4:
+   case op2_dot4_ieee:
+   case op1_max4:
+      // trans ops that use multi-slot only on cayman
+   case op2_mullo_int:
+   case op2_mullo_uint:
+   case op2_mulhi_uint:
+   case op2_mulhi_int:
+   case op1_log_clamped:
+   case op1_log_ieee:
+   case op1_exp_ieee:
+   case op1_sin:
+   case op1_cos:
+   case op1_sqrt_ieee:
+   case op1_recip_ieee:
+   case op1_recipsqrt_ieee1:
+   case op1_recipsqrt_clamped:
+   case op1_recipsqrt_ff:
+      return std::make_pair(opcode, 0);
+
    default:
       return std::make_pair(opcode, dest_chan);
    }
@@ -2077,8 +2107,10 @@ emit_alu_op2_64bit_one_dst(const nir_alu_instr& alu,
 
    AluInstr::SrcValues src(4);
 
+   auto chan_mask = get_dest_mask(opcode, 2, false);
+
    for (unsigned k = 0; k < alu.def.num_components; ++k) {
-      auto dest = value_factory.dest(alu.def, 2 * k, pin_chan);
+      auto dest = value_factory.dest(alu.def, 2 * k, pin_free, chan_mask);
       src[0] = value_factory.src64(alu.src[order[0]], k, 1);
       src[1] = value_factory.src64(alu.src[order[1]], k, 1);
       src[2] = value_factory.src64(alu.src[order[0]], k, 0);
@@ -2302,8 +2334,8 @@ emit_dot(const nir_alu_instr& alu, int n, Shader& shader)
    const nir_alu_src& src0 = alu.src[0];
    const nir_alu_src& src1 = alu.src[1];
 
-   auto dest = value_factory.dest(alu.def, 0, pin_free,
-                                  get_desk_mask(op2_dot_ieee, n, false));
+   auto dest =
+      value_factory.dest(alu.def, 0, pin_free, get_dest_mask(op2_dot_ieee, n, false));
 
    AluInstr::SrcValues srcs(2 * n);
 
