@@ -5834,7 +5834,7 @@ bi_lower_subgroups(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    return true;
 }
 
-bool
+static bool
 bifrost_nir_lower_load_output(nir_shader *nir)
 {
    assert(nir->info.stage == MESA_SHADER_FRAGMENT);
