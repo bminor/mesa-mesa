@@ -5328,16 +5328,11 @@ lookup_ps_epilog(struct radv_cmd_buffer *cmd_buffer)
 
    state.color_attachment_count = render->color_att_count;
    for (unsigned i = 0; i < render->color_att_count; ++i) {
-      state.color_attachment_formats[i] = render->color_att[i].format;
-   }
-
-   state.color_write_mask = d->color_write_mask;
-
-   for (unsigned i = 0; i < render->color_att_count; i++) {
       const uint32_t cb_blend_control = d->cb_att[i].cb_blend_control;
       const uint32_t src_blend = G_028780_COLOR_SRCBLEND(cb_blend_control);
       const uint32_t dst_blend = G_028780_COLOR_DESTBLEND(cb_blend_control);
 
+      state.color_attachment_formats[i] = render->color_att[i].format;
       state.color_blend_enable |= d->vk.cb.attachments[i].blend_enable << (4 * i);
 
       if (src_blend == V_028780_BLEND_SRC_ALPHA || src_blend == V_028780_BLEND_ONE_MINUS_SRC_ALPHA ||
@@ -5350,6 +5345,7 @@ lookup_ps_epilog(struct radv_cmd_buffer *cmd_buffer)
          color_remap[state.color_attachment_mappings[i]] = i;
    }
 
+   state.color_write_mask = d->color_write_mask;
    state.mrt0_is_dual_src = d->mrt0_is_dual_src;
 
    if (d->vk.ms.alpha_to_coverage_enable) {
