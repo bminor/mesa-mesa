@@ -44,7 +44,6 @@ struct radv_indirect_execution_set {
    bool uses_grid_base_sgpr;
    bool uses_upload_sgpr;
    bool uses_indirect_desc_sets_sgpr;
-   uint64_t inline_push_const_mask;
 
    uint32_t compute_scratch_size_per_wave;
    uint32_t compute_scratch_waves;

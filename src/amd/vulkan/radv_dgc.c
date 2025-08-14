@@ -381,7 +381,7 @@ radv_get_sequence_size(const struct radv_indirect_command_layout *layout, const 
             need_copy = true;
          }
 
-         *cmd_size += (3 * util_bitcount64(ies->inline_push_const_mask)) * 4;
+         *cmd_size += (3 * util_bitcount64(layout->push_constant_mask)) * 4;
       } else {
          struct radv_shader *shaders[MESA_VULKAN_SHADER_STAGES] = {0};
          if (pipeline_info) {
@@ -1724,14 +1724,6 @@ dgc_emit_push_constant_for_stage(struct dgc_cmdbuf *cs, nir_def *stream_addr, ni
             } else if (layout->push_constant_mask & (1ull << i)) {
                data = nir_build_load_global(b, 1, 32, nir_iadd_imm(b, stream_addr, layout->push_constant_offsets[i]),
                                             .access = ACCESS_NON_WRITEABLE);
-            } else if (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_IES)) {
-               /* For indirect pipeline binds, partial push constant updates can't be emitted when
-                * the DGC execute is called because there is no bound pipeline and they have to be
-                * emitted from the DGC prepare shader.
-                */
-               nir_def *va = load_param64(b, params_addr);
-               data = nir_build_load_global(
-                  b, 1, 32, nir_iadd(b, va, nir_u2u64(b, nir_iadd_imm(b, params->const_offset, i * 4))));
             }
 
             if (data) {
@@ -3368,7 +3360,6 @@ radv_update_ies_shader(struct radv_device *device, struct radv_indirect_executio
    set->uses_grid_base_sgpr |= md.grid_base_sgpr;
    set->uses_upload_sgpr |= !!(md.push_const_sgpr & 0xffff);
    set->uses_indirect_desc_sets_sgpr |= md.indirect_desc_sets_sgpr;
-   set->inline_push_const_mask |= md.inline_push_const_mask;
    set->compute_scratch_size_per_wave = MAX2(set->compute_scratch_size_per_wave, shader->config.scratch_bytes_per_wave);
    set->compute_scratch_waves = MAX2(set->compute_scratch_waves, radv_get_max_scratch_waves(device, shader));
 
