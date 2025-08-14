@@ -1485,7 +1485,6 @@ wsi_common_queue_present(const struct wsi_device *wsi,
 
       VkFence fence = swapchain->fences[image_index];
 
-      struct wsi_memory_signal_submit_info mem_signal;
       bool has_signal_dma_buf = false;
       bool explicit_sync = swapchain->image_info.explicit_sync;
       if (explicit_sync) {
@@ -1516,20 +1515,6 @@ wsi_common_queue_present(const struct wsi_device *wsi,
             goto fail_present;
          }
 #endif
-
-         if (!has_signal_dma_buf) {
-            /* If we don't have dma-buf signaling, signal the memory object by
-            * chaining wsi_memory_signal_submit_info into VkSubmitInfo.
-            */
-            result = VK_SUCCESS;
-            has_signal_dma_buf = false;
-            mem_signal = (struct wsi_memory_signal_submit_info) {
-               .sType = VK_STRUCTURE_TYPE_WSI_MEMORY_SIGNAL_SUBMIT_INFO_MESA,
-               .memory = swapchain->blit.type == WSI_SWAPCHAIN_NO_BLIT ?
-                         image->memory : image->blit.memory,
-            };
-            __vk_append_struct(&submit_info, &mem_signal);
-         }
       }
 
       result = wsi->QueueSubmit(submit_queue, 1, &submit_info, fence);
