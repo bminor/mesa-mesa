@@ -5416,26 +5416,34 @@ mem_vectorize_cb(unsigned align_mul, unsigned align_offset, unsigned bit_size,
 }
 
 static void
-bi_optimize_nir(nir_shader *nir, unsigned gpu_id, nir_variable_mode robust2_modes)
+bi_optimize_loop_nir(nir_shader *nir, unsigned gpu_id, bool allow_copies)
 {
-   unsigned arch = pan_arch(gpu_id);
-
-   NIR_PASS(_, nir, nir_opt_shrink_stores, true);
-
    bool progress;
 
    do {
       progress = false;
 
+      NIR_PASS(progress, nir, nir_split_array_vars, nir_var_function_temp);
+      NIR_PASS(progress, nir, nir_shrink_vec_array_vars, nir_var_function_temp);
+      NIR_PASS(progress, nir, nir_opt_deref);
+
       NIR_PASS(progress, nir, nir_lower_vars_to_ssa);
       NIR_PASS(progress, nir, nir_lower_wrmasks, should_split_wrmask, NULL);
 
-      NIR_PASS(_, nir, nir_opt_copy_prop_vars);
-      NIR_PASS(_, nir, nir_opt_dead_write_vars);
-      NIR_PASS(_, nir, nir_opt_combine_stores, nir_var_all);
+      if (allow_copies) {
+         /* Only run this pass in the first call to bi_optimize_nir. Later
+          * calls assume that we've lowered away any copy_deref instructions
+          * and we don't want to introduce any more.
+          */
+         NIR_PASS(progress, nir, nir_opt_find_array_copies);
+      }
 
-      NIR_PASS(_, nir, nir_lower_alu_width, bi_vectorize_filter, &gpu_id);
-      NIR_PASS(_, nir, nir_opt_vectorize, bi_vectorize_filter, &gpu_id);
+      NIR_PASS(progress, nir, nir_opt_copy_prop_vars);
+      NIR_PASS(progress, nir, nir_opt_dead_write_vars);
+      NIR_PASS(progress, nir, nir_opt_combine_stores, nir_var_all);
+
+      NIR_PASS(progress, nir, nir_lower_alu_width, bi_vectorize_filter, &gpu_id);
+      NIR_PASS(progress, nir, nir_opt_vectorize, bi_vectorize_filter, &gpu_id);
       NIR_PASS(progress, nir, nir_copy_prop);
       NIR_PASS(progress, nir, nir_opt_dce);
       NIR_PASS(progress, nir, nir_opt_cse);
@@ -5468,7 +5476,7 @@ bi_optimize_nir(nir_shader *nir, unsigned gpu_id, nir_variable_mode robust2_mode
       /* XXX: On Bifrost (G52), this cause a failure on
        * "dEQP-VK.graphicsfuzz.spv-composite-phi" and is related to an unknown
        * scheduling issue */
-      if (arch >= 9)
+      if (pan_arch(gpu_id) >= 9)
          NIR_PASS(
             progress, nir, nir_opt_if,
             nir_opt_if_optimize_phi_true_false | nir_opt_if_avoid_64bit_phis);
@@ -5480,6 +5488,16 @@ bi_optimize_nir(nir_shader *nir, unsigned gpu_id, nir_variable_mode robust2_mode
    } while (progress);
 
    NIR_PASS(_, nir, nir_lower_undef_to_zero);
+
+   NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
+}
+
+static void
+bi_optimize_nir(nir_shader *nir, unsigned gpu_id, nir_variable_mode robust2_modes)
+{
+   NIR_PASS(_, nir, nir_opt_shrink_stores, true);
+   bi_optimize_loop_nir(nir, gpu_id, false);
+
    NIR_PASS(_, nir, nir_opt_shrink_vectors, false);
 
    nir_load_store_vectorize_options vectorize_opts = {
@@ -5494,19 +5512,19 @@ bi_optimize_nir(nir_shader *nir, unsigned gpu_id, nir_variable_mode robust2_mode
    if (!(robust2_modes & nir_var_mem_ubo))
       vectorize_opts.modes |= nir_var_mem_ubo;
 
-   NIR_PASS(progress, nir, nir_opt_load_store_vectorize, &vectorize_opts);
-   NIR_PASS(progress, nir, nir_lower_pack);
+   NIR_PASS(_, nir, nir_opt_load_store_vectorize, &vectorize_opts);
+   NIR_PASS(_, nir, nir_lower_pack);
 
    /* nir_lower_pack can generate split operations, execute algebraic again to
     * handle them */
-   NIR_PASS(progress, nir, nir_opt_algebraic);
+   NIR_PASS(_, nir, nir_opt_algebraic);
 
    /* TODO: Why is 64-bit getting rematerialized?
     * KHR-GLES31.core.shader_image_load_store.basic-allTargets-atomicFS */
-   NIR_PASS(progress, nir, nir_lower_int64);
+   NIR_PASS(_, nir, nir_lower_int64);
 
    /* Algebraic can materialize instructions with a bit_size that we need to lower */
-   NIR_PASS(progress, nir, nir_lower_bit_size, bi_lower_bit_size, &gpu_id);
+   NIR_PASS(_, nir, nir_lower_bit_size, bi_lower_bit_size, &gpu_id);
 
    /* We need to cleanup after each iteration of late algebraic
     * optimizations, since otherwise NIR can produce weird edge cases
@@ -5515,19 +5533,19 @@ bi_optimize_nir(nir_shader *nir, unsigned gpu_id, nir_variable_mode robust2_mode
    while (late_algebraic) {
       late_algebraic = false;
       NIR_PASS(late_algebraic, nir, nir_opt_algebraic_late);
-      NIR_PASS(progress, nir, nir_opt_constant_folding);
-      NIR_PASS(progress, nir, nir_copy_prop);
-      NIR_PASS(progress, nir, nir_opt_dce);
-      NIR_PASS(progress, nir, nir_opt_cse);
+      NIR_PASS(_, nir, nir_opt_constant_folding);
+      NIR_PASS(_, nir, nir_copy_prop);
+      NIR_PASS(_, nir, nir_opt_dce);
+      NIR_PASS(_, nir, nir_opt_cse);
    }
 
    /* This opt currently helps on Bifrost but not Valhall */
    if (pan_arch(gpu_id) < 9)
-      NIR_PASS(progress, nir, bifrost_nir_opt_boolean_bitwise);
+      NIR_PASS(_, nir, bifrost_nir_opt_boolean_bitwise);
 
-   NIR_PASS(progress, nir, nir_lower_alu_width, bi_vectorize_filter, &gpu_id);
-   NIR_PASS(progress, nir, nir_opt_vectorize, bi_vectorize_filter, &gpu_id);
-   NIR_PASS(progress, nir, nir_lower_bool_to_bitsize);
+   NIR_PASS(_, nir, nir_lower_alu_width, bi_vectorize_filter, &gpu_id);
+   NIR_PASS(_, nir, nir_opt_vectorize, bi_vectorize_filter, &gpu_id);
+   NIR_PASS(_, nir, nir_lower_bool_to_bitsize);
 
    /* Prepass to simplify instruction selection */
    bool late_algebraic_progress = true;
@@ -5541,14 +5559,14 @@ bi_optimize_nir(nir_shader *nir, unsigned gpu_id, nir_variable_mode robust2_mode
    while (late_algebraic) {
       late_algebraic = false;
       NIR_PASS(late_algebraic, nir, nir_opt_algebraic_late);
-      NIR_PASS(progress, nir, nir_opt_constant_folding);
-      NIR_PASS(progress, nir, nir_copy_prop);
-      NIR_PASS(progress, nir, nir_opt_dce);
-      NIR_PASS(progress, nir, nir_opt_cse);
+      NIR_PASS(_, nir, nir_opt_constant_folding);
+      NIR_PASS(_, nir, nir_copy_prop);
+      NIR_PASS(_, nir, nir_opt_dce);
+      NIR_PASS(_, nir, nir_opt_cse);
    }
 
-   NIR_PASS(progress, nir, nir_lower_load_const_to_scalar);
-   NIR_PASS(progress, nir, nir_opt_dce);
+   NIR_PASS(_, nir, nir_lower_load_const_to_scalar);
+   NIR_PASS(_, nir, nir_opt_dce);
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       NIR_PASS(_, nir, nir_shader_intrinsics_pass,
@@ -5942,6 +5960,8 @@ bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
    NIR_PASS(_, nir, nir_split_var_copies);
    NIR_PASS(_, nir, nir_lower_var_copies);
    NIR_PASS(_, nir, nir_lower_vars_to_ssa);
+
+   bi_optimize_loop_nir(nir, gpu_id, true);
 }
 
 void
