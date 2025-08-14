@@ -50,6 +50,7 @@ i915_gem_create_context_ext(int fd,
 bool i915_gem_supports_protected_context(int fd);
 bool i915_gem_get_param(int fd, uint32_t param, int *value);
 bool i915_gem_can_render_on_fd(int fd);
+bool i915_gem_supports_dma_buf_sync_file(int fd);
 
 /**
  * A wrapper around DRM_IOCTL_I915_QUERY
