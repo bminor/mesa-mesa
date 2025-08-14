@@ -1705,8 +1705,11 @@ anv_physical_device_try_create(struct vk_instance *vk_instance,
       goto fail_base;
    }
 
-   if (intel_gem_get_param(fd, I915_PARAM_HAS_EXEC_CAPTURE, &val))
-      device->has_exec_capture = val;
+   if (!intel_gem_get_param(fd, I915_PARAM_HAS_EXEC_CAPTURE, &val) || !val) {
+      result = vk_errorf(device, VK_ERROR_INITIALIZATION_FAILED,
+                         "kernel missing exec capture support");
+      goto fail_base;
+   }
 
    /* Start with medium; sorted low to high */
    const int priorities[] = {

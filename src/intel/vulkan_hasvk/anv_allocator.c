@@ -1519,7 +1519,7 @@ anv_bo_alloc_flags_to_bo_flags(struct anv_device *device,
        pdevice->supports_48bit_addresses)
       bo_flags |= EXEC_OBJECT_SUPPORTS_48B_ADDRESS;
 
-   if ((alloc_flags & ANV_BO_ALLOC_CAPTURE) && pdevice->has_exec_capture)
+   if (alloc_flags & ANV_BO_ALLOC_CAPTURE)
       bo_flags |= EXEC_OBJECT_CAPTURE;
 
    if (alloc_flags & ANV_BO_ALLOC_IMPLICIT_WRITE) {
