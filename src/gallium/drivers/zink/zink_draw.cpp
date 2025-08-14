@@ -507,13 +507,15 @@ zink_draw(struct pipe_context *pctx,
    }
 
    if (index_buffer) {
-      const VkIndexType index_type[3] = {
+      const VkIndexType index_type[] = {
+         VK_INDEX_TYPE_UINT32,
          VK_INDEX_TYPE_UINT8_EXT,
          VK_INDEX_TYPE_UINT16,
          VK_INDEX_TYPE_UINT32,
+         VK_INDEX_TYPE_UINT32,
       };
       struct zink_resource *res = zink_resource(index_buffer);
-      VKCTX(CmdBindIndexBuffer)(bs->cmdbuf, res->obj->buffer, index_offset, index_type[index_size >> 1]);
+      VKCTX(CmdBindIndexBuffer)(bs->cmdbuf, res->obj->buffer, index_offset, index_type[index_size]);
    }
    if (DYNAMIC_STATE < ZINK_DYNAMIC_STATE2) {
       if (ctx->gfx_pipeline_state.dyn_state2.primitive_restart != dinfo->primitive_restart)
