@@ -636,7 +636,7 @@ impl PipeContext {
         }
     }
 
-    pub fn import_fence(&self, fence_fd: &FenceFd) -> PipeFence {
+    pub fn import_fence(&self, fence_fd: &FenceFd) -> Option<PipeFence> {
         unsafe {
             let mut fence = ptr::null_mut();
             self.pipe.as_ref().create_fence_fd.unwrap()(
@@ -645,7 +645,11 @@ impl PipeContext {
                 fence_fd.fd,
                 PIPE_FD_TYPE_NATIVE_SYNC,
             );
-            PipeFence::new(fence, &self.screen)
+            if fence.is_null() {
+                None
+            } else {
+                Some(PipeFence::new(fence, &self.screen))
+            }
         }
     }
 

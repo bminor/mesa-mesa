@@ -284,10 +284,10 @@ impl GLCtxManager {
         };
 
         if let Some(fence_fd) = self.do_flush(&mut [export_in])? {
-            cl_ctx.devs.iter().for_each(|dev| {
-                let fence = dev.helper_ctx().import_fence(&fence_fd);
+            for dev in &cl_ctx.devs {
+                let fence = dev.helper_ctx().import_fence(&fence_fd)?;
                 fence.wait();
-            });
+            }
         }
 
         let err = unsafe {

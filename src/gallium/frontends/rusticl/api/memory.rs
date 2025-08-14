@@ -3326,7 +3326,9 @@ fn enqueue_acquire_gl_objects(
         false,
         Box::new(move |_, ctx| {
             if let Some(fence_fd) = fence_fd {
-                ctx.import_fence(&fence_fd).gpu_wait(ctx);
+                ctx.import_fence(&fence_fd)
+                    .ok_or(CL_OUT_OF_RESOURCES)?
+                    .gpu_wait(ctx)
             }
             copy_cube_to_slice(ctx, &objs)
         }),
