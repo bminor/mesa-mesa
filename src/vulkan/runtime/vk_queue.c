@@ -42,8 +42,6 @@
 #include "vk_sync_timeline.h"
 #include "vk_util.h"
 
-#include "vulkan/wsi/wsi_common.h"
-
 static VkResult
 vk_queue_start_submit_thread(struct vk_queue *queue);
 
@@ -204,9 +202,6 @@ vk_queue_submit_cleanup(struct vk_queue *queue,
          vk_sync_destroy(queue->base.device, submit->_wait_temps[i]);
    }
 
-   if (submit->_mem_signal_temp != NULL)
-      vk_sync_destroy(queue->base.device, submit->_mem_signal_temp);
-
    if (submit->_wait_points != NULL) {
       for (uint32_t i = 0; i < submit->wait_count; i++) {
          if (unlikely(submit->_wait_points[i] != NULL)) {
@@ -359,28 +354,6 @@ vk_queue_submit_add_sync_signal(struct vk_queue *queue,
    };
 }
 
-static VkResult MUST_CHECK
-vk_queue_submit_add_mem_signal(struct vk_queue *queue,
-                               struct vk_queue_submit *submit,
-                               VkDeviceMemory memory)
-{
-   assert(submit->_mem_signal_temp == NULL);
-   VkResult result;
-
-   struct vk_sync *mem_sync;
-   result = queue->base.device->create_sync_for_memory(queue->base.device,
-                                                       memory, true,
-                                                       &mem_sync);
-   if (unlikely(result != VK_SUCCESS))
-      return result;
-
-   submit->_mem_signal_temp = mem_sync;
-
-   vk_queue_submit_add_sync_signal(queue, submit, mem_sync, 0);
-
-   return VK_SUCCESS;
-}
-
 static void
 vk_queue_submit_add_fence_signal(struct vk_queue *queue,
                                  struct vk_queue_submit *submit,
@@ -483,9 +456,6 @@ vk_queue_submits_merge(struct vk_queue *queue,
    if (vk_queue_submit_has_bind(first) != vk_queue_submit_has_bind(second))
       return NULL;
 
-   if (first->_mem_signal_temp)
-      return NULL;
-
    if (first->perf_pass_index != second->perf_pass_index)
       return NULL;
 
@@ -568,9 +538,6 @@ vk_queue_submits_merge(struct vk_queue *queue,
 
    typed_memcpy(merged->_wait_temps, first->_wait_temps, first->wait_count);
    typed_memcpy(&merged->_wait_temps[first->wait_count], second->_wait_temps, second->wait_count);
-
-   assert(first->_mem_signal_temp == NULL);
-   merged->_mem_signal_temp = second->_mem_signal_temp;
 
    if (queue->base.device->timeline_mode == VK_DEVICE_TIMELINE_MODE_EMULATED) {
       typed_memcpy(merged->_wait_points,
@@ -951,14 +918,7 @@ vk_queue_submit_create(struct vk_queue *queue,
    for (uint32_t i = 0; i < info->image_bind_count; ++i)
       sparse_memory_image_bind_entry_count += info->image_binds[i].bindCount;
 
-   const struct wsi_memory_signal_submit_info *mem_signal =
-      vk_find_struct_const(info->pNext, WSI_MEMORY_SIGNAL_SUBMIT_INFO_MESA);
-   bool signal_mem_sync = mem_signal != NULL &&
-                          mem_signal->memory != VK_NULL_HANDLE &&
-                          queue->base.device->create_sync_for_memory != NULL;
-
    uint32_t signal_count = info->signal_count +
-                           signal_mem_sync +
                            (info->fence != NULL);
 
    struct vk_queue_submit *submit =
@@ -1004,13 +964,6 @@ vk_queue_submit_create(struct vk_queue *queue,
    for (uint32_t i = 0; i < info->signal_count; i++) {
       result = vk_queue_submit_add_semaphore_signal(queue, submit,
                                                     &info->signals[i]);
-      if (unlikely(result != VK_SUCCESS))
-         goto fail;
-   }
-
-   if (signal_mem_sync) {
-      result = vk_queue_submit_add_mem_signal(queue, submit,
-                                              mem_signal->memory);
       if (unlikely(result != VK_SUCCESS))
          goto fail;
    }
@@ -1186,24 +1139,7 @@ vk_queue_submit(struct vk_queue *queue,
          }
       }
 
-      /* If we're signaling a memory object, we have to ensure that
-       * vkQueueSubmit does not return until the kernel submission has
-       * happened.  Otherwise, we may get a race between this process
-       * and whatever is going to wait on the object where the other
-       * process may wait before we've submitted our work.  Drain the
-       * queue now to avoid this.  It's the responsibility of the caller
-       * to ensure that any vkQueueSubmit which signals a memory object
-       * has fully resolved dependencies.
-       */
-      const bool needs_drain = submit->_mem_signal_temp;
-
       vk_queue_push_submit(queue, submit);
-
-      if (needs_drain) {
-         result = vk_queue_drain(queue);
-         if (unlikely(result != VK_SUCCESS))
-            return result;
-      }
 
       return VK_SUCCESS;
 

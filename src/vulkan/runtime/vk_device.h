@@ -41,7 +41,6 @@ extern "C" {
 struct vk_acceleration_structure_build_ops;
 struct vk_command_buffer_ops;
 struct vk_device_shader_ops;
-struct vk_sync;
 
 enum vk_queue_submit_mode {
    /** Submits happen immediately
@@ -217,29 +216,6 @@ struct vk_device {
    VkTimeDomainKHR calibrate_time_domain;
    /** Period of VK_TIME_DOMAIN_DEVICE_KHR */
    uint64_t device_time_domain_period;
-
-   /** Creates a vk_sync that wraps a memory object
-    *
-    * This is always a one-shot object so it need not track any additional
-    * state.  Since it's intended for synchronizing between processes using
-    * implicit synchronization mechanisms, no such tracking would be valid
-    * anyway.
-    *
-    * If `signal_memory` is set, the resulting vk_sync will be used to signal
-    * the memory object from a queue ``via vk_queue_submit::signals``.  The common
-    * code guarantees that, by the time vkQueueSubmit() returns, the signal
-    * operation has been submitted to the kernel via the driver's
-    * ``vk_queue::driver_submit`` hook.  This means that any vkQueueSubmit() call
-    * which needs implicit synchronization may block.
-    *
-    * If `signal_memory` is not set, it can be assumed that memory object
-    * already has a signal operation pending from some other process and we
-    * need only wait on it.
-    */
-   VkResult (*create_sync_for_memory)(struct vk_device *device,
-                                      VkDeviceMemory memory,
-                                      bool signal_memory,
-                                      struct vk_sync **sync_out);
 
    /* Set by vk_device_set_drm_fd() */
    struct util_sync_provider *sync;

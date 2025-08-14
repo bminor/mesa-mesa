@@ -244,7 +244,6 @@ struct vk_queue_submit {
 
    bool _has_binary_permanent_semaphore_wait;
    struct vk_sync **_wait_temps;
-   struct vk_sync *_mem_signal_temp;
    struct vk_sync_timeline_point **_wait_points;
    struct vk_sync_timeline_point **_signal_points;
 };
