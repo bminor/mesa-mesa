@@ -1182,7 +1182,7 @@ static void print_vcn_preencode_input_picture(FILE *f, struct ac_ib_parser *ib, 
 
 static void parse_vcn_enc_ib(FILE *f, struct ac_ib_parser *ib)
 {
-   rvcn_enc_cmd_t cmd = {};
+   rvcn_enc_cmd_t cmd = { 0 };
    ac_vcn_enc_init_cmds(&cmd, ib->vcn_version);
 
    while (ib->cur_dw < ib->num_dw) {
