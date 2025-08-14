@@ -5635,10 +5635,10 @@ anv_get_isl_format(const struct anv_physical_device *device, VkFormat vk_format,
 }
 
 static inline enum isl_format
-anv_get_vbo_format(const struct anv_physical_device *device, VkFormat vk_format,
-                   VkImageAspectFlags aspect, VkImageTiling tiling)
+anv_get_vbo_format(const struct anv_physical_device *device, VkFormat vk_format)
 {
-   return anv_get_format_aspect(device, vk_format, aspect, tiling).vbo_format;
+   const struct anv_format *format = anv_get_format(device, vk_format);
+   return format != NULL ? format->planes[0].vbo_format : ISL_FORMAT_UNSUPPORTED;
 }
 
 bool anv_format_supports_ccs_e(const struct anv_physical_device *device,
