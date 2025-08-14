@@ -7064,7 +7064,7 @@
         "description": "anv: Set the Shader capability when compiling the FP64 shader",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "91b62e986867ba12dad20789e51f978f1883f38c",
         "notes": null

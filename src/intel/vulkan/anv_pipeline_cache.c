@@ -677,6 +677,7 @@ anv_load_fp64_shader(struct anv_device *device)
       .Int8 = true,
       .Int16 = true,
       .Int64 = true,
+      .Shader = true,
    };
 
    struct spirv_to_nir_options spirv_options = {
