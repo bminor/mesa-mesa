@@ -75,10 +75,6 @@ anv_init_wsi(struct anv_physical_device *physical_device)
          i == VK_ICD_WSI_PLATFORM_DISPLAY;
    }
    wsi_device->get_blit_queue = anv_wsi_get_prime_blit_queue;
-   if (physical_device->info.kmd_type == INTEL_KMD_TYPE_I915) {
-      wsi_device->signal_semaphore_with_memory = true;
-      wsi_device->signal_fence_with_memory = true;
-   }
 
    physical_device->vk.wsi_device = wsi_device;
 
