@@ -3122,8 +3122,6 @@ get_affinities(ra_ctx& ctx)
             if (it != temp_to_phi_resources.end()) {
                /* mark last-seen phi operand */
                phi_resources[it->second][0] = def.getTemp();
-            } else if (!ctx.assignments[def.tempId()].precolor_affinity) {
-               continue;
             }
 
             /* try to coalesce affinities with parallelcopies */
@@ -3148,6 +3146,9 @@ get_affinities(ra_ctx& ctx)
                   phi_resources[it->second].emplace_back(op.getTemp());
                   temp_to_phi_resources[op.tempId()] = it->second;
                }
+               auto vec_it = ctx.vectors.find(def.tempId());
+               if (vec_it != ctx.vectors.end())
+                  ctx.vectors[op.tempId()] = vec_it->second;
             }
          }
       }
