@@ -1669,22 +1669,38 @@ dgc_alloc_push_constant(struct dgc_cmdbuf *cs, nir_def *stream_addr, nir_def *se
    VK_FROM_HANDLE(radv_pipeline_layout, pipeline_layout, layout->vk.layout);
    nir_builder *b = cs->b;
 
+   nir_def *upload_offset_pc = nir_load_var(b, cs->upload_offset);
+
+   /* Store push constants set by the command buffer. */
    for (uint32_t i = 0; i < pipeline_layout->push_constant_size / 4; i++) {
+      if (layout->push_constant_mask & (1ull << i))
+         continue;
+
+      nir_def *va = load_param64(b, params_addr);
+      nir_def *data =
+         nir_build_load_global(b, 1, 32, nir_iadd(b, va, nir_u2u64(b, nir_iadd_imm(b, params->const_offset, i * 4))));
+
+      nir_def *offset = nir_iadd_imm(b, upload_offset_pc, i * 4);
+      nir_build_store_global(b, data, nir_iadd(b, cs->va, nir_u2u64(b, offset)), .access = ACCESS_NON_READABLE);
+   }
+
+   /* Store push constants set by DGC tokens. */
+   u_foreach_bit64 (i, layout->push_constant_mask) {
       nir_def *data;
 
       if (layout->sequence_index_mask & (1ull << i)) {
          data = sequence_id;
-      } else if ((layout->push_constant_mask & (1ull << i))) {
+      } else {
          data = nir_build_load_global(b, 1, 32, nir_iadd_imm(b, stream_addr, layout->push_constant_offsets[i]),
                                       .access = ACCESS_NON_WRITEABLE);
-      } else {
-         nir_def *va = load_param64(b, params_addr);
-         data = nir_build_load_global(b, 1, 32,
-                                      nir_iadd(b, va, nir_u2u64(b, nir_iadd_imm(b, params->const_offset, i * 4))));
       }
 
-      dgc_upload(cs, data);
+      nir_def *offset = nir_iadd_imm(b, upload_offset_pc, i * 4);
+      nir_build_store_global(b, data, nir_iadd(b, cs->va, nir_u2u64(b, offset)), .access = ACCESS_NON_READABLE);
    }
+
+   nir_store_var(b, cs->upload_offset,
+                 nir_iadd_imm(b, nir_load_var(b, cs->upload_offset), pipeline_layout->push_constant_size), 0x1);
 }
 
 static void
