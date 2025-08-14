@@ -167,6 +167,7 @@ radv_dgc_get_shader(const VkGeneratedCommandsPipelineInfoEXT *pipeline_info,
 
 struct radv_dgc_pc_layout_info {
    VkShaderStageFlags stages;
+   uint16_t size;
    bool need_upload;
 
    struct {
@@ -188,6 +189,7 @@ radv_dgc_get_pc_layout_info(const struct radv_indirect_command_layout *layout,
 
    if (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_IES)) {
       pc_info->need_upload = ies->uses_upload_sgpr;
+      pc_info->size = ies->push_constant_size;
    } else {
       if (pipeline_info) {
          VK_FROM_HANDLE(radv_pipeline, pipeline, pipeline_info->pipeline);
@@ -195,6 +197,15 @@ radv_dgc_get_pc_layout_info(const struct radv_indirect_command_layout *layout,
          if (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_RT)) {
             const struct radv_ray_tracing_pipeline *rt_pipeline = radv_pipeline_to_ray_tracing(pipeline);
             struct radv_shader *rt_prolog = rt_pipeline->prolog;
+
+            for (unsigned i = 0; i < rt_pipeline->stage_count; ++i) {
+               struct radv_shader *shader = rt_pipeline->stages[i].shader;
+
+               if (!shader)
+                  continue;
+
+               pc_info->size = MAX2(pc_info->size, shader->info.push_constant_size);
+            }
 
             shaders[MESA_SHADER_COMPUTE] = rt_prolog;
          } else {
@@ -236,6 +247,7 @@ radv_dgc_get_pc_layout_info(const struct radv_indirect_command_layout *layout,
             pc_info->shaders[i].inline_push_const_mask = shader->info.inline_push_constant_mask;
          }
 
+         pc_info->size = MAX2(pc_info->size, shader->info.push_constant_size);
          pc_info->stages |= mesa_to_vk_shader_stage(i);
       }
    }
@@ -3399,6 +3411,7 @@ radv_update_ies_shader(struct radv_device *device, struct radv_indirect_executio
    set->uses_grid_base_sgpr |= md.grid_base_sgpr;
    set->uses_upload_sgpr |= !!(md.push_const_sgpr & 0xffff);
    set->uses_indirect_desc_sets_sgpr |= md.indirect_desc_sets_sgpr;
+   set->push_constant_size = MAX2(set->push_constant_size, shader->info.push_constant_size);
    set->compute_scratch_size_per_wave = MAX2(set->compute_scratch_size_per_wave, shader->config.scratch_bytes_per_wave);
    set->compute_scratch_waves = MAX2(set->compute_scratch_waves, radv_get_max_scratch_waves(device, shader));
 
