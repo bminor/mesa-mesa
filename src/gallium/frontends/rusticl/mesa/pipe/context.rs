@@ -632,7 +632,8 @@ impl PipeContext {
         unsafe {
             let mut fence = ptr::null_mut();
             self.pipe.as_ref().flush.unwrap()(self.pipe.as_ptr(), &mut fence, 0);
-            PipeFence::new(fence, &self.screen)
+            // TODO: handle properly
+            PipeFence::new(fence, &self.screen).unwrap()
         }
     }
 
@@ -645,11 +646,7 @@ impl PipeContext {
                 fence_fd.fd,
                 PIPE_FD_TYPE_NATIVE_SYNC,
             );
-            if fence.is_null() {
-                None
-            } else {
-                Some(PipeFence::new(fence, &self.screen))
-            }
+            PipeFence::new(fence, &self.screen)
         }
     }
 
