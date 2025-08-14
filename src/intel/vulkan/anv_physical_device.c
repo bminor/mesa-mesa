@@ -2670,8 +2670,6 @@ anv_physical_device_try_create(struct vk_instance *vk_instance,
    unsigned st_idx = 0;
 
    device->sync_syncobj_type = vk_drm_syncobj_get_type(fd);
-   if (!device->has_exec_timeline)
-      device->sync_syncobj_type.features &= ~VK_SYNC_FEATURE_TIMELINE;
    device->sync_types[st_idx++] = &device->sync_syncobj_type;
 
    /* anv_bo_sync_type is only supported with i915 for now  */
@@ -2722,7 +2720,7 @@ anv_physical_device_try_create(struct vk_instance *vk_instance,
          else
             device->sparse_type = ANV_SPARSE_TYPE_VM_BIND;
       } else {
-         if (device->info.ver >= 12 && device->has_exec_timeline)
+         if (device->info.ver >= 12)
             device->sparse_type = ANV_SPARSE_TYPE_TRTT;
       }
    }
