@@ -2243,7 +2243,6 @@ struct anv_device {
     const struct intel_l3_config               *internal_kernels_l3_config;
 
     pthread_mutex_t                             mutex;
-    pthread_cond_t                              queue_submit;
 
     struct intel_batch_decode_ctx               decoder[ANV_MAX_QUEUE_FAMILIES];
     /*
@@ -4895,38 +4894,6 @@ void anv_cmd_buffer_save_state(struct anv_cmd_buffer *cmd_buffer,
 
 void anv_cmd_buffer_restore_state(struct anv_cmd_buffer *cmd_buffer,
                                   struct anv_cmd_saved_state *state);
-
-enum anv_bo_sync_state {
-   /** Indicates that this is a new (or newly reset fence) */
-   ANV_BO_SYNC_STATE_RESET,
-
-   /** Indicates that this fence has been submitted to the GPU but is still
-    * (as far as we know) in use by the GPU.
-    */
-   ANV_BO_SYNC_STATE_SUBMITTED,
-
-   ANV_BO_SYNC_STATE_SIGNALED,
-};
-
-struct anv_bo_sync {
-   struct vk_sync sync;
-
-   enum anv_bo_sync_state state;
-   struct anv_bo *bo;
-};
-
-extern const struct vk_sync_type anv_bo_sync_type;
-
-static inline bool
-vk_sync_is_anv_bo_sync(const struct vk_sync *sync)
-{
-   return sync->type == &anv_bo_sync_type;
-}
-
-VkResult anv_create_sync_for_memory(struct vk_device *device,
-                                    VkDeviceMemory memory,
-                                    bool signal_memory,
-                                    struct vk_sync **sync_out);
 
 struct anv_event {
    struct vk_object_base                        base;

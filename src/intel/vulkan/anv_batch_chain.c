@@ -1489,24 +1489,6 @@ anv_queue_submit_cmd_buffers_locked(struct anv_queue *queue,
 {
    VkResult result;
 
-   /* It's not safe to access submit->signals[] elements after submit because
-    * the elements might signal through the kernel before this function
-    * returns and another thread could wake up and destroy any of those
-    * elements.
-    *
-    * Build a list of anv_bo_sync elements here and put them in the signal
-    * state after without looking at any other element.
-    */
-   STACK_ARRAY(struct anv_bo_sync *, bo_signals, submit->signal_count);
-   uint32_t bo_signal_count = 0;
-   for (uint32_t i = 0; i < submit->signal_count; i++) {
-      if (!vk_sync_is_anv_bo_sync(submit->signals[i].sync))
-         continue;
-
-      bo_signals[bo_signal_count++] =
-         container_of(submit->signals[i].sync, struct anv_bo_sync, sync);
-   }
-
    if (submit->command_buffer_count == 0) {
       result = anv_queue_exec_locked(queue, submit->wait_count, submit->waits,
                                      0 /* cmd_buffer_count */,
@@ -1563,27 +1545,8 @@ anv_queue_submit_cmd_buffers_locked(struct anv_queue *queue,
          }
       }
    }
-   for (uint32_t i = 0; i < bo_signal_count; i++) {
-      struct anv_bo_sync *bo_sync = bo_signals[i];
-
-      /* Once the execbuf has returned, we need to set the fence state to
-       * SUBMITTED.  We can't do this before calling execbuf because
-       * anv_GetFenceStatus does take the global device lock before checking
-       * fence->state.
-       *
-       * We set the fence state to SUBMITTED regardless of whether or not the
-       * execbuf succeeds because we need to ensure that vkWaitForFences() and
-       * vkGetFenceStatus() return a valid result (VK_ERROR_DEVICE_LOST or
-       * VK_SUCCESS) in a finite amount of time even if execbuf fails.
-       */
-      assert(bo_sync->state == ANV_BO_SYNC_STATE_RESET);
-      bo_sync->state = ANV_BO_SYNC_STATE_SUBMITTED;
-   }
-
-   pthread_cond_broadcast(&queue->device->queue_submit);
 
  fail:
-   STACK_ARRAY_FINISH(bo_signals);
    return result;
 }
 

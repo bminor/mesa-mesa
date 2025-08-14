@@ -246,27 +246,16 @@ anv_execbuf_add_sync(struct anv_device *device,
    if ((sync->flags & VK_SYNC_IS_TIMELINE) && value == 0)
       return VK_SUCCESS;
 
-   if (vk_sync_is_anv_bo_sync(sync)) {
-      struct anv_bo_sync *bo_sync =
-         container_of(sync, struct anv_bo_sync, sync);
+   assert(vk_sync_type_is_drm_syncobj(sync->type));
+   struct vk_drm_syncobj *syncobj = vk_sync_as_drm_syncobj(sync);
 
-      assert(is_signal == (bo_sync->state == ANV_BO_SYNC_STATE_RESET));
+   if (!(sync->flags & VK_SYNC_IS_TIMELINE))
+      value = 0;
 
-      return anv_execbuf_add_bo(device, execbuf, bo_sync->bo, NULL,
-                                is_signal ? EXEC_OBJECT_WRITE : 0);
-   } else if (vk_sync_type_is_drm_syncobj(sync->type)) {
-      struct vk_drm_syncobj *syncobj = vk_sync_as_drm_syncobj(sync);
-
-      if (!(sync->flags & VK_SYNC_IS_TIMELINE))
-         value = 0;
-
-      return anv_execbuf_add_syncobj(device, execbuf, syncobj->syncobj,
-                                     is_signal ? I915_EXEC_FENCE_SIGNAL :
-                                                 I915_EXEC_FENCE_WAIT,
-                                     value);
-   }
-
-   UNREACHABLE("Invalid sync type");
+   return anv_execbuf_add_syncobj(device, execbuf, syncobj->syncobj,
+                                  is_signal ? I915_EXEC_FENCE_SIGNAL :
+                                              I915_EXEC_FENCE_WAIT,
+                                  value);
 }
 
 static VkResult

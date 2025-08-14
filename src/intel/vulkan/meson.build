@@ -151,7 +151,6 @@ libanv_files = files(
   'anv_astc_emu.c',
   'anv_batch_chain.c',
   'anv_blorp.c',
-  'anv_bo_sync.c',
   'anv_buffer.c',
   'anv_buffer_view.c',
   'anv_cmd_buffer.c',
