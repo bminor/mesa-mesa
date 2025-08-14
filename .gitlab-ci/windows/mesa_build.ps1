@@ -50,6 +50,7 @@ meson setup `
 -Dvulkan-drivers="swrast,amd,microsoft-experimental" `
 -Dgallium-drivers="llvmpipe,softpipe,d3d12,zink,virgl" `
 -Dgallium-va=enabled `
+-Dgallium-d3d10umd=true `
 -Dgallium-mediafoundation=enabled `
 -Dvideo-codecs="all" `
 -Dmediafoundation-codecs="all" `
