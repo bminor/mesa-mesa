@@ -7,5 +7,5 @@ libimgui_core = static_library(
 
 libimgui_core_dep = declare_dependency(
   link_with : libimgui_core,
-  include_directories : include_directories('.')
+  include_directories : include_directories('.', is_system : true)
 )
