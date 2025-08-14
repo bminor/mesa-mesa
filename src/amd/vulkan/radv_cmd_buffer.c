@@ -5401,7 +5401,7 @@ lookup_ps_epilog(struct radv_cmd_buffer *cmd_buffer)
       state.color_attachment_formats[i] = render->color_att[i].format;
    }
 
-   for (unsigned i = 0; i < MAX_RTS; i++) {
+   for (unsigned i = 0; i < render->color_att_count; i++) {
       VkBlendOp eqRGB = d->vk.cb.attachments[i].color_blend_op;
       VkBlendFactor srcRGB = d->vk.cb.attachments[i].src_color_blend_factor;
       VkBlendFactor dstRGB = d->vk.cb.attachments[i].dst_color_blend_factor;
@@ -5453,6 +5453,14 @@ lookup_ps_epilog(struct radv_cmd_buffer *cmd_buffer)
    }
 
    struct radv_ps_epilog_key key = radv_generate_ps_epilog_key(device, &state);
+
+   /* Adjust the remapping for alpha-to-coverage without any color attachment and dual-source
+    * blending to make sure colors written aren't cleared.
+    */
+   if (!state.color_attachment_count && state.need_src_alpha)
+      color_remap[0] = 0;
+   if (state.mrt0_is_dual_src)
+      color_remap[1] = 1;
 
    /* Determine the actual colors written if outputs are remapped. */
    uint32_t colors_written = 0;
