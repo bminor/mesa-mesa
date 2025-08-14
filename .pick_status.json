@@ -2784,7 +2784,7 @@
         "description": "anv: fix R64* vertex buffer format support",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5c7397c75135eb0ba8c601e041d456266c866858",
         "notes": null
