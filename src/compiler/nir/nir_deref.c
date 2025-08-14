@@ -1566,3 +1566,49 @@ nir_lower_constant_to_temp(nir_shader *nir)
    nir_fixup_deref_modes(nir);
    nir_lower_global_vars_to_local(nir);
 }
+
+
+static bool
+update_image_format_intrin(nir_builder *b,
+                           nir_intrinsic_instr *intrin,
+                           void *state)
+{
+   switch (intrin->intrinsic) {
+#define CASE(op) case nir_intrinsic_image_deref_##op
+   CASE(load):
+   CASE(sparse_load):
+   CASE(store):
+   CASE(atomic):
+   CASE(atomic_swap):
+   CASE(format):
+   CASE(levels):
+   CASE(order):
+   CASE(size):
+   CASE(samples):
+   CASE(samples_identical):
+   CASE(texel_address):
+   CASE(load_raw_intel):
+   CASE(store_raw_intel):
+   CASE(descriptor_amd):
+   CASE(fragment_mask_load_amd):
+   CASE(store_block_agx): {
+      nir_deref_instr *deref = nir_src_as_deref(intrin->src[0]);
+      nir_variable *var = nir_deref_instr_get_variable(deref);
+      if (var == NULL)
+         return false;
+      nir_intrinsic_set_format(intrin, var->data.image.format);
+      return true;
+   }
+#undef CASE
+
+   default:
+      return false;
+   }
+}
+
+bool
+nir_update_image_intrinsic_from_var(nir_shader *nir)
+{
+   return nir_shader_intrinsics_pass(nir, update_image_format_intrin,
+                                     nir_metadata_all, NULL);
+}

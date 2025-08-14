@@ -5856,6 +5856,9 @@ nir_lower_tex_shadow(nir_shader *s,
                      nir_lower_tex_shadow_swizzle *tex_swizzles,
                      bool is_fixed_point_format);
 
+bool
+nir_update_image_intrinsic_from_var(nir_shader *nir);
+
 typedef struct nir_lower_image_options {
    /**
     * If true, lower cube size operations.
