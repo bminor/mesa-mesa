@@ -532,7 +532,8 @@ anv_get_format(const struct anv_physical_device *device, VkFormat vk_format)
 
    const struct anv_format *format =
       &anv_formats[ext_number].formats[enum_offset];
-   if (format->planes[0].isl_format == ISL_FORMAT_UNSUPPORTED)
+   if (format->planes[0].isl_format == ISL_FORMAT_UNSUPPORTED &&
+       format->planes[0].vbo_format == ISL_FORMAT_UNSUPPORTED)
       return NULL;
 
    /* This format is only available if custom border colors without format is
@@ -645,7 +646,8 @@ anv_get_image_format_features2(const struct anv_physical_device *physical_device
                             VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT |
                             VK_IMAGE_CREATE_SPARSE_ALIASED_BIT)) != 0;
 
-   if (anv_format == NULL)
+   if (anv_format == NULL ||
+       anv_format->planes[0].isl_format == ISL_FORMAT_UNSUPPORTED)
       return 0;
 
    assert((isl_mod_info != NULL) ==
