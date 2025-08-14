@@ -37,9 +37,9 @@ extract_8_16_bit_sgpr_element(isel_context* ctx, Temp dst, nir_alu_src* src, sgp
    unsigned swizzle = src->swizzle[0];
 
    if (vec.size() > 1) {
-      assert(src_size == 16);
-      vec = emit_extract_vector(ctx, vec, swizzle / 2, s1);
-      swizzle = swizzle & 1;
+      unsigned factor = 32 / src_size;
+      vec = emit_extract_vector(ctx, vec, swizzle / factor, s1);
+      swizzle = swizzle & (factor - 1);
    }
 
    Builder bld(ctx->program, ctx->block);
