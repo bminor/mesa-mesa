@@ -141,9 +141,9 @@ zink_bind_vertex_buffers(struct zink_context *ctx)
                                       elems->hw_state.num_bindings,
                                       buffers, buffer_offsets, NULL, elems->hw_state.b.strides);
    } else if (elems->hw_state.num_bindings)
-      VKCTX(CmdBindVertexBuffers)(ctx->bs->cmdbuf, 0,
+      VKCTX(CmdBindVertexBuffers2)(ctx->bs->cmdbuf, 0,
                                   elems->hw_state.num_bindings,
-                                  buffers, buffer_offsets);
+                                  buffers, buffer_offsets, NULL, NULL);
 
    ctx->vertex_buffers_dirty = false;
 }
