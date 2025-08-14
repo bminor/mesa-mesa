@@ -226,11 +226,7 @@ struct vk_device {
     * queue.  Instead, the driver is expected to simply copy the sync payloads
     * from the wait set, merge them together into one, and apply that to the
     * signals.  After this function returns, all of the signals are now
-    * equivalent to all of the waits.
-    *
-    * This function MUST reset all binary syncs it waits on, unless that same
-    * sync is also used as a signal.  Otherwise, we risk breaking timeline
-    * semaphore negotiation invariants.
+    * equivalent to the union all of the waits.
     */
    VkResult (*copy_sync_payloads)(struct vk_device *device,
                                   uint32_t wait_count,
