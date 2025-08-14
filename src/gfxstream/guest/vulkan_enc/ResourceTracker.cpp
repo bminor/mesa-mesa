@@ -2139,6 +2139,9 @@ void ResourceTracker::on_vkGetPhysicalDeviceFeatures2KHR(void* context,
 void ResourceTracker::on_vkGetPhysicalDeviceProperties2(void* context,
                                                         VkPhysicalDevice physicalDevice,
                                                         VkPhysicalDeviceProperties2* pProperties) {
+    if (!pProperties) {
+        return;
+    }
 #ifdef LINUX_GUEST_BUILD
     if (VK_PHYSICAL_DEVICE_TYPE_CPU == pProperties->properties.deviceType) {
         /* For Linux guest: Even if host driver reports DEVICE_TYPE_CPU,
@@ -2171,24 +2174,28 @@ void ResourceTracker::on_vkGetPhysicalDeviceProperties2(void* context,
                  "Mesa " PACKAGE_VERSION MESA_GIT_SHA1);
     }
 
+    // Note: VirtGpuDevice::getInstance() will return null for Goldfish, as it
+    // does not have the virtio-gpu interface that is expected.
     VirtGpuDevice* instance = VirtGpuDevice::getInstance();
-    if (!instance) {
-        mesa_loge("%s(): Could not get an instance of the VirtGpuDevice", __func__);
-        return;
-    }
+
+    const char* transport_name = instance ? "Virtio-GPU GFXStream" : "Goldfish GFXStream";
 
     char device_name[VK_MAX_PHYSICAL_DEVICE_NAME_SIZE];
-    int device_name_len = snprintf(device_name, sizeof(device_name), "Virtio-GPU GFXStream (%s)",
-                                   pProperties->properties.deviceName);
+    int device_name_len = snprintf(device_name, sizeof(device_name), "%s (%s)",
+                                   transport_name, pProperties->properties.deviceName);
     if (device_name_len >= (int)VK_MAX_PHYSICAL_DEVICE_NAME_SIZE) {
         memcpy(device_name + VK_MAX_PHYSICAL_DEVICE_NAME_SIZE - 5, "...)", 4);
         device_name_len = VK_MAX_PHYSICAL_DEVICE_NAME_SIZE - 1;
     }
     memcpy(pProperties->properties.deviceName, device_name, device_name_len + 1);
 
+    if (!instance) {
+        mesa_logd("%s(): Could not get an instance of the VirtGpuDevice", __func__);
+    }
+
     VkPhysicalDeviceDrmPropertiesEXT* drmProps =
         vk_find_struct(pProperties, PHYSICAL_DEVICE_DRM_PROPERTIES_EXT);
-    if (drmProps) {
+    if (instance && drmProps) {
         VirtGpuDrmInfo drmInfo;
         if (instance->getDrmInfo(&drmInfo)) {
             drmProps->hasPrimary = drmInfo.hasPrimary;
@@ -2207,7 +2214,7 @@ void ResourceTracker::on_vkGetPhysicalDeviceProperties2(void* context,
 
     VkPhysicalDevicePCIBusInfoPropertiesEXT* pciBusInfoProps =
         vk_find_struct(pProperties, PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT);
-    if (pciBusInfoProps) {
+    if (instance && pciBusInfoProps) {
         VirtGpuPciBusInfo pciBusInfo;
         if (instance->getPciBusInfo(&pciBusInfo)) {
             pciBusInfoProps->pciDomain = pciBusInfo.domain;
