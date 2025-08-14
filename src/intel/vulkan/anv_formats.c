@@ -661,17 +661,19 @@ anv_get_image_format_features2(const struct anv_physical_device *physical_device
    if (anv_is_compressed_format_emulated(physical_device, vk_format)) {
       assert(isl_format_is_compressed(anv_format->planes[0].isl_format));
 
-      /* require optimal tiling so that we can decompress on upload */
-      if (vk_tiling != VK_IMAGE_TILING_OPTIMAL)
-         return 0;
-
-      /* required features for compressed formats */
-      flags |= VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT |
-               VK_FORMAT_FEATURE_2_BLIT_SRC_BIT |
-               VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT |
-               VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT |
-               VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT;
-
+      /* Require optimal tiling so that we can decompress on upload */
+      if (vk_tiling == VK_IMAGE_TILING_OPTIMAL) {
+         /* Required features for compressed formats */
+         flags |= VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT |
+                  VK_FORMAT_FEATURE_2_BLIT_SRC_BIT |
+                  VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT |
+                  VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT |
+                  VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT;
+      } else if (vk_tiling == VK_IMAGE_TILING_LINEAR) {
+         /* Images used for transfers */
+         flags |= VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT |
+                  VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT;
+      }
       return flags;
    }
 
