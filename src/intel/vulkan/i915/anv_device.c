@@ -121,6 +121,12 @@ anv_i915_physical_device_get_parameters(struct anv_physical_device *device)
       return result;
    }
 
+   if (!i915_gem_supports_dma_buf_sync_file(fd)) {
+      result = vk_errorf(device, VK_ERROR_INCOMPATIBLE_DRIVER,
+                         "kernel missing dma-buf sync file import/export");
+      return result;
+   }
+
    /* Start with medium; sorted low to high */
    const VkQueueGlobalPriorityKHR priorities[] = {
          VK_QUEUE_GLOBAL_PRIORITY_LOW_KHR,

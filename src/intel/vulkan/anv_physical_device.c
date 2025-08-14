@@ -142,9 +142,6 @@ static void
 get_device_extensions(const struct anv_physical_device *device,
                       struct vk_device_extension_table *ext)
 {
-   const bool has_syncobj_wait =
-      (device->sync_syncobj_type.features & VK_SYNC_FEATURE_CPU_WAIT) != 0;
-
    const bool rt_enabled = ANV_SUPPORT_RT && device->info.has_ray_tracing;
    const bool video_decode_enabled = device->instance->debug & ANV_DEBUG_VIDEO_DECODE;
    const bool video_encode_enabled = device->instance->debug & ANV_DEBUG_VIDEO_ENCODE;
@@ -170,8 +167,8 @@ get_device_extensions(const struct anv_physical_device *device,
       .KHR_driver_properties                 = true,
       .KHR_dynamic_rendering                 = true,
       .KHR_dynamic_rendering_local_read      = true,
-      .KHR_external_fence                    = has_syncobj_wait,
-      .KHR_external_fence_fd                 = has_syncobj_wait,
+      .KHR_external_fence                    = true,
+      .KHR_external_fence_fd                 = true,
       .KHR_external_memory                   = true,
       .KHR_external_memory_fd                = true,
       .KHR_external_semaphore                = true,
@@ -2667,28 +2664,13 @@ anv_physical_device_try_create(struct vk_instance *vk_instance,
    device->has_cooperative_matrix =
       device->info.cooperative_matrix_configurations[0].scope != INTEL_CMAT_SCOPE_NONE;
 
-   unsigned st_idx = 0;
-
    device->sync_syncobj_type = vk_drm_syncobj_get_type(fd);
-   device->sync_types[st_idx++] = &device->sync_syncobj_type;
+   assert(vk_sync_type_is_drm_syncobj(&device->sync_syncobj_type));
+   assert(device->sync_syncobj_type.features & VK_SYNC_FEATURE_TIMELINE);
+   assert(device->sync_syncobj_type.features & VK_SYNC_FEATURE_CPU_WAIT);
 
-   /* anv_bo_sync_type is only supported with i915 for now  */
-   if (device->info.kmd_type == INTEL_KMD_TYPE_I915) {
-      if (!(device->sync_syncobj_type.features & VK_SYNC_FEATURE_CPU_WAIT))
-         device->sync_types[st_idx++] = &anv_bo_sync_type;
-
-      if (!(device->sync_syncobj_type.features & VK_SYNC_FEATURE_TIMELINE)) {
-         device->sync_timeline_type = vk_sync_timeline_get_type(&anv_bo_sync_type);
-         device->sync_types[st_idx++] = &device->sync_timeline_type.sync;
-      }
-   } else {
-      assert(vk_sync_type_is_drm_syncobj(&device->sync_syncobj_type));
-      assert(device->sync_syncobj_type.features & VK_SYNC_FEATURE_TIMELINE);
-      assert(device->sync_syncobj_type.features & VK_SYNC_FEATURE_CPU_WAIT);
-   }
-
-   device->sync_types[st_idx++] = NULL;
-   assert(st_idx <= ARRAY_SIZE(device->sync_types));
+   device->sync_types[0] = &device->sync_syncobj_type;
+   device->sync_types[1] = NULL;
    device->vk.supported_sync_types = device->sync_types;
 
    device->vk.pipeline_cache_import_ops = anv_cache_import_ops;
