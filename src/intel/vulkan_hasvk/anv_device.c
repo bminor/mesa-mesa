@@ -1711,6 +1711,12 @@ anv_physical_device_try_create(struct vk_instance *vk_instance,
       goto fail_base;
    }
 
+   if (!intel_gem_get_param(fd, I915_PARAM_HAS_EXEC_TIMELINE_FENCES, &val) || !val) {
+      result = vk_errorf(device, VK_ERROR_INITIALIZATION_FAILED,
+                         "kernel missing exec timeline fence support");
+      goto fail_base;
+   }
+
    /* Start with medium; sorted low to high */
    const int priorities[] = {
       INTEL_CONTEXT_MEDIUM_PRIORITY,
@@ -1740,14 +1746,9 @@ anv_physical_device_try_create(struct vk_instance *vk_instance,
    assert(device->supports_48bit_addresses == !device->use_relocations);
    device->use_softpin = !device->use_relocations;
 
-   if (intel_gem_get_param(fd, I915_PARAM_HAS_EXEC_TIMELINE_FENCES, &val))
-      device->has_exec_timeline = val;
-
    unsigned st_idx = 0;
 
    device->sync_syncobj_type = vk_drm_syncobj_get_type(fd);
-   if (!device->has_exec_timeline)
-      device->sync_syncobj_type.features &= ~VK_SYNC_FEATURE_TIMELINE;
    device->sync_types[st_idx++] = &device->sync_syncobj_type;
 
    if (!(device->sync_syncobj_type.features & VK_SYNC_FEATURE_CPU_WAIT))

@@ -871,8 +871,6 @@ struct anv_physical_device {
     bool                                        has_a64_buffer_access;
     /** True if we can use bindless access for samplers */
     bool                                        has_bindless_samplers;
-    /** True if we can use timeline semaphores through execbuf */
-    bool                                        has_exec_timeline;
 
     /** True if we can read the GPU timestamp register
      *
