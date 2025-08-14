@@ -2122,16 +2122,6 @@ dzn_queue_init(struct dzn_queue *queue,
 }
 
 static VkResult
-dzn_device_create_sync_for_memory(struct vk_device *device,
-                                  VkDeviceMemory memory,
-                                  bool signal_memory,
-                                  struct vk_sync **sync_out)
-{
-   return vk_sync_create(device, &vk_sync_dummy_type,
-                         0, 1, sync_out);
-}
-
-static VkResult
 dzn_device_query_init(struct dzn_device *device)
 {
    /* FIXME: create the resource in the default heap */
@@ -2298,7 +2288,6 @@ dzn_device_create(struct dzn_physical_device *pdev,
     * whole struct.
     */
    device->vk.command_dispatch_table = &device->cmd_dispatch;
-   device->vk.create_sync_for_memory = dzn_device_create_sync_for_memory;
    device->vk.check_status = dzn_device_check_status;
 
    device->dev = pdev->dev;
