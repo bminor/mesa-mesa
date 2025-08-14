@@ -1394,6 +1394,8 @@ anv_shader_lower_nir(struct anv_device *device,
                set_layouts, set_layout_count, NULL, /* TODO? */
                &shader_data->bind_map, &shader_data->push_map, mem_ctx);
 
+   NIR_PASS(_, nir, anv_nir_lower_driver_values, pdevice);
+
    NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_ubo,
             anv_nir_ubo_addr_format(pdevice, shader_data->key.base.robust_flags));
    NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_ssbo,

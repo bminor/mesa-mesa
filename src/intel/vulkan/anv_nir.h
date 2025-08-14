@@ -98,6 +98,9 @@ anv_nir_ubo_addr_format(const struct anv_physical_device *pdevice,
 
 bool anv_nir_lower_ubo_loads(nir_shader *shader);
 
+bool anv_nir_lower_driver_values(nir_shader *shader,
+                                 const struct anv_physical_device *pdevice);
+
 bool anv_nir_apply_pipeline_layout(nir_shader *shader,
                                    const struct anv_physical_device *pdevice,
                                    enum brw_robustness_flags robust_flags,
