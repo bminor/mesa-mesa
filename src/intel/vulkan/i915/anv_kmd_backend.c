@@ -302,7 +302,7 @@ i915_bo_alloc_flags_to_bo_flags(struct anv_device *device,
       bo_flags |= EXEC_OBJECT_WRITE;
    }
 
-   if (!(alloc_flags & ANV_BO_ALLOC_IMPLICIT_SYNC) && pdevice->has_exec_async)
+   if (!(alloc_flags & ANV_BO_ALLOC_IMPLICIT_SYNC))
       bo_flags |= EXEC_OBJECT_ASYNC;
 
    return bo_flags;
