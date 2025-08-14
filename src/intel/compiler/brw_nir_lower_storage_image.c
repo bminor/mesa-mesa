@@ -219,13 +219,12 @@ lower_image_load_instr_without_format(nir_builder *b,
 
    b->cursor = nir_after_instr(&intrin->instr);
 
-   nir_deref_instr *deref = nir_src_as_deref(intrin->src[0]);
-   nir_variable *var = nir_deref_instr_get_variable(deref);
+   nir_def *img = intrin->src[0].ssa;
 
-   assert(var->data.image.format == PIPE_FORMAT_NONE);
+   assert(nir_intrinsic_format(intrin) == PIPE_FORMAT_NONE);
 
    nir_def *image_fmt = nir_image_deref_load_param_intel(
-      b, 1, 32, &deref->def, .base = ISL_SURF_PARAM_FORMAT);
+      b, 1, 32, img, .base = ISL_SURF_PARAM_FORMAT);
 
    nir_def *color = convert_color_for_load_format(
       b, state->compiler, &intrin->def, image_fmt);
@@ -242,13 +241,10 @@ lower_image_load_instr(nir_builder *b,
                        nir_intrinsic_instr *intrin,
                        bool sparse)
 {
-   nir_deref_instr *deref = nir_src_as_deref(intrin->src[0]);
-   nir_variable *var = nir_deref_instr_get_variable(deref);
-
-   assert(var->data.image.format != PIPE_FORMAT_NONE);
+   assert(nir_intrinsic_format(intrin) != PIPE_FORMAT_NONE);
 
    const enum isl_format image_fmt =
-      isl_format_for_pipe_format(var->data.image.format);
+      isl_format_for_pipe_format(nir_intrinsic_format(intrin));
 
    assert(isl_has_matching_typed_storage_image_format(devinfo, image_fmt));
    const enum isl_format lower_fmt =
@@ -376,14 +372,13 @@ lower_image_store_instr(nir_builder *b,
                         const struct intel_device_info *devinfo,
                         nir_intrinsic_instr *intrin)
 {
-   nir_deref_instr *deref = nir_src_as_deref(intrin->src[0]);
-   nir_variable *var = nir_deref_instr_get_variable(deref);
+   enum pipe_format pipe_format = nir_intrinsic_format(intrin);
 
-   if (var->data.image.format == PIPE_FORMAT_NONE)
+   if (pipe_format == PIPE_FORMAT_NONE)
       return false;
 
    const struct util_format_description *fmt_desc =
-      util_format_description(var->data.image.format);
+      util_format_description(pipe_format);
    const bool is_r64_fmt =
       fmt_desc->block.bits == 64 && fmt_desc->nr_channels == 1;
    if ((!opts->lower_stores && !is_r64_fmt) ||
@@ -393,11 +388,11 @@ lower_image_store_instr(nir_builder *b,
    /* For write-only surfaces non-64bit bpc, we trust that the hardware can
     * just do the conversion for us.
     */
-   if ((var->data.access & ACCESS_NON_READABLE) && !is_r64_fmt)
+   if ((nir_intrinsic_access(intrin) & ACCESS_NON_READABLE) && !is_r64_fmt)
       return false;
 
    const enum isl_format image_fmt =
-      isl_format_for_pipe_format(var->data.image.format);
+      isl_format_for_pipe_format(pipe_format);
 
    assert(isl_has_matching_typed_storage_image_format(devinfo, image_fmt));
    const enum isl_format lower_fmt =
@@ -428,10 +423,7 @@ brw_nir_lower_storage_image_instr(nir_builder *b,
    nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
    switch (intrin->intrinsic) {
    case nir_intrinsic_image_deref_load: {
-      nir_deref_instr *deref = nir_src_as_deref(intrin->src[0]);
-      nir_variable *var = nir_deref_instr_get_variable(deref);
-
-      if (var->data.image.format == PIPE_FORMAT_NONE) {
+      if (nir_intrinsic_format(intrin) == PIPE_FORMAT_NONE) {
          if (state->opts.lower_loads_without_formats)
             return lower_image_load_instr_without_format(b, state, intrin);
       } else {
@@ -444,10 +436,7 @@ brw_nir_lower_storage_image_instr(nir_builder *b,
       }
 
    case nir_intrinsic_image_deref_sparse_load: {
-      nir_deref_instr *deref = nir_src_as_deref(intrin->src[0]);
-      nir_variable *var = nir_deref_instr_get_variable(deref);
-
-      if (var->data.image.format == PIPE_FORMAT_NONE) {
+      if (nir_intrinsic_format(intrin) == PIPE_FORMAT_NONE) {
          if (state->opts.lower_loads_without_formats)
             return lower_image_load_instr_without_format(b, state, intrin);
       } else {
