@@ -5962,6 +5962,10 @@ bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
    NIR_PASS(_, nir, nir_lower_vars_to_ssa);
 
    bi_optimize_loop_nir(nir, gpu_id, true);
+
+   /* Lower away all variables for smaller shaders */
+   NIR_PASS(_, nir, nir_lower_vars_to_ssa);
+   NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_all, NULL);
 }
 
 void
