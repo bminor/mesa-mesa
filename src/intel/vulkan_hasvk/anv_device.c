@@ -1699,8 +1699,12 @@ anv_physical_device_try_create(struct vk_instance *vk_instance,
       goto fail_base;
    }
 
-   if (intel_gem_get_param(fd, I915_PARAM_HAS_EXEC_ASYNC, &val))
-      device->has_exec_async = val;
+   if (!intel_gem_get_param(fd, I915_PARAM_HAS_EXEC_ASYNC, &val) || !val) {
+      result = vk_errorf(device, VK_ERROR_INITIALIZATION_FAILED,
+                         "kernel missing exec async support");
+      goto fail_base;
+   }
+
    if (intel_gem_get_param(fd, I915_PARAM_HAS_EXEC_CAPTURE, &val))
       device->has_exec_capture = val;
 
