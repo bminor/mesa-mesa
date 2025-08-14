@@ -1692,7 +1692,6 @@ dgc_emit_push_constant_for_stage(struct dgc_cmdbuf *cs, nir_def *stream_addr, ni
                                  const struct dgc_pc_params *params, mesa_shader_stage stage)
 {
    const struct radv_indirect_command_layout *layout = cs->layout;
-   VK_FROM_HANDLE(radv_pipeline_layout, pipeline_layout, layout->vk.layout);
    nir_builder *b = cs->b;
 
    nir_def *upload_sgpr = dgc_get_upload_sgpr(cs, params->offset, stage);
@@ -1711,30 +1710,28 @@ dgc_emit_push_constant_for_stage(struct dgc_cmdbuf *cs, nir_def *stream_addr, ni
 
    nir_push_if(b, nir_ine_imm(b, inline_sgpr, 0));
    {
-      nir_variable *pc_idx = nir_variable_create(b->shader, nir_var_shader_temp, glsl_uint_type(), "pc_idx");
-      nir_store_var(b, pc_idx, nir_imm_int(b, 0), 0x1);
-
-      for (uint32_t i = 0; i < pipeline_layout->push_constant_size / 4; i++) {
+      u_foreach_bit64 (i, layout->push_constant_mask) {
          nir_push_if(b, nir_ine_imm(b, nir_iand_imm(b, inline_mask, 1ull << i), 0));
          {
-            nir_def *data = NULL;
+            nir_def *data;
 
             if (layout->sequence_index_mask & (1ull << i)) {
                data = sequence_id;
-            } else if (layout->push_constant_mask & (1ull << i)) {
+            } else {
                data = nir_build_load_global(b, 1, 32, nir_iadd_imm(b, stream_addr, layout->push_constant_offsets[i]),
                                             .access = ACCESS_NON_WRITEABLE);
             }
 
-            if (data) {
-               dgc_cs_begin(cs);
-               dgc_cs_emit_imm(PKT3(PKT3_SET_SH_REG, 1, 0));
-               dgc_cs_emit(nir_iadd(b, inline_sgpr, nir_load_var(b, pc_idx)));
-               dgc_cs_emit(data);
-               dgc_cs_end();
-            }
+            /* Determine the inline push constant index by counting the number of bits prior to the
+             * current index because they have to be emitted consecutively.
+             */
+            nir_def *pc_idx = nir_bit_count(b, nir_iand_imm(b, inline_mask, BITFIELD64_MASK(i)));
 
-            nir_store_var(b, pc_idx, nir_iadd_imm(b, nir_load_var(b, pc_idx), 1), 0x1);
+            dgc_cs_begin(cs);
+            dgc_cs_emit_imm(PKT3(PKT3_SET_SH_REG, 1, 0));
+            dgc_cs_emit(nir_iadd(b, inline_sgpr, pc_idx));
+            dgc_cs_emit(data);
+            dgc_cs_end();
          }
          nir_pop_if(b, NULL);
       }
