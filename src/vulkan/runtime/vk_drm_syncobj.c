@@ -370,9 +370,7 @@ vk_drm_syncobj_move(struct vk_device *device,
       if (unlikely(result != VK_SUCCESS))
          return result;
 
-      uint32_t tmp = dst_sobj->syncobj;
-      dst_sobj->syncobj = src_sobj->syncobj;
-      src_sobj->syncobj = tmp;
+      SWAP(dst_sobj->syncobj, src_sobj->syncobj);
 
       return VK_SUCCESS;
    } else {
