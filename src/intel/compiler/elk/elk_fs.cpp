@@ -2530,9 +2530,9 @@ elk_fs_visitor::opt_algebraic()
             inst->sources = 1;
             progress = true;
          } else if (inst->src[1].file == IMM) {
+            const unsigned comp = inst->src[1].ud & (inst->exec_size - 1);
             inst->opcode = ELK_OPCODE_MOV;
-            inst->src[0] = component(inst->src[0],
-                                     inst->src[1].ud);
+            inst->src[0] = component(inst->src[0], comp);
             inst->sources = 1;
             progress = true;
          }
