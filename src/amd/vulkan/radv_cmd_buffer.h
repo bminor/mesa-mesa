@@ -710,19 +710,19 @@ radv_is_streamout_enabled(struct radv_cmd_buffer *cmd_buffer)
    return (so->streamout_enabled || cmd_buffer->state.active_prims_gen_queries) && !cmd_buffer->state.suspend_streamout;
 }
 
-static inline unsigned
+ALWAYS_INLINE static unsigned
 vk_to_bind_point(VkPipelineBindPoint bind_point)
 {
    return bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR ? 2 : bind_point;
 }
 
-static inline struct radv_descriptor_state *
+ALWAYS_INLINE static struct radv_descriptor_state *
 radv_get_descriptors_state(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoint bind_point)
 {
    return &cmd_buffer->descriptors[vk_to_bind_point(bind_point)];
 }
 
-static inline const struct radv_push_constant_state *
+ALWAYS_INLINE static const struct radv_push_constant_state *
 radv_get_push_constants_state(const struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoint bind_point)
 {
    return &cmd_buffer->push_constant_state[vk_to_bind_point(bind_point)];

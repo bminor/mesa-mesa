@@ -6661,7 +6661,7 @@ radv_flush_streamout_descriptors(struct radv_cmd_buffer *cmd_buffer)
       radv_emit_streamout_state(cmd_buffer);
 }
 
-static void
+ALWAYS_INLINE static void
 radv_upload_graphics_shader_descriptors(struct radv_cmd_buffer *cmd_buffer)
 {
    struct radv_descriptor_state *descriptors_state =
