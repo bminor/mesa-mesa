@@ -1067,7 +1067,6 @@ struct anv_device {
     bool                                        robust_buffer_access;
 
     pthread_mutex_t                             mutex;
-    pthread_cond_t                              queue_submit;
 
     struct intel_batch_decode_ctx               decoder_ctx;
     /*
@@ -2695,38 +2694,6 @@ anv_cmd_buffer_alloc_blorp_binding_table(struct anv_cmd_buffer *cmd_buffer,
 void anv_cmd_buffer_dump(struct anv_cmd_buffer *cmd_buffer);
 
 void anv_cmd_emit_conditional_render_predicate(struct anv_cmd_buffer *cmd_buffer);
-
-enum anv_bo_sync_state {
-   /** Indicates that this is a new (or newly reset fence) */
-   ANV_BO_SYNC_STATE_RESET,
-
-   /** Indicates that this fence has been submitted to the GPU but is still
-    * (as far as we know) in use by the GPU.
-    */
-   ANV_BO_SYNC_STATE_SUBMITTED,
-
-   ANV_BO_SYNC_STATE_SIGNALED,
-};
-
-struct anv_bo_sync {
-   struct vk_sync sync;
-
-   enum anv_bo_sync_state state;
-   struct anv_bo *bo;
-};
-
-extern const struct vk_sync_type anv_bo_sync_type;
-
-static inline bool
-vk_sync_is_anv_bo_sync(const struct vk_sync *sync)
-{
-   return sync->type == &anv_bo_sync_type;
-}
-
-VkResult anv_create_sync_for_memory(struct vk_device *device,
-                                    VkDeviceMemory memory,
-                                    bool signal_memory,
-                                    struct vk_sync **sync_out);
 
 struct anv_event {
    struct vk_object_base                        base;

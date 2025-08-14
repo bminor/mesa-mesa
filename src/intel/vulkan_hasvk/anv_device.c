@@ -2500,7 +2500,6 @@ VkResult anv_CreateDevice(
    device->vk.command_buffer_ops = &anv_cmd_buffer_ops;
    device->vk.check_status = anv_device_check_status;
    device->vk.get_timestamp = anv_device_get_timestamp;
-   device->vk.create_sync_for_memory = anv_create_sync_for_memory;
    vk_device_set_drm_fd(&device->vk, device->fd);
 
    uint32_t num_queues = 0;
@@ -2577,26 +2576,9 @@ VkResult anv_CreateDevice(
       goto fail_vmas;
    }
 
-   pthread_condattr_t condattr;
-   if (pthread_condattr_init(&condattr) != 0) {
-      result = vk_error(device, VK_ERROR_INITIALIZATION_FAILED);
-      goto fail_mutex;
-   }
-   if (pthread_condattr_setclock(&condattr, CLOCK_MONOTONIC) != 0) {
-      pthread_condattr_destroy(&condattr);
-      result = vk_error(device, VK_ERROR_INITIALIZATION_FAILED);
-      goto fail_mutex;
-   }
-   if (pthread_cond_init(&device->queue_submit, &condattr) != 0) {
-      pthread_condattr_destroy(&condattr);
-      result = vk_error(device, VK_ERROR_INITIALIZATION_FAILED);
-      goto fail_mutex;
-   }
-   pthread_condattr_destroy(&condattr);
-
    result = anv_bo_cache_init(&device->bo_cache, device);
    if (result != VK_SUCCESS)
-      goto fail_queue_cond;
+      goto fail_mutex;
 
    anv_bo_pool_init(&device->batch_bo_pool, device, "batch");
 
@@ -2758,8 +2740,6 @@ VkResult anv_CreateDevice(
  fail_batch_bo_pool:
    anv_bo_pool_finish(&device->batch_bo_pool);
    anv_bo_cache_finish(&device->bo_cache);
- fail_queue_cond:
-   pthread_cond_destroy(&device->queue_submit);
  fail_mutex:
    pthread_mutex_destroy(&device->mutex);
  fail_vmas:
@@ -2832,7 +2812,6 @@ void anv_DestroyDevice(
       util_vma_heap_finish(&device->vma_lo);
    }
 
-   pthread_cond_destroy(&device->queue_submit);
    pthread_mutex_destroy(&device->mutex);
 
    for (uint32_t i = 0; i < device->queue_count; i++)
