@@ -555,16 +555,6 @@ vk_common_EnumeratePhysicalDeviceGroups(VkInstance _instance, uint32_t *pGroupCo
    return vk_outarray_status(&out);
 }
 
-/* For Windows, PUBLIC is default-defined to __declspec(dllexport) to automatically export the
- * public entrypoints from a DLL. However, this declspec needs to match between declaration and
- * definition, and this attribute is not present on the prototypes specified in vk_icd.h. Instead,
- * we'll use a .def file to manually export these entrypoints on Windows.
- */
-#ifdef _WIN32
-#undef PUBLIC
-#define PUBLIC
-#endif
-
 /* With version 4+ of the loader interface the ICD should expose
  * vk_icdGetPhysicalDeviceProcAddr()
  */

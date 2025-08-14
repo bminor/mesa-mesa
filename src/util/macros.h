@@ -289,10 +289,11 @@ do {                       \
 
 /**
  * This marks symbols that should be visible to dynamic library consumers.
+ * On win32, symbols use def file to export, do not use __declspec(dllexport)
  */
 #ifndef PUBLIC
 #  if defined(_WIN32)
-#    define PUBLIC __declspec(dllexport)
+#    define PUBLIC
 #  elif defined(__GNUC__)
 #    define PUBLIC __attribute__((visibility("default")))
 #  else
