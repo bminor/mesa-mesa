@@ -794,6 +794,9 @@ struct vk_render_pass_state {
 
    /** VkAttachmentSampleCountInfoAMD::depthStencilAttachmentSamples */
    uint8_t depth_stencil_attachment_samples;
+
+   /** VkCustomResolveCreateInfoEXT::customResolve */
+   bool custom_resolve;
 };
 
 static inline bool

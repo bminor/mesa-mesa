@@ -1247,6 +1247,10 @@ vk_render_pass_state_init(struct vk_render_pass_state *rp,
 
    rp->view_mask = r_info->viewMask;
 
+   const VkCustomResolveCreateInfoEXT *crc_info =
+      vk_find_struct_const(info->pNext, CUSTOM_RESOLVE_CREATE_INFO_EXT);
+   rp->custom_resolve = crc_info != NULL && crc_info->customResolve;
+
    /* From the Vulkan 1.3.218 spec description of pre-rasterization state:
     *
     *    "Fragment shader state is defined by:
@@ -1271,19 +1275,22 @@ vk_render_pass_state_init(struct vk_render_pass_state *rp,
 
    assert(r_info->colorAttachmentCount <= MESA_VK_MAX_COLOR_ATTACHMENTS);
    rp->color_attachment_count = r_info->colorAttachmentCount;
-   for (uint32_t i = 0; i < r_info->colorAttachmentCount; i++) {
-      rp->color_attachment_formats[i] = r_info->pColorAttachmentFormats[i];
-      if (r_info->pColorAttachmentFormats[i] != VK_FORMAT_UNDEFINED)
-         rp->attachments |= MESA_VK_RP_ATTACHMENT_COLOR_BIT(i);
+
+   if (rp->custom_resolve) {
+      assert(crc_info->colorAttachmentCount == r_info->colorAttachmentCount);
+
+      for (uint32_t i = 0; i < crc_info->colorAttachmentCount; i++)
+         rp->color_attachment_formats[i] = crc_info->pColorAttachmentFormats[i];
+
+      rp->depth_attachment_format = crc_info->depthAttachmentFormat;
+      rp->stencil_attachment_format = crc_info->stencilAttachmentFormat;
+   } else {
+      for (uint32_t i = 0; i < r_info->colorAttachmentCount; i++)
+         rp->color_attachment_formats[i] = r_info->pColorAttachmentFormats[i];
+
+      rp->depth_attachment_format = r_info->depthAttachmentFormat;
+      rp->stencil_attachment_format = r_info->stencilAttachmentFormat;
    }
-
-   rp->depth_attachment_format = r_info->depthAttachmentFormat;
-   if (r_info->depthAttachmentFormat != VK_FORMAT_UNDEFINED)
-      rp->attachments |= MESA_VK_RP_ATTACHMENT_DEPTH_BIT;
-
-   rp->stencil_attachment_format = r_info->stencilAttachmentFormat;
-   if (r_info->stencilAttachmentFormat != VK_FORMAT_UNDEFINED)
-      rp->attachments |= MESA_VK_RP_ATTACHMENT_STENCIL_BIT;
 
    const VkAttachmentSampleCountInfoAMD *asc_info =
       vk_get_pipeline_sample_count_info_amd(info);
@@ -1295,6 +1302,16 @@ vk_render_pass_state_init(struct vk_render_pass_state *rp,
 
       rp->depth_stencil_attachment_samples = asc_info->depthStencilAttachmentSamples;
    }
+
+   for (uint32_t i = 0; i < r_info->colorAttachmentCount; i++) {
+      if (rp->color_attachment_formats[i] != VK_FORMAT_UNDEFINED)
+         rp->attachments |= MESA_VK_RP_ATTACHMENT_COLOR_BIT(i);
+   }
+   if (rp->depth_attachment_format != VK_FORMAT_UNDEFINED)
+      rp->attachments |= MESA_VK_RP_ATTACHMENT_DEPTH_BIT;
+
+   if (rp->stencil_attachment_format != VK_FORMAT_UNDEFINED)
+      rp->attachments |= MESA_VK_RP_ATTACHMENT_STENCIL_BIT;
 }
 
 static void
