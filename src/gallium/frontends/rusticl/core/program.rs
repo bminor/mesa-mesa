@@ -135,7 +135,7 @@ impl ProgramBuild {
                 }
 
                 let build_result =
-                    convert_spirv_to_nir(&build, kernel_name, &args, &self.spec_constants, dev);
+                    convert_spirv_to_nir(build, kernel_name, &args, &self.spec_constants, dev);
                 kernel_info_set.insert(build_result.kernel_info);
 
                 self.builds_by_device.get_mut(dev).unwrap().kernels.insert(
@@ -639,7 +639,7 @@ impl Program {
 
                         spirv::CLCHeader {
                             name: &header.name,
-                            source: &header_src,
+                            source: header_src,
                         }
                     })
                     .collect();
@@ -824,7 +824,7 @@ impl Program {
         is_lib: bool,
         device_for_validation: Option<&Device>,
     ) {
-        let (spirv, log) = spirv::SPIRVBin::link(&bins, is_lib);
+        let (spirv, log) = spirv::SPIRVBin::link(bins, is_lib);
         let (spirv, log) = if let Some(device) = device_for_validation {
             if let Some(spirv) = spirv {
                 let val_options = clc_validator_options(device);
@@ -1040,10 +1040,10 @@ fn create_link_closure(
                 .map(|l| l.dev_build(device).spirv.as_ref().unwrap())
                 .collect();
 
-            let mut device_build = build_info.dev_build_mut(device);
+            let device_build = build_info.dev_build_mut(device);
 
             let device_for_validation = Platform::dbg().validate_spirv.then_some(device);
-            Program::do_link(&mut device_build, &bins, is_lib, device_for_validation);
+            Program::do_link(device_build, &bins, is_lib, device_for_validation);
         }
 
         // Pre build nir kernels
