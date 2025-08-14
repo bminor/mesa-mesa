@@ -55,6 +55,7 @@
 #include "vk_deferred_operation.h"
 #include "vk_drm_syncobj.h"
 #include "common/i915/intel_defines.h"
+#include "common/i915/intel_gem.h"
 #include "common/intel_debug_identifier.h"
 #include "common/intel_uuid.h"
 #include "perf/intel_perf.h"
@@ -1717,6 +1718,12 @@ anv_physical_device_try_create(struct vk_instance *vk_instance,
       goto fail_base;
    }
 
+   if (!i915_gem_supports_dma_buf_sync_file(fd)) {
+      result = vk_errorf(instance, VK_ERROR_INCOMPATIBLE_DRIVER,
+                         "kernel missing dma-buf sync file import/export");
+      goto fail_fd;
+   }
+
    /* Start with medium; sorted low to high */
    const int priorities[] = {
       INTEL_CONTEXT_MEDIUM_PRIORITY,
@@ -1746,21 +1753,12 @@ anv_physical_device_try_create(struct vk_instance *vk_instance,
    assert(device->supports_48bit_addresses == !device->use_relocations);
    device->use_softpin = !device->use_relocations;
 
-   unsigned st_idx = 0;
-
    device->sync_syncobj_type = vk_drm_syncobj_get_type(fd);
-   device->sync_types[st_idx++] = &device->sync_syncobj_type;
+   assert(device->sync_syncobj_type.features & VK_SYNC_FEATURE_CPU_WAIT);
+   assert(device->sync_syncobj_type.features & VK_SYNC_FEATURE_TIMELINE);
 
-   if (!(device->sync_syncobj_type.features & VK_SYNC_FEATURE_CPU_WAIT))
-      device->sync_types[st_idx++] = &anv_bo_sync_type;
-
-   if (!(device->sync_syncobj_type.features & VK_SYNC_FEATURE_TIMELINE)) {
-      device->sync_timeline_type = vk_sync_timeline_get_type(&anv_bo_sync_type);
-      device->sync_types[st_idx++] = &device->sync_timeline_type.sync;
-   }
-
-   device->sync_types[st_idx++] = NULL;
-   assert(st_idx <= ARRAY_SIZE(device->sync_types));
+   device->sync_types[0] = &device->sync_syncobj_type;
+   device->sync_types[1] = NULL;
    device->vk.supported_sync_types = device->sync_types;
 
    device->vk.pipeline_cache_import_ops = anv_cache_import_ops;
