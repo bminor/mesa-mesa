@@ -1205,15 +1205,9 @@ wsi_signal_semaphore_for_image(struct vk_device *device,
       return result;
 #endif
 
-   if (chain->wsi->signal_semaphore_with_memory) {
-      return device->create_sync_for_memory(device, image->memory,
-                                            false /* signal_memory */,
-                                            &semaphore->temporary);
-   } else {
-      return vk_sync_create(device, &vk_sync_dummy_type,
-                            0 /* flags */, 0 /* initial_value */,
-                            &semaphore->temporary);
-   }
+   return vk_sync_create(device, &vk_sync_dummy_type,
+                         0 /* flags */, 0 /* initial_value */,
+                         &semaphore->temporary);
 }
 
 static VkResult
@@ -1241,15 +1235,9 @@ wsi_signal_fence_for_image(struct vk_device *device,
       return result;
 #endif
 
-   if (chain->wsi->signal_fence_with_memory) {
-      return device->create_sync_for_memory(device, image->memory,
-                                            false /* signal_memory */,
-                                            &fence->temporary);
-   } else {
-      return vk_sync_create(device, &vk_sync_dummy_type,
-                            0 /* flags */, 0 /* initial_value */,
-                            &fence->temporary);
-   }
+   return vk_sync_create(device, &vk_sync_dummy_type,
+                         0 /* flags */, 0 /* initial_value */,
+                         &fence->temporary);
 }
 
 VkResult

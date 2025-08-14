@@ -185,21 +185,6 @@ struct wsi_device {
    /* Set to true if the implementation is ok with linear WSI images. */
    bool wants_linear;
 
-   /* Signals the semaphore such that any wait on the semaphore will wait on
-    * any reads or writes on the give memory object.  This is used to
-    * implement the semaphore signal operation in vkAcquireNextImage.  This
-    * requires the driver to implement vk_device::create_sync_for_memory.
-    */
-   bool signal_semaphore_with_memory;
-
-   /* Signals the fence such that any wait on the fence will wait on any reads
-    * or writes on the give memory object.  This is used to implement the
-    * semaphore signal operation in vkAcquireNextImage.  This requires the
-    * driver to implement vk_device::create_sync_for_memory.  The resulting
-    * vk_sync must support CPU waits.
-    */
-   bool signal_fence_with_memory;
-
    /* Whether present_wait functionality is enabled on the device.
     * In this case, we have to create an extra timeline semaphore
     * to be able to synchronize with the WSI present semaphore being unsignalled.
