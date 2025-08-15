@@ -499,8 +499,8 @@ zink_draw(struct pipe_context *pctx,
          if (points_changed && ctx->rast_state->base.point_quad_rasterization)
             zink_set_fs_point_coord_key(ctx);
       }
+      ctx->gfx_pipeline_state.gfx_prim_mode = mode;
    }
-   ctx->gfx_pipeline_state.gfx_prim_mode = mode;
 
    if ((mode_changed || prim_changed || rast_state_changed || ctx->gfx_pipeline_state.modules_changed)) {
       zink_set_primitive_emulation_keys(ctx);
@@ -582,9 +582,9 @@ zink_draw(struct pipe_context *pctx,
          VKCTX(CmdSetScissorWithCount)(bs->cmdbuf, ctx->vp_state.num_viewports, scissors);
       else
          VKCTX(CmdSetScissor)(bs->cmdbuf, 0, ctx->vp_state.num_viewports, scissors);
+      ctx->vp_state_changed = false;
+      ctx->scissor_changed = false;
    }
-   ctx->vp_state_changed = false;
-   ctx->scissor_changed = false;
 
    if (BATCH_CHANGED || ctx->stencil_ref_changed) {
       VKCTX(CmdSetStencilReference)(bs->cmdbuf, VK_STENCIL_FACE_FRONT_BIT,
@@ -629,8 +629,8 @@ zink_draw(struct pipe_context *pctx,
          VKCTX(CmdSetStencilCompareMask)(bs->cmdbuf, VK_STENCIL_FACE_FRONT_AND_BACK, dsa_state->hw_state.stencil_front.compareMask);
          VKCTX(CmdSetStencilOp)(bs->cmdbuf, VK_STENCIL_FACE_FRONT_AND_BACK, VK_STENCIL_OP_KEEP, VK_STENCIL_OP_KEEP, VK_STENCIL_OP_KEEP, VK_COMPARE_OP_ALWAYS);
       }
+      ctx->dsa_state_changed = false;
    }
-   ctx->dsa_state_changed = false;
 
    if (BATCH_CHANGED || rast_state_changed) {
       if (DYNAMIC_STATE != ZINK_NO_DYNAMIC_STATE) {
@@ -658,7 +658,9 @@ zink_draw(struct pipe_context *pctx,
             VKCTX(CmdSetLineRasterizationModeEXT)(bs->cmdbuf, rast_state->dynamic_line_mode);
          if (ctx->ds3_states & BITFIELD_BIT(ZINK_DS3_RAST_STIPPLE_ON))
             VKCTX(CmdSetLineStippleEnableEXT)(bs->cmdbuf, rast_state->hw_state.line_stipple_enable);
+         ctx->ds3_states &= ~BITFIELD_RANGE(ZINK_DS3_RAST_STIPPLE, ZINK_DS3_RAST_STIPPLE_ON - ZINK_DS3_RAST_STIPPLE);
       }
+      ctx->rast_state_changed = false;
    }
    if ((BATCH_CHANGED || ctx->sample_mask_changed) && screen->have_full_ds3) {
       VKCTX(CmdSetRasterizationSamplesEXT)(bs->cmdbuf, (VkSampleCountFlagBits)(ctx->gfx_pipeline_state.rast_samples + 1));
@@ -684,9 +686,10 @@ zink_draw(struct pipe_context *pctx,
             VKCTX(CmdSetLogicOpEnableEXT)(bs->cmdbuf, ctx->gfx_pipeline_state.blend_state->logicop_enable);
          if (ctx->ds3_states & BITFIELD_BIT(ZINK_DS3_BLEND_LOGIC))
             VKCTX(CmdSetLogicOpEXT)(bs->cmdbuf, ctx->gfx_pipeline_state.blend_state->logicop_func);
+         ctx->ds3_states &= ~BITFIELD_RANGE(ZINK_DS3_BLEND_A2C, ZINK_DS3_BLEND_LOGIC - ZINK_DS3_BLEND_A2C);
       }
+      ctx->blend_state_changed = false;
    }
-   ctx->ds3_states = 0;
 
    if (BATCH_CHANGED ||
        /* only re-emit on non-batch change when actually drawing lines */
@@ -704,7 +707,6 @@ zink_draw(struct pipe_context *pctx,
       }
    }
    ctx->was_using_depth_bias = using_depth_bias;
-   ctx->rast_state_changed = false;
    ctx->depth_bias_changed = false;
 
    if (DYNAMIC_STATE != ZINK_NO_DYNAMIC_STATE) {
@@ -718,9 +720,8 @@ zink_draw(struct pipe_context *pctx,
 
    if (BATCH_CHANGED || ctx->blend_color_changed) {
       VKCTX(CmdSetBlendConstants)(bs->cmdbuf, ctx->blend_constants);
+      ctx->blend_color_changed = false;
    }
-   ctx->blend_state_changed = false;
-   ctx->blend_color_changed = false;
 
    if (!DRAW_STATE) {
       if (BATCH_CHANGED || ctx->vertex_buffers_dirty) {
@@ -733,6 +734,7 @@ zink_draw(struct pipe_context *pctx,
          VKCTX(CmdSetVertexInputEXT)(ctx->bs->cmdbuf,
                                      ctx->element_state->hw_state.num_bindings, ctx->element_state->hw_state.dynbindings,
                                      ctx->element_state->hw_state.num_attribs, ctx->element_state->hw_state.dynattribs);
+      ctx->vertex_state_changed = false;
    }
 
    if (BATCH_CHANGED) {
@@ -833,7 +835,6 @@ zink_draw(struct pipe_context *pctx,
       }
       VKCTX(CmdBeginTransformFeedbackEXT)(bs->cmdbuf, 0, ctx->num_so_targets, counter_buffers, counter_buffer_offsets);
    }
-   ctx->vertex_state_changed = false;
 
    bool marker = false;
    if (unlikely(zink_tracing)) {
