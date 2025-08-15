@@ -429,7 +429,7 @@ lower_ray_query_intrinsic(nir_builder *b,
          nir_def *geometry_index_dw =
             nir_load_global(b, nir_iadd_imm(b, hit_in.prim_leaf_ptr, 4), 4,
                             1, 32);
-         sysval = nir_iand_imm(b, geometry_index_dw, BITFIELD_MASK(29));
+         sysval = nir_iand_imm(b, geometry_index_dw, BITFIELD_MASK(24));
          break;
       }
 
