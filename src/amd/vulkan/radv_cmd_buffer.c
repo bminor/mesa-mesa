@@ -11584,7 +11584,7 @@ radv_bind_graphics_shaders(struct radv_cmd_buffer *cmd_buffer)
          continue;
 
       /* Compute push constants/indirect descriptors state. */
-      need_indirect_descriptor_sets |= radv_get_user_sgpr_info(shader, AC_UD_INDIRECT_DESCRIPTOR_SETS)->sgpr_idx != -1;
+      need_indirect_descriptor_sets |= radv_shader_need_indirect_descriptor_sets(shader);
       push_constant_size += shader_obj->push_constant_size;
       dynamic_offset_count += shader_obj->dynamic_offset_count;
    }
@@ -14621,8 +14621,7 @@ radv_bind_compute_shader(struct radv_cmd_buffer *cmd_buffer, struct radv_shader_
       radv_get_descriptors_state(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE);
    struct radv_push_constant_state *pc_state = &cmd_buffer->push_constant_state[VK_PIPELINE_BIND_POINT_COMPUTE];
 
-   descriptors_state->need_indirect_descriptor_sets =
-      radv_get_user_sgpr_info(shader, AC_UD_INDIRECT_DESCRIPTOR_SETS)->sgpr_idx != -1;
+   descriptors_state->need_indirect_descriptor_sets = radv_shader_need_indirect_descriptor_sets(shader);
    pc_state->size = shader_obj->push_constant_size;
    pc_state->dynamic_offset_count = shader_obj->dynamic_offset_count;
 

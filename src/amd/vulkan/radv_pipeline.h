@@ -72,8 +72,6 @@ VK_DEFINE_NONDISP_HANDLE_CASTS(radv_pipeline, base, VkPipeline, VK_OBJECT_TYPE_P
 
 bool radv_pipeline_capture_shaders(const struct radv_device *device, VkPipelineCreateFlags2 flags);
 
-bool radv_shader_need_indirect_descriptor_sets(const struct radv_shader *shader);
-
 bool radv_pipeline_capture_shader_stats(const struct radv_device *device, VkPipelineCreateFlags2 flags);
 
 bool radv_pipeline_skip_shaders_cache(const struct radv_device *device, const struct radv_pipeline *pipeline);

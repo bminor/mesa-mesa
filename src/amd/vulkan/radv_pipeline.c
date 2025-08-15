@@ -38,13 +38,6 @@
 #include "vk_ycbcr_conversion.h"
 
 bool
-radv_shader_need_indirect_descriptor_sets(const struct radv_shader *shader)
-{
-   const struct radv_userdata_info *loc = radv_get_user_sgpr_info(shader, AC_UD_INDIRECT_DESCRIPTOR_SETS);
-   return loc->sgpr_idx != -1;
-}
-
-bool
 radv_pipeline_capture_shaders(const struct radv_device *device, VkPipelineCreateFlags2 flags)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
