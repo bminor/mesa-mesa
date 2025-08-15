@@ -140,10 +140,8 @@ vk_sync_destroy(struct vk_device *device,
    vk_free(&device->alloc, sync);
 }
 
-VkResult
-vk_sync_signal(struct vk_device *device,
-               struct vk_sync *sync,
-               uint64_t value)
+static void
+assert_signal_valid(struct vk_sync *sync, uint64_t value)
 {
    assert(sync->type->features & VK_SYNC_FEATURE_CPU_SIGNAL);
 
@@ -151,8 +149,62 @@ vk_sync_signal(struct vk_device *device,
       assert(value > 0);
    else
       assert(value == 0);
+}
 
+VkResult
+vk_sync_signal(struct vk_device *device,
+               struct vk_sync *sync,
+               uint64_t value)
+{
+   assert_signal_valid(sync, value);
    return sync->type->signal(device, sync, value);
+}
+
+static bool
+can_signal_many(struct vk_device *device,
+                uint32_t signal_count,
+                const struct vk_sync_signal *signals)
+{
+   if (signals[0].sync->type->signal_many == NULL)
+      return false;
+
+   /* If we only have one sync type, there's no need to check everything */
+   if (device->physical->supported_sync_types[1] == NULL) {
+      assert(signals[0].sync->type == device->physical->supported_sync_types[0]);
+      return true;
+   }
+
+   for (uint32_t i = 1; i < signal_count; i++) {
+      if (signals[i].sync->type != signals[0].sync->type)
+         return false;
+   }
+
+   return true;
+}
+
+VkResult
+vk_sync_signal_many(struct vk_device *device,
+                    uint32_t signal_count,
+                    const struct vk_sync_signal *signals)
+{
+   if (signal_count == 0)
+      return VK_SUCCESS;
+
+   for (uint32_t i = 0; i < signal_count; i++)
+      assert_signal_valid(signals[i].sync, signals[i].signal_value);
+
+   if (can_signal_many(device, signal_count, signals))
+      return signals[0].sync->type->signal_many(device, signal_count, signals);
+
+   for (uint32_t i = 0; i < signal_count; i++) {
+      struct vk_sync *sync = signals[i].sync;
+      uint64_t value = signals[i].signal_value;
+      VkResult result = sync->type->signal(device, sync, value);
+      if (unlikely(result != VK_SUCCESS))
+         return result;
+   }
+
+   return VK_SUCCESS;
 }
 
 VkResult
@@ -164,13 +216,63 @@ vk_sync_get_value(struct vk_device *device,
    return sync->type->get_value(device, sync, value);
 }
 
+static void
+assert_reset_valid(struct vk_sync *sync)
+{
+   assert(sync->type->features & VK_SYNC_FEATURE_CPU_RESET);
+   assert(!(sync->flags & VK_SYNC_IS_TIMELINE));
+}
+
 VkResult
 vk_sync_reset(struct vk_device *device,
               struct vk_sync *sync)
 {
-   assert(sync->type->features & VK_SYNC_FEATURE_CPU_RESET);
-   assert(!(sync->flags & VK_SYNC_IS_TIMELINE));
+   assert_reset_valid(sync);
    return sync->type->reset(device, sync);
+}
+
+static bool
+can_reset_many(struct vk_device *device,
+               uint32_t sync_count,
+               struct vk_sync *const *syncs)
+{
+   if (syncs[0]->type->reset_many == NULL)
+      return false;
+
+   if (device->physical->supported_sync_types[1] == NULL) {
+      assert(syncs[0]->type == device->physical->supported_sync_types[0]);
+      return true;
+   }
+
+   for (uint32_t i = 1; i < sync_count; i++) {
+      if (syncs[i]->type != syncs[0]->type)
+         return false;
+   }
+
+   return true;
+}
+
+VkResult
+vk_sync_reset_many(struct vk_device *device,
+                   uint32_t sync_count,
+                   struct vk_sync *const *syncs)
+{
+   if (sync_count == 0)
+      return VK_SUCCESS;
+
+   for (uint32_t i = 0; i < sync_count; i++)
+      assert_reset_valid(syncs[i]);
+
+   if (can_reset_many(device, sync_count, syncs))
+      return syncs[0]->type->reset_many(device, sync_count, syncs);
+
+   for (uint32_t i = 0; i < sync_count; i++) {
+      VkResult result = syncs[i]->type->reset(device, syncs[i]);
+      if (unlikely(result != VK_SUCCESS))
+         return result;
+   }
+
+   return VK_SUCCESS;
 }
 
 VkResult vk_sync_move(struct vk_device *device,
