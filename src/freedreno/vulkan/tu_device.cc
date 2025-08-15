@@ -903,7 +903,7 @@ tu_get_physical_device_properties_1_2(struct tu_physical_device *pdevice,
    p->shaderStorageBufferArrayNonUniformIndexingNative   = true;
    p->shaderStorageImageArrayNonUniformIndexingNative    = true;
    p->shaderInputAttachmentArrayNonUniformIndexingNative = false;
-   p->robustBufferAccessUpdateAfterBind                  = false;
+   p->robustBufferAccessUpdateAfterBind                  = true;
    p->quadDivergentImplicitLod                           = false;
 
    p->maxUpdateAfterBindDescriptorsInAllPools            = max_descriptor_set_size;
