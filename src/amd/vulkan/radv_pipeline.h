@@ -48,6 +48,7 @@ struct radv_pipeline {
 
    bool is_internal;
    bool need_indirect_descriptor_sets;
+   bool need_push_constants_upload;
    struct radv_shader *shaders[MESA_VULKAN_SHADER_STAGES];
    struct radv_shader *gs_copy_shader;
 

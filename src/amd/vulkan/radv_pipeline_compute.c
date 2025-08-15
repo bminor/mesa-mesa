@@ -82,6 +82,7 @@ radv_compute_pipeline_init(struct radv_compute_pipeline *pipeline, const struct 
                            struct radv_shader *shader)
 {
    pipeline->base.need_indirect_descriptor_sets |= radv_shader_need_indirect_descriptor_sets(shader);
+   pipeline->base.need_push_constants_upload |= radv_shader_need_push_constants_upload(shader);
 
    pipeline->base.push_constant_size = layout->push_constant_size;
    pipeline->base.dynamic_offset_count = layout->dynamic_offset_count;

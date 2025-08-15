@@ -5533,11 +5533,8 @@ radv_flush_descriptors(struct radv_cmd_buffer *cmd_buffer, VkShaderStageFlags st
 
 static void
 radv_emit_all_inline_push_consts(const struct radv_device *device, struct radv_cmd_stream *cs,
-                                 const struct radv_shader *shader, const uint32_t *values, bool *need_push_constants)
+                                 const struct radv_shader *shader, const uint32_t *values)
 {
-   if (radv_get_user_sgpr_info(shader, AC_UD_PUSH_CONSTANTS)->sgpr_idx != -1)
-      *need_push_constants |= true;
-
    const uint64_t mask = shader->info.inline_push_constant_mask;
    if (!mask)
       return;
@@ -5576,7 +5573,6 @@ radv_flush_constants(struct radv_cmd_buffer *cmd_buffer, VkShaderStageFlags stag
    struct radv_descriptor_state *descriptors_state = radv_get_descriptors_state(cmd_buffer, bind_point);
    const struct radv_push_constant_state *push_constants = radv_get_push_constants_state(cmd_buffer, bind_point);
    struct radv_shader *shader, *prev_shader;
-   bool need_push_constants = false;
    unsigned offset;
    void *ptr;
    uint64_t va;
@@ -5599,8 +5595,7 @@ radv_flush_constants(struct radv_cmd_buffer *cmd_buffer, VkShaderStageFlags stag
                                               ? cmd_buffer->state.shaders[MESA_SHADER_COMPUTE]
                                               : cmd_buffer->state.rt_prolog;
 
-      radv_emit_all_inline_push_consts(device, cs, compute_shader, (uint32_t *)cmd_buffer->push_constants,
-                                       &need_push_constants);
+      radv_emit_all_inline_push_consts(device, cs, compute_shader, (uint32_t *)cmd_buffer->push_constants);
    } else {
       prev_shader = NULL;
       radv_foreach_stage (stage, internal_stages & ~VK_SHADER_STAGE_TASK_BIT_EXT) {
@@ -5608,19 +5603,18 @@ radv_flush_constants(struct radv_cmd_buffer *cmd_buffer, VkShaderStageFlags stag
 
          /* Avoid redundantly emitting SGPRs for merged stages. */
          if (shader && shader != prev_shader) {
-            radv_emit_all_inline_push_consts(device, cs, shader, (uint32_t *)cmd_buffer->push_constants,
-                                             &need_push_constants);
+            radv_emit_all_inline_push_consts(device, cs, shader, (uint32_t *)cmd_buffer->push_constants);
             prev_shader = shader;
          }
       }
 
       if (internal_stages & VK_SHADER_STAGE_TASK_BIT_EXT) {
          radv_emit_all_inline_push_consts(device, cmd_buffer->gang.cs, cmd_buffer->state.shaders[MESA_SHADER_TASK],
-                                          (uint32_t *)cmd_buffer->push_constants, &need_push_constants);
+                                          (uint32_t *)cmd_buffer->push_constants);
       }
    }
 
-   if (need_push_constants) {
+   if (push_constants->need_upload) {
       if (!radv_cmd_buffer_upload_alloc(cmd_buffer, push_constants->size + 16 * push_constants->dynamic_offset_count,
                                         &offset, &ptr))
          return;
@@ -7928,6 +7922,8 @@ radv_CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipeline
    }
 
    cmd_buffer->push_constant_state[vk_to_bind_point(pipelineBindPoint)].size = pipeline->push_constant_size;
+   cmd_buffer->push_constant_state[vk_to_bind_point(pipelineBindPoint)].need_upload =
+      pipeline->need_push_constants_upload;
    cmd_buffer->push_constant_state[vk_to_bind_point(pipelineBindPoint)].dynamic_offset_count =
       pipeline->dynamic_offset_count;
    cmd_buffer->descriptors[vk_to_bind_point(pipelineBindPoint)].need_indirect_descriptor_sets =
@@ -11552,6 +11548,7 @@ radv_bind_graphics_shaders(struct radv_cmd_buffer *cmd_buffer)
    const struct radv_physical_device *pdev = radv_device_physical(device);
    uint32_t push_constant_size = 0, dynamic_offset_count = 0;
    bool need_indirect_descriptor_sets = false;
+   bool need_push_constants_upload = false;
 
    for (unsigned s = 0; s <= MESA_SHADER_MESH; s++) {
       const struct radv_shader_object *shader_obj = cmd_buffer->state.shader_objs[s];
@@ -11585,6 +11582,7 @@ radv_bind_graphics_shaders(struct radv_cmd_buffer *cmd_buffer)
 
       /* Compute push constants/indirect descriptors state. */
       need_indirect_descriptor_sets |= radv_shader_need_indirect_descriptor_sets(shader);
+      need_push_constants_upload |= radv_shader_need_push_constants_upload(shader);
       push_constant_size += shader_obj->push_constant_size;
       dynamic_offset_count += shader_obj->dynamic_offset_count;
    }
@@ -11658,6 +11656,7 @@ radv_bind_graphics_shaders(struct radv_cmd_buffer *cmd_buffer)
    struct radv_push_constant_state *pc_state = &cmd_buffer->push_constant_state[VK_PIPELINE_BIND_POINT_GRAPHICS];
 
    descriptors_state->need_indirect_descriptor_sets = need_indirect_descriptor_sets;
+   pc_state->need_upload = need_push_constants_upload;
    pc_state->size = push_constant_size;
    pc_state->dynamic_offset_count = dynamic_offset_count;
 
@@ -14622,6 +14621,7 @@ radv_bind_compute_shader(struct radv_cmd_buffer *cmd_buffer, struct radv_shader_
    struct radv_push_constant_state *pc_state = &cmd_buffer->push_constant_state[VK_PIPELINE_BIND_POINT_COMPUTE];
 
    descriptors_state->need_indirect_descriptor_sets = radv_shader_need_indirect_descriptor_sets(shader);
+   pc_state->need_upload = radv_shader_need_push_constants_upload(shader);
    pc_state->size = shader_obj->push_constant_size;
    pc_state->dynamic_offset_count = shader_obj->dynamic_offset_count;
 

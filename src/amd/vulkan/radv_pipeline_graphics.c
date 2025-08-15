@@ -3328,9 +3328,12 @@ radv_pipeline_init_shader_stages_state(const struct radv_device *device, struct 
    for (unsigned i = 0; i < MESA_VULKAN_SHADER_STAGES; i++) {
       bool shader_exists = !!pipeline->base.shaders[i];
       if (shader_exists || i < MESA_SHADER_COMPUTE) {
-         if (shader_exists)
+         if (shader_exists) {
             pipeline->base.need_indirect_descriptor_sets |=
                radv_shader_need_indirect_descriptor_sets(pipeline->base.shaders[i]);
+            pipeline->base.need_push_constants_upload |=
+               radv_shader_need_push_constants_upload(pipeline->base.shaders[i]);
+         }
       }
    }
 

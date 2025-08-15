@@ -236,6 +236,7 @@ struct radv_descriptor_state {
 struct radv_push_constant_state {
    uint32_t size;
    uint32_t dynamic_offset_count;
+   bool need_upload;
 };
 
 enum rgp_flush_bits {
