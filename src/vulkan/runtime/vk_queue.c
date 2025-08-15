@@ -615,30 +615,13 @@ vk_queue_submit_final(struct vk_queue *queue,
    submit->wait_count = wait_count;
 
    for (uint32_t i = 0; i < submit->signal_count; i++) {
-      assert((submit->signals[i].sync->flags & VK_SYNC_IS_TIMELINE) ||
-             submit->signals[i].signal_value == 0);
-
-      struct vk_sync_timeline *timeline =
-         vk_sync_as_timeline(submit->signals[i].sync);
-      if (timeline) {
-         assert(queue->base.device->timeline_mode ==
-                VK_DEVICE_TIMELINE_MODE_EMULATED);
-         result = vk_sync_timeline_alloc_point(queue->base.device, timeline,
-                                               submit->signals[i].signal_value,
-                                               &submit->_signal_points[i]);
-         if (unlikely(result != VK_SUCCESS))
-            result = vk_queue_set_lost(queue, "Failed allocate time point");
-
-         submit->signals[i].sync = &submit->_signal_points[i]->sync;
-         submit->signals[i].signal_value = 0;
-      }
-
-      struct vk_sync_binary *binary =
-         vk_sync_as_binary(submit->signals[i].sync);
-      if (binary) {
-         submit->signals[i].sync = &binary->timeline;
-         submit->signals[i].signal_value = ++binary->next_point;
-      }
+      struct vk_sync_timeline_point *signal_point;
+      result = vk_sync_signal_unwrap(queue->base.device,
+                                     &submit->signals[i], &signal_point);
+      if (signal_point != NULL)
+         submit->_signal_points[i] = signal_point;
+      if (unlikely(result != VK_SUCCESS))
+         result = vk_queue_set_lost(queue, "Failed to unwrap sync signal");
    }
 
    result = queue->driver_submit(queue, submit);

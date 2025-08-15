@@ -626,3 +626,47 @@ vk_sync_wait_unwrap(struct vk_device *device,
 
    return VK_SUCCESS;
 }
+
+/**
+ * Unwraps a vk_sync_signal, removing any vk_sync_timeline or vk_sync_binary
+ * and replacing the sync with the actual driver primitive.
+ *
+ * If the sync is a timeline, the point will be returned in point_out.  This
+ * point must be installed in the timeline after the actual signal has been
+ * submitted to the kernel driver.  Otherwise point_out will be set to NULL.
+ */
+VkResult
+vk_sync_signal_unwrap(struct vk_device *device,
+                      struct vk_sync_signal *signal,
+                      struct vk_sync_timeline_point **point_out)
+{
+   if (signal->sync->flags & VK_SYNC_IS_TIMELINE)
+      assert(signal->signal_value > 0);
+   else
+      assert(signal->signal_value == 0);
+
+   *point_out = NULL;
+
+   struct vk_sync_timeline *timeline = vk_sync_as_timeline(signal->sync);
+   if (timeline) {
+      assert(device->timeline_mode == VK_DEVICE_TIMELINE_MODE_EMULATED);
+      VkResult result = vk_sync_timeline_alloc_point(device, timeline,
+                                                     signal->signal_value,
+                                                     point_out);
+      if (unlikely(result != VK_SUCCESS))
+         return result;
+
+      signal->sync = &(*point_out)->sync;
+      signal->signal_value = 0;
+   }
+
+   struct vk_sync_binary *binary = vk_sync_as_binary(signal->sync);
+   if (binary) {
+      signal->sync = &binary->timeline;
+      signal->signal_value = ++binary->next_point;
+   }
+
+   assert(!vk_sync_type_is_dummy(signal->sync->type));
+
+   return VK_SUCCESS;
+}
