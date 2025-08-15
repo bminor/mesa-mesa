@@ -38,19 +38,6 @@ anv_wsi_proc_addr(VkPhysicalDevice physicalDevice, const char *pName)
    return vk_instance_get_proc_addr_unchecked(&pdevice->instance->vk, pName);
 }
 
-static VkQueue
-anv_wsi_get_prime_blit_queue(VkDevice _device)
-{
-   ANV_FROM_HANDLE(anv_device, device, _device);
-
-   vk_foreach_queue(_queue, &device->vk) {
-      struct anv_queue *queue = (struct anv_queue *)_queue;
-      if (queue->family->queueFlags & (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT))
-         return vk_queue_to_handle(_queue);
-   }
-   return NULL;
-}
-
 VkResult
 anv_init_wsi(struct anv_physical_device *physical_device)
 {
@@ -74,7 +61,6 @@ anv_init_wsi(struct anv_physical_device *physical_device)
          physical_device->has_protected_contexts &&
          i == VK_ICD_WSI_PLATFORM_DISPLAY;
    }
-   wsi_device->get_blit_queue = anv_wsi_get_prime_blit_queue;
 
    physical_device->vk.wsi_device = wsi_device;
 
