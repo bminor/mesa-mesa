@@ -1916,6 +1916,7 @@ static VkResult
 prepare_oq(struct panvk_cmd_buffer *cmdbuf)
 {
    if (!gfx_state_dirty(cmdbuf, OQ) ||
+       cmdbuf->state.gfx.occlusion_query.mode == MALI_OCCLUSION_MODE_DISABLED ||
        cmdbuf->state.gfx.occlusion_query.syncobj ==
           cmdbuf->state.gfx.render.oq.last)
       return VK_SUCCESS;
