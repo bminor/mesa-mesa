@@ -1080,7 +1080,7 @@ lower_input_attachment_loads(nir_shader *nir,
    };
 
    NIR_PASS(progress, nir, nir_shader_intrinsics_pass,
-            lower_input_attachment_load, nir_metadata_control_flow,
+            lower_input_attachment_load, nir_metadata_none,
             &ia_load_ctx);
 
    /* Lower the remaining input attachment loads. */
