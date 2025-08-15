@@ -28,6 +28,9 @@
 #include "nv_push_clc597.h"
 #include "nv_push_clc86f.h"
 
+static uint8_t
+nvk_cmd_buffer_subchannel_mask(struct nvk_cmd_buffer *cmd);
+
 static void
 nvk_descriptor_state_fini(struct nvk_cmd_buffer *cmd,
                           struct nvk_descriptor_state *desc)
@@ -88,6 +91,8 @@ nvk_create_cmd_buffer(struct vk_command_pool *vk_pool,
    list_inithead(&cmd->owned_gart_mem);
    list_inithead(&cmd->owned_qmd);
    util_dynarray_init(&cmd->pushes, NULL);
+
+   cmd->prev_subc = ffs(nvk_cmd_buffer_subchannel_mask(cmd)) - 1;
 
    *cmd_buffer_out = &cmd->vk;
 
@@ -183,6 +188,8 @@ nvk_cmd_buffer_flush_push(struct nvk_cmd_buffer *cmd, bool incomplete)
          .incomplete = incomplete,
       };
       util_dynarray_append(&cmd->pushes, struct nvk_cmd_push, push);
+
+      cmd->prev_subc = NVC0_FIFO_SUBC_FROM_PKHDR(cmd->push.last_hdr_dw);
    }
 
    cmd->push.start = cmd->push.end;
@@ -434,6 +441,8 @@ nvk_CmdExecuteCommands(VkCommandBuffer commandBuffer,
        * do with it is reset it.  vkResetCommandPool() has similar language.
        */
       util_dynarray_append_dynarray(&cmd->pushes, &other->pushes);
+
+      cmd->prev_subc = nvk_cmd_buffer_last_subchannel(other);
    }
 
    /* From the Vulkan 1.3.275 spec:
