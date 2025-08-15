@@ -16,6 +16,58 @@
 #include "compiler/brw_nir_rt.h"
 #include "compiler/intel_nir.h"
 
+typedef void (*game_wa_callback)(nir_shader *nir);
+
+/* Structure to hold a game-specific workaround entry */
+struct game_wa_entry {
+   game_wa_callback cb;
+   uint32_t shader_blake3s[16][BLAKE3_OUT_LEN32];
+};
+
+/* Workaround for a shader in Horizon Forbidden West that causes
+ * visual corruption.  The shader writes the result of fsqrt to
+ * storage images with a 16-bit image format and misrendering
+ * occurs when those values are denormal for an unknown reason.
+ *
+ * This clamps the image writes to the smallest fp16 normalized
+ * value.  (Pattern matching against fsqrt is easy to do in a one
+ * line algebraic pass, while matching image stores is harder.)
+ *
+ * See https://gitlab.freedesktop.org/mesa/mesa/-/issues/12555
+ */
+static void
+wa_forbidden_west(nir_shader *nir)
+{
+   NIR_PASS(_, nir, brw_nir_apply_sqrt_workarounds);
+}
+
+/* List of game-specific workarounds identified by BLAKE3 hash of the shader.
+ * Add new workarounds here as needed.
+ */
+static const struct game_wa_entry game_was[] = {
+   {
+      .cb = wa_forbidden_west,
+      .shader_blake3s = {
+         {0x51683151, 0xe044f0ce, 0xc210a762, 0xb12b2da4, 0x4e69ddc0, 0x237b1cc1, 0xc84bcf09, 0x31cfe883},
+      },
+   },
+};
+
+/* Apply game-specific workarounds based on the shader's BLAKE3 hash */
+static void
+anv_nir_apply_shader_workarounds(nir_shader *nir)
+{
+   for (unsigned i = 0; i < ARRAY_SIZE(game_was); i++) {
+      const struct game_wa_entry *wa = &game_was[i];
+      for (unsigned j = 0; j < ARRAY_SIZE(wa->shader_blake3s); j++) {
+         if (_mesa_printed_blake3_equal(nir->info.source_blake3, wa->shader_blake3s[j])) {
+            wa->cb(nir);
+            return;
+         }
+      }
+   }
+}
+
 static enum brw_robustness_flags
 anv_get_robust_flags(const struct vk_pipeline_robustness_state *rstate)
 {
@@ -1742,6 +1794,8 @@ anv_shader_compile(struct vk_device *vk_device,
 
       anv_fixup_subgroup_size(device->physical->instance,
                               &shader_data->info->nir->info);
+
+      anv_nir_apply_shader_workarounds(shader_data->info->nir);
    }
 
    /* Combine intersection & any-hit before lowering */

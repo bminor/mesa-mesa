@@ -239,6 +239,8 @@ bool brw_nir_apply_trig_workarounds(nir_shader *nir);
 
 bool brw_nir_limit_trig_input_range_workaround(nir_shader *nir);
 
+bool brw_nir_apply_sqrt_workarounds(nir_shader *nir);
+
 bool brw_nir_lower_fsign(nir_shader *nir);
 
 bool brw_nir_opt_fsat(nir_shader *);

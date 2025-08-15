@@ -45,6 +45,10 @@ LIMIT_TRIG_INPUT_RANGE_WORKAROUND = [
     (('fcos', 'x(is_not_const)'), ('fcos', ('fmod', 'x', 2.0 * pi))),
 ]
 
+SQRT_WORKAROUND = [
+    (('fsqrt', 'x(is_not_const)'), ('fsqrt', ('fmax', 'x', 1e-12))),
+]
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--import-path', required=True)
@@ -61,6 +65,8 @@ def run():
                                       TRIG_WORKAROUNDS).render())
     print(nir_algebraic.AlgebraicPass("brw_nir_limit_trig_input_range_workaround",
                                       LIMIT_TRIG_INPUT_RANGE_WORKAROUND).render())
+    print(nir_algebraic.AlgebraicPass("brw_nir_apply_sqrt_workarounds",
+                                      SQRT_WORKAROUND).render())
 
 
 if __name__ == '__main__':
