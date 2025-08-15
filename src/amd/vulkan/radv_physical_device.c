@@ -649,6 +649,7 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
       .KHR_video_encode_av1 =
          (radv_video_encode_av1_supported(pdev) && VIDEO_CODEC_AV1ENC && pdev->video_encode_enabled),
       .KHR_video_encode_intra_refresh = pdev->video_encode_enabled,
+      .KHR_video_encode_quantization_map = pdev->video_encode_enabled && pdev->info.vcn_ip_version < VCN_5_0_0,
       .KHR_video_encode_queue = pdev->video_encode_enabled,
       .KHR_vulkan_memory_model = true,
       .KHR_workgroup_memory_explicit_layout = true,
@@ -1384,6 +1385,9 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
 
       /* VK_KHR_video_encode_intra_refresh */
       .videoEncodeIntraRefresh = true,
+
+      /* VK_KHR_video_encode_quantization_map */
+      .videoEncodeQuantizationMap = true,
    };
 }
 
@@ -2072,6 +2076,7 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
       VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR,
       VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT,
       VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT,
+      VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR,
    };
 
    p->copySrcLayoutCount = ARRAY_SIZE(supported_layouts);

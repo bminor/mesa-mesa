@@ -1708,6 +1708,40 @@ radv_enc_intra_refresh(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeIn
 }
 
 static void
+radv_enc_qp_map(struct radv_cmd_buffer *cmd_buffer, const struct VkVideoEncodeInfoKHR *enc_info)
+{
+   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   const struct VkVideoEncodeQuantizationMapInfoKHR *quantiziation_map_info =
+      vk_find_struct_const(enc_info->pNext, VIDEO_ENCODE_QUANTIZATION_MAP_INFO_KHR);
+   const struct radv_image_view *qp_map_view =
+      quantiziation_map_info ? radv_image_view_from_handle(quantiziation_map_info->quantizationMap) : NULL;
+   const struct radv_image *qp_map = qp_map_view ? qp_map_view->image : NULL;
+
+   RADEON_ENC_BEGIN(pdev->vcn_enc_cmds.enc_qp_map);
+   if (enc_info->flags & VK_VIDEO_ENCODE_WITH_QUANTIZATION_DELTA_MAP_BIT_KHR && qp_map) {
+      /* VCN < 5 uses a 32-bit signed integer for QP maps. */
+      assert(qp_map->vk.format == VK_FORMAT_R32_SINT);
+
+      const uint32_t qp_map_type = cmd_buffer->video.vid->enc_rate_control_method == RENCODE_RATE_CONTROL_METHOD_NONE
+                                      ? RENCODE_QP_MAP_TYPE_DELTA
+                                      : RENCODE_QP_MAP_TYPE_MAP_PA;
+      radv_cs_add_buffer(device->ws, cmd_buffer->cs->b, qp_map->bindings[0].bo);
+      const uint64_t va = qp_map->bindings[0].addr;
+      RADEON_ENC_CS(qp_map_type);
+      RADEON_ENC_CS(va >> 32);
+      RADEON_ENC_CS(va & 0xffffffff);
+      RADEON_ENC_CS(qp_map->planes[0].surface.u.gfx9.surf_pitch);
+   } else {
+      RADEON_ENC_CS(RENCODE_QP_MAP_TYPE_NONE);
+      RADEON_ENC_CS(0);
+      RADEON_ENC_CS(0);
+      RADEON_ENC_CS(0);
+   }
+   RADEON_ENC_END();
+}
+
+static void
 radv_enc_rc_per_pic(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *enc_info,
                     rvcn_enc_rate_ctl_per_picture_t *per_pic)
 {
@@ -2776,6 +2810,8 @@ radv_vcn_encode_video(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInf
    }
    // intra_refresh
    radv_enc_intra_refresh(cmd_buffer, enc_info);
+   // qp map
+   radv_enc_qp_map(cmd_buffer, enc_info);
    // v2 input format
    if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_2) {
       radv_enc_input_format(cmd_buffer);

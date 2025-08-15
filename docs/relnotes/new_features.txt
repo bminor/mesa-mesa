@@ -6,3 +6,4 @@ VK_ARM_shader_core_builtins on panvk
 VK_KHR_shader_untyped_pointers on anv
 cl_ext_immutable_memory_objects
 VK_KHR_video_encode_intra_refresh on radv
+VK_KHR_video_encode_quantization_map on radv

@@ -804,6 +804,20 @@ radv_video_is_profile_supported(struct radv_physical_device *pdev, const VkVideo
    return VK_SUCCESS;
 }
 
+static uint32_t
+radv_video_get_qp_map_texel_size(VkVideoCodecOperationFlagBitsKHR codec)
+{
+   switch (codec) {
+   case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
+      return 16;
+   case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR:
+   case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR:
+      return 64;
+   default:
+      UNREACHABLE("Unsupported video codec operation");
+   }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL
 radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, const VkVideoProfileInfoKHR *pVideoProfile,
                                            VkVideoCapabilitiesKHR *pCapabilities)
@@ -873,6 +887,8 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
          (struct VkVideoEncodeCapabilitiesKHR *)vk_find_struct(pCapabilities->pNext, VIDEO_ENCODE_CAPABILITIES_KHR);
       struct VkVideoEncodeIntraRefreshCapabilitiesKHR *intra_refresh_caps =
          vk_find_struct(pCapabilities->pNext, VIDEO_ENCODE_INTRA_REFRESH_CAPABILITIES_KHR);
+      struct VkVideoEncodeQuantizationMapCapabilitiesKHR *qp_map_caps =
+         vk_find_struct(pCapabilities->pNext, VIDEO_ENCODE_QUANTIZATION_MAP_CAPABILITIES_KHR);
 
       if (enc_caps) {
          enc_caps->flags = 0;
@@ -885,6 +901,9 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
          enc_caps->encodeInputPictureGranularity = pCapabilities->pictureAccessGranularity;
          enc_caps->supportedEncodeFeedbackFlags = VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR |
                                                   VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR;
+
+         if (pdev->info.vcn_ip_version < VCN_5_0_0)
+            enc_caps->flags |= VK_VIDEO_ENCODE_CAPABILITY_QUANTIZATION_DELTA_MAP_BIT_KHR;
       }
       if (intra_refresh_caps) {
          intra_refresh_caps->intraRefreshModes = VK_VIDEO_ENCODE_INTRA_REFRESH_MODE_BLOCK_BASED_BIT_KHR |
@@ -894,6 +913,11 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
          intra_refresh_caps->maxIntraRefreshActiveReferencePictures = 1;
          intra_refresh_caps->partitionIndependentIntraRefreshRegions = true;
          intra_refresh_caps->nonRectangularIntraRefreshRegions = false;
+      }
+      if (qp_map_caps) {
+         const uint32_t qp_map_texel_size = radv_video_get_qp_map_texel_size(pVideoProfile->videoCodecOperation);
+         qp_map_caps->maxQuantizationMapExtent.width = pCapabilities->maxCodedExtent.width / qp_map_texel_size;
+         qp_map_caps->maxQuantizationMapExtent.height = pCapabilities->maxCodedExtent.height / qp_map_texel_size;
       }
       pCapabilities->minBitstreamBufferOffsetAlignment = 256;
       pCapabilities->minBitstreamBufferSizeAlignment = 8;
@@ -972,6 +996,8 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {
       struct VkVideoEncodeH264CapabilitiesKHR *ext =
          vk_find_struct(pCapabilities->pNext, VIDEO_ENCODE_H264_CAPABILITIES_KHR);
+      struct VkVideoEncodeH264QuantizationMapCapabilitiesKHR *qp_map_caps =
+         vk_find_struct(pCapabilities->pNext, VIDEO_ENCODE_H264_QUANTIZATION_MAP_CAPABILITIES_KHR);
 
       ext->flags = VK_VIDEO_ENCODE_H264_CAPABILITY_HRD_COMPLIANCE_BIT_KHR |
                    VK_VIDEO_ENCODE_H264_CAPABILITY_PER_PICTURE_TYPE_MIN_MAX_QP_BIT_KHR |
@@ -1005,11 +1031,18 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
          MAX2(ext->maxPPictureL0ReferenceCount, ext->maxBPictureL0ReferenceCount + ext->maxL1ReferenceCount);
       pCapabilities->minCodedExtent.width = pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_5 ? 96 : 128;
       pCapabilities->minCodedExtent.height = pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_5 ? 32 : 128;
+
+      if (qp_map_caps) {
+         qp_map_caps->minQpDelta = -51;
+         qp_map_caps->maxQpDelta = 51;
+      }
       break;
    }
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
       struct VkVideoEncodeH265CapabilitiesKHR *ext = (struct VkVideoEncodeH265CapabilitiesKHR *)vk_find_struct(
          pCapabilities->pNext, VIDEO_ENCODE_H265_CAPABILITIES_KHR);
+      struct VkVideoEncodeH265QuantizationMapCapabilitiesKHR *qp_map_caps =
+         vk_find_struct(pCapabilities->pNext, VIDEO_ENCODE_H265_QUANTIZATION_MAP_CAPABILITIES_KHR);
 
       pCapabilities->pictureAccessGranularity.width = VK_VIDEO_H265_CTU_MAX_WIDTH;
       if (enc_caps) {
@@ -1057,11 +1090,18 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
          MAX2(ext->maxPPictureL0ReferenceCount, ext->maxBPictureL0ReferenceCount + ext->maxL1ReferenceCount);
       pCapabilities->minCodedExtent.width = pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_5 ? 384 : 130;
       pCapabilities->minCodedExtent.height = 128;
+
+      if (qp_map_caps) {
+         qp_map_caps->minQpDelta = -51;
+         qp_map_caps->maxQpDelta = 51;
+      }
       break;
    }
    case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR: {
       struct VkVideoEncodeAV1CapabilitiesKHR *ext = (struct VkVideoEncodeAV1CapabilitiesKHR *)vk_find_struct(
          pCapabilities->pNext, VIDEO_ENCODE_AV1_CAPABILITIES_KHR);
+      struct VkVideoEncodeAV1QuantizationMapCapabilitiesKHR *qp_map_caps =
+         vk_find_struct(pCapabilities->pNext, VIDEO_ENCODE_AV1_QUANTIZATION_MAP_CAPABILITIES_KHR);
 
       pCapabilities->maxDpbSlots = RADV_VIDEO_AV1_MAX_DPB_SLOTS;
       pCapabilities->maxActiveReferencePictures = RADV_VIDEO_AV1_MAX_NUM_REF_FRAME;
@@ -1120,6 +1160,11 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
       }
       pCapabilities->minCodedExtent.width = pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_5 ? 320 : 128;
       pCapabilities->minCodedExtent.height = 128;
+
+      if (qp_map_caps) {
+         qp_map_caps->minQIndexDelta = -255;
+         qp_map_caps->minQIndexDelta = 255;
+      }
       break;
    }
    default:
@@ -1164,8 +1209,16 @@ radv_GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysicalDevice physicalDevice,
    VK_FROM_HANDLE(radv_physical_device, pdev, physicalDevice);
 
    if ((pVideoFormatInfo->imageUsage &
-        (VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR)) &&
+        (VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR |
+         VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR)) &&
        !pdev->video_encode_enabled)
+      return VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR;
+
+   /* Cannot be a QP map and other video enc/dec usages, as they are totally different formats. */
+   if ((pVideoFormatInfo->imageUsage & VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR) &&
+       (pVideoFormatInfo->imageUsage &
+        (VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR |
+         VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR | VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR)))
       return VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR;
 
    /* VCN < 5 requires separate allocates for DPB and decode video. */
@@ -1176,6 +1229,7 @@ radv_GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysicalDevice physicalDevice,
       return VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR;
 
    VkFormat format = VK_FORMAT_UNDEFINED;
+   uint32_t qp_map_texel_size = 0;
    const struct VkVideoProfileListInfoKHR *prof_list =
       (struct VkVideoProfileListInfoKHR *)vk_find_struct_const(pVideoFormatInfo->pNext, VIDEO_PROFILE_LIST_INFO_KHR);
    if (prof_list) {
@@ -1191,12 +1245,24 @@ radv_GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysicalDevice physicalDevice,
 
          VkFormat profile_format = VK_FORMAT_UNDEFINED;
 
-         if (profile->lumaBitDepth == VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR)
-            profile_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
-         else if (profile->lumaBitDepth == VK_VIDEO_COMPONENT_BIT_DEPTH_10_BIT_KHR)
-            profile_format = VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16;
-         else if (profile->lumaBitDepth == VK_VIDEO_COMPONENT_BIT_DEPTH_12_BIT_KHR)
-            profile_format = VK_FORMAT_G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16;
+         if (pVideoFormatInfo->imageUsage & VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR) {
+            const uint32_t profile_qp_map_texel_size = radv_video_get_qp_map_texel_size(profile->videoCodecOperation);
+
+            /* All profiles must share the same qp_map texel size. */
+            if (qp_map_texel_size != 0 && qp_map_texel_size != profile_qp_map_texel_size)
+               return VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR;
+
+            qp_map_texel_size = profile_qp_map_texel_size;
+
+            profile_format = VK_FORMAT_R32_SINT;
+         } else {
+            if (profile->lumaBitDepth == VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR)
+               profile_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+            else if (profile->lumaBitDepth == VK_VIDEO_COMPONENT_BIT_DEPTH_10_BIT_KHR)
+               profile_format = VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16;
+            else if (profile->lumaBitDepth == VK_VIDEO_COMPONENT_BIT_DEPTH_12_BIT_KHR)
+               profile_format = VK_FORMAT_G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16;
+         }
 
          /* All profiles must share the same format. */
          if (format != VK_FORMAT_UNDEFINED && format != profile_format)
@@ -1205,12 +1271,17 @@ radv_GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysicalDevice physicalDevice,
          format = profile_format;
       }
    } else {
+      /* On AMD, we need a codec specified for qp map as the extents differ. */
+      if (pVideoFormatInfo->imageUsage & VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR)
+         return VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR;
+
       format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
    }
 
    if (format == VK_FORMAT_UNDEFINED)
       return VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR;
 
+   const bool qp_map = pVideoFormatInfo->imageUsage & VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR;
    const bool dpb = pVideoFormatInfo->imageUsage &
                     (VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR);
    const bool src_dst = pVideoFormatInfo->imageUsage &
@@ -1218,13 +1289,17 @@ radv_GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysicalDevice physicalDevice,
    VkImageTiling tiling[3];
    uint32_t num_tiling = 0;
 
-   tiling[num_tiling++] = VK_IMAGE_TILING_OPTIMAL;
-
-   if (src_dst && !dpb)
+   if (qp_map) {
       tiling[num_tiling++] = VK_IMAGE_TILING_LINEAR;
+   } else {
+      tiling[num_tiling++] = VK_IMAGE_TILING_OPTIMAL;
 
-   if (src_dst && pdev->info.gfx_level >= GFX9)
-      tiling[num_tiling++] = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
+      if (src_dst && !dpb)
+         tiling[num_tiling++] = VK_IMAGE_TILING_LINEAR;
+
+      if (src_dst && pdev->info.gfx_level >= GFX9)
+         tiling[num_tiling++] = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
+   }
 
    VK_OUTARRAY_MAKE_TYPED(VkVideoFormatPropertiesKHR, out, pVideoFormatProperties, pVideoFormatPropertyCount);
 
@@ -1242,6 +1317,22 @@ radv_GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysicalDevice physicalDevice,
          p->imageType = VK_IMAGE_TYPE_2D;
          p->imageTiling = tiling[i];
          p->imageUsageFlags = pVideoFormatInfo->imageUsage;
+
+         if (qp_map) {
+            struct VkVideoFormatQuantizationMapPropertiesKHR *qp_map_props =
+               vk_find_struct(p->pNext, VIDEO_FORMAT_QUANTIZATION_MAP_PROPERTIES_KHR);
+            struct VkVideoFormatH265QuantizationMapPropertiesKHR *qp_map_h265_props =
+               vk_find_struct(p->pNext, VIDEO_FORMAT_H265_QUANTIZATION_MAP_PROPERTIES_KHR);
+            struct VkVideoFormatAV1QuantizationMapPropertiesKHR *qp_map_av1_props =
+               vk_find_struct(p->pNext, VIDEO_FORMAT_AV1_QUANTIZATION_MAP_PROPERTIES_KHR);
+
+            if (qp_map_props)
+               qp_map_props->quantizationMapTexelSize = (VkExtent2D){qp_map_texel_size, qp_map_texel_size};
+            if (qp_map_h265_props)
+               qp_map_h265_props->compatibleCtbSizes = VK_VIDEO_ENCODE_H265_CTB_SIZE_64_BIT_KHR;
+            if (qp_map_av1_props)
+               qp_map_av1_props->compatibleSuperblockSizes = VK_VIDEO_ENCODE_AV1_SUPERBLOCK_SIZE_64_BIT_KHR;
+         }
       }
    }
 

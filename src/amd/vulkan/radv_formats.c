@@ -492,6 +492,10 @@ radv_physical_device_get_format_properties(struct radv_physical_device *pdev, Vk
          tiled |= VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT_EXT;
    }
 
+   if (pdev->video_encode_enabled && format == VK_FORMAT_R32_SINT) {
+      linear |= VK_FORMAT_FEATURE_2_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR;
+   }
+
    out_properties->linearTilingFeatures = linear;
    out_properties->optimalTilingFeatures = tiled;
    out_properties->bufferFeatures = buffer;
