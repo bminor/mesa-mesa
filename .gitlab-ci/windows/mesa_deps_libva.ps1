@@ -2,7 +2,7 @@
 
 $ProgressPreference = "SilentlyContinue"
 $MyPath = $MyInvocation.MyCommand.Path | Split-Path -Parent
-. "$MyPath\mesa_init_msvc.ps1"
+. "$MyPath\mesa_init_msvc.ps1" "-vcvars_ver=14.29"
 
 Remove-Item -Recurse -Force -ErrorAction SilentlyContinue "deps" | Out-Null
 $depsInstallPath="C:\mesa-deps"
