@@ -5531,28 +5531,6 @@ radv_flush_descriptors(struct radv_cmd_buffer *cmd_buffer, VkShaderStageFlags st
       radv_save_descriptors(cmd_buffer, bind_point);
 }
 
-static void
-radv_emit_all_inline_push_consts(const struct radv_device *device, struct radv_cmd_stream *cs,
-                                 const struct radv_shader *shader, const uint32_t *values)
-{
-   const uint64_t mask = shader->info.inline_push_constant_mask;
-   if (!mask)
-      return;
-
-   const uint8_t base = ffs(mask) - 1;
-   if (mask == u_bit_consecutive64(base, util_last_bit64(mask) - base)) {
-      /* consecutive inline push constants */
-      radv_emit_inline_push_consts(device, cs, shader, AC_UD_INLINE_PUSH_CONSTANTS, values + base);
-   } else {
-      /* sparse inline push constants */
-      uint32_t consts[AC_MAX_INLINE_PUSH_CONSTS];
-      unsigned num_consts = 0;
-      u_foreach_bit64 (idx, mask)
-         consts[num_consts++] = values[idx];
-      radv_emit_inline_push_consts(device, cs, shader, AC_UD_INLINE_PUSH_CONSTANTS, consts);
-   }
-}
-
 ALWAYS_INLINE static VkShaderStageFlags
 radv_must_flush_constants(const struct radv_cmd_buffer *cmd_buffer, VkShaderStageFlags stages,
                           VkPipelineBindPoint bind_point)
@@ -5566,16 +5544,47 @@ radv_must_flush_constants(const struct radv_cmd_buffer *cmd_buffer, VkShaderStag
 }
 
 static void
+radv_emit_push_constants_per_stage(const struct radv_device *device, struct radv_cmd_stream *cs,
+                                   const struct radv_shader *shader, uint32_t *values, uint64_t push_constants_va)
+{
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   const uint32_t push_constants_offset = radv_get_user_sgpr_loc(shader, AC_UD_PUSH_CONSTANTS);
+   const uint64_t inline_push_const_mask = shader->info.inline_push_constant_mask;
+
+   /* Emit inlined push constants. */
+   if (inline_push_const_mask) {
+      const uint8_t base = ffs(inline_push_const_mask) - 1;
+
+      if (inline_push_const_mask == u_bit_consecutive64(base, util_last_bit64(inline_push_const_mask) - base)) {
+         /* consecutive inline push constants */
+         radv_emit_inline_push_consts(device, cs, shader, AC_UD_INLINE_PUSH_CONSTANTS, values + base);
+      } else {
+         /* sparse inline push constants */
+         uint32_t consts[AC_MAX_INLINE_PUSH_CONSTS];
+         unsigned num_consts = 0;
+         u_foreach_bit64 (idx, inline_push_const_mask)
+            consts[num_consts++] = values[idx];
+         radv_emit_inline_push_consts(device, cs, shader, AC_UD_INLINE_PUSH_CONSTANTS, consts);
+      }
+   }
+
+   /* Emit the push constants upload pointer. */
+   if (push_constants_offset) {
+      radeon_check_space(device->ws, cs->b, 3);
+      radeon_begin(cs);
+      radeon_emit_32bit_pointer(push_constants_offset, push_constants_va, &pdev->info);
+      radeon_end();
+   }
+}
+
+static void
 radv_flush_constants(struct radv_cmd_buffer *cmd_buffer, VkShaderStageFlags stages, VkPipelineBindPoint bind_point)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_cmd_stream *cs = cmd_buffer->cs;
    struct radv_descriptor_state *descriptors_state = radv_get_descriptors_state(cmd_buffer, bind_point);
    const struct radv_push_constant_state *push_constants = radv_get_push_constants_state(cmd_buffer, bind_point);
-   struct radv_shader *shader, *prev_shader;
-   unsigned offset;
-   void *ptr;
-   uint64_t va;
+   uint64_t va = 0;
    uint32_t internal_stages = stages;
 
    switch (bind_point) {
@@ -5590,31 +5599,10 @@ radv_flush_constants(struct radv_cmd_buffer *cmd_buffer, VkShaderStageFlags stag
       UNREACHABLE("Unhandled bind point");
    }
 
-   if (internal_stages & VK_SHADER_STAGE_COMPUTE_BIT) {
-      struct radv_shader *compute_shader = bind_point == VK_PIPELINE_BIND_POINT_COMPUTE
-                                              ? cmd_buffer->state.shaders[MESA_SHADER_COMPUTE]
-                                              : cmd_buffer->state.rt_prolog;
-
-      radv_emit_all_inline_push_consts(device, cs, compute_shader, (uint32_t *)cmd_buffer->push_constants);
-   } else {
-      prev_shader = NULL;
-      radv_foreach_stage (stage, internal_stages & ~VK_SHADER_STAGE_TASK_BIT_EXT) {
-         shader = radv_get_shader(cmd_buffer->state.shaders, stage);
-
-         /* Avoid redundantly emitting SGPRs for merged stages. */
-         if (shader && shader != prev_shader) {
-            radv_emit_all_inline_push_consts(device, cs, shader, (uint32_t *)cmd_buffer->push_constants);
-            prev_shader = shader;
-         }
-      }
-
-      if (internal_stages & VK_SHADER_STAGE_TASK_BIT_EXT) {
-         radv_emit_all_inline_push_consts(device, cmd_buffer->gang.cs, cmd_buffer->state.shaders[MESA_SHADER_TASK],
-                                          (uint32_t *)cmd_buffer->push_constants);
-      }
-   }
-
    if (push_constants->need_upload) {
+      unsigned offset;
+      void *ptr;
+
       if (!radv_cmd_buffer_upload_alloc(cmd_buffer, push_constants->size + 16 * push_constants->dynamic_offset_count,
                                         &offset, &ptr))
          return;
@@ -5623,37 +5611,33 @@ radv_flush_constants(struct radv_cmd_buffer *cmd_buffer, VkShaderStageFlags stag
       memcpy((char *)ptr + push_constants->size, descriptors_state->dynamic_buffers,
              16 * push_constants->dynamic_offset_count);
 
-      va = radv_buffer_get_va(cmd_buffer->upload.upload_bo);
-      va += offset;
+      va = radv_buffer_get_va(cmd_buffer->upload.upload_bo) + offset;
+   }
 
-      ASSERTED unsigned cdw_max = radeon_check_space(device->ws, cs->b, MESA_VULKAN_SHADER_STAGES * 4);
+   if (internal_stages & VK_SHADER_STAGE_COMPUTE_BIT) {
+      const struct radv_shader *compute_shader = bind_point == VK_PIPELINE_BIND_POINT_COMPUTE
+                                                    ? cmd_buffer->state.shaders[MESA_SHADER_COMPUTE]
+                                                    : cmd_buffer->state.rt_prolog;
 
-      if (internal_stages & VK_SHADER_STAGE_COMPUTE_BIT) {
-         struct radv_shader *compute_shader = bind_point == VK_PIPELINE_BIND_POINT_COMPUTE
-                                                 ? cmd_buffer->state.shaders[MESA_SHADER_COMPUTE]
-                                                 : cmd_buffer->state.rt_prolog;
+      radv_emit_push_constants_per_stage(device, cs, compute_shader, (uint32_t *)cmd_buffer->push_constants, va);
+   } else {
+      struct radv_shader *prev_shader = NULL;
 
-         radv_emit_userdata_address(device, cs, compute_shader, AC_UD_PUSH_CONSTANTS, va);
-      } else {
-         prev_shader = NULL;
-         radv_foreach_stage (stage, internal_stages & ~VK_SHADER_STAGE_TASK_BIT_EXT) {
-            shader = radv_get_shader(cmd_buffer->state.shaders, stage);
+      radv_foreach_stage (stage, internal_stages & ~VK_SHADER_STAGE_TASK_BIT_EXT) {
+         struct radv_shader *shader = radv_get_shader(cmd_buffer->state.shaders, stage);
 
-            /* Avoid redundantly emitting the address for merged stages. */
-            if (shader && shader != prev_shader) {
-               radv_emit_userdata_address(device, cs, shader, AC_UD_PUSH_CONSTANTS, va);
+         /* Avoid redundantly emitting the same values for merged stages. */
+         if (shader && shader != prev_shader) {
+            radv_emit_push_constants_per_stage(device, cs, shader, (uint32_t *)cmd_buffer->push_constants, va);
 
-               prev_shader = shader;
-            }
-         }
-
-         if (internal_stages & VK_SHADER_STAGE_TASK_BIT_EXT) {
-            radv_emit_userdata_address(device, cmd_buffer->gang.cs, cmd_buffer->state.shaders[MESA_SHADER_TASK],
-                                       AC_UD_PUSH_CONSTANTS, va);
+            prev_shader = shader;
          }
       }
 
-      assert(cs->b->cdw <= cdw_max);
+      if (internal_stages & VK_SHADER_STAGE_TASK_BIT_EXT) {
+         radv_emit_push_constants_per_stage(device, cmd_buffer->gang.cs, cmd_buffer->state.shaders[MESA_SHADER_TASK],
+                                            (uint32_t *)cmd_buffer->push_constants, va);
+      }
    }
 
    cmd_buffer->push_constant_stages &= ~stages;
