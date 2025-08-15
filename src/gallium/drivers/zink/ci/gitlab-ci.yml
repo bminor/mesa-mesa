@@ -177,6 +177,7 @@ zink-tu-a618:
     HWCI_START_WESTON: 1
     GPU_VERSION: zink-tu-a618
     DRIVER_NAME: null  # Don't use freedreno skips
+    ZINK_DEBUG: validation
   parallel: 3
 
 zink-tu-a618-traces:
