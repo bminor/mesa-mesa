@@ -5468,7 +5468,8 @@ void
 radv_upload_indirect_descriptor_sets(struct radv_cmd_buffer *cmd_buffer,
                                      struct radv_descriptor_state *descriptors_state)
 {
-   uint32_t size = MAX_SETS * 4;
+   const uint32_t last_valid_desc = util_last_bit(descriptors_state->valid);
+   const uint32_t size = last_valid_desc * 4;
    uint32_t offset;
    void *ptr;
 
@@ -5477,7 +5478,7 @@ radv_upload_indirect_descriptor_sets(struct radv_cmd_buffer *cmd_buffer,
 
    descriptors_state->indirect_descriptor_sets_va = radv_buffer_get_va(cmd_buffer->upload.upload_bo) + offset;
 
-   for (unsigned i = 0; i < MAX_SETS; i++) {
+   for (unsigned i = 0; i < last_valid_desc; i++) {
       uint32_t *uptr = ((uint32_t *)ptr) + i;
       uint64_t set_va = 0;
       if (descriptors_state->valid & (1u << i))
