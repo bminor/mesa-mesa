@@ -61,3 +61,8 @@ dEQP-GLES31.functional.copy_image.non_compressed.viewclass_16_bits.r16f_rg8.text
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_16_bits.r16f_rg8ui.texture2d_array_to_texture3d
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_16_bits.r16ui_r16i.texture2d_array_to_texture2d_array
 
+# https://gitlab.freedesktop.org/mesa/mesa/-/issues/13738
+x11-dEQP-EGL.functional.sharing.gles2.multithread.simple.programs.link
+x11-dEQP-EGL.functional.sharing.gles2.multithread.simple.buffers.buffersubdata_render
+x11-dEQP-EGL.functional.sharing.gles2.multithread.simple_egl_server_sync.programs.link
+x11-dEQP-EGL.functional.sharing.gles2.multithread.simple.images.texture_source.copyteximage2d_render
