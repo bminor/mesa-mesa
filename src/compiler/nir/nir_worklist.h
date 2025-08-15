@@ -108,14 +108,14 @@ nir_instr_worklist_fini(nir_instr_worklist *wl)
 static inline void
 nir_instr_worklist_push_tail(nir_instr_worklist *wl, nir_instr *instr)
 {
-   struct nir_instr **vec_instr = u_vector_add(&wl->instr_vec);
+   nir_instr **vec_instr = (nir_instr **)u_vector_add(&wl->instr_vec);
    *vec_instr = instr;
 }
 
 static inline nir_instr *
 nir_instr_worklist_pop_head(nir_instr_worklist *wl)
 {
-   struct nir_instr **vec_instr = u_vector_remove(&wl->instr_vec);
+   nir_instr **vec_instr = (nir_instr **)u_vector_remove(&wl->instr_vec);
 
    if (vec_instr == NULL)
       return NULL;

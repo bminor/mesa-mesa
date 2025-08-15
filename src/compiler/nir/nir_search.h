@@ -201,8 +201,12 @@ typedef union {
    nir_search_expression expression;
 } nir_search_value_union;
 
+typedef struct {
+   struct hash_table *range_ht;
+} nir_search_state;
+
 typedef bool (*nir_search_expression_cond)(const nir_alu_instr *instr);
-typedef bool (*nir_search_variable_cond)(struct hash_table *range_ht,
+typedef bool (*nir_search_variable_cond)(const nir_search_state *state,
                                          const nir_alu_instr *instr,
                                          unsigned src, unsigned num_components,
                                          const uint8_t *swizzle);

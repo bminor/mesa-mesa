@@ -42,7 +42,7 @@ struct match_state {
    const nir_algebraic_table *table;
 
    nir_alu_src variables[NIR_SEARCH_MAX_VARIABLES];
-   struct hash_table *range_ht;
+   const nir_search_state *state;
 };
 
 static bool
@@ -278,7 +278,7 @@ match_value(const nir_algebraic_table *table,
           instr->src[src].src.ssa->parent_instr->type != nir_instr_type_load_const)
          return false;
 
-      if (var->cond_index != -1 && !table->variable_cond[var->cond_index](state->range_ht, instr,
+      if (var->cond_index != -1 && !table->variable_cond[var->cond_index](state->state, instr,
                                                                           src, num_components, new_swizzle))
          return false;
 
@@ -678,7 +678,7 @@ nir_algebraic_update_automaton(nir_instr *new_instr,
 
 static nir_def *
 nir_replace_instr(nir_builder *build, nir_alu_instr *instr,
-                  struct hash_table *range_ht,
+                  const nir_search_state *search_state,
                   struct util_dynarray *states,
                   const nir_algebraic_table *table,
                   const nir_search_expression *search,
@@ -694,7 +694,7 @@ nir_replace_instr(nir_builder *build, nir_alu_instr *instr,
    struct match_state state;
    state.inexact_match = false;
    state.has_exact_alu = false;
-   state.range_ht = range_ht;
+   state.state = search_state;
    state.pass_op_table = table->pass_op_table;
    state.table = table;
 
@@ -854,7 +854,7 @@ nir_algebraic_automaton(nir_instr *instr, struct util_dynarray *states,
 
 static bool
 nir_algebraic_instr(nir_builder *build, nir_instr *instr,
-                    struct hash_table *range_ht,
+                    const nir_search_state *state,
                     const bool *condition_flags,
                     const nir_algebraic_table *table,
                     struct util_dynarray *states,
@@ -881,10 +881,10 @@ nir_algebraic_instr(nir_builder *build, nir_instr *instr,
         xform++) {
       if (condition_flags[xform->condition_offset] &&
           !(table->values[xform->search].expression.inexact && ignore_inexact) &&
-          nir_replace_instr(build, alu, range_ht, states, table,
+          nir_replace_instr(build, alu, state, states, table,
                             &table->values[xform->search].expression,
                             &table->values[xform->replace].value, worklist, dead_instrs)) {
-         _mesa_hash_table_clear(range_ht, NULL);
+         _mesa_hash_table_clear(state->range_ht, NULL);
          return true;
       }
    }
@@ -913,6 +913,9 @@ nir_algebraic_impl(nir_function_impl *impl,
 
    struct hash_table range_ht;
    _mesa_pointer_hash_table_init(&range_ht, NULL);
+
+   nir_search_state state;
+   state.range_ht = &range_ht;
 
    nir_instr_worklist worklist;
    nir_instr_worklist_init(&worklist);
@@ -949,7 +952,7 @@ nir_algebraic_impl(nir_function_impl *impl,
          continue;
 
       progress |= nir_algebraic_instr(&build, instr,
-                                      &range_ht, condition_flags,
+                                      &state, condition_flags,
                                       table, &states, &worklist, &dead_instrs);
    }
 

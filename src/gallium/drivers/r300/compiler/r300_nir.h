@@ -9,11 +9,12 @@
 #include <math.h>
 
 #include "compiler/nir/nir.h"
+#include "compiler/nir/nir_search.h"
 #include "pipe/p_screen.h"
 #include "r300_screen.h"
 
 static inline bool
-is_ubo_or_input(UNUSED struct hash_table *ht, const nir_alu_instr *instr, unsigned src,
+is_ubo_or_input(UNUSED const nir_search_state *state, const nir_alu_instr *instr, unsigned src,
                 unsigned num_components, const uint8_t *swizzle)
 {
    nir_instr *parent = instr->src[src].src.ssa->parent_instr;
@@ -107,7 +108,7 @@ check_instr_and_src_value(nir_op op, nir_instr **instr, double value)
 }
 
 static inline bool
-needs_vs_trig_input_fixup(UNUSED struct hash_table *ht, const nir_alu_instr *instr, unsigned src,
+needs_vs_trig_input_fixup(UNUSED const nir_search_state *state, const nir_alu_instr *instr, unsigned src,
                           unsigned num_components, const uint8_t *swizzle)
 {
    /* We are checking for fadd(fmul(ffract(a), 2*pi), -pi) pattern
