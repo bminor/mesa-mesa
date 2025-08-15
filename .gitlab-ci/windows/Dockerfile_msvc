@@ -23,5 +23,8 @@ RUN C:\mesa_deps_choco.ps1
 # since the resulting container will want to be used that way be later containers in the build process.
 # Only --isolation=hyperv can succeed building this container locally,
 #   --isolation=process have network issue when installing Visual Studio and choco will crash
-# docker build --isolation=hyperv -f .\Dockerfile_msvc -t mesa_vs --build-arg base_image="mcr.microsoft.com/windows:10.0.19041.1415" .
+# docker build --isolation=hyperv -f .\Dockerfile_msvc -t mesa_msvc --build-arg base_image="mcr.microsoft.com/windows:10.0.19041.1415" .
 
+# Example run:
+# docker run --isolation=hyperv -it --rm -v ${PWD}:${PWD} mesa_msvc pwsh -ExecutionPolicy RemoteSigned
+# docker run --isolation=process -it --rm -v ${PWD}:${PWD} mesa_msvc pwsh -ExecutionPolicy RemoteSigned

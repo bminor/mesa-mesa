@@ -75,5 +75,11 @@ if (!$buildstatus) {
   Exit 1
 }
 
+function Remove-Symlinks {
+  Get-ChildItem -Force -ErrorAction SilentlyContinue @Args | Where-Object { if($_.Attributes -match "ReparsePoint"){$_.Delete()} }
+}
+Remove-Symlinks -Path "deps" -Recurse
+Remove-Item -Recurse -Force -ErrorAction SilentlyContinue -Path "deps" | Out-Null
+
 Write-Host "Building libva-utils finished at:"
 Get-Date
