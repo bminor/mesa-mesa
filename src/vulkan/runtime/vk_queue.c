@@ -294,7 +294,6 @@ vk_queue_submit_add_semaphore_signal(struct vk_queue *queue,
                                      const VkSemaphoreSubmitInfo *signal_info)
 {
    VK_FROM_HANDLE(vk_semaphore, semaphore, signal_info->semaphore);
-   VkResult result;
 
    struct vk_sync *sync = vk_semaphore_get_active_sync(semaphore);
    uint64_t signal_value = signal_info->value;
@@ -304,29 +303,6 @@ vk_queue_submit_add_semaphore_signal(struct vk_queue *queue,
             "Tried to signal a timeline with value 0");
       }
    } else {
-      signal_value = 0;
-   }
-
-   /* For emulated timelines, we need to associate a binary vk_sync with
-    * each time point and pass the binary vk_sync to the driver.  We could
-    * do this in vk_queue_submit_final but it might require doing memory
-    * allocation and we don't want to to add extra failure paths there.
-    * Instead, allocate and replace the driver-visible vk_sync now and
-    * we'll insert it into the timeline in vk_queue_submit_final.  The
-    * insert step is guaranteed to not fail.
-    */
-   struct vk_sync_timeline *timeline = vk_sync_as_timeline(sync);
-   if (timeline) {
-      assert(queue->base.device->timeline_mode ==
-             VK_DEVICE_TIMELINE_MODE_EMULATED);
-      struct vk_sync_timeline_point **signal_point =
-         &submit->_signal_points[submit->signal_count];
-      result = vk_sync_timeline_alloc_point(queue->base.device, timeline,
-                                            signal_value, signal_point);
-      if (unlikely(result != VK_SUCCESS))
-         return result;
-
-      sync = &(*signal_point)->sync;
       signal_value = 0;
    }
 
@@ -641,6 +617,21 @@ vk_queue_submit_final(struct vk_queue *queue,
    for (uint32_t i = 0; i < submit->signal_count; i++) {
       assert((submit->signals[i].sync->flags & VK_SYNC_IS_TIMELINE) ||
              submit->signals[i].signal_value == 0);
+
+      struct vk_sync_timeline *timeline =
+         vk_sync_as_timeline(submit->signals[i].sync);
+      if (timeline) {
+         assert(queue->base.device->timeline_mode ==
+                VK_DEVICE_TIMELINE_MODE_EMULATED);
+         result = vk_sync_timeline_alloc_point(queue->base.device, timeline,
+                                               submit->signals[i].signal_value,
+                                               &submit->_signal_points[i]);
+         if (unlikely(result != VK_SUCCESS))
+            result = vk_queue_set_lost(queue, "Failed allocate time point");
+
+         submit->signals[i].sync = &submit->_signal_points[i]->sync;
+         submit->signals[i].signal_value = 0;
+      }
 
       struct vk_sync_binary *binary =
          vk_sync_as_binary(submit->signals[i].sync);
