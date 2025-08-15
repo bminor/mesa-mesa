@@ -5578,6 +5578,22 @@ radv_emit_push_constants_per_stage(const struct radv_device *device, struct radv
 }
 
 static void
+radv_upload_push_constants(struct radv_cmd_buffer *cmd_buffer, const struct radv_push_constant_state *pc_state,
+                           const struct radv_descriptor_state *descriptors_state, uint64_t *va)
+{
+   unsigned offset;
+   void *ptr;
+
+   if (!radv_cmd_buffer_upload_alloc(cmd_buffer, pc_state->size + 16 * pc_state->dynamic_offset_count, &offset, &ptr))
+      return;
+
+   memcpy(ptr, cmd_buffer->push_constants, pc_state->size);
+   memcpy((char *)ptr + pc_state->size, descriptors_state->dynamic_buffers, 16 * pc_state->dynamic_offset_count);
+
+   *va = radv_buffer_get_va(cmd_buffer->upload.upload_bo) + offset;
+}
+
+static void
 radv_flush_constants(struct radv_cmd_buffer *cmd_buffer, VkShaderStageFlags stages, VkPipelineBindPoint bind_point)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
@@ -5600,18 +5616,7 @@ radv_flush_constants(struct radv_cmd_buffer *cmd_buffer, VkShaderStageFlags stag
    }
 
    if (push_constants->need_upload) {
-      unsigned offset;
-      void *ptr;
-
-      if (!radv_cmd_buffer_upload_alloc(cmd_buffer, push_constants->size + 16 * push_constants->dynamic_offset_count,
-                                        &offset, &ptr))
-         return;
-
-      memcpy(ptr, cmd_buffer->push_constants, push_constants->size);
-      memcpy((char *)ptr + push_constants->size, descriptors_state->dynamic_buffers,
-             16 * push_constants->dynamic_offset_count);
-
-      va = radv_buffer_get_va(cmd_buffer->upload.upload_bo) + offset;
+      radv_upload_push_constants(cmd_buffer, push_constants, descriptors_state, &va);
    }
 
    if (internal_stages & VK_SHADER_STAGE_COMPUTE_BIT) {
