@@ -1575,7 +1575,7 @@ if dep_zlib.found()
   pre_args += '-DHAVE_ZLIB'
 endif
 
-if host_machine.system() == 'windows'
+if host_machine.system() == 'windows' or with_platform_android
   dep_display_info = null_dep
 else
   dep_display_info = dependency('libdisplay-info', version : '>= 0.1.1',
