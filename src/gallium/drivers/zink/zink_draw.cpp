@@ -778,7 +778,7 @@ zink_draw(struct pipe_context *pctx,
       ctx->primitive_restart = dinfo->primitive_restart;
    }
 
-   if (zink_program_has_descriptors(&ctx->curr_program->base))
+   if (zink_program_has_descriptors(&ctx->curr_program->base) && (BATCH_CHANGED || ctx->dd.push_state_changed[0] || ctx->dd.state_changed[0] || pipeline_changed))
       zink_descriptors_update(ctx, ZINK_PIPELINE_GFX);
 
    if (ctx->di.any_bindless_dirty &&
@@ -1307,14 +1307,15 @@ zink_launch_grid(struct pipe_context *pctx, const struct pipe_grid_info *info)
    VkPipeline pipeline = zink_get_compute_pipeline(screen, ctx->curr_compute,
                                                &ctx->compute_pipeline_state);
 
-   if (prev_pipeline != pipeline || BATCH_CHANGED)
+   bool pipeline_changed = prev_pipeline != pipeline;
+   if (pipeline_changed || BATCH_CHANGED)
       VKCTX(CmdBindPipeline)(bs->cmdbuf, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
    if (BATCH_CHANGED) {
       ctx->pipeline_changed[1] = false;
       zink_select_launch_grid(ctx);
    }
 
-   if (zink_program_has_descriptors(&ctx->curr_compute->base))
+   if (zink_program_has_descriptors(&ctx->curr_compute->base) && (BATCH_CHANGED || ctx->dd.push_state_changed[1] || ctx->dd.state_changed[1] || pipeline_changed))
       zink_descriptors_update(ctx, ZINK_PIPELINE_COMPUTE);
    if (ctx->di.any_bindless_dirty && ctx->curr_compute->base.dd.bindless)
       zink_descriptors_update_bindless(ctx);
