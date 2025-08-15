@@ -604,53 +604,22 @@ vk_queue_submit_final(struct vk_queue *queue,
     */
    uint32_t wait_count = 0;
    for (uint32_t i = 0; i < submit->wait_count; i++) {
-      /* A timeline wait on 0 is always a no-op */
-      if ((submit->waits[i].sync->flags & VK_SYNC_IS_TIMELINE) &&
-          submit->waits[i].wait_value == 0)
-         continue;
+      struct vk_sync_timeline_point *wait_point;
+      result = vk_sync_wait_unwrap(queue->base.device,
+                                   &submit->waits[i], &wait_point);
+      if (wait_point != NULL)
+         submit->_wait_points[i] = wait_point;
+      if (unlikely(result != VK_SUCCESS))
+         result = vk_queue_set_lost(queue, "Failed to unwrap sync wait");
 
-      /* Waits on dummy vk_syncs are no-ops */
-      if (vk_sync_type_is_dummy(submit->waits[i].sync->type)) {
+      if (submit->waits[i].sync == NULL) {
          /* We are about to lose track of this wait, if it has a temporary
-          * we need to destroy it now, as vk_queue_submit_cleanup will not
-          * know about it */
-         if (submit->_wait_temps[i] != NULL) {
+          * or a wait point, we need to destroy it now, as
+          * vk_queue_submit_cleanup will not know about it
+          */
+         if (submit->_wait_temps[i] != NULL)
             vk_sync_destroy(queue->base.device, submit->_wait_temps[i]);
-            submit->waits[i].sync = NULL;
-         }
          continue;
-      }
-
-      /* For emulated timelines, we have a binary vk_sync associated with
-       * each time point and pass the binary vk_sync to the driver.
-       */
-      struct vk_sync_timeline *timeline =
-         vk_sync_as_timeline(submit->waits[i].sync);
-      if (timeline) {
-         assert(queue->base.device->timeline_mode ==
-                VK_DEVICE_TIMELINE_MODE_EMULATED);
-         result = vk_sync_timeline_get_point(queue->base.device, timeline,
-                                             submit->waits[i].wait_value,
-                                             &submit->_wait_points[i]);
-         if (unlikely(result != VK_SUCCESS)) {
-            result = vk_queue_set_lost(queue,
-                                       "Time point >= %"PRIu64" not found",
-                                       submit->waits[i].wait_value);
-         }
-
-         /* This can happen if the point is long past */
-         if (submit->_wait_points[i] == NULL)
-            continue;
-
-         submit->waits[i].sync = &submit->_wait_points[i]->sync;
-         submit->waits[i].wait_value = 0;
-      }
-
-      struct vk_sync_binary *binary =
-         vk_sync_as_binary(submit->waits[i].sync);
-      if (binary) {
-         submit->waits[i].sync = &binary->timeline;
-         submit->waits[i].wait_value = binary->next_point;
       }
 
       assert((submit->waits[i].sync->flags & VK_SYNC_IS_TIMELINE) ||

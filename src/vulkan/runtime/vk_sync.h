@@ -425,6 +425,12 @@ VkResult MUST_CHECK vk_sync_move(struct vk_device *device,
                                  struct vk_sync *dst,
                                  struct vk_sync *src);
 
+struct vk_sync_timeline_point;
+
+VkResult MUST_CHECK vk_sync_wait_unwrap(struct vk_device *device,
+                                        struct vk_sync_wait *wait,
+                                        struct vk_sync_timeline_point **point_out);
+
 #ifdef __cplusplus
 }
 #endif

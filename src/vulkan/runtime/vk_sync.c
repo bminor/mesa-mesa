@@ -34,6 +34,9 @@
 #include "vk_device.h"
 #include "vk_log.h"
 #include "vk_physical_device.h"
+#include "vk_sync_binary.h"
+#include "vk_sync_dummy.h"
+#include "vk_sync_timeline.h"
 
 static void
 vk_sync_type_validate(const struct vk_sync_type *type)
@@ -553,4 +556,73 @@ vk_sync_set_win32_export_params(struct vk_device *device,
    assert(sync->flags & VK_SYNC_IS_SHARED);
 
    return sync->type->set_win32_export_params(device, sync, security_attributes, access, name);
+}
+
+/**
+ * Unwraps a vk_sync_wait, removing any vk_sync_timeline or vk_sync_binary
+ * and replacing the sync with the actual driver primitive.
+ *
+ * After this is returns, wait->sync may be NULL, indicating no actual wait
+ * is needed and this wait can be discarded.
+ *
+ * If the sync is a timeline, the point will be returned in point_out.
+ * Otherwise point_out will be set to NULL.
+ */
+VkResult
+vk_sync_wait_unwrap(struct vk_device *device,
+                    struct vk_sync_wait *wait,
+                    struct vk_sync_timeline_point **point_out)
+{
+   *point_out = NULL;
+
+   if (wait->sync->flags & VK_SYNC_IS_TIMELINE) {
+      if (wait->wait_value == 0) {
+         *wait = (struct vk_sync_wait) { .sync = NULL };
+         return VK_SUCCESS;
+      }
+   } else {
+      assert(wait->wait_value == 0);
+   }
+
+   struct vk_sync_timeline *timeline = vk_sync_as_timeline(wait->sync);
+   if (timeline) {
+      assert(device->timeline_mode == VK_DEVICE_TIMELINE_MODE_EMULATED);
+      VkResult result = vk_sync_timeline_get_point(device, timeline,
+                                                   wait->wait_value,
+                                                   point_out);
+      if (unlikely(result != VK_SUCCESS)) {
+         /* vk_sync_timeline_get_point() returns VK_NOT_READY if no time
+          * point can be found.  Turn that into an actual error.
+          */
+         return vk_errorf(device, VK_ERROR_UNKNOWN,
+                          "Time point >= %"PRIu64" not found",
+                          wait->wait_value);
+      }
+
+      /* This can happen if the point is long past */
+      if (*point_out == NULL) {
+         *wait = (struct vk_sync_wait) { .sync = NULL };
+         return VK_SUCCESS;
+      }
+
+      wait->sync = &(*point_out)->sync;
+      wait->wait_value = 0;
+   }
+
+   struct vk_sync_binary *binary = vk_sync_as_binary(wait->sync);
+   if (binary) {
+      wait->sync = &binary->timeline;
+      wait->wait_value = binary->next_point;
+   }
+
+   if (vk_sync_type_is_dummy(wait->sync->type)) {
+      if (*point_out != NULL) {
+         vk_sync_timeline_point_unref(device, *point_out);
+         *point_out = NULL;
+      }
+      *wait = (struct vk_sync_wait) { .sync = NULL };
+      return VK_SUCCESS;
+   }
+
+   return VK_SUCCESS;
 }
