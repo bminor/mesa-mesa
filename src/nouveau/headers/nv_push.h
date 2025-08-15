@@ -92,6 +92,12 @@ void vk_push_print(FILE *fp, const struct nv_push *push,
 /* video decode will get push on sub channel 4 */
 #define SUBC_NVC5B0 4
 
+static inline uint8_t
+NVC0_FIFO_SUBC_FROM_PKHDR(uint32_t hdr)
+{
+   return (hdr >> 13) & BITFIELD_MASK(3);
+}
+
 static inline uint32_t
 NVC0_FIFO_PKHDR_SQ(int subc, int mthd, unsigned size)
 {
@@ -117,7 +123,7 @@ __push_hdr(struct nv_push *push, uint32_t hdr)
 {
    __push_verify(push);
 
-   ASSERTED const uint32_t subc = (hdr >> 13) & BITFIELD_MASK(3);
+   ASSERTED const uint32_t subc = NVC0_FIFO_SUBC_FROM_PKHDR(hdr);
    assert(push->subc_mask & BITFIELD_BIT(subc));
 
    *push->end = hdr;
