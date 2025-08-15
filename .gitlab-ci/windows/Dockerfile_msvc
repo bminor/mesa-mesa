@@ -15,8 +15,8 @@ RUN Write-Output $PSVersionTable $ErrorActionPreference
 COPY mesa_deps_msvc.ps1 C:\
 RUN C:\mesa_deps_msvc.ps1
 
-COPY mesa_deps_choco.ps1 C:\
-RUN C:\mesa_deps_choco.ps1
+COPY mesa_deps_packages.ps1 C:\
+RUN C:\mesa_deps_packages.ps1
 
 # Example usage:
 # `base_image` should use windows image that can be run with `--isolation=process` option,
