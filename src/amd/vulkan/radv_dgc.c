@@ -460,7 +460,6 @@ radv_get_sequence_size(const struct radv_indirect_command_layout *layout, const 
    *upload_size = 0;
 
    if (layout->vk.dgc_info & (BITFIELD_BIT(MESA_VK_DGC_PC) | BITFIELD_BIT(MESA_VK_DGC_SI))) {
-      VK_FROM_HANDLE(radv_pipeline_layout, pipeline_layout, layout->vk.layout);
       struct radv_dgc_pc_layout_info dgc_pc_info;
 
       radv_dgc_get_pc_layout_info(layout, ies, pipeline_info, eso_info, &dgc_pc_info);
@@ -499,7 +498,7 @@ radv_get_sequence_size(const struct radv_indirect_command_layout *layout, const 
       }
 
       if (dgc_pc_info.need_upload) {
-         *upload_size += pipeline_layout->push_constant_size;
+         *upload_size += dgc_pc_info.size;
       }
    }
 
@@ -3205,6 +3204,7 @@ radv_prepare_dgc(struct radv_cmd_buffer *cmd_buffer, const VkGeneratedCommandsIn
    VK_FROM_HANDLE(radv_indirect_execution_set, ies, pGeneratedCommandsInfo->indirectExecutionSet);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
+   struct radv_dgc_pc_layout_info dgc_pc_info;
    struct radv_meta_saved_state saved_state;
    unsigned upload_offset, upload_size = 0;
    void *upload_data;
@@ -3250,10 +3250,10 @@ radv_prepare_dgc(struct radv_cmd_buffer *cmd_buffer, const VkGeneratedCommandsIn
       .queue_family = state_cmd_buffer->qf,
    };
 
-   VK_FROM_HANDLE(radv_pipeline_layout, pipeline_layout, layout->vk.layout);
+   if (layout->push_constant_mask) {
+      radv_dgc_get_pc_layout_info(layout, ies, pipeline_info, eso_info, &dgc_pc_info);
 
-   if (layout->vk.dgc_info & (BITFIELD_BIT(MESA_VK_DGC_PC) | BITFIELD_BIT(MESA_VK_DGC_SI))) {
-      upload_size = pipeline_layout->push_constant_size + MESA_VULKAN_SHADER_STAGES * 12;
+      upload_size = dgc_pc_info.size + MESA_VULKAN_SHADER_STAGES * 12;
    }
 
    if (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_DISPATCH)) {
@@ -3269,13 +3269,9 @@ radv_prepare_dgc(struct radv_cmd_buffer *cmd_buffer, const VkGeneratedCommandsIn
    params.params_addr = radv_buffer_get_va(cmd_buffer->upload.upload_bo) + upload_offset;
 
    if (layout->push_constant_mask) {
-      struct radv_dgc_pc_layout_info dgc_pc_info;
-
-      radv_dgc_get_pc_layout_info(layout, ies, pipeline_info, eso_info, &dgc_pc_info);
-
       params.const_copy = dgc_pc_info.need_upload;
       params.push_constant_stages = dgc_pc_info.stages;
-      params.push_constant_size = pipeline_layout->push_constant_size / 4;
+      params.push_constant_size = dgc_pc_info.size / 4;
 
       uint32_t *desc = upload_data;
       upload_data = (char *)upload_data + MESA_VULKAN_SHADER_STAGES * 12;
@@ -3290,8 +3286,8 @@ radv_prepare_dgc(struct radv_cmd_buffer *cmd_buffer, const VkGeneratedCommandsIn
          desc[s * 3 + 2] = inline_push_const_mask >> 32;
       }
 
-      memcpy(upload_data, state_cmd_buffer->push_constants, pipeline_layout->push_constant_size);
-      upload_data = (char *)upload_data + pipeline_layout->push_constant_size;
+      memcpy(upload_data, state_cmd_buffer->push_constants, dgc_pc_info.size);
+      upload_data = (char *)upload_data + dgc_pc_info.size;
    }
 
    radv_meta_save(&saved_state, cmd_buffer, RADV_META_SAVE_COMPUTE_PIPELINE | RADV_META_SAVE_CONSTANTS);
