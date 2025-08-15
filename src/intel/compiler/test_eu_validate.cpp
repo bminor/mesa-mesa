@@ -3601,22 +3601,6 @@ TEST_P(validation_test, xe2_register_region_special_restrictions_for_src0_and_sr
 }
 
 static brw_reg
-brw_s0(enum brw_reg_type type, unsigned subnr)
-{
-   return brw_make_reg(ARF,
-                       BRW_ARF_SCALAR,
-                       subnr,
-                       0,
-                       0,
-                       type,
-                       BRW_VERTICAL_STRIDE_0,
-                       BRW_WIDTH_1,
-                       BRW_HORIZONTAL_STRIDE_0,
-                       BRW_SWIZZLE_XYZW,
-                       WRITEMASK_XYZW);
-}
-
-static brw_reg
 brw_s0_with_region(enum brw_reg_type type, unsigned subnr, unsigned v, unsigned w, unsigned h)
 {
    return brw_make_reg(ARF,

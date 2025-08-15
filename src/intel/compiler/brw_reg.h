@@ -561,6 +561,22 @@ brw_vecn_reg(unsigned width, enum brw_reg_file file,
    }
 }
 
+static inline brw_reg
+brw_s0(enum brw_reg_type type, unsigned subnr)
+{
+   return brw_make_reg(ARF,
+                       BRW_ARF_SCALAR,
+                       subnr,
+                       0,
+                       0,
+                       type,
+                       BRW_VERTICAL_STRIDE_0,
+                       BRW_WIDTH_1,
+                       BRW_HORIZONTAL_STRIDE_0,
+                       BRW_SWIZZLE_XYZW,
+                       WRITEMASK_XYZW);
+}
+
 static inline struct brw_reg
 retype(struct brw_reg reg, enum brw_reg_type type)
 {

@@ -857,22 +857,6 @@ brw_lower_vgrfs_to_fixed_grfs(brw_shader &s)
                          BRW_DEPENDENCY_VARIABLES);
 }
 
-static brw_reg
-brw_s0(enum brw_reg_type type, unsigned subnr)
-{
-   return brw_make_reg(ARF,
-                       BRW_ARF_SCALAR,
-                       subnr,
-                       0,
-                       0,
-                       type,
-                       BRW_VERTICAL_STRIDE_0,
-                       BRW_WIDTH_1,
-                       BRW_HORIZONTAL_STRIDE_0,
-                       BRW_SWIZZLE_XYZW,
-                       WRITEMASK_XYZW);
-}
-
 static bool
 brw_lower_send_gather_inst(brw_shader &s, brw_send_inst *inst)
 {
