@@ -421,6 +421,7 @@ VkResult anv_CreateDevice(
       UNREACHABLE("Missing");
    }
 
+   device->vk.copy_sync_payloads = vk_drm_syncobj_copy_payloads;
    device->vk.command_buffer_ops = &anv_cmd_buffer_ops;
    vk_device_set_drm_fd(&device->vk, device->fd);
 

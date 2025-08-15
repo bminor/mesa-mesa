@@ -2494,6 +2494,7 @@ VkResult anv_CreateDevice(
    device->vk.command_buffer_ops = &anv_cmd_buffer_ops;
    device->vk.check_status = anv_device_check_status;
    device->vk.get_timestamp = anv_device_get_timestamp;
+   device->vk.copy_sync_payloads = vk_drm_syncobj_copy_payloads;
    vk_device_set_drm_fd(&device->vk, device->fd);
 
    uint32_t num_queues = 0;
