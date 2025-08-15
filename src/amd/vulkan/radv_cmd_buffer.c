@@ -5581,17 +5581,14 @@ radv_flush_constants(struct radv_cmd_buffer *cmd_buffer, VkShaderStageFlags stag
    void *ptr;
    uint64_t va;
    uint32_t internal_stages = stages;
-   uint32_t dirty_stages = 0;
 
    switch (bind_point) {
    case VK_PIPELINE_BIND_POINT_GRAPHICS:
       break;
    case VK_PIPELINE_BIND_POINT_COMPUTE:
-      dirty_stages = RADV_RT_STAGE_BITS;
       break;
    case VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR:
       internal_stages = VK_SHADER_STAGE_COMPUTE_BIT;
-      dirty_stages = VK_SHADER_STAGE_COMPUTE_BIT;
       break;
    default:
       UNREACHABLE("Unhandled bind point");
@@ -5664,7 +5661,6 @@ radv_flush_constants(struct radv_cmd_buffer *cmd_buffer, VkShaderStageFlags stag
    }
 
    cmd_buffer->push_constant_stages &= ~stages;
-   cmd_buffer->push_constant_stages |= dirty_stages;
 }
 
 ALWAYS_INLINE void
@@ -12742,9 +12738,14 @@ radv_before_dispatch(struct radv_cmd_buffer *cmd_buffer, struct radv_compute_pip
        * We only need to do this when the pipeline is dirty because when we switch between
        * the two we always need to switch pipelines.
        */
-      radv_mark_descriptor_sets_dirty(cmd_buffer, bind_point == VK_PIPELINE_BIND_POINT_COMPUTE
-                                                     ? VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR
-                                                     : VK_PIPELINE_BIND_POINT_COMPUTE);
+      if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
+         radv_mark_descriptor_sets_dirty(cmd_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+         cmd_buffer->push_constant_stages |= RADV_RT_STAGE_BITS;
+      } else {
+         assert(bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+         radv_mark_descriptor_sets_dirty(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE);
+         cmd_buffer->push_constant_stages |= VK_SHADER_STAGE_COMPUTE_BIT;
+      }
    }
 }
 
