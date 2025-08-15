@@ -438,7 +438,8 @@ zink_draw(struct pipe_context *pctx,
          res->obj->unordered_read = false;
    }
 
-   zink_query_update_gs_states(ctx);
+   if (ctx->vertices_query || !list_is_empty(&ctx->primitives_generated_queries))
+      zink_query_update_gs_states(ctx);
 
    if (unlikely(zink_debug & ZINK_DEBUG_SYNC)) {
       zink_batch_no_rp(ctx);

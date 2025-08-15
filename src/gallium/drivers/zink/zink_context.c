@@ -3353,9 +3353,10 @@ zink_batch_rp(struct zink_context *ctx)
    bool maybe_has_query_ends = !ctx->track_renderpasses || ctx->dynamic_fb.tc_info.has_query_ends;
    ctx->queries_in_rp = maybe_has_query_ends;
    /* if possible, out-of-renderpass resume any queries that were stopped when previous rp ended */
-   if (!ctx->queries_disabled && !maybe_has_query_ends) {
+   if (!ctx->queries_disabled && !maybe_has_query_ends && !list_is_empty(&ctx->suspended_queries)) {
       zink_resume_queries(ctx);
-      zink_query_update_gs_states(ctx);
+      if (ctx->vertices_query || !list_is_empty(&ctx->primitives_generated_queries))
+         zink_query_update_gs_states(ctx);
    }
    unsigned clear_buffers = begin_rendering(ctx, true);
    assert(!ctx->rp_changed);
@@ -3374,9 +3375,10 @@ zink_batch_rp(struct zink_context *ctx)
       zink_clear_framebuffer(ctx, clear_buffers);
    }
    /* unable to previously determine that queries didn't split renderpasses: ensure queries start inside renderpass */
-   if (!ctx->queries_disabled && maybe_has_query_ends) {
+   if (!ctx->queries_disabled && maybe_has_query_ends && !list_is_empty(&ctx->suspended_queries)) {
       zink_resume_queries(ctx);
-      zink_query_update_gs_states(ctx);
+      if (ctx->vertices_query || !list_is_empty(&ctx->primitives_generated_queries))
+         zink_query_update_gs_states(ctx);
    }
 }
 
