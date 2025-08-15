@@ -12,6 +12,7 @@
 #include "nvk_shader.h"
 #include "nvkmd/nvkmd.h"
 
+#include "vk_drm_syncobj.h"
 #include "vk_pipeline_cache.h"
 #include "vulkan/wsi/wsi_common.h"
 
@@ -164,6 +165,7 @@ nvk_CreateDevice(VkPhysicalDevice physicalDevice,
    dev->vk.command_buffer_ops = &nvk_cmd_buffer_ops;
 
    dev->vk.get_timestamp = nvk_device_get_timestamp;
+   dev->vk.copy_sync_payloads = vk_drm_syncobj_copy_payloads;
 
    result = nvk_upload_queue_init(dev, &dev->upload);
    if (result != VK_SUCCESS)
