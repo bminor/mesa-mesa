@@ -513,7 +513,6 @@ struct radv_shader_dma_submission {
    uint64_t seq;
 };
 
-struct radv_pipeline_layout;
 struct radv_shader_stage;
 
 void radv_optimize_nir(struct nir_shader *shader, bool optimize_conservatively);

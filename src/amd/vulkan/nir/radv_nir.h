@@ -18,7 +18,6 @@ extern "C" {
 
 typedef struct nir_shader nir_shader;
 struct radeon_info;
-struct radv_pipeline_layout;
 struct radv_shader_stage;
 struct radv_shader_info;
 struct radv_shader_args;
