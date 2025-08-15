@@ -706,8 +706,6 @@ anv_cmd_buffer_alloc_binding_table(struct anv_cmd_buffer *cmd_buffer,
    if (u_vector_length(&cmd_buffer->bt_block_states) == 0)
       return (struct anv_state) { 0 };
 
-   struct anv_state *bt_block = u_vector_head(&cmd_buffer->bt_block_states);
-
    uint32_t bt_size = align(entries * 4, 32);
 
    struct anv_state state = cmd_buffer->bt_next;
@@ -726,6 +724,8 @@ anv_cmd_buffer_alloc_binding_table(struct anv_cmd_buffer *cmd_buffer,
        */
       *state_offset = 0;
    } else {
+      struct anv_state *bt_block = u_vector_head(&cmd_buffer->bt_block_states);
+
       assert(bt_block->offset < 0);
       *state_offset = -bt_block->offset;
    }
