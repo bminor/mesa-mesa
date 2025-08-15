@@ -5602,14 +5602,16 @@ radv_flush_constants(struct radv_cmd_buffer *cmd_buffer, VkShaderStageFlags stag
       radv_emit_all_inline_push_consts(device, cs, compute_shader, (uint32_t *)cmd_buffer->push_constants,
                                        &need_push_constants);
    } else {
+      prev_shader = NULL;
       radv_foreach_stage (stage, internal_stages & ~VK_SHADER_STAGE_TASK_BIT_EXT) {
          shader = radv_get_shader(cmd_buffer->state.shaders, stage);
 
-         if (!shader)
-            continue;
-
-         radv_emit_all_inline_push_consts(device, cs, shader, (uint32_t *)cmd_buffer->push_constants,
-                                          &need_push_constants);
+         /* Avoid redundantly emitting SGPRs for merged stages. */
+         if (shader && shader != prev_shader) {
+            radv_emit_all_inline_push_consts(device, cs, shader, (uint32_t *)cmd_buffer->push_constants,
+                                             &need_push_constants);
+            prev_shader = shader;
+         }
       }
 
       if (internal_stages & VK_SHADER_STAGE_TASK_BIT_EXT) {
