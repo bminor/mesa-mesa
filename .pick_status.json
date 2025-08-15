@@ -454,7 +454,7 @@
         "description": "panvk: revised occlusion query pointer fix",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "24c692c981631276f3f20ff021931c665162e7e6",
         "notes": null

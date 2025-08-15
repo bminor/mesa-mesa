@@ -103,9 +103,6 @@ panvk_per_arch(cmd_meta_gfx_start)(
    save_ctx->occlusion_query = cmdbuf->state.gfx.occlusion_query;
 
    /* Ensure occlusion queries are disabled */
-#if PAN_ARCH >= 10
-   cmdbuf->state.gfx.occlusion_query.syncobj = 0;
-#endif
    cmdbuf->state.gfx.occlusion_query.ptr = 0;
    cmdbuf->state.gfx.occlusion_query.mode = MALI_OCCLUSION_MODE_DISABLED;
    gfx_state_set_dirty(cmdbuf, OQ);
