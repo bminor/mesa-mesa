@@ -5493,22 +5493,19 @@ radv_flush_descriptors(struct radv_cmd_buffer *cmd_buffer, VkShaderStageFlags st
    struct radv_descriptor_state *descriptors_state = radv_get_descriptors_state(cmd_buffer, bind_point);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_cmd_stream *cs = cmd_buffer->cs;
-   bool flush_indirect_descriptors;
 
    if (!descriptors_state->dirty)
       return;
 
-   flush_indirect_descriptors = descriptors_state->need_indirect_descriptor_sets;
-
-   if (flush_indirect_descriptors)
+   if (descriptors_state->need_indirect_descriptor_sets)
       radv_upload_indirect_descriptor_sets(cmd_buffer, descriptors_state);
 
    ASSERTED unsigned cdw_max = radeon_check_space(device->ws, cs->b, MAX_SETS * MESA_VULKAN_SHADER_STAGES * 4);
 
    if (stages & VK_SHADER_STAGE_COMPUTE_BIT) {
-      struct radv_shader *compute_shader = bind_point == VK_PIPELINE_BIND_POINT_COMPUTE
-                                              ? cmd_buffer->state.shaders[MESA_SHADER_COMPUTE]
-                                              : cmd_buffer->state.rt_prolog;
+      const struct radv_shader *compute_shader = bind_point == VK_PIPELINE_BIND_POINT_COMPUTE
+                                                    ? cmd_buffer->state.shaders[MESA_SHADER_COMPUTE]
+                                                    : cmd_buffer->state.rt_prolog;
 
       radv_emit_descriptors_per_stage(device, cs, compute_shader, descriptors_state);
    } else {
