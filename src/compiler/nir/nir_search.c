@@ -884,7 +884,8 @@ nir_algebraic_instr(nir_builder *build, nir_instr *instr,
           nir_replace_instr(build, alu, state, states, table,
                             &table->values[xform->search].expression,
                             &table->values[xform->replace].value, worklist, dead_instrs)) {
-         _mesa_hash_table_clear(state->range_ht, NULL);
+         if (state->range_ht->entries)
+            _mesa_hash_table_clear(state->range_ht, NULL);
          return true;
       }
    }
