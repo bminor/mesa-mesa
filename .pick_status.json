@@ -8624,7 +8624,7 @@
         "description": "tu: Enable robustBufferAccessUpdateAfterBind",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d9fcf5de55a7104037823e62284ace8a206c8898",
         "notes": null
