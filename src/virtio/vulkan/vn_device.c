@@ -500,6 +500,10 @@ vn_device_init(struct vn_device *dev,
     */
    vn_device_update_shader_cache_id(dev);
 
+   dev->has_sync2 =
+      physical_dev->base.vk.properties.apiVersion >= VK_API_VERSION_1_3 ||
+      dev->base.vk.enabled_extensions.KHR_synchronization2;
+
    return VK_SUCCESS;
 
 out_feedback_cmd_pools_fini:
