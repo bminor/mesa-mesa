@@ -19,13 +19,11 @@
 
 #include "vn_command_buffer.h"
 #include "vn_device.h"
-#include "vn_device_memory.h"
 #include "vn_feedback.h"
 #include "vn_instance.h"
 #include "vn_physical_device.h"
 #include "vn_query_pool.h"
 #include "vn_renderer.h"
-#include "vn_wsi.h"
 
 /* queue commands */
 
@@ -52,7 +50,6 @@ struct vn_queue_submission {
    uint32_t pnext_count;
    uint32_t dev_mask_count;
    bool has_zink_sync_batch;
-   const struct vn_device_memory *wsi_mem;
    struct vn_sync_payload_external external_payload;
 
    /* Temporary storage allocation for submission
@@ -508,15 +505,6 @@ vn_queue_submission_prepare(struct vn_queue_submission *submit)
       submit->has_zink_sync_batch = vn_has_zink_sync_batch(submit);
 
    submit->external_payload.ring_idx = queue->ring_idx;
-
-   submit->wsi_mem = NULL;
-   if (submit->batch_count == 1 &&
-       submit->batch_type != VK_STRUCTURE_TYPE_BIND_SPARSE_INFO) {
-      const struct wsi_memory_signal_submit_info *info = vk_find_struct_const(
-         submit->submit_batches[0].pNext, WSI_MEMORY_SIGNAL_SUBMIT_INFO_MESA);
-      if (info)
-         submit->wsi_mem = vn_device_memory_from_handle(info->memory);
-   }
 
    for (uint32_t i = 0; i < submit->batch_count; i++) {
       VkResult result = vn_queue_submission_fix_batch_semaphores(submit, i);
@@ -980,51 +968,6 @@ vn_queue_submission_prepare_submit(struct vn_queue_submission *submit)
    return VK_SUCCESS;
 }
 
-static void
-vn_queue_wsi_present(struct vn_queue_submission *submit)
-{
-   struct vk_queue *queue_vk = vk_queue_from_handle(submit->queue_handle);
-   struct vn_device *dev = vn_device_from_vk(queue_vk->base.device);
-
-   if (!submit->wsi_mem)
-      return;
-
-   if (dev->renderer->info.has_implicit_fencing) {
-      struct vn_renderer_submit_batch batch = {
-         .ring_idx = submit->external_payload.ring_idx,
-      };
-
-      uint32_t local_data[8];
-      struct vn_cs_encoder local_enc =
-         VN_CS_ENCODER_INITIALIZER_LOCAL(local_data, sizeof(local_data));
-      if (submit->external_payload.ring_seqno_valid) {
-         const uint64_t ring_id = vn_ring_get_id(dev->primary_ring);
-         vn_encode_vkWaitRingSeqnoMESA(&local_enc, 0, ring_id,
-                                       submit->external_payload.ring_seqno);
-         batch.cs_data = local_data;
-         batch.cs_size = vn_cs_encoder_get_len(&local_enc);
-      }
-
-      const struct vn_renderer_submit renderer_submit = {
-         .bos = &submit->wsi_mem->base_bo,
-         .bo_count = 1,
-         .batches = &batch,
-         .batch_count = 1,
-      };
-      vn_renderer_submit(dev->renderer, &renderer_submit);
-   } else {
-      if (VN_DEBUG(WSI)) {
-         static uint32_t num_rate_limit_warning = 0;
-
-         if (num_rate_limit_warning++ < 10)
-            vn_log(dev->instance,
-                   "forcing vkQueueWaitIdle before presenting");
-      }
-
-      vn_QueueWaitIdle(submit->queue_handle);
-   }
-}
-
 static VkResult
 vn_queue_submit(struct vn_queue_submission *submit)
 {
@@ -1036,11 +979,9 @@ vn_queue_submit(struct vn_queue_submission *submit)
    /* To ensure external components waiting on the correct fence payload,
     * below sync primitives must be installed after the submission:
     * - explicit fencing: sync file export
-    * - implicit fencing: dma-fence attached to the wsi bo
     *
     * We enforce above via an asynchronous vkQueueSubmit(2) via ring followed
     * by an asynchronous renderer submission to wait for the ring submission:
-    * - struct wsi_memory_signal_submit_info
     * - fence is an external fence
     * - has an external signal semaphore
     */
@@ -1109,8 +1050,6 @@ vn_queue_submit(struct vn_queue_submission *submit)
          }
       }
    }
-
-   vn_queue_wsi_present(submit);
 
    vn_queue_submission_cleanup(submit);
 

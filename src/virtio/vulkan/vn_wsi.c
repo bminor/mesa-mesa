@@ -41,18 +41,6 @@
  * can be problematic when the memory is scanned out directly and special
  * requirements (e.g., alignments) must be met.
  *
- * The common WSI support makes other assumptions about the driver to support
- * implicit fencing.  In wsi_create_native_image and wsi_create_prime_image,
- * it assumes wsi_memory_allocate_info can be chained to VkMemoryAllocateInfo.
- * In wsi_common_queue_present, it assumes wsi_memory_signal_submit_info can
- * be chained to VkSubmitInfo.  Finally, in wsi_common_acquire_next_image2, it
- * calls wsi_device::signal_semaphore_for_memory, and
- * wsi_device::signal_fence_for_memory if the driver provides them.
- *
- * Some drivers use wsi_memory_allocate_info to set up implicit fencing.
- * Others use wsi_memory_signal_submit_info to set up implicit IN-fences and
- * use wsi_device::signal_*_for_memory to set up implicit OUT-fences.
- *
  * For venus, implicit fencing is broken (and there is no explicit fencing
  * support yet).  The kernel driver assumes everything is in the same fence
  * context and no synchronization is needed.  It should be fixed for
