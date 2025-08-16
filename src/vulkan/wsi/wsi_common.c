@@ -204,7 +204,7 @@ wsi_device_init(struct wsi_device *wsi,
    WSI_GET_CB(GetPhysicalDeviceImageFormatProperties2);
    WSI_GET_CB(GetSemaphoreFdKHR);
    WSI_GET_CB(ResetFences);
-   WSI_GET_CB(QueueSubmit);
+   WSI_GET_CB(QueueSubmit2);
    WSI_GET_CB(SetDebugUtilsObjectNameEXT);
    WSI_GET_CB(WaitForFences);
    WSI_GET_CB(MapMemory);
@@ -1304,21 +1304,22 @@ static VkResult wsi_signal_present_id_timeline(struct wsi_swapchain *swapchain,
 {
    assert(swapchain->present_id_timeline || present_fence);
 
-   const VkTimelineSemaphoreSubmitInfo timeline_info = {
-      .sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO,
-      .pSignalSemaphoreValues = &present_id,
-      .signalSemaphoreValueCount = 1,
+   const VkSemaphoreSubmitInfo semaphore_info = {
+      .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+      .semaphore = swapchain->present_id_timeline,
+      .value = present_id,
+      .stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
    };
 
-   const VkSubmitInfo submit_info = {
-      .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-      .pNext = &timeline_info,
-      .signalSemaphoreCount = 1,
-      .pSignalSemaphores = &swapchain->present_id_timeline,
+   const VkSubmitInfo2 submit_info = {
+      .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+      .signalSemaphoreInfoCount = 1,
+      .pSignalSemaphoreInfos = &semaphore_info,
    };
 
    uint32_t submit_count = present_id ? 1 : 0;
-   return swapchain->wsi->QueueSubmit(queue, submit_count, &submit_info, present_fence);
+   return swapchain->wsi->QueueSubmit2(queue, submit_count, &submit_info,
+                                       present_fence);
 }
 
 static VkResult
@@ -1367,10 +1368,15 @@ wsi_common_queue_present(const struct wsi_device *wsi,
    uint32_t current_frame = p_atomic_fetch_add(&dev->current_frame, 1);
    VkResult final_result = handle_trace(queue, dev, current_frame);
 
-   STACK_ARRAY(VkPipelineStageFlags, stage_flags,
-               MAX2(1, pPresentInfo->waitSemaphoreCount));
-   for (uint32_t s = 0; s < MAX2(1, pPresentInfo->waitSemaphoreCount); s++)
-      stage_flags[s] = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+   STACK_ARRAY(VkSemaphoreSubmitInfo, semaphore_wait_infos,
+               pPresentInfo->waitSemaphoreCount);
+   for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; i++) {
+      semaphore_wait_infos[i] = (VkSemaphoreSubmitInfo) {
+         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+         .semaphore = pPresentInfo->pWaitSemaphores[i],
+         .stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+      };
+   }
 
    const VkPresentRegionsKHR *regions =
       vk_find_struct_const(pPresentInfo->pNext, PRESENT_REGIONS_KHR);
@@ -1435,85 +1441,104 @@ wsi_common_queue_present(const struct wsi_device *wsi,
       if (result != VK_SUCCESS)
          goto fail_present;
 
-      VkTimelineSemaphoreSubmitInfo timeline_submit_info = {
-         .sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO,
-      };
-
-      VkSubmitInfo submit_info = {
-         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+      VkSubmitInfo2 submit_info = {
+         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
       };
 
       if (i == 0) {
          /* We only need/want to wait on semaphores once.  After that, we're
           * guaranteed ordering since it all happens on the same queue.
           */
-         submit_info.waitSemaphoreCount = pPresentInfo->waitSemaphoreCount;
-         submit_info.pWaitSemaphores = pPresentInfo->pWaitSemaphores;
-         submit_info.pWaitDstStageMask = stage_flags;
+         submit_info.waitSemaphoreInfoCount = pPresentInfo->waitSemaphoreCount;
+         submit_info.pWaitSemaphoreInfos = semaphore_wait_infos;
       }
 
       struct wsi_image *image =
          swapchain->get_wsi_image(swapchain, image_index);
 
       VkQueue submit_queue = queue;
+      VkSemaphoreSubmitInfo blit_semaphore_info;
+      VkCommandBufferSubmitInfo blit_command_buffer_info;
       if (swapchain->blit.type != WSI_SWAPCHAIN_NO_BLIT) {
          if (swapchain->blit.queue == VK_NULL_HANDLE) {
-            submit_info.commandBufferCount = 1;
-            submit_info.pCommandBuffers =
-               &image->blit.cmd_buffers[queue_family_index];
+            blit_command_buffer_info = (VkCommandBufferSubmitInfo) {
+               .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+               .commandBuffer = image->blit.cmd_buffers[queue_family_index],
+            };
+            submit_info.commandBufferInfoCount = 1;
+            submit_info.pCommandBufferInfos = &blit_command_buffer_info;
          } else {
             /* If we are using a blit using the driver's private queue, then
              * do an empty submit signalling a semaphore, and then submit the
              * blit waiting on that.  This ensures proper queue ordering of
-             * vkQueueSubmit() calls.
+             * vkQueueSubmit2() calls.
              */
-            submit_info.signalSemaphoreCount = 1;
-            submit_info.pSignalSemaphores =
-               &swapchain->blit.semaphores[image_index];
+            blit_semaphore_info = (VkSemaphoreSubmitInfo) {
+               .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+               .stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+               .semaphore = swapchain->blit.semaphores[image_index],
+            };
+            submit_info.signalSemaphoreInfoCount = 1;
+            submit_info.pSignalSemaphoreInfos = &blit_semaphore_info;
 
-            result = wsi->QueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
+            result = wsi->QueueSubmit2(queue, 1, &submit_info, VK_NULL_HANDLE);
             if (result != VK_SUCCESS)
                goto fail_present;
+
+            /* Reset the submit */
+            submit_info = (VkSubmitInfo2) {
+               .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+            };
 
             /* Now prepare the blit submit.  It needs to then wait on the
              * semaphore we signaled above.
              */
             submit_queue = swapchain->blit.queue;
-            submit_info.waitSemaphoreCount = 1;
-            submit_info.pWaitSemaphores = submit_info.pSignalSemaphores;
-            submit_info.signalSemaphoreCount = 0;
-            submit_info.pSignalSemaphores = NULL;
-            submit_info.commandBufferCount = 1;
-            submit_info.pCommandBuffers = &image->blit.cmd_buffers[0];
-            submit_info.pWaitDstStageMask = stage_flags;
+            submit_info.waitSemaphoreInfoCount = 1;
+            submit_info.pWaitSemaphoreInfos = &blit_semaphore_info;
+
+            blit_command_buffer_info = (VkCommandBufferSubmitInfo) {
+               .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+               .commandBuffer = image->blit.cmd_buffers[0],
+            };
+            submit_info.commandBufferInfoCount = 1;
+            submit_info.pCommandBufferInfos = &blit_command_buffer_info;
          }
       }
 
       VkFence fence = swapchain->fences[image_index];
 
       bool explicit_sync = swapchain->image_info.explicit_sync;
+      VkSemaphoreSubmitInfo sync_semaphore_info;
       if (explicit_sync) {
          /* We will signal this acquire value ourselves when GPU work is done. */
          image->explicit_sync[WSI_ES_ACQUIRE].timeline++;
          /* The compositor will signal this value when it is done with the image. */
          image->explicit_sync[WSI_ES_RELEASE].timeline++;
 
-         timeline_submit_info.signalSemaphoreValueCount = 1;
-         timeline_submit_info.pSignalSemaphoreValues = &image->explicit_sync[WSI_ES_ACQUIRE].timeline;
-
-         assert(submit_info.signalSemaphoreCount == 0);
-         submit_info.signalSemaphoreCount = 1;
-         submit_info.pSignalSemaphores = &image->explicit_sync[WSI_ES_ACQUIRE].semaphore;
-         __vk_append_struct(&submit_info, &timeline_submit_info);
+         sync_semaphore_info = (VkSemaphoreSubmitInfo) {
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+            .stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+            .semaphore = image->explicit_sync[WSI_ES_ACQUIRE].semaphore,
+            .value = image->explicit_sync[WSI_ES_ACQUIRE].timeline,
+         };
+         assert(submit_info.signalSemaphoreInfoCount == 0);
+         submit_info.signalSemaphoreInfoCount = 1;
+         submit_info.pSignalSemaphoreInfos = &sync_semaphore_info;
 #ifdef HAVE_LIBDRM
       } else if (swapchain->dma_buf_semaphore) {
-         assert(submit_info.signalSemaphoreCount == 0);
-         submit_info.signalSemaphoreCount = 1;
-         submit_info.pSignalSemaphores = &swapchain->dma_buf_semaphore;
+         sync_semaphore_info = (VkSemaphoreSubmitInfo) {
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+            .stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+            .semaphore = swapchain->dma_buf_semaphore,
+         };
+         assert(submit_info.signalSemaphoreInfoCount == 0);
+         submit_info.signalSemaphoreInfoCount = 1;
+         submit_info.pSignalSemaphoreInfos = &sync_semaphore_info;
 #endif
       }
 
-      result = wsi->QueueSubmit(submit_queue, 1, &submit_info, fence);
+      result = wsi->QueueSubmit2(submit_queue, 1, &submit_info, fence);
       if (result != VK_SUCCESS)
          goto fail_present;
 
@@ -1578,7 +1603,7 @@ wsi_common_queue_present(const struct wsi_device *wsi,
          final_result = result;
    }
 
-   STACK_ARRAY_FINISH(stage_flags);
+   STACK_ARRAY_FINISH(semaphore_wait_infos);
 
    return final_result;
 }
