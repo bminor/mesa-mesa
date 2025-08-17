@@ -395,7 +395,7 @@ vn_device_update_shader_cache_id(struct vn_device *dev)
     * The shader cache is destroyed after creating the necessary files
     * and not utilized by venus.
     */
-#if !DETECT_OS_ANDROID && defined(ENABLE_SHADER_CACHE)
+#if !defined(VK_USE_PLATFORM_ANDROID_KHR) && defined(ENABLE_SHADER_CACHE)
    const uint8_t *device_uuid =
       dev->physical_device->base.vk.properties.pipelineCacheUUID;
 

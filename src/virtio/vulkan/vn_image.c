@@ -684,7 +684,7 @@ vn_CreateImage(VkDevice device,
    } else if (ahb_info) {
       result = vn_image_create_deferred(dev, pCreateInfo, alloc, &img);
    } else if (swapchain_info) {
-#if DETECT_OS_ANDROID
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
       result = vn_image_create_deferred(dev, pCreateInfo, alloc, &img);
 #else
       result = wsi_common_create_swapchain_image(
@@ -788,7 +788,7 @@ vn_image_bind_wsi_memory(struct vn_device *dev,
          vn_device_memory_from_handle(info->memory);
 
       if (!mem) {
-#if DETECT_OS_ANDROID
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
          mem = vn_android_get_wsi_memory_from_bind_info(dev, info);
          if (!mem) {
             STACK_ARRAY_FINISH(local_infos);

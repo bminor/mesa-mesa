@@ -17,7 +17,7 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_android.h>
 
-#if DETECT_OS_ANDROID
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
 
 VkResult
 vn_android_image_from_anb(struct vn_device *dev,
@@ -35,7 +35,7 @@ vn_android_device_import_ahb(struct vn_device *dev,
                              struct vn_device_memory *mem,
                              const struct VkMemoryAllocateInfo *alloc_info);
 
-#else
+#else /* VK_USE_PLATFORM_ANDROID_KHR */
 
 static inline VkResult
 vn_android_image_from_anb(UNUSED struct vn_device *dev,
@@ -64,6 +64,6 @@ vn_android_device_import_ahb(
    return VK_ERROR_OUT_OF_HOST_MEMORY;
 }
 
-#endif /* DETECT_OS_ANDROID */
+#endif /* VK_USE_PLATFORM_ANDROID_KHR */
 
 #endif /* VN_ANDROID_H */
