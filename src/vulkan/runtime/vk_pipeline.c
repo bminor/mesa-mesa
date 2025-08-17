@@ -1108,6 +1108,9 @@ vk_pipeline_to_shader_flags(VkPipelineCreateFlags2KHR pipeline_flags,
    if (stage == MESA_SHADER_COMPUTE) {
       if (pipeline_flags & VK_PIPELINE_CREATE_2_DISPATCH_BASE_BIT_KHR)
          shader_flags |= VK_SHADER_CREATE_DISPATCH_BASE_BIT_EXT;
+
+      if (pipeline_flags & VK_PIPELINE_CREATE_2_UNALIGNED_DISPATCH_BIT_MESA)
+         shader_flags |= VK_SHADER_CREATE_UNALIGNED_DISPATCH_BIT_MESA;
    }
 
    return shader_flags;

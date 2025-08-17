@@ -29,6 +29,7 @@
 #include "vk_device.h"
 #include "vk_command_buffer.h"
 #include "vk_log.h"
+#include "vk_pipeline.h"
 #include "vk_meta.h"
 #include "vk_shader.h"
 
@@ -350,8 +351,6 @@ vk_get_bvh_build_pipeline_spv(struct vk_device *device, struct vk_meta_device *m
    };
 
    uint32_t shader_flags = VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
-   if (unaligned_dispatch)
-      shader_flags |= VK_SHADER_CREATE_UNALIGNED_DISPATCH_BIT_MESA;
 
    VkPipelineShaderStageCreateInfo shader_stage = {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -362,8 +361,14 @@ vk_get_bvh_build_pipeline_spv(struct vk_device *device, struct vk_meta_device *m
       .pSpecializationInfo = &spec_info,
    };
 
+   VkPipelineCreateFlags2CreateInfo pipeline_flags_info = {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO,
+      .flags = unaligned_dispatch ? VK_PIPELINE_CREATE_2_UNALIGNED_DISPATCH_BIT_MESA : 0,
+   };
+
    VkComputePipelineCreateInfo pipeline_info = {
       .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+      .pNext = &pipeline_flags_info,
       .stage = shader_stage,
       .flags = 0,
       .layout = layout,

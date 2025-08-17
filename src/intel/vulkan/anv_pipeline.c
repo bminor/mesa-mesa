@@ -2646,7 +2646,7 @@ anv_pipeline_compile_cs(struct anv_compute_pipeline *pipeline,
    int64_t pipeline_start = os_time_get_nano();
 
    const bool lower_unaligned_dispatch =
-      (sinfo->flags & VK_SHADER_CREATE_UNALIGNED_DISPATCH_BIT_MESA) != 0;
+      (pipeline->base.flags & VK_PIPELINE_CREATE_2_UNALIGNED_DISPATCH_BIT_MESA) != 0;
 
    struct anv_device *device = pipeline->base.device;
    const struct brw_compiler *compiler = device->physical->compiler;

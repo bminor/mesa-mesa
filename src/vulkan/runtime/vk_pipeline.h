@@ -45,6 +45,8 @@ extern "C" {
 #define VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_NIR_CREATE_INFO_MESA_cast \
    VkPipelineShaderStageNirCreateInfoMESA
 
+static const VkPipelineCreateFlagBits2 VK_PIPELINE_CREATE_2_UNALIGNED_DISPATCH_BIT_MESA = 0x20000000000ull;
+
 typedef struct VkPipelineShaderStageNirCreateInfoMESA {
    VkStructureType sType;
    const void *pNext;
