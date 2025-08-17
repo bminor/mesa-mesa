@@ -1134,7 +1134,7 @@
         "description": "nir/uub: guard against division by 0",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8ee54400733f1f26e175c0065ad69e6a49402969",
         "notes": null
