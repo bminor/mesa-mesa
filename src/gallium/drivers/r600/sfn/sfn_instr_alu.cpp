@@ -1433,10 +1433,7 @@ emit_alu_op1(const nir_alu_instr& alu,
              Shader& shader,
              AluMods mod = mod_none);
 static bool
-emit_alu_op1_64bit(const nir_alu_instr& alu,
-                   EAluOp opcode,
-                   Shader& shader,
-                   bool switch_chan);
+emit_alu_op1_64bit(const nir_alu_instr& alu, EAluOp opcode, Shader& shader);
 static bool
 emit_alu_mov_64bit(const nir_alu_instr& alu, Shader& shader);
 static bool
@@ -1444,10 +1441,7 @@ emit_alu_neg(const nir_alu_instr& alu, Shader& shader);
 static bool
 emit_alu_op1_64bit_trans(const nir_alu_instr& alu, EAluOp opcode, Shader& shader);
 static bool
-emit_alu_op2_64bit(const nir_alu_instr& alu,
-                   EAluOp opcode,
-                   Shader& shader,
-                   bool switch_order);
+emit_alu_op2_64bit(const nir_alu_instr& alu, EAluOp opcode, Shader& shader);
 static bool
 emit_alu_op2_64bit_one_dst(const nir_alu_instr& alu,
                            EAluOp opcode,
@@ -1567,7 +1561,7 @@ AluInstr::from_nir(nir_alu_instr *alu, Shader& shader)
       case nir_op_fsat:
          return emit_alu_fsat64(*alu, shader);
       case nir_op_ffract:
-         return emit_alu_op1_64bit(*alu, op1_fract_64, shader, true);
+         return emit_alu_op1_64bit(*alu, op1_fract_64, shader);
       case nir_op_feq32:
          return emit_alu_op2_64bit_one_dst(*alu, op2_sete_64, shader, false);
       case nir_op_fge32:
@@ -1580,13 +1574,13 @@ AluInstr::from_nir(nir_alu_instr *alu, Shader& shader)
          return emit_alu_fma_64bit(*alu, op3_fma_64, shader);
 
       case nir_op_fadd:
-         return emit_alu_op2_64bit(*alu, op2_add_64, shader, false);
+         return emit_alu_op2_64bit(*alu, op2_add_64, shader);
       case nir_op_fmul:
-         return emit_alu_op2_64bit(*alu, op2_mul_64, shader, false);
+         return emit_alu_op2_64bit(*alu, op2_mul_64, shader);
       case nir_op_fmax:
-         return emit_alu_op2_64bit(*alu, op2_max_64, shader, false);
+         return emit_alu_op2_64bit(*alu, op2_max_64, shader);
       case nir_op_fmin:
-         return emit_alu_op2_64bit(*alu, op2_min_64, shader, false);
+         return emit_alu_op2_64bit(*alu, op2_min_64, shader);
       case nir_op_f2f64:
          return emit_alu_f2f64(*alu, shader);
       case nir_op_f2f32:
@@ -1921,10 +1915,7 @@ AluInstr::from_nir(nir_alu_instr *alu, Shader& shader)
 }
 
 static bool
-emit_alu_op1_64bit(const nir_alu_instr& alu,
-                   EAluOp opcode,
-                   Shader& shader,
-                   bool switch_chan)
+emit_alu_op1_64bit(const nir_alu_instr& alu, EAluOp opcode, Shader& shader)
 {
    auto& value_factory = shader.value_factory();
 
@@ -1932,22 +1923,16 @@ emit_alu_op1_64bit(const nir_alu_instr& alu,
 
    AluInstr *ir = nullptr;
 
-   int swz[2] = {0, 1};
-   if (switch_chan) {
-      swz[0] = 1;
-      swz[1] = 0;
-   }
-
    for (unsigned i = 0; i < alu.def.num_components; ++i) {
       ir = new AluInstr(opcode,
                         value_factory.dest(alu.def, 2 * i, pin_chan),
-                        value_factory.src64(alu.src[0], i, swz[0]),
+                        value_factory.src64(alu.src[0], i, 1),
                         AluInstr::write);
       group->add_instruction(ir);
 
       ir = new AluInstr(opcode,
                         value_factory.dest(alu.def, 2 * i + 1, pin_chan),
-                        value_factory.src64(alu.src[0], i, swz[1]),
+                        value_factory.src64(alu.src[0], i, 0),
                         AluInstr::write);
       group->add_instruction(ir);
    }
@@ -2094,30 +2079,21 @@ emit_alu_fsat64(const nir_alu_instr& alu, Shader& shader)
    return true;
 }
 
-
 static bool
-emit_alu_op2_64bit(const nir_alu_instr& alu,
-                   EAluOp opcode,
-                   Shader& shader,
-                   bool switch_src)
+emit_alu_op2_64bit(const nir_alu_instr& alu, EAluOp opcode, Shader& shader)
 {
    auto& value_factory = shader.value_factory();
    auto group = new AluGroup();
    AluInstr *ir = nullptr;
-   int order[2] = {0, 1};
-   if (switch_src) {
-      order[0] = 1;
-      order[1] = 0;
-   }
 
    int num_emit0 = opcode == op2_mul_64 ? 3 : 1;
 
    std::array<std::array<PRegister, 4>,2> tmp;
    for (unsigned k = 0; k < alu.def.num_components; ++k) {
-      tmp[k][0] = shader.emit_load_to_register(value_factory.src64(alu.src[order[0]], k, 1), 0);
-      tmp[k][1] = shader.emit_load_to_register(value_factory.src64(alu.src[order[1]], k, 1), 1);
-      tmp[k][2] = shader.emit_load_to_register(value_factory.src64(alu.src[order[0]], k, 0), 2);
-      tmp[k][3] = shader.emit_load_to_register(value_factory.src64(alu.src[order[1]], k, 0), 3);
+      tmp[k][0] = shader.emit_load_to_register(value_factory.src64(alu.src[0], k, 1), 0);
+      tmp[k][1] = shader.emit_load_to_register(value_factory.src64(alu.src[1], k, 1), 1);
+      tmp[k][2] = shader.emit_load_to_register(value_factory.src64(alu.src[0], k, 0), 2);
+      tmp[k][3] = shader.emit_load_to_register(value_factory.src64(alu.src[1], k, 0), 3);
    }
 
    assert(num_emit0 == 1 || alu.def.num_components == 1);
