@@ -47,11 +47,6 @@
 static VkResult
 wsi_dma_buf_export_sync_file(int dma_buf_fd, int *sync_file_fd)
 {
-   /* Don't keep trying an IOCTL that doesn't exist. */
-   static bool no_dma_buf_sync_file = false;
-   if (no_dma_buf_sync_file)
-      return VK_ERROR_FEATURE_NOT_PRESENT;
-
    struct dma_buf_export_sync_file export = {
       .flags = DMA_BUF_SYNC_RW,
       .fd = -1,
@@ -59,7 +54,6 @@ wsi_dma_buf_export_sync_file(int dma_buf_fd, int *sync_file_fd)
    int ret = drmIoctl(dma_buf_fd, DMA_BUF_IOCTL_EXPORT_SYNC_FILE, &export);
    if (ret) {
       if (errno == ENOTTY || errno == EBADF || errno == ENOSYS) {
-         no_dma_buf_sync_file = true;
          return VK_ERROR_FEATURE_NOT_PRESENT;
       } else {
          mesa_loge("MESA: failed to export sync file '%s'", strerror(errno));
@@ -75,11 +69,6 @@ wsi_dma_buf_export_sync_file(int dma_buf_fd, int *sync_file_fd)
 static VkResult
 wsi_dma_buf_import_sync_file(int dma_buf_fd, int sync_file_fd)
 {
-   /* Don't keep trying an IOCTL that doesn't exist. */
-   static bool no_dma_buf_sync_file = false;
-   if (no_dma_buf_sync_file)
-      return VK_ERROR_FEATURE_NOT_PRESENT;
-
    struct dma_buf_import_sync_file import = {
       .flags = DMA_BUF_SYNC_RW,
       .fd = sync_file_fd,
@@ -87,7 +76,6 @@ wsi_dma_buf_import_sync_file(int dma_buf_fd, int sync_file_fd)
    int ret = drmIoctl(dma_buf_fd, DMA_BUF_IOCTL_IMPORT_SYNC_FILE, &import);
    if (ret) {
       if (errno == ENOTTY || errno == EBADF || errno == ENOSYS) {
-         no_dma_buf_sync_file = true;
          return VK_ERROR_FEATURE_NOT_PRESENT;
       } else {
          mesa_loge("MESA: failed to import sync file '%s'", strerror(errno));
@@ -234,6 +222,12 @@ wsi_create_sync_for_dma_buf_wait(const struct wsi_swapchain *chain,
 {
    VK_FROM_HANDLE(vk_device, device, chain->device);
    VkResult result;
+
+   /* First, check if we even have the feature */
+   result = wsi_drm_check_dma_buf_sync_file_import_export(chain->wsi,
+                                                          chain->device);
+   if (result != VK_SUCCESS)
+      return result;
 
    const struct vk_sync_type *sync_type =
       get_sync_file_sync_type(device, req_features);
