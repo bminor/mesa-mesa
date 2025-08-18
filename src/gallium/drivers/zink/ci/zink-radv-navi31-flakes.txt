@@ -24,10 +24,17 @@ dEQP-GLES3.functional.default_vertex_attrib.mat3x2.vertex_attrib_4f
 dEQP-GLES3.functional.fbo.multiview.samples_1
 dEQP-GLES3.functional.fbo.multiview.samples_2
 dEQP-GLES3.functional.fbo.multiview.samples_4
+dEQP-GLES3.functional.occlusion_query.depth_clear_stencil_write
+dEQP-GLES3.functional.texture.format.sized.cube.rg8ui_npot
+dEQP-GLES3.functional.texture.specification.texsubimage3d_pbo.rg32i_3d
 dEQP-GLES3.functional.transform_feedback.array_element.interleaved.lines.mediump_mat2x3
+dEQP-GLES3.functional.vertex_arrays.single_attribute.output_types.int.components3_ivec3_quads1
 dEQP-GLES31.functional.copy_image.mixed.viewclass_64_bits_mixed.rg32ui_signed_r11_eac.cubemap_to_cubemap
 dEQP-GLES31.functional.copy_image.mixed.viewclass_64_bits_mixed.signed_r11_eac_rg32i.cubemap_to_texture2d_array
+dEQP-GLES31.functional.copy_image.non_compressed.viewclass_64_bits.rg32i_rgba16i.cubemap_to_texture2d
 dEQP-GLES31.functional.draw_indirect.compute_interop.large.drawelements_separate_grid_100x100_drawcount_200
+dEQP-GLES31.functional.shaders.arrays_of_arrays.es31.constructor.explicit.int_4x4x4_fragment
+dEQP-GLES31.functional.ssbo.layout.3_level_array.packed.row_major_mat3
 dEQP-GLES31.functional.tessellation.invariance.primitive_set.triangles_equal_spacing_ccw_point_mode
 dEQP-GLES31.functional.tessellation.invariance.primitive_set.triangles_equal_spacing_cw_point_mode
 dEQP-GLES31.functional.tessellation.invariance.primitive_set.triangles_fractional_even_spacing_ccw_point_mode
@@ -75,8 +82,11 @@ spec@!opengl 1.1@ppgtt_memory_alignment
 spec@arb_compute_shader@local-id-explosion
 spec@arb_depth_texture@fbo-depth-gl_depth_component16-blit
 spec@arb_fragment_shader_interlock@arb_fragment_shader_interlock-image-load-store
+spec@arb_point_parameters@arb_point_parameters-point-attenuation
+spec@arb_point_parameters@arb_point_parameters-point-attenuation@Aliased combinations
 spec@arb_sampler_objects@framebufferblit
 spec@arb_shader_atomic_counters@semantics
+spec@arb_shader_atomic_counters@unused-result
 spec@arb_shader_image_load_store@coherency
 spec@arb_shader_image_load_store@coherency@Tessellation evaluation-Fragment shader/'coherent' qualifier coherency test/256x256
 spec@arb_shader_image_load_store@shader-mem-barrier
@@ -108,10 +118,13 @@ spec@arb_timer_query@timestamp-get
 spec@egl_mesa_configless_context@basic
 spec@ext_framebuffer_multisample@clip-and-scissor-blit 6 normal
 spec@ext_framebuffer_multisample@clip-and-scissor-blit 8 downsample
+spec@ext_framebuffer_multisample@upsample 8 depth
+spec@ext_framebuffer_object@getteximage-formats init-by-clear-and-render
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_yuyv
+spec@ext_packed_depth_stencil@fbo-stencil-gl_depth24_stencil8-copypixels
+spec@ext_texture_array@fbo-depth-array depth-layered-clear
 spec@ext_texture_lod_bias@lodbias
 spec@ext_transform_feedback@discard-bitmap
 spec@glsl-1.30@execution@texelfetch fs sampler3d 1x129x9-98x129x9
 spec@glsl-1.50@execution@geometry@point-size-out
 spec@glsl-1.50@execution@redeclare-pervertex-out-subset-gs
-

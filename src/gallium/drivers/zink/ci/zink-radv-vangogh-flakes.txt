@@ -98,6 +98,7 @@ spec@!opengl 1.0@rasterpos
 spec@!opengl 1.0@rasterpos@glsl_vs_gs_linked
 spec@!opengl 1.0@rasterpos@glsl_vs_tes_linked
 spec@!opengl 1.1@depthstencil-default_fb-blit samples=4
+spec@!opengl 1.1@draw-sync
 spec@!opengl 1.1@getteximage-formats
 spec@!opengl 1.1@max-texture-size
 spec@!opengl 1.1@ppgtt_memory_alignment
@@ -132,8 +133,10 @@ spec@arb_shader_image_load_store@shader-mem-barrier@Tessellation evaluation shad
 spec@arb_shader_image_load_store@shader-mem-barrier@Vertex shader/'coherent' qualifier memory barrier test/modulus=64
 spec@arb_shader_image_load_store@shader-mem-barrier@Vertex shader/'volatile' qualifier memory barrier test/modulus=64
 spec@arb_shader_texture_lod@execution@glsl-fs-shadow2dgradarb-cumulative
+spec@arb_tessellation_shader@arb_tessellation_shader-tes-gs-max-output -small -scan 1 50
 spec@arb_tessellation_shader@execution@built-in-functions@tcs-sign-vec3
 spec@arb_texture_barrier@arb_texture_barrier-blending-in-shader 32 42 1 8 3
+spec@arb_texture_buffer_object@formats (fs- 3.1 core)
 spec@arb_texture_compression_bptc@compressedteximage gl_compressed_srgb_alpha_bptc_unorm
 spec@arb_texture_gather@texturegather@vs-rgba-blue-float-2d
 spec@arb_texture_gather@texturegather@vs-rgba-red-int-2darray
@@ -162,6 +165,7 @@ spec@glsl-1.50@execution@built-in-functions@gs-greaterthan-uvec3-uvec3
 spec@glsl-1.50@execution@geometry@point-size-out
 spec@glsl-1.50@execution@redeclare-pervertex-out-subset-gs
 spec@glsl-4.00@execution@built-in-functions@gs-op-sub-dmat3-double
+spec@glsl-es-3.00@execution@built-in-functions@vs-packhalf2x16
 
 # Marked as flake because it passes with ESO but crashes with pipelines.
 spec@arb_tessellation_shader@arb_tessellation_shader-tes-gs-max-output -small -scan 1 50
@@ -202,16 +206,17 @@ dEQP-GLES31.functional.synchronization.inter_call.without_memory_barrier.ssbo_at
 dEQP-GLES31.functional.synchronization.inter_call.with_memory_barrier.image_overwrite
 
 # glcts: ../src/vulkan/runtime/vk_pipeline_cache.c:666: vk_pipeline_cache_destroy: Assertion `cache->object_cache->entries == 0' failed.
-dEQP-GLES31.functional.copy_image.mixed.viewclass_64_bits_mixed.rg32f_r11_eac.texture3d_to_cubemap
 KHR-GL46.gpu_shader5_gl.function_overloading
+KHR-GL46.gpu_shader_fp64.builtin.ldexp_double
 KHR-GL46.packed_pixels.rectangle.r8_format_rgb
+KHR-GL46.packed_pixels.varied_rectangle.rgb8_format_rgb
+KHR-GL46.sparse_texture_tests.SparseTextureAllocation_texture_2d_array_r16f
+KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_2d_r16i
+KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_2d_rgba16f
+KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_cube_map_r8_snorm
 KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_rectangle_rgba32f
 KHR-GL46.texture_lod_bias.texture_lod_bias_all
 KHR-GL46.transform_feedback_overflow_query_ARB.multiple-streams-one-buffer-per-stream
-KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_2d_r16i
-KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_2d_rgba16f
-KHR-GL46.sparse_texture_tests.SparseTextureAllocation_texture_2d_array_r16f
-spec@arb_gpu_shader5@texturegather@vs-rgba-3-unorm-2d
-KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_cube_map_r8_snorm
-KHR-GL46.packed_pixels.varied_rectangle.rgb8_format_rgb
+dEQP-GLES31.functional.copy_image.mixed.viewclass_64_bits_mixed.rg32f_r11_eac.texture3d_to_cubemap
 shaders@glsl-fs-loop
+spec@arb_gpu_shader5@texturegather@vs-rgba-3-unorm-2d
