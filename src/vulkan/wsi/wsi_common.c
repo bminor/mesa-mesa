@@ -451,13 +451,13 @@ wsi_swapchain_init(const struct wsi_device *wsi,
    chain->alloc = *pAllocator;
    chain->blit.type = get_blit_type(wsi, image_params, _device);
 
-   chain->blit.queue = VK_NULL_HANDLE;
+   chain->blit.queue = NULL;
    if (chain->blit.type != WSI_SWAPCHAIN_NO_BLIT) {
       if (wsi->get_blit_queue) {
          chain->blit.queue = wsi->get_blit_queue(_device);
       }
 
-      int cmd_pools_count = chain->blit.queue != VK_NULL_HANDLE ? 1 : wsi->queue_family_count;
+      int cmd_pools_count = chain->blit.queue != NULL ? 1 : wsi->queue_family_count;
 
       chain->cmd_pools =
          vk_zalloc(pAllocator, sizeof(VkCommandPool) * cmd_pools_count, 8,
@@ -471,9 +471,8 @@ wsi_swapchain_init(const struct wsi_device *wsi,
       for (uint32_t i = 0; i < cmd_pools_count; i++) {
          int queue_family_index = i;
 
-         if (chain->blit.queue != VK_NULL_HANDLE) {
-            VK_FROM_HANDLE(vk_queue, queue, chain->blit.queue);
-            queue_family_index = queue->queue_family_index;
+         if (chain->blit.queue != NULL) {
+            queue_family_index = chain->blit.queue->queue_family_index;
          } else {
             /* Queues returned by get_blit_queue() might not be listed in
             * GetPhysicalDeviceQueueFamilyProperties, so this check is skipped for those queues.
@@ -589,7 +588,7 @@ wsi_swapchain_finish(struct wsi_swapchain *chain)
                                 &chain->alloc);
 
    if (chain->blit.type != WSI_SWAPCHAIN_NO_BLIT) {
-      int cmd_pools_count = chain->blit.queue != VK_NULL_HANDLE ?
+      int cmd_pools_count = chain->blit.queue != NULL ?
          1 : chain->wsi->queue_family_count;
       for (uint32_t i = 0; i < cmd_pools_count; i++) {
          if (!chain->cmd_pools[i])
@@ -811,7 +810,7 @@ wsi_destroy_image(const struct wsi_swapchain *chain,
 
    if (image->blit.cmd_buffers) {
       int cmd_buffer_count =
-         chain->blit.queue != VK_NULL_HANDLE ? 1 : wsi->queue_family_count;
+         chain->blit.queue != NULL ? 1 : wsi->queue_family_count;
 
       for (uint32_t i = 0; i < cmd_buffer_count; i++) {
          if (!chain->cmd_pools[i])
@@ -1065,7 +1064,7 @@ wsi_CreateSwapchainKHR(VkDevice _device,
       }
    }
 
-   if (swapchain->blit.queue != VK_NULL_HANDLE) {
+   if (swapchain->blit.queue != NULL) {
       swapchain->blit.semaphores = vk_zalloc(alloc,
                                          sizeof (*swapchain->blit.semaphores) * swapchain->image_count,
                                          sizeof (*swapchain->blit.semaphores),
@@ -1417,7 +1416,7 @@ wsi_common_queue_present(const struct wsi_device *wsi,
             goto fail_present;
 
          if (swapchain->blit.type != WSI_SWAPCHAIN_NO_BLIT &&
-             swapchain->blit.queue != VK_NULL_HANDLE) {
+             swapchain->blit.queue != NULL) {
             const VkSemaphoreCreateInfo sem_info = {
                .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
                .pNext = NULL,
@@ -1462,7 +1461,7 @@ wsi_common_queue_present(const struct wsi_device *wsi,
       VkSemaphoreSubmitInfo blit_semaphore_info;
       VkCommandBufferSubmitInfo blit_command_buffer_info;
       if (swapchain->blit.type != WSI_SWAPCHAIN_NO_BLIT) {
-         if (swapchain->blit.queue == VK_NULL_HANDLE) {
+         if (swapchain->blit.queue == NULL) {
             blit_command_buffer_info = (VkCommandBufferSubmitInfo) {
                .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
                .commandBuffer =
@@ -1497,7 +1496,7 @@ wsi_common_queue_present(const struct wsi_device *wsi,
             /* Now prepare the blit submit.  It needs to then wait on the
              * semaphore we signaled above.
              */
-            submit_queue = vk_queue_from_handle(swapchain->blit.queue);
+            submit_queue = swapchain->blit.queue;
             submit_info.waitSemaphoreInfoCount = 1;
             submit_info.pWaitSemaphoreInfos = &blit_semaphore_info;
 
@@ -2099,7 +2098,7 @@ wsi_finish_create_blit_context(const struct wsi_swapchain *chain,
    VkResult result;
 
    int cmd_buffer_count =
-      chain->blit.queue != VK_NULL_HANDLE ? 1 : wsi->queue_family_count;
+      chain->blit.queue != NULL ? 1 : wsi->queue_family_count;
    image->blit.cmd_buffers =
       vk_zalloc(&chain->alloc,
                 sizeof(VkCommandBuffer) * cmd_buffer_count, 8,
@@ -2135,10 +2134,9 @@ wsi_finish_create_blit_context(const struct wsi_swapchain *chain,
 
       switch (chain->blit.type) {
       case WSI_SWAPCHAIN_BUFFER_BLIT: {
-         VK_FROM_HANDLE(vk_queue, blit_queue, chain->blit.queue);
          wsi_cmd_blit_image_to_buffer(
             cmd_buffer, wsi, info, image,
-            blit_queue ? blit_queue->queue_family_index : i);
+            chain->blit.queue ? chain->blit.queue->queue_family_index : i);
          break;
       }
       case WSI_SWAPCHAIN_IMAGE_BLIT:

@@ -233,7 +233,7 @@ struct wsi_swapchain {
        * The created queue will be stored here and will be used to execute the
        * buffer blit instead of using the present queue.
        */
-      VkQueue queue;
+      struct vk_queue *queue;
    } blit;
 
    bool capture_key_pressed;

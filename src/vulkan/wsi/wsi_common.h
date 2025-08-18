@@ -223,7 +223,7 @@ struct wsi_device {
     * A driver can implement this callback to return a special queue to execute
     * buffer blits.
     */
-   VkQueue (*get_blit_queue)(VkDevice device);
+   struct vk_queue *(*get_blit_queue)(VkDevice device);
 
 #define WSI_CB(cb) PFN_vk##cb cb
    WSI_CB(AllocateMemory);
