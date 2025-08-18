@@ -248,6 +248,8 @@ struct draw_context
       bool bypass_clip_points_lines;
    } driver;
 
+   unsigned fpstate;      /**< saved FP state */
+
    bool quads_always_flatshade_last;
 
    bool flushing;         /**< debugging/sanity */

@@ -370,8 +370,15 @@ int draw_tess_eval_shader_run(struct draw_tess_eval_shader *shader,
 
       llvm_fetch_tess_factors(shader, i, num_input_vertices_per_patch, &factors);
 
-      /* tessellate with the factors for this primitive */
+      /**
+       * Tessellate with the factors for this primitive.
+       * Make sure subnormals are not flushed to zero during tessellation.
+       * This is the behavior required by D3D11. OpenGL doesn't care.
+       */
+      unsigned fpstate = util_fpstate_get();
+      util_fpstate_set(shader->draw->fpstate);  /* do not flush subnormals */
       p_tessellate(ptess, &factors, &data);
+      util_fpstate_set(fpstate);                /* flush subnormals again */
 
       if (data.num_domain_points == 0)
          continue;
