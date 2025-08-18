@@ -965,15 +965,12 @@ trace_screen_fence_get_fd(struct pipe_screen *_screen,
 {
    struct trace_screen *tr_scr = trace_screen(_screen);
    struct pipe_screen *screen = tr_scr->screen;
-   int result;
+   int result = screen->fence_get_fd(screen, fence);
 
    trace_dump_call_begin("pipe_screen", "fence_get_fd");
 
    trace_dump_arg(ptr, screen);
    trace_dump_arg(ptr, fence);
-
-   result = screen->fence_get_fd(screen, fence);
-
    trace_dump_ret(int, result);
 
    trace_dump_call_end();
