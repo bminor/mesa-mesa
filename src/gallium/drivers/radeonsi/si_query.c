@@ -1696,7 +1696,7 @@ static void si_render_condition(struct pipe_context *ctx, struct pipe_query *que
 
          /* Settings this in the render cond atom is too late,
           * so set it here. */
-         if (sctx->gfx_level <= GFX8) {
+         if (sctx->gfx_level <= GFX8 || sctx->screen->info.cp_sdma_ge_use_system_memory_scope) {
             sctx->barrier_flags |= SI_BARRIER_WB_L2 | SI_BARRIER_PFP_SYNC_ME;
             si_mark_atom_dirty(sctx, &sctx->atoms.s.barrier);
          }
