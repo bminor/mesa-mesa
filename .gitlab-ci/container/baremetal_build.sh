@@ -12,7 +12,7 @@ S3_PATH="https://${S3_HOST}/${S3_KERNEL_BUCKET}"
 if curl -L --retry 3 -f --retry-delay 10 -s --head "${S3_PATH}/${FDO_UPSTREAM_REPO}/${LAVA_DISTRIBUTION_TAG}/lava-rootfs.tar.zst"; then
   ARTIFACTS_URL="${S3_PATH}/${FDO_UPSTREAM_REPO}/${LAVA_DISTRIBUTION_TAG}"
 else
-  ARTIFACTS_URL="${S3_PATH}/${CI_PROJECT_PATH}/${LAVA_DISTRIBUTION_TAG}"
+  ARTIFACTS_URL="${S3_PATH}/${S3_PROJECT_PATH}/${LAVA_DISTRIBUTION_TAG}"
 fi
 
 curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \

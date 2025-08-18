@@ -300,7 +300,7 @@ function find_s3_project_artifact() {
     x_off
     local artifact_path="$1"
 
-    for project in "${FDO_UPSTREAM_REPO}" "${CI_PROJECT_PATH}"; do
+    for project in "${FDO_UPSTREAM_REPO}" "${S3_PROJECT_PATH}"; do
         local full_path="${FDO_HTTP_CACHE_URI:-}${S3_BASE_PATH}/${project}/${artifact_path}"
         if curl-with-retry -s --head "https://${full_path}" >/dev/null; then
             echo "https://${full_path}"

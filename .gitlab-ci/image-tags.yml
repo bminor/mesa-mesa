@@ -19,10 +19,10 @@ include:
   - .gitlab-ci/conditional-build-image-tags.yml
 
 variables:
-  DEBIAN_BUILD_BASE_TAG: "20250803-noxvfb"
+  DEBIAN_BUILD_BASE_TAG: "20250818-s3url"
   DEBIAN_BUILD_TAG: "20250722-libwayland"
 
-  DEBIAN_TEST_BASE_TAG: "20250812-crosvm"
+  DEBIAN_TEST_BASE_TAG: "20250818-s3url"
   DEBIAN_TEST_ANDROID_TAG: "20250805-vkcts"
   DEBIAN_TEST_GL_TAG: "20250805-vkcts"
   DEBIAN_TEST_VIDEO_TAG: "20250813-vector"

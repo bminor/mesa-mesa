@@ -78,4 +78,4 @@ buildah rm "$container"
 curl --fail --retry-connrefused --retry 4 --retry-delay 30 \
   --header "Authorization: Bearer $(cat "${S3_JWT_FILE}")" \
   -X PUT --form file=@"$ROOTFSTAR" \
-  "https://${S3_HOST}/${S3_KERNEL_BUCKET}/${CI_PROJECT_PATH}/${CI_JOB_NAME}:${FDO_DISTRIBUTION_TAG}"
+  "https://${S3_HOST}/${S3_KERNEL_BUCKET}/${S3_PROJECT_PATH}/${CI_JOB_NAME}:${FDO_DISTRIBUTION_TAG}"

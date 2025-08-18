@@ -57,7 +57,7 @@ else
   echo "Uploaded vkd3d-proton not found, reuploading..."
   tar --zstd -cf "$VKD3D_PROTON_S3_ARTIFACT" -C / "${VKD3D_PROTON_DST_DIR#/}" "${VKD3D_PROTON_WINE_DIR#/}"
   ci-fairy s3cp --token-file "${S3_JWT_FILE}" "$VKD3D_PROTON_S3_ARTIFACT" \
-    "https://${S3_BASE_PATH}/${CI_PROJECT_PATH}/${ARTIFACT_PATH}"
+    "https://${S3_BASE_PATH}/${S3_PROJECT_PATH}/${ARTIFACT_PATH}"
   rm "$VKD3D_PROTON_S3_ARTIFACT"
 fi
 
