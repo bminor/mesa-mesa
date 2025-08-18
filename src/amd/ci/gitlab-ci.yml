@@ -315,9 +315,6 @@ radv-navi31-vkcts:
     RADV_PERFTEST: transfer_queue,video_decode,video_encode,hic
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 20
 
-    # Disable the hang detection until the regression gets addressed
-    CI_TRON_PATTERN__JOB_WARN__REGEX: ''
-
 
 radv-gfx1201-vkcts:
   timeout: 30m
