@@ -1398,6 +1398,36 @@ wsi_common_queue_present(const struct wsi_device *wsi,
    for (uint32_t i = 0; i < pPresentInfo->swapchainCount; i++)
       results[i] = VK_SUCCESS;
 
+   /* First, do the throttle waits, creating the throttle fences if needed */
+   for (uint32_t i = 0; i < pPresentInfo->swapchainCount; i++) {
+      VK_FROM_HANDLE(wsi_swapchain, swapchain, pPresentInfo->pSwapchains[i]);
+      uint32_t image_index = pPresentInfo->pImageIndices[i];
+
+      if (swapchain->fences[image_index] == VK_NULL_HANDLE) {
+         const VkFenceCreateInfo fence_info = {
+            .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+            .pNext = NULL,
+         };
+         results[i] = wsi->CreateFence(vk_device_to_handle(dev), &fence_info,
+                                       &swapchain->alloc,
+                                       &swapchain->fences[image_index]);
+         if (results[i] != VK_SUCCESS)
+            continue;
+      } else {
+         MESA_TRACE_SCOPE("throttle");
+         results[i] = wsi->WaitForFences(vk_device_to_handle(dev),
+                                         1, &swapchain->fences[image_index],
+                                         true, ~0ull);
+         if (results[i] != VK_SUCCESS)
+            continue;
+
+         results[i] = wsi->ResetFences(vk_device_to_handle(dev),
+                                       1, &swapchain->fences[image_index]);
+         if (results[i] != VK_SUCCESS)
+            continue;
+      }
+   }
+
    STACK_ARRAY(VkSemaphoreSubmitInfo, semaphore_wait_infos,
                pPresentInfo->waitSemaphoreCount);
    for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; i++) {
@@ -1423,6 +1453,9 @@ wsi_common_queue_present(const struct wsi_device *wsi,
       VK_FROM_HANDLE(wsi_swapchain, swapchain, pPresentInfo->pSwapchains[i]);
       uint32_t image_index = pPresentInfo->pImageIndices[i];
 
+      if (results[i] != VK_SUCCESS)
+         continue;
+
       /* Update the present mode for this present and any subsequent present.
        * Only update the present mode when MESA_VK_WSI_PRESENT_MODE is not used.
        * We should also turn any VkSwapchainPresentModesCreateInfoEXT into a nop,
@@ -1432,44 +1465,20 @@ wsi_common_queue_present(const struct wsi_device *wsi,
          swapchain->set_present_mode(swapchain, present_mode_info->pPresentModes[i]);
       }
 
-      if (swapchain->fences[image_index] == VK_NULL_HANDLE) {
-         const VkFenceCreateInfo fence_info = {
-            .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+      if (swapchain->blit.type != WSI_SWAPCHAIN_NO_BLIT &&
+          swapchain->blit.queue != NULL &&
+          swapchain->blit.semaphores[image_index] == VK_NULL_HANDLE) {
+         const VkSemaphoreCreateInfo sem_info = {
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
             .pNext = NULL,
-            .flags = VK_FENCE_CREATE_SIGNALED_BIT,
+            .flags = 0,
          };
-         results[i] = wsi->CreateFence(vk_device_to_handle(dev), &fence_info,
-                                       &swapchain->alloc,
-                                       &swapchain->fences[image_index]);
-         if (results[i] != VK_SUCCESS)
-            continue;
-
-         if (swapchain->blit.type != WSI_SWAPCHAIN_NO_BLIT &&
-             swapchain->blit.queue != NULL) {
-            const VkSemaphoreCreateInfo sem_info = {
-               .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-               .pNext = NULL,
-               .flags = 0,
-            };
-            results[i] = wsi->CreateSemaphore(vk_device_to_handle(dev), &sem_info,
-                                              &swapchain->alloc,
-                                              &swapchain->blit.semaphores[image_index]);
-            if (results[i] != VK_SUCCESS)
-               continue;
-         }
-      } else {
-         MESA_TRACE_SCOPE("throttle");
-         results[i] = wsi->WaitForFences(vk_device_to_handle(dev),
-                                         1, &swapchain->fences[image_index],
-                                         true, ~0ull);
+         results[i] = wsi->CreateSemaphore(vk_device_to_handle(dev), &sem_info,
+                                           &swapchain->alloc,
+                                           &swapchain->blit.semaphores[image_index]);
          if (results[i] != VK_SUCCESS)
             continue;
       }
-
-      results[i] = wsi->ResetFences(vk_device_to_handle(dev),
-                                    1, &swapchain->fences[image_index]);
-      if (results[i] != VK_SUCCESS)
-         continue;
 
       VkSubmitInfo2 submit_info = {
          .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
