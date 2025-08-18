@@ -1359,6 +1359,32 @@ handle_trace(struct vk_queue *queue, struct vk_device *device,
    return result;
 }
 
+static VkResult
+wsi_queue_submit2(const struct wsi_device *wsi,
+                  struct vk_queue *queue,
+                  const VkSubmitInfo2 *info,
+                  uint32_t fence_count,
+                  const VkFence *fences)
+{
+   VkResult result = wsi->QueueSubmit2(vk_queue_to_handle(queue), 1, info,
+                                       fence_count > 0 ? fences[0]
+                                                       : VK_NULL_HANDLE);
+   if (result != VK_SUCCESS)
+      return result;
+
+   for (uint32_t i = 1; i < fence_count; i++) {
+      const VkSubmitInfo2 submit_info = {
+         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+      };
+      result = wsi->QueueSubmit2(vk_queue_to_handle(queue),
+                                 1, &submit_info, fences[i]);
+      if (result != VK_SUCCESS)
+         return result;
+   }
+
+   return VK_SUCCESS;
+}
+
 VkResult
 wsi_common_queue_present(const struct wsi_device *wsi,
                          struct vk_queue *queue,
@@ -1483,8 +1509,7 @@ wsi_common_queue_present(const struct wsi_device *wsi,
             submit_info.signalSemaphoreInfoCount = 1;
             submit_info.pSignalSemaphoreInfos = &blit_semaphore_info;
 
-            result = wsi->QueueSubmit2(vk_queue_to_handle(queue),
-                                       1, &submit_info, VK_NULL_HANDLE);
+            result = wsi_queue_submit2(wsi, queue, &submit_info, 0, NULL);
             if (result != VK_SUCCESS)
                goto fail_present;
 
@@ -1541,8 +1566,8 @@ wsi_common_queue_present(const struct wsi_device *wsi,
 #endif
       }
 
-      result = wsi->QueueSubmit2(vk_queue_to_handle(submit_queue),
-                                 1, &submit_info, fence);
+      result = wsi_queue_submit2(wsi, submit_queue,
+                                 &submit_info, 1, &fence);
       if (result != VK_SUCCESS)
          goto fail_present;
 
