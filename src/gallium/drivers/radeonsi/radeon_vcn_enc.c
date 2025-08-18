@@ -292,7 +292,9 @@ static void radeon_vcn_enc_h264_get_spec_misc_param(struct radeon_encoder *enc,
    enc->enc_pic.spec_misc.redundant_pic_cnt_present_flag =
       pic->pic_ctrl.redundant_pic_cnt_present_flag;
    enc->enc_pic.spec_misc.b_picture_enabled = !!pic->seq.max_num_reorder_frames;
+   /* FW issue when using constrained intra pred with rate control. */
    enc->enc_pic.spec_misc.constrained_intra_pred_flag =
+      !enc->enc_pic.rc_session_init.rate_control_method &&
       pic->pic_ctrl.constrained_intra_pred_flag;
    enc->enc_pic.spec_misc.half_pel_enabled = 1;
    enc->enc_pic.spec_misc.quarter_pel_enabled = 1;
@@ -628,7 +630,9 @@ static void radeon_vcn_enc_hevc_get_spec_misc_param(struct radeon_encoder *enc,
    enc->enc_pic.hevc_spec_misc.amp_disabled = !pic->seq.amp_enabled_flag;
    enc->enc_pic.hevc_spec_misc.strong_intra_smoothing_enabled =
       pic->seq.strong_intra_smoothing_enabled_flag;
+   /* FW issue when using constrained intra pred with rate control. */
    enc->enc_pic.hevc_spec_misc.constrained_intra_pred_flag =
+      !enc->enc_pic.rc_session_init.rate_control_method &&
       pic->pic.constrained_intra_pred_flag;
    enc->enc_pic.hevc_spec_misc.cabac_init_flag = pic->slice.cabac_init_flag;
    enc->enc_pic.hevc_spec_misc.half_pel_enabled = 1;
