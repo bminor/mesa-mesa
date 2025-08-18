@@ -119,7 +119,7 @@ if with_tests
         'tests/test-earlyzs.cpp',
         'tests/test-layout.cpp',
       ),
-      cpp_args : [cpp_msvc_compat_args, no_override_init_args],
+      cpp_args : cpp_msvc_compat_args,
       gnu_symbol_visibility : 'hidden',
       include_directories : [inc_include, inc_src, inc_panfrost],
       dependencies: [idep_gtest, libpanfrost_dep],
