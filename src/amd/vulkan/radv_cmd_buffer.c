@@ -6439,12 +6439,16 @@ radv_src_access_flush(struct radv_cmd_buffer *cmd_buffer, VkPipelineStageFlags2 
 
    if (src_flags & VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT) {
       flush_bits |= RADV_CMD_FLAG_FLUSH_AND_INV_CB;
+      if (!image_is_coherent)
+         flush_bits |= RADV_CMD_FLAG_INV_L2;
       if (has_CB_meta)
          flush_bits |= RADV_CMD_FLAG_FLUSH_AND_INV_CB_META;
    }
 
    if (src_flags & VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT) {
       flush_bits |= RADV_CMD_FLAG_FLUSH_AND_INV_DB;
+      if (!image_is_coherent)
+         flush_bits |= RADV_CMD_FLAG_INV_L2;
       if (has_DB_meta)
          flush_bits |= RADV_CMD_FLAG_FLUSH_AND_INV_DB_META;
    }
