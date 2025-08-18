@@ -6,7 +6,12 @@
 #include "panvk_utrace_perfetto.h"
 
 #include <functional>
+
+#ifndef ANDROID_LIBPERFETTO
 #include <perfetto.h>
+#else
+#include <perfetto/tracing.h>
+#endif
 
 #include "c11/threads.h"
 #include "util/log.h"
