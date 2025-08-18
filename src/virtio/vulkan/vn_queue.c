@@ -1135,7 +1135,9 @@ vn_queue_submit_2_to_1(struct vn_device *dev,
    bool has_wait_timeline_sem = false;
    for (uint32_t i = 0; i < submit->waitSemaphoreInfoCount; i++) {
       _wait_sem_handles[i] = submit->pWaitSemaphoreInfos[i].semaphore;
-      _wait_stages[i] = submit->pWaitSemaphoreInfos[i].stageMask;
+      _wait_stages[i] = submit->pWaitSemaphoreInfos[i].stageMask
+                           ? submit->pWaitSemaphoreInfos[i].stageMask
+                           : VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 
       VK_FROM_HANDLE(vn_semaphore, sem, _wait_sem_handles[i]);
       has_wait_timeline_sem |= sem->type == VK_SEMAPHORE_TYPE_TIMELINE;
