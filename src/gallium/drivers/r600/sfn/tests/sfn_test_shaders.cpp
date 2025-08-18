@@ -1496,84 +1496,26 @@ ALU MOV S0.x@free : I[0] {WL}
 ALU MOV S1.x@free : I[1] {WL}
 ALU MOV S2.x@free : L[0x2] {WL}
 ALU MOV S3.x@free : L[0x3] {WL}
-ALU MOV S4.x : KC0[4].x {W}
-ALU MOV S4.y : KC0[4].y {W}
-ALU MOV S4.z : KC0[4].z {W}
-ALU MOV S4.w : KC0[4].w {WL}
-ALU MOV S5.x : KC0[0].x {W}
-ALU MOV S5.y : KC0[0].y {W}
-ALU MOV S5.z : KC0[0].z {W}
-ALU MOV S5.w : KC0[0].w {WL}
-ALU SETNE S6.x@group : S4.x S5.x {W}
-ALU SETNE S6.y@group : S4.y S5.y {W}
-ALU SETNE S6.z@group : S4.z S5.z {W}
-ALU SETNE S6.w@group : S4.w S5.w {WL}
-ALU MAX4 S7.x@free : S6.x@group + S6.y@group + S6.z@group + S6.w@group {WL}
-ALU SETE_DX10 S8.x@free : S7.x@free I[1.0] {WL}
-ALU MOV S9.x : KC0[5].x {W}
-ALU MOV S9.y : KC0[5].y {W}
-ALU MOV S9.z : KC0[5].z {W}
-ALU MOV S9.w : KC0[5].w {WL}
-ALU MOV S10.x : KC0[1].x {W}
-ALU MOV S10.y : KC0[1].y {W}
-ALU MOV S10.z : KC0[1].z {W}
-ALU MOV S10.w : KC0[1].w {WL}
-ALU SETNE S11.x@group : S9.x S10.x {W}
-ALU SETNE S11.y@group : S9.y S10.y {W}
-ALU SETNE S11.z@group : S9.z S10.z {W}
-ALU SETNE S11.w@group : S9.w S10.w {WL}
-ALU MAX4 S12.y@free : S11.x@group + S11.y@group + S11.z@group + S11.w@group {WL}
-ALU SETE_DX10 S13.x@free : S12.y@free I[1.0] {WL}
-ALU MOV S14.x : KC0[6].x {W}
-ALU MOV S14.y : KC0[6].y {W}
-ALU MOV S14.z : KC0[6].z {W}
-ALU MOV S14.w : KC0[6].w {WL}
-ALU MOV S15.x : KC0[2].x {W}
-ALU MOV S15.y : KC0[2].y {W}
-ALU MOV S15.z : KC0[2].z {W}
-ALU MOV S15.w : KC0[2].w {WL}
-ALU SETNE S16.x@group : S14.x S15.x {W}
-ALU SETNE S16.y@group : S14.y S15.y {W}
-ALU SETNE S16.z@group : S14.z S15.z {W}
-ALU SETNE S16.w@group : S14.w S15.w {WL}
-ALU MAX4 S17.z@free : S16.x@group + S16.y@group + S16.z@group + S16.w@group {WL}
-ALU SETE_DX10 S18.x@free : S17.z@free I[1.0] {WL}
-ALU MOV S19.x : KC0[7].x {W}
-ALU MOV S19.y : KC0[7].y {W}
-ALU MOV S19.z : KC0[7].z {W}
-ALU MOV S19.w : KC0[7].w {WL}
-ALU MOV S20.x : KC0[3].x {W}
-ALU MOV S20.y : KC0[3].y {W}
-ALU MOV S20.z : KC0[3].z {W}
-ALU MOV S20.w : KC0[3].w {WL}
-ALU SETNE S21.x@group : S19.x S20.x {W}
-ALU SETNE S21.y@group : S19.y S20.y {W}
-ALU SETNE S21.z@group : S19.z S20.z {W}
-ALU SETNE S21.w@group : S19.w S20.w {WL}
-ALU MAX4 S22.w@free : S21.x@group + S21.y@group + S21.z@group + S21.w@group {WL}
-ALU SETE_DX10 S23.x@free : S22.w@free I[1.0] {WL}
-ALU MOV S24.x : S8.x@free {W}
-ALU MOV S24.y : S13.x@free {W}
-ALU MOV S24.z : S18.x@free {W}
-ALU MOV S24.w : S23.x@free {WL}
-ALU MOV S25.x : I[0] {W}
-ALU MOV S25.y : I[0] {W}
-ALU MOV S25.z : I[0] {W}
-ALU MOV S25.w : I[0] {WL}
-ALU SETNE_INT S27.x@free : S24.x S25.x {W}
-ALU SETNE_INT S28.y@free : S24.y S25.y {W}
-ALU SETNE_INT S29.z@free : S24.z S25.z {W}
-ALU SETNE_INT S30.w@free : S24.w S25.w {WL}
-ALU OR_INT S31.x@free : S27.x@free S28.y@free {W}
-ALU OR_INT S32.y@free : S29.z@free S30.w@free {WL}
-ALU OR_INT S26.x@free : S31.x@free S32.y@free {WL}
-ALU NOT_INT S33.x@free : S26.x@free {WL}
-ALU AND_INT S34.x@free : S33.x@free I[1.0] {WL}
-ALU MOV S35.x@group : S34.x@free {W}
-ALU MOV S35.y@group : S0.x@free {W}
-ALU MOV S35.z@group : S0.x@free {W}
-ALU MOV S35.w@group : S0.x@free {WL}
-EXPORT_DONE PIXEL 0 S35.xyzw
+ALU MOV S4.x@free : KC0[4].x {W}
+ALU MOV S5.y@free : KC0[4].y {W}
+ALU MOV S6.z@free : KC0[4].z {W}
+ALU MOV S7.w@free : KC0[4].w {WL}
+ALU MOV S8.x@free : KC0[0].x {W}
+ALU MOV S9.y@free : KC0[0].y {W}
+ALU MOV S10.z@free : KC0[0].z {W}
+ALU MOV S11.w@free : KC0[0].w {WL}
+ALU SETNE S12.x@free : S4.x S8.x {W}
+ALU SETNE S13.y@free : S5.y S9.y {W}
+ALU SETNE S14.z@free : S6.z S10.z {W}
+ALU SETNE S15.w@free : S7.w S11.w {WL}
+ALU MAX4 S16.x@free : S12.x@free + S13.y@free + S14.z@free + S15.w@free {WL}
+ALU SETE_DX10 S17.x@free : S16.x@free I[1.0] {WL}
+ALU NOT_INT S18.x@free : S17.x@free {WL}
+ALU MOV S19.x@group : S18.x@free {W}
+ALU MOV S19.y@group : S0.x@free {W}
+ALU MOV S19.z@group : S0.x@free {W}
+ALU MOV S19.w@group : S0.x@free {WL}
+EXPORT_DONE PIXEL 0 S19.xyzw
 )";
 
 const char *shader_with_bany_expect_opt_sched_eg =
@@ -1587,89 +1529,28 @@ OUTPUT LOC:0 FRAG_RESULT:2 MASK:15
 SHADER
 BLOCK_START
 ALU_GROUP_BEGIN
-  ALU SETNE S6.x@chgr : KC0[4].x KC0[0].x {W}
-  ALU SETNE S6.y@chgr : KC0[4].y KC0[0].y {WL}
+  ALU SETNE S12.x@chan : KC0[4].x KC0[0].x {W}
+  ALU SETNE S13.y@chan : KC0[4].y KC0[0].y {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU SETNE S6.z@chgr : KC0[4].z KC0[0].z {W}
-  ALU SETNE S6.w@chgr : KC0[4].w KC0[0].w {WL}
+  ALU SETNE S14.z@chan : KC0[4].z KC0[0].z {W}
+  ALU SETNE S15.w@chan : KC0[4].w KC0[0].w {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU MAX4 S7.x@chan : S6.x@chgr {W}
-  ALU MAX4 __.y@chan : S6.y@chgr {}
-  ALU MAX4 __.z@chan : S6.z@chgr {}
-  ALU MAX4 __.w@chan : S6.w@chgr {}
-  ALU SETNE S11.x@chgr : KC0[5].x KC0[1].x {WL}
+  ALU MAX4 S16.x@chan : S12.x@chan {W}
+  ALU MAX4 __.y@chan : S13.y@chan {}
+  ALU MAX4 __.z@chan : S14.z@chan {}
+  ALU MAX4 __.w@chan : S15.w@chan {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU SETE_DX10 S8.x@free : S7.x@chan I[1.0] {W}
-  ALU SETNE S11.y@chgr : KC0[5].y KC0[1].y {WL}
+  ALU SETE_DX10 S17.x@free : S16.x@chan I[1.0] {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU SETNE_INT S27.x@chan : S8.x@free I[0] {W}
-  ALU SETNE S11.z@chgr : KC0[5].z KC0[1].z {W}
-  ALU SETNE S11.w@chgr : KC0[5].w KC0[1].w {WL}
-ALU_GROUP_END
-ALU_GROUP_BEGIN
-  ALU MAX4 __.x@chan : S11.x@chgr {}
-  ALU MAX4 S12.y@chan : S11.y@chgr {W}
-  ALU MAX4 __.z@chan : S11.z@chgr {}
-  ALU MAX4 __.w@chan : S11.w@chgr {}
-  ALU SETNE S16.x@chgr : KC0[6].x KC0[2].x {WL}
-ALU_GROUP_END
-ALU_GROUP_BEGIN
-  ALU SETE_DX10 S13.x@free : S12.y@chan I[1.0] {W}
-  ALU SETNE S16.y@chgr : KC0[6].y KC0[2].y {WL}
-ALU_GROUP_END
-ALU_GROUP_BEGIN
-  ALU SETNE_INT S28.y@chan : S13.x@free I[0] {W}
-  ALU SETNE S16.z@chgr : KC0[6].z KC0[2].z {W}
-  ALU SETNE S16.w@chgr : KC0[6].w KC0[2].w {WL}
-ALU_GROUP_END
-ALU_GROUP_BEGIN
-  ALU MAX4 __.x@chan : S16.x@chgr {}
-  ALU MAX4 __.y@chan : S16.y@chgr {}
-  ALU MAX4 S17.z@chan : S16.z@chgr {W}
-  ALU MAX4 __.w@chan : S16.w@chgr {}
-  ALU SETNE S21.x@chgr : KC0[7].x KC0[3].x {WL}
-ALU_GROUP_END
-ALU_GROUP_BEGIN
-  ALU OR_INT S31.x@chan : S27.x@chan S28.y@chan {W}
-  ALU SETNE S21.y@chgr : KC0[7].y KC0[3].y {W}
-  ALU SETE_DX10 S18.z@chan : S17.z@chan I[1.0] {WL}
-ALU_GROUP_END
-ALU_GROUP_BEGIN
-  ALU SETNE_INT S29.x@chan : S18.z@chan I[0] {W}
-  ALU SETNE S21.z@chgr : KC0[7].z KC0[3].z {W}
-  ALU SETNE S21.w@chgr : KC0[7].w KC0[3].w {WL}
-ALU_GROUP_END
-ALU_GROUP_BEGIN
-  ALU MAX4 __.x@chan : S21.x@chgr {}
-  ALU MAX4 __.y@chan : S21.y@chgr {}
-  ALU MAX4 __.z@chan : S21.z@chgr {}
-  ALU MAX4 S22.w@chan : S21.w@chgr {WL}
-ALU_GROUP_END
-ALU_GROUP_BEGIN
-  ALU SETE_DX10 S23.x@free : S22.w@chan I[1.0] {WL}
-ALU_GROUP_END
-ALU_GROUP_BEGIN
-  ALU SETNE_INT S30.w@chan : S23.x@free I[0] {WL}
-ALU_GROUP_END
-ALU_GROUP_BEGIN
-  ALU OR_INT S32.y@chan : S29.x@chan S30.w@chan {WL}
-ALU_GROUP_END
-ALU_GROUP_BEGIN
-  ALU OR_INT S26.x@chan : S31.x@chan S32.y@chan {WL}
-ALU_GROUP_END
-ALU_GROUP_BEGIN
-  ALU NOT_INT S33.x@free : S26.x@chan {WL}
-ALU_GROUP_END
-ALU_GROUP_BEGIN
-  ALU AND_INT S35.x@group : S33.x@free I[1.0] {WL}
+  ALU NOT_INT S19.x@chgr : S17.x@free {WL}
 ALU_GROUP_END
 BLOCK_END
 BLOCK_START
-EXPORT_DONE PIXEL 0 S35.x000
+EXPORT_DONE PIXEL 0 S19.x000
 BLOCK_END
 )";
 
