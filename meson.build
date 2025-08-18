@@ -1862,9 +1862,12 @@ else
   dep_llvmspirvlib = null_dep
 endif
 
+with_spirv_tools = get_option('spirv-tools') \
+    .enable_if(with_clc, error_message : 'CLC requires SPIRV-Tools')
+
 dep_spirv_tools = dependency(
   'SPIRV-Tools',
-  required : with_clc,
+  required : with_spirv_tools,
   version : '>= 2024.1'
 )
 if dep_spirv_tools.found()

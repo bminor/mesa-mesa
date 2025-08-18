@@ -851,3 +851,9 @@ option(
   value : false,
   description : 'Build virtgpu_kumquat (only useful with gfxstream currently)'
 )
+
+option(
+  'spirv-tools',
+  type : 'feature',
+  description : 'Use SPIRV-Tools for dumping SPIR-V for debugging purposes (required by CLC)'
+)
