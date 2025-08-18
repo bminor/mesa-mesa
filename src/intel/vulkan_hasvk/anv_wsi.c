@@ -105,10 +105,6 @@ VkResult anv_QueuePresentKHR(
 #endif
    }
 
-   result = vk_queue_wait_before_present(&queue->vk, pPresentInfo);
-   if (result != VK_SUCCESS)
-      return result;
-
    result = wsi_common_queue_present(&device->physical->wsi_device,
                                      anv_device_to_handle(queue->device),
                                      _queue, 0,

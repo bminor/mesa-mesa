@@ -192,9 +192,6 @@ VkResult vk_queue_enable_submit_thread(struct vk_queue *queue);
 
 VkResult vk_queue_flush(struct vk_queue *queue, uint32_t *submit_count_out);
 
-VkResult vk_queue_wait_before_present(struct vk_queue *queue,
-                                      const VkPresentInfoKHR *pPresentInfo);
-
 VkResult PRINTFLIKE(4, 5)
 _vk_queue_set_lost(struct vk_queue *queue,
                    const char *file, int line,
