@@ -1754,7 +1754,7 @@
         "description": "aux/trace: move fence_server calls outside the locked area",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
