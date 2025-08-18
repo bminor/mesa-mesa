@@ -164,6 +164,13 @@ free_fd:
 free_mem:
    wsi->FreeMemory(device, mem, NULL);
 out:
+
+   /* This is a feature check.  We don't want to return random error codes
+    * from other functions that may call this one, so sanitize it a bit.
+    */
+   if (result != VK_SUCCESS)
+      result = VK_ERROR_FEATURE_NOT_PRESENT;
+
    /* We can ignore const here -- this field is managed entirely by this
     * function, in an atomic manner.
     */
