@@ -104,7 +104,8 @@ wsi_dma_buf_import_sync_file(int dma_buf_fd, int sync_file_fd)
  * This should return success on linux 6.0+.
  */
 static VkResult
-wsi_drm_check_dma_buf_sync_file_import_export(const struct wsi_device *wsi, VkDevice device)
+wsi_drm_check_dma_buf_sync_file_import_export(const struct wsi_device *wsi,
+                                              VkDevice device)
 {
    /* Not doing a mutex here -- we may race to do the check twice, but it's
     * lockless normally.
@@ -124,8 +125,7 @@ wsi_drm_check_dma_buf_sync_file_import_export(const struct wsi_device *wsi, VkDe
    VkResult result;
    VkDeviceMemory mem;
    result = wsi->AllocateMemory(device, &mem_info, NULL, &mem);
-   if (result != VK_SUCCESS)
-   {
+   if (result != VK_SUCCESS) {
       mesa_logd("wsi: failed to create memory for dma-buf sync import/export test.");
       goto out;
    }
@@ -137,23 +137,20 @@ wsi_drm_check_dma_buf_sync_file_import_export(const struct wsi_device *wsi, VkDe
        .handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT,
    };
    result = wsi->GetMemoryFdKHR(device, &get_info, &fd);
-   if (result != VK_SUCCESS)
-   {
+   if (result != VK_SUCCESS) {
       mesa_logd("wsi: failed to dma-buf fd for sync import/export test.");
       goto free_mem;
    }
 
    int sync_file;
    result = wsi_dma_buf_export_sync_file(fd, &sync_file);
-   if (result != VK_SUCCESS)
-   {
+   if (result != VK_SUCCESS) {
       mesa_logd("wsi: failed export sync file from dma-buf fd.");
       goto free_fd;
    }
 
    result = wsi_dma_buf_import_sync_file(fd, sync_file);
-   if (result != VK_SUCCESS)
-   {
+   if (result != VK_SUCCESS) {
       mesa_logd("wsi: failed import sync file to dma-buf fd.");
       goto free_sync_file;
    }
