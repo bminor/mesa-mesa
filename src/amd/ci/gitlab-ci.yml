@@ -318,7 +318,7 @@ radv-navi31-vkcts:
 
 radv-gfx1201-vkcts:
   timeout: 30m
-  parallel: 2
+  parallel: 3
   extends:
     - .ci-tron-test-radv-vk
     - .gfx1201-test-valve
