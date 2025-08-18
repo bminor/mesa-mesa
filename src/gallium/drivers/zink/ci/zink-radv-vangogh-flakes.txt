@@ -93,7 +93,6 @@ dEQP-GLES31.functional.texture.filtering.cube_array.sizes.8x8x6_nearest
 
 glx@glx-visuals-depth
 
-object namespace pollution@framebuffer with glgetteximage
 spec@!opengl 1.0@gl-1.0-readpixsanity
 spec@!opengl 1.0@rasterpos
 spec@!opengl 1.0@rasterpos@glsl_vs_gs_linked

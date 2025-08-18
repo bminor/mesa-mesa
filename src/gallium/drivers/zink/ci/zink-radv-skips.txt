@@ -37,3 +37,6 @@ spec@arb_shader_image_load_store.*
 
 # This test seems to hang.
 spec@arb_fragment_program@fog-modes
+
+# This subset seems to randomly hang.
+object namespace pollution@.*
