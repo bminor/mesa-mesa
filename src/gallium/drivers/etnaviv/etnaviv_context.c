@@ -364,17 +364,15 @@ etna_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
    }
 
    /* Mark textures as being read */
-   for (i = 0; i < PIPE_MAX_SAMPLERS; i++) {
-      if (ctx->sampler_view[i]) {
-         if (ctx->dirty & ETNA_DIRTY_SAMPLER_VIEWS)
-             resource_read(ctx, ctx->sampler_view[i]->texture);
+   u_foreach_bit(i, ctx->active_sampler_views) {
+      if (ctx->dirty & ETNA_DIRTY_SAMPLER_VIEWS)
+            resource_read(ctx, ctx->sampler_view[i]->texture);
 
-         /* if texture was modified since the last update,
-          * we need to clear the texture cache and possibly
-          * resolve/update ts
-          */
-         etna_update_sampler_source(ctx->sampler_view[i], i);
-      }
+      /* if texture was modified since the last update,
+       * we need to clear the texture cache and possibly
+       * resolve/update ts
+       */
+      etna_update_sampler_source(ctx->sampler_view[i], i);
    }
 
    if (indirect) {
