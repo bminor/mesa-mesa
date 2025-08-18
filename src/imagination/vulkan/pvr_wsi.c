@@ -75,10 +75,7 @@ VkResult pvr_QueuePresentKHR(VkQueue _queue,
    VkResult result;
 
    result = wsi_common_queue_present(&queue->device->pdevice->wsi_device,
-                                     pvr_device_to_handle(queue->device),
-                                     _queue,
-                                     0,
-                                     pPresentInfo);
+                                     &queue->vk, pPresentInfo);
    if (result != VK_SUCCESS)
       return result;
 

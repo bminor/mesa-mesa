@@ -1299,7 +1299,8 @@ wsi_AcquireNextImage2KHR(VkDevice _device,
 }
 
 static VkResult wsi_signal_present_id_timeline(struct wsi_swapchain *swapchain,
-                                               VkQueue queue, uint64_t present_id,
+                                               struct vk_queue *queue,
+                                               uint64_t present_id,
                                                VkFence present_fence)
 {
    assert(swapchain->present_id_timeline || present_fence);
@@ -1318,12 +1319,14 @@ static VkResult wsi_signal_present_id_timeline(struct wsi_swapchain *swapchain,
    };
 
    uint32_t submit_count = present_id ? 1 : 0;
-   return swapchain->wsi->QueueSubmit2(queue, submit_count, &submit_info,
+   return swapchain->wsi->QueueSubmit2(vk_queue_to_handle(queue),
+                                       submit_count, &submit_info,
                                        present_fence);
 }
 
 static VkResult
-handle_trace(VkQueue queue, struct vk_device *device, uint32_t current_frame)
+handle_trace(struct vk_queue *queue, struct vk_device *device,
+             uint32_t current_frame)
 {
    struct vk_instance *instance = device->physical->instance;
    if (!instance->trace_mode)
@@ -1348,7 +1351,7 @@ handle_trace(VkQueue queue, struct vk_device *device, uint32_t current_frame)
 
    VkResult result = VK_SUCCESS;
    if (frame_trigger || file_trigger || device->trace_hotkey_trigger)
-      result = device->capture_trace(queue);
+      result = device->capture_trace(vk_queue_to_handle(queue));
 
    device->trace_hotkey_trigger = false;
 
@@ -1359,12 +1362,10 @@ handle_trace(VkQueue queue, struct vk_device *device, uint32_t current_frame)
 
 VkResult
 wsi_common_queue_present(const struct wsi_device *wsi,
-                         VkDevice device,
-                         VkQueue queue,
-                         int queue_family_index,
+                         struct vk_queue *queue,
                          const VkPresentInfoKHR *pPresentInfo)
 {
-   struct vk_device *dev = vk_device_from_handle(device);
+   struct vk_device *dev = queue->base.device;
    uint32_t current_frame = p_atomic_fetch_add(&dev->current_frame, 1);
    VkResult final_result = handle_trace(queue, dev, current_frame);
 
@@ -1409,7 +1410,7 @@ wsi_common_queue_present(const struct wsi_device *wsi,
             .pNext = NULL,
             .flags = VK_FENCE_CREATE_SIGNALED_BIT,
          };
-         result = wsi->CreateFence(device, &fence_info,
+         result = wsi->CreateFence(vk_device_to_handle(dev), &fence_info,
                                    &swapchain->alloc,
                                    &swapchain->fences[image_index]);
          if (result != VK_SUCCESS)
@@ -1422,7 +1423,7 @@ wsi_common_queue_present(const struct wsi_device *wsi,
                .pNext = NULL,
                .flags = 0,
             };
-            result = wsi->CreateSemaphore(device, &sem_info,
+            result = wsi->CreateSemaphore(vk_device_to_handle(dev), &sem_info,
                                           &swapchain->alloc,
                                           &swapchain->blit.semaphores[image_index]);
             if (result != VK_SUCCESS)
@@ -1430,14 +1431,15 @@ wsi_common_queue_present(const struct wsi_device *wsi,
          }
       } else {
          MESA_TRACE_SCOPE("throttle");
-         result =
-            wsi->WaitForFences(device, 1, &swapchain->fences[image_index],
-                               true, ~0ull);
+         result = wsi->WaitForFences(vk_device_to_handle(dev),
+                                     1, &swapchain->fences[image_index],
+                                     true, ~0ull);
          if (result != VK_SUCCESS)
             goto fail_present;
       }
 
-      result = wsi->ResetFences(device, 1, &swapchain->fences[image_index]);
+      result = wsi->ResetFences(vk_device_to_handle(dev),
+                                1, &swapchain->fences[image_index]);
       if (result != VK_SUCCESS)
          goto fail_present;
 
@@ -1456,14 +1458,15 @@ wsi_common_queue_present(const struct wsi_device *wsi,
       struct wsi_image *image =
          swapchain->get_wsi_image(swapchain, image_index);
 
-      VkQueue submit_queue = queue;
+      struct vk_queue *submit_queue = queue;
       VkSemaphoreSubmitInfo blit_semaphore_info;
       VkCommandBufferSubmitInfo blit_command_buffer_info;
       if (swapchain->blit.type != WSI_SWAPCHAIN_NO_BLIT) {
          if (swapchain->blit.queue == VK_NULL_HANDLE) {
             blit_command_buffer_info = (VkCommandBufferSubmitInfo) {
                .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
-               .commandBuffer = image->blit.cmd_buffers[queue_family_index],
+               .commandBuffer =
+                  image->blit.cmd_buffers[queue->queue_family_index],
             };
             submit_info.commandBufferInfoCount = 1;
             submit_info.pCommandBufferInfos = &blit_command_buffer_info;
@@ -1481,7 +1484,8 @@ wsi_common_queue_present(const struct wsi_device *wsi,
             submit_info.signalSemaphoreInfoCount = 1;
             submit_info.pSignalSemaphoreInfos = &blit_semaphore_info;
 
-            result = wsi->QueueSubmit2(queue, 1, &submit_info, VK_NULL_HANDLE);
+            result = wsi->QueueSubmit2(vk_queue_to_handle(queue),
+                                       1, &submit_info, VK_NULL_HANDLE);
             if (result != VK_SUCCESS)
                goto fail_present;
 
@@ -1493,7 +1497,7 @@ wsi_common_queue_present(const struct wsi_device *wsi,
             /* Now prepare the blit submit.  It needs to then wait on the
              * semaphore we signaled above.
              */
-            submit_queue = swapchain->blit.queue;
+            submit_queue = vk_queue_from_handle(swapchain->blit.queue);
             submit_info.waitSemaphoreInfoCount = 1;
             submit_info.pWaitSemaphoreInfos = &blit_semaphore_info;
 
@@ -1538,7 +1542,8 @@ wsi_common_queue_present(const struct wsi_device *wsi,
 #endif
       }
 
-      result = wsi->QueueSubmit2(submit_queue, 1, &submit_info, fence);
+      result = wsi->QueueSubmit2(vk_queue_to_handle(submit_queue),
+                                 1, &submit_info, fence);
       if (result != VK_SUCCESS)
          goto fail_present;
 
@@ -1561,8 +1566,10 @@ wsi_common_queue_present(const struct wsi_device *wsi,
 #endif
       }
 
-      if (wsi->sw)
-         wsi->WaitForFences(device, 1, &swapchain->fences[image_index], true, ~0ull);
+      if (wsi->sw) {
+         wsi->WaitForFences(vk_device_to_handle(dev),
+                            1, &swapchain->fences[image_index], true, ~0ull);
+      }
 
       const VkPresentRegionKHR *region = NULL;
       if (regions && regions->pRegions)
@@ -1580,7 +1587,8 @@ wsi_common_queue_present(const struct wsi_device *wsi,
          present_fence = present_fence_info->pFences[i];
 
       if (present_id || present_fence) {
-         result = wsi_signal_present_id_timeline(swapchain, queue, present_id, present_fence);
+         result = wsi_signal_present_id_timeline(swapchain, queue,
+                                                 present_id, present_fence);
          if (result != VK_SUCCESS)
             goto fail_present;
       }
@@ -1615,10 +1623,7 @@ wsi_QueuePresentKHR(VkQueue _queue, const VkPresentInfoKHR *pPresentInfo)
    VK_FROM_HANDLE(vk_queue, queue, _queue);
 
    return wsi_common_queue_present(queue->base.device->physical->wsi_device,
-                                   vk_device_to_handle(queue->base.device),
-                                   _queue,
-                                   queue->queue_family_index,
-                                   pPresentInfo);
+                                   queue, pPresentInfo);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL

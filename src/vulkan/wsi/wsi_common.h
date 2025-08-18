@@ -91,6 +91,7 @@ struct wsi_surface_supported_counters {
 
 struct wsi_interface;
 struct vk_instance;
+struct vk_queue;
 
 struct driOptionCache;
 
@@ -323,9 +324,7 @@ wsi_common_acquire_next_image2(const struct wsi_device *wsi,
 
 VkResult
 wsi_common_queue_present(const struct wsi_device *wsi,
-                         VkDevice device_h,
-                         VkQueue queue_h,
-                         int queue_family_index,
+                         struct vk_queue *queue,
                          const VkPresentInfoKHR *pPresentInfo);
 
 VkResult

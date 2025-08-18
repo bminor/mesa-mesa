@@ -106,9 +106,7 @@ VkResult anv_QueuePresentKHR(
    }
 
    result = wsi_common_queue_present(&device->physical->wsi_device,
-                                     anv_device_to_handle(queue->device),
-                                     _queue, 0,
-                                     pPresentInfo);
+                                     &queue->vk, pPresentInfo);
 
    intel_ds_device_process(&device->ds, true);
 
