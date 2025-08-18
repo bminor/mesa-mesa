@@ -2230,7 +2230,8 @@ compacted_between(int old_ip, int old_target_ip, int *compacted_counts)
 
 static void
 update_uip_jip(const struct brw_isa_info *isa, brw_eu_inst *insn,
-               int this_old_ip, int *compacted_counts)
+               int this_old_ip, int *compacted_counts,
+               unsigned num_compacted_counts)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
 
@@ -2244,8 +2245,10 @@ update_uip_jip(const struct brw_isa_info *isa, brw_eu_inst *insn,
           brw_eu_inst_uip(devinfo, insn) % 8 == 0);
 
    int32_t jip_compacted = brw_eu_inst_jip(devinfo, insn) >> shift;
+
    jip_compacted -= compacted_between(this_old_ip,
-                                      this_old_ip + (jip_compacted / 2),
+                                      MIN2(this_old_ip + (jip_compacted / 2),
+                                           num_compacted_counts - 1),
                                       compacted_counts);
    brw_eu_inst_set_jip(devinfo, insn, (uint32_t)jip_compacted << shift);
 
@@ -2255,8 +2258,10 @@ update_uip_jip(const struct brw_isa_info *isa, brw_eu_inst *insn,
       return;
 
    int32_t uip_compacted = brw_eu_inst_uip(devinfo, insn) >> shift;
+
    uip_compacted -= compacted_between(this_old_ip,
-                                      this_old_ip + (uip_compacted / 2),
+                                      MIN2(this_old_ip + (uip_compacted / 2),
+                                           num_compacted_counts - 1),
                                       compacted_counts);
    brw_eu_inst_set_uip(devinfo, insn, (uint32_t)uip_compacted << shift);
 }
@@ -2411,7 +2416,7 @@ brw_compact_instructions(struct brw_codegen *p, int start_offset,
       case BRW_OPCODE_BREAK:
       case BRW_OPCODE_CONTINUE:
       case BRW_OPCODE_HALT:
-         update_uip_jip(p->isa, insn, this_old_ip, compacted_counts);
+         update_uip_jip(p->isa, insn, this_old_ip, compacted_counts, num_compacted_counts);
          break;
 
       case BRW_OPCODE_IF:
@@ -2426,13 +2431,14 @@ brw_compact_instructions(struct brw_codegen *p, int start_offset,
                                   (brw_eu_compact_inst *)insn);
 
             update_uip_jip(p->isa, &uncompacted, this_old_ip,
-                           compacted_counts);
+                           compacted_counts, num_compacted_counts);
 
             bool ret = try_compact_instruction(&c, (brw_eu_compact_inst *)insn,
                                                &uncompacted);
             assert(ret); (void)ret;
          } else {
-            update_uip_jip(p->isa, insn, this_old_ip, compacted_counts);
+            update_uip_jip(p->isa, insn, this_old_ip, compacted_counts,
+                           num_compacted_counts);
          }
          break;
 
