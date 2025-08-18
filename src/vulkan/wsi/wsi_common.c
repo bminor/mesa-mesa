@@ -1333,13 +1333,31 @@ handle_trace(struct vk_queue *queue, struct vk_device *device,
    return result;
 }
 
+/* You can treat this like vkQueueSubmit2() except that it doesn't obey the
+ * implicit ordering of submits to queues.  Instead, each submit needs
+ * explicit semaphores to ensure ordering.
+ */
 static VkResult
-wsi_queue_submit2(const struct wsi_device *wsi,
-                  struct vk_queue *queue,
-                  const VkSubmitInfo2 *info,
-                  uint32_t fence_count,
-                  const VkFence *fences)
+wsi_queue_submit2_unordered(const struct wsi_device *wsi,
+                            struct vk_queue *queue,
+                            const VkSubmitInfo2 *info,
+                            uint32_t fence_count,
+                            const VkFence *fences)
 {
+   if (info->commandBufferInfoCount == 0 &&
+       queue->base.device->copy_sync_payloads != NULL) {
+      /* This helper is unordered so if there are no command buffers, we can
+       * just signal the signal semaphores and fences with the wait semaphores
+       * and skip the queue entirely.
+       */
+      return vk_device_copy_semaphore_payloads(queue->base.device,
+                                               info->waitSemaphoreInfoCount,
+                                               info->pWaitSemaphoreInfos,
+                                               info->signalSemaphoreInfoCount,
+                                               info->pSignalSemaphoreInfos,
+                                               fence_count, fences);
+   }
+
    VkResult result = wsi->QueueSubmit2(vk_queue_to_handle(queue), 1, info,
                                        fence_count > 0 ? fences[0]
                                                        : VK_NULL_HANDLE);
@@ -1596,8 +1614,8 @@ wsi_common_queue_present(const struct wsi_device *wsi,
          .signalSemaphoreInfoCount = signal_semaphore_count,
          .pSignalSemaphoreInfos = signal_semaphore_infos,
       };
-      VkResult result = wsi_queue_submit2(wsi, queue, &submit_info,
-                                          fence_count, fences);
+      VkResult result = wsi_queue_submit2_unordered(wsi, queue, &submit_info,
+                                                    fence_count, fences);
       if (result != VK_SUCCESS) {
          /* If this failed, everything failed */
          for (uint32_t i = 0; i < pPresentInfo->swapchainCount; i++) {
@@ -1645,10 +1663,10 @@ wsi_common_queue_present(const struct wsi_device *wsi,
          .signalSemaphoreInfoCount = image_signal_infos[i].semaphore_count,
          .pSignalSemaphoreInfos = image_signal_infos[i].semaphore_infos,
       };
-      results[i] = wsi_queue_submit2(wsi, swapchain->blit.queue,
-                                     &submit_info,
-                                     image_signal_infos[i].fence_count,
-                                     image_signal_infos[i].fences);
+      results[i] = wsi_queue_submit2_unordered(wsi, swapchain->blit.queue,
+                                               &submit_info,
+                                               image_signal_infos[i].fence_count,
+                                               image_signal_infos[i].fences);
    }
 
    /* Finally, we can present */
