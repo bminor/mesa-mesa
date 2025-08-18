@@ -2077,6 +2077,8 @@ get_cmat_call_op_str(nir_cmat_call_op op)
       return "cmat_call_reduce_finish";
    case nir_cmat_call_op_reduce_2x2:
       return "cmat_call_reduce_2x2";
+   case nir_cmat_call_op_per_element_op:
+      return "cmat_call_per_element";
    }
    UNREACHABLE("Unknown cmat call op");
 }

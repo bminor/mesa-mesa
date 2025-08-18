@@ -1859,6 +1859,11 @@ typedef enum {
     * reduce 2x2 dst, src0, src1, src2, src3.
     */
    nir_cmat_call_op_reduce_2x2,
+   /*
+    * Cooperative matrix per-element operation call
+    * per-element dst, row offset, col offset, src
+    */
+   nir_cmat_call_op_per_element_op,
 } nir_cmat_call_op;
 
 typedef struct nir_cmat_call_instr {

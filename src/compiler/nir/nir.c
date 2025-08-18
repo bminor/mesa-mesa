@@ -913,6 +913,8 @@ int
 nir_cmat_call_op_params(nir_cmat_call_op op, nir_function *callee)
 {
    switch (op) {
+   case nir_cmat_call_op_per_element_op:
+      return callee->num_params;
    case nir_cmat_call_op_reduce:
       return 2;
    case nir_cmat_call_op_reduce_finish:

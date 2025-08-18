@@ -725,6 +725,50 @@ split_cmat_load_store(nir_builder *b,
 }
 
 static bool
+split_cmat_call_per_element_op(nir_builder *b,
+                               nir_cmat_call_instr *call,
+                               struct split_info *info)
+{
+   nir_instr *instr = &call->instr;
+   struct split_mat *dst_split = find_call_split(info->split_mats, call, 0);
+   struct split_mat *src_split = find_call_split(info->split_mats, call, 3);
+   if (!dst_split)
+      return false;
+
+   assert(src_split);
+   int splits = dst_split->num_col_splits * dst_split->num_row_splits;
+   if (splits <= 1)
+      return false;
+
+   for (unsigned r = 0; r < dst_split->num_row_splits; r++) {
+      for (unsigned c = 0; c < dst_split->num_col_splits; c++) {
+         int idx = r * dst_split->num_col_splits + c;
+         nir_deref_instr *dst_deref = recreate_derefs(b, &call->params[0], dst_split->split_vars[idx]);
+         nir_deref_instr *src_deref = recreate_derefs(b, &call->params[3], src_split->split_vars[idx]);
+         struct glsl_cmat_description cmat_desc = *glsl_get_cmat_description(src_split->split_vars[0]->type);
+         nir_cmat_call_instr *new_call = nir_cmat_call_instr_create(b->shader, nir_cmat_call_op_per_element_op, call->callee);
+         new_call->params[0] = nir_src_for_ssa(&dst_deref->def);
+         new_call->params[1] = nir_src_for_ssa(nir_imm_int(b, cmat_desc.rows * r));
+         new_call->params[2] = nir_src_for_ssa(nir_imm_int(b, cmat_desc.cols * c));
+         new_call->params[3] = nir_src_for_ssa(&src_deref->def);
+
+         for (unsigned i = 4; i < call->num_params; i++) {
+            if (nir_src_as_deref(call->params[i])) {
+               struct split_mat *src1_split = find_call_split(info->split_mats, call, i);
+               nir_deref_instr *src1_deref = src1_split ? recreate_derefs(b, &call->params[i], src1_split->split_vars[idx]) : nir_src_as_deref(call->params[i]);
+               new_call->params[i] = src1_deref ? nir_src_for_ssa(&src1_deref->def) : call->params[i];
+            } else
+               new_call->params[i] = call->params[i];
+         }
+         b->cursor = nir_before_instr(instr);
+         nir_builder_instr_insert(b, &new_call->instr);
+      }
+   }
+   nir_instr_remove(instr);
+   return true;
+}
+
+static bool
 split_matrix_impl(nir_function_impl *impl, struct split_info *info)
 {
    bool progress = false;
@@ -786,6 +830,9 @@ split_matrix_impl(nir_function_impl *impl, struct split_info *info)
             switch (cmat_call->op) {
             case nir_cmat_call_op_reduce:
                progress |= split_cmat_call_reduce(&b, impl, cmat_call, info);
+               break;
+            case nir_cmat_call_op_per_element_op:
+               progress |= split_cmat_call_per_element_op(&b, cmat_call, info);
                break;
             default:
                break;
