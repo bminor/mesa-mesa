@@ -44,6 +44,8 @@
 #include "d3d12/d3d12_resource.h"
 #include "d3d12/d3d12_screen.h"
 
+#include <dcomp.h>
+
 using Microsoft::WRL::ComPtr;
 constexpr uint32_t num_buffers = 2;
 
@@ -53,7 +55,11 @@ struct d3d12_wgl_framebuffer {
    struct d3d12_screen *screen;
    enum pipe_format pformat;
    HWND window;
+   ComPtr<IDCompositionDevice> dcomp;
+   ComPtr<IDCompositionTarget> target;
+   ComPtr<IDCompositionVisual> visual;
    ComPtr<IDXGISwapChain3> swapchain;
+   bool need_fillrect = true;
    HANDLE waitable_object;
    int latency = 2;
    struct pipe_resource *buffers[num_buffers];
@@ -100,6 +106,31 @@ d3d12_wgl_framebuffer_destroy(struct stw_winsys_framebuffer *fb,
    delete framebuffer;
 }
 
+static IDCompositionDevice *
+dcomp_get_device()
+{
+   HMODULE dcomp_mod = LoadLibraryA("DComp.DLL");
+   if (!dcomp_mod) {
+      return NULL;
+   }
+
+   typedef HRESULT (STDAPICALLTYPE *PFN_DCOMP_CREATE_DEVICE)(IDXGIDevice *, REFIID, void **);
+   PFN_DCOMP_CREATE_DEVICE DCompositionCreateDevice;
+
+   DCompositionCreateDevice = (PFN_DCOMP_CREATE_DEVICE)GetProcAddress(dcomp_mod, "DCompositionCreateDevice");
+   if (!DCompositionCreateDevice) {
+      return NULL;
+   }
+
+   IDCompositionDevice *device;
+   HRESULT hr = DCompositionCreateDevice(NULL, IID_PPV_ARGS(&device));
+   if (FAILED(hr)) {
+      return NULL;
+   }
+
+   return device;
+}
+
 static void
 d3d12_wgl_framebuffer_resize(stw_winsys_framebuffer *fb,
                              pipe_context *ctx,
@@ -118,7 +149,10 @@ d3d12_wgl_framebuffer_resize(stw_winsys_framebuffer *fb,
    desc.Width = templ->width0;
    desc.Height = templ->height0;
    desc.SampleDesc.Count = 1;
+   desc.AlphaMode = util_format_has_alpha(templ->format) ?
+      DXGI_ALPHA_MODE_PREMULTIPLIED : DXGI_ALPHA_MODE_IGNORE;
    desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+   desc.Scaling = DXGI_SCALING_STRETCH;
 
    framebuffer->pformat = templ->format;
    switch (templ->format) {
@@ -132,23 +166,33 @@ d3d12_wgl_framebuffer_resize(stw_winsys_framebuffer *fb,
       break;
    }
 
+   if (!framebuffer->dcomp) {
+      framebuffer->dcomp.Attach(dcomp_get_device());
+      if (!framebuffer->dcomp) {
+         debug_printf("D3D12: failed to create dcomp device\n");
+         return;
+      }
+   }
+
+   if (!framebuffer->target) {
+      if (FAILED(framebuffer->dcomp->CreateTargetForHwnd(framebuffer->window, TRUE, &framebuffer->target))) {
+         debug_printf("D3D12: failed to create dcomp target\n");
+         return;
+      }
+   }
+
    if (!framebuffer->swapchain) {
       ComPtr<IDXGISwapChain1> swapchain1;
-      if (FAILED(screen->factory->CreateSwapChainForHwnd(
+      if (FAILED(screen->factory->CreateSwapChainForComposition(
          screen->base.cmdqueue,
-         framebuffer->window,
          &desc,
          nullptr,
-         nullptr,
          &swapchain1))) {
-         debug_printf("D3D12: failed to create swapchain");
+         debug_printf("D3D12: failed to create swapchain\n");
          return;
       }
 
       swapchain1.As(&framebuffer->swapchain);
-
-      screen->factory->MakeWindowAssociation(framebuffer->window,
-                                             DXGI_MWA_NO_WINDOW_CHANGES | DXGI_MWA_NO_ALT_ENTER | DXGI_MWA_NO_PRINT_SCREEN);
 
       framebuffer->waitable_object = framebuffer->swapchain->GetFrameLatencyWaitableObject();
       WaitForSingleObject(framebuffer->waitable_object, INFINITE);
@@ -172,7 +216,17 @@ d3d12_wgl_framebuffer_resize(stw_winsys_framebuffer *fb,
          }
       }
       if (FAILED(framebuffer->swapchain->ResizeBuffers(num_buffers, desc.Width, desc.Height, desc.Format, desc.Flags))) {
-         debug_printf("D3D12: failed to resize swapchain");
+         debug_printf("D3D12: failed to resize swapchain\n");
+      }
+   }
+
+   if (!framebuffer->visual) {
+      if (FAILED(framebuffer->dcomp->CreateVisual(&framebuffer->visual)) ||
+          FAILED(framebuffer->target->SetRoot(framebuffer->visual.Get())) ||
+          FAILED(framebuffer->visual->SetContent(framebuffer->swapchain.Get())) ||
+          FAILED(framebuffer->dcomp->Commit())) {
+         debug_printf("D3D12: failed to configure visual\n");
+         return;
       }
    }
 
@@ -217,6 +271,8 @@ d3d12_wgl_framebuffer_resize(stw_winsys_framebuffer *fb,
       local_templ.bind = PIPE_BIND_RENDER_TARGET | PIPE_BIND_SAMPLER_VIEW;
       framebuffer->offscreen_buffer = screen->base.base.resource_create(&screen->base.base, &local_templ);
    }
+
+   framebuffer->need_fillrect = util_format_has_alpha(templ->format);
 }
 
 static bool
@@ -226,6 +282,19 @@ d3d12_wgl_framebuffer_present(stw_winsys_framebuffer *fb, int interval)
    if (!framebuffer->swapchain) {
       debug_printf("D3D12: Cannot present; no swapchain");
       return false;
+   }
+
+   if (framebuffer->need_fillrect && IsWindowVisible(framebuffer->window)) {
+      HDC hdc = GetWindowDC(framebuffer->window);
+      RECT rect;
+      GetWindowRect(framebuffer->window, &rect);
+      rect.right -= rect.left;
+      rect.bottom -= rect.top;
+      rect.left = 0;
+      rect.top = 0;
+      FillRect(hdc, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
+      ReleaseDC(framebuffer->window, hdc);
+      framebuffer->need_fillrect = false;
    }
 
    HRESULT hr;
