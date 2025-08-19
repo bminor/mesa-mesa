@@ -3133,14 +3133,7 @@ emit_intrinsic(struct ir3_context *ctx, nir_intrinsic_instr *intr)
          cond = create_immed_typed(b, 1, ctx->compiler->bool_type);
       }
 
-      /* NOTE: only cmps.*.* can write p0.x: */
-      struct ir3_instruction *zero =
-            create_immed_typed(b, 0, is_half(cond) ? TYPE_U16 : TYPE_U32);
-      cond = ir3_CMPS_S(b, cond, 0, zero, 0);
-      cond->cat2.condition = IR3_COND_NE;
-
-      /* condition always goes in predicate register: */
-      cond->dsts[0]->flags |= IR3_REG_PREDICATE;
+      cond = ir3_get_predicate(ctx, cond);
 
       if (intr->intrinsic == nir_intrinsic_demote ||
           intr->intrinsic == nir_intrinsic_demote_if) {
