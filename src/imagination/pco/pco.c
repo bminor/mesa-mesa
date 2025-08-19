@@ -305,10 +305,14 @@ pco_precomp_data pco_get_precomp_data(pco_shader *shader)
 {
    assert(pco_shader_binary_size(shader));
 
+   unsigned size_dwords = pco_shader_binary_size(shader) / sizeof(uint32_t);
+   assert(size_dwords <= UINT16_MAX);
+
    return (pco_precomp_data){
       .temps = shader->data.common.temps,
       .vtxins = shader->data.common.vtxins,
       .coeffs = shader->data.common.coeffs,
       .shareds = shader->data.common.shareds,
+      .size_dwords = size_dwords,
    };
 }

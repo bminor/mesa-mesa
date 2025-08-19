@@ -241,7 +241,11 @@ typedef struct PACKED _pco_precomp_data {
    uint16_t coeffs : 12;
    uint16_t shareds : 12;
 
-   uint8_t pad[3];
+   uint16_t size_dwords;
+
+   uint8_t pad[1];
+
+   uint32_t binary[];
 } pco_precomp_data;
 static_assert(sizeof(pco_precomp_data) == 8, "sizeof(pco_precomp_data) != 8");
 
