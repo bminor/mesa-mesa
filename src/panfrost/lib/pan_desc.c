@@ -1020,13 +1020,16 @@ check_fb_attachments(const struct pan_fb_info *fb)
 {
 #ifndef NDEBUG
    for (unsigned i = 0; i < fb->rt_count; i++) {
-      if (fb->rts[i].view)
+      if (fb->rts[i].view) {
          pan_image_view_check(fb->rts[i].view);
+         assert(fb->rts[i].view->nr_samples == fb->nr_samples);
+      }
    }
 
-   if (fb->zs.view.zs)
+   if (fb->zs.view.zs) {
       pan_image_view_check(fb->zs.view.zs);
-
+      assert(fb->zs.view.zs->nr_samples == fb->nr_samples);
+   }
    if (fb->zs.view.s)
       pan_image_view_check(fb->zs.view.s);
 #endif
