@@ -1167,10 +1167,21 @@ nir_explicit_io_address_from_deref(nir_builder *b, nir_deref_instr *deref,
                  : base_addr;
 }
 
+static nir_def *
+build_addr(nir_builder *b, nir_intrinsic_instr *intrin, nir_def *base_addr,
+           nir_address_format addr_format, unsigned comp_offset)
+{
+   nir_deref_instr *deref = nir_src_as_deref(intrin->src[0]);
+   assert(deref);
+
+   return nir_build_addr_iadd_imm(b, base_addr, addr_format, deref->modes,
+                                  comp_offset);
+}
+
 void
 nir_lower_explicit_io_instr(nir_builder *b,
                             nir_intrinsic_instr *intrin,
-                            nir_def *addr,
+                            nir_def *base_addr,
                             nir_address_format addr_format)
 {
    b->cursor = nir_after_instr(&intrin->instr);
@@ -1218,9 +1229,8 @@ nir_lower_explicit_io_instr(nir_builder *b,
          };
          for (unsigned i = 0; i < intrin->num_components; i++) {
             unsigned comp_offset = i * vec_stride;
-            nir_def *comp_addr = nir_build_addr_iadd_imm(b, addr, addr_format,
-                                                         deref->modes,
-                                                         comp_offset);
+            nir_def *comp_addr =
+               build_addr(b, intrin, base_addr, addr_format, comp_offset);
             comps[i] = build_explicit_io_load(b, intrin, comp_addr,
                                               addr_format, deref->modes,
                                               align_mul,
@@ -1230,6 +1240,7 @@ nir_lower_explicit_io_instr(nir_builder *b,
          }
          value = nir_vec(b, comps, intrin->num_components);
       } else {
+         nir_def *addr = build_addr(b, intrin, base_addr, addr_format, 0);
          value = build_explicit_io_load(b, intrin, addr, addr_format,
                                         deref->modes, align_mul, align_offset,
                                         intrin->num_components);
@@ -1247,15 +1258,15 @@ nir_lower_explicit_io_instr(nir_builder *b,
                continue;
 
             unsigned comp_offset = i * vec_stride;
-            nir_def *comp_addr = nir_build_addr_iadd_imm(b, addr, addr_format,
-                                                         deref->modes,
-                                                         comp_offset);
+            nir_def *comp_addr =
+               build_addr(b, intrin, base_addr, addr_format, comp_offset);
             build_explicit_io_store(b, intrin, comp_addr, addr_format,
                                     deref->modes, align_mul,
                                     (align_offset + comp_offset) % align_mul,
                                     nir_channel(b, value, i), 1);
          }
       } else {
+         nir_def *addr = build_addr(b, intrin, base_addr, addr_format, 0);
          build_explicit_io_store(b, intrin, addr, addr_format,
                                  deref->modes, align_mul, align_offset,
                                  value, write_mask);
@@ -1264,6 +1275,7 @@ nir_lower_explicit_io_instr(nir_builder *b,
    }
 
    case nir_intrinsic_load_deref_block_intel: {
+      nir_def *addr = build_addr(b, intrin, base_addr, addr_format, 0);
       nir_def *value = build_explicit_io_load(b, intrin, addr, addr_format,
                                               deref->modes,
                                               align_mul, align_offset,
@@ -1273,6 +1285,7 @@ nir_lower_explicit_io_instr(nir_builder *b,
    }
 
    case nir_intrinsic_store_deref_block_intel: {
+      nir_def *addr = build_addr(b, intrin, base_addr, addr_format, 0);
       nir_def *value = intrin->src[1].ssa;
       const nir_component_mask_t write_mask = 0;
       build_explicit_io_store(b, intrin, addr, addr_format,
@@ -1282,6 +1295,7 @@ nir_lower_explicit_io_instr(nir_builder *b,
    }
 
    default: {
+      nir_def *addr = build_addr(b, intrin, base_addr, addr_format, 0);
       nir_def *value =
          build_explicit_io_atomic(b, intrin, addr, addr_format, deref->modes);
       nir_def_rewrite_uses(&intrin->def, value);
