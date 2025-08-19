@@ -427,7 +427,10 @@ vk_common_QueueSignalReleaseImageANDROID(VkQueue _queue,
       .semaphore = queue->anb_semaphore,
       .stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
    };
-   {
+   if (device->copy_sync_payloads != NULL) {
+      result = vk_device_copy_semaphore_payloads(
+         device, waitSemaphoreCount, wait_infos, 1, &signal_info, 0, NULL);
+   } else {
       const VkSubmitInfo2 submit_info = {
          .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
          .waitSemaphoreInfoCount = waitSemaphoreCount,
