@@ -706,7 +706,7 @@ radv_emit_ge_rings(struct radv_device *device, struct radv_cmd_stream *cs, struc
          /* Mitigate the HiZ GPU hang by increasing a timeout when BOTTOM_OF_PIPE_TS is used as the
           * workaround. This must be emitted when the gfx queue is idle.
           */
-         const uint32_t timeout = pdev->use_gfx12_hiz_his_event_wa ? 0xfff : 0;
+         const uint32_t timeout = pdev->gfx12_hiz_wa == RADV_GFX12_HIZ_WA_PARTIAL ? 0xfff : 0;
 
          radeon_emit(PKT3(PKT3_UPDATE_DB_SUMMARIZER_TIMEOUT, 0, 0));
          radeon_emit(S_EF1_SUMM_CNTL_EVICT_TIMEOUT(timeout));

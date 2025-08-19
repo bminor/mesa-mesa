@@ -2308,8 +2308,8 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
    if (pdev->info.gfx_level == GFX12 && instance->drirc.disable_hiz_his_gfx12)
       pdev->use_hiz = false;
 
-   pdev->use_gfx12_hiz_his_event_wa =
-      pdev->info.gfx_level == GFX12 && pdev->use_hiz; /* TODO: Implement the alternative solution. */
+   if (pdev->info.gfx_level == GFX12)
+      pdev->gfx12_hiz_wa = RADV_GFX12_HIZ_WA_PARTIAL;
 
    pdev->use_ngg = (pdev->info.gfx_level >= GFX10 && pdev->info.family != CHIP_NAVI14 &&
                     !(instance->debug_flags & RADV_DEBUG_NO_NGG)) ||

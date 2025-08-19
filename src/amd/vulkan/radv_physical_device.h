@@ -76,6 +76,25 @@ enum radv_video_enc_hw_ver {
    RADV_VIDEO_ENC_HW_5,
 };
 
+/**
+ * Description of the various HiZ workarounds for GFX12.
+ *
+ * - disabled: None of the HiZ/HiS workarounds are enabled. This is very risky and should only be
+ *   used when we guarantee no issues. Performance is optimal.
+ *
+ * - partial: Emit BOTTOM_OF_PIPE_TS events after every draw to mitigate the issue. This is
+ *   potentially risky because it doesn't mitigate the issue complety but it helps in most cases.
+ *   Performance should be mostly optimal.
+ *
+ * - full: Disable HiZ/HiS at draw time when required to prevent the issue to happen. This solution
+ *   should be completely safe but it might decrease performance in some cases.
+ */
+enum radv_gfx12_hiz_wa {
+   RADV_GFX12_HIZ_WA_DISABLED,
+   RADV_GFX12_HIZ_WA_PARTIAL,
+   RADV_GFX12_HIZ_WA_FULL,
+};
+
 struct radv_physical_device {
    struct vk_physical_device vk;
 
@@ -104,11 +123,8 @@ struct radv_physical_device {
    /* Whether to enable HTILE compression for depth/stencil images. */
    bool use_hiz;
 
-   /* Whether the driver uses BOTTOM_OF_PIPE_TS events to workaround random GPU hangs with HiZ/HiS
-    * on GFX12. Note that this workaround doesn't mitigate the issue reliably but it helps in most
-    * scenarios.
-    */
-   bool use_gfx12_hiz_his_event_wa;
+   /* GFX12 HiZ workaround behavior. */
+   enum radv_gfx12_hiz_wa gfx12_hiz_wa;
 
    /* Whether to enable NGG. */
    bool use_ngg;

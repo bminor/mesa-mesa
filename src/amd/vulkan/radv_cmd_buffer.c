@@ -5575,7 +5575,7 @@ radv_gfx12_override_hiz_enable(struct radv_cmd_buffer *cmd_buffer, bool enable)
 }
 
 static void
-radv_gfx12_emit_alt_hiz_wa(struct radv_cmd_buffer *cmd_buffer)
+radv_gfx12_emit_hiz_wa_full(struct radv_cmd_buffer *cmd_buffer)
 {
    const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_rendering_state *render = &cmd_buffer->state.render;
@@ -9443,7 +9443,7 @@ radv_CmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCou
              */
             radv_emit_framebuffer_state(primary);
 
-            if (pdev->info.gfx_level == GFX12 && !pdev->use_gfx12_hiz_his_event_wa) {
+            if (pdev->gfx12_hiz_wa == RADV_GFX12_HIZ_WA_FULL) {
                const struct radv_rendering_state *render = &primary->state.render;
                const struct radv_image_view *iview = render->ds_att.iview;
 
@@ -10021,11 +10021,7 @@ radv_gfx12_emit_hiz_his_wa(const struct radv_device *device, const struct radv_c
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_rendering_state *render = &cmd_state->render;
 
-   /* On GFX12, HiZ/HiS is buggy and can cause random GPU hangs. There are basically two alternatives:
-    * - disable HiZ/HiS completely which is the safest workaround but this is known to decrease performance
-    * - emit a dummy BOTTOM_OF_PIPE_TS after every draw which should workaround the hang and maintain performance
-    */
-   if (pdev->use_gfx12_hiz_his_event_wa && render->has_hiz_his) {
+   if (pdev->gfx12_hiz_wa == RADV_GFX12_HIZ_WA_PARTIAL && render->has_hiz_his) {
       radeon_begin(cs);
       radeon_emit(PKT3(PKT3_RELEASE_MEM, 6, 0));
       radeon_emit(S_490_EVENT_TYPE(V_028A90_BOTTOM_OF_PIPE_TS) | S_490_EVENT_INDEX(5));
@@ -12031,8 +12027,8 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
    const bool late_scissor_emission =
       pdev->info.has_gfx9_scissor_bug ? radv_need_late_scissor_emission(cmd_buffer, info) : false;
 
-   const bool gfx12_emit_alt_hiz_wa =
-      pdev->info.gfx_level == GFX12 && !pdev->use_gfx12_hiz_his_event_wa &&
+   const bool gfx12_emit_hiz_wa_full =
+      pdev->gfx12_hiz_wa == RADV_GFX12_HIZ_WA_FULL &&
       cmd_buffer->state.dirty & (RADV_CMD_DIRTY_FRAMEBUFFER | RADV_CMD_DIRTY_DEPTH_STENCIL_STATE);
 
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_RBPLUS) {
@@ -12176,8 +12172,8 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
       cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_RAST_SAMPLES_STATE;
    }
 
-   if (gfx12_emit_alt_hiz_wa)
-      radv_gfx12_emit_alt_hiz_wa(cmd_buffer);
+   if (gfx12_emit_hiz_wa_full)
+      radv_gfx12_emit_hiz_wa_full(cmd_buffer);
 
    radv_emit_shaders_state(cmd_buffer);
 
