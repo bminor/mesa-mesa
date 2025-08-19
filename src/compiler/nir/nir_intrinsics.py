@@ -214,6 +214,20 @@ index("unsigned", "stack_size")
 index("unsigned", "align_mul")
 index("unsigned", "align_offset")
 
+# For load/store intrinsics that take an offset, the amount the offset is
+# shifted left to calculate the final byte offset:
+#
+#                offset = (offset_src + base) << offset_shift
+#
+# It is unspecified how overflows due to offset_shift are handled: they may
+# either be treated as out-of-bounds, or wrap around and generate an in-bounds
+# offset. NIR passes may implement either behavior and may not be consistent
+# about it.
+#
+# This is useful for backends that have memory operations that use offset units
+# other than bytes (i.e., where the shift is implicit).
+index("unsigned", "offset_shift")
+
 # The Vulkan descriptor type for a vulkan_resource_[re]index intrinsic.
 index("unsigned", "desc_type")
 

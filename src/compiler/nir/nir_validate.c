@@ -809,6 +809,12 @@ validate_intrinsic_instr(nir_intrinsic_instr *instr, validate_state *state)
                          (state->shader->info.stage == MESA_SHADER_FRAGMENT &&
                           instr->intrinsic == nir_intrinsic_load_input_vertex));
    }
+
+   if (nir_intrinsic_has_offset_shift(instr) &&
+       nir_intrinsic_has_align(instr)) {
+      unsigned min_align = 1 << nir_intrinsic_offset_shift(instr);
+      validate_assert(state, nir_intrinsic_align(instr) >= min_align);
+   }
 }
 
 static void
