@@ -84,6 +84,24 @@ nir_shader *
 brw_nir_create_null_ahs_shader(const struct brw_compiler *compiler,
                                void *mem_ctx);
 
+static inline nir_def *
+brw_nir_build_vec3_mat_mult_col_major(nir_builder *b, nir_def *vec,
+                                      nir_def *matrix[], bool translation)
+{
+   nir_def *result_components[3] = {
+      nir_channel(b, matrix[3], 0),
+      nir_channel(b, matrix[3], 1),
+      nir_channel(b, matrix[3], 2),
+   };
+   for (unsigned i = 0; i < 3; ++i) {
+      for (unsigned j = 0; j < 3; ++j) {
+         nir_def *v = nir_fmul(b, nir_channels(b, vec, 1 << j), nir_channels(b, matrix[j], 1 << i));
+         result_components[i] = (translation || j) ? nir_fadd(b, result_components[i], v) : v;
+      }
+   }
+   return nir_vec(b, result_components, 3);
+}
+
 #ifdef __cplusplus
 }
 #endif
