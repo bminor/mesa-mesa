@@ -130,6 +130,18 @@ extract_reg_uim(const struct ir3_register *reg)
    return reg->uim_val;
 }
 
+static inline uint32_t
+extract_dst_num(const struct ir3_register *reg)
+{
+   if (reg->flags & IR3_REG_UNIFORM) {
+      assert(reg->flags & IR3_REG_PREDICATE);
+      assert(reg_num(reg) == REG_P0);
+      return REG_A0;
+   }
+
+   return reg_num(reg);
+}
+
 /**
  * This is a bit messy, to deal with the fact that the optional "s2en"
  * src is the first src, shifting everything else up by one.

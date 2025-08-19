@@ -95,6 +95,9 @@ static int parse_reg(const char *str)
 		str++;
 		num++;
 	}
+	if (str[0] == 'u') {
+		str++;
+	}
 	str++;
 	if (str[0] == 't') {
 		str++;
@@ -178,6 +181,7 @@ static int parse_reg(const char *str)
 "a0.x"                            return T_A0;
 "a1.x"                            return T_A1;
 "p0."[xyzw]                       ir3_yylval.num = parse_reg(yytext); return T_P0;
+"up0."[xyzw]                      ir3_yylval.num = parse_reg(yytext); return T_UP0;
 "w"[0-9]+                         ir3_yylval.num = strtol(yytext+1, NULL, 10); return T_W;
 "s#"[0-9]+                        ir3_yylval.num = strtol(yytext+2, NULL, 10); return T_SAMP;
 "t#"[0-9]+                        ir3_yylval.num = strtol(yytext+2, NULL, 10); return T_TEX;

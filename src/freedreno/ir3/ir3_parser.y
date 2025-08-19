@@ -773,6 +773,7 @@ static void print_token(FILE *file, int type, YYSTYPE value)
 %token <num> T_A0
 %token <num> T_A1
 %token <num> T_P0
+%token <num> T_UP0
 %token <num> T_W
 %token <str> T_CAT1_TYPE_TYPE
 
@@ -1613,6 +1614,7 @@ dst:               T_REGISTER     { $$ = new_dst($1, 0); }
 |                  T_A0           { $$ = new_dst((61 << 3), IR3_REG_HALF); }
 |                  T_A1           { $$ = new_dst((61 << 3) + 1, IR3_REG_HALF); }
 |                  T_P0           { $$ = new_dst((62 << 3) + $1, IR3_REG_PREDICATE); }
+|                  T_UP0          { $$ = new_dst((62 << 3) + $1, IR3_REG_PREDICATE | IR3_REG_UNIFORM); }
 
 const:             T_CONSTANT     { $$ = new_src($1, IR3_REG_CONST); }
 
