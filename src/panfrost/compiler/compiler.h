@@ -981,6 +981,7 @@ struct bi_shader_info {
    unsigned tls_size;
    unsigned work_reg_count;
    unsigned push_offset;
+   unsigned init_fau_consts_count;
    bool has_ld_gclk_instr;
 };
 
@@ -1041,6 +1042,8 @@ typedef struct {
     * preloaded.
     */
    bi_index preloaded[BI_MAX_REGS];
+
+   uint32_t fau_consts_count;
 
    /* For creating temporaries */
    unsigned ssa_alloc;

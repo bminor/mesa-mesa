@@ -6111,6 +6111,7 @@ bi_compile_variant_nir(nir_shader *nir,
    ctx->info = info;
    ctx->idvs = idvs;
    ctx->malloc_idvs = (ctx->arch >= 9) && !inputs->no_idvs;
+   ctx->fau_consts_count = info.init_fau_consts_count;
 
    unsigned execution_mode = nir->info.float_controls_execution_mode;
    ctx->rtz_fp16 = nir_is_rounding_mode_rtz(execution_mode, 16);
@@ -6377,6 +6378,7 @@ bi_compile_variant(nir_shader *nir,
       .bifrost = &info->bifrost,
       .tls_size = info->tls_size,
       .push_offset = info->push.count,
+      .init_fau_consts_count = info->fau_consts_count,
    };
 
    unsigned offset = binary->size;
@@ -6398,6 +6400,8 @@ bi_compile_variant(nir_shader *nir,
 
    bi_context *ctx =
       bi_compile_variant_nir(nir, inputs, binary, local_info, stats, idvs);
+
+   info->fau_consts_count = ctx->fau_consts_count;
 
    /* A register is preloaded <==> it is live before the first block */
    bi_block *first_block = list_first_entry(&ctx->blocks, bi_block, link);

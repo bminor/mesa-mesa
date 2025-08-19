@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2025 Arm Ltd.
  * Copyright (C) 2021 Collabora Ltd.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -109,6 +110,32 @@ is_extension_of_16(uint32_t x, bool is_signed)
 }
 
 static bi_index
+va_move_const_to_fau(bi_builder *b, uint32_t value)
+{
+   const unsigned push_base = b->shader->inputs->fau_consts.offset;
+   uint32_t *values = b->shader->inputs->fau_consts.values;
+
+   assert(b->shader->inputs->fau_consts.max_amount == 0 || values != NULL);
+   assert(b->shader->fau_consts_count <=
+          b->shader->inputs->fau_consts.max_amount);
+
+   for (unsigned i = 0; i < b->shader->fau_consts_count; ++i) {
+      if (values[i] == value) {
+         const unsigned idx = push_base + i;
+         return bi_fau((enum bir_fau)(BIR_FAU_UNIFORM | (idx >> 1)), idx & 1);
+      }
+   }
+
+   if (b->shader->fau_consts_count < b->shader->inputs->fau_consts.max_amount) {
+      const unsigned int idx = push_base + b->shader->fau_consts_count;
+      values[b->shader->fau_consts_count++] = value;
+      return bi_fau((enum bir_fau)(BIR_FAU_UNIFORM | (idx >> 1)), idx & 1);
+   }
+
+   return bi_null();
+}
+
+static bi_index
 va_resolve_constant(bi_builder *b, uint32_t value, struct va_src_info info,
                     bool is_signed, bool staging)
 {
@@ -179,7 +206,12 @@ va_resolve_constant(bi_builder *b, uint32_t value, struct va_src_info info,
       }
    }
 
-   /* TODO: Optimize to uniform */
+   if (!staging) {
+      bi_index c = va_move_const_to_fau(b, value);
+      if (!bi_is_null(c))
+         return c;
+   }
+
    return va_mov_imm(b, value);
 }
 
