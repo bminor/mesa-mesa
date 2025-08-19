@@ -116,6 +116,8 @@ emit_intrinsic_store_ssbo(struct ir3_context *ctx, nir_intrinsic_instr *intr)
    unsigned imm_offset_val;
 
    assert(wrmask == BITFIELD_MASK(intr->num_components));
+   assert(nir_intrinsic_offset_shift(intr) ==
+          util_logbase2(intr->src[0].ssa->bit_size / 8));
 
    /* src0 is offset, src1 is immediate offset, src2 is value:
     */
@@ -228,6 +230,12 @@ emit_intrinsic_atomic_ssbo(struct ir3_context *ctx, nir_intrinsic_instr *intr)
    type_t type = nir_atomic_op_type(op) == nir_type_int ? TYPE_S32 : TYPE_U32;
    if (intr->def.bit_size == 64) {
       type = TYPE_ATOMIC_U64;
+      /* Note: 64-bit atomics are strange and have a shift like 2-byte accesses.
+       */
+      assert(nir_intrinsic_offset_shift(intr) == 1);
+   } else {
+      assert(nir_intrinsic_offset_shift(intr) ==
+             util_logbase2(intr->def.bit_size / 8));
    }
 
    ibo = ir3_ssbo_to_ibo(ctx, intr->src[0]);

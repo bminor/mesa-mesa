@@ -1989,6 +1989,9 @@ emit_intrinsic_load_ssbo(struct ir3_context *ctx,
                          nir_intrinsic_instr *intr,
                          struct ir3_instruction **dst)
 {
+   assert(nir_intrinsic_offset_shift(intr) ==
+          util_logbase2(intr->def.bit_size / 8));
+
    /* Note: we can only use isam for vectorized loads/stores if isam.v is
     * available.
     * Note: isam also can't handle 8-bit loads.
