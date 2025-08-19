@@ -71,6 +71,23 @@ set_src_needs_helpers(nir_src *src, void *_data)
    return true;
 }
 
+static inline bool
+add_load_to_worklist(struct helper_state *hs, nir_instr *instr)
+{
+   /* If a load is uniform, we don't want to set skip_helpers because
+    * then it might not be uniform if the helpers don't fetch.  Also,
+    * for uniform load results, we shouldn't be burning any more
+    * memory by executing the helper pixels unless the hardware is
+    * really dumb.
+    */
+   if (hs->options->no_add_divergence && !nir_instr_def(instr)->divergent)
+      return false;
+
+   nir_instr_worklist_push_tail(&hs->load_instrs, instr);
+
+   return true;
+}
+
 bool
 nir_opt_load_skip_helpers(nir_shader *shader, nir_opt_load_skip_helpers_options *options)
 {
@@ -106,7 +123,7 @@ nir_opt_load_skip_helpers(nir_shader *shader, nir_opt_load_skip_helpers_options 
             /* Stash texture instructions so we don't have to walk the whole
              * shader again just to set the skip_helpers bit.
              */
-            nir_instr_worklist_push_tail(&hs.load_instrs, instr);
+            add_load_to_worklist(&hs, instr);
 
             for (uint32_t i = 0; i < tex->num_srcs; i++) {
                switch (tex->src[i].src_type) {
@@ -157,8 +174,11 @@ nir_opt_load_skip_helpers(nir_shader *shader, nir_opt_load_skip_helpers_options 
             } else if (instr_never_needs_helpers(instr)) {
                continue;
             } else if (hs.options->intrinsic_cb &&
-                       hs.options->intrinsic_cb(intr, hs.options->intrinsic_cb_data)) {
-               nir_instr_worklist_push_tail(&hs.load_instrs, instr);
+                       hs.options->intrinsic_cb(intr, hs.options->intrinsic_cb_data) &&
+                       add_load_to_worklist(&hs, instr)) {
+               /* We don't need to set the sources as needing helpers if this
+                * load is skipped for helpers.
+                */
             } else {
                /* All I/O addresses need helpers because getting them wrong
                 * may cause a fault.
@@ -192,25 +212,6 @@ nir_opt_load_skip_helpers(nir_shader *shader, nir_opt_load_skip_helpers_options 
       while (!nir_instr_worklist_is_empty(&hs.load_instrs)) {
          nir_instr *instr = nir_instr_worklist_pop_head(&hs.load_instrs);
          nir_def *def = nir_instr_def(instr);
-
-         /* If a load is uniform, we don't want to set skip_helpers because
-          * then it might not be uniform if the helpers don't fetch.  Also,
-          * for uniform load results, we shouldn't be burning any more
-          * memory by executing the helper pixels unless the hardware is
-          * really dumb.
-          *
-          * NOTE: Any load instruction that doesn't have skip_helpers set
-          * then relies on correct parameters in those helper invocations.
-          * If we're depending on those helpers to keep things uniform, then
-          * leaving skip_helpers=false adds dependencies.  However, in order
-          * for the load result to be uniform, all parameters must be
-          * uniform so they either have to come from other uniform things or
-          * subgroup ops which uniformize values.  Therefore, as long as we
-          * always leave skip_helpers=false on all uniform load ops, we'll
-          * have valid helper data in this load op.
-          */
-         if (hs.options->no_add_divergence && !def->divergent)
-            continue;
 
          if (!def_needs_helpers(def, &hs)) {
             if (instr->type == nir_instr_type_tex) {
