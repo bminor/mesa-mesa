@@ -561,17 +561,18 @@ get_load_global_constant_op_from_addr_format(nir_address_format addr_format)
 
 static nir_def *
 build_explicit_io_load(nir_builder *b, nir_intrinsic_instr *intrin,
-                       nir_def *addr, nir_address_format addr_format,
+                       nir_io_offset addr_shift, nir_address_format addr_format,
                        nir_variable_mode modes,
                        uint32_t align_mul, uint32_t align_offset,
                        unsigned num_components)
 {
    nir_deref_instr *deref = nir_src_as_deref(intrin->src[0]);
    modes = canonicalize_generic_modes(modes);
+   nir_def *addr = addr_shift.def;
 
    if (util_bitcount(modes) > 1) {
       if (addr_format_is_global(addr_format, modes)) {
-         return build_explicit_io_load(b, intrin, addr, addr_format,
+         return build_explicit_io_load(b, intrin, addr_shift, addr_format,
                                        nir_var_mem_global,
                                        align_mul, align_offset,
                                        num_components);
@@ -579,13 +580,13 @@ build_explicit_io_load(nir_builder *b, nir_intrinsic_instr *intrin,
          nir_push_if(b, build_runtime_addr_mode_check(b, addr, addr_format,
                                                       nir_var_function_temp));
          nir_def *res1 =
-            build_explicit_io_load(b, intrin, addr, addr_format,
+            build_explicit_io_load(b, intrin, addr_shift, addr_format,
                                    nir_var_function_temp,
                                    align_mul, align_offset,
                                    num_components);
          nir_push_else(b, NULL);
          nir_def *res2 =
-            build_explicit_io_load(b, intrin, addr, addr_format,
+            build_explicit_io_load(b, intrin, addr_shift, addr_format,
                                    modes & ~nir_var_function_temp,
                                    align_mul, align_offset,
                                    num_components);
@@ -596,14 +597,14 @@ build_explicit_io_load(nir_builder *b, nir_intrinsic_instr *intrin,
                                                       nir_var_mem_shared));
          assert(modes & nir_var_mem_shared);
          nir_def *res1 =
-            build_explicit_io_load(b, intrin, addr, addr_format,
+            build_explicit_io_load(b, intrin, addr_shift, addr_format,
                                    nir_var_mem_shared,
                                    align_mul, align_offset,
                                    num_components);
          nir_push_else(b, NULL);
          assert(modes & nir_var_mem_global);
          nir_def *res2 =
-            build_explicit_io_load(b, intrin, addr, addr_format,
+            build_explicit_io_load(b, intrin, addr_shift, addr_format,
                                    nir_var_mem_global,
                                    align_mul, align_offset,
                                    num_components);
@@ -818,28 +819,29 @@ build_explicit_io_load(nir_builder *b, nir_intrinsic_instr *intrin,
 
 static void
 build_explicit_io_store(nir_builder *b, nir_intrinsic_instr *intrin,
-                        nir_def *addr, nir_address_format addr_format,
+                        nir_io_offset addr_shift, nir_address_format addr_format,
                         nir_variable_mode modes,
                         uint32_t align_mul, uint32_t align_offset,
                         nir_def *value, nir_component_mask_t write_mask)
 {
    modes = canonicalize_generic_modes(modes);
+   nir_def *addr = addr_shift.def;
 
    if (util_bitcount(modes) > 1) {
       if (addr_format_is_global(addr_format, modes)) {
-         build_explicit_io_store(b, intrin, addr, addr_format,
+         build_explicit_io_store(b, intrin, addr_shift, addr_format,
                                  nir_var_mem_global,
                                  align_mul, align_offset,
                                  value, write_mask);
       } else if (modes & nir_var_function_temp) {
          nir_push_if(b, build_runtime_addr_mode_check(b, addr, addr_format,
                                                       nir_var_function_temp));
-         build_explicit_io_store(b, intrin, addr, addr_format,
+         build_explicit_io_store(b, intrin, addr_shift, addr_format,
                                  nir_var_function_temp,
                                  align_mul, align_offset,
                                  value, write_mask);
          nir_push_else(b, NULL);
-         build_explicit_io_store(b, intrin, addr, addr_format,
+         build_explicit_io_store(b, intrin, addr_shift, addr_format,
                                  modes & ~nir_var_function_temp,
                                  align_mul, align_offset,
                                  value, write_mask);
@@ -848,13 +850,13 @@ build_explicit_io_store(nir_builder *b, nir_intrinsic_instr *intrin,
          nir_push_if(b, build_runtime_addr_mode_check(b, addr, addr_format,
                                                       nir_var_mem_shared));
          assert(modes & nir_var_mem_shared);
-         build_explicit_io_store(b, intrin, addr, addr_format,
+         build_explicit_io_store(b, intrin, addr_shift, addr_format,
                                  nir_var_mem_shared,
                                  align_mul, align_offset,
                                  value, write_mask);
          nir_push_else(b, NULL);
          assert(modes & nir_var_mem_global);
-         build_explicit_io_store(b, intrin, addr, addr_format,
+         build_explicit_io_store(b, intrin, addr_shift, addr_format,
                                  nir_var_mem_global,
                                  align_mul, align_offset,
                                  value, write_mask);
@@ -986,24 +988,26 @@ build_explicit_io_store(nir_builder *b, nir_intrinsic_instr *intrin,
 
 static nir_def *
 build_explicit_io_atomic(nir_builder *b, nir_intrinsic_instr *intrin,
-                         nir_def *addr, nir_address_format addr_format,
+                         nir_io_offset addr_shift,
+                         nir_address_format addr_format,
                          nir_variable_mode modes)
 {
    modes = canonicalize_generic_modes(modes);
+   nir_def *addr = addr_shift.def;
 
    if (util_bitcount(modes) > 1) {
       if (addr_format_is_global(addr_format, modes)) {
-         return build_explicit_io_atomic(b, intrin, addr, addr_format,
+         return build_explicit_io_atomic(b, intrin, addr_shift, addr_format,
                                          nir_var_mem_global);
       } else if (modes & nir_var_function_temp) {
          nir_push_if(b, build_runtime_addr_mode_check(b, addr, addr_format,
                                                       nir_var_function_temp));
          nir_def *res1 =
-            build_explicit_io_atomic(b, intrin, addr, addr_format,
+            build_explicit_io_atomic(b, intrin, addr_shift, addr_format,
                                      nir_var_function_temp);
          nir_push_else(b, NULL);
          nir_def *res2 =
-            build_explicit_io_atomic(b, intrin, addr, addr_format,
+            build_explicit_io_atomic(b, intrin, addr_shift, addr_format,
                                      modes & ~nir_var_function_temp);
          nir_pop_if(b, NULL);
          return nir_if_phi(b, res1, res2);
@@ -1012,12 +1016,12 @@ build_explicit_io_atomic(nir_builder *b, nir_intrinsic_instr *intrin,
                                                       nir_var_mem_shared));
          assert(modes & nir_var_mem_shared);
          nir_def *res1 =
-            build_explicit_io_atomic(b, intrin, addr, addr_format,
+            build_explicit_io_atomic(b, intrin, addr_shift, addr_format,
                                      nir_var_mem_shared);
          nir_push_else(b, NULL);
          assert(modes & nir_var_mem_global);
          nir_def *res2 =
-            build_explicit_io_atomic(b, intrin, addr, addr_format,
+            build_explicit_io_atomic(b, intrin, addr_shift, addr_format,
                                      nir_var_mem_global);
          nir_pop_if(b, NULL);
          return nir_if_phi(b, res1, res2);
@@ -1167,15 +1171,18 @@ nir_explicit_io_address_from_deref(nir_builder *b, nir_deref_instr *deref,
                  : base_addr;
 }
 
-static nir_def *
+static nir_io_offset
 build_addr(nir_builder *b, nir_intrinsic_instr *intrin, nir_def *base_addr,
            nir_address_format addr_format, unsigned comp_offset)
 {
    nir_deref_instr *deref = nir_src_as_deref(intrin->src[0]);
    assert(deref);
 
-   return nir_build_addr_iadd_imm(b, base_addr, addr_format, deref->modes,
-                                  comp_offset);
+   nir_io_offset addr;
+   addr.def = nir_build_addr_iadd_imm(b, base_addr, addr_format, deref->modes,
+                                      comp_offset);
+   addr.shift = 0;
+   return addr;
 }
 
 void
@@ -1229,7 +1236,7 @@ nir_lower_explicit_io_instr(nir_builder *b,
          };
          for (unsigned i = 0; i < intrin->num_components; i++) {
             unsigned comp_offset = i * vec_stride;
-            nir_def *comp_addr =
+            nir_io_offset comp_addr =
                build_addr(b, intrin, base_addr, addr_format, comp_offset);
             comps[i] = build_explicit_io_load(b, intrin, comp_addr,
                                               addr_format, deref->modes,
@@ -1240,7 +1247,7 @@ nir_lower_explicit_io_instr(nir_builder *b,
          }
          value = nir_vec(b, comps, intrin->num_components);
       } else {
-         nir_def *addr = build_addr(b, intrin, base_addr, addr_format, 0);
+         nir_io_offset addr = build_addr(b, intrin, base_addr, addr_format, 0);
          value = build_explicit_io_load(b, intrin, addr, addr_format,
                                         deref->modes, align_mul, align_offset,
                                         intrin->num_components);
@@ -1258,7 +1265,7 @@ nir_lower_explicit_io_instr(nir_builder *b,
                continue;
 
             unsigned comp_offset = i * vec_stride;
-            nir_def *comp_addr =
+            nir_io_offset comp_addr =
                build_addr(b, intrin, base_addr, addr_format, comp_offset);
             build_explicit_io_store(b, intrin, comp_addr, addr_format,
                                     deref->modes, align_mul,
@@ -1266,7 +1273,7 @@ nir_lower_explicit_io_instr(nir_builder *b,
                                     nir_channel(b, value, i), 1);
          }
       } else {
-         nir_def *addr = build_addr(b, intrin, base_addr, addr_format, 0);
+         nir_io_offset addr = build_addr(b, intrin, base_addr, addr_format, 0);
          build_explicit_io_store(b, intrin, addr, addr_format,
                                  deref->modes, align_mul, align_offset,
                                  value, write_mask);
@@ -1275,7 +1282,7 @@ nir_lower_explicit_io_instr(nir_builder *b,
    }
 
    case nir_intrinsic_load_deref_block_intel: {
-      nir_def *addr = build_addr(b, intrin, base_addr, addr_format, 0);
+      nir_io_offset addr = build_addr(b, intrin, base_addr, addr_format, 0);
       nir_def *value = build_explicit_io_load(b, intrin, addr, addr_format,
                                               deref->modes,
                                               align_mul, align_offset,
@@ -1285,7 +1292,7 @@ nir_lower_explicit_io_instr(nir_builder *b,
    }
 
    case nir_intrinsic_store_deref_block_intel: {
-      nir_def *addr = build_addr(b, intrin, base_addr, addr_format, 0);
+      nir_io_offset addr = build_addr(b, intrin, base_addr, addr_format, 0);
       nir_def *value = intrin->src[1].ssa;
       const nir_component_mask_t write_mask = 0;
       build_explicit_io_store(b, intrin, addr, addr_format,
@@ -1295,7 +1302,7 @@ nir_lower_explicit_io_instr(nir_builder *b,
    }
 
    default: {
-      nir_def *addr = build_addr(b, intrin, base_addr, addr_format, 0);
+      nir_io_offset addr = build_addr(b, intrin, base_addr, addr_format, 0);
       nir_def *value =
          build_explicit_io_atomic(b, intrin, addr, addr_format, deref->modes);
       nir_def_rewrite_uses(&intrin->def, value);
