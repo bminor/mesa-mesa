@@ -105,7 +105,7 @@ impl ALUType {
 }
 
 impl nir_def {
-    pub fn parent_instr<'a>(&'a self) -> &'a nir_instr {
+    pub fn parent_instr(&self) -> &nir_instr {
         unsafe { self.parent_instr.as_ref() }.unwrap()
     }
 
@@ -119,7 +119,7 @@ impl nir_def {
 }
 
 pub trait AsDef {
-    fn as_def<'a>(&'a self) -> &'a nir_def;
+    fn as_def(&self) -> &nir_def;
 
     fn bit_size(&self) -> u8 {
         self.as_def().bit_size
@@ -129,7 +129,7 @@ pub trait AsDef {
         self.as_def().num_components
     }
 
-    fn as_load_const<'a>(&'a self) -> Option<&'a nir_load_const_instr> {
+    fn as_load_const(&self) -> Option<&nir_load_const_instr> {
         self.as_def().parent_instr().as_load_const()
     }
 
@@ -189,13 +189,13 @@ pub trait AsDef {
 }
 
 impl AsDef for nir_def {
-    fn as_def<'a>(&'a self) -> &'a nir_def {
+    fn as_def(&self) -> &nir_def {
         self
     }
 }
 
 impl AsDef for nir_src {
-    fn as_def<'a>(&'a self) -> &'a nir_def {
+    fn as_def(&self) -> &nir_def {
         unsafe { self.ssa.as_ref() }.unwrap()
     }
 }
@@ -215,7 +215,7 @@ impl nir_alu_instr {
         }
     }
 
-    pub fn srcs_as_slice<'a>(&'a self) -> &'a [nir_alu_src] {
+    pub fn srcs_as_slice(&self) -> &[nir_alu_src] {
         unsafe {
             self.src
                 .as_slice(self.info().num_inputs.try_into().unwrap())
@@ -248,7 +248,7 @@ impl nir_alu_src {
 }
 
 impl nir_tex_instr {
-    pub fn srcs_as_slice<'a>(&'a self) -> &'a [nir_tex_src] {
+    pub fn srcs_as_slice(&self) -> &[nir_tex_src] {
         unsafe { std::slice::from_raw_parts(self.src, self.num_srcs as usize) }
     }
 
@@ -263,7 +263,7 @@ impl nir_intrinsic_instr {
         unsafe { &nir_intrinsic_infos[info_idx] }
     }
 
-    pub fn srcs_as_slice<'a>(&'a self) -> &'a [nir_src] {
+    pub fn srcs_as_slice(&self) -> &[nir_src] {
         unsafe { self.src.as_slice(self.info().num_srcs.try_into().unwrap()) }
     }
 
@@ -397,13 +397,13 @@ impl nir_intrinsic_info {
 }
 
 impl nir_load_const_instr {
-    pub fn values<'a>(&'a self) -> &'a [nir_const_value] {
+    pub fn values(&self) -> &[nir_const_value] {
         unsafe { self.value.as_slice(self.def.num_components as usize) }
     }
 }
 
 impl nir_phi_src {
-    pub fn pred<'a>(&'a self) -> &'a nir_block {
+    pub fn pred(&self) -> &nir_block {
         unsafe { self.pred.as_ref() }.unwrap()
     }
 }
@@ -415,17 +415,17 @@ impl nir_phi_instr {
 }
 
 impl nir_jump_instr {
-    pub fn target<'a>(&'a self) -> Option<&'a nir_block> {
+    pub fn target(&self) -> Option<&nir_block> {
         unsafe { self.target.as_ref() }
     }
 
-    pub fn else_target<'a>(&'a self) -> Option<&'a nir_block> {
+    pub fn else_target(&self) -> Option<&nir_block> {
         unsafe { self.else_target.as_ref() }
     }
 }
 
 impl nir_instr {
-    pub fn as_alu<'a>(&'a self) -> Option<&'a nir_alu_instr> {
+    pub fn as_alu(&self) -> Option<&nir_alu_instr> {
         if self.type_ == nir_instr_type_alu {
             let p = self as *const nir_instr;
             Some(unsafe { p.cast::<nir_alu_instr>().as_ref().unwrap() })
@@ -434,7 +434,7 @@ impl nir_instr {
         }
     }
 
-    pub fn as_jump<'a>(&'a self) -> Option<&'a nir_jump_instr> {
+    pub fn as_jump(&self) -> Option<&nir_jump_instr> {
         if self.type_ == nir_instr_type_jump {
             let p = self as *const nir_instr;
             Some(unsafe { p.cast::<nir_jump_instr>().as_ref().unwrap() })
@@ -443,7 +443,7 @@ impl nir_instr {
         }
     }
 
-    pub fn as_tex<'a>(&'a self) -> Option<&'a nir_tex_instr> {
+    pub fn as_tex(&self) -> Option<&nir_tex_instr> {
         if self.type_ == nir_instr_type_tex {
             let p = self as *const nir_instr;
             Some(unsafe { p.cast::<nir_tex_instr>().as_ref().unwrap() })
@@ -452,7 +452,7 @@ impl nir_instr {
         }
     }
 
-    pub fn as_intrinsic<'a>(&'a self) -> Option<&'a nir_intrinsic_instr> {
+    pub fn as_intrinsic(&self) -> Option<&nir_intrinsic_instr> {
         if self.type_ == nir_instr_type_intrinsic {
             let p = self as *const nir_instr;
             Some(unsafe { p.cast::<nir_intrinsic_instr>().as_ref().unwrap() })
@@ -461,7 +461,7 @@ impl nir_instr {
         }
     }
 
-    pub fn as_load_const<'a>(&'a self) -> Option<&'a nir_load_const_instr> {
+    pub fn as_load_const(&self) -> Option<&nir_load_const_instr> {
         if self.type_ == nir_instr_type_load_const {
             let p = self as *const nir_instr;
             Some(unsafe { p.cast::<nir_load_const_instr>().as_ref().unwrap() })
@@ -470,7 +470,7 @@ impl nir_instr {
         }
     }
 
-    pub fn as_undef<'a>(&'a self) -> Option<&'a nir_undef_instr> {
+    pub fn as_undef(&self) -> Option<&nir_undef_instr> {
         if self.type_ == nir_instr_type_undef {
             let p = self as *const nir_instr;
             Some(unsafe { p.cast::<nir_undef_instr>().as_ref().unwrap() })
@@ -479,7 +479,7 @@ impl nir_instr {
         }
     }
 
-    pub fn as_phi<'a>(&'a self) -> Option<&'a nir_phi_instr> {
+    pub fn as_phi(&self) -> Option<&nir_phi_instr> {
         if self.type_ == nir_instr_type_phi {
             let p = self as *const nir_instr;
             Some(unsafe { p.cast::<nir_phi_instr>().as_ref().unwrap() })
@@ -488,7 +488,7 @@ impl nir_instr {
         }
     }
 
-    pub fn def<'a>(&'a self) -> Option<&'a nir_def> {
+    pub fn def(&self) -> Option<&nir_def> {
         unsafe { nir_instr_def(self as *const _ as *mut _).as_ref() }
     }
 }
@@ -498,16 +498,16 @@ impl nir_block {
         ExecListIter::new(&self.instr_list, offset_of!(nir_instr, node))
     }
 
-    pub fn successors<'a>(&'a self) -> [Option<&'a nir_block>; 2] {
+    pub fn successors(&self) -> [Option<&nir_block>; 2] {
         unsafe { [self.successors[0].as_ref(), self.successors[1].as_ref()] }
     }
 
-    pub fn following_if<'a>(&'a self) -> Option<&'a nir_if> {
+    pub fn following_if(&self) -> Option<&nir_if> {
         let self_ptr = self as *const _ as *mut _;
         unsafe { nir_block_get_following_if(self_ptr).as_ref() }
     }
 
-    pub fn following_loop<'a>(&'a self) -> Option<&'a nir_loop> {
+    pub fn following_loop(&self) -> Option<&nir_loop> {
         let self_ptr = self as *const _ as *mut _;
         unsafe { nir_block_get_following_loop(self_ptr).as_ref() }
     }
@@ -554,7 +554,7 @@ impl nir_loop {
 }
 
 impl nir_cf_node {
-    pub fn as_block<'a>(&'a self) -> Option<&'a nir_block> {
+    pub fn as_block(&self) -> Option<&nir_block> {
         if self.type_ == nir_cf_node_block {
             let p = self as *const nir_cf_node;
             Some(unsafe { p.cast::<nir_block>().as_ref().unwrap() })
@@ -563,7 +563,7 @@ impl nir_cf_node {
         }
     }
 
-    pub fn as_if<'a>(&'a self) -> Option<&'a nir_if> {
+    pub fn as_if(&self) -> Option<&nir_if> {
         if self.type_ == nir_cf_node_if {
             let p = self as *const nir_cf_node;
             Some(unsafe { p.cast::<nir_if>().as_ref().unwrap() })
@@ -572,7 +572,7 @@ impl nir_cf_node {
         }
     }
 
-    pub fn as_loop<'a>(&'a self) -> Option<&'a nir_loop> {
+    pub fn as_loop(&self) -> Option<&nir_loop> {
         if self.type_ == nir_cf_node_loop {
             let p = self as *const nir_cf_node;
             Some(unsafe { p.cast::<nir_loop>().as_ref().unwrap() })
@@ -593,7 +593,7 @@ impl nir_cf_node {
         iter.next()
     }
 
-    pub fn parent<'a>(&'a self) -> Option<&'a nir_cf_node> {
+    pub fn parent(&self) -> Option<&nir_cf_node> {
         unsafe { self.parent.as_ref() }
     }
 }
@@ -603,11 +603,11 @@ impl nir_function_impl {
         ExecListIter::new(&self.body, offset_of!(nir_cf_node, node))
     }
 
-    pub fn end_block<'a>(&'a self) -> &'a nir_block {
+    pub fn end_block(&self) -> &nir_block {
         unsafe { self.end_block.as_ref() }.unwrap()
     }
 
-    pub fn function<'a>(&'a self) -> &'a nir_function {
+    pub fn function(&self) -> &nir_function {
         unsafe { self.function.as_ref() }.unwrap()
     }
 }
