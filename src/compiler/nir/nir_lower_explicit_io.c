@@ -1098,21 +1098,19 @@ build_explicit_io_atomic(nir_builder *b, nir_intrinsic_instr *intrin,
    }
 }
 
-nir_def *
-nir_explicit_io_address_from_deref(nir_builder *b, nir_deref_instr *deref,
-                                   nir_def *base_addr,
-                                   nir_address_format addr_format)
+static nir_def *
+explicit_io_offset_from_deref(nir_builder *b, nir_deref_instr *deref,
+                              unsigned offset_bit_size)
 {
    switch (deref->deref_type) {
    case nir_deref_type_var:
-      return build_addr_for_var(b, deref->var, addr_format);
+      return NULL;
 
    case nir_deref_type_ptr_as_array:
    case nir_deref_type_array: {
       unsigned stride = nir_deref_instr_array_stride(deref);
       assert(stride > 0);
 
-      unsigned offset_bit_size = addr_get_offset_bit_size(base_addr, addr_format);
       nir_def *index = deref->arr.index.ssa;
       nir_def *offset;
 
@@ -1130,8 +1128,7 @@ nir_explicit_io_address_from_deref(nir_builder *b, nir_deref_instr *deref,
          offset = nir_amul_imm(b, index, stride);
       }
 
-      return nir_build_addr_iadd(b, base_addr, addr_format,
-                                 deref->modes, offset);
+      return offset;
    }
 
    case nir_deref_type_array_wildcard:
@@ -1143,16 +1140,31 @@ nir_explicit_io_address_from_deref(nir_builder *b, nir_deref_instr *deref,
       int offset = glsl_get_struct_field_offset(parent->type,
                                                 deref->strct.index);
       assert(offset >= 0);
-      return nir_build_addr_iadd_imm(b, base_addr, addr_format,
-                                     deref->modes, offset);
+      return nir_imm_intN_t(b, offset, offset_bit_size);
    }
 
    case nir_deref_type_cast:
       /* Nothing to do here */
-      return base_addr;
+      return NULL;
    }
 
    UNREACHABLE("Invalid NIR deref type");
+}
+
+nir_def *
+nir_explicit_io_address_from_deref(nir_builder *b, nir_deref_instr *deref,
+                                   nir_def *base_addr,
+                                   nir_address_format addr_format)
+{
+   if (deref->deref_type == nir_deref_type_var) {
+      return build_addr_for_var(b, deref->var, addr_format);
+   }
+
+   nir_def *offset = explicit_io_offset_from_deref(
+      b, deref, addr_get_offset_bit_size(base_addr, addr_format));
+   return offset ? nir_build_addr_iadd(b, base_addr, addr_format, deref->modes,
+                                       offset)
+                 : base_addr;
 }
 
 void
