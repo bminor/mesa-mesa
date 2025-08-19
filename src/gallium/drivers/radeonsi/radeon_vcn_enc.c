@@ -634,6 +634,18 @@ static bool cu_qp_delta_supported(struct si_screen *sscreen)
       return false;
 }
 
+static bool transform_skip_supported(struct si_screen *sscreen)
+{
+   if (sscreen->info.vcn_ip_version >= VCN_5_0_0)
+      return true;
+   else if (sscreen->info.vcn_ip_version >= VCN_4_0_0)
+      return sscreen->info.vcn_enc_minor_version >= 2;
+   else if (sscreen->info.vcn_ip_version >= VCN_3_0_0)
+      return sscreen->info.vcn_enc_minor_version >= 23;
+   else
+      return false;
+}
+
 static void radeon_vcn_enc_hevc_get_spec_misc_param(struct radeon_encoder *enc,
                                                     struct pipe_h265_enc_picture_desc *pic)
 {
@@ -652,7 +664,7 @@ static void radeon_vcn_enc_hevc_get_spec_misc_param(struct radeon_encoder *enc,
    enc->enc_pic.hevc_spec_misc.half_pel_enabled = 1;
    enc->enc_pic.hevc_spec_misc.quarter_pel_enabled = 1;
    enc->enc_pic.hevc_spec_misc.transform_skip_disabled =
-      sscreen->info.vcn_ip_version < VCN_3_0_0 ||
+      !transform_skip_supported(sscreen) ||
       !pic->pic.transform_skip_enabled_flag;
    enc->enc_pic.hevc_spec_misc.cu_qp_delta_enabled_flag =
       (cu_qp_delta_supported(sscreen) && pic->pic.cu_qp_delta_enabled_flag) ||
