@@ -216,10 +216,7 @@ impl nir_alu_instr {
     }
 
     pub fn srcs_as_slice(&self) -> &[nir_alu_src] {
-        unsafe {
-            self.src
-                .as_slice(self.info().num_inputs.try_into().unwrap())
-        }
+        unsafe { self.src.as_slice(self.info().num_inputs.into()) }
     }
 
     pub fn get_src(&self, idx: usize) -> &nir_alu_src {
@@ -264,7 +261,7 @@ impl nir_intrinsic_instr {
     }
 
     pub fn srcs_as_slice(&self) -> &[nir_src] {
-        unsafe { self.src.as_slice(self.info().num_srcs.try_into().unwrap()) }
+        unsafe { self.src.as_slice(self.info().num_srcs.into()) }
     }
 
     pub fn get_src(&self, idx: usize) -> &nir_src {
