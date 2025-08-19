@@ -22,12 +22,14 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
 unsafe fn is_nvidia_device(dev: drmDevicePtr) -> bool {
-    match (*dev).bustype as u32 {
-        DRM_BUS_PCI => {
-            let pci = (*dev).deviceinfo.pci.as_ref().unwrap();
-            pci.vendor_id == (NVIDIA_VENDOR_ID as u16)
+    unsafe {
+        match (*dev).bustype as u32 {
+            DRM_BUS_PCI => {
+                let pci = (*dev).deviceinfo.pci.as_ref().unwrap();
+                pci.vendor_id == (NVIDIA_VENDOR_ID as u16)
+            }
+            _ => false,
         }
-        _ => false,
     }
 }
 
@@ -416,8 +418,10 @@ impl<'a> Runner {
         data: *mut std::os::raw::c_void,
         data_size: usize,
     ) -> io::Result<()> {
-        assert!(shader.info.stage == MESA_SHADER_COMPUTE);
-        let cs_info = &shader.info.__bindgen_anon_1.cs;
+        let cs_info = unsafe {
+            assert!(shader.info.stage == MESA_SHADER_COMPUTE);
+            &shader.info.__bindgen_anon_1.cs
+        };
         assert!(cs_info.local_size[1] == 1 && cs_info.local_size[2] == 1);
         let local_size = cs_info.local_size[0];
 
@@ -441,29 +445,36 @@ impl<'a> Runner {
 
         // Copy the data from the caller into our BO
         let data_addr = bo.addr + u64::try_from(data_offset).unwrap();
-        let data_map = bo.map.byte_offset(data_offset.try_into().unwrap());
-        if data_size > 0 {
-            std::ptr::copy(data, data_map, data_size);
+        unsafe {
+            let data_map = bo.map.byte_offset(data_offset.try_into().unwrap());
+            if data_size > 0 {
+                std::ptr::copy(data, data_map, data_size);
+            }
         }
 
         // Fill out cb0
         let cb0_addr = bo.addr + u64::try_from(cb0_offset).unwrap();
-        let cb0_map = bo.map.byte_offset(cb0_offset.try_into().unwrap());
-        cb0_map.cast::<CB0>().write(CB0 {
-            data_addr_lo: data_addr as u32,
-            data_addr_hi: (data_addr >> 32) as u32,
-            data_stride,
-            invocations,
-        });
+        unsafe {
+            let cb0_map = bo.map.byte_offset(cb0_offset.try_into().unwrap());
+            cb0_map.cast::<CB0>().write(CB0 {
+                data_addr_lo: data_addr as u32,
+                data_addr_hi: (data_addr >> 32) as u32,
+                data_stride,
+                invocations,
+            });
+        }
 
         // Upload the shader
         let shader_addr = bo.addr + u64::try_from(shader_offset).unwrap();
-        let shader_map = bo.map.byte_offset(shader_offset.try_into().unwrap());
-        std::ptr::copy(
-            shader.code,
-            shader_map,
-            shader.code_size.try_into().unwrap(),
-        );
+        unsafe {
+            let shader_map =
+                bo.map.byte_offset(shader_offset.try_into().unwrap());
+            std::ptr::copy(
+                shader.code,
+                shader_map,
+                shader.code_size.try_into().unwrap(),
+            );
+        }
 
         // Populate and upload the QMD
         let mut qmd_cbufs: [nak_qmd_cbuf; 8] = Default::default();
@@ -487,13 +498,15 @@ impl<'a> Runner {
         };
 
         let qmd = self.qmd_heap.alloc_qmd()?;
-        nak_fill_qmd(
-            self.dev_info(),
-            &shader.info,
-            &qmd_info,
-            qmd.map,
-            QMDHeap::QMD_SIZE.try_into().unwrap(),
-        );
+        unsafe {
+            nak_fill_qmd(
+                self.dev_info(),
+                &shader.info,
+                &qmd_info,
+                qmd.map,
+                QMDHeap::QMD_SIZE.try_into().unwrap(),
+            );
+        }
 
         // Fill out the pushbuf
         let mut p = NvPush::new();
@@ -560,15 +573,19 @@ impl<'a> Runner {
         }
 
         let push_addr = bo.addr + u64::try_from(push_offset).unwrap();
-        let push_map = bo.map.byte_offset(push_offset.try_into().unwrap());
-        std::ptr::copy(p.as_ptr(), push_map.cast(), p.len());
+        unsafe {
+            let push_map = bo.map.byte_offset(push_offset.try_into().unwrap());
+            std::ptr::copy(p.as_ptr(), push_map.cast(), p.len());
+        }
 
         let res = self.ctx.exec(push_addr, (p.len() * 4).try_into().unwrap());
 
         // Always copy the data back to the caller, even if exec fails
-        let data_map = bo.map.byte_offset(data_offset.try_into().unwrap());
-        if data_size > 0 {
-            std::ptr::copy(data_map, data, data_size);
+        unsafe {
+            let data_map = bo.map.byte_offset(data_offset.try_into().unwrap());
+            if data_size > 0 {
+                std::ptr::copy(data_map, data, data_size);
+            }
         }
 
         res
