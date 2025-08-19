@@ -6,6 +6,7 @@ spec@!opengl 1.4@tex-miplevel-selection
 spec@!opengl 1.4@tex-miplevel-selection-lod
 spec@!opengl 1.4@tex-miplevel-selection-lod-bias
 
+spec@!opengl 1.5@depth-tex-compare
 spec@!opengl 2.1@pbo@test_draw_pixels
 spec@arb_draw_buffers@fbo-mrt-alphatest
 spec@arb_sampler_objects@sampler-incomplete
