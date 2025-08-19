@@ -1,3 +1,6 @@
+// Copyright 2022 Red Hat.
+// SPDX-License-Identifier: MIT
+
 use crate::pipe::{context::PipeContext, screen::*};
 
 use libc_rust_gen::close;

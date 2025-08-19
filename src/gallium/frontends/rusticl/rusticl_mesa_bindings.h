@@ -1,3 +1,9 @@
+/*
+ * Copyright 2020 Red Hat.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 #include "rusticl_system_bindings.h"
 
 #include "compiler/clc/nir_clc_helpers.h"

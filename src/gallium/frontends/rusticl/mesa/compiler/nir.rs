@@ -1,3 +1,6 @@
+// Copyright 2022 Red Hat.
+// SPDX-License-Identifier: MIT
+
 use mesa_rust_gen::*;
 use mesa_rust_util::bitset;
 

@@ -1,3 +1,6 @@
+// Copyright 2025 Seán de Búrca.
+// SPDX-License-Identifier: MIT
+
 //! An abstraction of mesa's `util_queue` and related primitives for
 //! asynchronous, queue-based execution of arbitrary jobs.
 

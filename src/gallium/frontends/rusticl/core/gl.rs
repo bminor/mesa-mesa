@@ -1,3 +1,6 @@
+// Copyright 2023 Antonio Gomes.
+// SPDX-License-Identifier: MIT
+
 use crate::api::icd::*;
 use crate::api::types::*;
 use crate::core::context::*;

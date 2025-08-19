@@ -1,3 +1,6 @@
+// Copyright 2020 Red Hat.
+// SPDX-License-Identifier: MIT
+
 #![allow(non_snake_case)]
 
 use crate::api::context::*;

@@ -1,3 +1,6 @@
+// Copyright 2022 Red Hat.
+// SPDX-License-Identifier: MIT
+
 /// Casts a &[T] to a [&u8] without copying.
 /// Inspired by cast_slice from the bytemuck crate. Drop this copy once external crates are supported.
 ///

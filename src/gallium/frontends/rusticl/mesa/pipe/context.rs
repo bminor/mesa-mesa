@@ -1,3 +1,6 @@
+// Copyright 2020 Red Hat.
+// SPDX-License-Identifier: MIT
+
 use crate::compiler::nir::*;
 use crate::pipe::fence::*;
 use crate::pipe::resource::*;

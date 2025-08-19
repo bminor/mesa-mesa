@@ -1,3 +1,6 @@
+// Copyright 2022 Red Hat.
+// SPDX-License-Identifier: MIT
+
 use libc_rust_gen::free;
 use mesa_rust_gen::*;
 

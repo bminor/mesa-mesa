@@ -1,3 +1,6 @@
+// Copyright 2023 Dr. David Alan Gilbert.
+// SPDX-License-Identifier: MIT
+
 use crate::pipe::context::*;
 
 use mesa_rust_gen::*;

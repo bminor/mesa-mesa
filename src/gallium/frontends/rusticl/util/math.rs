@@ -1,3 +1,6 @@
+// Copyright 2022 Red Hat.
+// SPDX-License-Identifier: MIT
+
 use std::ops::Rem;
 
 pub fn gcd<T>(mut a: T, mut b: T) -> T

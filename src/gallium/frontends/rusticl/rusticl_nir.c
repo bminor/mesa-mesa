@@ -1,3 +1,9 @@
+/*
+ * Copyright 2022 Red Hat.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 #include "CL/cl.h"
 
 #include "nir.h"

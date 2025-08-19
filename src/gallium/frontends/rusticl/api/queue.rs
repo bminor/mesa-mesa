@@ -1,3 +1,6 @@
+// Copyright 2020 Red Hat.
+// SPDX-License-Identifier: MIT
+
 use crate::api::event::create_and_queue;
 use crate::api::icd::*;
 use crate::api::util::*;

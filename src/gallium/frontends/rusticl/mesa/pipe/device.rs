@@ -1,3 +1,6 @@
+// Copyright 2020 Red Hat.
+// SPDX-License-Identifier: MIT
+
 use crate::pipe::screen::*;
 
 use mesa_rust_gen::*;

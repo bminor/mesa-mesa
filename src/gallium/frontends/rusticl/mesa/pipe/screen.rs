@@ -1,3 +1,6 @@
+// Copyright 2020 Red Hat.
+// SPDX-License-Identifier: MIT
+
 use crate::compiler::nir::NirShader;
 use crate::pipe::context::*;
 use crate::pipe::device::*;

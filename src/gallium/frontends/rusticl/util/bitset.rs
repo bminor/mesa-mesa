@@ -1,3 +1,6 @@
+// Copyright 2022 Red Hat.
+// SPDX-License-Identifier: MIT
+
 pub fn test_bit(bitset: &[u32], bit: u32) -> bool {
     let idx = bit / 32;
     let test = bit % 32;
