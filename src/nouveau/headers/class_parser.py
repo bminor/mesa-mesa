@@ -294,7 +294,7 @@ pub struct ${to_camel(mthd.name)} {
 % if not mthd.is_array:
 ## This trait lays out how the conversion to u32 happens
 impl Mthd for ${to_camel(mthd.name)} {
-    const ADDR: u16 = ${mthd.addr.replace('(', '').replace(')', '')};
+    const ADDR: u16 = ${mthd.addr_expr(None)};
     const CLASS: u16 = ${version[1].lower() if version is not None else nvcl.lower().replace("nv", "0x")};
 
 %else:
@@ -302,8 +302,7 @@ impl ArrayMthd for ${to_camel(mthd.name)} {
     const CLASS: u16 = ${version[1].lower() if version is not None else nvcl.lower().replace("nv", "0x")};
 
     fn addr(i: usize) -> u16 {
-        <% assert not ('i' in mthd.addr and 'j' in mthd.addr) %>
-        (${mthd.addr.replace('j', 'i').replace('(', '').replace(')', '')}).try_into().unwrap()
+        (${mthd.addr_expr('i')}).try_into().unwrap()
     }
 %endif
 
@@ -438,6 +437,25 @@ class Method(object):
                self.addr == other.addr and \
                self.is_array == other.is_array and \
                self.fields == other.fields
+
+    def addr_expr(self, idx_var):
+        expr = self.addr
+        if self.is_array:
+            # We don't support multiple-indexing but the headers aren't
+            # consistent in choosing i vs. j.
+            assert idx_var is not None
+            assert not ('i' in self.addr and 'j' in self.addr)
+            expr = re.sub(r'[ij]', idx_var, expr)
+
+            # Rust doesn't like extra parens
+            expr = expr.replace('(' + idx_var + ')', idx_var)
+        else:
+            assert not 'i' in self.addr and not 'j' in self.addr
+
+        # Rust also doesn't like extra parens
+        expr = strip_parens(expr)
+
+        return expr
 
     @property
     def array_size(self):
