@@ -204,7 +204,7 @@ fn generate_order(
 fn sched_buffer(
     sm: &dyn ShaderModel,
     instrs: Vec<Box<Instr>>,
-) -> (impl Iterator<Item = Box<Instr>>, u32) {
+) -> (impl Iterator<Item = Box<Instr>> + use<>, u32) {
     let mut g = generate_dep_graph(sm, &instrs);
     let init_ready_list = calc_statistics(&mut g);
     // save_graphviz(&instrs, &g).unwrap();
