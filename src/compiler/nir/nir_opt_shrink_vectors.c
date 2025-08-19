@@ -130,7 +130,7 @@ shrink_dest_to_read_mask(nir_def *def, bool shrink_start)
             }
 
             nir_builder b = nir_builder_at(nir_before_instr(&intr->instr));
-            nir_src_rewrite(offset_src, nir_iadd_imm(&b, offset_src->ssa, offset));
+            nir_add_io_offset(&b, intr, offset);
          }
 
          /* Reswizzle sources, which must be ALU since they have swizzle */
