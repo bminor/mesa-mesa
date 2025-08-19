@@ -2308,8 +2308,21 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
    if (pdev->info.gfx_level == GFX12 && instance->drirc.disable_hiz_his_gfx12)
       pdev->use_hiz = false;
 
-   if (pdev->info.gfx_level == GFX12)
-      pdev->gfx12_hiz_wa = RADV_GFX12_HIZ_WA_PARTIAL;
+   if (pdev->info.gfx_level == GFX12) {
+      const char *gfx12_hiz_wa_str = getenv("RADV_GFX12_HIZ_WA");
+
+      pdev->gfx12_hiz_wa = RADV_GFX12_HIZ_WA_PARTIAL; /* Default */
+
+      if (gfx12_hiz_wa_str) {
+         if (!strcmp(gfx12_hiz_wa_str, "disabled")) {
+            pdev->gfx12_hiz_wa = RADV_GFX12_HIZ_WA_DISABLED;
+         } else if (!strcmp(gfx12_hiz_wa_str, "partial")) {
+            pdev->gfx12_hiz_wa = RADV_GFX12_HIZ_WA_PARTIAL;
+         } else if (!strcmp(gfx12_hiz_wa_str, "full")) {
+            pdev->gfx12_hiz_wa = RADV_GFX12_HIZ_WA_FULL;
+         }
+      }
+   }
 
    pdev->use_ngg = (pdev->info.gfx_level >= GFX10 && pdev->info.family != CHIP_NAVI14 &&
                     !(instance->debug_flags & RADV_DEBUG_NO_NGG)) ||

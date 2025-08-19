@@ -1612,6 +1612,19 @@ RADV driver environment variables
    ``peak``
       force GPU clocks to their maximum level, this is the default value
 
+.. envvar:: RADV_GFX12_HIZ_WA
+
+   choose the specific HiZ workaround to apply on GFX12 (RDNA4). The possible
+   values are:
+
+   ``disabled``
+     no HiZ workaround is enabled, use at your own risk but optimal for performance
+   ``partial``
+     mitigate the issue partially, potentially risky but performance should be
+     mostly optimal (default value)
+   ``full``
+     mitigate the issue completely, no risk but performance might be decreased
+
 .. envvar:: ACO_DEBUG
 
    a comma-separated list of named flags, which do various things:
