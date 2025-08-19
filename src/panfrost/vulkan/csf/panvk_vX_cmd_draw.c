@@ -2567,8 +2567,7 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
    struct cs_index draw_id = cs_scratch_reg32(b, 7);
    struct cs_index vs_fau_addr = cs_scratch_reg64(b, 8);
    struct cs_index tracing_scratch_regs = cs_scratch_reg_tuple(b, 10, 4);
-   uint32_t vs_fau_count = BITSET_COUNT(vs->fau.used_sysvals) +
-                           BITSET_COUNT(vs->fau.used_push_consts);
+   uint32_t vs_fau_count = vs->fau.total_count;
 
    if (draw->indirect.count_buffer_dev_addr) {
       cs_move32_to(b, max_draw_count, draw->indirect.draw_count);

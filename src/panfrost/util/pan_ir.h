@@ -120,6 +120,15 @@ struct pan_compile_inputs {
     */
    uint32_t fixed_varying_mask;
 
+   /* Settings to move constants into the FAU. */
+   struct {
+      uint32_t *values;
+      /* In multiples of 32bit. */
+      uint32_t max_amount;
+      /* In multiples of 32bit. */
+      uint32_t offset;
+   } fau_consts;
+
    union {
       struct {
          uint32_t rt_conv[8];
@@ -203,6 +212,9 @@ struct pan_shader_info {
 
    /* Bit mask of preloaded registers */
    uint64_t preload;
+
+   uint32_t fau_consts_count;
+   uint32_t fau_consts[128];
 
    union {
       struct {

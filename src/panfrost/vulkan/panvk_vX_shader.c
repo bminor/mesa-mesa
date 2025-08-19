@@ -1,4 +1,5 @@
 /*
+ * Copyright © 2025 Arm Ltd.
  * Copyright © 2021 Collabora Ltd.
  *
  * Derived from tu_shader.c which is:
@@ -61,6 +62,8 @@
 #include "vk_pipeline_layout.h"
 #include "vk_shader.h"
 #include "vk_util.h"
+
+#define FAU_WORD_COUNT 64
 
 struct panvk_lower_sysvals_context {
    struct panvk_shader_variant *shader;
@@ -710,10 +713,11 @@ lower_load_push_consts(nir_shader *nir, struct panvk_shader_variant *shader)
     * needed in the blend shader. */
    shader->fau.sysval_count = BITSET_COUNT(shader->fau.used_sysvals);
    /* 32 FAUs (256 bytes) are reserved for API push constants */
-   assert(shader->fau.sysval_count <= 64 - 32 && "too many sysval FAUs");
+   assert(shader->fau.sysval_count <= FAU_WORD_COUNT - 32 &&
+          "too many sysval FAUs");
    shader->fau.total_count =
       shader->fau.sysval_count + BITSET_COUNT(shader->fau.used_push_consts);
-   assert(shader->fau.total_count <= 64 &&
+   assert(shader->fau.total_count <= FAU_WORD_COUNT &&
           "asking for more FAUs than the hardware has to offer");
 
    if (!progress)
@@ -976,6 +980,11 @@ panvk_compile_nir(struct panvk_device *dev, nir_shader *nir,
    struct util_dynarray binary;
    util_dynarray_init(&binary, NULL);
    pan_shader_compile(nir, compile_input, &binary, &shader->info);
+
+   /* Propagate potential additional FAU values into the panvk info struct. */
+   /* FAU consts are pushed as 32bit values, but total_count is for 64bit
+    * ones. */
+   shader->fau.total_count += DIV_ROUND_UP(shader->info.fau_consts_count, 2);
 
    void *bin_ptr = util_dynarray_element(&binary, uint8_t, 0);
    unsigned bin_size = util_dynarray_num_elements(&binary, uint8_t);
@@ -1355,6 +1364,13 @@ panvk_compile_shader(struct panvk_device *dev,
                          info->robustness, noperspective_varyings, state,
                          &inputs, variant);
 
+         /* Allow the remaining FAU space to be filled with constants. */
+         input_variants[v].fau_consts.max_amount =
+            2 * (FAU_WORD_COUNT - variant->fau.total_count);
+         input_variants[v].fau_consts.offset = variant->fau.total_count * 2;
+         input_variants[v].fau_consts.values = &variant->info.fau_consts[0];
+         assert(input_variants[v].fau_consts.max_amount <= ARRAY_SIZE(variant->info.fau_consts));
+
          variant->own_bin = true;
 
          result = panvk_compile_nir(dev, nir_variants[v], info->flags,
@@ -1390,6 +1406,12 @@ panvk_compile_shader(struct panvk_device *dev,
          /* Use LD_VAR_BUF[_IMM] for varyings if possible. */
          inputs.valhall.use_ld_var_buf = panvk_use_ld_var_buf(variant);
 #endif
+
+      /* Allow the remaining FAU space to be filled with constants. */
+      inputs.fau_consts.max_amount = 2 * (FAU_WORD_COUNT - variant->fau.total_count);
+      inputs.fau_consts.offset = variant->fau.total_count * 2;
+      inputs.fau_consts.values = &variant->info.fau_consts[0];
+      assert(inputs.fau_consts.max_amount <= ARRAY_SIZE(variant->info.fau_consts));
 
       result = panvk_compile_nir(dev, nir, info->flags, &inputs, variant);
 

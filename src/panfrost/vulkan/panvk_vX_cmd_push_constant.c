@@ -70,6 +70,11 @@ panvk_per_arch(cmd_prepare_push_uniforms)(
 
       BITSET_FOREACH_SET(w, shader->fau.used_push_consts, MAX_PUSH_CONST_FAUS)
          faus[fau++] = push_consts[w];
+
+      for (uint32_t i = 0; i < shader->info.fau_consts_count; i += 2) {
+         faus[fau++] = (uint64_t)shader->info.fau_consts[i + 1] << 32 |
+                       shader->info.fau_consts[i];
+      }
    }
 
    *push_ptr = push_uniforms.gpu;
