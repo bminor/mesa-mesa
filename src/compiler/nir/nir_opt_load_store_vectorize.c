@@ -861,10 +861,17 @@ vectorize_loads(nir_builder *b, struct vectorize_ctx *ctx,
        * nir_opt_algebraic() turns them into "i * 16 + 16" */
       b->cursor = nir_before_instr(first->instr);
 
-      nir_def *new_base = first->intrin->src[info->base_src].ssa;
-      new_base = nir_iadd_imm(b, new_base, -(int)(high_start / 8u / get_offset_scale(first)));
-
-      nir_src_rewrite(&first->intrin->src[info->base_src], new_base);
+      if (nir_intrinsic_has_offset_shift(first->intrin)) {
+         nir_add_io_offset(b, first->intrin, -(int)(high_start / 8u));
+      } else {
+         /* TODO once all intrinsics that need a scaled offset use
+          * offset_shift, this old path can be removed.
+          */
+         nir_def *new_base = first->intrin->src[info->base_src].ssa;
+         new_base = nir_iadd_imm(
+            b, new_base, -(int)(high_start / 8u / get_offset_scale(first)));
+         nir_src_rewrite(&first->intrin->src[info->base_src], new_base);
+      }
    }
 
    /* update the deref */
@@ -994,6 +1001,14 @@ vectorize_stores(nir_builder *b, struct vectorize_ctx *ctx,
    /* update base/align */
    if (second != low && nir_intrinsic_has_base(second->intrin))
       nir_intrinsic_set_base(second->intrin, nir_intrinsic_base(low->intrin));
+
+   /* update offset_shift: since we use low's offset, we should use its
+    * offset_shift as well.
+    */
+   if (second != low && nir_intrinsic_has_offset_shift(second->intrin)) {
+      nir_intrinsic_set_offset_shift(second->intrin,
+                                     nir_intrinsic_offset_shift(low->intrin));
+   }
 
    second->key = low->key;
    second->offset = low->offset;
