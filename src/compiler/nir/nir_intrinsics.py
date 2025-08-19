@@ -895,7 +895,7 @@ intrinsic("load_vulkan_descriptor", src_comp=[-1], dest_comp=0,
 # The offset is sign-extended or zero-extended based on the SIGN_EXTEND index.
 
 intrinsic("deref_atomic",  src_comp=[-1, 1], dest_comp=1, indices=[ACCESS, ATOMIC_OP])
-intrinsic("ssbo_atomic",  src_comp=[-1, 1, 1], dest_comp=1, indices=[ACCESS, ATOMIC_OP])
+intrinsic("ssbo_atomic",  src_comp=[-1, 1, 1], dest_comp=1, indices=[ACCESS, ATOMIC_OP, OFFSET_SHIFT])
 intrinsic("shared_atomic",  src_comp=[1, 1], dest_comp=1, indices=[BASE, ATOMIC_OP])
 intrinsic("task_payload_atomic",  src_comp=[1, 1], dest_comp=1, indices=[BASE, ATOMIC_OP])
 intrinsic("global_atomic",  src_comp=[1, 1], dest_comp=1, indices=[ATOMIC_OP])
@@ -904,7 +904,7 @@ intrinsic("global_atomic_amd",  src_comp=[1, 1, 1], dest_comp=1, indices=[BASE, 
 intrinsic("global_atomic_agx",  src_comp=[1, 1, 1], dest_comp=1, indices=[ATOMIC_OP, SIGN_EXTEND])
 
 intrinsic("deref_atomic_swap",  src_comp=[-1, 1, 1], dest_comp=1, indices=[ACCESS, ATOMIC_OP])
-intrinsic("ssbo_atomic_swap",  src_comp=[-1, 1, 1, 1], dest_comp=1, indices=[ACCESS, ATOMIC_OP])
+intrinsic("ssbo_atomic_swap",  src_comp=[-1, 1, 1, 1], dest_comp=1, indices=[ACCESS, ATOMIC_OP, OFFSET_SHIFT])
 intrinsic("shared_atomic_swap",  src_comp=[1, 1, 1], dest_comp=1, indices=[BASE, ATOMIC_OP])
 intrinsic("task_payload_atomic_swap",  src_comp=[1, 1, 1], dest_comp=1, indices=[BASE, ATOMIC_OP])
 intrinsic("global_atomic_swap",  src_comp=[1, 1, 1], dest_comp=1, indices=[ATOMIC_OP])
@@ -1231,7 +1231,7 @@ load("interpolated_input", [2, 1], [BASE, COMPONENT, DEST_TYPE, IO_SEMANTICS], [
 load("per_primitive_input", [1], [BASE, COMPONENT, DEST_TYPE, IO_SEMANTICS], [CAN_ELIMINATE, CAN_REORDER])
 
 # src[] = { buffer_index, offset }.
-load("ssbo", [-1, 1], [ACCESS, ALIGN_MUL, ALIGN_OFFSET], [CAN_ELIMINATE])
+load("ssbo", [-1, 1], [ACCESS, ALIGN_MUL, ALIGN_OFFSET, OFFSET_SHIFT], [CAN_ELIMINATE])
 # src[] = { buffer_index, offset }
 load("ssbo_address", [1, 1], [], [CAN_ELIMINATE, CAN_REORDER])
 # src[] = { offset }.
@@ -1292,7 +1292,7 @@ store("per_view_output", [1, 1], [BASE, RANGE, WRITE_MASK, COMPONENT, SRC_TYPE, 
 # src[] = { value, primitive, offset }.
 store("per_primitive_output", [1, 1], [BASE, RANGE, WRITE_MASK, COMPONENT, SRC_TYPE, IO_SEMANTICS])
 # src[] = { value, block_index, offset }
-store("ssbo", [-1, 1], [WRITE_MASK, ACCESS, ALIGN_MUL, ALIGN_OFFSET])
+store("ssbo", [-1, 1], [WRITE_MASK, ACCESS, ALIGN_MUL, ALIGN_OFFSET, OFFSET_SHIFT])
 # src[] = { value, offset }.
 store("shared", [1], [BASE, WRITE_MASK, ALIGN_MUL, ALIGN_OFFSET])
 # src[] = { value, offset }.
@@ -1427,13 +1427,13 @@ system_value("tess_param_buffer_poly", 1, bit_sizes=[64])
 # The float versions are not handled because those are not supported
 # by the backend.
 store("ssbo_ir3", [1, 1, 1],
-      indices=[BASE, WRITE_MASK, ACCESS, ALIGN_MUL, ALIGN_OFFSET])
+      indices=[BASE, WRITE_MASK, ACCESS, ALIGN_MUL, ALIGN_OFFSET, OFFSET_SHIFT])
 load("ssbo_ir3",  [1, 1, 1],
-     indices=[BASE, ACCESS, ALIGN_MUL, ALIGN_OFFSET], flags=[CAN_ELIMINATE])
+     indices=[BASE, ACCESS, ALIGN_MUL, ALIGN_OFFSET, OFFSET_SHIFT], flags=[CAN_ELIMINATE])
 intrinsic("ssbo_atomic_ir3",       src_comp=[1, 1, 1, 1],    dest_comp=1,
-          indices=[ACCESS, ATOMIC_OP])
+          indices=[ACCESS, ATOMIC_OP, OFFSET_SHIFT])
 intrinsic("ssbo_atomic_swap_ir3",  src_comp=[1, 1, 1, 1, 1], dest_comp=1,
-          indices=[ACCESS, ATOMIC_OP])
+          indices=[ACCESS, ATOMIC_OP, OFFSET_SHIFT])
 
 # IR3-specific intrinsic for UAVs, which are like SSBOs but with a source
 # for which "record" to access as well as the offset within the record, instead
