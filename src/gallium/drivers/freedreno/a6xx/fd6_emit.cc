@@ -854,6 +854,12 @@ fd6_emit_static_non_context_regs(struct fd_context *ctx, fd_cs &cs)
 
       uint32_t value = magic_reg.value;
       switch(magic_reg.reg) {
+         case REG_A6XX_TPL1_DBG_ECO_CNTL:
+            value = (value & ~A6XX_TPL1_DBG_ECO_CNTL_LINEAR_MIPMAP_FALLBACK_IN_BLOCKS) |
+                    (screen->info->props.supports_linear_mipmap_threshold_in_blocks
+                        ? A6XX_TPL1_DBG_ECO_CNTL_LINEAR_MIPMAP_FALLBACK_IN_BLOCKS
+                        : 0);
+            break;
          case REG_A6XX_TPL1_DBG_ECO_CNTL1:
             value = (value & ~A6XX_TPL1_DBG_ECO_CNTL1_TP_UBWC_FLAG_HINT) |
                     (screen->info->props.enable_tp_ubwc_flag_hint

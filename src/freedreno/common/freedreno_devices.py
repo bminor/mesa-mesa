@@ -399,6 +399,9 @@ a6xx_gen3 = GPUProps(
         prede_nop_quirk = True,
         has_pred_bit = True,
         has_pc_dgen_so_cntl = True,
+        # HW seem to support this, but prop driver doesn't enable it,
+        # Be safe and don't enable it either.
+        # supports_linear_mipmap_threshold_in_blocks = True,
     )
 
 a6xx_gen4 = GPUProps(
@@ -437,6 +440,9 @@ a6xx_gen4 = GPUProps(
         has_sel_b_fneg = True,
         has_pred_bit = True,
         has_pc_dgen_so_cntl = True,
+        # HW seem to support this, but prop driver doesn't enable it,
+        # Be safe and don't enable it either.
+        # supports_linear_mipmap_threshold_in_blocks = True,
     )
 
 add_gpus([
@@ -949,6 +955,7 @@ a7xx_base = GPUProps(
         has_early_preamble = True,
         has_attachment_shading_rate = True,
         has_ubwc_linear_mipmap_fallback = True,
+        supports_linear_mipmap_threshold_in_blocks = True,
         prede_nop_quirk = True,
         predtf_nop_quirk = True,
         has_sad = True,

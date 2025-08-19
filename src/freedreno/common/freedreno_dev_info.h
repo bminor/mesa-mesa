@@ -224,6 +224,11 @@ struct fd_dev_info {
        */
       bool has_ubwc_linear_mipmap_fallback;
 
+      /* Whether threshold for linear mipmaps for compressed textures is in
+       * blocks, if false then threshold is in texels.
+       */
+      bool supports_linear_mipmap_threshold_in_blocks;
+
       /* Whether 4 nops are needed after the second pred[tf] of a
        * pred[tf]/pred[ft] pair to work around a hardware issue.
        */

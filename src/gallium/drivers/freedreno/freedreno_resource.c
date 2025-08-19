@@ -1186,6 +1186,7 @@ fd_resource_resize(struct pipe_resource *prsc, uint32_t sz)
 void
 fd_resource_layout_init(struct pipe_resource *prsc)
 {
+   const struct fd_dev_info *info = fd_screen(prsc->screen)->info;
    struct fd_resource *rsc = fd_resource(prsc);
    struct fdl_layout *layout = &rsc->layout;
 
@@ -1198,6 +1199,9 @@ fd_resource_layout_init(struct pipe_resource *prsc)
    layout->cpp = util_format_get_blocksize(prsc->format);
    layout->cpp *= fd_resource_nr_samples(prsc);
    layout->cpp_shift = ffs(util_next_power_of_two(layout->cpp)) - 1;
+
+   layout->linear_fallback_threshold_texels =
+      fdl_linear_fallback_threshold_texels(layout, info);
 }
 
 static struct fd_resource *
@@ -1372,7 +1376,7 @@ fd_resource_allocate_and_resolve(struct pipe_screen *pscreen,
       rsc->b.is_shared = true;
 
    enum fd_layout_type layout =
-      get_best_layout(screen, tmpl, modifiers, count);
+      get_best_layout(screen, prsc, modifiers, count);
    if (layout == FD_LAYOUT_ERROR) {
       free(prsc);
       return NULL;
