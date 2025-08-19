@@ -790,6 +790,8 @@ if with_gallium_rusticl or with_nouveau_vk or with_tools.contains('etnaviv') or 
   endif
 
   bindgen_output_args = [
+    # This is needed to generate 2024-safe code
+    '--wrap-unsafe-ops',
     # can't do anything about it anyway
     '--raw-line', '#![allow(clippy::all)]',
     '--raw-line', '#![allow(improper_ctypes)]',
