@@ -52,7 +52,8 @@ build_atomic(nir_builder *b, nir_intrinsic_instr *intr)
       load = nir_load_ssbo(b, 1, intr->def.bit_size, intr->src[0].ssa,
                            intr->src[1].ssa,
                            .align_mul = intr->def.bit_size / 8,
-                           .align_offset = 0);
+                           .align_offset = 0,
+                           .offset_shift = nir_intrinsic_offset_shift(intr));
       break;
    case nir_intrinsic_shared_atomic:
       load = nir_load_shared(b, 1, intr->def.bit_size,
@@ -88,7 +89,8 @@ build_atomic(nir_builder *b, nir_intrinsic_instr *intr)
                                      intr->src[0].ssa,
                                      intr->src[1].ssa,
                                      before, expected,
-                                     .atomic_op = nir_atomic_op_cmpxchg);
+                                     .atomic_op = nir_atomic_op_cmpxchg,
+                                     .offset_shift = nir_intrinsic_offset_shift(intr));
          break;
       case nir_intrinsic_shared_atomic:
          xchg = nir_shared_atomic_swap(b, intr->def.bit_size,
