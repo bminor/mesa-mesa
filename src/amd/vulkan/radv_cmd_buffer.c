@@ -11441,6 +11441,13 @@ radv_validate_dynamic_states(struct radv_cmd_buffer *cmd_buffer, uint64_t dynami
    if (pdev->info.gfx_level < GFX12 &&
        (dynamic_states & (RADV_DYNAMIC_RASTERIZATION_SAMPLES | RADV_DYNAMIC_PRIMITIVE_TOPOLOGY)))
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_OCCLUSION_QUERY;
+
+   if (dynamic_states &
+       (RADV_DYNAMIC_COLOR_WRITE_MASK | RADV_DYNAMIC_COLOR_BLEND_ENABLE | RADV_DYNAMIC_RASTERIZATION_SAMPLES |
+        RADV_DYNAMIC_LINE_RASTERIZATION_MODE | RADV_DYNAMIC_PRIMITIVE_TOPOLOGY | RADV_DYNAMIC_POLYGON_MODE |
+        RADV_DYNAMIC_ATTACHMENT_FEEDBACK_LOOP_ENABLE | RADV_DYNAMIC_ALPHA_TO_COVERAGE_ENABLE |
+        RADV_DYNAMIC_ALPHA_TO_ONE_ENABLE))
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_DB_SHADER_CONTROL;
 }
 
 static void
@@ -11520,12 +11527,7 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_GUARDBAND)
       radv_emit_guardband_state(cmd_buffer);
 
-   if ((cmd_buffer->state.dirty & RADV_CMD_DIRTY_DB_SHADER_CONTROL) ||
-       (cmd_buffer->state.dirty_dynamic &
-        (RADV_DYNAMIC_COLOR_WRITE_MASK | RADV_DYNAMIC_COLOR_BLEND_ENABLE | RADV_DYNAMIC_RASTERIZATION_SAMPLES |
-         RADV_DYNAMIC_LINE_RASTERIZATION_MODE | RADV_DYNAMIC_PRIMITIVE_TOPOLOGY | RADV_DYNAMIC_POLYGON_MODE |
-         RADV_DYNAMIC_ATTACHMENT_FEEDBACK_LOOP_ENABLE | RADV_DYNAMIC_ALPHA_TO_COVERAGE_ENABLE |
-         RADV_DYNAMIC_ALPHA_TO_ONE_ENABLE)))
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_DB_SHADER_CONTROL)
       radv_emit_db_shader_control(cmd_buffer);
 
    if (info->indexed && info->indirect_va && cmd_buffer->state.dirty & RADV_CMD_DIRTY_INDEX_BUFFER)
