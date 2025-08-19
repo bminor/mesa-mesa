@@ -284,6 +284,11 @@ struct ir3_compiler {
     */
    bool has_scalar_alu;
 
+   /* True if cat2 instructions can write predicate registers from the scalar
+    * ALU.
+    */
+   bool has_scalar_predicates;
+
    bool fs_must_have_non_zero_constlen_quirk;
 
    /* On all generations that support scalar ALU, there is also a copy of the

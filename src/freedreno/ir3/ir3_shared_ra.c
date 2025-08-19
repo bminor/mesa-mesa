@@ -619,7 +619,7 @@ try_demote_instruction(struct ra_ctx *ctx, struct ir3_instruction *instr)
     * skipped reloading and just demoted sources directly, so we should never
     * get here.
     */
-   assert(instr->dsts[0]->flags & IR3_REG_SHARED);
+   assert(instr->dsts[0]->flags & (IR3_REG_SHARED | IR3_REG_UNIFORM));
 
    /* Now we actually demote the instruction */
    ra_foreach_src (src, instr) {
@@ -635,6 +635,13 @@ try_demote_instruction(struct ra_ctx *ctx, struct ir3_instruction *instr)
             interval = ir3_reg_interval_to_ra_interval(interval->interval.parent);
          interval->src = false;
       }
+   }
+
+   if (instr->dsts[0]->flags & IR3_REG_UNIFORM) {
+      instr->dsts[0]->flags &= ~IR3_REG_UNIFORM;
+
+      /* Uniform registers are always predicates which we don't handle here. */
+      return true;
    }
 
    struct ra_interval *dst_interval = ra_interval_get(ctx, instr->dsts[0]);
@@ -812,7 +819,7 @@ can_demote_src(struct ir3_instruction *instr)
                  full_type(instr->cat1.dst_type) == TYPE_S32)));
    default:
       return (!is_alu(instr) && !is_sfu(instr)) ||
-         !(instr->dsts[0]->flags & IR3_REG_SHARED);
+         !(instr->dsts[0]->flags & (IR3_REG_SHARED | IR3_REG_UNIFORM));
    }
 }
 

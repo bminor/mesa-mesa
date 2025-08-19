@@ -191,6 +191,12 @@ typedef enum ir3_register_flags {
     * dummy src and dst of prefetch sam/ldc/resinfo.
     */
    IR3_REG_DUMMY = BIT(23),
+
+   /* Used to mark predicate registers as uniform. Uniform predicate registers
+    * can be written by the scalar ALU but can only be read as a vector, needing
+    * (ss) to synchronize like any scalar ALU result.
+    */
+   IR3_REG_UNIFORM = BIT(24),
 } ir3_register_flags;
 
 struct ir3_register {
@@ -2189,7 +2195,7 @@ static inline bool
 is_ss_producer(struct ir3_instruction *instr)
 {
    foreach_dst (dst, instr) {
-      if (dst->flags & IR3_REG_SHARED)
+      if (dst->flags & (IR3_REG_SHARED | IR3_REG_UNIFORM))
          return true;
    }
 

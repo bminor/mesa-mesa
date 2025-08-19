@@ -60,6 +60,12 @@ validate_reg(struct ir3_validate_ctx *ctx, struct ir3_register *reg)
       validate_assert(ctx, reg->num >= SHARED_REG_START);
       validate_assert(ctx, reg->num - SHARED_REG_START < SHARED_REG_SIZE);
    }
+
+   if (reg->flags & IR3_REG_UNIFORM) {
+      validate_assert(ctx, ctx->ir->compiler->has_scalar_predicates);
+      validate_assert(ctx, reg->flags & IR3_REG_PREDICATE);
+   }
+
 }
 
 static void
@@ -189,6 +195,9 @@ validate_dst(struct ir3_validate_ctx *ctx, struct ir3_instruction *instr,
 
    if (reg->flags & IR3_REG_RELATIV)
       validate_assert(ctx, instr->address);
+
+   if (reg->flags & IR3_REG_UNIFORM)
+      validate_assert(ctx, opc_cat(instr->opc) == 2);
 
    validate_reg(ctx, reg);
 }

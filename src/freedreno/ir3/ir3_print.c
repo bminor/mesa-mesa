@@ -355,6 +355,8 @@ print_reg_name(struct log_stream *stream, struct ir3_instruction *instr,
          mesa_log_stream_printf(stream, "!");
    }
 
+   if (reg->flags & IR3_REG_UNIFORM)
+      mesa_log_stream_printf(stream, "u");
    if (reg->flags & IR3_REG_SHARED)
       mesa_log_stream_printf(stream, "s");
    if (reg->flags & IR3_REG_HALF)

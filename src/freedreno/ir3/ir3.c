@@ -1367,7 +1367,8 @@ is_scalar_alu(struct ir3_instruction *instr,
       instr->opc != OPC_SCAN_CLUSTERS_MACRO &&
       instr->opc != OPC_SCAN_MACRO &&
       instr->opc != OPC_MOVS &&
-      is_alu(instr) && (instr->dsts[0]->flags & IR3_REG_SHARED) &&
+      is_alu(instr) &&
+      (instr->dsts[0]->flags & (IR3_REG_SHARED | IR3_REG_UNIFORM)) &&
       /* scalar->scalar mov instructions (but NOT cov) were supported before the
        * scalar ALU was supported, but they still required (ss) whereas on GPUs
        * that have a scalar ALU they are executed on it and do not require (ss).
@@ -1748,7 +1749,7 @@ ir3_valid_flags(struct ir3_instruction *instr, unsigned n, unsigned flags)
          return true;
 
       /* cat2/cat3 scalar ALU instructions must not have regular sources. */
-      if (instr->dsts[0]->flags & IR3_REG_SHARED) {
+      if (instr->dsts[0]->flags & (IR3_REG_SHARED | IR3_REG_UNIFORM)) {
          if (!(flags & (IR3_REG_SHARED | IR3_REG_IMMED | IR3_REG_CONST)))
             return false;
       }

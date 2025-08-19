@@ -235,6 +235,8 @@ sync_update(struct ir3_legalize_state *state, struct ir3_compiler *compiler,
          }
       } else if (reg_is_addr1(dst) && n->block->in_early_preamble) {
          regmask_set(&state->needs_ss, dst);
+      } else if (dst->flags & IR3_REG_UNIFORM) {
+         regmask_set(&state->needs_ss, dst);
       }
    }
 
@@ -553,7 +555,7 @@ delay_update(struct ir3_compiler *compiler,
       if (dst->flags & IR3_REG_RELATIV)
          dst_cycle += instr->repeat;
 
-      if (dst->flags & IR3_REG_SHARED)
+      if (dst->flags & (IR3_REG_SHARED | IR3_REG_UNIFORM))
          continue;
 
       for (unsigned elem = 0; elem < elems; elem++, num++) {
@@ -2198,7 +2200,8 @@ ir3_legalize(struct ir3 *ir, struct ir3_shader_variant *so, int *max_bary)
             }
          }
 
-         if (in_preamble && writes_pred(instr)) {
+         if (in_preamble && writes_pred(instr) &&
+             !(instr->dsts[0]->flags & IR3_REG_UNIFORM)) {
             pred_in_preamble = true;
          }
       }

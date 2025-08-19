@@ -246,6 +246,7 @@ ir3_compiler_create(struct fd_device *dev, const struct fd_dev_id *dev_id,
       compiler->predtf_nop_quirk = dev_info->a6xx.predtf_nop_quirk;
       compiler->prede_nop_quirk = dev_info->a6xx.prede_nop_quirk;
       compiler->has_scalar_alu = dev_info->a6xx.has_scalar_alu;
+      compiler->has_scalar_predicates = dev_info->a6xx.has_scalar_predicates;
       compiler->has_isam_v = dev_info->a6xx.has_isam_v;
       compiler->has_ssbo_imm_offsets = dev_info->a6xx.has_ssbo_imm_offsets;
       compiler->fs_must_have_non_zero_constlen_quirk = dev_info->a7xx.fs_must_have_non_zero_constlen_quirk;
