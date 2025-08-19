@@ -312,20 +312,20 @@ impl ArrayMthd for ${to_camel(mthd.name)} {
         let mut val = 0;
         %for field in mthd.fields:
             <% field_width = field.end - field.start + 1 %>
-            %if field_width == 32:
-                %if field.rs_type(mthd) == "u32":
-        val |= self.${field.rs_name};
-                %else:
-        val |= self.${field.rs_name} as u32;
-                %endif
+            %if field.rs_type(mthd) == "u32":
+        let field_u32 = self.${field.rs_name};
             %else:
-                %if field.rs_type(mthd) == "u32":
-        assert!(self.${field.rs_name} < (1 << ${field_width}));
-        val |= self.${field.rs_name} << ${field.start};
-                %else:
-        assert!((self.${field.rs_name} as u32) < (1 << ${field_width}));
-        val |= (self.${field.rs_name} as u32) << ${field.start};
-                %endif
+        let field_u32 = self.${field.rs_name} as u32;
+            %endif
+            %if field_width == 32:
+            <% assert field_width == 32 %>
+            %else:
+        assert!(field_u32 < (1 << ${field_width}));
+            %endif
+            %if field.start == 0:
+        val |= field_u32;
+            %else:
+        val |= field_u32 << ${field.start};
             %endif
         %endfor
 
