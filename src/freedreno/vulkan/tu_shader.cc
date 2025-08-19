@@ -67,6 +67,9 @@ tu_spirv_to_nir(struct tu_device *dev,
 
       /* Accessed via stg/ldg (not used with Vulkan?) */
       .global_addr_format = nir_address_format_64bit_global,
+
+      .min_ubo_alignment = 64,
+      .min_ssbo_alignment = 4,
    };
 
    const nir_shader_compiler_options *nir_options =
