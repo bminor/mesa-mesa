@@ -10427,6 +10427,8 @@ radv_emit_ngg_culling_state(struct radv_cmd_buffer *cmd_buffer)
 {
    const struct radv_shader *last_vgt_shader = cmd_buffer->state.last_vgt_shader;
 
+   assert(last_vgt_shader->info.has_ngg_culling);
+
    /* Get viewport transform. */
    float vp_scale[2], vp_translate[2];
    memcpy(vp_scale, cmd_buffer->state.dynamic.hw_vp.xform[0].scale, 2 * sizeof(float));
@@ -10463,6 +10465,8 @@ radv_emit_ngg_culling_state(struct radv_cmd_buffer *cmd_buffer)
 
    radeon_set_sh_reg(ngg_culling_settings_offset, nggc_settings);
    radeon_end();
+
+   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_NGGC_STATE;
 }
 
 static void
@@ -11478,6 +11482,15 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
    }
 
    const uint64_t dynamic_states = cmd_buffer->state.dirty_dynamic & radv_get_needed_dynamic_states(cmd_buffer);
+   if (cmd_buffer->state.has_nggc &&
+       ((cmd_buffer->state.dirty & (RADV_CMD_DIRTY_PIPELINE | RADV_CMD_DIRTY_GRAPHICS_SHADERS)) ||
+        (dynamic_states &
+         (RADV_DYNAMIC_CULL_MODE | RADV_DYNAMIC_FRONT_FACE | RADV_DYNAMIC_RASTERIZER_DISCARD_ENABLE |
+          RADV_DYNAMIC_VIEWPORT | RADV_DYNAMIC_CONSERVATIVE_RAST_MODE | RADV_DYNAMIC_RASTERIZATION_SAMPLES |
+          RADV_DYNAMIC_PRIMITIVE_TOPOLOGY | RADV_DYNAMIC_SAMPLE_LOCATIONS_ENABLE)))) {
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_NGGC_STATE;
+   }
+
    if (dynamic_states)
       radv_validate_dynamic_states(cmd_buffer, dynamic_states);
 
@@ -11498,12 +11511,7 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_OCCLUSION_QUERY)
       radv_flush_occlusion_query_state(cmd_buffer);
 
-   if (((cmd_buffer->state.dirty & (RADV_CMD_DIRTY_PIPELINE | RADV_CMD_DIRTY_GRAPHICS_SHADERS)) ||
-        (cmd_buffer->state.dirty_dynamic &
-         (RADV_DYNAMIC_CULL_MODE | RADV_DYNAMIC_FRONT_FACE | RADV_DYNAMIC_RASTERIZER_DISCARD_ENABLE |
-          RADV_DYNAMIC_VIEWPORT | RADV_DYNAMIC_CONSERVATIVE_RAST_MODE | RADV_DYNAMIC_RASTERIZATION_SAMPLES |
-          RADV_DYNAMIC_PRIMITIVE_TOPOLOGY | RADV_DYNAMIC_SAMPLE_LOCATIONS_ENABLE))) &&
-       cmd_buffer->state.has_nggc)
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_NGGC_STATE)
       radv_emit_ngg_culling_state(cmd_buffer);
 
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_BINNING_STATE)
