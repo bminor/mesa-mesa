@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2020 Collabora Ltd.
  * Copyright (C) 2022 Alyssa Rosenzweig <alyssa@rosenzweig.io>
+ * Copyright (C) 2025 Arm Ltd.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -31,6 +32,7 @@
 #include "panfrost/util/pan_ir.h"
 #include "util/perf/cpu_trace.h"
 #include "util/u_debug.h"
+#include "util/u_qsort.h"
 
 #include "bifrost/disassemble.h"
 #include "panfrost/lib/pan_props.h"
@@ -6092,6 +6094,14 @@ void bifrost_lower_texture_nir(nir_shader *nir, unsigned gpu_id)
    }
 }
 
+static int
+compare_u32(const void* a, const void* b, void* _)
+{
+   const uint32_t va = (uintptr_t)a;
+   const uint32_t vb = (uintptr_t)b;
+   return va - vb;
+}
+
 static bi_context *
 bi_compile_variant_nir(nir_shader *nir,
                        const struct pan_compile_inputs *inputs,
@@ -6236,16 +6246,42 @@ bi_compile_variant_nir(nir_shader *nir,
       va_lower_isel(ctx);
       va_optimize(ctx);
 
+      /* Count how often a specific constant appears. */
+      struct hash_table_u64 *const_hist = _mesa_hash_table_u64_create(ctx);
       bi_foreach_instr_global_safe(ctx, I) {
          /* Phis become single moves so shouldn't be affected */
          if (I->op == BI_OPCODE_PHI)
             continue;
 
-         va_lower_constants(ctx, I);
+         va_count_constants(ctx, I, const_hist);
+      }
+
+      uint32_t const_amount = _mesa_hash_table_u64_num_entries(const_hist);
+      uint32_t *sorted = rzalloc_array(ctx, uint32_t, const_amount);
+
+      uint32_t idx = 0;
+      hash_table_u64_foreach(const_hist, entry)
+      {
+         sorted[idx++] = (uintptr_t)entry.data;
+      }
+
+      util_qsort_r(sorted, const_amount, sizeof(uint32_t), compare_u32, NULL);
+      uint32_t max_amount = MIN2(const_amount, ctx->inputs->fau_consts.max_amount);
+      uint32_t min_count_for_fau = max_amount > 0 ? sorted[max_amount - 1] : 0; 
+      ralloc_free(sorted);
+
+      bi_foreach_instr_global_safe(ctx, I) {
+         /* Phis become single moves so shouldn't be affected */
+         if (I->op == BI_OPCODE_PHI)
+            continue;
+
+         va_lower_constants(ctx, I, const_hist, min_count_for_fau);
 
          bi_builder b = bi_init_builder(ctx, bi_before_instr(I));
          va_repair_fau(&b, I);
       }
+
+      _mesa_hash_table_u64_destroy(const_hist);
 
       /* We need to clean up after constant lowering */
       if (likely(optimize)) {

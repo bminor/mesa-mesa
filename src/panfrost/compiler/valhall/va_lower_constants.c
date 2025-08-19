@@ -136,11 +136,10 @@ va_move_const_to_fau(bi_builder *b, uint32_t value)
 }
 
 static bi_index
-va_resolve_constant(bi_builder *b, uint32_t value, struct va_src_info info,
-                    bool is_signed, bool staging)
+va_lookup_constant(uint32_t value, struct va_src_info info, bool is_signed)
 {
    /* Try the constant as-is */
-   if (!staging) {
+   {
       bi_index lut = va_lut_index_32(value);
       if (!bi_is_null(lut))
          return lut;
@@ -162,8 +161,7 @@ va_resolve_constant(bi_builder *b, uint32_t value, struct va_src_info info,
 
    /* Try using a single half of a FP16 constant */
    bool replicated_halves = (value & 0xFFFF) == (value >> 16);
-   if (!staging && info.swizzle && info.size == VA_SIZE_16 &&
-       replicated_halves) {
+   if (info.swizzle && info.size == VA_SIZE_16 && replicated_halves) {
       bi_index lut = va_lut_index_16(value & 0xFFFF);
       if (!bi_is_null(lut))
          return lut;
@@ -177,7 +175,7 @@ va_resolve_constant(bi_builder *b, uint32_t value, struct va_src_info info,
    }
 
    /* Try extending a byte */
-   if (!staging && (info.widen || info.lanes || info.lane) &&
+   if ((info.widen || info.lanes || info.lane) &&
        is_extension_of_8(value, is_signed)) {
 
       bi_index lut = va_lut_index_8(value & 0xFF);
@@ -186,7 +184,7 @@ va_resolve_constant(bi_builder *b, uint32_t value, struct va_src_info info,
    }
 
    /* Try extending a halfword */
-   if (!staging && info.widen && is_extension_of_16(value, is_signed)) {
+   if (info.widen && is_extension_of_16(value, is_signed)) {
 
       bi_index lut = va_lut_index_16(value & 0xFFFF);
       if (!bi_is_null(lut))
@@ -194,7 +192,7 @@ va_resolve_constant(bi_builder *b, uint32_t value, struct va_src_info info,
    }
 
    /* Try demoting the constant to FP16 */
-   if (!staging && info.swizzle && info.size == VA_SIZE_32) {
+   if (info.swizzle && info.size == VA_SIZE_32) {
       bi_index lut = va_demote_constant_fp16(value);
       if (!bi_is_null(lut))
          return lut;
@@ -206,7 +204,20 @@ va_resolve_constant(bi_builder *b, uint32_t value, struct va_src_info info,
       }
    }
 
+   return bi_null();
+}
+
+static bi_index
+va_resolve_constant(bi_builder *b, uint32_t value, struct va_src_info info,
+                    bool is_signed, bool staging, bool try_move_to_fau)
+{
    if (!staging) {
+      bi_index lut = va_lookup_constant(value, info, is_signed);
+      if (!bi_is_null(lut))
+         return lut;
+   }
+
+   if (!staging && try_move_to_fau) {
       bi_index c = va_move_const_to_fau(b, value);
       if (!bi_is_null(c))
          return c;
@@ -255,7 +266,7 @@ va_resolve_swizzles(bi_context *ctx, bi_instr *I, unsigned s)
 }
 
 void
-va_lower_constants(bi_context *ctx, bi_instr *I)
+va_lower_constants(bi_context *ctx, bi_instr *I, struct hash_table_u64 *counts, uint32_t min_fau_count)
 {
    bi_builder b = bi_init_builder(ctx, bi_before_instr(I));
 
@@ -269,8 +280,11 @@ va_lower_constants(bi_context *ctx, bi_instr *I)
          struct va_src_info info = va_src_info(I->op, s);
          const uint32_t value = va_resolve_swizzles(ctx, I, s);
 
+         const uint32_t count = (uintptr_t)_mesa_hash_table_u64_search(counts, value);
+         const bool move_to_fau = count >= min_fau_count;
+
          bi_index cons =
-            va_resolve_constant(&b, value, info, is_signed, staging);
+            va_resolve_constant(&b, value, info, is_signed, staging, move_to_fau);
          cons.neg ^= I->src[s].neg;
          I->src[s] = cons;
 
@@ -287,6 +301,34 @@ va_lower_constants(bi_context *ctx, bi_instr *I)
             else if (info.size == VA_SIZE_16)
                I->src[s] = bi_half(I->src[s], false);
          }
+      }
+   }
+}
+
+void
+va_count_constants(bi_context *ctx, bi_instr *I, struct hash_table_u64 *counts)
+{
+   bi_foreach_src(I, s) {
+      if (I->src[s].type != BI_INDEX_CONSTANT)
+         continue;
+
+      const bool staging = (s < valhall_opcodes[I->op].nr_staging_srcs);
+      if (staging)
+         continue;
+
+      bool is_signed = valhall_opcodes[I->op].is_signed;
+      struct va_src_info info = va_src_info(I->op, s);
+      uint32_t value = va_resolve_swizzles(ctx, I, s);
+
+      bi_index cons = va_lookup_constant(value, info, is_signed);
+
+      const bool can_lut = !bi_is_null(cons);
+
+      /* We want to move constants that can't be created from built-in
+       * constants into the FAU if they are not staging register sources. */
+      if (!can_lut) {
+         uint32_t count = (uintptr_t)_mesa_hash_table_u64_search(counts, value);
+         _mesa_hash_table_u64_insert(counts, value, (void*)(uintptr_t)(count + 1));
       }
    }
 }
