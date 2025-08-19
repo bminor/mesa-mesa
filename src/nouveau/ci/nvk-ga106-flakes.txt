@@ -60,6 +60,11 @@ dEQP-VK.synchronization.signal_order.shared_timeline_semaphore.write_image_compu
 dEQP-VK.synchronization.signal_order.shared_timeline_semaphore.write_image_fragment_read_image_vertex.image_128x128_r16g16b16a16_uint_opaque_fd
 dEQP-VK.synchronization2.timeline_semaphore.wait_before_signal.write_image_tess_eval_read_image_tess_eval.image_128x128_r16g16b16a16_uint
 
+dEQP-VK.wsi.display.create_display_mode
 dEQP-VK.wsi.display.create_display_plane_surface
+dEQP-VK.wsi.display.get_display_mode_properties2
+dEQP-VK.wsi.display.get_display_plane_capabilities
+dEQP-VK.wsi.display.get_display_plane_capabilities2
 dEQP-VK.wsi.display.get_display_plane_properties2
 dEQP-VK.wsi.display.get_display_plane_supported_displays
+dEQP-VK.wsi.display.surface_counters
