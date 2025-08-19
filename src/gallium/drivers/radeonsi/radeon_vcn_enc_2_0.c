@@ -15,7 +15,7 @@
 #include <stdio.h>
 
 #define RENCODE_FW_INTERFACE_MAJOR_VERSION         1
-#define RENCODE_FW_INTERFACE_MINOR_VERSION         1
+#define RENCODE_FW_INTERFACE_MINOR_VERSION         20
 
 static void radeon_enc_op_preset(struct radeon_encoder *enc)
 {
