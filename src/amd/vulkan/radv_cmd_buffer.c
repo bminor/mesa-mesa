@@ -3172,13 +3172,6 @@ radv_get_depth_clip_enable(struct radv_cmd_buffer *cmd_buffer)
           (d->vk.rs.depth_clip_enable == VK_MESA_DEPTH_CLIP_ENABLE_NOT_CLAMP && !d->vk.rs.depth_clamp_enable);
 }
 
-enum radv_depth_clamp_mode {
-   RADV_DEPTH_CLAMP_MODE_VIEWPORT = 0,     /* Clamp to the viewport min/max depth bounds */
-   RADV_DEPTH_CLAMP_MODE_USER_DEFINED = 1, /* Range set using VK_EXT_depth_clamp_control */
-   RADV_DEPTH_CLAMP_MODE_ZERO_TO_ONE = 2,  /* Clamp between 0.0f and 1.0f */
-   RADV_DEPTH_CLAMP_MODE_DISABLED = 3,     /* Disable depth clamping */
-};
-
 static enum radv_depth_clamp_mode
 radv_get_depth_clamp_mode(struct radv_cmd_buffer *cmd_buffer)
 {
@@ -3249,7 +3242,7 @@ radv_emit_viewport_state(struct radv_cmd_buffer *cmd_buffer)
 {
    const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   const enum radv_depth_clamp_mode depth_clamp_mode = radv_get_depth_clamp_mode(cmd_buffer);
+   const enum radv_depth_clamp_mode depth_clamp_mode = cmd_buffer->state.depth_clamp_mode;
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    struct radv_cmd_stream *cs = cmd_buffer->cs;
 
@@ -11372,6 +11365,19 @@ radv_emit_clip_rects_state(struct radv_cmd_buffer *cmd_buffer)
 static void
 radv_validate_dynamic_states(struct radv_cmd_buffer *cmd_buffer, uint64_t dynamic_states)
 {
+   if (dynamic_states &
+       (RADV_DYNAMIC_DEPTH_CLAMP_ENABLE | RADV_DYNAMIC_DEPTH_CLAMP_RANGE | RADV_DYNAMIC_DEPTH_CLIP_ENABLE)) {
+      const enum radv_depth_clamp_mode depth_clamp_mode = radv_get_depth_clamp_mode(cmd_buffer);
+
+      if (cmd_buffer->state.depth_clamp_mode != depth_clamp_mode) {
+         cmd_buffer->state.depth_clamp_mode = depth_clamp_mode;
+         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_VIEWPORT_STATE;
+      }
+
+      if ((dynamic_states & RADV_DYNAMIC_DEPTH_CLAMP_RANGE) && depth_clamp_mode == RADV_DEPTH_CLAMP_MODE_USER_DEFINED)
+         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_VIEWPORT_STATE;
+   }
+
    if (dynamic_states & (RADV_DYNAMIC_RASTERIZATION_SAMPLES | RADV_DYNAMIC_LINE_RASTERIZATION_MODE |
                          RADV_DYNAMIC_PRIMITIVE_TOPOLOGY | RADV_DYNAMIC_POLYGON_MODE))
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FS_STATE;
@@ -11412,9 +11418,7 @@ radv_validate_dynamic_states(struct radv_cmd_buffer *cmd_buffer, uint64_t dynami
                          RADV_DYNAMIC_COLOR_BLEND_EQUATION | RADV_DYNAMIC_ALPHA_TO_COVERAGE_ENABLE))
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_CB_RENDER_STATE;
 
-   if (dynamic_states &
-       (RADV_DYNAMIC_VIEWPORT | RADV_DYNAMIC_DEPTH_CLIP_ENABLE | RADV_DYNAMIC_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE |
-        RADV_DYNAMIC_DEPTH_CLAMP_ENABLE | RADV_DYNAMIC_DEPTH_CLAMP_RANGE))
+   if (dynamic_states & (RADV_DYNAMIC_VIEWPORT | RADV_DYNAMIC_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE))
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_VIEWPORT_STATE;
 }
 

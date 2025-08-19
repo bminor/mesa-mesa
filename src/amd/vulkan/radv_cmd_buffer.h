@@ -373,6 +373,13 @@ struct radv_tracked_regs {
    uint32_t sx_mrt_blend_opt[MAX_RTS];
 };
 
+enum radv_depth_clamp_mode {
+   RADV_DEPTH_CLAMP_MODE_VIEWPORT = 0,     /* Clamp to the viewport min/max depth bounds */
+   RADV_DEPTH_CLAMP_MODE_USER_DEFINED = 1, /* Range set using VK_EXT_depth_clamp_control */
+   RADV_DEPTH_CLAMP_MODE_ZERO_TO_ONE = 2,  /* Clamp between 0.0f and 1.0f */
+   RADV_DEPTH_CLAMP_MODE_DISABLED = 3,     /* Disable depth clamping */
+};
+
 struct radv_cmd_state {
    /* Vertex descriptors */
    uint64_t vb_va;
@@ -529,6 +536,8 @@ struct radv_cmd_state {
    bool uses_fbfetch_output;
 
    uint64_t shader_query_buf_va; /* GFX12+ */
+
+   enum radv_depth_clamp_mode depth_clamp_mode;
 };
 
 struct radv_enc_state {
