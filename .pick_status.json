@@ -1274,7 +1274,7 @@
         "description": "brw/rt: Move nir_build_vec3_mat_mult_col_major helper to header",
         "nominated": false,
         "nomination_type": 0,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
