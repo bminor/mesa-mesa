@@ -83,7 +83,6 @@ static const driOptionDescription hk_dri_options[] = {
       DRI_CONF_VK_X11_OVERRIDE_MIN_IMAGE_COUNT(0)
       DRI_CONF_VK_X11_STRICT_IMAGE_COUNT(false)
       DRI_CONF_VK_X11_ENSURE_MIN_IMAGE_COUNT(false)
-      DRI_CONF_VK_KHR_PRESENT_WAIT(false)
       DRI_CONF_VK_XWAYLAND_WAIT_READY(false)
    DRI_CONF_SECTION_END
 
