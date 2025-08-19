@@ -217,16 +217,9 @@ get_device_extensions(const struct tu_physical_device *device,
       .KHR_pipeline_executable_properties = true,
       .KHR_pipeline_library = true,
 #ifdef TU_USE_WSI_PLATFORM
-      /* Hide these behind dri configs for now since we cannot implement it reliably on
-       * all surfaces yet. There is no surface capability query for present wait/id,
-       * but the feature is useful enough to hide behind an opt-in mechanism for now.
-       * If the instance only enables surface extensions that unconditionally support present wait,
-       * we can also expose the extension that way. */
-      .KHR_present_id = (driQueryOptionb(&device->instance->dri_options, "vk_khr_present_wait") ||
-                         wsi_common_vk_instance_supports_present_wait(&device->instance->vk)),
+      .KHR_present_id = true,
       .KHR_present_id2 = true,
-      .KHR_present_wait = (driQueryOptionb(&device->instance->dri_options, "vk_khr_present_wait") ||
-                           wsi_common_vk_instance_supports_present_wait(&device->instance->vk)),
+      .KHR_present_wait = true,
       .KHR_present_wait2 = true,
 #endif
       .KHR_push_descriptor = true,
@@ -551,11 +544,13 @@ tu_get_features(struct tu_physical_device *pdevice,
    /* VK_KHR_pipeline_executable_properties */
    features->pipelineExecutableInfo = true;
 
+#ifdef TU_USE_WSI_PLATFORM
    /* VK_KHR_present_id */
-   features->presentId = pdevice->vk.supported_extensions.KHR_present_id;
+   features->presentId = true;
 
    /* VK_KHR_present_wait */
-   features->presentWait = pdevice->vk.supported_extensions.KHR_present_wait;
+   features->presentWait = true;
+#endif
 
    /* VK_KHR_shader_clock */
    features->shaderSubgroupClock = true;
@@ -1670,7 +1665,6 @@ tu_destroy_physical_device(struct vk_physical_device *device)
 static const driOptionDescription tu_dri_options[] = {
    DRI_CONF_SECTION_PERFORMANCE
       DRI_CONF_VK_X11_OVERRIDE_MIN_IMAGE_COUNT(0)
-      DRI_CONF_VK_KHR_PRESENT_WAIT(false)
       DRI_CONF_VK_X11_STRICT_IMAGE_COUNT(false)
       DRI_CONF_VK_X11_ENSURE_MIN_IMAGE_COUNT(false)
       DRI_CONF_VK_XWAYLAND_WAIT_READY(false)
