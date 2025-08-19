@@ -321,11 +321,7 @@ fn chunk_range(
     chunk_len: u32,
 ) -> Range<u32> {
     debug_assert!(chunk_start < whole.end);
-    let start = if chunk_start < whole.start {
-        whole.start - chunk_start
-    } else {
-        0
-    };
+    let start = whole.start.saturating_sub(chunk_start);
     let end = std::cmp::min(whole.end - chunk_start, chunk_len);
     start..end
 }
