@@ -3234,6 +3234,7 @@ decode_type_from_blob(struct blob_reader *blob)
    case GLSL_TYPE_INT:
    case GLSL_TYPE_FLOAT:
    case GLSL_TYPE_FLOAT16:
+   case GLSL_TYPE_BFLOAT16:
    case GLSL_TYPE_DOUBLE:
    case GLSL_TYPE_UINT8:
    case GLSL_TYPE_INT8:
