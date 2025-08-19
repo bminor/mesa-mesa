@@ -29,7 +29,11 @@ use std::ops::Range;
         % if f.stride:
 #[inline]
 pub const fn ${s.name}_${f.name}(i: usize) -> Range<usize> {
+        % if f.stride == 1:
+    (i + ${f.lo})..(i + ${f.hi + 1})
+        % else:
     (i * ${f.stride} + ${f.lo})..(i * ${f.stride} + ${f.hi + 1})
+        % endif
 }
         % else:
 pub const ${s.name}_${f.name}: Range<usize> = ${f.lo}..${f.hi + 1};
