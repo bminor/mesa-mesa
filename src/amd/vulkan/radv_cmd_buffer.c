@@ -7506,9 +7506,8 @@ radv_bind_fragment_shader(struct radv_cmd_buffer *cmd_buffer, const struct radv_
    if (radv_get_user_sgpr_info(ps, AC_UD_PS_STATE)->sgpr_idx != -1)
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FS_STATE;
 
-   /* Re-emit the conservative rasterization mode because inner coverage is different. */
    if (!previous_ps || previous_ps->info.ps.reads_fully_covered != ps->info.ps.reads_fully_covered)
-      cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_CONSERVATIVE_RAST_MODE;
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_MSAA_STATE;
 
    if (gfx_level >= GFX10_3 && (!previous_ps || previous_ps->info.ps.force_sample_iter_shading_rate !=
                                                    ps->info.ps.force_sample_iter_shading_rate))
@@ -7586,9 +7585,8 @@ radv_bind_shader(struct radv_cmd_buffer *cmd_buffer, struct radv_shader *shader,
          cmd_buffer->state.can_use_simple_vertex_input = false;
          break;
       case MESA_SHADER_FRAGMENT:
-         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_DB_SHADER_CONTROL;
-         cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_CONSERVATIVE_RAST_MODE | RADV_DYNAMIC_RASTERIZATION_SAMPLES |
-                                            RADV_DYNAMIC_FRAGMENT_SHADING_RATE;
+         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_DB_SHADER_CONTROL | RADV_CMD_DIRTY_MSAA_STATE;
+         cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_RASTERIZATION_SAMPLES | RADV_DYNAMIC_FRAGMENT_SHADING_RATE;
          break;
       default:
          break;
