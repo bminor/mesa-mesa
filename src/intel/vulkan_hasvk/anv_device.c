@@ -68,7 +68,6 @@ static const driOptionDescription anv_dri_options[] = {
       DRI_CONF_ADAPTIVE_SYNC(true)
       DRI_CONF_VK_X11_OVERRIDE_MIN_IMAGE_COUNT(0)
       DRI_CONF_VK_X11_STRICT_IMAGE_COUNT(false)
-      DRI_CONF_VK_KHR_PRESENT_WAIT(false)
       DRI_CONF_VK_XWAYLAND_WAIT_READY(true)
       DRI_CONF_ANV_ASSUME_FULL_SUBGROUPS(0)
       DRI_CONF_ANV_SAMPLE_MASK_OUT_OPENGL_BEHAVIOUR(false)
@@ -239,17 +238,10 @@ get_device_extensions(const struct anv_physical_device *device,
           INTEL_DEBUG(DEBUG_NO_OACONFIG)) &&
          device->use_call_secondary,
       .KHR_pipeline_executable_properties    = true,
-      /* Hide these behind dri configs for now since we cannot implement it reliably on
-       * all surfaces yet. There is no surface capability query for present wait/id,
-       * but the feature is useful enough to hide behind an opt-in mechanism for now.
-       * If the instance only enables surface extensions that unconditionally support present wait,
-       * we can also expose the extension that way. */
-      .KHR_present_id =
-         driQueryOptionb(&device->instance->dri_options, "vk_khr_present_wait") ||
-         wsi_common_vk_instance_supports_present_wait(&device->instance->vk),
-      .KHR_present_wait =
-         driQueryOptionb(&device->instance->dri_options, "vk_khr_present_wait") ||
-         wsi_common_vk_instance_supports_present_wait(&device->instance->vk),
+#ifdef ANV_USE_WSI_PLATFORM
+      .KHR_present_id                        = true,
+      .KHR_present_wait                      = true,
+#endif
       .KHR_push_descriptor                   = true,
       .KHR_relaxed_block_layout              = true,
       .KHR_sampler_mirror_clamp_to_edge      = true,
@@ -658,11 +650,13 @@ get_features(const struct anv_physical_device *pdevice,
       /* VK_EXT_depth_clip_control */
       .depthClipControl = true,
 
+#ifdef ANV_USE_WSI_PLATFORM
       /* VK_KHR_present_id */
-      .presentId = pdevice->vk.supported_extensions.KHR_present_id,
+      .presentId = true,
 
       /* VK_KHR_present_wait */
-      .presentWait = pdevice->vk.supported_extensions.KHR_present_wait,
+      .presentWait = true,
+#endif
 
       /* VK_KHR_shader_expect_assume */
       .shaderExpectAssume = true,
