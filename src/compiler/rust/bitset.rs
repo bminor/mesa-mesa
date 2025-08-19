@@ -587,13 +587,13 @@ mod tests {
         assert_eq!(to_vec(&actual_2), &expected[..]);
 
         let mut actual_3 = a.clone();
-        assert_eq!(actual_3.union_with(a.s(..)), false);
-        assert_eq!(actual_3.union_with(b.s(..)), true);
+        assert!(!actual_3.union_with(a.s(..)));
+        assert!(actual_3.union_with(b.s(..)));
         assert_eq!(to_vec(&actual_3), &expected[..]);
 
         let mut actual_4 = b.clone();
-        assert_eq!(actual_4.union_with(b.s(..)), false);
-        assert_eq!(actual_4.union_with(a.s(..)), true);
+        assert!(!actual_4.union_with(b.s(..)));
+        assert!(actual_4.union_with(a.s(..)));
         assert_eq!(to_vec(&actual_4), &expected[..]);
     }
 
