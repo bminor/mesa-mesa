@@ -437,7 +437,18 @@ ir3_get_predicate(struct ir3_context *ctx, struct ir3_instruction *src)
 
    /* condition always goes in predicate register: */
    cond->dsts[0]->flags |= IR3_REG_PREDICATE;
-   cond->dsts[0]->flags &= ~IR3_REG_SHARED;
+
+   /* The builders will mark the dst as shared when both srcs are shared.
+    * Predicates can't be shared but do support the scalar ALU when marked as
+    * uniform.
+    */
+   if (cond->dsts[0]->flags & IR3_REG_SHARED) {
+      cond->dsts[0]->flags &= ~IR3_REG_SHARED;
+
+      if (ctx->compiler->has_scalar_predicates) {
+         cond->dsts[0]->flags |= IR3_REG_UNIFORM;
+      }
+   }
 
    _mesa_hash_table_insert(ctx->predicate_conversions, src, cond);
    return cond;
