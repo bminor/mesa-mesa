@@ -2295,6 +2295,7 @@ parse_global(isel_context* ctx, nir_intrinsic_instr* intrin, Temp* address, uint
 {
    bool is_store = intrin->intrinsic == nir_intrinsic_store_global_amd;
    *address = get_ssa_temp(ctx, intrin->src[is_store ? 1 : 0].ssa);
+   assert(address->bytes() == 8);
 
    *const_offset = nir_intrinsic_base(intrin);
 
