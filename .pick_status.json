@@ -434,7 +434,7 @@
         "description": "compiler/types: handle BFLOAT16 when decoding blob",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9e5d7eb88d7046fc6dd5c6ef85f9ae7e898702cd",
         "notes": null
