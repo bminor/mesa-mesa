@@ -620,6 +620,20 @@ static void radeon_vcn_enc_hevc_get_dbk_param(struct radeon_encoder *enc,
       !pic->seq.sample_adaptive_offset_enabled_flag;
 }
 
+static bool cu_qp_delta_supported(struct si_screen *sscreen)
+{
+   if (sscreen->info.vcn_ip_version >= VCN_5_0_0)
+      return true;
+   else if (sscreen->info.vcn_ip_version >= VCN_4_0_0)
+      return sscreen->info.vcn_enc_minor_version >= 7;
+   else if (sscreen->info.vcn_ip_version >= VCN_3_0_0)
+      return sscreen->info.vcn_enc_minor_version >= 26;
+   else if (sscreen->info.vcn_ip_version >= VCN_2_0_0)
+      return sscreen->info.vcn_enc_minor_version >= 20;
+   else
+      return false;
+}
+
 static void radeon_vcn_enc_hevc_get_spec_misc_param(struct radeon_encoder *enc,
                                                     struct pipe_h265_enc_picture_desc *pic)
 {
@@ -641,8 +655,7 @@ static void radeon_vcn_enc_hevc_get_spec_misc_param(struct radeon_encoder *enc,
       sscreen->info.vcn_ip_version < VCN_3_0_0 ||
       !pic->pic.transform_skip_enabled_flag;
    enc->enc_pic.hevc_spec_misc.cu_qp_delta_enabled_flag =
-      (sscreen->info.vcn_ip_version >= VCN_2_0_0 &&
-      pic->pic.cu_qp_delta_enabled_flag) ||
+      (cu_qp_delta_supported(sscreen) && pic->pic.cu_qp_delta_enabled_flag) ||
       enc->enc_pic.enc_qp_map.qp_map_type ||
       enc->enc_pic.rc_session_init.rate_control_method;
 }
