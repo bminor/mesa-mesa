@@ -64,7 +64,6 @@ struct radv_instance {
       bool ssbo_non_uniform;
       bool flush_before_timestamp_write;
       bool clear_lds;
-      bool enable_khr_present_wait;
       bool report_llvm9_version_string;
       bool vk_require_etc2;
       bool vk_require_astc;

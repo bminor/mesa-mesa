@@ -589,18 +589,12 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
       .KHR_pipeline_binary = true,
       .KHR_pipeline_executable_properties = true,
       .KHR_pipeline_library = !pdev->use_llvm,
-      /* Hide these behind dri configs for now since we cannot implement it reliably on
-       * all surfaces yet. There is no surface capability query for present wait/id,
-       * but the feature is useful enough to hide behind an opt-in mechanism for now.
-       * If the instance only enables surface extensions that unconditionally support present wait,
-       * we can also expose the extension that way. */
-      .KHR_present_id =
-         instance->drirc.enable_khr_present_wait || wsi_common_vk_instance_supports_present_wait(&instance->vk),
+#ifdef RADV_USE_WSI_PLATFORM
+      .KHR_present_id = true,
       .KHR_present_id2 = true,
-      .KHR_present_wait =
-         (instance->drirc.enable_khr_present_wait || wsi_common_vk_instance_supports_present_wait(&instance->vk)) &&
-         pdev->info.has_timeline_syncobj,
+      .KHR_present_wait = pdev->info.has_timeline_syncobj,
       .KHR_present_wait2 = true,
+#endif
       .KHR_push_descriptor = true,
       .KHR_ray_query = radv_enable_rt(pdev),
       .KHR_ray_tracing_maintenance1 = radv_enable_rt(pdev),
@@ -1112,11 +1106,13 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
       .shaderImageFloat32AtomicMinMax = has_shader_image_float_minmax,
       .sparseImageFloat32AtomicMinMax = has_shader_image_float_minmax,
 
+#ifdef RADV_USE_WSI_PLATFORM
       /* VK_KHR_present_id */
-      .presentId = pdev->vk.supported_extensions.KHR_present_id,
+      .presentId = true,
 
       /* VK_KHR_present_wait */
       .presentWait = pdev->vk.supported_extensions.KHR_present_wait,
+#endif
 
       /* VK_EXT_primitive_topology_list_restart */
       .primitiveTopologyListRestart = true,
@@ -1378,11 +1374,13 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
       /* VK_KHR_video_encode_av1 */
       .videoEncodeAV1 = true,
 
+#ifdef RADV_USE_WSI_PLATFORM
       /* VK_KHR_present_id2 */
       .presentId2 = true,
 
       /* VK_KHR_present_wait2 */
       .presentWait2 = true,
+#endif
 
       /* VK_KHR_video_encode_intra_refresh */
       .videoEncodeIntraRefresh = true,
