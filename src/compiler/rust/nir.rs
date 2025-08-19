@@ -6,7 +6,6 @@ use crate::bindings::*;
 use std::ffi::{c_void, CStr};
 use std::marker::PhantomData;
 use std::mem::offset_of;
-use std::ptr::NonNull;
 use std::str;
 
 pub struct ExecListIter<'a, T> {
@@ -107,7 +106,7 @@ impl ALUType {
 
 impl nir_def {
     pub fn parent_instr<'a>(&'a self) -> &'a nir_instr {
-        unsafe { NonNull::new(self.parent_instr).unwrap().as_ref() }
+        unsafe { self.parent_instr.as_ref() }.unwrap()
     }
 
     pub fn components_read(&self) -> nir_component_mask_t {
@@ -197,7 +196,7 @@ impl AsDef for nir_def {
 
 impl AsDef for nir_src {
     fn as_def<'a>(&'a self) -> &'a nir_def {
-        unsafe { NonNull::new(self.ssa).unwrap().as_ref() }
+        unsafe { self.ssa.as_ref() }.unwrap()
     }
 }
 
@@ -405,7 +404,7 @@ impl nir_load_const_instr {
 
 impl nir_phi_src {
     pub fn pred<'a>(&'a self) -> &'a nir_block {
-        unsafe { NonNull::new(self.pred).unwrap().as_ref() }
+        unsafe { self.pred.as_ref() }.unwrap()
     }
 }
 
@@ -417,11 +416,11 @@ impl nir_phi_instr {
 
 impl nir_jump_instr {
     pub fn target<'a>(&'a self) -> Option<&'a nir_block> {
-        NonNull::new(self.target).map(|b| unsafe { b.as_ref() })
+        unsafe { self.target.as_ref() }
     }
 
     pub fn else_target<'a>(&'a self) -> Option<&'a nir_block> {
-        NonNull::new(self.else_target).map(|b| unsafe { b.as_ref() })
+        unsafe { self.else_target.as_ref() }
     }
 }
 
@@ -490,10 +489,7 @@ impl nir_instr {
     }
 
     pub fn def<'a>(&'a self) -> Option<&'a nir_def> {
-        unsafe {
-            let def = nir_instr_def(self as *const _ as *mut _);
-            NonNull::new(def).map(|d| d.as_ref())
-        }
+        unsafe { nir_instr_def(self as *const _ as *mut _).as_ref() }
     }
 }
 
@@ -503,10 +499,7 @@ impl nir_block {
     }
 
     pub fn successors<'a>(&'a self) -> [Option<&'a nir_block>; 2] {
-        [
-            NonNull::new(self.successors[0]).map(|b| unsafe { b.as_ref() }),
-            NonNull::new(self.successors[1]).map(|b| unsafe { b.as_ref() }),
-        ]
+        unsafe { [self.successors[0].as_ref(), self.successors[1].as_ref()] }
     }
 
     pub fn following_if<'a>(&'a self) -> Option<&'a nir_if> {
@@ -601,7 +594,7 @@ impl nir_cf_node {
     }
 
     pub fn parent<'a>(&'a self) -> Option<&'a nir_cf_node> {
-        NonNull::new(self.parent).map(|b| unsafe { b.as_ref() })
+        unsafe { self.parent.as_ref() }
     }
 }
 
@@ -611,7 +604,7 @@ impl nir_function_impl {
     }
 
     pub fn end_block<'a>(&'a self) -> &'a nir_block {
-        unsafe { NonNull::new(self.end_block).unwrap().as_ref() }
+        unsafe { self.end_block.as_ref() }.unwrap()
     }
 
     pub fn function<'a>(&'a self) -> &'a nir_function {
