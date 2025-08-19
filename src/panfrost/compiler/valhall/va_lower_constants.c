@@ -215,6 +215,45 @@ va_resolve_constant(bi_builder *b, uint32_t value, struct va_src_info info,
    return va_mov_imm(b, value);
 }
 
+static uint32_t
+va_resolve_swizzles(bi_context *ctx, bi_instr *I, unsigned s)
+{
+   struct va_src_info info = va_src_info(I->op, s);
+   uint32_t value = I->src[s].value;
+   enum bi_swizzle swz = I->src[s].swizzle;
+
+   /* Resolve any swizzle, keeping in mind the different interpretations
+    * swizzles in different contexts.
+    */
+   if (info.size == VA_SIZE_32) {
+      /* Extracting a half from the 32-bit value */
+      if (swz == BI_SWIZZLE_H00)
+         value = (value & 0xFFFF);
+      else if (swz == BI_SWIZZLE_H11)
+         value = (value >> 16);
+      else
+         assert(swz == BI_SWIZZLE_H01);
+
+      /* FP16 -> FP32 */
+      if (info.swizzle && swz != BI_SWIZZLE_H01)
+         value = fui(_mesa_half_to_float(value));
+   } else if (info.size == VA_SIZE_16) {
+      assert(swz >= BI_SWIZZLE_H00 && swz <= BI_SWIZZLE_H11);
+      value = bi_apply_swizzle(value, swz);
+   } else if (info.size == VA_SIZE_8 && (info.lane || info.lanes)) {
+      /* 8-bit extract */
+      unsigned chan = (swz - BI_SWIZZLE_B0000);
+      assert(chan < 4);
+
+      value = (value >> (8 * chan)) & 0xFF;
+   } else {
+      /* TODO: Any other special handling? */
+      value = bi_apply_swizzle(value, swz);
+   }
+
+   return value;
+}
+
 void
 va_lower_constants(bi_context *ctx, bi_instr *I)
 {
@@ -228,37 +267,7 @@ va_lower_constants(bi_context *ctx, bi_instr *I)
          bool is_signed = valhall_opcodes[I->op].is_signed;
          bool staging = (s < valhall_opcodes[I->op].nr_staging_srcs);
          struct va_src_info info = va_src_info(I->op, s);
-         uint32_t value = I->src[s].value;
-         enum bi_swizzle swz = I->src[s].swizzle;
-
-         /* Resolve any swizzle, keeping in mind the different interpretations
-          * swizzles in different contexts.
-          */
-         if (info.size == VA_SIZE_32) {
-            /* Extracting a half from the 32-bit value */
-            if (swz == BI_SWIZZLE_H00)
-               value = (value & 0xFFFF);
-            else if (swz == BI_SWIZZLE_H11)
-               value = (value >> 16);
-            else
-               assert(swz == BI_SWIZZLE_H01);
-
-            /* FP16 -> FP32 */
-            if (info.swizzle && swz != BI_SWIZZLE_H01)
-               value = fui(_mesa_half_to_float(value));
-         } else if (info.size == VA_SIZE_16) {
-            assert(swz >= BI_SWIZZLE_H00 && swz <= BI_SWIZZLE_H11);
-            value = bi_apply_swizzle(value, swz);
-         } else if (info.size == VA_SIZE_8 && (info.lane || info.lanes)) {
-            /* 8-bit extract */
-            unsigned chan = (swz - BI_SWIZZLE_B0000);
-            assert(chan < 4);
-
-            value = (value >> (8 * chan)) & 0xFF;
-         } else {
-            /* TODO: Any other special handling? */
-            value = bi_apply_swizzle(value, swz);
-         }
+         const uint32_t value = va_resolve_swizzles(ctx, I, s);
 
          bi_index cons =
             va_resolve_constant(&b, value, info, is_signed, staging);
