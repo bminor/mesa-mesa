@@ -334,9 +334,6 @@ wsi_common_create_swapchain_image(const struct wsi_device *wsi,
                                   VkSwapchainKHR _swapchain,
                                   VkImage *pImage);
 
-bool
-wsi_common_vk_instance_supports_present_wait(const struct vk_instance *instance);
-
 VkImageUsageFlags
 wsi_caps_get_image_usage(void);
 
