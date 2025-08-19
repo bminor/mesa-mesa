@@ -150,6 +150,7 @@ dEQP-VK.dynamic_rendering.primary_cmd_buff.random.*
 dEQP-VK.dynamic_rendering.primary_cmd_buff.suballocation.formats.r8g8_uint.dont_care.clear
 dEQP-VK.dynamic_rendering.primary_cmd_buff.suballocation.multisample_resolve.r16g16b16a16_snorm.samples_4_baseLayer1
 
+dEQP-VK.glsl.builtin.precision.distance.mediump.vec4
 dEQP-VK.glsl.conversions.vector_to_vector.ivec4_to_ivec2_vertex
 dEQP-VK.glsl.matrix.mul.uniform.mediump_mat4x3_mat4_vertex
 dEQP-VK.glsl.matrix.unary_addition.mediump_mat3x2_float_fragment
