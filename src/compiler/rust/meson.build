@@ -35,6 +35,10 @@ _compiler_binding_types = [
   'u_printf_info',
 ]
 
+_compiler_rust_args = [
+  rust_2024_lint_args,
+]
+
 _compiler_bindgen_args = [
   bindgen_output_args,
   '--allowlist-var', 'NIR_.*',
@@ -100,6 +104,7 @@ _libcompiler_rs = static_library(
   gnu_symbol_visibility : 'hidden',
   rust_abi : 'rust',
   dependencies: [_idep_libcompiler_c],
+  rust_args: _compiler_rust_args,
 )
 
 # TODO: Linking Rust executables (such as unit tests) doesn't play nicely
@@ -115,7 +120,10 @@ if with_tests and get_option('b_sanitize') == 'none'
     ],
     # This is needed to ensure we link against glibc
     # See also https://gitlab.freedesktop.org/mesa/mesa/-/issues/11632
-    rust_args: ['-C', 'default-linker-libraries'],
+    rust_args: [
+      _compiler_rust_args,
+      '-C', 'default-linker-libraries',
+    ],
   )
 endif
 
