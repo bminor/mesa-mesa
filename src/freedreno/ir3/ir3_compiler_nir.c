@@ -3126,11 +3126,12 @@ emit_intrinsic(struct ir3_context *ctx, nir_intrinsic_instr *intr)
       if (intr->intrinsic == nir_intrinsic_demote_if ||
           intr->intrinsic == nir_intrinsic_terminate_if) {
          /* conditional discard: */
-         src = ir3_get_src(ctx, &intr->src[0]);
+         src = ir3_get_src_maybe_shared(ctx, &intr->src[0]);
          cond = src[0];
       } else {
          /* unconditional discard: */
-         cond = create_immed_typed(b, 1, ctx->compiler->bool_type);
+         cond = create_immed_typed_shared(b, 1, ctx->compiler->bool_type,
+                                          ctx->compiler->has_scalar_alu);
       }
 
       cond = ir3_get_predicate(ctx, cond);
