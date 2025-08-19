@@ -109,7 +109,7 @@ vc4_screen_destroy(struct pipe_screen *pscreen)
                 screen->ro->destroy(screen->ro);
 
 #ifdef USE_VC4_SIMULATOR
-        vc4_simulator_destroy(screen);
+        vc4_simulator_destroy(screen->sim_file);
 #endif
 
         u_transfer_helper_destroy(pscreen->transfer_helper);
@@ -505,7 +505,7 @@ vc4_screen_create(int fd, const struct pipe_screen_config *config,
         vc4_mesa_debug = debug_get_option_vc4_debug();
 
 #ifdef USE_VC4_SIMULATOR
-        vc4_simulator_init(screen);
+        screen->sim_file = vc4_simulator_init(screen);
 #endif
 
         vc4_resource_screen_init(pscreen);

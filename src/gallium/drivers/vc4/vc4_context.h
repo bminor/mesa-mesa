@@ -457,8 +457,8 @@ void vc4_state_init(struct pipe_context *pctx);
 void vc4_program_init(struct pipe_context *pctx);
 void vc4_program_fini(struct pipe_context *pctx);
 void vc4_query_init(struct pipe_context *pctx);
-void vc4_simulator_init(struct vc4_screen *screen);
-void vc4_simulator_destroy(struct vc4_screen *screen);
+struct vc4_simulator_file *vc4_simulator_init(struct vc4_screen *screen);
+void vc4_simulator_destroy(struct vc4_simulator_file *sim_file);
 int vc4_simulator_ioctl(int fd, unsigned long request, void *arg);
 void vc4_simulator_open_from_handle(int fd, int handle, uint32_t size);
 

@@ -735,36 +735,39 @@ vc4_simulator_init_global(void)
                                         _mesa_key_pointer_equal);
 }
 
-void
+struct vc4_simulator_file *
 vc4_simulator_init(struct vc4_screen *screen)
 {
         vc4_simulator_init_global();
 
-        screen->sim_file = rzalloc(screen, struct vc4_simulator_file);
+        struct vc4_simulator_file *sim_file =
+                rzalloc(NULL, struct vc4_simulator_file);
 
-        screen->sim_file->bo_map =
-                _mesa_hash_table_create(screen->sim_file,
+        sim_file->bo_map =
+                _mesa_hash_table_create(sim_file,
                                         _mesa_hash_pointer,
                                         _mesa_key_pointer_equal);
 
         drmVersionPtr version = drmGetVersion(screen->fd);
         if (version && strncmp(version->name, "i915", version->name_len) == 0)
-                screen->sim_file->gem_type = GEM_I915;
+                sim_file->gem_type = GEM_I915;
         else if (version && strncmp(version->name, "amdgpu", version->name_len) == 0)
-                screen->sim_file->gem_type = GEM_AMDGPU;
+                sim_file->gem_type = GEM_AMDGPU;
         else
-                screen->sim_file->gem_type = GEM_DUMB;
+                sim_file->gem_type = GEM_DUMB;
         drmFreeVersion(version);
         simple_mtx_lock(&sim_state.mutex);
         _mesa_hash_table_insert(sim_state.fd_map, int_to_key(screen->fd + 1),
-                                screen->sim_file);
+                                sim_file);
         simple_mtx_unlock(&sim_state.mutex);
 
-        screen->sim_file->dev.screen = screen;
+        sim_file->dev.screen = screen;
+
+        return sim_file;
 }
 
 void
-vc4_simulator_destroy(struct vc4_screen *screen)
+vc4_simulator_destroy(struct vc4_simulator_file *sim_file)
 {
         simple_mtx_lock(&sim_state.mutex);
         if (!--sim_state.refcount) {
@@ -773,6 +776,7 @@ vc4_simulator_destroy(struct vc4_screen *screen)
                 free(sim_state.mem);
                 /* No memsetting it, because it contains the mutex. */
         }
+        ralloc_free(sim_file);
         simple_mtx_unlock(&sim_state.mutex);
 }
 
