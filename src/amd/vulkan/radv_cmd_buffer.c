@@ -1741,16 +1741,16 @@ radv_emit_binning_state(struct radv_cmd_buffer *cmd_buffer)
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radv_cmd_stream *cs = cmd_buffer->cs;
-   unsigned pa_sc_binner_cntl_0;
 
-   if (pdev->info.gfx_level < GFX9)
-      return;
+   if (pdev->info.gfx_level >= GFX9) {
+      const uint32_t pa_sc_binner_cntl_0 = radv_get_binning_state(cmd_buffer);
 
-   pa_sc_binner_cntl_0 = radv_get_binning_state(cmd_buffer);
+      radeon_begin(cs);
+      radeon_opt_set_context_reg(R_028C44_PA_SC_BINNER_CNTL_0, RADV_TRACKED_PA_SC_BINNER_CNTL_0, pa_sc_binner_cntl_0);
+      radeon_end();
+   }
 
-   radeon_begin(cs);
-   radeon_opt_set_context_reg(R_028C44_PA_SC_BINNER_CNTL_0, RADV_TRACKED_PA_SC_BINNER_CNTL_0, pa_sc_binner_cntl_0);
-   radeon_end();
+   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_BINNING_STATE;
 }
 
 static void
@@ -9358,7 +9358,7 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
    render->has_hiz_his = has_hiz_his;
    render->vrs_att = vrs_att;
    render->vrs_texel_size = vrs_texel_size;
-   cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FRAMEBUFFER | RADV_CMD_DIRTY_FBFETCH_OUTPUT;
+   cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FRAMEBUFFER | RADV_CMD_DIRTY_BINNING_STATE | RADV_CMD_DIRTY_FBFETCH_OUTPUT;
 
    if (pdev->info.rbplus_allowed)
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_RBPLUS;
@@ -11429,6 +11429,11 @@ radv_validate_dynamic_states(struct radv_cmd_buffer *cmd_buffer, uint64_t dynami
 
    if (dynamic_states & (RADV_DYNAMIC_VIEWPORT | RADV_DYNAMIC_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE))
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_VIEWPORT_STATE;
+
+   if (dynamic_states &
+       (RADV_DYNAMIC_COLOR_WRITE_MASK | RADV_DYNAMIC_RASTERIZATION_SAMPLES | RADV_DYNAMIC_LINE_RASTERIZATION_MODE |
+        RADV_DYNAMIC_PRIMITIVE_TOPOLOGY | RADV_DYNAMIC_POLYGON_MODE))
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_BINNING_STATE;
 }
 
 static void
@@ -11488,10 +11493,7 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
        cmd_buffer->state.has_nggc)
       radv_emit_ngg_culling_state(cmd_buffer);
 
-   if ((cmd_buffer->state.dirty & RADV_CMD_DIRTY_FRAMEBUFFER) ||
-       (cmd_buffer->state.dirty_dynamic &
-        (RADV_DYNAMIC_COLOR_WRITE_MASK | RADV_DYNAMIC_RASTERIZATION_SAMPLES | RADV_DYNAMIC_LINE_RASTERIZATION_MODE |
-         RADV_DYNAMIC_PRIMITIVE_TOPOLOGY | RADV_DYNAMIC_POLYGON_MODE)))
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_BINNING_STATE)
       radv_emit_binning_state(cmd_buffer);
 
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_PIPELINE) {
