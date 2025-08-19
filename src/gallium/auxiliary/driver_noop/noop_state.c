@@ -328,6 +328,12 @@ static void noop_fence_server_sync(struct pipe_context *pipe,
 {
 }
 
+static void noop_fence_server_signal(struct pipe_context *pipe,
+                                     struct pipe_fence_handle *fence,
+                                     uint64_t value)
+{
+}
+
 static void noop_texture_barrier(struct pipe_context *ctx, unsigned flags)
 {
 }
@@ -459,6 +465,7 @@ void noop_init_state_functions(struct pipe_context *ctx)
    ctx->clear_texture = noop_clear_texture;
    ctx->clear_buffer = noop_clear_buffer;
    ctx->fence_server_sync = noop_fence_server_sync;
+   ctx->fence_server_signal = noop_fence_server_signal;
    ctx->texture_barrier = noop_texture_barrier;
    ctx->memory_barrier = noop_memory_barrier;
    ctx->resource_commit = noop_resource_commit;
