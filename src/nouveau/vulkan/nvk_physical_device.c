@@ -152,18 +152,9 @@ nvk_get_device_extensions(const struct nvk_instance *instance,
       .KHR_pipeline_executable_properties = true,
       .KHR_pipeline_library = true,
 #ifdef NVK_USE_WSI_PLATFORM
-      /* Hide these behind dri configs for now since we cannot implement it
-       * reliably on all surfaces yet. There is no surface capability query
-       * for present wait/id, but the feature is useful enough to hide behind
-       * an opt-in mechanism for now.  If the instance only enables surface
-       * extensions that unconditionally support present wait, we can also
-       * expose the extension that way.
-       */
-      .KHR_present_id = driQueryOptionb(&instance->dri_options, "vk_khr_present_wait") ||
-                        wsi_common_vk_instance_supports_present_wait(&instance->vk),
-      .KHR_present_wait = driQueryOptionb(&instance->dri_options, "vk_khr_present_wait") ||
-                          wsi_common_vk_instance_supports_present_wait(&instance->vk),
+      .KHR_present_id = true,
       .KHR_present_id2 = true,
+      .KHR_present_wait = true,
       .KHR_present_wait2 = true,
 #endif
       .KHR_push_descriptor = true,
@@ -487,11 +478,13 @@ nvk_get_device_features(const struct nv_device_info *info,
       /* VK_KHR_pipeline_executable_properties */
       .pipelineExecutableInfo = true,
 
+#ifdef NVK_USE_WSI_PLATFORM
       /* VK_KHR_present_id */
-      .presentId = supported_extensions->KHR_present_id,
+      .presentId = true,
 
       /* VK_KHR_present_wait */
-      .presentWait = supported_extensions->KHR_present_wait,
+      .presentWait = true,
+#endif
 
       /* VK_KHR_shader_quad_control */
       .shaderQuadControl = true,
@@ -722,11 +715,13 @@ nvk_get_device_features(const struct nv_device_info *info,
       /* VK_NV_shader_sm_builtins */
       .shaderSMBuiltins = true,
 
+#ifdef NVK_USE_WSI_PLATFORM
       /* VK_KHR_present_id2 */
-      .presentId2 = supported_extensions->KHR_present_id2,
+      .presentId2 = true,
 
       /* VK_KHR_present_wait2 */
-      .presentWait2 = supported_extensions->KHR_present_wait2,
+      .presentWait2 = true,
+#endif
    };
 }
 
