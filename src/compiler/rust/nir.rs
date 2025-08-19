@@ -51,20 +51,24 @@ impl<'a, T: 'a> Iterator for ExecListIter<'a, T> {
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.rev {
-            self.n = unsafe { &*self.n.prev };
+            self.n = unsafe { self.n.prev.as_ref().unwrap() };
             if self.n.prev.is_null() {
                 None
             } else {
                 let t: *const c_void = (self.n as *const exec_node).cast();
-                Some(unsafe { &*(t.sub(self.offset).cast()) })
+                Some(unsafe {
+                    (t.sub(self.offset).cast::<T>()).as_ref().unwrap()
+                })
             }
         } else {
-            self.n = unsafe { &*self.n.next };
+            self.n = unsafe { self.n.next.as_ref().unwrap() };
             if self.n.next.is_null() {
                 None
             } else {
                 let t: *const c_void = (self.n as *const exec_node).cast();
-                Some(unsafe { &*(t.sub(self.offset).cast()) })
+                Some(unsafe {
+                    (t.sub(self.offset).cast::<T>()).as_ref().unwrap()
+                })
             }
         }
     }
@@ -425,7 +429,7 @@ impl nir_instr {
     pub fn as_alu<'a>(&'a self) -> Option<&'a nir_alu_instr> {
         if self.type_ == nir_instr_type_alu {
             let p = self as *const nir_instr;
-            Some(unsafe { &*(p as *const nir_alu_instr) })
+            Some(unsafe { p.cast::<nir_alu_instr>().as_ref().unwrap() })
         } else {
             None
         }
@@ -434,7 +438,7 @@ impl nir_instr {
     pub fn as_jump<'a>(&'a self) -> Option<&'a nir_jump_instr> {
         if self.type_ == nir_instr_type_jump {
             let p = self as *const nir_instr;
-            Some(unsafe { &*(p as *const nir_jump_instr) })
+            Some(unsafe { p.cast::<nir_jump_instr>().as_ref().unwrap() })
         } else {
             None
         }
@@ -443,7 +447,7 @@ impl nir_instr {
     pub fn as_tex<'a>(&'a self) -> Option<&'a nir_tex_instr> {
         if self.type_ == nir_instr_type_tex {
             let p = self as *const nir_instr;
-            Some(unsafe { &*(p as *const nir_tex_instr) })
+            Some(unsafe { p.cast::<nir_tex_instr>().as_ref().unwrap() })
         } else {
             None
         }
@@ -452,7 +456,7 @@ impl nir_instr {
     pub fn as_intrinsic<'a>(&'a self) -> Option<&'a nir_intrinsic_instr> {
         if self.type_ == nir_instr_type_intrinsic {
             let p = self as *const nir_instr;
-            Some(unsafe { &*(p as *const nir_intrinsic_instr) })
+            Some(unsafe { p.cast::<nir_intrinsic_instr>().as_ref().unwrap() })
         } else {
             None
         }
@@ -461,7 +465,7 @@ impl nir_instr {
     pub fn as_load_const<'a>(&'a self) -> Option<&'a nir_load_const_instr> {
         if self.type_ == nir_instr_type_load_const {
             let p = self as *const nir_instr;
-            Some(unsafe { &*(p as *const nir_load_const_instr) })
+            Some(unsafe { p.cast::<nir_load_const_instr>().as_ref().unwrap() })
         } else {
             None
         }
@@ -470,7 +474,7 @@ impl nir_instr {
     pub fn as_undef<'a>(&'a self) -> Option<&'a nir_undef_instr> {
         if self.type_ == nir_instr_type_undef {
             let p = self as *const nir_instr;
-            Some(unsafe { &*(p as *const nir_undef_instr) })
+            Some(unsafe { p.cast::<nir_undef_instr>().as_ref().unwrap() })
         } else {
             None
         }
@@ -479,7 +483,7 @@ impl nir_instr {
     pub fn as_phi<'a>(&'a self) -> Option<&'a nir_phi_instr> {
         if self.type_ == nir_instr_type_phi {
             let p = self as *const nir_instr;
-            Some(unsafe { &*(p as *const nir_phi_instr) })
+            Some(unsafe { p.cast::<nir_phi_instr>().as_ref().unwrap() })
         } else {
             None
         }
@@ -559,7 +563,8 @@ impl nir_loop {
 impl nir_cf_node {
     pub fn as_block<'a>(&'a self) -> Option<&'a nir_block> {
         if self.type_ == nir_cf_node_block {
-            Some(unsafe { &*(self as *const nir_cf_node as *const nir_block) })
+            let p = self as *const nir_cf_node;
+            Some(unsafe { p.cast::<nir_block>().as_ref().unwrap() })
         } else {
             None
         }
@@ -567,7 +572,8 @@ impl nir_cf_node {
 
     pub fn as_if<'a>(&'a self) -> Option<&'a nir_if> {
         if self.type_ == nir_cf_node_if {
-            Some(unsafe { &*(self as *const nir_cf_node as *const nir_if) })
+            let p = self as *const nir_cf_node;
+            Some(unsafe { p.cast::<nir_if>().as_ref().unwrap() })
         } else {
             None
         }
@@ -575,7 +581,8 @@ impl nir_cf_node {
 
     pub fn as_loop<'a>(&'a self) -> Option<&'a nir_loop> {
         if self.type_ == nir_cf_node_loop {
-            Some(unsafe { &*(self as *const nir_cf_node as *const nir_loop) })
+            let p = self as *const nir_cf_node;
+            Some(unsafe { p.cast::<nir_loop>().as_ref().unwrap() })
         } else {
             None
         }
