@@ -9,6 +9,7 @@
 #include "compiler/libcl/libcl.h"
 #include "compiler/shader_enums.h"
 #include "pco/pco_common.h"
+#include "pp_macros.h"
 
 void nir_mutex_pco(enum pco_mutex_id mutex_id, enum pco_mutex_op mutex_op);
 uint32_t nir_load_instance_num_pco(void);
