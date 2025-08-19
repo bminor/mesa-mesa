@@ -30,6 +30,19 @@ struct opt_predicates_ctx {
    struct hash_table *predicate_clones;
 };
 
+static bool
+is_shared_or_const(struct ir3_register *reg)
+{
+   return reg->flags & (IR3_REG_CONST | IR3_REG_SHARED);
+}
+
+static bool
+cat2_needs_scalar_alu(struct ir3_instruction *instr)
+{
+   return is_shared_or_const(instr->srcs[0]) &&
+          (instr->srcs_count == 1 || is_shared_or_const(instr->srcs[1]));
+}
+
 static struct ir3_instruction *
 clone_with_predicate_dst(struct opt_predicates_ctx *ctx,
                          struct ir3_instruction *instr)
@@ -47,19 +60,6 @@ clone_with_predicate_dst(struct opt_predicates_ctx *ctx,
    clone->dsts[0]->flags &= ~(IR3_REG_HALF | IR3_REG_SHARED);
    _mesa_hash_table_insert(ctx->predicate_clones, instr, clone);
    return clone;
-}
-
-static bool
-is_shared_or_const(struct ir3_register *reg)
-{
-   return reg->flags & (IR3_REG_CONST | IR3_REG_SHARED);
-}
-
-static bool
-cat2_needs_scalar_alu(struct ir3_instruction *instr)
-{
-   return is_shared_or_const(instr->srcs[0]) &&
-          (instr->srcs_count == 1 || is_shared_or_const(instr->srcs[1]));
 }
 
 static bool
