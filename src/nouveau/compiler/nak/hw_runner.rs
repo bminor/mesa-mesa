@@ -24,7 +24,7 @@ use std::sync::{Arc, Mutex};
 unsafe fn is_nvidia_device(dev: drmDevicePtr) -> bool {
     match (*dev).bustype as u32 {
         DRM_BUS_PCI => {
-            let pci = &*(*dev).deviceinfo.pci;
+            let pci = (*dev).deviceinfo.pci.as_ref().unwrap();
             pci.vendor_id == (NVIDIA_VENDOR_ID as u16)
         }
         _ => false,
