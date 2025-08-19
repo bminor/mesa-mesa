@@ -235,6 +235,7 @@ lower_ray_query_intrinsic(nir_builder *b,
       brw_nir_rt_sync_stack_addr(b, state->globals.base_mem_addr,
                                  state->globals.num_dss_rt_stacks);
    nir_def *stack_addr = shadow_stack_addr ? shadow_stack_addr : hw_stack_addr;
+   mesa_shader_stage stage = b->shader->info.stage;
 
    switch (intrin->intrinsic) {
    case nir_intrinsic_rq_initialize: {
@@ -446,11 +447,27 @@ lower_ray_query_intrinsic(nir_builder *b,
          break;
 
       case nir_ray_query_value_intersection_object_ray_direction:
-         sysval = world_ray_in.dir;
+         if (stage == MESA_SHADER_CLOSEST_HIT) {
+            struct brw_nir_rt_bvh_instance_leaf_defs leaf;
+            brw_nir_rt_load_bvh_instance_leaf(b, &leaf, hit_in.inst_leaf_ptr,
+                                              state->devinfo);
+            sysval = brw_nir_build_vec3_mat_mult_col_major(
+               b, world_ray_in.dir, leaf.world_to_object, false);
+         } else {
+            sysval = object_ray_in.dir;
+         }
          break;
 
       case nir_ray_query_value_intersection_object_ray_origin:
-         sysval = world_ray_in.orig;
+         if (stage == MESA_SHADER_CLOSEST_HIT) {
+            struct brw_nir_rt_bvh_instance_leaf_defs leaf;
+            brw_nir_rt_load_bvh_instance_leaf(b, &leaf, hit_in.inst_leaf_ptr,
+                                              state->devinfo);
+            sysval = brw_nir_build_vec3_mat_mult_col_major(
+               b, world_ray_in.orig, leaf.world_to_object, true);
+         } else {
+            sysval = object_ray_in.orig;
+         }
          break;
 
       case nir_ray_query_value_intersection_object_to_world: {
