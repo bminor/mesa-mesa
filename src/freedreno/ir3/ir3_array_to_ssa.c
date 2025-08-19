@@ -121,40 +121,32 @@ remove_trivial_phi(struct ir3_instruction *phi)
    phi->data = phi->dsts[0];
 
    struct ir3_register *unique_def = NULL;
+   bool unique_def_valid = false;
    bool unique = true;
    for (unsigned i = 0; i < phi->block->predecessors_count; i++) {
       struct ir3_register *src = phi->srcs[i];
 
-      /* If there are any undef sources, then the remaining sources may not
-       * dominate the phi node, even if they are all equal. So we need to
-       * bail out in this case.
-       *
-       * This seems to be a bug in the original paper.
-       */
-      if (!src->def) {
-         unique = false;
-         break;
+      if (src->def) {
+         struct ir3_instruction *src_instr = src->def->instr;
+
+         /* phi sources which point to the phi itself don't count for
+          * figuring out if the phi is trivial
+          */
+         if (src_instr == phi)
+            continue;
+
+         if (src_instr->opc == OPC_META_PHI) {
+            src->def = remove_trivial_phi(src->def->instr);
+         }
       }
 
-      struct ir3_instruction *src_instr = src->def->instr;
-
-      /* phi sources which point to the phi itself don't count for
-       * figuring out if the phi is trivial
-       */
-      if (src_instr == phi)
-         continue;
-
-      if (src_instr->opc == OPC_META_PHI) {
-         src->def = remove_trivial_phi(src->def->instr);
-      }
-
-      if (unique_def) {
+      if (unique_def_valid) {
          if (unique_def != src->def) {
             unique = false;
-            break;
          }
       } else {
          unique_def = src->def;
+         unique_def_valid = true;
       }
    }
 
