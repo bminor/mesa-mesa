@@ -761,7 +761,8 @@ tu6_calculate_lrz_state(struct tu_cmd_buffer *cmd,
    gras_lrz_cntl.enable = true;
    gras_lrz_cntl.lrz_write =
       z_write_enable &&
-      !(fs->fs.lrz.status & TU_LRZ_FORCE_DISABLE_WRITE);
+      !(fs->fs.lrz.status & TU_LRZ_FORCE_DISABLE_WRITE) &&
+      !cmd->vk.dynamic_graphics_state.ms.alpha_to_coverage_enable;
    gras_lrz_cntl.z_write_enable = z_write_enable;
    gras_lrz_cntl.z_bounds_enable = z_bounds_enable;
    gras_lrz_cntl.fc_enable = cmd->state.lrz.fast_clear;

@@ -2830,7 +2830,7 @@ tu_shader_create(struct tu_device *dev,
       const struct ir3_shader_variant *fs = shader->variant;
       shader->fs.sample_shading = fs->sample_shading;
       shader->fs.has_fdm = key->fragment_density_map;
-      if (fs->has_kill)
+      if (fs->has_kill || fs->writes_smask)
          shader->fs.lrz.status |= TU_LRZ_FORCE_DISABLE_WRITE;
       if (fs->no_earlyz)
          shader->fs.lrz.status = TU_LRZ_FORCE_DISABLE_LRZ;
