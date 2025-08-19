@@ -86,7 +86,6 @@ lower_load_to_scalar(nir_builder *b, nir_intrinsic_instr *intr)
    b->cursor = nir_before_instr(&intr->instr);
 
    nir_def *loads[NIR_MAX_VEC_COMPONENTS];
-   nir_def *base_offset = nir_get_io_offset_src(intr)->ssa;
 
    for (unsigned i = 0; i < intr->num_components; i++) {
       nir_intrinsic_instr *chan_intr =
@@ -114,8 +113,9 @@ lower_load_to_scalar(nir_builder *b, nir_intrinsic_instr *intr)
          chan_intr->src[j] = nir_src_for_ssa(intr->src[j].ssa);
 
       /* increment offset per component */
-      nir_def *offset = nir_iadd_imm(b, base_offset, i * (intr->def.bit_size / 8));
-      *nir_get_io_offset_src(chan_intr) = nir_src_for_ssa(offset);
+      nir_io_offset offset =
+         nir_io_offset_iadd(b, intr, i * (intr->def.bit_size / 8));
+      nir_set_io_offset(chan_intr, offset);
 
       nir_builder_instr_insert(b, &chan_intr->instr);
 
@@ -230,7 +230,6 @@ lower_store_to_scalar(nir_builder *b, nir_intrinsic_instr *intr)
    b->cursor = nir_before_instr(&intr->instr);
 
    nir_def *value = intr->src[0].ssa;
-   nir_def *base_offset = nir_get_io_offset_src(intr)->ssa;
 
    /* iterate wrmask instead of num_components to handle split components */
    u_foreach_bit(i, nir_intrinsic_write_mask(intr)) {
@@ -257,8 +256,9 @@ lower_store_to_scalar(nir_builder *b, nir_intrinsic_instr *intr)
          chan_intr->src[j] = nir_src_for_ssa(intr->src[j].ssa);
 
       /* increment offset per component */
-      nir_def *offset = nir_iadd_imm(b, base_offset, i * (value->bit_size / 8));
-      *nir_get_io_offset_src(chan_intr) = nir_src_for_ssa(offset);
+      nir_io_offset offset =
+         nir_io_offset_iadd(b, intr, i * (value->bit_size / 8));
+      nir_set_io_offset(chan_intr, offset);
 
       nir_builder_instr_insert(b, &chan_intr->instr);
    }
