@@ -155,7 +155,7 @@ ir3_required_sync_flags(struct ir3_legalize_state *state,
          if (state->needs_sy_for_const) {
             flags |= IR3_INSTR_SY;
          }
-      } else if (reg_is_addr1(reg) && n->block->in_early_preamble) {
+      } else if (!(reg->flags & (IR3_REG_IMMED | IR3_REG_RT))) {
          if (regmask_get(&state->needs_ss, reg)) {
             flags |= IR3_INSTR_SS;
          }
