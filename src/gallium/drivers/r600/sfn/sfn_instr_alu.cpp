@@ -2058,6 +2058,56 @@ emit_alu_fsat64(const nir_alu_instr& alu, Shader& shader)
    return true;
 }
 
+using PreloadSources = std::array<std::array<PVirtualValue, 3>, 4>;
+
+void
+preload_sources(const nir_alu_instr& alu,
+                Shader& shader,
+                PreloadSources& src,
+                unsigned distinct_slopts_per_instructions,
+                unsigned nsrc)
+{
+   auto& value_factory = shader.value_factory();
+
+   AluReadportReservation rr_all;
+   int chan_used[4] = {0};
+
+   for (unsigned i = 0; i < alu.def.num_components; ++i) {
+      for (unsigned slot = 0; slot < distinct_slopts_per_instructions; slot++) {
+         unsigned row = slot + i * distinct_slopts_per_instructions;
+         for (unsigned col = 0; col < nsrc; col++) {
+            src[row][col] = value_factory.src64(alu.src[col], 0, slot);
+            if (auto r = src[row][col]->as_register())
+               ++chan_used[r->chan()];
+         }
+
+         while (1) {
+            AluReadportReservation rr = rr_all;
+            unsigned failing_source = nsrc;
+            for (auto bs = alu_vec_012; bs != alu_vec_unknown; ++bs) {
+               failing_source = rr_all.schedule_vec_src(src[row], nsrc, bs);
+               if (failing_source == nsrc)
+                  break;
+            }
+            if (failing_source == nsrc) {
+               rr_all = rr;
+               break;
+            }
+
+            int new_chan = 0;
+            for (int i = 0; i < 4; ++i) {
+               if (chan_used[i] < 3) {
+                  new_chan = i;
+                  break;
+               }
+            }
+            src[row][failing_source] =
+               shader.emit_load_to_register(src[row][failing_source], new_chan);
+         }
+      }
+   }
+}
+
 static bool
 emit_alu_op2_64bit(const nir_alu_instr& alu, EAluOp opcode, Shader& shader)
 {
@@ -2067,13 +2117,8 @@ emit_alu_op2_64bit(const nir_alu_instr& alu, EAluOp opcode, Shader& shader)
 
    int num_emit0 = opcode == op2_mul_64 ? 3 : 1;
 
-   std::array<std::array<PRegister, 4>,2> tmp;
-   for (unsigned k = 0; k < alu.def.num_components; ++k) {
-      tmp[k][0] = shader.emit_load_to_register(value_factory.src64(alu.src[0], k, 1), 0);
-      tmp[k][1] = shader.emit_load_to_register(value_factory.src64(alu.src[1], k, 1), 1);
-      tmp[k][2] = shader.emit_load_to_register(value_factory.src64(alu.src[0], k, 0), 2);
-      tmp[k][3] = shader.emit_load_to_register(value_factory.src64(alu.src[1], k, 0), 3);
-   }
+   PreloadSources tmp;
+   preload_sources(alu, shader, tmp, 2, 2);
 
    assert(num_emit0 == 1 || alu.def.num_components == 1);
 
@@ -2085,8 +2130,8 @@ emit_alu_op2_64bit(const nir_alu_instr& alu, EAluOp opcode, Shader& shader)
 
          ir = new AluInstr(opcode,
                            dest,
-                           tmp[k][0],
-                           tmp[k][1],
+                           tmp[2 * k + 1][0],
+                           tmp[2 * k + 1][1],
                            i < 2 ? AluInstr::write : AluInstr::empty);
          group->add_instruction(ir);
       }
@@ -2096,8 +2141,8 @@ emit_alu_op2_64bit(const nir_alu_instr& alu, EAluOp opcode, Shader& shader)
 
       ir = new AluInstr(opcode,
                         dest,
-                        tmp[k][2],
-                        tmp[k][3],
+                        tmp[2 * k][0],
+                        tmp[2 * k][1],
                         i == 1 ? AluInstr::write : AluInstr::empty);
       group->add_instruction(ir);
    }
@@ -2120,16 +2165,18 @@ emit_alu_op2_64bit_one_dst(const nir_alu_instr& alu,
       order[1] = 0;
    }
 
-   AluInstr::SrcValues src(4);
+   PreloadSources tmp;
+   preload_sources(alu, shader, tmp, 2, 2);
 
    auto chan_mask = get_dest_mask(opcode, 2, false);
 
    for (unsigned k = 0; k < alu.def.num_components; ++k) {
       auto dest = value_factory.dest(alu.def, 2 * k, pin_free, chan_mask);
-      src[0] = value_factory.src64(alu.src[order[0]], k, 1);
-      src[1] = value_factory.src64(alu.src[order[1]], k, 1);
-      src[2] = value_factory.src64(alu.src[order[0]], k, 0);
-      src[3] = value_factory.src64(alu.src[order[1]], k, 0);
+
+      AluInstr::SrcValues src(4);
+      for (unsigned i = 0; i < 2; ++i)
+         for (unsigned j = 0; j < 2; ++j)
+            src[j + 2 * i] = tmp[1 - i + 2 * k][order[j]];
 
       ir = new AluInstr(opcode, dest, src, AluInstr::write, 2);
       ir->set_alu_flag(alu_64bit_op);
@@ -2168,6 +2215,11 @@ emit_alu_fma_64bit(const nir_alu_instr& alu, EAluOp opcode, Shader& shader)
    auto& value_factory = shader.value_factory();
    auto group = new AluGroup();
    AluInstr *ir = nullptr;
+
+   std::array<std::array<PVirtualValue, 3>, 4> src;
+
+   preload_sources(alu, shader, src, 2, 3);
+
    for (unsigned i = 0; i < 4; ++i) {
 
       int chan = i < 3 ? 1 : 0;
@@ -2176,9 +2228,9 @@ emit_alu_fma_64bit(const nir_alu_instr& alu, EAluOp opcode, Shader& shader)
 
       ir = new AluInstr(opcode,
                         dest,
-                        value_factory.src64(alu.src[0], 0, chan),
-                        value_factory.src64(alu.src[1], 0, chan),
-                        value_factory.src64(alu.src[2], 0, chan),
+                        src[chan][0],
+                        src[chan][1],
+                        src[chan][2],
                         i < 2 ? AluInstr::write : AluInstr::empty);
       if (!group->add_instruction(ir))
          UNREACHABLE("Unable to emit group, likely because of a readport conflict\n");
