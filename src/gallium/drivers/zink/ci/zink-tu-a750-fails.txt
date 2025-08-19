@@ -227,8 +227,6 @@ spec@ext_external_objects@vk-image-overwrite@RGBA 8 SNORM optimal: Failed to cre
 spec@ext_external_objects@vk-image-overwrite@RGBA 8 SRGB optimal: Failed to create texture from GL memory object.,Fail
 spec@ext_external_objects@vk-image-overwrite@RGBA 8 UINT optimal: Failed to create texture from GL memory object.,Fail
 spec@ext_external_objects@vk-image-overwrite@RGBA 8 UNORM optimal: Failed to create texture from GL memory object.,Fail
-spec@ext_external_objects@vk-ping-pong-multi-sem,Crash
-spec@ext_external_objects@vk-ping-pong-single-sem,Crash
 spec@ext_external_objects@vk-semaphores,Fail
 spec@ext_external_objects@vk-semaphores-2,Fail
 spec@ext_framebuffer_multisample@accuracy 2 srgb depthstencil linear,Fail
@@ -259,14 +257,6 @@ spec@ext_framebuffer_multisample@interpolation 4 non-centroid-deriv-disabled,Fai
 spec@ext_framebuffer_multisample@interpolation 4 non-centroid-disabled,Fail
 spec@ext_framebuffer_multisample@sample-alpha-to-coverage 2 color,Fail
 spec@ext_framebuffer_multisample@sample-alpha-to-coverage 4 color,Fail
-spec@ext_image_dma_buf_import@ext_image_dma_buf_import-export,Fail
-spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_nv12,Fail
-spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_nv21,Fail
-spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_p010,Fail
-spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_p012,Fail
-spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_p016,Fail
-spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_yuv420,Fail
-spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_yvu420,Fail
 spec@ext_transform_feedback@max-varyings,Fail
 spec@ext_transform_feedback@max-varyings@max-varying-arrays-of-arrays,Fail
 spec@ext_transform_feedback@max-varyings@max-varying-single-dimension-array,Fail
