@@ -694,7 +694,7 @@
         "description": "venus: hide swapchainMaintenance1 behind wsi guard",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "acd5497067389df5f798e4dfc2075580ca5c0412",
         "notes": null
