@@ -755,7 +755,7 @@ impl Image {
 
     fn gb202_choose_pte_kind(_format: Format, _compressed: bool) -> u8 {
         use nvidia_headers::hwref::tu102::mmu::*;
-        return NV_MMU_PTE_KIND_GENERIC_MEMORY.try_into().unwrap();
+        NV_MMU_PTE_KIND_GENERIC_MEMORY.try_into().unwrap()
     }
 
     fn tu102_choose_pte_kind(format: Format, compressed: bool) -> u8 {
