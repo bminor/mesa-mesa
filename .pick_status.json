@@ -1264,7 +1264,7 @@
         "description": "brw/rt: fix ray_object_(direction|origin) for closest-hit shaders",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "aaff19135644049cde3bd3ddd649b48f96111fa4",
         "notes": null
