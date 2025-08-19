@@ -403,10 +403,15 @@ vk_common_QueueSignalReleaseImageANDROID(VkQueue _queue,
 {
    VK_FROM_HANDLE(vk_queue, queue, _queue);
    struct vk_device *device = queue->base.device;
-   VkResult result = VK_SUCCESS;
+   VkResult result;
 
-   STACK_ARRAY(VkPipelineStageFlags, stage_flags, MAX2(1, waitSemaphoreCount));
-   for (uint32_t i = 0; i < MAX2(1, waitSemaphoreCount); i++)
+   if (waitSemaphoreCount == 0) {
+      *pNativeFenceFd = -1;
+      return VK_SUCCESS;
+   }
+
+   STACK_ARRAY(VkPipelineStageFlags, stage_flags, waitSemaphoreCount);
+   for (uint32_t i = 0; i < waitSemaphoreCount; i++)
       stage_flags[i] = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 
    result = vk_anb_semaphore_init_once(queue, device);
