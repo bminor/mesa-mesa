@@ -3,6 +3,14 @@
  * SPDX-License-Identifier: MIT
  */
 
+#ifndef __pvr_address_type
+#define __pvr_address_type uint64_t
+#define __pvr_get_address(addr) addr
+#define __pvr_make_address(addr) addr
+#endif /* __pvr_address_type */
+
+#include "csbgen/rogue_cdm.h"
+#include "hwdef/rogue_hw_defs.h"
 #include "libcl.h"
 
 uint32_t

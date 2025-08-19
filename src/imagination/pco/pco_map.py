@@ -335,7 +335,7 @@ enum_map(OM_SCHEDSWAP.t, F_SCHED_CTRL, [
    ('swap', 'swap'),
 ])
 
-enum_map(OM_MTX_OP.t, F_LR, [
+enum_map(OM_MUTEX_OP.t, F_LR, [
    ('release', 'release'),
    ('release_sleep', 'release_sleep'),
    ('release_wakeup', 'release_wakeup'),
@@ -1764,7 +1764,7 @@ encode_map(O_BR_NEXT,
 encode_map(O_MUTEX,
    encodings=[
       (I_MUTEX, [
-         ('lr', OM_MTX_OP),
+         ('lr', OM_MUTEX_OP),
          ('id', ('pco_ref_get_imm', SRC(0))),
       ])
    ],

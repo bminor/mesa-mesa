@@ -3,25 +3,12 @@
  * SPDX-License-Identifier: MIT
  */
 
+#ifndef PCO_LIBCL_H
+#define PCO_LIBCL_H
+
 #include "compiler/libcl/libcl.h"
 #include "compiler/shader_enums.h"
-
-enum pco_mutex_id {
-   PCO_MUTEX_ID_ATOMIC_EMU,
-   PCO_MUTEX_ID_BARRIER,
-
-   _PCO_MUTEX_ID_COUNT,
-};
-static_assert(_PCO_MUTEX_ID_COUNT <= 16, "Too many mutex IDs.");
-
-enum pco_mutex_op {
-   PCO_MUTEX_OP_RELEASE,
-   PCO_MUTEX_OP_RELEASE_SLEEP,
-   PCO_MUTEX_OP_RELEASE_WAKEUP,
-   PCO_MUTEX_OP_LOCK,
-};
-
-#define ROGUE_MAX_INSTANCES_PER_TASK 32
+#include "pco/pco_common.h"
 
 void nir_mutex_pco(enum pco_mutex_id mutex_id, enum pco_mutex_op mutex_op);
 uint32_t nir_load_instance_num_pco(void);
@@ -51,3 +38,4 @@ void nir_store_shared(uint32_t value,
                       uint write_mask,
                       uint align_mul,
                       uint align_offset);
+#endif /* PCO_LIBCL_H */

@@ -113,6 +113,25 @@ DRC = enum_type('drc', [
    ('pending', '?'),
 ])
 
+MUTEX_ID = enum_type('mutex_id', [
+   'atomic_emu',
+   'barrier',
+   'rsvd_2',
+   'rsvd_3',
+   'rsvd_4',
+   'rsvd_5',
+   'rsvd_6',
+   'rsvd_7',
+   'rsvd_8',
+   'rsvd_9',
+   'rsvd_a',
+   'rsvd_b',
+   'rsvd_c',
+   'rsvd_d',
+   'rsvd_e',
+   'rsvd_f'
+])
+
 # Ref mods.
 RM_ONEMINUS = ref_mod('oneminus', BaseType.bool)
 RM_CLAMP = ref_mod('clamp', BaseType.bool)
@@ -321,7 +340,7 @@ OM_FRED_PART = op_mod_enum('fred_part', [
    'b',
 ])
 
-OM_MTX_OP = op_mod_enum('mtx_op', [
+OM_MUTEX_OP = op_mod_enum('mutex_op', [
    ('release', 'release'),
    ('release_sleep', 'release.sleep'),
    ('release_wakeup', 'release.wakeup'),
@@ -448,7 +467,7 @@ O_BR = hw_op('br', [OM_EXEC_CND, OM_BRANCH_CND, OM_LINK], has_target_cf_node=Tru
 
 O_BR_NEXT = hw_op('br.next', [OM_EXEC_CND])
 
-O_MUTEX = hw_op('mutex', [OM_MTX_OP], 0, 1)
+O_MUTEX = hw_op('mutex', [OM_MUTEX_OP], 0, 1)
 
 # Combination (> 1 instructions per group).
 O_SCMP = hw_op('scmp', OM_ALU + [OM_TST_OP_MAIN], 1, 2, [], [[RM_ABS, RM_NEG], [RM_ABS, RM_NEG]])
