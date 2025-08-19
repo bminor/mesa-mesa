@@ -317,7 +317,7 @@ radv-navi31-vkcts:
 
 
 radv-gfx1201-vkcts:
-  timeout: 30m
+  timeout: 20m
   parallel: 3
   extends:
     - .ci-tron-test-radv-vk
@@ -328,7 +328,7 @@ radv-gfx1201-vkcts:
     # TODO: Fix GPU hangs with video
     RADV_DEBUG: nomeshshader,novideo
     RADV_PERFTEST: transfer_queue,hic
-    CI_TRON_TIMEOUT__OVERALL__MINUTES: 25
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 15
 
 ############### Fossilize
 radv-fossils:
