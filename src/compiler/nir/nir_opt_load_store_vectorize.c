@@ -1231,14 +1231,12 @@ check_for_robustness(struct vectorize_ctx *ctx, struct entry *low, uint64_t high
    if (!(mode & ctx->options->robust_modes))
       return false;
 
-   unsigned scale = get_offset_scale(low);
-
    /* First, try to use alignment information in case the application provided some. If the addition
     * of the maximum offset of the low load and "high_offset" wraps around, we can't combine the low
     * and high loads.
     */
    uint64_t max_low = round_down(UINT64_MAX, low->align_mul) + low->align_offset;
-   if (!addition_wraps(max_low / scale, high_offset / scale, 64))
+   if (!addition_wraps(max_low, high_offset, 64))
       return false;
 
    /* We can't obtain addition_bits */
@@ -1257,7 +1255,7 @@ check_for_robustness(struct vectorize_ctx *ctx, struct entry *low, uint64_t high
    max_low = low->offset;
    if (stride)
       max_low = round_down(BITFIELD64_MASK(addition_bits), stride) + (low->offset % stride);
-   return addition_wraps(max_low / scale, high_offset / scale, addition_bits);
+   return addition_wraps(max_low, high_offset, addition_bits);
 }
 
 static bool
