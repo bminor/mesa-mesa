@@ -33,7 +33,7 @@ impl<N> DerefMut for CFGNode<N> {
 }
 
 fn graph_post_dfs<N>(
-    nodes: &Vec<CFGNode<N>>,
+    nodes: &[CFGNode<N>],
     id: usize,
     seen: &mut BitSet,
     post_idx: &mut Vec<usize>,
@@ -107,7 +107,7 @@ fn rev_post_order_sort<N>(nodes: &mut Vec<CFGNode<N>>) {
 }
 
 fn find_common_dom<N>(
-    nodes: &Vec<CFGNode<N>>,
+    nodes: &[CFGNode<N>],
     mut a: usize,
     mut b: usize,
 ) -> usize {
@@ -124,7 +124,7 @@ fn find_common_dom<N>(
 
 fn dom_idx_dfs<N>(
     nodes: &mut Vec<CFGNode<N>>,
-    dom_children: &Vec<Vec<usize>>,
+    dom_children: &[Vec<usize>],
     id: usize,
     count: &mut usize,
 ) {
@@ -178,7 +178,7 @@ fn calc_dominance<N>(nodes: &mut Vec<CFGNode<N>>) {
 }
 
 fn loop_detect_dfs<N>(
-    nodes: &Vec<CFGNode<N>>,
+    nodes: &[CFGNode<N>],
     id: usize,
     pre: &mut BitSet,
     post: &mut BitSet,
