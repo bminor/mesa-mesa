@@ -114,8 +114,11 @@ typedef struct nir_def nir_def;
 /* si_nir_*.c */
 bool si_nir_clamp_shadow_comparison_value(nir_shader *nir);
 bool si_nir_kill_outputs(nir_shader *nir, const union si_shader_key *key);
-nir_def *si_nir_load_internal_binding(nir_builder *b, struct si_shader_args *args,
-                                          unsigned slot, unsigned num_components);
+nir_def *si_nir_load_addr32_arg(struct si_screen *sscreen, struct si_shader_args *args,
+                                nir_builder *b, struct ac_arg arg);
+nir_def *si_nir_load_internal_binding(struct si_screen *sscreen, nir_builder *b,
+                                      struct si_shader_args *args, unsigned slot,
+                                      unsigned num_components);
 bool si_nir_lower_abi(nir_shader *nir, struct si_shader *shader, struct si_shader_args *args);
 bool si_nir_lower_color_inputs_to_sysvals(nir_shader *nir);
 bool si_nir_lower_polygon_stipple(nir_shader *nir);

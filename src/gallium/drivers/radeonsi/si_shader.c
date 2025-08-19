@@ -1846,6 +1846,8 @@ si_nir_generate_gs_copy_shader(struct si_screen *sscreen,
    shader->info.culldist_mask = gs_shader->info.culldist_mask;
 
    nir_shader *nir = gs_copy_shader;
+   nir->info.use_aco_amd = gs_nir->info.use_aco_amd;
+
    struct si_linked_shaders linked;
    memset(&linked, 0, sizeof(linked));
    linked.consumer.nir = nir;
