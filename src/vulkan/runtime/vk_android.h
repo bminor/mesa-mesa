@@ -110,6 +110,9 @@ void vk_android_get_ahb_buffer_properties(
    const VkPhysicalDeviceExternalBufferInfo *info,
    VkExternalBufferProperties *props);
 
+bool vk_android_rp_attachment_has_external_format(
+   const VkAttachmentDescription2 *desc);
+
 #else /* defined(VK_USE_PLATFORM_ANDROID_KHR) && ANDROID_API_LEVEL >= 26 */
 
 static inline uint64_t
@@ -167,6 +170,13 @@ vk_android_get_ahb_buffer_properties(
    const VkPhysicalDeviceExternalBufferInfo *info,
    VkExternalBufferProperties *props)
 {
+}
+
+static bool
+vk_android_rp_attachment_has_external_format(
+   const VkAttachmentDescription2 *desc)
+{
+   return false;
 }
 
 #endif /* ANDROID_API_LEVEL >= 26 */

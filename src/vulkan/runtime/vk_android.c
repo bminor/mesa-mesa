@@ -1061,4 +1061,14 @@ vk_android_get_ahb_buffer_properties(
    };
 }
 
+bool vk_android_rp_attachment_has_external_format(
+   const VkAttachmentDescription2 *desc)
+{
+   const VkExternalFormatANDROID *format_info =
+      vk_find_struct_const(desc->pNext,
+                           EXTERNAL_FORMAT_ANDROID);
+   return (desc->format == VK_FORMAT_UNDEFINED) &&
+          (format_info != NULL);
+}
+
 #endif /* ANDROID_API_LEVEL >= 26 */
