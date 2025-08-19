@@ -5894,7 +5894,7 @@
         "description": "ir3/array_to_ssa: fix updating/removing phis",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3ac743c333e49c6c91e74073eb8ba01cc6762fc6",
         "notes": null
