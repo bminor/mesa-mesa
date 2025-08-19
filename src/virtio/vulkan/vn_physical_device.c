@@ -406,7 +406,10 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
     * See vn_physical_device_get_native_extensions.
     */
    feats->deviceMemoryReport = true;
+
+#ifdef VN_USE_WSI_PLATFORM
    feats->swapchainMaintenance1 = true;
+#endif
 
    /* Host commands require custom protocol level support. Disable it
     * since it'd be non-trivial to make it performant.
