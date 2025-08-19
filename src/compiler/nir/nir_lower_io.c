@@ -101,6 +101,89 @@ nir_is_arrayed_io(const nir_variable *var, mesa_shader_stage stage)
    return false;
 }
 
+/* Add `offset_diff_bytes` bytes to the offset used by `intr`. Takes the
+ * offset_shift used by `intr` (if any) into account and, if needed, adjusts
+ * it in order to be able to represent the resulting offset in full precision.
+ */
+nir_io_offset
+nir_io_offset_iadd(nir_builder *b, nir_intrinsic_instr *intr,
+                   int offset_diff_bytes)
+{
+   unsigned offset_diff;
+   unsigned base_shift;
+   unsigned offset_shift;
+
+   if (nir_intrinsic_has_offset_shift(intr)) {
+      unsigned cur_offset_shift = nir_intrinsic_offset_shift(intr);
+
+      if (util_is_aligned(offset_diff_bytes, (uintmax_t)1 << cur_offset_shift)) {
+         /* If the byte offset is properly aligned, we can just shift it and
+          * keep the current offset_shift.
+          */
+         offset_diff = offset_diff_bytes >> cur_offset_shift;
+         base_shift = 0;
+         offset_shift = cur_offset_shift;
+      } else {
+         /* TODO add support for adjusting the base index. */
+         assert(!nir_intrinsic_has_base(intr) || nir_intrinsic_base(intr) == 0);
+
+         /* Otherwise, we have to lower offset_shift in order to not lose
+          * precision. We also have to shift the original base offset left to
+          * make sure it uses the same units.
+          */
+         offset_shift = ffs(offset_diff_bytes) - 1;
+         offset_diff = offset_diff_bytes >> offset_shift;
+         base_shift = cur_offset_shift - offset_shift;
+      }
+   } else {
+      offset_diff = offset_diff_bytes;
+      base_shift = 0;
+      offset_shift = 0;
+   }
+
+   nir_src *base_offset_src = nir_get_io_offset_src(intr);
+   assert(base_offset_src);
+
+   nir_def *base_offset = base_offset_src->ssa;
+   nir_def *offset =
+      nir_iadd_imm(b, nir_ishl_imm(b, base_offset, base_shift), offset_diff);
+
+   return (nir_io_offset){
+      .def = offset,
+      .shift = offset_shift,
+   };
+}
+
+/* Set the offset src and offset_shift of `intr` to `offset`. */
+void
+nir_set_io_offset(nir_intrinsic_instr *intr, nir_io_offset offset)
+{
+   nir_src *offset_src = nir_get_io_offset_src(intr);
+   assert(offset_src);
+
+   if (offset_src->ssa) {
+      nir_src_rewrite(offset_src, offset.def);
+   } else {
+      *offset_src = nir_src_for_ssa(offset.def);
+   }
+
+   if (nir_intrinsic_has_offset_shift(intr)) {
+      /* TODO add support for adjusting the base index. */
+      assert(!nir_intrinsic_has_base(intr) || nir_intrinsic_base(intr) == 0);
+
+      nir_intrinsic_set_offset_shift(intr, offset.shift);
+   } else {
+      assert(offset.shift == 0);
+   }
+}
+
+void
+nir_add_io_offset(nir_builder *b, nir_intrinsic_instr *intr,
+                  int offset_diff_bytes)
+{
+   nir_set_io_offset(intr, nir_io_offset_iadd(b, intr, offset_diff_bytes));
+}
+
 static bool
 uses_high_dvec2_semantic(struct lower_io_state *state,
                          const nir_variable *var)

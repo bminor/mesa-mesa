@@ -5326,6 +5326,20 @@ nir_src *nir_get_shader_call_payload_src(nir_intrinsic_instr *call);
 bool nir_is_output_load(nir_intrinsic_instr *intr);
 bool nir_is_arrayed_io(const nir_variable *var, mesa_shader_stage stage);
 
+/* Represents an offset used by intrinsics that support the offset_shift
+ * index. The final offset in bytes is (def << shift).
+ */
+typedef struct {
+   nir_def *def;
+   unsigned shift;
+} nir_io_offset;
+
+nir_io_offset nir_io_offset_iadd(nir_builder *b, nir_intrinsic_instr *intr,
+                                 int offset_diff_bytes);
+void nir_set_io_offset(nir_intrinsic_instr *intr, nir_io_offset offset);
+void nir_add_io_offset(nir_builder *b, nir_intrinsic_instr *intr,
+                       int offset_diff_bytes);
+
 bool nir_lower_reg_intrinsics_to_ssa_impl(nir_function_impl *impl);
 bool nir_lower_reg_intrinsics_to_ssa(nir_shader *shader);
 bool nir_lower_vars_to_ssa(nir_shader *shader);
