@@ -229,7 +229,7 @@ vn_device_fix_create_info(const struct vn_device *dev,
       &physical_dev->renderer_extensions;
    /* extra_exts and block_exts must not overlap */
    const char *extra_exts[16];
-   const char *block_exts[16];
+   const char *block_exts[32];
    uint32_t extra_count = 0;
    uint32_t block_count = 0;
 
@@ -258,6 +258,10 @@ vn_device_fix_create_info(const struct vn_device *dev,
 
       if (app_exts->KHR_swapchain) {
          /* see vn_physical_device_get_native_extensions */
+         block_exts[block_count++] = VK_KHR_PRESENT_ID_EXTENSION_NAME;
+         block_exts[block_count++] = VK_KHR_PRESENT_ID_2_EXTENSION_NAME;
+         block_exts[block_count++] = VK_KHR_PRESENT_WAIT_EXTENSION_NAME;
+         block_exts[block_count++] = VK_KHR_PRESENT_WAIT_2_EXTENSION_NAME;
          block_exts[block_count++] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
          block_exts[block_count++] =
             VK_KHR_SWAPCHAIN_MUTABLE_FORMAT_EXTENSION_NAME;

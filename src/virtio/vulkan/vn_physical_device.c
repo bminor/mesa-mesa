@@ -412,6 +412,10 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
    feats->deviceMemoryReport = true;
 
 #ifdef VN_USE_WSI_PLATFORM
+   feats->presentId = true;
+   feats->presentId2 = true;
+   feats->presentWait = true;
+   feats->presentWait2 = true;
    feats->swapchainMaintenance1 = true;
 #endif
 
@@ -1170,6 +1174,10 @@ vn_physical_device_get_native_extensions(
 #ifdef VN_USE_WSI_PLATFORM
    if (physical_dev->renderer_sync_fd.semaphore_importable) {
       exts->KHR_incremental_present = true;
+      exts->KHR_present_id = true;
+      exts->KHR_present_id2 = true;
+      exts->KHR_present_wait = true;
+      exts->KHR_present_wait2 = true;
       exts->KHR_swapchain = true;
       exts->KHR_swapchain_mutable_format = true;
       exts->EXT_hdr_metadata = true;
