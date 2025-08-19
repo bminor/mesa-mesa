@@ -205,20 +205,13 @@ get_device_extensions(const struct anv_physical_device *device,
          !(device->instance->debug & ANV_DEBUG_NO_SECONDARY_CALL),
       .KHR_pipeline_executable_properties    = true,
       .KHR_pipeline_library                  = true,
-      /* Hide these behind dri configs for now since we cannot implement it reliably on
-       * all surfaces yet. There is no surface capability query for present wait/id,
-       * but the feature is useful enough to hide behind an opt-in mechanism for now.
-       * If the instance only enables surface extensions that unconditionally support present wait,
-       * we can also expose the extension that way. */
-      .KHR_present_id =
-         driQueryOptionb(&device->instance->dri_options, "vk_khr_present_wait") ||
-         wsi_common_vk_instance_supports_present_wait(&device->instance->vk),
-      .KHR_present_wait =
-         driQueryOptionb(&device->instance->dri_options, "vk_khr_present_wait") ||
-         wsi_common_vk_instance_supports_present_wait(&device->instance->vk),
-      .KHR_push_descriptor                   = true,
+#ifdef ANV_USE_WSI_PLATFORM
+      .KHR_present_id                        = true,
       .KHR_present_id2                       = true,
+      .KHR_present_wait                      = true,
       .KHR_present_wait2                     = true,
+#endif
+      .KHR_push_descriptor                   = true,
       .KHR_ray_query                         = rt_enabled,
       .KHR_ray_tracing_maintenance1          = rt_enabled,
       .KHR_ray_tracing_pipeline              = rt_enabled,
@@ -842,11 +835,13 @@ get_features(const struct anv_physical_device *pdevice,
       /* VK_EXT_depth_clip_control */
       .depthClipControl = true,
 
+#ifdef ANV_USE_WSI_PLATFORM
       /* VK_KHR_present_id */
-      .presentId = pdevice->vk.supported_extensions.KHR_present_id,
+      .presentId = true,
 
       /* VK_KHR_present_wait */
-      .presentWait = pdevice->vk.supported_extensions.KHR_present_wait,
+      .presentWait = true,
+#endif
 
       /* VK_EXT_vertex_input_dynamic_state */
       .vertexInputDynamicState = true,
@@ -974,11 +969,13 @@ get_features(const struct anv_physical_device *pdevice,
       /* VK_KHR_maintenance9 */
       .maintenance9 = true,
 
+#ifdef ANV_USE_WSI_PLATFORM
       /* VK_KHR_present_id2 */
       .presentId2 = true,
 
       /* VK_KHR_present_wait2 */
       .presentWait2 = true,
+#endif
 
       /* VK_KHR_shader_untyped_pointers */
       .shaderUntypedPointers = true,
