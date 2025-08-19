@@ -802,6 +802,24 @@ if with_gallium_rusticl or with_nouveau_vk or with_tools.contains('etnaviv') or 
   if rustc.version().version_compare('>= 1.88')
     bindgen_output_args += ['--raw-line', '#![allow(unnecessary_transmutes)]']
   endif
+
+  rust_2024_lint_args = [
+    '-Dboxed_slice_into_iter',
+    '-Ddeprecated_safe_2024',
+    '-Dimpl_trait_overcaptures',
+    '-Dkeyword_idents_2024',
+    '-Dmissing_unsafe_on_extern',
+    '-Dnever_type_fallback_flowing_into_unsafe',
+    '-Drust_2024_prelude_collisions',
+    '-Dstatic_mut_refs',
+    '-Dunsafe_attr_outside_unsafe',
+    '-Dunsafe_op_in_unsafe_fn',
+
+    # 1.83+
+    # '-Dif_let_rescope',
+    # '-Drust_2024_guarded_string_incompatible_syntax',
+    # '-Drust_2024_incompatible_pat',
+  ]
 endif
 
 if get_option('precomp-compiler') != 'system'

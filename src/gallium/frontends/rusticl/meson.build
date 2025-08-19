@@ -62,22 +62,7 @@ rusticl_files = files(
 )
 
 rusticl_args = [
-  # rust 2024 edition lints
-  '-Dboxed_slice_into_iter',
-  '-Ddeprecated_safe_2024',
-  '-Dimpl_trait_overcaptures',
-  '-Dkeyword_idents_2024',
-  '-Dmissing_unsafe_on_extern',
-  '-Dnever_type_fallback_flowing_into_unsafe',
-  '-Drust_2024_prelude_collisions',
-  '-Dstatic_mut_refs',
-  '-Dunsafe_attr_outside_unsafe',
-  '-Dunsafe_op_in_unsafe_fn',
-
-  # 1.83+:
-  # '-Dif_let_rescope',
-  # '-Drust_2024_guarded_string_incompatible_syntax',
-  # '-Drust_2024_incompatible_pat',
+  rust_2024_lint_args,
 
   # Should be ran manually before moving to the 2024 edition
   # '-Dtail_expr_drop_order',
