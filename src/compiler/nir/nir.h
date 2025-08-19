@@ -1183,6 +1183,12 @@ nir_src_is_undef(nir_src src)
    return src.ssa->parent_instr->type == nir_instr_type_undef;
 }
 
+static inline bool
+nir_src_is_deref(nir_src src)
+{
+   return src.ssa->parent_instr->type == nir_instr_type_deref;
+}
+
 bool nir_src_is_divergent(nir_src *src);
 
 /* Are all components the same, ie. .xxxx */
