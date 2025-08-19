@@ -190,6 +190,9 @@ static void encode(struct radeon_encoder *enc)
 
 void radeon_enc_2_0_init(struct radeon_encoder *enc)
 {
+   struct si_screen *sscreen = (struct si_screen *)enc->screen;
+   uint32_t minor_version;
+
    radeon_enc_1_2_init(enc);
    enc->encode = encode;
    enc->input_format = radeon_enc_input_format;
@@ -205,7 +208,10 @@ void radeon_enc_2_0_init(struct radeon_encoder *enc)
       enc->spec_misc = radeon_enc_spec_misc_hevc;
    }
 
+   minor_version =
+      MIN2(sscreen->info.vcn_enc_minor_version, RENCODE_FW_INTERFACE_MINOR_VERSION);
+
    enc->enc_pic.session_info.interface_version =
       ((RENCODE_FW_INTERFACE_MAJOR_VERSION << RENCODE_IF_MAJOR_VERSION_SHIFT) |
-       (RENCODE_FW_INTERFACE_MINOR_VERSION << RENCODE_IF_MINOR_VERSION_SHIFT));
+       (minor_version << RENCODE_IF_MINOR_VERSION_SHIFT));
 }
