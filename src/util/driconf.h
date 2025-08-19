@@ -465,10 +465,6 @@
    DRI_CONF_OPT_B(vk_x11_ignore_suboptimal, def, \
                   "Force the X11 WSI to never report VK_SUBOPTIMAL_KHR")
 
-#define DRI_CONF_VK_KHR_PRESENT_WAIT(def) \
-   DRI_CONF_OPT_B(vk_khr_present_wait, def, \
-                  "Expose VK_KHR_present_wait and id extensions despite them not being implemented for all supported surface types")
-
 #define DRI_CONF_VK_XWAYLAND_WAIT_READY(def) \
    DRI_CONF_OPT_B(vk_xwayland_wait_ready, def, \
                   "Wait for fences before submitting buffers to Xwayland")
