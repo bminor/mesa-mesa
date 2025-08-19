@@ -11368,6 +11368,9 @@ radv_emit_clip_rects_state(struct radv_cmd_buffer *cmd_buffer)
 static void
 radv_validate_dynamic_states(struct radv_cmd_buffer *cmd_buffer, uint64_t dynamic_states)
 {
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+
    if (dynamic_states &
        (RADV_DYNAMIC_DEPTH_CLAMP_ENABLE | RADV_DYNAMIC_DEPTH_CLAMP_RANGE | RADV_DYNAMIC_DEPTH_CLIP_ENABLE)) {
       const bool depth_clip_enable = radv_get_depth_clip_enable(cmd_buffer);
@@ -11434,6 +11437,10 @@ radv_validate_dynamic_states(struct radv_cmd_buffer *cmd_buffer, uint64_t dynami
        (RADV_DYNAMIC_COLOR_WRITE_MASK | RADV_DYNAMIC_RASTERIZATION_SAMPLES | RADV_DYNAMIC_LINE_RASTERIZATION_MODE |
         RADV_DYNAMIC_PRIMITIVE_TOPOLOGY | RADV_DYNAMIC_POLYGON_MODE))
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_BINNING_STATE;
+
+   if (pdev->info.gfx_level < GFX12 &&
+       (dynamic_states & (RADV_DYNAMIC_RASTERIZATION_SAMPLES | RADV_DYNAMIC_PRIMITIVE_TOPOLOGY)))
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_OCCLUSION_QUERY;
 }
 
 static void
@@ -11481,9 +11488,7 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_RBPLUS)
       radv_emit_rbplus_state(cmd_buffer);
 
-   if ((cmd_buffer->state.dirty & RADV_CMD_DIRTY_OCCLUSION_QUERY) ||
-       (pdev->info.gfx_level < GFX12 &&
-        (cmd_buffer->state.dirty_dynamic & (RADV_DYNAMIC_RASTERIZATION_SAMPLES | RADV_DYNAMIC_PRIMITIVE_TOPOLOGY))))
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_OCCLUSION_QUERY)
       radv_flush_occlusion_query_state(cmd_buffer);
 
    if (((cmd_buffer->state.dirty & (RADV_CMD_DIRTY_PIPELINE | RADV_CMD_DIRTY_GRAPHICS_SHADERS)) ||
