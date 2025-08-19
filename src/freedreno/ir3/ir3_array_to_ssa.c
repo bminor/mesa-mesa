@@ -169,6 +169,8 @@ remove_trivial_phi(struct ir3_instruction *phi)
 static struct ir3_register *
 lookup_value(struct ir3_register *reg)
 {
+   if (!reg)
+      return NULL;
    if (reg->instr->opc == OPC_META_PHI)
       return reg->instr->data;
    return reg;
@@ -252,14 +254,14 @@ ir3_array_to_ssa(struct ir3 *ir)
    foreach_block (block, &ir->block_list) {
       foreach_instr_safe (instr, &block->instr_list) {
          if (instr->opc == OPC_META_PHI) {
-            if (!(instr->flags & IR3_REG_ARRAY))
+            if (!(instr->dsts[0]->flags & IR3_REG_ARRAY))
                continue;
             if (instr->data != instr->dsts[0]) {
                list_del(&instr->node);
                continue;
             }
             for (unsigned i = 0; i < instr->srcs_count; i++) {
-               instr->srcs[i] = lookup_value(instr->srcs[i]);
+               instr->srcs[i]->def = lookup_value(instr->srcs[i]->def);
             }
          } else {
             foreach_dst (reg, instr) {
