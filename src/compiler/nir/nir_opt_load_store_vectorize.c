@@ -177,6 +177,17 @@ struct vectorize_ctx {
    struct hash_table *stores[nir_num_variable_modes];
 };
 
+static unsigned
+get_offset_scale(struct entry *entry)
+{
+   if (nir_intrinsic_has_offset_shift(entry->intrin)) {
+      assert(entry->info->offset_scale == 1);
+      return 1 << nir_intrinsic_offset_shift(entry->intrin);
+   }
+
+   return entry->info->offset_scale;
+}
+
 static uint32_t
 hash_entry_key(const void *key_)
 {
@@ -627,9 +638,10 @@ create_entry(void *mem_ctx,
    } else {
       nir_def *base = entry->info->base_src >= 0 ? intrin->src[entry->info->base_src].ssa : NULL;
       uint64_t offset = 0;
+      unsigned offset_scale = get_offset_scale(entry);
       if (nir_intrinsic_has_base(intrin))
-         offset += nir_intrinsic_base(intrin) * info->offset_scale;
-      entry->key = create_entry_key_from_offset(entry, base, info->offset_scale, &offset);
+         offset += nir_intrinsic_base(intrin) * offset_scale;
+      entry->key = create_entry_key_from_offset(entry, base, offset_scale, &offset);
       entry->offset = offset;
 
       if (base)
@@ -850,7 +862,7 @@ vectorize_loads(nir_builder *b, struct vectorize_ctx *ctx,
       b->cursor = nir_before_instr(first->instr);
 
       nir_def *new_base = first->intrin->src[info->base_src].ssa;
-      new_base = nir_iadd_imm(b, new_base, -(int)(high_start / 8u / first->info->offset_scale));
+      new_base = nir_iadd_imm(b, new_base, -(int)(high_start / 8u / get_offset_scale(first)));
 
       nir_src_rewrite(&first->intrin->src[info->base_src], new_base);
    }
@@ -861,7 +873,7 @@ vectorize_loads(nir_builder *b, struct vectorize_ctx *ctx,
 
       nir_deref_instr *deref = nir_src_as_deref(first->intrin->src[info->deref_src]);
       if (first != low && high_start != 0)
-         deref = subtract_deref(b, deref, high_start / 8u / first->info->offset_scale);
+         deref = subtract_deref(b, deref, high_start / 8u / get_offset_scale(first));
       first->deref = cast_deref(b, new_num_components, new_bit_size, deref);
 
       nir_src_rewrite(&first->intrin->src[info->deref_src],
@@ -1204,7 +1216,7 @@ check_for_robustness(struct vectorize_ctx *ctx, struct entry *low, uint64_t high
    if (!(mode & ctx->options->robust_modes))
       return false;
 
-   unsigned scale = low->info->offset_scale;
+   unsigned scale = get_offset_scale(low);
 
    /* First, try to use alignment information in case the application provided some. If the addition
     * of the maximum offset of the low load and "high_offset" wraps around, we can't combine the low
