@@ -393,12 +393,14 @@ fn get_device_ids(
 }
 
 #[cl_entrypoint(clRetainDevice)]
-fn retain_device(_device: cl_device_id) -> CLResult<()> {
+fn retain_device(device: cl_device_id) -> CLResult<()> {
+    let _ = Device::ref_from_raw(device)?;
     Ok(())
 }
 
 #[cl_entrypoint(clReleaseDevice)]
-fn release_device(_device: cl_device_id) -> CLResult<()> {
+fn release_device(device: cl_device_id) -> CLResult<()> {
+    let _ = Device::ref_from_raw(device)?;
     Ok(())
 }
 
