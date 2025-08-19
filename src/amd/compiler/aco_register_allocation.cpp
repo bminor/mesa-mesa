@@ -1766,11 +1766,14 @@ get_reg_vector(ra_ctx& ctx, const RegisterFile& reg_file, Temp temp, aco_ptr<Ins
       for (unsigned i = 0; i < vec.num_parts; i++) {
          const Operand& op = vec.parts[i];
          if (i != vec.index && op.isTemp() && op.getTemp().type() == temp.type() &&
-             ctx.assignments[op.tempId()].assigned) {
+             (ctx.assignments[op.tempId()].assigned ||
+              ctx.assignments[op.tempId()].precolor_affinity)) {
             PhysReg reg = ctx.assignments[op.tempId()].reg;
             reg.reg_b += (our_offset - their_offset);
-            if (get_reg_specified(ctx, reg_file, temp.regClass(), instr, reg, operand))
+            if (get_reg_specified(ctx, reg_file, temp.regClass(), instr, reg, operand)) {
+               ctx.assignments[vec.parts[vec.index].tempId()].set_precolor_affinity(reg);
                return reg;
+            }
 
             /* return if MIMG vaddr components don't remain vector-aligned */
             if (vec.is_weak)
@@ -1788,8 +1791,10 @@ get_reg_vector(ra_ctx& ctx, const RegisterFile& reg_file, Temp temp, aco_ptr<Ins
       if (reg) {
          reg->reg_b += our_offset;
          /* make sure to only use byte offset if the instruction supports it */
-         if (get_reg_specified(ctx, reg_file, temp.regClass(), instr, *reg, operand))
+         if (get_reg_specified(ctx, reg_file, temp.regClass(), instr, *reg, operand)) {
+            ctx.assignments[vec.parts[vec.index].tempId()].set_precolor_affinity(reg.value());
             return reg;
+         }
       }
    }
    return {};
