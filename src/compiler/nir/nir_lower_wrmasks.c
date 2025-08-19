@@ -140,18 +140,9 @@ split_wrmask(nir_builder *b, nir_intrinsic_instr *intr)
          nir_intrinsic_set_align(new_intr, align_mul, align_off);
       }
 
-      /* if the instruction has a BASE, fold the offset adjustment
-       * into that instead of adding alu instructions, otherwise add
-       * instructions
-       */
       unsigned offset_adj = offset_units * first_component;
-      if (nir_intrinsic_has_base(intr)) {
-         nir_intrinsic_set_base(new_intr,
-                                nir_intrinsic_base(intr) + offset_adj);
-      } else {
-         offset = nir_iadd(b, offset,
-                           nir_imm_intN_t(b, offset_adj, offset->bit_size));
-      }
+      offset = nir_iadd(b, offset,
+                        nir_imm_intN_t(b, offset_adj, offset->bit_size));
 
       new_intr->num_components = length;
 
