@@ -3228,10 +3228,9 @@ radv_get_viewport_zscale_ztranslate(struct radv_cmd_buffer *cmd_buffer, uint32_t
 }
 
 static void
-radv_get_viewport_zmin_zmax(struct radv_cmd_buffer *cmd_buffer, const VkViewport *viewport, float *zmin, float *zmax)
+radv_get_viewport_zmin_zmax(struct radv_cmd_buffer *cmd_buffer, const VkViewport *viewport,
+                            const enum radv_depth_clamp_mode depth_clamp_mode, float *zmin, float *zmax)
 {
-   const enum radv_depth_clamp_mode depth_clamp_mode = radv_get_depth_clamp_mode(cmd_buffer);
-
    if (depth_clamp_mode == RADV_DEPTH_CLAMP_MODE_ZERO_TO_ONE) {
       *zmin = 0.0f;
       *zmax = 1.0f;
@@ -3250,6 +3249,7 @@ radv_emit_viewport(struct radv_cmd_buffer *cmd_buffer)
 {
    const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
+   const enum radv_depth_clamp_mode depth_clamp_mode = radv_get_depth_clamp_mode(cmd_buffer);
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    struct radv_cmd_stream *cs = cmd_buffer->cs;
 
@@ -3264,7 +3264,7 @@ radv_emit_viewport(struct radv_cmd_buffer *cmd_buffer)
          float zscale, ztranslate, zmin, zmax;
 
          radv_get_viewport_zscale_ztranslate(cmd_buffer, i, &zscale, &ztranslate);
-         radv_get_viewport_zmin_zmax(cmd_buffer, &d->vk.vp.viewports[i], &zmin, &zmax);
+         radv_get_viewport_zmin_zmax(cmd_buffer, &d->vk.vp.viewports[i], depth_clamp_mode, &zmin, &zmax);
 
          radeon_emit(fui(d->hw_vp.xform[i].scale[0]));
          radeon_emit(fui(d->hw_vp.xform[i].translate[0]));
@@ -3295,7 +3295,7 @@ radv_emit_viewport(struct radv_cmd_buffer *cmd_buffer)
       for (unsigned i = 0; i < d->vk.vp.viewport_count; i++) {
          float zmin, zmax;
 
-         radv_get_viewport_zmin_zmax(cmd_buffer, &d->vk.vp.viewports[i], &zmin, &zmax);
+         radv_get_viewport_zmin_zmax(cmd_buffer, &d->vk.vp.viewports[i], depth_clamp_mode, &zmin, &zmax);
 
          radeon_emit(fui(zmin));
          radeon_emit(fui(zmax));
