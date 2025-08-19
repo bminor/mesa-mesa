@@ -340,7 +340,7 @@ bool brw_opt_cmod_propagation(brw_shader &s);
 bool brw_opt_combine_constants(brw_shader &s);
 bool brw_opt_combine_convergent_txf(brw_shader &s);
 bool brw_opt_compact_virtual_grfs(brw_shader &s);
-bool brw_opt_constant_fold_instruction(const intel_device_info *devinfo, brw_inst *inst);
+bool brw_opt_constant_fold_instruction(brw_shader &s, brw_inst *inst);
 bool brw_opt_copy_propagation(brw_shader &s);
 bool brw_opt_copy_propagation_defs(brw_shader &s);
 bool brw_opt_cse_defs(brw_shader &s);

@@ -1440,7 +1440,7 @@ opt_copy_propagation_local(brw_shader &s, linear_ctx *lin_ctx,
 
       if (constant_progress) {
          commute_immediates(inst);
-         brw_opt_constant_fold_instruction(devinfo, inst);
+         brw_opt_constant_fold_instruction(s, inst);
          progress = true;
       }
 
@@ -1992,7 +1992,7 @@ brw_opt_copy_propagation_defs(brw_shader &s)
 
       if (constant_progress) {
          commute_immediates(inst);
-         brw_opt_constant_fold_instruction(s.compiler->devinfo, inst);
+         brw_opt_constant_fold_instruction(s, inst);
       }
    }
 

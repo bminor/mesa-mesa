@@ -87,7 +87,7 @@ brw_imm_for_type(uint64_t value, enum brw_reg_type type)
  * Converts a MAD to an ADD by folding the multiplicand sources.
  */
 static void
-fold_multiplicands_of_MAD(brw_inst *inst)
+fold_multiplicands_of_MAD(brw_shader &s, brw_inst *inst)
 {
    assert(inst->opcode == BRW_OPCODE_MAD);
    assert (inst->src[1].file == IMM &&
@@ -133,8 +133,9 @@ fold_multiplicands_of_MAD(brw_inst *inst)
 }
 
 bool
-brw_opt_constant_fold_instruction(const intel_device_info *devinfo, brw_inst *inst)
+brw_opt_constant_fold_instruction(brw_shader &s, brw_inst *inst)
 {
+   const intel_device_info *devinfo = s.devinfo;
    brw_reg result;
 
    result.file = BAD_FILE;
@@ -187,10 +188,10 @@ brw_opt_constant_fold_instruction(const intel_device_info *devinfo, brw_inst *in
           !brw_type_is_vector_imm(inst->src[0].type) &&
           !brw_type_is_vector_imm(inst->src[1].type) &&
           !brw_type_is_vector_imm(inst->src[2].type)) {
-         fold_multiplicands_of_MAD(inst);
+         fold_multiplicands_of_MAD(s, inst);
          assert(inst->opcode == BRW_OPCODE_ADD);
 
-         ASSERTED bool folded = brw_opt_constant_fold_instruction(devinfo, inst);
+         ASSERTED bool folded = brw_opt_constant_fold_instruction(s, inst);
          assert(folded);
 
          return true;
@@ -331,7 +332,7 @@ brw_opt_algebraic(brw_shader &s)
    bool progress = false;
 
    foreach_block_and_inst_safe(block, brw_inst, inst, s.cfg) {
-      if (brw_opt_constant_fold_instruction(devinfo, inst)) {
+      if (brw_opt_constant_fold_instruction(s, inst)) {
          progress = true;
          continue;
       }
@@ -680,7 +681,7 @@ brw_opt_algebraic(brw_shader &s)
              inst->src[2].file == IMM &&
              !brw_type_is_vector_imm(inst->src[1].type) &&
              !brw_type_is_vector_imm(inst->src[2].type)) {
-            fold_multiplicands_of_MAD(inst);
+            fold_multiplicands_of_MAD(s, inst);
 
             /* This could result in (x + 0). For floats, we want to leave this
              * as an ADD so that a subnormal x will get flushed to zero.
