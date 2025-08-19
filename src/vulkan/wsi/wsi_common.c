@@ -1457,7 +1457,26 @@ wsi_common_queue_present(const struct wsi_device *wsi,
       semaphore_wait_infos[i] = (VkSemaphoreSubmitInfo) {
          .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
          .semaphore = pPresentInfo->pWaitSemaphores[i],
-         .stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+         /* From the Vulkan 1.4.325 spec:
+          *
+          *    "Semaphore Waiting
+          *
+          *    In the case of vkQueueSubmit, the second synchronization scope
+          *    is limited to operations on the pipeline stages determined by
+          *    the destination stage mask specified by the corresponding
+          *    element of pWaitDstStageMask. In the case of vkQueueSubmit2,
+          *    the second synchronization scope is limited to the pipeline
+          *    stage specified by VkSemaphoreSubmitInfo::stageMask."
+          *
+          * So the stageMask controls not what we're waiting on but who on
+          * this queue is waiting.  Since we only ever either submit nothing
+          * or submit a blit, the only thing that needs to block on the wait
+          * semaphores are blits (which are transfer ops) and other semaphores
+          * and fences.  Therefore, it's safe to always use TRANSFER_BIT as
+          * long as we use it for all the semaphore ops on queues (to ensure
+          * transitivity).
+          */
+         .stageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
       };
    }
 
@@ -1490,7 +1509,7 @@ wsi_common_queue_present(const struct wsi_device *wsi,
 
          const VkSemaphoreSubmitInfo sem_info = {
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-            .stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+            .stageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
             .semaphore = image->explicit_sync[WSI_ES_ACQUIRE].semaphore,
             .value = image->explicit_sync[WSI_ES_ACQUIRE].timeline,
          };
@@ -1498,7 +1517,7 @@ wsi_common_queue_present(const struct wsi_device *wsi,
       } else if (swapchain->dma_buf_semaphore != VK_NULL_HANDLE) {
          const VkSemaphoreSubmitInfo sem_info = {
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-            .stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+            .stageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
             .semaphore = swapchain->dma_buf_semaphore,
          };
          wsi_image_signal_info_add_semaphore(&image_signal_infos[i], sem_info);
@@ -1517,7 +1536,7 @@ wsi_common_queue_present(const struct wsi_device *wsi,
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
             .semaphore = swapchain->present_id_timeline,
             .value = present_id,
-            .stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+            .stageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
          };
          wsi_image_signal_info_add_semaphore(&image_signal_infos[i], sem_info);
       }
@@ -1583,7 +1602,7 @@ wsi_common_queue_present(const struct wsi_device *wsi,
 
             signal_semaphore_infos[signal_semaphore_count++] = (VkSemaphoreSubmitInfo) {
                .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-               .stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+               .stageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
                .semaphore = swapchain->blit.semaphores[image_index],
             };
             continue;
@@ -1645,7 +1664,7 @@ wsi_common_queue_present(const struct wsi_device *wsi,
 
       const VkSemaphoreSubmitInfo blit_semaphore_info = {
          .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-         .stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+         .stageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
          .semaphore = swapchain->blit.semaphores[image_index],
       };
 
