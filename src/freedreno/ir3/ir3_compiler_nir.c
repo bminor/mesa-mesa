@@ -1212,8 +1212,11 @@ emit_intrinsic_copy_ubo_to_uniform(struct ir3_context *ctx,
 
    struct ir3_instruction *addr1 = ir3_create_addr1(&ctx->build, base);
 
-   struct ir3_instruction *offset = ir3_get_src(ctx, &intr->src[1])[0];
-   struct ir3_instruction *idx = ir3_get_src(ctx, &intr->src[0])[0];
+   bool use_shared = ctx->compiler->has_scalar_alu;
+   struct ir3_instruction *offset =
+      ir3_get_src_shared(ctx, &intr->src[1], use_shared)[0];
+   struct ir3_instruction *idx =
+      ir3_get_src_shared(ctx, &intr->src[0], use_shared)[0];
    struct ir3_instruction *ldc = ir3_LDC_K(b, idx, 0, offset, 0);
    ldc->cat6.iim_val = size;
    ldc->barrier_class = ldc->barrier_conflict = IR3_BARRIER_CONST_W;
