@@ -58,3 +58,21 @@ TEST_F(algebraic_test, fmax_a_a)
     */
    EXPECT_NO_PROGRESS(brw_opt_algebraic, bld);
 }
+
+TEST_F(algebraic_test, mad_with_all_immediates_DISABLED)
+{
+   brw_builder bld = make_shader();
+   brw_builder exp = make_shader();
+
+   brw_reg dst = vgrf(bld, exp, BRW_TYPE_UD);
+
+   bld.MAD(dst, brw_imm_ud(2), brw_imm_ud(3), brw_imm_ud(4));
+
+   EXPECT_PROGRESS(brw_opt_algebraic, bld);
+
+   exp.MOV(dst, brw_imm_ud(14));
+
+   EXPECT_SHADERS_MATCH(bld, exp);
+}
+
+
