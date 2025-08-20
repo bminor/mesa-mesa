@@ -6134,7 +6134,7 @@
         "description": "aco/ra: don't clear lateKill operands in get_reg_create_vector()",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "08f088479a40b2f8c76064f4f9939c53a6d03a9b",
         "notes": null
