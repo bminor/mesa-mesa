@@ -317,7 +317,7 @@ zink-radv-gfx1201-valve:
   extends:
     - .radv-zink-test-valve
     - .gfx1201-test-valve
-    - .zink-radv-valve-manual-rules
+    - .zink-radv-valve-rules
   timeout: 15m
   variables:
     HWCI_START_WESTON: 1
