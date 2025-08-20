@@ -105,7 +105,8 @@ endforeach
 mediafoundation_wpp_preprocess = custom_target(
   'mediafoundation_wpp_preprocess',
   capture : true,
-  build_always: true,
+  build_by_default : true,
+  build_always_stale : true,
   input : mediafoundation_files,
   output : 'mediafoundation_wpp_preprocess.dummy.h',
   command : ['tracewpp', '-cfgdir:@CURRENT_SOURCE_DIR@/wppconfig/rev1', '-scan:@CURRENT_SOURCE_DIR@/wpptrace.h', '-odir:@OUTDIR@', '@' + fs.relative_to(mediafoundation_wpp_rsp, 'a:\\')]

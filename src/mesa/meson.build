@@ -10,7 +10,8 @@ if _shader_replacement != ''
     input: [files(_shader_replacement + '/process_shaders.py')],
     output: 'shader_replacement.h',
     command: [prog_python, '@INPUT0@', _shader_replacement, '@OUTPUT@'],
-    build_always: true,
+    build_by_default : true,
+    build_always_stale : true,
   )
 endif
 
