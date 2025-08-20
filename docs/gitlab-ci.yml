@@ -30,11 +30,9 @@ test-docs:
     - !reference [.common-rules, rules]
     # merge pipeline
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $GITLAB_USER_LOGIN == "marge-bot"'
-      changes: *docs-or-ci
       when: on_success
     # pre-merge pipeline
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      changes: *docs-or-ci
       when: manual
 
 linkcheck-docs:
@@ -47,7 +45,6 @@ linkcheck-docs:
     - !reference [.scheduled_pipeline-rules, rules]
     # pre-merge pipeline
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $GITLAB_USER_LOGIN != "marge-bot"'
-      changes: *docs-or-ci
       when: manual
   allow_failure: true
   script:
