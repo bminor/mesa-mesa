@@ -2413,13 +2413,17 @@ texture_page_commitment(struct gl_context *ctx, GLenum target,
       return;
    }
 
-   if (level < 0 || level > tex_obj->_MaxLevel) {
+   if (level < 0 || level >= _mesa_max_texture_levels(ctx, target)) {
       /* Not in error list of ARB_sparse_texture. */
       _mesa_error(ctx, GL_INVALID_VALUE, "%s(level %d)", func, level);
       return;
    }
 
-   struct gl_texture_image *image = tex_obj->Image[0][level];
+   struct gl_texture_image *image = _mesa_select_tex_image(tex_obj, target, level);
+   if (!image) {
+      _mesa_error(ctx, GL_INVALID_OPERATION, "%s(no image for level %d)", func, level);
+      return;
+   }
 
    int max_depth = image->Depth;
    if (target == GL_TEXTURE_CUBE_MAP)
