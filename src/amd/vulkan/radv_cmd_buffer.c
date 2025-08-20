@@ -10627,7 +10627,7 @@ radv_emit_task_state(struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
-radv_emit_tess_state(struct radv_cmd_buffer *cmd_buffer)
+radv_emit_tcs_tes_state(struct radv_cmd_buffer *cmd_buffer)
 {
    const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -10715,9 +10715,9 @@ radv_emit_shaders_state(struct radv_cmd_buffer *cmd_buffer)
       cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_TASK_STATE;
    }
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_TESS_STATE) {
-      radv_emit_tess_state(cmd_buffer);
-      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_TESS_STATE;
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_TCS_TES_STATE) {
+      radv_emit_tcs_tes_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_TCS_TES_STATE;
    }
 }
 
@@ -11406,7 +11406,7 @@ radv_validate_dynamic_states(struct radv_cmd_buffer *cmd_buffer, uint64_t dynami
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_NGG_STATE;
 
    if (dynamic_states & RADV_DYNAMIC_PATCH_CONTROL_POINTS)
-      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_TESS_STATE;
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_TCS_TES_STATE;
 
    if (dynamic_states &
        (RADV_DYNAMIC_DEPTH_TEST_ENABLE | RADV_DYNAMIC_DEPTH_WRITE_ENABLE | RADV_DYNAMIC_DEPTH_COMPARE_OP |
