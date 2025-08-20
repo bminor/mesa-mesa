@@ -24,6 +24,7 @@
 
 #include "common/freedreno_gpu_event.h"
 #include "common/freedreno_lrz.h"
+#include "common/freedreno_vrs.h"
 
 enum tu_cmd_buffer_status {
    TU_CMD_BUFFER_STATUS_IDLE = 0,
@@ -1710,6 +1711,13 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
       }
 
       tu_cs_emit_write_reg(cs, magic_reg.reg, value);
+   }
+
+   if (dev->physical_device->info->a6xx.has_attachment_shading_rate) {
+      tu_cs_emit_write_reg(cs, REG_A7XX_GRAS_LRZ_QUALITY_LOOKUP_TABLE(0),
+                           fd_gras_shading_rate_lut(0));
+      tu_cs_emit_write_reg(cs, REG_A7XX_GRAS_LRZ_QUALITY_LOOKUP_TABLE(1),
+                           fd_gras_shading_rate_lut(1));
    }
 
    tu_cs_emit_write_reg(cs, REG_A6XX_RB_DBG_ECO_CNTL,

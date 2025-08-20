@@ -1278,9 +1278,8 @@ by a particular renderpass/blit.
 		<bitfield name="UNK3" pos="3"/>
 	</reg32>
 
-	<!-- Always written together and always equal 09510840 00000a62 -->
-	<reg32 offset="0x8120" name="GRAS_UNKNOWN_8120" variants="A7XX-" usage="cmd"/>
-	<reg32 offset="0x8121" name="GRAS_UNKNOWN_8121" variants="A7XX-" usage="cmd"/>
+	<doc>LUT used to convert quality buffer values to HW shading rate values. An array of 4-bit values.</doc>
+	<array offset="0x8120" name="GRAS_LRZ_QUALITY_LOOKUP_TABLE" variants="A7XX-" stride="1" length="2"/>
 
 	<!-- 0x8112-0x83ff invalid -->
 
