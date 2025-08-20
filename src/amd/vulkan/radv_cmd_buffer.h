@@ -538,6 +538,7 @@ struct radv_cmd_state {
    uint64_t shader_query_buf_va; /* GFX12+ */
 
    enum radv_depth_clamp_mode depth_clamp_mode;
+   bool depth_clip_enable;
 };
 
 struct radv_enc_state {

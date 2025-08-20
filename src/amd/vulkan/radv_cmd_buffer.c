@@ -3176,7 +3176,7 @@ static enum radv_depth_clamp_mode
 radv_get_depth_clamp_mode(struct radv_cmd_buffer *cmd_buffer)
 {
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
-   bool depth_clip_enable = radv_get_depth_clip_enable(cmd_buffer);
+   const bool depth_clip_enable = cmd_buffer->state.depth_clip_enable;
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    enum radv_depth_clamp_mode mode;
 
@@ -10972,7 +10972,7 @@ radv_emit_raster_state(struct radv_cmd_buffer *cmd_buffer)
    const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
-   const bool depth_clip_enable = radv_get_depth_clip_enable(cmd_buffer);
+   const bool depth_clip_enable = cmd_buffer->state.depth_clip_enable;
 
    /* GFX9 chips fail linestrip CTS tests unless this is set to 0 = no reset */
    uint32_t auto_reset_cntl = (pdev->info.gfx_level == GFX9) ? 0 : 2;
@@ -11367,6 +11367,13 @@ radv_validate_dynamic_states(struct radv_cmd_buffer *cmd_buffer, uint64_t dynami
 {
    if (dynamic_states &
        (RADV_DYNAMIC_DEPTH_CLAMP_ENABLE | RADV_DYNAMIC_DEPTH_CLAMP_RANGE | RADV_DYNAMIC_DEPTH_CLIP_ENABLE)) {
+      const bool depth_clip_enable = radv_get_depth_clip_enable(cmd_buffer);
+
+      if (cmd_buffer->state.depth_clip_enable != depth_clip_enable) {
+         cmd_buffer->state.depth_clip_enable = depth_clip_enable;
+         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_RASTER_STATE;
+      }
+
       const enum radv_depth_clamp_mode depth_clamp_mode = radv_get_depth_clamp_mode(cmd_buffer);
 
       if (cmd_buffer->state.depth_clamp_mode != depth_clamp_mode) {
@@ -11399,8 +11406,7 @@ radv_validate_dynamic_states(struct radv_cmd_buffer *cmd_buffer, uint64_t dynami
        (RADV_DYNAMIC_LINE_WIDTH | RADV_DYNAMIC_LINE_STIPPLE | RADV_DYNAMIC_CULL_MODE | RADV_DYNAMIC_FRONT_FACE |
         RADV_DYNAMIC_DEPTH_BIAS_ENABLE | RADV_DYNAMIC_PRIMITIVE_TOPOLOGY | RADV_DYNAMIC_POLYGON_MODE |
         RADV_DYNAMIC_PROVOKING_VERTEX_MODE | RADV_DYNAMIC_LINE_RASTERIZATION_MODE |
-        RADV_DYNAMIC_RASTERIZER_DISCARD_ENABLE | RADV_DYNAMIC_DEPTH_CLIP_ENABLE |
-        RADV_DYNAMIC_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE | RADV_DYNAMIC_DEPTH_CLAMP_ENABLE))
+        RADV_DYNAMIC_RASTERIZER_DISCARD_ENABLE | RADV_DYNAMIC_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE))
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_RASTER_STATE;
 
    if (dynamic_states & (RADV_DYNAMIC_LINE_STIPPLE_ENABLE | RADV_DYNAMIC_CONSERVATIVE_RAST_MODE |
