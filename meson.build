@@ -814,8 +814,10 @@ if with_gallium_rusticl or with_nouveau_vk or with_tools.contains('etnaviv') or 
     '-Dnever_type_fallback_flowing_into_unsafe',
     '-Drust_2024_prelude_collisions',
     '-Dstatic_mut_refs',
-    '-Dunsafe_attr_outside_unsafe',
     '-Dunsafe_op_in_unsafe_fn',
+
+    # This requires cbindgen >= 0.28
+    # '-Dunsafe_attr_outside_unsafe',
 
     # 1.83+
     # '-Dif_let_rescope',
