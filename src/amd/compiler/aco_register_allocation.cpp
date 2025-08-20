@@ -2109,7 +2109,7 @@ get_reg_create_vector(ra_ctx& ctx, const RegisterFile& reg_file, Temp temp,
    tmp_file.fill_killed_operands(instr.get());
 
    for (unsigned i = 0; i < instr->operands.size(); i++) {
-      if ((correct_pos_mask >> i) & 1u && instr->operands[i].isKill())
+      if ((correct_pos_mask >> i) & 1u && instr->operands[i].isKillBeforeDef())
          tmp_file.clear(instr->operands[i]);
    }
 
