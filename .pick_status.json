@@ -24,7 +24,7 @@
         "description": "aco/isel: fix vectorized i2i16 with 8bit vec8 source",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "92d433c54af8726563c2d9697213979cc405b105",
         "notes": null
