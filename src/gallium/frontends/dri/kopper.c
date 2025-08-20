@@ -536,7 +536,7 @@ kopperSwapBuffersWithDamage(struct dri_drawable *drawable, uint32_t flush_flags,
    drawable->texture_stamp = drawable->lastStamp - 1;
 
    dri_flush(ctx, drawable,
-             __DRI2_FLUSH_DRAWABLE | __DRI2_FLUSH_CONTEXT | flush_flags,
+             __DRI2_FLUSH_DRAWABLE | flush_flags,
              __DRI2_THROTTLE_SWAPBUFFER);
 
    struct pipe_box stack_boxes[64];

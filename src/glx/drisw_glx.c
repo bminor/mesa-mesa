@@ -563,7 +563,7 @@ driswSwapBuffers(__GLXDRIdrawable * pdraw,
    }
 
    if (psc->kopper)
-       return kopperSwapBuffers(pdraw->dri_drawable, 0);
+       return kopperSwapBuffers(pdraw->dri_drawable, flush ? __DRI2_FLUSH_CONTEXT : 0);
 
    driSwapBuffers(pdraw->dri_drawable);
 

@@ -705,9 +705,9 @@ dri2_x11_kopper_swap_buffers_with_damage(_EGLDisplay *disp, _EGLSurface *draw,
 
    /* swrast path unsupported for now */
    if (numRects)
-      kopperSwapBuffersWithDamage(dri2_surf->dri_drawable, __DRI2_FLUSH_INVALIDATE_ANCILLARY, numRects, rects);
+      kopperSwapBuffersWithDamage(dri2_surf->dri_drawable, __DRI2_FLUSH_CONTEXT | __DRI2_FLUSH_INVALIDATE_ANCILLARY, numRects, rects);
    else
-      kopperSwapBuffers(dri2_surf->dri_drawable, __DRI2_FLUSH_INVALIDATE_ANCILLARY);
+      kopperSwapBuffers(dri2_surf->dri_drawable, __DRI2_FLUSH_CONTEXT | __DRI2_FLUSH_INVALIDATE_ANCILLARY);
 
    /* If the X11 window has been resized, vkQueuePresentKHR() or
     * vkAcquireNextImageKHR() may return VK_ERROR_SURFACE_LOST or
