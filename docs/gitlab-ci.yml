@@ -20,7 +20,6 @@ deploy-docs:
         - src/intel/isl/**/*
         - src/vulkan/runtime/**/*
       when: always
-    # Other cases default to never
 
 test-docs:
   extends: .docs-base
