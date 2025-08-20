@@ -3432,12 +3432,14 @@ radv_should_force_vrs1x1(struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
-radv_emit_fragment_shading_rate(struct radv_cmd_buffer *cmd_buffer)
+radv_emit_fsr_state(struct radv_cmd_buffer *cmd_buffer)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    struct radv_cmd_stream *cs = cmd_buffer->cs;
+
+   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_FSR_STATE;
 
    /* When per-vertex VRS is forced and the dynamic fragment shading rate is a no-op, ignore
     * it. This is needed for vkd3d-proton because it always declares per-draw VRS as dynamic.
@@ -5391,9 +5393,6 @@ radv_cmd_buffer_flush_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const ui
        (pdev->info.gfx_level >= GFX12 && states & RADV_DYNAMIC_PATCH_CONTROL_POINTS))
       radv_emit_primitive_topology(cmd_buffer);
 
-   if (states & RADV_DYNAMIC_FRAGMENT_SHADING_RATE)
-      radv_emit_fragment_shading_rate(cmd_buffer);
-
    if (states & RADV_DYNAMIC_VERTEX_INPUT)
       radv_emit_vertex_input(cmd_buffer);
 
@@ -7316,7 +7315,7 @@ radv_bind_multisample_state(struct radv_cmd_buffer *cmd_buffer, const struct rad
    if (cmd_buffer->state.ms.sample_shading_enable != ms->sample_shading_enable) {
       cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_RASTERIZATION_SAMPLES;
       if (pdev->info.gfx_level >= GFX10_3)
-         cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_FRAGMENT_SHADING_RATE;
+         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FSR_STATE;
    }
 
    if (ms->sample_shading_enable) {
@@ -7398,7 +7397,8 @@ radv_bind_pre_rast_shader(struct radv_cmd_buffer *cmd_buffer, const struct radv_
       /* Re-emit VRS state because the combiner is different (vertex vs primitive). Re-emit
        * primitive topology because the mesh shading pipeline clobbered it.
        */
-      cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_FRAGMENT_SHADING_RATE | RADV_DYNAMIC_PRIMITIVE_TOPOLOGY;
+      cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_PRIMITIVE_TOPOLOGY;
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FSR_STATE;
    }
 
    cmd_buffer->state.mesh_shading = mesh_shading;
@@ -7510,15 +7510,17 @@ radv_bind_fragment_shader(struct radv_cmd_buffer *cmd_buffer, const struct radv_
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_MSAA_STATE;
 
    if (gfx_level >= GFX10_3 && (!previous_ps || previous_ps->info.ps.force_sample_iter_shading_rate !=
-                                                   ps->info.ps.force_sample_iter_shading_rate))
-      cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_RASTERIZATION_SAMPLES | RADV_DYNAMIC_FRAGMENT_SHADING_RATE;
+                                                   ps->info.ps.force_sample_iter_shading_rate)) {
+      cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_RASTERIZATION_SAMPLES;
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FSR_STATE;
+   }
 
    if (cmd_buffer->state.ms.sample_shading_enable != ps->info.ps.uses_sample_shading) {
       cmd_buffer->state.ms.sample_shading_enable = ps->info.ps.uses_sample_shading;
       cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_RASTERIZATION_SAMPLES;
 
       if (gfx_level >= GFX10_3)
-         cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_FRAGMENT_SHADING_RATE;
+         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FSR_STATE;
    }
 
    if (cmd_buffer->state.ms.min_sample_shading != min_sample_shading) {
@@ -7573,6 +7575,7 @@ static void
 radv_bind_shader(struct radv_cmd_buffer *cmd_buffer, struct radv_shader *shader, mesa_shader_stage stage)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radv_cmd_stream *cs = cmd_buffer->cs;
 
    if (!shader) {
@@ -7586,7 +7589,9 @@ radv_bind_shader(struct radv_cmd_buffer *cmd_buffer, struct radv_shader *shader,
          break;
       case MESA_SHADER_FRAGMENT:
          cmd_buffer->state.dirty |= RADV_CMD_DIRTY_DB_SHADER_CONTROL | RADV_CMD_DIRTY_MSAA_STATE;
-         cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_RASTERIZATION_SAMPLES | RADV_DYNAMIC_FRAGMENT_SHADING_RATE;
+         if (pdev->info.gfx_level >= GFX10_3)
+            cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FSR_STATE;
+         cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_RASTERIZATION_SAMPLES;
          break;
       default:
          break;
@@ -9362,11 +9367,11 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
 
    if (pdev->info.rbplus_allowed)
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_RBPLUS;
+   if (pdev->info.gfx_level >= GFX10_3)
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FSR_STATE;
 
    cmd_buffer->state.dirty_dynamic |=
       RADV_DYNAMIC_DEPTH_BIAS | RADV_DYNAMIC_STENCIL_TEST_ENABLE | RADV_DYNAMIC_COLOR_BLEND_ENABLE;
-   if (pdev->info.gfx_level >= GFX10_3)
-      cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_FRAGMENT_SHADING_RATE;
    if (pdev->info.gfx_level >= GFX12)
       cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_RASTERIZATION_SAMPLES;
 
@@ -11452,6 +11457,9 @@ radv_validate_dynamic_states(struct radv_cmd_buffer *cmd_buffer, uint64_t dynami
         RADV_DYNAMIC_ATTACHMENT_FEEDBACK_LOOP_ENABLE | RADV_DYNAMIC_ALPHA_TO_COVERAGE_ENABLE |
         RADV_DYNAMIC_ALPHA_TO_ONE_ENABLE))
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_DB_SHADER_CONTROL;
+
+   if (dynamic_states & RADV_DYNAMIC_FRAGMENT_SHADING_RATE)
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FSR_STATE;
 }
 
 static void
@@ -11564,6 +11572,9 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
 
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_MSAA_STATE)
       radv_emit_msaa_state(cmd_buffer);
+
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_FSR_STATE)
+      radv_emit_fsr_state(cmd_buffer);
 
    if (gfx12_emit_alt_hiz_wa)
       radv_gfx12_emit_alt_hiz_wa(cmd_buffer);
