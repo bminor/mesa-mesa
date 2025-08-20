@@ -30,10 +30,23 @@
 
 #include <algorithm>
 #include <chrono>
+#include <random>
 #include <set>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+
+#ifdef HAVE_PERFETTO
+#include <perfetto/tracing.h>
+
+#define GFXSTREAM_TRACE_DEFAULT_CATEGORY "gfxstream.default"
+
+PERFETTO_DEFINE_CATEGORIES(
+    perfetto::Category(GFXSTREAM_TRACE_DEFAULT_CATEGORY)
+                       .SetDescription("Default events")
+                       .SetTags("default"));
+
+#endif // HAVE_PERFETTO
 
 #include "vk_util.h"
 
@@ -78,8 +91,36 @@ static T vk_make_orphan_copy(const T& vk_struct) {
     return copy;
 }
 
+
 namespace gfxstream {
 namespace vk {
+namespace {
+
+#ifdef HAVE_PERFETTO
+uint64_t GeneratePseudoUniqueId() {
+    thread_local std::mt19937 generator(std::random_device{}());
+    std::uniform_int_distribution<uint64_t> distribution(0, std::numeric_limits<uint64_t>::max());
+    return distribution(generator);
+}
+#endif
+
+void EmitGuestAndHostTraceMarker(VkEncoder* encoder) {
+#ifdef HAVE_PERFETTO
+    const uint64_t flowId = GeneratePseudoUniqueId();
+
+    TRACE_EVENT_INSTANT(
+        GFXSTREAM_TRACE_DEFAULT_CATEGORY,
+        "vkTraceAsyncGOOGLE",
+        perfetto::Flow::Global(flowId),
+        "flow id", flowId);
+
+    encoder->vkTraceAsyncGOOGLE(flowId, true /* do lock */);
+#else
+    (void)encoder;
+#endif  // HAVE_PERFETTO
+}
+
+}  // namespace
 
 #define MAKE_HANDLE_MAPPING_FOREACH(type_name, map_impl, map_to_u64_impl, map_from_u64_impl)       \
     void mapHandles_##type_name(type_name* handles, size_t count) override {                       \
@@ -6111,6 +6152,7 @@ VkResult ResourceTracker::on_vkQueueSubmit(void* context, VkResult input_result,
                                            uint32_t submitCount, const VkSubmitInfo* pSubmits,
                                            VkFence fence) {
     MESA_TRACE_SCOPE("on_vkQueueSubmit");
+    EmitGuestAndHostTraceMarker((VkEncoder*)context);
 
     /* From the Vulkan 1.3.204 spec:
      *
@@ -6148,6 +6190,7 @@ VkResult ResourceTracker::on_vkQueueSubmit2(void* context, VkResult input_result
                                             uint32_t submitCount, const VkSubmitInfo2* pSubmits,
                                             VkFence fence) {
     MESA_TRACE_SCOPE("on_vkQueueSubmit2");
+    EmitGuestAndHostTraceMarker((VkEncoder*)context);
     return on_vkQueueSubmitTemplate<VkSubmitInfo2, VkSemaphoreSubmitInfo>(context, input_result, queue, submitCount,
                                                    pSubmits, fence);
 }
