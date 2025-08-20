@@ -564,11 +564,11 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
 
    if (!stage->key.optimisations_disabled) {
       NIR_PASS(_, stage->nir, nir_opt_dce);
-      NIR_PASS(_, stage->nir, nir_opt_shrink_vectors, true);
 
       NIR_PASS(_, stage->nir, nir_copy_prop);
       NIR_PASS(_, stage->nir, nir_opt_constant_folding);
       NIR_PASS(_, stage->nir, nir_opt_cse);
+      NIR_PASS(_, stage->nir, nir_opt_shrink_vectors, true);
 
       nir_load_store_vectorize_options late_vectorize_opts = {
          .modes =
