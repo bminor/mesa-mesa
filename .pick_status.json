@@ -4284,7 +4284,7 @@
         "description": "mesa: fix off by one in MSRTT handling",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "894b37e06099c60f371e9b181e3f84cfc29c49bb",
         "notes": null
