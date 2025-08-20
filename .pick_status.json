@@ -6214,7 +6214,7 @@
         "description": "radv/video: Disable H264 encode 8x8 transform when CABAC is disabled",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "960f63596fee40fdf395925534a7a918c08b1475",
         "notes": null
