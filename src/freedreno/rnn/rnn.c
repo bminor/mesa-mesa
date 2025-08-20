@@ -968,7 +968,12 @@ static void copytypeinfo (struct rnntypeinfo *dst, struct rnntypeinfo *src, char
 	dst->min = src->min;
 	dst->max = src->max;
 	dst->align = src->align;
+	dst->radix = src->radix;
 	dst->addvariant = src->addvariant;
+	dst->minvalid = src->minvalid;
+	dst->maxvalid = src->maxvalid;
+	dst->alignvalid = src->alignvalid;
+	dst->radixvalid = src->radixvalid;
 	for (i = 0; i < src->valsnum; i++)
 		ADDARRAY(dst->vals, copyvalue(src->vals[i], file));
 	for (i = 0; i < src->bitfieldsnum; i++)
