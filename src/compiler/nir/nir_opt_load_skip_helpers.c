@@ -176,8 +176,23 @@ nir_opt_load_skip_helpers(nir_shader *shader, nir_opt_load_skip_helpers_options 
             } else if (hs.options->intrinsic_cb &&
                        hs.options->intrinsic_cb(intr, hs.options->intrinsic_cb_data) &&
                        add_load_to_worklist(&hs, instr)) {
-               /* We don't need to set the sources as needing helpers if this
-                * load is skipped for helpers.
+               switch (intr->intrinsic) {
+               case nir_intrinsic_load_global_amd:
+               case nir_intrinsic_load_smem_amd:
+                  break;
+               default: {
+                  /* Even if this load is skipped for helpers, the handle must
+                   * still be uniform.
+                   */
+                  nir_src *io_index_src = nir_get_io_index_src(intr);
+                  if (io_index_src != NULL)
+                     set_src_needs_helpers(io_index_src, &hs);
+                  break;
+               }
+               }
+
+               /* We don't need to set the offset/address sources as needing
+                * helpers if this load is skipped for helpers.
                 */
             } else {
                /* All I/O addresses need helpers because getting them wrong
