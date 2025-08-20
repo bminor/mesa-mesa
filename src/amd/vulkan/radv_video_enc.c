@@ -3089,7 +3089,8 @@ radv_video_patch_encode_session_parameters(struct radv_device *device, struct vk
       for (unsigned i = 0; i < params->h264_enc.h264_pps_count; i++) {
          params->h264_enc.h264_pps[i].base.pic_init_qp_minus26 = 0;
          params->h264_enc.h264_pps[i].base.pic_init_qs_minus26 = 0;
-         if (pdev->enc_hw_ver < RADV_VIDEO_ENC_HW_5)
+         if (pdev->enc_hw_ver < RADV_VIDEO_ENC_HW_5 ||
+             !params->h264_enc.h264_pps[i].base.flags.entropy_coding_mode_flag)
             params->h264_enc.h264_pps[i].base.flags.transform_8x8_mode_flag = 0;
       }
       break;
