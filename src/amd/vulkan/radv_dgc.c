@@ -2152,7 +2152,7 @@ dgc_emit_dispatch_direct(struct dgc_cmdbuf *cs, nir_def *wg_x, nir_def *wg_y, ni
       dgc_emit_sqtt_begin_api_marker(cs, ApiCmdDispatch);
       dgc_emit_sqtt_marker_event_with_dims(
          cs, sequence_id, wg_x, wg_y, wg_z,
-         is_rt ? EventCmdTraceRaysKHR | ApiRayTracingSeparateCompiled : EventCmdDispatch);
+         is_rt ? EventCmdTraceRaysKHR | EventRayTracingSeparateCompiled : EventCmdDispatch);
 
       dgc_cs_begin(cs);
       dgc_cs_emit_imm(PKT3(PKT3_DISPATCH_DIRECT, 3, 0) | PKT3_SHADER_TYPE_S(1));
