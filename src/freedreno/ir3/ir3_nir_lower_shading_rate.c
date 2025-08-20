@@ -10,15 +10,13 @@
  * be translated into HW internal representation.
  */
 static const uint32_t vk_to_hw_shading_rate_lut[] = {
-   0, 4, 8, 11, 1, 5, 9, 11, 2, 6, 10, 11, 11, 11, 11, 11,
-   0, 1, 2, 11, 4, 5, 6, 11, 8, 9, 10, 11, 11, 11, 11, 11};
+   0, 4, 8, 11, 1, 5, 9, 11, 2, 6, 10, 11, 11, 11, 11, 11};
 
 /* Values read from gl_ShadingRateEXT in FS have to be translated from
  * HW representation.
  */
 static const uint32_t hw_to_vk_shading_rate_lut[] = {
-   0, 4, 8, 0, 1, 5, 9, 0, 2, 6, 10, 11, 11, 11, 11, 11,
-   0, 1, 2, 0, 4, 5, 6, 0, 8, 9, 10, 11, 11, 11, 11, 11};
+   0, 4, 8, 11, 1, 5, 9, 11, 2, 6, 10, 11, 11, 11, 11, 11};
 
 static nir_deref_instr *
 create_lut(nir_builder *b, const uint32_t *lut, uint32_t lut_size,
