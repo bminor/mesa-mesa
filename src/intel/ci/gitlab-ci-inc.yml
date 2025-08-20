@@ -417,6 +417,8 @@
   extends:
     - .iris-test
     - .lava-acer-n20q11-r856ltn-p1s2-nissa:x86_64
+  variables:
+    DEQP_SUITE: iris-adl
 
 .iris-whl-deqp:
   extends:

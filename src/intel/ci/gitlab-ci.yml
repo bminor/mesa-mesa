@@ -210,6 +210,14 @@ iris-jsl-deqp:
     DEQP_FRACTION: 8
   parallel: 2
 
+iris-adl-deqp:
+  extends:
+    - .iris-adl-test
+  variables:
+    DEQP_SUITE: iris-adl
+    GPU_VERSION: iris-adl
+  parallel: 5
+
 iris-amly-egl:
   extends:
     - .iris-amly-test
