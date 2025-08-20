@@ -137,7 +137,8 @@
   extends:
     - .test-piglit
   variables:
-    PIGLIT_REPLAY_EXTRA_ARGS: --db-path ${CI_PROJECT_DIR}/replayer-db/ --minio_bucket=${S3_TRACIE_PUBLIC_BUCKET} --jwt-file=${S3_JWT_FILE}
+    PIGLIT_CACHE_DIR: $CI_PROJECT_DIR
+    PIGLIT_REPLAY_EXTRA_ARGS: --db-path ${PIGLIT_CACHE_DIR}/replayer-db/ --minio_bucket=${S3_TRACIE_PUBLIC_BUCKET} --jwt-file=${S3_JWT_FILE}
     PIGLIT_REPLAY_DEVICE_NAME: $GPU_VERSION
     PIGLIT_RESULTS: "${GPU_VERSION}-replay"
     PIGLIT_NO_WINDOW: 1

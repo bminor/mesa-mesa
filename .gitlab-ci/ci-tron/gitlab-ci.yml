@@ -15,6 +15,7 @@
 
     DEQP_RUNNER_SHADER_CACHE_DIR: /cache
     VKD3D_SHADER_CACHE_PATH: /cache
+    PIGLIT_CACHE_DIR: /cache
 
     CI_TRON__B2C_ARTIFACT_EXCLUSION: "install/*"
     CI_TRON_HTTP_ARTIFACT__INSTALL__PATH: "/install.tar.zst"
