@@ -3194,7 +3194,7 @@
         "description": "brw: Fix folding case for MAD instruction with all immediates",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b605f76b2a6b19194a3f4f29d7bb40e47648cda3",
         "notes": null
