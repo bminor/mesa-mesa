@@ -5244,7 +5244,7 @@
         "description": "mesa: fix glTexPageCommitmentARB and glTexturePageCommitmentEXT level check",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "90415c1a3a4b987a9cf38a44a094eea9f27d0b9c",
         "notes": null
