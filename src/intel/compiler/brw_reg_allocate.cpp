@@ -908,13 +908,6 @@ brw_reg_alloc::emit_unspill(const brw_builder &bld,
             offset = build_lane_offsets(ubld, spill_offset, ip);
          }
 
-         brw_reg srcs[SEND_NUM_SRCS] = {
-            [SEND_SRC_DESC] = brw_imm_ud(0),
-            [SEND_SRC_EX_DESC] = build_ex_desc(bld, reg_size, true),
-            [SEND_SRC_PAYLOAD1] = offset,
-            [SEND_SRC_PAYLOAD2] = brw_reg(),
-         };
-
          uint32_t desc = lsc_msg_desc(devinfo, LSC_OP_LOAD,
                                       LSC_ADDR_SURFTYPE_SS,
                                       LSC_ADDR_SIZE_A32,
@@ -923,9 +916,16 @@ brw_reg_alloc::emit_unspill(const brw_builder &bld,
                                       use_transpose,
                                       LSC_CACHE(devinfo, LOAD, L1STATE_L3MOCS));
 
+         const brw_reg ex_desc_reg = build_ex_desc(bld, reg_size, true);
 
-         unspill_inst = ubld.emit(SHADER_OPCODE_SEND, dst,
-                                  srcs, ARRAY_SIZE(srcs));
+         unspill_inst = ubld.SEND();
+         unspill_inst->dst = dst;
+
+         unspill_inst->src[SEND_SRC_DESC]     = brw_imm_ud(0);
+         unspill_inst->src[SEND_SRC_EX_DESC]  = ex_desc_reg;
+         unspill_inst->src[SEND_SRC_PAYLOAD1] = offset;
+         unspill_inst->src[SEND_SRC_PAYLOAD2] = brw_reg();
+
          unspill_inst->sfid = BRW_SFID_UGM;
          unspill_inst->header_size = 0;
          unspill_inst->mlen = lsc_msg_addr_len(devinfo, LSC_ADDR_SIZE_A32,
@@ -947,14 +947,14 @@ brw_reg_alloc::emit_unspill(const brw_builder &bld,
 
          const unsigned bti = GFX8_BTI_STATELESS_NON_COHERENT;
 
-         brw_reg srcs[SEND_NUM_SRCS] = {
-            [SEND_SRC_DESC]     = brw_imm_ud(0),
-            [SEND_SRC_EX_DESC]  = brw_imm_ud(0),
-            [SEND_SRC_PAYLOAD1] = header,
-            [SEND_SRC_PAYLOAD2] = brw_reg(),
-         };
-         unspill_inst = bld.emit(SHADER_OPCODE_SEND, dst,
-                                 srcs, ARRAY_SIZE(srcs));
+         unspill_inst = bld.SEND();
+         unspill_inst->dst = dst;
+
+         unspill_inst->src[SEND_SRC_DESC]     = brw_imm_ud(0);
+         unspill_inst->src[SEND_SRC_EX_DESC]  = brw_imm_ud(0);
+         unspill_inst->src[SEND_SRC_PAYLOAD1] = header;
+         unspill_inst->src[SEND_SRC_PAYLOAD2] = brw_reg();
+
          unspill_inst->mlen = 1;
          unspill_inst->header_size = 1;
          unspill_inst->size_written = reg_size * REG_SIZE;
@@ -996,14 +996,16 @@ brw_reg_alloc::emit_spill(const brw_builder &bld,
       if (devinfo->verx10 >= 125) {
          brw_reg offset = build_lane_offsets(bld, spill_offset, ip);
 
-         brw_reg srcs[SEND_NUM_SRCS] = {
-            [SEND_SRC_DESC]     = brw_imm_ud(0),
-            [SEND_SRC_EX_DESC]  = build_ex_desc(bld, reg_size, false),
-            [SEND_SRC_PAYLOAD1] = offset,
-            [SEND_SRC_PAYLOAD2] = src,
-         };
-         spill_inst = bld.emit(SHADER_OPCODE_SEND, bld.null_reg_f(),
-                               srcs, ARRAY_SIZE(srcs));
+         const brw_reg ex_desc_reg = build_ex_desc(bld, reg_size, false);
+
+         spill_inst = bld.SEND();
+         spill_inst->dst = bld.null_reg_f();
+
+         spill_inst->src[SEND_SRC_DESC]     = brw_imm_ud(0);
+         spill_inst->src[SEND_SRC_EX_DESC]  = ex_desc_reg;
+         spill_inst->src[SEND_SRC_PAYLOAD1] = offset;
+         spill_inst->src[SEND_SRC_PAYLOAD2] = src;
+
          spill_inst->sfid = BRW_SFID_UGM;
          uint32_t desc = lsc_msg_desc(devinfo, LSC_OP_STORE,
                                       LSC_ADDR_SURFTYPE_SS,
@@ -1030,14 +1032,15 @@ brw_reg_alloc::emit_spill(const brw_builder &bld,
          brw_reg header = build_legacy_scratch_header(bld, spill_offset, ip);
 
          const unsigned bti = GFX8_BTI_STATELESS_NON_COHERENT;
-         brw_reg srcs[SEND_NUM_SRCS] = {
-            [SEND_SRC_DESC]     = brw_imm_ud(0),
-            [SEND_SRC_EX_DESC]  = brw_imm_ud(0),
-            [SEND_SRC_PAYLOAD1] = header,
-            [SEND_SRC_PAYLOAD2] = src
-         };
-         spill_inst = bld.emit(SHADER_OPCODE_SEND, bld.null_reg_f(),
-                               srcs, ARRAY_SIZE(srcs));
+
+         spill_inst = bld.SEND();
+         spill_inst->dst = bld.null_reg_f();
+
+         spill_inst->src[SEND_SRC_DESC]     = brw_imm_ud(0);
+         spill_inst->src[SEND_SRC_EX_DESC]  = brw_imm_ud(0);
+         spill_inst->src[SEND_SRC_PAYLOAD1] = header;
+         spill_inst->src[SEND_SRC_PAYLOAD2] = src;
+
          spill_inst->mlen = 1;
          spill_inst->ex_mlen = reg_size;
          spill_inst->size_written = 0;

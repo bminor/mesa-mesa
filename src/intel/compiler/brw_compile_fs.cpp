@@ -648,7 +648,7 @@ brw_emit_repclear_shader(brw_shader &s)
       if (i > 0)
          bld.uniform().MOV(component(header, 2), brw_imm_ud(i));
 
-      write = bld.emit(SHADER_OPCODE_SEND, SEND_NUM_SRCS);
+      write = bld.SEND();
 
       /* We can use a headerless message for the first render target */
       write->header_size = i == 0 ? 0 : 2;

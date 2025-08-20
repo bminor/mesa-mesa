@@ -375,15 +375,12 @@ brw_shader::emit_cs_terminate()
    if (devinfo->ver < 11)
       desc |= (1 << 4); /* Do not dereference URB */
 
-   brw_reg srcs[SEND_NUM_SRCS] = {
-      [SEND_SRC_DESC]     = brw_imm_ud(desc),
-      [SEND_SRC_EX_DESC]  = brw_imm_ud(0),
-      [SEND_SRC_PAYLOAD1] = payload,
-      [SEND_SRC_PAYLOAD2] = brw_reg(),
-   };
-
-   brw_inst *send =
-      ubld.emit(SHADER_OPCODE_SEND, reg_undef, srcs, SEND_NUM_SRCS);
+   brw_inst *send = ubld.SEND();
+   send->dst = reg_undef;
+   send->src[SEND_SRC_DESC]     = brw_imm_ud(desc);
+   send->src[SEND_SRC_EX_DESC]  = brw_imm_ud(0);
+   send->src[SEND_SRC_PAYLOAD1] = payload;
+   send->src[SEND_SRC_PAYLOAD2] = brw_reg();
 
    /* On Alchemist and later, send an EOT message to the message gateway to
     * terminate a compute shader.  For older GPUs, send to the thread spawner.
@@ -684,16 +681,14 @@ brw_shader::assign_curb_setup()
             addr = base_addr;
          }
 
-         brw_reg srcs[SEND_NUM_SRCS] = {
-            [SEND_SRC_DESC]     = brw_imm_ud(0),
-            [SEND_SRC_EX_DESC]  = brw_imm_ud(0),
-            [SEND_SRC_PAYLOAD1] = addr,
-            [SEND_SRC_PAYLOAD2] = brw_reg(),
-         };
+         brw_inst *send = ubld.SEND();
+         send->dst = retype(brw_vec8_grf(payload().num_regs + i, 0),
+                            BRW_TYPE_UD);
 
-         brw_reg dest = retype(brw_vec8_grf(payload().num_regs + i, 0),
-                              BRW_TYPE_UD);
-         brw_inst *send = ubld.emit(SHADER_OPCODE_SEND, dest, srcs, 4);
+         send->src[SEND_SRC_DESC]     = brw_imm_ud(0);
+         send->src[SEND_SRC_EX_DESC]  = brw_imm_ud(0);
+         send->src[SEND_SRC_PAYLOAD1] = addr;
+         send->src[SEND_SRC_PAYLOAD2] = brw_reg();
 
          send->sfid = BRW_SFID_UGM;
          uint32_t desc = lsc_msg_desc(devinfo, LSC_OP_LOAD,

@@ -106,7 +106,7 @@ brw_workaround_memory_fence_before_eot(brw_shader &s)
       const brw_builder ubld = brw_builder(inst).uniform();
 
       brw_reg dst = ubld.vgrf(BRW_TYPE_UD);
-      brw_inst *dummy_fence = ubld.emit(SHADER_OPCODE_SEND, SEND_NUM_SRCS);
+      brw_inst *dummy_fence = ubld.SEND();
 
       dummy_fence->src[SEND_SRC_DESC]     = brw_imm_ud(0);
       dummy_fence->src[SEND_SRC_EX_DESC]  = brw_imm_ud(0);

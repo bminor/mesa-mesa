@@ -43,15 +43,19 @@ emit_SEND(const brw_builder &bld, const brw_reg &dst,
           const brw_reg &desc, const brw_reg &payload)
 {
    brw_reg uniform_desc = component(desc, 0);
-   brw_reg srcs[SEND_NUM_SRCS] = {
-      [SEND_SRC_DESC]     = uniform_desc,
-      [SEND_SRC_EX_DESC]  = uniform_desc,
-      [SEND_SRC_PAYLOAD1] = payload,
-      [SEND_SRC_PAYLOAD2] = brw_reg(),
-   };
-   brw_inst *inst = bld.emit(SHADER_OPCODE_SEND, dst, srcs, SEND_NUM_SRCS);
-   inst->mlen = 1;
-   return inst;
+
+   brw_inst *send = bld.SEND();
+   send->dst = dst;
+
+   send->src[SEND_SRC_DESC]     = uniform_desc;
+   send->src[SEND_SRC_EX_DESC]  = uniform_desc;
+   send->src[SEND_SRC_PAYLOAD1] = payload;
+   send->src[SEND_SRC_PAYLOAD2] = brw_reg();
+
+   send->mlen = 1;
+   send->size_written = dst.component_size(send->exec_size);
+
+   return send;
 }
 
 bool operator ==(const tgl_swsb &a, const tgl_swsb &b)

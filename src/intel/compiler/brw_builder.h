@@ -633,6 +633,12 @@ public:
    /** @} */
 
    brw_inst *
+   SEND() const
+   {
+      return emit(SHADER_OPCODE_SEND, SEND_NUM_SRCS);
+   }
+
+   brw_inst *
    ADD(const brw_reg &dst, const brw_reg &src0, const brw_reg &src1) const
    {
       return alu2(BRW_OPCODE_ADD, dst, src0, src1);
