@@ -401,23 +401,28 @@ struct find_insert_block_state {
 };
 
 static bool
-find_dominated_src(nir_src *src, void *data)
+find_dominated_block(nir_block *block, struct find_insert_block_state *state)
 {
-   struct find_insert_block_state *state = data;
-   nir_block *src_block = nir_def_block(src->ssa);
-
    if (!state->insert_block) {
-      state->insert_block = src_block;
+      state->insert_block = block;
       return true;
-   } else if (nir_block_dominates(state->insert_block, src_block)) {
-      state->insert_block = src_block;
+   } else if (nir_block_dominates(state->insert_block, block)) {
+      state->insert_block = block;
       return true;
-   } else if (nir_block_dominates(src_block, state->insert_block)) {
+   } else if (nir_block_dominates(block, state->insert_block)) {
       return true;
    } else {
       state->insert_block = NULL;
       return false;
    }
+}
+
+static bool
+find_dominated_src(nir_src *src, void *data)
+{
+   struct find_insert_block_state *state = data;
+   nir_block *src_block = nir_def_block(src->ssa);
+   return find_dominated_block(src_block, state);
 }
 
 /* Find the block where instr can be inserted. This is the block that is
@@ -435,6 +440,22 @@ find_insert_block(nir_instr *instr, nir_block *dflt)
    }
 
    return NULL;
+}
+
+static nir_block *
+find_insert_block_for_defs(nir_def *defs[], unsigned n)
+{
+   struct find_insert_block_state state = {
+      .insert_block = NULL,
+   };
+
+   for (unsigned i = 0; i < n; i++) {
+      if (!find_dominated_block(nir_def_block(defs[i]), &state)) {
+         return NULL;
+      }
+   }
+
+   return state.insert_block;
 }
 
 static bool
@@ -608,6 +629,20 @@ static bool
 emit_descriptor_prefetch(nir_builder *b, nir_instr *instr, nir_def **descs,
                          struct prefetch_state *state)
 {
+   nir_block *insert_block = nir_def_block(descs[0]);
+
+   if (descs[1]) {
+      insert_block = find_insert_block_for_defs(descs, 2);
+
+      /* Since the preamble control flow was reconstructed from the original
+       * one, and the two descriptor defs were used by the same instruction, we
+       * must be able to find a legal place to insert the prefetch.
+       */
+      assert(insert_block);
+   }
+
+   b->cursor = nir_after_block(insert_block);
+
    if (instr->type == nir_instr_type_tex) {
       nir_tex_instr *tex = nir_instr_as_tex(instr);
       int sampler_index =
@@ -783,8 +818,6 @@ ir3_nir_opt_prefetch_descriptors(nir_shader *nir, struct ir3_shader_variant *v)
                                                   preamble_defs);
          }
 
-         /* ir3_rematerialize_def_for_preamble may have moved the cursor. */
-         b.cursor = nir_after_impl(preamble);
          progress |= emit_descriptor_prefetch(&b, instr, preamble_descs, &state);
 
          if (state.sampler.num_prefetches == MAX_PREFETCHES &&
