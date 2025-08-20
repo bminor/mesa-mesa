@@ -11,17 +11,25 @@
 #include "brw_inst.h"
 #include "brw_isa_info.h"
 
-static brw_inst *
-brw_alloc_inst(brw_shader &s, unsigned num_srcs)
+static inline unsigned
+brw_inst_kind_size(brw_inst_kind kind)
 {
-   STATIC_ASSERT((sizeof(brw_inst) % alignof(brw_reg)) == 0);
+   return sizeof(brw_inst);
+}
 
-   void *mem = ralloc_size(s.mem_ctx, sizeof(brw_inst) + num_srcs * sizeof(brw_reg));
-   memset(mem, 0, sizeof(brw_inst));
+static brw_inst *
+brw_alloc_inst(brw_shader &s, brw_inst_kind kind, unsigned num_srcs)
+{
+   const unsigned inst_size = brw_inst_kind_size(kind);
+
+   assert((inst_size % alignof(brw_reg)) == 0);
+
+   void *mem = ralloc_size(s.mem_ctx, inst_size + num_srcs * sizeof(brw_reg));
+   memset(mem, 0, inst_size);
 
    brw_inst *inst = (brw_inst *)mem;
    if (num_srcs)
-      inst->src = (brw_reg *)((char*)mem + sizeof(brw_inst));
+      inst->src = (brw_reg *)((char*)mem + inst_size);
    inst->sources = num_srcs;
 
    return inst;
@@ -34,8 +42,10 @@ brw_new_inst(brw_shader &s, enum opcode opcode, unsigned exec_size,
    assert(exec_size != 0);
    assert(dst.file != IMM && dst.file != UNIFORM);
 
-   brw_inst *inst = brw_alloc_inst(s, num_srcs);
+   brw_inst_kind kind = brw_inst_kind_for_opcode(opcode);
+   brw_inst *inst = brw_alloc_inst(s, kind, num_srcs);
 
+   inst->kind = kind;
    inst->opcode = opcode;
    inst->dst = dst;
    inst->exec_size = exec_size;
@@ -64,10 +74,11 @@ brw_new_inst(brw_shader &s, enum opcode opcode, unsigned exec_size,
 brw_inst *
 brw_clone_inst(brw_shader &s, const brw_inst *inst)
 {
-   brw_inst *clone = brw_alloc_inst(s, inst->sources);
+   brw_inst *clone = brw_alloc_inst(s, inst->kind, inst->sources);
    brw_reg *cloned_src = clone->src;
 
-   memcpy((void*)clone, inst, sizeof(brw_inst));
+   const unsigned inst_size = brw_inst_kind_size(inst->kind);
+   memcpy((void*)clone, inst, inst_size);
 
    brw_exec_node_init(clone);
    clone->src = cloned_src;
@@ -96,7 +107,15 @@ brw_inst *
 brw_transform_inst(brw_shader &s, brw_inst *inst, enum opcode new_opcode,
                    unsigned new_num_sources)
 {
-   inst->opcode = new_opcode;
+   const brw_inst_kind kind = inst->kind;
+   const brw_inst_kind new_kind = brw_inst_kind_for_opcode(new_opcode);
+
+   assert(new_kind == BRW_KIND_BASE);
+
+   const unsigned inst_size = brw_inst_kind_size(kind);
+   const unsigned new_inst_size = brw_inst_kind_size(new_kind);
+   assert(new_inst_size <= inst_size);
+
    if (new_num_sources == UINT_MAX)
       new_num_sources = brw_num_sources_for_opcode(s, new_opcode);
    assert(new_num_sources != UINT_MAX);
@@ -109,8 +128,16 @@ brw_transform_inst(brw_shader &s, brw_inst *inst, enum opcode new_opcode,
    }
 
    inst->sources = new_num_sources;
+   inst->opcode = new_opcode;
+   inst->kind = new_kind;
 
    return inst;
+}
+
+brw_inst_kind
+brw_inst_kind_for_opcode(enum opcode opcode)
+{
+   return BRW_KIND_BASE;
 }
 
 bool

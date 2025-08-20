@@ -39,8 +39,13 @@
 struct bblock_t;
 struct brw_shader;
 
-struct brw_inst : public brw_exec_node {
-public:
+enum ENUM_PACKED brw_inst_kind {
+   BRW_KIND_BASE,
+};
+
+brw_inst_kind brw_inst_kind_for_opcode(enum opcode opcode);
+
+struct brw_inst : brw_exec_node {
    brw_inst() = delete;
    brw_inst(const brw_inst&) = delete;
 
@@ -153,6 +158,7 @@ public:
    enum opcode opcode; /* BRW_OPCODE_* or FS_OPCODE_* */
    enum brw_conditional_mod conditional_mod; /**< BRW_CONDITIONAL_* */
    enum brw_predicate predicate;
+   brw_inst_kind kind;
 
    tgl_swsb sched; /**< Scheduling info. */
 

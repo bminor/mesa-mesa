@@ -241,6 +241,8 @@ operands_match(const brw_inst *a, const brw_inst *b, bool *negate)
 static bool
 instructions_match(brw_inst *a, brw_inst *b, bool *negate)
 {
+   /* `Kind` is derived from opcode, so skipped. */
+
    return a->opcode == b->opcode &&
           a->exec_size == b->exec_size &&
           a->group == b->group &&
@@ -290,6 +292,8 @@ hash_inst(const void *v)
    /* Skip dst - that would make nothing ever match */
 
    /* Skip ir and annotation - we don't care for equivalency purposes. */
+
+   /* Skip `kind` since it is derived from the opcode. */
 
    const uint8_t u8data[] = {
       inst->sources,

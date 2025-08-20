@@ -304,6 +304,8 @@ brw_validate(const brw_shader &s)
       uint32_t last_used_address_register[16] = {};
 
       foreach_inst_in_block (brw_inst, inst, block) {
+         VAL_ASSERT_EQ(inst->kind, brw_inst_kind_for_opcode(inst->opcode));
+
          brw_validate_instruction_phase(s, inst);
 
          switch (inst->opcode) {
