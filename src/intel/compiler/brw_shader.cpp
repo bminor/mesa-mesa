@@ -372,7 +372,7 @@ brw_shader::emit_cs_terminate()
    if (devinfo->ver < 11)
       desc |= (1 << 4); /* Do not dereference URB */
 
-   brw_inst *send = ubld.SEND();
+   brw_send_inst *send = ubld.SEND();
    send->dst = reg_undef;
    send->src[SEND_SRC_DESC]     = brw_imm_ud(desc);
    send->src[SEND_SRC_EX_DESC]  = brw_imm_ud(0);
@@ -678,7 +678,7 @@ brw_shader::assign_curb_setup()
             addr = base_addr;
          }
 
-         brw_inst *send = ubld.SEND();
+         brw_send_inst *send = ubld.SEND();
          send->dst = retype(brw_vec8_grf(payload().num_regs + i, 0),
                             BRW_TYPE_UD);
 
@@ -704,7 +704,7 @@ brw_shader::assign_curb_setup()
             lsc_msg_dest_len(devinfo, LSC_DATA_SIZE_D32, num_regs * 8) * REG_SIZE;
          assert((payload().num_regs + i + send->size_written / REG_SIZE) <=
                 (payload().num_regs + prog_data->curb_read_length));
-         send->send_is_volatile = true;
+         send->is_volatile = true;
 
          send->src[SEND_SRC_DESC] =
             brw_imm_ud(desc | brw_message_desc(devinfo,

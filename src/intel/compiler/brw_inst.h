@@ -41,6 +41,7 @@ struct brw_shader;
 
 enum ENUM_PACKED brw_inst_kind {
    BRW_KIND_BASE,
+   BRW_KIND_SEND,
 };
 
 brw_inst_kind brw_inst_kind_for_opcode(enum opcode opcode);
@@ -52,6 +53,23 @@ struct brw_inst : brw_exec_node {
    /* Enable usage of placement new. */
    static void* operator new(size_t size, void *ptr) { return ptr; }
    static void operator delete(void *p) {}
+
+   /* Prefer macro here instead of templates to get nicer
+    * helper names.
+    */
+#define KIND_HELPERS(HELPER_NAME, TYPE_NAME, ENUM_NAME)         \
+   struct TYPE_NAME *HELPER_NAME() {                            \
+      return kind == ENUM_NAME ? (struct TYPE_NAME *)this       \
+                               : nullptr;                       \
+   }                                                            \
+   const struct TYPE_NAME *HELPER_NAME() const {                \
+      return kind == ENUM_NAME ? (const struct TYPE_NAME *)this \
+                               : nullptr;                       \
+   }
+
+   KIND_HELPERS(as_send, brw_send_inst, BRW_KIND_SEND);
+
+#undef KIND_HELPERS
 
    bool is_send() const;
    bool is_payload(unsigned arg) const;
@@ -144,13 +162,8 @@ struct brw_inst : brw_exec_node {
     */
    uint8_t group;
 
-   uint8_t mlen; /**< SEND message length */
-   uint8_t ex_mlen; /**< SENDS extended message length */
-   uint8_t sfid; /**< SFID for SEND instructions */
    /** The number of hardware registers used for a message header. */
    uint8_t header_size;
-   uint32_t desc; /**< SEND[S] message descriptor immediate */
-   uint32_t ex_desc; /**< SEND[S] extended message descriptor immediate */
 
    uint32_t offset; /**< spill/unspill offset or texture offset bitfield */
    uint16_t size_written; /**< Data written to the destination register in bytes. */
@@ -179,25 +192,11 @@ struct brw_inst : brw_exec_node {
           */
          unsigned rcount:4;
 
-         unsigned pad:4;
-
          bool predicate_inverse:1;
          bool writes_accumulator:1; /**< instruction implicitly writes accumulator */
          bool force_writemask_all:1;
          bool saturate:1;
-         bool check_tdr:1; /**< Only valid for SEND; turns it into a SENDC */
-         bool send_has_side_effects:1; /**< Only valid for SHADER_OPCODE_SEND */
-         bool send_is_volatile:1; /**< Only valid for SHADER_OPCODE_SEND */
-         bool send_ex_bso:1; /**< Only for SHADER_OPCODE_SEND, use extended
-                              *   bindless surface offset (26bits instead of
-                              *   20bits)
-                              */
-         /**
-          * Only for SHADER_OPCODE_SEND, @offset field contains an immediate
-          * part of the extended descriptor that must be encoded in the
-          * instruction.
-          */
-         bool send_ex_desc_imm:1;
+
          /**
           * The predication mask applied to this instruction is guaranteed to
           * be uniform and a superset of the execution mask of the present block.
@@ -215,6 +214,8 @@ struct brw_inst : brw_exec_node {
           * never executed.
           */
          bool has_no_mask_send_params:1;
+
+         unsigned pad:13;
       };
       uint32_t bits;
    };
@@ -231,6 +232,42 @@ struct brw_inst : brw_exec_node {
 #endif
 
    bblock_t *block;
+};
+
+struct brw_send_inst : brw_inst {
+   uint32_t desc;
+   uint32_t ex_desc;
+
+   uint8_t mlen;
+   uint8_t ex_mlen;
+   uint8_t sfid;
+
+   union {
+      struct {
+         /**
+          * Turns it into a SENDC.
+          */
+         bool check_tdr:1;
+
+         bool has_side_effects:1;
+         bool is_volatile:1;
+
+         /**
+          * Use extended bindless surface offset (26bits instead of 20bits)
+          */
+         bool ex_bso:1;
+
+         /**
+          * Only for SHADER_OPCODE_SEND, @offset field contains an immediate
+          * part of the extended descriptor that must be encoded in the
+          * instruction.
+          */
+         bool ex_desc_imm:1;
+
+         uint8_t pad:3;
+      };
+      uint8_t send_bits;
+   };
 };
 
 /**

@@ -60,7 +60,9 @@ can_omit_write(const brw_inst *inst)
       /* We can eliminate the destination write for ordinary instructions,
        * but not most SENDs.
        */
-      if (inst->opcode < NUM_BRW_OPCODES && inst->mlen == 0)
+      const brw_send_inst *send = inst->as_send();
+      if (inst->opcode < NUM_BRW_OPCODES &&
+          (!send || send->mlen == 0))
          return true;
 
       /* It might not be safe for other virtual opcodes. */

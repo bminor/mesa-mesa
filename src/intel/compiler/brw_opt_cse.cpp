@@ -135,10 +135,12 @@ is_expression(const brw_shader *v, const brw_inst *const inst)
    case SHADER_OPCODE_LOAD_PAYLOAD:
       return !is_coalescing_payload(*v, inst);
    case SHADER_OPCODE_SEND:
-   case SHADER_OPCODE_SEND_GATHER:
-      return !inst->send_has_side_effects &&
-             !inst->send_is_volatile &&
-             !inst->eot;
+   case SHADER_OPCODE_SEND_GATHER: {
+      const brw_send_inst *send = inst->as_send();
+      return !send->has_side_effects &&
+             !send->is_volatile &&
+             !send->eot;
+   }
    default:
       return false;
    }
@@ -239,24 +241,30 @@ operands_match(const brw_inst *a, const brw_inst *b, bool *negate)
 }
 
 static bool
+send_inst_match(brw_send_inst *a, brw_send_inst *b)
+{
+   return a->mlen == b->mlen &&
+          a->ex_mlen == b->ex_mlen &&
+          a->sfid == b->sfid &&
+          a->desc == b->desc &&
+          a->ex_desc == b->ex_desc &&
+          a->send_bits == b->send_bits;
+}
+
+static bool
 instructions_match(brw_inst *a, brw_inst *b, bool *negate)
 {
-   /* `Kind` is derived from opcode, so skipped. */
 
    return a->opcode == b->opcode &&
+          /* `kind` is derived from opcode, so skipped. */
+          (a->kind != BRW_KIND_SEND || send_inst_match(a->as_send(), b->as_send())) &&
           a->exec_size == b->exec_size &&
           a->group == b->group &&
           a->predicate == b->predicate &&
           a->conditional_mod == b->conditional_mod &&
           a->dst.type == b->dst.type &&
           a->offset == b->offset &&
-          a->mlen == b->mlen &&
-          a->ex_mlen == b->ex_mlen &&
-          a->sfid == b->sfid &&
-          a->desc == b->desc &&
-          a->ex_desc == b->ex_desc &&
           a->size_written == b->size_written &&
-          a->check_tdr == b->check_tdr &&
           a->header_size == b->header_size &&
           a->sources == b->sources &&
           a->bits == b->bits &&
@@ -299,17 +307,12 @@ hash_inst(const void *v)
       inst->sources,
       inst->exec_size,
       inst->group,
-      inst->mlen,
-      inst->ex_mlen,
-      inst->sfid,
       inst->header_size,
 
       inst->conditional_mod,
       inst->predicate,
    };
    const uint32_t u32data[] = {
-      inst->desc,
-      inst->ex_desc,
       inst->offset,
       inst->size_written,
       inst->opcode,
@@ -320,6 +323,29 @@ hash_inst(const void *v)
    hash = HASH(hash, u32data);
 
    /* Skip hashing sched - we shouldn't be CSE'ing after that SWSB */
+
+   switch (inst->kind) {
+   case BRW_KIND_SEND: {
+      const brw_send_inst *send = inst->as_send();
+      const uint8_t send_u8data[] = {
+         send->mlen,
+         send->ex_mlen,
+         send->sfid,
+         send->send_bits,
+      };
+      const uint32_t send_u32data[] = {
+         send->desc,
+         send->ex_desc,
+      };
+      hash = HASH(hash, send_u8data);
+      hash = HASH(hash, send_u32data);
+      break;
+   }
+
+   case BRW_KIND_BASE:
+      /* Nothing else to do. */
+      break;
+   }
 
    if (inst->opcode == BRW_OPCODE_MAD) {
       /* Commutatively combine the hashes for the multiplicands */

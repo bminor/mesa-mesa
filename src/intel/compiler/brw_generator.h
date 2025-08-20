@@ -25,7 +25,7 @@ public:
    const unsigned *get_assembly();
 
 private:
-   void generate_send(brw_inst *inst,
+   void generate_send(brw_send_inst *inst,
                       struct brw_reg dst,
                       struct brw_reg desc,
                       struct brw_reg ex_desc,

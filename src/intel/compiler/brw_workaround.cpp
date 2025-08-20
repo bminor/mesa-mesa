@@ -37,20 +37,24 @@ brw_workaround_emit_dummy_mov_instruction(brw_shader &s)
 }
 
 static bool
-needs_dummy_fence(const intel_device_info *devinfo, brw_inst *inst)
+needs_dummy_fence(const intel_device_info *devinfo, const brw_inst *inst)
 {
+   const brw_send_inst *send = inst->as_send();
+   if (!send)
+      return false;
+
    /* This workaround is about making sure that any instruction writing
     * through UGM has completed before we hit EOT.
     */
-   if (inst->sfid != BRW_SFID_UGM)
+   if (send->sfid != BRW_SFID_UGM)
       return false;
 
    /* Any UGM, non-Scratch-surface Stores (not including Atomic) messages,
     * where the L1-cache override is NOT among {WB, WS, WT}
     */
-   enum lsc_opcode opcode = lsc_msg_desc_opcode(devinfo, inst->desc);
+   enum lsc_opcode opcode = lsc_msg_desc_opcode(devinfo, send->desc);
    if (lsc_opcode_is_store(opcode)) {
-      switch (lsc_msg_desc_cache_ctrl(devinfo, inst->desc)) {
+      switch (lsc_msg_desc_cache_ctrl(devinfo, send->desc)) {
       case LSC_CACHE_STORE_L1STATE_L3MOCS:
       case LSC_CACHE_STORE_L1WB_L3WB:
       case LSC_CACHE_STORE_L1S_L3UC:
@@ -65,7 +69,7 @@ needs_dummy_fence(const intel_device_info *devinfo, brw_inst *inst)
    }
 
    /* Any UGM Atomic message WITHOUT return value */
-   if (lsc_opcode_is_atomic(opcode) && inst->dst.is_null())
+   if (lsc_opcode_is_atomic(opcode) && send->dst.is_null())
       return true;
 
    return false;
@@ -106,7 +110,7 @@ brw_workaround_memory_fence_before_eot(brw_shader &s)
       const brw_builder ubld = brw_builder(inst).uniform();
 
       brw_reg dst = ubld.vgrf(BRW_TYPE_UD);
-      brw_inst *dummy_fence = ubld.SEND();
+      brw_send_inst *dummy_fence = ubld.SEND();
 
       dummy_fence->src[SEND_SRC_DESC]     = brw_imm_ud(0);
       dummy_fence->src[SEND_SRC_EX_DESC]  = brw_imm_ud(0);

@@ -519,22 +519,27 @@ brw_lower_sends_overlapping_payload(brw_shader &s)
    bool progress = false;
 
    foreach_block_and_inst_safe (block, brw_inst, inst, s.cfg) {
-      if (inst->opcode == SHADER_OPCODE_SEND && inst->ex_mlen > 0 &&
-          regions_overlap(inst->src[SEND_SRC_PAYLOAD1],
-                          inst->mlen * REG_SIZE,
-                          inst->src[SEND_SRC_PAYLOAD2],
-                          inst->ex_mlen * REG_SIZE)) {
-         const unsigned arg = inst->mlen < inst->ex_mlen ?
+      if (inst->opcode != SHADER_OPCODE_SEND)
+         continue;
+
+      brw_send_inst *send = inst->as_send();
+
+      if (send->ex_mlen > 0 &&
+          regions_overlap(send->src[SEND_SRC_PAYLOAD1],
+                          send->mlen * REG_SIZE,
+                          send->src[SEND_SRC_PAYLOAD2],
+                          send->ex_mlen * REG_SIZE)) {
+         const unsigned arg = send->mlen < send->ex_mlen ?
                               SEND_SRC_PAYLOAD1 : SEND_SRC_PAYLOAD2;
-         const unsigned len = MIN2(inst->mlen, inst->ex_mlen);
+         const unsigned len = MIN2(send->mlen, send->ex_mlen);
 
          brw_reg tmp = retype(brw_allocate_vgrf_units(s, len), BRW_TYPE_UD);
 
          /* Sadly, we've lost all notion of channels and bit sizes at this
           * point.  Just WE_all it.
           */
-         const brw_builder ibld = brw_builder(inst).exec_all().group(16, 0);
-         brw_reg copy_src = retype(inst->src[arg], BRW_TYPE_UD);
+         const brw_builder ibld = brw_builder(send).exec_all().group(16, 0);
+         brw_reg copy_src = retype(send->src[arg], BRW_TYPE_UD);
          brw_reg copy_dst = tmp;
          for (unsigned i = 0; i < len; i += 2) {
             if (len == i + 1) {
@@ -546,7 +551,7 @@ brw_lower_sends_overlapping_payload(brw_shader &s)
             copy_src = offset(copy_src, ibld, 1);
             copy_dst = offset(copy_dst, ibld, 1);
          }
-         inst->src[arg] = tmp;
+         send->src[arg] = tmp;
          progress = true;
       }
    }
@@ -867,7 +872,7 @@ brw_s0(enum brw_reg_type type, unsigned subnr)
 }
 
 static bool
-brw_lower_send_gather_inst(brw_shader &s, brw_inst *inst)
+brw_lower_send_gather_inst(brw_shader &s, brw_send_inst *inst)
 {
    const intel_device_info *devinfo = s.devinfo;
    assert(devinfo->ver >= 30);
@@ -926,7 +931,7 @@ brw_lower_send_gather(brw_shader &s)
 
    foreach_block_and_inst(block, brw_inst, inst, s.cfg) {
       if (inst->opcode == SHADER_OPCODE_SEND_GATHER)
-         progress |= brw_lower_send_gather_inst(s, inst);
+         progress |= brw_lower_send_gather_inst(s, inst->as_send());
    }
 
    if (progress)

@@ -44,7 +44,7 @@ emit_SEND(const brw_builder &bld, const brw_reg &dst,
 {
    brw_reg uniform_desc = component(desc, 0);
 
-   brw_inst *send = bld.SEND();
+   brw_send_inst *send = bld.SEND();
    send->dst = dst;
 
    send->src[SEND_SRC_DESC]     = uniform_desc;

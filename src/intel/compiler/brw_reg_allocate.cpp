@@ -621,7 +621,7 @@ brw_reg_alloc::setup_inst_interference(const brw_inst *inst)
     * they're used as sources in the same instruction.  We also need to add
     * interference here.
     */
-   if (inst->opcode == SHADER_OPCODE_SEND && inst->ex_mlen > 0 &&
+   if (inst->opcode == SHADER_OPCODE_SEND && inst->as_send()->ex_mlen > 0 &&
        inst->src[SEND_SRC_PAYLOAD1].file == VGRF &&
        inst->src[SEND_SRC_PAYLOAD2].file == VGRF &&
        inst->src[SEND_SRC_PAYLOAD1].nr != inst->src[SEND_SRC_PAYLOAD2].nr) {
@@ -643,7 +643,7 @@ brw_reg_alloc::setup_inst_interference(const brw_inst *inst)
       assert(inst->opcode == SHADER_OPCODE_SEND);
       const brw_reg srcs[2] = {
          inst->src[SEND_SRC_PAYLOAD1],
-         inst->ex_mlen > 0 ? inst->src[SEND_SRC_PAYLOAD2] : brw_reg(),
+         inst->as_send()->ex_mlen > 0 ? inst->src[SEND_SRC_PAYLOAD2] : brw_reg(),
       };
       const unsigned sizes[2] = {
          DIV_ROUND_UP(fs->alloc.sizes[srcs[0].nr], reg_unit(devinfo)),
@@ -892,7 +892,7 @@ brw_reg_alloc::emit_unspill(const brw_builder &bld,
    for (unsigned i = 0; i < DIV_ROUND_UP(count, reg_size); i++) {
       ++stats->fill_count;
 
-      brw_inst *unspill_inst;
+      brw_send_inst *unspill_inst;
       if (devinfo->verx10 >= 125) {
          /* LSC is limited to SIMD16 (SIMD32 on Xe2) load/store but we can
           * load more using transpose messages.
@@ -933,8 +933,8 @@ brw_reg_alloc::emit_unspill(const brw_builder &bld,
          unspill_inst->ex_mlen = 0;
          unspill_inst->size_written =
             lsc_msg_dest_len(devinfo, LSC_DATA_SIZE_D32, bld.dispatch_width()) * REG_SIZE;
-         unspill_inst->send_has_side_effects = false;
-         unspill_inst->send_is_volatile = true;
+         unspill_inst->has_side_effects = false;
+         unspill_inst->is_volatile = true;
 
          unspill_inst->src[0] = brw_imm_ud(
             desc |
@@ -958,8 +958,8 @@ brw_reg_alloc::emit_unspill(const brw_builder &bld,
          unspill_inst->mlen = 1;
          unspill_inst->header_size = 1;
          unspill_inst->size_written = reg_size * REG_SIZE;
-         unspill_inst->send_has_side_effects = false;
-         unspill_inst->send_is_volatile = true;
+         unspill_inst->has_side_effects = false;
+         unspill_inst->is_volatile = true;
          unspill_inst->sfid = BRW_SFID_HDC0;
 
          unspill_inst->src[0] = brw_imm_ud(
@@ -992,7 +992,7 @@ brw_reg_alloc::emit_spill(const brw_builder &bld,
    for (unsigned i = 0; i < DIV_ROUND_UP(count, reg_size); i++) {
       ++stats->spill_count;
 
-      brw_inst *spill_inst;
+      brw_send_inst *spill_inst;
       if (devinfo->verx10 >= 125) {
          brw_reg offset = build_lane_offsets(bld, spill_offset, ip);
 
@@ -1019,8 +1019,8 @@ brw_reg_alloc::emit_spill(const brw_builder &bld,
                                              bld.dispatch_width());
          spill_inst->ex_mlen = reg_size;
          spill_inst->size_written = 0;
-         spill_inst->send_has_side_effects = true;
-         spill_inst->send_is_volatile = false;
+         spill_inst->has_side_effects = true;
+         spill_inst->is_volatile = false;
 
          spill_inst->src[0] = brw_imm_ud(
             desc |
@@ -1045,8 +1045,8 @@ brw_reg_alloc::emit_spill(const brw_builder &bld,
          spill_inst->ex_mlen = reg_size;
          spill_inst->size_written = 0;
          spill_inst->header_size = 1;
-         spill_inst->send_has_side_effects = true;
-         spill_inst->send_is_volatile = false;
+         spill_inst->has_side_effects = true;
+         spill_inst->is_volatile = false;
          spill_inst->sfid = BRW_SFID_HDC0;
 
          spill_inst->src[0] = brw_imm_ud(

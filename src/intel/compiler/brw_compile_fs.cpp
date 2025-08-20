@@ -620,7 +620,7 @@ static void
 brw_emit_repclear_shader(brw_shader &s)
 {
    brw_wm_prog_key *key = (brw_wm_prog_key*) s.key;
-   brw_inst *write = NULL;
+   brw_send_inst *write = NULL;
 
    assert(s.devinfo->ver < 20);
    assert(s.uniforms == 0);
@@ -666,7 +666,7 @@ brw_emit_repclear_shader(brw_shader &s)
       write->src[SEND_SRC_PAYLOAD1] = i == 0 ? color_output : header;
       write->src[SEND_SRC_PAYLOAD2] = brw_reg();
       write->check_tdr = true;
-      write->send_has_side_effects = true;
+      write->has_side_effects = true;
 
       /* We can use a headerless message for the first render target */
       write->header_size = i == 0 ? 0 : 2;

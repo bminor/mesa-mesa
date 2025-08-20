@@ -289,9 +289,9 @@ brw_emit_urb_fence(brw_shader &s)
 {
    const brw_builder bld1 = brw_builder(&s).uniform();
    brw_reg dst = bld1.vgrf(BRW_TYPE_UD);
-   brw_inst *fence = bld1.emit(SHADER_OPCODE_MEMORY_FENCE, dst,
-                              brw_vec8_grf(0, 0),
-                              brw_imm_ud(true));
+   brw_send_inst *fence = bld1.emit(SHADER_OPCODE_MEMORY_FENCE, dst,
+                                    brw_vec8_grf(0, 0),
+                                    brw_imm_ud(true))->as_send();
    fence->size_written = REG_SIZE * reg_unit(s.devinfo);
    fence->sfid = BRW_SFID_URB;
    /* The logical thing here would likely be a THREADGROUP fence but that's

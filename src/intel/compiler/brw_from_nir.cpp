@@ -4935,7 +4935,7 @@ emit_rt_lsc_fence(const brw_builder &bld,
    const brw_builder ubld = bld.exec_all().group(8, 0);
    brw_reg tmp = ubld.vgrf(BRW_TYPE_UD);
 
-   brw_inst *send = ubld.SEND();
+   brw_send_inst *send = ubld.SEND();
    send->dst = tmp;
 
    send->src[SEND_SRC_DESC]     = brw_imm_ud(0);
@@ -4949,7 +4949,7 @@ emit_rt_lsc_fence(const brw_builder &bld,
    send->ex_mlen = 0;
    /* Temp write for scheduling */
    send->size_written = REG_SIZE * reg_unit(devinfo);
-   send->send_has_side_effects = true;
+   send->has_side_effects = true;
 
    ubld.emit(FS_OPCODE_SCHEDULING_FENCE, ubld.null_reg_ud(), tmp);
 }
@@ -5164,8 +5164,8 @@ emit_fence(const brw_builder &bld, enum opcode opcode,
           opcode == SHADER_OPCODE_MEMORY_FENCE);
 
    brw_reg dst = commit_enable ? bld.vgrf(BRW_TYPE_UD) : bld.null_reg_ud();
-   brw_inst *fence = bld.emit(opcode, dst, brw_vec8_grf(0, 0),
-                              brw_imm_ud(commit_enable));
+   brw_send_inst *fence = bld.emit(opcode, dst, brw_vec8_grf(0, 0),
+                                   brw_imm_ud(commit_enable))->as_send();
    fence->sfid = sfid;
    fence->desc = desc;
    fence->size_written = commit_enable ? REG_SIZE * reg_unit(devinfo) : 0;

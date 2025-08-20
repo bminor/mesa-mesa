@@ -14,7 +14,11 @@
 static inline unsigned
 brw_inst_kind_size(brw_inst_kind kind)
 {
-   return sizeof(brw_inst);
+   /* TODO: Temporarily here to ensure all instructions can be converted to
+    * SEND.  Once all new kinds are added, change so that BASE allocate only
+    * sizeof(brw_inst).
+    */
+   return sizeof(brw_send_inst);
 }
 
 static brw_inst *
@@ -110,8 +114,6 @@ brw_transform_inst(brw_shader &s, brw_inst *inst, enum opcode new_opcode,
    const brw_inst_kind kind = inst->kind;
    const brw_inst_kind new_kind = brw_inst_kind_for_opcode(new_opcode);
 
-   assert(new_kind == BRW_KIND_BASE);
-
    const unsigned inst_size = brw_inst_kind_size(kind);
    const unsigned new_inst_size = brw_inst_kind_size(new_kind);
    assert(new_inst_size <= inst_size);
@@ -127,6 +129,9 @@ brw_transform_inst(brw_shader &s, brw_inst *inst, enum opcode new_opcode,
       inst->src = new_src;
    }
 
+   if (new_kind != kind)
+      memset(((char *)inst) + sizeof(brw_inst), 0, new_inst_size - sizeof(brw_inst));
+
    inst->sources = new_num_sources;
    inst->opcode = new_opcode;
    inst->kind = new_kind;
@@ -137,7 +142,21 @@ brw_transform_inst(brw_shader &s, brw_inst *inst, enum opcode new_opcode,
 brw_inst_kind
 brw_inst_kind_for_opcode(enum opcode opcode)
 {
-   return BRW_KIND_BASE;
+   switch (opcode) {
+   case BRW_OPCODE_SEND:
+   case BRW_OPCODE_SENDS:
+   case BRW_OPCODE_SENDC:
+   case BRW_OPCODE_SENDSC:
+   case SHADER_OPCODE_SEND:
+   case SHADER_OPCODE_SEND_GATHER:
+   case SHADER_OPCODE_BARRIER:
+   case SHADER_OPCODE_MEMORY_FENCE:
+   case SHADER_OPCODE_INTERLOCK:
+      return BRW_KIND_SEND;
+
+   default:
+      return BRW_KIND_BASE;
+   }
 }
 
 bool
@@ -483,9 +502,9 @@ brw_inst::size_read(const struct intel_device_info *devinfo, int arg) const
    switch (opcode) {
    case SHADER_OPCODE_SEND:
       if (arg == SEND_SRC_PAYLOAD1) {
-         return mlen * REG_SIZE;
+         return as_send()->mlen * REG_SIZE;
       } else if (arg == SEND_SRC_PAYLOAD2) {
-         return ex_mlen * REG_SIZE;
+         return as_send()->ex_mlen * REG_SIZE;
       }
       break;
 
@@ -893,7 +912,7 @@ brw_inst::has_side_effects() const
    switch (opcode) {
    case SHADER_OPCODE_SEND:
    case SHADER_OPCODE_SEND_GATHER:
-      return send_has_side_effects;
+      return as_send()->has_side_effects;
 
    case BRW_OPCODE_SYNC:
    case SHADER_OPCODE_MEMORY_STORE_LOGICAL:
@@ -927,7 +946,7 @@ brw_inst::is_volatile() const
       return src[MEMORY_LOGICAL_FLAGS].ud & MEMORY_FLAG_VOLATILE_ACCESS;
    case SHADER_OPCODE_SEND:
    case SHADER_OPCODE_SEND_GATHER:
-      return send_is_volatile;
+      return as_send()->is_volatile;
    default:
       return false;
    }

@@ -677,7 +677,10 @@ brw_lower_simd_width(brw_shader &s)
          (inst->size_written - residency_size) /
          inst->dst.component_size(inst->exec_size);
 
-      assert(!inst->writes_accumulator && !inst->mlen);
+      if (const brw_send_inst *send = inst->as_send())
+         assert(!send->mlen);
+
+      assert(!inst->writes_accumulator);
 
       /* Inserting the zip, unzip, and duplicated instructions in all of
        * the right spots is somewhat tricky.  All of the unzip and any

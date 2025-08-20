@@ -268,10 +268,12 @@ schedule_node::set_latency(const struct brw_isa_info *isa)
       break;
 
    case SHADER_OPCODE_SEND:
-   case SHADER_OPCODE_SEND_GATHER:
-      switch (inst->sfid) {
+   case SHADER_OPCODE_SEND_GATHER: {
+      brw_send_inst *send = inst->as_send();
+
+      switch (send->sfid) {
       case BRW_SFID_SAMPLER: {
-         unsigned msg_type = (inst->desc >> 12) & 0x1f;
+         unsigned msg_type = (send->desc >> 12) & 0x1f;
          switch (msg_type) {
          case GFX5_SAMPLER_MESSAGE_SAMPLE_RESINFO:
          case GFX6_SAMPLER_MESSAGE_SAMPLE_SAMPLEINFO:
@@ -364,7 +366,7 @@ schedule_node::set_latency(const struct brw_isa_info *isa)
          break;
 
       case BRW_SFID_RENDER_CACHE:
-         switch (brw_fb_desc_msg_type(isa->devinfo, inst->desc)) {
+         switch (brw_fb_desc_msg_type(isa->devinfo, send->desc)) {
          case GFX7_DATAPORT_RC_TYPED_SURFACE_WRITE:
          case GFX7_DATAPORT_RC_TYPED_SURFACE_READ:
             /* See also SHADER_OPCODE_TYPED_SURFACE_READ */
@@ -388,7 +390,7 @@ schedule_node::set_latency(const struct brw_isa_info *isa)
          break;
 
       case BRW_SFID_HDC0:
-         switch ((inst->desc >> 14) & 0x1f) {
+         switch ((send->desc >> 14) & 0x1f) {
          case BRW_DATAPORT_READ_MESSAGE_OWORD_BLOCK_READ:
          case GFX7_DATAPORT_DC_UNALIGNED_OWORD_BLOCK_READ:
          case GFX6_DATAPORT_WRITE_MESSAGE_OWORD_BLOCK_WRITE:
@@ -460,7 +462,7 @@ schedule_node::set_latency(const struct brw_isa_info *isa)
          break;
 
       case BRW_SFID_HDC1:
-         switch (brw_dp_desc_msg_type(isa->devinfo, inst->desc)) {
+         switch (brw_dp_desc_msg_type(isa->devinfo, send->desc)) {
          case HSW_DATAPORT_DC_PORT1_UNTYPED_SURFACE_READ:
          case HSW_DATAPORT_DC_PORT1_UNTYPED_SURFACE_WRITE:
          case HSW_DATAPORT_DC_PORT1_TYPED_SURFACE_READ:
@@ -500,7 +502,7 @@ schedule_node::set_latency(const struct brw_isa_info *isa)
       case BRW_SFID_UGM:
       case BRW_SFID_TGM:
       case BRW_SFID_SLM:
-         switch (lsc_msg_desc_opcode(isa->devinfo, inst->desc)) {
+         switch (lsc_msg_desc_opcode(isa->devinfo, send->desc)) {
          case LSC_OP_LOAD:
          case LSC_OP_STORE:
          case LSC_OP_LOAD_CMASK:
@@ -555,6 +557,7 @@ schedule_node::set_latency(const struct brw_isa_info *isa)
          UNREACHABLE("Unknown SFID");
       }
       break;
+   }
 
    case BRW_OPCODE_DPAS:
       switch (inst->rcount) {

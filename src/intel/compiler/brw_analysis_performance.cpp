@@ -137,20 +137,25 @@ namespace {
          td(inst->dst.type), sd(DIV_ROUND_UP(inst->size_written, REG_SIZE)),
          tx(get_exec_type(inst)), sx(0), ss(0),
          sc(has_bank_conflict(isa, inst) ? sd : 0),
-         desc(inst->desc), sfid(inst->sfid)
+         desc(0), sfid(0)
       {
-         /* We typically want the maximum source size, except for split send
-          * messages which require the total size.
-          */
-         if (inst->opcode == SHADER_OPCODE_SEND) {
-            ss = DIV_ROUND_UP(inst->size_read(devinfo, 2), REG_SIZE) +
-                 DIV_ROUND_UP(inst->size_read(devinfo, 3), REG_SIZE);
-         } else if (inst->opcode == SHADER_OPCODE_SEND_GATHER) {
-            ss = inst->mlen;
-            /* If haven't lowered yet, count the sources. */
-            if (!ss) {
-               for (int i = 3; i < inst->sources; i++)
-                  ss += DIV_ROUND_UP(inst->size_read(devinfo, i), REG_SIZE);
+         const brw_send_inst *send = inst->as_send();
+         if (send) {
+            desc = send->desc;
+            sfid = send->sfid;
+            /* We typically want the maximum source size, except for split send
+             * messages which require the total size.
+             */
+            if (inst->opcode == SHADER_OPCODE_SEND) {
+               ss = DIV_ROUND_UP(inst->size_read(devinfo, 2), REG_SIZE) +
+                    DIV_ROUND_UP(inst->size_read(devinfo, 3), REG_SIZE);
+            } else if (inst->opcode == SHADER_OPCODE_SEND_GATHER) {
+               ss = send->mlen;
+               /* If haven't lowered yet, count the sources. */
+               if (!ss) {
+                  for (int i = 3; i < inst->sources; i++)
+                     ss += DIV_ROUND_UP(inst->size_read(devinfo, i), REG_SIZE);
+               }
             }
          } else {
             for (unsigned i = 0; i < inst->sources; i++)

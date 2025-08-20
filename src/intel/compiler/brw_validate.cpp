@@ -314,7 +314,7 @@ brw_validate(const brw_shader &s)
             VAL_ASSERT(is_uniform(inst->src[SEND_SRC_DESC]));
             VAL_ASSERT(is_uniform(inst->src[SEND_SRC_EX_DESC]));
             VAL_ASSERT_NE(inst->src[SEND_SRC_PAYLOAD1].file, BAD_FILE);
-            VAL_ASSERT(inst->ex_mlen > 0 ||
+            VAL_ASSERT(inst->as_send()->ex_mlen > 0 ||
                        inst->src[SEND_SRC_PAYLOAD2].file == BAD_FILE);
             /* Send payloads cannot be immediates nor have source modifiers */
             for (unsigned i = 0; i < 2; i++) {

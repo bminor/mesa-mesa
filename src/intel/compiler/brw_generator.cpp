@@ -161,12 +161,12 @@ brw_generator::patch_halt_jumps()
 }
 
 void
-brw_generator::generate_send(brw_inst *inst,
-                            struct brw_reg dst,
-                            struct brw_reg desc,
-                            struct brw_reg ex_desc,
-                            struct brw_reg payload,
-                            struct brw_reg payload2)
+brw_generator::generate_send(brw_send_inst *inst,
+                             struct brw_reg dst,
+                             struct brw_reg desc,
+                             struct brw_reg ex_desc,
+                             struct brw_reg payload,
+                             struct brw_reg payload2)
 {
    const bool gather = inst->opcode == SHADER_OPCODE_SEND_GATHER;
    if (gather) {
@@ -181,7 +181,7 @@ brw_generator::generate_send(brw_inst *inst,
        * descriptor is written indirectly (it already contains a SS/BSS
        * surface handle)
        */
-      assert(!inst->send_ex_desc_imm);
+      assert(!inst->ex_desc_imm);
       brw_send_indirect_message(p, inst->sfid, dst, payload, desc, inst->eot, gather);
       if (inst->check_tdr)
          brw_eu_inst_set_opcode(p->isa, brw_last_inst, BRW_OPCODE_SENDC);
@@ -191,8 +191,8 @@ brw_generator::generate_send(brw_inst *inst,
        */
       brw_send_indirect_split_message(p, inst->sfid, dst, payload, payload2,
                                       desc, ex_desc,
-                                      inst->send_ex_desc_imm ? inst->offset : 0,
-                                      inst->ex_mlen, inst->send_ex_bso,
+                                      inst->ex_desc_imm ? inst->offset : 0,
+                                      inst->ex_mlen, inst->ex_bso,
                                       inst->eot, gather);
       if (inst->check_tdr)
          brw_eu_inst_set_opcode(p->isa, brw_last_inst,
@@ -886,7 +886,8 @@ brw_generator::generate_code(const brw_shader &s,
 
       assert(inst->force_writemask_all || inst->exec_size >= 4);
       assert(inst->force_writemask_all || inst->group % inst->exec_size == 0);
-      assert(inst->mlen <= BRW_MAX_MSG_LENGTH * reg_unit(devinfo));
+      if (const brw_send_inst *send = inst->as_send())
+         assert(send->mlen <= BRW_MAX_MSG_LENGTH * reg_unit(devinfo));
 
       switch (inst->opcode) {
       case BRW_OPCODE_NOP:
@@ -1094,7 +1095,6 @@ brw_generator::generate_code(const brw_shader &s,
       case SHADER_OPCODE_SIN:
       case SHADER_OPCODE_COS:
          assert(inst->conditional_mod == BRW_CONDITIONAL_NONE);
-         assert(inst->mlen == 0);
          gfx6_math(p, dst, brw_math_function(inst->opcode),
                    src[0], retype(brw_null_reg(), src[0].type));
 	 break;
@@ -1103,7 +1103,6 @@ brw_generator::generate_code(const brw_shader &s,
       case SHADER_OPCODE_POW:
          assert(devinfo->verx10 < 125);
          assert(inst->conditional_mod == BRW_CONDITIONAL_NONE);
-         assert(inst->mlen == 0);
          assert(inst->opcode == SHADER_OPCODE_POW || inst->exec_size == 8);
          gfx6_math(p, dst, brw_math_function(inst->opcode), src[0], src[1]);
 	 break;
@@ -1144,13 +1143,13 @@ brw_generator::generate_code(const brw_shader &s,
          break;
 
       case SHADER_OPCODE_SEND:
-         generate_send(inst, dst, src[SEND_SRC_DESC], src[SEND_SRC_EX_DESC],
+         generate_send(inst->as_send(), dst, src[SEND_SRC_DESC], src[SEND_SRC_EX_DESC],
                        src[SEND_SRC_PAYLOAD1], src[SEND_SRC_PAYLOAD2]);
          send_count++;
          break;
 
       case SHADER_OPCODE_SEND_GATHER:
-         generate_send(inst, dst,
+         generate_send(inst->as_send(), dst,
                        src[SEND_GATHER_SRC_DESC], src[SEND_GATHER_SRC_EX_DESC],
                        src[SEND_GATHER_SRC_SCALAR], brw_null_reg());
          send_count++;

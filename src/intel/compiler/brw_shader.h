@@ -379,6 +379,9 @@ brw_inst *brw_clone_inst(brw_shader &s, const brw_inst *inst);
  * brw_inst are maintained and any previous sources still visible.  Additional
  * sources will be uninitialized.
  *
+ * All instructions can be transformed to an instruction of BASE kind.
+ * All non-BASE instructions can be transformed to an instruction of SEND kind.
+ *
  * If new_num_srcs is UINT_MAX a default will be picked based on the opcode.
  * Not all opcodes have a default.
  */

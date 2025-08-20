@@ -632,10 +632,10 @@ public:
 #undef _ALU1
    /** @} */
 
-   brw_inst *
+   brw_send_inst *
    SEND() const
    {
-      return emit(SHADER_OPCODE_SEND, SEND_NUM_SRCS);
+      return emit(SHADER_OPCODE_SEND, SEND_NUM_SRCS)->as_send();
    }
 
    brw_inst *
