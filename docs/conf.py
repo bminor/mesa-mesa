@@ -227,6 +227,7 @@ graphviz_output_format = 'svg'
 
 hawkmoth_root = os.path.abspath(os.pardir)
 mesa_root = os.path.join(os.path.dirname(__file__), os.pardir)
+mesa_build_root = os.environ.get('MESA_BUILD_ROOT')
 hawkmoth_clang = [
     '-I{}/docs/header-stubs/'.format(mesa_root),
     '-I{}/include/'.format(mesa_root),
@@ -234,6 +235,7 @@ hawkmoth_clang = [
     '-I{}/src/gallium/include/'.format(mesa_root),
     '-I{}/src/intel/'.format(mesa_root),
     '-I{}/src/mesa/'.format(mesa_root),
+    '-I{}/src/'.format(mesa_build_root),
     '-DHAVE_STRUCT_TIMESPEC',
     '-DHAVE_PTHREAD',
     '-DHAVE_ENDIAN_H',
