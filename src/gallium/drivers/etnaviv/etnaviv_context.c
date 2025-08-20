@@ -545,11 +545,6 @@ etna_reset_gpu_state(struct etna_context *ctx)
    if (VIV_FEATURE(screen, ETNA_FEATURE_BUG_FIXES18))
       etna_set_state(stream, VIVS_GL_BUG_FIXES, 0x6);
 
-   if (!screen->specs.use_blt) {
-      /* Enable SINGLE_BUFFER for resolve, if supported */
-      etna_set_state(stream, VIVS_RS_SINGLE_BUFFER, COND(screen->specs.single_buffer, VIVS_RS_SINGLE_BUFFER_ENABLE));
-   }
-
    if (screen->info->halti >= 5 && !DBG_ENABLED(ETNA_DBG_NO_TEXDESC)) {
       /* TXDESC cache flush - do this once at the beginning, as texture
        * descriptors are only written by the CPU once, then patched by the kernel
