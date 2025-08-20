@@ -113,9 +113,13 @@ public:
     */
    linear_ctx *node_linalloc;
 
-   DECLARE_LINEAR_ZALLOC_CXX_OPERATORS(ir_instruction,
-                                       ((ir_instruction*)((uintptr_t)p))->node_linalloc = ctx;,
-                                       UNREACHABLE("don't allocate ir_instruction with new[]");)
+   /* ir_instruction structure is not fully constructed the first time the
+    * new() operators are invoked, so UBSan shouldn't check vptrs.
+    */
+   DECLARE_LINEAR_ZALLOC_CXX_OPERATORS_NO_SANITIZE(ir_instruction,
+                                                        ((ir_instruction*)((uintptr_t)p))->node_linalloc = ctx;,
+                                                        UNREACHABLE("don't allocate ir_instruction with new[]");,
+                                                        VPTR)
 
    /**
     * GCC 4.7+ and clang warn when deleting an ir_instruction unless
