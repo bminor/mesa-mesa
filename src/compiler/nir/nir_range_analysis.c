@@ -1573,7 +1573,7 @@ lookup_input(nir_shader *shader, unsigned driver_location)
 /* The config here should be generic enough to be correct on any HW. */
 static const nir_unsigned_upper_bound_config default_ub_config = {
    .min_subgroup_size = 1u,
-   .max_subgroup_size = UINT16_MAX,
+   .max_subgroup_size = 128u,
    .max_workgroup_invocations = UINT16_MAX,
 
    /* max_workgroup_count represents the maximum compute shader / kernel
