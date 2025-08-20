@@ -80,6 +80,7 @@ static struct vc4_simulator_state {
         int refcount;
 } sim_state = {
         .mutex = SIMPLE_MTX_INITIALIZER,
+        .mem = NULL,
 };
 
 enum gem_type {
@@ -704,16 +705,23 @@ vc4_simulator_init_global(void)
                 return;
         }
 
-        sim_state.mem_size = 256 * 1024 * 1024;
-        sim_state.mem = calloc(sim_state.mem_size, 1);
-        if (!sim_state.mem)
-                abort();
-        sim_state.heap = u_mmInit(0, sim_state.mem_size);
-
-        /* We supply our own memory so that we can have more aperture
-         * available (256MB instead of simpenrose's default 64MB).
+        /* We only allocate once the memory supplied to the simulator, and we
+         * will never free it unless execution ends. So if the simulator is
+         * initialized after being destroyed, it doesn't assert because of
+         * memory being re-initialized.
          */
-        simpenrose_init_hardware_supply_mem(sim_state.mem, sim_state.mem_size);
+        if (!sim_state.mem) {
+                sim_state.mem_size = 256 * 1024 * 1024;
+                sim_state.mem = calloc(sim_state.mem_size, 1);
+                if (!sim_state.mem)
+                        abort();
+                /* We supply our own memory so that we can have more aperture
+                 * available (256MB instead of simpenrose's default 64MB).
+                 */
+                simpenrose_init_hardware_supply_mem(sim_state.mem, sim_state.mem_size);
+        }
+
+        sim_state.heap = u_mmInit(0, sim_state.mem_size);
 
         /* Carve out low memory for tile allocation overflow.  The kernel
          * should be automatically handling overflow memory setup on real
@@ -773,7 +781,7 @@ vc4_simulator_destroy(struct vc4_simulator_file *sim_file)
         if (!--sim_state.refcount) {
                 _mesa_hash_table_destroy(sim_state.fd_map, NULL);
                 u_mmDestroy(sim_state.heap);
-                free(sim_state.mem);
+                /* We don't free the simulator allocated memory */
                 /* No memsetting it, because it contains the mutex. */
         }
         ralloc_free(sim_file);
