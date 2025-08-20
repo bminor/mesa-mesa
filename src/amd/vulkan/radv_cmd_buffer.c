@@ -3245,7 +3245,7 @@ radv_get_viewport_zmin_zmax(struct radv_cmd_buffer *cmd_buffer, const VkViewport
 }
 
 static void
-radv_emit_viewport(struct radv_cmd_buffer *cmd_buffer)
+radv_emit_viewport_state(struct radv_cmd_buffer *cmd_buffer)
 {
    const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -3309,6 +3309,8 @@ radv_emit_viewport(struct radv_cmd_buffer *cmd_buffer)
    }
 
    radeon_end();
+
+   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_VIEWPORT_STATE;
 }
 
 static VkRect2D
@@ -5407,10 +5409,6 @@ radv_cmd_buffer_flush_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const ui
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
-
-   if (states & (RADV_DYNAMIC_VIEWPORT | RADV_DYNAMIC_DEPTH_CLIP_ENABLE | RADV_DYNAMIC_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE |
-                 RADV_DYNAMIC_DEPTH_CLAMP_ENABLE | RADV_DYNAMIC_DEPTH_CLAMP_RANGE))
-      radv_emit_viewport(cmd_buffer);
 
    if (states & (RADV_DYNAMIC_SCISSOR | RADV_DYNAMIC_VIEWPORT) && !pdev->info.has_gfx9_scissor_bug)
       radv_emit_scissor(cmd_buffer);
@@ -11413,6 +11411,11 @@ radv_validate_dynamic_states(struct radv_cmd_buffer *cmd_buffer, uint64_t dynami
                          RADV_DYNAMIC_LOGIC_OP_ENABLE | RADV_DYNAMIC_COLOR_BLEND_ENABLE |
                          RADV_DYNAMIC_COLOR_BLEND_EQUATION | RADV_DYNAMIC_ALPHA_TO_COVERAGE_ENABLE))
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_CB_RENDER_STATE;
+
+   if (dynamic_states &
+       (RADV_DYNAMIC_VIEWPORT | RADV_DYNAMIC_DEPTH_CLIP_ENABLE | RADV_DYNAMIC_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE |
+        RADV_DYNAMIC_DEPTH_CLAMP_ENABLE | RADV_DYNAMIC_DEPTH_CLAMP_RANGE))
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_VIEWPORT_STATE;
 }
 
 static void
@@ -11515,6 +11518,9 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
 
       if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_CLIP_RECTS_STATE)
          radv_emit_clip_rects_state(cmd_buffer);
+
+      if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_VIEWPORT_STATE)
+         radv_emit_viewport_state(cmd_buffer);
 
       if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_RASTER_STATE)
          radv_emit_raster_state(cmd_buffer);
