@@ -4244,7 +4244,7 @@
         "description": "ir3: don't vectorize nir_op_sdot_4x8_iadd[_sat]",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "58d18bc7a817e8514414a7d4090f1dfde3315b47",
         "notes": null
