@@ -473,15 +473,21 @@ isl_genX(surf_fill_state_s)(const struct isl_device *dev, void *state,
        *    SurfaceMinLOD is ignored.
        */
       s.MIPCountLOD = info->view->base_level;
-      s.SurfaceMinLOD = 0;
    } else {
       /* For non render target surfaces, the hardware interprets field
        * MIPCount/LOD as MIPCount.  The range of levels accessible by the
        * sampler engine is [SurfaceMinLOD, SurfaceMinLOD + MIPCountLOD].
        */
-      s.SurfaceMinLOD = info->view->base_level;
       s.MIPCountLOD = MAX(info->view->levels, 1) - 1;
    }
+
+   /* As noted above, the render target cache of the HW ignores SurfaceMinLOD.
+    * But the render target surface may also get sampled when
+    * EXT_shader_framebuffer_fetch_non_coherent is in use, so we still set
+    * SurfaceMinLOD to make sure sampling the render target also hits the
+    * correct LOD.
+    */
+   s.SurfaceMinLOD = info->view->base_level;
 
 #if GFX_VER >= 9
    s.MipTailStartLOD = info->surf->miptail_start_level;
