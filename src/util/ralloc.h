@@ -566,8 +566,9 @@ public:                                                                  \
    DECLARE_RALLOC_CXX_OPERATORS_TEMPLATE(type, rzalloc_size)
 
 
-#define DECLARE_LINEAR_ALLOC_CXX_OPERATORS_TEMPLATE(TYPE, ALLOC_FUNC, new_cmd, new_array_cmd) \
+#define DECLARE_LINEAR_ALLOC_CXX_OPERATORS_TEMPLATE(TYPE, ALLOC_FUNC, new_cmd, new_array_cmd, ATTRIBUTE) \
 public:                                                                  \
+   ATTRIBUTE                                                             \
    static void* operator new(size_t size, linear_ctx *ctx)               \
    {                                                                     \
       void *p = ALLOC_FUNC(ctx, size);                                   \
@@ -575,6 +576,7 @@ public:                                                                  \
       new_cmd                                                            \
       return p;                                                          \
    }                                                                     \
+   ATTRIBUTE                                                             \
    static void* operator new[](size_t size, linear_ctx *ctx)             \
    {                                                                     \
       void *p = ALLOC_FUNC(ctx, size);                                   \
@@ -585,11 +587,16 @@ public:                                                                  \
 
 #define DECLARE_LINEAR_ALLOC_CXX_OPERATORS(type, new_cmd, new_array_cmd) \
    DECLARE_LINEAR_ALLOC_CXX_OPERATORS_TEMPLATE(type, linear_alloc_child, \
-                                               new_cmd, new_array_cmd)
+                                               new_cmd, new_array_cmd,)
 
 #define DECLARE_LINEAR_ZALLOC_CXX_OPERATORS(type, new_cmd, new_array_cmd) \
    DECLARE_LINEAR_ALLOC_CXX_OPERATORS_TEMPLATE(type, linear_zalloc_child, \
-                                               new_cmd, new_array_cmd)
+                                               new_cmd, new_array_cmd,)
+
+#define DECLARE_LINEAR_ZALLOC_CXX_OPERATORS_NO_SANITIZE(type, new_cmd, new_array_cmd, FLAG) \
+   DECLARE_LINEAR_ALLOC_CXX_OPERATORS_TEMPLATE(type, linear_zalloc_child, \
+                                               new_cmd, new_array_cmd,    \
+                                               ATTRIBUTE_NO_SANITIZE_##FLAG)
 
 typedef struct linear_ctx linear_ctx;
 
