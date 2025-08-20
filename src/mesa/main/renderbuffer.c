@@ -646,7 +646,7 @@ _mesa_update_renderbuffer_surface(struct gl_context *ctx,
          than or equal to samples and no more than the next larger sample count 
          supported by the implementation.
        */
-      for (unsigned i = rb->rtt_nr_samples + 1; i <= ctx->Const.MaxFramebufferSamples; i++) {
+      for (unsigned i = rb->rtt_nr_samples; i <= ctx->Const.MaxFramebufferSamples; i++) {
          if (!ctx->st->screen->is_format_supported(ctx->st->screen, format, resource->target, i, i, resource->bind))
             continue;
          nr_samples = i;
