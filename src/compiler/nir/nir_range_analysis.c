@@ -1705,12 +1705,19 @@ get_intrinsic_uub(struct analysis_state *state, struct uub_query q, uint32_t *re
    case nir_intrinsic_inclusive_scan:
    case nir_intrinsic_exclusive_scan: {
       nir_op op = nir_intrinsic_reduction_op(intrin);
+      unsigned bit_size = q.scalar.def->bit_size;
+      bool exclusive = intrin->intrinsic == nir_intrinsic_exclusive_scan;
+
       if (op == nir_op_umin || op == nir_op_umax || op == nir_op_imin || op == nir_op_imax) {
          if (!q.head.pushed_queries) {
             push_uub_query(state, nir_get_scalar(intrin->src[0].ssa, q.scalar.comp));
             return;
          } else {
             *result = src[0];
+            if (exclusive) {
+               uint32_t identity = nir_const_value_as_uint(nir_alu_binop_identity(op, bit_size), bit_size);
+               *result = MAX2(*result, identity);
+            }
          }
       }
       break;
