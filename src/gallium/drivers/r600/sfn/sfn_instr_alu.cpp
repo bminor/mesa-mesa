@@ -717,18 +717,7 @@ AluInstr::check_readport_validation(PRegister old_src, PVirtualValue new_src) co
       for (unsigned i = 0; i < nsrc; ++i, ++ireg)
          src[i] = old_src->equal_to(**ireg) ? new_src : *ireg;
 
-      AluBankSwizzle bs = alu_vec_012;
-      while (bs != alu_vec_unknown) {
-         AluReadportReservation rpr = rpr_sum;
-         if (rpr.schedule_vec_src(src, nsrc, bs) == nsrc) {
-            rpr_sum = rpr;
-            break;
-         }
-         ++bs;
-      }
-
-      if (bs == alu_vec_unknown)
-         success = false;
+      success &= rpr_sum.update_from_sources(src, nsrc);
    }
    return success;
 }
@@ -883,17 +872,7 @@ AluInstr::split(ValueFactory& vf, AluGroup& group)
       for (unsigned i = 0; i < nsrc; ++i, ++ireg)
          src[i] = *ireg;
 
-      AluBankSwizzle bs = alu_vec_012;
-      while (bs != alu_vec_unknown) {
-         AluReadportReservation rpr = rr;
-         if (rpr.schedule_vec_src(src, nsrc, bs) == nsrc) {
-            rr = rpr;
-            break;
-         }
-         ++bs;
-      }
-
-      if (bs == alu_vec_unknown) {
+      if (!rr.update_from_sources(src, nsrc)) {
          if (group.empty())
             UNREACHABLE("multi-slot ALU op violated readpport configuration");
          else

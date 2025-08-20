@@ -71,6 +71,22 @@ public:
    void visit(const UniformValue& value) override;
 };
 
+bool
+AluReadportReservation::update_from_sources(const std::array<PVirtualValue, 3>& src,
+                                            const unsigned int nsrc)
+{
+   AluBankSwizzle bs = alu_vec_012;
+   while (bs != alu_vec_unknown) {
+      AluReadportReservation rpr = *this;
+      if (rpr.schedule_vec_src(src, nsrc, bs) == nsrc) {
+         *this = rpr;
+         return true;
+      }
+      ++bs;
+   }
+   return false;
+}
+
 unsigned
 AluReadportReservation::schedule_vec_src(const std::array<PVirtualValue, 3>& src,
                                          int nsrc,

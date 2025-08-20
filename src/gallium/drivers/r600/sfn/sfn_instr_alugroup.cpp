@@ -335,18 +335,7 @@ bool AluGroup::replace_source(PRegister old_src, PVirtualValue new_src)
                         return old_src->equal_to(*s) ? new_src : s;
                      });
 
-      AluBankSwizzle bs = alu_vec_012;
-      while (bs != alu_vec_unknown) {
-         AluReadportReservation rpr = rpr_sum;
-         unsigned nsrc = srcs.size();
-         if (rpr.schedule_vec_src(test_src, nsrc, bs) == nsrc) {
-            rpr_sum = rpr;
-            break;
-         }
-         ++bs;
-      }
-
-      if (bs == alu_vec_unknown)
+      if (!rpr_sum.update_from_sources(test_src, srcs.size()))
          return false;
    }
 
