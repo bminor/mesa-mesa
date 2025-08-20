@@ -19,6 +19,8 @@ ir3_supports_vectorized_nir_op(nir_op op)
    case nir_op_udot_4x8_uadd_sat:
    case nir_op_sudot_4x8_iadd:
    case nir_op_sudot_4x8_iadd_sat:
+   case nir_op_sdot_4x8_iadd:
+   case nir_op_sdot_4x8_iadd_sat:
 
       /* Among SFU instructions, only rcp doesn't seem to support repeat. */
    case nir_op_frcp:
