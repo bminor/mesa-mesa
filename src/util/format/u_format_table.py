@@ -513,6 +513,7 @@ def write_format_table(formats):
     write_format_table_header(sys.stdout3)
 
     print('#include "util/macros.h"', file=sys.stdout3)
+    print('#include "util/u_endian.h"', file=sys.stdout3)
     print(file=sys.stdout3)
 
     print('#ifdef __cplusplus', file=sys.stdout3)
