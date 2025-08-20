@@ -79,6 +79,7 @@ vk_push_print(FILE *fp, const struct nv_push *push,
    uint16_t curr_subchans[8] = {0};
    curr_subchans[0] = devinfo->cls_eng3d;
    curr_subchans[1] = devinfo->cls_compute;
+   curr_subchans[2] = devinfo->cls_m2mf;
    curr_subchans[3] = 0x2d;
    curr_subchans[4] = devinfo->cls_copy;
 
@@ -275,6 +276,15 @@ vk_push_print(FILE *fp, const struct nv_push *push,
                   P_DUMP_NVC0C0_MTHD_DATA(fp, mthd, value, "\t\t");
                else
                   P_DUMP_NVA0C0_MTHD_DATA(fp, mthd, value, "\t\t");
+               break;
+            case 0x39:
+            case 0x40:
+               if (cls_hi >= 0xa1)
+                  P_DUMP_NVA140_MTHD_DATA(fp, mthd, value, "\t\t");
+               else if (cls_hi >= 0xa0)
+                  P_DUMP_NVA040_MTHD_DATA(fp, mthd, value, "\t\t");
+               else if (cls_hi >= 0x90)
+                  P_DUMP_NV9039_MTHD_DATA(fp, mthd, value, "\t\t");
                break;
             case 0x2d:
                P_DUMP_NV902D_MTHD_DATA(fp, mthd, value, "\t\t");
