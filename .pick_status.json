@@ -2524,7 +2524,7 @@
         "description": "gallium: Set and count all extra samplers",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "abcd02a07db11b8cb56ca5de754efa3355eeb2cb",
         "notes": null
