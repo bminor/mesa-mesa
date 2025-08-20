@@ -671,7 +671,7 @@ static const uint8_t bgra_vertex_formats[4][2] = {
 /**
  * Return a PIPE_FORMAT_x for the given GL datatype and size.
  */
-static enum pipe_format
+ALWAYS_INLINE static enum pipe_format
 vertex_format_to_pipe_format(GLubyte size, GLenum16 type, GLenum16 format,
                              bool normalized, bool integer, bool doubles)
 {
@@ -705,7 +705,7 @@ vertex_format_to_pipe_format(GLubyte size, GLenum16 type, GLenum16 format,
    return pipe_format;
 }
 
-static void
+ALWAYS_INLINE static void
 set_vertex_format_user(union gl_vertex_format_user *vertex_format,
                        GLubyte size, GLenum16 type, GLenum16 format,
                        GLboolean normalized, GLboolean integer,
@@ -720,7 +720,7 @@ set_vertex_format_user(union gl_vertex_format_user *vertex_format,
    vertex_format->Doubles = doubles;
 }
 
-static void
+ALWAYS_INLINE static void
 recompute_vertex_format_fields(struct gl_vertex_format *vertex_format,
                                GLubyte size, GLenum16 type, GLenum16 format,
                                GLboolean normalized, GLboolean integer,
@@ -830,7 +830,7 @@ get_array_format(const struct gl_context *ctx, GLint sizeMax, GLint *size)
  * \param relativeOffset Offset of the first element relative to the binding
  *                       offset.
  */
-void
+ALWAYS_INLINE void
 _mesa_update_array_format(struct gl_context *ctx,
                           struct gl_vertex_array_object *vao,
                           gl_vert_attrib attrib, GLint size, GLenum type,
