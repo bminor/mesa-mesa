@@ -59,7 +59,7 @@ TEST_F(algebraic_test, fmax_a_a)
    EXPECT_NO_PROGRESS(brw_opt_algebraic, bld);
 }
 
-TEST_F(algebraic_test, mad_with_all_immediates_DISABLED)
+TEST_F(algebraic_test, mad_with_all_immediates)
 {
    brw_builder bld = make_shader();
    brw_builder exp = make_shader();
