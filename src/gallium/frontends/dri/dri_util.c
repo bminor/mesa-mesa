@@ -421,7 +421,8 @@ driCreateContextAttribs(struct dri_screen *screen, int api,
                         unsigned num_attribs,
                         const uint32_t *attribs,
                         unsigned *error,
-                        void *data)
+                        void *data,
+                        bool thread_safe)
 {
     const struct gl_config *modes = (config != NULL) ? &config->modes : NULL;
     gl_api mesa_api;
@@ -594,27 +595,27 @@ driCreateContextAttribs(struct dri_screen *screen, int api,
 
     struct dri_context *ctx = dri_create_context(screen, mesa_api,
                                                  modes, &ctx_config, error,
-                                                 shared, data);
+                                                 shared, data, thread_safe);
     return ctx;
 }
 
 static struct dri_context *
 driCreateNewContextForAPI(struct dri_screen *screen, int api,
                           const struct dri_config *config,
-                          struct dri_context *shared, void *data)
+                          struct dri_context *shared, void *data, bool thread_safe)
 {
     unsigned error;
 
     return driCreateContextAttribs(screen, api, config, shared, 0, NULL,
-                                   &error, data);
+                                   &error, data, thread_safe);
 }
 
 struct dri_context *
 driCreateNewContext(struct dri_screen *screen, const struct dri_config *config,
-                    struct dri_context *shared, void *data)
+                    struct dri_context *shared, void *data, bool thread_safe)
 {
     return driCreateNewContextForAPI(screen, __DRI_API_OPENGL,
-                                     config, shared, data);
+                                     config, shared, data, thread_safe);
 }
 
 /**

@@ -184,7 +184,7 @@ loader_dri3_blit_context_get(struct loader_dri3_drawable *draw)
 
    if (!blit_context.ctx) {
       blit_context.ctx = driCreateNewContext(draw->dri_screen_render_gpu,
-                                                           NULL, NULL, NULL);
+                                             NULL, NULL, NULL, true);
       blit_context.cur_screen = draw->dri_screen_render_gpu;
    }
 

@@ -59,6 +59,7 @@
 #ifdef HAVE_X11_PLATFORM
 #include "X11/Xlibint.h"
 #include "x11_dri3.h"
+#include "x11_display.h"
 #endif
 
 #include "GL/mesa_glinterop.h"
@@ -1235,9 +1236,16 @@ dri2_create_context(_EGLDisplay *disp, _EGLConfig *conf,
                                   &num_attribs))
       goto cleanup;
 
+   bool thread_safe = true;
+
+#ifdef HAVE_X11_PLATFORM
+   if (disp->Platform == _EGL_PLATFORM_X11)
+      thread_safe = x11_xlib_display_is_thread_safe(disp->PlatformDisplay);
+#endif
+
    dri2_ctx->dri_context = driCreateContextAttribs(
       dri2_dpy->dri_screen_render_gpu, api, dri_config, shared, num_attribs / 2,
-      ctx_attribs, &error, dri2_ctx);
+      ctx_attribs, &error, dri2_ctx, thread_safe);
    dri2_create_context_attribs_error(error);
 
    if (!dri2_ctx->dri_context)

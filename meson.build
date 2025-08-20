@@ -2058,7 +2058,7 @@ dep_glproto_version = '>= 1.4.14'
 dep_xcb_dri3_version = '>= 1.13'
 dep_xcb_glx_version = '>= 1.8.1'
 dep_xcb_present_version = '>= 1.13'
-dep_xlib_version = '>= 1.8'
+dep_xlib_version = '>= 1.6' # RHEL8 has 1.6, RHEL9 has 1.7, U22.04 has 1.7
 dep_xlib_xrandr_version = '>= 1.3'
 dep_xshmfence_version = '>= 1.1'
 
