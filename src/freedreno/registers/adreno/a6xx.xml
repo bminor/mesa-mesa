@@ -1060,7 +1060,7 @@ by a particular renderpass/blit.
 		<value value="0x4" name="LRZ_FEEDBACK_LATE_Z"/>
 	</enum>
 
-	<reg32 offset="0x80a1" name="GRAS_SC_BIN_CNTL" usage="rp_blit">
+	<bitset name="a6xx_bin_cntl" inline="yes">
 		<bitfield name="BINW" low="0" high="5" shr="5" type="uint"/>
 		<bitfield name="BINH" low="8" high="14" shr="4" type="uint"/>
 		<bitfield name="RENDER_MODE" low="18" high="20" type="a6xx_render_mode"/>
@@ -1074,7 +1074,9 @@ by a particular renderpass/blit.
 		</doc>
 		<bitfield name="LRZ_FEEDBACK_ZMODE_MASK" low="24" high="26" type="a6xx_lrz_feedback_mask"/>
 		<bitfield name="FORCE_LRZ_DIS" pos="27" type="boolean"/>
-	</reg32>
+	</bitset>
+
+	<reg32 offset="0x80a1" name="GRAS_SC_BIN_CNTL" type="a6xx_bin_cntl" usage="rp_blit"/>
 
 	<reg32 offset="0x80a2" name="GRAS_SC_RAS_MSAA_CNTL" usage="rp_blit">
 		<bitfield name="SAMPLES" low="0" high="1" type="a3xx_msaa_samples"/>
@@ -1345,22 +1347,7 @@ by a particular renderpass/blit.
 	-->
 
 	<!-- same as GRAS_BIN_CONTROL, but without bit 27: -->
-	<reg32 offset="0x8800" name="RB_CNTL" variants="A6XX" usage="rp_blit">
-		<bitfield name="BINW" low="0" high="5" shr="5" type="uint"/>
-		<bitfield name="BINH" low="8" high="14" shr="4" type="uint"/>
-		<bitfield name="RENDER_MODE" low="18" high="20" type="a6xx_render_mode"/>
-		<bitfield name="FORCE_LRZ_WRITE_DIS" pos="21" type="boolean"/>
-		<bitfield name="BUFFERS_LOCATION" low="22" high="23" type="a6xx_buffers_location"/>
-		<bitfield name="LRZ_FEEDBACK_ZMODE_MASK" low="24" high="26" type="a6xx_lrz_feedback_mask"/>
-	</reg32>
-
-	<reg32 offset="0x8800" name="RB_CNTL" variants="A7XX-" usage="rp_blit">
-		<bitfield name="BINW" low="0" high="5" shr="5" type="uint"/>
-		<bitfield name="BINH" low="8" high="14" shr="4" type="uint"/>
-		<bitfield name="RENDER_MODE" low="18" high="20" type="a6xx_render_mode"/>
-		<bitfield name="FORCE_LRZ_WRITE_DIS" pos="21" type="boolean"/>
-		<bitfield name="LRZ_FEEDBACK_ZMODE_MASK" low="24" high="26" type="a6xx_lrz_feedback_mask"/>
-	</reg32>
+	<reg32 offset="0x8800" name="RB_CNTL" variants="A6XX-A7XX" type="a6xx_bin_cntl" usage="rp_blit"/>
 
 	<reg32 offset="0x8801" name="RB_RENDER_CNTL" variants="A6XX" usage="rp_blit">
 		<bitfield name="CCUSINGLECACHELINESIZE" low="3" high="5"/>
