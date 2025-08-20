@@ -2992,7 +2992,7 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
 
          Temp src = get_ssa_temp(ctx, instr->src[0].src.ssa);
          if (src.bytes() >= 4)
-            src = emit_extract_vector(ctx, src, instr->src[0].swizzle[0] & ~0x3, v1);
+            src = emit_extract_vector(ctx, src, instr->src[0].swizzle[0] >> 2, v1);
 
          emit_pk_int16_from_8bit(ctx, dst, src, instr->src[0].swizzle[0] & 0x3,
                                  instr->src[0].swizzle[1] & 0x3, sext);
