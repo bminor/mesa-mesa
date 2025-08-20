@@ -3572,7 +3572,7 @@ radv_emit_patch_control_points(struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
-radv_emit_rasterization_samples(struct radv_cmd_buffer *cmd_buffer)
+radv_emit_rast_samples_state(struct radv_cmd_buffer *cmd_buffer)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -3632,6 +3632,8 @@ radv_emit_rasterization_samples(struct radv_cmd_buffer *cmd_buffer)
       radeon_set_context_reg(R_028A4C_PA_SC_MODE_CNTL_1, pa_sc_mode_cntl_1);
       radeon_end();
    }
+
+   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_RAST_SAMPLES_STATE;
 }
 
 static void
@@ -5401,10 +5403,6 @@ radv_cmd_buffer_flush_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const ui
 
    if (states & RADV_DYNAMIC_TESS_DOMAIN_ORIGIN)
       radv_emit_tess_domain_origin(cmd_buffer);
-
-   if (states & (RADV_DYNAMIC_RASTERIZATION_SAMPLES | RADV_DYNAMIC_LINE_RASTERIZATION_MODE | RADV_DYNAMIC_POLYGON_MODE |
-                 RADV_DYNAMIC_SAMPLE_LOCATIONS_ENABLE))
-      radv_emit_rasterization_samples(cmd_buffer);
 
    /* RADV_DYNAMIC_ATTACHMENT_FEEDBACK_LOOP_ENABLE is handled by radv_emit_db_shader_control. */
 
@@ -11460,6 +11458,10 @@ radv_validate_dynamic_states(struct radv_cmd_buffer *cmd_buffer, uint64_t dynami
 
    if (dynamic_states & RADV_DYNAMIC_FRAGMENT_SHADING_RATE)
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FSR_STATE;
+
+   if (dynamic_states & (RADV_DYNAMIC_RASTERIZATION_SAMPLES | RADV_DYNAMIC_LINE_RASTERIZATION_MODE |
+                         RADV_DYNAMIC_POLYGON_MODE | RADV_DYNAMIC_SAMPLE_LOCATIONS_ENABLE))
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_RAST_SAMPLES_STATE;
 }
 
 static void
@@ -11575,6 +11577,9 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
 
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_FSR_STATE)
       radv_emit_fsr_state(cmd_buffer);
+
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_RAST_SAMPLES_STATE)
+      radv_emit_rast_samples_state(cmd_buffer);
 
    if (gfx12_emit_alt_hiz_wa)
       radv_gfx12_emit_alt_hiz_wa(cmd_buffer);
