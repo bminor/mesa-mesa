@@ -302,6 +302,7 @@ static void radeon_vcn_enc_h264_get_spec_misc_param(struct radeon_encoder *enc,
       pic->pic_ctrl.weighted_bipred_idc : 0;
    enc->enc_pic.spec_misc.transform_8x8_mode =
       sscreen->info.vcn_ip_version >= VCN_5_0_0 &&
+      enc->enc_pic.spec_misc.cabac_enable &&
       pic->pic_ctrl.transform_8x8_mode_flag;
    enc->enc_pic.spec_misc.level_idc = pic->seq.level_idc;
 }

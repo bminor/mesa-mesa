@@ -2604,7 +2604,7 @@
         "description": "radeonsi/vcn: Disable H264 encode 8x8 transform when CABAC is disabled",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e509139f61a2b517ab7e4d08cafd227c2a149aa3",
         "notes": null
