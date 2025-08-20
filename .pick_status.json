@@ -2854,7 +2854,7 @@
         "description": "ir3: emit descriptor prefetch in block dominated by its sources",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4e2a0a5ad097ef2cbbcf38f7a4f508061a5f9c0c",
         "notes": null
