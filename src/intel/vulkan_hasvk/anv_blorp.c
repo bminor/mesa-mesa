@@ -1314,7 +1314,9 @@ anv_image_msaa_resolve(struct anv_cmd_buffer *cmd_buffer,
 
    assert(src_image->vk.image_type == VK_IMAGE_TYPE_2D);
    assert(src_image->vk.samples > 1);
-   assert(dst_image->vk.image_type == VK_IMAGE_TYPE_2D);
+   assert((dst_image->vk.image_type == VK_IMAGE_TYPE_2D) ||
+          (dst_image->vk.image_type == VK_IMAGE_TYPE_3D &&
+           dst_base_layer == 0 && layer_count == 1));
    assert(dst_image->vk.samples == 1);
 
    struct blorp_surf src_surf, dst_surf;
