@@ -142,6 +142,13 @@
         - src/intel/vulkan/**/*
       when: on_success
 
+.anv-restricted-rules:
+  stage: intel
+  rules:
+    - !reference [.test, rules]
+    - !reference [.restricted-rules, rules]
+    - !reference [.anv-rules, rules]
+
 .anv-manual-rules:
   stage: intel-nightly
   extends: .no-auto-retry
