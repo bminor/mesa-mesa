@@ -457,6 +457,11 @@ radv_amdgpu_winsys_cs_pad(struct radeon_cmdbuf *_cs, unsigned leave_dw_space)
             radeon_emit_unchecked(&cs->base, PKT3(PKT3_NOP, remaining - 2, 0));
             cs->base.cdw += remaining - 1;
          }
+      } else if (cs->base.cdw == 0 && leave_dw_space == 0) {
+         /* Emit a NOP packet to avoid submitting a completely empty IB. */
+         const int remaining = pad_dw_mask + 1;
+         radeon_emit_unchecked(&cs->base, PKT3(PKT3_NOP, remaining - 2, 0));
+         cs->base.cdw += remaining - 1;
       }
    } else {
       /* Don't pad on VCN encode/unified as no NOPs */
