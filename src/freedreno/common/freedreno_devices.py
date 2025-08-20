@@ -1350,8 +1350,9 @@ add_gpus([
             [A6XXRegs.REG_A7XX_RB_UNKNOWN_8899,   0x00000000],
             [A6XXRegs.REG_A7XX_RB_UNKNOWN_8C34,   0x00000000],
 
-            [0x930a, 0],
-            [0x960a, 1],
+            [A6XXRegs.REG_A7XX_VPC_UNKNOWN_930A, 0],
+            [A6XXRegs.REG_A7XX_PC_UNKNOWN_9EB6, 0],
+
             [A6XXRegs.REG_A7XX_SP_PS_OUTPUT_CONST_CNTL, 0],
             [A6XXRegs.REG_A7XX_SP_PS_OUTPUT_CONST_MASK, 0],
         ],

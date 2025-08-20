@@ -2186,6 +2186,9 @@ by a particular renderpass/blit.
 		<bitfield name="SIZE_GMEM" low="0" high="31"/>
 	</reg32>
 
+	<reg32 offset="0x930a" name="VPC_UNKNOWN_930A" variants="A7XX"/>
+	<reg32 offset="0x9eb6" name="PC_UNKNOWN_9EB6" variants="A7XX"/>
+
 	<!-- 0x9307-0x95ff invalid -->
 
 	<!-- TODO: 0x9600-0x97ff range -->
