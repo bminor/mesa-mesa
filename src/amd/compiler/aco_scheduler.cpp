@@ -475,6 +475,22 @@ get_sync_info_with_hack(const Instruction* instr)
    return sync;
 }
 
+bool
+is_reorderable(const Instruction* instr)
+{
+   return instr->opcode != aco_opcode::s_memtime && instr->opcode != aco_opcode::s_memrealtime &&
+          instr->opcode != aco_opcode::s_setprio && instr->opcode != aco_opcode::s_getreg_b32 &&
+          instr->opcode != aco_opcode::p_shader_cycles_hi_lo_hi &&
+          instr->opcode != aco_opcode::p_init_scratch &&
+          instr->opcode != aco_opcode::p_jump_to_epilog &&
+          instr->opcode != aco_opcode::s_sendmsg_rtn_b32 &&
+          instr->opcode != aco_opcode::s_sendmsg_rtn_b64 &&
+          instr->opcode != aco_opcode::p_end_with_regs && instr->opcode != aco_opcode::s_nop &&
+          instr->opcode != aco_opcode::s_sleep && instr->opcode != aco_opcode::s_trap &&
+          instr->opcode != aco_opcode::p_call && instr->opcode != aco_opcode::p_logical_start &&
+          instr->opcode != aco_opcode::p_logical_end;
+}
+
 struct memory_event_set {
    bool has_control_barrier;
 
@@ -632,19 +648,6 @@ perform_hazard_query(hazard_query* query, Instruction* instr, bool upwards)
    if (instr->isEXP() || instr->opcode == aco_opcode::p_dual_src_export_gfx11)
       return hazard_fail_export;
 
-   /* don't move non-reorderable instructions */
-   if (instr->opcode == aco_opcode::s_memtime || instr->opcode == aco_opcode::s_memrealtime ||
-       instr->opcode == aco_opcode::s_setprio || instr->opcode == aco_opcode::s_getreg_b32 ||
-       instr->opcode == aco_opcode::p_shader_cycles_hi_lo_hi ||
-       instr->opcode == aco_opcode::p_init_scratch ||
-       instr->opcode == aco_opcode::p_jump_to_epilog ||
-       instr->opcode == aco_opcode::s_sendmsg_rtn_b32 ||
-       instr->opcode == aco_opcode::s_sendmsg_rtn_b64 ||
-       instr->opcode == aco_opcode::p_end_with_regs || instr->opcode == aco_opcode::s_nop ||
-       instr->opcode == aco_opcode::s_sleep || instr->opcode == aco_opcode::s_trap ||
-       instr->opcode == aco_opcode::p_call)
-      return hazard_fail_unreorderable;
-
    memory_event_set instr_set;
    memset(&instr_set, 0, sizeof(instr_set));
    memory_sync_info sync = get_sync_info_with_hack(instr);
@@ -769,7 +772,7 @@ schedule_SMEM(sched_ctx& ctx, Block* block, Instruction* current, int idx)
          break;
 
       /* break when encountering another MEM instruction, logical_start or barriers */
-      if (candidate->opcode == aco_opcode::p_logical_start)
+      if (!is_reorderable(candidate.get()))
          break;
       /* only move VMEM instructions below descriptor loads. be more aggressive at higher num_waves
        * to help create more vmem clauses */
@@ -825,7 +828,7 @@ schedule_SMEM(sched_ctx& ctx, Block* block, Instruction* current, int idx)
       assert(candidate_idx < (int)block->instructions.size());
       aco_ptr<Instruction>& candidate = block->instructions[candidate_idx];
 
-      if (candidate->opcode == aco_opcode::p_logical_end)
+      if (!is_reorderable(candidate.get()))
          break;
 
       /* check if candidate depends on current */
@@ -906,7 +909,7 @@ schedule_VMEM(sched_ctx& ctx, Block* block, Instruction* current, int idx)
       bool is_vmem = candidate->isVMEM() || candidate->isFlatLike();
 
       /* Break when encountering another VMEM instruction, logical_start or barriers. */
-      if (candidate->opcode == aco_opcode::p_logical_start)
+      if (!is_reorderable(candidate.get()))
          break;
 
       if (should_form_clause(current, candidate.get())) {
@@ -980,7 +983,7 @@ schedule_VMEM(sched_ctx& ctx, Block* block, Instruction* current, int idx)
       aco_ptr<Instruction>& candidate = block->instructions[candidate_idx];
       bool is_vmem = candidate->isVMEM() || candidate->isFlatLike();
 
-      if (candidate->opcode == aco_opcode::p_logical_end)
+      if (!is_reorderable(candidate.get()))
          break;
 
       /* check if candidate depends on current */
@@ -1049,7 +1052,7 @@ schedule_LDS(sched_ctx& ctx, Block* block, Instruction* current, int idx)
    for (int i = 0; k < max_moves && i < window_size; i++) {
       aco_ptr<Instruction>& candidate = block->instructions[cursor.source_idx];
       bool is_mem = candidate->isVMEM() || candidate->isFlatLike() || candidate->isSMEM();
-      if (candidate->opcode == aco_opcode::p_logical_start || is_mem)
+      if (!is_reorderable(candidate.get()) || is_mem)
          break;
 
       if (candidate->isDS() || candidate->isLDSDIR()) {
@@ -1073,7 +1076,7 @@ schedule_LDS(sched_ctx& ctx, Block* block, Instruction* current, int idx)
    for (; k < max_moves && i < window_size; i++) {
       aco_ptr<Instruction>& candidate = block->instructions[up_cursor.source_idx];
       bool is_mem = candidate->isVMEM() || candidate->isFlatLike() || candidate->isSMEM();
-      if (candidate->opcode == aco_opcode::p_logical_end || is_mem)
+      if (!is_reorderable(candidate.get()) || is_mem)
          break;
 
       /* check if candidate depends on current */
@@ -1093,7 +1096,7 @@ schedule_LDS(sched_ctx& ctx, Block* block, Instruction* current, int idx)
    for (; found_dependency && k < max_moves && i < window_size; i++) {
       aco_ptr<Instruction>& candidate = block->instructions[up_cursor.source_idx];
       bool is_mem = candidate->isVMEM() || candidate->isFlatLike() || candidate->isSMEM();
-      if (candidate->opcode == aco_opcode::p_logical_end || is_mem)
+      if (!is_reorderable(candidate.get()) || is_mem)
          break;
 
       HazardResult haz = perform_hazard_query(&hq, candidate.get(), true);
@@ -1128,7 +1131,7 @@ schedule_position_export(sched_ctx& ctx, Block* block, Instruction* current, int
       assert(candidate_idx >= 0);
       aco_ptr<Instruction>& candidate = block->instructions[candidate_idx];
 
-      if (candidate->opcode == aco_opcode::p_logical_start)
+      if (!is_reorderable(candidate.get()))
          break;
       if (candidate->isVMEM() || candidate->isSMEM() || candidate->isFlatLike())
          break;
@@ -1171,7 +1174,7 @@ schedule_VMEM_store(sched_ctx& ctx, Block* block, Instruction* current, int idx)
 
    for (int16_t k = 0; k < VMEM_STORE_CLAUSE_MAX_GRAB_DIST;) {
       aco_ptr<Instruction>& candidate = block->instructions[cursor.source_idx];
-      if (candidate->opcode == aco_opcode::p_logical_start)
+      if (!is_reorderable(candidate.get()))
          break;
 
       if (should_form_clause(current, candidate.get())) {
