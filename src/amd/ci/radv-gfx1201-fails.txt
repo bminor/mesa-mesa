@@ -52,7 +52,3 @@ dEQP-VK.compute.shader_object_spirv.cooperative_matrix.khr_r.subgroupscope.conve
 dEQP-VK.compute.shader_object_spirv.cooperative_matrix.khr_r.subgroupscope.convert.input_float32_t_output_bfloat16_t.buffer.rowmajor,Fail
 dEQP-VK.compute.shader_object_spirv.cooperative_matrix.khr_r.subgroupscope.convert.input_float32_t_output_bfloat16_t.physical_buffer.rowmajor,Fail
 dEQP-VK.compute.shader_object_spirv.cooperative_matrix.khr_r.subgroupscope.convert.input_float32_t_output_bfloat16_t.workgroup.rowmajor,Fail
-
-# Very recent ACO regression 0c590eb90328b39e38b742125fe14ee1f56c79da
-dEQP-VK.ray_query.builtin.rayqueryterminate.call.aabbs,Crash
-dEQP-VK.ray_query.builtin.rayqueryterminate.call.triangles,Crash
