@@ -745,7 +745,6 @@ zink_init_screen_caps(struct zink_screen *screen)
    caps->compressed_surface_reinterpret_blocks_layered = caps->surface_reinterpret_blocks &&
                                                          screen->info.maint6_props.blockTexelViewCompatibleMultipleLayers;
 
-   caps->validate_all_dirty_states = true;
    caps->allow_mapped_buffers_during_execution = true;
    caps->map_unsynchronized_thread_safe = true;
    caps->shareable_shaders = true;
