@@ -3275,6 +3275,9 @@ radv_emit_viewport(struct radv_cmd_buffer *cmd_buffer)
          radeon_emit(fui(zmin));
          radeon_emit(fui(zmax));
       }
+
+      radeon_set_context_reg(R_028064_DB_VIEWPORT_CONTROL,
+                             S_028064_DISABLE_VIEWPORT_CLAMP(depth_clamp_mode == RADV_DEPTH_CLAMP_MODE_DISABLED));
    } else {
       radeon_set_context_reg_seq(R_02843C_PA_CL_VPORT_XSCALE, d->vk.vp.viewport_count * 6);
 
@@ -3300,6 +3303,9 @@ radv_emit_viewport(struct radv_cmd_buffer *cmd_buffer)
          radeon_emit(fui(zmin));
          radeon_emit(fui(zmax));
       }
+
+      radeon_set_context_reg(R_02800C_DB_RENDER_OVERRIDE,
+                             S_02800C_DISABLE_VIEWPORT_CLAMP(depth_clamp_mode == RADV_DEPTH_CLAMP_MODE_DISABLED));
    }
 
    radeon_end();
@@ -3592,25 +3598,6 @@ radv_emit_patch_control_points(struct radv_cmd_buffer *cmd_buffer)
       radeon_set_context_reg_idx(R_028B58_VGT_LS_HS_CONFIG, 2, ls_hs_config);
    } else {
       radeon_set_context_reg(R_028B58_VGT_LS_HS_CONFIG, ls_hs_config);
-   }
-   radeon_end();
-}
-
-static void
-radv_emit_depth_clamp_enable(struct radv_cmd_buffer *cmd_buffer)
-{
-   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-
-   enum radv_depth_clamp_mode mode = radv_get_depth_clamp_mode(cmd_buffer);
-
-   radeon_begin(cmd_buffer->cs);
-   if (pdev->info.gfx_level >= GFX12) {
-      radeon_set_context_reg(R_028064_DB_VIEWPORT_CONTROL,
-                             S_028064_DISABLE_VIEWPORT_CLAMP(mode == RADV_DEPTH_CLAMP_MODE_DISABLED));
-   } else {
-      radeon_set_context_reg(R_02800C_DB_RENDER_OVERRIDE,
-                             S_02800C_DISABLE_VIEWPORT_CLAMP(mode == RADV_DEPTH_CLAMP_MODE_DISABLED));
    }
    radeon_end();
 }
@@ -5452,9 +5439,6 @@ radv_cmd_buffer_flush_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const ui
 
    if (states & RADV_DYNAMIC_TESS_DOMAIN_ORIGIN)
       radv_emit_tess_domain_origin(cmd_buffer);
-
-   if (states & (RADV_DYNAMIC_DEPTH_CLAMP_ENABLE | RADV_DYNAMIC_DEPTH_CLIP_ENABLE))
-      radv_emit_depth_clamp_enable(cmd_buffer);
 
    if (states & (RADV_DYNAMIC_RASTERIZATION_SAMPLES | RADV_DYNAMIC_LINE_RASTERIZATION_MODE | RADV_DYNAMIC_POLYGON_MODE |
                  RADV_DYNAMIC_SAMPLE_LOCATIONS_ENABLE))
