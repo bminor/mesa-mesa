@@ -187,6 +187,7 @@ st_get_sampler_views(struct st_context *st,
          extra = u_bit_scan(&free_slots);
          sampler_views[extra] =
                pipe->create_sampler_view(pipe, stObj->pt->next, &tmpl);
+         (*extra_sampler_views) |= 1 << extra;
          break;
       case PIPE_FORMAT_NV12:
          if (stObj->pt->format == PIPE_FORMAT_R8_G8B8_420_UNORM)
@@ -199,6 +200,7 @@ st_get_sampler_views(struct st_context *st,
          extra = u_bit_scan(&free_slots);
          sampler_views[extra] =
                pipe->create_sampler_view(pipe, stObj->pt->next, &tmpl);
+         (*extra_sampler_views) |= 1 << extra;
          break;
       case PIPE_FORMAT_NV21:
          if (stObj->pt->format == PIPE_FORMAT_R8_B8G8_420_UNORM)
@@ -211,6 +213,7 @@ st_get_sampler_views(struct st_context *st,
          extra = u_bit_scan(&free_slots);
          sampler_views[extra] =
                pipe->create_sampler_view(pipe, stObj->pt->next, &tmpl);
+         (*extra_sampler_views) |= 1 << extra;
          break;
       case PIPE_FORMAT_P010:
       case PIPE_FORMAT_P012:
@@ -222,6 +225,7 @@ st_get_sampler_views(struct st_context *st,
          extra = u_bit_scan(&free_slots);
          sampler_views[extra] =
                pipe->create_sampler_view(pipe, stObj->pt->next, &tmpl);
+         (*extra_sampler_views) |= 1 << extra;
          break;
       case PIPE_FORMAT_IYUV:
          if (stObj->pt->format == PIPE_FORMAT_R8_G8_B8_420_UNORM ||
@@ -234,9 +238,11 @@ st_get_sampler_views(struct st_context *st,
          extra = u_bit_scan(&free_slots);
          sampler_views[extra] =
                pipe->create_sampler_view(pipe, stObj->pt->next, &tmpl);
+         (*extra_sampler_views) |= 1 << extra;
          extra = u_bit_scan(&free_slots);
          sampler_views[extra] =
                pipe->create_sampler_view(pipe, stObj->pt->next->next, &tmpl);
+         (*extra_sampler_views) |= 1 << extra;
          break;
       case PIPE_FORMAT_Y10X6_U10X6_V10X6_420_UNORM:
       case PIPE_FORMAT_Y10X6_U10X6_V10X6_422_UNORM:
@@ -252,9 +258,11 @@ st_get_sampler_views(struct st_context *st,
          extra = u_bit_scan(&free_slots);
          sampler_views[extra] =
                pipe->create_sampler_view(pipe, stObj->pt->next, &tmpl);
+         (*extra_sampler_views) |= 1 << extra;
          extra = u_bit_scan(&free_slots);
          sampler_views[extra] =
                pipe->create_sampler_view(pipe, stObj->pt->next->next, &tmpl);
+         (*extra_sampler_views) |= 1 << extra;
          break;
       case PIPE_FORMAT_YUYV:
       case PIPE_FORMAT_YVYU:
@@ -270,6 +278,7 @@ st_get_sampler_views(struct st_context *st,
          extra = u_bit_scan(&free_slots);
          sampler_views[extra] =
                pipe->create_sampler_view(pipe, stObj->pt->next, &tmpl);
+         (*extra_sampler_views) |= 1 << extra;
          break;
       case PIPE_FORMAT_UYVY:
       case PIPE_FORMAT_VYUY:
@@ -285,6 +294,7 @@ st_get_sampler_views(struct st_context *st,
          extra = u_bit_scan(&free_slots);
          sampler_views[extra] =
                pipe->create_sampler_view(pipe, stObj->pt->next, &tmpl);
+         (*extra_sampler_views) |= 1 << extra;
          break;
       case PIPE_FORMAT_Y210:
       case PIPE_FORMAT_Y212:
@@ -296,13 +306,11 @@ st_get_sampler_views(struct st_context *st,
          extra = u_bit_scan(&free_slots);
          sampler_views[extra] =
                pipe->create_sampler_view(pipe, stObj->pt->next, &tmpl);
+         (*extra_sampler_views) |= 1 << extra;
          break;
       default:
          break;
       }
-
-      if (extra)
-         (*extra_sampler_views) |= 1 << extra;
 
       num_textures = MAX2(num_textures, extra + 1);
    }
