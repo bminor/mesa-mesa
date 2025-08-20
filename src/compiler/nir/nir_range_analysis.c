@@ -1913,6 +1913,12 @@ get_alu_uub(struct analysis_state *state, struct uub_query q, uint32_t *result, 
          return;
       }
       break;
+   case nir_op_bit_count:
+      if (nir_scalar_chase_alu_src(q.scalar, 0).def->bit_size > 32) {
+         *result = nir_scalar_chase_alu_src(q.scalar, 0).def->bit_size;
+         return;
+      }
+      break;
    default:
       return;
    }
@@ -2091,6 +2097,9 @@ get_alu_uub(struct analysis_state *state, struct uub_query q, uint32_t *result, 
       break;
    case nir_op_extract_i16:
       *result = (src[0] >= 0x8000) ? max : MIN2(src[0], INT16_MAX);
+      break;
+   case nir_op_bit_count:
+      *result = util_last_bit64(src[0]);
       break;
    default:
       break;
