@@ -798,6 +798,8 @@ if with_gallium_rusticl or with_nouveau_vk or with_tools.contains('etnaviv') or 
     '--raw-line', '#![allow(non_camel_case_types)]',
     '--raw-line', '#![allow(non_snake_case)]',
     '--raw-line', '#![allow(non_upper_case_globals)]',
+    # This is fixed in 0.72 but we don't have that in CI yet
+    '--raw-line', '#![allow(unsafe_op_in_unsafe_fn)]',
   ]
   if rustc.version().version_compare('>= 1.88')
     bindgen_output_args += ['--raw-line', '#![allow(unnecessary_transmutes)]']
