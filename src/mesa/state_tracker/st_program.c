@@ -769,11 +769,9 @@ st_create_common_variant(struct st_context *st,
 
    if (key->clamp_color) {
       NIR_PASS(_, state.ir.nir, nir_lower_clamp_color_outputs);
-      finalize = true;
    }
    if (key->passthrough_edgeflags) {
-      NIR_PASS(_, state.ir.nir, nir_lower_passthrough_edgeflags);
-      finalize = true;
+      NIR_PASS(finalize, state.ir.nir, nir_lower_passthrough_edgeflags);
    }
 
    if (key->export_point_size) {
@@ -797,7 +795,7 @@ st_create_common_variant(struct st_context *st,
       tex_opts.saturate_s = key->gl_clamp[0];
       tex_opts.saturate_t = key->gl_clamp[1];
       tex_opts.saturate_r = key->gl_clamp[2];
-      NIR_PASS(_, state.ir.nir, nir_lower_tex, &tex_opts);
+      NIR_PASS(finalize, state.ir.nir, nir_lower_tex, &tex_opts);
    }
 
    if (finalize || !st->allow_st_finalize_nir_twice || key->is_draw_shader) {
@@ -1039,12 +1037,10 @@ st_create_fp_variant(struct st_context *st,
 
    if (key->clamp_color) {
       NIR_PASS(_, state.ir.nir, nir_lower_clamp_color_outputs);
-      finalize = true;
    }
 
    if (key->lower_flatshade) {
       NIR_PASS(_, state.ir.nir, nir_lower_flatshade);
-      finalize = true;
    }
 
    if (key->lower_alpha_func != COMPARE_FUNC_ALWAYS) {
@@ -1057,7 +1053,6 @@ st_create_fp_variant(struct st_context *st,
    if (key->lower_two_sided_color) {
       bool face_sysval = st->ctx->Const.GLSLFrontFacingIsSysVal;
       NIR_PASS(_, state.ir.nir, nir_lower_two_sided_color, face_sysval);
-      finalize = true;
    }
 
    if (key->persample_shading) {
@@ -1070,8 +1065,6 @@ st_create_fp_variant(struct st_context *st,
        */
       shader->info.fs.uses_sample_shading = true;
       nir_lower_sample_shading(shader);
-
-      finalize = true;
    }
 
    if (st->emulate_gl_clamp &&
@@ -1080,8 +1073,7 @@ st_create_fp_variant(struct st_context *st,
       tex_opts.saturate_s = key->gl_clamp[0];
       tex_opts.saturate_t = key->gl_clamp[1];
       tex_opts.saturate_r = key->gl_clamp[2];
-      NIR_PASS(_, state.ir.nir, nir_lower_tex, &tex_opts);
-      finalize = true;
+      NIR_PASS(finalize, state.ir.nir, nir_lower_tex, &tex_opts);
    }
 
    assert(!(key->bitmap && key->drawpixels));
@@ -1094,8 +1086,7 @@ st_create_fp_variant(struct st_context *st,
       options.sampler = variant->bitmap_sampler;
       options.swizzle_xxxx = st->bitmap.tex_format == PIPE_FORMAT_R8_UNORM;
 
-      NIR_PASS(_, state.ir.nir, nir_lower_bitmap, &options);
-      finalize = true;
+      NIR_PASS(finalize, state.ir.nir, nir_lower_bitmap, &options);
    }
 
    /* glDrawPixels (color only) */
