@@ -6974,7 +6974,7 @@
         "description": "anv: fix uninitialized return value",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "884df891d791bd35eb87a3aefbb50a4662be1267",
         "notes": null
