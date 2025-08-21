@@ -243,8 +243,7 @@ brw_shader::emit_urb_writes(const brw_reg &gs_vertex_count)
          srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(length);
          abld.LOAD_PAYLOAD(srcs[URB_LOGICAL_SRC_DATA], sources, length, 0);
 
-         brw_inst *inst = abld.emit(SHADER_OPCODE_URB_WRITE_LOGICAL, reg_undef,
-                                   srcs, ARRAY_SIZE(srcs));
+         brw_inst *inst = abld.URB_WRITE(srcs, ARRAY_SIZE(srcs));
 
          /* For Wa_1805992985 one needs additional write in the end. */
          if (intel_needs_workaround(devinfo, 1805992985) && stage == MESA_SHADER_TESS_EVAL)
@@ -290,8 +289,7 @@ brw_shader::emit_urb_writes(const brw_reg &gs_vertex_count)
       srcs[URB_LOGICAL_SRC_DATA] = payload;
       srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(1);
 
-      brw_inst *inst = bld.emit(SHADER_OPCODE_URB_WRITE_LOGICAL, reg_undef,
-                               srcs, ARRAY_SIZE(srcs));
+      brw_inst *inst = bld.URB_WRITE(srcs, ARRAY_SIZE(srcs));
       inst->eot = true;
       inst->offset = 1;
       return;
@@ -342,8 +340,7 @@ brw_shader::emit_urb_writes(const brw_reg &gs_vertex_count)
       srcs[URB_LOGICAL_SRC_DATA] = payload;
       srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(4);
 
-      brw_inst *inst = bld.exec_all().emit(SHADER_OPCODE_URB_WRITE_LOGICAL,
-                                          reg_undef, srcs, ARRAY_SIZE(srcs));
+      brw_inst *inst = bld.exec_all().URB_WRITE(srcs, ARRAY_SIZE(srcs));
       inst->eot = true;
       inst->offset = 0;
    }

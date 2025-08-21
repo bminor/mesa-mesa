@@ -639,6 +639,20 @@ public:
    }
 
    brw_inst *
+   URB_WRITE(const brw_reg srcs[], unsigned num_srcs) const
+   {
+      assert(num_srcs == URB_LOGICAL_NUM_SRCS);
+      return emit(SHADER_OPCODE_URB_WRITE_LOGICAL, reg_undef, srcs, num_srcs);
+   }
+
+   brw_inst *
+   URB_READ(const brw_reg &dst, const brw_reg srcs[], unsigned num_srcs) const
+   {
+      assert(num_srcs == URB_LOGICAL_NUM_SRCS);
+      return emit(SHADER_OPCODE_URB_READ_LOGICAL, dst, srcs, num_srcs);
+   }
+
+   brw_inst *
    ADD(const brw_reg &dst, const brw_reg &src0, const brw_reg &src1) const
    {
       return alu2(BRW_OPCODE_ADD, dst, src0, src1);

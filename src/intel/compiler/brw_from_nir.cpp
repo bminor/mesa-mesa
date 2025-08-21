@@ -2527,8 +2527,7 @@ brw_shader::emit_gs_control_data_bits(const brw_reg &vertex_count)
    srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(length);
    abld.LOAD_PAYLOAD(srcs[URB_LOGICAL_SRC_DATA], sources, length, 0);
 
-   brw_inst *inst = abld.emit(SHADER_OPCODE_URB_WRITE_LOGICAL, reg_undef,
-                             srcs, ARRAY_SIZE(srcs));
+   brw_inst *inst = abld.URB_WRITE(srcs, ARRAY_SIZE(srcs));
 
    /* We need to increment Global Offset by 256-bits to make room for
     * Broadwell's extra "Vertex Count" payload at the beginning of the
@@ -2800,15 +2799,13 @@ emit_gs_input_load(nir_to_brw_state &ntb, const brw_reg &dst,
       if (first_component != 0) {
          unsigned read_components = num_components + first_component;
          brw_reg tmp = bld.vgrf(dst.type, read_components);
-         inst = bld.emit(SHADER_OPCODE_URB_READ_LOGICAL, tmp, srcs,
-                         ARRAY_SIZE(srcs));
+         inst = bld.URB_READ(tmp, srcs, ARRAY_SIZE(srcs));
          inst->size_written = read_components *
                               tmp.component_size(inst->exec_size);
          brw_combine_with_vec(bld, dst, offset(tmp, bld, first_component),
                               num_components);
       } else {
-         inst = bld.emit(SHADER_OPCODE_URB_READ_LOGICAL, dst, srcs,
-                         ARRAY_SIZE(srcs));
+         inst = bld.URB_READ(dst, srcs, ARRAY_SIZE(srcs));
          inst->size_written = num_components *
                               dst.component_size(inst->exec_size);
       }
@@ -2827,15 +2824,13 @@ emit_gs_input_load(nir_to_brw_state &ntb, const brw_reg &dst,
       srcs[URB_LOGICAL_SRC_PER_SLOT_OFFSETS] = indirect_offset;
 
       if (first_component != 0) {
-         inst = bld.emit(SHADER_OPCODE_URB_READ_LOGICAL, tmp,
-                         srcs, ARRAY_SIZE(srcs));
+         inst = bld.URB_READ(tmp, srcs, ARRAY_SIZE(srcs));
          inst->size_written = read_components *
                               tmp.component_size(inst->exec_size);
          brw_combine_with_vec(bld, dst, offset(tmp, bld, first_component),
                               num_components);
       } else {
-         inst = bld.emit(SHADER_OPCODE_URB_READ_LOGICAL, dst,
-                         srcs, ARRAY_SIZE(srcs));
+         inst = bld.URB_READ(dst, srcs, ARRAY_SIZE(srcs));
          inst->size_written = num_components *
                               dst.component_size(inst->exec_size);
       }
@@ -3169,13 +3164,11 @@ brw_from_nir_emit_tcs_intrinsic(nir_to_brw_state &ntb,
          if (first_component != 0) {
             unsigned read_components = num_components + first_component;
             brw_reg tmp = bld.vgrf(dst.type, read_components);
-            inst = bld.emit(SHADER_OPCODE_URB_READ_LOGICAL, tmp, srcs,
-                            ARRAY_SIZE(srcs));
+            inst = bld.URB_READ(tmp, srcs, ARRAY_SIZE(srcs));
             brw_combine_with_vec(bld, dst, offset(tmp, bld, first_component),
                                  num_components);
          } else {
-            inst = bld.emit(SHADER_OPCODE_URB_READ_LOGICAL, dst, srcs,
-                            ARRAY_SIZE(srcs));
+            inst = bld.URB_READ(dst, srcs, ARRAY_SIZE(srcs));
          }
          inst->offset = imm_offset;
       } else {
@@ -3185,13 +3178,11 @@ brw_from_nir_emit_tcs_intrinsic(nir_to_brw_state &ntb,
          if (first_component != 0) {
             unsigned read_components = num_components + first_component;
             brw_reg tmp = bld.vgrf(dst.type, read_components);
-            inst = bld.emit(SHADER_OPCODE_URB_READ_LOGICAL, tmp,
-                            srcs, ARRAY_SIZE(srcs));
+            inst = bld.URB_READ(tmp, srcs, ARRAY_SIZE(srcs));
             brw_combine_with_vec(bld, dst, offset(tmp, bld, first_component),
                                  num_components);
          } else {
-            inst = bld.emit(SHADER_OPCODE_URB_READ_LOGICAL, dst,
-                            srcs, ARRAY_SIZE(srcs));
+            inst = bld.URB_READ(dst, srcs, ARRAY_SIZE(srcs));
          }
          inst->offset = imm_offset;
       }
@@ -3233,14 +3224,12 @@ brw_from_nir_emit_tcs_intrinsic(nir_to_brw_state &ntb,
                unsigned read_components =
                   instr->num_components + first_component;
                brw_reg tmp = bld.vgrf(dst.type, read_components);
-               inst = bld.emit(SHADER_OPCODE_URB_READ_LOGICAL, tmp,
-                               srcs, ARRAY_SIZE(srcs));
+               inst = bld.URB_READ(tmp, srcs, ARRAY_SIZE(srcs));
                inst->size_written = read_components * REG_SIZE * reg_unit(devinfo);
                brw_combine_with_vec(bld, dst, offset(tmp, bld, first_component),
                                     instr->num_components);
             } else {
-               inst = bld.emit(SHADER_OPCODE_URB_READ_LOGICAL, dst,
-                               srcs, ARRAY_SIZE(srcs));
+               inst = bld.URB_READ(dst, srcs, ARRAY_SIZE(srcs));
                inst->size_written = instr->num_components * REG_SIZE * reg_unit(devinfo);
             }
             inst->offset = imm_offset;
@@ -3255,14 +3244,12 @@ brw_from_nir_emit_tcs_intrinsic(nir_to_brw_state &ntb,
             unsigned read_components =
                instr->num_components + first_component;
             brw_reg tmp = bld.vgrf(dst.type, read_components);
-            inst = bld.emit(SHADER_OPCODE_URB_READ_LOGICAL, tmp,
-                            srcs, ARRAY_SIZE(srcs));
+            inst = bld.URB_READ(tmp, srcs, ARRAY_SIZE(srcs));
             inst->size_written = read_components * REG_SIZE * reg_unit(devinfo);
             brw_combine_with_vec(bld, dst, offset(tmp, bld, first_component),
                                  instr->num_components);
          } else {
-            inst = bld.emit(SHADER_OPCODE_URB_READ_LOGICAL, dst,
-                            srcs, ARRAY_SIZE(srcs));
+            inst = bld.URB_READ(dst, srcs, ARRAY_SIZE(srcs));
             inst->size_written = instr->num_components * REG_SIZE * reg_unit(devinfo);
          }
          inst->offset = imm_offset;
@@ -3315,8 +3302,7 @@ brw_from_nir_emit_tcs_intrinsic(nir_to_brw_state &ntb,
       srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(m);
       bld.LOAD_PAYLOAD(srcs[URB_LOGICAL_SRC_DATA], sources, m, 0);
 
-      brw_inst *inst = bld.emit(SHADER_OPCODE_URB_WRITE_LOGICAL, reg_undef,
-                               srcs, ARRAY_SIZE(srcs));
+      brw_inst *inst = bld.URB_WRITE(srcs, ARRAY_SIZE(srcs));
       inst->offset = imm_offset;
       break;
    }
@@ -3391,14 +3377,12 @@ brw_from_nir_emit_tes_intrinsic(nir_to_brw_state &ntb,
                unsigned read_components =
                   instr->num_components + first_component;
                brw_reg tmp = bld.vgrf(dest.type, read_components);
-               inst = bld.emit(SHADER_OPCODE_URB_READ_LOGICAL, tmp,
-                               srcs, ARRAY_SIZE(srcs));
+               inst = bld.URB_READ(tmp, srcs, ARRAY_SIZE(srcs));
                inst->size_written = read_components * REG_SIZE * reg_unit(devinfo);
                brw_combine_with_vec(bld, dest, offset(tmp, bld, first_component),
                                     instr->num_components);
             } else {
-               inst = bld.emit(SHADER_OPCODE_URB_READ_LOGICAL, dest,
-                               srcs, ARRAY_SIZE(srcs));
+               inst = bld.URB_READ(dest, srcs, ARRAY_SIZE(srcs));
                inst->size_written = instr->num_components * REG_SIZE * reg_unit(devinfo);
             }
             inst->offset = imm_offset;
@@ -3420,13 +3404,11 @@ brw_from_nir_emit_tes_intrinsic(nir_to_brw_state &ntb,
             unsigned read_components =
                 num_components + first_component;
             brw_reg tmp = bld.vgrf(dest.type, read_components);
-            inst = bld.emit(SHADER_OPCODE_URB_READ_LOGICAL, tmp,
-                            srcs, ARRAY_SIZE(srcs));
+            inst = bld.URB_READ(tmp, srcs, ARRAY_SIZE(srcs));
             brw_combine_with_vec(bld, dest, offset(tmp, bld, first_component),
                                  num_components);
          } else {
-            inst = bld.emit(SHADER_OPCODE_URB_READ_LOGICAL, dest,
-                            srcs, ARRAY_SIZE(srcs));
+            inst = bld.URB_READ(dest, srcs, ARRAY_SIZE(srcs));
          }
          inst->offset = imm_offset;
          inst->size_written = (num_components + first_component) *
@@ -5301,8 +5283,7 @@ emit_urb_direct_vec4_write(const brw_builder &bld,
       srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(length);
       bld8.LOAD_PAYLOAD(srcs[URB_LOGICAL_SRC_DATA], payload_srcs, length, 0);
 
-      brw_inst *inst = bld8.emit(SHADER_OPCODE_URB_WRITE_LOGICAL,
-                                reg_undef, srcs, ARRAY_SIZE(srcs));
+      brw_inst *inst = bld8.URB_WRITE(srcs, ARRAY_SIZE(srcs));
       inst->offset = urb_global_offset;
       assert(inst->offset < 2048);
    }
@@ -5371,8 +5352,7 @@ emit_urb_direct_vec4_write_xe2(const brw_builder &bld,
       srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(comps);
       hbld.LOAD_PAYLOAD(srcs[URB_LOGICAL_SRC_DATA], payload_srcs, comps, 0);
 
-      hbld.emit(SHADER_OPCODE_URB_WRITE_LOGICAL,
-                reg_undef, srcs, ARRAY_SIZE(srcs));
+      hbld.URB_WRITE(srcs, ARRAY_SIZE(srcs));
    }
 }
 
@@ -5434,8 +5414,7 @@ emit_urb_indirect_vec4_write(const brw_builder &bld,
       srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(length);
       bld8.LOAD_PAYLOAD(srcs[URB_LOGICAL_SRC_DATA], payload_srcs, length, 0);
 
-      brw_inst *inst = bld8.emit(SHADER_OPCODE_URB_WRITE_LOGICAL,
-                                reg_undef, srcs, ARRAY_SIZE(srcs));
+      brw_inst *inst = bld8.URB_WRITE(srcs, ARRAY_SIZE(srcs));
       inst->offset = 0;
    }
 }
@@ -5505,8 +5484,7 @@ emit_urb_indirect_writes_xe2(const brw_builder &bld, nir_intrinsic_instr *instr,
       srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(comps);
       wbld.LOAD_PAYLOAD(srcs[URB_LOGICAL_SRC_DATA], payload_srcs, comps, 0);
 
-      wbld.emit(SHADER_OPCODE_URB_WRITE_LOGICAL,
-                reg_undef, srcs, ARRAY_SIZE(srcs));
+      wbld.URB_WRITE(srcs, ARRAY_SIZE(srcs));
    }
 }
 
@@ -5564,8 +5542,7 @@ emit_urb_indirect_writes(const brw_builder &bld, nir_intrinsic_instr *instr,
          srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(length);
          bld8.LOAD_PAYLOAD(srcs[URB_LOGICAL_SRC_DATA], payload_srcs, length, 0);
 
-         brw_inst *inst = bld8.emit(SHADER_OPCODE_URB_WRITE_LOGICAL,
-                                   reg_undef, srcs, ARRAY_SIZE(srcs));
+         brw_inst *inst = bld8.URB_WRITE(srcs, ARRAY_SIZE(srcs));
          inst->offset = 0;
       }
    }
@@ -5599,8 +5576,7 @@ emit_urb_direct_reads(const brw_builder &bld, nir_intrinsic_instr *instr,
    brw_reg srcs[URB_LOGICAL_NUM_SRCS];
    srcs[URB_LOGICAL_SRC_HANDLE] = urb_handle;
 
-   brw_inst *inst = ubld8.emit(SHADER_OPCODE_URB_READ_LOGICAL, data,
-                              srcs, ARRAY_SIZE(srcs));
+   brw_inst *inst = ubld8.URB_READ(data, srcs, ARRAY_SIZE(srcs));
    inst->offset = urb_global_offset;
    assert(inst->offset < 2048);
    inst->size_written = num_regs * REG_SIZE;
@@ -5638,8 +5614,7 @@ emit_urb_direct_reads_xe2(const brw_builder &bld, nir_intrinsic_instr *instr,
    brw_reg srcs[URB_LOGICAL_NUM_SRCS];
    srcs[URB_LOGICAL_SRC_HANDLE] = urb_handle;
 
-   brw_inst *inst = ubld16.emit(SHADER_OPCODE_URB_READ_LOGICAL,
-                               data, srcs, ARRAY_SIZE(srcs));
+   brw_inst *inst = ubld16.URB_READ(data, srcs, ARRAY_SIZE(srcs));
    inst->size_written = 2 * comps * REG_SIZE;
 
    for (unsigned c = 0; c < comps; c++) {
@@ -5698,8 +5673,7 @@ emit_urb_indirect_reads(const brw_builder &bld, nir_intrinsic_instr *instr,
 
          brw_reg data = bld8.vgrf(BRW_TYPE_UD, 4);
 
-         brw_inst *inst = bld8.emit(SHADER_OPCODE_URB_READ_LOGICAL,
-                                   data, srcs, ARRAY_SIZE(srcs));
+         brw_inst *inst = bld8.URB_READ(data, srcs, ARRAY_SIZE(srcs));
          inst->offset = 0;
          inst->size_written = 4 * REG_SIZE;
 
@@ -5744,8 +5718,7 @@ emit_urb_indirect_reads_xe2(const brw_builder &bld, nir_intrinsic_instr *instr,
       brw_reg srcs[URB_LOGICAL_NUM_SRCS];
       srcs[URB_LOGICAL_SRC_HANDLE] = wbld.ADD(addr, urb_handle);
 
-      brw_inst *inst = wbld.emit(SHADER_OPCODE_URB_READ_LOGICAL,
-                                 data, srcs, ARRAY_SIZE(srcs));
+      brw_inst *inst = wbld.URB_READ(data, srcs, ARRAY_SIZE(srcs));
       inst->size_written = 2 * comps * REG_SIZE;
 
       for (unsigned c = 0; c < comps; c++) {
