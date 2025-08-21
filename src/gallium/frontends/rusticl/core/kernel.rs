@@ -1251,22 +1251,25 @@ fn extract<'a, const S: usize>(buf: &'a mut &[u8]) -> &'a [u8; S] {
 struct KernelExecBuilder<'a> {
     dev: &'static Device,
     input: Vec<u8>,
-    resource_info: Vec<(&'a PipeResource, usize)>,
+    resources: Vec<&'a PipeResource>,
+    resource_offsets: Vec<usize>,
     workgroup_id_offset_loc: Option<usize>,
 }
 
 impl<'a> KernelExecBuilder<'a> {
-    fn new(dev: &'static Device, input_size: u32) -> Self {
+    fn new(dev: &'static Device, input_size: u32, num_globals: usize) -> Self {
         Self {
             dev: dev,
             input: Vec::with_capacity(input_size as usize),
-            resource_info: Vec::new(),
+            resources: Vec::with_capacity(num_globals),
+            resource_offsets: Vec::with_capacity(num_globals),
             workgroup_id_offset_loc: None,
         }
     }
 
     fn add_global(&mut self, res: &'a PipeResourceOwned, offset: usize) {
-        self.resource_info.push((res.borrow(), self.input.len()));
+        self.resources.push(res.borrow());
+        self.resource_offsets.push(self.input.len());
         self.add_pointer(offset as u64);
     }
 
@@ -1304,15 +1307,14 @@ impl<'a> KernelExecBuilder<'a> {
     /// This returns a list of the tracked resources and their pointer into the managed kernel input
     /// buffer. Before using the input buffer the locations need to be filled with the gpu addresses
     /// of the resources.
-    fn get_resources_and_globals(&mut self) -> (Vec<&PipeResource>, Vec<*mut u32>) {
-        let mut resources = Vec::with_capacity(self.resource_info.len());
-        let mut globals: Vec<*mut u32> = Vec::with_capacity(self.resource_info.len());
-        for &(res, offset) in &self.resource_info {
-            resources.push(res);
-            globals.push(unsafe { self.input.as_mut_ptr().byte_add(offset) }.cast());
-        }
+    fn get_resources_and_globals<'s>(&'s mut self) -> (&'s mut [&'a PipeResource], Vec<*mut u32>) {
+        let globals = self
+            .resource_offsets
+            .iter()
+            .map(|&offset| unsafe { self.input.as_mut_ptr().byte_add(offset) }.cast())
+            .collect();
 
-        (resources, globals)
+        (&mut self.resources, globals)
     }
 
     fn input(&self) -> &[u8] {
@@ -1487,7 +1489,8 @@ impl Kernel {
             };
 
             let nir_kernel_build = &nir_kernel_builds[variant];
-            let mut exec_builder = KernelExecBuilder::new(ctx.dev, nir_kernel_build.input_size);
+            let mut exec_builder =
+                KernelExecBuilder::new(ctx.dev, nir_kernel_build.input_size, buffer_arcs.len() + 2);
             // Set it once so we get the alignment padding right
             let static_local_size: u64 = nir_kernel_build.shared_size;
             let mut variable_local_size: u64 = static_local_size;
@@ -1711,13 +1714,13 @@ impl Kernel {
             // subtract the shader local_size as we only request something on top of that.
             variable_local_size -= static_local_size;
 
-            let (mut resources, mut globals) = exec_builder.get_resources_and_globals();
+            let (resources, mut globals) = exec_builder.get_resources_and_globals();
 
             ctx.bind_kernel(&nir_kernel_builds, variant)?;
             ctx.bind_sampler_states(samplers);
             ctx.bind_sampler_views(sviews);
             ctx.bind_shader_images(&iviews);
-            ctx.set_global_binding(resources.as_mut_slice(), &mut globals);
+            ctx.set_global_binding(resources, &mut globals);
 
             for z in 0..grid[2].div_ceil(hw_max_grid[2]) {
                 for y in 0..grid[1].div_ceil(hw_max_grid[1]) {
