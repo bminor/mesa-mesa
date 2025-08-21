@@ -396,7 +396,7 @@ struct radv_cmd_state {
 
    bool predicating;
    uint64_t dirty_dynamic;
-   uint32_t dirty;
+   uint64_t dirty;
 
    VkShaderStageFlags active_stages;
    struct radv_shader *shaders[MESA_VULKAN_SHADER_STAGES];
