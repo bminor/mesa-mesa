@@ -155,19 +155,19 @@ ALU_GROUP_BEGIN
 ALU MOV S1.x@chan : I[0] {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-ALU MOV S2.x : KC0[0].x {W}
-ALU MOV S2.y : KC0[0].y {W}
-ALU MOV S2.z : KC0[0].z {W}
-ALU MOV S2.w : KC0[0].w {WL}
+ALU MOV S2.x@chan : KC0[0].x {W}
+ALU MOV S2.y@chan : KC0[0].y {W}
+ALU MOV S2.z@chan : KC0[0].z {W}
+ALU MOV S2.w@chan : KC0[0].w {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-ALU ADD S3.x@chan : S0.x@free S2.x {WL}
+ALU ADD S3.x@chan : S0.x@free S2.x@chan {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-ALU MOV S4.x@chgr : S3.x@free {W}
-ALU MOV S4.y@chgr : S2.y {W}
-ALU MOV S4.z@chgr : S2.z {W}
-ALU MOV S4.w@chgr : S2.w {WL}
+ALU MOV S4.x@chgr : S3.x@chan {W}
+ALU MOV S4.y@chgr : S2.y@chan {W}
+ALU MOV S4.z@chgr : S2.z@chan {W}
+ALU MOV S4.w@chgr : S2.w@chan {WL}
 ALU_GROUP_END
 EXPORT_DONE PIXEL 0 S4.xyzw
 )";
@@ -1416,22 +1416,22 @@ ALU_GROUP_BEGIN
 ALU_GROUP_END
 ALU_GROUP_BEGIN
   ALU DOT4_IEEE S5.x@chan : S4.x@chan S4.x@chan {W}
-  ALU DOT4_IEEE __.y@chan : S4.y@chan S4.y@chan {}
-  ALU DOT4_IEEE __.z@chan : I[0] I[0] {}
-  ALU DOT4_IEEE __.w@chan : I[0] I[0] {L}
+  ALU DOT4_IEEE __.y@chgr : S4.y@chan S4.y@chan {}
+  ALU DOT4_IEEE __.z@chgr : I[0] I[0] {}
+  ALU DOT4_IEEE __.w@chgr : I[0] I[0] {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU SQRT_IEEE S6.x : S5.x@chan {WL}
+  ALU SQRT_IEEE S6.x@chan : S5.x@chan {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU SETGE_DX10 S8.x : KC0[1].x S6.x {WL}
+  ALU SETGE_DX10 S8.x@chan : KC0[1].x S6.x {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU NOT_INT S9.x : S8.x {W}
-  ALU AND_INT S12.y@group : S8.x I[1.0] {WL}
+  ALU NOT_INT S9.x@chan : S8.x@chan {W}
+  ALU AND_INT S12.y@chgr : S8.x@chan I[1.0] {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU AND_INT S12.x@group : S9.x I[1.0] {WL}
+  ALU AND_INT S12.x@chgr : S9.x@chan I[1.0] {WL}
 ALU_GROUP_END
 BLOCK_END
 BLOCK_START
@@ -1538,9 +1538,9 @@ ALU_GROUP_BEGIN
 ALU_GROUP_END
 ALU_GROUP_BEGIN
   ALU MAX4 S16.x@chan : S12.x@chan {W}
-  ALU MAX4 __.y@chan : S13.y@chan {}
-  ALU MAX4 __.z@chan : S14.y@chan {}
-  ALU MAX4 __.w@chan : S15.x@chan {L}
+  ALU MAX4 __.y@chgr : S13.y@chan {}
+  ALU MAX4 __.z@chgr : S14.y@chan {}
+  ALU MAX4 __.w@chgr : S15.x@chan {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
   ALU SETE_DX10 S17.x@free : S16.x@chan I[1.0] {WL}
@@ -1603,30 +1603,30 @@ OUTPUT LOC:0 FRAG_RESULT:2 MASK:15
 SHADER
 BLOCK_START
 ALU_GROUP_BEGIN
-  ALU SETNE_DX10 S5.x : KC0[2].y KC0[0].y {W}
-  ALU SETNE_DX10 S5.y : KC0[2].x KC0[0].x {WL}
+  ALU SETNE_DX10 S5.x@chan : KC0[2].y KC0[0].y {W}
+  ALU SETNE_DX10 S5.y@chan : KC0[2].x KC0[0].x {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU SETNE_DX10 S9.x : KC0[3].y KC0[1].y {W}
-  ALU SETNE_DX10 S9.y : KC0[3].x KC0[1].x {W}
-  ALU OR_INT S6.x : S5.x S5.y {WL}
+  ALU SETNE_DX10 S9.x@chan : KC0[3].y KC0[1].y {W}
+  ALU SETNE_DX10 S9.y@chan : KC0[3].x KC0[1].x {W}
+  ALU OR_INT S6.x@chan : S5.x@chan S5.y@chan {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU OR_INT S10.x : S9.x S9.y {WL}
+  ALU OR_INT S10.x@chan : S9.x@chan S9.y@chan {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU OR_INT S11.x : S10.x S6.x {WL}
+  ALU OR_INT S11.x@chan : S10.x@chan S6.x@chan {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU NOT_INT S12.x : S11.x {W}
-  ALU AND_INT S15.z@group : S11.x I[1.0] {WL}
+  ALU NOT_INT S12.x@chan : S11.x@chan {W}
+  ALU AND_INT S15.z@chgr : S11.x@chan I[1.0] {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU AND_INT S13.x : S12.x I[1.0] {WL}
+  ALU AND_INT S13.x@chan : S12.x@chan I[1.0] {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU MOV S15.x@group : S13.x {W}
-  ALU MOV S15.y@group : S13.x {WL}
+  ALU MOV S15.x@chgr : S13.x@chan {W}
+  ALU MOV S15.y@chgr : S13.x@chan {WL}
 ALU_GROUP_END
 BLOCK_END
 BLOCK_START
@@ -1643,7 +1643,7 @@ OUTPUT LOC:1 VARYING_SLOT:32 MASK:15
 OUTPUT LOC:2 VARYING_SLOT:33 MASK:15
 OUTPUT LOC:3 VARYING_SLOT:34 MASK:15
 OUTPUT LOC:4 VARYING_SLOT:35 MASK:15
-REGISTERS R1.xyzw
+SYSVALUES R1.xyzw
 ARRAYS A2[4].xy A2[4].zw
 SHADER
 ALU MOV S6.x : I[0] {WL}
@@ -1782,7 +1782,7 @@ OUTPUT LOC:1 VARYING_SLOT:32 MASK:15
 OUTPUT LOC:2 VARYING_SLOT:33 MASK:15
 OUTPUT LOC:3 VARYING_SLOT:34 MASK:15
 OUTPUT LOC:4 VARYING_SLOT:35 MASK:15
-REGISTERS R1.xyzw
+SYSVALUES R1.xyzw
 ARRAYS A2[4].xy A2[4].zw
 SHADER
 ALU MUL_IEEE S14.x : KC0[2].x R1.y@fully {W}
@@ -1858,7 +1858,7 @@ OUTPUT LOC:1 VARYING_SLOT:32 MASK:15
 OUTPUT LOC:2 VARYING_SLOT:33 MASK:15
 OUTPUT LOC:3 VARYING_SLOT:34 MASK:15
 OUTPUT LOC:4 VARYING_SLOT:35 MASK:15
-REGISTERS R1.xyzw
+SYSVALUES R1.xyzw
 ARRAYS A2[4].xy A2[4].zw
 SHADER
 BLOCK_START
@@ -2414,10 +2414,10 @@ TEX SAMPLE S5.xyzw : S3.zw__ RID:18 SID:0 NNNN
 BLOCK_END
 BLOCK_START
 ALU_GROUP_BEGIN
-ALU ADD S6.x@group : S5.x@group S4.x@group {W}
-ALU ADD S6.y@group : S5.y@group S4.y@group {W}
-ALU ADD S6.z@group : S5.z@group S4.z@group {W}
-ALU ADD S6.w@group : S5.w@group S4.w@group {WL}
+ALU ADD S6.x@group : S5.x@chgr S4.x@chgr {W}
+ALU ADD S6.y@group : S5.y@chgr S4.y@chgr {W}
+ALU ADD S6.z@group : S5.z@chgr S4.z@chgr {W}
+ALU ADD S6.w@group : S5.w@chgr S4.w@chgr {WL}
 ALU_GROUP_END
 BLOCK_END
 BLOCK_START
@@ -2463,11 +2463,11 @@ ALU_GROUP_END
 LOOP_BEGIN
   ALU_GROUP_BEGIN
     ALU RECIPSQRT_IEEE S3.x@chan : |R1.x@free| {W}
-    ALU RECIPSQRT_IEEE __.y@chan : |R1.x@free| {}
-    ALU RECIPSQRT_IEEE __.z@chan : |R1.x@free| {L}
+    ALU RECIPSQRT_IEEE __.y@chgr : |R1.x@free| {}
+    ALU RECIPSQRT_IEEE __.z@chgr : |R1.x@free| {L}
   ALU_GROUP_END
   ALU_GROUP_BEGIN
-    ALU SETGT_DX10 S4.x@chan : S3.x@chgr S2.y@free {WL}
+    ALU SETGT_DX10 S4.x@chan : S3.x@chan S2.y@free {WL}
   ALU_GROUP_END
   IF (( ALU PRED_SETNE_INT __.x@free : S4.x@chan I[0] {LEP} PUSH_BEFORE ))
      BREAK
@@ -2695,28 +2695,28 @@ REGISTERS R0.x@fully R0.y@fully
 SHADER
 BLOCK_START
 ALU_GROUP_BEGIN
-  ALU MOV S3.x@free : R0.x@fully {W}
-  ALU MOV S7.y@free : I[0] {WL}
+  ALU MOV S3.x@chan : R0.x@fully {W}
+  ALU MOV S7.y@chan : I[0] {WL}
 ALU_GROUP_END
 BLOCK_END
 BLOCK_START
-LOAD_BUF S4.xyzw : S3.x@free RID:0
-LOAD_BUF S8.xyzw : S7.y@free RID:16 SRF
+LOAD_BUF S4.xyzw : S3.x@chan RID:0
+LOAD_BUF S8.xyzw : S7.y@chan RID:16 SRF
 BLOCK_END
 BLOCK_START
 ALU_GROUP_BEGIN
-  ALU MUL_UINT24 S10.x@free : S8.y@group R0.y@fully {WL}
+  ALU MUL_UINT24 S10.x@chan : S8.y@chgr R0.y@fully {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU ADD_INT S12.x@chan : L[0x8] S10.x@free {WL}
+  ALU ADD_INT S12.x@chan : L[0x8] S10.x@chan {WL}
 ALU_GROUP_END
 BLOCK_END
 BLOCK_START
-LOAD_BUF S5.xyzw : S4.x@group + 96b RID:0
+LOAD_BUF S5.xyzw : S4.x@chgr + 96b RID:0
 BLOCK_END
 BLOCK_START
 ALU_GROUP_BEGIN
-  ALU LDS WRITE_REL __.x : S10.x@free S5.x@group S5.y@group {L}
+  ALU LDS WRITE_REL __.x : S10.x@chan S5.x@chgr S5.y@chgr {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
   ALU LDS WRITE_REL __.x : S12.x@chan I[0] I[1.0] {L}
@@ -3065,10 +3065,10 @@ LOAD_BUF S1034.xyzw : S1033.y@chan RID:16 SRF
 BLOCK_START
 BLOCK_END
 ALU_GROUP_BEGIN
-   ALU MULADD_UINT24 S1036.x@chan : S1034.x@group R0.z@fully S1034.z@group {WL}
+   ALU MULADD_UINT24 S1036.x@chan : S1034.x@chgr R0.z@fully S1034.z@chgr {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-   ALU MULADD_UINT24 S1037.x@chan : S1034.y@group S1031.x@chan S1036.x@chan {WL}
+   ALU MULADD_UINT24 S1037.x@chan : S1034.y@chgr S1031.x@chan S1036.x@chan {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
    ALU ADD_INT S1039.x : I[0] S1037.x@chan {W}

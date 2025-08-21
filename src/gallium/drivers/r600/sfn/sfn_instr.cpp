@@ -505,6 +505,15 @@ void InstrWithVectorResult::update_indirect_addr(UNUSED PRegister old_reg, PRegi
    set_resource_offset(addr);
 }
 
+void
+InstrWithVectorResult::pin_dest_to_chan()
+{
+   for (int i = 0; i < 4; ++i) {
+      if (m_dest[i]->chan() < 4)
+         m_dest[i]->set_pin(pin_chgr);
+   }
+}
+
 class InstrComparer : public ConstInstrVisitor {
 public:
    InstrComparer() = default;

@@ -685,17 +685,19 @@ AluInstr::replace_dest(PRegister new_dest, AluInstr *move_instr)
 }
 
 void
-AluInstr::pin_sources_to_chan()
+AluInstr::pin_dest_to_chan()
 {
-   for (auto s : m_src) {
-      auto r = s->as_register();
-      if (r) {
-         if (r->pin() == pin_free)
-            r->set_pin(pin_chan);
-         else if (r->pin() == pin_group)
-            r->set_pin(pin_chgr);
-      }
-   }
+   if (!m_dest)
+      return;
+
+   auto p = m_dest->pin();
+   if (p == pin_fully || p == pin_chan || p == pin_chgr || p == pin_array)
+      return;
+
+   if (p != pin_group)
+      m_dest->set_pin(pin_chan);
+   else
+      m_dest->set_pin(pin_chgr);
 }
 
 bool
@@ -888,36 +890,19 @@ AluInstr::split(ValueFactory& vf, AluGroup& group)
    for (int k = 0; k < m_alu_slots; ++k) {
       int dest_slot = k + start_slot;
 
-      PRegister dst = m_dest->chan() == dest_slot ? m_dest : vf.dummy_dest(dest_slot);
-      if (dst->pin() != pin_chgr) {
-         auto pin = pin_chan;
-         if (dst->pin() == pin_group && m_dest->chan() == dest_slot)
-            pin = pin_chgr;
-         dst->set_pin(pin);
-      }
+      PRegister dst = dest_slot == m_dest->chan() ? m_dest : vf.dummy_dest(dest_slot);
 
       SrcValues src;
       int nsrc = alu_ops.at(m_opcode).nsrc;
       for (int i = 0; i < nsrc; ++i) {
-         auto old_src = m_src[k * nsrc + i];
-         // Make it easy for the scheduler and pin the register to the
-         // channel, otherwise scheduler would have to check whether a
-         // channel switch is possible
-         auto r = old_src->as_register();
-         if (r) {
-            if (r->pin() == pin_free || r->pin() == pin_none)
-               r->set_pin(pin_chan);
-            else if (r->pin() == pin_group)
-               r->set_pin(pin_chgr);
-         }
-         src.push_back(old_src);
+         src.push_back(m_src[k * nsrc + i]);
       }
 
       auto opcode = k < m_alu_slots -1 ? m_opcode : last_opcode;
 
-
       auto instr = new AluInstr(opcode, dst, src, {}, 1);
       instr->set_blockid(block_id(), index());
+      instr->pin_dest_to_chan();
 
       if (k == 0 || !m_alu_flags.test(alu_64bit_op)) {
          if (has_source_mod(nsrc * k + 0, mod_neg))
@@ -1266,14 +1251,22 @@ AluInstr::from_string(istream& is, ValueFactory& value_factory, AluGroup *group,
 
    PRegister dest = nullptr;
    // construct instruction
+
    if (deststr != "(null)")
       dest = value_factory.dest_from_string(deststr);
 
    AluInstr *retval = nullptr;
    if (is_lds)
       retval = new AluInstr(op_descr.lds_opcode, sources, flags);
-   else
-      retval = new AluInstr(op_descr.alu_opcode, dest, sources, flags, slots);
+   else {
+      if (op_descr.alu_opcode != op0_nop && op_descr.alu_opcode != op0_group_barrier)
+         retval = new AluInstr(op_descr.alu_opcode, dest, sources, flags, slots);
+      else {
+         retval = new AluInstr(op_descr.alu_opcode, 0);
+         for (auto f : flags)
+            retval->set_alu_flag(f);
+      }
+   }
 
    retval->m_source_modifiers = src_mods;
    retval->set_bank_swizzle(bank_swizzle);

@@ -583,6 +583,11 @@ BlockScheduler::schedule_alu(Shader::ShaderBlocks& out_blocks, ValueFactory& vf)
          /* Only start a new CF if we have no pending AR reads */
          if (m_current_block->try_reserve_kcache(*group)) {
             alu_groups_ready.erase(alu_groups_ready.begin());
+
+            for (auto i : *group) {
+               if (i)
+                  i->pin_dest_to_chan();
+            }
             success = true;
          } else {
             if (expected_ar_uses == 0) {
@@ -738,7 +743,7 @@ BlockScheduler::schedule_tex(Shader::ShaderBlocks& out_blocks)
          prep->set_scheduled();
          m_current_block->push_back(prep);
       }
-
+      (*ii)->pin_dest_to_chan();
       (*ii)->set_scheduled();
       m_current_block->push_back(*ii);
       tex_ready.erase(ii);
@@ -891,6 +896,7 @@ BlockScheduler::schedule_alu_to_group_vec(AluGroup *group)
       }
 
       if (group->add_vec_instructions(*i)) {
+         (*i)->pin_dest_to_chan();
          auto old_i = i;
          ++i;
          if ((*old_i)->has_alu_flag(alu_is_lds)) {
@@ -1012,6 +1018,7 @@ BlockScheduler::schedule_alu_to_group_trans(AluGroup *group,
       }
 
       if (group->add_trans_instructions(*i)) {
+         (*i)->pin_dest_to_chan();
          auto old_i = i;
          ++i;
          auto addr = std::get<0>((*old_i)->indirect_addr());
@@ -1054,6 +1061,7 @@ BlockScheduler::schedule_block(std::list<I *>& ready_list)
       auto ii = ready_list.begin();
       sfn_log << SfnLog::schedule << "Schedule: " << **ii << " "
               << m_current_block->remaining_slots() << "\n";
+      (*ii)->pin_dest_to_chan();
       (*ii)->set_scheduled();
       m_current_block->push_back(*ii);
       ready_list.erase(ii);

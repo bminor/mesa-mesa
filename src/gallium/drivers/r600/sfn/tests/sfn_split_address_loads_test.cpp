@@ -493,7 +493,7 @@ BLOCK_END
 )";
 
    const char *expect =
-R"(
+      R"(
 FS
 CHIPCLASS EVERGREEN
 PROP MAX_COLOR_EXPORTS:1
@@ -517,10 +517,10 @@ BLOCK_START
 BLOCK_END
 BLOCK_START
 ALU_GROUP_BEGIN
-  ALU ADD S4.x@chgr : KC1[IDX0][0].x S3.x {W}
-  ALU ADD S4.y@chgr : KC1[IDX0][0].y S3.y {W}
-  ALU ADD S4.z@chgr : KC1[IDX0][0].z S3.z {W}
-  ALU ADD S4.w@chgr : KC1[IDX0][0].w S3.w {WL}
+  ALU ADD S4.x@chgr : KC1[IDX0][0].x S3.x@chgr {W}
+  ALU ADD S4.y@chgr : KC1[IDX0][0].y S3.y@chgr {W}
+  ALU ADD S4.z@chgr : KC1[IDX0][0].z S3.z@chgr {W}
+  ALU ADD S4.w@chgr : KC1[IDX0][0].w S3.w@chgr {WL}
 ALU_GROUP_END
 BLOCK_END
 BLOCK_START

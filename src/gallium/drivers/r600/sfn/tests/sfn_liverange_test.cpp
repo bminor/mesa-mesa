@@ -81,7 +81,7 @@ TEST_F(LiveRangeTests, SimpleAdd)
    ValueFactory vf;
    Register *r0x = vf.dest_from_string("S0.x@chan");
    Register *r1x = vf.dest_from_string("S1.x@chan");
-   RegisterVec4 r2 = vf.dest_vec4_from_string("S2.xyzw", dummy, pin_none);
+   RegisterVec4 r2 = vf.dest_vec4_from_string("S2.xyzw", dummy, pin_chan);
    Register *r3x = vf.dest_from_string("S3.x@chan");
    RegisterVec4 r4 = vf.dest_vec4_from_string("S4.xyzw", dummy, pin_chgr);
 
@@ -163,9 +163,9 @@ TEST_F(LiveRangeTests, SimpleArrayAccess)
 
    auto array = vf.array_from_string("A0[2].xy");
 
-   auto s1 = vf.dest_from_string("S1.x");
-   auto s2x = vf.dest_from_string("S2.x");
-   auto s2y = vf.dest_from_string("S2.y");
+   auto s1 = vf.dest_from_string("S1.x@chan");
+   auto s2x = vf.dest_from_string("S2.x@chan");
+   auto s2y = vf.dest_from_string("S2.y@chan");
 
    auto s3 = vf.dest_vec4_from_string("S3.xy01", dummy, pin_chgr);
 

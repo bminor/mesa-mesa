@@ -244,8 +244,8 @@ EXPORT_DONE PIXEL 0 S3.xxxx
 
 TEST_F(TestShaderFromNir, CopyPropAndIndirectReadOrder)
 {
-const char *shader_input =
-   R"(FS
+   const char *shader_input =
+      R"(FS
 CHIPCLASS EVERGREEN
 PROP MAX_COLOR_EXPORTS:1
 PROP COLOR_EXPORTS:1
@@ -253,18 +253,18 @@ PROP COLOR_EXPORT_MASK:15
 PROP WRITE_ALL_COLORS:1
 OUTPUT LOC:0 FRAG_RESULT:2 MASK:15
 ARRAYS A0[4].x
-REGISTERS R0.xy
+SYSVALUES R0.xy
 SHADER
 BLOCK_START
   ALU MOV A0[0].x : I[0] {W}
   ALU MOV A0[1].x : I[1] {W}
   ALU MOV A0[2].x : I[0] {W}
   ALU MOV A0[3].x : I[0] {W}
-  ALU MOV S2.x{s} : A0[R0.x].x {W}
+  ALU MOV S2.x{s} : A0[R0.x@fully].x {W}
   ALU MOV A0[1].x : L[0x2] {W}
   ALU MOV A0[2].x : L[0x2] {W}
   ALU MOV A0[3].x : L[0x3] {W}
-  ALU MOV A0[R0.y].x : I[1] {W}
+  ALU MOV A0[R0.y@fully].x : I[1] {W}
   ALU MOV S3.x : A0[0].x {W}
   ALU MOV S3.y : A0[1].x {W}
   ALU MOV S3.z : A0[2].x {W}
@@ -273,8 +273,8 @@ BLOCK_START
 BLOCK_END
 )";
 
-const char *shader_expect =
-   R"(FS
+   const char *shader_expect =
+      R"(FS
 CHIPCLASS EVERGREEN
 PROP MAX_COLOR_EXPORTS:1
 PROP COLOR_EXPORTS:1
@@ -282,11 +282,11 @@ PROP COLOR_EXPORT_MASK:15
 PROP WRITE_ALL_COLORS:1
 OUTPUT LOC:0 FRAG_RESULT:2 MASK:15
 ARRAYS A0[4].x
-REGISTERS R0.xy
+SYSVALUES R0.xy
 SHADER
 BLOCK_START
 ALU_GROUP_BEGIN
-  ALU MOVA_INT AR : R0.x {}
+  ALU MOVA_INT AR : R0.x@fully {}
   ALU MOV A0[0].x : I[0] {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
@@ -297,10 +297,10 @@ ALU_GROUP_BEGIN
   ALU MOV A0[3].x : I[0] {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-    ALU MOV S2.x : A0[AR].x {WL}
+    ALU MOV S2.x@chan : A0[AR].x {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU MOVA_INT AR : R0.y {}
+  ALU MOVA_INT AR : R0.y@fully {}
   ALU MOV A0[1].x : L[0x2] {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
@@ -1180,9 +1180,8 @@ BLOCK_START
   EXPORT_DONE PIXEL 0 S2.xyzw
 BLOCK_END)";
 
-
    const char *expect =
-R"(FS
+      R"(FS
 CHIPCLASS R700
 FAMILY RV770
 PROP MAX_COLOR_EXPORTS:1
@@ -1200,16 +1199,16 @@ ALU_GROUP_BEGIN
     ALU MOV A1[AR].x : KC0[1].y {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-   ALU ADD S1.z : KC0[0].z KC0[2].z {W}
-   ALU ADD S1.w : KC0[0].w KC0[2].w {WL}
+   ALU ADD S1.z@chan : KC0[0].z KC0[2].z {W}
+   ALU ADD S1.w@chan : KC0[0].w KC0[2].w {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
    ALU ADD S2.x@chgr : A1[1].x KC0[0].y {W}
-   ALU ADD S2.y@chgr : KC0[1].y S1.z{s} {WL}
+   ALU ADD S2.y@chgr : KC0[1].y S1.z@chan{s} {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-   ALU ADD S2.z@chgr : KC0[1].z S1.w{s} {W}
-   ALU ADD S2.w@chgr : KC0[1].w S1.w{s} {WL}
+   ALU ADD S2.z@chgr : KC0[1].z S1.w@chan{s} {W}
+   ALU ADD S2.w@chgr : KC0[1].w S1.w@chan{s} {WL}
 ALU_GROUP_END
 BLOCK_END
 BLOCK_START

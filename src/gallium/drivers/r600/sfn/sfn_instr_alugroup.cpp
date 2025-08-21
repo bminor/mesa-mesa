@@ -32,6 +32,8 @@ AluGroup::add_instruction(AluInstr *instr)
       ASSERTED auto opinfo = alu_ops.find(instr->opcode());
       assert(opinfo->second.can_channel(AluOp::t, s_chip_class));
       if (add_trans_instructions(instr)) {
+         instr->set_parent_group(this);
+         instr->pin_dest_to_chan();
          m_has_kill_op |= instr->is_kill();
          return true;
       }
@@ -39,6 +41,7 @@ AluGroup::add_instruction(AluInstr *instr)
 
    if (add_vec_instructions(instr) && !instr->has_alu_flag(alu_is_trans)) {
       instr->set_parent_group(this);
+      instr->pin_dest_to_chan();
       m_has_kill_op |= instr->is_kill();
       return true;
    }
@@ -49,6 +52,7 @@ AluGroup::add_instruction(AluInstr *instr)
    if (s_max_slots > 4 && opinfo->second.can_channel(AluOp::t, s_chip_class) &&
        add_trans_instructions(instr)) {
       instr->set_parent_group(this);
+      instr->pin_dest_to_chan();
       m_has_kill_op |= instr->is_kill();
       return true;
    }
@@ -117,7 +121,7 @@ AluGroup::add_trans_instructions(AluInstr *instr)
          m_readports_reserver = readports_evaluator;
          m_slots[4] = instr;
          m_free_slots &= ~0x10;
-         instr->pin_sources_to_chan();
+
          sfn_log << SfnLog::schedule << "T: " << *instr << "\n";
 
          /* We added a vector op in the trans channel, so we have to
@@ -303,7 +307,6 @@ AluGroup::try_readport(AluInstr *instr, AluBankSwizzle cycle)
          else if (dest->pin() == pin_group)
             dest->set_pin(pin_chgr);
       }
-      instr->pin_sources_to_chan();
       return true;
    }
    return false;

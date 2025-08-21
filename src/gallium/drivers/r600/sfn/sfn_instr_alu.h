@@ -102,6 +102,8 @@ public:
 
    int dest_chan() const { return m_dest ? m_dest->chan() : m_fallback_chan; }
 
+   void pin_dest_to_chan();
+
    const VirtualValue *psrc(unsigned i) const { return i < m_src.size() ? m_src[i] : nullptr; }
    PVirtualValue psrc(unsigned i) { return i < m_src.size() ? m_src[i] : nullptr; }
    VirtualValue& src(unsigned i)
@@ -117,7 +119,6 @@ public:
 
    void set_sources(SrcValues src);
    const SrcValues& sources() const { return m_src; }
-   void pin_sources_to_chan();
 
    int register_priority() const;
 

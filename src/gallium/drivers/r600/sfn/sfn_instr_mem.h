@@ -41,6 +41,8 @@ public:
 
    void update_indirect_addr(PRegister old_reg, PRegister addr) override;
 
+   void pin_dest_to_chan() {}
+
 private:
    static bool emit_atomic_read(nir_intrinsic_instr *intr, Shader& shader);
    static bool emit_atomic_op2(nir_intrinsic_instr *intr, Shader& shader);

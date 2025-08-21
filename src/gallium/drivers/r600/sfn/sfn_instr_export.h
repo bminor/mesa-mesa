@@ -228,6 +228,8 @@ public:
 
    uint8_t allowed_src_chan_mask() const override;
 
+   void pin_dest_to_chan() {}
+
 private:
    bool do_ready() const override;
    void do_print(std::ostream& os) const override;

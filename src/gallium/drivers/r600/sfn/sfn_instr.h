@@ -338,6 +338,8 @@ public:
 
    void update_indirect_addr(PRegister old_reg, PRegister addr) override;
 
+   void pin_dest_to_chan();
+
 protected:
    InstrWithVectorResult(const InstrWithVectorResult& orig);
 
