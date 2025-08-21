@@ -54,7 +54,7 @@
       done
 
       # Open a section that will be closed by b2c
-      echo -e "\n\e[0Ksection_start:`date +%s`:b2c_kernel_boot[collapsed=true]\r\e[0K\e[0;36m[$(cut -d ' ' -f1 /proc/uptime)]: Submitting the CI-tron job and booting the DUT\e[0m\n"
+      echo -e "\n\e[0Ksection_start:`date +%s`:b2c_kernel_boot[collapsed=true]\r\e[0K\e[0;36mSubmitting the CI-tron job and booting the DUT\e[0m\n"
 
   # Anything our job places in results/ will be collected by the
   # Gitlab coordinator for status presentation. results/junit.xml
