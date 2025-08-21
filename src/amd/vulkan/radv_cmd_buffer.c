@@ -7889,7 +7889,7 @@ radv_CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipeline
           cmd_buffer->state.uses_vrs_attachment != graphics_pipeline->uses_vrs_attachment) {
          cmd_buffer->state.uses_out_of_order_rast = graphics_pipeline->uses_out_of_order_rast;
          cmd_buffer->state.uses_vrs_attachment = graphics_pipeline->uses_vrs_attachment;
-         cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_RASTERIZATION_SAMPLES;
+         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_RAST_SAMPLES_STATE;
       }
 
       cmd_buffer->state.ia_multi_vgt_param = graphics_pipeline->ia_multi_vgt_param;
