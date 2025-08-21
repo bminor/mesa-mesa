@@ -1680,9 +1680,6 @@ anv_image_init(struct anv_device *device, struct anv_image *image,
    if (image->vk.external_handle_types &
        VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) {
       image->from_ahb = true;
-#if DETECT_OS_ANDROID
-      image->vk.ahb_format = anv_ahb_format_for_vk_format(image->vk.format);
-#endif
       return VK_SUCCESS;
    }
 

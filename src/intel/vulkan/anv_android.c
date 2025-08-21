@@ -52,17 +52,6 @@ vk_format_from_android(unsigned android_format, unsigned android_usage)
    }
 }
 
-unsigned
-anv_ahb_format_for_vk_format(VkFormat vk_format)
-{
-   switch (vk_format) {
-   case VK_FORMAT_G8_B8R8_2PLANE_420_UNORM:
-      return AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420;
-   default:
-      return vk_image_format_to_ahb_format(vk_format);
-   }
-}
-
 static VkResult
 get_ahw_buffer_format_properties2(
    VkDevice device_h,
