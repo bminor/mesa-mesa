@@ -19,6 +19,7 @@
 #include "pco/pco_common.h"
 #include "pco/pco_data.h"
 #include "pco_uscgen_programs.h"
+#include "pco/usclib/pco_usclib.h"
 #include "pvr_common.h"
 #include "pvr_formats.h"
 #include "pvr_private.h"
@@ -1291,6 +1292,28 @@ pco_shader *pvr_uscgen_clear_attach(pco_ctx *ctx,
          nir_frag_store_pco(&b, data, u + props->offset);
       }
    }
+
+   nir_jump(&b, nir_jump_return);
+
+   return build_shader(ctx, b.shader, &data);
+}
+
+pco_shader *
+pvr_usc_zero_init_wg_mem(pco_ctx *ctx, unsigned start, unsigned count)
+{
+   pco_data data = {
+      .cs.shmem.start = start,
+      .cs.shmem.count = count,
+      .common.uses.usclib = true,
+   };
+
+   nir_builder b = nir_builder_init_simple_shader(MESA_SHADER_COMPUTE,
+                                                  pco_nir_options(),
+                                                  "zero_init_wg_mem(%u, %u)",
+                                                  start,
+                                                  count);
+
+   usclib_zero_init_wg_mem(&b, nir_imm_int(&b, count));
 
    nir_jump(&b, nir_jump_return);
 

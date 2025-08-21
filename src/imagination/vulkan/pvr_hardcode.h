@@ -44,11 +44,4 @@ void pvr_hard_code_get_idfwdf_program(
    uint32_t *usc_shareds_out,
    uint32_t *usc_temps_out);
 
-void pvr_hard_code_get_zero_wgmem_program(
-   const struct pvr_device_info *const dev_info,
-   unsigned start,
-   unsigned count,
-   struct util_dynarray *program_out,
-   uint32_t *usc_temps_out);
-
 #endif /* PVR_HARDCODE_SHADERS_H */

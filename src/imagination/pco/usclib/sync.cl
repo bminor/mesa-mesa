@@ -59,3 +59,10 @@ usclib_barrier(uint num_slots, uint counter_offset)
 
    nir_mutex_pco(PCO_MUTEX_ID_BARRIER, PCO_MUTEX_OP_RELEASE_WAKEUP);
 }
+
+void
+usclib_zero_init_wg_mem(uint count)
+{
+   for (unsigned u = 0; u < count; ++u)
+      nir_store_shared(0, u * sizeof(uint32_t), 0, 0x1, 4, 0);
+}

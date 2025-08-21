@@ -44,6 +44,7 @@
 #include "pvr_private.h"
 #include "pvr_robustness.h"
 #include "pvr_types.h"
+#include "pvr_usc.h"
 #include "util/log.h"
 #include "util/macros.h"
 #include "util/ralloc.h"
@@ -1037,23 +1038,19 @@ static VkResult pvr_compute_pipeline_compile(
 
    if (compute_pipeline->cs_data.cs.zero_shmem) {
       uint32_t start = compute_pipeline->cs_data.cs.shmem.start;
-      uint32_t count = start + compute_pipeline->cs_data.cs.shmem.count;
-      struct util_dynarray usc_program;
+      uint32_t count = compute_pipeline->cs_data.cs.shmem.count;
+      pco_shader *zero_init_shader =
+         pvr_usc_zero_init_wg_mem(pco_ctx, start, count);
 
-      util_dynarray_init(&usc_program, NULL);
-      pvr_hard_code_get_zero_wgmem_program(
-         &device->pdevice->dev_info,
-         start,
-         count,
-         &usc_program,
-         &compute_state->coeff_update_shader_temps);
+      compute_state->coeff_update_shader_temps =
+         pco_shader_data(zero_init_shader)->common.temps;
 
       result = pvr_gpu_upload_usc(device,
-                                  usc_program.data,
-                                  usc_program.size,
+                                  pco_shader_binary_data(zero_init_shader),
+                                  pco_shader_binary_size(zero_init_shader),
                                   cache_line_size,
                                   &compute_state->coeff_update_shader_bo);
-      util_dynarray_fini(&usc_program);
+      ralloc_free(zero_init_shader);
 
       if (result != VK_SUCCESS)
          goto err_free_shader;
