@@ -1307,6 +1307,10 @@ impl<'a> KernelExecBuilder<'a> {
         (resources, globals)
     }
 
+    fn input(&self) -> &[u8] {
+        &self.input
+    }
+
     /// Marks the current position in the kernel input buffer as the location of the workgroup id
     /// offsets for use with `set_workgroup_id_offset`.
     fn mark_workgroup_id_offset(&mut self) {
@@ -1722,7 +1726,7 @@ impl Kernel {
                             cmp::min(hw_max_grid[2], grid[2] - hw_max_grid[2] * z) as u32,
                         ];
 
-                        ctx.update_cb0(&exec_builder.input)?;
+                        ctx.update_cb0(exec_builder.input())?;
                         ctx.launch_grid(
                             work_dim,
                             block,
