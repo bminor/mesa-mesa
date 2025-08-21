@@ -1883,7 +1883,7 @@ radv_get_rasterization_samples(struct radv_cmd_buffer *cmd_buffer)
 {
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
 
-   VkLineRasterizationModeEXT line_mode = radv_get_line_mode(cmd_buffer);
+   const VkLineRasterizationModeEXT line_mode = cmd_buffer->state.line_rast_mode;
 
    if (line_mode == VK_LINE_RASTERIZATION_MODE_BRESENHAM) {
       /* From the Vulkan spec 1.3.221:
@@ -10939,13 +10939,14 @@ radv_emit_ps_state(struct radv_cmd_buffer *cmd_buffer)
    if (!ps_state_offset)
       return;
 
+   const VkLineRasterizationModeEXT line_rast_mode = cmd_buffer->state.line_rast_mode;
    const unsigned rasterization_samples = cmd_buffer->state.num_rast_samples;
    const unsigned ps_iter_samples = radv_get_ps_iter_samples(cmd_buffer);
    const uint16_t ps_iter_mask = ac_get_ps_iter_mask(ps_iter_samples);
    const unsigned vgt_outprim_type = radv_get_vgt_outprim_type(cmd_buffer);
    const unsigned ps_state = SET_SGPR_FIELD(PS_STATE_NUM_SAMPLES, rasterization_samples) |
                              SET_SGPR_FIELD(PS_STATE_PS_ITER_MASK, ps_iter_mask) |
-                             SET_SGPR_FIELD(PS_STATE_LINE_RAST_MODE, radv_get_line_mode(cmd_buffer)) |
+                             SET_SGPR_FIELD(PS_STATE_LINE_RAST_MODE, line_rast_mode) |
                              SET_SGPR_FIELD(PS_STATE_RAST_PRIM, vgt_outprim_type);
 
    radeon_begin(cmd_buffer->cs);
@@ -11309,6 +11310,7 @@ radv_emit_db_shader_control(struct radv_cmd_buffer *cmd_buffer)
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    const bool uses_ds_feedback_loop =
       !!(d->feedback_loop_aspects & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT));
+   const VkLineRasterizationModeEXT line_rast_mode = cmd_buffer->state.line_rast_mode;
    const unsigned rasterization_samples = cmd_buffer->state.num_rast_samples;
    uint32_t db_dfsm_control = S_028060_PUNCHOUT_MODE(V_028060_FORCE_OFF);
    uint32_t db_shader_control;
@@ -11326,7 +11328,7 @@ radv_emit_db_shader_control(struct radv_cmd_buffer *cmd_buffer)
     * Also apply the bug workaround for smoothing (overrasterization) on GFX6.
     */
    if (uses_ds_feedback_loop ||
-       (gpu_info->gfx_level == GFX6 && radv_get_line_mode(cmd_buffer) == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH))
+       (gpu_info->gfx_level == GFX6 && line_rast_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH))
       db_shader_control = (db_shader_control & C_02880C_Z_ORDER) | S_02880C_Z_ORDER(V_02880C_LATE_Z);
 
    if (ps && ps->info.ps.pops) {
@@ -11541,6 +11543,7 @@ radv_emit_raster_state(struct radv_cmd_buffer *cmd_buffer)
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    const bool depth_clip_enable = cmd_buffer->state.depth_clip_enable;
+   const VkLineRasterizationModeEXT line_rast_mode = cmd_buffer->state.line_rast_mode;
 
    /* GFX9 chips fail linestrip CTS tests unless this is set to 0 = no reset */
    uint32_t auto_reset_cntl = (pdev->info.gfx_level == GFX9) ? 0 : 2;
@@ -11562,9 +11565,8 @@ radv_emit_raster_state(struct radv_cmd_buffer *cmd_buffer)
       /* Ensure that SC processes the primitive group in the same order as PA produced them.  Needed
        * when either POLY_MODE or PERPENDICULAR_ENDCAP_ENA is set.
        */
-      pa_su_sc_mode_cntl |=
-         S_028814_KEEP_TOGETHER_ENABLE(d->vk.rs.polygon_mode != V_028814_X_DRAW_TRIANGLES ||
-                                       radv_get_line_mode(cmd_buffer) == VK_LINE_RASTERIZATION_MODE_RECTANGULAR);
+      pa_su_sc_mode_cntl |= S_028814_KEEP_TOGETHER_ENABLE(d->vk.rs.polygon_mode != V_028814_X_DRAW_TRIANGLES ||
+                                                          line_rast_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR);
    }
 
    const uint32_t pa_su_line_cntl = S_028A08_WIDTH(CLAMP(d->vk.rs.line.width * 8, 0, 0xFFFF));
@@ -11573,7 +11575,7 @@ radv_emit_raster_state(struct radv_cmd_buffer *cmd_buffer)
     * performance.
     */
    const uint32_t pa_sc_line_cntl =
-      S_028BDC_PERPENDICULAR_ENDCAP_ENA(radv_get_line_mode(cmd_buffer) == VK_LINE_RASTERIZATION_MODE_RECTANGULAR);
+      S_028BDC_PERPENDICULAR_ENDCAP_ENA(line_rast_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR);
 
    if (pdev->info.gfx_level >= GFX12) {
       radeon_begin(cmd_buffer->cs);
@@ -11733,6 +11735,7 @@ radv_emit_msaa_state(struct radv_cmd_buffer *cmd_buffer)
    const uint32_t sample_mask = d->vk.ms.sample_mask | ((uint32_t)d->vk.ms.sample_mask << 16);
    const bool enable_1x_user_sample_locs =
       d->vk.ms.sample_locations_enable && d->sample_location.count > 0 && d->sample_location.per_pixel == 1;
+   const VkLineRasterizationModeEXT line_rast_mode = cmd_buffer->state.line_rast_mode;
    const bool msaa_enable = rasterization_samples > 1 || enable_1x_user_sample_locs;
    unsigned log_samples = util_logbase2(rasterization_samples);
    unsigned pa_sc_conservative_rast = 0;
@@ -11816,7 +11819,7 @@ radv_emit_msaa_state(struct radv_cmd_buffer *cmd_buffer)
                     S_028804_MASK_EXPORT_NUM_SAMPLES(log_samples) | S_028804_ALPHA_TO_MASK_NUM_SAMPLES(log_samples);
       }
 
-      if (radv_get_line_mode(cmd_buffer) == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH)
+      if (line_rast_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH)
          db_eqaa |= S_028804_OVERRASTERIZATION_AMOUNT(log_samples);
    }
 
@@ -12091,6 +12094,15 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
    if ((cmd_buffer->state.dirty & (RADV_CMD_DIRTY_PIPELINE | RADV_CMD_DIRTY_GRAPHICS_SHADERS)) ||
        (dynamic_states & (RADV_DYNAMIC_PRIMITIVE_TOPOLOGY | RADV_DYNAMIC_POLYGON_MODE |
                           RADV_DYNAMIC_LINE_RASTERIZATION_MODE | RADV_DYNAMIC_RASTERIZATION_SAMPLES))) {
+      const VkLineRasterizationModeEXT line_rast_mode = radv_get_line_mode(cmd_buffer);
+
+      if (cmd_buffer->state.line_rast_mode != line_rast_mode) {
+         cmd_buffer->state.line_rast_mode = line_rast_mode;
+         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_PS_STATE | RADV_CMD_DIRTY_RASTER_STATE | RADV_CMD_DIRTY_MSAA_STATE;
+         if (pdev->info.gfx_level == GFX6)
+            cmd_buffer->state.dirty |= RADV_CMD_DIRTY_DB_SHADER_CONTROL;
+      }
+
       const uint32_t num_rast_samples = radv_get_rasterization_samples(cmd_buffer);
 
       if (cmd_buffer->state.num_rast_samples != num_rast_samples) {
