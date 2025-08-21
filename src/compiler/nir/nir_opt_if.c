@@ -215,9 +215,9 @@ opt_peel_loop_initial_if(nir_loop *loop)
       nir_cf_node_as_block(nir_cf_node_next(&nif->cf_node));
 
    /* Get rid of phis in the header block since we will be duplicating it */
-   nir_lower_phis_to_regs_block(header_block);
+   nir_lower_phis_to_regs_block(header_block, false);
    /* Get rid of phis after the if since dominance will change */
-   nir_lower_phis_to_regs_block(after_if_block);
+   nir_lower_phis_to_regs_block(after_if_block, false);
 
    /* Get rid of SSA defs in the pieces we're about to move around */
    nir_lower_ssa_defs_to_regs_block(header_block);

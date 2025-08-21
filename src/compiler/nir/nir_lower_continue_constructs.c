@@ -49,7 +49,7 @@ lower_loop_continue_block(nir_builder *b, nir_loop *loop, bool *repair_ssa)
          break;
    }
 
-   nir_lower_phis_to_regs_block(header);
+   nir_lower_phis_to_regs_block(header, false);
 
    if (num_continue == 0) {
       /* this loop doesn't continue at all. delete the continue construct */
@@ -66,7 +66,7 @@ lower_loop_continue_block(nir_builder *b, nir_loop *loop, bool *repair_ssa)
       nir_cf_reinsert(&extracted,
                       nir_after_block_before_jump(single_predecessor));
    } else {
-      nir_lower_phis_to_regs_block(cont);
+      nir_lower_phis_to_regs_block(cont, false);
       *repair_ssa = true;
 
       /* As control flow has to re-converge before executing the continue

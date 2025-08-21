@@ -448,7 +448,7 @@ lower_cf_func(nir_function *func)
     * motion way easier.
     */
    nir_foreach_block(block, old_impl)
-      nir_lower_phis_to_regs_block(block);
+      nir_lower_phis_to_regs_block(block, false);
 
    /* We create a whole new nir_function_impl and copy the contents over */
    func->impl = NULL;

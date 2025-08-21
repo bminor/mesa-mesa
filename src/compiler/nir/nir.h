@@ -6161,7 +6161,8 @@ nir_rewrite_uses_to_load_reg(nir_builder *b, nir_def *old,
 bool nir_convert_from_ssa(nir_shader *shader,
                           bool phi_webs_only, bool consider_divergence);
 
-bool nir_lower_phis_to_regs_block(nir_block *block);
+bool nir_lower_phis_to_regs_block(nir_block *block,
+                                  bool place_writes_in_imm_preds);
 bool nir_lower_ssa_defs_to_regs_block(nir_block *block);
 
 bool nir_rematerialize_deref_in_use_blocks(nir_deref_instr *instr);

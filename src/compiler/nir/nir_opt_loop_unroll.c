@@ -56,7 +56,7 @@ loop_prepare_for_unroll(nir_loop *loop)
    /* Lower phis at the top level of the loop body */
    foreach_list_typed_safe(nir_cf_node, node, node, &loop->body) {
       if (nir_cf_node_block == node->type) {
-         nir_lower_phis_to_regs_block(nir_cf_node_as_block(node));
+         nir_lower_phis_to_regs_block(nir_cf_node_as_block(node), false);
       }
    }
 
@@ -64,7 +64,7 @@ loop_prepare_for_unroll(nir_loop *loop)
    nir_block *block_after_loop =
       nir_cf_node_as_block(nir_cf_node_next(&loop->cf_node));
 
-   nir_lower_phis_to_regs_block(block_after_loop);
+   nir_lower_phis_to_regs_block(block_after_loop, false);
 
    /* Remove jump if it's the last instruction in the loop */
    nir_instr *last_instr = nir_block_last_instr(nir_loop_last_block(loop));

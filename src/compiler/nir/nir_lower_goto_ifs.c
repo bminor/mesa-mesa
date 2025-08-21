@@ -923,7 +923,7 @@ nir_lower_goto_ifs_impl(nir_function_impl *impl)
     * if we don't have any phi nodes to fix up.
     */
    nir_foreach_block_unstructured(block, impl)
-      nir_lower_phis_to_regs_block(block);
+      nir_lower_phis_to_regs_block(block, false);
 
    nir_cf_list cf_list;
    nir_cf_extract(&cf_list, nir_before_impl(impl),

@@ -1152,18 +1152,30 @@ place_phi_read(nir_builder *b, nir_def *reg,
  * temporary for each phi, all movs inserted in any particular block have
  * unique destinations so the order of operations does not matter.
  *
- * The one intelligent thing this pass does is that it places the moves from
- * the phi sources as high up the predecessor tree as possible instead of in
- * the exact predecessor.  This means that, in particular, it will crawl into
- * the deepest nesting of any if-ladders.  In order to ensure that doing so is
+ * If place_writes_in_imm_preds is set, we don't try to be clever and
+ * reg_write instructions are placed in the immediate predecessor block as
+ * given by the phi source.  If unset, we try to place the moves from the phi
+ * sources as high up the predecessor tree as possible instead of in the exact
+ * predecessor.  This means that, in particular, it will crawl into the
+ * deepest nesting of any if-ladders.  In order to ensure that doing so is
  * safe, it stops as soon as one of the predecessors has multiple successors.
+ * This can be useful for passes which don't want store_reg intrinsics to be
+ * placed in unreachable blocks or blocks with a single predecessor and single
+ * successor, this simplifying the pass logic.
+ *
+ * place_writes_in_imm_preds should be set if the caller wants reg_load/store
+ * instructions to map directly to the original phis.  This can be useful if,
+ * for instance, you want to guarantee that uniform registers are only ever
+ * written from uniform control flow or if you want to accurately be able to
+ * re-construct the original phis afterwards.
  */
 bool
-nir_lower_phis_to_regs_block(nir_block *block)
+nir_lower_phis_to_regs_block(nir_block *block, bool place_writes_in_imm_preds)
 {
    nir_builder b = nir_builder_create(nir_cf_node_get_function(&block->cf_node));
-   struct set *visited_blocks = _mesa_set_create(NULL, _mesa_hash_pointer,
-                                                 _mesa_key_pointer_equal);
+   struct set *visited_blocks = NULL;
+   if (!place_writes_in_imm_preds)
+      visited_blocks = _mesa_pointer_set_create(NULL);
 
    bool progress = false;
    nir_foreach_phi_safe(phi, block) {
@@ -1174,10 +1186,14 @@ nir_lower_phis_to_regs_block(nir_block *block)
       nir_def_rewrite_uses(&phi->def, nir_load_reg(&b, reg));
 
       nir_foreach_phi_src(src, phi) {
-
-         _mesa_set_add(visited_blocks, nir_def_block(src->src.ssa));
-         place_phi_read(&b, reg, src->src.ssa, src->pred, visited_blocks);
-         _mesa_set_clear(visited_blocks, NULL);
+         if (place_writes_in_imm_preds) {
+            b.cursor = nir_after_block_before_jump(src->pred);
+            nir_store_reg(&b, src->src.ssa, reg);
+         } else {
+            _mesa_set_add(visited_blocks, nir_def_block(src->src.ssa));
+            place_phi_read(&b, reg, src->src.ssa, src->pred, visited_blocks);
+            _mesa_set_clear(visited_blocks, NULL);
+         }
       }
 
       nir_instr_remove(&phi->instr);
@@ -1185,7 +1201,8 @@ nir_lower_phis_to_regs_block(nir_block *block)
       progress = true;
    }
 
-   _mesa_set_destroy(visited_blocks, NULL);
+   if (!place_writes_in_imm_preds)
+      _mesa_set_destroy(visited_blocks, NULL);
 
    return progress;
 }
