@@ -33,6 +33,7 @@
 #include "vk_alloc.h"
 #include "vk_device.h"
 #include "vk_log.h"
+#include "vk_physical_device.h"
 
 static void
 vk_sync_type_validate(const struct vk_sync_type *type)
@@ -258,7 +259,8 @@ vk_sync_wait(struct vk_device *device,
 }
 
 static bool
-can_wait_many(uint32_t wait_count,
+can_wait_many(struct vk_device *device,
+              uint32_t wait_count,
               const struct vk_sync_wait *waits,
               enum vk_sync_wait_flags wait_flags)
 {
@@ -268,6 +270,12 @@ can_wait_many(uint32_t wait_count,
    if ((wait_flags & VK_SYNC_WAIT_ANY) &&
        !(waits[0].sync->type->features & VK_SYNC_FEATURE_WAIT_ANY))
       return false;
+
+   /* If we only have one sync type, there's no need to check everything */
+   if (device->physical->supported_sync_types[1] == NULL) {
+      assert(waits[0].sync->type == device->physical->supported_sync_types[0]);
+      return true;
+   }
 
    for (uint32_t i = 0; i < wait_count; i++) {
       assert_valid_wait(waits[i].sync, waits[i].wait_value, wait_flags);
@@ -293,7 +301,7 @@ __vk_sync_wait_many(struct vk_device *device,
                             wait_flags & ~VK_SYNC_WAIT_ANY, abs_timeout_ns);
    }
 
-   if (can_wait_many(wait_count, waits, wait_flags)) {
+   if (can_wait_many(device, wait_count, waits, wait_flags)) {
       return waits[0].sync->type->wait_many(device, wait_count, waits,
                                             wait_flags, abs_timeout_ns);
    } else if (wait_flags & VK_SYNC_WAIT_ANY) {
