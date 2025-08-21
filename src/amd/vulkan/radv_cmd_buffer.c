@@ -5225,7 +5225,7 @@ radv_emit_vs_prolog_state(struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
-radv_emit_tess_domain_origin(struct radv_cmd_buffer *cmd_buffer)
+radv_emit_tess_domain_origin_state(struct radv_cmd_buffer *cmd_buffer)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -5233,6 +5233,10 @@ radv_emit_tess_domain_origin(struct radv_cmd_buffer *cmd_buffer)
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    unsigned type = 0, partitioning = 0;
    unsigned topology;
+
+   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_TESS_DOMAIN_ORIGIN_STATE;
+   if (!tes)
+      return;
 
    switch (tes->info.tes._primitive_mode) {
    case TESS_PRIMITIVE_TRIANGLES:
@@ -5394,9 +5398,6 @@ radv_cmd_buffer_flush_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const ui
 
    if (states & RADV_DYNAMIC_PATCH_CONTROL_POINTS)
       radv_emit_patch_control_points(cmd_buffer);
-
-   if (states & RADV_DYNAMIC_TESS_DOMAIN_ORIGIN)
-      radv_emit_tess_domain_origin(cmd_buffer);
 
    /* RADV_DYNAMIC_ATTACHMENT_FEEDBACK_LOOP_ENABLE is handled by radv_emit_db_shader_control. */
 
@@ -7431,7 +7432,8 @@ radv_bind_tess_ctrl_shader(struct radv_cmd_buffer *cmd_buffer, const struct radv
    /* Always re-emit patch control points/domain origin when a new pipeline with tessellation is
     * bound because a bunch of parameters (user SGPRs, TCS vertices out, ccw, etc) can be different.
     */
-   cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_PATCH_CONTROL_POINTS | RADV_DYNAMIC_TESS_DOMAIN_ORIGIN;
+   cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_PATCH_CONTROL_POINTS;
+   cmd_buffer->state.dirty |= RADV_CMD_DIRTY_TESS_DOMAIN_ORIGIN_STATE;
 
    /* Re-emit the VS prolog when the tessellation control shader is compiled separately because
     * shader configs are combined and need to be updated.
@@ -11473,6 +11475,9 @@ radv_validate_dynamic_states(struct radv_cmd_buffer *cmd_buffer, uint64_t dynami
 
    if (dynamic_states & (RADV_DYNAMIC_SCISSOR | RADV_DYNAMIC_VIEWPORT) && !pdev->info.has_gfx9_scissor_bug)
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_SCISSOR_STATE;
+
+   if (dynamic_states & RADV_DYNAMIC_TESS_DOMAIN_ORIGIN)
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_TESS_DOMAIN_ORIGIN_STATE;
 }
 
 static void
@@ -11579,6 +11584,9 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
 
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_SCISSOR_STATE)
       radv_emit_scissor_state(cmd_buffer);
+
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_TESS_DOMAIN_ORIGIN_STATE)
+      radv_emit_tess_domain_origin_state(cmd_buffer);
 
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_RASTER_STATE)
       radv_emit_raster_state(cmd_buffer);
