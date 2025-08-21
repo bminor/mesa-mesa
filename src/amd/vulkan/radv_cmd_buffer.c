@@ -3401,7 +3401,7 @@ radv_emit_depth_bias_state(struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
-radv_emit_primitive_topology(struct radv_cmd_buffer *cmd_buffer)
+radv_emit_vgt_prim_state(struct radv_cmd_buffer *cmd_buffer)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -3425,6 +3425,8 @@ radv_emit_primitive_topology(struct radv_cmd_buffer *cmd_buffer)
    radeon_end();
 
    radv_emit_vgt_gs_out(cmd_buffer, vgt_gs_out_prim_type);
+
+   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_VGT_PRIM_STATE;
 }
 
 static bool
@@ -5393,13 +5395,6 @@ lookup_ps_epilog(struct radv_cmd_buffer *cmd_buffer)
 static void
 radv_cmd_buffer_flush_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const uint64_t states)
 {
-   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-
-   if ((states & RADV_DYNAMIC_PRIMITIVE_TOPOLOGY) ||
-       (pdev->info.gfx_level >= GFX12 && states & RADV_DYNAMIC_PATCH_CONTROL_POINTS))
-      radv_emit_primitive_topology(cmd_buffer);
-
    /* RADV_DYNAMIC_ATTACHMENT_FEEDBACK_LOOP_ENABLE is handled by radv_emit_db_shader_control. */
 
    cmd_buffer->state.dirty_dynamic &= ~states;
@@ -11482,6 +11477,10 @@ radv_validate_dynamic_states(struct radv_cmd_buffer *cmd_buffer, uint64_t dynami
 
    if (dynamic_states & RADV_DYNAMIC_TESS_DOMAIN_ORIGIN)
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_TESS_DOMAIN_ORIGIN_STATE;
+
+   if ((dynamic_states & RADV_DYNAMIC_PRIMITIVE_TOPOLOGY) ||
+       (pdev->info.gfx_level >= GFX12 && dynamic_states & RADV_DYNAMIC_PATCH_CONTROL_POINTS))
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_VGT_PRIM_STATE;
 }
 
 static void
@@ -11588,6 +11587,9 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
 
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_SCISSOR_STATE)
       radv_emit_scissor_state(cmd_buffer);
+
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_VGT_PRIM_STATE)
+      radv_emit_vgt_prim_state(cmd_buffer);
 
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_PATCH_CONTROL_POINTS_STATE)
       radv_emit_patch_control_points_state(cmd_buffer);
