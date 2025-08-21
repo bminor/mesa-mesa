@@ -258,6 +258,9 @@ static inline bool try_back_prop_instr(struct pco_use *uses, pco_instr *instr)
 
    pco_ref *pdest_from = &use->instr->dest[0];
 
+   if (pco_ref_is_idx_reg(*pdest_from))
+      return false;
+
    if (pco_ref_is_reg(*pdest_from) &&
        pco_ref_get_reg_class(*pdest_from) == PCO_REG_CLASS_PIXOUT) {
       return false;
