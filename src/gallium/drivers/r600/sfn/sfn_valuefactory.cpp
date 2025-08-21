@@ -778,6 +778,13 @@ ValueFactory::src_from_string(const std::string& s)
          }
          return array->element(offset, addr, chan - array->frac());
       } else {
+         auto old_pin = ireg->second->pin();
+         if (old_pin != p) {
+            if ((old_pin == pin_group && p == pin_chgr) ||
+                ((old_pin == pin_free || old_pin == pin_none) &&
+                 (p == pin_chan || p == pin_group)))
+               ireg->second->set_pin(p);
+         }
          return ireg->second;
       }
    } else {
