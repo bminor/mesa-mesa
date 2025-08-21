@@ -1290,6 +1290,20 @@ impl<'a> KernelExecBuilder<'a> {
             self.input.resize(until_len, 0);
         }
     }
+
+    /// This returns a list of the tracked resources and their pointer into the managed kernel input
+    /// buffer. Before using the input buffer the locations need to be filled with the gpu addresses
+    /// of the resources.
+    fn get_resources_and_globals(&mut self) -> (Vec<&PipeResource>, Vec<*mut u32>) {
+        let mut resources = Vec::with_capacity(self.resource_info.len());
+        let mut globals: Vec<*mut u32> = Vec::with_capacity(self.resource_info.len());
+        for &(res, offset) in &self.resource_info {
+            resources.push(res);
+            globals.push(unsafe { self.input.as_mut_ptr().byte_add(offset) }.cast());
+        }
+
+        (resources, globals)
+    }
 }
 
 impl Kernel {
@@ -1663,12 +1677,7 @@ impl Kernel {
             // subtract the shader local_size as we only request something on top of that.
             variable_local_size -= static_local_size;
 
-            let mut resources = Vec::with_capacity(exec_builder.resource_info.len());
-            let mut globals: Vec<*mut u32> = Vec::with_capacity(exec_builder.resource_info.len());
-            for (res, offset) in exec_builder.resource_info {
-                resources.push(res);
-                globals.push(unsafe { exec_builder.input.as_mut_ptr().byte_add(offset) }.cast());
-            }
+            let (mut resources, mut globals) = exec_builder.get_resources_and_globals();
 
             ctx.bind_kernel(&nir_kernel_builds, variant)?;
             ctx.bind_sampler_states(samplers);
