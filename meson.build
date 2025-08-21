@@ -52,6 +52,8 @@ relative_dir = fs.relative_to(meson.project_source_root(), meson.project_build_r
 
 cl_args = [
   '-fmacro-prefix-map=@0@/='.format(relative_dir),
+  '-fmacro-prefix-map=@0@/='.format(meson.project_source_root()),
+  '-fmacro-prefix-map=@0@/='.format(meson.project_build_root()),
 
   # Set the OpenCL standard to CL 2.0, enabling everything at a frontend.
   # Drivers may not actually support everything but that's ok.
