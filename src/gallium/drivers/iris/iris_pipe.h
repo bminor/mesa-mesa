@@ -24,19 +24,6 @@
 #define IRIS_PIPE_H
 
 #include "pipe/p_defines.h"
-#include "compiler/shader_enums.h"
-
-static inline mesa_shader_stage
-stage_from_pipe(mesa_shader_stage pstage)
-{
-   return (mesa_shader_stage)pstage;
-}
-
-static inline mesa_shader_stage
-stage_to_pipe(mesa_shader_stage stage)
-{
-   return (mesa_shader_stage)stage;
-}
 
 /**
  * Convert an swizzle enumeration (i.e. PIPE_SWIZZLE_X) to one of the HW's

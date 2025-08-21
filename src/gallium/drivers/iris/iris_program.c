@@ -4001,10 +4001,9 @@ iris_shader_perf_log(void *data, unsigned *id, const char *fmt, ...)
 
 const struct nir_shader_compiler_options *
 iris_get_compiler_options(struct pipe_screen *pscreen,
-                          mesa_shader_stage pstage)
+                          mesa_shader_stage stage)
 {
    struct iris_screen *screen = (struct iris_screen *) pscreen;
-   mesa_shader_stage stage = stage_from_pipe(pstage);
 
 #ifdef INTEL_USE_ELK
    return screen->brw ? screen->brw->nir_options[stage]

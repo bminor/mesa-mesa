@@ -2623,12 +2623,11 @@ iris_create_sampler_state(struct pipe_context *ctx,
  */
 static void
 iris_bind_sampler_states(struct pipe_context *ctx,
-                         mesa_shader_stage p_stage,
+                         mesa_shader_stage stage,
                          unsigned start, unsigned count,
                          void **states)
 {
    struct iris_context *ice = (struct iris_context *) ctx;
-   mesa_shader_stage stage = stage_from_pipe(p_stage);
    struct iris_shader_state *shs = &ice->state.shaders[stage];
 
    assert(start + count <= IRIS_MAX_SAMPLERS);
@@ -3357,14 +3356,13 @@ fill_buffer_image_param(struct isl_image_param *param,
  */
 static void
 iris_set_shader_images(struct pipe_context *ctx,
-                       mesa_shader_stage p_stage,
+                       mesa_shader_stage stage,
                        unsigned start_slot, unsigned count,
                        unsigned unbind_num_trailing_slots,
                        const struct pipe_image_view *p_images)
 {
    struct iris_context *ice = (struct iris_context *) ctx;
    struct iris_screen *screen = (struct iris_screen *)ctx->screen;
-   mesa_shader_stage stage = stage_from_pipe(p_stage);
    struct iris_shader_state *shs = &ice->state.shaders[stage];
 #if GFX_VER == 8
    struct iris_genx_state *genx = ice->state.genx;
@@ -3489,7 +3487,7 @@ iris_set_shader_images(struct pipe_context *ctx,
    }
 
    if (unbind_num_trailing_slots) {
-      iris_set_shader_images(ctx, p_stage, start_slot + count,
+      iris_set_shader_images(ctx, stage, start_slot + count,
                              unbind_num_trailing_slots, 0, NULL);
    }
 }
@@ -3505,7 +3503,7 @@ is_sampler_view_3d(const struct iris_sampler_view *view)
  */
 static void
 iris_set_sampler_views(struct pipe_context *ctx,
-                       mesa_shader_stage p_stage,
+                       mesa_shader_stage stage,
                        unsigned start, unsigned count,
                        unsigned unbind_num_trailing_slots,
                        struct pipe_sampler_view **views)
@@ -3513,7 +3511,6 @@ iris_set_sampler_views(struct pipe_context *ctx,
    struct iris_context *ice = (struct iris_context *) ctx;
    UNUSED struct iris_screen *screen = (void *) ctx->screen;
    UNUSED const struct intel_device_info *devinfo = screen->devinfo;
-   mesa_shader_stage stage = stage_from_pipe(p_stage);
    struct iris_shader_state *shs = &ice->state.shaders[stage];
    unsigned i;
 
@@ -3949,12 +3946,11 @@ iris_set_framebuffer_state(struct pipe_context *ctx,
  */
 static void
 iris_set_constant_buffer(struct pipe_context *ctx,
-                         mesa_shader_stage p_stage, unsigned index,
+                         mesa_shader_stage stage, unsigned index,
                          bool take_ownership,
                          const struct pipe_constant_buffer *input)
 {
    struct iris_context *ice = (struct iris_context *) ctx;
-   mesa_shader_stage stage = stage_from_pipe(p_stage);
    struct iris_shader_state *shs = &ice->state.shaders[stage];
    struct pipe_shader_buffer *cbuf = &shs->constbuf[index];
 
@@ -3972,7 +3968,7 @@ iris_set_constant_buffer(struct pipe_context *ctx,
 
          if (!cbuf->buffer) {
             /* Allocation was unsuccessful - just unbind */
-            iris_set_constant_buffer(ctx, p_stage, index, false, NULL);
+            iris_set_constant_buffer(ctx, stage, index, false, NULL);
             return;
          }
 
@@ -4109,13 +4105,12 @@ upload_sysvals(struct iris_context *ice,
  */
 static void
 iris_set_shader_buffers(struct pipe_context *ctx,
-                        mesa_shader_stage p_stage,
+                        mesa_shader_stage stage,
                         unsigned start_slot, unsigned count,
                         const struct pipe_shader_buffer *buffers,
                         unsigned writable_bitmask)
 {
    struct iris_context *ice = (struct iris_context *) ctx;
-   mesa_shader_stage stage = stage_from_pipe(p_stage);
    struct iris_shader_state *shs = &ice->state.shaders[stage];
 
    unsigned modified_bits = u_bit_consecutive(start_slot, count);
@@ -9616,7 +9611,6 @@ iris_rebind_buffer(struct iris_context *ice,
 
    for (int s = MESA_SHADER_VERTEX; s < MESA_SHADER_STAGES; s++) {
       struct iris_shader_state *shs = &ice->state.shaders[s];
-      mesa_shader_stage p_stage = stage_to_pipe(s);
 
       if (!(res->bind_stages & (1 << s)))
          continue;
@@ -9651,7 +9645,7 @@ iris_rebind_buffer(struct iris_context *ice,
                   .buffer_offset = ssbo->buffer_offset,
                   .buffer_size = ssbo->buffer_size,
                };
-               iris_set_shader_buffers(ctx, p_stage, i, 1, &buf,
+               iris_set_shader_buffers(ctx, s, i, 1, &buf,
                                        (shs->writable_ssbos >> i) & 1);
             }
          }
