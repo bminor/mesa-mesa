@@ -866,36 +866,46 @@ vk_common_GetAndroidHardwareBufferPropertiesANDROID(
    VK_FROM_HANDLE(vk_device, device, device_h);
    VkResult result;
 
-   VkAndroidHardwareBufferFormatPropertiesANDROID *format_prop =
-      vk_find_struct(pProperties->pNext, ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_ANDROID);
+   VkAndroidHardwareBufferFormatPropertiesANDROID *format_prop = NULL;
+   VkAndroidHardwareBufferFormatProperties2ANDROID *format_prop2 = NULL;
 
-   /* Fill format properties of an Android hardware buffer. */
-   if (format_prop) {
-      VkAndroidHardwareBufferFormatProperties2ANDROID format_prop2 = {
-         .sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_2_ANDROID,
-      };
-      result = get_ahb_buffer_format_properties2(device, buffer, &format_prop2);
-      if (result != VK_SUCCESS)
-         return result;
-
-      format_prop->format                 = format_prop2.format;
-      format_prop->externalFormat         = format_prop2.externalFormat;
-      format_prop->formatFeatures         =
-         vk_format_features2_to_features(format_prop2.formatFeatures);
-      format_prop->samplerYcbcrConversionComponents =
-         format_prop2.samplerYcbcrConversionComponents;
-      format_prop->suggestedYcbcrModel    = format_prop2.suggestedYcbcrModel;
-      format_prop->suggestedYcbcrRange    = format_prop2.suggestedYcbcrRange;
-      format_prop->suggestedXChromaOffset = format_prop2.suggestedXChromaOffset;
-      format_prop->suggestedYChromaOffset = format_prop2.suggestedYChromaOffset;
+   vk_foreach_struct(ext, pProperties->pNext) {
+      switch (ext->sType) {
+      case VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_ANDROID:
+         format_prop = (void *)ext;
+         break;
+      case VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_2_ANDROID:
+         format_prop2 = (void *)ext;
+         break;
+      default:
+         break;
+      }
    }
 
-   VkAndroidHardwareBufferFormatProperties2ANDROID *format_prop2 =
-      vk_find_struct(pProperties->pNext, ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_2_ANDROID);
+   /* Fill format properties of an Android hardware buffer. */
+   VkAndroidHardwareBufferFormatProperties2ANDROID local_prop2 = {
+      .sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_2_ANDROID,
+   };
+   if (!format_prop2 && format_prop)
+      format_prop2 = &local_prop2;
+
    if (format_prop2) {
       result = get_ahb_buffer_format_properties2(device, buffer, format_prop2);
       if (result != VK_SUCCESS)
          return result;
+   }
+
+   if (format_prop) {
+      format_prop->format                 = format_prop2->format;
+      format_prop->externalFormat         = format_prop2->externalFormat;
+      format_prop->formatFeatures         =
+         vk_format_features2_to_features(format_prop2->formatFeatures);
+      format_prop->samplerYcbcrConversionComponents =
+         format_prop2->samplerYcbcrConversionComponents;
+      format_prop->suggestedYcbcrModel    = format_prop2->suggestedYcbcrModel;
+      format_prop->suggestedYcbcrRange    = format_prop2->suggestedYcbcrRange;
+      format_prop->suggestedXChromaOffset = format_prop2->suggestedXChromaOffset;
+      format_prop->suggestedYChromaOffset = format_prop2->suggestedYChromaOffset;
    }
 
    const native_handle_t *handle = AHardwareBuffer_getNativeHandle(buffer);
