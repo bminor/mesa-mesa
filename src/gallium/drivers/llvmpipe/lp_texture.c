@@ -766,7 +766,7 @@ llvmpipe_resource_from_handle(struct pipe_screen *_screen,
          void *data = (char*)alloc->cpu_addr + whandle->offset;
          lpr->dt = winsys->displaytarget_create_mapped(winsys, template->bind,
                                                        template->format, template->width0, template->height0,
-                                                       whandle->stride, data);
+                                                       whandle->stride, data, whandle);
          if (!lpr->dt)
             goto no_dt;
          lpr->dmabuf_alloc = alloc;
@@ -1649,7 +1649,8 @@ llvmpipe_resource_bind_backing(struct pipe_screen *pscreen,
                                                           lpr->base.format,
                                                           width, height,
                                                           lpr->row_stride[0],
-                                                          lpr->tex_data);
+                                                          lpr->tex_data,
+                                                          NULL);
          }
       }
    } else
