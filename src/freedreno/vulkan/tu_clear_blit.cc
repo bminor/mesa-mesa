@@ -2405,7 +2405,8 @@ tu_copy_buffer_to_image(struct tu_cmd_buffer *cmd,
 
    copy_compressed(dst_image->vk.format, &offset, &extent, &src_width, &src_height);
 
-   uint32_t pitch = src_width * util_format_get_blocksize(src_format);
+   uint32_t block_size = util_format_get_blocksize(src_format);
+   uint32_t pitch = src_width * block_size;
    uint32_t layer_size = src_height * pitch;
 
    ops->setup(cmd, cs, src_format, dst_format,
@@ -2423,12 +2424,35 @@ tu_copy_buffer_to_image(struct tu_cmd_buffer *cmd,
       bool unaligned = (src_va & 63) || (pitch & 63);
       if (!has_unaligned && unaligned) {
          for (uint32_t y = 0; y < extent.height; y++) {
-            uint32_t x = (src_va & 63) / util_format_get_blocksize(src_format);
+            uint32_t x = (src_va & 63) / block_size;
+            uint32_t excess_width = 0;
+            /* With VA aligning we can go over the maximum copy size
+             * and will have to do additional copy of the leftover.
+             */
+            if (x + extent.width > MAX_VIEWPORT_SIZE) {
+               excess_width = x + extent.width - MAX_VIEWPORT_SIZE;
+               assert(excess_width < 64 / block_size);
+            }
+            uint32_t clamped_width = extent.width - excess_width;
+
             ops->src_buffer(cmd, cs, src_format, src_va & ~63, pitch,
-                            x + extent.width, 1, dst_format);
+                            x + clamped_width, 1, dst_format);
             ops->coords(cmd, cs, (VkOffset2D) {offset.x, offset.y + y},  (VkOffset2D) {x},
-                        (VkExtent2D) {extent.width, 1});
+                        (VkExtent2D) {clamped_width, 1});
             ops->run(cmd, cs);
+
+            if (excess_width) {
+               uint64_t src_va_overflow =
+                  (src_va + clamped_width * block_size);
+               assert((src_va_overflow & 63) == 0);
+               ops->src_buffer(cmd, cs, src_format, src_va_overflow & ~63,
+                               pitch, excess_width, 1, dst_format);
+               ops->coords(
+                  cmd, cs,
+                  (VkOffset2D) { offset.x + clamped_width, offset.y + y },
+                  (VkOffset2D) { 0 }, (VkExtent2D) { excess_width, 1 });
+               ops->run(cmd, cs);
+            }
             src_va += pitch;
          }
       } else {
