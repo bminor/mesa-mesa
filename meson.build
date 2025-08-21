@@ -1575,7 +1575,6 @@ if host_machine.system() == 'windows' or with_platform_android
   dep_display_info = null_dep
 else
   dep_display_info = dependency('libdisplay-info', version : '>= 0.1.1',
-                                fallback : ['libdisplay-info', 'di_dep'],
                                 required : get_option('display-info'))
   if dep_display_info.found()
     pre_args += '-DHAVE_LIBDISPLAY_INFO'
