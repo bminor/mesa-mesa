@@ -1984,7 +1984,7 @@
         "description": "nak,nir: Use a simpler version of phis_to_regs_block in lower_cf",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b013d54e4ff9cb066cb77ead0a7fd76d5df962ad",
         "notes": null
