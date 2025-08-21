@@ -373,6 +373,9 @@ kgsl_bo_finish(struct tu_device *dev, struct tu_bo *bo)
    if (!p_atomic_dec_zero(&bo->refcnt))
       return;
 
+   tu_debug_bos_del(dev, bo);
+   tu_dump_bo_del(dev, bo);
+
    if (bo->map) {
       TU_RMV(bo_unmap, dev, bo);
       munmap(bo->map, bo->size);
@@ -382,8 +385,6 @@ kgsl_bo_finish(struct tu_device *dev, struct tu_bo *bo)
       close(bo->shared_fd);
 
    TU_RMV(bo_destroy, dev, bo);
-   tu_debug_bos_del(dev, bo);
-   tu_dump_bo_del(dev, bo);
 
    struct kgsl_gpumem_free_id req = {
       .id = bo->gem_handle

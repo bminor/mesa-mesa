@@ -70,14 +70,15 @@ tu_drm_bo_finish(struct tu_device *dev, struct tu_bo *bo)
       return;
    }
 
+   tu_debug_bos_del(dev, bo);
+   tu_dump_bo_del(dev, bo);
+
    if (bo->map) {
       TU_RMV(bo_unmap, dev, bo);
       munmap(bo->map, bo->size);
    }
 
    TU_RMV(bo_destroy, dev, bo);
-   tu_debug_bos_del(dev, bo);
-   tu_dump_bo_del(dev, bo);
 
    mtx_lock(&dev->bo_mutex);
    dev->submit_bo_count--;
