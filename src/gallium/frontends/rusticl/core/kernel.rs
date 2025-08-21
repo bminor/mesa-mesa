@@ -460,6 +460,7 @@ pub struct NirKernelBuild {
     constant_buffer: Option<PipeResourceOwned>,
     info: pipe_compute_state_object_info,
     shared_size: u64,
+    input_size: u32,
     printf_info: Option<NirPrintfInfo>,
     compiled_args: Vec<CompiledKernelArg>,
 }
@@ -490,6 +491,7 @@ impl NirKernelBuild {
             constant_buffer: cb,
             info: info,
             shared_size: shared_size,
+            input_size: out.input_size,
             printf_info: printf_info,
             compiled_args: out.compiled_args,
         }
@@ -550,6 +552,7 @@ where
 struct CompilationResult {
     nir: NirShader,
     compiled_args: Vec<CompiledKernelArg>,
+    input_size: u32,
 }
 
 impl CompilationResult {
@@ -560,16 +563,19 @@ impl CompilationResult {
                 .nir_shader_compiler_options(mesa_shader_stage::MESA_SHADER_COMPUTE),
         )?;
         let compiled_args = CompiledKernelArg::deserialize(reader)?;
+        let input_size = unsafe { blob_read_uint32(reader) };
 
         Some(Self {
             nir: nir,
-            compiled_args,
+            compiled_args: compiled_args,
+            input_size: input_size,
         })
     }
 
     fn serialize(&self, blob: &mut blob) {
         self.nir.serialize(blob);
         CompiledKernelArg::serialize(&self.compiled_args, blob);
+        unsafe { blob_write_uint32(blob, self.input_size) };
     }
 }
 
@@ -1010,6 +1016,7 @@ fn compile_nir_variant(
     if nir_options.lower_uniforms_to_ubo {
         nir_pass!(nir, rusticl_lower_inputs);
     }
+    res.input_size = nir.uniform_size();
 
     nir_pass!(nir, nir_lower_convert_alu_types, None);
 
@@ -1071,6 +1078,7 @@ fn compile_nir_remaining(
     let mut default_build = CompilationResult {
         nir: nir,
         compiled_args: compiled_args,
+        input_size: 0,
     };
 
     // check if we even want to compile a variant before cloning the compilation state
@@ -1248,10 +1256,10 @@ struct KernelExecBuilder<'a> {
 }
 
 impl<'a> KernelExecBuilder<'a> {
-    fn new(dev: &'static Device) -> Self {
+    fn new(dev: &'static Device, input_size: u32) -> Self {
         Self {
             dev: dev,
-            input: Vec::new(),
+            input: Vec::with_capacity(input_size as usize),
             resource_info: Vec::new(),
             workgroup_id_offset_loc: None,
         }
@@ -1479,7 +1487,7 @@ impl Kernel {
             };
 
             let nir_kernel_build = &nir_kernel_builds[variant];
-            let mut exec_builder = KernelExecBuilder::new(ctx.dev);
+            let mut exec_builder = KernelExecBuilder::new(ctx.dev, nir_kernel_build.input_size);
             // Set it once so we get the alignment padding right
             let static_local_size: u64 = nir_kernel_build.shared_size;
             let mut variable_local_size: u64 = static_local_size;

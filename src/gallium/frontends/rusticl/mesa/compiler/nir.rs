@@ -313,6 +313,10 @@ impl NirShader {
         unsafe { (*self.nir.as_ptr()).info.shared_size }
     }
 
+    pub fn uniform_size(&self) -> u32 {
+        unsafe { (*self.nir.as_ptr()).num_uniforms }
+    }
+
     pub fn workgroup_size(&self) -> [u16; 3] {
         unsafe { (*self.nir.as_ptr()).info.workgroup_size }
     }
