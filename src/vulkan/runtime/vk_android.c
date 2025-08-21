@@ -795,6 +795,10 @@ get_ahb_buffer_format_properties2(
    case DRM_FORMAT_NV12:
       external_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
       break;
+   case DRM_FORMAT_XBGR8888:
+      /* This can be resolved from IMPLEMENTATION_DEFINED AHB format */
+      external_format = VK_FORMAT_R8G8B8A8_UNORM;
+      break;
    default:
       mesa_loge("Unsupported external DRM format: %d", info.drm_fourcc);
       return VK_ERROR_INVALID_EXTERNAL_HANDLE;
