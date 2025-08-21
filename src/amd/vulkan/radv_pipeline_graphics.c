@@ -2563,28 +2563,28 @@ radv_pipeline_load_retained_shaders(const struct radv_device *device, const VkGr
 }
 
 static unsigned
-radv_get_rasterization_prim(const struct radv_shader_stage *stages, const struct radv_graphics_state_key *gfx_state)
+radv_get_vgt_outprim_type(const struct radv_shader_stage *stages, const struct radv_graphics_state_key *gfx_state)
 {
-   unsigned rast_prim;
+   unsigned vgt_outprim_type;
 
    if (gfx_state->unknown_rast_prim)
       return -1;
 
    if (stages[MESA_SHADER_GEOMETRY].nir) {
-      rast_prim = radv_conv_gl_prim_to_gs_out(stages[MESA_SHADER_GEOMETRY].nir->info.gs.output_primitive);
+      vgt_outprim_type = radv_conv_gl_prim_to_gs_out(stages[MESA_SHADER_GEOMETRY].nir->info.gs.output_primitive);
    } else if (stages[MESA_SHADER_TESS_EVAL].nir) {
       if (stages[MESA_SHADER_TESS_EVAL].nir->info.tess.point_mode) {
-         rast_prim = V_028A6C_POINTLIST;
+         vgt_outprim_type = V_028A6C_POINTLIST;
       } else {
-         rast_prim = radv_conv_tess_prim_to_gs_out(stages[MESA_SHADER_TESS_EVAL].nir->info.tess._primitive_mode);
+         vgt_outprim_type = radv_conv_tess_prim_to_gs_out(stages[MESA_SHADER_TESS_EVAL].nir->info.tess._primitive_mode);
       }
    } else if (stages[MESA_SHADER_MESH].nir) {
-      rast_prim = radv_conv_gl_prim_to_gs_out(stages[MESA_SHADER_MESH].nir->info.mesh.primitive_type);
+      vgt_outprim_type = radv_conv_gl_prim_to_gs_out(stages[MESA_SHADER_MESH].nir->info.mesh.primitive_type);
    } else {
-      rast_prim = radv_conv_prim_to_gs_out(gfx_state->ia.topology, false);
+      vgt_outprim_type = radv_conv_prim_to_gs_out(gfx_state->ia.topology, false);
    }
 
-   return rast_prim;
+   return vgt_outprim_type;
 }
 
 static bool
@@ -2773,9 +2773,9 @@ radv_graphics_shaders_compile(struct radv_device *device, struct vk_pipeline_cac
    radv_graphics_shaders_link(device, gfx_state, stages);
 
    if (stages[MESA_SHADER_FRAGMENT].nir) {
-      unsigned rast_prim = radv_get_rasterization_prim(stages, gfx_state);
+      unsigned vgt_outprim_type = radv_get_vgt_outprim_type(stages, gfx_state);
 
-      NIR_PASS(_, stages[MESA_SHADER_FRAGMENT].nir, radv_nir_lower_fs_barycentric, gfx_state, rast_prim);
+      NIR_PASS(_, stages[MESA_SHADER_FRAGMENT].nir, radv_nir_lower_fs_barycentric, gfx_state, vgt_outprim_type);
 
       NIR_PASS(_, stages[MESA_SHADER_FRAGMENT].nir, nir_lower_fragcoord_wtrans);
 
@@ -3523,7 +3523,7 @@ radv_graphics_pipeline_init(struct radv_graphics_pipeline *pipeline, struct radv
       return result;
    }
 
-   uint32_t vgt_gs_out_prim_type = radv_pipeline_init_vgt_gs_out(pipeline, &gfx_state.vk);
+   uint32_t vgt_outprim_type = radv_pipeline_init_vgt_gs_out(pipeline, &gfx_state.vk);
 
    radv_pipeline_init_multisample_state(device, pipeline, pCreateInfo, &gfx_state.vk);
 
@@ -3539,7 +3539,7 @@ radv_graphics_pipeline_init(struct radv_graphics_pipeline *pipeline, struct radv
    pipeline->is_ngg = pipeline->base.shaders[pipeline->last_vgt_api_stage]->info.is_ngg;
    pipeline->has_ngg_culling = pipeline->base.shaders[pipeline->last_vgt_api_stage]->info.has_ngg_culling;
    pipeline->force_vrs_per_vertex = pipeline->base.shaders[pipeline->last_vgt_api_stage]->info.force_vrs_per_vertex;
-   pipeline->rast_prim = vgt_gs_out_prim_type;
+   pipeline->vgt_outprim_type = vgt_outprim_type;
    pipeline->uses_out_of_order_rast = gfx_state.vk.rs->rasterization_order_amd == VK_RASTERIZATION_ORDER_RELAXED_AMD;
    pipeline->uses_vrs = radv_is_vrs_enabled(&gfx_state.vk);
    pipeline->uses_vrs_attachment = radv_pipeline_uses_vrs_attachment(pipeline, &gfx_state.vk);

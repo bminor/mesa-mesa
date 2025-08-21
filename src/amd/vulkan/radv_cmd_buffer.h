@@ -532,7 +532,7 @@ struct radv_cmd_state {
 
    unsigned last_cb_target_mask;
 
-   unsigned rast_prim;
+   unsigned vgt_outprim_type;
 
    uint32_t vtx_base_sgpr;
    uint8_t vtx_emit_num;

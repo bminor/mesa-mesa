@@ -125,7 +125,7 @@ struct radv_graphics_pipeline {
    /* Last pre-PS API stage */
    mesa_shader_stage last_vgt_api_stage;
 
-   unsigned rast_prim;
+   unsigned vgt_outprim_type;
 
    /* Custom blend mode for internal operations. */
    unsigned custom_blend_mode;
@@ -291,21 +291,21 @@ radv_prim_is_points_or_lines(unsigned topology)
 }
 
 static inline bool
-radv_rast_prim_is_point(unsigned rast_prim)
+radv_vgt_outprim_is_point(unsigned vgt_outprim_type)
 {
-   return rast_prim == V_028A6C_POINTLIST;
+   return vgt_outprim_type == V_028A6C_POINTLIST;
 }
 
 static inline bool
-radv_rast_prim_is_line(unsigned rast_prim)
+radv_vgt_outprim_is_line(unsigned vgt_outprim_type)
 {
-   return rast_prim == V_028A6C_LINESTRIP;
+   return vgt_outprim_type == V_028A6C_LINESTRIP;
 }
 
 static inline bool
-radv_rast_prim_is_points_or_lines(unsigned rast_prim)
+radv_vgt_outprim_is_point_or_line(unsigned vgt_outprim_type)
 {
-   return radv_rast_prim_is_point(rast_prim) || radv_rast_prim_is_line(rast_prim);
+   return radv_vgt_outprim_is_point(vgt_outprim_type) || radv_vgt_outprim_is_line(vgt_outprim_type);
 }
 
 static inline bool

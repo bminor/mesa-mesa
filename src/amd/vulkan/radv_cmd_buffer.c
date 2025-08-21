@@ -1014,7 +1014,7 @@ radv_emit_descriptors_per_stage(const struct radv_device *device, struct radv_cm
 }
 
 static unsigned
-radv_get_rasterization_prim(const struct radv_cmd_buffer *cmd_buffer)
+radv_get_vgt_outprim_type(const struct radv_cmd_buffer *cmd_buffer)
 {
    const struct radv_shader *last_vgt_shader = cmd_buffer->state.last_vgt_shader;
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
@@ -1023,7 +1023,7 @@ radv_get_rasterization_prim(const struct radv_cmd_buffer *cmd_buffer)
        (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
         VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_MESH_BIT_EXT)) {
       /* Ignore dynamic primitive topology for TES/GS/MS stages. */
-      return cmd_buffer->state.rast_prim;
+      return cmd_buffer->state.vgt_outprim_type;
    }
 
    return radv_conv_prim_to_gs_out(d->vk.ia.primitive_topology, last_vgt_shader->info.is_ngg);
@@ -1034,10 +1034,11 @@ radv_get_line_mode(const struct radv_cmd_buffer *cmd_buffer)
 {
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
 
-   const unsigned rast_prim = radv_get_rasterization_prim(cmd_buffer);
+   const unsigned vgt_outprim_type = radv_get_vgt_outprim_type(cmd_buffer);
 
-   const bool draw_lines = (radv_rast_prim_is_line(rast_prim) && !radv_polygon_mode_is_point(d->vk.rs.polygon_mode)) ||
-                           (radv_polygon_mode_is_line(d->vk.rs.polygon_mode) && !radv_rast_prim_is_point(rast_prim));
+   const bool draw_lines =
+      (radv_vgt_outprim_is_line(vgt_outprim_type) && !radv_polygon_mode_is_point(d->vk.rs.polygon_mode)) ||
+      (radv_polygon_mode_is_line(d->vk.rs.polygon_mode) && !radv_vgt_outprim_is_point(vgt_outprim_type));
    if (draw_lines)
       return d->vk.rs.line.mode;
 
@@ -3405,7 +3406,7 @@ radv_emit_vgt_prim_state(struct radv_cmd_buffer *cmd_buffer)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   const uint32_t vgt_gs_out_prim_type = radv_get_rasterization_prim(cmd_buffer);
+   const uint32_t vgt_outprim_type = radv_get_vgt_outprim_type(cmd_buffer);
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    struct radv_cmd_stream *cs = cmd_buffer->cs;
 
@@ -3424,7 +3425,7 @@ radv_emit_vgt_prim_state(struct radv_cmd_buffer *cmd_buffer)
    }
    radeon_end();
 
-   radv_emit_vgt_gs_out(cmd_buffer, vgt_gs_out_prim_type);
+   radv_emit_vgt_gs_out(cmd_buffer, vgt_outprim_type);
 
    cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_VGT_PRIM_STATE;
 }
@@ -4820,9 +4821,11 @@ radv_emit_guardband_state(struct radv_cmd_buffer *cmd_buffer)
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
-   unsigned rast_prim = radv_get_rasterization_prim(cmd_buffer);
-   const bool draw_points = radv_rast_prim_is_point(rast_prim) || radv_polygon_mode_is_point(d->vk.rs.polygon_mode);
-   const bool draw_lines = radv_rast_prim_is_line(rast_prim) || radv_polygon_mode_is_line(d->vk.rs.polygon_mode);
+   unsigned vgt_outprim_type = radv_get_vgt_outprim_type(cmd_buffer);
+   const bool draw_points =
+      radv_vgt_outprim_is_point(vgt_outprim_type) || radv_polygon_mode_is_point(d->vk.rs.polygon_mode);
+   const bool draw_lines =
+      radv_vgt_outprim_is_line(vgt_outprim_type) || radv_polygon_mode_is_line(d->vk.rs.polygon_mode);
    struct radv_cmd_stream *cs = cmd_buffer->cs;
    int i;
    float guardband_x = INFINITY, guardband_y = INFINITY;
@@ -7877,18 +7880,18 @@ radv_CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipeline
          cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FRAMEBUFFER;
       }
 
-      if (cmd_buffer->state.rast_prim != graphics_pipeline->rast_prim) {
+      if (cmd_buffer->state.vgt_outprim_type != graphics_pipeline->vgt_outprim_type) {
          cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_PRIMITIVE_TOPOLOGY;
 
-         if (radv_rast_prim_is_points_or_lines(cmd_buffer->state.rast_prim) !=
-             radv_rast_prim_is_points_or_lines(graphics_pipeline->rast_prim))
+         if (radv_vgt_outprim_is_point_or_line(cmd_buffer->state.vgt_outprim_type) !=
+             radv_vgt_outprim_is_point_or_line(graphics_pipeline->vgt_outprim_type))
             cmd_buffer->state.dirty |= RADV_CMD_DIRTY_GUARDBAND;
 
-         if (radv_rast_prim_is_line(cmd_buffer->state.rast_prim) !=
-             radv_rast_prim_is_line(graphics_pipeline->rast_prim))
+         if (radv_vgt_outprim_is_line(cmd_buffer->state.vgt_outprim_type) !=
+             radv_vgt_outprim_is_line(graphics_pipeline->vgt_outprim_type))
             cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_RASTERIZATION_SAMPLES;
 
-         cmd_buffer->state.rast_prim = graphics_pipeline->rast_prim;
+         cmd_buffer->state.vgt_outprim_type = graphics_pipeline->vgt_outprim_type;
       }
 
       if (cmd_buffer->state.uses_out_of_order_rast != graphics_pipeline->uses_out_of_order_rast ||
@@ -10477,11 +10480,11 @@ radv_emit_fs_state(struct radv_cmd_buffer *cmd_buffer)
    const unsigned rasterization_samples = radv_get_rasterization_samples(cmd_buffer);
    const unsigned ps_iter_samples = radv_get_ps_iter_samples(cmd_buffer);
    const uint16_t ps_iter_mask = ac_get_ps_iter_mask(ps_iter_samples);
-   const unsigned rast_prim = radv_get_rasterization_prim(cmd_buffer);
+   const unsigned vgt_outprim_type = radv_get_vgt_outprim_type(cmd_buffer);
    const unsigned ps_state = SET_SGPR_FIELD(PS_STATE_NUM_SAMPLES, rasterization_samples) |
                              SET_SGPR_FIELD(PS_STATE_PS_ITER_MASK, ps_iter_mask) |
                              SET_SGPR_FIELD(PS_STATE_LINE_RAST_MODE, radv_get_line_mode(cmd_buffer)) |
-                             SET_SGPR_FIELD(PS_STATE_RAST_PRIM, rast_prim);
+                             SET_SGPR_FIELD(PS_STATE_RAST_PRIM, vgt_outprim_type);
 
    radeon_begin(cmd_buffer->cs);
    if (pdev->info.gfx_level >= GFX12) {
@@ -11717,7 +11720,7 @@ radv_bind_graphics_shaders(struct radv_cmd_buffer *cmd_buffer)
    if (cmd_buffer->state.active_stages &
        (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
         VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_MESH_BIT_EXT)) {
-      cmd_buffer->state.rast_prim = radv_get_vgt_gs_out(cmd_buffer->state.shaders, 0, false);
+      cmd_buffer->state.vgt_outprim_type = radv_get_vgt_gs_out(cmd_buffer->state.shaders, 0, false);
    }
 
    const struct radv_shader *vs = radv_get_shader(cmd_buffer->state.shaders, MESA_SHADER_VERTEX);
@@ -14661,7 +14664,7 @@ radv_reset_pipeline_state(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoin
          cmd_buffer->state.emitted_vs_prolog = NULL;
          cmd_buffer->state.ms.sample_shading_enable = false;
          cmd_buffer->state.ms.min_sample_shading = 1.0f;
-         cmd_buffer->state.rast_prim = 0;
+         cmd_buffer->state.vgt_outprim_type = 0;
          cmd_buffer->state.uses_out_of_order_rast = false;
          cmd_buffer->state.uses_vrs_attachment = false;
       }
