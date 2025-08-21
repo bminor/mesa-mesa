@@ -1269,6 +1269,16 @@ impl<'a> KernelExecBuilder<'a> {
             self.input.extend_from_slice(&address.to_ne_bytes());
         }
     }
+
+    fn add_sysval(&mut self, vals: &[usize; 3]) {
+        if self.dev.address_bits() == 64 {
+            self.input
+                .extend_from_slice(unsafe { as_byte_slice(&vals.map(|v| v as u64)) });
+        } else {
+            self.input
+                .extend_from_slice(unsafe { as_byte_slice(&vals.map(|v| v as u32)) });
+        }
+    }
 }
 
 impl Kernel {
@@ -1441,14 +1451,6 @@ impl Kernel {
                 null_ptr_v3 = [0u8; 12].as_slice();
             };
 
-            fn add_sysval(ctx: &QueueContext, input: &mut Vec<u8>, vals: &[usize; 3]) {
-                if ctx.dev.address_bits() == 64 {
-                    input.extend_from_slice(unsafe { as_byte_slice(&vals.map(|v| v as u64)) });
-                } else {
-                    input.extend_from_slice(unsafe { as_byte_slice(&vals.map(|v| v as u32)) });
-                }
-            }
-
             let mut printf_buf = None;
             if nir_kernel_build.printf_info.is_some() {
                 let buf = ctx
@@ -1589,14 +1591,14 @@ impl Kernel {
                         exec_builder.add_global(res, 0);
                     }
                     CompiledKernelArgType::GlobalWorkOffsets => {
-                        add_sysval(ctx, &mut exec_builder.input, &offsets);
+                        exec_builder.add_sysval(&offsets);
                     }
                     CompiledKernelArgType::WorkGroupOffsets => {
                         workgroup_id_offset_loc = Some(exec_builder.input.len());
                         exec_builder.input.extend_from_slice(null_ptr_v3);
                     }
                     CompiledKernelArgType::GlobalWorkSize => {
-                        add_sysval(ctx, &mut exec_builder.input, &api_grid);
+                        exec_builder.add_sysval(&api_grid);
                     }
                     CompiledKernelArgType::PrintfBuffer => {
                         let res = printf_buf.as_ref().unwrap();
