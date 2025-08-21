@@ -1279,6 +1279,10 @@ impl<'a> KernelExecBuilder<'a> {
                 .extend_from_slice(unsafe { as_byte_slice(&vals.map(|v| v as u32)) });
         }
     }
+
+    fn add_values(&mut self, value: &[u8]) {
+        self.input.extend_from_slice(value);
+    }
 }
 
 impl Kernel {
@@ -1490,7 +1494,7 @@ impl Kernel {
                         };
 
                         match value {
-                            KernelArgValue::Constant(c) => exec_builder.input.extend_from_slice(c),
+                            KernelArgValue::Constant(c) => exec_builder.add_values(c),
                             KernelArgValue::BDA(address) => {
                                 bdas.push(*address);
                                 if !api_arg.dead {
@@ -1562,11 +1566,11 @@ impl Kernel {
                                 if ctx.dev.address_bits() == 64 {
                                     let variable_local_size: [u8; 8] =
                                         variable_local_size.to_ne_bytes();
-                                    exec_builder.input.extend_from_slice(&variable_local_size);
+                                    exec_builder.add_values(&variable_local_size);
                                 } else {
                                     let variable_local_size: [u8; 4] =
                                         (variable_local_size as u32).to_ne_bytes();
-                                    exec_builder.input.extend_from_slice(&variable_local_size);
+                                    exec_builder.add_values(&variable_local_size);
                                 }
                                 variable_local_size += *size as u64;
                             }
@@ -1580,7 +1584,7 @@ impl Kernel {
                                         KernelArgType::MemGlobal | KernelArgType::MemConstant
                                     )
                                 {
-                                    exec_builder.input.extend_from_slice(null_ptr);
+                                    exec_builder.add_values(null_ptr);
                                 }
                             }
                         }
@@ -1595,7 +1599,7 @@ impl Kernel {
                     }
                     CompiledKernelArgType::WorkGroupOffsets => {
                         workgroup_id_offset_loc = Some(exec_builder.input.len());
-                        exec_builder.input.extend_from_slice(null_ptr_v3);
+                        exec_builder.add_values(null_ptr_v3);
                     }
                     CompiledKernelArgType::GlobalWorkSize => {
                         exec_builder.add_sysval(&api_grid);
@@ -1608,26 +1612,18 @@ impl Kernel {
                         samplers.push(Sampler::cl_to_pipe(cl));
                     }
                     CompiledKernelArgType::FormatArray => {
-                        exec_builder
-                            .input
-                            .extend_from_slice(unsafe { as_byte_slice(&tex_formats) });
-                        exec_builder
-                            .input
-                            .extend_from_slice(unsafe { as_byte_slice(&img_formats) });
+                        exec_builder.add_values(unsafe { as_byte_slice(&tex_formats) });
+                        exec_builder.add_values(unsafe { as_byte_slice(&img_formats) });
                     }
                     CompiledKernelArgType::OrderArray => {
-                        exec_builder
-                            .input
-                            .extend_from_slice(unsafe { as_byte_slice(&tex_orders) });
-                        exec_builder
-                            .input
-                            .extend_from_slice(unsafe { as_byte_slice(&img_orders) });
+                        exec_builder.add_values(unsafe { as_byte_slice(&tex_orders) });
+                        exec_builder.add_values(unsafe { as_byte_slice(&img_orders) });
                     }
                     CompiledKernelArgType::WorkDim => {
-                        exec_builder.input.extend_from_slice(&[work_dim as u8; 1]);
+                        exec_builder.add_values(&[work_dim as u8; 1]);
                     }
                     CompiledKernelArgType::NumWorkgroups => {
-                        exec_builder.input.extend_from_slice(unsafe {
+                        exec_builder.add_values(unsafe {
                             as_byte_slice(&[grid[0] as u32, grid[1] as u32, grid[2] as u32])
                         });
                     }
