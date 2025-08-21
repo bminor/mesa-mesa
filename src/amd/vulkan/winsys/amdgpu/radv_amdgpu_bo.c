@@ -14,7 +14,6 @@
 #include "radv_amdgpu_bo.h"
 #include "radv_debug.h"
 
-#include <amdgpu.h>
 #include <inttypes.h>
 #include <pthread.h>
 #include <unistd.h>

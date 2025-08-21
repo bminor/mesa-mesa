@@ -33,7 +33,6 @@
 typedef void *drmDevicePtr;
 #include <io.h>
 #else
-#include <amdgpu.h>
 #include "drm-uapi/amdgpu_drm.h"
 #include "util/os_drm.h"
 #include "winsys/amdgpu/radv_amdgpu_winsys_public.h"

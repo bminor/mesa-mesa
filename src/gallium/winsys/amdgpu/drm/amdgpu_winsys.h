@@ -14,7 +14,6 @@
 #include "util/simple_mtx.h"
 #include "util/u_queue.h"
 #include "ac_linux_drm.h"
-#include <amdgpu.h>
 #include "amdgpu_userq.h"
 
 struct amdgpu_cs;

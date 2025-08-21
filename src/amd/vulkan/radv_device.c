@@ -47,7 +47,6 @@
 typedef void *drmDevicePtr;
 #include <io.h>
 #else
-#include <amdgpu.h>
 #include <xf86drm.h>
 #include "drm-uapi/amdgpu_drm.h"
 #include "winsys/amdgpu/radv_amdgpu_winsys_public.h"

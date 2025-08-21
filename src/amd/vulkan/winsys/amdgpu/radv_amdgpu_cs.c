@@ -5,7 +5,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include <amdgpu.h>
 #include <assert.h>
 #include <libsync.h>
 #include <pthread.h>

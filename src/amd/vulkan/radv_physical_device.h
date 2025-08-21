@@ -28,7 +28,6 @@
 #include "vk_physical_device.h"
 
 #ifndef _WIN32
-#include <amdgpu.h>
 #include <xf86drm.h>
 #endif
 
