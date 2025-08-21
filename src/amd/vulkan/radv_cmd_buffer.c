@@ -5190,12 +5190,14 @@ emit_prolog_inputs(struct radv_cmd_buffer *cmd_buffer, const struct radv_shader 
 }
 
 static void
-radv_emit_vertex_input(struct radv_cmd_buffer *cmd_buffer)
+radv_emit_vs_prolog_state(struct radv_cmd_buffer *cmd_buffer)
 {
    const struct radv_shader *vs_shader = radv_get_shader(cmd_buffer->state.shaders, MESA_SHADER_VERTEX);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
 
    assert(!cmd_buffer->state.mesh_shading);
+
+   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_VS_PROLOG_STATE;
 
    if (!vs_shader->info.vs.has_prolog)
       return;
@@ -5393,9 +5395,6 @@ radv_cmd_buffer_flush_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const ui
    if ((states & RADV_DYNAMIC_PRIMITIVE_TOPOLOGY) ||
        (pdev->info.gfx_level >= GFX12 && states & RADV_DYNAMIC_PATCH_CONTROL_POINTS))
       radv_emit_primitive_topology(cmd_buffer);
-
-   if (states & RADV_DYNAMIC_VERTEX_INPUT)
-      radv_emit_vertex_input(cmd_buffer);
 
    if (states & RADV_DYNAMIC_PATCH_CONTROL_POINTS)
       radv_emit_patch_control_points(cmd_buffer);
@@ -6874,7 +6873,7 @@ radv_CmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding,
       cmd_buffer->state.vbo_misaligned_mask_invalid = misaligned_mask_invalid;
       cmd_buffer->state.vbo_misaligned_mask &= ~misaligned_mask_invalid;
       cmd_buffer->state.vbo_unaligned_mask &= ~misaligned_mask_invalid;
-      cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_VERTEX_INPUT;
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_VS_PROLOG_STATE;
    }
 
    cmd_buffer->state.dirty |= RADV_CMD_DIRTY_VERTEX_BUFFER;
@@ -7300,7 +7299,7 @@ radv_bind_vs_input_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_g
    cmd_buffer->state.vbo_unaligned_mask = 0;
    cmd_buffer->state.vbo_misaligned_mask_invalid = src->attribute_mask;
 
-   cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_VERTEX_INPUT;
+   cmd_buffer->state.dirty |= RADV_CMD_DIRTY_VS_PROLOG_STATE;
 }
 
 static void
@@ -7858,7 +7857,7 @@ radv_CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipeline
          /* Re-emit the VS prolog when a new vertex shader is bound. */
          if (vs->info.vs.has_prolog) {
             cmd_buffer->state.emitted_vs_prolog = NULL;
-            cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_VERTEX_INPUT;
+            cmd_buffer->state.dirty |= RADV_CMD_DIRTY_VS_PROLOG_STATE;
          }
 
          /* Re-emit the vertex buffer descriptors because they are really tied to the pipeline. */
@@ -11462,6 +11461,9 @@ radv_validate_dynamic_states(struct radv_cmd_buffer *cmd_buffer, uint64_t dynami
 
    if (dynamic_states & RADV_DYNAMIC_DEPTH_BIAS)
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_DEPTH_BIAS_STATE;
+
+   if (dynamic_states & RADV_DYNAMIC_VERTEX_INPUT)
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_VS_PROLOG_STATE;
 }
 
 static void
@@ -11556,6 +11558,9 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
 
    if (dynamic_states)
       radv_cmd_buffer_flush_dynamic_state(cmd_buffer, dynamic_states);
+
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_VS_PROLOG_STATE)
+      radv_emit_vs_prolog_state(cmd_buffer);
 
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_CLIP_RECTS_STATE)
       radv_emit_clip_rects_state(cmd_buffer);
@@ -11692,7 +11697,7 @@ radv_bind_graphics_shaders(struct radv_cmd_buffer *cmd_buffer)
       /* Re-emit the VS prolog when a new vertex shader is bound. */
       if (vs->info.vs.has_prolog) {
          cmd_buffer->state.emitted_vs_prolog = NULL;
-         cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_VERTEX_INPUT;
+         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_VS_PROLOG_STATE;
       }
 
       /* Re-emit the vertex buffer descriptors because they are really tied to the pipeline. */
