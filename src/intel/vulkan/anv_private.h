@@ -5611,9 +5611,6 @@ bool anv_formats_ccs_e_compatible(const struct anv_physical_device *device,
                                   VkImageUsageFlags vk_usage,
                                   const VkImageFormatListCreateInfo *fmt_list);
 
-extern VkFormat
-vk_format_from_android(unsigned android_format, unsigned android_usage);
-
 static inline VkFormat
 anv_get_compressed_format_emulation(const struct anv_physical_device *pdevice,
                                     VkFormat format)

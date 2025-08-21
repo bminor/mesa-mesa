@@ -32,7 +32,7 @@
 #if ANDROID_API_LEVEL >= 26
 #include <vndk/hardware_buffer.h>
 
-inline VkFormat
+static inline VkFormat
 vk_format_from_android(unsigned android_format, unsigned android_usage)
 {
    switch (android_format) {
