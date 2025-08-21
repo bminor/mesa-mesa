@@ -1193,8 +1193,6 @@ radv_emit_sample_locations_state(struct radv_cmd_buffer *cmd_buffer)
    VkOffset2D sample_locs[4][8]; /* 8 is the max. sample count supported */
    uint64_t centroid_priority;
 
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_SAMPLE_LOCATIONS_STATE;
-
    if (!d->sample_location.count || !d->vk.ms.sample_locations_enable)
       return;
 
@@ -1752,8 +1750,6 @@ radv_emit_binning_state(struct radv_cmd_buffer *cmd_buffer)
       radeon_opt_set_context_reg(R_028C44_PA_SC_BINNER_CNTL_0, RADV_TRACKED_PA_SC_BINNER_CNTL_0, pa_sc_binner_cntl_0);
       radeon_end();
    }
-
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_BINNING_STATE;
 }
 
 static void
@@ -1996,8 +1992,6 @@ radv_emit_rbplus_state(struct radv_cmd_buffer *cmd_buffer)
    radeon_opt_set_context_reg3(R_028754_SX_PS_DOWNCONVERT, RADV_TRACKED_SX_PS_DOWNCONVERT, sx_ps_downconvert,
                                sx_blend_opt_epsilon, sx_blend_opt_control);
    radeon_end();
-
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_RBPLUS;
 }
 
 static void
@@ -3094,8 +3088,6 @@ radv_emit_graphics_shaders(struct radv_cmd_buffer *cmd_buffer)
       gfx103_emit_vgt_draw_payload_cntl(cmd_buffer);
       gfx103_emit_vrs_state(cmd_buffer);
    }
-
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_GRAPHICS_SHADERS;
 }
 
 static void
@@ -3134,8 +3126,6 @@ radv_emit_graphics_pipeline(struct radv_cmd_buffer *cmd_buffer)
       radv_save_pipeline(cmd_buffer, &pipeline->base);
 
    cmd_buffer->state.emitted_graphics_pipeline = pipeline;
-
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_PIPELINE;
 }
 
 static bool
@@ -3277,8 +3267,6 @@ radv_emit_viewport_state(struct radv_cmd_buffer *cmd_buffer)
    }
 
    radeon_end();
-
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_VIEWPORT_STATE;
 }
 
 static VkRect2D
@@ -3313,7 +3301,6 @@ radv_emit_scissor_state(struct radv_cmd_buffer *cmd_buffer)
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    struct radv_cmd_stream *cs = cmd_buffer->cs;
 
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_SCISSOR_STATE;
    if (!d->vk.vp.scissor_count)
       return;
 
@@ -3356,8 +3343,6 @@ radv_emit_blend_constants_state(struct radv_cmd_buffer *cmd_buffer)
    radeon_set_context_reg_seq(R_028414_CB_BLEND_RED, 4);
    radeon_emit_array((uint32_t *)d->vk.cb.blend_constants, 4);
    radeon_end();
-
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_BLEND_CONSTANTS_STATE;
 }
 
 static void
@@ -3397,8 +3382,6 @@ radv_emit_depth_bias_state(struct radv_cmd_buffer *cmd_buffer)
 
    radeon_set_context_reg(R_028B78_PA_SU_POLY_OFFSET_DB_FMT_CNTL, pa_su_poly_offset_db_fmt_cntl);
    radeon_end();
-
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_DEPTH_BIAS_STATE;
 }
 
 static void
@@ -3426,8 +3409,6 @@ radv_emit_vgt_prim_state(struct radv_cmd_buffer *cmd_buffer)
    radeon_end();
 
    radv_emit_vgt_gs_out(cmd_buffer, vgt_outprim_type);
-
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_VGT_PRIM_STATE;
 }
 
 static bool
@@ -3448,8 +3429,6 @@ radv_emit_fsr_state(struct radv_cmd_buffer *cmd_buffer)
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    struct radv_cmd_stream *cs = cmd_buffer->cs;
-
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_FSR_STATE;
 
    /* When per-vertex VRS is forced and the dynamic fragment shading rate is a no-op, ignore
     * it. This is needed for vkd3d-proton because it always declares per-draw VRS as dynamic.
@@ -3557,7 +3536,6 @@ radv_emit_patch_control_points_state(struct radv_cmd_buffer *cmd_buffer)
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    unsigned ls_hs_config;
 
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_PATCH_CONTROL_POINTS_STATE;
    if (!tcs)
       return;
 
@@ -3646,8 +3624,6 @@ radv_emit_rast_samples_state(struct radv_cmd_buffer *cmd_buffer)
       radeon_set_context_reg(R_028A4C_PA_SC_MODE_CNTL_1, pa_sc_mode_cntl_1);
       radeon_end();
    }
-
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_RAST_SAMPLES_STATE;
 }
 
 static void
@@ -4746,8 +4722,6 @@ radv_emit_framebuffer_state(struct radv_cmd_buffer *cmd_buffer)
       radv_gfx11_emit_vrs_surface(cmd_buffer);
 
    assert(cs->b->cdw <= cdw_max);
-
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_FRAMEBUFFER;
 }
 
 static uint32_t
@@ -4881,8 +4855,6 @@ radv_emit_guardband_state(struct radv_cmd_buffer *cmd_buffer)
    radeon_emit(fui(guardband_x));
    radeon_emit(fui(discard_x));
    radeon_end();
-
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_GUARDBAND;
 }
 
 /* Bind an internal index buffer for GPUs that hang with 0-sized index buffers to handle robustness2
@@ -4980,8 +4952,6 @@ radv_flush_occlusion_query_state(struct radv_cmd_buffer *cmd_buffer)
    }
 
    radeon_end();
-
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_OCCLUSION_QUERY;
 }
 
 unsigned
@@ -5211,8 +5181,6 @@ radv_emit_vs_prolog_state(struct radv_cmd_buffer *cmd_buffer)
 
    assert(!cmd_buffer->state.mesh_shading);
 
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_VS_PROLOG_STATE;
-
    if (!vs_shader->info.vs.has_prolog)
       return;
 
@@ -5243,7 +5211,6 @@ radv_emit_tess_domain_origin_state(struct radv_cmd_buffer *cmd_buffer)
    unsigned type = 0, partitioning = 0;
    unsigned topology;
 
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_TESS_DOMAIN_ORIGIN_STATE;
    if (!tes)
       return;
 
@@ -10461,8 +10428,6 @@ radv_emit_ngg_culling_state(struct radv_cmd_buffer *cmd_buffer)
 
    radeon_set_sh_reg(ngg_culling_settings_offset, nggc_settings);
    radeon_end();
-
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_NGGC_STATE;
 }
 
 static void
@@ -10791,8 +10756,6 @@ radv_emit_db_shader_control(struct radv_cmd_buffer *cmd_buffer)
    }
 
    radeon_end();
-
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_DB_SHADER_CONTROL;
 }
 
 static void
@@ -10824,8 +10787,6 @@ radv_emit_streamout_enable_state(struct radv_cmd_buffer *cmd_buffer)
                S_028B94_STREAMOUT_3_EN(streamout_enabled));
    radeon_emit(so->hw_enabled_mask & enabled_stream_buffers_mask);
    radeon_end();
-
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_STREAMOUT_ENABLE;
 }
 
 static mesa_shader_stage
@@ -10883,8 +10844,6 @@ radv_emit_fragment_output_state(struct radv_cmd_buffer *cmd_buffer)
                                   cmd_buffer->state.spi_shader_z_format, col_format_compacted);
       radeon_end();
    }
-
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_FRAGMENT_OUTPUT;
 }
 
 static void
@@ -10968,8 +10927,6 @@ radv_emit_depth_stencil_state(struct radv_cmd_buffer *cmd_buffer)
       }
       radeon_end();
    }
-
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_DEPTH_STENCIL_STATE;
 }
 
 static void
@@ -11055,8 +11012,6 @@ radv_emit_raster_state(struct radv_cmd_buffer *cmd_buffer)
       radeon_opt_set_context_reg(R_028814_PA_SU_SC_MODE_CNTL, RADV_TRACKED_PA_SU_SC_MODE_CNTL, pa_su_sc_mode_cntl);
       radeon_end();
    }
-
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_RASTER_STATE;
 }
 
 static void
@@ -11158,8 +11113,6 @@ radv_emit_cb_render_state(struct radv_cmd_buffer *cmd_buffer)
       radeon_opt_set_context_reg(R_028808_CB_COLOR_CONTROL, RADV_TRACKED_CB_COLOR_CONTROL, cb_color_control);
    }
    radeon_end();
-
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_CB_RENDER_STATE;
 }
 
 static void
@@ -11309,8 +11262,6 @@ radv_emit_msaa_state(struct radv_cmd_buffer *cmd_buffer)
                                     RADV_TRACKED_PA_SC_CONSERVATIVE_RASTERIZATION_CNTL, pa_sc_conservative_rast);
       radeon_end();
    }
-
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_MSAA_STATE;
 }
 
 static void
@@ -11364,8 +11315,6 @@ radv_emit_clip_rects_state(struct radv_cmd_buffer *cmd_buffer)
 
    radeon_set_context_reg(R_02820C_PA_SC_CLIPRECT_RULE, cliprect_rule);
    radeon_end();
-
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_CLIP_RECTS_STATE;
 }
 
 static void
@@ -11533,92 +11482,144 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
       pdev->info.gfx_level == GFX12 && !pdev->use_gfx12_hiz_his_event_wa &&
       cmd_buffer->state.dirty & (RADV_CMD_DIRTY_FRAMEBUFFER | RADV_CMD_DIRTY_DEPTH_STENCIL_STATE);
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_RBPLUS)
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_RBPLUS) {
       radv_emit_rbplus_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_RBPLUS;
+   }
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_OCCLUSION_QUERY)
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_OCCLUSION_QUERY) {
       radv_flush_occlusion_query_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_OCCLUSION_QUERY;
+   }
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_NGGC_STATE)
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_NGGC_STATE) {
       radv_emit_ngg_culling_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_NGGC_STATE;
+   }
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_BINNING_STATE)
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_BINNING_STATE) {
       radv_emit_binning_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_BINNING_STATE;
+   }
 
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_PIPELINE) {
       radv_emit_graphics_pipeline(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_PIPELINE;
    } else if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_GRAPHICS_SHADERS) {
       radv_emit_graphics_shaders(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_GRAPHICS_SHADERS;
    }
 
    if (ps_epilog)
       radv_emit_ps_epilog_state(cmd_buffer, ps_epilog);
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_FRAGMENT_OUTPUT)
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_FRAGMENT_OUTPUT) {
       radv_emit_fragment_output_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_FRAGMENT_OUTPUT;
+   }
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_FRAMEBUFFER)
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_FRAMEBUFFER) {
       radv_emit_framebuffer_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_FRAMEBUFFER;
+   }
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_GUARDBAND)
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_GUARDBAND) {
       radv_emit_guardband_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_GUARDBAND;
+   }
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_DB_SHADER_CONTROL)
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_DB_SHADER_CONTROL) {
       radv_emit_db_shader_control(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_DB_SHADER_CONTROL;
+   }
 
    if (info->indexed && info->indirect_va && cmd_buffer->state.dirty & RADV_CMD_DIRTY_INDEX_BUFFER)
       radv_emit_index_buffer(cmd_buffer);
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_STREAMOUT_ENABLE)
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_STREAMOUT_ENABLE) {
       radv_emit_streamout_enable_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_STREAMOUT_ENABLE;
+   }
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_VS_PROLOG_STATE)
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_VS_PROLOG_STATE) {
       radv_emit_vs_prolog_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_VS_PROLOG_STATE;
+   }
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_CLIP_RECTS_STATE)
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_CLIP_RECTS_STATE) {
       radv_emit_clip_rects_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_CLIP_RECTS_STATE;
+   }
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_VIEWPORT_STATE)
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_VIEWPORT_STATE) {
       radv_emit_viewport_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_VIEWPORT_STATE;
+   }
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_SCISSOR_STATE)
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_SCISSOR_STATE) {
       radv_emit_scissor_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_SCISSOR_STATE;
+   }
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_VGT_PRIM_STATE)
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_VGT_PRIM_STATE) {
       radv_emit_vgt_prim_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_VGT_PRIM_STATE;
+   }
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_PATCH_CONTROL_POINTS_STATE)
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_PATCH_CONTROL_POINTS_STATE) {
       radv_emit_patch_control_points_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_PATCH_CONTROL_POINTS_STATE;
+   }
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_TESS_DOMAIN_ORIGIN_STATE)
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_TESS_DOMAIN_ORIGIN_STATE) {
       radv_emit_tess_domain_origin_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_TESS_DOMAIN_ORIGIN_STATE;
+   }
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_RASTER_STATE)
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_RASTER_STATE) {
       radv_emit_raster_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_RASTER_STATE;
+   }
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_DEPTH_BIAS_STATE)
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_DEPTH_BIAS_STATE) {
       radv_emit_depth_bias_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_DEPTH_BIAS_STATE;
+   }
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_DEPTH_STENCIL_STATE)
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_DEPTH_STENCIL_STATE) {
       radv_emit_depth_stencil_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_DEPTH_STENCIL_STATE;
+   }
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_BLEND_CONSTANTS_STATE)
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_BLEND_CONSTANTS_STATE) {
       radv_emit_blend_constants_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_BLEND_CONSTANTS_STATE;
+   }
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_CB_RENDER_STATE)
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_CB_RENDER_STATE) {
       radv_emit_cb_render_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_CB_RENDER_STATE;
+   }
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_SAMPLE_LOCATIONS_STATE)
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_SAMPLE_LOCATIONS_STATE) {
       radv_emit_sample_locations_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_SAMPLE_LOCATIONS_STATE;
+   }
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_MSAA_STATE)
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_MSAA_STATE) {
       radv_emit_msaa_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_MSAA_STATE;
+   }
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_FSR_STATE)
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_FSR_STATE) {
       radv_emit_fsr_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_FSR_STATE;
+   }
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_RAST_SAMPLES_STATE)
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_RAST_SAMPLES_STATE) {
       radv_emit_rast_samples_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_RAST_SAMPLES_STATE;
+   }
 
    if (gfx12_emit_alt_hiz_wa)
       radv_gfx12_emit_alt_hiz_wa(cmd_buffer);
