@@ -1481,17 +1481,6 @@ static const VkExternalMemoryProperties android_buffer_props = {
       VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID,
 };
 
-
-static const VkExternalMemoryProperties android_image_props = {
-   /* VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT will be set dynamically */
-   .externalMemoryFeatures = VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT |
-                             VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT,
-   .exportFromImportedHandleTypes =
-      VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID,
-   .compatibleHandleTypes =
-      VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID,
-};
-
 static VkResult
 anv_get_image_format_properties(
    struct anv_physical_device *physical_device,
@@ -1511,7 +1500,6 @@ anv_get_image_format_properties(
    const VkPhysicalDeviceExternalImageFormatInfo *external_info = NULL;
    VkExternalImageFormatProperties *external_props = NULL;
    VkSamplerYcbcrConversionImageFormatProperties *ycbcr_props = NULL;
-   VkAndroidHardwareBufferUsageANDROID *android_usage = NULL;
    VkTextureLODGatherFormatPropertiesAMD *texture_lod_gather_props = NULL;
    VkImageCompressionPropertiesEXT *comp_props = NULL;
    VkHostImageCopyDevicePerformanceQueryEXT *host_props = NULL;
@@ -1556,9 +1544,6 @@ anv_get_image_format_properties(
          break;
       case VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_IMAGE_FORMAT_PROPERTIES:
          ycbcr_props = (void *) s;
-         break;
-      case VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_USAGE_ANDROID:
-         android_usage = (void *) s;
          break;
       case VK_STRUCTURE_TYPE_TEXTURE_LOD_GATHER_FORMAT_PROPERTIES_AMD:
          texture_lod_gather_props = (void *) s;
@@ -1868,17 +1853,6 @@ anv_get_image_format_properties(
          physical_device->info.ver >= 20;
    }
 
-   bool ahw_supported =
-      physical_device->vk.supported_extensions.ANDROID_external_memory_android_hardware_buffer;
-
-   if (ahw_supported && android_usage) {
-      android_usage->androidHardwareBufferUsage =
-         vk_image_usage_to_ahb_usage(info->flags, info->usage);
-
-      /* Limit maxArrayLayers to 1 for AHardwareBuffer based images for now. */
-      props->imageFormatProperties.maxArrayLayers = 1;
-   }
-
    /* From the Vulkan 1.0.42 spec:
     *
     *    If handleType is 0, vkGetPhysicalDeviceImageFormatProperties2 will
@@ -1984,23 +1958,22 @@ anv_get_image_format_properties(
          if (external_props)
             external_props->externalMemoryProperties = userptr_props;
          break;
-      case VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID:
+      case VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID: {
          /* This memory handle is magic. The Vulkan spec says it has no
           * requirements regarding deviceUUID nor driverUUID, but Android still
           * requires support for VK_IMAGE_TILING_OPTIMAL. Android systems
           * communicate the image's memory layout through backdoor channels.
           */
-         if (ahw_supported) {
-            if (external_props) {
-               external_props->externalMemoryProperties = android_image_props;
-               if (anv_ahb_format_for_vk_format(info->format)) {
-                  external_props->externalMemoryProperties.externalMemoryFeatures |=
-                     VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT;
-               }
-            }
-            break;
-         }
-         FALLTHROUGH; /* If ahw not supported */
+         VkPhysicalDevice pdev_handle =
+            anv_physical_device_to_handle(physical_device);
+         if (vk_android_get_ahb_image_properties(pdev_handle, info, props) !=
+             VK_SUCCESS)
+            goto unsupported;
+
+         /* Limit maxArrayLayers to 1 for AHardwareBuffer based images for now. */
+         props->imageFormatProperties.maxArrayLayers = 1;
+         break;
+      }
       default:
          /* From the Vulkan 1.0.42 spec:
           *
