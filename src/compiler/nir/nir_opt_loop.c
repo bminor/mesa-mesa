@@ -86,7 +86,7 @@ opt_loop_merge_break_continue(nir_if *nif)
     * merge the statement after the branch
     */
    if ((then_break && else_break) || (then_cont && else_cont)) {
-      nir_lower_phis_to_regs_block(last_then->successors[0]);
+      nir_lower_phis_to_regs_block(last_then->successors[0], false);
       nir_instr_remove_v(nir_block_last_instr(last_then));
       nir_instr *jump = nir_block_last_instr(last_else);
       nir_instr_remove_v(jump);
@@ -154,7 +154,7 @@ opt_loop_terminator(nir_if *nif)
          return false;
 
       /* We are about to move the predecessor. */
-      nir_lower_phis_to_regs_block(continue_from_blk->successors[0]);
+      nir_lower_phis_to_regs_block(continue_from_blk->successors[0], false);
    }
 
    /* Even though this if statement has a jump on one side, we may still have
@@ -221,7 +221,7 @@ opt_loop_last_block(nir_block *block, bool is_trivial_continue, bool is_trivial_
     * control-flow will naturally take us to the same target block.
     */
    if ((has_break && is_trivial_break) || (has_continue && is_trivial_continue)) {
-      nir_lower_phis_to_regs_block(block->successors[0]);
+      nir_lower_phis_to_regs_block(block->successors[0], false);
       nir_instr_remove_v(nir_block_last_instr(block));
       return true;
    }
@@ -269,7 +269,7 @@ opt_loop_last_block(nir_block *block, bool is_trivial_continue, bool is_trivial_
       nir_remove_single_src_phis_block(nir_cf_node_cf_tree_next(prev));
 
       /* We are about to remove one predecessor. */
-      nir_lower_phis_to_regs_block(block->successors[0]);
+      nir_lower_phis_to_regs_block(block->successors[0], false);
 
       nir_cf_list tmp;
       nir_cf_extract(&tmp, nir_after_cf_node(prev), nir_after_block_before_jump(block));
@@ -417,9 +417,9 @@ opt_loop_peel_initial_break(nir_loop *loop)
    }
 
    /* Lower loop header and LCSSA-phis to regs. */
-   nir_lower_phis_to_regs_block(header_block);
+   nir_lower_phis_to_regs_block(header_block, false);
    nir_lower_ssa_defs_to_regs_block(header_block);
-   nir_lower_phis_to_regs_block(exit_block);
+   nir_lower_phis_to_regs_block(exit_block, false);
 
    /* Extract the loop header including the first break. */
    nir_cf_list tmp;

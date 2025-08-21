@@ -1994,7 +1994,7 @@
         "description": "nir: Add an option to make lower_phis_to_regs_block() less clever",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b013d54e4ff9cb066cb77ead0a7fd76d5df962ad",
         "notes": null

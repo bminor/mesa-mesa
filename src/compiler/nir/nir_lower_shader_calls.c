@@ -863,9 +863,9 @@ duplicate_loop_bodies(nir_function_impl *impl, nir_instr *resume_instr)
        * serious trouble if we don't do this.
        */
       nir_convert_loop_to_lcssa(loop);
-      nir_lower_phis_to_regs_block(nir_loop_first_block(loop));
+      nir_lower_phis_to_regs_block(nir_loop_first_block(loop), false);
       nir_lower_phis_to_regs_block(
-         nir_cf_node_as_block(nir_cf_node_next(&loop->cf_node)));
+         nir_cf_node_as_block(nir_cf_node_next(&loop->cf_node)), false);
 
       nir_cf_list cf_list;
       nir_cf_list_extract(&cf_list, &loop->body);
