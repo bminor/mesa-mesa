@@ -7501,8 +7501,7 @@ radv_bind_fragment_shader(struct radv_cmd_buffer *cmd_buffer, const struct radv_
 
    if (gfx_level >= GFX10_3 && (!previous_ps || previous_ps->info.ps.force_sample_iter_shading_rate !=
                                                    ps->info.ps.force_sample_iter_shading_rate)) {
-      cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_RASTERIZATION_SAMPLES;
-      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FSR_STATE;
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FSR_STATE | RADV_CMD_DIRTY_RAST_SAMPLES_STATE;
    }
 
    if (cmd_buffer->state.ms.sample_shading_enable != ps->info.ps.uses_sample_shading) {
