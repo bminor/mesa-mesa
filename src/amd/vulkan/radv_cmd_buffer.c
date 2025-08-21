@@ -1930,7 +1930,7 @@ radv_get_ps_iter_samples(struct radv_cmd_buffer *cmd_buffer)
    float min_sample_shading;
 
    if (radv_is_sample_shading_enabled(cmd_buffer, &min_sample_shading)) {
-      unsigned rasterization_samples = radv_get_rasterization_samples(cmd_buffer);
+      unsigned rasterization_samples = cmd_buffer->state.num_rast_samples;
       unsigned color_samples = MAX2(render->color_samples, rasterization_samples);
 
       ps_iter_samples = ceilf(min_sample_shading * color_samples);
@@ -2173,7 +2173,7 @@ radv_gfx10_compute_bin_size(struct radv_cmd_buffer *cmd_buffer)
    const unsigned color_tag_part = (color_tag_count * rb_count / pipe_count) * color_tag_size * pipe_count;
    const unsigned fmask_tag_part = (fmask_tag_count * rb_count / pipe_count) * fmask_tag_size * pipe_count;
 
-   const unsigned total_samples = radv_get_rasterization_samples(cmd_buffer);
+   const unsigned total_samples = cmd_buffer->state.num_rast_samples;
    const unsigned samples_log = util_logbase2_ceil(total_samples);
 
    unsigned color_bytes_per_pixel = 0;
@@ -2457,7 +2457,7 @@ radv_gfx9_compute_bin_size(struct radv_cmd_buffer *cmd_buffer)
    unsigned log_num_rb_per_se = util_logbase2_ceil(pdev->info.max_render_backends / pdev->info.max_se);
    unsigned log_num_se = util_logbase2_ceil(pdev->info.max_se);
 
-   unsigned total_samples = radv_get_rasterization_samples(cmd_buffer);
+   unsigned total_samples = cmd_buffer->state.num_rast_samples;
    unsigned ps_iter_samples = radv_get_ps_iter_samples(cmd_buffer);
    unsigned effective_samples = total_samples;
    unsigned color_bytes_per_pixel = 0;
@@ -4405,7 +4405,7 @@ radv_emit_rast_samples_state(struct radv_cmd_buffer *cmd_buffer)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   unsigned rasterization_samples = radv_get_rasterization_samples(cmd_buffer);
+   const unsigned rasterization_samples = cmd_buffer->state.num_rast_samples;
    unsigned ps_iter_samples = radv_get_ps_iter_samples(cmd_buffer);
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    unsigned spi_baryc_cntl = S_0286E0_FRONT_FACE_ALL_BITS(0);
@@ -5772,7 +5772,7 @@ radv_emit_occlusion_query_state(struct radv_cmd_buffer *cmd_buffer)
       }
 
       if (gfx_level < GFX12) {
-         const uint32_t rasterization_samples = radv_get_rasterization_samples(cmd_buffer);
+         const uint32_t rasterization_samples = cmd_buffer->state.num_rast_samples;
          const uint32_t sample_rate = util_logbase2(rasterization_samples);
 
          db_count_control |= S_028004_SAMPLE_RATE(sample_rate);
@@ -10916,7 +10916,7 @@ radv_get_nggc_settings(struct radv_cmd_buffer *cmd_buffer, bool vp_y_inverted)
        * num_samples is also always a power of two, so the small prim precision can only be
        * a power of two between 2^-2 and 2^-6, therefore it's enough to remember the exponent.
        */
-      unsigned rasterization_samples = radv_get_rasterization_samples(cmd_buffer);
+      unsigned rasterization_samples = cmd_buffer->state.num_rast_samples;
       unsigned subpixel_bits = 256;
       int32_t small_prim_precision_log2 = util_logbase2(rasterization_samples) - util_logbase2(subpixel_bits);
       nggc_settings |= ((uint32_t)small_prim_precision_log2 << 24u);
@@ -10939,7 +10939,7 @@ radv_emit_ps_state(struct radv_cmd_buffer *cmd_buffer)
    if (!ps_state_offset)
       return;
 
-   const unsigned rasterization_samples = radv_get_rasterization_samples(cmd_buffer);
+   const unsigned rasterization_samples = cmd_buffer->state.num_rast_samples;
    const unsigned ps_iter_samples = radv_get_ps_iter_samples(cmd_buffer);
    const uint16_t ps_iter_mask = ac_get_ps_iter_mask(ps_iter_samples);
    const unsigned vgt_outprim_type = radv_get_vgt_outprim_type(cmd_buffer);
@@ -11309,7 +11309,7 @@ radv_emit_db_shader_control(struct radv_cmd_buffer *cmd_buffer)
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    const bool uses_ds_feedback_loop =
       !!(d->feedback_loop_aspects & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT));
-   const unsigned rasterization_samples = radv_get_rasterization_samples(cmd_buffer);
+   const unsigned rasterization_samples = cmd_buffer->state.num_rast_samples;
    uint32_t db_dfsm_control = S_028060_PUNCHOUT_MODE(V_028060_FORCE_OFF);
    uint32_t db_shader_control;
 
@@ -11727,7 +11727,7 @@ radv_emit_msaa_state(struct radv_cmd_buffer *cmd_buffer)
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
    const struct radv_shader *ps = cmd_buffer->state.shaders[MESA_SHADER_FRAGMENT];
-   const unsigned rasterization_samples = radv_get_rasterization_samples(cmd_buffer);
+   const unsigned rasterization_samples = cmd_buffer->state.num_rast_samples;
    const struct radv_rendering_state *render = &cmd_buffer->state.render;
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    const uint32_t sample_mask = d->vk.ms.sample_mask | ((uint32_t)d->vk.ms.sample_mask << 16);
@@ -12085,6 +12085,21 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
             cmd_buffer->state.tess_num_patches = tess_num_patches;
             cmd_buffer->state.dirty |= RADV_CMD_DIRTY_LS_HS_CONFIG | RADV_CMD_DIRTY_TCS_TES_STATE;
          }
+      }
+   }
+
+   if ((cmd_buffer->state.dirty & (RADV_CMD_DIRTY_PIPELINE | RADV_CMD_DIRTY_GRAPHICS_SHADERS)) ||
+       (dynamic_states & (RADV_DYNAMIC_PRIMITIVE_TOPOLOGY | RADV_DYNAMIC_POLYGON_MODE |
+                          RADV_DYNAMIC_LINE_RASTERIZATION_MODE | RADV_DYNAMIC_RASTERIZATION_SAMPLES))) {
+      const uint32_t num_rast_samples = radv_get_rasterization_samples(cmd_buffer);
+
+      if (cmd_buffer->state.num_rast_samples != num_rast_samples) {
+         cmd_buffer->state.num_rast_samples = num_rast_samples;
+         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_BINNING_STATE | RADV_CMD_DIRTY_RAST_SAMPLES_STATE |
+                                    RADV_CMD_DIRTY_PS_STATE | RADV_CMD_DIRTY_DB_SHADER_CONTROL |
+                                    RADV_CMD_DIRTY_MSAA_STATE | RADV_CMD_DIRTY_NGGC_SETTINGS;
+         if (pdev->info.gfx_level < GFX12)
+            cmd_buffer->state.dirty |= RADV_CMD_DIRTY_OCCLUSION_QUERY;
       }
    }
 
