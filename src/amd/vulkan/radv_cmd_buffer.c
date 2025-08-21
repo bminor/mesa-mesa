@@ -7298,9 +7298,11 @@ radv_bind_multisample_state(struct radv_cmd_buffer *cmd_buffer, const struct rad
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
    if (cmd_buffer->state.ms.sample_shading_enable != ms->sample_shading_enable) {
-      cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_RASTERIZATION_SAMPLES;
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_RAST_SAMPLES_STATE | RADV_CMD_DIRTY_MSAA_STATE;
       if (pdev->info.gfx_level >= GFX10_3)
          cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FSR_STATE;
+      if (pdev->info.gfx_level == GFX9)
+         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_BINNING_STATE;
    }
 
    if (ms->sample_shading_enable) {
@@ -7308,7 +7310,9 @@ radv_bind_multisample_state(struct radv_cmd_buffer *cmd_buffer, const struct rad
 
       if (cmd_buffer->state.ms.min_sample_shading != ms->min_sample_shading) {
          cmd_buffer->state.ms.min_sample_shading = ms->min_sample_shading;
-         cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_RASTERIZATION_SAMPLES;
+         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_RAST_SAMPLES_STATE | RADV_CMD_DIRTY_MSAA_STATE;
+         if (pdev->info.gfx_level == GFX9)
+            cmd_buffer->state.dirty |= RADV_CMD_DIRTY_BINNING_STATE;
       }
    }
 }
@@ -7503,15 +7507,18 @@ radv_bind_fragment_shader(struct radv_cmd_buffer *cmd_buffer, const struct radv_
 
    if (cmd_buffer->state.ms.sample_shading_enable != ps->info.ps.uses_sample_shading) {
       cmd_buffer->state.ms.sample_shading_enable = ps->info.ps.uses_sample_shading;
-      cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_RASTERIZATION_SAMPLES;
-
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_RAST_SAMPLES_STATE | RADV_CMD_DIRTY_MSAA_STATE;
       if (gfx_level >= GFX10_3)
          cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FSR_STATE;
+      if (gfx_level == GFX9)
+         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_BINNING_STATE;
    }
 
    if (cmd_buffer->state.ms.min_sample_shading != min_sample_shading) {
       cmd_buffer->state.ms.min_sample_shading = min_sample_shading;
-      cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_RASTERIZATION_SAMPLES;
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_RAST_SAMPLES_STATE | RADV_CMD_DIRTY_MSAA_STATE;
+      if (pdev->info.gfx_level == GFX9)
+         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_BINNING_STATE;
    }
 
    if (!previous_ps || previous_ps->info.regs.ps.db_shader_control != ps->info.regs.ps.db_shader_control ||
