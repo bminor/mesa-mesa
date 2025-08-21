@@ -34,7 +34,7 @@ variables:
 
   FEDORA_X86_64_BUILD_TAG: "20250722-libwayland"
 
-  KERNEL_TAG: "v6.16-mesa-09d1"
+  KERNEL_TAG: "v6.16-mesa-9d85"
   KERNEL_REPO: "gfx-ci/linux"
   PKG_REPO_REV: "95bf62c"
   FIRMWARE_TAG: "36f9bbfa"

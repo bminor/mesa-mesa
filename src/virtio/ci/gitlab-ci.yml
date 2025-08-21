@@ -13,9 +13,6 @@ venus-lavapipe:
     CROSVM_MEMORY: 12288
     CROSVM_CPU: $FDO_CI_CONCURRENT
     FLAKES_CHANNEL: "#virgl-ci"
-    # INFO: Keep Linux version at 6.14 as 6.16 seems to have regressed
-    # in virtio gfx device initializaiton
-    KERNEL_TAG: "v6.14-mesa-4277"
   script: |
     export LD_LIBRARY_PATH="$CI_PROJECT_DIR/install/lib"
     export LIBGL_DRIVERS_PATH="$CI_PROJECT_DIR/install/lib/dri"
