@@ -1240,17 +1240,24 @@ fn extract<'a, const S: usize>(buf: &'a mut &[u8]) -> &'a [u8; S] {
 }
 
 /// Helper class to build an execution environment for a single kernel invocation.
-struct KernelExecBuilder {
+struct KernelExecBuilder<'a> {
     dev: &'static Device,
     input: Vec<u8>,
+    resource_info: Vec<(&'a PipeResource, usize)>,
 }
 
-impl KernelExecBuilder {
+impl<'a> KernelExecBuilder<'a> {
     fn new(dev: &'static Device) -> Self {
         Self {
             dev: dev,
             input: Vec::new(),
+            resource_info: Vec::new(),
         }
+    }
+
+    fn add_global(&mut self, res: &'a PipeResourceOwned, offset: usize) {
+        self.resource_info.push((res.borrow(), self.input.len()));
+        self.add_pointer(offset as u64);
     }
 
     fn add_pointer(&mut self, address: u64) {
@@ -1434,18 +1441,6 @@ impl Kernel {
                 null_ptr_v3 = [0u8; 12].as_slice();
             };
 
-            let mut resource_info = Vec::new();
-
-            fn add_global<'a>(
-                exec_builder: &mut KernelExecBuilder,
-                resource_info: &mut Vec<(&'a PipeResource, usize)>,
-                res: &'a PipeResourceOwned,
-                offset: usize,
-            ) {
-                resource_info.push((res.borrow(), exec_builder.input.len()));
-                exec_builder.add_pointer(offset as u64);
-            }
-
             fn add_sysval(ctx: &QueueContext, input: &mut Vec<u8>, vals: &[usize; 3]) {
                 if ctx.dev.address_bits() == 64 {
                     input.extend_from_slice(unsafe { as_byte_slice(&vals.map(|v| v as u64)) });
@@ -1523,12 +1518,7 @@ impl Kernel {
                                     }
                                 } else {
                                     let res = buffer.get_res_for_access(ctx, rw)?;
-                                    add_global(
-                                        &mut exec_builder,
-                                        &mut resource_info,
-                                        res,
-                                        buffer.offset(),
-                                    );
+                                    exec_builder.add_global(res, buffer.offset());
                                 }
                             }
                             &KernelArgValue::SVM(handle) => {
@@ -1596,7 +1586,7 @@ impl Kernel {
                     CompiledKernelArgType::ConstantBuffer => {
                         assert!(nir_kernel_build.constant_buffer.is_some());
                         let res = nir_kernel_build.constant_buffer.as_ref().unwrap();
-                        add_global(&mut exec_builder, &mut resource_info, res, 0);
+                        exec_builder.add_global(res, 0);
                     }
                     CompiledKernelArgType::GlobalWorkOffsets => {
                         add_sysval(ctx, &mut exec_builder.input, &offsets);
@@ -1610,7 +1600,7 @@ impl Kernel {
                     }
                     CompiledKernelArgType::PrintfBuffer => {
                         let res = printf_buf.as_ref().unwrap();
-                        add_global(&mut exec_builder, &mut resource_info, res, 0);
+                        exec_builder.add_global(res, 0);
                     }
                     CompiledKernelArgType::InlineSampler(cl) => {
                         samplers.push(Sampler::cl_to_pipe(cl));
@@ -1668,9 +1658,9 @@ impl Kernel {
             // subtract the shader local_size as we only request something on top of that.
             variable_local_size -= static_local_size;
 
-            let mut resources = Vec::with_capacity(resource_info.len());
-            let mut globals: Vec<*mut u32> = Vec::with_capacity(resource_info.len());
-            for (res, offset) in resource_info {
+            let mut resources = Vec::with_capacity(exec_builder.resource_info.len());
+            let mut globals: Vec<*mut u32> = Vec::with_capacity(exec_builder.resource_info.len());
+            for (res, offset) in exec_builder.resource_info {
                 resources.push(res);
                 globals.push(unsafe { exec_builder.input.as_mut_ptr().byte_add(offset) }.cast());
             }
