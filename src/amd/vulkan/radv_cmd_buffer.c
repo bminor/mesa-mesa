@@ -8108,10 +8108,6 @@ radv_CmdSetPrimitiveTopology(VkCommandBuffer commandBuffer, VkPrimitiveTopology 
        radv_prim_is_points_or_lines(primitive_topology))
       state->dirty |= RADV_CMD_DIRTY_GUARDBAND;
 
-   /* for line stipple/mode */
-   if (radv_prim_is_lines(state->dynamic.vk.ia.primitive_topology) != radv_prim_is_lines(primitive_topology))
-      state->dirty |= RADV_DYNAMIC_RASTERIZATION_SAMPLES;
-
    state->dynamic.vk.ia.primitive_topology = primitive_topology;
 
    state->dirty_dynamic |= RADV_DYNAMIC_PRIMITIVE_TOPOLOGY;
