@@ -23,6 +23,7 @@ use mesa_rust_util::serialize::*;
 use rusticl_opencl_gen::*;
 use spirv::SpirvKernelInfo;
 
+use std::borrow::Borrow;
 use std::cmp;
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -1422,11 +1423,11 @@ impl Kernel {
             fn add_global<'a>(
                 ctx: &QueueContext,
                 input: &mut Vec<u8>,
-                resource_info: &mut Vec<(&'a PipeResourceOwned, usize)>,
+                resource_info: &mut Vec<(&'a PipeResource, usize)>,
                 res: &'a PipeResourceOwned,
                 offset: usize,
             ) {
-                resource_info.push((res, input.len()));
+                resource_info.push((res.borrow(), input.len()));
                 add_pointer(ctx, input, offset as u64);
             }
 
@@ -1656,7 +1657,7 @@ impl Kernel {
             ctx.bind_sampler_states(samplers);
             ctx.bind_sampler_views(sviews);
             ctx.bind_shader_images(&iviews);
-            ctx.set_global_binding(resources.as_slice(), &mut globals);
+            ctx.set_global_binding(resources.as_mut_slice(), &mut globals);
 
             for z in 0..grid[2].div_ceil(hw_max_grid[2]) {
                 for y in 0..grid[1].div_ceil(hw_max_grid[1]) {

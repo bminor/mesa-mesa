@@ -517,14 +517,18 @@ impl PipeContext {
         unsafe { self.pipe.as_ref().launch_grid.unwrap()(self.pipe.as_ptr(), &info) }
     }
 
-    pub fn set_global_binding(&self, res: &[&PipeResourceOwned], out: &mut [*mut u32]) {
-        let mut res: Vec<_> = res.iter().copied().map(PipeResourceOwned::pipe).collect();
+    pub fn set_global_binding(&self, res: &mut [&PipeResource], out: &mut [*mut u32]) {
+        let len = res.len();
+        let res = PipeResource::slice_as_mut_ptr_slice(res);
+        // SAFETY: We can safely cast the *mut *const pointer to *mut *mut as drivers aren't going
+        //         to change any of the pipe_resource fields, but merely allows them to change
+        //         fields of their own subclass.
         unsafe {
             self.pipe.as_ref().set_global_binding.unwrap()(
                 self.pipe.as_ptr(),
                 0,
-                res.len() as u32,
-                res.as_mut_ptr(),
+                len as u32,
+                res.cast(),
                 out.as_mut_ptr(),
             )
         }
