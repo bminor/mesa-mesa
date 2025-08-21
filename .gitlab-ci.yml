@@ -137,7 +137,7 @@ variables:
   CI_EXCLUDE_ENV_VAR_REGEX: 'SCRIPTS_DIR|RESULTS_DIR'
 
   CI_TRON_JOB_TEMPLATE_PROJECT: &ci-tron-template-project gfx-ci/ci-tron
-  CI_TRON_JOB_TEMPLATE_COMMIT: &ci-tron-template-commit ddadab0006e43f1365cd30779f565b444a6538ee
+  CI_TRON_JOB_TEMPLATE_COMMIT: &ci-tron-template-commit 5178f958fc3c3405745ea612a9df8941a32b01b0
   CI_TRON_JOB_TEMPLATE_PROJECT_URL: "https://gitlab.freedesktop.org/$CI_TRON_JOB_TEMPLATE_PROJECT"
 
 
