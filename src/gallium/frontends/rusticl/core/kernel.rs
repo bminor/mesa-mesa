@@ -1283,6 +1283,13 @@ impl<'a> KernelExecBuilder<'a> {
     fn add_values(&mut self, value: &[u8]) {
         self.input.extend_from_slice(value);
     }
+
+    /// Adds padding up to the provided length.
+    fn add_zero_padding(&mut self, until_len: usize) {
+        if self.input.len() < until_len {
+            self.input.resize(until_len, 0);
+        }
+    }
 }
 
 impl Kernel {
@@ -1482,8 +1489,8 @@ impl Kernel {
                     false
                 };
 
-                if !is_opaque && arg.offset > exec_builder.input.len() {
-                    exec_builder.input.resize(arg.offset, 0);
+                if !is_opaque {
+                    exec_builder.add_zero_padding(arg.offset);
                 }
 
                 match arg.kind {
