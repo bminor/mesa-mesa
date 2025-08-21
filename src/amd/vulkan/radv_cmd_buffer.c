@@ -465,10 +465,6 @@ radv_cmd_set_primitive_topology(struct radv_cmd_buffer *cmd_buffer, uint32_t pri
        radv_primitive_topology_is_line_list(primitive_topology))
       state->dirty |= RADV_CMD_DIRTY_RASTER_STATE;
 
-   if (radv_prim_is_points_or_lines(state->dynamic.vk.ia.primitive_topology) !=
-       radv_prim_is_points_or_lines(primitive_topology))
-      state->dirty |= RADV_CMD_DIRTY_GUARDBAND;
-
    state->dynamic.vk.ia.primitive_topology = primitive_topology;
 
    state->dirty_dynamic |= RADV_DYNAMIC_PRIMITIVE_TOPOLOGY;
@@ -1852,11 +1848,22 @@ radv_get_vgt_outprim_type(const struct radv_cmd_buffer *cmd_buffer)
    const struct radv_shader *last_vgt_shader = cmd_buffer->state.last_vgt_shader;
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
 
+   /* Ignore dynamic primitive topology for TES/GS/MS stages. */
    if (cmd_buffer->state.active_stages &
-       (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
-        VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_MESH_BIT_EXT)) {
-      /* Ignore dynamic primitive topology for TES/GS/MS stages. */
-      return cmd_buffer->state.vgt_outprim_type;
+       (VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_MESH_BIT_EXT)) {
+      if (cmd_buffer->state.shaders[MESA_SHADER_GEOMETRY]) {
+         return radv_conv_gl_prim_to_gs_out(cmd_buffer->state.shaders[MESA_SHADER_GEOMETRY]->info.gs.output_prim);
+      } else if (cmd_buffer->state.shaders[MESA_SHADER_TESS_EVAL]) {
+         if (cmd_buffer->state.shaders[MESA_SHADER_TESS_EVAL]->info.tes.point_mode) {
+            return V_028A6C_POINTLIST;
+         } else {
+            return radv_conv_tess_prim_to_gs_out(
+               cmd_buffer->state.shaders[MESA_SHADER_TESS_EVAL]->info.tes._primitive_mode);
+         }
+      } else {
+         assert(cmd_buffer->state.shaders[MESA_SHADER_MESH]);
+         return radv_conv_gl_prim_to_gs_out(cmd_buffer->state.shaders[MESA_SHADER_MESH]->info.ms.output_prim);
+      }
    }
 
    return radv_conv_prim_to_gs_out(d->vk.ia.primitive_topology, last_vgt_shader->info.is_ngg);
@@ -1867,7 +1874,7 @@ radv_get_line_mode(const struct radv_cmd_buffer *cmd_buffer)
 {
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
 
-   const unsigned vgt_outprim_type = radv_get_vgt_outprim_type(cmd_buffer);
+   const unsigned vgt_outprim_type = cmd_buffer->state.vgt_outprim_type;
 
    const bool draw_lines =
       (radv_vgt_outprim_is_line(vgt_outprim_type) && !radv_polygon_mode_is_point(d->vk.rs.polygon_mode)) ||
@@ -4237,11 +4244,12 @@ radv_emit_vgt_prim_state(struct radv_cmd_buffer *cmd_buffer)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   const uint32_t vgt_outprim_type = radv_get_vgt_outprim_type(cmd_buffer);
+   const uint32_t vgt_outprim_type = cmd_buffer->state.vgt_outprim_type;
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    struct radv_cmd_stream *cs = cmd_buffer->cs;
 
-   assert(!cmd_buffer->state.mesh_shading);
+   if (cmd_buffer->state.mesh_shading)
+      return;
 
    radeon_begin(cs);
    if (pdev->info.gfx_level >= GFX7) {
@@ -5633,7 +5641,7 @@ radv_emit_guardband_state(struct radv_cmd_buffer *cmd_buffer)
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
-   unsigned vgt_outprim_type = radv_get_vgt_outprim_type(cmd_buffer);
+   unsigned vgt_outprim_type = cmd_buffer->state.vgt_outprim_type;
    const bool draw_points =
       radv_vgt_outprim_is_point(vgt_outprim_type) || radv_polygon_mode_is_point(d->vk.rs.polygon_mode);
    const bool draw_lines =
@@ -8213,8 +8221,7 @@ radv_bind_pre_rast_shader(struct radv_cmd_buffer *cmd_buffer, const struct radv_
       /* Re-emit VRS state because the combiner is different (vertex vs primitive). Re-emit
        * primitive topology because the mesh shading pipeline clobbered it.
        */
-      cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_PRIMITIVE_TOPOLOGY;
-      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FSR_STATE;
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FSR_STATE | RADV_CMD_DIRTY_VGT_PRIM_STATE;
    }
 
    /* Determine if this shader is the last VGT shader. */
@@ -8629,20 +8636,6 @@ radv_CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipeline
       if (cmd_buffer->state.db_render_control != graphics_pipeline->db_render_control) {
          cmd_buffer->state.db_render_control = graphics_pipeline->db_render_control;
          cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FRAMEBUFFER;
-      }
-
-      if (cmd_buffer->state.vgt_outprim_type != graphics_pipeline->vgt_outprim_type) {
-         cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_PRIMITIVE_TOPOLOGY;
-
-         if (radv_vgt_outprim_is_point_or_line(cmd_buffer->state.vgt_outprim_type) !=
-             radv_vgt_outprim_is_point_or_line(graphics_pipeline->vgt_outprim_type))
-            cmd_buffer->state.dirty |= RADV_CMD_DIRTY_GUARDBAND;
-
-         if (radv_vgt_outprim_is_line(cmd_buffer->state.vgt_outprim_type) !=
-             radv_vgt_outprim_is_line(graphics_pipeline->vgt_outprim_type))
-            cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_RASTERIZATION_SAMPLES;
-
-         cmd_buffer->state.vgt_outprim_type = graphics_pipeline->vgt_outprim_type;
       }
 
       if (cmd_buffer->state.uses_out_of_order_rast != graphics_pipeline->uses_out_of_order_rast ||
@@ -10881,7 +10874,7 @@ radv_get_nggc_settings(struct radv_cmd_buffer *cmd_buffer, bool vp_y_inverted)
     * because we don't know the primitive topology at compile time, so we should
     * disable it dynamically for points or lines.
     */
-   const unsigned num_vertices_per_prim = radv_get_vgt_outprim_type(cmd_buffer) + 1;
+   const unsigned num_vertices_per_prim = cmd_buffer->state.vgt_outprim_type + 1;
    if (num_vertices_per_prim != 3)
       return radv_nggc_none;
 
@@ -10943,7 +10936,7 @@ radv_emit_ps_state(struct radv_cmd_buffer *cmd_buffer)
    const unsigned rasterization_samples = cmd_buffer->state.num_rast_samples;
    const unsigned ps_iter_samples = radv_get_ps_iter_samples(cmd_buffer);
    const uint16_t ps_iter_mask = ac_get_ps_iter_mask(ps_iter_samples);
-   const unsigned vgt_outprim_type = radv_get_vgt_outprim_type(cmd_buffer);
+   const unsigned vgt_outprim_type = cmd_buffer->state.vgt_outprim_type;
    const unsigned ps_state = SET_SGPR_FIELD(PS_STATE_NUM_SAMPLES, rasterization_samples) |
                              SET_SGPR_FIELD(PS_STATE_PS_ITER_MASK, ps_iter_mask) |
                              SET_SGPR_FIELD(PS_STATE_LINE_RAST_MODE, line_rast_mode) |
@@ -10965,7 +10958,7 @@ radv_get_ngg_state_num_verts_per_prim(struct radv_cmd_buffer *cmd_buffer)
    uint32_t num_verts_per_prim = 0;
 
    if (last_vgt_shader->info.stage == MESA_SHADER_VERTEX)
-      num_verts_per_prim = radv_get_vgt_outprim_type(cmd_buffer) + 1;
+      num_verts_per_prim = cmd_buffer->state.vgt_outprim_type + 1;
 
    return num_verts_per_prim;
 }
@@ -10980,7 +10973,7 @@ radv_get_ngg_state_provoking_vtx(struct radv_cmd_buffer *cmd_buffer)
 
    if (d->vk.rs.provoking_vertex == VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT) {
       if (stage == MESA_SHADER_VERTEX) {
-         provoking_vtx = radv_get_vgt_outprim_type(cmd_buffer);
+         provoking_vtx = cmd_buffer->state.vgt_outprim_type;
       } else if (stage == MESA_SHADER_GEOMETRY) {
          provoking_vtx = last_vgt_shader->info.gs.vertices_in - 1;
       }
@@ -12094,6 +12087,18 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
    if ((cmd_buffer->state.dirty & (RADV_CMD_DIRTY_PIPELINE | RADV_CMD_DIRTY_GRAPHICS_SHADERS)) ||
        (dynamic_states & (RADV_DYNAMIC_PRIMITIVE_TOPOLOGY | RADV_DYNAMIC_POLYGON_MODE |
                           RADV_DYNAMIC_LINE_RASTERIZATION_MODE | RADV_DYNAMIC_RASTERIZATION_SAMPLES))) {
+      const uint32_t vgt_outprim_type = radv_get_vgt_outprim_type(cmd_buffer);
+
+      if (cmd_buffer->state.vgt_outprim_type != vgt_outprim_type) {
+         if (radv_vgt_outprim_is_point_or_line(cmd_buffer->state.vgt_outprim_type) !=
+             radv_vgt_outprim_is_point_or_line(vgt_outprim_type))
+            cmd_buffer->state.dirty |= RADV_CMD_DIRTY_GUARDBAND;
+
+         cmd_buffer->state.vgt_outprim_type = vgt_outprim_type;
+         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_PS_STATE | RADV_CMD_DIRTY_NGG_STATE | RADV_CMD_DIRTY_NGGC_SETTINGS |
+                                    RADV_CMD_DIRTY_VGT_PRIM_STATE;
+      }
+
       const VkLineRasterizationModeEXT line_rast_mode = radv_get_line_mode(cmd_buffer);
 
       if (cmd_buffer->state.line_rast_mode != line_rast_mode) {
@@ -12346,13 +12351,6 @@ radv_bind_graphics_shaders(struct radv_cmd_buffer *cmd_buffer)
       gfx10_ngg_set_esgs_ring_itemsize(device, &es->info, &gs->info, &gs->info.ngg_info);
       gfx10_get_ngg_info(device, &es->info, &gs->info, &gs->info.ngg_info);
       radv_precompute_registers_hw_ngg(device, &gs->config, &gs->info);
-   }
-
-   /* Determine the rasterized primitive. */
-   if (cmd_buffer->state.active_stages &
-       (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
-        VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_MESH_BIT_EXT)) {
-      cmd_buffer->state.vgt_outprim_type = radv_get_vgt_gs_out(cmd_buffer->state.shaders, 0, false);
    }
 
    const struct radv_shader *ps = cmd_buffer->state.shaders[MESA_SHADER_FRAGMENT];
@@ -15278,7 +15276,6 @@ radv_reset_pipeline_state(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoin
          cmd_buffer->state.emitted_vs_prolog = NULL;
          cmd_buffer->state.ms.sample_shading_enable = false;
          cmd_buffer->state.ms.min_sample_shading = 1.0f;
-         cmd_buffer->state.vgt_outprim_type = 0;
          cmd_buffer->state.uses_out_of_order_rast = false;
          cmd_buffer->state.uses_vrs_attachment = false;
       }

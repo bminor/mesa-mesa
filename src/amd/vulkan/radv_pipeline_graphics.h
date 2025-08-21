@@ -146,8 +146,6 @@ struct radv_graphics_pipeline {
    /* Last pre-PS API stage */
    mesa_shader_stage last_vgt_api_stage;
 
-   unsigned vgt_outprim_type;
-
    /* Custom blend mode for internal operations. */
    unsigned custom_blend_mode;
 
@@ -252,6 +250,21 @@ radv_conv_gl_prim_to_gs_out(unsigned gl_prim)
    case MESA_PRIM_TRIANGLE_STRIP:
    case MESA_PRIM_QUADS:
       return V_028A6C_TRISTRIP;
+   default:
+      assert(0);
+      return 0;
+   }
+}
+
+static inline uint32_t
+radv_conv_tess_prim_to_gs_out(enum tess_primitive_mode prim)
+{
+   switch (prim) {
+   case TESS_PRIMITIVE_TRIANGLES:
+   case TESS_PRIMITIVE_QUADS:
+      return V_028A6C_TRISTRIP;
+   case TESS_PRIMITIVE_ISOLINES:
+      return V_028A6C_LINESTRIP;
    default:
       assert(0);
       return 0;
@@ -670,8 +683,6 @@ struct radv_vgt_shader_key {
 
 struct radv_vgt_shader_key radv_get_vgt_shader_key(const struct radv_device *device, struct radv_shader **shaders,
                                                    const struct radv_shader *gs_copy_shader);
-
-uint32_t radv_get_vgt_gs_out(struct radv_shader **shaders, uint32_t primitive_topology, bool is_ngg);
 
 bool radv_needs_null_export_workaround(const struct radv_device *device, const struct radv_shader *ps,
                                        unsigned custom_blend_mode);
