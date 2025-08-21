@@ -160,55 +160,48 @@ get_fpu_lowered_simd_width(const brw_shader *shader,
  */
 static unsigned
 get_sampler_lowered_simd_width(const struct intel_device_info *devinfo,
-                               const brw_inst *inst)
+                               const brw_tex_inst *tex)
 {
    /* If we have a min_lod parameter on anything other than a simple sample
     * message, it will push it over 5 arguments and we have to fall back to
     * SIMD8.
     */
-   if (inst->opcode != SHADER_OPCODE_TEX_LOGICAL &&
-       inst->components_read(TEX_LOGICAL_SRC_MIN_LOD))
+   if (tex->opcode != SHADER_OPCODE_TEX_LOGICAL &&
+       tex->components_read(TEX_LOGICAL_SRC_MIN_LOD))
       return devinfo->ver < 20 ? 8 : 16;
 
    /* On Gfx9+ the LOD argument is for free if we're able to use the LZ
     * variant of the TXL or TXF message.
     */
-   const bool implicit_lod = (inst->opcode == SHADER_OPCODE_TXL_LOGICAL ||
-                              inst->opcode == SHADER_OPCODE_TXF_LOGICAL) &&
-                             inst->src[TEX_LOGICAL_SRC_LOD].is_zero();
+   const bool implicit_lod = (tex->opcode == SHADER_OPCODE_TXL_LOGICAL ||
+                              tex->opcode == SHADER_OPCODE_TXF_LOGICAL) &&
+                             tex->src[TEX_LOGICAL_SRC_LOD].is_zero();
 
    /* Calculate the total number of argument components that need to be passed
     * to the sampler unit.
     */
-   assert(inst->src[TEX_LOGICAL_SRC_GRAD_COMPONENTS].file == IMM);
-   const unsigned grad_components =
-      inst->src[TEX_LOGICAL_SRC_GRAD_COMPONENTS].ud;
-   assert(inst->src[TEX_LOGICAL_SRC_COORD_COMPONENTS].file == IMM);
-   const unsigned coord_components =
-      inst->src[TEX_LOGICAL_SRC_COORD_COMPONENTS].ud;
-
    unsigned num_payload_components =
-      coord_components +
-      inst->components_read(TEX_LOGICAL_SRC_SHADOW_C) +
-      (implicit_lod ? 0 : inst->components_read(TEX_LOGICAL_SRC_LOD)) +
-      inst->components_read(TEX_LOGICAL_SRC_LOD2) +
-      inst->components_read(TEX_LOGICAL_SRC_SAMPLE_INDEX) +
-      (inst->opcode == SHADER_OPCODE_TG4_OFFSET_LOGICAL ?
-       inst->components_read(TEX_LOGICAL_SRC_TG4_OFFSET) : 0) +
-      inst->components_read(TEX_LOGICAL_SRC_MCS) +
-      inst->components_read(TEX_LOGICAL_SRC_MIN_LOD);
+      tex->coord_components +
+      tex->components_read(TEX_LOGICAL_SRC_SHADOW_C) +
+      (implicit_lod ? 0 : tex->components_read(TEX_LOGICAL_SRC_LOD)) +
+      tex->components_read(TEX_LOGICAL_SRC_LOD2) +
+      tex->components_read(TEX_LOGICAL_SRC_SAMPLE_INDEX) +
+      (tex->opcode == SHADER_OPCODE_TG4_OFFSET_LOGICAL ?
+       tex->components_read(TEX_LOGICAL_SRC_TG4_OFFSET) : 0) +
+      tex->components_read(TEX_LOGICAL_SRC_MCS) +
+      tex->components_read(TEX_LOGICAL_SRC_MIN_LOD);
 
 
-   if (inst->opcode == FS_OPCODE_TXB_LOGICAL && devinfo->ver >= 20) {
-      num_payload_components += 3 - coord_components;
-   } else if (inst->opcode == SHADER_OPCODE_TXD_LOGICAL &&
+   if (tex->opcode == FS_OPCODE_TXB_LOGICAL && devinfo->ver >= 20) {
+      num_payload_components += 3 - tex->coord_components;
+   } else if (tex->opcode == SHADER_OPCODE_TXD_LOGICAL &&
             devinfo->verx10 >= 125 && devinfo->ver < 20) {
       num_payload_components +=
-         3 - coord_components + (2 - grad_components) * 2;
+         3 - tex->coord_components + (2 - tex->grad_components) * 2;
    } else {
-      num_payload_components += 4 - coord_components;
-      if (inst->opcode == SHADER_OPCODE_TXD_LOGICAL)
-         num_payload_components += (3 - grad_components) * 2;
+      num_payload_components += 4 - tex->coord_components;
+      if (tex->opcode == SHADER_OPCODE_TXD_LOGICAL)
+         num_payload_components += (3 - tex->grad_components) * 2;
    }
 
 
@@ -219,7 +212,7 @@ get_sampler_lowered_simd_width(const struct intel_device_info *devinfo,
     * maximum message size supported by the sampler, regardless of whether a
     * header is provided or not.
     */
-   return MIN2(inst->exec_size, simd_limit);
+   return MIN2(tex->exec_size, simd_limit);
 }
 
 static bool
@@ -379,7 +372,7 @@ brw_get_lowered_simd_width(const brw_shader *shader, const brw_inst *inst)
    case FS_OPCODE_TXB_LOGICAL:
    case SHADER_OPCODE_TXF_LOGICAL:
    case SHADER_OPCODE_TXS_LOGICAL:
-      return get_sampler_lowered_simd_width(devinfo, inst);
+      return get_sampler_lowered_simd_width(devinfo, inst->as_tex());
 
    case SHADER_OPCODE_MEMORY_LOAD_LOGICAL:
    case SHADER_OPCODE_MEMORY_STORE_LOGICAL:

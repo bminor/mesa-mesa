@@ -841,38 +841,32 @@ get_sampler_msg_payload_type_bit_size(const intel_device_info *devinfo,
 }
 
 static void
-lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst)
+lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
 {
    const intel_device_info *devinfo = bld.shader->devinfo;
    const brw_compiler *compiler = bld.shader->compiler;
 
-   const brw_reg coordinate = inst->src[TEX_LOGICAL_SRC_COORDINATE];
-   const brw_reg shadow_c = inst->src[TEX_LOGICAL_SRC_SHADOW_C];
-   const brw_reg lod = inst->src[TEX_LOGICAL_SRC_LOD];
-   const brw_reg lod2 = inst->src[TEX_LOGICAL_SRC_LOD2];
-   const brw_reg min_lod = inst->src[TEX_LOGICAL_SRC_MIN_LOD];
-   const brw_reg sample_index = inst->src[TEX_LOGICAL_SRC_SAMPLE_INDEX];
-   const brw_reg mcs = inst->src[TEX_LOGICAL_SRC_MCS];
-   const brw_reg surface = inst->src[TEX_LOGICAL_SRC_SURFACE];
-   const brw_reg sampler = inst->src[TEX_LOGICAL_SRC_SAMPLER];
-   const brw_reg surface_handle = inst->src[TEX_LOGICAL_SRC_SURFACE_HANDLE];
-   const brw_reg sampler_handle = inst->src[TEX_LOGICAL_SRC_SAMPLER_HANDLE];
-   const brw_reg tg4_offset = inst->src[TEX_LOGICAL_SRC_TG4_OFFSET];
-   assert(inst->src[TEX_LOGICAL_SRC_COORD_COMPONENTS].file == IMM);
-   const unsigned coord_components = inst->src[TEX_LOGICAL_SRC_COORD_COMPONENTS].ud;
-   assert(inst->src[TEX_LOGICAL_SRC_GRAD_COMPONENTS].file == IMM);
-   const unsigned grad_components = inst->src[TEX_LOGICAL_SRC_GRAD_COMPONENTS].ud;
-   assert(inst->src[TEX_LOGICAL_SRC_RESIDENCY].file == IMM);
-   const bool residency = inst->src[TEX_LOGICAL_SRC_RESIDENCY].ud != 0;
+   const brw_reg coordinate = tex->src[TEX_LOGICAL_SRC_COORDINATE];
+   const brw_reg shadow_c = tex->src[TEX_LOGICAL_SRC_SHADOW_C];
+   const brw_reg lod = tex->src[TEX_LOGICAL_SRC_LOD];
+   const brw_reg lod2 = tex->src[TEX_LOGICAL_SRC_LOD2];
+   const brw_reg min_lod = tex->src[TEX_LOGICAL_SRC_MIN_LOD];
+   const brw_reg sample_index = tex->src[TEX_LOGICAL_SRC_SAMPLE_INDEX];
+   const brw_reg mcs = tex->src[TEX_LOGICAL_SRC_MCS];
+   const brw_reg surface = tex->src[TEX_LOGICAL_SRC_SURFACE];
+   const brw_reg sampler = tex->src[TEX_LOGICAL_SRC_SAMPLER];
+   const brw_reg surface_handle = tex->src[TEX_LOGICAL_SRC_SURFACE_HANDLE];
+   const brw_reg sampler_handle = tex->src[TEX_LOGICAL_SRC_SAMPLER_HANDLE];
+   const brw_reg tg4_offset = tex->src[TEX_LOGICAL_SRC_TG4_OFFSET];
 
    const unsigned payload_type_bit_size =
-      get_sampler_msg_payload_type_bit_size(devinfo, inst);
+      get_sampler_msg_payload_type_bit_size(devinfo, tex);
 
    /* 16-bit payloads are available only on gfx11+ */
    assert(payload_type_bit_size != 16 || devinfo->ver >= 11);
 
    /* We never generate EOT sampler messages */
-   assert(!inst->eot);
+   assert(!tex->eot);
 
    const enum brw_reg_type payload_type =
       brw_type_with_size(BRW_TYPE_F, payload_type_bit_size);
@@ -881,7 +875,7 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst)
    const enum brw_reg_type payload_signed_type =
       brw_type_with_size(BRW_TYPE_D, payload_type_bit_size);
    unsigned header_size = 0, length = 0;
-   opcode op = inst->opcode;
+   opcode op = tex->opcode;
    brw_reg sources[1 + MAX_SAMPLER_MESSAGE_SIZE];
    for (unsigned i = 0; i < ARRAY_SIZE(sources); i++)
       sources[i] = bld.vgrf(payload_type);
@@ -890,10 +884,10 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst)
    assert((surface.file == BAD_FILE) != (surface_handle.file == BAD_FILE));
    assert((sampler.file == BAD_FILE) != (sampler_handle.file == BAD_FILE));
 
-   if (shader_opcode_needs_header(op, devinfo) || inst->offset != 0 ||
+   if (shader_opcode_needs_header(op, devinfo) || tex->offset != 0 ||
        sampler_handle.file != BAD_FILE ||
        is_high_sampler(devinfo, sampler) ||
-       residency) {
+       tex->residency) {
       /* For general texture offsets (no txf workaround), we need a header to
        * put them in.
        *
@@ -911,19 +905,19 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst)
        * writemask.  It's reversed from normal: 1 means "don't write".
        */
       unsigned comps_regs =
-         DIV_ROUND_UP(regs_written(inst) - reg_unit(devinfo) * residency,
+         DIV_ROUND_UP(regs_written(tex) - reg_unit(devinfo) * tex->residency,
                       reg_unit(devinfo));
       unsigned comp_regs =
-         DIV_ROUND_UP(inst->dst.component_size(inst->exec_size),
+         DIV_ROUND_UP(tex->dst.component_size(tex->exec_size),
                       reg_unit(devinfo) * REG_SIZE);
       if (comps_regs < 4 * comp_regs) {
          assert(comps_regs % comp_regs == 0);
          unsigned mask = ~((1 << (comps_regs / comp_regs)) - 1) & 0xf;
-         inst->offset |= mask << 12;
+         tex->offset |= mask << 12;
       }
 
-      if (residency)
-         inst->offset |= 1 << 23; /* g0.2 bit23 : Pixel Null Mask Enable */
+      if (tex->residency)
+         tex->offset |= 1 << 23; /* g0.2 bit23 : Pixel Null Mask Enable */
 
       /* Build the actual header */
       const brw_builder ubld = bld.exec_all().group(8 * reg_unit(devinfo), 0);
@@ -932,8 +926,8 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst)
          ubld.MOV(header, brw_imm_ud(0));
       else
          ubld.MOV(header, retype(brw_vec8_grf(0, 0), BRW_TYPE_UD));
-      if (inst->offset) {
-         ubld1.MOV(component(header, 2), brw_imm_ud(inst->offset));
+      if (tex->offset) {
+         ubld1.MOV(component(header, 2), brw_imm_ud(tex->offset));
       } else if (devinfo->ver < 11 &&
                  bld.shader->stage != MESA_SHADER_VERTEX &&
                  bld.shader->stage != MESA_SHADER_FRAGMENT) {
@@ -1049,13 +1043,13 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst)
       /* Load dPdx and the coordinate together:
        * [hdr], [ref], x, dPdx.x, dPdy.x, y, dPdx.y, dPdy.y, z, dPdx.z, dPdy.z
        */
-      for (unsigned i = 0; i < coord_components; i++) {
+      for (unsigned i = 0; i < tex->coord_components; i++) {
          bld.MOV(sources[length++], offset(coordinate, bld, i));
 
          /* For cube map array, the coordinate is (u,v,r,ai) but there are
           * only derivatives for (u, v, r).
           */
-         if (i < grad_components) {
+         if (i < tex->grad_components) {
             bld.MOV(sources[length++], offset(lod, bld, i));
             bld.MOV(sources[length++], offset(lod2, bld, i));
          }
@@ -1077,7 +1071,7 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst)
       sources[length] = retype(sources[length], payload_signed_type);
       bld.MOV(sources[length++], offset(coordinate, bld, 0));
 
-      if (coord_components >= 2) {
+      if (tex->coord_components >= 2) {
          sources[length] = retype(sources[length], payload_signed_type);
          bld.MOV(sources[length], offset(coordinate, bld, 1));
       } else {
@@ -1090,7 +1084,7 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst)
          bld.MOV(sources[length++], lod);
       }
 
-      for (unsigned i = 2; i < coord_components; i++) {
+      for (unsigned i = 2; i < tex->coord_components; i++) {
          sources[length] = retype(sources[length], payload_signed_type);
          bld.MOV(sources[length++], offset(coordinate, bld, i));
       }
@@ -1138,7 +1132,7 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst)
       /* There is no offsetting for this message; just copy in the integer
        * texture coordinates.
        */
-      for (unsigned i = 0; i < coord_components; i++) {
+      for (unsigned i = 0; i < tex->coord_components; i++) {
          sources[length] = retype(sources[length], payload_signed_type);
          bld.MOV(sources[length++], offset(coordinate, bld, i));
       }
@@ -1155,7 +1149,7 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst)
          bld.MOV(sources[length++], offset(tg4_offset, bld, i));
       }
 
-      if (coord_components == 3) /* r if present */
+      if (tex->coord_components == 3) /* r if present */
          bld.MOV(sources[length++], offset(coordinate, bld, 2));
 
       coordinate_done = true;
@@ -1166,7 +1160,7 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst)
 
    /* Set up the coordinate (except for cases where it was done above) */
    if (!coordinate_done) {
-      for (unsigned i = 0; i < coord_components; i++)
+      for (unsigned i = 0; i < tex->coord_components; i++)
          bld.MOV(retype(sources[length++], payload_type),
                  offset(coordinate, bld, i));
    }
@@ -1186,7 +1180,7 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst)
           * Param Number   0        1  2  3  4
           * Param          BIAS_AI  U  V  R  MLOD
           */
-         length += 3 - coord_components;
+         length += 3 - tex->coord_components;
       } else if (op == SHADER_OPCODE_TXD_LOGICAL && devinfo->verx10 >= 125) {
          /* On DG2 and newer platforms, sample_d can only be used with 1D and
           * 2D surfaces, so the maximum number of gradient components is 2.
@@ -1196,12 +1190,12 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst)
           *
           * See bspec 45942, "Enable new message layout for cube array"
           */
-         length += 3 - coord_components;
-         length += (2 - grad_components) * 2;
+         length += 3 - tex->coord_components;
+         length += (2 - tex->grad_components) * 2;
       } else {
-         length += 4 - coord_components;
+         length += 4 - tex->coord_components;
          if (op == SHADER_OPCODE_TXD_LOGICAL)
-            length += (3 - grad_components) * 2;
+            length += (3 - tex->grad_components) * 2;
       }
 
       bld.MOV(sources[length++], min_lod);
@@ -1228,24 +1222,24 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst)
    if (devinfo->ver < 20) {
       if (payload_type_bit_size == 16) {
          assert(devinfo->ver >= 11);
-         simd_mode = inst->exec_size <= 8 ? GFX10_SAMPLER_SIMD_MODE_SIMD8H :
+         simd_mode = tex->exec_size <= 8 ? GFX10_SAMPLER_SIMD_MODE_SIMD8H :
             GFX10_SAMPLER_SIMD_MODE_SIMD16H;
       } else {
-         simd_mode = inst->exec_size <= 8 ? BRW_SAMPLER_SIMD_MODE_SIMD8 :
+         simd_mode = tex->exec_size <= 8 ? BRW_SAMPLER_SIMD_MODE_SIMD8 :
             BRW_SAMPLER_SIMD_MODE_SIMD16;
       }
    } else {
       if (payload_type_bit_size == 16) {
-         simd_mode = inst->exec_size <= 16 ? XE2_SAMPLER_SIMD_MODE_SIMD16H :
+         simd_mode = tex->exec_size <= 16 ? XE2_SAMPLER_SIMD_MODE_SIMD16H :
             XE2_SAMPLER_SIMD_MODE_SIMD32H;
       } else {
-         simd_mode = inst->exec_size <= 16 ? XE2_SAMPLER_SIMD_MODE_SIMD16 :
+         simd_mode = tex->exec_size <= 16 ? XE2_SAMPLER_SIMD_MODE_SIMD16 :
             XE2_SAMPLER_SIMD_MODE_SIMD32;
       }
    }
 
-   brw_send_inst *send = brw_transform_inst_to_send(bld, inst);
-   inst = NULL;
+   brw_send_inst *send = brw_transform_inst_to_send(bld, tex);
+   tex = NULL;
 
    send->mlen = mlen;
    send->header_size = header_size;
@@ -2679,7 +2673,7 @@ brw_lower_logical_sends(brw_shader &s)
       case SHADER_OPCODE_TG4_OFFSET_LOD_LOGICAL:
       case SHADER_OPCODE_TG4_OFFSET_BIAS_LOGICAL:
       case SHADER_OPCODE_SAMPLEINFO_LOGICAL:
-         lower_sampler_logical_send(ibld, inst);
+         lower_sampler_logical_send(ibld, inst->as_tex());
          break;
 
       case SHADER_OPCODE_GET_BUFFER_SIZE:

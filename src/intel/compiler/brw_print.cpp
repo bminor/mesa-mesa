@@ -656,6 +656,12 @@ brw_print_instruction(const brw_shader &s, const brw_inst *inst, FILE *file, con
       }
    }
 
+   if (const brw_tex_inst *tex = inst->as_tex()) {
+      fprintf(file, ", coord_comps: %uu", tex->coord_components);
+      fprintf(file, ", grad_comps: %uu", tex->grad_components);
+      fprintf(file, ", residency: %s", tex->residency ? "true" : "false");
+   }
+
    fprintf(file, " ");
 
    if (inst->force_writemask_all)

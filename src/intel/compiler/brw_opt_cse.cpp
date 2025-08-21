@@ -252,12 +252,21 @@ send_inst_match(brw_send_inst *a, brw_send_inst *b)
 }
 
 static bool
+tex_inst_match(brw_tex_inst *a, brw_tex_inst *b)
+{
+   return a->coord_components == b->coord_components &&
+          a->grad_components == b->grad_components &&
+          a->residency == b->residency;
+}
+
+static bool
 instructions_match(brw_inst *a, brw_inst *b, bool *negate)
 {
 
    return a->opcode == b->opcode &&
           /* `kind` is derived from opcode, so skipped. */
           (a->kind != BRW_KIND_SEND || send_inst_match(a->as_send(), b->as_send())) &&
+          (a->kind != BRW_KIND_TEX || tex_inst_match(a->as_tex(), b->as_tex())) &&
           a->exec_size == b->exec_size &&
           a->group == b->group &&
           a->predicate == b->predicate &&
@@ -339,6 +348,17 @@ hash_inst(const void *v)
       };
       hash = HASH(hash, send_u8data);
       hash = HASH(hash, send_u32data);
+      break;
+   }
+
+   case BRW_KIND_TEX: {
+      const brw_tex_inst *tex = inst->as_tex();
+      const uint8_t tex_u8data[] = {
+         tex->coord_components,
+         tex->grad_components,
+         tex->residency,
+      };
+      hash = HASH(hash, tex_u8data);
       break;
    }
 

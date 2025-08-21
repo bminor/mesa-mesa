@@ -14,10 +14,13 @@
 static inline unsigned
 brw_inst_kind_size(brw_inst_kind kind)
 {
+   STATIC_ASSERT(sizeof(brw_send_inst) >= sizeof(brw_tex_inst));
+
    /* TODO: Temporarily here to ensure all instructions can be converted to
     * SEND.  Once all new kinds are added, change so that BASE allocate only
     * sizeof(brw_inst).
     */
+
    return sizeof(brw_send_inst);
 }
 
@@ -153,6 +156,27 @@ brw_inst_kind_for_opcode(enum opcode opcode)
    case SHADER_OPCODE_MEMORY_FENCE:
    case SHADER_OPCODE_INTERLOCK:
       return BRW_KIND_SEND;
+
+   case SHADER_OPCODE_TEX_LOGICAL:
+   case SHADER_OPCODE_TXD_LOGICAL:
+   case SHADER_OPCODE_TXF_LOGICAL:
+   case SHADER_OPCODE_TXL_LOGICAL:
+   case SHADER_OPCODE_TXS_LOGICAL:
+   case SHADER_OPCODE_IMAGE_SIZE_LOGICAL:
+   case FS_OPCODE_TXB_LOGICAL:
+   case SHADER_OPCODE_TXF_CMS_W_LOGICAL:
+   case SHADER_OPCODE_TXF_CMS_W_GFX12_LOGICAL:
+   case SHADER_OPCODE_TXF_MCS_LOGICAL:
+   case SHADER_OPCODE_LOD_LOGICAL:
+   case SHADER_OPCODE_TG4_LOGICAL:
+   case SHADER_OPCODE_TG4_OFFSET_LOGICAL:
+   case SHADER_OPCODE_TG4_BIAS_LOGICAL:
+   case SHADER_OPCODE_TG4_EXPLICIT_LOD_LOGICAL:
+   case SHADER_OPCODE_TG4_IMPLICIT_LOD_LOGICAL:
+   case SHADER_OPCODE_TG4_OFFSET_LOD_LOGICAL:
+   case SHADER_OPCODE_TG4_OFFSET_BIAS_LOGICAL:
+   case SHADER_OPCODE_SAMPLEINFO_LOGICAL:
+      return BRW_KIND_TEX;
 
    default:
       return BRW_KIND_BASE;
@@ -436,17 +460,15 @@ brw_inst::components_read(unsigned i) const
    case SHADER_OPCODE_TG4_IMPLICIT_LOD_LOGICAL:
    case SHADER_OPCODE_TG4_OFFSET_LOD_LOGICAL:
    case SHADER_OPCODE_TG4_OFFSET_BIAS_LOGICAL:
-   case SHADER_OPCODE_SAMPLEINFO_LOGICAL:
-      assert(src[TEX_LOGICAL_SRC_COORD_COMPONENTS].file == IMM &&
-             src[TEX_LOGICAL_SRC_GRAD_COMPONENTS].file == IMM &&
-             src[TEX_LOGICAL_SRC_RESIDENCY].file == IMM);
+   case SHADER_OPCODE_SAMPLEINFO_LOGICAL: {
+      const brw_tex_inst *tex = as_tex();
       /* Texture coordinates. */
       if (i == TEX_LOGICAL_SRC_COORDINATE)
-         return src[TEX_LOGICAL_SRC_COORD_COMPONENTS].ud;
+         return tex->coord_components;
       /* Texture derivatives. */
       else if ((i == TEX_LOGICAL_SRC_LOD || i == TEX_LOGICAL_SRC_LOD2) &&
                opcode == SHADER_OPCODE_TXD_LOGICAL)
-         return src[TEX_LOGICAL_SRC_GRAD_COMPONENTS].ud;
+         return tex->grad_components;
       /* Texture offset. */
       else if (i == TEX_LOGICAL_SRC_TG4_OFFSET)
          return 2;
@@ -460,6 +482,7 @@ brw_inst::components_read(unsigned i) const
             return 1;
       } else
          return 1;
+   }
 
    case SHADER_OPCODE_MEMORY_LOAD_LOGICAL:
       if (i == MEMORY_LOGICAL_DATA0)
@@ -663,27 +686,8 @@ brw_inst::flags_written(const intel_device_info *devinfo) const
 bool
 brw_inst::has_sampler_residency() const
 {
-   switch (opcode) {
-   case SHADER_OPCODE_TEX_LOGICAL:
-   case FS_OPCODE_TXB_LOGICAL:
-   case SHADER_OPCODE_TXL_LOGICAL:
-   case SHADER_OPCODE_TXD_LOGICAL:
-   case SHADER_OPCODE_TXF_LOGICAL:
-   case SHADER_OPCODE_TXF_CMS_W_GFX12_LOGICAL:
-   case SHADER_OPCODE_TXF_CMS_W_LOGICAL:
-   case SHADER_OPCODE_TXS_LOGICAL:
-   case SHADER_OPCODE_TG4_OFFSET_LOGICAL:
-   case SHADER_OPCODE_TG4_LOGICAL:
-   case SHADER_OPCODE_TG4_BIAS_LOGICAL:
-   case SHADER_OPCODE_TG4_EXPLICIT_LOD_LOGICAL:
-   case SHADER_OPCODE_TG4_IMPLICIT_LOD_LOGICAL:
-   case SHADER_OPCODE_TG4_OFFSET_LOD_LOGICAL:
-   case SHADER_OPCODE_TG4_OFFSET_BIAS_LOGICAL:
-      assert(src[TEX_LOGICAL_SRC_RESIDENCY].file == IMM);
-      return src[TEX_LOGICAL_SRC_RESIDENCY].ud != 0;
-   default:
-      return false;
-   }
+   const brw_tex_inst *tex = as_tex();
+   return tex && tex->residency;
 }
 
 /* \sa inst_is_raw_move in brw_eu_validate. */

@@ -3632,17 +3632,15 @@ emit_mcs_fetch(nir_to_brw_state &ntb, const brw_reg &coordinate, unsigned compon
    srcs[TEX_LOGICAL_SRC_SURFACE] = texture;
    srcs[TEX_LOGICAL_SRC_SAMPLER] = brw_imm_ud(0);
    srcs[TEX_LOGICAL_SRC_SURFACE_HANDLE] = texture_handle;
-   srcs[TEX_LOGICAL_SRC_COORD_COMPONENTS] = brw_imm_d(components);
-   srcs[TEX_LOGICAL_SRC_GRAD_COMPONENTS] = brw_imm_d(0);
-   srcs[TEX_LOGICAL_SRC_RESIDENCY] = brw_imm_d(0);
 
-   brw_inst *inst = bld.emit(SHADER_OPCODE_TXF_MCS_LOGICAL, dest, srcs,
-                            ARRAY_SIZE(srcs));
+   brw_tex_inst *tex = bld.emit(SHADER_OPCODE_TXF_MCS_LOGICAL, dest, srcs,
+                                ARRAY_SIZE(srcs))->as_tex();
+   tex->coord_components = components;
 
    /* We only care about one or two regs of response, but the sampler always
     * writes 4/8.
     */
-   inst->size_written = 4 * dest.component_size(inst->exec_size);
+   tex->size_written = 4 * dest.component_size(tex->exec_size);
 
    return dest;
 }
@@ -3713,14 +3711,12 @@ emit_non_coherent_fb_read(nir_to_brw_state &ntb, const brw_builder &bld, const b
    srcs[TEX_LOGICAL_SRC_MCS]              = mcs;
    srcs[TEX_LOGICAL_SRC_SURFACE]          = brw_imm_ud(target);
    srcs[TEX_LOGICAL_SRC_SAMPLER]          = brw_imm_ud(0);
-   srcs[TEX_LOGICAL_SRC_COORD_COMPONENTS] = brw_imm_ud(3);
-   srcs[TEX_LOGICAL_SRC_GRAD_COMPONENTS]  = brw_imm_ud(0);
-   srcs[TEX_LOGICAL_SRC_RESIDENCY]        = brw_imm_ud(0);
 
-   brw_inst *inst = bld.emit(op, dst, srcs, ARRAY_SIZE(srcs));
-   inst->size_written = 4 * inst->dst.component_size(inst->exec_size);
+   brw_tex_inst *tex = bld.emit(op, dst, srcs, ARRAY_SIZE(srcs))->as_tex();
+   tex->size_written = 4 * tex->dst.component_size(tex->exec_size);
+   tex->coord_components = 3;
 
-   return inst;
+   return tex;
 }
 
 /**
@@ -6021,9 +6017,6 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
       else
          srcs[TEX_LOGICAL_SRC_SURFACE_HANDLE] = image;
       srcs[TEX_LOGICAL_SRC_SAMPLER] = brw_imm_d(0);
-      srcs[TEX_LOGICAL_SRC_COORD_COMPONENTS] = brw_imm_d(0);
-      srcs[TEX_LOGICAL_SRC_GRAD_COMPONENTS] = brw_imm_d(0);
-      srcs[TEX_LOGICAL_SRC_RESIDENCY] = brw_imm_d(0);
 
       /* Since the image size is always uniform, we can just emit a SIMD8
        * query instruction and splat the result out.
@@ -6031,8 +6024,8 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
       const brw_builder ubld = bld.scalar_group();
 
       brw_reg tmp = ubld.vgrf(BRW_TYPE_UD, 4);
-      brw_inst *inst = ubld.emit(SHADER_OPCODE_IMAGE_SIZE_LOGICAL,
-                                tmp, srcs, ARRAY_SIZE(srcs));
+      brw_tex_inst *inst = ubld.emit(SHADER_OPCODE_IMAGE_SIZE_LOGICAL,
+                                     tmp, srcs, ARRAY_SIZE(srcs))->as_tex();
       inst->size_written = 4 * REG_SIZE * reg_unit(devinfo);
 
       for (unsigned c = 0; c < instr->def.num_components; ++c) {
@@ -7430,8 +7423,6 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
     */
    assert(!instr->is_sparse || srcs[TEX_LOGICAL_SRC_SHADOW_C].file == BAD_FILE);
 
-   srcs[TEX_LOGICAL_SRC_RESIDENCY] = brw_imm_ud(instr->is_sparse);
-
    int lod_components = 0;
 
    /* The hardware requires a LOD for buffer textures */
@@ -7612,9 +7603,6 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
                         srcs[TEX_LOGICAL_SRC_SURFACE_HANDLE]);
    }
 
-   srcs[TEX_LOGICAL_SRC_COORD_COMPONENTS] = brw_imm_d(instr->coord_components);
-   srcs[TEX_LOGICAL_SRC_GRAD_COMPONENTS] = brw_imm_d(lod_components);
-
    enum opcode opcode;
    switch (instr->op) {
    case nir_texop_tex:
@@ -7741,9 +7729,12 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
       brw_allocate_vgrf_units(*bld.shader, total_regs * reg_unit(devinfo)),
       dst_type);
 
-   brw_inst *inst = bld.emit(opcode, dst, srcs, ARRAY_SIZE(srcs));
-   inst->offset = header_bits;
-   inst->size_written = total_regs * grf_size;
+   brw_tex_inst *tex = bld.emit(opcode, dst, srcs, ARRAY_SIZE(srcs))->as_tex();
+   tex->offset = header_bits;
+   tex->size_written = total_regs * grf_size;
+   tex->residency = instr->is_sparse;
+   tex->coord_components = instr->coord_components;
+   tex->grad_components = lod_components;
 
    /* Wa_14012688258:
     *
@@ -7758,7 +7749,7 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
          assert(instr->coord_components >= 3u);
 
       /* See opt_zero_samples(). */
-      inst->keep_payload_trailing_zeros = true;
+      tex->keep_payload_trailing_zeros = true;
    }
 
    /* With half-floats returns, the stride into a GRF allocation for each
@@ -7781,7 +7772,7 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
    if (instr->op != nir_texop_query_levels && !instr->is_sparse &&
        !non_aligned_component_stride) {
       /* In most cases we can write directly to the result. */
-      inst->dst = nir_def_reg;
+      tex->dst = nir_def_reg;
    } else {
       /* In other cases, we have to reorganize the sampler message's results
        * a bit to match the NIR intrinsic's expectations.

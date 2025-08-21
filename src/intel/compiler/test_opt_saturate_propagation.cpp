@@ -277,13 +277,14 @@ TEST_F(saturate_propagation_test, intervening_dest_write)
    brw_reg tex_srcs[TEX_LOGICAL_NUM_SRCS] = {};
    tex_srcs[TEX_LOGICAL_SRC_COORDINATE] = src2;
    tex_srcs[TEX_LOGICAL_SRC_SURFACE] = brw_imm_ud(0);
-   tex_srcs[TEX_LOGICAL_SRC_COORD_COMPONENTS] = brw_imm_ud(2);
-   tex_srcs[TEX_LOGICAL_SRC_GRAD_COMPONENTS] = brw_imm_ud(0);
-   tex_srcs[TEX_LOGICAL_SRC_RESIDENCY] = brw_imm_ud(0);
 
    bld.ADD(offset(dst0, bld, 2), src0, src1);
-   bld.emit(SHADER_OPCODE_TEX_LOGICAL, dst0, tex_srcs, TEX_LOGICAL_NUM_SRCS)
-      ->size_written = 8 * REG_SIZE;
+
+   brw_tex_inst *tex =
+      bld.emit(SHADER_OPCODE_TEX_LOGICAL, dst0, tex_srcs, TEX_LOGICAL_NUM_SRCS)->as_tex();
+   tex->size_written = 8 * REG_SIZE;
+   tex->coord_components = 2;
+
    bld.MOV(dst1, offset(dst0, bld, 2))->saturate = true;
 
    EXPECT_NO_PROGRESS(brw_opt_saturate_propagation, bld);

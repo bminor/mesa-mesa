@@ -42,6 +42,7 @@ struct brw_shader;
 enum ENUM_PACKED brw_inst_kind {
    BRW_KIND_BASE,
    BRW_KIND_SEND,
+   BRW_KIND_TEX,
 };
 
 brw_inst_kind brw_inst_kind_for_opcode(enum opcode opcode);
@@ -68,6 +69,7 @@ struct brw_inst : brw_exec_node {
    }
 
    KIND_HELPERS(as_send, brw_send_inst, BRW_KIND_SEND);
+   KIND_HELPERS(as_tex, brw_tex_inst, BRW_KIND_TEX);
 
 #undef KIND_HELPERS
 
@@ -268,6 +270,12 @@ struct brw_send_inst : brw_inst {
       };
       uint8_t send_bits;
    };
+};
+
+struct brw_tex_inst : brw_inst {
+   uint8_t coord_components;
+   uint8_t grad_components;
+   bool residency;
 };
 
 /**
