@@ -3343,7 +3343,7 @@ radv_emit_scissor(struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
-radv_emit_blend_constants(struct radv_cmd_buffer *cmd_buffer)
+radv_emit_blend_constants_state(struct radv_cmd_buffer *cmd_buffer)
 {
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    struct radv_cmd_stream *cs = cmd_buffer->cs;
@@ -3352,6 +3352,8 @@ radv_emit_blend_constants(struct radv_cmd_buffer *cmd_buffer)
    radeon_set_context_reg_seq(R_028414_CB_BLEND_RED, 4);
    radeon_emit_array((uint32_t *)d->vk.cb.blend_constants, 4);
    radeon_end();
+
+   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_BLEND_CONSTANTS_STATE;
 }
 
 static void
@@ -5385,9 +5387,6 @@ radv_cmd_buffer_flush_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const ui
 
    if (states & (RADV_DYNAMIC_SCISSOR | RADV_DYNAMIC_VIEWPORT) && !pdev->info.has_gfx9_scissor_bug)
       radv_emit_scissor(cmd_buffer);
-
-   if (states & RADV_DYNAMIC_BLEND_CONSTANTS)
-      radv_emit_blend_constants(cmd_buffer);
 
    if (states & (RADV_DYNAMIC_SAMPLE_LOCATIONS | RADV_DYNAMIC_SAMPLE_LOCATIONS_ENABLE))
       radv_emit_sample_locations(cmd_buffer);
@@ -11464,6 +11463,9 @@ radv_validate_dynamic_states(struct radv_cmd_buffer *cmd_buffer, uint64_t dynami
 
    if (dynamic_states & RADV_DYNAMIC_VERTEX_INPUT)
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_VS_PROLOG_STATE;
+
+   if (dynamic_states & RADV_DYNAMIC_BLEND_CONSTANTS)
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_BLEND_CONSTANTS_STATE;
 }
 
 static void
@@ -11576,6 +11578,9 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
 
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_DEPTH_STENCIL_STATE)
       radv_emit_depth_stencil_state(cmd_buffer);
+
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_BLEND_CONSTANTS_STATE)
+      radv_emit_blend_constants_state(cmd_buffer);
 
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_CB_RENDER_STATE)
       radv_emit_cb_render_state(cmd_buffer);
