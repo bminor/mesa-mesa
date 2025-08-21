@@ -956,8 +956,31 @@ BlockScheduler::schedule_alu_multislot_to_group_vec(AluGroup *group, ValueFactor
    auto e = alu_multi_slot_ready.end();
 
    while (i != e && util_bitcount(group->free_slot_mask()) > 1) {
-      auto required_mask = (*i)->required_channels_mask();
-      if ((group->free_slot_mask() & required_mask) != required_mask) {
+
+      auto dest = (*i)->dest();
+      assert(dest);
+
+      bool can_merge = false;
+      unsigned allowed_dest_chan_mask = (*i)->allowed_dest_chan_mask();
+      while (allowed_dest_chan_mask) {
+
+         auto required_mask = (*i)->required_channels_mask();
+
+         if ((group->free_slot_mask() & required_mask) == required_mask) {
+            can_merge = true;
+            break;
+         }
+
+         allowed_dest_chan_mask &= ~BITFIELD_BIT((*i)->dest_chan());
+         int new_chan = u_bit_scan(&allowed_dest_chan_mask);
+
+         if (!dest->can_switch_to_chan(new_chan))
+            break;
+
+         dest->set_chan(new_chan);
+      }
+
+      if (!can_merge) {
          ++i;
          continue;
       }

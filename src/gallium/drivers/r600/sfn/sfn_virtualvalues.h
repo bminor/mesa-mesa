@@ -169,6 +169,8 @@ public:
    bool has_uses() const { return !m_uses.empty() || pin() == pin_array; }
    void set_chan(int c) { do_set_chan(c); }
 
+   bool can_switch_to_chan(int c);
+
    virtual VirtualValue *addr() const { return nullptr; }
 
    int index() const { return m_index; }

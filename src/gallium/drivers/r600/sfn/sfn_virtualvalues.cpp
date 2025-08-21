@@ -241,6 +241,27 @@ Register::accept(ConstRegisterVisitor& visitor) const
    visitor.visit(*this);
 }
 
+bool
+Register::can_switch_to_chan(int c)
+{
+   if (pin() != pin_free && pin() != pin_group)
+      return false;
+
+   int free_mask = BITSET_BIT(c);
+   for (auto p : parents()) {
+      auto alu = p->as_alu();
+      if (alu)
+         free_mask &= alu->allowed_dest_chan_mask();
+   }
+
+   for (auto u : uses()) {
+      free_mask &= u->allowed_src_chan_mask();
+      if (!free_mask)
+         return false;
+   }
+   return true;
+}
+
 void
 Register::print(std::ostream& os) const
 {
