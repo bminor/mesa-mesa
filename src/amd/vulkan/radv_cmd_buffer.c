@@ -11528,27 +11528,26 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_STREAMOUT_ENABLE)
       radv_emit_streamout_enable_state(cmd_buffer);
 
-   if (dynamic_states) {
+   if (dynamic_states)
       radv_cmd_buffer_flush_dynamic_state(cmd_buffer, dynamic_states);
 
-      if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_CLIP_RECTS_STATE)
-         radv_emit_clip_rects_state(cmd_buffer);
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_CLIP_RECTS_STATE)
+      radv_emit_clip_rects_state(cmd_buffer);
 
-      if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_VIEWPORT_STATE)
-         radv_emit_viewport_state(cmd_buffer);
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_VIEWPORT_STATE)
+      radv_emit_viewport_state(cmd_buffer);
 
-      if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_RASTER_STATE)
-         radv_emit_raster_state(cmd_buffer);
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_RASTER_STATE)
+      radv_emit_raster_state(cmd_buffer);
 
-      if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_DEPTH_STENCIL_STATE)
-         radv_emit_depth_stencil_state(cmd_buffer);
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_DEPTH_STENCIL_STATE)
+      radv_emit_depth_stencil_state(cmd_buffer);
 
-      if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_CB_RENDER_STATE)
-         radv_emit_cb_render_state(cmd_buffer);
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_CB_RENDER_STATE)
+      radv_emit_cb_render_state(cmd_buffer);
 
-      if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_MSAA_STATE)
-         radv_emit_msaa_state(cmd_buffer);
-   }
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_MSAA_STATE)
+      radv_emit_msaa_state(cmd_buffer);
 
    if (gfx12_emit_alt_hiz_wa)
       radv_gfx12_emit_alt_hiz_wa(cmd_buffer);
