@@ -27,6 +27,7 @@
 #include "vk_common_entrypoints.h"
 #include "vk_device.h"
 #include "vk_enum_defines.h"
+#include "vk_format.h"
 #include "vk_image.h"
 #include "vk_log.h"
 #include "vk_physical_device.h"
@@ -868,6 +869,7 @@ vk_common_GetAndroidHardwareBufferPropertiesANDROID(
 
    VkAndroidHardwareBufferFormatPropertiesANDROID *format_prop = NULL;
    VkAndroidHardwareBufferFormatProperties2ANDROID *format_prop2 = NULL;
+   VkAndroidHardwareBufferFormatResolvePropertiesANDROID *format_resolve = NULL;
 
    vk_foreach_struct(ext, pProperties->pNext) {
       switch (ext->sType) {
@@ -876,6 +878,9 @@ vk_common_GetAndroidHardwareBufferPropertiesANDROID(
          break;
       case VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_2_ANDROID:
          format_prop2 = (void *)ext;
+         break;
+      case VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_RESOLVE_PROPERTIES_ANDROID:
+         format_resolve = (void *)ext;
          break;
       default:
          break;
@@ -886,7 +891,7 @@ vk_common_GetAndroidHardwareBufferPropertiesANDROID(
    VkAndroidHardwareBufferFormatProperties2ANDROID local_prop2 = {
       .sType = VK_STRUCTURE_TYPE_ANDROID_HARDWARE_BUFFER_FORMAT_PROPERTIES_2_ANDROID,
    };
-   if (!format_prop2 && format_prop)
+   if (!format_prop2 && (format_prop || format_resolve))
       format_prop2 = &local_prop2;
 
    if (format_prop2) {
@@ -906,6 +911,19 @@ vk_common_GetAndroidHardwareBufferPropertiesANDROID(
       format_prop->suggestedYcbcrRange    = format_prop2->suggestedYcbcrRange;
       format_prop->suggestedXChromaOffset = format_prop2->suggestedXChromaOffset;
       format_prop->suggestedYChromaOffset = format_prop2->suggestedYChromaOffset;
+   }
+
+   if (format_resolve) {
+      if (device->enabled_extensions.ANDROID_external_format_resolve) {
+         assert(format_prop2->externalFormat != VK_FORMAT_UNDEFINED);
+         const uint32_t num_bits = vk_format_get_component_bits(
+            format_prop2->externalFormat, UTIL_FORMAT_COLORSPACE_RGB, 1);
+         format_resolve->colorAttachmentFormat =
+            num_bits == 8 ? VK_FORMAT_R8G8B8A8_UNORM
+                          : VK_FORMAT_R16G16B16A16_UNORM;
+      } else {
+         format_resolve->colorAttachmentFormat = VK_FORMAT_UNDEFINED;
+      }
    }
 
    const native_handle_t *handle = AHardwareBuffer_getNativeHandle(buffer);
