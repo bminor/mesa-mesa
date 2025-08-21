@@ -3106,34 +3106,6 @@ radv_emit_graphics_pipeline(struct radv_cmd_buffer *cmd_buffer)
    if (cmd_buffer->state.emitted_graphics_pipeline == pipeline)
       return;
 
-   if (cmd_buffer->state.emitted_graphics_pipeline) {
-      if (radv_rast_prim_is_points_or_lines(cmd_buffer->state.emitted_graphics_pipeline->rast_prim) !=
-          radv_rast_prim_is_points_or_lines(pipeline->rast_prim))
-         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_GUARDBAND;
-
-      if (cmd_buffer->state.emitted_graphics_pipeline->rast_prim != pipeline->rast_prim) {
-         cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_PRIMITIVE_TOPOLOGY;
-
-         if (radv_rast_prim_is_line(cmd_buffer->state.emitted_graphics_pipeline->rast_prim) !=
-             radv_rast_prim_is_line(pipeline->rast_prim))
-            cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_RASTERIZATION_SAMPLES;
-      }
-
-      if (cmd_buffer->state.emitted_graphics_pipeline->ms.min_sample_shading != pipeline->ms.min_sample_shading ||
-          cmd_buffer->state.emitted_graphics_pipeline->uses_out_of_order_rast != pipeline->uses_out_of_order_rast ||
-          cmd_buffer->state.emitted_graphics_pipeline->uses_vrs_attachment != pipeline->uses_vrs_attachment)
-         cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_RASTERIZATION_SAMPLES;
-
-      if (cmd_buffer->state.emitted_graphics_pipeline->ms.sample_shading_enable != pipeline->ms.sample_shading_enable) {
-         cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_RASTERIZATION_SAMPLES;
-         if (pdev->info.gfx_level >= GFX10_3)
-            cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_FRAGMENT_SHADING_RATE;
-      }
-
-      if (cmd_buffer->state.emitted_graphics_pipeline->db_render_control != pipeline->db_render_control)
-         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FRAMEBUFFER;
-   }
-
    radv_emit_graphics_shaders(cmd_buffer);
 
    if (device->pbb_allowed) {
@@ -7338,9 +7310,22 @@ radv_bind_vs_input_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_g
 static void
 radv_bind_multisample_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_multisample_state *ms)
 {
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+
+   if (cmd_buffer->state.ms.sample_shading_enable != ms->sample_shading_enable) {
+      cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_RASTERIZATION_SAMPLES;
+      if (pdev->info.gfx_level >= GFX10_3)
+         cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_FRAGMENT_SHADING_RATE;
+   }
+
    if (ms->sample_shading_enable) {
       cmd_buffer->state.ms.sample_shading_enable = true;
-      cmd_buffer->state.ms.min_sample_shading = ms->min_sample_shading;
+
+      if (cmd_buffer->state.ms.min_sample_shading != ms->min_sample_shading) {
+         cmd_buffer->state.ms.min_sample_shading = ms->min_sample_shading;
+         cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_RASTERIZATION_SAMPLES;
+      }
    }
 }
 
@@ -7892,15 +7877,35 @@ radv_CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipeline
 
       radv_bind_custom_blend_mode(cmd_buffer, graphics_pipeline->custom_blend_mode);
 
-      cmd_buffer->state.db_render_control = graphics_pipeline->db_render_control;
+      if (cmd_buffer->state.db_render_control != graphics_pipeline->db_render_control) {
+         cmd_buffer->state.db_render_control = graphics_pipeline->db_render_control;
+         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FRAMEBUFFER;
+      }
 
-      cmd_buffer->state.rast_prim = graphics_pipeline->rast_prim;
+      if (cmd_buffer->state.rast_prim != graphics_pipeline->rast_prim) {
+         cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_PRIMITIVE_TOPOLOGY;
+
+         if (radv_rast_prim_is_points_or_lines(cmd_buffer->state.rast_prim) !=
+             radv_rast_prim_is_points_or_lines(graphics_pipeline->rast_prim))
+            cmd_buffer->state.dirty |= RADV_CMD_DIRTY_GUARDBAND;
+
+         if (radv_rast_prim_is_line(cmd_buffer->state.rast_prim) !=
+             radv_rast_prim_is_line(graphics_pipeline->rast_prim))
+            cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_RASTERIZATION_SAMPLES;
+
+         cmd_buffer->state.rast_prim = graphics_pipeline->rast_prim;
+      }
+
+      if (cmd_buffer->state.uses_out_of_order_rast != graphics_pipeline->uses_out_of_order_rast ||
+          cmd_buffer->state.uses_vrs_attachment != graphics_pipeline->uses_vrs_attachment) {
+         cmd_buffer->state.uses_out_of_order_rast = graphics_pipeline->uses_out_of_order_rast;
+         cmd_buffer->state.uses_vrs_attachment = graphics_pipeline->uses_vrs_attachment;
+         cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_RASTERIZATION_SAMPLES;
+      }
 
       cmd_buffer->state.ia_multi_vgt_param = graphics_pipeline->ia_multi_vgt_param;
 
-      cmd_buffer->state.uses_out_of_order_rast = graphics_pipeline->uses_out_of_order_rast;
       cmd_buffer->state.uses_vrs = graphics_pipeline->uses_vrs;
-      cmd_buffer->state.uses_vrs_attachment = graphics_pipeline->uses_vrs_attachment;
       cmd_buffer->state.uses_vrs_coarse_shading = graphics_pipeline->uses_vrs_coarse_shading;
       break;
    }
