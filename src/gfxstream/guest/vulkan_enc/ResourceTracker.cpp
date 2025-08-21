@@ -104,22 +104,6 @@ uint64_t GeneratePseudoUniqueId() {
 }
 #endif
 
-void EmitGuestAndHostTraceMarker(VkEncoder* encoder) {
-#ifdef HAVE_PERFETTO
-    const uint64_t flowId = GeneratePseudoUniqueId();
-
-    TRACE_EVENT_INSTANT(
-        GFXSTREAM_TRACE_DEFAULT_CATEGORY,
-        "vkTraceAsyncGOOGLE",
-        perfetto::Flow::Global(flowId),
-        "flow id", flowId);
-
-    encoder->vkTraceAsyncGOOGLE(flowId, true /* do lock */);
-#else
-    (void)encoder;
-#endif  // HAVE_PERFETTO
-}
-
 }  // namespace
 
 #define MAKE_HANDLE_MAPPING_FOREACH(type_name, map_impl, map_to_u64_impl, map_from_u64_impl)       \
@@ -800,6 +784,24 @@ CoherentMemoryPtr ResourceTracker::freeCoherentMemoryLocked(VkDeviceMemory memor
     }
 
     return nullptr;
+}
+
+void ResourceTracker::EmitGuestAndHostTraceMarker(VkEncoder* encoder) {
+#ifdef HAVE_PERFETTO
+    const uint64_t flowId = GeneratePseudoUniqueId();
+
+    TRACE_EVENT_INSTANT(
+        GFXSTREAM_TRACE_DEFAULT_CATEGORY,
+        "vkTraceAsyncGOOGLE",
+        perfetto::Flow::Global(flowId),
+        "flow id", flowId);
+
+    if (mCaps.vulkanCapset.hasTraceAsyncCommand) {
+        encoder->vkTraceAsyncGOOGLE(flowId, true /* do lock */);
+    }
+#else
+    (void)encoder;
+#endif  // HAVE_PERFETTO
 }
 
 VkResult acquireSync(uint64_t syncId, int64_t& osHandle) {
