@@ -87,10 +87,10 @@
 /* Table of supported Mali GPUs */
 /* clang-format off */
 const struct pan_model pan_model_list[] = {
-   MIDGARD_MODEL(0x600,     "T600",   "T60x", MODEL_ANISO(NONE), MODEL_TB_SIZES( 8192,  8192),
+   MIDGARD_MODEL(0x600,     "T600",   "T60x", MODEL_ANISO(NONE), MODEL_TB_SIZES( 4096,  4096),
                                               MODEL_QUIRKS( .max_4x_msaa = true )),
-   MIDGARD_MODEL(0x620,     "T620",   "T62x", MODEL_ANISO(NONE), MODEL_TB_SIZES( 8192,  8192)),
-   MIDGARD_MODEL(0x720,     "T720",   "T72x", MODEL_ANISO(NONE), MODEL_TB_SIZES( 8192,  8192),
+   MIDGARD_MODEL(0x620,     "T620",   "T62x", MODEL_ANISO(NONE), MODEL_TB_SIZES( 4096,  4096)),
+   MIDGARD_MODEL(0x720,     "T720",   "T72x", MODEL_ANISO(NONE), MODEL_TB_SIZES( 4096,  4096),
                                               MODEL_QUIRKS( .no_hierarchical_tiling = true, .max_4x_msaa = true )),
    MIDGARD_MODEL(0x750,     "T760",   "T76x", MODEL_ANISO(NONE), MODEL_TB_SIZES( 8192,  8192)),
    MIDGARD_MODEL(0x820,     "T820",   "T82x", MODEL_ANISO(NONE), MODEL_TB_SIZES( 8192,  8192),
@@ -100,8 +100,8 @@ const struct pan_model pan_model_list[] = {
    MIDGARD_MODEL(0x860,     "T860",   "T86x", MODEL_ANISO(NONE), MODEL_TB_SIZES( 8192,  8192)),
    MIDGARD_MODEL(0x880,     "T880",   "T88x", MODEL_ANISO(NONE), MODEL_TB_SIZES( 8192,  8192)),
 
-   BIFROST_MODEL(0x6000,    "G71",    "TMIx", MODEL_ANISO(NONE), MODEL_TB_SIZES( 8192,  8192)),
-   BIFROST_MODEL(0x6201,    "G72",    "THEx", MODEL_ANISO(R0P3), MODEL_TB_SIZES(16384,  8192)),
+   BIFROST_MODEL(0x6000,    "G71",    "TMIx", MODEL_ANISO(NONE), MODEL_TB_SIZES( 4096,  4096)),
+   BIFROST_MODEL(0x6201,    "G72",    "THEx", MODEL_ANISO(R0P3), MODEL_TB_SIZES( 8192,  4096)),
    BIFROST_MODEL(0x7000,    "G51",    "TSIx", MODEL_ANISO(R1P1), MODEL_TB_SIZES( 8192,  8192)),
    BIFROST_MODEL(0x7003,    "G31",    "TDVx", MODEL_ANISO(ALL),  MODEL_TB_SIZES( 8192,  8192)),
    BIFROST_MODEL(0x7201,    "G76",    "TNOx", MODEL_ANISO(ALL),  MODEL_TB_SIZES(16384,  8192)),
@@ -266,7 +266,7 @@ pan_query_afrc(const struct pan_kmod_dev_props *props)
  * size for the particular variant. The CORE_FEATURES register might help.
  */
 unsigned
-pan_query_optimal_tib_size(const struct pan_model *model)
+pan_query_tib_size(const struct pan_model *model)
 {
    /* Preconditions ensure the returned value is a multiple of 1 KiB, the
     * granularity of the colour buffer allocation field.
@@ -274,11 +274,11 @@ pan_query_optimal_tib_size(const struct pan_model *model)
    assert(model->tilebuffer.color_size >= 2048);
    assert(util_is_power_of_two_nonzero(model->tilebuffer.color_size));
 
-   return model->tilebuffer.color_size / 2;
+   return model->tilebuffer.color_size;
 }
 
 unsigned
-pan_query_optimal_z_tib_size(const struct pan_model *model)
+pan_query_z_tib_size(const struct pan_model *model)
 {
    /* Preconditions ensure the returned value is a multiple of 1 KiB, the
     * granularity of the colour buffer allocation field.
@@ -286,7 +286,7 @@ pan_query_optimal_z_tib_size(const struct pan_model *model)
    assert(model->tilebuffer.z_size >= 1024);
    assert(util_is_power_of_two_nonzero(model->tilebuffer.z_size));
 
-   return model->tilebuffer.z_size / 2;
+   return model->tilebuffer.z_size;
 }
 
 uint64_t

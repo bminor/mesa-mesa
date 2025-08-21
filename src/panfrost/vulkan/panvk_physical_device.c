@@ -685,7 +685,7 @@ get_image_format_sample_counts(struct panvk_physical_device *physical_device,
                                VkFormat format)
 {
    unsigned arch = pan_arch(physical_device->kmod.props.gpu_id);
-   unsigned max_tib_size = pan_get_max_tib_size(arch, physical_device->model);
+   unsigned max_tib_size = pan_query_tib_size(physical_device->model);
    unsigned max_cbuf_atts = pan_get_max_cbufs(arch, max_tib_size);
 
    assert(!vk_format_is_compressed(format));

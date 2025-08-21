@@ -120,9 +120,37 @@ bool pan_query_afbc(const struct pan_kmod_dev_props *props);
 
 bool pan_query_afrc(const struct pan_kmod_dev_props *props);
 
-unsigned pan_query_optimal_tib_size(const struct pan_model *model);
+unsigned pan_query_tib_size(const struct pan_model *model);
 
-unsigned pan_query_optimal_z_tib_size(const struct pan_model *model);
+unsigned pan_query_z_tib_size(const struct pan_model *model);
+
+static inline unsigned
+pan_query_optimal_tib_size(unsigned arch, const struct pan_model *model)
+{
+   unsigned tib_size = pan_query_tib_size(model);
+
+   /* On V5, as well as V7 and later, we can disable pipelining to gain some
+    * extra tib memory.
+    */
+   if (arch > 4 && arch != 6)
+      return tib_size / 2;
+
+   return tib_size;
+}
+
+static inline unsigned
+pan_query_optimal_z_tib_size(unsigned arch, const struct pan_model *model)
+{
+   unsigned tib_size = pan_query_z_tib_size(model);
+
+   /* On V5, as well as V7 and later, we can disable pipelining to gain some
+    * extra tib memory.
+    */
+   if (arch > 4 && arch != 6)
+      return tib_size / 2;
+
+   return tib_size;
+}
 
 uint64_t pan_clamp_to_usable_va_range(const struct pan_kmod_dev *dev,
                                       uint64_t va);
@@ -172,23 +200,6 @@ pan_meta_tile_size(unsigned arch)
       return 64;
 
    return 32;
-}
-
-/* Returns the maximum usable color tilebuffer-size. This is *usually* twice
- * the optimal tilebuffer-size, but not always.
- */
-static inline unsigned
-pan_get_max_tib_size(unsigned arch, const struct pan_model *model)
-{
-   unsigned tib_size = pan_query_optimal_tib_size(model);
-
-   /* On V5, as well as V6 and later, we can disable pipelining to gain some
-    * extra tib memory.
-    */
-   if (arch > 4 && arch != 6)
-      return tib_size * 2;
-
-   return tib_size;
 }
 
 static inline uint32_t

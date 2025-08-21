@@ -2855,8 +2855,8 @@ panvk_per_arch(cmd_inherit_render_state)(
    /* If a draw was performed, the inherited sample count should match our current sample count */
    assert(fbinfo->nr_samples == 0 || inheritance_info->rasterizationSamples == fbinfo->nr_samples);
    *fbinfo = (struct pan_fb_info){
-      .tile_buf_budget = pan_query_optimal_tib_size(phys_dev->model),
-      .z_tile_buf_budget = pan_query_optimal_z_tib_size(phys_dev->model),
+      .tile_buf_budget = pan_query_optimal_tib_size(PAN_ARCH, phys_dev->model),
+      .z_tile_buf_budget = pan_query_optimal_z_tib_size(PAN_ARCH, phys_dev->model),
       .tile_size = fbinfo->tile_size,
       .cbuf_allocation = fbinfo->cbuf_allocation,
       .nr_samples = inheritance_info->rasterizationSamples,

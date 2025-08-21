@@ -541,7 +541,7 @@ panvk_per_arch(get_physical_device_properties)(
    const struct panvk_instance *instance,
    const struct panvk_physical_device *device, struct vk_properties *properties)
 {
-   unsigned max_tib_size = pan_get_max_tib_size(PAN_ARCH, device->model);
+   unsigned max_tib_size = pan_query_tib_size(device->model);
    const unsigned max_cbuf_format = 16; /* R32G32B32A32 */
 
    unsigned max_cbuf_atts = pan_get_max_cbufs(PAN_ARCH, max_tib_size);
