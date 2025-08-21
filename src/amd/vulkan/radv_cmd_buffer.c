@@ -1181,7 +1181,7 @@ radv_compute_centroid_priority(struct radv_cmd_buffer *cmd_buffer, VkOffset2D *s
  * Emit the sample locations that are specified with VK_EXT_sample_locations.
  */
 static void
-radv_emit_sample_locations(struct radv_cmd_buffer *cmd_buffer)
+radv_emit_sample_locations_state(struct radv_cmd_buffer *cmd_buffer)
 {
    const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -1191,6 +1191,8 @@ radv_emit_sample_locations(struct radv_cmd_buffer *cmd_buffer)
    uint32_t sample_locs_pixel[4][2] = {0};
    VkOffset2D sample_locs[4][8]; /* 8 is the max. sample count supported */
    uint64_t centroid_priority;
+
+   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_SAMPLE_LOCATIONS_STATE;
 
    if (!d->sample_location.count || !d->vk.ms.sample_locations_enable)
       return;
@@ -5387,9 +5389,6 @@ radv_cmd_buffer_flush_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const ui
 
    if (states & (RADV_DYNAMIC_SCISSOR | RADV_DYNAMIC_VIEWPORT) && !pdev->info.has_gfx9_scissor_bug)
       radv_emit_scissor(cmd_buffer);
-
-   if (states & (RADV_DYNAMIC_SAMPLE_LOCATIONS | RADV_DYNAMIC_SAMPLE_LOCATIONS_ENABLE))
-      radv_emit_sample_locations(cmd_buffer);
 
    if ((states & RADV_DYNAMIC_PRIMITIVE_TOPOLOGY) ||
        (pdev->info.gfx_level >= GFX12 && states & RADV_DYNAMIC_PATCH_CONTROL_POINTS))
@@ -11466,6 +11465,9 @@ radv_validate_dynamic_states(struct radv_cmd_buffer *cmd_buffer, uint64_t dynami
 
    if (dynamic_states & RADV_DYNAMIC_BLEND_CONSTANTS)
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_BLEND_CONSTANTS_STATE;
+
+   if (dynamic_states & (RADV_DYNAMIC_SAMPLE_LOCATIONS | RADV_DYNAMIC_SAMPLE_LOCATIONS_ENABLE))
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_SAMPLE_LOCATIONS_STATE;
 }
 
 static void
@@ -11584,6 +11586,9 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
 
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_CB_RENDER_STATE)
       radv_emit_cb_render_state(cmd_buffer);
+
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_SAMPLE_LOCATIONS_STATE)
+      radv_emit_sample_locations_state(cmd_buffer);
 
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_MSAA_STATE)
       radv_emit_msaa_state(cmd_buffer);
