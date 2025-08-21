@@ -1047,6 +1047,22 @@ endforeach
 if cc.has_function_attribute('visibility:hidden')
   pre_args += '-DHAVE_FUNC_ATTRIBUTE_VISIBILITY'
 endif
+
+_no_sanitize_flags = []
+if ['address', 'address,undefined'].contains(get_option('b_sanitize'))
+  _no_sanitize_flags += ['address']
+endif
+if ['undefined', 'address,undefined'].contains(get_option('b_sanitize'))
+  _no_sanitize_flags += ['vptr']
+endif
+foreach flag: _no_sanitize_flags
+  if cc.compiles('__attribute__((no_sanitize("@0@"))) int foo(void) { return 0; }'.format(flag),
+                 name : 'no_sanitize(@0@)'.format(flag),
+                 werror: true)
+    pre_args += '-DHAVE_FUNC_ATTRIBUTE_NO_SANITIZE_@0@'.format(flag.to_upper())
+  endif
+endforeach
+
 if cc.compiles('__uint128_t foo(void) { return 0; }',
                name : '__uint128_t')
   pre_args += '-DHAVE_UINT128'

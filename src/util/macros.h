@@ -253,6 +253,12 @@ do {                       \
 #define ATTRIBUTE_OPTIMIZE(flags)
 #endif
 
+#ifdef HAVE_FUNC_ATTRIBUTE_NO_SANITIZE_VPTR
+#define ATTRIBUTE_NO_SANITIZE_VPTR __attribute__((no_sanitize(("vptr"))))
+#else
+#define ATTRIBUTE_NO_SANITIZE_VPTR
+#endif
+
 #ifdef __cplusplus
 /**
  * Macro function that evaluates to true if T is a trivially
