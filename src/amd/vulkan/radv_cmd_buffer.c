@@ -3545,7 +3545,7 @@ radv_get_primitive_reset_index(const struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
-radv_emit_patch_control_points(struct radv_cmd_buffer *cmd_buffer)
+radv_emit_patch_control_points_state(struct radv_cmd_buffer *cmd_buffer)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -3553,6 +3553,10 @@ radv_emit_patch_control_points(struct radv_cmd_buffer *cmd_buffer)
    const struct radv_shader *tcs = cmd_buffer->state.shaders[MESA_SHADER_TESS_CTRL];
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    unsigned ls_hs_config;
+
+   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_PATCH_CONTROL_POINTS_STATE;
+   if (!tcs)
+      return;
 
    /* Compute tessellation info that depends on the number of patch control points when this state
     * is dynamic.
@@ -5395,9 +5399,6 @@ radv_cmd_buffer_flush_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const ui
    if ((states & RADV_DYNAMIC_PRIMITIVE_TOPOLOGY) ||
        (pdev->info.gfx_level >= GFX12 && states & RADV_DYNAMIC_PATCH_CONTROL_POINTS))
       radv_emit_primitive_topology(cmd_buffer);
-
-   if (states & RADV_DYNAMIC_PATCH_CONTROL_POINTS)
-      radv_emit_patch_control_points(cmd_buffer);
 
    /* RADV_DYNAMIC_ATTACHMENT_FEEDBACK_LOOP_ENABLE is handled by radv_emit_db_shader_control. */
 
@@ -7413,7 +7414,7 @@ radv_bind_vertex_shader(struct radv_cmd_buffer *cmd_buffer, const struct radv_sh
     * because shader configs are combined.
     */
    if (vs->info.merged_shader_compiled_separately && vs->info.next_stage == MESA_SHADER_TESS_CTRL) {
-      cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_PATCH_CONTROL_POINTS;
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_PATCH_CONTROL_POINTS_STATE | RADV_CMD_DIRTY_TCS_TES_STATE;
    }
 
    cmd_buffer->state.can_use_simple_vertex_input = !vs->info.merged_shader_compiled_separately &&
@@ -7432,8 +7433,8 @@ radv_bind_tess_ctrl_shader(struct radv_cmd_buffer *cmd_buffer, const struct radv
    /* Always re-emit patch control points/domain origin when a new pipeline with tessellation is
     * bound because a bunch of parameters (user SGPRs, TCS vertices out, ccw, etc) can be different.
     */
-   cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_PATCH_CONTROL_POINTS;
-   cmd_buffer->state.dirty |= RADV_CMD_DIRTY_TESS_DOMAIN_ORIGIN_STATE;
+   cmd_buffer->state.dirty |= RADV_CMD_DIRTY_PATCH_CONTROL_POINTS_STATE | RADV_CMD_DIRTY_TESS_DOMAIN_ORIGIN_STATE |
+                              RADV_CMD_DIRTY_TCS_TES_STATE;
 
    /* Re-emit the VS prolog when the tessellation control shader is compiled separately because
     * shader configs are combined and need to be updated.
@@ -10637,6 +10638,9 @@ radv_emit_tcs_tes_state(struct radv_cmd_buffer *cmd_buffer)
    uint32_t tcs_offchip_layout = 0, tes_offchip_layout = 0;
    uint32_t pgm_hs_rsrc2 = 0;
 
+   if (!tcs)
+      return;
+
    if (pdev->info.gfx_level >= GFX9) {
       if (tcs->info.merged_shader_compiled_separately) {
          radv_shader_combine_cfg_vs_tcs(cmd_buffer->state.shaders[MESA_SHADER_VERTEX], tcs, NULL, &pgm_hs_rsrc2);
@@ -11404,7 +11408,7 @@ radv_validate_dynamic_states(struct radv_cmd_buffer *cmd_buffer, uint64_t dynami
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_NGG_STATE;
 
    if (dynamic_states & RADV_DYNAMIC_PATCH_CONTROL_POINTS)
-      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_TCS_TES_STATE;
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_TCS_TES_STATE | RADV_CMD_DIRTY_PATCH_CONTROL_POINTS_STATE;
 
    if (dynamic_states &
        (RADV_DYNAMIC_DEPTH_TEST_ENABLE | RADV_DYNAMIC_DEPTH_WRITE_ENABLE | RADV_DYNAMIC_DEPTH_COMPARE_OP |
@@ -11584,6 +11588,9 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
 
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_SCISSOR_STATE)
       radv_emit_scissor_state(cmd_buffer);
+
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_PATCH_CONTROL_POINTS_STATE)
+      radv_emit_patch_control_points_state(cmd_buffer);
 
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_TESS_DOMAIN_ORIGIN_STATE)
       radv_emit_tess_domain_origin_state(cmd_buffer);
