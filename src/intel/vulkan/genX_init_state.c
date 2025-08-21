@@ -931,7 +931,7 @@ genX(init_physical_device_state)(ASSERTED struct anv_physical_device *pdevice)
 VkResult
 genX(init_device_state)(struct anv_device *device)
 {
-   VkResult res;
+   VkResult res = VK_SUCCESS;
 
    device->slice_hash = (struct anv_state) { 0 };
    for (uint32_t i = 0; i < device->queue_count; i++) {
