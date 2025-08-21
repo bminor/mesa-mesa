@@ -5393,14 +5393,6 @@ lookup_ps_epilog(struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
-radv_cmd_buffer_flush_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const uint64_t states)
-{
-   /* RADV_DYNAMIC_ATTACHMENT_FEEDBACK_LOOP_ENABLE is handled by radv_emit_db_shader_control. */
-
-   cmd_buffer->state.dirty_dynamic &= ~states;
-}
-
-static void
 radv_flush_push_descriptors(struct radv_cmd_buffer *cmd_buffer, struct radv_descriptor_state *descriptors_state)
 {
    struct radv_descriptor_set *set = (struct radv_descriptor_set *)&descriptors_state->push_set.set;
@@ -11573,9 +11565,6 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_STREAMOUT_ENABLE)
       radv_emit_streamout_enable_state(cmd_buffer);
 
-   if (dynamic_states)
-      radv_cmd_buffer_flush_dynamic_state(cmd_buffer, dynamic_states);
-
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_VS_PROLOG_STATE)
       radv_emit_vs_prolog_state(cmd_buffer);
 
@@ -11635,6 +11624,8 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
       radv_emit_scissor_state(cmd_buffer);
       cmd_buffer->cs->context_roll_without_scissor_emitted = false;
    }
+
+   cmd_buffer->state.dirty_dynamic &= ~dynamic_states;
 }
 
 static void
