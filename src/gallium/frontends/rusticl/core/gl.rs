@@ -27,7 +27,7 @@ use std::os::raw::c_void;
 use std::ptr;
 use std::sync::Arc;
 
-type CLGLMappings = Option<HashMap<PipeResource, PipeResource>>;
+type CLGLMappings = Option<HashMap<PipeResourceOwned, PipeResourceOwned>>;
 
 pub struct XPlatManager {
     #[cfg(glx)]
@@ -478,9 +478,9 @@ impl GLObject {
 }
 
 pub fn create_shadow_slice(
-    cube_map: &HashMap<&'static Device, PipeResource>,
+    cube_map: &HashMap<&'static Device, PipeResourceOwned>,
     image_format: cl_image_format,
-) -> CLResult<HashMap<&'static Device, PipeResource>> {
+) -> CLResult<HashMap<&'static Device, PipeResourceOwned>> {
     let mut slice = HashMap::new();
 
     for (dev, imported_gl_res) in cube_map {

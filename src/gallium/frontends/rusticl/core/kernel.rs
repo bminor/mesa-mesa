@@ -456,7 +456,7 @@ impl NirKernelBuilds {
 
 pub struct NirKernelBuild {
     nir_or_cso: KernelDevStateVariant,
-    constant_buffer: Option<PipeResource>,
+    constant_buffer: Option<PipeResourceOwned>,
     info: pipe_compute_state_object_info,
     shared_size: u64,
     printf_info: Option<NirPrintfInfo>,
@@ -494,7 +494,7 @@ impl NirKernelBuild {
         }
     }
 
-    fn create_nir_constant_buffer(dev: &Device, nir: &NirShader) -> Option<PipeResource> {
+    fn create_nir_constant_buffer(dev: &Device, nir: &NirShader) -> Option<PipeResourceOwned> {
         let buf = nir.get_constant_buffer();
         let len = buf.len() as u32;
 
@@ -1422,8 +1422,8 @@ impl Kernel {
             fn add_global<'a>(
                 ctx: &QueueContext,
                 input: &mut Vec<u8>,
-                resource_info: &mut Vec<(&'a PipeResource, usize)>,
-                res: &'a PipeResource,
+                resource_info: &mut Vec<(&'a PipeResourceOwned, usize)>,
+                res: &'a PipeResourceOwned,
                 offset: usize,
             ) {
                 resource_info.push((res, input.len()));

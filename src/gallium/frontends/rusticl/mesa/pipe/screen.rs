@@ -114,7 +114,7 @@ impl PipeScreen {
         })
     }
 
-    pub fn resource_assign_vma(&self, res: &PipeResource, address: u64) -> bool {
+    pub fn resource_assign_vma(&self, res: &PipeResourceOwned, address: u64) -> bool {
         if let Some(resource_assign_vma) = self.screen().resource_assign_vma {
             // Validate that we already acquired the vm range
             if cfg!(debug_assertions) {
@@ -130,8 +130,8 @@ impl PipeScreen {
         }
     }
 
-    fn resource_create(&self, tmpl: &pipe_resource) -> Option<PipeResource> {
-        PipeResource::new(
+    fn resource_create(&self, tmpl: &pipe_resource) -> Option<PipeResourceOwned> {
+        PipeResourceOwned::new(
             unsafe { self.screen().resource_create.unwrap()(self.screen.as_ptr(), tmpl) },
             false,
         )
@@ -141,8 +141,8 @@ impl PipeScreen {
         &self,
         tmpl: &pipe_resource,
         mem: *mut c_void,
-    ) -> Option<PipeResource> {
-        PipeResource::new(
+    ) -> Option<PipeResourceOwned> {
+        PipeResourceOwned::new(
             unsafe { self.screen().resource_from_user_memory?(self.screen.as_ptr(), tmpl, mem) },
             true,
         )
@@ -154,7 +154,7 @@ impl PipeScreen {
         res_type: ResourceType,
         pipe_bind: u32,
         pipe_flags: u32,
-    ) -> Option<PipeResource> {
+    ) -> Option<PipeResourceOwned> {
         let mut tmpl = pipe_resource::default();
 
         tmpl.set_target(pipe_texture_target::PIPE_BUFFER);
@@ -176,7 +176,7 @@ impl PipeScreen {
         mem: *mut c_void,
         pipe_bind: u32,
         pipe_flags: u32,
-    ) -> Option<PipeResource> {
+    ) -> Option<PipeResourceOwned> {
         let mut tmpl = pipe_resource::default();
 
         tmpl.set_target(pipe_texture_target::PIPE_BUFFER);
@@ -200,7 +200,7 @@ impl PipeScreen {
         format: pipe_format,
         res_type: ResourceType,
         support_image: bool,
-    ) -> Option<PipeResource> {
+    ) -> Option<PipeResourceOwned> {
         let mut tmpl = pipe_resource::default();
 
         tmpl.set_target(target);
@@ -230,7 +230,7 @@ impl PipeScreen {
         format: pipe_format,
         mem: *mut c_void,
         support_image: bool,
-    ) -> Option<PipeResource> {
+    ) -> Option<PipeResourceOwned> {
         let mut tmpl = pipe_resource::default();
 
         tmpl.set_target(target);
@@ -260,7 +260,7 @@ impl PipeScreen {
         depth: u16,
         array_size: u16,
         support_image: bool,
-    ) -> Option<PipeResource> {
+    ) -> Option<PipeResourceOwned> {
         let mut tmpl = pipe_resource::default();
         let mut handle = winsys_handle {
             type_: WINSYS_HANDLE_TYPE_FD,
@@ -288,7 +288,7 @@ impl PipeScreen {
         }
 
         unsafe {
-            PipeResource::new(
+            PipeResourceOwned::new(
                 self.screen().resource_from_handle.unwrap()(
                     self.screen.as_ptr(),
                     &tmpl,

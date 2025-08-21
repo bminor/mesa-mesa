@@ -77,7 +77,7 @@ impl PipeContext {
 
     pub fn buffer_subdata(
         &self,
-        res: &PipeResource,
+        res: &PipeResourceOwned,
         offset: c_uint,
         data: *const c_void,
         size: c_uint,
@@ -96,7 +96,7 @@ impl PipeContext {
 
     pub fn texture_subdata(
         &self,
-        res: &PipeResource,
+        res: &PipeResourceOwned,
         bx: &pipe_box,
         data: *const c_void,
         stride: u32,
@@ -116,7 +116,7 @@ impl PipeContext {
         }
     }
 
-    pub fn clear_buffer(&self, res: &PipeResource, pattern: &[u8], offset: u32, size: u32) {
+    pub fn clear_buffer(&self, res: &PipeResourceOwned, pattern: &[u8], offset: u32, size: u32) {
         unsafe {
             self.pipe
                 .as_ref()
@@ -134,7 +134,7 @@ impl PipeContext {
 
     pub fn clear_image_buffer(
         &self,
-        res: &PipeResource,
+        res: &PipeResourceOwned,
         pattern: &[u32],
         offset_bytes: u32,
         region: &[usize; 3],
@@ -162,7 +162,7 @@ impl PipeContext {
         }
     }
 
-    pub fn clear_texture(&self, res: &PipeResource, pattern: &[u32], bx: &pipe_box) {
+    pub fn clear_texture(&self, res: &PipeResourceOwned, pattern: &[u32], bx: &pipe_box) {
         unsafe {
             let clear_texture = self
                 .pipe
@@ -181,8 +181,8 @@ impl PipeContext {
 
     fn resource_copy_region(
         &self,
-        src: &PipeResource,
-        dst: &PipeResource,
+        src: &PipeResourceOwned,
+        dst: &PipeResourceOwned,
         dst_offset: &[u32; 3],
         bx: &pipe_box,
     ) {
@@ -203,9 +203,9 @@ impl PipeContext {
 
     pub fn resource_copy_buffer(
         &self,
-        src: &PipeResource,
+        src: &PipeResourceOwned,
         src_offset: i32,
-        dst: &PipeResource,
+        dst: &PipeResourceOwned,
         dst_offset: u32,
         width: i32,
     ) {
@@ -225,8 +225,8 @@ impl PipeContext {
 
     pub fn resource_copy_texture(
         &self,
-        src: &PipeResource,
-        dst: &PipeResource,
+        src: &PipeResourceOwned,
+        dst: &PipeResourceOwned,
         dst_offset: &[u32; 3],
         bx: &pipe_box,
     ) {
@@ -244,8 +244,8 @@ impl PipeContext {
     /// ([Self::has_buffer_texture_copies]).
     pub fn resource_copy_buffer_texture(
         &self,
-        src: &PipeResource,
-        dst: &PipeResource,
+        src: &PipeResourceOwned,
+        dst: &PipeResourceOwned,
         buffer_offset: u32,
         bx: &pipe_box,
     ) {
@@ -267,7 +267,7 @@ impl PipeContext {
 
     fn resource_map(
         &self,
-        res: &PipeResource,
+        res: &PipeResourceOwned,
         bx: &pipe_box,
         flags: pipe_map_flags,
         is_buffer: bool,
@@ -293,7 +293,7 @@ impl PipeContext {
 
     pub fn buffer_map_flags(
         &self,
-        res: &PipeResource,
+        res: &PipeResourceOwned,
         offset: i32,
         size: i32,
         flags: pipe_map_flags,
@@ -311,7 +311,7 @@ impl PipeContext {
 
     pub fn buffer_map(
         &self,
-        res: &PipeResource,
+        res: &PipeResourceOwned,
         offset: i32,
         size: i32,
         rw: RWFlags,
@@ -325,7 +325,7 @@ impl PipeContext {
 
     pub fn texture_map_flags(
         &self,
-        res: &PipeResource,
+        res: &PipeResourceOwned,
         bx: &pipe_box,
         flags: pipe_map_flags,
     ) -> Option<PipeTransfer<'_>> {
@@ -334,7 +334,7 @@ impl PipeContext {
 
     pub fn texture_map(
         &self,
-        res: &PipeResource,
+        res: &PipeResourceOwned,
         bx: &pipe_box,
         rw: RWFlags,
     ) -> Option<PipeTransfer<'_>> {
@@ -421,7 +421,7 @@ impl PipeContext {
         unsafe { self.pipe.as_ref().delete_sampler_state.unwrap()(self.pipe.as_ptr(), ptr) }
     }
 
-    pub fn bind_constant_buffer(&self, idx: u32, res: &PipeResource) {
+    pub fn bind_constant_buffer(&self, idx: u32, res: &PipeResourceOwned) {
         let cb = pipe_constant_buffer {
             buffer: res.pipe(),
             buffer_offset: 0,
@@ -502,7 +502,7 @@ impl PipeContext {
         block: [u32; 3],
         grid: [u32; 3],
         variable_local_mem: u32,
-        globals: &[&PipeResource],
+        globals: &[&PipeResourceOwned],
     ) {
         let mut globals: Vec<*mut pipe_resource> = globals.iter().map(|res| res.pipe()).collect();
         let info = pipe_grid_info {
@@ -517,8 +517,8 @@ impl PipeContext {
         unsafe { self.pipe.as_ref().launch_grid.unwrap()(self.pipe.as_ptr(), &info) }
     }
 
-    pub fn set_global_binding(&self, res: &[&PipeResource], out: &mut [*mut u32]) {
-        let mut res: Vec<_> = res.iter().copied().map(PipeResource::pipe).collect();
+    pub fn set_global_binding(&self, res: &[&PipeResourceOwned], out: &mut [*mut u32]) {
+        let mut res: Vec<_> = res.iter().copied().map(PipeResourceOwned::pipe).collect();
         unsafe {
             self.pipe.as_ref().set_global_binding.unwrap()(
                 self.pipe.as_ptr(),

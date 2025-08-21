@@ -14,15 +14,15 @@ use super::context::PipeContext;
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 #[repr(transparent)]
-pub struct PipeResource {
+pub struct PipeResourceOwned {
     pipe: NonNull<pipe_resource>,
 }
 
 const PIPE_RESOURCE_FLAG_RUSTICL_IS_USER: u32 = PIPE_RESOURCE_FLAG_FRONTEND_PRIV;
 
 // SAFETY: pipe_resource is considered a thread safe type
-unsafe impl Send for PipeResource {}
-unsafe impl Sync for PipeResource {}
+unsafe impl Send for PipeResourceOwned {}
+unsafe impl Sync for PipeResourceOwned {}
 
 /// A thread safe wrapper around [pipe_image_view]. It's purpose is to increase the reference count
 /// on the [pipe_resource] this view belongs to.
@@ -74,7 +74,7 @@ impl AppImgInfo {
     }
 }
 
-impl PipeResource {
+impl PipeResourceOwned {
     pub(super) fn new(res: *mut pipe_resource, is_user: bool) -> Option<Self> {
         let mut res = NonNull::new(res)?;
 
@@ -298,7 +298,7 @@ impl PipeResource {
     }
 }
 
-impl Drop for PipeResource {
+impl Drop for PipeResourceOwned {
     fn drop(&mut self) {
         unsafe {
             pipe_resource_reference(&mut self.pipe.as_ptr(), ptr::null_mut());
@@ -314,13 +314,13 @@ pub struct PipeSamplerView<'c, 'r> {
     view: NonNull<pipe_sampler_view>,
     // the pipe_sampler_view object references both a context and a resource.
     _ctx: PhantomData<&'c PipeContext>,
-    _res: PhantomData<&'r PipeResource>,
+    _res: PhantomData<&'r PipeResourceOwned>,
 }
 
 impl<'c, 'r> PipeSamplerView<'c, 'r> {
     pub fn new(
         ctx: &'c PipeContext,
-        res: &'r PipeResource,
+        res: &'r PipeResourceOwned,
         template: &pipe_sampler_view,
     ) -> Option<Self> {
         let view = unsafe {

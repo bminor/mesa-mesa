@@ -128,7 +128,7 @@ pub trait HelperContextWrapper {
 
     fn buffer_map(
         &self,
-        res: &PipeResource,
+        res: &PipeResourceOwned,
         offset: i32,
         size: i32,
         rw: RWFlags,
@@ -140,7 +140,7 @@ pub trait HelperContextWrapper {
 
     fn map_buffer_unsynchronized(
         &self,
-        res: &PipeResource,
+        res: &PipeResourceOwned,
         offset: i32,
         size: i32,
         rw: RWFlags,
@@ -148,7 +148,7 @@ pub trait HelperContextWrapper {
 
     fn map_texture_unsynchronized(
         &self,
-        res: &PipeResource,
+        res: &PipeResourceOwned,
         bx: &pipe_box,
         rw: RWFlags,
     ) -> Option<PipeTransfer<'_>>;
@@ -164,7 +164,7 @@ pub struct HelperContext<'a> {
 impl HelperContext<'_> {
     pub fn buffer_subdata(
         &self,
-        res: &PipeResource,
+        res: &PipeResourceOwned,
         offset: c_uint,
         data: *const c_void,
         size: c_uint,
@@ -174,7 +174,7 @@ impl HelperContext<'_> {
 
     pub fn texture_subdata(
         &self,
-        res: &PipeResource,
+        res: &PipeResourceOwned,
         bx: &pipe_box,
         data: *const c_void,
         stride: u32,
@@ -196,7 +196,7 @@ impl HelperContextWrapper for HelperContext<'_> {
 
     fn buffer_map(
         &self,
-        res: &PipeResource,
+        res: &PipeResourceOwned,
         offset: i32,
         size: i32,
         rw: RWFlags,
@@ -222,7 +222,7 @@ impl HelperContextWrapper for HelperContext<'_> {
 
     fn map_buffer_unsynchronized(
         &self,
-        res: &PipeResource,
+        res: &PipeResourceOwned,
         offset: i32,
         size: i32,
         rw: RWFlags,
@@ -237,7 +237,7 @@ impl HelperContextWrapper for HelperContext<'_> {
 
     fn map_texture_unsynchronized(
         &self,
-        res: &PipeResource,
+        res: &PipeResourceOwned,
         bx: &pipe_box,
         rw: RWFlags,
     ) -> Option<PipeTransfer<'_>> {

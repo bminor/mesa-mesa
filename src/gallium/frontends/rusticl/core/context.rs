@@ -152,7 +152,7 @@ impl Context {
         copy: bool,
         bda: bool,
         res_type: ResourceType,
-    ) -> CLResult<HashMap<&'static Device, PipeResource>> {
+    ) -> CLResult<HashMap<&'static Device, PipeResourceOwned>> {
         let adj_size: u32 = size.try_into_with_err(CL_OUT_OF_HOST_MEMORY)?;
         let mut res = HashMap::new();
         let mut pipe_flags = 0;
@@ -208,7 +208,7 @@ impl Context {
         user_ptr: *mut c_void,
         copy: bool,
         res_type: ResourceType,
-    ) -> CLResult<HashMap<&'static Device, PipeResource>> {
+    ) -> CLResult<HashMap<&'static Device, PipeResourceOwned>> {
         let pipe_format = format.to_pipe_format().unwrap();
 
         let width = desc.image_width.try_into_with_err(CL_OUT_OF_HOST_MEMORY)?;
@@ -420,7 +420,7 @@ impl Context {
         &self,
         ctx: &QueueContext,
         ptr: usize,
-    ) -> CLResult<Option<PipeResource>> {
+    ) -> CLResult<Option<PipeResourceOwned>> {
         let svm = self.svm.lock().unwrap();
 
         let Some(alloc) = svm.svm_ptrs.find_alloc_precise(ptr) else {
@@ -631,7 +631,7 @@ impl Context {
         gl_target: cl_GLenum,
         format: cl_image_format,
         gl_props: GLMemProps,
-    ) -> CLResult<HashMap<&'static Device, PipeResource>> {
+    ) -> CLResult<HashMap<&'static Device, PipeResourceOwned>> {
         let mut res = HashMap::new();
         let target = cl_mem_type_to_texture_target_gl(image_type, gl_target);
         let pipe_format = if image_type == CL_MEM_OBJECT_BUFFER {
