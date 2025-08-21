@@ -1049,10 +1049,10 @@ if cc.has_function_attribute('visibility:hidden')
 endif
 
 _no_sanitize_flags = []
-if ['address', 'address,undefined'].contains(get_option('b_sanitize'))
+if get_option('b_sanitize').split(',').contains('address')
   _no_sanitize_flags += ['address']
 endif
-if ['undefined', 'address,undefined'].contains(get_option('b_sanitize'))
+if get_option('b_sanitize').split(',').contains('undefined')
   _no_sanitize_flags += ['vptr']
 endif
 foreach flag: _no_sanitize_flags
@@ -1931,7 +1931,7 @@ endif
 # AddressSanitizer's leak reports need all the symbols to be present at exit to
 # decode well, which runs afoul of our dlopen()/dlclose()ing of the DRI drivers.
 # Set a flag so we can skip the dlclose for asan builds.
-if ['address', 'address,undefined'].contains(get_option('b_sanitize'))
+if get_option('b_sanitize').split(',').contains('address')
   asan_c_args = ['-DBUILT_WITH_ASAN=1']
 else
   asan_c_args = ['-DBUILT_WITH_ASAN=0']
