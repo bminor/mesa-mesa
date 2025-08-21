@@ -321,61 +321,17 @@ brw_instruction_name(const struct brw_isa_info *isa, enum opcode op)
 static bool
 print_memory_logical_source(FILE *file, const brw_inst *inst, unsigned i)
 {
-   if (inst->is_control_source(i)) {
-      assert(inst->src[i].file == IMM &&
-             (inst->src[i].type == BRW_TYPE_UD ||
-              inst->src[i].type == BRW_TYPE_D));
-      assert(!inst->src[i].negate);
-      assert(!inst->src[i].abs);
-   }
-
    switch (i) {
-   case MEMORY_LOGICAL_OPCODE:
-      fprintf(file, " %s", brw_lsc_op_to_string(inst->src[i].ud));
-      return true;
-   case MEMORY_LOGICAL_MODE: {
-      static const char *modes[] = {
-         [MEMORY_MODE_TYPED]        = "typed",
-         [MEMORY_MODE_UNTYPED]      = "untyped",
-         [MEMORY_MODE_SHARED_LOCAL] = "shared",
-         [MEMORY_MODE_SCRATCH]      = "scratch",
-         [MEMORY_MODE_CONSTANT]     = "const",
-      };
-      assert(inst->src[i].ud < ARRAY_SIZE(modes));
-      fprintf(file, " %s", modes[inst->src[i].ud]);
-      return true;
-   }
-   case MEMORY_LOGICAL_BINDING_TYPE:
-      fprintf(file, " %s", brw_lsc_addr_surftype_to_string(inst->src[i].ud));
-      if (inst->src[i].ud != LSC_ADDR_SURFTYPE_FLAT)
+   case MEMORY_LOGICAL_BINDING: {
+      lsc_addr_surface_type binding_type = inst->as_mem()->binding_type;
+      fprintf(file, " %s", brw_lsc_addr_surftype_to_string(binding_type));
+      if (binding_type != LSC_ADDR_SURFTYPE_FLAT)
          fprintf(file, ":");
-      return true;
-   case MEMORY_LOGICAL_BINDING:
       return inst->src[i].file == BAD_FILE;
+   }
    case MEMORY_LOGICAL_ADDRESS:
       fprintf(file, " addr: ");
       return false;
-   case MEMORY_LOGICAL_ADDRESS_OFFSET:
-      fprintf(file, " offset: ");
-      return false;
-   case MEMORY_LOGICAL_COORD_COMPONENTS:
-      fprintf(file, " coord_comps:");
-      return false;
-   case MEMORY_LOGICAL_ALIGNMENT:
-      fprintf(file, " align:");
-      return false;
-   case MEMORY_LOGICAL_DATA_SIZE:
-      fprintf(file, " %s", brw_lsc_data_size_to_string(inst->src[i].ud));
-      return true;
-   case MEMORY_LOGICAL_COMPONENTS:
-      fprintf(file, " comps:");
-      return false;
-   case MEMORY_LOGICAL_FLAGS:
-      if (inst->src[i].ud & MEMORY_FLAG_TRANSPOSE)
-         fprintf(file, " transpose");
-      if (inst->src[i].ud & MEMORY_FLAG_INCLUDE_HELPERS)
-         fprintf(file, " helpers");
-      return true;
    case MEMORY_LOGICAL_DATA0:
       fprintf(file, " data0: ");
       return false;
@@ -499,10 +455,37 @@ brw_print_instruction(const brw_shader &s, const brw_inst *inst, FILE *file, con
       fprintf(file, ":%s", brw_reg_type_to_letters(inst->dst.type));
    }
 
+   const brw_mem_inst *mem = inst->as_mem();
+   if (mem) {
+      fprintf(file, " %s", brw_lsc_op_to_string(mem->lsc_op));
+
+      static const char *modes[] = {
+         [MEMORY_MODE_TYPED]        = "typed",
+         [MEMORY_MODE_UNTYPED]      = "untyped",
+         [MEMORY_MODE_SHARED_LOCAL] = "shared",
+         [MEMORY_MODE_SCRATCH]      = "scratch",
+         [MEMORY_MODE_CONSTANT]     = "const",
+      };
+      assert(mem->mode < ARRAY_SIZE(modes));
+      fprintf(file, " %s", modes[mem->mode]);
+      fprintf(file, " offset: %dd", mem->address_offset);
+      fprintf(file, " coord_comps: %uu", mem->coord_components);
+      fprintf(file, " %s", brw_lsc_data_size_to_string(mem->data_size));
+      fprintf(file, " comps: %uu", mem->components);
+      fprintf(file, " align: %uu", mem->alignment);
+
+      if (mem->flags & MEMORY_FLAG_TRANSPOSE)
+         fprintf(file, " transpose");
+      if (mem->flags & MEMORY_FLAG_INCLUDE_HELPERS)
+         fprintf(file, " helpers");
+      if (mem->flags & MEMORY_FLAG_VOLATILE_ACCESS)
+         fprintf(file, " volatile");
+      if (mem->flags & MEMORY_FLAG_COHERENT_ACCESS)
+         fprintf(file, " coherent");
+   }
+
    for (int i = 0; i < inst->sources; i++) {
-      if (inst->opcode == SHADER_OPCODE_MEMORY_LOAD_LOGICAL ||
-          inst->opcode == SHADER_OPCODE_MEMORY_STORE_LOGICAL ||
-          inst->opcode == SHADER_OPCODE_MEMORY_ATOMIC_LOGICAL) {
+      if (mem) {
          if (print_memory_logical_source(file, inst, i))
             continue;
       } else {

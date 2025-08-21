@@ -671,7 +671,7 @@ enum get_buffer_size_srcs {
    GET_BUFFER_SIZE_SRCS
 };
 
-enum memory_logical_mode {
+enum ENUM_PACKED memory_logical_mode {
    MEMORY_MODE_TYPED,
    MEMORY_MODE_UNTYPED,
    MEMORY_MODE_SHARED_LOCAL,
@@ -680,17 +680,8 @@ enum memory_logical_mode {
 };
 
 enum memory_logical_srcs {
-   /** enum lsc_opcode (as UD immediate) */
-   MEMORY_LOGICAL_OPCODE,
-
-   /** enum memory_logical_mode (as UD immediate) */
-   MEMORY_LOGICAL_MODE,
-
-   /** enum lsc_addr_surface_type (as UD immediate) */
-   MEMORY_LOGICAL_BINDING_TYPE,
-
    /**
-    * Where to find the surface state.  Depends on BINDING_TYPE above:
+    * Where to find the surface state.  Depends on brw_mem_inst::binding_type:
     *
     * - SS: pointer to surface state (relative to surface base address)
     * - BSS: pointer to surface state (relative to bindless surface base)
@@ -701,24 +692,6 @@ enum memory_logical_srcs {
 
    /** Coordinate/address/offset for where to access memory */
    MEMORY_LOGICAL_ADDRESS,
-
-   /** Xe2+: offset for where to access memory (as UD immediate) */
-   MEMORY_LOGICAL_ADDRESS_OFFSET,
-
-   /** Dimensionality of the "address" source (as UD immediate) */
-   MEMORY_LOGICAL_COORD_COMPONENTS,
-
-   /** Required alignment of address in bytes; 0 for natural alignment */
-   MEMORY_LOGICAL_ALIGNMENT,
-
-   /** Bit-size in the form of enum lsc_data_size (as UD immediate) */
-   MEMORY_LOGICAL_DATA_SIZE,
-
-   /** Number of vector components (as UD immediate) */
-   MEMORY_LOGICAL_COMPONENTS,
-
-   /** memory_flags bitfield (as UD immediate) */
-   MEMORY_LOGICAL_FLAGS,
 
    /** Data to write for stores or the first operand for atomics */
    MEMORY_LOGICAL_DATA0,
@@ -1583,7 +1556,7 @@ enum ENUM_PACKED brw_rnd_mode {
  * one or two messages with different bits to control things like address
  * size, how much data is read/written, etc.
  */
-enum lsc_opcode {
+enum ENUM_PACKED lsc_opcode {
    LSC_OP_LOAD            = 0,
    LSC_OP_LOAD_CMASK      = 2,
    LSC_OP_STORE           = 4,

@@ -15,6 +15,7 @@ static inline unsigned
 brw_inst_kind_size(brw_inst_kind kind)
 {
    STATIC_ASSERT(sizeof(brw_send_inst) >= sizeof(brw_tex_inst));
+   STATIC_ASSERT(sizeof(brw_send_inst) >= sizeof(brw_mem_inst));
 
    /* TODO: Temporarily here to ensure all instructions can be converted to
     * SEND.  Once all new kinds are added, change so that BASE allocate only
@@ -178,6 +179,11 @@ brw_inst_kind_for_opcode(enum opcode opcode)
    case SHADER_OPCODE_SAMPLEINFO_LOGICAL:
       return BRW_KIND_TEX;
 
+   case SHADER_OPCODE_MEMORY_LOAD_LOGICAL:
+   case SHADER_OPCODE_MEMORY_STORE_LOGICAL:
+   case SHADER_OPCODE_MEMORY_ATOMIC_LOGICAL:
+      return BRW_KIND_MEM;
+
    default:
       return BRW_KIND_BASE;
    }
@@ -220,14 +226,6 @@ brw_inst::is_control_source(unsigned arg) const
    case SHADER_OPCODE_SEND:
    case SHADER_OPCODE_SEND_GATHER:
       return arg < SEND_SRC_PAYLOAD1;
-
-   case SHADER_OPCODE_MEMORY_LOAD_LOGICAL:
-   case SHADER_OPCODE_MEMORY_STORE_LOGICAL:
-   case SHADER_OPCODE_MEMORY_ATOMIC_LOGICAL:
-      return arg != MEMORY_LOGICAL_BINDING &&
-             arg != MEMORY_LOGICAL_ADDRESS &&
-             arg != MEMORY_LOGICAL_DATA0 &&
-             arg != MEMORY_LOGICAL_DATA1;
 
    case SHADER_OPCODE_QUAD_SWAP:
    case SHADER_OPCODE_INCLUSIVE_SCAN:
@@ -492,13 +490,15 @@ brw_inst::components_read(unsigned i) const
       if (i == MEMORY_LOGICAL_DATA1)
          return 0;
       FALLTHROUGH;
-   case SHADER_OPCODE_MEMORY_ATOMIC_LOGICAL:
+   case SHADER_OPCODE_MEMORY_ATOMIC_LOGICAL: {
+      const brw_mem_inst *mem = as_mem();
       if (i == MEMORY_LOGICAL_DATA0 || i == MEMORY_LOGICAL_DATA1)
-         return src[MEMORY_LOGICAL_COMPONENTS].ud;
+         return mem->components;
       else if (i == MEMORY_LOGICAL_ADDRESS)
-         return src[MEMORY_LOGICAL_COORD_COMPONENTS].ud;
+         return mem->coord_components;
       else
          return 1;
+   }
 
    case FS_OPCODE_INTERPOLATE_AT_PER_SLOT_OFFSET:
       return (i == 0 ? 2 : 1);
@@ -946,8 +946,7 @@ brw_inst::is_volatile() const
    case SHADER_OPCODE_LOAD_REG:
       return true;
    case SHADER_OPCODE_MEMORY_STORE_LOGICAL:
-      assert(sources > MEMORY_LOGICAL_FLAGS);
-      return src[MEMORY_LOGICAL_FLAGS].ud & MEMORY_FLAG_VOLATILE_ACCESS;
+      return as_mem()->flags & MEMORY_FLAG_VOLATILE_ACCESS;
    case SHADER_OPCODE_SEND:
    case SHADER_OPCODE_SEND_GATHER:
       return as_send()->is_volatile;

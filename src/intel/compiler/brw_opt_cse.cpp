@@ -131,7 +131,7 @@ is_expression(const brw_shader *v, const brw_inst *const inst)
    case FS_OPCODE_INTERPOLATE_AT_PER_SLOT_OFFSET:
       return true;
    case SHADER_OPCODE_MEMORY_LOAD_LOGICAL:
-      return inst->src[MEMORY_LOGICAL_MODE].ud == MEMORY_MODE_CONSTANT;
+      return inst->as_mem()->mode == MEMORY_MODE_CONSTANT;
    case SHADER_OPCODE_LOAD_PAYLOAD:
       return !is_coalescing_payload(*v, inst);
    case SHADER_OPCODE_SEND:
@@ -260,6 +260,20 @@ tex_inst_match(brw_tex_inst *a, brw_tex_inst *b)
 }
 
 static bool
+mem_inst_match(brw_mem_inst *a, brw_mem_inst *b)
+{
+   return a->lsc_op == b->lsc_op &&
+          a->mode == b->mode &&
+          a->binding_type == b->binding_type &&
+          a->data_size == b->data_size &&
+          a->coord_components == b->coord_components &&
+          a->components == b->components &&
+          a->flags == b->flags &&
+          a->alignment == b->alignment &&
+          a->address_offset == b->address_offset;
+}
+
+static bool
 instructions_match(brw_inst *a, brw_inst *b, bool *negate)
 {
 
@@ -267,6 +281,7 @@ instructions_match(brw_inst *a, brw_inst *b, bool *negate)
           /* `kind` is derived from opcode, so skipped. */
           (a->kind != BRW_KIND_SEND || send_inst_match(a->as_send(), b->as_send())) &&
           (a->kind != BRW_KIND_TEX || tex_inst_match(a->as_tex(), b->as_tex())) &&
+          (a->kind != BRW_KIND_MEM || mem_inst_match(a->as_mem(), b->as_mem())) &&
           a->exec_size == b->exec_size &&
           a->group == b->group &&
           a->predicate == b->predicate &&
@@ -359,6 +374,26 @@ hash_inst(const void *v)
          tex->residency,
       };
       hash = HASH(hash, tex_u8data);
+      break;
+   }
+
+   case BRW_KIND_MEM: {
+      const brw_mem_inst *mem = inst->as_mem();
+      const uint8_t mem_u8data[] = {
+         mem->lsc_op,
+         mem->mode,
+         mem->binding_type,
+         mem->data_size,
+         mem->coord_components,
+         mem->components,
+         mem->flags,
+      };
+      const uint32_t mem_u32data[] = {
+         (uint32_t)mem->address_offset,
+         mem->alignment,
+      };
+      hash = HASH(hash, mem_u8data);
+      hash = HASH(hash, mem_u32data);
       break;
    }
 

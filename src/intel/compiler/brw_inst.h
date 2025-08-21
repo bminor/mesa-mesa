@@ -43,6 +43,7 @@ enum ENUM_PACKED brw_inst_kind {
    BRW_KIND_BASE,
    BRW_KIND_SEND,
    BRW_KIND_TEX,
+   BRW_KIND_MEM,
 };
 
 brw_inst_kind brw_inst_kind_for_opcode(enum opcode opcode);
@@ -70,6 +71,7 @@ struct brw_inst : brw_exec_node {
 
    KIND_HELPERS(as_send, brw_send_inst, BRW_KIND_SEND);
    KIND_HELPERS(as_tex, brw_tex_inst, BRW_KIND_TEX);
+   KIND_HELPERS(as_mem, brw_mem_inst, BRW_KIND_MEM);
 
 #undef KIND_HELPERS
 
@@ -276,6 +278,22 @@ struct brw_tex_inst : brw_inst {
    uint8_t coord_components;
    uint8_t grad_components;
    bool residency;
+};
+
+struct brw_mem_inst : brw_inst {
+   enum lsc_opcode lsc_op;
+   enum memory_logical_mode mode;
+   enum lsc_addr_surface_type binding_type;
+   enum lsc_data_size data_size;
+
+   uint8_t coord_components;
+   uint8_t components;
+   uint8_t flags;
+
+   /** Required alignment of address in bytes; 0 for natural alignment */
+   uint32_t alignment;
+
+   int32_t address_offset;
 };
 
 /**

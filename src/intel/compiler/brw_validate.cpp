@@ -90,36 +90,18 @@ is_ud_imm(const brw_reg &reg)
    return reg.file == IMM && reg.type == BRW_TYPE_UD;
 }
 
-static inline bool
-is_d_imm(const brw_reg &reg)
-{
-   return reg.file == IMM && reg.type == BRW_TYPE_D;
-}
-
 static void
-validate_memory_logical(const brw_shader &s, const brw_inst *inst)
+validate_memory_logical(const brw_shader &s, const brw_mem_inst *inst)
 {
    const intel_device_info *devinfo = s.devinfo;
 
-   VAL_ASSERT(is_ud_imm(inst->src[MEMORY_LOGICAL_OPCODE]));
-   VAL_ASSERT(is_ud_imm(inst->src[MEMORY_LOGICAL_MODE]));
-   VAL_ASSERT(is_ud_imm(inst->src[MEMORY_LOGICAL_BINDING_TYPE]));
-   VAL_ASSERT(is_ud_imm(inst->src[MEMORY_LOGICAL_COORD_COMPONENTS]));
-   VAL_ASSERT(is_ud_imm(inst->src[MEMORY_LOGICAL_ALIGNMENT]));
-   VAL_ASSERT(is_ud_imm(inst->src[MEMORY_LOGICAL_DATA_SIZE]));
-   VAL_ASSERT(is_ud_imm(inst->src[MEMORY_LOGICAL_COMPONENTS]));
-   VAL_ASSERT(is_ud_imm(inst->src[MEMORY_LOGICAL_FLAGS]));
-   VAL_ASSERT(is_d_imm(inst->src[MEMORY_LOGICAL_ADDRESS_OFFSET]));
-
-   enum lsc_opcode op = (enum lsc_opcode) inst->src[MEMORY_LOGICAL_OPCODE].ud;
-   enum memory_flags flags = (memory_flags)inst->src[MEMORY_LOGICAL_FLAGS].ud;
+   enum lsc_opcode op = inst->lsc_op;
+   enum memory_flags flags = (memory_flags)inst->flags;
    bool transpose = flags & MEMORY_FLAG_TRANSPOSE;
    bool include_helpers = flags & MEMORY_FLAG_INCLUDE_HELPERS;
-   enum memory_logical_mode mode =
-      (memory_logical_mode)inst->src[MEMORY_LOGICAL_MODE].ud;
+   enum memory_logical_mode mode = inst->mode;
 
-   enum lsc_data_size data_size =
-      (enum lsc_data_size) inst->src[MEMORY_LOGICAL_DATA_SIZE].ud;
+   enum lsc_data_size data_size = inst->data_size;
    unsigned data_size_B = lsc_data_size_bytes(data_size);
 
    if (!devinfo->has_lsc) {
@@ -131,18 +113,18 @@ validate_memory_logical(const brw_shader &s, const brw_inst *inst)
       if (transpose) {
          const unsigned min_alignment =
             mode == MEMORY_MODE_SHARED_LOCAL ? 16 : 4;
-         VAL_ASSERT_GE(inst->src[MEMORY_LOGICAL_ALIGNMENT].ud, min_alignment);
+         VAL_ASSERT_GE(inst->alignment, min_alignment);
       }
    }
 
    VAL_ASSERT(!transpose || !include_helpers);
    VAL_ASSERT(!transpose || lsc_opcode_has_transpose(op));
 
-   if (inst->src[MEMORY_LOGICAL_BINDING_TYPE].ud == LSC_ADDR_SURFTYPE_FLAT)
+   if (inst->binding_type == LSC_ADDR_SURFTYPE_FLAT)
       VAL_ASSERT_EQ(inst->src[MEMORY_LOGICAL_BINDING].file, BAD_FILE);
 
    if (inst->src[MEMORY_LOGICAL_DATA1].file != BAD_FILE) {
-      VAL_ASSERT_EQ(inst->src[MEMORY_LOGICAL_COMPONENTS].ud,
+      VAL_ASSERT_EQ(inst->components,
                     inst->components_read(MEMORY_LOGICAL_DATA1));
 
       VAL_ASSERT_EQ(inst->src[MEMORY_LOGICAL_DATA0].type,
@@ -150,7 +132,7 @@ validate_memory_logical(const brw_shader &s, const brw_inst *inst)
    }
 
    if (inst->src[MEMORY_LOGICAL_DATA0].file != BAD_FILE) {
-      VAL_ASSERT_EQ(inst->src[MEMORY_LOGICAL_COMPONENTS].ud,
+      VAL_ASSERT_EQ(inst->components,
                     inst->components_read(MEMORY_LOGICAL_DATA0));
 
       VAL_ASSERT_EQ(brw_type_size_bytes(inst->src[MEMORY_LOGICAL_DATA0].type),
@@ -162,10 +144,10 @@ validate_memory_logical(const brw_shader &s, const brw_inst *inst)
 
    /** TGM messages cannot have a base offset */
    if (mode == MEMORY_MODE_TYPED)
-      VAL_ASSERT_EQ(inst->src[MEMORY_LOGICAL_ADDRESS_OFFSET].d, 0);
+      VAL_ASSERT_EQ(inst->as_mem()->address_offset, 0);
 
    /* Offset must be DWord aligned */
-   VAL_ASSERT_EQ((inst->src[MEMORY_LOGICAL_ADDRESS_OFFSET].d % 4), 0);
+   VAL_ASSERT_EQ((inst->as_mem()->address_offset % 4), 0);
 
    switch (inst->opcode) {
    case SHADER_OPCODE_MEMORY_LOAD_LOGICAL:
@@ -185,7 +167,7 @@ validate_memory_logical(const brw_shader &s, const brw_inst *inst)
                     (lsc_op_num_data_values(op) < 1));
       VAL_ASSERT_EQ((inst->src[MEMORY_LOGICAL_DATA1].file == BAD_FILE),
                     (lsc_op_num_data_values(op) < 2));
-      VAL_ASSERT_EQ(inst->src[MEMORY_LOGICAL_COMPONENTS].ud, 1);
+      VAL_ASSERT_EQ(inst->components, 1);
       VAL_ASSERT(!include_helpers);
       break;
    default:
@@ -336,7 +318,7 @@ brw_validate(const brw_shader &s)
          case SHADER_OPCODE_MEMORY_LOAD_LOGICAL:
          case SHADER_OPCODE_MEMORY_STORE_LOGICAL:
          case SHADER_OPCODE_MEMORY_ATOMIC_LOGICAL:
-            validate_memory_logical(s, inst);
+            validate_memory_logical(s, inst->as_mem());
             break;
 
          case SHADER_OPCODE_MEMORY_FENCE:

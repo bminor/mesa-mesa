@@ -1478,48 +1478,35 @@ lsc_addr_size_for_type(enum brw_reg_type type)
 }
 
 static void
-lower_lsc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
+lower_lsc_memory_logical_send(const brw_builder &bld, brw_mem_inst *mem)
 {
    const intel_device_info *devinfo = bld.shader->devinfo;
    assert(devinfo->has_lsc);
 
-   assert(inst->src[MEMORY_LOGICAL_OPCODE].file == IMM);
-   assert(inst->src[MEMORY_LOGICAL_MODE].file == IMM);
-   assert(inst->src[MEMORY_LOGICAL_BINDING_TYPE].file == IMM);
-   assert(inst->src[MEMORY_LOGICAL_COORD_COMPONENTS].file == IMM);
-   assert(inst->src[MEMORY_LOGICAL_DATA_SIZE].file == IMM);
-   assert(inst->src[MEMORY_LOGICAL_FLAGS].file == IMM);
-
    /* Get the logical send arguments. */
-   const enum lsc_opcode op = (lsc_opcode) inst->src[MEMORY_LOGICAL_OPCODE].ud;
-   const enum memory_logical_mode mode =
-      (enum memory_logical_mode) inst->src[MEMORY_LOGICAL_MODE].ud;
-   const enum lsc_addr_surface_type binding_type =
-      (enum lsc_addr_surface_type) inst->src[MEMORY_LOGICAL_BINDING_TYPE].ud;
-   const brw_reg binding = inst->src[MEMORY_LOGICAL_BINDING];
-   const brw_reg addr = inst->src[MEMORY_LOGICAL_ADDRESS];
-   const unsigned coord_components =
-      inst->src[MEMORY_LOGICAL_COORD_COMPONENTS].ud;
-   enum lsc_data_size data_size =
-      (enum lsc_data_size) inst->src[MEMORY_LOGICAL_DATA_SIZE].ud;
-   const unsigned components = inst->src[MEMORY_LOGICAL_COMPONENTS].ud;
-   const enum memory_flags flags =
-      (enum memory_flags) inst->src[MEMORY_LOGICAL_FLAGS].ud;
-   const bool transpose = flags & MEMORY_FLAG_TRANSPOSE;
-   const bool include_helpers = flags & MEMORY_FLAG_INCLUDE_HELPERS;
-   const bool volatile_access = flags & MEMORY_FLAG_VOLATILE_ACCESS;
-   const bool coherent_access = flags & MEMORY_FLAG_COHERENT_ACCESS;
-   const brw_reg data0 = inst->src[MEMORY_LOGICAL_DATA0];
-   const brw_reg data1 = inst->src[MEMORY_LOGICAL_DATA1];
-   const bool has_side_effects = inst->has_side_effects();
+   const brw_reg binding = mem->src[MEMORY_LOGICAL_BINDING];
+   const brw_reg addr = mem->src[MEMORY_LOGICAL_ADDRESS];
+   const brw_reg data0 = mem->src[MEMORY_LOGICAL_DATA0];
+   const brw_reg data1 = mem->src[MEMORY_LOGICAL_DATA1];
+
+   const enum lsc_opcode op = mem->lsc_op;
+   const enum memory_logical_mode mode = mem->mode;
+   const enum lsc_addr_surface_type binding_type = mem->binding_type;
+   const unsigned coord_components = mem->coord_components;
+   enum lsc_data_size data_size = mem->data_size;
+   const unsigned components = mem->components;
+   const bool transpose = mem->flags & MEMORY_FLAG_TRANSPOSE;
+   const bool include_helpers = mem->flags & MEMORY_FLAG_INCLUDE_HELPERS;
+   const bool volatile_access = mem->flags & MEMORY_FLAG_VOLATILE_ACCESS;
+   const bool coherent_access = mem->flags & MEMORY_FLAG_COHERENT_ACCESS;
+   const bool has_side_effects = mem->has_side_effects();
 
    const uint32_t data_size_B = lsc_data_size_bytes(data_size);
    const enum brw_reg_type data_type =
       brw_type_with_size(data0.type, data_size_B * 8);
 
    const enum lsc_addr_size addr_size = lsc_addr_size_for_type(addr.type);
-   assert(inst->src[MEMORY_LOGICAL_ADDRESS_OFFSET].file == IMM);
-   const int32_t base_offset = inst->src[MEMORY_LOGICAL_ADDRESS_OFFSET].d;
+   const int32_t base_offset = mem->address_offset;
 
    /**
     * TGM messages cannot have a base offset
@@ -1530,9 +1517,9 @@ lower_lsc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
    brw_reg payload = addr;
 
    if (addr.file != VGRF || !addr.is_contiguous()) {
-      if (inst->force_writemask_all) {
+      if (mem->force_writemask_all) {
          const brw_builder dbld =
-            inst->exec_size == 1 ?
+            mem->exec_size == 1 ?
             bld.scalar_group() :
             bld.group(bld.shader->dispatch_width, 0);
          payload = dbld.move_to_vgrf(addr, coord_components);
@@ -1565,7 +1552,7 @@ lower_lsc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
 
          payload2 = bld.vgrf(data0.type, size);
          bld.LOAD_PAYLOAD(payload2, data, size, 0);
-         ex_mlen = (size * brw_type_size_bytes(data_type) * inst->exec_size) / REG_SIZE;
+         ex_mlen = (size * brw_type_size_bytes(data_type) * mem->exec_size) / REG_SIZE;
       }
    }
 
@@ -1616,13 +1603,13 @@ lower_lsc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
     */
    if (bld.shader->stage == MESA_SHADER_FRAGMENT && !transpose) {
       if (include_helpers)
-         emit_predicate_on_vector_mask(bld, inst);
+         emit_predicate_on_vector_mask(bld, mem);
       else if (has_side_effects && mode != MEMORY_MODE_SCRATCH)
-         brw_emit_predicate_on_sample_mask(bld, inst);
+         brw_emit_predicate_on_sample_mask(bld, mem);
    }
 
-   brw_send_inst *send = brw_transform_inst_to_send(bld, inst);
-   inst = NULL;
+   brw_send_inst *send = brw_transform_inst_to_send(bld, mem);
+   mem = NULL;
 
    switch (mode) {
    case MEMORY_MODE_UNTYPED:
@@ -1704,42 +1691,29 @@ emit_a64_oword_block_header(const brw_builder &bld, const brw_reg &addr)
 }
 
 static void
-lower_hdc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
+lower_hdc_memory_logical_send(const brw_builder &bld, brw_mem_inst *mem)
 {
    const intel_device_info *devinfo = bld.shader->devinfo;
    const brw_compiler *compiler = bld.shader->compiler;
 
-   assert(inst->src[MEMORY_LOGICAL_OPCODE].file == IMM);
-   assert(inst->src[MEMORY_LOGICAL_MODE].file == IMM);
-   assert(inst->src[MEMORY_LOGICAL_BINDING_TYPE].file == IMM);
-   assert(inst->src[MEMORY_LOGICAL_COORD_COMPONENTS].file == IMM);
-   assert(inst->src[MEMORY_LOGICAL_DATA_SIZE].file == IMM);
-   assert(inst->src[MEMORY_LOGICAL_FLAGS].file == IMM);
-   assert(inst->src[MEMORY_LOGICAL_ADDRESS_OFFSET].file == IMM);
-
    /* Get the logical send arguments. */
-   const enum lsc_opcode op = (lsc_opcode)inst->src[MEMORY_LOGICAL_OPCODE].ud;
-   const enum memory_logical_mode mode =
-      (enum memory_logical_mode) inst->src[MEMORY_LOGICAL_MODE].ud;
-   enum lsc_addr_surface_type binding_type =
-      (enum lsc_addr_surface_type) inst->src[MEMORY_LOGICAL_BINDING_TYPE].ud;
-   brw_reg binding = inst->src[MEMORY_LOGICAL_BINDING];
-   const brw_reg addr = inst->src[MEMORY_LOGICAL_ADDRESS];
-   const unsigned coord_components =
-      inst->src[MEMORY_LOGICAL_COORD_COMPONENTS].ud;
-   const unsigned alignment = inst->src[MEMORY_LOGICAL_ALIGNMENT].ud;
-   const unsigned components = inst->src[MEMORY_LOGICAL_COMPONENTS].ud;
-   const enum memory_flags flags =
-      (enum memory_flags) inst->src[MEMORY_LOGICAL_FLAGS].ud;
-   const bool block = flags & MEMORY_FLAG_TRANSPOSE;
-   const bool include_helpers = flags & MEMORY_FLAG_INCLUDE_HELPERS;
-   const bool volatile_access = flags & MEMORY_FLAG_VOLATILE_ACCESS;
-   const brw_reg data0 = inst->src[MEMORY_LOGICAL_DATA0];
-   const brw_reg data1 = inst->src[MEMORY_LOGICAL_DATA1];
-   const bool has_side_effects = inst->has_side_effects();
-   const bool has_dest = inst->dst.file != BAD_FILE && !inst->dst.is_null();
-   assert(inst->src[MEMORY_LOGICAL_ADDRESS_OFFSET].file == IMM &&
-          inst->src[MEMORY_LOGICAL_ADDRESS_OFFSET].d == 0);
+   brw_reg binding = mem->src[MEMORY_LOGICAL_BINDING];
+   const brw_reg addr = mem->src[MEMORY_LOGICAL_ADDRESS];
+   const brw_reg data0 = mem->src[MEMORY_LOGICAL_DATA0];
+   const brw_reg data1 = mem->src[MEMORY_LOGICAL_DATA1];
+
+   const enum lsc_opcode op = mem->lsc_op;
+   const enum memory_logical_mode mode = mem->mode;
+   enum lsc_addr_surface_type binding_type = mem->binding_type;
+   const unsigned coord_components = mem->coord_components;
+   const unsigned alignment = mem->alignment;
+   const unsigned components = mem->components;
+   const bool block = mem->flags & MEMORY_FLAG_TRANSPOSE;
+   const bool include_helpers = mem->flags & MEMORY_FLAG_INCLUDE_HELPERS;
+   const bool volatile_access = mem->flags & MEMORY_FLAG_VOLATILE_ACCESS;
+   const bool has_side_effects = mem->has_side_effects();
+   const bool has_dest = mem->dst.file != BAD_FILE && !mem->dst.is_null();
+   assert(mem->address_offset == 0);
 
    /* Don't predicate scratch writes on the sample mask.  Otherwise,
     * FS helper invocations would load undefined values from scratch memory.
@@ -1749,8 +1723,7 @@ lower_hdc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
     */
    bool allow_sample_mask = has_side_effects && mode != MEMORY_MODE_SCRATCH;
 
-   const enum lsc_data_size data_size =
-      (enum lsc_data_size) inst->src[MEMORY_LOGICAL_DATA_SIZE].ud;
+   const enum lsc_data_size data_size = mem->data_size;
 
    /* unpadded data size */
    const uint32_t data_bit_size =
@@ -1801,10 +1774,10 @@ lower_hdc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
     */
    if (bld.shader->stage == MESA_SHADER_FRAGMENT) {
       if (include_helpers)
-         emit_predicate_on_vector_mask(bld, inst);
+         emit_predicate_on_vector_mask(bld, mem);
       else if (allow_sample_mask &&
                (header.file == BAD_FILE || !surface_access))
-         brw_emit_predicate_on_sample_mask(bld, inst);
+         brw_emit_predicate_on_sample_mask(bld, mem);
    }
 
    brw_reg payload, payload2;
@@ -1870,12 +1843,12 @@ lower_hdc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
       sfid = BRW_SFID_HDC1;
 
       if (lsc_opcode_is_atomic(op)) {
-         desc = brw_dp_typed_atomic_desc(devinfo, inst->exec_size, inst->group,
+         desc = brw_dp_typed_atomic_desc(devinfo, mem->exec_size, mem->group,
                                          lsc_op_to_legacy_atomic(op),
                                          has_dest);
       } else {
-         desc = brw_dp_typed_surface_rw_desc(devinfo, inst->exec_size,
-                                             inst->group, components, !has_dest);
+         desc = brw_dp_typed_surface_rw_desc(devinfo, mem->exec_size,
+                                             mem->group, components, !has_dest);
       }
    } else if (mode == MEMORY_MODE_CONSTANT) {
       assert(block); /* non-block loads not yet handled */
@@ -1891,11 +1864,11 @@ lower_hdc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
       if (lsc_opcode_is_atomic(op)) {
          unsigned aop = lsc_op_to_legacy_atomic(op);
          if (lsc_opcode_is_atomic_float(op)) {
-            desc = brw_dp_a64_untyped_atomic_float_desc(devinfo, inst->exec_size,
+            desc = brw_dp_a64_untyped_atomic_float_desc(devinfo, mem->exec_size,
                                                         data_bit_size, aop,
                                                         has_dest);
          } else {
-            desc = brw_dp_a64_untyped_atomic_desc(devinfo, inst->exec_size,
+            desc = brw_dp_a64_untyped_atomic_desc(devinfo, mem->exec_size,
                                                   data_bit_size, aop,
                                                   has_dest);
          }
@@ -1903,10 +1876,10 @@ lower_hdc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
          desc = brw_dp_a64_oword_block_rw_desc(devinfo, oword_aligned,
                                                components, !has_dest);
       } else if (byte_scattered) {
-         desc = brw_dp_a64_byte_scattered_rw_desc(devinfo, inst->exec_size,
+         desc = brw_dp_a64_byte_scattered_rw_desc(devinfo, mem->exec_size,
                                                   data_bit_size, !has_dest);
       } else {
-         desc = brw_dp_a64_untyped_surface_rw_desc(devinfo, inst->exec_size,
+         desc = brw_dp_a64_untyped_surface_rw_desc(devinfo, mem->exec_size,
                                                    components, !has_dest);
       }
    } else {
@@ -1917,31 +1890,31 @@ lower_hdc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
       if (lsc_opcode_is_atomic(op)) {
          unsigned aop = lsc_op_to_legacy_atomic(op);
          if (lsc_opcode_is_atomic_float(op)) {
-            desc = brw_dp_untyped_atomic_float_desc(devinfo, inst->exec_size,
+            desc = brw_dp_untyped_atomic_float_desc(devinfo, mem->exec_size,
                                                     aop, has_dest);
          } else {
-            desc = brw_dp_untyped_atomic_desc(devinfo, inst->exec_size,
+            desc = brw_dp_untyped_atomic_desc(devinfo, mem->exec_size,
                                               aop, has_dest);
          }
       } else if (block) {
          desc = brw_dp_oword_block_rw_desc(devinfo, oword_aligned,
                                            components, !has_dest);
       } else if (byte_scattered) {
-         desc = brw_dp_byte_scattered_rw_desc(devinfo, inst->exec_size,
+         desc = brw_dp_byte_scattered_rw_desc(devinfo, mem->exec_size,
                                               data_bit_size, !has_dest);
       } else if (dword_scattered) {
-         desc = brw_dp_dword_scattered_rw_desc(devinfo, inst->exec_size,
+         desc = brw_dp_dword_scattered_rw_desc(devinfo, mem->exec_size,
                                                !has_dest);
       } else {
-         desc = brw_dp_untyped_surface_rw_desc(devinfo, inst->exec_size,
+         desc = brw_dp_untyped_surface_rw_desc(devinfo, mem->exec_size,
                                                components, !has_dest);
       }
    }
 
    assert(sfid);
 
-   brw_send_inst *send = brw_transform_inst_to_send(bld, inst);
-   inst = NULL;
+   brw_send_inst *send = brw_transform_inst_to_send(bld, mem);
+   mem = NULL;
 
    send->sfid = sfid;
    send->mlen = mlen;
@@ -2682,14 +2655,15 @@ brw_lower_logical_sends(brw_shader &s)
 
       case SHADER_OPCODE_MEMORY_LOAD_LOGICAL:
       case SHADER_OPCODE_MEMORY_STORE_LOGICAL:
-      case SHADER_OPCODE_MEMORY_ATOMIC_LOGICAL:
+      case SHADER_OPCODE_MEMORY_ATOMIC_LOGICAL: {
+         brw_mem_inst *mem = inst->as_mem();
          if (devinfo->ver >= 20 ||
-             (devinfo->has_lsc &&
-              inst->src[MEMORY_LOGICAL_MODE].ud != MEMORY_MODE_TYPED))
-            lower_lsc_memory_logical_send(ibld, inst);
+             (devinfo->has_lsc && mem->mode != MEMORY_MODE_TYPED))
+            lower_lsc_memory_logical_send(ibld, mem);
          else
-            lower_hdc_memory_logical_send(ibld, inst);
+            lower_hdc_memory_logical_send(ibld, mem);
          break;
+      }
 
       case FS_OPCODE_VARYING_PULL_CONSTANT_LOAD_LOGICAL:
          if (devinfo->has_lsc && !s.compiler->indirect_ubos_use_sampler)
