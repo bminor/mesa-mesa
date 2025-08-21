@@ -4,6 +4,7 @@
 use mesa_rust_gen::*;
 
 use std::{
+    borrow::Borrow,
     marker::PhantomData,
     mem,
     num::NonZeroU64,
@@ -17,6 +18,9 @@ use super::context::PipeContext;
 pub struct PipeResourceOwned {
     pipe: NonNull<pipe_resource>,
 }
+
+#[repr(transparent)]
+pub struct PipeResource(pipe_resource);
 
 const PIPE_RESOURCE_FLAG_RUSTICL_IS_USER: u32 = PIPE_RESOURCE_FLAG_FRONTEND_PRIV;
 
@@ -298,10 +302,49 @@ impl PipeResourceOwned {
     }
 }
 
+impl Borrow<PipeResource> for PipeResourceOwned {
+    fn borrow(&self) -> &PipeResource {
+        PipeResource::from_raw(self.as_ref())
+    }
+}
+
 impl Drop for PipeResourceOwned {
     fn drop(&mut self) {
         unsafe {
             pipe_resource_reference(&mut self.pipe.as_ptr(), ptr::null_mut());
+        }
+    }
+}
+
+impl PipeResource {
+    pub(super) fn slice_as_mut_ptr_slice(this: &mut [&PipeResource]) -> *mut *const pipe_resource {
+        // `PipeResource`` is transparent over `pipe_resource`. So we can simply cast a
+        // `*mut &PipeResource` into a `*mut *mut pipe_resource`.
+        this.as_mut_ptr().cast()
+    }
+
+    fn as_mut_ptr(&self) -> *mut pipe_resource {
+        (&self.0 as *const pipe_resource).cast_mut()
+    }
+
+    pub fn from_raw(res: &pipe_resource) -> &Self {
+        // SAFETY: `PipeResource` is transparent over `pipe_resource`, so we can simply transmute
+        //         a ref as we don't impose any further restrictions on the type.
+        unsafe { mem::transmute(res) }
+    }
+}
+
+impl ToOwned for PipeResource {
+    type Owned = PipeResourceOwned;
+
+    fn to_owned(&self) -> Self::Owned {
+        let mut res = ptr::null_mut();
+        // SAFETY: pipe_resource_reference will copy the ptr from src to dest, therefore ptr can't
+        //         be NULL.
+        unsafe { pipe_resource_reference(&mut res, self.as_mut_ptr()) };
+
+        PipeResourceOwned {
+            pipe: unsafe { NonNull::new_unchecked(res) },
         }
     }
 }
