@@ -20,6 +20,7 @@ KHR-GL46.shading_language_420pack.initializer_list_initializer_array_vector_list
 KHR-GL46.sparse_buffer_tests.BufferStorageTest
 KHR-GL46.sparse_texture_tests.SparseTextureCommitment_texture_2d_rg8
 
+dEQP-GLES2.functional.fragment_ops.random.79
 dEQP-GLES3.functional.default_vertex_attrib.mat3x2.vertex_attrib_4f
 dEQP-GLES3.functional.fbo.multiview.samples_1
 dEQP-GLES3.functional.fbo.multiview.samples_2
@@ -35,6 +36,7 @@ dEQP-GLES31.functional.tessellation.invariance.primitive_set.triangles_fractiona
 dEQP-GLES31.functional.tessellation.invariance.primitive_set.triangles_fractional_odd_spacing_ccw_point_mode
 dEQP-GLES31.functional.tessellation.invariance.primitive_set.triangles_fractional_odd_spacing_cw_point_mode
 
+spec@!opengl 1.0@gl-1.0-blend-func
 spec@!opengl 1.0@rasterpos
 spec@!opengl 1.1@depthstencil-default_fb-blit samples=4
 spec@!opengl 1.1@depthstencil-default_fb-blit samples=6
@@ -43,6 +45,8 @@ spec@!opengl 1.1@ppgtt_memory_alignment
 spec@arb_compute_shader@local-id-explosion
 spec@arb_depth_texture@fbo-depth-gl_depth_component16-blit
 spec@arb_fragment_shader_interlock@arb_fragment_shader_interlock-image-load-store
+spec@arb_point_parameters@arb_point_parameters-point-attenuation
+spec@arb_point_parameters@arb_point_parameters-point-attenuation@Aliased combinations
 spec@arb_sampler_objects@framebufferblit
 spec@arb_shader_atomic_counters@semantics
 spec@arb_shader_image_load_store@coherency
@@ -73,12 +77,14 @@ spec@arb_texture_multisample@arb_texture_multisample-dsa-texelfetch
 spec@arb_texture_multisample@arb_texture_multisample-dsa-texelfetch@Texture type: GL_RGB9_E5
 spec@arb_texture_rg@texture-rg
 spec@arb_timer_query@timestamp-get
+spec@ext_framebuffer_multisample@accuracy all_samples srgb depthstencil linear
 spec@ext_framebuffer_multisample@clip-and-scissor-blit 6 normal
 spec@ext_framebuffer_multisample@clip-and-scissor-blit 8 downsample
+spec@ext_framebuffer_object@getteximage-formats init-by-rendering
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_yuyv
+spec@ext_texture_array@fbo-depth-array stencil-layered-clear
 spec@ext_texture_shared_exponent@texwrap formats
 spec@ext_transform_feedback@discard-bitmap
+spec@glsl-1.30@execution@texelfetch@fs-texelfetch-sampler2darray-swizzle
 spec@glsl-1.50@execution@geometry@point-size-out
 spec@glsl-1.50@execution@redeclare-pervertex-out-subset-gs
-
-spec@ext_framebuffer_multisample@accuracy all_samples srgb depthstencil linear
