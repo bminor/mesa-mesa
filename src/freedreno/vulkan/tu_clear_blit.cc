@@ -2600,7 +2600,8 @@ tu_copy_image_to_buffer(struct tu_cmd_buffer *cmd,
 
    copy_compressed(src_image->vk.format, &offset, &extent, &dst_width, &dst_height);
 
-   uint32_t pitch = dst_width * util_format_get_blocksize(dst_format);
+   uint32_t block_size = util_format_get_blocksize(dst_format);
+   uint32_t pitch = dst_width * block_size;
    uint32_t layer_size = pitch * dst_height;
 
    handle_buffer_unaligned_store<CHIP>(cmd,
@@ -2620,11 +2621,32 @@ tu_copy_image_to_buffer(struct tu_cmd_buffer *cmd,
       uint64_t dst_va = vk_buffer_address(&dst_buffer->vk, info->bufferOffset) + layer_size * i;
       if ((dst_va & 63) || (pitch & 63)) {
          for (uint32_t y = 0; y < extent.height; y++) {
-            uint32_t x = (dst_va & 63) / util_format_get_blocksize(dst_format);
+            uint32_t x = (dst_va & 63) / block_size;
+            uint32_t excess_width = 0;
+            /* With VA aligning we can go over the maximum copy size
+             * and will have to do additional copy of the leftover.
+             */
+            if (x + extent.width > MAX_VIEWPORT_SIZE) {
+               excess_width = x + extent.width - MAX_VIEWPORT_SIZE;
+               assert(excess_width < 64 / block_size);
+            }
+            uint32_t clamped_width = extent.width - excess_width;
+
             ops->dst_buffer(cs, dst_format, dst_va & ~63, 0, src_format);
             ops->coords(cmd, cs, (VkOffset2D) {x}, (VkOffset2D) {offset.x, offset.y + y},
-                        (VkExtent2D) {extent.width, 1});
+                        (VkExtent2D) {clamped_width, 1});
             ops->run(cmd, cs);
+
+            if (excess_width) {
+               uint64_t dst_va_overflow = (dst_va + clamped_width * block_size);
+               assert((dst_va_overflow & 63) == 0);
+               ops->dst_buffer(cs, dst_format, dst_va_overflow, 0, src_format);
+               ops->coords(cmd, cs, (VkOffset2D) { 0 },
+                           (VkOffset2D) { offset.x + clamped_width, offset.y + y },
+                           (VkExtent2D) { excess_width, 1 });
+               ops->run(cmd, cs);
+            }
+
             dst_va += pitch;
          }
       } else {
