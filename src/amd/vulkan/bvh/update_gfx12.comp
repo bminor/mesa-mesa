@@ -157,6 +157,7 @@ main()
          if (!VK_BUILD_FLAG(RADV_BUILD_FLAG_UPDATE_IN_PLACE)) {
             DEREF(dst_node).primitive_base_id = src_node.primitive_base_id;
             DEREF(dst_node).internal_base_id = src_node.internal_base_id;
+            DEREF(dst_node).parent_id = src_node.parent_id;
          }
          DEREF(dst_node).origin = origin;
          DEREF(dst_node).child_count_exponents = extent_exponents.x | (extent_exponents.y << 8) |
