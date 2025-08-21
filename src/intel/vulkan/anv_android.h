@@ -54,7 +54,4 @@ unsigned anv_ahb_format_for_vk_format(VkFormat vk_format);
 VkResult anv_import_ahw_memory(VkDevice device_h,
                                struct anv_device_memory *mem);
 
-VkResult anv_create_ahw_memory(VkDevice device_h,
-                               struct anv_device_memory *mem,
-                               const VkMemoryDedicatedAllocateInfo *dedicated_info);
 #endif /* ANV_ANDROID_H */

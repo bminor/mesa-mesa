@@ -51,11 +51,3 @@ anv_import_ahw_memory(VkDevice device_h,
 {
    return VK_ERROR_EXTENSION_NOT_PRESENT;
 }
-
-VkResult
-anv_create_ahw_memory(VkDevice device_h,
-                      struct anv_device_memory *mem,
-                      const VkMemoryDedicatedAllocateInfo *dedicated_info)
-{
-   return VK_ERROR_EXTENSION_NOT_PRESENT;
-}
