@@ -223,10 +223,11 @@ tu_physical_device_get_format_properties(
 
       /* TODO: The blob also exposes these for R16G16_UINT/R16G16_SINT/
        * R32G32_SFLOAT/R32G32B32A32_SFLOAT, but we don't have any tests for those.
-       * R32_SFLOAT is also included here by the blob, but that requires
-       * implementing VK_EXT_shader_atomic_float.
+       * The WoA blob on X1 also supports VK_EXT_shader_image_atomic_int64 (for
+       * R64_UINT and R64_SINT).
        */
-      if (vk_format == VK_FORMAT_R32_UINT || vk_format == VK_FORMAT_R32_SINT) {
+      if (vk_format == VK_FORMAT_R32_UINT || vk_format == VK_FORMAT_R32_SINT ||
+          vk_format == VK_FORMAT_R32_SFLOAT) {
          optimal |= VK_FORMAT_FEATURE_2_STORAGE_IMAGE_ATOMIC_BIT;
          buffer |= VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_ATOMIC_BIT;
       }

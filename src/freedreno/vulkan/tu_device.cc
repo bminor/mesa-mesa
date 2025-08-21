@@ -320,6 +320,7 @@ get_device_extensions(const struct tu_physical_device *device,
       .EXT_sampler_filter_minmax = device->info->a6xx.has_sampler_minmax,
       .EXT_scalar_block_layout = true,
       .EXT_separate_stencil_usage = true,
+      .EXT_shader_atomic_float = true,
       .EXT_shader_demote_to_helper_invocation = true,
       .EXT_shader_module_identifier = true,
       .EXT_shader_replicated_composites = true,
@@ -738,6 +739,20 @@ tu_get_features(struct tu_physical_device *pdevice,
    features->robustBufferAccess2 = true;
    features->robustImageAccess2 = true;
    features->nullDescriptor = true;
+
+   /* VK_EXT_shader_atomic_float */
+   features->shaderBufferFloat32Atomics = true;
+   features->shaderBufferFloat32AtomicAdd = false;
+   features->shaderBufferFloat64Atomics = false;
+   features->shaderBufferFloat64AtomicAdd = false;
+   features->shaderSharedFloat32Atomics = true;
+   features->shaderSharedFloat32AtomicAdd = false;
+   features->shaderSharedFloat64Atomics = false;
+   features->shaderSharedFloat64AtomicAdd = false;
+   features->shaderImageFloat32Atomics = true;
+   features->shaderImageFloat32AtomicAdd = false;
+   features->sparseImageFloat32Atomics = false;
+   features->sparseImageFloat32AtomicAdd = false;
 
    /* VK_EXT_shader_module_identifier */
    features->shaderModuleIdentifier = true;
