@@ -37,6 +37,7 @@ pco_uscgen_programs = custom_target(
   input : pco_usclib_spv,
   output : ['pco_uscgen_programs.h', 'pco_uscgen_programs.c'],
   command : [prog_pco_clc, pco_usclib_spv, '@OUTPUT@', uscgen_devices],
+  env: ['PCO_DEBUG=no_pred_cf'],
 )
 
 idep_pco_uscgen_programs_h = declare_dependency(
