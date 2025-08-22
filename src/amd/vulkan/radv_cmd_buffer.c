@@ -378,6 +378,16 @@ radv_cmd_set_stencil_reference(struct radv_cmd_buffer *cmd_buffer, VkStencilFace
    state->dirty_dynamic |= RADV_DYNAMIC_STENCIL_REFERENCE;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_logic_op(struct radv_cmd_buffer *cmd_buffer, uint32_t logic_op)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.cb.logic_op = logic_op;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_LOGIC_OP;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -701,7 +711,12 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    RADV_CMP_COPY(vk.ds.stencil.back.op.depth_fail, RADV_DYNAMIC_STENCIL_OP);
    RADV_CMP_COPY(vk.ds.stencil.back.op.compare, RADV_DYNAMIC_STENCIL_OP);
 
-   RADV_CMP_COPY(vk.cb.logic_op, RADV_DYNAMIC_LOGIC_OP);
+   if (copy_mask & RADV_DYNAMIC_LOGIC_OP) {
+      if (dest->vk.cb.logic_op != src->vk.cb.logic_op) {
+         radv_cmd_set_logic_op(cmd_buffer, src->vk.cb.logic_op);
+      }
+   }
+
    RADV_CMP_COPY(color_write_enable, RADV_DYNAMIC_COLOR_WRITE_ENABLE);
    RADV_CMP_COPY(color_write_mask, RADV_DYNAMIC_COLOR_WRITE_MASK);
    RADV_CMP_COPY(vk.cb.logic_op_enable, RADV_DYNAMIC_LOGIC_OP_ENABLE);
@@ -8605,12 +8620,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetLogicOpEXT(VkCommandBuffer commandBuffer, VkLogicOp logicOp)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-   unsigned logic_op = radv_translate_blend_logic_op(logicOp);
-
-   state->dynamic.vk.cb.logic_op = logic_op;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_LOGIC_OP;
+   radv_cmd_set_logic_op(cmd_buffer, radv_translate_blend_logic_op(logicOp));
 }
 
 VKAPI_ATTR void VKAPI_CALL
