@@ -66,3 +66,7 @@ x11-dEQP-EGL.functional.sharing.gles2.multithread.simple.programs.link
 x11-dEQP-EGL.functional.sharing.gles2.multithread.simple.buffers.buffersubdata_render
 x11-dEQP-EGL.functional.sharing.gles2.multithread.simple_egl_server_sync.programs.link
 x11-dEQP-EGL.functional.sharing.gles2.multithread.simple.images.texture_source.copyteximage2d_render
+
+565-nozs-dEQP-GLES3.functional.fragment_ops.blend.fbo_srgb.rgb_func_alpha_func.src.dst_color_one_minus_dst_alpha
+multisample-dEQP-GLES3.functional.occlusion_query.conservative_scissor_stencil_clear
+multisample-dEQP-GLES3.functional.occlusion_query.scissor_depth_clear_stencil_clear
