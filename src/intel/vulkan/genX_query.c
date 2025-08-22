@@ -1628,50 +1628,62 @@ void genX(CmdWriteTimestamp2)(
 #define MI_PREDICATE_SRC1    0x2408
 #define MI_PREDICATE_RESULT  0x2418
 
-/**
- * Writes the results of a query to dst_addr is the value at poll_addr is equal
- * to the reference value.
- */
 static void
-gpu_write_query_result_cond(struct anv_cmd_buffer *cmd_buffer,
-                            struct mi_builder *b,
-                            struct anv_address poll_addr,
-                            struct anv_address dst_addr,
-                            uint64_t ref_value,
-                            VkQueryResultFlags flags,
-                            uint32_t value_index,
-                            struct mi_value query_result)
+gpu_write_query_on_predicate(struct anv_cmd_buffer *cmd_buffer,
+                             struct mi_builder *b,
+                             struct anv_address base_store_addr,
+                             uint32_t store_index,
+                             bool store_64bits,
+                             struct mi_value store_val,
+                             uint64_t predicate_value)
 {
-   mi_store(b, mi_reg64(MI_PREDICATE_SRC0), mi_mem64(poll_addr));
-   mi_store(b, mi_reg64(MI_PREDICATE_SRC1), mi_imm(ref_value));
+   mi_store(b, mi_reg64(MI_PREDICATE_SRC1), mi_imm(predicate_value));
    anv_batch_emit(&cmd_buffer->batch, GENX(MI_PREDICATE), mip) {
       mip.LoadOperation    = LOAD_LOAD;
-      mip.CombineOperation = COMBINE_SET;
-      mip.CompareOperation = COMPARE_SRCS_EQUAL;
+         mip.CombineOperation = COMBINE_SET;
+         mip.CompareOperation = COMPARE_SRCS_EQUAL;
    }
 
-   if (flags & VK_QUERY_RESULT_64_BIT) {
-      struct anv_address res_addr = anv_address_add(dst_addr, value_index * 8);
-      mi_store_if(b, mi_mem64(res_addr), query_result);
+   if (store_64bits) {
+      struct anv_address addr = anv_address_add(base_store_addr, store_index * 8);
+      mi_store_if(b, mi_mem64(addr), store_val);
    } else {
-      struct anv_address res_addr = anv_address_add(dst_addr, value_index * 4);
-      mi_store_if(b, mi_mem32(res_addr), query_result);
+      struct anv_address addr = anv_address_add(base_store_addr, store_index * 4);
+      mi_store_if(b, mi_mem32(addr), store_val);
    }
 }
 
 static void
-gpu_write_query_result(struct mi_builder *b,
+gpu_write_query_result(struct anv_cmd_buffer *cmd_buffer,
+                       struct mi_builder *b,
+                       struct anv_address poll_addr,
                        struct anv_address dst_addr,
                        VkQueryResultFlags flags,
                        uint32_t value_index,
                        struct mi_value query_result)
 {
-   if (flags & VK_QUERY_RESULT_64_BIT) {
-      struct anv_address res_addr = anv_address_add(dst_addr, value_index * 8);
-      mi_store(b, mi_mem64(res_addr), query_result);
+   /* Like in the case of vkGetQueryPoolResults, if the query is unavailable
+    * and the VK_QUERY_RESULT_PARTIAL_BIT flag is set, conservatively write 0
+    * as the query result. If the VK_QUERY_RESULT_PARTIAL_BIT isn't set, don't
+    * write any value.
+    */
+   if (flags & VK_QUERY_RESULT_PARTIAL_BIT) {
+      mi_store(b, mi_reg64(MI_PREDICATE_SRC0), mi_mem64(poll_addr));
+
+      gpu_write_query_on_predicate(cmd_buffer, b, dst_addr, value_index,
+                                   flags & VK_QUERY_RESULT_64_BIT,
+                                   query_result, 1);
+      gpu_write_query_on_predicate(cmd_buffer, b, dst_addr, value_index,
+                                   flags & VK_QUERY_RESULT_64_BIT,
+                                   mi_imm(0), 0);
    } else {
-      struct anv_address res_addr = anv_address_add(dst_addr, value_index * 4);
-      mi_store(b, mi_mem32(res_addr), query_result);
+      if (flags & VK_QUERY_RESULT_64_BIT) {
+         struct anv_address res_addr = anv_address_add(dst_addr, value_index * 8);
+         mi_store(b, mi_mem64(res_addr), query_result);
+      } else {
+         struct anv_address res_addr = anv_address_add(dst_addr, value_index * 4);
+         mi_store(b, mi_mem32(res_addr), query_result);
+      }
    }
 }
 
@@ -1756,18 +1768,8 @@ copy_query_results_with_cs(struct anv_cmd_buffer *cmd_buffer,
       case VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT:
 #endif
          result = compute_query_result(&b, anv_address_add(query_addr, 8));
-         /* Like in the case of vkGetQueryPoolResults, if the query is
-          * unavailable and the VK_QUERY_RESULT_PARTIAL_BIT flag is set,
-          * conservatively write 0 as the query result. If the
-          * VK_QUERY_RESULT_PARTIAL_BIT isn't set, don't write any value.
-          */
-         gpu_write_query_result_cond(cmd_buffer, &b, query_addr, dest_addr,
-                                     1 /* available */, flags, idx, result);
-         if (flags & VK_QUERY_RESULT_PARTIAL_BIT) {
-            gpu_write_query_result_cond(cmd_buffer, &b, query_addr, dest_addr,
-                                        0 /* unavailable */, flags, idx, mi_imm(0));
-         }
-         idx++;
+         gpu_write_query_result(cmd_buffer, &b, query_addr, dest_addr,
+                                flags, idx++, result);
          break;
 
       case VK_QUERY_TYPE_PIPELINE_STATISTICS: {
@@ -1776,7 +1778,8 @@ copy_query_results_with_cs(struct anv_cmd_buffer *cmd_buffer,
             UNUSED uint32_t stat = u_bit_scan(&statistics);
             result = compute_query_result(&b, anv_address_add(query_addr,
                                                               idx * 16 + 8));
-            gpu_write_query_result(&b, dest_addr, flags, idx++, result);
+            gpu_write_query_result(cmd_buffer, &b, query_addr, dest_addr,
+                                   flags, idx++, result);
          }
          assert(idx == util_bitcount(pool->vk.pipeline_statistics));
          break;
@@ -1784,14 +1787,17 @@ copy_query_results_with_cs(struct anv_cmd_buffer *cmd_buffer,
 
       case VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT:
          result = compute_query_result(&b, anv_address_add(query_addr, 8));
-         gpu_write_query_result(&b, dest_addr, flags, idx++, result);
+         gpu_write_query_result(cmd_buffer, &b, query_addr, dest_addr,
+                                flags, idx++, result);
          result = compute_query_result(&b, anv_address_add(query_addr, 24));
-         gpu_write_query_result(&b, dest_addr, flags, idx++, result);
+         gpu_write_query_result(cmd_buffer, &b, query_addr, dest_addr,
+                                flags, idx++, result);
          break;
 
       case VK_QUERY_TYPE_TIMESTAMP:
          result = mi_mem64(anv_address_add(query_addr, 8));
-         gpu_write_query_result(&b, dest_addr, flags, idx++, result);
+         gpu_write_query_result(cmd_buffer, &b, query_addr, dest_addr,
+                                flags, idx++, result);
          break;
 
 #if GFX_VERx10 >= 125
@@ -1799,12 +1805,14 @@ copy_query_results_with_cs(struct anv_cmd_buffer *cmd_buffer,
       case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR:
       case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR:
          result = mi_mem64(anv_address_add(query_addr, 8));
-         gpu_write_query_result(&b, dest_addr, flags, idx++, result);
+         gpu_write_query_result(cmd_buffer, &b, query_addr, dest_addr,
+                                flags, idx++, result);
          break;
 
       case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR:
          result = mi_mem64(anv_address_add(query_addr, 16));
-         gpu_write_query_result(&b, dest_addr, flags, idx++, result);
+         gpu_write_query_result(cmd_buffer, &b, query_addr, dest_addr,
+                                flags, idx++, result);
          break;
 #endif
 
@@ -1817,7 +1825,10 @@ copy_query_results_with_cs(struct anv_cmd_buffer *cmd_buffer,
       }
 
       if (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT) {
-         gpu_write_query_result(&b, dest_addr, flags, idx,
+         gpu_write_query_result(cmd_buffer, &b,
+                                ANV_NULL_ADDRESS, dest_addr,
+                                flags & ~VK_QUERY_RESULT_PARTIAL_BIT,
+                                idx,
                                 mi_mem64(query_addr));
       }
 
@@ -1936,23 +1947,17 @@ copy_query_results_with_shader(struct anv_cmd_buffer *cmd_buffer,
 
    uint32_t copy_flags =
       ((flags & VK_QUERY_RESULT_64_BIT) ? ANV_COPY_QUERY_FLAG_RESULT64 : 0) |
-      ((flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT) ? ANV_COPY_QUERY_FLAG_AVAILABLE : 0);
+      ((flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT) ? ANV_COPY_QUERY_FLAG_AVAILABLE : 0) |
+      ((flags & VK_QUERY_RESULT_PARTIAL_BIT) ? ANV_COPY_QUERY_FLAG_PARTIAL : 0);
 
    uint32_t num_items = 1;
    uint32_t data_offset = 8 /* behind availability */;
    switch (pool->vk.query_type) {
    case VK_QUERY_TYPE_OCCLUSION:
       copy_flags |= ANV_COPY_QUERY_FLAG_DELTA;
-      /* Occlusion and timestamps queries are the only ones where we would have partial data
-       * because they are capture with a PIPE_CONTROL post sync operation. The
-       * other ones are captured with MI_STORE_REGISTER_DATA so we're always
-       * available by the time we reach the copy command.
-       */
-      copy_flags |= (flags & VK_QUERY_RESULT_PARTIAL_BIT) ? ANV_COPY_QUERY_FLAG_PARTIAL : 0;
       break;
 
    case VK_QUERY_TYPE_TIMESTAMP:
-      copy_flags |= (flags & VK_QUERY_RESULT_PARTIAL_BIT) ? ANV_COPY_QUERY_FLAG_PARTIAL : 0;
       break;
 
    case VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT:
