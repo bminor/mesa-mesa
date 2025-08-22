@@ -2864,7 +2864,7 @@
         "description": "brw: fix INTEL_DEBUG=spill_fs",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a6b0783375fb1fdee705985928169d5d48d277b0",
         "notes": null
