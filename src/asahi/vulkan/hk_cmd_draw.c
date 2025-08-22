@@ -103,42 +103,6 @@ print_draw(struct agx_draw d, FILE *fp)
    fprintf(fp, "\n");
 }
 
-/* XXX: deduplicate */
-static inline enum mesa_prim
-vk_conv_topology(VkPrimitiveTopology topology)
-{
-   switch (topology) {
-   case VK_PRIMITIVE_TOPOLOGY_POINT_LIST:
-      return MESA_PRIM_POINTS;
-   case VK_PRIMITIVE_TOPOLOGY_LINE_LIST:
-      return MESA_PRIM_LINES;
-   case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP:
-      return MESA_PRIM_LINE_STRIP;
-   case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST:
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wswitch"
-   case VK_PRIMITIVE_TOPOLOGY_META_RECT_LIST_MESA:
-#pragma GCC diagnostic pop
-      return MESA_PRIM_TRIANGLES;
-   case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP:
-      return MESA_PRIM_TRIANGLE_STRIP;
-   case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN:
-      return MESA_PRIM_TRIANGLE_FAN;
-   case VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY:
-      return MESA_PRIM_LINES_ADJACENCY;
-   case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY:
-      return MESA_PRIM_LINE_STRIP_ADJACENCY;
-   case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY:
-      return MESA_PRIM_TRIANGLES_ADJACENCY;
-   case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY:
-      return MESA_PRIM_TRIANGLE_STRIP_ADJACENCY;
-   case VK_PRIMITIVE_TOPOLOGY_PATCH_LIST:
-      return MESA_PRIM_PATCHES;
-   default:
-      UNREACHABLE("invalid");
-   }
-}
-
 static bool
 hk_rast_discard(struct hk_cmd_buffer *cmd)
 {
@@ -1096,7 +1060,7 @@ hk_gs_in_prim(struct hk_cmd_buffer *cmd)
    if (tes != NULL)
       return gfx->tess.prim;
    else
-      return vk_conv_topology(dyn->ia.primitive_topology);
+      return vk_topology_to_mesa(dyn->ia.primitive_topology);
 }
 
 static enum mesa_prim
@@ -1435,7 +1399,7 @@ hk_draw_without_restart(struct hk_cmd_buffer *cmd, struct agx_draw draw,
    draw = hk_draw_as_indexed_indirect(cmd, draw);
 
    /* Next, we unroll the index buffer used by the indirect draw */
-   enum mesa_prim prim = vk_conv_topology(dyn->ia.primitive_topology);
+   enum mesa_prim prim = vk_topology_to_mesa(dyn->ia.primitive_topology);
 
    assert(draw_count == 1 && "TODO: multidraw");
 
@@ -2746,7 +2710,7 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
          .prolog.static_vi = !sw_vs->info.vs.use_prolog,
       };
 
-      enum mesa_prim prim = vk_conv_topology(dyn->ia.primitive_topology);
+      enum mesa_prim prim = vk_topology_to_mesa(dyn->ia.primitive_topology);
 
       if (mesa_prim_has_adjacency(prim)) {
          if (draw.restart) {
@@ -3499,7 +3463,7 @@ hk_ia_update(struct hk_cmd_buffer *cmd, struct agx_draw draw,
    }
 
    struct vk_dynamic_graphics_state *dyn = &cmd->vk.dynamic_graphics_state;
-   enum mesa_prim prim = vk_conv_topology(dyn->ia.primitive_topology);
+   enum mesa_prim prim = vk_topology_to_mesa(dyn->ia.primitive_topology);
 
    bool geom = cmd->state.gfx.shaders[MESA_SHADER_GEOMETRY];
    bool tess = cmd->state.gfx.shaders[MESA_SHADER_TESS_EVAL];
@@ -3578,8 +3542,8 @@ hk_draw(struct hk_cmd_buffer *cmd, uint16_t draw_id, struct agx_draw draw_)
       bool geom = cmd->state.gfx.shaders[MESA_SHADER_GEOMETRY];
       bool tess = cmd->state.gfx.shaders[MESA_SHADER_TESS_EVAL];
       bool needs_idx_robust = hk_needs_index_robustness(cmd, &draw);
-      bool adj =
-         mesa_prim_has_adjacency(vk_conv_topology(dyn->ia.primitive_topology));
+      bool adj = mesa_prim_has_adjacency(
+         vk_topology_to_mesa(dyn->ia.primitive_topology));
       adj &= !geom;
       needs_idx_robust &= !adj;
 
@@ -3615,7 +3579,7 @@ hk_draw(struct hk_cmd_buffer *cmd, uint16_t draw_id, struct agx_draw draw_)
 
       if (adj) {
          assert(!geom && "geometry shaders handle adj directly");
-         enum mesa_prim prim = vk_conv_topology(dyn->ia.primitive_topology);
+         enum mesa_prim prim = vk_topology_to_mesa(dyn->ia.primitive_topology);
 
          if (draw.restart) {
             draw = hk_draw_without_restart(cmd, draw, 1);
