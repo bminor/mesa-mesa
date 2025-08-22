@@ -4304,7 +4304,7 @@
         "description": "brw: remove uniform from opt_offsets",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e103afe7bec5eb509bf11ea62148a3db61a9eeaa",
         "notes": null

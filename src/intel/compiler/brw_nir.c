@@ -1948,7 +1948,6 @@ brw_vectorize_lower_mem_access(nir_shader *nir,
          .buffer_max        = UINT32_MAX,
          .shared_max        = UINT32_MAX,
          .shared_atomic_max = UINT32_MAX,
-         .uniform_max       = UINT32_MAX,
       };
       OPT(nir_opt_offsets, &offset_options);
 
