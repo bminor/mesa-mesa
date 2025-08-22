@@ -322,10 +322,14 @@ ac_nir_load_smem(nir_builder *b, unsigned num_components, nir_def *addr, nir_def
    /* Only 1 flag is allowed. */
    assert(!(access & ~ACCESS_CAN_SPECULATE));
    assert(align_mul >= 4 && util_is_power_of_two_nonzero(align_mul));
+   if (addr->bit_size == 32)
+      addr = nir_iadd_nuw(b, addr, offset);
+   else
+      addr = nir_iadd(b, addr, nir_u2u64(b, offset));
 
-   return nir_load_smem_amd(b, num_components, addr, offset,
+   return nir_build_load_global(b, num_components, 32, addr,
                             .align_mul = align_mul,
-                            .access = access | ACCESS_CAN_REORDER | ACCESS_NON_WRITEABLE);
+                            .access = access | ACCESS_CAN_REORDER | ACCESS_NON_WRITEABLE | ACCESS_SMEM_AMD);
 }
 
 unsigned
