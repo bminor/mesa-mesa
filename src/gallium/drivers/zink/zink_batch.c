@@ -600,6 +600,9 @@ post_submit(void *data, void *gdata, int thread_index)
    } else if (bs->ctx->batch_states_count > 5000) {
       /* throttle in case something crazy is happening */
       zink_screen_timeline_wait(screen, bs->fence.batch_id - 2500, OS_TIMEOUT_INFINITE);
+   } else if (screen->curr_batch - screen->last_finished > 5) {
+      /* try to avoid ooming by regularly checking for batch completion */
+      zink_screen_timeline_wait(screen, screen->last_finished + 1, 0);
    }
 }
 
