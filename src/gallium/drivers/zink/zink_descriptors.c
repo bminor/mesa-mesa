@@ -1489,29 +1489,31 @@ zink_context_invalidate_descriptor_state_compact(struct zink_context *ctx, mesa_
 void
 zink_batch_descriptor_deinit(struct zink_screen *screen, struct zink_batch_state *bs)
 {
-   for (unsigned i = 0; i < ZINK_DESCRIPTOR_BASE_TYPES; i++) {
-      for (unsigned j = 0; j < bs->dd.pools[i].capacity / sizeof(struct zink_descriptor_pool_multi *); j++) {
-         struct zink_descriptor_pool_multi **mppool = util_dynarray_element(&bs->dd.pools[i], struct zink_descriptor_pool_multi *, j);
-         if (mppool && *mppool)
-            multi_pool_destroy(screen, *mppool);
+   if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_LAZY) {
+      for (unsigned i = 0; i < ZINK_DESCRIPTOR_BASE_TYPES; i++) {
+         for (unsigned j = 0; j < bs->dd.pools[i].capacity / sizeof(struct zink_descriptor_pool_multi *); j++) {
+            struct zink_descriptor_pool_multi **mppool = util_dynarray_element(&bs->dd.pools[i], struct zink_descriptor_pool_multi *, j);
+            if (mppool && *mppool)
+               multi_pool_destroy(screen, *mppool);
+         }
+         util_dynarray_fini(&bs->dd.pools[i]);
       }
-      util_dynarray_fini(&bs->dd.pools[i]);
+      for (unsigned i = 0; i < 2; i++) {
+         if (bs->dd.push_pool[i].pool)
+            pool_destroy(screen, bs->dd.push_pool[i].pool);
+         deinit_multi_pool_overflow(screen, &bs->dd.push_pool[i]);
+      }
+   } else if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB) {
+      if (bs->dd.db_xfer)
+         zink_screen_buffer_unmap(&screen->base, bs->dd.db_xfer);
+      bs->dd.db_xfer = NULL;
+      if (bs->dd.db)
+         screen->base.resource_destroy(&screen->base, &bs->dd.db->base.b);
+      bs->dd.db = NULL;
+      bs->dd.db_bound = false;
+      bs->dd.db_offset = 0;
+      memset(bs->dd.cur_db_offset, 0, sizeof(bs->dd.cur_db_offset));
    }
-   for (unsigned i = 0; i < 2; i++) {
-      if (bs->dd.push_pool[i].pool)
-         pool_destroy(screen, bs->dd.push_pool[i].pool);
-      deinit_multi_pool_overflow(screen, &bs->dd.push_pool[i]);
-   }
-
-   if (bs->dd.db_xfer)
-      zink_screen_buffer_unmap(&screen->base, bs->dd.db_xfer);
-   bs->dd.db_xfer = NULL;
-   if (bs->dd.db)
-      screen->base.resource_destroy(&screen->base, &bs->dd.db->base.b);
-   bs->dd.db = NULL;
-   bs->dd.db_bound = false;
-   bs->dd.db_offset = 0;
-   memset(bs->dd.cur_db_offset, 0, sizeof(bs->dd.cur_db_offset));
 }
 
 /* ensure the idle/usable overflow set array always has as many members as possible by merging both arrays on batch state reset */
@@ -1581,17 +1583,17 @@ zink_batch_descriptor_reset(struct zink_screen *screen, struct zink_batch_state 
 bool
 zink_batch_descriptor_init(struct zink_screen *screen, struct zink_batch_state *bs)
 {
-   for (unsigned i = 0; i < ZINK_DESCRIPTOR_BASE_TYPES; i++)
-      util_dynarray_init(&bs->dd.pools[i], bs);
-   if (!screen->info.have_KHR_push_descriptor) {
-      for (unsigned i = 0; i < 2; i++) {
-         bs->dd.push_pool[i].pool = create_push_pool(screen, bs, i, false);
-         util_dynarray_init(&bs->dd.push_pool[i].overflowed_pools[0], bs);
-         util_dynarray_init(&bs->dd.push_pool[i].overflowed_pools[1], bs);
+   if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_LAZY) {
+      for (unsigned i = 0; i < ZINK_DESCRIPTOR_BASE_TYPES; i++)
+         util_dynarray_init(&bs->dd.pools[i], bs);
+      if (!screen->info.have_KHR_push_descriptor) {
+         for (unsigned i = 0; i < 2; i++) {
+            bs->dd.push_pool[i].pool = create_push_pool(screen, bs, i, false);
+            util_dynarray_init(&bs->dd.push_pool[i].overflowed_pools[0], bs);
+            util_dynarray_init(&bs->dd.push_pool[i].overflowed_pools[1], bs);
+         }
       }
-   }
-
-   if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB && !(bs->ctx->flags & ZINK_CONTEXT_COPY_ONLY)) {
+   } else if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB && !(bs->ctx->flags & ZINK_CONTEXT_COPY_ONLY)) {
       unsigned bind = ZINK_BIND_DESCRIPTOR;
       struct pipe_resource *pres = pipe_buffer_create(&screen->base, bind, 0, bs->ctx->dd.db.max_db_size * screen->base_descriptor_size);
       if (!pres)
