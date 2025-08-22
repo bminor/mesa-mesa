@@ -268,17 +268,17 @@ d3d12_surface_destroy(struct d3d12_surface *surface)
    mtx_unlock(&screen->descriptor_pool_mutex);
 
    pipe_resource_reference(&surface->base.texture, NULL);
-   pipe_resource_reference(&surface->rgba_texture, NULL);
    FREE(surface);
 }
 
 static void
-blit_surface(struct pipe_context *pctx, struct d3d12_surface *surface, bool pre)
+blit_logicop_surface(struct pipe_context *pctx, struct d3d12_surface *surface, bool pre)
 {
    struct pipe_blit_info info = {};
+   struct pipe_resource *logicop_surface = d3d12_resource_get_logicop_texture(d3d12_resource(surface->base.texture));
 
-   info.src.resource = pre ? surface->base.texture : surface->rgba_texture;
-   info.dst.resource = pre ? surface->rgba_texture : surface->base.texture;
+   info.src.resource = pre ? surface->base.texture : logicop_surface;
+   info.dst.resource = pre ? logicop_surface : surface->base.texture;
    info.src.format = pre ? surface->base.texture->format : PIPE_FORMAT_R8G8B8A8_UNORM;
    info.dst.format = pre ? PIPE_FORMAT_R8G8B8A8_UNORM : surface->base.texture->format;
    info.src.level = info.dst.level = 0;
@@ -306,33 +306,13 @@ d3d12_surface_update_pre_draw(struct pipe_context *pctx,
    if (dxgi_format == format)
       return D3D12_SURFACE_CONVERSION_NONE;
 
-   if (dxgi_format == DXGI_FORMAT_B8G8R8A8_UNORM ||
-       dxgi_format == DXGI_FORMAT_B8G8R8X8_UNORM)
-      mode = D3D12_SURFACE_CONVERSION_BGRA_UINT;
-   else
+   struct pipe_resource *logicop_resource = d3d12_resource_get_logicop_texture(res);
+   if (logicop_resource == surface->base.texture) {
       mode = D3D12_SURFACE_CONVERSION_RGBA_UINT;
-
-   if (mode == D3D12_SURFACE_CONVERSION_BGRA_UINT) {
-      if (!surface->rgba_texture) {
-         struct pipe_resource templ = {};
-         struct pipe_resource *src = surface->base.texture;
-
-         templ.format = PIPE_FORMAT_R8G8B8A8_UNORM;
-         templ.width0 = src->width0;
-         templ.height0 = src->height0;
-         templ.depth0 = src->depth0;
-         templ.array_size = src->array_size;
-         templ.nr_samples = src->nr_samples;
-         templ.nr_storage_samples = src->nr_storage_samples;
-         templ.usage = PIPE_USAGE_STAGING;
-         templ.bind = src->bind;
-         templ.target = src->target;
-
-         surface->rgba_texture = screen->base.resource_create(&screen->base, &templ);
-      }
-
-      blit_surface(pctx, surface, true);
-      res = d3d12_resource(surface->rgba_texture);
+   } else {
+      blit_logicop_surface(pctx, surface, true);
+      res = d3d12_resource(logicop_resource);
+      mode = D3D12_SURFACE_CONVERSION_BGRA_UINT;
    }
 
    if (!d3d12_descriptor_handle_is_allocated(&surface->uint_rtv_handle)) {
@@ -349,7 +329,7 @@ d3d12_surface_update_post_draw(struct pipe_context *pctx,
                                enum d3d12_surface_conversion_mode mode)
 {
    if (mode == D3D12_SURFACE_CONVERSION_BGRA_UINT)
-      blit_surface(pctx, surface, false);
+      blit_logicop_surface(pctx, surface, false);
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE

@@ -32,9 +32,8 @@ struct pipe_context;
 struct d3d12_surface {
    struct pipe_surface base;
    struct d3d12_screen *screen;
-   struct d3d12_descriptor_handle uint_rtv_handle;
-   struct pipe_resource *rgba_texture;
 
+   struct d3d12_descriptor_handle uint_rtv_handle;
    struct d3d12_descriptor_handle desc_handle;
 };
 

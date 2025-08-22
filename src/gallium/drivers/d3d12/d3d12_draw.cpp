@@ -1203,8 +1203,9 @@ d3d12_draw_vbo(struct pipe_context *pctx,
       if (!surf)
          continue;
 
-      struct pipe_resource *pres = conversion_modes[i] == D3D12_SURFACE_CONVERSION_BGRA_UINT ?
-                                      surf->rgba_texture : surf->base.texture;
+      struct pipe_resource *pres = surf->base.texture;
+      if (conversion_modes[i] == D3D12_SURFACE_CONVERSION_BGRA_UINT)
+         pres = d3d12_resource_get_logicop_texture(d3d12_resource(pres));
       transition_surface_subresources_state(ctx, &surf->base, pres,
          D3D12_RESOURCE_STATE_RENDER_TARGET);
    }

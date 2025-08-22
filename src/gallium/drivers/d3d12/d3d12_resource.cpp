@@ -93,6 +93,8 @@ d3d12_resource_destroy(struct pipe_screen *pscreen,
       util_range_destroy(&resource->valid_buffer_range);
    if (resource->bo)
       d3d12_bo_unreference(resource->bo);
+   if (resource->logicop_texture)
+      pipe_resource_reference(&resource->logicop_texture, NULL);
    FREE(resource);
 }
 
@@ -2028,4 +2030,43 @@ d3d12_context_resource_init(struct pipe_context *pctx)
    pctx->transfer_flush_region = u_default_transfer_flush_region;
    pctx->buffer_subdata = u_default_buffer_subdata;
    pctx->texture_subdata = u_default_texture_subdata;
+}
+
+static void
+d3d12_resource_init_logicop_texture(const void *data)
+{
+   struct d3d12_resource *res = (struct d3d12_resource *)data;
+   struct pipe_resource templ = {};
+   struct pipe_resource *src = &res->base.b;
+
+   templ.format = PIPE_FORMAT_R8G8B8A8_UNORM;
+   templ.width0 = src->width0;
+   templ.height0 = src->height0;
+   templ.depth0 = src->depth0;
+   templ.array_size = src->array_size;
+   templ.nr_samples = src->nr_samples;
+   templ.nr_storage_samples = src->nr_storage_samples;
+   templ.usage = PIPE_USAGE_STAGING;
+   templ.bind = src->bind;
+   templ.target = src->target;
+
+   res->logicop_texture = src->screen->resource_create(src->screen, &templ);
+}
+
+struct pipe_resource *
+d3d12_resource_get_logicop_texture(struct d3d12_resource *res)
+{
+   switch (res->dxgi_format) {
+   case DXGI_FORMAT_B8G8R8A8_TYPELESS:
+   case DXGI_FORMAT_B8G8R8A8_UNORM:
+   case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:
+   case DXGI_FORMAT_B8G8R8X8_UNORM:
+   case DXGI_FORMAT_B8G8R8X8_UNORM_SRGB:
+   case DXGI_FORMAT_B8G8R8X8_TYPELESS:
+      break;
+   default:
+      return &res->base.b;
+   }
+   util_call_once_data(&res->logicop_texture_init_flag, d3d12_resource_init_logicop_texture, res);
+   return res->logicop_texture;
 }
