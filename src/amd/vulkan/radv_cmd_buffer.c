@@ -475,6 +475,17 @@ radv_cmd_set_blend_constants(struct radv_cmd_buffer *cmd_buffer, const float ble
 }
 
 ALWAYS_INLINE static void
+radv_cmd_set_discard_rectangle(struct radv_cmd_buffer *cmd_buffer, uint32_t first, uint32_t count,
+                               const VkRect2D *discard_rectangles)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   typed_memcpy(&state->dynamic.vk.dr.rectangles[first], discard_rectangles, count);
+
+   state->dirty_dynamic |= RADV_DYNAMIC_DISCARD_RECTANGLE;
+}
+
+ALWAYS_INLINE static void
 radv_cmd_set_discard_rectangle_mode(struct radv_cmd_buffer *cmd_buffer,
                                     VkDiscardRectangleModeEXT discard_rectangle_mode)
 {
@@ -616,8 +627,7 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
 
    if (copy_mask & RADV_DYNAMIC_DISCARD_RECTANGLE) {
       if (memcmp(&dest->vk.dr.rectangles, &src->vk.dr.rectangles, src->vk.dr.rectangle_count * sizeof(VkRect2D))) {
-         typed_memcpy(dest->vk.dr.rectangles, src->vk.dr.rectangles, src->vk.dr.rectangle_count);
-         dest_mask |= RADV_DYNAMIC_DISCARD_RECTANGLE;
+         radv_cmd_set_discard_rectangle(cmd_buffer, 0, src->vk.dr.rectangle_count, src->vk.dr.rectangles);
       }
    }
 
@@ -8633,15 +8643,7 @@ radv_CmdSetDiscardRectangleEXT(VkCommandBuffer commandBuffer, uint32_t firstDisc
                                uint32_t discardRectangleCount, const VkRect2D *pDiscardRectangles)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-   ASSERTED const uint32_t total_count = firstDiscardRectangle + discardRectangleCount;
-
-   assert(firstDiscardRectangle < MAX_DISCARD_RECTANGLES);
-   assert(total_count >= 1 && total_count <= MAX_DISCARD_RECTANGLES);
-
-   typed_memcpy(&state->dynamic.vk.dr.rectangles[firstDiscardRectangle], pDiscardRectangles, discardRectangleCount);
-
-   state->dirty_dynamic |= RADV_DYNAMIC_DISCARD_RECTANGLE;
+   radv_cmd_set_discard_rectangle(cmd_buffer, firstDiscardRectangle, discardRectangleCount, pDiscardRectangles);
 }
 
 VKAPI_ATTR void VKAPI_CALL
