@@ -76,6 +76,16 @@ radv_cmd_set_line_width(struct radv_cmd_buffer *cmd_buffer, float line_width)
    state->dirty |= RADV_CMD_DIRTY_GUARDBAND;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_tessellation_domain_origin(struct radv_cmd_buffer *cmd_buffer, VkTessellationDomainOrigin domain_origin)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.ts.domain_origin = domain_origin;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_TESS_DOMAIN_ORIGIN;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -198,11 +208,16 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    RADV_CMP_COPY(vk.vp.depth_clamp_range.maxDepthClamp, RADV_DYNAMIC_DEPTH_CLAMP_RANGE);
 
    RADV_CMP_COPY(vk.ts.patch_control_points, RADV_DYNAMIC_PATCH_CONTROL_POINTS);
-   RADV_CMP_COPY(vk.ts.domain_origin, RADV_DYNAMIC_TESS_DOMAIN_ORIGIN);
 
    if (copy_mask & RADV_DYNAMIC_LINE_WIDTH) {
       if (dest->vk.rs.line.width != src->vk.rs.line.width) {
          radv_cmd_set_line_width(cmd_buffer, src->vk.rs.line.width);
+      }
+   }
+
+   if (copy_mask & RADV_DYNAMIC_TESS_DOMAIN_ORIGIN) {
+      if (dest->vk.ts.domain_origin != src->vk.ts.domain_origin) {
+         radv_cmd_set_tessellation_domain_origin(cmd_buffer, src->vk.ts.domain_origin);
       }
    }
 
@@ -8358,11 +8373,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetTessellationDomainOriginEXT(VkCommandBuffer commandBuffer, VkTessellationDomainOrigin domainOrigin)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   state->dynamic.vk.ts.domain_origin = domainOrigin;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_TESS_DOMAIN_ORIGIN;
+   radv_cmd_set_tessellation_domain_origin(cmd_buffer, domainOrigin);
 }
 
 VKAPI_ATTR void VKAPI_CALL
