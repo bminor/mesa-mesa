@@ -157,7 +157,8 @@ struct brw_inst : brw_exec_node {
     */
    bool uses_address_register_implicitly() const;
 
-   uint8_t sources; /**< Number of brw_reg sources. */
+   enum opcode opcode;
+   brw_inst_kind kind;
 
    /**
     * Execution size of the instruction.  This is used by the generator to
@@ -175,14 +176,12 @@ struct brw_inst : brw_exec_node {
     */
    uint8_t group;
 
-   uint16_t size_written; /**< Data written to the destination register in bytes. */
+   uint8_t sources; /**< Number of brw_reg sources. */
 
-   enum opcode opcode; /* BRW_OPCODE_* or FS_OPCODE_* */
-   enum brw_conditional_mod conditional_mod; /**< BRW_CONDITIONAL_* */
    enum brw_predicate predicate;
-   brw_inst_kind kind;
+   enum brw_conditional_mod conditional_mod; /**< BRW_CONDITIONAL_* */
 
-   tgl_swsb sched; /**< Scheduling info. */
+   uint16_t size_written; /**< Data written to the destination register in bytes. */
 
    union {
       struct {
@@ -219,6 +218,10 @@ struct brw_inst : brw_exec_node {
       uint16_t bits;
    };
 
+   tgl_swsb sched; /**< Scheduling info. */
+
+   bblock_t *block;
+
    brw_reg dst;
    brw_reg *src;
 
@@ -229,8 +232,6 @@ struct brw_inst : brw_exec_node {
    const char *annotation;
    /** @} */
 #endif
-
-   bblock_t *block;
 };
 
 struct brw_send_inst : brw_inst {

@@ -154,7 +154,7 @@ enum ENUM_PACKED brw_align1_3src_dst_horizontal_stride {
 #define BRW_WE_ALL		1
 /** @} */
 
-enum opcode {
+enum ENUM_PACKED opcode {
    /* These are the actual hardware instructions. */
    BRW_OPCODE_ILLEGAL,
    BRW_OPCODE_SYNC,
