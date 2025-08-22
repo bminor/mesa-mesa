@@ -376,9 +376,11 @@ load_sbt_entry(nir_builder *b, const struct rt_variables *vars, nir_def *idx, en
    nir_def *addr = nir_iadd(b, desc, nir_u2u64(b, nir_iadd_imm(b, nir_imul(b, idx, stride), offset)));
 
    if (offset == SBT_RECURSIVE_PTR) {
-      nir_store_var(b, vars->shader_addr, nir_build_load_global(b, 1, 64, addr), 1);
+      nir_store_var(b, vars->shader_addr,
+                    nir_build_load_global(b, 1, 64, addr, .access = ACCESS_CAN_REORDER | ACCESS_NON_WRITEABLE), 1);
    } else {
-      nir_store_var(b, vars->idx, nir_build_load_global(b, 1, 32, addr), 1);
+      nir_store_var(b, vars->idx,
+                    nir_build_load_global(b, 1, 32, addr, .access = ACCESS_CAN_REORDER | ACCESS_NON_WRITEABLE), 1);
    }
 
    nir_def *record_addr = nir_iadd_imm(b, addr, RADV_RT_HANDLE_SIZE - offset);
