@@ -545,6 +545,29 @@ radv_cmd_set_stencil_test_enable(struct radv_cmd_buffer *cmd_buffer, bool stenci
    state->dirty_dynamic |= RADV_DYNAMIC_STENCIL_TEST_ENABLE;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_stencil_op(struct radv_cmd_buffer *cmd_buffer, VkStencilFaceFlags face_mask, VkStencilOp fail_op,
+                        VkStencilOp pass_op, VkStencilOp depth_fail_op, VkCompareOp compare_op)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   if (face_mask & VK_STENCIL_FACE_FRONT_BIT) {
+      state->dynamic.vk.ds.stencil.front.op.fail = fail_op;
+      state->dynamic.vk.ds.stencil.front.op.pass = pass_op;
+      state->dynamic.vk.ds.stencil.front.op.depth_fail = depth_fail_op;
+      state->dynamic.vk.ds.stencil.front.op.compare = compare_op;
+   }
+
+   if (face_mask & VK_STENCIL_FACE_BACK_BIT) {
+      state->dynamic.vk.ds.stencil.back.op.fail = fail_op;
+      state->dynamic.vk.ds.stencil.back.op.pass = pass_op;
+      state->dynamic.vk.ds.stencil.back.op.depth_fail = depth_fail_op;
+      state->dynamic.vk.ds.stencil.back.op.compare = compare_op;
+   }
+
+   state->dirty_dynamic |= RADV_DYNAMIC_STENCIL_OP;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -646,14 +669,6 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       dest->vk.ial.depth_att = src->vk.ial.depth_att;
       dest->vk.ial.stencil_att = src->vk.ial.stencil_att;
       dest_mask |= RADV_DYNAMIC_INPUT_ATTACHMENT_MAP;
-   }
-
-#define RADV_CMP_COPY(field, flag)                                                                                     \
-   if (copy_mask & flag) {                                                                                             \
-      if (dest->field != src->field) {                                                                                 \
-         dest->field = src->field;                                                                                     \
-         dest_mask |= flag;                                                                                            \
-      }                                                                                                                \
    }
 
    if (copy_mask & RADV_DYNAMIC_PRIMITIVE_TOPOLOGY) {
@@ -886,14 +901,24 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }
    }
 
-   RADV_CMP_COPY(vk.ds.stencil.front.op.fail, RADV_DYNAMIC_STENCIL_OP);
-   RADV_CMP_COPY(vk.ds.stencil.front.op.pass, RADV_DYNAMIC_STENCIL_OP);
-   RADV_CMP_COPY(vk.ds.stencil.front.op.depth_fail, RADV_DYNAMIC_STENCIL_OP);
-   RADV_CMP_COPY(vk.ds.stencil.front.op.compare, RADV_DYNAMIC_STENCIL_OP);
-   RADV_CMP_COPY(vk.ds.stencil.back.op.fail, RADV_DYNAMIC_STENCIL_OP);
-   RADV_CMP_COPY(vk.ds.stencil.back.op.pass, RADV_DYNAMIC_STENCIL_OP);
-   RADV_CMP_COPY(vk.ds.stencil.back.op.depth_fail, RADV_DYNAMIC_STENCIL_OP);
-   RADV_CMP_COPY(vk.ds.stencil.back.op.compare, RADV_DYNAMIC_STENCIL_OP);
+   if (copy_mask & RADV_DYNAMIC_STENCIL_OP) {
+      if (dest->vk.ds.stencil.front.op.fail != src->vk.ds.stencil.front.op.fail ||
+          dest->vk.ds.stencil.front.op.pass != src->vk.ds.stencil.front.op.pass ||
+          dest->vk.ds.stencil.front.op.depth_fail != src->vk.ds.stencil.front.op.depth_fail ||
+          dest->vk.ds.stencil.front.op.compare != src->vk.ds.stencil.front.op.compare) {
+         radv_cmd_set_stencil_op(cmd_buffer, VK_STENCIL_FACE_FRONT_BIT, src->vk.ds.stencil.front.op.fail,
+                                 src->vk.ds.stencil.front.op.pass, src->vk.ds.stencil.front.op.depth_fail,
+                                 src->vk.ds.stencil.front.op.compare);
+      }
+      if (dest->vk.ds.stencil.back.op.fail != src->vk.ds.stencil.back.op.fail ||
+          dest->vk.ds.stencil.back.op.pass != src->vk.ds.stencil.back.op.pass ||
+          dest->vk.ds.stencil.back.op.depth_fail != src->vk.ds.stencil.back.op.depth_fail ||
+          dest->vk.ds.stencil.back.op.compare != src->vk.ds.stencil.back.op.compare) {
+         radv_cmd_set_stencil_op(cmd_buffer, VK_STENCIL_FACE_BACK_BIT, src->vk.ds.stencil.back.op.fail,
+                                 src->vk.ds.stencil.back.op.pass, src->vk.ds.stencil.back.op.depth_fail,
+                                 src->vk.ds.stencil.back.op.compare);
+      }
+   }
 
    if (copy_mask & RADV_DYNAMIC_LOGIC_OP) {
       if (dest->vk.cb.logic_op != src->vk.cb.logic_op) {
@@ -945,8 +970,6 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
          radv_cmd_set_attachment_feedback_loop_enable(cmd_buffer, src->feedback_loop_aspects);
       }
    }
-
-#undef RADV_CMP_COPY
 
    cmd_buffer->state.dirty_dynamic |= dest_mask;
 
@@ -8728,23 +8751,7 @@ radv_CmdSetStencilOp(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
                      VkStencilOp depthFailOp, VkCompareOp compareOp)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   if (faceMask & VK_STENCIL_FACE_FRONT_BIT) {
-      state->dynamic.vk.ds.stencil.front.op.fail = failOp;
-      state->dynamic.vk.ds.stencil.front.op.pass = passOp;
-      state->dynamic.vk.ds.stencil.front.op.depth_fail = depthFailOp;
-      state->dynamic.vk.ds.stencil.front.op.compare = compareOp;
-   }
-
-   if (faceMask & VK_STENCIL_FACE_BACK_BIT) {
-      state->dynamic.vk.ds.stencil.back.op.fail = failOp;
-      state->dynamic.vk.ds.stencil.back.op.pass = passOp;
-      state->dynamic.vk.ds.stencil.back.op.depth_fail = depthFailOp;
-      state->dynamic.vk.ds.stencil.back.op.compare = compareOp;
-   }
-
-   state->dirty_dynamic |= RADV_DYNAMIC_STENCIL_OP;
+   radv_cmd_set_stencil_op(cmd_buffer, faceMask, failOp, passOp, depthFailOp, compareOp);
 }
 
 VKAPI_ATTR void VKAPI_CALL
