@@ -1308,7 +1308,7 @@ radv_GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysicalDevice physicalDevice,
          p->componentMapping.b = VK_COMPONENT_SWIZZLE_IDENTITY;
          p->componentMapping.a = VK_COMPONENT_SWIZZLE_IDENTITY;
          p->imageCreateFlags = 0;
-         if (src_dst)
+         if (src_dst || qp_map)
             p->imageCreateFlags |= VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT;
          p->imageType = VK_IMAGE_TYPE_2D;
          p->imageTiling = tiling[i];
