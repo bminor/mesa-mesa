@@ -172,6 +172,16 @@ radv_cmd_set_cull_mode(struct radv_cmd_buffer *cmd_buffer, VkCullModeFlags cull_
    state->dirty_dynamic |= RADV_DYNAMIC_CULL_MODE;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_front_face(struct radv_cmd_buffer *cmd_buffer, VkFrontFace front_face)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.rs.front_face = front_face;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_FRONT_FACE;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -353,7 +363,12 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }
    }
 
-   RADV_CMP_COPY(vk.rs.front_face, RADV_DYNAMIC_FRONT_FACE);
+   if (copy_mask & RADV_DYNAMIC_FRONT_FACE) {
+      if (dest->vk.rs.front_face != src->vk.rs.front_face) {
+         radv_cmd_set_front_face(cmd_buffer, src->vk.rs.front_face);
+      }
+   }
+
    RADV_CMP_COPY(vk.rs.depth_bias.enable, RADV_DYNAMIC_DEPTH_BIAS_ENABLE);
    RADV_CMP_COPY(vk.rs.rasterizer_discard_enable, RADV_DYNAMIC_RASTERIZER_DISCARD_ENABLE);
    RADV_CMP_COPY(vk.rs.polygon_mode, RADV_DYNAMIC_POLYGON_MODE);
@@ -8151,11 +8166,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetFrontFace(VkCommandBuffer commandBuffer, VkFrontFace frontFace)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   state->dynamic.vk.rs.front_face = frontFace;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_FRONT_FACE;
+   radv_cmd_set_front_face(cmd_buffer, frontFace);
 }
 
 VKAPI_ATTR void VKAPI_CALL
