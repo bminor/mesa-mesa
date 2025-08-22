@@ -1160,7 +1160,7 @@ d3d12_draw_vbo(struct pipe_context *pctx,
       for (int i = 0; i < ctx->fb.nr_cbufs; ++i) {
          if (ctx->fb_cbufs[i]) {
             struct d3d12_surface *surface = ctx->fb_cbufs[i];
-            render_targets[i] = d3d12_surface_get_handle(surface, conversion_modes[i]);
+            render_targets[i] = d3d12_surface_get_handle(surface, conversion_modes[i], d3d12_rtv_format(ctx, i));
             d3d12_batch_reference_surface_texture(batch, surface);
          } else
             render_targets[i] = screen->null_rtv.cpu_handle;

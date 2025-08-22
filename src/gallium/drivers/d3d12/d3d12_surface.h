@@ -55,7 +55,8 @@ d3d12_surface_update_post_draw(struct pipe_context *pctx,
 
 D3D12_CPU_DESCRIPTOR_HANDLE
 d3d12_surface_get_handle(struct d3d12_surface *surface,
-                         enum d3d12_surface_conversion_mode mode);
+                         enum d3d12_surface_conversion_mode mode,
+                         DXGI_FORMAT format);
 
 struct d3d12_surface *
 d3d12_create_surface(struct d3d12_screen *screen,

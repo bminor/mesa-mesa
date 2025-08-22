@@ -298,7 +298,6 @@ d3d12_surface_update_pre_draw(struct pipe_context *pctx,
                               struct d3d12_surface *surface,
                               DXGI_FORMAT format)
 {
-   struct d3d12_screen *screen = d3d12_screen(pctx->screen);
    struct d3d12_resource *res = d3d12_resource(surface->base.texture);
    DXGI_FORMAT dxgi_format = d3d12_get_resource_rt_format(surface->base.format);
    enum d3d12_surface_conversion_mode mode;
@@ -315,11 +314,6 @@ d3d12_surface_update_pre_draw(struct pipe_context *pctx,
       mode = D3D12_SURFACE_CONVERSION_BGRA_UINT;
    }
 
-   if (!d3d12_descriptor_handle_is_allocated(&surface->uint_rtv_handle)) {
-      initialize_rtv(screen, res, &surface->base,
-                     &surface->uint_rtv_handle, format);
-   }
-
    return mode;
 }
 
@@ -334,9 +328,17 @@ d3d12_surface_update_post_draw(struct pipe_context *pctx,
 
 D3D12_CPU_DESCRIPTOR_HANDLE
 d3d12_surface_get_handle(struct d3d12_surface *surface,
-                         enum d3d12_surface_conversion_mode mode)
+                         enum d3d12_surface_conversion_mode mode,
+                         DXGI_FORMAT format)
 {
-   if (mode != D3D12_SURFACE_CONVERSION_NONE)
+   if (mode != D3D12_SURFACE_CONVERSION_NONE) {
+      struct d3d12_resource *base_res = d3d12_resource(surface->base.texture);
+      if (!d3d12_descriptor_handle_is_allocated(&surface->uint_rtv_handle)) {
+         initialize_rtv(surface->screen,
+                        d3d12_resource(d3d12_resource_get_logicop_texture(base_res)),
+                        &surface->base, &surface->uint_rtv_handle, format);
+      }
       return surface->uint_rtv_handle.cpu_handle;
+   }
    return surface->desc_handle.cpu_handle;
 }
