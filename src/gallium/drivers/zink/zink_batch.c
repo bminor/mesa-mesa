@@ -851,28 +851,6 @@ zink_end_batch(struct zink_context *ctx)
       tc_driver_internal_flush_notify(ctx->tc);
    struct zink_batch_state *bs;
 
-   /* oom flushing is triggered to handle stupid piglit tests like streaming-texture-leak */
-   if (ctx->oom_flush || ctx->batch_states_count > 25) {
-      assert(!ctx->batch_states_count || ctx->batch_states);
-      while (ctx->batch_states) {
-         bs = ctx->batch_states;
-         struct zink_fence *fence = &bs->fence;
-         /* once an incomplete state is reached, no more will be complete */
-         if (!zink_check_batch_completion(ctx, fence->batch_id))
-            break;
-
-         pop_batch_state(ctx);
-         zink_reset_batch_state(ctx, bs);
-         if (ctx->last_free_batch_state)
-            ctx->last_free_batch_state->next = bs;
-         else
-            ctx->free_batch_states = bs;
-         ctx->last_free_batch_state = bs;
-      }
-      if (ctx->batch_states_count > 50)
-         ctx->oom_flush = true;
-   }
-
    bs = ctx->bs;
    zink_batch_state_append(&ctx->batch_states, &ctx->last_batch_state, bs);
    ctx->batch_states_count++;
