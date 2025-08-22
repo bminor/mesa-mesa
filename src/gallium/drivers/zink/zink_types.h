@@ -1369,6 +1369,10 @@ struct zink_screen {
    struct zink_batch_state *last_free_batch_state; //for appending
    simple_mtx_t free_batch_states_lock;
 
+   struct zink_batch_state *active_batch_states; //active batch states
+   struct zink_batch_state *last_active_batch_state; //for appending
+   simple_mtx_t active_batch_states_lock;
+
    simple_mtx_t semaphores_lock;
    struct util_dynarray semaphores;
    struct util_dynarray fd_semaphores;
