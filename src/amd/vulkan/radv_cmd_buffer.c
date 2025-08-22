@@ -600,6 +600,16 @@ radv_cmd_set_scissor_with_count(struct radv_cmd_buffer *cmd_buffer, uint32_t sci
    state->dirty_dynamic |= RADV_DYNAMIC_SCISSOR_WITH_COUNT;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_scissor(struct radv_cmd_buffer *cmd_buffer, uint32_t first, uint32_t count, const VkRect2D *scissors)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   memcpy(state->dynamic.vk.vp.scissors + first, scissors, count * sizeof(*scissors));
+
+   state->dirty_dynamic |= RADV_DYNAMIC_SCISSOR;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -627,8 +637,7 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
 
    if (copy_mask & RADV_DYNAMIC_SCISSOR) {
       if (memcmp(&dest->vk.vp.scissors, &src->vk.vp.scissors, src->vk.vp.scissor_count * sizeof(VkRect2D))) {
-         typed_memcpy(dest->vk.vp.scissors, src->vk.vp.scissors, src->vk.vp.scissor_count);
-         dest_mask |= RADV_DYNAMIC_SCISSOR;
+         radv_cmd_set_scissor(cmd_buffer, 0, src->vk.vp.scissor_count, src->vk.vp.scissors);
       }
    }
 
@@ -8604,15 +8613,7 @@ radv_CmdSetScissor(VkCommandBuffer commandBuffer, uint32_t firstScissor, uint32_
                    const VkRect2D *pScissors)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-   ASSERTED const uint32_t total_count = firstScissor + scissorCount;
-
-   assert(firstScissor < MAX_SCISSORS);
-   assert(total_count >= 1 && total_count <= MAX_SCISSORS);
-
-   memcpy(state->dynamic.vk.vp.scissors + firstScissor, pScissors, scissorCount * sizeof(*pScissors));
-
-   state->dirty_dynamic |= RADV_DYNAMIC_SCISSOR;
+   radv_cmd_set_scissor(cmd_buffer, firstScissor, scissorCount, pScissors);
 }
 
 VKAPI_ATTR void VKAPI_CALL
