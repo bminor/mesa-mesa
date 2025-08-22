@@ -115,7 +115,7 @@ panvk_copy_image_to_from_memory(struct image_params img,
    unsigned layer_count =
       vk_image_subresource_layer_count(&img.img->vk, &img.subres);
 
-   void *img_base_ptr = img.ptr + plane->offset + slice_layout->offset_B;
+   void *img_base_ptr = img.ptr + plane->mem_offset + slice_layout->offset_B;
    for (unsigned layer = 0; layer < layer_count; layer++) {
       unsigned img_layer = layer + img.subres.baseArrayLayer;
       void *img_layer_ptr = img_base_ptr +
@@ -197,28 +197,82 @@ panvk_copy_memory_to_image(struct panvk_image *dst, void *dst_cpu,
       dst_params, src_params, region->imageExtent, flags, true);
 }
 
+static VkResult
+mmap_plane(struct panvk_image *img, uint8_t p, int prot,
+           void *plane_ptrs[static const PANVK_MAX_PLANES])
+{
+   assert(p < PANVK_MAX_PLANES);
+
+   if (plane_ptrs[p])
+      return VK_SUCCESS;
+
+   plane_ptrs[p] = pan_kmod_bo_mmap(img->planes[p].mem->bo, 0,
+                                    pan_kmod_bo_size(img->planes[p].mem->bo),
+                                    prot, MAP_SHARED, NULL);
+
+   if (plane_ptrs[p] == MAP_FAILED) {
+      plane_ptrs[p] = NULL;
+      return panvk_errorf(img->vk.base.device, VK_ERROR_MEMORY_MAP_FAILED,
+                          "Failed to CPU map image");
+   }
+
+   /* In case of a multi-planar and !disjoint image (or disjoint but with some
+    * planes pointing to the same memory object), we propagate the BO mapping to
+    * all relevant entries, so we don't have to mmap the same BO to different
+    * location if another plane is copied. */
+   for (uint8_t i = 0; i < PANVK_MAX_PLANES; i++) {
+      if (p != i && img->planes[p].mem == img->planes[i].mem)
+         plane_ptrs[i] = plane_ptrs[p];
+   }
+
+   return VK_SUCCESS;
+}
+
+static void
+munmap_planes(struct panvk_image *img,
+              void *plane_ptrs[static const PANVK_MAX_PLANES])
+{
+   for (uint8_t i = 0; i < PANVK_MAX_PLANES; i++) {
+      if (!plane_ptrs[i])
+         continue;
+
+      ASSERTED int ret =
+         os_munmap(plane_ptrs[i], pan_kmod_bo_size(img->planes[i].mem->bo));
+      assert(!ret);
+
+      /* Make sure we reset all mapping entries pointing to the same virtual
+       * address so we don't end up with double-munmap() cases. */
+      for (uint8_t j = i; j < PANVK_MAX_PLANES; j++) {
+         if (plane_ptrs[i] == plane_ptrs[j])
+            plane_ptrs[j] = NULL;
+      }
+
+      plane_ptrs[i] = NULL;
+   }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL
 panvk_CopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInfo *info)
 {
-   VK_FROM_HANDLE(panvk_device, dev, device);
    VK_FROM_HANDLE(panvk_image, dst, info->dstImage);
-
-   void *dst_cpu = pan_kmod_bo_mmap(
-      dst->mem->bo, 0, pan_kmod_bo_size(dst->mem->bo), PROT_WRITE, MAP_SHARED,
-      NULL);
-   if (dst_cpu == MAP_FAILED)
-      return panvk_errorf(dev, VK_ERROR_MEMORY_MAP_FAILED,
-                          "Failed to CPU map image");
+   void *dst_cpu[PANVK_MAX_PLANES] = {NULL};
+   VkResult result = VK_SUCCESS;
 
    for (unsigned i = 0; i < info->regionCount; i++) {
-      panvk_copy_memory_to_image(dst, dst_cpu, &info->pRegions[i],
+      uint8_t p = panvk_plane_index(
+         dst->vk.format, info->pRegions[i].imageSubresource.aspectMask);
+
+      result = mmap_plane(dst, p, PROT_WRITE, dst_cpu);
+      if (result != VK_SUCCESS)
+         goto out_unmap;
+
+      panvk_copy_memory_to_image(dst, dst_cpu[p], &info->pRegions[i],
                                  info->flags);
    }
 
-   ASSERTED int ret = os_munmap(dst_cpu, pan_kmod_bo_size(dst->mem->bo));
-   assert(!ret);
-
-   return VK_SUCCESS;
+out_unmap:
+   munmap_planes(dst, dst_cpu);
+   return result;
 }
 
 static void
@@ -244,25 +298,25 @@ panvk_copy_image_to_memory(struct panvk_image *src, void *src_cpu,
 VKAPI_ATTR VkResult VKAPI_CALL
 panvk_CopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInfo *info)
 {
-   VK_FROM_HANDLE(panvk_device, dev, device);
    VK_FROM_HANDLE(panvk_image, src, info->srcImage);
-
-   void *src_cpu = pan_kmod_bo_mmap(
-      src->mem->bo, 0, pan_kmod_bo_size(src->mem->bo), PROT_READ, MAP_SHARED,
-      NULL);
-   if (src_cpu == MAP_FAILED)
-      return panvk_errorf(dev, VK_ERROR_MEMORY_MAP_FAILED,
-                          "Failed to CPU map image");
+   void *src_cpu[PANVK_MAX_PLANES] = {NULL};
+   VkResult result = VK_SUCCESS;
 
    for (unsigned i = 0; i < info->regionCount; i++) {
-      panvk_copy_image_to_memory(src, src_cpu, &info->pRegions[i],
+      uint8_t p = panvk_plane_index(
+         src->vk.format, info->pRegions[i].imageSubresource.aspectMask);
+
+      result = mmap_plane(src, p, PROT_READ, src_cpu);
+      if (result != VK_SUCCESS)
+         goto out_unmap;
+
+      panvk_copy_image_to_memory(src, src_cpu[p], &info->pRegions[i],
                                  info->flags);
    }
 
-   ASSERTED int ret = os_munmap(src_cpu, pan_kmod_bo_size(src->mem->bo));
-   assert(!ret);
-
-   return VK_SUCCESS;
+out_unmap:
+   munmap_planes(src, src_cpu);
+   return result;
 }
 
 static void
@@ -337,9 +391,9 @@ panvk_copy_image_to_image(struct panvk_image *dst, void *dst_cpu,
    unsigned depth = sample_count > 1 ? sample_count : region->extent.depth;
 
    void *src_base_ptr =
-      src_cpu + src_plane->offset + src_slice_layout->offset_B;
+      src_cpu + src_plane->mem_offset + src_slice_layout->offset_B;
    void *dst_base_ptr =
-      dst_cpu + dst_plane->offset + dst_slice_layout->offset_B;
+      dst_cpu + dst_plane->mem_offset + dst_slice_layout->offset_B;
    for (unsigned layer = 0; layer < layer_count; layer++) {
       unsigned src_layer = layer + src_subres.baseArrayLayer;
       unsigned dst_layer = layer + dst_subres.baseArrayLayer;
@@ -421,37 +475,32 @@ panvk_CopyImageToImage(VkDevice device, const VkCopyImageToImageInfo *info)
 {
    VkResult result = VK_SUCCESS;
 
-   VK_FROM_HANDLE(panvk_device, dev, device);
    VK_FROM_HANDLE(panvk_image, dst, info->dstImage);
    VK_FROM_HANDLE(panvk_image, src, info->srcImage);
-
-   void *dst_cpu = pan_kmod_bo_mmap(
-      dst->mem->bo, 0, pan_kmod_bo_size(dst->mem->bo), PROT_WRITE, MAP_SHARED,
-      NULL);
-   if (dst_cpu == MAP_FAILED)
-      return panvk_errorf(dev, VK_ERROR_MEMORY_MAP_FAILED,
-                          "Failed to CPU map image");
-
-   void *src_cpu = pan_kmod_bo_mmap(
-      src->mem->bo, 0, pan_kmod_bo_size(src->mem->bo), PROT_READ, MAP_SHARED,
-      NULL);
-   if (src_cpu == MAP_FAILED) {
-      result = panvk_errorf(dev, VK_ERROR_MEMORY_MAP_FAILED,
-                            "Failed to CPU map image");
-      goto unmap_dst;
-   }
+   void *src_cpu[PANVK_MAX_PLANES] = {NULL};
+   void *dst_cpu[PANVK_MAX_PLANES] = {NULL};
 
    for (unsigned i = 0; i < info->regionCount; i++) {
-      panvk_copy_image_to_image(dst, dst_cpu, src, src_cpu, &info->pRegions[i],
-                                info->flags);
+      uint8_t src_p = panvk_plane_index(
+         src->vk.format, info->pRegions[i].srcSubresource.aspectMask);
+      uint8_t dst_p = panvk_plane_index(
+         dst->vk.format, info->pRegions[i].dstSubresource.aspectMask);
+
+      result = mmap_plane(dst, dst_p, PROT_WRITE, dst_cpu);
+      if (result != VK_SUCCESS)
+         goto out_unmap;
+
+      result = mmap_plane(src, src_p, PROT_READ, src_cpu);
+      if (result != VK_SUCCESS)
+         goto out_unmap;
+
+      panvk_copy_image_to_image(dst, dst_cpu[dst_p], src, src_cpu[src_p],
+                                &info->pRegions[i], info->flags);
    }
 
-   ASSERTED int ret = os_munmap(src_cpu, pan_kmod_bo_size(src->mem->bo));
-   assert(!ret);
-unmap_dst:
-   ret = os_munmap(dst_cpu, pan_kmod_bo_size(dst->mem->bo));
-   assert(!ret);
-
+out_unmap:
+   munmap_planes(src, src_cpu);
+   munmap_planes(dst, dst_cpu);
    return result;
 }
 

@@ -22,14 +22,14 @@ struct panvk_image_plane {
    struct pan_image image;
    struct pan_image_plane plane;
 
-   /* Plane offset inside the image BO */
-   uint64_t offset;
+   struct panvk_device_memory *mem;
+
+   /* Plane offset inside the memory object. */
+   uint64_t mem_offset;
 };
 
 struct panvk_image {
    struct vk_image vk;
-
-   struct panvk_device_memory *mem;
 
    uint8_t plane_count;
    struct panvk_image_plane planes[PANVK_MAX_PLANES];
