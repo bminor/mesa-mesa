@@ -475,7 +475,9 @@ get_batch_state(struct zink_context *ctx)
    if (!bs)
       bs = find_completed_batch_state(ctx);
 
-   if (!bs) {
+   if (bs) {
+      bs->next = NULL;
+   } else {
       if (!ctx->bs) {
          /* this is batch init, so create a few more states for later use */
          for (int i = 0; i < 3; i++) {
