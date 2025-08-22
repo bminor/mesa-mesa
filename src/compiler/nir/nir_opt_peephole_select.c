@@ -130,17 +130,23 @@ block_check_for_allowed_instrs(nir_block *block, unsigned *count,
 
          case nir_intrinsic_load_ubo:
          case nir_intrinsic_load_ubo_vec4:
+         case nir_intrinsic_load_ssbo:
+         case nir_intrinsic_load_interpolated_input:
+         case nir_intrinsic_load_per_vertex_input:
+         case nir_intrinsic_load_input_vertex:
             if (!options->indirect_load_ok && !nir_src_is_const(intrin->src[1]))
                return false;
-            if (!(nir_intrinsic_access(intrin) & ACCESS_CAN_SPECULATE))
+            if (!nir_instr_can_speculate(&intrin->instr))
                return false;
             break;
 
          case nir_intrinsic_load_global_constant:
          case nir_intrinsic_load_constant_agx:
+         case nir_intrinsic_load_input:
+         case nir_intrinsic_load_constant:
             if (!options->indirect_load_ok && !nir_src_is_const(intrin->src[0]))
                return false;
-            if (!(nir_intrinsic_access(intrin) & ACCESS_CAN_SPECULATE))
+            if (!nir_instr_can_speculate(&intrin->instr))
                return false;
             break;
 
