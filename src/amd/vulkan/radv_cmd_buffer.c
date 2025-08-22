@@ -515,6 +515,16 @@ radv_cmd_set_depth_write_enable(struct radv_cmd_buffer *cmd_buffer, bool depth_w
    state->dirty_dynamic |= RADV_DYNAMIC_DEPTH_WRITE_ENABLE;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_depth_compare_op(struct radv_cmd_buffer *cmd_buffer, VkCompareOp depth_compare_op)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.ds.depth.compare_op = depth_compare_op;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_DEPTH_COMPARE_OP;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -838,7 +848,12 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }
    }
 
-   RADV_CMP_COPY(vk.ds.depth.compare_op, RADV_DYNAMIC_DEPTH_COMPARE_OP);
+   if (copy_mask & RADV_DYNAMIC_DEPTH_COMPARE_OP) {
+      if (dest->vk.ds.depth.compare_op != src->vk.ds.depth.compare_op) {
+         radv_cmd_set_depth_compare_op(cmd_buffer, src->vk.ds.depth.compare_op);
+      }
+   }
+
    RADV_CMP_COPY(vk.ds.depth.bounds_test.enable, RADV_DYNAMIC_DEPTH_BOUNDS_TEST_ENABLE);
    RADV_CMP_COPY(vk.ds.stencil.test_enable, RADV_DYNAMIC_STENCIL_TEST_ENABLE);
    RADV_CMP_COPY(vk.ds.stencil.front.op.fail, RADV_DYNAMIC_STENCIL_OP);
@@ -8661,11 +8676,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   state->dynamic.vk.ds.depth.compare_op = depthCompareOp;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_DEPTH_COMPARE_OP;
+   radv_cmd_set_depth_compare_op(cmd_buffer, depthCompareOp);
 }
 
 VKAPI_ATTR void VKAPI_CALL
