@@ -711,6 +711,60 @@ nvk_linear_render_copy(struct nvk_cmd_buffer *cmd,
    nouveau_copy_rect(cmd, &copy);
 }
 
+static void
+nvk_remap_copy_aspect(struct nouveau_copy *copy,
+                      enum pipe_format p_format,
+                      const VkImageAspectFlagBits aspects)
+{
+   switch (p_format) {
+   case PIPE_FORMAT_Z24_UNORM_S8_UINT:
+      if (aspects == VK_IMAGE_ASPECT_DEPTH_BIT) {
+         copy->remap.comp_size = 1;
+         copy->remap.dst[0] = NV90B5_SET_REMAP_COMPONENTS_DST_X_SRC_X;
+         copy->remap.dst[1] = NV90B5_SET_REMAP_COMPONENTS_DST_Y_SRC_Y;
+         copy->remap.dst[2] = NV90B5_SET_REMAP_COMPONENTS_DST_Z_SRC_Z;
+         copy->remap.dst[3] = NV90B5_SET_REMAP_COMPONENTS_DST_W_NO_WRITE;
+      } else if (aspects == VK_IMAGE_ASPECT_STENCIL_BIT) {
+         copy->remap.comp_size = 1;
+         copy->remap.dst[0] = NV90B5_SET_REMAP_COMPONENTS_DST_X_NO_WRITE;
+         copy->remap.dst[1] = NV90B5_SET_REMAP_COMPONENTS_DST_Y_NO_WRITE;
+         copy->remap.dst[2] = NV90B5_SET_REMAP_COMPONENTS_DST_Z_NO_WRITE;
+         copy->remap.dst[3] = NV90B5_SET_REMAP_COMPONENTS_DST_W_SRC_W;
+      } else {
+         /* If we're copying both, there's nothing special to do */
+         assert(aspects == (VK_IMAGE_ASPECT_DEPTH_BIT |
+                            VK_IMAGE_ASPECT_STENCIL_BIT));
+      }
+      break;
+   case PIPE_FORMAT_Z32_FLOAT_S8X24_UINT:
+      if (aspects == VK_IMAGE_ASPECT_DEPTH_BIT) {
+         copy->remap.comp_size = 4;
+         copy->remap.dst[0] = NV90B5_SET_REMAP_COMPONENTS_DST_X_SRC_X;
+         copy->remap.dst[1] = NV90B5_SET_REMAP_COMPONENTS_DST_Y_NO_WRITE;
+         copy->remap.dst[2] = NV90B5_SET_REMAP_COMPONENTS_DST_Z_NO_WRITE;
+         copy->remap.dst[3] = NV90B5_SET_REMAP_COMPONENTS_DST_W_NO_WRITE;
+      } else if (aspects == VK_IMAGE_ASPECT_STENCIL_BIT) {
+         copy->remap.comp_size = 4;
+         copy->remap.dst[0] = NV90B5_SET_REMAP_COMPONENTS_DST_X_NO_WRITE;
+         copy->remap.dst[1] = NV90B5_SET_REMAP_COMPONENTS_DST_Y_SRC_Y;
+         copy->remap.dst[2] = NV90B5_SET_REMAP_COMPONENTS_DST_Z_NO_WRITE;
+         copy->remap.dst[3] = NV90B5_SET_REMAP_COMPONENTS_DST_W_NO_WRITE;
+      } else {
+         /* If we're copying both, there's nothing special to do */
+         assert(aspects == (VK_IMAGE_ASPECT_DEPTH_BIT |
+                            VK_IMAGE_ASPECT_STENCIL_BIT));
+      }
+      break;
+   case PIPE_FORMAT_Z16_UNORM_S8_UINT:
+   case PIPE_FORMAT_S8_UINT_Z24_UNORM:
+      UNREACHABLE("Unsupported packed depth/stencil format");
+      break;
+   default:
+      copy->remap = nouveau_copy_remap_format(p_format);
+      break;
+   }
+}
+
 VKAPI_ATTR void VKAPI_CALL
 nvk_CmdCopyImage2(VkCommandBuffer commandBuffer,
                   const VkCopyImageInfo2 *pCopyImageInfo)
@@ -790,53 +844,7 @@ nvk_CmdCopyImage2(VkCommandBuffer commandBuffer,
                                                src_sample_layout),
          };
 
-         switch (src_format.p_format) {
-         case PIPE_FORMAT_Z24_UNORM_S8_UINT:
-            if (src_aspects == VK_IMAGE_ASPECT_DEPTH_BIT) {
-               copy.remap.comp_size = 1;
-               copy.remap.dst[0] = NV90B5_SET_REMAP_COMPONENTS_DST_X_SRC_X;
-               copy.remap.dst[1] = NV90B5_SET_REMAP_COMPONENTS_DST_Y_SRC_Y;
-               copy.remap.dst[2] = NV90B5_SET_REMAP_COMPONENTS_DST_Z_SRC_Z;
-               copy.remap.dst[3] = NV90B5_SET_REMAP_COMPONENTS_DST_W_NO_WRITE;
-            } else if (src_aspects == VK_IMAGE_ASPECT_STENCIL_BIT) {
-               copy.remap.comp_size = 1;
-               copy.remap.dst[0] = NV90B5_SET_REMAP_COMPONENTS_DST_X_NO_WRITE;
-               copy.remap.dst[1] = NV90B5_SET_REMAP_COMPONENTS_DST_Y_NO_WRITE;
-               copy.remap.dst[2] = NV90B5_SET_REMAP_COMPONENTS_DST_Z_NO_WRITE;
-               copy.remap.dst[3] = NV90B5_SET_REMAP_COMPONENTS_DST_W_SRC_W;
-            } else {
-               /* If we're copying both, there's nothing special to do */
-               assert(src_aspects == (VK_IMAGE_ASPECT_DEPTH_BIT |
-                                      VK_IMAGE_ASPECT_STENCIL_BIT));
-            }
-            break;
-         case PIPE_FORMAT_Z32_FLOAT_S8X24_UINT:
-            if (src_aspects == VK_IMAGE_ASPECT_DEPTH_BIT) {
-               copy.remap.comp_size = 4;
-               copy.remap.dst[0] = NV90B5_SET_REMAP_COMPONENTS_DST_X_SRC_X;
-               copy.remap.dst[1] = NV90B5_SET_REMAP_COMPONENTS_DST_Y_NO_WRITE;
-               copy.remap.dst[2] = NV90B5_SET_REMAP_COMPONENTS_DST_Z_NO_WRITE;
-               copy.remap.dst[3] = NV90B5_SET_REMAP_COMPONENTS_DST_W_NO_WRITE;
-            } else if (src_aspects == VK_IMAGE_ASPECT_STENCIL_BIT) {
-               copy.remap.comp_size = 4;
-               copy.remap.dst[0] = NV90B5_SET_REMAP_COMPONENTS_DST_X_NO_WRITE;
-               copy.remap.dst[1] = NV90B5_SET_REMAP_COMPONENTS_DST_Y_SRC_Y;
-               copy.remap.dst[2] = NV90B5_SET_REMAP_COMPONENTS_DST_Z_NO_WRITE;
-               copy.remap.dst[3] = NV90B5_SET_REMAP_COMPONENTS_DST_W_NO_WRITE;
-            } else {
-               /* If we're copying both, there's nothing special to do */
-               assert(src_aspects == (VK_IMAGE_ASPECT_DEPTH_BIT |
-                                      VK_IMAGE_ASPECT_STENCIL_BIT));
-            }
-            break;
-         case PIPE_FORMAT_Z16_UNORM_S8_UINT:
-         case PIPE_FORMAT_S8_UINT_Z24_UNORM:
-            UNREACHABLE("Unsupported packed depth/stencil format");
-            break;
-         default:
-            copy.remap = nouveau_copy_remap_format(src_format.p_format);
-            break;
-         }
+         nvk_remap_copy_aspect(&copy, src_format.p_format, src_aspects);
 
          nouveau_copy_rect(cmd, &copy);
       }
