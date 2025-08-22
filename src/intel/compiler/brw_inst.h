@@ -164,7 +164,7 @@ public:
    uint32_t ex_desc; /**< SEND[S] extended message descriptor immediate */
 
    uint32_t offset; /**< spill/unspill offset or texture offset bitfield */
-   unsigned size_written; /**< Data written to the destination register in bytes. */
+   uint16_t size_written; /**< Data written to the destination register in bytes. */
 
    enum opcode opcode; /* BRW_OPCODE_* or FS_OPCODE_* */
    enum brw_conditional_mod conditional_mod; /**< BRW_CONDITIONAL_* */
