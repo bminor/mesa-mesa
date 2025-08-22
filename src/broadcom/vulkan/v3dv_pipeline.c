@@ -1035,26 +1035,10 @@ pipeline_populate_v3d_key(struct v3d_key *key,
       p_stage->robustness.images == robust_image_enabled;
 }
 
-/* FIXME: anv maps to hw primitive type. Perhaps eventually we would do the
- * same. For not using prim_mode that is the one already used on v3d
- */
-static const enum mesa_prim vk_to_mesa_prim[] = {
-   [VK_PRIMITIVE_TOPOLOGY_POINT_LIST] = MESA_PRIM_POINTS,
-   [VK_PRIMITIVE_TOPOLOGY_LINE_LIST] = MESA_PRIM_LINES,
-   [VK_PRIMITIVE_TOPOLOGY_LINE_STRIP] = MESA_PRIM_LINE_STRIP,
-   [VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST] = MESA_PRIM_TRIANGLES,
-   [VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP] = MESA_PRIM_TRIANGLE_STRIP,
-   [VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN] = MESA_PRIM_TRIANGLE_FAN,
-   [VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY] = MESA_PRIM_LINES_ADJACENCY,
-   [VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY] = MESA_PRIM_LINE_STRIP_ADJACENCY,
-   [VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY] = MESA_PRIM_TRIANGLES_ADJACENCY,
-   [VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY] = MESA_PRIM_TRIANGLE_STRIP_ADJACENCY,
-};
-
 uint32_t
 v3dv_pipeline_primitive(VkPrimitiveTopology vk_prim)
 {
-   return v3d_hw_prim_type(vk_to_mesa_prim[vk_prim]);
+   return v3d_hw_prim_type(vk_topology_to_mesa(vk_prim));
 }
 
 static const enum pipe_logicop vk_to_pipe_logicop[] = {
@@ -1205,7 +1189,7 @@ pipeline_populate_v3d_fs_key(struct v3d_fs_key *key,
 
    const VkPipelineInputAssemblyStateCreateInfo *ia_info =
       pCreateInfo->pInputAssemblyState;
-   uint8_t topology = vk_to_mesa_prim[ia_info->topology];
+   uint8_t topology = vk_topology_to_mesa(ia_info->topology);
 
    key->is_points = (topology == MESA_PRIM_POINTS);
    key->is_lines = (topology >= MESA_PRIM_LINES &&
@@ -2006,7 +1990,7 @@ pipeline_populate_graphics_key(struct v3dv_pipeline *pipeline,
 
    const VkPipelineInputAssemblyStateCreateInfo *ia_info =
       pCreateInfo->pInputAssemblyState;
-   key->topology = vk_to_mesa_prim[ia_info->topology];
+   key->topology = vk_topology_to_mesa(ia_info->topology);
 
    const VkPipelineColorBlendStateCreateInfo *cb_info =
       pipeline->rasterization_enabled ? pCreateInfo->pColorBlendState : NULL;
@@ -2944,7 +2928,7 @@ pipeline_init(struct v3dv_pipeline *pipeline,
 
    const VkPipelineInputAssemblyStateCreateInfo *ia_info =
       pCreateInfo->pInputAssemblyState;
-   pipeline->topology = vk_to_mesa_prim[ia_info->topology];
+   pipeline->topology = vk_topology_to_mesa(ia_info->topology);
 
    struct vk_graphics_pipeline_all_state all;
    struct vk_graphics_pipeline_state pipeline_state = { };
