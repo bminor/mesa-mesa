@@ -96,6 +96,20 @@ radv_cmd_set_patch_control_points(struct radv_cmd_buffer *cmd_buffer, uint32_t p
    state->dirty_dynamic |= RADV_DYNAMIC_PATCH_CONTROL_POINTS;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_depth_clamp_range(struct radv_cmd_buffer *cmd_buffer, VkDepthClampModeEXT depth_clamp_mode,
+                               const VkDepthClampRangeEXT *depth_clamp_range)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.vp.depth_clamp_mode = depth_clamp_mode;
+   if (depth_clamp_mode == VK_DEPTH_CLAMP_MODE_USER_DEFINED_RANGE_EXT) {
+      state->dynamic.vk.vp.depth_clamp_range = *depth_clamp_range;
+   }
+
+   state->dirty_dynamic |= RADV_DYNAMIC_DEPTH_CLAMP_RANGE;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -213,9 +227,6 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    RADV_CMP_COPY(vk.ia.primitive_restart_enable, RADV_DYNAMIC_PRIMITIVE_RESTART_ENABLE);
 
    RADV_CMP_COPY(vk.vp.depth_clip_negative_one_to_one, RADV_DYNAMIC_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE);
-   RADV_CMP_COPY(vk.vp.depth_clamp_mode, RADV_DYNAMIC_DEPTH_CLAMP_RANGE);
-   RADV_CMP_COPY(vk.vp.depth_clamp_range.minDepthClamp, RADV_DYNAMIC_DEPTH_CLAMP_RANGE);
-   RADV_CMP_COPY(vk.vp.depth_clamp_range.maxDepthClamp, RADV_DYNAMIC_DEPTH_CLAMP_RANGE);
 
    if (copy_mask & RADV_DYNAMIC_LINE_WIDTH) {
       if (dest->vk.rs.line.width != src->vk.rs.line.width) {
@@ -232,6 +243,14 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    if (copy_mask & RADV_DYNAMIC_PATCH_CONTROL_POINTS) {
       if (dest->vk.ts.patch_control_points != src->vk.ts.patch_control_points) {
          radv_cmd_set_patch_control_points(cmd_buffer, src->vk.ts.patch_control_points);
+      }
+   }
+
+   if (copy_mask & RADV_DYNAMIC_DEPTH_CLAMP_RANGE) {
+      if (dest->vk.vp.depth_clamp_mode != src->vk.vp.depth_clamp_mode ||
+          dest->vk.vp.depth_clamp_range.minDepthClamp != src->vk.vp.depth_clamp_range.minDepthClamp ||
+          dest->vk.vp.depth_clamp_range.maxDepthClamp != src->vk.vp.depth_clamp_range.maxDepthClamp) {
+         radv_cmd_set_depth_clamp_range(cmd_buffer, src->vk.vp.depth_clamp_mode, &src->vk.vp.depth_clamp_range);
       }
    }
 
@@ -14874,12 +14893,5 @@ radv_CmdSetDepthClampRangeEXT(VkCommandBuffer commandBuffer, VkDepthClampModeEXT
                               const VkDepthClampRangeEXT *pDepthClampRange)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   state->dynamic.vk.vp.depth_clamp_mode = depthClampMode;
-   if (depthClampMode == VK_DEPTH_CLAMP_MODE_USER_DEFINED_RANGE_EXT) {
-      state->dynamic.vk.vp.depth_clamp_range = *pDepthClampRange;
-   }
-
-   state->dirty_dynamic |= RADV_DYNAMIC_DEPTH_CLAMP_RANGE;
+   radv_cmd_set_depth_clamp_range(cmd_buffer, depthClampMode, pDepthClampRange);
 }
