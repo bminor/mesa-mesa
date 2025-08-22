@@ -150,6 +150,18 @@ radv_cmd_set_depth_bias(struct radv_cmd_buffer *cmd_buffer, const struct radv_cm
    state->dirty_dynamic |= RADV_DYNAMIC_DEPTH_BIAS;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_line_stipple(struct radv_cmd_buffer *cmd_buffer, uint32_t line_stipple_factor,
+                          uint32_t line_stipple_pattern)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.rs.line.stipple.factor = line_stipple_factor;
+   state->dynamic.vk.rs.line.stipple.pattern = line_stipple_pattern;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_LINE_STIPPLE;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -318,8 +330,13 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }
    }
 
-   RADV_CMP_COPY(vk.rs.line.stipple.factor, RADV_DYNAMIC_LINE_STIPPLE);
-   RADV_CMP_COPY(vk.rs.line.stipple.pattern, RADV_DYNAMIC_LINE_STIPPLE);
+   if (copy_mask & RADV_DYNAMIC_LINE_STIPPLE) {
+      if (dest->vk.rs.line.stipple.factor != src->vk.rs.line.stipple.factor ||
+          dest->vk.rs.line.stipple.pattern != src->vk.rs.line.stipple.pattern) {
+         radv_cmd_set_line_stipple(cmd_buffer, src->vk.rs.line.stipple.factor, src->vk.rs.line.stipple.pattern);
+      }
+   }
+
    RADV_CMP_COPY(vk.rs.cull_mode, RADV_DYNAMIC_CULL_MODE);
    RADV_CMP_COPY(vk.rs.front_face, RADV_DYNAMIC_FRONT_FACE);
    RADV_CMP_COPY(vk.rs.depth_bias.enable, RADV_DYNAMIC_DEPTH_BIAS_ENABLE);
@@ -8105,12 +8122,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetLineStipple(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor, uint16_t lineStipplePattern)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   state->dynamic.vk.rs.line.stipple.factor = lineStippleFactor;
-   state->dynamic.vk.rs.line.stipple.pattern = lineStipplePattern;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_LINE_STIPPLE;
+   radv_cmd_set_line_stipple(cmd_buffer, lineStippleFactor, lineStipplePattern);
 }
 
 VKAPI_ATTR void VKAPI_CALL
