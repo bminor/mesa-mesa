@@ -192,6 +192,16 @@ radv_cmd_set_depth_bias_enable(struct radv_cmd_buffer *cmd_buffer, bool depth_bi
    state->dirty_dynamic |= RADV_DYNAMIC_DEPTH_BIAS_ENABLE;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_rasterizer_discard_enable(struct radv_cmd_buffer *cmd_buffer, bool rasterizer_discard_enable)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.rs.rasterizer_discard_enable = rasterizer_discard_enable;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_RASTERIZER_DISCARD_ENABLE;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -385,7 +395,12 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }
    }
 
-   RADV_CMP_COPY(vk.rs.rasterizer_discard_enable, RADV_DYNAMIC_RASTERIZER_DISCARD_ENABLE);
+   if (copy_mask & RADV_DYNAMIC_RASTERIZER_DISCARD_ENABLE) {
+      if (dest->vk.rs.rasterizer_discard_enable != src->vk.rs.rasterizer_discard_enable) {
+         radv_cmd_set_rasterizer_discard_enable(cmd_buffer, src->vk.rs.rasterizer_discard_enable);
+      }
+   }
+
    RADV_CMP_COPY(vk.rs.polygon_mode, RADV_DYNAMIC_POLYGON_MODE);
    RADV_CMP_COPY(vk.rs.line.stipple.enable, RADV_DYNAMIC_LINE_STIPPLE_ENABLE);
    RADV_CMP_COPY(vk.rs.depth_clip_enable, RADV_DYNAMIC_DEPTH_CLIP_ENABLE);
@@ -8338,11 +8353,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetRasterizerDiscardEnable(VkCommandBuffer commandBuffer, VkBool32 rasterizerDiscardEnable)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   state->dynamic.vk.rs.rasterizer_discard_enable = rasterizerDiscardEnable;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_RASTERIZER_DISCARD_ENABLE;
+   radv_cmd_set_rasterizer_discard_enable(cmd_buffer, rasterizerDiscardEnable);
 }
 
 VKAPI_ATTR void VKAPI_CALL
