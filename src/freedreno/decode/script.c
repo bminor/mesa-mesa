@@ -214,6 +214,9 @@ l_rnn_etype(lua_State *L, struct rnn *rnn, struct rnndelem *elem,
       return l_rnn_etype_reg(L, rnn, elem, offset);
    case RNN_ETYPE_ARRAY:
       return l_rnn_etype_array(L, rnn, elem, offset);
+   case RNN_ETYPE_STRIPE:
+      assert(elem->subelemsnum == 1);
+      return l_rnn_etype(L, rnn, elem->subelems[0], offset);
    default:
       /* hmm.. */
       printf("unhandled type: %d\n", elem->type);
