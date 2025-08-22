@@ -23,6 +23,7 @@
 
 #include "nir.h"
 #include "nir_builder.h"
+#include <c99_alloca.h>
 
 typedef struct {
    nir_variable *var[INTERP_MODE_COUNT];
