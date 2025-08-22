@@ -317,6 +317,16 @@ radv_cmd_set_rasterization_samples(struct radv_cmd_buffer *cmd_buffer, VkSampleC
    state->dirty_dynamic |= RADV_DYNAMIC_RASTERIZATION_SAMPLES;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_sample_locations_enable(struct radv_cmd_buffer *cmd_buffer, bool sample_locations_enable)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.ms.sample_locations_enable = sample_locations_enable;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_SAMPLE_LOCATIONS_ENABLE;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -582,7 +592,11 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }
    }
 
-   RADV_CMP_COPY(vk.ms.sample_locations_enable, RADV_DYNAMIC_SAMPLE_LOCATIONS_ENABLE);
+   if (copy_mask & RADV_DYNAMIC_SAMPLE_LOCATIONS_ENABLE) {
+      if (dest->vk.ms.sample_locations_enable != src->vk.ms.sample_locations_enable) {
+         radv_cmd_set_sample_locations_enable(cmd_buffer, src->vk.ms.sample_locations_enable);
+      }
+   }
 
    RADV_CMP_COPY(vk.ds.depth.bounds_test.min, RADV_DYNAMIC_DEPTH_BOUNDS);
    RADV_CMP_COPY(vk.ds.depth.bounds_test.max, RADV_DYNAMIC_DEPTH_BOUNDS);
@@ -8849,11 +8863,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetSampleLocationsEnableEXT(VkCommandBuffer commandBuffer, VkBool32 sampleLocationsEnable)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   state->dynamic.vk.ms.sample_locations_enable = sampleLocationsEnable;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_SAMPLE_LOCATIONS_ENABLE;
+   radv_cmd_set_sample_locations_enable(cmd_buffer, sampleLocationsEnable);
 }
 
 VKAPI_ATTR void VKAPI_CALL
