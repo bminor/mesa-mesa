@@ -398,11 +398,24 @@ radv_cmd_set_color_write_enable(struct radv_cmd_buffer *cmd_buffer, uint32_t col
    state->dirty_dynamic |= RADV_DYNAMIC_COLOR_WRITE_ENABLE;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_color_write_mask(struct radv_cmd_buffer *cmd_buffer, uint32_t color_write_mask)
+{
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.color_write_mask = color_write_mask;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_COLOR_WRITE_MASK;
+
+   if (pdev->info.rbplus_allowed)
+      state->dirty |= RADV_CMD_DIRTY_RBPLUS;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
-   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radv_dynamic_state *dest = &cmd_buffer->state.dynamic;
    uint64_t copy_mask = src->mask;
    uint64_t dest_mask = 0;
@@ -733,7 +746,12 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }
    }
 
-   RADV_CMP_COPY(color_write_mask, RADV_DYNAMIC_COLOR_WRITE_MASK);
+   if (copy_mask & RADV_DYNAMIC_COLOR_WRITE_MASK) {
+      if (dest->color_write_mask != src->color_write_mask) {
+         radv_cmd_set_color_write_mask(cmd_buffer, src->color_write_mask);
+      }
+   }
+
    RADV_CMP_COPY(vk.cb.logic_op_enable, RADV_DYNAMIC_LOGIC_OP_ENABLE);
 
    RADV_CMP_COPY(vk.fsr.fragment_size.width, RADV_DYNAMIC_FRAGMENT_SHADING_RATE);
@@ -753,10 +771,6 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    /* Handle driver specific states that need to be re-emitted when PSO are bound. */
    if (dest_mask & (RADV_DYNAMIC_VIEWPORT | RADV_DYNAMIC_PRIMITIVE_TOPOLOGY)) {
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_GUARDBAND;
-   }
-
-   if (pdev->info.rbplus_allowed && (dest_mask & RADV_DYNAMIC_COLOR_WRITE_MASK)) {
-      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_RBPLUS;
    }
 
    if (dest_mask & (RADV_DYNAMIC_COLOR_ATTACHMENT_MAP | RADV_DYNAMIC_INPUT_ATTACHMENT_MAP)) {
@@ -8849,23 +8863,19 @@ radv_CmdSetColorWriteMaskEXT(VkCommandBuffer commandBuffer, uint32_t firstAttach
                              const VkColorComponentFlags *pColorWriteMasks)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radv_cmd_state *state = &cmd_buffer->state;
+   uint32_t color_write_mask = state->dynamic.color_write_mask;
 
    assert(firstAttachment + attachmentCount <= MAX_RTS);
 
    for (uint32_t i = 0; i < attachmentCount; i++) {
       uint32_t idx = firstAttachment + i;
 
-      state->dynamic.color_write_mask &= ~BITFIELD_RANGE(4 * idx, 4);
-      state->dynamic.color_write_mask |= pColorWriteMasks[i] << (4 * idx);
+      color_write_mask &= ~BITFIELD_RANGE(4 * idx, 4);
+      color_write_mask |= pColorWriteMasks[i] << (4 * idx);
    }
 
-   state->dirty_dynamic |= RADV_DYNAMIC_COLOR_WRITE_MASK;
-
-   if (pdev->info.rbplus_allowed)
-      state->dirty |= RADV_CMD_DIRTY_RBPLUS;
+   radv_cmd_set_color_write_mask(cmd_buffer, color_write_mask);
 }
 
 VKAPI_ATTR void VKAPI_CALL
