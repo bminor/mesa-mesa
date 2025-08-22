@@ -65,6 +65,17 @@ static void radv_handle_image_transition(struct radv_cmd_buffer *cmd_buffer, str
                                          uint32_t dst_family_index, const VkImageSubresourceRange *range,
                                          struct radv_sample_locations_state *sample_locs);
 
+ALWAYS_INLINE static void
+radv_cmd_set_line_width(struct radv_cmd_buffer *cmd_buffer, float line_width)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.rs.line.width = line_width;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_LINE_WIDTH;
+   state->dirty |= RADV_CMD_DIRTY_GUARDBAND;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -189,7 +200,12 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    RADV_CMP_COPY(vk.ts.patch_control_points, RADV_DYNAMIC_PATCH_CONTROL_POINTS);
    RADV_CMP_COPY(vk.ts.domain_origin, RADV_DYNAMIC_TESS_DOMAIN_ORIGIN);
 
-   RADV_CMP_COPY(vk.rs.line.width, RADV_DYNAMIC_LINE_WIDTH);
+   if (copy_mask & RADV_DYNAMIC_LINE_WIDTH) {
+      if (dest->vk.rs.line.width != src->vk.rs.line.width) {
+         radv_cmd_set_line_width(cmd_buffer, src->vk.rs.line.width);
+      }
+   }
+
    RADV_CMP_COPY(vk.rs.depth_bias.constant_factor, RADV_DYNAMIC_DEPTH_BIAS);
    RADV_CMP_COPY(vk.rs.depth_bias.clamp, RADV_DYNAMIC_DEPTH_BIAS);
    RADV_CMP_COPY(vk.rs.depth_bias.slope_factor, RADV_DYNAMIC_DEPTH_BIAS);
@@ -256,8 +272,7 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    cmd_buffer->state.dirty_dynamic |= dest_mask;
 
    /* Handle driver specific states that need to be re-emitted when PSO are bound. */
-   if (dest_mask & (RADV_DYNAMIC_VIEWPORT | RADV_DYNAMIC_POLYGON_MODE | RADV_DYNAMIC_LINE_WIDTH |
-                    RADV_DYNAMIC_PRIMITIVE_TOPOLOGY)) {
+   if (dest_mask & (RADV_DYNAMIC_VIEWPORT | RADV_DYNAMIC_POLYGON_MODE | RADV_DYNAMIC_PRIMITIVE_TOPOLOGY)) {
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_GUARDBAND;
    }
 
@@ -7877,12 +7892,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetLineWidth(VkCommandBuffer commandBuffer, float lineWidth)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   state->dynamic.vk.rs.line.width = lineWidth;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_LINE_WIDTH;
-   state->dirty |= RADV_CMD_DIRTY_GUARDBAND;
+   radv_cmd_set_line_width(cmd_buffer, lineWidth);
 }
 
 VKAPI_ATTR void VKAPI_CALL
