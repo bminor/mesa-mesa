@@ -976,7 +976,7 @@ static void handle_graphics_pipeline(struct lvp_pipeline *pipeline,
    }
 
    if (!BITSET_TEST(ps->dynamic, MESA_VK_DYNAMIC_IA_PRIMITIVE_TOPOLOGY) && ps->ia) {
-      state->info.mode = vk_conv_topology(ps->ia->primitive_topology);
+      state->info.mode = vk_topology_to_mesa(ps->ia->primitive_topology);
       state->rs_dirty = true;
    }
    if (!BITSET_TEST(ps->dynamic, MESA_VK_DYNAMIC_IA_PRIMITIVE_RESTART_ENABLE) && ps->ia)
@@ -3523,7 +3523,7 @@ static void handle_set_front_face(struct vk_cmd_queue_entry *cmd,
 static void handle_set_primitive_topology(struct vk_cmd_queue_entry *cmd,
                                           struct rendering_state *state)
 {
-   state->info.mode = vk_conv_topology(cmd->u.set_primitive_topology.primitive_topology);
+   state->info.mode = vk_topology_to_mesa(cmd->u.set_primitive_topology.primitive_topology);
    state->rs_dirty = true;
 }
 
