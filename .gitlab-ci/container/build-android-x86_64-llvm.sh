@@ -26,13 +26,17 @@ if [ -n "$CI" ] && [ ! -s "${S3_JWT_FILE}" ]; then
   exit 1
 fi
 
-if curl -s -o /dev/null -I -L -f --retry 4 --retry-delay 15 "https://${S3_HOST}/${S3_ANDROID_BUCKET}/${S3_PROJECT_PATH}/${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst"; then
+# shellcheck disable=SC2034 # S3_BASE_PATH is used in find_s3_project_artifact
+S3_BASE_PATH="${S3_HOST}/${S3_ANDROID_BUCKET}"
+ARTIFACTS_PATH="${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst"
+
+if ARTIFACTS_URL="$(find_s3_project_artifact "${ARTIFACTS_PATH}")"; then
   echo "Artifact ${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst already exists, skip re-building."
 
   # Download prebuilt LLVM libraries for Android when they have not changed,
   # to save some time
   curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
-    -o "/${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst" "https://${S3_HOST}/${S3_ANDROID_BUCKET}/${S3_PROJECT_PATH}/${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst"
+    -o "/${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst" "${ARTIFACTS_URL}"
   tar -C / --zstd -xf "/${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst"
   rm "/${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst"
 

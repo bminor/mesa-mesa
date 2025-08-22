@@ -152,7 +152,7 @@ debian/s390x_build:
     ANDROID_NDK_VERSION: "r27c"
     ANDROID_SDK_VERSION: 34
     ANDROID_LLVM_VERSION: llvmorg-19.1.7
-    ANDROID_LLVM_ARTIFACT_NAME: android-x86_64-llvm-20250324
+    ANDROID_LLVM_ARTIFACT_NAME: android-x86_64-llvm-20250822
     # This can be confusing: LLVM_VERSION refers to the host LLVM toolchain
     # used (LLVM 19 in our Debian system), but ANDROID_LLVM_VERSION refers to
     # the cross-compiling LLVM toolchain used to build for the Android system.
