@@ -293,6 +293,7 @@ msm_device_init(struct tu_device *dev)
                                "Failed to get initial fault count: %d", ret);
    }
 
+   dev->vk.copy_sync_payloads = vk_drm_syncobj_copy_payloads;
    dev->fd = fd;
 
    return VK_SUCCESS;
