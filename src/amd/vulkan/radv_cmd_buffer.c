@@ -182,6 +182,16 @@ radv_cmd_set_front_face(struct radv_cmd_buffer *cmd_buffer, VkFrontFace front_fa
    state->dirty_dynamic |= RADV_DYNAMIC_FRONT_FACE;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_depth_bias_enable(struct radv_cmd_buffer *cmd_buffer, bool depth_bias_enable)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.rs.depth_bias.enable = depth_bias_enable;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_DEPTH_BIAS_ENABLE;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -369,7 +379,12 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }
    }
 
-   RADV_CMP_COPY(vk.rs.depth_bias.enable, RADV_DYNAMIC_DEPTH_BIAS_ENABLE);
+   if (copy_mask & RADV_DYNAMIC_DEPTH_BIAS_ENABLE) {
+      if (dest->vk.rs.depth_bias.enable != src->vk.rs.depth_bias.enable) {
+         radv_cmd_set_depth_bias_enable(cmd_buffer, src->vk.rs.depth_bias.enable);
+      }
+   }
+
    RADV_CMP_COPY(vk.rs.rasterizer_discard_enable, RADV_DYNAMIC_RASTERIZER_DISCARD_ENABLE);
    RADV_CMP_COPY(vk.rs.polygon_mode, RADV_DYNAMIC_POLYGON_MODE);
    RADV_CMP_COPY(vk.rs.line.stipple.enable, RADV_DYNAMIC_LINE_STIPPLE_ENABLE);
@@ -8309,11 +8324,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetDepthBiasEnable(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   state->dynamic.vk.rs.depth_bias.enable = depthBiasEnable;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_DEPTH_BIAS_ENABLE;
+   radv_cmd_set_depth_bias_enable(cmd_buffer, depthBiasEnable);
 }
 
 VKAPI_ATTR void VKAPI_CALL
