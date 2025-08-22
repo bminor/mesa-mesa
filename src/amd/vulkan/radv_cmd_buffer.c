@@ -436,6 +436,16 @@ radv_cmd_set_fragment_shading_rate(struct radv_cmd_buffer *cmd_buffer, const VkE
    state->dirty_dynamic |= RADV_DYNAMIC_FRAGMENT_SHADING_RATE;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_attachment_feedback_loop_enable(struct radv_cmd_buffer *cmd_buffer, VkImageAspectFlags aspect_mask)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.feedback_loop_aspects = aspect_mask;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_ATTACHMENT_FEEDBACK_LOOP_ENABLE;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -793,7 +803,11 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    RADV_CMP_COPY(vk.dr.enable, RADV_DYNAMIC_DISCARD_RECTANGLE_ENABLE);
    RADV_CMP_COPY(vk.dr.mode, RADV_DYNAMIC_DISCARD_RECTANGLE_MODE);
 
-   RADV_CMP_COPY(feedback_loop_aspects, RADV_DYNAMIC_ATTACHMENT_FEEDBACK_LOOP_ENABLE);
+   if (copy_mask & RADV_DYNAMIC_ATTACHMENT_FEEDBACK_LOOP_ENABLE) {
+      if (dest->feedback_loop_aspects != src->feedback_loop_aspects) {
+         radv_cmd_set_attachment_feedback_loop_enable(cmd_buffer, src->feedback_loop_aspects);
+      }
+   }
 
 #undef RADV_CMP_COPY
 
@@ -9001,11 +9015,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer, VkImageAspectFlags aspectMask)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   state->dynamic.feedback_loop_aspects = aspectMask;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_ATTACHMENT_FEEDBACK_LOOP_ENABLE;
+   radv_cmd_set_attachment_feedback_loop_enable(cmd_buffer, aspectMask);
 }
 
 VKAPI_ATTR void VKAPI_CALL
