@@ -257,6 +257,16 @@ radv_cmd_set_provoking_vertex_mode(struct radv_cmd_buffer *cmd_buffer, VkProvoki
    state->dirty_dynamic |= RADV_DYNAMIC_PROVOKING_VERTEX_MODE;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_depth_clamp_enable(struct radv_cmd_buffer *cmd_buffer, bool depth_clamp_enable)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.rs.depth_clamp_enable = depth_clamp_enable;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_DEPTH_CLAMP_ENABLE;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -486,7 +496,12 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }
    }
 
-   RADV_CMP_COPY(vk.rs.depth_clamp_enable, RADV_DYNAMIC_DEPTH_CLAMP_ENABLE);
+   if (copy_mask & RADV_DYNAMIC_DEPTH_CLAMP_ENABLE) {
+      if (dest->vk.rs.depth_clamp_enable != src->vk.rs.depth_clamp_enable) {
+         radv_cmd_set_depth_clamp_enable(cmd_buffer, src->vk.rs.depth_clamp_enable);
+      }
+   }
+
    RADV_CMP_COPY(vk.rs.line.mode, RADV_DYNAMIC_LINE_RASTERIZATION_MODE);
 
    RADV_CMP_COPY(vk.ms.alpha_to_coverage_enable, RADV_DYNAMIC_ALPHA_TO_COVERAGE_ENABLE);
@@ -8673,11 +8688,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetDepthClampEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   state->dynamic.vk.rs.depth_clamp_enable = depthClampEnable;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_DEPTH_CLAMP_ENABLE;
+   radv_cmd_set_depth_clamp_enable(cmd_buffer, depthClampEnable);
 }
 
 VKAPI_ATTR void VKAPI_CALL
