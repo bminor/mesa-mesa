@@ -267,6 +267,16 @@ radv_cmd_set_depth_clamp_enable(struct radv_cmd_buffer *cmd_buffer, bool depth_c
    state->dirty_dynamic |= RADV_DYNAMIC_DEPTH_CLAMP_ENABLE;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_line_rasterization_mode(struct radv_cmd_buffer *cmd_buffer, VkLineRasterizationMode line_rast_mode)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.rs.line.mode = line_rast_mode;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_LINE_RASTERIZATION_MODE;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -502,7 +512,11 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }
    }
 
-   RADV_CMP_COPY(vk.rs.line.mode, RADV_DYNAMIC_LINE_RASTERIZATION_MODE);
+   if (copy_mask & RADV_DYNAMIC_LINE_RASTERIZATION_MODE) {
+      if (dest->vk.rs.line.mode != src->vk.rs.line.mode) {
+         radv_cmd_set_line_rasterization_mode(cmd_buffer, src->vk.rs.line.mode);
+      }
+   }
 
    RADV_CMP_COPY(vk.ms.alpha_to_coverage_enable, RADV_DYNAMIC_ALPHA_TO_COVERAGE_ENABLE);
    RADV_CMP_COPY(vk.ms.alpha_to_one_enable, RADV_DYNAMIC_ALPHA_TO_ONE_ENABLE);
@@ -8748,11 +8762,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetLineRasterizationModeEXT(VkCommandBuffer commandBuffer, VkLineRasterizationMode lineRasterizationMode)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   state->dynamic.vk.rs.line.mode = lineRasterizationMode;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_LINE_RASTERIZATION_MODE;
+   radv_cmd_set_line_rasterization_mode(cmd_buffer, lineRasterizationMode);
 }
 
 VKAPI_ATTR void VKAPI_CALL
