@@ -226,6 +226,16 @@ radv_cmd_set_line_stipple_enable(struct radv_cmd_buffer *cmd_buffer, bool line_s
    state->dirty_dynamic |= RADV_DYNAMIC_LINE_STIPPLE_ENABLE;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_depth_clip_enable(struct radv_cmd_buffer *cmd_buffer, enum vk_mesa_depth_clip_enable depth_clip_enable)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.rs.depth_clip_enable = depth_clip_enable;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_DEPTH_CLIP_ENABLE;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -437,7 +447,12 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }
    }
 
-   RADV_CMP_COPY(vk.rs.depth_clip_enable, RADV_DYNAMIC_DEPTH_CLIP_ENABLE);
+   if (copy_mask & RADV_DYNAMIC_DEPTH_CLIP_ENABLE) {
+      if (dest->vk.rs.depth_clip_enable != src->vk.rs.depth_clip_enable) {
+         radv_cmd_set_depth_clip_enable(cmd_buffer, src->vk.rs.depth_clip_enable);
+      }
+   }
+
    RADV_CMP_COPY(vk.rs.conservative_mode, RADV_DYNAMIC_CONSERVATIVE_RAST_MODE);
    RADV_CMP_COPY(vk.rs.provoking_vertex, RADV_DYNAMIC_PROVOKING_VERTEX_MODE);
    RADV_CMP_COPY(vk.rs.depth_clamp_enable, RADV_DYNAMIC_DEPTH_CLAMP_ENABLE);
@@ -8597,11 +8612,8 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetDepthClipEnableEXT(VkCommandBuffer commandBuffer, VkBool32 depthClipEnable)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   state->dynamic.vk.rs.depth_clip_enable = depthClipEnable;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_DEPTH_CLIP_ENABLE;
+   radv_cmd_set_depth_clip_enable(cmd_buffer,
+                                  depthClipEnable ? VK_MESA_DEPTH_CLIP_ENABLE_TRUE : VK_MESA_DEPTH_CLIP_ENABLE_FALSE);
 }
 
 VKAPI_ATTR void VKAPI_CALL
