@@ -120,6 +120,16 @@ radv_cmd_set_depth_clip_negative_one_to_one(struct radv_cmd_buffer *cmd_buffer, 
    state->dirty_dynamic |= RADV_DYNAMIC_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_primitive_restart_enable(struct radv_cmd_buffer *cmd_buffer, bool primitive_restart_enable)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.ia.primitive_restart_enable = primitive_restart_enable;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_PRIMITIVE_RESTART_ENABLE;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -234,7 +244,6 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    }
 
    RADV_CMP_COPY(vk.ia.primitive_topology, RADV_DYNAMIC_PRIMITIVE_TOPOLOGY);
-   RADV_CMP_COPY(vk.ia.primitive_restart_enable, RADV_DYNAMIC_PRIMITIVE_RESTART_ENABLE);
 
    if (copy_mask & RADV_DYNAMIC_LINE_WIDTH) {
       if (dest->vk.rs.line.width != src->vk.rs.line.width) {
@@ -265,6 +274,12 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    if (copy_mask & RADV_DYNAMIC_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE) {
       if (dest->vk.vp.depth_clip_negative_one_to_one != src->vk.vp.depth_clip_negative_one_to_one) {
          radv_cmd_set_depth_clip_negative_one_to_one(cmd_buffer, src->vk.vp.depth_clip_negative_one_to_one);
+      }
+   }
+
+   if (copy_mask & RADV_DYNAMIC_PRIMITIVE_RESTART_ENABLE) {
+      if (dest->vk.ia.primitive_restart_enable != src->vk.ia.primitive_restart_enable) {
+         radv_cmd_set_primitive_restart_enable(cmd_buffer, src->vk.ia.primitive_restart_enable);
       }
    }
 
@@ -8240,11 +8255,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetPrimitiveRestartEnable(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   state->dynamic.vk.ia.primitive_restart_enable = primitiveRestartEnable;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_PRIMITIVE_RESTART_ENABLE;
+   radv_cmd_set_primitive_restart_enable(cmd_buffer, primitiveRestartEnable);
 }
 
 VKAPI_ATTR void VKAPI_CALL
