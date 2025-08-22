@@ -1,6 +1,3 @@
-dEQP-VK.query_pool.statistics_query.multiple_queries.input_assembly_vertex_fragment_partial_cmdcopy_dstoffset,Fail
-dEQP-VK.query_pool.statistics_query.multiple_queries.input_assembly_vertex_partial_cmdcopy,Fail
-
 dEQP-VK.video.formats.decode_h264_g8_b8r8_2plane_420_unorm_encode_src_420_8bit,Crash
 dEQP-VK.video.formats.encode_h264_g10x6_b10x6r10x6_2plane_420_unorm_3pack16_decode_dpb_monochrome_10bit,Crash
 
