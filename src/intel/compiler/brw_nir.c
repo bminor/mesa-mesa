@@ -1435,7 +1435,7 @@ brw_preprocess_nir(const struct brw_compiler *compiler, nir_shader *nir,
    if (nir->info.stage == MESA_SHADER_GEOMETRY)
       OPT(nir_lower_gs_intrinsics, 0);
 
-   /* See also brw_nir_trig_workarounds.py */
+   /* See also brw_nir_workarounds.py */
    if (compiler->precise_trig &&
        !(devinfo->ver >= 10 || devinfo->platform == INTEL_PLATFORM_KBL))
       OPT(brw_nir_apply_trig_workarounds);

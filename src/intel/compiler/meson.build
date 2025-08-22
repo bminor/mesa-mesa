@@ -141,9 +141,9 @@ brw_nir_lower_fsign = custom_target(
 )
 
 brw_nir_trig = custom_target(
-  'brw_nir_trig_workarounds.c',
-  input : 'brw_nir_trig_workarounds.py',
-  output : 'brw_nir_trig_workarounds.c',
+  'brw_nir_workarounds.c',
+  input : 'brw_nir_workarounds.py',
+  output : 'brw_nir_workarounds.c',
   command : [
     prog_python, '@INPUT@', '-p', dir_compiler_nir,
   ],
