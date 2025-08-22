@@ -44,6 +44,7 @@ enum ENUM_PACKED brw_inst_kind {
    BRW_KIND_SEND,
    BRW_KIND_TEX,
    BRW_KIND_MEM,
+   BRW_KIND_DPAS,
 };
 
 brw_inst_kind brw_inst_kind_for_opcode(enum opcode opcode);
@@ -72,6 +73,7 @@ struct brw_inst : brw_exec_node {
    KIND_HELPERS(as_send, brw_send_inst, BRW_KIND_SEND);
    KIND_HELPERS(as_tex, brw_tex_inst, BRW_KIND_TEX);
    KIND_HELPERS(as_mem, brw_mem_inst, BRW_KIND_MEM);
+   KIND_HELPERS(as_dpas, brw_dpas_inst, BRW_KIND_DPAS);
 
 #undef KIND_HELPERS
 
@@ -184,17 +186,7 @@ struct brw_inst : brw_exec_node {
          /* Chooses which flag subregister (f0.0 to f3.1) is used for
           * conditional mod and predication.
           */
-         unsigned flag_subreg:3;
-
-         /**
-          * Systolic depth used by DPAS instruction.
-          */
-         unsigned sdepth:4;
-
-         /**
-          * Repeat count used by DPAS instruction.
-          */
-         unsigned rcount:4;
+         uint8_t flag_subreg:3;
 
          bool predicate_inverse:1;
          bool writes_accumulator:1; /**< instruction implicitly writes accumulator */
@@ -219,9 +211,9 @@ struct brw_inst : brw_exec_node {
           */
          bool has_no_mask_send_params:1;
 
-         unsigned pad:13;
+         uint8_t pad:5;
       };
-      uint32_t bits;
+      uint16_t bits;
    };
 
    brw_reg dst;
@@ -294,6 +286,14 @@ struct brw_mem_inst : brw_inst {
    uint32_t alignment;
 
    int32_t address_offset;
+};
+
+struct brw_dpas_inst : brw_inst {
+   /** Systolic depth. */
+   uint8_t sdepth;
+
+   /** Repeat count. */
+   uint8_t rcount;
 };
 
 /**

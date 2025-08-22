@@ -926,11 +926,13 @@ brw_generator::generate_code(const brw_shader &s,
          brw_LINE(p, dst, src[0], src[1]);
          break;
 
-      case BRW_OPCODE_DPAS:
+      case BRW_OPCODE_DPAS: {
          assert(devinfo->verx10 >= 125);
-         brw_DPAS(p, translate_systolic_depth(inst->sdepth), inst->rcount,
+         const brw_dpas_inst *dpas = inst->as_dpas();
+         brw_DPAS(p, translate_systolic_depth(dpas->sdepth), dpas->rcount,
                   dst, src[0], src[1], src[2]);
          break;
+      }
 
       case BRW_OPCODE_MAD:
          if (devinfo->ver < 10)

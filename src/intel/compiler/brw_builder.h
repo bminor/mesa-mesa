@@ -805,7 +805,7 @@ public:
       return inst;
    }
 
-   brw_inst *
+   brw_dpas_inst *
    DPAS(const brw_reg &dst, const brw_reg &src0, const brw_reg &src1, const brw_reg &src2,
         unsigned sdepth, unsigned rcount) const
    {
@@ -813,15 +813,15 @@ public:
       assert(sdepth == 8);
       assert(rcount == 1 || rcount == 2 || rcount == 4 || rcount == 8);
 
-      brw_inst *inst = emit(BRW_OPCODE_DPAS, dst, src0, src1, src2);
-      inst->sdepth = sdepth;
-      inst->rcount = rcount;
+      brw_dpas_inst *dpas = emit(BRW_OPCODE_DPAS, dst, src0, src1, src2)->as_dpas();
+      dpas->sdepth = sdepth;
+      dpas->rcount = rcount;
 
       unsigned type_size = brw_type_size_bytes(dst.type);
       assert(type_size == 4 || type_size == 2);
-      inst->size_written = rcount * reg_unit(shader->devinfo) * 8 * type_size;
+      dpas->size_written = rcount * reg_unit(shader->devinfo) * 8 * type_size;
 
-      return inst;
+      return dpas;
    }
 
    void

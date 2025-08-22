@@ -504,7 +504,7 @@ brw_inst_has_source_and_destination_hazard(const struct intel_device_info *devin
        * There may be some advantage to properly modeling this, but for now,
        * be overly conservative.
        */
-      return inst->rcount > 1;
+      return inst->as_dpas()->rcount > 1;
    default:
       /* The SIMD16 compressed instruction
        *

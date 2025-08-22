@@ -16,6 +16,7 @@ brw_inst_kind_size(brw_inst_kind kind)
 {
    STATIC_ASSERT(sizeof(brw_send_inst) >= sizeof(brw_tex_inst));
    STATIC_ASSERT(sizeof(brw_send_inst) >= sizeof(brw_mem_inst));
+   STATIC_ASSERT(sizeof(brw_send_inst) >= sizeof(brw_dpas_inst));
 
    /* TODO: Temporarily here to ensure all instructions can be converted to
     * SEND.  Once all new kinds are added, change so that BASE allocate only
@@ -183,6 +184,9 @@ brw_inst_kind_for_opcode(enum opcode opcode)
    case SHADER_OPCODE_MEMORY_STORE_LOGICAL:
    case SHADER_OPCODE_MEMORY_ATOMIC_LOGICAL:
       return BRW_KIND_MEM;
+
+   case BRW_OPCODE_DPAS:
+      return BRW_KIND_DPAS;
 
    default:
       return BRW_KIND_BASE;
@@ -569,13 +573,14 @@ brw_inst::size_read(const struct intel_device_info *devinfo, int arg) const
        */
       const unsigned reg_unit = this->exec_size / 8;
       const unsigned type_size = brw_type_size_bytes(src[arg].type);
+      const brw_dpas_inst *dpas = as_dpas();
 
       switch (arg) {
       case 0:
          assert(type_size == 4 || type_size == 2);
-         return rcount * reg_unit * 8 * type_size;
+         return dpas->rcount * reg_unit * 8 * type_size;
       case 1:
-         return sdepth * reg_unit * REG_SIZE;
+         return dpas->sdepth * reg_unit * REG_SIZE;
       case 2:
          /* This is simpler than the formula described in the Bspec, but it
           * covers all of the cases that we support. Each inner sdepth
@@ -584,7 +589,7 @@ brw_inst::size_read(const struct intel_device_info *devinfo, int arg) const
           * currently supportable through Vulkan. This is independent of
           * reg_unit.
           */
-         return rcount * sdepth * 4;
+         return dpas->rcount * dpas->sdepth * 4;
       default:
          UNREACHABLE("Invalid source number.");
       }

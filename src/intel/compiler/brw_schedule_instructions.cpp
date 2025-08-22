@@ -560,7 +560,7 @@ schedule_node::set_latency(const struct brw_isa_info *isa)
    }
 
    case BRW_OPCODE_DPAS:
-      switch (inst->rcount) {
+      switch (inst->as_dpas()->rcount) {
       case 1:
          latency = 21;
          break;

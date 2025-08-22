@@ -274,6 +274,13 @@ mem_inst_match(brw_mem_inst *a, brw_mem_inst *b)
 }
 
 static bool
+dpas_inst_match(brw_dpas_inst *a, brw_dpas_inst *b)
+{
+   return a->sdepth == b->sdepth &&
+          a->rcount == b->rcount;
+}
+
+static bool
 instructions_match(brw_inst *a, brw_inst *b, bool *negate)
 {
 
@@ -282,6 +289,7 @@ instructions_match(brw_inst *a, brw_inst *b, bool *negate)
           (a->kind != BRW_KIND_SEND || send_inst_match(a->as_send(), b->as_send())) &&
           (a->kind != BRW_KIND_TEX || tex_inst_match(a->as_tex(), b->as_tex())) &&
           (a->kind != BRW_KIND_MEM || mem_inst_match(a->as_mem(), b->as_mem())) &&
+          (a->kind != BRW_KIND_DPAS || dpas_inst_match(a->as_dpas(), b->as_dpas())) &&
           a->exec_size == b->exec_size &&
           a->group == b->group &&
           a->predicate == b->predicate &&
@@ -394,6 +402,16 @@ hash_inst(const void *v)
       };
       hash = HASH(hash, mem_u8data);
       hash = HASH(hash, mem_u32data);
+      break;
+   }
+
+   case BRW_KIND_DPAS: {
+      const brw_dpas_inst *dpas = inst->as_dpas();
+      const uint8_t dpas_u8data[] = {
+         dpas->sdepth,
+         dpas->rcount,
+      };
+      hash = HASH(hash, dpas_u8data);
       break;
    }
 

@@ -173,7 +173,8 @@ namespace {
              brw_type_size_bytes(inst->src[0].type) == brw_type_size_bytes(inst->src[1].type))
             tx = brw_int_type(8, tx == BRW_TYPE_D);
 
-         rcount = inst->opcode == BRW_OPCODE_DPAS ? inst->rcount : 0;
+         const brw_dpas_inst *dpas = inst->as_dpas();
+         rcount = dpas ? dpas->rcount : 0;
       }
 
       /** ISA encoding information */

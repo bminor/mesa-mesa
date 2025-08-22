@@ -7,34 +7,34 @@
 #include "brw_builder.h"
 
 static void
-f16_using_mac(const brw_builder &bld, brw_inst *inst)
+f16_using_mac(const brw_builder &bld, brw_dpas_inst *dpas)
 {
    /* We only intend to support configurations where the destination and
     * accumulator have the same type.
     */
-   if (!inst->src[0].is_null())
-      assert(inst->dst.type == inst->src[0].type);
+   if (!dpas->src[0].is_null())
+      assert(dpas->dst.type == dpas->src[0].type);
 
-   assert(inst->src[1].type == BRW_TYPE_HF);
-   assert(inst->src[2].type == BRW_TYPE_HF);
+   assert(dpas->src[1].type == BRW_TYPE_HF);
+   assert(dpas->src[2].type == BRW_TYPE_HF);
 
-   const brw_reg_type src0_type = inst->dst.type;
+   const brw_reg_type src0_type = dpas->dst.type;
    const brw_reg_type src1_type = BRW_TYPE_HF;
    const brw_reg_type src2_type = BRW_TYPE_HF;
 
-   const brw_reg dest = inst->dst;
-   brw_reg src0 = inst->src[0];
-   const brw_reg src1 = retype(inst->src[1], src1_type);
-   const brw_reg src2 = retype(inst->src[2], src2_type);
+   const brw_reg dest = dpas->dst;
+   brw_reg src0 = dpas->src[0];
+   const brw_reg src1 = retype(dpas->src[1], src1_type);
+   const brw_reg src2 = retype(dpas->src[2], src2_type);
 
    const unsigned dest_stride =
       dest.type == BRW_TYPE_HF ? REG_SIZE / 2 : REG_SIZE;
 
-   for (unsigned r = 0; r < inst->rcount; r++) {
+   for (unsigned r = 0; r < dpas->rcount; r++) {
       brw_reg temp = bld.vgrf(BRW_TYPE_HF);
 
       for (unsigned subword = 0; subword < 2; subword++) {
-         for (unsigned s = 0; s < inst->sdepth; s++) {
+         for (unsigned s = 0; s < dpas->sdepth; s++) {
             /* The first multiply of the dot-product operation has to
              * explicitly write the accumulator register. The successive MAC
              * instructions will implicitly read *and* write the
@@ -48,8 +48,8 @@ f16_using_mac(const brw_builder &bld, brw_inst *inst)
              */
             if (s == 0 && subword == 0) {
                const unsigned acc_width = 8;
-               brw_reg acc = suboffset(retype(brw_acc_reg(inst->exec_size), BRW_TYPE_UD),
-                                      inst->group % acc_width);
+               brw_reg acc = suboffset(retype(brw_acc_reg(dpas->exec_size), BRW_TYPE_UD),
+                                      dpas->group % acc_width);
 
                if (bld.shader->devinfo->verx10 >= 125) {
                   acc = subscript(acc, BRW_TYPE_HF, subword);
@@ -75,7 +75,7 @@ f16_using_mac(const brw_builder &bld, brw_inst *inst)
                 * instruction, so only write the result register on the final
                 * MAC in the sequence.
                 */
-               if ((s + 1) == inst->sdepth && subword == 1)
+               if ((s + 1) == dpas->sdepth && subword == 1)
                   result = temp;
                else
                   result = retype(bld.null_reg_ud(), BRW_TYPE_HF);
@@ -113,33 +113,33 @@ f16_using_mac(const brw_builder &bld, brw_inst *inst)
 }
 
 static void
-int8_using_dp4a(const brw_builder &bld, brw_inst *inst)
+int8_using_dp4a(const brw_builder &bld, brw_dpas_inst *dpas)
 {
    /* We only intend to support configurations where the destination and
     * accumulator have the same type.
     */
-   if (!inst->src[0].is_null())
-      assert(inst->dst.type == inst->src[0].type);
+   if (!dpas->src[0].is_null())
+      assert(dpas->dst.type == dpas->src[0].type);
 
-   assert(inst->src[1].type == BRW_TYPE_B ||
-          inst->src[1].type == BRW_TYPE_UB);
-   assert(inst->src[2].type == BRW_TYPE_B ||
-          inst->src[2].type == BRW_TYPE_UB);
+   assert(dpas->src[1].type == BRW_TYPE_B ||
+          dpas->src[1].type == BRW_TYPE_UB);
+   assert(dpas->src[2].type == BRW_TYPE_B ||
+          dpas->src[2].type == BRW_TYPE_UB);
 
-   const brw_reg_type src1_type = inst->src[1].type == BRW_TYPE_UB
+   const brw_reg_type src1_type = dpas->src[1].type == BRW_TYPE_UB
       ? BRW_TYPE_UD : BRW_TYPE_D;
 
-   const brw_reg_type src2_type = inst->src[2].type == BRW_TYPE_UB
+   const brw_reg_type src2_type = dpas->src[2].type == BRW_TYPE_UB
       ? BRW_TYPE_UD : BRW_TYPE_D;
 
-   brw_reg dest = inst->dst;
-   brw_reg src0 = inst->src[0];
-   const brw_reg src1 = retype(inst->src[1], src1_type);
-   const brw_reg src2 = retype(inst->src[2], src2_type);
+   brw_reg dest = dpas->dst;
+   brw_reg src0 = dpas->src[0];
+   const brw_reg src1 = retype(dpas->src[1], src1_type);
+   const brw_reg src2 = retype(dpas->src[2], src2_type);
 
    const unsigned dest_stride = reg_unit(bld.shader->devinfo) * REG_SIZE;
 
-   for (unsigned r = 0; r < inst->rcount; r++) {
+   for (unsigned r = 0; r < dpas->rcount; r++) {
       if (!src0.is_null()) {
          bld.MOV(dest, src0);
          src0 = byte_offset(src0, dest_stride);
@@ -147,12 +147,12 @@ int8_using_dp4a(const brw_builder &bld, brw_inst *inst)
          bld.MOV(dest, retype(brw_imm_d(0), dest.type));
       }
 
-      for (unsigned s = 0; s < inst->sdepth; s++) {
+      for (unsigned s = 0; s < dpas->sdepth; s++) {
          bld.DP4A(dest,
                   dest,
-                  byte_offset(src1, s * inst->exec_size * 4),
-                  component(byte_offset(src2, r * inst->sdepth * 4), s))
-            ->saturate = inst->saturate;
+                  byte_offset(src1, s * dpas->exec_size * 4),
+                  component(byte_offset(src2, r * dpas->sdepth * 4), s))
+            ->saturate = dpas->saturate;
       }
 
       dest = byte_offset(dest, dest_stride);
@@ -160,35 +160,35 @@ int8_using_dp4a(const brw_builder &bld, brw_inst *inst)
 }
 
 static void
-int8_using_mul_add(const brw_builder &bld, brw_inst *inst)
+int8_using_mul_add(const brw_builder &bld, brw_dpas_inst *dpas)
 {
    /* We only intend to support configurations where the destination and
     * accumulator have the same type.
     */
-   if (!inst->src[0].is_null())
-      assert(inst->dst.type == inst->src[0].type);
+   if (!dpas->src[0].is_null())
+      assert(dpas->dst.type == dpas->src[0].type);
 
-   assert(inst->src[1].type == BRW_TYPE_B ||
-          inst->src[1].type == BRW_TYPE_UB);
-   assert(inst->src[2].type == BRW_TYPE_B ||
-          inst->src[2].type == BRW_TYPE_UB);
+   assert(dpas->src[1].type == BRW_TYPE_B ||
+          dpas->src[1].type == BRW_TYPE_UB);
+   assert(dpas->src[2].type == BRW_TYPE_B ||
+          dpas->src[2].type == BRW_TYPE_UB);
 
-   const brw_reg_type src0_type = inst->dst.type;
+   const brw_reg_type src0_type = dpas->dst.type;
 
-   const brw_reg_type src1_type = inst->src[1].type == BRW_TYPE_UB
+   const brw_reg_type src1_type = dpas->src[1].type == BRW_TYPE_UB
       ? BRW_TYPE_UD : BRW_TYPE_D;
 
-   const brw_reg_type src2_type = inst->src[2].type == BRW_TYPE_UB
+   const brw_reg_type src2_type = dpas->src[2].type == BRW_TYPE_UB
       ? BRW_TYPE_UD : BRW_TYPE_D;
 
-   brw_reg dest = inst->dst;
-   brw_reg src0 = inst->src[0];
-   const brw_reg src1 = retype(inst->src[1], src1_type);
-   const brw_reg src2 = retype(inst->src[2], src2_type);
+   brw_reg dest = dpas->dst;
+   brw_reg src0 = dpas->src[0];
+   const brw_reg src1 = retype(dpas->src[1], src1_type);
+   const brw_reg src2 = retype(dpas->src[2], src2_type);
 
    const unsigned dest_stride = REG_SIZE;
 
-   for (unsigned r = 0; r < inst->rcount; r++) {
+   for (unsigned r = 0; r < dpas->rcount; r++) {
       if (!src0.is_null()) {
          bld.MOV(dest, src0);
          src0 = byte_offset(src0, dest_stride);
@@ -196,13 +196,13 @@ int8_using_mul_add(const brw_builder &bld, brw_inst *inst)
          bld.MOV(dest, retype(brw_imm_d(0), dest.type));
       }
 
-      for (unsigned s = 0; s < inst->sdepth; s++) {
+      for (unsigned s = 0; s < dpas->sdepth; s++) {
          brw_reg temp1 = bld.vgrf(BRW_TYPE_UD);
          brw_reg temp2 = bld.vgrf(BRW_TYPE_UD);
          brw_reg temp3 = bld.vgrf(BRW_TYPE_UD, 2);
          const brw_reg_type temp_type =
-            (inst->src[1].type == BRW_TYPE_B ||
-             inst->src[2].type == BRW_TYPE_B)
+            (dpas->src[1].type == BRW_TYPE_B ||
+             dpas->src[2].type == BRW_TYPE_B)
             ? BRW_TYPE_W : BRW_TYPE_UW;
 
          /* Expand 8 dwords of packed bytes into 16 dwords of packed
@@ -214,12 +214,12 @@ int8_using_mul_add(const brw_builder &bld, brw_inst *inst)
           */
          bld.group(32, 0).MOV(retype(temp3, temp_type),
                               retype(byte_offset(src2, r * REG_SIZE),
-                                     inst->src[2].type));
+                                     dpas->src[2].type));
 
          bld.MUL(subscript(temp1, temp_type, 0),
                  subscript(retype(byte_offset(src1, s * REG_SIZE),
                                   BRW_TYPE_UD),
-                           inst->src[1].type, 0),
+                           dpas->src[1].type, 0),
                  subscript(component(retype(temp3, BRW_TYPE_UD),
                                      s * 2),
                            temp_type, 0));
@@ -227,7 +227,7 @@ int8_using_mul_add(const brw_builder &bld, brw_inst *inst)
          bld.MUL(subscript(temp1, temp_type, 1),
                  subscript(retype(byte_offset(src1, s * REG_SIZE),
                                   BRW_TYPE_UD),
-                           inst->src[1].type, 1),
+                           dpas->src[1].type, 1),
                  subscript(component(retype(temp3, BRW_TYPE_UD),
                                      s * 2),
                            temp_type, 1));
@@ -235,7 +235,7 @@ int8_using_mul_add(const brw_builder &bld, brw_inst *inst)
          bld.MUL(subscript(temp2, temp_type, 0),
                  subscript(retype(byte_offset(src1, s * REG_SIZE),
                                   BRW_TYPE_UD),
-                           inst->src[1].type, 2),
+                           dpas->src[1].type, 2),
                  subscript(component(retype(temp3, BRW_TYPE_UD),
                                      s * 2 + 1),
                            temp_type, 0));
@@ -243,7 +243,7 @@ int8_using_mul_add(const brw_builder &bld, brw_inst *inst)
          bld.MUL(subscript(temp2, temp_type, 1),
                  subscript(retype(byte_offset(src1, s * REG_SIZE),
                                   BRW_TYPE_UD),
-                           inst->src[1].type, 3),
+                           dpas->src[1].type, 3),
                  subscript(component(retype(temp3, BRW_TYPE_UD),
                                      s * 2 + 1),
                            temp_type, 1));
@@ -261,7 +261,7 @@ int8_using_mul_add(const brw_builder &bld, brw_inst *inst)
                  retype(temp2, src0_type));
 
          bld.ADD(dest, dest, retype(temp1, src0_type))
-            ->saturate = inst->saturate;
+            ->saturate = dpas->saturate;
       }
 
       dest = byte_offset(dest, dest_stride);
@@ -277,20 +277,21 @@ brw_lower_dpas(brw_shader &v)
       if (inst->opcode != BRW_OPCODE_DPAS)
          continue;
 
+      brw_dpas_inst *dpas = inst->as_dpas();
       const unsigned exec_size = v.devinfo->ver >= 20 ? 16 : 8;
-      const brw_builder bld = brw_builder(inst).group(exec_size, 0).exec_all();
+      const brw_builder bld = brw_builder(dpas).group(exec_size, 0).exec_all();
 
-      if (brw_type_is_float(inst->dst.type)) {
-         f16_using_mac(bld, inst);
+      if (brw_type_is_float(dpas->dst.type)) {
+         f16_using_mac(bld, dpas);
       } else {
          if (v.devinfo->ver >= 12) {
-            int8_using_dp4a(bld, inst);
+            int8_using_dp4a(bld, dpas);
          } else {
-            int8_using_mul_add(bld, inst);
+            int8_using_mul_add(bld, dpas);
          }
       }
 
-      inst->remove();
+      dpas->remove();
       progress = true;
    }
 
