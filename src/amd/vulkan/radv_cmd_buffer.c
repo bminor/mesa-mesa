@@ -247,6 +247,16 @@ radv_cmd_set_conservative_rasterization_mode(struct radv_cmd_buffer *cmd_buffer,
    state->dirty_dynamic |= RADV_DYNAMIC_CONSERVATIVE_RAST_MODE;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_provoking_vertex_mode(struct radv_cmd_buffer *cmd_buffer, VkProvokingVertexModeEXT provoking_vertex_mode)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.rs.provoking_vertex = provoking_vertex_mode;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_PROVOKING_VERTEX_MODE;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -470,7 +480,12 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }
    }
 
-   RADV_CMP_COPY(vk.rs.provoking_vertex, RADV_DYNAMIC_PROVOKING_VERTEX_MODE);
+   if (copy_mask & RADV_DYNAMIC_PROVOKING_VERTEX_MODE) {
+      if (dest->vk.rs.provoking_vertex != src->vk.rs.provoking_vertex) {
+         radv_cmd_set_provoking_vertex_mode(cmd_buffer, src->vk.rs.provoking_vertex);
+      }
+   }
+
    RADV_CMP_COPY(vk.rs.depth_clamp_enable, RADV_DYNAMIC_DEPTH_CLAMP_ENABLE);
    RADV_CMP_COPY(vk.rs.line.mode, RADV_DYNAMIC_LINE_RASTERIZATION_MODE);
 
@@ -8651,11 +8666,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetProvokingVertexModeEXT(VkCommandBuffer commandBuffer, VkProvokingVertexModeEXT provokingVertexMode)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   state->dynamic.vk.rs.provoking_vertex = provokingVertexMode;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_PROVOKING_VERTEX_MODE;
+   radv_cmd_set_provoking_vertex_mode(cmd_buffer, provokingVertexMode);
 }
 
 VKAPI_ATTR void VKAPI_CALL
