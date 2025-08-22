@@ -83,7 +83,7 @@ _mesa_half_to_float(uint16_t val)
       __asm volatile("vcvtph2ps %1, %0" : "=v"(out) : "v"(in));
       return out[0];
    }
-#elif DETECT_ARCH_AARCH64
+#elif DETECT_ARCH_AARCH64 && DETECT_CC_GCC
    float result;
    uint16_t in = val;
 

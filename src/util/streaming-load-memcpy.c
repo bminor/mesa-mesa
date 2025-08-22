@@ -43,7 +43,7 @@ util_streaming_load_memcpy(void *restrict dst, void *restrict src, size_t len)
    char *restrict d = dst;
    char *restrict s = src;
 
-#if defined(USE_SSE41) || DETECT_ARCH_AARCH64
+#if defined(USE_SSE41) || (DETECT_ARCH_AARCH64 && DETECT_CC_GCC)
    /* If dst and src are not co-aligned, or if non-temporal load instructions
     * are not present, fallback to memcpy(). */
    if (((uintptr_t)d & 15) != ((uintptr_t)s & 15)
@@ -92,7 +92,7 @@ util_streaming_load_memcpy(void *restrict dst, void *restrict src, size_t len)
       len -= 64;
    }
 
-#elif DETECT_ARCH_AARCH64
+#elif DETECT_ARCH_AARCH64 && DETECT_CC_GCC
    if (len >= 64) {
       __asm__ volatile(
          /* Memory barrier for loads completion in the non-shareable domain:
