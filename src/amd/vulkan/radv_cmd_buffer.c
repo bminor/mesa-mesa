@@ -86,6 +86,16 @@ radv_cmd_set_tessellation_domain_origin(struct radv_cmd_buffer *cmd_buffer, VkTe
    state->dirty_dynamic |= RADV_DYNAMIC_TESS_DOMAIN_ORIGIN;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_patch_control_points(struct radv_cmd_buffer *cmd_buffer, uint32_t patch_control_points)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.ts.patch_control_points = patch_control_points;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_PATCH_CONTROL_POINTS;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -207,8 +217,6 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    RADV_CMP_COPY(vk.vp.depth_clamp_range.minDepthClamp, RADV_DYNAMIC_DEPTH_CLAMP_RANGE);
    RADV_CMP_COPY(vk.vp.depth_clamp_range.maxDepthClamp, RADV_DYNAMIC_DEPTH_CLAMP_RANGE);
 
-   RADV_CMP_COPY(vk.ts.patch_control_points, RADV_DYNAMIC_PATCH_CONTROL_POINTS);
-
    if (copy_mask & RADV_DYNAMIC_LINE_WIDTH) {
       if (dest->vk.rs.line.width != src->vk.rs.line.width) {
          radv_cmd_set_line_width(cmd_buffer, src->vk.rs.line.width);
@@ -218,6 +226,12 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    if (copy_mask & RADV_DYNAMIC_TESS_DOMAIN_ORIGIN) {
       if (dest->vk.ts.domain_origin != src->vk.ts.domain_origin) {
          radv_cmd_set_tessellation_domain_origin(cmd_buffer, src->vk.ts.domain_origin);
+      }
+   }
+
+   if (copy_mask & RADV_DYNAMIC_PATCH_CONTROL_POINTS) {
+      if (dest->vk.ts.patch_control_points != src->vk.ts.patch_control_points) {
+         radv_cmd_set_patch_control_points(cmd_buffer, src->vk.ts.patch_control_points);
       }
    }
 
@@ -8215,11 +8229,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetPatchControlPointsEXT(VkCommandBuffer commandBuffer, uint32_t patchControlPoints)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   state->dynamic.vk.ts.patch_control_points = patchControlPoints;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_PATCH_CONTROL_POINTS;
+   radv_cmd_set_patch_control_points(cmd_buffer, patchControlPoints);
 }
 
 VKAPI_ATTR void VKAPI_CALL
