@@ -412,6 +412,63 @@ nvk_CmdCopyBuffer2(VkCommandBuffer commandBuffer,
    }
 }
 
+static void
+nvk_remap_insert_aspect(struct nouveau_copy *copy,
+                        struct nouveau_copy *copy2,
+                        enum pipe_format p_format,
+                        const VkImageAspectFlagBits aspects)
+{
+   switch (p_format) {
+   case PIPE_FORMAT_Z32_FLOAT_S8X24_UINT:
+      if (aspects == VK_IMAGE_ASPECT_DEPTH_BIT) {
+         copy->remap.comp_size = 4;
+         copy->remap.dst[0] = NV90B5_SET_REMAP_COMPONENTS_DST_X_SRC_X;
+         copy->remap.dst[1] = NV90B5_SET_REMAP_COMPONENTS_DST_Y_NO_WRITE;
+         copy->remap.dst[2] = NV90B5_SET_REMAP_COMPONENTS_DST_Z_NO_WRITE;
+         copy->remap.dst[3] = NV90B5_SET_REMAP_COMPONENTS_DST_W_NO_WRITE;
+      } else {
+         assert(aspects == VK_IMAGE_ASPECT_STENCIL_BIT);
+         copy2->extent_el = copy->extent_el;
+
+         copy->remap.comp_size = 1;
+         copy->remap.dst[0] = NV90B5_SET_REMAP_COMPONENTS_DST_X_SRC_X;
+         copy->remap.dst[1] = NV90B5_SET_REMAP_COMPONENTS_DST_Y_NO_WRITE;
+         copy->remap.dst[2] = NV90B5_SET_REMAP_COMPONENTS_DST_Z_NO_WRITE;
+         copy->remap.dst[3] = NV90B5_SET_REMAP_COMPONENTS_DST_W_NO_WRITE;
+
+         copy2->remap.comp_size = 2;
+         copy2->remap.dst[0] = NV90B5_SET_REMAP_COMPONENTS_DST_X_NO_WRITE;
+         copy2->remap.dst[1] = NV90B5_SET_REMAP_COMPONENTS_DST_Y_NO_WRITE;
+         copy2->remap.dst[2] = NV90B5_SET_REMAP_COMPONENTS_DST_Z_SRC_X;
+         copy2->remap.dst[3] = NV90B5_SET_REMAP_COMPONENTS_DST_W_NO_WRITE;
+      }
+      break;
+   case PIPE_FORMAT_Z24_UNORM_S8_UINT:
+      if (aspects == VK_IMAGE_ASPECT_DEPTH_BIT) {
+         copy->remap.comp_size = 1;
+         copy->remap.dst[0] = NV90B5_SET_REMAP_COMPONENTS_DST_X_SRC_X;
+         copy->remap.dst[1] = NV90B5_SET_REMAP_COMPONENTS_DST_Y_SRC_Y;
+         copy->remap.dst[2] = NV90B5_SET_REMAP_COMPONENTS_DST_Z_SRC_Z;
+         copy->remap.dst[3] = NV90B5_SET_REMAP_COMPONENTS_DST_W_NO_WRITE;
+      } else {
+         assert(aspects == VK_IMAGE_ASPECT_STENCIL_BIT);
+         copy->remap.comp_size = 1;
+         copy->remap.dst[0] = NV90B5_SET_REMAP_COMPONENTS_DST_X_NO_WRITE;
+         copy->remap.dst[1] = NV90B5_SET_REMAP_COMPONENTS_DST_Y_NO_WRITE;
+         copy->remap.dst[2] = NV90B5_SET_REMAP_COMPONENTS_DST_Z_NO_WRITE;
+         copy->remap.dst[3] = NV90B5_SET_REMAP_COMPONENTS_DST_W_SRC_X;
+      }
+      break;
+   case PIPE_FORMAT_Z16_UNORM_S8_UINT:
+   case PIPE_FORMAT_S8_UINT_Z24_UNORM:
+      UNREACHABLE("Unsupported packed depth/stencil format");
+      break;
+   default:
+      copy->remap = nouveau_copy_remap_format(p_format);
+      break;
+   }
+}
+
 VKAPI_ATTR void VKAPI_CALL
 nvk_CmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
                           const VkCopyBufferToImageInfo2 *pCopyBufferToImageInfo)
@@ -449,59 +506,13 @@ nvk_CmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
       };
       struct nouveau_copy copy2 = { 0 };
 
-      switch (format.p_format) {
-      case PIPE_FORMAT_Z32_FLOAT_S8X24_UINT:
-         if (aspects == VK_IMAGE_ASPECT_DEPTH_BIT) {
-            copy.remap.comp_size = 4;
-            copy.remap.dst[0] = NV90B5_SET_REMAP_COMPONENTS_DST_X_SRC_X;
-            copy.remap.dst[1] = NV90B5_SET_REMAP_COMPONENTS_DST_Y_NO_WRITE;
-            copy.remap.dst[2] = NV90B5_SET_REMAP_COMPONENTS_DST_Z_NO_WRITE;
-            copy.remap.dst[3] = NV90B5_SET_REMAP_COMPONENTS_DST_W_NO_WRITE;
-         } else {
-            assert(aspects == VK_IMAGE_ASPECT_STENCIL_BIT);
-            copy2.dst = copy.dst;
-            copy2.extent_el = copy.extent_el;
-            copy.dst = copy2.src =
-               nouveau_copy_rect_image(dst, &dst->stencil_copy_temp,
-                                       region->imageOffset,
-                                       &region->imageSubresource);
-
-            copy.remap.comp_size = 1;
-            copy.remap.dst[0] = NV90B5_SET_REMAP_COMPONENTS_DST_X_SRC_X;
-            copy.remap.dst[1] = NV90B5_SET_REMAP_COMPONENTS_DST_Y_NO_WRITE;
-            copy.remap.dst[2] = NV90B5_SET_REMAP_COMPONENTS_DST_Z_NO_WRITE;
-            copy.remap.dst[3] = NV90B5_SET_REMAP_COMPONENTS_DST_W_NO_WRITE;
-
-            copy2.remap.comp_size = 2;
-            copy2.remap.dst[0] = NV90B5_SET_REMAP_COMPONENTS_DST_X_NO_WRITE;
-            copy2.remap.dst[1] = NV90B5_SET_REMAP_COMPONENTS_DST_Y_NO_WRITE;
-            copy2.remap.dst[2] = NV90B5_SET_REMAP_COMPONENTS_DST_Z_SRC_X;
-            copy2.remap.dst[3] = NV90B5_SET_REMAP_COMPONENTS_DST_W_NO_WRITE;
-         }
-         break;
-      case PIPE_FORMAT_Z24_UNORM_S8_UINT:
-         if (aspects == VK_IMAGE_ASPECT_DEPTH_BIT) {
-            copy.remap.comp_size = 1;
-            copy.remap.dst[0] = NV90B5_SET_REMAP_COMPONENTS_DST_X_SRC_X;
-            copy.remap.dst[1] = NV90B5_SET_REMAP_COMPONENTS_DST_Y_SRC_Y;
-            copy.remap.dst[2] = NV90B5_SET_REMAP_COMPONENTS_DST_Z_SRC_Z;
-            copy.remap.dst[3] = NV90B5_SET_REMAP_COMPONENTS_DST_W_NO_WRITE;
-         } else {
-            assert(aspects == VK_IMAGE_ASPECT_STENCIL_BIT);
-            copy.remap.comp_size = 1;
-            copy.remap.dst[0] = NV90B5_SET_REMAP_COMPONENTS_DST_X_NO_WRITE;
-            copy.remap.dst[1] = NV90B5_SET_REMAP_COMPONENTS_DST_Y_NO_WRITE;
-            copy.remap.dst[2] = NV90B5_SET_REMAP_COMPONENTS_DST_Z_NO_WRITE;
-            copy.remap.dst[3] = NV90B5_SET_REMAP_COMPONENTS_DST_W_SRC_X;
-         }
-         break;
-      case PIPE_FORMAT_Z16_UNORM_S8_UINT:
-      case PIPE_FORMAT_S8_UINT_Z24_UNORM:
-         UNREACHABLE("Unsupported packed depth/stencil format");
-         break;
-      default:
-         copy.remap = nouveau_copy_remap_format(format.p_format);
-         break;
+      nvk_remap_insert_aspect(&copy, &copy2, format.p_format, aspects);
+      if (copy2.extent_el.width > 0) {
+         copy2.dst = copy.dst;
+         copy.dst = copy2.src =
+            nouveau_copy_rect_image(dst, &dst->stencil_copy_temp,
+                                    region->imageOffset,
+                                    &region->imageSubresource);
       }
 
       nouveau_copy_rect(cmd, &copy);
