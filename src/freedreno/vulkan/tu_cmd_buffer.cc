@@ -4094,11 +4094,9 @@ tu_CmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer,
    for (uint32_t i = 0; i < bindingCount; i++) {
       VK_FROM_HANDLE(tu_buffer, buf, pBuffers[i]);
       uint64_t iova = vk_buffer_address(&buf->vk, pOffsets[i]);
-      uint32_t size = buf->bo->size - (iova - buf->bo->iova);
+      uint32_t size = vk_buffer_range(&buf->vk, pOffsets[i],
+                                      pSizes ? pSizes[i] : VK_WHOLE_SIZE);
       uint32_t idx = i + firstBinding;
-
-      if (pSizes && pSizes[i] != VK_WHOLE_SIZE)
-         size = pSizes[i];
 
       /* BUFFER_BASE is 32-byte aligned, add remaining offset to BUFFER_OFFSET */
       uint32_t offset = iova & 0x1f;
