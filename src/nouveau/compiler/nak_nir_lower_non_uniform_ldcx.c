@@ -72,6 +72,17 @@ lower_ldcx_to_global(nir_builder *b, nir_intrinsic_instr *load,
    nir_def_replace(&load->def, val);
 }
 
+static bool
+lower_all_ldcx_to_global_intrin(nir_builder *b, nir_intrinsic_instr *load,
+                                void *data)
+{
+   if (load->intrinsic != nir_intrinsic_ldcx_nv)
+      return false;
+
+   lower_ldcx_to_global(b, load, data);
+   return true;
+}
+
 struct non_uniform_section {
    nir_block *pred;
    nir_block *succ;
@@ -491,6 +502,12 @@ bool
 nak_nir_lower_non_uniform_ldcx(nir_shader *nir,
                                const struct nak_compiler *nak)
 {
+   /* If we don't have UGPRs, lower all of them. */
+   if (nak_debug_no_ugpr()) {
+      return nir_shader_intrinsics_pass(nir, lower_all_ldcx_to_global_intrin,
+                                        nir_metadata_none, (void *)nak);
+   }
+
    /* Real functions are going to make hash of this */
    nir_function_impl *impl = nir_shader_get_entrypoint(nir);
    nir_builder b = nir_builder_create(impl);

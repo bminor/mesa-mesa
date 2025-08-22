@@ -107,6 +107,11 @@ pub extern "C" fn nak_should_print_nir() -> bool {
     DEBUG.print()
 }
 
+#[no_mangle]
+pub extern "C" fn nak_debug_no_ugpr() -> bool {
+    DEBUG.no_ugpr()
+}
+
 fn nir_options(dev: &nv_device_info) -> nir_shader_compiler_options {
     let mut op: nir_shader_compiler_options = Default::default();
 
