@@ -216,6 +216,16 @@ radv_cmd_set_polygon_mode(struct radv_cmd_buffer *cmd_buffer, VkPolygonMode poly
    state->dirty_dynamic |= RADV_DYNAMIC_POLYGON_MODE;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_line_stipple_enable(struct radv_cmd_buffer *cmd_buffer, bool line_stipple_enable)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.rs.line.stipple.enable = line_stipple_enable;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_LINE_STIPPLE_ENABLE;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -421,7 +431,12 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }
    }
 
-   RADV_CMP_COPY(vk.rs.line.stipple.enable, RADV_DYNAMIC_LINE_STIPPLE_ENABLE);
+   if (copy_mask & RADV_DYNAMIC_LINE_STIPPLE_ENABLE) {
+      if (dest->vk.rs.line.stipple.enable != src->vk.rs.line.stipple.enable) {
+         radv_cmd_set_line_stipple_enable(cmd_buffer, src->vk.rs.line.stipple.enable);
+      }
+   }
+
    RADV_CMP_COPY(vk.rs.depth_clip_enable, RADV_DYNAMIC_DEPTH_CLIP_ENABLE);
    RADV_CMP_COPY(vk.rs.conservative_mode, RADV_DYNAMIC_CONSERVATIVE_RAST_MODE);
    RADV_CMP_COPY(vk.rs.provoking_vertex, RADV_DYNAMIC_PROVOKING_VERTEX_MODE);
@@ -8542,11 +8557,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetLineStippleEnableEXT(VkCommandBuffer commandBuffer, VkBool32 stippledLineEnable)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   state->dynamic.vk.rs.line.stipple.enable = stippledLineEnable;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_LINE_STIPPLE_ENABLE;
+   radv_cmd_set_line_stipple_enable(cmd_buffer, stippledLineEnable);
 }
 
 VKAPI_ATTR void VKAPI_CALL
