@@ -277,6 +277,16 @@ radv_cmd_set_line_rasterization_mode(struct radv_cmd_buffer *cmd_buffer, VkLineR
    state->dirty_dynamic |= RADV_DYNAMIC_LINE_RASTERIZATION_MODE;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_alpha_to_coverage_enable(struct radv_cmd_buffer *cmd_buffer, bool alpha_to_coverage_enable)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.ms.alpha_to_coverage_enable = alpha_to_coverage_enable;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_ALPHA_TO_COVERAGE_ENABLE;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -518,7 +528,12 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }
    }
 
-   RADV_CMP_COPY(vk.ms.alpha_to_coverage_enable, RADV_DYNAMIC_ALPHA_TO_COVERAGE_ENABLE);
+   if (copy_mask & RADV_DYNAMIC_ALPHA_TO_COVERAGE_ENABLE) {
+      if (dest->vk.ms.alpha_to_coverage_enable != src->vk.ms.alpha_to_coverage_enable) {
+         radv_cmd_set_alpha_to_coverage_enable(cmd_buffer, src->vk.ms.alpha_to_coverage_enable);
+      }
+   }
+
    RADV_CMP_COPY(vk.ms.alpha_to_one_enable, RADV_DYNAMIC_ALPHA_TO_ONE_ENABLE);
    RADV_CMP_COPY(vk.ms.sample_mask, RADV_DYNAMIC_SAMPLE_MASK);
    RADV_CMP_COPY(vk.ms.rasterization_samples, RADV_DYNAMIC_RASTERIZATION_SAMPLES);
@@ -8639,11 +8654,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetAlphaToCoverageEnableEXT(VkCommandBuffer commandBuffer, VkBool32 alphaToCoverageEnable)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   state->dynamic.vk.ms.alpha_to_coverage_enable = alphaToCoverageEnable;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_ALPHA_TO_COVERAGE_ENABLE;
+   radv_cmd_set_alpha_to_coverage_enable(cmd_buffer, alphaToCoverageEnable);
 }
 
 VKAPI_ATTR void VKAPI_CALL
