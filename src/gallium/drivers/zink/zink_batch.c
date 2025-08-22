@@ -413,6 +413,46 @@ find_unused_state(struct zink_batch_state *bs)
    return submitted && completed;
 }
 
+static struct zink_batch_state *
+find_screen_state(struct zink_screen *screen, struct zink_context *ctx)
+{
+   struct zink_batch_state *bs = NULL;
+   simple_mtx_lock(&screen->free_batch_states_lock);
+   if (screen->free_batch_states) {
+      bs = screen->free_batch_states;
+      bs->ctx = ctx;
+      screen->free_batch_states = bs->next;
+      bs->next = NULL;
+      if (bs == screen->last_free_batch_state)
+         screen->last_free_batch_state = NULL;
+   }
+   simple_mtx_unlock(&screen->free_batch_states_lock);
+   return bs;
+}
+
+static struct zink_batch_state *
+find_completed_batch_state(struct zink_context *ctx)
+{
+   struct zink_screen *screen = zink_screen(ctx->base.screen);
+   struct zink_batch_state *bs = NULL;
+
+   /* states are stored sequentially, so if the first one doesn't work, none of them will */
+   for (struct zink_batch_state *i = ctx->batch_states; i; i = i->next) {
+      /* only a submitted state can be reused */
+      if (p_atomic_read(&i->fence.submitted) &&
+          /* a submitted state must have completed before it can be reused */
+          (zink_screen_check_last_finished(screen, i->fence.batch_id) ||
+           p_atomic_read(&i->fence.completed))) {
+         pop_batch_state(ctx);
+         zink_reset_batch_state(ctx, bs);
+         return i;
+      } else {
+         return bs;
+      }
+   }
+   return bs;
+}
+
 /* find a "free" batch state */
 static struct zink_batch_state *
 get_batch_state(struct zink_context *ctx)
@@ -429,31 +469,13 @@ get_batch_state(struct zink_context *ctx)
          ctx->last_free_batch_state = NULL;
    }
    /* try from the ones that are given back to the screen next */
+   if (!bs)
+      bs = find_screen_state(screen, ctx);
+
+   if (!bs)
+      bs = find_completed_batch_state(ctx);
+
    if (!bs) {
-      simple_mtx_lock(&screen->free_batch_states_lock);
-      if (screen->free_batch_states) {
-         bs = screen->free_batch_states;
-         bs->ctx = ctx;
-         screen->free_batch_states = bs->next;
-         if (bs == screen->last_free_batch_state)
-            screen->last_free_batch_state = NULL;
-      }
-      simple_mtx_unlock(&screen->free_batch_states_lock);
-   }
-   /* states are stored sequentially, so if the first one doesn't work, none of them will */
-   if (!bs && ctx->batch_states && ctx->batch_states->next) {
-      /* only a submitted state can be reused */
-      if (p_atomic_read(&ctx->batch_states->fence.submitted) &&
-          /* a submitted state must have completed before it can be reused */
-          (zink_screen_check_last_finished(screen, ctx->batch_states->fence.batch_id) ||
-           p_atomic_read(&ctx->batch_states->fence.completed))) {
-         bs = ctx->batch_states;
-         pop_batch_state(ctx);
-      }
-   }
-   if (bs) {
-      zink_reset_batch_state(ctx, bs);
-   } else {
       if (!ctx->bs) {
          /* this is batch init, so create a few more states for later use */
          for (int i = 0; i < 3; i++) {
