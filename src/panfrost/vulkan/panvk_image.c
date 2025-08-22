@@ -416,11 +416,12 @@ panvk_image_init(struct panvk_image *image,
 
 static void
 panvk_image_plane_bind(struct panvk_device *dev,
-                       struct panvk_image_plane *plane, struct pan_kmod_bo *bo,
-                       uint64_t base, uint64_t offset)
+                       struct panvk_image_plane *plane,
+                       struct panvk_device_memory *mem, uint64_t offset)
 {
-   plane->plane.base = base + offset;
-   plane->offset = offset;
+   plane->plane.base = mem->addr.dev + offset;
+   plane->mem = mem;
+   plane->mem_offset = offset;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
@@ -667,19 +668,15 @@ panvk_image_bind(struct panvk_device *dev,
    }
 
    assert(mem);
-   image->mem = mem;
    if (is_disjoint(image)) {
       const VkBindImagePlaneMemoryInfo *plane_info =
          vk_find_struct_const(bind_info->pNext, BIND_IMAGE_PLANE_MEMORY_INFO);
       const uint8_t plane =
          panvk_plane_index(image->vk.format, plane_info->planeAspect);
-      panvk_image_plane_bind(dev, &image->planes[plane], mem->bo, mem->addr.dev,
-                             offset);
+      panvk_image_plane_bind(dev, &image->planes[plane], mem, offset);
    } else {
-      for (unsigned plane = 0; plane < image->plane_count; plane++) {
-         panvk_image_plane_bind(dev, &image->planes[plane], mem->bo,
-                                mem->addr.dev, offset);
-      }
+      for (unsigned plane = 0; plane < image->plane_count; plane++)
+         panvk_image_plane_bind(dev, &image->planes[plane], mem, offset);
    }
 
    return VK_SUCCESS;

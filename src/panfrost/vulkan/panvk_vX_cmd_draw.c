@@ -67,7 +67,18 @@ render_state_set_color_attachment(struct panvk_cmd_buffer *cmdbuf,
    state->render.color_attachments.samples[index] = img->vk.samples;
 
 #if PAN_ARCH < 9
-   state->render.fb.bos[state->render.fb.bo_count++] = img->mem->bo;
+   for (uint8_t p = 0; p < ARRAY_SIZE(iview->pview.planes); p++) {
+      struct pan_image_plane_ref pref =
+         pan_image_view_get_plane(&iview->pview, p);
+
+      if (!pref.image)
+         continue;
+
+      assert(pref.plane_idx < ARRAY_SIZE(img->planes));
+      assert(img->planes[pref.plane_idx].mem->bo != NULL);
+      state->render.fb.bos[state->render.fb.bo_count++] =
+         img->planes[pref.plane_idx].mem->bo;
+   }
 #endif
 
    fbinfo->rts[index].view = &iview->pview;
@@ -108,7 +119,8 @@ render_state_set_z_attachment(struct panvk_cmd_buffer *cmdbuf,
       container_of(iview->vk.image, struct panvk_image, vk);
 
 #if PAN_ARCH < 9
-   state->render.fb.bos[state->render.fb.bo_count++] = img->mem->bo;
+   /* Depth plane always comes first. */
+   state->render.fb.bos[state->render.fb.bo_count++] = img->planes[0].mem->bo;
 #endif
 
    state->render.z_attachment.fmt = iview->vk.format;
@@ -172,7 +184,9 @@ render_state_set_s_attachment(struct panvk_cmd_buffer *cmdbuf,
       container_of(iview->vk.image, struct panvk_image, vk);
 
 #if PAN_ARCH < 9
-   state->render.fb.bos[state->render.fb.bo_count++] = img->mem->bo;
+   /* The stencil plane is always last. */
+   state->render.fb.bos[state->render.fb.bo_count++] =
+      img->planes[img->plane_count - 1].mem->bo;
 #endif
 
    state->render.s_attachment.fmt = iview->vk.format;
