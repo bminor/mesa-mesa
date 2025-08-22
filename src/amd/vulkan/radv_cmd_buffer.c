@@ -423,6 +423,19 @@ radv_cmd_set_logic_op_enable(struct radv_cmd_buffer *cmd_buffer, bool logic_op_e
    state->dirty_dynamic |= RADV_DYNAMIC_LOGIC_OP_ENABLE;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_fragment_shading_rate(struct radv_cmd_buffer *cmd_buffer, const VkExtent2D *fragment_size,
+                                   const VkFragmentShadingRateCombinerOpKHR combiner_ops[2])
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.fsr.fragment_size = *fragment_size;
+   for (unsigned i = 0; i < 2; i++)
+      state->dynamic.vk.fsr.combiner_ops[i] = combiner_ops[i];
+
+   state->dirty_dynamic |= RADV_DYNAMIC_FRAGMENT_SHADING_RATE;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -768,10 +781,14 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }
    }
 
-   RADV_CMP_COPY(vk.fsr.fragment_size.width, RADV_DYNAMIC_FRAGMENT_SHADING_RATE);
-   RADV_CMP_COPY(vk.fsr.fragment_size.height, RADV_DYNAMIC_FRAGMENT_SHADING_RATE);
-   RADV_CMP_COPY(vk.fsr.combiner_ops[0], RADV_DYNAMIC_FRAGMENT_SHADING_RATE);
-   RADV_CMP_COPY(vk.fsr.combiner_ops[1], RADV_DYNAMIC_FRAGMENT_SHADING_RATE);
+   if (copy_mask & RADV_DYNAMIC_FRAGMENT_SHADING_RATE) {
+      if (dest->vk.fsr.fragment_size.width != src->vk.fsr.fragment_size.width ||
+          dest->vk.fsr.fragment_size.height != src->vk.fsr.fragment_size.height ||
+          dest->vk.fsr.combiner_ops[0] != src->vk.fsr.combiner_ops[0] ||
+          dest->vk.fsr.combiner_ops[1] != src->vk.fsr.combiner_ops[1]) {
+         radv_cmd_set_fragment_shading_rate(cmd_buffer, &src->vk.fsr.fragment_size, src->vk.fsr.combiner_ops);
+      }
+   }
 
    RADV_CMP_COPY(vk.dr.enable, RADV_DYNAMIC_DISCARD_RECTANGLE_ENABLE);
    RADV_CMP_COPY(vk.dr.mode, RADV_DYNAMIC_DISCARD_RECTANGLE_MODE);
@@ -8622,13 +8639,7 @@ radv_CmdSetFragmentShadingRateKHR(VkCommandBuffer commandBuffer, const VkExtent2
                                   const VkFragmentShadingRateCombinerOpKHR combinerOps[2])
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   state->dynamic.vk.fsr.fragment_size = *pFragmentSize;
-   for (unsigned i = 0; i < 2; i++)
-      state->dynamic.vk.fsr.combiner_ops[i] = combinerOps[i];
-
-   state->dirty_dynamic |= RADV_DYNAMIC_FRAGMENT_SHADING_RATE;
+   radv_cmd_set_fragment_shading_rate(cmd_buffer, pFragmentSize, combinerOps);
 }
 
 VKAPI_ATTR void VKAPI_CALL
