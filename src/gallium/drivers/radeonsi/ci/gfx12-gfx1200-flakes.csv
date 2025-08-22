@@ -38,34 +38,6 @@ KHR-GLES32.core.geometry_shader.primitive_counter.points_to_line_strip_rp
 KHR-GLES32.core.geometry_shader.primitive_counter.triangles_to_line_strip
 KHR-GLES32.core.geometry_shader.primitive_counter.triangles_to_line_strip_rp
 
-dEQP-GLES3.functional.occlusion_query.conservative_all_occluders
-dEQP-GLES3.functional.occlusion_query.conservative_depth_clear
-dEQP-GLES3.functional.occlusion_query.conservative_depth_clear_stencil_write
-dEQP-GLES3.functional.occlusion_query.conservative_depth_write
-dEQP-GLES3.functional.occlusion_query.conservative_depth_write_depth_clear_stencil_write_stencil_clear
-dEQP-GLES3.functional.occlusion_query.conservative_scissor
-dEQP-GLES3.functional.occlusion_query.conservative_scissor_depth_write_stencil_write_stencil_clear
-dEQP-GLES3.functional.occlusion_query.conservative_stencil_clear
-dEQP-GLES3.functional.occlusion_query.conservative_stencil_write
-dEQP-GLES3.functional.occlusion_query.conservative_stencil_write_stencil_clear
-dEQP-GLES3.functional.occlusion_query.all_occluders
-dEQP-GLES3.functional.occlusion_query.depth_clear
-dEQP-GLES3.functional.occlusion_query.depth_clear_stencil_write
-dEQP-GLES3.functional.occlusion_query.depth_write
-dEQP-GLES3.functional.occlusion_query.depth_write_depth_clear
-dEQP-GLES3.functional.occlusion_query.depth_write_depth_clear_stencil_clear
-dEQP-GLES3.functional.occlusion_query.depth_write_depth_clear_stencil_write
-dEQP-GLES3.functional.occlusion_query.depth_write_stencil_clear
-dEQP-GLES3.functional.occlusion_query.depth_write_stencil_write
-dEQP-GLES3.functional.occlusion_query.depth_write_stencil_write_stencil_clear
-dEQP-GLES3.functional.occlusion_query.scissor
-dEQP-GLES3.functional.occlusion_query.scissor_depth_clear
-dEQP-GLES3.functional.occlusion_query.scissor_depth_write_depth_clear_stencil_write
-dEQP-GLES3.functional.occlusion_query.scissor_depth_write_stencil_write
-dEQP-GLES3.functional.occlusion_query.scissor_stencil_write
-dEQP-GLES3.functional.occlusion_query.stencil_clear
-dEQP-GLES3.functional.occlusion_query.stencil_write
-
 KHR-GL46.shaders.uniform_block.random.all_shared_buffer.12
 
 # These pass when run separately, but fail when run via deqp-runner

@@ -538,7 +538,12 @@ static void si_flush_all_queues(struct pipe_context *ctx,
    }
    assert(!fine.buf);
 finish:
-   if (!(flags & (PIPE_FLUSH_DEFERRED | PIPE_FLUSH_ASYNC))) {
+   if (!(flags & (PIPE_FLUSH_DEFERRED | PIPE_FLUSH_ASYNC)) ||
+        (flags & PIPE_FLUSH_HINT_FINISH)) {
+      /* sync if PIPE_FLUSH_HINT_FINISH is set: this is required to get the
+       * BOs' num_active_ioctls value updated before the fence status can be
+       * read.
+       */
       ws->cs_sync_flush(&sctx->gfx_cs);
    }
 }
