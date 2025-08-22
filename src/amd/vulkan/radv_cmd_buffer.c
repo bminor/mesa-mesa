@@ -495,6 +495,16 @@ radv_cmd_set_discard_rectangle_enable(struct radv_cmd_buffer *cmd_buffer, bool d
    state->dirty_dynamic |= RADV_DYNAMIC_DISCARD_RECTANGLE_ENABLE;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_depth_test_enable(struct radv_cmd_buffer *cmd_buffer, bool depth_test_enable)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.ds.depth.test_enable = depth_test_enable;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_DEPTH_TEST_ENABLE;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -806,7 +816,12 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }
    }
 
-   RADV_CMP_COPY(vk.ds.depth.test_enable, RADV_DYNAMIC_DEPTH_TEST_ENABLE);
+   if (copy_mask & RADV_DYNAMIC_DEPTH_TEST_ENABLE) {
+      if (dest->vk.ds.depth.test_enable != src->vk.ds.depth.test_enable) {
+         radv_cmd_set_depth_test_enable(cmd_buffer, src->vk.ds.depth.test_enable);
+      }
+   }
+
    RADV_CMP_COPY(vk.ds.depth.write_enable, RADV_DYNAMIC_DEPTH_WRITE_ENABLE);
    RADV_CMP_COPY(vk.ds.depth.compare_op, RADV_DYNAMIC_DEPTH_COMPARE_OP);
    RADV_CMP_COPY(vk.ds.depth.bounds_test.enable, RADV_DYNAMIC_DEPTH_BOUNDS_TEST_ENABLE);
@@ -8615,14 +8630,9 @@ radv_CmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount
 
 VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable)
-
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   state->dynamic.vk.ds.depth.test_enable = depthTestEnable;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_DEPTH_TEST_ENABLE;
+   radv_cmd_set_depth_test_enable(cmd_buffer, depthTestEnable);
 }
 
 VKAPI_ATTR void VKAPI_CALL
