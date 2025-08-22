@@ -903,10 +903,6 @@ panvk_per_arch(CmdBindIndexBuffer2)(VkCommandBuffer commandBuffer,
       cmdbuf->state.gfx.ib.size = panvk_buffer_range(buf, offset, size);
       assert(cmdbuf->state.gfx.ib.size <= UINT32_MAX);
       cmdbuf->state.gfx.ib.dev_addr = panvk_buffer_gpu_ptr(buf, offset);
-#if PAN_ARCH < 9
-      cmdbuf->state.gfx.ib.host_addr =
-         buf && buf->host_ptr ? buf->host_ptr + offset : NULL;
-#endif
    } else {
       cmdbuf->state.gfx.ib.size = 0;
       /* In case of NullDescriptors, we need to set a non-NULL address and rely
@@ -914,9 +910,6 @@ panvk_per_arch(CmdBindIndexBuffer2)(VkCommandBuffer commandBuffer,
        * that this only works for v10+, as v9 does not have a way to specify the
        * index buffer size. */
       cmdbuf->state.gfx.ib.dev_addr = PAN_ARCH >= 10 ? 0x1000 : 0;
-#if PAN_ARCH < 9
-      cmdbuf->state.gfx.ib.host_addr = 0;
-#endif
    }
    cmdbuf->state.gfx.ib.index_size = vk_index_type_to_bytes(indexType);
 

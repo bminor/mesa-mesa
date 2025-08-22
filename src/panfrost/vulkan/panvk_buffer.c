@@ -103,16 +103,5 @@ panvk_DestroyBuffer(VkDevice _device, VkBuffer _buffer,
    if (!buffer)
       return;
 
-   if (buffer->host_ptr) {
-      VkDeviceSize pgsize = getpagesize();
-      uintptr_t map_start = (uintptr_t)buffer->host_ptr & ~(pgsize - 1);
-      uintptr_t map_end =
-         ALIGN_POT((uintptr_t)buffer->host_ptr + buffer->vk.size, pgsize);
-      ASSERTED int ret = os_munmap((void *)map_start, map_end - map_start);
-
-      assert(!ret);
-      buffer->host_ptr = NULL;
-   }
-
    vk_buffer_destroy(&device->vk, pAllocator, &buffer->vk);
 }

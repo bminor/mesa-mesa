@@ -170,9 +170,6 @@ struct panvk_cmd_graphics_state {
    /* Index buffer */
    struct {
       uint64_t dev_addr;
-#if PAN_ARCH < 9
-      void *host_addr;
-#endif
       uint64_t size;
       uint8_t index_size;
    } ib;
