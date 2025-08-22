@@ -1,5 +1,4 @@
 test_shader_instructions,Fail
 test_line_rasterization,Fail
-
-# Hangs
-test_fence_wait_robustness,Crash
+test_large_texel_buffer_view,Fail
+test_derivative_hoisting_dxil,Fail
