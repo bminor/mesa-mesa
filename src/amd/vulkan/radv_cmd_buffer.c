@@ -535,6 +535,16 @@ radv_cmd_set_depth_bounds_test_enable(struct radv_cmd_buffer *cmd_buffer, bool d
    state->dirty_dynamic |= RADV_DYNAMIC_DEPTH_BOUNDS_TEST_ENABLE;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_stencil_test_enable(struct radv_cmd_buffer *cmd_buffer, bool stencil_test_enable)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.ds.stencil.test_enable = stencil_test_enable;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_STENCIL_TEST_ENABLE;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -870,7 +880,12 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }
    }
 
-   RADV_CMP_COPY(vk.ds.stencil.test_enable, RADV_DYNAMIC_STENCIL_TEST_ENABLE);
+   if (copy_mask & RADV_DYNAMIC_STENCIL_TEST_ENABLE) {
+      if (dest->vk.ds.stencil.test_enable != src->vk.ds.stencil.test_enable) {
+         radv_cmd_set_stencil_test_enable(cmd_buffer, src->vk.ds.stencil.test_enable);
+      }
+   }
+
    RADV_CMP_COPY(vk.ds.stencil.front.op.fail, RADV_DYNAMIC_STENCIL_OP);
    RADV_CMP_COPY(vk.ds.stencil.front.op.pass, RADV_DYNAMIC_STENCIL_OP);
    RADV_CMP_COPY(vk.ds.stencil.front.op.depth_fail, RADV_DYNAMIC_STENCIL_OP);
@@ -8705,11 +8720,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetStencilTestEnable(VkCommandBuffer commandBuffer, VkBool32 stencilTestEnable)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   state->dynamic.vk.ds.stencil.test_enable = stencilTestEnable;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_STENCIL_TEST_ENABLE;
+   radv_cmd_set_stencil_test_enable(cmd_buffer, stencilTestEnable);
 }
 
 VKAPI_ATTR void VKAPI_CALL
