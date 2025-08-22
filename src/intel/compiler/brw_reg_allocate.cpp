@@ -1351,6 +1351,7 @@ brw_reg_alloc::assign_regs(bool allow_spilling, bool spill_all)
          int reg = choose_spill_reg();
          if (reg != -1) {
             spill_reg(reg);
+            spilled++;
             continue;
          }
       }
