@@ -841,6 +841,12 @@ enum {
    LVP_CMD_SAVE_STATE,
    LVP_CMD_RESTORE_STATE,
 };
+#define LVP_CMD_WRITE_BUFFER_CP ((enum vk_cmd_type)LVP_CMD_WRITE_BUFFER_CP)
+#define LVP_CMD_DISPATCH_UNALIGNED ((enum vk_cmd_type)LVP_CMD_DISPATCH_UNALIGNED)
+#define LVP_CMD_FILL_BUFFER_ADDR ((enum vk_cmd_type)LVP_CMD_FILL_BUFFER_ADDR)
+#define LVP_CMD_ENCODE_AS ((enum vk_cmd_type)LVP_CMD_ENCODE_AS)
+#define LVP_CMD_SAVE_STATE ((enum vk_cmd_type)LVP_CMD_SAVE_STATE)
+#define LVP_CMD_RESTORE_STATE ((enum vk_cmd_type)LVP_CMD_RESTORE_STATE)
 
 #ifdef __cplusplus
 }
