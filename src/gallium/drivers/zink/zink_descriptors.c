@@ -1078,11 +1078,13 @@ enlarge_db(struct zink_context *ctx)
    struct zink_batch_state *bs = ctx->bs;
    /* ensure current db surives */
    zink_batch_reference_resource(ctx, bs->dd.db);
-   /* rebinding a db mid-batch is extremely costly: if we start with a factor
-    * 16 and then half the factor with each new allocation. It shouldn't need to
-    * do this more than twice. */
-   ctx->dd.db.max_db_size *= ctx->dd.db.size_enlarge_scale;
-   ctx->dd.db.size_enlarge_scale = MAX2(ctx->dd.db.size_enlarge_scale >> 1, 4);
+   if (bs->dd.db->base.b.width0 >= bs->ctx->dd.db.max_db_size * screen->base_descriptor_size) {
+      /* rebinding a db mid-batch is extremely costly: if we start with a factor
+      * 16 and then half the factor with each new allocation. It shouldn't need to
+      * do this more than twice. */
+      ctx->dd.db.max_db_size *= ctx->dd.db.size_enlarge_scale;
+      ctx->dd.db.size_enlarge_scale = MAX2(ctx->dd.db.size_enlarge_scale >> 1, 4);
+   }
    reinit_db(screen, bs);
 }
 
