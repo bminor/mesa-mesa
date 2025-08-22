@@ -56,41 +56,43 @@ brw_lower_load_payload(brw_shader &s)
       if (inst->opcode != SHADER_OPCODE_LOAD_PAYLOAD)
          continue;
 
-      assert(inst->dst.file == VGRF);
-      assert(inst->saturate == false);
-      brw_reg dst = inst->dst;
+      brw_load_payload_inst *lp = inst->as_load_payload();
 
-      const brw_builder ibld(inst);
+      assert(lp->dst.file == VGRF);
+      assert(lp->saturate == false);
+      brw_reg dst = lp->dst;
+
+      const brw_builder ibld(lp);
       const brw_builder ubld = ibld.exec_all();
 
-      for (uint8_t i = 0; i < inst->header_size;) {
+      for (uint8_t i = 0; i < lp->header_size;) {
          /* Number of header GRFs to initialize at once with a single MOV
           * instruction.
           */
          const unsigned n =
-            (i + 1 < inst->header_size &&
-             (inst->src[i].file == IMM ||
-              (inst->src[i].is_contiguous() &&
-               inst->src[i + 1].equals(byte_offset(inst->src[i], REG_SIZE))))) ?
+            (i + 1 < lp->header_size &&
+             (lp->src[i].file == IMM ||
+              (lp->src[i].is_contiguous() &&
+               lp->src[i + 1].equals(byte_offset(lp->src[i], REG_SIZE))))) ?
             2 : 1;
 
-         if (inst->src[i].file != BAD_FILE)
+         if (lp->src[i].file != BAD_FILE)
             ubld.group(8 * n, 0).MOV(retype(dst, BRW_TYPE_UD),
-                                     retype(inst->src[i], BRW_TYPE_UD));
+                                     retype(lp->src[i], BRW_TYPE_UD));
 
          dst = byte_offset(dst, n * REG_SIZE);
          i += n;
       }
 
-      for (uint8_t i = inst->header_size; i < inst->sources; i++) {
-         dst.type = inst->src[i].type;
-         if (inst->src[i].file != BAD_FILE) {
-            ibld.MOV(dst, inst->src[i]);
+      for (uint8_t i = lp->header_size; i < lp->sources; i++) {
+         dst.type = lp->src[i].type;
+         if (lp->src[i].file != BAD_FILE) {
+            ibld.MOV(dst, lp->src[i]);
          }
          dst = offset(dst, ibld, 1);
       }
 
-      inst->remove();
+      lp->remove();
       progress = true;
    }
 

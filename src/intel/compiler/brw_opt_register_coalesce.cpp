@@ -48,14 +48,16 @@ static bool
 is_nop_mov(const brw_inst *inst)
 {
    if (inst->opcode == SHADER_OPCODE_LOAD_PAYLOAD) {
-      brw_reg dst = inst->dst;
-      for (int i = 0; i < inst->sources; i++) {
-         if (!dst.equals(inst->src[i])) {
+      const brw_load_payload_inst *lp = inst->as_load_payload();
+
+      brw_reg dst = lp->dst;
+      for (int i = 0; i < lp->sources; i++) {
+         if (!dst.equals(lp->src[i])) {
             return false;
          }
-         dst.offset += (i < inst->header_size ? REG_SIZE :
-                        inst->exec_size * dst.stride *
-                        brw_type_size_bytes(inst->src[i].type));
+         dst.offset += (i < lp->header_size ? REG_SIZE :
+                        lp->exec_size * dst.stride *
+                        brw_type_size_bytes(lp->src[i].type));
       }
       return true;
    } else if (inst->opcode == BRW_OPCODE_MOV) {

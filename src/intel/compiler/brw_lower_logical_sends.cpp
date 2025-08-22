@@ -45,7 +45,6 @@ lower_urb_read_logical_send(const brw_builder &bld, brw_inst *inst)
       inst->src[URB_LOGICAL_SRC_PER_SLOT_OFFSETS].file != BAD_FILE;
 
    assert(inst->size_written % REG_SIZE == 0);
-   assert(inst->header_size == 0);
 
    brw_reg payload_sources[2];
    unsigned header_size = 0;
@@ -86,7 +85,6 @@ lower_urb_read_logical_send_xe2(const brw_builder &bld, brw_inst *inst)
    assert(devinfo->has_lsc);
 
    assert(inst->size_written % (REG_SIZE * reg_unit(devinfo)) == 0);
-   assert(inst->header_size == 0);
 
    /* Get the logical send arguments. */
    const brw_reg handle = inst->src[URB_LOGICAL_SRC_HANDLE];
@@ -145,8 +143,6 @@ lower_urb_write_logical_send(const brw_builder &bld, brw_inst *inst)
       inst->src[URB_LOGICAL_SRC_PER_SLOT_OFFSETS].file != BAD_FILE;
    const bool channel_mask_present =
       inst->src[URB_LOGICAL_SRC_CHANNEL_MASK].file != BAD_FILE;
-
-   assert(inst->header_size == 0);
 
    const unsigned length = 1 + per_slot_present + channel_mask_present +
                            inst->components_read(URB_LOGICAL_SRC_DATA);

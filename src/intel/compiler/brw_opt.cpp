@@ -234,7 +234,7 @@ brw_optimize(brw_shader &s)
 }
 
 static unsigned
-load_payload_sources_read_for_size(brw_inst *lp, unsigned size_read)
+load_payload_sources_read_for_size(brw_load_payload_inst *lp, unsigned size_read)
 {
    assert(lp->opcode == SHADER_OPCODE_LOAD_PAYLOAD);
    assert(size_read >= lp->header_size * REG_SIZE);
@@ -283,10 +283,12 @@ brw_opt_zero_samples(brw_shader &s)
       if (send->ex_mlen > 0)
          continue;
 
-      brw_inst *lp = (brw_inst *) send->prev;
+      brw_inst *prev = (brw_inst *) send->prev;
 
-      if (lp->is_head_sentinel() || lp->opcode != SHADER_OPCODE_LOAD_PAYLOAD)
+      if (prev->is_head_sentinel() || prev->opcode != SHADER_OPCODE_LOAD_PAYLOAD)
          continue;
+
+      brw_load_payload_inst *lp = prev->as_load_payload();
 
       /* How much of the payload are actually read by this SEND. */
       const unsigned params =
@@ -353,10 +355,12 @@ brw_opt_split_sends(brw_shader &s)
          continue;
 
       /* Currently don't split sends that reuse a previously used payload. */
-      brw_inst *lp = (brw_inst *) send->prev;
+      brw_inst *prev = (brw_inst *) send->prev;
 
-      if (lp->is_head_sentinel() || lp->opcode != SHADER_OPCODE_LOAD_PAYLOAD)
+      if (prev->is_head_sentinel() || prev->opcode != SHADER_OPCODE_LOAD_PAYLOAD)
          continue;
+
+      brw_load_payload_inst *lp = prev->as_load_payload();
 
       if (lp->dst.file != send->src[SEND_SRC_PAYLOAD1].file ||
           lp->dst.nr != send->src[SEND_SRC_PAYLOAD1].nr)

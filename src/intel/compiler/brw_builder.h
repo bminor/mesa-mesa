@@ -765,19 +765,20 @@ public:
    /**
     * Collect a number of registers in a contiguous range of registers.
     */
-   brw_inst *
+   brw_load_payload_inst *
    LOAD_PAYLOAD(const brw_reg &dst, const brw_reg *src,
                 unsigned sources, unsigned header_size) const
    {
-      brw_inst *inst = emit(SHADER_OPCODE_LOAD_PAYLOAD, dst, src, sources);
-      inst->header_size = header_size;
-      inst->size_written = header_size * REG_SIZE;
+      brw_load_payload_inst *lp =
+         emit(SHADER_OPCODE_LOAD_PAYLOAD, dst, src, sources)->as_load_payload();
+      lp->header_size = header_size;
+      lp->size_written = header_size * REG_SIZE;
       for (unsigned i = header_size; i < sources; i++) {
-         inst->size_written += dispatch_width() * brw_type_size_bytes(src[i].type) *
-                               dst.stride;
+         lp->size_written += dispatch_width() * brw_type_size_bytes(src[i].type) *
+                             dst.stride;
       }
 
-      return inst;
+      return lp;
    }
 
    brw_inst *

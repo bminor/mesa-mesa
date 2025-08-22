@@ -246,6 +246,7 @@ send_inst_match(brw_send_inst *a, brw_send_inst *b)
    return a->mlen == b->mlen &&
           a->ex_mlen == b->ex_mlen &&
           a->sfid == b->sfid &&
+          a->header_size == b->header_size &&
           a->desc == b->desc &&
           a->ex_desc == b->ex_desc &&
           a->send_bits == b->send_bits;
@@ -281,6 +282,12 @@ dpas_inst_match(brw_dpas_inst *a, brw_dpas_inst *b)
 }
 
 static bool
+load_payload_inst_match(brw_load_payload_inst *a, brw_load_payload_inst *b)
+{
+   return a->header_size == b->header_size;
+}
+
+static bool
 instructions_match(brw_inst *a, brw_inst *b, bool *negate)
 {
 
@@ -290,6 +297,8 @@ instructions_match(brw_inst *a, brw_inst *b, bool *negate)
           (a->kind != BRW_KIND_TEX || tex_inst_match(a->as_tex(), b->as_tex())) &&
           (a->kind != BRW_KIND_MEM || mem_inst_match(a->as_mem(), b->as_mem())) &&
           (a->kind != BRW_KIND_DPAS || dpas_inst_match(a->as_dpas(), b->as_dpas())) &&
+          (a->kind != BRW_KIND_LOAD_PAYLOAD ||
+           load_payload_inst_match(a->as_load_payload(), b->as_load_payload())) &&
           a->exec_size == b->exec_size &&
           a->group == b->group &&
           a->predicate == b->predicate &&
@@ -297,7 +306,6 @@ instructions_match(brw_inst *a, brw_inst *b, bool *negate)
           a->dst.type == b->dst.type &&
           a->offset == b->offset &&
           a->size_written == b->size_written &&
-          a->header_size == b->header_size &&
           a->sources == b->sources &&
           a->bits == b->bits &&
           operands_match(a, b, negate);
@@ -339,7 +347,6 @@ hash_inst(const void *v)
       inst->sources,
       inst->exec_size,
       inst->group,
-      inst->header_size,
 
       inst->conditional_mod,
       inst->predicate,
@@ -364,6 +371,7 @@ hash_inst(const void *v)
          send->ex_mlen,
          send->sfid,
          send->send_bits,
+         send->header_size,
       };
       const uint32_t send_u32data[] = {
          send->desc,
@@ -412,6 +420,15 @@ hash_inst(const void *v)
          dpas->rcount,
       };
       hash = HASH(hash, dpas_u8data);
+      break;
+   }
+
+   case BRW_KIND_LOAD_PAYLOAD: {
+      const brw_load_payload_inst *lp = inst->as_load_payload();
+      const uint8_t lp_u8data[] = {
+         lp->header_size,
+      };
+      hash = HASH(hash, lp_u8data);
       break;
    }
 

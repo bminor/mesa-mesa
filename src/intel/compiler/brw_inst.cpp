@@ -17,6 +17,7 @@ brw_inst_kind_size(brw_inst_kind kind)
    STATIC_ASSERT(sizeof(brw_send_inst) >= sizeof(brw_tex_inst));
    STATIC_ASSERT(sizeof(brw_send_inst) >= sizeof(brw_mem_inst));
    STATIC_ASSERT(sizeof(brw_send_inst) >= sizeof(brw_dpas_inst));
+   STATIC_ASSERT(sizeof(brw_send_inst) >= sizeof(brw_load_payload_inst));
 
    /* TODO: Temporarily here to ensure all instructions can be converted to
     * SEND.  Once all new kinds are added, change so that BASE allocate only
@@ -187,6 +188,9 @@ brw_inst_kind_for_opcode(enum opcode opcode)
 
    case BRW_OPCODE_DPAS:
       return BRW_KIND_DPAS;
+
+   case SHADER_OPCODE_LOAD_PAYLOAD:
+      return BRW_KIND_LOAD_PAYLOAD;
 
    default:
       return BRW_KIND_BASE;
@@ -549,7 +553,7 @@ brw_inst::size_read(const struct intel_device_info *devinfo, int arg) const
       break;
 
    case SHADER_OPCODE_LOAD_PAYLOAD:
-      if (arg < this->header_size)
+      if (arg < as_load_payload()->header_size)
          return retype(src[arg], BRW_TYPE_UD).component_size(8);
       break;
 

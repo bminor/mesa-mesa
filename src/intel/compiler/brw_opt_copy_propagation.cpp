@@ -1482,25 +1482,26 @@ opt_copy_propagation_local(brw_shader &s, linear_ctx *lin_ctx,
          acp.add(entry);
       } else if (inst->opcode == SHADER_OPCODE_LOAD_PAYLOAD &&
                  inst->dst.file == VGRF) {
+         brw_load_payload_inst *lp = inst->as_load_payload();
          int offset = 0;
-         for (int i = 0; i < inst->sources; i++) {
-            int effective_width = i < inst->header_size ? 8 : inst->exec_size;
+         for (int i = 0; i < lp->sources; i++) {
+            int effective_width = i < lp->header_size ? 8 : lp->exec_size;
             const unsigned size_written =
-               effective_width * brw_type_size_bytes(inst->src[i].type);
-            if (inst->src[i].file == VGRF ||
-                (inst->src[i].file == FIXED_GRF &&
-                 inst->src[i].is_contiguous())) {
-               const brw_reg_type t = i < inst->header_size ?
-                  BRW_TYPE_UD : inst->src[i].type;
-               brw_reg dst = byte_offset(retype(inst->dst, t), offset);
-               if (!dst.equals(inst->src[i])) {
+               effective_width * brw_type_size_bytes(lp->src[i].type);
+            if (lp->src[i].file == VGRF ||
+                (lp->src[i].file == FIXED_GRF &&
+                 lp->src[i].is_contiguous())) {
+               const brw_reg_type t = i < lp->header_size ?
+                  BRW_TYPE_UD : lp->src[i].type;
+               brw_reg dst = byte_offset(retype(lp->dst, t), offset);
+               if (!dst.equals(lp->src[i])) {
                   acp_entry *entry = linear_zalloc(lin_ctx, acp_entry);
                   entry->dst = dst;
-                  entry->src = retype(inst->src[i], t);
+                  entry->src = retype(lp->src[i], t);
                   entry->size_written = size_written;
-                  entry->size_read = inst->size_read(devinfo, i);
-                  entry->opcode = inst->opcode;
-                  entry->force_writemask_all = inst->force_writemask_all;
+                  entry->size_read = lp->size_read(devinfo, i);
+                  entry->opcode = lp->opcode;
+                  entry->force_writemask_all = lp->force_writemask_all;
                   acp.add(entry);
                }
             }
@@ -1866,7 +1867,7 @@ find_value_for_offset(brw_inst *def, const brw_reg &src, unsigned src_size)
       break;
    case SHADER_OPCODE_LOAD_PAYLOAD: {
       unsigned offset = 0;
-      for (int i = def->header_size; i < def->sources; i++) {
+      for (int i = def->as_load_payload()->header_size; i < def->sources; i++) {
          /* Ignore the source splat if the source is a scalar. In that case
           * always use just the first component.
           */

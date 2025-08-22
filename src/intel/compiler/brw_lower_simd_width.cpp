@@ -437,8 +437,10 @@ brw_get_lowered_simd_width(const brw_shader *shader, const brw_inst *inst)
    }
 
    case SHADER_OPCODE_LOAD_PAYLOAD: {
+      const brw_load_payload_inst *lp = inst->as_load_payload();
+
       const unsigned reg_count =
-         DIV_ROUND_UP(inst->dst.component_size(inst->exec_size),
+         DIV_ROUND_UP(lp->dst.component_size(lp->exec_size),
                       REG_SIZE * reg_unit(devinfo));
 
       if (reg_count > 2) {
@@ -446,14 +448,14 @@ brw_get_lowered_simd_width(const brw_shader *shader, const brw_inst *inst)
           * can be easily lowered (which excludes headers and heterogeneous
           * types).
           */
-         assert(!inst->header_size);
-         for (unsigned i = 0; i < inst->sources; i++)
-            assert(brw_type_size_bits(inst->dst.type) == brw_type_size_bits(inst->src[i].type) ||
-                   inst->src[i].file == BAD_FILE);
+         assert(!lp->header_size);
+         for (unsigned i = 0; i < lp->sources; i++)
+            assert(brw_type_size_bits(lp->dst.type) == brw_type_size_bits(lp->src[i].type) ||
+                   lp->src[i].file == BAD_FILE);
 
-         return inst->exec_size / DIV_ROUND_UP(reg_count, 2);
+         return lp->exec_size / DIV_ROUND_UP(reg_count, 2);
       } else {
-         return inst->exec_size;
+         return lp->exec_size;
       }
    }
    default:
