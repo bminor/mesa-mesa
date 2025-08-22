@@ -1668,9 +1668,6 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
    NIR_PASS(progress, nir, ac_nir_lower_mem_access_bit_sizes,
             sel->screen->info.gfx_level, !nir->info.use_aco_amd);
 
-   if (nir->info.stage == MESA_SHADER_KERNEL)
-      NIR_PASS(progress, nir, ac_nir_lower_global_access);
-
    if (ac_nir_might_lower_bit_size(nir)) {
       if (sel->screen->info.gfx_level >= GFX8)
          nir_divergence_analysis(nir);
@@ -1685,8 +1682,11 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
    if (nir->info.use_aco_amd)
       progress |= ac_nir_optimize_uniform_atomics(nir);
 
-   NIR_PASS(progress, nir, nir_lower_int64);
    NIR_PASS(progress, nir, si_nir_lower_abi, shader, &ctx->args);
+   /* Global access lowering must be called after lowering ABI which emits regular load_global intrinsics. */
+   NIR_PASS(progress, nir, ac_nir_lower_global_access);
+   NIR_PASS(progress, nir, nir_lower_int64);
+
    NIR_PASS(progress, nir, ac_nir_lower_intrinsics_to_args, sel->screen->info.gfx_level,
             sel->screen->info.has_ls_vgpr_init_bug,
             si_select_hw_stage(nir->info.stage, key, sel->screen->info.gfx_level),
