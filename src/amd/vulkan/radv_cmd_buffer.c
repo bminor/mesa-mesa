@@ -388,6 +388,16 @@ radv_cmd_set_logic_op(struct radv_cmd_buffer *cmd_buffer, uint32_t logic_op)
    state->dirty_dynamic |= RADV_DYNAMIC_LOGIC_OP;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_color_write_enable(struct radv_cmd_buffer *cmd_buffer, uint32_t color_write_enable)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.color_write_enable = color_write_enable;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_COLOR_WRITE_ENABLE;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -717,7 +727,12 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }
    }
 
-   RADV_CMP_COPY(color_write_enable, RADV_DYNAMIC_COLOR_WRITE_ENABLE);
+   if (copy_mask & RADV_DYNAMIC_COLOR_WRITE_ENABLE) {
+      if (dest->color_write_enable != src->color_write_enable) {
+         radv_cmd_set_color_write_enable(cmd_buffer, src->color_write_enable);
+      }
+   }
+
    RADV_CMP_COPY(color_write_mask, RADV_DYNAMIC_COLOR_WRITE_MASK);
    RADV_CMP_COPY(vk.cb.logic_op_enable, RADV_DYNAMIC_LOGIC_OP_ENABLE);
 
@@ -8628,7 +8643,6 @@ radv_CmdSetColorWriteEnableEXT(VkCommandBuffer commandBuffer, uint32_t attachmen
                                const VkBool32 *pColorWriteEnables)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
    uint32_t color_write_enable = 0;
 
    assert(attachmentCount <= MAX_RTS);
@@ -8639,9 +8653,7 @@ radv_CmdSetColorWriteEnableEXT(VkCommandBuffer commandBuffer, uint32_t attachmen
       }
    }
 
-   state->dynamic.color_write_enable = color_write_enable;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_COLOR_WRITE_ENABLE;
+   radv_cmd_set_color_write_enable(cmd_buffer, color_write_enable);
 }
 
 VKAPI_ATTR void VKAPI_CALL
