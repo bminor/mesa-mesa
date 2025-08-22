@@ -270,27 +270,28 @@ radv-vangogh-vkcts:
     RADV_PERFTEST: transfer_queue,hic
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 89
 
-radeonsi-vangogh-glcts-full:
+radeonsi-vangogh-glcts:
   extends:
     - .ci-tron-x86_64-test-gl
     - .ci-tron-test-amdgpu
     - .test-piglit
     - .vangogh-test-valve
-    - .radeonsi-valve-manual-rules
-  timeout: 90m
-  variables:
-    GPU_VERSION: radeonsi-vangogh
-    DEQP_SUITE: radeonsi-vangogh
-    CI_TRON_TIMEOUT__OVERALL__MINUTES: 89
-
-radeonsi-vangogh-glcts:
-  extends:
-    - radeonsi-vangogh-glcts-full
     - .radeonsi-valve-rules
   timeout: 20m
   variables:
+    GPU_VERSION: radeonsi-vangogh
+    DEQP_SUITE: radeonsi-vangogh
     DEQP_FRACTION: 6
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 19
+
+radeonsi-vangogh-glcts-full:
+  extends:
+    - radeonsi-vangogh-glcts
+    - .radeonsi-valve-manual-rules
+  timeout: 90m
+  variables:
+    DEQP_FRACTION: 1
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 89
 
 radv-raphael-vkcts:
   extends:
