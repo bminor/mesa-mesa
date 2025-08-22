@@ -35,8 +35,7 @@ if ARTIFACTS_URL="$(find_s3_project_artifact "${ARTIFACTS_PATH}")"; then
 
   # Download prebuilt LLVM libraries for Android when they have not changed,
   # to save some time
-  curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
-    -o "/${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst" "${ARTIFACTS_URL}"
+  curl-with-retry -o "/${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst" "${ARTIFACTS_URL}"
   tar -C / --zstd -xf "/${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst"
   rm "/${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst"
 
@@ -55,9 +54,8 @@ ANDROID_NDK="android-ndk-${ANDROID_NDK_VERSION}"
 ANDROID_NDK_ROOT="/${ANDROID_NDK}"
 if [ ! -d "$ANDROID_NDK_ROOT" ];
 then
-  curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
-    -o "${ANDROID_NDK}.zip" \
-    "https://dl.google.com/android/repository/${ANDROID_NDK}-linux.zip"
+  curl-with-retry -o "${ANDROID_NDK}.zip" \
+   "https://dl.google.com/android/repository/${ANDROID_NDK}-linux.zip"
   unzip -d / "${ANDROID_NDK}.zip" "$ANDROID_NDK/source.properties" "$ANDROID_NDK/build/cmake/*" "$ANDROID_NDK/toolchains/llvm/*"
   rm "${ANDROID_NDK}.zip"
 fi
