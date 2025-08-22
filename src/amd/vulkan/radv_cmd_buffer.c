@@ -413,6 +413,16 @@ radv_cmd_set_color_write_mask(struct radv_cmd_buffer *cmd_buffer, uint32_t color
       state->dirty |= RADV_CMD_DIRTY_RBPLUS;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_logic_op_enable(struct radv_cmd_buffer *cmd_buffer, bool logic_op_enable)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.cb.logic_op_enable = logic_op_enable;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_LOGIC_OP_ENABLE;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -752,7 +762,11 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }
    }
 
-   RADV_CMP_COPY(vk.cb.logic_op_enable, RADV_DYNAMIC_LOGIC_OP_ENABLE);
+   if (copy_mask & RADV_DYNAMIC_LOGIC_OP_ENABLE) {
+      if (dest->vk.cb.logic_op_enable != src->vk.cb.logic_op_enable) {
+         radv_cmd_set_logic_op_enable(cmd_buffer, src->vk.cb.logic_op_enable);
+      }
+   }
 
    RADV_CMP_COPY(vk.fsr.fragment_size.width, RADV_DYNAMIC_FRAGMENT_SHADING_RATE);
    RADV_CMP_COPY(vk.fsr.fragment_size.height, RADV_DYNAMIC_FRAGMENT_SHADING_RATE);
@@ -8786,11 +8800,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetLogicOpEnableEXT(VkCommandBuffer commandBuffer, VkBool32 logicOpEnable)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   state->dynamic.vk.cb.logic_op_enable = logicOpEnable;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_LOGIC_OP_ENABLE;
+   radv_cmd_set_logic_op_enable(cmd_buffer, logicOpEnable);
 }
 
 VKAPI_ATTR void VKAPI_CALL
