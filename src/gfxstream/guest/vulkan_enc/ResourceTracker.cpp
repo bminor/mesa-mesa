@@ -2130,12 +2130,6 @@ void ResourceTracker::on_vkGetPhysicalDeviceFeatures2(void*, VkPhysicalDevice,
     }
 }
 
-void ResourceTracker::on_vkGetPhysicalDeviceFeatures2KHR(void* context,
-                                                         VkPhysicalDevice physicalDevice,
-                                                         VkPhysicalDeviceFeatures2* pFeatures) {
-    on_vkGetPhysicalDeviceFeatures2(context, physicalDevice, pFeatures);
-}
-
 void ResourceTracker::on_vkGetPhysicalDeviceProperties2(void* context,
                                                         VkPhysicalDevice physicalDevice,
                                                         VkPhysicalDeviceProperties2* pProperties) {
@@ -2228,11 +2222,6 @@ void ResourceTracker::on_vkGetPhysicalDeviceProperties2(void* context,
                 __func__);
         }
     }
-}
-
-void ResourceTracker::on_vkGetPhysicalDeviceProperties2KHR(
-    void* context, VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties2* pProperties) {
-    on_vkGetPhysicalDeviceProperties2(context, physicalDevice, pProperties);
 }
 
 void ResourceTracker::on_vkGetPhysicalDeviceMemoryProperties(
@@ -4643,52 +4632,6 @@ void ResourceTracker::on_vkDestroySamplerYcbcrConversion(void* context, VkDevice
     }
 }
 
-VkResult ResourceTracker::on_vkCreateSamplerYcbcrConversionKHR(
-    void* context, VkResult, VkDevice device, const VkSamplerYcbcrConversionCreateInfo* pCreateInfo,
-    const VkAllocationCallbacks* pAllocator, VkSamplerYcbcrConversion* pYcbcrConversion) {
-    VkSamplerYcbcrConversionCreateInfo localCreateInfo = vk_make_orphan_copy(*pCreateInfo);
-
-#if defined(VK_USE_PLATFORM_ANDROID_KHR)
-    const VkExternalFormatANDROID* extFormatAndroidPtr =
-        vk_find_struct_const(pCreateInfo, EXTERNAL_FORMAT_ANDROID);
-    if (extFormatAndroidPtr) {
-        if (extFormatAndroidPtr->externalFormat == DRM_FORMAT_RGB565) {
-            // We don't support external formats on host and it causes RGB565
-            // to fail in CtsGraphicsTestCases android.graphics.cts.BasicVulkanGpuTest
-            // when passed as an external format.
-            // We may consider doing this for all external formats.
-            // See b/134771579.
-            *pYcbcrConversion = VK_YCBCR_CONVERSION_DO_NOTHING;
-            return VK_SUCCESS;
-        } else if (extFormatAndroidPtr->externalFormat) {
-            localCreateInfo.format = vk_format_from_fourcc(extFormatAndroidPtr->externalFormat);
-        }
-    }
-#endif
-
-    VkEncoder* enc = (VkEncoder*)context;
-    VkResult res = enc->vkCreateSamplerYcbcrConversionKHR(device, &localCreateInfo, pAllocator,
-                                                          pYcbcrConversion, true /* do lock */);
-
-    if (*pYcbcrConversion == VK_YCBCR_CONVERSION_DO_NOTHING) {
-        mesa_loge(
-            "FATAL: vkCreateSamplerYcbcrConversionKHR returned a reserved value "
-            "(VK_YCBCR_CONVERSION_DO_NOTHING)");
-        abort();
-    }
-    return res;
-}
-
-void ResourceTracker::on_vkDestroySamplerYcbcrConversionKHR(
-    void* context, VkDevice device, VkSamplerYcbcrConversion ycbcrConversion,
-    const VkAllocationCallbacks* pAllocator) {
-    VkEncoder* enc = (VkEncoder*)context;
-    if (ycbcrConversion != VK_YCBCR_CONVERSION_DO_NOTHING) {
-        enc->vkDestroySamplerYcbcrConversionKHR(device, ycbcrConversion, pAllocator,
-                                                true /* do lock */);
-    }
-}
-
 VkResult ResourceTracker::on_vkCreateSampler(void* context, VkResult, VkDevice device,
                                              const VkSamplerCreateInfo* pCreateInfo,
                                              const VkAllocationCallbacks* pAllocator,
@@ -4754,14 +4697,6 @@ void ResourceTracker::on_vkGetPhysicalDeviceExternalFenceProperties(
     pExternalFenceProperties->externalFenceFeatures =
         VK_EXTERNAL_FENCE_FEATURE_IMPORTABLE_BIT | VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT;
 #endif
-}
-
-void ResourceTracker::on_vkGetPhysicalDeviceExternalFencePropertiesKHR(
-    void* context, VkPhysicalDevice physicalDevice,
-    const VkPhysicalDeviceExternalFenceInfo* pExternalFenceInfo,
-    VkExternalFenceProperties* pExternalFenceProperties) {
-    on_vkGetPhysicalDeviceExternalFenceProperties(context, physicalDevice, pExternalFenceInfo,
-                                                  pExternalFenceProperties);
 }
 
 VkResult ResourceTracker::on_vkCreateFence(void* context, VkResult input_result, VkDevice device,
@@ -5524,14 +5459,6 @@ void ResourceTracker::on_vkGetImageMemoryRequirements2(void* context, VkDevice d
     transformImageMemoryRequirements2ForGuest(pInfo->image, pMemoryRequirements);
 }
 
-void ResourceTracker::on_vkGetImageMemoryRequirements2KHR(
-    void* context, VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
-    VkMemoryRequirements2* pMemoryRequirements) {
-    VkEncoder* enc = (VkEncoder*)context;
-    enc->vkGetImageMemoryRequirements2KHR(device, pInfo, pMemoryRequirements, true /* do lock */);
-    transformImageMemoryRequirements2ForGuest(pInfo->image, pMemoryRequirements);
-}
-
 VkResult ResourceTracker::on_vkGetImageDrmFormatModifierPropertiesEXT(
     void* context, VkResult, VkDevice device, VkImage image,
     VkImageDrmFormatModifierPropertiesEXT* pProperties) {
@@ -5595,12 +5522,6 @@ VkResult ResourceTracker::on_vkBindImageMemory2(void* context, VkResult, VkDevic
     }
 
     return enc->vkBindImageMemory2(device, bindingCount, pBindInfos, true /* do lock */);
-}
-
-VkResult ResourceTracker::on_vkBindImageMemory2KHR(void* context, VkResult result, VkDevice device,
-                                                   uint32_t bindingCount,
-                                                   const VkBindImageMemoryInfo* pBindInfos) {
-    return on_vkBindImageMemory2(context, result, device, bindingCount, pBindInfos);
 }
 
 VkResult ResourceTracker::on_vkCreateBuffer(void* context, VkResult, VkDevice device,
@@ -5774,35 +5695,6 @@ void ResourceTracker::on_vkGetBufferMemoryRequirements2(
     VkEncoder* enc = (VkEncoder*)context;
     enc->vkGetBufferMemoryRequirements2(device, pInfo, pMemoryRequirements, true /* do lock */);
     transformBufferMemoryRequirements2ForGuest(pInfo->buffer, pMemoryRequirements);
-}
-
-void ResourceTracker::on_vkGetBufferMemoryRequirements2KHR(
-    void* context, VkDevice device, const VkBufferMemoryRequirementsInfo2* pInfo,
-    VkMemoryRequirements2* pMemoryRequirements) {
-    VkEncoder* enc = (VkEncoder*)context;
-    enc->vkGetBufferMemoryRequirements2KHR(device, pInfo, pMemoryRequirements, true /* do lock */);
-    transformBufferMemoryRequirements2ForGuest(pInfo->buffer, pMemoryRequirements);
-}
-
-VkResult ResourceTracker::on_vkBindBufferMemory(void* context, VkResult, VkDevice device,
-                                                VkBuffer buffer, VkDeviceMemory memory,
-                                                VkDeviceSize memoryOffset) {
-    VkEncoder* enc = (VkEncoder*)context;
-    return enc->vkBindBufferMemory(device, buffer, memory, memoryOffset, true /* do lock */);
-}
-
-VkResult ResourceTracker::on_vkBindBufferMemory2(void* context, VkResult, VkDevice device,
-                                                 uint32_t bindInfoCount,
-                                                 const VkBindBufferMemoryInfo* pBindInfos) {
-    VkEncoder* enc = (VkEncoder*)context;
-    return enc->vkBindBufferMemory2(device, bindInfoCount, pBindInfos, true /* do lock */);
-}
-
-VkResult ResourceTracker::on_vkBindBufferMemory2KHR(void* context, VkResult, VkDevice device,
-                                                    uint32_t bindInfoCount,
-                                                    const VkBindBufferMemoryInfo* pBindInfos) {
-    VkEncoder* enc = (VkEncoder*)context;
-    return enc->vkBindBufferMemory2KHR(device, bindInfoCount, pBindInfos, true /* do lock */);
 }
 
 VkResult ResourceTracker::on_vkCreateSemaphore(void* context, VkResult input_result,
@@ -6835,20 +6727,6 @@ VkResult ResourceTracker::on_vkCreateDescriptorUpdateTemplate(
     return initDescriptorUpdateTemplateBuffers(pCreateInfo, *pDescriptorUpdateTemplate);
 }
 
-VkResult ResourceTracker::on_vkCreateDescriptorUpdateTemplateKHR(
-    void* context, VkResult input_result, VkDevice device,
-    const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
-    const VkAllocationCallbacks* pAllocator,
-    VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate) {
-    (void)context;
-    (void)device;
-    (void)pAllocator;
-
-    if (input_result != VK_SUCCESS) return input_result;
-
-    return initDescriptorUpdateTemplateBuffers(pCreateInfo, *pDescriptorUpdateTemplate);
-}
-
 void ResourceTracker::on_vkUpdateDescriptorSetWithTemplate(
     void* context, VkDevice device, VkDescriptorSet descriptorSet,
     VkDescriptorUpdateTemplate descriptorUpdateTemplate, const void* pData) {
@@ -7001,13 +6879,6 @@ void ResourceTracker::on_vkUpdateDescriptorSetWithTemplate(
         bufferViews, inlineUniformBlockBuffer, true /* do lock */);
 }
 
-void ResourceTracker::on_vkUpdateDescriptorSetWithTemplateKHR(
-    void* context, VkDevice device, VkDescriptorSet descriptorSet,
-    VkDescriptorUpdateTemplate descriptorUpdateTemplate, const void* pData) {
-    on_vkUpdateDescriptorSetWithTemplate(context, device, descriptorSet, descriptorUpdateTemplate,
-                                         pData);
-}
-
 #ifdef LINUX_GUEST_BUILD
 static void fillEmulatedDrmFormatModPropsList(
     const VkFormatProperties* pFormatProperties,
@@ -7045,14 +6916,8 @@ void ResourceTracker::on_vkGetPhysicalDeviceFormatProperties2(
 #endif
 }
 
-void ResourceTracker::on_vkGetPhysicalDeviceFormatProperties2KHR(
-    void* context, VkPhysicalDevice physicalDevice, VkFormat format,
-    VkFormatProperties2* pFormatProperties) {
-    on_vkGetPhysicalDeviceFormatProperties2(context, physicalDevice, format, pFormatProperties);
-}
-
-VkResult ResourceTracker::on_vkGetPhysicalDeviceImageFormatProperties2_common(
-    bool isKhr, void* context, VkResult input_result, VkPhysicalDevice physicalDevice,
+VkResult ResourceTracker::on_vkGetPhysicalDeviceImageFormatProperties2(
+    void* context, VkResult input_result, VkPhysicalDevice physicalDevice,
     const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
     VkImageFormatProperties2* pImageFormatProperties) {
     VkEncoder* enc = (VkEncoder*)context;
@@ -7131,13 +6996,8 @@ VkResult ResourceTracker::on_vkGetPhysicalDeviceImageFormatProperties2_common(
 
     VkResult hostRes;
 
-    if (isKhr) {
-        hostRes = enc->vkGetPhysicalDeviceImageFormatProperties2KHR(
-            physicalDevice, &localImageFormatInfo, pImageFormatProperties, true /* do lock */);
-    } else {
-        hostRes = enc->vkGetPhysicalDeviceImageFormatProperties2(
-            physicalDevice, &localImageFormatInfo, pImageFormatProperties, true /* do lock */);
-    }
+    hostRes = enc->vkGetPhysicalDeviceImageFormatProperties2(
+        physicalDevice, &localImageFormatInfo, pImageFormatProperties, true /* do lock */);
 
     if (hostRes != VK_SUCCESS) return hostRes;
 
@@ -7192,26 +7052,8 @@ VkResult ResourceTracker::on_vkGetPhysicalDeviceImageFormatProperties2_common(
     return hostRes;
 }
 
-VkResult ResourceTracker::on_vkGetPhysicalDeviceImageFormatProperties2(
-    void* context, VkResult input_result, VkPhysicalDevice physicalDevice,
-    const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
-    VkImageFormatProperties2* pImageFormatProperties) {
-    return on_vkGetPhysicalDeviceImageFormatProperties2_common(
-        false /* not KHR */, context, input_result, physicalDevice, pImageFormatInfo,
-        pImageFormatProperties);
-}
-
-VkResult ResourceTracker::on_vkGetPhysicalDeviceImageFormatProperties2KHR(
-    void* context, VkResult input_result, VkPhysicalDevice physicalDevice,
-    const VkPhysicalDeviceImageFormatInfo2* pImageFormatInfo,
-    VkImageFormatProperties2* pImageFormatProperties) {
-    return on_vkGetPhysicalDeviceImageFormatProperties2_common(
-        true /* is KHR */, context, input_result, physicalDevice, pImageFormatInfo,
-        pImageFormatProperties);
-}
-
-void ResourceTracker::on_vkGetPhysicalDeviceExternalBufferProperties_common(
-    bool isKhr, void* context, VkPhysicalDevice physicalDevice,
+void ResourceTracker::on_vkGetPhysicalDeviceExternalBufferProperties(
+    void* context, VkPhysicalDevice physicalDevice,
     const VkPhysicalDeviceExternalBufferInfo* pExternalBufferInfo,
     VkExternalBufferProperties* pExternalBufferProperties) {
     VkEncoder* enc = (VkEncoder*)context;
@@ -7244,32 +7086,11 @@ void ResourceTracker::on_vkGetPhysicalDeviceExternalBufferProperties_common(
         }
     }
 
-    if (isKhr) {
-        enc->vkGetPhysicalDeviceExternalBufferPropertiesKHR(
-            physicalDevice, pExternalBufferInfo, pExternalBufferProperties, true /* do lock */);
-    } else {
-        enc->vkGetPhysicalDeviceExternalBufferProperties(
-            physicalDevice, pExternalBufferInfo, pExternalBufferProperties, true /* do lock */);
-    }
+    enc->vkGetPhysicalDeviceExternalBufferProperties(
+        physicalDevice, pExternalBufferInfo, pExternalBufferProperties, true /* do lock */);
+
     transformImpl_VkExternalMemoryProperties_fromhost(
         &pExternalBufferProperties->externalMemoryProperties, 0);
-}
-
-void ResourceTracker::on_vkGetPhysicalDeviceExternalBufferProperties(
-    void* context, VkPhysicalDevice physicalDevice,
-    const VkPhysicalDeviceExternalBufferInfo* pExternalBufferInfo,
-    VkExternalBufferProperties* pExternalBufferProperties) {
-    return on_vkGetPhysicalDeviceExternalBufferProperties_common(
-        false /* not KHR */, context, physicalDevice, pExternalBufferInfo,
-        pExternalBufferProperties);
-}
-
-void ResourceTracker::on_vkGetPhysicalDeviceExternalBufferPropertiesKHR(
-    void* context, VkPhysicalDevice physicalDevice,
-    const VkPhysicalDeviceExternalBufferInfoKHR* pExternalBufferInfo,
-    VkExternalBufferPropertiesKHR* pExternalBufferProperties) {
-    return on_vkGetPhysicalDeviceExternalBufferProperties_common(
-        true /* is KHR */, context, physicalDevice, pExternalBufferInfo, pExternalBufferProperties);
 }
 
 void ResourceTracker::on_vkGetPhysicalDeviceExternalSemaphoreProperties(
@@ -7310,14 +7131,6 @@ void ResourceTracker::on_vkGetPhysicalDeviceExternalSemaphoreProperties(
             VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT;
     }
 #endif  // VK_USE_PLATFORM_FUCHSIA
-}
-
-void ResourceTracker::on_vkGetPhysicalDeviceExternalSemaphorePropertiesKHR(
-    void* context, VkPhysicalDevice physicalDevice,
-    const VkPhysicalDeviceExternalSemaphoreInfo* pExternalSemaphoreInfo,
-    VkExternalSemaphoreProperties* pExternalSemaphoreProperties) {
-    on_vkGetPhysicalDeviceExternalSemaphoreProperties(
-        context, physicalDevice, pExternalSemaphoreInfo, pExternalSemaphoreProperties);
 }
 
 void ResourceTracker::registerEncoderCleanupCallback(const VkEncoder* encoder, void* object,
