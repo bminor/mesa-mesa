@@ -108,9 +108,9 @@ brw_emit_tcs_thread_end(brw_shader &s)
    srcs[URB_LOGICAL_SRC_HANDLE] = s.tcs_payload().patch_urb_output;
    srcs[URB_LOGICAL_SRC_CHANNEL_MASK] = brw_imm_ud(WRITEMASK_X);
    srcs[URB_LOGICAL_SRC_DATA] = brw_imm_ud(0);
-   srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(1);
-   brw_inst *inst = bld.URB_WRITE(srcs, ARRAY_SIZE(srcs));
-   inst->eot = true;
+   brw_urb_inst *urb = bld.URB_WRITE(srcs, ARRAY_SIZE(srcs));
+   urb->eot = true;
+   urb->components = 1;
 }
 
 static void

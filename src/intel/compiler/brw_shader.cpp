@@ -240,18 +240,18 @@ brw_shader::emit_urb_writes(const brw_reg &gs_vertex_count)
          srcs[URB_LOGICAL_SRC_PER_SLOT_OFFSETS] = per_slot_offsets;
          srcs[URB_LOGICAL_SRC_DATA] =
             retype(brw_allocate_vgrf_units(*this, (dispatch_width / 8) * length), BRW_TYPE_F);
-         srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(length);
          abld.LOAD_PAYLOAD(srcs[URB_LOGICAL_SRC_DATA], sources, length, 0);
 
-         brw_inst *inst = abld.URB_WRITE(srcs, ARRAY_SIZE(srcs));
+         brw_urb_inst *urb = abld.URB_WRITE(srcs, ARRAY_SIZE(srcs));
+         urb->components = length;
 
          /* For Wa_1805992985 one needs additional write in the end. */
          if (intel_needs_workaround(devinfo, 1805992985) && stage == MESA_SHADER_TESS_EVAL)
-            inst->eot = false;
+            urb->eot = false;
          else
-            inst->eot = slot == last_slot && stage != MESA_SHADER_GEOMETRY;
+            urb->eot = slot == last_slot && stage != MESA_SHADER_GEOMETRY;
 
-         inst->offset = urb_offset;
+         urb->offset = urb_offset;
          urb_offset = starting_urb_offset + slot + 1;
          length = 0;
          flush = false;
@@ -287,11 +287,11 @@ brw_shader::emit_urb_writes(const brw_reg &gs_vertex_count)
       brw_reg srcs[URB_LOGICAL_NUM_SRCS];
       srcs[URB_LOGICAL_SRC_HANDLE] = uniform_urb_handle;
       srcs[URB_LOGICAL_SRC_DATA] = payload;
-      srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(1);
 
-      brw_inst *inst = bld.URB_WRITE(srcs, ARRAY_SIZE(srcs));
-      inst->eot = true;
-      inst->offset = 1;
+      brw_urb_inst *urb = bld.URB_WRITE(srcs, ARRAY_SIZE(srcs));
+      urb->eot = true;
+      urb->offset = 1;
+      urb->components = 1;
       return;
    }
 
@@ -338,11 +338,11 @@ brw_shader::emit_urb_writes(const brw_reg &gs_vertex_count)
       srcs[URB_LOGICAL_SRC_HANDLE] = uniform_urb_handle;
       srcs[URB_LOGICAL_SRC_CHANNEL_MASK] = uniform_mask;
       srcs[URB_LOGICAL_SRC_DATA] = payload;
-      srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(4);
 
-      brw_inst *inst = bld.exec_all().URB_WRITE(srcs, ARRAY_SIZE(srcs));
-      inst->eot = true;
-      inst->offset = 0;
+      brw_urb_inst *urb = bld.exec_all().URB_WRITE(srcs, ARRAY_SIZE(srcs));
+      urb->eot = true;
+      urb->offset = 0;
+      urb->components = 4;
    }
 }
 

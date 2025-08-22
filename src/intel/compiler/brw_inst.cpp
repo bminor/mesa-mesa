@@ -18,6 +18,7 @@ brw_inst_kind_size(brw_inst_kind kind)
    STATIC_ASSERT(sizeof(brw_send_inst) >= sizeof(brw_mem_inst));
    STATIC_ASSERT(sizeof(brw_send_inst) >= sizeof(brw_dpas_inst));
    STATIC_ASSERT(sizeof(brw_send_inst) >= sizeof(brw_load_payload_inst));
+   STATIC_ASSERT(sizeof(brw_send_inst) >= sizeof(brw_urb_inst));
 
    /* TODO: Temporarily here to ensure all instructions can be converted to
     * SEND.  Once all new kinds are added, change so that BASE allocate only
@@ -191,6 +192,10 @@ brw_inst_kind_for_opcode(enum opcode opcode)
 
    case SHADER_OPCODE_LOAD_PAYLOAD:
       return BRW_KIND_LOAD_PAYLOAD;
+
+   case SHADER_OPCODE_URB_READ_LOGICAL:
+   case SHADER_OPCODE_URB_WRITE_LOGICAL:
+      return BRW_KIND_URB;
 
    default:
       return BRW_KIND_BASE;
@@ -512,10 +517,8 @@ brw_inst::components_read(unsigned i) const
       return (i == 0 ? 2 : 1);
 
    case SHADER_OPCODE_URB_WRITE_LOGICAL:
-      assert(src[URB_LOGICAL_SRC_COMPONENTS].file == IMM);
-
       if (i == URB_LOGICAL_SRC_DATA)
-         return src[URB_LOGICAL_SRC_COMPONENTS].ud;
+         return as_urb()->components;
       else
          return 1;
 

@@ -38,25 +38,27 @@ brw_transform_inst_to_send(const brw_builder &bld, brw_inst *inst)
 }
 
 static void
-lower_urb_read_logical_send(const brw_builder &bld, brw_inst *inst)
+lower_urb_read_logical_send(const brw_builder &bld, brw_urb_inst *urb)
 {
    const intel_device_info *devinfo = bld.shader->devinfo;
    const bool per_slot_present =
-      inst->src[URB_LOGICAL_SRC_PER_SLOT_OFFSETS].file != BAD_FILE;
+      urb->src[URB_LOGICAL_SRC_PER_SLOT_OFFSETS].file != BAD_FILE;
 
-   assert(inst->size_written % REG_SIZE == 0);
+   assert(urb->size_written % REG_SIZE == 0);
 
    brw_reg payload_sources[2];
    unsigned header_size = 0;
-   payload_sources[header_size++] = inst->src[URB_LOGICAL_SRC_HANDLE];
+   payload_sources[header_size++] = urb->src[URB_LOGICAL_SRC_HANDLE];
    if (per_slot_present)
-      payload_sources[header_size++] = inst->src[URB_LOGICAL_SRC_PER_SLOT_OFFSETS];
+      payload_sources[header_size++] = urb->src[URB_LOGICAL_SRC_PER_SLOT_OFFSETS];
 
    brw_reg payload = retype(brw_allocate_vgrf_units(*bld.shader, header_size), BRW_TYPE_F);
    bld.LOAD_PAYLOAD(payload, payload_sources, header_size, header_size);
 
-   brw_send_inst *send = brw_transform_inst_to_send(bld, inst);
-   inst = NULL;
+   const uint32_t offset = urb->offset;
+
+   brw_send_inst *send = brw_transform_inst_to_send(bld, urb);
+   urb = NULL;
 
    send->header_size = header_size;
 
@@ -65,7 +67,7 @@ lower_urb_read_logical_send(const brw_builder &bld, brw_inst *inst)
                              GFX8_URB_OPCODE_SIMD8_READ,
                              per_slot_present,
                              false,
-                             send->offset);
+                             offset);
 
    send->mlen = header_size;
    send->ex_desc = 0;
@@ -79,18 +81,18 @@ lower_urb_read_logical_send(const brw_builder &bld, brw_inst *inst)
 }
 
 static void
-lower_urb_read_logical_send_xe2(const brw_builder &bld, brw_inst *inst)
+lower_urb_read_logical_send_xe2(const brw_builder &bld, brw_urb_inst *urb)
 {
    const intel_device_info *devinfo = bld.shader->devinfo;
    assert(devinfo->has_lsc);
 
-   assert(inst->size_written % (REG_SIZE * reg_unit(devinfo)) == 0);
+   assert(urb->size_written % (REG_SIZE * reg_unit(devinfo)) == 0);
 
    /* Get the logical send arguments. */
-   const brw_reg handle = inst->src[URB_LOGICAL_SRC_HANDLE];
+   const brw_reg handle = urb->src[URB_LOGICAL_SRC_HANDLE];
 
    /* Calculate the total number of components of the payload. */
-   const unsigned dst_comps = inst->size_written / (REG_SIZE * reg_unit(devinfo));
+   const unsigned dst_comps = urb->size_written / (REG_SIZE * reg_unit(devinfo));
 
    brw_reg payload = bld.vgrf(BRW_TYPE_UD);
 
@@ -99,18 +101,18 @@ lower_urb_read_logical_send_xe2(const brw_builder &bld, brw_inst *inst)
    /* The low 24-bits of the URB handle is a byte offset into the URB area.
     * Add the (OWord) offset of the write to this value.
     */
-   if (inst->offset) {
-      bld.ADD(payload, payload, brw_imm_ud(inst->offset * 16));
-      inst->offset = 0;
+   if (urb->offset) {
+      bld.ADD(payload, payload, brw_imm_ud(urb->offset * 16));
+      urb->offset = 0;
    }
 
-   brw_reg offsets = inst->src[URB_LOGICAL_SRC_PER_SLOT_OFFSETS];
+   brw_reg offsets = urb->src[URB_LOGICAL_SRC_PER_SLOT_OFFSETS];
    if (offsets.file != BAD_FILE) {
       bld.ADD(payload, payload, offsets);
    }
 
-   brw_send_inst *send = brw_transform_inst_to_send(bld, inst);
-   inst = NULL;
+   brw_send_inst *send = brw_transform_inst_to_send(bld, urb);
+   urb = NULL;
 
    send->sfid = BRW_SFID_URB;
 
@@ -136,43 +138,45 @@ lower_urb_read_logical_send_xe2(const brw_builder &bld, brw_inst *inst)
 }
 
 static void
-lower_urb_write_logical_send(const brw_builder &bld, brw_inst *inst)
+lower_urb_write_logical_send(const brw_builder &bld, brw_urb_inst *urb)
 {
    const intel_device_info *devinfo = bld.shader->devinfo;
    const bool per_slot_present =
-      inst->src[URB_LOGICAL_SRC_PER_SLOT_OFFSETS].file != BAD_FILE;
+      urb->src[URB_LOGICAL_SRC_PER_SLOT_OFFSETS].file != BAD_FILE;
    const bool channel_mask_present =
-      inst->src[URB_LOGICAL_SRC_CHANNEL_MASK].file != BAD_FILE;
+      urb->src[URB_LOGICAL_SRC_CHANNEL_MASK].file != BAD_FILE;
 
    const unsigned length = 1 + per_slot_present + channel_mask_present +
-                           inst->components_read(URB_LOGICAL_SRC_DATA);
+                           urb->components_read(URB_LOGICAL_SRC_DATA);
 
    brw_reg *payload_sources = new brw_reg[length];
    brw_reg payload = retype(brw_allocate_vgrf_units(*bld.shader, length),
                             BRW_TYPE_F);
 
    unsigned header_size = 0;
-   payload_sources[header_size++] = inst->src[URB_LOGICAL_SRC_HANDLE];
+   payload_sources[header_size++] = urb->src[URB_LOGICAL_SRC_HANDLE];
    if (per_slot_present)
-      payload_sources[header_size++] = inst->src[URB_LOGICAL_SRC_PER_SLOT_OFFSETS];
+      payload_sources[header_size++] = urb->src[URB_LOGICAL_SRC_PER_SLOT_OFFSETS];
 
    if (channel_mask_present) {
       payload_sources[header_size++] =
-         inst->src[URB_LOGICAL_SRC_CHANNEL_MASK].file == IMM ?
-         brw_imm_ud(inst->src[URB_LOGICAL_SRC_CHANNEL_MASK].ud << 16) :
-         bld.SHL(retype(inst->src[URB_LOGICAL_SRC_CHANNEL_MASK], BRW_TYPE_UD),
+         urb->src[URB_LOGICAL_SRC_CHANNEL_MASK].file == IMM ?
+         brw_imm_ud(urb->src[URB_LOGICAL_SRC_CHANNEL_MASK].ud << 16) :
+         bld.SHL(retype(urb->src[URB_LOGICAL_SRC_CHANNEL_MASK], BRW_TYPE_UD),
                  brw_imm_ud(16));
    }
 
    for (unsigned i = header_size, j = 0; i < length; i++, j++)
-      payload_sources[i] = offset(inst->src[URB_LOGICAL_SRC_DATA], bld, j);
+      payload_sources[i] = offset(urb->src[URB_LOGICAL_SRC_DATA], bld, j);
 
    bld.LOAD_PAYLOAD(payload, payload_sources, length, header_size);
 
    delete [] payload_sources;
 
-   brw_send_inst *send = brw_transform_inst_to_send(bld, inst);
-   inst = NULL;
+   const uint32_t offset = urb->offset;
+
+   brw_send_inst *send = brw_transform_inst_to_send(bld, urb);
+   urb = NULL;
 
    send->header_size = header_size;
    send->dst = brw_null_reg();
@@ -182,7 +186,7 @@ lower_urb_write_logical_send(const brw_builder &bld, brw_inst *inst)
                              GFX8_URB_OPCODE_SIMD8_WRITE,
                              per_slot_present,
                              channel_mask_present,
-                             send->offset);
+                             offset);
 
    send->mlen = length;
    send->ex_desc = 0;
@@ -196,19 +200,19 @@ lower_urb_write_logical_send(const brw_builder &bld, brw_inst *inst)
 }
 
 static void
-lower_urb_write_logical_send_xe2(const brw_builder &bld, brw_inst *inst)
+lower_urb_write_logical_send_xe2(const brw_builder &bld, brw_urb_inst *urb)
 {
    const intel_device_info *devinfo = bld.shader->devinfo;
    assert(devinfo->has_lsc);
 
    /* Get the logical send arguments. */
-   const brw_reg handle = inst->src[URB_LOGICAL_SRC_HANDLE];
-   const brw_reg src = inst->components_read(URB_LOGICAL_SRC_DATA) ?
-      inst->src[URB_LOGICAL_SRC_DATA] : brw_reg(brw_imm_ud(0));
+   const brw_reg handle = urb->src[URB_LOGICAL_SRC_HANDLE];
+   const brw_reg src = urb->components_read(URB_LOGICAL_SRC_DATA) ?
+      urb->src[URB_LOGICAL_SRC_DATA] : brw_reg(brw_imm_ud(0));
    assert(brw_type_size_bytes(src.type) == 4);
 
    /* Calculate the total number of components of the payload. */
-   const unsigned src_comps = MAX2(1, inst->components_read(URB_LOGICAL_SRC_DATA));
+   const unsigned src_comps = MAX2(1, urb->components_read(URB_LOGICAL_SRC_DATA));
    const unsigned src_sz = brw_type_size_bytes(src.type);
 
    brw_reg payload = bld.vgrf(BRW_TYPE_UD);
@@ -218,19 +222,19 @@ lower_urb_write_logical_send_xe2(const brw_builder &bld, brw_inst *inst)
    /* The low 24-bits of the URB handle is a byte offset into the URB area.
     * Add the (OWord) offset of the write to this value.
     */
-   if (inst->offset) {
-      bld.ADD(payload, payload, brw_imm_ud(inst->offset * 16));
-      inst->offset = 0;
+   if (urb->offset) {
+      bld.ADD(payload, payload, brw_imm_ud(urb->offset * 16));
+      urb->offset = 0;
    }
 
-   brw_reg offsets = inst->src[URB_LOGICAL_SRC_PER_SLOT_OFFSETS];
+   brw_reg offsets = urb->src[URB_LOGICAL_SRC_PER_SLOT_OFFSETS];
    if (offsets.file != BAD_FILE) {
       bld.ADD(payload, payload, offsets);
    }
 
    unsigned num_channels_or_cmask = src_comps;
 
-   const brw_reg cmask = inst->src[URB_LOGICAL_SRC_CHANNEL_MASK];
+   const brw_reg cmask = urb->src[URB_LOGICAL_SRC_CHANNEL_MASK];
    brw_reg desc = brw_imm_ud(0);
    if (cmask.file == IMM) {
       assert(cmask.type == BRW_TYPE_UD);
@@ -242,10 +246,10 @@ lower_urb_write_logical_send_xe2(const brw_builder &bld, brw_inst *inst)
    }
 
    brw_reg payload2 = bld.move_to_vgrf(src, src_comps);
-   const unsigned ex_mlen = (src_comps * src_sz * inst->exec_size) / REG_SIZE;
+   const unsigned ex_mlen = (src_comps * src_sz * urb->exec_size) / REG_SIZE;
 
-   brw_send_inst *send = brw_transform_inst_to_send(bld, inst);
-   inst = NULL;
+   brw_send_inst *send = brw_transform_inst_to_send(bld, urb);
+   urb = NULL;
 
    send->sfid = BRW_SFID_URB;
 
@@ -2687,16 +2691,16 @@ brw_lower_logical_sends(brw_shader &s)
 
       case SHADER_OPCODE_URB_READ_LOGICAL:
          if (devinfo->ver < 20)
-            lower_urb_read_logical_send(ibld, inst);
+            lower_urb_read_logical_send(ibld, inst->as_urb());
          else
-            lower_urb_read_logical_send_xe2(ibld, inst);
+            lower_urb_read_logical_send_xe2(ibld, inst->as_urb());
          break;
 
       case SHADER_OPCODE_URB_WRITE_LOGICAL:
          if (devinfo->ver < 20)
-            lower_urb_write_logical_send(ibld, inst);
+            lower_urb_write_logical_send(ibld, inst->as_urb());
          else
-            lower_urb_write_logical_send_xe2(ibld, inst);
+            lower_urb_write_logical_send_xe2(ibld, inst->as_urb());
 
          break;
 

@@ -249,13 +249,15 @@ send_inst_match(brw_send_inst *a, brw_send_inst *b)
           a->header_size == b->header_size &&
           a->desc == b->desc &&
           a->ex_desc == b->ex_desc &&
+          a->offset == b->offset &&
           a->send_bits == b->send_bits;
 }
 
 static bool
 tex_inst_match(brw_tex_inst *a, brw_tex_inst *b)
 {
-   return a->coord_components == b->coord_components &&
+   return a->offset == b->offset &&
+          a->coord_components == b->coord_components &&
           a->grad_components == b->grad_components &&
           a->residency == b->residency;
 }
@@ -288,6 +290,13 @@ load_payload_inst_match(brw_load_payload_inst *a, brw_load_payload_inst *b)
 }
 
 static bool
+urb_inst_match(brw_urb_inst *a, brw_urb_inst *b)
+{
+   return a->offset == b->offset &&
+          a->components == b->components;
+}
+
+static bool
 instructions_match(brw_inst *a, brw_inst *b, bool *negate)
 {
 
@@ -299,12 +308,12 @@ instructions_match(brw_inst *a, brw_inst *b, bool *negate)
           (a->kind != BRW_KIND_DPAS || dpas_inst_match(a->as_dpas(), b->as_dpas())) &&
           (a->kind != BRW_KIND_LOAD_PAYLOAD ||
            load_payload_inst_match(a->as_load_payload(), b->as_load_payload())) &&
+          (a->kind != BRW_KIND_URB || urb_inst_match(a->as_urb(), b->as_urb())) &&
           a->exec_size == b->exec_size &&
           a->group == b->group &&
           a->predicate == b->predicate &&
           a->conditional_mod == b->conditional_mod &&
           a->dst.type == b->dst.type &&
-          a->offset == b->offset &&
           a->size_written == b->size_written &&
           a->sources == b->sources &&
           a->bits == b->bits &&
@@ -352,7 +361,6 @@ hash_inst(const void *v)
       inst->predicate,
    };
    const uint32_t u32data[] = {
-      inst->offset,
       inst->size_written,
       inst->opcode,
       inst->bits,
@@ -376,6 +384,7 @@ hash_inst(const void *v)
       const uint32_t send_u32data[] = {
          send->desc,
          send->ex_desc,
+         send->offset,
       };
       hash = HASH(hash, send_u8data);
       hash = HASH(hash, send_u32data);
@@ -429,6 +438,19 @@ hash_inst(const void *v)
          lp->header_size,
       };
       hash = HASH(hash, lp_u8data);
+      break;
+   }
+
+   case BRW_KIND_URB: {
+      const brw_urb_inst *urb = inst->as_urb();
+      const uint8_t urb_u8data[] = {
+         urb->components,
+      };
+      const uint32_t urb_u32data[] = {
+         urb->offset,
+      };
+      hash = HASH(hash, urb_u8data);
+      hash = HASH(hash, urb_u32data);
       break;
    }
 

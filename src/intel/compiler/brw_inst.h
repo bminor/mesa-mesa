@@ -46,6 +46,7 @@ enum ENUM_PACKED brw_inst_kind {
    BRW_KIND_MEM,
    BRW_KIND_DPAS,
    BRW_KIND_LOAD_PAYLOAD,
+   BRW_KIND_URB,
 };
 
 brw_inst_kind brw_inst_kind_for_opcode(enum opcode opcode);
@@ -76,6 +77,7 @@ struct brw_inst : brw_exec_node {
    KIND_HELPERS(as_mem, brw_mem_inst, BRW_KIND_MEM);
    KIND_HELPERS(as_dpas, brw_dpas_inst, BRW_KIND_DPAS);
    KIND_HELPERS(as_load_payload, brw_load_payload_inst, BRW_KIND_LOAD_PAYLOAD);
+   KIND_HELPERS(as_urb, brw_urb_inst, BRW_KIND_URB);
 
 #undef KIND_HELPERS
 
@@ -170,7 +172,6 @@ struct brw_inst : brw_exec_node {
     */
    uint8_t group;
 
-   uint32_t offset; /**< spill/unspill offset or texture offset bitfield */
    uint16_t size_written; /**< Data written to the destination register in bytes. */
 
    enum opcode opcode; /* BRW_OPCODE_* or FS_OPCODE_* */
@@ -232,6 +233,7 @@ struct brw_inst : brw_exec_node {
 struct brw_send_inst : brw_inst {
    uint32_t desc;
    uint32_t ex_desc;
+   uint32_t offset;
 
    uint8_t mlen;
    uint8_t ex_mlen;
@@ -269,6 +271,7 @@ struct brw_send_inst : brw_inst {
 };
 
 struct brw_tex_inst : brw_inst {
+   uint32_t offset;
    uint8_t coord_components;
    uint8_t grad_components;
    bool residency;
@@ -301,6 +304,11 @@ struct brw_dpas_inst : brw_inst {
 struct brw_load_payload_inst : brw_inst {
    /** The number of hardware registers used for a message header. */
    uint8_t header_size;
+};
+
+struct brw_urb_inst : brw_inst {
+   uint32_t offset;
+   uint8_t components;
 };
 
 /**

@@ -663,7 +663,7 @@ brw_print_instruction(const brw_shader &s, const brw_inst *inst, FILE *file, con
       fprintf(file, "ExDesc 0x%08x ", send->ex_desc);
 
    if (send && send->ex_desc_imm)
-      fprintf(file, "ExDescImmInst 0x%08x ", inst->offset);
+      fprintf(file, "ExDescImmInst 0x%08x ", send->offset);
 
    if (inst->sched.regdist || inst->sched.mode) {
       fprintf(file, "{ ");

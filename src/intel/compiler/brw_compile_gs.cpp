@@ -41,7 +41,7 @@ brw_emit_gs_thread_end(brw_shader &s)
    }
 
    const brw_builder abld = brw_builder(&s).annotate("thread end");
-   brw_inst *inst;
+   brw_urb_inst *urb;
 
    if (gs_prog_data->static_vertex_count != -1) {
       /* Try and tag the last URB write with EOT instead of emitting a whole
@@ -52,17 +52,17 @@ brw_emit_gs_thread_end(brw_shader &s)
 
       brw_reg srcs[URB_LOGICAL_NUM_SRCS];
       srcs[URB_LOGICAL_SRC_HANDLE] = s.gs_payload().urb_handles;
-      srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(0);
-      inst = abld.URB_WRITE(srcs, ARRAY_SIZE(srcs));
+      urb = abld.URB_WRITE(srcs, ARRAY_SIZE(srcs));
+      urb->components = 0;
    } else {
       brw_reg srcs[URB_LOGICAL_NUM_SRCS];
       srcs[URB_LOGICAL_SRC_HANDLE] = s.gs_payload().urb_handles;
       srcs[URB_LOGICAL_SRC_DATA] = s.final_gs_vertex_count;
-      srcs[URB_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(1);
-      inst = abld.URB_WRITE(srcs, ARRAY_SIZE(srcs));
+      urb = abld.URB_WRITE(srcs, ARRAY_SIZE(srcs));
+      urb->components = 1;
    }
-   inst->eot = true;
-   inst->offset = 0;
+   urb->eot = true;
+   urb->offset = 0;
 }
 
 static void
