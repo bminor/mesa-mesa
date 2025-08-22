@@ -230,6 +230,26 @@ d3d12_rtv_format(struct d3d12_context *ctx, unsigned index)
       case DXGI_FORMAT_B8G8R8A8_UNORM:
       case DXGI_FORMAT_B8G8R8X8_UNORM:
          return DXGI_FORMAT_R8G8B8A8_UINT;
+      case DXGI_FORMAT_R10G10B10A2_UNORM:
+         return DXGI_FORMAT_R10G10B10A2_UINT;
+      case DXGI_FORMAT_R16_FLOAT:
+      case DXGI_FORMAT_R16_UNORM:
+      case DXGI_FORMAT_R16_SNORM:
+         return DXGI_FORMAT_R16_UINT;
+      case DXGI_FORMAT_R16G16_FLOAT:
+      case DXGI_FORMAT_R16G16_UNORM:
+      case DXGI_FORMAT_R16G16_SNORM:
+         return DXGI_FORMAT_R16G16_UINT;
+      case DXGI_FORMAT_R16G16B16A16_FLOAT:
+      case DXGI_FORMAT_R16G16B16A16_UNORM:
+      case DXGI_FORMAT_R16G16B16A16_SNORM:
+         return DXGI_FORMAT_R16G16B16A16_UINT;
+      case DXGI_FORMAT_R32_FLOAT:
+         return DXGI_FORMAT_R32_UINT;
+      case DXGI_FORMAT_R32G32_FLOAT:
+         return DXGI_FORMAT_R32G32_UINT;
+      case DXGI_FORMAT_R32G32B32A32_FLOAT:
+         return DXGI_FORMAT_R32G32B32A32_UINT;
       default:
          UNREACHABLE("unsupported logic-op format");
       }
