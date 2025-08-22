@@ -162,6 +162,16 @@ radv_cmd_set_line_stipple(struct radv_cmd_buffer *cmd_buffer, uint32_t line_stip
    state->dirty_dynamic |= RADV_DYNAMIC_LINE_STIPPLE;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_cull_mode(struct radv_cmd_buffer *cmd_buffer, VkCullModeFlags cull_mode)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.rs.cull_mode = cull_mode;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_CULL_MODE;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -337,7 +347,12 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }
    }
 
-   RADV_CMP_COPY(vk.rs.cull_mode, RADV_DYNAMIC_CULL_MODE);
+   if (copy_mask & RADV_DYNAMIC_CULL_MODE) {
+      if (dest->vk.rs.cull_mode != src->vk.rs.cull_mode) {
+         radv_cmd_set_cull_mode(cmd_buffer, src->vk.rs.cull_mode);
+      }
+   }
+
    RADV_CMP_COPY(vk.rs.front_face, RADV_DYNAMIC_FRONT_FACE);
    RADV_CMP_COPY(vk.rs.depth_bias.enable, RADV_DYNAMIC_DEPTH_BIAS_ENABLE);
    RADV_CMP_COPY(vk.rs.rasterizer_discard_enable, RADV_DYNAMIC_RASTERIZER_DISCARD_ENABLE);
@@ -8129,11 +8144,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetCullMode(VkCommandBuffer commandBuffer, VkCullModeFlags cullMode)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   state->dynamic.vk.rs.cull_mode = cullMode;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_CULL_MODE;
+   radv_cmd_set_cull_mode(cmd_buffer, cullMode);
 }
 
 VKAPI_ATTR void VKAPI_CALL
