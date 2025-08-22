@@ -147,6 +147,7 @@ nvk_get_device_extensions(const struct nvk_instance *instance,
       .KHR_maintenance5 = true,
       .KHR_maintenance6 = true,
       .KHR_maintenance7 = true,
+      .KHR_maintenance8 = true,
       .KHR_maintenance9 = true,
       .KHR_map_memory2 = true,
       .KHR_multiview = true,
@@ -475,7 +476,10 @@ nvk_get_device_features(const struct nv_device_info *info,
 
       /* VK_KHR_maintenance7 */
       .maintenance7 = true,
-      
+
+      /* VK_KHR_maintenance8 */
+      .maintenance8 = true,
+
       /* VK_KHR_maintenance9 */
       .maintenance9 = true,
 

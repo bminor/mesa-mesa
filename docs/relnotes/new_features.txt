@@ -9,4 +9,5 @@ VK_KHR_video_encode_intra_refresh on radv
 VK_KHR_video_encode_quantization_map on radv
 GL_ATI_meminfo and GL_NVX_gpu_memory_info on r300
 VK_KHR_shader_untyped_pointers on anv and RADV
+VK_KHR_maintenance8 on NVK
 VK_KHR_maintenance9 on NVK
