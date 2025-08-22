@@ -365,6 +365,19 @@ radv_cmd_set_stencil_write_mask(struct radv_cmd_buffer *cmd_buffer, VkStencilFac
    state->dirty_dynamic |= RADV_DYNAMIC_STENCIL_WRITE_MASK;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_stencil_reference(struct radv_cmd_buffer *cmd_buffer, VkStencilFaceFlags face_mask, uint32_t reference)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   if (face_mask & VK_STENCIL_FACE_FRONT_BIT)
+      state->dynamic.vk.ds.stencil.front.reference = reference;
+   if (face_mask & VK_STENCIL_FACE_BACK_BIT)
+      state->dynamic.vk.ds.stencil.back.reference = reference;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_STENCIL_REFERENCE;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -664,8 +677,16 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }
    }
 
-   RADV_CMP_COPY(vk.ds.stencil.front.reference, RADV_DYNAMIC_STENCIL_REFERENCE);
-   RADV_CMP_COPY(vk.ds.stencil.back.reference, RADV_DYNAMIC_STENCIL_REFERENCE);
+   if (copy_mask & RADV_DYNAMIC_STENCIL_REFERENCE) {
+      if (dest->vk.ds.stencil.front.reference != src->vk.ds.stencil.front.reference) {
+         radv_cmd_set_stencil_reference(cmd_buffer, VK_STENCIL_FACE_FRONT_BIT, src->vk.ds.stencil.front.reference);
+      }
+
+      if (dest->vk.ds.stencil.back.reference != src->vk.ds.stencil.back.reference) {
+         radv_cmd_set_stencil_reference(cmd_buffer, VK_STENCIL_FACE_BACK_BIT, src->vk.ds.stencil.back.reference);
+      }
+   }
+
    RADV_CMP_COPY(vk.ds.depth.test_enable, RADV_DYNAMIC_DEPTH_TEST_ENABLE);
    RADV_CMP_COPY(vk.ds.depth.write_enable, RADV_DYNAMIC_DEPTH_WRITE_ENABLE);
    RADV_CMP_COPY(vk.ds.depth.compare_op, RADV_DYNAMIC_DEPTH_COMPARE_OP);
@@ -8359,14 +8380,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t reference)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   if (faceMask & VK_STENCIL_FACE_FRONT_BIT)
-      state->dynamic.vk.ds.stencil.front.reference = reference;
-   if (faceMask & VK_STENCIL_FACE_BACK_BIT)
-      state->dynamic.vk.ds.stencil.back.reference = reference;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_STENCIL_REFERENCE;
+   radv_cmd_set_stencil_reference(cmd_buffer, faceMask, reference);
 }
 
 VKAPI_ATTR void VKAPI_CALL
