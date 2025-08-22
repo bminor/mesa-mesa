@@ -485,6 +485,16 @@ radv_cmd_set_discard_rectangle_mode(struct radv_cmd_buffer *cmd_buffer,
    state->dirty_dynamic |= RADV_DYNAMIC_DISCARD_RECTANGLE_MODE;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_discard_rectangle_enable(struct radv_cmd_buffer *cmd_buffer, bool discard_rectangle_enable)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.dr.enable = discard_rectangle_enable;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_DISCARD_RECTANGLE_ENABLE;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -492,6 +502,7 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    uint64_t copy_mask = src->mask;
    uint64_t dest_mask = 0;
 
+   /* Special case for setting the number of rectangles from the pipeline. */
    dest->vk.dr.rectangle_count = src->vk.dr.rectangle_count;
    dest->sample_location.count = src->sample_location.count;
 
@@ -842,7 +853,11 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }
    }
 
-   RADV_CMP_COPY(vk.dr.enable, RADV_DYNAMIC_DISCARD_RECTANGLE_ENABLE);
+   if (copy_mask & RADV_DYNAMIC_DISCARD_RECTANGLE_ENABLE) {
+      if (dest->vk.dr.enable != src->vk.dr.enable) {
+         radv_cmd_set_discard_rectangle_enable(cmd_buffer, src->vk.dr.enable);
+      }
+   }
 
    if (copy_mask & RADV_DYNAMIC_DISCARD_RECTANGLE_MODE) {
       if (dest->vk.dr.mode != src->vk.dr.mode) {
@@ -9024,10 +9039,10 @@ radv_CmdSetDiscardRectangleEnableEXT(VkCommandBuffer commandBuffer, VkBool32 dis
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    struct radv_cmd_state *state = &cmd_buffer->state;
 
-   state->dynamic.vk.dr.enable = discardRectangleEnable;
+   /* Special case to allow setting the number of rectangles dynamically. */
    state->dynamic.vk.dr.rectangle_count = discardRectangleEnable ? MAX_DISCARD_RECTANGLES : 0;
 
-   state->dirty_dynamic |= RADV_DYNAMIC_DISCARD_RECTANGLE_ENABLE;
+   radv_cmd_set_discard_rectangle_enable(cmd_buffer, discardRectangleEnable);
 }
 
 VKAPI_ATTR void VKAPI_CALL
