@@ -601,7 +601,7 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    if (copy_mask & RADV_DYNAMIC_VIEWPORT_WITH_COUNT) {
       if (dest->vk.vp.viewport_count != src->vk.vp.viewport_count) {
          dest->vk.vp.viewport_count = src->vk.vp.viewport_count;
-         dest_mask |= RADV_DYNAMIC_VIEWPORT;
+         dest_mask |= RADV_DYNAMIC_VIEWPORT_WITH_COUNT;
       }
    }
 
@@ -615,7 +615,7 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    if (copy_mask & RADV_DYNAMIC_SCISSOR_WITH_COUNT) {
       if (dest->vk.vp.scissor_count != src->vk.vp.scissor_count) {
          dest->vk.vp.scissor_count = src->vk.vp.scissor_count;
-         dest_mask |= RADV_DYNAMIC_SCISSOR;
+         dest_mask |= RADV_DYNAMIC_SCISSOR_WITH_COUNT;
       }
    }
 
@@ -984,7 +984,7 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    cmd_buffer->state.dirty_dynamic |= dest_mask;
 
    /* Handle driver specific states that need to be re-emitted when PSO are bound. */
-   if (dest_mask & RADV_DYNAMIC_VIEWPORT) {
+   if (dest_mask & (RADV_DYNAMIC_VIEWPORT | RADV_DYNAMIC_VIEWPORT_WITH_COUNT)) {
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_GUARDBAND;
    }
 
@@ -8699,6 +8699,8 @@ radv_CmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCou
 
    state->dynamic.vk.vp.viewport_count = viewportCount;
 
+   state->dirty_dynamic |= RADV_DYNAMIC_VIEWPORT_WITH_COUNT;
+
    radv_CmdSetViewport(commandBuffer, 0, viewportCount, pViewports);
 }
 
@@ -8709,6 +8711,8 @@ radv_CmdSetScissorWithCount(VkCommandBuffer commandBuffer, uint32_t scissorCount
    struct radv_cmd_state *state = &cmd_buffer->state;
 
    state->dynamic.vk.vp.scissor_count = scissorCount;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_SCISSOR_WITH_COUNT;
 
    radv_CmdSetScissor(commandBuffer, 0, scissorCount, pScissors);
 }
@@ -10859,7 +10863,8 @@ radv_emit_ngg_culling_state(struct radv_cmd_buffer *cmd_buffer)
    radeon_begin(cmd_buffer->cs);
 
    if ((cmd_buffer->state.dirty & RADV_CMD_DIRTY_PIPELINE) ||
-       (cmd_buffer->state.dirty_dynamic & (RADV_DYNAMIC_VIEWPORT | RADV_DYNAMIC_RASTERIZATION_SAMPLES))) {
+       (cmd_buffer->state.dirty_dynamic &
+        (RADV_DYNAMIC_VIEWPORT | RADV_DYNAMIC_VIEWPORT_WITH_COUNT | RADV_DYNAMIC_RASTERIZATION_SAMPLES))) {
       /* Correction for inverted Y */
       if (vp_y_inverted) {
          vp_scale[1] = -vp_scale[1];
@@ -11883,7 +11888,8 @@ radv_validate_dynamic_states(struct radv_cmd_buffer *cmd_buffer, uint64_t dynami
                          RADV_DYNAMIC_COLOR_BLEND_EQUATION | RADV_DYNAMIC_ALPHA_TO_COVERAGE_ENABLE))
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_CB_RENDER_STATE;
 
-   if (dynamic_states & (RADV_DYNAMIC_VIEWPORT | RADV_DYNAMIC_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE))
+   if (dynamic_states &
+       (RADV_DYNAMIC_VIEWPORT | RADV_DYNAMIC_VIEWPORT_WITH_COUNT | RADV_DYNAMIC_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE))
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_VIEWPORT_STATE;
 
    if (dynamic_states &
@@ -11921,7 +11927,9 @@ radv_validate_dynamic_states(struct radv_cmd_buffer *cmd_buffer, uint64_t dynami
    if (dynamic_states & (RADV_DYNAMIC_SAMPLE_LOCATIONS | RADV_DYNAMIC_SAMPLE_LOCATIONS_ENABLE))
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_SAMPLE_LOCATIONS_STATE;
 
-   if (dynamic_states & (RADV_DYNAMIC_SCISSOR | RADV_DYNAMIC_VIEWPORT) && !pdev->info.has_gfx9_scissor_bug)
+   if (dynamic_states & (RADV_DYNAMIC_SCISSOR | RADV_DYNAMIC_SCISSOR_WITH_COUNT | RADV_DYNAMIC_VIEWPORT |
+                         RADV_DYNAMIC_VIEWPORT_WITH_COUNT) &&
+       !pdev->info.has_gfx9_scissor_bug)
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_SCISSOR_STATE;
 
    if (dynamic_states & RADV_DYNAMIC_TESS_DOMAIN_ORIGIN)
@@ -11962,10 +11970,10 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
    const uint64_t dynamic_states = cmd_buffer->state.dirty_dynamic & radv_get_needed_dynamic_states(cmd_buffer);
    if (cmd_buffer->state.has_nggc &&
        ((cmd_buffer->state.dirty & (RADV_CMD_DIRTY_PIPELINE | RADV_CMD_DIRTY_GRAPHICS_SHADERS)) ||
-        (dynamic_states &
-         (RADV_DYNAMIC_CULL_MODE | RADV_DYNAMIC_FRONT_FACE | RADV_DYNAMIC_RASTERIZER_DISCARD_ENABLE |
-          RADV_DYNAMIC_VIEWPORT | RADV_DYNAMIC_CONSERVATIVE_RAST_MODE | RADV_DYNAMIC_RASTERIZATION_SAMPLES |
-          RADV_DYNAMIC_PRIMITIVE_TOPOLOGY | RADV_DYNAMIC_SAMPLE_LOCATIONS_ENABLE)))) {
+        (dynamic_states & (RADV_DYNAMIC_CULL_MODE | RADV_DYNAMIC_FRONT_FACE | RADV_DYNAMIC_RASTERIZER_DISCARD_ENABLE |
+                           RADV_DYNAMIC_VIEWPORT | RADV_DYNAMIC_VIEWPORT_WITH_COUNT |
+                           RADV_DYNAMIC_CONSERVATIVE_RAST_MODE | RADV_DYNAMIC_RASTERIZATION_SAMPLES |
+                           RADV_DYNAMIC_PRIMITIVE_TOPOLOGY | RADV_DYNAMIC_SAMPLE_LOCATIONS_ENABLE)))) {
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_NGGC_STATE;
    }
 
