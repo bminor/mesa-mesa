@@ -579,6 +579,17 @@ radv_cmd_set_stencil_op(struct radv_cmd_buffer *cmd_buffer, VkStencilFaceFlags f
    state->dirty_dynamic |= RADV_DYNAMIC_STENCIL_OP;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_viewport_with_count(struct radv_cmd_buffer *cmd_buffer, uint32_t viewport_count)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.vp.viewport_count = viewport_count;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_VIEWPORT_WITH_COUNT;
+   state->dirty |= RADV_CMD_DIRTY_GUARDBAND;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -600,8 +611,7 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
 
    if (copy_mask & RADV_DYNAMIC_VIEWPORT_WITH_COUNT) {
       if (dest->vk.vp.viewport_count != src->vk.vp.viewport_count) {
-         dest->vk.vp.viewport_count = src->vk.vp.viewport_count;
-         dest_mask |= RADV_DYNAMIC_VIEWPORT_WITH_COUNT;
+         radv_cmd_set_viewport_with_count(cmd_buffer, src->vk.vp.viewport_count);
       }
    }
 
@@ -984,7 +994,7 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    cmd_buffer->state.dirty_dynamic |= dest_mask;
 
    /* Handle driver specific states that need to be re-emitted when PSO are bound. */
-   if (dest_mask & (RADV_DYNAMIC_VIEWPORT | RADV_DYNAMIC_VIEWPORT_WITH_COUNT)) {
+   if (dest_mask & RADV_DYNAMIC_VIEWPORT) {
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_GUARDBAND;
    }
 
@@ -8695,11 +8705,8 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetViewportWithCount(VkCommandBuffer commandBuffer, uint32_t viewportCount, const VkViewport *pViewports)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
 
-   state->dynamic.vk.vp.viewport_count = viewportCount;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_VIEWPORT_WITH_COUNT;
+   radv_cmd_set_viewport_with_count(cmd_buffer, viewportCount);
 
    radv_CmdSetViewport(commandBuffer, 0, viewportCount, pViewports);
 }
