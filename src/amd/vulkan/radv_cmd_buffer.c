@@ -110,6 +110,16 @@ radv_cmd_set_depth_clamp_range(struct radv_cmd_buffer *cmd_buffer, VkDepthClampM
    state->dirty_dynamic |= RADV_DYNAMIC_DEPTH_CLAMP_RANGE;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_depth_clip_negative_one_to_one(struct radv_cmd_buffer *cmd_buffer, bool negative_one_to_one)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.vp.depth_clip_negative_one_to_one = negative_one_to_one;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -226,8 +236,6 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    RADV_CMP_COPY(vk.ia.primitive_topology, RADV_DYNAMIC_PRIMITIVE_TOPOLOGY);
    RADV_CMP_COPY(vk.ia.primitive_restart_enable, RADV_DYNAMIC_PRIMITIVE_RESTART_ENABLE);
 
-   RADV_CMP_COPY(vk.vp.depth_clip_negative_one_to_one, RADV_DYNAMIC_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE);
-
    if (copy_mask & RADV_DYNAMIC_LINE_WIDTH) {
       if (dest->vk.rs.line.width != src->vk.rs.line.width) {
          radv_cmd_set_line_width(cmd_buffer, src->vk.rs.line.width);
@@ -251,6 +259,12 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
           dest->vk.vp.depth_clamp_range.minDepthClamp != src->vk.vp.depth_clamp_range.minDepthClamp ||
           dest->vk.vp.depth_clamp_range.maxDepthClamp != src->vk.vp.depth_clamp_range.maxDepthClamp) {
          radv_cmd_set_depth_clamp_range(cmd_buffer, src->vk.vp.depth_clamp_mode, &src->vk.vp.depth_clamp_range);
+      }
+   }
+
+   if (copy_mask & RADV_DYNAMIC_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE) {
+      if (dest->vk.vp.depth_clip_negative_one_to_one != src->vk.vp.depth_clip_negative_one_to_one) {
+         radv_cmd_set_depth_clip_negative_one_to_one(cmd_buffer, src->vk.vp.depth_clip_negative_one_to_one);
       }
    }
 
@@ -8487,11 +8501,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetDepthClipNegativeOneToOneEXT(VkCommandBuffer commandBuffer, VkBool32 negativeOneToOne)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   state->dynamic.vk.vp.depth_clip_negative_one_to_one = negativeOneToOne;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE;
+   radv_cmd_set_depth_clip_negative_one_to_one(cmd_buffer, negativeOneToOne);
 }
 
 VKAPI_ATTR void VKAPI_CALL
