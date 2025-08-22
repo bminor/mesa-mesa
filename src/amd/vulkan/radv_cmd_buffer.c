@@ -474,6 +474,17 @@ radv_cmd_set_blend_constants(struct radv_cmd_buffer *cmd_buffer, const float ble
    state->dirty_dynamic |= RADV_DYNAMIC_BLEND_CONSTANTS;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_discard_rectangle_mode(struct radv_cmd_buffer *cmd_buffer,
+                                    VkDiscardRectangleModeEXT discard_rectangle_mode)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.dr.mode = discard_rectangle_mode;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_DISCARD_RECTANGLE_MODE;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -832,7 +843,12 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    }
 
    RADV_CMP_COPY(vk.dr.enable, RADV_DYNAMIC_DISCARD_RECTANGLE_ENABLE);
-   RADV_CMP_COPY(vk.dr.mode, RADV_DYNAMIC_DISCARD_RECTANGLE_MODE);
+
+   if (copy_mask & RADV_DYNAMIC_DISCARD_RECTANGLE_MODE) {
+      if (dest->vk.dr.mode != src->vk.dr.mode) {
+         radv_cmd_set_discard_rectangle_mode(cmd_buffer, src->vk.dr.mode);
+      }
+   }
 
    if (copy_mask & RADV_DYNAMIC_ATTACHMENT_FEEDBACK_LOOP_ENABLE) {
       if (dest->feedback_loop_aspects != src->feedback_loop_aspects) {
@@ -9018,11 +9034,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetDiscardRectangleModeEXT(VkCommandBuffer commandBuffer, VkDiscardRectangleModeEXT discardRectangleMode)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   state->dynamic.vk.dr.mode = discardRectangleMode;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_DISCARD_RECTANGLE_MODE;
+   radv_cmd_set_discard_rectangle_mode(cmd_buffer, discardRectangleMode);
 }
 
 VKAPI_ATTR void VKAPI_CALL
