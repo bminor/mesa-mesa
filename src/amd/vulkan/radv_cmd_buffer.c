@@ -10845,7 +10845,7 @@ radv_get_nggc_settings(struct radv_cmd_buffer *cmd_buffer, bool vp_y_inverted)
     * because we don't know the primitive topology at compile time, so we should
     * disable it dynamically for points or lines.
     */
-   const unsigned num_vertices_per_prim = radv_conv_prim_to_gs_out(d->vk.ia.primitive_topology, true) + 1;
+   const unsigned num_vertices_per_prim = radv_get_vgt_outprim_type(cmd_buffer) + 1;
    if (num_vertices_per_prim != 3)
       return radv_nggc_none;
 
