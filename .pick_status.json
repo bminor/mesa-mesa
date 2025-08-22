@@ -5874,7 +5874,7 @@
         "description": "nir: Add missing #include for c99_alloca.h",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3dd9a9782b20e7ced50064d7a4414b0ae318b8c1",
         "notes": null
