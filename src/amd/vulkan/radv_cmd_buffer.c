@@ -10925,11 +10925,10 @@ static uint32_t
 radv_get_ngg_state_num_verts_per_prim(struct radv_cmd_buffer *cmd_buffer)
 {
    const struct radv_shader *last_vgt_shader = cmd_buffer->state.last_vgt_shader;
-   const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    uint32_t num_verts_per_prim = 0;
 
    if (last_vgt_shader->info.stage == MESA_SHADER_VERTEX)
-      num_verts_per_prim = radv_conv_prim_to_gs_out(d->vk.ia.primitive_topology, last_vgt_shader->info.is_ngg) + 1;
+      num_verts_per_prim = radv_get_vgt_outprim_type(cmd_buffer) + 1;
 
    return num_verts_per_prim;
 }
@@ -10944,7 +10943,7 @@ radv_get_ngg_state_provoking_vtx(struct radv_cmd_buffer *cmd_buffer)
 
    if (d->vk.rs.provoking_vertex == VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT) {
       if (stage == MESA_SHADER_VERTEX) {
-         provoking_vtx = radv_conv_prim_to_gs_out(d->vk.ia.primitive_topology, last_vgt_shader->info.is_ngg);
+         provoking_vtx = radv_get_vgt_outprim_type(cmd_buffer);
       } else if (stage == MESA_SHADER_GEOMETRY) {
          provoking_vtx = last_vgt_shader->info.gs.vertices_in - 1;
       }
