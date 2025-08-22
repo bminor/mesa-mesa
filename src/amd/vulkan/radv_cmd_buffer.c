@@ -338,6 +338,20 @@ radv_cmd_set_depth_bounds(struct radv_cmd_buffer *cmd_buffer, float min_depth_bo
    state->dirty_dynamic |= RADV_DYNAMIC_DEPTH_BOUNDS;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_stencil_compare_mask(struct radv_cmd_buffer *cmd_buffer, VkStencilFaceFlags face_mask,
+                                  uint32_t compare_mask)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   if (face_mask & VK_STENCIL_FACE_FRONT_BIT)
+      state->dynamic.vk.ds.stencil.front.compare_mask = compare_mask;
+   if (face_mask & VK_STENCIL_FACE_BACK_BIT)
+      state->dynamic.vk.ds.stencil.back.compare_mask = compare_mask;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_STENCIL_COMPARE_MASK;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -616,8 +630,17 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }
    }
 
-   RADV_CMP_COPY(vk.ds.stencil.front.compare_mask, RADV_DYNAMIC_STENCIL_COMPARE_MASK);
-   RADV_CMP_COPY(vk.ds.stencil.back.compare_mask, RADV_DYNAMIC_STENCIL_COMPARE_MASK);
+   if (copy_mask & RADV_DYNAMIC_STENCIL_COMPARE_MASK) {
+      if (dest->vk.ds.stencil.front.compare_mask != src->vk.ds.stencil.front.compare_mask) {
+         radv_cmd_set_stencil_compare_mask(cmd_buffer, VK_STENCIL_FACE_FRONT_BIT,
+                                           src->vk.ds.stencil.front.compare_mask);
+      }
+
+      if (dest->vk.ds.stencil.back.compare_mask != src->vk.ds.stencil.back.compare_mask) {
+         radv_cmd_set_stencil_compare_mask(cmd_buffer, VK_STENCIL_FACE_BACK_BIT, src->vk.ds.stencil.back.compare_mask);
+      }
+   }
+
    RADV_CMP_COPY(vk.ds.stencil.front.write_mask, RADV_DYNAMIC_STENCIL_WRITE_MASK);
    RADV_CMP_COPY(vk.ds.stencil.back.write_mask, RADV_DYNAMIC_STENCIL_WRITE_MASK);
    RADV_CMP_COPY(vk.ds.stencil.front.reference, RADV_DYNAMIC_STENCIL_REFERENCE);
@@ -8301,14 +8324,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetStencilCompareMask(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t compareMask)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   if (faceMask & VK_STENCIL_FACE_FRONT_BIT)
-      state->dynamic.vk.ds.stencil.front.compare_mask = compareMask;
-   if (faceMask & VK_STENCIL_FACE_BACK_BIT)
-      state->dynamic.vk.ds.stencil.back.compare_mask = compareMask;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_STENCIL_COMPARE_MASK;
+   radv_cmd_set_stencil_compare_mask(cmd_buffer, faceMask, compareMask);
 }
 
 VKAPI_ATTR void VKAPI_CALL
