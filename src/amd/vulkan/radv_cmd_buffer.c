@@ -327,6 +327,17 @@ radv_cmd_set_sample_locations_enable(struct radv_cmd_buffer *cmd_buffer, bool sa
    state->dirty_dynamic |= RADV_DYNAMIC_SAMPLE_LOCATIONS_ENABLE;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_depth_bounds(struct radv_cmd_buffer *cmd_buffer, float min_depth_bounds, float max_depth_bounds)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.ds.depth.bounds_test.min = min_depth_bounds;
+   state->dynamic.vk.ds.depth.bounds_test.max = max_depth_bounds;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_DEPTH_BOUNDS;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -598,8 +609,13 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }
    }
 
-   RADV_CMP_COPY(vk.ds.depth.bounds_test.min, RADV_DYNAMIC_DEPTH_BOUNDS);
-   RADV_CMP_COPY(vk.ds.depth.bounds_test.max, RADV_DYNAMIC_DEPTH_BOUNDS);
+   if (copy_mask & RADV_DYNAMIC_DEPTH_BOUNDS) {
+      if (dest->vk.ds.depth.bounds_test.min != src->vk.ds.depth.bounds_test.min ||
+          dest->vk.ds.depth.bounds_test.max != src->vk.ds.depth.bounds_test.max) {
+         radv_cmd_set_depth_bounds(cmd_buffer, src->vk.ds.depth.bounds_test.min, src->vk.ds.depth.bounds_test.max);
+      }
+   }
+
    RADV_CMP_COPY(vk.ds.stencil.front.compare_mask, RADV_DYNAMIC_STENCIL_COMPARE_MASK);
    RADV_CMP_COPY(vk.ds.stencil.back.compare_mask, RADV_DYNAMIC_STENCIL_COMPARE_MASK);
    RADV_CMP_COPY(vk.ds.stencil.front.write_mask, RADV_DYNAMIC_STENCIL_WRITE_MASK);
@@ -8278,12 +8294,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   state->dynamic.vk.ds.depth.bounds_test.min = minDepthBounds;
-   state->dynamic.vk.ds.depth.bounds_test.max = maxDepthBounds;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_DEPTH_BOUNDS;
+   radv_cmd_set_depth_bounds(cmd_buffer, minDepthBounds, maxDepthBounds);
 }
 
 VKAPI_ATTR void VKAPI_CALL
