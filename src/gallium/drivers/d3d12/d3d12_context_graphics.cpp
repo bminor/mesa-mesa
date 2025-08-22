@@ -1410,6 +1410,47 @@ d3d12_set_constant_buffer(struct pipe_context *pctx,
 }
 
 static void
+d3d12_framebuffer_init(struct d3d12_context *ctx, const struct pipe_framebuffer_state *fb)
+{
+   struct d3d12_screen *screen = d3d12_screen(ctx->base.screen);
+
+   if (fb) {
+      for (unsigned i = 0; i < fb->nr_cbufs; i++) {
+         if (ctx->fb_cbufs[i] && pipe_surface_equal(&fb->cbufs[i], &ctx->fb_cbufs[i]->base))
+            continue;
+
+         struct d3d12_surface *surf = fb->cbufs[i].texture ?
+            d3d12_create_surface(screen, &fb->cbufs[i]) :
+            NULL;
+         if (ctx->fb_cbufs[i])
+            d3d12_surface_reference(&ctx->fb_cbufs[i], NULL);
+         ctx->fb_cbufs[i] = surf;
+      }
+
+      for (unsigned i = fb->nr_cbufs; i < PIPE_MAX_COLOR_BUFS; i++) {
+         if (ctx->fb_cbufs[i])
+            d3d12_surface_reference(&ctx->fb_cbufs[i], NULL);
+      }
+
+      if (ctx->fb_zsbuf && pipe_surface_equal(&fb->zsbuf, &ctx->fb_zsbuf->base))
+         return;
+      struct d3d12_surface *zsurf = fb->zsbuf.texture ?
+         d3d12_create_surface(screen, &fb->zsbuf) :
+         NULL;
+      if (ctx->fb_zsbuf)
+         d3d12_surface_reference(&ctx->fb_zsbuf, NULL);
+      ctx->fb_zsbuf = zsurf;
+   } else {
+      for (unsigned i = 0; i < PIPE_MAX_COLOR_BUFS; i++) {
+         if (ctx->fb_cbufs[i])
+            d3d12_surface_reference(&ctx->fb_cbufs[i], NULL);
+      }
+      if (ctx->fb_zsbuf)
+         d3d12_surface_reference(&ctx->fb_zsbuf, NULL);
+   }
+}
+
+static void
 d3d12_set_framebuffer_state(struct pipe_context *pctx,
                             const struct pipe_framebuffer_state *state)
 {
@@ -1417,7 +1458,7 @@ d3d12_set_framebuffer_state(struct pipe_context *pctx,
    int samples = -1;
 
    bool prev_cbufs_or_zsbuf = ctx->fb.nr_cbufs || ctx->fb.zsbuf.texture;
-   util_framebuffer_init(pctx, state, ctx->fb_cbufs, &ctx->fb_zsbuf);
+   d3d12_framebuffer_init(ctx, state);
    util_copy_framebuffer_state(&d3d12_context(pctx)->fb, state);
    bool new_cbufs_or_zsbuf = ctx->fb.nr_cbufs || ctx->fb.zsbuf.texture;
 
@@ -1979,8 +2020,7 @@ d3d12_clear_render_target(struct pipe_context *pctx,
       }
       util_blitter_clear_render_target(ctx->blitter, psurf, &local_color, dstx, dsty, width, height);
    } else {
-      struct pipe_surface *tmpsurf = pctx->create_surface(pctx, psurf->texture, psurf);
-      struct d3d12_surface *surf = d3d12_surface(tmpsurf);
+      struct d3d12_surface *surf = d3d12_create_surface(d3d12_screen(pctx->screen), psurf);
 
       if (!(util_format_colormask(util_format_description(psurf->format)) &
             PIPE_MASK_A))
@@ -1993,7 +2033,7 @@ d3d12_clear_render_target(struct pipe_context *pctx,
                                           clear_color, 1, &rect);
       ctx->has_commands = true;
       d3d12_batch_reference_surface_texture(d3d12_current_batch(ctx), surf);
-      pipe_surface_unref(pctx, &tmpsurf);
+      d3d12_surface_destroy(surf);
    }
 
 
@@ -2013,8 +2053,7 @@ d3d12_clear_depth_stencil(struct pipe_context *pctx,
                           bool render_condition_enabled)
 {
    struct d3d12_context *ctx = d3d12_context(pctx);
-   struct pipe_surface *tmpsurf = pctx->create_surface(pctx, psurf->texture, psurf);
-   struct d3d12_surface *surf = d3d12_surface(tmpsurf);
+   struct d3d12_surface *surf = d3d12_create_surface(d3d12_screen(pctx->screen), psurf);
 
    if (!render_condition_enabled && ctx->current_predication)
       ctx->cmdlist->SetPredication(NULL, 0, D3D12_PREDICATION_OP_EQUAL_ZERO);
@@ -2043,7 +2082,7 @@ d3d12_clear_depth_stencil(struct pipe_context *pctx,
    if (!render_condition_enabled && ctx->current_predication) {
       d3d12_enable_predication(ctx);
    }
-   pipe_surface_unref(pctx, &tmpsurf);
+   d3d12_surface_destroy(surf);
 }
 
 static void

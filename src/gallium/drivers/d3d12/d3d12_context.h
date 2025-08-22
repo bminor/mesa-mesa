@@ -207,7 +207,8 @@ struct d3d12_context {
    struct hash_table *compute_transform_cache;
 
    struct pipe_constant_buffer cbufs[MESA_SHADER_STAGES][PIPE_MAX_CONSTANT_BUFFERS];
-   PIPE_FB_SURFACES; //STOP USING THIS
+   struct d3d12_surface *fb_cbufs[PIPE_MAX_COLOR_BUFS];
+   struct d3d12_surface *fb_zsbuf;
    struct pipe_framebuffer_state fb;
    struct pipe_vertex_buffer vbs[PIPE_MAX_ATTRIBS];
    D3D12_VERTEX_BUFFER_VIEW vbvs[PIPE_MAX_ATTRIBS];

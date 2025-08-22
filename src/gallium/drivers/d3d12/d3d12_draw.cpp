@@ -940,7 +940,7 @@ d3d12_draw_vbo(struct pipe_context *pctx,
 
    for (int i = 0; i < ctx->fb.nr_cbufs; ++i) {
       if (ctx->fb_cbufs[i]) {
-         struct d3d12_surface *surface = d3d12_surface(ctx->fb_cbufs[i]);
+         struct d3d12_surface *surface = ctx->fb_cbufs[i];
          conversion_modes[i] = d3d12_surface_update_pre_draw(pctx, surface, d3d12_rtv_format(ctx, i));
          if (conversion_modes[i] != D3D12_SURFACE_CONVERSION_NONE)
             ctx->cmdlist_dirty |= D3D12_DIRTY_FRAMEBUFFER;
@@ -1159,14 +1159,14 @@ d3d12_draw_vbo(struct pipe_context *pctx,
       D3D12_CPU_DESCRIPTOR_HANDLE *depth_desc = NULL, tmp_desc;
       for (int i = 0; i < ctx->fb.nr_cbufs; ++i) {
          if (ctx->fb_cbufs[i]) {
-            struct d3d12_surface *surface = d3d12_surface(ctx->fb_cbufs[i]);
+            struct d3d12_surface *surface = ctx->fb_cbufs[i];
             render_targets[i] = d3d12_surface_get_handle(surface, conversion_modes[i]);
             d3d12_batch_reference_surface_texture(batch, surface);
          } else
             render_targets[i] = screen->null_rtv.cpu_handle;
       }
       if (ctx->fb_zsbuf) {
-         struct d3d12_surface *surface = d3d12_surface(ctx->fb_zsbuf);
+         struct d3d12_surface *surface = ctx->fb_zsbuf;
          tmp_desc = surface->desc_handle.cpu_handle;
          d3d12_batch_reference_surface_texture(batch, surface);
          depth_desc = &tmp_desc;
@@ -1199,18 +1199,18 @@ d3d12_draw_vbo(struct pipe_context *pctx,
       ctx->cmdlist->SOSetTargets(0, 4, so_buffer_views);
 
    for (int i = 0; i < ctx->fb.nr_cbufs; ++i) {
-      struct pipe_surface *psurf = ctx->fb_cbufs[i];
-      if (!psurf)
+      struct d3d12_surface *surf = ctx->fb_cbufs[i];
+      if (!surf)
          continue;
 
       struct pipe_resource *pres = conversion_modes[i] == D3D12_SURFACE_CONVERSION_BGRA_UINT ?
-                                      d3d12_surface(psurf)->rgba_texture : psurf->texture;
-      transition_surface_subresources_state(ctx, psurf, pres,
+                                      surf->rgba_texture : surf->base.texture;
+      transition_surface_subresources_state(ctx, &surf->base, pres,
          D3D12_RESOURCE_STATE_RENDER_TARGET);
    }
    if (ctx->fb_zsbuf) {
-      struct pipe_surface *psurf = ctx->fb_zsbuf;
-      transition_surface_subresources_state(ctx, psurf, psurf->texture,
+      struct d3d12_surface *surf = ctx->fb_zsbuf;
+      transition_surface_subresources_state(ctx, &surf->base, surf->base.texture,
          D3D12_RESOURCE_STATE_DEPTH_WRITE);
    }
 
@@ -1274,7 +1274,7 @@ d3d12_draw_vbo(struct pipe_context *pctx,
 
    for (int i = 0; i < ctx->fb.nr_cbufs; ++i) {
       if (ctx->fb_cbufs[i]) {
-         struct d3d12_surface *surface = d3d12_surface(ctx->fb_cbufs[i]);
+         struct d3d12_surface *surface = ctx->fb_cbufs[i];
          d3d12_surface_update_post_draw(pctx, surface, conversion_modes[i]);
       }
    }
