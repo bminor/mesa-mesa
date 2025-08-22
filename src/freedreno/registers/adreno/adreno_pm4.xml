@@ -102,7 +102,7 @@ xsi:schemaLocation="https://gitlab.freedesktop.org/freedreno/ rules-fd.xsd">
 	for concurrent binning, so that BV can write to one buffer while
 	BR reads from the other.
 	</doc>
-	<value name="LRZ_FLIP_BUFFER" value="36" variants="A7XX"/>
+	<value name="LRZ_FLIP_BUFFER" value="36" variants="A7XX-"/>
 
 	<doc>
 		Clears based on GRAS_LRZ_CNTL configuration, could clear
@@ -120,8 +120,8 @@ xsi:schemaLocation="https://gitlab.freedesktop.org/freedreno/ rules-fd.xsd">
 	<value name="LRZ_FLUSH" value="38" variants="A5XX-"/>
 	<value name="BLIT_OP_FILL_2D" value="39" variants="A5XX-"/>
 	<value name="BLIT_OP_COPY_2D" value="40" variants="A5XX-A6XX"/>
-	<value name="LRZ_CACHE_INVALIDATE" value="40" variants="A7XX"/>
-	<value name="LRZ_Q_CACHE_INVALIDATE" value="41" variants="A7XX"/>
+	<value name="LRZ_CACHE_INVALIDATE" value="40" variants="A7XX-"/>
+	<value name="LRZ_Q_CACHE_INVALIDATE" value="41" variants="A7XX-"/>
 	<value name="BLIT_OP_SCALE_2D" value="42" variants="A5XX-"/>
 	<value name="CONTEXT_DONE_2D" value="43" variants="A5XX-"/>
 	<value name="VSC_BINNING_START" value="44" variants="A5XX-"/>
@@ -138,21 +138,22 @@ xsi:schemaLocation="https://gitlab.freedesktop.org/freedreno/ rules-fd.xsd">
 	<!-- note, some of these are the same as a6xx, just named differently -->
 
 	<doc> Doesn't seem to do anything </doc>
-	<value name="DUMMY_EVENT" value="1" variants="A7XX"/>
-	<value name="CCU_INVALIDATE_DEPTH" value="24" variants="A7XX"/>
-	<value name="CCU_INVALIDATE_COLOR" value="25" variants="A7XX"/>
-	<value name="CCU_RESOLVE_CLEAN" value="26" variants="A7XX"/>
-	<value name="CCU_FLUSH_DEPTH" value="28" variants="A7XX"/>
-	<value name="CCU_FLUSH_COLOR" value="29" variants="A7XX"/>
-	<value name="CCU_RESOLVE" value="30" variants="A7XX"/>
-	<value name="CCU_END_RESOLVE_GROUP" value="31" variants="A7XX"/>
-	<value name="CCU_CLEAN_DEPTH" value="32" variants="A7XX"/>
-	<value name="CCU_CLEAN_COLOR" value="33" variants="A7XX"/>
-	<value name="CACHE_RESET" value="48" variants="A7XX"/>
-	<value name="CACHE_CLEAN" value="49" variants="A7XX"/>
+	<value name="DUMMY_EVENT" value="1" variants="A7XX-"/>
+	<value name="CCU_INVALIDATE_DEPTH" value="24" variants="A7XX-"/>
+	<value name="CCU_INVALIDATE_COLOR" value="25" variants="A7XX-"/>
+	<value name="CCU_RESOLVE_CLEAN" value="26" variants="A7XX-"/>
+	<value name="CCU_FLUSH_DEPTH" value="28" variants="A7XX-"/>
+	<value name="CCU_FLUSH_COLOR" value="29" variants="A7XX-"/>
+	<value name="CCU_RESOLVE" value="30" variants="A7XX-"/>
+	<value name="CCU_END_RESOLVE_GROUP" value="31" variants="A7XX-"/>
+	<value name="CCU_CLEAN_DEPTH" value="32" variants="A7XX-"/>
+	<value name="CCU_CLEAN_COLOR" value="33" variants="A7XX-"/>
+	<value name="CACHE_RESET" value="48" variants="A7XX-"/>
+	<value name="CACHE_CLEAN" value="49" variants="A7XX-"/>
 	<!-- TODO: deal with name conflicts with other gens -->
-	<value name="CACHE_FLUSH7" value="50" variants="A7XX"/>
-	<value name="CACHE_INVALIDATE7" value="51" variants="A7XX"/>
+	<value name="CACHE_FLUSH7" value="50" variants="A7XX-"/>
+	<value name="CACHE_INVALIDATE7" value="51" variants="A7XX-"/>
+	<value name="DEPTH_BUFFER_FLIP" value="0x3d" variants="A8XX-"/>
 </enum>
 
 <enum name="pc_di_primtype">
@@ -1800,49 +1801,70 @@ opcode: CP_LOAD_STATE4 (30) (4 dwords)
 		<value value="6" name="RM6_BIN_RESOLVE"/>
 		<value value="7" name="RM6_BIN_RENDER_END"/>
 		<value value="8" name="RM6_COMPUTE"/>
-		<value value="0xc" name="RM6_BLIT2DSCALE"/>  <!-- no-op (at least on current sqe fw) -->
+		<value value="12" name="RM6_BLIT2DSCALE"/>  <!-- no-op (at least on current sqe fw) -->
 
 		<!--
 			These values come from a6xx_set_marker() in the
 			downstream kernel, and they can only be set by the kernel
 		-->
-		<value value="0xd" name="RM6_IB1LIST_START"/>
-		<value value="0xe" name="RM6_IB1LIST_END"/>
+		<value value="13" name="RM6_IB1LIST_START"/>
+		<value value="14" name="RM6_IB1LIST_END"/>
+		<value value="15" name="RM7_BIN_VISIBILITY_END"/>
+
+		<!-- new in a8xx: -->
+		<value value="32" name="RM8_DEPTH_PASS_START"/>
+		<value value="33" name="RM8_DEPTH_PASS_END"/>
 	</enum>
-	<reg32 offset="0" name="0">
-		<!-- if b8 is set, the low bits are interpreted differently (and b4 ignored) -->
-		<bitfield name="MARKER_MODE" pos="8" type="set_marker_mode" addvariant="yes"/>
+	<stripe varset="chip" variants="A6XX-A7XX">
+		<reg32 offset="0" name="0">
+			<!-- if b8 is set, the low bits are interpreted differently (and b4 ignored) -->
+			<bitfield name="MARKER_MODE" pos="8" type="set_marker_mode" addvariant="yes"/>
 
-		<bitfield name="MODE" low="0" high="3" type="a6xx_marker" varset="set_marker_mode" variants="SET_RENDER_MODE"/>
-		<!-- used by preemption to determine if GMEM needs to be saved or not -->
-		<bitfield name="USES_GMEM" pos="4" type="boolean" varset="set_marker_mode" variants="SET_RENDER_MODE"/>
 
-		<bitfield name="IFPC_MODE" pos="0" type="a6xx_ifpc_mode" varset="set_marker_mode" variants="SET_IFPC_MODE"/>
+			<bitfield name="MODE" low="0" high="3" type="a6xx_marker" varset="set_marker_mode" variants="SET_RENDER_MODE"/>
+			<!-- used by preemption to determine if GMEM needs to be saved or not -->
+			<bitfield name="USES_GMEM" pos="4" type="boolean" varset="set_marker_mode" variants="SET_RENDER_MODE"/>
 
-		<!--
-			CP_SET_MARKER is used with these bits to create a
-			critical section around a workaround for ray tracing.
-			The workaround happens after BVH building, and appears
-			to invalidate the RTU's BVH node cache. It makes sure
-			that only one of BR/BV/LPAC is executing the
-			workaround at a time, and no draws using RT on BV/LPAC
-			are executing while the workaround is executed on BR (or
-			vice versa, that no draws on BV/BR using RT are executed
-			while the workaround executes on LPAC), by
-			hooking subsequent CP_EVENT_WRITE/CP_DRAW_*/CP_EXEC_CS.
-			The blob usage is:
 
-			CP_SET_MARKER(RT_WA_START)
-			... workaround here ...
-			CP_SET_MARKER(RT_WA_END)
-			...
-			CP_SET_MARKER(SHADER_USES_RT)
-			CP_DRAW_INDX(...) or CP_EXEC_CS(...)
-		-->
-		<bitfield name="SHADER_USES_RT" pos="9" type="boolean" variants="A7XX-"/>
-		<bitfield name="RT_WA_START" pos="10" type="boolean" variants="A7XX-"/>
-		<bitfield name="RT_WA_END" pos="11" type="boolean" variants="A7XX-"/>
-	</reg32>
+			<bitfield name="IFPC_MODE" pos="0" type="a6xx_ifpc_mode" varset="set_marker_mode" variants="SET_IFPC_MODE"/>
+
+
+			<!--
+				CP_SET_MARKER is used with these bits to create a
+				critical section around a workaround for ray tracing.
+				The workaround happens after BVH building, and appears
+				to invalidate the RTU's BVH node cache. It makes sure
+				that only one of BR/BV/LPAC is executing the
+				workaround at a time, and no draws using RT on BV/LPAC
+				are executing while the workaround is executed on BR (or
+				vice versa, that no draws on BV/BR using RT are executed
+				while the workaround executes on LPAC), by
+				hooking subsequent CP_EVENT_WRITE/CP_DRAW_*/CP_EXEC_CS.
+				The blob usage is:
+
+
+				CP_SET_MARKER(RT_WA_START)
+				... workaround here ...
+				CP_SET_MARKER(RT_WA_END)
+				...
+				CP_SET_MARKER(SHADER_USES_RT)
+				CP_DRAW_INDX(...) or CP_EXEC_CS(...)
+			-->
+			<bitfield name="SHADER_USES_RT" pos="9" type="boolean" variants="A7XX-"/>
+			<bitfield name="RT_WA_START" pos="10" type="boolean" variants="A7XX-"/>
+			<bitfield name="RT_WA_END" pos="11" type="boolean" variants="A7XX-"/>
+		</reg32>
+	</stripe>
+	<stripe varset="chip" variants="A8XX-">
+		<reg32 offset="0" name="0">
+			<!-- if b8 is set, the low bits are interpreted differently (and b4 ignored) -->
+			<bitfield name="MARKER_MODE" pos="8" type="set_marker_mode" addvariant="yes"/>
+			<bitfield name="USES_GMEM" pos="7" type="boolean" varset="set_marker_mode" variants="SET_RENDER_MODE"/>
+			<bitfield name="MODE" low="0" high="6" type="a6xx_marker" varset="set_marker_mode" variants="SET_RENDER_MODE"/>
+			<bitfield name="IFPC_MODE" pos="0" type="a6xx_ifpc_mode" varset="set_marker_mode" variants="SET_IFPC_MODE"/>
+			<!-- idk if the RT w/a fields apply to a8xx as well -->
+		</reg32>
+	</stripe>
 </domain>
 
 <domain name="CP_SET_PSEUDO_REG" width="32" varset="chip" prefix="chip" variants="A6XX-">
