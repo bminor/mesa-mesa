@@ -464,6 +464,16 @@ radv_cmd_set_primitive_topology(struct radv_cmd_buffer *cmd_buffer, uint32_t pri
    state->dirty_dynamic |= RADV_DYNAMIC_PRIMITIVE_TOPOLOGY;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_blend_constants(struct radv_cmd_buffer *cmd_buffer, const float blend_constants[4])
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   memcpy(state->dynamic.vk.cb.blend_constants, blend_constants, sizeof(float) * 4);
+
+   state->dirty_dynamic |= RADV_DYNAMIC_BLEND_CONSTANTS;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -505,8 +515,7 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
 
    if (copy_mask & RADV_DYNAMIC_BLEND_CONSTANTS) {
       if (memcmp(&dest->vk.cb.blend_constants, &src->vk.cb.blend_constants, sizeof(src->vk.cb.blend_constants))) {
-         typed_memcpy(dest->vk.cb.blend_constants, src->vk.cb.blend_constants, 4);
-         dest_mask |= RADV_DYNAMIC_BLEND_CONSTANTS;
+         radv_cmd_set_blend_constants(cmd_buffer, src->vk.cb.blend_constants);
       }
    }
 
@@ -8459,11 +8468,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetBlendConstants(VkCommandBuffer commandBuffer, const float blendConstants[4])
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   memcpy(state->dynamic.vk.cb.blend_constants, blendConstants, sizeof(float) * 4);
-
-   state->dirty_dynamic |= RADV_DYNAMIC_BLEND_CONSTANTS;
+   radv_cmd_set_blend_constants(cmd_buffer, blendConstants);
 }
 
 VKAPI_ATTR void VKAPI_CALL
