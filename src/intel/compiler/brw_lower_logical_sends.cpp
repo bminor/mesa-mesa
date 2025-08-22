@@ -770,29 +770,92 @@ shader_opcode_uses_sampler(opcode op)
    }
 }
 
-static void
-lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst,
-                           const brw_reg &coordinate,
-                           const brw_reg &shadow_c,
-                           brw_reg lod, const brw_reg &lod2,
-                           const brw_reg &min_lod,
-                           const brw_reg &sample_index,
-                           const brw_reg &mcs,
-                           const brw_reg &surface,
-                           const brw_reg &sampler,
-                           const brw_reg &surface_handle,
-                           const brw_reg &sampler_handle,
-                           const brw_reg &tg4_offset,
-                           unsigned payload_type_bit_size,
-                           unsigned coord_components,
-                           unsigned grad_components,
-                           bool residency)
+static unsigned
+get_sampler_msg_payload_type_bit_size(const intel_device_info *devinfo,
+                                      const brw_inst *inst)
 {
+   assert(inst);
+   const brw_reg *src = inst->src;
+   unsigned src_type_size = 0;
+
+   /* All sources need to have the same size, therefore seek the first valid
+    * and take the size from there.
+    */
+   for (unsigned i = 0; i < TEX_LOGICAL_NUM_SRCS; i++) {
+      if (src[i].file != BAD_FILE) {
+         src_type_size = brw_type_size_bytes(src[i].type);
+         break;
+      }
+   }
+
+   assert(src_type_size == 2 || src_type_size == 4);
+
+#ifndef NDEBUG
+   /* Make sure all sources agree. On gfx12 this doesn't hold when sampling
+    * compressed multisampled surfaces. There the payload contains MCS data
+    * which is already in 16-bits unlike the other parameters that need forced
+    * conversion.
+    */
+   if (inst->opcode != SHADER_OPCODE_TXF_CMS_W_GFX12_LOGICAL) {
+      for (unsigned i = 0; i < TEX_LOGICAL_NUM_SRCS; i++) {
+         assert(src[i].file == BAD_FILE ||
+                brw_type_size_bytes(src[i].type) == src_type_size);
+      }
+   }
+#endif
+
+   if (devinfo->verx10 < 125)
+      return src_type_size * 8;
+
+   /* Force conversion from 32-bit sources to 16-bit payload. From the XeHP Bspec:
+    * 3D and GPGPU Programs - Shared Functions - 3D Sampler - Messages - Message
+    * Format [GFX12:HAS:1209977870] *
+    *
+    *  ld2dms_w       SIMD8H and SIMD16H Only
+    *  ld_mcs         SIMD8H and SIMD16H Only
+    *  ld2dms         REMOVEDBY(GEN:HAS:1406788836)
+    */
+   if (inst->opcode == SHADER_OPCODE_TXF_CMS_W_GFX12_LOGICAL ||
+       inst->opcode == SHADER_OPCODE_TXF_MCS_LOGICAL)
+      src_type_size = 2;
+
+   return src_type_size * 8;
+}
+
+static void
+lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst)
+{
+   const intel_device_info *devinfo = bld.shader->devinfo;
+   const brw_compiler *compiler = bld.shader->compiler;
+
+   const brw_reg coordinate = inst->src[TEX_LOGICAL_SRC_COORDINATE];
+   const brw_reg shadow_c = inst->src[TEX_LOGICAL_SRC_SHADOW_C];
+   const brw_reg lod = inst->src[TEX_LOGICAL_SRC_LOD];
+   const brw_reg lod2 = inst->src[TEX_LOGICAL_SRC_LOD2];
+   const brw_reg min_lod = inst->src[TEX_LOGICAL_SRC_MIN_LOD];
+   const brw_reg sample_index = inst->src[TEX_LOGICAL_SRC_SAMPLE_INDEX];
+   const brw_reg mcs = inst->src[TEX_LOGICAL_SRC_MCS];
+   const brw_reg surface = inst->src[TEX_LOGICAL_SRC_SURFACE];
+   const brw_reg sampler = inst->src[TEX_LOGICAL_SRC_SAMPLER];
+   const brw_reg surface_handle = inst->src[TEX_LOGICAL_SRC_SURFACE_HANDLE];
+   const brw_reg sampler_handle = inst->src[TEX_LOGICAL_SRC_SAMPLER_HANDLE];
+   const brw_reg tg4_offset = inst->src[TEX_LOGICAL_SRC_TG4_OFFSET];
+   assert(inst->src[TEX_LOGICAL_SRC_COORD_COMPONENTS].file == IMM);
+   const unsigned coord_components = inst->src[TEX_LOGICAL_SRC_COORD_COMPONENTS].ud;
+   assert(inst->src[TEX_LOGICAL_SRC_GRAD_COMPONENTS].file == IMM);
+   const unsigned grad_components = inst->src[TEX_LOGICAL_SRC_GRAD_COMPONENTS].ud;
+   assert(inst->src[TEX_LOGICAL_SRC_RESIDENCY].file == IMM);
+   const bool residency = inst->src[TEX_LOGICAL_SRC_RESIDENCY].ud != 0;
+
+   const unsigned payload_type_bit_size =
+      get_sampler_msg_payload_type_bit_size(devinfo, inst);
+
+   /* 16-bit payloads are available only on gfx11+ */
+   assert(payload_type_bit_size != 16 || devinfo->ver >= 11);
+
    /* We never generate EOT sampler messages */
    assert(!inst->eot);
 
-   const brw_compiler *compiler = bld.shader->compiler;
-   const intel_device_info *devinfo = bld.shader->devinfo;
    const enum brw_reg_type payload_type =
       brw_type_with_size(BRW_TYPE_F, payload_type_bit_size);
    const enum brw_reg_type payload_unsigned_type =
@@ -1243,98 +1306,6 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst,
 
    /* Message length > MAX_SAMPLER_MESSAGE_SIZE disallowed by hardware. */
    assert(inst->mlen <= MAX_SAMPLER_MESSAGE_SIZE * reg_unit(devinfo));
-}
-
-static unsigned
-get_sampler_msg_payload_type_bit_size(const intel_device_info *devinfo,
-                                      const brw_inst *inst)
-{
-   assert(inst);
-   const brw_reg *src = inst->src;
-   unsigned src_type_size = 0;
-
-   /* All sources need to have the same size, therefore seek the first valid
-    * and take the size from there.
-    */
-   for (unsigned i = 0; i < TEX_LOGICAL_NUM_SRCS; i++) {
-      if (src[i].file != BAD_FILE) {
-         src_type_size = brw_type_size_bytes(src[i].type);
-         break;
-      }
-   }
-
-   assert(src_type_size == 2 || src_type_size == 4);
-
-#ifndef NDEBUG
-   /* Make sure all sources agree. On gfx12 this doesn't hold when sampling
-    * compressed multisampled surfaces. There the payload contains MCS data
-    * which is already in 16-bits unlike the other parameters that need forced
-    * conversion.
-    */
-   if (inst->opcode != SHADER_OPCODE_TXF_CMS_W_GFX12_LOGICAL) {
-      for (unsigned i = 0; i < TEX_LOGICAL_NUM_SRCS; i++) {
-         assert(src[i].file == BAD_FILE ||
-                brw_type_size_bytes(src[i].type) == src_type_size);
-      }
-   }
-#endif
-
-   if (devinfo->verx10 < 125)
-      return src_type_size * 8;
-
-   /* Force conversion from 32-bit sources to 16-bit payload. From the XeHP Bspec:
-    * 3D and GPGPU Programs - Shared Functions - 3D Sampler - Messages - Message
-    * Format [GFX12:HAS:1209977870] *
-    *
-    *  ld2dms_w       SIMD8H and SIMD16H Only
-    *  ld_mcs         SIMD8H and SIMD16H Only
-    *  ld2dms         REMOVEDBY(GEN:HAS:1406788836)
-    */
-   if (inst->opcode == SHADER_OPCODE_TXF_CMS_W_GFX12_LOGICAL ||
-       inst->opcode == SHADER_OPCODE_TXF_MCS_LOGICAL)
-      src_type_size = 2;
-
-   return src_type_size * 8;
-}
-
-static void
-lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst)
-{
-   const intel_device_info *devinfo = bld.shader->devinfo;
-   const brw_reg coordinate = inst->src[TEX_LOGICAL_SRC_COORDINATE];
-   const brw_reg shadow_c = inst->src[TEX_LOGICAL_SRC_SHADOW_C];
-   const brw_reg lod = inst->src[TEX_LOGICAL_SRC_LOD];
-   const brw_reg lod2 = inst->src[TEX_LOGICAL_SRC_LOD2];
-   const brw_reg min_lod = inst->src[TEX_LOGICAL_SRC_MIN_LOD];
-   const brw_reg sample_index = inst->src[TEX_LOGICAL_SRC_SAMPLE_INDEX];
-   const brw_reg mcs = inst->src[TEX_LOGICAL_SRC_MCS];
-   const brw_reg surface = inst->src[TEX_LOGICAL_SRC_SURFACE];
-   const brw_reg sampler = inst->src[TEX_LOGICAL_SRC_SAMPLER];
-   const brw_reg surface_handle = inst->src[TEX_LOGICAL_SRC_SURFACE_HANDLE];
-   const brw_reg sampler_handle = inst->src[TEX_LOGICAL_SRC_SAMPLER_HANDLE];
-   const brw_reg tg4_offset = inst->src[TEX_LOGICAL_SRC_TG4_OFFSET];
-   assert(inst->src[TEX_LOGICAL_SRC_COORD_COMPONENTS].file == IMM);
-   const unsigned coord_components = inst->src[TEX_LOGICAL_SRC_COORD_COMPONENTS].ud;
-   assert(inst->src[TEX_LOGICAL_SRC_GRAD_COMPONENTS].file == IMM);
-   const unsigned grad_components = inst->src[TEX_LOGICAL_SRC_GRAD_COMPONENTS].ud;
-   assert(inst->src[TEX_LOGICAL_SRC_RESIDENCY].file == IMM);
-   const bool residency = inst->src[TEX_LOGICAL_SRC_RESIDENCY].ud != 0;
-
-   const unsigned msg_payload_type_bit_size =
-      get_sampler_msg_payload_type_bit_size(devinfo, inst);
-
-   /* 16-bit payloads are available only on gfx11+ */
-   assert(msg_payload_type_bit_size != 16 || devinfo->ver >= 11);
-
-   lower_sampler_logical_send(bld, inst, coordinate,
-                              shadow_c, lod, lod2, min_lod,
-                              sample_index,
-                              mcs, surface, sampler,
-                              surface_handle, sampler_handle,
-                              tg4_offset,
-                              msg_payload_type_bit_size,
-                              coord_components, grad_components,
-                              residency);
 }
 
 /**
