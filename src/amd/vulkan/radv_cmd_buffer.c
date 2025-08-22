@@ -7583,10 +7583,12 @@ radv_bind_shader(struct radv_cmd_buffer *cmd_buffer, struct radv_shader *shader,
          cmd_buffer->state.can_use_simple_vertex_input = false;
          break;
       case MESA_SHADER_FRAGMENT:
-         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_DB_SHADER_CONTROL | RADV_CMD_DIRTY_MSAA_STATE;
+         cmd_buffer->state.dirty |=
+            RADV_CMD_DIRTY_DB_SHADER_CONTROL | RADV_CMD_DIRTY_MSAA_STATE | RADV_CMD_DIRTY_RAST_SAMPLES_STATE;
          if (pdev->info.gfx_level >= GFX10_3)
             cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FSR_STATE;
-         cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_RASTERIZATION_SAMPLES;
+         if (pdev->info.gfx_level == GFX9)
+            cmd_buffer->state.dirty |= RADV_CMD_DIRTY_BINNING_STATE;
          break;
       default:
          break;
