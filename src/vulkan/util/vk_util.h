@@ -401,6 +401,8 @@ vk_descriptor_type_is_dynamic(VkDescriptorType type)
    }
 }
 
+enum mesa_prim vk_topology_to_mesa(VkPrimitiveTopology topology);
+
 #define VK_PRINT_STR(field, ...) do {                          \
    memset(field, 0, sizeof(field));                            \
    UNUSED int i = snprintf(field, sizeof(field), __VA_ARGS__); \

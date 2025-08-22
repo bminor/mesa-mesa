@@ -26,6 +26,7 @@
 #include "vk_internal_exts.h"
 #include "vk_limits.h"
 #include "vk_object.h"
+#include "vk_util.h"
 
 #include "util/simple_mtx.h"
 
