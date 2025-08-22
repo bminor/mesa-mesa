@@ -6544,7 +6544,7 @@
         "description": "Revert \"glsl: Work around MSVC arm64 optimizer bug\"",
         "nominated": true,
         "nomination_type": 3,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "86b5c9278ccc2ce3e660142915f9b1c9c5a33c09",
         "notes": null
