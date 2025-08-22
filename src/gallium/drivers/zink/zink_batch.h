@@ -113,6 +113,17 @@ zink_batch_usage_exists(const struct zink_batch_usage *u)
    return u && (u->usage || u->unflushed);
 }
 
+static ALWAYS_INLINE void
+zink_batch_state_append(struct zink_batch_state **list, struct zink_batch_state **last, struct zink_batch_state *bs)
+{
+   if (*last)
+      (*last)->next = bs;
+   else
+      *list = bs;
+   *last = bs;
+   bs->next = NULL;
+}
+
 bool
 zink_screen_usage_check_completion(struct zink_screen *screen, const struct zink_batch_usage *u);
 bool

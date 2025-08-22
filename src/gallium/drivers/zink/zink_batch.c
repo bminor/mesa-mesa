@@ -221,11 +221,7 @@ zink_batch_reset_all(struct zink_context *ctx)
       bs->fence.completed = true;
       pop_batch_state(ctx);
       zink_reset_batch_state(ctx, bs);
-      if (ctx->last_free_batch_state)
-         ctx->last_free_batch_state->next = bs;
-      else
-         ctx->free_batch_states = bs;
-      ctx->last_free_batch_state = bs;
+      zink_batch_state_append(&ctx->free_batch_states, &ctx->last_free_batch_state, bs);
    }
 }
 
@@ -462,11 +458,7 @@ get_batch_state(struct zink_context *ctx)
          /* this is batch init, so create a few more states for later use */
          for (int i = 0; i < 3; i++) {
             struct zink_batch_state *state = create_batch_state(ctx);
-            if (ctx->last_free_batch_state)
-               ctx->last_free_batch_state->next = state;
-            else
-               ctx->free_batch_states = state;
-            ctx->last_free_batch_state = state;
+            zink_batch_state_append(&ctx->free_batch_states, &ctx->last_free_batch_state, state);
          }
       }
       /* no batch states were available: make a new one */
@@ -835,13 +827,7 @@ zink_end_batch(struct zink_context *ctx)
    }
 
    bs = ctx->bs;
-   if (ctx->last_batch_state)
-      ctx->last_batch_state->next = bs;
-   else {
-      assert(!ctx->batch_states);
-      ctx->batch_states = bs;
-   }
-   ctx->last_batch_state = bs;
+   zink_batch_state_append(&ctx->batch_states, &ctx->last_batch_state, bs);
    ctx->batch_states_count++;
    ctx->work_count = 0;
 
