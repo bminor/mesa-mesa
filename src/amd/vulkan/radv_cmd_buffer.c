@@ -446,6 +446,24 @@ radv_cmd_set_attachment_feedback_loop_enable(struct radv_cmd_buffer *cmd_buffer,
    state->dirty_dynamic |= RADV_DYNAMIC_ATTACHMENT_FEEDBACK_LOOP_ENABLE;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_primitive_topology(struct radv_cmd_buffer *cmd_buffer, uint32_t primitive_topology)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   if (radv_primitive_topology_is_line_list(state->dynamic.vk.ia.primitive_topology) !=
+       radv_primitive_topology_is_line_list(primitive_topology))
+      state->dirty_dynamic |= RADV_DYNAMIC_LINE_STIPPLE;
+
+   if (radv_prim_is_points_or_lines(state->dynamic.vk.ia.primitive_topology) !=
+       radv_prim_is_points_or_lines(primitive_topology))
+      state->dirty |= RADV_CMD_DIRTY_GUARDBAND;
+
+   state->dynamic.vk.ia.primitive_topology = primitive_topology;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_PRIMITIVE_TOPOLOGY;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -557,7 +575,11 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }                                                                                                                \
    }
 
-   RADV_CMP_COPY(vk.ia.primitive_topology, RADV_DYNAMIC_PRIMITIVE_TOPOLOGY);
+   if (copy_mask & RADV_DYNAMIC_PRIMITIVE_TOPOLOGY) {
+      if (dest->vk.ia.primitive_topology != src->vk.ia.primitive_topology) {
+         radv_cmd_set_primitive_topology(cmd_buffer, src->vk.ia.primitive_topology);
+      }
+   }
 
    if (copy_mask & RADV_DYNAMIC_LINE_WIDTH) {
       if (dest->vk.rs.line.width != src->vk.rs.line.width) {
@@ -814,7 +836,7 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    cmd_buffer->state.dirty_dynamic |= dest_mask;
 
    /* Handle driver specific states that need to be re-emitted when PSO are bound. */
-   if (dest_mask & (RADV_DYNAMIC_VIEWPORT | RADV_DYNAMIC_PRIMITIVE_TOPOLOGY)) {
+   if (dest_mask & RADV_DYNAMIC_VIEWPORT) {
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_GUARDBAND;
    }
 
@@ -8530,20 +8552,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetPrimitiveTopology(VkCommandBuffer commandBuffer, VkPrimitiveTopology primitiveTopology)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-   unsigned primitive_topology = radv_translate_prim(primitiveTopology);
-
-   if (radv_primitive_topology_is_line_list(state->dynamic.vk.ia.primitive_topology) !=
-       radv_primitive_topology_is_line_list(primitive_topology))
-      state->dirty_dynamic |= RADV_DYNAMIC_LINE_STIPPLE;
-
-   if (radv_prim_is_points_or_lines(state->dynamic.vk.ia.primitive_topology) !=
-       radv_prim_is_points_or_lines(primitive_topology))
-      state->dirty |= RADV_CMD_DIRTY_GUARDBAND;
-
-   state->dynamic.vk.ia.primitive_topology = primitive_topology;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_PRIMITIVE_TOPOLOGY;
+   radv_cmd_set_primitive_topology(cmd_buffer, radv_translate_prim(primitiveTopology));
 }
 
 VKAPI_ATTR void VKAPI_CALL
