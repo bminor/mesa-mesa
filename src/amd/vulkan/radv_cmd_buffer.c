@@ -130,6 +130,26 @@ radv_cmd_set_primitive_restart_enable(struct radv_cmd_buffer *cmd_buffer, bool p
    state->dirty_dynamic |= RADV_DYNAMIC_PRIMITIVE_RESTART_ENABLE;
 }
 
+struct radv_cmd_set_depth_bias_info {
+   float constant_factor;
+   float clamp;
+   float slope_factor;
+   VkDepthBiasRepresentationEXT representation;
+};
+
+ALWAYS_INLINE static void
+radv_cmd_set_depth_bias(struct radv_cmd_buffer *cmd_buffer, const struct radv_cmd_set_depth_bias_info *info)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.rs.depth_bias.constant_factor = info->constant_factor;
+   state->dynamic.vk.rs.depth_bias.clamp = info->clamp;
+   state->dynamic.vk.rs.depth_bias.slope_factor = info->slope_factor;
+   state->dynamic.vk.rs.depth_bias.representation = info->representation;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_DEPTH_BIAS;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -283,10 +303,21 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }
    }
 
-   RADV_CMP_COPY(vk.rs.depth_bias.constant_factor, RADV_DYNAMIC_DEPTH_BIAS);
-   RADV_CMP_COPY(vk.rs.depth_bias.clamp, RADV_DYNAMIC_DEPTH_BIAS);
-   RADV_CMP_COPY(vk.rs.depth_bias.slope_factor, RADV_DYNAMIC_DEPTH_BIAS);
-   RADV_CMP_COPY(vk.rs.depth_bias.representation, RADV_DYNAMIC_DEPTH_BIAS);
+   if (copy_mask & RADV_DYNAMIC_DEPTH_BIAS) {
+      if (dest->vk.rs.depth_bias.constant_factor != src->vk.rs.depth_bias.constant_factor ||
+          dest->vk.rs.depth_bias.clamp != src->vk.rs.depth_bias.clamp ||
+          dest->vk.rs.depth_bias.slope_factor != src->vk.rs.depth_bias.slope_factor ||
+          dest->vk.rs.depth_bias.representation != src->vk.rs.depth_bias.representation) {
+         const struct radv_cmd_set_depth_bias_info info = {
+            .constant_factor = src->vk.rs.depth_bias.constant_factor,
+            .clamp = src->vk.rs.depth_bias.clamp,
+            .slope_factor = src->vk.rs.depth_bias.slope_factor,
+            .representation = src->vk.rs.depth_bias.representation,
+         };
+         radv_cmd_set_depth_bias(cmd_buffer, &info);
+      }
+   }
+
    RADV_CMP_COPY(vk.rs.line.stipple.factor, RADV_DYNAMIC_LINE_STIPPLE);
    RADV_CMP_COPY(vk.rs.line.stipple.pattern, RADV_DYNAMIC_LINE_STIPPLE);
    RADV_CMP_COPY(vk.rs.cull_mode, RADV_DYNAMIC_CULL_MODE);
@@ -8686,18 +8717,19 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetDepthBias2EXT(VkCommandBuffer commandBuffer, const VkDepthBiasInfoEXT *pDepthBiasInfo)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
 
    const VkDepthBiasRepresentationInfoEXT *dbr_info =
       vk_find_struct_const(pDepthBiasInfo->pNext, DEPTH_BIAS_REPRESENTATION_INFO_EXT);
 
-   state->dynamic.vk.rs.depth_bias.constant_factor = pDepthBiasInfo->depthBiasConstantFactor;
-   state->dynamic.vk.rs.depth_bias.clamp = pDepthBiasInfo->depthBiasClamp;
-   state->dynamic.vk.rs.depth_bias.slope_factor = pDepthBiasInfo->depthBiasSlopeFactor;
-   state->dynamic.vk.rs.depth_bias.representation =
-      dbr_info ? dbr_info->depthBiasRepresentation : VK_DEPTH_BIAS_REPRESENTATION_LEAST_REPRESENTABLE_VALUE_FORMAT_EXT;
+   const struct radv_cmd_set_depth_bias_info info = {
+      .constant_factor = pDepthBiasInfo->depthBiasConstantFactor,
+      .clamp = pDepthBiasInfo->depthBiasClamp,
+      .slope_factor = pDepthBiasInfo->depthBiasSlopeFactor,
+      .representation = dbr_info ? dbr_info->depthBiasRepresentation
+                                 : VK_DEPTH_BIAS_REPRESENTATION_LEAST_REPRESENTABLE_VALUE_FORMAT_EXT,
+   };
 
-   state->dirty_dynamic |= RADV_DYNAMIC_DEPTH_BIAS;
+   radv_cmd_set_depth_bias(cmd_buffer, &info);
 }
 
 VKAPI_ATTR void VKAPI_CALL
