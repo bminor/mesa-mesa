@@ -472,6 +472,11 @@ get_batch_state(struct zink_context *ctx)
 
    if (bs) {
       bs->next = NULL;
+      if  (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB && bs->dd.db &&
+           bs->dd.db->base.b.width0 < bs->ctx->dd.db.max_db_size * screen->base_descriptor_size) {
+         /* reset again to catch descriptor buffer resize */
+         zink_batch_descriptor_reset(screen, bs);
+      }
    } else {
       if (!ctx->bs) {
          /* this is batch init, so create a few more states for later use */
