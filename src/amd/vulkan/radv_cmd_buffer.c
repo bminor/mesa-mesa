@@ -202,6 +202,20 @@ radv_cmd_set_rasterizer_discard_enable(struct radv_cmd_buffer *cmd_buffer, bool 
    state->dirty_dynamic |= RADV_DYNAMIC_RASTERIZER_DISCARD_ENABLE;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_polygon_mode(struct radv_cmd_buffer *cmd_buffer, VkPolygonMode polygon_mode)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   if (radv_polygon_mode_is_points_or_lines(state->dynamic.vk.rs.polygon_mode) !=
+       radv_polygon_mode_is_points_or_lines(polygon_mode))
+      state->dirty |= RADV_CMD_DIRTY_GUARDBAND;
+
+   state->dynamic.vk.rs.polygon_mode = polygon_mode;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_POLYGON_MODE;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -401,7 +415,12 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }
    }
 
-   RADV_CMP_COPY(vk.rs.polygon_mode, RADV_DYNAMIC_POLYGON_MODE);
+   if (copy_mask & RADV_DYNAMIC_POLYGON_MODE) {
+      if (dest->vk.rs.polygon_mode != src->vk.rs.polygon_mode) {
+         radv_cmd_set_polygon_mode(cmd_buffer, src->vk.rs.polygon_mode);
+      }
+   }
+
    RADV_CMP_COPY(vk.rs.line.stipple.enable, RADV_DYNAMIC_LINE_STIPPLE_ENABLE);
    RADV_CMP_COPY(vk.rs.depth_clip_enable, RADV_DYNAMIC_DEPTH_CLIP_ENABLE);
    RADV_CMP_COPY(vk.rs.conservative_mode, RADV_DYNAMIC_CONSERVATIVE_RAST_MODE);
@@ -457,7 +476,7 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    cmd_buffer->state.dirty_dynamic |= dest_mask;
 
    /* Handle driver specific states that need to be re-emitted when PSO are bound. */
-   if (dest_mask & (RADV_DYNAMIC_VIEWPORT | RADV_DYNAMIC_POLYGON_MODE | RADV_DYNAMIC_PRIMITIVE_TOPOLOGY)) {
+   if (dest_mask & (RADV_DYNAMIC_VIEWPORT | RADV_DYNAMIC_PRIMITIVE_TOPOLOGY)) {
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_GUARDBAND;
    }
 
@@ -8498,16 +8517,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetPolygonModeEXT(VkCommandBuffer commandBuffer, VkPolygonMode polygonMode)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-   unsigned polygon_mode = radv_translate_fill(polygonMode);
-
-   if (radv_polygon_mode_is_points_or_lines(state->dynamic.vk.rs.polygon_mode) !=
-       radv_polygon_mode_is_points_or_lines(polygon_mode))
-      state->dirty |= RADV_CMD_DIRTY_GUARDBAND;
-
-   state->dynamic.vk.rs.polygon_mode = polygon_mode;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_POLYGON_MODE;
+   radv_cmd_set_polygon_mode(cmd_buffer, radv_translate_fill(polygonMode));
 }
 
 VKAPI_ATTR void VKAPI_CALL
