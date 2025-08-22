@@ -297,6 +297,16 @@ radv_cmd_set_alpha_to_one_enable(struct radv_cmd_buffer *cmd_buffer, bool alpha_
    state->dirty_dynamic |= RADV_DYNAMIC_ALPHA_TO_ONE_ENABLE;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_sample_mask(struct radv_cmd_buffer *cmd_buffer, uint32_t sample_mask)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.vk.ms.sample_mask = sample_mask;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_SAMPLE_MASK;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -550,7 +560,12 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
       }
    }
 
-   RADV_CMP_COPY(vk.ms.sample_mask, RADV_DYNAMIC_SAMPLE_MASK);
+   if (copy_mask & RADV_DYNAMIC_SAMPLE_MASK) {
+      if (dest->vk.ms.sample_mask != src->vk.ms.sample_mask) {
+         radv_cmd_set_sample_mask(cmd_buffer, src->vk.ms.sample_mask);
+      }
+   }
+
    RADV_CMP_COPY(vk.ms.rasterization_samples, RADV_DYNAMIC_RASTERIZATION_SAMPLES);
    RADV_CMP_COPY(vk.ms.sample_locations_enable, RADV_DYNAMIC_SAMPLE_LOCATIONS_ENABLE);
 
@@ -8683,11 +8698,7 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetSampleMaskEXT(VkCommandBuffer commandBuffer, VkSampleCountFlagBits samples, const VkSampleMask *pSampleMask)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   state->dynamic.vk.ms.sample_mask = pSampleMask[0] & 0xffff;
-
-   state->dirty_dynamic |= RADV_DYNAMIC_SAMPLE_MASK;
+   radv_cmd_set_sample_mask(cmd_buffer, pSampleMask[0] & 0xffff);
 }
 
 VKAPI_ATTR void VKAPI_CALL
