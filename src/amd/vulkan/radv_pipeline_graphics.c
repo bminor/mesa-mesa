@@ -799,8 +799,8 @@ radv_pipeline_init_dynamic_state(const struct radv_device *device, struct radv_g
    if (states & RADV_DYNAMIC_VIEWPORT) {
       typed_memcpy(dynamic->vk.vp.viewports, state->vp->viewports, state->vp->viewport_count);
       for (unsigned i = 0; i < state->vp->viewport_count; i++)
-         radv_get_viewport_xform(&dynamic->vk.vp.viewports[i], dynamic->hw_vp.xform[i].scale,
-                                 dynamic->hw_vp.xform[i].translate);
+         radv_get_viewport_xform(&dynamic->vk.vp.viewports[i], dynamic->vp_xform[i].scale,
+                                 dynamic->vp_xform[i].translate);
    }
 
    if (states & RADV_DYNAMIC_VIEWPORT_WITH_COUNT) {

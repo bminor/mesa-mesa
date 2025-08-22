@@ -42,6 +42,11 @@ struct radv_sample_locations_state {
    VkSampleLocationEXT locations[MAX_SAMPLE_LOCATIONS];
 };
 
+struct radv_viewport_xform_state {
+   float scale[3];
+   float translate[3];
+};
+
 struct radv_dynamic_state {
    struct vk_dynamic_graphics_state vk;
 
@@ -51,12 +56,7 @@ struct radv_dynamic_state {
     */
    uint64_t mask;
 
-   struct {
-      struct {
-         float scale[3];
-         float translate[3];
-      } xform[MAX_VIEWPORTS];
-   } hw_vp;
+   struct radv_viewport_xform_state vp_xform[MAX_VIEWPORTS];
 
    struct radv_sample_locations_state sample_location;
 
