@@ -491,10 +491,13 @@ void si_handle_sqtt(struct si_context *sctx, struct radeon_cmdbuf *rcs)
          if (sctx->spm.ptr)
             sctx->ws->buffer_unmap(sctx->ws, sctx->spm.bo);
       } else {
-         mesa_loge("Failed to read the trace");
          if (!sctx->sqtt->trigger_file) {
             sctx->sqtt->start_frame = num_frames + 10;
          }
+
+         /* Restart SQTT to try to capture the next frame. */
+         si_begin_sqtt(sctx, rcs);
+         sctx->sqtt_enabled = true;
       }
    }
 
