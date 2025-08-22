@@ -826,6 +826,10 @@ radv_check_modifier_support(struct radv_physical_device *pdev, const VkPhysicalD
          return VK_ERROR_FORMAT_NOT_SUPPORTED;
    }
 
+   /* QP map needs linear. */
+   if (info->usage & VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR && modifier != DRM_FORMAT_MOD_LINEAR)
+      return VK_ERROR_FORMAT_NOT_SUPPORTED;
+
    /* We can expand this as needed and implemented but there is not much demand
     * for more.
     * Video can't support array layers with swizzle modes that use slice index

@@ -1289,17 +1289,13 @@ radv_GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysicalDevice physicalDevice,
    VkImageTiling tiling[3];
    uint32_t num_tiling = 0;
 
-   if (qp_map) {
+   tiling[num_tiling++] = VK_IMAGE_TILING_OPTIMAL;
+
+   if ((src_dst || qp_map) && !dpb)
       tiling[num_tiling++] = VK_IMAGE_TILING_LINEAR;
-   } else {
-      tiling[num_tiling++] = VK_IMAGE_TILING_OPTIMAL;
 
-      if (src_dst && !dpb)
-         tiling[num_tiling++] = VK_IMAGE_TILING_LINEAR;
-
-      if (src_dst && pdev->info.gfx_level >= GFX9)
-         tiling[num_tiling++] = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
-   }
+   if ((src_dst || qp_map) && pdev->info.gfx_level >= GFX9)
+      tiling[num_tiling++] = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
 
    VK_OUTARRAY_MAKE_TYPED(VkVideoFormatPropertiesKHR, out, pVideoFormatProperties, pVideoFormatPropertyCount);
 
