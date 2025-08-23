@@ -195,7 +195,11 @@ nvk_cmd_buffer_new_push(struct nvk_cmd_buffer *cmd)
 
    uint8_t subc_mask = nvk_cmd_buffer_subchannel_mask(cmd);
 
-   VkResult result = nvk_cmd_buffer_alloc_mem(cmd, false, &cmd->push_mem);
+   /* Strictly speaking, pushbufs don't need to live in GART but the command
+    * streamer is pretty efficient at pulling across PCI and command buffers tend
+    * to be read-once so there's not much benefit to putting them in VRAM.
+    */
+   VkResult result = nvk_cmd_buffer_alloc_mem(cmd, true, &cmd->push_mem);
    if (unlikely(result != VK_SUCCESS)) {
       vk_command_buffer_set_error(&cmd->vk, result);
       STATIC_ASSERT(NVK_CMD_BUFFER_MAX_PUSH <= NVK_CMD_MEM_SIZE / 4);
