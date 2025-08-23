@@ -614,6 +614,8 @@ vn_gettid(void)
 {
 #if DETECT_OS_ANDROID
    return gettid();
+#elif defined(__FreeBSD__)
+   return syscall(SYS_thr_self);
 #else
    return syscall(SYS_gettid);
 #endif
