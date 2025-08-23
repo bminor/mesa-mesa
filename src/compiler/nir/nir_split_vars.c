@@ -991,6 +991,25 @@ nir_split_array_vars(nir_shader *shader, nir_variable_mode modes)
    return progress;
 }
 
+static nir_constant *
+create_null_constant(void *ctx, const struct glsl_type *type)
+{
+   nir_constant *c = rzalloc(ctx, nir_constant);
+   c->is_null_constant = true;
+   if (glsl_type_is_array_or_matrix(type)) {
+      c->num_elements = glsl_get_length(type);
+      c->elements = ralloc_array(ctx, nir_constant *, c->num_elements);
+
+      c->elements[0] = create_null_constant(ctx, glsl_get_array_element(type));
+      for (unsigned i = 1; i < c->num_elements; i++)
+         c->elements[i] = c->elements[0];
+   } else {
+      assert(glsl_type_is_vector_or_scalar(type));
+   }
+
+   return c;
+}
+
 struct array_level_usage {
    unsigned array_len;
 
@@ -1496,6 +1515,10 @@ shrink_vec_var_list(nir_shader *shader,
          }
       }
       var->type = new_type;
+      if (var->constant_initializer) {
+         assert(var->constant_initializer->is_null_constant);
+         var->constant_initializer = create_null_constant(shader, new_type);
+      }
 
       vars_shrunk = true;
    }
