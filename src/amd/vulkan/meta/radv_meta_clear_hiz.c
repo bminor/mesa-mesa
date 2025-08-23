@@ -130,6 +130,7 @@ radv_clear_hiz(struct radv_cmd_buffer *cmd_buffer, struct radv_image *image, con
          radv_hiz_image_view_init(&iview, device,
                                   &(VkImageViewCreateInfo){
                                      .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                                     .flags = VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA,
                                      .image = radv_image_to_handle(image),
                                      .viewType = radv_meta_get_view_type(image),
                                      .format = image->vk.format,

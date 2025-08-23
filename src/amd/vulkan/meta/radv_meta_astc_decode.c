@@ -77,6 +77,7 @@ image_view_init(struct radv_device *device, struct radv_image *image, VkFormat f
 {
    VkImageViewCreateInfo iview_create_info = {
       .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+      .flags = VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA,
       .image = radv_image_to_handle(image),
       .viewType = get_view_type(image),
       .format = format,

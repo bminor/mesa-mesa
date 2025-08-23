@@ -497,8 +497,9 @@ radv_image_view_init(struct radv_image_view *iview, struct radv_device *device,
    const struct VkImageViewSlicedCreateInfoEXT *sliced_3d =
       vk_find_struct_const(pCreateInfo->pNext, IMAGE_VIEW_SLICED_CREATE_INFO_EXT);
 
-   bool from_client = extra_create_info && extra_create_info->from_client;
-   vk_image_view_init(&device->vk, &iview->vk, !from_client, pCreateInfo);
+   if (!extra_create_info || !extra_create_info->from_client)
+      assert(pCreateInfo->flags & VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA);
+   vk_image_view_init(&device->vk, &iview->vk, false, pCreateInfo);
 
    memset(&iview->descriptor, 0, sizeof(iview->descriptor));
 
@@ -648,7 +649,8 @@ radv_hiz_image_view_init(struct radv_image_view *iview, struct radv_device *devi
 {
    VK_FROM_HANDLE(radv_image, image, pCreateInfo->image);
 
-   vk_image_view_init(&device->vk, &iview->vk, true, pCreateInfo);
+   assert(pCreateInfo->flags & VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA);
+   vk_image_view_init(&device->vk, &iview->vk, false, pCreateInfo);
 
    assert(vk_format_has_depth(image->vk.format) && vk_format_has_stencil(image->vk.format));
    assert(iview->vk.aspects == VK_IMAGE_ASPECT_DEPTH_BIT);
