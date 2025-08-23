@@ -768,18 +768,6 @@ nvk_image_init(struct nvk_device *dev,
 
    vk_image_init(&dev->vk, &image->vk, pCreateInfo);
 
-   if ((image->vk.usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-                           VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) &&
-       image->vk.samples > 1) {
-      image->vk.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-      image->vk.stencil_usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-   }
-
-   if (image->vk.usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT)
-      image->vk.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-   if (image->vk.usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT)
-      image->vk.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
    nil_image_usage_flags usage = 0;
    if (image->vk.tiling == VK_IMAGE_TILING_LINEAR)
       usage |= NIL_IMAGE_USAGE_LINEAR_BIT;
