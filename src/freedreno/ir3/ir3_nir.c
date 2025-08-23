@@ -339,6 +339,7 @@ ir3_optimize_loop(struct ir3_compiler *compiler,
       progress |= OPT(s, nir_opt_dead_write_vars);
       progress |= OPT(s, nir_split_struct_vars, nir_var_function_temp);
       progress |= OPT(s, nir_opt_shrink_stores, true);
+      progress |= OPT(s, nir_shrink_vec_array_vars, nir_var_function_temp | nir_var_mem_shared);
 
       static int gcm = -1;
       if (gcm == -1)
