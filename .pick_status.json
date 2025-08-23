@@ -2914,7 +2914,7 @@
         "description": "Revert \"nir: Temporarily disable optimizations for MSVC ARM64\"",
         "nominated": true,
         "nomination_type": 3,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "55d153b9f598c77510a483ba768eca2103bf850b",
         "notes": null
