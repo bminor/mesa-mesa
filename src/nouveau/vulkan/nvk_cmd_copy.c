@@ -830,6 +830,7 @@ nvk_CmdCopyImage2(VkCommandBuffer commandBuffer,
          uint8_t dst_plane = nvk_image_aspects_to_plane(dst, dst_aspects);
 
          const struct nil_format src_format = src->planes[src_plane].nil.format;
+         const struct nil_format dst_format = dst->planes[dst_plane].nil.format;
          const enum nil_sample_layout src_sample_layout =
             src->planes[src_plane].nil.sample_layout;
 
@@ -843,10 +844,41 @@ nvk_CmdCopyImage2(VkCommandBuffer commandBuffer,
             .extent_el = nil_extent4d_px_to_el(extent4d_px, src_format,
                                                src_sample_layout),
          };
+         struct nouveau_copy copy2 = { 0 };
 
-         nvk_remap_copy_aspect(&copy, src_format.p_format, src_aspects);
+         bool src_zs = util_format_is_depth_and_stencil(src_format.p_format);
+         bool dst_zs = util_format_is_depth_and_stencil(dst_format.p_format);
+
+         if (src_zs && dst_zs) {
+            assert(src_format.p_format == dst_format.p_format);
+            nvk_remap_copy_aspect(&copy, src_format.p_format, src_aspects);
+         } else if (src_zs && !dst_zs) {
+            nvk_remap_extract_aspect(&copy, &copy2,
+                                     src_format.p_format, src_aspects);
+            if (copy2.extent_el.width > 0) {
+               copy2.dst = copy.dst;
+               copy.dst = copy2.src =
+                  nouveau_copy_rect_image(src, &src->stencil_copy_temp,
+                                          region->srcOffset,
+                                          &region->srcSubresource);
+            }
+         } else if (!src_zs && dst_zs) {
+            nvk_remap_insert_aspect(&copy, &copy2,
+                                    dst_format.p_format, dst_aspects);
+            if (copy2.extent_el.width > 0) {
+               copy2.dst = copy.dst;
+               copy.dst = copy2.src =
+                  nouveau_copy_rect_image(dst, &dst->stencil_copy_temp,
+                                          region->dstOffset,
+                                          &region->dstSubresource);
+            }
+         } else {
+            copy.remap = nouveau_copy_remap_format(src_format.p_format);
+         }
 
          nouveau_copy_rect(cmd, &copy);
+         if (copy2.extent_el.width > 0)
+            nouveau_copy_rect(cmd, &copy2);
       }
    }
 }
