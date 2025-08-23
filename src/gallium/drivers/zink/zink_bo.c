@@ -761,13 +761,49 @@ track_freed_sparse_bo(struct zink_context *ctx, struct zink_sparse_backing *back
    util_dynarray_append(&ctx->bs->freed_sparse_backing_bos, struct zink_bo*, backing->bo);
 }
 
+static VkTimelineSemaphoreSubmitInfo
+init_timeline_wait(struct zink_context *ctx, struct zink_resource *res, bool commit, VkSemaphore *wait)
+{
+   struct zink_screen *screen = zink_screen(ctx->base.screen);
+
+   VkTimelineSemaphoreSubmitInfo timeline = {
+      VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO,
+      NULL,
+      1,
+      &screen->curr_batch
+   };
+
+   /* nothing to do here */
+   if (*wait)
+      return timeline;
+
+   /* commit || no usage = no wait */
+   if (commit || !zink_resource_has_usage(res) || zink_resource_usage_check_completion_fast(screen, res, ZINK_RESOURCE_ACCESS_RW))
+      return timeline;
+
+   if (zink_resource_usage_is_unflushed(res) && !zink_resource_usage_matches(res, ctx->bs)) {
+      /* assuming this is a batch that is doing an async submit: unlock wait for that to finish */
+      simple_mtx_unlock(&screen->queue_lock);
+      /* note that this can deadlock if multi-context */
+      zink_resource_usage_unflushed_wait(ctx, res, ZINK_RESOURCE_ACCESS_RW);
+      /* make sure to lock again and take queue ownership */
+      simple_mtx_lock(&screen->queue_lock);
+   }
+   *wait = screen->sem;
+   timeline.pWaitSemaphoreValues = &screen->curr_batch;
+
+   return timeline;
+}
+
 static VkSemaphore
 buffer_commit_single(struct zink_context *ctx, struct zink_resource *res, struct zink_bo *bo, uint32_t bo_offset, uint32_t offset, uint32_t size, bool commit, VkSemaphore wait)
 {
    struct zink_screen *screen = zink_screen(ctx->base.screen);
    VkSemaphore sem = zink_create_semaphore(screen);
+   VkTimelineSemaphoreSubmitInfo timeline = init_timeline_wait(ctx, res, commit, &wait);
    VkBindSparseInfo sparse = {0};
    sparse.sType = VK_STRUCTURE_TYPE_BIND_SPARSE_INFO;
+   sparse.pNext = &timeline;
    sparse.bufferBindCount = res->obj->storage_buffer ? 2 : 1;
    sparse.waitSemaphoreCount = !!wait;
    sparse.pWaitSemaphores = &wait;
@@ -922,8 +958,10 @@ texture_commit_single(struct zink_context *ctx, struct zink_resource *res, VkSpa
 {
    struct zink_screen *screen = zink_screen(ctx->base.screen);
    VkSemaphore sem = zink_create_semaphore(screen);
+   VkTimelineSemaphoreSubmitInfo timeline = init_timeline_wait(ctx, res, commit, &wait);
    VkBindSparseInfo sparse = {0};
    sparse.sType = VK_STRUCTURE_TYPE_BIND_SPARSE_INFO;
+   sparse.pNext = &timeline;
    sparse.imageBindCount = 1;
    sparse.waitSemaphoreCount = !!wait;
    sparse.pWaitSemaphores = &wait;
@@ -948,8 +986,10 @@ texture_commit_miptail(struct zink_context *ctx, struct zink_resource *res, stru
 {
    struct zink_screen *screen = zink_screen(ctx->base.screen);
    VkSemaphore sem = zink_create_semaphore(screen);
+   VkTimelineSemaphoreSubmitInfo timeline = init_timeline_wait(ctx, res, commit, &wait);
    VkBindSparseInfo sparse = {0};
    sparse.sType = VK_STRUCTURE_TYPE_BIND_SPARSE_INFO;
+   sparse.pNext = &timeline;
    sparse.imageOpaqueBindCount = 1;
    sparse.waitSemaphoreCount = !!wait;
    sparse.pWaitSemaphores = &wait;
