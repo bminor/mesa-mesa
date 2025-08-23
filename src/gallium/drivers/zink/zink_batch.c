@@ -1163,19 +1163,20 @@ zink_batch_usage_check_completion(struct zink_context *ctx, const struct zink_ba
    return zink_check_batch_completion(ctx, u->usage);
 }
 
-static void
-batch_usage_wait(struct zink_context *ctx, struct zink_batch_usage *u, unsigned submit_count, bool trywait)
+ALWAYS_INLINE bool
+zink_batch_usage_unflushed_wait(struct zink_context *ctx, struct zink_batch_usage *u, unsigned submit_count, bool trywait)
 {
    MESA_TRACE_FUNC();
    if (!zink_batch_usage_exists(u))
-      return;
+      return true;
    /* this batch state was already completed and reset */
    if (u->submit_count - submit_count > 1)
-      return;
+      return true;
    if (zink_batch_usage_is_unflushed(u)) {
-      if (likely(u == &ctx->bs->usage))
+      if (likely(u == &ctx->bs->usage)) {
          ctx->base.flush(&ctx->base, NULL, PIPE_FLUSH_HINT_FINISH);
-      else { //multi-context
+         return true;
+      } else { //multi-context
          mtx_lock(&u->mtx);
          if (trywait) {
             struct timespec ts = {0, 10000};
@@ -1185,7 +1186,20 @@ batch_usage_wait(struct zink_context *ctx, struct zink_batch_usage *u, unsigned 
          mtx_unlock(&u->mtx);
       }
    }
-   zink_wait_on_batch(ctx, u->usage);
+   return !u->unflushed;
+}
+
+static void
+batch_usage_wait(struct zink_context *ctx, struct zink_batch_usage *u, unsigned submit_count, bool trywait)
+{
+   MESA_TRACE_FUNC();
+   if (!zink_batch_usage_exists(u))
+      return;
+   /* this batch state was already completed and reset */
+   if (u->submit_count - submit_count > 1)
+      return;
+   if (zink_batch_usage_unflushed_wait(ctx, u, submit_count, trywait))
+      zink_wait_on_batch(ctx, u->usage);
 }
 
 void

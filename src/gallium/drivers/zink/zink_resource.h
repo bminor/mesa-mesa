@@ -151,6 +151,12 @@ zink_resource_usage_check_completion_fast(struct zink_screen *screen, struct zin
 }
 
 static ALWAYS_INLINE void
+zink_resource_usage_unflushed_wait(struct zink_context *ctx, struct zink_resource *res, enum zink_resource_access access)
+{
+   zink_bo_usage_unflushed_wait(ctx, res->obj->bo, access);
+}
+
+static ALWAYS_INLINE void
 zink_resource_usage_try_wait(struct zink_context *ctx, struct zink_resource *res, enum zink_resource_access access)
 {
    zink_bo_usage_try_wait(ctx, res->obj->bo, access);
