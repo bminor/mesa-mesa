@@ -393,6 +393,15 @@ anv_encode_as(VkCommandBuffer commandBuffer, const struct vk_acceleration_struct
    };
    anv_bvh_build_set_args(commandBuffer, &args, sizeof(args));
 
+   /* L1/L2 caches flushes should have been dealt with by pipeline barriers.
+    * Unfortunately some platforms require L3 flush because CS (reading the
+    * ir_internal_node_count paramters from vk_ir_header) is not L3 coherent.
+    */
+   if (!ANV_DEVINFO_HAS_COHERENT_L3_CS(cmd_buffer->device->info)) {
+      anv_add_pending_pipe_bits(cmd_buffer, ANV_PIPE_DATA_CACHE_FLUSH_BIT,
+                                "ir internal node count for dispatch");
+   }
+
    struct anv_address indirect_addr =
       anv_address_from_u64(intermediate_header_addr +
                             offsetof(struct vk_ir_header, ir_internal_node_count));
@@ -429,9 +438,6 @@ anv_init_header(VkCommandBuffer commandBuffer, const struct vk_acceleration_stru
 
    VkDeviceAddress header_addr = vk_acceleration_structure_get_va(dst);
 
-   UNUSED size_t base = offsetof(struct anv_accel_struct_header,
-                                 copy_dispatch_size);
-
    uint32_t instance_count = geometry_type == VK_GEOMETRY_TYPE_INSTANCES_KHR ?
                              state->leaf_node_count : 0;
 
@@ -440,13 +446,6 @@ anv_init_header(VkCommandBuffer commandBuffer, const struct vk_acceleration_stru
        * read by header.comp
        */
       vk_barrier_compute_w_to_compute_r(commandBuffer);
-
-      /* VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR is set, so we
-       * want to populate header.compacted_size with the compacted size, which
-       * needs to be calculated by using ir_header.dst_node_offset, which we'll
-       * access in the header.comp.
-       */
-      base = offsetof(struct anv_accel_struct_header, instance_count);
 
       struct header_args args = {
          .src = intermediate_header_addr,
@@ -459,6 +458,19 @@ anv_init_header(VkCommandBuffer commandBuffer, const struct vk_acceleration_stru
       vk_common_CmdDispatch(commandBuffer, 1, 1, 1);
    } else {
       vk_barrier_compute_w_to_host_r(commandBuffer);
+
+      /* L1/L2 caches flushes should have been dealt with by pipeline barriers.
+       * Unfortunately some platforms require L3 flush because CS (reading the
+       * dispatch size paramters) is not L3 coherent.
+       */
+      if (!ANV_DEVINFO_HAS_COHERENT_L3_CS(cmd_buffer->device->info)) {
+         anv_add_pending_pipe_bits(cmd_buffer, ANV_PIPE_DATA_CACHE_FLUSH_BIT,
+                                   "copy dispatch size for dispatch");
+         genX(cmd_buffer_apply_pipe_flushes)(cmd_buffer);
+      }
+
+      size_t base = offsetof(struct anv_accel_struct_header,
+                             copy_dispatch_size);
 
       struct anv_accel_struct_header header = {};
 
