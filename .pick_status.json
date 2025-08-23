@@ -1134,7 +1134,7 @@
         "description": "anv: Add missing ACCELERATION_STRUCTURE_READ in barrier handling",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
