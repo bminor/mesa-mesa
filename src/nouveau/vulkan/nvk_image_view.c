@@ -104,7 +104,7 @@ nvk_image_view_init(struct nvk_device *dev,
 
    memset(view, 0, sizeof(*view));
 
-   vk_image_view_init(&dev->vk, &view->vk, false, pCreateInfo);
+   vk_image_view_init(&dev->vk, &view->vk, pCreateInfo);
 
    /* First, figure out which image planes we need.
     * For depth/stencil, we may only have plane so simply assert

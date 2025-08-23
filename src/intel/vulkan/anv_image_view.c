@@ -173,7 +173,7 @@ anv_image_view_init(struct anv_device *device,
 {
    ANV_FROM_HANDLE(anv_image, image, pCreateInfo->image);
 
-   vk_image_view_init(&device->vk, &iview->vk, false, pCreateInfo);
+   vk_image_view_init(&device->vk, &iview->vk, pCreateInfo);
    iview->image = image;
    iview->n_planes = anv_image_aspect_get_planes(iview->vk.aspects);
    iview->use_surface_state_stream = surface_state_stream != NULL;

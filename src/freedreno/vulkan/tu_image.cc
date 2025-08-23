@@ -200,7 +200,7 @@ tu_image_view_init(struct tu_device *device,
    const struct vk_ycbcr_conversion *conversion = ycbcr_conversion ?
       vk_ycbcr_conversion_from_handle(ycbcr_conversion->conversion) : NULL;
 
-   vk_image_view_init(&device->vk, &iview->vk, false, pCreateInfo);
+   vk_image_view_init(&device->vk, &iview->vk, pCreateInfo);
    assert(iview->vk.format != VK_FORMAT_UNDEFINED);
 
    iview->image = image;

@@ -525,7 +525,7 @@ hk_image_view_init(struct hk_device *dev, struct hk_image_view *view,
    VK_FROM_HANDLE(hk_image, image, pCreateInfo->image);
    memset(view, 0, sizeof(*view));
 
-   vk_image_view_init(&dev->vk, &view->vk, false, pCreateInfo);
+   vk_image_view_init(&dev->vk, &view->vk, pCreateInfo);
 
    /* First, figure out which image planes we need. For depth/stencil, we only
     * have one aspect viewed at a time.

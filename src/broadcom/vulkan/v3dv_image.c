@@ -702,7 +702,7 @@ create_image_view(struct v3dv_device *device,
    V3DV_FROM_HANDLE(v3dv_image, image, pCreateInfo->image);
    struct v3dv_image_view *iview;
 
-   iview = vk_image_view_create(&device->vk, false, pCreateInfo,
+   iview = vk_image_view_create(&device->vk, pCreateInfo,
                                 pAllocator, sizeof(*iview));
    if (iview == NULL)
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);

@@ -1338,7 +1338,7 @@ dzn_image_view_init(struct dzn_device *device,
    const VkImageSubresourceRange *range = &pCreateInfo->subresourceRange;
    ASSERTED uint32_t layer_count = dzn_get_layer_count(image, range);
 
-   vk_image_view_init(&device->vk, &iview->vk, false, pCreateInfo);
+   vk_image_view_init(&device->vk, &iview->vk, pCreateInfo);
 
    assert(layer_count > 0);
    assert(range->baseMipLevel < image->vk.mip_levels);
