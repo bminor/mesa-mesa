@@ -1569,7 +1569,10 @@ lower_lsc_memory_logical_send(const brw_builder &bld, brw_inst *inst)
 
    if (addr.file != VGRF || !addr.is_contiguous()) {
       if (inst->force_writemask_all) {
-         const brw_builder dbld = bld.group(bld.shader->dispatch_width, 0);
+         const brw_builder dbld =
+            inst->exec_size == 1 ?
+            bld.scalar_group() :
+            bld.group(bld.shader->dispatch_width, 0);
          payload = dbld.move_to_vgrf(addr, coord_components);
       } else {
          payload = bld.move_to_vgrf(addr, coord_components);
