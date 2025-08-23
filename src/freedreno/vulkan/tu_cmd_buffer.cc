@@ -1816,11 +1816,11 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
                                                         .bo_offset = gb_offset(bcolor)));
 
    if (CHIP == A7XX) {
-      tu_cs_emit_regs(cs, TPL1_BICUBIC_WEIGHTS_TABLE_0(CHIP, 0),
-                      TPL1_BICUBIC_WEIGHTS_TABLE_1(CHIP, 0x3fe05ff4),
-                      TPL1_BICUBIC_WEIGHTS_TABLE_2(CHIP, 0x3fa0ebee),
-                      TPL1_BICUBIC_WEIGHTS_TABLE_3(CHIP, 0x3f5193ed),
-                      TPL1_BICUBIC_WEIGHTS_TABLE_4(CHIP, 0x3f0243f0), );
+      tu_cs_emit_regs(cs, TPL1_BICUBIC_WEIGHTS_TABLE_REG(CHIP, 0, 0),
+                      TPL1_BICUBIC_WEIGHTS_TABLE_REG(CHIP, 1, 0x3fe05ff4),
+                      TPL1_BICUBIC_WEIGHTS_TABLE_REG(CHIP, 2, 0x3fa0ebee),
+                      TPL1_BICUBIC_WEIGHTS_TABLE_REG(CHIP, 3, 0x3f5193ed),
+                      TPL1_BICUBIC_WEIGHTS_TABLE_REG(CHIP, 4, 0x3f0243f0), );
    }
 
    if (CHIP >= A7XX) {

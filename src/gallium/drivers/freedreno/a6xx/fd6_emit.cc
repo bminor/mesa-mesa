@@ -896,11 +896,11 @@ fd6_emit_static_non_context_regs(struct fd_context *ctx, fd_cs &cs)
 
    /* These regs are blocked (CP_PROTECT) on a6xx: */
    if (CHIP >= A7XX) {
-      ncrb.add(TPL1_BICUBIC_WEIGHTS_TABLE_0(CHIP, 0));
-      ncrb.add(TPL1_BICUBIC_WEIGHTS_TABLE_1(CHIP, 0x3fe05ff4));
-      ncrb.add(TPL1_BICUBIC_WEIGHTS_TABLE_2(CHIP, 0x3fa0ebee));
-      ncrb.add(TPL1_BICUBIC_WEIGHTS_TABLE_3(CHIP, 0x3f5193ed));
-      ncrb.add(TPL1_BICUBIC_WEIGHTS_TABLE_4(CHIP, 0x3f0243f0));
+      ncrb.add(TPL1_BICUBIC_WEIGHTS_TABLE_REG(CHIP, 0, 0));
+      ncrb.add(TPL1_BICUBIC_WEIGHTS_TABLE_REG(CHIP, 1, 0x3fe05ff4));
+      ncrb.add(TPL1_BICUBIC_WEIGHTS_TABLE_REG(CHIP, 2, 0x3fa0ebee));
+      ncrb.add(TPL1_BICUBIC_WEIGHTS_TABLE_REG(CHIP, 3, 0x3f5193ed));
+      ncrb.add(TPL1_BICUBIC_WEIGHTS_TABLE_REG(CHIP, 4, 0x3f0243f0));
    }
 
    if (screen->info->a7xx.has_hw_bin_scaling) {
