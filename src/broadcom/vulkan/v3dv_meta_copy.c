@@ -2724,6 +2724,7 @@ texel_buffer_shader_copy(struct v3dv_cmd_buffer *cmd_buffer,
 
    VkImageViewCreateInfo image_view_info = {
       .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+      .flags = VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA,
       .image = v3dv_image_to_handle(image),
       .viewType = v3dv_image_type_to_view_type(image->vk.image_type),
       .format = dst_format,
@@ -4635,6 +4636,7 @@ blit_shader(struct v3dv_cmd_buffer *cmd_buffer,
       /* Setup framebuffer */
       VkImageViewCreateInfo dst_image_view_info = {
          .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+         .flags = VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA,
          .image = v3dv_image_to_handle(dst),
          .viewType = v3dv_image_type_to_view_type(dst->vk.image_type),
          .format = dst_format,
@@ -4693,6 +4695,7 @@ blit_shader(struct v3dv_cmd_buffer *cmd_buffer,
 
       VkImageViewCreateInfo src_image_view_info = {
          .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+         .flags = VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA,
          .image = v3dv_image_to_handle(src),
          .viewType = v3dv_image_type_to_view_type(src->vk.image_type),
          .format = src_format,

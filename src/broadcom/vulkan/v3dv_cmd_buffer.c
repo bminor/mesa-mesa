@@ -3716,7 +3716,8 @@ handle_sample_from_linear_image(struct v3dv_cmd_buffer *cmd_buffer,
       } else {
          VkImageViewCreateInfo view_info = {
             .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-            .flags = view->vk.create_flags,
+            .flags = view->vk.create_flags |
+                     VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA,
             .image = tiled_image,
             .viewType = view->vk.view_type,
             .format = view->vk.format,
