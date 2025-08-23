@@ -905,10 +905,6 @@ with_libbacktrace = get_option('android-libbacktrace') \
   .disable_auto_if(not with_platform_android) \
   .allowed()
 
-if with_libbacktrace
-  cpp_args += '-DWITH_LIBBACKTRACE'
-endif
-
 if with_platform_android
   dep_android_ui = null_dep
   dep_android_mapper4 = null_dep
@@ -919,7 +915,8 @@ if with_platform_android
       dependency('log'),
       dependency('sync'),
     ]
-    if with_libbacktrace
+    if with_libbacktrace and get_option('platform-sdk-version') < 34
+      cpp_args += '-DWITH_LIBBACKTRACE'
       dep_android += dependency('backtrace')
     endif
     if get_option('platform-sdk-version') >= 26
