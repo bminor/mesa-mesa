@@ -410,27 +410,35 @@ vk_common_QueueSignalReleaseImageANDROID(VkQueue _queue,
       return VK_SUCCESS;
    }
 
-   STACK_ARRAY(VkPipelineStageFlags, stage_flags, waitSemaphoreCount);
-   for (uint32_t i = 0; i < waitSemaphoreCount; i++)
-      stage_flags[i] = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-
    result = vk_anb_semaphore_init_once(queue, device);
-   if (result != VK_SUCCESS) {
-      STACK_ARRAY_FINISH(stage_flags);
+   if (result != VK_SUCCESS)
       return result;
-   }
 
-   const VkSubmitInfo submit_info = {
-      .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-      .waitSemaphoreCount = waitSemaphoreCount,
-      .pWaitSemaphores = pWaitSemaphores,
-      .pWaitDstStageMask = stage_flags,
-      .signalSemaphoreCount = 1,
-      .pSignalSemaphores = &queue->anb_semaphore,
+   STACK_ARRAY(VkSemaphoreSubmitInfo, wait_infos, waitSemaphoreCount);
+   for (uint32_t i = 0; i < waitSemaphoreCount; i++) {
+      wait_infos[i] = (VkSemaphoreSubmitInfo){
+         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+         .semaphore = pWaitSemaphores[i],
+         .stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+      };
+   }
+   const VkSemaphoreSubmitInfo signal_info = {
+      .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+      .semaphore = queue->anb_semaphore,
+      .stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
    };
-   result = device->dispatch_table.QueueSubmit(_queue, 1, &submit_info,
-                                               VK_NULL_HANDLE);
-   STACK_ARRAY_FINISH(stage_flags);
+   {
+      const VkSubmitInfo2 submit_info = {
+         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+         .waitSemaphoreInfoCount = waitSemaphoreCount,
+         .pWaitSemaphoreInfos = wait_infos,
+         .signalSemaphoreInfoCount = 1,
+         .pSignalSemaphoreInfos = &signal_info,
+      };
+      result = device->dispatch_table.QueueSubmit2(_queue, 1, &submit_info,
+                                                   VK_NULL_HANDLE);
+   }
+   STACK_ARRAY_FINISH(wait_infos);
    if (result != VK_SUCCESS)
       return result;
 
