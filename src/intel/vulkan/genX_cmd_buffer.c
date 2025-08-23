@@ -3958,6 +3958,7 @@ anv_pipe_invalidate_bits_for_access_flags(struct anv_cmd_buffer *cmd_buffer,
          pipe_bits |= ANV_PIPE_TILE_CACHE_FLUSH_BIT;
          break;
       case VK_ACCESS_2_SHADER_STORAGE_READ_BIT:
+      case VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR:
          /* VK_ACCESS_2_SHADER_STORAGE_READ_BIT specifies read access to a
           * storage buffer, physical storage buffer, storage texel buffer, or
           * storage image in any shader pipeline stage.
