@@ -121,6 +121,9 @@ zink_screen_usage_check_completion_fast(struct zink_screen *screen, const struct
 bool
 zink_batch_usage_check_completion(struct zink_context *ctx, const struct zink_batch_usage *u);
 
+bool
+zink_batch_usage_unflushed_wait(struct zink_context *ctx, struct zink_batch_usage *u, unsigned submit_count, bool trywait);
+
 void
 zink_batch_usage_wait(struct zink_context *ctx, struct zink_batch_usage *u, unsigned submit_count);
 
