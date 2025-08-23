@@ -119,6 +119,20 @@ encode_gfx12(uint32_t ir_leaf_node_size, REF(vk_ir_box_node) intermediate_intern
             child = right;
       }
 
+      if ((VK_BUILD_FLAG(RADV_BUILD_FLAG_PAIR_COMPRESS_TRIANGLES) ||
+           VK_BUILD_FLAG(RADV_BUILD_FLAG_BATCH_COMPRESS_TRIANGLES)) &&
+          child != RADV_BVH_INVALID_NODE && ir_id_to_type(child) == vk_ir_node_internal &&
+          second_child == RADV_BVH_INVALID_NODE) {
+         REF(vk_ir_box_node) child_node = REF(vk_ir_box_node) OFFSET(args.intermediate_bvh, ir_id_to_offset(child));
+         uint32_t left = DEREF(child_node).children[0];
+         uint32_t right = DEREF(child_node).children[1];
+         if (ir_id_to_type(left) == vk_ir_node_triangle && ir_id_to_type(right) == vk_ir_node_triangle) {
+            child = left;
+            second_child = right;
+            DEREF(child_node).bvh_offset = VK_NULL_BVH_OFFSET;
+         }
+      }
+
       bool is_valid = child != RADV_BVH_INVALID_NODE;
       bool is_valid_primitive = is_valid && ir_id_to_type(child) != vk_ir_node_internal;
       bool is_valid_internal = is_valid && ir_id_to_type(child) == vk_ir_node_internal;
