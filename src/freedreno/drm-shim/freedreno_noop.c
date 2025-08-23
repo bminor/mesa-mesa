@@ -73,6 +73,8 @@ msm_ioctl_gem_info(int fd, unsigned long request, void *arg)
       break;
    case MSM_INFO_SET_IOVA:
    case MSM_INFO_SET_NAME:
+   case MSM_INFO_SET_METADATA:
+   case MSM_INFO_GET_METADATA:
       break;
    default:
       fprintf(stderr, "Unknown DRM_IOCTL_MSM_GEM_INFO %d\n", args->info);
