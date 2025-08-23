@@ -88,6 +88,7 @@ one cross-compiling the turnip driver for a stock Pixel phone)
         -Dplatforms=android \
         -Dplatform-sdk-version=34 \
         -Dandroid-stub=true \
+        -Dandroid-libbacktrace=disabled \
         -Degl=disabled \
         -Dgallium-drivers= \
         -Dvulkan-drivers=freedreno \
