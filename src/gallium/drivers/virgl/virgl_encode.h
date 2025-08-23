@@ -341,6 +341,10 @@ int virgl_encode_clear_surface(struct virgl_context *ctx,
                                unsigned width, unsigned height,
                                bool render_condition_enabled);
 
+void virgl_encoder_get_layout(struct virgl_context *ctx,
+                              struct virgl_resource *out_res,
+                              struct virgl_resource *res);
+
 enum virgl_formats pipe_to_virgl_format(enum pipe_format format);
 enum pipe_format virgl_to_pipe_format(enum virgl_formats format);
 #endif
