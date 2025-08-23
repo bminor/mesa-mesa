@@ -245,6 +245,7 @@ clear_image(struct nvk_cmd_buffer *cmd,
          const VkImageViewCreateInfo view_info = {
             .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
             .pNext = &view_usage_info,
+            .flags = VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA,
             .image = nvk_image_to_handle(image),
             .viewType = render_view_type(image->vk.image_type, layer_count),
             .format = format,
@@ -258,7 +259,7 @@ clear_image(struct nvk_cmd_buffer *cmd,
          };
 
          struct nvk_image_view view;
-         result = nvk_image_view_init(dev, &view, true, &view_info);
+         result = nvk_image_view_init(dev, &view, &view_info);
          assert(result == VK_SUCCESS);
 
          VkRenderingInfo render = {

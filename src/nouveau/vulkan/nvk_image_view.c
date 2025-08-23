@@ -89,7 +89,6 @@ image_3d_view_as_2d_array(struct nil_image *image,
 VkResult
 nvk_image_view_init(struct nvk_device *dev,
                     struct nvk_image_view *view,
-                    bool driver_internal,
                     const VkImageViewCreateInfo *pCreateInfo)
 {
    const struct nvk_physical_device *pdev = nvk_device_physical(dev);
@@ -105,7 +104,7 @@ nvk_image_view_init(struct nvk_device *dev,
 
    memset(view, 0, sizeof(*view));
 
-   vk_image_view_init(&dev->vk, &view->vk, driver_internal, pCreateInfo);
+   vk_image_view_init(&dev->vk, &view->vk, false, pCreateInfo);
 
    /* First, figure out which image planes we need.
     * For depth/stencil, we may only have plane so simply assert
@@ -310,7 +309,7 @@ nvk_CreateImageView(VkDevice _device,
    if (!view)
       return vk_error(dev, VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   result = nvk_image_view_init(dev, view, false, pCreateInfo);
+   result = nvk_image_view_init(dev, view, pCreateInfo);
    if (result != VK_SUCCESS) {
       vk_free2(&dev->vk.alloc, pAllocator, view);
       return result;
