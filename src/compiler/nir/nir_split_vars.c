@@ -1373,8 +1373,11 @@ shrink_vec_var_list(nir_shader *shader,
       if (!usage)
          continue;
 
-      /* Zero inited shared memory is always written. */
-      bool zero_init = var->data.mode == nir_var_mem_shared && shader->info.zero_initialize_shared_memory;
+      /* Zero inited shared memory is always written.
+       * All other initializer should be lowered before this pass.
+       */
+      assert(!var->constant_initializer || var->constant_initializer->is_null_constant);
+      bool zero_init = var->constant_initializer;
       assert(usage->comps_kept == 0);
       if (usage->has_external_copy || usage->has_complex_use)
          usage->comps_kept = usage->all_comps;
