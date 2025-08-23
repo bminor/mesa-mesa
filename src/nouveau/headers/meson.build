@@ -10,6 +10,7 @@ nv_classes = [
   'cla097',
   'cla140',
   'cla297',
+  'clb06f',
   'clb097',
   'clb0c0',
   'clb197',

@@ -15,6 +15,7 @@
 #include "nv_push_cla040.h"
 #include "nv_push_cla0c0.h"
 #include "nv_push_cla140.h"
+#include "nv_push_clb06f.h"
 #include "nv_push_clb197.h"
 #include "nv_push_clc0c0.h"
 #include "nv_push_clc1b5.h"
@@ -108,6 +109,13 @@ vk_push_print(FILE *fp, const struct nv_push *push,
          fprintf(fp, "HDR %x subch %i", hdr, subchan);
       }
 
+      if (mthd == 0) { /* SET_OBJECT */
+         curr_subchans[subchan] = value & 0xffff;
+      }
+      int class_id = curr_subchans[subchan];
+      int cls_hi = (class_id & 0xff00) >> 8;
+      int cls_lo = class_id & 0xff;
+
       cur++;
 
       const char *mthd_name = "";
@@ -168,14 +176,13 @@ vk_push_print(FILE *fp, const struct nv_push *push,
       while (count--) {
          if (!is_tert) {
             if (mthd < 0x100) {
-               if (devinfo->cls_eng3d >= 0xc597)
+               if (cls_hi >= 0xc5)
                   mthd_name = P_PARSE_NVC56F_MTHD(mthd);
+               else if (cls_hi >= 0xb0)
+                  mthd_name = P_PARSE_NVB06F_MTHD(mthd);
                else
                   mthd_name = P_PARSE_NV906F_MTHD(mthd);
             } else {
-               int class_id = curr_subchans[subchan];
-               int cls_lo = class_id & 0xff;
-               int cls_hi = (class_id & 0xff00) >> 8;
                switch (cls_lo) {
                case 0x97:
                   if (cls_hi >= 0xc7)
@@ -248,14 +255,11 @@ vk_push_print(FILE *fp, const struct nv_push *push,
 
          fprintf(fp, "\tmthd %04x %s\n", mthd, mthd_name);
          if (mthd < 0x100) {
-            P_DUMP_NV906F_MTHD_DATA(fp, mthd, value, "\t\t");
-            if (mthd == 0) { /* SET_OBJECT */
-               curr_subchans[subchan] = value & 0xffff;
-            }
+            if (cls_hi >= 0xb0)
+               P_DUMP_NVB06F_MTHD_DATA(fp, mthd, value, "\t\t");
+            else
+               P_DUMP_NV906F_MTHD_DATA(fp, mthd, value, "\t\t");
          } else {
-            int class_id = curr_subchans[subchan];
-            int cls_lo = class_id & 0xff;
-            int cls_hi = (class_id & 0xff00) >> 8;
             switch (cls_lo) {
             case 0x97:
                if (cls_hi >= 0xc5)
