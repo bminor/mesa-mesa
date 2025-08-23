@@ -179,7 +179,6 @@ panvk_image_get_explicit_mod(
    assert(image->vk.samples == 1);
    assert(image->vk.array_layers == 1);
    assert(image->vk.image_type != VK_IMAGE_TYPE_3D);
-   assert(explicit->drmFormatModifierPlaneCount == 1);
    assert(panvk_image_can_use_mod(image, mod));
 
    return mod;
