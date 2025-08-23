@@ -742,7 +742,7 @@ vk_device_copy_semaphore_payloads(struct vk_device *device,
 
    /* Reset any syncs which were waited on but not signaled */
    for (uint32_t i = 0; i < wait_count; i++) {
-      bool was_signaled;
+      bool was_signaled = false;
       for (uint32_t j = 0; j < signal_count; j++) {
          if (signals[j].sync == waits[i].sync) {
             was_signaled = true;
