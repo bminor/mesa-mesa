@@ -636,7 +636,7 @@ lower_store(nir_intrinsic_instr *intrin, struct lower_io_state *state,
          write_mask >>= num_comps;
          offset = nir_iadd_imm(b, offset, slot_size);
       }
-   } else if (intrin->def.bit_size == 1) {
+   } else if (intrin->src[1].ssa->bit_size == 1) {
       /* Booleans are 32-bit */
       assert(glsl_type_is_boolean(type));
       nir_def *b32_val = nir_b2b32(&state->builder, intrin->src[1].ssa);
