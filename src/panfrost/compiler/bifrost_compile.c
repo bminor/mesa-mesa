@@ -1430,11 +1430,27 @@ bi_emit_load_push_constant(bi_builder *b, nir_intrinsic_instr *instr)
       MAX2((base / 4) + n, b->shader->info.push->count);
 }
 
-static bi_index
-bi_addr_high(bi_builder *b, nir_src *src)
+/* Split a 32/64-bit address into low and high parts. 64-bit addresses are
+ * checked to be split and cached. 64-bit address happens on `store_scratch`
+ * produced by `nir_lower_vars_to_scratch`
+ */
+
+static void
+bi_addr_split(bi_builder *b, nir_src *src, bi_index *addr_lo, bi_index *addr_hi)
 {
-   return (nir_src_bit_size(*src) == 64) ? bi_extract(b, bi_src_index(src), 1)
-                                         : bi_zero();
+   bi_index addr = bi_src_index(src);
+   if (nir_src_bit_size(*src) == 32) {
+      *addr_lo = addr;
+      *addr_hi = bi_zero();
+      return;
+   }
+   bi_index *components = _mesa_hash_table_u64_search(b->shader->allocated_vec,
+                                                      bi_index_to_key(addr));
+   if (components == NULL) {
+      bi_emit_cached_split(b, addr, 64);
+   }
+   *addr_lo = bi_extract(b, addr, 0);
+   *addr_hi = bi_extract(b, addr, 1);
 }
 
 static void
@@ -1474,8 +1490,8 @@ bi_emit_load(bi_builder *b, nir_intrinsic_instr *instr, enum bi_seg seg)
    int16_t offset = 0;
    unsigned bits = instr->num_components * instr->def.bit_size;
    bi_index dest = bi_def_index(&instr->def);
-   bi_index addr_lo = bi_extract(b, bi_src_index(&instr->src[0]), 0);
-   bi_index addr_hi = bi_addr_high(b, &instr->src[0]);
+   bi_index addr_lo, addr_hi;
+   bi_addr_split(b, &instr->src[0], &addr_lo, &addr_hi);
 
    bi_handle_segment(b, &addr_lo, &addr_hi, seg, &offset);
 
@@ -1491,8 +1507,8 @@ bi_emit_store(bi_builder *b, nir_intrinsic_instr *instr, enum bi_seg seg)
           BITFIELD_MASK(instr->num_components));
 
    int16_t offset = 0;
-   bi_index addr_lo = bi_extract(b, bi_src_index(&instr->src[1]), 0);
-   bi_index addr_hi = bi_addr_high(b, &instr->src[1]);
+   bi_index addr_lo, addr_hi;
+   bi_addr_split(b, &instr->src[1], &addr_lo, &addr_hi);
 
    bi_handle_segment(b, &addr_lo, &addr_hi, seg, &offset);
 
