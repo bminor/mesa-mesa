@@ -15,6 +15,10 @@ RUN Write-Output $PSVersionTable $ErrorActionPreference
 COPY mesa_deps_msvc.ps1 C:\
 RUN C:\mesa_deps_msvc.ps1
 
+COPY mesa_deps_winget.ps1 C:\
+RUN C:\mesa_deps_winget.ps1
+COPY mesa_deps_winget_settings.json C:\Users\ContainerAdministrator\AppData\Local\Microsoft\WinGet\Settings\defaultState\settings.json
+
 COPY mesa_deps_packages.ps1 C:\
 RUN C:\mesa_deps_packages.ps1
 

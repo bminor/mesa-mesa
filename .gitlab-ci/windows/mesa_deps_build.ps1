@@ -3,7 +3,7 @@ $MyPath = $MyInvocation.MyCommand.Path | Split-Path -Parent
 . "$MyPath\mesa_init_msvc.ps1" "-vcvars_ver=14.29"
 
 # we want more secure TLS 1.2 for most things, but it breaks SourceForge
-# downloads so must be done after Chocolatey use
+# downloads so must be done after winget use
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.SecurityProtocolType]::Tls13;
 
 Remove-Item -Recurse -Force -ErrorAction SilentlyContinue "deps" | Out-Null

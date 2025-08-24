@@ -31,35 +31,51 @@ if (!$graphics_tools_installed) {
   Exit 1
 }
 
-Write-Host "Installing Chocolatey at:"
-Get-Date
-Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
-Import-Module "$env:ProgramData\chocolatey\helpers\chocolateyProfile.psm1"
-# Add Chocolatey's native install path
-Update-SessionEnvironment
-Write-Host "Installing Chocolatey packages at:"
-Get-Date
+$USER_PATH=[System.Environment]::GetEnvironmentVariable('PATH', [System.EnvironmentVariableTarget]::User)
+$MACHINE_PATH=[System.Environment]::GetEnvironmentVariable('PATH', [System.EnvironmentVariableTarget]::Machine)
+Write-Output "Before winget install USER_PATH:$USER_PATH MACHINE_PATH:$MACHINE_PATH"
 
-# Chocolatey tries to download winflexbison3 from github, which is not super reliable, and has no retry
-# loop of its own - so we give it a helping hand here
-For ($i = 0; $i -lt 5; $i++) {
-  choco install --no-progress -y python3
-  $python_install = $?
-  choco install --allow-empty-checksums --no-progress -y cmake git git-lfs ninja pkgconfiglite winflexbison3 --installargs "ADD_CMAKE_TO_PATH=System"
-  $other_install = $?
-  $choco_installed = $other_install -and $python_install
-  if ($choco_installed) {
-    Break
+$Packages = @(
+  'Microsoft.WindowsWDK.10.0.26100',
+  'Python.Python.3.13',
+  'Ninja-build.Ninja',
+  'Kitware.CMake',
+  'Git.Git',
+  'WinFlexBison.win_flex_bison',
+  'bloodrock.pkg-config-lite'
+)
+
+$ProgressPreference = "SilentlyContinue"
+New-Item -Force -ItemType 'directory' -Name 'flexbison' -Path 'C:\temp'
+foreach ($package in $Packages)
+{
+  Write-Output "Installing $package with winget"
+  For ($i = 0; $i -lt 5; $i++) {
+    winget install --verbose --silent --accept-package-agreements --source winget --exact --id $package --log C:\temp\wdk-install.log
+    $packages_installed = $?
+    if ($packages_installed) {
+      Break
+    }
+  }
+  if (!$packages_installed) {
+    Write-Host "Couldn't install $package with winget"
+    Exit 1
+  } else {
+    Write-Output "Installed $package with winget"
   }
 }
 
-if (!$choco_installed) {
-  Write-Host "Couldn't install dependencies from Chocolatey"
-  Exit 1
-}
+# The win_flex.exe should be directly accessed than use symbolic link https://github.com/lexxmark/winflexbison/issues/97
+$win_flex_target=((Get-ChildItem -Path (Get-Command win_flex).Path -Force | Select-Object Target).Target | Split-Path -Parent)
+$NEW_USER_PATH="$win_flex_target;"
+[Environment]::SetEnvironmentVariable('PATH', $NEW_USER_PATH + [Environment]::GetEnvironmentVariable('PATH', "User"), 'User')
 
-# Add Chocolatey's newly installed package path
-Update-SessionEnvironment
+$USER_PATH=[System.Environment]::GetEnvironmentVariable('PATH', [System.EnvironmentVariableTarget]::User)
+$MACHINE_PATH=[System.Environment]::GetEnvironmentVariable('PATH', [System.EnvironmentVariableTarget]::Machine)
+Write-Output "After winget install USER_PATH:$USER_PATH MACHINE_PATH:$MACHINE_PATH"
+
+# Setup tmp path for git and python
+$env:PATH="$env:LOCALAPPDATA\Programs\Python\Python313\Scripts\;$env:LOCALAPPDATA\Programs\Python\Python313\;$env:ProgramFiles\Git\cmd;$env:PATH"
 
 Start-Process -NoNewWindow -Wait git -ArgumentList 'config --global core.autocrlf false'
 
