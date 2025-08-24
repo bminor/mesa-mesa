@@ -1648,7 +1648,7 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          while (instr->operands.size() > ops.size())
             instr->operands.pop_back();
 
-         if (ops.size() == 1) {
+         if (ops.size() == 1 && !ops[0].isUndefined()) {
             instr->opcode = aco_opcode::p_parallelcopy;
             if (ops[0].isTemp())
                ctx.info[instr->definitions[0].tempId()].set_temp(ops[0].getTemp());

@@ -4804,7 +4804,7 @@
         "description": "aco/optimizer: don't create undef copies from p_create_vector",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "01d20680e2e6ef9a9de8a1b4ec66cd569f3b7535",
         "notes": null
