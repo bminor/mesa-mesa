@@ -1207,6 +1207,7 @@ ac_dump_rgp_capture(const struct radeon_info *info, struct ac_sqtt_trace *sqtt_t
                     const struct ac_spm_trace *spm_trace)
 {
 #if !defined(USE_LIBELF)
+   fprintf(stderr, "RGP capture can't be saved: libelf was not enabled during build\n");
    return -1;
 #else
    char filename[2048];
