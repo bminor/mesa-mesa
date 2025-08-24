@@ -353,6 +353,45 @@ try_fold_txb_to_tex(nir_builder *b, nir_tex_instr *tex)
 }
 
 static bool
+try_fold_txd_to_txl(nir_builder *b, nir_tex_instr *tex)
+{
+   assert(tex->op == nir_texop_txd);
+
+   const int ddx_idx = nir_tex_instr_src_index(tex, nir_tex_src_ddx);
+   const int ddy_idx = nir_tex_instr_src_index(tex, nir_tex_src_ddy);
+   const int min_lod_idx = nir_tex_instr_src_index(tex, nir_tex_src_min_lod);
+
+   if (ddx_idx < 0 || ddx_idx < 0)
+      return false;
+
+   /* min_lod is applied after the sampler bias is added, so we can't use it as lod */
+   if (min_lod_idx >= 0)
+      return false;
+
+   if (!nir_src_is_const(tex->src[ddx_idx].src) || !nir_src_is_const(tex->src[ddy_idx].src))
+      return false;
+
+   for (unsigned i = 0; i < tex->src[ddx_idx].src.ssa->num_components; i++) {
+      if (nir_src_comp_as_float(tex->src[ddx_idx].src, i) != 0.0)
+         return false;
+   }
+
+   for (unsigned i = 0; i < tex->src[ddy_idx].src.ssa->num_components; i++) {
+      if (nir_src_comp_as_float(tex->src[ddy_idx].src, i) != 0.0)
+         return false;
+   }
+
+   b->cursor = nir_before_instr(&tex->instr);
+   nir_steal_tex_src(tex, nir_tex_src_ddx);
+   nir_steal_tex_src(tex, nir_tex_src_ddy);
+
+   nir_def *lod = nir_imm_int(b, 0);
+   nir_tex_instr_add_src(tex, nir_tex_src_lod, lod);
+   tex->op = nir_texop_txl;
+   return true;
+}
+
+static bool
 try_fold_tex_offset(nir_tex_instr *tex, unsigned *index,
                     nir_tex_src_type src_type)
 {
@@ -403,6 +442,9 @@ try_fold_tex(nir_builder *b, nir_tex_instr *tex)
    /* txb with a bias of constant zero is just tex. */
    if (tex->op == nir_texop_txb)
       progress |= try_fold_txb_to_tex(b, tex);
+   /* txd with ddx/ddy of constant zero is just txl. */
+   if (tex->op == nir_texop_txd)
+      progress |= try_fold_txd_to_txl(b, tex);
 
    /* tex with a zero offset is just tex. */
    progress |= try_fold_texel_offset_src(tex);
