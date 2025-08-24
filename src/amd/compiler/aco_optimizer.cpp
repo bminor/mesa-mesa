@@ -3338,8 +3338,11 @@ combine_vop3p(opt_ctx& ctx, aco_ptr<Instruction>& instr)
        !vop3p->opsel_lo[1] && !vop3p->opsel_hi[1]) {
 
       Instruction* op_instr = ctx.info[instr->operands[0].tempId()].parent_instr;
-      if (op_instr->isVOP3P() &&
-          instr_info.alu_opcode_infos[(int)op_instr->opcode].output_modifiers) {
+      const aco_alu_opcode_info& opcode_info = instr_info.alu_opcode_infos[(int)op_instr->opcode];
+      aco_type op_type = opcode_info.def_types[0];
+      if (op_instr->isVOP3P() && op_type.num_components == 2 &&
+          op_type.base_type == aco_base_type_float && op_type.bit_size == 16 &&
+          opcode_info.output_modifiers) {
          op_instr->valu().clamp = true;
          propagate_swizzles(&op_instr->valu(), vop3p->opsel_lo[0], vop3p->opsel_hi[0]);
          instr->definitions[0].swapTemp(op_instr->definitions[0]);

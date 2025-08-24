@@ -4814,7 +4814,7 @@
         "description": "aco/optimizer: don't apply packed clamp to v_fma_mix",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "345bf8a2f2807a6a6ff3a4bdab5f2da6d94a9661",
         "notes": null

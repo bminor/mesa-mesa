@@ -2048,3 +2048,33 @@ BEGIN_TEST(optimizer.trans_no_omod)
 
    finish_opt_test();
 END_TEST
+
+BEGIN_TEST(optimizer.pk_clamp_fma_mix)
+   //>> v1: %a,  v1: %b,  v2b: %c = p_startpgm
+   if (!setup_cs("v1 v1 v2b", GFX12))
+      return;
+
+   //! v2b: %cvt0 = v_fma_mixlo_f16 1.0, %a, %b
+   //! v1: %clamp0 = v_pk_mul_f16 %cvt0.xx, 1.0.xx clamp
+   //! p_unit_test 0, %clamp0
+   Temp add0 = bld.vop2(aco_opcode::v_add_f32, bld.def(v1), inputs[0], inputs[1]);
+   Temp cvt0 = bld.vop1(aco_opcode::v_cvt_f16_f32, bld.def(v2b), add0);
+   Builder::Result clamp0 =
+      bld.vop3p(aco_opcode::v_pk_mul_f16, bld.def(v1), cvt0, Operand::c16(0x3c00), 0, 0);
+   clamp0->valu().clamp = true;
+
+   writeout(0, clamp0);
+
+   //! v1: %add1 = v_fma_mix_f32 1.0, lo(%c), %a
+   //! v1: %clamp1 = v_pk_mul_f16 %add1, 1.0.xx clamp
+   //! p_unit_test 1, %clamp1
+   Temp cvt1 = bld.vop1(aco_opcode::v_cvt_f32_f16, bld.def(v1), inputs[2]);
+   Temp add1 = bld.vop2(aco_opcode::v_add_f32, bld.def(v1), inputs[0], cvt1);
+   Builder::Result clamp1 =
+      bld.vop3p(aco_opcode::v_pk_mul_f16, bld.def(v1), add1, Operand::c16(0x3c00), 0, 0x1);
+   clamp1->valu().clamp = true;
+
+   writeout(1, clamp1);
+
+   finish_opt_test();
+END_TEST
