@@ -143,12 +143,6 @@ nouveau_zink_predicate(int fd, const char *driver)
    if (!drm_fd_is_nouveau(fd))
       return false;
 
-#if !defined(HAVE_NVK) || !defined(HAVE_ZINK)
-   if (!strcmp(driver, "zink"))
-      return false;
-   return true;
-#else
-
    bool prefer_zink = false;
    bool require_zink = false;
 
@@ -197,7 +191,6 @@ nouveau_zink_predicate(int fd, const char *driver)
    if (!use_zink && !strcmp(driver, "nouveau"))
       return true;
    return false;
-#endif
 }
 
 
