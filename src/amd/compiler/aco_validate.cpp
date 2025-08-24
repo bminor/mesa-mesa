@@ -1297,12 +1297,16 @@ validate_subdword_definition(amd_gfx_level gfx_level, const aco_ptr<Instruction>
    case aco_opcode::buffer_load_short_d16_hi:
    case aco_opcode::buffer_load_format_d16_hi_x:
    case aco_opcode::flat_load_ubyte_d16_hi:
+   case aco_opcode::flat_load_sbyte_d16_hi:
    case aco_opcode::flat_load_short_d16_hi:
    case aco_opcode::scratch_load_ubyte_d16_hi:
+   case aco_opcode::scratch_load_sbyte_d16_hi:
    case aco_opcode::scratch_load_short_d16_hi:
    case aco_opcode::global_load_ubyte_d16_hi:
+   case aco_opcode::global_load_sbyte_d16_hi:
    case aco_opcode::global_load_short_d16_hi:
    case aco_opcode::ds_read_u8_d16_hi:
+   case aco_opcode::ds_read_i8_d16_hi:
    case aco_opcode::ds_read_u16_d16_hi: return byte == 2;
    default: break;
    }
@@ -1341,24 +1345,32 @@ get_subdword_bytes_written(Program* program, const aco_ptr<Instruction>& instr, 
    case aco_opcode::buffer_load_format_d16_x:
    case aco_opcode::tbuffer_load_format_d16_x:
    case aco_opcode::flat_load_ubyte_d16:
+   case aco_opcode::flat_load_sbyte_d16:
    case aco_opcode::flat_load_short_d16:
    case aco_opcode::scratch_load_ubyte_d16:
+   case aco_opcode::scratch_load_sbyte_d16:
    case aco_opcode::scratch_load_short_d16:
    case aco_opcode::global_load_ubyte_d16:
+   case aco_opcode::global_load_sbyte_d16:
    case aco_opcode::global_load_short_d16:
    case aco_opcode::ds_read_u8_d16:
+   case aco_opcode::ds_read_i8_d16:
    case aco_opcode::ds_read_u16_d16:
    case aco_opcode::buffer_load_ubyte_d16_hi:
    case aco_opcode::buffer_load_sbyte_d16_hi:
    case aco_opcode::buffer_load_short_d16_hi:
    case aco_opcode::buffer_load_format_d16_hi_x:
    case aco_opcode::flat_load_ubyte_d16_hi:
+   case aco_opcode::flat_load_sbyte_d16_hi:
    case aco_opcode::flat_load_short_d16_hi:
    case aco_opcode::scratch_load_ubyte_d16_hi:
+   case aco_opcode::scratch_load_sbyte_d16_hi:
    case aco_opcode::scratch_load_short_d16_hi:
    case aco_opcode::global_load_ubyte_d16_hi:
+   case aco_opcode::global_load_sbyte_d16_hi:
    case aco_opcode::global_load_short_d16_hi:
    case aco_opcode::ds_read_u8_d16_hi:
+   case aco_opcode::ds_read_i8_d16_hi:
    case aco_opcode::ds_read_u16_d16_hi: return program->dev.sram_ecc_enabled ? 4 : 2;
    case aco_opcode::buffer_load_format_d16_xyz:
    case aco_opcode::tbuffer_load_format_d16_xyz: return program->dev.sram_ecc_enabled ? 8 : 6;

@@ -5164,7 +5164,7 @@
         "description": "aco: fix ra validation for flat/global/scratch/ds load sbyte_d16",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "18a53230eb553435f892ac4f33e557ac254984c8",
         "notes": null
