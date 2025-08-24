@@ -3564,7 +3564,7 @@
         "description": "nir/lower_io: fix boolean output stores",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c217ee8d35fcac8ab11e7b5bfd0e053e1fed7df0",
         "notes": null
