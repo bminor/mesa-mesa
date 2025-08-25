@@ -74,6 +74,17 @@ d3d12_wgl_framebuffer(struct stw_winsys_framebuffer *fb)
 }
 
 static void
+d3d12_wgl_framebuffer_drain_queue(struct d3d12_wgl_framebuffer *framebuffer)
+{
+   /* Fully drain */
+   mtx_lock(&framebuffer->screen->submit_mutex);
+   UINT64 value = ++framebuffer->screen->fence_value;
+   framebuffer->screen->cmdqueue->Signal(framebuffer->screen->fence, value);
+   mtx_unlock(&framebuffer->screen->submit_mutex);
+   framebuffer->screen->fence->SetEventOnCompletion(value, nullptr);
+}
+
+static void
 d3d12_wgl_framebuffer_destroy(struct stw_winsys_framebuffer *fb,
                               pipe_context *ctx)
 {
@@ -88,6 +99,8 @@ d3d12_wgl_framebuffer_destroy(struct stw_winsys_framebuffer *fb,
          ctx->screen->fence_reference(ctx->screen, &fence, NULL);
       }
    }
+
+   d3d12_wgl_framebuffer_drain_queue(framebuffer);
 
    for (uint32_t i = 0; i < num_buffers; ++i) {
       if (framebuffer->buffers[i]) {
@@ -208,6 +221,8 @@ d3d12_wgl_framebuffer_resize(stw_winsys_framebuffer *fb,
          ctx->screen->fence_finish(ctx->screen, ctx, fence, OS_TIMEOUT_INFINITE);
          ctx->screen->fence_reference(ctx->screen, &fence, NULL);
       }
+
+      d3d12_wgl_framebuffer_drain_queue(framebuffer);
 
       for (uint32_t i = 0; i < num_buffers; ++i) {
          if (framebuffer->buffers[i]) {
