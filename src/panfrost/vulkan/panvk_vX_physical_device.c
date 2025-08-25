@@ -82,6 +82,7 @@ panvk_per_arch(get_physical_device_extensions)(
       .KHR_maintenance5 = has_vk1_1,
       .KHR_maintenance6 = has_vk1_1,
       .KHR_maintenance7 = has_vk1_1,
+      .KHR_maintenance8 = has_vk1_1,
       .KHR_map_memory2 = true,
       .KHR_multiview = true,
       .KHR_pipeline_executable_properties = true,
@@ -368,6 +369,7 @@ panvk_per_arch(get_physical_device_features)(
       .maintenance5 = true,
       .maintenance6 = true,
       .maintenance7 = true,
+      .maintenance8 = true,
 
       /* Vulkan 1.4 */
       .shaderSubgroupRotate = true,
