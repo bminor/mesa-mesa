@@ -660,6 +660,20 @@ radv_cmd_set_rendering_input_attachment_indices(struct radv_cmd_buffer *cmd_buff
    state->dirty |= RADV_CMD_DIRTY_FBFETCH_OUTPUT;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_sample_locations(struct radv_cmd_buffer *cmd_buffer, VkSampleCountFlagBits per_pixel, VkExtent2D grid_size,
+                              uint32_t count, const VkSampleLocationEXT *sample_locations)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.sample_location.per_pixel = per_pixel;
+   state->dynamic.sample_location.grid_size = grid_size;
+   state->dynamic.sample_location.count = count;
+   typed_memcpy(&state->dynamic.sample_location.locations[0], sample_locations, count);
+
+   state->dirty_dynamic |= RADV_DYNAMIC_SAMPLE_LOCATIONS;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -669,7 +683,6 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
 
    /* Special case for setting the number of rectangles from the pipeline. */
    dest->vk.dr.rectangle_count = src->vk.dr.rectangle_count;
-   dest->sample_location.count = src->sample_location.count;
 
    if (copy_mask & RADV_DYNAMIC_VIEWPORT) {
       if (memcmp(&dest->vk.vp.viewports, &src->vk.vp.viewports, src->vk.vp.viewport_count * sizeof(VkViewport))) {
@@ -713,10 +726,8 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
           dest->sample_location.grid_size.height != src->sample_location.grid_size.height ||
           memcmp(&dest->sample_location.locations, &src->sample_location.locations,
                  src->sample_location.count * sizeof(VkSampleLocationEXT))) {
-         dest->sample_location.per_pixel = src->sample_location.per_pixel;
-         dest->sample_location.grid_size = src->sample_location.grid_size;
-         typed_memcpy(dest->sample_location.locations, src->sample_location.locations, src->sample_location.count);
-         dest_mask |= RADV_DYNAMIC_SAMPLE_LOCATIONS;
+         radv_cmd_set_sample_locations(cmd_buffer, src->sample_location.per_pixel, src->sample_location.grid_size,
+                                       src->sample_location.count, src->sample_location.locations);
       }
    }
 
@@ -8696,17 +8707,9 @@ VKAPI_ATTR void VKAPI_CALL
 radv_CmdSetSampleLocationsEXT(VkCommandBuffer commandBuffer, const VkSampleLocationsInfoEXT *pSampleLocationsInfo)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
-
-   assert(pSampleLocationsInfo->sampleLocationsCount <= MAX_SAMPLE_LOCATIONS);
-
-   state->dynamic.sample_location.per_pixel = pSampleLocationsInfo->sampleLocationsPerPixel;
-   state->dynamic.sample_location.grid_size = pSampleLocationsInfo->sampleLocationGridSize;
-   state->dynamic.sample_location.count = pSampleLocationsInfo->sampleLocationsCount;
-   typed_memcpy(&state->dynamic.sample_location.locations[0], pSampleLocationsInfo->pSampleLocations,
-                pSampleLocationsInfo->sampleLocationsCount);
-
-   state->dirty_dynamic |= RADV_DYNAMIC_SAMPLE_LOCATIONS;
+   radv_cmd_set_sample_locations(cmd_buffer, pSampleLocationsInfo->sampleLocationsPerPixel,
+                                 pSampleLocationsInfo->sampleLocationGridSize,
+                                 pSampleLocationsInfo->sampleLocationsCount, pSampleLocationsInfo->pSampleLocations);
 }
 
 VKAPI_ATTR void VKAPI_CALL
