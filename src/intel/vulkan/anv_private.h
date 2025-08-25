@@ -1390,6 +1390,7 @@ struct anv_instance {
     bool                                        anv_upper_bound_descriptor_pool_sampler;
     bool                                        custom_border_colors_without_format;
     bool                                        vf_component_packing;
+    bool                                        large_workgroup_non_coherent_image_workaround;
 
     /* HW workarounds */
     bool                                        no_16bit;
