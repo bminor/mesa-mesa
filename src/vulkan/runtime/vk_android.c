@@ -419,13 +419,15 @@ vk_common_QueueSignalReleaseImageANDROID(VkQueue _queue,
       wait_infos[i] = (VkSemaphoreSubmitInfo){
          .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
          .semaphore = pWaitSemaphores[i],
-         .stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+         /* see wsi_common_queue_present for the rationale */
+         .stageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
       };
    }
    const VkSemaphoreSubmitInfo signal_info = {
       .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
       .semaphore = queue->anb_semaphore,
-      .stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+      /* see wsi_common_queue_present for the rationale */
+      .stageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
    };
    if (device->copy_sync_payloads != NULL) {
       result = vk_device_copy_semaphore_payloads(
