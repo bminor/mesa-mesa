@@ -40,6 +40,9 @@ float ms(const std::chrono::nanoseconds &t)
 
 void GpuDataSource::OnSetup(const SetupArgs &args)
 {
+   if (!driver->init_perfcnt())
+      PPS_LOG_ERROR("Failed to initialize %s driver", driver->drm_device.name.c_str());
+
    // Parse perfetto config
    const std::string &config_raw = args.config->gpu_counter_config_raw();
    perfetto::protos::pbzero::GpuCounterConfig::Decoder config(config_raw);
@@ -111,7 +114,6 @@ void GpuDataSource::OnStop(const StopArgs &args)
    stop_closure();
 
    driver->disable_perfcnt();
-   driver = nullptr;
 
    std::lock_guard<std::mutex> lock(started_m);
    started = false;
