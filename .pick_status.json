@@ -3684,7 +3684,7 @@
         "description": "pps: init driver in OnSetup",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a739889789f454b755ae9ff36cc4998835fee5e1",
         "notes": null
