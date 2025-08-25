@@ -12059,6 +12059,8 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
    const bool late_scissor_emission =
       pdev->info.has_gfx9_scissor_bug ? radv_need_late_scissor_emission(cmd_buffer, info) : false;
 
+   cmd_buffer->state.dirty_dynamic &= ~dynamic_states;
+
    const bool gfx12_emit_hiz_wa_full =
       pdev->gfx12_hiz_wa == RADV_GFX12_HIZ_WA_FULL &&
       cmd_buffer->state.dirty & (RADV_CMD_DIRTY_FRAMEBUFFER | RADV_CMD_DIRTY_DEPTH_STENCIL_STATE);
@@ -12210,8 +12212,6 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
       radv_emit_scissor_state(cmd_buffer);
       cmd_buffer->cs->context_roll_without_scissor_emitted = false;
    }
-
-   cmd_buffer->state.dirty_dynamic &= ~dynamic_states;
 }
 
 static void
