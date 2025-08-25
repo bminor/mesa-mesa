@@ -171,10 +171,9 @@ ms_store_cull_flag(nir_builder *b,
    assert(nir_intrinsic_component(intrin) == 0);
    assert(nir_intrinsic_write_mask(intrin) == 1);
 
-   nir_def *store_val = intrin->src[0].ssa;
+   nir_def *store_val = nir_b2b1(b, intrin->src[0].ssa);
 
    assert(store_val->num_components == 1);
-   assert(store_val->bit_size == 1);
 
    if (s->layout.var.prm_attr.mask & VARYING_BIT_CULL_PRIMITIVE) {
       nir_store_var(b, s->out_variables[VARYING_SLOT_CULL_PRIMITIVE * 4], nir_b2i32(b, store_val), 0x1);
