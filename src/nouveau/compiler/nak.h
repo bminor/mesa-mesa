@@ -251,6 +251,12 @@ struct nak_qmd_info {
    struct nak_qmd_cbuf cbufs[8];
 };
 
+#define NAK_QMD_ALIGN_B 256
+#define NAK_MAX_QMD_SIZE_B 256
+#define NAK_MAX_QMD_DWORDS (NAK_MAX_QMD_SIZE_B / 4)
+
+uint32_t nak_qmd_size_B(const struct nv_device_info *dev);
+
 void nak_fill_qmd(const struct nv_device_info *dev,
                   const struct nak_shader_info *info,
                   const struct nak_qmd_info *qmd_info,

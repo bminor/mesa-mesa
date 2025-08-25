@@ -65,6 +65,7 @@ _nak_bindings_rs = rust.bindgen(
     '--allowlist-type', 'nak_.*',
     '--allowlist-type', 'nouveau_ws_.*',
     '--allowlist-var', 'DRM_.*',
+    '--allowlist-var', 'NAK_.*',
     '--allowlist-var', 'NVIDIA_VENDOR_ID',
     '--allowlist-function', 'drm.*',
     '--allowlist-function', 'nak_.*',
