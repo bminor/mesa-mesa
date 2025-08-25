@@ -332,7 +332,10 @@ struct QMDHeapImpl {
     free: Vec<(u64, *mut std::os::raw::c_void)>,
 }
 
-struct QMDHeap(Mutex<QMDHeapImpl>);
+struct QMDHeap {
+    pub qmd_size_B: u32,
+    imp: Mutex<QMDHeapImpl>,
+}
 
 struct QMD<'a> {
     heap: &'a QMDHeap,
@@ -342,26 +345,29 @@ struct QMD<'a> {
 
 impl Drop for QMD<'_> {
     fn drop(&mut self) {
-        let mut heap = self.heap.0.lock().unwrap();
+        let mut heap = self.heap.imp.lock().unwrap();
         heap.free.push((self.addr, self.map));
     }
 }
 
 impl QMDHeap {
     const BO_SIZE: u32 = 1 << 16;
-    const QMD_SIZE: u32 = 0x100;
 
     fn new(dev: Arc<Device>) -> Self {
-        Self(Mutex::new(QMDHeapImpl {
-            dev,
-            bos: Vec::new(),
-            last_offset: Self::BO_SIZE,
-            free: Vec::new(),
-        }))
+        let qmd_size_B = unsafe { nak_qmd_size_B(dev.dev_info()) };
+        Self {
+            qmd_size_B,
+            imp: Mutex::new(QMDHeapImpl {
+                dev,
+                bos: Vec::new(),
+                last_offset: Self::BO_SIZE,
+                free: Vec::new(),
+            }),
+        }
     }
 
     fn alloc_qmd<'a>(&'a self) -> io::Result<QMD<'a>> {
-        let mut imp = self.0.lock().unwrap();
+        let mut imp = self.imp.lock().unwrap();
         if let Some((addr, map)) = imp.free.pop() {
             return Ok(QMD {
                 heap: self,
@@ -380,7 +386,7 @@ impl QMDHeap {
         let addr = bo.addr + u64::from(imp.last_offset);
         let map =
             unsafe { bo.map.byte_offset(imp.last_offset.try_into().unwrap()) };
-        imp.last_offset += Self::QMD_SIZE;
+        imp.last_offset += self.qmd_size_B.next_multiple_of(NAK_QMD_ALIGN_B);
 
         Ok(QMD {
             heap: self,
@@ -495,7 +501,7 @@ impl<'a> Runner {
             &shader.info,
             &qmd_info,
             qmd.map,
-            QMDHeap::QMD_SIZE.try_into().unwrap(),
+            self.qmd_heap.qmd_size_B.try_into().unwrap(),
         );
 
         // Fill out the pushbuf
