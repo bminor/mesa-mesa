@@ -674,12 +674,24 @@ radv_cmd_set_sample_locations(struct radv_cmd_buffer *cmd_buffer, VkSampleCountF
    state->dirty_dynamic |= RADV_DYNAMIC_SAMPLE_LOCATIONS;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_color_blend_equation(struct radv_cmd_buffer *cmd_buffer, uint32_t first, uint32_t count,
+                                  const struct radv_blend_equation_state *blend_eq)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   typed_memcpy(state->dynamic.blend_eq.att + first, blend_eq->att, count);
+   if (first == 0)
+      state->dynamic.blend_eq.mrt0_is_dual_src = blend_eq->mrt0_is_dual_src;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_COLOR_BLEND_EQUATION;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
    struct radv_dynamic_state *dest = &cmd_buffer->state.dynamic;
    uint64_t copy_mask = src->mask;
-   uint64_t dest_mask = 0;
 
    /* Special case for setting the number of rectangles from the pipeline. */
    dest->vk.dr.rectangle_count = src->vk.dr.rectangle_count;
@@ -738,18 +750,8 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    }
 
    if (copy_mask & RADV_DYNAMIC_COLOR_BLEND_EQUATION) {
-      for (uint32_t i = 0; i < MAX_RTS; i++) {
-         if (dest->cb_att[i].cb_blend_control != src->cb_att[i].cb_blend_control ||
-             dest->cb_att[i].sx_mrt_blend_opt != src->cb_att[i].sx_mrt_blend_opt) {
-            dest->cb_att[i].cb_blend_control = src->cb_att[i].cb_blend_control;
-            dest->cb_att[i].sx_mrt_blend_opt = src->cb_att[i].sx_mrt_blend_opt;
-            dest_mask |= RADV_DYNAMIC_COLOR_BLEND_EQUATION;
-         }
-      }
-
-      if (dest->mrt0_is_dual_src != src->mrt0_is_dual_src) {
-         dest->mrt0_is_dual_src = src->mrt0_is_dual_src;
-         dest_mask |= RADV_DYNAMIC_COLOR_BLEND_EQUATION;
+      if (memcmp(&dest->blend_eq, &src->blend_eq, sizeof(src->blend_eq))) {
+         radv_cmd_set_color_blend_equation(cmd_buffer, 0, MAX_RTS, &src->blend_eq);
       }
    }
 
@@ -1061,8 +1063,6 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
          radv_cmd_set_attachment_feedback_loop_enable(cmd_buffer, src->feedback_loop_aspects);
       }
    }
-
-   cmd_buffer->state.dirty_dynamic |= dest_mask;
 }
 
 bool
@@ -6078,7 +6078,7 @@ lookup_ps_epilog(struct radv_cmd_buffer *cmd_buffer)
 
    state.color_attachment_count = render->color_att_count;
    for (unsigned i = 0; i < render->color_att_count; ++i) {
-      const uint32_t cb_blend_control = d->cb_att[i].cb_blend_control;
+      const uint32_t cb_blend_control = d->blend_eq.att[i].cb_blend_control;
       const uint32_t src_blend = G_028780_COLOR_SRCBLEND(cb_blend_control);
       const uint32_t dst_blend = G_028780_COLOR_DESTBLEND(cb_blend_control);
 
@@ -6096,7 +6096,7 @@ lookup_ps_epilog(struct radv_cmd_buffer *cmd_buffer)
 
    state.color_write_mask = d->color_write_mask;
    state.color_blend_enable = d->color_blend_enable;
-   state.mrt0_is_dual_src = d->mrt0_is_dual_src;
+   state.mrt0_is_dual_src = d->blend_eq.mrt0_is_dual_src;
 
    if (d->vk.ms.alpha_to_coverage_enable) {
       /* Select a color export format with alpha when alpha to coverage is enabled. */
@@ -9109,17 +9109,14 @@ radv_CmdSetColorBlendEquationEXT(VkCommandBuffer commandBuffer, uint32_t firstAt
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   struct radv_cmd_state *state = &cmd_buffer->state;
+   struct radv_blend_equation_state blend_eq;
 
-   assert(firstAttachment + attachmentCount <= MAX_RTS);
    for (uint32_t i = 0; i < attachmentCount; i++) {
-      unsigned idx = firstAttachment + i;
-
       radv_translate_blend_equation(
          pdev, pColorBlendEquations[i].colorBlendOp, pColorBlendEquations[i].srcColorBlendFactor,
          pColorBlendEquations[i].dstColorBlendFactor, pColorBlendEquations[i].alphaBlendOp,
          pColorBlendEquations[i].srcAlphaBlendFactor, pColorBlendEquations[i].dstAlphaBlendFactor,
-         &state->dynamic.cb_att[idx].cb_blend_control, &state->dynamic.cb_att[idx].sx_mrt_blend_opt);
+         &blend_eq.att[i].cb_blend_control, &blend_eq.att[i].sx_mrt_blend_opt);
    }
 
    if (firstAttachment == 0) {
@@ -9132,10 +9129,10 @@ radv_CmdSetColorBlendEquationEXT(VkCommandBuffer commandBuffer, uint32_t firstAt
          .dst_alpha_blend_factor = pColorBlendEquations[0].dstAlphaBlendFactor,
       };
 
-      state->dynamic.mrt0_is_dual_src = radv_can_enable_dual_src(&blend_att);
+      blend_eq.mrt0_is_dual_src = radv_can_enable_dual_src(&blend_att);
    }
 
-   state->dirty_dynamic |= RADV_DYNAMIC_COLOR_BLEND_EQUATION;
+   radv_cmd_set_color_blend_equation(cmd_buffer, firstAttachment, attachmentCount, &blend_eq);
 }
 
 VKAPI_ATTR void VKAPI_CALL
@@ -11574,6 +11571,7 @@ radv_emit_cb_render_state(struct radv_cmd_buffer *cmd_buffer)
    const struct radv_rendering_state *render = &cmd_buffer->state.render;
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    unsigned cb_blend_control[MAX_RTS], sx_mrt_blend_opt[MAX_RTS];
+   const bool mrt0_is_dual_src = d->blend_eq.mrt0_is_dual_src;
    uint32_t cb_color_control = 0;
 
    const uint32_t cb_target_mask = d->color_write_enable & d->color_write_mask;
@@ -11609,7 +11607,7 @@ radv_emit_cb_render_state(struct radv_cmd_buffer *cmd_buffer)
 
       /* Ignore other blend targets if dual-source blending is enabled to prevent wrong behaviour.
        */
-      if (i > 0 && d->mrt0_is_dual_src)
+      if (i > 0 && mrt0_is_dual_src)
          continue;
 
       /* Disable logic op for float/srgb formats because it shouldn't be applied. */
@@ -11625,16 +11623,16 @@ radv_emit_cb_render_state(struct radv_cmd_buffer *cmd_buffer)
          continue;
       }
 
-      cb_blend_control[i] = d->cb_att[i].cb_blend_control;
-      sx_mrt_blend_opt[i] = d->cb_att[i].sx_mrt_blend_opt;
+      cb_blend_control[i] = d->blend_eq.att[i].cb_blend_control;
+      sx_mrt_blend_opt[i] = d->blend_eq.att[i].sx_mrt_blend_opt;
    }
 
    if (pdev->info.has_rbplus) {
       /* RB+ doesn't work with dual source blending, logic op and CB_RESOLVE. */
-      cb_color_control |= S_028808_DISABLE_DUAL_QUAD(d->mrt0_is_dual_src || d->vk.cb.logic_op_enable ||
+      cb_color_control |= S_028808_DISABLE_DUAL_QUAD(mrt0_is_dual_src || d->vk.cb.logic_op_enable ||
                                                      cmd_buffer->state.custom_blend_mode == V_028808_CB_RESOLVE);
 
-      if (d->mrt0_is_dual_src) {
+      if (mrt0_is_dual_src) {
          for (unsigned i = 0; i < MAX_RTS; i++) {
             sx_mrt_blend_opt[i] =
                S_028760_COLOR_COMB_FCN(V_028760_OPT_COMB_NONE) | S_028760_ALPHA_COMB_FCN(V_028760_OPT_COMB_NONE);

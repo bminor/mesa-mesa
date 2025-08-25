@@ -1043,11 +1043,11 @@ radv_pipeline_init_dynamic_state(const struct radv_device *device, struct radv_g
 
             radv_translate_blend_equation(pdev, att->color_blend_op, att->src_color_blend_factor,
                                           att->dst_color_blend_factor, att->alpha_blend_op, att->src_alpha_blend_factor,
-                                          att->dst_alpha_blend_factor, &dynamic->cb_att[i].cb_blend_control,
-                                          &dynamic->cb_att[i].sx_mrt_blend_opt);
+                                          att->dst_alpha_blend_factor, &dynamic->blend_eq.att[i].cb_blend_control,
+                                          &dynamic->blend_eq.att[i].sx_mrt_blend_opt);
          }
 
-         dynamic->mrt0_is_dual_src = radv_can_enable_dual_src(&state->cb->attachments[0]);
+         dynamic->blend_eq.mrt0_is_dual_src = radv_can_enable_dual_src(&state->cb->attachments[0]);
       }
    }
 

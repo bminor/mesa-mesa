@@ -47,6 +47,15 @@ struct radv_viewport_xform_state {
    float translate[3];
 };
 
+struct radv_blend_equation_state {
+   struct {
+      uint32_t cb_blend_control;
+      uint32_t sx_mrt_blend_opt;
+   } att[MAX_RTS];
+
+   bool mrt0_is_dual_src;
+};
+
 struct radv_dynamic_state {
    struct vk_dynamic_graphics_state vk;
 
@@ -66,13 +75,7 @@ struct radv_dynamic_state {
    uint32_t color_write_mask;
    uint8_t color_blend_enable;
 
-   bool mrt0_is_dual_src;
-
-   struct {
-      /* For color blend equations. */
-      uint32_t cb_blend_control;
-      uint32_t sx_mrt_blend_opt;
-   } cb_att[MAX_RTS];
+   struct radv_blend_equation_state blend_eq;
 };
 
 struct radv_multisample_state {
