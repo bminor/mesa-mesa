@@ -83,6 +83,7 @@ panvk_per_arch(get_physical_device_extensions)(
       .KHR_maintenance6 = has_vk1_1,
       .KHR_maintenance7 = has_vk1_1,
       .KHR_maintenance8 = has_vk1_1,
+      .KHR_maintenance9 = true,
       .KHR_map_memory2 = true,
       .KHR_multiview = true,
       .KHR_pipeline_executable_properties = true,
@@ -370,6 +371,7 @@ panvk_per_arch(get_physical_device_features)(
       .maintenance6 = true,
       .maintenance7 = true,
       .maintenance8 = true,
+      .maintenance9 = true,
 
       /* Vulkan 1.4 */
       .shaderSubgroupRotate = true,
@@ -948,6 +950,11 @@ panvk_per_arch(get_physical_device_properties)(
          PAN_ARCH >= 9 ? MAX_DYNAMIC_STORAGE_BUFFERS : 0,
       .maxDescriptorSetUpdateAfterBindTotalBuffersDynamic =
          PAN_ARCH >= 9 ? MAX_DYNAMIC_BUFFERS : 0,
+
+      /* VK_KHR_maintenance9 */
+      /* Sparse binding not supported yet. */
+      .image2DViewOf3DSparse = false,
+      .defaultVertexAttributeValue = VK_DEFAULT_VERTEX_ATTRIBUTE_VALUE_ZERO_ZERO_ZERO_ZERO_KHR,
 
       /* VK_KHR_line_rasterization */
       .lineSubPixelPrecisionBits = 8,
