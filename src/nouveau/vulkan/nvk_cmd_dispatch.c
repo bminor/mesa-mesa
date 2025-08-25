@@ -163,6 +163,7 @@ nvk_cmd_upload_qmd(struct nvk_cmd_buffer *cmd,
    struct nvk_device *dev = nvk_cmd_buffer_device(cmd);
    const struct nvk_physical_device *pdev = nvk_device_physical(dev);
    const uint32_t min_cbuf_alignment = nvk_min_cbuf_alignment(&pdev->info);
+   const uint32_t qmd_size_B = nak_qmd_size_B(&pdev->info);
    VkResult result;
 
    /* pre Pascal the constant buffer sizes need to be 0x100 aligned. As we
@@ -223,8 +224,9 @@ nvk_cmd_upload_qmd(struct nvk_cmd_buffer *cmd,
          }
       }
 
-      uint32_t qmd[64];
-      nak_fill_qmd(&pdev->info, &shader->info, &qmd_info, qmd, sizeof(qmd));
+      uint32_t qmd[NAK_MAX_QMD_DWORDS];
+      assert(qmd_size_B <= sizeof(qmd));
+      nak_fill_qmd(&pdev->info, &shader->info, &qmd_info, qmd, qmd_size_B);
 
       void *qmd_map;
       result = nvk_cmd_buffer_alloc_qmd(cmd, sizeof(qmd), 0x100,
