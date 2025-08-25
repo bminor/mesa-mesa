@@ -1271,36 +1271,6 @@ vk_common_QueueBindSparse(VkQueue _queue,
    for (uint32_t i = 0; i < bindInfoCount; i++) {
       const VkTimelineSemaphoreSubmitInfo *timeline_info =
          vk_find_struct_const(pBindInfo[i].pNext, TIMELINE_SEMAPHORE_SUBMIT_INFO);
-      const uint64_t *wait_values = NULL;
-      const uint64_t *signal_values = NULL;
-
-      if (timeline_info && timeline_info->waitSemaphoreValueCount) {
-         /* From the Vulkan 1.3.204 spec:
-          *
-          *    VUID-VkBindSparseInfo-pNext-03248
-          *
-          *    "If the pNext chain of this structure includes a VkTimelineSemaphoreSubmitInfo structure
-          *    and any element of pSignalSemaphores was created with a VkSemaphoreType of
-          *    VK_SEMAPHORE_TYPE_TIMELINE, then its signalSemaphoreValueCount member must equal
-          *    signalSemaphoreCount"
-          */
-         assert(timeline_info->waitSemaphoreValueCount == pBindInfo[i].waitSemaphoreCount);
-         wait_values = timeline_info->pWaitSemaphoreValues;
-      }
-
-      if (timeline_info && timeline_info->signalSemaphoreValueCount) {
-         /* From the Vulkan 1.3.204 spec:
-          *
-          * VUID-VkBindSparseInfo-pNext-03247
-          *
-          *    "If the pNext chain of this structure includes a VkTimelineSemaphoreSubmitInfo structure
-          *    and any element of pWaitSemaphores was created with a VkSemaphoreType of
-          *    VK_SEMAPHORE_TYPE_TIMELINE, then its waitSemaphoreValueCount member must equal
-          *    waitSemaphoreCount"
-          */
-         assert(timeline_info->signalSemaphoreValueCount == pBindInfo[i].signalSemaphoreCount);
-         signal_values = timeline_info->pSignalSemaphoreValues;
-      }
 
       STACK_ARRAY(VkSemaphoreSubmitInfo, wait_semaphore_infos,
                   pBindInfo[i].waitSemaphoreCount);
@@ -1314,18 +1284,52 @@ vk_common_QueueBindSparse(VkQueue _queue,
       }
 
       for (uint32_t j = 0; j < pBindInfo[i].waitSemaphoreCount; j++) {
+         VK_FROM_HANDLE(vk_semaphore, semaphore, pBindInfo[i].pWaitSemaphores[j]);
+
+         uint64_t wait_value = 0;
+         if (timeline_info && semaphore->type == VK_SEMAPHORE_TYPE_TIMELINE) {
+            /* From the Vulkan 1.3.204 spec:
+             *
+             *    VUID-VkBindSparseInfo-pNext-03248
+             *
+             *    "If the pNext chain of this structure includes a VkTimelineSemaphoreSubmitInfo structure
+             *    and any element of pSignalSemaphores was created with a VkSemaphoreType of
+             *    VK_SEMAPHORE_TYPE_TIMELINE, then its signalSemaphoreValueCount member must equal
+             *    signalSemaphoreCount"
+             */
+            assert(timeline_info->waitSemaphoreValueCount == pBindInfo[i].waitSemaphoreCount);
+            wait_value = timeline_info->pWaitSemaphoreValues[j];
+         }
+
          wait_semaphore_infos[j] = (VkSemaphoreSubmitInfo) {
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
             .semaphore = pBindInfo[i].pWaitSemaphores[j],
-            .value = wait_values ? wait_values[j] : 0,
+            .value = wait_value,
          };
       }
 
       for (uint32_t j = 0; j < pBindInfo[i].signalSemaphoreCount; j++) {
+         VK_FROM_HANDLE(vk_semaphore, semaphore, pBindInfo[i].pSignalSemaphores[j]);
+
+         uint64_t signal_value = 0;
+         if (timeline_info && semaphore->type == VK_SEMAPHORE_TYPE_TIMELINE) {
+            /* From the Vulkan 1.3.204 spec:
+             *
+             * VUID-VkBindSparseInfo-pNext-03247
+             *
+             *    "If the pNext chain of this structure includes a VkTimelineSemaphoreSubmitInfo structure
+             *    and any element of pWaitSemaphores was created with a VkSemaphoreType of
+             *    VK_SEMAPHORE_TYPE_TIMELINE, then its waitSemaphoreValueCount member must equal
+             *    waitSemaphoreCount"
+             */
+            assert(timeline_info->signalSemaphoreValueCount == pBindInfo[i].signalSemaphoreCount);
+            signal_value = timeline_info->pSignalSemaphoreValues[j];
+         }
+
          signal_semaphore_infos[j] = (VkSemaphoreSubmitInfo) {
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
             .semaphore = pBindInfo[i].pSignalSemaphores[j],
-            .value = signal_values ? signal_values[j] : 0,
+            .value = signal_value,
          };
       }
       struct vulkan_submit_info info = {

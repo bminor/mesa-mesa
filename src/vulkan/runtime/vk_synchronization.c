@@ -396,14 +396,6 @@ vk_common_QueueSubmit(
       const VkTimelineSemaphoreSubmitInfo *timeline_info =
          vk_find_struct_const(pSubmits[s].pNext,
                               TIMELINE_SEMAPHORE_SUBMIT_INFO);
-      const uint64_t *wait_values = NULL;
-      const uint64_t *signal_values = NULL;
-
-      if (timeline_info && timeline_info->waitSemaphoreValueCount)
-         wait_values = timeline_info->pWaitSemaphoreValues;
-
-      if (timeline_info && timeline_info->signalSemaphoreValueCount)
-         signal_values = timeline_info->pSignalSemaphoreValues;
 
       const VkDeviceGroupSubmitInfo *group_info =
          vk_find_struct_const(pSubmits[s].pNext, DEVICE_GROUP_SUBMIT_INFO);
@@ -411,8 +403,8 @@ vk_common_QueueSubmit(
       for (uint32_t i = 0; i < pSubmits[s].waitSemaphoreCount; i++) {
          VK_FROM_HANDLE(vk_semaphore, semaphore, pSubmits[s].pWaitSemaphores[i]);
 
-         if (semaphore->type == VK_SEMAPHORE_TYPE_TIMELINE &&
-             timeline_info && timeline_info->waitSemaphoreValueCount) {
+         uint64_t wait_value = 0;
+         if (semaphore->type == VK_SEMAPHORE_TYPE_TIMELINE && timeline_info) {
             /* From the Vulkan 1.3.204 spec:
              *
              *    VUID-VkSubmitInfo-pNext-03241
@@ -423,12 +415,13 @@ vk_common_QueueSubmit(
              *    waitSemaphoreCount"
              */
             assert(timeline_info->waitSemaphoreValueCount == pSubmits[s].waitSemaphoreCount);
+            wait_value = timeline_info->pWaitSemaphoreValues[i];
          }
 
          wait_semaphores[n_wait_semaphores + i] = (VkSemaphoreSubmitInfo) {
             .sType       = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
             .semaphore   = pSubmits[s].pWaitSemaphores[i],
-            .value       = wait_values ? wait_values[i] : 0,
+            .value       = wait_value,
             .stageMask   = pSubmits[s].pWaitDstStageMask[i],
             .deviceIndex = group_info ? group_info->pWaitSemaphoreDeviceIndices[i] : 0,
          };
@@ -443,8 +436,8 @@ vk_common_QueueSubmit(
       for (uint32_t i = 0; i < pSubmits[s].signalSemaphoreCount; i++) {
          VK_FROM_HANDLE(vk_semaphore, semaphore, pSubmits[s].pSignalSemaphores[i]);
 
-         if (semaphore->type == VK_SEMAPHORE_TYPE_TIMELINE &&
-             timeline_info && timeline_info->signalSemaphoreValueCount) {
+         uint64_t signal_value = 0;
+         if (semaphore->type == VK_SEMAPHORE_TYPE_TIMELINE && timeline_info) {
             /* From the Vulkan 1.3.204 spec:
              *
              *    VUID-VkSubmitInfo-pNext-03240
@@ -455,12 +448,13 @@ vk_common_QueueSubmit(
              *    signalSemaphoreCount"
              */
             assert(timeline_info->signalSemaphoreValueCount == pSubmits[s].signalSemaphoreCount);
+            signal_value = timeline_info->pSignalSemaphoreValues[i];
          }
 
          signal_semaphores[n_signal_semaphores + i] = (VkSemaphoreSubmitInfo) {
             .sType     = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
             .semaphore = pSubmits[s].pSignalSemaphores[i],
-            .value     = signal_values ? signal_values[i] : 0,
+            .value     = signal_value,
             .stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
             .deviceIndex = group_info ? group_info->pSignalSemaphoreDeviceIndices[i] : 0,
          };
