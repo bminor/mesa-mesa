@@ -64,12 +64,13 @@ struct vk_subpass_attachment {
     */
    VkImageLayout stencil_layout;
 
-   /** A per-view mask for if this is the last use of this attachment
+   /** A per-view mask for if this is the first or last use of this attachment
     *
     * If the same render pass attachment is used multiple ways within a
-    * subpass, corresponding last_subpass bits will be set in all of them.
+    * subpass, corresponding first/last_subpass bits will be set in all of them.
     * For the non-multiview case, only the first bit is used.
     */
+   uint32_t first_subpass;
    uint32_t last_subpass;
 
    /** Resolve attachment, if any */

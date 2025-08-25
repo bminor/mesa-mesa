@@ -803,6 +803,51 @@ vk_common_CreateRenderPass2(VkDevice _device,
    assert(next_subpass_color_samples ==
           subpass_color_samples + subpass_color_attachment_count);
 
+   /* Walk forwards over the subpasses to compute first_subpass masks for all
+    * attachments.
+    */
+   for (uint32_t s = 0; s < pCreateInfo->subpassCount; s++) {
+      struct vk_subpass *subpass = &pass->subpasses[s];
+
+      /* First, compute first_subpass for all the attachments */
+      for (uint32_t a = 0; a < subpass->attachment_count; a++) {
+         struct vk_subpass_attachment *att = &subpass->attachments[a];
+         if (att->attachment == VK_ATTACHMENT_UNUSED)
+            continue;
+
+         assert(att->attachment < pass->attachment_count);
+         const struct vk_render_pass_attachment *pass_att =
+            &pass->attachments[att->attachment];
+
+         att->first_subpass = subpass->view_mask & ~pass_att->view_mask;
+      }
+
+      /* Then compute pass_att->view_mask.  We do the two separately so that
+       * we end up with the right first_subpass even if the same attachment is
+       * used twice within a subpass.
+       */
+      for (uint32_t a = 0; a < subpass->attachment_count; a++) {
+         const struct vk_subpass_attachment *att = &subpass->attachments[a];
+         if (att->attachment == VK_ATTACHMENT_UNUSED)
+            continue;
+
+         assert(att->attachment < pass->attachment_count);
+         struct vk_render_pass_attachment *pass_att =
+            &pass->attachments[att->attachment];
+
+         pass_att->view_mask |= subpass->view_mask;
+      }
+   }
+
+   /* Zero the view-masks, as we'll need to fill them again when looking for
+    * last_subpass
+    */
+   for (uint32_t a = 0; a < pass->attachment_count; a++) {
+      struct vk_render_pass_attachment *pass_att =
+         &pass->attachments[a];
+      pass_att->view_mask = 0;
+   }
+
    /* Walk backwards over the subpasses to compute view masks and
     * last_subpass masks for all attachments.
     */
