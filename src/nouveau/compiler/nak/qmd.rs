@@ -472,12 +472,12 @@ mod qmd_4_0 {
 
     #[repr(transparent)]
     pub struct Qmd4_0 {
-        qmd: [u32; 64],
+        qmd: [u32; 96],
     }
 
     impl QMD for Qmd4_0 {
         fn new() -> Self {
-            let mut qmd = [0; 64];
+            let mut qmd = [0; 96];
             let mut bv = QMDBitView::new(&mut qmd);
             qmd_init!(bv, clcbc0, QMDV04_00, 4, 0);
             Self { qmd }
@@ -514,12 +514,12 @@ mod qmd_5_0 {
     }
 
     pub struct Qmd5_0 {
-        qmd: [u32; 64],
+        qmd: [u32; 96],
     }
 
     impl QMD for Qmd5_0 {
         fn new() -> Self {
-            let mut qmd = [0; 64];
+            let mut qmd = [0; 96];
             let mut bv = QMDBitView::new(&mut qmd);
             qmd_init!(bv, clcdc0, QMDV05_00, 5, 0);
             set_field!(bv, clcdc0, QMDV05_00, QMD_TYPE, 0x2);
