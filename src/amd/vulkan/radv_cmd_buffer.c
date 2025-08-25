@@ -4903,8 +4903,6 @@ radv_emit_index_buffer(struct radv_cmd_buffer *cmd_buffer)
    radeon_emit(PKT3(PKT3_INDEX_BUFFER_SIZE, 0, 0));
    radeon_emit(max_index_count);
    radeon_end();
-
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_INDEX_BUFFER;
 }
 
 static void
@@ -5755,8 +5753,6 @@ radv_flush_vertex_descriptors(struct radv_cmd_buffer *cmd_buffer)
 
    if (radv_device_fault_detection_enabled(device))
       radv_save_vertex_descriptors(cmd_buffer, (uintptr_t)vb_ptr);
-
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_VERTEX_BUFFER;
 }
 
 static void
@@ -5809,55 +5805,50 @@ radv_flush_streamout_descriptors(struct radv_cmd_buffer *cmd_buffer)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
+   struct radv_streamout_binding *sb = cmd_buffer->streamout_bindings;
+   struct radv_streamout_state *so = &cmd_buffer->state.streamout;
+   unsigned so_offset;
+   uint64_t desc_va;
+   void *so_ptr;
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_STREAMOUT_BUFFER) {
-      struct radv_streamout_binding *sb = cmd_buffer->streamout_bindings;
-      struct radv_streamout_state *so = &cmd_buffer->state.streamout;
-      unsigned so_offset;
-      uint64_t desc_va;
-      void *so_ptr;
+   /* Allocate some descriptor state for streamout buffers. */
+   if (!radv_cmd_buffer_upload_alloc(cmd_buffer, MAX_SO_BUFFERS * 16, &so_offset, &so_ptr))
+      return;
 
-      /* Allocate some descriptor state for streamout buffers. */
-      if (!radv_cmd_buffer_upload_alloc(cmd_buffer, MAX_SO_BUFFERS * 16, &so_offset, &so_ptr))
-         return;
+   for (uint32_t i = 0; i < MAX_SO_BUFFERS; i++) {
+      uint32_t *desc = &((uint32_t *)so_ptr)[i * 4];
+      uint32_t size = 0;
+      uint64_t va = 0;
 
-      for (uint32_t i = 0; i < MAX_SO_BUFFERS; i++) {
-         uint32_t *desc = &((uint32_t *)so_ptr)[i * 4];
-         uint32_t size = 0;
-         uint64_t va = 0;
+      if (so->enabled_mask & (1 << i)) {
+         va = sb[i].va;
 
-         if (so->enabled_mask & (1 << i)) {
-            va = sb[i].va;
+         /* Set the descriptor.
+          *
+          * On GFX8, the format must be non-INVALID, otherwise
+          * the buffer will be considered not bound and store
+          * instructions will be no-ops.
+          */
+         size = 0xffffffff;
 
-            /* Set the descriptor.
-             *
-             * On GFX8, the format must be non-INVALID, otherwise
-             * the buffer will be considered not bound and store
-             * instructions will be no-ops.
+         if (pdev->use_ngg_streamout) {
+            /* With NGG streamout, the buffer size is used to determine the max emit per buffer
+             * and also acts as a disable bit when it's 0.
              */
-            size = 0xffffffff;
-
-            if (pdev->use_ngg_streamout) {
-               /* With NGG streamout, the buffer size is used to determine the max emit per buffer
-                * and also acts as a disable bit when it's 0.
-                */
-               size = radv_is_streamout_enabled(cmd_buffer) ? sb[i].size : 0;
-            }
+            size = radv_is_streamout_enabled(cmd_buffer) ? sb[i].size : 0;
          }
-
-         ac_build_raw_buffer_descriptor(pdev->info.gfx_level, va, size, desc);
       }
 
-      desc_va = radv_buffer_get_va(cmd_buffer->upload.upload_bo);
-      desc_va += so_offset;
-
-      radv_emit_streamout_buffers(cmd_buffer, desc_va);
-
-      if (pdev->info.gfx_level >= GFX12)
-         radv_emit_streamout_state(cmd_buffer);
+      ac_build_raw_buffer_descriptor(pdev->info.gfx_level, va, size, desc);
    }
 
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_STREAMOUT_BUFFER;
+   desc_va = radv_buffer_get_va(cmd_buffer->upload.upload_bo);
+   desc_va += so_offset;
+
+   radv_emit_streamout_buffers(cmd_buffer, desc_va);
+
+   if (pdev->info.gfx_level >= GFX12)
+      radv_emit_streamout_state(cmd_buffer);
 }
 
 static void
@@ -5916,10 +5907,15 @@ radv_flush_force_vrs_state(struct radv_cmd_buffer *cmd_buffer)
 static void
 radv_upload_graphics_shader_descriptors(struct radv_cmd_buffer *cmd_buffer)
 {
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_VERTEX_BUFFER)
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_VERTEX_BUFFER) {
       radv_flush_vertex_descriptors(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_VERTEX_BUFFER;
+   }
 
-   radv_flush_streamout_descriptors(cmd_buffer);
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_STREAMOUT_BUFFER) {
+      radv_flush_streamout_descriptors(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_STREAMOUT_BUFFER;
+   }
 
    VkShaderStageFlags stages = VK_SHADER_STAGE_ALL_GRAPHICS;
    radv_flush_descriptors(cmd_buffer, stages, VK_PIPELINE_BIND_POINT_GRAPHICS);
@@ -8854,8 +8850,6 @@ radv_handle_fbfetch_output(struct radv_cmd_buffer *cmd_buffer)
 {
    const struct radv_rendering_state *render = &cmd_buffer->state.render;
 
-   cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_FBFETCH_OUTPUT;
-
    /* Nothing to do when dynamic rendering doesn't use concurrent input attachment writes. */
    if (render->has_input_attachment_no_concurrent_writes)
       return;
@@ -8928,8 +8922,10 @@ radv_CmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCou
       primary->state.uses_fbfetch_output |= secondary->state.uses_fbfetch_output;
 
       if (!secondary->state.render.has_image_views) {
-         if (primary->state.dirty & RADV_CMD_DIRTY_FBFETCH_OUTPUT)
+         if (primary->state.dirty & RADV_CMD_DIRTY_FBFETCH_OUTPUT) {
             radv_handle_fbfetch_output(primary);
+            primary->state.dirty &= ~RADV_CMD_DIRTY_FBFETCH_OUTPUT;
+         }
 
          if (primary->state.render.active && (primary->state.dirty & RADV_CMD_DIRTY_FRAMEBUFFER)) {
             /* Emit the framebuffer state from primary if secondary
@@ -11533,8 +11529,10 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
       cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_DB_SHADER_CONTROL;
    }
 
-   if (info->indexed && info->indirect_va && cmd_buffer->state.dirty & RADV_CMD_DIRTY_INDEX_BUFFER)
+   if (info->indexed && info->indirect_va && cmd_buffer->state.dirty & RADV_CMD_DIRTY_INDEX_BUFFER) {
       radv_emit_index_buffer(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_INDEX_BUFFER;
+   }
 
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_STREAMOUT_ENABLE) {
       radv_emit_streamout_enable_state(cmd_buffer);
@@ -11797,8 +11795,10 @@ radv_before_draw(struct radv_cmd_buffer *cmd_buffer, const struct radv_draw_info
       cmd_buffer->state.last_index_type = -1;
    }
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_FBFETCH_OUTPUT)
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_FBFETCH_OUTPUT) {
       radv_handle_fbfetch_output(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_FBFETCH_OUTPUT;
+   }
 
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_GRAPHICS_SHADERS) {
       radv_bind_graphics_shaders(cmd_buffer);
