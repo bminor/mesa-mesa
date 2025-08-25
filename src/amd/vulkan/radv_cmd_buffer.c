@@ -645,6 +645,21 @@ radv_cmd_set_rendering_attachment_locations(struct radv_cmd_buffer *cmd_buffer, 
    state->dirty |= RADV_CMD_DIRTY_FBFETCH_OUTPUT;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_rendering_input_attachment_indices(struct radv_cmd_buffer *cmd_buffer, uint32_t count,
+                                                const uint8_t color_map[MAX_RTS], uint8_t depth_att,
+                                                uint8_t stencil_att)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   typed_memcpy(state->dynamic.vk.ial.color_map, color_map, count);
+   state->dynamic.vk.ial.depth_att = depth_att;
+   state->dynamic.vk.ial.stencil_att = stencil_att;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_INPUT_ATTACHMENT_MAP;
+   state->dirty |= RADV_CMD_DIRTY_FBFETCH_OUTPUT;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -732,10 +747,8 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    }
 
    if (memcmp(&dest->vk.ial, &src->vk.ial, sizeof(src->vk.ial))) {
-      typed_memcpy(dest->vk.ial.color_map, src->vk.ial.color_map, MAX_RTS);
-      dest->vk.ial.depth_att = src->vk.ial.depth_att;
-      dest->vk.ial.stencil_att = src->vk.ial.stencil_att;
-      dest_mask |= RADV_DYNAMIC_INPUT_ATTACHMENT_MAP;
+      radv_cmd_set_rendering_input_attachment_indices(cmd_buffer, MAX_RTS, src->vk.ial.color_map, src->vk.ial.depth_att,
+                                                      src->vk.ial.stencil_att);
    }
 
    if (copy_mask & RADV_DYNAMIC_PRIMITIVE_TOPOLOGY) {
@@ -1039,11 +1052,6 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    }
 
    cmd_buffer->state.dirty_dynamic |= dest_mask;
-
-   /* Handle driver specific states that need to be re-emitted when PSO are bound. */
-   if (dest_mask & RADV_DYNAMIC_INPUT_ATTACHMENT_MAP) {
-      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FBFETCH_OUTPUT;
-   }
 }
 
 bool
@@ -9209,7 +9217,8 @@ radv_CmdSetRenderingInputAttachmentIndices(VkCommandBuffer commandBuffer,
                                            const VkRenderingInputAttachmentIndexInfo *pLocationInfo)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
+   uint8_t depth_att, stencil_att;
+   uint8_t color_map[MAX_RTS];
 
    assume(pLocationInfo->colorAttachmentCount <= MESA_VK_MAX_COLOR_ATTACHMENTS);
    for (uint32_t i = 0; i < pLocationInfo->colorAttachmentCount; i++) {
@@ -9223,20 +9232,20 @@ radv_CmdSetRenderingInputAttachmentIndices(VkCommandBuffer commandBuffer,
          val = pLocationInfo->pColorAttachmentInputIndices[i];
       }
 
-      state->dynamic.vk.ial.color_map[i] = val;
+      color_map[i] = val;
    }
 
-   state->dynamic.vk.ial.depth_att = (pLocationInfo->pDepthInputAttachmentIndex == NULL ||
-                                      *pLocationInfo->pDepthInputAttachmentIndex == VK_ATTACHMENT_UNUSED)
-                                        ? MESA_VK_ATTACHMENT_UNUSED
-                                        : *pLocationInfo->pDepthInputAttachmentIndex;
-   state->dynamic.vk.ial.stencil_att = (pLocationInfo->pStencilInputAttachmentIndex == NULL ||
-                                        *pLocationInfo->pStencilInputAttachmentIndex == VK_ATTACHMENT_UNUSED)
-                                          ? MESA_VK_ATTACHMENT_UNUSED
-                                          : *pLocationInfo->pStencilInputAttachmentIndex;
+   depth_att = (pLocationInfo->pDepthInputAttachmentIndex == NULL ||
+                *pLocationInfo->pDepthInputAttachmentIndex == VK_ATTACHMENT_UNUSED)
+                  ? MESA_VK_ATTACHMENT_UNUSED
+                  : *pLocationInfo->pDepthInputAttachmentIndex;
+   stencil_att = (pLocationInfo->pStencilInputAttachmentIndex == NULL ||
+                  *pLocationInfo->pStencilInputAttachmentIndex == VK_ATTACHMENT_UNUSED)
+                    ? MESA_VK_ATTACHMENT_UNUSED
+                    : *pLocationInfo->pStencilInputAttachmentIndex;
 
-   state->dirty_dynamic |= RADV_DYNAMIC_INPUT_ATTACHMENT_MAP;
-   state->dirty |= RADV_CMD_DIRTY_FBFETCH_OUTPUT;
+   radv_cmd_set_rendering_input_attachment_indices(cmd_buffer, pLocationInfo->colorAttachmentCount, color_map,
+                                                   depth_att, stencil_att);
 }
 
 static void
