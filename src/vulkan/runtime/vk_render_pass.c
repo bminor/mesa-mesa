@@ -1652,7 +1652,7 @@ transition_view_mask(struct vk_command_buffer *cmd_buffer,
    return transition_view_mask;
 }
 
-static void
+static uint32_t
 transition_attachment(struct vk_command_buffer *cmd_buffer,
                       uint32_t att_idx,
                       uint32_t view_mask,
@@ -1726,6 +1726,8 @@ transition_attachment(struct vk_command_buffer *cmd_buffer,
       att_view_state->layout = layout;
       att_view_state->stencil_layout = stencil_layout;
    }
+
+   return view_mask;
 }
 
 static void
@@ -2131,6 +2133,7 @@ begin_subpass(struct vk_command_buffer *cmd_buffer,
     * implicit one. */
    STACK_ARRAY(VkMemoryBarrier2, mem_barriers, pass->dependency_count + 1);
    uint32_t mem_barrier_count = 0;
+   bool external_dependency = false;
    for (uint32_t d = 0; d < pass->dependency_count; d++) {
       const struct vk_subpass_dependency *dep = &pass->dependencies[d];
       if (dep->dst_subpass != subpass_idx)
@@ -2178,9 +2181,58 @@ begin_subpass(struct vk_command_buffer *cmd_buffer,
          .dstStageMask = dep->dst_stage_mask,
          .dstAccessMask = dep->dst_access_mask,
       };
+      external_dependency |= (dep->src_subpass == VK_SUBPASS_EXTERNAL);
    }
 
-   if (subpass_idx == 0) {
+   uint32_t max_image_barrier_count = 0;
+   for (uint32_t a = 0; a < subpass->attachment_count; a++) {
+      const struct vk_subpass_attachment *sp_att = &subpass->attachments[a];
+      if (sp_att->attachment == VK_ATTACHMENT_UNUSED)
+         continue;
+
+      assert(sp_att->attachment < pass->attachment_count);
+      const struct vk_render_pass_attachment *rp_att =
+         &pass->attachments[sp_att->attachment];
+
+      max_image_barrier_count += util_bitcount(subpass->view_mask) *
+                                 util_bitcount(rp_att->aspects);
+   }
+   if (pass->fragment_density_map.attachment != VK_ATTACHMENT_UNUSED)
+      max_image_barrier_count += util_bitcount(subpass->view_mask);
+   STACK_ARRAY(VkImageMemoryBarrier2, image_barriers, max_image_barrier_count);
+   uint32_t image_barrier_count = 0;
+   bool has_layout_transition = false;
+
+   for (uint32_t a = 0; a < subpass->attachment_count; a++) {
+      const struct vk_subpass_attachment *sp_att = &subpass->attachments[a];
+      if (sp_att->attachment == VK_ATTACHMENT_UNUSED)
+         continue;
+
+      /* If we're using an initial layout, the attachment will already be
+       * marked as transitioned and this will be a no-op.
+       */
+      uint32_t transitioned_views =
+         transition_attachment(cmd_buffer, sp_att->attachment,
+                               subpass->view_mask,
+                               sp_att->layout, sp_att->stencil_layout,
+                               &image_barrier_count,
+                               max_image_barrier_count,
+                               image_barriers);
+
+      has_layout_transition |= (sp_att->first_subpass & transitioned_views) != 0;
+   }
+   if (pass->fragment_density_map.attachment != VK_ATTACHMENT_UNUSED) {
+      transition_attachment(cmd_buffer, pass->fragment_density_map.attachment,
+                            subpass->view_mask,
+                            pass->fragment_density_map.layout,
+                            VK_IMAGE_LAYOUT_UNDEFINED,
+                            &image_barrier_count,
+                            max_image_barrier_count,
+                            image_barriers);
+   }
+   assert(image_barrier_count <= max_image_barrier_count);
+
+   if (has_layout_transition && !external_dependency) {
       /* From the Vulkan 1.3.232 spec:
        *
        *    "If there is no subpass dependency from VK_SUBPASS_EXTERNAL to the
@@ -2204,13 +2256,6 @@ begin_subpass(struct vk_command_buffer *cmd_buffer,
        *                         VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
        *        .dependencyFlags = 0;
        *    };"
-       *
-       * We could track individual subpasses and attachments and views to make
-       * sure we only insert this barrier when it's absolutely necessary.
-       * However, this is only going to happen for the first subpass and
-       * you're probably going to take a stall in BeginRenderPass() anyway.
-       * If this is ever a perf problem, we can re-evaluate and do something
-       * more intellegent at that time.
        */
       mem_barriers[mem_barrier_count++] = (VkMemoryBarrier2){
          .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
@@ -2224,50 +2269,6 @@ begin_subpass(struct vk_command_buffer *cmd_buffer,
                           VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
       };
    }
-
-   uint32_t max_image_barrier_count = 0;
-   for (uint32_t a = 0; a < subpass->attachment_count; a++) {
-      const struct vk_subpass_attachment *sp_att = &subpass->attachments[a];
-      if (sp_att->attachment == VK_ATTACHMENT_UNUSED)
-         continue;
-
-      assert(sp_att->attachment < pass->attachment_count);
-      const struct vk_render_pass_attachment *rp_att =
-         &pass->attachments[sp_att->attachment];
-
-      max_image_barrier_count += util_bitcount(subpass->view_mask) *
-                                 util_bitcount(rp_att->aspects);
-   }
-   if (pass->fragment_density_map.attachment != VK_ATTACHMENT_UNUSED)
-      max_image_barrier_count += util_bitcount(subpass->view_mask);
-   STACK_ARRAY(VkImageMemoryBarrier2, image_barriers, max_image_barrier_count);
-   uint32_t image_barrier_count = 0;
-
-   for (uint32_t a = 0; a < subpass->attachment_count; a++) {
-      const struct vk_subpass_attachment *sp_att = &subpass->attachments[a];
-      if (sp_att->attachment == VK_ATTACHMENT_UNUSED)
-         continue;
-
-      /* If we're using an initial layout, the attachment will already be
-       * marked as transitioned and this will be a no-op.
-       */
-      transition_attachment(cmd_buffer, sp_att->attachment,
-                            subpass->view_mask,
-                            sp_att->layout, sp_att->stencil_layout,
-                            &image_barrier_count,
-                            max_image_barrier_count,
-                            image_barriers);
-   }
-   if (pass->fragment_density_map.attachment != VK_ATTACHMENT_UNUSED) {
-      transition_attachment(cmd_buffer, pass->fragment_density_map.attachment,
-                            subpass->view_mask,
-                            pass->fragment_density_map.layout,
-                            VK_IMAGE_LAYOUT_UNDEFINED,
-                            &image_barrier_count,
-                            max_image_barrier_count,
-                            image_barriers);
-   }
-   assert(image_barrier_count <= max_image_barrier_count);
 
    if (mem_barrier_count > 0 || image_barrier_count > 0) {
       const VkDependencyInfo dependency_info = {
