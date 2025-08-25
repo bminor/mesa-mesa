@@ -1947,7 +1947,7 @@ tu6_init_hw(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
 
       tu_emit_event_write<CHIP>(cmd, cs, FD_CCU_INVALIDATE_COLOR);
       tu_emit_event_write<CHIP>(cmd, cs, FD_CCU_INVALIDATE_DEPTH);
-      tu_emit_raw_event_write<CHIP>(cmd, cs, UNK_40, false);
+      tu_emit_event_write<CHIP>(cmd, cs, FD_LRZ_INVALIDATE);
       tu_emit_event_write<CHIP>(cmd, cs, FD_CACHE_INVALIDATE);
       tu_cs_emit_wfi(cs);
    }
@@ -2189,8 +2189,7 @@ tu6_emit_binning_pass(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
                      A6XX_VFD_POWER_CNTL(phys_dev->info->a6xx.magic.PC_POWER_CNTL));
    }
 
-   tu_cs_emit_pkt7(cs, CP_EVENT_WRITE, 1);
-   tu_cs_emit(cs, UNK_2C);
+   tu_emit_event_write<CHIP>(cmd, cs, FD_VSC_BINNING_START);
 
    tu_cs_emit_regs(cs,
                    A6XX_RB_WINDOW_OFFSET(.x = 0, .y = 0));
@@ -2219,8 +2218,7 @@ tu6_emit_binning_pass(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
    tu_cs_emit(cs, CP_SET_DRAW_STATE__1_ADDR_LO(0));
    tu_cs_emit(cs, CP_SET_DRAW_STATE__2_ADDR_HI(0));
 
-   tu_cs_emit_pkt7(cs, CP_EVENT_WRITE, 1);
-   tu_cs_emit(cs, UNK_2D);
+   tu_emit_event_write<CHIP>(cmd, cs, FD_VSC_BINNING_END);
 
    /* This flush is probably required because the VSC, which produces the
     * visibility stream, is a client of UCHE, whereas the CP needs to read the

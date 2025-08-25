@@ -1099,11 +1099,9 @@ fd6_emit_restore(fd_cs &cs, struct fd_batch *batch)
 
       fd6_event_write<CHIP>(ctx, cs, FD_CCU_INVALIDATE_COLOR);
       fd6_event_write<CHIP>(ctx, cs, FD_CCU_INVALIDATE_DEPTH);
-
-      fd_pkt7(cs, CP_EVENT_WRITE, 1)
-         .add(UNK_40);
-
+      fd6_event_write<CHIP>(ctx, cs, FD_LRZ_INVALIDATE);
       fd6_event_write<CHIP>(ctx, cs, FD_CACHE_INVALIDATE);
+
       fd_pkt7(cs, CP_WAIT_FOR_IDLE, 0);
    }
 

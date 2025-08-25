@@ -969,8 +969,7 @@ emit_binning_pass(fd_cs &cs, struct fd_batch *batch) assert_dt
          .add(A6XX_VFD_POWER_CNTL(screen->info->a6xx.magic.PC_POWER_CNTL));
    }
 
-   fd_pkt7(cs, CP_EVENT_WRITE, 1)
-      .add(UNK_2C);
+   fd6_event_write<CHIP>(batch->ctx, cs, FD_VSC_BINNING_START);
 
    fd_crb(cs, 2)
       .add(A6XX_RB_WINDOW_OFFSET(.x = 0, .y = 0))
@@ -988,8 +987,7 @@ emit_binning_pass(fd_cs &cs, struct fd_batch *batch) assert_dt
       .add(CP_SET_DRAW_STATE__0(0, .disable_all_groups = true))
       .add(CP_SET_DRAW_STATE__ADDR(0));
 
-   fd_pkt7(cs, CP_EVENT_WRITE, 1)
-      .add(UNK_2D);
+   fd6_event_write<CHIP>(batch->ctx, cs, FD_VSC_BINNING_END);
 
    /* This flush is probably required because the VSC, which produces the
     * visibility stream, is a client of UCHE, whereas the CP needs to read
