@@ -659,6 +659,10 @@ anv_pipeline_hash_common(struct mesa_sha1 *ctx,
 
    const bool erwf = device->physical->instance->emulate_read_without_format;
    _mesa_sha1_update(ctx, &erwf, sizeof(erwf));
+
+   const bool large_wg_wa =
+      device->physical->instance->large_workgroup_non_coherent_image_workaround;
+   _mesa_sha1_update(ctx, &large_wg_wa, sizeof(large_wg_wa));
 }
 
 static void
@@ -943,6 +947,52 @@ build_tcs_input_vertices(nir_builder *b, nir_instr *instr, void *data)
 }
 
 static void
+fixup_large_workgroup_image_coherency(nir_shader *nir)
+{
+   nir_foreach_function_impl(impl, nir) {
+      nir_foreach_block(block, impl) {
+         nir_foreach_instr(instr, block) {
+            if (instr->type != nir_instr_type_intrinsic)
+               continue;
+
+            nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+
+            if (intr->intrinsic != nir_intrinsic_image_deref_store ||
+                nir_intrinsic_image_dim(intr) != GLSL_SAMPLER_DIM_3D)
+               continue;
+
+            /* We have found image store access to 3D. */
+            nir_deref_instr *array_deref = nir_src_as_deref(intr->src[0]);
+            if (array_deref->deref_type != nir_deref_type_array)
+               continue;
+
+            nir_alu_instr *alu = nir_src_as_alu_instr(intr->src[1]);
+            if (!alu || !nir_op_is_vec(alu->op))
+               return;
+
+            /* Check if any src is from @load_local_invocation_id. */
+            for (unsigned i = 0; i < nir_op_infos[alu->op].num_inputs; i++) {
+               nir_instr *parent = alu->src[i].src.ssa->parent_instr;
+               if (parent->type != nir_instr_type_intrinsic)
+                  continue;
+
+               nir_intrinsic_instr *parent_intr = nir_instr_as_intrinsic(parent);
+               if (parent_intr->intrinsic !=
+                   nir_intrinsic_load_local_invocation_id)
+                  continue;
+
+               /* Found a match, change image access qualifier coherent. */
+               nir_deref_instr *parent_deref =
+                  nir_src_as_deref(array_deref->parent);
+               parent_deref->var->data.access = ACCESS_COHERENT;
+               return;
+            }
+         }  /* instr */
+      } /* block */
+   } /* func */
+}
+
+static void
 anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
                        void *mem_ctx,
                        struct anv_pipeline_stage *stage,
@@ -955,6 +1005,22 @@ anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
 
    struct brw_stage_prog_data *prog_data = &stage->prog_data.base;
    nir_shader *nir = stage->nir;
+
+   unsigned workgroup_size = nir->info.workgroup_size[0] *
+                             nir->info.workgroup_size[1] *
+                             nir->info.workgroup_size[2];
+
+   /* We've noticed that a particular shader in "Last Of Us" accesses
+    * a 3D image using local workgroup index. Corruptions are observed
+    * unless the image is marked workgroup coherent.
+    * The shader workgroup size is 16x2x2 (64), which would fit inside
+    * the subgroup on other vendors (AMD). We think that is why the
+    * corruption is not observed there.
+    */
+   if (pdevice->instance->large_workgroup_non_coherent_image_workaround &&
+       stage->stage == MESA_SHADER_COMPUTE &&
+       workgroup_size == 64)
+      fixup_large_workgroup_image_coherency(nir);
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       NIR_PASS(_, nir, nir_lower_wpos_center);

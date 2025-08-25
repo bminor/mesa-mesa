@@ -37,6 +37,7 @@ static const driOptionDescription anv_dri_options[] = {
       DRI_CONFIG_INTEL_VF_DISTRIBUTION(true)
       DRI_CONFIG_INTEL_TE_DISTRIBUTION(true)
       DRI_CONFIG_INTEL_STORAGE_CACHE_POLICY_WT(false)
+      DRI_CONF_ANV_LARGE_WORKGROUP_NON_COHERENT_IMAGE_WORKAROUND(false)
       DRI_CONF_ANV_COMPRESSION_CONTROL_ENABLED(false)
       DRI_CONF_ANV_FAKE_NONLOCAL_MEMORY(false)
       DRI_CONF_OPT_E(intel_stack_id, 512, 256, 2048,
@@ -194,6 +195,8 @@ anv_init_dri_options(struct anv_instance *instance)
        driQueryOptionb(&instance->dri_options, "intel_vf_distribution");
     instance->enable_te_distribution =
        driQueryOptionb(&instance->dri_options, "intel_te_distribution");
+    instance->large_workgroup_non_coherent_image_workaround =
+       driQueryOptionb(&instance->dri_options, "anv_large_workgroup_non_coherent_image_workaround");
     instance->disable_fcv =
        driQueryOptionb(&instance->dri_options, "anv_disable_fcv");
     instance->enable_buffer_comp =

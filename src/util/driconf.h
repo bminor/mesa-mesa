@@ -874,6 +874,10 @@
    DRI_CONF_OPT_B(anv_vf_component_packing, def, \
                   "Vertex fetching component packing")
 
+#define DRI_CONF_ANV_LARGE_WORKGROUP_NON_COHERENT_IMAGE_WORKAROUND(def) \
+   DRI_CONF_OPT_B(anv_large_workgroup_non_coherent_image_workaround, def, \
+                  "Fixup image coherency qualifier for certain shaders.")
+
 /**
  * \brief HASVK specific configuration options
  */
