@@ -81,6 +81,7 @@ panvk_per_arch(get_physical_device_extensions)(
       .KHR_maintenance4 = has_vk1_1,
       .KHR_maintenance5 = has_vk1_1,
       .KHR_maintenance6 = has_vk1_1,
+      .KHR_maintenance7 = has_vk1_1,
       .KHR_map_memory2 = true,
       .KHR_multiview = true,
       .KHR_pipeline_executable_properties = true,
@@ -366,6 +367,7 @@ panvk_per_arch(get_physical_device_features)(
       .maintenance4 = true,
       .maintenance5 = true,
       .maintenance6 = true,
+      .maintenance7 = true,
 
       /* Vulkan 1.4 */
       .shaderSubgroupRotate = true,
@@ -930,6 +932,20 @@ panvk_per_arch(get_physical_device_properties)(
       /* We don't implement VK_KHR_fragment_shading_rate */
       .fragmentShadingRateClampCombinerInputs = false,
       .maxCombinedImageSamplerDescriptorCount = 1,
+
+      /* VK_KHR_maintenance7 */
+      /* We don't implement VK_KHR_fragment_shading_rate */
+      .robustFragmentShadingRateAttachmentAccess = false,
+      .separateDepthStencilAttachmentAccess = false,
+      .maxDescriptorSetTotalUniformBuffersDynamic = MAX_DYNAMIC_UNIFORM_BUFFERS,
+      .maxDescriptorSetTotalStorageBuffersDynamic = MAX_DYNAMIC_STORAGE_BUFFERS,
+      .maxDescriptorSetTotalBuffersDynamic = MAX_DYNAMIC_BUFFERS,
+      .maxDescriptorSetUpdateAfterBindTotalUniformBuffersDynamic =
+         PAN_ARCH >= 9 ? MAX_DYNAMIC_UNIFORM_BUFFERS : 0,
+      .maxDescriptorSetUpdateAfterBindTotalStorageBuffersDynamic =
+         PAN_ARCH >= 9 ? MAX_DYNAMIC_STORAGE_BUFFERS : 0,
+      .maxDescriptorSetUpdateAfterBindTotalBuffersDynamic =
+         PAN_ARCH >= 9 ? MAX_DYNAMIC_BUFFERS : 0,
 
       /* VK_KHR_line_rasterization */
       .lineSubPixelPrecisionBits = 8,
