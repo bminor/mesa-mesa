@@ -445,33 +445,51 @@ vk_fill_geometry_data(VkAccelerationStructureTypeKHR type, uint32_t first_id, ui
 
 void
 vk_accel_struct_cmd_begin_debug_marker(VkCommandBuffer commandBuffer,
-                                       enum vk_acceleration_structure_build_step step,
-                                       const char *format, ...)
+                                       struct vk_acceleration_structure_build_marker *marker)
 {
    VK_FROM_HANDLE(vk_command_buffer, cmd_buffer, commandBuffer);
    struct vk_device *device = cmd_buffer->base.device;
 
-   va_list ap;
-   va_start(ap, format);
-
-   char *name;
-   if (vasprintf(&name, format, ap) == -1) {
-      va_end(ap);
-      return;
+   char name[256];
+   switch (marker->step) {
+   case VK_ACCELERATION_STRUCTURE_BUILD_STEP_TOP:
+      snprintf(name, sizeof(name), "vkCmdBuildAccelerationStructuresKHR(blas_count=%u, tlas_count=%u)",
+               marker->top.blas_count, marker->top.tlas_count);
+      break;
+   case VK_ACCELERATION_STRUCTURE_BUILD_STEP_BUILD_LEAVES:
+      snprintf(name, sizeof(name), "build_leaves");
+      break;
+   case VK_ACCELERATION_STRUCTURE_BUILD_STEP_MORTON_GENERATE:
+      snprintf(name, sizeof(name), "morton_generate");
+      break;
+   case VK_ACCELERATION_STRUCTURE_BUILD_STEP_MORTON_SORT:
+      snprintf(name, sizeof(name), "morton_sort");
+      break;
+   case VK_ACCELERATION_STRUCTURE_BUILD_STEP_LBVH_BUILD_INTERNAL:
+      snprintf(name, sizeof(name), "lbvh_build_internal");
+      break;
+   case VK_ACCELERATION_STRUCTURE_BUILD_STEP_PLOC_BUILD_INTERNAL:
+      snprintf(name, sizeof(name), "ploc_build_internal");
+      break;
+   case VK_ACCELERATION_STRUCTURE_BUILD_STEP_ENCODE:
+      snprintf(name, sizeof(name), "encode(leaf_node_count=%u, internal_node_count=%u)",
+               marker->encode.leaf_node_count, marker->encode.internal_node_count);
+      break;
+   default:
+      UNREACHABLE("Invalid build step");
    }
 
-   va_end(ap);
-
-   VkDebugMarkerMarkerInfoEXT marker = {
+   VkDebugMarkerMarkerInfoEXT marker_info = {
       .sType = VK_STRUCTURE_TYPE_DEBUG_MARKER_MARKER_INFO_EXT,
       .pMarkerName = name,
    };
 
-   device->dispatch_table.CmdDebugMarkerBeginEXT(commandBuffer, &marker);
+   device->dispatch_table.CmdDebugMarkerBeginEXT(commandBuffer, &marker_info);
 }
 
 void
-vk_accel_struct_cmd_end_debug_marker(VkCommandBuffer commandBuffer)
+vk_accel_struct_cmd_end_debug_marker(VkCommandBuffer commandBuffer,
+                                     struct vk_acceleration_structure_build_marker *marker)
 {
    VK_FROM_HANDLE(vk_command_buffer, cmd_buffer, commandBuffer);
    struct vk_device *device = cmd_buffer->base.device;
@@ -525,9 +543,10 @@ build_leaves(VkCommandBuffer commandBuffer,
       return result;
 
    if (args->emit_markers) {
-      device->as_build_ops->begin_debug_marker(commandBuffer,
-                                               VK_ACCELERATION_STRUCTURE_BUILD_STEP_BUILD_LEAVES,
-                                               "build_leaves");
+      struct vk_acceleration_structure_build_marker marker = {
+         .step = VK_ACCELERATION_STRUCTURE_BUILD_STEP_BUILD_LEAVES,
+      };
+      device->as_build_ops->begin_debug_marker(commandBuffer, &marker);
    }
 
    const struct vk_device_dispatch_table *disp = &device->dispatch_table;
@@ -565,8 +584,12 @@ build_leaves(VkCommandBuffer commandBuffer,
       }
    }
 
-   if (args->emit_markers)
-      device->as_build_ops->end_debug_marker(commandBuffer);
+   if (args->emit_markers) {
+      struct vk_acceleration_structure_build_marker marker = {
+         .step = VK_ACCELERATION_STRUCTURE_BUILD_STEP_BUILD_LEAVES,
+      };
+      device->as_build_ops->end_debug_marker(commandBuffer, &marker);
+   }
 
    return VK_SUCCESS;
 }
@@ -595,9 +618,10 @@ morton_generate(VkCommandBuffer commandBuffer, struct vk_device *device,
       return result;
 
    if (args->emit_markers) {
-      device->as_build_ops->begin_debug_marker(commandBuffer,
-                                               VK_ACCELERATION_STRUCTURE_BUILD_STEP_MORTON_GENERATE,
-                                               "morton_generate");
+      struct vk_acceleration_structure_build_marker marker = {
+         .step = VK_ACCELERATION_STRUCTURE_BUILD_STEP_MORTON_GENERATE,
+      };
+      device->as_build_ops->begin_debug_marker(commandBuffer, &marker);
    }
 
    const struct vk_device_dispatch_table *disp = &device->dispatch_table;
@@ -618,8 +642,12 @@ morton_generate(VkCommandBuffer commandBuffer, struct vk_device *device,
       device->cmd_dispatch_unaligned(commandBuffer, bvh_states[i].vk.leaf_node_count, 1, 1);
    }
 
-   if (args->emit_markers)
-      device->as_build_ops->end_debug_marker(commandBuffer);
+   if (args->emit_markers) {
+      struct vk_acceleration_structure_build_marker marker = {
+         .step = VK_ACCELERATION_STRUCTURE_BUILD_STEP_MORTON_GENERATE,
+      };
+      device->as_build_ops->end_debug_marker(commandBuffer, &marker);
+   }
 
    return VK_SUCCESS;
 }
@@ -633,9 +661,10 @@ morton_sort(VkCommandBuffer commandBuffer, struct vk_device *device,
    const struct vk_device_dispatch_table *disp = &device->dispatch_table;
 
    if (args->emit_markers) {
-      device->as_build_ops->begin_debug_marker(commandBuffer,
-                                               VK_ACCELERATION_STRUCTURE_BUILD_STEP_MORTON_SORT,
-                                               "morton_sort");
+      struct vk_acceleration_structure_build_marker marker = {
+         .step = VK_ACCELERATION_STRUCTURE_BUILD_STEP_MORTON_SORT,
+      };
+      device->as_build_ops->begin_debug_marker(commandBuffer, &marker);
    }
 
    /* Copyright 2019 The Fuchsia Authors. */
@@ -858,8 +887,12 @@ morton_sort(VkCommandBuffer commandBuffer, struct vk_device *device,
       is_even ^= true;
    }
 
-   if (args->emit_markers)
-      device->as_build_ops->end_debug_marker(commandBuffer);
+   if (args->emit_markers) {
+      struct vk_acceleration_structure_build_marker marker = {
+         .step = VK_ACCELERATION_STRUCTURE_BUILD_STEP_MORTON_SORT,
+      };
+      device->as_build_ops->end_debug_marker(commandBuffer, &marker);
+   }
 }
 
 static VkResult
@@ -889,9 +922,10 @@ lbvh_build_internal(VkCommandBuffer commandBuffer,
       return result;
 
    if (args->emit_markers) {
-      device->as_build_ops->begin_debug_marker(commandBuffer,
-                                               VK_ACCELERATION_STRUCTURE_BUILD_STEP_LBVH_BUILD_INTERNAL,
-                                               "lbvh_build_internal");
+      struct vk_acceleration_structure_build_marker marker = {
+         .step = VK_ACCELERATION_STRUCTURE_BUILD_STEP_LBVH_BUILD_INTERNAL,
+      };
+      device->as_build_ops->begin_debug_marker(commandBuffer, &marker);
    }
 
    const struct vk_device_dispatch_table *disp = &device->dispatch_table;
@@ -951,8 +985,12 @@ lbvh_build_internal(VkCommandBuffer commandBuffer,
       device->cmd_dispatch_unaligned(commandBuffer, bvh_states[i].internal_node_count, 1, 1);
    }
 
-   if (args->emit_markers)
-      device->as_build_ops->end_debug_marker(commandBuffer);
+   if (args->emit_markers) {
+      struct vk_acceleration_structure_build_marker marker = {
+         .step = VK_ACCELERATION_STRUCTURE_BUILD_STEP_LBVH_BUILD_INTERNAL,
+      };
+      device->as_build_ops->end_debug_marker(commandBuffer, &marker);
+   }
 
    return VK_SUCCESS;
 }
@@ -983,9 +1021,10 @@ ploc_build_internal(VkCommandBuffer commandBuffer,
       return result;
 
    if (args->emit_markers) {
-      device->as_build_ops->begin_debug_marker(commandBuffer,
-                                               VK_ACCELERATION_STRUCTURE_BUILD_STEP_PLOC_BUILD_INTERNAL,
-                                               "ploc_build_internal");
+      struct vk_acceleration_structure_build_marker marker = {
+         .step = VK_ACCELERATION_STRUCTURE_BUILD_STEP_PLOC_BUILD_INTERNAL,
+      };
+      device->as_build_ops->begin_debug_marker(commandBuffer, &marker);
    }
 
    const struct vk_device_dispatch_table *disp = &device->dispatch_table;
@@ -1016,8 +1055,12 @@ ploc_build_internal(VkCommandBuffer commandBuffer,
       disp->CmdDispatch(commandBuffer, MAX2(DIV_ROUND_UP(bvh_states[i].vk.leaf_node_count, PLOC_WORKGROUP_SIZE), 1), 1, 1);
    }
 
-   if (args->emit_markers)
-      device->as_build_ops->end_debug_marker(commandBuffer);
+   if (args->emit_markers) {
+      struct vk_acceleration_structure_build_marker marker = {
+         .step = VK_ACCELERATION_STRUCTURE_BUILD_STEP_PLOC_BUILD_INTERNAL,
+      };
+      device->as_build_ops->end_debug_marker(commandBuffer, &marker);
+   }
 
    return VK_SUCCESS;
 }
@@ -1038,25 +1081,23 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
 
    struct bvh_state *bvh_states = calloc(infoCount, sizeof(struct bvh_state));
 
+   struct vk_acceleration_structure_build_marker top_marker = {
+      .step = VK_ACCELERATION_STRUCTURE_BUILD_STEP_TOP,
+   };
    if (args->emit_markers) {
-      uint32_t num_of_blas = 0;
-      uint32_t num_of_tlas = 0;
       for (uint32_t i = 0; i < infoCount; ++i) {
          switch (pInfos[i].type) {
          case VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR:
-            num_of_tlas++;
+            top_marker.top.tlas_count++;
             break;
          case VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR:
-            num_of_blas++;
+            top_marker.top.blas_count++;
             break;
          default:
             break;
          }
       }
-      ops->begin_debug_marker(commandBuffer,
-                              VK_ACCELERATION_STRUCTURE_BUILD_STEP_TOP,
-                              "vkCmdBuildAccelerationStructuresKHR() TLAS(%u) BLAS(%u)",
-                              num_of_tlas, num_of_blas);
+      ops->begin_debug_marker(commandBuffer, &top_marker);
    }
 
    for (uint32_t i = 0; i < infoCount; ++i) {
@@ -1193,19 +1234,17 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
       vk_barrier_compute_w_to_indirect_compute_r(commandBuffer);
    }
 
-   /* Calculate number of leaves and internal nodes to encode */
-   uint32_t num_leaves = 0;
-   uint32_t num_internal_node = 0;
-   for ( uint32_t i = 0; i < infoCount; i++) {
-      num_leaves += bvh_states[i].vk.leaf_node_count;
-      num_internal_node += bvh_states[i].internal_node_count;
-   }
+   struct vk_acceleration_structure_build_marker encode_marker = {
+      .step = VK_ACCELERATION_STRUCTURE_BUILD_STEP_ENCODE,
+   };
+   if (args->emit_markers) {
+      for ( uint32_t i = 0; i < infoCount; i++) {
+         encode_marker.encode.leaf_node_count += bvh_states[i].vk.leaf_node_count;
+         encode_marker.encode.internal_node_count += bvh_states[i].internal_node_count;
+      }
 
-   if (args->emit_markers)
-      device->as_build_ops->begin_debug_marker(commandBuffer,
-                                               VK_ACCELERATION_STRUCTURE_BUILD_STEP_ENCODE,
-                                               "encode_leaves=%u encode_ir_node=%u",
-                                               num_leaves, num_internal_node);
+      device->as_build_ops->begin_debug_marker(commandBuffer, &encode_marker);
+   }
 
    for (unsigned pass = 0; pass < ARRAY_SIZE(ops->encode_as); pass++) {
       if (!ops->encode_as[pass] && !ops->update_as[pass])
@@ -1255,10 +1294,10 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
    }
 
    if (args->emit_markers)
-      device->as_build_ops->end_debug_marker(commandBuffer);
+      device->as_build_ops->end_debug_marker(commandBuffer, &encode_marker);
 
    if (args->emit_markers)
-      device->as_build_ops->end_debug_marker(commandBuffer);
+      device->as_build_ops->end_debug_marker(commandBuffer, &top_marker);
 
    free(bvh_states);
 }

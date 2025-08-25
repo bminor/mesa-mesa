@@ -46,6 +46,20 @@ enum vk_acceleration_structure_build_step {
    VK_ACCELERATION_STRUCTURE_BUILD_STEP_ENCODE,
 };
 
+struct vk_acceleration_structure_build_marker {
+   enum vk_acceleration_structure_build_step step;
+   union {
+      struct {
+         uint32_t blas_count;
+         uint32_t tlas_count;
+      } top;
+      struct {
+         uint32_t leaf_node_count;
+         uint32_t internal_node_count;
+      } encode;
+   };
+};
+
 struct vk_acceleration_structure {
    struct vk_object_base base;
 
@@ -109,9 +123,9 @@ struct vk_acceleration_structure_build_state {
 
 struct vk_acceleration_structure_build_ops {
    void (*begin_debug_marker)(VkCommandBuffer commandBuffer,
-                              enum vk_acceleration_structure_build_step step,
-                              const char *format, ...);
-   void (*end_debug_marker)(VkCommandBuffer commandBuffer);
+                              struct vk_acceleration_structure_build_marker *marker);
+   void (*end_debug_marker)(VkCommandBuffer commandBuffer,
+                            struct vk_acceleration_structure_build_marker *marker);
 
    void (*get_build_config)(VkDevice device, struct vk_acceleration_structure_build_state *state);
 
@@ -187,10 +201,10 @@ vk_fill_geometry_data(VkAccelerationStructureTypeKHR type, uint32_t first_id, ui
                       const VkAccelerationStructureBuildRangeInfoKHR *build_range_info);
 
 void vk_accel_struct_cmd_begin_debug_marker(VkCommandBuffer commandBuffer,
-                                            enum vk_acceleration_structure_build_step step,
-                                            const char *format, ...);
+                                            struct vk_acceleration_structure_build_marker *marker);
 
-void vk_accel_struct_cmd_end_debug_marker(VkCommandBuffer commandBuffer);
+void vk_accel_struct_cmd_end_debug_marker(VkCommandBuffer commandBuffer,
+                                          struct vk_acceleration_structure_build_marker *marker);
 
 #ifdef __cplusplus
 }

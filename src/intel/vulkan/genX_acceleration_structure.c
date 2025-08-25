@@ -32,26 +32,14 @@ static uint32_t tlas_id = 0;
 
 static void
 begin_debug_marker(VkCommandBuffer commandBuffer,
-                   enum vk_acceleration_structure_build_step step,
-                   const char *format, ...)
+                   struct vk_acceleration_structure_build_marker *marker)
 {
    ANV_FROM_HANDLE(anv_cmd_buffer, cmd_buffer, commandBuffer);
 
-   assert(cmd_buffer->state.rt.debug_marker_count <
-          ARRAY_SIZE(cmd_buffer->state.rt.debug_markers));
-   cmd_buffer->state.rt.debug_markers[cmd_buffer->state.rt.debug_marker_count++] =
-      step;
-   switch (step) {
+   switch (marker->step) {
    case VK_ACCELERATION_STRUCTURE_BUILD_STEP_TOP:
-   {
-      va_list args;
-      va_start(args, format);
-      cmd_buffer->state.rt.num_tlas = va_arg(args, uint32_t);
-      cmd_buffer->state.rt.num_blas = va_arg(args, uint32_t);
-      va_end(args);
       trace_intel_begin_as_build(&cmd_buffer->trace);
       break;
-   }
    case VK_ACCELERATION_STRUCTURE_BUILD_STEP_BUILD_LEAVES:
       trace_intel_begin_as_build_leaves(&cmd_buffer->trace);
       break;
@@ -68,31 +56,24 @@ begin_debug_marker(VkCommandBuffer commandBuffer,
       trace_intel_begin_as_ploc_build_internal(&cmd_buffer->trace);
       break;
    case VK_ACCELERATION_STRUCTURE_BUILD_STEP_ENCODE:
-   {
-      va_list args;
-      va_start(args, format);
-      cmd_buffer->state.rt.num_leaves = va_arg(args, uint32_t);
-      cmd_buffer->state.rt.num_ir_nodes = va_arg(args, uint32_t);
-      va_end(args);
       trace_intel_begin_as_encode(&cmd_buffer->trace);
       break;
-   }
    default:
       UNREACHABLE("Invalid build step");
    }
 }
 
 static void
-end_debug_marker(VkCommandBuffer commandBuffer)
+end_debug_marker(VkCommandBuffer commandBuffer,
+                 struct vk_acceleration_structure_build_marker *marker)
 {
    ANV_FROM_HANDLE(anv_cmd_buffer, cmd_buffer, commandBuffer);
 
-   cmd_buffer->state.rt.debug_marker_count--;
-   switch (cmd_buffer->state.rt.debug_markers[cmd_buffer->state.rt.debug_marker_count]) {
+   switch (marker->step) {
    case VK_ACCELERATION_STRUCTURE_BUILD_STEP_TOP:
       trace_intel_end_as_build(&cmd_buffer->trace,
-                               cmd_buffer->state.rt.num_tlas,
-                               cmd_buffer->state.rt.num_blas);
+                               marker->top.tlas_count,
+                               marker->top.blas_count);
       break;
    case VK_ACCELERATION_STRUCTURE_BUILD_STEP_BUILD_LEAVES:
       trace_intel_end_as_build_leaves(&cmd_buffer->trace);
@@ -110,7 +91,9 @@ end_debug_marker(VkCommandBuffer commandBuffer)
       trace_intel_end_as_ploc_build_internal(&cmd_buffer->trace);
       break;
    case VK_ACCELERATION_STRUCTURE_BUILD_STEP_ENCODE:
-      trace_intel_end_as_encode(&cmd_buffer->trace, cmd_buffer->state.rt.num_leaves, cmd_buffer->state.rt.num_ir_nodes);
+      trace_intel_end_as_encode(&cmd_buffer->trace,
+                                marker->encode.leaf_node_count,
+                                marker->encode.internal_node_count);
       break;
    default:
       UNREACHABLE("Invalid build step");
