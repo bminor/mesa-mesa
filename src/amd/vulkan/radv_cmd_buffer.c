@@ -414,6 +414,16 @@ radv_cmd_set_color_write_mask(struct radv_cmd_buffer *cmd_buffer, uint32_t color
 }
 
 ALWAYS_INLINE static void
+radv_cmd_set_color_blend_enable(struct radv_cmd_buffer *cmd_buffer, uint8_t color_blend_enable)
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   state->dynamic.color_blend_enable = color_blend_enable;
+
+   state->dirty_dynamic |= RADV_DYNAMIC_COLOR_BLEND_ENABLE;
+}
+
+ALWAYS_INLINE static void
 radv_cmd_set_logic_op_enable(struct radv_cmd_buffer *cmd_buffer, bool logic_op_enable)
 {
    struct radv_cmd_state *state = &cmd_buffer->state;
@@ -685,8 +695,7 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
 
    if (copy_mask & RADV_DYNAMIC_COLOR_BLEND_ENABLE) {
       if (dest->color_blend_enable != src->color_blend_enable) {
-         dest->color_blend_enable = src->color_blend_enable;
-         dest_mask |= RADV_DYNAMIC_COLOR_BLEND_ENABLE;
+         radv_cmd_set_color_blend_enable(cmd_buffer, src->color_blend_enable);
       }
    }
 
@@ -9054,8 +9063,7 @@ radv_CmdSetColorBlendEnableEXT(VkCommandBuffer commandBuffer, uint32_t firstAtta
       color_blend_enable |= pColorBlendEnables[i] << idx;
    }
 
-   state->dynamic.color_blend_enable = color_blend_enable;
-   state->dirty_dynamic |= RADV_DYNAMIC_COLOR_BLEND_ENABLE;
+   radv_cmd_set_color_blend_enable(cmd_buffer, color_blend_enable);
 }
 
 VKAPI_ATTR void VKAPI_CALL
