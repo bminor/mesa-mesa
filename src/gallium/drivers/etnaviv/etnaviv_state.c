@@ -343,6 +343,9 @@ etna_set_framebuffer_state(struct pipe_context *pctx,
       /* VIVS_PE_DEPTH_CONFIG_ONLY_DEPTH */
       /* merged with depth_stencil_alpha */
 
+      if (surf->format == PIPE_FORMAT_S8_UINT)
+         pe_logic_op |= VIVS_PE_LOGIC_OP_UNK20(1);
+
       for (int i = 0; i < screen->specs.pixel_pipes; i++) {
          cs->PE_PIPE_DEPTH_ADDR[i].bo = res->bo;
          cs->PE_PIPE_DEPTH_ADDR[i].offset = level->offset + surf->first_layer * level->layer_stride;

@@ -503,6 +503,15 @@ gpu_supports_vertex_format(struct etna_screen *screen, enum pipe_format format)
 }
 
 static bool
+gpu_supports_depth_stencil_format(struct etna_screen *screen, enum pipe_format format)
+{
+   if (format == PIPE_FORMAT_S8_UINT)
+      return VIV_FEATURE(screen, ETNA_FEATURE_S8);
+
+   return true;
+}
+
+static bool
 etna_screen_is_format_supported(struct pipe_screen *pscreen,
                                 enum pipe_format format,
                                 enum pipe_texture_target target,
@@ -529,7 +538,12 @@ etna_screen_is_format_supported(struct pipe_screen *pscreen,
    }
 
    if (usage & PIPE_BIND_DEPTH_STENCIL) {
-      if (translate_depth_format(format) != ETNA_NO_MATCH)
+      uint32_t fmt = translate_depth_format(format);
+
+      if (!gpu_supports_depth_stencil_format(screen, format))
+         fmt = ETNA_NO_MATCH;
+
+      if (fmt != ETNA_NO_MATCH)
          allowed |= PIPE_BIND_DEPTH_STENCIL;
    }
 

@@ -233,6 +233,8 @@ translate_depth_format(enum pipe_format fmt)
       return VIVS_PE_DEPTH_CONFIG_DEPTH_FORMAT_D24S8;
    case PIPE_FORMAT_S8_UINT_Z24_UNORM:
       return VIVS_PE_DEPTH_CONFIG_DEPTH_FORMAT_D24S8;
+   case PIPE_FORMAT_S8_UINT:
+      return VIVS_PE_DEPTH_CONFIG_DEPTH_FORMAT_D24S8;
    default:
       return ETNA_NO_MATCH;
    }
