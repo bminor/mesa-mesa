@@ -472,9 +472,13 @@ vk_accel_struct_cmd_begin_debug_marker(VkCommandBuffer commandBuffer,
       snprintf(name, sizeof(name), "ploc_build_internal");
       break;
    case VK_ACCELERATION_STRUCTURE_BUILD_STEP_ENCODE:
-      snprintf(name, sizeof(name), "encode(leaf_node_count=%u, internal_node_count=%u)",
-               marker->encode.leaf_node_count, marker->encode.internal_node_count);
+   case VK_ACCELERATION_STRUCTURE_BUILD_STEP_UPDATE: {
+      const char *type = marker->step == VK_ACCELERATION_STRUCTURE_BUILD_STEP_ENCODE ? "encode" : "update";
+      snprintf(name, sizeof(name), "%s(pass=%u, key=0x%x, leaf_node_count=%u, internal_node_count=%u)",
+               type, marker->encode.pass, marker->encode.key, marker->encode.leaf_node_count,
+               marker->encode.internal_node_count);
       break;
+   }
    default:
       UNREACHABLE("Invalid build step");
    }
@@ -1234,17 +1238,8 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
       vk_barrier_compute_w_to_indirect_compute_r(commandBuffer);
    }
 
-   struct vk_acceleration_structure_build_marker encode_marker = {
-      .step = VK_ACCELERATION_STRUCTURE_BUILD_STEP_ENCODE,
-   };
-   if (args->emit_markers) {
-      for ( uint32_t i = 0; i < infoCount; i++) {
-         encode_marker.encode.leaf_node_count += bvh_states[i].vk.leaf_node_count;
-         encode_marker.encode.internal_node_count += bvh_states[i].internal_node_count;
-      }
-
-      device->as_build_ops->begin_debug_marker(commandBuffer, &encode_marker);
-   }
+   struct vk_acceleration_structure_build_marker encode_marker;
+   bool inside_encode_marker = false;
 
    for (unsigned pass = 0; pass < ARRAY_SIZE(ops->encode_as); pass++) {
       if (!ops->encode_as[pass] && !ops->update_as[pass])
@@ -1271,6 +1266,33 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
                encode_key = bvh_states[i].vk.config.encode_key[pass];
                update_key = bvh_states[i].vk.config.update_key[pass];
                progress = true;
+
+               if (args->emit_markers) {
+                  if (inside_encode_marker)
+                     device->as_build_ops->end_debug_marker(commandBuffer, &encode_marker);
+
+                  memset(&encode_marker, 0, sizeof(encode_marker));
+                  encode_marker.step = update ? VK_ACCELERATION_STRUCTURE_BUILD_STEP_UPDATE
+                                              : VK_ACCELERATION_STRUCTURE_BUILD_STEP_ENCODE;
+                  encode_marker.encode.pass = pass;
+                  encode_marker.encode.key = update ? update_key : encode_key;
+
+                  for (uint32_t j = 0; j < infoCount; j++) {
+                     if (update != (bvh_states[j].vk.config.internal_type ==
+                                    VK_INTERNAL_BUILD_TYPE_UPDATE) ||
+                         encode_key != bvh_states[j].vk.config.encode_key[pass] ||
+                         update_key != bvh_states[j].vk.config.update_key[pass])
+                        continue;
+
+                     encode_marker.encode.leaf_node_count += bvh_states[j].vk.leaf_node_count;
+                     encode_marker.encode.internal_node_count += bvh_states[j].internal_node_count;
+                  }
+
+                  device->as_build_ops->begin_debug_marker(commandBuffer, &encode_marker);
+
+                  inside_encode_marker = true;
+               }
+
                if (update)
                   ops->update_bind_pipeline[pass](commandBuffer, &bvh_states[i].vk);
                else
@@ -1293,7 +1315,7 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
       } while (progress);
    }
 
-   if (args->emit_markers)
+   if (inside_encode_marker)
       device->as_build_ops->end_debug_marker(commandBuffer, &encode_marker);
 
    if (args->emit_markers)

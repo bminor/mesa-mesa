@@ -92,6 +92,8 @@ end_debug_marker(VkCommandBuffer commandBuffer,
       break;
    case VK_ACCELERATION_STRUCTURE_BUILD_STEP_ENCODE:
       trace_intel_end_as_encode(&cmd_buffer->trace,
+                                marker->encode.pass,
+                                marker->encode.key,
                                 marker->encode.leaf_node_count,
                                 marker->encode.internal_node_count);
       break;

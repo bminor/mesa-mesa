@@ -44,6 +44,7 @@ enum vk_acceleration_structure_build_step {
    VK_ACCELERATION_STRUCTURE_BUILD_STEP_LBVH_BUILD_INTERNAL,
    VK_ACCELERATION_STRUCTURE_BUILD_STEP_PLOC_BUILD_INTERNAL,
    VK_ACCELERATION_STRUCTURE_BUILD_STEP_ENCODE,
+   VK_ACCELERATION_STRUCTURE_BUILD_STEP_UPDATE,
 };
 
 struct vk_acceleration_structure_build_marker {
@@ -52,11 +53,13 @@ struct vk_acceleration_structure_build_marker {
       struct {
          uint32_t blas_count;
          uint32_t tlas_count;
-      } top;
+      } top; /* Used for VK_ACCELERATION_STRUCTURE_BUILD_STEP_TOP */
       struct {
+         uint32_t pass;
+         uint32_t key;
          uint32_t leaf_node_count;
          uint32_t internal_node_count;
-      } encode;
+      } encode; /* Used for VK_ACCELERATION_STRUCTURE_BUILD_STEP_ENCODE, VK_ACCELERATION_STRUCTURE_BUILD_STEP_UPDATE */
    };
 };
 

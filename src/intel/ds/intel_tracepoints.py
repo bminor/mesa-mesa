@@ -241,7 +241,9 @@ def define_tracepoints(args):
     begin_end_tp('as_lbvh_build_internal', repeat_last=True)
     begin_end_tp('as_ploc_build_internal', repeat_last=True)
     begin_end_tp('as_encode', repeat_last=True,
-                  tp_args=[Arg(type='uint32_t', var='n_leaves', c_format='%u'),
+                  tp_args=[Arg(type='uint32_t', var='pass', c_format='%u'),
+                           Arg(type='uint32_t', var='key', c_format='%x'),
+                           Arg(type='uint32_t', var='n_leaves', c_format='%u'),
                            Arg(type='uint32_t', var='n_ir_leaves', c_format='%u')])
     begin_end_tp('as_copy', repeat_last=True)
 
