@@ -1077,18 +1077,19 @@ dri_get_drm_device_info(const char *device_name, uint8_t *device_uuid, uint8_t *
       close(fd);
       return false;
    }
-   if (!pscreen->get_device_uuid || !pscreen->get_driver_uuid ||
-       !pscreen->get_device_vendor || !pscreen->get_name) {
-      pscreen->destroy(pscreen);
-      pipe_loader_release(&pldev, 1);
-      close(fd);
-      return false;
-   }
 
-   pscreen->get_device_uuid(pscreen, (char *)device_uuid);
-   pscreen->get_driver_uuid(pscreen, (char *)driver_uuid);
-   *vendor_name = strdup(pscreen->get_device_vendor(pscreen));
-   *renderer_name = strdup(pscreen->get_name(pscreen));
+   if (pscreen->get_device_uuid)
+      pscreen->get_device_uuid(pscreen, (char *)device_uuid);
+
+   if (pscreen->get_driver_uuid)
+      pscreen->get_driver_uuid(pscreen, (char *)driver_uuid);
+
+   if (pscreen->get_device_vendor)
+      *vendor_name = strdup(pscreen->get_device_vendor(pscreen));
+
+   if (pscreen->get_name)
+      *renderer_name = strdup(pscreen->get_name(pscreen));
+
    *driver_name = loader_get_driver_for_fd(fd);
 
    pscreen->destroy(pscreen);

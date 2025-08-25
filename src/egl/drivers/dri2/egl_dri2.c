@@ -574,6 +574,11 @@ dri2_query_device_info(const void* driver_device_identifier,
                        struct egl_device_info *device_info)
 {
    const char* drm_device_name = (const char*)driver_device_identifier;
+
+   /* We have information cached already. */
+   if (device_info->vendor_name)
+      return true;
+
    return dri_get_drm_device_info(
       drm_device_name, device_info->device_uuid, device_info->driver_uuid,
       &device_info->vendor_name, &device_info->renderer_name, &device_info->driver_name);
