@@ -220,6 +220,7 @@
 #define RENCODE_COLOR_RANGE_FULL                                                    0
 #define RENCODE_COLOR_RANGE_STUDIO                                                  1
 #define RENCODE_CHROMA_LOCATION_INTERSTITIAL                                        0
+#define RENCODE_CHROMA_LOCATION_CO_SITE                                             1
 
 #define RENCODE_COLOR_BIT_DEPTH_8_BIT                                               0
 #define RENCODE_COLOR_BIT_DEPTH_10_BIT                                              1

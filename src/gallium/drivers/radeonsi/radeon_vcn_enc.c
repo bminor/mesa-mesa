@@ -435,7 +435,7 @@ static void radeon_vcn_enc_get_output_format_param(struct radeon_encoder *enc)
 
    enc->enc_pic.enc_output_format.output_color_volume = enc->output_color_volume;
    enc->enc_pic.enc_output_format.output_color_range = enc->output_color_range;
-   enc->enc_pic.enc_output_format.output_chroma_location = RENCODE_CHROMA_LOCATION_INTERSTITIAL;
+   enc->enc_pic.enc_output_format.output_chroma_location = enc->output_chroma_location;
 }
 
 static void radeon_vcn_enc_get_input_format_param(struct radeon_encoder *enc)
@@ -1499,6 +1499,7 @@ static void radeon_enc_begin_frame(struct pipe_video_codec *encoder,
       enc->source = source;
       enc->input_color_volume = enc->output_color_volume = RENCODE_COLOR_VOLUME_G22_BT709;
       enc->input_color_range = enc->output_color_range = RENCODE_COLOR_RANGE_FULL;
+      enc->output_chroma_location = RENCODE_CHROMA_LOCATION_INTERSTITIAL;
    }
    enc->need_rate_control = false;
    enc->need_rc_per_pic = false;
@@ -1844,6 +1845,10 @@ static bool radeon_vcn_enc_efc_supported(struct radeon_encoder *enc,
         vpp->in_colors_standard != PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_BT709))
       return false;
 
+   if (vpp->out_chroma_siting & (PIPE_VIDEO_VPP_CHROMA_SITING_VERTICAL_BOTTOM |
+                                 PIPE_VIDEO_VPP_CHROMA_SITING_HORIZONTAL_CENTER))
+      return false;
+
    /* DCC not supported */
    if (tex->surface.meta_offset)
       return false;
@@ -1896,6 +1901,14 @@ static uint32_t radeon_vcn_enc_color_range(enum pipe_video_vpp_color_range color
    }
 }
 
+static uint32_t radeon_vcn_enc_chroma_location(enum pipe_video_vpp_chroma_siting chroma_siting)
+{
+   if (chroma_siting & PIPE_VIDEO_VPP_CHROMA_SITING_VERTICAL_TOP)
+      return RENCODE_CHROMA_LOCATION_CO_SITE;
+   else
+      return RENCODE_CHROMA_LOCATION_INTERSTITIAL;
+}
+
 static int radeon_enc_process_frame(struct pipe_video_codec *encoder,
                                     struct pipe_video_buffer *source,
                                     const struct pipe_vpp_desc *vpp)
@@ -1908,6 +1921,7 @@ static int radeon_enc_process_frame(struct pipe_video_codec *encoder,
       enc->input_color_range = radeon_vcn_enc_color_range(vpp->in_color_range);
       enc->output_color_volume = radeon_vcn_enc_color_volume(vpp->out_colors_standard);
       enc->output_color_range = radeon_vcn_enc_color_range(vpp->out_color_range);
+      enc->output_chroma_location = radeon_vcn_enc_chroma_location(vpp->out_chroma_siting);
       return 0;
    }
 

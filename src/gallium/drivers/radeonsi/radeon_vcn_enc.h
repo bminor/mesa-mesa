@@ -236,6 +236,7 @@ struct radeon_encoder {
    unsigned input_color_range;
    unsigned output_color_volume;
    unsigned output_color_range;
+   unsigned output_chroma_location;
 
    struct pb_buffer_lean *bs_handle;
    unsigned bs_size;
