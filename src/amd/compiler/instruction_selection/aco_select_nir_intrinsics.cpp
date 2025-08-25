@@ -540,7 +540,8 @@ smem_load_callback(Builder& bld, const LoadEmitInfo& info, unsigned bytes_needed
     */
    RegClass rc(RegType::sgpr, DIV_ROUND_UP(util_next_power_of_two(bytes_needed), 4u));
 
-   aco_ptr<Instruction> load{create_instruction(op, Format::SMEM, 2, 1)};
+   bool soe = !buffer && offset.id() && const_offset && bld.program->gfx_level >= GFX9;
+   aco_ptr<Instruction> load{create_instruction(op, Format::SMEM, 2 + soe, 1)};
    if (buffer) {
       if (const_offset)
          offset = bld.sop2(aco_opcode::s_add_u32, bld.def(s1), bld.def(s1, scc), offset,
@@ -549,13 +550,17 @@ smem_load_callback(Builder& bld, const LoadEmitInfo& info, unsigned bytes_needed
       load->operands[1] = Operand(offset);
    } else {
       load->operands[0] = Operand(addr);
-      if (offset.id() && const_offset)
-         load->operands[1] = bld.sop2(aco_opcode::s_add_u32, bld.def(s1), bld.def(s1, scc), offset,
-                                      Operand::c32(const_offset));
-      else if (offset.id())
-         load->operands[1] = Operand(offset);
-      else
+      if (soe) {
          load->operands[1] = Operand::c32(const_offset);
+         load->operands[2] = Operand(offset);
+      } else if (offset.id() && const_offset) {
+         load->operands[0] = Operand(add64_32(bld, addr, Operand::c32(const_offset)));
+         load->operands[1] = Operand(offset);
+      } else if (offset.id()) {
+         load->operands[1] = Operand(offset);
+      } else {
+         load->operands[1] = Operand::c32(const_offset);
+      }
    }
    Temp val = info.dst.regClass() == rc && rc.bytes() == bytes_needed ? info.dst : bld.tmp(rc);
    load->definitions[0] = Definition(val);
