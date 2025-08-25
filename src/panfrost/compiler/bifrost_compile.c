@@ -6552,8 +6552,25 @@ bifrost_compile_shader_nir(nir_shader *nir,
       if (info->vs.idvs && nir->info.writes_memory)
          NIR_PASS(_, nir, bifrost_nir_lower_vs_atomics);
 
-      if (info->vs.idvs)
-         NIR_PASS(_, nir, bifrost_nir_lower_shader_output);
+      if (info->vs.idvs) {
+         bool shader_output_pass = false;
+         NIR_PASS(shader_output_pass, nir, bifrost_nir_lower_shader_output);
+
+         /* If shader output lower made progress, ensure to merge adjacent if that were added */
+         if (shader_output_pass) {
+            /* First we clean up and deduplicate added condition logic */
+            NIR_PASS(_, nir, nir_copy_prop);
+            NIR_PASS(_, nir, nir_opt_dce);
+            NIR_PASS(_, nir, nir_opt_cse);
+
+            /* We then move vec closer to their I/O stores to ensure nothing is between ifs */
+            NIR_PASS(_, nir, nir_opt_sink, nir_move_copies);
+            NIR_PASS(_, nir, nir_opt_move, nir_move_copies);
+
+            /* Finally run if optimization to ensure trivial if blocks are merged together */
+            NIR_PASS(_, nir, nir_opt_if, 0);
+         }
+      }
    }
 
    bi_optimize_nir(nir, inputs->gpu_id, inputs->robust2_modes);
