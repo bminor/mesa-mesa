@@ -1157,6 +1157,9 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
       }
    }
 
+   bool flushed_compute_after_init_update_scratch = false;
+   bool flushed_cp_after_init_update_scratch = true;
+
    /* Wait for the write_buffer_cp to land before using in compute shaders */
    device->flush_buffer_write_cp(commandBuffer);
    device->dispatch_table.CmdPipelineBarrier(commandBuffer,
@@ -1236,6 +1239,7 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
 
       vk_barrier_compute_w_to_compute_r(commandBuffer);
       vk_barrier_compute_w_to_indirect_compute_r(commandBuffer);
+      flushed_compute_after_init_update_scratch = true;
    }
 
    struct vk_acceleration_structure_build_marker encode_marker;
@@ -1293,10 +1297,13 @@ vk_cmd_build_acceleration_structures(VkCommandBuffer commandBuffer,
                   inside_encode_marker = true;
                }
 
-               if (update)
-                  ops->update_bind_pipeline[pass](commandBuffer, &bvh_states[i].vk);
-               else
+               if (update) {
+                  ops->update_bind_pipeline[pass](commandBuffer, &bvh_states[i].vk,
+                                                  flushed_cp_after_init_update_scratch,
+                                                  flushed_compute_after_init_update_scratch);
+               } else {
                   ops->encode_bind_pipeline[pass](commandBuffer, &bvh_states[i].vk);
+               }
             } else {
                if (update != (bvh_states[i].vk.config.internal_type ==
                               VK_INTERNAL_BUILD_TYPE_UPDATE) ||

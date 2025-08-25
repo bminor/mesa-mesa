@@ -606,17 +606,21 @@ radv_init_update_scratch(VkCommandBuffer commandBuffer, const struct vk_accelera
 }
 
 static void
-radv_update_bind_pipeline(VkCommandBuffer commandBuffer, const struct vk_acceleration_structure_build_state *state)
+radv_update_bind_pipeline(VkCommandBuffer commandBuffer, const struct vk_acceleration_structure_build_state *state,
+                          bool flushed_cp_after_init_update_scratch, bool flushed_compute_after_init_update_scratch)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
    /* Wait for update scratch initialization to finish.. */
-   vk_barrier_compute_w_to_compute_r(commandBuffer);
+   if (!flushed_compute_after_init_update_scratch)
+      vk_barrier_compute_w_to_compute_r(commandBuffer);
 
-   if (radv_device_physical(device)->info.cp_sdma_ge_use_system_memory_scope)
-      cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_INV_L2;
+   if (!flushed_cp_after_init_update_scratch) {
+      if (radv_device_physical(device)->info.cp_sdma_ge_use_system_memory_scope)
+         cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_INV_L2;
+   }
 
    uint32_t flags = state->config.update_key[0];
 
