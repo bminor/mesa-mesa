@@ -508,7 +508,10 @@ panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
       }
    }
 
-   panvk_per_arch(utrace_context_init)(device);
+   result = panvk_per_arch(utrace_context_init)(device);
+   if (result != VK_SUCCESS)
+      goto err_finish_queues;
+
 #if PAN_ARCH >= 10
    panvk_utrace_perfetto_init(device, PANVK_SUBQUEUE_COUNT);
 #else

@@ -60,7 +60,9 @@ struct panvk_utrace_cs_info {
  * rather than an address. */
 #define PANVK_UTRACE_CAPTURE_REGISTERS 0x1
 
-void panvk_per_arch(utrace_context_init)(struct panvk_device *dev);
+VkResult
+panvk_per_arch(utrace_context_init)(struct panvk_device *dev);
+
 void panvk_per_arch(utrace_context_fini)(struct panvk_device *dev);
 
 void panvk_per_arch(utrace_copy_buffer)(struct u_trace_context *utctx,
@@ -78,9 +80,10 @@ void panvk_per_arch(utrace_clone_finish_builder)(struct cs_builder *b);
 
 #else /* PAN_ARCH >= 10 */
 
-static inline void
+static inline VkResult
 panvk_per_arch(utrace_context_init)(struct panvk_device *dev)
 {
+   return VK_SUCCESS;
 }
 
 static inline void

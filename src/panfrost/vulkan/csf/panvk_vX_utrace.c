@@ -185,7 +185,7 @@ get_utrace_clone_mem_size()
    return 0xa00000;
 }
 
-void
+VkResult
 panvk_per_arch(utrace_context_init)(struct panvk_device *dev)
 {
    u_trace_context_init(&dev->utrace.utctx, dev, sizeof(uint64_t),
@@ -198,9 +198,10 @@ panvk_per_arch(utrace_context_init)(struct panvk_device *dev)
    VkResult result = panvk_priv_bo_create(dev, get_utrace_clone_mem_size(), 0,
                                           VK_SYSTEM_ALLOCATION_SCOPE_OBJECT,
                                           &dev->utrace.copy_buf_heap_bo);
-   assert(result == VK_SUCCESS);
-   if (result != VK_SUCCESS)
-      return;
+   if (result != VK_SUCCESS) {
+      u_trace_context_fini(&dev->utrace.utctx);
+      return result;
+   }
 
    simple_mtx_init(&dev->utrace.copy_buf_heap_lock, mtx_plain);
 
@@ -209,6 +210,8 @@ panvk_per_arch(utrace_context_init)(struct panvk_device *dev)
                       dev->utrace.copy_buf_heap_bo->addr.dev,
                       dev->utrace.copy_buf_heap_bo->bo->size);
    simple_mtx_unlock(&dev->utrace.copy_buf_heap_lock);
+
+   return VK_SUCCESS;
 }
 
 void
