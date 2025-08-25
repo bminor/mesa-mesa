@@ -581,6 +581,27 @@ fn fill_qmd<Q: QMD>(info: &nak_shader_info, qmd_info: &nak_qmd_info) -> Q {
 }
 
 #[no_mangle]
+pub extern "C" fn nak_qmd_size_B(dev: &nv_device_info) -> u32 {
+    let size_B = if dev.cls_compute >= clcdc0::BLACKWELL_COMPUTE_A {
+        size_of::<Qmd5_0>().try_into().unwrap()
+    } else if dev.cls_compute >= clcbc0::HOPPER_COMPUTE_A {
+        size_of::<Qmd4_0>().try_into().unwrap()
+    } else if dev.cls_compute >= clc6c0::AMPERE_COMPUTE_A {
+        size_of::<Qmd3_0>().try_into().unwrap()
+    } else if dev.cls_compute >= clc3c0::VOLTA_COMPUTE_A {
+        size_of::<Qmd2_2>().try_into().unwrap()
+    } else if dev.cls_compute >= clc0c0::PASCAL_COMPUTE_A {
+        size_of::<Qmd2_1>().try_into().unwrap()
+    } else if dev.cls_compute >= cla0c0::KEPLER_COMPUTE_A {
+        size_of::<Qmd0_6>().try_into().unwrap()
+    } else {
+        panic!("Unknown shader model");
+    };
+    assert!(size_B <= NAK_MAX_QMD_SIZE_B);
+    size_B
+}
+
+#[no_mangle]
 pub extern "C" fn nak_fill_qmd(
     dev: *const nv_device_info,
     info: *const nak_shader_info,
