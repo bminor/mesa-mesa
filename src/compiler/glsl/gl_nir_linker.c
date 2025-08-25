@@ -2844,8 +2844,6 @@ reserve_explicit_locations(struct gl_shader_program *prog,
                       *var_name);
          return -1;
       }
-
-      prog->NumUniformRemapTable += slots;
    }
 
    /* Check if location is already used. */

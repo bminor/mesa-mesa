@@ -439,7 +439,6 @@ struct gl_shader_program
     * UniformStorage entries. Arrays will have multiple contiguous slots
     * in the UniformRemapTable, all pointing to the same UniformStorage entry.
     */
-   unsigned NumUniformRemapTable;
    struct list_head *UniformRemapTable;
 
    /**

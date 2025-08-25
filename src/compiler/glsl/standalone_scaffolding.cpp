@@ -161,7 +161,6 @@ _mesa_clear_shader_program_data(struct gl_context *ctx,
 
    shProg->data->NumUniformStorage = 0;
    shProg->data->UniformStorage = NULL;
-   shProg->NumUniformRemapTable = 0;
    shProg->UniformRemapTable =
       util_reset_range_remap(shProg->UniformRemapTable);
 

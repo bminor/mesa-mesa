@@ -2016,9 +2016,6 @@ gl_nir_link_uniforms(const struct gl_constants *consts,
 
    assert(prog->data->spirv || prog->data->NumUniformStorage == storage_size);
 
-   if (prog->data->spirv)
-      prog->NumUniformRemapTable = state.max_uniform_location;
-
    setup_uniform_remap_tables(consts, prog);
    gl_nir_set_uniform_initializers(consts, prog);
 
