@@ -235,7 +235,7 @@ build_lrz(struct fd6_emit *emit) assert_dt
                   .z_write_enable = lrz.test,
                   .z_bounds_enable = lrz.z_bounds_enable,
          ))
-         .add(A7XX_GRAS_LRZ_CNTL2(
+         .add(GRAS_LRZ_CNTL2(CHIP,
                   .disable_on_wrong_dir = false,
                   .fc_enable = false,
          ));
@@ -774,7 +774,7 @@ fd6_emit_ccu_cntl(fd_cs &cs, struct fd_screen *screen, bool gmem)
 
    if (CHIP == A7XX) {
       fd_pkt4(cs, 1)
-         .add(A7XX_RB_CCU_CACHE_CNTL(
+         .add(RB_CCU_CACHE_CNTL(CHIP,
             .depth_offset_hi = depth_offset_hi,
             .color_offset_hi = color_offset_hi,
             .depth_cache_size = CCU_CACHE_SIZE_FULL,
@@ -786,9 +786,9 @@ fd6_emit_ccu_cntl(fd_cs &cs, struct fd_screen *screen, bool gmem)
 
       if (screen->info->a7xx.has_gmem_vpc_attr_buf) {
          fd_crb(cs, 3)
-            .add(A7XX_VPC_ATTR_BUF_GMEM_SIZE(.size_gmem = cfg->vpc_attr_buf_size))
-            .add(A7XX_VPC_ATTR_BUF_GMEM_BASE(.base_gmem = cfg->vpc_attr_buf_offset))
-            .add(A7XX_PC_ATTR_BUF_GMEM_SIZE(.size_gmem = cfg->vpc_attr_buf_size));
+            .add(VPC_ATTR_BUF_GMEM_SIZE(CHIP, .size_gmem = cfg->vpc_attr_buf_size))
+            .add(VPC_ATTR_BUF_GMEM_BASE(CHIP, .base_gmem = cfg->vpc_attr_buf_offset))
+            .add(PC_ATTR_BUF_GMEM_SIZE(CHIP, .size_gmem = cfg->vpc_attr_buf_size));
       }
    } else {
       fd_pkt7(cs, CP_WAIT_FOR_IDLE, 0);
@@ -866,25 +866,25 @@ fd6_emit_static_non_context_regs(struct fd_context *ctx, fd_cs &cs)
    ncrb.add(A6XX_SP_DBG_ECO_CNTL(.dword = screen->info->a6xx.magic.SP_DBG_ECO_CNTL));
    ncrb.add(A6XX_SP_PERFCTR_SHADER_MASK(.dword = 0x3f));
    if (CHIP == A6XX && !screen->info->a6xx.is_a702)
-      ncrb.add(A6XX_TPL1_UNKNOWN_B605(.dword = 0x44));
+      ncrb.add(TPL1_UNKNOWN_B605(CHIP, .dword = 0x44));
    ncrb.add(A6XX_TPL1_DBG_ECO_CNTL(.dword = screen->info->a6xx.magic.TPL1_DBG_ECO_CNTL));
    if (CHIP == A6XX) {
-      ncrb.add(A6XX_HLSQ_UNKNOWN_BE00(.dword = 0x80));
-      ncrb.add(A6XX_HLSQ_UNKNOWN_BE01());
+      ncrb.add(HLSQ_UNKNOWN_BE00(CHIP, .dword = 0x80));
+      ncrb.add(HLSQ_UNKNOWN_BE01(CHIP));
    }
 
    ncrb.add(A6XX_VPC_DBG_ECO_CNTL(.dword = screen->info->a6xx.magic.VPC_DBG_ECO_CNTL));
    ncrb.add(A6XX_GRAS_DBG_ECO_CNTL(.dword = screen->info->a6xx.magic.GRAS_DBG_ECO_CNTL));
    if (CHIP == A6XX)
-      ncrb.add(A6XX_HLSQ_DBG_ECO_CNTL(.dword = screen->info->a6xx.magic.HLSQ_DBG_ECO_CNTL));
+      ncrb.add(HLSQ_DBG_ECO_CNTL(CHIP, .dword = screen->info->a6xx.magic.HLSQ_DBG_ECO_CNTL));
    ncrb.add(A6XX_SP_CHICKEN_BITS(.dword = screen->info->a6xx.magic.SP_CHICKEN_BITS));
 
    ncrb.add(A6XX_UCHE_UNKNOWN_0E12(.dword = screen->info->a6xx.magic.UCHE_UNKNOWN_0E12));
    ncrb.add(A6XX_UCHE_CLIENT_PF(.dword = screen->info->a6xx.magic.UCHE_CLIENT_PF));
 
    if (CHIP == A6XX) {
-      ncrb.add(A6XX_HLSQ_SHARED_CONSTS());
-      ncrb.add(A6XX_VPC_UNKNOWN_9211());
+      ncrb.add(HLSQ_SHARED_CONSTS(CHIP));
+      ncrb.add(VPC_UNKNOWN_9211(CHIP));
    }
 
    ncrb.add(A6XX_GRAS_UNKNOWN_80AF());
@@ -900,8 +900,8 @@ fd6_emit_static_non_context_regs(struct fd_context *ctx, fd_cs &cs)
    }
 
    if (screen->info->a7xx.has_hw_bin_scaling) {
-      ncrb.add(A7XX_GRAS_BIN_FOVEAT());
-      ncrb.add(A7XX_RB_BIN_FOVEAT());
+      ncrb.add(GRAS_BIN_FOVEAT(CHIP));
+      ncrb.add(RB_BIN_FOVEAT(CHIP));
    }
 }
 
@@ -932,7 +932,15 @@ fd6_emit_static_context_regs(struct fd_context *ctx, fd_cs &cs)
    );
 
    crb.add(A6XX_VFD_MODE_CNTL(.vertex = true, .instance = true));
-   crb.add(A6XX_VPC_UNKNOWN_9107());
+   if (CHIP == A6XX) {
+      crb.add(VPC_UNKNOWN_9107(CHIP));
+   } else {
+      /* This seems to be load-bearing, we need to set it both here
+       * and below.  Previously we were unconditionally zero'ing
+       * VPC_UNKNOWN_9107 which happens to be the same offset.
+       */
+      crb.add(VPC_RAST_STREAM_CNTL(CHIP));
+   }
    crb.add(A6XX_RB_UNKNOWN_8811(.dword = 0x00000010));
    crb.add(A6XX_PC_MODE_CNTL(.dword=screen->info->a6xx.magic.PC_MODE_CNTL));
    crb.add(A6XX_GRAS_LRZ_PS_INPUT_CNTL());
@@ -958,7 +966,7 @@ fd6_emit_static_context_regs(struct fd_context *ctx, fd_cs &cs)
    crb.add(VPC_RAST_STREAM_CNTL(CHIP));
 
    if (CHIP == A7XX)
-      crb.add(A7XX_VPC_RAST_STREAM_CNTL_V2());
+      crb.add(VPC_RAST_STREAM_CNTL_V2(CHIP));
 
    crb.add(A6XX_PC_STEREO_RENDERING_CNTL());
    crb.add(A6XX_SP_UNKNOWN_B183());
@@ -967,7 +975,7 @@ fd6_emit_static_context_regs(struct fd_context *ctx, fd_cs &cs)
    crb.add(A6XX_GRAS_SC_CNTL(.ccusinglecachelinesize = 2));
 
    if (CHIP == A6XX) {
-      crb.add(A6XX_VPC_UNKNOWN_9210());
+      crb.add(VPC_UNKNOWN_9210(CHIP));
    }
 
    crb.add(A6XX_PC_UNKNOWN_9E72());
@@ -991,7 +999,7 @@ fd6_emit_static_context_regs(struct fd_context *ctx, fd_cs &cs)
 
    crb.add(A6XX_GRAS_LRZ_CNTL());
    if (CHIP >= A7XX)
-      crb.add(A7XX_GRAS_LRZ_CNTL2());
+      crb.add(GRAS_LRZ_CNTL2(CHIP));
 
    crb.add(A6XX_RB_LRZ_CNTL());
    crb.add(A6XX_RB_DEPTH_PLANE_CNTL());
@@ -1013,12 +1021,12 @@ fd6_emit_static_context_regs(struct fd_context *ctx, fd_cs &cs)
 
    if (CHIP >= A7XX) {
       /* Blob sets these two per draw. */
-      crb.add(A7XX_PC_HS_BUFFER_SIZE(FD6_TESS_PARAM_SIZE));
+      crb.add(PC_HS_BUFFER_SIZE(CHIP, FD6_TESS_PARAM_SIZE));
       /* Blob adds a bit more space ({0x10, 0x20, 0x30, 0x40} bytes)
        * but the meaning of this additional space is not known,
        * so we play safe and don't add it.
        */
-      crb.add(A7XX_PC_TF_BUFFER_SIZE(FD6_TESS_FACTOR_SIZE));
+      crb.add(PC_TF_BUFFER_SIZE(CHIP, FD6_TESS_FACTOR_SIZE));
    }
 
    /* There is an optimization to skip executing draw states for draws with no

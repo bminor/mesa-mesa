@@ -234,7 +234,7 @@ emit_lrz(fd_cs &cs, struct fd_batch *batch, struct fd_batch_subpass *subpass)
       crb.add(A6XX_GRAS_LRZ_BUFFER_PITCH());
       crb.add(A6XX_GRAS_LRZ_FAST_CLEAR_BUFFER_BASE());
       if (CHIP >= A7XX)
-         crb.add(A7XX_GRAS_LRZ_DEPTH_BUFFER_INFO());
+         crb.add(GRAS_LRZ_DEPTH_BUFFER_INFO(CHIP));
       return;
    }
 
@@ -260,7 +260,7 @@ emit_lrz(fd_cs &cs, struct fd_batch *batch, struct fd_batch_subpass *subpass)
    ));
 
    if (CHIP >= A7XX) {
-      crb.add(A7XX_GRAS_LRZ_DEPTH_BUFFER_INFO(
+      crb.add(GRAS_LRZ_DEPTH_BUFFER_INFO(CHIP,
          .depth_format = fd6_pipe2depth(pfb->zsbuf.format),
       ));
    }
@@ -479,7 +479,7 @@ update_render_cntl(fd_cs &cs, struct fd_screen *screen,
             .raster_mode = TYPE_TILED,
             .raster_direction = LR_TB
          ));
-         crb.add(A7XX_GRAS_SU_RENDER_CNTL(
+         crb.add(GRAS_SU_RENDER_CNTL(CHIP,
             .fs_disable = binning,
          ));
       }
@@ -1054,12 +1054,12 @@ fd7_emit_static_binning_regs(fd_cs &cs)
 {
    fd_ncrb<CHIP> ncrb(cs, 6);
 
-   ncrb.add(A7XX_RB_UNKNOWN_8812(0x0));
-   ncrb.add(A7XX_RB_CCU_DBG_ECO_CNTL(0x0));
-   ncrb.add(A7XX_GRAS_UNKNOWN_8007(0x0));
+   ncrb.add(RB_UNKNOWN_8812(CHIP, 0x0));
+   ncrb.add(RB_CCU_DBG_ECO_CNTL(CHIP, 0x0));
+   ncrb.add(GRAS_UNKNOWN_8007(CHIP, 0x0));
    ncrb.add(A6XX_GRAS_UNKNOWN_8110(0x2));
-   ncrb.add(A7XX_RB_UNKNOWN_8E09(0x4));
-   ncrb.add(A7XX_RB_CLEAR_TARGET(.clear_mode = CLEAR_MODE_GMEM));
+   ncrb.add(RB_UNKNOWN_8E09(CHIP, 0x4));
+   ncrb.add(RB_CLEAR_TARGET(CHIP, .clear_mode = CLEAR_MODE_GMEM));
 }
 
 template <chip CHIP>
@@ -1436,7 +1436,7 @@ emit_blit(struct fd_batch *batch, fd_crb &crb, uint32_t base,
    }
 
    if (CHIP >= A7XX)
-      crb.add(A7XX_RB_CLEAR_TARGET(.clear_mode = CLEAR_MODE_GMEM));
+      crb.add(RB_CLEAR_TARGET(CHIP, .clear_mode = CLEAR_MODE_GMEM));
 }
 
 template <chip CHIP>
@@ -1535,7 +1535,7 @@ emit_subpass_clears(struct fd_batch *batch, fd_cs &cs, struct fd_batch_subpass *
             crb.add(A6XX_RB_RESOLVE_CLEAR_COLOR_DW3(uc.ui[3]));
 
             if (CHIP >= A7XX)
-               crb.add(A7XX_RB_CLEAR_TARGET(.clear_mode = CLEAR_MODE_GMEM));
+               crb.add(RB_CLEAR_TARGET(CHIP, .clear_mode = CLEAR_MODE_GMEM));
          }
 
          fd6_emit_blit<CHIP>(batch->ctx, cs);
@@ -1587,7 +1587,7 @@ emit_subpass_clears(struct fd_batch *batch, fd_cs &cs, struct fd_batch_subpass *
          crb.add(A6XX_RB_RESOLVE_CLEAR_COLOR_DW0(clear_value));
 
          if (CHIP >= A7XX)
-            crb.add(A7XX_RB_CLEAR_TARGET(.clear_mode = CLEAR_MODE_GMEM));
+            crb.add(RB_CLEAR_TARGET(CHIP, .clear_mode = CLEAR_MODE_GMEM));
       }
 
       fd6_emit_blit<CHIP>(batch->ctx, cs);
@@ -1615,7 +1615,7 @@ emit_subpass_clears(struct fd_batch *batch, fd_cs &cs, struct fd_batch_subpass *
          crb.add(A6XX_RB_RESOLVE_CLEAR_COLOR_DW0(subpass->clear_stencil & 0xff));
 
          if (CHIP >= A7XX)
-            crb.add(A7XX_RB_CLEAR_TARGET(.clear_mode = CLEAR_MODE_GMEM));
+            crb.add(RB_CLEAR_TARGET(CHIP, .clear_mode = CLEAR_MODE_GMEM));
       }
 
       fd6_emit_blit<CHIP>(batch->ctx, cs);
@@ -2054,10 +2054,10 @@ fd6_emit_sysmem_prep(struct fd_batch *batch) assert_dt
       });
 
       if (CHIP >= A7XX) {
-         crb.add(A7XX_RB_UNKNOWN_8812(0x3ff)); // all buffers in sysmem
-         crb.add(A7XX_RB_CCU_DBG_ECO_CNTL(batch->ctx->screen->info->a6xx.magic.RB_CCU_DBG_ECO_CNTL));
-         crb.add(A7XX_GRAS_UNKNOWN_8007(0x0));
-         crb.add(A7XX_RB_UNKNOWN_8E09(0x4));
+         crb.add(RB_UNKNOWN_8812(CHIP, 0x3ff)); // all buffers in sysmem
+         crb.add(RB_CCU_DBG_ECO_CNTL(CHIP, batch->ctx->screen->info->a6xx.magic.RB_CCU_DBG_ECO_CNTL));
+         crb.add(GRAS_UNKNOWN_8007(CHIP, 0x0));
+         crb.add(RB_UNKNOWN_8E09(CHIP, 0x4));
       }
 
       /* enable stream-out, with sysmem there is only one pass: */

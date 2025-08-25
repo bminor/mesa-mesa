@@ -71,7 +71,7 @@ __fd6_setup_rasterizer_stateobj(struct fd_context *ctx,
    );
 
    if (CHIP >= A7XX) {
-      crb.add(A7XX_VPC_PC_CNTL(
+      crb.add(VPC_PC_CNTL(CHIP,
                     .primitive_restart = primitive_restart,
                     .provoking_vtx_last = !cso->flatshade_first,
               )
@@ -96,7 +96,7 @@ __fd6_setup_rasterizer_stateobj(struct fd_context *ctx,
 
    if (CHIP == A7XX ||
        (CHIP == A6XX && ctx->screen->info->a6xx.is_a702)) {
-      crb.add(A6XX_VPC_PS_RAST_CNTL(mode));
+      crb.add(VPC_PS_RAST_CNTL(CHIP, mode));
    }
 
    /* With a7xx the hw doesn't do the clamping for us.  When depth clamp
@@ -120,10 +120,10 @@ __fd6_setup_rasterizer_stateobj(struct fd_context *ctx,
    }
 
    if (CHIP == A6XX && ctx->screen->info->a6xx.has_legacy_pipeline_shading_rate) {
-      crb.add(A6XX_RB_UNKNOWN_8A00());
-      crb.add(A6XX_RB_UNKNOWN_8A10());
-      crb.add(A6XX_RB_UNKNOWN_8A20());
-      crb.add(A6XX_RB_UNKNOWN_8A30());
+      crb.add(RB_UNKNOWN_8A00(CHIP));
+      crb.add(RB_UNKNOWN_8A10(CHIP));
+      crb.add(RB_UNKNOWN_8A20(CHIP));
+      crb.add(RB_UNKNOWN_8A30(CHIP));
    }
 
    return crb.ring();

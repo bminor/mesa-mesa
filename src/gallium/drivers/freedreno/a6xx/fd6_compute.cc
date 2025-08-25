@@ -52,7 +52,7 @@ cs_program_emit_local_size(struct fd_context *ctx, fd_crb &crb,
          .wgtileheight = tile_height,
       ));
 
-      crb.add(A7XX_SP_CS_NDRANGE_7(
+      crb.add(SP_CS_NDRANGE_7(CHIP,
          .localsizex = local_size[0] - 1,
          .localsizey = local_size[1] - 1,
          .localsizez = local_size[2] - 1,
@@ -102,7 +102,7 @@ cs_program_emit(struct fd_context *ctx, fd_crb &crb, struct ir3_shader_variant *
       .supports_double_threadsize ? thrsz : THREAD128;
 
    if (CHIP == A6XX) {
-      crb.add(A6XX_SP_CS_CONST_CONFIG_0(
+      crb.add(SP_CS_CONST_CONFIG_0(CHIP,
          .wgidconstid = work_group_id,
          .wgsizeconstid = INVALID_REG,
          .wgoffsetconstid = INVALID_REG,
@@ -144,7 +144,7 @@ cs_program_emit(struct fd_context *ctx, fd_crb &crb, struct ir3_shader_variant *
             v->cs.force_linear_dispatch ? WORKITEMRASTORDER_LINEAR
                                           : WORKITEMRASTORDER_TILED,
       ));
-      crb.add(A7XX_SP_CS_UNKNOWN_A9BE(0)); // Sometimes is 0x08000000
+      crb.add(SP_CS_UNKNOWN_A9BE(CHIP, 0)); // Sometimes is 0x08000000
    }
 
    if (!v->local_size_variable)
@@ -235,7 +235,7 @@ fd6_launch_grid(struct fd_context *ctx, const struct pipe_grid_info *info) in_dt
       ));
 
       if (CHIP == A6XX && ctx->screen->info->a6xx.has_lpac) {
-         crb.add(A6XX_HLSQ_CS_CTRL_REG1(
+         crb.add(HLSQ_CS_CTRL_REG1(CHIP,
             .shared_size = shared_size,
             .constantrammode = mode,
          ));

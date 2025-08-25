@@ -278,7 +278,7 @@ fd6_build_bindless_state(struct fd_context *ctx, mesa_shader_stage shader,
          ));
 
          if (CHIP == A6XX) {
-            crb.add(A6XX_HLSQ_CS_BINDLESS_BASE_DESCRIPTOR(
+            crb.add(HLSQ_CS_BINDLESS_BASE_DESCRIPTOR(CHIP,
                idx, .desc_size = BINDLESS_DESCRIPTOR_64B, .bo = set->bo,
             ));
          }
@@ -324,7 +324,7 @@ fd6_build_bindless_state(struct fd_context *ctx, mesa_shader_stage shader,
             idx, .desc_size = BINDLESS_DESCRIPTOR_64B, .bo = set->bo,
          ));
          if (CHIP == A6XX) {
-            crb.add(A6XX_HLSQ_BINDLESS_BASE_DESCRIPTOR(
+            crb.add(HLSQ_BINDLESS_BASE_DESCRIPTOR(CHIP,
                idx, .desc_size = BINDLESS_DESCRIPTOR_64B, .bo = set->bo,
             ));
          }

@@ -322,7 +322,7 @@ emit_blit_setup(fd_ncrb<CHIP> &ncrb, enum pipe_format pfmt,
    ncrb.add(A6XX_GRAS_A2D_BLT_CNTL(.dword = blit_cntl));
 
    if (CHIP >= A7XX) {
-      ncrb.add(A7XX_TPL1_A2D_BLT_CNTL(
+      ncrb.add(TPL1_A2D_BLT_CNTL(CHIP,
          .raw_copy = false,
          .start_offset_texels = 0,
          .type = A6XX_TEX_2D,

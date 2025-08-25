@@ -89,7 +89,7 @@ emit_shader_regs(struct fd_context *ctx, fd_cs &cs, const struct ir3_shader_vari
       ));
       crb.add(A6XX_SP_VS_PVT_MEM_STACK_OFFSET(.offset = per_sp_size));
       if (CHIP >= A7XX)
-         crb.add(A7XX_SP_VS_VGS_CNTL());
+         crb.add(SP_VS_VGS_CNTL(CHIP));
       break;
    case MESA_SHADER_TESS_CTRL:
       crb.add(A6XX_SP_HS_CNTL_0(
@@ -111,7 +111,7 @@ emit_shader_regs(struct fd_context *ctx, fd_cs &cs, const struct ir3_shader_vari
       ));
       crb.add(A6XX_SP_HS_PVT_MEM_STACK_OFFSET(.offset = per_sp_size));
       if (CHIP >= A7XX)
-         crb.add(A7XX_SP_HS_VGS_CNTL());
+         crb.add(SP_HS_VGS_CNTL(CHIP));
       break;
    case MESA_SHADER_TESS_EVAL:
       crb.add(A6XX_SP_DS_CNTL_0(
@@ -133,7 +133,7 @@ emit_shader_regs(struct fd_context *ctx, fd_cs &cs, const struct ir3_shader_vari
       ));
       crb.add(A6XX_SP_DS_PVT_MEM_STACK_OFFSET(.offset = per_sp_size));
       if (CHIP >= A7XX)
-         crb.add(A7XX_SP_DS_VGS_CNTL());
+         crb.add(SP_DS_VGS_CNTL(CHIP));
       break;
    case MESA_SHADER_GEOMETRY:
       crb.add(A6XX_SP_GS_CNTL_0(
@@ -155,7 +155,7 @@ emit_shader_regs(struct fd_context *ctx, fd_cs &cs, const struct ir3_shader_vari
       ));
       crb.add(A6XX_SP_GS_PVT_MEM_STACK_OFFSET(.offset = per_sp_size));
       if (CHIP >= A7XX)
-         crb.add(A7XX_SP_GS_VGS_CNTL());
+         crb.add(SP_GS_VGS_CNTL(CHIP));
       break;
    case MESA_SHADER_FRAGMENT:
       crb.add(A6XX_SP_PS_CNTL_0(
@@ -183,7 +183,7 @@ emit_shader_regs(struct fd_context *ctx, fd_cs &cs, const struct ir3_shader_vari
       ));
       crb.add(A6XX_SP_PS_PVT_MEM_STACK_OFFSET(.offset = per_sp_size));
       if (CHIP >= A7XX)
-         crb.add(A7XX_SP_PS_VGS_CNTL());
+         crb.add(SP_PS_VGS_CNTL(CHIP));
       break;
    case MESA_SHADER_COMPUTE:
       thrsz = ctx->screen->info->a6xx.supports_double_threadsize ? thrsz : THREAD128;
@@ -208,7 +208,7 @@ emit_shader_regs(struct fd_context *ctx, fd_cs &cs, const struct ir3_shader_vari
       ));
       crb.add(A6XX_SP_CS_PVT_MEM_STACK_OFFSET(.offset = per_sp_size));
       if (CHIP >= A7XX)
-         crb.add(A7XX_SP_CS_VGS_CNTL());
+         crb.add(SP_CS_VGS_CNTL(CHIP));
       break;
    default:
       UNREACHABLE("bad shader stage");
@@ -842,7 +842,7 @@ emit_vpc(fd_crb &crb, const struct program_builder *b)
 
    if (CHIP >= A7XX) {
       crb.add(A6XX_GRAS_UNKNOWN_8110(0x2));
-      crb.add(A7XX_SP_RENDER_CNTL(.fs_disable = false));
+      crb.add(SP_RENDER_CNTL(CHIP, .fs_disable = false));
    }
 
    crb.add(A6XX_VPC_PS_CNTL(
@@ -876,17 +876,17 @@ emit_vpc(fd_crb &crb, const struct program_builder *b)
       ));
 
       if (CHIP >= A7XX) {
-         crb.add(A7XX_VPC_GS_PARAM_0(
+         crb.add(VPC_GS_PARAM_0(CHIP,
             .gs_vertices_out = vertices_out,
             .gs_invocations = invocations,
             .gs_output = output,
          ));
       } else {
-         crb.add(A6XX_VPC_GS_PARAM(0xff));
+         crb.add(VPC_GS_PARAM(CHIP, 0xff));
       }
 
       if (CHIP == A6XX) {
-         crb.add(A6XX_PC_PRIMITIVE_CNTL_6(vec4_size));
+         crb.add(PC_PRIMITIVE_CNTL_6(CHIP, vec4_size));
       }
 
       uint32_t prim_size = prev_stage_output_size;
@@ -1017,7 +1017,7 @@ emit_fs_inputs(fd_crb &crb, const struct program_builder *b)
             sysval_regs += 2;
       }
 
-      crb.add(A7XX_SP_PS_CNTL_1(
+      crb.add(SP_PS_CNTL_1(CHIP,
          .sysval_regs_count = sysval_regs,
          .unk8 = 1,
          .unk9 = 1,
@@ -1137,8 +1137,8 @@ emit_fs_outputs(fd_crb &crb, const struct program_builder *b)
    }
 
    if (CHIP >= A7XX) {
-      crb.add(A7XX_SP_PS_OUTPUT_CONST_CNTL(.enabled = fragdata_aliased_components != 0));
-      crb.add(A7XX_SP_PS_OUTPUT_CONST_MASK(.dword = fragdata_aliased_components));
+      crb.add(SP_PS_OUTPUT_CONST_CNTL(CHIP, .enabled = fragdata_aliased_components != 0));
+      crb.add(SP_PS_OUTPUT_CONST_MASK(CHIP, .dword = fragdata_aliased_components));
    } else {
       assert(fragdata_aliased_components == 0);
    }
