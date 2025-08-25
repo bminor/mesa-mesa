@@ -551,13 +551,7 @@ emit_mimg(Builder& bld, aco_opcode op, std::vector<Temp> dsts, Temp rsrc, Operan
    for (unsigned i = 0; i < coords.size(); i++)
       mimg->operands[3 + i] = Operand(coords[i]);
 
-   if (disable_wqm) {
-      instr_exact_mask(mimg.get()) = Operand();
-      instr_wqm_mask(mimg.get()) = Operand();
-      mimg->mimg().disable_wqm = true;
-      bld.program->needs_exact = true;
-   }
-
+   init_disable_wqm(bld, mimg->mimg(), disable_wqm);
    mimg->mimg().strict_wqm = strict_wqm;
 
    return &bld.insert(std::move(mimg))->mimg();

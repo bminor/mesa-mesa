@@ -1990,13 +1990,10 @@ visit_image_store(isel_context* ctx, nir_intrinsic_instr* instr)
       store->operands[1] = Operand(vindex);
       store->operands[2] = Operand::c32(0);
       store->operands[3] = Operand(data);
-      store->operands[4] = Operand();
-      store->operands[5] = Operand();
       store->mubuf().idxen = true;
       store->mubuf().cache = cache;
-      store->mubuf().disable_wqm = true;
       store->mubuf().sync = sync;
-      ctx->program->needs_exact = true;
+      init_disable_wqm(bld, store->mubuf(), true);
       ctx->block->instructions.emplace_back(std::move(store));
       return;
    }
@@ -2142,8 +2139,6 @@ visit_image_atomic(isel_context* ctx, nir_intrinsic_instr* instr)
       mubuf->operands[1] = Operand(vindex);
       mubuf->operands[2] = Operand::c32(0);
       mubuf->operands[3] = Operand(data);
-      mubuf->operands[4] = Operand();
-      mubuf->operands[5] = Operand();
       Definition def =
          return_previous ? (cmpswap ? bld.def(data.regClass()) : Definition(dst)) : Definition();
       if (return_previous)
@@ -2151,9 +2146,8 @@ visit_image_atomic(isel_context* ctx, nir_intrinsic_instr* instr)
       mubuf->mubuf().offset = 0;
       mubuf->mubuf().idxen = true;
       mubuf->mubuf().cache = get_atomic_cache_flags(ctx, return_previous);
-      mubuf->mubuf().disable_wqm = true;
       mubuf->mubuf().sync = sync;
-      ctx->program->needs_exact = true;
+      init_disable_wqm(bld, mubuf->mubuf(), true);
       ctx->block->instructions.emplace_back(std::move(mubuf));
       if (return_previous && cmpswap)
          bld.pseudo(aco_opcode::p_extract_vector, Definition(dst), def.getTemp(), Operand::zero());
@@ -2234,14 +2228,11 @@ visit_store_ssbo(isel_context* ctx, nir_intrinsic_instr* instr)
       store->operands[1] = offset.type() == RegType::vgpr ? Operand(offset) : Operand(v1);
       store->operands[2] = offset.type() == RegType::sgpr ? Operand(offset) : Operand::c32(0);
       store->operands[3] = Operand(write_datas[i]);
-      store->operands[4] = Operand();
-      store->operands[5] = Operand();
       store->mubuf().offset = offsets[i];
       store->mubuf().offen = (offset.type() == RegType::vgpr);
       store->mubuf().cache = get_cache_flags(ctx, access, type);
-      store->mubuf().disable_wqm = true;
       store->mubuf().sync = sync;
-      ctx->program->needs_exact = true;
+      init_disable_wqm(bld, store->mubuf(), true);
       ctx->block->instructions.emplace_back(std::move(store));
    }
 }
@@ -2273,8 +2264,6 @@ visit_atomic_ssbo(isel_context* ctx, nir_intrinsic_instr* instr)
    mubuf->operands[1] = offset.type() == RegType::vgpr ? Operand(offset) : Operand(v1);
    mubuf->operands[2] = offset.type() == RegType::sgpr ? Operand(offset) : Operand::c32(0);
    mubuf->operands[3] = Operand(data);
-   mubuf->operands[4] = Operand();
-   mubuf->operands[5] = Operand();
    Definition def =
       return_previous ? (cmpswap ? bld.def(data.regClass()) : Definition(dst)) : Definition();
    if (return_previous)
@@ -2282,9 +2271,8 @@ visit_atomic_ssbo(isel_context* ctx, nir_intrinsic_instr* instr)
    mubuf->mubuf().offset = 0;
    mubuf->mubuf().offen = (offset.type() == RegType::vgpr);
    mubuf->mubuf().cache = get_atomic_cache_flags(ctx, return_previous);
-   mubuf->mubuf().disable_wqm = true;
    mubuf->mubuf().sync = get_memory_sync_info(instr, storage_buffer, semantic_atomicrmw);
-   ctx->program->needs_exact = true;
+   init_disable_wqm(bld, mubuf->mubuf(), true);
    ctx->block->instructions.emplace_back(std::move(mubuf));
    if (return_previous && cmpswap)
       bld.pseudo(aco_opcode::p_extract_vector, Definition(dst), def.getTemp(), Operand::zero());
@@ -2409,14 +2397,11 @@ visit_store_global(isel_context* ctx, nir_intrinsic_instr* instr)
             flat->operands[1] = Operand(s1);
          }
          flat->operands[2] = Operand(write_datas[i]);
-         flat->operands[3] = Operand();
-         flat->operands[4] = Operand();
          flat->flatlike().cache = get_cache_flags(ctx, access, type);
          assert(global || !write_const_offset);
          flat->flatlike().offset = write_const_offset;
-         flat->flatlike().disable_wqm = true;
          flat->flatlike().sync = sync;
-         ctx->program->needs_exact = true;
+         init_disable_wqm(bld, flat->flatlike(), true);
          ctx->block->instructions.emplace_back(std::move(flat));
       } else {
          assert(ctx->options->gfx_level == GFX6 || write_address.type() != RegType::vgpr);
@@ -2436,15 +2421,12 @@ visit_store_global(isel_context* ctx, nir_intrinsic_instr* instr)
          mubuf->operands[2] =
             write_offset.type() == RegType::sgpr ? Operand(write_offset) : Operand::c32(0);
          mubuf->operands[3] = Operand(write_datas[i]);
-         mubuf->operands[4] = Operand();
-         mubuf->operands[5] = Operand();
          mubuf->mubuf().offen = write_offset.type() == RegType::vgpr;
          mubuf->mubuf().cache = get_cache_flags(ctx, access, type);
          mubuf->mubuf().offset = write_const_offset;
          mubuf->mubuf().addr64 = write_address.type() == RegType::vgpr;
-         mubuf->mubuf().disable_wqm = true;
          mubuf->mubuf().sync = sync;
-         ctx->program->needs_exact = true;
+         init_disable_wqm(bld, mubuf->mubuf(), true);
          ctx->block->instructions.emplace_back(std::move(mubuf));
       }
    }
@@ -2548,16 +2530,13 @@ visit_global_atomic(isel_context* ctx, nir_intrinsic_instr* instr)
          flat->operands[1] = Operand(s1);
       }
       flat->operands[2] = Operand(data);
-      flat->operands[3] = Operand();
-      flat->operands[4] = Operand();
       if (return_previous)
          flat->definitions[0] = Definition(dst);
       flat->flatlike().cache = get_atomic_cache_flags(ctx, return_previous);
       assert(global || !const_offset);
       flat->flatlike().offset = const_offset;
-      flat->flatlike().disable_wqm = true;
       flat->flatlike().sync = get_memory_sync_info(instr, storage_buffer, semantic_atomicrmw);
-      ctx->program->needs_exact = true;
+      init_disable_wqm(bld, flat->flatlike(), true);
       ctx->block->instructions.emplace_back(std::move(flat));
    } else {
       assert(ctx->options->gfx_level == GFX6 || addr.type() != RegType::vgpr);
@@ -2579,8 +2558,6 @@ visit_global_atomic(isel_context* ctx, nir_intrinsic_instr* instr)
          mubuf->operands[1] = Operand(v1);
       mubuf->operands[2] = offset.type() == RegType::sgpr ? Operand(offset) : Operand::c32(0);
       mubuf->operands[3] = Operand(data);
-      mubuf->operands[4] = Operand();
-      mubuf->operands[5] = Operand();
       Definition def =
          return_previous ? (cmpswap ? bld.def(data.regClass()) : Definition(dst)) : Definition();
       if (return_previous)
@@ -2589,9 +2566,8 @@ visit_global_atomic(isel_context* ctx, nir_intrinsic_instr* instr)
       mubuf->mubuf().cache = get_atomic_cache_flags(ctx, return_previous);
       mubuf->mubuf().offset = const_offset;
       mubuf->mubuf().addr64 = addr.type() == RegType::vgpr;
-      mubuf->mubuf().disable_wqm = true;
       mubuf->mubuf().sync = get_memory_sync_info(instr, storage_buffer, semantic_atomicrmw);
-      ctx->program->needs_exact = true;
+      init_disable_wqm(bld, mubuf->mubuf(), true);
       ctx->block->instructions.emplace_back(std::move(mubuf));
       if (return_previous && cmpswap)
          bld.pseudo(aco_opcode::p_extract_vector, Definition(dst), def.getTemp(), Operand::zero());

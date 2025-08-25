@@ -465,12 +465,7 @@ visit_tex(isel_context* ctx, nir_tex_instr* instr)
       mubuf->mubuf().tfe = instr->is_sparse;
       if (mubuf->mubuf().tfe)
          mubuf->operands[3] = emit_tfe_init(bld, tmp_dst);
-      if (disable_wqm) {
-         instr_exact_mask(mubuf.get()) = Operand();
-         instr_wqm_mask(mubuf.get()) = Operand();
-         mubuf->mubuf().disable_wqm = true;
-         bld.program->needs_exact = true;
-      }
+      init_disable_wqm(bld, mubuf->mubuf(), disable_wqm);
       ctx->block->instructions.emplace_back(std::move(mubuf));
 
       expand_vector(ctx, tmp_dst, dst, instr->def.num_components, dmask);

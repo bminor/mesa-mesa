@@ -7,6 +7,7 @@
 #ifndef ACO_INSTRUCTION_SELECTION_H
 #define ACO_INSTRUCTION_SELECTION_H
 
+#include "aco_builder.h"
 #include "aco_ir.h"
 
 #include "nir.h"
@@ -176,6 +177,18 @@ should_declare_array(ac_image_dim dim)
 {
    return dim == ac_image_cube || dim == ac_image_1darray || dim == ac_image_2darray ||
           dim == ac_image_2darraymsaa;
+}
+
+template <typename T>
+inline void
+init_disable_wqm(Builder& bld, T& instr, bool disable_wqm)
+{
+   if (disable_wqm) {
+      instr_exact_mask(&instr) = Operand();
+      instr_wqm_mask(&instr) = Operand();
+      instr.disable_wqm = true;
+      bld.program->needs_exact = true;
+   }
 }
 
 /* aco_isel_setup.cpp */
