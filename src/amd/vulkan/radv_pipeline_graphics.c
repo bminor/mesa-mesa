@@ -1033,7 +1033,7 @@ radv_pipeline_init_dynamic_state(const struct radv_device *device, struct radv_g
 
       if (states & RADV_DYNAMIC_COLOR_BLEND_ENABLE) {
          for (unsigned i = 0; i < state->cb->attachment_count; i++) {
-            dynamic->vk.cb.attachments[i].blend_enable = state->cb->attachments[i].blend_enable;
+            dynamic->color_blend_enable |= state->cb->attachments[i].blend_enable << i;
          }
       }
 

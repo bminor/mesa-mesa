@@ -64,6 +64,7 @@ struct radv_dynamic_state {
 
    uint32_t color_write_enable;
    uint32_t color_write_mask;
+   uint8_t color_blend_enable;
 
    bool mrt0_is_dual_src;
 
