@@ -854,7 +854,7 @@
         "description": "freedreno/drm: Only initialize memory data source when Perfetto is active",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c7045e3e6331c207065b77285ea9e786276ca0d2",
         "notes": null
