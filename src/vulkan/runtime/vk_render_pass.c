@@ -1,5 +1,6 @@
 /*
  * Copyright © 2020 Valve Corporation
+ * Copyright © 2025 Arm Ltd
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -2049,15 +2050,15 @@ begin_subpass(struct vk_command_buffer *cmd_buffer,
       }
    }
 
-   /* Next, handle any barriers we need.  This may include a general
-    * VkMemoryBarrier for subpass dependencies and it may include some
+   /* Next, handle any barriers we need.  This may include general
+    * VkMemoryBarriers for subpass dependencies and it may include some
     * number of VkImageMemoryBarriers for layout transitions.
     */
 
-   bool needs_mem_barrier = false;
-   VkMemoryBarrier2 mem_barrier = {
-      .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
-   };
+   /* At most all dependencies will need a barrier, and we might have an
+    * implicit one. */
+   STACK_ARRAY(VkMemoryBarrier2, mem_barriers, pass->dependency_count + 1);
+   uint32_t mem_barrier_count = 0;
    for (uint32_t d = 0; d < pass->dependency_count; d++) {
       const struct vk_subpass_dependency *dep = &pass->dependencies[d];
       if (dep->dst_subpass != subpass_idx)
@@ -2098,11 +2099,13 @@ begin_subpass(struct vk_command_buffer *cmd_buffer,
             continue;
       }
 
-      needs_mem_barrier = true;
-      mem_barrier.srcStageMask |= dep->src_stage_mask;
-      mem_barrier.srcAccessMask |= dep->src_access_mask;
-      mem_barrier.dstStageMask |= dep->dst_stage_mask;
-      mem_barrier.dstAccessMask |= dep->dst_access_mask;
+      mem_barriers[mem_barrier_count++] = (VkMemoryBarrier2){
+         .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+         .srcStageMask = dep->src_stage_mask,
+         .srcAccessMask = dep->src_access_mask,
+         .dstStageMask = dep->dst_stage_mask,
+         .dstAccessMask = dep->dst_access_mask,
+      };
    }
 
    if (subpass_idx == 0) {
@@ -2137,13 +2140,17 @@ begin_subpass(struct vk_command_buffer *cmd_buffer,
        * If this is ever a perf problem, we can re-evaluate and do something
        * more intellegent at that time.
        */
-      needs_mem_barrier = true;
-      mem_barrier.dstStageMask |= VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-      mem_barrier.dstAccessMask |= VK_ACCESS_INPUT_ATTACHMENT_READ_BIT |
-                                   VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-                                   VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
-                                   VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                                   VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+      mem_barriers[mem_barrier_count++] = (VkMemoryBarrier2){
+         .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+         .srcStageMask = VK_PIPELINE_STAGE_2_NONE,
+         .srcAccessMask = VK_ACCESS_2_NONE,
+         .dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+         .dstAccessMask = VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT |
+                          VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT |
+                          VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT |
+                          VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                          VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+      };
    }
 
    uint32_t max_image_barrier_count = 0;
@@ -2190,15 +2197,14 @@ begin_subpass(struct vk_command_buffer *cmd_buffer,
    }
    assert(image_barrier_count <= max_image_barrier_count);
 
-   if (needs_mem_barrier || image_barrier_count > 0) {
+   if (mem_barrier_count > 0 || image_barrier_count > 0) {
       const VkDependencyInfo dependency_info = {
          .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
          .dependencyFlags = 0,
-         .memoryBarrierCount = needs_mem_barrier ? 1 : 0,
-         .pMemoryBarriers = needs_mem_barrier ? &mem_barrier : NULL,
+         .memoryBarrierCount = mem_barrier_count,
+         .pMemoryBarriers = mem_barrier_count > 0 ? mem_barriers : NULL,
          .imageMemoryBarrierCount = image_barrier_count,
-         .pImageMemoryBarriers = image_barrier_count > 0 ?
-                                 image_barriers : NULL,
+         .pImageMemoryBarriers = image_barrier_count > 0 ? image_barriers : NULL,
       };
       cmd_buffer->runtime_rp_barrier = true;
       disp->CmdPipelineBarrier2(vk_command_buffer_to_handle(cmd_buffer),
@@ -2207,6 +2213,7 @@ begin_subpass(struct vk_command_buffer *cmd_buffer,
    }
 
    STACK_ARRAY_FINISH(image_barriers);
+   STACK_ARRAY_FINISH(mem_barriers);
 
    /* Next, handle any VK_ATTACHMENT_LOAD_OP_CLEAR that we couldn't handle
     * directly by emitting a quick vkCmdBegin/EndRendering to do the load.
@@ -2353,10 +2360,10 @@ end_subpass(struct vk_command_buffer *cmd_buffer,
 
    disp->CmdEndRendering(vk_command_buffer_to_handle(cmd_buffer));
 
-   bool needs_mem_barrier = false;
-   VkMemoryBarrier2 mem_barrier = {
-      .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
-   };
+   /* At most all dependencies will need a barrier, and we might have an
+    * implicit one. */
+   STACK_ARRAY(VkMemoryBarrier2, mem_barriers, pass->dependency_count + 1);
+   uint32_t mem_barrier_count = 0;
    for (uint32_t d = 0; d < pass->dependency_count; d++) {
       const struct vk_subpass_dependency *dep = &pass->dependencies[d];
       if (dep->src_subpass != subpass_idx)
@@ -2365,11 +2372,13 @@ end_subpass(struct vk_command_buffer *cmd_buffer,
       if (dep->dst_subpass != VK_SUBPASS_EXTERNAL)
          continue;
 
-      needs_mem_barrier = true;
-      mem_barrier.srcStageMask |= dep->src_stage_mask;
-      mem_barrier.srcAccessMask |= dep->src_access_mask;
-      mem_barrier.dstStageMask |= dep->dst_stage_mask;
-      mem_barrier.dstAccessMask |= dep->dst_access_mask;
+      mem_barriers[mem_barrier_count++] = (VkMemoryBarrier2){
+         .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+         .srcStageMask = dep->src_stage_mask,
+         .srcAccessMask = dep->src_access_mask,
+         .dstStageMask = dep->dst_stage_mask,
+         .dstAccessMask = dep->dst_access_mask,
+      };
    }
 
    if (subpass_idx == pass->subpass_count - 1) {
@@ -2401,24 +2410,30 @@ end_subpass(struct vk_command_buffer *cmd_buffer,
        * If this is ever a perf problem, we can re-evaluate and do something
        * more intellegent at that time.
        */
-      needs_mem_barrier = true;
-      mem_barrier.srcStageMask |= VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-      mem_barrier.srcAccessMask |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
-                                   VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+      mem_barriers[mem_barrier_count++] = (VkMemoryBarrier2){
+         .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+         .srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+         .srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT |
+                          VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+         .dstStageMask = VK_PIPELINE_STAGE_2_NONE,
+         .dstAccessMask = VK_ACCESS_2_NONE,
+      };
    }
 
-   if (needs_mem_barrier) {
+   if (mem_barrier_count > 0) {
       const VkDependencyInfo dependency_info = {
          .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
          .dependencyFlags = 0,
-         .memoryBarrierCount = 1,
-         .pMemoryBarriers = &mem_barrier,
+         .memoryBarrierCount = mem_barrier_count,
+         .pMemoryBarriers = mem_barriers,
       };
       cmd_buffer->runtime_rp_barrier = true;
       disp->CmdPipelineBarrier2(vk_command_buffer_to_handle(cmd_buffer),
                                 &dependency_info);
       cmd_buffer->runtime_rp_barrier = false;
    }
+
+   STACK_ARRAY_FINISH(mem_barriers);
 }
 
 VKAPI_ATTR void VKAPI_CALL
