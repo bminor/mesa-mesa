@@ -633,6 +633,18 @@ radv_cmd_set_scissor(struct radv_cmd_buffer *cmd_buffer, uint32_t first, uint32_
    state->dirty_dynamic |= RADV_DYNAMIC_SCISSOR;
 }
 
+ALWAYS_INLINE static void
+radv_cmd_set_rendering_attachment_locations(struct radv_cmd_buffer *cmd_buffer, uint32_t count,
+                                            const uint8_t color_map[MAX_RTS])
+{
+   struct radv_cmd_state *state = &cmd_buffer->state;
+
+   typed_memcpy(state->dynamic.vk.cal.color_map, color_map, count);
+
+   state->dirty_dynamic |= RADV_DYNAMIC_COLOR_ATTACHMENT_MAP;
+   state->dirty |= RADV_CMD_DIRTY_FBFETCH_OUTPUT;
+}
+
 static void
 radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dynamic_state *src)
 {
@@ -716,8 +728,7 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    }
 
    if (memcmp(&dest->vk.cal.color_map, &src->vk.cal.color_map, sizeof(src->vk.cal.color_map))) {
-      typed_memcpy(dest->vk.cal.color_map, src->vk.cal.color_map, MAX_RTS);
-      dest_mask |= RADV_DYNAMIC_COLOR_ATTACHMENT_MAP;
+      radv_cmd_set_rendering_attachment_locations(cmd_buffer, MAX_RTS, src->vk.cal.color_map);
    }
 
    if (memcmp(&dest->vk.ial, &src->vk.ial, sizeof(src->vk.ial))) {
@@ -1030,7 +1041,7 @@ radv_bind_dynamic_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_dy
    cmd_buffer->state.dirty_dynamic |= dest_mask;
 
    /* Handle driver specific states that need to be re-emitted when PSO are bound. */
-   if (dest_mask & (RADV_DYNAMIC_COLOR_ATTACHMENT_MAP | RADV_DYNAMIC_INPUT_ATTACHMENT_MAP)) {
+   if (dest_mask & RADV_DYNAMIC_INPUT_ATTACHMENT_MAP) {
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FBFETCH_OUTPUT;
    }
 }
@@ -9173,7 +9184,7 @@ radv_CmdSetRenderingAttachmentLocations(VkCommandBuffer commandBuffer,
                                         const VkRenderingAttachmentLocationInfo *pLocationInfo)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   struct radv_cmd_state *state = &cmd_buffer->state;
+   uint8_t color_map[MAX_RTS];
 
    assume(pLocationInfo->colorAttachmentCount <= MESA_VK_MAX_COLOR_ATTACHMENTS);
    for (uint32_t i = 0; i < pLocationInfo->colorAttachmentCount; i++) {
@@ -9187,11 +9198,10 @@ radv_CmdSetRenderingAttachmentLocations(VkCommandBuffer commandBuffer,
          val = pLocationInfo->pColorAttachmentLocations[i];
       }
 
-      state->dynamic.vk.cal.color_map[i] = val;
+      color_map[i] = val;
    }
 
-   state->dirty_dynamic |= RADV_DYNAMIC_COLOR_ATTACHMENT_MAP;
-   state->dirty |= RADV_CMD_DIRTY_FBFETCH_OUTPUT;
+   radv_cmd_set_rendering_attachment_locations(cmd_buffer, pLocationInfo->colorAttachmentCount, color_map);
 }
 
 VKAPI_ATTR void VKAPI_CALL
