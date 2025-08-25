@@ -36,6 +36,7 @@
 #include "pipe/p_state.h"
 #include "tgsi/tgsi_ureg.h"
 #include "tgsi/tgsi_dump.h"
+#include "util/macros.h"
 #include "util/u_memory.h"
 
 #include "ShaderDump.h"
@@ -298,6 +299,7 @@ translate_system_name(D3D10_SB_NAME name)
    case D3D10_SB_NAME_IS_FRONT_FACE:
       return TGSI_SEMANTIC_FACE;
    case D3D10_SB_NAME_SAMPLE_INDEX:
+   default:
       LOG_UNSUPPORTED(true);
       return TGSI_SEMANTIC_GENERIC;
    }
@@ -768,6 +770,7 @@ translate_operand(struct Shader_xlate *sx,
    case D3D10_SB_OPERAND_TYPE_NULL:
    case D3D10_SB_OPERAND_TYPE_RASTERIZER:
    case D3D10_SB_OPERAND_TYPE_OUTPUT_COVERAGE_MASK:
+   default:
       /* XXX: Translate more operands types.
        */
       LOG_UNSUPPORTED(true);
@@ -1282,6 +1285,8 @@ Shader_tgsi_translate(const unsigned *code,
    case D3D10_SB_GEOMETRY_SHADER:
       ureg = ureg_create(MESA_SHADER_GEOMETRY);
       break;
+   default:
+      UNREACHABLE("unsupported D3D10_SB_SHADER\n");
    }
 
    assert(ureg);
