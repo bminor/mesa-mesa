@@ -358,59 +358,6 @@ translate_superblock_size(uint64_t modifier)
 #endif
 
 static void
-pan_emit_bview_plane(const struct pan_buffer_view *bview, void *payload)
-{
-   const struct util_format_description *desc =
-      util_format_description(bview->format);
-   uint64_t size =
-      (uint64_t)util_format_get_blocksize(bview->format) * bview->width_el;
-
-   if (desc->layout == UTIL_FORMAT_LAYOUT_ASTC) {
-      bool srgb = (desc->colorspace == UTIL_FORMAT_COLORSPACE_SRGB);
-      /* sRGB formats decode to RGBA8 sRGB, which is narrow.
-       *
-       * Non-sRGB formats decode to RGBA16F which is wide except if decode
-       * precision is set to GL_RGBA8 for that texture.
-       */
-      bool wide = !srgb && !bview->astc.narrow;
-
-      if (desc->block.depth > 1) {
-         pan_cast_and_pack(payload, ASTC_3D_PLANE, cfg) {
-            cfg.clump_ordering = MALI_CLUMP_ORDERING_LINEAR;
-            cfg.decode_hdr = bview->astc.hdr;
-            cfg.decode_wide = wide;
-            cfg.block_width = pan_astc_dim_3d(desc->block.width);
-            cfg.block_height = pan_astc_dim_3d(desc->block.height);
-            cfg.block_depth = pan_astc_dim_3d(desc->block.depth);
-            cfg.pointer = bview->base;
-            PLANE_SET_SIZE(cfg, size);
-            PLANE_SET_EXTENT(cfg, bview->width_el, 1);
-         }
-      } else {
-         pan_cast_and_pack(payload, ASTC_2D_PLANE, cfg) {
-            cfg.clump_ordering = MALI_CLUMP_ORDERING_LINEAR;
-            cfg.decode_hdr = bview->astc.hdr;
-            cfg.decode_wide = wide;
-            cfg.block_width = pan_astc_dim_2d(desc->block.width);
-            cfg.block_height = pan_astc_dim_2d(desc->block.height);
-            PLANE_SET_SIZE(cfg, size);
-            cfg.pointer = bview->base;
-            PLANE_SET_EXTENT(cfg, bview->width_el, 1);
-         }
-      }
-   } else {
-      pan_cast_and_pack(payload, GENERIC_PLANE, cfg) {
-         cfg.clump_ordering = MALI_CLUMP_ORDERING_LINEAR;
-         cfg.clump_format = pan_clump_format(bview->format);
-         PLANE_SET_SIZE(cfg, size);
-         cfg.pointer = bview->base;
-         cfg.clump_ordering = MALI_CLUMP_ORDERING_LINEAR;
-         PLANE_SET_EXTENT(cfg, bview->width_el, 1);
-      }
-   }
-}
-
-static void
 get_linear_or_u_tiled_plane_props(const struct pan_image_view *iview,
                                   int plane_idx, unsigned mip_level,
                                   unsigned layer_or_z_slice, uint64_t *pointer,
@@ -1381,6 +1328,30 @@ GENX(pan_storage_texture_emit)(const struct pan_image_view *iview,
 }
 #endif
 
+#if PAN_ARCH >= 9
+
+void
+GENX(pan_buffer_texture_emit)(const struct pan_buffer_view *bview,
+                              struct mali_buffer_packed *out)
+{
+   unsigned stride = util_format_get_blocksize(bview->format);
+   struct MALI_INTERNAL_CONVERSION conv = {
+      .memory_format = GENX(pan_format_from_pipe_format)(bview->format)->hw,
+      .raw = false,
+   };
+
+   pan_pack(out, BUFFER, cfg) {
+      cfg.type = MALI_DESCRIPTOR_TYPE_BUFFER;
+      cfg.buffer_type = MALI_BUFFER_TYPE_STRUCTURE;
+      cfg.size = bview->width_el * stride;
+      cfg.address = bview->base;
+      cfg.stride = stride;
+      cfg.conversion = conv;
+   }
+}
+
+#else
+
 void
 GENX(pan_buffer_texture_emit)(const struct pan_buffer_view *bview,
                               struct mali_texture_packed *out,
@@ -1394,11 +1365,7 @@ GENX(pan_buffer_texture_emit)(const struct pan_buffer_view *bview,
       PIPE_SWIZZLE_W,
    };
 
-#if PAN_ARCH >= 9
-   pan_emit_bview_plane(bview, payload->cpu);
-#else
    pan_emit_bview_surface_with_stride(bview, payload->cpu);
-#endif
 
    pan_pack(out, TEXTURE, cfg) {
       cfg.dimension = MALI_TEXTURE_DIMENSION_1D;
@@ -1407,11 +1374,7 @@ GENX(pan_buffer_texture_emit)(const struct pan_buffer_view *bview,
       cfg.height = 1;
       cfg.sample_count = 1;
       cfg.swizzle = pan_translate_swizzle_4(rgba_swizzle);
-#if PAN_ARCH >= 9
-      cfg.texel_interleave = false;
-#else
       cfg.texel_ordering = MALI_TEXTURE_LAYOUT_LINEAR;
-#endif
       cfg.levels = 1;
       cfg.array_size = 1;
 
@@ -1422,3 +1385,5 @@ GENX(pan_buffer_texture_emit)(const struct pan_buffer_view *bview,
 #endif
    }
 }
+
+#endif

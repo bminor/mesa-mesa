@@ -78,11 +78,19 @@ struct panfrost_sampler_state {
 };
 
 /* Misnomer: Sampler view corresponds to textures, not samplers */
-
+struct mali_buffer_packed;
 struct panfrost_sampler_view {
    struct pipe_sampler_view base;
    struct panfrost_pool_ref state;
-   struct mali_texture_packed bifrost_descriptor;
+#if PAN_ARCH >= 9
+   union {
+      struct mali_buffer_packed bifrost_buf_descriptor;
+      struct mali_texture_packed bifrost_tex_descriptor;
+   };
+#else
+   /* TODO: move Bifrost over to using BufferDescriptor as well. */
+   struct mali_texture_packed bifrost_tex_descriptor;
+#endif
    uint64_t texture_bo;
    uint64_t texture_size;
    uint64_t modifier;
@@ -1001,7 +1009,7 @@ panfrost_emit_images(struct panfrost_batch *batch, mesa_shader_stage stage)
       };
 
       panfrost_update_sampler_view(&view, &ctx->base);
-      out[i] = view.bifrost_descriptor;
+      out[i] = view.bifrost_tex_descriptor;
 
       panfrost_track_image_access(batch, stage, image);
    }
@@ -1713,8 +1721,6 @@ panfrost_create_sampler_view_bo(struct panfrost_sampler_view *so,
       panfrost_translate_texture_dimension(so->base.target);
 
    if (so->base.target == PIPE_BUFFER) {
-      const struct util_format_description *desc =
-         util_format_description(format);
       struct pan_buffer_view bview = {
          .format = format,
          .width_el =
@@ -1723,15 +1729,20 @@ panfrost_create_sampler_view_bo(struct panfrost_sampler_view *so,
          .base = prsrc->plane.base + so->base.u.buf.offset,
       };
 
+#if PAN_ARCH >= 9
+      void *tex = &so->bifrost_buf_descriptor;
+      GENX(pan_buffer_texture_emit)(&bview, tex);
+      return;
+#else
+      const struct util_format_description *desc =
+         util_format_description(format);
       if (desc->layout == UTIL_FORMAT_LAYOUT_ASTC) {
          bview.astc.narrow =
             so->base.astc_decode_format == PIPE_ASTC_DECODE_FORMAT_UNORM8;
          bview.astc.hdr = util_format_is_astc_hdr(format);
       }
 
-#if PAN_ARCH >= 9
-      unsigned payload_size = pan_size(NULL_PLANE);
-#elif PAN_ARCH >= 6
+#if PAN_ARCH >= 6
       unsigned payload_size = pan_size(SURFACE_WITH_STRIDE);
 #else
       unsigned payload_size = pan_size(TEXTURE) + pan_size(SURFACE_WITH_STRIDE);
@@ -1748,7 +1759,7 @@ panfrost_create_sampler_view_bo(struct panfrost_sampler_view *so,
 
       so->state = panfrost_pool_take_ref(pool, payload.gpu);
 
-      void *tex = (PAN_ARCH >= 6) ? &so->bifrost_descriptor : payload.cpu;
+      void *tex = (PAN_ARCH >= 6) ? &so->bifrost_tex_descriptor : payload.cpu;
 
       if (PAN_ARCH <= 5) {
          payload.cpu += pan_size(TEXTURE);
@@ -1757,6 +1768,7 @@ panfrost_create_sampler_view_bo(struct panfrost_sampler_view *so,
 
       GENX(pan_buffer_texture_emit)(&bview, tex, &payload);
       return;
+#endif
    }
 
    unsigned first_level = so->base.u.tex.first_level;
@@ -1813,7 +1825,7 @@ panfrost_create_sampler_view_bo(struct panfrost_sampler_view *so,
 
    so->state = panfrost_pool_take_ref(pool, payload.gpu);
 
-   void *tex = (PAN_ARCH >= 6) ? &so->bifrost_descriptor : payload.cpu;
+   void *tex = (PAN_ARCH >= 6) ? &so->bifrost_tex_descriptor : payload.cpu;
 
    if (PAN_ARCH <= 5) {
       payload.cpu += pan_size(TEXTURE);
@@ -1913,7 +1925,7 @@ panfrost_emit_texture_descriptors(struct panfrost_batch *batch,
       struct panfrost_resource *rsrc = pan_resource(pview->texture);
 
       panfrost_update_sampler_view(view, &ctx->base);
-      out[i] = view->bifrost_descriptor;
+      out[i] = view->bifrost_tex_descriptor;
 
       panfrost_batch_read_rsrc(batch, rsrc, stage);
       panfrost_batch_add_bo(batch, view->state.bo, stage);

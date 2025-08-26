@@ -156,6 +156,7 @@ get_preload_shader(struct panvk_device *dev,
    pan_shader_preprocess(nir, inputs.gpu_id);
    pan_shader_lower_texture_early(nir, inputs.gpu_id);
    pan_shader_postprocess(nir, inputs.gpu_id);
+   pan_shader_lower_texture_late(nir, inputs.gpu_id);
 
    VkResult result = panvk_per_arch(create_internal_shader)(
       dev, nir, &inputs, &shader);

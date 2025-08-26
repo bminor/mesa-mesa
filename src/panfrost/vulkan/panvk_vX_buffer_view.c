@@ -48,7 +48,6 @@ panvk_per_arch(CreateBufferView)(VkDevice _device,
    VkBufferUsageFlags tex_usage_mask = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
 
 #if PAN_ARCH >= 9
-   /* Valhall passes a texture descriptor to LEA_TEX. */
    tex_usage_mask |= VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
 #endif
 
@@ -63,18 +62,17 @@ panvk_per_arch(CreateBufferView)(VkDevice _device,
       };
 
 #if PAN_ARCH >= 9
-      view->mem = panvk_pool_alloc_desc(&device->mempools.rw, NULL_PLANE);
+      view->mem = panvk_pool_alloc_desc(&device->mempools.rw, BUFFER);
+      GENX(pan_buffer_texture_emit)(&bview, &view->descs.buf);
 #else
       view->mem =
          panvk_pool_alloc_desc(&device->mempools.rw, SURFACE_WITH_STRIDE);
-#endif
-
       struct pan_ptr ptr = {
          .gpu = panvk_priv_mem_dev_addr(view->mem),
          .cpu = panvk_priv_mem_host_addr(view->mem),
       };
-
       GENX(pan_buffer_texture_emit)(&bview, &view->descs.tex, &ptr);
+#endif
    }
 
 #if PAN_ARCH < 9

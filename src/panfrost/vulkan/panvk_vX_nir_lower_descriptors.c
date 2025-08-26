@@ -585,12 +585,20 @@ load_tex_size(nir_builder *b, nir_deref_instr *deref, enum glsl_sampler_dim dim,
 {
    nir_def *loaded_size;
    if (dim == GLSL_SAMPLER_DIM_BUF) {
+#if PAN_ARCH >= 9
+      nir_def *bytes = load_resource_deref_desc(
+         b, deref, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 4, 1, 32, ctx);
+      nir_def *stride = load_resource_deref_desc(
+         b, deref, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 16, 1, 32, ctx);
+      loaded_size = nir_idiv(b, nir_u2u32(b, bytes), nir_u2u32(b, stride));
+#else
       nir_def *tex_w = load_resource_deref_desc(
          b, deref, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 4, 1, 16, ctx);
 
       /* S dimension is 16 bits wide. We don't support combining S,T dimensions
        * to allow large buffers yet. */
       loaded_size = nir_iadd_imm(b, nir_u2u32(b, tex_w), 1);
+#endif
    } else {
       nir_def *tex_w_h = load_resource_deref_desc(
          b, deref, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 4, 2, 16, ctx);

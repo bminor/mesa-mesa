@@ -235,7 +235,7 @@ write_buffer_view_desc(struct panvk_descriptor_set *set,
    else
       write_desc(set, binding, elem, &view->descs.tex, NO_SUBDESC);
 #else
-   write_desc(set, binding, elem, &view->descs.tex, NO_SUBDESC);
+   write_desc(set, binding, elem, &view->descs.buf, NO_SUBDESC);
 #endif
 }
 

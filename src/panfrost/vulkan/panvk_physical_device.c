@@ -768,12 +768,9 @@ get_buffer_format_features(struct panvk_physical_device *physical_device,
    if ((fmt.bind & PAN_BIND_VERTEX_BUFFER) && !util_format_is_srgb(pfmt))
       features |= VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT;
 
-   if ((fmt.bind & PAN_BIND_SAMPLER_VIEW) &&
-       !util_format_is_depth_or_stencil(pfmt))
-      features |= VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT;
-
-   if (fmt.bind & PAN_BIND_STORAGE_IMAGE)
-      features |= VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT |
+   if (fmt.bind & PAN_BIND_TEXEL_BUFFER)
+      features |= VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT |
+                  VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT |
                   VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT |
                   VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT;
 

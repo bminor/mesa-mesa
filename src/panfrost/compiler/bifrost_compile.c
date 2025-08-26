@@ -1687,6 +1687,8 @@ static void
 bi_emit_image_load(bi_builder *b, nir_intrinsic_instr *instr)
 {
    enum glsl_sampler_dim dim = nir_intrinsic_image_dim(instr);
+   assert((b->shader->arch < 9 || dim != GLSL_SAMPLER_DIM_BUF) &&
+          "Texel buffers should already have been lowered");
    unsigned coord_comps = nir_image_intrinsic_coord_components(instr);
    bool array =
       nir_intrinsic_image_array(instr) || dim == GLSL_SAMPLER_DIM_CUBE;
@@ -1737,6 +1739,8 @@ static void
 bi_emit_lea_image_to(bi_builder *b, bi_index dest, nir_intrinsic_instr *instr)
 {
    enum glsl_sampler_dim dim = nir_intrinsic_image_dim(instr);
+   assert((b->shader->arch < 9 || dim != GLSL_SAMPLER_DIM_BUF) &&
+          "Texel buffers should already have been lowered");
    bool array =
       nir_intrinsic_image_array(instr) || dim == GLSL_SAMPLER_DIM_CUBE;
    unsigned coord_comps = nir_image_intrinsic_coord_components(instr);
@@ -4680,6 +4684,8 @@ bi_emit_tex_valhall(bi_builder *b, nir_tex_instr *instr)
       break;
    case nir_texop_txf:
    case nir_texop_txf_ms: {
+      assert(instr->sampler_dim != GLSL_SAMPLER_DIM_BUF &&
+             "Texel buffers should already have been lowered");
       /* On Valhall, TEX_FETCH doesn't have CUBE support. This is not a problem
        * as a cube is just a 2D array in any cases. */
       if (dim == BI_DIMENSION_CUBE)

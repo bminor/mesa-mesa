@@ -225,6 +225,7 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
 
    /* Lower resource indices */
    NIR_PASS(_, s, panfrost_nir_lower_res_indices, &inputs);
+   pan_shader_lower_texture_late(s, inputs.gpu_id);
 
    if (dev->arch >= 9) {
       inputs.valhall.use_ld_var_buf = panfrost_use_ld_var_buf(s);
