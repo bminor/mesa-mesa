@@ -223,7 +223,7 @@ struct vpe *vpe_create(const struct vpe_init_data *params)
     struct vpe_engine_priv *engine_priv = NULL;
 
     if (!params || (params->funcs.zalloc == NULL) || (params->funcs.free == NULL) ||
-        (params->funcs.log == NULL))
+        (params->funcs.log == (vpe_log_func_t)NULL))
         return NULL;
 
     if (!params->engine_handle) {
@@ -260,7 +260,7 @@ struct vpe *vpe_create(const struct vpe_init_data *params)
     // Make sys event an optional feature but hooking up to dummy function if no
     // callback is
     // provided
-    if (vpe_priv->init.funcs.sys_event == NULL)
+    if (vpe_priv->init.funcs.sys_event == (vpe_sys_event_func_t)NULL)
         vpe_priv->init.funcs.sys_event = dummy_sys_event;
 
     status = vpe_construct_resource(vpe_priv, vpe_priv->pub.level, &vpe_priv->resource);
