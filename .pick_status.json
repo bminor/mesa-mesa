@@ -3824,7 +3824,7 @@
         "description": "nak: NAK_MAX_QMD_SIZE_B should be 384",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "00a845a698e3a86b71f0eb7a6ddf1d611826151e",
         "notes": null
