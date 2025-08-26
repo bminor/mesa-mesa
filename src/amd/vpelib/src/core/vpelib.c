@@ -468,16 +468,6 @@ static enum vpe_status populate_input_streams(struct vpe_priv *vpe_priv, const s
             stream_ctx->flip_horizonal_output = false;
 
         memcpy(&stream_ctx->stream, &param->streams[i], sizeof(struct vpe_stream));
-
-        /* if top-bottom blending is not supported,
-         * the 1st stream still can support blending with background,
-         * however, the 2nd stream and onward can not enable blending.
-         */
-        if (i && param->streams[i].blend_info.blending &&
-            !vpe_priv->pub.caps->color_caps.mpc.top_bottom_blending) {
-            result = VPE_STATUS_ALPHA_BLENDING_NOT_SUPPORTED;
-            break;
-        }
     }
 
     return result;
@@ -515,6 +505,27 @@ static enum vpe_status populate_virtual_streams(struct vpe_priv* vpe_priv, const
             stream_ctx->flip_horizonal_output = true;
         else
             stream_ctx->flip_horizonal_output = false;
+    }
+
+    return result;
+}
+
+static enum vpe_status check_blending_support(
+    struct vpe_priv *vpe_priv, const struct vpe_build_param *param)
+{
+    enum vpe_status result = VPE_STATUS_OK;
+    uint32_t        i;
+
+    for (i = 0; i < vpe_priv->num_input_streams; i++) {
+        /* if top-bottom blending is not supported,
+         * the 1st stream still can support blending with background,
+         * however, the 2nd stream and onward can not enable blending.
+         */
+        if (i && param->streams[i].blend_info.blending &&
+            !vpe_priv->pub.caps->color_caps.mpc.top_bottom_blending) {
+            result = VPE_STATUS_ALPHA_BLENDING_NOT_SUPPORTED;
+            break;
+        }
     }
 
     return result;
@@ -622,6 +633,12 @@ enum vpe_status vpe_check_support(
 
     if (status == VPE_STATUS_OK) {
         // blending support check
+        status = check_blending_support(vpe_priv, param);
+        if (status != VPE_STATUS_OK)
+            vpe_log("fail input stream population. status %d\n", (int)status);
+    }
+
+    if (status == VPE_STATUS_OK) {
         status = populate_input_streams(vpe_priv, param, vpe_priv->stream_ctx);
         if (status != VPE_STATUS_OK)
             vpe_log("fail input stream population. status %d\n", (int)status);
