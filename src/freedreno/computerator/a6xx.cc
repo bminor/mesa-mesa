@@ -192,7 +192,7 @@ cs_program_emit_regs(fd_cs &cs, struct kernel *kernel)
    crb.add(A6XX_SP_CS_CNTL_1(.shared_size = shared_size, .constantrammode = mode));
 
    if (CHIP == A6XX && a6xx_backend->info->a6xx.has_lpac) {
-      crb.add(A6XX_HLSQ_CS_CTRL_REG1(.shared_size = 1, .constantrammode = mode));
+      crb.add(HLSQ_CS_CTRL_REG1(CHIP, .shared_size = 1, .constantrammode = mode));
    }
 
    uint32_t local_invocation_id, work_group_id;
@@ -201,7 +201,7 @@ cs_program_emit_regs(fd_cs &cs, struct kernel *kernel)
    work_group_id = ir3_find_sysval_regid(v, SYSTEM_VALUE_WORKGROUP_ID);
 
    if (CHIP == A6XX) {
-      crb.add(A6XX_SP_CS_CONST_CONFIG_0(
+      crb.add(SP_CS_CONST_CONFIG_0(CHIP,
          .wgidconstid = work_group_id,
          .wgsizeconstid = INVALID_REG,
          .wgoffsetconstid = INVALID_REG,
@@ -576,7 +576,7 @@ a6xx_emit_grid(struct kernel *kernel, uint32_t grid[3],
       ));
 
       if (CHIP == A7XX) {
-         crb.add(A7XX_SP_CS_NDRANGE_7(
+         crb.add(SP_CS_NDRANGE_7(CHIP,
             .localsizex = local_size[0] - 1,
             .localsizey = local_size[1] - 1,
             .localsizez = local_size[2] - 1,
