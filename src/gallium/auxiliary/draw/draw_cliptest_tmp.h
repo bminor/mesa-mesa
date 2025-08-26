@@ -181,17 +181,6 @@ TAG(do_cliptest)(struct pt_post_vs *pvs,
          position[2] = position[2] * w * scale[2] + trans[2];
          position[3] = w;
       }
-#if MESA_DEBUG
-      /* For debug builds, set the clipped vertex's window coordinate
-       * to NaN to help catch potential errors later.
-       */
-      else {
-         position[0] =
-         position[1] =
-         position[2] =
-         position[3] = NAN;
-      }
-#endif
 
       if ((flags & DO_EDGEFLAG) && ef) {
          const float *edgeflag = out->data[ef];
