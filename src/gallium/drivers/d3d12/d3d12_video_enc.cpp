@@ -520,88 +520,93 @@ d3d12_video_encoder_update_two_pass_frame_settings(struct d3d12_video_encoder *p
       // For when two pass is enabled for this frame AND Pow2DownscaleFactor > 0
       // also convert input downscaled texture and input recon pics (in/out)
       //
-      if ((!pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.bSkipTwoPassInCurrentFrame) &&
-         (pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.Pow2DownscaleFactor > 0))
+      if (!pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.bSkipTwoPassInCurrentFrame)
       {
+         pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[pD3D12Enc->m_currentEncodeConfig.m_activeRateControlIndex].m_Flags |=
+               D3D12_VIDEO_ENCODER_RATE_CONTROL_FLAG_ENABLE_FRAME_ANALYSIS;
 
-         //
-         // Convert the input downscaled texture from the pic params
-         //
-         struct d3d12_video_buffer *pDownscaledInputBuffer12 = (struct d3d12_video_buffer *) two_pass_frame_cfg.downscaled_source;
-         pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.pDownscaledInputTexture = pDownscaledInputBuffer12 ? d3d12_resource_resource(pDownscaledInputBuffer12->texture) : NULL;
+         if (pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.Pow2DownscaleFactor > 0)
+         {
 
-         //
-         // Convert the DPB input and output params from the picparams DPB array
-         //
-         switch (codec) {
+            //
+            // Convert the input downscaled texture from the pic params
+            //
+            struct d3d12_video_buffer *pDownscaledInputBuffer12 = (struct d3d12_video_buffer *) two_pass_frame_cfg.downscaled_source;
+            pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.pDownscaledInputTexture = pDownscaledInputBuffer12 ? d3d12_resource_resource(pDownscaledInputBuffer12->texture) : NULL;
+
+            //
+            // Convert the DPB input and output params from the picparams DPB array
+            //
+            switch (codec) {
 #if VIDEO_CODEC_H264ENC
-            case PIPE_VIDEO_FORMAT_MPEG4_AVC:
-            {
-               struct pipe_h264_enc_picture_desc *h264Pic = (struct pipe_h264_enc_picture_desc *) picture;
-               pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pResources.resize(h264Pic->dpb_size);
-               pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pSubresources.resize(h264Pic->dpb_size);
-               pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.FrameAnalysisReconstructedPictureOutput = { NULL, 0u };
-               for (uint8_t i = 0; i < h264Pic->dpb_size; i++) {
-                  struct d3d12_video_buffer *vidbuf = (struct d3d12_video_buffer *) h264Pic->dpb[i].downscaled_buffer;
-                  pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pResources[i] = d3d12_resource_resource(vidbuf->texture);
-                  pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pSubresources[i] = vidbuf->idx_texarray_slots;
-                  if (!pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.bUseExternalDPBScaling && // Pass NULL to the output recon pic 1st pass if bUseExternalDPBScaling set
-                      (h264Pic->dpb[i].pic_order_cnt == h264Pic->pic_order_cnt))
-                  {
-                     pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.FrameAnalysisReconstructedPictureOutput.pReconstructedPicture =
-                        pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pResources[i];
-                     pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.FrameAnalysisReconstructedPictureOutput.ReconstructedPictureSubresource =
-                        pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pSubresources[i];
-                  }
-               }
-
-               // Now that we found the recon pio in the loop above
-               // only fill the references for frame types as DX12 expects
-               if ((h264Pic->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_I) ||
-                   (h264Pic->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_IDR))
+               case PIPE_VIDEO_FORMAT_MPEG4_AVC:
                {
-                  pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pResources.clear();
-                  pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pSubresources.clear();
-               }
-
-            } break;
-#endif
-#if VIDEO_CODEC_H265ENC
-            case PIPE_VIDEO_FORMAT_HEVC:
-            {
-               struct pipe_h265_enc_picture_desc *h265Pic = (struct pipe_h265_enc_picture_desc *) picture;
-               pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pResources.resize(h265Pic->dpb_size);
-               pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pSubresources.resize(h265Pic->dpb_size);
-               pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.FrameAnalysisReconstructedPictureOutput = { NULL, 0u };
-               for (uint8_t i = 0; i < h265Pic->dpb_size; i++) {
-                  struct d3d12_video_buffer *vidbuf = (struct d3d12_video_buffer *) h265Pic->dpb[i].downscaled_buffer;
-                  pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pResources[i] = d3d12_resource_resource(vidbuf->texture);
-                  pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pSubresources[i] = vidbuf->idx_texarray_slots;
-                  
-                  if (!pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.bUseExternalDPBScaling && // Pass NULL to the output recon pic 1st pass if bUseExternalDPBScaling set
-                      (h265Pic->dpb[i].pic_order_cnt == h265Pic->pic_order_cnt))
-                  {
-                     pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.FrameAnalysisReconstructedPictureOutput.pReconstructedPicture =
-                        pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pResources[i];
-                     pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.FrameAnalysisReconstructedPictureOutput.ReconstructedPictureSubresource =
-                        pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pSubresources[i];
+                  struct pipe_h264_enc_picture_desc *h264Pic = (struct pipe_h264_enc_picture_desc *) picture;
+                  pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pResources.resize(h264Pic->dpb_size);
+                  pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pSubresources.resize(h264Pic->dpb_size);
+                  pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.FrameAnalysisReconstructedPictureOutput = { NULL, 0u };
+                  for (uint8_t i = 0; i < h264Pic->dpb_size; i++) {
+                     struct d3d12_video_buffer *vidbuf = (struct d3d12_video_buffer *) h264Pic->dpb[i].downscaled_buffer;
+                     pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pResources[i] = d3d12_resource_resource(vidbuf->texture);
+                     pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pSubresources[i] = vidbuf->idx_texarray_slots;
+                     if (!pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.bUseExternalDPBScaling && // Pass NULL to the output recon pic 1st pass if bUseExternalDPBScaling set
+                        (h264Pic->dpb[i].pic_order_cnt == h264Pic->pic_order_cnt))
+                     {
+                        pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.FrameAnalysisReconstructedPictureOutput.pReconstructedPicture =
+                           pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pResources[i];
+                        pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.FrameAnalysisReconstructedPictureOutput.ReconstructedPictureSubresource =
+                           pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pSubresources[i];
+                     }
                   }
-               }
-                            
-               // Now that we found the recon pio in the loop above
-               // only fill the references for frame types as DX12 expects
-               if (h265Pic->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_IDR)
-               {
-                  pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pResources.clear();
-                  pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pSubresources.clear();
-               }
 
-            } break;
+                  // Now that we found the recon pio in the loop above
+                  // only fill the references for frame types as DX12 expects
+                  if ((h264Pic->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_I) ||
+                     (h264Pic->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_IDR))
+                  {
+                     pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pResources.clear();
+                     pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pSubresources.clear();
+                  }
+
+               } break;
+   #endif
+   #if VIDEO_CODEC_H265ENC
+               case PIPE_VIDEO_FORMAT_HEVC:
+               {
+                  struct pipe_h265_enc_picture_desc *h265Pic = (struct pipe_h265_enc_picture_desc *) picture;
+                  pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pResources.resize(h265Pic->dpb_size);
+                  pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pSubresources.resize(h265Pic->dpb_size);
+                  pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.FrameAnalysisReconstructedPictureOutput = { NULL, 0u };
+                  for (uint8_t i = 0; i < h265Pic->dpb_size; i++) {
+                     struct d3d12_video_buffer *vidbuf = (struct d3d12_video_buffer *) h265Pic->dpb[i].downscaled_buffer;
+                     pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pResources[i] = d3d12_resource_resource(vidbuf->texture);
+                     pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pSubresources[i] = vidbuf->idx_texarray_slots;
+
+                     if (!pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.bUseExternalDPBScaling && // Pass NULL to the output recon pic 1st pass if bUseExternalDPBScaling set
+                        (h265Pic->dpb[i].pic_order_cnt == h265Pic->pic_order_cnt))
+                     {
+                        pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.FrameAnalysisReconstructedPictureOutput.pReconstructedPicture =
+                           pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pResources[i];
+                        pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.FrameAnalysisReconstructedPictureOutput.ReconstructedPictureSubresource =
+                           pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pSubresources[i];
+                     }
+                  }
+
+                  // Now that we found the recon pio in the loop above
+                  // only fill the references for frame types as DX12 expects
+                  if (h265Pic->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_IDR)
+                  {
+                     pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pResources.clear();
+                     pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.DownscaledReferences.pSubresources.clear();
+                  }
+
+               } break;
 #endif
-            default:
-            {
-               UNREACHABLE("Unsupported pipe_video_format");
-            } break;
+               default:
+               {
+                  UNREACHABLE("Unsupported pipe_video_format");
+               } break;
+            }
          }
       }
    }
@@ -1843,9 +1848,8 @@ bool d3d12_video_encoder_negotiate_requested_features_and_d3d12_driver_caps(stru
 #endif
    }
 
-   if (memcmp(&pD3D12Enc->m_prevFrameEncodeConfig.m_encoderRateControlDesc[pD3D12Enc->m_currentEncodeConfig.m_activeRateControlIndex],
-              &pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[pD3D12Enc->m_currentEncodeConfig.m_activeRateControlIndex],
-              sizeof(pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[pD3D12Enc->m_currentEncodeConfig.m_activeRateControlIndex])) != 0) {
+   if (!pD3D12Enc->m_prevFrameEncodeConfig.m_encoderRateControlDesc[pD3D12Enc->m_currentEncodeConfig.m_activeRateControlIndex]
+            .CompareEqual(pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[pD3D12Enc->m_currentEncodeConfig.m_activeRateControlIndex])) {
       pD3D12Enc->m_currentEncodeConfig.m_ConfigDirtyFlags |= d3d12_video_encoder_config_dirty_flag_rate_control;
    }
 
@@ -3616,14 +3620,13 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
       D3D12_VIDEO_ENCODER_FRAME_ANALYSIS FrameAnalysis = {};
       D3D12_VIDEO_ENCODER_RECONSTRUCTED_PICTURE FrameAnalysisReconstructedPicture = {};
       std::vector<D3D12_RESOURCE_BARRIER> pTwoPassExtraBarriers;
-      pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[pD3D12Enc->m_currentEncodeConfig.m_activeRateControlIndex].m_Flags &=
-            ~D3D12_VIDEO_ENCODER_RATE_CONTROL_FLAG_ENABLE_FRAME_ANALYSIS;
 
       if ((pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.AppRequested) &&
          (!pD3D12Enc->m_currentEncodeConfig.m_TwoPassEncodeDesc.bSkipTwoPassInCurrentFrame))
       {
-         pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[pD3D12Enc->m_currentEncodeConfig.m_activeRateControlIndex].m_Flags |=
-            D3D12_VIDEO_ENCODER_RATE_CONTROL_FLAG_ENABLE_FRAME_ANALYSIS;
+         // Validate two pass is enabled in RC flags
+         assert((pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[pD3D12Enc->m_currentEncodeConfig.m_activeRateControlIndex].m_Flags &
+                 D3D12_VIDEO_ENCODER_RATE_CONTROL_FLAG_ENABLE_FRAME_ANALYSIS) != 0u);
 
          //
          // When Pow2DownscaleFactor is zero, is full resolution two pass, which leaves FrameAnalysis empty/zero filled.

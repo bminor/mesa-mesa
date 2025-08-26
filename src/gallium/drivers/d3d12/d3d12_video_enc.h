@@ -232,6 +232,27 @@ struct D3D12EncodeRateControlState
       D3D12_VIDEO_ENCODER_RATE_CONTROL_VBR1  m_Configuration_VBR1;
       D3D12_VIDEO_ENCODER_RATE_CONTROL_QVBR1 m_Configuration_QVBR1;  
    } m_Config;
+
+   bool CompareEqual(D3D12EncodeRateControlState& other)
+   {
+      if (m_Mode != other.m_Mode)
+         return false;
+      {
+         // Ignore differences in the ENABLE_FRAME_ANALYSIS flag when comparing rate control flags.
+         const uint32_t ignoreFlagMask =
+         static_cast<uint32_t>(D3D12_VIDEO_ENCODER_RATE_CONTROL_FLAG_ENABLE_FRAME_ANALYSIS);
+         if ((static_cast<uint32_t>(m_Flags) & ~ignoreFlagMask) !=
+          (static_cast<uint32_t>(other.m_Flags) & ~ignoreFlagMask))
+         return false;
+      }
+      if (max_frame_size != other.max_frame_size)
+         return false;
+      if (memcmp(&m_FrameRate, &other.m_FrameRate, sizeof(m_FrameRate)) != 0)
+         return false;
+      if (memcmp(&m_Config, &other.m_Config, sizeof(m_Config)) != 0)
+         return false;
+      return true;
+   }
 };
 
 struct D3D12EncodeConfiguration
