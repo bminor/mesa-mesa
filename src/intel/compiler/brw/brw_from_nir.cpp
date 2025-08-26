@@ -25,6 +25,7 @@
 #include "brw_builder.h"
 #include "brw_nir.h"
 #include "brw_eu.h"
+#include "brw_sampler.h"
 #include "nir.h"
 #include "nir_intrinsics.h"
 #include "nir_search_helpers.h"
