@@ -269,6 +269,8 @@ struct radeon_winsys {
    VkResult (*ctx_create)(struct radeon_winsys *ws, enum radeon_ctx_priority priority, struct radeon_winsys_ctx **ctx);
    void (*ctx_destroy)(struct radeon_winsys_ctx *ctx);
 
+   VkResult (*ctx_is_priority_permitted)(struct radeon_winsys *_ws, enum radeon_ctx_priority priority);
+
    bool (*ctx_wait_idle)(struct radeon_winsys_ctx *ctx, enum amd_ip_type amd_ip_type, int ring_index);
 
    int (*ctx_set_pstate)(struct radeon_winsys_ctx *ctx, uint32_t pstate);

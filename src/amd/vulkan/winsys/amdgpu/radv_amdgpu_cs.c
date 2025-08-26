@@ -1640,6 +1640,25 @@ radv_amdgpu_ctx_destroy(struct radeon_winsys_ctx *rwctx)
    FREE(ctx);
 }
 
+static VkResult
+radv_amdgpu_ctx_is_priority_permitted(struct radeon_winsys *_ws, enum radeon_ctx_priority priority)
+{
+   struct radv_amdgpu_winsys *ws = radv_amdgpu_winsys(_ws);
+   uint32_t amdgpu_priority = radv_to_amdgpu_priority(priority);
+   uint32_t ctx_handle;
+   int r;
+
+   r = ac_drm_cs_ctx_create2(ws->dev, amdgpu_priority, &ctx_handle);
+   if (r && r == -EACCES) {
+      return VK_ERROR_NOT_PERMITTED;
+   } else if (r) {
+      return VK_ERROR_OUT_OF_HOST_MEMORY;
+   }
+
+   ac_drm_cs_ctx_free(ws->dev, ctx_handle);
+   return VK_SUCCESS;
+}
+
 static uint32_t
 radv_amdgpu_ctx_queue_syncobj(struct radv_amdgpu_ctx *ctx, unsigned ip, unsigned ring)
 {
@@ -1955,6 +1974,7 @@ radv_amdgpu_cs_init_functions(struct radv_amdgpu_winsys *ws)
 {
    ws->base.ctx_create = radv_amdgpu_ctx_create;
    ws->base.ctx_destroy = radv_amdgpu_ctx_destroy;
+   ws->base.ctx_is_priority_permitted = radv_amdgpu_ctx_is_priority_permitted;
    ws->base.ctx_wait_idle = radv_amdgpu_ctx_wait_idle;
    ws->base.ctx_set_pstate = radv_amdgpu_ctx_set_pstate;
    ws->base.cs_domain = radv_amdgpu_cs_domain;
