@@ -2953,14 +2953,16 @@ radv_graphics_pipeline_hash(const struct radv_device *device, const struct radv_
 
    _mesa_sha1_update(&ctx, &gfx_state->key.gfx_state, sizeof(gfx_state->key.gfx_state));
 
-   for (unsigned s = 0; s < MESA_VULKAN_SHADER_STAGES; s++) {
-      const struct radv_shader_stage *stage = &gfx_state->stages[s];
+   if (gfx_state->stages) {
+      for (unsigned s = 0; s < MESA_VULKAN_SHADER_STAGES; s++) {
+         const struct radv_shader_stage *stage = &gfx_state->stages[s];
 
-      if (stage->stage == MESA_SHADER_NONE)
-         continue;
+         if (stage->stage == MESA_SHADER_NONE)
+            continue;
 
-      _mesa_sha1_update(&ctx, stage->shader_sha1, sizeof(stage->shader_sha1));
-      _mesa_sha1_update(&ctx, &stage->key, sizeof(stage->key));
+         _mesa_sha1_update(&ctx, stage->shader_sha1, sizeof(stage->shader_sha1));
+         _mesa_sha1_update(&ctx, &stage->key, sizeof(stage->key));
+      }
    }
 
    _mesa_sha1_final(&ctx, hash);
