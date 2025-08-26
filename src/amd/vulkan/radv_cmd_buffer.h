@@ -118,7 +118,8 @@ enum radv_cmd_dirty_bits {
    RADV_CMD_DIRTY_TESS_DOMAIN_ORIGIN_STATE = 1ull << 32,
    RADV_CMD_DIRTY_PATCH_CONTROL_POINTS_STATE = 1ull << 33,
    RADV_CMD_DIRTY_VGT_PRIM_STATE = 1ull << 34,
-   RADV_CMD_DIRTY_ALL = (1ull << 35) - 1,
+   RADV_CMD_DIRTY_FORCE_VRS_STATE = 1ull << 35,
+   RADV_CMD_DIRTY_ALL = (1ull << 36) - 1,
 
    RADV_CMD_DIRTY_SHADER_QUERY = RADV_CMD_DIRTY_NGG_STATE | RADV_CMD_DIRTY_TASK_STATE,
 };
@@ -503,10 +504,6 @@ struct radv_cmd_state {
    uint32_t vbo_bound_mask;
 
    struct radv_shader_part *emitted_ps_epilog;
-
-   /* Per-vertex VRS state. */
-   uint32_t last_vrs_rates;
-   int32_t last_force_vrs_rates_offset;
 
    /* Whether to suspend streamout for internal driver operations. */
    bool suspend_streamout;

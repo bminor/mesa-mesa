@@ -5847,59 +5847,6 @@ radv_flush_streamout_descriptors(struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
-radv_flush_force_vrs_state(struct radv_cmd_buffer *cmd_buffer)
-{
-   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-   const struct radv_shader *last_vgt_shader = cmd_buffer->state.last_vgt_shader;
-   uint32_t force_vrs_rates_offset;
-
-   if (!last_vgt_shader->info.force_vrs_per_vertex) {
-      /* Un-set the SGPR index so we know to re-emit it later. */
-      cmd_buffer->state.last_force_vrs_rates_offset = -1;
-      return;
-   }
-
-   if (cmd_buffer->state.gs_copy_shader) {
-      force_vrs_rates_offset = radv_get_user_sgpr_loc(cmd_buffer->state.gs_copy_shader, AC_UD_FORCE_VRS_RATES);
-   } else {
-      force_vrs_rates_offset = radv_get_user_sgpr_loc(last_vgt_shader, AC_UD_FORCE_VRS_RATES);
-   }
-
-   enum amd_gfx_level gfx_level = pdev->info.gfx_level;
-   uint32_t vrs_rates = 0;
-
-   switch (device->force_vrs) {
-   case RADV_FORCE_VRS_2x2:
-      vrs_rates = gfx_level >= GFX11 ? V_0283D0_VRS_SHADING_RATE_2X2 : (1u << 2) | (1u << 4);
-      break;
-   case RADV_FORCE_VRS_2x1:
-      vrs_rates = gfx_level >= GFX11 ? V_0283D0_VRS_SHADING_RATE_2X1 : (1u << 2) | (0u << 4);
-      break;
-   case RADV_FORCE_VRS_1x2:
-      vrs_rates = gfx_level >= GFX11 ? V_0283D0_VRS_SHADING_RATE_1X2 : (0u << 2) | (1u << 4);
-      break;
-   default:
-      break;
-   }
-
-   if (cmd_buffer->state.last_vrs_rates != vrs_rates ||
-       cmd_buffer->state.last_force_vrs_rates_offset != force_vrs_rates_offset) {
-
-      radeon_begin(cmd_buffer->cs);
-      if (pdev->info.gfx_level >= GFX12) {
-         gfx12_push_sh_reg(force_vrs_rates_offset, vrs_rates);
-      } else {
-         radeon_set_sh_reg(force_vrs_rates_offset, vrs_rates);
-      }
-      radeon_end();
-   }
-
-   cmd_buffer->state.last_vrs_rates = vrs_rates;
-   cmd_buffer->state.last_force_vrs_rates_offset = force_vrs_rates_offset;
-}
-
-static void
 radv_upload_graphics_shader_descriptors(struct radv_cmd_buffer *cmd_buffer)
 {
    struct radv_descriptor_state *descriptors_state =
@@ -5924,8 +5871,6 @@ radv_upload_graphics_shader_descriptors(struct radv_cmd_buffer *cmd_buffer)
    const VkShaderStageFlags pc_stages = radv_must_flush_constants(cmd_buffer, stages, VK_PIPELINE_BIND_POINT_GRAPHICS);
    if (pc_stages)
       radv_flush_constants(cmd_buffer, pc_stages, VK_PIPELINE_BIND_POINT_GRAPHICS);
-
-   radv_flush_force_vrs_state(cmd_buffer);
 }
 
 struct radv_prim_vertex_count {
@@ -6667,8 +6612,6 @@ radv_BeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBegi
    cmd_buffer->state.last_subpass_color_count = MAX_RTS;
    cmd_buffer->state.predication_type = -1;
    cmd_buffer->state.mesh_shading = false;
-   cmd_buffer->state.last_vrs_rates = -1;
-   cmd_buffer->state.last_force_vrs_rates_offset = -1;
 
    cmd_buffer->usage_flags = pBeginInfo->flags;
 
@@ -7323,6 +7266,9 @@ radv_bind_pre_rast_shader(struct radv_cmd_buffer *cmd_buffer, const struct radv_
       }
    }
 
+   if (radv_get_user_sgpr_info(shader, AC_UD_FORCE_VRS_RATES)->sgpr_idx != -1)
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FORCE_VRS_STATE;
+
    const bool needs_vtx_sgpr =
       shader->info.stage == MESA_SHADER_VERTEX || shader->info.stage == MESA_SHADER_MESH ||
       (shader->info.stage == MESA_SHADER_GEOMETRY && !shader->info.merged_shader_compiled_separately) ||
@@ -7436,6 +7382,9 @@ radv_bind_gs_copy_shader(struct radv_cmd_buffer *cmd_buffer, struct radv_shader 
       cmd_buffer->shader_upload_seq = MAX2(cmd_buffer->shader_upload_seq, gs_copy_shader->upload_seq);
 
       radv_cs_add_buffer(device->ws, cs->b, gs_copy_shader->bo);
+
+      if (radv_get_user_sgpr_info(gs_copy_shader, AC_UD_FORCE_VRS_RATES)->sgpr_idx != -1)
+         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FORCE_VRS_STATE;
    }
 }
 
@@ -9034,9 +8983,6 @@ radv_CmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCou
       if (secondary->state.last_primitive_reset_index) {
          primary->state.last_primitive_reset_index = secondary->state.last_primitive_reset_index;
       }
-
-      primary->state.last_vrs_rates = secondary->state.last_vrs_rates;
-      primary->state.last_force_vrs_rates_offset = secondary->state.last_force_vrs_rates_offset;
 
       primary->state.rb_noncoherent_dirty |= secondary->state.rb_noncoherent_dirty;
 
@@ -10656,6 +10602,47 @@ radv_emit_tcs_tes_state(struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
+radv_emit_force_vrs_state(struct radv_cmd_buffer *cmd_buffer)
+{
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   struct radv_cmd_stream *cs = cmd_buffer->cs;
+   uint32_t force_vrs_rates_offset;
+   struct radv_shader *shader;
+   uint32_t vrs_rates = 0;
+
+   shader = cmd_buffer->state.gs_copy_shader ? cmd_buffer->state.gs_copy_shader : cmd_buffer->state.last_vgt_shader;
+   if (!shader)
+      return;
+
+   force_vrs_rates_offset = radv_get_user_sgpr_loc(shader, AC_UD_FORCE_VRS_RATES);
+   if (!force_vrs_rates_offset)
+      return;
+
+   switch (device->force_vrs) {
+   case RADV_FORCE_VRS_2x2:
+      vrs_rates = pdev->info.gfx_level >= GFX11 ? V_0283D0_VRS_SHADING_RATE_2X2 : (1u << 2) | (1u << 4);
+      break;
+   case RADV_FORCE_VRS_2x1:
+      vrs_rates = pdev->info.gfx_level >= GFX11 ? V_0283D0_VRS_SHADING_RATE_2X1 : (1u << 2) | (0u << 4);
+      break;
+   case RADV_FORCE_VRS_1x2:
+      vrs_rates = pdev->info.gfx_level >= GFX11 ? V_0283D0_VRS_SHADING_RATE_1X2 : (0u << 2) | (1u << 4);
+      break;
+   default:
+      break;
+   }
+
+   radeon_begin(cs);
+   if (pdev->info.gfx_level >= GFX12) {
+      gfx12_push_sh_reg(force_vrs_rates_offset, vrs_rates);
+   } else {
+      radeon_set_sh_reg(force_vrs_rates_offset, vrs_rates);
+   }
+   radeon_end();
+}
+
+static void
 radv_emit_shaders_state(struct radv_cmd_buffer *cmd_buffer)
 {
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_FS_STATE) {
@@ -10676,6 +10663,11 @@ radv_emit_shaders_state(struct radv_cmd_buffer *cmd_buffer)
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_TCS_TES_STATE) {
       radv_emit_tcs_tes_state(cmd_buffer);
       cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_TCS_TES_STATE;
+   }
+
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_FORCE_VRS_STATE) {
+      radv_emit_force_vrs_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_FORCE_VRS_STATE;
    }
 }
 
