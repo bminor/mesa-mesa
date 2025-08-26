@@ -481,12 +481,12 @@ get_batch_state(struct zink_context *ctx)
       if (bs == ctx->last_free_batch_state)
          ctx->last_free_batch_state = NULL;
    }
-   /* try from the ones that are given back to the screen next */
-   if (!bs)
-      bs = find_screen_state(screen, ctx);
-
+   /* always try to recycle ctx states first */
    if (!bs)
       bs = find_completed_batch_state(ctx);
+
+   if (!bs)
+      bs = find_screen_state(screen, ctx);
 
    if (bs) {
       bs->next = NULL;
