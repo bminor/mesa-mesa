@@ -498,21 +498,6 @@
     <field name="Divisor D" size="32" start="5:0" type="uint"/>
   </struct>
 
-  <struct name="Buffer" size="8" align="32">
-    <field name="Type" size="4" start="0:0" type="Descriptor Type" default="Buffer"/>
-    <field name="Buffer type" size="4" start="0:4" type="Buffer Type" default="Simple"/>
-    <field name="Size" size="32" start="1:0" type="uint"/>
-    <field name="Address" size="64" start="2:0" type="address"/>
-
-    <!-- Structured buffer only -->
-    <field name="Stride" size="32" start="4:0" type="uint"/>
-
-    <!-- Vertex packet buffer only -->
-    <field name="Packet stride" size="16" start="4:0" type="uint" modifier="shr(6)"/>
-    <field name="Attribute stride" size="16" start="4:16" type="uint"/>
-
-  </struct>
-
   <enum name="Blend Operand A">
     <value name="Zero" value="1"/>
     <value name="Src" value="2"/>
@@ -600,6 +585,21 @@
     <field name="Blend Constant" size="16" start="0:16" type="uint"/>
     <field name="Equation" size="32" start="1:0" type="Blend Equation"/>
     <field name="Internal" size="64" start="2:0" type="Internal Blend"/>
+  </struct>
+
+  <struct name="Buffer" size="8" align="32">
+    <field name="Type" size="4" start="0:0" type="Descriptor Type" default="Buffer"/>
+    <field name="Buffer type" size="4" start="0:4" type="Buffer Type" default="Simple"/>
+    <field name="Size" size="32" start="1:0" type="uint"/>
+    <field name="Address" size="64" start="2:0" type="address"/>
+
+    <!-- Structured buffer only -->
+    <field name="Stride" size="32" start="4:0" type="uint"/>
+
+    <!-- Vertex packet buffer only -->
+    <field name="Packet stride" size="16" start="4:0" type="uint" modifier="shr(6)"/>
+    <field name="Attribute stride" size="16" start="4:16" type="uint"/>
+
   </struct>
 
   <enum name="Point Size Array Format">
