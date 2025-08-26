@@ -443,6 +443,9 @@ vk_image_view_init(struct vk_device *device,
    assert(pCreateInfo->sType == VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO);
    VK_FROM_HANDLE(vk_image, image, pCreateInfo->image);
 
+   if (pCreateInfo->flags & VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA)
+      driver_internal = true;
+
    image_view->create_flags = pCreateInfo->flags;
    image_view->image = image;
    image_view->view_type = pCreateInfo->viewType;

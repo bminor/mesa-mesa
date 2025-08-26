@@ -27,6 +27,7 @@
 #include "vk_buffer.h"
 #include "vk_command_buffer.h"
 #include "vk_device.h"
+#include "vk_format.h"
 #include "vk_pipeline.h"
 #include "vk_util.h"
 
@@ -531,6 +532,7 @@ vk_meta_create_image_view(struct vk_command_buffer *cmd,
    struct vk_device *device = cmd->base.device;
    const struct vk_device_dispatch_table *disp = &device->dispatch_table;
    VkDevice _device = vk_device_to_handle(device);
+   VkImageViewCreateInfo patched_info = *info;
 
    /* Meta must always specify view usage */
    assert(vk_find_struct_const(info->pNext, IMAGE_VIEW_USAGE_CREATE_INFO));
@@ -538,7 +540,17 @@ vk_meta_create_image_view(struct vk_command_buffer *cmd,
    /* Meta image views are always driver-internal */
    assert(info->flags & VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA);
 
-   VkResult result = disp->CreateImageView(_device, info, NULL, image_view_out);
+   /* vk_image_view_init() sanitizes depth/stencil formats to use the
+    * single-plane format, which drivers rely on.  It doesn't do this with
+    * driver-internal images, though.  We have to do that ourselves.
+    */
+   if (info->subresourceRange.aspectMask == VK_IMAGE_ASPECT_DEPTH_BIT)
+      patched_info.format = vk_format_depth_only(info->format);
+   else if (info->subresourceRange.aspectMask == VK_IMAGE_ASPECT_STENCIL_BIT)
+      patched_info.format = vk_format_stencil_only(info->format);
+
+   VkResult result =
+      disp->CreateImageView(_device, &patched_info, NULL, image_view_out);
    if (unlikely(result != VK_SUCCESS))
       return result;
 

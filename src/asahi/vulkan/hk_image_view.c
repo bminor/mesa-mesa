@@ -520,13 +520,12 @@ pack_pbe(struct hk_device *dev, struct hk_image_view *view, unsigned view_plane,
 
 static VkResult
 hk_image_view_init(struct hk_device *dev, struct hk_image_view *view,
-                   bool driver_internal,
                    const VkImageViewCreateInfo *pCreateInfo)
 {
    VK_FROM_HANDLE(hk_image, image, pCreateInfo->image);
    memset(view, 0, sizeof(*view));
 
-   vk_image_view_init(&dev->vk, &view->vk, driver_internal, pCreateInfo);
+   vk_image_view_init(&dev->vk, &view->vk, false, pCreateInfo);
 
    /* First, figure out which image planes we need. For depth/stencil, we only
     * have one aspect viewed at a time.
@@ -598,10 +597,7 @@ hk_CreateImageView(VkDevice _device, const VkImageViewCreateInfo *pCreateInfo,
    if (!view)
       return vk_error(dev, VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   result = hk_image_view_init(
-      dev, view,
-      pCreateInfo->flags & VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA,
-      pCreateInfo);
+   result = hk_image_view_init(dev, view, pCreateInfo);
    if (result != VK_SUCCESS) {
       hk_DestroyImageView(_device, hk_image_view_to_handle(view), pAllocator);
       return result;

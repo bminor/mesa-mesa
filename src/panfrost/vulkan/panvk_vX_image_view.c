@@ -304,12 +304,10 @@ panvk_per_arch(CreateImageView)(VkDevice _device,
 {
    VK_FROM_HANDLE(panvk_device, device, _device);
    VK_FROM_HANDLE(panvk_image, image, pCreateInfo->image);
-   bool driver_internal =
-      (pCreateInfo->flags & VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA) != 0;
    struct panvk_image_view *view;
    VkResult result;
 
-   view = vk_image_view_create(&device->vk, driver_internal, pCreateInfo,
+   view = vk_image_view_create(&device->vk, false, pCreateInfo,
                                pAllocator, sizeof(*view));
    if (view == NULL)
       return panvk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
