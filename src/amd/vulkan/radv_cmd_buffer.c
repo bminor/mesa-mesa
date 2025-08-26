@@ -3639,9 +3639,23 @@ radv_emit_fragment_shader(struct radv_cmd_buffer *cmd_buffer)
 {
    const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   const struct radv_shader *ps = cmd_buffer->state.shaders[MESA_SHADER_FRAGMENT];
+   struct radv_shader *ps = cmd_buffer->state.shaders[MESA_SHADER_FRAGMENT];
    struct radv_cmd_stream *cs = cmd_buffer->cs;
    const uint64_t va = radv_shader_get_va(ps);
+
+   if (device->pbb_allowed) {
+      const struct radv_binning_settings *settings = &pdev->binning_settings;
+
+      if (cmd_buffer->state.emitted_ps != ps &&
+          (settings->context_states_per_bin > 1 || settings->persistent_states_per_bin > 1)) {
+         /* Break the batch on PS changes. */
+         radeon_begin(cs);
+         radeon_event_write(V_028A90_BREAK_BATCH);
+         radeon_end();
+
+         cmd_buffer->state.emitted_ps = ps;
+      }
+   }
 
    radeon_begin(cs);
    if (pdev->info.gfx_level >= GFX12) {
@@ -3924,27 +3938,11 @@ radv_emit_graphics_pipeline(struct radv_cmd_buffer *cmd_buffer)
 {
    struct radv_graphics_pipeline *pipeline = cmd_buffer->state.graphics_pipeline;
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-   struct radv_cmd_stream *cs = cmd_buffer->cs;
 
    if (cmd_buffer->state.emitted_graphics_pipeline == pipeline)
       return;
 
    radv_emit_graphics_shaders(cmd_buffer);
-
-   if (device->pbb_allowed) {
-      const struct radv_binning_settings *settings = &pdev->binning_settings;
-
-      if ((!cmd_buffer->state.emitted_graphics_pipeline ||
-           cmd_buffer->state.emitted_graphics_pipeline->base.shaders[MESA_SHADER_FRAGMENT] !=
-              cmd_buffer->state.graphics_pipeline->base.shaders[MESA_SHADER_FRAGMENT]) &&
-          (settings->context_states_per_bin > 1 || settings->persistent_states_per_bin > 1)) {
-         /* Break the batch on PS changes. */
-         radeon_begin(cs);
-         radeon_event_write(V_028A90_BREAK_BATCH);
-         radeon_end();
-      }
-   }
 
    if (pipeline->sqtt_shaders_reloc) {
       /* Emit shaders relocation because RGP requires them to be contiguous in memory. */

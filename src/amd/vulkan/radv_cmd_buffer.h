@@ -499,6 +499,7 @@ struct radv_cmd_state {
    struct radv_shader_part *emitted_vs_prolog;
    uint32_t vbo_bound_mask;
 
+   struct radv_shader *emitted_ps;
    struct radv_shader_part *emitted_ps_epilog;
 
    /* Whether to suspend streamout for internal driver operations. */
