@@ -28,6 +28,7 @@
 #include "nv_push_cl9097.h"
 #include "nv_push_cla0c0.h"
 #include "nv_push_clc597.h"
+#include "nv_push_clc7c0.h"
 
 VKAPI_ATTR VkResult VKAPI_CALL
 nvk_CreateQueryPool(VkDevice device,
@@ -378,6 +379,9 @@ nvk_cmd_begin_end_query(struct nvk_cmd_buffer *cmd,
                         uint32_t query, uint32_t index,
                         bool end)
 {
+   const struct nvk_device *dev = nvk_cmd_buffer_device(cmd);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
+
    uint64_t report_addr = nvk_query_report_addr(pool, query) +
                           end * sizeof(struct nvk_query_report);
 
@@ -417,7 +421,10 @@ nvk_cmd_begin_end_query(struct nvk_cmd_buffer *cmd,
          assert(!(stats_left & (sq->flag - 1)));
 
          if (sq->flag == VK_QUERY_PIPELINE_STATISTIC_COMPUTE_SHADER_INVOCATIONS_BIT) {
-            P_1INC(p, NVC597, CALL_MME_MACRO(NVK_MME_WRITE_CS_INVOCATIONS));
+            if (pdev->info.cls_compute >= AMPERE_COMPUTE_B)
+               P_1INC(p, NVC7C0, CALL_MME_MACRO(NVK_MME_WRITE_CS_INVOCATIONS));
+            else
+               P_1INC(p, NVC597, CALL_MME_MACRO(NVK_MME_WRITE_CS_INVOCATIONS));
             P_INLINE_DATA(p, report_addr >> 32);
             P_INLINE_DATA(p, report_addr);
          } else {
