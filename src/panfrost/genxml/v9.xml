@@ -600,6 +600,8 @@
     <field name="Packet stride" size="16" start="4:0" type="uint" modifier="shr(6)"/>
     <field name="Attribute stride" size="16" start="4:16" type="uint"/>
 
+    <!-- Texel buffer only, this is not interpreted by HW -->
+    <field name="Conversion" size="32" start="7:0" type="Internal Conversion"/>
   </struct>
 
   <enum name="Point Size Array Format">
