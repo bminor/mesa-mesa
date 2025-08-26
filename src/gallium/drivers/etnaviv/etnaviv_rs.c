@@ -284,6 +284,10 @@ etna_rs_gen_clear_cmd(struct etna_context *ctx,
    uint32_t format;
 
    switch (util_format_get_blocksizebits(psurf->format)) {
+   case 8:
+      assert(VIV_FEATURE(screen, ETNA_FEATURE_S8));
+      format = RS_FORMAT_S8;
+      break;
    case 16:
       format = RS_FORMAT_A4R4G4B4;
       break;
