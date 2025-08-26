@@ -2428,6 +2428,8 @@ end_subpass(struct vk_command_buffer *cmd_buffer,
 {
    const struct vk_render_pass *pass = cmd_buffer->render_pass;
    const uint32_t subpass_idx = cmd_buffer->subpass_idx;
+   assert(subpass_idx < pass->subpass_count);
+   const struct vk_subpass *subpass = &pass->subpasses[subpass_idx];
    struct vk_device_dispatch_table *disp =
       &cmd_buffer->base.device->dispatch_table;
 
@@ -2454,7 +2456,26 @@ end_subpass(struct vk_command_buffer *cmd_buffer,
       };
    }
 
-   if (subpass_idx == pass->subpass_count - 1) {
+   /* If we have a barrier, we have an external dependency */
+   bool external_dependency = mem_barrier_count > 0;
+
+   if (!external_dependency) {
+      bool has_layout_transition = false;
+      for (uint32_t a = 0; a < subpass->attachment_count; a++) {
+         const struct vk_subpass_attachment *sp_att = &subpass->attachments[a];
+         if (sp_att->attachment == VK_ATTACHMENT_UNUSED)
+            continue;
+
+         const struct vk_render_pass_attachment *rp_att =
+            &pass->attachments[sp_att->attachment];
+         uint32_t view_mask = transition_view_mask(cmd_buffer, sp_att->attachment,
+                                                   subpass->view_mask,
+                                                   rp_att->final_layout,
+                                                   rp_att->final_stencil_layout);
+
+         has_layout_transition |= (sp_att->last_subpass & view_mask) != 0;
+      }
+
       /* From the Vulkan 1.3.232 spec:
        *
        *    "Similarly, if there is no subpass dependency from the last
@@ -2475,22 +2496,17 @@ end_subpass(struct vk_command_buffer *cmd_buffer,
        *        .dstAccessMask = 0;
        *        .dependencyFlags = 0;
        *    };"
-       *
-       * We could track individual subpasses and attachments and views to make
-       * sure we only insert this barrier when it's absolutely necessary.
-       * However, this is only going to happen for the last subpass and
-       * you're probably going to take a stall in EndRenderPass() anyway.
-       * If this is ever a perf problem, we can re-evaluate and do something
-       * more intellegent at that time.
        */
-      mem_barriers[mem_barrier_count++] = (VkMemoryBarrier2){
-         .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
-         .srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-         .srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT |
-                          VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-         .dstStageMask = VK_PIPELINE_STAGE_2_NONE,
-         .dstAccessMask = VK_ACCESS_2_NONE,
-      };
+      if (has_layout_transition) {
+         mem_barriers[mem_barrier_count++] = (VkMemoryBarrier2){
+            .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+            .srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+            .srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT |
+                             VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+            .dstStageMask = VK_PIPELINE_STAGE_2_NONE,
+            .dstAccessMask = VK_ACCESS_2_NONE,
+         };
+      }
    }
 
    if (mem_barrier_count > 0) {
