@@ -7,5 +7,5 @@ VK_KHR_present_id2 on HoneyKrisp
 VK_KHR_present_wait on HoneyKrisp
 VK_KHR_present_wait2 on HoneyKrisp
 VK_KHR_maintenance10 on ANV, NVK, RADV
-VK_EXT_shader_uniform_buffer_unsized_array on RADV
+VK_EXT_shader_uniform_buffer_unsized_array on NVK, RADV
 VK_EXT_device_memory_report on panvk
