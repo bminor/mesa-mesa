@@ -975,6 +975,15 @@ va_pack_instr(const bi_instr *I, unsigned arch)
 
       break;
 
+   case BI_OPCODE_LD_CVT:
+      hex |= (uint64_t)va_pack_src(I, 0);
+      hex |= va_pack_byte_offset(I);
+
+      /* Conversion descriptor */
+      hex |= (uint64_t)va_pack_src(I, 2) << 16;
+      hex |= va_pack_memory_access(I) << 37;
+      break;
+
    case BI_OPCODE_ST_CVT:
       /* Staging read */
       hex |= va_pack_store(I);

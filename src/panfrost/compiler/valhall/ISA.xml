@@ -1433,6 +1433,23 @@
     <src>Index</src>
   </ins>
 
+  <ins name="LD_CVT" title="Load with conversion" opcode="0x70" unused="true" unit="LS">
+    <desc>
+      Load from memory with data conversion. The address to load from is given in
+      the first source, which must be a 64-bit register (a pair of 32-bit
+      registers). The other source is the conversion descriptor used for the load.
+    </desc>
+    <slot/>
+    <va_mod name="memory_access" start="37" size="3"/>
+    <vecsize/>
+    <regfmt/>
+    <sr write="true"/>
+    <sr_count/>
+    <src size="64">64-bit address to load from</src>
+    <imm name="offset" start="8" size="8"/>
+    <src>Internal conversion descriptor</src>
+  </ins>
+
   <ins name="ST_CVT" title="Store with conversion" opcode="0x71" unused="true" unit="LS">
     <desc>
       Store to memory with data conversion. The address to store to is given in
