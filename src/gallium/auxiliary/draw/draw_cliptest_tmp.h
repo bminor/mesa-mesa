@@ -159,6 +159,14 @@ TAG(do_cliptest)(struct pt_post_vs *pvs,
          need_pipeline |= out->clipmask;
       }
 
+      /* For the window transformation, the first 4 (xy) clip planes should
+       * normally be handled by guardband clipping in clip_line_guard_xy, but
+       * it hasn't been fully implemented yet, so we'll have to do it here.
+       * Otherwise we'd skip it for being redundant.
+       */
+      if (flags & DO_CLIP_XY_GUARD_BAND)
+         mask &= 0xfffffff0;
+
       /*
        * Transform the vertex position from clip coords to window coords,
        * if the vertex is unclipped.

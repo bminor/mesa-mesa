@@ -1884,7 +1884,7 @@
         "description": "draw: fix missing line viewport transformation",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "00627b4f8db5465daae08ddd7dfffa3a06e2c902",
         "notes": null
