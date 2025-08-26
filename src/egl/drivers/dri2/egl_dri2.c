@@ -1239,8 +1239,17 @@ dri2_create_context(_EGLDisplay *disp, _EGLConfig *conf,
    bool thread_safe = true;
 
 #ifdef HAVE_X11_PLATFORM
-   if (disp->Platform == _EGL_PLATFORM_X11)
-      thread_safe = x11_xlib_display_is_thread_safe(disp->PlatformDisplay);
+   if (disp->Platform == _EGL_PLATFORM_X11) {
+      if (disp->PlatformDisplay != EGL_DEFAULT_DISPLAY) {
+         thread_safe = x11_xlib_display_is_thread_safe(disp->PlatformDisplay);
+      } else {
+         Display *display = XOpenDisplay(NULL);
+         if (display) {
+            thread_safe = x11_xlib_display_is_thread_safe(display);
+            XCloseDisplay(display);
+         }
+      }
+   }
 #endif
 
    dri2_ctx->dri_context = driCreateContextAttribs(
