@@ -66,8 +66,6 @@ extern "C" {
  * Gallium interface limits us to 32k at the moment */
 #define PAN_MAX_MIP_LEVELS 16
 
-#define PAN_MAX_TEXEL_BUFFER_ELEMENTS 65536
-
 /* How many power-of-two levels in the BO cache do we want? 2^12
  * minimum chosen as it is the page size that all allocations are
  * rounded to */
@@ -244,6 +242,19 @@ pan_gpu_time_to_ns(struct panfrost_device *dev, uint64_t gpu_time)
 {
    assert(dev->kmod.props.timestamp_frequency > 0);
    return (gpu_time * NSEC_PER_SEC) / dev->kmod.props.timestamp_frequency;
+}
+
+static inline uint32_t
+pan_get_max_texel_buffer_elements(unsigned arch)
+{
+   if (arch >= 11)
+      /* TODO 1<<27 can be made larger for v11+ with a refactor of the buffer
+       * path away from using image logic. */
+      return 1 << 27;
+   else if (arch >= 9)
+      return 1 << 27;
+   else
+      return 65536;
 }
 
 #if defined(__cplusplus)

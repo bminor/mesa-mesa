@@ -635,11 +635,12 @@ panvk_per_arch(get_physical_device_properties)(
       .maxImageDimension3D = PAN_ARCH <= 10 ? (1 << 9) : (1 << 14),
       .maxImageDimensionCube = PAN_ARCH <= 10 ? (1 << 14) - 1 : (1 << 16),
       .maxImageArrayLayers = (1 << 16),
-      /* Currently limited by the 1D texture size, which is 2^16.
-       * TODO: If we expose buffer views as 2D textures, we can increase the
-       * limit.
-       */
-      .maxTexelBufferElements = (1 << 16),
+      /* Currently Bifrost is limited by the 1D texture size, which is 2^16,
+         while pre-v11 is limited to 2^27 elements of 16 byte formats due to
+         size fields of 32 bits. */
+      .maxTexelBufferElements = PAN_ARCH >= 11  ? PANVK_MAX_BUFFER_SIZE
+                                : PAN_ARCH >= 9 ? (1 << 27)
+                                                : (1 << 16),
       /* Each uniform entry is 16-byte and the number of entries is encoded in a
        * 12-bit field, with the minus(1) modifier, which gives 2^20.
        */
@@ -965,8 +966,8 @@ panvk_per_arch(get_physical_device_properties)(
       .integerDotProductAccumulatingSaturating64BitMixedSignednessAccelerated = false,
       .storageTexelBufferOffsetAlignmentBytes = 64,
       .storageTexelBufferOffsetSingleTexelAlignment = false,
-      .uniformTexelBufferOffsetAlignmentBytes = 64,
-      .uniformTexelBufferOffsetSingleTexelAlignment = false,
+      .uniformTexelBufferOffsetAlignmentBytes = PAN_ARCH >= 9 ? 4 : 64,
+      .uniformTexelBufferOffsetSingleTexelAlignment = PAN_ARCH >= 9,
       .maxBufferSize = PANVK_MAX_BUFFER_SIZE,
 
       /* Vulkan 1.4 properties */

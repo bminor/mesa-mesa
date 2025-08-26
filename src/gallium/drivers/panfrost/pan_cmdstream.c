@@ -1091,7 +1091,8 @@ panfrost_upload_txs_sysval(struct panfrost_batch *batch,
    if (tex->target == PIPE_BUFFER) {
       assert(dim == 1);
       unsigned buf_size = tex->u.buf.size / util_format_get_blocksize(tex->format);
-      uniform->i[0] = MIN2(buf_size, PAN_MAX_TEXEL_BUFFER_ELEMENTS);
+      uniform->i[0] =
+         MIN2(buf_size, pan_get_max_texel_buffer_elements(PAN_ARCH));
       return;
    }
 
@@ -1725,7 +1726,7 @@ panfrost_create_sampler_view_bo(struct panfrost_sampler_view *so,
          .format = format,
          .width_el =
             MIN2(so->base.u.buf.size / util_format_get_blocksize(format),
-                 PAN_MAX_TEXEL_BUFFER_ELEMENTS),
+                 pan_get_max_texel_buffer_elements(PAN_ARCH)),
          .base = prsrc->plane.base + so->base.u.buf.offset,
       };
 

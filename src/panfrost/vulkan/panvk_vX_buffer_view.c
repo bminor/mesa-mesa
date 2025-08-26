@@ -49,9 +49,10 @@ panvk_per_arch(CreateBufferView)(VkDevice _device,
 
 #if PAN_ARCH >= 9
    tex_usage_mask |= VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT;
-#endif
-
+#else
+   /* This alignment constraint only applies when TextureDescriptors are used. */
    assert(!(address & 63));
+#endif
 
    if (buffer->vk.usage & tex_usage_mask) {
       struct pan_buffer_view bview = {

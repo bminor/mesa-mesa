@@ -782,7 +782,8 @@ panfrost_init_screen_caps(struct panfrost_screen *screen)
    caps->texture_border_color_quirk = dev->arch == 7 || dev->arch >= 10 ?
       PIPE_QUIRK_TEXTURE_BORDER_COLOR_SWIZZLE_FREEDRENO : 0;
 
-   caps->max_texel_buffer_elements = PAN_MAX_TEXEL_BUFFER_ELEMENTS;
+   caps->max_texel_buffer_elements =
+      pan_get_max_texel_buffer_elements(dev->arch);
 
    /* Must be at least 64 for correct behaviour */
    caps->texture_buffer_offset_alignment = 64;
