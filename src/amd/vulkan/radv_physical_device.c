@@ -3054,6 +3054,11 @@ static void fill_array_sizes_structs(const struct radv_physical_device *pdev,
                                      struct __vk_outarray *base,
                                      void (*array_size_cb)(struct __vk_outarray *base, struct matrix_prop *prop))
 {
+   /* The Vulkan spec says:
+    * If some types are preferred over other types (e.g. for performance),
+    * they should appear earlier in the list enumerated by
+    * vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR.
+    */
    struct matrix_prop prop;
 
    if (pdev->info.gfx_level >= GFX12) {
@@ -3065,19 +3070,6 @@ static void fill_array_sizes_structs(const struct radv_physical_device *pdev,
             prop.c_type = prop.r_type = VK_COMPONENT_TYPE_FLOAT32_KHR;
             (*array_size_cb)(base, &prop);
          }
-      }
-   }
-
-   for (unsigned bfloat = 0; bfloat < 2; bfloat++) {
-      for (unsigned fp32 = 0; fp32 < 2; fp32++) {
-         prop.saturate = false;
-         prop.a_type = prop.b_type = bfloat ? VK_COMPONENT_TYPE_BFLOAT16_KHR : VK_COMPONENT_TYPE_FLOAT16_KHR;
-         prop.c_type = prop.r_type = fp32 ? VK_COMPONENT_TYPE_FLOAT32_KHR : prop.a_type;
-
-         if (pdev->info.gfx_level < GFX12 && bfloat)
-            continue; /* BF16 isn't working precisely on GFX11. */
-
-         (*array_size_cb)(base, &prop);
       }
    }
 
@@ -3096,6 +3088,19 @@ static void fill_array_sizes_structs(const struct radv_physical_device *pdev,
                (*array_size_cb)(base, &prop);
             }
          }
+      }
+   }
+
+   for (unsigned fp32 = 0; fp32 < 2; fp32++) {
+      for (unsigned bfloat = 0; bfloat < 2; bfloat++) {
+         prop.saturate = false;
+         prop.a_type = prop.b_type = bfloat ? VK_COMPONENT_TYPE_BFLOAT16_KHR : VK_COMPONENT_TYPE_FLOAT16_KHR;
+         prop.c_type = prop.r_type = fp32 ? VK_COMPONENT_TYPE_FLOAT32_KHR : prop.a_type;
+
+         if (pdev->info.gfx_level < GFX12 && bfloat)
+            continue; /* BF16 isn't working precisely on GFX11. */
+
+         (*array_size_cb)(base, &prop);
       }
    }
 }
