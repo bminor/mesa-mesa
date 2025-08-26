@@ -2657,12 +2657,21 @@ radv_get_physical_device_queue_family_properties(struct radv_physical_device *pd
    *pCount = idx;
 }
 
-static const VkQueueGlobalPriority radv_global_queue_priorities[] = {
-   VK_QUEUE_GLOBAL_PRIORITY_LOW,
-   VK_QUEUE_GLOBAL_PRIORITY_MEDIUM,
-   VK_QUEUE_GLOBAL_PRIORITY_HIGH,
-   VK_QUEUE_GLOBAL_PRIORITY_REALTIME,
-};
+static void
+radv_get_global_queue_priorities(struct radv_physical_device *pdev, VkQueueFamilyGlobalPriorityProperties *prop)
+{
+   struct radeon_winsys *ws = pdev->ws;
+
+   prop->priorityCount = 0;
+
+   for (uint32_t p = VK_QUEUE_GLOBAL_PRIORITY_LOW; p <= VK_QUEUE_GLOBAL_PRIORITY_REALTIME; p <<= 1) {
+      if (ws->ctx_is_priority_permitted(ws, vk_to_radeon_priority(p)) != VK_SUCCESS)
+         continue;
+
+      prop->priorities[prop->priorityCount++] = p;
+      assert(prop->priorityCount < VK_MAX_GLOBAL_PRIORITY_SIZE);
+   }
+}
 
 VKAPI_ATTR void VKAPI_CALL
 radv_GetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice, uint32_t *pCount,
@@ -2686,9 +2695,8 @@ radv_GetPhysicalDeviceQueueFamilyProperties2(VkPhysicalDevice physicalDevice, ui
          switch (ext->sType) {
          case VK_STRUCTURE_TYPE_QUEUE_FAMILY_GLOBAL_PRIORITY_PROPERTIES: {
             VkQueueFamilyGlobalPriorityProperties *prop = (VkQueueFamilyGlobalPriorityProperties *)ext;
-            STATIC_ASSERT(ARRAY_SIZE(radv_global_queue_priorities) <= VK_MAX_GLOBAL_PRIORITY_SIZE);
-            prop->priorityCount = ARRAY_SIZE(radv_global_queue_priorities);
-            memcpy(&prop->priorities, radv_global_queue_priorities, sizeof(radv_global_queue_priorities));
+
+            radv_get_global_queue_priorities(pdev, prop);
             break;
          }
          case VK_STRUCTURE_TYPE_QUEUE_FAMILY_QUERY_RESULT_STATUS_PROPERTIES_KHR: {

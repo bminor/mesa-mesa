@@ -117,4 +117,21 @@ enum amd_ip_type radv_queue_ring(const struct radv_queue *queue);
 
 enum amd_ip_type radv_queue_family_to_ring(const struct radv_physical_device *dev, enum radv_queue_family f);
 
+static inline enum radeon_ctx_priority
+vk_to_radeon_priority(VkQueueGlobalPriority priority)
+{
+   switch (priority) {
+   case VK_QUEUE_GLOBAL_PRIORITY_REALTIME:
+      return RADEON_CTX_PRIORITY_REALTIME;
+   case VK_QUEUE_GLOBAL_PRIORITY_HIGH:
+      return RADEON_CTX_PRIORITY_HIGH;
+   case VK_QUEUE_GLOBAL_PRIORITY_MEDIUM:
+      return RADEON_CTX_PRIORITY_MEDIUM;
+   case VK_QUEUE_GLOBAL_PRIORITY_LOW:
+      return RADEON_CTX_PRIORITY_LOW;
+   default:
+      return RADEON_CTX_PRIORITY_INVALID;
+   }
+}
+
 #endif /* RADV_QUEUE_H */
