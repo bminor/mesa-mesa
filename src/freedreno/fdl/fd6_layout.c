@@ -175,6 +175,11 @@ fdl6_layout_image(struct fdl_layout *layout, const struct fd_dev_info *info,
    if (layout->ubwc && !info->props.has_ubwc_linear_mipmap_fallback)
       layout->tile_all = true;
 
+   if (layout->tile_mode != TILE6_LINEAR &&
+       params->force_disable_linear_fallback) {
+      layout->tile_all = true;
+   }
+
    /* in layer_first layout, the level (slice) contains just one
     * layer (since in fact the layer contains the slices)
     */

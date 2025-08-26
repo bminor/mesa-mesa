@@ -475,6 +475,20 @@ format_list_has_swaps(const VkImageFormatListCreateInfo *fmt_list)
    return false;
 }
 
+static bool
+format_list_has_uncompressed_format(
+   const VkImageFormatListCreateInfo *fmt_list)
+{
+   if (!fmt_list || !fmt_list->viewFormatCount)
+      return true;
+
+   for (uint32_t i = 0; i < fmt_list->viewFormatCount; i++) {
+      if (!vk_format_is_compressed(fmt_list->pViewFormats[i]))
+         return true;
+   }
+   return false;
+}
+
 template <chip CHIP>
 VkResult
 tu_image_update_layout(struct tu_device *device, struct tu_image *image,
@@ -564,6 +578,7 @@ tu_image_update_layout(struct tu_device *device, struct tu_image *image,
          .is_mutable = image->is_mutable,
          .sparse = image->vk.create_flags &
             VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT,
+         .force_disable_linear_fallback = image->force_disable_linear_fallback,
       };
 
       if (!fdl6_layout_image(layout, &device->physical_device->dev_info,
@@ -779,6 +794,23 @@ tu_image_init(struct tu_device *device, struct tu_image *image,
             image->is_mutable = true;
             if (!format_list_ubwc_possible(device, fmt_list, pCreateInfo))
                image->ubwc_enabled = false;
+         }
+
+         /* If the threshold of the linear mipmap fallback for compressed
+          * format is reached at a different mipmap level than the
+          * size-compatible non-compressed formats the image can be viewed as,
+          * then we have to disable the fallback. Otherwise, for some levels,
+          * texels would be read from the wrong locations due to the tiling
+          * mismatch.
+          * NOTE: Prop driver falls back to LINEAR in this case.
+          */
+         if (!device->physical_device->info->props
+                 .supports_linear_mipmap_threshold_in_blocks &&
+             vk_format_is_compressed(image->vk.format) &&
+             pCreateInfo->usage &
+                VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT &&
+             format_list_has_uncompressed_format(fmt_list)) {
+            image->force_disable_linear_fallback = true;
          }
       }
    }

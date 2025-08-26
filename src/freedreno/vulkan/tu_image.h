@@ -58,6 +58,8 @@ struct tu_image
    bool ubwc_enabled;
    bool force_linear_tile;
    bool is_mutable;
+   /* Force to either use tiled layout or linear for all mip layers. */
+   bool force_disable_linear_fallback;
 };
 VK_DEFINE_NONDISP_HANDLE_CASTS(tu_image, vk.base, VkImage, VK_OBJECT_TYPE_IMAGE)
 

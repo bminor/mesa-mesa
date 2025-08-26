@@ -109,6 +109,8 @@ struct fdl_image_params {
     * standard sparse tiling.
     */
    bool sparse;
+
+   bool force_disable_linear_fallback;
 };
 
 /**
