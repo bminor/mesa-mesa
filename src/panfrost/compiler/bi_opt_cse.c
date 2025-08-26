@@ -117,6 +117,12 @@ instrs_equal(const void *_i1, const void *_i2)
          return false;
    }
 
+   if (i1->table != i2->table)
+      return false;
+
+   if (i1->index != i2->index)
+      return false;
+
    return true;
 }
 
