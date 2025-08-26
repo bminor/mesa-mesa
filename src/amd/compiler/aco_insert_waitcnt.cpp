@@ -189,6 +189,7 @@ enum barrier_info_kind {
 struct barrier_info {
    wait_imm imm[storage_count];
    uint16_t events[storage_count] = {}; /* use wait_event notion */
+   sync_scope scope[storage_count] = {};
    uint8_t storage = 0;
 
    bool join(const barrier_info& other)
@@ -198,6 +199,8 @@ struct barrier_info {
          changed |= imm[i].combine(other.imm[i]);
          changed |= (other.events[i] & ~events[i]) != 0;
          events[i] |= other.events[i];
+         changed |= other.scope[i] > scope[i];
+         scope[i] = MAX2(scope[i], other.scope[i]);
       }
       storage |= other.storage;
       return changed;
@@ -209,6 +212,7 @@ struct barrier_info {
          fprintf(output, "storage[%u] = {\n", i);
          imm[i].print(output);
          fprintf(output, "events: %u\n", events[i]);
+         fprintf(output, "scope: %u\n", scope[i]);
          fprintf(output, "}\n");
       }
    }
@@ -452,21 +456,12 @@ setup_barrier(wait_ctx& ctx, wait_imm& imm, memory_sync_info sync, bool is_acqui
    wait_imm dst_imm;
    uint16_t dst_events = 0;
    u_foreach_bit (i, sync.storage & src.storage) {
-      uint16_t events = src.events[i];
+      /* LDS is private to the workgroup, so reduce the scope in that case. */
+      if (src.events[i] == event_lds && MIN2(sync.scope, scope_workgroup) <= subgroup_scope)
+         continue;
 
-      /* LDS is private to the workgroup */
-      if (MIN2(sync.scope, scope_workgroup) <= subgroup_scope)
-         events &= ~event_lds;
-
-      /* Until GFX11, in non-WGP, the L1 (L0 on GFX10+) cache keeps all memory operations
-       * in-order for the same workgroup */
-      if (ctx.gfx_level < GFX11 && !ctx.program->wgp_mode && sync.scope <= scope_workgroup)
-         events &= ~(event_vmem | event_vmem_store);
-
-      if (events) {
-         dst_imm.combine(src.imm[i]);
-         dst_events |= src.events[i];
-      }
+      dst_imm.combine(src.imm[i]);
+      dst_events |= src.events[i];
    }
    if (!dst_events)
       return;
@@ -477,9 +472,29 @@ setup_barrier(wait_ctx& ctx, wait_imm& imm, memory_sync_info sync, bool is_acqui
    u_foreach_bit (i, sync.storage) {
       dst.imm[i].combine(dst_imm);
       dst.events[i] |= dst_events;
+      dst.scope[i] = MAX2(dst.scope[i], sync.scope);
    }
    dst.storage |= sync.storage;
    ctx.bar_nonempty |= 1 << dst_index;
+}
+
+void
+finish_barrier_internal(wait_ctx& ctx, wait_imm& imm, Instruction* instr, struct barrier_info* info,
+                        unsigned storage_idx)
+{
+   uint16_t events = info->events[storage_idx];
+   if (info->scope[storage_idx] <= scope_workgroup) {
+      bool is_vmem = instr->isVMEM() || (instr->isFlatLike() && !instr->flatlike().may_use_lds);
+      bool is_barrier = instr->isBarrier();
+
+      /* Until GFX11, in non-WGP, the L1 (L0 on GFX10+) cache keeps all memory operations
+       * in-order for the same workgroup */
+      if ((is_vmem || is_barrier) && ctx.gfx_level < GFX11 && !ctx.program->wgp_mode)
+         events &= ~(event_vmem | event_vmem_store);
+   }
+
+   if (events)
+      imm.combine(info->imm[storage_idx]);
 }
 
 void
@@ -489,12 +504,12 @@ finish_barriers(wait_ctx& ctx, wait_imm& imm, Instruction* instr, memory_sync_in
       uint16_t storage_release =
          is_atomic_or_control_instr(ctx.program, instr, sync, semantic_release);
       u_foreach_bit (i, storage_release & ctx.bar[barrier_info_release].storage)
-         imm.combine(ctx.bar[barrier_info_release].imm[i]);
+         finish_barrier_internal(ctx, imm, instr, &ctx.bar[barrier_info_release], i);
    }
    if (ctx.bar_nonempty & (1 << barrier_info_acquire)) {
       uint16_t storage_acquire = (sync.semantics & semantic_private) ? 0 : sync.storage;
       u_foreach_bit (i, storage_acquire & ctx.bar[barrier_info_acquire].storage)
-         imm.combine(ctx.bar[barrier_info_acquire].imm[i]);
+         finish_barrier_internal(ctx, imm, instr, &ctx.bar[barrier_info_acquire], i);
    }
 }
 
@@ -521,6 +536,8 @@ update_barrier_info_for_wait(wait_ctx& ctx, unsigned idx, wait_imm imm)
             info.events[j] &= ~ctx.info->events[i];
 
             if (!info.events[j]) {
+               assert(info.imm[j].empty());
+               info.scope[j] = scope_invocation;
                info.storage &= ~(1 << j);
                if (!info.storage)
                   ctx.bar_nonempty &= ~(1 << idx);
