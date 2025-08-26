@@ -252,7 +252,7 @@ struct nak_qmd_info {
 };
 
 #define NAK_QMD_ALIGN_B 256
-#define NAK_MAX_QMD_SIZE_B 256
+#define NAK_MAX_QMD_SIZE_B 384
 #define NAK_MAX_QMD_DWORDS (NAK_MAX_QMD_SIZE_B / 4)
 
 uint32_t nak_qmd_size_B(const struct nv_device_info *dev);

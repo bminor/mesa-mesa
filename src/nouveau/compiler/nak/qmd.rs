@@ -68,6 +68,7 @@ macro_rules! qmd_impl_common {
 
         const GLOBAL_SIZE_LAYOUT: nak_qmd_dispatch_size_layout = {
             assert!(paste! {$c::[<$s _MAX_BIT>]} < size_of::<Self>() * 8);
+            assert!(NAK_MAX_QMD_SIZE_B as usize >= size_of::<Self>());
 
             let w = paste! {$c::[<$s _CTA_RASTER_WIDTH>]};
             let h = paste! {$c::[<$s _CTA_RASTER_HEIGHT>]};
