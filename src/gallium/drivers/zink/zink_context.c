@@ -3170,8 +3170,10 @@ begin_rendering(struct zink_context *ctx, bool check_msaa_expand)
          resolves[0] = zink_resource(ctx->dynamic_fb.tc_info.resolve[0]);
       for (unsigned i = 0; i < ARRAY_SIZE(resolves); i++) {
          struct zink_resource *res = resolves[i];
-         if (!res)
+         if (!res) {
+            zink_resource_reference(&ctx->fb_resolve[i], NULL);
             continue;
+         }
          zink_batch_resource_usage_set(ctx->bs, res, true, false);
          bool is_depth = util_format_is_depth_or_stencil(res->base.b.format);
          enum pipe_format format = res->base.b.format;
@@ -3185,8 +3187,10 @@ begin_rendering(struct zink_context *ctx, bool check_msaa_expand)
             .texture = &res->base.b
          };
          if (zink_is_swapchain(res)) {
-            if (!zink_kopper_acquire(ctx, res, UINT64_MAX))
+            if (!zink_kopper_acquire(ctx, res, UINT64_MAX)) {
+               zink_resource_reference(&ctx->fb_resolve[i], NULL);
                return 0;
+            }
          }
          VkImageViewCreateInfo ivci = create_ivci(screen, res, &tmpl, ctx->dynamic_fb.info.layerCount > 1 ? PIPE_TEXTURE_2D_ARRAY : PIPE_TEXTURE_2D);
          struct zink_surface *surf = zink_get_surface(ctx, &tmpl, &ivci);
@@ -3204,6 +3208,7 @@ begin_rendering(struct zink_context *ctx, bool check_msaa_expand)
             ctx->dynamic_fb.attachments[idx + 1].resolveImageLayout = res->layout;
             ctx->dynamic_fb.attachments[idx + 1].resolveImageView = surf->image_view;
          }
+         zink_resource_reference(&ctx->fb_resolve[i], res);
       }
    }
    ctx->zsbuf_unused = !zsbuf_used;
@@ -3824,6 +3829,13 @@ zink_set_framebuffer_state(struct pipe_context *pctx,
           * so just throw some random barrier */
          zink_screen(ctx->base.screen)->image_barrier(ctx, res, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                      VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+   }
+   if (ctx->track_renderpasses && !ctx->unordered_blitting) {
+      for (unsigned i = 0; i < ARRAY_SIZE(ctx->fb_resolve); i++) {
+         if (ctx->fb_resolve[i])
+            pre_sync_transfer_barrier(ctx, ctx->fb_resolve[i], false);
+         zink_resource_reference(&ctx->fb_resolve[i], NULL);
+      }
    }
    /* renderpass changes if the number or types of attachments change */
    ctx->rp_changed |= ctx->fb_state.nr_cbufs != state->nr_cbufs;
