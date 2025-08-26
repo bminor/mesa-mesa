@@ -2272,6 +2272,52 @@ handle_block(struct ra_ctx *ctx, struct ir3_block *block)
    ra_file_init(&ctx->half);
    ra_file_init(&ctx->shared);
 
+   if (block == ir3_after_preamble(block->shader) &&
+       block != ir3_start_block(block->shader)) {
+      /* Reset the file start in the first block after the preamble to make the
+       * main shader independent of the preamble. Without this, the allocated
+       * registers in the main shader will depend on how many registers were
+       * used in the preamble. This in turn may cause more or less copies being
+       * generated or postsched behaving differently due to a difference in
+       * false dependencies. This is undesirable when analyzing compiler changes
+       * that should only affect the preamble as they may also change main
+       * shader stats, generating noise in the shader-db output.
+       */
+      ctx->full.start = 0;
+      ctx->half.start = 0;
+      ctx->shared.start = 0;
+
+      /* However, make sure the file start accounts for defs that are
+       * live-through the preamble (inputs and tex prefetches). If not, this
+       * could introduce unwanted false dependencies.
+       */
+      foreach_instr (input, &ir3_start_block(block->shader)->instr_list) {
+         if (input->opc != OPC_META_INPUT &&
+             input->opc != OPC_META_TEX_PREFETCH) {
+            break;
+         }
+
+         struct ir3_register *dst = input->dsts[0];
+         assert(dst->num != INVALID_REG);
+
+         physreg_t dst_start = ra_reg_get_physreg(dst);
+         physreg_t dst_end;
+
+         if (dst->merge_set) {
+            /* Take the whole merge set into account to prevent its range being
+             * allocated for defs not part of the merge set.
+             */
+            assert(dst_start >= dst->merge_set_offset);
+            dst_end = dst_start - dst->merge_set_offset + dst->merge_set->size;
+         } else {
+            dst_end = dst_start + reg_size(dst);
+         }
+
+         struct ra_file *file = ra_get_file(ctx, dst);
+         file->start = MAX2(file->start, dst_end);
+      }
+   }
+
    /* Handle live-ins, phis, and input meta-instructions. These all appear
     * live at the beginning of the block, and interfere with each other
     * therefore need to be allocated "in parallel". This means that we
