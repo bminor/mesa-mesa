@@ -120,6 +120,7 @@ SUPPORTED_FEATURES = [
     "VK_NV_device_diagnostic_checkpoints",
     "VK_KHR_ray_tracing_pipeline",
     "VK_KHR_pipeline_library",
+    "VK_MVK_macos_surface",
     # Android
     "VK_ANDROID_native_buffer",
     "VK_ANDROID_external_memory_android_hardware_buffer",
@@ -161,6 +162,7 @@ SUPPORTED_MODULES = {
     "VK_EXT_external_memory_metal": ["goldfish_vk_dispatch"],
     "VK_KHR_external_semaphore_win32" : ["goldfish_vk_dispatch"],
     "VK_KHR_external_memory_win32" : ["goldfish_vk_dispatch"],
+    "VK_MVK_macos_surface" : ["goldfish_vk_dispatch"],
     # Host dispatch for Linux hosts + and entrypoint for guests
     "VK_KHR_external_memory_fd": ["goldfish_vk_dispatch", "func_table"],
     "VK_QNX_external_memory_screen_buffer": ["goldfish_vk_dispatch"],
