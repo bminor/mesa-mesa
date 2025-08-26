@@ -11818,7 +11818,8 @@ radv_before_draw(struct radv_cmd_buffer *cmd_buffer, const struct radv_draw_info
       /* If we don't wait for idle, start prefetches first, then set
        * states, and draw at the end.
        */
-      radv_emit_cache_flush(cmd_buffer);
+      if (cmd_buffer->state.flush_bits)
+         radv_emit_cache_flush(cmd_buffer);
 
       if (has_prefetch) {
          /* Only prefetch the vertex shader and VBO descriptors in order to start the draw as soon
@@ -11888,7 +11889,8 @@ radv_before_taskmesh_draw(struct radv_cmd_buffer *cmd_buffer, const struct radv_
 
    radv_emit_all_graphics_states(cmd_buffer, info);
 
-   radv_emit_cache_flush(cmd_buffer);
+   if (cmd_buffer->state.flush_bits)
+      radv_emit_cache_flush(cmd_buffer);
 
    if (task_shader) {
       radv_gang_cache_flush(cmd_buffer);
