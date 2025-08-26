@@ -8114,7 +8114,7 @@
         "description": "util: Avoid invalid access in ralloc_print_info()",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7b5b1642815dc7e74a7f90d89a7d46fde4ace19a",
         "notes": null
