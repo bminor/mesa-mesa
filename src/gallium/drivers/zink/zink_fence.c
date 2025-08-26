@@ -132,7 +132,7 @@ fence_wait(struct zink_screen *screen, struct zink_fence *fence, uint64_t timeou
    struct zink_batch_state *bs = zink_batch_state(fence);
    if (screen->device_lost)
       return true;
-   if (p_atomic_read(&fence->completed))
+   if (fence->completed)
       return true;
 
    if (screen->threaded_submit) {
@@ -147,7 +147,7 @@ fence_wait(struct zink_screen *screen, struct zink_fence *fence, uint64_t timeou
    bool success = zink_screen_timeline_wait(screen, fence->batch_id, timeout_ns);
 
    if (success) {
-      p_atomic_set(&fence->completed, true);
+      fence->completed = true;
       bs->usage.usage = 0;
       zink_screen_update_last_finished(screen, fence->batch_id);
    }

@@ -450,10 +450,9 @@ find_completed_batch_state(struct zink_context *ctx)
    /* states are stored sequentially, so if the first one doesn't work, none of them will */
    for (struct zink_batch_state *i = ctx->batch_states, *j = i ? i->next : NULL; i; i = j, j = j ? j->next : NULL) {
       /* only a submitted state can be reused */
-      if (p_atomic_read(&i->fence.submitted) &&
+      if (i->fence.submitted &&
           /* a submitted state must have completed before it can be reused */
-          (zink_screen_check_last_finished(screen, i->fence.batch_id) ||
-           p_atomic_read(&i->fence.completed))) {
+          (zink_screen_check_last_finished(screen, i->fence.batch_id) || i->fence.completed)) {
          pop_batch_state(ctx);
          reset_batch_state_ctx(ctx, i);
          simple_mtx_lock(&screen->active_batch_states_lock);
