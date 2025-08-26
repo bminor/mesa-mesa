@@ -645,6 +645,11 @@ lp_scene_begin_binning(struct lp_scene *scene,
          scene->fixed_sample_pos[i][0] = util_iround(lp_sample_pos_4x[i][0] * FIXED_ONE);
          scene->fixed_sample_pos[i][1] = util_iround(lp_sample_pos_4x[i][1] * FIXED_ONE);
       }
+   } else if (scene->fb_max_samples == 8) {
+      for (unsigned i = 0; i < 8; i++) {
+         scene->fixed_sample_pos[i][0] = util_iround(lp_sample_pos_8x[i][0] * FIXED_ONE);
+         scene->fixed_sample_pos[i][1] = util_iround(lp_sample_pos_8x[i][1] * FIXED_ONE);
+      }
    }
 }
 

@@ -267,6 +267,10 @@ llvmpipe_get_sample_position(struct pipe_context *pipe,
       out_value[0] = lp_sample_pos_4x[sample_index][0];
       out_value[1] = lp_sample_pos_4x[sample_index][1];
       break;
+   case 8:
+      out_value[0] = lp_sample_pos_8x[sample_index][0];
+      out_value[1] = lp_sample_pos_8x[sample_index][1];
+      break;
    default:
       break;
    }

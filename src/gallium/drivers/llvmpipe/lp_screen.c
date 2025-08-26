@@ -598,8 +598,16 @@ llvmpipe_is_format_supported(struct pipe_screen *_screen,
           target == PIPE_TEXTURE_CUBE ||
           target == PIPE_TEXTURE_CUBE_ARRAY);
 
-   if (sample_count != 0 && sample_count != 1 && sample_count != 4)
+   static_assert(LP_MAX_SAMPLES == 8, "Code below assumes support up to 8x");
+   switch (sample_count) {
+   case 0:
+   case 1:
+   case 4:
+   case 8:
+      break;
+   default:
       return false;
+   }
 
    if (bind & (PIPE_BIND_RENDER_TARGET | PIPE_BIND_SHADER_IMAGE))
       if (!lp_storage_render_image_format_supported(format))

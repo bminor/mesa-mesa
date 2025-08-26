@@ -84,12 +84,14 @@ spec@!opengl 1.0@rasterpos@glsl_vs_tes_linked,Fail
 spec@!opengl 1.1@depthstencil-default_fb-copypixels,Fail
 spec@!opengl 1.1@depthstencil-default_fb-copypixels samples=2,Fail
 spec@!opengl 1.1@depthstencil-default_fb-copypixels samples=4,Fail
+spec@!opengl 1.1@depthstencil-default_fb-copypixels samples=6,Fail
 spec@!opengl 1.1@depthstencil-default_fb-drawpixels-24_8,Fail
 spec@!opengl 1.1@depthstencil-default_fb-drawpixels-24_8 samples=2,Fail
 spec@!opengl 1.1@depthstencil-default_fb-drawpixels-24_8 samples=4,Fail
 spec@!opengl 1.1@depthstencil-default_fb-drawpixels-32f_24_8_rev,Fail
 spec@!opengl 1.1@depthstencil-default_fb-drawpixels-32f_24_8_rev samples=2,Fail
 spec@!opengl 1.1@depthstencil-default_fb-drawpixels-32f_24_8_rev samples=4,Fail
+spec@!opengl 1.1@depthstencil-default_fb-drawpixels-32f_24_8_rev samples=8,Fail
 spec@!opengl 1.1@linestipple,Fail
 spec@!opengl 1.1@linestipple@Factor 2x,Fail
 spec@!opengl 1.1@linestipple@Factor 3x,Fail
@@ -362,6 +364,7 @@ spec@ext_framebuffer_multisample@clip-and-scissor-blit 2 msaa,Fail
 spec@ext_framebuffer_multisample@clip-and-scissor-blit 2 upsample,Fail
 spec@ext_framebuffer_multisample@clip-and-scissor-blit 4 msaa,Fail
 spec@ext_framebuffer_multisample@clip-and-scissor-blit 4 upsample,Fail
+spec@ext_framebuffer_multisample@clip-and-scissor-blit 8 upsample,Fail
 spec@ext_framebuffer_multisample@interpolation 2 centroid-edges,Fail
 spec@ext_framebuffer_multisample@interpolation 4 centroid-edges,Fail
 spec@ext_framebuffer_multisample@no-color 2 depth single,Fail

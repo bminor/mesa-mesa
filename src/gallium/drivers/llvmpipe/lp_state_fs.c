@@ -218,7 +218,8 @@ generate_quad_mask(struct gallivm_state *gallivm,
                    struct lp_type fs_type,
                    unsigned first_quad,
                    unsigned sample,
-                   LLVMValueRef mask_input) /* int64 */
+                   LLVMValueRef mask_input,  /* int64, samples 0..3 */
+                   LLVMValueRef mask_input1) /* int64, samples 4..7 */
 {
    LLVMBuilderRef builder = gallivm->builder;
    LLVMTypeRef i32t = LLVMInt32TypeInContext(gallivm->context);
@@ -256,8 +257,8 @@ generate_quad_mask(struct gallivm_state *gallivm,
       shift = 0;
    }
 
-   mask_input = LLVMBuildLShr(builder, mask_input,
-                              lp_build_const_int64(gallivm, 16 * sample), "");
+   mask_input = LLVMBuildLShr(builder, sample < 4 ? mask_input : mask_input1,
+                              lp_build_const_int64(gallivm, 16 * (sample % 4)), "");
    mask_input = LLVMBuildTrunc(builder, mask_input, i32t, "");
    mask_input = LLVMBuildAnd(builder, mask_input,
                              lp_build_const_int32(gallivm, 0xffff), "");
@@ -3162,7 +3163,7 @@ generate_fragment(struct llvmpipe_context *lp,
    struct lp_shader_input inputs[PIPE_MAX_SHADER_INPUTS];
    LLVMTypeRef fs_elem_type;
    LLVMTypeRef blend_vec_type;
-   LLVMTypeRef arg_types[16];
+   LLVMTypeRef arg_types[17];
    LLVMTypeRef func_type;
    LLVMTypeRef int32_type = LLVMInt32TypeInContext(gallivm->context);
    LLVMTypeRef int32p_type = LLVMPointerType(int32_type, 0);
@@ -3181,7 +3182,8 @@ generate_fragment(struct llvmpipe_context *lp,
    LLVMValueRef depth_ptr;
    LLVMValueRef depth_stride;
    LLVMValueRef depth_sample_stride;
-   LLVMValueRef mask_input;
+   LLVMValueRef mask_input0;
+   LLVMValueRef mask_input1;
    LLVMValueRef thread_data_ptr;
    LLVMBasicBlockRef block;
    LLVMBuilderRef builder;
@@ -3249,12 +3251,13 @@ generate_fragment(struct llvmpipe_context *lp,
    arg_types[7] = LLVMPointerType(fs_elem_type, 0);    /* dady */
    arg_types[8] = LLVMPointerType(int8p_type, 0);  /* color */
    arg_types[9] = int8p_type;       /* depth */
-   arg_types[10] = LLVMInt64TypeInContext(gallivm->context);  /* mask_input */
-   arg_types[11] = variant->jit_thread_data_ptr_type;  /* per thread data */
-   arg_types[12] = int32p_type;     /* stride */
-   arg_types[13] = int32_type;                         /* depth_stride */
-   arg_types[14] = int32p_type;     /* color sample strides */
-   arg_types[15] = int32_type;                         /* depth sample stride */
+   arg_types[10] = LLVMInt64TypeInContext(gallivm->context);  /* mask_input0 */
+   arg_types[11] = LLVMInt64TypeInContext(gallivm->context);  /* mask_input1 */
+   arg_types[12] = variant->jit_thread_data_ptr_type;  /* per thread data */
+   arg_types[13] = int32p_type;     /* stride */
+   arg_types[14] = int32_type;                         /* depth_stride */
+   arg_types[15] = int32p_type;     /* color sample strides */
+   arg_types[16] = int32_type;                         /* depth sample stride */
 
    func_type = LLVMFunctionType(LLVMVoidTypeInContext(gallivm->context),
                                 arg_types, ARRAY_SIZE(arg_types), 0);
@@ -3290,12 +3293,13 @@ generate_fragment(struct llvmpipe_context *lp,
    dady_ptr     = LLVMGetParam(function, 7);
    color_ptr_ptr = LLVMGetParam(function, 8);
    depth_ptr    = LLVMGetParam(function, 9);
-   mask_input   = LLVMGetParam(function, 10);
-   thread_data_ptr  = LLVMGetParam(function, 11);
-   stride_ptr   = LLVMGetParam(function, 12);
-   depth_stride = LLVMGetParam(function, 13);
-   color_sample_stride_ptr = LLVMGetParam(function, 14);
-   depth_sample_stride = LLVMGetParam(function, 15);
+   mask_input0  = LLVMGetParam(function, 10);
+   mask_input1  = LLVMGetParam(function, 11);
+   thread_data_ptr  = LLVMGetParam(function, 12);
+   stride_ptr   = LLVMGetParam(function, 13);
+   depth_stride = LLVMGetParam(function, 14);
+   color_sample_stride_ptr = LLVMGetParam(function, 15);
+   depth_sample_stride = LLVMGetParam(function, 16);
 
    lp_build_name(context_ptr, "context");
    lp_build_name(resources_ptr, "resources");
@@ -3306,7 +3310,8 @@ generate_fragment(struct llvmpipe_context *lp,
    lp_build_name(dady_ptr, "dady");
    lp_build_name(color_ptr_ptr, "color_ptr_ptr");
    lp_build_name(depth_ptr, "depth");
-   lp_build_name(mask_input, "mask_input");
+   lp_build_name(mask_input0, "mask_input0");
+   lp_build_name(mask_input1, "mask_input1");
    lp_build_name(thread_data_ptr, "thread_data");
    lp_build_name(stride_ptr, "stride_ptr");
    lp_build_name(depth_stride, "depth_stride");
@@ -3366,6 +3371,17 @@ generate_fragment(struct llvmpipe_context *lp,
          sample_pos_array =
             LLVMConstArray(LLVMFloatTypeInContext(gallivm->context),
                            sample_pos_arr, 8);
+      } else if (key->multisample && key->coverage_samples == 8) {
+         LLVMValueRef sample_pos_arr[16];
+         for (unsigned i = 0; i < 8; i++) {
+            sample_pos_arr[i * 2] = LLVMConstReal(flt_type,
+                                                  lp_sample_pos_8x[i][0]);
+            sample_pos_arr[i * 2 + 1] = LLVMConstReal(flt_type,
+                                                      lp_sample_pos_8x[i][1]);
+         }
+         sample_pos_array =
+            LLVMConstArray(LLVMFloatTypeInContext(gallivm->context),
+                           sample_pos_arr, 16);
       } else {
          LLVMValueRef sample_pos_arr[2];
          sample_pos_arr[0] = LLVMConstReal(flt_type, 0.5);
@@ -3419,7 +3435,7 @@ generate_fragment(struct llvmpipe_context *lp,
                                 "sample_mask_ptr");
                LLVMValueRef s_mask =
                   generate_quad_mask(gallivm, fs_type,
-                                     i * fs_type.length / 4, s, mask_input);
+                                     i * fs_type.length / 4, s, mask_input0, mask_input1);
                LLVMValueRef smask_bit =
                   LLVMBuildAnd(builder, smask_val,
                                lp_build_const_int32(gallivm, (1 << s)), "");
@@ -3440,7 +3456,7 @@ generate_fragment(struct llvmpipe_context *lp,
 
             if (partial_mask) {
                mask = generate_quad_mask(gallivm, fs_type,
-                                         i * fs_type.length / 4, 0, mask_input);
+                                         i * fs_type.length / 4, 0, mask_input0, mask_input1);
             } else {
                mask = lp_build_const_int_vec(gallivm, fs_type, ~0);
             }
