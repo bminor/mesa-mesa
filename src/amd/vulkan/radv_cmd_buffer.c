@@ -11836,7 +11836,7 @@ radv_before_draw(struct radv_cmd_buffer *cmd_buffer, const struct radv_draw_info
       radv_gfx12_emit_buffered_regs(device, cs);
    }
 
-   if (!dgc)
+   if (device->sqtt.bo && !dgc)
       radv_describe_draw(cmd_buffer, info);
    if (likely(!info->indirect_va)) {
       struct radv_cmd_state *state = &cmd_buffer->state;
@@ -11917,7 +11917,7 @@ radv_before_taskmesh_draw(struct radv_cmd_buffer *cmd_buffer, const struct radv_
          radv_gfx12_emit_buffered_regs(device, cmd_buffer->gang.cs);
    }
 
-   if (!dgc)
+   if (device->sqtt.bo && !dgc)
       radv_describe_draw(cmd_buffer, info);
    if (likely(!info->indirect_va)) {
       struct radv_cmd_state *state = &cmd_buffer->state;

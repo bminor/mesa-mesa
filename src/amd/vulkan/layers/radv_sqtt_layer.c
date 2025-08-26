@@ -344,8 +344,7 @@ radv_describe_draw(struct radv_cmd_buffer *cmd_buffer, const struct radv_draw_in
    const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
-   if (likely(!device->sqtt.bo))
-      return;
+   assert(device->sqtt.bo);
 
    radv_write_event_marker(cmd_buffer, cmd_buffer->state.current_event_type, UINT_MAX, UINT_MAX, UINT_MAX);
 
