@@ -2904,7 +2904,7 @@
         "description": "zink: fix sizing on resolve resource array",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a71b6ac41a190aa2d58dcf0770c040efe98dcf85",
         "notes": null
