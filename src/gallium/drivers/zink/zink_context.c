@@ -3156,6 +3156,8 @@ begin_rendering(struct zink_context *ctx, bool check_msaa_expand)
       if (ctx->fb_state.zsbuf.nr_samples && !has_msrtss) {
          ctx->dynamic_fb.attachments[PIPE_MAX_COLOR_BUFS].resolveImageView = iv;
          ctx->dynamic_fb.attachments[PIPE_MAX_COLOR_BUFS].resolveImageLayout = res->layout;
+         ctx->dynamic_fb.attachments[PIPE_MAX_COLOR_BUFS+1].resolveImageView = iv;
+         ctx->dynamic_fb.attachments[PIPE_MAX_COLOR_BUFS+1].resolveImageLayout = res->layout;
 
          iv = zink_create_transient_surface(ctx, &ctx->fb_state.zsbuf, ctx->fb_state.zsbuf.nr_samples)->image_view;
          struct zink_resource *transient_res = res->transient;
