@@ -238,7 +238,10 @@ main()
                     gl_SemanticsAcquireRelease | gl_SemanticsMakeAvailable | gl_SemanticsMakeVisible);
 
       DEREF(dst_node).children = children;
-      DEREF(dst_node).flags = flags;
+
+      if (VK_BUILD_FLAG(VK_BUILD_FLAG_PROPAGATE_CULL_FLAGS))
+         DEREF(dst_node).flags = flags;
+
       break;
    }
 

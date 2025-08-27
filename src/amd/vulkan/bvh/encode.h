@@ -17,12 +17,16 @@ radv_encode_triangle_gfx10_3(VOID_REF dst_addr, vk_ir_triangle_node src)
 {
    REF(radv_bvh_triangle_node) dst = REF(radv_bvh_triangle_node)(dst_addr);
 
-   bool opaque = (src.geometry_id_and_flags & VK_GEOMETRY_OPAQUE) != 0;
+   uint32_t barycentrics_control = 9;
+   if (VK_BUILD_FLAG(VK_BUILD_FLAG_PROPAGATE_CULL_FLAGS)) {
+      bool opaque = (src.geometry_id_and_flags & VK_GEOMETRY_OPAQUE) != 0;
+      barycentrics_control |= (opaque ? 128 : 0);
+   }
 
    DEREF(dst).coords = src.coords;
    DEREF(dst).triangle_id = src.triangle_id;
    DEREF(dst).geometry_id_and_flags = src.geometry_id_and_flags;
-   DEREF(dst).id = 9 | (opaque ? 128 : 0);
+   DEREF(dst).id = barycentrics_control;
 }
 
 void
