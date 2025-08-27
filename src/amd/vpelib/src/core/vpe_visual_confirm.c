@@ -98,7 +98,7 @@ struct vpe_color vpe_get_visual_confirm_color(struct vpe_priv *vpe_priv,
         break;
     case VPE_SURFACE_PIXEL_FORMAT_VIDEO_420_10bpc_YCbCr:
     case VPE_SURFACE_PIXEL_FORMAT_VIDEO_420_10bpc_YCrCb:
-        // YUV420 10bit: yellow (SDR)
+        // YUV420 10bit: Yellow (SDR)
         switch (cs.tf) {
         case VPE_TF_G22:
         case VPE_TF_G24:
@@ -152,9 +152,9 @@ struct vpe_color vpe_get_visual_confirm_color(struct vpe_priv *vpe_priv,
     case VPE_SURFACE_PIXEL_FORMAT_GRPH_ABGR16161616F:
     case VPE_SURFACE_PIXEL_FORMAT_GRPH_RGBA16161616F:
     case VPE_SURFACE_PIXEL_FORMAT_GRPH_BGRA16161616F:
-        // FP16 and variants: orange
+        // FP16 and variants: Orange
         visual_confirm_color.rgba.r = 1.0;
-        visual_confirm_color.rgba.g = 0.21972f;
+        visual_confirm_color.rgba.g = 0.65f;
         visual_confirm_color.rgba.b = 0.0;
         break;
     default:
