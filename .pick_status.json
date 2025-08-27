@@ -2784,7 +2784,7 @@
         "description": "brw: Fix checking sources of wrong instruction in opt_address_reg_load",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8ac7802ac835eb8e01e88a477586bae7dc547034",
         "notes": null
