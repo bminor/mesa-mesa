@@ -281,6 +281,12 @@ impl Platform {
     pub fn all_devs_have_semaphores(&self) -> bool {
         self.devs.iter().all(|dev| dev.are_semaphores_supported())
     }
+
+    pub fn all_devs_have_external_semaphores(&self) -> bool {
+        self.devs
+            .iter()
+            .all(|dev| dev.are_external_semaphores_supported())
+    }
 }
 
 impl Drop for Platform {

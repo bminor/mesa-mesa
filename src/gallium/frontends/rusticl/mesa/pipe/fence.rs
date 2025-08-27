@@ -7,7 +7,7 @@ use libc_rust_gen::close;
 use mesa_rust_gen::*;
 use mesa_rust_util::ptr::ThreadSafeCPtr;
 
-use std::sync::Arc;
+use std::{ffi::c_int, sync::Arc};
 
 pub struct FenceFd {
     pub fd: i32,
@@ -34,6 +34,10 @@ impl PipeFence {
             fence: unsafe { ThreadSafeCPtr::new(fence)? },
             screen: Arc::clone(screen),
         })
+    }
+
+    pub fn export_fd(&self) -> c_int {
+        self.screen.fence_get_fd(self.fence.as_ptr())
     }
 
     pub fn gpu_signal(&self, ctx: &PipeContext) {

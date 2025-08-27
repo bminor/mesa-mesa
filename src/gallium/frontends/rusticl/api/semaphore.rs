@@ -8,13 +8,23 @@ use {
             icd::{ArcedCLObject, BaseCLObject, CLResult, ReferenceCountedAPIPointer},
             util::{event_list_from_cl, CLInfo, CLInfoRes, CLInfoValue},
         },
-        core::{context::Context, device::Device, queue::Queue, semaphore::Semaphore},
+        core::{
+            context::Context,
+            device::Device,
+            queue::Queue,
+            semaphore::{Semaphore, SemaphoreHandle},
+        },
     },
-    mesa_rust_util::{conversion::TryIntoWithErr, properties::MultiValProperties},
+    mesa_rust_util::{
+        conversion::TryIntoWithErr,
+        properties::{MultiValProperties, Properties},
+        ptr::CheckedPtr,
+    },
     rusticl_opencl_gen::*,
     rusticl_proc_macros::{cl_entrypoint, cl_info_entrypoint},
     std::{
         ffi::{c_int, c_void},
+        mem,
         sync::Arc,
     },
 };
@@ -36,7 +46,11 @@ unsafe impl CLInfo<cl_semaphore_info_khr> for cl_semaphore_khr {
                 // is fine here.
                 v.write::<Option<cl_external_semaphore_handle_type_khr>>(None)
             }
-            CL_SEMAPHORE_EXPORTABLE_KHR => v.write::<cl_bool>(CL_FALSE),
+            // Exporting a semaphore handle from a semaphore that was created by importing an
+            // external semaphore handle is not permitted.
+            CL_SEMAPHORE_EXPORTABLE_KHR => {
+                v.write::<cl_bool>((!sema.imported && sema.handle_type.is_some()).into())
+            }
             CL_SEMAPHORE_PAYLOAD_KHR => {
                 v.write::<cl_semaphore_payload_khr>(sema.is_signalled().into())
             }
@@ -62,8 +76,10 @@ fn create_semaphore(
         return Err(CL_INVALID_VALUE);
     }
 
+    let mut handle = None;
     let mut sema_type = 0;
     let mut dev = None;
+    let mut handle_type = None;
     let sema_props = unsafe {
         MultiValProperties::new(
             sema_props,
@@ -99,11 +115,28 @@ fn create_semaphore(
                 dev = Some(dev_in);
             }
             CL_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR => {
-                // CL_INVALID_VALUE if more than one semaphore handle type is specified in the
-                // CL_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR list.
-                if vals.len() > 1 {
-                    return Err(CL_INVALID_VALUE);
+                if let Some((&handle_type_in, remaining)) = vals.split_first() {
+                    // CL_INVALID_VALUE if more than one semaphore handle type is specified in the
+                    // CL_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR list.
+                    if !remaining.is_empty() {
+                        return Err(CL_INVALID_VALUE);
+                    }
+
+                    let handle_type_in = handle_type_in.try_into_with_err(CL_INVALID_PROPERTY)?;
+                    if handle_type_in != CL_SEMAPHORE_HANDLE_SYNC_FD_KHR {
+                        return Err(CL_INVALID_PROPERTY);
+                    }
+                    handle_type = Some(handle_type_in);
                 }
+            }
+            CL_SEMAPHORE_HANDLE_SYNC_FD_KHR => {
+                handle = Some(SemaphoreHandle::SyncFD(
+                    // we cast to a signed int to be able to handle negative FDs such as -1.
+                    //
+                    // CL_INVALID_PROPERTY [..] if the value specified for a supported property name
+                    // is not valid
+                    (vals[0] as i64).try_into_with_err(CL_INVALID_PROPERTY)?,
+                ));
             }
             CL_SEMAPHORE_TYPE_KHR => {
                 // CL_INVALID_PROPERTY [..] if the value specified for a supported property name is
@@ -141,11 +174,16 @@ fn create_semaphore(
         return Err(CL_INVALID_VALUE);
     }
 
-    Ok(Semaphore::new(context, sema_props, dev)?.into_cl())
+    // CL_INVALID_OPERATION If props_list specifies a cl_external_semaphore_handle_type_khr followed
+    // by a handle as well as CL_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR. Exporting a semaphore handle
+    // from a semaphore that was created by importing an external semaphore handle is not permitted.
+    if handle_type.is_some() && handle.is_some() {
+        return Err(CL_INVALID_OPERATION);
+    }
+
+    Ok(Semaphore::new(context, sema_props, dev, handle_type, handle)?.into_cl())
 
     // CL_INVALID_DEVICE if one or more devices identified by properties CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR cannot import the requested external semaphore handle type.
-    // CL_INVALID_OPERATION If props_list specifies a cl_external_semaphore_handle_type_khr followed by a handle as well as CL_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR. Exporting a semaphore handle from a semaphore that was created by importing an external semaphore handle is not permitted.
-    // CL_INVALID_PROPERTY if sema_props includes more than one external semaphore handle.
 }
 
 #[cl_entrypoint(clEnqueueSignalSemaphoresKHR)]
@@ -186,14 +224,8 @@ fn enqueue_signal_semaphores(
         }
     }
 
-    create_and_queue(
-        q,
-        CL_COMMAND_SEMAPHORE_SIGNAL_KHR,
-        evs,
-        event,
-        false,
-        Semaphore::gpu_signal(semas),
-    )
+    let work = Semaphore::gpu_signal(semas, &q);
+    create_and_queue(q, CL_COMMAND_SEMAPHORE_SIGNAL_KHR, evs, event, false, work)
 
     // CL_INVALID_VALUE if any of the semaphore objects specified by sema_objects requires a semaphore payload and sema_payload_list is NULL.
 }
@@ -255,14 +287,43 @@ fn enqueue_wait_semaphores(
 
 #[cl_entrypoint(clGetSemaphoreHandleForTypeKHR)]
 fn get_semaphore_handle_for_type(
-    _sema_object: cl_semaphore_khr,
-    _device: cl_device_id,
-    _handle_type: cl_external_semaphore_handle_type_khr,
-    _handle_size: usize,
-    _handle_ptr: *mut c_void,
-    _handle_size_ret: *mut usize,
+    sema_object: cl_semaphore_khr,
+    device: cl_device_id,
+    handle_type: cl_external_semaphore_handle_type_khr,
+    handle_size: usize,
+    handle_ptr: *mut c_void,
+    handle_size_ret: *mut usize,
 ) -> CLResult<()> {
-    Err(CL_INVALID_OPERATION)
+    let sema = Semaphore::ref_from_raw(sema_object)?;
+    let dev = Device::ref_from_raw(device)?;
+
+    // CL_INVALID_DEVICE [..] if sema_object belongs to a context that is not associated with
+    // device.
+    if !sema.ctx.devs.contains(&dev) {
+        return Err(CL_INVALID_DEVICE);
+    }
+
+    // CL_INVALID_VALUE if the requested external semaphore handle type was not specified when
+    // sema_object was created.
+    if sema.handle_type != Some(handle_type) {
+        return Err(CL_INVALID_VALUE);
+    }
+
+    unsafe { handle_size_ret.write_checked(mem::size_of::<c_int>()) };
+    if !handle_ptr.is_null() {
+        // CL_INVALID_VALUE if the size in bytes specified by handle_size is less than size of the
+        // requested handle and handle_ptr is not NULL.
+        if handle_size < mem::size_of::<c_int>() {
+            return Err(CL_INVALID_VALUE);
+        }
+
+        let fd = sema.fd()?;
+        unsafe {
+            handle_ptr.cast::<c_int>().write(fd);
+        }
+    }
+
+    Ok(())
 }
 
 #[cl_entrypoint(clReleaseSemaphoreKHR)]
@@ -277,9 +338,28 @@ fn retain_semaphore(sema_object: cl_semaphore_khr) -> CLResult<()> {
 
 #[cl_entrypoint(clReImportSemaphoreSyncFdKHR)]
 fn re_import_semaphore_sync_fd(
-    _sema_object: cl_semaphore_khr,
-    _reimport_props: *mut cl_semaphore_reimport_properties_khr,
-    _fd: c_int,
+    sema_object: cl_semaphore_khr,
+    reimport_props: *mut cl_semaphore_reimport_properties_khr,
+    fd: c_int,
 ) -> CLResult<()> {
-    Err(CL_INVALID_OPERATION)
+    let sema = Semaphore::ref_from_raw(sema_object)?;
+
+    // CL_INVALID_SEMAPHORE_KHR if a CL_SEMAPHORE_HANDLE_SYNC_FD_KHR handle was not imported when
+    // sema_object was created.
+    if !sema.imported {
+        return Err(CL_INVALID_SEMAPHORE_KHR);
+    }
+
+    // reimport_props is an optional list of properties that affect the re-import behavior. [..] If
+    // no properties are required, reimport_props may be NULL. This extension does not define any
+    // optional properties.
+    // SAFETY: The list is terminated with the special property 0.
+    let props = unsafe { Properties::new(reimport_props) }.ok_or(CL_INVALID_PROPERTY)?;
+    if !props.is_empty() {
+        // We don't support any optional properties, so just throw an error for now.
+        return Err(CL_INVALID_PROPERTY);
+    }
+
+    // CL_INVALID_VALUE if fd is invalid.
+    sema.reimport(fd)
 }

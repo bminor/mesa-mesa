@@ -27,6 +27,24 @@ unsafe impl CLInfo<cl_platform_info> for cl_platform_id {
             CL_PLATFORM_NAME => v.write::<&CStr>(c"rusticl"),
             CL_PLATFORM_NUMERIC_VERSION => v.write::<cl_version>(CLVersion::Cl3_0.into()),
             CL_PLATFORM_PROFILE => v.write::<&CStr>(c"FULL_PROFILE"),
+            CL_PLATFORM_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR => {
+                v.write::<&[cl_external_semaphore_handle_type_khr]>(
+                    if Platform::get().all_devs_have_external_semaphores() {
+                        &[CL_SEMAPHORE_HANDLE_SYNC_FD_KHR]
+                    } else {
+                        &[]
+                    },
+                )
+            }
+            CL_PLATFORM_SEMAPHORE_IMPORT_HANDLE_TYPES_KHR => {
+                v.write::<&[cl_external_semaphore_handle_type_khr]>(
+                    if Platform::get().all_devs_have_external_semaphores() {
+                        &[CL_SEMAPHORE_HANDLE_SYNC_FD_KHR]
+                    } else {
+                        &[]
+                    },
+                )
+            }
             CL_PLATFORM_SEMAPHORE_TYPES_KHR => {
                 v.write::<&[cl_semaphore_type_khr]>(if Platform::get().all_devs_have_semaphores() {
                     &[CL_SEMAPHORE_TYPE_BINARY_KHR]

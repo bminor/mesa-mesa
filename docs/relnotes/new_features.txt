@@ -12,3 +12,5 @@ VK_KHR_shader_untyped_pointers on anv and RADV
 VK_KHR_maintenance8 on NVK
 VK_KHR_maintenance9 on NVK
 cl_khr_semaphore on radeonsi and zink
+cl_khr_external_semaphore on radeonsi and zink
+cl_khr_external_semaphore_sync_fd on radeonsi and zink

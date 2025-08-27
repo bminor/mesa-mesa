@@ -273,6 +273,20 @@ unsafe impl CLInfo<cl_device_info> for cl_device_id {
                 (CL_QUEUE_PROFILING_ENABLE | CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE).into(),
             ),
             CL_DEVICE_REFERENCE_COUNT => v.write::<cl_uint>(1),
+            CL_DEVICE_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR
+                if dev.are_external_semaphores_supported() =>
+            {
+                v.write::<&[cl_external_semaphore_handle_type_khr]>(&[
+                    CL_SEMAPHORE_HANDLE_SYNC_FD_KHR,
+                ])
+            }
+            CL_DEVICE_SEMAPHORE_IMPORT_HANDLE_TYPES_KHR
+                if dev.are_external_semaphores_supported() =>
+            {
+                v.write::<&[cl_external_semaphore_handle_type_khr]>(&[
+                    CL_SEMAPHORE_HANDLE_SYNC_FD_KHR,
+                ])
+            }
             CL_DEVICE_SEMAPHORE_TYPES_KHR if dev.are_semaphores_supported() => {
                 v.write::<&[cl_semaphore_type_khr]>(&[CL_SEMAPHORE_TYPE_BINARY_KHR])
             }

@@ -12,6 +12,7 @@ use mesa_rust_gen::*;
 use mesa_rust_util::has_required_feature;
 use mesa_rust_util::ptr::ThreadSafeCPtr;
 
+use std::ffi::c_int;
 use std::ffi::CStr;
 use std::num::NonZeroU64;
 use std::os::raw::c_schar;
@@ -469,12 +470,20 @@ impl PipeScreen {
         }
     }
 
+    pub(super) fn fence_get_fd(&self, fence: *mut pipe_fence_handle) -> c_int {
+        unsafe { self.screen().fence_get_fd.unwrap()(self.screen.as_ptr(), fence) }
+    }
+
     pub fn query_memory_info(&self) -> Option<pipe_memory_info> {
         let mut info = pipe_memory_info::default();
         unsafe {
             self.screen().query_memory_info?(self.screen.as_ptr(), &mut info);
         }
         Some(info)
+    }
+
+    pub fn has_fence_get_fd(&self) -> bool {
+        self.screen().fence_get_fd.is_some()
     }
 
     pub fn has_semaphore_create(&self) -> bool {

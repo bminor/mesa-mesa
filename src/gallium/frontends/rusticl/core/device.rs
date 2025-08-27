@@ -771,6 +771,10 @@ impl DeviceBase {
         }
 
         if self.are_semaphores_supported() {
+            if self.are_external_semaphores_supported() {
+                add_ext(1, 0, 1, "cl_khr_external_semaphore");
+                add_ext(1, 0, 1, "cl_khr_external_semaphore_sync_fd");
+            }
             add_ext(1, 0, 1, "cl_khr_semaphore");
         }
 
@@ -1256,6 +1260,10 @@ impl DeviceBase {
             subgroups_shuffle_relative: subgroups_supported,
             ..Default::default()
         }
+    }
+
+    pub fn are_external_semaphores_supported(&self) -> bool {
+        self.caps.has_create_fence_fd && self.screen().has_fence_get_fd()
     }
 
     pub fn are_semaphores_supported(&self) -> bool {
