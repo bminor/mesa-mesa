@@ -757,8 +757,7 @@ radv_translate_blend_equation(const struct radv_physical_device *pdev, VkBlendOp
 
 static void
 radv_pipeline_init_dynamic_state(const struct radv_device *device, struct radv_graphics_pipeline *pipeline,
-                                 const struct vk_graphics_pipeline_state *state,
-                                 const VkGraphicsPipelineCreateInfo *pCreateInfo)
+                                 const struct vk_graphics_pipeline_state *state)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    uint64_t needed_states = radv_pipeline_needed_dynamic_state(device, pipeline, state);
@@ -3537,7 +3536,7 @@ radv_graphics_pipeline_init(struct radv_graphics_pipeline *pipeline, struct radv
 
    if (!radv_pipeline_has_stage(pipeline, MESA_SHADER_MESH))
       radv_pipeline_init_input_assembly_state(device, pipeline);
-   radv_pipeline_init_dynamic_state(device, pipeline, &gfx_state.vk, pCreateInfo);
+   radv_pipeline_init_dynamic_state(device, pipeline, &gfx_state.vk);
 
    if (!radv_pipeline_has_stage(pipeline, MESA_SHADER_MESH))
       radv_pipeline_init_vertex_input_state(device, pipeline, &gfx_state.vk);
