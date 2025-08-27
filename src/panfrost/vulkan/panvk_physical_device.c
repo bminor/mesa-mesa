@@ -97,8 +97,12 @@ create_kmod_dev(struct panvk_physical_device *device,
    if (PANVK_DEBUG(STARTUP))
       mesa_logi("Found compatible device '%s'.", path);
 
-   device->kmod.dev = pan_kmod_dev_create(fd, PAN_KMOD_DEV_FLAG_OWNS_FD,
-                                          &instance->kmod.allocator);
+   uint32_t flags = PAN_KMOD_DEV_FLAG_OWNS_FD;
+
+   if (PANVK_DEBUG(NO_USER_MMAP_SYNC))
+      flags |= PAN_KMOD_DEV_FLAG_MMAP_SYNC_THROUGH_KERNEL;
+
+   device->kmod.dev = pan_kmod_dev_create(fd, flags, &instance->kmod.allocator);
 
    if (!device->kmod.dev) {
       close(fd);

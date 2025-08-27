@@ -393,9 +393,9 @@ panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
       .free = panvk_kmod_free,
       .priv = &device->vk.alloc,
    };
-   device->kmod.dev =
-      pan_kmod_dev_create(os_dupfd_cloexec(physical_device->kmod.dev->fd),
-                          PAN_KMOD_DEV_FLAG_OWNS_FD, &device->kmod.allocator);
+   device->kmod.dev = pan_kmod_dev_create(
+      os_dupfd_cloexec(physical_device->kmod.dev->fd),
+      physical_device->kmod.dev->flags, &device->kmod.allocator);
 
    if (!device->kmod.dev) {
       result = panvk_errorf(instance, VK_ERROR_OUT_OF_HOST_MEMORY,
