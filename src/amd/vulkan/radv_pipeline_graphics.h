@@ -98,6 +98,8 @@ struct radv_dynamic_state {
 
    struct radv_viewport_xform_state vp_xform[MAX_VIEWPORTS];
 
+   struct radv_vertex_input_state vertex_input;
+
    struct radv_sample_locations_state sample_location;
 
    VkImageAspectFlags feedback_loop_aspects;
@@ -149,8 +151,6 @@ struct radv_graphics_pipeline {
    VkShaderStageFlags active_stages;
 
    struct radv_dynamic_state dynamic_state;
-
-   struct radv_vertex_input_state vertex_input;
 
    struct radv_multisample_state ms;
    struct radv_ia_multi_vgt_param_helpers ia_multi_vgt_param;

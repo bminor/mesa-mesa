@@ -756,6 +756,84 @@ radv_translate_blend_equation(const struct radv_physical_device *pdev, VkBlendOp
 }
 
 static void
+radv_pipeline_init_vertex_input_state(const struct radv_device *device, struct radv_graphics_pipeline *pipeline,
+                                      const struct vk_graphics_pipeline_state *state)
+{
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   const struct radv_shader *vs = radv_get_shader(pipeline->base.shaders, MESA_SHADER_VERTEX);
+   struct radv_dynamic_state *dynamic = &pipeline->dynamic_state;
+
+   if (vs->info.vs.use_per_attribute_vb_descs) {
+      const enum amd_gfx_level gfx_level = pdev->info.gfx_level;
+      const enum radeon_family family = pdev->info.family;
+      const struct ac_vtx_format_info *vtx_info_table = ac_get_vtx_format_info_table(gfx_level, family);
+
+      dynamic->vertex_input.bindings_match_attrib = true;
+
+      u_foreach_bit (i, state->vi->attributes_valid) {
+         uint32_t binding = state->vi->attributes[i].binding;
+         uint32_t offset = state->vi->attributes[i].offset;
+
+         dynamic->vertex_input.attribute_mask |= BITFIELD_BIT(i);
+         dynamic->vertex_input.bindings[i] = binding;
+         dynamic->vertex_input.bindings_match_attrib &= binding == i;
+
+         if (state->vi->bindings[binding].stride) {
+            dynamic->vertex_input.attrib_index_offset[i] = offset / state->vi->bindings[binding].stride;
+         }
+
+         if (state->vi->bindings[binding].input_rate) {
+            dynamic->vertex_input.instance_rate_inputs |= BITFIELD_BIT(i);
+            dynamic->vertex_input.divisors[i] = state->vi->bindings[binding].divisor;
+
+            if (state->vi->bindings[binding].divisor == 0) {
+               dynamic->vertex_input.zero_divisors |= BITFIELD_BIT(i);
+            } else if (state->vi->bindings[binding].divisor > 1) {
+               dynamic->vertex_input.nontrivial_divisors |= BITFIELD_BIT(i);
+            }
+         }
+
+         dynamic->vertex_input.offsets[i] = offset;
+
+         enum pipe_format format = radv_format_to_pipe_format(state->vi->attributes[i].format);
+         const struct ac_vtx_format_info *vtx_info = &vtx_info_table[format];
+         const uint32_t hw_format = vtx_info->hw_format[vtx_info->num_channels - 1];
+
+         dynamic->vertex_input.formats[i] = format;
+         uint8_t format_align_req_minus_1 = vtx_info->chan_byte_size >= 4 ? 3 : (vtx_info->element_size - 1);
+         dynamic->vertex_input.format_align_req_minus_1[i] = format_align_req_minus_1;
+         uint8_t component_align_req_minus_1 =
+            MIN2(vtx_info->chan_byte_size ? vtx_info->chan_byte_size : vtx_info->element_size, 4) - 1;
+         dynamic->vertex_input.component_align_req_minus_1[i] = component_align_req_minus_1;
+         dynamic->vertex_input.format_sizes[i] = vtx_info->element_size;
+         dynamic->vertex_input.alpha_adjust_lo |= (vtx_info->alpha_adjust & 0x1) << i;
+         dynamic->vertex_input.alpha_adjust_hi |= (vtx_info->alpha_adjust >> 1) << i;
+         if (G_008F0C_DST_SEL_X(vtx_info->dst_sel) == V_008F0C_SQ_SEL_Z) {
+            dynamic->vertex_input.post_shuffle |= BITFIELD_BIT(i);
+         }
+
+         if (vtx_info->has_hw_format & BITFIELD_BIT(vtx_info->num_channels - 1)) {
+            if (pdev->info.gfx_level >= GFX10) {
+               dynamic->vertex_input.non_trivial_format[i] = vtx_info->dst_sel | S_008F0C_FORMAT_GFX10(hw_format);
+            } else {
+               dynamic->vertex_input.non_trivial_format[i] = vtx_info->dst_sel |
+                                                             S_008F0C_NUM_FORMAT((hw_format >> 4) & 0x7) |
+                                                             S_008F0C_DATA_FORMAT(hw_format & 0xf);
+            }
+         } else {
+            dynamic->vertex_input.nontrivial_formats |= BITFIELD_BIT(i);
+         }
+      }
+
+      dynamic->vertex_input.vbo_misaligned_mask = dynamic->vertex_input.attribute_mask;
+   } else {
+      u_foreach_bit (i, vs->info.vs.vb_desc_usage_mask) {
+         dynamic->vertex_input.bindings[i] = i;
+      }
+   }
+}
+
+static void
 radv_pipeline_init_dynamic_state(const struct radv_device *device, struct radv_graphics_pipeline *pipeline,
                                  const struct vk_graphics_pipeline_state *state)
 {
@@ -1072,6 +1150,10 @@ radv_pipeline_init_dynamic_state(const struct radv_device *device, struct radv_g
       u_foreach_bit (i, state->vi->bindings_valid) {
          dynamic->vk.vi_binding_strides[i] = state->vi->bindings[i].stride;
       }
+   }
+
+   if (states & RADV_DYNAMIC_VERTEX_INPUT) {
+      radv_pipeline_init_vertex_input_state(device, pipeline, state);
    }
 
    for (uint32_t i = 0; i < MAX_RTS; i++) {
@@ -3250,86 +3332,6 @@ gfx103_pipeline_vrs_coarse_shading(const struct radv_device *device, const struc
 }
 
 static void
-radv_pipeline_init_vertex_input_state(const struct radv_device *device, struct radv_graphics_pipeline *pipeline,
-                                      const struct vk_graphics_pipeline_state *state)
-{
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-   const struct radv_shader *vs = radv_get_shader(pipeline->base.shaders, MESA_SHADER_VERTEX);
-
-   if (!state->vi)
-      return;
-
-   if (vs->info.vs.use_per_attribute_vb_descs) {
-      const enum amd_gfx_level gfx_level = pdev->info.gfx_level;
-      const enum radeon_family family = pdev->info.family;
-      const struct ac_vtx_format_info *vtx_info_table = ac_get_vtx_format_info_table(gfx_level, family);
-
-      pipeline->vertex_input.bindings_match_attrib = true;
-
-      u_foreach_bit (i, state->vi->attributes_valid) {
-         uint32_t binding = state->vi->attributes[i].binding;
-         uint32_t offset = state->vi->attributes[i].offset;
-
-         pipeline->vertex_input.attribute_mask |= BITFIELD_BIT(i);
-         pipeline->vertex_input.bindings[i] = binding;
-         pipeline->vertex_input.bindings_match_attrib &= binding == i;
-
-         if (state->vi->bindings[binding].stride) {
-            pipeline->vertex_input.attrib_index_offset[i] = offset / state->vi->bindings[binding].stride;
-         }
-
-         if (state->vi->bindings[binding].input_rate) {
-            pipeline->vertex_input.instance_rate_inputs |= BITFIELD_BIT(i);
-            pipeline->vertex_input.divisors[i] = state->vi->bindings[binding].divisor;
-
-            if (state->vi->bindings[binding].divisor == 0) {
-               pipeline->vertex_input.zero_divisors |= BITFIELD_BIT(i);
-            } else if (state->vi->bindings[binding].divisor > 1) {
-               pipeline->vertex_input.nontrivial_divisors |= BITFIELD_BIT(i);
-            }
-         }
-
-         pipeline->vertex_input.offsets[i] = offset;
-
-         enum pipe_format format = radv_format_to_pipe_format(state->vi->attributes[i].format);
-         const struct ac_vtx_format_info *vtx_info = &vtx_info_table[format];
-         const uint32_t hw_format = vtx_info->hw_format[vtx_info->num_channels - 1];
-
-         pipeline->vertex_input.formats[i] = format;
-         uint8_t format_align_req_minus_1 = vtx_info->chan_byte_size >= 4 ? 3 : (vtx_info->element_size - 1);
-         pipeline->vertex_input.format_align_req_minus_1[i] = format_align_req_minus_1;
-         uint8_t component_align_req_minus_1 =
-            MIN2(vtx_info->chan_byte_size ? vtx_info->chan_byte_size : vtx_info->element_size, 4) - 1;
-         pipeline->vertex_input.component_align_req_minus_1[i] = component_align_req_minus_1;
-         pipeline->vertex_input.format_sizes[i] = vtx_info->element_size;
-         pipeline->vertex_input.alpha_adjust_lo |= (vtx_info->alpha_adjust & 0x1) << i;
-         pipeline->vertex_input.alpha_adjust_hi |= (vtx_info->alpha_adjust >> 1) << i;
-         if (G_008F0C_DST_SEL_X(vtx_info->dst_sel) == V_008F0C_SQ_SEL_Z) {
-            pipeline->vertex_input.post_shuffle |= BITFIELD_BIT(i);
-         }
-
-         if (vtx_info->has_hw_format & BITFIELD_BIT(vtx_info->num_channels - 1)) {
-            if (pdev->info.gfx_level >= GFX10) {
-               pipeline->vertex_input.non_trivial_format[i] = vtx_info->dst_sel | S_008F0C_FORMAT_GFX10(hw_format);
-            } else {
-               pipeline->vertex_input.non_trivial_format[i] = vtx_info->dst_sel |
-                                                              S_008F0C_NUM_FORMAT((hw_format >> 4) & 0x7) |
-                                                              S_008F0C_DATA_FORMAT(hw_format & 0xf);
-            }
-         } else {
-            pipeline->vertex_input.nontrivial_formats |= BITFIELD_BIT(i);
-         }
-      }
-
-      pipeline->vertex_input.vbo_misaligned_mask = pipeline->vertex_input.attribute_mask;
-   } else {
-      u_foreach_bit (i, vs->info.vs.vb_desc_usage_mask) {
-         pipeline->vertex_input.bindings[i] = i;
-      }
-   }
-}
-
-static void
 radv_pipeline_init_shader_stages_state(const struct radv_device *device, struct radv_graphics_pipeline *pipeline)
 {
    for (unsigned i = 0; i < MESA_VULKAN_SHADER_STAGES; i++) {
@@ -3537,9 +3539,6 @@ radv_graphics_pipeline_init(struct radv_graphics_pipeline *pipeline, struct radv
    if (!radv_pipeline_has_stage(pipeline, MESA_SHADER_MESH))
       radv_pipeline_init_input_assembly_state(device, pipeline);
    radv_pipeline_init_dynamic_state(device, pipeline, &gfx_state.vk);
-
-   if (!radv_pipeline_has_stage(pipeline, MESA_SHADER_MESH))
-      radv_pipeline_init_vertex_input_state(device, pipeline, &gfx_state.vk);
 
    radv_pipeline_init_shader_stages_state(device, pipeline);
 
