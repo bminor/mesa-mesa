@@ -6046,7 +6046,7 @@ lookup_ps_epilog(struct radv_cmd_buffer *cmd_buffer)
       const uint32_t dst_blend = G_028780_COLOR_DESTBLEND(cb_blend_control);
 
       state.color_attachment_formats[i] = render->color_att[i].format;
-      state.color_blend_enable |= d->vk.cb.attachments[i].blend_enable << (4 * i);
+      state.color_blend_enable |= d->vk.cb.attachments[i].blend_enable << i;
 
       if (src_blend == V_028780_BLEND_SRC_ALPHA || src_blend == V_028780_BLEND_ONE_MINUS_SRC_ALPHA ||
           src_blend == V_028780_BLEND_SRC_ALPHA_SATURATE || dst_blend == V_028780_BLEND_SRC_ALPHA ||

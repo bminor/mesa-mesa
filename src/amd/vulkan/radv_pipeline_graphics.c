@@ -1780,7 +1780,7 @@ radv_generate_ps_epilog_key(const struct radv_device *device, const struct radv_
           cb_idx == MESA_VK_ATTACHMENT_UNUSED) {
          cf = V_028714_SPI_SHADER_ZERO;
       } else {
-         bool blend_enable = state->color_blend_enable & (0xfu << (i * 4));
+         const bool blend_enable = (state->color_blend_enable >> i) & 0x1u;
 
          cf = radv_choose_spi_color_format(device, fmt, blend_enable, state->need_src_alpha & (1 << i));
 
@@ -1855,10 +1855,9 @@ radv_pipeline_generate_ps_epilog_key(const struct radv_device *device, const str
          if (!((ps_epilog.color_write_mask >> (i * 4)) & 0xf))
             continue;
 
-         if (state->cb->attachments[i].blend_enable)
-            ps_epilog.color_blend_enable |= 0xfu << (i * 4);
+         ps_epilog.color_blend_enable |= state->cb->attachments[i].blend_enable << i;
 
-         if (!((ps_epilog.color_blend_enable >> (i * 4)) & 0xf))
+         if (!((ps_epilog.color_blend_enable >> i) & 0x1u))
             continue;
 
          if (i == 0 && radv_can_enable_dual_src(&state->cb->attachments[i])) {

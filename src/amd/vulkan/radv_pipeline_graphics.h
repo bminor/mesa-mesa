@@ -612,7 +612,7 @@ struct radv_ps_epilog_state {
    uint8_t color_attachment_mappings[MAX_RTS];
 
    uint32_t color_write_mask;
-   uint32_t color_blend_enable;
+   uint8_t color_blend_enable;
 
    uint32_t colors_written;
    bool mrt0_is_dual_src;
