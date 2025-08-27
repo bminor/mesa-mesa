@@ -102,6 +102,23 @@ wsi_drm_check_dma_buf_sync_file_import_export(const struct wsi_device *wsi,
    if (likely(cached_result != 0))
       return (VkResult) (cached_result + 1);
 
+   /* If we don't have dma-buf export, we don't have dma-buf sync, either */
+   VkResult result;
+   if (wsi->GetMemoryFdKHR == NULL) {
+      result = VK_ERROR_FEATURE_NOT_PRESENT;
+      goto out;
+   }
+
+   /* If semaphores don't support sync FD or if the kernel doesn't support
+    * sync file import/export, then WSI will fall back to requesting BO-based
+    * implicit sync from the driver.
+    */
+   if (!(wsi->semaphore_export_handle_types &
+         VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT)) {
+      result = VK_ERROR_FEATURE_NOT_PRESENT;
+      goto out;
+   }
+
    struct VkExportMemoryAllocateInfo export_info = {
        .sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO,
        .handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT,
@@ -110,7 +127,6 @@ wsi_drm_check_dma_buf_sync_file_import_export(const struct wsi_device *wsi,
        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
        .allocationSize = 4096,
        .pNext = (void *)&export_info};
-   VkResult result;
    VkDeviceMemory mem;
    result = wsi->AllocateMemory(device, &mem_info, NULL, &mem);
    if (result != VK_SUCCESS) {
@@ -222,6 +238,9 @@ wsi_create_sync_for_dma_buf_wait(const struct wsi_swapchain *chain,
 {
    VK_FROM_HANDLE(vk_device, device, chain->device);
    VkResult result;
+
+   if (image->dma_buf_fd < 0)
+      return VK_ERROR_FEATURE_NOT_PRESENT;
 
    /* First, check if we even have the feature */
    result = wsi_drm_check_dma_buf_sync_file_import_export(chain->wsi,
@@ -354,14 +373,6 @@ wsi_drm_init_swapchain_implicit_sync(struct wsi_swapchain *chain)
     * window system protocol.
     */
    if (chain->image_info.explicit_sync)
-      return VK_SUCCESS;
-
-   /* If semaphores don't support sync FD or if the kernel doesn't support
-    * sync file import/export, then WSI will fall back to requesting BO-based
-    * implicit sync from the driver.
-    */
-   if (!(chain->wsi->semaphore_export_handle_types &
-         VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT))
       return VK_SUCCESS;
 
    VkResult result =
