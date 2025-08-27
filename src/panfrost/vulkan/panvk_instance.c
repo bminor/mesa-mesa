@@ -46,7 +46,9 @@ static const struct debug_control panvk_debug_options[] = {
    {"implicit_others_inv", PANVK_DEBUG_IMPLICIT_OTHERS_INV},
    {"force_blackhole", PANVK_DEBUG_FORCE_BLACKHOLE},
    {"wsi_afbc", PANVK_DEBUG_WSI_AFBC},
-   {NULL, 0}};
+   {"no_wb_mmap", PANVK_DEBUG_NO_WB_MMAP},
+   {NULL, 0},
+};
 
 uint64_t panvk_debug;
 

@@ -159,7 +159,7 @@ panvk_device_adjust_bo_flags(const struct panvk_device *device,
     */
    const bool allow_wb_mmap =
       (pdev->kmod.dev->props.supported_bo_flags & PAN_KMOD_BO_FLAG_WB_MMAP) &&
-      !PANVK_DEBUG(DUMP);
+      !PANVK_DEBUG(DUMP) && !PANVK_DEBUG(NO_WB_MMAP);
 
    if (!allow_wb_mmap)
       bo_flags &= ~PAN_KMOD_BO_FLAG_WB_MMAP;
