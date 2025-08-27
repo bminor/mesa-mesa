@@ -1026,7 +1026,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
       std::lock_guard<std::mutex> lock( pThis->m_lock );
       while( !bHasEncodingError && pThis->m_EncodingQueue.try_pop( pDX12EncodeContext ) )
       {
-         pipe_enc_feedback_metadata metadata = { };
+         pipe_enc_feedback_metadata metadata = {};
          unsigned int encoded_bitstream_bytes = 0u;
          ComPtr<IMFSample> spOutputSample;
          MFCreateSample( &spOutputSample );
@@ -1059,13 +1059,11 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                {
                   assert( pDX12EncodeContext->pSliceFences[slice_idx] );
 
-                  bool fenceWaitResult =
-                     pThis->m_pPipeVideoCodec->fence_wait( pThis->m_pPipeVideoCodec,
-                                                           pDX12EncodeContext->pSliceFences[slice_idx],
-                                                           OS_TIMEOUT_INFINITE ) != 0;
+                  bool fenceWaitResult = pThis->m_pPipeVideoCodec->fence_wait( pThis->m_pPipeVideoCodec,
+                                                                               pDX12EncodeContext->pSliceFences[slice_idx],
+                                                                               OS_TIMEOUT_INFINITE ) != 0;
                   assert( fenceWaitResult );
-                  pThis->m_pPipeVideoCodec->destroy_fence( pThis->m_pPipeVideoCodec,
-                                                           pDX12EncodeContext->pSliceFences[slice_idx]);
+                  pThis->m_pPipeVideoCodec->destroy_fence( pThis->m_pPipeVideoCodec, pDX12EncodeContext->pSliceFences[slice_idx] );
                   if( fenceWaitResult )
                   {
                      std::vector<struct codec_unit_location_t> codec_unit_metadata;
@@ -1115,7 +1113,9 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                   }
                }
 
-               memset(pDX12EncodeContext->pSliceFences.data(), 0, pDX12EncodeContext->pSliceFences.size() * sizeof(pipe_fence_handle *));
+               memset( pDX12EncodeContext->pSliceFences.data(),
+                       0,
+                       pDX12EncodeContext->pSliceFences.size() * sizeof( pipe_fence_handle * ) );
 
                spMemoryBuffer->Unlock();
                spMemoryBuffer->SetCurrentLength( static_cast<DWORD>( output_buffer_offset ) );
@@ -1128,9 +1128,11 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
             assert( pDX12EncodeContext->pAsyncFence );   // NULL returned pDX12EncodeContext->pAsyncFence indicates encode error
             if( pDX12EncodeContext->pAsyncFence )
             {
-               int wait_res = pThis->m_pPipeVideoCodec->fence_wait(pThis->m_pPipeVideoCodec, pDX12EncodeContext->pAsyncFence, OS_TIMEOUT_INFINITE);
-               HRESULT hr = wait_res > 0 ? S_OK : E_FAIL; // Based on p_video_codec interface
-               pThis->m_pPipeVideoCodec->destroy_fence(pThis->m_pPipeVideoCodec, pDX12EncodeContext->pAsyncFence);
+               int wait_res = pThis->m_pPipeVideoCodec->fence_wait( pThis->m_pPipeVideoCodec,
+                                                                    pDX12EncodeContext->pAsyncFence,
+                                                                    OS_TIMEOUT_INFINITE );
+               HRESULT hr = wait_res > 0 ? S_OK : E_FAIL;   // Based on p_video_codec interface
+               pThis->m_pPipeVideoCodec->destroy_fence( pThis->m_pPipeVideoCodec, pDX12EncodeContext->pAsyncFence );
                pDX12EncodeContext->pAsyncFence = nullptr;
 
                assert( SUCCEEDED( hr ) );
@@ -1218,11 +1220,10 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                      // queue the fence wait into the next frame's encode GPU fence wait
 
                      ASSERTED bool finished =
-                        pThis->m_pPipeVideoCodec->fence_wait(pThis->m_pPipeVideoCodec,
-                                                             dst_surface_fence,
-                                                             OS_TIMEOUT_INFINITE ) != 0;
+                        pThis->m_pPipeVideoCodec->fence_wait( pThis->m_pPipeVideoCodec, dst_surface_fence, OS_TIMEOUT_INFINITE ) !=
+                        0;
                      assert( finished );
-                     pThis->m_pPipeVideoCodec->destroy_fence(pThis->m_pPipeVideoCodec, dst_surface_fence);
+                     pThis->m_pPipeVideoCodec->destroy_fence( pThis->m_pPipeVideoCodec, dst_surface_fence );
                   }
 #endif   // (MFT_CODEC_H264ENC || MFT_CODEC_H265ENC)
 

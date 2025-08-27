@@ -64,7 +64,7 @@ using namespace concurrency;
 using namespace Microsoft::WRL;
 using Microsoft::WRL::ComPtr;
 
-#define ENCODE_WITH_TWO_PASS_LOWEST_RES               1
+#define ENCODE_WITH_TWO_PASS_LOWEST_RES 1
 
 #define NUM_INPUT_TYPES 3
 
@@ -387,35 +387,49 @@ DEFINE_GUID( MFSampleExtension_VideoEncodeSatdMap, 0xadf61d96, 0xc2d3, 0x4b57, 0
 // Read-only parameter that specifies the settings that the encoder MFT supports with respect to delta QP values as input.
 // Use ICodecAPI::GetValue to determine supported settings for Input Delta QP.
 // See usage of InputQPSettings within mfapi.h to retrieve block size & qp details
-DEFINE_CODECAPI_GUID(AVEncVideoInputDeltaQPBlockSettings, "5A4787DC-0648-47AA-B945-552BFAD2A6D8", 0x5a4787dc, 0x648, 0x47aa, 0xb9, 0x45, 0x55, 0x2b, 0xfa, 0xd2, 0xa6, 0xd8 )
+DEFINE_CODECAPI_GUID( AVEncVideoInputDeltaQPBlockSettings,
+                      "5A4787DC-0648-47AA-B945-552BFAD2A6D8",
+                      0x5a4787dc,
+                      0x648,
+                      0x47aa,
+                      0xb9,
+                      0x45,
+                      0x55,
+                      0x2b,
+                      0xfa,
+                      0xd2,
+                      0xa6,
+                      0xd8 )
 
-#define CODECAPI_AVEncVideoInputDeltaQPBlockSettings    DEFINE_CODECAPI_GUIDNAMED( AVEncVideoInputDeltaQPBlockSettings )
+#define CODECAPI_AVEncVideoInputDeltaQPBlockSettings DEFINE_CODECAPI_GUIDNAMED( AVEncVideoInputDeltaQPBlockSettings )
 
-typedef enum _eAVEncVideoQPMapElementDataType {
-    CODEC_API_QP_MAP_INT8   = 0x00000000,
-    CODEC_API_QP_MAP_INT16  = 0x00000001,
-    CODEC_API_QP_MAP_INT32  = 0x00000002,
-    CODEC_API_QP_MAP_UINT8  = 0x80000000,
-    CODEC_API_QP_MAP_UINT16 = 0x80000001,
-    CODEC_API_QP_MAP_UINT32 = 0x80000002,
+typedef enum _eAVEncVideoQPMapElementDataType
+{
+   CODEC_API_QP_MAP_INT8 = 0x00000000,
+   CODEC_API_QP_MAP_INT16 = 0x00000001,
+   CODEC_API_QP_MAP_INT32 = 0x00000002,
+   CODEC_API_QP_MAP_UINT8 = 0x80000000,
+   CODEC_API_QP_MAP_UINT16 = 0x80000001,
+   CODEC_API_QP_MAP_UINT32 = 0x80000002,
 } eAVEncVideoQPMapElementDataType;
 
-typedef struct _inputQPSettings {
-    UINT32                         minBlockSize;
-    UINT32                         maxBlockSize;
-    UINT32                         stepsBlockSize;
-    eAVEncVideoQPMapElementDataType dataType;
-    INT16                          minValue;
-    INT16                          maxValue;
-    UINT16                         step;
+typedef struct _inputQPSettings
+{
+   UINT32 minBlockSize;
+   UINT32 maxBlockSize;
+   UINT32 stepsBlockSize;
+   eAVEncVideoQPMapElementDataType dataType;
+   INT16 minValue;
+   INT16 maxValue;
+   UINT16 step;
 } InputQPSettings;
 
 // MFSampleExtension_VideoEncodeInputDeltaQPMap   {DAB419C3-BF21-4B46-8692-9A7BF0A71769}
 // Type: IMFMediaBuffer
 // MFSampleExtension_VideoEncodeInputDeltaQPMap specifies the input delta QP map of the frame.
 // The delta QP map must use one of the block sizes specified by CODECAPI_AVEncVideoInputDeltaQPBlockSize.
-DEFINE_GUID(MFSampleExtension_VideoEncodeInputDeltaQPMap,
-0xdab419c3, 0xbf21, 0x4b46, 0x86, 0x92, 0x9a, 0x7b, 0xf0, 0xa7, 0x17, 0x69);
+DEFINE_GUID(
+   MFSampleExtension_VideoEncodeInputDeltaQPMap, 0xdab419c3, 0xbf21, 0x4b46, 0x86, 0x92, 0x9a, 0x7b, 0xf0, 0xa7, 0x17, 0x69 );
 
 #endif /* CODECAPI_AVEncVideoInputDeltaQPBlockSettings */
 
@@ -424,7 +438,19 @@ DEFINE_GUID(MFSampleExtension_VideoEncodeInputDeltaQPMap,
 // Read-only parameter that specifies the settings that the encoder MFT supports with respect to absolute QP values as input.
 // Use ICodecAPI::GetValue to determine supported settings for Input Absolute QP.
 // See usage of InputQPSettings within mfapi.h to retrieve block size & qp details
-DEFINE_CODECAPI_GUID(AVEncVideoInputAbsoluteQPBlockSettings, "EF95A145-4F91-4DEA-8173-ACFF11434210", 0xef95a145, 0x4f91, 0x4dea, 0x81, 0x73, 0xac, 0xff, 0x11, 0x43, 0x42, 0x10 )
+DEFINE_CODECAPI_GUID( AVEncVideoInputAbsoluteQPBlockSettings,
+                      "EF95A145-4F91-4DEA-8173-ACFF11434210",
+                      0xef95a145,
+                      0x4f91,
+                      0x4dea,
+                      0x81,
+                      0x73,
+                      0xac,
+                      0xff,
+                      0x11,
+                      0x43,
+                      0x42,
+                      0x10 )
 
 #define CODECAPI_AVEncVideoInputAbsoluteQPBlockSettings DEFINE_CODECAPI_GUIDNAMED( AVEncVideoInputAbsoluteQPBlockSettings )
 
@@ -432,8 +458,8 @@ DEFINE_CODECAPI_GUID(AVEncVideoInputAbsoluteQPBlockSettings, "EF95A145-4F91-4DEA
 // Type: IMFMediaBuffer
 // MFSampleExtension_VideoEncodeInputExtAbsDeltaQPMap specifies the absolute QP map of the frame.
 // The absolute QP map must use one of the block sizes specified by CODECAPI_AVEncVideoInputAbsQPBlockSize.
-DEFINE_GUID(MFSampleExtension_VideoEncodeInputAbsoluteQPMap,
-0x432a6e9a, 0xf1ed, 0x456e, 0x8d, 0xc3, 0x6f, 0x89, 0x85, 0x64, 0x9e, 0xb9);
+DEFINE_GUID(
+   MFSampleExtension_VideoEncodeInputAbsoluteQPMap, 0x432a6e9a, 0xf1ed, 0x456e, 0x8d, 0xc3, 0x6f, 0x89, 0x85, 0x64, 0x9e, 0xb9 );
 
 #endif /* CODECAPI_AVEncVideoInputAbsoluteQPBlockSettings */
 

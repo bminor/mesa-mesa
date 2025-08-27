@@ -195,7 +195,7 @@ typedef class DX12EncodeContext
          pDownscaledTwoPassPipeVideoBuffer->destroy( pDownscaledTwoPassPipeVideoBuffer );
       if( pPipeResourcePSNRStats )
          pVlScreen->pscreen->resource_destroy( pVlScreen->pscreen, pPipeResourcePSNRStats );
-      if (pDownscaledTwoPassPipeVideoBufferCompletionFence)
+      if( pDownscaledTwoPassPipeVideoBufferCompletionFence )
          pVlScreen->pscreen->fence_reference( pVlScreen->pscreen, &pDownscaledTwoPassPipeVideoBufferCompletionFence, NULL );
    }
 } *LPDX12EncodeContext;

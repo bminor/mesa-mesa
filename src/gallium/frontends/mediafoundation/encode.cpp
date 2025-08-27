@@ -103,16 +103,17 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
       // pDX12EncodeContext->pPipeVideoBuffer
       // video_buffer_from_handle expects data to be on first subresource (e.g no texture array)
       //
-      if (uiSubresourceIndex == 0)
+      if( uiSubresourceIndex == 0 )
       {
          CHECKHR_GOTO( spTexture.As( &spDXGIResource1 ), done );
-         if(SUCCEEDED(spDXGIResource1->CreateSharedHandle( nullptr, DXGI_SHARED_RESOURCE_READ, nullptr, &hTexture )))
+         if( SUCCEEDED( spDXGIResource1->CreateSharedHandle( nullptr, DXGI_SHARED_RESOURCE_READ, nullptr, &hTexture ) ) )
          {
             // Open the pipe video buffer from the hTexture of the source DX11 texture directly
             // as an ID3D12Resource, wrapped in pDX12EncodeContext->pPipeVideoBuffer
             winsysHandle.handle = hTexture;
             winsysHandle.type = WINSYS_HANDLE_TYPE_FD;
-            pDX12EncodeContext->pPipeVideoBuffer = m_pPipeContext->video_buffer_from_handle( m_pPipeContext, NULL, &winsysHandle, 0 );
+            pDX12EncodeContext->pPipeVideoBuffer =
+               m_pPipeContext->video_buffer_from_handle( m_pPipeContext, NULL, &winsysHandle, 0 );
          }
       }
 
@@ -122,7 +123,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
       // Otherwise, if the interop without a copy into pDX12EncodeContext->pPipeVideoBuffer failed, fallback to doing the copy
       // and placing the copy destination texture in pDX12EncodeContext->pPipeVideoBuffer
       //
-      if (pDX12EncodeContext->pPipeVideoBuffer != nullptr)
+      if( pDX12EncodeContext->pPipeVideoBuffer != nullptr )
       {
          m_spDevice11->GetImmediateContext3( &spDeviceContext3 );
          CHECKHR_GOTO( spDeviceContext3.As( &spDeviceContext4 ), done );
@@ -151,10 +152,10 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
          debug_printf( "[dx12 hmft 0x%p] DX11 input sample\n", this );
          winsysHandle.handle = hTexture;
          winsysHandle.type = WINSYS_HANDLE_TYPE_FD;
-         CHECKNULL_GOTO(
-            pDX12EncodeContext->pPipeVideoBuffer = m_pPipeContext->video_buffer_from_handle( m_pPipeContext, NULL, &winsysHandle, 0 ),
-            MF_E_UNEXPECTED,
-            done );
+         CHECKNULL_GOTO( pDX12EncodeContext->pPipeVideoBuffer =
+                            m_pPipeContext->video_buffer_from_handle( m_pPipeContext, NULL, &winsysHandle, 0 ),
+                         MF_E_UNEXPECTED,
+                         done );
 
          // On successful opening of shared texture, submit the copy and signal readiness to the consumer of the texture
          m_spDevice11->GetImmediateContext3( &spDeviceContext3 );
@@ -221,8 +222,8 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
       pipeEncoderInputFenceHandleValue = m_CurrentSyncFenceValue;
    }
    else
-   {  // ENCODE_WITH_TWO_PASS code block
-      
+   {   // ENCODE_WITH_TWO_PASS code block
+
       // TODO: In case the app sends the downscaled input remove this
 
       //
@@ -240,11 +241,11 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
 
       struct pipe_vpp_desc vpblit_params = {};
 
-      vpblit_params.base.in_fence = m_pPipeFenceHandle;   // input surface fence (driver input)
+      vpblit_params.base.in_fence = m_pPipeFenceHandle;                       // input surface fence (driver input)
       vpblit_params.base.in_fence_value = pipeEncoderInputFenceHandleValue;   // input surface fence value (driver input)
 
-      vpblit_params.base.out_fence = &pPipeEncoderInputFenceHandle;          // Output surface fence (driver output)
-      pipeEncoderInputFenceHandleValue = 0u; // pPipeEncoderInputFenceHandle is PIPE_FD_TYPE_NATIVE_SYNC so doesn't need the value
+      vpblit_params.base.out_fence = &pPipeEncoderInputFenceHandle;   // Output surface fence (driver output)
+      pipeEncoderInputFenceHandleValue = 0u;   // pPipeEncoderInputFenceHandle is PIPE_FD_TYPE_NATIVE_SYNC so doesn't need the value
 
       vpblit_params.base.input_format = pDX12EncodeContext->pPipeVideoBuffer->buffer_format;
       vpblit_params.base.output_format = pDX12EncodeContext->pDownscaledTwoPassPipeVideoBuffer->buffer_format;
@@ -273,8 +274,9 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
                       done );
       m_pPipeVideoBlitter->flush( m_pPipeVideoBlitter );
 
-      assert(pPipeEncoderInputFenceHandle);   // Driver must have returned the completion fence
-      pDX12EncodeContext->pDownscaledTwoPassPipeVideoBufferCompletionFence = pPipeEncoderInputFenceHandle; // For destruction of the fence later
+      assert( pPipeEncoderInputFenceHandle );   // Driver must have returned the completion fence
+      pDX12EncodeContext->pDownscaledTwoPassPipeVideoBufferCompletionFence =
+         pPipeEncoderInputFenceHandle;   // For destruction of the fence later
    }
 
    // validate texture dimensions with surface alignment here for now, will add handling for non-aligned textures later
