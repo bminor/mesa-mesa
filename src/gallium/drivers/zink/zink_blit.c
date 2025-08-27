@@ -13,6 +13,8 @@
 #include "util/u_surface.h"
 #include "util/format/u_format.h"
 
+#include "vk_format.h"
+
 static void
 apply_dst_clears(struct zink_context *ctx, const struct pipe_blit_info *info, bool discard_only)
 {
@@ -154,7 +156,8 @@ blit_resolve(struct zink_context *ctx, const struct pipe_blit_info *info, bool *
 static bool
 blit_native(struct zink_context *ctx, const struct pipe_blit_info *info, bool *needs_present_readback)
 {
-   if (util_format_get_mask(info->dst.format) != info->mask ||
+   enum pipe_format dst_format = info->mask == PIPE_MASK_Z ? util_format_get_depth_only(info->dst.format) : info->mask == PIPE_MASK_S ? PIPE_FORMAT_S8_UINT : info->dst.format;
+   if (util_format_get_mask(dst_format) != info->mask ||
        util_format_get_mask(info->src.format) != info->mask ||
        info->scissor_enable ||
        info->swizzle_enable ||
@@ -166,7 +169,7 @@ blit_native(struct zink_context *ctx, const struct pipe_blit_info *info, bool *n
       return false;
 
    if (util_format_is_depth_or_stencil(info->dst.format) &&
-       (info->dst.format != info->src.format || info->filter == PIPE_TEX_FILTER_LINEAR))
+       (dst_format != info->src.format || info->filter == PIPE_TEX_FILTER_LINEAR))
       return false;
 
    /* vkCmdBlitImage must not be used for multisampled source or destination images. */
@@ -178,8 +181,14 @@ blit_native(struct zink_context *ctx, const struct pipe_blit_info *info, bool *n
    struct zink_resource *dst = zink_resource(info->dst.resource);
 
    struct zink_screen *screen = zink_screen(ctx->base.screen);
-   if (src->format != zink_get_format(screen, info->src.format) ||
-       dst->format != zink_get_format(screen, info->dst.format))
+   /* calculate format for masked blit */
+   VkFormat dst_vkformat = zink_get_format(screen, dst_format);
+   VkImageAspectFlags dst_aspects = vk_format_aspects(dst_vkformat);
+   /* color formats need to always check the base image format matches */
+   VkFormat dst_aspect_fmt = dst_aspects == VK_IMAGE_ASPECT_COLOR_BIT ? dst->format :
+                             dst_aspects == (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) ? dst_vkformat :
+                             vk_format_get_aspect_format(dst_vkformat, dst_aspects);
+   if (src->format != zink_get_format(screen, info->src.format) || dst_aspect_fmt != dst_vkformat)
       return false;
    if (src->format != VK_FORMAT_A8_UNORM_KHR && zink_format_is_emulated_alpha(info->src.format))
       return false;
@@ -239,7 +248,7 @@ blit_native(struct zink_context *ctx, const struct pipe_blit_info *info, bool *n
       region.srcOffsets[1].z = 1;
    }
 
-   region.dstSubresource.aspectMask = dst->aspect;
+   region.dstSubresource.aspectMask = dst_aspects;
    region.dstSubresource.mipLevel = info->dst.level;
    region.dstOffsets[0].x = info->dst.box.x;
    region.dstOffsets[0].y = info->dst.box.y;
