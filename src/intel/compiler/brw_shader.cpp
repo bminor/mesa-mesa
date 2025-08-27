@@ -394,63 +394,33 @@ brw_shader::emit_cs_terminate()
    send->eot = true;
 }
 
-brw_shader::brw_shader(const struct brw_compiler *compiler,
-                       const struct brw_compile_params *params,
-                       const brw_base_prog_key *key,
-                       struct brw_stage_prog_data *prog_data,
-                       const nir_shader *shader,
-                       unsigned dispatch_width,
-                       bool needs_register_pressure,
-                       bool debug_enabled)
-   : compiler(compiler), log_data(params->log_data),
-     devinfo(compiler->devinfo), nir(shader),
+brw_shader::brw_shader(const brw_shader_params *params)
+   : compiler(params->compiler),
+     log_data(params->log_data),
+     devinfo(params->compiler->devinfo),
+     nir(params->nir),
      mem_ctx(params->mem_ctx),
-     cfg(NULL), stage(shader->info.stage),
-     debug_enabled(debug_enabled),
-     key(key), prog_data(prog_data),
-     live_analysis(this), regpressure_analysis(this),
-     performance_analysis(this), idom_analysis(this), def_analysis(this),
+     cfg(NULL),
+     stage(params->nir->info.stage),
+     debug_enabled(params->debug_enabled),
+     key(params->key),
+     prog_data(params->prog_data),
+     live_analysis(this),
+     regpressure_analysis(this),
+     performance_analysis(this),
+     idom_analysis(this),
+     def_analysis(this),
      ip_ranges_analysis(this),
-     needs_register_pressure(needs_register_pressure),
-     dispatch_width(dispatch_width),
-     max_polygons(0),
-     api_subgroup_size(brw_nir_api_subgroup_size(shader, dispatch_width))
+     needs_register_pressure(params->needs_register_pressure),
+     dispatch_width(params->dispatch_width),
+     max_polygons(params->num_polygons),
+     api_subgroup_size(brw_nir_api_subgroup_size(params->nir, dispatch_width))
 {
-   init();
-}
-
-brw_shader::brw_shader(const struct brw_compiler *compiler,
-                       const struct brw_compile_params *params,
-                       const brw_wm_prog_key *key,
-                       struct brw_wm_prog_data *prog_data,
-                       const nir_shader *shader,
-                       unsigned dispatch_width, unsigned max_polygons,
-                       bool needs_register_pressure,
-                       bool debug_enabled)
-   : compiler(compiler), log_data(params->log_data),
-     devinfo(compiler->devinfo), nir(shader),
-     mem_ctx(params->mem_ctx),
-     cfg(NULL), stage(shader->info.stage),
-     debug_enabled(debug_enabled),
-     key(&key->base), prog_data(&prog_data->base),
-     live_analysis(this), regpressure_analysis(this),
-     performance_analysis(this), idom_analysis(this), def_analysis(this),
-     ip_ranges_analysis(this),
-     needs_register_pressure(needs_register_pressure),
-     dispatch_width(dispatch_width),
-     max_polygons(max_polygons),
-     api_subgroup_size(brw_nir_api_subgroup_size(shader, dispatch_width))
-{
-   init();
    assert(api_subgroup_size == 0 ||
-          api_subgroup_size == 8 ||
-          api_subgroup_size == 16 ||
-          api_subgroup_size == 32);
-}
+         api_subgroup_size == 8 ||
+         api_subgroup_size == 16 ||
+         api_subgroup_size == 32);
 
-void
-brw_shader::init()
-{
    this->max_dispatch_width = 32;
 
    this->failed = false;

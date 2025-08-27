@@ -176,12 +176,18 @@ brw_compile_cs(const struct brw_compiler *compiler,
       brw_postprocess_nir(shader, compiler, debug_enabled,
                           key->base.robust_flags);
 
-      v[simd] = std::make_unique<brw_shader>(compiler, &params->base,
-                                             &key->base,
-                                             &prog_data->base,
-                                             shader, dispatch_width,
-                                             params->base.stats != NULL,
-                                             debug_enabled);
+      const brw_shader_params shader_params = {
+         .compiler                = compiler,
+         .mem_ctx                 = params->base.mem_ctx,
+         .nir                     = shader,
+         .key                     = &key->base,
+         .prog_data               = &prog_data->base,
+         .dispatch_width          = dispatch_width,
+         .needs_register_pressure = params->base.stats != NULL,
+         .log_data                = params->base.log_data,
+         .debug_enabled           = debug_enabled,
+      };
+      v[simd] = std::make_unique<brw_shader>(&shader_params);
 
       const bool allow_spilling = simd == 0 ||
          (!simd_state.compiled[simd - 1] && !brw_simd_should_compile(simd_state, simd - 1)) ||

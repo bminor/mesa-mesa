@@ -352,9 +352,18 @@ brw_compile_gs(const struct brw_compiler *compiler,
       brw_print_vue_map(stderr, &prog_data->base.vue_map, MESA_SHADER_GEOMETRY);
    }
 
-   brw_shader v(compiler, &params->base, &key->base, &prog_data->base.base,
-                nir, dispatch_width,
-                params->base.stats != NULL, debug_enabled);
+   const brw_shader_params shader_params = {
+      .compiler                = compiler,
+      .mem_ctx                 = params->base.mem_ctx,
+      .nir                     = nir,
+      .key                     = &key->base,
+      .prog_data               = &prog_data->base.base,
+      .dispatch_width          = dispatch_width,
+      .needs_register_pressure = params->base.stats != NULL,
+      .log_data                = params->base.log_data,
+      .debug_enabled           = debug_enabled,
+   };
+   brw_shader v(&shader_params);
    v.gs.control_data_bits_per_vertex = control_data_bits_per_vertex;
    v.gs.control_data_header_size_bits = control_data_header_size_bits;
    if (run_gs(v)) {

@@ -59,27 +59,29 @@ enum brw_shader_phase {
    BRW_SHADER_PHASE_INVALID,
 };
 
+struct brw_shader_params
+{
+   const struct brw_compiler *compiler;
+   void *mem_ctx;
+
+   const nir_shader *nir;
+   const brw_base_prog_key *key;
+   brw_stage_prog_data *prog_data;
+
+   unsigned dispatch_width;
+
+   /* Fragment shader. */
+   unsigned num_polygons;
+
+   bool needs_register_pressure;
+   void *log_data;
+   bool debug_enabled;
+};
+
 struct brw_shader
 {
 public:
-   brw_shader(const struct brw_compiler *compiler,
-              const struct brw_compile_params *params,
-              const brw_base_prog_key *key,
-              struct brw_stage_prog_data *prog_data,
-              const nir_shader *shader,
-              unsigned dispatch_width,
-              bool needs_register_pressure,
-              bool debug_enabled);
-   brw_shader(const struct brw_compiler *compiler,
-              const struct brw_compile_params *params,
-              const brw_wm_prog_key *key,
-              struct brw_wm_prog_data *prog_data,
-              const nir_shader *shader,
-              unsigned dispatch_width,
-              unsigned num_polygons,
-              bool needs_register_pressure,
-              bool debug_enabled);
-   void init();
+   brw_shader(const brw_shader_params *params);
    ~brw_shader();
 
    void import_uniforms(brw_shader *v);

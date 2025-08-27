@@ -339,9 +339,18 @@ brw_compile_vs(const struct brw_compiler *compiler,
 
    prog_data->base.dispatch_mode = INTEL_DISPATCH_MODE_SIMD8;
 
-   brw_shader v(compiler, &params->base, &key->base,
-                &prog_data->base.base, nir, dispatch_width,
-                params->base.stats != NULL, debug_enabled);
+   const brw_shader_params shader_params = {
+      .compiler                = compiler,
+      .mem_ctx                 = params->base.mem_ctx,
+      .nir                     = nir,
+      .key                     = &key->base,
+      .prog_data               = &prog_data->base.base,
+      .dispatch_width          = dispatch_width,
+      .needs_register_pressure = params->base.stats != NULL,
+      .log_data                = params->base.log_data,
+      .debug_enabled           = debug_enabled,
+   };
+   brw_shader v(&shader_params);
    if (!run_vs(v)) {
       params->base.error_str =
          ralloc_strdup(params->base.mem_ctx, v.fail_msg);

@@ -139,11 +139,14 @@ protected:
       brw_stage_prog_data *pd =
          (struct brw_stage_prog_data *)rzalloc(mem_ctx, brw_any_prog_data);
 
-      brw_compile_params params = {};
-      params.mem_ctx = mem_ctx;
-
-      shaders.push_back(std::make_unique<brw_shader>(compiler, &params, nullptr, pd, nir,
-                                                     dispatch_width, false, false));
+      const brw_shader_params shader_params = {
+         .compiler       = compiler,
+         .mem_ctx        = mem_ctx,
+         .nir            = nir,
+         .prog_data      = pd,
+         .dispatch_width = dispatch_width,
+      };
+      shaders.push_back(std::make_unique<brw_shader>(&shader_params));
 
       brw_shader *s = shaders.back().get();
       s->phase = BRW_SHADER_PHASE_AFTER_OPT_LOOP;

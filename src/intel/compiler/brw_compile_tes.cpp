@@ -157,9 +157,18 @@ brw_compile_tes(const struct brw_compiler *compiler,
                         MESA_SHADER_TESS_EVAL);
    }
 
-    brw_shader v(compiler, &params->base, &key->base,
-                 &prog_data->base.base, nir, dispatch_width,
-                 params->base.stats != NULL, debug_enabled);
+   const brw_shader_params shader_params = {
+      .compiler                = compiler,
+      .mem_ctx                 = params->base.mem_ctx,
+      .nir                     = nir,
+      .key                     = &key->base,
+      .prog_data               = &prog_data->base.base,
+      .dispatch_width          = dispatch_width,
+      .needs_register_pressure = params->base.stats != NULL,
+      .log_data                = params->base.log_data,
+      .debug_enabled           = debug_enabled,
+   };
+   brw_shader v(&shader_params);
    if (!run_tes(v)) {
       params->base.error_str =
          ralloc_strdup(params->base.mem_ctx, v.fail_msg);
