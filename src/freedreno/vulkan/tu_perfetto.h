@@ -35,6 +35,12 @@ struct tu_perfetto_stage {
    void* start_payload_function;
 };
 
+struct tu_perfetto_stage_stack {
+   struct tu_perfetto_stage stages[TU_PERFETTO_MAX_STACK_DEPTH];
+   unsigned stage_depth;
+   unsigned skipped_depth;
+};
+
 struct tu_perfetto_clocks
 {
    uint64_t cpu;
@@ -43,9 +49,8 @@ struct tu_perfetto_clocks
 };
 
 struct tu_perfetto_state {
-   struct tu_perfetto_stage stages[TU_PERFETTO_MAX_STACK_DEPTH];
-   unsigned stage_depth;
-   unsigned skipped_depth;
+   struct tu_perfetto_stage_stack annotations_stack;
+   struct tu_perfetto_stage_stack render_stack;
 
    bool has_pending_clocks_sync;
    mtx_t pending_clocks_sync_mtx;

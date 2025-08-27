@@ -40,6 +40,21 @@ tu_device_get_u_trace(struct tu_device *device);
  */
 enum {
    DEFAULT_HW_QUEUE_ID,
+   /* Labels set via VK_EXT_debug_utils are in a separate track due to the
+    * following part of the spec:
+    *  "An application may open a debug label region in one command buffer and
+    *   close it in another, or otherwise split debug label regions across
+    *   multiple command buffers or multiple queue submissions."
+    *
+    * This means labels can start in one renderpass and end in another command
+    * buffer, which breaks our assumption that stages can be modeled as a stack.
+    * While applications aren't expected to use labels in such extreme ways,
+    * even simpler cases can break our assumptions.
+    *
+    * Having annotations in a separate track prevents the main track(s) from
+    * entering an invalid state.
+    */
+   ANNOTATIONS_QUEUE_ID,
 };
 
 /**
@@ -71,6 +86,7 @@ static const struct {
    const char *desc;
 } queues[] = {
    [DEFAULT_HW_QUEUE_ID] = {"GPU Queue 0", "Default Adreno Hardware Queue"},
+   [ANNOTATIONS_QUEUE_ID] = {"Annotations", "Annotations Queue"},
 };
 
 static const struct {
@@ -186,32 +202,40 @@ setup_incremental_state(TuRenderpassDataSource::TraceContext &ctx)
 }
 
 static struct tu_perfetto_stage *
-stage_push(struct tu_device *dev)
+stage_push(struct tu_perfetto_stage_stack *stack)
 {
-   struct tu_perfetto_state *p = &dev->perfetto;
-
-   if (p->stage_depth >= ARRAY_SIZE(p->stages)) {
-      p->skipped_depth++;
+   if (stack->stage_depth >= ARRAY_SIZE(stack->stages)) {
+      stack->skipped_depth++;
       return NULL;
    }
 
-   return &p->stages[p->stage_depth++];
+   return &stack->stages[stack->stage_depth++];
 }
 
 static struct tu_perfetto_stage *
-stage_pop(struct tu_device *dev)
+stage_pop(struct tu_perfetto_stage_stack *stack)
 {
-   struct tu_perfetto_state *p = &dev->perfetto;
-
-   if (!p->stage_depth)
+   if (!stack->stage_depth)
       return NULL;
 
-   if (p->skipped_depth) {
-      p->skipped_depth--;
+   if (stack->skipped_depth) {
+      stack->skipped_depth--;
       return NULL;
    }
 
-   return &p->stages[--p->stage_depth];
+   return &stack->stages[--stack->stage_depth];
+}
+
+static struct tu_perfetto_stage_stack *
+get_stack(struct tu_device *dev, enum tu_stage_id stage_id)
+{
+   switch (stage_id) {
+   case CMD_BUFFER_ANNOTATION_STAGE_ID:
+   case CMD_BUFFER_ANNOTATION_RENDER_PASS_STAGE_ID:
+      return &dev->perfetto.annotations_stack;
+   default:
+      return &dev->perfetto.render_stack;
+   }
 }
 
 static void
@@ -224,7 +248,8 @@ stage_start(struct tu_device *dev,
             const void *indirect = nullptr,
             trace_payload_as_extra_func payload_as_extra = nullptr)
 {
-   struct tu_perfetto_stage *stage = stage_push(dev);
+   struct tu_perfetto_stage_stack *stack = get_stack(dev, stage_id);
+   struct tu_perfetto_stage *stage = stage_push(stack);
 
    if (!stage) {
       PERFETTO_ELOG("stage %d is nested too deep", stage_id);
@@ -264,7 +289,8 @@ stage_end(struct tu_device *dev, uint64_t ts_ns, enum tu_stage_id stage_id,
           trace_payload_as_extra_func payload_as_extra = nullptr)
 {
    struct tu_perfetto_state *state = &dev->perfetto;
-   struct tu_perfetto_stage *stage = stage_pop(dev);
+   struct tu_perfetto_stage_stack *stack = get_stack(dev, stage_id);
+   struct tu_perfetto_stage *stage = stage_pop(stack);
    auto trace_flush_data =
       (const struct tu_u_trace_submission_data *) flush_data;
    uint32_t submission_id = trace_flush_data->submission_id;
@@ -297,6 +323,16 @@ stage_end(struct tu_device *dev, uint64_t ts_ns, enum tu_stage_id stage_id,
       emit_sync_timestamp(clocks);
    }
 
+   uint32_t queue_id = DEFAULT_HW_QUEUE_ID;
+   switch (stage->stage_id) {
+      case CMD_BUFFER_ANNOTATION_STAGE_ID:
+      case CMD_BUFFER_ANNOTATION_RENDER_PASS_STAGE_ID:
+         queue_id = ANNOTATIONS_QUEUE_ID;
+         break;
+      default:
+         break;
+   }
+
    TuRenderpassDataSource::Trace([=](TuRenderpassDataSource::TraceContext tctx) {
       setup_incremental_state(tctx);
 
@@ -309,7 +345,7 @@ stage_end(struct tu_device *dev, uint64_t ts_ns, enum tu_stage_id stage_id,
 
       auto event = packet->set_gpu_render_stage_event();
       event->set_event_id(0); // ???
-      event->set_hw_queue_id(DEFAULT_HW_QUEUE_ID);
+      event->set_hw_queue_id(queue_id);
       event->set_duration(ts_ns - stage->start_ts);
       if (stage->stage_iid)
          event->set_stage_iid(stage->stage_iid);

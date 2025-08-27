@@ -3903,13 +3903,11 @@ tu_CmdEndDebugUtilsLabelEXT(VkCommandBuffer _commandBuffer)
 {
    VK_FROM_HANDLE(tu_cmd_buffer, cmd_buffer, _commandBuffer);
 
-   if (cmd_buffer->vk.labels.size > 0) {
-      if (cmd_buffer->state.pass) {
-         trace_end_cmd_buffer_annotation_rp(&cmd_buffer->trace,
-                                            &cmd_buffer->draw_cs);
-      } else {
-         trace_end_cmd_buffer_annotation(&cmd_buffer->trace, &cmd_buffer->cs);
-      }
+   if (cmd_buffer->state.pass) {
+      trace_end_cmd_buffer_annotation_rp(&cmd_buffer->trace,
+                                          &cmd_buffer->draw_cs);
+   } else {
+      trace_end_cmd_buffer_annotation(&cmd_buffer->trace, &cmd_buffer->cs);
    }
 
    vk_common_CmdEndDebugUtilsLabelEXT(_commandBuffer);
