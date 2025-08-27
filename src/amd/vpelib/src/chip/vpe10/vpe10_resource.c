@@ -669,6 +669,11 @@ enum vpe_status vpe10_calculate_segments(
         if (stream_ctx->stream_type == VPE_STREAM_TYPE_BG_GEN)
             continue;
 
+        if (dst_rect->width == 0 && dst_rect->height == 0) {
+            stream_ctx->num_segments = 0;
+            continue;
+        }
+
         if (src_rect->width < VPE_MIN_VIEWPORT_SIZE || src_rect->height < VPE_MIN_VIEWPORT_SIZE ||
             dst_rect->width < VPE_MIN_VIEWPORT_SIZE || dst_rect->height < VPE_MIN_VIEWPORT_SIZE) {
             return VPE_STATUS_VIEWPORT_SIZE_NOT_SUPPORTED;
@@ -1189,9 +1194,8 @@ void vpe10_create_stream_ops_config(struct vpe_priv *vpe_priv, uint32_t pipe_idx
 #define VPE10_GENERAL_VPE_DESC_SIZE                144   // 4 * (4 + (2 * MAX_NUM_SAVED_CONFIG))
 #define VPE10_GENERAL_EMB_USAGE_FRAME_SHARED       6000  // currently max 4804 is recorded
 #define VPE10_GENERAL_EMB_USAGE_3DLUT_FRAME_SHARED 40960 // currently max 35192 is recorded
-#define VPE10_GENERAL_EMB_USAGE_BG_SHARED          3600 // currently max 52 + 128 + 1356 +1020 +92 + 60 + 116 = 2824 is recorded
-#define VPE10_GENERAL_EMB_USAGE_SEG_NON_SHARED                                                     \
-    240 // segment specific config + plane descripor size. currently max 92 + 72 = 164 is recorded.
+#define VPE10_GENERAL_EMB_USAGE_BG_SHARED          5000
+#define VPE10_GENERAL_EMB_USAGE_SEG_NON_SHARED     300
 
 void vpe10_get_bufs_req(struct vpe_priv *vpe_priv, struct vpe_bufs_req *req)
 {
@@ -1400,6 +1404,8 @@ bool vpe10_validate_cached_param(struct vpe_priv *vpe_priv, const struct vpe_bui
 
     for (i = 0; i < vpe_priv->num_input_streams; i++) {
         struct vpe_stream stream = param->streams[i];
+        struct vpe_rect  *src_rect = &stream.scaling_info.src_rect;
+        struct vpe_rect  *dst_rect = &stream.scaling_info.dst_rect;
 
         vpe_clip_stream(
             &stream.scaling_info.src_rect, &stream.scaling_info.dst_rect, &param->target_rect);

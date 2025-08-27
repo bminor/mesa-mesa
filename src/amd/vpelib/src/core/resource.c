@@ -637,6 +637,9 @@ void vpe_clip_stream(
     struct vpe_rect clipped_dst_rect, clipped_src_rect;
     uint32_t        clipped_pixels;
 
+    if (dst_rect->height == 0 && dst_rect->width == 0)
+        return;
+
     clipped_dst_rect = *dst_rect;
     clipped_src_rect = *src_rect;
 
