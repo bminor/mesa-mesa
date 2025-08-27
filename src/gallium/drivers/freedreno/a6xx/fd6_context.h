@@ -165,6 +165,7 @@ struct fd6_control {
 #define control_ptr(fd6_ctx, member)                                           \
    (fd6_ctx)->control_mem, offsetof(struct fd6_control, member)
 
+template <chip CHIP>
 static inline void
 emit_marker6(fd_cs &cs, int scratch_idx)
 {
@@ -172,7 +173,7 @@ emit_marker6(fd_cs &cs, int scratch_idx)
    if (__EMIT_MARKER) {
       fd_pkt7(cs, CP_WAIT_FOR_IDLE, 0);
       fd_pkt4(cs, 1)
-         .add(A6XX_CP_SCRATCH_REG(scratch_idx, p_atomic_inc_return(&marker_cnt)));
+         .add(CP_SCRATCH_REG(CHIP, scratch_idx, p_atomic_inc_return(&marker_cnt)));
    }
 }
 

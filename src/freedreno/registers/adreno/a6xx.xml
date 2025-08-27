@@ -95,7 +95,15 @@ by a particular renderpass/blit.
 	</reg32>
 	<reg32 offset="0x0821" name="CP_HW_FAULT"/>
 	<reg32 offset="0x0823" name="CP_INTERRUPT_STATUS" type="A6XX_CP_INT"/>
-	<reg32 offset="0x0824" name="CP_PROTECT_STATUS"/>
+
+	<bitset name="a6xx_cp_protect_status" inline="yes">
+		<bitfield name="ADDR" low="0" high="17"/>
+		<bitfield name="READ" pos="20" type="boolean"/>
+		<bitfield name="CP_HALTED" pos="21" type="boolean"/>
+		<bitfield name="ACCESS_VIOLATION" pos="22" type="boolean"/>
+	</bitset>
+
+	<reg32 offset="0x0824" name="CP_PROTECT_STATUS" type="a6xx_cp_protect_status"/>
 	<reg32 offset="0x0825" name="CP_STATUS_1"/>
 	<reg64 offset="0x0830" name="CP_SQE_INSTR_BASE"/>
 	<reg32 offset="0x0840" name="CP_MISC_CNTL"/>
@@ -157,7 +165,7 @@ by a particular renderpass/blit.
 		<bitfield pos="0" name="ACCESS_PROT_EN" type="boolean"/>
 	</reg32>
 
-	<array offset="0x0883" name="CP_SCRATCH" stride="1" length="8">
+	<array offset="0x0883" name="CP_SCRATCH" stride="1" length="8" variants="A6XX-A7XX">
 		<reg32 offset="0x0" name="REG" type="uint"/>
 	</array>
 	<array offset="0x0850" name="CP_PROTECT" stride="1" length="32">
@@ -657,7 +665,7 @@ by a particular renderpass/blit.
 	<reg64 offset="0x0E0D" name="UCHE_GMEM_RANGE_MAX"/>
 	<reg32 offset="0x0E17" name="UCHE_CACHE_WAYS" usage="init"/>
 	<reg32 offset="0x0E18" name="UCHE_FILTER_CNTL"/>
-	<reg32 offset="0x0E19" name="UCHE_CLIENT_PF" usage="init">
+	<reg32 offset="0x0e19" name="UCHE_CLIENT_PF" variants="A6XX-A7XX" usage="init">
 		<bitfield high="7" low="0" name="PERFSEL"/>
 	</reg32>
 	<array offset="0x0E1C" name="UCHE_PERFCTR_UCHE_SEL" stride="1" length="12"/>
@@ -805,7 +813,7 @@ by a particular renderpass/blit.
 	<reg32 offset="0x0E10" name="UCHE_UNKNOWN_0E10" variants="A7XX-" usage="init"/>
 	<reg32 offset="0x0E11" name="UCHE_UNKNOWN_0E11" variants="A7XX-" usage="init"/>
 	<!-- always 0x03200000 ? -->
-	<reg32 offset="0x0e12" name="UCHE_UNKNOWN_0E12"  usage="init"/>
+	<reg32 offset="0x0e12" name="UCHE_UNKNOWN_0E12" variants="A6XX-A7XX" usage="init"/>
 
 	<!-- adreno_reg_xy has 15 bits per coordinate, but a6xx registers only have 14 -->
 	<bitset name="a6xx_reg_xy" inline="yes">
@@ -1408,7 +1416,7 @@ by a particular renderpass/blit.
 	<reg32 offset="0x840b" name="GRAS_A2D_SCISSOR_BR" type="a6xx_reg_xy" variants="A6XX-A7XX" usage="rp_blit"/>
 
 	<!-- always 0x880 ? (and 0 in a640/a650 traces?) -->
-	<reg32 offset="0x8600" name="GRAS_DBG_ECO_CNTL" usage="init">
+	<reg32 offset="0x8600" name="GRAS_DBG_ECO_CNTL" usage="init" variants="A6XX-A7XX">
 		<bitfield name="UNK7" pos="7" type="boolean"/>
 		<bitfield name="LRZCACHELOCKDIS" pos="11" type="boolean"/>
 	</reg32>
@@ -2442,7 +2450,7 @@ by a particular renderpass/blit.
 	<array offset="0x9e42" name="PC_PERFCTR_PC_SEL" stride="1" length="16" variants="A7XX-"/>
 
 	<!-- always 0x0 -->
-	<reg32 offset="0x9e72" name="PC_UNKNOWN_9E72" usage="init"/>
+	<reg32 offset="0x9e72" name="PC_CONTEXT_SWITCH_GFX_PREEMPTION_MODE" variants="A6XX-A7XX" usage="init"/>
 
 	<reg32 offset="0xa000" name="VFD_CNTL_0" usage="rp_blit">
 		<bitfield name="FETCH_CNT" low="0" high="5" type="uint"/>

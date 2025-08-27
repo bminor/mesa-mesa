@@ -560,7 +560,7 @@ fd6_emit_3d_state(fd_cs &cs, struct fd6_emit *emit)
    const struct fd6_program_state *prog = fd6_emit_get_prog(emit);
    const struct ir3_shader_variant *fs = emit->fs;
 
-   emit_marker6(cs, 5);
+   emit_marker6<CHIP>(cs, 5);
 
    /* Special case, we need to re-emit bindless FS state w/ the
     * fb-read state appended:
@@ -878,13 +878,13 @@ fd6_emit_static_non_context_regs(struct fd_context *ctx, fd_cs &cs)
    }
 
    ncrb.add(A6XX_VPC_DBG_ECO_CNTL(.dword = screen->info->a6xx.magic.VPC_DBG_ECO_CNTL));
-   ncrb.add(A6XX_GRAS_DBG_ECO_CNTL(.dword = screen->info->a6xx.magic.GRAS_DBG_ECO_CNTL));
+   ncrb.add(GRAS_DBG_ECO_CNTL(CHIP, .dword = screen->info->a6xx.magic.GRAS_DBG_ECO_CNTL));
    if (CHIP == A6XX)
       ncrb.add(HLSQ_DBG_ECO_CNTL(CHIP, .dword = screen->info->a6xx.magic.HLSQ_DBG_ECO_CNTL));
    ncrb.add(A6XX_SP_CHICKEN_BITS(.dword = screen->info->a6xx.magic.SP_CHICKEN_BITS));
 
-   ncrb.add(A6XX_UCHE_UNKNOWN_0E12(.dword = screen->info->a6xx.magic.UCHE_UNKNOWN_0E12));
-   ncrb.add(A6XX_UCHE_CLIENT_PF(.dword = screen->info->a6xx.magic.UCHE_CLIENT_PF));
+   ncrb.add(UCHE_UNKNOWN_0E12(CHIP, .dword = screen->info->a6xx.magic.UCHE_UNKNOWN_0E12));
+   ncrb.add(UCHE_CLIENT_PF(CHIP, .dword = screen->info->a6xx.magic.UCHE_CLIENT_PF));
 
    if (CHIP == A6XX) {
       ncrb.add(HLSQ_SHARED_CONSTS(CHIP));
@@ -908,7 +908,8 @@ fd6_emit_static_non_context_regs(struct fd_context *ctx, fd_cs &cs)
       ncrb.add(RB_BIN_FOVEAT(CHIP));
    }
 
-   ncrb.add(A6XX_PC_UNKNOWN_9E72());
+   ncrb.add(PC_CONTEXT_SWITCH_GFX_PREEMPTION_MODE(CHIP));
+
    if (CHIP == A7XX)
       ncrb.add(RB_UNKNOWN_8E09(CHIP, 0x4));
 }
@@ -1114,7 +1115,7 @@ fd6_emit_restore(fd_cs &cs, struct fd_batch *batch)
 
    fd_pkt7(cs, CP_WAIT_FOR_IDLE, 0);
 
-   fd6_emit_ib(cs, fd6_context(ctx)->restore);
+   fd6_emit_ib<CHIP>(cs, fd6_context(ctx)->restore);
    fd6_emit_ccu_cntl<CHIP>(cs, screen, false);
 
    uint32_t dwords;

@@ -487,7 +487,7 @@ draw_vbos(struct fd_context *ctx, const struct pipe_draw_info *info,
     * (scratch6) and DRAW is enough to "triangulate" the
     * particular draw that caused lockup.
     */
-   emit_marker6(cs, 7);
+   emit_marker6<CHIP>(cs, 7);
 
    if (is_indirect(DRAW)) {
       assert(num_draws == 1);  /* only >1 for direct draws */
@@ -553,7 +553,7 @@ draw_vbos(struct fd_context *ctx, const struct pipe_draw_info *info,
       }
    }
 
-   emit_marker6(cs, 7);
+   emit_marker6<CHIP>(cs, 7);
 
    flush_streamout<CHIP>(ctx, cs, &emit);
 
