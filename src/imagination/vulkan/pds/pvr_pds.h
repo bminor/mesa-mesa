@@ -909,6 +909,7 @@ struct pvr_pds_descriptor_set {
 #define PVR_BUFFER_TYPE_TILE_BUFFERS (11)
 #define PVR_BUFFER_TYPE_SPILL_INFO (12)
 #define PVR_BUFFER_TYPE_SCRATCH_INFO (13)
+#define PVR_BUFFER_TYPE_SAMPLE_LOCATIONS (14)
 #define PVR_BUFFER_TYPE_INVALID (~0)
 
 struct pvr_pds_buffer {

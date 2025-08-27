@@ -343,8 +343,10 @@ static inline pco_instr *build_itr(pco_builder *b,
  * \param[in] dest Instruction destination.
  * \return The translated PCO instruction.
  */
-static pco_instr *
-trans_load_input_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
+static pco_instr *trans_load_input_fs(trans_ctx *tctx,
+                                      nir_intrinsic_instr *intr,
+                                      pco_ref dest,
+                                      bool interp)
 {
    pco_fs_data *fs_data = &tctx->shader->data.fs;
    UNUSED unsigned base = nir_intrinsic_base(intr);
@@ -352,7 +354,7 @@ trans_load_input_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
    unsigned component = nir_intrinsic_component(intr);
    unsigned chans = pco_ref_get_chans(dest);
 
-   const nir_src offset = intr->src[0];
+   const nir_src offset = interp ? intr->src[1] : intr->src[0];
    assert(nir_src_as_uint(offset) == 0);
 
    struct nir_io_semantics io_semantics = nir_intrinsic_io_semantics(intr);
@@ -362,12 +364,40 @@ trans_load_input_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
                                                        nir_var_shader_in,
                                                        location);
 
+   enum glsl_interp_mode interp_mode = var->data.interpolation;
+
+   /* Setup iteration mode. */
    enum pco_itr_mode itr_mode = PCO_ITR_MODE_PIXEL;
    assert(!(var->data.sample && var->data.centroid));
    if (var->data.sample)
       itr_mode = PCO_ITR_MODE_SAMPLE;
    else if (var->data.centroid)
       itr_mode = PCO_ITR_MODE_CENTROID;
+
+   /* Override if load_input_interpolated. */
+   if (interp) {
+      nir_intrinsic_instr *bary = nir_src_as_intrinsic(intr->src[0]);
+      assert(bary);
+
+      interp_mode = nir_intrinsic_interp_mode(bary);
+
+      switch (bary->intrinsic) {
+      case nir_intrinsic_load_barycentric_pixel:
+         itr_mode = PCO_ITR_MODE_PIXEL;
+         break;
+
+      case nir_intrinsic_load_barycentric_sample:
+         itr_mode = PCO_ITR_MODE_SAMPLE;
+         break;
+
+      case nir_intrinsic_load_barycentric_centroid:
+         itr_mode = PCO_ITR_MODE_CENTROID;
+         break;
+
+      default:
+         UNREACHABLE("");
+      }
+   }
 
    if (location == VARYING_SLOT_POS) {
       /* Only scalar supported for now. */
@@ -377,7 +407,7 @@ trans_load_input_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
       /* TODO: support packing/partial vars. */
       assert(!var->data.location_frac);
 
-      assert(var->data.interpolation == INTERP_MODE_NOPERSPECTIVE);
+      assert(interp_mode == INTERP_MODE_NOPERSPECTIVE);
 
       /* Special case: x and y are loaded from special registers. */
       switch (component) {
@@ -423,7 +453,7 @@ trans_load_input_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
    bool usc_itrsmp_enhanced =
       PVR_HAS_FEATURE(tctx->pco_ctx->dev_info, usc_itrsmp_enhanced);
 
-   switch (var->data.interpolation) {
+   switch (interp_mode) {
    case INTERP_MODE_SMOOTH: {
       assert(fs_data->uses.w);
 
@@ -467,6 +497,51 @@ trans_load_input_fs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
       /* Should have been previously lowered. */
       UNREACHABLE("");
    }
+}
+
+static pco_instr *
+trans_load_fs_coeffs(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
+{
+   pco_fs_data *fs_data = &tctx->shader->data.fs;
+
+   unsigned component = nir_intrinsic_component(intr);
+   unsigned chans = pco_ref_get_chans(dest);
+
+   struct nir_io_semantics io_semantics = nir_intrinsic_io_semantics(intr);
+   gl_varying_slot location = io_semantics.location;
+
+   /* Special case, get z/w coeffs. */
+   if (location == VARYING_SLOT_POS) {
+      if (component == 2) {
+         assert(fs_data->uses.z);
+
+         pco_ref zcoeffs = pco_ref_hwreg_vec(0, PCO_REG_CLASS_COEFF, chans);
+
+         return pco_mov(&tctx->b, dest, zcoeffs, .rpt = chans);
+      } else if (component == 3) {
+         assert(fs_data->uses.w);
+
+         unsigned wcoeffs_index =
+            fs_data->uses.z ? ROGUE_USC_COEFFICIENT_SET_SIZE : 0;
+
+         pco_ref wcoeffs =
+            pco_ref_hwreg_vec(wcoeffs_index, PCO_REG_CLASS_COEFF, chans);
+
+         return pco_mov(&tctx->b, dest, wcoeffs, .rpt = chans);
+      }
+
+      UNREACHABLE("");
+   }
+
+   const pco_range *range = &fs_data->varyings[location];
+   assert(component + chans <= range->count);
+
+   unsigned coeffs_index =
+      range->start + (ROGUE_USC_COEFFICIENT_SET_SIZE * component);
+
+   pco_ref coeffs = pco_ref_hwreg_vec(coeffs_index, PCO_REG_CLASS_COEFF, chans);
+
+   return pco_mov(&tctx->b, dest, coeffs, .rpt = chans);
 }
 
 /**
@@ -1389,6 +1464,29 @@ trans_load_sysval(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
    return pco_mov(&tctx->b, dest, src, .rpt = chans);
 }
 
+static pco_instr *trans_load_packed_sample_location(trans_ctx *tctx,
+                                                    nir_intrinsic_instr *intr,
+                                                    pco_ref dest,
+                                                    pco_ref offset_src)
+{
+   unsigned idx_reg_num = 0;
+   pco_ref idx_reg =
+      pco_ref_hwreg_idx(idx_reg_num, idx_reg_num, PCO_REG_CLASS_INDEX);
+
+   pco_mov(&tctx->b, idx_reg, offset_src);
+
+   const pco_range *range = &tctx->shader->data.fs.sample_locations;
+   assert(range->count > 0);
+
+   /* TODO: add the start onto the offset src instead? */
+   assert(range->start < 256);
+
+   pco_ref src = pco_ref_hwreg(range->start, PCO_REG_CLASS_SHARED);
+   src = pco_ref_hwreg_idx_from(idx_reg_num, src);
+
+   return pco_mov(&tctx->b, dest, src);
+}
+
 static bool desc_set_binding_is_comb_img_smp(unsigned desc_set,
                                              unsigned binding,
                                              const pco_common_data *common)
@@ -1691,10 +1789,21 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
       if (tctx->stage == MESA_SHADER_VERTEX)
          instr = trans_load_input_vs(tctx, intr, dest);
       else if (tctx->stage == MESA_SHADER_FRAGMENT)
-         instr = trans_load_input_fs(tctx, intr, dest);
+         instr = trans_load_input_fs(tctx, intr, dest, false);
       else
          UNREACHABLE("Unsupported stage for \"nir_intrinsic_load_input\".");
       break;
+
+   case nir_intrinsic_load_interpolated_input:
+      assert(tctx->stage == MESA_SHADER_FRAGMENT);
+      instr = trans_load_input_fs(tctx, intr, dest, true);
+      break;
+
+   /* Just consume. */
+   case nir_intrinsic_load_barycentric_pixel:
+   case nir_intrinsic_load_barycentric_sample:
+   case nir_intrinsic_load_barycentric_centroid:
+      return NULL;
 
    case nir_intrinsic_store_output:
       if (tctx->stage == MESA_SHADER_VERTEX)
@@ -1703,6 +1812,10 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
          instr = trans_store_output_fs(tctx, intr, src[0]);
       else
          UNREACHABLE("Unsupported stage for \"nir_intrinsic_store_output\".");
+      break;
+
+   case nir_intrinsic_load_fs_coeffs_pco:
+      instr = trans_load_fs_coeffs(tctx, intr, dest);
       break;
 
    case nir_intrinsic_uvsw_write_pco:
@@ -1797,6 +1910,11 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
                                       pco_ref_null(),
                                       false,
                                       &tctx->shader->data.fs.blend_consts);
+      break;
+
+   case nir_intrinsic_load_packed_sample_location_pco:
+      assert(tctx->stage == MESA_SHADER_FRAGMENT);
+      instr = trans_load_packed_sample_location(tctx, intr, dest, src[0]);
       break;
 
    case nir_intrinsic_load_shared:
@@ -2095,6 +2213,22 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
                       dest,
                       pco_ref_hwreg(PCO_SR_FACE_ORIENT, PCO_REG_CLASS_SPEC));
       break;
+
+   case nir_intrinsic_load_tile_coord_pco: {
+      assert(tctx->stage == MESA_SHADER_FRAGMENT);
+
+      pco_ref xy[] = {
+         pco_ref_hwreg(PCO_SR_TILE_X_P, PCO_REG_CLASS_SPEC),
+         pco_ref_hwreg(PCO_SR_TILE_Y_P, PCO_REG_CLASS_SPEC),
+      };
+
+      unsigned component = nir_intrinsic_component(intr);
+      unsigned chans = pco_ref_get_chans(dest);
+      assert(component + chans <= ARRAY_SIZE(xy));
+
+      instr = pco_vec(&tctx->b, dest, chans, &xy[component]);
+      break;
+   }
 
    case nir_intrinsic_load_savmsk_vm_pco:
       instr = pco_savmsk(&tctx->b,

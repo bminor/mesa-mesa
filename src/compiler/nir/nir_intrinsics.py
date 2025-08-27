@@ -2790,3 +2790,10 @@ intrinsic("dma_ld_shregs_pco", src_comp=[2, 1, 1], bit_sizes=[32])
 
 # dma_st_shregs_pco(address, burst_len, shreg_offset, emit_idf)
 intrinsic("dma_st_shregs_pco", src_comp=[2, 1, 1], indices=[FLAGS], bit_sizes=[32])
+
+intrinsic("load_tile_coord_pco", dest_comp=0, flags=[CAN_ELIMINATE, CAN_REORDER], indices=[COMPONENT], bit_sizes=[32])
+
+intrinsic("load_fs_coeffs_pco", dest_comp=3, flags=[CAN_ELIMINATE, CAN_REORDER], indices=[COMPONENT, IO_SEMANTICS], bit_sizes=[32])
+
+# load_packed_sample_location_pco(dword_index)
+intrinsic("load_packed_sample_location_pco", src_comp=[1], dest_comp=1, flags=[CAN_ELIMINATE, CAN_REORDER], bit_sizes=[32])

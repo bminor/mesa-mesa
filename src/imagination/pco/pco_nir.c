@@ -64,6 +64,8 @@ static const nir_shader_compiler_options nir_options = {
    .lower_pack_64_2x32_split = true,
    .lower_unpack_64_2x32_split = true,
 
+   .lower_interpolate_at = true,
+
    .max_unroll_iterations = 16,
 
    .io_options = nir_io_vectorizer_ignores_types,
@@ -199,7 +201,8 @@ static bool gather_fs_data_pass(struct nir_builder *b,
 
    switch (intr->intrinsic) {
    /* Check whether the shader accesses z/w. */
-   case nir_intrinsic_load_input: {
+   case nir_intrinsic_load_input:
+   case nir_intrinsic_load_interpolated_input: {
       struct nir_io_semantics io_semantics = nir_intrinsic_io_semantics(intr);
       if (io_semantics.location != VARYING_SLOT_POS)
          return false;
@@ -210,6 +213,19 @@ static bool gather_fs_data_pass(struct nir_builder *b,
 
       data->fs.uses.z |= (component == 2);
       data->fs.uses.w |= (component + chans > 3);
+      break;
+   }
+
+   case nir_intrinsic_load_fs_coeffs_pco: {
+      struct nir_io_semantics io_semantics = nir_intrinsic_io_semantics(intr);
+      b->shader->info.inputs_read |= BITFIELD64_BIT(io_semantics.location);
+
+      if (io_semantics.location != VARYING_SLOT_POS)
+         return false;
+
+      unsigned component = nir_intrinsic_component(intr);
+      data->fs.uses.z |= (component == 2);
+      data->fs.uses.w |= (component == 3);
       break;
    }
 
@@ -860,6 +876,7 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
          .discard_ok = true,
       };
       NIR_PASS(_, nir, nir_opt_peephole_select, &peep_opts);
+      NIR_PASS(_, nir, pco_nir_lower_interpolation, &data->fs);
       NIR_PASS(_, nir, pco_nir_pfo, &data->fs);
       NIR_PASS(_, nir, pco_nir_lower_fs_intrinsics);
    } else if (nir->info.stage == MESA_SHADER_VERTEX) {

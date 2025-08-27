@@ -104,6 +104,8 @@ typedef struct _pco_fs_data {
 
    pco_range tile_buffers;
 
+   pco_range sample_locations;
+
    struct {
       bool w; /** Whether the shader uses pos.w. */
       bool z; /** Whether the shader uses pos.z */
@@ -114,6 +116,7 @@ typedef struct _pco_fs_data {
       bool discard;
       bool early_frag;
       bool sample_shading;
+      bool sample_locations;
       bool alpha_to_coverage;
       bool olchk_skip;
    } uses;

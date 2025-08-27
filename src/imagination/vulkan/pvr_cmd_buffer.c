@@ -4127,6 +4127,33 @@ static VkResult pvr_setup_descriptor_mappings(
                       pds_info->data_size_in_dwords);
             break;
          }
+
+         case PVR_BUFFER_TYPE_SAMPLE_LOCATIONS: {
+            /* Standard sample locations. */
+            uint32_t packed_sample_locations[] = {
+               0x000044cc,
+               0xeaa26e26,
+               0x359db759,
+               0x1ffb71d3,
+            };
+
+            struct pvr_suballoc_bo *sample_locations_bo;
+            result =
+               pvr_cmd_buffer_upload_general(cmd_buffer,
+                                             &packed_sample_locations,
+                                             sizeof(packed_sample_locations),
+                                             &sample_locations_bo);
+
+            if (result != VK_SUCCESS)
+               return result;
+
+            PVR_WRITE(qword_buffer,
+                      sample_locations_bo->dev_addr.addr,
+                      special_buff_entry->const_offset,
+                      pds_info->data_size_in_dwords);
+            break;
+         }
+
          default:
             UNREACHABLE("Unsupported special buffer type.");
          }

@@ -1257,3 +1257,280 @@ bool pco_nir_link_clip_cull_vars(nir_shader *producer, nir_shader *consumer)
 
    return true;
 }
+
+static bool lower_bary_at_sample(nir_builder *b, nir_intrinsic_instr *intr)
+{
+   /* Check for and handle simple replacement cases:
+    * - Flat interpolation - don't care about sample num, will get consumed.
+    * - Sample num is current sample.
+    */
+   enum glsl_interp_mode interp_mode = nir_intrinsic_interp_mode(intr);
+   nir_intrinsic_instr *sample = nir_src_as_intrinsic(intr->src[0]);
+
+   if (interp_mode == INTERP_MODE_FLAT ||
+       (sample && sample->intrinsic == nir_intrinsic_load_sample_id)) {
+      nir_def *repl = nir_load_barycentric_sample(
+         b,
+         intr->def.bit_size,
+         .interp_mode = nir_intrinsic_interp_mode(intr));
+      nir_def_replace(&intr->def, repl);
+      nir_instr_free(&intr->instr);
+      return true;
+   }
+
+   /* Turn the sample id into a position. */
+   nir_def *offset =
+      nir_load_sample_pos_from_id(b, intr->def.bit_size, intr->src[0].ssa);
+   offset = nir_fadd_imm(b, offset, -0.5f);
+
+   nir_def *repl = nir_load_barycentric_at_offset(
+      b,
+      intr->def.bit_size,
+      offset,
+      .interp_mode = nir_intrinsic_interp_mode(intr));
+
+   nir_def_replace(&intr->def, repl);
+   nir_instr_free(&intr->instr);
+   return true;
+}
+
+static bool src_is_vec2_sample_pos_minus_half(nir_src src)
+{
+   nir_alu_instr *alu = nir_src_as_alu_instr(src);
+   if (!alu || alu->op != nir_op_vec2)
+      return false;
+
+   /* Check both vec2 components. */
+   for (unsigned u = 0; u < 2; ++u) {
+      nir_scalar comp = nir_get_scalar(&alu->def, u);
+      comp = nir_scalar_chase_movs(comp);
+
+      if (!nir_scalar_is_alu(comp))
+         return false;
+
+      /* Look for fadd(sample_pos.x/y, -0.5f) or fsub(sample_pos.x/y, +0.5f) */
+      nir_op op = nir_scalar_alu_op(comp);
+      if (op != nir_op_fadd && op != nir_op_fsub)
+         return false;
+
+      float half_val = op == nir_op_fadd ? -0.5f : +0.5f;
+      unsigned sample_pos_srcn = ~0U;
+      unsigned half_srcn = ~0U;
+
+      /* Check both fadd/fsub sources. */
+      for (unsigned n = 0; n < 2; ++n) {
+         nir_scalar src = nir_scalar_chase_alu_src(comp, n);
+
+         if (nir_scalar_is_intrinsic(src) &&
+             nir_scalar_intrinsic_op(src) == nir_intrinsic_load_sample_pos) {
+            sample_pos_srcn = n;
+         } else if (nir_scalar_is_const(src) &&
+                    nir_scalar_as_const_value(src).f32 == half_val) {
+            half_srcn = n;
+         }
+      }
+
+      /* One or more operands not found. */
+      if (sample_pos_srcn == ~0U || half_srcn == ~0U)
+         return false;
+
+      /* fsub is not commutative. */
+      if (op == nir_op_fsub && (sample_pos_srcn != 0 || half_srcn != 1))
+         return false;
+
+      /* vec2.{x,y} needs to be referencing load_sample_pos.{x,y}. */
+      nir_scalar sample_pos_src =
+         nir_scalar_chase_alu_src(comp, sample_pos_srcn);
+      if (sample_pos_src.comp != u)
+         return false;
+   }
+
+   return true;
+}
+
+static bool lower_bary_at_offset(nir_builder *b, nir_intrinsic_instr *intr)
+{
+   /* Check for and handle simple replacement cases:
+    * - Flat interpolation - don't care about offset, will get consumed.
+    * - Offset is zero.
+    * - sample_pos - 0.5f.
+    */
+   enum glsl_interp_mode interp_mode = nir_intrinsic_interp_mode(intr);
+   nir_src src = intr->src[0];
+
+   if (interp_mode == INTERP_MODE_FLAT ||
+       (nir_src_is_const(src) && !nir_src_comp_as_int(src, 0) &&
+        !nir_src_comp_as_int(src, 1))) {
+      nir_def *repl = nir_load_barycentric_pixel(
+         b,
+         intr->def.bit_size,
+         .interp_mode = nir_intrinsic_interp_mode(intr));
+      nir_def_replace(&intr->def, repl);
+      nir_instr_free(&intr->instr);
+      return true;
+   }
+
+   if (src_is_vec2_sample_pos_minus_half(src)) {
+      nir_def *repl = nir_load_barycentric_sample(
+         b,
+         intr->def.bit_size,
+         .interp_mode = nir_intrinsic_interp_mode(intr));
+      nir_def_replace(&intr->def, repl);
+      nir_instr_free(&intr->instr);
+      return true;
+   }
+
+   /* Non-zero offsets handled in lower_interp. */
+   return false;
+}
+
+static bool
+lower_bary(nir_builder *b, nir_intrinsic_instr *intr, UNUSED void *cb_data)
+{
+   b->cursor = nir_before_instr(&intr->instr);
+
+   switch (intr->intrinsic) {
+   case nir_intrinsic_load_barycentric_at_sample:
+      return lower_bary_at_sample(b, intr);
+
+   case nir_intrinsic_load_barycentric_at_offset:
+      return lower_bary_at_offset(b, intr);
+
+   default:
+      break;
+   }
+
+   return false;
+}
+
+static nir_def *alu_iter(nir_builder *b,
+                         nir_def *coords,
+                         unsigned component,
+                         struct nir_io_semantics io_semantics)
+{
+   nir_def *coeffs = nir_load_fs_coeffs_pco(b,
+                                            .component = component,
+                                            .io_semantics = io_semantics);
+
+   nir_def *result = nir_ffma(b,
+                              nir_channel(b, coeffs, 1),
+                              nir_channel(b, coords, 1),
+                              nir_channel(b, coeffs, 2));
+   result =
+      nir_ffma(b, nir_channel(b, coeffs, 0), nir_channel(b, coords, 0), result);
+
+   return result;
+}
+
+static bool
+lower_sample_pos(nir_builder *b, nir_intrinsic_instr *intr, pco_fs_data *fs)
+{
+   b->cursor = nir_before_instr(&intr->instr);
+
+   nir_def *msaa_samples = nir_bit_count(
+      b,
+      nir_u2u32(b, nir_alpha_to_coverage(b, nir_imm_float(b, 1.0f))));
+
+   nir_def *sample_id = intr->intrinsic == nir_intrinsic_load_sample_pos
+                           ? nir_load_sample_id(b)
+                           : intr->src[0].ssa;
+
+   nir_def *dword_index =
+      nir_ishr_imm(b, nir_iadd(b, msaa_samples, sample_id), 2);
+
+   nir_def *packed_sample_location =
+      nir_load_packed_sample_location_pco(b, dword_index);
+   fs->uses.sample_locations = true;
+
+   nir_def *byte_index = nir_iand_imm(b, sample_id, 0b11);
+
+   packed_sample_location =
+      nir_extract_u8(b, packed_sample_location, byte_index);
+
+   nir_def *sample_location =
+      nir_vec2(b,
+               nir_ubitfield_extract_imm(b, packed_sample_location, 0, 4),
+               nir_ubitfield_extract_imm(b, packed_sample_location, 4, 4));
+
+   sample_location = nir_u2f32(b, sample_location);
+   sample_location = nir_fdiv_imm(b, sample_location, 16.0f);
+   sample_location = nir_bcsel(b,
+                               nir_ieq_imm(b, msaa_samples, 1),
+                               nir_imm_vec2(b, 0.5f, 0.5f),
+                               sample_location);
+
+   nir_def_replace(&intr->def, sample_location);
+   nir_instr_free(&intr->instr);
+
+   return true;
+}
+
+static bool
+lower_interp(nir_builder *b, nir_intrinsic_instr *intr, void *cb_data)
+{
+   pco_fs_data *fs = cb_data;
+   b->cursor = nir_before_instr(&intr->instr);
+
+   switch (intr->intrinsic) {
+   case nir_intrinsic_load_sample_pos:
+   case nir_intrinsic_load_sample_pos_from_id:
+      return lower_sample_pos(b, intr, fs);
+
+   case nir_intrinsic_load_interpolated_input:
+      break;
+
+   default:
+      return false;
+   }
+
+   nir_intrinsic_instr *bary = nir_src_as_intrinsic(intr->src[0]);
+   assert(bary);
+
+   /* Skip cases that don't need handling. */
+   if (bary->intrinsic != nir_intrinsic_load_barycentric_at_offset)
+      return false;
+
+   assert(nir_src_as_uint(intr->src[1]) == 0);
+
+   nir_def *coords = nir_load_tile_coord_pco(b, 2);
+   coords = nir_fadd(b, coords, bary->src[0].ssa);
+
+   enum glsl_interp_mode interp_mode = nir_intrinsic_interp_mode(bary);
+   nir_def *rhw = alu_iter(b,
+                           coords,
+                           3,
+                           (struct nir_io_semantics){
+                              .location = VARYING_SLOT_POS,
+                              .num_slots = 1,
+                           });
+
+   nir_def *comps[4];
+   for (unsigned u = 0; u < intr->def.num_components; ++u) {
+      comps[u] = alu_iter(b, coords, u, nir_intrinsic_io_semantics(intr));
+      if (interp_mode != INTERP_MODE_NOPERSPECTIVE)
+         comps[u] = nir_fdiv(b, comps[u], rhw);
+   }
+
+   nir_def *repl = nir_vec(b, comps, intr->def.num_components);
+   nir_def_replace(&intr->def, repl);
+   nir_instr_free(&intr->instr);
+
+   return true;
+}
+
+bool pco_nir_lower_interpolation(nir_shader *shader, pco_fs_data *fs)
+{
+   bool progress = false;
+
+   progress |= nir_shader_intrinsics_pass(shader,
+                                          lower_bary,
+                                          nir_metadata_control_flow,
+                                          NULL);
+
+   progress |= nir_shader_intrinsics_pass(shader,
+                                          lower_interp,
+                                          nir_metadata_control_flow,
+                                          fs);
+
+   return progress;
+}

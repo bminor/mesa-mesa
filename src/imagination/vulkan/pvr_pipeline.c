@@ -656,6 +656,14 @@ static VkResult pvr_pds_descriptor_program_create_and_upload(
       };
    }
 
+   if (stage == MESA_SHADER_FRAGMENT && data->fs.sample_locations.count > 0) {
+      program.buffers[program.buffer_count++] = (struct pvr_pds_buffer){
+         .type = PVR_BUFFER_TYPE_SAMPLE_LOCATIONS,
+         .size_in_dwords = data->fs.sample_locations.count,
+         .destination = data->fs.sample_locations.start,
+      };
+   }
+
    pds_info->entries_size_in_bytes = const_entries_size_in_bytes;
 
    pvr_pds_generate_descriptor_upload_program(&program, NULL, pds_info);
@@ -1835,6 +1843,16 @@ static void pvr_alloc_fs_sysvals(pco_data *data, nir_shader *nir)
    gl_system_value builtin_sys_vals[] = {
       SYSTEM_VALUE_SAMPLE_ID,
       SYSTEM_VALUE_LAYER_ID,
+      SYSTEM_VALUE_SAMPLE_POS,
+      SYSTEM_VALUE_BARYCENTRIC_LINEAR_CENTROID,
+      SYSTEM_VALUE_BARYCENTRIC_LINEAR_COORD,
+      SYSTEM_VALUE_BARYCENTRIC_LINEAR_PIXEL,
+      SYSTEM_VALUE_BARYCENTRIC_LINEAR_SAMPLE,
+      SYSTEM_VALUE_BARYCENTRIC_PERSP_CENTROID,
+      SYSTEM_VALUE_BARYCENTRIC_PERSP_COORD,
+      SYSTEM_VALUE_BARYCENTRIC_PERSP_PIXEL,
+      SYSTEM_VALUE_BARYCENTRIC_PERSP_SAMPLE,
+      SYSTEM_VALUE_BARYCENTRIC_PULL_MODEL,
    };
 
    for (unsigned u = 0; u < ARRAY_SIZE(builtin_sys_vals); ++u)
@@ -2171,6 +2189,16 @@ static void pvr_setup_fs_tile_buffers(pco_data *data)
 
    data->fs.tile_buffers.start = data->common.shareds;
    data->common.shareds += data->fs.tile_buffers.count;
+}
+
+static void pvr_setup_fs_sample_locations(pco_data *data)
+{
+   if (!data->fs.uses.sample_locations)
+      return;
+
+   data->fs.sample_locations.start = data->common.shareds;
+   data->fs.sample_locations.count = 4; /* TODO */
+   data->common.shareds += data->fs.sample_locations.count;
 }
 
 static void pvr_alloc_cs_sysvals(pco_data *data, nir_shader *nir)
@@ -2544,6 +2572,7 @@ static void pvr_postprocess_shader_data(pco_data *data,
       pvr_setup_fs_input_attachments(data, nir, subpass, hw_subpass);
       pvr_setup_fs_blend(data);
       pvr_setup_fs_tile_buffers(data);
+      pvr_setup_fs_sample_locations(data);
 
       /* TODO: push consts, blend consts, dynamic state, etc. */
       break;
