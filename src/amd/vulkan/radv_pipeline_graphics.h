@@ -80,6 +80,10 @@ struct radv_vertex_input_state {
    uint32_t attrib_index_offset[MAX_VERTEX_ATTRIBS]; /* Only used with static strides. */
    uint32_t non_trivial_format[MAX_VERTEX_ATTRIBS];
 
+   uint32_t vbo_misaligned_mask;
+   uint32_t vbo_unaligned_mask;
+   uint32_t vbo_misaligned_mask_invalid;
+
    bool bindings_match_attrib;
 };
 

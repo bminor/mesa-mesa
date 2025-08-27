@@ -497,9 +497,6 @@ struct radv_cmd_state {
    uint32_t rt_stack_size;
 
    struct radv_shader_part *emitted_vs_prolog;
-   uint32_t vbo_misaligned_mask;
-   uint32_t vbo_unaligned_mask;
-   uint32_t vbo_misaligned_mask_invalid;
    uint32_t vbo_bound_mask;
 
    struct radv_shader_part *emitted_ps_epilog;

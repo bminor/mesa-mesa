@@ -3321,6 +3321,8 @@ radv_pipeline_init_vertex_input_state(const struct radv_device *device, struct r
             pipeline->vertex_input.nontrivial_formats |= BITFIELD_BIT(i);
          }
       }
+
+      pipeline->vertex_input.vbo_misaligned_mask = pipeline->vertex_input.attribute_mask;
    } else {
       u_foreach_bit (i, vs->info.vs.vb_desc_usage_mask) {
          pipeline->vertex_input.bindings[i] = i;
