@@ -78,6 +78,13 @@ pan_kmod_bo_init(struct pan_kmod_bo *bo, struct pan_kmod_dev *dev,
                  struct pan_kmod_vm *exclusive_vm, uint64_t size, uint32_t flags,
                  uint32_t handle)
 {
+   /* Set by default when the device is IO coherent. We might want to
+    * make it optional at some point and pass a NON_COHERENT flag to
+    * the KMD to force non-coherent mappings on IO coherent setup.
+    */
+   if (dev->props.is_io_coherent)
+      flags |= PAN_KMOD_BO_FLAG_IO_COHERENT;
+
    bo->dev = dev;
    bo->exclusive_vm = exclusive_vm;
    bo->size = size;

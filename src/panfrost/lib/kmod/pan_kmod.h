@@ -109,6 +109,12 @@ enum pan_kmod_bo_flags {
     * supported by the GPU.
     */
    PAN_KMOD_BO_FLAG_WB_MMAP = BITFIELD_BIT(6),
+
+   /* Set by default when the device is IO coherent. We might want to
+    * make it optional at some point and pass a NON_COHERENT flag to
+    * the KMD to force non-coherent mappings on IO coherent setup.
+    */
+   PAN_KMOD_BO_FLAG_IO_COHERENT = BITFIELD_BIT(7),
 };
 
 /* Allowed group priority flags. */
@@ -223,6 +229,11 @@ struct pan_kmod_dev_props {
 
    /* Mask of BO flags supported by the KMD. */
    uint32_t supported_bo_flags;
+
+   /* GPU is IO coherent, meaning BOs can be created with WB_MMAP without
+    * requiring explicit CPU cache maintenance.
+    */
+   bool is_io_coherent;
 };
 
 /* Memory allocator for kmod internal allocations. */

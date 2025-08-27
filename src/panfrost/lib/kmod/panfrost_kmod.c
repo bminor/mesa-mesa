@@ -201,8 +201,16 @@ panfrost_dev_query_props(struct panfrost_kmod_dev *panfrost_dev)
    props->supported_bo_flags = PAN_KMOD_BO_FLAG_EXECUTABLE |
                                PAN_KMOD_BO_FLAG_ALLOC_ON_FAULT |
                                PAN_KMOD_BO_FLAG_NO_MMAP;
-   if (pan_kmod_driver_version_at_least(&dev->driver, 1, 6))
+
+   if (pan_kmod_driver_version_at_least(&dev->driver, 1, 6)) {
+      uint32_t selected_coherency =
+         panfrost_query_raw(fd, DRM_PANFROST_PARAM_SELECTED_COHERENCY, true,
+                            DRM_PANFROST_GPU_COHERENCY_NONE);
+
       props->supported_bo_flags |= PAN_KMOD_BO_FLAG_WB_MMAP;
+      props->is_io_coherent =
+         selected_coherency != DRM_PANFROST_GPU_COHERENCY_NONE;
+   }
 }
 
 static struct pan_kmod_dev *

@@ -180,8 +180,11 @@ panthor_dev_query_props(struct panthor_kmod_dev *panthor_dev)
    if (pan_kmod_driver_version_at_least(&panthor_dev->base.driver, 1, 6))
       props->timestamp_device_coherent = true;
 
-   if (pan_kmod_driver_version_at_least(&panthor_dev->base.driver, 1, 7))
+   if (pan_kmod_driver_version_at_least(&panthor_dev->base.driver, 1, 7)) {
+      props->is_io_coherent = panthor_dev->props.gpu.selected_coherency !=
+                              DRM_PANTHOR_GPU_COHERENCY_NONE;
       props->supported_bo_flags |= PAN_KMOD_BO_FLAG_WB_MMAP;
+   }
 
    static_assert(sizeof(props->texture_features) ==
                     sizeof(panthor_dev->props.gpu.texture_features),
