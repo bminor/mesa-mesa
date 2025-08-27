@@ -6544,11 +6544,11 @@ radv_flush_vertex_descriptors(struct radv_cmd_buffer *cmd_buffer)
    bool uses_dynamic_inputs = vs->info.vs.dynamic_inputs;
    struct radv_cmd_stream *cs = cmd_buffer->cs;
 
-   if (!vs->info.vs.vb_desc_usage_mask)
+   if (!vs)
       return;
 
-   /* Mesh shaders don't have vertex descriptors. */
-   assert(!cmd_buffer->state.mesh_shading);
+   if (!vs->info.vs.vb_desc_usage_mask)
+      return;
 
    unsigned vb_desc_alloc_size =
       (uses_dynamic_inputs ? vs->info.vs.num_attributes : util_bitcount(vs->info.vs.vb_desc_usage_mask)) * 16;
