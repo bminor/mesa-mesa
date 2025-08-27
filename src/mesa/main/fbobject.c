@@ -3338,6 +3338,12 @@ bind_framebuffer(GLenum target, GLuint framebuffer)
    GLboolean bindReadBuf, bindDrawBuf;
    GET_CURRENT_CONTEXT(ctx);
 
+   if (MESA_VERBOSE & VERBOSE_API)
+      _mesa_debug(ctx,
+                  "glBindFramebuffer(%s, %u)\n",
+                  _mesa_enum_to_string(target),
+                  framebuffer);
+
    switch (target) {
    case GL_DRAW_FRAMEBUFFER_EXT:
       bindDrawBuf = GL_TRUE;
@@ -5779,6 +5785,14 @@ _mesa_InvalidateFramebuffer(GLenum target, GLsizei numAttachments,
 {
    struct gl_framebuffer *fb;
    GET_CURRENT_CONTEXT(ctx);
+
+   if (MESA_VERBOSE & VERBOSE_API) {
+      for (unsigned i = 0; i < numAttachments; i++)
+         _mesa_debug(ctx,
+                     "glInvalidateFramebuffer(%s, %s)\n",
+                     _mesa_enum_to_string(target),
+                     _mesa_enum_to_string(attachments[i]));
+   }
 
    fb = get_framebuffer_target(ctx, target);
    if (!fb) {
