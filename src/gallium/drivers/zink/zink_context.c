@@ -3162,7 +3162,7 @@ begin_rendering(struct zink_context *ctx, bool check_msaa_expand)
       }
    }
    if (use_tc_info && ctx->dynamic_fb.tc_info.has_resolve) {
-      struct zink_resource *resolves[3] = {
+      struct zink_resource *resolves[] = {
          zink_resource(ctx->fb_state.resolve),
          zink_resource(ctx->dynamic_fb.tc_info.resolve[1]),
       };
