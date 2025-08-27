@@ -5989,9 +5989,7 @@ radv_emit_vs_prolog_state(struct radv_cmd_buffer *cmd_buffer)
    const struct radv_shader *vs_shader = radv_get_shader(cmd_buffer->state.shaders, MESA_SHADER_VERTEX);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
 
-   assert(!cmd_buffer->state.mesh_shading);
-
-   if (!vs_shader->info.vs.has_prolog)
+   if (!vs_shader || !vs_shader->info.vs.has_prolog)
       return;
 
    uint32_t nontrivial_divisors;
