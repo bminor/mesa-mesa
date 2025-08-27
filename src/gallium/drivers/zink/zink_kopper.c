@@ -1155,6 +1155,17 @@ zink_kopper_fixup_depth_buffer(struct zink_context *ctx)
    res->base.b.width0 = ctx->fb_state.width;
    res->base.b.height0 = ctx->fb_state.height;
    pipe_resource_reference(&pz, NULL);
+
+   /* this otherwise won't have its layout set */
+   if (ctx->blitting) {
+      /* shhhh, illegal to barrier while blitting*/
+      ctx->blitting = false;
+      screen->image_barrier(ctx, res,
+                            screen->driver_workarounds.general_layout ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT);
+      ctx->blitting = true;;
+   }
 }
 
 bool
