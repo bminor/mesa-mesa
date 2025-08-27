@@ -339,7 +339,12 @@ LPJit::LPJit() :jit_dylib_count(0) {
          .setJITTargetMachineBuilder(std::move(JTMB))
 #ifdef USE_JITLINK
          .setObjectLinkingLayerCreator(
+#if LLVM_VERSION_MAJOR >= 21
+            /* LLVM 21 removed the Triple argument */
+            [&](ExecutionSession &ES) {
+#else
             [&](ExecutionSession &ES, const llvm::Triple &TT) {
+#endif
                return std::make_unique<ObjectLinkingLayer>(
                   ES, ExitOnErr(llvm::jitlink::InProcessMemoryManager::Create()));
             })
@@ -551,7 +556,7 @@ init_gallivm_state(struct gallivm_state *gallivm, const char *name,
    gallivm->cache = cache;
 
    gallivm->_ts_context = context->ref;
-   gallivm->context = LLVMOrcThreadSafeContextGetContext(context->ref);
+   gallivm->context = LLVMContextCreate();
 
    gallivm->module_name = LPJit::get_unique_name(name);
    gallivm->module = LLVMModuleCreateWithNameInContext(gallivm->module_name,
