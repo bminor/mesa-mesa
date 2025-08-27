@@ -923,6 +923,8 @@ lower_input_attachment_load(nir_builder *b, nir_intrinsic_instr *intr,
       nir_def *is_color_att = nir_ilt_imm(b, target, 8);
       nir_def *load_color, *load_zs;
       nir_io_semantics iosem = {0};
+      iosem.fb_fetch_output = true;
+      iosem.fb_fetch_output_coherent = !!(nir_intrinsic_access(intr) & ACCESS_COHERENT);
 
       nir_push_if(b, is_color_att);
       {
