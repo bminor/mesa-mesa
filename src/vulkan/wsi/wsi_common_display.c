@@ -3456,15 +3456,15 @@ wsi_display_output_to_root(xcb_connection_t *connection,
         root == 0 && iter.rem;
         xcb_screen_next(&iter))
    {
-      xcb_randr_get_screen_resources_cookie_t gsr_c =
-         xcb_randr_get_screen_resources(connection, iter.data->root);
-      xcb_randr_get_screen_resources_reply_t *gsr_r =
-         xcb_randr_get_screen_resources_reply(connection, gsr_c, NULL);
+      xcb_randr_get_screen_resources_current_cookie_t gsr_c =
+         xcb_randr_get_screen_resources_current(connection, iter.data->root);
+      xcb_randr_get_screen_resources_current_reply_t *gsr_r =
+         xcb_randr_get_screen_resources_current_reply(connection, gsr_c, NULL);
 
       if (!gsr_r)
          return 0;
 
-      xcb_randr_output_t *ro = xcb_randr_get_screen_resources_outputs(gsr_r);
+      xcb_randr_output_t *ro = xcb_randr_get_screen_resources_current_outputs(gsr_r);
 
       for (int o = 0; o < gsr_r->num_outputs; o++) {
          if (ro[o] == output) {
@@ -3593,12 +3593,12 @@ wsi_display_get_output(struct wsi_device *wsi_device,
       connector->output = output;
    }
 
-   xcb_randr_get_screen_resources_cookie_t src =
-      xcb_randr_get_screen_resources(connection, root);
+   xcb_randr_get_screen_resources_current_cookie_t src =
+      xcb_randr_get_screen_resources_current(connection, root);
    xcb_randr_get_output_info_cookie_t oic =
       xcb_randr_get_output_info(connection, output, XCB_CURRENT_TIME);
-   xcb_randr_get_screen_resources_reply_t *srr =
-      xcb_randr_get_screen_resources_reply(connection, src, NULL);
+   xcb_randr_get_screen_resources_current_reply_t *srr =
+      xcb_randr_get_screen_resources_current_reply(connection, src, NULL);
    xcb_randr_get_output_info_reply_t *oir =
       xcb_randr_get_output_info_reply(connection, oic, NULL);
 
@@ -3613,7 +3613,7 @@ wsi_display_get_output(struct wsi_device *wsi_device,
       xcb_randr_mode_t *x_modes = xcb_randr_get_output_info_modes(oir);
       for (int m = 0; m < oir->num_modes; m++) {
          xcb_randr_mode_info_iterator_t i =
-            xcb_randr_get_screen_resources_modes_iterator(srr);
+            xcb_randr_get_screen_resources_current_modes_iterator(srr);
          while (i.rem) {
             xcb_randr_mode_info_t *mi = i.data;
             if (mi->id == x_modes[m]) {
