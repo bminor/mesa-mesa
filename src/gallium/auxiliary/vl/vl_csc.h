@@ -29,6 +29,8 @@
 #define vl_csc_h
 
 #include "util/compiler.h"
+#include "util/format/u_format.h"
+#include "pipe/p_video_enums.h"
 
 typedef float vl_csc_matrix[3][4];
 
@@ -56,5 +58,11 @@ void vl_csc_get_matrix(enum VL_CSC_COLOR_STANDARD cs,
                        struct vl_procamp *procamp,
                        bool full_range,
                        vl_csc_matrix *matrix);
+
+void vl_csc_get_rgbyuv_matrix(enum pipe_video_vpp_matrix_coefficients coefficients,
+                              enum pipe_format in_format, enum pipe_format out_format,
+                              enum pipe_video_vpp_color_range in_color_range,
+                              enum pipe_video_vpp_color_range out_color_range,
+                              vl_csc_matrix *matrix);
 
 #endif /* vl_csc_h */
