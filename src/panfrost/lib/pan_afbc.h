@@ -79,7 +79,6 @@ enum pan_afbc_mode {
    PAN_AFBC_MODE_R8G8B8A8,
    PAN_AFBC_MODE_R10G10B10A2,
    PAN_AFBC_MODE_R11G11B10,
-   PAN_AFBC_MODE_S8,
 
    /* YUV special modes */
    PAN_AFBC_MODE_YUV420_6C8,
@@ -638,13 +637,7 @@ pan_afbc_can_tile(unsigned arch)
 static inline enum mali_afbc_compression_mode
 pan_afbc_compression_mode(enum pipe_format format, unsigned plane_idx)
 {
-   /* There's a special case for texturing the stencil part from a combined
-    * depth/stencil texture, handle it separately.
-    */
-   if (format == PIPE_FORMAT_X24S8_UINT)
-      return MALI_AFBC_COMPRESSION_MODE_X24S8;
-
-   /* Otherwise, map canonical formats to the hardware enum. This only
+   /* Map canonical formats to the hardware enum. This only
     * needs to handle the subset of formats returned by
     * pan_afbc_format.
     */
@@ -667,8 +660,6 @@ pan_afbc_compression_mode(enum pipe_format format, unsigned plane_idx)
       return MALI_AFBC_COMPRESSION_MODE_R10G10B10A2;
    case PAN_AFBC_MODE_R11G11B10:
       return MALI_AFBC_COMPRESSION_MODE_R11G11B10;
-   case PAN_AFBC_MODE_S8:
-      return MALI_AFBC_COMPRESSION_MODE_S8;
    case PAN_AFBC_MODE_YUV420_6C8:
       return MALI_AFBC_COMPRESSION_MODE_YUV420_6C8;
    case PAN_AFBC_MODE_YUV420_2C8:
@@ -698,6 +689,20 @@ pan_afbc_compression_mode(enum pipe_format format, unsigned plane_idx)
    }
 
    UNREACHABLE("all AFBC formats handled");
+}
+
+static inline enum mali_afbc_compression_mode
+pan_afbc_decompression_mode(enum pipe_format view_format,
+                            enum pipe_format img_format, unsigned plane_idx)
+{
+   /* There are special cases for texture views of stencil images. */
+   if (img_format == PIPE_FORMAT_Z24_UNORM_S8_UINT &&
+       view_format == PIPE_FORMAT_X24S8_UINT)
+      return MALI_AFBC_COMPRESSION_MODE_X24S8;
+   else if (view_format == PIPE_FORMAT_S8_UINT)
+      return MALI_AFBC_COMPRESSION_MODE_S8;
+
+   return pan_afbc_compression_mode(img_format, plane_idx);
 }
 #endif
 

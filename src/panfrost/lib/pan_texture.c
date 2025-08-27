@@ -683,8 +683,8 @@ emit_afbc_plane(const struct pan_image_view *iview, int plane_idx,
       cfg.split_block = (props->modifier & AFBC_FORMAT_MOD_SPLIT);
       cfg.tiled_header = (props->modifier & AFBC_FORMAT_MOD_TILED);
       cfg.prefetch = true;
-      cfg.compression_mode =
-         pan_afbc_compression_mode(iview->format, plane_idx);
+      cfg.compression_mode = pan_afbc_decompression_mode(
+         iview->format, props->format, pref.plane_idx);
       PLANE_SET_SIZE(cfg, plane_size);
       cfg.pointer = header_addr;
       cfg.header_row_stride = header_row_stride;
