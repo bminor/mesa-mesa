@@ -123,7 +123,6 @@ struct radv_graphics_pipeline {
 
    struct radv_multisample_state ms;
    struct radv_ia_multi_vgt_param_helpers ia_multi_vgt_param;
-   uint32_t binding_stride[MAX_VBS];
    uint32_t db_render_control;
 
    /* Last pre-PS API stage */

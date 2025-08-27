@@ -468,6 +468,9 @@ radv_pipeline_needed_dynamic_state(const struct radv_device *device, const struc
    if (!(pipeline->active_stages & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT))
       states &= ~(RADV_DYNAMIC_PATCH_CONTROL_POINTS | RADV_DYNAMIC_TESS_DOMAIN_ORIGIN);
 
+   if (pipeline->dynamic_states & RADV_DYNAMIC_VERTEX_INPUT)
+      states &= ~RADV_DYNAMIC_VERTEX_INPUT_BINDING_STRIDE;
+
    return states;
 }
 
@@ -1064,6 +1067,12 @@ radv_pipeline_init_dynamic_state(const struct radv_device *device, struct radv_g
 
       dynamic->feedback_loop_aspects =
          uses_ds_feedback_loop ? (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) : VK_IMAGE_ASPECT_NONE;
+   }
+
+   if (states & RADV_DYNAMIC_VERTEX_INPUT_BINDING_STRIDE) {
+      u_foreach_bit (i, state->vi->bindings_valid) {
+         dynamic->vk.vi_binding_strides[i] = state->vi->bindings[i].stride;
+      }
    }
 
    for (uint32_t i = 0; i < MAX_RTS; i++) {
@@ -3250,10 +3259,6 @@ radv_pipeline_init_vertex_input_state(const struct radv_device *device, struct r
 
    if (!state->vi)
       return;
-
-   u_foreach_bit (i, state->vi->bindings_valid) {
-      pipeline->binding_stride[i] = state->vi->bindings[i].stride;
-   }
 
    if (vs->info.vs.use_per_attribute_vb_descs) {
       const enum amd_gfx_level gfx_level = pdev->info.gfx_level;

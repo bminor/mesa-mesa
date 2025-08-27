@@ -5782,6 +5782,7 @@ lookup_vs_prolog(struct radv_cmd_buffer *cmd_buffer, const struct radv_shader *v
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_vertex_input_state *vi_state = &cmd_buffer->state.vertex_input;
+   const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
 
    unsigned num_attributes = vs_shader->info.vs.num_attributes;
    uint32_t attribute_mask = vs_shader->info.vs.vb_desc_usage_mask;
@@ -5801,7 +5802,7 @@ lookup_vs_prolog(struct radv_cmd_buffer *cmd_buffer, const struct radv_shader *v
          uint8_t format_req = vi_state->format_align_req_minus_1[index];
          uint8_t component_req = vi_state->component_align_req_minus_1[index];
          uint64_t vb_addr = cmd_buffer->vertex_bindings[binding].addr;
-         uint64_t vb_stride = cmd_buffer->vertex_bindings[binding].stride;
+         uint64_t vb_stride = d->vk.vi_binding_strides[binding];
 
          VkDeviceSize addr = vb_addr + vi_state->offsets[index];
 
@@ -6351,12 +6352,14 @@ ALWAYS_INLINE void
 radv_get_vbo_info(const struct radv_cmd_buffer *cmd_buffer, uint32_t idx, struct radv_vbo_info *vbo_info)
 {
    const struct radv_vertex_input_state *vi_state = &cmd_buffer->state.vertex_input;
+   const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    const uint32_t binding = vi_state->bindings[idx];
 
    vbo_info->binding = binding;
    vbo_info->va = cmd_buffer->vertex_bindings[binding].addr;
    vbo_info->size = cmd_buffer->vertex_bindings[binding].size;
-   vbo_info->stride = cmd_buffer->vertex_bindings[binding].stride;
+
+   vbo_info->stride = d->vk.vi_binding_strides[binding];
 
    vbo_info->attrib_offset = vi_state->offsets[idx];
    vbo_info->attrib_index_offset = vi_state->attrib_index_offset[idx];
@@ -7528,6 +7531,7 @@ radv_CmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding,
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_vertex_binding *vb = cmd_buffer->vertex_bindings;
    const struct radv_vertex_input_state *vi_state = &cmd_buffer->state.vertex_input;
+   struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    struct radv_cmd_stream *cs = cmd_buffer->cs;
 
    /* We have to defer setting up vertex buffer since we need the buffer
@@ -7541,11 +7545,11 @@ radv_CmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding,
       VK_FROM_HANDLE(radv_buffer, buffer, pBuffers[i]);
       uint32_t idx = firstBinding + i;
       VkDeviceSize size = pSizes ? pSizes[i] : VK_WHOLE_SIZE;
-      VkDeviceSize stride = pStrides ? pStrides[i] : vb[idx].stride;
+      VkDeviceSize stride = pStrides ? pStrides[i] : d->vk.vi_binding_strides[idx];
       uint64_t addr = buffer ? vk_buffer_address(&buffer->vk, pOffsets[i]) : 0;
 
-      if (!!vb[idx].addr != !!addr ||
-          (addr && (((vb[idx].addr & 0x3) != (addr & 0x3) || (vb[idx].stride & 0x3) != (stride & 0x3))))) {
+      if (!!vb[idx].addr != !!addr || (addr && (((vb[idx].addr & 0x3) != (addr & 0x3) ||
+                                                 (d->vk.vi_binding_strides[idx] & 0x3) != (stride & 0x3))))) {
          misaligned_mask_invalid |= vi_state->bindings_match_attrib ? BITFIELD_BIT(idx) : 0xffffffff;
       }
 
@@ -7554,7 +7558,7 @@ radv_CmdBindVertexBuffers2(VkCommandBuffer commandBuffer, uint32_t firstBinding,
 
       /* if pStrides=NULL, it shouldn't overwrite the strides specified by CmdSetVertexInputEXT */
       if (pStrides)
-         vb[idx].stride = stride;
+         d->vk.vi_binding_strides[idx] = stride;
 
       uint32_t bit = BITFIELD_BIT(idx);
       if (buffer) {
@@ -7973,6 +7977,7 @@ radv_bind_vs_input_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_g
 {
    const struct radv_shader *vs_shader = radv_get_shader(cmd_buffer->state.shaders, MESA_SHADER_VERTEX);
    const struct radv_vertex_input_state *src = &pipeline->vertex_input;
+   struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
 
    /* Bind the vertex input state from the pipeline when it's static. */
    if (!vs_shader || !vs_shader->info.vs.vb_desc_usage_mask || (pipeline->dynamic_states & RADV_DYNAMIC_VERTEX_INPUT))
@@ -7982,7 +7987,7 @@ radv_bind_vs_input_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_g
 
    if (!(pipeline->dynamic_states & RADV_DYNAMIC_VERTEX_INPUT_BINDING_STRIDE)) {
       for (uint32_t i = 0; i < MAX_VBS; i++)
-         cmd_buffer->vertex_bindings[i].stride = pipeline->binding_stride[i];
+         d->vk.vi_binding_strides[i] = pipeline->dynamic_state.vk.vi_binding_strides[i];
    }
 
    /* When the vertex input state is static but the VS has been compiled without it (GPL), the
@@ -8877,6 +8882,7 @@ radv_CmdSetVertexInputEXT(VkCommandBuffer commandBuffer, uint32_t vertexBindingD
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radv_cmd_state *state = &cmd_buffer->state;
    struct radv_vertex_input_state *vi_state = &state->vertex_input;
+   struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
 
    const VkVertexInputBindingDescription2EXT *bindings[MAX_VBS];
    for (unsigned i = 0; i < vertexBindingDescriptionCount; i++)
@@ -8918,7 +8924,7 @@ radv_CmdSetVertexInputEXT(VkCommandBuffer commandBuffer, uint32_t vertexBindingD
             vi_state->nontrivial_divisors |= 1u << loc;
          }
       }
-      cmd_buffer->vertex_bindings[attrib->binding].stride = binding->stride;
+      d->vk.vi_binding_strides[attrib->binding] = binding->stride;
       vi_state->offsets[loc] = attrib->offset;
 
       enum pipe_format format = vk_format_map[attrib->format];
