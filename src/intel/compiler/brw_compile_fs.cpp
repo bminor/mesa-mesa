@@ -1593,6 +1593,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
       .nir                     = nir,
       .key                     = &key->base,
       .prog_data               = &prog_data->base,
+      .per_primitive_offsets   = per_primitive_offsets,
       .needs_register_pressure = params->base.stats != NULL,
       .log_data                = params->base.log_data,
       .debug_enabled           = debug_enabled,
@@ -1604,7 +1605,6 @@ brw_compile_fs(const struct brw_compiler *compiler,
       shader_params.num_polygons   = 1;
 
       v8 = std::make_unique<brw_shader>(&shader_params);
-      v8->import_per_primitive_offsets(per_primitive_offsets);
       if (!run_fs(*v8, allow_spilling, false /* do_rep_send */)) {
          params->base.error_str = ralloc_strdup(params->base.mem_ctx,
                                                 v8->fail_msg);
@@ -1713,7 +1713,6 @@ brw_compile_fs(const struct brw_compiler *compiler,
          shader_params.num_polygons   = 1;
 
          v32 = std::make_unique<brw_shader>(&shader_params);
-         v32->import_per_primitive_offsets(per_primitive_offsets);
          if (vbase)
             v32->import_uniforms(vbase);
 
@@ -1739,7 +1738,6 @@ brw_compile_fs(const struct brw_compiler *compiler,
          shader_params.dispatch_width = 16;
          shader_params.num_polygons   = 1;
          v16 = std::make_unique<brw_shader>(&shader_params);
-         v16->import_per_primitive_offsets(per_primitive_offsets);
 
          if (!run_fs(*v16, allow_spilling, params->use_rep_send)) {
             brw_shader_perf_log(compiler, params->base.log_data,
@@ -1765,7 +1763,6 @@ brw_compile_fs(const struct brw_compiler *compiler,
          shader_params.num_polygons   = 1;
 
          v16 = std::make_unique<brw_shader>(&shader_params);
-         v16->import_per_primitive_offsets(per_primitive_offsets);
          if (v8)
             v16->import_uniforms(v8.get());
          if (!run_fs(*v16, allow_spilling, params->use_rep_send)) {
@@ -1801,7 +1798,6 @@ brw_compile_fs(const struct brw_compiler *compiler,
          shader_params.num_polygons   = 1;
 
          v32 = std::make_unique<brw_shader>(&shader_params);
-         v32->import_per_primitive_offsets(per_primitive_offsets);
          if (v8)
             v32->import_uniforms(v8.get());
          else if (v16)
@@ -1846,7 +1842,6 @@ brw_compile_fs(const struct brw_compiler *compiler,
             shader_params.num_polygons   = 4;
             vmulti = std::make_unique<brw_shader>(&shader_params);
 
-            vmulti->import_per_primitive_offsets(per_primitive_offsets);
             vmulti->import_uniforms(vbase);
             if (!run_fs(*vmulti, false, params->use_rep_send)) {
                brw_shader_perf_log(compiler, params->base.log_data,
@@ -1868,7 +1863,6 @@ brw_compile_fs(const struct brw_compiler *compiler,
             shader_params.num_polygons   = 2;
 
             vmulti = std::make_unique<brw_shader>(&shader_params);
-            vmulti->import_per_primitive_offsets(per_primitive_offsets);
             vmulti->import_uniforms(vbase);
             if (!run_fs(*vmulti, false, params->use_rep_send)) {
                brw_shader_perf_log(compiler, params->base.log_data,
@@ -1889,7 +1883,6 @@ brw_compile_fs(const struct brw_compiler *compiler,
             shader_params.num_polygons   = 2;
 
             vmulti = std::make_unique<brw_shader>(&shader_params);
-            vmulti->import_per_primitive_offsets(per_primitive_offsets);
             vmulti->import_uniforms(vbase);
             if (!run_fs(*vmulti, allow_spilling, params->use_rep_send)) {
                brw_shader_perf_log(compiler, params->base.log_data,

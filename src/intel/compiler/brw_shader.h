@@ -72,6 +72,7 @@ struct brw_shader_params
 
    /* Fragment shader. */
    unsigned num_polygons;
+   const int *per_primitive_offsets;
 
    bool needs_register_pressure;
    void *log_data;
@@ -85,7 +86,6 @@ public:
    ~brw_shader();
 
    void import_uniforms(brw_shader *v);
-   void import_per_primitive_offsets(const int *per_primitive_offsets);
 
    void assign_curb_setup();
    void convert_attr_sources_to_hw_regs(brw_inst *inst);
