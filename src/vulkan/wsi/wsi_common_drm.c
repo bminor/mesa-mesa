@@ -159,8 +159,6 @@ wsi_drm_check_dma_buf_sync_file_import_export(const struct wsi_device *wsi,
       goto free_sync_file;
    }
 
-   mesa_logd("Found support for dma-buf sync import/export");
-
 free_sync_file:
    close(sync_file);
 free_fd:
