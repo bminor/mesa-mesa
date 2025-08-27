@@ -60,11 +60,9 @@ panfrost_open_device(void *memctx, int fd, struct panfrost_device *dev)
       return -1;
    }
 
-   pan_kmod_dev_query_props(dev->kmod.dev, &dev->kmod.props);
-
-   dev->arch = pan_arch(dev->kmod.props.gpu_id);
-   dev->model = pan_get_model(dev->kmod.props.gpu_id,
-                              dev->kmod.props.gpu_variant);
+   dev->arch = pan_arch(dev->kmod.dev->props.gpu_id);
+   dev->model = pan_get_model(dev->kmod.dev->props.gpu_id,
+                              dev->kmod.dev->props.gpu_variant);
 
    /* If we don't recognize the model, bail early */
    if (!dev->model)
@@ -85,14 +83,16 @@ panfrost_open_device(void *memctx, int fd, struct panfrost_device *dev)
       goto err_free_kmod_dev;
 
    dev->core_count =
-      pan_query_core_count(&dev->kmod.props, &dev->core_id_range);
-   dev->thread_tls_alloc = pan_query_thread_tls_alloc(&dev->kmod.props);
+      pan_query_core_count(&dev->kmod.dev->props, &dev->core_id_range);
+   dev->thread_tls_alloc = pan_query_thread_tls_alloc(&dev->kmod.dev->props);
    dev->optimal_tib_size = pan_query_optimal_tib_size(dev->arch, dev->model);
-   dev->optimal_z_tib_size = pan_query_optimal_z_tib_size(dev->arch, dev->model);
-   dev->compressed_formats = pan_query_compressed_formats(&dev->kmod.props);
-   dev->tiler_features = pan_query_tiler_features(&dev->kmod.props);
-   dev->has_afbc = pan_query_afbc(&dev->kmod.props);
-   dev->has_afrc = pan_query_afrc(&dev->kmod.props);
+   dev->optimal_z_tib_size =
+      pan_query_optimal_z_tib_size(dev->arch, dev->model);
+   dev->compressed_formats =
+      pan_query_compressed_formats(&dev->kmod.dev->props);
+   dev->tiler_features = pan_query_tiler_features(&dev->kmod.dev->props);
+   dev->has_afbc = pan_query_afbc(&dev->kmod.dev->props);
+   dev->has_afrc = pan_query_afrc(&dev->kmod.dev->props);
    dev->formats = pan_format_table(dev->arch);
    dev->blendable_formats = pan_blendable_format_table(dev->arch);
 

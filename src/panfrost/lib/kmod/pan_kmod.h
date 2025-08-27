@@ -369,10 +369,6 @@ struct pan_kmod_ops {
    /* Destroy a pan_kmod_dev object. */
    void (*dev_destroy)(struct pan_kmod_dev *dev);
 
-   /* Query device properties. */
-   void (*dev_query_props)(const struct pan_kmod_dev *dev,
-                           struct pan_kmod_dev_props *props);
-
    /* Query the maxium user VA range.
     * Users are free to use a subset of this range if they need less VA space.
     * This method is optional, when not specified, kmod assumes the whole VA
@@ -466,6 +462,9 @@ struct pan_kmod_dev {
    /* KMD backing this device. */
    struct pan_kmod_driver driver;
 
+   /* KMD-agnostic device properties. */
+   struct pan_kmod_dev_props props;
+
    /* kmod backend ops assigned at device creation. */
    const struct pan_kmod_ops *ops;
 
@@ -499,25 +498,15 @@ pan_kmod_dev_create(int fd, uint32_t flags,
 
 void pan_kmod_dev_destroy(struct pan_kmod_dev *dev);
 
-static inline void
-pan_kmod_dev_query_props(const struct pan_kmod_dev *dev,
-                         struct pan_kmod_dev_props *props)
-{
-   dev->ops->dev_query_props(dev, props);
-}
-
 static inline struct pan_kmod_va_range
 pan_kmod_dev_query_user_va_range(const struct pan_kmod_dev *dev)
 {
    if (dev->ops->dev_query_user_va_range)
       return dev->ops->dev_query_user_va_range(dev);
 
-   struct pan_kmod_dev_props props;
-
-   pan_kmod_dev_query_props(dev, &props);
    return (struct pan_kmod_va_range){
       .start = 0,
-      .size = 1ull << MMU_FEATURES_VA_BITS(props.mmu_features),
+      .size = 1ull << MMU_FEATURES_VA_BITS(dev->props.mmu_features),
    };
 }
 

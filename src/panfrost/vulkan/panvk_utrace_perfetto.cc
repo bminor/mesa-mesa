@@ -93,7 +93,7 @@ get_gpu_time_ns(struct panvk_device *dev)
 {
    const struct panvk_physical_device *pdev =
       to_panvk_physical_device(dev->vk.physical);
-   const struct pan_kmod_dev_props *props = &pdev->kmod.props;
+   const struct pan_kmod_dev_props *props = &pdev->kmod.dev->props;
 
    const uint64_t ts = pan_kmod_query_timestamp(dev->kmod.dev);
    return ts * NSEC_PER_SEC / props->timestamp_frequency;
@@ -332,7 +332,7 @@ panvk_utrace_perfetto_init(struct panvk_device *dev, uint32_t queue_count)
 {
    const struct panvk_physical_device *pdev =
       to_panvk_physical_device(dev->vk.physical);
-   const struct pan_kmod_dev_props *props = &pdev->kmod.props;
+   const struct pan_kmod_dev_props *props = &pdev->kmod.dev->props;
    struct panvk_utrace_perfetto *utp = &dev->utrace.utp;
 
    if (queue_count > PANVK_UTRACE_PERFETTO_QUEUE_COUNT) {

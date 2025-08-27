@@ -54,7 +54,7 @@ panvk_image_can_use_afbc(
    VkImageUsageFlags usage, VkImageType type, VkImageTiling tiling,
    VkImageCreateFlags flags)
 {
-   unsigned arch = pan_arch(phys_dev->kmod.props.gpu_id);
+   unsigned arch = pan_arch(phys_dev->kmod.dev->props.gpu_id);
    enum pipe_format pfmt = vk_format_to_pipe_format(fmt);
 
    /* Disallow AFBC if either of these is true
@@ -79,7 +79,7 @@ panvk_image_can_use_afbc(
    return !PANVK_DEBUG(NO_AFBC) &&
           !(usage &
             (VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_HOST_TRANSFER_BIT)) &&
-          pan_query_afbc(&phys_dev->kmod.props) &&
+          pan_query_afbc(&phys_dev->kmod.dev->props) &&
           pan_afbc_supports_format(arch, pfmt) &&
           tiling != VK_IMAGE_TILING_LINEAR && type != VK_IMAGE_TYPE_1D &&
           (type != VK_IMAGE_TYPE_3D || arch >= 7) &&
@@ -143,7 +143,7 @@ get_plane_count(struct panvk_image *image)
 
    struct panvk_physical_device *phys_dev =
       to_panvk_physical_device(image->vk.base.device->physical);
-   unsigned arch = pan_arch(phys_dev->kmod.props.gpu_id);
+   unsigned arch = pan_arch(phys_dev->kmod.dev->props.gpu_id);
 
    /* Z32_S8X24 is not supported on v9+, and we don't want to use it
     * on v7- anyway, because it's less efficient than the multiplanar
@@ -208,7 +208,7 @@ panvk_image_can_use_mod(struct panvk_image *image,
 {
    struct panvk_physical_device *phys_dev =
       to_panvk_physical_device(image->vk.base.device->physical);
-   unsigned arch = pan_arch(phys_dev->kmod.props.gpu_id);
+   unsigned arch = pan_arch(phys_dev->kmod.dev->props.gpu_id);
    const bool forced_linear = PANVK_DEBUG(LINEAR) ||
                               image->vk.tiling == VK_IMAGE_TILING_LINEAR ||
                               image->vk.image_type == VK_IMAGE_TYPE_1D;
@@ -298,7 +298,7 @@ panvk_image_can_use_mod(struct panvk_image *image,
       };
 
       enum pan_mod_support supported =
-         pan_image_test_props(&phys_dev->kmod.props, &iprops, iusage);
+         pan_image_test_props(&phys_dev->kmod.dev->props, &iprops, iusage);
       if (supported == PAN_MOD_NOT_SUPPORTED ||
           (supported == PAN_MOD_NOT_OPTIMAL && optimal_only))
          return false;
@@ -413,7 +413,7 @@ panvk_image_init_layouts(struct panvk_image *image,
    struct panvk_device *dev = to_panvk_device(image->vk.base.device);
    struct panvk_physical_device *phys_dev =
       to_panvk_physical_device(dev->vk.physical);
-   unsigned arch = pan_arch(phys_dev->kmod.props.gpu_id);
+   unsigned arch = pan_arch(phys_dev->kmod.dev->props.gpu_id);
    const VkImageDrmFormatModifierExplicitCreateInfoEXT *explicit_info =
       vk_find_struct_const(
          pCreateInfo->pNext,

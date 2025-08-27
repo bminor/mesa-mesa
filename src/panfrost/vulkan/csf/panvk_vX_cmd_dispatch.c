@@ -87,10 +87,10 @@ panvk_per_arch(cmd_dispatch_prepare_tls)(
 
    if (tlsinfo.wls.size) {
       unsigned core_id_range;
-      pan_query_core_count(&phys_dev->kmod.props, &core_id_range);
+      pan_query_core_count(&phys_dev->kmod.dev->props, &core_id_range);
 
       tlsinfo.wls.instances = pan_calc_wls_instances(
-         &cs->cs.local_size, &phys_dev->kmod.props, indirect ? NULL : dim);
+         &cs->cs.local_size, &phys_dev->kmod.dev->props, indirect ? NULL : dim);
 
       unsigned wls_total_size = pan_calc_total_wls_size(
          tlsinfo.wls.size, tlsinfo.wls.instances, core_id_range);
@@ -156,7 +156,7 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
    unsigned wg_per_task = 0;
    if (indirect)
       wg_per_task = pan_calc_workgroups_per_task(&cs->cs.local_size,
-                                                 &phys_dev->kmod.props);
+                                                 &phys_dev->kmod.dev->props);
 
    if (compute_state_dirty(cmdbuf, DESC_STATE) ||
        compute_state_dirty(cmdbuf, CS)) {

@@ -247,7 +247,7 @@ panvk_select_tiler_hierarchy_mask(const struct panvk_physical_device *phys_dev,
                                   unsigned bin_ptr_mem_budget)
 {
    struct pan_tiler_features tiler_features =
-      pan_query_tiler_features(&phys_dev->kmod.props);
+      pan_query_tiler_features(&phys_dev->kmod.dev->props);
 
    uint32_t hierarchy_mask = GENX(pan_select_tiler_hierarchy_mask)(
       state->render.fb.info.width, state->render.fb.info.height,

@@ -1634,8 +1634,8 @@ panfrost_emit_shared_memory(struct panfrost_batch *batch,
    struct pan_tls_info info = {
       .tls.size = ss->info.tls_size,
       .wls.size = ss->info.wls_size + grid->variable_shared_mem,
-      .wls.instances = pan_calc_wls_instances(&local_size, &dev->kmod.props,
-                                              grid->indirect ? NULL : &dim),
+      .wls.instances = pan_calc_wls_instances(
+         &local_size, &dev->kmod.dev->props, grid->indirect ? NULL : &dim),
    };
 
    if (ss->info.tls_size) {
@@ -4493,12 +4493,12 @@ GENX(panfrost_cmdstream_screen_init)(struct panfrost_screen *screen)
    screen->vtbl.get_conv_desc = get_conv_desc;
 
    pan_blend_shader_cache_init(&dev->blend_shaders, panfrost_device_gpu_id(dev),
-                               dev->kmod.props.gpu_variant,
+                               dev->kmod.dev->props.gpu_variant,
                                &screen->mempools.bin.base);
 
    GENX(pan_fb_preload_cache_init)
    (&dev->fb_preload_cache, panfrost_device_gpu_id(dev),
-    dev->kmod.props.gpu_variant, &dev->blend_shaders,
+    dev->kmod.dev->props.gpu_variant, &dev->blend_shaders,
     &screen->mempools.bin.base, &screen->mempools.desc.base);
 
    dev->precomp_cache = GENX(panfrost_precomp_cache_init)(screen);

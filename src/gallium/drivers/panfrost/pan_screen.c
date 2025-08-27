@@ -439,12 +439,12 @@ panfrost_walk_dmabuf_modifiers(struct pipe_screen *screen,
          for (unsigned r = 0; r < yuv_lowering.nres; r++) {
             enum pipe_format res_format = yuv_lowering.res_formats[r];
 
-            supported &= pan_image_test_modifier_with_format(&dev->kmod.props,
-                                                             mod, res_format);
+            supported &= pan_image_test_modifier_with_format(
+               &dev->kmod.dev->props, mod, res_format);
          }
       } else {
-         supported =
-            pan_image_test_modifier_with_format(&dev->kmod.props, mod, format);
+         supported = pan_image_test_modifier_with_format(&dev->kmod.dev->props,
+                                                         mod, format);
       }
 
       if (!supported)
@@ -727,10 +727,10 @@ panfrost_init_screen_caps(struct panfrost_screen *screen)
 
    /* Compile side is TODO for Midgard. */
    caps->shader_clock = dev->arch >= 6 &&
-      dev->kmod.props.gpu_can_query_timestamp;
+      dev->kmod.dev->props.gpu_can_query_timestamp;
    caps->shader_realtime_clock = dev->arch >= 6 &&
-      dev->kmod.props.gpu_can_query_timestamp &&
-      dev->kmod.props.timestamp_device_coherent;
+      dev->kmod.dev->props.gpu_can_query_timestamp &&
+      dev->kmod.dev->props.timestamp_device_coherent;
 
    /* pixel_local_storage is initially for valhall and bifrost only */
    caps->shader_pixel_local_storage_fast_size =
@@ -796,10 +796,9 @@ panfrost_init_screen_caps(struct panfrost_screen *screen)
    /* Must be at least 64 for correct behaviour */
    caps->texture_buffer_offset_alignment = 64;
 
-   caps->query_time_elapsed =
-   caps->query_timestamp =
-      dev->kmod.props.gpu_can_query_timestamp &&
-      dev->kmod.props.timestamp_frequency != 0;
+   caps->query_time_elapsed = caps->query_timestamp =
+      dev->kmod.dev->props.gpu_can_query_timestamp &&
+      dev->kmod.dev->props.timestamp_frequency != 0;
 
    if (caps->query_timestamp)
       caps->timer_resolution = pan_gpu_time_to_ns(dev, 1);
@@ -914,9 +913,8 @@ panfrost_init_screen_caps(struct panfrost_screen *screen)
 
    caps->native_fence_fd = true;
 
-   caps->context_priority_mask =
-      from_kmod_group_allow_priority_flags(
-         dev->kmod.props.allowed_group_priorities_mask);
+   caps->context_priority_mask = from_kmod_group_allow_priority_flags(
+      dev->kmod.dev->props.allowed_group_priorities_mask);
 
    caps->astc_decode_mode = dev->arch >= 9 && (dev->compressed_formats & (1 << 30));
 
@@ -1006,7 +1004,7 @@ get_core_mask(const struct panfrost_device *dev,
               const struct pipe_screen_config *config,
               const char *option_name, uint64_t *mask)
 {
-   uint64_t present = dev->kmod.props.shader_present;
+   uint64_t present = dev->kmod.dev->props.shader_present;
    *mask = driQueryOptionu64(config->options, option_name) & present;
 
    if (!*mask) {

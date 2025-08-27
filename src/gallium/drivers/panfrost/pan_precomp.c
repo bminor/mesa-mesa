@@ -197,8 +197,8 @@ emit_tls(struct panfrost_batch *batch,
    struct pan_tls_info info = {
       .tls.size = shader->info.tls_size,
       .wls.size = shader->info.wls_size,
-      .wls.instances =
-         pan_calc_wls_instances(&shader->local_size, &dev->kmod.props, dim),
+      .wls.instances = pan_calc_wls_instances(&shader->local_size,
+                                              &dev->kmod.dev->props, dim),
    };
 
    if (info.tls.size) {
@@ -354,7 +354,7 @@ GENX(panfrost_launch_precomp)(struct panfrost_batch *batch,
    unsigned threads_per_wg =
       shader->local_size.x * shader->local_size.y * shader->local_size.z;
    unsigned max_thread_cnt = pan_compute_max_thread_count(
-      &dev->kmod.props, shader->info.work_reg_count);
+      &dev->kmod.dev->props, shader->info.work_reg_count);
 
    /* Pick the task_axis and task_increment to maximize thread utilization. */
    unsigned task_axis = MALI_TASK_AXIS_X;

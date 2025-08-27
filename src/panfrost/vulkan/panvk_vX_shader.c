@@ -370,7 +370,8 @@ panvk_get_nir_options(UNUSED struct vk_physical_device *vk_pdev,
                       UNUSED const struct vk_pipeline_robustness_state *rs)
 {
    struct panvk_physical_device *phys_dev = to_panvk_physical_device(vk_pdev);
-   return pan_get_nir_shader_compiler_options(pan_arch(phys_dev->kmod.props.gpu_id));
+   return pan_get_nir_shader_compiler_options(
+      pan_arch(phys_dev->kmod.dev->props.gpu_id));
 }
 
 static struct spirv_to_nir_options
@@ -439,7 +440,7 @@ panvk_preprocess_nir(struct vk_physical_device *vk_pdev,
     *
     * This would give us a better place to do panvk-specific lowering.
     */
-   pan_nir_lower_texture_early(nir, pdev->kmod.props.gpu_id);
+   pan_nir_lower_texture_early(nir, pdev->kmod.dev->props.gpu_id);
    NIR_PASS(_, nir, nir_lower_system_values);
 
    nir_lower_compute_system_values_options options = {
@@ -451,17 +452,18 @@ panvk_preprocess_nir(struct vk_physical_device *vk_pdev,
    if (nir->info.stage == MESA_SHADER_FRAGMENT)
       NIR_PASS(_, nir, nir_lower_wpos_center);
 
-   pan_optimize_nir(nir, pdev->kmod.props.gpu_id);
+   pan_optimize_nir(nir, pdev->kmod.dev->props.gpu_id);
 
    NIR_PASS(_, nir, nir_split_var_copies);
    NIR_PASS(_, nir, nir_lower_var_copies);
 
-   assert(pdev->kmod.props.shader_present != 0);
-   uint64_t core_max_id = util_last_bit(pdev->kmod.props.shader_present) - 1;
+   assert(pdev->kmod.dev->props.shader_present != 0);
+   uint64_t core_max_id =
+      util_last_bit(pdev->kmod.dev->props.shader_present) - 1;
    NIR_PASS(_, nir, nir_inline_sysval, nir_intrinsic_load_core_max_id_arm,
             core_max_id);
 
-   pan_preprocess_nir(nir, pdev->kmod.props.gpu_id);
+   pan_preprocess_nir(nir, pdev->kmod.dev->props.gpu_id);
 }
 
 static void
@@ -1289,8 +1291,8 @@ panvk_compile_shader(struct panvk_device *dev,
       robust2_modes |= nir_var_mem_ssbo;
 
    struct pan_compile_inputs inputs = {
-      .gpu_id = phys_dev->kmod.props.gpu_id,
-      .gpu_variant = phys_dev->kmod.props.gpu_variant,
+      .gpu_id = phys_dev->kmod.dev->props.gpu_id,
+      .gpu_variant = phys_dev->kmod.dev->props.gpu_variant,
       .view_mask = (state && state->rp) ? state->rp->view_mask : 0,
       .robust2_modes = robust2_modes,
       .robust_descriptors = dev->vk.enabled_features.nullDescriptor,

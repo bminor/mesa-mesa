@@ -1000,7 +1000,7 @@ get_tiler_desc(struct panvk_cmd_buffer *cmdbuf)
       to_panvk_physical_device(cmdbuf->vk.base.device->physical);
    const bool tracing_enabled = PANVK_DEBUG(TRACE);
    struct pan_tiler_features tiler_features =
-      pan_query_tiler_features(&phys_dev->kmod.props);
+      pan_query_tiler_features(&phys_dev->kmod.dev->props);
    bool simul_use =
       cmdbuf->flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
    struct pan_ptr tiler_desc = {0};

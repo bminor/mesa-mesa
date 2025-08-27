@@ -145,8 +145,8 @@ init_shader_caches(struct panvk_physical_device *device,
    _mesa_sha1_update(&sha_ctx, instance->driver_build_sha,
                      sizeof(instance->driver_build_sha));
 
-   _mesa_sha1_update(&sha_ctx, &device->kmod.props.gpu_id,
-                     sizeof(device->kmod.props.gpu_id));
+   _mesa_sha1_update(&sha_ctx, &device->kmod.dev->props.gpu_id,
+                     sizeof(device->kmod.dev->props.gpu_id));
 
    unsigned char sha[SHA1_DIGEST_LENGTH];
    _mesa_sha1_final(&sha_ctx, sha);
@@ -157,7 +157,7 @@ init_shader_caches(struct panvk_physical_device *device,
 #ifdef ENABLE_SHADER_CACHE
    char renderer[17];
    ASSERTED int len = snprintf(renderer, sizeof(renderer), "panvk_0x%08x",
-                               device->kmod.props.gpu_id);
+                               device->kmod.dev->props.gpu_id);
    assert(len == sizeof(renderer) - 1);
 
    char timestamp[SHA1_DIGEST_STRING_LENGTH];
@@ -186,7 +186,7 @@ get_core_mask(struct panvk_physical_device *device,
               const struct panvk_instance *instance, const char *option_name,
               uint64_t *mask)
 {
-   uint64_t present = device->kmod.props.shader_present;
+   uint64_t present = device->kmod.dev->props.shader_present;
    *mask = driQueryOptionu64(&instance->dri_options, option_name) & present;
 
    if (!*mask)
@@ -218,7 +218,7 @@ static VkResult
 get_device_sync_types(struct panvk_physical_device *device,
                       const struct panvk_instance *instance)
 {
-   const unsigned arch = pan_arch(device->kmod.props.gpu_id);
+   const unsigned arch = pan_arch(device->kmod.dev->props.gpu_id);
    uint32_t sync_type_count = 0;
 
    device->drm_syncobj_type = vk_drm_syncobj_get_type(device->kmod.dev->fd);
@@ -252,12 +252,12 @@ get_device_sync_types(struct panvk_physical_device *device,
 float
 panvk_get_gpu_system_timestamp_period(const struct panvk_physical_device *device)
 {
-   if (!device->kmod.props.gpu_can_query_timestamp ||
-       !device->kmod.props.timestamp_frequency)
+   if (!device->kmod.dev->props.gpu_can_query_timestamp ||
+       !device->kmod.dev->props.timestamp_frequency)
       return 0;
 
    const float ns_per_s = 1000000000.0;
-   return ns_per_s / (float)device->kmod.props.timestamp_frequency;
+   return ns_per_s / (float)device->kmod.dev->props.timestamp_frequency;
 }
 
 void
@@ -283,18 +283,16 @@ panvk_physical_device_init(struct panvk_physical_device *device,
    if (result != VK_SUCCESS)
       return result;
 
-   pan_kmod_dev_query_props(device->kmod.dev, &device->kmod.props);
+   device->model = pan_get_model(device->kmod.dev->props.gpu_id,
+                                 device->kmod.dev->props.gpu_variant);
 
-   device->model = pan_get_model(device->kmod.props.gpu_id,
-                                 device->kmod.props.gpu_variant);
-
-   unsigned arch = pan_arch(device->kmod.props.gpu_id);
+   unsigned arch = pan_arch(device->kmod.dev->props.gpu_id);
 
    if (!device->model) {
       result = panvk_errorf(instance, VK_ERROR_INCOMPATIBLE_DRIVER,
                             "Unknown gpu_id (%#x) or variant (%#x)",
-                            device->kmod.props.gpu_id,
-                            device->kmod.props.gpu_variant);
+                            device->kmod.dev->props.gpu_id,
+                            device->kmod.dev->props.gpu_variant);
       goto fail;
    }
 
@@ -400,13 +398,13 @@ panvk_fill_global_priority(const struct panvk_physical_device *physical_device,
                            uint32_t family_idx,
                            VkQueueFamilyGlobalPriorityPropertiesKHR *prio)
 {
-   const unsigned arch = pan_arch(physical_device->kmod.props.gpu_id);
+   const unsigned arch = pan_arch(physical_device->kmod.dev->props.gpu_id);
    uint32_t prio_idx = 0;
 
    switch (family_idx) {
    case PANVK_QUEUE_FAMILY_GPU: {
       enum pan_kmod_group_allow_priority_flags prio_mask =
-         physical_device->kmod.props.allowed_group_priorities_mask;
+         physical_device->kmod.dev->props.allowed_group_priorities_mask;
 
       /* Non-medium priority context is not hooked-up in the JM backend, even
        * though the panfrost kmod advertize it. Manually filter non-medium
@@ -445,7 +443,7 @@ panvk_GetPhysicalDeviceQueueFamilyProperties2(
    VK_FROM_HANDLE(panvk_physical_device, physical_device, physicalDevice);
    VK_OUTARRAY_MAKE_TYPED(VkQueueFamilyProperties2, out, pQueueFamilyProperties,
                           pQueueFamilyPropertyCount);
-   unsigned arch = pan_arch(physical_device->kmod.props.gpu_id);
+   unsigned arch = pan_arch(physical_device->kmod.dev->props.gpu_id);
 
    const VkQueueFamilyProperties qfamily_props[PANVK_QUEUE_FAMILY_COUNT] = {
       [PANVK_QUEUE_FAMILY_GPU] = {
@@ -455,7 +453,8 @@ panvk_GetPhysicalDeviceQueueFamilyProperties2(
             some CTS tests */
          .queueCount = arch >= 10 ? 2 : 1,
          .timestampValidBits =
-            arch >= 10 && physical_device->kmod.props.gpu_can_query_timestamp
+            arch >= 10 &&
+                  physical_device->kmod.dev->props.gpu_can_query_timestamp
                ? 64
                : 0,
          .minImageTransferGranularity = {1, 1, 1},
@@ -525,7 +524,7 @@ panvk_CreateDevice(VkPhysicalDevice physicalDevice,
                    const VkAllocationCallbacks *pAllocator, VkDevice *pDevice)
 {
    VK_FROM_HANDLE(panvk_physical_device, physical_device, physicalDevice);
-   unsigned arch = pan_arch(physical_device->kmod.props.gpu_id);
+   unsigned arch = pan_arch(physical_device->kmod.dev->props.gpu_id);
    VkResult result = VK_ERROR_INITIALIZATION_FAILED;
 
    panvk_arch_dispatch_ret(arch, create_device, result, physical_device,
@@ -540,7 +539,7 @@ panvk_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
    VK_FROM_HANDLE(panvk_device, device, _device);
    struct panvk_physical_device *physical_device =
       to_panvk_physical_device(device->vk.physical);
-   unsigned arch = pan_arch(physical_device->kmod.props.gpu_id);
+   unsigned arch = pan_arch(physical_device->kmod.dev->props.gpu_id);
 
    panvk_arch_dispatch(arch, destroy_device, device, pAllocator);
 }
@@ -580,7 +579,7 @@ format_is_supported(struct panvk_physical_device *physical_device,
     * the supported formats reported by the GPU. */
    if (util_format_is_compressed(pfmt)) {
       uint32_t supported_compr_fmts =
-         pan_query_compressed_formats(&physical_device->kmod.props);
+         pan_query_compressed_formats(&physical_device->kmod.dev->props);
 
       if (!(BITFIELD_BIT(fmt.texfeat_bit) & supported_compr_fmts))
          return false;
@@ -596,7 +595,7 @@ get_image_plane_format_features(struct panvk_physical_device *physical_device,
    VkFormatFeatureFlags2 features = 0;
    enum pipe_format pfmt = vk_format_to_pipe_format(format);
    const struct pan_format fmt = physical_device->formats.all[pfmt];
-   unsigned arch = pan_arch(physical_device->kmod.props.gpu_id);
+   unsigned arch = pan_arch(physical_device->kmod.dev->props.gpu_id);
 
    if (!format_is_supported(physical_device, fmt, pfmt))
       return 0;
@@ -736,7 +735,7 @@ static VkFormatFeatureFlags2
 get_image_format_sample_counts(struct panvk_physical_device *physical_device,
                                VkFormat format)
 {
-   unsigned arch = pan_arch(physical_device->kmod.props.gpu_id);
+   unsigned arch = pan_arch(physical_device->kmod.dev->props.gpu_id);
    unsigned max_tib_size = pan_query_tib_size(physical_device->model);
    unsigned max_cbuf_atts = pan_get_max_cbufs(arch, max_tib_size);
 
@@ -782,7 +781,7 @@ panvk_GetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice,
                                          VkFormatProperties2 *pFormatProperties)
 {
    VK_FROM_HANDLE(panvk_physical_device, physical_device, physicalDevice);
-   const unsigned arch = pan_arch(physical_device->kmod.props.gpu_id);
+   const unsigned arch = pan_arch(physical_device->kmod.dev->props.gpu_id);
 
    VkFormatFeatureFlags2 tex =
       get_image_format_features(physical_device, format);
@@ -846,7 +845,7 @@ panvk_GetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice,
 static VkExtent3D
 get_max_2d_image_size(struct panvk_physical_device *phys_dev, VkFormat format)
 {
-   const unsigned arch = pan_arch(phys_dev->kmod.props.gpu_id);
+   const unsigned arch = pan_arch(phys_dev->kmod.dev->props.gpu_id);
    const uint64_t max_img_size_B =
       arch <= 10 ? u_uintN_max(32) : u_uintN_max(48);
    const enum pipe_format pfmt = vk_format_to_pipe_format(format);
@@ -869,7 +868,7 @@ get_max_2d_image_size(struct panvk_physical_device *phys_dev, VkFormat format)
 static VkExtent3D
 get_max_3d_image_size(struct panvk_physical_device *phys_dev, VkFormat format)
 {
-   const unsigned arch = pan_arch(phys_dev->kmod.props.gpu_id);
+   const unsigned arch = pan_arch(phys_dev->kmod.dev->props.gpu_id);
    const uint64_t max_img_size_B =
       arch <= 10 ? u_uintN_max(32) : u_uintN_max(48);
    enum pipe_format pfmt = vk_format_to_pipe_format(format);

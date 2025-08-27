@@ -64,11 +64,11 @@ emit_tls(struct panvk_cmd_buffer *cmdbuf)
    struct panvk_physical_device *phys_dev =
       to_panvk_physical_device(dev->vk.physical);
    unsigned core_id_range;
-   pan_query_core_count(&phys_dev->kmod.props, &core_id_range);
+   pan_query_core_count(&phys_dev->kmod.dev->props, &core_id_range);
 
    if (cmdbuf->state.tls.info.tls.size) {
       unsigned thread_tls_alloc =
-         pan_query_thread_tls_alloc(&phys_dev->kmod.props);
+         pan_query_thread_tls_alloc(&phys_dev->kmod.dev->props);
       unsigned size = pan_get_total_stack_size(cmdbuf->state.tls.info.tls.size,
                                                thread_tls_alloc, core_id_range);
 
@@ -823,7 +823,7 @@ init_cs_builders(struct panvk_cmd_buffer *cmdbuf)
          .nr_registers = csif_info->cs_reg_count,
          .nr_kernel_registers = MAX2(csif_info->unpreserved_cs_reg_count, 4),
          .compute_ep_limit =
-            PAN_ARCH >= 12 ? phys_dev->kmod.props.max_tasks_per_core : 0,
+            PAN_ARCH >= 12 ? phys_dev->kmod.dev->props.max_tasks_per_core : 0,
          .alloc_buffer = alloc_cs_buffer,
          .cookie = cmdbuf,
          .ls_sb_slot = SB_ID(LS),

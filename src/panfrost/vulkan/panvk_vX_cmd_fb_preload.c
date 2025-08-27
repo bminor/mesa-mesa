@@ -149,8 +149,8 @@ get_preload_shader(struct panvk_device *dev,
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
 
    struct pan_compile_inputs inputs = {
-      .gpu_id = phys_dev->kmod.props.gpu_id,
-      .gpu_variant = phys_dev->kmod.props.gpu_variant,
+      .gpu_id = phys_dev->kmod.dev->props.gpu_id,
+      .gpu_variant = phys_dev->kmod.dev->props.gpu_variant,
       .is_blit = true,
    };
 
@@ -512,7 +512,7 @@ cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
        */
       struct panvk_physical_device *pdev =
          to_panvk_physical_device(dev->vk.physical);
-      unsigned gpu_prod_id = pdev->kmod.props.gpu_id >> 16;
+      unsigned gpu_prod_id = pdev->kmod.dev->props.gpu_id >> 16;
 
       /* the PAN_ARCH check is redundant but allows compiler optimization
          when PAN_ARCH <= 6 */

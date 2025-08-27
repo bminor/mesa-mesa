@@ -30,7 +30,6 @@ struct panvk_physical_device {
 
    struct {
       struct pan_kmod_dev *dev;
-      struct pan_kmod_dev_props props;
    } kmod;
 
    const struct pan_model *model;

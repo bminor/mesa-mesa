@@ -42,39 +42,6 @@ struct panfrost_kmod_bo {
    uint64_t offset;
 };
 
-static struct pan_kmod_dev *
-panfrost_kmod_dev_create(int fd, uint32_t flags, drmVersionPtr version,
-                         const struct pan_kmod_allocator *allocator)
-{
-   if (version->version_major < 1 ||
-       (version->version_major == 1 && version->version_minor < 1)) {
-      mesa_loge("kernel driver is too old (requires at least 1.1, found %d.%d)",
-                version->version_major, version->version_minor);
-      return NULL;
-   }
-
-   struct panfrost_kmod_dev *panfrost_dev =
-      pan_kmod_alloc(allocator, sizeof(*panfrost_dev));
-   if (!panfrost_dev) {
-      mesa_loge("failed to allocate a panfrost_kmod_dev object");
-      return NULL;
-   }
-
-   pan_kmod_dev_init(&panfrost_dev->base, fd, flags, version,
-                     &panfrost_kmod_ops, allocator);
-   return &panfrost_dev->base;
-}
-
-static void
-panfrost_kmod_dev_destroy(struct pan_kmod_dev *dev)
-{
-   struct panfrost_kmod_dev *panfrost_dev =
-      container_of(dev, struct panfrost_kmod_dev, base);
-
-   pan_kmod_dev_cleanup(dev);
-   pan_kmod_free(dev->allocator, panfrost_dev);
-}
-
 /* Abstraction over the raw drm_panfrost_get_param ioctl for fetching
  * information about devices.
  */
@@ -97,9 +64,10 @@ panfrost_query_raw(int fd, enum drm_panfrost_param param, bool required,
 }
 
 static void
-panfrost_dev_query_thread_props(const struct pan_kmod_dev *dev,
-                                struct pan_kmod_dev_props *props)
+panfrost_dev_query_thread_props(struct panfrost_kmod_dev *panfrost_dev)
 {
+   struct pan_kmod_dev_props *props = &panfrost_dev->base.props;
+   const struct pan_kmod_dev *dev = &panfrost_dev->base;
    int fd = dev->fd;
 
    props->max_threads_per_core =
@@ -177,9 +145,10 @@ panfrost_dev_query_thread_props(const struct pan_kmod_dev *dev,
 }
 
 static void
-panfrost_dev_query_props(const struct pan_kmod_dev *dev,
-                         struct pan_kmod_dev_props *props)
+panfrost_dev_query_props(struct panfrost_kmod_dev *panfrost_dev)
 {
+   struct pan_kmod_dev_props *props = &panfrost_dev->base.props;
+   const struct pan_kmod_dev *dev = &panfrost_dev->base;
    int fd = dev->fd;
 
    memset(props, 0, sizeof(*props));
@@ -203,7 +172,7 @@ panfrost_dev_query_props(const struct pan_kmod_dev *dev,
    props->afbc_features =
       panfrost_query_raw(fd, DRM_PANFROST_PARAM_AFBC_FEATURES, true, 0);
 
-   panfrost_dev_query_thread_props(dev, props);
+   panfrost_dev_query_thread_props(panfrost_dev);
 
    if (dev->driver.version.major > 1 || dev->driver.version.minor >= 3) {
       props->gpu_can_query_timestamp = true;
@@ -228,6 +197,41 @@ panfrost_dev_query_props(const struct pan_kmod_dev *dev,
    if (prios & BITFIELD_BIT(PANFROST_JM_CTX_PRIORITY_HIGH))
       props->allowed_group_priorities_mask |=
          PAN_KMOD_GROUP_ALLOW_PRIORITY_HIGH;
+}
+
+static struct pan_kmod_dev *
+panfrost_kmod_dev_create(int fd, uint32_t flags, drmVersionPtr version,
+                         const struct pan_kmod_allocator *allocator)
+{
+   if (version->version_major < 1 ||
+       (version->version_major == 1 && version->version_minor < 1)) {
+      mesa_loge("kernel driver is too old (requires at least 1.1, found %d.%d)",
+                version->version_major, version->version_minor);
+      return NULL;
+   }
+
+   struct panfrost_kmod_dev *panfrost_dev =
+      pan_kmod_alloc(allocator, sizeof(*panfrost_dev));
+   if (!panfrost_dev) {
+      mesa_loge("failed to allocate a panfrost_kmod_dev object");
+      return NULL;
+   }
+
+   pan_kmod_dev_init(&panfrost_dev->base, fd, flags, version,
+                     &panfrost_kmod_ops, allocator);
+   panfrost_dev_query_props(panfrost_dev);
+
+   return &panfrost_dev->base;
+}
+
+static void
+panfrost_kmod_dev_destroy(struct pan_kmod_dev *dev)
+{
+   struct panfrost_kmod_dev *panfrost_dev =
+      container_of(dev, struct panfrost_kmod_dev, base);
+
+   pan_kmod_dev_cleanup(dev);
+   pan_kmod_free(dev->allocator, panfrost_dev);
 }
 
 static uint32_t
@@ -530,7 +534,6 @@ panfrost_kmod_bo_label(struct pan_kmod_dev *dev, struct pan_kmod_bo *bo, const c
 const struct pan_kmod_ops panfrost_kmod_ops = {
    .dev_create = panfrost_kmod_dev_create,
    .dev_destroy = panfrost_kmod_dev_destroy,
-   .dev_query_props = panfrost_dev_query_props,
    .dev_query_user_va_range = panfrost_kmod_dev_query_user_va_range,
    .bo_alloc = panfrost_kmod_bo_alloc,
    .bo_free = panfrost_kmod_bo_free,

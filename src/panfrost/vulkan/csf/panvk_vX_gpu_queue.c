@@ -531,7 +531,7 @@ init_subqueue(struct panvk_gpu_queue *queue, enum panvk_subqueue_id subqueue)
                          subqueue);
       pandecode_cs_binary(dev->debug.decode_ctx, qsubmit.stream_addr,
                           qsubmit.stream_size,
-                          phys_dev->kmod.props.gpu_id);
+                          phys_dev->kmod.dev->props.gpu_id);
    }
 
    return VK_SUCCESS;
@@ -778,7 +778,7 @@ panvk_queue_submit_init(struct panvk_queue_submit *submit,
 
    submit->process_utrace =
       u_trace_should_process(&submit->dev->utrace.utctx) &&
-      submit->phys_dev->kmod.props.timestamp_frequency;
+      submit->phys_dev->kmod.dev->props.timestamp_frequency;
 
    submit->force_sync = PANVK_DEBUG(TRACE) || PANVK_DEBUG(SYNC);
 }
@@ -1201,7 +1201,8 @@ panvk_queue_submit_process_debug(const struct panvk_queue_submit *submit)
    struct pandecode_context *decode_ctx = submit->dev->debug.decode_ctx;
 
    if (PANVK_DEBUG(TRACE)) {
-      const struct pan_kmod_dev_props *props = &submit->phys_dev->kmod.props;
+      const struct pan_kmod_dev_props *props =
+         &submit->phys_dev->kmod.dev->props;
 
       for (uint32_t i = 0; i < submit->qsubmit_count; i++) {
          const struct drm_panthor_queue_submit *qsubmit = &submit->qsubmits[i];

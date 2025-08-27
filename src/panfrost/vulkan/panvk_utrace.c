@@ -76,7 +76,7 @@ panvk_utrace_read_ts(struct u_trace_context *utctx, void *timestamps,
    struct panvk_device *dev = to_dev(utctx);
    const struct panvk_physical_device *pdev =
       to_panvk_physical_device(dev->vk.physical);
-   const struct pan_kmod_dev_props *props = &pdev->kmod.props;
+   const struct pan_kmod_dev_props *props = &pdev->kmod.dev->props;
    const struct panvk_utrace_buf *buf = timestamps;
    struct panvk_utrace_flush_data *data = flush_data;
 

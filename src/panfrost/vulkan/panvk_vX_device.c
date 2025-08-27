@@ -204,7 +204,7 @@ static VkResult
 check_global_priority(const struct panvk_physical_device *phys_dev,
                       const VkDeviceQueueCreateInfo *create_info)
 {
-   const unsigned arch = pan_arch(phys_dev->kmod.props.gpu_id);
+   const unsigned arch = pan_arch(phys_dev->kmod.dev->props.gpu_id);
    const VkDeviceQueueGlobalPriorityCreateInfoKHR *priority_info =
       vk_find_struct_const(create_info->pNext,
                            DEVICE_QUEUE_GLOBAL_PRIORITY_CREATE_INFO_KHR);
@@ -217,7 +217,7 @@ check_global_priority(const struct panvk_physical_device *phys_dev,
       enum pan_kmod_group_allow_priority_flags requested_prio =
          global_priority_to_group_allow_priority_flag(priority);
       enum pan_kmod_group_allow_priority_flags allowed_prio_mask =
-         phys_dev->kmod.props.allowed_group_priorities_mask;
+         phys_dev->kmod.dev->props.allowed_group_priorities_mask;
 
       /* Non-medium priority context is not hooked-up in the JM backend, even
        * though the panfrost kmod advertize it. Manually filter non-medium
