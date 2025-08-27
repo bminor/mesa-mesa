@@ -40,7 +40,8 @@ opt_address_reg_load_local(brw_shader &s, bblock_t *block, const brw_def_analysi
       brw_builder ubld = brw_builder(&s).before(inst).uniform();
       brw_reg sources[3];
       for (unsigned i = 0; i < src_inst->sources; i++) {
-         sources[i] = inst->src[i].file == VGRF ? component(src_inst->src[i], 0) : src_inst->src[i];
+         const brw_reg src = src_inst->src[i];
+         sources[i] = src.file == VGRF ? component(src, 0) : src;
       }
       ubld.emit(src_inst->opcode, inst->dst, sources, src_inst->sources);
 
