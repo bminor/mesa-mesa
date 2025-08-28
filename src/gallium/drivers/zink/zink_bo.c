@@ -777,8 +777,8 @@ init_timeline_wait(struct zink_context *ctx, struct zink_resource *res, bool com
    if (*wait)
       return timeline;
 
-   /* commit || no usage = no wait */
-   if (commit || !zink_resource_has_usage(res) || zink_resource_usage_check_completion_fast(screen, res, ZINK_RESOURCE_ACCESS_RW))
+   /* no usage = no wait */
+   if (!zink_resource_has_usage(res) || zink_resource_usage_check_completion_fast(screen, res, ZINK_RESOURCE_ACCESS_RW))
       return timeline;
 
    if (zink_resource_usage_is_unflushed(res) && !zink_resource_usage_matches(res, ctx->bs)) {
