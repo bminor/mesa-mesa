@@ -1048,11 +1048,6 @@ msm_bo_finish(struct tu_device *dev, struct tu_bo *bo)
       tu_map_vm_bind(dev, MSM_VM_BIND_OP_UNMAP, 0, bo->iova, 0, 0,
                      bo->size);
 
-      mtx_lock(&dev->bo_mutex);
-      if (bo->implicit_sync)
-         dev->implicit_sync_bo_count--;
-      mtx_unlock(&dev->bo_mutex);
-
       mtx_lock(&dev->vma_mutex);
       util_vma_heap_free(&dev->vma, bo->iova, bo->size);
       mtx_unlock(&dev->vma_mutex);
