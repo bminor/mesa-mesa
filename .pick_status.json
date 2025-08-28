@@ -9744,7 +9744,7 @@
         "description": "tgsi: Fixes ntt_should_vectorize_io parameters",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5f757bb95c20cdebed578b851e9f204b8aa6c014",
         "notes": null
