@@ -585,7 +585,6 @@ TEST_F(TestInstrFromString, test_load_from_scratch)
    expect_fetch.set_print_skip(FetchInstr::EPrintSkip::ftype);
    expect_fetch.set_fetch_flag(FetchInstr::EFlags::uncached);
    expect_fetch.set_fetch_flag(FetchInstr::EFlags::indexed);
-   expect_fetch.set_fetch_flag(FetchInstr::EFlags::wait_ack);
    expect_fetch.set_array_size(19);
 
    check(init, expect_fetch);
@@ -645,7 +644,6 @@ TEST_F(TestInstrFromString, test_load_from_scratch_fixed_offset)
    expect_fetch.set_print_skip(FetchInstr::EPrintSkip::fmt);
    expect_fetch.set_print_skip(FetchInstr::EPrintSkip::ftype);
    expect_fetch.set_fetch_flag(FetchInstr::EFlags::uncached);
-   expect_fetch.set_fetch_flag(FetchInstr::EFlags::wait_ack);
    expect_fetch.set_array_base(10);
    expect_fetch.set_array_size(39);
 

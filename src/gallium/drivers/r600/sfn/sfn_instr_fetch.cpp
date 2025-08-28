@@ -687,7 +687,6 @@ LoadFromScratch::LoadFromScratch(const RegisterVec4& dst,
                nullptr)
 {
    set_fetch_flag(uncached);
-   set_fetch_flag(wait_ack);
 
    assert(scratch_size >= 1);
    set_array_size(scratch_size - 1);

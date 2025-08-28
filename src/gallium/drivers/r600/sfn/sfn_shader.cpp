@@ -1240,6 +1240,10 @@ Shader::emit_load_scratch(nir_intrinsic_instr *intr)
       for (unsigned i = 0; i < intr->num_components; ++i)
          dest_swz[i] = i;
 
+      auto wait = new ControlFlowInstr(ControlFlowInstr::cf_wait_ack);
+      emit_instruction(wait);
+      chain_scratch_read(wait);
+
       auto *ir = new LoadFromScratch(dest, dest_swz, addr, m_scratch_size);
       emit_instruction(ir);
       chain_scratch_read(ir);

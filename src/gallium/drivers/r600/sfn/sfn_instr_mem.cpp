@@ -765,6 +765,10 @@ RatInstr::emit_ssbo_atomic_op(nir_intrinsic_instr *intr, Shader& shader)
       atomic->set_instr_flag(ack_rat_return_write);
       auto dest = vf.dest_vec4(intr->def, pin_group);
 
+      auto wait = new ControlFlowInstr(ControlFlowInstr::cf_wait_ack);
+      wait->add_required_instr(atomic);
+      shader.emit_instruction(wait);
+
       auto fetch = new FetchInstr(vc_fetch,
                                   dest,
                                   {0, 1, 2, 3},
@@ -780,8 +784,7 @@ RatInstr::emit_ssbo_atomic_op(nir_intrinsic_instr *intr, Shader& shader)
       fetch->set_fetch_flag(FetchInstr::srf_mode);
       fetch->set_fetch_flag(FetchInstr::use_tc);
       fetch->set_fetch_flag(FetchInstr::vpm);
-      fetch->set_fetch_flag(FetchInstr::wait_ack);
-      fetch->add_required_instr(atomic);
+      fetch->add_required_instr(wait);
       shader.chain_ssbo_read(fetch);
       shader.emit_instruction(fetch);
    }
@@ -899,11 +902,16 @@ RatInstr::emit_image_load_or_atomic(nir_intrinsic_instr *intrin, Shader& shader)
    auto atomic =
       new RatInstr(cf_mem_rat, opcode, data_vec4, coord, imageid, image_offset, 1, 0xf, 0);
    shader.emit_instruction(atomic);
-
    atomic->set_ack();
+
    if (read_result) {
       atomic->set_instr_flag(ack_rat_return_write);
       auto dest = vf.dest_vec4(intrin->def, pin_group);
+
+      auto wait = new ControlFlowInstr(ControlFlowInstr::cf_wait_ack);
+
+      shader.chain_ssbo_read(wait);
+      shader.emit_instruction(wait);
 
       pipe_format format = nir_intrinsic_format(intrin);
       unsigned fmt = fmt_32;
@@ -926,12 +934,12 @@ RatInstr::emit_image_load_or_atomic(nir_intrinsic_instr *intrin, Shader& shader)
       fetch->set_mfc(3);
       fetch->set_fetch_flag(FetchInstr::use_tc);
       fetch->set_fetch_flag(FetchInstr::vpm);
-      fetch->set_fetch_flag(FetchInstr::wait_ack);
+      fetch->add_required_instr(wait);
       if (format_comp)
          fetch->set_fetch_flag(FetchInstr::format_comp_signed);
 
-      shader.chain_ssbo_read(fetch);
       shader.emit_instruction(fetch);
+      shader.chain_ssbo_read(fetch);
    }
 
    return true;
