@@ -25,6 +25,7 @@
 #define VK_SHADER_H
 
 #include "compiler/spirv/nir_spirv.h"
+#include "vk_internal_exts.h"
 #include "vk_limits.h"
 #include "vk_pipeline_cache.h"
 
@@ -48,9 +49,6 @@ struct vk_pipeline_robustness_state;
 
 int vk_shader_cmp_graphics_stages(mesa_shader_stage a, mesa_shader_stage b);
 int vk_shader_cmp_rt_stages(mesa_shader_stage a, mesa_shader_stage b);
-
-#define VK_SHADER_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_MESA 0x1000
-#define VK_SHADER_CREATE_UNALIGNED_DISPATCH_BIT_MESA               0x2000
 
 #define MESA_VK_PIPELINE_RAY_TRACING_FLAGS ( \
    VK_PIPELINE_CREATE_2_RAY_TRACING_SKIP_BUILT_IN_PRIMITIVES_BIT_KHR | \

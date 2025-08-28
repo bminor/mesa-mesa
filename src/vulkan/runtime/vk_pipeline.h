@@ -24,6 +24,7 @@
 #ifndef VK_PIPELINE_H
 #define VK_PIPELINE_H
 
+#include "vk_internal_exts.h"
 #include "vk_object.h"
 #include "vk_util.h"
 
@@ -38,20 +39,6 @@ struct vk_device;
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_NIR_CREATE_INFO_MESA \
-   (VkStructureType)1000290001
-
-#define VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_NIR_CREATE_INFO_MESA_cast \
-   VkPipelineShaderStageNirCreateInfoMESA
-
-static const VkPipelineCreateFlagBits2 VK_PIPELINE_CREATE_2_UNALIGNED_DISPATCH_BIT_MESA = 0x20000000000ull;
-
-typedef struct VkPipelineShaderStageNirCreateInfoMESA {
-   VkStructureType sType;
-   const void *pNext;
-   struct nir_shader *nir;
-} VkPipelineShaderStageNirCreateInfoMESA;
 
 bool
 vk_pipeline_shader_stage_is_null(const VkPipelineShaderStageCreateInfo *info);

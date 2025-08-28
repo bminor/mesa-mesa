@@ -235,6 +235,7 @@ hawkmoth_clang = [
     '-I{}/src/gallium/include/'.format(mesa_root),
     '-I{}/src/intel/'.format(mesa_root),
     '-I{}/src/mesa/'.format(mesa_root),
+    '-I{}/src/vulkan/util'.format(mesa_root),
     '-I{}/src/'.format(mesa_build_root),
     '-DHAVE_STRUCT_TIMESPEC',
     '-DHAVE_PTHREAD',

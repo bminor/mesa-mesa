@@ -23,6 +23,7 @@
 #ifndef VK_META_H
 #define VK_META_H
 
+#include "vk_internal_exts.h"
 #include "vk_limits.h"
 #include "vk_object.h"
 
@@ -45,9 +46,6 @@ struct vk_meta_rect {
    float z;
    uint32_t layer;
 };
-
-#define VK_PRIMITIVE_TOPOLOGY_META_RECT_LIST_MESA (VkPrimitiveTopology)11
-#define VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA (VkImageViewCreateFlagBits)0x80000000
 
 struct vk_meta_copy_image_properties {
    union {
