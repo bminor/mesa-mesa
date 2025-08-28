@@ -179,6 +179,72 @@ VkResult pvr_pds_unitex_state_program_create_and_upload(
    return VK_SUCCESS;
 }
 
+static VkResult pvr_pds_fragment_program_create_and_upload(
+   struct pvr_device *device,
+   const VkAllocationCallbacks *allocator,
+   pco_shader *fs,
+   struct pvr_suballoc_bo *shader_bo,
+   struct pvr_pds_upload *pds_frag_prog,
+   bool msaa)
+{
+   struct pvr_pds_kickusc_program program = { 0 };
+   pco_data *fs_data = pco_shader_data(fs);
+   uint32_t staging_buffer_size;
+   uint32_t *staging_buffer;
+   VkResult result;
+
+   const pvr_dev_addr_t exec_addr =
+      PVR_DEV_ADDR_OFFSET(shader_bo->dev_addr, fs_data->common.entry_offset);
+
+   /* Note this is not strictly required to be done before calculating the
+    * staging_buffer_size in this particular case. It can also be done after
+    * allocating the buffer. The size from pvr_pds_kick_usc() is constant.
+    */
+   pvr_pds_setup_doutu(&program.usc_task_control,
+                       exec_addr.addr,
+                       fs_data->common.temps,
+                       msaa ? ROGUE_PDSINST_DOUTU_SAMPLE_RATE_FULL
+                            : ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE,
+                       fs_data->fs.uses.phase_change);
+
+   pvr_pds_kick_usc(&program, NULL, 0, false, PDS_GENERATE_SIZES);
+
+   staging_buffer_size = PVR_DW_TO_BYTES(program.code_size + program.data_size);
+
+   staging_buffer = vk_alloc2(&device->vk.alloc,
+                              allocator,
+                              staging_buffer_size,
+                              8,
+                              VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+   if (!staging_buffer)
+      return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+
+   pvr_pds_kick_usc(&program,
+                    staging_buffer,
+                    0,
+                    false,
+                    PDS_GENERATE_CODEDATA_SEGMENTS);
+
+   /* FIXME: Figure out the define for alignment of 16. */
+   result = pvr_gpu_upload_pds(device,
+                               &staging_buffer[0],
+                               program.data_size,
+                               16,
+                               &staging_buffer[program.data_size],
+                               program.code_size,
+                               16,
+                               16,
+                               pds_frag_prog);
+   if (result != VK_SUCCESS) {
+      vk_free2(&device->vk.alloc, allocator, staging_buffer);
+      return result;
+   }
+
+   vk_free2(&device->vk.alloc, allocator, staging_buffer);
+
+   return VK_SUCCESS;
+}
+
 static VkResult
 pvr_load_op_shader_generate(struct pvr_device *device,
                             const VkAllocationCallbacks *allocator,
@@ -203,24 +269,16 @@ pvr_load_op_shader_generate(struct pvr_device *device,
    const bool msaa = load_op->clears_loads_state.unresolved_msaa_mask &
                      load_op->clears_loads_state.rt_load_mask;
 
-   /* TODO: amend this once the hardcoded shaders have been removed. */
-   struct pvr_fragment_shader_state fragment_state = {
-      .shader_bo = load_op->usc_frag_prog_bo,
-      .sample_rate = msaa ? ROGUE_PDSINST_DOUTU_SAMPLE_RATE_FULL
-                          : ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE,
-      .pds_fragment_program = load_op->pds_frag_prog,
-   };
-
-   result = pvr_pds_fragment_program_create_and_upload(device,
-                                                       allocator,
-                                                       loadop,
-                                                       &fragment_state);
+   result =
+      pvr_pds_fragment_program_create_and_upload(device,
+                                                 allocator,
+                                                 loadop,
+                                                 load_op->usc_frag_prog_bo,
+                                                 &load_op->pds_frag_prog,
+                                                 msaa);
 
    load_op->temps_count = pco_shader_data(loadop)->common.temps;
    ralloc_free(loadop);
-
-   load_op->usc_frag_prog_bo = fragment_state.shader_bo;
-   load_op->pds_frag_prog = fragment_state.pds_fragment_program;
 
    if (result != VK_SUCCESS)
       goto err_free_usc_frag_prog_bo;

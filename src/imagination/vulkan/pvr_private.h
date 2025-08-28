@@ -894,12 +894,12 @@ struct pvr_fragment_shader_state {
    /* FIXME: Move this into stage_state? */
    struct pvr_stage_allocation_descriptor_state descriptor_state;
    enum ROGUE_TA_PASSTYPE pass_type;
-   enum ROGUE_PDSINST_DOUTU_SAMPLE_RATE sample_rate;
 
    struct pvr_pds_coeff_loading_program pds_coeff_program;
    uint32_t *pds_coeff_program_buffer;
 
-   struct pvr_pds_upload pds_fragment_program;
+   struct pvr_pds_kickusc_program pds_fragment_program;
+   uint32_t *pds_fragment_program_buffer;
 };
 
 struct pvr_pipeline {
@@ -1365,12 +1365,6 @@ pvr_cmd_buffer_set_error_unwarned(struct pvr_cmd_buffer *cmd_buffer,
 
    return error;
 }
-
-VkResult pvr_pds_fragment_program_create_and_upload(
-   struct pvr_device *device,
-   const VkAllocationCallbacks *allocator,
-   pco_shader *fs,
-   struct pvr_fragment_shader_state *fragment_state);
 
 VkResult pvr_pds_unitex_state_program_create_and_upload(
    struct pvr_device *device,

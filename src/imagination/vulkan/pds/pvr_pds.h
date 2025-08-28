@@ -237,6 +237,8 @@ struct pvr_pds_kickusc_program {
    uint32_t *data_segment;
    struct pvr_pds_usc_task_control usc_task_control;
 
+   uint32_t doutu_offset;
+
    uint32_t data_size;
    uint32_t code_size;
 };

@@ -110,53 +110,37 @@ static VkResult pvr_pds_coeff_program_create_and_upload(
    return VK_SUCCESS;
 }
 
-/* FIXME: move this elsewhere since it's also called in pvr_pass.c? */
 /* If allocator == NULL, the internal one will be used. */
-VkResult pvr_pds_fragment_program_create_and_upload(
+static VkResult pvr_pds_fragment_program_create(
    struct pvr_device *device,
    const VkAllocationCallbacks *allocator,
    pco_shader *fs,
    struct pvr_fragment_shader_state *fragment_state)
 {
-   /* TODO: remove the below + revert the pvr_pds_setup_doutu
-    * args and make sure fs isn't NULL instead;
-    * temporarily in place for hardcoded load ops in
-    * pvr_pass.c:pvr_generate_load_op_shader()
-    */
-   unsigned temps = 0;
-   bool has_phase_rate_change = false;
-   unsigned entry_offset = 0;
-
-   if (fs) {
-      pco_data *fs_data = pco_shader_data(fs);
-      temps = fs_data->common.temps;
-      has_phase_rate_change = fs_data->fs.uses.phase_change;
-      entry_offset = fs_data->common.entry_offset;
-   }
-
-   struct pvr_pds_kickusc_program program = { 0 };
+   struct pvr_pds_kickusc_program *program =
+      &fragment_state->pds_fragment_program;
+   pco_data *fs_data = pco_shader_data(fs);
    uint32_t staging_buffer_size;
    uint32_t *staging_buffer;
-   VkResult result;
 
    const pvr_dev_addr_t exec_addr =
       PVR_DEV_ADDR_OFFSET(fragment_state->shader_bo->dev_addr,
-                          /* fs_data->common.entry_offset */ entry_offset);
+                          fs_data->common.entry_offset);
 
    /* Note this is not strictly required to be done before calculating the
     * staging_buffer_size in this particular case. It can also be done after
     * allocating the buffer. The size from pvr_pds_kick_usc() is constant.
     */
-   pvr_pds_setup_doutu(
-      &program.usc_task_control,
-      exec_addr.addr,
-      /* fs_data->common.temps */ temps,
-      fragment_state->sample_rate,
-      /* fs_data->fs.uses.phase_change */ has_phase_rate_change);
+   pvr_pds_setup_doutu(&program->usc_task_control,
+                       exec_addr.addr,
+                       fs_data->common.temps,
+                       ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE,
+                       fs_data->fs.uses.phase_change);
 
-   pvr_pds_kick_usc(&program, NULL, 0, false, PDS_GENERATE_SIZES);
+   pvr_pds_kick_usc(program, NULL, 0, false, PDS_GENERATE_SIZES);
 
-   staging_buffer_size = PVR_DW_TO_BYTES(program.code_size + program.data_size);
+   staging_buffer_size =
+      PVR_DW_TO_BYTES(program->code_size + program->data_size);
 
    staging_buffer = vk_alloc2(&device->vk.alloc,
                               allocator,
@@ -166,28 +150,13 @@ VkResult pvr_pds_fragment_program_create_and_upload(
    if (!staging_buffer)
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   pvr_pds_kick_usc(&program,
+   pvr_pds_kick_usc(program,
                     staging_buffer,
                     0,
                     false,
                     PDS_GENERATE_CODEDATA_SEGMENTS);
 
-   /* FIXME: Figure out the define for alignment of 16. */
-   result = pvr_gpu_upload_pds(device,
-                               &staging_buffer[0],
-                               program.data_size,
-                               16,
-                               &staging_buffer[program.data_size],
-                               program.code_size,
-                               16,
-                               16,
-                               &fragment_state->pds_fragment_program);
-   if (result != VK_SUCCESS) {
-      vk_free2(&device->vk.alloc, allocator, staging_buffer);
-      return result;
-   }
-
-   vk_free2(&device->vk.alloc, allocator, staging_buffer);
+   fragment_state->pds_fragment_program_buffer = staging_buffer;
 
    return VK_SUCCESS;
 }
@@ -1251,8 +1220,9 @@ pvr_graphics_pipeline_destroy(struct pvr_device *const device,
       pvr_pds_vertex_attrib_program_destroy(device, allocator, attrib_program);
    }
 
-   pvr_bo_suballoc_free(
-      gfx_pipeline->shader_state.fragment.pds_fragment_program.pvr_bo);
+   vk_free2(&device->vk.alloc,
+            allocator,
+            fragment_state->pds_fragment_program_buffer);
    vk_free2(&device->vk.alloc,
             allocator,
             fragment_state->pds_coeff_program_buffer);
@@ -1295,6 +1265,7 @@ static void pvr_fragment_state_save(struct pvr_graphics_pipeline *gfx_pipeline,
 
    /* TODO: add selection for other values of pass type and sample rate. */
 
+   /* TODO: do this dynamically as well */
    if (shader_data->fs.uses.depth_feedback && !shader_data->fs.uses.early_frag)
       fragment_state->pass_type = ROGUE_TA_PASSTYPE_DEPTH_FEEDBACK;
    else if (shader_data->fs.uses.discard)
@@ -1303,13 +1274,6 @@ static void pvr_fragment_state_save(struct pvr_graphics_pipeline *gfx_pipeline,
       fragment_state->pass_type = ROGUE_TA_PASSTYPE_TRANSLUCENT;
    else
       fragment_state->pass_type = ROGUE_TA_PASSTYPE_OPAQUE;
-
-   fragment_state->sample_rate = ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE;
-   if (shader_data->fs.uses.sample_shading ||
-       gfx_pipeline->dynamic_state.ms.rasterization_samples >
-          VK_SAMPLE_COUNT_1_BIT) {
-      fragment_state->sample_rate = ROGUE_PDSINST_DOUTU_SAMPLE_RATE_FULL;
-   }
 
    /* We can't initialize it yet since we still need to generate the PDS
     * programs so set it to `~0` to make sure that we set this up later on.
@@ -2531,9 +2495,6 @@ pvr_preprocess_shader_data(pco_data *data,
          data->fs.meta_present.sample_mask = true;
       }
 
-      data->fs.rasterization_samples = state->ms->rasterization_samples;
-      nir->info.fs.uses_sample_shading = state->ms->rasterization_samples >
-                                         VK_SAMPLE_COUNT_1_BIT;
       if (BITSET_TEST(state->dynamic, MESA_VK_DYNAMIC_CB_COLOR_WRITE_ENABLES) ||
           (state->cb && state->cb->color_write_enables !=
                            BITFIELD_MASK(MESA_VK_MAX_COLOR_ATTACHMENTS))) {
@@ -2760,10 +2721,10 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
       if (result != VK_SUCCESS)
          goto err_free_fragment_bo;
 
-      result = pvr_pds_fragment_program_create_and_upload(device,
-                                                          allocator,
-                                                          *fs,
-                                                          fragment_state);
+      result = pvr_pds_fragment_program_create(device,
+                                               allocator,
+                                               *fs,
+                                               fragment_state);
       if (result != VK_SUCCESS)
          goto err_free_coeff_program;
 
@@ -2827,7 +2788,9 @@ err_free_frag_descriptor_program:
                                       allocator,
                                       &fragment_state->descriptor_state);
 err_free_frag_program:
-   pvr_bo_suballoc_free(fragment_state->pds_fragment_program.pvr_bo);
+   vk_free2(&device->vk.alloc,
+            allocator,
+            fragment_state->pds_fragment_program_buffer);
 err_free_coeff_program:
    vk_free2(&device->vk.alloc,
             allocator,

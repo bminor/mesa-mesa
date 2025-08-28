@@ -5311,6 +5311,53 @@ pvr_setup_triangle_merging_flag(struct pvr_cmd_buffer *const cmd_buffer,
 }
 
 static VkResult
+setup_pds_fragment_program(struct pvr_cmd_buffer *const cmd_buffer,
+                           struct pvr_pds_upload *pds_fragment_program)
+{
+   struct pvr_cmd_buffer_state *const state = &cmd_buffer->state;
+   const struct pvr_fragment_shader_state *const fragment_shader_state =
+      &state->gfx_pipeline->shader_state.fragment;
+   const struct vk_dynamic_graphics_state *const dynamic_state =
+      &cmd_buffer->vk.dynamic_graphics_state;
+   const struct pvr_pds_kickusc_program *program =
+      &fragment_shader_state->pds_fragment_program;
+   uint32_t *pds_fragment_program_buffer =
+      fragment_shader_state->pds_fragment_program_buffer;
+
+   memset(pds_fragment_program, 0, sizeof(*pds_fragment_program));
+
+   if (!pds_fragment_program_buffer)
+      return VK_SUCCESS;
+
+   struct ROGUE_PDSINST_DOUTU_SRC0 doutu_src;
+   ROGUE_PDSINST_DOUTU_SRC0_unpack(
+      &pds_fragment_program_buffer[program->doutu_offset],
+      &doutu_src);
+
+   /* TODO: VkPipelineMultisampleStateCreateInfo.sampleShadingEnable? */
+   doutu_src.sample_rate = dynamic_state->ms.rasterization_samples >
+                                 VK_SAMPLE_COUNT_1_BIT
+                              ? ROGUE_PDSINST_DOUTU_SAMPLE_RATE_FULL
+                              : ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE;
+
+   ROGUE_PDSINST_DOUTU_SRC0_pack(
+      &pds_fragment_program_buffer[program->doutu_offset],
+      &doutu_src);
+
+   /* FIXME: Figure out the define for alignment of 16. */
+   return pvr_cmd_buffer_upload_pds(
+      cmd_buffer,
+      &pds_fragment_program_buffer[0],
+      program->data_size,
+      16,
+      &pds_fragment_program_buffer[program->data_size],
+      program->code_size,
+      16,
+      16,
+      pds_fragment_program);
+}
+
+static VkResult
 setup_pds_coeff_program(struct pvr_cmd_buffer *const cmd_buffer,
                         struct pvr_pds_upload *pds_coeff_program)
 {
@@ -5391,8 +5438,13 @@ pvr_setup_fragment_state_pointers(struct pvr_cmd_buffer *const cmd_buffer,
       &fragment_shader_state->descriptor_state;
    const struct pvr_pipeline_stage_state *fragment_state =
       &fragment_shader_state->stage_state;
+   struct pvr_pds_upload pds_fragment_program;
    struct pvr_pds_upload pds_coeff_program;
    VkResult result;
+
+   result = setup_pds_fragment_program(cmd_buffer, &pds_fragment_program);
+   if (result != VK_SUCCESS)
+      return result;
 
    result = setup_pds_coeff_program(cmd_buffer, &pds_coeff_program);
    if (result != VK_SUCCESS)
@@ -5438,10 +5490,7 @@ pvr_setup_fragment_state_pointers(struct pvr_cmd_buffer *const cmd_buffer,
    pvr_csb_pack (&ppp_state->pds.pixel_shader_base,
                  TA_STATE_PDS_SHADERBASE,
                  shader_base) {
-      const struct pvr_pds_upload *const pds_upload =
-         &fragment_shader_state->pds_fragment_program;
-
-      shader_base.addr = PVR_DEV_ADDR(pds_upload->data_offset);
+      shader_base.addr = PVR_DEV_ADDR(pds_fragment_program.data_offset);
    }
 
    if (descriptor_shader_state->pds_code.pvr_bo) {
@@ -5949,7 +5998,8 @@ static inline bool pvr_ppp_dynamic_state_isp_faces_and_control_dirty(
           BITSET_TEST(dynamic_dirty, MESA_VK_DYNAMIC_RS_DEPTH_BIAS_ENABLE) ||
           BITSET_TEST(dynamic_dirty, MESA_VK_DYNAMIC_RS_LINE_WIDTH) ||
           BITSET_TEST(dynamic_dirty,
-                      MESA_VK_DYNAMIC_RS_RASTERIZER_DISCARD_ENABLE);
+                      MESA_VK_DYNAMIC_RS_RASTERIZER_DISCARD_ENABLE) ||
+          BITSET_TEST(dynamic_dirty, MESA_VK_DYNAMIC_MS_RASTERIZATION_SAMPLES);
 }
 
 static inline bool

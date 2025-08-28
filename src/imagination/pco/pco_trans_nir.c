@@ -335,6 +335,43 @@ static inline pco_instr *build_itr(pco_builder *b,
    return instr;
 }
 
+static pco_ref fs_is_single_sampled(trans_ctx *tctx)
+{
+   assert(tctx->stage == MESA_SHADER_FRAGMENT);
+
+   /* n samples = ...
+    * 1 = 0b00000001
+    * 2 = 0b00000011
+    * 4 = 0b00001111
+    * 8 = 0b11111111
+    */
+   pco_ref smp_rate_mask = pco_ref_new_ssa32(tctx->func);
+   pco_pck(&tctx->b, smp_rate_mask, pco_fone, .pck_fmt = PCO_PCK_FMT_COV);
+
+   /* n samples = ...
+    * 1 = 0b00000000
+    * 2 = 0b00000001
+    * 4 = 0b00000111
+    * 8 = 0b01111111
+    */
+   pco_ref smp_rate_mask_shr1 = pco_ref_new_ssa32(tctx->func);
+   pco_shift(&tctx->b,
+             smp_rate_mask_shr1,
+             smp_rate_mask,
+             pco_one,
+             pco_ref_null(),
+             .shiftop = PCO_SHIFTOP_SHR);
+
+   pco_ref is_single_sampled = pco_ref_new_ssa32(tctx->func);
+   pco_tstz(&tctx->b,
+            is_single_sampled,
+            pco_ref_null(),
+            smp_rate_mask_shr1,
+            .tst_type_main = PCO_TST_TYPE_MAIN_U32);
+
+   return is_single_sampled;
+}
+
 /**
  * \brief Translates a NIR fs load_input intrinsic into PCO.
  *
@@ -412,18 +449,20 @@ static pco_instr *trans_load_input_fs(trans_ctx *tctx,
       /* Special case: x and y are loaded from special registers. */
       switch (component) {
       case 0: /* x */
-         return pco_mov(&tctx->b,
-                        dest,
-                        pco_ref_hwreg(fs_data->uses.sample_shading ? PCO_SR_X_S
-                                                                   : PCO_SR_X_P,
-                                      PCO_REG_CLASS_SPEC));
+      case 1: /* y */ {
+         pco_ref xy_s[] = { pco_ref_hwreg(PCO_SR_X_S, PCO_REG_CLASS_SPEC),
+                            pco_ref_hwreg(PCO_SR_Y_S, PCO_REG_CLASS_SPEC) };
+         pco_ref xy_p[] = { pco_ref_hwreg(PCO_SR_X_P, PCO_REG_CLASS_SPEC),
+                            pco_ref_hwreg(PCO_SR_Y_P, PCO_REG_CLASS_SPEC) };
 
-      case 1: /* y */
-         return pco_mov(&tctx->b,
-                        dest,
-                        pco_ref_hwreg(fs_data->uses.sample_shading ? PCO_SR_Y_S
-                                                                   : PCO_SR_Y_P,
-                                      PCO_REG_CLASS_SPEC));
+         return pco_csel(&tctx->b,
+                         dest,
+                         fs_is_single_sampled(tctx),
+                         xy_p[component],
+                         xy_s[component],
+                         .tst_op_main = PCO_TST_OP_MAIN_GZERO,
+                         .tst_type_main = PCO_TST_TYPE_MAIN_U32);
+      }
 
       case 2:
          assert(fs_data->uses.z);

@@ -3772,6 +3772,7 @@ uint32_t *pvr_pds_kick_usc(struct pvr_pds_kickusc_program *restrict program,
       /* Copy the USC task control words to constants. */
 
       constant = pvr_pds_get_constants(&next_constant, 2, &dummy_count);
+      program->doutu_offset = constant;
 
       pvr_pds_write_wide_constant(constants,
                                   constant + 0,
