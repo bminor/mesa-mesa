@@ -270,7 +270,7 @@ impl PipeContext {
         bx: &pipe_box,
         flags: pipe_map_flags,
         is_buffer: bool,
-    ) -> Option<PipeTransfer> {
+    ) -> Option<PipeTransfer<'_>> {
         let mut out: *mut pipe_transfer = ptr::null_mut();
 
         let ptr = unsafe {
@@ -296,7 +296,7 @@ impl PipeContext {
         offset: i32,
         size: i32,
         flags: pipe_map_flags,
-    ) -> Option<PipeTransfer> {
+    ) -> Option<PipeTransfer<'_>> {
         let b = pipe_box {
             x: offset,
             width: size,
@@ -314,7 +314,7 @@ impl PipeContext {
         offset: i32,
         size: i32,
         rw: RWFlags,
-    ) -> Option<PipeTransfer> {
+    ) -> Option<PipeTransfer<'_>> {
         self.buffer_map_flags(res, offset, size, rw.into())
     }
 
@@ -327,7 +327,7 @@ impl PipeContext {
         res: &PipeResource,
         bx: &pipe_box,
         flags: pipe_map_flags,
-    ) -> Option<PipeTransfer> {
+    ) -> Option<PipeTransfer<'_>> {
         self.resource_map(res, bx, flags, false)
     }
 
@@ -336,7 +336,7 @@ impl PipeContext {
         res: &PipeResource,
         bx: &pipe_box,
         rw: RWFlags,
-    ) -> Option<PipeTransfer> {
+    ) -> Option<PipeTransfer<'_>> {
         self.texture_map_flags(res, bx, rw.into())
     }
 

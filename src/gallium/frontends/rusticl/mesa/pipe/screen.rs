@@ -98,7 +98,7 @@ impl PipeScreen {
         )
     }
 
-    pub fn alloc_vm(&self, start: NonZeroU64, size: NonZeroU64) -> Option<ScreenVMAllocation> {
+    pub fn alloc_vm(&self, start: NonZeroU64, size: NonZeroU64) -> Option<ScreenVMAllocation<'_>> {
         let alloc =
             unsafe { self.screen().alloc_vm?(self.screen.as_ptr(), start.get(), size.get()) };
         Some(ScreenVMAllocation {
