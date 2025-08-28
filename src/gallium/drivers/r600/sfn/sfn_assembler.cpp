@@ -70,6 +70,7 @@ public:
    void emit_loop_end();
    void emit_loop_break();
    void emit_loop_cont();
+   void emit_alu_push_before();
 
    void emit_alu_op(const AluInstr& ai);
    void emit_lds_op(const AluInstr& lds);
@@ -1092,6 +1093,36 @@ AssamblerVisitor::emit_else()
    r600_bytecode_add_cfinst(m_bc, CF_OP_ELSE);
    m_bc->cf_last->pop_count = 1;
    m_result &= m_jump_tracker.add_mid(m_bc->cf_last, jt_if);
+}
+
+void
+AssamblerVisitor::emit_alu_push_before()
+{
+   int elems = m_callstack.push(FC_PUSH_VPM);
+   bool needs_workaround = false;
+
+   if (m_bc->gfx_level == CAYMAN && m_bc->stack.loop > 1)
+      needs_workaround = true;
+
+   if (m_bc->gfx_level == EVERGREEN && m_bc->family != CHIP_HEMLOCK &&
+       m_bc->family != CHIP_CYPRESS && m_bc->family != CHIP_JUNIPER) {
+      unsigned dmod1 = (elems - 1) % m_bc->stack.entry_size;
+      unsigned dmod2 = (elems) % m_bc->stack.entry_size;
+
+      if (elems && (!dmod1 || !dmod2))
+         needs_workaround = true;
+   }
+
+   if (needs_workaround) {
+      r600_bytecode_add_cfinst(m_bc, CF_OP_PUSH);
+      m_bc->cf_last->cf_addr = m_bc->cf_last->id + 2;
+      r600_bytecode_add_cfinst(m_bc, CF_OP_ALU);
+      // pred->set_cf_type(cf_alu);
+   } else {
+      r600_bytecode_add_cfinst(m_bc, CF_OP_ALU_PUSH_BEFORE);
+   }
+
+   clear_states(sf_tex | sf_vtx);
 }
 
 void
