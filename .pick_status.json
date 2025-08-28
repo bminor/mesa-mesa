@@ -2074,7 +2074,7 @@
         "description": "lavapipe: Always use dma-buf for external memory when we can",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c1657de63c23914c7f09ab96aa461e80458d6594",
         "notes": null
