@@ -71,15 +71,15 @@ public:
       m_cf_instr = instr;
    }
 
-   void visit(ScratchIOInstr *instr) override { mem_write_instr.push_back(instr); }
+   void visit(ScratchIOInstr *instr) override { free_instr.push_back(instr); }
 
-   void visit(StreamOutInstr *instr) override { mem_write_instr.push_back(instr); }
+   void visit(StreamOutInstr *instr) override { free_instr.push_back(instr); }
 
-   void visit(MemRingOutInstr *instr) override { mem_ring_writes.push_back(instr); }
+   void visit(MemRingOutInstr *instr) override { free_instr.push_back(instr); }
 
-   void visit(GDSInstr *instr) override { gds_op.push_back(instr); }
+   void visit(GDSInstr *instr) override { gds_instr.push_back(instr); }
 
-   void visit(WriteTFInstr *instr) override { write_tf.push_back(instr); }
+   void visit(WriteTFInstr *instr) override { gds_instr.push_back(instr); }
 
    void visit(LDSReadInstr *instr) override
    {
@@ -99,7 +99,7 @@ public:
       }
    }
 
-   void visit(RatInstr *instr) override { rat_instr.push_back(instr); }
+   void visit(RatInstr *instr) override { free_instr.push_back(instr); }
 
    std::list<AluInstr *> alu_trans;
    std::list<AluInstr *> alu_vec;
@@ -108,11 +108,8 @@ public:
    std::list<AluGroup *> alu_groups;
    std::list<ExportInstr *> exports;
    std::list<FetchInstr *> fetches;
-   std::list<WriteOutInstr *> mem_write_instr;
-   std::list<MemRingOutInstr *> mem_ring_writes;
-   std::list<GDSInstr *> gds_op;
-   std::list<WriteTFInstr *> write_tf;
-   std::list<RatInstr *> rat_instr;
+   std::list<Instr *> free_instr;
+   std::list<Instr *> gds_instr;
 
    Instr *m_cf_instr{nullptr};
    ValueFactory& m_value_factory;
@@ -187,21 +184,15 @@ private:
    std::list<TexInstr *> tex_ready;
    std::list<ExportInstr *> exports_ready;
    std::list<FetchInstr *> fetches_ready;
-   std::list<WriteOutInstr *> memops_ready;
-   std::list<MemRingOutInstr *> mem_ring_writes_ready;
-   std::list<GDSInstr *> gds_ready;
-   std::list<WriteTFInstr *> write_tf_ready;
-   std::list<RatInstr *> rat_instr_ready;
+   std::list<Instr *> free_ready;
+   std::list<Instr *> gds_ready;
 
    enum {
       sched_alu,
       sched_tex,
       sched_fetch,
       sched_free,
-      sched_mem_ring,
       sched_gds,
-      sched_write_tf,
-      sched_rat,
    } current_shed;
 
    ExportInstr *m_last_pos;
@@ -337,21 +328,15 @@ BlockScheduler::schedule_block(Block& in_block,
          sfn_log << SfnLog::schedule << "  TEX:" << tex_ready.size() << "\n";
       if (fetches_ready.size())
          sfn_log << SfnLog::schedule << "  FETCH:" << fetches_ready.size() << "\n";
-      if (mem_ring_writes_ready.size())
-         sfn_log << SfnLog::schedule << "  MEM_RING:" << mem_ring_writes_ready.size()
-                 << "\n";
-      if (memops_ready.size())
-         sfn_log << SfnLog::schedule << "  MEM_OPS:" << mem_ring_writes_ready.size()
-                 << "\n";
+      if (free_ready.size())
+         sfn_log << SfnLog::schedule << "  GENERIC:" << free_ready.size() << "\n";
+      if (gds_ready.size())
+         sfn_log << SfnLog::schedule << "  GDS:" << gds_ready.size() << "\n";
 
       if (!m_current_block->lds_group_active() &&
           m_current_block->expected_ar_uses() == 0) {
-         if (last_shed != sched_free && memops_ready.size() > 8)
+         if (last_shed != sched_free && free_ready.size() > 8)
             current_shed = sched_free;
-         else if (mem_ring_writes_ready.size() > 15)
-            current_shed = sched_mem_ring;
-         else if (rat_instr_ready.size() > 3)
-            current_shed = sched_rat;
          else if (tex_ready.size() > (m_chip_class >= ISA_CC_EVERGREEN ? 15 : 7))
             current_shed = sched_tex;
       }
@@ -384,32 +369,10 @@ BlockScheduler::schedule_block(Block& in_block,
             schedule_gds(out_blocks, gds_ready);
             last_shed = current_shed;
          }
-         current_shed = sched_mem_ring;
+         current_shed = sched_free;
          continue;
-      case sched_mem_ring:
-         if (mem_ring_writes_ready.empty() ||
-             !schedule_cf(out_blocks, mem_ring_writes_ready)) {
-            current_shed = sched_write_tf;
-            continue;
-         }
-         last_shed = current_shed;
-         break;
-      case sched_write_tf:
-         if (write_tf_ready.empty() || !schedule_gds(out_blocks, write_tf_ready)) {
-            current_shed = sched_rat;
-            continue;
-         }
-         last_shed = current_shed;
-         break;
-      case sched_rat:
-         if (rat_instr_ready.empty() || !schedule_cf(out_blocks, rat_instr_ready)) {
-            current_shed = sched_free;
-            continue;
-         }
-         last_shed = current_shed;
-         break;
       case sched_free:
-         if (memops_ready.empty() || !schedule_cf(out_blocks, memops_ready)) {
+         if (free_ready.empty() || !schedule_cf(out_blocks, free_ready)) {
             current_shed = sched_alu;
             break;
          }
@@ -466,9 +429,9 @@ BlockScheduler::schedule_block(Block& in_block,
       }
       fail = true;
    }
-   if (!cir.mem_write_instr.empty()) {
+   if (!cir.free_instr.empty()) {
       std::cerr << "Unscheduled MEM ops:\n";
-      for (auto& a : cir.mem_write_instr) {
+      for (auto& a : cir.free_instr) {
          std::cerr << "   " << *a << "\n";
       }
       fail = true;
@@ -507,8 +470,7 @@ BlockScheduler::schedule_block(Block& in_block,
    assert(cir.exports.empty());
    assert(cir.fetches.empty());
    assert(cir.alu_vec.empty());
-   assert(cir.mem_write_instr.empty());
-   assert(cir.mem_ring_writes.empty());
+   assert(cir.free_instr.empty());
 
    assert(!fail);
 
@@ -1132,13 +1094,10 @@ BlockScheduler::collect_ready(CollectInstructions& available)
    result |= collect_ready_type(alu_trans_ready, available.alu_trans);
    result |= collect_ready_type(alu_multi_slot_ready, available.alu_multi_slot);
    result |= collect_ready_type(alu_groups_ready, available.alu_groups);
-   result |= collect_ready_type(gds_ready, available.gds_op);
+   result |= collect_ready_type(gds_ready, available.gds_instr);
    result |= collect_ready_type(tex_ready, available.tex);
    result |= collect_ready_type(fetches_ready, available.fetches);
-   result |= collect_ready_type(memops_ready, available.mem_write_instr);
-   result |= collect_ready_type(mem_ring_writes_ready, available.mem_ring_writes);
-   result |= collect_ready_type(write_tf_ready, available.write_tf);
-   result |= collect_ready_type(rat_instr_ready, available.rat_instr);
+   result |= collect_ready_type(free_ready, available.free_instr);
 
    sfn_log << SfnLog::schedule << "\n";
    return result;
@@ -1260,7 +1219,7 @@ template <> struct type_char<GDSInstr> {
    static char value() { return 'S';};
 };
 
-template <> struct type_char<RatInstr> {
+template <> struct type_char<Instr> {
    static char value() { return 'I';};
 };
 
