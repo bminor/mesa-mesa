@@ -4233,6 +4233,10 @@ static VkResult pvr_setup_descriptor_mappings(
                cmd_buffer->vk.dynamic_graphics_state.cb.color_write_enables
                << 1;
 
+            if (cmd_buffer->vk.dynamic_graphics_state.ms
+                   .alpha_to_coverage_enable)
+               fs_meta |= (1 << 25);
+
             struct pvr_suballoc_bo *fs_meta_bo;
             result = pvr_cmd_buffer_upload_general(cmd_buffer,
                                                    &fs_meta,

@@ -28,7 +28,7 @@ alpha_to_coverage(nir_builder *b, nir_def *alpha, uint8_t nr_samples, bool has_i
  * monolithic pixel shader or a fragment epilogue.
  */
 bool
-nir_lower_alpha_to_coverage(nir_shader *shader, uint8_t nr_samples, bool has_intrinsic)
+nir_lower_alpha_to_coverage(nir_shader *shader, uint8_t nr_samples, bool has_intrinsic, nir_def *dyn_enable)
 {
    /* If we are not using the intrinsic we need to know the sample count. */
    assert(has_intrinsic || nr_samples);
@@ -72,6 +72,8 @@ nir_lower_alpha_to_coverage(nir_shader *shader, uint8_t nr_samples, bool has_int
    nir_builder *b = &_b;
 
    nir_def *alpha = nir_channel(b, rgba, 3);
+   if (dyn_enable)
+      alpha = nir_bcsel(b, dyn_enable, alpha, nir_imm_floatN_t(b, 1.0f, alpha->bit_size));
    nir_def *mask = alpha_to_coverage(b, alpha, nr_samples, has_intrinsic);
 
    /* Discard samples that aren't covered */

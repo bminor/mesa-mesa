@@ -5455,7 +5455,8 @@ bool nir_lower_vec_to_regs(nir_shader *shader, nir_instr_writemask_filter_cb cb,
 
 bool nir_lower_alpha_to_coverage(nir_shader *shader,
                                  uint8_t nr_samples,
-                                 bool has_intrinsic);
+                                 bool has_intrinsic,
+                                 nir_def *dyn_enable);
 
 bool nir_lower_alpha_to_one(nir_shader *shader);
 

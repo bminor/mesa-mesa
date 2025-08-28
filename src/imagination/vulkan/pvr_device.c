@@ -391,7 +391,7 @@ static void pvr_physical_device_get_supported_features(
       .extendedDynamicState3PolygonMode = false,
       .extendedDynamicState3RasterizationSamples = true,
       .extendedDynamicState3SampleMask = true,
-      .extendedDynamicState3AlphaToCoverageEnable = false,
+      .extendedDynamicState3AlphaToCoverageEnable = true,
       .extendedDynamicState3AlphaToOneEnable = true,
       .extendedDynamicState3LogicOpEnable = false,
       .extendedDynamicState3ColorBlendEnable = false,

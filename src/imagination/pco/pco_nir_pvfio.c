@@ -702,13 +702,27 @@ static bool lower_demote_samples(nir_builder *b,
    return true;
 }
 
-bool pco_nir_lower_demote_samples(nir_shader *s)
+bool pco_nir_lower_alpha_to_coverage(nir_shader *shader)
 {
-   assert(s->info.stage == MESA_SHADER_FRAGMENT);
-   return nir_shader_intrinsics_pass(s,
-                                     lower_demote_samples,
-                                     nir_metadata_control_flow,
-                                     NULL);
+   if (shader->info.internal)
+      return false;
+
+   nir_builder b = nir_builder_create(nir_shader_get_entrypoint(shader));
+   b.cursor =
+      nir_before_block(nir_start_block(nir_shader_get_entrypoint(shader)));
+   nir_def *a2c_enabled = nir_ine_imm(
+      &b,
+      nir_ubitfield_extract_imm(&b, nir_load_fs_meta_pco(&b), 25, 1),
+      0);
+
+   nir_lower_alpha_to_coverage(shader, 0, true, a2c_enabled);
+
+   nir_shader_intrinsics_pass(shader,
+                              lower_demote_samples,
+                              nir_metadata_control_flow,
+                              NULL);
+
+   return true;
 }
 
 static nir_def *
