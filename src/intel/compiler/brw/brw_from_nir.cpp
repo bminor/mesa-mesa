@@ -7438,6 +7438,9 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
       case P(BIAS_OFFUVR4):
       case P(LOD_OFFUV6):
       case P(LOD_OFFUVR4):
+      case P(OFFUV4_R):
+      case P(OFFUV6_R):
+      case P(OFFUVR4_R):
          /* There is no payload with 2 packed entries, so backend1 is always
           * the one payload parameter packed. */
          S(backend1, 0);

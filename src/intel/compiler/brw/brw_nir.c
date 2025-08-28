@@ -24,6 +24,7 @@
 #include "intel_nir.h"
 #include "brw_nir.h"
 #include "brw_private.h"
+#include "brw_sampler.h"
 #include "compiler/glsl_types.h"
 #include "compiler/nir/nir_builder.h"
 #include "dev/intel_debug.h"
@@ -2061,6 +2062,10 @@ lower_txd_cb(const nir_tex_instr *tex, const void *data)
       if (tex->is_array)
          return true;
    }
+
+   if (tex->is_shadow && offset_index >= 0 &&
+       !brw_nir_tex_offset_in_constant_range(tex, offset_index))
+      return true;
 
    return false;
 }

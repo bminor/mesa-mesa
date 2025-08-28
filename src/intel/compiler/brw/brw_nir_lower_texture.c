@@ -29,7 +29,10 @@
 /**
  * Takes care of lowering to target HW messages payload.
  *
- * For example, HW has no gather4_po_i_b so lower to gather_po_l.
+ * For example:
+ *    - HW has no gather4_po_i_b so lower to gather_po_l.
+ *    - HW has no sample_po_b_c message, so lower the bias into the LOD to switch
+ *      to sample_po_c_l instead.
  */
 static bool
 pre_lower_texture_instr(nir_builder *b,
@@ -37,6 +40,30 @@ pre_lower_texture_instr(nir_builder *b,
                         void *data)
 {
    switch (tex->op) {
+   case nir_texop_txb: {
+      int bias_index = nir_tex_instr_src_index(tex, nir_tex_src_bias);
+      assert(bias_index != -1);
+      int comparator_index = nir_tex_instr_src_index(tex, nir_tex_src_comparator);
+      int offset_index = nir_tex_instr_src_index(tex, nir_tex_src_offset);
+
+      if (comparator_index == -1 || offset_index == -1)
+         return false;
+
+      if (brw_nir_tex_offset_in_constant_range(tex, offset_index))
+         return false;
+
+      b->cursor = nir_before_instr(&tex->instr);
+
+      tex->op = nir_texop_txl;
+
+      nir_def *bias = tex->src[bias_index].src.ssa;
+      nir_tex_instr_remove_src(tex, bias_index);
+
+      nir_def *lod = nir_fadd(b, bias, nir_get_texture_lod(b, tex));
+      nir_tex_instr_add_src(tex, nir_tex_src_lod, lod);
+      return true;
+   }
+
    case nir_texop_tg4: {
       if (!tex->is_gather_implicit_lod)
          return false;
@@ -229,6 +256,65 @@ pack_lod_or_bias_and_offset(nir_builder *b, nir_tex_instr *tex,
 }
 
 static bool
+pack_offset_r(nir_builder *b, nir_tex_instr *tex,
+              unsigned offset_bits, unsigned offset_count)
+{
+   nir_def *offset = nir_steal_tex_src(tex, nir_tex_src_offset);
+   if (!offset)
+      return false;
+
+   const int coord_index = nir_tex_instr_src_index(tex, nir_tex_src_coord);
+   assert(coord_index >= 0);
+
+   b->cursor = nir_before_instr(&tex->instr);
+
+   nir_def *coord = tex->src[coord_index].src.ssa;
+
+   nir_def *offuvr = build_packed_offset(
+      b, offset, offset_bits, offset_count);
+
+   nir_def *packed = nir_ishl_imm(b, offuvr, 12);
+
+   assert(tex->coord_components != 4);
+   if (tex->coord_components == 3) {
+      nir_def *clamped_r =
+         nir_umin_imm(
+            b,
+            nir_f2u32(b, nir_fround_even(b, nir_channel(b, coord, 2))),
+            0xfff);
+
+      packed = nir_ior(b, packed, clamped_r);
+
+      nir_def *reduced_coord = nir_trim_vector(b, coord, 2);
+      tex->coord_components = 2;
+
+      nir_src_rewrite(&tex->src[coord_index].src, reduced_coord);
+   }
+
+   nir_tex_instr_add_src(tex, nir_tex_src_backend1, packed);
+
+   return true;
+}
+
+static bool
+pack_offset(nir_builder *b, nir_tex_instr *tex,
+            unsigned offset_bits, unsigned offset_count)
+{
+   nir_def *offset = nir_steal_tex_src(tex, nir_tex_src_offset);
+   if (!offset)
+      return false;
+
+   b->cursor = nir_before_instr(&tex->instr);
+
+   nir_def *offuvr = build_packed_offset(
+      b, offset, offset_bits, offset_count);
+
+   nir_tex_instr_add_src(tex, nir_tex_src_backend1, offuvr);
+
+   return true;
+}
+
+static bool
 brw_nir_lower_texture_instr(nir_builder *b, nir_tex_instr *tex, void *cb_data)
 {
    enum brw_sampler_opcode sampler_opcode = tex->backend_flags;
@@ -250,6 +336,34 @@ brw_nir_lower_texture_instr(nir_builder *b, nir_tex_instr *tex, void *cb_data)
        brw_sampler_opcode_param_index(sampler_opcode,
                                       BRW_SAMPLER_PAYLOAD_PARAM_LOD_OFFUVR4) != -1)
       return pack_lod_or_bias_and_offset(b, tex, 4, 3);
+
+   if (brw_sampler_opcode_param_index(sampler_opcode,
+                                      BRW_SAMPLER_PAYLOAD_PARAM_OFFUV4_R) != -1)
+      return pack_offset_r(b, tex, 4, 2);
+
+   if (brw_sampler_opcode_param_index(sampler_opcode,
+                                      BRW_SAMPLER_PAYLOAD_PARAM_OFFUVR4_R) != -1)
+      return pack_offset_r(b, tex, 4, 3);
+
+   if (brw_sampler_opcode_param_index(sampler_opcode,
+                                      BRW_SAMPLER_PAYLOAD_PARAM_OFFUV6_R) != -1)
+      return pack_offset_r(b, tex, 6, 2);
+
+   if (brw_sampler_opcode_param_index(sampler_opcode,
+                                      BRW_SAMPLER_PAYLOAD_PARAM_OFFUV4) != -1)
+      return pack_offset(b, tex, 4, 2);
+
+   if (brw_sampler_opcode_param_index(sampler_opcode,
+                                      BRW_SAMPLER_PAYLOAD_PARAM_OFFUVR4) != -1)
+      return pack_offset(b, tex, 4, 3);
+
+   if (brw_sampler_opcode_param_index(sampler_opcode,
+                                      BRW_SAMPLER_PAYLOAD_PARAM_OFFUV6) != -1)
+      return pack_offset(b, tex, 6, 2);
+
+   if (brw_sampler_opcode_param_index(sampler_opcode,
+                                      BRW_SAMPLER_PAYLOAD_PARAM_OFFUVR6) != -1)
+      return pack_offset(b, tex, 6, 3);
 
    return false;
 }

@@ -548,7 +548,10 @@ static const char *const xe2_sampler_msg_type[] = {
    [XE2_SAMPLER_MESSAGE_SAMPLE_GATHER4_B]    = "gather4_b",
    [XE2_SAMPLER_MESSAGE_SAMPLE_GATHER4_I_C]  = "gather4_i_c",
    [XE2_SAMPLER_MESSAGE_SAMPLE_GATHER4_L_C]  = "gather4_l_c",
+   [XE2_SAMPLER_MESSAGE_SAMPLE_GATHER4_PO_C] = "gather4_po_c",
+   [XE2_SAMPLER_MESSAGE_SAMPLE_GATHER4_PO_I] = "gather4_po_i",
    [XE2_SAMPLER_MESSAGE_SAMPLE_GATHER4_PO_L] = "gather4_po_l",
+   [XE2_SAMPLER_MESSAGE_SAMPLE_GATHER4_PO_I_C] = "gather4_po_i_c",
    [XE2_SAMPLER_MESSAGE_SAMPLE_GATHER4_PO_L_C] = "gather4_po_l_c",
    [XE2_SAMPLER_MESSAGE_SAMPLE_GATHER4_PO_B]  = "gather4_po_b",
    [HSW_SAMPLER_MESSAGE_SAMPLE_DERIV_COMPARE] = "sample_d_c",
@@ -559,6 +562,16 @@ static const char *const xe2_sampler_msg_type[] = {
    [GFX7_SAMPLER_MESSAGE_SAMPLE_LD_MCS]       = "ld_mcs",
    [GFX7_SAMPLER_MESSAGE_SAMPLE_LD2DMS]       = "ld2dms",
    [GFX7_SAMPLER_MESSAGE_SAMPLE_LD2DSS]       = "ld2dss",
+   [XE2_SAMPLER_MESSAGE_SAMPLE_PO]                 = "sample_po",
+   [XE2_SAMPLER_MESSAGE_SAMPLE_PO_BIAS]            = "sample_po_b",
+   [XE2_SAMPLER_MESSAGE_SAMPLE_PO_LOD]             = "sample_po_l",
+   [XE2_SAMPLER_MESSAGE_SAMPLE_PO_COMPARE]         = "sample_po_c",
+   [XE2_SAMPLER_MESSAGE_SAMPLE_PO_DERIVS]          = "sample_po_d",
+   [XE3_SAMPLER_MESSAGE_SAMPLE_PO_BIAS_COMPARE]    = "sample_po_b_c",
+   [XE2_SAMPLER_MESSAGE_SAMPLE_PO_LOD_COMPARE]     = "sample_po_l_c",
+   [XE2_SAMPLER_MESSAGE_SAMPLE_PO_D_C]             = "sample_po_d_c",
+   [XE2_SAMPLER_MESSAGE_SAMPLE_PO_LZ]              = "sample_po_lz",
+   [XE2_SAMPLER_MESSAGE_SAMPLE_PO_C_LZ]            = "sample_po_c_lz",
 };
 
 static const char *const gfx5_sampler_simd_mode[7] = {

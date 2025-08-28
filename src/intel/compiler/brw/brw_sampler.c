@@ -57,6 +57,13 @@ static const opcode_filter_cb opcode_filters[BRW_SAMPLER_OPCODE_MAX] = {
    [BRW_SAMPLER_OPCODE_SAMPLE_L_C_PACKED]     = gfx200_cube_array,
    [BRW_SAMPLER_OPCODE_SAMPLE_D_C]            = not_gfx200_2darray,
    [BRW_SAMPLER_OPCODE_SAMPLE_D_C_PACKED]     = gfx200_2darray,
+   [BRW_SAMPLER_OPCODE_SAMPLE_PO]             = gfx200,
+   [BRW_SAMPLER_OPCODE_SAMPLE_PO_B]           = gfx200,
+   [BRW_SAMPLER_OPCODE_SAMPLE_PO_C]           = gfx200,
+   [BRW_SAMPLER_OPCODE_SAMPLE_PO_C_LZ]        = gfx200,
+   [BRW_SAMPLER_OPCODE_SAMPLE_PO_D]           = gfx200,
+   [BRW_SAMPLER_OPCODE_SAMPLE_PO_L]           = gfx200,
+   [BRW_SAMPLER_OPCODE_SAMPLE_PO_LZ]          = gfx200,
    [BRW_SAMPLER_OPCODE_GATHER4_B]             = gfx200,
    [BRW_SAMPLER_OPCODE_GATHER4_I]             = gfx200,
    [BRW_SAMPLER_OPCODE_GATHER4_L]             = gfx200,
@@ -65,6 +72,8 @@ static const opcode_filter_cb opcode_filters[BRW_SAMPLER_OPCODE_MAX] = {
    [BRW_SAMPLER_OPCODE_GATHER4_PO_B]          = gfx200,
    [BRW_SAMPLER_OPCODE_GATHER4_PO_C]          = not_gfx200,
    [BRW_SAMPLER_OPCODE_GATHER4_PO_C_PACKED]   = gfx200,
+   [BRW_SAMPLER_OPCODE_GATHER4_PO_I]          = gfx200,
+   [BRW_SAMPLER_OPCODE_GATHER4_PO_I_C]        = gfx200,
    [BRW_SAMPLER_OPCODE_GATHER4_PO_L]          = gfx200,
    [BRW_SAMPLER_OPCODE_GATHER4_PO_L_C]        = gfx200,
    [BRW_SAMPLER_OPCODE_LD2DMS_W]              = not_gfx125,
@@ -271,6 +280,96 @@ static const struct sampler_opcode_desc {
          },
       },
    },
+   [BRW_SAMPLER_OPCODE_SAMPLE_PO] = {
+      .name = "sample_po",
+      .hw_opcode = XE2_SAMPLER_MESSAGE_SAMPLE_PO,
+      .nir_src_mask = N(coord) | N(offset) | N(min_lod),
+      .has_offset_payload = true,
+      .payload = {
+         .sources = {
+            R(U), R(V), R(R), R(OFFUVR4), O(MLOD)
+         },
+      },
+   },
+   [BRW_SAMPLER_OPCODE_SAMPLE_PO_B] = {
+      .name = "sample_po_b",
+      .hw_opcode = XE2_SAMPLER_MESSAGE_SAMPLE_PO_BIAS,
+      .nir_src_mask = N(bias) | N(coord) | N(offset) | N(min_lod),
+      .has_offset_payload = true,
+      .payload = {
+         .sources = {
+            R(BIAS_OFFUVR4), R(U), O(V), O(R), O(MLOD),
+         },
+      },
+   },
+   [BRW_SAMPLER_OPCODE_SAMPLE_PO_C] = {
+      .name = "sample_po_c",
+      .hw_opcode = XE2_SAMPLER_MESSAGE_SAMPLE_PO_COMPARE,
+      .nir_src_mask = N(comparator) | N(coord) | N(offset) | N(min_lod),
+      .has_offset_payload = true,
+      .payload = {
+         .sources = {
+            R(REF), R(U), R(V), R(OFFUV4_R), O(MLOD),
+         },
+      },
+   },
+   [BRW_SAMPLER_OPCODE_SAMPLE_PO_C_LZ] = {
+      .name = "sample_po_c_lz",
+      .hw_opcode = XE2_SAMPLER_MESSAGE_SAMPLE_PO_C_LZ,
+      .nir_src_mask = N(comparator) | N(lod) | N(coord) | N(offset),
+      .has_offset_payload = true,
+      .lod_zero = true,
+      .payload = {
+         .sources = {
+            R(REF), R(U), R(V), R(OFFUV4_R),
+         },
+      },
+   },
+   [BRW_SAMPLER_OPCODE_SAMPLE_PO_C_L] = {
+      .name = "sample_po_c_l",
+      .hw_opcode = XE2_SAMPLER_MESSAGE_SAMPLE_PO_LOD_COMPARE,
+      .nir_src_mask = N(comparator) | N(lod) | N(coord) | N(offset),
+      .has_offset_payload = true,
+      .payload = {
+         .sources = {
+            R(REF), R(LOD_OFFUVR4), R(U), O(V), O(R)
+         },
+      },
+   },
+   [BRW_SAMPLER_OPCODE_SAMPLE_PO_D] = {
+      .name = "sample_po_d",
+      .hw_opcode = XE2_SAMPLER_MESSAGE_SAMPLE_PO_DERIVS,
+      .nir_src_mask = N(ddx) | N(ddy) | N(coord) | N(offset) | N(min_lod),
+      .has_offset_payload = true,
+      .payload = {
+         .sources = {
+            R(U), R(DUDX), R(DUDY), R(V), R(DVDX), R(DVDY), R(OFFUVR4_R), O(MLOD),
+         },
+      },
+   },
+   [BRW_SAMPLER_OPCODE_SAMPLE_PO_L] = {
+      .name = "sample_po_l",
+      .hw_opcode = XE2_SAMPLER_MESSAGE_SAMPLE_PO_LOD,
+      .nir_src_mask = N(lod) | N(coord) | N(offset),
+      .has_offset_payload = true,
+      .payload = {
+         .sources = {
+            R(LOD_OFFUVR4), R(U), O(V), O(R),
+         },
+      },
+   },
+   [BRW_SAMPLER_OPCODE_SAMPLE_PO_LZ] = {
+      .name = "sample_po_lz",
+      .hw_opcode = XE2_SAMPLER_MESSAGE_SAMPLE_PO_LZ,
+      .nir_src_mask = N(lod) | N(coord) | N(offset),
+      .has_offset_payload = true,
+      .lod_zero = true,
+      .payload = {
+         .sources = {
+            R(U), R(V), R(R), R(OFFUVR4),
+         },
+      },
+   },
    [BRW_SAMPLER_OPCODE_LD] = {
       .name = "ld",
       .hw_opcode = GFX5_SAMPLER_MESSAGE_SAMPLE_LD,
@@ -467,6 +566,32 @@ static const struct sampler_opcode_desc {
          },
       },
    },
+   [BRW_SAMPLER_OPCODE_GATHER4_PO_I] = {
+      .name = "gather4_po_i",
+      .hw_opcode = XE2_SAMPLER_MESSAGE_SAMPLE_GATHER4_PO_I,
+      .nir_src_mask = N(comparator) | N(coord) | N(offset),
+      .is_gather = true,
+      .is_gather_implicit_lod = true,
+      .has_offset_payload = true,
+      .payload = {
+         .sources = {
+            R(REF), R(U), R(V), R(R), R(OFFUV6),
+         },
+      },
+   },
+   [BRW_SAMPLER_OPCODE_GATHER4_PO_I_C] = {
+      .name = "gather4_po_i_c",
+      .hw_opcode = XE2_SAMPLER_MESSAGE_SAMPLE_GATHER4_PO_I_C,
+      .nir_src_mask = N(comparator) | N(coord) | N(offset),
+      .is_gather = true,
+      .is_gather_implicit_lod = true,
+      .has_offset_payload = true,
+      .payload = {
+         .sources = {
+            R(REF), R(U), R(V), R(OFFUV6_R),
+         },
+      },
+   },
    [BRW_SAMPLER_OPCODE_GATHER4_PO_L] = {
       .name = "gather4_po_l",
       .hw_opcode = XE2_SAMPLER_MESSAGE_SAMPLE_GATHER4_PO_L,
@@ -581,6 +706,8 @@ brw_sampler_payload_param_name(enum brw_sampler_payload_param param)
    case P(LOD_AI,       "lod_ai");
    case P(LOD_OFFUV6,   "lod_offuv6");
    case P(LOD_OFFUVR4,  "lod_offuvr4");
+   case P(OFFUV4_R,     "offuv4_r");
+   case P(OFFUV6_R,     "offuv6_r");
    case P(SI,           "si");
    case P(SSI,          "ssi");
    case P(MCS,          "mcs");
