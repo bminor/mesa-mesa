@@ -210,8 +210,12 @@ bool brw_nir_lower_texel_address(nir_shader *shader,
                                  const struct intel_device_info *devinfo,
                                  enum isl_tiling tiling);
 
+struct brw_nir_lower_texture_opts {
+   bool combined_lod_and_array_index;
+   bool combined_lod_or_bias_and_offset;
+};
 bool brw_nir_lower_texture(nir_shader *nir,
-                           const struct intel_device_info *devinfo);
+                           const struct brw_nir_lower_texture_opts *opts);
 
 bool brw_nir_lower_sample_index_in_coord(nir_shader *nir);
 

@@ -1954,7 +1954,7 @@
         "description": "Revert \"brw: move texture offset packing to NIR\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4346210ae622d059560971a50e8ece000215cdcb",
         "notes": null

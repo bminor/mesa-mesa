@@ -22,7 +22,6 @@
  */
 
 #include "compiler/nir/nir_builder.h"
-#include "compiler/nir/nir_format_convert.h"
 #include "brw_nir.h"
 
 /**
@@ -104,11 +103,8 @@ pack_lod_and_array_index(nir_builder *b, nir_tex_instr *tex)
 static bool
 pack_lod_or_bias_and_offset(nir_builder *b, nir_tex_instr *tex)
 {
-   /* If there is no backend2, it means there was no offset to pack so just
-    * bail.
-    */
-   int backend2_index = nir_tex_instr_src_index(tex, nir_tex_src_backend2);
-   if (backend2_index < 0)
+   int offset_index = nir_tex_instr_src_index(tex, nir_tex_src_offset);
+   if (offset_index < 0)
       return false;
 
    /* If 32-bit texture coordinates are used, pack either the explicit LOD or
@@ -134,13 +130,18 @@ pack_lod_or_bias_and_offset(nir_builder *b, nir_tex_instr *tex)
       return false;
    }
 
+   nir_def *lod = tex->src[lod_index].src.ssa;
+   nir_def *offset = tex->src[offset_index].src.ssa;
+
+   b->cursor = nir_before_instr(&tex->instr);
+
    /* When using the programmable offsets instruction gather4_po_l_c with
     * SIMD16 or SIMD32 the U, V offsets are combined with LOD/bias parameters
     * on the 12 LSBs. For the offset parameters on gather instructions the 6
     * least significant bits are honored as signed value with a range
     * [-32..31].
     *
-    * Offsets should already have been packed in pack_const_offset().
+    * Pack Offset U, and V for texture gather with offsets.
     *
     *    ------------------------------------------
     *    |Bits     | [31:12]  | [11:6]  | [5:0]   |
@@ -148,129 +149,57 @@ pack_lod_or_bias_and_offset(nir_builder *b, nir_tex_instr *tex)
     *    |OffsetUV | LOD/Bias | OffsetV | OffsetU |
     *    ------------------------------------------
     */
-   nir_def *lod = tex->src[lod_index].src.ssa;
-   nir_def *backend2 = tex->src[backend2_index].src.ssa;
+   nir_def *offu = nir_iand_imm(b, nir_channel(b, offset, 0), 0x3F);
+   nir_def *offv = nir_iand_imm(b, nir_channel(b, offset, 1), 0x3F);
 
-   b->cursor = nir_before_instr(&tex->instr);
+   nir_def *offsetUV = nir_ior(b, offu, nir_ishl_imm(b, offv, 6));
 
-   nir_def *lod_offsetUV = nir_ior(b, backend2,
+   nir_def *lod_offsetUV = nir_ior(b, offsetUV,
                                    nir_iand_imm(b, lod, 0xFFFFF000));
-
-   nir_src_rewrite(&tex->src[backend2_index].src, lod_offsetUV);
+   nir_tex_instr_remove_src(tex, offset_index);
+   nir_tex_instr_add_src(tex, nir_tex_src_backend2, lod_offsetUV);
 
    return true;
 }
 
 static bool
-pack_offset(nir_builder *b, nir_tex_instr *tex, bool pack_6bits_offsets)
+brw_nir_lower_texture_instr(nir_builder *b, nir_instr *instr, void *cb_data)
 {
-   /* No offset, nothing to do */
-   int offset_index = nir_tex_instr_src_index(tex, nir_tex_src_offset);
-   if (offset_index < 0)
+   if (instr->type != nir_instr_type_tex)
       return false;
 
-   b->cursor = nir_before_instr(&tex->instr);
-
-   nir_def *offset = tex->src[offset_index].src.ssa;
-
-   /* Combine all three offsets into a single unsigned dword:
-    *
-    *    bits 11:8 - U Offset (X component)
-    *    bits  7:4 - V Offset (Y component)
-    *    bits  3:0 - R Offset (Z component)
-    *
-    * Or for TG4 messages with pack_6bits_offsets=true, do the bottom packing
-    * of :
-    *
-    *    ------------------------------------------
-    *    |Bits     | [31:12]  | [11:6]  | [5:0]   |
-    *    ------------------------------------------
-    *    |OffsetUV | LOD/Bias | OffsetV | OffsetU |
-    *    ------------------------------------------
-    */
-   const unsigned num_components =
-      nir_tex_instr_src_size(tex, offset_index);
-
-   static const unsigned bits4_bits[] = { 4, 4, 4, };
-   static const unsigned bits6_bits[] = { 6, 6, 0, };
-
-   offset = nir_pad_vector_imm_int(b, offset, 0, num_components);
-   offset = nir_format_clamp_sint(
-      b, offset, pack_6bits_offsets ? bits6_bits : bits4_bits);
-
-   static const unsigned bits4_offsets[] = { 8, 4, 0, };
-   static const unsigned bits6_offsets[] = { 0, 6, 0, };
-   const unsigned *comp_bits_offsets = pack_6bits_offsets ?
-      bits6_offsets : bits4_offsets;
-   const unsigned value_mask = pack_6bits_offsets ? 0x3f : 0xf;
-
-   nir_def *packed_offset = NULL;
-   for (unsigned c = 0; c < num_components; c++) {
-      nir_def *c_shifted = nir_ishl_imm(
-         b,
-         nir_iand_imm(b, nir_channel(b, offset, c), value_mask),
-         comp_bits_offsets[c]);
-      packed_offset = packed_offset == NULL ? c_shifted : nir_ior(b, packed_offset, c_shifted);
-   }
-
-   nir_tex_instr_remove_src(tex, offset_index);
-   nir_tex_instr_add_src(tex, nir_tex_src_backend2, packed_offset);
-
-   return true;
-}
-
-static bool
-intel_nir_lower_texture_instr(nir_builder *b, nir_tex_instr *tex, void *cb_data)
-{
-   const struct intel_device_info *devinfo = cb_data;
-
-   const bool has_lod =
-      nir_tex_instr_src_index(tex, nir_tex_src_lod) != -1 ||
-      nir_tex_instr_src_index(tex, nir_tex_src_bias) != -1;
-   /* On Gfx20+, when we have a LOD, we need to pack the offsets with it. When
-    * there is no LOD, the offsets are lowered in the coordinates (see
-    * lower_xehp_tg4_offset_filter).
-    */
-   const bool needs_tg4_load_bias_offset_packing =
-      tex->op == nir_texop_tg4 && has_lod &&
-      devinfo->ver >= 20;
-   const bool needs_tg4_offset_packing = devinfo->verx10 >= 125;
-
-   bool progress = false;
-
-   if (tex->op != nir_texop_txf &&
-       (tex->op != nir_texop_tg4 || needs_tg4_offset_packing)) {
-      progress |= pack_offset(b, tex, needs_tg4_load_bias_offset_packing);
-   }
+   const struct brw_nir_lower_texture_opts *opts = cb_data;
+   nir_tex_instr *tex = nir_instr_as_tex(instr);
 
    switch (tex->op) {
    case nir_texop_txl:
    case nir_texop_txb:
-   case nir_texop_tg4: {
+   case nir_texop_tg4:
       if (tex->is_array &&
           tex->sampler_dim == GLSL_SAMPLER_DIM_CUBE &&
-          devinfo->ver >= 20) {
-         progress |= pack_lod_and_array_index(b, tex);
+          opts->combined_lod_and_array_index) {
+         return pack_lod_and_array_index(b, tex);
       }
 
-      if (needs_tg4_load_bias_offset_packing)
-         progress |= pack_lod_or_bias_and_offset(b, tex);
+      if (tex->op == nir_texop_tg4 && opts->combined_lod_or_bias_and_offset) {
+         return pack_lod_or_bias_and_offset(b, tex);
+      }
 
-      break;
-   }
+      return false;
    default:
-      break;
+      /* Nothing to do */
+      return false;
    }
 
-   return progress;
+   return false;
 }
 
 bool
 brw_nir_lower_texture(nir_shader *shader,
-                      const struct intel_device_info *devinfo)
+                      const struct brw_nir_lower_texture_opts *opts)
 {
-   return nir_shader_tex_pass(shader,
-                              intel_nir_lower_texture_instr,
-                              nir_metadata_none,
-                              (void *)devinfo);
+   return nir_shader_instructions_pass(shader,
+                                       brw_nir_lower_texture_instr,
+                                       nir_metadata_none,
+                                       (void *)opts);
 }
