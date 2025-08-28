@@ -244,7 +244,10 @@ Block::do_print(std::ostream& os) const
 {
    for (int j = 0; j < 2 * m_nesting_depth; ++j)
       os << ' ';
-   os << "BLOCK START\n";
+   os << "BLOCK START ";
+   if (m_cf_start)
+      os << *m_cf_start;
+   os << "\n";
    for (auto& i : m_instructions) {
       for (int j = 0; j < 2 * (m_nesting_depth + i->nesting_corr()) + 2; ++j)
          os << ' ';
@@ -298,16 +301,25 @@ Block::set_type(Type t, r600_chip_class chip_class)
        * to 16 slots if the register pressure doesn't get too high.
        */
       m_remaining_slots = 8;
+      m_cf_start =
+         new ControlFlowInstr(chip_class >= ISA_CC_CAYMAN ? ControlFlowInstr::cf_tex
+                                                          : ControlFlowInstr::cf_vtx);
       break;
    case gds:
+      m_cf_start = new ControlFlowInstr(ControlFlowInstr::cf_gds);
+      m_remaining_slots = chip_class >= ISA_CC_EVERGREEN ? 16 : 8;
+      break;
    case tex:
+      m_cf_start = new ControlFlowInstr(ControlFlowInstr::cf_tex);
       m_remaining_slots = chip_class >= ISA_CC_EVERGREEN ? 16 : 8;
       break;
    case alu:
+      m_cf_start = new ControlFlowInstr(ControlFlowInstr::cf_alu);
       /* 128 but a follow up block might need to emit and ADDR + INDEX load */
       m_remaining_slots = 118;
       break;
    default:
+      m_cf_start = nullptr;
       m_remaining_slots = 0xffff;
    }
 }

@@ -186,11 +186,29 @@ Shader::emit_instruction_from_string(const std::string& s)
 {
 
    sfn_log << SfnLog::instr << "Create Instr from '" << s << "'\n";
-   if (s == "BLOCK_START") {
+   if (s.compare(0, 11, "BLOCK_START") == 0) {
+      std::istringstream ins(s.substr(11));
+      string type;
+      ins >> type;
       if (!m_current_block->empty()) {
          start_new_block(m_current_block->nesting_offset());
          sfn_log << SfnLog::instr << "   Emit start block\n";
       }
+
+      if (type == "ALU")
+         m_current_block->set_cf_start(new ControlFlowInstr(ControlFlowInstr::cf_alu));
+      else if (type == "ALU_PUSH_BEFORE")
+         m_current_block->set_cf_start(
+            new ControlFlowInstr(ControlFlowInstr::cf_alu_push_before));
+      else if (type == "GDS")
+         m_current_block->set_cf_start(new ControlFlowInstr(ControlFlowInstr::cf_gds));
+      else if (type == "TEX")
+         m_current_block->set_cf_start(new ControlFlowInstr(ControlFlowInstr::cf_tex));
+      else if (type == "VTX")
+         m_current_block->set_cf_start(new ControlFlowInstr(ControlFlowInstr::cf_vtx));
+      else if (type == "POP")
+         m_current_block->set_cf_start(new ControlFlowInstr(ControlFlowInstr::cf_pop));
+
       return;
    }
 

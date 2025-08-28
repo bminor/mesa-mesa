@@ -42,6 +42,7 @@ public:
    void accept(ConstInstrVisitor& visitor) const override;
    void accept(InstrVisitor& visitor) override;
 
+   void promote_alu_cf(CFType new_type);
    CFType cf_type() const { return m_type; }
 
    int nesting_corr() const override;

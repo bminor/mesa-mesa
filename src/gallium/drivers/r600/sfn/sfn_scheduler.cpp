@@ -705,7 +705,7 @@ BlockScheduler::schedule_alu(Shader::ShaderBlocks& out_blocks, ValueFactory& vf)
    if (group->has_kill_op()) {
       assert(!group->has_lds_group_start());
       assert(expected_ar_uses == 0);
-      start_new_block(out_blocks, Block::alu);
+      start_new_block(out_blocks, Block::unknown);
    }
    group->update_readport_reserver();
    return success;
@@ -714,12 +714,12 @@ BlockScheduler::schedule_alu(Shader::ShaderBlocks& out_blocks, ValueFactory& vf)
 bool
 BlockScheduler::schedule_tex(Shader::ShaderBlocks& out_blocks)
 {
-   if (m_current_block->type() != Block::tex || m_current_block->remaining_slots() == 0) {
+   if (!tex_ready.empty() && (m_current_block->type() != Block::tex ||
+                              m_current_block->remaining_slots() == 0)) {
       start_new_block(out_blocks, Block::tex);
-      m_current_block->set_instr_flag(Instr::force_cf);
    }
 
-   if (!tex_ready.empty() && m_current_block->remaining_slots() > 0) {
+   if (m_current_block->remaining_slots() > 0) {
       auto ii = tex_ready.begin();
       sfn_log << SfnLog::schedule << "Schedule: " << **ii << "\n";
 
@@ -742,7 +742,8 @@ BlockScheduler::schedule_tex(Shader::ShaderBlocks& out_blocks)
 bool
 BlockScheduler::schedule_vtx(Shader::ShaderBlocks& out_blocks)
 {
-   if (m_current_block->type() != Block::vtx || m_current_block->remaining_slots() == 0) {
+   if (!fetches_ready.empty() && (m_current_block->type() != Block::vtx ||
+                                  m_current_block->remaining_slots() == 0)) {
       start_new_block(out_blocks, Block::vtx);
       m_current_block->set_instr_flag(Instr::force_cf);
    }

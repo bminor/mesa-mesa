@@ -97,6 +97,14 @@ ControlFlowInstr::do_print(std::ostream& os) const
    }
 }
 
+void
+ControlFlowInstr::promote_alu_cf(CFType new_type)
+{
+   assert(m_type == cf_alu);
+   assert(new_type == cf_alu_push_before);
+   m_type = new_type;
+}
+
 Instr::Pointer
 ControlFlowInstr::from_string(std::string type_str)
 {

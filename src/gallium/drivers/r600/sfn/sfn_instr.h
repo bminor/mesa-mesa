@@ -179,6 +179,10 @@ public:
    const_iterator begin() const { return m_instructions.begin(); }
    const_iterator end() const { return m_instructions.end(); }
 
+   void set_cf_start(ControlFlowInstr *cf) { m_cf_start = cf; }
+   ControlFlowInstr *cf_start() { return m_cf_start; }
+   const ControlFlowInstr *cf_start() const { return m_cf_start; }
+
    bool empty() const { return m_instructions.empty(); }
 
    void erase(iterator node);
@@ -247,6 +251,7 @@ private:
    static unsigned s_max_kcache_banks;
    int m_emitted_rat_instr{0};
    uint32_t m_expected_ar_uses{0};
+   ControlFlowInstr *m_cf_start{nullptr};
 };
 
 class Resource {
