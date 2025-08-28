@@ -630,8 +630,6 @@ enum tex_logical_srcs {
    TEX_LOGICAL_SRC_SAMPLER_HANDLE,
    /** Texel offset for gathers */
    TEX_LOGICAL_SRC_TG4_OFFSET,
-   /** Texture offset */
-   TEX_LOGICAL_SRC_PACKED_OFFSET,
    /** REQUIRED: Number of coordinate components (as UD immediate) */
    TEX_LOGICAL_SRC_COORD_COMPONENTS,
    /** REQUIRED: Number of derivative components (as UD immediate) */

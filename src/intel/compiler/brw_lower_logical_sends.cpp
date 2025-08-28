@@ -790,7 +790,6 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst,
                            const brw_reg &surface_handle,
                            const brw_reg &sampler_handle,
                            const brw_reg &tg4_offset,
-                           const brw_reg &packed_offset,
                            unsigned payload_type_bit_size,
                            unsigned coord_components,
                            unsigned grad_components,
@@ -818,7 +817,6 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst,
    assert((sampler.file == BAD_FILE) != (sampler_handle.file == BAD_FILE));
 
    if (shader_opcode_needs_header(op, devinfo) || inst->offset != 0 ||
-       packed_offset.file != BAD_FILE ||
        sampler_handle.file != BAD_FILE ||
        is_high_sampler(devinfo, sampler) ||
        residency) {
@@ -860,17 +858,8 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst,
          ubld.MOV(header, brw_imm_ud(0));
       else
          ubld.MOV(header, retype(brw_vec8_grf(0, 0), BRW_TYPE_UD));
-      if (packed_offset.file != BAD_FILE || inst->offset) {
-         if (inst->offset && packed_offset.file != BAD_FILE) {
-            if (packed_offset.file == IMM)
-               ubld1.MOV(component(header, 2), brw_imm_ud(packed_offset.ud | inst->offset));
-            else
-               ubld1.OR(component(header, 2), packed_offset, brw_imm_ud(inst->offset));
-         } else if (packed_offset.file != BAD_FILE) {
-            ubld1.MOV(component(header, 2), packed_offset);
-         } else {
-            ubld1.MOV(component(header, 2), brw_imm_ud(inst->offset));
-         }
+      if (inst->offset) {
+         ubld1.MOV(component(header, 2), brw_imm_ud(inst->offset));
       } else if (devinfo->ver < 11 &&
                  bld.shader->stage != MESA_SHADER_VERTEX &&
                  bld.shader->stage != MESA_SHADER_FRAGMENT) {
@@ -1331,7 +1320,6 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst)
    const brw_reg surface_handle = inst->src[TEX_LOGICAL_SRC_SURFACE_HANDLE];
    const brw_reg sampler_handle = inst->src[TEX_LOGICAL_SRC_SAMPLER_HANDLE];
    const brw_reg tg4_offset = inst->src[TEX_LOGICAL_SRC_TG4_OFFSET];
-   const brw_reg packed_offset = inst->src[TEX_LOGICAL_SRC_PACKED_OFFSET];
    assert(inst->src[TEX_LOGICAL_SRC_COORD_COMPONENTS].file == IMM);
    const unsigned coord_components = inst->src[TEX_LOGICAL_SRC_COORD_COMPONENTS].ud;
    assert(inst->src[TEX_LOGICAL_SRC_GRAD_COMPONENTS].file == IMM);
@@ -1342,8 +1330,6 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst)
    const unsigned msg_payload_type_bit_size =
       get_sampler_msg_payload_type_bit_size(devinfo, inst);
 
-   assert(tg4_offset.file == BAD_FILE || packed_offset.file == BAD_FILE);
-
    /* 16-bit payloads are available only on gfx11+ */
    assert(msg_payload_type_bit_size != 16 || devinfo->ver >= 11);
 
@@ -1352,7 +1338,7 @@ lower_sampler_logical_send(const brw_builder &bld, brw_inst *inst)
                               sample_index,
                               mcs, surface, sampler,
                               surface_handle, sampler_handle,
-                              tg4_offset, packed_offset,
+                              tg4_offset,
                               msg_payload_type_bit_size,
                               coord_components, grad_components,
                               residency);
