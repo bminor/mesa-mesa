@@ -463,7 +463,7 @@ radv_cmd_set_primitive_topology(struct radv_cmd_buffer *cmd_buffer, uint32_t pri
 
    if (radv_primitive_topology_is_line_list(state->dynamic.vk.ia.primitive_topology) !=
        radv_primitive_topology_is_line_list(primitive_topology))
-      state->dirty_dynamic |= RADV_DYNAMIC_LINE_STIPPLE;
+      state->dirty |= RADV_CMD_DIRTY_RASTER_STATE;
 
    if (radv_prim_is_points_or_lines(state->dynamic.vk.ia.primitive_topology) !=
        radv_prim_is_points_or_lines(primitive_topology))
