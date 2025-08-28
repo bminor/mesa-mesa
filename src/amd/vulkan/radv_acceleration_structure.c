@@ -72,10 +72,9 @@ struct update_scratch_layout {
 };
 
 enum radv_encode_key_bits {
-   RADV_ENCODE_KEY_COMPACT = (1 << 0),
-   RADV_ENCODE_KEY_WRITE_LEAF_NODE_OFFSETS = (1 << 1),
-   RADV_ENCODE_KEY_PAIR_COMPRESS_GFX12 = (1 << 2),
-   RADV_ENCODE_KEY_BATCH_COMPRESS_GFX12 = (1 << 3),
+   RADV_ENCODE_KEY_WRITE_LEAF_NODE_OFFSETS = (1 << 0),
+   RADV_ENCODE_KEY_PAIR_COMPRESS_GFX12 = (1 << 1),
+   RADV_ENCODE_KEY_BATCH_COMPRESS_GFX12 = (1 << 2),
 };
 
 static void
@@ -274,8 +273,6 @@ radv_get_build_config(VkDevice _device, struct vk_acceleration_structure_build_s
 
    uint32_t encode_key = 0;
    if (radv_use_bvh8(pdev)) {
-      encode_key |= RADV_ENCODE_KEY_COMPACT;
-
       /*
        * Leaf nodes are not written in the order provided by the application when BVH8 encoding is used.
        * The proper order leaf nodes is used...
@@ -295,9 +292,6 @@ radv_get_build_config(VkDevice _device, struct vk_acceleration_structure_build_s
           geometry_type == VK_GEOMETRY_TYPE_TRIANGLES_KHR)
          encode_key |= RADV_ENCODE_KEY_BATCH_COMPRESS_GFX12;
    }
-
-   if (state->build_info->flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR)
-      encode_key |= RADV_ENCODE_KEY_COMPACT;
 
    state->config.encode_key[0] = encode_key;
    state->config.encode_key[1] = encode_key;
@@ -363,8 +357,6 @@ radv_build_flags(VkCommandBuffer commandBuffer, uint32_t key)
 
    uint32_t flags = 0;
 
-   if (key & RADV_ENCODE_KEY_COMPACT)
-      flags |= RADV_BUILD_FLAG_COMPACT;
    if (radv_use_bvh8(pdev))
       flags |= RADV_BUILD_FLAG_BVH8;
    if (!radv_emulate_rt(pdev)) {
@@ -418,13 +410,11 @@ radv_encode_as(VkCommandBuffer commandBuffer, const struct vk_acceleration_struc
    uint64_t intermediate_header_addr = state->build_info->scratchData.deviceAddress + state->scratch.header_offset;
    uint64_t intermediate_bvh_addr = state->build_info->scratchData.deviceAddress + state->scratch.ir_offset;
 
-   if (state->config.encode_key[0] & RADV_ENCODE_KEY_COMPACT) {
-      uint32_t dst_offset = layout.internal_nodes_offset - layout.bvh_offset;
-      radv_update_memory_cp(cmd_buffer, intermediate_header_addr + offsetof(struct vk_ir_header, dst_node_offset),
-                            &dst_offset, sizeof(uint32_t));
-      if (radv_device_physical(device)->info.cp_sdma_ge_use_system_memory_scope)
-         cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_INV_L2;
-   }
+   uint32_t dst_offset = layout.internal_nodes_offset - layout.bvh_offset;
+   radv_update_memory_cp(cmd_buffer, intermediate_header_addr + offsetof(struct vk_ir_header, dst_node_offset),
+                         &dst_offset, sizeof(uint32_t));
+   if (radv_device_physical(device)->info.cp_sdma_ge_use_system_memory_scope)
+      cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_INV_L2;
 
    const struct encode_args args = {
       .intermediate_bvh = intermediate_bvh_addr,
@@ -622,9 +612,6 @@ radv_encode_triangles_retry_gfx12(VkCommandBuffer commandBuffer,
 static VkResult
 radv_init_header_bind_pipeline(VkCommandBuffer commandBuffer, const struct vk_acceleration_structure_build_state *state)
 {
-   if (!(state->config.encode_key[1] & RADV_ENCODE_KEY_COMPACT))
-      return VK_SUCCESS;
-
    /* Wait for encoding to finish. */
    vk_barrier_compute_w_to_compute_r(commandBuffer);
 
@@ -651,20 +638,18 @@ radv_init_header(VkCommandBuffer commandBuffer, const struct vk_acceleration_str
    struct acceleration_structure_layout layout;
    radv_get_acceleration_structure_layout(device, state, &layout);
 
-   if (state->config.encode_key[1] & RADV_ENCODE_KEY_COMPACT) {
-      base = offsetof(struct radv_accel_struct_header, geometry_type);
+   base = offsetof(struct radv_accel_struct_header, geometry_type);
 
-      struct header_args args = {
-         .src = intermediate_header_addr,
-         .dst = vk_acceleration_structure_get_va(dst),
-         .bvh_offset = layout.bvh_offset,
-         .internal_nodes_offset = layout.internal_nodes_offset - layout.bvh_offset,
-         .instance_count = instance_count,
-      };
-      radv_bvh_build_set_args(commandBuffer, &args, sizeof(args));
+   struct header_args args = {
+      .src = intermediate_header_addr,
+      .dst = vk_acceleration_structure_get_va(dst),
+      .bvh_offset = layout.bvh_offset,
+      .internal_nodes_offset = layout.internal_nodes_offset - layout.bvh_offset,
+      .instance_count = instance_count,
+   };
+   radv_bvh_build_set_args(commandBuffer, &args, sizeof(args));
 
-      radv_unaligned_dispatch(cmd_buffer, 1, 1, 1);
-   }
+   radv_unaligned_dispatch(cmd_buffer, 1, 1, 1);
 
    struct radv_accel_struct_header header;
 
