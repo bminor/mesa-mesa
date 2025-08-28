@@ -1066,14 +1066,14 @@ radv_pipeline_init_dynamic_state(const struct radv_device *device, struct radv_g
 
       if (states & RADV_DYNAMIC_STENCIL_OP) {
          dynamic->vk.ds.stencil.front.op.compare = state->ds->stencil.front.op.compare;
-         dynamic->vk.ds.stencil.front.op.fail = state->ds->stencil.front.op.fail;
-         dynamic->vk.ds.stencil.front.op.pass = state->ds->stencil.front.op.pass;
-         dynamic->vk.ds.stencil.front.op.depth_fail = state->ds->stencil.front.op.depth_fail;
+         dynamic->vk.ds.stencil.front.op.fail = radv_translate_stencil_op(state->ds->stencil.front.op.fail);
+         dynamic->vk.ds.stencil.front.op.pass = radv_translate_stencil_op(state->ds->stencil.front.op.pass);
+         dynamic->vk.ds.stencil.front.op.depth_fail = radv_translate_stencil_op(state->ds->stencil.front.op.depth_fail);
 
          dynamic->vk.ds.stencil.back.op.compare = state->ds->stencil.back.op.compare;
-         dynamic->vk.ds.stencil.back.op.fail = state->ds->stencil.back.op.fail;
-         dynamic->vk.ds.stencil.back.op.pass = state->ds->stencil.back.op.pass;
-         dynamic->vk.ds.stencil.back.op.depth_fail = state->ds->stencil.back.op.depth_fail;
+         dynamic->vk.ds.stencil.back.op.fail = radv_translate_stencil_op(state->ds->stencil.back.op.fail);
+         dynamic->vk.ds.stencil.back.op.pass = radv_translate_stencil_op(state->ds->stencil.back.op.pass);
+         dynamic->vk.ds.stencil.back.op.depth_fail = radv_translate_stencil_op(state->ds->stencil.back.op.depth_fail);
       }
    }
 

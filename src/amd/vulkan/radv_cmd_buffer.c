@@ -8782,7 +8782,8 @@ radv_CmdSetStencilOp(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask,
                      VkStencilOp depthFailOp, VkCompareOp compareOp)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
-   radv_cmd_set_stencil_op(cmd_buffer, faceMask, failOp, passOp, depthFailOp, compareOp);
+   radv_cmd_set_stencil_op(cmd_buffer, faceMask, radv_translate_stencil_op(failOp), radv_translate_stencil_op(passOp),
+                           radv_translate_stencil_op(depthFailOp), compareOp);
 }
 
 VKAPI_ATTR void VKAPI_CALL
@@ -11414,12 +11415,9 @@ radv_emit_depth_stencil_state(struct radv_cmd_buffer *cmd_buffer)
       S_028800_STENCILFUNC(ds.stencil.front.op.compare) | S_028800_STENCILFUNC_BF(ds.stencil.back.op.compare);
 
    const uint32_t db_stencil_control =
-      S_02842C_STENCILFAIL(radv_translate_stencil_op(ds.stencil.front.op.fail)) |
-      S_02842C_STENCILZPASS(radv_translate_stencil_op(ds.stencil.front.op.pass)) |
-      S_02842C_STENCILZFAIL(radv_translate_stencil_op(ds.stencil.front.op.depth_fail)) |
-      S_02842C_STENCILFAIL_BF(radv_translate_stencil_op(ds.stencil.back.op.fail)) |
-      S_02842C_STENCILZPASS_BF(radv_translate_stencil_op(ds.stencil.back.op.pass)) |
-      S_02842C_STENCILZFAIL_BF(radv_translate_stencil_op(ds.stencil.back.op.depth_fail));
+      S_02842C_STENCILFAIL(ds.stencil.front.op.fail) | S_02842C_STENCILZPASS(ds.stencil.front.op.pass) |
+      S_02842C_STENCILZFAIL(ds.stencil.front.op.depth_fail) | S_02842C_STENCILFAIL_BF(ds.stencil.back.op.fail) |
+      S_02842C_STENCILZPASS_BF(ds.stencil.back.op.pass) | S_02842C_STENCILZFAIL_BF(ds.stencil.back.op.depth_fail);
 
    const uint32_t depth_bounds_min = fui(ds.depth.bounds_test.min);
    const uint32_t depth_bounds_max = fui(ds.depth.bounds_test.max);
