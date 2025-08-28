@@ -457,7 +457,7 @@ impl Program {
         })
     }
 
-    pub fn build_info(&self) -> MutexGuard<ProgramBuild> {
+    pub fn build_info(&self) -> MutexGuard<'_, ProgramBuild> {
         self.build.lock().unwrap()
     }
 

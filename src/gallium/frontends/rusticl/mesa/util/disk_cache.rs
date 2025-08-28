@@ -35,7 +35,7 @@ impl DiskCacheBorrowed {
         }
     }
 
-    pub fn get(&self, key: &mut cache_key) -> Option<DiskCacheEntry> {
+    pub fn get(&self, key: &mut cache_key) -> Option<DiskCacheEntry<'_>> {
         let mut size = 0;
 
         unsafe {

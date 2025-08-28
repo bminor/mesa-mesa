@@ -93,7 +93,7 @@ impl Event {
         })
     }
 
-    fn state(&self) -> MutexGuard<EventMutState> {
+    fn state(&self) -> MutexGuard<'_, EventMutState> {
         self.state.lock().unwrap()
     }
 
