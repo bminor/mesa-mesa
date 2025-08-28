@@ -1775,21 +1775,21 @@ update_binds_for_samplerviews(struct zink_context *ctx, struct zink_resource *re
 {
     VkImageLayout layout = get_layout_for_binding(ctx, res, ZINK_DESCRIPTOR_TYPE_SAMPLER_VIEW, is_compute);
     if (is_compute) {
-       u_foreach_bit(slot, res->sampler_binds[MESA_SHADER_COMPUTE]) {
-          if (ctx->di.textures[MESA_SHADER_COMPUTE][slot].imageLayout != layout) {
-             update_descriptor_state_sampler(ctx, MESA_SHADER_COMPUTE, slot, res);
-             ctx->invalidate_descriptor_state(ctx, MESA_SHADER_COMPUTE, ZINK_DESCRIPTOR_TYPE_SAMPLER_VIEW, slot, 1);
-          }
-       }
+      u_foreach_bit(slot, res->sampler_binds[MESA_SHADER_COMPUTE]) {
+         if (ctx->di.textures[MESA_SHADER_COMPUTE][slot].imageLayout != layout) {
+            update_descriptor_state_sampler(ctx, MESA_SHADER_COMPUTE, slot, res);
+            ctx->invalidate_descriptor_state(ctx, MESA_SHADER_COMPUTE, ZINK_DESCRIPTOR_TYPE_SAMPLER_VIEW, slot, 1);
+         }
+      }
     } else {
-       for (unsigned i = 0; i < ZINK_GFX_SHADER_COUNT; i++) {
-          u_foreach_bit(slot, res->sampler_binds[i]) {
-             if (ctx->di.textures[i][slot].imageLayout != layout) {
-                update_descriptor_state_sampler(ctx, i, slot, res);
-                ctx->invalidate_descriptor_state(ctx, i, ZINK_DESCRIPTOR_TYPE_SAMPLER_VIEW, slot, 1);
-             }
-          }
-       }
+      for (unsigned i = 0; i < ZINK_GFX_SHADER_COUNT; i++) {
+         u_foreach_bit(slot, res->sampler_binds[i]) {
+            if (ctx->di.textures[i][slot].imageLayout != layout) {
+               update_descriptor_state_sampler(ctx, i, slot, res);
+               ctx->invalidate_descriptor_state(ctx, i, ZINK_DESCRIPTOR_TYPE_SAMPLER_VIEW, slot, 1);
+            }
+         }
+      }
     }
 }
 
