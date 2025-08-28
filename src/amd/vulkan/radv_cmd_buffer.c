@@ -11408,8 +11408,8 @@ radv_emit_depth_stencil_state(struct radv_cmd_buffer *cmd_buffer)
    vk_optimize_depth_stencil_state(&ds, render->ds_att_aspects, true);
 
    const uint32_t db_depth_control =
-      S_028800_Z_ENABLE(ds.depth.test_enable ? 1 : 0) | S_028800_Z_WRITE_ENABLE(ds.depth.write_enable ? 1 : 0) |
-      S_028800_ZFUNC(ds.depth.compare_op) | S_028800_DEPTH_BOUNDS_ENABLE(ds.depth.bounds_test.enable ? 1 : 0) |
+      S_028800_Z_ENABLE(ds.depth.test_enable) | S_028800_Z_WRITE_ENABLE(ds.depth.write_enable) |
+      S_028800_ZFUNC(ds.depth.compare_op) | S_028800_DEPTH_BOUNDS_ENABLE(ds.depth.bounds_test.enable) |
       S_028800_STENCIL_ENABLE(ds.stencil.test_enable) | S_028800_BACKFACE_ENABLE(ds.stencil.test_enable) |
       S_028800_STENCILFUNC(ds.stencil.front.op.compare) | S_028800_STENCILFUNC_BF(ds.stencil.back.op.compare);
 
