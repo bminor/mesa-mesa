@@ -604,7 +604,7 @@
         "description": "nvk: Avoid passing garbage data in descriptor buffers for UBOs.",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8b5835af31f590d6163a632f21587341fc3fa255",
         "notes": null
