@@ -74,6 +74,23 @@ typedef enum mesa_shader_stage {
 } mesa_shader_stage;
 
 static inline bool
+mesa_shader_stage_is_graphics(mesa_shader_stage stage)
+{
+   switch (stage) {
+   case MESA_SHADER_VERTEX:
+   case MESA_SHADER_TESS_CTRL:
+   case MESA_SHADER_TESS_EVAL:
+   case MESA_SHADER_GEOMETRY:
+   case MESA_SHADER_FRAGMENT:
+   case MESA_SHADER_TASK:
+   case MESA_SHADER_MESH:
+      return true;
+   default:
+      return false;
+   }
+}
+
+static inline bool
 mesa_shader_stage_is_compute(mesa_shader_stage stage)
 {
    return stage == MESA_SHADER_COMPUTE || stage == MESA_SHADER_KERNEL;
