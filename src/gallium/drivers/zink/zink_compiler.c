@@ -2473,28 +2473,22 @@ find_var_io(nir_shader *nir, nir_variable *var)
    return false;
 }
 
-struct clamp_layer_output_state {
-   nir_variable *original;
-   nir_variable *clamped;
-};
-
 static void
-clamp_layer_output_emit(nir_builder *b, struct clamp_layer_output_state *state)
+clamp_layer_output_emit(nir_builder *b, struct nir_variable *var)
 {
    nir_def *is_layered = nir_load_push_constant_zink(b, 1, 32,
                                                          nir_imm_int(b, ZINK_GFX_PUSHCONST_FRAMEBUFFER_IS_LAYERED));
-   nir_deref_instr *original_deref = nir_build_deref_var(b, state->original);
-   nir_deref_instr *clamped_deref = nir_build_deref_var(b, state->clamped);
+   nir_deref_instr *var_deref = nir_build_deref_var(b, var);
    nir_def *layer = nir_bcsel(b, nir_ieq_imm(b, is_layered, 1),
-                                  nir_load_deref(b, original_deref),
+                                  nir_load_deref(b, var_deref),
                                   nir_imm_int(b, 0));
-   nir_store_deref(b, clamped_deref, layer, 0);
+   nir_store_deref(b, var_deref, layer, 0);
 }
 
 static bool
 clamp_layer_output_instr(nir_builder *b, nir_instr *instr, void *data)
 {
-   struct clamp_layer_output_state *state = data;
+   nir_variable *var = data;
    switch (instr->type) {
    case nir_instr_type_intrinsic: {
       nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
@@ -2502,7 +2496,7 @@ clamp_layer_output_instr(nir_builder *b, nir_instr *instr, void *data)
           intr->intrinsic != nir_intrinsic_emit_vertex)
          return false;
       b->cursor = nir_before_instr(instr);
-      clamp_layer_output_emit(b, state);
+      clamp_layer_output_emit(b, var);
       return true;
    }
    default: return false;
@@ -2520,40 +2514,17 @@ clamp_layer_output(nir_shader *vs, nir_shader *fs, unsigned *next_location)
    default:
       UNREACHABLE("invalid last vertex stage!");
    }
-   struct clamp_layer_output_state state = {0};
-   state.original = nir_find_variable_with_location(vs, nir_var_shader_out, VARYING_SLOT_LAYER);
-   if (!state.original || (!find_var_deref(vs, state.original) && !find_var_io(vs, state.original)))
+   nir_variable *var = nir_find_variable_with_location(vs, nir_var_shader_out, VARYING_SLOT_LAYER);
+   if (!var || (!find_var_deref(vs, var) && !find_var_io(vs, var)))
       return false;
-   state.clamped = nir_variable_create(vs, nir_var_shader_out, glsl_int_type(), "layer_clamped");
-   state.clamped->data.location = VARYING_SLOT_LAYER;
-   nir_variable *fs_var = nir_find_variable_with_location(fs, nir_var_shader_in, VARYING_SLOT_LAYER);
-   if ((state.original->data.explicit_xfb_buffer || fs_var) && *next_location < MAX_VARYING) {
-      state.original->data.location = VARYING_SLOT_VAR0; // Anything but a built-in slot
-      state.original->data.driver_location = (*next_location)++;
-      if (fs_var) {
-         fs_var->data.location = state.original->data.location;
-         fs_var->data.driver_location = state.original->data.driver_location;
-      }
-   } else {
-      if (state.original->data.explicit_xfb_buffer) {
-         /* Will xfb the clamped output but still better than nothing */
-         state.clamped->data.explicit_xfb_buffer = state.original->data.explicit_xfb_buffer;
-         state.clamped->data.xfb.buffer = state.original->data.xfb.buffer;
-         state.clamped->data.xfb.stride = state.original->data.xfb.stride;
-         state.clamped->data.offset = state.original->data.offset;
-         state.clamped->data.stream = state.original->data.stream;
-      }
-      state.original->data.mode = nir_var_shader_temp;
-      nir_fixup_deref_modes(vs);
-   }
    if (vs->info.stage == MESA_SHADER_GEOMETRY) {
-      nir_shader_instructions_pass(vs, clamp_layer_output_instr, nir_metadata_dominance, &state);
+      nir_shader_instructions_pass(vs, clamp_layer_output_instr, nir_metadata_dominance, var);
    } else {
       nir_builder b;
       nir_function_impl *impl = nir_shader_get_entrypoint(vs);
       b = nir_builder_at(nir_after_impl(impl));
       assert(impl->end_block->predecessors.entries == 1);
-      clamp_layer_output_emit(&b, &state);
+      clamp_layer_output_emit(&b, var);
       nir_progress(true, impl, nir_metadata_dominance);
    }
    optimize_nir(vs, NULL, true);
