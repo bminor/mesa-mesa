@@ -1804,8 +1804,6 @@ static void pvr_alloc_vs_varyings(pco_data *data, nir_shader *nir)
 static void pvr_alloc_fs_sysvals(pco_data *data, nir_shader *nir)
 {
    BITSET_DECLARE(system_values_read, SYSTEM_VALUE_MAX);
-   bool has_meta = false;
-
    BITSET_COPY(system_values_read, nir->info.system_values_read);
 
    gl_system_value sys_vals[] = {
@@ -1848,12 +1846,6 @@ static void pvr_alloc_fs_sysvals(pco_data *data, nir_shader *nir)
 
    check_unused_sysvals(system_values_read);
    assert(BITSET_IS_EMPTY(system_values_read));
-
-   has_meta |= data->fs.meta_present.alpha_to_one;
-   has_meta |= data->fs.meta_present.sample_mask;
-   has_meta |= data->fs.meta_present.color_write_enable;
-   if (!has_meta)
-      return;
 
    data->fs.meta = (pco_range){
       .start = data->common.shareds,
@@ -2494,16 +2486,6 @@ pvr_preprocess_shader_data(pco_data *data,
       pvr_init_fs_tile_buffers(data);
 
       data->fs.uses.alpha_to_coverage = state->ms->alpha_to_coverage_enable;
-
-      if (BITSET_TEST(state->dynamic, MESA_VK_DYNAMIC_MS_ALPHA_TO_ONE_ENABLE) ||
-          (state->ms && state->ms->alpha_to_one_enable)) {
-         data->fs.meta_present.alpha_to_one = true;
-      }
-
-      if (BITSET_TEST(state->dynamic, MESA_VK_DYNAMIC_MS_SAMPLE_MASK) ||
-          (state->ms && state->ms->sample_mask != 0xffff)) {
-         data->fs.meta_present.sample_mask = true;
-      }
 
       if (BITSET_TEST(state->dynamic, MESA_VK_DYNAMIC_CB_COLOR_WRITE_ENABLES) ||
           (state->cb && state->cb->color_write_enables !=

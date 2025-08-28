@@ -6248,7 +6248,9 @@ static inline bool pvr_ppp_dynamic_state_isp_faces_and_control_dirty(
           BITSET_TEST(dynamic_dirty, MESA_VK_DYNAMIC_RS_LINE_WIDTH) ||
           BITSET_TEST(dynamic_dirty,
                       MESA_VK_DYNAMIC_RS_RASTERIZER_DISCARD_ENABLE) ||
-          BITSET_TEST(dynamic_dirty, MESA_VK_DYNAMIC_MS_RASTERIZATION_SAMPLES);
+          BITSET_TEST(dynamic_dirty,
+                      MESA_VK_DYNAMIC_MS_RASTERIZATION_SAMPLES) ||
+          BITSET_TEST(dynamic_dirty, MESA_VK_DYNAMIC_MS_SAMPLE_MASK);
 }
 
 static inline bool
@@ -6278,6 +6280,7 @@ pvr_ppp_state_update_required(const struct pvr_cmd_buffer *cmd_buffer)
           state->push_consts[PVR_STAGE_ALLOCATION_FRAGMENT].dirty ||
           pvr_ppp_dynamic_state_isp_faces_and_control_dirty(dynamic_dirty) ||
           BITSET_TEST(dynamic_dirty, MESA_VK_DYNAMIC_RS_DEPTH_BIAS_FACTORS) ||
+          BITSET_TEST(dynamic_dirty, MESA_VK_DYNAMIC_RS_DEPTH_CLAMP_ENABLE) ||
           BITSET_TEST(dynamic_dirty, MESA_VK_DYNAMIC_VP_SCISSORS) ||
           BITSET_TEST(dynamic_dirty, MESA_VK_DYNAMIC_VP_SCISSOR_COUNT) ||
           BITSET_TEST(dynamic_dirty, MESA_VK_DYNAMIC_VP_VIEWPORTS) ||

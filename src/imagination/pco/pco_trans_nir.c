@@ -2126,6 +2126,9 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
       break;
 
    case nir_intrinsic_load_fs_meta_pco:
+      assert(tctx->stage == MESA_SHADER_FRAGMENT);
+      assert(tctx->shader->data.fs.meta.count > 0);
+
       return pco_mov(&tctx->b,
                      dest,
                      pco_ref_hwreg(tctx->shader->data.fs.meta.start,

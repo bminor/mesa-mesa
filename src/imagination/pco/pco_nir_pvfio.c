@@ -754,14 +754,9 @@ static bool is_load_sample_mask(const nir_instr *instr,
 }
 
 static nir_def *
-lower_load_sample_mask(nir_builder *b, nir_instr *instr, void *cb_data)
+lower_load_sample_mask(nir_builder *b, nir_instr *instr, UNUSED void *cb_data)
 {
-   struct pfo_state *state = cb_data;
-
    b->cursor = nir_before_instr(instr);
-
-   if (!state->fs->meta_present.sample_mask)
-      return nir_imm_int(b, 0xffff);
 
    nir_def *smp_msk =
       nir_ubitfield_extract_imm(b, nir_load_fs_meta_pco(b), 9, 16);
@@ -843,11 +838,12 @@ bool pco_nir_pfo(nir_shader *shader, pco_fs_data *fs)
    /* TODO: instead of doing multiple passes, probably better to just cache all
     * the stores
     */
-   if (fs->meta_present.alpha_to_one)
+   if (!shader->info.internal) {
       progress |= nir_shader_lower_instructions(shader,
                                                 is_frag_color_out,
                                                 lower_alpha_to_one,
                                                 &state);
+   }
 
    if (fs->meta_present.color_write_enable)
       progress |= nir_shader_lower_instructions(shader,
@@ -864,7 +860,7 @@ bool pco_nir_pfo(nir_shader *shader, pco_fs_data *fs)
    progress |= nir_shader_lower_instructions(shader,
                                              is_load_sample_mask,
                                              lower_load_sample_mask,
-                                             &state);
+                                             NULL);
 
    util_dynarray_fini(&state.stores);
    util_dynarray_fini(&state.loads);

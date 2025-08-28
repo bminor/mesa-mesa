@@ -213,6 +213,8 @@ static void pvr_physical_device_get_supported_extensions(
       .EXT_depth_clamp_zero_one = true,
       .EXT_depth_clip_enable = true,
       .EXT_extended_dynamic_state = true,
+      .EXT_extended_dynamic_state2 = true,
+      .EXT_extended_dynamic_state3 = true,
       .EXT_external_memory_dma_buf = true,
       .EXT_host_query_reset = true,
       .EXT_image_2d_view_of_3d = true,
@@ -377,6 +379,44 @@ static void pvr_physical_device_get_supported_features(
 
       /* Vulkan 1.3 / VK_EXT_extended_dynamic_state */
       .extendedDynamicState = true,
+
+      /* Vulkan 1.3 / VK_EXT_extended_dynamic_state2 */
+      .extendedDynamicState2 = true,
+      .extendedDynamicState2LogicOp = false,
+      .extendedDynamicState2PatchControlPoints = false,
+
+      /* VK_EXT_extended_dynamic_state3 */
+      .extendedDynamicState3TessellationDomainOrigin = false,
+      .extendedDynamicState3DepthClampEnable = false,
+      .extendedDynamicState3PolygonMode = false,
+      .extendedDynamicState3RasterizationSamples = true,
+      .extendedDynamicState3SampleMask = true,
+      .extendedDynamicState3AlphaToCoverageEnable = false,
+      .extendedDynamicState3AlphaToOneEnable = true,
+      .extendedDynamicState3LogicOpEnable = false,
+      .extendedDynamicState3ColorBlendEnable = false,
+      .extendedDynamicState3ColorBlendEquation = false,
+      .extendedDynamicState3ColorWriteMask = false,
+      .extendedDynamicState3RasterizationStream = false,
+      .extendedDynamicState3ConservativeRasterizationMode = false,
+      .extendedDynamicState3ExtraPrimitiveOverestimationSize = false,
+      .extendedDynamicState3DepthClipEnable = false,
+      .extendedDynamicState3SampleLocationsEnable = false,
+      .extendedDynamicState3ColorBlendAdvanced = false,
+      .extendedDynamicState3ProvokingVertexMode = false,
+      .extendedDynamicState3LineRasterizationMode = false,
+      .extendedDynamicState3LineStippleEnable = false,
+      .extendedDynamicState3DepthClipNegativeOneToOne = false,
+      .extendedDynamicState3ViewportWScalingEnable = false,
+      .extendedDynamicState3ViewportSwizzle = false,
+      .extendedDynamicState3CoverageToColorEnable = false,
+      .extendedDynamicState3CoverageToColorLocation = false,
+      .extendedDynamicState3CoverageModulationMode = false,
+      .extendedDynamicState3CoverageModulationTableEnable = false,
+      .extendedDynamicState3CoverageModulationTable = false,
+      .extendedDynamicState3CoverageReductionMode = false,
+      .extendedDynamicState3RepresentativeFragmentTestEnable = false,
+      .extendedDynamicState3ShadingRateImageEnable = false,
 
       /* Vulkan 1.2 / VK_EXT_host_query_reset */
       .hostQueryReset = true,
@@ -711,6 +751,9 @@ static bool pvr_physical_device_get_properties(
          .subminor = 8,
          .patch = 4,
       },
+
+      /* VK_EXT_extended_dynamic_state3 */
+      .dynamicPrimitiveTopologyUnrestricted = false,
 
       /* VK_EXT_provoking_vertex */
       .provokingVertexModePerPipeline = true,

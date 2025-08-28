@@ -124,8 +124,6 @@ typedef struct _pco_fs_data {
    } uses;
 
    struct {
-      bool alpha_to_one;
-      bool sample_mask;
       bool color_write_enable;
    } meta_present;
 } pco_fs_data;
