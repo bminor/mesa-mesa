@@ -433,7 +433,6 @@ nvk_GetDeviceMemoryOpaqueCaptureAddress(
    UNUSED VkDevice device,
    const VkDeviceMemoryOpaqueCaptureAddressInfo* pInfo)
 {
-   VK_FROM_HANDLE(nvk_device_memory, mem, pInfo->memory);
-
-   return mem->mem->va->addr;
+   /* Addresses are replayed at buffer and image creation, not memory. */
+   return 0;
 }

@@ -2114,7 +2114,7 @@
         "description": "nvk: Return 0 for opaque memory capture replay.",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ed6d5c33c60ea41f4e81fd4fc128cad91421ba36",
         "notes": null
