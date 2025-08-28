@@ -936,25 +936,6 @@ accept_64bit_atomic_cb(const nir_intrinsic_instr *intrin, const void *data)
           intrin->def.bit_size == 64;
 }
 
-static bool
-lower_non_tg4_non_uniform_offsets(const nir_tex_instr *tex,
-                                  unsigned index, void *data)
-{
-   /* HW cannot deal with divergent surfaces/samplers */
-   if (tex->src[index].src_type == nir_tex_src_texture_offset ||
-       tex->src[index].src_type == nir_tex_src_texture_handle ||
-       tex->src[index].src_type == nir_tex_src_sampler_offset ||
-       tex->src[index].src_type == nir_tex_src_sampler_handle)
-      return true;
-
-   if (tex->src[index].src_type == nir_tex_src_offset) {
-      /* HW can deal with TG4 divergent offsets only */
-      return tex->op != nir_texop_tg4;
-   }
-
-   return false;
-}
-
 static nir_def *
 build_tcs_input_vertices(nir_builder *b, nir_instr *instr, void *data)
 {
@@ -1092,17 +1073,7 @@ anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
    enum nir_lower_non_uniform_access_type lower_non_uniform_access_types =
       nir_lower_non_uniform_texture_access |
       nir_lower_non_uniform_image_access |
-      nir_lower_non_uniform_get_ssbo_size |
-      nir_lower_non_uniform_texture_offset_access;
-
-   /* For textures, images, sampler, NonUniform decoration is required but not
-    * for offsets, so we rely on divergence information for this. Offsets used
-    * to be constants until KHR_maintenance8.
-    */
-   if (pipeline->device->vk.enabled_features.maintenance8) {
-      nir_foreach_function_impl(impl, nir)
-         nir_metadata_require(impl, nir_metadata_divergence);
-   }
+      nir_lower_non_uniform_get_ssbo_size;
 
    /* In practice, most shaders do not have non-uniform-qualified
     * accesses (see
@@ -1118,7 +1089,6 @@ anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
       NIR_PASS(_, nir, nir_lower_non_uniform_access,
                &(nir_lower_non_uniform_access_options) {
                   .types = lower_non_uniform_access_types,
-                  .tex_src_callback = lower_non_tg4_non_uniform_offsets,
                   .callback = NULL,
                });
 

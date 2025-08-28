@@ -1964,7 +1964,7 @@
         "description": "Revert \"anv: enable non uniform texture offset lowering\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "23de5abcb5370a28f42e1423321ed881591c0c1b",
         "notes": null
