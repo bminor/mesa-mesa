@@ -538,7 +538,6 @@ struct radv_cmd_state {
    bool uses_vrs;
    bool uses_vrs_attachment;
    bool uses_vrs_coarse_shading;
-   bool uses_dynamic_patch_control_points;
    bool uses_fbfetch_output;
 
    uint64_t shader_query_buf_va; /* GFX12+ */

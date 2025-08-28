@@ -4358,23 +4358,12 @@ radv_emit_patch_control_points_state(struct radv_cmd_buffer *cmd_buffer)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   const struct radv_shader *vs = radv_get_shader(cmd_buffer->state.shaders, MESA_SHADER_VERTEX);
    const struct radv_shader *tcs = cmd_buffer->state.shaders[MESA_SHADER_TESS_CTRL];
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    unsigned ls_hs_config;
 
    if (!tcs)
       return;
-
-   /* Compute tessellation info that depends on the number of patch control points when this state
-    * is dynamic.
-    */
-   if (cmd_buffer->state.uses_dynamic_patch_control_points) {
-      radv_get_tess_wg_info(pdev, &tcs->info.tcs.io_info, tcs->info.tcs.tcs_vertices_out, d->vk.ts.patch_control_points,
-                            /* TODO: This should be only inputs in LDS (not VGPR inputs) to reduce LDS usage */
-                            vs->info.vs.num_linked_outputs, &cmd_buffer->state.tess_num_patches,
-                            &cmd_buffer->state.tess_lds_size);
-   }
 
    ls_hs_config = S_028B58_NUM_PATCHES(cmd_buffer->state.tess_num_patches) |
                   /* GFX12 programs patch_vertices in VGT_PRIMITIVE_TYPE.NUM_INPUT_CP. */
@@ -8121,7 +8110,7 @@ radv_bind_vertex_shader(struct radv_cmd_buffer *cmd_buffer, const struct radv_sh
     * because shader configs are combined.
     */
    if (vs->info.merged_shader_compiled_separately && vs->info.next_stage == MESA_SHADER_TESS_CTRL) {
-      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_PATCH_CONTROL_POINTS_STATE | RADV_CMD_DIRTY_TCS_TES_STATE;
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_TCS_TES_STATE;
    }
 
    cmd_buffer->state.can_use_simple_vertex_input = !vs->info.merged_shader_compiled_separately &&
@@ -8554,19 +8543,6 @@ radv_CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipeline
           * GS ring pointers are set.
           */
          cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_VGT_FLUSH;
-      }
-
-      cmd_buffer->state.uses_dynamic_patch_control_points =
-         !!(graphics_pipeline->dynamic_states & RADV_DYNAMIC_PATCH_CONTROL_POINTS);
-
-      if (graphics_pipeline->active_stages & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) {
-         if (!cmd_buffer->state.uses_dynamic_patch_control_points) {
-            /* Bind the tessellation state from the pipeline when it's not dynamic. */
-            struct radv_shader *tcs = cmd_buffer->state.shaders[MESA_SHADER_TESS_CTRL];
-
-            cmd_buffer->state.tess_num_patches = tcs->info.num_tess_patches;
-            cmd_buffer->state.tess_lds_size = tcs->info.tcs.num_lds_blocks;
-         }
       }
 
       const struct radv_shader *vs = radv_get_shader(graphics_pipeline->base.shaders, MESA_SHADER_VERTEX);
@@ -12045,6 +12021,31 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
    }
 
    const uint64_t dynamic_states = cmd_buffer->state.dirty_dynamic & radv_get_needed_dynamic_states(cmd_buffer);
+   if (((cmd_buffer->state.dirty & (RADV_CMD_DIRTY_PIPELINE | RADV_CMD_DIRTY_GRAPHICS_SHADERS)) ||
+        (dynamic_states & RADV_DYNAMIC_PATCH_CONTROL_POINTS))) {
+      if (cmd_buffer->state.active_stages & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) {
+         const struct radv_shader *vs = radv_get_shader(cmd_buffer->state.shaders, MESA_SHADER_VERTEX);
+         const struct radv_shader *tcs = cmd_buffer->state.shaders[MESA_SHADER_TESS_CTRL];
+         const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
+         uint32_t tess_num_patches, tess_lds_size;
+
+         radv_get_tess_wg_info(pdev, &tcs->info.tcs.io_info, tcs->info.tcs.tcs_vertices_out,
+                               d->vk.ts.patch_control_points,
+                               /* TODO: This should be only inputs in LDS (not VGPR inputs) to reduce LDS usage */
+                               vs->info.vs.num_linked_outputs, &tess_num_patches, &tess_lds_size);
+
+         if (cmd_buffer->state.tess_lds_size != tess_lds_size) {
+            cmd_buffer->state.tess_lds_size = tess_lds_size;
+            cmd_buffer->state.dirty |= RADV_CMD_DIRTY_TCS_TES_STATE;
+         }
+
+         if (cmd_buffer->state.tess_num_patches != tess_num_patches) {
+            cmd_buffer->state.tess_num_patches = tess_num_patches;
+            cmd_buffer->state.dirty |= RADV_CMD_DIRTY_PATCH_CONTROL_POINTS_STATE | RADV_CMD_DIRTY_TCS_TES_STATE;
+         }
+      }
+   }
+
    if (dynamic_states)
       radv_validate_dynamic_states(cmd_buffer, dynamic_states);
 
@@ -12331,11 +12332,6 @@ radv_bind_graphics_shaders(struct radv_cmd_buffer *cmd_buffer)
 
    if (pdev->info.gfx_level <= GFX9) {
       cmd_buffer->state.ia_multi_vgt_param = radv_compute_ia_multi_vgt_param(device, cmd_buffer->state.shaders);
-   }
-
-   if (cmd_buffer->state.active_stages &
-       (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT)) {
-      cmd_buffer->state.uses_dynamic_patch_control_points = true;
    }
 }
 
