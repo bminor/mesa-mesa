@@ -865,7 +865,7 @@ r600_lower_and_optimize_nir(nir_shader *sh,
             sh,
             nir_lower_vars_to_scratch,
             nir_var_function_temp,
-            40,
+            64,
             r600_get_scratch_size_align,
             r600_get_scratch_size_align);
 
