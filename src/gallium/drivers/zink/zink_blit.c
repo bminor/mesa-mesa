@@ -16,7 +16,10 @@
 static void
 apply_dst_clears(struct zink_context *ctx, const struct pipe_blit_info *info, bool discard_only)
 {
-   if (info->scissor_enable) {
+   if (util_format_get_mask(info->dst.format) != info->mask) {
+      /* need to flush z/s clears before doing single-aspect blit to avoid data loss */
+      zink_fb_clears_apply_region(ctx, info->dst.resource, zink_rect_from_box(&info->dst.box), info->dst.box.z, info->dst.box.depth);
+   } else if (info->scissor_enable) {
       struct u_rect rect = { info->scissor.minx, info->scissor.maxx,
                              info->scissor.miny, info->scissor.maxy };
       zink_fb_clears_apply_or_discard(ctx, info->dst.resource, rect, info->dst.box.z, info->dst.box.depth, discard_only);
