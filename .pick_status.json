@@ -6504,7 +6504,7 @@
         "description": "util/list: Fix next instruction removal usecase for non safe iterators",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "372e83b95f9277fe1d09b1c65c70a38918843b6f",
         "notes": null
