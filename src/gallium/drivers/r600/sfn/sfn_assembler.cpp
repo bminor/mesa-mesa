@@ -104,6 +104,7 @@ public:
    bool m_last_op_was_barrier{false};
    bool m_result{true};
    bool m_legacy_math_rules{false};
+   bool m_require_alu_extended{false};
 };
 
 bool
@@ -858,6 +859,7 @@ AssamblerVisitor::visit(const Block& block)
    sfn_log << SfnLog::assembly << "Translate block  size: " << block.size()
            << " new_cf:" << m_bc->force_add_cf << "\n";
 
+   m_require_alu_extended = block.kcache_needs_extended();
    for (const auto& i : block) {
       sfn_log << SfnLog::assembly << "Translate " << *i << " ";
       i->accept(*this);
@@ -866,39 +868,19 @@ AssamblerVisitor::visit(const Block& block)
       if (!m_result)
          break;
    }
+   m_require_alu_extended = false;
 }
 
 void
 AssamblerVisitor::visit(const IfInstr& instr)
 {
-   int elems = m_callstack.push(FC_PUSH_VPM);
-   bool needs_workaround = false;
-
-   if (m_bc->gfx_level == CAYMAN && m_bc->stack.loop > 1)
-      needs_workaround = true;
-
-   if (m_bc->gfx_level == EVERGREEN && m_bc->family != CHIP_HEMLOCK &&
-       m_bc->family != CHIP_CYPRESS && m_bc->family != CHIP_JUNIPER) {
-      unsigned dmod1 = (elems - 1) % m_bc->stack.entry_size;
-      unsigned dmod2 = (elems) % m_bc->stack.entry_size;
-
-      if (elems && (!dmod1 || !dmod2))
-         needs_workaround = true;
-   }
+   emit_alu_push_before();
 
    auto pred = instr.predicate();
    auto [addr, dummy0, dummy1] = pred->indirect_addr();
    assert(!dummy1);
    assert(!addr);
 
-   if (needs_workaround) {
-      r600_bytecode_add_cfinst(m_bc, CF_OP_PUSH);
-      m_bc->cf_last->cf_addr = m_bc->cf_last->id + 2;
-      r600_bytecode_add_cfinst(m_bc, CF_OP_ALU);
-      pred->set_cf_type(cf_alu);
-   }
-
-   clear_states(sf_tex | sf_vtx);
    pred->accept(*this);
 
    r600_bytecode_add_cfinst(m_bc, CF_OP_JUMP);
@@ -1102,11 +1084,11 @@ AssamblerVisitor::emit_alu_push_before()
          needs_workaround = true;
    }
 
-   if (needs_workaround) {
+   if (needs_workaround || m_require_alu_extended) {
       r600_bytecode_add_cfinst(m_bc, CF_OP_PUSH);
       m_bc->cf_last->cf_addr = m_bc->cf_last->id + 2;
       r600_bytecode_add_cfinst(m_bc, CF_OP_ALU);
-      // pred->set_cf_type(cf_alu);
+      m_bc->cf_last->eg_alu_extended = m_require_alu_extended;
    } else {
       r600_bytecode_add_cfinst(m_bc, CF_OP_ALU_PUSH_BEFORE);
    }
