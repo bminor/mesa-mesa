@@ -3680,7 +3680,8 @@ enum _debug
    DEBUG_ALWAYS_FLUSH		= (1 << 1),
    DEBUG_INCOMPLETE_TEXTURE     = (1 << 2),
    DEBUG_INCOMPLETE_FBO         = (1 << 3),
-   DEBUG_CONTEXT                = (1 << 4)
+   DEBUG_CONTEXT                = (1 << 4),
+   DEBUG_FALLBACK_TEXTURE       = (1 << 5),
 };
 
 #ifdef __cplusplus

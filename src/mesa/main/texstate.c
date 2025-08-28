@@ -704,6 +704,8 @@ update_single_program_texture(struct gl_context *ctx, struct gl_program *prog,
     * Mesa implements this by creating a hidden texture object with a pixel of
     * that value.
     */
+   if (MESA_DEBUG_FLAGS & DEBUG_FALLBACK_TEXTURE)
+      _mesa_debug(NULL, "Using fallback texture for target %u\n", target_index);
    texObj = _mesa_get_fallback_texture(ctx, target_index, !!(prog->ShadowSamplers & BITFIELD_BIT(unit)));
    assert(texObj);
 

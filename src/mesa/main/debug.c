@@ -205,7 +205,8 @@ set_debug_flags(const char *str)
       { "flush", DEBUG_ALWAYS_FLUSH }, /* flush after each drawing command */
       { "incomplete_tex", DEBUG_INCOMPLETE_TEXTURE },
       { "incomplete_fbo", DEBUG_INCOMPLETE_FBO },
-      { "context", DEBUG_CONTEXT } /* force set GL_CONTEXT_FLAG_DEBUG_BIT flag */
+      { "context", DEBUG_CONTEXT }, /* force set GL_CONTEXT_FLAG_DEBUG_BIT flag */
+      { "fallback_tex", DEBUG_FALLBACK_TEXTURE },
    };
    GLuint i;
 
