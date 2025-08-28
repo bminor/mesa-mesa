@@ -11909,8 +11909,11 @@ radv_validate_dynamic_states(struct radv_cmd_buffer *cmd_buffer, uint64_t dynami
    if (dynamic_states & (RADV_DYNAMIC_VIEWPORT | RADV_DYNAMIC_VIEWPORT_WITH_COUNT | RADV_DYNAMIC_RASTERIZATION_SAMPLES))
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_NGGC_VIEWPORT;
 
-   if (dynamic_states & RADV_DYNAMIC_PATCH_CONTROL_POINTS)
-      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_TCS_TES_STATE | RADV_CMD_DIRTY_PATCH_CONTROL_POINTS_STATE;
+   if (dynamic_states & RADV_DYNAMIC_PATCH_CONTROL_POINTS) {
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_TCS_TES_STATE;
+      if (pdev->info.gfx_level < GFX12)
+         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_PATCH_CONTROL_POINTS_STATE;
+   }
 
    if (dynamic_states &
        (RADV_DYNAMIC_DEPTH_TEST_ENABLE | RADV_DYNAMIC_DEPTH_WRITE_ENABLE | RADV_DYNAMIC_DEPTH_COMPARE_OP |
