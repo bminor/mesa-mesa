@@ -7443,8 +7443,10 @@ radv_BeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBegi
    if (cmd_buffer->qf == RADV_QUEUE_COMPUTE || device->vk.enabled_features.taskShader) {
       uint32_t pred_value = 0;
       uint32_t pred_offset;
-      if (!radv_cmd_buffer_upload_data(cmd_buffer, 4, &pred_value, &pred_offset))
+      if (!radv_cmd_buffer_upload_data(cmd_buffer, 4, &pred_value, &pred_offset)) {
          vk_command_buffer_set_error(&cmd_buffer->vk, VK_ERROR_OUT_OF_HOST_MEMORY);
+         return VK_ERROR_OUT_OF_HOST_MEMORY;
+      }
 
       cmd_buffer->state.mec_inv_pred_emitted = false;
       cmd_buffer->state.mec_inv_pred_va = radv_buffer_get_va(cmd_buffer->upload.upload_bo) + pred_offset;
@@ -7455,7 +7457,10 @@ radv_BeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBegi
       unsigned fence_offset, eop_bug_offset;
       void *fence_ptr;
 
-      radv_cmd_buffer_upload_alloc(cmd_buffer, 8, &fence_offset, &fence_ptr);
+      if (!radv_cmd_buffer_upload_alloc(cmd_buffer, 8, &fence_offset, &fence_ptr)) {
+         vk_command_buffer_set_error(&cmd_buffer->vk, VK_ERROR_OUT_OF_HOST_MEMORY);
+         return VK_ERROR_OUT_OF_HOST_MEMORY;
+      }
       memset(fence_ptr, 0, 8);
 
       cmd_buffer->gfx9_fence_va = radv_buffer_get_va(cmd_buffer->upload.upload_bo);
@@ -7465,7 +7470,11 @@ radv_BeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBegi
 
       if (pdev->info.gfx_level == GFX9) {
          /* Allocate a buffer for the EOP bug on GFX9. */
-         radv_cmd_buffer_upload_alloc(cmd_buffer, 16 * num_db, &eop_bug_offset, &fence_ptr);
+         if (!radv_cmd_buffer_upload_alloc(cmd_buffer, 16 * num_db, &eop_bug_offset, &fence_ptr)) {
+            vk_command_buffer_set_error(&cmd_buffer->vk, VK_ERROR_OUT_OF_HOST_MEMORY);
+            return VK_ERROR_OUT_OF_HOST_MEMORY;
+         }
+
          memset(fence_ptr, 0, 16 * num_db);
          cmd_buffer->gfx9_eop_bug_va = radv_buffer_get_va(cmd_buffer->upload.upload_bo);
          cmd_buffer->gfx9_eop_bug_va += eop_bug_offset;
@@ -12842,8 +12851,10 @@ radv_CmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer _b
          uint32_t workaround_cond_init = 0;
          uint32_t workaround_cond_off;
 
-         if (!radv_cmd_buffer_upload_data(cmd_buffer, 4, &workaround_cond_init, &workaround_cond_off))
+         if (!radv_cmd_buffer_upload_data(cmd_buffer, 4, &workaround_cond_init, &workaround_cond_off)) {
             vk_command_buffer_set_error(&cmd_buffer->vk, VK_ERROR_OUT_OF_HOST_MEMORY);
+            return;
+         }
 
          workaround_cond_va = radv_buffer_get_va(cmd_buffer->upload.upload_bo) + workaround_cond_off;
       }
@@ -14601,7 +14612,10 @@ radv_begin_conditional_rendering(struct radv_cmd_buffer *cmd_buffer, uint64_t va
           * Based on the conditionalrender demo, it's faster to do the
           * COPY_DATA in ME  (+ sync PFP) instead of PFP.
           */
-         radv_cmd_buffer_upload_data(cmd_buffer, 8, &pred_value, &pred_offset);
+         if (!radv_cmd_buffer_upload_data(cmd_buffer, 8, &pred_value, &pred_offset)) {
+            vk_command_buffer_set_error(&cmd_buffer->vk, VK_ERROR_OUT_OF_HOST_MEMORY);
+            return;
+         }
 
          emulated_va = radv_buffer_get_va(cmd_buffer->upload.upload_bo) + pred_offset;
 
