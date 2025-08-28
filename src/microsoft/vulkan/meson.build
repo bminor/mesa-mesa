@@ -44,7 +44,6 @@ dzn_flags = [ ]
 dzn_cpp_flags = [ ]
 
 if with_platform_windows
-  dzn_flags += '-DVK_USE_PLATFORM_WIN32_KHR'
   libdzn_files += files('dzn_dxgi.c')
 endif
 
