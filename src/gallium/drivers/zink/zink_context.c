@@ -3384,6 +3384,10 @@ zink_batch_no_rp(struct zink_context *ctx)
 static void
 zink_flush_clears(struct zink_context *ctx)
 {
+   /* may be called recursively, e.g., from texture_barrier */
+   if (ctx->in_rp)
+      return;
+
    struct zink_screen *screen = zink_screen(ctx->base.screen);
    bool general_layout = screen->driver_workarounds.general_layout;
    bool queries_disabled = ctx->queries_disabled;
@@ -3427,6 +3431,7 @@ zink_flush_clears(struct zink_context *ctx)
    ctx->blitting = blitting;
    if (!blitting)
       ctx->fb_state = fb;
+   zink_batch_no_rp(ctx);
 }
 
 static uint32_t
