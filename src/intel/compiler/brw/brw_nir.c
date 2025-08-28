@@ -2183,13 +2183,15 @@ brw_postprocess_nir_opts(nir_shader *nir, const struct brw_compiler *compiler,
 
    OPT(brw_nir_lower_mcs_fetch, devinfo);
 
-   const struct brw_nir_lower_texture_opts brw_tex_options = {
-      .combined_lod_and_array_index = compiler->devinfo->ver >= 20,
-      .combined_lod_or_bias_and_offset = compiler->devinfo->ver >= 20,
-   };
-   OPT(brw_nir_lower_texture, &brw_tex_options);
-
    OPT(intel_nir_lower_sparse_intrinsics);
+
+   /* Needs to happen before the backend opcode selection */
+   OPT(brw_nir_pre_lower_texture);
+
+   /* Needs to happen before the texture lowering */
+   OPT(brw_nir_texture_backend_opcode, devinfo);
+
+   OPT(brw_nir_lower_texture);
 
    OPT(nir_lower_bit_size, lower_bit_size_callback, (void *)compiler);
 

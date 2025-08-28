@@ -22,7 +22,51 @@
  */
 
 #include "compiler/nir/nir_builder.h"
+#include "compiler/nir/nir_builtin_builder.h"
 #include "brw_nir.h"
+#include "brw_sampler.h"
+
+/**
+ * Takes care of lowering to target HW messages payload.
+ *
+ * For example, HW has no gather4_po_i_b so lower to gather_po_l.
+ */
+static bool
+pre_lower_texture_instr(nir_builder *b,
+                        nir_tex_instr *tex,
+                        void *data)
+{
+   switch (tex->op) {
+   case nir_texop_tg4: {
+      if (!tex->is_gather_implicit_lod)
+         return false;
+
+      nir_def *bias = nir_steal_tex_src(tex, nir_tex_src_bias);
+      if (!bias)
+         return false;
+
+      b->cursor = nir_before_instr(&tex->instr);
+
+      tex->is_gather_implicit_lod = false;
+
+      nir_def *lod = nir_fadd(b, bias, nir_get_texture_lod(b, tex));
+      nir_tex_instr_add_src(tex, nir_tex_src_lod, lod);
+      return true;
+   }
+
+   default:
+      return false;
+   }
+}
+
+bool
+brw_nir_pre_lower_texture(nir_shader *shader)
+{
+   return nir_shader_tex_pass(shader,
+                              pre_lower_texture_instr,
+                              nir_metadata_control_flow,
+                              NULL);
+}
 
 /**
  * Pack either the explicit LOD or LOD bias and the array index together.
@@ -165,40 +209,46 @@ pack_lod_or_bias_and_offset(nir_builder *b, nir_tex_instr *tex)
 static bool
 brw_nir_lower_texture_instr(nir_builder *b, nir_tex_instr *tex, void *cb_data)
 {
-   const struct brw_nir_lower_texture_opts *opts = cb_data;
+   enum brw_sampler_opcode sampler_opcode = tex->backend_flags;
 
-   switch (tex->op) {
-   case nir_texop_txl:
-   case nir_texop_txb:
-   case nir_texop_tg4:
-      if (tex->is_array &&
-          tex->sampler_dim == GLSL_SAMPLER_DIM_CUBE &&
-          opts->combined_lod_and_array_index) {
-         return pack_lod_and_array_index(b, tex);
-      }
+   if (brw_sampler_opcode_param_index(sampler_opcode,
+                                      BRW_SAMPLER_PAYLOAD_PARAM_LOD_AI) != -1 ||
+       brw_sampler_opcode_param_index(sampler_opcode,
+                                      BRW_SAMPLER_PAYLOAD_PARAM_BIAS_AI) != -1)
+      return pack_lod_and_array_index(b, tex);
 
-      if (tex->op == nir_texop_tg4 && opts->combined_lod_or_bias_and_offset) {
-         return pack_lod_or_bias_and_offset(b, tex);
-      }
-
-      return false;
-
-   default:
-      /* Nothing to do */
-      return false;
-   }
+   if (brw_sampler_opcode_param_index(sampler_opcode,
+                                      BRW_SAMPLER_PAYLOAD_PARAM_BIAS_OFFUV6) != -1 ||
+      brw_sampler_opcode_param_index(sampler_opcode,
+                                     BRW_SAMPLER_PAYLOAD_PARAM_LOD_OFFUV6) != -1)
+      return pack_lod_or_bias_and_offset(b, tex);
 
    return false;
 }
 
 bool
-brw_nir_lower_texture(nir_shader *shader,
-                      const struct brw_nir_lower_texture_opts *opts)
+brw_nir_lower_texture(nir_shader *shader)
 {
-   return nir_shader_tex_pass(shader,
-                              brw_nir_lower_texture_instr,
-                              nir_metadata_control_flow,
-                              (void *)opts);
+   return nir_shader_tex_pass(shader, brw_nir_lower_texture_instr,
+                              nir_metadata_none, NULL);
+}
+
+static bool
+brw_nir_lower_texture_opcode_instr(nir_builder *b, nir_tex_instr *tex, void *cb_data)
+{
+   const struct intel_device_info *devinfo = cb_data;
+
+   tex->backend_flags = brw_get_sampler_opcode_from_tex(devinfo, tex);
+
+   return true;
+}
+
+bool
+brw_nir_texture_backend_opcode(nir_shader *shader,
+                               const struct intel_device_info *devinfo)
+{
+   return nir_shader_tex_pass(shader, brw_nir_lower_texture_opcode_instr,
+                              nir_metadata_all, (void *)devinfo);
 }
 
 static bool
