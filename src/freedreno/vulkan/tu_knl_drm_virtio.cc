@@ -804,7 +804,6 @@ virtio_bo_init_dmabuf(struct tu_device *dev,
     * to happen in parallel.
     */
    u_rwlock_wrlock(&dev->dma_bo_lock);
-   mtx_lock(&dev->vma_mutex);
 
    uint32_t handle, res_id;
    uint64_t iova;
@@ -834,8 +833,10 @@ virtio_bo_init_dmabuf(struct tu_device *dev,
 
    bo->res_id = res_id;
 
+   mtx_lock(&dev->vma_mutex);
    result = virtio_allocate_userspace_iova_locked(dev, handle, size, 0,
                                                   TU_BO_ALLOC_DMABUF, &iova);
+   mtx_unlock(&dev->vma_mutex);
    if (result != VK_SUCCESS) {
       vdrm_bo_close(dev->vdev->vdrm, handle);
       goto out_unlock;
@@ -853,7 +854,6 @@ virtio_bo_init_dmabuf(struct tu_device *dev,
    set_iova(dev, bo->res_id, iova);
 
 out_unlock:
-   mtx_unlock(&dev->vma_mutex);
    u_rwlock_wrunlock(&dev->dma_bo_lock);
    return result;
 }

@@ -538,19 +538,23 @@ msm_allocate_userspace_iova_locked(struct tu_device *dev,
       result = tu_allocate_userspace_iova(dev, size, client_iova, flags, iova);
    }
 
-   if (result != VK_SUCCESS)
-      return result;
+   return result;
+}
 
+static VkResult
+msm_set_iova(struct tu_device *dev,
+             uint32_t gem_handle,
+             uint64_t iova)
+{
    struct drm_msm_gem_info req = {
       .handle = gem_handle,
       .info = MSM_INFO_SET_IOVA,
-      .value = *iova,
+      .value = iova,
    };
 
    int ret =
       drmCommandWriteRead(dev->fd, DRM_MSM_GEM_INFO, &req, sizeof(req));
    if (ret < 0) {
-      util_vma_heap_free(&dev->vma, *iova, size);
       mesa_loge("MSM_INFO_SET_IOVA failed! %d (%s)", ret, strerror(errno));
       return VK_ERROR_OUT_OF_HOST_MEMORY;
    }
@@ -559,9 +563,9 @@ msm_allocate_userspace_iova_locked(struct tu_device *dev,
 }
 
 static VkResult
-tu_allocate_kernel_iova(struct tu_device *dev,
-                        uint32_t gem_handle,
-                        uint64_t *iova)
+msm_get_iova(struct tu_device *dev,
+             uint32_t gem_handle,
+             uint64_t *iova)
 {
    *iova = tu_gem_info(dev, gem_handle, MSM_INFO_GET_IOVA);
    if (!*iova)
@@ -625,23 +629,13 @@ static VkResult
 msm_allocate_vm_bind(struct tu_device *dev,
                      uint32_t gem_handle,
                      uint64_t size,
-                     uint64_t client_iova,
-                     enum tu_bo_alloc_flags flags,
-                     uint64_t *iova)
+                     uint64_t iova,
+                     enum tu_bo_alloc_flags flags)
 {
-   VkResult result;
-
-   *iova = 0;
-
-   result = tu_allocate_userspace_iova(dev, size, client_iova, flags, iova);
-
-   if (result != VK_SUCCESS)
-      return result;
-
    uint32_t map_op_flags = 0;
    if (flags & TU_BO_ALLOC_ALLOW_DUMP)
       map_op_flags |= MSM_VM_BIND_OP_DUMP;
-   return tu_map_vm_bind(dev, MSM_VM_BIND_OP_MAP, map_op_flags, *iova,
+   return tu_map_vm_bind(dev, MSM_VM_BIND_OP_MAP, map_op_flags, iova,
                          gem_handle, 0, size);
 }
 
@@ -684,29 +678,65 @@ tu_bo_add_to_bo_list(struct tu_device *dev,
    return VK_SUCCESS;
 }
 
+static inline void
+msm_vma_lock(struct tu_device *dev)
+{
+   if (dev->physical_device->has_set_iova)
+      mtx_lock(&dev->vma_mutex);
+}
+
+static inline void
+msm_vma_unlock(struct tu_device *dev)
+{
+   if (dev->physical_device->has_set_iova)
+      mtx_unlock(&dev->vma_mutex);
+}
+
+/* If we have control over iova, allocate the iova range. */
+static VkResult
+tu_allocate_iova(struct tu_device *dev,
+                 uint32_t gem_handle, /* only for BOs imported via dma-buf */
+                 uint64_t size,
+                 uint64_t client_iova,
+                 enum tu_bo_alloc_flags flags,
+                 uint64_t *iova)
+{
+   VkResult result = VK_SUCCESS;
+
+   msm_vma_lock(dev);
+
+   if (dev->physical_device->has_vm_bind) {
+      result = tu_allocate_userspace_iova(dev, size, client_iova, flags, iova);
+   } else if (dev->physical_device->has_set_iova) {
+      assert(dev->physical_device->has_set_iova);
+      result = msm_allocate_userspace_iova_locked(dev, gem_handle, size,
+                                                  client_iova, flags, iova);
+   }
+
+   msm_vma_unlock(dev);
+
+   return result;
+}
+
+
 static VkResult
 tu_bo_init(struct tu_device *dev,
            struct vk_object_base *base,
            struct tu_bo *bo,
            uint32_t gem_handle,
            uint64_t size,
-           uint64_t client_iova,
+           uint64_t iova,
            enum tu_bo_alloc_flags flags,
            const char *name)
 {
    VkResult result = VK_SUCCESS;
-   uint64_t iova = 0;
-
-   assert(!client_iova || dev->physical_device->has_set_iova);
 
    if (dev->physical_device->has_vm_bind) {
-      result = msm_allocate_vm_bind(dev, gem_handle, size, client_iova, flags,
-                                    &iova);
+      result = msm_allocate_vm_bind(dev, gem_handle, size, iova, flags);
    } else if (dev->physical_device->has_set_iova) {
-      result = msm_allocate_userspace_iova_locked(dev, gem_handle, size,
-                                                  client_iova, flags, &iova);
+      result = msm_set_iova(dev, gem_handle, iova);
    } else {
-      result = tu_allocate_kernel_iova(dev, gem_handle, &iova);
+      result = msm_get_iova(dev, gem_handle, &iova);
    }
 
    if (result != VK_SUCCESS) {
@@ -784,20 +814,6 @@ tu_bo_set_kernel_name(struct tu_device *dev, struct tu_bo *bo, const char *name)
    }
 }
 
-static inline void
-msm_vma_lock(struct tu_device *dev)
-{
-   if (dev->physical_device->has_set_iova)
-      mtx_lock(&dev->vma_mutex);
-}
-
-static inline void
-msm_vma_unlock(struct tu_device *dev)
-{
-   if (dev->physical_device->has_set_iova)
-      mtx_unlock(&dev->vma_mutex);
-}
-
 static VkResult
 msm_bo_init(struct tu_device *dev,
             struct vk_object_base *base,
@@ -809,6 +825,14 @@ msm_bo_init(struct tu_device *dev,
             const char *name)
 {
    MESA_TRACE_FUNC();
+   VkResult result;
+   uint64_t iova;
+
+   result = tu_allocate_iova(dev, 0, size, client_iova, flags, &iova);
+
+   if (result != VK_SUCCESS)
+      return result;
+
    struct drm_msm_gem_new req = {
       .size = size,
       .flags = 0
@@ -832,20 +856,20 @@ msm_bo_init(struct tu_device *dev,
 
    int ret = drmCommandWriteRead(dev->fd,
                                  DRM_MSM_GEM_NEW, &req, sizeof(req));
-   if (ret)
+   if (ret) {
+      msm_vma_lock(dev);
+      util_vma_heap_free(&dev->vma, iova, size);
+      msm_vma_unlock(dev);
       return vk_error(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY);
+   }
 
    struct tu_bo* bo = tu_device_lookup_bo(dev, req.handle);
    assert(bo && bo->gem_handle == 0);
 
    assert(!(flags & TU_BO_ALLOC_DMABUF));
 
-   msm_vma_lock(dev);
-
-   VkResult result =
-      tu_bo_init(dev, base, bo, req.handle, size, client_iova, flags, name);
-
-   msm_vma_unlock(dev);
+   result =
+      tu_bo_init(dev, base, bo, req.handle, size, iova, flags, name);
 
    if (result == VK_SUCCESS) {
       *out_bo = bo;
@@ -853,8 +877,12 @@ msm_bo_init(struct tu_device *dev,
          TU_RMV(internal_resource_create, dev, bo);
          TU_RMV(resource_name, dev, bo, name);
       }
-   } else
+   } else {
+      msm_vma_lock(dev);
+      util_vma_heap_free(&dev->vma, iova, size);
+      msm_vma_unlock(dev);
       memset(bo, 0, sizeof(*bo));
+   }
 
    /* We don't use bo->name here because for the !TU_DEBUG=bo case bo->name is NULL. */
    tu_bo_set_kernel_name(dev, bo, name);
@@ -898,22 +926,21 @@ msm_bo_init_dmabuf(struct tu_device *dev,
     * to happen in parallel.
     */
    u_rwlock_wrlock(&dev->dma_bo_lock);
-   msm_vma_lock(dev);
 
    uint32_t gem_handle;
    int ret = drmPrimeFDToHandle(dev->fd, prime_fd,
                                 &gem_handle);
    if (ret) {
-      msm_vma_unlock(dev);
       u_rwlock_wrunlock(&dev->dma_bo_lock);
       return vk_error(dev, VK_ERROR_INVALID_EXTERNAL_HANDLE);
    }
+
+   uint64_t iova;
 
    struct tu_bo* bo = tu_device_lookup_bo(dev, gem_handle);
 
    if (bo->refcnt != 0) {
       p_atomic_inc(&bo->refcnt);
-      msm_vma_unlock(dev);
       u_rwlock_wrunlock(&dev->dma_bo_lock);
 
       *out_bo = bo;
@@ -921,16 +948,27 @@ msm_bo_init_dmabuf(struct tu_device *dev,
    }
 
    VkResult result =
-      tu_bo_init(dev, NULL, bo, gem_handle, size, 0, TU_BO_ALLOC_DMABUF, "dmabuf");
+      tu_allocate_iova(dev, gem_handle, size, 0, TU_BO_ALLOC_DMABUF, &iova);
 
-   if (result != VK_SUCCESS)
+   if (result != VK_SUCCESS) {
+      tu_gem_close(dev, gem_handle);
+      goto out_unlock;
+   }
+
+   result =
+      tu_bo_init(dev, NULL, bo, gem_handle, size, iova, TU_BO_ALLOC_DMABUF, "dmabuf");
+
+   if (result != VK_SUCCESS) {
+      msm_vma_lock(dev);
+      util_vma_heap_free(&dev->vma, iova, size);
+      msm_vma_unlock(dev);
       memset(bo, 0, sizeof(*bo));
-   else
+   } else {
       *out_bo = bo;
+   }
 
-   msm_vma_unlock(dev);
+out_unlock:
    u_rwlock_wrunlock(&dev->dma_bo_lock);
-
    return result;
 }
 
