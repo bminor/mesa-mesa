@@ -888,19 +888,8 @@ AssamblerVisitor::visit(const IfInstr& instr)
 
    auto pred = instr.predicate();
    auto [addr, dummy0, dummy1] = pred->indirect_addr();
-   {
-   }
    assert(!dummy1);
-   if (addr) {
-      if (!m_last_addr || !m_bc->ar_loaded || !m_last_addr->equal_to(*addr)) {
-         m_bc->ar_reg = addr->sel();
-         m_bc->ar_chan = addr->chan();
-         m_last_addr = addr;
-         m_bc->ar_loaded = 0;
-
-         r600_load_ar(m_bc, true);
-      }
-   }
+   assert(!addr);
 
    if (needs_workaround) {
       r600_bytecode_add_cfinst(m_bc, CF_OP_PUSH);
