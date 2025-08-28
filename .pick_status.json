@@ -1974,7 +1974,7 @@
         "description": "anv: temporary disable KHR_maintenance8",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "47cfc7708518665dc8d830c277c082046c477d0e",
         "notes": null
