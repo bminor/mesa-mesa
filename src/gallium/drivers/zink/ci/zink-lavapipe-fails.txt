@@ -132,3 +132,11 @@ wayland-dEQP-EGL.functional.resize.surface_size.grow,Fail
 wayland-dEQP-EGL.functional.resize.surface_size.shrink,Fail
 wayland-dEQP-EGL.functional.resize.surface_size.stretch_height,Fail
 wayland-dEQP-EGL.functional.resize.surface_size.stretch_width,Fail
+
+# Failing since https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/37024
+# It got merged since this weird job succeeded without running any tests:
+#  https://gitlab.freedesktop.org/mesa/mesa/-/jobs/83398228
+spec@arb_depth_buffer_float@fbo-clear-formats stencil,Fail
+spec@arb_depth_buffer_float@fbo-clear-formats stencil@GL_DEPTH32F_STENCIL8,Fail
+spec@ext_packed_depth_stencil@fbo-clear-formats stencil,Fail
+spec@ext_packed_depth_stencil@fbo-clear-formats stencil@GL_DEPTH_STENCIL,Fail
