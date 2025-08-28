@@ -1439,13 +1439,19 @@ void Shader::InstructionChain::visit(AluInstr *instr)
       if (last_ssbo_instr)
          instr->add_required_instr(last_ssbo_instr);
    }
-
 }
 
 void
 Shader::InstructionChain::visit(ScratchIOInstr *instr)
 {
    apply(instr, &last_scratch_instr);
+}
+
+void
+Shader::InstructionChain::visit(IfInstr *instr)
+{
+   if (last_group_barrier)
+      instr->predicate()->add_required_instr(last_group_barrier);
 }
 
 void
