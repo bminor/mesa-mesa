@@ -974,6 +974,13 @@ panfrost_fence_server_sync(struct pipe_context *pctx,
    close(fd);
 }
 
+static const struct debug_named_value panfrost_prio_options[] = {
+   {"low",        PIPE_CONTEXT_LOW_PRIORITY,       "low prio"},
+   {"high",       PIPE_CONTEXT_HIGH_PRIORITY,      "high prio"},
+   {"rt",         PIPE_CONTEXT_REALTIME_PRIORITY,  "real-time prio"},
+   DEBUG_NAMED_VALUE_END
+};
+
 struct pipe_context *
 panfrost_create_context(struct pipe_screen *screen, void *priv, unsigned flags)
 {
@@ -981,6 +988,15 @@ panfrost_create_context(struct pipe_screen *screen, void *priv, unsigned flags)
 
    if (!ctx)
       return NULL;
+
+   unsigned prio =
+      debug_get_flags_option("PAN_MESA_PRIO", panfrost_prio_options, 0);
+
+   if (prio) {
+      flags &= (PIPE_CONTEXT_LOW_PRIORITY | PIPE_CONTEXT_HIGH_PRIORITY |
+                PIPE_CONTEXT_REALTIME_PRIORITY);
+      flags |= prio;
+   }
 
    ctx->flags = flags;
 
