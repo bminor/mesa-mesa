@@ -204,17 +204,13 @@ destroy_shim(void)
 static void
 init_shim(void)
 {
-   static bool inited = false;
+   static uint32_t inited = 0;
+
    drm_shim_debug = debug_get_bool_option("DRM_SHIM_DEBUG", false);
 
    /* We can't lock this, because we recurse during initialization. */
-   if (inited)
+   if (p_atomic_cmpxchg(&inited, 0, 1))
       return;
-
-   /* This comes first (and we're locked), to make sure we don't recurse
-    * during initialization.
-    */
-   inited = true;
 
    opendir_set = _mesa_set_create(NULL,
                                   _mesa_hash_string,
