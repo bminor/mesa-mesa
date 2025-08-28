@@ -42,7 +42,7 @@ tu_cmd_buffer_setup_status_tracking(struct tu_device *device)
       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
          VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-      TU_BO_ALLOC_INTERNAL_RESOURCE, "cmd_buffer_status");
+      TU_BO_ALLOC_INTERNAL_RESOURCE, NULL, "cmd_buffer_status");
    if (result != VK_SUCCESS)
       return NULL;
 

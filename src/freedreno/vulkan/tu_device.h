@@ -132,6 +132,8 @@ struct tu_physical_device
    bool has_sparse;
    /* Whether TU_SPARSE_VMA_MAP_ZERO can be used. */
    bool has_sparse_prr;
+   /* Whether lazy allocations are supported. */
+   bool has_lazy_bos;
    uint64_t va_start;
    uint64_t va_size;
 
@@ -654,7 +656,7 @@ tu_bo_init_new_cached(struct tu_device *dev, struct vk_object_base *base,
          VK_MEMORY_PROPERTY_HOST_COHERENT_BIT |
          (dev->physical_device->has_cached_coherent_memory ? 
           VK_MEMORY_PROPERTY_HOST_CACHED_BIT : 0),
-      flags, name);
+      flags, NULL, name);
 }
 
 

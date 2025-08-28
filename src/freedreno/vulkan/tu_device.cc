@@ -3306,7 +3306,7 @@ tu_AllocateMemory(VkDevice _device,
          device->physical_device->memory.types[pAllocateInfo->memoryTypeIndex];
       result = tu_bo_init_new_explicit_iova(
          device, &mem->vk.base, &mem->bo, pAllocateInfo->allocationSize,
-         client_address, mem_property, alloc_flags, name);
+         client_address, mem_property, alloc_flags, NULL, name);
    }
 
    if (result == VK_SUCCESS) {

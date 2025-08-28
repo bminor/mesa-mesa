@@ -57,6 +57,7 @@ struct tu_bo {
    bool implicit_sync : 1;
    bool never_unmap : 1;
    bool cached_non_coherent : 1;
+   bool lazy : 1;
 
    bool dump;
 
@@ -67,6 +68,7 @@ struct tu_bo {
 };
 
 enum tu_sparse_vma_flags {
+   TU_SPARSE_VMA_NONE = 0,
    TU_SPARSE_VMA_REPLAYABLE = 1 << 0,
 
    /* Make unmapped pages in the memory region map to the PRR NULL page. This
@@ -120,10 +122,13 @@ struct tu_knl {
    VkResult (*bo_init)(struct tu_device *dev, struct vk_object_base *base,
                        struct tu_bo **out_bo, uint64_t size, uint64_t client_iova,
                        VkMemoryPropertyFlags mem_property,
-                       enum tu_bo_alloc_flags flags, const char *name);
+                       enum tu_bo_alloc_flags flags,
+                       struct tu_sparse_vma *lazy_vma,
+                       const char *name);
    VkResult (*bo_init_dmabuf)(struct tu_device *dev, struct tu_bo **out_bo,
                               uint64_t size, int prime_fd);
    int (*bo_export_dmabuf)(struct tu_device *dev, struct tu_bo *bo);
+   VkResult (*bo_alloc_lazy)(struct tu_device *dev, struct tu_bo *bo);
    VkResult (*bo_map)(struct tu_device *dev, struct tu_bo *bo, void *placed_addr);
    void (*bo_allow_dump)(struct tu_device *dev, struct tu_bo *bo);
    void (*bo_finish)(struct tu_device *dev, struct tu_bo *bo);
@@ -177,6 +182,7 @@ tu_bo_init_new_explicit_iova(struct tu_device *dev,
                              uint64_t client_iova,
                              VkMemoryPropertyFlags mem_property,
                              enum tu_bo_alloc_flags flags,
+                             struct tu_sparse_vma *lazy_vma,
                              const char *name);
 
 static inline VkResult
@@ -189,7 +195,7 @@ tu_bo_init_new(struct tu_device *dev, struct vk_object_base *base,
       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
          VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-      flags, name);
+      flags, NULL, name);
 }
 
 VkResult

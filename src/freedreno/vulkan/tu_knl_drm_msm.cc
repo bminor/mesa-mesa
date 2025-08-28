@@ -822,13 +822,17 @@ msm_bo_init(struct tu_device *dev,
             uint64_t client_iova,
             VkMemoryPropertyFlags mem_property,
             enum tu_bo_alloc_flags flags,
+            struct tu_sparse_vma *lazy_vma,
             const char *name)
 {
    MESA_TRACE_FUNC();
-   VkResult result;
+   VkResult result = VK_SUCCESS;
    uint64_t iova;
 
-   result = tu_allocate_iova(dev, 0, size, client_iova, flags, &iova);
+   if (lazy_vma)
+      iova = lazy_vma->msm.iova;
+   else
+      result = tu_allocate_iova(dev, 0, size, client_iova, flags, &iova);
 
    if (result != VK_SUCCESS)
       return result;
@@ -857,9 +861,11 @@ msm_bo_init(struct tu_device *dev,
    int ret = drmCommandWriteRead(dev->fd,
                                  DRM_MSM_GEM_NEW, &req, sizeof(req));
    if (ret) {
-      msm_vma_lock(dev);
-      util_vma_heap_free(&dev->vma, iova, size);
-      msm_vma_unlock(dev);
+      if (!lazy_vma) {
+         msm_vma_lock(dev);
+         util_vma_heap_free(&dev->vma, iova, size);
+         msm_vma_unlock(dev);
+      }
       return vk_error(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY);
    }
 
@@ -877,10 +883,13 @@ msm_bo_init(struct tu_device *dev,
          TU_RMV(internal_resource_create, dev, bo);
          TU_RMV(resource_name, dev, bo, name);
       }
+      bo->lazy = !!lazy_vma;
    } else {
-      msm_vma_lock(dev);
-      util_vma_heap_free(&dev->vma, iova, size);
-      msm_vma_unlock(dev);
+      if (!lazy_vma) {
+         msm_vma_lock(dev);
+         util_vma_heap_free(&dev->vma, iova, size);
+         msm_vma_unlock(dev);
+      }
       memset(bo, 0, sizeof(*bo));
    }
 
@@ -1084,12 +1093,14 @@ msm_bo_finish(struct tu_device *dev, struct tu_bo *bo)
    TU_RMV(bo_destroy, dev, bo);
 
    if (dev->physical_device->has_vm_bind) {
-      tu_map_vm_bind(dev, MSM_VM_BIND_OP_UNMAP, 0, bo->iova, 0, 0,
-                     bo->size);
+      if (!bo->lazy) {
+         tu_map_vm_bind(dev, MSM_VM_BIND_OP_UNMAP, 0, bo->iova, 0, 0,
+                        bo->size);
 
-      mtx_lock(&dev->vma_mutex);
-      util_vma_heap_free(&dev->vma, bo->iova, bo->size);
-      mtx_unlock(&dev->vma_mutex);
+         mtx_lock(&dev->vma_mutex);
+         util_vma_heap_free(&dev->vma, bo->iova, bo->size);
+         mtx_unlock(&dev->vma_mutex);
+      }
 
       msm_bo_gem_close(dev, bo);
    } else if (dev->physical_device->has_set_iova) {
@@ -1119,15 +1130,14 @@ msm_sparse_vma_init(struct tu_device *dev,
 
    out_vma->msm.size = size;
 
-   mtx_lock(&dev->vma_mutex);
-   result = tu_allocate_userspace_iova(dev, size, client_iova, bo_flags,
-                                       &out_vma->msm.iova);
-   mtx_unlock(&dev->vma_mutex);
+   result = tu_allocate_iova(dev, 0, size, client_iova, bo_flags,
+                             &out_vma->msm.iova);
 
    if (result != VK_SUCCESS)
       return result;
 
    if (flags & TU_SPARSE_VMA_MAP_ZERO) {
+      assert(dev->physical_device->has_vm_bind);
       result = tu_map_vm_bind(dev, MSM_VM_BIND_OP_MAP_NULL, 0,
                               out_vma->msm.iova, 0, 0, size);
    }
@@ -1141,8 +1151,10 @@ static void
 msm_sparse_vma_finish(struct tu_device *dev,
                       struct tu_sparse_vma *vma)
 {
-   tu_map_vm_bind(dev, MSM_VM_BIND_OP_UNMAP, 0, vma->msm.iova, 0, 0,
-                  vma->msm.size);
+   if (dev->physical_device->has_vm_bind) {
+      tu_map_vm_bind(dev, MSM_VM_BIND_OP_UNMAP, 0, vma->msm.iova, 0, 0,
+                     vma->msm.size);
+   }
 
    mtx_lock(&dev->vma_mutex);
    util_vma_heap_free(&dev->vma, vma->msm.iova, vma->msm.size);
@@ -1549,6 +1561,7 @@ tu_knl_drm_msm_load(struct tu_instance *instance,
 
    device->has_set_iova = !tu_drm_get_va_prop(device, &device->va_start,
                                               &device->va_size);
+   device->has_lazy_bos = device->has_set_iova;
    device->has_raytracing = tu_drm_get_raytracing(device);
    device->has_sparse_prr = tu_drm_get_prr(device);
 

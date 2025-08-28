@@ -35,7 +35,9 @@ tu_bo_init_new_explicit_iova(struct tu_device *dev,
                              uint64_t size,
                              uint64_t client_iova,
                              VkMemoryPropertyFlags mem_property,
-                             enum tu_bo_alloc_flags flags, const char *name)
+                             enum tu_bo_alloc_flags flags,
+                             struct tu_sparse_vma *lazy_vma,
+                             const char *name)
 {
    MESA_TRACE_FUNC();
    struct tu_instance *instance = dev->physical_device->instance;
@@ -44,7 +46,7 @@ tu_bo_init_new_explicit_iova(struct tu_device *dev,
 
    VkResult result =
       dev->instance->knl->bo_init(dev, base, out_bo, size, client_iova,
-                                  mem_property, flags, name);
+                                  mem_property, flags, lazy_vma, name);
    if (result != VK_SUCCESS)
       return result;
 

@@ -198,6 +198,39 @@ kgsl_bo_user_map(struct tu_device *dev, struct tu_bo *bo, uint64_t client_iova)
 }
 
 static VkResult
+kgsl_sparse_vma_map(struct tu_device *dev,
+                    struct tu_sparse_vma *vma,
+                    struct tu_bo *bo, uint64_t bo_offset)
+{
+   struct kgsl_gpumem_bind_range range = {
+      .child_offset = bo_offset,
+      .target_offset = 0,
+      .length = vma->kgsl.virtual_bo->size,
+      .child_id = bo->gem_handle,
+      .op = KGSL_GPUMEM_RANGE_OP_BIND,
+   };
+
+   struct kgsl_gpumem_bind_ranges req = {
+      .ranges = (uint64_t)(uintptr_t)&range,
+      .ranges_nents = 1,
+      .ranges_size = sizeof(range),
+      .id = vma->kgsl.virtual_bo->gem_handle,
+      .flags = 0,
+   };
+
+   int ret;
+
+   ret = safe_ioctl(dev->physical_device->local_fd,
+                    IOCTL_KGSL_GPUMEM_BIND_RANGES, &req);
+   if (ret) {
+      return vk_errorf(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY,
+                       "GPUMEM_BIND_RANGES failed (%s)", strerror(errno));
+   }
+
+   return VK_SUCCESS;
+}
+
+static VkResult
 kgsl_bo_init(struct tu_device *dev,
              struct vk_object_base *base,
              struct tu_bo **out_bo,
@@ -205,6 +238,7 @@ kgsl_bo_init(struct tu_device *dev,
              uint64_t client_iova,
              VkMemoryPropertyFlags mem_property,
              enum tu_bo_alloc_flags flags,
+             struct tu_sparse_vma *lazy_vma,
              const char *name)
 {
    if (flags & TU_BO_ALLOC_SHAREABLE) {
@@ -269,11 +303,16 @@ kgsl_bo_init(struct tu_device *dev,
       .base = base,
    };
 
-   if (flags & TU_BO_ALLOC_REPLAYABLE) {
-      VkResult result = kgsl_bo_user_map(dev, bo, client_iova);
-      if (result != VK_SUCCESS)
-         return result;
+   VkResult result = VK_SUCCESS;
+
+   if (lazy_vma) {
+      result = kgsl_sparse_vma_map(dev, lazy_vma, bo, 0);
+   } else if (flags & TU_BO_ALLOC_REPLAYABLE) {
+      result = kgsl_bo_user_map(dev, bo, client_iova);
    }
+
+   if (result != VK_SUCCESS)
+      return result;
 
    tu_dump_bo_init(dev, bo);
 
@@ -475,39 +514,6 @@ kgsl_sparse_vma_init(struct tu_device *dev,
 
    out_vma->kgsl.virtual_bo = bo;
    *out_iova = bo->iova;
-   return VK_SUCCESS;
-}
-
-static VkResult
-kgsl_sparse_vma_map(struct tu_device *dev,
-                    struct tu_sparse_vma *vma,
-                    struct tu_bo *bo, uint64_t bo_offset)
-{
-   struct kgsl_gpumem_bind_range range = {
-      .child_offset = bo_offset,
-      .target_offset = 0,
-      .length = vma->kgsl.virtual_bo->size,
-      .child_id = bo->gem_handle,
-      .op = KGSL_GPUMEM_RANGE_OP_BIND,
-   };
-
-   struct kgsl_gpumem_bind_ranges req = {
-      .ranges = (uint64_t)(uintptr_t)&range,
-      .ranges_nents = 1,
-      .ranges_size = sizeof(range),
-      .id = vma->kgsl.virtual_bo->gem_handle,
-      .flags = 0,
-   };
-
-   int ret;
-
-   ret = safe_ioctl(dev->physical_device->local_fd,
-                    IOCTL_KGSL_GPUMEM_BIND_RANGES, &req);
-   if (ret) {
-      return vk_errorf(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY,
-                       "GPUMEM_BIND_RANGES failed (%s)", strerror(errno));
-   }
-
    return VK_SUCCESS;
 }
 
@@ -1809,6 +1815,7 @@ tu_knl_kgsl_load(struct tu_instance *instance, int fd)
 
    device->has_sparse = kgsl_is_virtual_bo_supported(fd);
    device->has_sparse_prr = device->has_sparse;
+   device->has_lazy_bos = device->has_sparse;
    get_kgsl_prop(fd, KGSL_PROP_GPU_VA64_SIZE, &device->va_size,
                  sizeof(device->va_size));
    /* We don't actually use the VMA, but set a fake offset so that it doesn't
