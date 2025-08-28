@@ -1774,9 +1774,12 @@ static void
 update_binds_for_samplerviews(struct zink_context *ctx, struct zink_resource *res, bool is_compute)
 {
     VkImageLayout layout = get_layout_for_binding(ctx, res, ZINK_DESCRIPTOR_TYPE_SAMPLER_VIEW, is_compute);
+    bool compute_rebind = false;
+    bool gfx_rebind = false;
     if (is_compute) {
       u_foreach_bit(slot, res->sampler_binds[MESA_SHADER_COMPUTE]) {
          if (ctx->di.textures[MESA_SHADER_COMPUTE][slot].imageLayout != layout) {
+            compute_rebind = true;
             update_descriptor_state_sampler(ctx, MESA_SHADER_COMPUTE, slot, res);
             ctx->invalidate_descriptor_state(ctx, MESA_SHADER_COMPUTE, ZINK_DESCRIPTOR_TYPE_SAMPLER_VIEW, slot, 1);
          }
@@ -1785,12 +1788,17 @@ update_binds_for_samplerviews(struct zink_context *ctx, struct zink_resource *re
       for (unsigned i = 0; i < ZINK_GFX_SHADER_COUNT; i++) {
          u_foreach_bit(slot, res->sampler_binds[i]) {
             if (ctx->di.textures[i][slot].imageLayout != layout) {
+               gfx_rebind = true;
                update_descriptor_state_sampler(ctx, i, slot, res);
                ctx->invalidate_descriptor_state(ctx, i, ZINK_DESCRIPTOR_TYPE_SAMPLER_VIEW, slot, 1);
             }
          }
       }
     }
+    if (gfx_rebind)
+      _mesa_set_add(ctx->need_barriers[0], res);
+    if (compute_rebind)
+      _mesa_set_add(ctx->need_barriers[1], res);
 }
 
 static void
