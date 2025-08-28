@@ -1248,7 +1248,6 @@ int r600_bytecode_add_alu_type(struct r600_bytecode *bc,
 		const struct r600_bytecode_alu *alu, unsigned type)
 {
 	struct r600_bytecode_alu *nalu = r600_bytecode_alu();
-	struct r600_bytecode_alu *lalu;
 	int i, r;
 
 	if (!nalu)
@@ -1260,22 +1259,12 @@ int r600_bytecode_add_alu_type(struct r600_bytecode *bc,
 		assert(!alu->src[0].abs && !alu->src[1].abs && !alu->src[2].abs);
 	}
 
-	if (bc->cf_last != NULL && bc->cf_last->op != type) {
+	if (bc->cf_last != NULL && bc->cf_last->op != type && !bc->force_add_cf) {
 		/* check if we could add it anyway */
-		if ((bc->cf_last->op == CF_OP_ALU && type == CF_OP_ALU_PUSH_BEFORE) ||
-		 	(bc->cf_last->op == CF_OP_ALU_PUSH_BEFORE && type == CF_OP_ALU)) {
-		 	LIST_FOR_EACH_ENTRY(lalu, &bc->cf_last->alu, list) {
-		 		if (lalu->execute_mask) {
-                                        assert(bc->force_add_cf || !"no force cf");
-					bc->force_add_cf = 1;
-					break;
-				}
-		 		type = CF_OP_ALU_PUSH_BEFORE;
-			}
-		} else  {
-                   assert(bc->force_add_cf ||!"no force cf");
-			bc->force_add_cf = 1;
-                }
+		if (bc->cf_last->op == CF_OP_ALU_PUSH_BEFORE && type == CF_OP_ALU)
+			type = CF_OP_ALU_PUSH_BEFORE;
+		else
+			assert(!"Try adding ALU with unsipported CF type to ALU_PUSH_BEFORE");
 	}
 
 	/* cf can contains only alu or only vtx or only tex */

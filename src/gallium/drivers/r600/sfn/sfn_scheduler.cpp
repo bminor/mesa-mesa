@@ -72,6 +72,7 @@ public:
    {
       assert(!m_cf_instr);
       m_cf_instr = instr;
+      predicate = instr->predicate();
    }
 
    void visit(EmitVertexInstr *instr) override
@@ -121,6 +122,8 @@ public:
    std::list<Instr *> gds_instr;
    std::list<Instr *> waitacks;
 
+   AluInstr *predicate{nullptr};
+
    Instr *m_cf_instr{nullptr};
    ValueFactory& m_value_factory;
 
@@ -156,7 +159,8 @@ private:
    bool collect_ready_type(std::list<T *>& ready, std::list<T *>& orig);
 
    bool collect_ready_alu_vec(std::list<AluInstr *>& ready,
-                              std::list<AluInstr *>& available);
+                              std::list<AluInstr *>& available,
+                              AluInstr **predicate);
 
    bool schedule_tex(Shader::ShaderBlocks& out_blocks);
    bool schedule_vtx(Shader::ShaderBlocks& out_blocks);
@@ -500,10 +504,6 @@ BlockScheduler::schedule_block(Block& in_block,
    assert(!fail);
 
    if (cir.m_cf_instr) {
-      // Assert that if condition is ready
-      if (m_current_block->type() != Block::alu) {
-         start_new_block(out_blocks, Block::alu);
-      }
       m_current_block->push_back(cir.m_cf_instr);
       cir.m_cf_instr->set_scheduled();
    }
@@ -787,18 +787,13 @@ BlockScheduler::start_new_block(Shader::ShaderBlocks& out_blocks, Block::Type ty
 
 void BlockScheduler::maybe_split_alu_block(Shader::ShaderBlocks& out_blocks)
 {
-   // TODO: needs fixing
-   if (m_current_block->remaining_slots() > 0) {
-      out_blocks.push_back(m_current_block);
-      return;
-   }
 
    int used_slots = 0;
    int pending_slots = 0;
 
    Instr *next_block_start = nullptr;
    for (auto cur_group : *m_current_block) {
-      /* This limit is a bit fishy, it should be 128 */
+
       if (used_slots + pending_slots + cur_group->slots() < 128) {
          if (cur_group->can_start_alu_block()) {
             next_block_start = cur_group;
@@ -843,6 +838,8 @@ void BlockScheduler::maybe_split_alu_block(Shader::ShaderBlocks& out_blocks)
       if (group->has_lds_group_end())
          sub_block->lds_group_end();
 
+      if (group->require_push())
+         sub_block->cf_start()->promote_alu_cf(ControlFlowInstr::cf_alu_push_before);
    }
    if (!sub_block->empty())
       out_blocks.push_back(sub_block);
@@ -1137,7 +1134,6 @@ BlockScheduler::collect_ready(CollectInstructions& available)
 {
    sfn_log << SfnLog::schedule << "Ready instructions\n";
    bool result = false;
-   result |= collect_ready_alu_vec(alu_vec_ready, available.alu_vec);
    result |= collect_ready_type(alu_trans_ready, available.alu_trans);
    result |= collect_ready_type(alu_multi_slot_ready, available.alu_multi_slot);
    result |= collect_ready_type(alu_groups_ready, available.alu_groups);
@@ -1147,13 +1143,22 @@ BlockScheduler::collect_ready(CollectInstructions& available)
    result |= collect_ready_type(free_ready, available.free_instr);
    result |= collect_ready_type(waitacks_ready, available.waitacks);
 
+   if (!result && available.predicate && available.alu_groups.empty() &&
+       available.gds_instr.empty() && available.tex.empty() &&
+       available.fetches.empty() && available.free_instr.empty())
+      result |=
+         collect_ready_alu_vec(alu_vec_ready, available.alu_vec, &available.predicate);
+   else
+      result |= collect_ready_alu_vec(alu_vec_ready, available.alu_vec, nullptr);
+
    sfn_log << SfnLog::schedule << "\n";
    return result;
 }
 
 bool
 BlockScheduler::collect_ready_alu_vec(std::list<AluInstr *>& ready,
-                                     std::list<AluInstr *>& available)
+                                      std::list<AluInstr *>& available,
+                                      AluInstr **predicate)
 {
    auto i = available.begin();
    auto e = available.end();
@@ -1213,6 +1218,12 @@ BlockScheduler::collect_ready_alu_vec(std::list<AluInstr *>& ready,
          available.erase(old_i);
       } else
          ++i;
+   }
+
+   if (predicate && *predicate && available.empty() && ready.size() < 16 &&
+       (*predicate)->ready()) {
+      ready.push_back(*predicate);
+      *predicate = nullptr;
    }
 
    for (auto& i : ready)

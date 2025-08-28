@@ -361,15 +361,14 @@ AssamblerVisitor::emit_alu_op(const AluInstr& ai)
    if (dst)
       sfn_log << SfnLog::assembly << "  Current dst register is " << *dst << "\n";
 
+   /*
    auto cf_op = ai.cf_type();
 
    unsigned type = 0;
    switch (cf_op) {
    case cf_alu:
-      type = CF_OP_ALU;
-      break;
    case cf_alu_push_before:
-      type = CF_OP_ALU_PUSH_BEFORE;
+      type = CF_OP_ALU;
       break;
    case cf_alu_pop_after:
       type = CF_OP_ALU_POP_AFTER;
@@ -392,11 +391,11 @@ AssamblerVisitor::emit_alu_op(const AluInstr& ai)
    default:
       assert(0 && "cf_alu_undefined should have been replaced");
    }
-
+*/
    if (alu.last)
       m_nliterals_in_group.clear();
 
-   m_result = !r600_bytecode_add_alu_type(m_bc, &alu, type);
+   m_result = !r600_bytecode_add_alu(m_bc, &alu);
 
    if (unlikely(ai.opcode() == op1_mova_int)) {
       if (m_bc->gfx_level < CAYMAN || alu.dst.sel == 0) {
@@ -851,7 +850,9 @@ AssamblerVisitor::visit(const Block& block)
    if (block.empty())
       return;
 
-   if (block.has_instr_flag(Instr::force_cf)) {
+   if (block.cf_start())
+      block.cf_start()->accept(*this);
+   else if (block.has_instr_flag(Instr::force_cf)) {
       m_bc->force_add_cf = 1;
       m_bc->ar_loaded = 0;
       m_last_addr = nullptr;
@@ -874,14 +875,11 @@ AssamblerVisitor::visit(const Block& block)
 void
 AssamblerVisitor::visit(const IfInstr& instr)
 {
-   emit_alu_push_before();
 
    auto pred = instr.predicate();
    auto [addr, dummy0, dummy1] = pred->indirect_addr();
    assert(!dummy1);
    assert(!addr);
-
-   pred->accept(*this);
 
    r600_bytecode_add_cfinst(m_bc, CF_OP_JUMP);
    clear_states(sf_all);
@@ -892,6 +890,8 @@ AssamblerVisitor::visit(const IfInstr& instr)
 void
 AssamblerVisitor::visit(const ControlFlowInstr& instr)
 {
+   sfn_log << SfnLog::assembly << "Translate " << instr << " ";
+
    clear_states(sf_all);
    switch (instr.cf_type()) {
    case ControlFlowInstr::cf_else:
@@ -926,6 +926,21 @@ AssamblerVisitor::visit(const ControlFlowInstr& instr)
          m_result = false;
       }
    } break;
+   case ControlFlowInstr::cf_alu:
+      r600_bytecode_add_cfinst(m_bc, CF_OP_ALU);
+      break;
+   case ControlFlowInstr::cf_alu_push_before:
+      emit_alu_push_before();
+      break;
+   case ControlFlowInstr::cf_gds:
+      r600_bytecode_add_cfinst(m_bc, CF_OP_GDS);
+      break;
+   case ControlFlowInstr::cf_tex:
+      r600_bytecode_add_cfinst(m_bc, CF_OP_TEX);
+      break;
+   case ControlFlowInstr::cf_vtx:
+      r600_bytecode_add_cfinst(m_bc, CF_OP_VTX);
+      break;
    default:
       UNREACHABLE("Unknown CF instruction type");
    }

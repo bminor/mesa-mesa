@@ -374,7 +374,6 @@ LiveRangeInstrVisitor::visit(IfInstr *instr)
 {
    int b = m_block;
    m_block = -1;
-   instr->predicate()->accept(*this);
    scope_if();
    m_block = b;
 }
