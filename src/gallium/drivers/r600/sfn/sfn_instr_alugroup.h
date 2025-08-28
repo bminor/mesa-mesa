@@ -87,6 +87,8 @@ public:
 
    AluGroup *as_alu_group() override { return this;}
 
+   bool require_push() const;
+
 private:
    bool update_readport_reserver_vec(int i, AluReadportReservation& readports_evaluator);
    bool update_readport_reserver_trans(AluReadportReservation& readports_evaluator);

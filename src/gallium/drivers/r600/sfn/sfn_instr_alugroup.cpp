@@ -136,6 +136,17 @@ AluGroup::add_trans_instructions(AluInstr *instr)
 }
 
 bool
+AluGroup::require_push() const
+{
+   for (auto& i : m_slots) {
+      if (i)
+         if (i->cf_type() == cf_alu_push_before)
+            return true;
+   }
+   return false;
+}
+
+bool
 AluGroup::add_vec_instructions(AluInstr *instr)
 {   
    int param_src = -1;
