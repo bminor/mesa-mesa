@@ -14,3 +14,4 @@ VK_KHR_maintenance9 on NVK
 cl_khr_semaphore on radeonsi and zink
 cl_khr_external_semaphore on radeonsi and zink
 cl_khr_external_semaphore_sync_fd on radeonsi and zink
+GL_NV_shader_atomic_int64 on radeonsi and Panfrost V9+

@@ -209,6 +209,7 @@ GL 4.4, GLSL 4.40 -- all DONE: freedreno/a6xx, nvc0, r600, radeonsi, llvmpipe, v
   GL_ARB_texture_mirror_clamp_to_edge                   DONE (freedreno, nv50, softpipe, v3d, panfrost, crocus)
   GL_ARB_texture_stencil8                               DONE (freedreno, nv50, softpipe, v3d, panfrost)
   GL_ARB_vertex_type_10f_11f_11f_rev                    DONE (freedreno, nv50, softpipe, panfrost, crocus)
+  GL_NV_shader_atomic_int64                             DONE (radeonsi, panfrost/v9+)
 
 GL 4.5, GLSL 4.50 -- all DONE: freedreno/a6xx, nvc0, r600, radeonsi, llvmpipe, virgl, zink, iris, crocus/gen7.5+, d3d12, asahi
 

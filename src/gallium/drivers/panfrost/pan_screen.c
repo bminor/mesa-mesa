@@ -910,6 +910,8 @@ panfrost_init_screen_caps(struct panfrost_screen *screen)
    caps->max_texture_anisotropy = 16.0;
 
    caps->max_texture_lod_bias = 16.0; /* arbitrary */
+
+   caps->shader_atomic_int64 = dev->arch >= 9;
 }
 
 static void
