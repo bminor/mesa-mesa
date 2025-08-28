@@ -241,6 +241,7 @@ struct panfrost_context {
 
    union {
       struct panfrost_csf_context csf;
+      struct panfrost_jm_context jm;
    };
 
    struct {

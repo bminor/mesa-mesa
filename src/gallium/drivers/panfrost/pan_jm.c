@@ -86,7 +86,7 @@ jm_submit_jc(struct panfrost_batch *batch, uint64_t first_job_desc,
    struct pipe_context *gallium = (struct pipe_context *)ctx;
    struct panfrost_device *dev = pan_device(gallium->screen);
    struct drm_panfrost_submit submit = {
-      0,
+      .jm_ctx_handle = ctx->jm.handle,
    };
    uint32_t in_syncs[1];
    uint32_t *bo_handles;
@@ -1031,4 +1031,56 @@ GENX(jm_emit_write_timestamp)(struct panfrost_batch *batch,
    pan_jc_add_job(&batch->jm.jobs.vtc_jc, MALI_JOB_TYPE_WRITE_VALUE, false,
                   false, 0, 0, &job, false);
    panfrost_batch_write_rsrc(batch, dst, MESA_SHADER_VERTEX);
+}
+
+int
+GENX(jm_init_context)(struct panfrost_context *ctx)
+{
+   /* The default context is medium prio, so we use that one. */
+   if (!(ctx->flags &
+         (PIPE_CONTEXT_HIGH_PRIORITY | PIPE_CONTEXT_LOW_PRIORITY))) {
+      ctx->jm.handle = 0;
+      return 0;
+   }
+
+   struct panfrost_device *dev = pan_device(ctx->base.screen);
+   enum drm_panfrost_jm_ctx_priority prio;
+
+   if (ctx->flags & PIPE_CONTEXT_HIGH_PRIORITY)
+      prio = PANFROST_JM_CTX_PRIORITY_HIGH;
+   else if (ctx->flags & PIPE_CONTEXT_LOW_PRIORITY)
+      prio = PANFROST_JM_CTX_PRIORITY_LOW;
+   else
+      prio = PANFROST_JM_CTX_PRIORITY_MEDIUM;
+
+   struct drm_panfrost_jm_ctx_create args = {
+      .priority = prio,
+   };
+
+   int ret = ret = pan_kmod_ioctl(panfrost_device_fd(dev),
+                                  DRM_IOCTL_PANFROST_JM_CTX_CREATE,
+                                  &args);
+   if (ret)
+      return -1;
+
+   ctx->jm.handle = args.handle;
+   return 0;
+}
+
+void
+GENX(jm_cleanup_context)(struct panfrost_context *ctx)
+{
+   if (!ctx->jm.handle)
+      return;
+
+   struct panfrost_device *dev = pan_device(ctx->base.screen);
+   struct drm_panfrost_jm_ctx_destroy args = {
+      .handle = ctx->jm.handle,
+   };
+
+   ASSERTED int ret = pan_kmod_ioctl(panfrost_device_fd(dev),
+                                     DRM_IOCTL_PANFROST_JM_CTX_DESTROY,
+                                     &args);
+
+   assert(!ret);
 }
