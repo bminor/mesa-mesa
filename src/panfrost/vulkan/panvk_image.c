@@ -55,19 +55,33 @@ panvk_image_can_use_afbc(
 {
    unsigned arch = pan_arch(phys_dev->kmod.props.gpu_id);
    struct panvk_instance *instance = to_panvk_instance(phys_dev->vk.instance);
+   enum pipe_format pfmt = vk_format_to_pipe_format(fmt);
 
    /* Disallow AFBC if either of these is true
     * - PANVK_DEBUG does not have the 'afbc' flag set
     * - storage image views are requested
     * - host image copies are requested
+    * - the GPU doesn't support AFBC
+    * - the format is not AFBC-able
+    * - tiling is set to linear
+    * - this is a 1D image
+    * - this is a 3D image on a pre-v7 GPU
     * - this is a mutable format image on v7 (the BGR emulation we have with
     *   the texture swizzle gets in the way).
     *
-    * Other hardware constraints are checked by the mod handler.
+    * Some of these checks are redundant with tests provided by the AFBC mod
+    * handler when pan_image_test_props() is called, but we need them because
+    * panvk_image_can_use_afbc() is also called from
+    * GetPhysicalDeviceImageFormatProperties2() and we don't have enough
+    * information to conduct a full image property check in this context.
     */
    return (instance->debug_flags & PANVK_DEBUG_AFBC) &&
           !(usage &
             (VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_HOST_TRANSFER_BIT)) &&
+          pan_query_afbc(&phys_dev->kmod.props) &&
+          pan_afbc_supports_format(arch, pfmt) &&
+          tiling == VK_IMAGE_TILING_OPTIMAL && type != VK_IMAGE_TYPE_1D &&
+          (type != VK_IMAGE_TYPE_3D || arch >= 7) &&
           (!(flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) || arch != 7);
 }
 
