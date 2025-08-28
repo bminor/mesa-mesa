@@ -234,7 +234,7 @@ impl SendableQueueContext {
     }
 
     /// The returned value can be used to execute operation on the wrapped context in a safe manner.
-    fn ctx(&self) -> QueueContext {
+    fn ctx(&self) -> QueueContext<'_> {
         QueueContext {
             ctx: &self.ctx,
             dev: self.dev,

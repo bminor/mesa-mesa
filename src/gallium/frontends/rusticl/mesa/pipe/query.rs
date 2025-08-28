@@ -28,7 +28,7 @@ where
     PipeQueryGen<Q>: QueryResultTrait,
 {
     // The external interface to create a new query
-    pub fn new(ctx: &PipeContext) -> Option<PipeQuery<<Self as QueryResultTrait>::ResType>> {
+    pub fn new(ctx: &PipeContext) -> Option<PipeQuery<'_, <Self as QueryResultTrait>::ResType>> {
         PipeQuery::<<Self as QueryResultTrait>::ResType>::new(ctx, Q)
     }
 }

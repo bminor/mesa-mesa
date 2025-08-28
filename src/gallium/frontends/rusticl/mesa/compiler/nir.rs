@@ -279,7 +279,7 @@ impl NirShader {
         unsafe { nir_cleanup_functions(self.nir.as_ptr()) };
     }
 
-    pub fn variables(&mut self) -> ExecListIter<nir_variable> {
+    pub fn variables(&mut self) -> ExecListIter<'_, nir_variable> {
         ExecListIter::new(
             &mut unsafe { self.nir.as_mut() }.variables,
             offset_of!(nir_variable, node),

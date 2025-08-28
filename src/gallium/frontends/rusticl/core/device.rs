@@ -132,7 +132,7 @@ pub trait HelperContextWrapper {
         offset: i32,
         size: i32,
         rw: RWFlags,
-    ) -> Option<PipeTransfer>;
+    ) -> Option<PipeTransfer<'_>>;
     fn create_compute_state(&self, nir: &NirShader, static_local_mem: u32) -> *mut c_void;
     fn delete_compute_state(&self, cso: *mut c_void);
     fn compute_state_info(&self, state: *mut c_void) -> pipe_compute_state_object_info;
@@ -144,14 +144,14 @@ pub trait HelperContextWrapper {
         offset: i32,
         size: i32,
         rw: RWFlags,
-    ) -> Option<PipeTransfer>;
+    ) -> Option<PipeTransfer<'_>>;
 
     fn map_texture_unsynchronized(
         &self,
         res: &PipeResource,
         bx: &pipe_box,
         rw: RWFlags,
-    ) -> Option<PipeTransfer>;
+    ) -> Option<PipeTransfer<'_>>;
 
     fn is_create_fence_fd_supported(&self) -> bool;
     fn import_fence(&self, fence_fd: &FenceFd, fence_type: pipe_fd_type) -> CLResult<PipeFence>;
@@ -200,7 +200,7 @@ impl HelperContextWrapper for HelperContext<'_> {
         offset: i32,
         size: i32,
         rw: RWFlags,
-    ) -> Option<PipeTransfer> {
+    ) -> Option<PipeTransfer<'_>> {
         self.lock.buffer_map(res, offset, size, rw)
     }
 
@@ -226,7 +226,7 @@ impl HelperContextWrapper for HelperContext<'_> {
         offset: i32,
         size: i32,
         rw: RWFlags,
-    ) -> Option<PipeTransfer> {
+    ) -> Option<PipeTransfer<'_>> {
         self.lock.buffer_map_flags(
             res,
             offset,
@@ -240,7 +240,7 @@ impl HelperContextWrapper for HelperContext<'_> {
         res: &PipeResource,
         bx: &pipe_box,
         rw: RWFlags,
-    ) -> Option<PipeTransfer> {
+    ) -> Option<PipeTransfer<'_>> {
         self.lock
             .texture_map_flags(res, bx, pipe_map_flags::PIPE_MAP_UNSYNCHRONIZED | rw.into())
     }
@@ -1122,7 +1122,7 @@ impl DeviceBase {
         })
     }
 
-    fn reusable_ctx(&self) -> MutexGuard<Vec<PipeContext>> {
+    fn reusable_ctx(&self) -> MutexGuard<'_, Vec<PipeContext>> {
         self.reusable_ctx.lock().unwrap()
     }
 
