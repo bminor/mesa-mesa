@@ -61,8 +61,11 @@ public:
 
    void visit(ControlFlowInstr *instr) override
    {
-      assert(!m_cf_instr);
-      m_cf_instr = instr;
+      if (instr->cf_type() != ControlFlowInstr::cf_wait_ack) {
+         assert(!m_cf_instr);
+         m_cf_instr = instr;
+      } else
+         waitacks.push_back(instr);
    }
 
    void visit(IfInstr *instr) override
@@ -116,6 +119,7 @@ public:
    std::list<FetchInstr *> fetches;
    std::list<Instr *> free_instr;
    std::list<Instr *> gds_instr;
+   std::list<Instr *> waitacks;
 
    Instr *m_cf_instr{nullptr};
    ValueFactory& m_value_factory;
@@ -192,6 +196,7 @@ private:
    std::list<FetchInstr *> fetches_ready;
    std::list<Instr *> free_ready;
    std::list<Instr *> gds_ready;
+   std::list<Instr *> waitacks_ready;
 
    enum {
       sched_alu,
@@ -199,6 +204,7 @@ private:
       sched_fetch,
       sched_free,
       sched_gds,
+      sched_waitack,
    } current_shed;
 
    ExportInstr *m_last_pos;
@@ -338,6 +344,8 @@ BlockScheduler::schedule_block(Block& in_block,
          sfn_log << SfnLog::schedule << "  GENERIC:" << free_ready.size() << "\n";
       if (gds_ready.size())
          sfn_log << SfnLog::schedule << "  GDS:" << gds_ready.size() << "\n";
+      if (waitacks_ready.size())
+         sfn_log << SfnLog::schedule << "  WAITACK:" << waitacks_ready.size() << "\n";
 
       if (!m_current_block->lds_group_active() &&
           m_current_block->expected_ar_uses() == 0) {
@@ -348,6 +356,11 @@ BlockScheduler::schedule_block(Block& in_block,
       }
 
       switch (current_shed) {
+      case sched_waitack:
+         if (waitacks_ready.empty() || !schedule_cf(out_blocks, waitacks_ready)) {
+            current_shed = sched_alu;
+            break;
+         }
       case sched_alu:
          if (!schedule_alu(out_blocks, vf)) {
             assert(!m_current_block->lds_group_active());
@@ -386,6 +399,12 @@ BlockScheduler::schedule_block(Block& in_block,
       }
 
       have_instr = collect_ready(cir);
+
+      if (alu_vec_ready.empty() && alu_multi_slot_ready.empty() &&
+          alu_trans_ready.empty() && alu_groups_ready.empty() && tex_ready.empty() &&
+          exports_ready.empty() && fetches_ready.empty() && free_ready.empty() &&
+          gds_ready.empty())
+         current_shed = sched_waitack;
    }
 
    /* Emit exports always at end of a block */
@@ -1104,6 +1123,7 @@ BlockScheduler::collect_ready(CollectInstructions& available)
    result |= collect_ready_type(tex_ready, available.tex);
    result |= collect_ready_type(fetches_ready, available.fetches);
    result |= collect_ready_type(free_ready, available.free_instr);
+   result |= collect_ready_type(waitacks_ready, available.waitacks);
 
    sfn_log << SfnLog::schedule << "\n";
    return result;
