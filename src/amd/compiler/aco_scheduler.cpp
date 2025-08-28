@@ -1207,7 +1207,7 @@ void
 schedule_block(sched_ctx& ctx, Program* program, Block* block)
 {
    ctx.last_SMEM_dep_idx = 0;
-   ctx.last_VMEM_store_idx = INT_MAX;
+   ctx.last_VMEM_store_idx = INT_MIN;
    ctx.last_SMEM_stall = INT16_MIN;
    ctx.mv.block = block;
 
