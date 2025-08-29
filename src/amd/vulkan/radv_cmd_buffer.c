@@ -12462,17 +12462,6 @@ radv_before_taskmesh_draw(struct radv_cmd_buffer *cmd_buffer, const struct radv_
 
    radv_emit_all_graphics_states(cmd_buffer, info);
 
-   if (cmd_buffer->state.flush_bits)
-      radv_emit_cache_flush(cmd_buffer);
-
-   if (task_shader) {
-      radv_gang_cache_flush(cmd_buffer);
-
-      if (need_task_semaphore) {
-         radv_wait_gang_leader(cmd_buffer);
-      }
-   }
-
    struct radv_descriptor_state *descriptors_state =
       radv_get_descriptors_state(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 
@@ -12490,6 +12479,17 @@ radv_before_taskmesh_draw(struct radv_cmd_buffer *cmd_buffer, const struct radv_
 
       if (task_shader)
          radv_gfx12_emit_buffered_regs(device, cmd_buffer->gang.cs);
+   }
+
+   if (cmd_buffer->state.flush_bits)
+      radv_emit_cache_flush(cmd_buffer);
+
+   if (task_shader) {
+      radv_gang_cache_flush(cmd_buffer);
+
+      if (need_task_semaphore) {
+         radv_wait_gang_leader(cmd_buffer);
+      }
    }
 
    if (device->sqtt.bo && !dgc)
