@@ -8052,6 +8052,12 @@ radv_bind_pre_rast_shader(struct radv_cmd_buffer *cmd_buffer, const struct radv_
        radv_get_user_sgpr_info(shader, AC_UD_NGG_QUERY_BUF_VA)->sgpr_idx != -1)
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_NGG_STATE;
 
+   if (radv_get_user_sgpr_info(shader, AC_UD_NGGC_SETTINGS)->sgpr_idx != -1)
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_NGGC_SETTINGS;
+
+   if (radv_get_user_sgpr_info(shader, AC_UD_NGGC_VIEWPORT)->sgpr_idx != -1)
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_NGGC_VIEWPORT;
+
    if (radv_get_user_sgpr_info(shader, AC_UD_STREAMOUT_BUFFERS)->sgpr_idx != -1 ||
        radv_get_user_sgpr_info(shader, AC_UD_STREAMOUT_STATE)->sgpr_idx != -1) {
       /* Re-emit the streamout buffers because the SGPR idx can be different and with NGG streamout
@@ -10884,52 +10890,6 @@ radv_get_nggc_settings(struct radv_cmd_buffer *cmd_buffer, bool vp_y_inverted)
 }
 
 static void
-radv_emit_ngg_culling_state(struct radv_cmd_buffer *cmd_buffer)
-{
-   const struct radv_shader *last_vgt_shader = cmd_buffer->state.last_vgt_shader;
-
-   assert(last_vgt_shader->info.has_ngg_culling);
-
-   /* Get viewport transform. */
-   float vp_scale[2], vp_translate[2];
-   memcpy(vp_scale, cmd_buffer->state.dynamic.vp_xform[0].scale, 2 * sizeof(float));
-   memcpy(vp_translate, cmd_buffer->state.dynamic.vp_xform[0].translate, 2 * sizeof(float));
-   bool vp_y_inverted = (-vp_scale[1] + vp_translate[1]) > (vp_scale[1] + vp_translate[1]);
-
-   /* Get current culling settings. */
-   uint32_t nggc_settings = radv_get_nggc_settings(cmd_buffer, vp_y_inverted);
-
-   radeon_begin(cmd_buffer->cs);
-
-   if ((cmd_buffer->state.dirty & RADV_CMD_DIRTY_PIPELINE) ||
-       (cmd_buffer->state.dirty_dynamic &
-        (RADV_DYNAMIC_VIEWPORT | RADV_DYNAMIC_VIEWPORT_WITH_COUNT | RADV_DYNAMIC_RASTERIZATION_SAMPLES))) {
-      /* Correction for inverted Y */
-      if (vp_y_inverted) {
-         vp_scale[1] = -vp_scale[1];
-         vp_translate[1] = -vp_translate[1];
-      }
-
-      /* Correction for number of samples per pixel. */
-      for (unsigned i = 0; i < 2; ++i) {
-         vp_scale[i] *= (float)cmd_buffer->state.dynamic.vk.ms.rasterization_samples;
-         vp_translate[i] *= (float)cmd_buffer->state.dynamic.vk.ms.rasterization_samples;
-      }
-
-      uint32_t vp_reg_values[4] = {fui(vp_scale[0]), fui(vp_scale[1]), fui(vp_translate[0]), fui(vp_translate[1])};
-      const uint32_t nggc_viewport_offset = radv_get_user_sgpr_loc(last_vgt_shader, AC_UD_NGGC_VIEWPORT);
-
-      radeon_set_sh_reg_seq(nggc_viewport_offset, 4);
-      radeon_emit_array(vp_reg_values, 4);
-   }
-
-   const uint32_t nggc_settings_offset = radv_get_user_sgpr_loc(last_vgt_shader, AC_UD_NGGC_SETTINGS);
-
-   radeon_set_sh_reg(nggc_settings_offset, nggc_settings);
-   radeon_end();
-}
-
-static void
 radv_emit_fs_state(struct radv_cmd_buffer *cmd_buffer)
 {
    const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
@@ -11047,6 +11007,68 @@ radv_emit_ngg_state(struct radv_cmd_buffer *cmd_buffer)
       if (ngg_query_buf_va_offset)
          radeon_set_sh_reg(ngg_query_buf_va_offset, cmd_buffer->state.shader_query_buf_va);
    }
+   radeon_end();
+}
+
+static bool
+radv_is_viewport_y_inverted(struct radv_cmd_buffer *cmd_buffer)
+{
+   const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
+   const float y_scale = d->vp_xform[0].scale[1];
+   const float y_translate = d->vp_xform[0].translate[1];
+
+   return (-y_scale + y_translate) > (y_scale + y_translate);
+}
+
+static void
+radv_emit_nggc_settings(struct radv_cmd_buffer *cmd_buffer)
+{
+   const struct radv_shader *last_vgt_shader = cmd_buffer->state.last_vgt_shader;
+
+   const uint32_t nggc_settings_offset = radv_get_user_sgpr_loc(last_vgt_shader, AC_UD_NGGC_SETTINGS);
+   if (!nggc_settings_offset)
+      return;
+
+   const bool vp_y_inverted = radv_is_viewport_y_inverted(cmd_buffer);
+   const uint32_t nggc_settings = radv_get_nggc_settings(cmd_buffer, vp_y_inverted);
+
+   radeon_begin(cmd_buffer->cs);
+   radeon_set_sh_reg(nggc_settings_offset, nggc_settings);
+   radeon_end();
+}
+
+static void
+radv_emit_nggc_viewport(struct radv_cmd_buffer *cmd_buffer)
+{
+   const struct radv_shader *last_vgt_shader = cmd_buffer->state.last_vgt_shader;
+   const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
+
+   const uint32_t nggc_viewport_offset = radv_get_user_sgpr_loc(last_vgt_shader, AC_UD_NGGC_VIEWPORT);
+   if (!nggc_viewport_offset)
+      return;
+
+   /* Get viewport transform. */
+   float vp_scale[2], vp_translate[2];
+   memcpy(vp_scale, d->vp_xform[0].scale, 2 * sizeof(float));
+   memcpy(vp_translate, d->vp_xform[0].translate, 2 * sizeof(float));
+
+   /* Correction for inverted Y */
+   if (radv_is_viewport_y_inverted(cmd_buffer)) {
+      vp_scale[1] = -vp_scale[1];
+      vp_translate[1] = -vp_translate[1];
+   }
+
+   /* Correction for number of samples per pixel. */
+   for (unsigned i = 0; i < 2; ++i) {
+      vp_scale[i] *= (float)d->vk.ms.rasterization_samples;
+      vp_translate[i] *= (float)d->vk.ms.rasterization_samples;
+   }
+
+   const uint32_t vp_reg_values[4] = {fui(vp_scale[0]), fui(vp_scale[1]), fui(vp_translate[0]), fui(vp_translate[1])};
+
+   radeon_begin(cmd_buffer->cs);
+   radeon_set_sh_reg_seq(nggc_viewport_offset, 4);
+   radeon_emit_array(vp_reg_values, 4);
    radeon_end();
 }
 
@@ -11209,6 +11231,16 @@ radv_emit_shaders_state(struct radv_cmd_buffer *cmd_buffer)
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_NGG_STATE) {
       radv_emit_ngg_state(cmd_buffer);
       cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_NGG_STATE;
+   }
+
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_NGGC_SETTINGS) {
+      radv_emit_nggc_settings(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_NGGC_SETTINGS;
+   }
+
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_NGGC_VIEWPORT) {
+      radv_emit_nggc_viewport(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_NGGC_VIEWPORT;
    }
 
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_TASK_STATE) {
@@ -11896,6 +11928,15 @@ radv_validate_dynamic_states(struct radv_cmd_buffer *cmd_buffer, uint64_t dynami
    if (dynamic_states & (RADV_DYNAMIC_PRIMITIVE_TOPOLOGY | RADV_DYNAMIC_PROVOKING_VERTEX_MODE))
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_NGG_STATE;
 
+   if (dynamic_states &
+       (RADV_DYNAMIC_CULL_MODE | RADV_DYNAMIC_FRONT_FACE | RADV_DYNAMIC_RASTERIZER_DISCARD_ENABLE |
+        RADV_DYNAMIC_VIEWPORT | RADV_DYNAMIC_VIEWPORT_WITH_COUNT | RADV_DYNAMIC_CONSERVATIVE_RAST_MODE |
+        RADV_DYNAMIC_RASTERIZATION_SAMPLES | RADV_DYNAMIC_PRIMITIVE_TOPOLOGY | RADV_DYNAMIC_SAMPLE_LOCATIONS_ENABLE))
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_NGGC_SETTINGS;
+
+   if (dynamic_states & (RADV_DYNAMIC_VIEWPORT | RADV_DYNAMIC_VIEWPORT_WITH_COUNT | RADV_DYNAMIC_RASTERIZATION_SAMPLES))
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_NGGC_VIEWPORT;
+
    if (dynamic_states & RADV_DYNAMIC_PATCH_CONTROL_POINTS)
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_TCS_TES_STATE | RADV_CMD_DIRTY_PATCH_CONTROL_POINTS_STATE;
 
@@ -12008,15 +12049,6 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
    }
 
    const uint64_t dynamic_states = cmd_buffer->state.dirty_dynamic & radv_get_needed_dynamic_states(cmd_buffer);
-   if (cmd_buffer->state.has_nggc &&
-       ((cmd_buffer->state.dirty & (RADV_CMD_DIRTY_PIPELINE | RADV_CMD_DIRTY_GRAPHICS_SHADERS)) ||
-        (dynamic_states & (RADV_DYNAMIC_CULL_MODE | RADV_DYNAMIC_FRONT_FACE | RADV_DYNAMIC_RASTERIZER_DISCARD_ENABLE |
-                           RADV_DYNAMIC_VIEWPORT | RADV_DYNAMIC_VIEWPORT_WITH_COUNT |
-                           RADV_DYNAMIC_CONSERVATIVE_RAST_MODE | RADV_DYNAMIC_RASTERIZATION_SAMPLES |
-                           RADV_DYNAMIC_PRIMITIVE_TOPOLOGY | RADV_DYNAMIC_SAMPLE_LOCATIONS_ENABLE)))) {
-      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_NGGC_STATE;
-   }
-
    if (dynamic_states)
       radv_validate_dynamic_states(cmd_buffer, dynamic_states);
 
@@ -12039,11 +12071,6 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_OCCLUSION_QUERY) {
       radv_flush_occlusion_query_state(cmd_buffer);
       cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_OCCLUSION_QUERY;
-   }
-
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_NGGC_STATE) {
-      radv_emit_ngg_culling_state(cmd_buffer);
-      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_NGGC_STATE;
    }
 
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_BINNING_STATE) {
