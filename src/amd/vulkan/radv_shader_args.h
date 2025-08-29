@@ -23,8 +23,8 @@ enum radv_ud_index {
    AC_UD_STREAMOUT_BUFFERS = 5,
    AC_UD_STREAMOUT_STATE = 6,
    AC_UD_TASK_STATE = 7,
-   AC_UD_NGG_CULLING_SETTINGS = 8,
-   AC_UD_NGG_VIEWPORT = 9,
+   AC_UD_NGGC_SETTINGS = 8,
+   AC_UD_NGGC_VIEWPORT = 9,
    AC_UD_NGG_LDS_LAYOUT = 10,
    AC_UD_NGG_STATE = 11,
    AC_UD_NGG_QUERY_BUF_VA = 12,
@@ -89,10 +89,10 @@ struct radv_shader_args {
    struct ac_arg ngg_lds_layout;
    struct ac_arg ngg_query_buf_va; /* GFX11+ */
 
-   /* NGG GS */
-   struct ac_arg ngg_culling_settings;
-   struct ac_arg ngg_viewport_scale[2];
-   struct ac_arg ngg_viewport_translate[2];
+   /* NGG Culling */
+   struct ac_arg nggc_settings;
+   struct ac_arg nggc_viewport_scale[2];
+   struct ac_arg nggc_viewport_translate[2];
 
    /* Fragment shaders */
    struct ac_arg ps_state;

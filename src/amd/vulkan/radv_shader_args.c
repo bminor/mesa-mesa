@@ -291,11 +291,11 @@ declare_ngg_sgprs(const struct radv_shader_info *info, struct radv_shader_args *
       add_ud_arg(args, 1, AC_ARG_VALUE, &args->ngg_state, AC_UD_NGG_STATE);
 
    if (info->has_ngg_culling) {
-      add_ud_arg(args, 1, AC_ARG_VALUE, &args->ngg_culling_settings, AC_UD_NGG_CULLING_SETTINGS);
-      add_ud_arg(args, 1, AC_ARG_VALUE, &args->ngg_viewport_scale[0], AC_UD_NGG_VIEWPORT);
-      add_ud_arg(args, 1, AC_ARG_VALUE, &args->ngg_viewport_scale[1], AC_UD_NGG_VIEWPORT);
-      add_ud_arg(args, 1, AC_ARG_VALUE, &args->ngg_viewport_translate[0], AC_UD_NGG_VIEWPORT);
-      add_ud_arg(args, 1, AC_ARG_VALUE, &args->ngg_viewport_translate[1], AC_UD_NGG_VIEWPORT);
+      add_ud_arg(args, 1, AC_ARG_VALUE, &args->nggc_settings, AC_UD_NGGC_SETTINGS);
+      add_ud_arg(args, 1, AC_ARG_VALUE, &args->nggc_viewport_scale[0], AC_UD_NGGC_VIEWPORT);
+      add_ud_arg(args, 1, AC_ARG_VALUE, &args->nggc_viewport_scale[1], AC_UD_NGGC_VIEWPORT);
+      add_ud_arg(args, 1, AC_ARG_VALUE, &args->nggc_viewport_translate[0], AC_UD_NGGC_VIEWPORT);
+      add_ud_arg(args, 1, AC_ARG_VALUE, &args->nggc_viewport_translate[1], AC_UD_NGGC_VIEWPORT);
    }
 }
 

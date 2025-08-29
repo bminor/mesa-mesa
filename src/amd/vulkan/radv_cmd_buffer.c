@@ -10825,7 +10825,7 @@ radv_need_late_scissor_emission(struct radv_cmd_buffer *cmd_buffer, const struct
 }
 
 ALWAYS_INLINE static uint32_t
-radv_get_ngg_culling_settings(struct radv_cmd_buffer *cmd_buffer, bool vp_y_inverted)
+radv_get_nggc_settings(struct radv_cmd_buffer *cmd_buffer, bool vp_y_inverted)
 {
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
 
@@ -10897,7 +10897,7 @@ radv_emit_ngg_culling_state(struct radv_cmd_buffer *cmd_buffer)
    bool vp_y_inverted = (-vp_scale[1] + vp_translate[1]) > (vp_scale[1] + vp_translate[1]);
 
    /* Get current culling settings. */
-   uint32_t nggc_settings = radv_get_ngg_culling_settings(cmd_buffer, vp_y_inverted);
+   uint32_t nggc_settings = radv_get_nggc_settings(cmd_buffer, vp_y_inverted);
 
    radeon_begin(cmd_buffer->cs);
 
@@ -10917,15 +10917,15 @@ radv_emit_ngg_culling_state(struct radv_cmd_buffer *cmd_buffer)
       }
 
       uint32_t vp_reg_values[4] = {fui(vp_scale[0]), fui(vp_scale[1]), fui(vp_translate[0]), fui(vp_translate[1])};
-      const uint32_t ngg_viewport_offset = radv_get_user_sgpr_loc(last_vgt_shader, AC_UD_NGG_VIEWPORT);
+      const uint32_t nggc_viewport_offset = radv_get_user_sgpr_loc(last_vgt_shader, AC_UD_NGGC_VIEWPORT);
 
-      radeon_set_sh_reg_seq(ngg_viewport_offset, 4);
+      radeon_set_sh_reg_seq(nggc_viewport_offset, 4);
       radeon_emit_array(vp_reg_values, 4);
    }
 
-   const uint32_t ngg_culling_settings_offset = radv_get_user_sgpr_loc(last_vgt_shader, AC_UD_NGG_CULLING_SETTINGS);
+   const uint32_t nggc_settings_offset = radv_get_user_sgpr_loc(last_vgt_shader, AC_UD_NGGC_SETTINGS);
 
-   radeon_set_sh_reg(ngg_culling_settings_offset, nggc_settings);
+   radeon_set_sh_reg(nggc_settings_offset, nggc_settings);
    radeon_end();
 }
 
