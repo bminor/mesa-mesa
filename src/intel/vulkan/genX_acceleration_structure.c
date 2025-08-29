@@ -709,6 +709,16 @@ genX(CmdBuildAccelerationStructuresKHR)(
                              ANV_CMD_SAVED_STATE_DESCRIPTOR_SET_ALL |
                              ANV_CMD_SAVED_STATE_PUSH_CONSTANTS, &saved);
 
+   /* Apply any outstanding accumulated PC bits before we proceed on building
+    * Acceleration Structure.
+    *
+    * 2 reasons for this :
+    *    - some of the data accessed by the build might need to be flushed as a
+    *    result of a previous barrier
+    *    - the scratch buffer might get reused between builds
+    */
+   genX(cmd_buffer_apply_pipe_flushes)(cmd_buffer);
+
    vk_cmd_build_acceleration_structures(commandBuffer, &device->vk,
                                         &device->meta_device, infoCount,
                                         pInfos, ppBuildRangeInfos,
