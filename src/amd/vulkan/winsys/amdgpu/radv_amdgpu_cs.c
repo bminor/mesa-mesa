@@ -506,15 +506,11 @@ radv_amdgpu_cs_finalize(struct radeon_cmdbuf *_cs)
    assert(cs->base.cdw <= cs->base.reserved_dw);
 
    if (cs->chain_ib) {
-      const uint32_t nop_packet = get_nop_packet(cs);
-
       /* Pad with NOPs but leave 4 dwords for INDIRECT_BUFFER. */
       radv_amdgpu_winsys_cs_pad(_cs, 4);
 
-      radeon_emit_unchecked(&cs->base, nop_packet);
-      radeon_emit_unchecked(&cs->base, nop_packet);
-      radeon_emit_unchecked(&cs->base, nop_packet);
-      radeon_emit_unchecked(&cs->base, nop_packet);
+      /* Emit 4 dwords of NOP, these will be replaced by the chaining INDIRECT_BUFFER. */
+      radv_amdgpu_cs_emit_nops(cs, 4);
 
       assert(cs->base.cdw <= ~C_3F2_IB_SIZE);
       *cs->ib_size_ptr |= cs->base.cdw;
@@ -588,13 +584,9 @@ radv_amdgpu_cs_unchain(struct radeon_cmdbuf *cs)
       return;
 
    assert(cs->cdw <= cs->max_dw + 4);
-   const uint32_t nop_packet = get_nop_packet(acs);
 
    acs->chained_to = NULL;
-   cs->buf[cs->cdw - 4] = nop_packet;
-   cs->buf[cs->cdw - 3] = nop_packet;
-   cs->buf[cs->cdw - 2] = nop_packet;
-   cs->buf[cs->cdw - 1] = nop_packet;
+   cs->buf[cs->cdw - 4] = PKT3(PKT3_NOP, 2, 0);
 }
 
 static bool
