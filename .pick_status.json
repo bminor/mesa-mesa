@@ -634,7 +634,7 @@
         "description": "radv/video: Fix VP9 loop filter and segmentation params",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b8ac2d47e79fa2d787cebc8de568a50c54719a38",
         "notes": null
