@@ -18,7 +18,7 @@ enum panvk_debug_flags {
    PANVK_DEBUG_NIR = 1 << 1,
    PANVK_DEBUG_TRACE = 1 << 2,
    PANVK_DEBUG_SYNC = 1 << 3,
-   PANVK_DEBUG_AFBC = 1 << 4,
+   PANVK_DEBUG_NO_AFBC = 1 << 4,
    PANVK_DEBUG_LINEAR = 1 << 5,
    PANVK_DEBUG_DUMP = 1 << 6,
    PANVK_DEBUG_NO_KNOWN_WARN = 1 << 7,

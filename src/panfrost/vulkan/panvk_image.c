@@ -75,7 +75,7 @@ panvk_image_can_use_afbc(
     * GetPhysicalDeviceImageFormatProperties2() and we don't have enough
     * information to conduct a full image property check in this context.
     */
-   return (instance->debug_flags & PANVK_DEBUG_AFBC) &&
+   return !(instance->debug_flags & PANVK_DEBUG_NO_AFBC) &&
           !(usage &
             (VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_HOST_TRANSFER_BIT)) &&
           pan_query_afbc(&phys_dev->kmod.props) &&

@@ -34,7 +34,7 @@ static const struct debug_control panvk_debug_options[] = {
    {"nir", PANVK_DEBUG_NIR},
    {"trace", PANVK_DEBUG_TRACE},
    {"sync", PANVK_DEBUG_SYNC},
-   {"afbc", PANVK_DEBUG_AFBC},
+   {"noafbc", PANVK_DEBUG_NO_AFBC},
    {"linear", PANVK_DEBUG_LINEAR},
    {"dump", PANVK_DEBUG_DUMP},
    {"no_known_warn", PANVK_DEBUG_NO_KNOWN_WARN},
