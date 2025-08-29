@@ -227,6 +227,8 @@ public:
 
    static void set_chipclass(r600_chip_class chip_class);
 
+   bool kcache_needs_extended() const;
+
 private:
    bool try_reserve_kcache(const UniformValue& u,
                            std::array<KCacheLine, 4>& kcache) const;

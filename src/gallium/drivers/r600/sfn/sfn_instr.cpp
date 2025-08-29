@@ -385,6 +385,18 @@ Block::try_reserve_kcache(const AluGroup& group)
 }
 
 bool
+Block::kcache_needs_extended() const
+{
+   for (unsigned i = 0; i < s_max_kcache_banks; ++i) {
+      if (m_kcache[i].mode) {
+         if (i > 2 || m_kcache[i].index_mode)
+            return true;
+      }
+   }
+   return false;
+}
+
+bool
 Block::try_reserve_kcache(const AluInstr& instr)
 {
    auto kcache = m_kcache;
@@ -417,19 +429,21 @@ unsigned Block::s_max_kcache_banks = 4;
 bool
 Block::try_reserve_kcache(const UniformValue& u, std::array<KCacheLine, 4>& kcache) const
 {
-   const int kcache_banks = s_max_kcache_banks; // TODO: handle pre-evergreen
 
    int bank = u.kcache_bank();
    int sel = (u.sel() - 512);
    int line = sel >> 4;
    EBufferIndexMode index_mode = bim_none;
 
-   if (auto addr = u.buf_addr())
+   if (auto addr = u.buf_addr()) {
+      /* No indirect addressing with only two kcache banks (since this also
+       * means, we can't emit ALU_EXTENDED */
       index_mode = addr->sel() == AddressRegister::idx0 ?  bim_zero : bim_one;
+   }
 
    bool found = false;
 
-   for (int i = 0; i < kcache_banks && !found; ++i) {
+   for (unsigned i = 0; i < s_max_kcache_banks && !found; ++i) {
       if (kcache[i].mode) {
          if (kcache[i].bank < bank)
             continue;
@@ -442,12 +456,12 @@ Block::try_reserve_kcache(const UniformValue& u, std::array<KCacheLine, 4>& kcac
          }
          if ((kcache[i].bank == bank && kcache[i].addr > line + 1) ||
              kcache[i].bank > bank) {
-            if (kcache[kcache_banks - 1].mode)
+            if (kcache[s_max_kcache_banks - 1].mode)
                return false;
 
             memmove(&kcache[i + 1],
                     &kcache[i],
-                    (kcache_banks - i - 1) * sizeof(KCacheLine));
+                    (s_max_kcache_banks - i - 1) * sizeof(KCacheLine));
             kcache[i].mode = KCacheLine::lock_1;
             kcache[i].bank = bank;
             kcache[i].addr = line;
