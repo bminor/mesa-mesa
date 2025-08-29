@@ -14403,7 +14403,7 @@ write_event(struct radv_cmd_buffer *cmd_buffer, struct radv_event *event, VkPipe
 
    radv_cp_dma_wait_for_stages(cmd_buffer, stageMask);
 
-   if (!(stageMask & ~top_of_pipe_flags)) {
+   if (!(stageMask & ~top_of_pipe_flags) && cmd_buffer->qf != RADV_QUEUE_COMPUTE) {
       /* Just need to sync the PFP engine. */
       radv_write_data(cmd_buffer, V_370_PFP, va, 1, &value, false);
    } else if (!(stageMask & ~post_index_fetch_flags)) {
@@ -14415,6 +14415,7 @@ write_event(struct radv_cmd_buffer *cmd_buffer, struct radv_event *event, VkPipe
       if (!(stageMask & ~post_ps_flags)) {
          /* Sync previous fragment shaders. */
          event_type = V_028A90_PS_DONE;
+         assert(cmd_buffer->qf == RADV_QUEUE_GENERAL);
       } else if (!(stageMask & ~post_cs_flags)) {
          /* Sync previous compute shaders. */
          event_type = V_028A90_CS_DONE;
