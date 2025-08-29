@@ -149,6 +149,7 @@ get_preload_shader(struct panvk_device *dev,
 
    struct pan_compile_inputs inputs = {
       .gpu_id = phys_dev->kmod.props.gpu_id,
+      .gpu_variant = phys_dev->kmod.props.gpu_variant,
       .is_blit = true,
    };
 

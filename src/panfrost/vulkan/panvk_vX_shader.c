@@ -1336,6 +1336,7 @@ panvk_compile_shader(struct panvk_device *dev,
 
    struct pan_compile_inputs inputs = {
       .gpu_id = phys_dev->kmod.props.gpu_id,
+      .gpu_variant = phys_dev->kmod.props.gpu_variant,
       .view_mask = (state && state->rp) ? state->rp->view_mask : 0,
       .robust2_modes = robust2_modes,
    };
