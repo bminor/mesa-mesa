@@ -12385,44 +12385,29 @@ radv_before_draw(struct radv_cmd_buffer *cmd_buffer, const struct radv_draw_info
       cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_FBFETCH_OUTPUT;
    }
 
-   /* Use optimal packet order based on whether we need to sync the
-    * pipeline.
+   /* This is the optimal packet order:
+    * Set all states first, so that all SET packets are processed in parallel with previous draw
+    * calls. Then flush caches and wait if needed. Then draw and prefetch at the end. It's better
+    * to draw before prefetches because we want to start fetching indices before shaders. The idea
+    * is to minimize the time when the CUs are idle.
     */
-   if (cmd_buffer->state.flush_bits & (RADV_CMD_FLAG_FLUSH_AND_INV_CB | RADV_CMD_FLAG_FLUSH_AND_INV_DB |
-                                       RADV_CMD_FLAG_PS_PARTIAL_FLUSH | RADV_CMD_FLAG_CS_PARTIAL_FLUSH)) {
-      /* If we have to wait for idle, set all states first, so that
-       * all SET packets are processed in parallel with previous draw
-       * calls. Then upload descriptors, set shader pointers, and
-       * draw, and prefetch at the end. This ensures that the time
-       * the CUs are idle is very short. (there are only SET_SH
-       * packets between the wait and the draw)
-       */
-      radv_emit_all_graphics_states(cmd_buffer, info);
-      radv_emit_cache_flush(cmd_buffer);
-      /* <-- CUs are idle here --> */
-
-      radv_upload_graphics_shader_descriptors(cmd_buffer);
-   } else {
-      /* If we don't wait for idle, start prefetches first, then set
-       * states, and draw at the end.
-       */
-      if (cmd_buffer->state.flush_bits)
-         radv_emit_cache_flush(cmd_buffer);
-
-      if (has_prefetch) {
-         /* Only prefetch the vertex shader and VBO descriptors in order to start the draw as soon
-          * as possible.
-          */
-         radv_emit_graphics_prefetch(cmd_buffer, true);
-      }
-
-      radv_upload_graphics_shader_descriptors(cmd_buffer);
-
-      radv_emit_all_graphics_states(cmd_buffer, info);
-   }
+   radv_emit_all_graphics_states(cmd_buffer, info);
+   radv_upload_graphics_shader_descriptors(cmd_buffer);
 
    if (pdev->info.gfx_level >= GFX12) {
       radv_gfx12_emit_buffered_regs(device, cs);
+   }
+
+   if (cmd_buffer->state.flush_bits)
+      radv_emit_cache_flush(cmd_buffer);
+
+   /* <-- CUs are idle here if shaders are synchronized. */
+
+   if (has_prefetch) {
+      /* Only prefetch the vertex shader and VBO descriptors in order to start the draw as soon as
+       * possible.
+       */
+      radv_emit_graphics_prefetch(cmd_buffer, true);
    }
 
    if (device->sqtt.bo && !dgc)
