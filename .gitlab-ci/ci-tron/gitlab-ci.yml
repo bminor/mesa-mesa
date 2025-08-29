@@ -4,7 +4,7 @@
     - .ci-tron-b2c-job-v1
   variables:
     GIT_STRATEGY: none
-    B2C_VERSION: v0.9.15.1  # Linux 6.13.7
+    B2C_VERSION: v0.9.17  # Linux 6.16.3
 
     CI_TRON_PATTERN__JOB_SUCCESS__REGEX: 'hwci: mesa: exit_code: 0\r$'
     CI_TRON_PATTERN__SESSION_END__REGEX: '^.*It''s now safe to turn off your computer\r$'

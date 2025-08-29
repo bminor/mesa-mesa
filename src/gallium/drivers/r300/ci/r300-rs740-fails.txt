@@ -38,7 +38,6 @@ dEQP-GLES2.functional.fbo.render.repeated_clear.tex2d_rgba,Fail
 
 # This bunch is not reproducible outside of CI
 dEQP-GLES2.functional.fragment_ops.interaction.basic_shader.8,Fail
-dEQP-GLES2.functional.fragment_ops.interaction.basic_shader.17,Fail
 dEQP-GLES2.functional.fragment_ops.interaction.basic_shader.86,Fail
 dEQP-GLES2.functional.fragment_ops.random.19,Fail
 dEQP-GLES2.functional.fragment_ops.random.34,Fail
@@ -503,7 +502,6 @@ dEQP-GLES2.functional.uniform_api.value.assigned.by_pointer.render.nested_struct
 
 shaders@glsl-arb-fragment-coord-conventions,Fail
 shaders@glsl-derivs,Fail
-shaders@glsl-fs-bug25902,Fail
 shaders@glsl-fs-fogscale@vs and fs,Fail
 shaders@glsl-fs-loop,Fail
 shaders@glsl-fs-loop-nested,Fail
@@ -551,7 +549,6 @@ spec@!opengl 1.1@depthstencil-default_fb-readpixels-float-and-ushort samples=6,F
 spec@!opengl 1.1@draw-pixel-with-texture,Fail
 spec@!opengl 1.1@getteximage-formats,Fail
 spec@!opengl 1.1@getteximage-simple,Fail
-spec@!opengl 1.1@gl-1.1-read-pixels-after-display-list,Fail
 spec@!opengl 1.1@gl-1.2-texture-base-level,Fail
 spec@!opengl 1.1@line-aa-width,Fail
 spec@!opengl 1.1@line-smooth-stipple,Fail
@@ -562,7 +559,6 @@ spec@!opengl 1.1@polygon-mode-offset@config 4: Expected white pixel on right edg
 spec@!opengl 1.1@polygon-mode-offset@config 4: Expected white pixel on top edge,Fail
 spec@!opengl 1.1@polygon-offset,Fail
 spec@!opengl 1.1@read-front samples=6,Fail
-spec@!opengl 1.1@texgen,Fail
 spec@!opengl 1.1@texsubimage,Fail
 spec@!opengl 1.1@texwrap formats bordercolor,Fail
 spec@!opengl 1.1@texwrap formats bordercolor-swizzled,Fail
@@ -589,15 +585,12 @@ spec@!opengl 1.4@tex-miplevel-selection-lod-bias,Fail
 spec@!opengl 1.4@triangle-rasterization,Fail
 spec@!opengl 1.4@triangle-rasterization-fbo,Fail
 
-spec@!opengl 1.5@depth-tex-compare,Fail
-
 spec@!opengl 2.0@depth-tex-modes-glsl,Fail
 spec@!opengl 2.0@gl-2.0-two-sided-stencil,Fail
 spec@!opengl 2.0@occlusion-query-discard,Fail
 spec@!opengl 2.0@tex3d-npot,Fail
 
 spec@!opengl 2.1@pbo,Fail
-spec@!opengl 2.1@pbo@test_draw_pixels,Fail
 spec@!opengl 2.1@pbo@test_polygon_stip,Fail
 spec@!opengl 2.1@polygon-stipple-fs,Fail
 
@@ -616,7 +609,6 @@ spec@arb_draw_buffers@fbo-mrt-alphatest,Fail
 
 spec@arb_fragment_coord_conventions@fp-arb-fragment-coord-conventions-integer,Fail
 
-spec@arb_fragment_program@fp-formats,Fail
 spec@arb_fragment_program@fp-indirections2,Fail
 
 spec@arb_framebuffer_object@fbo-attachments-blit-scaled-linear,Fail
@@ -706,7 +698,6 @@ spec@arb_texture_rectangle@copyteximage rect samples=6,Fail
 spec@arb_texture_rectangle@tex-miplevel-selection gl2:texture() 2drect,Fail
 spec@arb_texture_rectangle@tex-miplevel-selection gl2:texture() 2drectshadow,Fail
 spec@arb_texture_rectangle@tex-miplevel-selection gl2:textureproj 2drect,Fail
-spec@arb_texture_rectangle@tex-miplevel-selection gl2:textureproj 2drect_projvec4,Fail
 spec@arb_texture_rectangle@tex-miplevel-selection gl2:textureproj 2drectshadow,Fail
 
 spec@arb_texture_rg@fbo-alphatest-formats,Fail
@@ -729,7 +720,6 @@ spec@arb_texture_rg@texwrap formats-float bordercolor@GL_RG16F- border color onl
 spec@arb_texture_rg@texwrap formats-float bordercolor@GL_RG32F- border color only,Fail
 
 spec@ati_fragment_shader@ati_fragment_shader-render-notexture,Fail
-spec@ati_fragment_shader@ati_fragment_shader-render-sources,Fail
 spec@ati_fragment_shader@ati_fragment_shader-render-textargets,Fail
 
 spec@egl 1.4@eglterminate then unbind context,Fail
@@ -1100,17 +1090,10 @@ spec@glsl-1.20@execution@vs-loop-uint-induction-var-2,Fail
 spec@glsl-1.20@execution@vs-loop-uint-induction-var-3,Fail
 spec@glsl-1.20@execution@vs-loop-uint-induction-var-4,Fail
 
-spec@glsl-1.20@execution@tex-miplevel-selection gl2:texture() 1d,Fail
-spec@glsl-1.20@execution@tex-miplevel-selection gl2:texture() 2d,Fail
-spec@glsl-1.20@execution@tex-miplevel-selection gl2:texture() 2dshadow,Fail
 spec@glsl-1.20@execution@tex-miplevel-selection gl2:texture() cube,Fail
 spec@glsl-1.20@execution@tex-miplevel-selection gl2:texture(bias) 1d,Fail
 spec@glsl-1.20@execution@tex-miplevel-selection gl2:texture(bias) 1dshadow,Fail
-spec@glsl-1.20@execution@tex-miplevel-selection gl2:texture(bias) 2d,Fail
-spec@glsl-1.20@execution@tex-miplevel-selection gl2:texture(bias) 2dshadow,Fail
 spec@glsl-1.20@execution@tex-miplevel-selection gl2:texture(bias) cube,Fail
-spec@glsl-1.20@execution@tex-miplevel-selection gl2:textureproj 1d,Fail
-spec@glsl-1.20@execution@tex-miplevel-selection gl2:textureproj 1dshadow,Fail
 spec@glsl-1.20@execution@tex-miplevel-selection gl2:textureproj 1d_projvec4,Fail
 spec@glsl-1.20@execution@tex-miplevel-selection gl2:textureproj 2d,Fail
 spec@glsl-1.20@execution@tex-miplevel-selection gl2:textureproj 2d_projvec4,Fail
@@ -1118,7 +1101,6 @@ spec@glsl-1.20@execution@tex-miplevel-selection gl2:textureproj(bias) 1d,Fail
 spec@glsl-1.20@execution@tex-miplevel-selection gl2:textureproj(bias) 1d_projvec4,Fail
 spec@glsl-1.20@execution@tex-miplevel-selection gl2:textureproj(bias) 1dshadow,Fail
 spec@glsl-1.20@execution@tex-miplevel-selection gl2:textureproj(bias) 2d,Fail
-spec@glsl-1.20@execution@tex-miplevel-selection gl2:textureproj(bias) 2d_projvec4,Fail
 
 spec@glsl-1.20@execution@built-in-functions@fs-matrixcompmult-mat2x3-mat2x3,Fail
 spec@glsl-1.20@execution@built-in-functions@fs-matrixcompmult-mat2x4-mat2x4,Fail
@@ -1230,7 +1212,6 @@ spec@glsl-1.20@execution@built-in-functions@fs-outerproduct-vec4-vec4,Fail
 spec@glsl-1.20@execution@fs-underflow-mul-compare-zero,Fail
 spec@glsl-1.20@execution@fs-vec4-const-array-indirect-access-256-elements,Fail
 spec@glsl-1.20@execution@glsl-fs-frontfacing,Fail
-spec@glsl-1.20@execution@tex-miplevel-selection gl2:texture() 1dshadow,Fail
 spec@glsl-1.20@execution@tex-miplevel-selection gl2:textureproj(bias) 2dshadow,Fail
 spec@glsl-1.20@execution@uniform-initializer@fs-mat4-array,Fail
 
@@ -1255,7 +1236,6 @@ spec@nv_primitive_restart@primitive-restart-draw-mode-quads,Fail
 
 spec@nv_texture_env_combine4@nv_texture_env_combine4-combine,Fail
 
-spec@oes_texture_float@oes_texture_float,Fail
 spec@oes_texture_float@oes_texture_float half,Fail
 
 # Remaining fallout from 9d359c6d10adb1cd2978a0e13714a3f98544aae8
