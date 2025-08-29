@@ -13,14 +13,6 @@
 
 #include "fd6_hw.h"
 
-static bool
-is_r8g8(const struct fdl_layout *layout)
-{
-   return layout->cpp == 2 &&
-          util_format_get_nr_components(layout->format) == 2 &&
-          !layout->is_mutable;
-}
-
 void
 fdl6_get_ubwc_blockwidth(const struct fdl_layout *layout,
                          uint32_t *blockwidth, uint32_t *blockheight)
@@ -43,7 +35,7 @@ fdl6_get_ubwc_blockwidth(const struct fdl_layout *layout,
    };
 
    /* special case for r8g8: */
-   if (is_r8g8(layout)) {
+   if (fdl6_is_r8g8_layout(layout)) {
       *blockwidth = 16;
       *blockheight = 8;
       return;
@@ -86,7 +78,7 @@ fdl6_tile_alignment(struct fdl_layout *layout, uint32_t *heightalign)
    layout->pitchalign = fdl_cpp_shift(layout);
    *heightalign = 16;
 
-   if (is_r8g8(layout) || layout->cpp == 1) {
+   if (fdl6_is_r8g8_layout(layout) || layout->cpp == 1) {
       layout->pitchalign = 1;
       *heightalign = 32;
    } else if (layout->cpp == 2) {
@@ -98,7 +90,7 @@ fdl6_tile_alignment(struct fdl_layout *layout, uint32_t *heightalign)
     * heavily undertested and the "officially" supported alignment is 4096b.
     */
    if (layout->ubwc || util_format_is_depth_or_stencil(layout->format) ||
-       is_r8g8(layout))
+       fdl6_is_r8g8_layout(layout))
       layout->base_align = 4096;
    else if (layout->cpp == 1)
       layout->base_align = 64;

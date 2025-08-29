@@ -281,6 +281,18 @@ void fdl_dump_layout(struct fdl_layout *layout);
 void fdl6_get_ubwc_blockwidth(const struct fdl_layout *layout,
                               uint32_t *blockwidth, uint32_t *blockheight);
 
+/* Single-sampled non-mutable R8G8 textures have a special UBWC block layout
+ * that's different from the normal cpp=2 layout. Return true if this layout
+ * is in use.
+ */
+static inline bool
+fdl6_is_r8g8_layout(const struct fdl_layout *layout)
+{
+   return layout->cpp == 2 &&
+          util_format_get_nr_components(layout->format) == 2 &&
+          !layout->is_mutable;
+}
+
 enum fdl_view_type {
    FDL_VIEW_TYPE_1D = 0,
    FDL_VIEW_TYPE_2D = 1,
