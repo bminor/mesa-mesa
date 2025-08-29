@@ -858,7 +858,8 @@ prog_to_nir(const struct gl_context *ctx, const struct gl_program *prog)
 
    /* ARB_vp: */
    if (prog->arb.IsPositionInvariant) {
-      NIR_PASS(_, s, st_nir_lower_position_invariant, prog->Parameters);
+      NIR_PASS(_, s, st_nir_lower_position_invariant, prog->Parameters,
+               ctx->Const.PackedDriverUniformStorage);
    }
 
    /* Add OPTION ARB_fog_exp code */
