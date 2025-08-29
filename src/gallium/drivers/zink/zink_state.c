@@ -683,6 +683,7 @@ zink_bind_rasterizer_state(struct pipe_context *pctx, void *cso)
    bool clip_halfz = ctx->rast_state ? ctx->rast_state->hw_state.clip_halfz : false;
    bool rasterizer_discard = ctx->rast_state ? ctx->rast_state->base.rasterizer_discard : false;
    bool half_pixel_center = ctx->rast_state ? ctx->rast_state->base.half_pixel_center : true;
+   bool representative_fragment_test = ctx->rast_state ? ctx->rast_state->base.representative_fragment_test : false;
    float line_width = ctx->rast_state ? ctx->rast_state->base.line_width : 1.0;
    ctx->rast_state = cso;
 
@@ -730,6 +731,9 @@ zink_bind_rasterizer_state(struct pipe_context *pctx, void *cso)
 
 #undef STATE_CHECK
       }
+
+      if (representative_fragment_test != ctx->rast_state->base.representative_fragment_test)
+         VKCTX(CmdSetRepresentativeFragmentTestEnableNV)(ctx->bs->cmdbuf, ctx->rast_state->base.representative_fragment_test);
 
       if (fabs(ctx->rast_state->base.line_width - line_width) > FLT_EPSILON)
          ctx->line_width_changed = true;

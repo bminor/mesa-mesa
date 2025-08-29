@@ -21,3 +21,4 @@ VK_KHR_maintenance9 on panvk
 VK_AMD_buffer_marker on NVK
 VK_EXT_ycbcr_2plane_444_formats on radv
 Removed VDPAU frontend
+GL_NV_representative_fragment_test on zink

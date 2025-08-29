@@ -264,6 +264,8 @@ zink_create_gfx_pipeline(struct zink_screen *screen,
             }
          }
       }
+      if (screen->info.dynamic_state3_feats.extendedDynamicState3RepresentativeFragmentTestEnable)
+         dynamicStateEnables[state_count++] = VK_DYNAMIC_STATE_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV;
    }
    if (screen->info.have_EXT_color_write_enable)
       dynamicStateEnables[state_count++] = VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT;
@@ -754,6 +756,8 @@ create_gfx_pipeline_library(struct zink_screen *screen, struct zink_shader_objec
       dynamicStateEnables[state_count++] = VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT;
    if (!screen->driver_workarounds.no_linestipple)
       dynamicStateEnables[state_count++] = VK_DYNAMIC_STATE_LINE_STIPPLE_EXT;
+   if (screen->info.dynamic_state3_feats.extendedDynamicState3RepresentativeFragmentTestEnable)
+      dynamicStateEnables[state_count++] = VK_DYNAMIC_STATE_REPRESENTATIVE_FRAGMENT_TEST_ENABLE_NV;
    assert(state_count < ARRAY_SIZE(dynamicStateEnables));
 
    VkPipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo = {0};

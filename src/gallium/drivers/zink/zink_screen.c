@@ -778,6 +778,7 @@ zink_init_screen_caps(struct zink_screen *screen)
    caps->allow_glthread_buffer_subdata_opt = true;
    caps->nir_samplers_as_deref = true;
    caps->call_finalize_nir_in_linker = true;
+   caps->representative_fragment_test = screen->info.dynamic_state3_feats.extendedDynamicState3RepresentativeFragmentTestEnable;
 
    caps->draw_vertex_state = screen->info.have_EXT_vertex_input_dynamic_state;
 

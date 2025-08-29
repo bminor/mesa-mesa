@@ -593,6 +593,11 @@ zink_start_batch(struct zink_context *ctx)
       VKCTX(CmdSetAttachmentFeedbackLoopEnableEXT)(ctx->bs->reordered_cmdbuf, 0);
       VKCTX(CmdSetAttachmentFeedbackLoopEnableEXT)(ctx->bs->unsynchronized_cmdbuf, 0);
    }
+   if (screen->info.dynamic_state3_feats.extendedDynamicState3RepresentativeFragmentTestEnable) {
+      VKCTX(CmdSetRepresentativeFragmentTestEnableNV)(ctx->bs->cmdbuf, 0);
+      VKCTX(CmdSetRepresentativeFragmentTestEnableNV)(ctx->bs->reordered_cmdbuf, 0);
+      VKCTX(CmdSetRepresentativeFragmentTestEnableNV)(ctx->bs->unsynchronized_cmdbuf, 0);
+   }
 }
 
 /* common operations to run post submit; split out for clarity */

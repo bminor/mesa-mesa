@@ -196,6 +196,7 @@ EXTENSIONS = [
               features=True,
               conditions=["$feats.vertexAttributeInstanceRateDivisor"]),
     Extension("VK_EXT_calibrated_timestamps"),
+    Extension("VK_NV_representative_fragment_test"),
     Extension("VK_NV_linear_color_attachment",
               alias="linear_color",
               features=True),
