@@ -517,7 +517,7 @@ kms_sw_displaytarget_get_handle(struct sw_winsys *winsys,
       return true;
    case WINSYS_HANDLE_TYPE_FD:
       if (!drmPrimeHandleToFD(kms_sw->fd, kms_sw_dt->handle,
-                             DRM_CLOEXEC, (int*)&whandle->handle)) {
+                             DRM_CLOEXEC | DRM_RDWR, (int*)&whandle->handle)) {
          whandle->stride = plane->stride;
          whandle->offset = plane->offset;
          return true;
