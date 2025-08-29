@@ -1918,6 +1918,8 @@ get_vp9_msg(struct radv_device *device, struct radv_video_session *vid, struct v
 
       for (unsigned i = 0; i < STD_VIDEO_VP9_MAX_SEGMENTATION_PRED_PROB; ++i)
          prbs->seg.pred_probs[i] = std_pic_info->pSegmentation->segmentation_pred_prob[i];
+
+      prbs->seg.abs_delta = std_pic_info->pSegmentation->flags.segmentation_abs_or_delta_update;
    } else {
       memset(&prbs->seg, 0, 256);
    }
@@ -1987,7 +1989,18 @@ get_vp9_msg(struct radv_device *device, struct radv_video_session *vid, struct v
    int shifted = std_pic_info->pLoopFilter->loop_filter_level >= 32;
 
    for (int i = 0; i < (std_pic_info->flags.segmentation_enabled ? 8 : 1); i++) {
-      uint8_t lvl = std_pic_info->pLoopFilter->loop_filter_level;
+      const uint8_t seg_lvl_alt_l = 1;
+      uint8_t lvl;
+
+      if (std_pic_info->flags.segmentation_enabled &&
+          std_pic_info->pSegmentation->FeatureEnabled[i] & (1 << seg_lvl_alt_l)) {
+         lvl = std_pic_info->pSegmentation->FeatureData[i][seg_lvl_alt_l];
+         if (!std_pic_info->pSegmentation->flags.segmentation_abs_or_delta_update)
+            lvl += std_pic_info->pLoopFilter->loop_filter_level;
+         lvl = CLAMP(lvl, 0, 63);
+      } else {
+         lvl = std_pic_info->pLoopFilter->loop_filter_level;
+      }
 
       if (std_pic_info->pLoopFilter->flags.loop_filter_delta_enabled) {
          result.lf_adj_level[i][0][0] = result.lf_adj_level[i][0][1] =
