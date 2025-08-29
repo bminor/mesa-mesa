@@ -825,7 +825,7 @@ radv_pipeline_init_vertex_input_state(const struct radv_device *device, struct r
          }
       }
 
-      dynamic->vertex_input.vbo_misaligned_mask = dynamic->vertex_input.attribute_mask;
+      dynamic->vertex_input.vbo_misaligned_mask_invalid = dynamic->vertex_input.attribute_mask;
    } else {
       u_foreach_bit (i, vs->info.vs.vb_desc_usage_mask) {
          dynamic->vertex_input.bindings[i] = i;
