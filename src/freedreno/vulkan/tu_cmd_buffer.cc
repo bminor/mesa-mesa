@@ -2099,12 +2099,6 @@ tu6_emit_binning_pass(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
    const struct tu_framebuffer *fb = cmd->state.framebuffer;
    const struct tu_tiling_config *tiling = cmd->state.tiling;
 
-   /* Reset bin scaling. */
-   if (phys_dev->info->a7xx.has_hw_bin_scaling) {
-      tu_cs_emit_regs(cs, A7XX_GRAS_BIN_FOVEAT());
-      tu_cs_emit_regs(cs, A7XX_RB_BIN_FOVEAT());
-   }
-
    /* If this command buffer may be executed multiple times, then
     * viewports/scissor states may have been changed by previous executions
     * and we need to reset them before executing the binning IB. With FDM
@@ -2632,6 +2626,12 @@ tu6_tile_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
 
    if (CHIP >= A7XX) {
       tu7_emit_tile_render_begin_regs(cs);
+   }
+
+   /* Reset bin scaling. */
+   if (phys_dev->info->a7xx.has_hw_bin_scaling) {
+      tu_cs_emit_regs(cs, A7XX_GRAS_BIN_FOVEAT());
+      tu_cs_emit_regs(cs, A7XX_RB_BIN_FOVEAT());
    }
 
    tu_emit_cache_flush_ccu<CHIP>(cmd, cs, TU_CMD_CCU_GMEM);
