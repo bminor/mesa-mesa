@@ -69,3 +69,8 @@ spec@glsl-1.50@execution@redeclare-pervertex-out-subset-gs
 # Marked as flake because it passes with ESO but crashes with pipelines.
 spec@arb_tessellation_shader@arb_tessellation_shader-tes-gs-max-output -small -scan 1 50
 
+KHR-GL46.packed_pixels.varied_rectangle.rgb10_a2_format_red
+KHR-GL46.packed_pixels.varied_rectangle.rgb4_format_green
+spec@!opengl 1.1@copypixels-sync
+spec@amd_pinned_memory@map-buffer offset=0
+spec@glsl-1.30@execution@texelfetch fs sampler2darray 98x1x9-98x129x9

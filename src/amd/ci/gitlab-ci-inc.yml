@@ -347,9 +347,8 @@
 .ci-tron-test-amdgpu:
   variables:
     CI_TRON_PATTERN__JOB_WARN__REGEX: 'ring .* timeout'
-    CI_TRON_KERNEL__URL: "https://fs.mupuf.org/radv/linux-6.15.9/linux-x86_64"
-    CI_TRON_INITRAMFS__DEPMOD__URL: "https://fs.mupuf.org/radv/linux-6.15.9/linux-x86_64.depmod.cpio.xz"
-    CI_TRON_INITRAMFS__GPU__URL: "https://fs.mupuf.org/radv/linux-6.15.9/linux-x86_64.gpu.cpio"
+    CI_TRON_INITRAMFS__DEPMOD__URL: "https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/linux-x86_64.depmod.cpio.xz"
+    CI_TRON_INITRAMFS__GPU__URL: "https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/linux-x86_64.gpu.cpio"
     CI_TRON_INITRAMFS__GPU__FORMAT__0__ARCHIVE__KEEP__0__PATH: "(lib/(modules|firmware/amdgpu)/.*)"
     CI_TRON_KERNEL_CMDLINE__LOAD_MODULES: 'modules_load=amdgpu'
 
@@ -409,6 +408,20 @@
     #    TSC found unstable after boot, most likely due to broken BIOS. Use 'tsc=unstable'.
     CI_TRON_KERNEL_CMDLINE__TSC_WORKAROUND: 'tsc=unstable'
     GPU_VERSION: radv-polaris10
+
+    # FIXME: B2C's 6.16 kernel regressed and leads to the following hang with a 10% probability. Let's keep using the
+    # last known working kernel until the bisection is over.
+    # [   32.648386] amdgpu 0000:2d:00.0: [drm:amdgpu_ring_test_helper [amdgpu]] *ERROR* ring kiq_0.2.1.0 test failed (-110)
+    # [   32.648641] [drm:gfx_v8_0_hw_fini [amdgpu]] *ERROR* KCQ disable failed
+    # [   32.900818] amdgpu: cp is busy, skip halt cp
+    # [   33.152738] amdgpu: rlc is busy, skip halt rlc
+    # [   33.980604] amdgpu 0000:2d:00.0: [drm:amdgpu_ring_test_helper [amdgpu]] *ERROR* ring gfx test failed (-110)
+    # [   33.980854] amdgpu 0000:2d:00.0: amdgpu: resume of IP block <gfx_v8_0> failed -110
+    # [   33.980860] amdgpu 0000:2d:00.0: amdgpu: GPU Recovery Failed: -110
+    CI_TRON_KERNEL__URL: "https://fs.mupuf.org/radv/linux-6.15.9/linux-x86_64"
+    CI_TRON_INITRAMFS__DEPMOD__URL: "https://fs.mupuf.org/radv/linux-6.15.9/linux-x86_64.depmod.cpio.xz"
+    CI_TRON_INITRAMFS__GPU__URL: "https://fs.mupuf.org/radv/linux-6.15.9/linux-x86_64.gpu.cpio"
+
 
 .polaris10-test-valve-mupuf:
   extends: .polaris10-test-valve

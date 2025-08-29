@@ -116,3 +116,14 @@ spec@glsl-1.30@execution@texelfetch@fs-texelfetch-sampler2darray-swizzle
 spec@glsl-1.50@execution@geometry@point-size-out
 spec@glsl-1.50@execution@redeclare-pervertex-out-subset-gs
 spec@nv_copy_image@nv_copy_image-formats --samples=8
+
+glx@glx-multithread-texture
+spec@arb_copy_image@arb_copy_image-formats --samples=2
+spec@arb_copy_image@arb_copy_image-formats --samples=2@Source: GL_RGBA8_SNORM/Destination: GL_RGBA8_SNORM
+spec@ext_packed_depth_stencil@fbo-depth-gl_depth24_stencil8-tex1d
+
+dEQP-GLES2.functional.color_clear.masked_scissored_rgba
+dEQP-GLES3.functional.fragment_ops.interaction.basic_shader.1
+dEQP-GLES3.functional.occlusion_query.depth_write_stencil_clear
+spec@!opengl 1.1@copypixels-sync
+spec@ext_texture_array@fbo-depth-array stencil-draw

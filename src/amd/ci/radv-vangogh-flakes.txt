@@ -18,3 +18,13 @@ dEQP-VK.shader_object.rendering.color_attachment_count_8.none.none.none.random_c
 dEQP-VK.shader_object.rendering.color_attachment_count_8.none.none.none.random_color_formats.before.none.r8g8b8a8_uint_d32_sfloat_s8_uint
 
 dEQP-VK.synchronization2.op.multi_queue.timeline_semaphore.write_clear_color_image_read_image_fragment.image_128x128_r16g16b16a16_uint_concurrent
+
+dEQP-VK.transform_feedback.primitives_generated_query.get.queue_reset.32bit.geom.no_xfb.no_attachment.line_strip.pgq_default.two_draws.pqg_first.after
+dEQP-VK.transform_feedback.primitives_generated_query.get.queue_reset.32bit.geom.no_xfb.rast.triangle_strip_with_adjacency.pgq_default.single_draw.pqg_first.before
+
+dEQP-VK.synchronization.op.multi_queue.fence.write_clear_color_image_read_image_compute.image_128_r32_uint_concurrent
+dEQP-VK.synchronization.op.multi_queue.fence.write_ssbo_tess_eval_read_ssbo_compute_indirect.buffer_16384_exclusive
+dEQP-VK.transform_feedback.primitives_generated_query.get.queue_reset.32bit.vert.no_xfb.no_rast.line_list.pgq_default.single_draw.pqg_first.before_2_queries_with_availability
+dEQP-VK.transform_feedback.primitives_generated_query.get.queue_reset.32bit.vert.xfb.empty_frag.point_list.pgq_default_xfb_default.two_draws.xfbq_first.after_2_queries
+
+dEQP-VK.pipeline.pipeline_library.vertex_input.multiple_attributes.layout_skip.binding_one_to_many.attributes.uvec3.float16_t.f16vec4
