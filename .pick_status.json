@@ -8704,7 +8704,7 @@
         "description": "radv/amdgpu: Use correct NOP packets when unchaining a CS",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
