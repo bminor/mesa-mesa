@@ -941,7 +941,10 @@ void r600_resource_copy_region(struct pipe_context *ctx,
 		src_box = &sbox;
 
 		src_force_level = src_level;
-	} else if (!util_blitter_is_copy_supported(rctx->blitter, dst, src)) {
+	} else if (!util_blitter_is_copy_supported(rctx->blitter, dst, src) ||
+		   (src->format == dst->format &&
+		    ((util_format_is_float(src->format) && !util_format_is_depth_or_stencil(src->format)) ||
+		     util_format_is_snorm(src->format)))) {
 		if (util_format_is_subsampled_422(src->format)) {
 
 			src_templ.format = PIPE_FORMAT_R8G8B8A8_UINT;

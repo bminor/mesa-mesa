@@ -7824,7 +7824,7 @@
         "description": "r600: fix r600_resource_copy_region behavior for some formats",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
