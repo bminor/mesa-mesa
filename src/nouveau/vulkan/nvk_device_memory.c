@@ -133,6 +133,11 @@ nvk_AllocateMemory(VkDevice device,
    struct nvk_device_memory *mem;
    VkResult result = VK_SUCCESS;
 
+   mem = vk_device_memory_create(&dev->vk, pAllocateInfo,
+                                 pAllocator, sizeof(*mem));
+   if (!mem)
+      return vk_error(dev, VK_ERROR_OUT_OF_HOST_MEMORY);
+
    const VkImportMemoryFdInfoKHR *fd_info =
       vk_find_struct_const(pAllocateInfo->pNext, IMPORT_MEMORY_FD_INFO_KHR);
    const VkExportMemoryAllocateInfo *export_info =
@@ -153,10 +158,12 @@ nvk_AllocateMemory(VkDevice device,
    uint32_t alignment = pdev->nvkmd->bind_align_B;
 
    uint8_t pte_kind = 0, tile_mode = 0;
-   if (dedicated_info != NULL) {
+   if (dedicated_info != NULL && dedicated_info->image != VK_NULL_HANDLE) {
       VK_FROM_HANDLE(nvk_image, image, dedicated_info->image);
-      if (image != NULL &&
-          image->vk.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+
+      mem->dedicated_image = image;
+
+      if (image->vk.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
          /* This image might be shared with GL so we need to set the BO flags
           * such that GL can bind and use it.
           */
@@ -169,11 +176,6 @@ nvk_AllocateMemory(VkDevice device,
 
    const uint64_t aligned_size =
       align64(pAllocateInfo->allocationSize, alignment);
-
-   mem = vk_device_memory_create(&dev->vk, pAllocateInfo,
-                                 pAllocator, sizeof(*mem));
-   if (!mem)
-      return vk_error(dev, VK_ERROR_OUT_OF_HOST_MEMORY);
 
    const bool is_import = fd_info && fd_info->handleType;
    if (is_import) {
