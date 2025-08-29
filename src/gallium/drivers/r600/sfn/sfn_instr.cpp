@@ -530,7 +530,7 @@ public:
       result = this_##TYPE->is_equal_to(instr);                                          \
    }                                                                                     \
                                                                                          \
-   const TYPE *this_##TYPE{nullptr};
+   const TYPE *this_##TYPE { nullptr }
 
    DECLARE_MEMBER(AluInstr);
    DECLARE_MEMBER(AluGroup);
