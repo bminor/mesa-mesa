@@ -33,7 +33,6 @@ radv_cs_emit_write_event_eop(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_
    const bool is_mec = qf == RADV_QUEUE_COMPUTE && gfx_level >= GFX7;
    unsigned op =
       EVENT_TYPE(event) | EVENT_INDEX(event == V_028A90_CS_DONE || event == V_028A90_PS_DONE ? 6 : 5) | event_flags;
-   unsigned is_gfx8_mec = is_mec && gfx_level < GFX9;
    unsigned sel = EOP_DST_SEL(dst_sel) | EOP_DATA_SEL(data_sel);
 
    /* Wait for write confirmation before writing data, but don't send
@@ -43,7 +42,7 @@ radv_cs_emit_write_event_eop(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_
 
    radeon_begin(cs);
 
-   if (gfx_level >= GFX9 || is_gfx8_mec) {
+   if (gfx_level >= GFX9 || is_mec) {
       /* A ZPASS_DONE or PIXEL_STAT_DUMP_EVENT (of the DB occlusion
        * counters) must immediately precede every timestamp event to
        * prevent a GPU hang on GFX9.
@@ -55,14 +54,14 @@ radv_cs_emit_write_event_eop(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_
          radeon_emit(gfx9_eop_bug_va >> 32);
       }
 
-      radeon_emit(PKT3(PKT3_RELEASE_MEM, is_gfx8_mec ? 5 : 6, false));
+      radeon_emit(PKT3(PKT3_RELEASE_MEM, gfx_level >= GFX9 ? 6 : 5, false));
       radeon_emit(op);
       radeon_emit(sel);
       radeon_emit(va);        /* address lo */
       radeon_emit(va >> 32);  /* address hi */
       radeon_emit(new_fence); /* immediate data lo */
       radeon_emit(0);         /* immediate data hi */
-      if (!is_gfx8_mec)
+      if (gfx_level >= GFX9)
          radeon_emit(0); /* unused */
    } else {
       /* On GFX6, EOS events are always emitted with EVENT_WRITE_EOS.
@@ -73,21 +72,11 @@ radv_cs_emit_write_event_eop(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_
       if (event == V_028B9C_CS_DONE || event == V_028B9C_PS_DONE) {
          assert(event_flags == 0 && dst_sel == EOP_DST_SEL_MEM && data_sel == EOP_DATA_SEL_VALUE_32BIT);
 
-         if (is_mec) {
-            radeon_emit(PKT3(PKT3_RELEASE_MEM, 5, false));
-            radeon_emit(op);
-            radeon_emit(sel);
-            radeon_emit(va);        /* address lo */
-            radeon_emit(va >> 32);  /* address hi */
-            radeon_emit(new_fence); /* immediate data lo */
-            radeon_emit(0);         /* immediate data hi */
-         } else {
-            radeon_emit(PKT3(PKT3_EVENT_WRITE_EOS, 3, false));
-            radeon_emit(op);
-            radeon_emit(va);
-            radeon_emit(((va >> 32) & 0xffff) | EOS_DATA_SEL(EOS_DATA_SEL_VALUE_32BIT));
-            radeon_emit(new_fence);
-         }
+         radeon_emit(PKT3(PKT3_EVENT_WRITE_EOS, 3, false));
+         radeon_emit(op);
+         radeon_emit(va);
+         radeon_emit(((va >> 32) & 0xffff) | EOS_DATA_SEL(EOS_DATA_SEL_VALUE_32BIT));
+         radeon_emit(new_fence);
       } else {
          if (gfx_level == GFX7 || gfx_level == GFX8) {
             /* Two EOP events are required to make all
