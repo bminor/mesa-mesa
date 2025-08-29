@@ -487,6 +487,8 @@ struct radv_shader_dma_submission {
 struct radv_shader_stage;
 
 void radv_optimize_nir(struct nir_shader *shader, bool optimize_conservatively);
+void radv_optimize_nir_algebraic_early(nir_shader *shader);
+void radv_optimize_nir_algebraic_late(nir_shader *shader);
 void radv_optimize_nir_algebraic(nir_shader *shader, bool opt_offsets, bool opt_mqsad,
                                  enum amd_gfx_level gfx_level);
 

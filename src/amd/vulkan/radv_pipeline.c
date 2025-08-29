@@ -433,6 +433,15 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
    if (constant_fold_for_push_const && stage->args.ac.inline_push_const_mask)
       NIR_PASS(_, stage->nir, nir_opt_constant_folding);
 
+   /* Optimize NIR before NGG culling */
+   bool is_last_vgt_stage = radv_is_last_vgt_stage(stage);
+   bool lowered_ngg = stage->info.is_ngg && is_last_vgt_stage;
+   if (lowered_ngg && stage->nir->info.stage != MESA_SHADER_GEOMETRY && stage->info.has_ngg_culling)
+      radv_optimize_nir_algebraic_early(stage->nir);
+
+   /* This has to be done after nir_opt_algebraic for best descriptor vectorization, but also before
+    * NGG culling.
+    */
    NIR_PASS(_, stage->nir, radv_nir_apply_pipeline_layout, device, stage);
 
    NIR_PASS(_, stage->nir, nir_lower_alu_width, opt_vectorize_callback, device);
@@ -466,9 +475,7 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
    }
 
    /* Lower I/O intrinsics to memory instructions. */
-   bool is_last_vgt_stage = radv_is_last_vgt_stage(stage);
    bool io_to_mem = radv_nir_lower_io_to_mem(device, stage);
-   bool lowered_ngg = stage->info.is_ngg && is_last_vgt_stage;
    if (lowered_ngg) {
       radv_lower_ngg(device, stage, gfx_state);
    } else if (is_last_vgt_stage) {
