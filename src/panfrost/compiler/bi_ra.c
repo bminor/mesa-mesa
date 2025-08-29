@@ -965,7 +965,7 @@ bi_out_of_ssa(bi_context *ctx)
          }
 
          /* Replace the phi with a move */
-         allow_propagate = false;
+         allow_propagate = true;
          bi_builder b = bi_init_builder(ctx, bi_before_instr(I));
          if (I->dest[0].memory) {
             /* dest was spilled to memory */
