@@ -15,7 +15,3 @@ dEQP-VK.video.synchronization.decode_h264.basic.event.device_set_reset,Fail
 dEQP-VK.video.synchronization.decode_h265.basic.event.device_set_reset,Fail
 dEQP-VK.video.synchronization2.decode_h264.basic.event.device_set_reset,Fail
 dEQP-VK.video.synchronization2.decode_h265.basic.event.device_set_reset,Fail
-
-# CTS bug
-dEQP-VK.video.formats.decode_h264_g8_b8r8_2plane_420_unorm_decode_dst_420_8bit,Fail
-dEQP-VK.video.formats.decode_h265_g8_b8r8_2plane_420_unorm_decode_dst_420_8bit,Fail

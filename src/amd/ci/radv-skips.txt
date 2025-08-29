@@ -52,3 +52,6 @@ dEQP-VK.reconvergence.maximal.compute.nesting4.7.38
 # This test can cause random GPU hangs for very weird reasons, needs to be
 # investigated.
 dEQP-VK.api.command_buffers.many_indirect_disps_on_secondary
+
+# These tests are expected to hang on GFX10+. I have a pending fix.
+dEQP-VK.sparse_resources.buffer.misc.null_address_read*
