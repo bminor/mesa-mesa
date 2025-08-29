@@ -79,7 +79,8 @@ st_nir_state_variable_create(struct nir_shader *shader,
                              bool packed_driver_uniform_storage);
 
 bool st_nir_lower_fog(struct nir_shader *s, enum gl_fog_mode fog_mode,
-                      struct gl_program_parameter_list *paramList);
+                      struct gl_program_parameter_list *paramList,
+                      bool packed_driver_uniform_storage);
 bool st_nir_lower_position_invariant(struct nir_shader *s,
                                      struct gl_program_parameter_list *paramList);
 

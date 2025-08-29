@@ -925,7 +925,7 @@ emit_instructions(struct texenv_fragment_program *p)
  * current texture env/combine mode.
  */
 static nir_shader *
-create_new_program(struct state_key *key,
+create_new_program(struct gl_context *ctx, struct state_key *key,
                    struct gl_program *program,
                    const nir_shader_compiler_options *options)
 {
@@ -954,8 +954,10 @@ create_new_program(struct state_key *key,
 
    nir_validate_shader(b.shader, "after generating ff-vertex shader");
 
-   if (key->fog_mode)
-      NIR_PASS(_, b.shader, st_nir_lower_fog, key->fog_mode, p.state_params);
+   if (key->fog_mode) {
+      NIR_PASS(_, b.shader, st_nir_lower_fog, key->fog_mode, p.state_params,
+               ctx->Const.PackedDriverUniformStorage);
+   }
 
    _mesa_add_separate_state_parameters(program, p.state_params);
    _mesa_free_parameter_list(p.state_params);
@@ -989,7 +991,7 @@ _mesa_get_fixed_func_fragment_program(struct gl_context *ctx)
          ctx->screen->nir_options[MESA_SHADER_FRAGMENT];
 
       nir_shader *s =
-         create_new_program(&key, prog, options);
+         create_new_program(ctx, &key, prog, options);
 
       prog->state.type = PIPE_SHADER_IR_NIR;
       prog->nir = s;

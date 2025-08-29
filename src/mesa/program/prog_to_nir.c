@@ -862,8 +862,10 @@ prog_to_nir(const struct gl_context *ctx, const struct gl_program *prog)
    }
 
    /* Add OPTION ARB_fog_exp code */
-   if (prog->arb.Fog)
-      NIR_PASS(_, s, st_nir_lower_fog, prog->arb.Fog, prog->Parameters);
+   if (prog->arb.Fog) {
+      NIR_PASS(_, s, st_nir_lower_fog, prog->arb.Fog, prog->Parameters,
+               ctx->Const.PackedDriverUniformStorage);
+   }
 
 fail:
    if (c->error) {
