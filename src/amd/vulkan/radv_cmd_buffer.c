@@ -6141,26 +6141,23 @@ lookup_ps_epilog(struct radv_cmd_buffer *cmd_buffer)
    }
 
    state.alpha_to_one = d->vk.ms.alpha_to_one_enable;
+   state.colors_written = ps->info.ps.colors_written;
 
-   if (ps) {
-      state.colors_written = ps->info.ps.colors_written;
+   if (ps->info.ps.exports_mrtz_via_epilog) {
+      const bool export_z_stencil_samplemask =
+         ps->info.ps.writes_z || ps->info.ps.writes_stencil || ps->info.ps.writes_sample_mask;
 
-      if (ps->info.ps.exports_mrtz_via_epilog) {
-         const bool export_z_stencil_samplemask =
-            ps->info.ps.writes_z || ps->info.ps.writes_stencil || ps->info.ps.writes_sample_mask;
+      state.export_depth = ps->info.ps.writes_z;
+      state.export_stencil = ps->info.ps.writes_stencil;
+      state.export_sample_mask = ps->info.ps.writes_sample_mask;
 
-         state.export_depth = ps->info.ps.writes_z;
-         state.export_stencil = ps->info.ps.writes_stencil;
-         state.export_sample_mask = ps->info.ps.writes_sample_mask;
-
-         if (d->vk.ms.alpha_to_coverage_enable) {
-            /* We need coverage-to-mask when alpha-to-one is also enabled. On GFX11, it's always
-             * enabled if there's a mrtz export.
-             */
-            const bool coverage_to_mask =
-               d->vk.ms.alpha_to_one_enable || (pdev->info.gfx_level >= GFX11 && export_z_stencil_samplemask);
-            state.alpha_to_coverage_via_mrtz = coverage_to_mask;
-         }
+      if (d->vk.ms.alpha_to_coverage_enable) {
+         /* We need coverage-to-mask when alpha-to-one is also enabled. On GFX11, it's always
+          * enabled if there's a mrtz export.
+          */
+         const bool coverage_to_mask =
+            d->vk.ms.alpha_to_one_enable || (pdev->info.gfx_level >= GFX11 && export_z_stencil_samplemask);
+         state.alpha_to_coverage_via_mrtz = coverage_to_mask;
       }
    }
 
