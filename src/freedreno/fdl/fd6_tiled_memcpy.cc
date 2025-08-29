@@ -294,6 +294,14 @@ get_block_size(unsigned cpp, uint32_t *block_width,
       *block_width = 4;
       *block_height = 4;
       break;
+   case 32:
+      *block_width = 4;
+      *block_height = 2;
+      break;
+   case 64:
+      *block_width = 2;
+      *block_height = 2;
+      break;
    default:
       UNREACHABLE("unknown cpp");
    }
