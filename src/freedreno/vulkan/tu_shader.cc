@@ -3242,7 +3242,7 @@ tu_empty_fs_create(struct tu_device *dev, struct tu_shader **shader,
       return VK_ERROR_OUT_OF_HOST_MEMORY;
 
    (*shader)->fs.has_fdm = fragment_density_map;
-   if (fragment_density_map)
+   if (fragment_density_map && dev->physical_device->info->chip < 7)
       (*shader)->fs.lrz.status = TU_LRZ_FORCE_DISABLE_LRZ;
 
    for (unsigned i = 0; i < MAX_SETS; i++)
