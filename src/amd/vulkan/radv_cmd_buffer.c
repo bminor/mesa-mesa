@@ -13368,49 +13368,24 @@ radv_before_dispatch(struct radv_cmd_buffer *cmd_buffer, struct radv_compute_pip
    struct radv_shader *compute_shader = bind_point == VK_PIPELINE_BIND_POINT_COMPUTE
                                            ? cmd_buffer->state.shaders[MESA_SHADER_COMPUTE]
                                            : cmd_buffer->state.rt_prolog;
-   const bool has_prefetch = pdev->info.gfx_level >= GFX7;
 
    if (compute_shader->info.cs.regalloc_hang_bug)
       cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_PS_PARTIAL_FLUSH | RADV_CMD_FLAG_CS_PARTIAL_FLUSH;
 
-   if (cmd_buffer->state.flush_bits & (RADV_CMD_FLAG_FLUSH_AND_INV_CB | RADV_CMD_FLAG_FLUSH_AND_INV_DB |
-                                       RADV_CMD_FLAG_PS_PARTIAL_FLUSH | RADV_CMD_FLAG_CS_PARTIAL_FLUSH)) {
-      /* If we have to wait for idle, set all states first, so that
-       * all SET packets are processed in parallel with previous draw
-       * calls. Then upload descriptors, set shader pointers, and
-       * dispatch, and prefetch at the end. This ensures that the
-       * time the CUs are idle is very short. (there are only SET_SH
-       * packets between the wait and the draw)
-       */
-      if (pipeline)
-         radv_emit_compute_pipeline(cmd_buffer, pipeline);
-      if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)
-         radv_emit_rt_stack_size(cmd_buffer);
-      radv_emit_cache_flush(cmd_buffer);
-      /* <-- CUs are idle here --> */
+   /* Use the optimal packet order similar to draws. */
+   if (pipeline)
+      radv_emit_compute_pipeline(cmd_buffer, pipeline);
+   if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)
+      radv_emit_rt_stack_size(cmd_buffer);
 
-      radv_upload_compute_shader_descriptors(cmd_buffer, bind_point);
-   } else {
-      /* If we don't wait for idle, start prefetches first, then set
-       * states, and dispatch at the end.
-       */
-      radv_emit_cache_flush(cmd_buffer);
+   radv_upload_compute_shader_descriptors(cmd_buffer, bind_point);
 
-      if (has_prefetch) {
-         if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
-            radv_emit_compute_prefetch(cmd_buffer);
-         } else {
-            radv_emit_ray_tracing_prefetch(cmd_buffer);
-         }
-      }
+   if (pdev->info.gfx_level >= GFX12)
+      radv_gfx12_emit_buffered_regs(device, cmd_buffer->cs);
 
-      radv_upload_compute_shader_descriptors(cmd_buffer, bind_point);
+   radv_emit_cache_flush(cmd_buffer);
 
-      if (pipeline)
-         radv_emit_compute_pipeline(cmd_buffer, pipeline);
-      if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)
-         radv_emit_rt_stack_size(cmd_buffer);
-   }
+   /* <-- CUs are idle here if shaders are synchronized. */
 
    if (pipeline_is_dirty) {
       /* Raytracing uses compute shaders but has separate bind points and pipelines.
