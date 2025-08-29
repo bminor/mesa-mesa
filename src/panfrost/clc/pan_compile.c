@@ -348,6 +348,7 @@ main(int argc, const char **argv)
 
          struct pan_compile_inputs inputs = {
             .gpu_id = gpu_prod_id << 16,
+            .gpu_variant = 0,
          };
 
          nir_link_shader_functions(s, nir);
