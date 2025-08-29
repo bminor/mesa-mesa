@@ -570,12 +570,13 @@ radv_amdgpu_cs_unchain(struct radeon_cmdbuf *cs)
       return;
 
    assert(cs->cdw <= cs->max_dw + 4);
+   const uint32_t nop_packet = get_nop_packet(acs);
 
    acs->chained_to = NULL;
-   cs->buf[cs->cdw - 4] = PKT3_NOP_PAD;
-   cs->buf[cs->cdw - 3] = PKT3_NOP_PAD;
-   cs->buf[cs->cdw - 2] = PKT3_NOP_PAD;
-   cs->buf[cs->cdw - 1] = PKT3_NOP_PAD;
+   cs->buf[cs->cdw - 4] = nop_packet;
+   cs->buf[cs->cdw - 3] = nop_packet;
+   cs->buf[cs->cdw - 2] = nop_packet;
+   cs->buf[cs->cdw - 1] = nop_packet;
 }
 
 static bool
