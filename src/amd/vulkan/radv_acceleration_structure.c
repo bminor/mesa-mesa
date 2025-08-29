@@ -84,7 +84,19 @@ radv_get_acceleration_structure_layout(struct radv_device *device,
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
-   uint32_t internal_count = MAX2(state->leaf_node_count, 2) - 1;
+   uint32_t internal_node_max_child_count = radv_use_bvh8(pdev) ? 8 : 4;
+   /* There are no internal nodes with only one child node except the root node which does't matter here. */
+   uint32_t last_internal_node_min_child_count = 2;
+   /* With pair compression on GFX12, internal nodes with two triangles are always collapsed so they don't exist. the
+    * minimum child count therefore has to be 3.
+    */
+   if (state->config.encode_key[0] & (RADV_ENCODE_KEY_PAIR_COMPRESS_GFX12 | RADV_ENCODE_KEY_BATCH_COMPRESS_GFX12))
+      last_internal_node_min_child_count = 3;
+
+   /* See CalcAccelStructInternalNodeCount (gpurt). */
+   uint32_t internal_count = (state->leaf_node_count * internal_node_max_child_count) /
+                                (last_internal_node_min_child_count * (internal_node_max_child_count - 1)) +
+                             1;
 
    VkGeometryTypeKHR geometry_type = vk_get_as_geometry_type(state->build_info);
 
@@ -122,7 +134,11 @@ radv_get_acceleration_structure_layout(struct radv_device *device,
    uint32_t internal_node_size =
       radv_use_bvh8(pdev) ? sizeof(struct radv_gfx12_box_node) : sizeof(struct radv_bvh_box32_node);
 
-   uint64_t bvh_size = bvh_leaf_size * state->leaf_node_count + internal_node_size * internal_count;
+   uint32_t hw_leaf_node_count = state->leaf_node_count;
+   if (state->config.encode_key[0] & RADV_ENCODE_KEY_BATCH_COMPRESS_GFX12)
+      hw_leaf_node_count = DIV_ROUND_UP(hw_leaf_node_count, 2);
+
+   uint64_t bvh_size = bvh_leaf_size * hw_leaf_node_count + internal_node_size * internal_count;
    uint32_t offset = 0;
    offset += sizeof(struct radv_accel_struct_header);
 
