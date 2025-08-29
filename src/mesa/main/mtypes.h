@@ -3589,6 +3589,8 @@ struct gl_context
    GLfloat ConservativeRasterDilate;
    GLenum16 ConservativeRasterMode;
 
+   GLboolean RepresentativeFragmentTest; /**< GL_REPRESENTATIVE_FRAGMENT_TEST_NV */
+
    GLboolean IntelBlackholeRender; /**< GL_INTEL_blackhole_render */
 
    /** Does glVertexAttrib(0) alias glVertex()? */

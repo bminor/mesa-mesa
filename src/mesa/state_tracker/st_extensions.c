@@ -1146,6 +1146,7 @@ void st_init_extensions(struct pipe_screen *screen,
    EXT_CAP(NV_conditional_render,            conditional_render);
    EXT_CAP(NV_fill_rectangle,                polygon_mode_fill_rectangle);
    EXT_CAP(NV_primitive_restart,             primitive_restart);
+   EXT_CAP(NV_representative_fragment_test,  representative_fragment_test);
    EXT_CAP(NV_shader_atomic_float,           image_atomic_float_add);
    EXT_CAP(NV_shader_atomic_int64,           shader_atomic_int64);
    EXT_CAP(NV_texture_barrier,               texture_barrier);

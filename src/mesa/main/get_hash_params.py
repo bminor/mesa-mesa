@@ -895,6 +895,9 @@ descriptor=[
   [ "EDGE_FLAG_ARRAY_STRIDE", "ARRAY_SHORT(VertexAttrib[VERT_ATTRIB_EDGEFLAG].Stride), NO_EXTRA" ],
   [ "EDGE_FLAG_ARRAY_COUNT_EXT", "CONST(0), NO_EXTRA" ],
 
+# GL_NV_representative_fragment_test
+  [ "REPRESENTATIVE_FRAGMENT_TEST_NV", "CONTEXT_BOOL(RepresentativeFragmentTest), NO_EXTRA" ],
+
 # GL_ARB_texture_compression
   [ "TEXTURE_COMPRESSION_HINT_ARB", "CONTEXT_ENUM16(Hint.TextureCompression), NO_EXTRA" ],
 

@@ -203,6 +203,8 @@ struct pipe_rasterizer_state
     */
    unsigned clip_plane_enable:PIPE_MAX_CLIP_PLANES;
 
+   unsigned representative_fragment_test:1;
+
    unsigned line_stipple_factor:8;  /**< [1..256] actually */
    unsigned line_stipple_pattern:16;
 

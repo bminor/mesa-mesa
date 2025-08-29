@@ -9310,6 +9310,10 @@
     <function name="ResolveDepthValuesNV" es2="3.1" alias="EvaluateDepthValuesARB"/>
 </category>
 
+<category name="GL_NV_representative_fragment_test">
+    <enum name="REPRESENTATIVE_FRAGMENT_TEST_NV" value="0x937F"/>
+</category>
+
 <category name="GL_SUN_convolution_border_modes" number="182">
     <enum name="WRAP_BORDER_SUN"                          value="0x81D4"/>
 </category>

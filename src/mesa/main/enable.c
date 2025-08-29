@@ -616,6 +616,15 @@ _mesa_set_enable(struct gl_context *ctx, GLenum cap, GLboolean state)
          ST_SET_STATE(ctx->NewDriverState, ST_NEW_RASTERIZER);
          ctx->ConservativeRasterization = state;
          break;
+      case GL_REPRESENTATIVE_FRAGMENT_TEST_NV:
+         if (!_mesa_has_NV_representative_fragment_test(ctx))
+            goto invalid_enum_error;
+         if (ctx->RepresentativeFragmentTest == state)
+            return;
+         FLUSH_VERTICES(ctx, 0, GL_ENABLE_BIT);
+         ST_SET_STATE(ctx->NewDriverState, ST_NEW_RASTERIZER);
+         ctx->RepresentativeFragmentTest = state;
+         break;
       case GL_COLOR_LOGIC_OP:
          if (!_mesa_is_desktop_gl(ctx) && ctx->API != API_OPENGLES)
             goto invalid_enum_error;
@@ -1982,6 +1991,11 @@ _mesa_IsEnabled( GLenum cap )
          if (!_mesa_has_NV_conservative_raster(ctx))
             goto invalid_enum_error;
          return ctx->ConservativeRasterization;
+
+      case GL_REPRESENTATIVE_FRAGMENT_TEST_NV:
+         if (!_mesa_has_NV_representative_fragment_test(ctx))
+            goto invalid_enum_error;
+         return ctx->RepresentativeFragmentTest;
 
       case GL_TILE_RASTER_ORDER_FIXED_MESA:
          if (!_mesa_has_MESA_tile_raster_order(ctx))

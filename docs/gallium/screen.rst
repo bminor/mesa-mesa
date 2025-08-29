@@ -653,6 +653,7 @@ Capability about the features and limits of the driver/GPU.
 * ``pipe_caps.shader_subgroup_quad_all_stages``: Whether shader subgroup quad operations are supported by shader stages other than fragment shader.
 * ``pipe_caps.multiview``: Whether multiview rendering of array textures is supported. A return of ``1`` indicates support for OVR_multiview, and ``2`` additionally supports OVR_multiview2. 
 * ``pipe_caps.call_finalize_nir_in_linker``: Whether ``pipe_screen::finalize_nir`` can be called in the GLSL linker before the NIR is stored in the shader cache. It's always called again after st/mesa adds code for shader variants. It must be 1 if the driver wants to report compile failures to the GLSL linker. It must be 0 if two consecutive ``finalize_nir`` calls on the same shader can break it, or if ``finalize_nir`` can't handle NIR that isn't fully lowered for the driver, or if ``finalize_nir`` breaks passes that st/mesa runs after it. Setting it to 1 is generally safe for drivers that expose nir_io_has_intrinsics and that don't enable any optional shader variants in st/mesa. Since it's difficult to support, any future refactoring can change it to 0.
+* ``pipe_caps.representative_fragment_test``: Support for GL_NV_representative_fragment_test.
 * ``pipe_caps.min_line_width``: The minimum width of a regular line.
 * ``pipe_caps.min_line_width_aa``: The minimum width of a smoothed line.
 * ``pipe_caps.max_line_width``: The maximum width of a regular line.

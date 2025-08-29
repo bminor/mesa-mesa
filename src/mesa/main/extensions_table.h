@@ -434,6 +434,7 @@ EXT(NV_read_buffer                          , dummy_true                        
 EXT(NV_read_depth                           , dummy_true                             ,  x ,  x ,  x , ES2, 2011)
 EXT(NV_read_depth_stencil                   , dummy_true                             ,  x ,  x ,  x , ES2, 2011)
 EXT(NV_read_stencil                         , dummy_true                             ,  x ,  x ,  x , ES2, 2011)
+EXT(NV_representative_fragment_test         , NV_representative_fragment_test        , GLL, GLC,  x ,  32, 2019)
 EXT(NV_sample_locations                     , ARB_sample_locations                   , GLL, GLC,  x , ES2, 2015)
 EXT(NV_shader_atomic_float                  , NV_shader_atomic_float                 , GLL, GLC,  x ,  x , 2012)
 EXT(NV_shader_atomic_int64                  , NV_shader_atomic_int64                 , GLL, GLC,  x ,  x , 2014)

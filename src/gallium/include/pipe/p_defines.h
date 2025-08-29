@@ -1043,6 +1043,7 @@ struct pipe_caps {
    bool shader_subgroup_quad_all_stages;
    bool call_finalize_nir_in_linker;
    bool mesh_shader;
+   bool representative_fragment_test;
 
    int accelerated;
    int min_texel_offset;

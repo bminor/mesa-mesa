@@ -288,6 +288,7 @@ struct gl_extensions
    GLboolean NV_viewport_array2;
    GLboolean NV_viewport_swizzle;
    GLboolean NV_timeline_semaphore;
+   GLboolean NV_representative_fragment_test;
    GLboolean NVX_gpu_memory_info;
    GLboolean TDFX_texture_compression_FXT1;
    GLboolean OES_EGL_image;
