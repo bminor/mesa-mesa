@@ -100,8 +100,38 @@ panvk_image_type_to_mali_tex_dim(VkImageType type)
    }
 }
 
+static struct pan_image_usage
+get_iusage(struct panvk_image *image, const VkImageCreateInfo *create_info)
+{
+   const struct wsi_image_create_info *wsi_info =
+      vk_find_struct_const(create_info->pNext, WSI_IMAGE_CREATE_INFO_MESA);
+   struct pan_image_usage iusage = {0};
+
+   if (image->vk.usage &
+       (VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT))
+      iusage.bind |= PAN_BIND_SAMPLER_VIEW;
+
+   if (image->vk.usage & VK_IMAGE_USAGE_STORAGE_BIT)
+      iusage.bind |= PAN_BIND_STORAGE_IMAGE;
+
+   if (image->vk.usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
+      iusage.bind |= PAN_BIND_DEPTH_STENCIL;
+
+   if (image->vk.usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
+      iusage.bind |= PAN_BIND_RENDER_TARGET;
+
+   iusage.host_copy =
+      !!(image->vk.usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT);
+   iusage.scanout = wsi_info && wsi_info->scanout;
+
+   return iusage;
+}
+
 static bool
-panvk_image_can_use_mod(struct panvk_image *image, uint64_t mod)
+panvk_image_can_use_mod(struct panvk_image *image,
+                        const struct pan_image_usage *iusage, uint64_t mod,
+                        bool optimal_only)
 {
    struct panvk_physical_device *phys_dev =
       to_panvk_physical_device(image->vk.base.device->physical);
@@ -175,7 +205,10 @@ panvk_image_can_use_mod(struct panvk_image *image, uint64_t mod)
          .depth = image->vk.extent.depth,
       };
 
-      if (!pan_image_test_props(&phys_dev->kmod.props, &iprops, NULL))
+      enum pan_mod_support supported =
+         pan_image_test_props(&phys_dev->kmod.props, &iprops, iusage);
+      if (supported == PAN_MOD_NOT_SUPPORTED ||
+          (supported == PAN_MOD_NOT_OPTIMAL && optimal_only))
          return false;
    }
 
@@ -184,7 +217,7 @@ panvk_image_can_use_mod(struct panvk_image *image, uint64_t mod)
 
 static uint64_t
 panvk_image_get_explicit_mod(
-   struct panvk_image *image,
+   struct panvk_image *image, const struct pan_image_usage *iusage,
    const VkImageDrmFormatModifierExplicitCreateInfoEXT *explicit)
 {
    uint64_t mod = explicit->drmFormatModifier;
@@ -193,24 +226,28 @@ panvk_image_get_explicit_mod(
    assert(image->vk.samples == 1);
    assert(image->vk.array_layers == 1);
    assert(image->vk.image_type != VK_IMAGE_TYPE_3D);
-   assert(panvk_image_can_use_mod(image, mod));
+   assert(panvk_image_can_use_mod(image, iusage, mod, false));
 
    return mod;
 }
 
 static uint64_t
 panvk_image_get_mod_from_list(struct panvk_image *image,
+                              const struct pan_image_usage *iusage,
                               const uint64_t *mods, uint32_t mod_count)
 {
    PAN_SUPPORTED_MODIFIERS(supported_mods);
 
-   for (unsigned i = 0; i < ARRAY_SIZE(supported_mods); ++i) {
-      if (!panvk_image_can_use_mod(image, supported_mods[i]))
-         continue;
+   for (unsigned pass = 0; pass < 2; pass++) {
+      for (unsigned i = 0; i < ARRAY_SIZE(supported_mods); ++i) {
+         if (!panvk_image_can_use_mod(image, iusage, supported_mods[i],
+                                      pass == 0))
+            continue;
 
-      if (!mod_count ||
-          drm_find_modifier(supported_mods[i], mods, mod_count))
-         return supported_mods[i];
+         if (!mod_count ||
+             drm_find_modifier(supported_mods[i], mods, mod_count))
+            return supported_mods[i];
+      }
    }
 
    /* If we reached that point without finding a proper modifier, there's
@@ -223,6 +260,8 @@ static uint64_t
 panvk_image_get_mod(struct panvk_image *image,
                     const VkImageCreateInfo *pCreateInfo)
 {
+   struct pan_image_usage iusage = get_iusage(image, pCreateInfo);
+
    if (pCreateInfo->tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
       const VkImageDrmFormatModifierListCreateInfoEXT *mod_list =
          vk_find_struct_const(pCreateInfo->pNext,
@@ -233,17 +272,17 @@ panvk_image_get_mod(struct panvk_image *image,
             IMAGE_DRM_FORMAT_MODIFIER_EXPLICIT_CREATE_INFO_EXT);
 
       if (explicit_mod)
-         return panvk_image_get_explicit_mod(image, explicit_mod);
+         return panvk_image_get_explicit_mod(image, &iusage, explicit_mod);
 
       if (mod_list)
-         return panvk_image_get_mod_from_list(image,
+         return panvk_image_get_mod_from_list(image, &iusage,
                    mod_list->pDrmFormatModifiers,
                    mod_list->drmFormatModifierCount);
 
       assert(!"Missing modifier info");
    }
 
-   return panvk_image_get_mod_from_list(image, NULL, 0);
+   return panvk_image_get_mod_from_list(image, &iusage, NULL, 0);
 }
 
 static bool
