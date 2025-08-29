@@ -307,13 +307,6 @@ anv_utrace_create_buffer(struct u_trace_context *utctx, uint64_t size_B)
                         &bo);
    assert(result == VK_SUCCESS);
 
-   memset(bo->map, 0, bo->size);
-#ifdef SUPPORT_INTEL_INTEGRATED_GPUS
-   if (device->physical->memory.need_flush &&
-       anv_bo_needs_host_cache_flush(bo->alloc_flags))
-      intel_flush_range(bo->map, bo->size);
-#endif
-
    return bo;
 }
 
@@ -422,10 +415,10 @@ anv_utrace_read_ts(struct u_trace_context *utctx,
 
    uint64_t timestamp;
 
-   /* Detect a 16/32 bytes timestamp write */
-   if (ts->gfx20_postsync_data[1] != 0 ||
-       ts->gfx20_postsync_data[2] != 0 ||
-       ts->gfx20_postsync_data[3] != 0) {
+   /* Gfx12.5+ use the COMPUTE_WALKER timestamp write which has a different
+    * format than a dummy 64bit timestamp.
+    */
+   if (device->info->verx10 >= 125 && (flags & INTEL_DS_TRACEPOINT_FLAG_END_CS)) {
       if (device->info->ver >= 20) {
          timestamp = ts->gfx20_postsync_data[3];
       } else {
