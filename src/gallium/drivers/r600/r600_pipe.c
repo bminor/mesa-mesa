@@ -508,7 +508,7 @@ static void r600_init_screen_caps(struct r600_screen *rscreen)
 	caps->multi_draw_indirect =
 	caps->draw_parameters = family >= CHIP_CEDAR;
 	caps->multi_draw_indirect_params = family >= CHIP_CEDAR &&
-		drm_version >= r600_version_simple(2, 50, 1);
+		drm_version >= r600_version_simple(2, 51, 0);
 
 	caps->buffer_sampler_view_rgba_only = family < CHIP_CEDAR;
 

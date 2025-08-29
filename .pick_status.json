@@ -7804,7 +7804,7 @@
         "description": "r600: update multi_draw_indirect_params drm version requirement",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9e1180b33523fce5dd692746355f48ee2580f939",
         "notes": null
