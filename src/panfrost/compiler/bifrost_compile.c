@@ -60,6 +60,7 @@ static const struct debug_named_value bifrost_debug_options[] = {
    {"nopreload",  BIFROST_DBG_NOPRELOAD,  "Disable message preloading"},
    {"spill",      BIFROST_DBG_SPILL,      "Test register spilling"},
    {"nossara",    BIFROST_DBG_NOSSARA,    "Disable SSA in register allocation"},
+   {"statsabs",   BIFROST_DBG_STATSABS,   "Don't normalize statistics"},
    DEBUG_NAMED_VALUE_END
 };
 /* clang-format on */
@@ -5110,33 +5111,43 @@ va_gather_stats(bi_context *ctx, unsigned size, struct valhall_stats *out)
       va_count_instr_stats(I, &counts);
    }
 
-   /* Mali G78 peak performance:
-    *
-    * 64 FMA instructions per cycle
-    * 64 CVT instructions per cycle
-    * 16 SFU instructions per cycle
-    * 8 x 32-bit varying channels interpolated per cycle
-    * 4 texture instructions per cycle
-    * 1 load/store operation per cycle
-    */
-   *out = (struct valhall_stats){
+   const struct pan_model *model =
+      pan_get_model(ctx->inputs->gpu_id, ctx->inputs->gpu_variant);
+
+   if (model == NULL) {
+      /* Get G57 by default: */
+      model = pan_get_model(((uint32_t)0x9001) << 16, 0);
+      assert(model);
+   }
+
+   struct valhall_stats stats_abs = {
       .instrs = nr_ins,
       .code_size = size,
-      .fma = ((float)counts.fma) / 64.0,
-      .cvt = ((float)counts.cvt) / 64.0,
-      .sfu = ((float)counts.sfu) / 16.0,
-      .v = ((float)counts.v) / 16.0,
-      .t = ((float)counts.t) / 4.0,
-      .ls = ((float)counts.ls) / 1.0,
+      .fma = ((float)counts.fma),
+      .cvt = ((float)counts.cvt),
+      .sfu = ((float)counts.sfu),
+      .v = ((float)counts.v),
+      .t = ((float)counts.t),
+      .ls = ((float)counts.ls),
       .threads = (ctx->info.work_reg_count <= 32) ? 2 : 1,
       .loops = ctx->loop_count,
       .spills = ctx->spills,
       .fills = ctx->fills,
    };
+   struct valhall_stats stats = stats_abs;
+   stats.fma /= model->rates.fma;
+   stats.cvt /= model->rates.fma;
+   stats.sfu /= (model->rates.fma / 4.0);
+   stats.v /= 16.0;
+   stats.t /= model->rates.texel;
+   stats.ls /= 1.0;
+
+   const bool output_normalized = !(bifrost_debug & BIFROST_DBG_STATSABS);
+   *out = output_normalized ? stats : stats_abs;
 
    /* Calculate the bound */
-   out->cycles =
-      MAX2(MAX3(out->fma, out->cvt, out->sfu), MAX3(out->v, out->t, out->ls));
+   out->cycles = MAX2(MAX3(stats.fma, stats.cvt, stats.sfu),
+                      MAX3(stats.v, stats.t, stats.ls));
 }
 
 /* Split stores to memory. We don't split stores to vertex outputs, since

@@ -50,6 +50,7 @@ extern "C" {
 #define BIFROST_DBG_SPILL      0x1000
 #define BIFROST_DBG_NOPSCHED   0x2000
 #define BIFROST_DBG_NOSSARA    0x4000
+#define BIFROST_DBG_STATSABS   0x8000
 
 extern int bifrost_debug;
 
