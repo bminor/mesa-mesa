@@ -13,7 +13,7 @@ endif
 #===============#
 # Configuration #
 #===============#
-gfxstream_guest_args = []
+gfxstream_guest_args = ['-D_FILE_OFFSET_BITS=64']
 
 # Our internal guest build
 if host_machine.system() == 'windows'
