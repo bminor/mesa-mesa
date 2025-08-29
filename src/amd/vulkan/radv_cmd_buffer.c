@@ -2858,8 +2858,6 @@ radv_emit_ps_epilog_state(struct radv_cmd_buffer *cmd_buffer, struct radv_shader
       pgm_rsrc1 = (ps_shader->config.rsrc1 & C_00B848_VGPRS) | (ps_epilog->rsrc1 & ~C_00B848_VGPRS);
    }
 
-   radv_cs_add_buffer(device->ws, cs->b, ps_epilog->bo);
-
    const uint32_t epilog_pc_offset = radv_get_user_sgpr_loc(ps_shader, AC_UD_EPILOG_PC);
 
    radeon_begin(cs);
@@ -2873,8 +2871,6 @@ radv_emit_ps_epilog_state(struct radv_cmd_buffer *cmd_buffer, struct radv_shader
       radeon_emit_32bit_pointer(epilog_pc_offset, ps_epilog->va, &pdev->info);
    }
    radeon_end();
-
-   cmd_buffer->shader_upload_seq = MAX2(cmd_buffer->shader_upload_seq, ps_epilog->upload_seq);
 
    cmd_buffer->state.emitted_ps_epilog = ps_epilog;
 }
@@ -8046,6 +8042,79 @@ radv_bind_custom_blend_mode(struct radv_cmd_buffer *cmd_buffer, unsigned custom_
    cmd_buffer->state.custom_blend_mode = custom_blend_mode;
 }
 
+static bool
+radv_can_enable_rbplus_depth_only(const struct radv_cmd_buffer *cmd_buffer, const struct radv_shader *ps,
+                                  uint32_t col_format, uint32_t custom_blend_mode)
+{
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+
+   if (!pdev->info.rbplus_allowed)
+      return false;
+
+   /* Enable RB+ for depth-only rendering. Registers must be programmed as follows:
+    *    CB_COLOR_CONTROL.MODE = CB_DISABLE
+    *    CB_COLOR0_INFO.FORMAT = COLOR_32
+    *    CB_COLOR0_INFO.NUMBER_TYPE = NUMBER_FLOAT
+    *    SPI_SHADER_COL_FORMAT.COL0_EXPORT_FORMAT = SPI_SHADER_32_R
+    *    SX_PS_DOWNCONVERT.MRT0 = SX_RT_EXPORT_32_R
+    *
+    * col_format == 0 implies no color outputs written and no alpha to coverage.
+    */
+
+   /* Do not enable for secondaries because it depends on states that we might not know. */
+   if (cmd_buffer->vk.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY)
+      return false;
+
+   /* Do not enable for internal operations which program CB_MODE differently. */
+   if (custom_blend_mode)
+      return false;
+
+   return !col_format && (!ps || !ps->info.ps.writes_memory);
+}
+
+static void
+radv_bind_fragment_output_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_shader *ps,
+                                const struct radv_shader_part *ps_epilog, uint32_t custom_blend_mode)
+{
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   uint32_t col_format = 0, z_format = 0, cb_shader_mask = 0;
+
+   if (ps) {
+      col_format = ps_epilog ? ps_epilog->spi_shader_col_format : ps->info.ps.spi_shader_col_format;
+      z_format = ps_epilog && ps->info.ps.exports_mrtz_via_epilog ? ps_epilog->spi_shader_z_format
+                                                                  : ps->info.regs.ps.spi_shader_z_format;
+      cb_shader_mask = ps_epilog ? ps_epilog->cb_shader_mask : ps->info.ps.cb_shader_mask;
+   }
+
+   if (custom_blend_mode) {
+      /* According to the CB spec states, CB_SHADER_MASK should be set to enable writes to all four
+       * channels of MRT0.
+       */
+      cb_shader_mask = 0xf;
+   }
+
+   const bool rbplus_depth_only_enabled =
+      radv_can_enable_rbplus_depth_only(cmd_buffer, ps, col_format, custom_blend_mode);
+
+   if ((radv_needs_null_export_workaround(device, ps, custom_blend_mode) && !col_format) || rbplus_depth_only_enabled)
+      col_format = V_028714_SPI_SHADER_32_R;
+
+   if (cmd_buffer->state.spi_shader_col_format != col_format) {
+      cmd_buffer->state.spi_shader_col_format = col_format;
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FRAGMENT_OUTPUT;
+      if (pdev->info.rbplus_allowed)
+         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_RBPLUS;
+   }
+
+   if (cmd_buffer->state.cb_shader_mask != cb_shader_mask || cmd_buffer->state.spi_shader_z_format != z_format) {
+      cmd_buffer->state.cb_shader_mask = cb_shader_mask;
+      cmd_buffer->state.spi_shader_z_format = z_format;
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FRAGMENT_OUTPUT;
+   }
+}
+
 static void
 radv_bind_pre_rast_shader(struct radv_cmd_buffer *cmd_buffer, const struct radv_shader *shader)
 {
@@ -8309,6 +8378,23 @@ radv_bind_rt_prolog(struct radv_cmd_buffer *cmd_buffer, struct radv_shader *rt_p
    radv_cs_add_buffer(device->ws, cs->b, rt_prolog->bo);
 }
 
+static void
+radv_bind_ps_epilog(struct radv_cmd_buffer *cmd_buffer, struct radv_shader_part *ps_epilog)
+{
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_shader *ps = cmd_buffer->state.shaders[MESA_SHADER_FRAGMENT];
+   struct radv_cmd_stream *cs = cmd_buffer->cs;
+
+   assert(cmd_buffer->state.custom_blend_mode == 0);
+   radv_bind_fragment_output_state(cmd_buffer, ps, ps_epilog, 0);
+
+   cmd_buffer->state.ps_epilog = ps_epilog;
+
+   cmd_buffer->shader_upload_seq = MAX2(cmd_buffer->shader_upload_seq, ps_epilog->upload_seq);
+
+   radv_cs_add_buffer(device->ws, cs->b, ps_epilog->bo);
+}
+
 /* This function binds/unbinds a shader to the cmdbuffer state. */
 static void
 radv_bind_shader(struct radv_cmd_buffer *cmd_buffer, struct radv_shader *shader, mesa_shader_stage stage)
@@ -8391,79 +8477,6 @@ radv_bind_shader(struct radv_cmd_buffer *cmd_buffer, struct radv_shader *shader,
    cmd_buffer->shader_upload_seq = MAX2(cmd_buffer->shader_upload_seq, shader->upload_seq);
 
    radv_cs_add_buffer(device->ws, cs->b, shader->bo);
-}
-
-static bool
-radv_can_enable_rbplus_depth_only(const struct radv_cmd_buffer *cmd_buffer, const struct radv_shader *ps,
-                                  uint32_t col_format, uint32_t custom_blend_mode)
-{
-   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-
-   if (!pdev->info.rbplus_allowed)
-      return false;
-
-   /* Enable RB+ for depth-only rendering. Registers must be programmed as follows:
-    *    CB_COLOR_CONTROL.MODE = CB_DISABLE
-    *    CB_COLOR0_INFO.FORMAT = COLOR_32
-    *    CB_COLOR0_INFO.NUMBER_TYPE = NUMBER_FLOAT
-    *    SPI_SHADER_COL_FORMAT.COL0_EXPORT_FORMAT = SPI_SHADER_32_R
-    *    SX_PS_DOWNCONVERT.MRT0 = SX_RT_EXPORT_32_R
-    *
-    * col_format == 0 implies no color outputs written and no alpha to coverage.
-    */
-
-   /* Do not enable for secondaries because it depends on states that we might not know. */
-   if (cmd_buffer->vk.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY)
-      return false;
-
-   /* Do not enable for internal operations which program CB_MODE differently. */
-   if (custom_blend_mode)
-      return false;
-
-   return !col_format && (!ps || !ps->info.ps.writes_memory);
-}
-
-static void
-radv_bind_fragment_output_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_shader *ps,
-                                const struct radv_shader_part *ps_epilog, uint32_t custom_blend_mode)
-{
-   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-   uint32_t col_format = 0, z_format = 0, cb_shader_mask = 0;
-
-   if (ps) {
-      col_format = ps_epilog ? ps_epilog->spi_shader_col_format : ps->info.ps.spi_shader_col_format;
-      z_format = ps_epilog && ps->info.ps.exports_mrtz_via_epilog ? ps_epilog->spi_shader_z_format
-                                                                  : ps->info.regs.ps.spi_shader_z_format;
-      cb_shader_mask = ps_epilog ? ps_epilog->cb_shader_mask : ps->info.ps.cb_shader_mask;
-   }
-
-   if (custom_blend_mode) {
-      /* According to the CB spec states, CB_SHADER_MASK should be set to enable writes to all four
-       * channels of MRT0.
-       */
-      cb_shader_mask = 0xf;
-   }
-
-   const bool rbplus_depth_only_enabled =
-      radv_can_enable_rbplus_depth_only(cmd_buffer, ps, col_format, custom_blend_mode);
-
-   if ((radv_needs_null_export_workaround(device, ps, custom_blend_mode) && !col_format) || rbplus_depth_only_enabled)
-      col_format = V_028714_SPI_SHADER_32_R;
-
-   if (cmd_buffer->state.spi_shader_col_format != col_format) {
-      cmd_buffer->state.spi_shader_col_format = col_format;
-      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FRAGMENT_OUTPUT;
-      if (pdev->info.rbplus_allowed)
-         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_RBPLUS;
-   }
-
-   if (cmd_buffer->state.cb_shader_mask != cb_shader_mask || cmd_buffer->state.spi_shader_z_format != z_format) {
-      cmd_buffer->state.cb_shader_mask = cb_shader_mask;
-      cmd_buffer->state.spi_shader_z_format = z_format;
-      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FRAGMENT_OUTPUT;
-   }
 }
 
 static void
@@ -12019,9 +12032,7 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
             return;
          }
 
-         assert(cmd_buffer->state.custom_blend_mode == 0);
-
-         radv_bind_fragment_output_state(cmd_buffer, cmd_buffer->state.shaders[MESA_SHADER_FRAGMENT], ps_epilog, 0);
+         radv_bind_ps_epilog(cmd_buffer, ps_epilog);
       }
    }
 
