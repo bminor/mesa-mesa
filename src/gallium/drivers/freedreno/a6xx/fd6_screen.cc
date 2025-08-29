@@ -78,7 +78,9 @@ fd6_screen_is_format_supported(struct pipe_screen *pscreen,
    if ((usage & (PIPE_BIND_SAMPLER_VIEW | PIPE_BIND_SHADER_IMAGE)) &&
        has_tex &&
        (target == PIPE_BUFFER || allow_suboptimal || !is_suboptimal)) {
-      retval |= usage & (PIPE_BIND_SAMPLER_VIEW | PIPE_BIND_SHADER_IMAGE);
+      retval |= usage & PIPE_BIND_SAMPLER_VIEW;
+      if (has_color)
+         retval |= usage & PIPE_BIND_SHADER_IMAGE;
    }
 
    if (usage & PIPE_BIND_SHADER_IMAGE) {
