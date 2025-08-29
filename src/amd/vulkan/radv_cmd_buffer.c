@@ -4354,7 +4354,7 @@ radv_get_primitive_reset_index(const struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
-radv_emit_patch_control_points_state(struct radv_cmd_buffer *cmd_buffer)
+radv_emit_ls_hs_config(struct radv_cmd_buffer *cmd_buffer)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -8129,8 +8129,8 @@ radv_bind_tess_ctrl_shader(struct radv_cmd_buffer *cmd_buffer, const struct radv
    /* Always re-emit patch control points/domain origin when a new pipeline with tessellation is
     * bound because a bunch of parameters (user SGPRs, TCS vertices out, ccw, etc) can be different.
     */
-   cmd_buffer->state.dirty |= RADV_CMD_DIRTY_PATCH_CONTROL_POINTS_STATE | RADV_CMD_DIRTY_TESS_DOMAIN_ORIGIN_STATE |
-                              RADV_CMD_DIRTY_TCS_TES_STATE;
+   cmd_buffer->state.dirty |=
+      RADV_CMD_DIRTY_LS_HS_CONFIG | RADV_CMD_DIRTY_TESS_DOMAIN_ORIGIN_STATE | RADV_CMD_DIRTY_TCS_TES_STATE;
 
    /* Re-emit the VS prolog when the tessellation control shader is compiled separately because
     * shader configs are combined and need to be updated.
@@ -11912,7 +11912,7 @@ radv_validate_dynamic_states(struct radv_cmd_buffer *cmd_buffer, uint64_t dynami
    if (dynamic_states & RADV_DYNAMIC_PATCH_CONTROL_POINTS) {
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_TCS_TES_STATE;
       if (pdev->info.gfx_level < GFX12)
-         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_PATCH_CONTROL_POINTS_STATE;
+         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_LS_HS_CONFIG;
    }
 
    if (dynamic_states &
@@ -12044,7 +12044,7 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
 
          if (cmd_buffer->state.tess_num_patches != tess_num_patches) {
             cmd_buffer->state.tess_num_patches = tess_num_patches;
-            cmd_buffer->state.dirty |= RADV_CMD_DIRTY_PATCH_CONTROL_POINTS_STATE | RADV_CMD_DIRTY_TCS_TES_STATE;
+            cmd_buffer->state.dirty |= RADV_CMD_DIRTY_LS_HS_CONFIG | RADV_CMD_DIRTY_TCS_TES_STATE;
          }
       }
    }
@@ -12146,9 +12146,9 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
       cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_VGT_PRIM_STATE;
    }
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_PATCH_CONTROL_POINTS_STATE) {
-      radv_emit_patch_control_points_state(cmd_buffer);
-      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_PATCH_CONTROL_POINTS_STATE;
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_LS_HS_CONFIG) {
+      radv_emit_ls_hs_config(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_LS_HS_CONFIG;
    }
 
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_TESS_DOMAIN_ORIGIN_STATE) {
