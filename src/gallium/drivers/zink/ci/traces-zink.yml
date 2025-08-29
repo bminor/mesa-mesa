@@ -67,13 +67,13 @@ traces:
   gputest/furmark-v2.trace:
     gl-zink-anv-adl:
       label: [no-perf]
-      checksum: 30649dc37efcf5dadc7b761769de51d7
+      checksum: 2d3f45cda72a1f8a54fd115fb27ee8d6
     gl-zink-anv-tgl:
-      checksum: 30649dc37efcf5dadc7b761769de51d7
+      checksum: 2d3f45cda72a1f8a54fd115fb27ee8d6
     zink-radv-vangogh:
-      checksum: d02c3021f720ae4b1023fc298f125581
+      checksum: 6466543da6b14d7e35630c6ed3e90e5f
     zink-radv-gfx1201:
-      checksum: d02c3021f720ae4b1023fc298f125581
+      checksum: 6466543da6b14d7e35630c6ed3e90e5f
 
   gputest/triangle-v2.trace:
     gl-zink-anv-adl:

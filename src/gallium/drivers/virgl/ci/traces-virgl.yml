@@ -9,7 +9,7 @@ traces:
       checksum: f8eba0fec6e3e0af9cb09844bc73bdc8
   gputest/furmark-v2.trace:
     gl-virgl:
-      checksum: e9013d2861ac60b5b80d759455a6f058
+      checksum: 95b55f29d9f6dceb842386ea887861d4
   gputest/triangle-v2.trace:
     gl-virgl:
       checksum: 7812de00011a3a059892e36cea19c696
