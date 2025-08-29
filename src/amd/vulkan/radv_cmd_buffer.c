@@ -2842,15 +2842,17 @@ radv_emit_rbplus_state(struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
-radv_emit_ps_epilog_state(struct radv_cmd_buffer *cmd_buffer, struct radv_shader_part *ps_epilog)
+radv_emit_ps_epilog_state(struct radv_cmd_buffer *cmd_buffer)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radv_shader *ps_shader = cmd_buffer->state.shaders[MESA_SHADER_FRAGMENT];
+   const struct radv_shader_part *ps_epilog = cmd_buffer->state.ps_epilog;
    struct radv_cmd_stream *cs = cmd_buffer->cs;
    uint32_t pgm_rsrc1 = 0;
 
-   if (cmd_buffer->state.emitted_ps_epilog == ps_epilog)
+   /* This state might be dirty with a NULL PS when states are saved/restored for meta operations. */
+   if (!ps_shader || !ps_shader->info.ps.has_epilog)
       return;
 
    assert(ps_shader->config.num_shared_vgprs == 0);
@@ -2871,8 +2873,6 @@ radv_emit_ps_epilog_state(struct radv_cmd_buffer *cmd_buffer, struct radv_shader
       radeon_emit_32bit_pointer(epilog_pc_offset, ps_epilog->va, &pdev->info);
    }
    radeon_end();
-
-   cmd_buffer->state.emitted_ps_epilog = ps_epilog;
 }
 
 void
@@ -8318,7 +8318,7 @@ radv_bind_fragment_shader(struct radv_cmd_buffer *cmd_buffer, const struct radv_
    }
 
    if (ps->info.ps.has_epilog)
-      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_PS_EPILOG_SHADER;
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_PS_EPILOG_SHADER | RADV_CMD_DIRTY_PS_EPILOG_STATE;
 
    if (radv_get_user_sgpr_info(ps, AC_UD_PS_STATE)->sgpr_idx != -1)
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FS_STATE;
@@ -8347,10 +8347,6 @@ radv_bind_fragment_shader(struct radv_cmd_buffer *cmd_buffer, const struct radv_
       cmd_buffer->state.uses_fbfetch_output = ps->info.ps.uses_fbfetch_output;
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FBFETCH_OUTPUT;
    }
-
-   /* Re-emit the PS epilog when a new fragment shader is bound. */
-   if (ps->info.ps.has_epilog)
-      cmd_buffer->state.emitted_ps_epilog = NULL;
 }
 
 static void
@@ -8381,7 +8377,7 @@ radv_bind_rt_prolog(struct radv_cmd_buffer *cmd_buffer, struct radv_shader *rt_p
    radv_cs_add_buffer(device->ws, cs->b, rt_prolog->bo);
 }
 
-static struct radv_shader_part *
+static void
 radv_bind_ps_epilog(struct radv_cmd_buffer *cmd_buffer)
 {
    const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
@@ -8390,16 +8386,19 @@ radv_bind_ps_epilog(struct radv_cmd_buffer *cmd_buffer)
    struct radv_shader_part *ps_epilog;
 
    if (!ps || !ps->info.ps.has_epilog)
-      return NULL;
+      return;
 
    ps_epilog = lookup_ps_epilog(cmd_buffer);
    if (!ps_epilog) {
       vk_command_buffer_set_error(&cmd_buffer->vk, VK_ERROR_OUT_OF_HOST_MEMORY);
-      return NULL;
+      return;
    }
 
    assert(cmd_buffer->state.custom_blend_mode == 0);
    radv_bind_fragment_output_state(cmd_buffer, ps, ps_epilog, 0);
+
+   if (cmd_buffer->state.ps_epilog == ps_epilog)
+      return;
 
    cmd_buffer->state.ps_epilog = ps_epilog;
 
@@ -8407,7 +8406,7 @@ radv_bind_ps_epilog(struct radv_cmd_buffer *cmd_buffer)
 
    radv_cs_add_buffer(device->ws, cs->b, ps_epilog->bo);
 
-   return ps_epilog;
+   cmd_buffer->state.dirty |= RADV_CMD_DIRTY_PS_EPILOG_STATE;
 }
 
 /* This function binds/unbinds a shader to the cmdbuffer state. */
@@ -11244,6 +11243,11 @@ radv_emit_shaders_state(struct radv_cmd_buffer *cmd_buffer)
       cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_FS_STATE;
    }
 
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_PS_EPILOG_STATE) {
+      radv_emit_ps_epilog_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_PS_EPILOG_STATE;
+   }
+
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_NGG_STATE) {
       radv_emit_ngg_state(cmd_buffer);
       cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_NGG_STATE;
@@ -12037,7 +12041,6 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   struct radv_shader_part *ps_epilog = NULL;
 
    const uint64_t dynamic_states = cmd_buffer->state.dirty_dynamic & radv_get_needed_dynamic_states(cmd_buffer);
    if (((cmd_buffer->state.dirty & (RADV_CMD_DIRTY_PIPELINE | RADV_CMD_DIRTY_GRAPHICS_SHADERS)) ||
@@ -12069,7 +12072,7 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
       radv_validate_dynamic_states(cmd_buffer, dynamic_states);
 
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_PS_EPILOG_SHADER) {
-      ps_epilog = radv_bind_ps_epilog(cmd_buffer);
+      radv_bind_ps_epilog(cmd_buffer);
       cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_PS_EPILOG_SHADER;
    }
 
@@ -12108,9 +12111,6 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
       radv_emit_graphics_shaders(cmd_buffer);
       cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_GRAPHICS_SHADERS;
    }
-
-   if (ps_epilog)
-      radv_emit_ps_epilog_state(cmd_buffer, ps_epilog);
 
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_FRAGMENT_OUTPUT) {
       radv_emit_fragment_output_state(cmd_buffer);

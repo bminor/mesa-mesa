@@ -121,7 +121,8 @@ enum radv_cmd_dirty_bits {
    RADV_CMD_DIRTY_NGGC_VIEWPORT = 1ull << 35,
    RADV_CMD_DIRTY_NGGC_SETTINGS = 1ull << 36,
    RADV_CMD_DIRTY_PS_EPILOG_SHADER = 1ull << 37,
-   RADV_CMD_DIRTY_ALL = (1ull << 38) - 1,
+   RADV_CMD_DIRTY_PS_EPILOG_STATE = 1ull << 38,
+   RADV_CMD_DIRTY_ALL = (1ull << 39) - 1,
 
    RADV_CMD_DIRTY_SHADER_QUERY = RADV_CMD_DIRTY_NGG_STATE | RADV_CMD_DIRTY_TASK_STATE,
 };
@@ -500,7 +501,6 @@ struct radv_cmd_state {
    struct radv_shader *emitted_ps;
 
    struct radv_shader_part *ps_epilog;
-   struct radv_shader_part *emitted_ps_epilog;
 
    /* Whether to suspend streamout for internal driver operations. */
    bool suspend_streamout;
