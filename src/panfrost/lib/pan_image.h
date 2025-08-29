@@ -252,9 +252,24 @@ bool pan_image_layout_init(
    unsigned arch, struct pan_image *image, unsigned plane_idx,
    const struct pan_image_layout_constraints *explicit_layout_constraints);
 
-static inline bool
+struct pan_image_usage {
+   /* PAN_BIND_xxx flags. */
+   uint32_t bind;
+
+   /* Image filled directly from the CPU. */
+   bool host_copy;
+
+   /* Image frequently updated with host data. */
+   bool frequent_host_updates;
+
+   /* Scanout image. */
+   bool scanout;
+};
+
+static inline enum pan_mod_support
 pan_image_test_props(const struct pan_kmod_dev_props *dprops,
-                     const struct pan_image_props *iprops)
+                     const struct pan_image_props *iprops,
+                     const struct pan_image_usage *iusage)
 {
    const unsigned arch = pan_arch(dprops->gpu_id);
    struct pan_image image = {
@@ -263,10 +278,12 @@ pan_image_test_props(const struct pan_kmod_dev_props *dprops,
    };
 
    if (!image.mod_handler)
-      return false;
+      return PAN_MOD_NOT_SUPPORTED;
 
-   if (!image.mod_handler->test_props(dprops, &image.props))
-      return false;
+   enum pan_mod_support ret =
+      image.mod_handler->test_props(dprops, &image.props, iusage);
+   if (ret == PAN_MOD_NOT_SUPPORTED)
+      return ret;
 
    /* Now make sure the layout can be properly initialized on all planes. */
    uint32_t plane_count = util_format_get_num_planes(image.props.format);
@@ -277,10 +294,10 @@ pan_image_test_props(const struct pan_kmod_dev_props *dprops,
       image.planes[p] = &plane;
 
       if (!pan_image_layout_init(arch, &image, p, NULL))
-         return false;
+         return PAN_MOD_NOT_SUPPORTED;
    }
 
-   return true;
+   return ret;
 }
 
 static inline bool
@@ -304,9 +321,8 @@ pan_image_test_modifier_with_format(const struct pan_kmod_dev_props *dprops,
       .array_size = 1,
    };
 
-   return pan_image_test_props(dprops, &iprops);
+   return pan_image_test_props(dprops, &iprops, NULL) != PAN_MOD_NOT_SUPPORTED;
 }
-
 
 #ifdef __cplusplus
 } /* extern C */

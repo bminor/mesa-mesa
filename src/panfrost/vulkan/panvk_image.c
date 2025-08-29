@@ -175,7 +175,7 @@ panvk_image_can_use_mod(struct panvk_image *image, uint64_t mod)
          .depth = image->vk.extent.depth,
       };
 
-      if (!pan_image_test_props(&phys_dev->kmod.props, &iprops))
+      if (!pan_image_test_props(&phys_dev->kmod.props, &iprops, NULL))
          return false;
    }
 
