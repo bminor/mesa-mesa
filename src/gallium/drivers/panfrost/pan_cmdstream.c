@@ -4467,10 +4467,12 @@ GENX(panfrost_cmdstream_screen_init)(struct panfrost_screen *screen)
    screen->vtbl.select_tile_size = GENX(pan_select_tile_size);
 
    pan_blend_shader_cache_init(&dev->blend_shaders, panfrost_device_gpu_id(dev),
+                               dev->kmod.props.gpu_variant,
                                &screen->mempools.bin.base);
 
    GENX(pan_fb_preload_cache_init)
-   (&dev->fb_preload_cache, panfrost_device_gpu_id(dev), &dev->blend_shaders,
+   (&dev->fb_preload_cache, panfrost_device_gpu_id(dev),
+    dev->kmod.props.gpu_variant, &dev->blend_shaders,
     &screen->mempools.bin.base, &screen->mempools.desc.base);
 
    dev->precomp_cache = GENX(panfrost_precomp_cache_init)(screen);

@@ -18,9 +18,11 @@ DERIVE_HASH_TABLE(pan_blend_shader_key);
 
 void
 pan_blend_shader_cache_init(struct pan_blend_shader_cache *cache,
-                            unsigned gpu_id, struct pan_pool *bin_pool)
+                            unsigned gpu_id, uint32_t gpu_variant,
+                            struct pan_pool *bin_pool)
 {
    cache->gpu_id = gpu_id;
+   cache->gpu_variant = gpu_variant;
    cache->bin_pool = bin_pool;
    cache->shaders = pan_blend_shader_key_table_create(NULL);
    pthread_mutex_init(&cache->lock, NULL);
@@ -95,6 +97,7 @@ GENX(pan_blend_get_shader_locked)(struct pan_blend_shader_cache *cache,
    /* Compile the NIR shader */
    struct pan_compile_inputs inputs = {
       .gpu_id = cache->gpu_id,
+      .gpu_variant = cache->gpu_variant,
       .is_blend = true,
       .blend.nr_samples = key.nr_samples,
       .pushable_ubos = BITFIELD_BIT(PAN_UBO_SYSVALS),

@@ -547,6 +547,7 @@ pan_preload_get_shader(struct pan_fb_preload_cache *cache,
 
    struct pan_compile_inputs inputs = {
       .gpu_id = cache->gpu_id,
+      .gpu_variant = cache->gpu_variant,
       .is_blit = true,
       .no_idvs = true,
    };
@@ -1417,11 +1418,12 @@ pan_preload_prefill_preload_shader_cache(struct pan_fb_preload_cache *cache)
 
 void
 GENX(pan_fb_preload_cache_init)(
-   struct pan_fb_preload_cache *cache, unsigned gpu_id,
+   struct pan_fb_preload_cache *cache, unsigned gpu_id, uint32_t gpu_variant,
    struct pan_blend_shader_cache *blend_shader_cache, struct pan_pool *bin_pool,
    struct pan_pool *desc_pool)
 {
    cache->gpu_id = gpu_id;
+   cache->gpu_variant = gpu_variant;
    cache->shaders.preload = pan_preload_shader_key_table_create(NULL);
    cache->shaders.pool = bin_pool;
    pthread_mutex_init(&cache->shaders.lock, NULL);

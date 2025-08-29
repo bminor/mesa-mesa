@@ -145,6 +145,7 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
 
    struct pan_compile_inputs inputs = {
       .gpu_id = panfrost_device_gpu_id(dev),
+      .gpu_variant = dev->kmod.props.gpu_variant,
    };
 
    /* Lower this early so the backends don't have to worry about it */
