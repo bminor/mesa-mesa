@@ -1520,7 +1520,7 @@ can_use_attachment_initial_layout(struct vk_command_buffer *cmd_buffer,
     * view_mask now as the only thing using it will be the loop below.
     */
 
-   /* 3D is stupidly special.  See transition_attachment() */
+   /* 3D is stupidly special. See transition_view_mask() */
    if (image_view->image->image_type == VK_IMAGE_TYPE_3D)
       view_mask = 1;
 
@@ -1605,22 +1605,17 @@ vk_command_buffer_set_attachment_layout(struct vk_command_buffer *cmd_buffer,
    }
 }
 
-static void
-transition_attachment(struct vk_command_buffer *cmd_buffer,
-                      uint32_t att_idx,
-                      uint32_t view_mask,
-                      VkImageLayout layout,
-                      VkImageLayout stencil_layout,
-                      uint32_t *barrier_count,
-                      uint32_t max_barrier_count,
-                      VkImageMemoryBarrier2 *barriers)
+static uint32_t
+transition_view_mask(struct vk_command_buffer *cmd_buffer,
+                     uint32_t att_idx,
+                     uint32_t view_mask,
+                     VkImageLayout layout,
+                     VkImageLayout stencil_layout)
 {
-   const struct vk_render_pass *pass = cmd_buffer->render_pass;
-   const struct vk_framebuffer *framebuffer = cmd_buffer->framebuffer;
-   const struct vk_render_pass_attachment *pass_att =
-      &pass->attachments[att_idx];
    struct vk_attachment_state *att_state = &cmd_buffer->attachments[att_idx];
    const struct vk_image_view *image_view = att_state->image_view;
+
+   uint32_t transition_view_mask = 0;
 
    /* 3D is stupidly special.  From the Vulkan 1.3.204 spec:
     *
@@ -1649,10 +1644,41 @@ transition_attachment(struct vk_command_buffer *cmd_buffer,
       assert(view >= 0 && view < MESA_VK_MAX_MULTIVIEW_VIEW_COUNT);
       struct vk_attachment_view_state *att_view_state = &att_state->views[view];
 
-      /* First, check to see if we even need a transition */
-      if (att_view_state->layout == layout &&
-          att_view_state->stencil_layout == stencil_layout)
-         continue;
+      if (att_view_state->layout != layout ||
+          att_view_state->stencil_layout != stencil_layout)
+         transition_view_mask |= BITFIELD_BIT(view);
+   }
+
+   return transition_view_mask;
+}
+
+static void
+transition_attachment(struct vk_command_buffer *cmd_buffer,
+                      uint32_t att_idx,
+                      uint32_t view_mask,
+                      VkImageLayout layout,
+                      VkImageLayout stencil_layout,
+                      uint32_t *barrier_count,
+                      uint32_t max_barrier_count,
+                      VkImageMemoryBarrier2 *barriers)
+{
+   const struct vk_render_pass *pass = cmd_buffer->render_pass;
+   const struct vk_framebuffer *framebuffer = cmd_buffer->framebuffer;
+   const struct vk_render_pass_attachment *pass_att =
+      &pass->attachments[att_idx];
+   struct vk_attachment_state *att_state = &cmd_buffer->attachments[att_idx];
+   const struct vk_image_view *image_view = att_state->image_view;
+
+   /* Get a mask of views that need a layout transition. */
+   view_mask = transition_view_mask(cmd_buffer, att_idx, view_mask, layout,
+                                    stencil_layout);
+
+   u_foreach_bit(view, view_mask) {
+      assert(view >= 0 && view < MESA_VK_MAX_MULTIVIEW_VIEW_COUNT);
+      struct vk_attachment_view_state *att_view_state = &att_state->views[view];
+
+      assert(att_view_state->layout != layout ||
+             att_view_state->stencil_layout != stencil_layout);
 
       VkImageSubresourceRange range = {
          .aspectMask = pass_att->aspects,
@@ -1678,6 +1704,7 @@ transition_attachment(struct vk_command_buffer *cmd_buffer,
        *    level in this case."
        */
       if (image_view->image->image_type == VK_IMAGE_TYPE_3D) {
+         /* 3D is stupidly special. See transition_view_mask() */
          assert(view == 0);
          range.baseArrayLayer = 0;
          range.layerCount = image_view->extent.depth;
