@@ -470,7 +470,7 @@ def parse_args() -> argparse.Namespace:
         metavar="token",
         type=str,
         default=get_token_from_default_dir(),
-        help="Use the provided GitLab token or token file, "
+        help="Use the provided GitLab token (with `api` scope) or token file, "
              f"otherwise it's read from {TOKEN_DIR / 'gitlab-token'}",
     )
     parser.add_argument(
