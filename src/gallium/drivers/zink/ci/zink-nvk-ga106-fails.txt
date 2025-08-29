@@ -408,7 +408,6 @@ spec@arb_shader_image_load_store@atomicity@imageAtomicMax,Fail
 spec@arb_shader_image_load_store@atomicity@imageAtomicMin,Fail
 spec@arb_shader_image_load_store@atomicity@imageAtomicOr,Fail
 spec@arb_shader_image_load_store@atomicity@imageAtomicXor,Fail
-spec@arb_shader_image_load_store@coherency,Fail
 spec@arb_shader_image_load_store@max-size,Fail
 spec@arb_shader_image_load_store@max-size@image2DMS max size test/8x16384x8x1,Fail
 spec@arb_shader_storage_buffer_object@max-ssbo-size@fs,Crash
@@ -549,3 +548,12 @@ spec@khr_texture_compression_astc@sliced-3d-miptree-gl srgb-fp,Fail
 spec@khr_texture_compression_astc@sliced-3d-miptree-gl srgb-fp@sRGB decode full precision,Fail
 spec@khr_texture_compression_astc@sliced-3d-miptree-gles srgb-fp,Fail
 spec@khr_texture_compression_astc@sliced-3d-miptree-gles srgb-fp@sRGB decode full precision,Fail
+
+KHR-GL46.transform_feedback_overflow_query_ARB.advanced-single-stream-interleaved-attribs,Fail
+KHR-GL46.transform_feedback_overflow_query_ARB.advanced-single-stream-separate-attribs,Fail
+KHR-GL46.transform_feedback_overflow_query_ARB.basic-single-stream-interleaved-attribs,Fail
+KHR-GL46.transform_feedback_overflow_query_ARB.basic-single-stream-separate-attribs,Fail
+KHR-GL46.transform_feedback_overflow_query_ARB.multiple-streams-multiple-buffers-per-stream,Fail
+KHR-GL46.transform_feedback_overflow_query_ARB.multiple-streams-one-buffer-per-stream,Fail
+spec@arb_transform_feedback_overflow_query@arb_transform_feedback_overflow_query-basic,Fail
+spec@arb_transform_feedback_overflow_query@arb_transform_feedback_overflow_query-basic@arb_transform_feedback_overflow_query-conditional_render_no_overflow,Fail

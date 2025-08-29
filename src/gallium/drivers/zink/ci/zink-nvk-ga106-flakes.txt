@@ -276,3 +276,18 @@ spec@nv_primitive_restart@primitive-restart-draw-mode-polygon
 spec@nv_primitive_restart@primitive-restart-draw-mode-quad_strip
 spec@oes_texture_float@oes_texture_float half
 spec@oes_texture_view@rendering-levels
+
+KHR-GL46.conditional_render_inverted.functional
+KHR-GL46.gpu_shader_fp64.builtin.*
+KHR-GL46.packed_pixels.pbo_rectangle.rg32f_format_rg
+dEQP-GLES3.functional.occlusion_query.conservative_depth_write_depth_clear
+dEQP-GLES3.functional.occlusion_query.conservative_scissor_depth_write_stencil_write
+dEQP-GLES3.functional.occlusion_query.scissor_stencil_write_stencil_clear
+dEQP-GLES31.functional.copy_image.non_compressed.viewclass_24_bits.rgb8i_rgb8.cubemap_to_renderbuffer
+dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.rgb10_a2_srgb8_alpha8.texture2d_array_to_texture2d
+spec@!opengl 1.1@ppgtt_memory_alignment
+spec@arb_pixel_buffer_object@texsubimage-unpack pbo
+spec@arb_shader_image_load_store@coherency
+spec@arb_shader_image_load_store@coherency@Geometry-Fragment shader/'coherent' qualifier coherency test/256x256
+spec@arb_shader_image_load_store@coherency@Tessellation evaluation-Fragment shader/'coherent' qualifier coherency test/256x256
+spec@arb_shader_image_load_store@coherency@Vertex-Geometry shader/'volatile' qualifier coherency test/256x256
