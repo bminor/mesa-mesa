@@ -97,6 +97,7 @@ unsigned pan_lookup_pushed_ubo(struct pan_ubo_push *push, unsigned ubo,
 
 struct pan_compile_inputs {
    unsigned gpu_id;
+   uint32_t gpu_variant;
    bool is_blend, is_blit;
    struct {
       unsigned nr_samples;
