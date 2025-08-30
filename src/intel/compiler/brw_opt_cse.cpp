@@ -476,6 +476,7 @@ hash_inst(const void *v)
       break;
    }
 
+   case BRW_KIND_LOGICAL:
    case BRW_KIND_BASE:
       /* Nothing else to do. */
       break;

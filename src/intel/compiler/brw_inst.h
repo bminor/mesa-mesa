@@ -42,6 +42,7 @@ struct brw_shader;
 enum ENUM_PACKED brw_inst_kind {
    BRW_KIND_BASE,
    BRW_KIND_SEND,
+   BRW_KIND_LOGICAL,
    BRW_KIND_TEX,
    BRW_KIND_MEM,
    BRW_KIND_DPAS,
