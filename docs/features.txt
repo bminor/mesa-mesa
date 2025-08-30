@@ -63,10 +63,10 @@ GL 3.0, GLSL 1.30 --- all DONE: freedreno, nv50, nvc0, r600, radeonsi, llvmpipe,
   glVertexAttribI commands                              DONE
   Depth format cube textures                            DONE (v3d)
   GLX_ARB_create_context (GLX 1.4 is required)          DONE (v3d, vc4)
-  Multisample anti-aliasing                             DONE (freedreno/a5xx+, freedreno (*), llvmpipe (*), softpipe (*)), v3d)
+  Multisample anti-aliasing                             DONE (freedreno/a5xx+, freedreno (*), llvmpipe, softpipe (*), v3d)
   8 draw buffers                                        DONE (panfrost/v5+, v3d/vc7+)
 
-(*) freedreno (a2xx-a4xx), llvmpipe, and softpipe have fake Multisample anti-aliasing support
+(*) freedreno (a2xx-a4xx) and softpipe have fake Multisample anti-aliasing support
 
 
 GL 3.1, GLSL 1.40 --- all DONE: freedreno, nv50, nvc0, r600, radeonsi, llvmpipe, softpipe, virgl, zink, d3d12, panfrost, asahi, iris, crocus/gen6+
