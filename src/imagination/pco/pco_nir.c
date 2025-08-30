@@ -929,6 +929,14 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
                nir_lower_vars_to_explicit_types,
                nir_var_shader_temp | nir_var_function_temp,
                glsl_get_cl_type_size_align);
+
+      NIR_PASS(_, nir, nir_opt_idiv_const, 32);
+      NIR_PASS(_,
+               nir,
+               nir_lower_idiv,
+               &(nir_lower_idiv_options){
+                  .allow_fp16 = false,
+               });
    }
 
    NIR_PASS(_,

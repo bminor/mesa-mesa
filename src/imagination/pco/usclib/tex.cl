@@ -60,7 +60,7 @@ usclib_tex_state_array_max(uint4 tex_state)
 }
 
 uint3
-usclib_tex_state_size(uint4 tex_state, uint num_comps, bool is_1d, bool is_array, uint lod)
+usclib_tex_state_size(uint4 tex_state, uint num_comps, enum glsl_sampler_dim dim, bool is_array, bool is_image, uint lod)
 {
    uint32_t texstate_image_word0[] = {tex_state.x, tex_state.y};
    uint32_t texstate_image_word1[] = {tex_state.z, tex_state.w};
@@ -82,8 +82,12 @@ usclib_tex_state_size(uint4 tex_state, uint num_comps, bool is_1d, bool is_array
    for (unsigned u = 0; u < num_comps; ++u)
       size_comps[u] = MAX2(size_comps[u] >> lod, 1);
 
-   if (is_1d && is_array)
-      size_comps.y = size_comps.z;
+   if (is_array) {
+      if (dim == GLSL_SAMPLER_DIM_1D)
+         size_comps.y = size_comps.z;
+      else if (dim == GLSL_SAMPLER_DIM_CUBE && is_image)
+         size_comps.z /= 6;
+   }
 
    return size_comps;
 }

@@ -69,11 +69,17 @@ static nir_def *lower_tex_query_basic(nir_builder *b,
       }
 
       nir_def *num_comps = nir_imm_int(b, tex->def.num_components);
-      nir_def *is_1d = nir_imm_bool(b, tex->sampler_dim == GLSL_SAMPLER_DIM_1D);
+      nir_def *dim = nir_imm_int(b, tex->sampler_dim);
       nir_def *is_array = nir_imm_bool(b, tex->is_array);
+      nir_def *is_image = nir_imm_bool(b, false);
       nir_def *lod = get_src_def(tex, nir_tex_src_lod);
-      nir_def *size_comps =
-         usclib_tex_state_size(b, tex_state, num_comps, is_1d, is_array, lod);
+      nir_def *size_comps = usclib_tex_state_size(b,
+                                                  tex_state,
+                                                  num_comps,
+                                                  dim,
+                                                  is_array,
+                                                  is_image,
+                                                  lod);
 
       data->common.uses.usclib = true;
 
@@ -817,8 +823,6 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
    unsigned binding = nir_src_comp_as_uint(intr->src[0], 1);
    nir_def *elem = nir_channel(b, intr->src[0].ssa, 2);
 
-   bool is_cube_array = image_dim == GLSL_SAMPLER_DIM_CUBE && is_array;
-
    nir_def *lod = NULL;
    switch (intr->intrinsic) {
    case nir_intrinsic_image_deref_load:
@@ -860,10 +864,16 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
                                                   .binding = binding);
 
       nir_def *num_comps = nir_imm_int(b, intr->def.num_components);
-      nir_def *is_1d = nir_imm_bool(b, image_dim == GLSL_SAMPLER_DIM_1D);
+      nir_def *dim = nir_imm_int(b, image_dim);
       nir_def *is_array_ = nir_imm_bool(b, is_array);
-      nir_def *size_comps =
-         usclib_tex_state_size(b, tex_state, num_comps, is_1d, is_array_, lod);
+      nir_def *is_image = nir_imm_bool(b, true);
+      nir_def *size_comps = usclib_tex_state_size(b,
+                                                  tex_state,
+                                                  num_comps,
+                                                  dim,
+                                                  is_array_,
+                                                  is_image,
+                                                  lod);
 
       data->common.uses.usclib = true;
 
@@ -1306,8 +1316,6 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
 
          nir_def *array_max = usclib_tex_state_array_max(b, tex_state);
          array_index = nir_uclamp(b, array_index, nir_imm_int(b, 0), array_max);
-         if (is_cube_array)
-            array_index = nir_imul_imm(b, array_index, 6);
 
          nir_def *tex_meta = nir_load_tex_meta_pco(b,
                                                    PCO_IMAGE_META_COUNT,

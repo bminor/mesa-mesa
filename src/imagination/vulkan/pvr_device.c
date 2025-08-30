@@ -232,7 +232,7 @@ static void pvr_physical_device_get_supported_features(
       /* Vulkan 1.0 */
       .robustBufferAccess = true,
       .fullDrawIndexUint32 = false,
-      .imageCubeArray = false,
+      .imageCubeArray = true,
       .independentBlend = true,
       .geometryShader = false,
       .tessellationShader = false,
