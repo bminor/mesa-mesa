@@ -953,6 +953,7 @@ tu_BindImageMemory2(VkDevice _device,
    for (uint32_t i = 0; i < bindInfoCount; ++i) {
       VK_FROM_HANDLE(tu_image, image, pBindInfos[i].image);
       VK_FROM_HANDLE(tu_device_memory, mem, pBindInfos[i].memory);
+      uint64_t offset = pBindInfos[i].memoryOffset;
 
       if (!mem) {
 #if DETECT_OS_ANDROID
@@ -966,6 +967,10 @@ tu_BindImageMemory2(VkDevice _device,
                 swapchain_info->swapchain != VK_NULL_HANDLE);
          mem = tu_device_memory_from_handle(wsi_common_get_memory(
             swapchain_info->swapchain, swapchain_info->imageIndex));
+         /* memoryOffset is ignored when VkBindImageMemorySwapchainInfoKHR is
+          * present, so we follow common wsi to set the offset to 0 here.
+          */
+         offset = 0;
 #endif
       }
 
@@ -997,8 +1002,8 @@ tu_BindImageMemory2(VkDevice _device,
          }
       }
       image->bo = mem->bo;
-      image->bo_offset = pBindInfos[i].memoryOffset;
-      image->iova = mem->bo->iova + pBindInfos[i].memoryOffset;
+      image->bo_offset = offset;
+      image->iova = mem->bo->iova + offset;
 
       if (image->vk.usage & (VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT |
                              VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT)) {
@@ -1011,7 +1016,7 @@ tu_BindImageMemory2(VkDevice _device,
             }
          }
 
-         image->map = (char *) mem->bo->map + pBindInfos[i].memoryOffset;
+         image->map = (char *) mem->bo->map + offset;
       } else {
          image->map = NULL;
       }
