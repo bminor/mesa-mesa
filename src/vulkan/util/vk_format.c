@@ -909,17 +909,3 @@ vk_swizzle_color_value(VkClearColorValue color,
       swizzled_color_component(&color, swizzle.a, 3, is_int),
    }};
 }
-
-VkFormat
-vk_select_android_external_format(const void *next, VkFormat default_format)
-{
-   const VkExternalFormatANDROID *android_format = vk_find_struct_const(next, EXTERNAL_FORMAT_ANDROID);
-
-   if (android_format && android_format->externalFormat) {
-      assert(default_format == VK_FORMAT_UNDEFINED);
-      assert((VkFormat)android_format->externalFormat != VK_FORMAT_UNDEFINED);
-      return (VkFormat)android_format->externalFormat;
-   }
-
-   return default_format;
-}
