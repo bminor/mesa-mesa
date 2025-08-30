@@ -297,6 +297,15 @@ urb_inst_match(brw_urb_inst *a, brw_urb_inst *b)
 }
 
 static bool
+fb_write_inst_match(brw_fb_write_inst *a, brw_fb_write_inst *b)
+{
+   return a->components == b->components &&
+          a->target == b->target &&
+          a->null_rt == b->null_rt &&
+          a->last_rt == b->last_rt;
+}
+
+static bool
 instructions_match(brw_inst *a, brw_inst *b, bool *negate)
 {
 
@@ -309,6 +318,7 @@ instructions_match(brw_inst *a, brw_inst *b, bool *negate)
           (a->kind != BRW_KIND_LOAD_PAYLOAD ||
            load_payload_inst_match(a->as_load_payload(), b->as_load_payload())) &&
           (a->kind != BRW_KIND_URB || urb_inst_match(a->as_urb(), b->as_urb())) &&
+          (a->kind != BRW_KIND_FB_WRITE || fb_write_inst_match(a->as_fb_write(), b->as_fb_write())) &&
           a->exec_size == b->exec_size &&
           a->group == b->group &&
           a->predicate == b->predicate &&
@@ -451,6 +461,18 @@ hash_inst(const void *v)
       };
       hash = HASH(hash, urb_u8data);
       hash = HASH(hash, urb_u32data);
+      break;
+   }
+
+   case BRW_KIND_FB_WRITE: {
+      const brw_fb_write_inst *fb_write = inst->as_fb_write();
+      const uint8_t fb_write_u8data[] = {
+         fb_write->components,
+         fb_write->target,
+         fb_write->null_rt,
+         fb_write->last_rt,
+      };
+      hash = HASH(hash, fb_write_u8data);
       break;
    }
 

@@ -598,10 +598,6 @@ enum fb_write_logical_srcs {
    FB_WRITE_LOGICAL_SRC_SRC_DEPTH,   /* gl_FragDepth */
    FB_WRITE_LOGICAL_SRC_SRC_STENCIL, /* gl_FragStencilRefARB */
    FB_WRITE_LOGICAL_SRC_OMASK,       /* Sample Mask (gl_SampleMask) */
-   FB_WRITE_LOGICAL_SRC_TARGET,      /* REQUIRED */
-   FB_WRITE_LOGICAL_SRC_COMPONENTS,  /* REQUIRED */
-   FB_WRITE_LOGICAL_SRC_NULL_RT,     /* Null RT write */
-   FB_WRITE_LOGICAL_SRC_LAST_RT,     /* Last RT? (bool as UD immediate) */
    FB_WRITE_LOGICAL_NUM_SRCS
 };
 

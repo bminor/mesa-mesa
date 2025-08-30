@@ -19,6 +19,7 @@ brw_inst_kind_size(brw_inst_kind kind)
    STATIC_ASSERT(sizeof(brw_send_inst) >= sizeof(brw_dpas_inst));
    STATIC_ASSERT(sizeof(brw_send_inst) >= sizeof(brw_load_payload_inst));
    STATIC_ASSERT(sizeof(brw_send_inst) >= sizeof(brw_urb_inst));
+   STATIC_ASSERT(sizeof(brw_send_inst) >= sizeof(brw_fb_write_inst));
 
    /* TODO: Temporarily here to ensure all instructions can be converted to
     * SEND.  Once all new kinds are added, change so that BASE allocate only
@@ -196,6 +197,9 @@ brw_inst_kind_for_opcode(enum opcode opcode)
    case SHADER_OPCODE_URB_READ_LOGICAL:
    case SHADER_OPCODE_URB_WRITE_LOGICAL:
       return BRW_KIND_URB;
+
+   case FS_OPCODE_FB_WRITE_LOGICAL:
+      return BRW_KIND_FB_WRITE;
 
    default:
       return BRW_KIND_BASE;
@@ -446,10 +450,9 @@ brw_inst::components_read(unsigned i) const
          return 1;
 
    case FS_OPCODE_FB_WRITE_LOGICAL:
-      assert(src[FB_WRITE_LOGICAL_SRC_COMPONENTS].file == IMM);
       /* First/second FB write color. */
       if (i < 2)
-         return src[FB_WRITE_LOGICAL_SRC_COMPONENTS].ud;
+         return as_fb_write()->components;
       else
          return 1;
 

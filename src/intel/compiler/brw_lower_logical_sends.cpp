@@ -294,28 +294,22 @@ setup_color_payload(const brw_builder &bld, const brw_wm_prog_key *key,
 }
 
 static void
-lower_fb_write_logical_send(const brw_builder &bld, brw_inst *inst,
+lower_fb_write_logical_send(const brw_builder &bld, brw_fb_write_inst *write,
                             const struct brw_wm_prog_data *prog_data,
                             const brw_wm_prog_key *key,
                             const brw_fs_thread_payload &fs_payload)
 {
-   assert(inst->src[FB_WRITE_LOGICAL_SRC_COMPONENTS].file == IMM);
-   assert(inst->src[FB_WRITE_LOGICAL_SRC_NULL_RT].file == IMM);
-   assert(inst->src[FB_WRITE_LOGICAL_SRC_LAST_RT].file == IMM);
-   assert(inst->src[FB_WRITE_LOGICAL_SRC_TARGET].file == IMM);
-
    const intel_device_info *devinfo = bld.shader->devinfo;
-   const brw_reg color0 = inst->src[FB_WRITE_LOGICAL_SRC_COLOR0];
-   const brw_reg color1 = inst->src[FB_WRITE_LOGICAL_SRC_COLOR1];
-   const brw_reg src0_alpha = inst->src[FB_WRITE_LOGICAL_SRC_SRC0_ALPHA];
-   const brw_reg src_depth = inst->src[FB_WRITE_LOGICAL_SRC_SRC_DEPTH];
-   const brw_reg src_stencil = inst->src[FB_WRITE_LOGICAL_SRC_SRC_STENCIL];
-   brw_reg sample_mask = inst->src[FB_WRITE_LOGICAL_SRC_OMASK];
-   const unsigned components =
-      inst->src[FB_WRITE_LOGICAL_SRC_COMPONENTS].ud;
-   const unsigned target = inst->src[FB_WRITE_LOGICAL_SRC_TARGET].ud;
-   const bool null_rt = inst->src[FB_WRITE_LOGICAL_SRC_NULL_RT].ud != 0;
-   const bool last_rt = inst->src[FB_WRITE_LOGICAL_SRC_LAST_RT].ud != 0;
+   const brw_reg color0 = write->src[FB_WRITE_LOGICAL_SRC_COLOR0];
+   const brw_reg color1 = write->src[FB_WRITE_LOGICAL_SRC_COLOR1];
+   const brw_reg src0_alpha = write->src[FB_WRITE_LOGICAL_SRC_SRC0_ALPHA];
+   const brw_reg src_depth = write->src[FB_WRITE_LOGICAL_SRC_SRC_DEPTH];
+   const brw_reg src_stencil = write->src[FB_WRITE_LOGICAL_SRC_SRC_STENCIL];
+   brw_reg sample_mask = write->src[FB_WRITE_LOGICAL_SRC_OMASK];
+   const unsigned components = write->components;
+   const unsigned target = write->target;
+   const bool null_rt = write->null_rt;
+   const bool last_rt = write->last_rt;
 
    assert(target != 0 || src0_alpha.file == BAD_FILE);
 
@@ -391,7 +385,7 @@ lower_fb_write_logical_send(const brw_builder &bld, brw_inst *inst,
    header_size = length;
 
    if (fs_payload.aa_dest_stencil_reg[0]) {
-      assert(inst->group < 16);
+      assert(write->group < 16);
       sources[length] = retype(brw_allocate_vgrf_units(*bld.shader, 1), BRW_TYPE_F);
       bld.group(8, 0).exec_all().annotate("FB write stencil/AA alpha")
          .MOV(sources[length],
@@ -427,7 +421,7 @@ lower_fb_write_logical_send(const brw_builder &bld, brw_inst *inst,
 
       bld.exec_all().annotate("FB write oMask")
          .MOV(horiz_offset(retype(tmp, BRW_TYPE_UW),
-                           inst->group % (16 * reg_unit(devinfo))),
+                           write->group % (16 * reg_unit(devinfo))),
               sample_mask);
 
       for (unsigned i = 0; i < reg_unit(devinfo); i++)
@@ -465,17 +459,17 @@ lower_fb_write_logical_send(const brw_builder &bld, brw_inst *inst,
    payload.nr = brw_allocate_vgrf_units(*bld.shader, regs_written(load)).nr;
    load->dst = payload;
 
-   uint32_t msg_ctl = brw_fb_write_msg_control(inst, prog_data);
+   uint32_t msg_ctl = brw_fb_write_msg_control(write, prog_data);
 
    /* XXX - Bit 13 Per-sample PS enable */
    uint32_t desc =
-      (inst->group / 16) << 11 | /* rt slot group */
+      (write->group / 16) << 11 | /* rt slot group */
       brw_fb_write_desc(devinfo, target, msg_ctl, last_rt,
                         0 /* coarse_rt_write */);
 
    brw_reg desc_reg = brw_imm_ud(0);
    if (prog_data->coarse_pixel_dispatch == INTEL_SOMETIMES &&
-       !inst->has_no_mask_send_params) {
+       !write->has_no_mask_send_params) {
       assert(devinfo->ver >= 11);
       if (devinfo->ver != 11) {
          const brw_builder &ubld =
@@ -506,8 +500,8 @@ lower_fb_write_logical_send(const brw_builder &bld, brw_inst *inst,
                 (src0_alpha.file != BAD_FILE) << 15;
    }
 
-   brw_send_inst *send = brw_transform_inst_to_send(bld, inst);
-   inst = NULL;
+   brw_send_inst *send = brw_transform_inst_to_send(bld, write);
+   write = NULL;
 
    send->desc = desc;
    send->ex_desc = ex_desc;
@@ -2617,7 +2611,7 @@ brw_lower_logical_sends(brw_shader &s)
       switch (inst->opcode) {
       case FS_OPCODE_FB_WRITE_LOGICAL:
          assert(s.stage == MESA_SHADER_FRAGMENT);
-         lower_fb_write_logical_send(ibld, inst,
+         lower_fb_write_logical_send(ibld, inst->as_fb_write(),
                                      brw_wm_prog_data(s.prog_data),
                                      (const brw_wm_prog_key *)s.key,
                                      s.fs_payload());

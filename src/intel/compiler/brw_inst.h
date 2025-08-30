@@ -47,6 +47,7 @@ enum ENUM_PACKED brw_inst_kind {
    BRW_KIND_DPAS,
    BRW_KIND_LOAD_PAYLOAD,
    BRW_KIND_URB,
+   BRW_KIND_FB_WRITE,
 };
 
 brw_inst_kind brw_inst_kind_for_opcode(enum opcode opcode);
@@ -78,6 +79,7 @@ struct brw_inst : brw_exec_node {
    KIND_HELPERS(as_dpas, brw_dpas_inst, BRW_KIND_DPAS);
    KIND_HELPERS(as_load_payload, brw_load_payload_inst, BRW_KIND_LOAD_PAYLOAD);
    KIND_HELPERS(as_urb, brw_urb_inst, BRW_KIND_URB);
+   KIND_HELPERS(as_fb_write, brw_fb_write_inst, BRW_KIND_FB_WRITE);
 
 #undef KIND_HELPERS
 
@@ -309,6 +311,13 @@ struct brw_load_payload_inst : brw_inst {
 struct brw_urb_inst : brw_inst {
    uint32_t offset;
    uint8_t components;
+};
+
+struct brw_fb_write_inst : brw_inst {
+   uint8_t components;
+   uint8_t target;
+   bool null_rt;
+   bool last_rt;
 };
 
 /**

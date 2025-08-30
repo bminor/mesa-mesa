@@ -18,7 +18,7 @@
 
 #include <memory>
 
-static brw_inst *
+static brw_fb_write_inst *
 brw_emit_single_fb_write(brw_shader &s, const brw_builder &bld,
                          brw_reg color0, brw_reg color1,
                          brw_reg src0_alpha,
@@ -32,10 +32,6 @@ brw_emit_single_fb_write(brw_shader &s, const brw_builder &bld,
    sources[FB_WRITE_LOGICAL_SRC_COLOR0]     = color0;
    sources[FB_WRITE_LOGICAL_SRC_COLOR1]     = color1;
    sources[FB_WRITE_LOGICAL_SRC_SRC0_ALPHA] = src0_alpha;
-   sources[FB_WRITE_LOGICAL_SRC_TARGET]     = brw_imm_ud(target);
-   sources[FB_WRITE_LOGICAL_SRC_COMPONENTS] = brw_imm_ud(components);
-   sources[FB_WRITE_LOGICAL_SRC_NULL_RT]    = brw_imm_ud(null_rt);
-   sources[FB_WRITE_LOGICAL_SRC_LAST_RT]    = brw_imm_ud(false);
 
    if (prog_data->uses_omask)
       sources[FB_WRITE_LOGICAL_SRC_OMASK] = s.sample_mask;
@@ -44,8 +40,12 @@ brw_emit_single_fb_write(brw_shader &s, const brw_builder &bld,
    if (s.nir->info.outputs_written & BITFIELD64_BIT(FRAG_RESULT_STENCIL))
       sources[FB_WRITE_LOGICAL_SRC_SRC_STENCIL] = s.frag_stencil;
 
-   brw_inst *write = bld.emit(FS_OPCODE_FB_WRITE_LOGICAL, brw_reg(),
-                             sources, ARRAY_SIZE(sources));
+   brw_fb_write_inst *write = bld.emit(FS_OPCODE_FB_WRITE_LOGICAL, brw_reg(),
+                                       sources, ARRAY_SIZE(sources))->as_fb_write();
+   write->target     = target;
+   write->components = components;
+   write->null_rt    = null_rt;
+   write->last_rt    = false;
 
    if (prog_data->uses_kill) {
       write->predicate = BRW_PREDICATE_NORMAL;
@@ -64,7 +64,7 @@ brw_do_emit_fb_writes(brw_shader &s, int nr_color_regions, bool replicate_alpha)
    const bool double_rt_writes = s.devinfo->ver == 11 &&
       prog_data->coarse_pixel_dispatch == INTEL_SOMETIMES;
 
-   brw_inst *inst = NULL;
+   brw_fb_write_inst *write = NULL;
    for (int target = 0; target < nr_color_regions; target++) {
       /* Skip over outputs that weren't written. */
       if (s.outputs[target].file == BAD_FILE)
@@ -77,18 +77,18 @@ brw_do_emit_fb_writes(brw_shader &s, int nr_color_regions, bool replicate_alpha)
       if (replicate_alpha && target != 0)
          src0_alpha = offset(s.outputs[0], bld, 3);
 
-      inst = brw_emit_single_fb_write(s, abld, s.outputs[target],
-                                      s.dual_src_output, src0_alpha,
-                                      target, 4, false);
+      write = brw_emit_single_fb_write(s, abld, s.outputs[target],
+                                       s.dual_src_output, src0_alpha,
+                                       target, 4, false);
    }
 
-   bool flag_dummy_message = inst && double_rt_writes;
-   if (inst) {
-      inst->src[FB_WRITE_LOGICAL_SRC_LAST_RT] = brw_imm_ud(true);
-      inst->eot = true;
+   bool flag_dummy_message = write && double_rt_writes;
+   if (write) {
+      write->last_rt = true;
+      write->eot = true;
    }
 
-   if (inst == NULL) {
+   if (write == NULL) {
       struct brw_wm_prog_key *key = (brw_wm_prog_key*) s.key;
       /* Disable null_rt if any non color output is written or if
        * alpha_to_coverage can be enabled. Since the alpha_to_coverage bit is
@@ -111,11 +111,11 @@ brw_do_emit_fb_writes(brw_shader &s, int nr_color_regions, bool replicate_alpha)
       const brw_reg tmp = bld.vgrf(BRW_TYPE_UD, 4);
       bld.LOAD_PAYLOAD(tmp, srcs, 4, 0);
 
-      inst = brw_emit_single_fb_write(s, bld, tmp, reg_undef, reg_undef,
+      write = brw_emit_single_fb_write(s, bld, tmp, reg_undef, reg_undef,
                                       0, 4, use_null_rt);
-      inst->src[FB_WRITE_LOGICAL_SRC_LAST_RT] = brw_imm_ud(true);
-      inst->has_no_mask_send_params = flag_dummy_message;
-      inst->eot = true;
+      write->last_rt = true;
+      write->has_no_mask_send_params = flag_dummy_message;
+      write->eot = true;
    }
 }
 
