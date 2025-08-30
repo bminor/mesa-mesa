@@ -803,6 +803,18 @@ iris_resource_configure_main(const struct iris_screen *screen,
    if (res->mod_info && !isl_drm_modifier_has_aux(modifier))
       usage |= ISL_SURF_USAGE_DISABLE_AUX_BIT;
 
+   /* On pre-Xe2 platforms, we still have a chance to disable CCS compression
+    * in the first query (iris_resource_disable_aux_on_first_query). But that
+    * function won't work on Xe2+ platforms because the compression state has
+    * been set in bo's allocation. We have to disable compression since the
+    * beginning of the image's life cycle in the below case on Xe2, unless a
+    * complicated bo or VMA manipulation is implemented. That is probably
+    * unworthy.
+    */
+   else if (screen->devinfo->ver >= 20 && !res->mod_info &&
+            (templ->bind & PIPE_BIND_SHARED))
+      usage |= ISL_SURF_USAGE_DISABLE_AUX_BIT;
+
    else if (!res->mod_info && res->external_format != PIPE_FORMAT_NONE)
       usage |= ISL_SURF_USAGE_DISABLE_AUX_BIT;
 
