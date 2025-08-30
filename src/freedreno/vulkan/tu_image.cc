@@ -942,96 +942,96 @@ tu_DestroyImage(VkDevice _device,
    vk_image_destroy(&device->vk, pAllocator, &image->vk);
 }
 
+static VkResult
+tu_image_bind(struct tu_device *device,
+              const VkBindImageMemoryInfo *bind_info)
+{
+   struct tu_instance *instance = device->physical_device->instance;
+   VK_FROM_HANDLE(tu_image, image, bind_info->image);
+   VK_FROM_HANDLE(tu_device_memory, mem, bind_info->memory);
+   uint64_t offset = bind_info->memoryOffset;
+   VkResult result;
+
+   if (!mem) {
+#if DETECT_OS_ANDROID
+      /* TODO handle VkNativeBufferANDROID */
+      UNREACHABLE("VkBindImageMemoryInfo with no memory");
+#else
+      const VkBindImageMemorySwapchainInfoKHR *swapchain_info =
+         vk_find_struct_const(bind_info->pNext,
+                              BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHR);
+      assert(swapchain_info && swapchain_info->swapchain != VK_NULL_HANDLE);
+      mem = tu_device_memory_from_handle(wsi_common_get_memory(
+         swapchain_info->swapchain, swapchain_info->imageIndex));
+      /* memoryOffset is ignored when VkBindImageMemorySwapchainInfoKHR is
+       * present, so we follow common wsi to set the offset to 0 here.
+       */
+      offset = 0;
+#endif
+   }
+
+   assert(mem);
+   if (vk_image_is_android_hardware_buffer(&image->vk)) {
+      VkImageDrmFormatModifierExplicitCreateInfoEXT eci;
+      VkSubresourceLayout a_plane_layouts[TU_MAX_PLANE_COUNT];
+      result = vk_android_get_ahb_layout(mem->vk.ahardware_buffer, &eci,
+                                         a_plane_layouts, TU_MAX_PLANE_COUNT);
+      if (result != VK_SUCCESS)
+         return result;
+
+      result = TU_CALLX(device, tu_image_update_layout)(
+         device, image, eci.drmFormatModifier, a_plane_layouts);
+      if (result != VK_SUCCESS)
+         return result;
+   }
+   image->bo = mem->bo;
+   image->bo_offset = offset;
+   image->iova = mem->bo->iova + offset;
+
+   if (image->vk.usage & (VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT |
+                          VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT)) {
+      if (!mem->bo->map) {
+         result = tu_bo_map(device, mem->bo, NULL);
+         if (result != VK_SUCCESS)
+            return result;
+      }
+
+      image->map = (char *) mem->bo->map + offset;
+   } else {
+      image->map = NULL;
+   }
+#ifdef HAVE_PERFETTO
+   tu_perfetto_log_bind_image(device, image);
+#endif
+
+   TU_RMV(image_bind, device, image);
+
+   vk_address_binding_report(&instance->vk, &image->vk.base, image->iova,
+                             image->total_size,
+                             VK_DEVICE_ADDRESS_BINDING_TYPE_BIND_EXT);
+
+   return VK_SUCCESS;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL
 tu_BindImageMemory2(VkDevice _device,
                     uint32_t bindInfoCount,
                     const VkBindImageMemoryInfo *pBindInfos)
 {
    VK_FROM_HANDLE(tu_device, device, _device);
-   struct tu_instance *instance = device->physical_device->instance;
+   VkResult result = VK_SUCCESS;
 
-   for (uint32_t i = 0; i < bindInfoCount; ++i) {
-      VK_FROM_HANDLE(tu_image, image, pBindInfos[i].image);
-      VK_FROM_HANDLE(tu_device_memory, mem, pBindInfos[i].memory);
-      uint64_t offset = pBindInfos[i].memoryOffset;
-
-      if (!mem) {
-#if DETECT_OS_ANDROID
-         /* TODO handle VkNativeBufferANDROID */
-         UNREACHABLE("VkBindImageMemoryInfo with no memory");
-#else
-         const VkBindImageMemorySwapchainInfoKHR *swapchain_info =
-            vk_find_struct_const(pBindInfos[i].pNext,
-                                 BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHR);
-         assert(swapchain_info &&
-                swapchain_info->swapchain != VK_NULL_HANDLE);
-         mem = tu_device_memory_from_handle(wsi_common_get_memory(
-            swapchain_info->swapchain, swapchain_info->imageIndex));
-         /* memoryOffset is ignored when VkBindImageMemorySwapchainInfoKHR is
-          * present, so we follow common wsi to set the offset to 0 here.
-          */
-         offset = 0;
-#endif
-      }
-
-      const VkBindMemoryStatusKHR *status =
-         vk_find_struct_const(pBindInfos[i].pNext, BIND_MEMORY_STATUS_KHR);
-      if (status)
-         *status->pResult = VK_SUCCESS;
-
-      assert(mem);
-      VkResult result;
-      if (vk_image_is_android_hardware_buffer(&image->vk)) {
-         VkImageDrmFormatModifierExplicitCreateInfoEXT eci;
-         VkSubresourceLayout a_plane_layouts[TU_MAX_PLANE_COUNT];
-         result =
-            vk_android_get_ahb_layout(mem->vk.ahardware_buffer, &eci,
-                                      a_plane_layouts, TU_MAX_PLANE_COUNT);
-         if (result != VK_SUCCESS) {
-            if (status)
-               *status->pResult = result;
-            return result;
-         }
-
-         result = TU_CALLX(device, tu_image_update_layout)(
-            device, image, eci.drmFormatModifier, a_plane_layouts);
-         if (result != VK_SUCCESS) {
-            if (status)
-               *status->pResult = result;
-            return result;
-         }
-      }
-      image->bo = mem->bo;
-      image->bo_offset = offset;
-      image->iova = mem->bo->iova + offset;
-
-      if (image->vk.usage & (VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT |
-                             VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT)) {
-         if (!mem->bo->map) {
-            result = tu_bo_map(device, mem->bo, NULL);
-            if (result != VK_SUCCESS) {
-               if (status)
-                  *status->pResult = result;
-               return result;
-            }
-         }
-
-         image->map = (char *) mem->bo->map + offset;
-      } else {
-         image->map = NULL;
-      }
-#ifdef HAVE_PERFETTO
-      tu_perfetto_log_bind_image(device, image);
-#endif
-
-      TU_RMV(image_bind, device, image);
-
-      vk_address_binding_report(&instance->vk, &image->vk.base,
-                                image->iova, image->total_size,
-                                VK_DEVICE_ADDRESS_BINDING_TYPE_BIND_EXT);
+   for (uint32_t i = 0; i < bindInfoCount; i++) {
+      const VkBindMemoryStatus *bind_status =
+         vk_find_struct_const(&pBindInfos[i], BIND_MEMORY_STATUS);
+      VkResult bind_result = tu_image_bind(device, &pBindInfos[i]);
+      if (bind_status)
+         *bind_status->pResult = bind_result;
+      if (bind_result != VK_SUCCESS)
+         result = bind_result;
    }
 
-   return VK_SUCCESS;
+   return result;
 }
 
 static void
