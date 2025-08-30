@@ -75,6 +75,7 @@ impl Deref for Device {
 #[derive(Default)]
 pub struct DeviceCaps {
     pub has_3d_image_writes: bool,
+    has_create_fence_fd: bool,
     pub has_depth_images: bool,
     pub has_image_unorm_int_2_101010: bool,
     pub has_images: bool,
@@ -87,7 +88,7 @@ pub struct DeviceCaps {
 }
 
 impl DeviceCaps {
-    fn new(screen: &PipeScreen) -> Self {
+    fn new(screen: &PipeScreen, ctx: &PipeContext) -> Self {
         let cap_timestamp = screen.caps().query_timestamp;
         let timer_resolution = screen.caps().timer_resolution;
 
@@ -111,6 +112,7 @@ impl DeviceCaps {
             max_read_images: has_images.then_some(max_read_images).unwrap_or_default(),
             max_write_images: has_images.then_some(max_write_images).unwrap_or_default(),
             timer_resolution: timer_resolution,
+            has_create_fence_fd: ctx.is_create_fence_fd_supported(),
             ..Default::default()
         }
     }
@@ -153,7 +155,6 @@ pub trait HelperContextWrapper {
         rw: RWFlags,
     ) -> Option<PipeTransfer<'_>>;
 
-    fn is_create_fence_fd_supported(&self) -> bool;
     fn import_fence(&self, fence_fd: &FenceFd, fence_type: pipe_fd_type) -> CLResult<PipeFence>;
 }
 
@@ -243,10 +244,6 @@ impl HelperContextWrapper for HelperContext<'_> {
     ) -> Option<PipeTransfer<'_>> {
         self.lock
             .texture_map_flags(res, bx, pipe_map_flags::PIPE_MAP_UNSYNCHRONIZED | rw.into())
-    }
-
-    fn is_create_fence_fd_supported(&self) -> bool {
-        self.lock.is_create_fence_fd_supported()
     }
 
     fn import_fence(&self, fd: &FenceFd, fence_type: pipe_fd_type) -> CLResult<PipeFence> {
@@ -887,7 +884,7 @@ impl DeviceBase {
             && !self.is_device_software()
             && self.screen.is_res_handle_supported()
             && self.screen.device_uuid().is_some()
-            && self.helper_ctx().is_create_fence_fd_supported()
+            && self.caps.has_create_fence_fd
     }
 
     pub fn is_device_software(&self) -> bool {
@@ -1269,7 +1266,7 @@ impl Device {
         // context being created.
         let helper_ctx = screen.create_context(PipeContextPrio::Med)?;
         let mut dev_base = DeviceBase {
-            caps: DeviceCaps::new(&screen),
+            caps: DeviceCaps::new(&screen, &helper_ctx),
             helper_ctx: Mutex::new(helper_ctx),
             screen: screen,
             cl_version: CLVersion::Cl3_0,
