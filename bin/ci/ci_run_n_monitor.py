@@ -168,6 +168,7 @@ def monitor_pipeline(
             if job_filter(
                 job_name=job.name,
                 job_stage=job.stage,
+                job_tags=job.tag_list,
             ) and job.status in COMPLETED_STATUSES:
                 execution_times[job.name][job.id] = (job_duration(job), job.status, job.web_url)
 
@@ -192,6 +193,7 @@ def monitor_pipeline(
             if job_filter(
                 job_name=job.name,
                 job_stage=job.stage,
+                job_tags=job.tag_list,
             ):
                 run_target_job(
                     job,
@@ -465,6 +467,18 @@ def parse_args() -> argparse.Namespace:
         nargs=argparse.ONE_OR_MORE,
     )
     parser.add_argument(
+        "--job-tags",
+        metavar="job-tags",
+        help="Job tags to require when searching for target jobs. If multiple "
+             "values are passed, eg. `--job-tags 'foo.*' 'bar'`, the job will "
+             "need to have a tag matching `foo.*` *and* a tag matching `bar` "
+             "to qualify. Passing `--job-tags '.*'` makes sure the job has "
+             "a tag defined, while not passing `--job-tags` also allows "
+             "untagged jobs.",
+        default=[],
+        nargs=argparse.ONE_OR_MORE,
+    )
+    parser.add_argument(
         "--token",
         metavar="token",
         type=str,
@@ -718,9 +732,13 @@ def main() -> None:
 
         exclude_stage_regex = re.compile(exclude_stage)
 
+        print("🞋 target jobs with tags: " + Fore.BLUE + str(args.job_tags) + Style.RESET_ALL)  # U+1F78B Round target
+        job_tags_regexes = [re.compile(job_tag) for job_tag in args.job_tags]
+
         def job_filter(
             job_name: str,
             job_stage: str,
+            job_tags: set[str],
         ) -> bool:
             """
             Apply user-specified filters to a job, and return whether the
@@ -731,6 +749,11 @@ def main() -> None:
             if not include_stage_regex.fullmatch(job_stage):
                 return False
             if exclude_stage_regex.fullmatch(job_stage):
+                return False
+            if not all(
+                any(job_tags_regex.fullmatch(tag) for tag in job_tags)
+                for job_tags_regex in job_tags_regexes
+            ):
                 return False
             return True
 
