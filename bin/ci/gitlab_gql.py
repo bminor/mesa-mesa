@@ -29,6 +29,7 @@ DEFAULT_TERMINAL_SIZE: int = 80  # columns
 class DagNode(TypedDict):
     needs: set[str]
     stage: str
+    tags: set[str]
     # `name` is redundant but is here for retro-compatibility
     name: str
 
@@ -254,6 +255,7 @@ def extract_stages_and_job_needs(
         stage_sequence[job["stage"]["name"]].add(job["name"])
         dag_job: DagNode = {
             "name": job["name"],
+            "tags": set(job["tags"] or []),  # jobs with no tags defined return None here
             "stage": job["stage"]["name"],
             "needs": set([j["node"]["name"] for j in job["needs"]["edges"]]),
         }
