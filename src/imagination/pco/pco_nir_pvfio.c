@@ -1549,3 +1549,68 @@ bool pco_nir_lower_interpolation(nir_shader *shader, pco_fs_data *fs)
 
    return progress;
 }
+
+static bool lower_load_view_index_fs(struct nir_builder *b,
+                                     nir_intrinsic_instr *intr,
+                                     void *cb_data)
+{
+   if (intr->intrinsic != nir_intrinsic_load_view_index)
+      return false;
+
+   nir_variable *view_index_var = cb_data;
+   b->cursor = nir_before_instr(&intr->instr);
+   nir_def_replace(&intr->def, nir_load_var(b, view_index_var));
+   nir_instr_free(&intr->instr);
+
+   return true;
+}
+
+bool pco_nir_link_multiview(nir_shader *producer,
+                            nir_shader *consumer,
+                            pco_data *consumer_data)
+{
+   if (producer->info.stage != MESA_SHADER_VERTEX ||
+       consumer->info.stage != MESA_SHADER_FRAGMENT ||
+       !consumer_data->common.multiview) {
+      return false;
+   }
+
+   /* Find unused varying slot for the view index. */
+   gl_varying_slot view_index_slot = VARYING_SLOT_VAR0;
+   nir_foreach_shader_out_variable (var, producer) {
+      view_index_slot = MAX2(view_index_slot, var->data.location + 1);
+   }
+   assert(view_index_slot < VARYING_SLOT_MAX);
+   consumer_data->fs.view_index_slot = view_index_slot;
+
+   /* Create output variable in the producer. */
+   nir_variable *view_index_var = nir_variable_create(producer,
+                                                      nir_var_shader_out,
+                                                      glsl_uint_type(),
+                                                      "view_index");
+   view_index_var->data.location = view_index_slot;
+   view_index_var->data.interpolation = INTERP_MODE_FLAT;
+   view_index_var->data.always_active_io = true;
+
+   /* Store view index in the producer. */
+   nir_builder b = nir_builder_at(nir_after_block(
+      nir_impl_last_block(nir_shader_get_entrypoint(producer))));
+   nir_store_var(&b, view_index_var, nir_load_view_index(&b), 1);
+
+   /* Create input variable in the consumer. */
+   view_index_var = nir_variable_create(consumer,
+                                        nir_var_shader_in,
+                                        glsl_uint_type(),
+                                        "view_index");
+   view_index_var->data.location = view_index_slot;
+   view_index_var->data.interpolation = INTERP_MODE_FLAT;
+   view_index_var->data.always_active_io = true;
+
+   /* Lower view index loads in the consumer. */
+   nir_shader_intrinsics_pass(consumer,
+                              lower_load_view_index_fs,
+                              nir_metadata_all,
+                              view_index_var);
+
+   return true;
+}

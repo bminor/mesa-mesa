@@ -636,15 +636,27 @@ void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
    }
 }
 
+static bool can_remove_var(nir_variable *var, UNUSED void *data)
+{
+   return !var->data.always_active_io;
+}
+
 /**
  * \brief Performs linking optimizations on consecutive NIR shader stages.
  *
  * \param[in] ctx PCO compiler context.
  * \param[in,out] producer NIR producer shader.
  * \param[in,out] consumer NIR consumer shader.
+ * \param[in,out] producer_data Producer shader data.
+ * \param[in,out] consumer_data Consumer shader data.
  */
-void pco_link_nir(pco_ctx *ctx, nir_shader *producer, nir_shader *consumer)
+void pco_link_nir(pco_ctx *ctx,
+                  nir_shader *producer,
+                  nir_shader *consumer,
+                  pco_data *producer_data,
+                  pco_data *consumer_data)
 {
+   pco_nir_link_multiview(producer, consumer, consumer_data);
    pco_nir_link_clip_cull_vars(producer, consumer);
 
    nir_lower_io_array_vars_to_elements(producer, consumer);
@@ -660,8 +672,12 @@ void pco_link_nir(pco_ctx *ctx, nir_shader *producer, nir_shader *consumer)
    if (nir_link_opt_varyings(producer, consumer))
       pco_nir_opt(ctx, consumer);
 
-   NIR_PASS(_, producer, nir_remove_dead_variables, nir_var_shader_out, NULL);
-   NIR_PASS(_, consumer, nir_remove_dead_variables, nir_var_shader_in, NULL);
+   nir_remove_dead_variables_options rdv = {
+      .can_remove_var = can_remove_var,
+   };
+
+   NIR_PASS(_, producer, nir_remove_dead_variables, nir_var_shader_out, &rdv);
+   NIR_PASS(_, consumer, nir_remove_dead_variables, nir_var_shader_in, &rdv);
 
    bool progress = nir_remove_unused_varyings(producer, consumer);
    nir_compact_varyings(producer, consumer, true);

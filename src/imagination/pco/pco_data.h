@@ -106,6 +106,8 @@ typedef struct _pco_fs_data {
 
    pco_range sample_locations;
 
+   gl_varying_slot view_index_slot;
+
    struct {
       bool w; /** Whether the shader uses pos.w. */
       bool z; /** Whether the shader uses pos.z */
@@ -224,6 +226,7 @@ typedef struct _pco_common_data {
 
    bool robust_buffer_access;
    bool image_2d_view_of_3d;
+   bool multiview;
 } pco_common_data;
 
 /** PCO shader data. */

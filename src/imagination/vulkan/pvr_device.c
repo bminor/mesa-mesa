@@ -189,6 +189,7 @@ static void pvr_physical_device_get_supported_extensions(
       .KHR_maintenance1 = true,
       .KHR_maintenance2 = true,
       .KHR_maintenance3 = true,
+      .KHR_multiview = true,
       .KHR_present_id2 = PVR_USE_WSI_PLATFORM,
       .KHR_present_wait2 = PVR_USE_WSI_PLATFORM,
       .KHR_separate_depth_stencil_layouts = true,
@@ -292,6 +293,11 @@ static void pvr_physical_device_get_supported_features(
 
       /* Vulkan 1.2 / VK_KHR_imageless_framebuffer */
       .imagelessFramebuffer = true,
+
+      /* Vulkan 1.1 / VK_KHR_multiview */
+      .multiview = true,
+      .multiviewGeometryShader = false,
+      .multiviewTessellationShader = false,
 
       /* Vulkan 1.2 / VK_KHR_timeline_semaphore */
       .timelineSemaphore = true,
@@ -585,6 +591,10 @@ static bool pvr_physical_device_get_properties(
       /* Vulkan 1.1 / VK_KHR_maintenance3 */
       .maxPerSetDescriptors = PVR_MAX_DESCRIPTORS_PER_SET,
       .maxMemoryAllocationSize = max_memory_alloc_size,
+
+      /* Vulkan 1.1 / VK_KHR_multiview */
+      .maxMultiviewViewCount = PVR_MAX_MULTIVIEW,
+      .maxMultiviewInstanceIndex = (1 << 27) - 1,
 
       /* Vulkan 1.2 / VK_KHR_driver_properties */
       .driverID = VK_DRIVER_ID_IMAGINATION_OPEN_SOURCE_MESA,

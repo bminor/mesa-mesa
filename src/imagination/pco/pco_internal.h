@@ -1756,6 +1756,9 @@ bool pco_legalize(pco_shader *shader);
 bool pco_opt_comp_only_vecs(pco_shader *shader);
 bool pco_nir_compute_instance_check(nir_shader *shader);
 bool pco_nir_link_clip_cull_vars(nir_shader *producer, nir_shader *consumer);
+bool pco_nir_link_multiview(nir_shader *producer,
+                            nir_shader *consumer,
+                            pco_data *consumer_data);
 bool pco_nir_lower_algebraic(nir_shader *shader);
 bool pco_nir_lower_algebraic_late(nir_shader *shader);
 bool pco_nir_lower_atomics(nir_shader *shader, pco_data *data);

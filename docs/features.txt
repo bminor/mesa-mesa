@@ -452,7 +452,7 @@ Vulkan 1.1 -- all DONE: anv, hk, lvp, nvk, panvk/v10+, radv, tu, vn
   VK_KHR_maintenance1                                   DONE (anv, dzn, hasvk, lvp, nvk, panvk, pvr, radv, tu, v3dv, vn)
   VK_KHR_maintenance2                                   DONE (anv, dzn, hasvk, lvp, nvk, panvk, pvr, radv, tu, v3dv, vn)
   VK_KHR_maintenance3                                   DONE (anv, dzn, hasvk, lvp, nvk, panvk, pvr, radv, tu, v3dv, vn)
-  VK_KHR_multiview                                      DONE (anv, dzn, hasvk, lvp, nvk, panvk/v10+, radv, tu, v3dv, vn)
+  VK_KHR_multiview                                      DONE (anv, dzn, hasvk, lvp, nvk, panvk/v10+, pvr, radv, tu, v3dv, vn)
   VK_KHR_relaxed_block_layout                           DONE (anv, dzn, hasvk, lvp, nvk, panvk, radv, tu, v3dv, vn)
   VK_KHR_sampler_ycbcr_conversion                       DONE (anv, hasvk, lvp, nvk, panvk/v10+, radv, tu, v3dv, vn)
   VK_KHR_shader_draw_parameters                         DONE (anv, dzn, hasvk, lvp, nvk, panvk, radv, tu, vn)

@@ -2113,6 +2113,7 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
    case nir_intrinsic_load_base_instance:
    case nir_intrinsic_load_base_vertex:
    case nir_intrinsic_load_draw_id:
+   case nir_intrinsic_load_view_index:
 
    /* Compute sysvals. */
    case nir_intrinsic_load_local_invocation_index:

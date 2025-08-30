@@ -400,6 +400,11 @@ static VkResult pvr_pds_vertex_attrib_programs_create_and_upload(
       input.draw_index_register = sys_vals[SYSTEM_VALUE_DRAW_ID].start;
    }
 
+   if (sys_vals[SYSTEM_VALUE_VIEW_INDEX].count > 0) {
+      input.flags |= PVR_PDS_VERTEX_FLAGS_VIEW_INDEX_REQUIRED;
+      input.view_index_register = sys_vals[SYSTEM_VALUE_VIEW_INDEX].start;
+   }
+
    pvr_pds_setup_doutu(&input.usc_task_control,
                        0,
                        usc_temp_count,
@@ -930,6 +935,10 @@ static void pvr_pipeline_finish(struct pvr_device *device,
    vk_object_base_finish(&pipeline->base);
 }
 
+static void pvr_early_init_shader_data(pco_data *data,
+                                       nir_shader *nir,
+                                       const void *pCreateInfo);
+
 static void
 pvr_preprocess_shader_data(pco_data *data,
                            nir_shader *nir,
@@ -987,6 +996,7 @@ static VkResult pvr_compute_pipeline_compile(
    if (result != VK_SUCCESS)
       goto err_free_build_context;
 
+   pvr_early_init_shader_data(&shader_data, nir, pCreateInfo);
    pco_preprocess_nir(pco_ctx, nir);
    pvr_preprocess_shader_data(&shader_data, nir, pCreateInfo, layout, NULL);
    pco_lower_nir(pco_ctx, nir, &shader_data);
@@ -1651,7 +1661,7 @@ static void pvr_alloc_vs_sysvals(pco_data *data, nir_shader *nir)
    gl_system_value sys_vals[] = {
       SYSTEM_VALUE_VERTEX_ID,     SYSTEM_VALUE_INSTANCE_ID,
       SYSTEM_VALUE_BASE_INSTANCE, SYSTEM_VALUE_BASE_VERTEX,
-      SYSTEM_VALUE_DRAW_ID,
+      SYSTEM_VALUE_DRAW_ID,       SYSTEM_VALUE_VIEW_INDEX,
    };
 
    for (unsigned u = 0; u < ARRAY_SIZE(sys_vals); ++u) {
@@ -2570,6 +2580,29 @@ static void pvr_postprocess_shader_data(pco_data *data,
    /* TODO: common things, like large constants being put into shareds. */
 }
 
+static void pvr_early_init_shader_data(pco_data *data,
+                                       nir_shader *nir,
+                                       const void *pCreateInfo)
+{
+   const VkGraphicsPipelineCreateInfo *pGraphicsCreateInfo = pCreateInfo;
+
+   switch (nir->info.stage) {
+   case MESA_SHADER_VERTEX:
+   case MESA_SHADER_FRAGMENT: {
+      VK_FROM_HANDLE(pvr_render_pass, pass, pGraphicsCreateInfo->renderPass);
+      data->common.multiview = pass->multiview_enabled;
+
+      break;
+   }
+
+   case MESA_SHADER_COMPUTE:
+      break;
+
+   default:
+      UNREACHABLE("Unsupported stage.");
+   }
+}
+
 /* Compiles and uploads shaders and PDS programs. */
 static VkResult
 pvr_graphics_pipeline_compile(struct pvr_device *const device,
@@ -2594,6 +2627,7 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
    nir_shader *producer = NULL;
    nir_shader *consumer = NULL;
    pco_data shader_data[MESA_SHADER_STAGES] = { 0 };
+   pco_data *producer_data = NULL;
    nir_shader *nir_shaders[MESA_SHADER_STAGES] = { 0 };
    pco_shader *pco_shaders[MESA_SHADER_STAGES] = { 0 };
    pco_shader **vs = &pco_shaders[MESA_SHADER_VERTEX];
@@ -2621,6 +2655,9 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
       if (result != VK_SUCCESS)
          goto err_free_build_context;
 
+      pvr_early_init_shader_data(&shader_data[stage],
+                                 nir_shaders[stage],
+                                 pCreateInfo);
       pco_preprocess_nir(pco_ctx, nir_shaders[stage]);
    }
 
@@ -2629,9 +2666,14 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
          continue;
 
       if (producer)
-         pco_link_nir(pco_ctx, producer, nir_shaders[stage]);
+         pco_link_nir(pco_ctx,
+                      producer,
+                      nir_shaders[stage],
+                      producer_data,
+                      &shader_data[stage]);
 
       producer = nir_shaders[stage];
+      producer_data = &shader_data[stage];
    }
 
    for (mesa_shader_stage stage = MESA_SHADER_STAGES; stage-- > 0;) {

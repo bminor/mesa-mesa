@@ -1226,7 +1226,22 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
       frag_coords = nir_f2i32(b, frag_coords);
       coords = nir_iadd(b, frag_coords, coords);
 
-      nir_def *layer = nir_load_layer_id(b); /* TODO: view id for multiview? */
+      nir_def *layer = nir_load_layer_id(b);
+
+      /* Use the view index instead if we're in multiview. */
+      if (data->common.multiview) {
+         assert(data->fs.view_index_slot >= VARYING_SLOT_VAR0 &&
+                data->fs.view_index_slot < VARYING_SLOT_MAX);
+         layer = nir_load_input(b,
+                                1,
+                                32,
+                                nir_imm_int(b, 0),
+                                .dest_type = nir_type_uint32,
+                                .io_semantics = (nir_io_semantics){
+                                   .location = data->fs.view_index_slot,
+                                   .num_slots = 1,
+                                });
+      }
 
       coords = nir_pad_vector(b, coords, 3);
       coords = nir_vector_insert_imm(b, coords, layer, 2);

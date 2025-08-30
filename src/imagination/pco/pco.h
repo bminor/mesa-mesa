@@ -34,7 +34,11 @@ const struct spirv_to_nir_options *pco_spirv_options(void);
 const nir_shader_compiler_options *pco_nir_options(void);
 
 void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir);
-void pco_link_nir(pco_ctx *ctx, nir_shader *producer, nir_shader *consumer);
+void pco_link_nir(pco_ctx *ctx,
+                  nir_shader *producer,
+                  nir_shader *consumer,
+                  pco_data *producer_data,
+                  pco_data *consumer_data);
 void pco_rev_link_nir(pco_ctx *ctx, nir_shader *producer, nir_shader *consumer);
 void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data);
 void pco_postprocess_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data);
