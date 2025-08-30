@@ -15,11 +15,8 @@
 #include "vk_acceleration_structure.h"
 #include "drm-uapi/drm_fourcc.h"
 
-#include "tu_android.h"
 #include "tu_device.h"
 #include "tu_image.h"
-
-#include <vulkan/vulkan_android.h>
 
 static bool
 tu6_format_vtx_supported(enum pipe_format format)

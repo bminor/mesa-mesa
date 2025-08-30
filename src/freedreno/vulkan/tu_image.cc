@@ -14,7 +14,6 @@
 
 #include "util/u_debug.h"
 #include "util/format/u_format.h"
-#include "vulkan/vulkan_android.h"
 #include "vk_android.h"
 #include "vk_debug_utils.h"
 #include "vk_util.h"

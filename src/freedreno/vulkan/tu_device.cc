@@ -45,7 +45,6 @@
 #include "tu_wsi.h"
 
 #if DETECT_OS_ANDROID
-#include "util/u_gralloc/u_gralloc.h"
 #include <vndk/hardware_buffer.h>
 #endif
 

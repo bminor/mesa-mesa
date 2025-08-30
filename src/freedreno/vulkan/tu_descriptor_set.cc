@@ -21,8 +21,6 @@
 
 #include <fcntl.h>
 
-#include "vulkan/vulkan_android.h"
-
 #include "util/mesa-sha1.h"
 #include "vk_descriptors.h"
 #include "vk_util.h"
