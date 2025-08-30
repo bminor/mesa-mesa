@@ -83,6 +83,15 @@ fd6_screen_is_format_supported(struct pipe_screen *pscreen,
          retval |= usage & PIPE_BIND_SHADER_IMAGE;
    }
 
+   /* Images can't do the requisite swizzling to make these formats work,
+    * without lowering in the shader:
+    */
+   if (util_format_is_luminance_alpha(format) ||
+       util_format_is_luminance(format) ||
+       util_format_is_alpha(format) ||
+       util_format_is_intensity(format))
+      retval &= ~PIPE_BIND_SHADER_IMAGE;
+
    if (usage & PIPE_BIND_SHADER_IMAGE) {
       if (sample_count > 0)
          return false;
