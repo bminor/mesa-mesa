@@ -191,17 +191,6 @@ tu_image_view_init(struct tu_device *device,
 {
    VK_FROM_HANDLE(tu_image, image, pCreateInfo->image);
    const VkImageSubresourceRange *range = &pCreateInfo->subresourceRange;
-   VkFormat vk_format =
-      vk_select_android_external_format(pCreateInfo->pNext, pCreateInfo->format);
-
-   /* With AHB, the app may be using an external format but not necessarily
-    * chain the VkExternalFormatANDROID.  In this case, just take the format
-    * from the image.
-    */
-   if ((vk_format == VK_FORMAT_UNDEFINED) &&
-       (image->vk.external_handle_types & VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID))
-       vk_format = image->vk.format;
-
    VkImageAspectFlags aspect_mask = pCreateInfo->subresourceRange.aspectMask;
 
    const struct VkSamplerYcbcrConversionInfo *ycbcr_conversion =
@@ -210,6 +199,7 @@ tu_image_view_init(struct tu_device *device,
       vk_ycbcr_conversion_from_handle(ycbcr_conversion->conversion) : NULL;
 
    vk_image_view_init(&device->vk, &iview->vk, false, pCreateInfo);
+   assert(iview->vk.format != VK_FORMAT_UNDEFINED);
 
    iview->image = image;
 
@@ -218,14 +208,14 @@ tu_image_view_init(struct tu_device *device,
    layouts[0] = &image->layout[tu6_plane_index(image->vk.format, aspect_mask)];
 
    enum pipe_format format;
-   if (vk_format == VK_FORMAT_D32_SFLOAT_S8_UINT)
-      format = tu_aspects_to_plane(vk_format, aspect_mask);
+   if (iview->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT)
+      format = tu_aspects_to_plane(iview->vk.format, aspect_mask);
    else
-      format = vk_format_to_pipe_format(vk_format);
+      format = vk_format_to_pipe_format(iview->vk.format);
 
    if (image->vk.format == VK_FORMAT_G8_B8R8_2PLANE_420_UNORM &&
        aspect_mask == VK_IMAGE_ASPECT_PLANE_0_BIT) {
-      if (vk_format == VK_FORMAT_R8_UNORM) {
+      if (iview->vk.format == VK_FORMAT_R8_UNORM) {
          /* The 0'th plane of this format has a different UBWC compression. */
          format = PIPE_FORMAT_Y8_UNORM;
       } else {
@@ -237,7 +227,7 @@ tu_image_view_init(struct tu_device *device,
    }
 
    if (aspect_mask == VK_IMAGE_ASPECT_COLOR_BIT &&
-       vk_format_get_plane_count(vk_format) > 1) {
+       vk_format_get_plane_count(iview->vk.format) > 1) {
       layouts[1] = &image->layout[1];
       layouts[2] = &image->layout[2];
    }
