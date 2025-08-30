@@ -14,7 +14,7 @@ from os import get_terminal_size
 from pathlib import Path
 from subprocess import check_output
 from textwrap import dedent
-from typing import Any, Iterable, Optional, Pattern, TypedDict, Union
+from typing import Any, Iterable, Optional, TypedDict, Union
 
 import yaml
 from filecache import DAY, filecache
@@ -329,19 +329,15 @@ def create_job_needs_dag(gl_gql: GitlabGQL, params, disable_cache: bool = True) 
     return final_dag
 
 
-def filter_dag(
-    dag: Dag, job_name_regex: Pattern, include_stage_regex: Pattern, exclude_stage_regex: Pattern
-) -> Dag:
-    filtered_jobs: Dag = Dag({})
-    for (job, data) in dag.items():
-        if not job_name_regex.fullmatch(job):
-            continue
-        if not include_stage_regex.fullmatch(data["stage"]):
-            continue
-        if exclude_stage_regex.fullmatch(data["stage"]):
-            continue
-        filtered_jobs[job] = data
-    return filtered_jobs
+def filter_dag(dag: Dag, job_filter: callable) -> Dag:
+    return Dag({
+        job: data
+        for job, data in dag.items()
+        if job_filter(
+            job_name=job,
+            job_stage=data["stage"],
+        )
+    })
 
 
 def print_dag(dag: Dag, indentation: int = 0) -> None:
@@ -575,7 +571,27 @@ def main():
             gl_gql, {"projectPath": args.project_path, "iid": iid}, disable_cache=True
         )
 
-        dag = filter_dag(dag, re.compile(args.regex), re.compile(args.include_stage), re.compile(args.exclude_stage))
+        job_name_regex = re.compile(args.regex)
+        include_stage_regex = re.compile(args.include_stage)
+        exclude_stage_regex = re.compile(args.exclude_stage)
+
+        def job_filter(
+            job_name: str,
+            job_stage: str,
+        ) -> bool:
+            """
+            Apply user-specified filters to a job, and return whether the
+            filters allow that job (True) or not (False).
+            """
+            if not job_name_regex.fullmatch(job_name):
+                return False
+            if not include_stage_regex.fullmatch(job_stage):
+                return False
+            if exclude_stage_regex.fullmatch(job_stage):
+                return False
+            return True
+
+        dag = filter_dag(dag, job_filter)
 
         print_dag(dag)
 
