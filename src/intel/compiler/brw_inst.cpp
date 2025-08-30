@@ -21,12 +21,12 @@ brw_inst_kind_size(brw_inst_kind kind)
    STATIC_ASSERT(sizeof(brw_send_inst) >= sizeof(brw_urb_inst));
    STATIC_ASSERT(sizeof(brw_send_inst) >= sizeof(brw_fb_write_inst));
 
-   /* TODO: Temporarily here to ensure all instructions can be converted to
-    * SEND.  Once all new kinds are added, change so that BASE allocate only
-    * sizeof(brw_inst).
+   /* To allow transforming from other non-BASE kinds to a SEND, make
+    * it so that enough space is always allocated.
     */
 
-   return sizeof(brw_send_inst);
+   return kind == BRW_KIND_BASE ? sizeof(brw_inst)
+                                : sizeof(brw_send_inst);
 }
 
 static brw_inst *
