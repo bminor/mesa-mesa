@@ -884,7 +884,7 @@
         "description": "ir3/cf: don't swap signedness of (sat) instructions",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e894e83e478c35f8e6b35b65114e376dbdb7da9d",
         "notes": null
