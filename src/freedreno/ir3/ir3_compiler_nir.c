@@ -348,8 +348,8 @@ create_cov(struct ir3_context *ctx, unsigned nrpt,
     * is used to achieve the result.
     */
    if (src_type == TYPE_U8 && full_type(dst_type) == TYPE_U32) {
-      struct ir3_instruction_rpt mask =
-         create_immed_typed_rpt(&ctx->build, nrpt, 0xff, TYPE_U8);
+      struct ir3_instruction_rpt mask = create_immed_typed_shared_rpt(
+         &ctx->build, nrpt, 0xff, TYPE_U8, ctx->compiler->has_scalar_alu);
       struct ir3_instruction_rpt cov =
          ir3_AND_B_rpt(&ctx->build, nrpt, src, 0, mask, 0);
       set_dst_flags(cov.rpts, nrpt, type_flags(dst_type));
@@ -366,8 +366,8 @@ create_cov(struct ir3_context *ctx, unsigned nrpt,
 
       struct ir3_instruction_rpt cov;
       if (op == nir_op_u2f16 || op == nir_op_u2f32) {
-         struct ir3_instruction_rpt mask =
-            create_immed_typed_rpt(&ctx->build, nrpt, 0xff, TYPE_U8);
+         struct ir3_instruction_rpt mask = create_immed_typed_shared_rpt(
+            &ctx->build, nrpt, 0xff, TYPE_U8, ctx->compiler->has_scalar_alu);
          cov = ir3_AND_B_rpt(&ctx->build, nrpt, src, 0, mask, 0);
          set_dst_flags(cov.rpts, nrpt, IR3_REG_HALF);
          cov = ir3_COV_rpt(&ctx->build, nrpt, cov, TYPE_U16, dst_type);
