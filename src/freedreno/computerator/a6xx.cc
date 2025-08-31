@@ -488,8 +488,7 @@ event_write(fd_cs &cs, struct kernel *kernel, enum vgt_event_type evt, bool time
    fd_pkt7 pkt(cs, CP_EVENT_WRITE, len);
 
    if (CHIP == A6XX) {
-      pkt.add(CP_EVENT_WRITE_0_EVENT(evt) |
-               COND(timestamp, CP_EVENT_WRITE_0_TIMESTAMP));
+      pkt.add(CP_EVENT_WRITE_0_EVENT(evt));
    } else {
       pkt.add(CP_EVENT_WRITE7_0_EVENT(evt) |
               CP_EVENT_WRITE7_0_WRITE_SRC(EV_WRITE_USER_32B) |
@@ -521,7 +520,7 @@ cache_flush(fd_cs &cs, struct kernel *kernel)
       .add(CP_WAIT_REG_MEM_0(.function = WRITE_EQ, .poll = POLL_MEMORY))
       .add(CP_WAIT_REG_MEM_POLL_ADDR(control_ptr(a6xx_backend, seqno)))
       .add(CP_WAIT_REG_MEM_3(.ref = seqno))
-      .add(CP_WAIT_REG_MEM_4(.mask = !0))
+      .add(CP_WAIT_REG_MEM_4(.mask = ~0))
       .add(CP_WAIT_REG_MEM_5(.delay_loop_cycles = 16));
 
    if (CHIP == A6XX) {
