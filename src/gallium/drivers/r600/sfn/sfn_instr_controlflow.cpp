@@ -50,6 +50,9 @@ ControlFlowInstr::do_print(std::ostream& os) const
    case cf_endif:
       os << "ENDIF";
       break;
+   case cf_gds:
+      os << "GDS";
+      break;
    case cf_loop_begin:
       os << "LOOP_BEGIN";
       break;
@@ -64,6 +67,30 @@ ControlFlowInstr::do_print(std::ostream& os) const
       break;
    case cf_wait_ack:
       os << "WAIT_ACK";
+      break;
+   case cf_alu:
+      os << "ALU";
+      break;
+   case cf_alu_push_before:
+      os << "ALU_PUSH_BEFORE";
+      break;
+   case cf_alu_pop_after:
+      os << "ALU_POP_AFTER";
+      break;
+   case cf_alu_pop2_after:
+      os << "ALU_POP2_AFTER";
+      break;
+   case cf_pop:
+      os << "GDS";
+      break;
+   case cf_push:
+      os << "GDS";
+      break;
+   case cf_tex:
+      os << "TEX";
+      break;
+   case cf_vtx:
+      os << "VTX";
       break;
    default:
       UNREACHABLE("Unknown CF type");

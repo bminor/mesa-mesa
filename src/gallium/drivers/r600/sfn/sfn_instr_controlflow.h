@@ -14,13 +14,23 @@ namespace r600 {
 class ControlFlowInstr : public Instr {
 public:
    enum CFType {
+      cf_none,
+      cf_alu,
+      cf_alu_push_before,
+      cf_alu_pop_after,
+      cf_alu_pop2_after,
       cf_else,
       cf_endif,
+      cf_gds,
       cf_loop_begin,
       cf_loop_end,
       cf_loop_break,
       cf_loop_continue,
-      cf_wait_ack
+      cf_pop,
+      cf_push,
+      cf_tex,
+      cf_vtx,
+      cf_wait_ack,
    };
 
    ControlFlowInstr(CFType type);
