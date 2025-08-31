@@ -342,6 +342,8 @@ public:
 
    void pin_dest_to_chan() override;
 
+   virtual Block::Instructions prepare_instr() const { return Block::Instructions(); }
+
 protected:
    InstrWithVectorResult(const InstrWithVectorResult& orig);
 

@@ -46,7 +46,13 @@ public:
    void visit(AluGroup *instr) override { alu_groups.push_back(instr); }
    void visit(TexInstr *instr) override { tex.push_back(instr); }
    void visit(ExportInstr *instr) override { exports.push_back(instr); }
-   void visit(FetchInstr *instr) override { fetches.push_back(instr); }
+   void visit(FetchInstr *instr) override
+   {
+      if (unlikely(instr->has_fetch_flag(FetchInstr::use_tc)))
+         tex.push_back(instr);
+      else
+         fetches.push_back(instr);
+   }
    void visit(Block *instr) override
    {
       for (auto& i : *instr)
@@ -104,7 +110,7 @@ public:
    std::list<AluInstr *> alu_trans;
    std::list<AluInstr *> alu_vec;
    std::list<AluInstr *> alu_multi_slot;
-   std::list<TexInstr *> tex;
+   std::list<InstrWithVectorResult *> tex;
    std::list<AluGroup *> alu_groups;
    std::list<ExportInstr *> exports;
    std::list<FetchInstr *> fetches;
@@ -181,7 +187,7 @@ private:
    std::list<AluInstr *> alu_multi_slot_ready;
    std::list<AluInstr *> alu_trans_ready;
    std::list<AluGroup *> alu_groups_ready;
-   std::list<TexInstr *> tex_ready;
+   std::list<InstrWithVectorResult *> tex_ready;
    std::list<ExportInstr *> exports_ready;
    std::list<FetchInstr *> fetches_ready;
    std::list<Instr *> free_ready;
@@ -1195,7 +1201,7 @@ template <> struct type_char<ExportInstr> {
    static char value() { return 'E';};
 };
 
-template <> struct type_char<TexInstr> {
+template <> struct type_char<InstrWithVectorResult> {
    static char value() { return 'T';};
 };
 
