@@ -171,7 +171,7 @@ GL 4.3, GLSL 4.30 -- all DONE: freedreno/a6xx, nvc0, r600, radeonsi, llvmpipe, v
   GL_ARB_arrays_of_arrays                               DONE (all drivers that support GLSL 1.30)
   GL_ARB_ES3_compatibility                              DONE (all drivers that support GLSL 3.30)
   GL_ARB_clear_buffer_object                            DONE (all drivers)
-  GL_ARB_compute_shader                                 DONE (freedreno/a5xx+, softpipe, v3d, panfrost, crocus/gen7+)
+  GL_ARB_compute_shader                                 DONE (freedreno/a5xx+, softpipe, crocus/gen7+)
   GL_ARB_copy_image                                     DONE (freedreno/a6xx, nv50, softpipe, v3d, panfrost, crocus)
   GL_KHR_debug                                          DONE (all drivers)
   GL_ARB_explicit_uniform_location                      DONE (all drivers that support GLSL)
@@ -244,7 +244,6 @@ These are the extensions cherry-picked to make GLES 3.1
 GLES3.1, GLSL ES 3.1 -- all DONE: freedreno/a5xx+, nvc0, r600, radeonsi, virgl, v3d, softpipe, llvmpipe, zink, panfrost, d3d12, iris, crocus/gen7.5+, asahi
 
   GL_ARB_arrays_of_arrays                               DONE (all drivers that support GLSL 1.30)
-  GL_ARB_compute_shader                                 DONE (freedreno/a5xx+, crocus/gen7+)
   GL_ARB_draw_indirect                                  DONE (freedreno, crocus/gen7+)
   GL_ARB_explicit_uniform_location                      DONE (all drivers that support GLSL)
   GL_ARB_framebuffer_no_attachments                     DONE (freedreno, softpipe, crocus/gen7+, etnaviv)
@@ -264,10 +263,11 @@ GLES3.1, GLSL ES 3.1 -- all DONE: freedreno/a5xx+, nvc0, r600, radeonsi, virgl, 
   GL_EXT_shader_integer_mix                             DONE (all drivers that support GLSL)
 
   Additional functionality not covered above:
+      Compute shader                                    DONE (crocus/gen7+, v3d)
       glMemoryBarrierByRegion                           DONE
       glGetTexLevelParameter[fi]v - needs updates       DONE
       glGetBooleani_v - restrict to GLES enums
-      gl_HelperInvocation support                       DONE (r600, panfrost, crocus)
+      gl_HelperInvocation support                       DONE (r600, crocus)
 
 GLES3.2, GLSL ES 3.2 -- all DONE: freedreno/a6xx, radeonsi, virgl, llvmpipe, zink, iris, crocus/gen7.5+, asahi
 
