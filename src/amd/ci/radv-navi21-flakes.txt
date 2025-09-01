@@ -25,11 +25,13 @@ dEQP-VK.draw.renderpass.instanced.draw_indirect_vk_primitive_topology_line_list_
 dEQP-VK.draw.renderpass.instanced.dynamic_state_draw_indirect_vk_primitive_topology_triangle_strip_attrib_divisor_0_multiview
 dEQP-VK.draw.renderpass.instanced.dynamic_state_draw_vk_primitive_topology_line_list_attrib_divisor_20
 dEQP-VK.draw.renderpass.multi_draw.mosaic.indexed_mixed.16_draws.stride_extra_12.1_instance.with_tess.multiview.offset_6
+dEQP-VK.draw.renderpass.multi_draw.mosaic.indexed_packed.16_draws.stride_extra_4.1_instance.tess_geom.multiview.offset_6
 dEQP-VK.draw.renderpass.multi_draw.mosaic.indexed_packed.one_draw.stride_extra_12.1_instance.with_tess.single_view.offset_6_no_draw_id
 dEQP-VK.draw.renderpass.multi_draw.mosaic.indexed_random.one_draw.stride_extra_4.1_instance.tess_geom.single_view.offset_6_no_draw_id
 dEQP-VK.draw.renderpass.output_location.array.r32g32b32a32-sfloat-highp
 
 dEQP-VK.dynamic_rendering.primary_cmd_buff.random.seed24_geometry_tessellation
+dEQP-VK.dynamic_rendering.primary_cmd_buff.random.seed4_multiview
 dEQP-VK.dynamic_rendering.primary_cmd_buff.random.seed83_geometry_tessellation_multiview
 dEQP-VK.dynamic_rendering.primary_cmd_buff.suballocation.multisample_resolve.r16g16b16a16_uint.samples_8_resolve_level_4
 
@@ -40,6 +42,7 @@ dEQP-VK.fragment_shading_barycentric.data.provoking_last.static.line_strip_with_
 dEQP-VK.fragment_shading_barycentric.data.provoking_last.static.triangle_strip.no_clip.array2.vec4.per_vertex_flat.vertex_shader
 dEQP-VK.fragment_shading_barycentric.fast_linked_library.data.provoking_first.static.triangle_list.no_clip.array2.uint.per_vertex_flat.vertex_shader
 dEQP-VK.fragment_shading_barycentric.fast_linked_library.data.provoking_last.dynamic.line_list_with_adjacency.no_clip.type.double.per_vertex_flat.vertex_shader
+dEQP-VK.fragment_shading_barycentric.fast_linked_library.data.provoking_last.static.triangle_list.clip.array2.dvec4.per_vertex_flat.mesh_shader
 dEQP-VK.fragment_shading_barycentric.fast_linked_library.data.provoking_last.static.triangle_list.clip.array2.int.per_vertex_flat.vertex_shader
 dEQP-VK.fragment_shading_barycentric.pipeline_library.data.provoking_last.dynamic.line_list.no_clip.type.dvec3.per_vertex.vertex_shader
 dEQP-VK.fragment_shading_barycentric.pipeline_library.data.provoking_last.static.line_list_with_adjacency.no_clip.type.float.per_vertex_flat.vertex_shader
@@ -78,6 +81,7 @@ dEQP-VK.pipeline.monolithic.sampler.view_type.3d.format.r32_sfloat.min_filter.ne
 dEQP-VK.pipeline.monolithic.stencil.format.d32_sfloat_s8_uint.states.fail_wrap.pass_repl.dfail_incc.comp_less.any
 dEQP-VK.pipeline.monolithic.vertex_input.multiple_attributes.out_of_order.binding_one_to_many.attributes_sequential.f16vec3.f16vec4.mat3
 dEQP-VK.pipeline.pipeline_library.blend.dual_source.format.r8_snorm.output_variable.states.color_1msc_1ms1a_add_alpha_1mdc_1msa_sub-color_dc_1ms1c_rsub_alpha_z_1mdc_sub-color_ca_1ms1c_min_alpha_sas_ca_rsub-color_1ms1c_s1c_add_alpha_z_1mda_add
+dEQP-VK.pipeline.pipeline_library.render_to_image.core.cube_array.mipmap.a2b10g10r10_uint_pack32_s8_uint
 dEQP-VK.pipeline.pipeline_library.render_to_image.dedicated_allocation.2d.mipmap.a1r5g5b5_unorm_pack16_d16_unorm
 dEQP-VK.pipeline.pipeline_library.sampler.separate_stencil_usage.view_type.2d_array.format.d16_unorm_s8_uint.mipmap.linear.lod.select_bias_2_5
 dEQP-VK.pipeline.shader_object_linked_binary.image.suballocation.sampling_type.separate.view_type.1d_array.format.r8_srgb.count_1.size.443x1_array_of_3
@@ -129,6 +133,7 @@ dEQP-VK.texture.filtering.cube.sizes.64x64.nearest
 dEQP-VK.texture.mipmap.cubemap.basic.nearest_linear_linear_mirror
 dEQP-VK.texture.mipmap.cubemap.projected.linear_nearest_nearest_mirror
 dEQP-VK.texture.mipmap.cubemap.projected.nearest_nearest_linear_repeat
+dEQP-VK.texture.shadow.cube_array.nearest_mipmap_nearest.greater_d16_unorm_s8_uint
 dEQP-VK.texture.shadow.cube_array.nearest_mipmap_nearest.non_seamless_less_or_equal_d16_unorm_s8_uint
 
 dEQP-VK.transform_feedback.primitives_generated_query.get.host_reset.64bit.geom.no_xfb.no_rast.triangle_fan.pgq_1.two_draws.pqg_first.before

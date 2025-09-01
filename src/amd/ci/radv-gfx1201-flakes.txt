@@ -1,1 +1,3 @@
 dEQP-VK.pipeline.*.depth.*
+dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_memory_bind.3d.rgba16_snorm.1024_128_8
+dEQP-VK.sparse_resources.image_sparse_residency.3d.rg32ui.512_256_16
