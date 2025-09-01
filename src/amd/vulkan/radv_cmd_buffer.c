@@ -8499,8 +8499,11 @@ radv_CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipeline
 
       for (unsigned i = 0; i < rt_pipeline->stage_count; ++i) {
          struct radv_shader *shader = rt_pipeline->stages[i].shader;
-         if (shader)
-            radv_cs_add_buffer(device->ws, cs->b, shader->bo);
+         if (!shader)
+            continue;
+
+         cmd_buffer->shader_upload_seq = MAX2(cmd_buffer->shader_upload_seq, shader->upload_seq);
+         radv_cs_add_buffer(device->ws, cs->b, shader->bo);
       }
 
       cmd_buffer->state.rt_pipeline = rt_pipeline;
