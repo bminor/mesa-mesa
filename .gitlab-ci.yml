@@ -81,7 +81,7 @@ workflow:
 
 variables:
   FDO_UPSTREAM_REPO: mesa/mesa
-  MESA_TEMPLATES_COMMIT: &ci-templates-commit c6aeb16f86e32525fa630fb99c66c4f3e62fc3cb
+  MESA_TEMPLATES_COMMIT: &ci-templates-commit aec7a6ce7bb38902c70641526f6611e27141784a
   CI_PRE_CLONE_SCRIPT: |-
           set -o xtrace
           curl --silent --location --fail --retry-connrefused --retry 3 --retry-delay 10 \
