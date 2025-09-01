@@ -281,7 +281,7 @@ TEST_F(saturate_propagation_test, intervening_dest_write)
    bld.ADD(offset(dst0, bld, 2), src0, src1);
 
    brw_tex_inst *tex =
-      bld.emit(SHADER_OPCODE_TEX_LOGICAL, dst0, tex_srcs, TEX_LOGICAL_NUM_SRCS)->as_tex();
+      bld.emit(SHADER_OPCODE_SAMPLER, dst0, tex_srcs, TEX_LOGICAL_NUM_SRCS)->as_tex();
    tex->size_written = 8 * REG_SIZE;
    tex->coord_components = 2;
 

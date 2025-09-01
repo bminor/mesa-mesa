@@ -93,25 +93,7 @@ is_expression(const brw_shader *v, const brw_inst *const inst)
    case SHADER_OPCODE_QUAD_SWIZZLE:
    case SHADER_OPCODE_CLUSTER_BROADCAST:
    case SHADER_OPCODE_MOV_INDIRECT:
-   case SHADER_OPCODE_TEX_LOGICAL:
-   case SHADER_OPCODE_TXD_LOGICAL:
-   case SHADER_OPCODE_TXF_LOGICAL:
-   case SHADER_OPCODE_TXL_LOGICAL:
-   case SHADER_OPCODE_TXS_LOGICAL:
-   case FS_OPCODE_TXB_LOGICAL:
-   case SHADER_OPCODE_TXF_CMS_W_LOGICAL:
-   case SHADER_OPCODE_TXF_CMS_W_GFX12_LOGICAL:
-   case SHADER_OPCODE_TXF_MCS_LOGICAL:
-   case SHADER_OPCODE_LOD_LOGICAL:
-   case SHADER_OPCODE_TG4_LOGICAL:
-   case SHADER_OPCODE_TG4_BIAS_LOGICAL:
-   case SHADER_OPCODE_TG4_EXPLICIT_LOD_LOGICAL:
-   case SHADER_OPCODE_TG4_IMPLICIT_LOD_LOGICAL:
-   case SHADER_OPCODE_TG4_OFFSET_LOGICAL:
-   case SHADER_OPCODE_TG4_OFFSET_LOD_LOGICAL:
-   case SHADER_OPCODE_TG4_OFFSET_BIAS_LOGICAL:
-   case SHADER_OPCODE_SAMPLEINFO_LOGICAL:
-   case SHADER_OPCODE_IMAGE_SIZE_LOGICAL:
+   case SHADER_OPCODE_SAMPLER:
    case SHADER_OPCODE_GET_BUFFER_SIZE:
    case FS_OPCODE_PACK:
    case FS_OPCODE_PACK_HALF_2x16_SPLIT:
@@ -256,7 +238,8 @@ send_inst_match(brw_send_inst *a, brw_send_inst *b)
 static bool
 tex_inst_match(brw_tex_inst *a, brw_tex_inst *b)
 {
-   return a->offset == b->offset &&
+   return a->sampler_opcode == b->sampler_opcode &&
+          a->offset == b->offset &&
           a->coord_components == b->coord_components &&
           a->grad_components == b->grad_components &&
           a->residency == b->residency;
@@ -408,7 +391,11 @@ hash_inst(const void *v)
          tex->grad_components,
          tex->residency,
       };
+      const uint32_t tex_u32data[] = {
+         tex->sampler_opcode,
+      };
       hash = HASH(hash, tex_u8data);
+      hash = HASH(hash, tex_u32data);
       break;
    }
 

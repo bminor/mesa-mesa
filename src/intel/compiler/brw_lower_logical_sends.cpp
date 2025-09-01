@@ -606,11 +606,11 @@ is_high_sampler(const struct intel_device_info *devinfo, const brw_reg &sampler)
 
 static unsigned
 sampler_msg_type(const intel_device_info *devinfo,
-                 opcode opcode, bool shadow_compare,
+                 sampler_opcode opcode, bool shadow_compare,
                  bool lod_is_zero, bool has_min_lod)
 {
    switch (opcode) {
-   case SHADER_OPCODE_TEX_LOGICAL:
+   case SAMPLER_OPCODE_TEX_LOGICAL:
       if (devinfo->ver >= 20 && has_min_lod) {
          return shadow_compare ? XE2_SAMPLER_MESSAGE_SAMPLE_COMPARE_MLOD :
                                  XE2_SAMPLER_MESSAGE_SAMPLE_MLOD;
@@ -618,10 +618,10 @@ sampler_msg_type(const intel_device_info *devinfo,
          return shadow_compare ? GFX5_SAMPLER_MESSAGE_SAMPLE_COMPARE :
                                  GFX5_SAMPLER_MESSAGE_SAMPLE;
       }
-   case FS_OPCODE_TXB_LOGICAL:
+   case SAMPLER_OPCODE_TXB_LOGICAL:
       return shadow_compare ? GFX5_SAMPLER_MESSAGE_SAMPLE_BIAS_COMPARE :
                               GFX5_SAMPLER_MESSAGE_SAMPLE_BIAS;
-   case SHADER_OPCODE_TXL_LOGICAL:
+   case SAMPLER_OPCODE_TXL_LOGICAL:
       assert(!has_min_lod);
       if (lod_is_zero) {
          return shadow_compare ? GFX9_SAMPLER_MESSAGE_SAMPLE_C_LZ :
@@ -629,60 +629,60 @@ sampler_msg_type(const intel_device_info *devinfo,
       }
       return shadow_compare ? GFX5_SAMPLER_MESSAGE_SAMPLE_LOD_COMPARE :
                               GFX5_SAMPLER_MESSAGE_SAMPLE_LOD;
-   case SHADER_OPCODE_TXS_LOGICAL:
-   case SHADER_OPCODE_IMAGE_SIZE_LOGICAL:
+   case SAMPLER_OPCODE_TXS_LOGICAL:
+   case SAMPLER_OPCODE_IMAGE_SIZE_LOGICAL:
       assert(!has_min_lod);
       return GFX5_SAMPLER_MESSAGE_SAMPLE_RESINFO;
-   case SHADER_OPCODE_TXD_LOGICAL:
+   case SAMPLER_OPCODE_TXD_LOGICAL:
       return shadow_compare ? HSW_SAMPLER_MESSAGE_SAMPLE_DERIV_COMPARE :
                               GFX5_SAMPLER_MESSAGE_SAMPLE_DERIVS;
-   case SHADER_OPCODE_TXF_LOGICAL:
+   case SAMPLER_OPCODE_TXF_LOGICAL:
       assert(!has_min_lod);
       return lod_is_zero ? GFX9_SAMPLER_MESSAGE_SAMPLE_LD_LZ :
                            GFX5_SAMPLER_MESSAGE_SAMPLE_LD;
-   case SHADER_OPCODE_TXF_CMS_W_LOGICAL:
-   case SHADER_OPCODE_TXF_CMS_W_GFX12_LOGICAL:
+   case SAMPLER_OPCODE_TXF_CMS_W_LOGICAL:
+   case SAMPLER_OPCODE_TXF_CMS_W_GFX12_LOGICAL:
       assert(!has_min_lod);
       return GFX9_SAMPLER_MESSAGE_SAMPLE_LD2DMS_W;
-   case SHADER_OPCODE_TXF_MCS_LOGICAL:
+   case SAMPLER_OPCODE_TXF_MCS_LOGICAL:
       assert(!has_min_lod);
       return GFX7_SAMPLER_MESSAGE_SAMPLE_LD_MCS;
-   case SHADER_OPCODE_LOD_LOGICAL:
+   case SAMPLER_OPCODE_LOD_LOGICAL:
       assert(!has_min_lod);
       return GFX5_SAMPLER_MESSAGE_LOD;
-   case SHADER_OPCODE_TG4_LOGICAL:
+   case SAMPLER_OPCODE_TG4_LOGICAL:
       assert(!has_min_lod);
       return shadow_compare ? GFX7_SAMPLER_MESSAGE_SAMPLE_GATHER4_C :
                               GFX7_SAMPLER_MESSAGE_SAMPLE_GATHER4;
       break;
-   case SHADER_OPCODE_TG4_OFFSET_LOGICAL:
+   case SAMPLER_OPCODE_TG4_OFFSET_LOGICAL:
       assert(!has_min_lod);
       return shadow_compare ? GFX7_SAMPLER_MESSAGE_SAMPLE_GATHER4_PO_C :
                               GFX7_SAMPLER_MESSAGE_SAMPLE_GATHER4_PO;
-   case SHADER_OPCODE_TG4_OFFSET_LOD_LOGICAL:
+   case SAMPLER_OPCODE_TG4_OFFSET_LOD_LOGICAL:
       assert(!has_min_lod);
       assert(devinfo->ver >= 20);
       return shadow_compare ? XE2_SAMPLER_MESSAGE_SAMPLE_GATHER4_PO_L_C:
                               XE2_SAMPLER_MESSAGE_SAMPLE_GATHER4_PO_L;
-   case SHADER_OPCODE_TG4_OFFSET_BIAS_LOGICAL:
+   case SAMPLER_OPCODE_TG4_OFFSET_BIAS_LOGICAL:
       assert(!has_min_lod);
       assert(devinfo->ver >= 20);
       return XE2_SAMPLER_MESSAGE_SAMPLE_GATHER4_PO_B;
-   case SHADER_OPCODE_TG4_BIAS_LOGICAL:
+   case SAMPLER_OPCODE_TG4_BIAS_LOGICAL:
       assert(!has_min_lod);
       assert(devinfo->ver >= 20);
       return XE2_SAMPLER_MESSAGE_SAMPLE_GATHER4_B;
-   case SHADER_OPCODE_TG4_EXPLICIT_LOD_LOGICAL:
+   case SAMPLER_OPCODE_TG4_EXPLICIT_LOD_LOGICAL:
       assert(!has_min_lod);
       assert(devinfo->ver >= 20);
       return shadow_compare ? XE2_SAMPLER_MESSAGE_SAMPLE_GATHER4_L_C :
                               XE2_SAMPLER_MESSAGE_SAMPLE_GATHER4_L;
-   case SHADER_OPCODE_TG4_IMPLICIT_LOD_LOGICAL:
+   case SAMPLER_OPCODE_TG4_IMPLICIT_LOD_LOGICAL:
       assert(!has_min_lod);
       assert(devinfo->ver >= 20);
       return shadow_compare ? XE2_SAMPLER_MESSAGE_SAMPLE_GATHER4_I_C :
                               XE2_SAMPLER_MESSAGE_SAMPLE_GATHER4_I;
-  case SHADER_OPCODE_SAMPLEINFO_LOGICAL:
+  case SAMPLER_OPCODE_SAMPLEINFO_LOGICAL:
       assert(!has_min_lod);
       return GFX6_SAMPLER_MESSAGE_SAMPLE_SAMPLEINFO;
    default:
@@ -733,20 +733,20 @@ emit_load_payload_with_padding(const brw_builder &bld, const brw_reg &dst,
 }
 
 static bool
-shader_opcode_needs_header(opcode op,
+shader_opcode_needs_header(sampler_opcode op,
                            const struct intel_device_info *devinfo)
 {
    switch (op) {
-   case SHADER_OPCODE_TG4_LOGICAL:
-   case SHADER_OPCODE_TG4_OFFSET_LOGICAL:
-   case SHADER_OPCODE_TG4_OFFSET_BIAS_LOGICAL:
-   case SHADER_OPCODE_TG4_OFFSET_LOD_LOGICAL:
-   case SHADER_OPCODE_TG4_BIAS_LOGICAL:
-   case SHADER_OPCODE_TG4_EXPLICIT_LOD_LOGICAL:
-   case SHADER_OPCODE_TG4_IMPLICIT_LOD_LOGICAL:
-   case SHADER_OPCODE_SAMPLEINFO_LOGICAL:
+   case SAMPLER_OPCODE_TG4_LOGICAL:
+   case SAMPLER_OPCODE_TG4_OFFSET_LOGICAL:
+   case SAMPLER_OPCODE_TG4_OFFSET_BIAS_LOGICAL:
+   case SAMPLER_OPCODE_TG4_OFFSET_LOD_LOGICAL:
+   case SAMPLER_OPCODE_TG4_BIAS_LOGICAL:
+   case SAMPLER_OPCODE_TG4_EXPLICIT_LOD_LOGICAL:
+   case SAMPLER_OPCODE_TG4_IMPLICIT_LOD_LOGICAL:
+   case SAMPLER_OPCODE_SAMPLEINFO_LOGICAL:
       return true;
-   case SHADER_OPCODE_TXF_LOGICAL:
+   case SAMPLER_OPCODE_TXF_LOGICAL:
       /* Xe3 HW does not seem to work unless we force a header. */
       return devinfo->ver >= 30;
    default:
@@ -757,13 +757,13 @@ shader_opcode_needs_header(opcode op,
 }
 
 static bool
-shader_opcode_uses_sampler(opcode op)
+sampler_opcode_uses_sampler_state(sampler_opcode op)
 {
    switch (op) {
-   case SHADER_OPCODE_SAMPLEINFO_LOGICAL:
-   case SHADER_OPCODE_TXF_LOGICAL:
-   case SHADER_OPCODE_TXS_LOGICAL:
-   case SHADER_OPCODE_IMAGE_SIZE_LOGICAL:
+   case SAMPLER_OPCODE_SAMPLEINFO_LOGICAL:
+   case SAMPLER_OPCODE_TXF_LOGICAL:
+   case SAMPLER_OPCODE_TXS_LOGICAL:
+   case SAMPLER_OPCODE_IMAGE_SIZE_LOGICAL:
       return false;
 
    default:
@@ -773,7 +773,7 @@ shader_opcode_uses_sampler(opcode op)
 
 static unsigned
 get_sampler_msg_payload_type_bit_size(const intel_device_info *devinfo,
-                                      const brw_inst *inst)
+                                      const brw_tex_inst *inst)
 {
    assert(inst);
    const brw_reg *src = inst->src;
@@ -797,7 +797,7 @@ get_sampler_msg_payload_type_bit_size(const intel_device_info *devinfo,
     * which is already in 16-bits unlike the other parameters that need forced
     * conversion.
     */
-   if (inst->opcode != SHADER_OPCODE_TXF_CMS_W_GFX12_LOGICAL) {
+   if (inst->sampler_opcode != SAMPLER_OPCODE_TXF_CMS_W_GFX12_LOGICAL) {
       for (unsigned i = 0; i < TEX_LOGICAL_NUM_SRCS; i++) {
          /* surface/sampler don't go in the payload */
          if (i == TEX_LOGICAL_SRC_SURFACE ||
@@ -822,8 +822,8 @@ get_sampler_msg_payload_type_bit_size(const intel_device_info *devinfo,
     *  ld_mcs         SIMD8H and SIMD16H Only
     *  ld2dms         REMOVEDBY(GEN:HAS:1406788836)
     */
-   if (inst->opcode == SHADER_OPCODE_TXF_CMS_W_GFX12_LOGICAL ||
-       inst->opcode == SHADER_OPCODE_TXF_MCS_LOGICAL)
+   if (inst->sampler_opcode == SAMPLER_OPCODE_TXF_CMS_W_GFX12_LOGICAL ||
+       inst->sampler_opcode == SAMPLER_OPCODE_TXF_MCS_LOGICAL)
       src_type_size = 2;
 
    return src_type_size * 8;
@@ -864,7 +864,7 @@ lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
    const enum brw_reg_type payload_signed_type =
       brw_type_with_size(BRW_TYPE_D, payload_type_bit_size);
    unsigned header_size = 0, length = 0;
-   opcode op = tex->opcode;
+   sampler_opcode op = tex->sampler_opcode;
    brw_reg sources[1 + MAX_SAMPLER_MESSAGE_SIZE];
    for (unsigned i = 0; i < ARRAY_SIZE(sources); i++)
       sources[i] = bld.vgrf(payload_type);
@@ -973,7 +973,7 @@ lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
             ubld.SHL(tmp, tmp, brw_imm_ud(4));
             ubld1.ADD(component(header, 3), sampler_state_ptr, tmp);
          }
-      } else if (devinfo->ver >= 11 && shader_opcode_uses_sampler(op)) {
+      } else if (devinfo->ver >= 11 && sampler_opcode_uses_sampler_state(op)) {
          /* Gfx11+ sampler message headers include bits in 4:0 which conflict
           * with the ones included in g0.3 bits 4:0.  Mask them out.
           */
@@ -1011,19 +1011,19 @@ lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
 
    /* Set up the LOD info */
    switch (op) {
-   case SHADER_OPCODE_TXL_LOGICAL:
+   case SAMPLER_OPCODE_TXL_LOGICAL:
       if (lod_is_zero)
          break;
       FALLTHROUGH;
-   case FS_OPCODE_TXB_LOGICAL:
-   case SHADER_OPCODE_TG4_BIAS_LOGICAL:
-   case SHADER_OPCODE_TG4_EXPLICIT_LOD_LOGICAL:
-   case SHADER_OPCODE_TG4_OFFSET_LOD_LOGICAL:
-   case SHADER_OPCODE_TG4_OFFSET_BIAS_LOGICAL:
+   case SAMPLER_OPCODE_TXB_LOGICAL:
+   case SAMPLER_OPCODE_TG4_BIAS_LOGICAL:
+   case SAMPLER_OPCODE_TG4_EXPLICIT_LOD_LOGICAL:
+   case SAMPLER_OPCODE_TG4_OFFSET_LOD_LOGICAL:
+   case SAMPLER_OPCODE_TG4_OFFSET_BIAS_LOGICAL:
       bld.MOV(sources[length], lod);
       length++;
       break;
-   case SHADER_OPCODE_TXD_LOGICAL:
+   case SAMPLER_OPCODE_TXD_LOGICAL:
       /* TXD should have been lowered in SIMD16 mode (in SIMD32 mode in
        * Xe2+).
        */
@@ -1046,16 +1046,16 @@ lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
 
       coordinate_done = true;
       break;
-   case SHADER_OPCODE_TXS_LOGICAL:
+   case SAMPLER_OPCODE_TXS_LOGICAL:
       sources[length] = retype(sources[length], payload_unsigned_type);
       bld.MOV(sources[length++], lod);
       break;
-   case SHADER_OPCODE_IMAGE_SIZE_LOGICAL:
+   case SAMPLER_OPCODE_IMAGE_SIZE_LOGICAL:
       /* We need an LOD; just use 0 */
       sources[length] = retype(sources[length], payload_unsigned_type);
       bld.MOV(sources[length++], brw_imm_ud(0));
       break;
-   case SHADER_OPCODE_TXF_LOGICAL:
+   case SAMPLER_OPCODE_TXF_LOGICAL:
        /* On Gfx9 the parameters are intermixed they are u, v, lod, r. */
       sources[length] = retype(sources[length], payload_signed_type);
       bld.MOV(sources[length++], offset(coordinate, bld, 0));
@@ -1081,8 +1081,8 @@ lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
       coordinate_done = true;
       break;
 
-   case SHADER_OPCODE_TXF_CMS_W_LOGICAL:
-   case SHADER_OPCODE_TXF_CMS_W_GFX12_LOGICAL:
+   case SAMPLER_OPCODE_TXF_CMS_W_LOGICAL:
+   case SAMPLER_OPCODE_TXF_CMS_W_GFX12_LOGICAL:
       sources[length] = retype(sources[length], payload_unsigned_type);
       bld.MOV(sources[length++], sample_index);
 
@@ -1098,7 +1098,7 @@ lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
           *
           *    ld2dms_w   si  mcs0 mcs1 mcs2  mcs3  u  v  r
           */
-         if (op == SHADER_OPCODE_TXF_CMS_W_GFX12_LOGICAL) {
+         if (op == SAMPLER_OPCODE_TXF_CMS_W_GFX12_LOGICAL) {
             sources[length] = retype(sources[length], payload_unsigned_type);
             bld.MOV(sources[length++],
                     mcs.file == IMM ? mcs : offset(mcs, bld, 2 * i + 0));
@@ -1114,7 +1114,7 @@ lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
       }
       FALLTHROUGH;
 
-   case SHADER_OPCODE_TXF_MCS_LOGICAL:
+   case SAMPLER_OPCODE_TXF_MCS_LOGICAL:
       /* There is no offsetting for this message; just copy in the integer
        * texture coordinates.
        */
@@ -1125,7 +1125,7 @@ lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
 
       coordinate_done = true;
       break;
-   case SHADER_OPCODE_TG4_OFFSET_LOGICAL:
+   case SAMPLER_OPCODE_TG4_OFFSET_LOGICAL:
       /* More crazy intermixing */
       for (unsigned i = 0; i < 2; i++) /* u, v */
          bld.MOV(sources[length++], offset(coordinate, bld, i));
@@ -1153,7 +1153,7 @@ lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
 
    if (min_lod.file != BAD_FILE && !min_lod_is_first) {
       /* Account for all of the missing coordinate sources */
-      if (op == FS_OPCODE_TXB_LOGICAL && devinfo->ver >= 20) {
+      if (op == SAMPLER_OPCODE_TXB_LOGICAL && devinfo->ver >= 20) {
          /* Bspec 64985:
           *
           * For sample_b sampler message format:
@@ -1167,7 +1167,7 @@ lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
           * Param          BIAS_AI  U  V  R  MLOD
           */
          length += 3 - tex->coord_components;
-      } else if (op == SHADER_OPCODE_TXD_LOGICAL && devinfo->verx10 >= 125) {
+      } else if (op == SAMPLER_OPCODE_TXD_LOGICAL && devinfo->verx10 >= 125) {
          /* On DG2 and newer platforms, sample_d can only be used with 1D and
           * 2D surfaces, so the maximum number of gradient components is 2.
           * In spite of this limitation, the Bspec lists a mysterious R
@@ -1180,7 +1180,7 @@ lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
          length += (2 - tex->grad_components) * 2;
       } else {
          length += 4 - tex->coord_components;
-         if (op == SHADER_OPCODE_TXD_LOGICAL)
+         if (op == SAMPLER_OPCODE_TXD_LOGICAL)
             length += (3 - tex->grad_components) * 2;
       }
 
@@ -1188,7 +1188,7 @@ lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
 
       /* Wa_14014595444: Populate MLOD as parameter 5 (twice). */
        if (intel_needs_workaround(devinfo, 14014595444) &&
-           op == FS_OPCODE_TXB_LOGICAL && shadow_c.file == BAD_FILE)
+           op == SAMPLER_OPCODE_TXB_LOGICAL && shadow_c.file == BAD_FILE)
          bld.MOV(sources[length++], min_lod);
    }
 
@@ -2613,25 +2613,7 @@ brw_lower_logical_sends(brw_shader &s)
          lower_fb_read_logical_send(ibld, inst, brw_wm_prog_data(s.prog_data));
          break;
 
-      case SHADER_OPCODE_TEX_LOGICAL:
-      case SHADER_OPCODE_TXD_LOGICAL:
-      case SHADER_OPCODE_TXF_LOGICAL:
-      case SHADER_OPCODE_TXL_LOGICAL:
-      case SHADER_OPCODE_TXS_LOGICAL:
-      case SHADER_OPCODE_IMAGE_SIZE_LOGICAL:
-      case FS_OPCODE_TXB_LOGICAL:
-      case SHADER_OPCODE_TXF_CMS_W_LOGICAL:
-      case SHADER_OPCODE_TXF_CMS_W_GFX12_LOGICAL:
-      case SHADER_OPCODE_TXF_MCS_LOGICAL:
-      case SHADER_OPCODE_LOD_LOGICAL:
-      case SHADER_OPCODE_TG4_LOGICAL:
-      case SHADER_OPCODE_TG4_BIAS_LOGICAL:
-      case SHADER_OPCODE_TG4_EXPLICIT_LOD_LOGICAL:
-      case SHADER_OPCODE_TG4_IMPLICIT_LOD_LOGICAL:
-      case SHADER_OPCODE_TG4_OFFSET_LOGICAL:
-      case SHADER_OPCODE_TG4_OFFSET_LOD_LOGICAL:
-      case SHADER_OPCODE_TG4_OFFSET_BIAS_LOGICAL:
-      case SHADER_OPCODE_SAMPLEINFO_LOGICAL:
+      case SHADER_OPCODE_SAMPLER:
          lower_sampler_logical_send(ibld, inst->as_tex());
          break;
 

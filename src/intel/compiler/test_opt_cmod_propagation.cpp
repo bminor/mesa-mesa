@@ -216,7 +216,7 @@ TEST_F(cmod_propagation_test, intervening_dest_write)
    bld.ADD(offset(dest, bld, 2), src0, src1);
 
    brw_tex_inst *tex =
-      bld.emit(SHADER_OPCODE_TEX_LOGICAL, dest, tex_srcs, TEX_LOGICAL_NUM_SRCS)->as_tex();
+      bld.emit(SHADER_OPCODE_SAMPLER, dest, tex_srcs, TEX_LOGICAL_NUM_SRCS)->as_tex();
    tex->size_written = 4 * REG_SIZE;
    tex->coord_components = 2;
 

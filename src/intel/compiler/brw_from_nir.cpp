@@ -5919,8 +5919,9 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
       const brw_builder ubld = bld.scalar_group();
 
       brw_reg tmp = ubld.vgrf(BRW_TYPE_UD, 4);
-      brw_tex_inst *inst = ubld.emit(SHADER_OPCODE_IMAGE_SIZE_LOGICAL,
+      brw_tex_inst *inst = ubld.emit(SHADER_OPCODE_SAMPLER,
                                      tmp, srcs, ARRAY_SIZE(srcs))->as_tex();
+      inst->sampler_opcode = SAMPLER_OPCODE_IMAGE_SIZE_LOGICAL;
       inst->size_written = 4 * REG_SIZE * reg_unit(devinfo);
 
       for (unsigned c = 0; c < instr->def.num_components; ++c) {
@@ -7511,22 +7512,22 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
    assert(srcs[TEX_LOGICAL_SRC_MCS].file != BAD_FILE ||
           instr->op != nir_texop_txf_ms);
 
-   enum opcode opcode;
+   enum sampler_opcode opcode;
    switch (instr->op) {
    case nir_texop_tex:
-      opcode = SHADER_OPCODE_TEX_LOGICAL;
+      opcode = SAMPLER_OPCODE_TEX_LOGICAL;
       break;
    case nir_texop_txb:
-      opcode = FS_OPCODE_TXB_LOGICAL;
+      opcode = SAMPLER_OPCODE_TXB_LOGICAL;
       break;
    case nir_texop_txl:
-      opcode = SHADER_OPCODE_TXL_LOGICAL;
+      opcode = SAMPLER_OPCODE_TXL_LOGICAL;
       break;
    case nir_texop_txd:
-      opcode = SHADER_OPCODE_TXD_LOGICAL;
+      opcode = SAMPLER_OPCODE_TXD_LOGICAL;
       break;
    case nir_texop_txf:
-      opcode = SHADER_OPCODE_TXF_LOGICAL;
+      opcode = SAMPLER_OPCODE_TXF_LOGICAL;
       break;
    case nir_texop_txf_ms:
       /* On Gfx12HP there is only CMS_W available. From the Bspec: Shared
@@ -7535,25 +7536,25 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
        *   ld2dms REMOVEDBY(GEN:HAS:1406788836)
        */
       if (devinfo->verx10 >= 125)
-         opcode = SHADER_OPCODE_TXF_CMS_W_GFX12_LOGICAL;
+         opcode = SAMPLER_OPCODE_TXF_CMS_W_GFX12_LOGICAL;
       else
-         opcode = SHADER_OPCODE_TXF_CMS_W_LOGICAL;
+         opcode = SAMPLER_OPCODE_TXF_CMS_W_LOGICAL;
       break;
    case nir_texop_txf_ms_mcs_intel:
-      opcode = SHADER_OPCODE_TXF_MCS_LOGICAL;
+      opcode = SAMPLER_OPCODE_TXF_MCS_LOGICAL;
       break;
    case nir_texop_query_levels:
    case nir_texop_txs:
-      opcode = SHADER_OPCODE_TXS_LOGICAL;
+      opcode = SAMPLER_OPCODE_TXS_LOGICAL;
       break;
    case nir_texop_lod:
-      opcode = SHADER_OPCODE_LOD_LOGICAL;
+      opcode = SAMPLER_OPCODE_LOD_LOGICAL;
       break;
    case nir_texop_tg4: {
       if (srcs[TEX_LOGICAL_SRC_TG4_OFFSET].file != BAD_FILE) {
-         opcode = SHADER_OPCODE_TG4_OFFSET_LOGICAL;
+         opcode = SAMPLER_OPCODE_TG4_OFFSET_LOGICAL;
       } else {
-         opcode = SHADER_OPCODE_TG4_LOGICAL;
+         opcode = SAMPLER_OPCODE_TG4_LOGICAL;
          if (devinfo->ver >= 20) {
             /* If SPV_AMD_texture_gather_bias_lod extension is enabled, all
              * texture gather functions (ie. the ones which do not take the
@@ -7562,26 +7563,26 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
              * stages, base level is used instead.
              */
             if (instr->is_gather_implicit_lod)
-               opcode = SHADER_OPCODE_TG4_IMPLICIT_LOD_LOGICAL;
+               opcode = SAMPLER_OPCODE_TG4_IMPLICIT_LOD_LOGICAL;
 
             if (got_bias)
-               opcode = SHADER_OPCODE_TG4_BIAS_LOGICAL;
+               opcode = SAMPLER_OPCODE_TG4_BIAS_LOGICAL;
 
             if (got_lod)
-               opcode = SHADER_OPCODE_TG4_EXPLICIT_LOD_LOGICAL;
+               opcode = SAMPLER_OPCODE_TG4_EXPLICIT_LOD_LOGICAL;
 
             if (pack_lod_bias_and_offset) {
                if (got_lod)
-                  opcode = SHADER_OPCODE_TG4_OFFSET_LOD_LOGICAL;
+                  opcode = SAMPLER_OPCODE_TG4_OFFSET_LOD_LOGICAL;
                if (got_bias)
-                  opcode = SHADER_OPCODE_TG4_OFFSET_BIAS_LOGICAL;
+                  opcode = SAMPLER_OPCODE_TG4_OFFSET_BIAS_LOGICAL;
             }
          }
       }
       break;
    }
    case nir_texop_texture_samples:
-      opcode = SHADER_OPCODE_SAMPLEINFO_LOGICAL;
+      opcode = SAMPLER_OPCODE_SAMPLEINFO_LOGICAL;
       break;
    default:
       UNREACHABLE("unknown texture opcode");
@@ -7621,7 +7622,8 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
       brw_allocate_vgrf_units(*bld.shader, total_regs * reg_unit(devinfo)),
       dst_type);
 
-   brw_tex_inst *tex = bld.emit(opcode, dst, srcs, ARRAY_SIZE(srcs))->as_tex();
+   brw_tex_inst *tex = bld.emit(SHADER_OPCODE_SAMPLER, dst, srcs, ARRAY_SIZE(srcs))->as_tex();
+   tex->sampler_opcode = opcode;
    tex->offset = header_bits;
    tex->size_written = total_regs * grf_size;
    tex->residency = instr->is_sparse;

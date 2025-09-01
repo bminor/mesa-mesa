@@ -275,6 +275,7 @@ struct brw_send_inst : brw_inst {
 };
 
 struct brw_tex_inst : brw_inst {
+   enum sampler_opcode sampler_opcode;
    uint32_t offset;
    uint8_t coord_components;
    uint8_t grad_components;

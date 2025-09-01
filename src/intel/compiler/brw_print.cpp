@@ -75,9 +75,36 @@ brw_print_instructions(const brw_shader &s, FILE *file)
 }
 
 static const char *
-brw_instruction_name(const struct brw_isa_info *isa, enum opcode op)
+brw_sampler_opcode_name(sampler_opcode opcode) {
+   switch (opcode) {
+   case SAMPLER_OPCODE_TEX_LOGICAL:              return "tex_logical";
+   case SAMPLER_OPCODE_TXD_LOGICAL:              return "txd_logical";
+   case SAMPLER_OPCODE_TXF_LOGICAL:              return "txf_logical";
+   case SAMPLER_OPCODE_TXL_LOGICAL:              return "txl_logical";
+   case SAMPLER_OPCODE_TXS_LOGICAL:              return "txs_logical";
+   case SAMPLER_OPCODE_TXB_LOGICAL:              return "txb_logical";
+   case SAMPLER_OPCODE_TXF_CMS_W_LOGICAL:        return "txf_cms_w_logical";
+   case SAMPLER_OPCODE_TXF_CMS_W_GFX12_LOGICAL:  return "txf_cms_w_gfx12_logical";
+   case SAMPLER_OPCODE_TXF_MCS_LOGICAL:          return "txf_mcs_logical";
+   case SAMPLER_OPCODE_LOD_LOGICAL:              return "lod_logical";
+   case SAMPLER_OPCODE_TG4_LOGICAL:              return "tg4_logical";
+   case SAMPLER_OPCODE_TG4_OFFSET_LOGICAL:       return "tg4_offset_logical";
+   case SAMPLER_OPCODE_TG4_OFFSET_LOD_LOGICAL:   return "tg4_offset_lod_logical";
+   case SAMPLER_OPCODE_TG4_OFFSET_BIAS_LOGICAL:  return "tg4_offset_bias_logical";
+   case SAMPLER_OPCODE_TG4_BIAS_LOGICAL:         return "tg4_b_logical";
+   case SAMPLER_OPCODE_TG4_EXPLICIT_LOD_LOGICAL: return "tg4_l_logical";
+   case SAMPLER_OPCODE_TG4_IMPLICIT_LOD_LOGICAL: return "tg4_i_logical";
+   case SAMPLER_OPCODE_SAMPLEINFO_LOGICAL:       return "sampleinfo_logical";
+   case SAMPLER_OPCODE_IMAGE_SIZE_LOGICAL:       return "image_size_logical";
+   default: UNREACHABLE("invalid sampler opcode");
+   }
+}
+
+static const char *
+brw_instruction_name(const struct brw_isa_info *isa, const brw_inst *inst)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
+   enum opcode op = inst->opcode;
 
    switch (op) {
    case 0 ... NUM_BRW_OPCODES - 1:
@@ -130,45 +157,8 @@ brw_instruction_name(const struct brw_isa_info *isa, enum opcode op)
    case SHADER_OPCODE_UNDEF:
       return "undef";
 
-   case SHADER_OPCODE_TEX_LOGICAL:
-      return "tex_logical";
-   case SHADER_OPCODE_TXD_LOGICAL:
-      return "txd_logical";
-   case SHADER_OPCODE_TXF_LOGICAL:
-      return "txf_logical";
-   case SHADER_OPCODE_TXL_LOGICAL:
-      return "txl_logical";
-   case SHADER_OPCODE_TXS_LOGICAL:
-      return "txs_logical";
-   case FS_OPCODE_TXB_LOGICAL:
-      return "txb_logical";
-   case SHADER_OPCODE_TXF_CMS_W_LOGICAL:
-      return "txf_cms_w_logical";
-   case SHADER_OPCODE_TXF_CMS_W_GFX12_LOGICAL:
-      return "txf_cms_w_gfx12_logical";
-   case SHADER_OPCODE_TXF_MCS_LOGICAL:
-      return "txf_mcs_logical";
-   case SHADER_OPCODE_LOD_LOGICAL:
-      return "lod_logical";
-   case SHADER_OPCODE_TG4_LOGICAL:
-      return "tg4_logical";
-   case SHADER_OPCODE_TG4_OFFSET_LOGICAL:
-      return "tg4_offset_logical";
-   case SHADER_OPCODE_TG4_OFFSET_LOD_LOGICAL:
-      return "tg4_offset_lod_logical";
-   case SHADER_OPCODE_TG4_OFFSET_BIAS_LOGICAL:
-      return "tg4_offset_bias_logical";
-   case SHADER_OPCODE_TG4_BIAS_LOGICAL:
-      return "tg4_b_logical";
-   case SHADER_OPCODE_TG4_EXPLICIT_LOD_LOGICAL:
-      return "tg4_l_logical";
-   case SHADER_OPCODE_TG4_IMPLICIT_LOD_LOGICAL:
-      return "tg4_i_logical";
-   case SHADER_OPCODE_SAMPLEINFO_LOGICAL:
-      return "sampleinfo_logical";
-
-   case SHADER_OPCODE_IMAGE_SIZE_LOGICAL:
-      return "image_size_logical";
+   case SHADER_OPCODE_SAMPLER:
+      return brw_sampler_opcode_name(inst->as_tex()->sampler_opcode);
 
    case SHADER_OPCODE_MEMORY_FENCE:
       return "memory_fence";
@@ -355,7 +345,7 @@ brw_print_instruction(const brw_shader &s, const brw_inst *inst, FILE *file, con
               inst->flag_subreg % 2);
    }
 
-   fprintf(file, "%s", brw_instruction_name(&s.compiler->isa, inst->opcode));
+   fprintf(file, "%s", brw_instruction_name(&s.compiler->isa, inst));
    if (inst->saturate)
       fprintf(file, ".sat");
    if (inst->conditional_mod) {

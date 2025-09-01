@@ -162,19 +162,31 @@ static unsigned
 get_sampler_lowered_simd_width(const struct intel_device_info *devinfo,
                                const brw_tex_inst *tex)
 {
+   /* On gfx12 parameters are fixed to 16-bit values and therefore they all
+    * always fit regardless of the execution size.
+    */
+   if (tex->sampler_opcode == SAMPLER_OPCODE_TXF_CMS_W_GFX12_LOGICAL)
+      return MIN2(16, tex->exec_size);
+
+   /* TXD is unsupported in SIMD16 mode previous to Xe2. SIMD32 is still
+    * unsuppported on Xe2.
+    */
+   if (tex->sampler_opcode == SAMPLER_OPCODE_TXD_LOGICAL)
+      return devinfo->ver < 20 ? 8 : 16;
+
    /* If we have a min_lod parameter on anything other than a simple sample
     * message, it will push it over 5 arguments and we have to fall back to
     * SIMD8.
     */
-   if (tex->opcode != SHADER_OPCODE_TEX_LOGICAL &&
+   if (tex->sampler_opcode != SAMPLER_OPCODE_TEX_LOGICAL &&
        tex->components_read(TEX_LOGICAL_SRC_MIN_LOD))
       return devinfo->ver < 20 ? 8 : 16;
 
    /* On Gfx9+ the LOD argument is for free if we're able to use the LZ
     * variant of the TXL or TXF message.
     */
-   const bool implicit_lod = (tex->opcode == SHADER_OPCODE_TXL_LOGICAL ||
-                              tex->opcode == SHADER_OPCODE_TXF_LOGICAL) &&
+   const bool implicit_lod = (tex->sampler_opcode == SAMPLER_OPCODE_TXL_LOGICAL ||
+                              tex->sampler_opcode == SAMPLER_OPCODE_TXF_LOGICAL) &&
                              tex->src[TEX_LOGICAL_SRC_LOD].is_zero();
 
    /* Calculate the total number of argument components that need to be passed
@@ -186,21 +198,21 @@ get_sampler_lowered_simd_width(const struct intel_device_info *devinfo,
       (implicit_lod ? 0 : tex->components_read(TEX_LOGICAL_SRC_LOD)) +
       tex->components_read(TEX_LOGICAL_SRC_LOD2) +
       tex->components_read(TEX_LOGICAL_SRC_SAMPLE_INDEX) +
-      (tex->opcode == SHADER_OPCODE_TG4_OFFSET_LOGICAL ?
+      (tex->sampler_opcode == SAMPLER_OPCODE_TG4_OFFSET_LOGICAL ?
        tex->components_read(TEX_LOGICAL_SRC_TG4_OFFSET) : 0) +
       tex->components_read(TEX_LOGICAL_SRC_MCS) +
       tex->components_read(TEX_LOGICAL_SRC_MIN_LOD);
 
 
-   if (tex->opcode == FS_OPCODE_TXB_LOGICAL && devinfo->ver >= 20) {
+   if (tex->sampler_opcode == SAMPLER_OPCODE_TXB_LOGICAL && devinfo->ver >= 20) {
       num_payload_components += 3 - tex->coord_components;
-   } else if (tex->opcode == SHADER_OPCODE_TXD_LOGICAL &&
+   } else if (tex->sampler_opcode == SAMPLER_OPCODE_TXD_LOGICAL &&
             devinfo->verx10 >= 125 && devinfo->ver < 20) {
       num_payload_components +=
          3 - tex->coord_components + (2 - tex->grad_components) * 2;
    } else {
       num_payload_components += 4 - tex->coord_components;
-      if (tex->opcode == SHADER_OPCODE_TXD_LOGICAL)
+      if (tex->sampler_opcode == SAMPLER_OPCODE_TXD_LOGICAL)
          num_payload_components += (3 - tex->grad_components) * 2;
    }
 
@@ -356,22 +368,7 @@ brw_get_lowered_simd_width(const brw_shader *shader, const brw_inst *inst)
    case FS_OPCODE_FB_READ_LOGICAL:
       return MIN2(16, inst->exec_size);
 
-   case SHADER_OPCODE_TEX_LOGICAL:
-   case SHADER_OPCODE_TXF_MCS_LOGICAL:
-   case SHADER_OPCODE_LOD_LOGICAL:
-   case SHADER_OPCODE_TG4_LOGICAL:
-   case SHADER_OPCODE_SAMPLEINFO_LOGICAL:
-   case SHADER_OPCODE_TXF_CMS_W_LOGICAL:
-   case SHADER_OPCODE_TG4_OFFSET_LOGICAL:
-   case SHADER_OPCODE_TG4_BIAS_LOGICAL:
-   case SHADER_OPCODE_TG4_EXPLICIT_LOD_LOGICAL:
-   case SHADER_OPCODE_TG4_IMPLICIT_LOD_LOGICAL:
-   case SHADER_OPCODE_TG4_OFFSET_LOD_LOGICAL:
-   case SHADER_OPCODE_TG4_OFFSET_BIAS_LOGICAL:
-   case SHADER_OPCODE_TXL_LOGICAL:
-   case FS_OPCODE_TXB_LOGICAL:
-   case SHADER_OPCODE_TXF_LOGICAL:
-   case SHADER_OPCODE_TXS_LOGICAL:
+   case SHADER_OPCODE_SAMPLER:
       return get_sampler_lowered_simd_width(devinfo, inst->as_tex());
 
    case SHADER_OPCODE_MEMORY_LOAD_LOGICAL:
@@ -393,18 +390,6 @@ brw_get_lowered_simd_width(const brw_shader *shader, const brw_inst *inst)
 
       return MIN2(16, mem->exec_size);
    }
-
-   /* On gfx12 parameters are fixed to 16-bit values and therefore they all
-    * always fit regardless of the execution size.
-    */
-   case SHADER_OPCODE_TXF_CMS_W_GFX12_LOGICAL:
-      return MIN2(16, inst->exec_size);
-
-   case SHADER_OPCODE_TXD_LOGICAL:
-      /* TXD is unsupported in SIMD16 mode previous to Xe2. SIMD32 is still
-       * unsuppported on Xe2.
-       */
-      return devinfo->ver < 20 ? 8 : 16;
 
    case SHADER_OPCODE_URB_READ_LOGICAL:
    case SHADER_OPCODE_URB_WRITE_LOGICAL:

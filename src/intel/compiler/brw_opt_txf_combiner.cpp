@@ -94,10 +94,12 @@ brw_opt_combine_convergent_txf(brw_shader &s)
       unsigned count = 0;
 
       foreach_inst_in_block(brw_inst, inst, block) {
-         if (inst->opcode != SHADER_OPCODE_TXF_LOGICAL)
+         brw_tex_inst *tex = inst->as_tex();
+         if (tex == NULL)
             continue;
 
-         brw_tex_inst *tex = inst->as_tex();
+         if (tex->sampler_opcode != SAMPLER_OPCODE_TXF_LOGICAL)
+            continue;
 
          /* Only handle buffers or single miplevel 1D images for now */
          if (tex->coord_components > 1)
@@ -193,8 +195,9 @@ brw_opt_combine_convergent_txf(brw_shader &s)
          /* Emit the new divergent TXF */
          brw_reg div = ubld.vgrf(BRW_TYPE_UD, new_dest_comps);
          brw_tex_inst *div_txf =
-            ubld.emit(SHADER_OPCODE_TXF_LOGICAL, div, srcs,
+            ubld.emit(SHADER_OPCODE_SAMPLER, div, srcs,
                       TEX_LOGICAL_NUM_SRCS)->as_tex();
+         div_txf->sampler_opcode = SAMPLER_OPCODE_TXF_LOGICAL;
          div_txf->coord_components = 1;
          div_txf->grad_components = 0;
          div_txf->residency = false;
