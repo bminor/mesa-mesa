@@ -345,6 +345,7 @@ files_libmesa = files(
   'state_tracker/st_nir.h',
   'state_tracker/st_nir_builtins.c',
   'state_tracker/st_nir_lower_builtin.c',
+  'state_tracker/st_nir_lower_drawpixels.c',
   'state_tracker/st_nir_lower_fog.c',
   'state_tracker/st_nir_lower_position_invariant.c',
   'state_tracker/st_nir_lower_tex_src_plane.c',

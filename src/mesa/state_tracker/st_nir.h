@@ -35,6 +35,19 @@ extern "C" {
 struct nir_shader;
 struct nir_variable;
 
+typedef struct nir_lower_drawpixels_options {
+   gl_state_index16 texcoord_state_tokens[STATE_LENGTH];
+   gl_state_index16 scale_state_tokens[STATE_LENGTH];
+   gl_state_index16 bias_state_tokens[STATE_LENGTH];
+   unsigned drawpix_sampler;
+   unsigned pixelmap_sampler;
+   bool pixel_maps : 1;
+   bool scale_and_bias : 1;
+} nir_lower_drawpixels_options;
+
+bool st_nir_lower_drawpixels(struct nir_shader *shader,
+                             const nir_lower_drawpixels_options *options);
+
 bool st_nir_lower_builtin(struct nir_shader *shader);
 bool st_nir_lower_tex_src_plane(struct nir_shader *shader, unsigned free_slots,
                                 unsigned lower_2plane, unsigned lower_3plane);

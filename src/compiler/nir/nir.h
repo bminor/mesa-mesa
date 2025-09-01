@@ -5953,19 +5953,6 @@ bool nir_lower_wrmasks(nir_shader *shader, nir_instr_filter_cb cb, const void *d
 
 bool nir_lower_fb_read(nir_shader *shader);
 
-typedef struct nir_lower_drawpixels_options {
-   gl_state_index16 texcoord_state_tokens[STATE_LENGTH];
-   gl_state_index16 scale_state_tokens[STATE_LENGTH];
-   gl_state_index16 bias_state_tokens[STATE_LENGTH];
-   unsigned drawpix_sampler;
-   unsigned pixelmap_sampler;
-   bool pixel_maps : 1;
-   bool scale_and_bias : 1;
-} nir_lower_drawpixels_options;
-
-bool nir_lower_drawpixels(nir_shader *shader,
-                          const nir_lower_drawpixels_options *options);
-
 typedef struct nir_lower_bitmap_options {
    unsigned sampler;
    bool swizzle_xxxx;

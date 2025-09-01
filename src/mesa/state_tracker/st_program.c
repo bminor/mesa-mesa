@@ -1155,7 +1155,7 @@ st_create_fp_variant(struct st_context *st,
       memcpy(options.texcoord_state_tokens, texcoord_state,
                sizeof(options.texcoord_state_tokens));
 
-      NIR_PASS(_, state.ir.nir, nir_lower_drawpixels, &options);
+      NIR_PASS(_, state.ir.nir, st_nir_lower_drawpixels, &options);
       finalize = true;
    }
 

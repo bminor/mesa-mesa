@@ -164,7 +164,6 @@ else
   'nir_lower_variable_initializers.c',
   'nir_lower_discard_if.c',
   'nir_lower_double_ops.c',
-  'nir_lower_drawpixels.c',
   'nir_lower_explicit_io.c',
   'nir_lower_fb_read.c',
   'nir_lower_flatshade.c',

@@ -21,8 +21,8 @@
  * SOFTWARE.
  */
 
-#include "nir.h"
 #include "nir_builder.h"
+#include "st_nir.h"
 
 /* Lower glDrawPixels().
  *
@@ -211,8 +211,8 @@ lower_drawpixels_instr(nir_builder *b, nir_instr *instr, void *cb_data)
 }
 
 bool
-nir_lower_drawpixels(nir_shader *shader,
-                     const nir_lower_drawpixels_options *options)
+st_nir_lower_drawpixels(nir_shader *shader,
+                        const nir_lower_drawpixels_options *options)
 {
    assert(shader->info.io_lowered);
 
