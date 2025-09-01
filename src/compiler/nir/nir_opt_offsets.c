@@ -184,7 +184,7 @@ get_max(opt_offsets_state *state, nir_intrinsic_instr *intrin, uint32_t default_
    if (default_val)
       return default_val;
    if (state->options->max_offset_cb)
-      return state->options->max_offset_cb(intrin, state->options->max_offset_data);
+      return state->options->max_offset_cb(intrin, state->options->cb_data);
    return 0;
 }
 

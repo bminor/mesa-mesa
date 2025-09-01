@@ -386,7 +386,7 @@ ir3_optimize_loop(struct ir3_compiler *compiler,
 
          .buffer_max = 0,
          .max_offset_cb = ir3_nir_max_imm_offset,
-         .max_offset_data = compiler,
+         .cb_data = compiler,
          .allow_offset_wrap = true,
       };
       progress |= OPT(s, nir_opt_offsets, &offset_options);

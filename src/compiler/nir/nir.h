@@ -6332,8 +6332,8 @@ typedef struct nir_opt_offsets_options {
     */
    uint32_t (*max_offset_cb)(nir_intrinsic_instr *intr, const void *data);
 
-   /** Data to pass to max_offset_cb. */
-   const void *max_offset_data;
+   /** Data to pass to callbacks. */
+   const void *cb_data;
 
    /**
     * Allow the offset calculation to wrap. If false, constant additions that
