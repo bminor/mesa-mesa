@@ -1942,7 +1942,18 @@
   <register name="COMP_CTX0_TRTT_VA_RANGE" length="1" num="0x4584">
     <field name="TR-VA Base" dword="0" bits="12:0" type="uint" />
   </register>
+  <register name="FF_MODE" length="1" num="0x6210">
+    <field name="Mesh Shader Autostrip Disable" dword="0" bits="15:15" type="bool" />
+    <field name="Mesh Shader Partial Autostrip Disable" dword="0" bits="16:16" type="bool" />
+    <field name="TE Autostrip Disable" dword="0" bits="31:31" type="bool" />
+  </register>
   <register name="GFX_TRTT_VA_RANGE" length="1" num="0x4404">
     <field name="TR-VA Base" dword="0" bits="12:0" type="uint" />
+  </register>
+  <register name="VFL_SCRATCH_PAD" length="1" num="0x62a8">
+    <field name="Autostrip Disable" dword="0" bits="6:6" type="uint" />
+    <field name="Partial Autostrip Disable" dword="0" bits="9:9" type="uint" />
+    <field name="Autostrip Disable Mask" dword="0" bits="22:22" type="bool" />
+    <field name="Partial Autostrip Disable Mask" dword="0" bits="25:25" type="bool" />
   </register>
 </genxml>
