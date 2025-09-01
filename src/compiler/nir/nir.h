@@ -6339,7 +6339,7 @@ typedef struct nir_opt_offsets_options {
     * Allow the offset calculation to wrap. If false, constant additions that
     * might wrap will not be folded into the offset.
     */
-   bool allow_offset_wrap;
+   bool (*allow_offset_wrap_cb)(nir_intrinsic_instr *intr, const void *data);
 } nir_opt_offsets_options;
 
 bool nir_opt_offsets(nir_shader *shader, const nir_opt_offsets_options *options);

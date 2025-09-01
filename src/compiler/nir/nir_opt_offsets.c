@@ -57,7 +57,7 @@ try_extract_const_addition(nir_builder *b, nir_scalar val, opt_offsets_state *st
     * Ignored for ints-as-floats (lower_bitops is a proxy for that), where
     * unsigned wrapping doesn't make sense.
     */
-   if (!state->options->allow_offset_wrap && need_nuw && !alu->no_unsigned_wrap &&
+   if (need_nuw && !alu->no_unsigned_wrap &&
        !b->shader->options->lower_bitops) {
       if (!state->range_ht) {
          /* Cache for nir_unsigned_upper_bound */
@@ -189,6 +189,14 @@ get_max(opt_offsets_state *state, nir_intrinsic_instr *intrin, uint32_t default_
 }
 
 static bool
+allow_offset_wrap(opt_offsets_state *state, nir_intrinsic_instr *intr)
+{
+   if (state->options->allow_offset_wrap_cb)
+      return state->options->allow_offset_wrap_cb(intr, state->options->cb_data);
+   return false;
+}
+
+static bool
 process_instr(nir_builder *b, nir_instr *instr, void *s)
 {
    if (instr->type != nir_instr_type_intrinsic)
@@ -196,42 +204,43 @@ process_instr(nir_builder *b, nir_instr *instr, void *s)
 
    opt_offsets_state *state = (opt_offsets_state *)s;
    nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
+   bool need_nuw = !allow_offset_wrap(state, intrin);
 
    switch (intrin->intrinsic) {
    case nir_intrinsic_load_uniform:
    case nir_intrinsic_load_const_ir3:
-      return try_fold_load_store(b, intrin, state, 0, get_max(state, intrin, state->options->uniform_max), true);
+      return try_fold_load_store(b, intrin, state, 0, get_max(state, intrin, state->options->uniform_max), need_nuw);
    case nir_intrinsic_load_ubo_vec4:
-      return try_fold_load_store(b, intrin, state, 1, get_max(state, intrin, state->options->ubo_vec4_max), true);
+      return try_fold_load_store(b, intrin, state, 1, get_max(state, intrin, state->options->ubo_vec4_max), need_nuw);
    case nir_intrinsic_shared_atomic:
    case nir_intrinsic_shared_atomic_swap:
-      return try_fold_load_store(b, intrin, state, 0, get_max(state, intrin, state->options->shared_atomic_max), true);
+      return try_fold_load_store(b, intrin, state, 0, get_max(state, intrin, state->options->shared_atomic_max), need_nuw);
    case nir_intrinsic_load_shared:
    case nir_intrinsic_load_shared_ir3:
-      return try_fold_load_store(b, intrin, state, 0, get_max(state, intrin, state->options->shared_max), true);
+      return try_fold_load_store(b, intrin, state, 0, get_max(state, intrin, state->options->shared_max), need_nuw);
    case nir_intrinsic_store_shared:
    case nir_intrinsic_store_shared_ir3:
-      return try_fold_load_store(b, intrin, state, 1, get_max(state, intrin, state->options->shared_max), true);
+      return try_fold_load_store(b, intrin, state, 1, get_max(state, intrin, state->options->shared_max), need_nuw);
    case nir_intrinsic_load_shared2_amd:
       return try_fold_shared2(b, intrin, state, 0);
    case nir_intrinsic_store_shared2_amd:
       return try_fold_shared2(b, intrin, state, 1);
    case nir_intrinsic_load_buffer_amd:
-      return try_fold_load_store(b, intrin, state, 1, get_max(state, intrin, state->options->buffer_max),
-                                 nir_intrinsic_access(intrin) & ACCESS_IS_SWIZZLED_AMD);
+      need_nuw &= !!(nir_intrinsic_access(intrin) & ACCESS_IS_SWIZZLED_AMD);
+      return try_fold_load_store(b, intrin, state, 1, get_max(state, intrin, state->options->buffer_max), need_nuw);
    case nir_intrinsic_store_buffer_amd:
-      return try_fold_load_store(b, intrin, state, 2, get_max(state, intrin, state->options->buffer_max),
-                                 nir_intrinsic_access(intrin) & ACCESS_IS_SWIZZLED_AMD);
+      need_nuw &= !!(nir_intrinsic_access(intrin) & ACCESS_IS_SWIZZLED_AMD);
+      return try_fold_load_store(b, intrin, state, 2, get_max(state, intrin, state->options->buffer_max), need_nuw);
    case nir_intrinsic_load_ssbo_intel:
    case nir_intrinsic_load_ssbo_uniform_block_intel:
    case nir_intrinsic_load_ubo_uniform_block_intel:
-      return try_fold_load_store(b, intrin, state, 1, get_max(state, intrin, state->options->buffer_max), true);
+      return try_fold_load_store(b, intrin, state, 1, get_max(state, intrin, state->options->buffer_max), need_nuw);
    case nir_intrinsic_store_ssbo_intel:
-      return try_fold_load_store(b, intrin, state, 2, get_max(state, intrin, state->options->buffer_max), true);
+      return try_fold_load_store(b, intrin, state, 2, get_max(state, intrin, state->options->buffer_max), need_nuw);
    case nir_intrinsic_load_ssbo_ir3:
-      return try_fold_load_store(b, intrin, state, 2, get_max(state, intrin, state->options->buffer_max), true);
+      return try_fold_load_store(b, intrin, state, 2, get_max(state, intrin, state->options->buffer_max), need_nuw);
    case nir_intrinsic_store_ssbo_ir3:
-      return try_fold_load_store(b, intrin, state, 3, get_max(state, intrin, state->options->buffer_max), true);
+      return try_fold_load_store(b, intrin, state, 3, get_max(state, intrin, state->options->buffer_max), need_nuw);
    default:
       return false;
    }

@@ -335,6 +335,12 @@ ir3_nir_max_imm_offset(nir_intrinsic_instr *intrin, const void *data)
    }
 }
 
+bool
+ir3_nir_allow_base_offset_wrap(nir_intrinsic_instr *intrin, const void *data)
+{
+   return true;
+}
+
 unsigned
 ir3_nir_max_offset_shift(nir_intrinsic_instr *intr, const void *data)
 {
