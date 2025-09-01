@@ -1082,7 +1082,9 @@ st_create_fp_variant(struct st_context *st,
    if (key->lower_alpha_func != COMPARE_FUNC_ALWAYS) {
       _mesa_add_state_reference(params, alpha_ref_state);
       NIR_PASS(_, state.ir.nir, st_nir_lower_alpha_test, key->lower_alpha_func,
-               false, alpha_ref_state);
+               false, alpha_ref_state,
+               st->allow_st_finalize_nir_twice ? fp->Parameters : NULL,
+               st->ctx->Const.PackedDriverUniformStorage);
       finalize = true;
    }
 

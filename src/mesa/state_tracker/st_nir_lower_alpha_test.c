@@ -39,6 +39,8 @@ struct alpha_test_state {
    bool alpha_to_one;
    enum compare_func func;
    const gl_state_index16 *alpha_ref_state_tokens;
+   struct gl_program_parameter_list *paramList;
+   bool packed_driver_uniform_storage;
 };
 
 static bool
@@ -69,9 +71,13 @@ lower(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    else
       alpha = nir_channel(b, intr->src[0].ssa, 3);
 
-   nir_variable *var = nir_state_variable_create(b->shader, glsl_float_type(),
-                                                 "gl_AlphaRefMESA",
-                                                 state->alpha_ref_state_tokens);
+   nir_variable *var =
+      st_nir_state_variable_create(b->shader, glsl_float_type(),
+                                   state->paramList,
+                                   state->alpha_ref_state_tokens,
+                                   "gl_AlphaRefMESA",
+                                   state->packed_driver_uniform_storage);
+
    nir_def *alpha_ref = nir_load_var(b, var);
    nir_def *condition = nir_compare_func(b, state->func, alpha, alpha_ref);
 
@@ -83,13 +89,17 @@ lower(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 bool
 st_nir_lower_alpha_test(nir_shader *shader, enum compare_func func,
                         bool alpha_to_one,
-                        const gl_state_index16 *alpha_ref_state_tokens)
+                        const gl_state_index16 *alpha_ref_state_tokens,
+                        struct gl_program_parameter_list *paramList,
+                        bool packed_driver_uniform_storage)
 {
    assert(shader->info.io_lowered);
    struct alpha_test_state state = {
       .alpha_ref_state_tokens = alpha_ref_state_tokens,
       .alpha_to_one = alpha_to_one,
       .func = func,
+      .paramList = paramList,
+      .packed_driver_uniform_storage = packed_driver_uniform_storage,
    };
 
    return nir_shader_intrinsics_pass(shader, lower,
