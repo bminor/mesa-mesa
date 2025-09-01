@@ -793,6 +793,7 @@ radv_rmv_log_graphics_pipeline_create(struct radv_device *device, struct radv_pi
 
    VkPipeline _pipeline = radv_pipeline_to_handle(pipeline);
    struct radv_graphics_pipeline *graphics_pipeline = radv_pipeline_to_graphics(pipeline);
+   const struct radv_shader *last_vgt_shader = graphics_pipeline->base.shaders[graphics_pipeline->last_vgt_api_stage];
 
    simple_mtx_lock(&device->vk.memory_trace_data.token_mtx);
    struct vk_rmv_resource_create_token create_token = {0};
@@ -801,7 +802,7 @@ radv_rmv_log_graphics_pipeline_create(struct radv_device *device, struct radv_pi
    create_token.type = VK_RMV_RESOURCE_TYPE_PIPELINE;
    create_token.pipeline.is_internal = is_internal;
    create_token.pipeline.hash_lo = pipeline->pipeline_hash;
-   create_token.pipeline.is_ngg = graphics_pipeline->is_ngg;
+   create_token.pipeline.is_ngg = last_vgt_shader->info.is_ngg;
    create_token.pipeline.shader_stages = graphics_pipeline->active_stages;
 
    vk_rmv_emit_token(&device->vk.memory_trace_data, VK_RMV_TOKEN_TYPE_RESOURCE_CREATE, &create_token);

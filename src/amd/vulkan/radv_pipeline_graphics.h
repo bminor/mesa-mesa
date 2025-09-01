@@ -132,9 +132,6 @@ struct radv_sqtt_shaders_reloc {
 struct radv_graphics_pipeline {
    struct radv_pipeline base;
 
-   /* Whether the pipeline uses NGG (GFX10+). */
-   bool is_ngg;
-
    uint64_t dynamic_states;
    uint64_t needed_dynamic_state;
 

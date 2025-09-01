@@ -8532,6 +8532,16 @@ radv_CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipeline
 
       radv_bind_gs_copy_shader(cmd_buffer, graphics_pipeline->base.gs_copy_shader);
 
+      if (pdev->info.has_vgt_flush_ngg_legacy_bug &&
+          (!cmd_buffer->state.last_vgt_shader ||
+           (cmd_buffer->state.last_vgt_shader->info.is_ngg &&
+            !graphics_pipeline->base.shaders[graphics_pipeline->last_vgt_api_stage]->info.is_ngg))) {
+         /* Transitioning from NGG to legacy GS requires VGT_FLUSH on GFX10 and Navi21. VGT_FLUSH is
+          * also emitted at the beginning of IBs when legacy GS ring pointers are set.
+          */
+         cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_VGT_FLUSH;
+      }
+
       cmd_buffer->state.last_vgt_shader = graphics_pipeline->base.shaders[graphics_pipeline->last_vgt_api_stage];
 
       cmd_buffer->state.graphics_pipeline = graphics_pipeline;
@@ -8541,17 +8551,6 @@ radv_CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipeline
 
       /* Prefetch all pipeline shaders at first draw time. */
       cmd_buffer->state.prefetch_L2_mask |= RADV_PREFETCH_GFX_SHADERS;
-
-      if (pdev->info.has_vgt_flush_ngg_legacy_bug &&
-          (!cmd_buffer->state.emitted_graphics_pipeline ||
-           (cmd_buffer->state.emitted_graphics_pipeline->is_ngg && !cmd_buffer->state.graphics_pipeline->is_ngg))) {
-         /* Transitioning from NGG to legacy GS requires
-          * VGT_FLUSH on GFX10 and Navi21. VGT_FLUSH
-          * is also emitted at the beginning of IBs when legacy
-          * GS ring pointers are set.
-          */
-         cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_VGT_FLUSH;
-      }
 
       const struct radv_shader *vs = radv_get_shader(graphics_pipeline->base.shaders, MESA_SHADER_VERTEX);
       if (vs) {
