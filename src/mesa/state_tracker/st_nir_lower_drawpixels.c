@@ -33,6 +33,8 @@ typedef struct {
    const nir_lower_drawpixels_options *options;
    nir_shader *shader;
    nir_variable *texcoord_const, *scale, *bias, *tex, *pixelmap;
+   struct gl_program_parameter_list *paramList;
+   bool packed_driver_uniform_storage;
 } lower_drawpixels_state;
 
 static nir_def *
@@ -48,8 +50,10 @@ static nir_def *
 get_scale(nir_builder *b, lower_drawpixels_state *state)
 {
    if (state->scale == NULL) {
-      state->scale = nir_state_variable_create(state->shader, glsl_vec4_type(), "gl_PTscale",
-                                               state->options->scale_state_tokens);
+      state->scale =
+         st_nir_state_variable_create(state->shader, glsl_vec4_type(), state->paramList,
+                                      state->options->scale_state_tokens,
+                                      "gl_PTscale", state->packed_driver_uniform_storage);
    }
    return nir_load_var(b, state->scale);
 }
@@ -58,8 +62,10 @@ static nir_def *
 get_bias(nir_builder *b, lower_drawpixels_state *state)
 {
    if (state->bias == NULL) {
-      state->bias = nir_state_variable_create(state->shader, glsl_vec4_type(), "gl_PTbias",
-                                              state->options->bias_state_tokens);
+      state->bias =
+         st_nir_state_variable_create(state->shader, glsl_vec4_type(), state->paramList,
+                                      state->options->bias_state_tokens,
+                                      "gl_PTbias", state->packed_driver_uniform_storage);
    }
    return nir_load_var(b, state->bias);
 }
@@ -68,9 +74,10 @@ static nir_def *
 get_texcoord_const(nir_builder *b, lower_drawpixels_state *state)
 {
    if (state->texcoord_const == NULL) {
-      state->texcoord_const = nir_state_variable_create(state->shader, glsl_vec4_type(),
-                                                        "gl_MultiTexCoord0",
-                                                        state->options->texcoord_state_tokens);
+      state->texcoord_const =
+         st_nir_state_variable_create(state->shader, glsl_vec4_type(), state->paramList,
+                                      state->options->texcoord_state_tokens,
+                                      "gl_MultiTexCoord0", state->packed_driver_uniform_storage);
    }
    return nir_load_var(b, state->texcoord_const);
 }
@@ -212,13 +219,17 @@ lower_drawpixels_instr(nir_builder *b, nir_instr *instr, void *cb_data)
 
 bool
 st_nir_lower_drawpixels(nir_shader *shader,
-                        const nir_lower_drawpixels_options *options)
+                        const nir_lower_drawpixels_options *options,
+                        struct gl_program_parameter_list *paramList,
+                        bool packed_driver_uniform_storage)
 {
    assert(shader->info.io_lowered);
 
    lower_drawpixels_state state = {
       .options = options,
       .shader = shader,
+      .paramList = paramList,
+      .packed_driver_uniform_storage = packed_driver_uniform_storage,
    };
 
    assert(shader->info.stage == MESA_SHADER_FRAGMENT);

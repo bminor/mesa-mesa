@@ -46,7 +46,9 @@ typedef struct nir_lower_drawpixels_options {
 } nir_lower_drawpixels_options;
 
 bool st_nir_lower_drawpixels(struct nir_shader *shader,
-                             const nir_lower_drawpixels_options *options);
+                             const nir_lower_drawpixels_options *options,
+                             struct gl_program_parameter_list *paramList,
+                             bool packed_driver_uniform_storage);
 
 bool st_nir_lower_builtin(struct nir_shader *shader);
 bool st_nir_lower_tex_src_plane(struct nir_shader *shader, unsigned free_slots,
