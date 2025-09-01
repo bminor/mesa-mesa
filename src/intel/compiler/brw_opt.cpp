@@ -739,7 +739,7 @@ brw_opt_send_gather_to_send(brw_shader &s)
                break;
          }
       } else {
-         payload2 = brw_null_reg();
+         payload2 = brw_reg();
       }
 
       if (payload1_len + payload2_len != num_payload_sources)
