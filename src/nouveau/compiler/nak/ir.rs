@@ -601,7 +601,7 @@ impl SrcRef {
 
     pub fn is_carry(&self) -> bool {
         match self {
-            SrcRef::SSA(ssa) => ssa.file() == Some(RegFile::Carry),
+            SrcRef::SSA(ssa) => ssa.file() == RegFile::Carry,
             SrcRef::Reg(reg) => reg.file() == RegFile::Carry,
             _ => false,
         }
@@ -610,7 +610,7 @@ impl SrcRef {
     #[allow(dead_code)]
     pub fn is_barrier(&self) -> bool {
         match self {
-            SrcRef::SSA(ssa) => ssa.file() == Some(RegFile::Bar),
+            SrcRef::SSA(ssa) => ssa.file() == RegFile::Bar,
             SrcRef::Reg(reg) => reg.file() == RegFile::Bar,
             _ => false,
         }
@@ -1107,7 +1107,7 @@ impl Src {
 
     pub fn is_upred_reg(&self) -> bool {
         match &self.src_ref {
-            SrcRef::SSA(ssa) => ssa.file() == Some(RegFile::UPred),
+            SrcRef::SSA(ssa) => ssa.file() == RegFile::UPred,
             SrcRef::Reg(reg) => reg.file() == RegFile::UPred,
             _ => false,
         }
@@ -1302,7 +1302,7 @@ fn all_dsts_uniform(dsts: &[Dst]) -> bool {
         let dst_uniform = match dst {
             Dst::None => continue,
             Dst::Reg(r) => r.is_uniform(),
-            Dst::SSA(r) => r.file().unwrap().is_uniform(),
+            Dst::SSA(r) => r.file().is_uniform(),
         };
         assert!(uniform.is_none() || uniform == Some(dst_uniform));
         uniform = Some(dst_uniform);

@@ -28,7 +28,7 @@ pub fn src_is_upred_reg(src: &Src) -> bool {
 pub fn src_is_reg(src: &Src, reg_file: RegFile) -> bool {
     match &src.src_ref {
         SrcRef::Zero | SrcRef::True | SrcRef::False => true,
-        SrcRef::SSA(ssa) => ssa.file() == Some(reg_file),
+        SrcRef::SSA(ssa) => ssa.file() == reg_file,
         SrcRef::Imm32(_) | SrcRef::CBuf(_) => false,
         SrcRef::Reg(_) => panic!("Not in SSA form"),
     }
@@ -446,7 +446,7 @@ fn legalize_instr(
                         && vec.comps() > 1
                         && !pinned.contains(vec)
                     {
-                        b.copy_ssa_ref(vec, vec.file().unwrap().to_warp());
+                        b.copy_ssa_ref(vec, vec.file().to_warp());
                     }
                 }
                 SrcRef::CBuf(CBufRef {

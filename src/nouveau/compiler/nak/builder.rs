@@ -865,7 +865,7 @@ pub trait SSABuilder: Builder {
     }
 
     fn bmov_to_bar(&mut self, src: Src) -> SSAValue {
-        assert!(src.src_ref.as_ssa().unwrap().file() == Some(RegFile::GPR));
+        assert!(src.src_ref.as_ssa().unwrap().file() == RegFile::GPR);
         let dst = self.alloc_ssa(RegFile::Bar);
         self.push_op(OpBMov {
             dst: dst.into(),
@@ -876,7 +876,7 @@ pub trait SSABuilder: Builder {
     }
 
     fn bmov_to_gpr(&mut self, src: Src) -> SSAValue {
-        assert!(src.src_ref.as_ssa().unwrap().file() == Some(RegFile::Bar));
+        assert!(src.src_ref.as_ssa().unwrap().file() == RegFile::Bar);
         let dst = self.alloc_ssa(RegFile::GPR);
         self.push_op(OpBMov {
             dst: dst.into(),

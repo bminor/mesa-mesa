@@ -204,17 +204,17 @@ impl SSARef {
         }
     }
 
-    /// Returns the register file for this SSA reference, if all SSA values have
-    /// the same register file.
-    pub fn file(&self) -> Option<RegFile> {
+    /// Returns the register file for this SSA reference, assuming all SSA
+    /// values have the same register file.
+    pub fn file(&self) -> RegFile {
         let comps = usize::from(self.comps());
         let file = self[0].file();
         for i in 1..comps {
             if self[i].file() != file {
-                return None;
+                panic!("SSARef mixes RegFiles")
             }
         }
-        Some(file)
+        file
     }
 
     /// Returns true if this SSA reference is known to be uniform.

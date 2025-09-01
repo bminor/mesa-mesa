@@ -716,7 +716,7 @@ fn instr_remap_srcs_file(instr: &mut Instr, ra: &mut VecRegAllocator) {
     // scalar sources.
     for src in instr.srcs_mut() {
         if let Some(ssa) = src_ssa_ref(src) {
-            if ssa.file().unwrap() == ra.file() && ssa.comps() > 1 {
+            if ssa.file() == ra.file() && ssa.comps() > 1 {
                 let reg = ra.collect_vector(ssa);
                 src_set_reg(src, reg);
             }
@@ -731,7 +731,7 @@ fn instr_remap_srcs_file(instr: &mut Instr, ra: &mut VecRegAllocator) {
 
     for src in instr.srcs_mut() {
         if let Some(ssa) = src_ssa_ref(src) {
-            if ssa.file().unwrap() == ra.file() && ssa.comps() == 1 {
+            if ssa.file() == ra.file() && ssa.comps() == 1 {
                 let reg = ra.collect_vector(ssa);
                 src_set_reg(src, reg);
             }
@@ -748,7 +748,7 @@ fn instr_alloc_scalar_dsts_file(
 ) {
     for dst in instr.dsts_mut() {
         if let Dst::SSA(ssa) = dst {
-            if ssa.file().unwrap() == ra.file() {
+            if ssa.file() == ra.file() {
                 assert!(ssa.comps() == 1);
                 let reg = ra.alloc_scalar(ip, sum, phi_webs, ssa[0]);
                 *dst = RegRef::new(ra.file(), reg, 1).into();
@@ -777,7 +777,7 @@ fn instr_assign_regs_file(
     let mut vec_dst_comps = 0;
     for (i, dst) in instr.dsts().iter().enumerate() {
         if let Dst::SSA(ssa) = dst {
-            if ssa.file().unwrap() == ra.file() && ssa.comps() > 1 {
+            if ssa.file() == ra.file() && ssa.comps() > 1 {
                 vec_dsts.push(VecDst {
                     dst_idx: i,
                     comps: ssa.comps(),
@@ -899,7 +899,7 @@ fn instr_assign_regs_file(
         // Scalar destinations can fill in holes.
         for dst in instr.dsts_mut() {
             if let Dst::SSA(ssa) = dst {
-                if ssa.file().unwrap() == vra.file() && ssa.comps() > 1 {
+                if ssa.file() == vra.file() && ssa.comps() > 1 {
                     *dst = vra.alloc_vector(ssa).into();
                 }
             }
@@ -1102,7 +1102,7 @@ impl AssignRegsBlock {
                     // support vectors because cbuf handles are vec2s. However,
                     // since we only have a single scalar destination, we can
                     // just allocate and free killed up-front.
-                    let ra = &mut self.ra[ssa.file().unwrap()];
+                    let ra = &mut self.ra[ssa.file()];
                     let mut vra = VecRegAllocator::new(ra);
                     let reg = vra.collect_vector(ssa);
                     vra.free_killed(srcs_killed);
@@ -1145,7 +1145,7 @@ impl AssignRegsBlock {
                 if srcs_killed.len() == src_vec.comps().into()
                     && src_vec.file() == dst_vec.file()
                 {
-                    let ra = &mut self.ra[src_vec.file().unwrap()];
+                    let ra = &mut self.ra[src_vec.file()];
                     let mut vra = VecRegAllocator::new(ra);
                     let reg = vra.collect_vector(src_vec);
                     vra.finish(pcopy);
@@ -1168,7 +1168,7 @@ impl AssignRegsBlock {
                     // case.
                     assert!(dst_vec.comps() > 1 || srcs_killed.is_empty());
 
-                    let dst_ra = &mut self.ra[dst_vec.file().unwrap()];
+                    let dst_ra = &mut self.ra[dst_vec.file()];
                     let mut vra = VecRegAllocator::new(dst_ra);
                     let dst_reg = vra.alloc_vector(dst_vec);
                     vra.finish(pcopy);

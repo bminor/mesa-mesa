@@ -411,7 +411,7 @@ impl SM120Latency {
     ) -> u32 {
         let dst_file = match &write.dsts_as_slice()[dst_idx] {
             Dst::None => return 0,
-            Dst::SSA(vec) => vec.file().unwrap(),
+            Dst::SSA(vec) => vec.file(),
             Dst::Reg(reg) => reg.file(),
         };
 
@@ -468,7 +468,7 @@ impl SM120Latency {
     pub fn war(read: &Op, src_idx: usize, write: &Op, dst_idx: usize) -> u32 {
         let dst_file = match &write.dsts_as_slice()[dst_idx] {
             Dst::None => return 0,
-            Dst::SSA(vec) => vec.file().unwrap(),
+            Dst::SSA(vec) => vec.file(),
             Dst::Reg(reg) => reg.file(),
         };
 
@@ -513,7 +513,7 @@ impl SM120Latency {
     ) -> u32 {
         let dst_file = match &a.dsts_as_slice()[a_dst_idx] {
             Dst::None => return 0,
-            Dst::SSA(vec) => vec.file().unwrap(),
+            Dst::SSA(vec) => vec.file(),
             Dst::Reg(reg) => reg.file(),
         };
 

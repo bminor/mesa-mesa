@@ -232,7 +232,7 @@ impl Spill for SpillGPR<'_> {
         assert!(dst.file() == RegFile::Mem);
         self.info.num_spills_to_mem += 1;
         if let Some(ssa) = src.as_ssa() {
-            assert!(ssa.file() == Some(RegFile::GPR));
+            assert!(ssa.file() == RegFile::GPR);
             Instr::new_boxed(OpCopy {
                 dst: dst.into(),
                 src: src,

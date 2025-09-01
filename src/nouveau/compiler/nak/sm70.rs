@@ -24,7 +24,7 @@ impl ShaderModel70 {
     fn instr_latency(&self, op: &Op, dst_idx: usize) -> u32 {
         let file = match &op.dsts_as_slice()[dst_idx] {
             Dst::None => return 0,
-            Dst::SSA(vec) => vec.file().unwrap(),
+            Dst::SSA(vec) => vec.file(),
             Dst::Reg(reg) => reg.file(),
         };
 

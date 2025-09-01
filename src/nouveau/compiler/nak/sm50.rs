@@ -13,7 +13,7 @@ use std::ops::Range;
 pub fn instr_latency(_sm: u8, op: &Op, dst_idx: usize) -> u32 {
     let file = match &op.dsts_as_slice()[dst_idx] {
         Dst::None => return 0,
-        Dst::SSA(vec) => vec.file().unwrap(),
+        Dst::SSA(vec) => vec.file(),
         Dst::Reg(reg) => reg.file(),
     };
 
