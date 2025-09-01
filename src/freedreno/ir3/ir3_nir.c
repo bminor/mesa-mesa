@@ -265,6 +265,7 @@ ir3_lower_bit_size(const nir_instr *instr, UNUSED void *data)
       case nir_op_ine:
       case nir_op_uge:
       case nir_op_ult:
+      case nir_op_bit_count:
          return nir_src_bit_size(alu->src[0].src) == 8 ? 16 : 0;
       default:
          break;
