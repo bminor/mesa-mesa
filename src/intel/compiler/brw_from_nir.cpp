@@ -5907,10 +5907,7 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
       assert(nir_src_as_uint(instr->src[1]) == 0);
 
       brw_reg srcs[TEX_LOGICAL_NUM_SRCS];
-      if (instr->intrinsic == nir_intrinsic_image_size)
-         srcs[TEX_LOGICAL_SRC_SURFACE] = image;
-      else
-         srcs[TEX_LOGICAL_SRC_SURFACE_HANDLE] = image;
+      srcs[TEX_LOGICAL_SRC_SURFACE] = image;
       srcs[TEX_LOGICAL_SRC_SAMPLER] = brw_imm_d(0);
 
       /* Since the image size is always uniform, we can just emit a SIMD8
@@ -5922,6 +5919,7 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
       brw_tex_inst *inst = ubld.emit(SHADER_OPCODE_SAMPLER,
                                      tmp, srcs, ARRAY_SIZE(srcs))->as_tex();
       inst->sampler_opcode = SAMPLER_OPCODE_IMAGE_SIZE_LOGICAL;
+      inst->surface_bindless = instr->intrinsic == nir_intrinsic_bindless_image_size;
       inst->size_written = 4 * REG_SIZE * reg_unit(devinfo);
 
       for (unsigned c = 0; c < instr->def.num_components; ++c) {
@@ -7437,34 +7435,33 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
       case nir_tex_src_projector:
          UNREACHABLE("should be lowered");
 
-      case nir_tex_src_texture_offset: {
+      case nir_tex_src_texture_offset:
          assert(srcs[TEX_LOGICAL_SRC_SURFACE].file == BAD_FILE);
          /* Emit code to evaluate the actual indexing expression */
          srcs[TEX_LOGICAL_SRC_SURFACE] =
             bld.emit_uniformize(bld.ADD(retype(src, BRW_TYPE_UD),
                                         brw_imm_ud(instr->texture_index)));
-         assert(srcs[TEX_LOGICAL_SRC_SURFACE].file != BAD_FILE);
          break;
-      }
 
-      case nir_tex_src_sampler_offset: {
+      case nir_tex_src_sampler_offset:
+         assert(nir_tex_instr_src_index(instr, nir_tex_src_sampler_handle) == -1);
+         assert(srcs[TEX_LOGICAL_SRC_SAMPLER].file == BAD_FILE);
          /* Emit code to evaluate the actual indexing expression */
          srcs[TEX_LOGICAL_SRC_SAMPLER] =
             bld.emit_uniformize(bld.ADD(retype(src, BRW_TYPE_UD),
                                         brw_imm_ud(instr->sampler_index)));
          break;
-      }
 
       case nir_tex_src_texture_handle:
          assert(nir_tex_instr_src_index(instr, nir_tex_src_texture_offset) == -1);
-         srcs[TEX_LOGICAL_SRC_SURFACE] = brw_reg();
-         srcs[TEX_LOGICAL_SRC_SURFACE_HANDLE] = bld.emit_uniformize(src);
+         assert(srcs[TEX_LOGICAL_SRC_SURFACE].file == BAD_FILE);
+         srcs[TEX_LOGICAL_SRC_SURFACE] = bld.emit_uniformize(src);
          break;
 
       case nir_tex_src_sampler_handle:
          assert(nir_tex_instr_src_index(instr, nir_tex_src_sampler_offset) == -1);
-         srcs[TEX_LOGICAL_SRC_SAMPLER] = brw_reg();
-         srcs[TEX_LOGICAL_SRC_SAMPLER_HANDLE] = bld.emit_uniformize(src);
+         assert(srcs[TEX_LOGICAL_SRC_SAMPLER].file == BAD_FILE);
+         srcs[TEX_LOGICAL_SRC_SAMPLER] = bld.emit_uniformize(src);
          break;
 
       case nir_tex_src_ms_mcs_intel:
@@ -7499,14 +7496,17 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
       }
    }
 
+   const bool surface_bindless = nir_tex_instr_src_index(
+      instr, nir_tex_src_texture_handle) >= 0;
+   const bool sampler_bindless = nir_tex_instr_src_index(
+      instr, nir_tex_src_sampler_handle) >= 0;
+
    /* If the surface or sampler were not specified through sources, use the
     * instruction index.
     */
-   if (srcs[TEX_LOGICAL_SRC_SURFACE].file == BAD_FILE &&
-       srcs[TEX_LOGICAL_SRC_SURFACE_HANDLE].file == BAD_FILE)
+   if (srcs[TEX_LOGICAL_SRC_SURFACE].file == BAD_FILE)
       srcs[TEX_LOGICAL_SRC_SURFACE] = brw_imm_ud(instr->texture_index);
-   if (srcs[TEX_LOGICAL_SRC_SAMPLER].file == BAD_FILE &&
-       srcs[TEX_LOGICAL_SRC_SAMPLER_HANDLE].file == BAD_FILE)
+   if (srcs[TEX_LOGICAL_SRC_SAMPLER].file == BAD_FILE)
       srcs[TEX_LOGICAL_SRC_SAMPLER] = brw_imm_ud(instr->sampler_index);
 
    assert(srcs[TEX_LOGICAL_SRC_MCS].file != BAD_FILE ||
@@ -7624,6 +7624,8 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
 
    brw_tex_inst *tex = bld.emit(SHADER_OPCODE_SAMPLER, dst, srcs, ARRAY_SIZE(srcs))->as_tex();
    tex->sampler_opcode = opcode;
+   tex->surface_bindless = surface_bindless;
+   tex->sampler_bindless = sampler_bindless;
    tex->offset = header_bits;
    tex->size_written = total_regs * grf_size;
    tex->residency = instr->is_sparse;

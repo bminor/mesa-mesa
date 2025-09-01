@@ -801,9 +801,7 @@ get_sampler_msg_payload_type_bit_size(const intel_device_info *devinfo,
       for (unsigned i = 0; i < TEX_LOGICAL_NUM_SRCS; i++) {
          /* surface/sampler don't go in the payload */
          if (i == TEX_LOGICAL_SRC_SURFACE ||
-             i == TEX_LOGICAL_SRC_SAMPLER ||
-             i == TEX_LOGICAL_SRC_SURFACE_HANDLE ||
-             i == TEX_LOGICAL_SRC_SAMPLER_HANDLE)
+             i == TEX_LOGICAL_SRC_SAMPLER)
             continue;
          assert(src[i].file == BAD_FILE ||
                 brw_type_size_bytes(src[i].type) == src_type_size);
@@ -844,8 +842,6 @@ lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
    const brw_reg mcs = tex->src[TEX_LOGICAL_SRC_MCS];
    const brw_reg surface = tex->src[TEX_LOGICAL_SRC_SURFACE];
    const brw_reg sampler = tex->src[TEX_LOGICAL_SRC_SAMPLER];
-   const brw_reg surface_handle = tex->src[TEX_LOGICAL_SRC_SURFACE_HANDLE];
-   const brw_reg sampler_handle = tex->src[TEX_LOGICAL_SRC_SAMPLER_HANDLE];
    const brw_reg tg4_offset = tex->src[TEX_LOGICAL_SRC_TG4_OFFSET];
 
    const unsigned payload_type_bit_size =
@@ -857,6 +853,8 @@ lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
    /* We never generate EOT sampler messages */
    assert(!tex->eot);
 
+   const bool surface_bindless = tex->surface_bindless;
+   const bool sampler_bindless = tex->sampler_bindless;
    const enum brw_reg_type payload_type =
       brw_type_with_size(BRW_TYPE_F, payload_type_bit_size);
    const enum brw_reg_type payload_unsigned_type =
@@ -869,13 +867,8 @@ lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
    for (unsigned i = 0; i < ARRAY_SIZE(sources); i++)
       sources[i] = bld.vgrf(payload_type);
 
-   /* We must have exactly one of surface/sampler and surface/sampler_handle */
-   assert((surface.file == BAD_FILE) != (surface_handle.file == BAD_FILE));
-   assert((sampler.file == BAD_FILE) != (sampler_handle.file == BAD_FILE));
-
    if (shader_opcode_needs_header(op, devinfo) || tex->offset != 0 ||
-       sampler_handle.file != BAD_FILE ||
-       is_high_sampler(devinfo, sampler) ||
+       sampler_bindless || is_high_sampler(devinfo, sampler) ||
        tex->residency) {
       /* For general texture offsets (no txf workaround), we need a header to
        * put them in.
@@ -928,7 +921,7 @@ lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
          ubld1.MOV(component(header, 2), brw_imm_ud(0));
       }
 
-      if (sampler_handle.file != BAD_FILE) {
+      if (sampler_bindless) {
          /* Bindless sampler handles aren't relative to the sampler state
           * pointer passed into the shader through SAMPLER_STATE_POINTERS_*.
           * Instead, it's an absolute pointer relative to dynamic state base
@@ -943,9 +936,9 @@ lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
           */
          if (compiler->use_bindless_sampler_offset) {
             assert(devinfo->ver >= 11);
-            ubld1.OR(component(header, 3), sampler_handle, brw_imm_ud(1));
+            ubld1.OR(component(header, 3), sampler, brw_imm_ud(1));
          } else {
-            ubld1.MOV(component(header, 3), sampler_handle);
+            ubld1.MOV(component(header, 3), sampler);
          }
       } else if (is_high_sampler(devinfo, sampler)) {
          brw_reg sampler_state_ptr =
@@ -1233,20 +1226,22 @@ lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
    uint sampler_ret_type = brw_type_size_bits(send->dst.type) == 16
       ? GFX8_SAMPLER_RETURN_FORMAT_16BITS
       : GFX8_SAMPLER_RETURN_FORMAT_32BITS;
-   if (surface.file == IMM &&
-       (sampler.file == IMM || sampler_handle.file != BAD_FILE)) {
+   if (!surface_bindless && surface.file == IMM &&
+       (sampler.file == IMM || sampler_bindless)) {
       send->desc = brw_sampler_desc(devinfo, surface.ud,
-                                    sampler.file == IMM ? sampler.ud % 16 : 0,
+                                    (sampler.file == IMM && !sampler_bindless) ?
+                                    sampler.ud % 16 : 0,
                                     msg_type,
                                     simd_mode,
                                     sampler_ret_type);
       send->src[SEND_SRC_DESC]    = brw_imm_ud(0);
       send->src[SEND_SRC_EX_DESC] = brw_imm_ud(0);
-   } else if (surface_handle.file != BAD_FILE) {
+   } else if (surface_bindless) {
       /* Bindless surface */
       send->desc = brw_sampler_desc(devinfo,
                                     GFX9_BTI_BINDLESS,
-                                    sampler.file == IMM ? sampler.ud % 16 : 0,
+                                    (sampler.file == IMM && !sampler_bindless) ?
+                                    sampler.ud % 16 : 0,
                                     msg_type,
                                     simd_mode,
                                     sampler_ret_type);
@@ -1254,7 +1249,7 @@ lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
       /* For bindless samplers, the entire address is included in the message
        * header so we can leave the portion in the message descriptor 0.
        */
-      if (sampler_handle.file != BAD_FILE || sampler.file == IMM) {
+      if (sampler_bindless || sampler.file == IMM) {
          send->src[SEND_SRC_DESC] = brw_imm_ud(0);
       } else {
          const brw_builder ubld = bld.uniform();
@@ -1266,7 +1261,7 @@ lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
       /* We assume that the driver provided the handle in the top 20 bits so
        * we can use the surface handle directly as the extended descriptor.
        */
-      send->src[SEND_SRC_EX_DESC] = retype(surface_handle, BRW_TYPE_UD);
+      send->src[SEND_SRC_EX_DESC] = retype(surface, BRW_TYPE_UD);
       send->ex_bso = compiler->extended_bindless_surface_offset;
    } else {
       /* Immediate portion of the descriptor */
@@ -1282,9 +1277,9 @@ lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
          /* This case is common in GL */
          ubld.MUL(desc, surface, brw_imm_ud(0x101));
       } else {
-         if (sampler_handle.file != BAD_FILE) {
+         if (sampler_bindless) {
             ubld.MOV(desc, surface);
-         } else if (sampler.file == IMM) {
+         } else if (!sampler_bindless && sampler.file == IMM) {
             ubld.OR(desc, surface, brw_imm_ud(sampler.ud << 8));
          } else {
             ubld.SHL(desc, sampler, brw_imm_ud(8));

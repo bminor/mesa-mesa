@@ -240,6 +240,8 @@ tex_inst_match(brw_tex_inst *a, brw_tex_inst *b)
 {
    return a->sampler_opcode == b->sampler_opcode &&
           a->offset == b->offset &&
+          a->surface_bindless == b->surface_bindless &&
+          a->sampler_bindless == b->sampler_bindless &&
           a->coord_components == b->coord_components &&
           a->grad_components == b->grad_components &&
           a->residency == b->residency;
@@ -390,6 +392,8 @@ hash_inst(const void *v)
          tex->coord_components,
          tex->grad_components,
          tex->residency,
+         tex->surface_bindless,
+         tex->sampler_bindless,
       };
       const uint32_t tex_u32data[] = {
          tex->sampler_opcode,

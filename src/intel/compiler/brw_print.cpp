@@ -630,6 +630,11 @@ brw_print_instruction(const brw_shader &s, const brw_inst *inst, FILE *file, con
    }
 
    if (const brw_tex_inst *tex = inst->as_tex()) {
+      if (tex->surface_bindless)
+         fprintf(file, ", surface bindless");
+      if (tex->sampler_bindless)
+         fprintf(file, ", sampler bindless");
+      fprintf(file, ", grad_comps: %uu", tex->grad_components);
       fprintf(file, ", coord_comps: %uu", tex->coord_components);
       fprintf(file, ", grad_comps: %uu", tex->grad_components);
       fprintf(file, ", residency: %s", tex->residency ? "true" : "false");

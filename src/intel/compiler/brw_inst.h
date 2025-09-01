@@ -279,7 +279,9 @@ struct brw_tex_inst : brw_inst {
    uint32_t offset;
    uint8_t coord_components;
    uint8_t grad_components;
-   bool residency;
+   bool residency:1;
+   bool surface_bindless:1;
+   bool sampler_bindless:1;
 };
 
 struct brw_mem_inst : brw_inst {

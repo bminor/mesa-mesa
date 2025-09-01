@@ -90,7 +90,7 @@ brw_opt_combine_convergent_txf(brw_shader &s)
 
    foreach_block(block, s.cfg) {
       /* Gather a list of convergent TXFs to the same surface in this block */
-      brw_inst *txfs[32] = {};
+      brw_tex_inst *txfs[32] = {};
       unsigned count = 0;
 
       foreach_inst_in_block(brw_inst, inst, block) {
@@ -112,8 +112,7 @@ brw_opt_combine_convergent_txf(brw_shader &s)
             continue;
 
          if (!is_uniform_def(defs, tex->src[TEX_LOGICAL_SRC_LOD]) ||
-             !is_uniform_def(defs, tex->src[TEX_LOGICAL_SRC_SURFACE]) ||
-             !is_uniform_def(defs, tex->src[TEX_LOGICAL_SRC_SURFACE_HANDLE]))
+             !is_uniform_def(defs, tex->src[TEX_LOGICAL_SRC_SURFACE]))
             continue;
 
          /* Only handle immediates for now: we could check is_uniform(),
@@ -135,8 +134,9 @@ brw_opt_combine_convergent_txf(brw_shader &s)
          if (count > 0 &&
              (!sources_match(defs, tex, txfs[0], TEX_LOGICAL_SRC_LOD) ||
               !sources_match(defs, tex, txfs[0], TEX_LOGICAL_SRC_SURFACE) ||
-              !sources_match(defs, tex, txfs[0],
-                             TEX_LOGICAL_SRC_SURFACE_HANDLE)))
+              tex->surface_bindless != txfs[0]->surface_bindless ||
+              !sources_match(defs, tex, txfs[0], TEX_LOGICAL_SRC_SAMPLER) ||
+              tex->sampler_bindless != txfs[0]->sampler_bindless))
             continue;
 
          txfs[count++] = tex;
@@ -177,11 +177,7 @@ brw_opt_combine_convergent_txf(brw_shader &s)
          srcs[TEX_LOGICAL_SRC_COORDINATE] = coord;
          srcs[TEX_LOGICAL_SRC_LOD] = txfs[0]->src[TEX_LOGICAL_SRC_LOD];
          srcs[TEX_LOGICAL_SRC_SURFACE] = txfs[0]->src[TEX_LOGICAL_SRC_SURFACE];
-         srcs[TEX_LOGICAL_SRC_SURFACE_HANDLE] =
-            txfs[0]->src[TEX_LOGICAL_SRC_SURFACE_HANDLE];
          srcs[TEX_LOGICAL_SRC_SAMPLER] = txfs[0]->src[TEX_LOGICAL_SRC_SAMPLER];
-         srcs[TEX_LOGICAL_SRC_SAMPLER_HANDLE] =
-            txfs[0]->src[TEX_LOGICAL_SRC_SAMPLER_HANDLE];
 
          /* Each of our txf may have a reduced response length if some
           * components are never read.  Use the maximum of the sizes.
@@ -197,6 +193,8 @@ brw_opt_combine_convergent_txf(brw_shader &s)
          brw_tex_inst *div_txf =
             ubld.emit(SHADER_OPCODE_SAMPLER, div, srcs,
                       TEX_LOGICAL_NUM_SRCS)->as_tex();
+         div_txf->surface_bindless = txfs[0]->surface_bindless;
+         div_txf->sampler_bindless = txfs[0]->sampler_bindless;
          div_txf->sampler_opcode = SAMPLER_OPCODE_TXF_LOGICAL;
          div_txf->coord_components = 1;
          div_txf->grad_components = 0;

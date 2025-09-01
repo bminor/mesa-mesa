@@ -628,10 +628,6 @@ enum tex_logical_srcs {
    TEX_LOGICAL_SRC_SURFACE,
    /** Texture sampler index */
    TEX_LOGICAL_SRC_SAMPLER,
-   /** Texture surface bindless handle */
-   TEX_LOGICAL_SRC_SURFACE_HANDLE,
-   /** Texture sampler bindless handle */
-   TEX_LOGICAL_SRC_SAMPLER_HANDLE,
    /** Texel offset for gathers */
    TEX_LOGICAL_SRC_TG4_OFFSET,
 
