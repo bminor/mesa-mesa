@@ -21,8 +21,8 @@
  * IN THE SOFTWARE.
  */
 
-#include "nir.h"
 #include "nir_builder.h"
+#include "st_nir.h"
 
 /** nir_lower_point_size_mov.c
  *
@@ -65,8 +65,8 @@ lower_point_size_mov(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 }
 
 bool
-nir_lower_point_size_mov(nir_shader *shader,
-                         const gl_state_index16 *pointsize_state_tokens)
+st_nir_lower_point_size_mov(nir_shader *shader,
+                            const gl_state_index16 *pointsize_state_tokens)
 {
    assert(shader->info.stage != MESA_SHADER_FRAGMENT &&
           shader->info.stage != MESA_SHADER_COMPUTE);

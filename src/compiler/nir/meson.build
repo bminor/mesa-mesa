@@ -206,7 +206,6 @@ else
   'nir_lower_phis_to_scalar.c',
   'nir_lower_pntc_ytransform.c',
   'nir_lower_point_size.c',
-  'nir_lower_point_size_mov.c',
   'nir_lower_point_smooth.c',
   'nir_lower_poly_line_smooth.c',
   'nir_lower_printf.c',

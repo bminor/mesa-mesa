@@ -5916,9 +5916,6 @@ bool nir_lower_clip_cull_distance_to_vec4s(nir_shader *shader);
 bool nir_lower_clip_cull_distance_array_vars(nir_shader *nir);
 bool nir_lower_clip_disable(nir_shader *shader, unsigned clip_plane_enable);
 
-bool nir_lower_point_size_mov(nir_shader *shader,
-                              const gl_state_index16 *pointsize_state_tokens);
-
 bool nir_lower_frexp(nir_shader *nir);
 
 bool nir_lower_two_sided_color(nir_shader *shader, bool face_sysval);
