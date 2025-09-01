@@ -614,7 +614,7 @@
         "description": "ir3: use nir_lower_bit_size for 8-bit bit_count",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8aa2cad5df52773faf377cd6d829815632775acb",
         "notes": null
