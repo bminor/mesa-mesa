@@ -153,12 +153,12 @@ lower_intrinsic(lower_state *state, nir_intrinsic_instr *intr)
    case nir_intrinsic_global_atomic_swap:
    case nir_intrinsic_load_global_constant:
    case nir_intrinsic_load_global:
-      /* just assume we that 24b is not sufficient: */
+      /* just assume that 24b is not sufficient: */
       lower_large_src(&intr->src[0], state);
       return;
 
    case nir_intrinsic_store_global:
-      /* just assume we that 24b is not sufficient: */
+      /* just assume that 24b is not sufficient: */
       lower_large_src(&intr->src[1], state);
       return;
 
