@@ -56,5 +56,15 @@ KHR-GL46.sparse_buffer_tests.BufferStorageTest_.*
 x11-dEQP-EGL.functional.sharing.gles2.multithread.random_egl_sync.textures.copytexsubimage2d.*
 x11-dEQP-EGL.functional.sharing.gles2.multithread.random.textures.copytexsubimage2d.*
 
-x11-dEQP-EGL.functional.swap_buffers_with_damage.resize_before_swap.buffer_age_render
+spec@arb_direct_state_access@texture-storage-multisample
+
+wayland-dEQP-EGL.functional.sharing.gles2.multithread.random.textures.copytexsubimage2d.12
+wayland-dEQP-EGL.functional.sharing.gles2.multithread.random.textures.copytexsubimage2d.17
+wayland-dEQP-EGL.functional.sharing.gles2.multithread.random_egl_sync.textures.copytexsubimage2d.12
+wayland-dEQP-EGL.functional.sharing.gles2.multithread.random_egl_sync.textures.copytexsubimage2d.3
+wayland-dEQP-EGL.functional.sharing.gles2.multithread.random_egl_sync.textures.copytexsubimage2d.7
+x11-dEQP-EGL.functional.sharing.gles2.multithread.random_egl_server_sync.textures.copytexsubimage2d.16
+x11-dEQP-EGL.functional.sharing.gles2.multithread.random_egl_server_sync.textures.copytexsubimage2d.7
+x11-dEQP-EGL.functional.sharing.gles2.multithread.simple_egl_sync.buffers.bufferdata_render
 x11-dEQP-EGL.functional.swap_buffers_with_damage.resize_after_swap.buffer_age_clear_render
+x11-dEQP-EGL.functional.swap_buffers_with_damage.resize_before_swap.buffer_age_render
