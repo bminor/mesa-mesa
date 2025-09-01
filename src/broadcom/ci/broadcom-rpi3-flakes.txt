@@ -10,6 +10,7 @@ dEQP-GLES2.functional.fragment_ops.blend.equation_src_func_dst_func.subtract_one
 dEQP-GLES2.functional.fragment_ops.blend.rgb_func_alpha_func.dst.one_minus_constant_color_src_alpha
 dEQP-GLES2.functional.fragment_ops.blend.rgb_func_alpha_func.dst.one_one_minus_constant_alpha
 dEQP-GLES2.functional.fragment_ops.blend.rgb_func_alpha_func.src.one_minus_dst_color_one_minus_constant_color
+dEQP-GLES2.functional.fragment_ops.blend.rgb_func_alpha_func.src.one_one_minus_src_alpha
 dEQP-GLES2.functional.fragment_ops.blend.rgb_func_alpha_func.src.src_alpha_one
 dEQP-GLES2.functional.fragment_ops.blend.rgb_func_alpha_func.src.src_alpha_zero
 dEQP-GLES2.functional.fragment_ops.blend.rgb_func_alpha_func.src.zero_dst_alpha
@@ -46,6 +47,7 @@ dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_ops.zero_decr_keep
 dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_ops.zero_decr_wrap_decr_wrap
 dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_ops.zero_incr_keep
 dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_ops.zero_incr_wrap_invert
+dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_ops.zero_keep_incr_wrap
 dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_ops.zero_replace_incr
 dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_ops.zero_replace_keep
 dEQP-GLES2.functional.fragment_ops.depth_stencil.write_mask.stencil
@@ -87,6 +89,7 @@ dEQP-GLES2.functional.texture.filtering.2d.nearest_linear_mirror_rgb888_pot
 dEQP-GLES2.functional.texture.filtering.2d.nearest_mipmap_linear_nearest_repeat_rgb888
 dEQP-GLES2.functional.texture.filtering.cube.linear_mipmap_nearest_nearest_repeat_l8
 dEQP-GLES2.functional.texture.filtering.cube.linear_nearest_clamp_etc1
+dEQP-GLES2.functional.texture.filtering.cube.linear_nearest_clamp_rgba8888_npot
 dEQP-GLES2.functional.texture.filtering.cube.nearest_linear_mirror_l8_pot
 dEQP-GLES2.functional.texture.filtering.cube.nearest_linear_mirror_rgb888_pot
 dEQP-GLES2.functional.texture.filtering.cube.nearest_mipmap_linear_linear_mirror_rgba8888
@@ -112,6 +115,7 @@ dEQP-GLES2.functional.texture.specification.basic_copyteximage2d.cube_rgb
 dEQP-GLES2.functional.texture.specification.basic_copyteximage2d.cube_rgba
 dEQP-GLES2.functional.texture.specification.basic_copytexsubimage2d.cube_luminance
 dEQP-GLES2.functional.texture.specification.texsubimage2d_empty_tex.rgba8888_2d
+dEQP-GLES2.functional.texture.vertex.2d.filtering.nearest_mipmap_nearest_nearest_mirror
 dEQP-GLES2.functional.uniform_api.value.assigned.by_value.render.basic_array.ivec4_vertex
 
 arm32-dEQP-GLES2.functional.shaders.random.texture.vertex.44
@@ -191,6 +195,7 @@ spec@!opengl 1.0@depth-clear-precision-check@depth24_stencil8
 spec@!opengl 1.0@depth-clear-precision-check@depth32
 
 wayland-dEQP-EGL.functional.buffer_age.no_preserve.resize_after_swap.odd_render_render_even_render
+wayland-dEQP-EGL.functional.sharing.gles2.multithread.random_egl_server_sync.programs.link.19
 wayland-dEQP-EGL.functional.wide_color.window_8888_colorspace_srgb
 wayland-dEQP-EGL.functional.wide_color.window_888_colorspace_srgb
 

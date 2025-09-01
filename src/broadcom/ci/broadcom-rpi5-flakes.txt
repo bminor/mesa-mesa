@@ -23,6 +23,7 @@ spec@arb_texture_buffer_object@formats \(vs- arb\)
 spec@arb_texture_buffer_object@formats \(vs- arb\)@GL_ALPHA16F_ARB
 spec@arb_texture_buffer_object@formats \(vs- arb\)@GL_ALPHA32F_ARB
 spec@arb_texture_multisample@texelfetch fs sampler2dms 4 1x130-501x130
+spec@arb_timer_query@timestamp-get
 spec@ext_framebuffer_blit@fbo-blit-check-limits
 spec@ext_framebuffer_blit@fbo-sys-blit
 spec@ext_framebuffer_blit@fbo-sys-sub-blit
