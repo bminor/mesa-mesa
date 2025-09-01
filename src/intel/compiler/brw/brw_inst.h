@@ -27,6 +27,7 @@
 #include <assert.h>
 #include "brw_reg.h"
 #include "compiler/brw_list.h"
+#include "brw_sampler.h"
 
 #define MAX_SAMPLER_MESSAGE_SIZE 11
 
@@ -202,7 +203,6 @@ struct brw_inst : brw_exec_node {
           */
          bool predicate_trivial:1;
          bool eot:1;
-         bool keep_payload_trailing_zeros:1;
          /**
           * Whether the parameters of the SEND instructions are build with
           * NoMask (for A32 messages this covers only the surface handle, for
@@ -218,7 +218,7 @@ struct brw_inst : brw_exec_node {
           */
          bool fused_eu_disable:1;
 
-         uint8_t pad:4;
+         uint8_t pad:5;
       };
       uint16_t bits;
    };
@@ -285,10 +285,7 @@ struct brw_send_inst : brw_inst {
 };
 
 struct brw_tex_inst : brw_inst {
-   enum sampler_opcode sampler_opcode;
-   uint32_t offset;
-   uint8_t coord_components;
-   uint8_t grad_components;
+   enum brw_sampler_opcode sampler_opcode;
    union {
       struct {
          /**
@@ -308,9 +305,31 @@ struct brw_tex_inst : brw_inst {
           * Whether the sampler handle is bindless
           */
          bool sampler_bindless:1;
+         /**
+          * Whether const_offsets holds meaningful values
+          */
+         bool has_const_offsets:1;
+         /**
+          * Coord components
+          */
+         uint8_t coord_components:2;
+         /**
+          * Gather component
+          */
+         uint8_t gather_component:2;
+         /**
+          * Bitfields payload parameters that cannot be optimized by
+          * brw_opt_zero_samples()
+          */
+         uint16_t required_params:13;
       };
-      uint8_t bits;
+      uint32_t bits;
    };
+
+   /**
+    * Constant offsets
+    */
+   int8_t const_offsets[3];
 };
 
 struct brw_mem_inst : brw_inst {

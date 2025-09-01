@@ -552,35 +552,6 @@ enum ENUM_PACKED opcode {
    SHADER_OPCODE_LOAD_REG,
 };
 
-enum sampler_opcode {
-   /**
-    * Texture sampling opcodes.
-    *
-    * LOGICAL opcodes are eventually translated to SHADER_OPCODE_SEND but
-    * take parameters as individual sources.  See enum tex_logical_srcs.
-    */
-   SAMPLER_OPCODE_TEX_LOGICAL,
-   SAMPLER_OPCODE_TXD_LOGICAL,
-   SAMPLER_OPCODE_TXF_LOGICAL,
-   SAMPLER_OPCODE_TXL_LOGICAL,
-   SAMPLER_OPCODE_TXS_LOGICAL,
-   SAMPLER_OPCODE_TXB_LOGICAL,
-   SAMPLER_OPCODE_TXF_CMS_W_LOGICAL,
-   SAMPLER_OPCODE_TXF_CMS_W_GFX12_LOGICAL,
-   SAMPLER_OPCODE_TXF_MCS_LOGICAL,
-   SAMPLER_OPCODE_LOD_LOGICAL,
-   SAMPLER_OPCODE_TG4_LOGICAL,
-   SAMPLER_OPCODE_TG4_IMPLICIT_LOD_LOGICAL,
-   SAMPLER_OPCODE_TG4_EXPLICIT_LOD_LOGICAL,
-   SAMPLER_OPCODE_TG4_BIAS_LOGICAL,
-   SAMPLER_OPCODE_TG4_OFFSET_LOGICAL,
-   SAMPLER_OPCODE_TG4_OFFSET_LOD_LOGICAL,
-   SAMPLER_OPCODE_TG4_OFFSET_BIAS_LOGICAL,
-   SAMPLER_OPCODE_SAMPLEINFO_LOGICAL,
-
-   SAMPLER_OPCODE_IMAGE_SIZE_LOGICAL,
-};
-
 enum send_srcs {
    /** The 32-bit message descriptor (can be a register) */
    SEND_SRC_DESC,
@@ -612,26 +583,24 @@ enum fb_write_logical_srcs {
 };
 
 enum tex_logical_srcs {
-   /** Texture coordinates */
-   TEX_LOGICAL_SRC_COORDINATE,
-   /** Shadow comparator */
-   TEX_LOGICAL_SRC_SHADOW_C,
-   /** dPdx if the operation takes explicit derivatives, otherwise LOD value */
-   TEX_LOGICAL_SRC_LOD,
-   /** dPdy if the operation takes explicit derivatives */
-   TEX_LOGICAL_SRC_LOD2,
-   /** Min LOD */
-   TEX_LOGICAL_SRC_MIN_LOD,
-   /** Sample index */
-   TEX_LOGICAL_SRC_SAMPLE_INDEX,
-   /** MCS data */
-   TEX_LOGICAL_SRC_MCS,
    /** REQUIRED: Texture surface index */
    TEX_LOGICAL_SRC_SURFACE,
    /** Texture sampler index */
    TEX_LOGICAL_SRC_SAMPLER,
-   /** Texel offset for gathers */
-   TEX_LOGICAL_SRC_TG4_OFFSET,
+   /** Sampler payloads */
+   TEX_LOGICAL_SRC_PAYLOAD0,
+   TEX_LOGICAL_SRC_PAYLOAD1,
+   TEX_LOGICAL_SRC_PAYLOAD2,
+   TEX_LOGICAL_SRC_PAYLOAD3,
+   TEX_LOGICAL_SRC_PAYLOAD4,
+   TEX_LOGICAL_SRC_PAYLOAD5,
+   TEX_LOGICAL_SRC_PAYLOAD6,
+   TEX_LOGICAL_SRC_PAYLOAD7,
+   TEX_LOGICAL_SRC_PAYLOAD8,
+   TEX_LOGICAL_SRC_PAYLOAD9,
+   TEX_LOGICAL_SRC_PAYLOAD10,
+   TEX_LOGICAL_SRC_PAYLOAD11,
+   TEX_LOGICAL_SRC_PAYLOAD12,
 
    TEX_LOGICAL_NUM_SRCS,
 };

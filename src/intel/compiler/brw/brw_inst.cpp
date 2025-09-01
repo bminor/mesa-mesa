@@ -502,29 +502,8 @@ brw_inst::components_read(unsigned i) const
       else
          return 1;
 
-   case SHADER_OPCODE_SAMPLER: {
-      const brw_tex_inst *tex = as_tex();
-      /* Texture coordinates. */
-      if (i == TEX_LOGICAL_SRC_COORDINATE)
-         return tex->coord_components;
-      /* Texture derivatives. */
-      else if ((i == TEX_LOGICAL_SRC_LOD || i == TEX_LOGICAL_SRC_LOD2) &&
-               tex->sampler_opcode == SAMPLER_OPCODE_TXD_LOGICAL)
-         return tex->grad_components;
-      /* Texture offset. */
-      else if (i == TEX_LOGICAL_SRC_TG4_OFFSET)
-         return 2;
-      /* MCS */
-      else if (i == TEX_LOGICAL_SRC_MCS) {
-         if (tex->sampler_opcode == SAMPLER_OPCODE_TXF_CMS_W_LOGICAL)
-            return 2;
-         else if (tex->sampler_opcode == SAMPLER_OPCODE_TXF_CMS_W_GFX12_LOGICAL)
-            return 4;
-         else
-            return 1;
-      } else
-         return 1;
-   }
+   case SHADER_OPCODE_SAMPLER:
+      return 1;
 
    case SHADER_OPCODE_MEMORY_LOAD_LOGICAL:
       if (i == MEMORY_LOGICAL_DATA0)

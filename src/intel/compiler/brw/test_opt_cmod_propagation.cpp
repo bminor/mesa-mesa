@@ -199,32 +199,6 @@ TEST_F(cmod_propagation_test, intervening_mismatch_flag_read)
    EXPECT_SHADERS_MATCH(bld, exp);
 }
 
-TEST_F(cmod_propagation_test, intervening_dest_write)
-{
-   brw_builder bld = make_shader();
-
-   brw_reg dest = bld.vgrf(BRW_TYPE_F, 4);
-   brw_reg src0 = bld.vgrf(BRW_TYPE_F);
-   brw_reg src1 = bld.vgrf(BRW_TYPE_F);
-   brw_reg src2 = bld.vgrf(BRW_TYPE_F, 2);
-   brw_reg zero(brw_imm_f(0.0f));
-
-   brw_reg tex_srcs[TEX_LOGICAL_NUM_SRCS];
-   tex_srcs[TEX_LOGICAL_SRC_COORDINATE] = src2;
-   tex_srcs[TEX_LOGICAL_SRC_SURFACE] = brw_imm_ud(0);
-
-   bld.ADD(offset(dest, bld, 2), src0, src1);
-
-   brw_tex_inst *tex =
-      bld.emit(SHADER_OPCODE_SAMPLER, dest, tex_srcs, TEX_LOGICAL_NUM_SRCS)->as_tex();
-   tex->size_written = 4 * REG_SIZE;
-   tex->coord_components = 2;
-
-   bld.CMP(bld.null_reg_f(), offset(dest, bld, 2), zero, BRW_CONDITIONAL_GE);
-
-   EXPECT_NO_PROGRESS(brw_opt_cmod_propagation, bld);
-}
-
 TEST_F(cmod_propagation_test, intervening_flag_read_same_value)
 {
    brw_builder bld = make_shader();

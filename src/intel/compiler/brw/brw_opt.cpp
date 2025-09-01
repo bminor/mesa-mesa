@@ -110,6 +110,12 @@ brw_optimize(brw_shader &s)
    OPT(brw_lower_simd_width);
    OPT(brw_lower_scalar_fp64_MAD);
    OPT(brw_lower_barycentrics);
+
+   /* Identify trailing zeros LOAD_PAYLOAD of sampler messages. Do this before
+    * lowering the send messages.
+    */
+   OPT(brw_opt_zero_samples);
+
    OPT(brw_lower_logical_sends);
 
    brw_shader_phase_update(s, BRW_SHADER_PHASE_AFTER_EARLY_LOWERING);
@@ -118,15 +124,6 @@ brw_optimize(brw_shader &s)
 
    if (!OPT(brw_opt_copy_propagation_defs))
       OPT(brw_opt_copy_propagation);
-
-   /* Identify trailing zeros LOAD_PAYLOAD of sampler messages.
-    * Do this before splitting SENDs.
-    */
-   if (OPT(brw_opt_zero_samples)) {
-      if (!OPT(brw_opt_copy_propagation_defs)) {
-         OPT(brw_opt_copy_propagation);
-      }
-   }
 
    if (s.devinfo->ver >= 30)
       OPT(brw_opt_send_to_send_gather);
@@ -264,56 +261,21 @@ brw_opt_zero_samples(brw_shader &s)
    bool progress = false;
 
    foreach_block_and_inst(block, brw_inst, inst, s.cfg) {
-      if (inst->opcode != SHADER_OPCODE_SEND)
+      brw_tex_inst *tex = inst->as_tex();
+      if (tex == NULL)
          continue;
 
-      brw_send_inst *send = inst->as_send();
-      if (send->sfid != BRW_SFID_SAMPLER)
-         continue;
+      int last_req_param = util_last_bit(tex->required_params) - 1;
+      assert(last_req_param <= (tex->sources - TEX_LOGICAL_SRC_PAYLOAD0));
 
-      /* Wa_14012688258:
-       *
-       * Don't trim zeros at the end of payload for sample operations
-       * in cube and cube arrays.
-       */
-      if (send->keep_payload_trailing_zeros)
-         continue;
+      int last_param = tex->sources - 1 - TEX_LOGICAL_SRC_PAYLOAD0;
 
-      /* This pass works on SENDs before splitting. */
-      if (send->ex_mlen > 0)
-         continue;
-
-      brw_inst *prev = (brw_inst *) send->prev;
-
-      if (prev->is_head_sentinel() || prev->opcode != SHADER_OPCODE_LOAD_PAYLOAD)
-         continue;
-
-      brw_load_payload_inst *lp = prev->as_load_payload();
-
-      /* How much of the payload are actually read by this SEND. */
-      const unsigned params =
-         load_payload_sources_read_for_size(lp, send->mlen * REG_SIZE);
-
-      /* We don't want to remove the message header or the first parameter.
-       * Removing the first parameter is not allowed, see the Haswell PRM
-       * volume 7, page 149:
-       *
-       *     "Parameter 0 is required except for the sampleinfo message, which
-       *      has no parameter 0"
-       */
-      const unsigned first_param_idx = lp->header_size;
-      unsigned zero_size = 0;
-      for (unsigned i = params - 1; i > first_param_idx; i--) {
-         if (lp->src[i].file != BAD_FILE && !lp->src[i].is_zero())
+      for (int i = last_param; i > last_req_param; i--) {
+         if (tex->src[TEX_LOGICAL_SRC_PAYLOAD0 + i].file != IMM ||
+             tex->src[TEX_LOGICAL_SRC_PAYLOAD0 + i].ud != 0)
             break;
-         zero_size += lp->exec_size * brw_type_size_bytes(lp->src[i].type) * lp->dst.stride;
-      }
 
-      /* Round down to ensure to only consider full registers. */
-      const unsigned zero_len = ROUND_DOWN_TO(zero_size / REG_SIZE, reg_unit(s.devinfo));
-      if (zero_len > 0) {
-         /* Note mlen is in REG_SIZE units. */
-         send->mlen -= zero_len;
+         tex->sources = TEX_LOGICAL_SRC_PAYLOAD0 + i;
          progress = true;
       }
    }

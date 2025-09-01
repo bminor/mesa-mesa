@@ -239,12 +239,16 @@ static bool
 tex_inst_match(brw_tex_inst *a, brw_tex_inst *b)
 {
    return a->sampler_opcode == b->sampler_opcode &&
-          a->offset == b->offset &&
           a->surface_bindless == b->surface_bindless &&
           a->sampler_bindless == b->sampler_bindless &&
+          a->residency == b->residency &&
+          a->required_params == b->required_params &&
           a->coord_components == b->coord_components &&
-          a->grad_components == b->grad_components &&
-          a->residency == b->residency;
+          a->gather_component == b->gather_component &&
+          a->has_const_offsets == b->has_const_offsets &&
+          a->const_offsets[0] == b->const_offsets[0] &&
+          a->const_offsets[1] == b->const_offsets[1] &&
+          a->const_offsets[2] == b->const_offsets[2];
 }
 
 static bool
@@ -389,12 +393,13 @@ hash_inst(const void *v)
    case BRW_KIND_TEX: {
       const brw_tex_inst *tex = inst->as_tex();
       const uint8_t tex_u8data[] = {
-         tex->coord_components,
-         tex->grad_components,
-         tex->bits,
+         tex->sampler_opcode,
+         (uint8_t)tex->const_offsets[0],
+         (uint8_t)tex->const_offsets[1],
+         (uint8_t)tex->const_offsets[2],
       };
       const uint32_t tex_u32data[] = {
-         tex->sampler_opcode,
+         tex->bits,
       };
       hash = HASH(hash, tex_u8data);
       hash = HASH(hash, tex_u32data);

@@ -75,32 +75,6 @@ brw_print_instructions(const brw_shader &s, FILE *file)
 }
 
 static const char *
-brw_sampler_opcode_name(sampler_opcode opcode) {
-   switch (opcode) {
-   case SAMPLER_OPCODE_TEX_LOGICAL:              return "tex_logical";
-   case SAMPLER_OPCODE_TXD_LOGICAL:              return "txd_logical";
-   case SAMPLER_OPCODE_TXF_LOGICAL:              return "txf_logical";
-   case SAMPLER_OPCODE_TXL_LOGICAL:              return "txl_logical";
-   case SAMPLER_OPCODE_TXS_LOGICAL:              return "txs_logical";
-   case SAMPLER_OPCODE_TXB_LOGICAL:              return "txb_logical";
-   case SAMPLER_OPCODE_TXF_CMS_W_LOGICAL:        return "txf_cms_w_logical";
-   case SAMPLER_OPCODE_TXF_CMS_W_GFX12_LOGICAL:  return "txf_cms_w_gfx12_logical";
-   case SAMPLER_OPCODE_TXF_MCS_LOGICAL:          return "txf_mcs_logical";
-   case SAMPLER_OPCODE_LOD_LOGICAL:              return "lod_logical";
-   case SAMPLER_OPCODE_TG4_LOGICAL:              return "tg4_logical";
-   case SAMPLER_OPCODE_TG4_OFFSET_LOGICAL:       return "tg4_offset_logical";
-   case SAMPLER_OPCODE_TG4_OFFSET_LOD_LOGICAL:   return "tg4_offset_lod_logical";
-   case SAMPLER_OPCODE_TG4_OFFSET_BIAS_LOGICAL:  return "tg4_offset_bias_logical";
-   case SAMPLER_OPCODE_TG4_BIAS_LOGICAL:         return "tg4_b_logical";
-   case SAMPLER_OPCODE_TG4_EXPLICIT_LOD_LOGICAL: return "tg4_l_logical";
-   case SAMPLER_OPCODE_TG4_IMPLICIT_LOD_LOGICAL: return "tg4_i_logical";
-   case SAMPLER_OPCODE_SAMPLEINFO_LOGICAL:       return "sampleinfo_logical";
-   case SAMPLER_OPCODE_IMAGE_SIZE_LOGICAL:       return "image_size_logical";
-   default: UNREACHABLE("invalid sampler opcode");
-   }
-}
-
-static const char *
 brw_instruction_name(const struct brw_isa_info *isa, const brw_inst *inst)
 {
    const struct intel_device_info *devinfo = isa->devinfo;
@@ -474,12 +448,34 @@ brw_print_instruction(const brw_shader &s, const brw_inst *inst, FILE *file, con
          fprintf(file, " coherent");
    }
 
+   const brw_tex_inst *tex = inst->as_tex();
+   const struct brw_sampler_payload_desc *tex_payload = NULL;
+   if (tex)
+      tex_payload = brw_get_sampler_payload_desc(tex->sampler_opcode);
+
    for (int i = 0; i < inst->sources; i++) {
       if (mem) {
          if (print_memory_logical_source(file, inst, i))
             continue;
-      } else {
-         fprintf(file, ", ");
+      }
+
+      fprintf(file, ", ");
+
+      if (tex_payload) {
+         switch (i) {
+         case TEX_LOGICAL_SRC_SURFACE:
+            fprintf(file, "surf: ");
+            break;
+         case TEX_LOGICAL_SRC_SAMPLER:
+            fprintf(file, "smpl: ");
+            break;
+         default:
+            fprintf(file, "%s: ",
+                    brw_sampler_payload_param_name(
+                       tex_payload->sources[
+                          i - TEX_LOGICAL_SRC_PAYLOAD0].param));
+            break;
+         }
       }
 
       if (inst->src[i].negate)
@@ -634,10 +630,16 @@ brw_print_instruction(const brw_shader &s, const brw_inst *inst, FILE *file, con
          fprintf(file, ", surface bindless");
       if (tex->sampler_bindless)
          fprintf(file, ", sampler bindless");
-      fprintf(file, ", grad_comps: %uu", tex->grad_components);
-      fprintf(file, ", coord_comps: %uu", tex->coord_components);
-      fprintf(file, ", grad_comps: %uu", tex->grad_components);
-      fprintf(file, ", residency: %s", tex->residency ? "true" : "false");
+      if (brw_sampler_opcode_is_gather(tex->sampler_opcode))
+         fprintf(file, ", gather_comp: %hhu", tex->gather_component);
+      if (tex->has_const_offsets) {
+         fprintf(file, ", offsets: %hhi,%hhi,%hhi",
+                 tex->const_offsets[0],
+                 tex->const_offsets[1],
+                 tex->const_offsets[2]);
+      }
+      if (tex->residency)
+         fprintf(file, ", residency");
    }
 
    fprintf(file, " ");

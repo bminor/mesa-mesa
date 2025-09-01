@@ -48,6 +48,87 @@ sources_match(ASSERTED const brw_def_analysis &defs,
    return brw_regs_equal(&a->src[src], &b->src[src]);
 }
 
+static void
+merge_instructions(brw_shader &s, brw_tex_inst **txfs, unsigned count)
+{
+   const unsigned min_simd = 8 * reg_unit(s.devinfo);
+   const unsigned max_simd = 16 * reg_unit(s.devinfo);
+   const unsigned grf_size = REG_SIZE * reg_unit(s.devinfo);
+
+   for (unsigned curr = 0; curr < count; curr += max_simd) {
+      const unsigned lanes = CLAMP(count - curr, min_simd, max_simd);
+      const unsigned width = util_next_power_of_two(lanes);
+      const brw_builder ubld =
+         brw_builder(&s).before(txfs[curr]).exec_all().group(width, 0);
+      const brw_builder ubld1 = ubld.group(1, 0);
+
+      enum brw_reg_type coord_type =
+         txfs[curr]->src[TEX_LOGICAL_SRC_PAYLOAD0].type;
+      brw_reg coord = ubld.vgrf(coord_type);
+      brw_reg coord_comps[32];
+
+      for (unsigned i = 0; i < width; i++) {
+            /* Our block size might be larger than the number of convergent
+             * loads we're combining.  If so, repeat the last component.
+             */
+         if (txfs[curr+i])
+            coord_comps[i] = txfs[curr+i]->src[TEX_LOGICAL_SRC_PAYLOAD0];
+         else
+            coord_comps[i] = coord_comps[i-1];
+         }
+      ubld1.VEC(coord, coord_comps, width);
+
+      brw_reg srcs[TEX_LOGICAL_NUM_SRCS];
+      srcs[TEX_LOGICAL_SRC_SURFACE] = txfs[0]->src[TEX_LOGICAL_SRC_SURFACE];
+      srcs[TEX_LOGICAL_SRC_SAMPLER] = brw_imm_ud(0);
+      srcs[TEX_LOGICAL_SRC_PAYLOAD0] = coord;
+      for (unsigned i = TEX_LOGICAL_SRC_PAYLOAD1; i < txfs[0]->sources; i++)
+         srcs[i] = txfs[0]->src[i];
+
+      /* Each of our txf may have a reduced response length if some
+       * components are never read.  Use the maximum of the sizes.
+       */
+      unsigned new_dest_comps = 0;
+      for (unsigned i = 0; i < width; i++) {
+         const unsigned this_comps = dest_comps_for_txf(s, txfs[curr+i]);
+         new_dest_comps = MAX2(new_dest_comps, this_comps);
+      }
+
+      /* Emit the new divergent TXF */
+      brw_reg div = ubld.vgrf(BRW_TYPE_UD, new_dest_comps);
+      brw_tex_inst *div_txf =
+         ubld.emit(SHADER_OPCODE_SAMPLER, div, srcs, txfs[0]->sources)->as_tex();
+      div_txf->surface_bindless = txfs[0]->surface_bindless;
+      div_txf->sampler_opcode = txfs[0]->sampler_opcode;
+      div_txf->residency = false;
+
+      /* Update it to also use response length reduction */
+      const unsigned per_component_regs =
+         DIV_ROUND_UP(brw_type_size_bytes(div.type) * div_txf->exec_size,
+                      grf_size);
+      div_txf->size_written = new_dest_comps * per_component_regs * grf_size;
+
+      for (unsigned i = 0; i < width; i++) {
+         brw_inst *txf = txfs[curr+i];
+         if (!txf)
+            break;
+
+         const brw_builder ibld = brw_builder(txf);
+
+         /* Replace each of the original TXFs with MOVs from our new one */
+         const unsigned dest_comps = dest_comps_for_txf(s, txf);
+         assert(dest_comps <= 4);
+
+         brw_reg v[4];
+         for (unsigned c = 0; c < dest_comps; c++)
+            v[c] = component(offset(div, ubld, c), i);
+         ibld.VEC(retype(txf->dst, BRW_TYPE_UD), v, dest_comps);
+
+         txf->remove();
+      }
+   }
+}
+
 /**
  * Look for a series of convergent texture buffer fetches within a basic
  * block and combine them into a single divergent load with one lane for
@@ -82,23 +163,22 @@ brw_opt_combine_convergent_txf(brw_shader &s)
 {
    const brw_def_analysis &defs = s.def_analysis.require();
 
-   const unsigned min_simd = 8 * reg_unit(s.devinfo);
-   const unsigned max_simd = 16 * reg_unit(s.devinfo);
-   const unsigned grf_size = REG_SIZE * reg_unit(s.devinfo);
-
    bool progress = false;
 
    foreach_block(block, s.cfg) {
       /* Gather a list of convergent TXFs to the same surface in this block */
-      brw_tex_inst *txfs[32] = {};
-      unsigned count = 0;
+      brw_tex_inst *txfs_ld[32] = {};
+      brw_tex_inst *txfs_ld_lz[32] = {};
+      unsigned ld_count = 0;
+      unsigned ld_lz_count = 0;
 
       foreach_inst_in_block(brw_inst, inst, block) {
          brw_tex_inst *tex = inst->as_tex();
          if (tex == NULL)
             continue;
 
-         if (tex->sampler_opcode != SAMPLER_OPCODE_TXF_LOGICAL)
+         if (tex->sampler_opcode != BRW_SAMPLER_OPCODE_LD &&
+             tex->sampler_opcode != BRW_SAMPLER_OPCODE_LD_LZ)
             continue;
 
          /* Only handle buffers or single miplevel 1D images for now */
@@ -111,120 +191,48 @@ brw_opt_combine_convergent_txf(brw_shader &s)
          if (tex->predicate || tex->force_writemask_all)
             continue;
 
-         if (!is_uniform_def(defs, tex->src[TEX_LOGICAL_SRC_LOD]) ||
-             !is_uniform_def(defs, tex->src[TEX_LOGICAL_SRC_SURFACE]))
+         if (!is_uniform_def(defs, tex->src[TEX_LOGICAL_SRC_SURFACE]))
             continue;
 
          /* Only handle immediates for now: we could check is_uniform(),
           * but we'd need to ensure the coordinate's definition reaches
           * txfs[0] which is where we'll insert the combined coordinate.
           */
-         if (tex->src[TEX_LOGICAL_SRC_COORDINATE].file != IMM)
+         if (tex->src[TEX_LOGICAL_SRC_PAYLOAD0].file != IMM)
             continue;
 
-         /* texelFetch from 1D buffers shouldn't have any of these */
-         assert(tex->src[TEX_LOGICAL_SRC_SHADOW_C].file == BAD_FILE);
-         assert(tex->src[TEX_LOGICAL_SRC_LOD2].file == BAD_FILE);
-         assert(tex->src[TEX_LOGICAL_SRC_MIN_LOD].file == BAD_FILE);
-         assert(tex->src[TEX_LOGICAL_SRC_SAMPLE_INDEX].file == BAD_FILE);
-         assert(tex->src[TEX_LOGICAL_SRC_MCS].file == BAD_FILE);
-         assert(tex->src[TEX_LOGICAL_SRC_TG4_OFFSET].file == BAD_FILE);
-         assert(tex->grad_components == 0);
+         brw_tex_inst *tex0 = tex->sampler_opcode == BRW_SAMPLER_OPCODE_LD ?
+            txfs_ld[0] : txfs_ld_lz[0];
 
-         if (count > 0 &&
-             (!sources_match(defs, tex, txfs[0], TEX_LOGICAL_SRC_LOD) ||
-              !sources_match(defs, tex, txfs[0], TEX_LOGICAL_SRC_SURFACE) ||
-              tex->surface_bindless != txfs[0]->surface_bindless ||
-              !sources_match(defs, tex, txfs[0], TEX_LOGICAL_SRC_SAMPLER) ||
-              tex->sampler_bindless != txfs[0]->sampler_bindless))
-            continue;
+         if (tex0 != NULL) {
+            if (!sources_match(defs, tex, tex0, TEX_LOGICAL_SRC_SURFACE) ||
+                tex->surface_bindless != tex0->surface_bindless)
+               continue;
 
-         txfs[count++] = tex;
+            if (tex->sampler_opcode == BRW_SAMPLER_OPCODE_LD) {
+               if (ld_count > 0 &&
+                   !sources_match(defs, tex, tex0, TEX_LOGICAL_SRC_PAYLOAD2))
+                  continue;
+            }
+         }
 
-         if (count == ARRAY_SIZE(txfs))
+         if (tex->sampler_opcode == BRW_SAMPLER_OPCODE_LD)
+            txfs_ld[ld_count++] = tex;
+         if (tex->sampler_opcode == BRW_SAMPLER_OPCODE_LD_LZ)
+            txfs_ld_lz[ld_lz_count++] = tex;
+
+         if (ld_count == ARRAY_SIZE(txfs_ld) ||
+             ld_lz_count == ARRAY_SIZE(txfs_ld_lz))
             break;
       }
 
-      /* Need at least two things to combine. */
-      if (count < 2)
-         continue;
-
       /* Emit divergent TXFs and replace the original ones with MOVs */
-      for (unsigned curr = 0; curr < count; curr += max_simd) {
-         const unsigned lanes = CLAMP(count - curr, min_simd, max_simd);
-         const unsigned width = util_next_power_of_two(lanes);
-         const brw_builder ubld =
-            brw_builder(&s).before(txfs[curr]).exec_all().group(width, 0);
-         const brw_builder ubld1 = ubld.group(1, 0);
-
-         enum brw_reg_type coord_type =
-            txfs[curr]->src[TEX_LOGICAL_SRC_COORDINATE].type;
-         brw_reg coord = ubld.vgrf(coord_type);
-         brw_reg coord_comps[32];
-
-         for (unsigned i = 0; i < width; i++) {
-            /* Our block size might be larger than the number of convergent
-             * loads we're combining.  If so, repeat the last component.
-             */
-            if (txfs[curr+i])
-               coord_comps[i] = txfs[curr+i]->src[TEX_LOGICAL_SRC_COORDINATE];
-            else
-               coord_comps[i] = coord_comps[i-1];
-         }
-         ubld1.VEC(coord, coord_comps, width);
-
-         brw_reg srcs[TEX_LOGICAL_NUM_SRCS];
-         srcs[TEX_LOGICAL_SRC_COORDINATE] = coord;
-         srcs[TEX_LOGICAL_SRC_LOD] = txfs[0]->src[TEX_LOGICAL_SRC_LOD];
-         srcs[TEX_LOGICAL_SRC_SURFACE] = txfs[0]->src[TEX_LOGICAL_SRC_SURFACE];
-         srcs[TEX_LOGICAL_SRC_SAMPLER] = txfs[0]->src[TEX_LOGICAL_SRC_SAMPLER];
-
-         /* Each of our txf may have a reduced response length if some
-          * components are never read.  Use the maximum of the sizes.
-          */
-         unsigned new_dest_comps = 0;
-         for (unsigned i = 0; i < width; i++) {
-            const unsigned this_comps = dest_comps_for_txf(s, txfs[curr+i]);
-            new_dest_comps = MAX2(new_dest_comps, this_comps);
-         }
-
-         /* Emit the new divergent TXF */
-         brw_reg div = ubld.vgrf(BRW_TYPE_UD, new_dest_comps);
-         brw_tex_inst *div_txf =
-            ubld.emit(SHADER_OPCODE_SAMPLER, div, srcs,
-                      TEX_LOGICAL_NUM_SRCS)->as_tex();
-         div_txf->surface_bindless = txfs[0]->surface_bindless;
-         div_txf->sampler_bindless = txfs[0]->sampler_bindless;
-         div_txf->sampler_opcode = SAMPLER_OPCODE_TXF_LOGICAL;
-         div_txf->coord_components = 1;
-         div_txf->grad_components = 0;
-         div_txf->residency = false;
-
-         /* Update it to also use response length reduction */
-         const unsigned per_component_regs =
-            DIV_ROUND_UP(brw_type_size_bytes(div.type) * div_txf->exec_size,
-                         grf_size);
-         div_txf->size_written = new_dest_comps * per_component_regs * grf_size;
-
-         for (unsigned i = 0; i < width; i++) {
-            brw_inst *txf = txfs[curr+i];
-            if (!txf)
-               break;
-
-            const brw_builder ibld = brw_builder(txf);
-
-            /* Replace each of the original TXFs with MOVs from our new one */
-            const unsigned dest_comps = dest_comps_for_txf(s, txf);
-            assert(dest_comps <= 4);
-
-            brw_reg v[4];
-            for (unsigned c = 0; c < dest_comps; c++)
-               v[c] = component(offset(div, ubld, c), i);
-            ibld.VEC(retype(txf->dst, BRW_TYPE_UD), v, dest_comps);
-
-            txf->remove();
-         }
-
+      if (ld_count >= 2) {
+         merge_instructions(s, txfs_ld, ld_count);
+         progress = true;
+      }
+      if (ld_lz_count >= 2) {
+         merge_instructions(s, txfs_ld_lz, ld_lz_count);
          progress = true;
       }
    }

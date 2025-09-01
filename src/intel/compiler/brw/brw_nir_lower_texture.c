@@ -141,11 +141,30 @@ pack_lod_and_array_index(nir_builder *b, nir_tex_instr *tex)
    return true;
 }
 
+static nir_def *
+build_packed_offset(nir_builder *b,
+                    nir_def *offset,
+                    unsigned offset_bits,
+                    unsigned offset_count)
+{
+   offset = nir_iand_imm(b, offset, BITFIELD_MASK(offset_bits));
+
+   nir_def *offuvr = nir_channel(b, offset, 0);
+   for (unsigned i = 1; i < MIN2(offset->num_components, offset_count); i++) {
+      nir_def *chan = nir_channel(b, offset, i);
+      offuvr = nir_ior(b, offuvr, nir_ishl_imm(b, chan, i * offset_bits));
+   }
+
+   return offuvr;
+}
+
 /**
  * Pack either the explicit LOD/Bias and the offset together.
  */
 static bool
-pack_lod_or_bias_and_offset(nir_builder *b, nir_tex_instr *tex)
+pack_lod_or_bias_and_offset(nir_builder *b, nir_tex_instr *tex,
+                            unsigned offset_bits,
+                            unsigned offset_count)
 {
    int offset_index = nir_tex_instr_src_index(tex, nir_tex_src_offset);
    if (offset_index < 0)
@@ -175,7 +194,6 @@ pack_lod_or_bias_and_offset(nir_builder *b, nir_tex_instr *tex)
    }
 
    nir_def *lod = tex->src[lod_index].src.ssa;
-   nir_def *offset = tex->src[offset_index].src.ssa;
 
    b->cursor = nir_before_instr(&tex->instr);
 
@@ -192,16 +210,20 @@ pack_lod_or_bias_and_offset(nir_builder *b, nir_tex_instr *tex)
     *    ------------------------------------------
     *    |OffsetUV | LOD/Bias | OffsetV | OffsetU |
     *    ------------------------------------------
+    *
+    * Or
+    *    ---------------------------------------------------
+    *    |Bits     | [31:12]  |  [11:9] |  [8:5]  |  [4:0]  |
+    *    ----------------------------------------------------
+    *    |OffsetUV | LOD/Bias | OffsetR | OffsetV | OffsetU |
+    *    ----------------------------------------------------
     */
-   nir_def *offu = nir_iand_imm(b, nir_channel(b, offset, 0), 0x3F);
-   nir_def *offv = nir_iand_imm(b, nir_channel(b, offset, 1), 0x3F);
+   nir_def *offuvr = build_packed_offset(
+      b, tex->src[offset_index].src.ssa, offset_bits, offset_count);
 
-   nir_def *offsetUV = nir_ior(b, offu, nir_ishl_imm(b, offv, 6));
-
-   nir_def *lod_offsetUV = nir_ior(b, offsetUV,
-                                   nir_iand_imm(b, lod, 0xFFFFF000));
+   nir_def *packed = nir_ior(b, offuvr, nir_iand_imm(b, lod, 0xFFFFF000));
    nir_tex_instr_remove_src(tex, offset_index);
-   nir_tex_instr_add_src(tex, nir_tex_src_backend2, lod_offsetUV);
+   nir_tex_instr_add_src(tex, nir_tex_src_backend1, packed);
 
    return true;
 }
@@ -219,9 +241,15 @@ brw_nir_lower_texture_instr(nir_builder *b, nir_tex_instr *tex, void *cb_data)
 
    if (brw_sampler_opcode_param_index(sampler_opcode,
                                       BRW_SAMPLER_PAYLOAD_PARAM_BIAS_OFFUV6) != -1 ||
-      brw_sampler_opcode_param_index(sampler_opcode,
-                                     BRW_SAMPLER_PAYLOAD_PARAM_LOD_OFFUV6) != -1)
-      return pack_lod_or_bias_and_offset(b, tex);
+       brw_sampler_opcode_param_index(sampler_opcode,
+                                      BRW_SAMPLER_PAYLOAD_PARAM_LOD_OFFUV6) != -1)
+      return pack_lod_or_bias_and_offset(b, tex, 6, 2);
+
+   if (brw_sampler_opcode_param_index(sampler_opcode,
+                                      BRW_SAMPLER_PAYLOAD_PARAM_BIAS_OFFUVR4) != -1 ||
+       brw_sampler_opcode_param_index(sampler_opcode,
+                                      BRW_SAMPLER_PAYLOAD_PARAM_LOD_OFFUVR4) != -1)
+      return pack_lod_or_bias_and_offset(b, tex, 4, 3);
 
    return false;
 }
@@ -321,7 +349,7 @@ brw_nir_lower_mcs_fetch_instr(nir_builder *b, nir_tex_instr *tex, void *cb_data)
          break;
 
       default:
-         continue;
+         break;
       }
    }
 

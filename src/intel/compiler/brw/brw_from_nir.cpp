@@ -88,38 +88,6 @@ static void brw_from_nir_emit_memory_access(nir_to_brw_state &ntb,
 static void brw_combine_with_vec(const brw_builder &bld, const brw_reg &dst,
                                  const brw_reg &src, unsigned n);
 
-static bool
-brw_texture_offset(const nir_tex_instr *tex, unsigned src,
-                   uint32_t *offset_bits_out)
-{
-   if (!nir_src_is_const(tex->src[src].src))
-      return false;
-
-   const unsigned num_components = nir_tex_instr_src_size(tex, src);
-
-   /* Combine all three offsets into a single unsigned dword:
-    *
-    *    bits 11:8 - U Offset (X component)
-    *    bits  7:4 - V Offset (Y component)
-    *    bits  3:0 - R Offset (Z component)
-    */
-   uint32_t offset_bits = 0;
-   for (unsigned i = 0; i < num_components; i++) {
-      int offset = nir_src_comp_as_int(tex->src[src].src, i);
-
-      /* offset out of bounds; caller will handle it. */
-      if (offset > 7 || offset < -8)
-         return false;
-
-      const unsigned shift = 4 * (2 - i);
-      offset_bits |= (offset & 0xF) << shift;
-   }
-
-   *offset_bits_out = offset_bits;
-
-   return true;
-}
-
 static brw_reg
 setup_imm_b(const brw_builder &bld, int8_t v)
 {
@@ -5945,6 +5913,7 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
       brw_reg srcs[TEX_LOGICAL_NUM_SRCS];
       srcs[TEX_LOGICAL_SRC_SURFACE] = image;
       srcs[TEX_LOGICAL_SRC_SAMPLER] = brw_imm_d(0);
+      srcs[TEX_LOGICAL_SRC_PAYLOAD0] = brw_imm_d(0); /* LOD (required) */
 
       /* Since the image size is always uniform, we can just emit a SIMD8
        * query instruction and splat the result out.
@@ -5953,8 +5922,9 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
 
       brw_reg tmp = ubld.vgrf(BRW_TYPE_UD, 4);
       brw_tex_inst *inst = ubld.emit(SHADER_OPCODE_SAMPLER,
-                                     tmp, srcs, ARRAY_SIZE(srcs))->as_tex();
-      inst->sampler_opcode = SAMPLER_OPCODE_IMAGE_SIZE_LOGICAL;
+                                     tmp, srcs, 3)->as_tex();
+      inst->required_params = 0x1 /* LOD */;
+      inst->sampler_opcode = BRW_SAMPLER_OPCODE_RESINFO;
       inst->surface_bindless = instr->intrinsic == nir_intrinsic_bindless_image_size;
       inst->size_written = 4 * REG_SIZE * reg_unit(devinfo);
 
@@ -7359,11 +7329,6 @@ static void
 brw_from_nir_emit_texture(nir_to_brw_state &ntb,
                     nir_tex_instr *instr)
 {
-   const intel_device_info *devinfo = ntb.devinfo;
-   const brw_builder &bld = ntb.bld;
-
-   brw_reg srcs[TEX_LOGICAL_NUM_SRCS];
-
    /* SKL PRMs: Volume 7: 3D-Media-GPGPU:
     *
     *    "The Pixel Null Mask field, when enabled via the Pixel Null Mask
@@ -7373,270 +7338,170 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
     *
     * We'll take care of this in NIR.
     */
-   assert(!instr->is_sparse || srcs[TEX_LOGICAL_SRC_SHADOW_C].file == BAD_FILE);
+   assert(!instr->is_sparse ||
+          nir_tex_instr_src_index(instr, nir_tex_src_comparator) == -1);
 
-   int lod_components = 0;
+   const intel_device_info *devinfo = ntb.devinfo;
+   const brw_builder &bld = ntb.bld;
 
-   /* The hardware requires a LOD for buffer textures */
-   if (instr->sampler_dim == GLSL_SAMPLER_DIM_BUF)
-      srcs[TEX_LOGICAL_SRC_LOD] = brw_imm_d(0);
+   brw_reg srcs[TEX_LOGICAL_NUM_SRCS];
 
-   ASSERTED bool got_lod = false;
-   ASSERTED bool got_bias = false;
-   bool pack_lod_bias_and_offset = false;
-   uint32_t header_bits = 0;
+   const enum brw_sampler_opcode sampler_opcode =
+      (enum brw_sampler_opcode)(instr->backend_flags &
+                                ~BRW_TEX_INSTR_FUSED_EU_DISABLE);
+   const struct brw_sampler_payload_desc *payload_desc =
+      brw_get_sampler_payload_desc(sampler_opcode);
 
-   brw_reg_type default_src_type;
-   switch (instr->op) {
-   case nir_texop_txf_ms:
-   case nir_texop_txf_ms_mcs_intel:
-      default_src_type = devinfo->verx10 >= 125 ? BRW_TYPE_W : BRW_TYPE_D;
-      break;
-
-   case nir_texop_txf:
-   case nir_texop_txs:
-      default_src_type = BRW_TYPE_D;
-      break;
-
-   default:
-      default_src_type = BRW_TYPE_F;
-      break;
-   }
-
-   for (unsigned i = 0; i < instr->num_srcs; i++) {
-      nir_src nir_src = instr->src[i].src;
-      brw_reg src = get_nir_src(ntb, nir_src, -1);
-
-      /* If the source is not a vector (e.g., a 1D texture coordinate), then
-       * the eventual LOAD_PAYLOAD lowering will not properly adjust the
-       * stride, etc., so do it now.
-       */
-      if (nir_tex_instr_src_size(instr, i) == 1)
-         src = offset(src, bld, 0);
-
-      brw_reg_type src_type = BRW_TYPE_F;
-      switch (instr->src[i].src_type) {
-      case nir_tex_src_sampler_offset:
-      case nir_tex_src_texture_offset:
-      case nir_tex_src_sampler_handle:
-      case nir_tex_src_texture_handle:
-      case nir_tex_src_offset:
-         src_type = BRW_TYPE_D;
-         break;
-
-      default:
-         src_type = default_src_type;
-         break;
-      }
-
-      switch (instr->src[i].src_type) {
-      case nir_tex_src_bias:
-         assert(!got_lod);
-         got_bias = true;
-         srcs[TEX_LOGICAL_SRC_LOD] =
-            retype(get_nir_src_imm(ntb, instr->src[i].src), src_type);
-         break;
-      case nir_tex_src_comparator:
-         srcs[TEX_LOGICAL_SRC_SHADOW_C] = retype(src, src_type);
-         break;
-      case nir_tex_src_coord:
-         srcs[TEX_LOGICAL_SRC_COORDINATE] = retype(src, src_type);
-         break;
-      case nir_tex_src_ddx:
-         srcs[TEX_LOGICAL_SRC_LOD] = retype(src, src_type);
-         lod_components = nir_tex_instr_src_size(instr, i);
-         break;
-      case nir_tex_src_ddy:
-         srcs[TEX_LOGICAL_SRC_LOD2] = retype(src, src_type);
-         break;
-      case nir_tex_src_lod:
-         assert(!got_bias);
-         got_lod = true;
-         srcs[TEX_LOGICAL_SRC_LOD] =
-            retype(get_nir_src_imm(ntb, instr->src[i].src), src_type);
-         break;
-      case nir_tex_src_min_lod:
-         srcs[TEX_LOGICAL_SRC_MIN_LOD] =
-            retype(get_nir_src_imm(ntb, instr->src[i].src), src_type);
-         break;
-      case nir_tex_src_ms_index:
-         srcs[TEX_LOGICAL_SRC_SAMPLE_INDEX] = retype(src, src_type);
-         break;
-
-      case nir_tex_src_offset: {
-         uint32_t offset_bits = 0;
-         if (brw_texture_offset(instr, i, &offset_bits)) {
-            header_bits |= offset_bits;
-         } else {
-            /* On gfx12.5+, if the offsets are not both constant and in the
-             * {-8,7} range, nir_lower_tex() will have already lowered the
-             * source offset. So we should never reach this point.
-             */
-            assert(devinfo->verx10 < 125);
-            srcs[TEX_LOGICAL_SRC_TG4_OFFSET] =
-               retype(src, src_type);
-         }
-         break;
-      }
-
-      case nir_tex_src_projector:
-         UNREACHABLE("should be lowered");
-
-      case nir_tex_src_texture_offset:
-         assert(srcs[TEX_LOGICAL_SRC_SURFACE].file == BAD_FILE);
-         /* Emit code to evaluate the actual indexing expression */
-         srcs[TEX_LOGICAL_SRC_SURFACE] =
-            bld.emit_uniformize(bld.ADD(retype(src, BRW_TYPE_UD),
-                                        brw_imm_ud(instr->texture_index)));
-         break;
-
-      case nir_tex_src_sampler_offset:
-         assert(nir_tex_instr_src_index(instr, nir_tex_src_sampler_handle) == -1);
-         assert(srcs[TEX_LOGICAL_SRC_SAMPLER].file == BAD_FILE);
-         /* Emit code to evaluate the actual indexing expression */
-         srcs[TEX_LOGICAL_SRC_SAMPLER] =
-            bld.emit_uniformize(bld.ADD(retype(src, BRW_TYPE_UD),
-                                        brw_imm_ud(instr->sampler_index)));
-         break;
-
-      case nir_tex_src_texture_handle:
-         assert(nir_tex_instr_src_index(instr, nir_tex_src_texture_offset) == -1);
-         assert(srcs[TEX_LOGICAL_SRC_SURFACE].file == BAD_FILE);
-         srcs[TEX_LOGICAL_SRC_SURFACE] = bld.emit_uniformize(src);
-         break;
-
-      case nir_tex_src_sampler_handle:
-         assert(nir_tex_instr_src_index(instr, nir_tex_src_sampler_offset) == -1);
-         assert(srcs[TEX_LOGICAL_SRC_SAMPLER].file == BAD_FILE);
-         srcs[TEX_LOGICAL_SRC_SAMPLER] = bld.emit_uniformize(src);
-         break;
-
-      case nir_tex_src_ms_mcs_intel:
-         assert(instr->op == nir_texop_txf_ms);
-         srcs[TEX_LOGICAL_SRC_MCS] = retype(src, src_type);
-         break;
-
-      /* If this parameter is present, we are packing offset U, V and LOD/Bias
-       * into a single (32-bit) value.
-       */
-      case nir_tex_src_backend2:
-         assert(instr->op == nir_texop_tg4);
-         pack_lod_bias_and_offset = true;
-         srcs[TEX_LOGICAL_SRC_LOD] =
-            retype(get_nir_src_imm(ntb, instr->src[i].src), src_type);
-         break;
-
-      /* If this parameter is present, we are packing either the explicit LOD
-       * or LOD bias and the array index into a single (32-bit) value when
-       * 32-bit texture coordinates are used.
-       */
-      case nir_tex_src_backend1:
-         assert(!got_lod && !got_bias);
-         got_lod = true;
-         assert(instr->op == nir_texop_txl || instr->op == nir_texop_txb);
-         srcs[TEX_LOGICAL_SRC_LOD] =
-            retype(get_nir_src_imm(ntb, instr->src[i].src), src_type);
-         break;
-
-      default:
-         UNREACHABLE("unknown texture source");
-      }
-   }
-
-   const bool surface_bindless = nir_tex_instr_src_index(
-      instr, nir_tex_src_texture_handle) >= 0;
-   const bool sampler_bindless = nir_tex_instr_src_index(
-      instr, nir_tex_src_sampler_handle) >= 0;
-
-   /* If the surface or sampler were not specified through sources, use the
-    * instruction index.
-    */
-   if (srcs[TEX_LOGICAL_SRC_SURFACE].file == BAD_FILE)
-      srcs[TEX_LOGICAL_SRC_SURFACE] = brw_imm_ud(instr->texture_index);
-   if (srcs[TEX_LOGICAL_SRC_SAMPLER].file == BAD_FILE)
-      srcs[TEX_LOGICAL_SRC_SAMPLER] = brw_imm_ud(instr->sampler_index);
-
-   assert(srcs[TEX_LOGICAL_SRC_MCS].file != BAD_FILE ||
-          instr->op != nir_texop_txf_ms);
-
-   enum sampler_opcode opcode;
-   switch (instr->op) {
-   case nir_texop_tex:
-      opcode = SAMPLER_OPCODE_TEX_LOGICAL;
-      break;
-   case nir_texop_txb:
-      opcode = SAMPLER_OPCODE_TXB_LOGICAL;
-      break;
-   case nir_texop_txl:
-      opcode = SAMPLER_OPCODE_TXL_LOGICAL;
-      break;
-   case nir_texop_txd:
-      opcode = SAMPLER_OPCODE_TXD_LOGICAL;
-      break;
-   case nir_texop_txf:
-      opcode = SAMPLER_OPCODE_TXF_LOGICAL;
-      break;
-   case nir_texop_txf_ms:
-      /* On Gfx12HP there is only CMS_W available. From the Bspec: Shared
-       * Functions - 3D Sampler - Messages - Message Format:
-       *
-       *   ld2dms REMOVEDBY(GEN:HAS:1406788836)
-       */
-      if (devinfo->verx10 >= 125)
-         opcode = SAMPLER_OPCODE_TXF_CMS_W_GFX12_LOGICAL;
-      else
-         opcode = SAMPLER_OPCODE_TXF_CMS_W_LOGICAL;
-      break;
-   case nir_texop_txf_ms_mcs_intel:
-      opcode = SAMPLER_OPCODE_TXF_MCS_LOGICAL;
-      break;
-   case nir_texop_query_levels:
-   case nir_texop_txs:
-      opcode = SAMPLER_OPCODE_TXS_LOGICAL;
-      break;
-   case nir_texop_lod:
-      opcode = SAMPLER_OPCODE_LOD_LOGICAL;
-      break;
-   case nir_texop_tg4: {
-      if (srcs[TEX_LOGICAL_SRC_TG4_OFFSET].file != BAD_FILE) {
-         opcode = SAMPLER_OPCODE_TG4_OFFSET_LOGICAL;
+   /* First deal with surface & sampler */
+   bool surface_bindless = false;
+   bool sampler_bindless = false;
+   int src_idx;
+   {
+      if ((src_idx = nir_tex_instr_src_index(instr, nir_tex_src_texture_handle)) >= 0) {
+         srcs[TEX_LOGICAL_SRC_SURFACE] = bld.emit_uniformize(
+            get_nir_src(ntb, instr->src[src_idx].src, -1));
+         surface_bindless = true;
+      } else if ((src_idx = nir_tex_instr_src_index(instr, nir_tex_src_texture_offset)) >= 0) {
+         srcs[TEX_LOGICAL_SRC_SURFACE] = bld.emit_uniformize(
+            bld.ADD(get_nir_src(ntb, instr->src[src_idx].src, -1),
+                    brw_imm_ud(instr->texture_index)));
       } else {
-         opcode = SAMPLER_OPCODE_TG4_LOGICAL;
-         if (devinfo->ver >= 20) {
-            /* If SPV_AMD_texture_gather_bias_lod extension is enabled, all
-             * texture gather functions (ie. the ones which do not take the
-             * extra bias argument and the ones that do) fetch texels from
-             * implicit LOD in fragment shader stage. In all other shader
-             * stages, base level is used instead.
-             */
-            if (instr->is_gather_implicit_lod)
-               opcode = SAMPLER_OPCODE_TG4_IMPLICIT_LOD_LOGICAL;
-
-            if (got_bias)
-               opcode = SAMPLER_OPCODE_TG4_BIAS_LOGICAL;
-
-            if (got_lod)
-               opcode = SAMPLER_OPCODE_TG4_EXPLICIT_LOD_LOGICAL;
-
-            if (pack_lod_bias_and_offset) {
-               if (got_lod)
-                  opcode = SAMPLER_OPCODE_TG4_OFFSET_LOD_LOGICAL;
-               if (got_bias)
-                  opcode = SAMPLER_OPCODE_TG4_OFFSET_BIAS_LOGICAL;
-            }
-         }
+         srcs[TEX_LOGICAL_SRC_SURFACE] = brw_imm_ud(instr->texture_index);
       }
-      break;
-   }
-   case nir_texop_texture_samples:
-      opcode = SAMPLER_OPCODE_SAMPLEINFO_LOGICAL;
-      break;
-   default:
-      UNREACHABLE("unknown texture opcode");
+
+      if ((src_idx = nir_tex_instr_src_index(instr, nir_tex_src_sampler_handle)) >= 0) {
+         srcs[TEX_LOGICAL_SRC_SAMPLER] = bld.emit_uniformize(
+            get_nir_src(ntb, instr->src[src_idx].src, -1));
+         sampler_bindless = true;
+      } else if ((src_idx = nir_tex_instr_src_index(instr, nir_tex_src_sampler_offset)) >= 0) {
+         srcs[TEX_LOGICAL_SRC_SAMPLER] = bld.emit_uniformize(
+            bld.ADD(get_nir_src(ntb, instr->src[src_idx].src, -1),
+                    brw_imm_ud(instr->sampler_index)));
+      } else {
+         srcs[TEX_LOGICAL_SRC_SAMPLER] = brw_imm_ud(instr->sampler_index);
+      }
    }
 
-   if (instr->op == nir_texop_tg4) {
-      header_bits |= instr->component << 16;
+   /* Now the sampler payload */
+   bool has_offset_in_payload = false;
+   uint32_t n_sources = TEX_LOGICAL_SRC_PAYLOAD0;
+   uint16_t required_params = 0;
+   for (uint32_t i = 0; payload_desc->sources[i].param != BRW_SAMPLER_PAYLOAD_PARAM_INVALID; i++) {
+      nir_tex_src_type nir_source;
+      unsigned nir_comp;
+
+#define P(name) BRW_SAMPLER_PAYLOAD_PARAM_##name
+#define S(name, component) do { \
+         nir_source = nir_tex_src_##name; \
+         nir_comp = component; \
+      } while (0)
+
+      struct brw_sampler_payload_src sampler_src =
+         payload_desc->sources[i];
+
+      switch (sampler_src.param) {
+      case P(U):    S(coord, 0); break;
+      case P(V):    S(coord, 1); break;
+      case P(R):    S(coord, 2); break;
+      case P(AI):   S(coord, 3); break;
+      case P(BIAS): S(bias, 0); break;
+      case P(LOD):  S(lod, 0); break;
+      case P(MLOD): S(min_lod, 0); break;
+      case P(REF):  S(comparator, 0); break;
+      case P(DUDX): S(ddx, 0); break;
+      case P(DUDY): S(ddy, 0); break;
+      case P(DVDX): S(ddx, 1); break;
+      case P(DVDY): S(ddy, 1); break;
+      case P(DRDX): S(ddx, 2); break;
+      case P(DRDY): S(ddy, 2); break;
+      case P(SI):   S(ms_index, 0); break;
+      case P(MCSL): S(ms_mcs_intel, 0); break;
+      case P(MCSH): S(ms_mcs_intel, 1); break;
+      case P(MCS0): S(ms_mcs_intel, 0); break;
+      case P(MCS1): S(ms_mcs_intel, 1); break;
+      case P(MCS2): S(ms_mcs_intel, 2); break;
+      case P(MCS3): S(ms_mcs_intel, 3); break;
+
+      case P(OFFU):
+         S(offset, 0);
+         has_offset_in_payload = true;
+         break;
+      case P(OFFV):
+         S(offset, 1);
+         has_offset_in_payload = true;
+         break;
+      case P(OFFUV4):
+      case P(OFFUVR4):
+      case P(OFFUV6):
+      case P(OFFUVR6):
+      case P(BIAS_OFFUV6):
+      case P(BIAS_OFFUVR4):
+      case P(LOD_OFFUV6):
+      case P(LOD_OFFUVR4):
+         /* There is no payload with 2 packed entries, so backend1 is always
+          * the one payload parameter packed. */
+         S(backend1, 0);
+         has_offset_in_payload = true;
+         break;
+
+      case P(BIAS_AI):
+      case P(LOD_AI):
+      case P(MLOD_R):
+         /* There is no payload with 2 packed entries, so backend1 is always
+          * the one payload parameter packed. */
+         S(backend1, 0);
+         break;
+
+      default: UNREACHABLE("unhandled sampler param");
+      }
+
+#undef P
+#undef S
+
+      /* TODO: make sure sources have consistent bit sizes */
+      brw_reg param_val = brw_imm_ud(0);
+
+      src_idx = nir_tex_instr_src_index(instr, nir_source);
+      if (src_idx >= 0 &&
+          nir_comp < instr->src[src_idx].src.ssa->num_components) {
+         param_val =
+            get_nir_src(ntb, instr->src[src_idx].src, nir_comp);
+      }
+
+      /* The hardware requires a LOD for buffer textures */
+      if (instr->sampler_dim == GLSL_SAMPLER_DIM_BUF &&
+          sampler_src.param == BRW_SAMPLER_PAYLOAD_PARAM_LOD) {
+         sampler_src.optional = false;
+      }
+
+      /* Wa_14012688258:
+       *
+       * Don't trim zeros at the end of payload for sample operations
+       * in cube and cube arrays.
+       *
+       * Compiler should send U,V,R parameters even if V,R are 0.
+       */
+      if (instr->sampler_dim == GLSL_SAMPLER_DIM_CUBE &&
+          intel_needs_workaround(devinfo, 14012688258) &&
+          (sampler_src.param == BRW_SAMPLER_PAYLOAD_PARAM_U ||
+           sampler_src.param == BRW_SAMPLER_PAYLOAD_PARAM_V ||
+           sampler_src.param == BRW_SAMPLER_PAYLOAD_PARAM_R)) {
+         sampler_src.optional = false;
+      }
+
+      srcs[TEX_LOGICAL_SRC_PAYLOAD0 + i] = param_val;
+
+      /* The last source present in the payload dictates the number of
+       * sources, unless it's required.
+       *
+       * We can skip the last source if it's zero.
+       */
+      if (!sampler_src.optional ||
+          !(param_val.file == IMM && param_val.ud == 0))
+         n_sources = TEX_LOGICAL_SRC_PAYLOAD0 + i + 1;
+
+      if (!sampler_src.optional)
+         required_params |= BITFIELD_BIT(i);
    }
 
    brw_reg nir_def_reg = get_nir_def(ntb, instr->def);
@@ -7669,31 +7534,32 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
       brw_allocate_vgrf_units(*bld.shader, total_regs * reg_unit(devinfo)),
       dst_type);
 
-   brw_tex_inst *tex = bld.emit(SHADER_OPCODE_SAMPLER, dst, srcs, ARRAY_SIZE(srcs))->as_tex();
-   tex->sampler_opcode = opcode;
+   brw_tex_inst *tex = bld.emit(SHADER_OPCODE_SAMPLER, dst, srcs, n_sources)->as_tex();
+   tex->sampler_opcode = (enum brw_sampler_opcode) instr->backend_flags;
    tex->surface_bindless = surface_bindless;
    tex->sampler_bindless = sampler_bindless;
-   tex->offset = header_bits;
    tex->size_written = total_regs * grf_size;
    tex->residency = instr->is_sparse;
+   tex->required_params = required_params;
    tex->coord_components = instr->coord_components;
-   tex->grad_components = lod_components;
    tex->fused_eu_disable = (instr->backend_flags & BRW_TEX_INSTR_FUSED_EU_DISABLE) != 0;
+   tex->gather_component = instr->component;
 
-   /* Wa_14012688258:
+   /* If the NIR instruction has an offset param but the sampler payload
+    * doesn't, we can put the offset into the header of the message.
     *
-    * Don't trim zeros at the end of payload for sample operations
-    * in cube and cube arrays.
+    * The restriction though is that it should be a constant value.
     */
-   if (instr->sampler_dim == GLSL_SAMPLER_DIM_CUBE &&
-       intel_needs_workaround(devinfo, 14012688258)) {
+   if ((src_idx = nir_tex_instr_src_index(instr, nir_tex_src_offset)) != -1 &&
+       !has_offset_in_payload) {
+      assert(nir_src_is_const(instr->src[src_idx].src));
 
-      /* Compiler should send U,V,R parameters even if V,R are 0. */
-      if (srcs[TEX_LOGICAL_SRC_COORDINATE].file != BAD_FILE)
-         assert(instr->coord_components >= 3u);
-
-      /* See opt_zero_samples(). */
-      tex->keep_payload_trailing_zeros = true;
+      const unsigned num_components = nir_tex_instr_src_size(instr, src_idx);
+      for (unsigned i = 0; i < num_components; i++) {
+         int offset = nir_src_comp_as_int(instr->src[src_idx].src, i);
+         tex->const_offsets[i] = offset;
+      }
+      tex->has_const_offsets = true;
    }
 
    /* With half-floats returns, the stride into a GRF allocation for each
