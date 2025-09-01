@@ -146,11 +146,24 @@ panvk_image_can_use_mod(struct panvk_image *image,
    if (forced_linear)
       return mod == DRM_FORMAT_MOD_LINEAR;
 
-   if (drm_is_afbc(mod) &&
-       !panvk_image_can_use_afbc(
-          phys_dev, image->vk.format, image->vk.usage | image->vk.stencil_usage,
-          image->vk.image_type, image->vk.tiling, image->vk.create_flags))
-      return false;
+   if (drm_is_afbc(mod)) {
+      if (!panvk_image_can_use_afbc(phys_dev, image->vk.format,
+                                    image->vk.usage | image->vk.stencil_usage,
+                                    image->vk.image_type, image->vk.tiling,
+                                    image->vk.create_flags))
+         return false;
+
+      /* We can't have separate depth/stencil layout transitions with
+       * interleaved Z24S8, so make sure we always disallow AFBC on Z24S8 until
+       * we've extended the image logic to support planar Z24+S8. Note that
+       * AFBC(S8) is not supported on Bifrost, so we want to keep support for
+       * interleaved Z24S8 to at least have AFBC(Z24S8) when
+       * separateDepthStencilLayouts=false.
+       */
+      if (image->vk.base.device->enabled_features.separateDepthStencilLayouts &&
+          image->vk.format == VK_FORMAT_D24_UNORM_S8_UINT)
+         return false;
+   }
 
    if (mod == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED) {
       /* Multiplanar YUV with U-interleaving isn't supported by the HW. We
