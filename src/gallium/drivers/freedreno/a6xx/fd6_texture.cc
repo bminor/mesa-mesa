@@ -610,6 +610,7 @@ build_texture_state(struct fd_context *ctx, mesa_shader_stage type,
                             FD_BO_GPUREADONLY | FD_BO_HINT_COMMAND,
                             "samp desc");
       uint32_t *buf = (uint32_t *)fd_bo_map(samp_desc);
+      fd_bo_mark_for_dump(samp_desc);
 
       for (unsigned i = 0; i < tex->num_samplers; i++) {
          static const struct fd6_sampler_stateobj dummy_sampler = {};
@@ -628,6 +629,7 @@ build_texture_state(struct fd_context *ctx, mesa_shader_stage type,
                            FD_BO_GPUREADONLY | FD_BO_HINT_COMMAND,
                            "tex desc");
       uint32_t *buf = (uint32_t *)fd_bo_map(tex_desc);
+      fd_bo_mark_for_dump(tex_desc);
 
       for (unsigned i = 0; i < tex->num_textures; i++) {
          const struct fd6_pipe_sampler_view *view;
