@@ -52,8 +52,6 @@ struct radv_pipeline {
    struct radv_shader *shaders[MESA_VULKAN_SHADER_STAGES];
    struct radv_shader *gs_copy_shader;
 
-   uint32_t user_data_0[MESA_VULKAN_SHADER_STAGES];
-
    /* Unique pipeline hash identifier. */
    uint64_t pipeline_hash;
 
