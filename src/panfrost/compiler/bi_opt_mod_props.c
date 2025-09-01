@@ -166,18 +166,19 @@ bi_fuse_discard_fcmp(bi_context *ctx, bi_instr *I, bi_instr *mod)
 struct {
    enum bi_opcode inner;
    enum bi_opcode outer;
-   enum bi_opcode replacement;
+   enum bi_opcode small_replacement;
+   enum bi_opcode wide_replacement;
 } bi_small_int_patterns[] = {
-   {BI_OPCODE_S8_TO_S32, BI_OPCODE_S32_TO_F32, BI_OPCODE_S8_TO_F32},
-   {BI_OPCODE_U8_TO_U32, BI_OPCODE_U32_TO_F32, BI_OPCODE_U8_TO_F32},
-   {BI_OPCODE_U8_TO_U32, BI_OPCODE_S32_TO_F32, BI_OPCODE_U8_TO_F32},
-   {BI_OPCODE_S16_TO_S32, BI_OPCODE_S32_TO_F32, BI_OPCODE_S16_TO_F32},
-   {BI_OPCODE_U16_TO_U32, BI_OPCODE_U32_TO_F32, BI_OPCODE_U16_TO_F32},
-   {BI_OPCODE_U16_TO_U32, BI_OPCODE_S32_TO_F32, BI_OPCODE_U16_TO_F32},
+   {BI_OPCODE_S8_TO_S32, BI_OPCODE_S32_TO_F32, BI_OPCODE_S8_TO_F32, BI_OPCODE_S32_TO_F32},
+   {BI_OPCODE_U8_TO_U32, BI_OPCODE_U32_TO_F32, BI_OPCODE_U8_TO_F32, BI_OPCODE_U32_TO_F32},
+   {BI_OPCODE_U8_TO_U32, BI_OPCODE_S32_TO_F32, BI_OPCODE_U8_TO_F32, BI_OPCODE_U32_TO_F32},
+   {BI_OPCODE_S16_TO_S32, BI_OPCODE_S32_TO_F32, BI_OPCODE_S16_TO_F32, BI_OPCODE_S32_TO_F32},
+   {BI_OPCODE_U16_TO_U32, BI_OPCODE_U32_TO_F32, BI_OPCODE_U16_TO_F32, BI_OPCODE_U32_TO_F32},
+   {BI_OPCODE_U16_TO_U32, BI_OPCODE_S32_TO_F32, BI_OPCODE_U16_TO_F32, BI_OPCODE_U32_TO_F32},
 };
 
 static inline void
-bi_fuse_small_int_to_f32(bi_instr *I, bi_instr *mod)
+bi_fuse_small_int_to_f32(bi_context *ctx, bi_instr *I, bi_instr *mod)
 {
    for (unsigned i = 0; i < ARRAY_SIZE(bi_small_int_patterns); ++i) {
       if (I->op != bi_small_int_patterns[i].outer)
@@ -188,7 +189,12 @@ bi_fuse_small_int_to_f32(bi_instr *I, bi_instr *mod)
       assert(I->src[0].swizzle == BI_SWIZZLE_H01);
       I->src[0] = mod->src[0];
       I->round = BI_ROUND_NONE;
-      bi_set_opcode(I, bi_small_int_patterns[i].replacement);
+
+      /* On v11, All small int instructions are gone but we now can widen instead */
+      if (ctx->arch >= 11)
+         bi_set_opcode(I, bi_small_int_patterns[i].wide_replacement);
+      else
+         bi_set_opcode(I, bi_small_int_patterns[i].small_replacement);
    }
 }
 
@@ -223,9 +229,7 @@ bi_opt_mod_prop_forward(bi_context *ctx)
 
          unsigned size = bi_get_opcode_props(I)->size;
 
-         /* All small int instructions we were relying on here are gone on v11 */
-         if (ctx->arch < 11)
-            bi_fuse_small_int_to_f32(I, mod);
+         bi_fuse_small_int_to_f32(ctx, I, mod);
 
          if (bi_is_fabsneg(mod->op, size)) {
             if (mod->src[0].abs && !bi_takes_fabs(ctx->arch, I, mod->src[0], s))
