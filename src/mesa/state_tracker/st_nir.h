@@ -57,7 +57,9 @@ bool st_nir_lower_drawpixels(struct nir_shader *shader,
                              bool packed_driver_uniform_storage);
 
 bool st_nir_lower_point_size_mov(struct nir_shader *shader,
-                                 const gl_state_index16 *pointsize_state_tokens);
+                                 const gl_state_index16 *pointsize_state_tokens,
+                                 struct gl_program_parameter_list *paramList,
+                                 bool packed_driver_uniform_storage);
 
 bool st_nir_lower_builtin(struct nir_shader *shader);
 bool st_nir_lower_tex_src_plane(struct nir_shader *shader, unsigned free_slots,

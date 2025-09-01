@@ -66,7 +66,9 @@ lower_point_size_mov(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 
 bool
 st_nir_lower_point_size_mov(nir_shader *shader,
-                            const gl_state_index16 *pointsize_state_tokens)
+                            const gl_state_index16 *pointsize_state_tokens,
+                            struct gl_program_parameter_list *paramList,
+                            bool packed_driver_uniform_storage)
 {
    assert(shader->info.stage != MESA_SHADER_FRAGMENT &&
           shader->info.stage != MESA_SHADER_COMPUTE);
@@ -74,9 +76,12 @@ st_nir_lower_point_size_mov(nir_shader *shader,
 
    bool progress = false;
    nir_metadata preserved = nir_metadata_control_flow;
-   nir_variable *in = nir_state_variable_create(shader, glsl_vec4_type(),
-                                                "gl_PointSizeClampedMESA",
-                                                pointsize_state_tokens);
+   nir_variable *in =
+      st_nir_state_variable_create(shader, glsl_vec4_type(), paramList,
+                                   pointsize_state_tokens,
+                                   "gl_PointSizeClampedMESA",
+                                   packed_driver_uniform_storage);
+
    if (shader->info.outputs_written & VARYING_BIT_PSIZ) {
       progress = nir_shader_intrinsics_pass(shader, lower_point_size_mov, preserved, in);
    } else {

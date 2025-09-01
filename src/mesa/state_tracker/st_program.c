@@ -812,7 +812,9 @@ st_create_common_variant(struct st_context *st,
       /* if flag is set, shader must export psiz */
       _mesa_add_state_reference(params, point_size_state);
       NIR_PASS(_, state.ir.nir, st_nir_lower_point_size_mov,
-                  point_size_state);
+               point_size_state,
+               st->allow_st_finalize_nir_twice ? prog->Parameters : NULL,
+               st->ctx->Const.PackedDriverUniformStorage);
 
       finalize = true;
    }
