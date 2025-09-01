@@ -236,6 +236,19 @@ pub trait HasRegFile {
     }
 }
 
+impl HasRegFile for &[SSAValue] {
+    fn file(&self) -> RegFile {
+        let comps = self.len();
+        let file = self[0].file();
+        for i in 1..comps {
+            if self[i].file() != file {
+                panic!("Illegal mix of RegFiles")
+            }
+        }
+        file
+    }
+}
+
 #[derive(Clone)]
 pub struct RegFileSet {
     bits: u8,

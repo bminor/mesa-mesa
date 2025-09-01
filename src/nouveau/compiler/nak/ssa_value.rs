@@ -204,49 +204,6 @@ impl SSARef {
         }
     }
 
-    /// Returns the register file for this SSA reference, assuming all SSA
-    /// values have the same register file.
-    pub fn file(&self) -> RegFile {
-        let comps = usize::from(self.comps());
-        let file = self[0].file();
-        for i in 1..comps {
-            if self[i].file() != file {
-                panic!("SSARef mixes RegFiles")
-            }
-        }
-        file
-    }
-
-    /// Returns true if this SSA reference is known to be uniform.
-    pub fn is_uniform(&self) -> bool {
-        for ssa in &self[..] {
-            if !ssa.is_uniform() {
-                return false;
-            }
-        }
-        true
-    }
-
-    pub fn is_gpr(&self) -> bool {
-        for ssa in &self[..] {
-            if !ssa.is_gpr() {
-                return false;
-            }
-        }
-        true
-    }
-
-    pub fn is_predicate(&self) -> bool {
-        if self[0].is_predicate() {
-            true
-        } else {
-            for ssa in &self[..] {
-                debug_assert!(!ssa.is_predicate());
-            }
-            false
-        }
-    }
-
     #[cold]
     #[inline]
     fn cold() {}
@@ -334,6 +291,12 @@ impl fmt::Display for SSARef {
             }
             write!(f, "}}")
         }
+    }
+}
+
+impl HasRegFile for SSARef {
+    fn file(&self) -> RegFile {
+        (&self[..]).file()
     }
 }
 
