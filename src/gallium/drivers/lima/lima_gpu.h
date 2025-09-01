@@ -40,32 +40,6 @@ struct lima_gp_frame_reg {
    uint32_t tile_heap_end;
 };
 
-struct lima_pp_frame_reg {
-   uint32_t plbu_array_address;
-   uint32_t render_address;
-   uint32_t unused_0;
-   uint32_t flags;
-   uint32_t clear_value_depth;
-   uint32_t clear_value_stencil;
-   uint32_t clear_value_color;
-   uint32_t clear_value_color_1;
-   uint32_t clear_value_color_2;
-   uint32_t clear_value_color_3;
-   uint32_t width;
-   uint32_t height;
-   uint32_t fragment_stack_address;
-   uint32_t fragment_stack_size;
-   uint32_t unused_1;
-   uint32_t unused_2;
-   uint32_t one;
-   uint32_t supersampled_height;
-   uint32_t dubya;
-   uint32_t onscreen;
-   uint32_t blocking;
-   uint32_t scale;
-   uint32_t channel_layout;
-};
-
 struct lima_pp_wb_reg {
    uint32_t type;
    uint32_t address;
