@@ -455,13 +455,13 @@
     # MSI IRQs leading to GPU hangs on amdgpu.
     CI_TRON_KERNEL_CMDLINE__APIC_WORKAROUND: 'noapic'
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:NAVI10
+    GPU_VERSION: radv-navi10
 
 .navi10-test-valve-mupuf:
   extends:
     - .navi10-test-valve
   variables:
     RUNNER_FARM_LOCATION: mupuf
-    GPU_VERSION: radv-navi10
     FDO_CI_CONCURRENT: 24
 
 .navi10-test-valve-kws:
@@ -469,7 +469,6 @@
     - .navi10-test-valve
   variables:
     RUNNER_FARM_LOCATION: keywords
-    GPU_VERSION: radv-navi10
     FDO_CI_CONCURRENT: 16
 
 .navi21-test-valve:
