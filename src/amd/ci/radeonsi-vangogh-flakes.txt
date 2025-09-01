@@ -18,6 +18,7 @@ dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.r32f_r32f.cub
 dEQP-GLES31.functional.geometry_shading.basic.output_256
 dEQP-GLES31.functional.geometry_shading.basic.output_max
 
+KHR-GLES31.core.explicit_uniform_location.uniform-loc-mix-with-implicit-max-array
 KHR-GLES31.core.shader_image_load_store.basic-allFormats-store-fs
 KHR-GLES31.core.tessellation_shader.tessellation_control_to_tessellation_evaluation.gl_MaxPatchVertices_Position_PointSize
 KHR-GLES31.core.tessellation_shader.vertex.vertex_ordering

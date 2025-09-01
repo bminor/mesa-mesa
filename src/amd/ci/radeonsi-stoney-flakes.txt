@@ -31,10 +31,13 @@ dEQP-GLES3.functional.occlusion_query.conservative_depth_clear
 dEQP-GLES3.functional.occlusion_query.scissor_depth_clear_stencil_write_stencil_clear
 dEQP-GLES3.functional.occlusion_query.conservative_depth_write_stencil_clear
 
+dEQP-GLES2.functional.texture.mipmap.2d.generate.rgba8888_non_square_fastest
 dEQP-GLES3.functional.texture.filtering.3d.formats.r11f_g11f_b10f_nearest_mipmap_nearest
+dEQP-GLES3.functional.texture.vertex.3d.wrap.repeat_clamp_mirror
 
 dEQP-GLES31.functional.copy_image.compressed.viewclass_astc_12x12_rgba.srgb8_alpha8_astc_12x12_khr_srgb8_alpha8_astc_12x12_khr.texture2d_to_cubemap
 dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba32f_srgb8_alpha8_etc2_eac.texture2d_array_to_cubemap
+dEQP-GLES31.functional.copy_image.mixed.viewclass_64_bits_mixed.rg32i_r11_eac.cubemap_to_texture2d
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_64_bits.rg32f_rgba16ui.texture3d_to_renderbuffer
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_96_bits.rgb32f_rgb32i.texture3d_to_texture2d
 dEQP-GLES31.functional.shaders.multisample_interpolation.interpolate_at_sample.at_sample_id.multisample_rbo_2
@@ -45,14 +48,18 @@ spec@!opengl 1.0@gl-1.0-ortho-pos
 spec@!opengl 1.0@gl-1.0-readpixsanity
 spec@!opengl 1.1@draw-pixels
 spec@!opengl 1.2@texture-packed-formats
+spec@!opengl 3.2@layered-rendering@clear-color-all-types 3d mipmapped
 spec@amd_shader_trinary_minmax@execution@built-in-functions@fs-mid3-vec4-vec4-vec4
+spec@arb_clear_buffer_object@arb_clear_buffer_object-formats
 spec@arb_clear_texture@arb_clear_texture-depth
 spec@arb_copy_image@arb_copy_image-formats --samples=2
 spec@arb_draw_indirect@arb_draw_indirect-transform-feedback
 spec@arb_framebuffer_srgb@blit renderbuffer linear_to_srgb upsample disabled render
 spec@arb_framebuffer_srgb@blit renderbuffer srgb scaled disabled clear
 spec@arb_framebuffer_srgb@blit texture linear_to_srgb scaled enabled render
+spec@arb_framebuffer_srgb@blit texture srgb_to_linear single_sampled enabled render
 spec@arb_gpu_shader5@texturegatheroffset@vs-rgba-0-unorm-2d
+spec@arb_gpu_shader_int64@execution@built-in-functions@fs-op-sub-uint64_t-uint64_t
 spec@arb_sample_shading@arb_sample_shading-builtin-gl-sample-mask-mrt-alpha-to-coverage
 spec@arb_shader_texture_lod@execution@tex-miplevel-selection \*gradarb 3d
 spec@arb_tessellation_shader@execution@built-in-functions@tcs-op-assign-bitxor-uint-uint
@@ -77,6 +84,7 @@ spec@ext_framebuffer_multisample@accuracy all_samples depth_draw depthstencil
 spec@ext_framebuffer_multisample@accuracy all_samples depth_draw small depthstencil
 spec@ext_framebuffer_multisample@accuracy all_samples depth_resolve small depthstencil
 spec@ext_framebuffer_multisample@accuracy all_samples stencil_resolve small depthstencil
+spec@ext_framebuffer_multisample@interpolation 6 non-centroid-deriv-disabled
 spec@ext_framebuffer_object@fbo-drawbuffers-blend-add
 spec@ext_framebuffer_object@fbo-generatemipmap-nonsquare
 spec@ext_framebuffer_object@getteximage-formats init-by-rendering
@@ -93,7 +101,9 @@ spec@glsl-1.30@execution@tex-miplevel-selection textureoffset 2d
 spec@glsl-1.30@execution@tex-miplevel-selection textureoffset 3d
 spec@glsl-1.30@execution@tex-miplevel-selection textureproj\(bias\) 1d_projvec4
 spec@glsl-1.30@execution@tex-miplevel-selection textureprojgradoffset 1d
+spec@glsl-1.30@execution@tex-miplevel-selection textureprojlodoffset 2d_projvec4
 spec@glsl-1.30@execution@texturesize@fs-texturesize-sampler2darrayshadow
+spec@glsl-4.00@execution@built-in-functions@gs-mix-dvec2-dvec2-bvec2
 spec@glsl-4.30@execution@built-in-functions@cs-op-bitxor-uvec3-uint
 spec@nv_copy_image@nv_copy_image-formats --samples=4
 spec@nv_copy_image@nv_copy_image-formats --samples=8
