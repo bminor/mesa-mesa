@@ -26,6 +26,10 @@ radv_cs_emit_write_event_eop(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_
       return;
    }
 
+   /* EOS events may be buggy on GFX7, prefer not to use them. */
+   if (gfx_level == GFX7 && (event == V_028A90_CS_DONE || event == V_028A90_PS_DONE))
+      event = V_028A90_BOTTOM_OF_PIPE_TS;
+
    const bool is_mec = qf == RADV_QUEUE_COMPUTE && gfx_level >= GFX7;
    unsigned op =
       EVENT_TYPE(event) | EVENT_INDEX(event == V_028A90_CS_DONE || event == V_028A90_PS_DONE ? 6 : 5) | event_flags;
