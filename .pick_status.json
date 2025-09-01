@@ -1174,7 +1174,7 @@
         "description": "ci/crosvm: Retry all curl errors when downloading kernel",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d527da301f6c690f008c831ecd9759fb497b1d24",
         "notes": null

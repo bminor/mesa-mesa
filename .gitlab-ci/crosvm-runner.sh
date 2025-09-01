@@ -123,7 +123,7 @@ fi
 if [ ! -f "/kernel/${KERNEL_IMAGE_NAME:-bzImage}" ]; then
   mkdir -p /kernel
   # shellcheck disable=SC2153
-  curl -L --retry 4 -f --retry-connrefused --retry-delay 30 \
+  curl -L --retry 4 -f --retry-all-errors --retry-delay 30 \
     -o "/kernel/${KERNEL_IMAGE_NAME:-bzImage}" "${KERNEL_IMAGE_BASE}/${DEBIAN_ARCH:-amd64}/${KERNEL_IMAGE_NAME:-bzImage}"
 fi
 
