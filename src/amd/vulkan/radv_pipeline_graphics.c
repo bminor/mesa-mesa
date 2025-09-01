@@ -3345,22 +3345,6 @@ radv_pipeline_init_shader_stages_state(const struct radv_device *device, struct 
          }
       }
    }
-
-   mesa_shader_stage first_stage =
-      radv_pipeline_has_stage(pipeline, MESA_SHADER_MESH) ? MESA_SHADER_MESH : MESA_SHADER_VERTEX;
-
-   const struct radv_shader *shader = radv_get_shader(pipeline->base.shaders, first_stage);
-   const struct radv_userdata_info *loc = radv_get_user_sgpr_info(shader, AC_UD_VS_BASE_VERTEX_START_INSTANCE);
-
-   if (loc->sgpr_idx != -1) {
-      pipeline->vtx_base_sgpr = shader->info.user_data_0;
-      pipeline->vtx_base_sgpr += loc->sgpr_idx * 4;
-      pipeline->vtx_emit_num = loc->num_sgprs;
-      pipeline->uses_drawid = radv_get_shader(pipeline->base.shaders, first_stage)->info.vs.needs_draw_id;
-      pipeline->uses_baseinstance = radv_get_shader(pipeline->base.shaders, first_stage)->info.vs.needs_base_instance;
-
-      assert(first_stage != MESA_SHADER_MESH || !pipeline->uses_baseinstance);
-   }
 }
 
 uint32_t
@@ -3543,8 +3527,6 @@ radv_graphics_pipeline_init(struct radv_graphics_pipeline *pipeline, struct radv
    radv_pipeline_init_shader_stages_state(device, pipeline);
 
    pipeline->is_ngg = pipeline->base.shaders[pipeline->last_vgt_api_stage]->info.is_ngg;
-   pipeline->has_ngg_culling = pipeline->base.shaders[pipeline->last_vgt_api_stage]->info.has_ngg_culling;
-   pipeline->force_vrs_per_vertex = pipeline->base.shaders[pipeline->last_vgt_api_stage]->info.force_vrs_per_vertex;
    pipeline->vgt_outprim_type = vgt_outprim_type;
    pipeline->uses_out_of_order_rast = gfx_state.vk.rs->rasterization_order_amd == VK_RASTERIZATION_ORDER_RELAXED_AMD;
    pipeline->uses_vrs = radv_is_vrs_enabled(&gfx_state.vk);

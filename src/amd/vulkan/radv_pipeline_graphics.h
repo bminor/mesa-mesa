@@ -132,19 +132,9 @@ struct radv_sqtt_shaders_reloc {
 struct radv_graphics_pipeline {
    struct radv_pipeline base;
 
-   bool uses_drawid;
-   bool uses_baseinstance;
-
-   /* Whether the pipeline forces per-vertex VRS (GFX10.3+). */
-   bool force_vrs_per_vertex;
-
    /* Whether the pipeline uses NGG (GFX10+). */
    bool is_ngg;
-   bool has_ngg_culling;
 
-   uint8_t vtx_emit_num;
-
-   uint32_t vtx_base_sgpr;
    uint64_t dynamic_states;
    uint64_t needed_dynamic_state;
 
