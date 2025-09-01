@@ -190,6 +190,9 @@ genX(cmd_buffer_state_cache_inval_wa_14025112257)(
    }
 }
 
+void
+genX(setup_autostrip_state)(struct anv_cmd_buffer *cmd_buffer, bool enable);
+
 void genX(emit_so_memcpy_init)(struct anv_memcpy_state *state,
                                struct anv_device *device,
                                struct anv_cmd_buffer *cmd_buffer,

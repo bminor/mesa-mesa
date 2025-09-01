@@ -3427,6 +3427,12 @@ end_command_buffer(struct anv_cmd_buffer *cmd_buffer)
     */
    genX(cmd_buffer_enable_pma_fix)(cmd_buffer, false);
 
+#if INTEL_WA_14024997852_GFX_VER
+   /* Toggle autostrip on if we disabled it. */
+   if (cmd_buffer->state.gfx.dyn_state.autostrip_disabled)
+      genX(setup_autostrip_state)(cmd_buffer, true);
+#endif
+
    /* Wa_14015814527
     *
     * Apply task URB workaround in the end of primary or secondary cmd_buffer.

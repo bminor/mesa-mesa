@@ -2530,6 +2530,20 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
    }
 #endif
 
+#if INTEL_WA_14024997852_GFX_VER
+   /* Wa_14024997852: When Draw Cut Index or primitive id is enabled
+    * and topology is tri list, we need to disable autostrip.
+    *
+    * Note that we do not take primitive id in to account because it
+    * is mentioned only in xe2 clone of this wa and autostrip has been
+    * disabled globally on xe2 (+xe3 a0) by kernel due to 14021490052
+    * workaround.
+   */
+   SET(WA_14024997852, autostrip_disabled,
+       hw_state->vft.PrimitiveTopologyType == _3DPRIM_TRILIST &&
+       dyn->ia.primitive_restart_enable);
+#endif
+
    /* If the pipeline uses a dynamic value of patch_control_points or the
     * tessellation domain is dynamic and either the pipeline change or the
     * dynamic value change, check the value and reemit if needed.
@@ -2578,6 +2592,32 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
 #undef SET
 #undef SET_STAGE
 #undef SETUP_PROVOKING_VERTEX
+
+#if INTEL_WA_14024997852_GFX_VER
+void
+genX(setup_autostrip_state)(struct anv_cmd_buffer *cmd_buffer, bool enable)
+{
+   /* Add CS stall before writing registers. */
+   genx_batch_emit_pipe_control(&cmd_buffer->batch,
+                                cmd_buffer->device->info,
+                                cmd_buffer->state.current_pipeline,
+                                ANV_PIPE_CS_STALL_BIT);
+
+   /* VF */
+   anv_batch_write_reg(&cmd_buffer->batch, GENX(VFL_SCRATCH_PAD), vfl) {
+      vfl.AutostripDisable = !enable;
+      vfl.PartialAutostripDisable = !enable;
+      vfl.AutostripDisableMask = true;
+      vfl.PartialAutostripDisableMask = true;
+   }
+   /* TE and Mesh. */
+   anv_batch_write_reg(&cmd_buffer->batch, GENX(FF_MODE), ff) {
+      ff.TEAutostripDisable = !enable;
+      ff.MeshShaderAutostripDisable = !enable;
+      ff.MeshShaderPartialAutostripDisable = !enable;
+   }
+}
+#endif /* INTEL_WA_14024997852_GFX_VER */
 
 static void
 cmd_buffer_repack_gfx_state(struct anv_gfx_dynamic_state *hw_state,
@@ -3600,6 +3640,13 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
                                                 VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
       gfx->base.push_constants_data_dirty = true;
    }
+
+#if INTEL_WA_14024997852_GFX_VER
+   if (IS_DIRTY(WA_14024997852) &&
+       intel_needs_workaround(device->info, 14024997852)) {
+      genX(setup_autostrip_state)(cmd_buffer, !hw_state->autostrip_disabled);
+   }
+#endif
 
 #if INTEL_WA_18019110168_GFX_VER
    if (IS_DIRTY(MESH_PROVOKING_VERTEX))

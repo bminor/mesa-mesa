@@ -1870,6 +1870,7 @@ enum anv_gfx_state_bits {
    ANV_GFX_STATE_WA_18019816803, /* Fake state to implement workaround */
    ANV_GFX_STATE_WA_14018283232, /* Fake state to implement workaround */
    ANV_GFX_STATE_WA_18038825448, /* Fake state to implement workaround */
+   ANV_GFX_STATE_WA_14024997852, /* Fake state to implement workaround */
    ANV_GFX_STATE_TBIMR_TILE_PASS_INFO,
    ANV_GFX_STATE_FS_MSAA_FLAGS,
    ANV_GFX_STATE_TESS_CONFIG,
@@ -2307,6 +2308,11 @@ struct anv_gfx_dynamic_state {
     * Coarse state tracking for Wa_18038825448.
     */
    enum anv_coarse_pixel_state coarse_state;
+
+   /**
+    * State tracking for Wa_14024997852.
+    */
+   bool autostrip_disabled;
 
    /** Dirty bits of what needs to be repacked */
    BITSET_DECLARE(pack_dirty, ANV_GFX_STATE_MAX);
