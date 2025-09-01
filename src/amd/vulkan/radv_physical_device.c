@@ -696,7 +696,7 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
       .EXT_host_image_copy = radv_host_image_copy_enabled(pdev),
       .EXT_host_query_reset = true,
       .EXT_image_2d_view_of_3d = true,
-      .EXT_image_compression_control = true,
+      .EXT_image_compression_control = pdev->info.gfx_level < GFX12, /* Not useful on GFX12 */
       .EXT_image_drm_format_modifier = pdev->info.gfx_level >= GFX9,
       .EXT_image_robustness = true,
       .EXT_image_sliced_view_of_3d = pdev->info.gfx_level >= GFX10,
@@ -1268,7 +1268,7 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
       .cooperativeMatrixRobustBufferAccess = radv_cooperative_matrix_enabled(pdev),
 
       /* VK_EXT_image_compression_control */
-      .imageCompressionControl = true,
+      .imageCompressionControl = pdev->info.gfx_level < GFX12,
 
       /* VK_EXT_device_fault */
       .deviceFault = true,
