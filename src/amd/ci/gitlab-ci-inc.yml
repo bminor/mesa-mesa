@@ -351,6 +351,10 @@
     CI_TRON_INITRAMFS__GPU__URL: "https://gitlab.freedesktop.org/gfx-ci/boot2container/-/releases/$B2C_VERSION/downloads/linux-x86_64.gpu.cpio"
     CI_TRON_INITRAMFS__GPU__FORMAT__0__ARCHIVE__KEEP__0__PATH: "(lib/(modules|firmware/amdgpu)/.*)"
     CI_TRON_KERNEL_CMDLINE__LOAD_MODULES: 'modules_load=amdgpu'
+  tags:
+    - farm:$RUNNER_FARM_LOCATION
+    - $CI_TRON_DUT_SETUP_TAGS
+    - amdgpu:$INTEGRATED_OR_DISCRETE
 
 .ci-tron-test-radv:
   extends: .ci-tron-test-amdgpu
@@ -383,6 +387,7 @@
     FDO_CI_CONCURRENT: 24
     RUNNER_FARM_LOCATION: mupuf
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:TAHITI
+    INTEGRATED_OR_DISCRETE: discrete
     CI_TRON_KERNEL_CMDLINE__AMDGPU_FORCE_SI_SUPPORT: amdgpu.si_support=1
     GPU_VERSION: radv-tahiti
 
@@ -391,6 +396,7 @@
     FDO_CI_CONCURRENT: 24
     RUNNER_FARM_LOCATION: mupuf
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:HAWAII
+    INTEGRATED_OR_DISCRETE: discrete
     CI_TRON_KERNEL_CMDLINE__AMDGPU_FORCE_CIK_SUPPORT: amdgpu.cik_support=1
     GPU_VERSION: radv-hawaii
 
@@ -398,12 +404,14 @@
   variables:
     RUNNER_FARM_LOCATION: mupuf
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:KABINI
+    INTEGRATED_OR_DISCRETE: integrated
     GPU_VERSION: radv-kabini
 
 .polaris10-test-valve:
   variables:
     FDO_CI_CONCURRENT: 16
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:POLARIS10
+    INTEGRATED_OR_DISCRETE: discrete
     # (2022-01) tsc=unstable was added in response to this message in kmsg,
     #    TSC found unstable after boot, most likely due to broken BIOS. Use 'tsc=unstable'.
     CI_TRON_KERNEL_CMDLINE__TSC_WORKAROUND: 'tsc=unstable'
@@ -437,6 +445,7 @@
   variables:
     RUNNER_FARM_LOCATION: keywords
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:VEGA10
+    INTEGRATED_OR_DISCRETE: discrete
     GPU_VERSION: radv-vega10
     FDO_CI_CONCURRENT: 16
 
@@ -444,6 +453,7 @@
   variables:
     RUNNER_FARM_LOCATION: mupuf
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:RENOIR
+    INTEGRATED_OR_DISCRETE: integrated
     GPU_VERSION: radv-renoir
     FDO_CI_CONCURRENT: 16
 
@@ -455,6 +465,7 @@
     # MSI IRQs leading to GPU hangs on amdgpu.
     CI_TRON_KERNEL_CMDLINE__APIC_WORKAROUND: 'noapic'
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:NAVI10
+    INTEGRATED_OR_DISCRETE: discrete
     GPU_VERSION: radv-navi10
 
 .navi10-test-valve-mupuf:
@@ -475,6 +486,7 @@
   variables:
     RUNNER_FARM_LOCATION: keywords
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:NAVI21
+    INTEGRATED_OR_DISCRETE: discrete
     GPU_VERSION: radv-navi21
     FDO_CI_CONCURRENT: 32
     # FIXME: drop everything below to use the same kernel as the rest of the amdgpu jobs
@@ -487,10 +499,12 @@
   variables:
     RUNNER_FARM_LOCATION: mupuf
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:VANGOGH
+    INTEGRATED_OR_DISCRETE: integrated
     GPU_VERSION: radv-vangogh
     FDO_CI_CONCURRENT: 8
   tags:
     - farm:$RUNNER_FARM_LOCATION
+    - amdgpu:$INTEGRATED_OR_DISCRETE
     - $CI_TRON_DUT_SETUP_TAGS
     - $CI_TRON_JOB_PRIORITY_TAG
 
@@ -498,6 +512,7 @@
   variables:
     RUNNER_FARM_LOCATION: keywords
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:RAPHAEL
+    INTEGRATED_OR_DISCRETE: integrated
     GPU_VERSION: radv-raphael
     FDO_CI_CONCURRENT: 32
 
@@ -505,6 +520,7 @@
   variables:
     RUNNER_FARM_LOCATION: keywords
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:NAVI31
+    INTEGRATED_OR_DISCRETE: discrete
     GPU_VERSION: radv-navi31
     FDO_CI_CONCURRENT: 32
     # FIXME: drop everything below to use the same kernel as the rest of the amdgpu jobs
@@ -518,5 +534,6 @@
   variables:
     RUNNER_FARM_LOCATION: keywords
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:NAVI48
+    INTEGRATED_OR_DISCRETE: discrete
     GPU_VERSION: radv-gfx1201
     FDO_CI_CONCURRENT: 16  # FIXME: Replace with 32 when the zerovram regression is addressed
