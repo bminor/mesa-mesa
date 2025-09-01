@@ -32,8 +32,8 @@
  * rather silly to use with alpha test, but the spec permits).
  */
 
-#include "nir/nir.h"
 #include "nir/nir_builder.h"
+#include "st_nir.h"
 
 struct alpha_test_state {
    bool alpha_to_one;
@@ -81,9 +81,9 @@ lower(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 }
 
 bool
-nir_lower_alpha_test(nir_shader *shader, enum compare_func func,
-                     bool alpha_to_one,
-                     const gl_state_index16 *alpha_ref_state_tokens)
+st_nir_lower_alpha_test(nir_shader *shader, enum compare_func func,
+                        bool alpha_to_one,
+                        const gl_state_index16 *alpha_ref_state_tokens)
 {
    assert(shader->info.io_lowered);
    struct alpha_test_state state = {

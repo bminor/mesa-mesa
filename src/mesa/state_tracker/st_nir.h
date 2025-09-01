@@ -45,6 +45,10 @@ typedef struct nir_lower_drawpixels_options {
    bool scale_and_bias : 1;
 } nir_lower_drawpixels_options;
 
+bool st_nir_lower_alpha_test(struct nir_shader *shader, enum compare_func func,
+                             bool alpha_to_one,
+                             const gl_state_index16 *alpha_ref_state_tokens);
+
 bool st_nir_lower_drawpixels(struct nir_shader *shader,
                              const nir_lower_drawpixels_options *options,
                              struct gl_program_parameter_list *paramList,

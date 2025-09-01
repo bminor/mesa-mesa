@@ -141,7 +141,6 @@ else
   'nir_lower_alu.c',
   'nir_lower_alu_width.c',
   'nir_lower_alpha.c',
-  'nir_lower_alpha_test.c',
   'nir_lower_amul.c',
   'nir_lower_array_deref_of_vec.c',
   'nir_lower_atomics_to_ssbo.c',
