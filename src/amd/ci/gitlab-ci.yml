@@ -326,8 +326,7 @@ radv-gfx1201-vkcts:
     - .radv-valve-rules
   variables:
     # TODO: Verify that task shaders don't hang.
-    # TODO: Fix GPU hangs with video
-    RADV_DEBUG: nomeshshader,novideo
+    RADV_DEBUG: nomeshshader
     RADV_PERFTEST: transfer_queue,hic
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 15
 
