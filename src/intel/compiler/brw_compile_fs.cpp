@@ -1518,6 +1518,9 @@ brw_compile_fs(const struct brw_compiler *compiler,
    brw_nir_lower_fs_inputs(nir, devinfo, key);
    brw_nir_lower_fs_outputs(nir);
 
+   if (!key->coherent_fb_fetch)
+      NIR_PASS(_, nir, brw_nir_lower_fs_load_output, key);
+
    /* From the SKL PRM, Volume 7, "Alpha Coverage":
     *  "If Pixel Shader outputs oMask, AlphaToCoverage is disabled in
     *   hardware, regardless of the state setting for this feature."

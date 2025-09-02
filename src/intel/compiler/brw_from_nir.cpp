@@ -3648,80 +3648,6 @@ emit_mcs_fetch(nir_to_brw_state &ntb, const brw_reg &coordinate, unsigned compon
 }
 
 /**
- * Fake non-coherent framebuffer read implemented using TXF to fetch from the
- * framebuffer at the current fragment coordinates and sample index.
- */
-static brw_inst *
-emit_non_coherent_fb_read(nir_to_brw_state &ntb, const brw_builder &bld, const brw_reg &dst,
-                          unsigned target)
-{
-   brw_shader &s = ntb.s;
-   const struct intel_device_info *devinfo = s.devinfo;
-
-   assert(bld.shader->stage == MESA_SHADER_FRAGMENT);
-   const brw_wm_prog_key *wm_key =
-      reinterpret_cast<const brw_wm_prog_key *>(s.key);
-   assert(!wm_key->coherent_fb_fetch);
-
-   /* Calculate the fragment coordinates. */
-   const brw_reg coords = bld.vgrf(BRW_TYPE_UD, 3);
-   bld.MOV(offset(coords, bld, 0), s.pixel_x);
-   bld.MOV(offset(coords, bld, 1), s.pixel_y);
-   bld.MOV(offset(coords, bld, 2), fetch_render_target_array_index(bld));
-
-   /* Calculate the sample index and MCS payload when multisampling.  Luckily
-    * the MCS fetch message behaves deterministically for UMS surfaces, so it
-    * shouldn't be necessary to recompile based on whether the framebuffer is
-    * CMS or UMS.
-    */
-   assert(wm_key->multisample_fbo == INTEL_ALWAYS ||
-          wm_key->multisample_fbo == INTEL_NEVER);
-   if (wm_key->multisample_fbo &&
-       ntb.system_values[SYSTEM_VALUE_SAMPLE_ID].file == BAD_FILE)
-      ntb.system_values[SYSTEM_VALUE_SAMPLE_ID] = emit_sampleid_setup(ntb);
-
-   const brw_reg sample = ntb.system_values[SYSTEM_VALUE_SAMPLE_ID];
-   const brw_reg mcs = wm_key->multisample_fbo ?
-      emit_mcs_fetch(ntb, coords, 3, brw_imm_ud(target), brw_reg()) : brw_reg();
-
-   /* Use either a normal or a CMS texel fetch message depending on whether
-    * the framebuffer is single or multisample.  On SKL+ use the wide CMS
-    * message just in case the framebuffer uses 16x multisampling, it should
-    * be equivalent to the normal CMS fetch for lower multisampling modes.
-    */
-   opcode op;
-   if (wm_key->multisample_fbo) {
-      /* On SKL+ use the wide CMS message just in case the framebuffer uses 16x
-       * multisampling, it should be equivalent to the normal CMS fetch for
-       * lower multisampling modes.
-       *
-       * On Gfx12HP, there is only CMS_W variant available.
-       */
-      if (devinfo->verx10 >= 125)
-         op = SHADER_OPCODE_TXF_CMS_W_GFX12_LOGICAL;
-      else
-         op = SHADER_OPCODE_TXF_CMS_W_LOGICAL;
-   } else {
-      op = SHADER_OPCODE_TXF_LOGICAL;
-   }
-
-   /* Emit the instruction. */
-   brw_reg srcs[TEX_LOGICAL_NUM_SRCS];
-   srcs[TEX_LOGICAL_SRC_COORDINATE]       = coords;
-   srcs[TEX_LOGICAL_SRC_LOD]              = brw_imm_ud(0);
-   srcs[TEX_LOGICAL_SRC_SAMPLE_INDEX]     = sample;
-   srcs[TEX_LOGICAL_SRC_MCS]              = mcs;
-   srcs[TEX_LOGICAL_SRC_SURFACE]          = brw_imm_ud(target);
-   srcs[TEX_LOGICAL_SRC_SAMPLER]          = brw_imm_ud(0);
-
-   brw_tex_inst *tex = bld.emit(op, dst, srcs, ARRAY_SIZE(srcs))->as_tex();
-   tex->size_written = 4 * tex->dst.component_size(tex->exec_size);
-   tex->coord_components = 3;
-
-   return tex;
-}
-
-/**
  * Actual coherent framebuffer read implemented using the native render target
  * read message.  Requires SKL+.
  */
@@ -4260,10 +4186,8 @@ brw_from_nir_emit_fs_intrinsic(nir_to_brw_state &ntb,
       const unsigned target = l - FRAG_RESULT_DATA0 + load_offset;
       const brw_reg tmp = bld.vgrf(dest.type, 4);
 
-      if (reinterpret_cast<const brw_wm_prog_key *>(s.key)->coherent_fb_fetch)
-         emit_coherent_fb_read(bld, tmp, target);
-      else
-         emit_non_coherent_fb_read(ntb, bld, tmp, target);
+      assert(reinterpret_cast<const brw_wm_prog_key *>(s.key)->coherent_fb_fetch);
+      emit_coherent_fb_read(bld, tmp, target);
 
       brw_combine_with_vec(bld, dest,
                            offset(tmp, bld, nir_intrinsic_component(instr)),
