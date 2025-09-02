@@ -1976,6 +1976,10 @@ struct depctr_wait {
       };
       unsigned packed = -1;
    };
+
+   bool empty() const { return packed == (unsigned)-1; }
+
+   uint16_t pack() const;
 };
 
 depctr_wait parse_depctr_wait(const Instruction* instr);

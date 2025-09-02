@@ -479,37 +479,45 @@ setup_barrier(wait_ctx& ctx, wait_imm& imm, memory_sync_info sync, bool is_acqui
 }
 
 void
-finish_barrier_internal(wait_ctx& ctx, wait_imm& imm, Instruction* instr, struct barrier_info* info,
-                        unsigned storage_idx)
+finish_barrier_internal(wait_ctx& ctx, wait_imm& imm, depctr_wait& depctr, Instruction* instr,
+                        struct barrier_info* info, unsigned storage_idx)
 {
    uint16_t events = info->events[storage_idx];
+   bool vm_vsrc = false;
+
    if (info->scope[storage_idx] <= scope_workgroup) {
       bool is_vmem = instr->isVMEM() || (instr->isFlatLike() && !instr->flatlike().may_use_lds);
-      bool is_barrier = instr->isBarrier();
+      bool is_barrier = instr->isBarrier(); /* This is only called for control barriers. */
 
-      /* Until GFX11, in non-WGP, the L1 (L0 on GFX10+) cache keeps all memory operations
-       * in-order for the same workgroup */
-      if ((is_vmem || is_barrier) && ctx.gfx_level < GFX11 && !ctx.program->wgp_mode)
+      /* In non-WGP, the L1 (L0 on GFX10+) cache keeps all memory operations in-order for the same
+       * workgroup */
+      bool has_vmem_events = events & (event_vmem | event_vmem_store);
+      if (has_vmem_events && (is_vmem || is_barrier) && !ctx.program->wgp_mode) {
          events &= ~(event_vmem | event_vmem_store);
+         vm_vsrc |= is_barrier && ctx.gfx_level >= GFX10;
+      }
    }
 
    if (events)
       imm.combine(info->imm[storage_idx]);
+   if (vm_vsrc)
+      depctr.vm_vsrc = 0;
 }
 
 void
-finish_barriers(wait_ctx& ctx, wait_imm& imm, Instruction* instr, memory_sync_info sync)
+finish_barriers(wait_ctx& ctx, wait_imm& imm, depctr_wait& depctr, Instruction* instr,
+                memory_sync_info sync)
 {
    if (ctx.bar_nonempty & (1 << barrier_info_release)) {
       uint16_t storage_release =
          is_atomic_or_control_instr(ctx.program, instr, sync, semantic_release);
       u_foreach_bit (i, storage_release & ctx.bar[barrier_info_release].storage)
-         finish_barrier_internal(ctx, imm, instr, &ctx.bar[barrier_info_release], i);
+         finish_barrier_internal(ctx, imm, depctr, instr, &ctx.bar[barrier_info_release], i);
    }
    if (ctx.bar_nonempty & (1 << barrier_info_acquire)) {
       uint16_t storage_acquire = (sync.semantics & semantic_private) ? 0 : sync.storage;
       u_foreach_bit (i, storage_acquire & ctx.bar[barrier_info_acquire].storage)
-         finish_barrier_internal(ctx, imm, instr, &ctx.bar[barrier_info_acquire], i);
+         finish_barrier_internal(ctx, imm, depctr, instr, &ctx.bar[barrier_info_acquire], i);
    }
 }
 
@@ -548,7 +556,8 @@ update_barrier_info_for_wait(wait_ctx& ctx, unsigned idx, wait_imm imm)
 }
 
 void
-kill(wait_imm& imm, Instruction* instr, wait_ctx& ctx, memory_sync_info sync_info)
+kill(wait_imm& imm, depctr_wait& depctr, Instruction* instr, wait_ctx& ctx,
+     memory_sync_info sync_info)
 {
    if (instr->opcode == aco_opcode::s_setpc_b64 || (debug_flags & DEBUG_FORCE_WAITCNT)) {
       /* Force emitting waitcnt states right after the instruction if there is
@@ -585,7 +594,7 @@ kill(wait_imm& imm, Instruction* instr, wait_ctx& ctx, memory_sync_info sync_inf
       setup_barrier(ctx, imm, sync_info, false);
    }
 
-   finish_barriers(ctx, imm, instr, sync_info);
+   finish_barriers(ctx, imm, depctr, instr, sync_info);
 
    if (!imm.empty()) {
       if (ctx.pending_flat_vm && imm.vm != wait_imm::unset_counter)
@@ -866,6 +875,14 @@ emit_waitcnt(wait_ctx& ctx, std::vector<aco_ptr<Instruction>>& instructions, wai
    imm.build_waitcnt(bld);
 }
 
+void
+emit_depctr(wait_ctx& ctx, std::vector<aco_ptr<Instruction>>& instructions, depctr_wait& depctr)
+{
+   Builder bld(ctx.program, &instructions);
+   bld.sopp(aco_opcode::s_waitcnt_depctr, depctr.pack());
+   depctr = depctr_wait();
+}
+
 bool
 check_clause_raw(std::bitset<512>& regs_written, Instruction* instr)
 {
@@ -892,15 +909,19 @@ handle_block(Program* program, Block& block, wait_ctx& ctx)
    std::vector<aco_ptr<Instruction>> new_instructions;
 
    wait_imm queued_imm;
+   depctr_wait queued_depctr;
 
    size_t clause_end = 0;
    for (size_t i = 0; i < block.instructions.size(); i++) {
       aco_ptr<Instruction>& instr = block.instructions[i];
 
-      bool is_wait = queued_imm.unpack(ctx.gfx_level, instr.get());
+      bool is_wait = queued_imm.unpack(ctx.gfx_level, instr.get()) ||
+                     instr->opcode == aco_opcode::s_waitcnt_depctr;
+      if (instr->opcode == aco_opcode::s_waitcnt_depctr)
+         queued_depctr = parse_depctr_wait(instr.get());
 
       memory_sync_info sync_info = get_sync_info(instr.get());
-      kill(queued_imm, instr.get(), ctx, sync_info);
+      kill(queued_imm, queued_depctr, instr.get(), ctx, sync_info);
 
       /* At the start of a possible clause, also emit waitcnts for each instruction to avoid
        * splitting the clause.
@@ -920,7 +941,7 @@ handle_block(Program* program, Block& block, wait_ctx& ctx)
             if (!check_clause_raw(*regs_written, next))
                break;
 
-            kill(queued_imm, next, ctx, get_sync_info(next));
+            kill(queued_imm, queued_depctr, next, ctx, get_sync_info(next));
          }
       }
 
@@ -934,6 +955,8 @@ handle_block(Program* program, Block& block, wait_ctx& ctx)
 
          if (!queued_imm.empty())
             emit_waitcnt(ctx, new_instructions, queued_imm);
+         if (!queued_depctr.empty())
+            emit_depctr(ctx, new_instructions, queued_depctr);
 
          bool is_ordered_count_acquire =
             instr->opcode == aco_opcode::ds_ordered_count &&
@@ -956,6 +979,8 @@ handle_block(Program* program, Block& block, wait_ctx& ctx)
 
    if (!queued_imm.empty())
       emit_waitcnt(ctx, new_instructions, queued_imm);
+   if (!queued_depctr.empty())
+      emit_depctr(ctx, new_instructions, queued_depctr);
 
    block.instructions.swap(new_instructions);
 }

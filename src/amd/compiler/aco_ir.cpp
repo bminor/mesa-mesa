@@ -1641,6 +1641,21 @@ parse_depctr_wait(const Instruction* instr)
    return res;
 }
 
+uint16_t
+depctr_wait::pack() const
+{
+   uint16_t imm = 0;
+   imm |= (va_vdst & 0xf) << 12;
+   imm |= (va_sdst & 0x7) << 9;
+   imm |= (va_ssrc & 0x1) << 8;
+   imm |= (hold_cnt & 0x1) << 7;
+   imm |= 0x3 << 5; /* don't know what this is, if anything */
+   imm |= (vm_vsrc & 0x7) << 2;
+   imm |= (va_vcc & 0x1) << 1;
+   imm |= (sa_sdst & 0x1);
+   return imm;
+}
+
 bool
 dealloc_vgprs(Program* program)
 {
