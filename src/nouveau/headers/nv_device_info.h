@@ -47,6 +47,16 @@ struct nv_device_info {
 
    uint64_t vram_size_B;
    uint64_t bar_size_B;
+
+   /* Max shared memory per workgroup */
+   uint16_t max_smem_per_wg_kB;
+
+   /* Max shared memory configurations per MP. Those values matter for
+    * occupancy calculations and describe legal shared memory splits we can
+    * configure the hardware with.
+    */
+   uint16_t sm_smem_sizes_kB[10];
+   uint8_t sm_smem_size_count;
 };
 
 static inline void
