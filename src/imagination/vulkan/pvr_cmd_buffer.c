@@ -33,6 +33,7 @@
 #include "hwdef/rogue_hw_utils.h"
 #include "pvr_blit.h"
 #include "pvr_bo.h"
+#include "pvr_buffer.h"
 #include "pvr_clear.h"
 #include "pvr_common.h"
 #include "pvr_csb.h"

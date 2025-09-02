@@ -28,6 +28,7 @@
 #include <vulkan/vulkan.h>
 
 #include "pvr_blit.h"
+#include "pvr_buffer.h"
 #include "pvr_clear.h"
 #include "pvr_csb.h"
 #include "pvr_device.h"

@@ -49,6 +49,7 @@
 #include "pco_uscgen_programs.h"
 #include "pvr_bo.h"
 #include "pvr_border.h"
+#include "pvr_buffer.h"
 #include "pvr_clear.h"
 #include "pvr_csb.h"
 #include "pvr_csb_enum_helpers.h"

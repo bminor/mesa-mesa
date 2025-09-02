@@ -61,8 +61,6 @@
 #include "util/simple_mtx.h"
 #include "util/u_dynarray.h"
 #include "util/u_math.h"
-#include "vk_buffer.h"
-#include "vk_buffer_view.h"
 #include "vk_command_buffer.h"
 #include "vk_enum_to_str.h"
 #include "vk_graphics_state.h"
@@ -79,6 +77,7 @@
 #endif
 
 struct pvr_bo;
+struct pvr_buffer;
 struct pvr_compute_pipeline;
 struct pvr_device;
 struct pvr_graphics_pipeline;
@@ -88,30 +87,6 @@ struct pvr_vertex_binding {
    struct pvr_buffer *buffer;
    VkDeviceSize offset;
    VkDeviceSize size;
-};
-
-struct pvr_buffer {
-   struct vk_buffer vk;
-
-   /* Derived and other state */
-   uint32_t alignment;
-   /* vma this buffer is bound to */
-   struct pvr_winsys_vma *vma;
-   /* Device address the buffer is mapped to in device virtual address space */
-   pvr_dev_addr_t dev_addr;
-};
-
-#define PVR_BUFFER_VIEW_WIDTH 8192U
-
-struct pvr_buffer_view {
-   struct vk_buffer_view vk;
-
-   uint32_t num_rows;
-
-   /* Prepacked Texture dword 0 and 1. It will be copied to the descriptor
-    * during pvr_UpdateDescriptorSets().
-    */
-   struct pvr_image_descriptor image_state;
 };
 
 #define PVR_TRANSFER_MAX_SOURCES 10U
@@ -1159,14 +1134,6 @@ VK_DEFINE_HANDLE_CASTS(pvr_cmd_buffer,
                        VkCommandBuffer,
                        VK_OBJECT_TYPE_COMMAND_BUFFER)
 
-VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_buffer,
-                               vk.base,
-                               VkBuffer,
-                               VK_OBJECT_TYPE_BUFFER)
-VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_buffer_view,
-                               vk.base,
-                               VkBufferView,
-                               VK_OBJECT_TYPE_BUFFER_VIEW)
 VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_descriptor_set_layout,
                                vk.base,
                                VkDescriptorSetLayout,
