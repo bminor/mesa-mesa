@@ -563,7 +563,8 @@ tu_get_image_format_properties(
       }
    }
 
-   if (image_usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) {
+   if (image_usage & (VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT |
+                      VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT)) {
       if (!(format_feature_flags &
             (VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT |
              VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT))) {

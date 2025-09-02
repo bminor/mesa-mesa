@@ -2481,7 +2481,7 @@ tu_trace_end_render_pass(struct tu_cmd_buffer *cmd, bool gmem)
    if (cmd->state.lrz.image_view) {
       struct tu_image *image = cmd->state.lrz.image_view->image;
       addr.bo = image->mem->bo;
-      addr.offset = (image->iova - image->mem->bo->iova) +
+      addr.offset = (image->iova - image->mem->iova) +
                     image->lrz_layout.lrz_fc_offset +
                     offsetof(fd_lrzfc_layout<CHIP>, dir_track);
    }
@@ -3092,6 +3092,31 @@ tu_render_pipe_fdm(struct tu_cmd_buffer *cmd, uint32_t pipe,
    }
 }
 
+static VkResult
+tu_allocate_transient_attachments(struct tu_cmd_buffer *cmd, bool sysmem)
+{
+   const struct tu_framebuffer *fb = cmd->state.framebuffer;
+   const struct tu_render_pass *rp = cmd->state.pass;
+
+   for (unsigned i = 0; i < fb->attachment_count; i++) {
+      const struct tu_image_view *iview = cmd->state.attachments[i];
+      if (iview && !(iview->image->vk.create_flags &
+                     VK_IMAGE_CREATE_SPARSE_BINDING_BIT) &&
+          !iview->image->mem->bo &&
+          (sysmem || rp->attachments[i].load ||
+           rp->attachments[i].load_stencil ||
+           rp->attachments[i].store ||
+           rp->attachments[i].store_stencil)) {
+         VkResult result = tu_allocate_lazy_memory(cmd->device,
+                                                   iview->image->mem);
+         if (result != VK_SUCCESS)
+            return result;
+      }
+   }
+
+   return VK_SUCCESS;
+}
+
 template <chip CHIP>
 static void
 tu_cmd_render_tiles(struct tu_cmd_buffer *cmd,
@@ -3101,6 +3126,12 @@ tu_cmd_render_tiles(struct tu_cmd_buffer *cmd,
    const struct tu_tiling_config *tiling = cmd->state.tiling;
    const struct tu_vsc_config *vsc = tu_vsc_config(cmd, tiling);
    const struct tu_image_view *fdm = NULL;
+
+   VkResult result = tu_allocate_transient_attachments(cmd, false);
+   if (result != VK_SUCCESS) {
+      vk_command_buffer_set_error(&cmd->vk, result);
+      return;
+   }
 
    if (cmd->state.pass->fragment_density_map.attachment != VK_ATTACHMENT_UNUSED) {
       fdm = cmd->state.attachments[cmd->state.pass->fragment_density_map.attachment];
@@ -3199,6 +3230,13 @@ static void
 tu_cmd_render_sysmem(struct tu_cmd_buffer *cmd,
                      struct tu_renderpass_result *autotune_result)
 {
+   VkResult result = tu_allocate_transient_attachments(cmd, true);
+
+   if (result != VK_SUCCESS) {
+      vk_command_buffer_set_error(&cmd->vk, result);
+      return;
+   }
+
    tu_trace_start_render_pass(cmd);
 
    tu6_sysmem_render_begin<CHIP>(cmd, &cmd->cs, autotune_result);

@@ -1617,6 +1617,14 @@ tu_physical_device_init(struct tu_physical_device *device,
       device->memory.type_count++;
    }
 
+   device->memory.non_lazy_type_count = device->memory.type_count;
+   if (device->has_lazy_bos) {
+      device->memory.types[device->memory.type_count] =
+         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
+         VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
+      device->memory.type_count++;
+   }
+
    /* Provide fallback UBWC config values if the kernel doesn't support
     * providing them. This should match what the kernel programs.
     */
@@ -3208,6 +3216,20 @@ vk_icdGetInstanceProcAddr(VkInstance instance, const char *pName)
    return tu_GetInstanceProcAddr(instance, pName);
 }
 
+static VkResult
+tu_add_to_heap(struct tu_device *dev, struct tu_bo *bo)
+{
+   struct tu_memory_heap *mem_heap = &dev->physical_device->heap;
+   uint64_t mem_heap_used = p_atomic_add_return(&mem_heap->used, bo->size);
+   if (mem_heap_used > mem_heap->size) {
+      p_atomic_add(&mem_heap->used, -bo->size);
+      tu_bo_finish(dev, bo);
+      return vk_errorf(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY,
+                       "Out of heap memory");
+   }
+   return VK_SUCCESS;
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL
 tu_AllocateMemory(VkDevice _device,
                   const VkMemoryAllocateInfo *pAllocateInfo,
@@ -3236,6 +3258,8 @@ tu_AllocateMemory(VkDevice _device,
       *pMem = VK_NULL_HANDLE;
       return VK_SUCCESS;
    }
+
+   mem->size = pAllocateInfo->allocationSize;
 
    const VkImportMemoryFdInfoKHR *fd_info =
       vk_find_struct_const(pAllocateInfo->pNext, IMPORT_MEMORY_FD_INFO_KHR);
@@ -3304,19 +3328,28 @@ tu_AllocateMemory(VkDevice _device,
                   (long)DIV_ROUND_UP(pAllocateInfo->allocationSize, 1024));
       VkMemoryPropertyFlags mem_property =
          device->physical_device->memory.types[pAllocateInfo->memoryTypeIndex];
-      result = tu_bo_init_new_explicit_iova(
-         device, &mem->vk.base, &mem->bo, pAllocateInfo->allocationSize,
-         client_address, mem_property, alloc_flags, NULL, name);
+
+      if (mem_property & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) {
+         mem->lazy = true;
+         mtx_init(&mem->lazy_mutex, mtx_plain);
+         enum tu_sparse_vma_flags sparse_flags =
+            (alloc_flags & TU_BO_ALLOC_REPLAYABLE) ?
+            TU_SPARSE_VMA_REPLAYABLE : TU_SPARSE_VMA_NONE;
+         result = tu_sparse_vma_init(device, &mem->vk.base,
+                                     &mem->lazy_vma, &mem->iova,
+                                     sparse_flags,
+                                     pAllocateInfo->allocationSize,
+                                     client_address);
+      } else {
+         result = tu_bo_init_new_explicit_iova(
+            device, &mem->vk.base, &mem->bo, pAllocateInfo->allocationSize,
+            client_address, mem_property, alloc_flags, NULL, name);
+      }
    }
 
-   if (result == VK_SUCCESS) {
-      mem_heap_used = p_atomic_add_return(&mem_heap->used, mem->bo->size);
-      if (mem_heap_used > mem_heap->size) {
-         p_atomic_add(&mem_heap->used, -mem->bo->size);
-         tu_bo_finish(device, mem->bo);
-         result = vk_errorf(device, VK_ERROR_OUT_OF_DEVICE_MEMORY,
-                            "Out of heap memory");
-      }
+   if (result == VK_SUCCESS && !mem->lazy) {
+      result = tu_add_to_heap(device, mem->bo);
+      mem->iova = mem->bo->iova;
    }
 
    if (result != VK_SUCCESS) {
@@ -3339,6 +3372,53 @@ tu_AllocateMemory(VkDevice _device,
    return VK_SUCCESS;
 }
 
+VkResult
+tu_allocate_lazy_memory(struct tu_device *dev,
+                        struct tu_device_memory *mem)
+{
+   assert(mem->lazy);
+
+   if (mem->lazy_initialized) {
+      if (mem->bo)
+         return VK_SUCCESS;
+      else
+         return vk_error(dev, VK_ERROR_OUT_OF_HOST_MEMORY);
+   }
+
+   VkResult result = VK_SUCCESS;
+   mtx_lock(&mem->lazy_mutex);
+   if (!mem->lazy_initialized) {
+      char name[64] = "lazy vkAllocateMemory()";
+      if (dev->bo_sizes)
+         snprintf(name, ARRAY_SIZE(name), "lazy vkAllocateMemory(%ldkb)",
+                  (long)DIV_ROUND_UP(mem->size, 1024));
+      result =
+         tu_bo_init_new_explicit_iova(dev, &mem->vk.base,
+                                      &mem->bo, mem->size, 0, 0,
+                                      TU_BO_ALLOC_NO_FLAGS,
+                                      &mem->lazy_vma, name);
+      mem->lazy_initialized = true;
+
+      if (result == VK_SUCCESS) {
+         result = tu_add_to_heap(dev, mem->bo);
+
+         if (result != VK_SUCCESS) {
+            tu_bo_finish(dev, mem->bo);
+            mem->bo = NULL;
+         }
+      }
+   }
+   mtx_unlock(&mem->lazy_mutex);
+
+   /* Fail if another thread won the race and failed to allocate a BO */
+   if (result == VK_SUCCESS && !mem->bo) {
+      return vk_error(dev, VK_ERROR_OUT_OF_HOST_MEMORY);
+   }
+
+   return result;
+}
+
+
 VKAPI_ATTR void VKAPI_CALL
 tu_FreeMemory(VkDevice _device,
               VkDeviceMemory _mem,
@@ -3352,8 +3432,16 @@ tu_FreeMemory(VkDevice _device,
 
    TU_RMV(resource_destroy, device, mem);
 
-   p_atomic_add(&device->physical_device->heap.used, -mem->bo->size);
-   tu_bo_finish(device, mem->bo);
+   if (mem->bo) {
+      p_atomic_add(&device->physical_device->heap.used, -mem->bo->size);
+      tu_bo_finish(device, mem->bo);
+   }
+
+   if (mem->lazy) {
+      tu_sparse_vma_finish(device, &mem->lazy_vma);
+      mtx_destroy(&mem->lazy_mutex);
+   }
+
    vk_device_memory_destroy(&device->vk, pAllocator, &mem->vk);
 }
 
@@ -3438,10 +3526,11 @@ tu_InvalidateMappedMemoryRanges(VkDevice _device,
 
 VKAPI_ATTR void VKAPI_CALL
 tu_GetDeviceMemoryCommitment(VkDevice device,
-                             VkDeviceMemory memory,
+                             VkDeviceMemory _memory,
                              VkDeviceSize *pCommittedMemoryInBytes)
 {
-   *pCommittedMemoryInBytes = 0;
+   VK_FROM_HANDLE(tu_device_memory, memory, _memory);
+   *pCommittedMemoryInBytes = memory->lazy_initialized ? memory->size : 0;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
@@ -3581,7 +3670,7 @@ tu_GetMemoryFdPropertiesKHR(VkDevice _device,
    VK_FROM_HANDLE(tu_device, device, _device);
    assert(handleType == VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT);
    pMemoryFdProperties->memoryTypeBits =
-      (1 << device->physical_device->memory.type_count) - 1;
+      (1 << device->physical_device->memory.non_lazy_type_count) - 1;
    return VK_SUCCESS;
 }
 

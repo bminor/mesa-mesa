@@ -121,7 +121,7 @@ tu_GetDeviceBufferMemoryRequirements(
    pMemoryRequirements->memoryRequirements = (VkMemoryRequirements) {
       .size = MAX2(align64(size, alignment), size),
       .alignment = alignment,
-      .memoryTypeBits = (1 << device->physical_device->memory.type_count) - 1,
+      .memoryTypeBits = (1 << device->physical_device->memory.non_lazy_type_count) - 1,
    };
 
    vk_foreach_struct(ext, pMemoryRequirements->pNext) {

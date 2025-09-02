@@ -1005,10 +1005,11 @@ tu_image_bind(struct tu_device *device,
    }
    image->mem = mem;
    image->mem_offset = offset;
-   image->iova = mem->bo->iova + offset;
+   image->iova = mem->iova + offset;
 
    if (image->vk.usage & (VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT |
                           VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT)) {
+      assert(mem->bo); /* Transient images cannot have these usages */
       if (!mem->bo->map) {
          result = tu_bo_map(device, mem->bo, NULL);
          if (result != VK_SUCCESS)
@@ -1063,6 +1064,14 @@ tu_get_image_memory_requirements(struct tu_device *dev, struct tu_image *image,
    if (image->vk.create_flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT)
       alignment = 65536;
 
+   /* Only expose the lazy memory type for images with TRANSIENT_ATTACHMENT
+    * usage.
+    */
+   uint32_t type_count =
+      (image->vk.usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT) ?
+      dev->physical_device->memory.type_count :
+      dev->physical_device->memory.non_lazy_type_count;
+
    pMemoryRequirements->memoryRequirements = (VkMemoryRequirements) {
       /* Due to how we fake the sparse tile size, the real size may not be
        * aligned. CTS doesn't like this, and real apps may also be surprised,
@@ -1070,7 +1079,7 @@ tu_get_image_memory_requirements(struct tu_device *dev, struct tu_image *image,
        */
       .size = align64(image->total_size, alignment),
       .alignment = alignment,
-      .memoryTypeBits = (1 << dev->physical_device->memory.type_count) - 1,
+      .memoryTypeBits = (1 << type_count) - 1,
    };
 
    vk_foreach_struct(ext, pMemoryRequirements->pNext) {
