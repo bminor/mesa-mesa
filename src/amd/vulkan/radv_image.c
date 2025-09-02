@@ -1823,6 +1823,7 @@ radv_BindImageMemory2(VkDevice _device, uint32_t bindInfoCount, const VkBindImag
    for (uint32_t i = 0; i < bindInfoCount; ++i) {
       VK_FROM_HANDLE(radv_device_memory, mem, pBindInfos[i].memory);
       VK_FROM_HANDLE(radv_image, image, pBindInfos[i].image);
+      uint64_t offset = pBindInfos[i].memoryOffset;
       VkBindMemoryStatus *status = (void *)vk_find_struct_const(&pBindInfos[i], BIND_MEMORY_STATUS);
 
       if (status)
@@ -1836,6 +1837,7 @@ radv_BindImageMemory2(VkDevice _device, uint32_t bindInfoCount, const VkBindImag
          assert(swapchain_info && swapchain_info->swapchain != VK_NULL_HANDLE);
          mem = radv_device_memory_from_handle(
             wsi_common_get_memory(swapchain_info->swapchain, swapchain_info->imageIndex));
+         offset = 0;
       }
 #endif
 
@@ -1863,7 +1865,7 @@ radv_BindImageMemory2(VkDevice _device, uint32_t bindInfoCount, const VkBindImag
       radv_GetImageMemoryRequirements2(_device, &info, &reqs);
 
       if (mem->alloc_size) {
-         if (pBindInfos[i].memoryOffset + reqs.memoryRequirements.size > mem->alloc_size) {
+         if (offset + reqs.memoryRequirements.size > mem->alloc_size) {
             if (status)
                *status->pResult = VK_ERROR_UNKNOWN;
             return vk_errorf(device, VK_ERROR_UNKNOWN, "Device memory object too small for the image.\n");
@@ -1872,8 +1874,7 @@ radv_BindImageMemory2(VkDevice _device, uint32_t bindInfoCount, const VkBindImag
 
       const uint64_t addr = radv_buffer_get_va(mem->bo);
 
-      radv_bind_image_memory(device, image, bind_idx, mem->bo, addr, pBindInfos[i].memoryOffset,
-                             reqs.memoryRequirements.size);
+      radv_bind_image_memory(device, image, bind_idx, mem->bo, addr, offset, reqs.memoryRequirements.size);
    }
    return VK_SUCCESS;
 }
