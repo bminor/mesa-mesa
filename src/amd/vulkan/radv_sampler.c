@@ -195,7 +195,7 @@ radv_sampler_init(struct radv_device *device, struct radv_sampler *sampler, cons
    unsigned depth_compare_func = V_008F30_SQ_TEX_DEPTH_COMPARE_NEVER;
    bool trunc_coord = ((pCreateInfo->minFilter == VK_FILTER_NEAREST && pCreateInfo->magFilter == VK_FILTER_NEAREST) ||
                        pdev->info.conformant_trunc_coord) &&
-                      !instance->drirc.disable_trunc_coord;
+                      !instance->drirc.debug.disable_trunc_coord;
    bool uses_border_color = pCreateInfo->addressModeU == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER ||
                             pCreateInfo->addressModeV == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER ||
                             pCreateInfo->addressModeW == VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
@@ -231,7 +231,7 @@ radv_sampler_init(struct radv_device *device, struct radv_sampler *sampler, cons
       .min_lod = pCreateInfo->minLod,
       .max_lod = pCreateInfo->maxLod,
       .lod_bias = pCreateInfo->mipLodBias,
-      .aniso_single_level = !instance->drirc.disable_aniso_single_level,
+      .aniso_single_level = !instance->drirc.debug.disable_aniso_single_level,
       .border_color_type = radv_tex_bordercolor(border_color),
       .border_color_ptr = border_color_ptr,
    };

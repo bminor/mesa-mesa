@@ -211,23 +211,23 @@ radv_physical_device_init_cache_key(struct radv_physical_device *pdev)
 
    key->clear_lds = instance->drirc.clear_lds;
    key->cs_wave32 = pdev->cs_wave_size == 32;
-   key->disable_aniso_single_level = instance->drirc.disable_aniso_single_level && pdev->info.gfx_level < GFX8;
-   key->disable_shrink_image_store = instance->drirc.disable_shrink_image_store;
-   key->disable_sinking_load_input_fs = instance->drirc.disable_sinking_load_input_fs;
-   key->disable_trunc_coord = instance->drirc.disable_trunc_coord;
+   key->disable_aniso_single_level = instance->drirc.debug.disable_aniso_single_level && pdev->info.gfx_level < GFX8;
+   key->disable_shrink_image_store = instance->drirc.debug.disable_shrink_image_store;
+   key->disable_sinking_load_input_fs = instance->drirc.debug.disable_sinking_load_input_fs;
+   key->disable_trunc_coord = instance->drirc.debug.disable_trunc_coord;
    key->emulate_rt = radv_emulate_rt(pdev);
    key->bvh8 = radv_use_bvh8(pdev);
    key->ge_wave32 = pdev->ge_wave_size == 32;
-   key->invariant_geom = instance->drirc.invariant_geom;
+   key->invariant_geom = instance->drirc.debug.invariant_geom;
    key->no_fmask = !!(instance->debug_flags & RADV_DEBUG_NO_FMASK);
    key->no_ngg_gs = instance->drirc.performance.disable_ngg_gs;
    key->no_rt = !!(instance->debug_flags & RADV_DEBUG_NO_RT);
    key->ps_wave32 = pdev->ps_wave_size == 32;
    key->rt_wave64 = pdev->rt_wave_size == 64;
-   key->split_fma = instance->drirc.split_fma;
-   key->ssbo_non_uniform = instance->drirc.ssbo_non_uniform;
-   key->tex_non_uniform = instance->drirc.tex_non_uniform;
-   key->lower_terminate_to_discard = instance->drirc.lower_terminate_to_discard;
+   key->split_fma = instance->drirc.debug.split_fma;
+   key->ssbo_non_uniform = instance->drirc.debug.ssbo_non_uniform;
+   key->tex_non_uniform = instance->drirc.debug.tex_non_uniform;
+   key->lower_terminate_to_discard = instance->drirc.debug.lower_terminate_to_discard;
    key->use_llvm = pdev->use_llvm;
    key->use_ngg = pdev->use_ngg;
    key->use_ngg_culling = pdev->use_ngg_culling;
@@ -1414,7 +1414,7 @@ static uint32_t
 radv_uniform_buffer_offset_alignment(const struct radv_physical_device *pdev)
 {
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
-   uint32_t uniform_offset_alignment = instance->drirc.override_uniform_offset_alignment;
+   uint32_t uniform_offset_alignment = instance->drirc.debug.override_uniform_offset_alignment;
    if (!util_is_power_of_two_or_zero(uniform_offset_alignment)) {
       fprintf(stderr,
               "ERROR: invalid radv_override_uniform_offset_alignment setting %d:"
@@ -2305,7 +2305,7 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
    pdev->use_fmask = pdev->info.gfx_level < GFX11 && !(instance->debug_flags & RADV_DEBUG_NO_FMASK);
 
    pdev->use_hiz = !(instance->debug_flags & RADV_DEBUG_NO_HIZ);
-   if (pdev->info.gfx_level == GFX12 && instance->drirc.disable_hiz_his_gfx12)
+   if (pdev->info.gfx_level == GFX12 && instance->drirc.debug.disable_hiz_his_gfx12)
       pdev->use_hiz = false;
 
    if (pdev->info.gfx_level == GFX12) {

@@ -89,7 +89,7 @@ radv_device_should_clear_vram(const struct radv_device *device)
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
 
    /* Ignore drirc radv_zero_vram=true if the feature is enabled to let applications take control. */
-   return instance->drirc.zero_vram && !device->vk.enabled_features.zeroInitializeDeviceMemory;
+   return instance->drirc.debug.zero_vram && !device->vk.enabled_features.zeroInitializeDeviceMemory;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
@@ -786,11 +786,11 @@ init_dispatch_tables(struct radv_device *device, struct radv_physical_device *pd
    if (radv_device_fault_detection_enabled(device) || gather_ctx_rolls)
       add_entrypoints(&b, &annotate_device_entrypoints, RADV_ANNOTATE_DISPATCH_TABLE);
 
-   if (!strcmp(instance->drirc.app_layer, "metroexodus")) {
+   if (!strcmp(instance->drirc.debug.app_layer, "metroexodus")) {
       add_entrypoints(&b, &metro_exodus_device_entrypoints, RADV_APP_DISPATCH_TABLE);
-   } else if (!strcmp(instance->drirc.app_layer, "rage2")) {
+   } else if (!strcmp(instance->drirc.debug.app_layer, "rage2")) {
       add_entrypoints(&b, &rage2_device_entrypoints, RADV_APP_DISPATCH_TABLE);
-   } else if (!strcmp(instance->drirc.app_layer, "quanticdream")) {
+   } else if (!strcmp(instance->drirc.debug.app_layer, "quanticdream")) {
       add_entrypoints(&b, &quantic_dream_device_entrypoints, RADV_APP_DISPATCH_TABLE);
    }
 

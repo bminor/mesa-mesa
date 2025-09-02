@@ -204,6 +204,51 @@ static const driOptionDescription radv_dri_options[] = {
 // clang-format on
 
 static void
+radv_init_dri_debug_options(struct radv_instance *instance)
+{
+   struct radv_drirc *drirc = &instance->drirc;
+
+   drirc->debug.disable_aniso_single_level = driQueryOptionb(&drirc->options, "radv_disable_aniso_single_level");
+   drirc->debug.disable_dcc_mips = driQueryOptionb(&drirc->options, "radv_disable_dcc_mips");
+   drirc->debug.disable_dcc_stores = driQueryOptionb(&drirc->options, "radv_disable_dcc_stores");
+   drirc->debug.disable_depth_storage = driQueryOptionb(&drirc->options, "radv_disable_depth_storage");
+   drirc->debug.disable_hiz_his_gfx12 = driQueryOptionb(&drirc->options, "radv_disable_hiz_his_gfx12");
+   drirc->debug.disable_shrink_image_store = driQueryOptionb(&drirc->options, "radv_disable_shrink_image_store");
+   drirc->debug.disable_sinking_load_input_fs = driQueryOptionb(&drirc->options, "radv_disable_sinking_load_input_fs");
+   drirc->debug.disable_tc_compat_htile_in_general =
+      driQueryOptionb(&drirc->options, "radv_disable_tc_compat_htile_general");
+
+   drirc->debug.disable_trunc_coord = driQueryOptionb(&drirc->options, "radv_disable_trunc_coord");
+   if (instance->vk.app_info.engine_name && !strcmp(instance->vk.app_info.engine_name, "DXVK")) {
+      /* Since 2.3.1+, DXVK uses the application version to notify the driver about D3D9. */
+      const bool is_d3d9 = instance->vk.app_info.app_version & 0x1;
+
+      drirc->debug.disable_trunc_coord &= !is_d3d9;
+   }
+
+   drirc->debug.enable_mrt_output_nan_fixup = driQueryOptionb(&drirc->options, "radv_enable_mrt_output_nan_fixup");
+   drirc->debug.flush_before_query_copy = driQueryOptionb(&drirc->options, "radv_flush_before_query_copy");
+   drirc->debug.flush_before_timestamp_write = driQueryOptionb(&drirc->options, "radv_flush_before_timestamp_write");
+   drirc->debug.invariant_geom = driQueryOptionb(&drirc->options, "radv_invariant_geom");
+   drirc->debug.lower_terminate_to_discard = driQueryOptionb(&drirc->options, "vk_lower_terminate_to_discard");
+   drirc->debug.no_dynamic_bounds = driQueryOptionb(&drirc->options, "radv_no_dynamic_bounds");
+   drirc->debug.split_fma = driQueryOptionb(&drirc->options, "radv_split_fma");
+   drirc->debug.ssbo_non_uniform = driQueryOptionb(&drirc->options, "radv_ssbo_non_uniform");
+   drirc->debug.tex_non_uniform = driQueryOptionb(&drirc->options, "radv_tex_non_uniform");
+   drirc->debug.zero_vram = driQueryOptionb(&drirc->options, "radv_zero_vram");
+   drirc->debug.app_layer = driQueryOptionstr(&drirc->options, "radv_app_layer");
+
+   drirc->debug.override_uniform_offset_alignment =
+      driQueryOptioni(&drirc->options, "radv_override_uniform_offset_alignment");
+
+   if (driQueryOptionb(&drirc->options, "radv_disable_dcc"))
+      instance->debug_flags |= RADV_DEBUG_NO_DCC;
+
+   if (driQueryOptionb(&drirc->options, "radv_rt_wave64"))
+      instance->perftest_flags |= RADV_PERFTEST_RT_WAVE_64;
+}
+
+static void
 radv_init_dri_performance_options(struct radv_instance *instance)
 {
    struct radv_drirc *drirc = &instance->drirc;
@@ -236,54 +281,11 @@ radv_init_dri_options(struct radv_instance *instance)
                        instance->vk.app_info.app_name, instance->vk.app_info.app_version,
                        instance->vk.app_info.engine_name, instance->vk.app_info.engine_version);
 
+   radv_init_dri_debug_options(instance);
    radv_init_dri_performance_options(instance);
    radv_init_dri_features_options(instance);
 
-   drirc->enable_mrt_output_nan_fixup = driQueryOptionb(&drirc->options, "radv_enable_mrt_output_nan_fixup");
-
-   drirc->disable_shrink_image_store = driQueryOptionb(&drirc->options, "radv_disable_shrink_image_store");
-
-   drirc->disable_tc_compat_htile_in_general = driQueryOptionb(&drirc->options, "radv_disable_tc_compat_htile_general");
-
-   drirc->no_dynamic_bounds = driQueryOptionb(&drirc->options, "radv_no_dynamic_bounds");
-
-   drirc->invariant_geom = driQueryOptionb(&drirc->options, "radv_invariant_geom");
-
-   drirc->split_fma = driQueryOptionb(&drirc->options, "radv_split_fma");
-
-   if (driQueryOptionb(&drirc->options, "radv_disable_dcc"))
-      instance->debug_flags |= RADV_DEBUG_NO_DCC;
-
    drirc->clear_lds = driQueryOptionb(&drirc->options, "radv_clear_lds");
-
-   drirc->zero_vram = driQueryOptionb(&drirc->options, "radv_zero_vram");
-
-   drirc->disable_aniso_single_level = driQueryOptionb(&drirc->options, "radv_disable_aniso_single_level");
-
-   drirc->disable_trunc_coord = driQueryOptionb(&drirc->options, "radv_disable_trunc_coord");
-   if (instance->vk.app_info.engine_name && !strcmp(instance->vk.app_info.engine_name, "DXVK")) {
-      /* Since 2.3.1+, DXVK uses the application version to notify the driver about D3D9. */
-      const bool is_d3d9 = instance->vk.app_info.app_version & 0x1;
-
-      drirc->disable_trunc_coord &= !is_d3d9;
-   }
-
-   drirc->disable_sinking_load_input_fs = driQueryOptionb(&drirc->options, "radv_disable_sinking_load_input_fs");
-
-   drirc->disable_depth_storage = driQueryOptionb(&drirc->options, "radv_disable_depth_storage");
-
-   drirc->flush_before_query_copy = driQueryOptionb(&drirc->options, "radv_flush_before_query_copy");
-
-   drirc->tex_non_uniform = driQueryOptionb(&drirc->options, "radv_tex_non_uniform");
-
-   drirc->ssbo_non_uniform = driQueryOptionb(&drirc->options, "radv_ssbo_non_uniform");
-
-   drirc->app_layer = driQueryOptionstr(&drirc->options, "radv_app_layer");
-
-   drirc->flush_before_timestamp_write = driQueryOptionb(&drirc->options, "radv_flush_before_timestamp_write");
-
-   if (driQueryOptionb(&drirc->options, "radv_rt_wave64"))
-      instance->perftest_flags |= RADV_PERFTEST_RT_WAVE_64;
 
    drirc->override_graphics_shader_version = driQueryOptioni(&drirc->options, "radv_override_graphics_shader_version");
    drirc->override_compute_shader_version = driQueryOptioni(&drirc->options, "radv_override_compute_shader_version");
@@ -292,15 +294,6 @@ radv_init_dri_options(struct radv_instance *instance)
 
    drirc->override_vram_size = driQueryOptioni(&drirc->options, "override_vram_size");
 
-   drirc->override_uniform_offset_alignment =
-      driQueryOptioni(&drirc->options, "radv_override_uniform_offset_alignment");
-
-   drirc->disable_dcc_mips = driQueryOptionb(&drirc->options, "radv_disable_dcc_mips");
-   drirc->disable_dcc_stores = driQueryOptionb(&drirc->options, "radv_disable_dcc_stores");
-
-   drirc->lower_terminate_to_discard = driQueryOptionb(&drirc->options, "vk_lower_terminate_to_discard");
-
-   drirc->disable_hiz_his_gfx12 = driQueryOptionb(&drirc->options, "radv_disable_hiz_his_gfx12");
 }
 
 static const struct vk_instance_extension_table radv_instance_extensions_supported = {
@@ -442,19 +435,19 @@ radv_CreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationC
    if (instance->debug_flags & RADV_DEBUG_NO_DYNAMIC_BOUNDS) {
       fprintf(stderr, "radv: RADV_DEBUG=nodynamicbounds is deprecated and will it be removed in future Mesa releases. "
                       "Please use radv_no_dynamic_bounds=true instead.\n");
-      instance->drirc.no_dynamic_bounds = true;
+      instance->drirc.debug.no_dynamic_bounds = true;
    }
 
    if (instance->debug_flags & RADV_DEBUG_INVARIANT_GEOM) {
       fprintf(stderr, "radv: RADV_DEBUG=invariantgeom is deprecated and will it be removed in future Mesa releases. "
                       "Please use radv_invariant_geom=true instead.\n");
-      instance->drirc.invariant_geom = true;
+      instance->drirc.debug.invariant_geom = true;
    }
 
    if (instance->debug_flags & RADV_DEBUG_SPLIT_FMA) {
       fprintf(stderr, "radv: RADV_DEBUG=splitfma is deprecated and will it be removed in future Mesa releases. "
                       "Please use radv_split_fma=true instead.\n");
-      instance->drirc.split_fma = true;
+      instance->drirc.debug.split_fma = true;
    }
 
    if (instance->debug_flags & RADV_DEBUG_NO_NGG_GS) {

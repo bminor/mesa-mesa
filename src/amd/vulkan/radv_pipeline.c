@@ -393,7 +393,7 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
       NIR_PASS(progress, stage->nir, nir_opt_load_store_vectorize, &vectorize_opts);
       if (progress) {
          NIR_PASS(_, stage->nir, nir_copy_prop);
-         NIR_PASS(_, stage->nir, nir_opt_shrink_stores, !instance->drirc.disable_shrink_image_store);
+         NIR_PASS(_, stage->nir, nir_opt_shrink_stores, !instance->drirc.debug.disable_shrink_image_store);
 
          constant_fold_for_push_const = true;
       }
@@ -434,15 +434,15 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
    if (progress)
       nir_shader_gather_info(stage->nir, nir_shader_get_entrypoint(stage->nir));
 
-   NIR_PASS(
-      _, stage->nir, ac_nir_lower_tex,
-      &(ac_nir_lower_tex_options){
-         .gfx_level = gfx_level,
-         .lower_array_layer_round_even = !pdev->info.conformant_trunc_coord || instance->drirc.disable_trunc_coord,
-         .fix_derivs_in_divergent_cf =
-            stage->stage == MESA_SHADER_FRAGMENT && !radv_use_llvm_for_stage(pdev, stage->stage),
-         .max_wqm_vgprs = 64, // TODO: improve spiller and RA support for linear VGPRs
-      });
+   NIR_PASS(_, stage->nir, ac_nir_lower_tex,
+            &(ac_nir_lower_tex_options){
+               .gfx_level = gfx_level,
+               .lower_array_layer_round_even =
+                  !pdev->info.conformant_trunc_coord || instance->drirc.debug.disable_trunc_coord,
+               .fix_derivs_in_divergent_cf =
+                  stage->stage == MESA_SHADER_FRAGMENT && !radv_use_llvm_for_stage(pdev, stage->stage),
+               .max_wqm_vgprs = 64, // TODO: improve spiller and RA support for linear VGPRs
+            });
 
    if (stage->nir->info.uses_resource_info_query)
       NIR_PASS(_, stage->nir, ac_nir_lower_resinfo, gfx_level);

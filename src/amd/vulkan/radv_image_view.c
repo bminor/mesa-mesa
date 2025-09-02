@@ -286,7 +286,7 @@ gfx6_make_texture_descriptor(struct radv_device *device, struct radv_image *imag
       .min_lod = min_lod,
       .dcc_enabled = radv_dcc_enabled(image, first_level),
       .tc_compat_htile_enabled = radv_tc_compat_htile_enabled(image, first_level),
-      .aniso_single_level = !instance->drirc.disable_aniso_single_level,
+      .aniso_single_level = !instance->drirc.debug.disable_aniso_single_level,
    };
 
    ac_build_texture_descriptor(&pdev->info, &tex_state, &state[0]);

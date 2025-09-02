@@ -2488,7 +2488,7 @@ radv_CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPoo
    /* Workaround engines that forget to properly specify WAIT_BIT because some driver implicitly
     * synchronizes before query copy.
     */
-   if (instance->drirc.flush_before_query_copy)
+   if (instance->drirc.debug.flush_before_query_copy)
       cmd_buffer->state.flush_bits |= cmd_buffer->active_query_flush_bits;
 
    /* From the Vulkan spec 1.1.108:
@@ -2752,7 +2752,7 @@ radv_CmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 sta
    assert(cmd_buffer->qf != RADV_QUEUE_VIDEO_DEC && cmd_buffer->qf != RADV_QUEUE_VIDEO_ENC);
 
    if (cmd_buffer->qf == RADV_QUEUE_TRANSFER) {
-      if (instance->drirc.flush_before_timestamp_write) {
+      if (instance->drirc.debug.flush_before_timestamp_write) {
          radv_sdma_emit_nop(device, cs);
       }
 
@@ -2763,7 +2763,7 @@ radv_CmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 sta
       return;
    }
 
-   if (instance->drirc.flush_before_timestamp_write) {
+   if (instance->drirc.debug.flush_before_timestamp_write) {
       /* Make sure previously launched waves have finished */
       cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_PS_PARTIAL_FLUSH | RADV_CMD_FLAG_CS_PARTIAL_FLUSH;
    }

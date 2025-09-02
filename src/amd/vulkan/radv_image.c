@@ -299,11 +299,11 @@ radv_use_dcc_for_image_early(struct radv_device *device, struct radv_image *imag
    }
 
    /* Force disable DCC for mips to workaround game bugs. */
-   if (instance->drirc.disable_dcc_mips && pCreateInfo->mipLevels > 1)
+   if (instance->drirc.debug.disable_dcc_mips && pCreateInfo->mipLevels > 1)
       return false;
 
    /* Force disable DCC for stores to workaround game bugs. */
-   if (instance->drirc.disable_dcc_stores && pdev->info.gfx_level < GFX12 &&
+   if (instance->drirc.debug.disable_dcc_stores && pdev->info.gfx_level < GFX12 &&
        (pCreateInfo->usage & VK_IMAGE_USAGE_STORAGE_BIT))
       return false;
 
@@ -1594,7 +1594,7 @@ radv_layout_is_htile_compressed(const struct radv_device *device, const struct r
        * the number of decompressions from/to GENERAL.
        */
       if (radv_tc_compat_htile_enabled(image, level) && queue_mask & (1u << RADV_QUEUE_GENERAL) &&
-          !instance->drirc.disable_tc_compat_htile_in_general) {
+          !instance->drirc.debug.disable_tc_compat_htile_in_general) {
          return true;
       } else {
          return false;

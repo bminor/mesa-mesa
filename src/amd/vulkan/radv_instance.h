@@ -39,6 +39,30 @@ struct radv_drirc {
    struct driOptionCache available_options;
 
    struct {
+      bool disable_aniso_single_level;
+      bool disable_dcc_mips;
+      bool disable_dcc_stores;
+      bool disable_depth_storage;
+      bool disable_hiz_his_gfx12;
+      bool disable_shrink_image_store;
+      bool disable_sinking_load_input_fs;
+      bool disable_tc_compat_htile_in_general;
+      bool disable_trunc_coord;
+      bool enable_mrt_output_nan_fixup;
+      bool flush_before_query_copy;
+      bool flush_before_timestamp_write;
+      bool invariant_geom;
+      bool lower_terminate_to_discard;
+      bool no_dynamic_bounds;
+      bool split_fma;
+      bool ssbo_non_uniform;
+      bool tex_non_uniform;
+      bool zero_vram;
+      char *app_layer;
+      int override_uniform_offset_alignment;
+   } debug;
+
+   struct {
       bool disable_ngg_gs;
       bool enable_unified_heap_on_apu;
       bool report_llvm9_version_string;
@@ -52,32 +76,11 @@ struct radv_drirc {
       bool vk_require_etc2;
    } features;
 
-   bool enable_mrt_output_nan_fixup;
-   bool disable_tc_compat_htile_in_general;
-   bool disable_shrink_image_store;
-   bool disable_aniso_single_level;
-   bool disable_trunc_coord;
-   bool disable_depth_storage;
-   bool zero_vram;
-   bool disable_sinking_load_input_fs;
-   bool flush_before_query_copy;
-   bool tex_non_uniform;
-   bool ssbo_non_uniform;
-   bool flush_before_timestamp_write;
    bool clear_lds;
-   bool disable_dcc_mips;
-   bool disable_dcc_stores;
-   bool lower_terminate_to_discard;
-   bool disable_hiz_his_gfx12;
-   bool no_dynamic_bounds;
-   bool invariant_geom;
-   bool split_fma;
-   char *app_layer;
    uint8_t override_graphics_shader_version;
    uint8_t override_compute_shader_version;
    uint8_t override_ray_tracing_shader_version;
    int override_vram_size;
-   int override_uniform_offset_alignment;
 };
 
 struct radv_instance {

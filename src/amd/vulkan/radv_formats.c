@@ -119,7 +119,7 @@ radv_is_storage_image_format_supported(const struct radv_physical_device *pdev, 
    if (vk_format_has_stencil(format))
       return false;
 
-   if (instance->drirc.disable_depth_storage && vk_format_has_depth(format))
+   if (instance->drirc.debug.disable_depth_storage && vk_format_has_depth(format))
       return false;
 
    data_format = radv_translate_tex_dataformat(pdev, desc, vk_format_get_first_non_void_channel(format));
@@ -637,7 +637,7 @@ radv_get_modifier_flags(struct radv_physical_device *pdev, VkFormat format, uint
        */
       if (!ac_modifier_supports_dcc_image_stores(pdev->info.gfx_level, modifier) ||
           radv_is_atomic_format_supported(format) ||
-          (instance->drirc.disable_dcc_stores && pdev->info.gfx_level < GFX12))
+          (instance->drirc.debug.disable_dcc_stores && pdev->info.gfx_level < GFX12))
          features &= ~VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT;
 
       if (instance->debug_flags & (RADV_DEBUG_NO_DCC | RADV_DEBUG_NO_DISPLAY_DCC))
