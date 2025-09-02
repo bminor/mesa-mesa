@@ -100,8 +100,11 @@ declare_global_input_sgprs(const enum amd_gfx_level gfx_level, const struct radv
 
       if (info->merged_shader_compiled_separately ||
           (info->loads_push_constants && !user_sgpr_info->inlined_all_push_consts)) {
-         /* 1 for push constants and dynamic descriptors */
          add_ud_arg(args, 1, AC_ARG_CONST_ADDR, &args->ac.push_constants, AC_UD_PUSH_CONSTANTS);
+      }
+
+      if (info->merged_shader_compiled_separately || info->loads_dynamic_offsets) {
+         add_ud_arg(args, 1, AC_ARG_CONST_ADDR, &args->ac.dynamic_descriptors, AC_UD_DYNAMIC_DESCRIPTORS);
       }
 
       for (unsigned i = 0; i < util_bitcount64(user_sgpr_info->inline_push_constant_mask); i++) {
@@ -321,9 +324,9 @@ radv_declare_rt_shader_args(enum amd_gfx_level gfx_level, struct radv_shader_arg
    add_ud_arg(args, 2, AC_ARG_CONST_ADDR, &args->ac.rt.uniform_shader_addr, AC_UD_SCRATCH_RING_OFFSETS);
    add_ud_arg(args, 1, AC_ARG_CONST_ADDR, &args->descriptors[0], AC_UD_INDIRECT_DESCRIPTORS);
    ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_CONST_ADDR, &args->ac.push_constants);
-   ac_add_arg(&args->ac, AC_ARG_SGPR, 2, AC_ARG_CONST_ADDR, &args->ac.rt.sbt_descriptors);
+   ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_CONST_ADDR, &args->ac.dynamic_descriptors);
    ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_CONST_ADDR, &args->ac.rt.traversal_shader_addr);
-   ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_CONST_ADDR, NULL); /* unused */
+   ac_add_arg(&args->ac, AC_ARG_SGPR, 2, AC_ARG_CONST_ADDR, &args->ac.rt.sbt_descriptors);
 
    for (uint32_t i = 0; i < ARRAY_SIZE(args->ac.rt.launch_sizes); i++)
       ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.rt.launch_sizes[i]);
@@ -430,6 +433,7 @@ declare_unmerged_vs_tcs_args(const enum amd_gfx_level gfx_level, const struct ra
 
    ac_add_preserved(&args->ac, &args->descriptors[0]);
    ac_add_preserved(&args->ac, &args->ac.push_constants);
+   ac_add_preserved(&args->ac, &args->ac.dynamic_descriptors);
    ac_add_preserved(&args->ac, &args->ac.view_index);
    ac_add_preserved(&args->ac, &args->ac.tcs_offchip_layout);
    ac_add_preserved(&args->ac, &args->epilog_pc);
@@ -495,6 +499,7 @@ declare_unmerged_vs_tes_gs_args(const enum amd_gfx_level gfx_level, const struct
 
    ac_add_preserved(&args->ac, &args->descriptors[0]);
    ac_add_preserved(&args->ac, &args->ac.push_constants);
+   ac_add_preserved(&args->ac, &args->ac.dynamic_descriptors);
    ac_add_preserved(&args->ac, &args->streamout_buffers);
    if (gfx_level >= GFX12)
       ac_add_preserved(&args->ac, &args->streamout_state);
@@ -588,9 +593,8 @@ declare_shader_args(const struct radv_device *device, const struct radv_graphics
       }
 
       if (info->type == RADV_SHADER_TYPE_RT_PROLOG) {
-         add_ud_arg(args, 2, AC_ARG_CONST_ADDR, &args->ac.rt.sbt_descriptors, AC_UD_CS_SBT_DESCRIPTORS);
          add_ud_arg(args, 1, AC_ARG_CONST_ADDR, &args->ac.rt.traversal_shader_addr, AC_UD_CS_TRAVERSAL_SHADER_ADDR);
-         add_ud_arg(args, 1, AC_ARG_CONST_ADDR, NULL, AC_UD_PS_STATE); /* unused */
+         add_ud_arg(args, 2, AC_ARG_CONST_ADDR, &args->ac.rt.sbt_descriptors, AC_UD_CS_SBT_DESCRIPTORS);
          add_ud_arg(args, 2, AC_ARG_CONST_ADDR, &args->ac.rt.launch_size_addr, AC_UD_CS_RAY_LAUNCH_SIZE_ADDR);
          add_ud_arg(args, 1, AC_ARG_VALUE, &args->ac.rt.dynamic_callable_stack_base,
                     AC_UD_CS_RAY_DYNAMIC_CALLABLE_STACK_BASE);
@@ -890,6 +894,8 @@ radv_declare_shader_args(const struct radv_device *device, const struct radv_gra
 
    uint32_t num_user_sgprs = args->num_user_sgprs;
    if (info->loads_push_constants)
+      num_user_sgprs++;
+   if (info->loads_dynamic_offsets)
       num_user_sgprs++;
 
    const struct radv_physical_device *pdev = radv_device_physical(device);

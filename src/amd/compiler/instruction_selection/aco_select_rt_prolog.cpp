@@ -32,9 +32,9 @@ select_rt_prolog(Program* program, ac_shader_config* config,
     * Ring offsets:                s[0-1]
     * Indirect descriptor sets:    s[2]
     * Push constants pointer:      s[3]
-    * SBT descriptors:             s[4-5]
-    * Traversal shader address:    s[6]
-    * Unused (for future work):    s[7]
+    * Dynamic descriptors:         s[4]
+    * Traversal shader address:    s[5]
+    * SBT descriptors:             s[6-7]
     * Ray launch size address:     s[8-9]
     * Dynamic callable stack base: s[10]
     * Workgroup IDs (xyz):         s[11], s[12], s[13]
@@ -70,9 +70,9 @@ select_rt_prolog(Program* program, ac_shader_config* config,
     * Callee shader PC:            s[0-1]
     * Indirect descriptor sets:    s[2]
     * Push constants pointer:      s[3]
-    * SBT descriptors:             s[4-5]
-    * Traversal shader address:    s[6]
-    * Unused (for future work):    s[7]
+    * Dynamic descriptors:         s[4]
+    * Traversal shader address:    s[5]
+    * SBT descriptors:             s[6-7]
     * Ray launch sizes (xyz):      s[8], s[9], s[10]
     * Scratch offset (<GFX9 only): s[11]
     * Ring offsets (<GFX9 only):   s[12-13]
@@ -106,8 +106,12 @@ select_rt_prolog(Program* program, ac_shader_config* config,
    assert(in_ring_offsets == out_uniform_shader_addr);
    assert(get_arg_reg(in_args, in_args->push_constants) ==
           get_arg_reg(out_args, out_args->push_constants));
+   assert(get_arg_reg(in_args, in_args->dynamic_descriptors) ==
+          get_arg_reg(out_args, out_args->dynamic_descriptors));
    assert(get_arg_reg(in_args, in_args->rt.sbt_descriptors) ==
           get_arg_reg(out_args, out_args->rt.sbt_descriptors));
+   assert(get_arg_reg(in_args, in_args->rt.traversal_shader_addr) ==
+          get_arg_reg(out_args, out_args->rt.traversal_shader_addr));
    assert(in_launch_size_addr == out_launch_size_x);
    assert(in_stack_base == out_launch_size_z);
    assert(in_local_ids[0] == out_launch_ids[0]);

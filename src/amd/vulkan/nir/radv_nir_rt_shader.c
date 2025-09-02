@@ -2002,6 +2002,7 @@ radv_nir_lower_rt_abi(nir_shader *shader, const VkRayTracingPipelineCreateInfoKH
 
    nir_def *descriptors = ac_nir_load_arg(&b, &args->ac, args->descriptors[0]);
    nir_def *push_constants = ac_nir_load_arg(&b, &args->ac, args->ac.push_constants);
+   nir_def *dynamic_descriptors = ac_nir_load_arg(&b, &args->ac, args->ac.dynamic_descriptors);
    nir_def *sbt_descriptors = ac_nir_load_arg(&b, &args->ac, args->ac.rt.sbt_descriptors);
 
    nir_def *launch_sizes[3];
@@ -2085,6 +2086,7 @@ radv_nir_lower_rt_abi(nir_shader *shader, const VkRayTracingPipelineCreateInfoKH
 
       ac_nir_store_arg(&b, &args->ac, args->descriptors[0], descriptors);
       ac_nir_store_arg(&b, &args->ac, args->ac.push_constants, push_constants);
+      ac_nir_store_arg(&b, &args->ac, args->ac.dynamic_descriptors, dynamic_descriptors);
       ac_nir_store_arg(&b, &args->ac, args->ac.rt.sbt_descriptors, sbt_descriptors);
       ac_nir_store_arg(&b, &args->ac, args->ac.rt.traversal_shader_addr, traversal_addr);
 

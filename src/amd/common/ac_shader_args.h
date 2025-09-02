@@ -182,6 +182,7 @@ struct ac_shader_args {
    struct ac_arg push_constants;
    struct ac_arg inline_push_consts[AC_MAX_INLINE_PUSH_CONSTS];
    uint64_t inline_push_const_mask;
+   struct ac_arg dynamic_descriptors;
    struct ac_arg view_index;
    struct ac_arg force_vrs_rates;
 
