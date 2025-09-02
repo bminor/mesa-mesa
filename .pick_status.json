@@ -9864,7 +9864,7 @@
         "description": "brw: Run validation as soon as we have the CFG around",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "affa7567c291b9125afbd062ab77ed82d33330b6",
         "notes": null
