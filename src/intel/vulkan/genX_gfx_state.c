@@ -1404,8 +1404,19 @@ update_blend_state(struct anv_gfx_dynamic_state *hw_state,
    bool alpha_blend_zero = false;
    uint32_t rt_0 = MESA_VK_ATTACHMENT_UNUSED;
    for (uint32_t rt = 0; rt < MAX_RTS; rt++) {
-      if (gfx->color_output_mapping[rt] >= gfx->color_att_count)
+      if (gfx->color_output_mapping[rt] >= gfx->color_att_count) {
+         /* The Dual Source Blending documentation says:
+          *
+          * "If SRC1 is included in a src/dst blend factor and a DualSource RT
+          * Write message is not used, results are UNDEFINED."
+          *
+          * In practice, this results in hangs if we leave the Dual Source
+          * Blending enabled for the unused render targets. The easiest way to
+          * avoid it altogether is to completely disable the blending for them.
+          */
+         SET(BLEND_STATE, blend.rts[rt].ColorBufferBlendEnable, false);
          continue;
+      }
 
       uint32_t att = gfx->color_output_mapping[rt];
       if (att == 0)
