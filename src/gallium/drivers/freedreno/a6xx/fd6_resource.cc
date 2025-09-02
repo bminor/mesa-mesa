@@ -280,16 +280,26 @@ layout_resource_for_handle(struct fd_resource *rsc, struct winsys_handle *handle
       .pitch = handle->stride,
    };
 
-   if (ubwc && !can_do_ubwc(prsc))
+   if (ubwc && !can_do_ubwc(prsc)) {
+      if (FD_DBG(LAYOUT))
+         mesa_loge("cannot do ubwc for: %" PRSC_FMT, PRSC_ARGS(prsc));
       return false;
+   }
 
    struct fdl_image_params params = fd_image_params(prsc, ubwc, tile_mode);
 
-   if (!fdl6_layout_image(&rsc->layout, screen->info, &params, &l))
+   if (!fdl6_layout_image(&rsc->layout, screen->info, &params, &l)) {
+      if (FD_DBG(LAYOUT))
+         mesa_loge("layout failed for: %" PRSC_FMT, PRSC_ARGS(prsc));
       return false;
+   }
 
-   if (rsc->layout.size > fd_bo_size(rsc->bo))
+   if (rsc->layout.size > fd_bo_size(rsc->bo)) {
+      if (FD_DBG(LAYOUT))
+         mesa_loge("invalid size (%" PRIu64 " vs %u) for: %" PRSC_FMT, rsc->layout.size,
+                   fd_bo_size(rsc->bo), PRSC_ARGS(prsc));
       return false;
+   }
 
    return true;
 }

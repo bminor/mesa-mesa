@@ -1508,8 +1508,11 @@ fd_resource_from_handle(struct pipe_screen *pscreen,
    rsc->b.is_shared = true;
 
    struct fd_bo *bo = fd_screen_bo_from_handle(pscreen, handle);
-   if (!bo)
+   if (!bo) {
+      if (FD_DBG(LAYOUT))
+         mesa_loge("handle import failed for: %" PRSC_FMT, PRSC_ARGS(tmpl));
       goto fail;
+   }
 
    fd_resource_set_bo(rsc, bo);
 
@@ -1518,11 +1521,17 @@ fd_resource_from_handle(struct pipe_screen *pscreen,
    if (tmpl->target == PIPE_BUFFER) {
       fdl_layout_buffer(&rsc->layout, tmpl->width0);
    } else if (!screen->layout_resource_for_handle(rsc, handle)) {
+      if (FD_DBG(LAYOUT))
+         mesa_loge("layout failed for: %" PRSC_FMT, PRSC_ARGS(tmpl));
       goto fail;
    }
 
-   if (rsc->layout.pitch0 != handle->stride)
+   if (rsc->layout.pitch0 != handle->stride) {
+      if (FD_DBG(LAYOUT))
+         mesa_loge("invalid pitch (%u vs %u) for: %" PRSC_FMT, rsc->layout.pitch0,
+                   handle->stride, PRSC_ARGS(tmpl));
       goto fail;
+   }
 
    if (screen->ro) {
       rsc->scanout =
