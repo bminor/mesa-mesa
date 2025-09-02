@@ -15,8 +15,6 @@
 
 #include "ac_vcn_enc.h"
 
-#define PIPE_ALIGN_IN_BLOCK_SIZE(value, alignment) DIV_ROUND_UP(value, alignment)
-
 #define RADEON_ENC_CS(value) (enc->cs.current.buf[enc->cs.current.cdw++] = (value))
 #define RADEON_ENC_BEGIN(cmd)                                                                    \
    {                                                                                             \

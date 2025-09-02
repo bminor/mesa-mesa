@@ -96,10 +96,10 @@ static void radeon_enc_spec_misc_av1(struct radeon_encoder *enc)
    uint32_t min_log2_tiles_width_in_sb;
    uint32_t min_log2_tiles;
 
-   frame_width_in_sb = PIPE_ALIGN_IN_BLOCK_SIZE(enc->enc_pic.session_init.aligned_picture_width,
-                                       PIPE_AV1_ENC_SB_SIZE);
-   frame_height_in_sb = PIPE_ALIGN_IN_BLOCK_SIZE(enc->enc_pic.session_init.aligned_picture_height,
-                                       PIPE_AV1_ENC_SB_SIZE);
+   frame_width_in_sb = DIV_ROUND_UP(enc->enc_pic.session_init.aligned_picture_width,
+                                    PIPE_AV1_ENC_SB_SIZE);
+   frame_height_in_sb = DIV_ROUND_UP(enc->enc_pic.session_init.aligned_picture_height,
+                                    PIPE_AV1_ENC_SB_SIZE);
    num_tiles_cols = (frame_width_in_sb > max_tile_width_in_sb) ? 2 : 1;
    num_tiles_rows = CLAMP(p_config->num_tile_rows,
                          1, RENCODE_AV1_TILE_CONFIG_MAX_NUM_ROWS);
