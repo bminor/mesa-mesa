@@ -206,10 +206,10 @@ static void radeon_vcn_enc_get_roi_param(struct radeon_encoder *enc,
             } else
                map->qp_delta = region->qp_value;
 
-            map->x_in_unit = CLAMP((region->x / block_length), 0, width_in_block - 1);
-            map->y_in_unit = CLAMP((region->y / block_length), 0, height_in_block - 1);
-            map->width_in_unit = CLAMP((region->width / block_length), 0, width_in_block);
-            map->height_in_unit = CLAMP((region->height / block_length), 0, width_in_block);
+            map->x_in_unit = MIN2(DIV_ROUND_UP(region->x, block_length), width_in_block - 1);
+            map->y_in_unit = MIN2(DIV_ROUND_UP(region->y, block_length), height_in_block - 1);
+            map->width_in_unit = MIN2(DIV_ROUND_UP(region->width, block_length), width_in_block);
+            map->height_in_unit = MIN2(DIV_ROUND_UP(region->height, block_length), width_in_block);
          }
       }
    }
