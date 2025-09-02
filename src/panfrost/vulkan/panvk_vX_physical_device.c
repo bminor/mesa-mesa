@@ -241,23 +241,29 @@ panvk_per_arch(get_physical_device_features)(
 {
    *features = (struct vk_features){
       /* Vulkan 1.0 */
-      .depthClamp = true,
-      .depthBiasClamp = true,
-      .dualSrcBlend = true,
       .robustBufferAccess = true,
       .fullDrawIndexUint32 = true,
       .imageCubeArray = true,
       .independentBlend = true,
       .sampleRateShading = true,
+      .dualSrcBlend = true,
       .logicOp = true,
       .multiDrawIndirect = PAN_ARCH >= 10,
+      .drawIndirectFirstInstance = true,
+      .depthClamp = true,
+      .depthBiasClamp = true,
       .wideLines = true,
       .largePoints = true,
-      .occlusionQueryPrecise = true,
       .samplerAnisotropy = true,
       .textureCompressionETC2 = has_texture_compression_etc2(device),
       .textureCompressionASTC_LDR = has_texture_compression_astc_ldr(device),
       .textureCompressionBC = has_texture_compression_bc(device),
+      .occlusionQueryPrecise = true,
+      /* On v13+, the hardware isn't speculatively referencing to invalid
+         indices anymore. */
+      .vertexPipelineStoresAndAtomics =
+         (PAN_ARCH >= 13 && instance->enable_vertex_pipeline_stores_atomics) ||
+         instance->force_enable_shader_atomics,
       .fragmentStoresAndAtomics = (PAN_ARCH >= 10) ||
           instance->force_enable_shader_atomics,
       .shaderImageGatherExtended = true,
@@ -268,15 +274,8 @@ panvk_per_arch(get_physical_device_features)(
       .shaderSampledImageArrayDynamicIndexing = true,
       .shaderStorageBufferArrayDynamicIndexing = true,
       .shaderStorageImageArrayDynamicIndexing = true,
-      .shaderInt16 = true,
       .shaderInt64 = true,
-      .drawIndirectFirstInstance = true,
-
-      /* On v13+, the hardware isn't speculatively referencing to invalid
-         indices anymore. */
-      .vertexPipelineStoresAndAtomics =
-         (PAN_ARCH >= 13 && instance->enable_vertex_pipeline_stores_atomics) ||
-         instance->force_enable_shader_atomics,
+      .shaderInt16 = true,
 
       /* Vulkan 1.1 */
       .storageBuffer16BitAccess = true,
@@ -302,7 +301,6 @@ panvk_per_arch(get_physical_device_features)(
       .shaderSharedInt64Atomics = PAN_ARCH >= 9,
       .shaderFloat16 = PAN_ARCH >= 10,
       .shaderInt8 = true,
-
       /* In theory, update-after-bind is supported on bifrost, but the
        * descriptor limits would be too low for the descriptorIndexing feature.
        */
@@ -327,7 +325,6 @@ panvk_per_arch(get_physical_device_features)(
       .descriptorBindingPartiallyBound = PAN_ARCH >= 9,
       .descriptorBindingVariableDescriptorCount = true,
       .runtimeDescriptorArray = true,
-
       .samplerFilterMinmax = PAN_ARCH >= 10,
       .scalarBlockLayout = true,
       .imagelessFramebuffer = true,
@@ -350,10 +347,6 @@ panvk_per_arch(get_physical_device_features)(
       .robustImageAccess = true,
       .inlineUniformBlock = true,
       .descriptorBindingInlineUniformBlockUpdateAfterBind = true,
-      .extendedDynamicState = true,
-      .extendedDynamicState2 = true,
-      .extendedDynamicState2LogicOp = true,
-      .extendedDynamicState2PatchControlPoints = false,
       .pipelineCreationCacheControl = true,
       .privateData = true,
       .shaderDemoteToHelperInvocation = true,
@@ -364,41 +357,41 @@ panvk_per_arch(get_physical_device_features)(
       .textureCompressionASTC_HDR = has_texture_compression_astc_hdr(device),
       .shaderZeroInitializeWorkgroupMemory = true,
       .dynamicRendering = true,
-      .dynamicRenderingLocalRead = true,
       .shaderIntegerDotProduct = true,
       .maintenance4 = true,
-      .maintenance5 = true,
-      .maintenance6 = true,
-      .maintenance7 = true,
-      .maintenance8 = true,
-      .maintenance9 = true,
 
       /* Vulkan 1.4 */
+      .globalPriorityQuery = true,
       .shaderSubgroupRotate = true,
       .shaderSubgroupRotateClustered = true,
+      .shaderFloatControls2 = true,
+      .shaderExpectAssume = true,
+      .rectangularLines = true,
+      .bresenhamLines = true,
+      .vertexAttributeInstanceRateDivisor = true,
+      .vertexAttributeInstanceRateZeroDivisor = true,
+      .indexTypeUint8 = true,
+      .dynamicRenderingLocalRead = true,
+      .maintenance5 = true,
+      .maintenance6 = true,
+      .pipelineRobustness = true,
+      .hostImageCopy = true,
+      .pushDescriptor = true,
 
       /* VK_KHR_depth_clamp_zero_one */
       .depthClampZeroOne = true,
 
-      /* VK_KHR_line_rasterization */
-      .rectangularLines = true,
-      .bresenhamLines = true,
+      /* VK_KHR_maintenance7 */
+      .maintenance7 = true,
+
+      /* VK_KHR_maintenance8 */
+      .maintenance8 = true,
+
+      /* VK_KHR_maintenance9 */
+      .maintenance9 = true,
 
       /* VK_EXT_graphics_pipeline_library */
       .graphicsPipelineLibrary = true,
-
-      /* VK_KHR_global_priority */
-      .globalPriorityQuery = true,
-
-      /* VK_EXT_host_image_copy */
-      .hostImageCopy = true,
-
-      /* VK_KHR_index_type_uint8 */
-      .indexTypeUint8 = true,
-
-      /* VK_KHR_vertex_attribute_divisor */
-      .vertexAttributeInstanceRateDivisor = true,
-      .vertexAttributeInstanceRateZeroDivisor = true,
 
       /* VK_EXT_vertex_input_dynamic_state */
       .vertexInputDynamicState = true,
@@ -414,6 +407,14 @@ panvk_per_arch(get_physical_device_features)(
 
       /* VK_EXT_depth_clip_enable */
       .depthClipEnable = true,
+
+      /* VK_EXT_extended_dynamic_state */
+      .extendedDynamicState = true,
+
+      /* VK_EXT_extended_dynamic_state2 */
+      .extendedDynamicState2 = true,
+      .extendedDynamicState2LogicOp = true,
+      .extendedDynamicState2PatchControlPoints = false,
 
       /* VK_EXT_4444_formats */
       .formatA4R4G4B4 = true,
@@ -448,9 +449,6 @@ panvk_per_arch(get_physical_device_features)(
       /* VK_KHR_pipeline_executable_properties */
       .pipelineExecutableInfo = true,
 
-      /* VK_EXT_pipeline_robustness */
-      .pipelineRobustness = true,
-
       /* VK_EXT_robustness2 */
       .robustBufferAccess2 = PAN_ARCH >= 11,
       .robustImageAccess2 = false,
@@ -459,9 +457,6 @@ panvk_per_arch(get_physical_device_features)(
       /* VK_KHR_shader_clock */
       .shaderSubgroupClock = device->kmod.props.gpu_can_query_timestamp,
       .shaderDeviceClock = device->kmod.props.gpu_can_query_timestamp,
-
-      /* VK_KHR_shader_float_controls2 */
-      .shaderFloatControls2 = true,
 
       /* VK_KHR_shader_quad_control */
       .shaderQuadControl = true,
@@ -474,9 +469,6 @@ panvk_per_arch(get_physical_device_features)(
 
       /* VK_KHR_shader_subgroup_uniform_control_flow */
       .shaderSubgroupUniformControlFlow = true,
-
-      /* VK_KHR_shader_expect_assume */
-      .shaderExpectAssume = true,
 
       /* VK_EXT_shader_module_identifier */
       .shaderModuleIdentifier = true,
@@ -492,9 +484,6 @@ panvk_per_arch(get_physical_device_features)(
 
       /* VK_EXT_ycbcr_image_arrays */
       .ycbcrImageArrays = PAN_ARCH >= 10,
-
-      /* VK_KHR_push_descriptor */
-      .pushDescriptor = true,
 
       /* VK_EXT_non_seamless_cube_map */
       .nonSeamlessCubeMap = true,
