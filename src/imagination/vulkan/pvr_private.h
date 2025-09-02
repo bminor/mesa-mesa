@@ -66,7 +66,6 @@
 #include "vk_command_buffer.h"
 #include "vk_enum_to_str.h"
 #include "vk_graphics_state.h"
-#include "vk_image.h"
 #include "vk_log.h"
 #include "vk_sync.h"
 #include "wsi_common.h"
@@ -91,40 +90,6 @@ struct pvr_vertex_binding {
    VkDeviceSize size;
 };
 
-struct pvr_mip_level {
-   /* Offset of the mip level in bytes */
-   uint32_t offset;
-
-   /* Aligned mip level size in bytes */
-   uint32_t size;
-
-   /* Aligned row length in bytes */
-   uint32_t pitch;
-
-   /* Aligned height in bytes */
-   uint32_t height_pitch;
-};
-
-struct pvr_image {
-   struct vk_image vk;
-
-   /* vma this image is bound to */
-   struct pvr_winsys_vma *vma;
-
-   /* Device address the image is mapped to in device virtual address space */
-   pvr_dev_addr_t dev_addr;
-
-   /* Derived and other state */
-   VkExtent3D physical_extent;
-   enum pvr_memlayout memlayout;
-   VkDeviceSize layer_size;
-   VkDeviceSize size;
-
-   VkDeviceSize alignment;
-
-   struct pvr_mip_level mip_levels[14];
-};
-
 struct pvr_buffer {
    struct vk_buffer vk;
 
@@ -134,18 +99,6 @@ struct pvr_buffer {
    struct pvr_winsys_vma *vma;
    /* Device address the buffer is mapped to in device virtual address space */
    pvr_dev_addr_t dev_addr;
-};
-
-struct pvr_image_view {
-   struct vk_image_view vk;
-
-   /* Prepacked Texture Image dword 0 and 1. It will be copied to the
-    * descriptor info during pvr_UpdateDescriptorSets().
-    *
-    * We create separate texture states for sampling, storage and input
-    * attachment cases.
-    */
-   struct pvr_image_descriptor image_state[PVR_TEXTURE_STATE_MAX_ENUM];
 };
 
 #define PVR_BUFFER_VIEW_WIDTH 8192U
@@ -1030,10 +983,6 @@ void pvr_calculate_vertex_cam_size(const struct pvr_device_info *dev_info,
                                    uint32_t *const cam_size_out,
                                    uint32_t *const vs_max_instances_out);
 
-void pvr_get_image_subresource_layout(const struct pvr_image *image,
-                                      const VkImageSubresource *subresource,
-                                      VkSubresourceLayout *layout);
-
 static inline struct pvr_compute_pipeline *
 to_pvr_compute_pipeline(struct pvr_pipeline *pipeline)
 {
@@ -1052,18 +1001,6 @@ static inline struct pvr_descriptor_set_layout *
 vk_to_pvr_descriptor_set_layout(struct vk_descriptor_set_layout *layout)
 {
    return container_of(layout, struct pvr_descriptor_set_layout, vk);
-}
-
-static inline const struct pvr_image *
-vk_to_pvr_image(const struct vk_image *image)
-{
-   return container_of(image, const struct pvr_image, vk);
-}
-
-static inline const struct pvr_image *
-pvr_image_view_get_image(const struct pvr_image_view *const iview)
-{
-   return vk_to_pvr_image(iview->vk.image);
 }
 
 static enum pvr_pipeline_stage_bits
@@ -1222,15 +1159,10 @@ VK_DEFINE_HANDLE_CASTS(pvr_cmd_buffer,
                        VkCommandBuffer,
                        VK_OBJECT_TYPE_COMMAND_BUFFER)
 
-VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_image, vk.base, VkImage, VK_OBJECT_TYPE_IMAGE)
 VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_buffer,
                                vk.base,
                                VkBuffer,
                                VK_OBJECT_TYPE_BUFFER)
-VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_image_view,
-                               vk.base,
-                               VkImageView,
-                               VK_OBJECT_TYPE_IMAGE_VIEW)
 VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_buffer_view,
                                vk.base,
                                VkBufferView,

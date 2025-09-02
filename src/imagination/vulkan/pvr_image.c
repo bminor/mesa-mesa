@@ -21,6 +21,8 @@
  * SOFTWARE.
  */
 
+#include "pvr_image.h"
+
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>

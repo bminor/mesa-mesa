@@ -32,6 +32,7 @@
 #include "pvr_csb.h"
 #include "pvr_device.h"
 #include "pvr_formats.h"
+#include "pvr_image.h"
 #include "pvr_job_transfer.h"
 #include "pvr_private.h"
 #include "pvr_types.h"

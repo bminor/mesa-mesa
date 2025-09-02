@@ -32,6 +32,7 @@
 #include "pvr_bo.h"
 #include "pvr_debug.h"
 #include "pvr_device.h"
+#include "pvr_image.h"
 #include "pvr_private.h"
 #include "pvr_types.h"
 #include "util/compiler.h"
