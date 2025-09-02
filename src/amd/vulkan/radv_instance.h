@@ -74,6 +74,7 @@ struct radv_instance {
       bool expose_float16_gfx8;
       bool disable_hiz_his_gfx12;
       bool cooperative_matrix2_nv;
+      bool no_dynamic_bounds;
       char *app_layer;
       uint8_t override_graphics_shader_version;
       uint8_t override_compute_shader_version;

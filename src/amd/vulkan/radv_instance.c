@@ -220,8 +220,7 @@ radv_init_dri_options(struct radv_instance *instance)
    instance->drirc.disable_tc_compat_htile_in_general =
       driQueryOptionb(&instance->drirc.options, "radv_disable_tc_compat_htile_general");
 
-   if (driQueryOptionb(&instance->drirc.options, "radv_no_dynamic_bounds"))
-      instance->debug_flags |= RADV_DEBUG_NO_DYNAMIC_BOUNDS;
+   instance->drirc.no_dynamic_bounds = driQueryOptionb(&instance->drirc.options, "radv_no_dynamic_bounds");
 
    if (driQueryOptionb(&instance->drirc.options, "radv_invariant_geom"))
       instance->debug_flags |= RADV_DEBUG_INVARIANT_GEOM;
@@ -439,6 +438,13 @@ radv_CreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationC
    VG(VALGRIND_CREATE_MEMPOOL(instance, 0, false));
 
    radv_init_dri_options(instance);
+
+   /* Handle deprecated RADV_DEBUG options. */
+   if (instance->debug_flags & RADV_DEBUG_NO_DYNAMIC_BOUNDS) {
+      fprintf(stderr, "radv: RADV_DEBUG=nodynamicbounds is deprecated and will it be removed in future Mesa releases. "
+                      "Please use radv_no_dynamic_bounds=true instead.\n");
+      instance->drirc.no_dynamic_bounds = true;
+   }
 
    *pInstance = radv_instance_to_handle(instance);
 

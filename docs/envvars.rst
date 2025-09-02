@@ -1399,7 +1399,7 @@ RADV driver environment variables
    ``nodisplaydcc``
       disable Delta Color Compression (DCC) on displayable images
    ``nodynamicbounds``
-      do not check OOB access for dynamic descriptors
+      do not check OOB access for dynamic descriptors (deprecated)
    ``noeso``
       disable VK_EXT_shader_object
    ``nofastclears``

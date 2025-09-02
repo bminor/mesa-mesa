@@ -25,7 +25,7 @@ enum {
    RADV_DEBUG_ZERO_VRAM = 1ull << 10,
    RADV_DEBUG_SYNC_SHADERS = 1ull << 11,
    RADV_DEBUG_DUMP_PREOPT_IR = 1ull << 12,
-   RADV_DEBUG_NO_DYNAMIC_BOUNDS = 1ull << 13,
+   RADV_DEBUG_NO_DYNAMIC_BOUNDS = 1ull << 13, /* deprecated */
    RADV_DEBUG_INFO = 1ull << 14,
    RADV_DEBUG_STARTUP = 1ull << 15,
    RADV_DEBUG_CHECKIR = 1ull << 16,
