@@ -34,6 +34,46 @@ enum radv_trace_mode {
    RADV_TRACE_MODE_CTX_ROLLS = 1 << (VK_TRACE_MODE_COUNT + 2),
 };
 
+struct radv_drirc {
+   struct driOptionCache options;
+   struct driOptionCache available_options;
+
+   bool enable_mrt_output_nan_fixup;
+   bool disable_tc_compat_htile_in_general;
+   bool disable_shrink_image_store;
+   bool disable_aniso_single_level;
+   bool disable_trunc_coord;
+   bool disable_depth_storage;
+   bool zero_vram;
+   bool disable_sinking_load_input_fs;
+   bool flush_before_query_copy;
+   bool enable_unified_heap_on_apu;
+   bool tex_non_uniform;
+   bool ssbo_non_uniform;
+   bool flush_before_timestamp_write;
+   bool clear_lds;
+   bool report_llvm9_version_string;
+   bool vk_require_etc2;
+   bool vk_require_astc;
+   bool disable_dcc_mips;
+   bool disable_dcc_stores;
+   bool lower_terminate_to_discard;
+   bool emulate_rt;
+   bool expose_float16_gfx8;
+   bool disable_hiz_his_gfx12;
+   bool cooperative_matrix2_nv;
+   bool no_dynamic_bounds;
+   bool invariant_geom;
+   bool split_fma;
+   bool disable_ngg_gs;
+   char *app_layer;
+   uint8_t override_graphics_shader_version;
+   uint8_t override_compute_shader_version;
+   uint8_t override_ray_tracing_shader_version;
+   int override_vram_size;
+   int override_uniform_offset_alignment;
+};
+
 struct radv_instance {
    struct vk_instance vk;
 
@@ -46,45 +86,7 @@ struct radv_instance {
    uint64_t trap_excp_flags;
    enum radeon_ctx_pstate profile_pstate;
 
-   struct {
-      struct driOptionCache options;
-      struct driOptionCache available_options;
-
-      bool enable_mrt_output_nan_fixup;
-      bool disable_tc_compat_htile_in_general;
-      bool disable_shrink_image_store;
-      bool disable_aniso_single_level;
-      bool disable_trunc_coord;
-      bool disable_depth_storage;
-      bool zero_vram;
-      bool disable_sinking_load_input_fs;
-      bool flush_before_query_copy;
-      bool enable_unified_heap_on_apu;
-      bool tex_non_uniform;
-      bool ssbo_non_uniform;
-      bool flush_before_timestamp_write;
-      bool clear_lds;
-      bool report_llvm9_version_string;
-      bool vk_require_etc2;
-      bool vk_require_astc;
-      bool disable_dcc_mips;
-      bool disable_dcc_stores;
-      bool lower_terminate_to_discard;
-      bool emulate_rt;
-      bool expose_float16_gfx8;
-      bool disable_hiz_his_gfx12;
-      bool cooperative_matrix2_nv;
-      bool no_dynamic_bounds;
-      bool invariant_geom;
-      bool split_fma;
-      bool disable_ngg_gs;
-      char *app_layer;
-      uint8_t override_graphics_shader_version;
-      uint8_t override_compute_shader_version;
-      uint8_t override_ray_tracing_shader_version;
-      int override_vram_size;
-      int override_uniform_offset_alignment;
-   } drirc;
+   struct radv_drirc drirc;
 
    FILE *pso_history_logfile;
 };
