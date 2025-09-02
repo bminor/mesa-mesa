@@ -811,7 +811,13 @@ nvk_get_device_properties(const struct nvk_instance *instance,
       .maxFragmentOutputAttachments = NVK_MAX_RTS,
       .maxFragmentDualSrcAttachments = 1,
       .maxFragmentCombinedOutputResources = 16,
-      .maxComputeSharedMemorySize = NVK_MAX_SHARED_SIZE,
+      /* Nvidia limits this to 48kB for consistency reasons, we could lift the
+       * limit if we wanted to.
+       */
+      .maxComputeSharedMemorySize = MIN2(
+         NVK_MAX_SHARED_SIZE,
+         info->sm_smem_sizes_kB[info->sm_smem_size_count - 1] * 1024
+      ),
       .maxComputeWorkGroupCount = {0x7fffffff, 65535, 65535},
       .maxComputeWorkGroupInvocations = 1024,
       .maxComputeWorkGroupSize = {1024, 1024, 64},
