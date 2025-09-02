@@ -4,3 +4,6 @@ caselists = ["/deqp-vk/mustpass/vk-main.txt"]
 tests_per_group = 1
 renderer_check = "llvmpipe"
 fraction = 1000
+[deqp.env]
+  # Disable stack-use-after-return detection to match Debian 12
+  ASAN_OPTIONS = "detect_stack_use_after_return=0"
