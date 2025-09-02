@@ -399,46 +399,21 @@ si_vpe_set_color_space(const struct pipe_vpp_desc *process_properties,
                        enum pipe_format format,
                        int which_surface)
 {
-   enum pipe_video_vpp_color_standard_type colors_standard;
    enum pipe_video_vpp_color_range color_range;
    enum pipe_video_vpp_chroma_siting chroma_siting;
    enum pipe_video_vpp_color_primaries colour_primaries;
    enum pipe_video_vpp_transfer_characteristic transfer_characteristics;
 
    if (which_surface == USE_SRC_SURFACE) {
-      colors_standard          = process_properties->in_colors_standard;
       color_range              = process_properties->in_color_range;
       chroma_siting            = process_properties->in_chroma_siting;
       colour_primaries         = process_properties->in_color_primaries;
       transfer_characteristics = process_properties->in_transfer_characteristics;
    } else {
-      colors_standard          = process_properties->out_colors_standard;
       color_range              = process_properties->out_color_range;
       chroma_siting            = process_properties->out_chroma_siting;
       colour_primaries         = process_properties->out_color_primaries;
       transfer_characteristics = process_properties->out_transfer_characteristics;
-   }
-
-   switch (colors_standard) {
-   case PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_EXPLICIT:
-      /* use original settings from user application */
-      break;
-
-   case PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_BT601:
-      colour_primaries         = PIPE_VIDEO_VPP_PRI_SMPTE170M;
-      transfer_characteristics = PIPE_VIDEO_VPP_TRC_SMPTE170M;
-      break;
-
-   case PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_BT2020:
-      colour_primaries         = PIPE_VIDEO_VPP_PRI_BT2020;
-      transfer_characteristics = PIPE_VIDEO_VPP_TRC_BT2020_10;
-      break;
-
-   default:
-   case PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_BT709:
-      colour_primaries         = PIPE_VIDEO_VPP_PRI_BT709;
-      transfer_characteristics = PIPE_VIDEO_VPP_TRC_BT709;
-      break;
    }
 
    switch (format) {
@@ -1432,10 +1407,8 @@ si_vpe_processor_process_frame(struct pipe_video_codec *codec,
       process_geoscl.blend.global_alpha           = process_properties->blend.global_alpha;
       process_geoscl.background_color             = 0;
 
-      process_geoscl.in_colors_standard           = process_properties->in_colors_standard;
       process_geoscl.in_color_range               = process_properties->in_color_range;
       process_geoscl.in_chroma_siting             = process_properties->in_chroma_siting;
-      process_geoscl.out_colors_standard          = process_properties->out_colors_standard;
       process_geoscl.out_color_range              = PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_FULL;
       process_geoscl.out_chroma_siting            = process_properties->out_chroma_siting;
 
@@ -1475,7 +1448,6 @@ si_vpe_processor_process_frame(struct pipe_video_codec *codec,
        */
       process_geoscl.orientation                  = PIPE_VIDEO_VPP_ORIENTATION_DEFAULT;
       process_geoscl.blend.global_alpha           = 1.0f;
-      process_geoscl.in_colors_standard           = process_properties->out_colors_standard;
       process_geoscl.in_color_range               = PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_FULL;
       process_geoscl.in_chroma_siting             = process_properties->out_chroma_siting;
       process_geoscl.in_color_primaries           = process_properties->out_color_primaries;
