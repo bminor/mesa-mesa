@@ -258,6 +258,36 @@ vlVaApplyDeint(vlVaDriver *drv, vlVaContext *context,
    return context->deint->video_buffer;
 }
 
+static void
+vlVaGetColorProperties(VAProcColorStandardType standard,
+                       enum pipe_video_vpp_color_primaries *primaries,
+                       enum pipe_video_vpp_transfer_characteristic *trc,
+                       enum pipe_video_vpp_matrix_coefficients *coeffs)
+{
+   switch (standard) {
+   case VAProcColorStandardBT601:
+      *primaries = PIPE_VIDEO_VPP_PRI_SMPTE170M;
+      *trc = PIPE_VIDEO_VPP_TRC_SMPTE170M;
+      *coeffs = PIPE_VIDEO_VPP_MCF_SMPTE170M;
+      break;
+   case VAProcColorStandardBT709:
+      *primaries = PIPE_VIDEO_VPP_PRI_BT709;
+      *trc = PIPE_VIDEO_VPP_TRC_BT709;
+      *coeffs = PIPE_VIDEO_VPP_MCF_BT709;
+      break;
+   case VAProcColorStandardBT2020:
+      *primaries = PIPE_VIDEO_VPP_PRI_BT2020;
+      *trc = PIPE_VIDEO_VPP_TRC_SMPTE2084;
+      *coeffs = PIPE_VIDEO_VPP_MCF_BT2020_NCL;
+      break;
+   default:
+      *primaries = PIPE_VIDEO_VPP_PRI_UNSPECIFIED;
+      *trc = PIPE_VIDEO_VPP_TRC_UNSPECIFIED;
+      *coeffs = PIPE_VIDEO_VPP_MCF_UNSPECIFIED;
+      break;
+   }
+}
+
 VAStatus
 vlVaHandleVAProcPipelineParameterBufferType(vlVaDriver *drv, vlVaContext *context, vlVaBuffer *buf)
 {
@@ -390,6 +420,9 @@ vlVaHandleVAProcPipelineParameterBufferType(vlVaDriver *drv, vlVaContext *contex
    /* Output background color */
    vpp.background_color = param->output_background_color;
 
+   vlVaGetColorProperties(param->surface_color_standard, &vpp.in_color_primaries,
+                          &vpp.in_transfer_characteristics, &vpp.in_matrix_coefficients);
+
    /* Input surface color standard */
    switch (param->surface_color_standard) {
    case VAProcColorStandardBT601:
@@ -411,6 +444,17 @@ vlVaHandleVAProcPipelineParameterBufferType(vlVaDriver *drv, vlVaContext *contex
       vpp.in_colors_standard = PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_NONE;
       break;
    }
+
+   if (vpp.in_color_primaries == PIPE_VIDEO_VPP_PRI_UNSPECIFIED)
+      vpp.in_color_primaries = PIPE_VIDEO_VPP_PRI_BT709;
+
+   if (vpp.in_transfer_characteristics == PIPE_VIDEO_VPP_TRC_UNSPECIFIED)
+      vpp.in_transfer_characteristics = PIPE_VIDEO_VPP_TRC_GAMMA22;
+
+   if (vpp.in_matrix_coefficients == PIPE_VIDEO_VPP_MCF_UNSPECIFIED ||
+       (vpp.in_matrix_coefficients == PIPE_VIDEO_VPP_MCF_RGB &&
+        util_format_is_yuv(src->buffer_format)))
+      vpp.in_matrix_coefficients = PIPE_VIDEO_VPP_MCF_BT709;
 
    /* Input surface color range */
    switch (param->input_color_properties.color_range) {
@@ -439,6 +483,9 @@ vlVaHandleVAProcPipelineParameterBufferType(vlVaDriver *drv, vlVaContext *contex
    else if (param->input_color_properties.chroma_sample_location & VA_CHROMA_SITING_HORIZONTAL_CENTER)
       vpp.in_chroma_siting |= PIPE_VIDEO_VPP_CHROMA_SITING_HORIZONTAL_CENTER;
 
+   vlVaGetColorProperties(param->surface_color_standard, &vpp.out_color_primaries,
+                          &vpp.out_transfer_characteristics, &vpp.out_matrix_coefficients);
+
    /* Output surface color standard */
    switch (param->output_color_standard) {
    case VAProcColorStandardBT601:
@@ -460,6 +507,17 @@ vlVaHandleVAProcPipelineParameterBufferType(vlVaDriver *drv, vlVaContext *contex
       vpp.out_colors_standard = PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_NONE;
       break;
    }
+
+   if (vpp.out_color_primaries == PIPE_VIDEO_VPP_PRI_UNSPECIFIED)
+      vpp.out_color_primaries = PIPE_VIDEO_VPP_PRI_BT709;
+
+   if (vpp.out_transfer_characteristics == PIPE_VIDEO_VPP_TRC_UNSPECIFIED)
+      vpp.out_transfer_characteristics = PIPE_VIDEO_VPP_TRC_GAMMA22;
+
+   if (vpp.out_matrix_coefficients == PIPE_VIDEO_VPP_MCF_UNSPECIFIED ||
+       (vpp.out_matrix_coefficients == PIPE_VIDEO_VPP_MCF_RGB &&
+        util_format_is_yuv(dst->buffer_format)))
+      vpp.out_matrix_coefficients = PIPE_VIDEO_VPP_MCF_BT709;
 
    /* Output surface color range */
    switch (param->output_color_properties.color_range) {
