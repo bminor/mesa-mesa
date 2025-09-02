@@ -8087,6 +8087,17 @@ radv_bind_pre_rast_shader(struct radv_cmd_buffer *cmd_buffer, const struct radv_
    if (radv_get_user_sgpr_info(shader, AC_UD_FORCE_VRS_RATES)->sgpr_idx != -1)
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FORCE_VRS_STATE;
 
+   /* Re-emit the VS prolog when a new vertex shader is bound. */
+   if (shader->info.vs.has_prolog) {
+      cmd_buffer->state.emitted_vs_prolog = NULL;
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_VS_PROLOG_STATE;
+   }
+
+   /* Re-emit the vertex buffer descriptors because they are really tied to the pipeline. */
+   if (shader->info.vs.vb_desc_usage_mask) {
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_VERTEX_BUFFER;
+   }
+
    const bool needs_vtx_sgpr =
       shader->info.stage == MESA_SHADER_VERTEX || shader->info.stage == MESA_SHADER_MESH ||
       (shader->info.stage == MESA_SHADER_GEOMETRY && !shader->info.merged_shader_compiled_separately) ||
@@ -8563,20 +8574,6 @@ radv_CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipeline
 
       /* Prefetch all pipeline shaders at first draw time. */
       cmd_buffer->state.prefetch_L2_mask |= RADV_PREFETCH_GFX_SHADERS;
-
-      const struct radv_shader *vs = radv_get_shader(graphics_pipeline->base.shaders, MESA_SHADER_VERTEX);
-      if (vs) {
-         /* Re-emit the VS prolog when a new vertex shader is bound. */
-         if (vs->info.vs.has_prolog) {
-            cmd_buffer->state.emitted_vs_prolog = NULL;
-            cmd_buffer->state.dirty |= RADV_CMD_DIRTY_VS_PROLOG_STATE;
-         }
-
-         /* Re-emit the vertex buffer descriptors because they are really tied to the pipeline. */
-         if (vs->info.vs.vb_desc_usage_mask) {
-            cmd_buffer->state.dirty |= RADV_CMD_DIRTY_VERTEX_BUFFER;
-         }
-      }
 
       const struct radv_shader *ps = radv_get_shader(graphics_pipeline->base.shaders, MESA_SHADER_FRAGMENT);
 
@@ -12293,20 +12290,6 @@ radv_bind_graphics_shaders(struct radv_cmd_buffer *cmd_buffer)
        (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
         VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_MESH_BIT_EXT)) {
       cmd_buffer->state.vgt_outprim_type = radv_get_vgt_gs_out(cmd_buffer->state.shaders, 0, false);
-   }
-
-   const struct radv_shader *vs = radv_get_shader(cmd_buffer->state.shaders, MESA_SHADER_VERTEX);
-   if (vs) {
-      /* Re-emit the VS prolog when a new vertex shader is bound. */
-      if (vs->info.vs.has_prolog) {
-         cmd_buffer->state.emitted_vs_prolog = NULL;
-         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_VS_PROLOG_STATE;
-      }
-
-      /* Re-emit the vertex buffer descriptors because they are really tied to the pipeline. */
-      if (vs->info.vs.vb_desc_usage_mask) {
-         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_VERTEX_BUFFER;
-      }
    }
 
    const struct radv_shader *ps = cmd_buffer->state.shaders[MESA_SHADER_FRAGMENT];
