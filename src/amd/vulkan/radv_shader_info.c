@@ -1034,10 +1034,8 @@ radv_nir_shader_info_pass(struct radv_device *device, const struct nir_shader *n
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct nir_function *func = (struct nir_function *)exec_list_get_head_const(&nir->functions);
 
-   if (layout->use_dynamic_descriptors) {
-      info->loads_push_constants = true;
+   if (layout->use_dynamic_descriptors)
       info->loads_dynamic_offsets = true;
-   }
 
    nir_foreach_block (block, func->impl) {
       gather_info_block(nir, block, info, gfx_state, stage_key, consider_force_vrs);

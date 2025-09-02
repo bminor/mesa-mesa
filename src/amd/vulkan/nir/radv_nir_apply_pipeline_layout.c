@@ -69,8 +69,8 @@ visit_vulkan_resource_index(nir_builder *b, apply_layout_state *state, nir_intri
    nir_def *set_ptr;
    if (vk_descriptor_type_is_dynamic(layout->binding[binding].type)) {
       unsigned idx = state->layout->set[desc_set].dynamic_offset_start + layout->binding[binding].dynamic_offset_offset;
-      set_ptr = get_scalar_arg(b, 1, state->args->ac.push_constants);
-      offset = state->layout->push_constant_size + idx * 16;
+      set_ptr = get_scalar_arg(b, 1, state->args->ac.dynamic_descriptors);
+      offset = idx * 16;
       stride = 16;
    } else {
       set_ptr = load_desc_ptr(b, state, desc_set);
