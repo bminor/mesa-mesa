@@ -452,7 +452,7 @@ fn legalize_instr(
                 SrcRef::CBuf(CBufRef {
                     buf: CBuf::BindlessSSA(handle),
                     ..
-                }) => assert!(pinned.contains(handle)),
+                }) => assert!(pinned.contains(&SSARef::new(handle))),
                 _ => (),
             }
         }

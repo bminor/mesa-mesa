@@ -3343,7 +3343,7 @@ impl<'a> ShaderFromNir<'a> {
                 let (off, off_imm) = self.get_cbuf_addr_offset(&srcs[1]);
 
                 let cb = CBufRef {
-                    buf: CBuf::BindlessSSA(handle),
+                    buf: CBuf::BindlessSSA(handle[..].try_into().unwrap()),
                     offset: off_imm,
                 };
 

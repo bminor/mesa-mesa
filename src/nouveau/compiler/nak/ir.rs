@@ -535,7 +535,7 @@ pub enum CBuf {
     Binding(u8),
 
     #[allow(dead_code)]
-    BindlessSSA(SSARef),
+    BindlessSSA([SSAValue; 2]),
 
     #[allow(dead_code)]
     BindlessUGPR(RegRef),
@@ -545,7 +545,7 @@ impl fmt::Display for CBuf {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             CBuf::Binding(idx) => write!(f, "c[{:#x}]", idx),
-            CBuf::BindlessSSA(v) => write!(f, "cx[{}]", v),
+            CBuf::BindlessSSA(v) => write!(f, "cx[{{{}, {}}}]", v[0], v[1]),
             CBuf::BindlessUGPR(r) => write!(f, "cx[{}]", r),
         }
     }
@@ -683,7 +683,7 @@ impl SrcRef {
             | SrcRef::Reg(_) => &[],
             SrcRef::CBuf(cb) => match &cb.buf {
                 CBuf::Binding(_) | CBuf::BindlessUGPR(_) => &[],
-                CBuf::BindlessSSA(ssa) => ssa.deref(),
+                CBuf::BindlessSSA(ssa) => &ssa[..],
             },
             SrcRef::SSA(ssa) => ssa.deref(),
         }
@@ -699,7 +699,7 @@ impl SrcRef {
             | SrcRef::Reg(_) => &mut [],
             SrcRef::CBuf(cb) => match &mut cb.buf {
                 CBuf::Binding(_) | CBuf::BindlessUGPR(_) => &mut [],
-                CBuf::BindlessSSA(ssa) => ssa.deref_mut(),
+                CBuf::BindlessSSA(ssa) => &mut ssa[..],
             },
             SrcRef::SSA(ssa) => ssa.deref_mut(),
         }
