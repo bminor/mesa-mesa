@@ -569,7 +569,7 @@ fn fill_qmd<Q: QMD>(info: &nak_shader_info, qmd_info: &nak_qmd_info) -> Q {
     qmd.set_crs_size(info.crs_size);
     qmd.set_slm_size(info.slm_size);
 
-    assert!(qmd_info.smem_size >= cs_info.smem_size);
+    assert!(qmd_info.smem_size >= u32::from(cs_info.smem_size));
     assert!(qmd_info.smem_size <= qmd_info.smem_max);
     qmd.set_smem_size(qmd_info.smem_size.into(), qmd_info.smem_max.into());
 

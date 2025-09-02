@@ -244,8 +244,8 @@ struct nak_qmd_cbuf {
 struct nak_qmd_info {
    uint64_t addr;
 
-   uint16_t smem_size;
-   uint16_t smem_max;
+   uint32_t smem_size;
+   uint32_t smem_max;
 
    uint32_t global_size[3];
 
