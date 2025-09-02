@@ -1451,6 +1451,7 @@ RADV driver environment variables
       dump SPIR-V
    ``splitfma``
       split application-provided fused multiply-add in geometry stages
+      (deprecated)
    ``startup``
       display info at startup
    ``syncshaders``

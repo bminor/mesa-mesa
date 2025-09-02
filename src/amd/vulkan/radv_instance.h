@@ -76,6 +76,7 @@ struct radv_instance {
       bool cooperative_matrix2_nv;
       bool no_dynamic_bounds;
       bool invariant_geom;
+      bool split_fma;
       char *app_layer;
       uint8_t override_graphics_shader_version;
       uint8_t override_compute_shader_version;

@@ -224,8 +224,7 @@ radv_init_dri_options(struct radv_instance *instance)
 
    instance->drirc.invariant_geom = driQueryOptionb(&instance->drirc.options, "radv_invariant_geom");
 
-   if (driQueryOptionb(&instance->drirc.options, "radv_split_fma"))
-      instance->debug_flags |= RADV_DEBUG_SPLIT_FMA;
+   instance->drirc.split_fma = driQueryOptionb(&instance->drirc.options, "radv_split_fma");
 
    if (driQueryOptionb(&instance->drirc.options, "radv_disable_dcc"))
       instance->debug_flags |= RADV_DEBUG_NO_DCC;
@@ -449,6 +448,12 @@ radv_CreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationC
       fprintf(stderr, "radv: RADV_DEBUG=invariantgeom is deprecated and will it be removed in future Mesa releases. "
                       "Please use radv_invariant_geom=true instead.\n");
       instance->drirc.invariant_geom = true;
+   }
+
+   if (instance->debug_flags & RADV_DEBUG_SPLIT_FMA) {
+      fprintf(stderr, "radv: RADV_DEBUG=splitfma is deprecated and will it be removed in future Mesa releases. "
+                      "Please use radv_split_fma=true instead.\n");
+      instance->drirc.split_fma = true;
    }
 
    *pInstance = radv_instance_to_handle(instance);

@@ -45,7 +45,7 @@ enum {
    RADV_DEBUG_NO_NGGC = 1ull << 30,
    RADV_DEBUG_DUMP_PROLOGS = 1ull << 31,
    RADV_DEBUG_NO_DMA_BLIT = 1ull << 32,
-   RADV_DEBUG_SPLIT_FMA = 1ull << 33,
+   RADV_DEBUG_SPLIT_FMA = 1ull << 33, /* deprecated */
    RADV_DEBUG_DUMP_EPILOGS = 1ull << 34,
    RADV_DEBUG_NO_FMASK = 1ull << 35,
    RADV_DEBUG_SHADOW_REGS = 1ull << 36,

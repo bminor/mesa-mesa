@@ -224,7 +224,7 @@ radv_physical_device_init_cache_key(struct radv_physical_device *pdev)
    key->no_rt = !!(instance->debug_flags & RADV_DEBUG_NO_RT);
    key->ps_wave32 = pdev->ps_wave_size == 32;
    key->rt_wave64 = pdev->rt_wave_size == 64;
-   key->split_fma = !!(instance->debug_flags & RADV_DEBUG_SPLIT_FMA);
+   key->split_fma = instance->drirc.split_fma;
    key->ssbo_non_uniform = instance->drirc.ssbo_non_uniform;
    key->tex_non_uniform = instance->drirc.tex_non_uniform;
    key->lower_terminate_to_discard = instance->drirc.lower_terminate_to_discard;
