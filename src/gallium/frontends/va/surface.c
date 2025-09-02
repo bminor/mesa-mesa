@@ -1413,24 +1413,7 @@ vlVaQueryVideoProcFilterCaps(VADriverContextP ctx, VAContextID context_id,
    return VA_STATUS_SUCCESS;
 }
 
-static VAProcColorStandardType vpp_input_color_standards[] = {
-   VAProcColorStandardBT601,
-   VAProcColorStandardBT709
-};
-
-static VAProcColorStandardType vpp_output_color_standards[] = {
-   VAProcColorStandardBT601,
-   VAProcColorStandardBT709
-};
-
-static VAProcColorStandardType vpp_input_color_standards_extends[] = {
-   VAProcColorStandardBT601,
-   VAProcColorStandardBT709,
-   VAProcColorStandardBT2020,
-   VAProcColorStandardExplicit
-};
-
-static VAProcColorStandardType vpp_output_color_standards_extends[] = {
+static VAProcColorStandardType vpp_color_standards[] = {
    VAProcColorStandardBT601,
    VAProcColorStandardBT709,
    VAProcColorStandardBT2020,
@@ -1479,22 +1462,10 @@ vlVaQueryVideoProcPipelineCaps(VADriverContextP ctx, VAContextID context,
    if (!media_only || pipe_orientation_flags & PIPE_VIDEO_VPP_FLIP_VERTICAL)
       pipeline_cap->mirror_flags |= VA_MIRROR_VERTICAL;
 
-   if (pscreen->get_video_param(pscreen, PIPE_VIDEO_PROFILE_UNKNOWN, PIPE_VIDEO_ENTRYPOINT_PROCESSING,
-                                PIPE_VIDEO_CAP_VPP_SUPPORT_HDR_INPUT)) {
-      pipeline_cap->num_input_color_standards = ARRAY_SIZE(vpp_input_color_standards_extends);
-      pipeline_cap->input_color_standards = vpp_input_color_standards_extends;
-   } else {
-      pipeline_cap->num_input_color_standards = ARRAY_SIZE(vpp_input_color_standards);
-      pipeline_cap->input_color_standards = vpp_input_color_standards;
-   }
-   if (pscreen->get_video_param(pscreen, PIPE_VIDEO_PROFILE_UNKNOWN, PIPE_VIDEO_ENTRYPOINT_PROCESSING,
-                                PIPE_VIDEO_CAP_VPP_SUPPORT_HDR_OUTPUT)) {
-      pipeline_cap->num_output_color_standards = ARRAY_SIZE(vpp_output_color_standards_extends);
-      pipeline_cap->output_color_standards = vpp_output_color_standards_extends;
-   } else {
-      pipeline_cap->num_output_color_standards = ARRAY_SIZE(vpp_output_color_standards);
-      pipeline_cap->output_color_standards = vpp_output_color_standards;
-   }
+   pipeline_cap->input_color_standards = vpp_color_standards;
+   pipeline_cap->num_input_color_standards = ARRAY_SIZE(vpp_color_standards);
+   pipeline_cap->output_color_standards = vpp_color_standards;
+   pipeline_cap->num_output_color_standards = ARRAY_SIZE(vpp_color_standards);
 
    pipeline_cap->max_input_width = pscreen->get_video_param(pscreen, PIPE_VIDEO_PROFILE_UNKNOWN,
                                                             PIPE_VIDEO_ENTRYPOINT_PROCESSING,
