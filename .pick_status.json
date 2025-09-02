@@ -9404,7 +9404,7 @@
         "description": "nvk: Clear cond_render_gart_* in reset_cmd_buffer",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "07c70c77de4b7894df6719a0c19293ac85d53686",
         "notes": null
