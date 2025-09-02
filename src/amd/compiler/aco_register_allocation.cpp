@@ -72,6 +72,9 @@ struct assignment {
    }
    void set_precolor_affinity(PhysReg affinity_reg)
    {
+      if (assigned || precolor_affinity)
+         return;
+
       precolor_affinity = true;
       reg = affinity_reg;
    }
