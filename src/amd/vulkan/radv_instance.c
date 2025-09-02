@@ -204,6 +204,18 @@ static const driOptionDescription radv_dri_options[] = {
 // clang-format on
 
 static void
+radv_init_dri_features_options(struct radv_instance *instance)
+{
+   struct radv_drirc *drirc = &instance->drirc;
+
+   drirc->features.cooperative_matrix2_nv = driQueryOptionb(&drirc->options, "radv_cooperative_matrix2_nv");
+   drirc->features.emulate_rt = driQueryOptionb(&drirc->options, "radv_emulate_rt");
+   drirc->features.expose_float16_gfx8 = driQueryOptionb(&drirc->options, "radv_enable_float16_gfx8");
+   drirc->features.vk_require_etc2 = driQueryOptionb(&drirc->options, "vk_require_etc2");
+   drirc->features.vk_require_astc = driQueryOptionb(&drirc->options, "vk_require_astc");
+}
+
+static void
 radv_init_dri_options(struct radv_instance *instance)
 {
    struct radv_drirc *drirc = &instance->drirc;
@@ -212,6 +224,8 @@ radv_init_dri_options(struct radv_instance *instance)
    driParseConfigFiles(&drirc->options, &drirc->available_options, 0, "radv", NULL, NULL,
                        instance->vk.app_info.app_name, instance->vk.app_info.app_version,
                        instance->vk.app_info.engine_name, instance->vk.app_info.engine_version);
+
+   radv_init_dri_features_options(instance);
 
    drirc->enable_mrt_output_nan_fixup = driQueryOptionb(&drirc->options, "radv_enable_mrt_output_nan_fixup");
 
@@ -275,21 +289,12 @@ radv_init_dri_options(struct radv_instance *instance)
 
    drirc->report_llvm9_version_string = driQueryOptionb(&drirc->options, "radv_report_llvm9_version_string");
 
-   drirc->vk_require_etc2 = driQueryOptionb(&drirc->options, "vk_require_etc2");
-   drirc->vk_require_astc = driQueryOptionb(&drirc->options, "vk_require_astc");
-
    drirc->disable_dcc_mips = driQueryOptionb(&drirc->options, "radv_disable_dcc_mips");
    drirc->disable_dcc_stores = driQueryOptionb(&drirc->options, "radv_disable_dcc_stores");
 
    drirc->lower_terminate_to_discard = driQueryOptionb(&drirc->options, "vk_lower_terminate_to_discard");
 
-   drirc->emulate_rt = driQueryOptionb(&drirc->options, "radv_emulate_rt");
-
-   drirc->expose_float16_gfx8 = driQueryOptionb(&drirc->options, "radv_enable_float16_gfx8");
-
    drirc->disable_hiz_his_gfx12 = driQueryOptionb(&drirc->options, "radv_disable_hiz_his_gfx12");
-
-   drirc->cooperative_matrix2_nv = driQueryOptionb(&drirc->options, "radv_cooperative_matrix2_nv");
 }
 
 static const struct vk_instance_extension_table radv_instance_extensions_supported = {

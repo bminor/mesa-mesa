@@ -147,7 +147,7 @@ radv_cooperative_matrix2_nv_enabled(const struct radv_physical_device *pdev)
 
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
 
-   return instance->drirc.cooperative_matrix2_nv;
+   return instance->drirc.features.cooperative_matrix2_nv;
 }
 
 bool
@@ -177,7 +177,7 @@ radv_emulate_rt(const struct radv_physical_device *pdev)
       return true;
 
    /* Do not force emulated RT on GPUs that have native support. */
-   return !pdev->info.has_image_bvh_intersect_ray && instance->drirc.emulate_rt;
+   return !pdev->info.has_image_bvh_intersect_ray && instance->drirc.features.emulate_rt;
 }
 
 bool
@@ -876,8 +876,8 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
       .storagePushConstant8 = true,
       .shaderBufferInt64Atomics = true,
       .shaderSharedInt64Atomics = true,
-      .shaderFloat16 =
-         pdev->info.has_packed_math_16bit || (pdev->info.gfx_level == GFX8 && instance->drirc.expose_float16_gfx8),
+      .shaderFloat16 = pdev->info.has_packed_math_16bit ||
+                       (pdev->info.gfx_level == GFX8 && instance->drirc.features.expose_float16_gfx8),
       .shaderInt8 = true,
 
       .descriptorIndexing = pdev->info.has_vm_always_valid,
@@ -2284,8 +2284,8 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
    pdev->emulate_etc2 = !pdev->info.has_etc_support;
    pdev->emulate_astc = true;
 #else
-   pdev->emulate_etc2 = !pdev->info.has_etc_support && instance->drirc.vk_require_etc2;
-   pdev->emulate_astc = instance->drirc.vk_require_astc;
+   pdev->emulate_etc2 = !pdev->info.has_etc_support && instance->drirc.features.vk_require_etc2;
+   pdev->emulate_astc = instance->drirc.features.vk_require_astc;
 #endif
 
    snprintf(pdev->name, sizeof(pdev->name), "AMD RADV %s%s", pdev->info.name, radv_get_compiler_string(pdev));

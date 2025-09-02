@@ -38,6 +38,14 @@ struct radv_drirc {
    struct driOptionCache options;
    struct driOptionCache available_options;
 
+   struct {
+      bool cooperative_matrix2_nv;
+      bool emulate_rt;
+      bool expose_float16_gfx8;
+      bool vk_require_astc;
+      bool vk_require_etc2;
+   } features;
+
    bool enable_mrt_output_nan_fixup;
    bool disable_tc_compat_htile_in_general;
    bool disable_shrink_image_store;
@@ -53,15 +61,10 @@ struct radv_drirc {
    bool flush_before_timestamp_write;
    bool clear_lds;
    bool report_llvm9_version_string;
-   bool vk_require_etc2;
-   bool vk_require_astc;
    bool disable_dcc_mips;
    bool disable_dcc_stores;
    bool lower_terminate_to_discard;
-   bool emulate_rt;
-   bool expose_float16_gfx8;
    bool disable_hiz_his_gfx12;
-   bool cooperative_matrix2_nv;
    bool no_dynamic_bounds;
    bool invariant_geom;
    bool split_fma;
