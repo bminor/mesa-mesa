@@ -9934,7 +9934,7 @@
         "description": "radv: bind aliased wsi image at memory offset zero",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "825c05a7e8f89548c0400cf920f3f70fcfa64060",
         "notes": null
