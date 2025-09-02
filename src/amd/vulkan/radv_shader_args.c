@@ -32,11 +32,8 @@ allocate_inline_push_consts(const struct radv_shader_info *info, struct user_sgp
    uint64_t mask = info->inline_push_constant_mask;
    uint8_t num_push_consts = util_bitcount64(mask);
 
-   /* Disable the default push constants path if all constants can be inlined and if shaders don't
-    * use dynamic descriptors.
-    */
-   if (num_push_consts <= MIN2(remaining_sgprs + 1, AC_MAX_INLINE_PUSH_CONSTS) && info->can_inline_all_push_constants &&
-       !info->loads_dynamic_offsets) {
+   /* Disable the default push constants path if all constants can be inlined. */
+   if (num_push_consts <= MIN2(remaining_sgprs + 1, AC_MAX_INLINE_PUSH_CONSTS) && info->can_inline_all_push_constants) {
       user_sgpr_info->inlined_all_push_consts = true;
       remaining_sgprs++;
    } else {
