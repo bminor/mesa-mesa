@@ -9364,7 +9364,7 @@
         "description": "nvk: Clear second SET_RENDER_ENABLE operand",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "80eac1337d47dd7899781bdc74796bf167b33c90",
         "notes": null
