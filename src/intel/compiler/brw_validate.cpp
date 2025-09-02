@@ -291,11 +291,10 @@ brw_validate(const brw_shader &s)
 {
    const intel_device_info *devinfo = s.devinfo;
 
-   if (s.cfg)
-      s.cfg->validate(_mesa_shader_stage_to_abbrev(s.stage));
-
-   if (s.phase <= BRW_SHADER_PHASE_AFTER_NIR)
+   if (!s.cfg)
       return;
+
+   s.cfg->validate(_mesa_shader_stage_to_abbrev(s.stage));
 
    foreach_block(block, s.cfg) {
       /* Track the last used address register. Usage of the address register
