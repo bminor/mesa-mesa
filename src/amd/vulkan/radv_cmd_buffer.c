@@ -8121,6 +8121,20 @@ radv_bind_pre_rast_shader(struct radv_cmd_buffer *cmd_buffer, const struct radv_
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FSR_STATE;
    }
 
+   /* Determine if this shader is the last VGT shader. */
+   if (shader->info.next_stage == MESA_SHADER_NONE || shader->info.next_stage == MESA_SHADER_FRAGMENT) {
+      if (pdev->info.has_vgt_flush_ngg_legacy_bug &&
+          (!cmd_buffer->state.last_vgt_shader ||
+           (cmd_buffer->state.last_vgt_shader->info.is_ngg && !shader->info.is_ngg))) {
+         /* Transitioning from NGG to legacy GS requires VGT_FLUSH on GFX10 and Navi21. VGT_FLUSH is
+          * also emitted at the beginning of IBs when legacy GS ring pointers are set.
+          */
+         cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_VGT_FLUSH;
+      }
+
+      cmd_buffer->state.last_vgt_shader = (struct radv_shader *)shader;
+   }
+
    cmd_buffer->state.mesh_shading = mesh_shading;
 }
 
@@ -8475,7 +8489,6 @@ radv_CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipeline
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(radv_pipeline, pipeline, _pipeline);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radv_cmd_stream *cs = cmd_buffer->cs;
 
    radv_reset_shader_object_state(cmd_buffer, pipelineBindPoint);
@@ -8542,18 +8555,6 @@ radv_CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipeline
       }
 
       radv_bind_gs_copy_shader(cmd_buffer, graphics_pipeline->base.gs_copy_shader);
-
-      if (pdev->info.has_vgt_flush_ngg_legacy_bug &&
-          (!cmd_buffer->state.last_vgt_shader ||
-           (cmd_buffer->state.last_vgt_shader->info.is_ngg &&
-            !graphics_pipeline->base.shaders[graphics_pipeline->last_vgt_api_stage]->info.is_ngg))) {
-         /* Transitioning from NGG to legacy GS requires VGT_FLUSH on GFX10 and Navi21. VGT_FLUSH is
-          * also emitted at the beginning of IBs when legacy GS ring pointers are set.
-          */
-         cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_VGT_FLUSH;
-      }
-
-      cmd_buffer->state.last_vgt_shader = graphics_pipeline->base.shaders[graphics_pipeline->last_vgt_api_stage];
 
       cmd_buffer->state.graphics_pipeline = graphics_pipeline;
 
@@ -11358,15 +11359,6 @@ radv_emit_streamout_enable_state(struct radv_cmd_buffer *cmd_buffer)
    radeon_end();
 }
 
-static mesa_shader_stage
-radv_cmdbuf_get_last_vgt_api_stage(const struct radv_cmd_buffer *cmd_buffer)
-{
-   if (cmd_buffer->state.active_stages & VK_SHADER_STAGE_MESH_BIT_EXT)
-      return MESA_SHADER_MESH;
-
-   return util_last_bit(cmd_buffer->state.active_stages & BITFIELD_MASK(MESA_SHADER_FRAGMENT)) - 1;
-}
-
 static unsigned
 radv_compact_spi_shader_col_format(uint32_t spi_shader_col_format)
 {
@@ -12275,21 +12267,6 @@ radv_bind_graphics_shaders(struct radv_cmd_buffer *cmd_buffer)
       push_constant_size += shader_obj->push_constant_size;
       dynamic_offset_count += shader_obj->dynamic_offset_count;
    }
-
-   /* Determine the last VGT shader. */
-   const mesa_shader_stage last_vgt_api_stage = radv_cmdbuf_get_last_vgt_api_stage(cmd_buffer);
-
-   assume(last_vgt_api_stage != MESA_SHADER_NONE);
-   if (pdev->info.has_vgt_flush_ngg_legacy_bug &&
-       (!cmd_buffer->state.last_vgt_shader || (cmd_buffer->state.last_vgt_shader->info.is_ngg &&
-                                               !cmd_buffer->state.shaders[last_vgt_api_stage]->info.is_ngg))) {
-      /* Transitioning from NGG to legacy GS requires VGT_FLUSH on GFX10 and Navi21. VGT_FLUSH is
-       * also emitted at the beginning of IBs when legacy GS ring pointers are set.
-       */
-      cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_VGT_FLUSH;
-   }
-
-   cmd_buffer->state.last_vgt_shader = cmd_buffer->state.shaders[last_vgt_api_stage];
 
    struct radv_shader *gs_copy_shader = cmd_buffer->state.shader_objs[MESA_SHADER_GEOMETRY]
                                            ? cmd_buffer->state.shader_objs[MESA_SHADER_GEOMETRY]->gs.copy_shader
