@@ -131,10 +131,19 @@ blorp_blit_apply_transform(nir_builder *b, nir_def *src_pos,
    return nir_fadd(b, nir_fmul(b, src_pos, mul), offset);
 }
 
+static bool
+tex_needs_16bits(nir_texop op, const struct intel_device_info *devinfo)
+{
+   return devinfo->verx10 >= 125 &&
+      (op == nir_texop_txf_ms ||
+       op == nir_texop_txf_ms_mcs_intel);
+}
+
 static nir_tex_instr *
 blorp_create_nir_tex_instr(nir_builder *b, struct blorp_blit_vars *v,
                            nir_texop op, nir_def *pos, unsigned num_srcs,
-                           nir_alu_type dst_type)
+                           nir_alu_type dst_type,
+                           const struct intel_device_info *devinfo)
 {
    nir_tex_instr *tex = nir_tex_instr_create(b->shader, num_srcs);
 
@@ -161,7 +170,9 @@ blorp_create_nir_tex_instr(nir_builder *b, struct blorp_blit_vars *v,
                         nir_load_var(b, v->v_src_z));
    }
 
-   tex->src[0] = nir_tex_src_for_ssa(nir_tex_src_coord, pos);
+   tex->src[0] = nir_tex_src_for_ssa(
+      nir_tex_src_coord,
+      tex_needs_16bits(op, devinfo) ? nir_u2u16(b, pos) : pos);
    tex->coord_components = 3;
 
    nir_def_init(&tex->instr, &tex->def, 4, 32);
@@ -171,7 +182,8 @@ blorp_create_nir_tex_instr(nir_builder *b, struct blorp_blit_vars *v,
 
 static nir_def *
 blorp_nir_tex(nir_builder *b, struct blorp_blit_vars *v,
-              const struct blorp_blit_prog_key *key, nir_def *pos)
+              const struct blorp_blit_prog_key *key, nir_def *pos,
+              const struct intel_device_info *devinfo)
 {
    if (key->need_src_offset)
       pos = nir_fadd(b, pos, nir_i2f32(b, nir_load_var(b, v->v_src_offset)));
@@ -182,11 +194,13 @@ blorp_nir_tex(nir_builder *b, struct blorp_blit_vars *v,
 
    nir_tex_instr *tex =
       blorp_create_nir_tex_instr(b, v, nir_texop_txl, pos, 2,
-                                 key->texture_data_type);
+                                 key->texture_data_type, devinfo);
 
    assert(pos->num_components == 2);
    tex->sampler_dim = GLSL_SAMPLER_DIM_2D;
-   tex->src[1] = nir_tex_src_for_ssa(nir_tex_src_lod, nir_imm_int(b, 0));
+   tex->src[1] = nir_tex_src_for_ssa(
+      nir_tex_src_lod,
+      nir_imm_intN_t(b, 0, tex_needs_16bits(nir_texop_txl, devinfo) ? 16 : 32));
 
    nir_builder_instr_insert(b, &tex->instr);
 
@@ -195,10 +209,11 @@ blorp_nir_tex(nir_builder *b, struct blorp_blit_vars *v,
 
 static nir_def *
 blorp_nir_txf(nir_builder *b, struct blorp_blit_vars *v,
-              nir_def *pos, nir_alu_type dst_type)
+              nir_def *pos, nir_alu_type dst_type,
+              const struct intel_device_info *devinfo)
 {
    nir_tex_instr *tex =
-      blorp_create_nir_tex_instr(b, v, nir_texop_txf, pos, 2, dst_type);
+      blorp_create_nir_tex_instr(b, v, nir_texop_txf, pos, 2, dst_type, devinfo);
 
    tex->sampler_dim = GLSL_SAMPLER_DIM_3D;
    tex->src[1] = nir_tex_src_for_ssa(nir_tex_src_lod, nir_imm_int(b, 0));
@@ -210,25 +225,25 @@ blorp_nir_txf(nir_builder *b, struct blorp_blit_vars *v,
 
 static nir_def *
 blorp_nir_txf_ms(nir_builder *b, struct blorp_blit_vars *v,
-                 nir_def *pos, nir_def *mcs, nir_alu_type dst_type)
+                 nir_def *pos, nir_alu_type dst_type,
+                 const struct intel_device_info *devinfo)
 {
-   nir_tex_instr *tex =
-      blorp_create_nir_tex_instr(b, v, nir_texop_txf_ms, pos, 3, dst_type);
+   nir_tex_instr *tex = blorp_create_nir_tex_instr(
+      b, v, nir_texop_txf_ms, pos, 2, dst_type, devinfo);
 
    tex->sampler_dim = GLSL_SAMPLER_DIM_MS;
 
    tex->src[1].src_type = nir_tex_src_ms_index;
    if (pos->num_components == 2) {
-      tex->src[1].src = nir_src_for_ssa(nir_imm_int(b, 0));
+      tex->src[1].src = nir_src_for_ssa(
+         nir_imm_intN_t(b, 0, tex_needs_16bits(nir_texop_txf_ms, devinfo) ? 16 : 32));
    } else {
       assert(pos->num_components == 3);
-      tex->src[1].src = nir_src_for_ssa(nir_channel(b, pos, 2));
+      tex->src[1].src = nir_src_for_ssa(
+         tex_needs_16bits(nir_texop_txf_ms, devinfo) ?
+         nir_u2u16(b, nir_channel(b, pos, 2)) :
+         nir_channel(b, pos, 2));
    }
-
-   if (!mcs)
-      mcs = nir_imm_zero(b, 4, 32);
-
-   tex->src[2] = nir_tex_src_for_ssa(nir_tex_src_ms_mcs_intel, mcs);
 
    nir_builder_instr_insert(b, &tex->instr);
 
@@ -237,11 +252,12 @@ blorp_nir_txf_ms(nir_builder *b, struct blorp_blit_vars *v,
 
 static nir_def *
 blorp_blit_txf_ms_mcs(nir_builder *b, struct blorp_blit_vars *v,
-                      nir_def *pos)
+                      nir_def *pos,
+                      const struct intel_device_info *devinfo)
 {
    nir_tex_instr *tex =
       blorp_create_nir_tex_instr(b, v, nir_texop_txf_ms_mcs_intel,
-                                 pos, 1, nir_type_int);
+                                 pos, 1, nir_type_int, devinfo);
 
    tex->sampler_dim = GLSL_SAMPLER_DIM_MS;
 
@@ -558,14 +574,15 @@ blorp_nir_combine_samples(nir_builder *b, struct blorp_blit_vars *v,
                           nir_def *pos, unsigned tex_samples,
                           enum isl_aux_usage tex_aux_usage,
                           nir_alu_type dst_type,
-                          enum blorp_filter filter)
+                          enum blorp_filter filter,
+                          const struct intel_device_info *devinfo)
 {
    nir_variable *color =
       nir_local_variable_create(b->impl, glsl_vec4_type(), "color");
 
    nir_def *mcs = NULL;
    if (isl_aux_usage_has_mcs(tex_aux_usage))
-      mcs = blorp_blit_txf_ms_mcs(b, v, pos);
+      mcs = blorp_blit_txf_ms_mcs(b, v, pos, devinfo);
 
    nir_op combine_op;
    switch (filter) {
@@ -641,7 +658,7 @@ blorp_nir_combine_samples(nir_builder *b, struct blorp_blit_vars *v,
       nir_def *ms_pos = nir_vec3(b, nir_channel(b, pos, 0),
                                         nir_channel(b, pos, 1),
                                         nir_imm_int(b, i));
-      texture_data[stack_depth++] = blorp_nir_txf_ms(b, v, ms_pos, mcs, dst_type);
+      texture_data[stack_depth++] = blorp_nir_txf_ms(b, v, ms_pos, dst_type, devinfo);
 
       if (i == 0 && isl_aux_usage_has_mcs(tex_aux_usage)) {
          /* The Ivy Bridge PRM, Vol4 Part1 p27 (Multisample Control Surface)
@@ -711,7 +728,8 @@ static nir_def *
 blorp_nir_manual_blend_bilinear(nir_builder *b, nir_def *pos,
                                 unsigned tex_samples,
                                 const struct blorp_blit_prog_key *key,
-                                struct blorp_blit_vars *v)
+                                struct blorp_blit_vars *v,
+                                const struct intel_device_info *devinfo)
 {
    nir_def *pos_xy = nir_trim_vector(b, pos, 2);
    nir_def *rect_grid = nir_load_var(b, v->v_rect_grid);
@@ -746,15 +764,6 @@ blorp_nir_manual_blend_bilinear(nir_builder *b, nir_def *pos,
 
       nir_def *sample_coords = nir_fadd(b, pos_xy, sample_off);
       nir_def *sample_coords_int = nir_f2i32(b, sample_coords);
-
-      /* The MCS value we fetch has to match up with the pixel that we're
-       * sampling from. Since we sample from different pixels in each
-       * iteration of this "for" loop, the call to mcs_fetch() should be
-       * here inside the loop after computing the pixel coordinates.
-       */
-      nir_def *mcs = NULL;
-      if (isl_aux_usage_has_mcs(key->tex_aux_usage))
-         mcs = blorp_blit_txf_ms_mcs(b, v, sample_coords_int);
 
       /* Compute sample index and map the sample index to a sample number.
        * Sample index layout shows the numbering of slots in a rectangular
@@ -835,7 +844,7 @@ blorp_nir_manual_blend_bilinear(nir_builder *b, nir_def *pos,
       nir_def *pos_ms = nir_vec3(b, nir_channel(b, sample_coords_int, 0),
                                         nir_channel(b, sample_coords_int, 1),
                                         sample);
-      tex_data[i] = blorp_nir_txf_ms(b, v, pos_ms, mcs, key->texture_data_type);
+      tex_data[i] = blorp_nir_txf_ms(b, v, pos_ms, key->texture_data_type, devinfo);
    }
 
    nir_def *frac_x = nir_channel(b, frac_xy, 0);
@@ -1347,13 +1356,9 @@ blorp_build_nir_shader(struct blorp_context *blorp,
        * memory location.  So we can fetch the texel now.
        */
       if (key->src_samples == 1) {
-         color = blorp_nir_txf(&b, &v, src_pos, key->texture_data_type);
+         color = blorp_nir_txf(&b, &v, src_pos, key->texture_data_type, devinfo);
       } else {
-         nir_def *mcs = NULL;
-         if (isl_aux_usage_has_mcs(key->tex_aux_usage))
-            mcs = blorp_blit_txf_ms_mcs(&b, &v, src_pos);
-
-         color = blorp_nir_txf_ms(&b, &v, src_pos, mcs, key->texture_data_type);
+         color = blorp_nir_txf_ms(&b, &v, src_pos, key->texture_data_type, devinfo);
       }
       break;
 
@@ -1363,11 +1368,11 @@ blorp_build_nir_shader(struct blorp_context *blorp,
       assert(key->tex_layout == key->src_layout);
 
       if (key->src_samples == 1) {
-         color = blorp_nir_tex(&b, &v, key, src_pos);
+         color = blorp_nir_tex(&b, &v, key, src_pos, devinfo);
       } else {
          assert(!key->use_kill);
          color = blorp_nir_manual_blend_bilinear(&b, src_pos, key->src_samples,
-                                                 key, &v);
+                                                 key, &v, devinfo);
       }
       break;
 
@@ -1396,13 +1401,14 @@ blorp_build_nir_shader(struct blorp_context *blorp,
          src_pos = nir_fadd_imm(&b,
                                 nir_i2f32(&b, src_pos),
                                 0.5f);
-         color = blorp_nir_tex(&b, &v, key, src_pos);
+         color = blorp_nir_tex(&b, &v, key, src_pos, devinfo);
       } else {
          /* Gfx7+ hardware doesn't automatically blend. */
          color = blorp_nir_combine_samples(&b, &v, src_pos, key->src_samples,
                                            key->tex_aux_usage,
                                            key->texture_data_type,
-                                           key->filter);
+                                           key->filter,
+                                           devinfo);
       }
       break;
 

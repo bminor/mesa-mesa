@@ -212,6 +212,9 @@ bool brw_nir_lower_texel_address(nir_shader *shader,
                                  const struct intel_device_info *devinfo,
                                  enum isl_tiling tiling);
 
+bool brw_nir_lower_mcs_fetch(nir_shader *shader,
+                             const struct intel_device_info *devinfo);
+
 struct brw_nir_lower_texture_opts {
    bool combined_lod_and_array_index;
    bool combined_lod_or_bias_and_offset;

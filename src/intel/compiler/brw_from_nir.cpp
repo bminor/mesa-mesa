@@ -3619,34 +3619,6 @@ fetch_viewport_index(const brw_builder &bld)
    }
 }
 
-/* Sample from the MCS surface attached to this multisample texture. */
-static brw_reg
-emit_mcs_fetch(nir_to_brw_state &ntb, const brw_reg &coordinate, unsigned components,
-               const brw_reg &texture,
-               const brw_reg &texture_handle)
-{
-   const brw_builder &bld = ntb.bld;
-
-   const brw_reg dest = bld.vgrf(BRW_TYPE_UD, 4);
-
-   brw_reg srcs[TEX_LOGICAL_NUM_SRCS];
-   srcs[TEX_LOGICAL_SRC_COORDINATE] = coordinate;
-   srcs[TEX_LOGICAL_SRC_SURFACE] = texture;
-   srcs[TEX_LOGICAL_SRC_SAMPLER] = brw_imm_ud(0);
-   srcs[TEX_LOGICAL_SRC_SURFACE_HANDLE] = texture_handle;
-
-   brw_tex_inst *tex = bld.emit(SHADER_OPCODE_TXF_MCS_LOGICAL, dest, srcs,
-                                ARRAY_SIZE(srcs))->as_tex();
-   tex->coord_components = components;
-
-   /* We only care about one or two regs of response, but the sampler always
-    * writes 4/8.
-    */
-   tex->size_written = 4 * dest.component_size(tex->exec_size);
-
-   return dest;
-}
-
 /**
  * Actual coherent framebuffer read implemented using the native render target
  * read message.  Requires SKL+.
@@ -7363,6 +7335,24 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
    ASSERTED bool got_bias = false;
    bool pack_lod_bias_and_offset = false;
    uint32_t header_bits = 0;
+
+   brw_reg_type default_src_type;
+   switch (instr->op) {
+   case nir_texop_txf_ms:
+   case nir_texop_txf_ms_mcs_intel:
+      default_src_type = devinfo->verx10 >= 125 ? BRW_TYPE_W : BRW_TYPE_D;
+      break;
+
+   case nir_texop_txf:
+   case nir_texop_txs:
+      default_src_type = BRW_TYPE_D;
+      break;
+
+   default:
+      default_src_type = BRW_TYPE_F;
+      break;
+   }
+
    for (unsigned i = 0; i < instr->num_srcs; i++) {
       nir_src nir_src = instr->src[i].src;
       brw_reg src = get_nir_src(ntb, nir_src, -1);
@@ -7374,62 +7364,57 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
       if (nir_tex_instr_src_size(instr, i) == 1)
          src = offset(src, bld, 0);
 
+      brw_reg_type src_type = BRW_TYPE_F;
+      switch (instr->src[i].src_type) {
+      case nir_tex_src_sampler_offset:
+      case nir_tex_src_texture_offset:
+      case nir_tex_src_sampler_handle:
+      case nir_tex_src_texture_handle:
+      case nir_tex_src_offset:
+         src_type = BRW_TYPE_D;
+         break;
+
+      case nir_tex_src_backend1:
+      case nir_tex_src_backend2:
+         src_type = BRW_TYPE_UD;
+         break;
+
+      default:
+         src_type = default_src_type;
+      }
+
       switch (instr->src[i].src_type) {
       case nir_tex_src_bias:
          assert(!got_lod);
          got_bias = true;
-
          srcs[TEX_LOGICAL_SRC_LOD] =
-            retype(get_nir_src_imm(ntb, instr->src[i].src), BRW_TYPE_F);
+            retype(get_nir_src_imm(ntb, instr->src[i].src), src_type);
          break;
       case nir_tex_src_comparator:
-         srcs[TEX_LOGICAL_SRC_SHADOW_C] = retype(src, BRW_TYPE_F);
+         srcs[TEX_LOGICAL_SRC_SHADOW_C] = retype(src, src_type);
          break;
       case nir_tex_src_coord:
-         switch (instr->op) {
-         case nir_texop_txf:
-         case nir_texop_txf_ms:
-         case nir_texop_txf_ms_mcs_intel:
-         case nir_texop_samples_identical:
-            srcs[TEX_LOGICAL_SRC_COORDINATE] = retype(src, BRW_TYPE_D);
-            break;
-         default:
-            srcs[TEX_LOGICAL_SRC_COORDINATE] = retype(src, BRW_TYPE_F);
-            break;
-         }
+         srcs[TEX_LOGICAL_SRC_COORDINATE] = retype(src, src_type);
          break;
       case nir_tex_src_ddx:
-         srcs[TEX_LOGICAL_SRC_LOD] = retype(src, BRW_TYPE_F);
+         srcs[TEX_LOGICAL_SRC_LOD] = retype(src, src_type);
          lod_components = nir_tex_instr_src_size(instr, i);
          break;
       case nir_tex_src_ddy:
-         srcs[TEX_LOGICAL_SRC_LOD2] = retype(src, BRW_TYPE_F);
+         srcs[TEX_LOGICAL_SRC_LOD2] = retype(src, src_type);
          break;
       case nir_tex_src_lod:
          assert(!got_bias);
          got_lod = true;
-
-         switch (instr->op) {
-         case nir_texop_txs:
-            srcs[TEX_LOGICAL_SRC_LOD] =
-               retype(get_nir_src_imm(ntb, instr->src[i].src), BRW_TYPE_UD);
-            break;
-         case nir_texop_txf:
-            srcs[TEX_LOGICAL_SRC_LOD] =
-               retype(get_nir_src_imm(ntb, instr->src[i].src), BRW_TYPE_D);
-            break;
-         default:
-            srcs[TEX_LOGICAL_SRC_LOD] =
-               retype(get_nir_src_imm(ntb, instr->src[i].src), BRW_TYPE_F);
-            break;
-         }
+         srcs[TEX_LOGICAL_SRC_LOD] =
+            retype(get_nir_src_imm(ntb, instr->src[i].src), src_type);
          break;
       case nir_tex_src_min_lod:
          srcs[TEX_LOGICAL_SRC_MIN_LOD] =
-            retype(get_nir_src_imm(ntb, instr->src[i].src), BRW_TYPE_F);
+            retype(get_nir_src_imm(ntb, instr->src[i].src), src_type);
          break;
       case nir_tex_src_ms_index:
-         srcs[TEX_LOGICAL_SRC_SAMPLE_INDEX] = retype(src, BRW_TYPE_UD);
+         srcs[TEX_LOGICAL_SRC_SAMPLE_INDEX] = retype(src, src_type);
          break;
 
       case nir_tex_src_offset: {
@@ -7443,7 +7428,7 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
              */
             assert(devinfo->verx10 < 125);
             srcs[TEX_LOGICAL_SRC_TG4_OFFSET] =
-               retype(src, BRW_TYPE_D);
+               retype(src, src_type);
          }
          break;
       }
@@ -7483,7 +7468,7 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
 
       case nir_tex_src_ms_mcs_intel:
          assert(instr->op == nir_texop_txf_ms);
-         srcs[TEX_LOGICAL_SRC_MCS] = retype(src, BRW_TYPE_D);
+         srcs[TEX_LOGICAL_SRC_MCS] = retype(src, src_type);
          break;
 
       /* If this parameter is present, we are packing offset U, V and LOD/Bias
@@ -7493,7 +7478,7 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
          assert(instr->op == nir_texop_tg4);
          pack_lod_bias_and_offset = true;
          srcs[TEX_LOGICAL_SRC_LOD] =
-            retype(get_nir_src_imm(ntb, instr->src[i].src), BRW_TYPE_F);
+            retype(get_nir_src_imm(ntb, instr->src[i].src), src_type);
          break;
 
       /* If this parameter is present, we are packing either the explicit LOD
@@ -7505,7 +7490,7 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
          got_lod = true;
          assert(instr->op == nir_texop_txl || instr->op == nir_texop_txb);
          srcs[TEX_LOGICAL_SRC_LOD] =
-            retype(get_nir_src_imm(ntb, instr->src[i].src), BRW_TYPE_F);
+            retype(get_nir_src_imm(ntb, instr->src[i].src), src_type);
          break;
 
       default:
@@ -7523,15 +7508,8 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
        srcs[TEX_LOGICAL_SRC_SAMPLER_HANDLE].file == BAD_FILE)
       srcs[TEX_LOGICAL_SRC_SAMPLER] = brw_imm_ud(instr->sampler_index);
 
-   if (srcs[TEX_LOGICAL_SRC_MCS].file == BAD_FILE &&
-       (instr->op == nir_texop_txf_ms ||
-        instr->op == nir_texop_samples_identical)) {
-      srcs[TEX_LOGICAL_SRC_MCS] =
-         emit_mcs_fetch(ntb, srcs[TEX_LOGICAL_SRC_COORDINATE],
-                        instr->coord_components,
-                        srcs[TEX_LOGICAL_SRC_SURFACE],
-                        srcs[TEX_LOGICAL_SRC_SURFACE_HANDLE]);
-   }
+   assert(srcs[TEX_LOGICAL_SRC_MCS].file != BAD_FILE ||
+          instr->op != nir_texop_txf_ms);
 
    enum opcode opcode;
    switch (instr->op) {
@@ -7605,22 +7583,6 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
    case nir_texop_texture_samples:
       opcode = SHADER_OPCODE_SAMPLEINFO_LOGICAL;
       break;
-   case nir_texop_samples_identical: {
-      brw_reg dst = retype(get_nir_def(ntb, instr->def), BRW_TYPE_D);
-
-      /* If mcs is an immediate value, it means there is no MCS.  In that case
-       * just return false.
-       */
-      if (srcs[TEX_LOGICAL_SRC_MCS].file == IMM) {
-         bld.MOV(dst, brw_imm_ud(0u));
-      } else {
-         brw_reg tmp =
-            bld.OR(srcs[TEX_LOGICAL_SRC_MCS],
-                   offset(srcs[TEX_LOGICAL_SRC_MCS], bld, 1));
-         bld.CMP(dst, tmp, brw_imm_ud(0u), BRW_CONDITIONAL_EQ);
-      }
-      return;
-   }
    default:
       UNREACHABLE("unknown texture opcode");
    }

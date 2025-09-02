@@ -799,6 +799,12 @@ get_sampler_msg_payload_type_bit_size(const intel_device_info *devinfo,
     */
    if (inst->opcode != SHADER_OPCODE_TXF_CMS_W_GFX12_LOGICAL) {
       for (unsigned i = 0; i < TEX_LOGICAL_NUM_SRCS; i++) {
+         /* surface/sampler don't go in the payload */
+         if (i == TEX_LOGICAL_SRC_SURFACE ||
+             i == TEX_LOGICAL_SRC_SAMPLER ||
+             i == TEX_LOGICAL_SRC_SURFACE_HANDLE ||
+             i == TEX_LOGICAL_SRC_SAMPLER_HANDLE)
+            continue;
          assert(src[i].file == BAD_FILE ||
                 brw_type_size_bytes(src[i].type) == src_type_size);
       }
@@ -1093,16 +1099,13 @@ lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
           *    ld2dms_w   si  mcs0 mcs1 mcs2  mcs3  u  v  r
           */
          if (op == SHADER_OPCODE_TXF_CMS_W_GFX12_LOGICAL) {
-            brw_reg tmp = offset(mcs, bld, i);
             sources[length] = retype(sources[length], payload_unsigned_type);
             bld.MOV(sources[length++],
-                    mcs.file == IMM ? mcs :
-                    brw_reg(subscript(tmp, payload_unsigned_type, 0)));
+                    mcs.file == IMM ? mcs : offset(mcs, bld, 2 * i + 0));
 
             sources[length] = retype(sources[length], payload_unsigned_type);
             bld.MOV(sources[length++],
-                    mcs.file == IMM ? mcs :
-                    brw_reg(subscript(tmp, payload_unsigned_type, 1)));
+                    mcs.file == IMM ? mcs : offset(mcs, bld, 2 * i + 1));
          } else {
             sources[length] = retype(sources[length], payload_unsigned_type);
             bld.MOV(sources[length++],

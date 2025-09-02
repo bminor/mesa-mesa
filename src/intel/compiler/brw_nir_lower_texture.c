@@ -163,13 +163,9 @@ pack_lod_or_bias_and_offset(nir_builder *b, nir_tex_instr *tex)
 }
 
 static bool
-brw_nir_lower_texture_instr(nir_builder *b, nir_instr *instr, void *cb_data)
+brw_nir_lower_texture_instr(nir_builder *b, nir_tex_instr *tex, void *cb_data)
 {
-   if (instr->type != nir_instr_type_tex)
-      return false;
-
    const struct brw_nir_lower_texture_opts *opts = cb_data;
-   nir_tex_instr *tex = nir_instr_as_tex(instr);
 
    switch (tex->op) {
    case nir_texop_txl:
@@ -186,6 +182,7 @@ brw_nir_lower_texture_instr(nir_builder *b, nir_instr *instr, void *cb_data)
       }
 
       return false;
+
    default:
       /* Nothing to do */
       return false;
@@ -198,8 +195,122 @@ bool
 brw_nir_lower_texture(nir_shader *shader,
                       const struct brw_nir_lower_texture_opts *opts)
 {
-   return nir_shader_instructions_pass(shader,
-                                       brw_nir_lower_texture_instr,
-                                       nir_metadata_none,
-                                       (void *)opts);
+   return nir_shader_tex_pass(shader,
+                              brw_nir_lower_texture_instr,
+                              nir_metadata_control_flow,
+                              (void *)opts);
+}
+
+static bool
+brw_nir_lower_mcs_fetch_instr(nir_builder *b, nir_tex_instr *tex, void *cb_data)
+{
+   switch (tex->op) {
+   case nir_texop_txf_ms:
+   case nir_texop_samples_identical:
+      break;
+
+   default:
+      /* Nothing to do */
+      return false;
+   }
+
+   /* Only happens with BLORP shaders */
+   if (nir_tex_instr_src_index(tex, nir_tex_src_ms_mcs_intel) != -1)
+      return false;
+
+   const struct intel_device_info *devinfo = cb_data;
+   const bool needs_16bit_txf_ms_payload = devinfo->verx10 >= 125;
+
+   b->cursor = nir_before_instr(&tex->instr);
+
+   /* Convert all sources to 16bit */
+   unsigned n_mcs_sources = 0;
+   for (uint32_t i = 0; i < tex->num_srcs; i++) {
+      switch (tex->src[i].src_type) {
+      case nir_tex_src_texture_handle:
+      case nir_tex_src_texture_offset:
+      case nir_tex_src_texture_deref:
+         n_mcs_sources++;
+         break;
+
+      case nir_tex_src_coord:
+      case nir_tex_src_lod:
+         n_mcs_sources++;
+         FALLTHROUGH;
+      default:
+         if (needs_16bit_txf_ms_payload) {
+            nir_src_rewrite(&tex->src[i].src,
+                            nir_u2u16(b, tex->src[i].src.ssa));
+         }
+         break;
+      }
+   }
+
+   nir_tex_instr *mcs_tex = nir_tex_instr_create(b->shader, n_mcs_sources);
+   mcs_tex->op = nir_texop_txf_ms_mcs_intel;
+   mcs_tex->dest_type = nir_type_uint32;
+   mcs_tex->sampler_dim = tex->sampler_dim;
+   mcs_tex->coord_components = tex->coord_components;
+   mcs_tex->texture_index = tex->texture_index;
+   mcs_tex->sampler_index = tex->sampler_index;
+   mcs_tex->is_array = tex->is_array;
+   mcs_tex->can_speculate = tex->can_speculate;
+
+   uint32_t mcs_src = 0;
+   for (uint32_t i = 0; i < tex->num_srcs; i++) {
+      switch (tex->src[i].src_type) {
+      case nir_tex_src_texture_handle:
+      case nir_tex_src_texture_offset:
+      case nir_tex_src_texture_deref:
+      case nir_tex_src_coord:
+      case nir_tex_src_lod:
+         assert(mcs_src < mcs_tex->num_srcs);
+         mcs_tex->src[mcs_src++] =
+            nir_tex_src_for_ssa(tex->src[i].src_type,
+                                tex->src[i].src.ssa);
+         break;
+
+      default:
+         continue;
+      }
+   }
+
+   nir_def_init(&mcs_tex->instr, &mcs_tex->def, 4, 32);
+   nir_builder_instr_insert(b, &mcs_tex->instr);
+
+   nir_def *mcs_data = &mcs_tex->def;
+   if (tex->op == nir_texop_txf_ms) {
+      if (needs_16bit_txf_ms_payload) {
+         mcs_data =
+            nir_vec4(b,
+                     nir_unpack_32_2x16_split_x(b, nir_channel(b, mcs_data, 0)),
+                     nir_unpack_32_2x16_split_y(b, nir_channel(b, mcs_data, 0)),
+                     nir_unpack_32_2x16_split_x(b, nir_channel(b, mcs_data, 1)),
+                     nir_unpack_32_2x16_split_y(b, nir_channel(b, mcs_data, 1)));
+      }
+
+      nir_tex_instr_add_src(tex, nir_tex_src_ms_mcs_intel, mcs_data);
+   } else {
+      assert(tex->op == nir_texop_samples_identical);
+
+      nir_def_replace(&tex->def,
+                      nir_ieq_imm(
+                         b,
+                         nir_ior(b,
+                                 nir_channel(b, mcs_data, 0),
+                                 nir_channel(b, mcs_data, 1)),
+                         0));
+   }
+
+   return true;
+}
+
+bool
+brw_nir_lower_mcs_fetch(nir_shader *shader,
+                        const struct intel_device_info *devinfo)
+{
+   return nir_shader_tex_pass(shader,
+                              brw_nir_lower_mcs_fetch_instr,
+                              nir_metadata_control_flow,
+                              (void *)devinfo);
 }
