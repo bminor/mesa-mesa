@@ -222,8 +222,7 @@ radv_init_dri_options(struct radv_instance *instance)
 
    instance->drirc.no_dynamic_bounds = driQueryOptionb(&instance->drirc.options, "radv_no_dynamic_bounds");
 
-   if (driQueryOptionb(&instance->drirc.options, "radv_invariant_geom"))
-      instance->debug_flags |= RADV_DEBUG_INVARIANT_GEOM;
+   instance->drirc.invariant_geom = driQueryOptionb(&instance->drirc.options, "radv_invariant_geom");
 
    if (driQueryOptionb(&instance->drirc.options, "radv_split_fma"))
       instance->debug_flags |= RADV_DEBUG_SPLIT_FMA;
@@ -444,6 +443,12 @@ radv_CreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationC
       fprintf(stderr, "radv: RADV_DEBUG=nodynamicbounds is deprecated and will it be removed in future Mesa releases. "
                       "Please use radv_no_dynamic_bounds=true instead.\n");
       instance->drirc.no_dynamic_bounds = true;
+   }
+
+   if (instance->debug_flags & RADV_DEBUG_INVARIANT_GEOM) {
+      fprintf(stderr, "radv: RADV_DEBUG=invariantgeom is deprecated and will it be removed in future Mesa releases. "
+                      "Please use radv_invariant_geom=true instead.\n");
+      instance->drirc.invariant_geom = true;
    }
 
    *pInstance = radv_instance_to_handle(instance);

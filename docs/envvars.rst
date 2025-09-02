@@ -1383,7 +1383,7 @@ RADV driver environment variables
       show GPU-related information
    ``invariantgeom``
       Mark geometry-affecting outputs as invariant. This works around a common
-      class of application bugs appearing as flickering.
+      class of application bugs appearing as flickering. (deprecated)
    ``metashaders``
       dump internal meta shaders
    ``noatocdithering``

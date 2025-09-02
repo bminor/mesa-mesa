@@ -37,7 +37,7 @@ enum {
    RADV_DEBUG_HANG = 1ull << 22,
    RADV_DEBUG_IMG = 1ull << 23,
    RADV_DEBUG_NO_UMR = 1ull << 24,
-   RADV_DEBUG_INVARIANT_GEOM = 1ull << 25,
+   RADV_DEBUG_INVARIANT_GEOM = 1ull << 25, /* deprecated */
    RADV_DEBUG_NO_DISPLAY_DCC = 1ull << 26,
    RADV_DEBUG_NO_TC_COMPAT_CMASK = 1ull << 27,
    RADV_DEBUG_NO_VRS_FLAT_SHADING = 1ull << 28,
