@@ -418,10 +418,22 @@ add_to_entry_key(struct offset_term *terms, unsigned count, struct offset_term t
    return 0;
 }
 
-static struct entry_key *
-create_entry_key_from_deref(void *mem_ctx,
-                            nir_deref_path *path,
-                            uint64_t *offset_base)
+static void
+fill_in_offset_defs(struct entry *entry, unsigned count, struct offset_term *terms)
+{
+   struct entry_key *key = entry->key;
+   key->offset_def_count = count;
+   key->offset_defs = ralloc_array(entry, nir_scalar, count);
+   key->offset_defs_mul = ralloc_array(entry, uint64_t, count);
+   for (unsigned i = 0; i < count; i++) {
+      key->offset_defs[i] = terms[i].s;
+      key->offset_defs_mul[i] = terms[i].mul;
+   }
+}
+
+static void
+create_entry_key_from_deref(struct entry *entry,
+                            nir_deref_path *path)
 {
    unsigned path_len = 0;
    while (path->path[path_len])
@@ -433,10 +445,9 @@ create_entry_key_from_deref(void *mem_ctx,
       terms = malloc(path_len * sizeof(struct offset_term));
    unsigned term_count = 0;
 
-   struct entry_key *key = ralloc(mem_ctx, struct entry_key);
+   struct entry_key *key = ralloc(entry, struct entry_key);
    key->resource = NULL;
    key->var = NULL;
-   *offset_base = 0;
 
    for (unsigned i = 0; i < path_len; i++) {
       nir_deref_instr *parent = i ? path->path[i - 1] : NULL;
@@ -458,7 +469,7 @@ create_entry_key_from_deref(void *mem_ctx,
          struct offset_term term = parse_offset(nir_get_scalar(index, 0), &offset);
          offset = util_mask_sign_extend(offset, index->bit_size);
 
-         *offset_base += offset * stride;
+         entry->offset += offset * stride;
          if (term.s.def) {
             term.mul *= stride;
             term.mul = util_mask_sign_extend(term.mul, index->bit_size);
@@ -469,7 +480,7 @@ create_entry_key_from_deref(void *mem_ctx,
       case nir_deref_type_struct: {
          assert(parent);
          int offset = glsl_get_struct_field_offset(parent->type, deref->strct.index);
-         *offset_base += offset;
+         entry->offset += offset;
          break;
       }
       case nir_deref_type_cast: {
@@ -482,18 +493,11 @@ create_entry_key_from_deref(void *mem_ctx,
       }
    }
 
-   key->offset_def_count = term_count;
-   key->offset_defs = ralloc_array(mem_ctx, nir_scalar, term_count);
-   key->offset_defs_mul = ralloc_array(mem_ctx, uint64_t, term_count);
-   for (unsigned i = 0; i < term_count; i++) {
-      key->offset_defs[i] = terms[i].s;
-      key->offset_defs_mul[i] = terms[i].mul;
-   }
+   entry->key = key;
+   fill_in_offset_defs(entry, term_count, terms);
 
    if (terms != term_stack)
       free(terms);
-
-   return key;
 }
 
 static unsigned
@@ -525,33 +529,29 @@ parse_entry_key_from_offset(struct offset_term *terms, unsigned size, unsigned l
    return add_to_entry_key(terms, size, term);
 }
 
-static struct entry_key *
-create_entry_key_from_offset(void *mem_ctx, nir_def *base, uint64_t base_mul, uint64_t *offset)
+static void
+create_entry_key_from_offset(struct entry *entry, nir_def *base, uint64_t base_mul)
 {
-   struct entry_key *key = ralloc(mem_ctx, struct entry_key);
+   struct entry_key *key = ralloc(entry, struct entry_key);
    key->resource = NULL;
    key->var = NULL;
    key->offset_defs = NULL;
    key->offset_defs_mul = NULL;
    key->offset_def_count = 0;
+   entry->key = key;
 
    struct offset_term terms[32];
    if (base) {
       nir_scalar scalar = { .def = base, .comp = 0 };
-      key->offset_def_count = parse_entry_key_from_offset(terms, 0, 32, scalar, base_mul, offset);
+      uint64_t offset = 0;
+      key->offset_def_count = parse_entry_key_from_offset(terms, 0, 32, scalar, base_mul, &offset);
+      entry->offset += offset;
    }
 
    if (!key->offset_def_count)
-      return key;
+      return;
 
-   key->offset_defs = ralloc_array(mem_ctx, nir_scalar, key->offset_def_count);
-   key->offset_defs_mul = ralloc_array(mem_ctx, uint64_t, key->offset_def_count);
-   for (unsigned i = 0; i < key->offset_def_count; i++) {
-      key->offset_defs[i] = terms[i].s;
-      key->offset_defs_mul[i] = terms[i].mul;
-   }
-
-   return key;
+   fill_in_offset_defs(entry, key->offset_def_count, terms);
 }
 
 static nir_variable_mode
@@ -648,16 +648,14 @@ create_entry(void *mem_ctx, struct vectorize_ctx *ctx,
       entry->deref = nir_src_as_deref(intrin->src[entry->info->deref_src]);
       nir_deref_path path;
       nir_deref_path_init(&path, entry->deref, NULL);
-      entry->key = create_entry_key_from_deref(entry, &path, &entry->offset);
+      create_entry_key_from_deref(entry, &path);
       nir_deref_path_finish(&path);
    } else {
       nir_def *base = entry->info->base_src >= 0 ? intrin->src[entry->info->base_src].ssa : NULL;
-      uint64_t offset = 0;
       unsigned offset_scale = get_offset_scale(entry);
       if (nir_intrinsic_has_base(intrin))
-         offset += nir_intrinsic_base(intrin) * offset_scale;
-      entry->key = create_entry_key_from_offset(entry, base, offset_scale, &offset);
-      entry->offset = offset;
+         entry->offset = nir_intrinsic_base(intrin) * offset_scale;
+      create_entry_key_from_offset(entry, base, offset_scale);
 
       if (base)
          entry->offset = util_mask_sign_extend(entry->offset, base->bit_size);
