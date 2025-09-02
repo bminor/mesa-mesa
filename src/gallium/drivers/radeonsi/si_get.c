@@ -133,10 +133,6 @@ static int si_get_video_param(struct pipe_screen *screen, enum pipe_video_profil
          /* true: VPP flush function will be called within vaEndPicture() */
          /* false: VPP flush function will be skipped */
          return false;
-      case PIPE_VIDEO_CAP_VPP_SUPPORT_HDR_INPUT:
-         if (debug_get_bool_option("AMDGPU_SIVPE_SUPPORT_HDR_INPUT", false))
-            return true;
-         return false;
       default:
          return 0;
       }

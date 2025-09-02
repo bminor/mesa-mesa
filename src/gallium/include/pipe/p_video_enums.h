@@ -167,11 +167,6 @@ enum pipe_video_cap
     */
    PIPE_VIDEO_CAP_ENC_HEVC_RANGE_EXTENSION_FLAGS_SUPPORT = 52,
    /*
-    * Video Post Processing support HDR content
-    */
-   PIPE_VIDEO_CAP_VPP_SUPPORT_HDR_INPUT = 53,
-   PIPE_VIDEO_CAP_VPP_SUPPORT_HDR_OUTPUT = 54,
-   /*
     * Video encode max long term references supported
     */
    PIPE_VIDEO_CAP_ENC_MAX_LONG_TERM_REFERENCES_PER_FRAME = 55,
