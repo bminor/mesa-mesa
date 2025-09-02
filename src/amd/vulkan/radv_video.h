@@ -30,6 +30,7 @@ struct radv_cmd_stream;
 #define RADV_BIND_SESSION_CTX          0
 #define RADV_BIND_DECODER_CTX          1
 #define RADV_BIND_INTRA_ONLY           2
+#define RADV_BIND_ENCODE_QP_MAP        3
 #define RADV_BIND_ENCODE_AV1_CDF_STORE RADV_BIND_DECODER_CTX
 
 struct radv_vid_mem {
@@ -51,6 +52,7 @@ struct radv_video_session {
    struct radv_vid_mem ctx;
 
    struct radv_vid_mem intra_only_dpb;
+   struct radv_vid_mem qp_map;
 
    unsigned dbg_frame_cnt;
    rvcn_enc_session_init_t enc_session;
@@ -93,5 +95,8 @@ void radv_video_get_enc_dpb_image(struct radv_device *device, const struct VkVid
                                   struct radv_image *image, struct radv_image_create_info *create_info);
 bool radv_video_decode_vp9_supported(const struct radv_physical_device *pdev);
 bool radv_video_encode_av1_supported(const struct radv_physical_device *pdev);
+bool radv_video_encode_qp_map_supported(const struct radv_physical_device *pdev);
+uint32_t radv_video_get_qp_map_texel_size(VkVideoCodecOperationFlagBitsKHR codec);
+bool radv_check_vcn_fw_version(const struct radv_physical_device *pdev, uint32_t dec, uint32_t enc, uint32_t rev);
 
 #endif /* RADV_VIDEO_H */

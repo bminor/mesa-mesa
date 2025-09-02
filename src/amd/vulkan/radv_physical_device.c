@@ -649,7 +649,7 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
       .KHR_video_encode_av1 =
          (radv_video_encode_av1_supported(pdev) && VIDEO_CODEC_AV1ENC && pdev->video_encode_enabled),
       .KHR_video_encode_intra_refresh = pdev->video_encode_enabled,
-      .KHR_video_encode_quantization_map = pdev->video_encode_enabled && pdev->info.vcn_ip_version < VCN_5_0_0,
+      .KHR_video_encode_quantization_map = pdev->video_encode_enabled && radv_video_encode_qp_map_supported(pdev),
       .KHR_video_encode_queue = pdev->video_encode_enabled,
       .KHR_vulkan_memory_model = true,
       .KHR_workgroup_memory_explicit_layout = true,

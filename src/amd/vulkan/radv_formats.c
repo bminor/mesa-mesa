@@ -492,8 +492,12 @@ radv_physical_device_get_format_properties(struct radv_physical_device *pdev, Vk
          tiled |= VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT_EXT;
    }
 
-   if (pdev->video_encode_enabled && format == VK_FORMAT_R32_SINT) {
-      linear |= VK_FORMAT_FEATURE_2_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR;
+   if (pdev->video_encode_enabled) {
+      const VkFormat map_format = pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_5 ? VK_FORMAT_R16_SINT : VK_FORMAT_R32_SINT;
+      if (format == map_format) {
+         linear |= VK_FORMAT_FEATURE_2_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR;
+         tiled |= VK_FORMAT_FEATURE_2_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR;
+      }
    }
 
    out_properties->linearTilingFeatures = linear;

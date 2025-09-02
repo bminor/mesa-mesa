@@ -40,7 +40,7 @@
 
 static void set_reg(struct radv_cmd_buffer *cmd_buffer, unsigned reg, uint32_t val);
 
-static inline bool
+bool
 radv_check_vcn_fw_version(const struct radv_physical_device *pdev, uint32_t dec, uint32_t enc, uint32_t rev)
 {
    return pdev->info.vcn_dec_version > dec || pdev->info.vcn_enc_minor_version > enc ||
@@ -804,7 +804,7 @@ radv_video_is_profile_supported(struct radv_physical_device *pdev, const VkVideo
    return VK_SUCCESS;
 }
 
-static uint32_t
+uint32_t
 radv_video_get_qp_map_texel_size(VkVideoCodecOperationFlagBitsKHR codec)
 {
    switch (codec) {
@@ -902,7 +902,7 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
          enc_caps->supportedEncodeFeedbackFlags = VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR |
                                                   VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR;
 
-         if (pdev->info.vcn_ip_version < VCN_5_0_0)
+         if (radv_video_encode_qp_map_supported(pdev))
             enc_caps->flags |= VK_VIDEO_ENCODE_CAPABILITY_QUANTIZATION_DELTA_MAP_BIT_KHR;
       }
       if (intra_refresh_caps) {
@@ -1254,7 +1254,7 @@ radv_GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysicalDevice physicalDevice,
 
             qp_map_texel_size = profile_qp_map_texel_size;
 
-            profile_format = VK_FORMAT_R32_SINT;
+            profile_format = pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_5 ? VK_FORMAT_R16_SINT : VK_FORMAT_R32_SINT;
          } else {
             if (profile->lumaBitDepth == VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR)
                profile_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
@@ -1467,6 +1467,9 @@ radv_BindVideoSessionMemoryKHR(VkDevice _device, VkVideoSessionKHR videoSession,
          break;
       case RADV_BIND_INTRA_ONLY:
          copy_bind(&vid->intra_only_dpb, &pBindSessionMemoryInfos[i]);
+         break;
+      case RADV_BIND_ENCODE_QP_MAP:
+         copy_bind(&vid->qp_map, &pBindSessionMemoryInfos[i]);
          break;
       default:
          assert(0);
