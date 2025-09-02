@@ -153,6 +153,8 @@ struct entry_key {
    unsigned offset_def_count;
    nir_scalar *offset_defs;
    uint64_t *offset_defs_mul;
+
+   uint8_t *offset_def_num_lsbz;
 };
 
 /* Information on a single memory operation. */
@@ -419,20 +421,23 @@ add_to_entry_key(struct offset_term *terms, unsigned count, struct offset_term t
 }
 
 static void
-fill_in_offset_defs(struct entry *entry, unsigned count, struct offset_term *terms)
+fill_in_offset_defs(struct vectorize_ctx *ctx, struct entry *entry,
+                    unsigned count, struct offset_term *terms)
 {
    struct entry_key *key = entry->key;
    key->offset_def_count = count;
    key->offset_defs = ralloc_array(entry, nir_scalar, count);
    key->offset_defs_mul = ralloc_array(entry, uint64_t, count);
+   key->offset_def_num_lsbz = ralloc_array(entry, uint8_t, count);
    for (unsigned i = 0; i < count; i++) {
       key->offset_defs[i] = terms[i].s;
       key->offset_defs_mul[i] = terms[i].mul;
+      key->offset_def_num_lsbz[i] = nir_def_num_lsb_zero(ctx->numlsb_ht, terms[i].s);
    }
 }
 
 static void
-create_entry_key_from_deref(struct entry *entry,
+create_entry_key_from_deref(struct vectorize_ctx *ctx, struct entry *entry,
                             nir_deref_path *path)
 {
    unsigned path_len = 0;
@@ -494,7 +499,7 @@ create_entry_key_from_deref(struct entry *entry,
    }
 
    entry->key = key;
-   fill_in_offset_defs(entry, term_count, terms);
+   fill_in_offset_defs(ctx, entry, term_count, terms);
 
    if (terms != term_stack)
       free(terms);
@@ -530,7 +535,8 @@ parse_entry_key_from_offset(struct offset_term *terms, unsigned size, unsigned l
 }
 
 static void
-create_entry_key_from_offset(struct entry *entry, nir_def *base, uint64_t base_mul)
+create_entry_key_from_offset(struct vectorize_ctx *ctx, struct entry *entry,
+                             nir_def *base, uint64_t base_mul)
 {
    struct entry_key *key = ralloc(entry, struct entry_key);
    key->resource = NULL;
@@ -551,7 +557,7 @@ create_entry_key_from_offset(struct entry *entry, nir_def *base, uint64_t base_m
    if (!key->offset_def_count)
       return;
 
-   fill_in_offset_defs(entry, key->offset_def_count, terms);
+   fill_in_offset_defs(ctx, entry, key->offset_def_count, terms);
 }
 
 static nir_variable_mode
@@ -587,7 +593,7 @@ aliasing_modes(nir_variable_mode modes)
 }
 
 static void
-calc_alignment(struct vectorize_ctx *ctx, struct entry *entry)
+calc_alignment(struct entry *entry)
 {
    if (entry->intrin->intrinsic == nir_intrinsic_load_buffer_amd ||
        entry->intrin->intrinsic == nir_intrinsic_store_buffer_amd) {
@@ -601,7 +607,7 @@ calc_alignment(struct vectorize_ctx *ctx, struct entry *entry)
 
    uint32_t align_mul = 31;
    for (unsigned i = 0; i < entry->key->offset_def_count; i++) {
-      unsigned lsb_zero = nir_def_num_lsb_zero(ctx->numlsb_ht, entry->key->offset_defs[i]);
+      unsigned lsb_zero = entry->key->offset_def_num_lsbz[i];
       if (lsb_zero == 64)
          continue;
       uint64_t stride = entry->key->offset_defs_mul[i] << lsb_zero;
@@ -648,14 +654,14 @@ create_entry(void *mem_ctx, struct vectorize_ctx *ctx,
       entry->deref = nir_src_as_deref(intrin->src[entry->info->deref_src]);
       nir_deref_path path;
       nir_deref_path_init(&path, entry->deref, NULL);
-      create_entry_key_from_deref(entry, &path);
+      create_entry_key_from_deref(ctx, entry, &path);
       nir_deref_path_finish(&path);
    } else {
       nir_def *base = entry->info->base_src >= 0 ? intrin->src[entry->info->base_src].ssa : NULL;
       unsigned offset_scale = get_offset_scale(entry);
       if (nir_intrinsic_has_base(intrin))
          entry->offset = nir_intrinsic_base(intrin) * offset_scale;
-      create_entry_key_from_offset(entry, base, offset_scale);
+      create_entry_key_from_offset(ctx, entry, base, offset_scale);
 
       if (base)
          entry->offset = util_mask_sign_extend(entry->offset, base->bit_size);
@@ -680,7 +686,7 @@ create_entry(void *mem_ctx, struct vectorize_ctx *ctx,
    if (get_variable_mode(entry) & restrict_modes)
       entry->access |= ACCESS_RESTRICT;
 
-   calc_alignment(ctx, entry);
+   calc_alignment(entry);
 
    return entry;
 }
@@ -1261,7 +1267,7 @@ check_for_robustness(struct vectorize_ctx *ctx, struct entry *low, uint64_t high
     */
    uint64_t stride = 0;
    for (unsigned i = 0; i < low->key->offset_def_count; i++) {
-      unsigned lsb_zero = nir_def_num_lsb_zero(ctx->numlsb_ht, low->key->offset_defs[i]);
+      unsigned lsb_zero = low->key->offset_def_num_lsbz[i];
       if (lsb_zero != 64)
          stride = calc_gcd(low->key->offset_defs_mul[i] << lsb_zero, stride);
    }
