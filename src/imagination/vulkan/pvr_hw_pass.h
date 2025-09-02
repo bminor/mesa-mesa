@@ -197,6 +197,15 @@ struct pvr_renderpass_colorinit {
    VkAttachmentLoadOp op;
 };
 
+struct pvr_load_op_state {
+   uint32_t load_op_count;
+
+   /* Load op array indexed by HW render view (not by the index in the view
+    * mask).
+    */
+   struct pvr_load_op *load_ops;
+};
+
 struct pvr_renderpass_hwsetup_render {
    /* Number of pixel output registers to allocate for this render. */
    uint32_t output_regs_count;

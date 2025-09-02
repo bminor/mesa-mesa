@@ -21,6 +21,8 @@
  * SOFTWARE.
  */
 
+#include "pvr_pass.h"
+
 #include <stdbool.h>
 #include <stdint.h>
 

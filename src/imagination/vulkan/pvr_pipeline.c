@@ -40,6 +40,7 @@
 #include "pvr_csb.h"
 #include "pvr_csb_enum_helpers.h"
 #include "pvr_device.h"
+#include "pvr_pass.h"
 #include "pvr_pds.h"
 #include "pvr_private.h"
 #include "pvr_robustness.h"

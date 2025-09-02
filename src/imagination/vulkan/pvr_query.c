@@ -34,6 +34,7 @@
 #include "pvr_csb.h"
 #include "pvr_device.h"
 #include "pvr_device_info.h"
+#include "pvr_pass.h"
 #include "pvr_private.h"
 #include "util/macros.h"
 #include "util/os_time.h"

@@ -23,6 +23,7 @@
 #include "pvr_common.h"
 #include "pvr_formats.h"
 #include "pvr_private.h"
+#include "pvr_pass.h"
 #include "pvr_usc.h"
 #include "util/macros.h"
 
