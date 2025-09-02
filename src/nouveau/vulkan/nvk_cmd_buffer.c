@@ -114,6 +114,8 @@ nvk_reset_cmd_buffer(struct vk_command_buffer *vk_cmd_buffer,
    cmd->push_mem = NULL;
    cmd->push_mem_limit = NULL;
    cmd->push = (struct nv_push) {0};
+   cmd->cond_render_gart_mem = NULL;
+   cmd->cond_render_gart_offset = 0;
 
    util_dynarray_clear(&cmd->pushes);
 
