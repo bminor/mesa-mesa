@@ -1509,6 +1509,7 @@ nvk_bind_image_memory(struct nvk_device *dev,
 {
    VK_FROM_HANDLE(nvk_device_memory, mem, info->memory);
    VK_FROM_HANDLE(nvk_image, image, info->image);
+   uint64_t offset_B = info->memoryOffset;
    VkResult result;
 
 #if DETECT_OS_ANDROID
@@ -1529,11 +1530,11 @@ nvk_bind_image_memory(struct nvk_device *dev,
       assert(swapchain_info && swapchain_info->swapchain != VK_NULL_HANDLE);
       mem = nvk_device_memory_from_handle(
          wsi_common_get_memory(swapchain_info->swapchain, swapchain_info->imageIndex));
+      offset_B = 0;
    }
 #endif
 
    assert(mem != NULL);
-   uint64_t offset_B = info->memoryOffset;
    if (image->disjoint) {
       const VkBindImagePlaneMemoryInfo *plane_info =
          vk_find_struct_const(info->pNext, BIND_IMAGE_PLANE_MEMORY_INFO);
