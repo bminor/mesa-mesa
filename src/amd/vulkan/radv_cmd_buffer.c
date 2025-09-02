@@ -1901,17 +1901,35 @@ radv_get_rasterization_samples(struct radv_cmd_buffer *cmd_buffer)
    return MAX2(1, d->vk.ms.rasterization_samples);
 }
 
+static ALWAYS_INLINE bool
+radv_is_sample_shading_enabled(struct radv_cmd_buffer *cmd_buffer, float *min_sample_shading)
+{
+   const struct radv_shader *ps = cmd_buffer->state.shaders[MESA_SHADER_FRAGMENT];
+
+   if (min_sample_shading)
+      *min_sample_shading = 1.0f;
+
+   if (cmd_buffer->state.ms.sample_shading_enable) {
+      if (min_sample_shading)
+         *min_sample_shading = cmd_buffer->state.ms.min_sample_shading;
+      return true;
+   }
+
+   return ps ? ps->info.ps.uses_sample_shading : false;
+}
+
 static ALWAYS_INLINE unsigned
 radv_get_ps_iter_samples(struct radv_cmd_buffer *cmd_buffer)
 {
    const struct radv_rendering_state *render = &cmd_buffer->state.render;
    unsigned ps_iter_samples = 1;
+   float min_sample_shading;
 
-   if (cmd_buffer->state.ms.sample_shading_enable) {
+   if (radv_is_sample_shading_enabled(cmd_buffer, &min_sample_shading)) {
       unsigned rasterization_samples = radv_get_rasterization_samples(cmd_buffer);
       unsigned color_samples = MAX2(render->color_samples, rasterization_samples);
 
-      ps_iter_samples = ceilf(cmd_buffer->state.ms.min_sample_shading * color_samples);
+      ps_iter_samples = ceilf(min_sample_shading * color_samples);
       ps_iter_samples = util_next_power_of_two(ps_iter_samples);
    }
 
@@ -4246,7 +4264,7 @@ radv_should_force_vrs1x1(struct radv_cmd_buffer *cmd_buffer)
    const struct radv_shader *ps = cmd_buffer->state.shaders[MESA_SHADER_FRAGMENT];
 
    return pdev->info.gfx_level >= GFX10_3 &&
-          (cmd_buffer->state.ms.sample_shading_enable || (ps && ps->info.ps.force_sample_iter_shading_rate));
+          (radv_is_sample_shading_enabled(cmd_buffer, NULL) || (ps && ps->info.ps.force_sample_iter_shading_rate));
 }
 
 static void
@@ -8003,6 +8021,7 @@ radv_bind_multisample_state(struct radv_cmd_buffer *cmd_buffer, const struct rad
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
    if (cmd_buffer->state.ms.sample_shading_enable != ms->sample_shading_enable) {
+      cmd_buffer->state.ms.sample_shading_enable = ms->sample_shading_enable;
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_RAST_SAMPLES_STATE | RADV_CMD_DIRTY_MSAA_STATE;
       if (pdev->info.gfx_level >= GFX10_3)
          cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FSR_STATE;
@@ -8011,8 +8030,6 @@ radv_bind_multisample_state(struct radv_cmd_buffer *cmd_buffer, const struct rad
    }
 
    if (ms->sample_shading_enable) {
-      cmd_buffer->state.ms.sample_shading_enable = true;
-
       if (cmd_buffer->state.ms.min_sample_shading != ms->min_sample_shading) {
          cmd_buffer->state.ms.min_sample_shading = ms->min_sample_shading;
          cmd_buffer->state.dirty |= RADV_CMD_DIRTY_RAST_SAMPLES_STATE | RADV_CMD_DIRTY_MSAA_STATE;
@@ -8204,7 +8221,6 @@ radv_bind_fragment_shader(struct radv_cmd_buffer *cmd_buffer, const struct radv_
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const enum amd_gfx_level gfx_level = pdev->info.gfx_level;
    const struct radv_shader *previous_ps = cmd_buffer->state.shaders[MESA_SHADER_FRAGMENT];
-   const float min_sample_shading = 1.0f;
 
    if (ps->info.ps.needs_sample_positions) {
       cmd_buffer->sample_positions_needed = true;
@@ -8221,19 +8237,11 @@ radv_bind_fragment_shader(struct radv_cmd_buffer *cmd_buffer, const struct radv_
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FSR_STATE | RADV_CMD_DIRTY_RAST_SAMPLES_STATE;
    }
 
-   if (cmd_buffer->state.ms.sample_shading_enable != ps->info.ps.uses_sample_shading) {
-      cmd_buffer->state.ms.sample_shading_enable = ps->info.ps.uses_sample_shading;
+   if (!previous_ps || previous_ps->info.ps.uses_sample_shading != ps->info.ps.uses_sample_shading) {
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_RAST_SAMPLES_STATE | RADV_CMD_DIRTY_MSAA_STATE;
       if (gfx_level >= GFX10_3)
          cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FSR_STATE;
       if (gfx_level == GFX9)
-         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_BINNING_STATE;
-   }
-
-   if (cmd_buffer->state.ms.min_sample_shading != min_sample_shading) {
-      cmd_buffer->state.ms.min_sample_shading = min_sample_shading;
-      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_RAST_SAMPLES_STATE | RADV_CMD_DIRTY_MSAA_STATE;
-      if (pdev->info.gfx_level == GFX9)
          cmd_buffer->state.dirty |= RADV_CMD_DIRTY_BINNING_STATE;
    }
 
