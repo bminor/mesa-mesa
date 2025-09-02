@@ -3,13 +3,13 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include <algorithm>
 #include <cstdio>
 #include <fcntl.h>
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
 #include <sys/mman.h>
-#include <xtensor/xrandom.hpp>
 
 #include <iostream>
 #include <sstream>
@@ -37,13 +37,6 @@ std::vector<int> weight_size{1, 3, 5};
 std::vector<int> input_size{3, 5, 8, 80, 112};
 std::vector<int> fc_channels{23, 46, 128, 256, 512};
 std::vector<int> fc_size{128, 1280, 25088, 62720};
-
-static void
-set_seed(unsigned seed)
-{
-   srand(seed);
-   xt::random::seed(seed);
-}
 
 static void
 test_model(void *buf, size_t buf_size, std::string cache_dir, unsigned tolerance)
@@ -175,7 +168,7 @@ test_model_file(std::string file_name, unsigned tolerance, bool use_cache)
       cache_dir << path.stem().string();
    }
 
-   set_seed(4);
+   srand(4);
 
    struct stat sb;
    int model_fd = open(file_name.c_str(), O_RDONLY);
@@ -200,7 +193,7 @@ test_conv(int input_size, int weight_size, int input_channels, int output_channe
    if (weight_size > input_size)
       GTEST_SKIP();
 
-   set_seed(seed);
+   srand(seed);
 
    if (cache_is_enabled()) {
       if (access(model_cache.str().c_str(), F_OK) == 0) {
@@ -245,7 +238,7 @@ test_add(int input_size, int weight_size, int input_channels, int output_channel
    if (weight_size > input_size)
       GTEST_SKIP();
 
-   set_seed(seed);
+   srand(seed);
 
    if (cache_is_enabled()) {
       if (access(model_cache.str().c_str(), F_OK) == 0) {
@@ -284,7 +277,7 @@ test_fully_connected(int input_size, int output_channels, bool is_signed, int se
    model_cache << cache_dir.str() << "/"
                << "model.tflite";
 
-   set_seed(seed);
+   srand(seed);
 
    if (cache_is_enabled()) {
       if (access(model_cache.str().c_str(), F_OK) == 0) {
@@ -579,7 +572,7 @@ main(int argc, char **argv)
       int depthwise = atoi(argv[n++]);
       int seed = atoi(argv[n++]);
 
-      set_seed(seed);
+      srand(seed);
 
       buf = conv2d_generate_model(input_size, weight_size,
                                   input_channels, output_channels,

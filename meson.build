@@ -2193,7 +2193,6 @@ endif
 
 with_teflon = get_option('teflon')
 if with_teflon and with_tests
-  dep_xtensor = dependency('xtensor')
   dep_flatbuffers = dependency('flatbuffers')
   prog_flatc = find_program('flatc')
 endif
