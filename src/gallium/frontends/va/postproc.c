@@ -403,29 +403,13 @@ vlVaHandleVAProcPipelineParameterBufferType(vlVaDriver *drv, vlVaContext *contex
    /* Output background color */
    vpp.background_color = param->output_background_color;
 
-   vlVaGetColorProperties(param->surface_color_standard, &vpp.in_color_primaries,
-                          &vpp.in_transfer_characteristics, &vpp.in_matrix_coefficients);
-
-   /* Input surface color standard */
-   switch (param->surface_color_standard) {
-   case VAProcColorStandardBT601:
-      vpp.in_colors_standard = PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_BT601;
-      break;
-   case VAProcColorStandardBT709:
-      vpp.in_colors_standard = PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_BT709;
-      break;
-   case VAProcColorStandardBT2020:
-      vpp.in_colors_standard = PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_BT2020;
-      break;
-   case VAProcColorStandardExplicit:
-      vpp.in_colors_standard = PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_EXPLICIT;
+   if (param->surface_color_standard == VAProcColorStandardExplicit) {
       vpp.in_color_primaries = param->input_color_properties.colour_primaries;
       vpp.in_transfer_characteristics = param->input_color_properties.transfer_characteristics;
       vpp.in_matrix_coefficients = param->input_color_properties.matrix_coefficients;
-      break;
-   default:
-      vpp.in_colors_standard = PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_NONE;
-      break;
+   } else {
+      vlVaGetColorProperties(param->surface_color_standard, &vpp.in_color_primaries,
+                             &vpp.in_transfer_characteristics, &vpp.in_matrix_coefficients);
    }
 
    if (vpp.in_color_primaries == PIPE_VIDEO_VPP_PRI_UNSPECIFIED)
@@ -466,29 +450,13 @@ vlVaHandleVAProcPipelineParameterBufferType(vlVaDriver *drv, vlVaContext *contex
    else if (param->input_color_properties.chroma_sample_location & VA_CHROMA_SITING_HORIZONTAL_CENTER)
       vpp.in_chroma_siting |= PIPE_VIDEO_VPP_CHROMA_SITING_HORIZONTAL_CENTER;
 
-   vlVaGetColorProperties(param->surface_color_standard, &vpp.out_color_primaries,
-                          &vpp.out_transfer_characteristics, &vpp.out_matrix_coefficients);
-
-   /* Output surface color standard */
-   switch (param->output_color_standard) {
-   case VAProcColorStandardBT601:
-      vpp.out_colors_standard = PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_BT601;
-      break;
-   case VAProcColorStandardBT709:
-      vpp.out_colors_standard = PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_BT709;
-      break;
-   case VAProcColorStandardBT2020:
-      vpp.out_colors_standard = PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_BT2020;
-      break;
-   case VAProcColorStandardExplicit:
-      vpp.out_colors_standard = PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_EXPLICIT;
+   if (param->output_color_standard == VAProcColorStandardExplicit) {
       vpp.out_color_primaries = param->output_color_properties.colour_primaries;
       vpp.out_transfer_characteristics = param->output_color_properties.transfer_characteristics;
       vpp.out_matrix_coefficients = param->output_color_properties.matrix_coefficients;
-      break;
-   default:
-      vpp.out_colors_standard = PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_NONE;
-      break;
+   } else {
+      vlVaGetColorProperties(param->surface_color_standard, &vpp.out_color_primaries,
+                             &vpp.out_transfer_characteristics, &vpp.out_matrix_coefficients);
    }
 
    if (vpp.out_color_primaries == PIPE_VIDEO_VPP_PRI_UNSPECIFIED)
