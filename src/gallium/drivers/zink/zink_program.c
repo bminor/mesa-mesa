@@ -1532,6 +1532,7 @@ create_compute_program(struct zink_context *ctx, nir_shader *nir)
    if (!comp)
       return NULL;
    simple_mtx_init(&comp->cache_lock, mtx_plain);
+   comp->uses_bindless = nir->info.uses_bindless;
    comp->scratch_size = nir->scratch_size;
    comp->nir = nir;
    comp->num_inlinable_uniforms = nir->info.num_inlinable_uniforms;
@@ -1820,6 +1821,8 @@ bind_gfx_stage(struct zink_context *ctx, mesa_shader_stage stage, struct zink_sh
    if (shader) {
       ctx->shader_stages |= BITFIELD_BIT(stage);
       ctx->gfx_hash ^= ctx->gfx_stages[stage]->hash;
+      if (shader->info.uses_bindless)
+         zink_descriptors_init_bindless(ctx);
    } else {
       ctx->gfx_pipeline_state.modules[stage] = VK_NULL_HANDLE;
       if (ctx->curr_program)
@@ -2074,9 +2077,6 @@ zink_create_cs_state(struct pipe_context *pctx,
    else
       nir = (struct nir_shader *)shader->prog;
 
-   if (nir->info.uses_bindless)
-      zink_descriptors_init_bindless(zink_context(pctx));
-
    return create_compute_program(zink_context(pctx), nir);
 }
 
@@ -2101,6 +2101,8 @@ zink_bind_cs_state(struct pipe_context *pctx,
    if (comp && comp != ctx->curr_compute) {
       if (ctx->compute_pipeline_state.key.base.nonseamless_cube_mask)
          ctx->compute_dirty = true;
+      if (comp->uses_bindless)
+         zink_descriptors_init_bindless(ctx);
    }
    ctx->curr_compute = comp;
    zink_select_launch_grid(ctx);
@@ -2317,8 +2319,6 @@ zink_create_gfx_shader_state(struct pipe_context *pctx, const struct pipe_shader
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT && nir->info.fs.uses_fbfetch_output)
       zink_descriptor_util_init_fbfetch(zink_context(pctx));
-   if (nir->info.uses_bindless)
-      zink_descriptors_init_bindless(zink_context(pctx));
 
    struct zink_shader *zs = zink_shader_create(zink_screen(pctx->screen), nir);
    if (zink_debug & ZINK_DEBUG_NOBGC)
