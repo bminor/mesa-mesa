@@ -2196,7 +2196,6 @@ radv_fill_shader_info_ngg(struct radv_device *device, struct radv_shader_stage *
                           VkShaderStageFlagBits active_nir_stages)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   const struct radv_instance *instance = radv_physical_device_instance(pdev);
 
    if (!pdev->cache_key.use_ngg)
       return;
@@ -2234,7 +2233,7 @@ radv_fill_shader_info_ngg(struct radv_device *device, struct radv_shader_stage *
       }
 
       if ((last_vgt_stage && last_vgt_stage->nir->xfb_info) ||
-          ((instance->debug_flags & RADV_DEBUG_NO_NGG_GS) && stages[MESA_SHADER_GEOMETRY].nir)) {
+          (pdev->cache_key.no_ngg_gs && stages[MESA_SHADER_GEOMETRY].nir)) {
          /* NGG needs to be disabled on GFX10/GFX10.3 when:
           * - streamout is used because NGG streamout isn't supported
           * - NGG GS is explictly disabled to workaround performance issues

@@ -229,8 +229,7 @@ radv_init_dri_options(struct radv_instance *instance)
    if (driQueryOptionb(&instance->drirc.options, "radv_disable_dcc"))
       instance->debug_flags |= RADV_DEBUG_NO_DCC;
 
-   if (driQueryOptionb(&instance->drirc.options, "radv_disable_ngg_gs"))
-      instance->debug_flags |= RADV_DEBUG_NO_NGG_GS;
+   instance->drirc.disable_ngg_gs = driQueryOptionb(&instance->drirc.options, "radv_disable_ngg_gs");
 
    instance->drirc.clear_lds = driQueryOptionb(&instance->drirc.options, "radv_clear_lds");
 
@@ -454,6 +453,12 @@ radv_CreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationC
       fprintf(stderr, "radv: RADV_DEBUG=splitfma is deprecated and will it be removed in future Mesa releases. "
                       "Please use radv_split_fma=true instead.\n");
       instance->drirc.split_fma = true;
+   }
+
+   if (instance->debug_flags & RADV_DEBUG_NO_NGG_GS) {
+      fprintf(stderr, "radv: RADV_DEBUG=nongg_gs is deprecated and will it be removed in future Mesa releases. "
+                      "Please use radv_disable_ngg_gs=true instead.\n");
+      instance->drirc.disable_ngg_gs = true;
    }
 
    *pInstance = radv_instance_to_handle(instance);

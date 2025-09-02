@@ -1419,7 +1419,7 @@ RADV driver environment variables
    ``nonggc``
       disable NGG culling for GFX10 and GFX10.3
    ``nongg_gs``
-      disable NGG GS for GFX10 and GFX10.3
+      disable NGG GS for GFX10 and GFX10.3 (deprecated)
    ``nort``
       skip executing vkCmdTraceRays and ray queries (RT extensions will still be
       advertised)

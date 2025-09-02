@@ -220,7 +220,7 @@ radv_physical_device_init_cache_key(struct radv_physical_device *pdev)
    key->ge_wave32 = pdev->ge_wave_size == 32;
    key->invariant_geom = instance->drirc.invariant_geom;
    key->no_fmask = !!(instance->debug_flags & RADV_DEBUG_NO_FMASK);
-   key->no_ngg_gs = !!(instance->debug_flags & RADV_DEBUG_NO_NGG_GS);
+   key->no_ngg_gs = instance->drirc.disable_ngg_gs;
    key->no_rt = !!(instance->debug_flags & RADV_DEBUG_NO_RT);
    key->ps_wave32 = pdev->ps_wave_size == 32;
    key->rt_wave64 = pdev->rt_wave_size == 64;
