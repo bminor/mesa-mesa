@@ -31,7 +31,6 @@ nvk_ies_cs_qmd_init(const struct nvk_physical_device *pdev,
    struct nak_qmd_info qmd_info = {
       .addr = shader->hdr_addr,
       .smem_size = shader->info.cs.smem_size,
-      .smem_max = NVK_MAX_SHARED_SIZE,
    };
 
    assert(shader->cbuf_map.cbuf_count <= ARRAY_SIZE(qmd_info.cbufs));

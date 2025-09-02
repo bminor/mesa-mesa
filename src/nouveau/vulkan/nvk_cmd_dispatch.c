@@ -187,7 +187,6 @@ nvk_cmd_upload_qmd(struct nvk_cmd_buffer *cmd,
       struct nak_qmd_info qmd_info = {
          .addr = shader->hdr_addr,
          .smem_size = shader->info.cs.smem_size,
-         .smem_max = NVK_MAX_SHARED_SIZE,
          .global_size = {
             global_size[0],
             global_size[1],
