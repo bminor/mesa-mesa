@@ -926,6 +926,7 @@ struct pipe_caps {
    bool invalidate_buffer;
    bool generate_mipmap;
    bool string_marker;
+   bool surface_no_compress;
    bool surface_reinterpret_blocks;
    bool compressed_surface_reinterpret_blocks_layered;
    bool query_buffer_object;

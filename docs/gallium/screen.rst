@@ -341,6 +341,8 @@ Capability about the features and limits of the driver/GPU.
 * ``pipe_caps.generate_mipmap``: Indicates whether pipe_context::generate_mipmap
   is supported.
 * ``pipe_caps.string_marker``: Whether pipe->emit_string_marker() is supported.
+* ``pipe_caps.surface_no_compress``: Indicates that
+  pipe_context::create_surface does not support compression
 * ``pipe_caps.surface_reinterpret_blocks``: Indicates whether
   pipe_context::create_surface supports reinterpreting a texture as a surface
   of a format with different block width/height (but same block size in bits).

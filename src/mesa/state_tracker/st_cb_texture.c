@@ -2482,6 +2482,9 @@ st_CompressedTexSubImage(struct gl_context *ctx, GLuint dims,
    if (st_compressed_format_fallback(st, texImage->TexFormat))
       goto fallback;
 
+   if (screen->caps.surface_no_compress)
+      goto fallback;
+
    if (!dst) {
       goto fallback;
    }
