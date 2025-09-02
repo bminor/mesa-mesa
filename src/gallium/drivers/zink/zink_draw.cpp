@@ -287,6 +287,15 @@ update_gfx_pipeline(struct zink_context *ctx, struct zink_batch_state *bs, enum 
          };
          /* always rebind all stages */
          VKCTX(CmdBindShadersEXT)(bs->cmdbuf, ZINK_GFX_SHADER_COUNT, stages, ctx->curr_program->objects);
+         if (screen->info.have_EXT_mesh_shader) {
+            /* must always unbind mesh stages */
+            VkShaderStageFlagBits mesh_stages[] = {
+               VK_SHADER_STAGE_TASK_BIT_EXT,
+               VK_SHADER_STAGE_MESH_BIT_EXT,
+            };
+            VkShaderEXT mesh[2] = {VK_NULL_HANDLE};
+            VKCTX(CmdBindShadersEXT)(bs->cmdbuf, ARRAY_SIZE(mesh_stages), mesh_stages, mesh);
+         }
          VKCTX(CmdSetDepthBiasEnable)(bs->cmdbuf, VK_TRUE);
          VKCTX(CmdSetTessellationDomainOriginEXT)(bs->cmdbuf, VK_TESSELLATION_DOMAIN_ORIGIN_LOWER_LEFT);
          VKCTX(CmdSetSampleLocationsEnableEXT)(bs->cmdbuf, ctx->gfx_pipeline_state.sample_locations_enabled);
