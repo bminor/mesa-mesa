@@ -336,17 +336,6 @@ enum pipe_video_vpp_blend_mode
 };
 
 /* To be used for VPP state*/
-enum pipe_video_vpp_color_standard_type
-{
-   PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_NONE = 0x0,
-   PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_BT601 = 0x1,
-   PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_BT709 = 0x2,
-   PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_BT2020 = 0xC,
-   PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_EXPLICIT = 0xD,
-   PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_COUNT,
-};
-
-/* To be used for VPP state*/
 enum pipe_video_vpp_color_range
 {
    PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_NONE     = 0x00,
