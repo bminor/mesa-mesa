@@ -40,8 +40,8 @@ struct tu_image
    uint64_t iova;
    union {
       struct {
-         struct tu_bo *bo;
-         uint64_t bo_offset;
+         struct tu_device_memory *mem;
+         uint64_t mem_offset;
       };
       struct tu_sparse_vma vma;
    };

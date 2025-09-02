@@ -618,13 +618,13 @@ log_mem(struct tu_device *dev, struct tu_buffer *buffer, struct tu_image *image,
       if (buffer) {
          event->set_source(perfetto::protos::pbzero::perfetto_pbzero_enum_VulkanMemoryEvent::SOURCE_BUFFER);
          event->set_memory_size(buffer->vk.size);
-         if (buffer->bo)
+         if (buffer->vk.device_address)
             event->set_memory_address(buffer->vk.device_address);
       } else {
          assert(image);
          event->set_source(perfetto::protos::pbzero::perfetto_pbzero_enum_VulkanMemoryEvent::SOURCE_IMAGE);
          event->set_memory_size(image->layout[0].size);
-         if (image->bo)
+         if (image->iova)
             event->set_memory_address(image->iova);
       }
 
@@ -666,7 +666,7 @@ tu_perfetto_log_bind_image(struct tu_device *dev, struct tu_image *image)
 void
 tu_perfetto_log_destroy_image(struct tu_device *dev, struct tu_image *image)
 {
-   log_mem(dev, NULL, image, image->bo ?
+   log_mem(dev, NULL, image, image->mem ?
       perfetto::protos::pbzero::perfetto_pbzero_enum_VulkanMemoryEvent::OP_DESTROY_BOUND :
       perfetto::protos::pbzero::perfetto_pbzero_enum_VulkanMemoryEvent::OP_DESTROY);
 }

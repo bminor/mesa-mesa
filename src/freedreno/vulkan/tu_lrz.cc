@@ -630,10 +630,10 @@ tu_disable_lrz_cpu(struct tu_device *device, struct tu_image *image)
 
    *lrz_dir_tracking = FD_LRZ_GPU_DIR_DISABLED;
 
-   if (image->bo->cached_non_coherent) {
+   if (image->mem->bo->cached_non_coherent) {
       tu_bo_sync_cache(
-         device, image->bo,
-         image->bo_offset + image->lrz_layout.lrz_offset + lrz_dir_offset, 1,
+         device, image->mem->bo,
+         image->mem_offset + image->lrz_layout.lrz_offset + lrz_dir_offset, 1,
          TU_MEM_SYNC_CACHE_TO_GPU);
    }
 }

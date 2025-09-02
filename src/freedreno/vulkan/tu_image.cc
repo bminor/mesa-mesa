@@ -1003,8 +1003,8 @@ tu_image_bind(struct tu_device *device,
       if (result != VK_SUCCESS)
          return result;
    }
-   image->bo = mem->bo;
-   image->bo_offset = offset;
+   image->mem = mem;
+   image->mem_offset = offset;
    image->iova = mem->bo->iova + offset;
 
    if (image->vk.usage & (VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT |

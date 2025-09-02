@@ -2566,9 +2566,9 @@ tu_copy_memory_to_image(struct tu_device *device,
                                      &device->physical_device->ubwc_config);
       }
 
-      if (dst_image->bo->cached_non_coherent) {
-         tu_bo_sync_cache(device, dst_image->bo,
-                          dst_image->bo_offset + image_offset,
+      if (dst_image->mem->bo->cached_non_coherent) {
+         tu_bo_sync_cache(device, dst_image->mem->bo,
+                          dst_image->mem_offset + image_offset,
                           dst_layer_size, TU_MEM_SYNC_CACHE_TO_GPU);
       }
    }
@@ -2751,9 +2751,9 @@ tu_copy_image_to_memory(struct tu_device *device,
    char *dst = (char *) info->pHostPointer;
    for (unsigned layer = 0; layer < layers; layer++,
         src += src_layer_stride, dst += dst_layer_stride) {
-      if (src_image->bo->cached_non_coherent) {
-         tu_bo_sync_cache(device, src_image->bo,
-                          src_image->bo_offset + image_offset,
+      if (src_image->mem->bo->cached_non_coherent) {
+         tu_bo_sync_cache(device, src_image->mem->bo,
+                          src_image->mem_offset + image_offset,
                           src_layer_size, TU_MEM_SYNC_CACHE_FROM_GPU);
       }
 
@@ -3134,9 +3134,9 @@ tu_copy_image_to_image_cpu(struct tu_device *device,
    char *dst = (char *) dst_image->map + dst_image_offset;
    for (unsigned layer = 0; layer < layers_to_copy; layer++,
         src += src_layer_stride, dst += dst_layer_stride) {
-      if (src_image->bo->cached_non_coherent) {
-         tu_bo_sync_cache(device, src_image->bo,
-                          src_image->bo_offset + src_image_offset,
+      if (src_image->mem->bo->cached_non_coherent) {
+         tu_bo_sync_cache(device, src_image->mem->bo,
+                          src_image->mem_offset + src_image_offset,
                           src_layer_size, TU_MEM_SYNC_CACHE_FROM_GPU);
       }
 
@@ -3214,9 +3214,9 @@ tu_copy_image_to_image_cpu(struct tu_device *device,
          }
       }
 
-      if (dst_image->bo->cached_non_coherent) {
-         tu_bo_sync_cache(device, dst_image->bo,
-                          dst_image->bo_offset + dst_image_offset,
+      if (dst_image->mem->bo->cached_non_coherent) {
+         tu_bo_sync_cache(device, dst_image->mem->bo,
+                          dst_image->mem_offset + dst_image_offset,
                           dst_layer_size, TU_MEM_SYNC_CACHE_TO_GPU);
       }
    }

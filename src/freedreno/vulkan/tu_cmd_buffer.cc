@@ -2480,8 +2480,8 @@ tu_trace_end_render_pass(struct tu_cmd_buffer *cmd, bool gmem)
    struct u_trace_address addr = {};
    if (cmd->state.lrz.image_view) {
       struct tu_image *image = cmd->state.lrz.image_view->image;
-      addr.bo = image->bo;
-      addr.offset = (image->iova - image->bo->iova) +
+      addr.bo = image->mem->bo;
+      addr.offset = (image->iova - image->mem->bo->iova) +
                     image->lrz_layout.lrz_fc_offset +
                     offsetof(fd_lrzfc_layout<CHIP>, dir_track);
    }
