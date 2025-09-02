@@ -555,4 +555,13 @@ typedef int lock_cap_t;
    } while (0)
 #endif
 
+#define typed_memcpy(dest, src, count) do { \
+   STATIC_ASSERT(sizeof(*(src)) == sizeof(*(dest))); \
+   uint8_t *d = (uint8_t*)(dest); \
+   const uint8_t *s = (const uint8_t*)(src); \
+   if (d != NULL && s != NULL && (count) > 0) { \
+       memcpy(d, s, (count) * sizeof(*(src))); \
+   } \
+} while (0)
+
 #endif /* UTIL_MACROS_H */
