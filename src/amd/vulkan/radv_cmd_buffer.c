@@ -5722,7 +5722,7 @@ radv_emit_index_buffer(struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
-radv_flush_occlusion_query_state(struct radv_cmd_buffer *cmd_buffer)
+radv_emit_occlusion_query_state(struct radv_cmd_buffer *cmd_buffer)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -12079,7 +12079,7 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
    }
 
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_OCCLUSION_QUERY) {
-      radv_flush_occlusion_query_state(cmd_buffer);
+      radv_emit_occlusion_query_state(cmd_buffer);
       cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_OCCLUSION_QUERY;
    }
 
