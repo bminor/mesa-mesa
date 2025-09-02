@@ -487,6 +487,7 @@ finish_barrier_internal(wait_ctx& ctx, wait_imm& imm, depctr_wait& depctr, Instr
 
    if (info->scope[storage_idx] <= scope_workgroup) {
       bool is_vmem = instr->isVMEM() || (instr->isFlatLike() && !instr->flatlike().may_use_lds);
+      bool is_lds = instr->isDS() && !instr->ds().gds;
       bool is_barrier = instr->isBarrier(); /* This is only called for control barriers. */
 
       /* In non-WGP, the L1 (L0 on GFX10+) cache keeps all memory operations in-order for the same
@@ -495,6 +496,13 @@ finish_barrier_internal(wait_ctx& ctx, wait_imm& imm, depctr_wait& depctr, Instr
       if (has_vmem_events && (is_vmem || is_barrier) && !ctx.program->wgp_mode) {
          events &= ~(event_vmem | event_vmem_store);
          vm_vsrc |= is_barrier && ctx.gfx_level >= GFX10;
+      }
+
+      /* Similar for LDS. */
+      if ((events & event_lds) &&
+          (is_lds || (is_barrier && ctx.gfx_level >= GFX10 && !ctx.program->wgp_mode))) {
+         events &= ~event_lds;
+         vm_vsrc |= is_barrier;
       }
    }
 
