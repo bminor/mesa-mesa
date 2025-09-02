@@ -1840,9 +1840,9 @@ static bool radeon_vcn_enc_efc_supported(struct radeon_encoder *enc,
        vpp->src_region.y1 != vpp->dst_region.y1)
       return false;
 
-   if (vpp->in_colors_standard != vpp->out_colors_standard ||
-       (vpp->in_colors_standard != PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_NONE &&
-        vpp->in_colors_standard != PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_BT709))
+   if (vpp->in_color_primaries != vpp->out_color_primaries ||
+       vpp->in_transfer_characteristics != vpp->out_transfer_characteristics ||
+       vpp->out_matrix_coefficients != PIPE_VIDEO_VPP_MCF_BT709)
       return false;
 
    if (vpp->out_chroma_siting & (PIPE_VIDEO_VPP_CHROMA_SITING_VERTICAL_BOTTOM |
@@ -1878,11 +1878,10 @@ static bool radeon_vcn_enc_efc_supported(struct radeon_encoder *enc,
    return true;
 }
 
-static uint32_t radeon_vcn_enc_color_volume(enum pipe_video_vpp_color_standard_type color_standard)
+static uint32_t radeon_vcn_enc_color_volume(enum pipe_video_vpp_matrix_coefficients coeffs)
 {
-   switch (color_standard) {
-   case PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_NONE:
-   case PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_BT709:
+   switch (coeffs) {
+   case PIPE_VIDEO_VPP_MCF_BT709:
       return RENCODE_COLOR_VOLUME_G22_BT709;
    default:
       assert(0);
@@ -1917,9 +1916,9 @@ static int radeon_enc_process_frame(struct pipe_video_codec *encoder,
 
    if (radeon_vcn_enc_efc_supported(enc, source, vpp)) {
       enc->efc_source = source;
-      enc->input_color_volume = radeon_vcn_enc_color_volume(vpp->in_colors_standard);
+      enc->input_color_volume = radeon_vcn_enc_color_volume(vpp->out_matrix_coefficients);
       enc->input_color_range = radeon_vcn_enc_color_range(vpp->in_color_range);
-      enc->output_color_volume = radeon_vcn_enc_color_volume(vpp->out_colors_standard);
+      enc->output_color_volume = radeon_vcn_enc_color_volume(vpp->out_matrix_coefficients);
       enc->output_color_range = radeon_vcn_enc_color_range(vpp->out_color_range);
       enc->output_chroma_location = radeon_vcn_enc_chroma_location(vpp->out_chroma_siting);
       return 0;
