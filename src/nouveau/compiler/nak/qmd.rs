@@ -3,6 +3,8 @@
 
 extern crate nvidia_headers;
 
+use std::cmp::min;
+
 use compiler::bindings::*;
 use nak_bindings::*;
 use nvidia_headers::classes::{cla0c0, clc0c0, clc3c0, clc6c0, clcbc0, clcdc0};
@@ -25,7 +27,12 @@ trait QMD {
     fn set_register_count(&mut self, register_count: u8);
     fn set_crs_size(&mut self, crs_size: u32);
     fn set_slm_size(&mut self, slm_size: u32);
-    fn set_smem_size(&mut self, smem_size: u32, smem_sizes: &[u16]);
+    fn set_smem_size(
+        &mut self,
+        smem_size: u32,
+        dev: &nv_device_info,
+        info: &nak_shader_info,
+    );
 }
 
 macro_rules! set_enum {
@@ -282,7 +289,12 @@ mod qmd_0_6 {
         qmd_impl_set_register_count!(cla0c0, QMDV00_06, REGISTER_COUNT);
         qmd_impl_set_slm_size!(cla0c0, QMDV00_06, NONE);
 
-        fn set_smem_size(&mut self, smem_size: u32, _smem_sizes: &[u16]) {
+        fn set_smem_size(
+            &mut self,
+            smem_size: u32,
+            _dev: &nv_device_info,
+            _info: &nak_shader_info,
+        ) {
             let mut bv = QMDBitView::new(&mut self.qmd);
 
             let smem_size = smem_size.next_multiple_of(0x100);
@@ -328,7 +340,12 @@ mod qmd_2_1 {
         qmd_impl_set_register_count!(clc0c0, QMDV02_01, REGISTER_COUNT);
         qmd_impl_set_slm_size!(clc0c0, QMDV02_01, NONE);
 
-        fn set_smem_size(&mut self, smem_size: u32, _smem_sizes: &[u16]) {
+        fn set_smem_size(
+            &mut self,
+            smem_size: u32,
+            _dev: &nv_device_info,
+            _info: &nak_shader_info,
+        ) {
             let mut bv = QMDBitView::new(&mut self.qmd);
 
             let smem_size = smem_size.next_multiple_of(0x100);
@@ -343,36 +360,89 @@ fn gv100_smem_size_to_hw(size_kb: u16) -> u16 {
     (size_kb / 4) + 1
 }
 
-fn gv100_pick_smem_size_kb(size: u32, smem_sizes_kb: &[u16]) -> u16 {
+/// Returns the SM_CONFIG_SHARED_MEM_SIZE for the given workgroups and shared
+/// memory size.
+fn gv100_pick_smem_size_kb(
+    size: u32,
+    smem_sizes_kb: &[u16],
+    workgroups: u32,
+) -> u16 {
+    let highest = *smem_sizes_kb.last().unwrap();
+    // How many workgroups can we launch with the requested shared mem size?
+    let workgroups = min(workgroups, u32::from(highest) * 1024 / size.max(1));
+    assert!(
+        workgroups > 0,
+        "Requested shared memory not supported by the hw."
+    );
+
+    // Now that we know for how many workgroups we have shared memory, try to
+    // find the smallest allocation that fits.
     *smem_sizes_kb
         .iter()
-        .find(|&&val| u32::from(val) * 1024 >= size)
-        .expect("Requested shared memory not supported by the hw.")
+        .find(|&&val| u32::from(val) * 1024 >= size * workgroups)
+        .unwrap_or(&highest)
+}
+
+/// Returns the (MIN_, TARGET_, MAX_) SM_CONFIG_SHARED_MEM_SIZE values.
+fn gv100_get_hw_smem_sizes(
+    smem_size: u32,
+    dev: &nv_device_info,
+    info: &nak_shader_info,
+) -> (u16, u16, u16) {
+    let cs_info = unsafe {
+        assert!(info.stage == MESA_SHADER_COMPUTE);
+        &info.__bindgen_anon_1.cs
+    };
+
+    let smem_sizes = &dev.sm_smem_sizes_kB[0..dev.sm_smem_size_count.into()];
+    let threads =
+        cs_info.local_size[0] * cs_info.local_size[1] * cs_info.local_size[2];
+    let warps = threads.div_ceil(32);
+    let workgroups_per_sm = info.max_warps_per_sm / u32::from(warps);
+
+    let min = gv100_pick_smem_size_kb(smem_size, smem_sizes, 1);
+    let target =
+        gv100_pick_smem_size_kb(smem_size, smem_sizes, workgroups_per_sm);
+    let max = *smem_sizes.last().unwrap();
+
+    (
+        gv100_smem_size_to_hw(min),
+        gv100_smem_size_to_hw(target),
+        gv100_smem_size_to_hw(max),
+    )
 }
 
 macro_rules! qmd_impl_set_smem_size_bounded {
     ($c:ident, $s:ident) => {
-        fn set_smem_size(&mut self, smem_size: u32, smem_sizes: &[u16]) {
+        fn set_smem_size(
+            &mut self,
+            smem_size: u32,
+            dev: &nv_device_info,
+            info: &nak_shader_info,
+        ) {
             let mut bv = QMDBitView::new(&mut self.qmd);
 
             let smem_size = smem_size.next_multiple_of(0x100);
             set_field!(bv, $c, $s, SHARED_MEMORY_SIZE, smem_size);
 
-            let smem_size_kb = gv100_pick_smem_size_kb(smem_size, smem_sizes);
-            let smem_hw = gv100_smem_size_to_hw(smem_size_kb);
-            let smem_hw_max =
-                gv100_smem_size_to_hw(*smem_sizes.last().unwrap());
+            let (min, target, max) =
+                gv100_get_hw_smem_sizes(smem_size, dev, info);
 
-            set_field!(bv, $c, $s, MIN_SM_CONFIG_SHARED_MEM_SIZE, smem_hw);
-            set_field!(bv, $c, $s, MAX_SM_CONFIG_SHARED_MEM_SIZE, smem_hw_max);
-            set_field!(bv, $c, $s, TARGET_SM_CONFIG_SHARED_MEM_SIZE, smem_hw);
+            set_field!(bv, $c, $s, MIN_SM_CONFIG_SHARED_MEM_SIZE, min);
+            set_field!(bv, $c, $s, MAX_SM_CONFIG_SHARED_MEM_SIZE, max);
+            set_field!(bv, $c, $s, TARGET_SM_CONFIG_SHARED_MEM_SIZE, target);
         }
     };
 }
 
 macro_rules! qmd_impl_set_smem_size_bounded_gb {
     ($c:ident, $s:ident) => {
-        fn set_smem_size(&mut self, smem_size: u32, smem_sizes: &[u16]) {
+        fn set_smem_size(
+            &mut self,
+            smem_size: u32,
+            dev: &nv_device_info,
+            info: &nak_shader_info,
+        ) {
             let mut bv = QMDBitView::new(&mut self.qmd);
 
             let smem_size = smem_size.next_multiple_of(0x100);
@@ -387,14 +457,12 @@ macro_rules! qmd_impl_set_smem_size_bounded_gb {
                 smem_size_shifted
             );
 
-            let smem_size_kb = gv100_pick_smem_size_kb(smem_size, smem_sizes);
-            let smem_hw = gv100_smem_size_to_hw(smem_size_kb);
-            let smem_hw_max =
-                gv100_smem_size_to_hw(*smem_sizes.last().unwrap());
+            let (min, target, max) =
+                gv100_get_hw_smem_sizes(smem_size, dev, info);
 
-            set_field!(bv, $c, $s, MIN_SM_CONFIG_SHARED_MEM_SIZE, smem_hw);
-            set_field!(bv, $c, $s, MAX_SM_CONFIG_SHARED_MEM_SIZE, smem_hw_max);
-            set_field!(bv, $c, $s, TARGET_SM_CONFIG_SHARED_MEM_SIZE, smem_hw);
+            set_field!(bv, $c, $s, MIN_SM_CONFIG_SHARED_MEM_SIZE, min);
+            set_field!(bv, $c, $s, MAX_SM_CONFIG_SHARED_MEM_SIZE, max);
+            set_field!(bv, $c, $s, TARGET_SM_CONFIG_SHARED_MEM_SIZE, target);
         }
     };
 }
@@ -574,9 +642,7 @@ fn fill_qmd<Q: QMD>(
     qmd.set_slm_size(info.slm_size);
 
     assert!(qmd_info.smem_size <= u32::from(dev.max_smem_per_wg_kB) * 1024);
-
-    let smem_sizes = &dev.sm_smem_sizes_kB[0..dev.sm_smem_size_count.into()];
-    qmd.set_smem_size(qmd_info.smem_size.into(), smem_sizes);
+    qmd.set_smem_size(qmd_info.smem_size.into(), dev, info);
 
     for i in 0..qmd_info.num_cbufs {
         let cb = &qmd_info.cbufs[usize::try_from(i).unwrap()];
