@@ -47,7 +47,7 @@ struct pvr_sampler;
 /* Forward declaration from "pvr_bo.h" */
 struct pvr_bo;
 
-/* Forward declaration from "pvr_private.h" */
+/* Forward declaration from "pvr_device.h" */
 struct pvr_device;
 
 struct pvr_border_color_table {

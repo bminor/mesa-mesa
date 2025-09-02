@@ -29,6 +29,7 @@
 
 #include "hwdef/rogue_hw_utils.h"
 #include "pvr_common.h"
+#include "pvr_device.h"
 #include "pvr_formats.h"
 #include "pvr_private.h"
 #include "util/bitpack_helpers.h"

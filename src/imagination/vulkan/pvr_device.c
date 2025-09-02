@@ -27,6 +27,8 @@
  * SOFTWARE.
  */
 
+#include "pvr_device.h"
+
 #include <assert.h>
 #include <fcntl.h>
 #include <inttypes.h>

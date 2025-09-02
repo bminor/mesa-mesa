@@ -27,6 +27,7 @@
 #include <string.h>
 
 #include "pvr_csb.h"
+#include "pvr_device.h"
 #include "pvr_device_info.h"
 #include "pvr_formats.h"
 #include "pvr_private.h"

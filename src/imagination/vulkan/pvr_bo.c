@@ -39,6 +39,7 @@
 #include "hwdef/rogue_hw_utils.h"
 #include "pvr_bo.h"
 #include "pvr_debug.h"
+#include "pvr_device.h"
 #include "pvr_dump.h"
 #include "pvr_private.h"
 #include "pvr_types.h"

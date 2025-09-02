@@ -33,6 +33,7 @@
 #include "pvr_bo.h"
 #include "pvr_common.h"
 #include "pvr_csb.h"
+#include "pvr_device.h"
 #include "pvr_job_context.h"
 #include "pvr_pds.h"
 #include "pvr_private.h"

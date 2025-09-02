@@ -25,6 +25,7 @@
 #include <vulkan/vulkan_core.h>
 
 #include "pvr_bo.h"
+#include "pvr_device.h"
 #include "pvr_private.h"
 #include "pvr_robustness.h"
 #include "util/u_math.h"

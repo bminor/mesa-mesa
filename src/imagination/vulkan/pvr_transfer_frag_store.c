@@ -29,6 +29,7 @@
 #include "hwdef/rogue_hw_utils.h"
 #include "pvr_bo.h"
 #include "pvr_common.h"
+#include "pvr_device.h"
 #include "pvr_device_info.h"
 #include "pvr_job_transfer.h"
 #include "pvr_pds.h"

@@ -29,6 +29,7 @@
 #include <stdbool.h>
 #include <vulkan/vulkan.h>
 
+#include "pvr_device.h"
 #include "pvr_queue.h"
 #include "pvr_private.h"
 

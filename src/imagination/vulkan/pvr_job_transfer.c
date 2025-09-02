@@ -30,6 +30,7 @@
 
 #include "pvr_csb.h"
 #include "pvr_csb_enum_helpers.h"
+#include "pvr_device.h"
 #include "pvr_formats.h"
 #include "pvr_job_common.h"
 #include "pvr_job_context.h"
