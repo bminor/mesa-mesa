@@ -57,6 +57,7 @@
 #include "pvr_limits.h"
 #include "pvr_pds.h"
 #include "pvr_private.h"
+#include "pvr_queue.h"
 #include "pvr_robustness.h"
 #include "pvr_tex_state.h"
 #include "pvr_types.h"

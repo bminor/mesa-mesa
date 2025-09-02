@@ -29,7 +29,9 @@
 #include <stdbool.h>
 #include <vulkan/vulkan.h>
 
+#include "pvr_queue.h"
 #include "pvr_private.h"
+
 #include "util/u_atomic.h"
 #include "vk_object.h"
 #include "wsi_common.h"

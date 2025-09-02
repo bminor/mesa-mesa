@@ -29,6 +29,8 @@
  * This file implements VkQueue, VkFence, and VkSemaphore
  */
 
+#include "pvr_queue.h"
+
 #include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -41,7 +43,6 @@
 #include "pvr_job_render.h"
 #include "pvr_job_transfer.h"
 #include "pvr_limits.h"
-#include "pvr_private.h"
 #include "util/macros.h"
 #include "util/u_atomic.h"
 #include "vk_alloc.h"

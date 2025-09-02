@@ -72,7 +72,6 @@
 #include "vk_instance.h"
 #include "vk_log.h"
 #include "vk_physical_device.h"
-#include "vk_queue.h"
 #include "vk_sync.h"
 #include "wsi_common.h"
 
@@ -86,12 +85,11 @@
 
 struct pvr_bo;
 struct pvr_bo_store;
-struct pvr_compute_ctx;
 struct pvr_compute_pipeline;
 struct pvr_free_list;
 struct pvr_graphics_pipeline;
 struct pvr_instance;
-struct pvr_render_ctx;
+struct pvr_queue;
 
 struct pvr_physical_device {
    struct vk_physical_device vk;
@@ -127,20 +125,6 @@ struct pvr_instance {
    uint32_t active_device_count;
 
    uint8_t driver_build_sha[SHA1_DIGEST_LENGTH];
-};
-
-struct pvr_queue {
-   struct vk_queue vk;
-
-   struct pvr_device *device;
-
-   struct pvr_render_ctx *gfx_ctx;
-   struct pvr_compute_ctx *compute_ctx;
-   struct pvr_compute_ctx *query_ctx;
-   struct pvr_transfer_ctx *transfer_ctx;
-
-   struct vk_sync *last_job_signal_sync[PVR_JOB_TYPE_MAX];
-   struct vk_sync *next_job_wait_sync[PVR_JOB_TYPE_MAX];
 };
 
 struct pvr_vertex_binding {
@@ -1219,10 +1203,6 @@ uint32_t pvr_calc_fscommon_size_and_tiles_in_flight(
 VkResult pvr_wsi_init(struct pvr_physical_device *pdevice);
 void pvr_wsi_finish(struct pvr_physical_device *pdevice);
 
-VkResult pvr_queues_create(struct pvr_device *device,
-                           const VkDeviceCreateInfo *pCreateInfo);
-void pvr_queues_destroy(struct pvr_device *device);
-
 VkResult pvr_bind_memory(struct pvr_device *device,
                          struct pvr_device_memory *mem,
                          VkDeviceSize offset,
@@ -1480,7 +1460,6 @@ VK_DEFINE_HANDLE_CASTS(pvr_physical_device,
                        vk.base,
                        VkPhysicalDevice,
                        VK_OBJECT_TYPE_PHYSICAL_DEVICE)
-VK_DEFINE_HANDLE_CASTS(pvr_queue, vk.base, VkQueue, VK_OBJECT_TYPE_QUEUE)
 
 VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_device_memory,
                                base,
