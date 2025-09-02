@@ -39,6 +39,12 @@ struct radv_drirc {
    struct driOptionCache available_options;
 
    struct {
+      bool disable_ngg_gs;
+      bool enable_unified_heap_on_apu;
+      bool report_llvm9_version_string;
+   } performance;
+
+   struct {
       bool cooperative_matrix2_nv;
       bool emulate_rt;
       bool expose_float16_gfx8;
@@ -55,12 +61,10 @@ struct radv_drirc {
    bool zero_vram;
    bool disable_sinking_load_input_fs;
    bool flush_before_query_copy;
-   bool enable_unified_heap_on_apu;
    bool tex_non_uniform;
    bool ssbo_non_uniform;
    bool flush_before_timestamp_write;
    bool clear_lds;
-   bool report_llvm9_version_string;
    bool disable_dcc_mips;
    bool disable_dcc_stores;
    bool lower_terminate_to_discard;
@@ -68,7 +72,6 @@ struct radv_drirc {
    bool no_dynamic_bounds;
    bool invariant_geom;
    bool split_fma;
-   bool disable_ngg_gs;
    char *app_layer;
    uint8_t override_graphics_shader_version;
    uint8_t override_compute_shader_version;

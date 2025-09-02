@@ -204,6 +204,17 @@ static const driOptionDescription radv_dri_options[] = {
 // clang-format on
 
 static void
+radv_init_dri_performance_options(struct radv_instance *instance)
+{
+   struct radv_drirc *drirc = &instance->drirc;
+
+   drirc->performance.disable_ngg_gs = driQueryOptionb(&drirc->options, "radv_disable_ngg_gs");
+   drirc->performance.enable_unified_heap_on_apu = driQueryOptionb(&drirc->options, "radv_enable_unified_heap_on_apu");
+   drirc->performance.report_llvm9_version_string =
+      driQueryOptionb(&drirc->options, "radv_report_llvm9_version_string");
+}
+
+static void
 radv_init_dri_features_options(struct radv_instance *instance)
 {
    struct radv_drirc *drirc = &instance->drirc;
@@ -225,6 +236,7 @@ radv_init_dri_options(struct radv_instance *instance)
                        instance->vk.app_info.app_name, instance->vk.app_info.app_version,
                        instance->vk.app_info.engine_name, instance->vk.app_info.engine_version);
 
+   radv_init_dri_performance_options(instance);
    radv_init_dri_features_options(instance);
 
    drirc->enable_mrt_output_nan_fixup = driQueryOptionb(&drirc->options, "radv_enable_mrt_output_nan_fixup");
@@ -241,8 +253,6 @@ radv_init_dri_options(struct radv_instance *instance)
 
    if (driQueryOptionb(&drirc->options, "radv_disable_dcc"))
       instance->debug_flags |= RADV_DEBUG_NO_DCC;
-
-   drirc->disable_ngg_gs = driQueryOptionb(&drirc->options, "radv_disable_ngg_gs");
 
    drirc->clear_lds = driQueryOptionb(&drirc->options, "radv_clear_lds");
 
@@ -264,8 +274,6 @@ radv_init_dri_options(struct radv_instance *instance)
 
    drirc->flush_before_query_copy = driQueryOptionb(&drirc->options, "radv_flush_before_query_copy");
 
-   drirc->enable_unified_heap_on_apu = driQueryOptionb(&drirc->options, "radv_enable_unified_heap_on_apu");
-
    drirc->tex_non_uniform = driQueryOptionb(&drirc->options, "radv_tex_non_uniform");
 
    drirc->ssbo_non_uniform = driQueryOptionb(&drirc->options, "radv_ssbo_non_uniform");
@@ -286,8 +294,6 @@ radv_init_dri_options(struct radv_instance *instance)
 
    drirc->override_uniform_offset_alignment =
       driQueryOptioni(&drirc->options, "radv_override_uniform_offset_alignment");
-
-   drirc->report_llvm9_version_string = driQueryOptionb(&drirc->options, "radv_report_llvm9_version_string");
 
    drirc->disable_dcc_mips = driQueryOptionb(&drirc->options, "radv_disable_dcc_mips");
    drirc->disable_dcc_stores = driQueryOptionb(&drirc->options, "radv_disable_dcc_stores");
@@ -454,7 +460,7 @@ radv_CreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationC
    if (instance->debug_flags & RADV_DEBUG_NO_NGG_GS) {
       fprintf(stderr, "radv: RADV_DEBUG=nongg_gs is deprecated and will it be removed in future Mesa releases. "
                       "Please use radv_disable_ngg_gs=true instead.\n");
-      instance->drirc.disable_ngg_gs = true;
+      instance->drirc.performance.disable_ngg_gs = true;
    }
 
    *pInstance = radv_instance_to_handle(instance);

@@ -220,7 +220,7 @@ radv_physical_device_init_cache_key(struct radv_physical_device *pdev)
    key->ge_wave32 = pdev->ge_wave_size == 32;
    key->invariant_geom = instance->drirc.invariant_geom;
    key->no_fmask = !!(instance->debug_flags & RADV_DEBUG_NO_FMASK);
-   key->no_ngg_gs = instance->drirc.disable_ngg_gs;
+   key->no_ngg_gs = instance->drirc.performance.disable_ngg_gs;
    key->no_rt = !!(instance->debug_flags & RADV_DEBUG_NO_RT);
    key->ps_wave32 = pdev->ps_wave_size == 32;
    key->rt_wave64 = pdev->rt_wave_size == 64;
@@ -363,7 +363,7 @@ radv_physical_device_init_mem_types(struct radv_physical_device *pdev)
    if (!pdev->info.has_dedicated_vram) {
       const uint64_t total_size = gtt_size + visible_vram_size;
 
-      if (instance->drirc.enable_unified_heap_on_apu) {
+      if (instance->drirc.performance.enable_unified_heap_on_apu) {
          /* Some applications seem better when the driver exposes only one heap of VRAM on APUs. */
          visible_vram_size = total_size;
          gtt_size = 0;
@@ -1437,7 +1437,7 @@ radv_get_compiler_string(struct radv_physical_device *pdev)
        * version is too old or if the LLVM version string is
        * missing. This gives 2-5% performance with SotTR and ACO.
        */
-      if (instance->drirc.report_llvm9_version_string) {
+      if (instance->drirc.performance.report_llvm9_version_string) {
          return " (LLVM 9.0.1)";
       }
 
@@ -2750,7 +2750,7 @@ radv_get_memory_budget_properties(VkPhysicalDevice physicalDevice,
     * in presence of shared buffers).
     */
    if (!pdev->info.has_dedicated_vram) {
-      if (instance->drirc.enable_unified_heap_on_apu) {
+      if (instance->drirc.performance.enable_unified_heap_on_apu) {
          /* When the heaps are unified, only the visible VRAM heap is exposed on APUs. */
          assert(pdev->heaps == RADV_HEAP_VRAM_VIS);
          assert(pdev->memory_properties.memoryHeaps[0].flags == VK_MEMORY_HEAP_DEVICE_LOCAL_BIT);
