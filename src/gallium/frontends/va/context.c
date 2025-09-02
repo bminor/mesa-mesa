@@ -221,10 +221,6 @@ VA_DRIVER_INIT_FUNC(VADriverContextP ctx)
          goto error_compositor;
       if (!vl_compositor_init_state(&drv->cstate, drv->pipe))
          goto error_compositor_state;
-
-      vl_csc_get_matrix(VL_CSC_COLOR_STANDARD_BT_601, NULL, true, &drv->csc);
-      if (!vl_compositor_set_csc_matrix(&drv->cstate, (const vl_csc_matrix *)&drv->csc, 1.0f, 0.0f))
-         goto error_csc_matrix;
    }
 
    (void) mtx_init(&drv->mutex, mtx_plain);
@@ -251,10 +247,6 @@ VA_DRIVER_INIT_FUNC(VADriverContextP ctx)
    ctx->str_vendor = drv->vendor_string;
 
    return VA_STATUS_SUCCESS;
-
-error_csc_matrix:
-   if (can_init_compositor)
-      vl_compositor_cleanup_state(&drv->cstate);
 
 error_compositor_state:
    if (can_init_compositor)

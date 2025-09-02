@@ -359,7 +359,7 @@ vlVaPutSurface(VADriverContextP ctx, VASurfaceID surface_id, void* draw, short s
    struct u_rect dst_rect = {destx, destx + destw, desty, desty + desth};
    enum pipe_format format;
    VAStatus status;
-   enum VL_CSC_COLOR_STANDARD color_standard;
+   enum pipe_video_vpp_matrix_coefficients coeffs;
 
    if (!ctx)
       return VA_STATUS_ERROR_INVALID_CONTEXT;
@@ -394,14 +394,15 @@ vlVaPutSurface(VADriverContextP ctx, VASurfaceID surface_id, void* draw, short s
    format = surf->buffer->buffer_format;
 
    if (flags & VA_SRC_BT601)
-      color_standard = VL_CSC_COLOR_STANDARD_BT_601;
+      coeffs = PIPE_VIDEO_VPP_MCF_SMPTE170M;
    else if (flags & VA_SRC_SMPTE_240)
-      color_standard = VL_CSC_COLOR_STANDARD_SMPTE_240M;
+      coeffs = PIPE_VIDEO_VPP_MCF_SMPTE240M;
    else
-      color_standard = VL_CSC_COLOR_STANDARD_BT_709;
+      coeffs = PIPE_VIDEO_VPP_MCF_BT709;
 
-   vl_csc_get_matrix(color_standard, NULL, true, &drv->csc);
-   vl_compositor_set_csc_matrix(&drv->cstate, (const vl_csc_matrix *)&drv->csc, 1.0f, 0.0f);
+   vl_csc_get_rgbyuv_matrix(coeffs, format, surf_templ.format,
+                            PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_REDUCED,
+                            PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_FULL, &drv->cstate.csc_matrix);
 
    vl_compositor_clear_layers(&drv->cstate);
 

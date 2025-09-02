@@ -58,14 +58,11 @@ vlVaPostProcCompositor(vlVaDriver *drv,
                        struct pipe_vpp_desc *param)
 {
    struct pipe_surface *surfaces;
-   enum VL_CSC_COLOR_STANDARD color_standard;
+   enum pipe_video_vpp_matrix_coefficients coeffs;
    enum vl_compositor_rotation rotation;
    enum vl_compositor_mirror mirror;
    bool src_yuv = util_format_is_yuv(src->buffer_format);
    bool dst_yuv = util_format_is_yuv(dst->buffer_format);
-   bool dst_full_range =
-      param->out_color_range == PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_FULL ||
-      (param->out_color_range == PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_NONE && !dst_yuv);
 
    if (!drv->cstate.pipe)
       return VA_STATUS_ERROR_UNSUPPORTED_ENTRYPOINT;
@@ -78,27 +75,13 @@ vlVaPostProcCompositor(vlVaDriver *drv,
    if (!surfaces[0].texture)
       return VA_STATUS_ERROR_INVALID_SURFACE;
 
-   if (src_yuv == dst_yuv) {
-      color_standard = VL_CSC_COLOR_STANDARD_IDENTITY;
-   } else if (src_yuv) {
-      switch (param->in_colors_standard) {
-      case PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_BT601:
-         color_standard = VL_CSC_COLOR_STANDARD_BT_601;
-         break;
-      case PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_BT709:
-      default:
-         color_standard = param->in_color_range == PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_FULL ?
-            VL_CSC_COLOR_STANDARD_BT_709_FULL : VL_CSC_COLOR_STANDARD_BT_709;
-         break;
-      }
-   } else {
-      color_standard = VL_CSC_COLOR_STANDARD_BT_709_REV;
-   }
+   if (src_yuv == dst_yuv || util_format_get_nr_components(src->buffer_format) == 1)
+      coeffs = PIPE_VIDEO_VPP_MCF_RGB; /* identity */
+   else
+      coeffs = src_yuv ? param->in_matrix_coefficients : param->out_matrix_coefficients;
 
-   if (util_format_get_nr_components(src->buffer_format) == 1)
-      color_standard = VL_CSC_COLOR_STANDARD_IDENTITY;
-
-   vl_csc_get_matrix(color_standard, NULL, dst_full_range, &drv->csc);
+   vl_csc_get_rgbyuv_matrix(coeffs, src->buffer_format, dst->buffer_format,
+                            param->in_color_range, param->out_color_range, &drv->csc);
    vl_compositor_set_csc_matrix(&drv->cstate, &drv->csc, 1.0f, 0.0f);
 
    if (src_yuv || dst_yuv) {
