@@ -9924,7 +9924,7 @@
         "description": "nvk: bind aliased wsi image at memory offset zero",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "273df23a21947949b78960a573db09a33dd6be54",
         "notes": null
