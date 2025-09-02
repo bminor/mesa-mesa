@@ -21,6 +21,8 @@
  * SOFTWARE.
  */
 
+#include "pvr_cmd_buffer.h"
+
 #include <assert.h>
 #include <limits.h>
 #include <stdbool.h>

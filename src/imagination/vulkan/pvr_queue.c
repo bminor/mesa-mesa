@@ -38,6 +38,7 @@
 #include <unistd.h>
 #include <vulkan/vulkan.h>
 
+#include "pvr_cmd_buffer.h"
 #include "pvr_device.h"
 #include "pvr_job_compute.h"
 #include "pvr_job_context.h"

@@ -31,6 +31,7 @@
 #include <vulkan/vulkan.h>
 
 #include "pvr_bo.h"
+#include "pvr_cmd_buffer.h"
 #include "pvr_csb.h"
 #include "pvr_device.h"
 #include "pvr_device_info.h"

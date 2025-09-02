@@ -28,6 +28,7 @@
 #include "pco/pco_data.h"
 #include "pco_uscgen_programs.h"
 #include "pvr_clear.h"
+#include "pvr_cmd_buffer.h"
 #include "pvr_device.h"
 #include "pvr_pds.h"
 #include "pvr_private.h"

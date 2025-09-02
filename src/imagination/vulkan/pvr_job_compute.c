@@ -26,6 +26,7 @@
 #include <stdint.h>
 #include <vulkan/vulkan.h>
 
+#include "pvr_cmd_buffer.h"
 #include "pvr_csb.h"
 #include "pvr_debug.h"
 #include "pvr_device.h"

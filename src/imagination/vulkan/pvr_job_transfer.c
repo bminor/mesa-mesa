@@ -28,6 +28,7 @@
 #include <string.h>
 #include <vulkan/vulkan.h>
 
+#include "pvr_cmd_buffer.h"
 #include "pvr_csb.h"
 #include "pvr_csb_enum_helpers.h"
 #include "pvr_device.h"
