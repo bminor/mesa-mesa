@@ -272,6 +272,21 @@ radv_init_dri_features_options(struct radv_instance *instance)
 }
 
 static void
+radv_init_dri_misc_options(struct radv_instance *instance)
+{
+   struct radv_drirc *drirc = &instance->drirc;
+
+   drirc->misc.clear_lds = driQueryOptionb(&drirc->options, "radv_clear_lds");
+   drirc->misc.override_vram_size = driQueryOptioni(&drirc->options, "override_vram_size");
+   drirc->misc.override_graphics_shader_version =
+      driQueryOptioni(&drirc->options, "radv_override_graphics_shader_version");
+   drirc->misc.override_compute_shader_version =
+      driQueryOptioni(&drirc->options, "radv_override_compute_shader_version");
+   drirc->misc.override_ray_tracing_shader_version =
+      driQueryOptioni(&drirc->options, "radv_override_ray_tracing_shader_version");
+}
+
+static void
 radv_init_dri_options(struct radv_instance *instance)
 {
    struct radv_drirc *drirc = &instance->drirc;
@@ -284,16 +299,7 @@ radv_init_dri_options(struct radv_instance *instance)
    radv_init_dri_debug_options(instance);
    radv_init_dri_performance_options(instance);
    radv_init_dri_features_options(instance);
-
-   drirc->clear_lds = driQueryOptionb(&drirc->options, "radv_clear_lds");
-
-   drirc->override_graphics_shader_version = driQueryOptioni(&drirc->options, "radv_override_graphics_shader_version");
-   drirc->override_compute_shader_version = driQueryOptioni(&drirc->options, "radv_override_compute_shader_version");
-   drirc->override_ray_tracing_shader_version =
-      driQueryOptioni(&drirc->options, "radv_override_ray_tracing_shader_version");
-
-   drirc->override_vram_size = driQueryOptioni(&drirc->options, "override_vram_size");
-
+   radv_init_dri_misc_options(instance);
 }
 
 static const struct vk_instance_extension_table radv_instance_extensions_supported = {

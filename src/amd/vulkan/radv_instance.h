@@ -76,11 +76,13 @@ struct radv_drirc {
       bool vk_require_etc2;
    } features;
 
-   bool clear_lds;
-   uint8_t override_graphics_shader_version;
-   uint8_t override_compute_shader_version;
-   uint8_t override_ray_tracing_shader_version;
-   int override_vram_size;
+   struct {
+      bool clear_lds;
+      int override_vram_size;
+      uint8_t override_compute_shader_version;
+      uint8_t override_graphics_shader_version;
+      uint8_t override_ray_tracing_shader_version;
+   } misc;
 };
 
 struct radv_instance {

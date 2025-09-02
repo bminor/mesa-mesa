@@ -146,12 +146,12 @@ radv_pipeline_get_shader_key(const struct radv_device *device, const VkPipelineS
       key.indirect_bindable = 1;
 
    if (stage->stage & RADV_GRAPHICS_STAGE_BITS) {
-      key.version = instance->drirc.override_graphics_shader_version;
+      key.version = instance->drirc.misc.override_graphics_shader_version;
    } else if (stage->stage & RADV_RT_STAGE_BITS) {
-      key.version = instance->drirc.override_ray_tracing_shader_version;
+      key.version = instance->drirc.misc.override_ray_tracing_shader_version;
    } else {
       assert(stage->stage == VK_SHADER_STAGE_COMPUTE_BIT);
-      key.version = instance->drirc.override_compute_shader_version;
+      key.version = instance->drirc.misc.override_compute_shader_version;
    }
 
    vk_pipeline_robustness_state_fill(&device->vk, &rs, pNext, stage->pNext);
@@ -703,7 +703,7 @@ radv_shader_should_clear_lds(const struct radv_device *device, const nir_shader 
 
    return (shader->info.stage == MESA_SHADER_COMPUTE || shader->info.stage == MESA_SHADER_MESH ||
            shader->info.stage == MESA_SHADER_TASK) &&
-          shader->info.shared_size > 0 && instance->drirc.clear_lds;
+          shader->info.shared_size > 0 && instance->drirc.misc.clear_lds;
 }
 
 static uint32_t

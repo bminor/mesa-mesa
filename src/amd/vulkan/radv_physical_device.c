@@ -209,7 +209,7 @@ radv_physical_device_init_cache_key(struct radv_physical_device *pdev)
    key->ptr_size = sizeof(void *);
    key->conformant_trunc_coord = pdev->info.conformant_trunc_coord;
 
-   key->clear_lds = instance->drirc.clear_lds;
+   key->clear_lds = instance->drirc.misc.clear_lds;
    key->cs_wave32 = pdev->cs_wave_size == 32;
    key->disable_aniso_single_level = instance->drirc.debug.disable_aniso_single_level && pdev->info.gfx_level < GFX8;
    key->disable_shrink_image_store = instance->drirc.debug.disable_shrink_image_store;
@@ -329,7 +329,7 @@ static uint64_t
 radv_get_adjusted_vram_size(struct radv_physical_device *pdev)
 {
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
-   int ov = instance->drirc.override_vram_size;
+   int ov = instance->drirc.misc.override_vram_size;
    if (ov >= 0)
       return MIN2((uint64_t)pdev->info.vram_size_kb * 1024, (uint64_t)ov << 20);
    return (uint64_t)pdev->info.vram_size_kb * 1024;
