@@ -30,7 +30,6 @@
 #include "pvr_device_info.h"
 #include "pvr_formats.h"
 #include "pvr_job_common.h"
-#include "pvr_private.h"
 #include "util/macros.h"
 #include "util/u_math.h"
 #include "vk_alloc.h"

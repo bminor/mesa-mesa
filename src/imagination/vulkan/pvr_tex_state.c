@@ -30,7 +30,6 @@
 #include "pvr_device.h"
 #include "pvr_device_info.h"
 #include "pvr_formats.h"
-#include "pvr_private.h"
 #include "pvr_tex_state.h"
 #include "util/macros.h"
 #include "util/u_math.h"

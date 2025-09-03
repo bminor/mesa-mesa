@@ -30,7 +30,7 @@
 #include <xf86drm.h>
 
 #include "fw-api/pvr_rogue_fwif_shared.h"
-#include "pvr_private.h"
+#include "pvr_macros.h"
 #include "pvr_srv.h"
 #include "pvr_srv_bridge.h"
 #include "pvr_types.h"

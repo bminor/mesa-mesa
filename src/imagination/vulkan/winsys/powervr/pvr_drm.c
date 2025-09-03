@@ -36,7 +36,7 @@
 #include "pvr_drm_job_render.h"
 #include "pvr_drm_job_transfer.h"
 #include "pvr_drm_public.h"
-#include "pvr_private.h"
+#include "pvr_macros.h"
 #include "pvr_winsys.h"
 #include "pvr_winsys_helper.h"
 #include "vk_alloc.h"

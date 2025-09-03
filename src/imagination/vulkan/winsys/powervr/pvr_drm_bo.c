@@ -35,10 +35,11 @@
 #include "drm-uapi/pvr_drm.h"
 #include "pvr_drm.h"
 #include "pvr_drm_bo.h"
-#include "pvr_private.h"
+#include "pvr_macros.h"
 #include "pvr_winsys_helper.h"
 #include "util/bitscan.h"
 #include "util/macros.h"
+#include "vk_alloc.h"
 #include "vk_log.h"
 
 static VkResult pvr_drm_create_gem_bo(struct pvr_drm_winsys *drm_ws,

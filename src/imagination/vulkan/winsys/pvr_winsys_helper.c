@@ -29,8 +29,9 @@
 
 #include "pco/pco_data.h"
 #include "pco_uscgen_programs.h"
+#include "pvr_csb.h"
 #include "pvr_pass.h"
-#include "pvr_private.h"
+#include "pvr_pds.h"
 #include "pvr_types.h"
 #include "pvr_winsys.h"
 #include "pvr_winsys_helper.h"

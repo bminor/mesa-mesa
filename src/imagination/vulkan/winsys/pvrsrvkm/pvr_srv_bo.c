@@ -29,7 +29,7 @@
 #include <sys/mman.h>
 #include <xf86drm.h>
 
-#include "pvr_private.h"
+#include "pvr_macros.h"
 #include "pvr_srv.h"
 #include "pvr_srv_bo.h"
 #include "pvr_srv_bridge.h"
@@ -39,6 +39,7 @@
 #include "util/bitscan.h"
 #include "util/macros.h"
 #include "util/u_math.h"
+#include "vk_alloc.h"
 #include "vk_log.h"
 
 /* Note: This function does not have an associated pvr_srv_free_display_pmr

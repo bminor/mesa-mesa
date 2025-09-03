@@ -33,7 +33,6 @@
 #include "pvr_device_info.h"
 #include "pvr_job_transfer.h"
 #include "pvr_pds.h"
-#include "pvr_private.h"
 #include "pvr_transfer_frag_store.h"
 #include "pvr_types.h"
 #include "pvr_usc.h"

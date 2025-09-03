@@ -29,7 +29,6 @@
 #include <vulkan/vulkan.h>
 
 #include "pvr_device.h"
-#include "pvr_private.h"
 #include "pvr_srv.h"
 #include "pvr_srv_sync.h"
 #include "util/libsync.h"

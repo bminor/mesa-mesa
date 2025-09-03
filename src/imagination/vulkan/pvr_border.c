@@ -33,7 +33,7 @@
 #include "pvr_device.h"
 #include "pvr_device_info.h"
 #include "pvr_formats.h"
-#include "pvr_private.h"
+#include "pvr_macros.h"
 #include "util/bitset.h"
 #include "util/format/u_format.h"
 #include "util/format/u_formats.h"
