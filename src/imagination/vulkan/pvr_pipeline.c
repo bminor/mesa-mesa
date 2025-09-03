@@ -1186,7 +1186,7 @@ pvr_CreateComputePipelines(VkDevice _device,
                            VkPipeline *pPipelines)
 {
    VK_FROM_HANDLE(vk_pipeline_cache, cache, pipelineCache);
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_device, device, _device);
    VkResult result = VK_SUCCESS;
 
    for (uint32_t i = 0; i < createInfoCount; i++) {
@@ -2461,7 +2461,7 @@ pvr_preprocess_shader_data(pco_data *data,
    }
 
    case MESA_SHADER_FRAGMENT: {
-      PVR_FROM_HANDLE(pvr_render_pass, pass, pGraphicsCreateInfo->renderPass);
+      VK_FROM_HANDLE(pvr_render_pass, pass, pGraphicsCreateInfo->renderPass);
       const struct pvr_render_subpass *const subpass =
          &pass->subpasses[pGraphicsCreateInfo->subpass];
       const struct pvr_renderpass_hw_map *subpass_map =
@@ -2529,7 +2529,7 @@ static void pvr_postprocess_shader_data(pco_data *data,
    }
 
    case MESA_SHADER_FRAGMENT: {
-      PVR_FROM_HANDLE(pvr_render_pass, pass, pGraphicsCreateInfo->renderPass);
+      VK_FROM_HANDLE(pvr_render_pass, pass, pGraphicsCreateInfo->renderPass);
       const struct pvr_render_subpass *const subpass =
          &pass->subpasses[pGraphicsCreateInfo->subpass];
       const struct pvr_renderpass_hw_map *subpass_map =
@@ -2799,7 +2799,7 @@ err_free_build_context:
 static struct vk_render_pass_state
 pvr_create_renderpass_state(const VkGraphicsPipelineCreateInfo *const info)
 {
-   PVR_FROM_HANDLE(pvr_render_pass, pass, info->renderPass);
+   VK_FROM_HANDLE(pvr_render_pass, pass, info->renderPass);
    const struct pvr_render_subpass *const subpass =
       &pass->subpasses[info->subpass];
 
@@ -2969,7 +2969,7 @@ pvr_CreateGraphicsPipelines(VkDevice _device,
                             VkPipeline *pPipelines)
 {
    VK_FROM_HANDLE(vk_pipeline_cache, cache, pipelineCache);
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_device, device, _device);
    VkResult result = VK_SUCCESS;
 
    for (uint32_t i = 0; i < createInfoCount; i++) {
@@ -2996,8 +2996,8 @@ void pvr_DestroyPipeline(VkDevice _device,
                          VkPipeline _pipeline,
                          const VkAllocationCallbacks *pAllocator)
 {
-   PVR_FROM_HANDLE(pvr_pipeline, pipeline, _pipeline);
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_pipeline, pipeline, _pipeline);
+   VK_FROM_HANDLE(pvr_device, device, _device);
 
    if (!pipeline)
       return;

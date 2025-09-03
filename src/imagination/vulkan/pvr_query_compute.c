@@ -474,10 +474,10 @@ VkResult pvr_add_query_program(struct pvr_cmd_buffer *cmd_buffer,
    }
 
    case PVR_QUERY_TYPE_COPY_QUERY_RESULTS: {
-      PVR_FROM_HANDLE(pvr_query_pool,
+      VK_FROM_HANDLE(pvr_query_pool,
                       pool,
                       query_info->copy_query_results.query_pool);
-      PVR_FROM_HANDLE(pvr_buffer,
+      VK_FROM_HANDLE(pvr_buffer,
                       buffer,
                       query_info->copy_query_results.dst_buffer);
 
@@ -522,7 +522,7 @@ VkResult pvr_add_query_program(struct pvr_cmd_buffer *cmd_buffer,
    }
 
    case PVR_QUERY_TYPE_RESET_QUERY_POOL: {
-      PVR_FROM_HANDLE(pvr_query_pool,
+      VK_FROM_HANDLE(pvr_query_pool,
                       pool,
                       query_info->reset_query_pool.query_pool);
 

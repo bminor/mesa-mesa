@@ -746,7 +746,7 @@ static void pvr_physical_device_destroy(struct vk_physical_device *vk_pdevice)
 void pvr_DestroyInstance(VkInstance _instance,
                          const VkAllocationCallbacks *pAllocator)
 {
-   PVR_FROM_HANDLE(pvr_instance, instance, _instance);
+   VK_FROM_HANDLE(pvr_instance, instance, _instance);
 
    if (!instance)
       return;
@@ -1422,7 +1422,7 @@ void pvr_GetPhysicalDeviceMemoryProperties2(
    VkPhysicalDevice physicalDevice,
    VkPhysicalDeviceMemoryProperties2 *pMemoryProperties)
 {
-   PVR_FROM_HANDLE(pvr_physical_device, pdevice, physicalDevice);
+   VK_FROM_HANDLE(pvr_physical_device, pdevice, physicalDevice);
 
    pMemoryProperties->memoryProperties = pdevice->memory;
 
@@ -1437,7 +1437,7 @@ PFN_vkVoidFunction pvr_GetInstanceProcAddr(VkInstance _instance,
    const struct vk_instance *vk_instance = NULL;
 
    if (_instance != NULL) {
-      PVR_FROM_HANDLE(pvr_instance, instance, _instance);
+      VK_FROM_HANDLE(pvr_instance, instance, _instance);
       vk_instance = &instance->vk;
    }
 
@@ -1993,7 +1993,7 @@ VkResult pvr_CreateDevice(VkPhysicalDevice physicalDevice,
                           const VkAllocationCallbacks *pAllocator,
                           VkDevice *pDevice)
 {
-   PVR_FROM_HANDLE(pvr_physical_device, pdevice, physicalDevice);
+   VK_FROM_HANDLE(pvr_physical_device, pdevice, physicalDevice);
    uint32_t initial_free_list_size = PVR_GLOBAL_FREE_LIST_INITIAL_SIZE;
    struct pvr_instance *instance = pdevice->instance;
    struct vk_device_dispatch_table dispatch_table;
@@ -2213,7 +2213,7 @@ err_out:
 void pvr_DestroyDevice(VkDevice _device,
                        const VkAllocationCallbacks *pAllocator)
 {
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_device, device, _device);
 
    if (!device)
       return;
@@ -2261,7 +2261,7 @@ VkResult pvr_AllocateMemory(VkDevice _device,
                             VkDeviceMemory *pMem)
 {
    const VkImportMemoryFdInfoKHR *fd_info = NULL;
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_device, device, _device);
    enum pvr_winsys_bo_type type = PVR_WINSYS_BO_TYPE_GPU;
    struct pvr_device_memory *mem;
    VkResult result;
@@ -2382,8 +2382,8 @@ VkResult pvr_GetMemoryFdKHR(VkDevice _device,
                             const VkMemoryGetFdInfoKHR *pGetFdInfo,
                             int *pFd)
 {
-   PVR_FROM_HANDLE(pvr_device, device, _device);
-   PVR_FROM_HANDLE(pvr_device_memory, mem, pGetFdInfo->memory);
+   VK_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_device_memory, mem, pGetFdInfo->memory);
 
    assert(pGetFdInfo->sType == VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR);
 
@@ -2400,7 +2400,7 @@ pvr_GetMemoryFdPropertiesKHR(VkDevice _device,
                              int fd,
                              VkMemoryFdPropertiesKHR *pMemoryFdProperties)
 {
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_device, device, _device);
 
    switch (handleType) {
    case VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT:
@@ -2423,8 +2423,8 @@ void pvr_FreeMemory(VkDevice _device,
                     VkDeviceMemory _mem,
                     const VkAllocationCallbacks *pAllocator)
 {
-   PVR_FROM_HANDLE(pvr_device, device, _device);
-   PVR_FROM_HANDLE(pvr_device_memory, mem, _mem);
+   VK_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_device_memory, mem, _mem);
 
    if (!mem)
       return;
@@ -2448,8 +2448,8 @@ VkResult pvr_MapMemory(VkDevice _device,
                        VkMemoryMapFlags flags,
                        void **ppData)
 {
-   PVR_FROM_HANDLE(pvr_device, device, _device);
-   PVR_FROM_HANDLE(pvr_device_memory, mem, _memory);
+   VK_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_device_memory, mem, _memory);
    VkResult result;
 
    if (!mem) {
@@ -2489,8 +2489,8 @@ VkResult pvr_MapMemory(VkDevice _device,
 
 void pvr_UnmapMemory(VkDevice _device, VkDeviceMemory _memory)
 {
-   PVR_FROM_HANDLE(pvr_device, device, _device);
-   PVR_FROM_HANDLE(pvr_device_memory, mem, _memory);
+   VK_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_device_memory, mem, _memory);
 
    if (!mem || !mem->bo->map)
       return;
@@ -2589,12 +2589,12 @@ VkResult pvr_BindBufferMemory2(VkDevice _device,
                                uint32_t bindInfoCount,
                                const VkBindBufferMemoryInfo *pBindInfos)
 {
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_device, device, _device);
    uint32_t i;
 
    for (i = 0; i < bindInfoCount; i++) {
-      PVR_FROM_HANDLE(pvr_device_memory, mem, pBindInfos[i].memory);
-      PVR_FROM_HANDLE(pvr_buffer, buffer, pBindInfos[i].buffer);
+      VK_FROM_HANDLE(pvr_device_memory, mem, pBindInfos[i].memory);
+      VK_FROM_HANDLE(pvr_buffer, buffer, pBindInfos[i].buffer);
 
       VkResult result = pvr_bind_memory(device,
                                         mem,
@@ -2605,7 +2605,7 @@ VkResult pvr_BindBufferMemory2(VkDevice _device,
                                         &buffer->dev_addr);
       if (result != VK_SUCCESS) {
          while (i--) {
-            PVR_FROM_HANDLE(pvr_buffer, buffer, pBindInfos[i].buffer);
+            VK_FROM_HANDLE(pvr_buffer, buffer, pBindInfos[i].buffer);
             pvr_unbind_memory(device, buffer->vma);
          }
 
@@ -2631,7 +2631,7 @@ VkResult pvr_CreateEvent(VkDevice _device,
                          const VkAllocationCallbacks *pAllocator,
                          VkEvent *pEvent)
 {
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_device, device, _device);
 
    struct pvr_event *event = vk_object_alloc(&device->vk,
                                              pAllocator,
@@ -2652,8 +2652,8 @@ void pvr_DestroyEvent(VkDevice _device,
                       VkEvent _event,
                       const VkAllocationCallbacks *pAllocator)
 {
-   PVR_FROM_HANDLE(pvr_device, device, _device);
-   PVR_FROM_HANDLE(pvr_event, event, _event);
+   VK_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_event, event, _event);
 
    if (!event)
       return;
@@ -2666,8 +2666,8 @@ void pvr_DestroyEvent(VkDevice _device,
 
 VkResult pvr_GetEventStatus(VkDevice _device, VkEvent _event)
 {
-   PVR_FROM_HANDLE(pvr_device, device, _device);
-   PVR_FROM_HANDLE(pvr_event, event, _event);
+   VK_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_event, event, _event);
    VkResult result;
 
    switch (event->state) {
@@ -2706,10 +2706,10 @@ VkResult pvr_GetEventStatus(VkDevice _device, VkEvent _event)
 
 VkResult pvr_SetEvent(VkDevice _device, VkEvent _event)
 {
-   PVR_FROM_HANDLE(pvr_event, event, _event);
+   VK_FROM_HANDLE(pvr_event, event, _event);
 
    if (event->sync) {
-      PVR_FROM_HANDLE(pvr_device, device, _device);
+      VK_FROM_HANDLE(pvr_device, device, _device);
 
       const VkResult result = vk_sync_signal(&device->vk, event->sync, 0);
       if (result != VK_SUCCESS)
@@ -2723,10 +2723,10 @@ VkResult pvr_SetEvent(VkDevice _device, VkEvent _event)
 
 VkResult pvr_ResetEvent(VkDevice _device, VkEvent _event)
 {
-   PVR_FROM_HANDLE(pvr_event, event, _event);
+   VK_FROM_HANDLE(pvr_event, event, _event);
 
    if (event->sync) {
-      PVR_FROM_HANDLE(pvr_device, device, _device);
+      VK_FROM_HANDLE(pvr_device, device, _device);
 
       const VkResult result = vk_sync_reset(&device->vk, event->sync);
       if (result != VK_SUCCESS)
@@ -2745,7 +2745,7 @@ VkResult pvr_CreateBuffer(VkDevice _device,
                           const VkAllocationCallbacks *pAllocator,
                           VkBuffer *pBuffer)
 {
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_device, device, _device);
    const uint32_t alignment = 4096;
    struct pvr_buffer *buffer;
 
@@ -2772,8 +2772,8 @@ void pvr_DestroyBuffer(VkDevice _device,
                        VkBuffer _buffer,
                        const VkAllocationCallbacks *pAllocator)
 {
-   PVR_FROM_HANDLE(pvr_device, device, _device);
-   PVR_FROM_HANDLE(pvr_buffer, buffer, _buffer);
+   VK_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_buffer, buffer, _buffer);
 
    if (!buffer)
       return;
@@ -3024,8 +3024,8 @@ VkResult pvr_CreateFramebuffer(VkDevice _device,
                                const VkAllocationCallbacks *pAllocator,
                                VkFramebuffer *pFramebuffer)
 {
-   PVR_FROM_HANDLE(pvr_render_pass, pass, pCreateInfo->renderPass);
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_render_pass, pass, pCreateInfo->renderPass);
+   VK_FROM_HANDLE(pvr_device, device, _device);
    const VkFramebufferAttachmentsCreateInfoKHR *pImageless;
    struct pvr_spm_bgobj_state *spm_bgobj_state_per_render;
    struct pvr_spm_eot_state *spm_eot_state_per_render;
@@ -3169,8 +3169,8 @@ void pvr_DestroyFramebuffer(VkDevice _device,
                             VkFramebuffer _fb,
                             const VkAllocationCallbacks *pAllocator)
 {
-   PVR_FROM_HANDLE(pvr_framebuffer, framebuffer, _fb);
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_framebuffer, framebuffer, _fb);
+   VK_FROM_HANDLE(pvr_device, device, _device);
 
    if (!framebuffer)
       return;
@@ -3229,7 +3229,7 @@ VkResult pvr_CreateSampler(VkDevice _device,
                            const VkAllocationCallbacks *pAllocator,
                            VkSampler *pSampler)
 {
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_device, device, _device);
    struct pvr_sampler *sampler;
    float lod_rounding_bias;
    VkFilter min_filter;
@@ -3393,8 +3393,8 @@ void pvr_DestroySampler(VkDevice _device,
                         VkSampler _sampler,
                         const VkAllocationCallbacks *pAllocator)
 {
-   PVR_FROM_HANDLE(pvr_device, device, _device);
-   PVR_FROM_HANDLE(pvr_sampler, sampler, _sampler);
+   VK_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_sampler, sampler, _sampler);
 
    if (!sampler)
       return;
@@ -3410,8 +3410,8 @@ void pvr_GetBufferMemoryRequirements2(
    const VkBufferMemoryRequirementsInfo2 *pInfo,
    VkMemoryRequirements2 *pMemoryRequirements)
 {
-   PVR_FROM_HANDLE(pvr_buffer, buffer, pInfo->buffer);
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_buffer, buffer, pInfo->buffer);
+   VK_FROM_HANDLE(pvr_device, device, _device);
    uint64_t size;
 
    /* The Vulkan 1.0.166 spec says:
@@ -3448,8 +3448,8 @@ void pvr_GetImageMemoryRequirements2(VkDevice _device,
                                      const VkImageMemoryRequirementsInfo2 *pInfo,
                                      VkMemoryRequirements2 *pMemoryRequirements)
 {
-   PVR_FROM_HANDLE(pvr_device, device, _device);
-   PVR_FROM_HANDLE(pvr_image, image, pInfo->image);
+   VK_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_image, image, pInfo->image);
 
    /* The Vulkan 1.0.166 spec says:
     *

@@ -1082,7 +1082,7 @@ VkResult pvr_GetPhysicalDeviceImageFormatProperties2(
    VkImageFormatProperties2 *pImageFormatProperties)
 {
    const VkPhysicalDeviceExternalImageFormatInfo *external_info = NULL;
-   PVR_FROM_HANDLE(pvr_physical_device, pdevice, physicalDevice);
+   VK_FROM_HANDLE(pvr_physical_device, pdevice, physicalDevice);
    VkExternalImageFormatProperties *external_props = NULL;
    VkResult result;
 

@@ -1435,9 +1435,6 @@ void pvr_reset_graphics_dirty_state(struct pvr_cmd_buffer *const cmd_buffer,
 const struct pvr_renderpass_hwsetup_subpass *
 pvr_get_hw_subpass(const struct pvr_render_pass *pass, const uint32_t subpass);
 
-#define PVR_FROM_HANDLE(__pvr_type, __name, __handle) \
-   VK_FROM_HANDLE(__pvr_type, __name, __handle)
-
 VK_DEFINE_HANDLE_CASTS(pvr_cmd_buffer,
                        vk.base,
                        VkCommandBuffer,

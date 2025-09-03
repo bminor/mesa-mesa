@@ -244,7 +244,7 @@ pvr_AllocateCommandBuffers(VkDevice _device,
                            VkCommandBuffer *pCommandBuffers)
 {
    VK_FROM_HANDLE(vk_command_pool, pool, pAllocateInfo->commandPool);
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_device, device, _device);
    VkResult result = VK_SUCCESS;
    uint32_t i;
 
@@ -2569,8 +2569,8 @@ void pvr_CmdBindPipeline(VkCommandBuffer commandBuffer,
                          VkPipelineBindPoint pipelineBindPoint,
                          VkPipeline _pipeline)
 {
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
-   PVR_FROM_HANDLE(pvr_pipeline, pipeline, _pipeline);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_pipeline, pipeline, _pipeline);
 
    switch (pipelineBindPoint) {
    case VK_PIPELINE_BIND_POINT_COMPUTE:
@@ -2661,7 +2661,7 @@ void pvr_CmdSetViewport(VkCommandBuffer commandBuffer,
                         uint32_t viewportCount,
                         const VkViewport *pViewports)
 {
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    const uint32_t total_count = firstViewport + viewportCount;
 
    assert(firstViewport < PVR_MAX_VIEWPORTS && viewportCount > 0);
@@ -2694,7 +2694,7 @@ void pvr_CmdBindDescriptorSets2KHR(
    VkCommandBuffer commandBuffer,
    const VkBindDescriptorSetsInfoKHR *pBindDescriptorSetsInfo)
 {
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(vk_pipeline_layout,
                   pipeline_layout,
                   pBindDescriptorSetsInfo->layout);
@@ -2756,7 +2756,7 @@ void pvr_CmdBindVertexBuffers2(VkCommandBuffer commandBuffer,
                                const VkDeviceSize *pSizes,
                                const VkDeviceSize *pStrides)
 {
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    struct pvr_vertex_binding *const vb = cmd_buffer->state.vertex_bindings;
 
    assert(firstBinding < PVR_MAX_VERTEX_INPUT_BINDINGS &&
@@ -2790,8 +2790,8 @@ void pvr_CmdBindIndexBuffer(VkCommandBuffer commandBuffer,
                             VkDeviceSize offset,
                             VkIndexType indexType)
 {
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
-   PVR_FROM_HANDLE(pvr_buffer, index_buffer, buffer);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_buffer, index_buffer, buffer);
    struct pvr_cmd_buffer_state *const state = &cmd_buffer->state;
 
    assert(offset < index_buffer->vk.size);
@@ -2820,7 +2820,7 @@ static void update_push_constants(struct pvr_push_constants *push_consts,
 void pvr_CmdPushConstants2KHR(VkCommandBuffer commandBuffer,
                               const VkPushConstantsInfoKHR *pPushConstantsInfo)
 {
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    struct pvr_cmd_buffer_state *const state = &cmd_buffer->state;
 
    if (pPushConstantsInfo->stageFlags & VK_SHADER_STAGE_VERTEX_BIT) {
@@ -2882,7 +2882,7 @@ static VkResult pvr_cmd_buffer_attachments_setup(
    for (uint32_t i = 0; i < pass->attachment_count; i++) {
       if (pImageless && pImageless->attachmentCount) {
          assert(pImageless->attachmentCount == pass->attachment_count);
-         PVR_FROM_HANDLE(pvr_image_view, img_view, pImageless->pAttachments[i]);
+         VK_FROM_HANDLE(pvr_image_view, img_view, pImageless->pAttachments[i]);
          info->attachments[i] = img_view;
       } else {
          info->attachments[i] = framebuffer->attachments[i];
@@ -3299,11 +3299,11 @@ void pvr_CmdBeginRenderPass2(VkCommandBuffer commandBuffer,
                              const VkRenderPassBeginInfo *pRenderPassBeginInfo,
                              const VkSubpassBeginInfo *pSubpassBeginInfo)
 {
-   PVR_FROM_HANDLE(pvr_framebuffer,
+   VK_FROM_HANDLE(pvr_framebuffer,
                    framebuffer,
                    pRenderPassBeginInfo->framebuffer);
-   PVR_FROM_HANDLE(pvr_render_pass, pass, pRenderPassBeginInfo->renderPass);
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_render_pass, pass, pRenderPassBeginInfo->renderPass);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    const struct pvr_renderpass_hwsetup_subpass *hw_subpass;
    struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
    VkResult result;
@@ -3370,7 +3370,7 @@ void pvr_CmdBeginRenderPass2(VkCommandBuffer commandBuffer,
 VkResult pvr_BeginCommandBuffer(VkCommandBuffer commandBuffer,
                                 const VkCommandBufferBeginInfo *pBeginInfo)
 {
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    struct pvr_cmd_buffer_state *state;
    VkResult result;
 
@@ -4560,7 +4560,7 @@ void pvr_CmdDispatchBase(VkCommandBuffer commandBuffer,
                          uint32_t groupCountY,
                          uint32_t groupCountZ)
 {
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
 
    PVR_CHECK_COMMAND_BUFFER_BUILDING_STATE(cmd_buffer);
 
@@ -4577,8 +4577,8 @@ void pvr_CmdDispatchIndirect(VkCommandBuffer commandBuffer,
                              VkBuffer _buffer,
                              VkDeviceSize offset)
 {
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
-   PVR_FROM_HANDLE(pvr_buffer, buffer, _buffer);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_buffer, buffer, _buffer);
 
    PVR_CHECK_COMMAND_BUFFER_BUILDING_STATE(cmd_buffer);
 
@@ -6742,7 +6742,7 @@ void pvr_CmdDraw(VkCommandBuffer commandBuffer,
       .base_instance = firstInstance,
    };
 
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    struct vk_dynamic_graphics_state *const dynamic_state =
       &cmd_buffer->vk.dynamic_graphics_state;
    struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
@@ -6783,7 +6783,7 @@ void pvr_CmdDrawIndexed(VkCommandBuffer commandBuffer,
       .draw_indexed = true,
    };
 
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    struct vk_dynamic_graphics_state *const dynamic_state =
       &cmd_buffer->vk.dynamic_graphics_state;
    struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
@@ -6822,11 +6822,11 @@ void pvr_CmdDrawIndexedIndirect(VkCommandBuffer commandBuffer,
       .draw_indexed = true,
    };
 
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
    struct vk_dynamic_graphics_state *const dynamic_state =
       &cmd_buffer->vk.dynamic_graphics_state;
-   PVR_FROM_HANDLE(pvr_buffer, buffer, _buffer);
+   VK_FROM_HANDLE(pvr_buffer, buffer, _buffer);
    VkResult result;
 
    PVR_CHECK_COMMAND_BUFFER_BUILDING_STATE(cmd_buffer);
@@ -6861,9 +6861,9 @@ void pvr_CmdDrawIndirect(VkCommandBuffer commandBuffer,
       .draw_indirect = true,
    };
 
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
-   PVR_FROM_HANDLE(pvr_buffer, buffer, _buffer);
+   VK_FROM_HANDLE(pvr_buffer, buffer, _buffer);
    struct vk_dynamic_graphics_state *const dynamic_state =
       &cmd_buffer->vk.dynamic_graphics_state;
    VkResult result;
@@ -6972,7 +6972,7 @@ pvr_resolve_unemitted_resolve_attachments(struct pvr_cmd_buffer *cmd_buffer,
 void pvr_CmdEndRenderPass2(VkCommandBuffer commandBuffer,
                            const VkSubpassEndInfo *pSubpassEndInfo)
 {
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
    struct pvr_image_view **attachments;
    VkClearValue *clear_values;
@@ -7300,7 +7300,7 @@ void pvr_CmdExecuteCommands(VkCommandBuffer commandBuffer,
                             uint32_t commandBufferCount,
                             const VkCommandBuffer *pCommandBuffers)
 {
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
    struct pvr_cmd_buffer *last_cmd_buffer;
    VkResult result;
@@ -7323,7 +7323,7 @@ void pvr_CmdExecuteCommands(VkCommandBuffer commandBuffer,
    if (state->current_sub_cmd &&
        state->current_sub_cmd->type == PVR_SUB_CMD_TYPE_GRAPHICS) {
       for (uint32_t i = 0; i < commandBufferCount; i++) {
-         PVR_FROM_HANDLE(pvr_cmd_buffer, sec_cmd_buffer, pCommandBuffers[i]);
+         VK_FROM_HANDLE(pvr_cmd_buffer, sec_cmd_buffer, pCommandBuffers[i]);
 
          assert(sec_cmd_buffer->vk.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
@@ -7343,7 +7343,7 @@ void pvr_CmdExecuteCommands(VkCommandBuffer commandBuffer,
       }
    } else {
       for (uint32_t i = 0; i < commandBufferCount; i++) {
-         PVR_FROM_HANDLE(pvr_cmd_buffer, sec_cmd_buffer, pCommandBuffers[i]);
+         VK_FROM_HANDLE(pvr_cmd_buffer, sec_cmd_buffer, pCommandBuffers[i]);
 
          assert(sec_cmd_buffer->vk.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
@@ -7422,7 +7422,7 @@ void pvr_CmdNextSubpass2(VkCommandBuffer commandBuffer,
                          const VkSubpassBeginInfo *pSubpassBeginInfo,
                          const VkSubpassEndInfo *pSubpassEndInfo)
 {
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
    struct pvr_render_pass_info *rp_info = &state->render_pass_info;
    const struct pvr_renderpass_hwsetup_subpass *hw_subpass;
@@ -7602,7 +7602,7 @@ static bool pvr_is_stencil_store_load_needed(
    }
 
    for (uint32_t i = 0; i < image_barrier_count; i++) {
-      PVR_FROM_HANDLE(pvr_image, image, image_barriers[i].image);
+      VK_FROM_HANDLE(pvr_image, image, image_barriers[i].image);
       const uint32_t stencil_bit = VK_IMAGE_ASPECT_STENCIL_BIT;
 
       if (!(image_barriers[i].subresourceRange.aspectMask & stencil_bit))
@@ -7687,7 +7687,7 @@ pvr_cmd_buffer_insert_barrier_event(struct pvr_cmd_buffer *cmd_buffer,
 void pvr_CmdPipelineBarrier2(VkCommandBuffer commandBuffer,
                              const VkDependencyInfo *pDependencyInfo)
 {
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    struct pvr_cmd_buffer_state *const state = &cmd_buffer->state;
    const struct pvr_render_pass *const render_pass =
       state->render_pass_info.pass;
@@ -7827,8 +7827,8 @@ void pvr_CmdResetEvent2(VkCommandBuffer commandBuffer,
                         VkEvent _event,
                         VkPipelineStageFlags2 stageMask)
 {
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
-   PVR_FROM_HANDLE(pvr_event, event, _event);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_event, event, _event);
    VkResult result;
 
    PVR_CHECK_COMMAND_BUFFER_BUILDING_STATE(cmd_buffer);
@@ -7852,8 +7852,8 @@ void pvr_CmdSetEvent2(VkCommandBuffer commandBuffer,
                       VkEvent _event,
                       const VkDependencyInfo *pDependencyInfo)
 {
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
-   PVR_FROM_HANDLE(pvr_event, event, _event);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_event, event, _event);
    VkPipelineStageFlags2 stage_mask = 0;
    VkResult result;
 
@@ -7888,7 +7888,7 @@ void pvr_CmdWaitEvents2(VkCommandBuffer commandBuffer,
                         const VkEvent *pEvents,
                         const VkDependencyInfo *pDependencyInfos)
 {
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    struct pvr_event **events_array;
    uint32_t *stage_masks;
    VkResult result;
@@ -7952,7 +7952,7 @@ void pvr_CmdWriteTimestamp2(VkCommandBuffer commandBuffer,
 
 VkResult pvr_EndCommandBuffer(VkCommandBuffer commandBuffer)
 {
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
    VkResult result;
 

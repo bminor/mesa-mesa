@@ -551,7 +551,7 @@ VkResult pvr_CreateRenderPass2(VkDevice _device,
                                VkRenderPass *pRenderPass)
 {
    struct pvr_render_pass_attachment *attachments;
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_device, device, _device);
    const struct pvr_device_info *dev_info = &device->pdevice->dev_info;
    struct pvr_render_subpass *subpasses;
    const VkAllocationCallbacks *alloc;
@@ -807,8 +807,8 @@ void pvr_DestroyRenderPass(VkDevice _device,
                            VkRenderPass _pass,
                            const VkAllocationCallbacks *pAllocator)
 {
-   PVR_FROM_HANDLE(pvr_device, device, _device);
-   PVR_FROM_HANDLE(pvr_render_pass, pass, _pass);
+   VK_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_render_pass, pass, _pass);
    const VkAllocationCallbacks *allocator = pAllocator ? pAllocator
                                                        : &device->vk.alloc;
 
@@ -825,7 +825,7 @@ void pvr_GetRenderAreaGranularity(VkDevice _device,
                                   VkRenderPass renderPass,
                                   VkExtent2D *pGranularity)
 {
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_device, device, _device);
    const struct pvr_device_info *dev_info = &device->pdevice->dev_info;
 
    /* Granularity does not depend on any settings in the render pass, so return

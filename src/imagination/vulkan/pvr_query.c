@@ -44,7 +44,7 @@ VkResult pvr_CreateQueryPool(VkDevice _device,
                              const VkAllocationCallbacks *pAllocator,
                              VkQueryPool *pQueryPool)
 {
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_device, device, _device);
    const uint32_t core_count = device->pdevice->dev_runtime_info.core_count;
    const uint32_t query_size = pCreateInfo->queryCount * sizeof(uint32_t);
    struct pvr_query_pool *pool;
@@ -111,8 +111,8 @@ void pvr_DestroyQueryPool(VkDevice _device,
                           VkQueryPool queryPool,
                           const VkAllocationCallbacks *pAllocator)
 {
-   PVR_FROM_HANDLE(pvr_query_pool, pool, queryPool);
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_query_pool, pool, queryPool);
+   VK_FROM_HANDLE(pvr_device, device, _device);
 
    if (!pool)
       return;
@@ -197,8 +197,8 @@ VkResult pvr_GetQueryPoolResults(VkDevice _device,
                                  VkDeviceSize stride,
                                  VkQueryResultFlags flags)
 {
-   PVR_FROM_HANDLE(pvr_query_pool, pool, queryPool);
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_query_pool, pool, queryPool);
+   VK_FROM_HANDLE(pvr_device, device, _device);
    VG(volatile uint32_t *available =
          pvr_bo_suballoc_get_map_addr(pool->availability_buffer));
    volatile uint32_t *query_results =
@@ -265,7 +265,7 @@ void pvr_CmdResetQueryPool(VkCommandBuffer commandBuffer,
                            uint32_t firstQuery,
                            uint32_t queryCount)
 {
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    struct pvr_query_info query_info;
    VkResult result;
 
@@ -318,7 +318,7 @@ void pvr_ResetQueryPool(VkDevice _device,
                         uint32_t firstQuery,
                         uint32_t queryCount)
 {
-   PVR_FROM_HANDLE(pvr_query_pool, pool, queryPool);
+   VK_FROM_HANDLE(pvr_query_pool, pool, queryPool);
    uint32_t *availability =
       pvr_bo_suballoc_get_map_addr(pool->availability_buffer);
 
@@ -334,7 +334,7 @@ void pvr_CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer,
                                  VkDeviceSize stride,
                                  VkQueryResultFlags flags)
 {
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    struct pvr_query_info query_info;
    VkResult result;
 
@@ -399,9 +399,9 @@ void pvr_CmdBeginQuery(VkCommandBuffer commandBuffer,
                        uint32_t query,
                        VkQueryControlFlags flags)
 {
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
-   PVR_FROM_HANDLE(pvr_query_pool, pool, queryPool);
+   VK_FROM_HANDLE(pvr_query_pool, pool, queryPool);
 
    PVR_CHECK_COMMAND_BUFFER_BUILDING_STATE(cmd_buffer);
 
@@ -450,7 +450,7 @@ void pvr_CmdEndQuery(VkCommandBuffer commandBuffer,
                      VkQueryPool queryPool,
                      uint32_t query)
 {
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
 
    PVR_CHECK_COMMAND_BUFFER_BUILDING_STATE(cmd_buffer);

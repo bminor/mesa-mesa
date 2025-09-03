@@ -108,7 +108,7 @@ VkResult pvr_CreateDescriptorSetLayout(
    const VkAllocationCallbacks *pAllocator,
    VkDescriptorSetLayout *pSetLayout)
 {
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_device, device, _device);
    VkDescriptorSetLayoutBinding *bindings;
    uint32_t binding_count = 0;
    uint32_t immutable_sampler_count = 0;
@@ -249,7 +249,7 @@ VkResult pvr_CreateDescriptorPool(VkDevice _device,
                                   const VkAllocationCallbacks *pAllocator,
                                   VkDescriptorPool *pDescriptorPool)
 {
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_device, device, _device);
    const uint32_t cache_line_size =
       rogue_get_slc_cache_line_size(&device->pdevice->dev_info);
    struct pvr_descriptor_pool *pool;
@@ -350,8 +350,8 @@ void pvr_DestroyDescriptorPool(VkDevice _device,
                                VkDescriptorPool _pool,
                                const VkAllocationCallbacks *pAllocator)
 {
-   PVR_FROM_HANDLE(pvr_device, device, _device);
-   PVR_FROM_HANDLE(pvr_descriptor_pool, pool, _pool);
+   VK_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_descriptor_pool, pool, _pool);
 
    if (!pool)
       return;
@@ -373,8 +373,8 @@ VkResult pvr_ResetDescriptorPool(VkDevice _device,
                                  VkDescriptorPool descriptorPool,
                                  VkDescriptorPoolResetFlags flags)
 {
-   PVR_FROM_HANDLE(pvr_descriptor_pool, pool, descriptorPool);
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_descriptor_pool, pool, descriptorPool);
+   VK_FROM_HANDLE(pvr_device, device, _device);
 
    list_for_each_entry_safe (struct pvr_descriptor_set,
                              set,
@@ -456,8 +456,8 @@ pvr_AllocateDescriptorSets(VkDevice _device,
                            const VkDescriptorSetAllocateInfo *pAllocateInfo,
                            VkDescriptorSet *pDescriptorSets)
 {
-   PVR_FROM_HANDLE(pvr_descriptor_pool, pool, pAllocateInfo->descriptorPool);
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_descriptor_pool, pool, pAllocateInfo->descriptorPool);
+   VK_FROM_HANDLE(pvr_device, device, _device);
    VkResult result;
    uint32_t i;
 
@@ -466,7 +466,7 @@ pvr_AllocateDescriptorSets(VkDevice _device,
    }
 
    for (i = 0; i < pAllocateInfo->descriptorSetCount; i++) {
-      PVR_FROM_HANDLE(pvr_descriptor_set_layout,
+      VK_FROM_HANDLE(pvr_descriptor_set_layout,
                       layout,
                       pAllocateInfo->pSetLayouts[i]);
       struct pvr_descriptor_set *set;
@@ -497,8 +497,8 @@ VkResult pvr_FreeDescriptorSets(VkDevice _device,
                                 uint32_t count,
                                 const VkDescriptorSet *pDescriptorSets)
 {
-   PVR_FROM_HANDLE(pvr_descriptor_pool, pool, descriptorPool);
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_descriptor_pool, pool, descriptorPool);
+   VK_FROM_HANDLE(pvr_device, device, _device);
 
    for (uint32_t i = 0; i < count; i++) {
       struct pvr_descriptor_set *set;
@@ -573,7 +573,7 @@ write_sampler(const struct pvr_descriptor_set *set,
       sampler = binding->immutable_samplers[elem];
    } else {
       assert(image_info);
-      PVR_FROM_HANDLE(pvr_sampler, info_sampler, image_info->sampler);
+      VK_FROM_HANDLE(pvr_sampler, info_sampler, image_info->sampler);
       sampler = info_sampler;
    }
 
@@ -587,8 +587,8 @@ write_image_sampler(const struct pvr_descriptor_set *set,
                     const struct pvr_descriptor_set_layout_binding *binding,
                     uint32_t elem)
 {
-   PVR_FROM_HANDLE(pvr_sampler, info_sampler, image_info->sampler);
-   PVR_FROM_HANDLE(pvr_image_view, image_view, image_info->imageView);
+   VK_FROM_HANDLE(pvr_sampler, info_sampler, image_info->sampler);
+   VK_FROM_HANDLE(pvr_image_view, image_view, image_info->imageView);
 
    const unsigned desc_offset = binding->offset + (elem * binding->stride);
    void *desc_mapping = (uint8_t *)set->mapping + desc_offset;
@@ -611,7 +611,7 @@ write_input_attachment(const struct pvr_descriptor_set *set,
                        const struct pvr_descriptor_set_layout_binding *binding,
                        uint32_t elem)
 {
-   PVR_FROM_HANDLE(pvr_image_view, image_view, image_info->imageView);
+   VK_FROM_HANDLE(pvr_image_view, image_view, image_info->imageView);
 
    const unsigned desc_offset = binding->offset + (elem * binding->stride);
    void *desc_mapping = (uint8_t *)set->mapping + desc_offset;
@@ -629,7 +629,7 @@ write_sampled_image(const struct pvr_descriptor_set *set,
                     uint32_t elem,
                     const struct pvr_device_info *dev_info)
 {
-   PVR_FROM_HANDLE(pvr_image_view, image_view, image_info->imageView);
+   VK_FROM_HANDLE(pvr_image_view, image_view, image_info->imageView);
 
    const unsigned desc_offset = binding->offset + (elem * binding->stride);
    void *desc_mapping = (uint8_t *)set->mapping + desc_offset;
@@ -647,7 +647,7 @@ write_storage_image(const struct pvr_descriptor_set *set,
                     uint32_t elem,
                     const struct pvr_device_info *dev_info)
 {
-   PVR_FROM_HANDLE(pvr_image_view, image_view, image_info->imageView);
+   VK_FROM_HANDLE(pvr_image_view, image_view, image_info->imageView);
 
    bool is_cube = image_view->vk.view_type == VK_IMAGE_VIEW_TYPE_CUBE ||
                   image_view->vk.view_type == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
@@ -680,7 +680,7 @@ write_buffer_view(const struct pvr_descriptor_set *set,
                   bool is_texel_buffer,
                   const struct pvr_device_info *dev_info)
 {
-   PVR_FROM_HANDLE(pvr_buffer_view, buffer_view, _buffer_view);
+   VK_FROM_HANDLE(pvr_buffer_view, buffer_view, _buffer_view);
 
    const unsigned desc_offset = binding->offset + (elem * binding->stride);
    void *desc_mapping = (uint8_t *)set->mapping + desc_offset;
@@ -707,12 +707,12 @@ void pvr_UpdateDescriptorSets(VkDevice _device,
                               uint32_t descriptorCopyCount,
                               const VkCopyDescriptorSet *pDescriptorCopies)
 {
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_device, device, _device);
    const struct pvr_device_info *dev_info = &device->pdevice->dev_info;
 
    for (uint32_t i = 0; i < descriptorWriteCount; i++) {
       const VkWriteDescriptorSet *write = &pDescriptorWrites[i];
-      PVR_FROM_HANDLE(pvr_descriptor_set, set, write->dstSet);
+      VK_FROM_HANDLE(pvr_descriptor_set, set, write->dstSet);
       const struct pvr_descriptor_set_layout *layout = set->layout;
       const struct pvr_descriptor_set_layout_binding *binding;
 
@@ -814,8 +814,8 @@ void pvr_UpdateDescriptorSets(VkDevice _device,
 
    for (uint32_t i = 0; i < descriptorCopyCount; i++) {
       const VkCopyDescriptorSet *copy = &pDescriptorCopies[i];
-      PVR_FROM_HANDLE(pvr_descriptor_set, src_set, copy->srcSet);
-      PVR_FROM_HANDLE(pvr_descriptor_set, dst_set, copy->dstSet);
+      VK_FROM_HANDLE(pvr_descriptor_set, src_set, copy->srcSet);
+      VK_FROM_HANDLE(pvr_descriptor_set, dst_set, copy->dstSet);
 
       const struct pvr_descriptor_set_layout *src_layout = src_set->layout;
       const struct pvr_descriptor_set_layout *dst_layout = dst_set->layout;
@@ -889,11 +889,11 @@ void pvr_UpdateDescriptorSetWithTemplate(
    VkDescriptorUpdateTemplate descriptorUpdateTemplate,
    const void *pData)
 {
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_device, device, _device);
    VK_FROM_HANDLE(vk_descriptor_update_template,
                   template,
                   descriptorUpdateTemplate);
-   PVR_FROM_HANDLE(pvr_descriptor_set, set, descriptorSet);
+   VK_FROM_HANDLE(pvr_descriptor_set, set, descriptorSet);
 
    const struct pvr_device_info *dev_info = &device->pdevice->dev_info;
 

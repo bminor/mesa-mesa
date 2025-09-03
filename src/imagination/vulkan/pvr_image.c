@@ -152,7 +152,7 @@ VkResult pvr_CreateImage(VkDevice _device,
                          const VkAllocationCallbacks *pAllocator,
                          VkImage *pImage)
 {
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_device, device, _device);
    struct pvr_image *image;
 
    image =
@@ -179,8 +179,8 @@ void pvr_DestroyImage(VkDevice _device,
                       VkImage _image,
                       const VkAllocationCallbacks *pAllocator)
 {
-   PVR_FROM_HANDLE(pvr_device, device, _device);
-   PVR_FROM_HANDLE(pvr_image, image, _image);
+   VK_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_image, image, _image);
 
    if (!image)
       return;
@@ -227,12 +227,12 @@ VkResult pvr_BindImageMemory2(VkDevice _device,
                               uint32_t bindInfoCount,
                               const VkBindImageMemoryInfo *pBindInfos)
 {
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_device, device, _device);
    uint32_t i;
 
    for (i = 0; i < bindInfoCount; i++) {
-      PVR_FROM_HANDLE(pvr_device_memory, mem, pBindInfos[i].memory);
-      PVR_FROM_HANDLE(pvr_image, image, pBindInfos[i].image);
+      VK_FROM_HANDLE(pvr_device_memory, mem, pBindInfos[i].memory);
+      VK_FROM_HANDLE(pvr_image, image, pBindInfos[i].image);
 
       VkResult result = pvr_bind_memory(device,
                                         mem,
@@ -243,7 +243,7 @@ VkResult pvr_BindImageMemory2(VkDevice _device,
                                         &image->dev_addr);
       if (result != VK_SUCCESS) {
          while (i--) {
-            PVR_FROM_HANDLE(pvr_image, image, pBindInfos[i].image);
+            VK_FROM_HANDLE(pvr_image, image, pBindInfos[i].image);
 
             pvr_unbind_memory(device, image->vma);
          }
@@ -278,7 +278,7 @@ void pvr_GetImageSubresourceLayout(VkDevice device,
                                    const VkImageSubresource *subresource,
                                    VkSubresourceLayout *layout)
 {
-   PVR_FROM_HANDLE(pvr_image, image, _image);
+   VK_FROM_HANDLE(pvr_image, image, _image);
 
    pvr_get_image_subresource_layout(image, subresource, layout);
 }
@@ -311,7 +311,7 @@ VkResult pvr_CreateImageView(VkDevice _device,
                              const VkAllocationCallbacks *pAllocator,
                              VkImageView *pView)
 {
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_device, device, _device);
    struct pvr_texture_state_info info = { 0 };
    unsigned char input_swizzle[4];
    const uint8_t *format_swizzle;
@@ -451,8 +451,8 @@ void pvr_DestroyImageView(VkDevice _device,
                           VkImageView _iview,
                           const VkAllocationCallbacks *pAllocator)
 {
-   PVR_FROM_HANDLE(pvr_device, device, _device);
-   PVR_FROM_HANDLE(pvr_image_view, iview, _iview);
+   VK_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_image_view, iview, _iview);
 
    if (!iview)
       return;
@@ -465,8 +465,8 @@ VkResult pvr_CreateBufferView(VkDevice _device,
                               const VkAllocationCallbacks *pAllocator,
                               VkBufferView *pView)
 {
-   PVR_FROM_HANDLE(pvr_buffer, buffer, pCreateInfo->buffer);
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_buffer, buffer, pCreateInfo->buffer);
+   VK_FROM_HANDLE(pvr_device, device, _device);
    struct pvr_texture_state_info info = { 0 };
    const uint8_t *format_swizzle;
    struct pvr_buffer_view *bview;
@@ -533,8 +533,8 @@ void pvr_DestroyBufferView(VkDevice _device,
                            VkBufferView bufferView,
                            const VkAllocationCallbacks *pAllocator)
 {
-   PVR_FROM_HANDLE(pvr_buffer_view, bview, bufferView);
-   PVR_FROM_HANDLE(pvr_device, device, _device);
+   VK_FROM_HANDLE(pvr_buffer_view, bview, bufferView);
+   VK_FROM_HANDLE(pvr_device, device, _device);
 
    if (!bview)
       return;

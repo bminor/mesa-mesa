@@ -213,9 +213,9 @@ static void pvr_setup_transfer_surface(struct pvr_device *device,
 void pvr_CmdBlitImage2(VkCommandBuffer commandBuffer,
                        const VkBlitImageInfo2 *pBlitImageInfo)
 {
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
-   PVR_FROM_HANDLE(pvr_image, src, pBlitImageInfo->srcImage);
-   PVR_FROM_HANDLE(pvr_image, dst, pBlitImageInfo->dstImage);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_image, src, pBlitImageInfo->srcImage);
+   VK_FROM_HANDLE(pvr_image, dst, pBlitImageInfo->dstImage);
    struct pvr_device *device = cmd_buffer->device;
    enum pvr_filter filter = PVR_FILTER_DONTCARE;
 
@@ -695,9 +695,9 @@ static bool pvr_can_merge_ds_regions(const VkImageCopy2 *pRegionA,
 void pvr_CmdCopyImage2(VkCommandBuffer commandBuffer,
                        const VkCopyImageInfo2 *pCopyImageInfo)
 {
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
-   PVR_FROM_HANDLE(pvr_image, src, pCopyImageInfo->srcImage);
-   PVR_FROM_HANDLE(pvr_image, dst, pCopyImageInfo->dstImage);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_image, src, pCopyImageInfo->srcImage);
+   VK_FROM_HANDLE(pvr_image, dst, pCopyImageInfo->dstImage);
 
    const bool can_merge_ds = src->vk.format == VK_FORMAT_D24_UNORM_S8_UINT &&
                              dst->vk.format == VK_FORMAT_D24_UNORM_S8_UINT;
@@ -894,9 +894,9 @@ void pvr_CmdCopyBufferToImage2(
    VkCommandBuffer commandBuffer,
    const VkCopyBufferToImageInfo2 *pCopyBufferToImageInfo)
 {
-   PVR_FROM_HANDLE(pvr_buffer, src, pCopyBufferToImageInfo->srcBuffer);
-   PVR_FROM_HANDLE(pvr_image, dst, pCopyBufferToImageInfo->dstImage);
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_buffer, src, pCopyBufferToImageInfo->srcBuffer);
+   VK_FROM_HANDLE(pvr_image, dst, pCopyBufferToImageInfo->dstImage);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
 
    PVR_CHECK_COMMAND_BUFFER_BUILDING_STATE(cmd_buffer);
 
@@ -1088,9 +1088,9 @@ void pvr_CmdCopyImageToBuffer2(
    VkCommandBuffer commandBuffer,
    const VkCopyImageToBufferInfo2 *pCopyImageToBufferInfo)
 {
-   PVR_FROM_HANDLE(pvr_buffer, dst, pCopyImageToBufferInfo->dstBuffer);
-   PVR_FROM_HANDLE(pvr_image, src, pCopyImageToBufferInfo->srcImage);
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_buffer, dst, pCopyImageToBufferInfo->dstBuffer);
+   VK_FROM_HANDLE(pvr_image, src, pCopyImageToBufferInfo->srcImage);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
 
    PVR_CHECK_COMMAND_BUFFER_BUILDING_STATE(cmd_buffer);
 
@@ -1189,8 +1189,8 @@ void pvr_CmdClearColorImage(VkCommandBuffer commandBuffer,
                             uint32_t rangeCount,
                             const VkImageSubresourceRange *pRanges)
 {
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
-   PVR_FROM_HANDLE(pvr_image, image, _image);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_image, image, _image);
 
    for (uint32_t i = 0; i < rangeCount; i++) {
       const VkResult result =
@@ -1207,8 +1207,8 @@ void pvr_CmdClearDepthStencilImage(VkCommandBuffer commandBuffer,
                                    uint32_t rangeCount,
                                    const VkImageSubresourceRange *pRanges)
 {
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
-   PVR_FROM_HANDLE(pvr_image, image, _image);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_image, image, _image);
 
    for (uint32_t i = 0; i < rangeCount; i++) {
       const VkImageAspectFlags ds_aspect = VK_IMAGE_ASPECT_DEPTH_BIT |
@@ -1348,8 +1348,8 @@ void pvr_CmdUpdateBuffer(VkCommandBuffer commandBuffer,
                          VkDeviceSize dataSize,
                          const void *pData)
 {
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
-   PVR_FROM_HANDLE(pvr_buffer, dst, dstBuffer);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_buffer, dst, dstBuffer);
    struct pvr_suballoc_bo *pvr_bo;
    VkResult result;
 
@@ -1372,9 +1372,9 @@ void pvr_CmdUpdateBuffer(VkCommandBuffer commandBuffer,
 void pvr_CmdCopyBuffer2(VkCommandBuffer commandBuffer,
                         const VkCopyBufferInfo2 *pCopyBufferInfo)
 {
-   PVR_FROM_HANDLE(pvr_buffer, src, pCopyBufferInfo->srcBuffer);
-   PVR_FROM_HANDLE(pvr_buffer, dst, pCopyBufferInfo->dstBuffer);
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_buffer, src, pCopyBufferInfo->srcBuffer);
+   VK_FROM_HANDLE(pvr_buffer, dst, pCopyBufferInfo->dstBuffer);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
 
    PVR_CHECK_COMMAND_BUFFER_BUILDING_STATE(cmd_buffer);
 
@@ -1399,8 +1399,8 @@ void pvr_CmdFillBuffer(VkCommandBuffer commandBuffer,
                        VkDeviceSize fillSize,
                        uint32_t data)
 {
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
-   PVR_FROM_HANDLE(pvr_buffer, dst, dstBuffer);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_buffer, dst, dstBuffer);
 
    PVR_CHECK_COMMAND_BUFFER_BUILDING_STATE(cmd_buffer);
 
@@ -2182,7 +2182,7 @@ void pvr_CmdClearAttachments(VkCommandBuffer commandBuffer,
                              uint32_t rectCount,
                              const VkClearRect *pRects)
 {
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
    struct pvr_sub_cmd_gfx *sub_cmd = &state->current_sub_cmd->gfx;
 
@@ -2256,9 +2256,9 @@ void pvr_CmdClearAttachments(VkCommandBuffer commandBuffer,
 void pvr_CmdResolveImage2(VkCommandBuffer commandBuffer,
                           const VkResolveImageInfo2 *pResolveImageInfo)
 {
-   PVR_FROM_HANDLE(pvr_image, src, pResolveImageInfo->srcImage);
-   PVR_FROM_HANDLE(pvr_image, dst, pResolveImageInfo->dstImage);
-   PVR_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_image, src, pResolveImageInfo->srcImage);
+   VK_FROM_HANDLE(pvr_image, dst, pResolveImageInfo->dstImage);
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
 
    PVR_CHECK_COMMAND_BUFFER_BUILDING_STATE(cmd_buffer);
 
