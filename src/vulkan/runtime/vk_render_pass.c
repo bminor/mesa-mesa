@@ -32,6 +32,7 @@
 #include "vk_framebuffer.h"
 #include "vk_image.h"
 #include "vk_util.h"
+#include "vk_android.h"
 
 #include "util/log.h"
 
@@ -351,6 +352,8 @@ vk_render_pass_attachment_init(struct vk_render_pass_attachment *att,
       .final_layout           = desc->finalLayout,
       .initial_stencil_layout = vk_att_desc_stencil_layout(desc, false),
       .final_stencil_layout   = vk_att_desc_stencil_layout(desc, true),
+      .has_external_format =
+         vk_android_rp_attachment_has_external_format(desc),
    };
 }
 
@@ -1918,7 +1921,11 @@ begin_subpass(struct vk_command_buffer *cmd_buffer,
           */
          res_att_state->views_loaded |= subpass->view_mask;
 
-         if (vk_format_is_int(res_att_state->image_view->format))
+         const struct vk_render_pass_attachment *resolve_att =
+            &pass->attachments[sp_att->resolve->attachment];
+         if (resolve_att->has_external_format)
+            color_attachment->resolveMode = VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_BIT_ANDROID;
+         else if (vk_format_is_int(res_att_state->image_view->format))
             color_attachment->resolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
          else
             color_attachment->resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
@@ -2600,7 +2607,8 @@ vk_common_CmdBeginRenderPass2(VkCommandBuffer commandBuffer,
        *    VkImageViewCreateInfo::format equal to the corresponding value of
        *    VkAttachmentDescription::format in renderPass"
        */
-      assert(image_view->format == pass_att->format);
+      if (!pass_att->has_external_format)
+         assert(image_view->format == pass_att->format);
 
       /* From the Vulkan 1.3.204 spec:
        *

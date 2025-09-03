@@ -223,6 +223,9 @@ struct vk_render_pass_attachment {
     * otherwise.
     */
    VkImageLayout final_stencil_layout;
+
+   /** Whether VkExternalFormatANDROID is part of this render pass */
+   bool has_external_format;
 };
 
 /***/
