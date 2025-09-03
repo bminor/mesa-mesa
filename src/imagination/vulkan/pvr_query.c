@@ -24,6 +24,8 @@
  * Copyright © 2015 Intel Corporation
  */
 
+#include "pvr_query.h"
+
 #include <assert.h>
 #include <stddef.h>
 #include <stdint.h>

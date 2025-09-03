@@ -51,6 +51,7 @@
 #include "pvr_pass.h"
 #include "pvr_pds.h"
 #include "pvr_private.h"
+#include "pvr_query.h"
 #include "pvr_tex_state.h"
 #include "pvr_types.h"
 #include "pvr_usc.h"

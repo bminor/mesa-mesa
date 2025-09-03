@@ -186,20 +186,6 @@ struct pvr_graphics_pipeline {
    } shader_state;
 };
 
-struct pvr_query_pool {
-   struct vk_object_base base;
-
-   /* Stride of result_buffer to get to the start of the results for the next
-    * Phantom.
-    */
-   uint32_t result_stride;
-
-   uint32_t query_count;
-
-   struct pvr_suballoc_bo *result_buffer;
-   struct pvr_suballoc_bo *availability_buffer;
-};
-
 struct pvr_private_compute_pipeline {
    /* Used by pvr_compute_update_kernel_private(). */
    uint32_t pds_code_offset;
@@ -219,35 +205,6 @@ struct pvr_private_compute_pipeline {
    uint32_t const_shared_regs_count;
 
    pvr_dev_addr_t const_buffer_addr;
-};
-
-struct pvr_query_info {
-   enum pvr_query_type type;
-
-   union {
-      struct {
-         uint32_t num_query_indices;
-         struct pvr_suballoc_bo *index_bo;
-         uint32_t num_queries;
-         struct pvr_suballoc_bo *availability_bo;
-      } availability_write;
-
-      struct {
-         VkQueryPool query_pool;
-         uint32_t first_query;
-         uint32_t query_count;
-      } reset_query_pool;
-
-      struct {
-         VkQueryPool query_pool;
-         uint32_t first_query;
-         uint32_t query_count;
-         VkBuffer dst_buffer;
-         VkDeviceSize dst_offset;
-         VkDeviceSize stride;
-         VkQueryResultFlags flags;
-      } copy_query_results;
-   };
 };
 
 VkResult pvr_wsi_init(struct pvr_physical_device *pdevice);
@@ -335,9 +292,6 @@ pvr_stage_mask_dst(VkPipelineStageFlags2 stage_mask)
 
 size_t pvr_pds_get_max_descriptor_upload_const_map_size_in_bytes(void);
 
-VkResult pvr_device_create_compute_query_programs(struct pvr_device *device);
-void pvr_device_destroy_compute_query_programs(struct pvr_device *device);
-
 VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_descriptor_set_layout,
                                vk.base,
                                VkDescriptorSetLayout,
@@ -354,10 +308,6 @@ VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_pipeline,
                                base,
                                VkPipeline,
                                VK_OBJECT_TYPE_PIPELINE)
-VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_query_pool,
-                               base,
-                               VkQueryPool,
-                               VK_OBJECT_TYPE_QUERY_POOL)
 
 /**
  * Print a FINISHME message, including its source location.
