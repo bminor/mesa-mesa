@@ -21,6 +21,8 @@
  * SOFTWARE.
  */
 
+#include "pvr_descriptor_set.h"
+
 #include <assert.h>
 #include <limits.h>
 #include <stdint.h>

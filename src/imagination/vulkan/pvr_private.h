@@ -81,25 +81,6 @@ struct pvr_physical_device;
 VkResult pvr_wsi_init(struct pvr_physical_device *pdevice);
 void pvr_wsi_finish(struct pvr_physical_device *pdevice);
 
-static inline struct pvr_descriptor_set_layout *
-vk_to_pvr_descriptor_set_layout(struct vk_descriptor_set_layout *layout)
-{
-   return container_of(layout, struct pvr_descriptor_set_layout, vk);
-}
-
-VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_descriptor_set_layout,
-                               vk.base,
-                               VkDescriptorSetLayout,
-                               VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT)
-VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_descriptor_set,
-                               base,
-                               VkDescriptorSet,
-                               VK_OBJECT_TYPE_DESCRIPTOR_SET)
-VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_descriptor_pool,
-                               base,
-                               VkDescriptorPool,
-                               VK_OBJECT_TYPE_DESCRIPTOR_POOL)
-
 /**
  * Print a FINISHME message, including its source location.
  */
