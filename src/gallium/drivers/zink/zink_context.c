@@ -1591,7 +1591,7 @@ zink_set_inlinable_constants(struct pipe_context *pctx,
       if (shader == MESA_SHADER_COMPUTE)
          ctx->compute_dirty = true;
       else
-         ctx->dirty_gfx_stages |= bit;
+         zink_update_dirty_gfx_stages(ctx, bit);
       ctx->inlinable_uniforms_valid_mask |= bit;
       key->inline_uniforms = true;
    }
@@ -1636,7 +1636,7 @@ invalidate_inlined_uniforms(struct zink_context *ctx, mesa_shader_stage pstage)
       return;
    }
    assert(!zink_screen(ctx->base.screen)->optimal_keys || (pstage == MESA_SHADER_GEOMETRY && ctx->is_generated_gs_bound));
-   ctx->dirty_gfx_stages |= bit;
+   zink_update_dirty_gfx_stages(ctx, bit);
    struct zink_shader_key *key = &ctx->gfx_pipeline_state.shader_keys.key[pstage];
    key->inline_uniforms = false;
 }

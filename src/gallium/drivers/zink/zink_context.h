@@ -115,6 +115,12 @@ zink_resource_access_is_write(VkAccessFlags flags)
 void
 zink_fence_wait(struct pipe_context *ctx);
 
+static ALWAYS_INLINE void
+zink_update_dirty_gfx_stages(struct zink_context *ctx, uint32_t pstages)
+{
+   ctx->dirty_gfx_stages |= pstages;
+}
+
 void
 zink_wait_on_batch(struct zink_context *ctx, uint64_t batch_id);
 void
