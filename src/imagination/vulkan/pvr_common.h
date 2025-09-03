@@ -333,4 +333,10 @@ struct pvr_descriptor_state {
 
 #undef PVR_MAX_DYNAMIC_BUFFERS
 
+VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_event, base, VkEvent, VK_OBJECT_TYPE_EVENT)
+VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_sampler,
+                               vk.base,
+                               VkSampler,
+                               VK_OBJECT_TYPE_SAMPLER)
+
 #endif /* PVR_COMMON_H */

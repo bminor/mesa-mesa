@@ -1475,15 +1475,10 @@ VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_descriptor_set,
                                base,
                                VkDescriptorSet,
                                VK_OBJECT_TYPE_DESCRIPTOR_SET)
-VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_event, base, VkEvent, VK_OBJECT_TYPE_EVENT)
 VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_descriptor_pool,
                                base,
                                VkDescriptorPool,
                                VK_OBJECT_TYPE_DESCRIPTOR_POOL)
-VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_sampler,
-                               vk.base,
-                               VkSampler,
-                               VK_OBJECT_TYPE_SAMPLER)
 VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_pipeline,
                                base,
                                VkPipeline,
