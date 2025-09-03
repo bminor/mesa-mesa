@@ -71,6 +71,7 @@
 #include "pvr_usc.h"
 #include "pvr_util.h"
 #include "pvr_winsys.h"
+#include "pvr_wsi.h"
 #include "util/build_id.h"
 #include "util/disk_cache.h"
 #include "util/log.h"

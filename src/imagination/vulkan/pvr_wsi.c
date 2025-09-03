@@ -24,6 +24,8 @@
  * SOFTWARE.
  */
 
+#include "pvr_wsi.h"
+
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>

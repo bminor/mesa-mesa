@@ -76,11 +76,6 @@
 #   define VG(x) ((void)0)
 #endif
 
-struct pvr_physical_device;
-
-VkResult pvr_wsi_init(struct pvr_physical_device *pdevice);
-void pvr_wsi_finish(struct pvr_physical_device *pdevice);
-
 /**
  * Print a FINISHME message, including its source location.
  */
