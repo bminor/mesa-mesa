@@ -4012,8 +4012,6 @@ tu_clear_sysmem_attachments(struct tu_cmd_buffer *cmd,
    bool z_clear = false;
    bool s_clear = false;
 
-   trace_start_sysmem_clear_all(&cmd->rp_trace, cs, cmd, mrt_count, rect_count);
-
    for (uint32_t i = 0; i < attachment_count; i++) {
       uint32_t a;
       if (attachments[i].aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
@@ -4048,6 +4046,8 @@ tu_clear_sysmem_attachments(struct tu_cmd_buffer *cmd,
     */
    if (clear_rts == 0 && !z_clear && !s_clear)
       return;
+
+   trace_start_sysmem_clear_all(&cmd->rp_trace, cs, cmd, mrt_count, rect_count);
 
    /* disable all draw states so they don't interfere
     * TODO: use and re-use draw states
