@@ -207,6 +207,26 @@ filter_64_bit_instr(const nir_instr *const_instr, UNUSED const void *data)
    return lower;
 }
 
+static bool
+filter_double_subgroup(const nir_intrinsic_instr *intr, UNUSED const void *data)
+{
+   switch(intr->intrinsic) {
+   case nir_intrinsic_vote_feq:
+      return intr->src[0].ssa->bit_size == 64;
+   case nir_intrinsic_reduce:
+   case nir_intrinsic_exclusive_scan:
+   case nir_intrinsic_inclusive_scan: {
+      if (intr->src[0].ssa->bit_size != 64)
+         return false;
+      unsigned op = nir_intrinsic_reduction_op(intr);
+      nir_alu_type type = nir_op_infos[op].output_type;
+      return type == nir_type_float;
+   }
+   default:
+      return false;
+   }
+}
+
 /* Second third of converting glsl_to_nir. This creates uniforms, gathers
  * info on varyings, etc after NIR link time opts have been applied.
  */
@@ -277,16 +297,20 @@ st_glsl_to_nir_post_opts(struct st_context *st, struct gl_program *prog,
          /* 64-bit subgroup ops like vote_feq and inclusive_scan are secretly
           * fp64 operations, so lower them first to make the ALU operation
           * appear for nir_lower_doubles to lower after.
+          *
+          * Create GL_KHR_shader_subgroup like uvec4 ballots, drivers have to further
+          * lower that on their own.
           */
          nir_lower_subgroups_options subgroup_opts = {0};
-         subgroup_opts.subgroup_size = nir->options->subgroup_size;
-         subgroup_opts.ballot_bit_size = nir->options->ballot_bit_size;
-         subgroup_opts.ballot_components = nir->options->ballot_components;
-         subgroup_opts.lower_fp64 = true;
+         subgroup_opts.filter = filter_double_subgroup;
+         subgroup_opts.subgroup_size = 0;
+         subgroup_opts.ballot_bit_size = 32;
+         subgroup_opts.ballot_components = 4;
+         subgroup_opts.lower_vote_feq = true;
+         subgroup_opts.lower_reduce = true;
 
-         if (subgroup_opts.ballot_bit_size) {
+         if (nir->options->lower_doubles_options & nir_lower_fp64_full_software)
             NIR_PASS(lowered_64bit_ops, nir, nir_lower_subgroups, &subgroup_opts);
-         }
 
          /* nir_lower_doubles is not prepared for vector ops, so if the backend doesn't
           * request lower_alu_to_scalar until now, lower all 64 bit ops, and try to
