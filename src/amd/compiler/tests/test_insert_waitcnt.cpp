@@ -610,7 +610,8 @@ BEGIN_TEST(insert_waitcnt.vmem_ds)
 
    //! s_wait_storecnt_dscnt dscnt(0) storecnt(0)
    bld.barrier(aco_opcode::p_barrier,
-               memory_sync_info(storage_buffer | storage_shared, semantic_acqrel, scope_workgroup));
+               memory_sync_info(storage_buffer | storage_shared, semantic_acqrel, scope_workgroup),
+               scope_workgroup);
 
    finish_waitcnt_test();
 END_TEST
@@ -1119,7 +1120,7 @@ BEGIN_TEST(insert_waitcnt.flat.barrier)
                  memory_sync_info(storage_buffer));
       bld.flat(aco_opcode::flat_load_dword, dest1, addr, Operand(s1)).instr->flat().may_use_lds = true;
       bld.barrier(aco_opcode::p_barrier,
-                  memory_sync_info(storage_buffer, semantic_acqrel, scope_device));
+                  memory_sync_info(storage_buffer, semantic_acqrel, scope_device), scope_workgroup);
 
       //>> p_unit_test 1
       //! v1: %0:v[5] = flat_load_dword %0:v[0-1], s1: undef may_use_lds storage:buffer
@@ -1132,7 +1133,7 @@ BEGIN_TEST(insert_waitcnt.flat.barrier)
                memory_sync_info(storage_buffer)).instr->flat().may_use_lds = true;
       bld.global(aco_opcode::global_load_dword, dest0, addr, Operand(s1), 0);
       bld.barrier(aco_opcode::p_barrier,
-                  memory_sync_info(storage_buffer, semantic_acqrel, scope_device));
+                  memory_sync_info(storage_buffer, semantic_acqrel, scope_device), scope_workgroup);
 
       //>> p_unit_test 2
       //! flat_store_dword %0:v[0-1], s1: undef, %0:v[0] may_use_lds storage:buffer
@@ -1144,7 +1145,7 @@ BEGIN_TEST(insert_waitcnt.flat.barrier)
       bld.flat(aco_opcode::flat_store_dword, addr, Operand(s1), data, 0,
                memory_sync_info(storage_buffer)).instr->flat().may_use_lds = true;
       bld.barrier(aco_opcode::p_barrier,
-                  memory_sync_info(storage_buffer, semantic_acqrel, scope_device));
+                  memory_sync_info(storage_buffer, semantic_acqrel, scope_device), scope_workgroup);
 
       finish_waitcnt_test();
    }

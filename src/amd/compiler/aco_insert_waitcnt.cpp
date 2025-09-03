@@ -171,6 +171,12 @@ enum barrier_info_kind {
    barrier_info_release_dep,
    /* Waits for all atomics */
    barrier_info_acquire_dep,
+   /* A wait that is to be emitted when an
+    * atomics/control_barriers/sendmsg_gs_done/position-primitive-export is encountered.
+    */
+   barrier_info_release,
+   /* A wait that is to be emitted when any non-private access is encountered. */
+   barrier_info_acquire,
    num_barrier_infos,
 };
 
@@ -428,18 +434,22 @@ check_instr(wait_ctx& ctx, wait_imm& wait, Instruction* instr)
    }
 }
 
+/* We delay the waitcnt for a barrier until it's needed. This can help hide the cost or let it be
+ * eliminated. */
 void
-perform_barrier(wait_ctx& ctx, wait_imm& imm, memory_sync_info sync, bool is_acquire)
+setup_barrier(wait_ctx& ctx, wait_imm& imm, memory_sync_info sync, bool is_acquire)
 {
    sync_scope subgroup_scope =
       ctx.program->workgroup_size <= ctx.program->wave_size ? scope_workgroup : scope_subgroup;
    if (sync.scope <= subgroup_scope)
       return;
 
-   barrier_info& bar = ctx.bar[is_acquire ? barrier_info_acquire_dep : barrier_info_release_dep];
+   barrier_info& src = ctx.bar[is_acquire ? barrier_info_acquire_dep : barrier_info_release_dep];
 
-   u_foreach_bit (i, sync.storage & bar.storage) {
-      uint16_t events = bar.events[i];
+   wait_imm dst_imm;
+   uint16_t dst_events = 0;
+   u_foreach_bit (i, sync.storage & src.storage) {
+      uint16_t events = src.events[i];
 
       /* LDS is private to the workgroup */
       if (MIN2(sync.scope, scope_workgroup) <= subgroup_scope)
@@ -448,10 +458,40 @@ perform_barrier(wait_ctx& ctx, wait_imm& imm, memory_sync_info sync, bool is_acq
       /* Until GFX11, in non-WGP, the L1 (L0 on GFX10+) cache keeps all memory operations
        * in-order for the same workgroup */
       if (ctx.gfx_level < GFX11 && !ctx.program->wgp_mode && sync.scope <= scope_workgroup)
-         events &= ~(event_vmem | event_vmem_store | event_smem);
+         events &= ~(event_vmem | event_vmem_store);
 
-      if (events)
-         imm.combine(bar.imm[i]);
+      if (events) {
+         dst_imm.combine(src.imm[i]);
+         dst_events |= src.events[i];
+      }
+   }
+   if (!dst_events)
+      return;
+
+   /* Copy over wait into barrier_info_acquire/barrier_info_release */
+   unsigned dst_index = is_acquire ? barrier_info_acquire : barrier_info_release;
+   barrier_info& dst = ctx.bar[dst_index];
+   u_foreach_bit (i, sync.storage) {
+      dst.imm[i].combine(dst_imm);
+      dst.events[i] |= dst_events;
+   }
+   dst.storage |= sync.storage;
+   ctx.bar_nonempty |= 1 << dst_index;
+}
+
+void
+finish_barriers(wait_ctx& ctx, wait_imm& imm, Instruction* instr, memory_sync_info sync)
+{
+   if (ctx.bar_nonempty & (1 << barrier_info_release)) {
+      uint16_t storage_release =
+         is_atomic_or_control_instr(ctx.program, instr, sync, semantic_release);
+      u_foreach_bit (i, storage_release & ctx.bar[barrier_info_release].storage)
+         imm.combine(ctx.bar[barrier_info_release].imm[i]);
+   }
+   if (ctx.bar_nonempty & (1 << barrier_info_acquire)) {
+      uint16_t storage_acquire = (sync.semantics & semantic_private) ? 0 : sync.storage;
+      u_foreach_bit (i, storage_acquire & ctx.bar[barrier_info_acquire].storage)
+         imm.combine(ctx.bar[barrier_info_acquire].imm[i]);
    }
 }
 
@@ -558,12 +598,14 @@ kill(wait_imm& imm, Instruction* instr, wait_ctx& ctx, memory_sync_info sync_inf
 
    if (instr->opcode == aco_opcode::p_barrier) {
       if (instr->barrier().sync.semantics & semantic_release)
-         perform_barrier(ctx, imm, instr->barrier().sync, false);
+         setup_barrier(ctx, imm, instr->barrier().sync, false);
       if (instr->barrier().sync.semantics & semantic_acquire)
-         perform_barrier(ctx, imm, instr->barrier().sync, true);
+         setup_barrier(ctx, imm, instr->barrier().sync, true);
    } else if (sync_info.semantics & semantic_release) {
-      perform_barrier(ctx, imm, sync_info, false);
+      setup_barrier(ctx, imm, sync_info, false);
    }
+
+   finish_barriers(ctx, imm, instr, sync_info);
 
    if (!imm.empty()) {
       if (ctx.pending_flat_vm && imm.vm != wait_imm::unset_counter)
@@ -647,6 +689,9 @@ update_barriers(wait_ctx& ctx, uint8_t counters, wait_event event, Instruction* 
       uint16_t storage_acq = is_atomic_or_control_instr(ctx.program, instr, sync, semantic_acquire);
       update_barrier_info_for_event(ctx, counters, event, barrier_info_acquire_dep, storage_acq);
    }
+
+   update_barrier_info_for_event(ctx, counters, event, barrier_info_release, 0);
+   update_barrier_info_for_event(ctx, counters, event, barrier_info_acquire, 0);
 }
 
 void
@@ -915,7 +960,7 @@ handle_block(Program* program, Block& block, wait_ctx& ctx)
 
          new_instructions.emplace_back(std::move(instr));
          if (sync_info.semantics & semantic_acquire)
-            perform_barrier(ctx, queued_imm, sync_info, true);
+            setup_barrier(ctx, queued_imm, sync_info, true);
 
          if (is_ordered_count_acquire)
             queued_imm.combine(ctx.bar[barrier_info_release_dep].imm[ffs(storage_gds) - 1]);
