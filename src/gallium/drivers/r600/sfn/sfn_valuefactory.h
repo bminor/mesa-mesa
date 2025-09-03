@@ -250,7 +250,7 @@ public:
 
    void allocate_const(nir_load_const_instr *load_const);
 
-   PRegister dest_from_string(const std::string& s);
+   PRegister dest_from_string(const std::string& s, int *dest_chan = nullptr);
    RegisterVec4 dest_vec4_from_string(const std::string& s,
                                       RegisterVec4::Swizzle& swz,
                                       Pin pin = pin_none);

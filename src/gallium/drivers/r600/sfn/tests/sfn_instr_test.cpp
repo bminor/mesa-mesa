@@ -321,9 +321,6 @@ TEST_F(InstrTest, test_alu_dot4_grouped)
    auto R131w = new Register(131, 3, pin_none);
 
    auto R132x = new Register(132, 0, pin_chan);
-   auto R132y = new Register(132, 1, pin_chan);
-   auto R132z = new Register(132, 2, pin_chan);
-   auto R132w = new Register(132, 3, pin_chan);
 
    AluInstr::SrcValues src({R130x, R130y, R130z, R130w, R131x, R131y, R131z, R131w});
 
@@ -334,7 +331,7 @@ TEST_F(InstrTest, test_alu_dot4_grouped)
 
    ValueFactory vf;
    auto group = new AluGroup();
-   bool result = alu.split(vf, *group);
+   bool result = alu.split(*group);
    group->fix_last_flag();
    ASSERT_TRUE(result);
 
@@ -345,15 +342,15 @@ TEST_F(InstrTest, test_alu_dot4_grouped)
    ++i;
    EXPECT_NE(i, group->end());
    ASSERT_TRUE(*i);
-   check(**i, AluInstr(op2_dot4_ieee, R132y, R130z, R130w, AluInstr::empty));
+   check(**i, AluInstr(op2_dot4_ieee, 1, {R130z, R130w}, AluInstr::empty));
    ++i;
    EXPECT_NE(i, group->end());
    ASSERT_TRUE(*i);
-   check(**i, AluInstr(op2_dot4_ieee, R132z, R131x, R131y, AluInstr::empty));
+   check(**i, AluInstr(op2_dot4_ieee, 2, {R131x, R131y}, AluInstr::empty));
    ++i;
    EXPECT_NE(i, group->end());
    ASSERT_TRUE(*i);
-   check(**i, AluInstr(op2_dot4_ieee, R132w, R131z, R131w, {alu_last_instr}));
+   check(**i, AluInstr(op2_dot4_ieee, 3, {R131z, R131w}, {alu_last_instr}));
    ++i;
    EXPECT_NE(i, group->end());
    ASSERT_FALSE(*i);

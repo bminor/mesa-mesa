@@ -185,7 +185,7 @@ LDSReadInstr::from_string(istream& is, ValueFactory& value_factory) -> Pointer
 
    is >> temp_str;
    while (temp_str != "]") {
-      auto dst = value_factory.dest_from_string(temp_str);
+      auto dst = value_factory.dest_from_string(temp_str, nullptr);
       assert(dst);
       dests.push_back(dst);
       is >> temp_str;
@@ -447,7 +447,7 @@ LDSAtomicInstr::from_string(istream& is, ValueFactory& value_factory) -> Pointer
 
    PRegister dest = nullptr;
    if (temp_str[0] != '_')
-      dest = value_factory.dest_from_string(temp_str);
+      dest = value_factory.dest_from_string(temp_str, nullptr);
 
    is >> temp_str;
    assert(temp_str == "[");

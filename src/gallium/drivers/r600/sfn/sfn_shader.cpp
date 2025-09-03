@@ -729,7 +729,7 @@ Shader::process_if(nir_if *if_stmt)
    auto flags = {alu_update_exec, alu_last_instr, alu_update_pred};
 
    AluInstr *pred = new AluInstr(op,
-                                 value_factory().temp_register(),
+                                 0,
                                  value,
                                  value_factory().zero(),
                                  flags);

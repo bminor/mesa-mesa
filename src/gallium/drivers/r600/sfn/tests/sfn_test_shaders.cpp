@@ -1415,9 +1415,9 @@ ALU_GROUP_BEGIN
 ALU_GROUP_END
 ALU_GROUP_BEGIN
   ALU DOT4_IEEE S5.x@chan : S4.x@chan S4.x@chan {W}
-  ALU DOT4_IEEE __.y@chgr : S4.y@chan S4.y@chan {}
-  ALU DOT4_IEEE __.z@chgr : I[0] I[0] {}
-  ALU DOT4_IEEE __.w@chgr : I[0] I[0] {L}
+  ALU DOT4_IEEE __.y : S4.y@chan S4.y@chan {}
+  ALU DOT4_IEEE __.z : I[0] I[0] {}
+  ALU DOT4_IEEE __.w : I[0] I[0] {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
   ALU SQRT_IEEE S6.x@chan : S5.x@chan {WL}

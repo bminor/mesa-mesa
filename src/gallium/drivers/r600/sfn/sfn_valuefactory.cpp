@@ -593,7 +593,7 @@ split_register_string(const string& s,
 }
 
 PRegister
-ValueFactory::dest_from_string(const std::string& s)
+ValueFactory::dest_from_string(const std::string& s, int *dest_chan)
 {
    if (s == "AR") {
       if (!m_ar)
@@ -624,7 +624,7 @@ ValueFactory::dest_from_string(const std::string& s)
    if (s[0] == '_') {
       /* Since these instructions still may use or switch to a different
        * channel we have to create a new instance for each occurrence */
-      sel = std::numeric_limits<int>::max() - m_nowrite_idx++;
+      sel = -1;
    } else {
       std::istringstream n(index_str);
       n >> sel;
@@ -652,6 +652,12 @@ ValueFactory::dest_from_string(const std::string& s)
    }
 
    bool is_ssa = s[0] == 'S';
+
+   if (pool == vp_ignore) {
+      assert(dest_chan);
+      *dest_chan = chan;
+      return nullptr;
+   }
 
    RegisterKey key(sel, chan, pool);
 
