@@ -171,7 +171,7 @@ enum EAluOp {
    op1_ldexp_64 = 197,
    op1_fract_64 = 198,
    op2_pred_setgt_64 = 199,
-   op2_pred_sete_64 = 198,
+   op2_pred_sete_64 = 200,
    op2_pred_setge_64 = 201,
    OP2V_MUL_64 = 202,
    op2_add_64 = 203,
