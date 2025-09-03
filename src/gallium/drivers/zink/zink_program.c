@@ -1106,8 +1106,6 @@ gfx_program_create(struct zink_context *ctx,
    prog->base.removed = true;
    prog->optimal_keys = screen->optimal_keys;
 
-   prog->has_edgeflags = prog->shaders[MESA_SHADER_VERTEX] &&
-                         prog->shaders[MESA_SHADER_VERTEX]->has_edgeflags;
    for (int i = 0; i < ZINK_GFX_SHADER_COUNT; ++i) {
       util_dynarray_init(&prog->shader_cache[i][0][0], prog->base.ralloc_ctx);
       util_dynarray_init(&prog->shader_cache[i][0][1], prog->base.ralloc_ctx);
@@ -1145,6 +1143,8 @@ gfx_program_create(struct zink_context *ctx,
       prog->last_vertex_stage = stages[MESA_SHADER_TESS_EVAL];
    else
       prog->last_vertex_stage = stages[MESA_SHADER_VERTEX];
+   prog->has_edgeflags = prog->shaders[MESA_SHADER_VERTEX] &&
+                         prog->shaders[MESA_SHADER_VERTEX]->has_edgeflags;
 
    for (int i = 0; i < ARRAY_SIZE(prog->pipelines); ++i) {
       _mesa_hash_table_init(&prog->pipelines[i], prog->base.ralloc_ctx, NULL, zink_get_gfx_pipeline_eq_func(screen, prog));
