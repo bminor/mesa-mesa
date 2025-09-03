@@ -48,6 +48,34 @@ get_dest_mask(EAluOp opcode, int slots, bool is_cayman_trans)
 }
 
 AluInstr::AluInstr(EAluOp opcode,
+                   int chan,
+                   SrcValues src,
+                   const std::set<AluModifiers>& flags):
+    m_opcode(opcode),
+    m_bank_swizzle(alu_vec_unknown),
+    m_cf_type(cf_alu),
+    m_alu_slots(1),
+    m_fallback_chan(chan)
+{
+   m_src.swap(src);
+
+   if (m_src.size() == 3)
+      m_alu_flags.set(alu_op3);
+
+   for (auto f : flags)
+      m_alu_flags.set(f);
+
+   ASSERT_OR_THROW(m_src.size() ==
+                      static_cast<size_t>(alu_ops.at(opcode).nsrc * m_alu_slots),
+                   "Unexpected number of source values");
+
+   update_uses();
+
+   m_allowed_dest_mask = BITSET_BIT(m_fallback_chan);
+}
+
+
+AluInstr::AluInstr(EAluOp opcode,
                    PRegister dest,
                    SrcValues src,
                    const std::set<AluModifiers>& flags,
@@ -1019,6 +1047,18 @@ AluInstr::propagate_death()
          reg->del_use(this);
    }
    return true;
+}
+
+void AluInstr::set_allowed_dest_chan_mask(uint8_t mask)
+{
+   assert(!m_dest && "We override the fallback channel only");
+   m_allowed_dest_mask = mask;
+
+
+   if (!(BITSET_BIT(m_fallback_chan) & m_allowed_dest_mask)) {
+      unsigned m = mask;
+      m_fallback_chan = u_bit_scan(&m);
+   }
 }
 
 bool
