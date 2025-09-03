@@ -554,9 +554,14 @@ pan_afbc_format(unsigned arch, enum pipe_format format, unsigned plane_idx)
    case PIPE_FORMAT_R4G4B4A4_UNORM:    return PAN_AFBC_MODE_R4G4B4A4;
    case PIPE_FORMAT_Z16_UNORM:         return PAN_AFBC_MODE_R8G8;
 
+   case PIPE_FORMAT_Z32_FLOAT:         return PAN_AFBC_MODE_R8G8B8A8;
    case PIPE_FORMAT_Z24_UNORM_S8_UINT: return PAN_AFBC_MODE_R8G8B8A8;
    case PIPE_FORMAT_Z24X8_UNORM:       return PAN_AFBC_MODE_R8G8B8A8;
    case PIPE_FORMAT_X24S8_UINT:        return PAN_AFBC_MODE_R8G8B8A8;
+
+   /* AFBC(S8) only supported on v9+ */
+   case PIPE_FORMAT_S8_UINT:
+      return arch >= 9 ? PAN_AFBC_MODE_R8 : PAN_AFBC_MODE_INVALID;
 
    default:                            return PAN_AFBC_MODE_INVALID;
    }
