@@ -1077,8 +1077,7 @@ lower_subgroups_instr(nir_builder *b, nir_instr *instr, void *_options)
             return lower_vote_eq(b, intrin);
       } else {
          if (intrin->intrinsic == nir_intrinsic_vote_feq &&
-             (options->lower_vote_feq ||
-              (options->lower_fp64 && intrin->src[0].ssa->bit_size == 64)))
+             options->lower_vote_feq)
             return lower_vote_eq(b, intrin);
          if (intrin->intrinsic == nir_intrinsic_vote_ieq &&
              options->lower_vote_ieq)
@@ -1339,8 +1338,7 @@ lower_subgroups_instr(nir_builder *b, nir_instr *instr, void *_options)
       if (intrin->def.bit_size == 1 && options->ballot_components == 1 &&
           (options->lower_boolean_reduce || options->lower_reduce))
          return lower_boolean_reduce(b, intrin, options);
-      if (options->lower_reduce ||
-          (options->lower_fp64 && intrin->def.bit_size == 64))
+      if (options->lower_reduce)
          return lower_scan_reduce(b, intrin, options);
       return ret;
    }
@@ -1351,8 +1349,7 @@ lower_subgroups_instr(nir_builder *b, nir_instr *instr, void *_options)
       if (intrin->def.bit_size == 1 && options->ballot_components == 1 &&
           (options->lower_boolean_reduce || options->lower_reduce))
          return lower_boolean_reduce(b, intrin, options);
-      if (options->lower_reduce ||
-          (options->lower_fp64 && intrin->def.bit_size == 64))
+      if (options->lower_reduce)
          return lower_scan_reduce(b, intrin, options);
       break;
 
