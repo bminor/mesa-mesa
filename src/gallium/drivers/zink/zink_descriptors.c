@@ -257,17 +257,17 @@ create_gfx_layout(struct zink_context *ctx, struct zink_descriptor_layout_key **
    return create_layout(screen, dsl_type, bindings, fbfetch ? ARRAY_SIZE(bindings) : ARRAY_SIZE(bindings) - 1, layout_key);
 }
 
-bool
-zink_descriptor_util_push_layouts_get(struct zink_context *ctx, struct zink_descriptor_layout **dsls, struct zink_descriptor_layout_key **layout_keys)
+static bool
+zink_descriptor_util_push_layouts_get(struct zink_context *ctx)
 {
    struct zink_screen *screen = zink_screen(ctx->base.screen);
    VkDescriptorSetLayoutBinding compute_binding;
    enum zink_descriptor_type dsl_type;
    VkDescriptorType vktype = get_push_types(screen, &dsl_type);
    init_push_binding(&compute_binding, MESA_SHADER_COMPUTE, vktype);
-   dsls[0] = create_gfx_layout(ctx, &layout_keys[0], false);
-   dsls[1] = create_layout(screen, dsl_type, &compute_binding, 1, &layout_keys[1]);
-   return dsls[0] && dsls[1];
+   ctx->dd.push_dsl[0] = create_gfx_layout(ctx, &ctx->dd.push_layout_keys[0], false);
+   ctx->dd.push_dsl[1] = create_layout(screen, dsl_type, &compute_binding, 1, &ctx->dd.push_layout_keys[1]);
+   return ctx->dd.push_dsl[0] && ctx->dd.push_dsl[1];
 }
 
 VkImageLayout
@@ -1635,7 +1635,7 @@ zink_descriptors_init(struct zink_context *ctx)
    entry->offset = offsetof(struct zink_context, di.fbfetch);
    entry->stride = sizeof(VkDescriptorImageInfo);
    struct zink_descriptor_layout_key *layout_key;
-   if (!zink_descriptor_util_push_layouts_get(ctx, ctx->dd.push_dsl, ctx->dd.push_layout_keys))
+   if (!zink_descriptor_util_push_layouts_get(ctx))
       return false;
 
    ctx->dd.dummy_dsl = descriptor_util_layout_get(screen, 0, NULL, 0, &layout_key);
