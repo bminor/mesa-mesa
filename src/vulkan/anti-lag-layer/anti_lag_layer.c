@@ -518,7 +518,7 @@ queue_submit2(device_context *ctx, VkQueue queue, uint32_t submitCount,
    memcpy(semaphores, submit_info->pSignalSemaphoreInfos,
           sizeof(VkSemaphoreSubmitInfo) * submit_info->signalSemaphoreInfoCount);
    semaphores[submit_info->signalSemaphoreInfoCount] = (VkSemaphoreSubmitInfo){
-      .sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO,
+      .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
       .semaphore = queue_ctx->semaphore,
       .value = queue_ctx->semaphore_value,
       .stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
