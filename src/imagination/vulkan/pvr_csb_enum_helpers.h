@@ -28,7 +28,7 @@
 #include <vulkan/vulkan_core.h>
 
 #include "pvr_csb.h"
-#include "pvr_private.h"
+#include "pvr_common.h"
 #include "util/macros.h"
 
 static const char *
