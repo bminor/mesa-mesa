@@ -502,9 +502,8 @@ lower_boolean_shuffle(nir_builder *b, nir_intrinsic_instr *intrin,
    case nir_intrinsic_rotate: {
       nir_def *delta = nir_as_uniform(b, intrin->src[1].ssa);
       uint32_t cluster_size = nir_intrinsic_cluster_size(intrin);
-      unsigned subgroup_size = get_max_subgroup_size(options);
-      cluster_size = cluster_size ? cluster_size : subgroup_size;
-      cluster_size = MIN2(cluster_size, subgroup_size);
+      cluster_size = cluster_size ? cluster_size : options->subgroup_size;
+      cluster_size = MIN2(cluster_size, options->subgroup_size);
       if (cluster_size == 1) {
          return intrin->src[0].ssa;
       } else if (cluster_size == 2) {
