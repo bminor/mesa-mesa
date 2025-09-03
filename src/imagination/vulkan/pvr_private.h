@@ -92,7 +92,6 @@ struct pvr_free_list;
 struct pvr_graphics_pipeline;
 struct pvr_instance;
 struct pvr_render_ctx;
-struct rogue_compiler;
 
 struct pvr_physical_device {
    struct vk_physical_device vk;
