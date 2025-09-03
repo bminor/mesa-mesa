@@ -2207,7 +2207,7 @@ lower_subgroup_scan(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    nir_def *thread_in_range = intr->intrinsic == nir_intrinsic_inclusive_scan ?
       nir_ige(b, subgroup_id, loop_counter) :
       nir_ilt(b, loop_counter, subgroup_id);
-   nir_def *thread_active = nir_ballot_bitfield_extract(b, 1, active_threads, loop_counter);
+   nir_def *thread_active = nir_ballot_bitfield_extract(b, active_threads, loop_counter);
 
    nir_if *if_active_thread = nir_push_if(b, nir_iand(b, thread_in_range, thread_active));
    nir_def *result = nir_build_alu2(b, op, nir_load_var(b, result_var), other_thread_val);
