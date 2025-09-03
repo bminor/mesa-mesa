@@ -384,8 +384,10 @@ ReplacePredicate::visit(AluInstr *alu)
        *   R = SOME_OP
        *   IF (COND(R, X))
        */
-      if (reg && !reg->has_flag(Register::ssa))
-         return;
+      if (reg && !reg->has_flag(Register::ssa)) {
+         if (m_pred->block_id() != alu->block_id() || m_pred->index() - 1 != alu->index())
+            return;
+      }
    }
 
    m_pred->set_op(new_op);
