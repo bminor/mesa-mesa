@@ -1367,16 +1367,6 @@ pvr_cmd_buffer_set_error_unwarned(struct pvr_cmd_buffer *cmd_buffer,
    return error;
 }
 
-enum pvr_msaa_mode {
-   PVR_MSAA_MODE_UNDEF = 0, /* explicitly treat 0 as undefined */
-   /* One task for all samples. */
-   PVR_MSAA_MODE_PIXEL,
-   /* For on-edge pixels only: separate tasks for each sample. */
-   PVR_MSAA_MODE_SELECTIVE,
-   /* For all pixels: separate tasks for each sample. */
-   PVR_MSAA_MODE_FULL,
-};
-
 VkResult pvr_pds_fragment_program_create_and_upload(
    struct pvr_device *device,
    const VkAllocationCallbacks *allocator,
