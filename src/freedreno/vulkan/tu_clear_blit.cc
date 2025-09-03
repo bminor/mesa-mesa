@@ -2160,7 +2160,6 @@ tu_image_view_copy_blit(struct fdl6_view *iview,
       &image->layout[tu6_plane_index(image->vk.format, aspect_mask)];
 
    const struct fdl_view_args args = {
-      .chip = CHIP,
       .iova = image->iova,
       .base_miplevel = subres->mipLevel,
       .level_count = 1,
@@ -2172,7 +2171,7 @@ tu_image_view_copy_blit(struct fdl6_view *iview,
       .format = tu_format_for_aspect(format, aspect_mask),
       .type = z_scale ? FDL_VIEW_TYPE_3D : FDL_VIEW_TYPE_2D,
    };
-   fdl6_view_init(iview, &layout, &args, false);
+   fdl6_view_init<CHIP>(iview, &layout, &args, false);
 }
 
 template<chip CHIP>
@@ -2977,7 +2976,6 @@ tu_copy_image_to_image(struct tu_cmd_buffer *cmd,
       struct fdl6_view staging;
       const struct fdl_layout *staging_layout_ptr = &staging_layout;
       const struct fdl_view_args copy_to_args = {
-         .chip = CHIP,
          .iova = staging_bo->iova,
          .base_miplevel = 0,
          .level_count = 1,
@@ -2987,7 +2985,7 @@ tu_copy_image_to_image(struct tu_cmd_buffer *cmd,
          .format = tu_format_for_aspect(src_format, VK_IMAGE_ASPECT_COLOR_BIT),
          .type = FDL_VIEW_TYPE_2D,
       };
-      fdl6_view_init(&staging, &staging_layout_ptr, &copy_to_args, false);
+      fdl6_view_init<CHIP>(&staging, &staging_layout_ptr, &copy_to_args, false);
 
       ops->setup(cmd, cs, src_format, src_format, VK_IMAGE_ASPECT_COLOR_BIT, blit_param, false, false,
                  (VkSampleCountFlagBits) dst_image->layout[0].nr_samples);
@@ -3015,7 +3013,6 @@ tu_copy_image_to_image(struct tu_cmd_buffer *cmd,
       tu_cs_emit_wfi(cs);
 
       const struct fdl_view_args copy_from_args = {
-         .chip = CHIP,
          .iova = staging_bo->iova,
          .base_miplevel = 0,
          .level_count = 1,
@@ -3025,7 +3022,7 @@ tu_copy_image_to_image(struct tu_cmd_buffer *cmd,
          .format = tu_format_for_aspect(dst_format, VK_IMAGE_ASPECT_COLOR_BIT),
          .type = FDL_VIEW_TYPE_2D,
       };
-      fdl6_view_init(&staging, &staging_layout_ptr, &copy_from_args, false);
+      fdl6_view_init<CHIP>(&staging, &staging_layout_ptr, &copy_from_args, false);
 
       ops->setup(cmd, cs, dst_format, dst_format, info->dstSubresource.aspectMask,
                  blit_param, false, dst_image->layout[0].ubwc,

@@ -344,7 +344,6 @@ enum fdl_chroma_location {
 };
 
 struct fdl_view_args {
-   uint32_t chip;
    uint64_t iova;
    uint32_t base_miplevel;
    uint32_t level_count;
@@ -402,13 +401,6 @@ struct fdl6_view {
 };
 
 void
-fdl6_view_init(struct fdl6_view *view, const struct fdl_layout **layouts,
-               const struct fdl_view_args *args, bool has_z24uint_s8uint);
-void
-fdl6_buffer_view_init(uint32_t *descriptor, enum pipe_format format,
-                      const uint8_t *swiz, uint64_t iova, uint32_t size);
-
-void
 fdl6_format_swiz(enum pipe_format format, bool has_z24uint_s8uint,
                  unsigned char *format_swiz);
 
@@ -453,5 +445,17 @@ uint32_t fdl6_get_bank_mask(const struct fdl_layout *layout, unsigned miplevel,
 uint32_t fdl6_get_bank_shift(const struct fdl_ubwc_config *config);
 
 ENDC;
+
+#ifdef __cplusplus
+#include "adreno_common.xml.h"
+template <chip CHIP>
+void
+fdl6_view_init(struct fdl6_view *view, const struct fdl_layout **layouts,
+               const struct fdl_view_args *args, bool has_z24uint_s8uint);
+template <chip CHIP>
+void
+fdl6_buffer_view_init(uint32_t *descriptor, enum pipe_format format,
+                      const uint8_t *swiz, uint64_t iova, uint32_t size);
+#endif
 
 #endif /* FREEDRENO_LAYOUT_H_ */

@@ -238,7 +238,6 @@ tu_image_view_init(struct tu_device *device,
                                         iview->swizzle);
 
    struct fdl_view_args args = {};
-   args.chip = device->physical_device->info->chip;
    args.iova = image->iova;
    args.base_array_layer = range->baseArrayLayer;
    args.base_miplevel = range->baseMipLevel;
@@ -288,7 +287,7 @@ tu_image_view_init(struct tu_device *device,
       args.chroma_offsets[1] = (enum fdl_chroma_location) conversion->state.chroma_offsets[1];
    }
 
-   fdl6_view_init(&iview->view, layouts, &args, has_z24uint_s8uint);
+   TU_CALLX(device, fdl6_view_init)(&iview->view, layouts, &args, has_z24uint_s8uint);
 
    if (image->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT) {
       struct fdl_layout *layout = &image->layout[0];

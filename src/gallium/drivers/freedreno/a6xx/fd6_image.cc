@@ -31,25 +31,25 @@ rsc_iova(struct pipe_resource *prsc, unsigned offset)
    return fd_bo_get_iova(fd_resource(prsc)->bo) + offset;
 }
 
+template <chip CHIP>
 static void
 fd6_ssbo_descriptor(struct fd_context *ctx,
                     const struct pipe_shader_buffer *buf, uint32_t *descriptor)
 {
-   fdl6_buffer_view_init(
+   fdl6_buffer_view_init<CHIP>(
       descriptor,
       PIPE_FORMAT_R32_UINT,
       swiz_identity, rsc_iova(buf->buffer, buf->buffer_offset),
       buf->buffer_size);
 }
 
+template <chip CHIP>
 static void
 fd6_image_descriptor(struct fd_context *ctx, const struct pipe_image_view *buf,
                      uint32_t *descriptor)
 {
    if (buf->access & PIPE_IMAGE_ACCESS_TEX2D_FROM_BUFFER) {
       struct fdl_view_args args = {
-         .chip = ctx->screen->gen,
-
          .iova = rsc_iova(buf->resource, 0),
          .base_miplevel = 0,
          .level_count = 1,
@@ -71,21 +71,19 @@ fd6_image_descriptor(struct fd_context *ctx, const struct pipe_image_view *buf,
                                 &buf->u.tex2d_from_buf);
 
       struct fdl6_view view;
-      fdl6_view_init(&view, &layouts, &args,
-                     ctx->screen->info->a6xx.has_z24uint_s8uint);
+      fdl6_view_init<CHIP>(&view, &layouts, &args,
+                           ctx->screen->info->a6xx.has_z24uint_s8uint);
 
       memcpy(descriptor, view.storage_descriptor, sizeof(view.storage_descriptor));
    } else if (buf->resource->target == PIPE_BUFFER) {
       uint32_t size = fd_clamp_buffer_size(buf->format, buf->u.buf.size,
                                            A4XX_MAX_TEXEL_BUFFER_ELEMENTS_UINT);
 
-      fdl6_buffer_view_init(descriptor, buf->format, swiz_identity,
-                            rsc_iova(buf->resource, buf->u.buf.offset),
-                            size);
+      fdl6_buffer_view_init<CHIP>(descriptor, buf->format, swiz_identity,
+                                  rsc_iova(buf->resource, buf->u.buf.offset),
+                                  size);
    } else {
       struct fdl_view_args args = {
-         .chip = ctx->screen->gen,
-
          .iova = rsc_iova(buf->resource, 0),
 
          .base_miplevel = buf->u.tex.level,
@@ -113,8 +111,8 @@ fd6_image_descriptor(struct fd_context *ctx, const struct pipe_image_view *buf,
       struct fdl6_view view;
       struct fd_resource *rsc = fd_resource(buf->resource);
       const struct fdl_layout *layouts[3] = { &rsc->layout, NULL, NULL };
-      fdl6_view_init(&view, layouts, &args,
-                     ctx->screen->info->a6xx.has_z24uint_s8uint);
+      fdl6_view_init<CHIP>(&view, layouts, &args,
+                           ctx->screen->info->a6xx.has_z24uint_s8uint);
 
       memcpy(descriptor, view.storage_descriptor, sizeof(view.storage_descriptor));
    }
@@ -151,6 +149,7 @@ clear_descriptor(struct fd6_descriptor_set *set, unsigned slot)
    memset(set->descriptor[slot], 0, sizeof(set->descriptor[slot]));
 }
 
+template <chip CHIP>
 static void
 validate_image_descriptor(struct fd_context *ctx, struct fd6_descriptor_set *set,
                           unsigned slot, struct pipe_image_view *img)
@@ -162,10 +161,11 @@ validate_image_descriptor(struct fd_context *ctx, struct fd6_descriptor_set *set
 
    fd6_descriptor_set_invalidate(set);
 
-   fd6_image_descriptor(ctx, img, set->descriptor[slot]);
+   fd6_image_descriptor<CHIP>(ctx, img, set->descriptor[slot]);
    set->seqno[slot] = rsc->seqno;
 }
 
+template <chip CHIP>
 static void
 validate_buffer_descriptor(struct fd_context *ctx, struct fd6_descriptor_set *set,
                            unsigned slot, struct pipe_shader_buffer *buf)
@@ -177,7 +177,7 @@ validate_buffer_descriptor(struct fd_context *ctx, struct fd6_descriptor_set *se
 
    fd6_descriptor_set_invalidate(set);
 
-   fd6_ssbo_descriptor(ctx, buf, set->descriptor[slot]);
+   fd6_ssbo_descriptor<CHIP>(ctx, buf, set->descriptor[slot]);
    set->seqno[slot] = rsc->seqno;
 }
 
@@ -213,13 +213,13 @@ fd6_build_bindless_state(struct fd_context *ctx, mesa_shader_stage shader,
    u_foreach_bit (b, bufso->enabled_mask) {
       struct pipe_shader_buffer *buf = &bufso->sb[b];
       unsigned idx = b + IR3_BINDLESS_SSBO_OFFSET;
-      validate_buffer_descriptor(ctx, set, idx, buf);
+      validate_buffer_descriptor<CHIP>(ctx, set, idx, buf);
    }
 
    u_foreach_bit (b, imgso->enabled_mask) {
       struct pipe_image_view *img = &imgso->si[b];
       unsigned idx = b + IR3_BINDLESS_IMAGE_OFFSET;
-      validate_image_descriptor(ctx, set, idx, img);
+      validate_image_descriptor<CHIP>(ctx, set, idx, img);
    }
 
    if (!set->bo) {
@@ -367,6 +367,7 @@ fd6_build_bindless_state(struct fd_context *ctx, mesa_shader_stage shader,
 }
 FD_GENX(fd6_build_bindless_state);
 
+template <chip CHIP>
 static void
 fd6_set_shader_buffers(struct pipe_context *pctx, mesa_shader_stage shader,
                        unsigned start, unsigned count,
@@ -394,10 +395,11 @@ fd6_set_shader_buffers(struct pipe_context *pctx, mesa_shader_stage shader,
       }
 
       /* update descriptor: */
-      validate_buffer_descriptor(ctx, set, slot, buf);
+      validate_buffer_descriptor<CHIP>(ctx, set, slot, buf);
    }
 }
 
+template <chip CHIP>
 static void
 fd6_set_shader_images(struct pipe_context *pctx, mesa_shader_stage shader,
                       unsigned start, unsigned count,
@@ -448,7 +450,7 @@ fd6_set_shader_images(struct pipe_context *pctx, mesa_shader_stage shader,
       }
 
       /* update descriptor: */
-      validate_image_descriptor(ctx, set, slot, buf);
+      validate_image_descriptor<CHIP>(ctx, set, slot, buf);
    }
 
    for (unsigned i = 0; i < unbind_num_trailing_slots; i++) {
@@ -459,9 +461,11 @@ fd6_set_shader_images(struct pipe_context *pctx, mesa_shader_stage shader,
    }
 }
 
+template <chip CHIP>
 void
 fd6_image_init(struct pipe_context *pctx)
 {
-   pctx->set_shader_buffers = fd6_set_shader_buffers;
-   pctx->set_shader_images = fd6_set_shader_images;
+   pctx->set_shader_buffers = fd6_set_shader_buffers<CHIP>;
+   pctx->set_shader_images = fd6_set_shader_images<CHIP>;
 }
+FD_GENX(fd6_image_init);

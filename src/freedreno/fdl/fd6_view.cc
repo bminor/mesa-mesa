@@ -140,6 +140,7 @@ fdl6_texswiz(const struct fdl_view_args *args, bool has_z24uint_s8uint)
 
 #define COND(bool, val) ((bool) ? (val) : 0)
 
+template <chip CHIP>
 void
 fdl6_view_init(struct fdl6_view *view, const struct fdl_layout **layouts,
                const struct fdl_view_args *args, bool has_z24uint_s8uint)
@@ -192,10 +193,11 @@ fdl6_view_init(struct fdl6_view *view, const struct fdl_layout **layouts,
    uint32_t layer_size = fdl_layer_stride(layout, args->base_miplevel);
 
    enum a6xx_format texture_format =
-      fd6_texture_format(args->format, layout->tile_mode, layout->is_mutable);
+      fd6_texture_format(args->format, (enum a6xx_tile_mode)layout->tile_mode,
+                         layout->is_mutable);
    enum a3xx_color_swap swap =
-      fd6_texture_swap(args->format, layout->tile_mode, layout->is_mutable);
-   enum a6xx_tile_mode tile_mode = fdl_tile_mode(layout, args->base_miplevel);
+      fd6_texture_swap(args->format, (enum a6xx_tile_mode)layout->tile_mode, layout->is_mutable);
+   enum a6xx_tile_mode tile_mode = (enum a6xx_tile_mode)fdl_tile_mode(layout, args->base_miplevel);
 
    bool ubwc_enabled = fdl_ubwc_enabled(layout, args->base_miplevel);
 
@@ -226,14 +228,14 @@ fdl6_view_init(struct fdl6_view *view, const struct fdl_layout **layouts,
    view->format = args->format;
 
    memset(view->descriptor, 0, sizeof(view->descriptor));
-   
+
    bool is_mutable = layout->is_mutable && tile_mode == TILE6_3;
 
    view->descriptor[0] =
       A6XX_TEX_CONST_0_TILE_MODE(tile_mode) |
       COND(util_format_is_srgb(args->format), A6XX_TEX_CONST_0_SRGB) |
       A6XX_TEX_CONST_0_FMT(texture_format) |
-      A6XX_TEX_CONST_0_SAMPLES(util_logbase2(layout->nr_samples)) |
+      A6XX_TEX_CONST_0_SAMPLES((enum a3xx_msaa_samples)util_logbase2(layout->nr_samples)) |
       A6XX_TEX_CONST_0_SWAP(swap) |
       fdl6_texswiz(args, has_z24uint_s8uint) |
       A6XX_TEX_CONST_0_MIPLVLS(args->level_count - 1);
@@ -323,7 +325,7 @@ fdl6_view_init(struct fdl6_view *view, const struct fdl_layout **layouts,
       A6XX_TPL1_A2D_SRC_TEXTURE_INFO_COLOR_SWAP(swap) |
       COND(ubwc_enabled, A6XX_TPL1_A2D_SRC_TEXTURE_INFO_FLAGS) |
       COND(util_format_is_srgb(args->format), A6XX_TPL1_A2D_SRC_TEXTURE_INFO_SRGB) |
-      A6XX_TPL1_A2D_SRC_TEXTURE_INFO_SAMPLES(util_logbase2(layout->nr_samples)) |
+      A6XX_TPL1_A2D_SRC_TEXTURE_INFO_SAMPLES((enum a3xx_msaa_samples)util_logbase2(layout->nr_samples)) |
       COND(samples_average, A6XX_TPL1_A2D_SRC_TEXTURE_INFO_SAMPLES_AVERAGE) |
       A6XX_TPL1_A2D_SRC_TEXTURE_INFO_UNK20 |
       A6XX_TPL1_A2D_SRC_TEXTURE_INFO_UNK22 |
@@ -353,7 +355,7 @@ fdl6_view_init(struct fdl6_view *view, const struct fdl_layout **layouts,
    view->ubwc_layer_size = layout->ubwc_layer_size;
 
    enum a6xx_format color_format =
-      fd6_color_format(args->format, layout->tile_mode);
+      fd6_color_format(args->format, (enum a6xx_tile_mode)layout->tile_mode);
 
    /* Don't set fields that are only used for attachments/blit dest if COLOR
     * is unsupported.
@@ -362,7 +364,8 @@ fdl6_view_init(struct fdl6_view *view, const struct fdl_layout **layouts,
       return;
 
    enum a3xx_color_swap color_swap =
-      fd6_color_swap(args->format, layout->tile_mode, layout->is_mutable);
+      fd6_color_swap(args->format, (enum a6xx_tile_mode)layout->tile_mode,
+                     layout->is_mutable);
    enum a6xx_format blit_format = color_format;
 
    if (is_d24s8)
@@ -408,7 +411,7 @@ fdl6_view_init(struct fdl6_view *view, const struct fdl_layout **layouts,
    view->RB_MRT_BUF_INFO =
       A6XX_RB_MRT_BUF_INFO_COLOR_TILE_MODE(tile_mode) |
       A6XX_RB_MRT_BUF_INFO_COLOR_FORMAT(color_format) |
-      COND(args->chip >= A7XX && ubwc_enabled, A7XX_RB_MRT_BUF_INFO_LOSSLESSCOMPEN) |
+      COND(CHIP >= A7XX && ubwc_enabled, A7XX_RB_MRT_BUF_INFO_LOSSLESSCOMPEN) |
       A6XX_RB_MRT_BUF_INFO_COLOR_SWAP(color_swap) |
       COND(is_mutable, A7XX_RB_MRT_BUF_INFO_MUTABLEEN);
 
@@ -427,13 +430,15 @@ fdl6_view_init(struct fdl6_view *view, const struct fdl_layout **layouts,
 
    view->RB_RESOLVE_SYSTEM_BUFFER_INFO =
       A6XX_RB_RESOLVE_SYSTEM_BUFFER_INFO_TILE_MODE(tile_mode) |
-      A6XX_RB_RESOLVE_SYSTEM_BUFFER_INFO_SAMPLES(util_logbase2(layout->nr_samples)) |
+      A6XX_RB_RESOLVE_SYSTEM_BUFFER_INFO_SAMPLES((enum a3xx_msaa_samples)util_logbase2(layout->nr_samples)) |
       A6XX_RB_RESOLVE_SYSTEM_BUFFER_INFO_COLOR_FORMAT(blit_format) |
       A6XX_RB_RESOLVE_SYSTEM_BUFFER_INFO_COLOR_SWAP(color_swap) |
       COND(ubwc_enabled, A6XX_RB_RESOLVE_SYSTEM_BUFFER_INFO_FLAGS) |
       COND(is_mutable, A6XX_RB_RESOLVE_SYSTEM_BUFFER_INFO_MUTABLEEN);
 }
+FD_GENX(fdl6_view_init);
 
+template <chip CHIP>
 void
 fdl6_buffer_view_init(uint32_t *descriptor, enum pipe_format format,
                       const uint8_t *swiz, uint64_t iova, uint32_t size)
@@ -444,8 +449,8 @@ fdl6_buffer_view_init(uint32_t *descriptor, enum pipe_format format,
    unsigned texel_offset = (iova & 0x3f) / elem_size;
 
    struct fdl_view_args args = {
-      .format = format,
       .swiz = {swiz[0], swiz[1], swiz[2], swiz[3]},
+      .format = format,
    };
 
    memset(descriptor, 0, 4 * FDL6_TEX_CONST_DWORDS);
@@ -464,3 +469,4 @@ fdl6_buffer_view_init(uint32_t *descriptor, enum pipe_format format,
    descriptor[4] = base_iova;
    descriptor[5] = base_iova >> 32;
 }
+FD_GENX(fdl6_buffer_view_init);

@@ -36,6 +36,7 @@
 
 /* Helper to get tex stateobj.
  */
+template <chip CHIP>
 static struct fd_ringbuffer *
 tex_state(struct fd_context *ctx, mesa_shader_stage type)
    assert_dt
@@ -43,7 +44,7 @@ tex_state(struct fd_context *ctx, mesa_shader_stage type)
    if (ctx->tex[type].num_textures == 0)
       return NULL;
 
-   return fd_ringbuffer_ref(fd6_texture_state(ctx, type)->stateobj);
+   return fd_ringbuffer_ref(fd6_texture_state<CHIP>(ctx, type)->stateobj);
 }
 
 static struct fd_ringbuffer *
@@ -668,23 +669,23 @@ fd6_emit_3d_state(fd_cs &cs, struct fd6_emit *emit)
          }
          break;
       case FD6_GROUP_VS_TEX:
-         state = tex_state(ctx, MESA_SHADER_VERTEX);
+         state = tex_state<CHIP>(ctx, MESA_SHADER_VERTEX);
          fd6_state_take_group(&emit->state, state, FD6_GROUP_VS_TEX);
          break;
       case FD6_GROUP_HS_TEX:
-         state = tex_state(ctx, MESA_SHADER_TESS_CTRL);
+         state = tex_state<CHIP>(ctx, MESA_SHADER_TESS_CTRL);
          fd6_state_take_group(&emit->state, state, FD6_GROUP_HS_TEX);
          break;
       case FD6_GROUP_DS_TEX:
-         state = tex_state(ctx, MESA_SHADER_TESS_EVAL);
+         state = tex_state<CHIP>(ctx, MESA_SHADER_TESS_EVAL);
          fd6_state_take_group(&emit->state, state, FD6_GROUP_DS_TEX);
          break;
       case FD6_GROUP_GS_TEX:
-         state = tex_state(ctx, MESA_SHADER_GEOMETRY);
+         state = tex_state<CHIP>(ctx, MESA_SHADER_GEOMETRY);
          fd6_state_take_group(&emit->state, state, FD6_GROUP_GS_TEX);
          break;
       case FD6_GROUP_FS_TEX:
-         state = tex_state(ctx, MESA_SHADER_FRAGMENT);
+         state = tex_state<CHIP>(ctx, MESA_SHADER_FRAGMENT);
          fd6_state_take_group(&emit->state, state, FD6_GROUP_FS_TEX);
          break;
       case FD6_GROUP_SO:
@@ -744,7 +745,7 @@ fd6_emit_cs_state(struct fd_context *ctx, fd_cs &cs, struct fd6_compute_state *c
       case FD6_GROUP_CS_TEX:
          fd6_state_take_group(
                &state,
-               tex_state(ctx, MESA_SHADER_COMPUTE),
+               tex_state<CHIP>(ctx, MESA_SHADER_COMPUTE),
                FD6_GROUP_CS_TEX);
          break;
       case FD6_GROUP_CS_BINDLESS:

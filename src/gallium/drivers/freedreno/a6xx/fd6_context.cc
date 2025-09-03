@@ -260,7 +260,7 @@ fd6_context_create(struct pipe_screen *pscreen, void *priv,
    fd6_draw_init<CHIP>(pctx);
    fd6_compute_init<CHIP>(pctx);
    fd6_gmem_init<CHIP>(pctx);
-   fd6_texture_init(pctx);
+   fd6_texture_init<CHIP>(pctx);
    fd6_prog_init<CHIP>(pctx);
    fd6_query_context_init<CHIP>(pctx);
 
@@ -275,7 +275,7 @@ fd6_context_create(struct pipe_screen *pscreen, void *priv,
    pctx->set_framebuffer_state = fd6_set_framebuffer_state;
 
    /* after fd_context_init() to override set_shader_images() */
-   fd6_image_init(pctx);
+   fd6_image_init<CHIP>(pctx);
 
    /* after fd_context_init() to override memory_barrier/texture_barrier(): */
    fd6_barrier_init(pctx);

@@ -19,8 +19,6 @@
 #include "fdl/fd6_format_table.h"
 
 
-BEGINC;
-
 /* Border color layout is diff from a4xx/a5xx.. if it turns out to be
  * the same as a6xx then move this somewhere common ;-)
  *
@@ -78,6 +76,7 @@ fd6_pipe_sampler_view(struct pipe_sampler_view *pview)
    return (struct fd6_pipe_sampler_view *)pview;
 }
 
+template <chip CHIP>
 void fd6_texture_init(struct pipe_context *pctx);
 void fd6_texture_fini(struct pipe_context *pctx);
 
@@ -108,6 +107,7 @@ struct fd6_texture_state {
    bool invalidate;
 };
 
+template <chip CHIP>
 struct fd6_texture_state *
 fd6_texture_state(struct fd_context *ctx, mesa_shader_stage type) assert_dt;
 
@@ -144,7 +144,5 @@ fd6_layout_tex2d_from_buf(struct fdl_layout *layout,
    ASSERTED bool ret = fdl6_layout_image(layout, info, &params, &explicit_layout);
    assert(ret);
 }
-
-ENDC;
 
 #endif /* FD6_TEXTURE_H_ */

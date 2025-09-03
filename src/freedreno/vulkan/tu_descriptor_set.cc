@@ -972,6 +972,7 @@ tu_FreeDescriptorSets(VkDevice _device,
    return VK_SUCCESS;
 }
 
+template <chip CHIP>
 static void
 write_texel_buffer_descriptor_addr(uint32_t *dst,
                                    const VkDescriptorAddressInfoEXT *buffer_info)
@@ -981,9 +982,9 @@ write_texel_buffer_descriptor_addr(uint32_t *dst,
    } else {
       uint8_t swiz[4] = { PIPE_SWIZZLE_X, PIPE_SWIZZLE_Y, PIPE_SWIZZLE_Z,
                           PIPE_SWIZZLE_W };
-      fdl6_buffer_view_init(dst,
-                            vk_format_to_pipe_format(buffer_info->format),
-                            swiz, buffer_info->address, buffer_info->range);
+      fdl6_buffer_view_init<CHIP>(dst,
+                                  vk_format_to_pipe_format(buffer_info->format),
+                                  swiz, buffer_info->address, buffer_info->range);
    }
 }
 
@@ -1204,10 +1205,10 @@ tu_GetDescriptorEXT(
       write_buffer_descriptor_addr(device, dest, pDescriptorInfo->data.pStorageBuffer);
       break;
    case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
-      write_texel_buffer_descriptor_addr(dest, pDescriptorInfo->data.pUniformTexelBuffer);
+      TU_CALLX(device, write_texel_buffer_descriptor_addr)(dest, pDescriptorInfo->data.pUniformTexelBuffer);
       break;
    case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
-      write_texel_buffer_descriptor_addr(dest, pDescriptorInfo->data.pStorageTexelBuffer);
+      TU_CALLX(device, write_texel_buffer_descriptor_addr)(dest, pDescriptorInfo->data.pStorageTexelBuffer);
       break;
    case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
       write_image_descriptor(dest, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,

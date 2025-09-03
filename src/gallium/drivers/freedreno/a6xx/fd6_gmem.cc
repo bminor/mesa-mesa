@@ -438,8 +438,6 @@ patch_fb_read_sysmem(struct fd_batch *batch)
       struct fd_resource *rsc = fd_resource(prsc);
 
       struct fdl_view_args args = {
-         .chip = CHIP,
-
          .iova = fd_bo_get_iova(rsc->bo),
 
          .base_miplevel = psurf->level,
@@ -458,8 +456,8 @@ patch_fb_read_sysmem(struct fd_batch *batch)
       };
       const struct fdl_layout *layouts[3] = {&rsc->layout, NULL, NULL};
       struct fdl6_view view;
-      fdl6_view_init(&view, layouts, &args,
-                     batch->ctx->screen->info->a6xx.has_z24uint_s8uint);
+      fdl6_view_init<CHIP>(&view, layouts, &args,
+                           batch->ctx->screen->info->a6xx.has_z24uint_s8uint);
       memcpy(patch->cs, view.descriptor, FDL6_TEX_CONST_DWORDS * 4);
    }
 
