@@ -88,7 +88,7 @@ impl Drop for DrmDevices {
     }
 }
 
-struct Device {
+pub struct Device {
     dev: NonNull<nouveau_ws_device>,
     next_addr: AtomicU64,
 }
@@ -149,7 +149,7 @@ impl Drop for Device {
     }
 }
 
-struct Context {
+pub struct Context {
     dev: Arc<Device>,
     ctx: NonNull<nouveau_ws_context>,
     syncobj: u32,
@@ -269,7 +269,7 @@ impl Drop for Context {
     }
 }
 
-struct BO {
+pub struct BO {
     dev: Arc<Device>,
     bo: NonNull<nouveau_ws_bo>,
     pub addr: u64,
@@ -277,7 +277,7 @@ struct BO {
 }
 
 impl BO {
-    fn new(dev: Arc<Device>, size: u64) -> io::Result<BO> {
+    pub fn new(dev: Arc<Device>, size: u64) -> io::Result<BO> {
         let size = size.next_multiple_of(4096);
 
         let mut map: *mut std::os::raw::c_void = std::ptr::null_mut();
@@ -410,6 +410,10 @@ impl<'a> Runner {
         let ctx = Context::new(dev.clone()).expect("Failed to create context");
         let qmd_heap = QMDHeap::new(dev.clone());
         Runner { dev, ctx, qmd_heap }
+    }
+
+    pub fn device(&self) -> Arc<Device> {
+        self.dev.clone()
     }
 
     pub fn dev_info(&self) -> &nv_device_info {
