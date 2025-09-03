@@ -91,6 +91,14 @@ struct vk_video_session {
    uint32_t max_active_ref_pics;
    VkVideoEncodeIntraRefreshModeFlagBitsKHR intra_refresh_mode;
 
+   bool perform_rgb_conversion;
+   struct {
+      VkVideoEncodeRgbModelConversionFlagBitsVALVE rgb_model;
+      VkVideoEncodeRgbRangeCompressionFlagBitsVALVE rgb_range;
+      VkVideoEncodeRgbChromaOffsetFlagBitsVALVE x_chroma_offset;
+      VkVideoEncodeRgbChromaOffsetFlagBitsVALVE y_chroma_offset;
+   } rgb_conv;
+
    struct {
       VkVideoEncodeUsageFlagsKHR video_usage_hints;
       VkVideoEncodeContentFlagsKHR video_content_hints;

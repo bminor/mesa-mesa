@@ -928,6 +928,8 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
          vk_find_struct(pCapabilities->pNext, VIDEO_ENCODE_INTRA_REFRESH_CAPABILITIES_KHR);
       struct VkVideoEncodeQuantizationMapCapabilitiesKHR *qp_map_caps =
          vk_find_struct(pCapabilities->pNext, VIDEO_ENCODE_QUANTIZATION_MAP_CAPABILITIES_KHR);
+      struct VkVideoEncodeRgbConversionCapabilitiesVALVE *rgb_caps =
+         vk_find_struct(pCapabilities->pNext, VIDEO_ENCODE_RGB_CONVERSION_CAPABILITIES_VALVE);
 
       if (enc_caps) {
          enc_caps->flags = 0;
@@ -957,6 +959,15 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
          const uint32_t qp_map_texel_size = radv_video_get_qp_map_texel_size(pVideoProfile->videoCodecOperation);
          qp_map_caps->maxQuantizationMapExtent.width = pCapabilities->maxCodedExtent.width / qp_map_texel_size;
          qp_map_caps->maxQuantizationMapExtent.height = pCapabilities->maxCodedExtent.height / qp_map_texel_size;
+      }
+      if (rgb_caps) {
+         rgb_caps->rgbModels = VK_VIDEO_ENCODE_RGB_MODEL_CONVERSION_YCBCR_709_BIT_VALVE |
+                               VK_VIDEO_ENCODE_RGB_MODEL_CONVERSION_YCBCR_2020_BIT_VALVE;
+         rgb_caps->rgbRanges = VK_VIDEO_ENCODE_RGB_RANGE_COMPRESSION_FULL_RANGE_BIT_VALVE |
+                               VK_VIDEO_ENCODE_RGB_RANGE_COMPRESSION_NARROW_RANGE_BIT_VALVE;
+         rgb_caps->xChromaOffsets = VK_VIDEO_ENCODE_RGB_CHROMA_OFFSET_COSITED_EVEN_BIT_VALVE;
+         rgb_caps->yChromaOffsets = VK_VIDEO_ENCODE_RGB_CHROMA_OFFSET_MIDPOINT_BIT_VALVE |
+                                    VK_VIDEO_ENCODE_RGB_CHROMA_OFFSET_COSITED_EVEN_BIT_VALVE;
       }
       pCapabilities->minBitstreamBufferOffsetAlignment = 256;
       pCapabilities->minBitstreamBufferSizeAlignment = 8;
@@ -1241,13 +1252,17 @@ radv_GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysicalDevice physicalDevice,
           (VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR | VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR))
       return VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR;
 
-   VkFormat format = VK_FORMAT_UNDEFINED;
+   VkFormat formats[2] = {VK_FORMAT_UNDEFINED, VK_FORMAT_UNDEFINED};
    uint32_t qp_map_texel_size = 0;
    const struct VkVideoProfileListInfoKHR *prof_list =
       (struct VkVideoProfileListInfoKHR *)vk_find_struct_const(pVideoFormatInfo->pNext, VIDEO_PROFILE_LIST_INFO_KHR);
    if (prof_list) {
       for (unsigned i = 0; i < prof_list->profileCount; i++) {
          const VkVideoProfileInfoKHR *profile = &prof_list->pProfiles[i];
+         const VkVideoEncodeProfileRgbConversionInfoVALVE *rgbProfile =
+            vk_find_struct_const(profile, VIDEO_ENCODE_PROFILE_RGB_CONVERSION_INFO_VALVE);
+         bool rgb = rgbProfile && rgbProfile->performEncodeRgbConversion &&
+                    (pVideoFormatInfo->imageUsage & VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR);
 
          /* "If any of the video profiles specified via VkVideoProfileListInfoKHR::pProfiles are not
           * supported, then this command returns one of the video-profile-specific error codes."
@@ -1256,8 +1271,7 @@ radv_GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysicalDevice physicalDevice,
          if (res != VK_SUCCESS)
             return res;
 
-         VkFormat profile_format = VK_FORMAT_UNDEFINED;
-
+         VkFormat profile_formats[2] = {VK_FORMAT_UNDEFINED, VK_FORMAT_UNDEFINED};
          if (pVideoFormatInfo->imageUsage & VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR) {
             const uint32_t profile_qp_map_texel_size = radv_video_get_qp_map_texel_size(profile->videoCodecOperation);
 
@@ -1267,31 +1281,41 @@ radv_GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysicalDevice physicalDevice,
 
             qp_map_texel_size = profile_qp_map_texel_size;
 
-            profile_format = pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_5 ? VK_FORMAT_R16_SINT : VK_FORMAT_R32_SINT;
+            profile_formats[0] = pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_5 ? VK_FORMAT_R16_SINT : VK_FORMAT_R32_SINT;
+         } else if (rgb) {
+            if (profile->lumaBitDepth == VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR) {
+               profile_formats[0] = VK_FORMAT_B8G8R8A8_UNORM;
+               profile_formats[1] = VK_FORMAT_R8G8B8A8_UNORM;
+            } else if (profile->lumaBitDepth == VK_VIDEO_COMPONENT_BIT_DEPTH_10_BIT_KHR) {
+               profile_formats[0] = VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+               profile_formats[1] = VK_FORMAT_A2R10G10B10_UNORM_PACK32;
+            }
          } else {
             if (profile->lumaBitDepth == VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR)
-               profile_format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+               profile_formats[0] = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
             else if (profile->lumaBitDepth == VK_VIDEO_COMPONENT_BIT_DEPTH_10_BIT_KHR)
-               profile_format = VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16;
+               profile_formats[0] = VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16;
             else if (profile->lumaBitDepth == VK_VIDEO_COMPONENT_BIT_DEPTH_12_BIT_KHR)
-               profile_format = VK_FORMAT_G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16;
+               profile_formats[0] = VK_FORMAT_G12X4_B12X4R12X4_2PLANE_420_UNORM_3PACK16;
          }
 
-         /* All profiles must share the same format. */
-         if (format != VK_FORMAT_UNDEFINED && format != profile_format)
-            return VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR;
+         for (int j = 0; j < 2; j++) {
+            /* All profiles must share the same format. */
+            if (formats[j] != VK_FORMAT_UNDEFINED && formats[j] != profile_formats[j])
+               return VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR;
 
-         format = profile_format;
+            formats[j] = profile_formats[j];
+         }
       }
    } else {
       /* On AMD, we need a codec specified for qp map as the extents differ. */
       if (pVideoFormatInfo->imageUsage & VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR)
          return VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR;
 
-      format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+      formats[0] = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
    }
 
-   if (format == VK_FORMAT_UNDEFINED)
+   if (formats[0] == VK_FORMAT_UNDEFINED)
       return VK_ERROR_IMAGE_USAGE_NOT_SUPPORTED_KHR;
 
    const bool qp_map = pVideoFormatInfo->imageUsage & VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR;
@@ -1320,35 +1344,40 @@ radv_GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysicalDevice physicalDevice,
 
    VK_OUTARRAY_MAKE_TYPED(VkVideoFormatPropertiesKHR, out, pVideoFormatProperties, pVideoFormatPropertyCount);
 
-   for (uint32_t i = 0; i < num_tiling; i++) {
-      vk_outarray_append_typed(VkVideoFormatPropertiesKHR, &out, p)
-      {
-         p->format = format;
-         p->componentMapping.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-         p->componentMapping.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-         p->componentMapping.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-         p->componentMapping.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-         p->imageCreateFlags = 0;
-         if (src_dst || qp_map)
-            p->imageCreateFlags |= VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT;
-         p->imageType = VK_IMAGE_TYPE_2D;
-         p->imageTiling = tiling[i];
-         p->imageUsageFlags = usage_flags;
+   for (uint32_t i = 0; i < 2; i++) {
+      VkFormat format = formats[i];
+      if (format == VK_FORMAT_UNDEFINED)
+         break;
+      for (uint32_t j = 0; j < num_tiling; j++) {
+         vk_outarray_append_typed(VkVideoFormatPropertiesKHR, &out, p)
+         {
+            p->format = format;
+            p->componentMapping.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+            p->componentMapping.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+            p->componentMapping.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+            p->componentMapping.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+            p->imageCreateFlags = 0;
+            if (src_dst || qp_map)
+               p->imageCreateFlags |= VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT;
+            p->imageType = VK_IMAGE_TYPE_2D;
+            p->imageTiling = tiling[j];
+            p->imageUsageFlags = usage_flags;
 
-         if (qp_map) {
-            struct VkVideoFormatQuantizationMapPropertiesKHR *qp_map_props =
-               vk_find_struct(p->pNext, VIDEO_FORMAT_QUANTIZATION_MAP_PROPERTIES_KHR);
-            struct VkVideoFormatH265QuantizationMapPropertiesKHR *qp_map_h265_props =
-               vk_find_struct(p->pNext, VIDEO_FORMAT_H265_QUANTIZATION_MAP_PROPERTIES_KHR);
-            struct VkVideoFormatAV1QuantizationMapPropertiesKHR *qp_map_av1_props =
-               vk_find_struct(p->pNext, VIDEO_FORMAT_AV1_QUANTIZATION_MAP_PROPERTIES_KHR);
+            if (qp_map) {
+               struct VkVideoFormatQuantizationMapPropertiesKHR *qp_map_props =
+                  vk_find_struct(p->pNext, VIDEO_FORMAT_QUANTIZATION_MAP_PROPERTIES_KHR);
+               struct VkVideoFormatH265QuantizationMapPropertiesKHR *qp_map_h265_props =
+                  vk_find_struct(p->pNext, VIDEO_FORMAT_H265_QUANTIZATION_MAP_PROPERTIES_KHR);
+               struct VkVideoFormatAV1QuantizationMapPropertiesKHR *qp_map_av1_props =
+                  vk_find_struct(p->pNext, VIDEO_FORMAT_AV1_QUANTIZATION_MAP_PROPERTIES_KHR);
 
-            if (qp_map_props)
-               qp_map_props->quantizationMapTexelSize = (VkExtent2D){qp_map_texel_size, qp_map_texel_size};
-            if (qp_map_h265_props)
-               qp_map_h265_props->compatibleCtbSizes = VK_VIDEO_ENCODE_H265_CTB_SIZE_64_BIT_KHR;
-            if (qp_map_av1_props)
-               qp_map_av1_props->compatibleSuperblockSizes = VK_VIDEO_ENCODE_AV1_SUPERBLOCK_SIZE_64_BIT_KHR;
+               if (qp_map_props)
+                  qp_map_props->quantizationMapTexelSize = (VkExtent2D){qp_map_texel_size, qp_map_texel_size};
+               if (qp_map_h265_props)
+                  qp_map_h265_props->compatibleCtbSizes = VK_VIDEO_ENCODE_H265_CTB_SIZE_64_BIT_KHR;
+               if (qp_map_av1_props)
+                  qp_map_av1_props->compatibleSuperblockSizes = VK_VIDEO_ENCODE_AV1_SUPERBLOCK_SIZE_64_BIT_KHR;
+            }
          }
       }
    }

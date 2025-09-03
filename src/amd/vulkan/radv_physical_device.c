@@ -814,6 +814,8 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
       .NV_compute_shader_derivatives = true,
       .NV_cooperative_matrix2 = radv_cooperative_matrix2_nv_enabled(pdev),
       .VALVE_mutable_descriptor_type = true,
+      .VALVE_video_encode_rgb_conversion =
+         pdev->video_encode_enabled && pdev->info.vcn_ip_version >= VCN_2_0_0 && pdev->info.vcn_ip_version != VCN_2_2_0,
    };
    *out_ext = ext;
 }
@@ -1428,6 +1430,9 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
 
       /* VK_KHR_maintenance10 */
       .maintenance10 = true,
+
+      /* VK_VALVE_video_encode_rgb_conversion */
+      .videoEncodeRgbConversion = true,
    };
 }
 

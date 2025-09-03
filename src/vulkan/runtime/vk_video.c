@@ -108,6 +108,8 @@ vk_video_session_init(struct vk_device *device,
          vk_find_struct_const(create_info->pVideoProfile->pNext, VIDEO_ENCODE_USAGE_INFO_KHR);
       const struct VkVideoEncodeSessionIntraRefreshCreateInfoKHR *intra_refresh =
          vk_find_struct_const(create_info->pNext, VIDEO_ENCODE_SESSION_INTRA_REFRESH_CREATE_INFO_KHR);
+      const struct VkVideoEncodeProfileRgbConversionInfoVALVE *rgb_profile_info =
+         vk_find_struct_const(create_info->pVideoProfile->pNext, VIDEO_ENCODE_PROFILE_RGB_CONVERSION_INFO_VALVE);
       if (encode_usage_profile) {
          vid->enc_usage.video_usage_hints = encode_usage_profile->videoUsageHints;
          vid->enc_usage.video_content_hints = encode_usage_profile->videoContentHints;
@@ -119,6 +121,16 @@ vk_video_session_init(struct vk_device *device,
       }
       if (intra_refresh)
          vid->intra_refresh_mode = intra_refresh->intraRefreshMode;
+      if (rgb_profile_info && rgb_profile_info->performEncodeRgbConversion) {
+         const struct VkVideoEncodeSessionRgbConversionCreateInfoVALVE *rgb_info =
+            vk_find_struct_const(create_info->pNext, VIDEO_ENCODE_SESSION_RGB_CONVERSION_CREATE_INFO_VALVE);
+
+         vid->perform_rgb_conversion = true;
+         vid->rgb_conv.rgb_model = rgb_info->rgbModel;
+         vid->rgb_conv.rgb_range = rgb_info->rgbRange;
+         vid->rgb_conv.x_chroma_offset = rgb_info->xChromaOffset;
+         vid->rgb_conv.y_chroma_offset = rgb_info->yChromaOffset;
+      }
    }
 
    return VK_SUCCESS;
