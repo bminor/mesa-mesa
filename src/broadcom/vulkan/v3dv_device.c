@@ -190,6 +190,7 @@ get_device_extensions(const struct v3dv_physical_device *device,
       .KHR_workgroup_memory_explicit_layout = true,
 #ifdef V3DV_USE_WSI_PLATFORM
       .KHR_swapchain                        = true,
+      .KHR_swapchain_maintenance1           = true,
       .KHR_swapchain_mutable_format         = true,
       .KHR_incremental_present              = true,
       .KHR_present_id2                      = true,
@@ -508,7 +509,7 @@ get_features(const struct v3dv_physical_device *physical_device,
       .maintenance5 = true,
 
 #ifdef V3DV_USE_WSI_PLATFORM
-      /* VK_EXT_swapchain_maintenance1 */
+      /* VK_KHR_swapchain_maintenance1 */
       .swapchainMaintenance1 = true,
 
       /* VK_KHR_present_id2 */

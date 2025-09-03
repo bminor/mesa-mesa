@@ -195,6 +195,7 @@ nvk_get_device_extensions(const struct nvk_instance *instance,
       .KHR_storage_buffer_storage_class = true,
 #ifdef NVK_USE_WSI_PLATFORM
       .KHR_swapchain = true,
+      .KHR_swapchain_maintenance1 = true,
       .KHR_swapchain_mutable_format = true,
 #endif
       .KHR_synchronization2 = true,
@@ -658,7 +659,7 @@ nvk_get_device_features(const struct nv_device_info *info,
       .imageSlicedViewOf3D = true,
 
 #ifdef NVK_USE_WSI_PLATFORM
-      /* VK_EXT_swapchain_maintenance1 */
+      /* VK_KHR_swapchain_maintenance1 */
       .swapchainMaintenance1 = true,
 #endif
 

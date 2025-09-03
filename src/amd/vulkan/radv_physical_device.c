@@ -692,6 +692,7 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
       .KHR_storage_buffer_storage_class = true,
 #ifdef RADV_USE_WSI_PLATFORM
       .KHR_swapchain = true,
+      .KHR_swapchain_maintenance1 = true,
       .KHR_swapchain_mutable_format = true,
 #endif
       .KHR_synchronization2 = true,
@@ -1304,7 +1305,7 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
       .imageSlicedViewOf3D = true,
 
 #ifdef RADV_USE_WSI_PLATFORM
-      /* VK_EXT_swapchain_maintenance1 */
+      /* VK_KHR_swapchain_maintenance1 */
       .swapchainMaintenance1 = true,
 #endif
 

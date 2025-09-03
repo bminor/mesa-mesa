@@ -1181,6 +1181,7 @@ vn_physical_device_get_native_extensions(
       exts->KHR_present_wait = true;
       exts->KHR_present_wait2 = true;
       exts->KHR_swapchain = true;
+      exts->KHR_swapchain_maintenance1 = true;
       exts->KHR_swapchain_mutable_format = true;
       exts->EXT_hdr_metadata = true;
       exts->EXT_swapchain_maintenance1 = true;

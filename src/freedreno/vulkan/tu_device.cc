@@ -247,6 +247,7 @@ get_device_extensions(const struct tu_physical_device *device,
       .KHR_storage_buffer_storage_class = true,
 #ifdef TU_USE_WSI_PLATFORM
       .KHR_swapchain = true,
+      .KHR_swapchain_maintenance1 = true,
       .KHR_swapchain_mutable_format = true,
 #endif
       .KHR_synchronization2 = true,
@@ -773,7 +774,7 @@ tu_get_features(struct tu_physical_device *pdevice,
    features->shaderReplicatedComposites = true;
 
 #ifdef TU_USE_WSI_PLATFORM
-   /* VK_EXT_swapchain_maintenance1 */
+   /* VK_KHR_swapchain_maintenance1 */
    features->swapchainMaintenance1 = true;
 
    /* VK_KHR_present_id2 */

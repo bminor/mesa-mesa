@@ -126,6 +126,7 @@ hk_get_device_extensions(const struct hk_instance *instance,
       .KHR_timeline_semaphore = true,
 #ifdef HK_USE_WSI_PLATFORM
       .KHR_swapchain = true,
+      .KHR_swapchain_maintenance1 = true,
       .KHR_swapchain_mutable_format = true,
 #endif
       .KHR_synchronization2 = true,
@@ -543,7 +544,7 @@ hk_get_device_features(
       .imageSlicedViewOf3D = false,
 
 #ifdef HK_USE_WSI_PLATFORM
-      /* VK_EXT_swapchain_maintenance1 */
+      /* VK_KHR_swapchain_maintenance1 */
       .swapchainMaintenance1 = true,
 #endif
 

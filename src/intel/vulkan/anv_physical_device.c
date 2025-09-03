@@ -247,6 +247,7 @@ get_device_extensions(const struct anv_physical_device *device,
       .KHR_storage_buffer_storage_class      = true,
 #ifdef ANV_USE_WSI_PLATFORM
       .KHR_swapchain                         = true,
+      .KHR_swapchain_maintenance1            = true,
       .KHR_swapchain_mutable_format          = true,
 #endif
       .KHR_synchronization2                  = true,
@@ -915,7 +916,7 @@ get_features(const struct anv_physical_device *pdevice,
       .shaderQuadControl = true,
 
 #ifdef ANV_USE_WSI_PLATFORM
-      /* VK_EXT_swapchain_maintenance1 */
+      /* VK_KHR_swapchain_maintenance1 */
       .swapchainMaintenance1 = true,
 #endif
 
