@@ -616,6 +616,9 @@ BlockScheduler::schedule_alu(Shader::ShaderBlocks& out_blocks, ValueFactory& vf)
       if (!alu_vec_ready.empty())
          success |= schedule_alu_to_group_vec(group);
 
+      if (group->has_kill_op())
+         break;
+
       /* Apparently one can't schedule a t-slot if there is already
        * and LDS instruction scheduled.
        * TODO: check whether this is only relevant for actual LDS instructions
@@ -865,6 +868,8 @@ BlockScheduler::schedule_alu_to_group_vec(AluGroup *group)
    bool success = false;
    auto i = alu_vec_ready.begin();
    auto e = alu_vec_ready.end();
+   bool group_has_kill = false;
+   bool group_has_update_pred = false;
    while (i != e) {
       sfn_log << SfnLog::schedule << "Try schedule to vec " << **i;
 
@@ -873,9 +878,21 @@ BlockScheduler::schedule_alu_to_group_vec(AluGroup *group)
          continue;
       }
 
-      // precausion: don't kill while we hae LDS queue reads in the pipeline
-      if ((*i)->is_kill() && m_current_block->lds_group_active())
+      bool is_kill = (*i)->is_kill();
+      bool does_update_pred = (*i)->has_alu_flag(alu_update_pred);
+
+      // don't kill while we hae LDS queue reads in the pipeline
+      if (is_kill && (m_current_block->lds_group_active())) {
+         ++i;
          continue;
+      }
+
+      // don't put a kill and an update of the predicate into the
+      // same group
+      if ((group_has_kill && does_update_pred) || (group_has_update_pred && is_kill)) {
+         ++i;
+         continue;
+      }
 
       if (!m_current_block->try_reserve_kcache(**i)) {
          sfn_log << SfnLog::schedule << " failed (kcache)\n";
@@ -885,6 +902,7 @@ BlockScheduler::schedule_alu_to_group_vec(AluGroup *group)
 
       if (group->add_vec_instructions(*i)) {
          (*i)->pin_dest_to_chan();
+         group_has_update_pred |= (*i)->has_alu_flag(alu_update_pred);
          auto old_i = i;
          ++i;
          if ((*old_i)->has_alu_flag(alu_is_lds)) {
@@ -924,6 +942,9 @@ BlockScheduler::schedule_alu_to_group_vec(AluGroup *group)
 
          alu_vec_ready.erase(old_i);
          success = true;
+
+         group_has_kill |= is_kill;
+
          sfn_log << SfnLog::schedule << " success\n";
       } else {
          ++i;
