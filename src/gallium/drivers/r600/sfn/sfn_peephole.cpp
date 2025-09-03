@@ -316,6 +316,9 @@ pred_from_op(EAluOp pred_op, EAluOp op)
          return op2_pred_setgt_64;
       case op2_sete_64:
          return op2_pred_sete_64;
+      case op1_not_int:
+         return op2_prede_int;
+
       default:
          return op0_nop;
       }
@@ -397,8 +400,13 @@ ReplacePredicate::visit(AluInstr *alu)
       }
    }
 
+   if (likely(alu->opcode() != op1_not_int)) {
+      m_pred->set_sources(alu->sources());
+   } else {
+      if (!m_pred->replace_src(0, alu->psrc(0), 0, AluInstr::mod_none))
+         return;
+   }
    m_pred->set_op(new_op);
-   m_pred->set_sources(alu->sources());
 
    std::array<AluInstr::SourceMod, 2> mods = { AluInstr::mod_abs, AluInstr::mod_neg };
 
