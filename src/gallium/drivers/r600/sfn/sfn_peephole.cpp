@@ -309,6 +309,13 @@ pred_from_op(EAluOp pred_op, EAluOp op)
          return op2_prede_int;
       case op2_setne_int:
          return op2_pred_setne_int;
+
+      case op2_setge_64:
+         return op2_pred_setge_64;
+      case op2_setgt_64:
+         return op2_pred_setgt_64;
+      case op2_sete_64:
+         return op2_pred_sete_64;
       default:
          return op0_nop;
       }
@@ -400,6 +407,11 @@ ReplacePredicate::visit(AluInstr *alu)
          if (alu->has_source_mod(i, m))
             m_pred->set_source_mod(i, m);
       }
+   }
+
+   if (alu->alu_slots() > 1) {
+      m_pred->set_alu_slots(alu->alu_slots());
+      m_pred->set_allowed_dest_chan_mask(5);
    }
 
    success = true;

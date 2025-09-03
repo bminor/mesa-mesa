@@ -151,6 +151,7 @@ public:
    static bool from_nir(nir_alu_instr *alu, Shader& shader);
 
    int alu_slots() const { return m_alu_slots; }
+   void set_alu_slots(unsigned slots) { m_alu_slots = slots; }
 
    bool split(AluGroup& dest_group);
 
