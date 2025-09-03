@@ -62,7 +62,7 @@ LOCAL_SHARED_LIBRARIES += libvulkan
 MESON_GEN_PKGCONFIGS += vulkan
 endif
 
-ifneq ($(filter iris,$(BOARD_MESA3D_GALLIUM_DRIVERS)),)
+ifneq ($(filter i915,$(BOARD_MESA3D_GALLIUM_DRIVERS)),)
 LOCAL_SHARED_LIBRARIES += libdrm_intel
 MESON_GEN_PKGCONFIGS += libdrm_intel:$(LIBDRM_VERSION)
 endif
