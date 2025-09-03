@@ -64,9 +64,7 @@ struct pvr_spm_eot_state {
 
    struct pvr_suballoc_bo *usc_eot_program;
 
-   /* TODO: Make this struct pvr_pds_upload? It would pull in pvr_private.h
-    * though which causes a cycle since that includes pvr_spm.h .
-    */
+   /* TODO: Make this struct pvr_pds_upload? */
    /* This is only the data section upload. The code was uploaded at device
     * creation.
     */
@@ -77,9 +75,7 @@ struct pvr_spm_eot_state {
 struct pvr_spm_bgobj_state {
    struct pvr_bo *consts_buffer;
 
-   /* TODO: Make this struct pvr_pds_upload? It would pull in pvr_private.h
-    * though which causes a cycle since that includes pvr_spm.h .
-    */
+   /* TODO: Make this struct pvr_pds_upload? */
    struct pvr_suballoc_bo *pds_texture_data_upload;
 
    uint64_t pds_reg_values[ROGUE_NUM_CR_PDS_BGRND_WORDS];
