@@ -431,16 +431,27 @@ def write_get_plane_format(formats):
         'X4B12X4R12': 'X4R12X4G12',
     }
 
+    # On some YUV formats, we don't want RGB lowering
+    no_rgb_lowering = ['Y8_UNORM']
+
     print('static inline enum pipe_format', file=sys.stdout3)
     print('util_format_get_plane_format(enum pipe_format format, unsigned plane)', file=sys.stdout3)
     print('{', file=sys.stdout3)
     print('   switch (format) {', file=sys.stdout3)
     unhandled_formats = []
     for f in formats:
-        if f.layout not in ['planar2', 'planar3']:
+        if f.layout not in ['planar2', 'planar3'] and f.colorspace != 'YUV':
             continue
-        nplanes = 3 if f.layout == 'planar3' else 2
+
+        if f.short_name().upper() in no_rgb_lowering:
+            unhandled_formats += [f.name]
+            continue
+
+        nplanes = int(f.layout[-1]) if f.layout.startswith('planar') else 1
         planes = f.short_name().upper().split('_')
+        if planes[-1] == 'PACKED':
+            planes.pop(-1)
+
         assert(planes[-1] == 'UNORM')
         planes.pop(-1)
         if planes[-1] in CHROMA_SUBSAMP:
