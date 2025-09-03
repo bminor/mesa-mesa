@@ -29,6 +29,7 @@
 #include <vulkan/vulkan.h>
 
 #include "hwdef/rogue_hw_defs.h"
+#include "pvr_common.h"
 #include "pvr_csb.h"
 #include "pvr_limits.h"
 #include "pvr_types.h"
@@ -112,15 +113,7 @@ struct pvr_render_job {
       VkExtent2D physical_extent;
       uint32_t layer_size;
       enum ROGUE_CR_ZLS_FORMAT_TYPE zls_format;
-      /* FIXME: This should be of type 'enum pvr_memlayout', but this is defined
-       * in pvr_private.h, which causes a circular include dependency. For now,
-       * treat it as a uint32_t. A couple of ways to possibly fix this:
-       *
-       *   1. Merge the contents of this header file into pvr_private.h.
-       *   2. Move 'enum pvr_memlayout' into it a new header that can be
-       *      included by both this header and pvr_private.h.
-       */
-      uint32_t memlayout;
+      enum pvr_memlayout memlayout;
 
       /* TODO: Is this really necessary? Maybe we can extract all useful
        * information and drop this member. */
