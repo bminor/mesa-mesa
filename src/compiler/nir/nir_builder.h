@@ -2359,6 +2359,12 @@ nir_discard_if(nir_builder *build, nir_def *src)
       nir_terminate_if(build, src);
 }
 
+static inline nir_def *
+nir_inverse_ballot_imm(nir_builder *build, uint64_t imm, unsigned bit_size)
+{
+   return nir_inverse_ballot(build, nir_imm_intN_t(build, imm, bit_size));
+}
+
 nir_def *
 nir_build_string(nir_builder *build, const char *value);
 
