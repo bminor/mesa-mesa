@@ -598,9 +598,12 @@ d3d12_video_encoder_update_current_frame_pic_params_info_hevc(struct d3d12_video
 #if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
    if (pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.CPUInput.AppRequested)
    {
-      // Use 8 bit qpmap array for HEVC picparams (-51, 51 range and int8_t pRateControlQPMap type)
-      const int32_t hevc_min_delta_qp = -51;
-      const int32_t hevc_max_delta_qp = 51;
+      // Use 8-bit QP map entries (int8), but clamp to bit-depth dependent HEVC delta QP range (int8_t pRateControlQPMap type)
+      // HEVC spec: 7.4.9.14 Delta QP semantics : CUQpDeltaVal in [-(26 + QpBdOffsetY/2), 25 + QpBdOffsetY/2]
+      // where QpBdOffsetY = 6 * bit_depth_luma_minus8
+      const int32_t qp_bd_offset_y = 6 * static_cast<int32_t>(hevcPic->seq.bit_depth_luma_minus8);
+      const int32_t hevc_min_delta_qp = -(26 + (qp_bd_offset_y / 2));
+      const int32_t hevc_max_delta_qp = 25 + (qp_bd_offset_y / 2);
       d3d12_video_encoder_update_picparams_region_of_interest_qpmap(
          pD3D12Enc,
          &hevcPic->roi,
