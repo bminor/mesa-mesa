@@ -299,6 +299,62 @@ va_fuse_cmp(bi_context *ctx, bi_instr **lut, const BITSET_WORD *multiple,
    return true;
 }
 
+static bool
+va_propagate_replicate_wide(bi_context *ctx, bi_instr **lut, bi_instr *I)
+{
+   struct va_opcode_info info = valhall_opcodes[I->op];
+   bool progress = false;
+
+   bi_foreach_ssa_src(I, s) {
+      if (!info.srcs[s].widen)
+         continue;
+
+      bi_index *src = &I->src[s];
+      bi_instr *src_ins = lut[src->value];
+
+      assert(src_ins && "src has no corresponding instruction");
+
+      bi_index new_src = bi_null();
+      unsigned tmp[4];
+
+      /* If we have a MKVEC.v2i8 and current instruction only replicate, we
+       * should propagate */
+      if (src_ins->op == BI_OPCODE_MKVEC_V2I8 &&
+          bi_swizzle_replicates_8(src->swizzle) &&
+          bi_swizzle_to_byte_channels(src->swizzle, tmp)) {
+         unsigned byte_idx = *tmp;
+
+         /* In case of the top 16-bit, src2 contains the value we want without
+          * any swizzles */
+         if (byte_idx >= 2) {
+            /* src2 should not have non identity swizzle */
+            assert(src_ins->src[2].swizzle == BI_SWIZZLE_H01);
+
+            new_src = src_ins->src[2];
+            new_src.swizzle = BI_SWIZZLE_B0 + (byte_idx - 2);
+         } else {
+            new_src = src_ins->src[byte_idx];
+         }
+      }
+      /* In case of 16-bit source, attempt to propagate trivial conversions from
+         8-bit */
+      else if (bi_swizzle_replicates_16(src->swizzle) &&
+               !bi_swizzle_replicates_8(src->swizzle) &&
+               ((src_ins->op == BI_OPCODE_V2S8_TO_V2S16 && info.is_signed) ||
+                (src_ins->op == BI_OPCODE_V2U8_TO_V2U16 && !info.is_signed)) &&
+               bi_swizzle_replicates_8(src_ins->src[0].swizzle)) {
+         new_src = src_ins->src[0];
+      }
+
+      if (!bi_is_null(new_src)) {
+         *src = new_src;
+         progress = true;
+      }
+   }
+
+   return progress;
+}
+
 static void
 va_optimize_forward(bi_context *ctx)
 {
@@ -330,6 +386,7 @@ va_optimize_forward(bi_context *ctx)
       }
 
       bi_foreach_instr_global_safe(ctx, I) {
+         progress |= va_propagate_replicate_wide(ctx, lut, I);
          progress |= va_fuse_cmp(ctx, lut, multiple, I);
       }
 

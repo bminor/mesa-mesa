@@ -205,6 +205,35 @@ bi_apply_swizzle(uint32_t value, enum bi_swizzle swz)
    UNREACHABLE("Invalid swizzle");
 }
 
+static inline bool
+bi_swizzle_replicates_8(enum bi_swizzle swz)
+{
+   switch (swz) {
+   case BI_SWIZZLE_B0000:
+   case BI_SWIZZLE_B1111:
+   case BI_SWIZZLE_B2222:
+   case BI_SWIZZLE_B3333:
+      return true;
+   default:
+      return false;
+   }
+}
+
+static inline bool
+bi_swizzle_replicates_16(enum bi_swizzle swz)
+{
+   switch (swz) {
+   case BI_SWIZZLE_H00:
+   case BI_SWIZZLE_H11:
+      return true;
+   default:
+      /* If a swizzle replicates every 8-bits, it also replicates
+       * every 16-bits, so allow 8-bit replicating swizzles.
+       */
+      return bi_swizzle_replicates_8(swz);
+   }
+}
+
 enum bi_index_type {
    BI_INDEX_NULL = 0,
    BI_INDEX_NORMAL = 1,

@@ -33,20 +33,6 @@
  * recombine swizzles where we can as an optimization.
  */
 
-static bool
-bi_swizzle_replicates_8(enum bi_swizzle swz)
-{
-   switch (swz) {
-   case BI_SWIZZLE_B0000:
-   case BI_SWIZZLE_B1111:
-   case BI_SWIZZLE_B2222:
-   case BI_SWIZZLE_B3333:
-      return true;
-   default:
-      return false;
-   }
-}
-
 static uint32_t
 va_op_swizzles(enum bi_opcode op, unsigned src)
 {
@@ -183,21 +169,6 @@ lower_swizzle(bi_context *ctx, bi_instr *ins, unsigned src)
 
    bi_replace_src(ins, src, swz);
    ins->src[src].swizzle = BI_SWIZZLE_H01;
-}
-
-static bool
-bi_swizzle_replicates_16(enum bi_swizzle swz)
-{
-   switch (swz) {
-   case BI_SWIZZLE_H00:
-   case BI_SWIZZLE_H11:
-      return true;
-   default:
-      /* If a swizzle replicates every 8-bits, it also replicates
-       * every 16-bits, so allow 8-bit replicating swizzles.
-       */
-      return bi_swizzle_replicates_8(swz);
-   }
 }
 
 static bool
