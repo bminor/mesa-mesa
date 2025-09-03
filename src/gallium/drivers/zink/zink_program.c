@@ -1151,10 +1151,6 @@ gfx_program_create(struct zink_context *ctx,
 
    for (int i = 0; i < ARRAY_SIZE(prog->pipelines); ++i) {
       _mesa_hash_table_init(&prog->pipelines[i], prog->base.ralloc_ctx, NULL, zink_get_gfx_pipeline_eq_func(screen, prog));
-      /* only need first 3/4 for point/line/tri/patch */
-      if (screen->info.have_EXT_extended_dynamic_state &&
-            i == (prog->last_vertex_stage->info.stage == MESA_SHADER_TESS_EVAL ? 4 : 3))
-         break;
    }
    return prog;
 
@@ -1313,10 +1309,6 @@ create_gfx_program_separable(struct zink_context *ctx, struct zink_shader **stag
 
    for (int i = 0; i < ARRAY_SIZE(prog->pipelines); ++i) {
       _mesa_hash_table_init(&prog->pipelines[i], prog->base.ralloc_ctx, NULL, zink_get_gfx_pipeline_eq_func(screen, prog));
-      /* only need first 3/4 for point/line/tri/patch */
-      if (screen->info.have_EXT_extended_dynamic_state &&
-            i == (prog->last_vertex_stage->info.stage == MESA_SHADER_TESS_EVAL ? 4 : 3))
-         break;
    }
 
    for (int i = 0; i < ZINK_GFX_SHADER_COUNT; ++i) {
@@ -1647,21 +1639,9 @@ void
 zink_destroy_gfx_program(struct zink_screen *screen,
                          struct zink_gfx_program *prog)
 {
-   unsigned max_idx = ARRAY_SIZE(prog->pipelines);
-   if (screen->info.have_EXT_extended_dynamic_state) {
-      /* only need first 3/4 for point/line/tri/patch */
-      if ((prog->stages_present &
-          (BITFIELD_BIT(MESA_SHADER_TESS_EVAL) | BITFIELD_BIT(MESA_SHADER_GEOMETRY))) ==
-          BITFIELD_BIT(MESA_SHADER_TESS_EVAL))
-         max_idx = 4;
-      else
-         max_idx = 3;
-      max_idx++;
-   }
-
    if (prog->is_separable)
       zink_gfx_program_reference(screen, &prog->full_prog, NULL);
-   for (int i = 0; i < max_idx; ++i) {
+   for (int i = 0; i < ARRAY_SIZE(prog->pipelines); ++i) {
       hash_table_foreach(&prog->pipelines[i], entry) {
          struct zink_gfx_pipeline_cache_entry *pc_entry = entry->data;
 
