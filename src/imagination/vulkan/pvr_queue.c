@@ -45,6 +45,8 @@
 #include "pvr_job_render.h"
 #include "pvr_job_transfer.h"
 #include "pvr_limits.h"
+#include "pvr_pipeline.h"
+
 #include "util/macros.h"
 #include "util/u_atomic.h"
 #include "vk_alloc.h"
