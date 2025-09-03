@@ -18,7 +18,6 @@
 #include "pco/pco.h"
 #include "pvr_common.h"
 #include "pvr_formats.h"
-#include "pvr_private.h"
 
 struct pvr_load_op;
 

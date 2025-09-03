@@ -28,7 +28,6 @@
 #include <stdint.h>
 
 #include "drm-uapi/drm.h"
-#include "pvr_private.h"
 #include "pvr_srv.h"
 #include "pvr_types.h"
 #include "util/macros.h"

@@ -15,9 +15,11 @@
 #define PVR_PIPELINE_H
 
 #include "vk_object.h"
+#include "vk_graphics_state.h"
 
+#include "pvr_common.h"
+#include "pvr_csb.h"
 #include "pvr_pds.h"
-#include "pvr_private.h"
 
 struct pvr_suballoc_bo;
 

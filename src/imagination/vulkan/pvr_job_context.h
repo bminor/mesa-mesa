@@ -25,7 +25,6 @@
 #define PVR_JOB_CONTEXT_H
 
 #include "pvr_common.h"
-#include "pvr_private.h"
 #include "pvr_transfer_frag_store.h"
 #include "pvr_types.h"
 #include "pvr_usc.h"
