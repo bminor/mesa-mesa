@@ -129,7 +129,10 @@ VkResult
 nvk_cmd_pool_alloc_mem(struct nvk_cmd_pool *pool, bool force_gart,
                        struct nvk_cmd_mem **mem_out)
 {
+   const struct nvk_device *dev = nvk_cmd_pool_device(pool);
+   const struct nvk_physical_device *pdev = nvk_device_physical(dev);
    struct nvk_cmd_mem *mem = NULL;
+
    if (force_gart) {
       if (!list_is_empty(&pool->free_gart_mem))
          mem = list_first_entry(&pool->free_gart_mem, struct nvk_cmd_mem, link);
@@ -137,13 +140,21 @@ nvk_cmd_pool_alloc_mem(struct nvk_cmd_pool *pool, bool force_gart,
       if (!list_is_empty(&pool->free_mem))
          mem = list_first_entry(&pool->free_mem, struct nvk_cmd_mem, link);
    }
+
    if (mem) {
       list_del(&mem->link);
-      *mem_out = mem;
-      return VK_SUCCESS;
+   } else {
+      VkResult result = nvk_cmd_mem_create(pool, force_gart, &mem);
+      if (result != VK_SUCCESS)
+         return result;
    }
 
-   return nvk_cmd_mem_create(pool, force_gart, mem_out);
+   if (unlikely(pdev->debug_flags & NVK_DEBUG_TRASH_MEMORY)) {
+      memset(mem->mem->map, 0xF1, mem->mem->size_B);
+   }
+
+   *mem_out = mem;
+   return VK_SUCCESS;
 }
 
 VkResult
