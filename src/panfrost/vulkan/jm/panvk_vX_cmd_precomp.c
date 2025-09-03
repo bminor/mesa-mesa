@@ -22,6 +22,11 @@ panvk_per_arch(dispatch_precomp)(struct panvk_precomp_ctx *ctx,
                                  size_t data_size)
 {
    struct panvk_cmd_buffer *cmdbuf = ctx->cmdbuf;
+
+   /* Make sure we have a batch opened to queue our COMPUTE job to. */
+   if (!cmdbuf->cur_batch)
+      panvk_per_arch(cmd_open_batch)(cmdbuf);
+
    struct panvk_batch *batch = cmdbuf->cur_batch;
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
    const struct panvk_shader_variant *shader =
