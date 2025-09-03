@@ -11,6 +11,7 @@
 
 #include "csbgen/rogue_texstate.h"
 #include "libcl.h"
+#include "util/u_math.h"
 
 
 uint
@@ -122,4 +123,67 @@ usclib_tex_lod_dval_post_clamp_resource_to_view_space(uint4 tex_state, uint4 smp
       lod_dval_post_clamp = floor(lod_dval_post_clamp + 0.5f);
 
    return MAX2(lod_dval_post_clamp, 0.0f);
+}
+
+/* TODO: this can probably be optimized with nir_interleave. */
+uint32_t
+usclib_twiddle3d(uint3 coords, uint3 size)
+{
+   uint32_t width = nir_umax(size.x, 4);
+   width = util_next_power_of_two(width);
+
+   uint32_t height = nir_umax(size.y, 4);
+   height = util_next_power_of_two(height);
+
+   uint32_t depth = nir_umax(size.z, 4);
+   depth = util_next_power_of_two(depth);
+
+   /* Get to the inner 4x4 cube. */
+   width /= 4;
+   height /= 4;
+   depth /= 4;
+
+   uint32_t cx = coords.x / 4;
+   uint32_t cy = coords.y / 4;
+   uint32_t cz = coords.z / 4;
+   uint32_t shift = 0;
+   uint32_t cubeoffset = 0;
+   uint32_t i = 0;
+
+   while (width > 1 || height > 1 || depth > 1) {
+      uint32_t b1, b2, b3;
+
+      if (height > 1) {
+         b2 = ((cy & (1 << i)) >> i);
+         cubeoffset |= (b2 << shift);
+         shift++;
+         height >>= 1;
+      }
+
+      if (width > 1) {
+         b1 = ((cx & (1 << i)) >> i);
+         cubeoffset |= (b1 << shift);
+         shift++;
+         width >>= 1;
+      }
+
+      if (depth > 1) {
+         b3 = ((cz & (1 << i)) >> i);
+         cubeoffset |= (b3 << shift);
+         shift++;
+         depth >>= 1;
+      }
+
+      ++i;
+    }
+
+    cubeoffset *= 4 * 4 * 4;
+
+    /* Get to slice. */
+    cubeoffset += 4 * 4 * (coords.z % 4);
+
+    /* Twiddle within slice. */
+    uint32_t r = (coords.y & 1) | ((coords.x & 1) << 1) | (((coords.y & 2) >> 1) << 2) | (((coords.x & 2) >> 1) << 3);
+
+    return cubeoffset + r;
 }

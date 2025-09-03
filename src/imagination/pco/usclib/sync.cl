@@ -33,6 +33,27 @@ usclib_emu_ssbo_atomic_comp_swap(uint2 ssbo_buffer, uint ssbo_offset, uint compa
    return result;
 }
 
+uint32_t
+usclib_emu_global_atomic_comp_swap(uint32_t addr_lo, uint32_t addr_hi, uint compare, uint data)
+{
+   uint32_t result;
+
+   nir_mutex_pco(PCO_MUTEX_ID_ATOMIC_EMU, PCO_MUTEX_OP_LOCK);
+   for (uint u = 0; u < ROGUE_MAX_INSTANCES_PER_TASK; ++u) {
+      if (u == nir_load_instance_num_pco()) {
+         uint2 addr = (uint2)(addr_lo, addr_hi);
+         uint32_t pre_val = nir_dma_ld_pco(1, addr);
+         result = pre_val;
+
+         uint32_t post_val = (pre_val == compare) ? data : pre_val;
+         nir_dma_st_pco(false, addr, post_val);
+      }
+   }
+   nir_mutex_pco(PCO_MUTEX_ID_ATOMIC_EMU, PCO_MUTEX_OP_RELEASE);
+
+   return result;
+}
+
 void
 usclib_barrier(uint num_slots, uint counter_offset)
 {

@@ -101,19 +101,42 @@ static nir_def *lower_atomic(nir_builder *b, nir_instr *instr, void *cb_data)
 
    b->cursor = nir_before_instr(instr);
 
-   nir_def *buffer = intr->src[0].ssa;
-   nir_def *offset = intr->src[1].ssa;
-   nir_def *value = intr->src[2].ssa;
-   nir_def *value_swap = intr->src[3].ssa;
+   if (intr->intrinsic == nir_intrinsic_ssbo_atomic_swap) {
+      nir_def *buffer = intr->src[0].ssa;
+      nir_def *offset = intr->src[1].ssa;
+      nir_def *value = intr->src[2].ssa;
+      nir_def *value_swap = intr->src[3].ssa;
 
-   ASSERTED enum gl_access_qualifier access = nir_intrinsic_access(intr);
+      ASSERTED enum gl_access_qualifier access = nir_intrinsic_access(intr);
+      ASSERTED unsigned num_components = intr->def.num_components;
+      ASSERTED unsigned bit_size = intr->def.bit_size;
+      assert(access == ACCESS_COHERENT);
+      assert(num_components == 1 && bit_size == 32);
+
+      *uses_usclib = true;
+      return usclib_emu_ssbo_atomic_comp_swap(b,
+                                              buffer,
+                                              offset,
+                                              value,
+                                              value_swap);
+   }
+
+   nir_def *addr_data = intr->src[0].ssa;
+   nir_def *addr_lo = nir_channel(b, addr_data, 0);
+   nir_def *addr_hi = nir_channel(b, addr_data, 1);
+   nir_def *value = nir_channel(b, addr_data, 2);
+   nir_def *value_swap = nir_channel(b, addr_data, 3);
+
    ASSERTED unsigned num_components = intr->def.num_components;
    ASSERTED unsigned bit_size = intr->def.bit_size;
-   assert(access == ACCESS_COHERENT);
    assert(num_components == 1 && bit_size == 32);
 
    *uses_usclib = true;
-   return usclib_emu_ssbo_atomic_comp_swap(b, buffer, offset, value, value_swap);
+   return usclib_emu_global_atomic_comp_swap(b,
+                                             addr_lo,
+                                             addr_hi,
+                                             value,
+                                             value_swap);
 }
 
 /**
@@ -129,8 +152,10 @@ static bool is_lowerable_atomic(const nir_instr *instr,
    if (instr->type != nir_instr_type_intrinsic)
       return false;
 
-   return nir_instr_as_intrinsic(instr)->intrinsic ==
-          nir_intrinsic_ssbo_atomic_swap;
+   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+
+   return intr->intrinsic == nir_intrinsic_ssbo_atomic_swap ||
+          intr->intrinsic == nir_intrinsic_global_atomic_swap_pco;
 }
 
 /**

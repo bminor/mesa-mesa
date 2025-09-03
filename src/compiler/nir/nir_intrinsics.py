@@ -918,6 +918,7 @@ intrinsic("global_atomic_swap",  src_comp=[1, 1, 1], dest_comp=1, indices=[ATOMI
 intrinsic("global_atomic_swap_2x32",  src_comp=[2, 1, 1], dest_comp=1, indices=[ATOMIC_OP])
 intrinsic("global_atomic_swap_amd",  src_comp=[1, 1, 1, 1], dest_comp=1, indices=[BASE, ATOMIC_OP])
 intrinsic("global_atomic_swap_agx",  src_comp=[1, 1, 1, 1], dest_comp=1, indices=[ATOMIC_OP, SIGN_EXTEND])
+intrinsic("global_atomic_swap_pco",  src_comp=[4], dest_comp=1, indices=[ATOMIC_OP], bit_sizes=[32])
 
 def system_value(name, dest_comp, indices=[], bit_sizes=[32], can_reorder=True):
     flags = [CAN_ELIMINATE, CAN_REORDER] if can_reorder else [CAN_ELIMINATE]

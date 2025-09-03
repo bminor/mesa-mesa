@@ -839,6 +839,7 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
 
    case nir_intrinsic_image_deref_atomic:
    case nir_intrinsic_image_deref_atomic_swap:
+      lod = nir_imm_int(b, 0);
       break;
 
    default:
@@ -1158,9 +1159,6 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
 
    if (intr->intrinsic == nir_intrinsic_image_deref_atomic ||
        intr->intrinsic == nir_intrinsic_image_deref_atomic_swap) {
-      assert(image_dim == GLSL_SAMPLER_DIM_2D);
-      assert(!is_array);
-
       assert(util_format_is_plain(format));
       assert(util_format_is_pure_integer(format));
 
@@ -1170,12 +1168,90 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
       assert(util_format_get_blockdepth(format) == 1);
       assert(util_format_get_blocksize(format) == sizeof(uint32_t));
 
-      /* Calculate untwiddled offset. */
-      nir_def *x = nir_i2i16(b, nir_channel(b, coords, 0));
-      nir_def *y = nir_i2i16(b, nir_channel(b, coords, 1));
-      nir_def *twiddled_offset = nir_interleave(b, y, x);
-      twiddled_offset =
-         nir_imul_imm(b, twiddled_offset, util_format_get_blocksize(format));
+      if (image_dim == GLSL_SAMPLER_DIM_CUBE) {
+         image_dim = GLSL_SAMPLER_DIM_2D;
+         is_array = true;
+      } else if (image_dim == GLSL_SAMPLER_DIM_BUF) {
+         image_dim = GLSL_SAMPLER_DIM_2D;
+         coords = nir_vec2(b,
+                           nir_umod_imm(b, coords, 8192),
+                           nir_udiv_imm(b, coords, 8192));
+      }
+
+      nir_def *twiddled_offset = NULL;
+      nir_def *array_index = NULL;
+      switch (image_dim) {
+      case GLSL_SAMPLER_DIM_1D: {
+         twiddled_offset = nir_channel(b, coords, 0);
+         twiddled_offset =
+            nir_imul_imm(b, twiddled_offset, util_format_get_blocksize(format));
+         if (is_array)
+            array_index = nir_channel(b, coords, 1);
+         break;
+      }
+
+      case GLSL_SAMPLER_DIM_2D: {
+         /* Calculate untwiddled offset. */
+         nir_def *x = nir_i2i16(b, nir_channel(b, coords, 0));
+         nir_def *y = nir_i2i16(b, nir_channel(b, coords, 1));
+         twiddled_offset = nir_interleave(b, y, x);
+         twiddled_offset =
+            nir_imul_imm(b, twiddled_offset, util_format_get_blocksize(format));
+
+         if (is_array)
+            array_index = nir_channel(b, coords, 2);
+
+         break;
+      }
+
+      case GLSL_SAMPLER_DIM_3D: {
+         assert(!is_array);
+
+         /* Calculate untwiddled offset. */
+         nir_def *num_comps = nir_imm_int(b, 3);
+         nir_def *dim = nir_imm_int(b, image_dim);
+         nir_def *_is_array = nir_imm_bool(b, is_array);
+         nir_def *is_image = nir_imm_bool(b, true);
+         nir_def *size_comps = usclib_tex_state_size(b,
+                                                     tex_state,
+                                                     num_comps,
+                                                     dim,
+                                                     _is_array,
+                                                     is_image,
+                                                     lod);
+
+         twiddled_offset = usclib_twiddle3d(b, coords, size_comps);
+         data->common.uses.usclib = true;
+
+         twiddled_offset =
+            nir_imul_imm(b, twiddled_offset, util_format_get_blocksize(format));
+
+         break;
+      }
+
+      default:
+         UNREACHABLE("");
+      }
+
+      assert(twiddled_offset);
+
+      if (is_array) {
+         assert(array_index);
+         nir_def *array_max = usclib_tex_state_array_max(b, tex_state);
+         array_index = nir_uclamp(b, array_index, nir_imm_int(b, 0), array_max);
+
+         nir_def *tex_meta = nir_load_tex_meta_pco(b,
+                                                   PCO_IMAGE_META_COUNT,
+                                                   elem,
+                                                   .desc_set = desc_set,
+                                                   .binding = binding);
+
+         nir_def *array_stride =
+            nir_channel(b, tex_meta, PCO_IMAGE_META_LAYER_SIZE);
+
+         nir_def *array_offset = nir_imul(b, array_index, array_stride);
+         twiddled_offset = nir_iadd(b, twiddled_offset, array_offset);
+      }
 
       /* Offset the address by the co-ordinates. */
       nir_def *base_addr = usclib_tex_state_address(b, tex_state);
@@ -1187,6 +1263,19 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
 
       nir_def *addr_lo = nir_channel(b, addr, 0);
       nir_def *addr_hi = nir_channel(b, addr, 1);
+
+      if (intr->intrinsic == nir_intrinsic_image_deref_atomic_swap) {
+         nir_def *compare = intr->src[3].ssa;
+         nir_def *dma_data = intr->src[4].ssa;
+
+         nir_def *addr_data = nir_vec4(b, addr_lo, addr_hi, compare, dma_data);
+
+         return nir_global_atomic_swap_pco(b,
+                                           addr_data,
+                                           .atomic_op =
+                                              nir_intrinsic_atomic_op(intr));
+      }
+
       nir_def *dma_data = intr->src[3].ssa;
 
       nir_def *addr_data = nir_vec3(b, addr_lo, addr_hi, dma_data);
@@ -1360,6 +1449,7 @@ static bool is_image(const nir_instr *instr, UNUSED const void *cb_data)
    case nir_intrinsic_image_deref_load:
    case nir_intrinsic_image_deref_store:
    case nir_intrinsic_image_deref_atomic:
+   case nir_intrinsic_image_deref_atomic_swap:
    case nir_intrinsic_image_deref_size:
       return true;
 

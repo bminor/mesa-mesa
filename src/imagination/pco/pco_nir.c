@@ -837,7 +837,6 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
 
    NIR_PASS(_, nir, pco_nir_lower_vk, data);
    NIR_PASS(_, nir, pco_nir_lower_io);
-   NIR_PASS(_, nir, pco_nir_lower_atomics, data);
 
    NIR_PASS(_, nir, nir_opt_constant_folding);
 
@@ -873,6 +872,7 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
       NIR_PASS(_, nir, pco_nir_lower_clip_cull_vars);
 
    NIR_PASS(_, nir, pco_nir_lower_images, data);
+   NIR_PASS(_, nir, pco_nir_lower_atomics, data);
    NIR_PASS(_,
             nir,
             nir_lower_tex,
