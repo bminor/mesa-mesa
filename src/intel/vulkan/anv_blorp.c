@@ -2290,6 +2290,105 @@ vk_to_blorp_resolve_mode(VkResolveModeFlagBits vk_mode)
    }
 }
 
+static inline struct isl_swizzle
+conv_ycbcr_swizzle(const struct vk_format_ycbcr_plane *ycbcr_plane)
+{
+   const enum isl_channel_select vk_swiz_to_isl[] = {
+      [VK_COMPONENT_SWIZZLE_R] = ISL_CHANNEL_SELECT_RED,
+      [VK_COMPONENT_SWIZZLE_G] = ISL_CHANNEL_SELECT_GREEN,
+      [VK_COMPONENT_SWIZZLE_B] = ISL_CHANNEL_SELECT_BLUE,
+      [VK_COMPONENT_SWIZZLE_A] = ISL_CHANNEL_SELECT_ALPHA,
+      [VK_COMPONENT_SWIZZLE_ZERO] = ISL_CHANNEL_SELECT_ZERO,
+      [VK_COMPONENT_SWIZZLE_ONE] = ISL_CHANNEL_SELECT_ONE,
+      [VK_COMPONENT_SWIZZLE_IDENTITY] = ISL_CHANNEL_SELECT_ZERO,
+   };
+
+   struct isl_swizzle swiz;
+   swiz.r = vk_swiz_to_isl[ycbcr_plane->ycbcr_swizzle[0]];
+   swiz.g = vk_swiz_to_isl[ycbcr_plane->ycbcr_swizzle[1]];
+   swiz.b = vk_swiz_to_isl[ycbcr_plane->ycbcr_swizzle[2]];
+   swiz.a = vk_swiz_to_isl[ycbcr_plane->ycbcr_swizzle[3]];
+
+   return swiz;
+}
+
+void
+anv_attachment_external_resolve(struct anv_cmd_buffer *cmd_buffer,
+                                const struct anv_attachment *att)
+{
+   struct anv_cmd_graphics_state *gfx = &cmd_buffer->state.gfx;
+   const struct anv_image_view *src_iview = att->iview;
+   const struct anv_image_view *dst_iview = att->resolve_iview;
+   const struct anv_image *src_image = src_iview->image;
+   const struct anv_image *dst_image = dst_iview->image;
+   enum isl_format src_format = src_iview->planes[0].isl.format;
+   const VkRect2D render_area = gfx->render_area;
+   uint32_t src_level = src_iview->planes[0].isl.base_level;
+   uint32_t src_base_layer = src_iview->planes[0].isl.base_array_layer;
+   uint32_t dst_level = dst_iview->planes[0].isl.base_level;
+   uint32_t dst_base_layer = dst_iview->planes[0].isl.base_array_layer;
+   uint32_t src_x1 = render_area.offset.x,
+            src_x2 = render_area.offset.x + render_area.extent.width,
+            src_y1 = render_area.offset.y,
+            src_y2 = render_area.offset.y + render_area.extent.height;
+
+   const VkImageAspectFlags plane_aspects[] = {
+      VK_IMAGE_ASPECT_PLANE_0_BIT,
+      VK_IMAGE_ASPECT_PLANE_1_BIT,
+      VK_IMAGE_ASPECT_PLANE_2_BIT,
+   };
+
+   const struct vk_format_ycbcr_info *ycbcr_info =
+      vk_format_get_ycbcr_info(dst_iview->vk.format);
+   assert(ycbcr_info);
+
+   struct blorp_surf src_surf, dst_surf;
+   get_blorp_surf_for_anv_image(cmd_buffer, src_image,
+                                VK_IMAGE_ASPECT_COLOR_BIT,
+                                VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+                                att->resolve_layout,
+                                ISL_AUX_USAGE_NONE, src_format,
+                                false, &src_surf);
+
+   struct blorp_batch batch;
+   anv_blorp_batch_init(cmd_buffer, &batch, 0);
+
+   for (uint8_t i = 0; i < ycbcr_info->n_planes; i++) {
+      VkImageAspectFlags aspect_mask = plane_aspects[i];
+      get_blorp_surf_for_anv_image(cmd_buffer, dst_image, aspect_mask,
+                                   VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                                   att->resolve_layout,
+                                   ISL_AUX_USAGE_NONE,
+                                   dst_iview->planes[i].isl.format,
+                                   false, &dst_surf);
+
+      anv_cmd_buffer_mark_image_written(cmd_buffer, dst_image,
+                                        aspect_mask, dst_surf.aux_usage,
+                                        dst_level, dst_base_layer, 1);
+
+      const struct vk_format_ycbcr_plane *plane = &ycbcr_info->planes[i];
+      struct isl_swizzle plane_swizzle = conv_ycbcr_swizzle(plane);
+
+      uint32_t dst_x1 = render_area.offset.x / plane->denominator_scales[0],
+               dst_x2 = (render_area.offset.x + render_area.extent.width) /
+                        plane->denominator_scales[0],
+               dst_y1 = render_area.offset.y / plane->denominator_scales[1],
+               dst_y2 = (render_area.offset.y + render_area.extent.height) /
+                        plane->denominator_scales[1];
+
+      blorp_blit(&batch,
+                 &src_surf, src_level, src_base_layer,
+                 src_format, plane_swizzle,
+                 &dst_surf, dst_level, dst_base_layer,
+                 dst_iview->planes[i].isl.format, ISL_SWIZZLE_IDENTITY,
+                 src_x1, src_y1, src_x2, src_y2,
+                 dst_x1, dst_y1, dst_x2, dst_y2,
+                 BLORP_FILTER_BILINEAR, false, false);
+   }
+
+   anv_blorp_batch_finish(&batch);
+}
+
 void
 anv_attachment_msaa_resolve(struct anv_cmd_buffer *cmd_buffer,
                             const struct anv_attachment *att,

@@ -995,6 +995,9 @@ get_features(const struct anv_physical_device *pdevice,
     */
    if (app_info->engine_name && strcmp(app_info->engine_name, "idTech") == 0)
       features->depthBounds = true;
+
+   if (vk_android_get_ugralloc() != NULL)
+      features->externalFormatResolve = true;
 }
 
 #define MAX_PER_STAGE_DESCRIPTOR_UNIFORM_BUFFERS   64
@@ -2008,10 +2011,17 @@ get_properties(const struct anv_physical_device *pdevice,
       props->transformFeedbackDraw = true;
    }
 
-   /* VK_ANDROID_native_buffer */
 #if DETECT_OS_ANDROID
+   /* VK_ANDROID_native_buffer */
    {
       props->sharedImage = !!vk_android_get_front_buffer_usage();
+   }
+
+   /* VK_ANDROID_external_format_resolve */
+   {
+      props->nullColorAttachmentWithExternalFormatResolve = VK_FALSE;
+      props->externalFormatResolveChromaOffsetX = VK_CHROMA_LOCATION_MIDPOINT;
+      props->externalFormatResolveChromaOffsetY = VK_CHROMA_LOCATION_MIDPOINT;
    }
 #endif /* DETECT_OS_ANDROID */
 

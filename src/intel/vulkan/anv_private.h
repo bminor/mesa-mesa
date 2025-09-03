@@ -6019,6 +6019,9 @@ anv_attachment_msaa_resolve(struct anv_cmd_buffer *cmd_buffer,
                             const struct anv_attachment *att,
                             VkImageLayout layout,
                             VkImageAspectFlagBits aspect);
+void
+anv_attachment_external_resolve(struct anv_cmd_buffer *cmd_buffer,
+                                const struct anv_attachment *att);
 
 static inline union isl_color_value
 anv_image_hiz_clear_value(const struct anv_image *image)
