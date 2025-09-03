@@ -179,6 +179,9 @@ struct spill_ctx {
     */
    BITSET_WORD *S;
 
+   /* Widths of vectors */
+   uint32_t *size;
+
    /* Mapping of rematerializable values to their definitions, or NULL for nodes
     * that are not materializable.
     */
@@ -219,12 +222,11 @@ spill_block(struct spill_ctx *ctx, bi_block *block)
 
 /* Calculate the register demand of a node. This should be rounded up to
  * a power-of-two to match the equivalent calculations in RA.
- * For now just punt and return 1, but we'll want to revisit this later.
  */
 static inline unsigned
 node_size(struct spill_ctx *ctx, unsigned node)
 {
-   return 1;
+   return ctx->size[node];
 }
 
 /*
@@ -461,7 +463,8 @@ cmp_dist(const void *left_, const void *right_, void *ctx_)
    struct spill_ctx *ctx = ctx_;
    const struct candidate *left = left_;
    const struct candidate *right = right_;
-
+   unsigned ldist = left->dist;
+   unsigned rdist = right->dist;
    /* We assume that rematerializing - even before every instruction - is
     * cheaper than spilling. As long as one of the nodes is rematerializable
     * (with distance > 0), we choose it over spilling. Within a class of nodes
@@ -469,13 +472,13 @@ cmp_dist(const void *left_, const void *right_, void *ctx_)
     */
    assert(left->node < ctx->n_alloc);
    assert(right->node < ctx->n_alloc);
-   bool remat_left = ctx->remat[left->node] != NULL && left->dist > 0;
-   bool remat_right = ctx->remat[right->node] != NULL && right->dist > 0;
+   bool remat_left = ctx->remat[left->node] != NULL && ldist > 0;
+   bool remat_right = ctx->remat[right->node] != NULL && rdist > 0;
 
    if (remat_left != remat_right)
       return remat_left ? 1 : -1;
    else
-      return (left->dist > right->dist) - (left->dist < right->dist);
+      return (ldist > rdist) - (ldist < rdist);
 }
 
 /*
@@ -1293,13 +1296,40 @@ bi_spill_ssa(bi_context *ctx, unsigned k, unsigned spill_base)
 
    dist_t *next_uses = rzalloc_array(memctx, dist_t, ctx->ssa_alloc + max_temps);
    bi_instr **remat = rzalloc_array(memctx, bi_instr *, ctx->ssa_alloc + max_temps);
+   uint32_t *sizes = rzalloc_array(memctx, uint32_t, ctx->ssa_alloc + max_temps);
 
    /* now record instructions that can be easily re-materialized */
+   /* while we're at it, calculate sizes too */
    bi_foreach_instr_global(ctx, I) {
+      if (I->nr_dests == 0 || I->dest[0].type != BI_INDEX_NORMAL)
+         continue;
+      unsigned idx = I->dest[0].value;
       if (can_remat(I))
-         remat[I->dest[0].value] = I;
+         remat[idx] = I;
+      bi_foreach_ssa_dest(I, d) {
+         idx = I->dest[d].value;
+         assert(sizes[idx] == 0 && "SSA broken");
+         switch (I->op) {
+         case BI_OPCODE_PHI:
+            break;
+         default:
+            sizes[idx] = bi_count_write_registers(I, d);
+            break;
+         }
+      }
    }
-
+   /* now that we know the rest of the sizes, find the sizes for PHI nodes */
+   bi_foreach_block(ctx, block) {
+      bi_foreach_phi_in_block(block, I) {
+         if (I->dest[0].type != BI_INDEX_NORMAL)
+            continue;
+         unsigned idx = I->dest[0].value;
+         sizes[idx] = 1;
+         bi_foreach_ssa_src(I, s) {
+            sizes[idx] = MAX2(sizes[idx], sizes[I->src[s].value]);
+         }
+      }
+   }
    struct spill_block *blocks =
       rzalloc_array(memctx, struct spill_block, ctx->num_blocks);
 
@@ -1333,6 +1363,7 @@ bi_spill_ssa(bi_context *ctx, unsigned k, unsigned spill_base)
          .k = k,
          .W = W,
          .S = S,
+         .size = sizes,
          .spill_max = n,
          .spill_base = spill_base,
          .spill_map = spill_map,
@@ -1359,6 +1390,7 @@ bi_spill_ssa(bi_context *ctx, unsigned k, unsigned spill_base)
          .k = k,
          .W = W,
          .S = S,
+         .size = sizes,
          .spill_max = n,
          .spill_base = spill_base,
          .spill_map = spill_map,

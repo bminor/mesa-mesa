@@ -49,8 +49,20 @@ bi_calc_register_demand(bi_context *ctx)
          unsigned v = I->dest[d].value;
          assert(widths[v] == 0 && "broken SSA");
          /* Round up vectors for easier live range splitting */
-         widths[v] = 1;
+         widths[v] = bi_count_write_registers(I, d);
          classes[v] = ra_class_for_index(I->dest[d]);
+      }
+   }
+   /* now that we know the rest of the sizes, find the sizes for PHI nodes */
+   bi_foreach_block(ctx, block) {
+      bi_foreach_phi_in_block(block, I) {
+         if (I->dest[0].type != BI_INDEX_NORMAL)
+            continue;
+         unsigned idx = I->dest[0].value;
+         widths[idx] = 1;
+         bi_foreach_ssa_src(I, s) {
+            widths[idx] = MAX2(widths[idx], widths[I->src[s].value]);
+         }
       }
    }
 
