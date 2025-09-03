@@ -1567,7 +1567,6 @@ tc_set_framebuffer_state(struct pipe_context *_pipe,
    tc_set_resource_batch_usage_persistent(tc, tc->fb_resources[PIPE_MAX_COLOR_BUFS], true);
    tc_set_resource_batch_usage_persistent(tc, tc->fb_resolve, true);
    tc->in_renderpass = false;
-   p->state.resolve = NULL;
 }
 
 struct tc_tess_state {
