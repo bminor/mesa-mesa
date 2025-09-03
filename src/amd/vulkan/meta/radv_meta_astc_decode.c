@@ -54,16 +54,8 @@ decode_astc(struct radv_cmd_buffer *cmd_buffer, struct radv_image_view *src_ivie
 
    radv_CmdPushConstants2(radv_cmd_buffer_to_handle(cmd_buffer), &pc_info);
 
-   struct radv_dispatch_info info = {
-      .blocks[0] = DIV_ROUND_UP(extent->width, blk_w * 2),
-      .blocks[1] = DIV_ROUND_UP(extent->height, blk_h * 2),
-      .blocks[2] = extent->depth,
-      .offsets[0] = 0,
-      .offsets[1] = 0,
-      .offsets[2] = offset->z,
-      .unaligned = 0,
-   };
-   radv_compute_dispatch(cmd_buffer, &info);
+   radv_CmdDispatchBase(radv_cmd_buffer_to_handle(cmd_buffer), 0, 0, offset->z, DIV_ROUND_UP(extent->width, blk_w * 2),
+                        DIV_ROUND_UP(extent->height, blk_h * 2), extent->depth);
 }
 
 static VkImageViewType
