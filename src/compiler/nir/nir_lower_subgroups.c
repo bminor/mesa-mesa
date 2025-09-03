@@ -1203,9 +1203,9 @@ lower_subgroups_instr(nir_builder *b, nir_instr *instr, void *_options)
 
    case nir_intrinsic_ballot_bit_count_exclusive:
    case nir_intrinsic_ballot_bit_count_inclusive: {
-      nir_def *int_val = ballot_type_to_uint(b, intrin->src[0].ssa,
-                                             options);
+      nir_def *ballot = intrin->src[0].ssa;
       if (options->lower_ballot_bit_count_to_mbcnt_amd) {
+         nir_def *int_val = ballot_type_to_uint(b, ballot, options);
          nir_def *acc;
          if (intrin->intrinsic == nir_intrinsic_ballot_bit_count_exclusive) {
             acc = nir_imm_int(b, 0);
@@ -1218,12 +1218,14 @@ lower_subgroups_instr(nir_builder *b, nir_instr *instr, void *_options)
 
       nir_def *mask;
       if (intrin->intrinsic == nir_intrinsic_ballot_bit_count_inclusive) {
-         mask = nir_inot(b, build_subgroup_gt_mask(b, options));
+         mask = nir_load_subgroup_le_mask(b, 4, 32);
       } else {
-         mask = nir_inot(b, build_subgroup_ge_mask(b, options));
+         mask = nir_load_subgroup_lt_mask(b, 4, 32);
       }
 
-      return vec_bit_count(b, nir_iand(b, int_val, mask));
+      ballot = nir_iand(b, ballot, mask);
+
+      return nir_ballot_bit_count_reduce(b, ballot);
    }
 
    case nir_intrinsic_elect: {
