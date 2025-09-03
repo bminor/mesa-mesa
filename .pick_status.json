@@ -4,7 +4,7 @@
         "description": "anv: fix broken utrace",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6281b207db9e59ec51274465185e9b3cf4162b7b",
         "notes": null
