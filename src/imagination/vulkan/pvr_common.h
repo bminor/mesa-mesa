@@ -333,6 +333,18 @@ struct pvr_descriptor_state {
 
 #undef PVR_MAX_DYNAMIC_BUFFERS
 
+struct pvr_pds_upload {
+   struct pvr_suballoc_bo *pvr_bo;
+   /* Offset from the pds heap base address. */
+   uint32_t data_offset;
+   /* Offset from the pds heap base address. */
+   uint32_t code_offset;
+
+   /* data_size + code_size = program_size. */
+   uint32_t data_size;
+   uint32_t code_size;
+};
+
 VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_event, base, VkEvent, VK_OBJECT_TYPE_EVENT)
 VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_sampler,
                                vk.base,
