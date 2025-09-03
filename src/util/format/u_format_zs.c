@@ -205,6 +205,90 @@ util_format_z16_unorm_pack_z_32unorm(uint8_t *restrict dst_row, unsigned dst_str
 }
 
 void
+util_format_z24_unorm_packed_unpack_z_float(float *restrict dst_row, unsigned dst_stride,
+                                            const uint8_t *restrict src_row, unsigned src_stride,
+                                            unsigned width, unsigned height)
+{
+   unsigned x, y;
+   for(y = 0; y < height; ++y) {
+      float *dst = dst_row;
+      const uint8_t *src = src_row;
+      for(x = 0; x < width; ++x) {
+         uint32_t tmp = src[0] | ((uint32_t)src[1] << 8) | ((uint32_t)src[2] << 16);
+
+         *dst++ = z24_unorm_to_z32_float(tmp);
+         src += 3;
+      }
+      src_row += src_stride/sizeof(*src_row);
+      dst_row += dst_stride/sizeof(*dst_row);
+   }
+}
+
+void
+util_format_z24_unorm_packed_pack_z_float(uint8_t *restrict dst_row, unsigned dst_stride,
+                                          const float *restrict src_row, unsigned src_stride,
+                                          unsigned width, unsigned height)
+{
+   unsigned x, y;
+   for(y = 0; y < height; ++y) {
+      const float *src = src_row;
+      uint8_t *dst = dst_row;
+      for(x = 0; x < width; ++x) {
+         uint32_t tmp = z32_float_to_z24_unorm(*src++);
+
+         dst[0] = tmp;
+         dst[1] = tmp >> 8;
+         dst[2] = tmp >> 16;
+         dst += 3;
+      }
+      dst_row += dst_stride/sizeof(*dst_row);
+      src_row += src_stride/sizeof(*src_row);
+   }
+}
+
+void
+util_format_z24_unorm_packed_unpack_z_32unorm(uint32_t *restrict dst_row, unsigned dst_stride,
+                                              const uint8_t *restrict src_row, unsigned src_stride,
+                                              unsigned width, unsigned height)
+{
+   unsigned x, y;
+   for(y = 0; y < height; ++y) {
+      uint32_t *dst = dst_row;
+      const uint8_t *src = src_row;
+      for(x = 0; x < width; ++x) {
+         uint32_t tmp = src[0] | ((uint32_t)src[1] << 8) | ((uint32_t)src[2] << 16);
+
+         *dst++ = z24_unorm_to_z32_unorm(tmp);
+         src += 3;
+      }
+      src_row += src_stride/sizeof(*src_row);
+      dst_row += dst_stride/sizeof(*dst_row);
+   }
+}
+
+void
+util_format_z24_unorm_packed_pack_z_32unorm(uint8_t *restrict dst_row, unsigned dst_stride,
+                                            const uint32_t *restrict src_row, unsigned src_stride,
+                                            unsigned width, unsigned height)
+{
+   unsigned x, y;
+   for(y = 0; y < height; ++y) {
+      const uint32_t *src = src_row;
+      uint16_t *dst = (uint16_t *)dst_row;
+      for(x = 0; x < width; ++x) {
+         uint32_t tmp = z32_unorm_to_z24_unorm(*src++);
+
+         dst[0] = tmp;
+         dst[1] = tmp >> 8;
+         dst[2] = tmp >> 16;
+         dst += 3;
+      }
+      dst_row += dst_stride/sizeof(*dst_row);
+      src_row += src_stride/sizeof(*src_row);
+   }
+}
+
+void
 util_format_z32_unorm_unpack_z_float(float *restrict dst_row, unsigned dst_stride,
                                      const uint8_t *restrict src_row, unsigned src_stride,
                                      unsigned width, unsigned height)

@@ -649,6 +649,12 @@
   block: {width: 1, height: 1, depth: 1}
   channels: [X8, UN24]
   swizzles: [Y, _, _, _]
+- name: Z24_UNORM_PACKED
+  layout: plain
+  colorspace: ZS
+  block: {width: 1, height: 1, depth: 1}
+  channels: [UN24]
+  swizzles: [X, _, _, _]
 - name: Z32_FLOAT_S8X24_UINT
   layout: plain
   colorspace: ZS
