@@ -181,13 +181,9 @@ lower(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 }
 
 static bool
-lower_subgroup_filter(const nir_instr *instr, UNUSED const void *data)
+lower_subgroup_filter(const nir_intrinsic_instr *intr, UNUSED const void *data)
 {
-   if (instr->type != nir_instr_type_intrinsic)
-      return false;
-
    /* Use default behaviour for everything but scans */
-   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
    if (intr->intrinsic != nir_intrinsic_exclusive_scan &&
        intr->intrinsic != nir_intrinsic_inclusive_scan &&
        intr->intrinsic != nir_intrinsic_reduce)

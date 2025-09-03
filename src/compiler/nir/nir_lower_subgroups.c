@@ -889,13 +889,16 @@ lower_scan_reduce(nir_builder *b, nir_intrinsic_instr *intrin,
 static bool
 lower_subgroups_filter(const nir_instr *instr, const void *_options)
 {
+   if (instr->type != nir_instr_type_intrinsic)
+      return false;
+
    const nir_lower_subgroups_options *options = _options;
 
    if (options->filter) {
-      return options->filter(instr, options->filter_data);
+      return options->filter(nir_instr_as_intrinsic(instr), options->filter_data);
    }
 
-   return instr->type == nir_instr_type_intrinsic;
+   return true;
 }
 
 static nir_def *

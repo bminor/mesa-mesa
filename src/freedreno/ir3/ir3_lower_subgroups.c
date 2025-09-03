@@ -712,13 +712,8 @@ ir3_nir_opt_subgroups(nir_shader *nir, struct ir3_shader_variant *v)
 }
 
 bool
-ir3_nir_lower_subgroups_filter(const nir_instr *instr, const void *data)
+ir3_nir_lower_subgroups_filter(const nir_intrinsic_instr *intrin, const void *data)
 {
-   if (instr->type != nir_instr_type_intrinsic)
-      return false;
-
-   nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
-
    const struct ir3_compiler *compiler = data;
 
    switch (intrin->intrinsic) {

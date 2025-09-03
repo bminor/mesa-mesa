@@ -5476,7 +5476,7 @@ typedef struct nir_lower_subgroups_options {
     * will filter instructions for lowering if non-NULL. The data passed will be
     * filter_data.
     */
-   nir_instr_filter_cb filter;
+   nir_intrin_filter_cb filter;
 
    /* Extra data passed to the filter. */
    const void *filter_data;
