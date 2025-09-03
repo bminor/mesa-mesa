@@ -306,13 +306,15 @@ AssamblerVisitor::emit_alu_op(const AluInstr& ai)
          }
 
          alu.dst.write = ai.has_alu_flag(alu_write);
-         alu.dst.clamp = ai.has_alu_flag(alu_dst_clamp);
          alu.dst.rel = dst->addr() ? 1 : 0;
       } else if (m_bc->gfx_level == CAYMAN && ai.dest()->sel() > 0) {
          alu.dst.sel = ai.dest()->sel() + 1;
       }
+   } else {
+      alu.dst.chan = ai.dest_chan();
    }
 
+   alu.dst.clamp = ai.has_alu_flag(alu_dst_clamp);
    alu.is_op3 = ai.n_sources() == 3;
 
    EBufferIndexMode kcache_index_mode = bim_none;
