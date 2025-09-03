@@ -764,7 +764,7 @@ build_scan_reduce(nir_builder *b, nir_intrinsic_op op, nir_op red_op,
        * take into account in the accumulator.
        */
       nir_def *has_buddy = nir_bany_inequal(b, remaining, nir_imm_int(b, 0));
-      nir_def *buddy = nir_ballot_find_msb(b, 32, remaining);
+      nir_def *buddy = nir_ballot_find_msb(b, remaining);
 
       /* Accumulate with our buddy channel, if any */
       nir_def *buddy_data = nir_shuffle(b, data, buddy);
@@ -789,7 +789,7 @@ build_scan_reduce(nir_builder *b, nir_intrinsic_op op, nir_op red_op,
        */
       nir_def *lower = nir_iand(b, mask, lt_mask);
       nir_def *has_buddy = nir_bany_inequal(b, lower, nir_imm_int(b, 0));
-      nir_def *buddy = nir_ballot_find_msb(b, 32, lower);
+      nir_def *buddy = nir_ballot_find_msb(b, lower);
 
       nir_def *buddy_data = nir_shuffle(b, data, buddy);
       nir_def *identity = build_identity(b, data->bit_size, red_op);
@@ -801,7 +801,7 @@ build_scan_reduce(nir_builder *b, nir_intrinsic_op op, nir_op red_op,
 
    case nir_intrinsic_reduce: {
       /* For reductions, we need to take the top value of the scan */
-      nir_def *idx = nir_ballot_find_msb(b, 32, mask);
+      nir_def *idx = nir_ballot_find_msb(b, mask);
       return nir_shuffle(b, data, idx);
    }
 
@@ -995,7 +995,7 @@ static nir_def *
 lower_first_invocation_to_ballot(nir_builder *b, nir_intrinsic_instr *intrin,
                                  const nir_lower_subgroups_options *options)
 {
-   return nir_ballot_find_lsb(b, 32, nir_ballot(b, 4, 32, nir_imm_true(b)));
+   return nir_ballot_find_lsb(b, nir_ballot(b, 4, 32, nir_imm_true(b)));
 }
 
 static nir_def *

@@ -567,11 +567,11 @@ intrinsic("vote_ieq", src_comp=[0], dest_comp=1, flags=SUBGROUP_FLAGS)
 # on a uvec4 which is treated as a 128bit integer.  Also, they are, in
 # general, free to ignore any bits which are above the subgroup size.
 intrinsic("ballot_bitfield_extract", src_comp=[4, 1], dest_comp=1, bit_sizes=[1], flags=[CAN_REORDER, CAN_ELIMINATE])
-intrinsic("ballot_bit_count_reduce", src_comp=[4], dest_comp=1, flags=[CAN_REORDER, CAN_ELIMINATE])
-intrinsic("ballot_bit_count_inclusive", src_comp=[4], dest_comp=1, flags=[CAN_REORDER, CAN_ELIMINATE])
-intrinsic("ballot_bit_count_exclusive", src_comp=[4], dest_comp=1, flags=[CAN_REORDER, CAN_ELIMINATE])
-intrinsic("ballot_find_lsb", src_comp=[4], dest_comp=1, flags=[CAN_REORDER, CAN_ELIMINATE])
-intrinsic("ballot_find_msb", src_comp=[4], dest_comp=1, flags=[CAN_REORDER, CAN_ELIMINATE])
+intrinsic("ballot_bit_count_reduce", src_comp=[4], dest_comp=1, bit_sizes=[32], flags=[CAN_REORDER, CAN_ELIMINATE])
+intrinsic("ballot_bit_count_inclusive", src_comp=[4], dest_comp=1, bit_sizes=[32], flags=[CAN_REORDER, CAN_ELIMINATE])
+intrinsic("ballot_bit_count_exclusive", src_comp=[4], dest_comp=1, bit_sizes=[32], flags=[CAN_REORDER, CAN_ELIMINATE])
+intrinsic("ballot_find_lsb", src_comp=[4], dest_comp=1, bit_sizes=[32], flags=[CAN_REORDER, CAN_ELIMINATE])
+intrinsic("ballot_find_msb", src_comp=[4], dest_comp=1, bit_sizes=[32], flags=[CAN_REORDER, CAN_ELIMINATE])
 
 # Shuffle operations from SPIR-V.
 intrinsic("shuffle", src_comp=[0, 1], dest_comp=0, bit_sizes=src0, flags=SUBGROUP_FLAGS)
