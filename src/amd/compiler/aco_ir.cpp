@@ -293,6 +293,11 @@ is_atomic_or_control_instr(Program* program, const Instruction* instr, memory_sy
    }
 
    uint16_t cls = BITFIELD_MASK(storage_count);
+   if (is_acquire) {
+      if (is_wait_export_ready(program->gfx_level, instr) ||
+          instr->opcode == aco_opcode::p_pops_gfx9_add_exiting_wave_id)
+         return cls & ~storage_shared;
+   }
    if (is_release) {
       if (is_done_sendmsg(program->gfx_level, instr) ||
           is_pos_prim_export(program->gfx_level, instr))

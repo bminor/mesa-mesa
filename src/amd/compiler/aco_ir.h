@@ -64,7 +64,8 @@ enum memory_semantics : uint8_t {
    semantic_none = 0x0,
    /* for loads: don't move any access after this load to before this load (even other loads)
     * for barriers: don't move any access after the barrier to before any
-    * atomic_loads/control_barriers before the barrier */
+    * atomic_loads/control_barriers/p_pops_gfx9_add_exiting_wave_id or
+    * certain s_wait_event before the barrier */
    semantic_acquire = 0x1,
    /* for stores: don't move any access before this store to after this store
     * for barriers: don't move any access before the barrier to after any
