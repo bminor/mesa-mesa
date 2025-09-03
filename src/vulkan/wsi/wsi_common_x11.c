@@ -728,7 +728,7 @@ x11_get_min_image_count_for_present_mode(struct wsi_device *wsi_device,
 static VkResult
 x11_surface_get_capabilities(VkIcdSurfaceBase *icd_surface,
                              struct wsi_device *wsi_device,
-                             const VkSurfacePresentModeEXT *present_mode,
+                             const VkSurfacePresentModeKHR *present_mode,
                              VkSurfaceCapabilitiesKHR *caps)
 {
    xcb_connection_t *conn = x11_surface_get_connection(icd_surface);
@@ -791,7 +791,7 @@ x11_surface_get_capabilities2(VkIcdSurfaceBase *icd_surface,
 {
    assert(caps->sType == VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_KHR);
 
-   const VkSurfacePresentModeEXT *present_mode = vk_find_struct_const(info_next, SURFACE_PRESENT_MODE_EXT);
+   const VkSurfacePresentModeKHR *present_mode = vk_find_struct_const(info_next, SURFACE_PRESENT_MODE_KHR);
 
    VkResult result =
       x11_surface_get_capabilities(icd_surface, wsi_device, present_mode,
@@ -809,9 +809,9 @@ x11_surface_get_capabilities2(VkIcdSurfaceBase *icd_surface,
          break;
       }
 
-      case VK_STRUCTURE_TYPE_SURFACE_PRESENT_SCALING_CAPABILITIES_EXT: {
+      case VK_STRUCTURE_TYPE_SURFACE_PRESENT_SCALING_CAPABILITIES_KHR: {
          /* Unsupported. */
-         VkSurfacePresentScalingCapabilitiesEXT *scaling = (void *)ext;
+         VkSurfacePresentScalingCapabilitiesKHR *scaling = (void *)ext;
          scaling->supportedPresentScaling = 0;
          scaling->supportedPresentGravityX = 0;
          scaling->supportedPresentGravityY = 0;
@@ -820,9 +820,9 @@ x11_surface_get_capabilities2(VkIcdSurfaceBase *icd_surface,
          break;
       }
 
-      case VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_COMPATIBILITY_EXT: {
+      case VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_COMPATIBILITY_KHR: {
          /* All present modes are compatible with each other. */
-         VkSurfacePresentModeCompatibilityEXT *compat = (void *)ext;
+         VkSurfacePresentModeCompatibilityKHR *compat = (void *)ext;
          if (compat->pPresentModes) {
             assert(present_mode);
             VK_OUTARRAY_MAKE_TYPED(VkPresentModeKHR, modes, compat->pPresentModes, &compat->presentModeCount);
@@ -840,8 +840,8 @@ x11_surface_get_capabilities2(VkIcdSurfaceBase *icd_surface,
             }
          } else {
             if (!present_mode)
-               wsi_common_vk_warn_once("Use of VkSurfacePresentModeCompatibilityEXT "
-                                       "without a VkSurfacePresentModeEXT set. This is an "
+               wsi_common_vk_warn_once("Use of VkSurfacePresentModeCompatibilityKHR "
+                                       "without a VkSurfacePresentModeKHR set. This is an "
                                        "application bug.\n");
 
             compat->presentModeCount = ARRAY_SIZE(present_modes);
@@ -1710,7 +1710,7 @@ x11_requires_mailbox_image_count(const struct wsi_device *device,
     *
     * - IMMEDIATE expects tearing, and when tearing, 3 images are more than enough.
     *
-    * - With EXT_swapchain_maintenance1, toggling between FIFO / IMMEDIATE (used extensively by D3D layering)
+    * - With KHR_swapchain_maintenance1, toggling between FIFO / IMMEDIATE (used extensively by D3D layering)
     *   would require application to allocate >3 images which is unfortunate for memory usage,
     *   and potentially disastrous for latency unless KHR_present_wait is used.
     */
@@ -1872,7 +1872,7 @@ x11_queue_present(struct wsi_swapchain *wsi_chain,
    }
    chain->images[image_index].update_area = update_area;
    chain->images[image_index].present_id = present_id;
-   /* With EXT_swapchain_maintenance1, the present mode can change per present. */
+   /* With KHR_swapchain_maintenance1, the present mode can change per present. */
    chain->images[image_index].present_mode = chain->base.present_mode;
 
    wsi_queue_push(&chain->present_queue, image_index);

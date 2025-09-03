@@ -1704,7 +1704,7 @@ wsi_wl_surface_get_support(VkIcdSurfaceBase *surface,
 
 static uint32_t
 wsi_wl_surface_get_min_image_count(struct wsi_wl_display *display,
-                                   const VkSurfacePresentModeEXT *present_mode)
+                                   const VkSurfacePresentModeKHR *present_mode)
 {
    if (present_mode) {
       return present_mode->presentMode == VK_PRESENT_MODE_MAILBOX_KHR ?
@@ -1737,7 +1737,7 @@ wsi_wl_surface_get_min_image_count(struct wsi_wl_display *display,
 static VkResult
 wsi_wl_surface_get_capabilities(VkIcdSurfaceBase *icd_surface,
                                 struct wsi_device *wsi_device,
-                                const VkSurfacePresentModeEXT *present_mode,
+                                const VkSurfacePresentModeKHR *present_mode,
                                 VkSurfaceCapabilitiesKHR* caps)
 {
    VkIcdSurfaceWayland *surface = (VkIcdSurfaceWayland *)icd_surface;
@@ -1817,7 +1817,7 @@ wsi_wl_surface_get_capabilities2(VkIcdSurfaceBase *surface,
 
    struct wsi_wl_surface *wsi_wl_surface =
       wl_container_of((VkIcdSurfaceWayland *)surface, wsi_wl_surface, base);
-   const VkSurfacePresentModeEXT *present_mode = vk_find_struct_const(info_next, SURFACE_PRESENT_MODE_EXT);
+   const VkSurfacePresentModeKHR *present_mode = vk_find_struct_const(info_next, SURFACE_PRESENT_MODE_KHR);
 
    VkResult result =
       wsi_wl_surface_get_capabilities(surface, wsi_device, present_mode,
@@ -1832,9 +1832,9 @@ wsi_wl_surface_get_capabilities2(VkIcdSurfaceBase *surface,
          break;
       }
 
-      case VK_STRUCTURE_TYPE_SURFACE_PRESENT_SCALING_CAPABILITIES_EXT: {
+      case VK_STRUCTURE_TYPE_SURFACE_PRESENT_SCALING_CAPABILITIES_KHR: {
          /* Unsupported. */
-         VkSurfacePresentScalingCapabilitiesEXT *scaling = (void *)ext;
+         VkSurfacePresentScalingCapabilitiesKHR *scaling = (void *)ext;
          scaling->supportedPresentScaling = 0;
          scaling->supportedPresentGravityX = 0;
          scaling->supportedPresentGravityY = 0;
@@ -1843,9 +1843,9 @@ wsi_wl_surface_get_capabilities2(VkIcdSurfaceBase *surface,
          break;
       }
 
-      case VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_COMPATIBILITY_EXT: {
+      case VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_COMPATIBILITY_KHR: {
          /* Can easily toggle between FIFO and MAILBOX on Wayland. */
-         VkSurfacePresentModeCompatibilityEXT *compat = (void *)ext;
+         VkSurfacePresentModeCompatibilityKHR *compat = (void *)ext;
          if (compat->pPresentModes) {
             assert(present_mode);
             VK_OUTARRAY_MAKE_TYPED(VkPresentModeKHR, modes, compat->pPresentModes, &compat->presentModeCount);
@@ -1869,8 +1869,8 @@ wsi_wl_surface_get_capabilities2(VkIcdSurfaceBase *surface,
             }
          } else {
             if (!present_mode) {
-               wsi_common_vk_warn_once("Use of VkSurfacePresentModeCompatibilityEXT "
-                                       "without a VkSurfacePresentModeEXT set. This is an "
+               wsi_common_vk_warn_once("Use of VkSurfacePresentModeCompatibilityKHR "
+                                       "without a VkSurfacePresentModeKHR set. This is an "
                                        "application bug.\n");
                compat->presentModeCount = 1;
             } else {
@@ -3006,7 +3006,7 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
    if (ret != VK_SUCCESS)
       return ret;
 
-   /* For EXT_swapchain_maintenance1. We might have transitioned from FIFO to MAILBOX.
+   /* For KHR_swapchain_maintenance1. We might have transitioned from FIFO to MAILBOX.
     * In this case we need to let the FIFO request complete, before presenting MAILBOX. */
    while (!chain->legacy_fifo_ready) {
       int ret = wl_display_dispatch_queue(wsi_wl_surface->display->wl_display,
@@ -3172,7 +3172,7 @@ wsi_wl_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
        * When using timestamps, we already emit a dummy commit with the wait barrier anyway. */
       chain->next_present_force_wait_barrier = !timestamped;
    } else if (chain->fifo && chain->next_present_force_wait_barrier) {
-      /* If we're using EXT_swapchain_maintenance1 to transition from FIFO to something non-FIFO
+      /* If we're using KHR_swapchain_maintenance1 to transition from FIFO to something non-FIFO
        * the previous frame's FIFO must persist for a refresh cycle, i.e. it cannot be replaced by a MAILBOX presentation.
        * From 1.4.303 spec:
        * "Transition from VK_PRESENT_MODE_FIFO_KHR or VK_PRESENT_MODE_FIFO_RELAXED_KHR or VK_PRESENT_MODE_FIFO_LATEST_READY_EXT to
@@ -3382,7 +3382,7 @@ wsi_wl_swapchain_chain_free(struct wsi_wl_swapchain *chain,
 
    assert(!chain->present_ids.dispatch_in_progress);
 
-   /* In VK_EXT_swapchain_maintenance1 there is no requirement to wait for all present IDs to be complete.
+   /* In VK_KHR_swapchain_maintenance1 there is no requirement to wait for all present IDs to be complete.
     * Waiting for the swapchain fence is enough.
     * Just clean up anything user did not wait for. */
    struct wsi_wl_present_id *id, *tmp;
@@ -3498,13 +3498,13 @@ wsi_wl_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
 
    uint32_t num_images = pCreateInfo->minImageCount;
 
-   /* If app provides a present mode list from EXT_swapchain_maintenance1,
+   /* If app provides a present mode list from KHR_swapchain_maintenance1,
     * we don't know which present mode will be used.
     * Application is assumed to be well-behaved and be spec-compliant.
     * It needs to query all per-present mode minImageCounts individually and use the max() of those modes,
     * so there should never be any need to bump image counts. */
    bool uses_present_mode_group = vk_find_struct_const(
-         pCreateInfo->pNext, SWAPCHAIN_PRESENT_MODES_CREATE_INFO_EXT) != NULL;
+         pCreateInfo->pNext, SWAPCHAIN_PRESENT_MODES_CREATE_INFO_KHR) != NULL;
 
    /* If FIFO manager is not used, minImageCount is already the bumped value for reasons outlined in
     * wsi_wl_surface_get_min_image_count(), so skip any attempt to bump the counts. */
@@ -3512,8 +3512,8 @@ wsi_wl_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
       /* With proper FIFO, we return a lower minImageCount to make FIFO viable without requiring the use of KHR_present_wait.
        * The image count for MAILBOX should be bumped for performance reasons in this case.
        * This matches strategy for X11. */
-      const VkSurfacePresentModeEXT mode =
-            { VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_EXT, NULL, pCreateInfo->presentMode };
+      const VkSurfacePresentModeKHR mode =
+            { VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_KHR, NULL, pCreateInfo->presentMode };
 
       uint32_t min_images = wsi_wl_surface_get_min_image_count(wsi_wl_surface->display, &mode);
       bool requires_image_count_bump = min_images == WSI_WL_BUMPED_NUM_IMAGES;

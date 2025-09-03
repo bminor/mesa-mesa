@@ -14,3 +14,5 @@ VK_EXT_custom_resolve on RADV
 GL_EXT_shader_pixel_local_storage on Panfrost v6+
 sparseResidencyImage2D on panvk v10+
 sparseResidencyStandard2DBlockShape on panvk v10+
+VK_KHR_surface_maintenance1 promotion everywhere EXT is exposed
+VK_KHR_swapchain_maintenance1 promotion everywhere EXT is exposed

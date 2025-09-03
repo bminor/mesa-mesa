@@ -1264,8 +1264,8 @@ wsi_display_surface_get_capabilities2(VkIcdSurfaceBase *icd_surface,
 
    struct wsi_surface_supported_counters *counters =
       vk_find_struct( caps->pNext, WSI_SURFACE_SUPPORTED_COUNTERS_MESA);
-   const VkSurfacePresentModeEXT *present_mode =
-      vk_find_struct_const(info_next, SURFACE_PRESENT_MODE_EXT);
+   const VkSurfacePresentModeKHR *present_mode =
+      vk_find_struct_const(info_next, SURFACE_PRESENT_MODE_KHR);
 
    if (counters) {
       result = wsi_display_surface_get_surface_counters(&counters->supported_surface_counters);
@@ -1279,9 +1279,9 @@ wsi_display_surface_get_capabilities2(VkIcdSurfaceBase *icd_surface,
          break;
       }
 
-      case VK_STRUCTURE_TYPE_SURFACE_PRESENT_SCALING_CAPABILITIES_EXT: {
+      case VK_STRUCTURE_TYPE_SURFACE_PRESENT_SCALING_CAPABILITIES_KHR: {
          /* Unsupported. */
-         VkSurfacePresentScalingCapabilitiesEXT *scaling = (void *)ext;
+         VkSurfacePresentScalingCapabilitiesKHR *scaling = (void *)ext;
          scaling->supportedPresentScaling = 0;
          scaling->supportedPresentGravityX = 0;
          scaling->supportedPresentGravityY = 0;
@@ -1290,9 +1290,9 @@ wsi_display_surface_get_capabilities2(VkIcdSurfaceBase *icd_surface,
          break;
       }
 
-      case VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_COMPATIBILITY_EXT: {
+      case VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_COMPATIBILITY_KHR: {
          /* We only support FIFO. */
-         VkSurfacePresentModeCompatibilityEXT *compat = (void *)ext;
+         VkSurfacePresentModeCompatibilityKHR *compat = (void *)ext;
          if (compat->pPresentModes) {
             if (compat->presentModeCount) {
                assert(present_mode);
