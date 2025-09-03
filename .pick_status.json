@@ -9884,7 +9884,7 @@
         "description": "tc: don't unset resolve resource in set_framebuffer_state",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2eb45daa9c86f4b8bd602ddef7a67233f56f1edf",
         "notes": null
