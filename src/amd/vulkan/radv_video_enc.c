@@ -2834,6 +2834,7 @@ static void
 set_rate_control_defaults(struct radv_video_session *vid)
 {
    uint32_t frame_rate_den = 1, frame_rate_num = 30;
+   vid->enc_rate_control_default = true;
    vid->enc_rate_control_method = RENCODE_RATE_CONTROL_METHOD_NONE;
    vid->enc_vbv_buffer_level = 64;
    vid->rc_layer_control.num_temporal_layers = 1;
@@ -2914,10 +2915,9 @@ radv_video_enc_control_video_coding(struct radv_cmd_buffer *cmd_buffer, const Vk
 
       vid->enc_rate_control_default = false;
 
-      if (rate_control->rateControlMode == VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DEFAULT_KHR) {
-         vid->enc_rate_control_default = true;
+      if (rate_control->rateControlMode == VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DEFAULT_KHR)
          set_rate_control_defaults(vid);
-      } else if (rate_control->rateControlMode == VK_VIDEO_ENCODE_RATE_CONTROL_MODE_CBR_BIT_KHR)
+      else if (rate_control->rateControlMode == VK_VIDEO_ENCODE_RATE_CONTROL_MODE_CBR_BIT_KHR)
          rate_control_method = RENCODE_RATE_CONTROL_METHOD_CBR;
       else if (rate_control->rateControlMode == VK_VIDEO_ENCODE_RATE_CONTROL_MODE_VBR_BIT_KHR)
          rate_control_method = RENCODE_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR;
