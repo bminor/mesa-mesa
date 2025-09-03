@@ -9954,7 +9954,7 @@
         "description": "tu: Reset rp_trace on tu_reset_cmd_buffer",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "630380349bbc4873cebf5e90c359ca50d22fc998",
         "notes": null
