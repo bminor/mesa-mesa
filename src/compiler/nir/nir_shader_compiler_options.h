@@ -787,14 +787,6 @@ typedef struct nir_shader_compiler_options {
     */
    unsigned skip_lower_packing_ops;
 
-   /* In case the exact subgroup size is not known, subgroup_size should be
-    * set to 0. In that case, the maximum subgroup size will be calculated by
-    * ballot_components * ballot_bit_size.
-    */
-   uint8_t subgroup_size;
-   uint8_t ballot_bit_size;
-   uint8_t ballot_components;
-
    /** Driver callback where drivers can define how to lower mediump.
     *  Used by nir_lower_io_passes.
     */
