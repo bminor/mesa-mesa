@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use crate::api::{GetDebugFlags, ShaderBin, DEBUG};
-use crate::hw_runner::{Runner, CB0};
+use crate::hw_runner::{Context, Runner, BO, CB0};
 use crate::ir::*;
 use crate::sm20::ShaderModel20;
 use crate::sm32::ShaderModel32;
@@ -14,9 +14,15 @@ use compiler::bindings::MESA_SHADER_COMPUTE;
 use compiler::cfg::CFGBuilder;
 use nak_bindings::*;
 use rustc_hash::FxBuildHasher;
+use std::cell::RefCell;
+use std::io;
 use std::mem::{offset_of, size_of};
 use std::str::FromStr;
 use std::sync::OnceLock;
+
+use nv_push_rs::Push as NvPush;
+
+use nvidia_headers::classes::cl90b5::mthd as cl90b5;
 
 struct RunSingleton {
     sm: Box<dyn ShaderModel + Send + Sync>,
@@ -1747,4 +1753,174 @@ fn test_op_ldsm() {
         assert_eq!(i * 2 + 64 * 3 + 0, data[i][14].into());
         assert_eq!(i * 2 + 64 * 3 + 1, data[i][15].into());
     }
+}
+
+fn expected_render_enable(
+    mode: cl90b5::SetRenderEnableCMode,
+    data: &[u64],
+) -> bool {
+    use cl90b5::SetRenderEnableCMode::*;
+    match mode {
+        True => true,
+        False => false,
+        Conditional => data[0] > u32::MAX.into(),
+        RenderIfEqual => data[0] == data[2],
+        RenderIfNotEqual => data[0] != data[2],
+    }
+}
+
+#[test]
+fn test_render_enable() -> io::Result<()> {
+    let run = RunSingleton::get();
+    let dev = run.run.device();
+    let ctx = Context::new(dev.clone()).expect("Failed to create context");
+
+    let a = RefCell::new(Acorn::new());
+
+    const WRITE_VAL: u32 = 0x01234567;
+
+    let out_offset = 1024;
+    let push_offset = 2048;
+    let bo_size = 4096;
+    let bo = BO::new(dev.clone(), bo_size)?;
+
+    let run = |mode, data: &[u64]| -> io::Result<bool> {
+        // We can read from any aligned offset
+        let in_offset: u64 =
+            ((a.borrow_mut().get_u32() * 16) % (1024 - 32)).into();
+
+        unsafe {
+            let map = bo.map.byte_offset(0);
+            std::ptr::write_bytes(
+                map as *mut u8,
+                0,
+                bo_size.try_into().unwrap(),
+            );
+        }
+        unsafe {
+            let input = bo.map.byte_offset(in_offset.try_into().unwrap());
+            std::ptr::copy_nonoverlapping::<u64>(
+                &data[0],
+                input as *mut u64,
+                data.len(),
+            );
+        }
+
+        let mut p = NvPush::new();
+
+        let in_gpu_addr = bo.addr + in_offset;
+        p.push_method(cl90b5::SetRenderEnableA {
+            upper: (in_gpu_addr >> 32) as u32,
+        });
+        p.push_method(cl90b5::SetRenderEnableB {
+            lower: in_gpu_addr as u32,
+        });
+        p.push_method(cl90b5::SetRenderEnableC { mode });
+
+        let out_gpu_addr = bo.addr + out_offset;
+        p.push_method(cl90b5::OffsetOutUpper {
+            upper: (out_gpu_addr >> 32) as u32,
+        });
+        p.push_method(cl90b5::OffsetOutLower {
+            value: out_gpu_addr as u32,
+        });
+        p.push_method(cl90b5::LineLengthIn { value: 1 });
+        p.push_method(cl90b5::SetRemapConstA { v: WRITE_VAL });
+        p.push_method(cl90b5::SetRemapComponents {
+            component_size: cl90b5::SetRemapComponentsComponentSize::Four,
+            dst_x: cl90b5::SetRemapComponentsDstX::ConstA,
+            dst_y: cl90b5::SetRemapComponentsDstY::NoWrite,
+            dst_z: cl90b5::SetRemapComponentsDstZ::NoWrite,
+            dst_w: cl90b5::SetRemapComponentsDstW::NoWrite,
+            num_src_components: cl90b5::SetRemapComponentsNumSrcComponents::One,
+            num_dst_components: cl90b5::SetRemapComponentsNumDstComponents::One,
+        });
+        p.push_method(cl90b5::LaunchDma {
+            data_transfer_type: cl90b5::LaunchDmaDataTransferType::NonPipelined,
+            flush_enable: true,
+            semaphore_type: cl90b5::LaunchDmaSemaphoreType::None,
+            interrupt_type: cl90b5::LaunchDmaInterruptType::None,
+            src_memory_layout: cl90b5::LaunchDmaSrcMemoryLayout::Pitch,
+            dst_memory_layout: cl90b5::LaunchDmaDstMemoryLayout::Pitch,
+            multi_line_enable: false,
+            remap_enable: true,
+        });
+
+        p.push_method(cl90b5::SetRenderEnableC {
+            mode: cl90b5::SetRenderEnableCMode::True,
+        });
+
+        let push_addr = bo.addr + u64::try_from(push_offset).unwrap();
+        unsafe {
+            let push_map = bo.map.byte_offset(push_offset.try_into().unwrap());
+            std::ptr::copy(p.as_ptr(), push_map.cast(), p.len());
+        }
+
+        ctx.exec(push_addr, (p.len() * 4).try_into().unwrap())?;
+
+        let res = unsafe {
+            let map = bo.map.byte_offset(out_offset.try_into().unwrap());
+            *(map as *const u32)
+        };
+
+        let render_enabled = match res {
+            0 => false,
+            WRITE_VAL => true,
+            _ => panic!("Unexpected memory value {res}"),
+        };
+
+        Ok(render_enabled)
+    };
+    use cl90b5::SetRenderEnableCMode;
+
+    let modes = &[
+        SetRenderEnableCMode::False,
+        SetRenderEnableCMode::True,
+        SetRenderEnableCMode::Conditional,
+        SetRenderEnableCMode::RenderIfEqual,
+        SetRenderEnableCMode::RenderIfNotEqual,
+    ];
+
+    for &mode in modes {
+        let check = |data: &[u64]| -> io::Result<()> {
+            let actual = run(mode, data)?;
+            let expected = expected_render_enable(mode, data);
+            if actual != expected {
+                println!("input: {mode:?} {data:?}");
+            }
+            assert_eq!(actual, expected);
+            Ok(())
+        };
+
+        check(&[0, 0, 0, 0])?;
+
+        // Check all combinations of two bytes set
+        for bit1 in (0..(256 + 64)).step_by(8) {
+            for bit2 in (0..(256 + 64)).step_by(8) {
+                let mut data = [0; 5];
+                data[bit1 / 64] |= 1 << (bit1 % 64);
+                data[bit2 / 64] |= 1 << (bit2 % 64);
+                check(&data)?;
+            }
+        }
+
+        // Check near `Conditional` threshold
+        for i in (u32::MAX as u64) - 2..(u32::MAX as u64) + 2 {
+            check(&[i, 0, 0, 0])?;
+        }
+
+        // Try some random values
+        for _ in 0..2000 {
+            let data: [u64; 4] =
+                std::array::from_fn(|_| a.borrow_mut().get_u64());
+            check(&data)?;
+
+            let mut data_eq: [u64; 4] =
+                std::array::from_fn(|_| a.borrow_mut().get_u64());
+            data_eq[2] = data_eq[0];
+            check(&data)?;
+        }
+    }
+
+    Ok(())
 }
