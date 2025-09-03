@@ -10004,7 +10004,7 @@
         "description": "panvk: fix up vk1.4 properties",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5ee3c10d1edf4663980e8ea759a58dcc054efb71",
         "notes": null

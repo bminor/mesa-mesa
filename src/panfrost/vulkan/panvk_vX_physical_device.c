@@ -874,6 +874,10 @@ panvk_per_arch(get_physical_device_properties)(
       /* Vulkan 1.3 properties */
       /* XXX: 1.3 support */
 
+      /* Vulkan 1.4 properties */
+      .earlyFragmentMultisampleCoverageAfterSampleCounting = true,
+      .earlyFragmentSampleMaskTestBeforeSampleCounting = true,
+
       /* VK_EXT_subgroup_size_control */
       .minSubgroupSize = pan_subgroup_size(PAN_ARCH),
       .maxSubgroupSize = pan_subgroup_size(PAN_ARCH),
