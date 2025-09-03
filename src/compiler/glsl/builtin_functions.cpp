@@ -853,9 +853,11 @@ ballot_khr_and_fp64(const _mesa_glsl_parse_state *state)
 }
 
 static bool
-compute_shader(const _mesa_glsl_parse_state *state)
+compute_or_mesh_shader(const _mesa_glsl_parse_state *state)
 {
-   return state->stage == MESA_SHADER_COMPUTE;
+   return state->stage == MESA_SHADER_COMPUTE ||
+      state->stage == MESA_SHADER_MESH ||
+      state->stage == MESA_SHADER_TASK;
 }
 
 static bool
@@ -867,7 +869,7 @@ compute_shader_supported(const _mesa_glsl_parse_state *state)
 static bool
 buffer_atomics_supported(const _mesa_glsl_parse_state *state)
 {
-   return compute_shader(state) || shader_storage_buffer_object(state);
+   return compute_or_mesh_shader(state) || shader_storage_buffer_object(state);
 }
 
 static bool
@@ -880,7 +882,7 @@ buffer_int64_atomics_supported(const _mesa_glsl_parse_state *state)
 static bool
 barrier_supported(const _mesa_glsl_parse_state *state)
 {
-   return compute_shader(state) ||
+   return compute_or_mesh_shader(state) ||
           state->stage == MESA_SHADER_TESS_CTRL;
 }
 
@@ -1928,7 +1930,7 @@ builtin_builder::create_intrinsics()
                                           ir_intrinsic_memory_barrier),
                 NULL);
    add_function("__intrinsic_group_memory_barrier",
-                _memory_barrier_intrinsic(compute_shader,
+                _memory_barrier_intrinsic(compute_or_mesh_shader,
                                           ir_intrinsic_group_memory_barrier),
                 NULL);
    add_function("__intrinsic_memory_barrier_atomic_counter",
@@ -1944,7 +1946,7 @@ builtin_builder::create_intrinsics()
                                           ir_intrinsic_memory_barrier_image),
                 NULL);
    add_function("__intrinsic_memory_barrier_shared",
-                _memory_barrier_intrinsic(compute_shader,
+                _memory_barrier_intrinsic(compute_or_mesh_shader,
                                           ir_intrinsic_memory_barrier_shared),
                 NULL);
 
@@ -5620,7 +5622,7 @@ builtin_builder::create_builtins()
                 NULL);
    add_function("groupMemoryBarrier",
                 _memory_barrier("__intrinsic_group_memory_barrier",
-                                compute_shader),
+                                compute_or_mesh_shader),
                 NULL);
    add_function("memoryBarrierAtomicCounter",
                 _memory_barrier("__intrinsic_memory_barrier_atomic_counter",
@@ -5636,7 +5638,7 @@ builtin_builder::create_builtins()
                 NULL);
    add_function("memoryBarrierShared",
                 _memory_barrier("__intrinsic_memory_barrier_shared",
-                                compute_shader),
+                                compute_or_mesh_shader),
                 NULL);
 
    add_function("ballotARB", _ballot(&glsl_type_builtin_uint64_t, ballot_arb), NULL);
