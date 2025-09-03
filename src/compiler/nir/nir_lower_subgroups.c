@@ -545,7 +545,7 @@ lower_boolean_shuffle(nir_builder *b, nir_intrinsic_instr *intrin,
       nir_def *mask = nir_ishl(b, nir_imm_intN_t(b, 1, ballot->bit_size), index);
       return nir_ine_imm(b, nir_iand(b, ballot, mask), 0);
    } else {
-      return nir_inverse_ballot(b, 1, ballot);
+      return nir_inverse_ballot(b, ballot);
    }
 }
 
@@ -689,7 +689,7 @@ lower_boolean_reduce(nir_builder *b, nir_intrinsic_instr *intrin,
       val = nir_inot(b, val);
    }
 
-   return nir_inverse_ballot(b, 1, val);
+   return nir_inverse_ballot(b, val);
 }
 
 static nir_def *
@@ -1138,7 +1138,7 @@ lower_subgroups_instr(nir_builder *b, nir_instr *instr, void *_options)
                                             nir_load_subgroup_invocation(b));
       } else if (intrin->src[0].ssa->num_components != options->ballot_components ||
                  intrin->src[0].ssa->bit_size != options->ballot_bit_size) {
-         return nir_inverse_ballot(b, 1, ballot_type_to_uint(b, intrin->src[0].ssa, options));
+         return nir_inverse_ballot(b, ballot_type_to_uint(b, intrin->src[0].ssa, options));
       }
       break;
 

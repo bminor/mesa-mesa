@@ -824,12 +824,12 @@ ac_nir_repack_invocations_in_workgroup(nir_builder *b, nir_def **input_bool,
    nir_def *dont_care = nir_undef(b, 1, num_lds_dwords * 32);
    nir_def *packed_counts = NULL;
 
-   nir_if *if_use_lds = nir_push_if(b, nir_inverse_ballot(b, 1, nir_imm_intN_t(b, ballot, wave_size)));
+   nir_if *if_use_lds = nir_push_if(b, nir_inverse_ballot(b, nir_imm_intN_t(b, ballot, wave_size)));
    {
       nir_def *store_val = surviving_invocations_in_current_wave[0];
 
       if (num_repacks == 2) {
-         nir_def *lane_id_0 = nir_inverse_ballot(b, 1, nir_imm_intN_t(b, 1, wave_size));
+         nir_def *lane_id_0 = nir_inverse_ballot(b, nir_imm_intN_t(b, 1, wave_size));
          nir_def *off = nir_bcsel(b, lane_id_0, nir_imm_int(b, 0), nir_imm_int(b, num_lds_dwords * 4));
          lds_addr_base = nir_iadd_nuw(b, lds_addr_base, off);
          store_val = nir_bcsel(b, lane_id_0, store_val, surviving_invocations_in_current_wave[1]);

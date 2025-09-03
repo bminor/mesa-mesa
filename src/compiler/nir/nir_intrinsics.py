@@ -546,7 +546,7 @@ intrinsic("read_getlast_ir3", src_comp=[0], dest_comp=0, bit_sizes=src0, flags=S
 intrinsic("elect", dest_comp=1, flags=SUBGROUP_FLAGS)
 intrinsic("first_invocation", dest_comp=1, bit_sizes=[32], flags=SUBGROUP_FLAGS)
 intrinsic("last_invocation", dest_comp=1, bit_sizes=[32], flags=SUBGROUP_FLAGS)
-intrinsic("inverse_ballot", src_comp=[0], dest_comp=1, flags=[CAN_ELIMINATE, CAN_REORDER])
+intrinsic("inverse_ballot", src_comp=[0], dest_comp=1, bit_sizes=[1], flags=[CAN_ELIMINATE, CAN_REORDER])
 
 barrier("begin_invocation_interlock")
 barrier("end_invocation_interlock")

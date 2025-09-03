@@ -529,7 +529,7 @@ opt_fotid_bool(nir_builder *b, nir_alu_instr *instr, const radv_nir_opt_tid_func
    }
 
    nir_def *ballot = nir_vec(b, ballot_comp, options->hw_ballot_num_comp);
-   nir_def *res = nir_inverse_ballot(b, 1, ballot);
+   nir_def *res = nir_inverse_ballot(b, ballot);
    res->parent_instr->pass_flags = 1;
 
    nir_def_replace(&instr->def, res);

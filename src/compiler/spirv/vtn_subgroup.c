@@ -103,7 +103,7 @@ vtn_handle_subgroup(struct vtn_builder *b, SpvOp opcode,
    }
 
    case SpvOpGroupNonUniformInverseBallot: {
-      nir_def *dest = nir_inverse_ballot(&b->nb, 1, vtn_get_nir_ssa(b, w[4]));
+      nir_def *dest = nir_inverse_ballot(&b->nb, vtn_get_nir_ssa(b, w[4]));
       vtn_push_nir_ssa(b, w[2], dest);
       break;
    }
