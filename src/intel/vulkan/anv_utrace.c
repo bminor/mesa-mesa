@@ -358,7 +358,7 @@ anv_utrace_record_ts(struct u_trace *ut, void *cs,
           ANV_TIMESTAMP_REWRITE_COMPUTE_WALKER) :
           ANV_TIMESTAMP_CAPTURE_END_OF_PIPE;
    } else {
-      capture_type = (flags & INTEL_DS_TRACEPOINT_FLAG_END_CS) ?
+      capture_type = (flags & INTEL_DS_TRACEPOINT_FLAG_END_OF_PIPE) ?
          ANV_TIMESTAMP_CAPTURE_END_OF_PIPE :
          ANV_TIMESTAMP_CAPTURE_TOP_OF_PIPE;
    }
