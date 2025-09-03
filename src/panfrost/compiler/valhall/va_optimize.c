@@ -234,13 +234,13 @@ va_cmp_opcode_to_cmp_type(enum bi_opcode op)
 
 /* LSHIFT_X_F32(FCMP_OR_F32(a, b, 0), FCMP_Y_F32(c, d, e), 0) -> FCMP_X_F32(a,
  * b, FCMP_Y_F32(c, d, e))) */
-static void
+static bool
 va_fuse_cmp(bi_context *ctx, bi_instr **lut, const BITSET_WORD *multiple,
             bi_instr *I)
 {
    /* Expect SSA values on other sources */
    if (I->nr_srcs != 3 || !bi_is_ssa(I->src[0]) || !bi_is_ssa(I->src[1]))
-      return;
+      return false;
 
    bi_instr *src0_ins = lut[I->src[0].value];
    bi_instr *src1_ins = lut[I->src[1].value];
@@ -250,16 +250,16 @@ va_fuse_cmp(bi_context *ctx, bi_instr **lut, const BITSET_WORD *multiple,
    /* Expect both side to use the same form type */
    if (cmp_type == VA_CMP_TYPE_INVALID ||
        cmp_type != va_cmp_opcode_to_cmp_type(src1_ins->op))
-      return;
+      return false;
 
    /* Expect both side to use the same result type */
    if (src0_ins->result_type != src1_ins->result_type)
-      return;
+      return false;
 
    /* Ensure we really have a LSHIFT that we can remap (so without shift) */
    if (!va_remap_logical_to_logical_cmp(I->op, cmp_type) ||
        !bi_is_zero(I->src[2]))
-      return;
+      return false;
 
    bi_instr *old_ins;
    bi_index src2;
@@ -280,7 +280,7 @@ va_fuse_cmp(bi_context *ctx, bi_instr **lut, const BITSET_WORD *multiple,
       old_ins = src1_ins;
       src2 = src0_ins->dest[0];
    } else {
-      return;
+      return false;
    }
 
    /* Replace old LSHIFT logic op with the CMP with correct logical op and
@@ -296,40 +296,48 @@ va_fuse_cmp(bi_context *ctx, bi_instr **lut, const BITSET_WORD *multiple,
    lut[new_ins->dest[0].value] = new_ins;
    bi_remove_instruction(old_ins);
    bi_remove_instruction(I);
+   return true;
 }
 
 static void
 va_optimize_forward(bi_context *ctx)
 {
-   unsigned count = ctx->ssa_alloc;
-   bi_instr **lut = rzalloc_array(ctx, bi_instr *, count);
-   bi_instr **uses = rzalloc_array(ctx, bi_instr *, count);
-   BITSET_WORD *multiple = rzalloc_array(ctx, BITSET_WORD, BITSET_WORDS(count));
+   bool progress;
 
-   if (!lut || !uses || !multiple)
-      goto out;
+   do {
+      progress = false;
 
-   /* Record usage across blocks */
-   bi_foreach_block(ctx, block) {
-      bi_foreach_instr_in_block(block, I) {
-         bi_foreach_dest(I, d) {
-            lut[I->dest[d].value] = I;
-         }
+      unsigned count = ctx->ssa_alloc;
+      bi_instr **lut = rzalloc_array(ctx, bi_instr *, count);
+      bi_instr **uses = rzalloc_array(ctx, bi_instr *, count);
+      BITSET_WORD *multiple =
+         rzalloc_array(ctx, BITSET_WORD, BITSET_WORDS(count));
 
-         bi_foreach_ssa_src(I, s) {
-            bi_record_use(uses, multiple, I, s);
+      if (!lut || !uses || !multiple)
+         goto out;
+
+      /* Record usage across blocks */
+      bi_foreach_block(ctx, block) {
+         bi_foreach_instr_in_block(block, I) {
+            bi_foreach_dest(I, d) {
+               lut[I->dest[d].value] = I;
+            }
+
+            bi_foreach_ssa_src(I, s) {
+               bi_record_use(uses, multiple, I, s);
+            }
          }
       }
-   }
 
-   bi_foreach_instr_global_safe(ctx, I) {
-      va_fuse_cmp(ctx, lut, multiple, I);
-   }
+      bi_foreach_instr_global_safe(ctx, I) {
+         progress |= va_fuse_cmp(ctx, lut, multiple, I);
+      }
 
-out:
-   ralloc_free(uses);
-   ralloc_free(lut);
-   ralloc_free(multiple);
+   out:
+      ralloc_free(uses);
+      ralloc_free(lut);
+      ralloc_free(multiple);
+   } while (progress);
 }
 
 void
