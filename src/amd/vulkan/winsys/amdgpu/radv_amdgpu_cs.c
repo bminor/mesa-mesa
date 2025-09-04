@@ -314,7 +314,8 @@ radv_amdgpu_cs_create(struct radeon_winsys *ws, enum amd_ip_type ip_type, bool i
    cs->ws = radv_amdgpu_winsys(ws);
    radv_amdgpu_init_cs(cs, ip_type);
 
-   cs->chain_ib = cs->ws->chain_ib && (ip_type == AMD_IP_GFX || ip_type == AMD_IP_COMPUTE);
+   cs->chain_ib = cs->ws->chain_ib && (ip_type == AMD_IP_GFX || ip_type == AMD_IP_COMPUTE) &&
+                  !(is_secondary && !cs->ws->info.can_chain_ib2);
 
    VkResult result = radv_amdgpu_cs_get_new_ib(&cs->base, ib_size);
    if (result != VK_SUCCESS) {
@@ -739,14 +740,50 @@ radv_amdgpu_cs_add_buffer(struct radeon_cmdbuf *_cs, struct radeon_winsys_bo *_b
    radv_amdgpu_cs_add_buffer_internal(cs, bo->bo_handle, bo->priority);
 }
 
+/**
+ * Emit IB2 packets to execute a secondary CS.
+ * IB2 are a special variant of the INDIRECT_BUFFER packet which are used inside an IB.
+ * An IB2 packet can execute another IB and then continue execution of the current IB.
+ *
+ * When the secondary CS uses IB chaining: we only emit a single IB2 packet which
+ * jumps to the first IB of the secondary, then executes the entire secondary and returns.
+ *
+ * When the secondary CS does not support IB chaining or IB2 chaining is disabled:
+ * emit an IB2 packet for every IB inside the secondary CS.
+ */
+static void
+radv_amdgpu_cs_emit_secondary_ib2(struct radv_amdgpu_cs *parent, struct radv_amdgpu_cs *child)
+{
+   /* When IB2 chaining isn't allowed, the secondary CS shouldn't use IB chaining. */
+   assert(parent->ws->info.can_chain_ib2 || !child->chain_ib);
+   const uint32_t num_ib2 = child->chain_ib ? 1 : child->num_ib_buffers;
+
+   for (uint32_t i = 0; i < num_ib2; ++i) {
+      if (parent->base.cdw + 4 > parent->base.max_dw)
+         radv_amdgpu_cs_grow(&parent->base, 4);
+
+      parent->base.reserved_dw = MAX2(parent->base.reserved_dw, parent->base.cdw + 4);
+
+      const uint64_t va = child->ib_buffers[i].va;
+      const uint32_t size = child->ib_buffers[i].cdw;
+
+      /* Not setting the CHAIN bit will launch an IB2. */
+      radeon_emit(&parent->base, PKT3(PKT3_INDIRECT_BUFFER, 2, 0));
+      radeon_emit(&parent->base, va);
+      radeon_emit(&parent->base, va >> 32);
+      radeon_emit(&parent->base, size);
+
+      assert(parent->base.cdw <= parent->base.max_dw);
+   }
+}
+
 static void
 radv_amdgpu_cs_execute_secondary(struct radeon_cmdbuf *_parent, struct radeon_cmdbuf *_child, bool allow_ib2)
 {
    struct radv_amdgpu_cs *parent = radv_amdgpu_cs(_parent);
    struct radv_amdgpu_cs *child = radv_amdgpu_cs(_child);
    struct radv_amdgpu_winsys *ws = parent->ws;
-   const bool use_ib2 =
-      parent->chain_ib && !parent->is_secondary && allow_ib2 && parent->hw_ip == AMD_IP_GFX && ws->info.gfx_level >= GFX7;
+   const bool use_ib2 = parent->chain_ib && !parent->is_secondary && allow_ib2 && parent->hw_ip == AMD_IP_GFX;
 
    if (parent->status != VK_SUCCESS || child->status != VK_SUCCESS)
       return;
@@ -760,16 +797,7 @@ radv_amdgpu_cs_execute_secondary(struct radeon_cmdbuf *_parent, struct radeon_cm
    }
 
    if (use_ib2) {
-      if (parent->base.cdw + 4 > parent->base.max_dw)
-         radv_amdgpu_cs_grow(&parent->base, 4);
-
-      parent->base.reserved_dw = MAX2(parent->base.reserved_dw, parent->base.cdw + 4);
-
-      /* Not setting the CHAIN bit will launch an IB2. */
-      radeon_emit(&parent->base, PKT3(PKT3_INDIRECT_BUFFER, 2, 0));
-      radeon_emit(&parent->base, child->ib.ib_mc_address);
-      radeon_emit(&parent->base, child->ib.ib_mc_address >> 32);
-      radeon_emit(&parent->base, child->ib.size);
+      radv_amdgpu_cs_emit_secondary_ib2(parent, child);
    } else {
       /* Grow the current CS and copy the contents of the secondary CS. */
       for (unsigned i = 0; i < child->num_ib_buffers; i++) {
