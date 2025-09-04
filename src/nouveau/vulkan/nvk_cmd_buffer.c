@@ -122,7 +122,6 @@ nvk_reset_cmd_buffer(struct vk_command_buffer *vk_cmd_buffer,
    cmd->push_mem_limit = NULL;
    cmd->push = (struct nv_push) {0};
    cmd->cond_render_mem = NULL;
-   cmd->cond_render_offset = 0;
 
    util_dynarray_clear(&cmd->pushes);
 
@@ -161,7 +160,7 @@ const struct vk_command_buffer_ops nvk_cmd_buffer_ops = {
 /* If we ever fail to allocate a push, we use this */
 static uint32_t push_runout[NVK_CMD_BUFFER_MAX_PUSH];
 
-static VkResult
+VkResult
 nvk_cmd_buffer_alloc_mem(struct nvk_cmd_buffer *cmd, bool force_gart,
                          struct nvk_cmd_mem **mem_out)
 {
@@ -296,43 +295,6 @@ nvk_cmd_buffer_upload_data(struct nvk_cmd_buffer *cmd,
       return result;
 
    memcpy(map, data, size);
-
-   return VK_SUCCESS;
-}
-
-VkResult
-nvk_cmd_buffer_cond_render_alloc(struct nvk_cmd_buffer *cmd,
-                                 uint64_t *addr)
-{
-   uint32_t offset = cmd->cond_render_offset;
-   uint32_t size = 64;
-
-   assert(offset <= NVK_CMD_MEM_SIZE);
-   if (cmd->cond_render_mem != NULL && size <= NVK_CMD_MEM_SIZE - offset) {
-      *addr = cmd->cond_render_mem->mem->va->addr + offset;
-
-      cmd->cond_render_offset = offset + size;
-
-      return VK_SUCCESS;
-   }
-
-   struct nvk_cmd_mem *mem;
-   VkResult result = nvk_cmd_buffer_alloc_mem(cmd, false, &mem);
-   if (unlikely(result != VK_SUCCESS))
-      return result;
-
-   *addr = mem->mem->va->addr;
-
-   /* Pick whichever of the current upload BO and the new BO will have more
-    * room left to be the BO for the next upload.  If our upload size is
-    * bigger than the old offset, we're better off burning the whole new
-    * upload BO on this one allocation and continuing on the current upload
-    * BO.
-    */
-   if (cmd->cond_render_mem == NULL || size < cmd->cond_render_offset) {
-      cmd->cond_render_mem = mem;
-      cmd->cond_render_offset = size;
-   }
 
    return VK_SUCCESS;
 }

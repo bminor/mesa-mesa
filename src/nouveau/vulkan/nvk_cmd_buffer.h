@@ -223,7 +223,6 @@ struct nvk_cmd_buffer {
    uint32_t upload_offset;
 
    struct nvk_cmd_mem *cond_render_mem;
-   uint32_t cond_render_offset;
 
    struct nvk_cmd_mem *push_mem;
    uint32_t *push_mem_limit;
@@ -353,6 +352,10 @@ nvk_cmd_buffer_last_subchannel(const struct nvk_cmd_buffer *cmd)
    }
 }
 
+VkResult nvk_cmd_buffer_alloc_mem(struct nvk_cmd_buffer *cmd,
+                                  bool force_gart,
+                                  struct nvk_cmd_mem **mem_out);
+
 VkResult nvk_cmd_buffer_upload_alloc(struct nvk_cmd_buffer *cmd,
                                      uint32_t size, uint32_t alignment,
                                      uint64_t *addr, void **ptr);
@@ -360,9 +363,6 @@ VkResult nvk_cmd_buffer_upload_alloc(struct nvk_cmd_buffer *cmd,
 VkResult nvk_cmd_buffer_upload_data(struct nvk_cmd_buffer *cmd,
                                     const void *data, uint32_t size,
                                     uint32_t alignment, uint64_t *addr);
-
-VkResult nvk_cmd_buffer_cond_render_alloc(struct nvk_cmd_buffer *cmd,
-					  uint64_t *addr);
 
 VkResult nvk_cmd_buffer_alloc_qmd(struct nvk_cmd_buffer *cmd,
                                   uint32_t size, uint32_t alignment,

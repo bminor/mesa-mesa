@@ -4857,12 +4857,15 @@ nvk_CmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer,
     * The hardware compares a pair of 64-bit values, so we need to copy the
     * input value into one operand and zero into the other operatnd.
     */
-   uint64_t tmp_addr;
-   VkResult result = nvk_cmd_buffer_cond_render_alloc(cmd, &tmp_addr);
-   if (result != VK_SUCCESS) {
-      vk_command_buffer_set_error(&cmd->vk, result);
-      return;
+   if (cmd->cond_render_mem == NULL) {
+      VkResult result = nvk_cmd_buffer_alloc_mem(cmd, false,
+                                                 &cmd->cond_render_mem);
+      if (result != VK_SUCCESS) {
+         vk_command_buffer_set_error(&cmd->vk, result);
+         return;
+      }
    }
+   const uint64_t tmp_addr = cmd->cond_render_mem->mem->va->addr;
 
    /* Frustratingly, the u64s are not packed together */
    const uint64_t operand_a_addr = tmp_addr + 0;
