@@ -19,12 +19,12 @@ fog_result(nir_builder *b, nir_def *color, enum gl_fog_mode fog_mode, struct gl_
    static const gl_state_index16 fog_params_tokens[STATE_LENGTH] = {STATE_FOG_PARAMS_OPTIMIZED};
    static const gl_state_index16 fog_color_tokens[STATE_LENGTH] = {STATE_FOG_COLOR};
 
-   nir_variable *fog_params_var = st_nir_state_variable_create(s, glsl_vec4_type(), fog_params_tokens);
-   fog_params_var->data.driver_location = _mesa_add_state_reference(paramList, fog_params_tokens);
+   nir_variable *fog_params_var =
+      st_nir_state_variable_create(s, glsl_vec4_type(), paramList, fog_params_tokens, NULL, false);
    nir_def *params = nir_load_var(b, fog_params_var);
 
-   nir_variable *fog_color_var = st_nir_state_variable_create(s, glsl_vec4_type(), fog_color_tokens);
-   fog_color_var->data.driver_location = _mesa_add_state_reference(paramList, fog_color_tokens);
+   nir_variable *fog_color_var =
+      st_nir_state_variable_create(s, glsl_vec4_type(), paramList, fog_color_tokens, NULL, false);
    nir_def *fog_color = nir_load_var(b, fog_color_var);
 
    /* compute the 1 component fog factor f */

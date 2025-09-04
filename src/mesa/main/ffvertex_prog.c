@@ -310,8 +310,8 @@ register_state_var(struct tnl_program *p,
    if (var)
       return var;
 
-   var = st_nir_state_variable_create(p->b->shader, type, tokens);
-   var->data.driver_location = _mesa_add_state_reference(p->state_params, tokens);
+   var = st_nir_state_variable_create(p->b->shader, type, p->state_params,
+                                      tokens, NULL, false);
 
    return var;
 }
