@@ -290,8 +290,8 @@ panvk_per_arch(get_physical_device_features)(
       .shaderInt16 = true,
       .shaderResourceResidency = false,
       .shaderResourceMinLod = false,
-      .sparseBinding = false,
-      .sparseResidencyBuffer = false,
+      .sparseBinding = PAN_ARCH >= 10,
+      .sparseResidencyBuffer = PAN_ARCH >= 10,
       .sparseResidencyImage2D = false,
       .sparseResidencyImage3D = false,
       .sparseResidency2Samples = false,
@@ -658,8 +658,9 @@ panvk_per_arch(get_physical_device_properties)(
       .maxSamplerAllocationCount = UINT32_MAX,
       /* A cache line. */
       .bufferImageGranularity = 64,
-      /* Sparse binding not supported yet. */
-      .sparseAddressSpaceSize = 0,
+      /* The entire user-allocatable VA range. */
+      .sparseAddressSpaceSize =
+         pan_kmod_dev_query_user_va_range(device->kmod.dev).size,
       .maxBoundDescriptorSets = MAX_SETS,
       .maxPerStageDescriptorSamplers = MAX_PER_STAGE_SAMPLERS,
       .maxPerStageDescriptorUniformBuffers = MAX_PER_STAGE_UNIFORM_BUFFERS,
