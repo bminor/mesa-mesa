@@ -1011,6 +1011,7 @@ struct zink_program {
    bool is_compute;
    bool can_precompile;
    bool uses_shobj; //whether shader objects are used; programs CANNOT mix shader objects and shader modules
+   bool precompile_done;
 
    struct zink_program_descriptor_data dd;
 

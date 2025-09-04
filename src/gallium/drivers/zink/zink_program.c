@@ -751,6 +751,8 @@ zink_gfx_program_update_optimal(struct zink_context *ctx)
             real->base.removed = false;
             prog->base.removed = true;
             prog = real;
+         } else if (!prog->base.precompile_done) {
+            util_queue_fence_wait(&prog->base.cache_fence);
          }
          update_gfx_program_optimal(ctx, prog);
       } else {
@@ -1000,6 +1002,7 @@ create_program(struct zink_context *ctx, bool is_compute)
    u_rwlock_init(&pg->pipeline_cache_lock);
    util_queue_fence_init(&pg->cache_fence);
    pg->is_compute = is_compute;
+   pg->precompile_done = true;
    pg->ctx = ctx;
    return (void*)pg;
 }
@@ -1513,6 +1516,7 @@ precompile_compute_job(void *data, void *gdata, int thread_index)
    zink_screen_get_pipeline_cache(screen, &comp->base, true);
    if (comp->base.can_precompile)
       comp->base_pipeline = zink_create_compute_pipeline(screen, comp, NULL);
+   comp->base.precompile_done = true;
    if (comp->base_pipeline)
       zink_screen_update_pipeline_cache(screen, &comp->base, true);
 }
@@ -1540,11 +1544,13 @@ create_compute_program(struct zink_context *ctx, nir_shader *nir)
                                                        equals_compute_pipeline_state_local_size :
                                                        equals_compute_pipeline_state);
 
-   if (zink_debug & (ZINK_DEBUG_NOBGC|ZINK_DEBUG_SHADERDB))
+   if (zink_debug & (ZINK_DEBUG_NOBGC|ZINK_DEBUG_SHADERDB)) {
       precompile_compute_job(comp, screen, 0);
-   else
+   } else {
+      comp->base.precompile_done = false;
       util_queue_add_job(&screen->cache_get_thread, comp, &comp->base.cache_fence,
                         precompile_compute_job, NULL, 0);
+   }
 
    if (zink_debug & ZINK_DEBUG_SHADERDB) {
       print_pipeline_stats(screen, comp->base_pipeline, &ctx->dbg);
@@ -2194,6 +2200,7 @@ gfx_program_precompile_job(void *data, void *gdata, int thread_index)
       zink_create_pipeline_lib(screen, prog, &state);
       simple_mtx_unlock(&prog->libs->lock);
    }
+   prog->base.precompile_done = true;
    zink_screen_update_pipeline_cache(screen, &prog->base, true);
 }
 
@@ -2253,10 +2260,12 @@ zink_link_gfx_shader(struct pipe_context *pctx, void **shaders)
    } else {
       if (zink_screen(pctx->screen)->info.have_EXT_shader_object)
          prog->base.uses_shobj = !zshaders[MESA_SHADER_VERTEX]->info.view_mask && !BITSET_TEST(zshaders[MESA_SHADER_FRAGMENT]->info.system_values_read, SYSTEM_VALUE_SAMPLE_MASK_IN);
-      if (zink_debug & ZINK_DEBUG_NOBGC)
+      if (zink_debug & ZINK_DEBUG_NOBGC) {
          gfx_program_precompile_job(prog, pctx->screen, 0);
-      else
+      } else {
+         prog->base.precompile_done = false;
          util_queue_add_job(&zink_screen(pctx->screen)->cache_get_thread, prog, &prog->base.cache_fence, gfx_program_precompile_job, NULL, 0);
+      }
    }
 }
 
