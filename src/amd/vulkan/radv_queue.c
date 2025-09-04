@@ -1298,7 +1298,7 @@ fail:
       radv_bo_destroy(device, NULL, gds_oa_bo);
    }
 
-   return vk_error(queue, result);
+   return vk_error(device, result);
 }
 
 static VkResult
