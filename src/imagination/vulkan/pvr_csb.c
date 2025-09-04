@@ -27,6 +27,8 @@
  * SOFTWARE.
  */
 
+#include "pvr_csb.h"
+
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -35,7 +37,6 @@
 
 #include "hwdef/rogue_hw_utils.h"
 #include "pvr_bo.h"
-#include "pvr_csb.h"
 #include "pvr_debug.h"
 #include "pvr_device.h"
 #include "pvr_device_info.h"
