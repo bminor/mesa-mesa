@@ -52,6 +52,20 @@ pan_mod_afbc_get_wsi_row_pitch(const struct pan_image *image,
 }
 
 static bool
+pan_mod_afbc_init_plane_layout(const struct pan_image_props *props,
+                               unsigned plane_idx,
+                               struct pan_image_layout *plane_layout)
+{
+   enum pan_afbc_mode mode =
+      pan_afbc_format(PAN_ARCH, props->format, plane_idx);
+   if (mode == PAN_AFBC_MODE_INVALID)
+      return false;
+
+   plane_layout->afbc.mode = mode;
+   return true;
+}
+
+static bool
 pan_mod_afbc_init_slice_layout(
    const struct pan_image_props *props, unsigned plane_idx,
    struct pan_image_extent mip_extent_px,
@@ -184,9 +198,17 @@ pan_mod_afbc_test_props(const struct pan_kmod_dev_props *dprops,
    if (!pan_query_afbc(dprops))
       return PAN_MOD_NOT_SUPPORTED;
 
+   unsigned plane_count = util_format_get_num_planes(iprops->format);
+   const struct util_format_description *fdesc =
+      util_format_description(iprops->format);
+
    /* Check if the format is supported first. */
-   if (!pan_afbc_supports_format(PAN_ARCH, iprops->format))
-      return PAN_MOD_NOT_SUPPORTED;
+   enum pan_afbc_mode plane_modes[3];
+   for (unsigned p = 0; p < plane_count; p++) {
+      plane_modes[p] = pan_afbc_format(PAN_ARCH, iprops->format, p);
+      if (plane_modes[p] == PAN_AFBC_MODE_INVALID)
+         return PAN_MOD_NOT_SUPPORTED;
+   }
 
    /* AFBC can't do multisampling. */
    if (iprops->nr_samples > 1)
@@ -196,10 +218,6 @@ pan_mod_afbc_test_props(const struct pan_kmod_dev_props *dprops,
    if ((iprops->dim == MALI_TEXTURE_DIMENSION_3D && PAN_ARCH < 7) ||
        iprops->dim != MALI_TEXTURE_DIMENSION_2D)
       return PAN_MOD_NOT_SUPPORTED;
-
-   unsigned plane_count = util_format_get_num_planes(iprops->format);
-   const struct util_format_description *fdesc =
-      util_format_description(iprops->format);
 
    /* ZS buffer descriptors can't pass split/wide/YTR modifiers. */
    if (iusage && (iusage->bind & PAN_BIND_DEPTH_STENCIL) &&
@@ -215,7 +233,7 @@ pan_mod_afbc_test_props(const struct pan_kmod_dev_props *dprops,
    /* Make sure all planes support split mode. */
    if ((iprops->modifier & AFBC_FORMAT_MOD_SPLIT)) {
       for (unsigned p = 0; p < plane_count; p++) {
-         if (!pan_afbc_can_split(PAN_ARCH, iprops->format, iprops->modifier, p))
+         if (!pan_afbc_can_split(PAN_ARCH, plane_modes[p], iprops->modifier))
             return PAN_MOD_NOT_SUPPORTED;
       }
    }
@@ -327,6 +345,8 @@ pan_mod_afrc_get_wsi_row_pitch(const struct pan_image *image,
    return layout->slices[mip_level].tiled_or_linear.row_stride_B /
           tile_extent_px.height;
 }
+
+#define pan_mod_afrc_init_plane_layout NULL
 
 static bool
 pan_mod_afrc_init_slice_layout(
@@ -452,6 +472,8 @@ pan_mod_u_tiled_get_wsi_row_pitch(const struct pan_image *image,
    return layout->slices[mip_level].tiled_or_linear.row_stride_B /
           pan_u_interleaved_tile_size_el(props->format).height;
 }
+
+#define pan_mod_u_tiled_init_plane_layout NULL
 
 static bool
 pan_mod_u_tiled_init_slice_layout(
@@ -589,6 +611,8 @@ pan_mod_linear_get_wsi_row_pitch(const struct pan_image *image,
    return layout->slices[mip_level].tiled_or_linear.row_stride_B;
 }
 
+#define pan_mod_linear_init_plane_layout NULL
+
 static bool
 pan_mod_linear_init_slice_layout(
    const struct pan_image_props *props, unsigned plane_idx,
@@ -689,6 +713,7 @@ pan_mod_linear_init_slice_layout(
       .match = pan_mod_##__name##_match,                                       \
       .test_props = pan_mod_##__name##_test_props,                             \
       .get_wsi_row_pitch = pan_mod_##__name##_get_wsi_row_pitch,               \
+      .init_plane_layout = pan_mod_##__name##_init_plane_layout,               \
       .init_slice_layout = pan_mod_##__name##_init_slice_layout,               \
       .emit_tex_payload_entry = pan_mod_##__name##_emit_tex_payload_entry,     \
       EMIT_ATT(__name),                                                        \

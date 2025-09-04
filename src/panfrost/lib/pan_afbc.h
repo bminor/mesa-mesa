@@ -599,8 +599,7 @@ pan_afbc_can_ytr(enum pipe_format format)
 }
 
 static inline bool
-pan_afbc_can_split(unsigned arch, enum pipe_format format, uint64_t modifier,
-                   unsigned plane_idx)
+pan_afbc_can_split(unsigned arch, enum pan_afbc_mode mode, uint64_t modifier)
 {
    unsigned block_width = pan_afbc_superblock_width(modifier);
 
@@ -610,7 +609,6 @@ pan_afbc_can_split(unsigned arch, enum pipe_format format, uint64_t modifier,
    if (block_width == 16) {
       return true;
    } else if (block_width == 32) {
-      enum pan_afbc_mode mode = pan_afbc_format(arch, format, plane_idx);
       return (mode == PAN_AFBC_MODE_R8G8B8A8 ||
               mode == PAN_AFBC_MODE_R10G10B10A2);
    }
@@ -640,13 +638,13 @@ pan_afbc_can_tile(unsigned arch)
 
 #if PAN_ARCH >= 9
 static inline enum mali_afbc_compression_mode
-pan_afbc_compression_mode(enum pipe_format format, unsigned plane_idx)
+pan_afbc_compression_mode(enum pan_afbc_mode mode)
 {
    /* Map canonical formats to the hardware enum. This only
     * needs to handle the subset of formats returned by
     * pan_afbc_format.
     */
-   switch (pan_afbc_format(PAN_ARCH, format, plane_idx)) {
+   switch (mode) {
    case PAN_AFBC_MODE_R8:
       return MALI_AFBC_COMPRESSION_MODE_R8;
    case PAN_AFBC_MODE_R8G8:
@@ -698,16 +696,16 @@ pan_afbc_compression_mode(enum pipe_format format, unsigned plane_idx)
 
 static inline enum mali_afbc_compression_mode
 pan_afbc_decompression_mode(enum pipe_format view_format,
-                            enum pipe_format img_format, unsigned plane_idx)
+                            enum pan_afbc_mode img_mode)
 {
    /* There are special cases for texture views of stencil images. */
-   if (img_format == PIPE_FORMAT_Z24_UNORM_S8_UINT &&
+   if (img_mode == PAN_AFBC_MODE_R8G8B8A8 &&
        view_format == PIPE_FORMAT_X24S8_UINT)
       return MALI_AFBC_COMPRESSION_MODE_X24S8;
    else if (view_format == PIPE_FORMAT_S8_UINT)
       return MALI_AFBC_COMPRESSION_MODE_S8;
 
-   return pan_afbc_compression_mode(img_format, plane_idx);
+   return pan_afbc_compression_mode(img_mode);
 }
 #endif
 

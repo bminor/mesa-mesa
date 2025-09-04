@@ -40,6 +40,13 @@ struct pan_mod_handler {
                                       const struct pan_image_props *iprops,
                                       const struct pan_image_usage *iusage);
 
+   /* Optional method used to initialize modifier-specific per-plane layout
+    * data. This is called before init_slice_layout().
+    */
+   bool (*init_plane_layout)(const struct pan_image_props *props,
+                             unsigned plane_idx,
+                             struct pan_image_layout *plane_layout);
+
    bool (*init_slice_layout)(
       const struct pan_image_props *props, unsigned plane_idx,
       struct pan_image_extent mip_extent_px,

@@ -113,6 +113,11 @@ pan_image_layout_init(
    if (plane_idx >= util_format_get_num_planes(props->format))
       return false;
 
+   /* Init plane layout data. */
+   if (mod_handler->init_plane_layout &&
+       !mod_handler->init_plane_layout(props, plane_idx, layout))
+      return false;
+
    /* MSAA is implemented as a 3D texture with z corresponding to the
     * sample #, horrifyingly enough */
 

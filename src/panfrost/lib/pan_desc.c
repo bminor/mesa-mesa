@@ -710,8 +710,8 @@ GENX(pan_emit_afbc_color_attachment)(const struct pan_fb_info *fb,
       cfg.header = header;
       cfg.body_offset = body_offset;
       cfg.row_stride = hdr_row_stride;
-      cfg.compression_mode =
-         pan_afbc_compression_mode(image->props.format, pref.plane_idx);
+      cfg.compression_mode = pan_afbc_compression_mode(
+         image->planes[pref.plane_idx]->layout.afbc.mode);
 #else
       cfg.header = header;
       cfg.body = header + body_offset;
