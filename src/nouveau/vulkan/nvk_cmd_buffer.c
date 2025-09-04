@@ -317,7 +317,7 @@ nvk_cmd_buffer_cond_render_alloc(struct nvk_cmd_buffer *cmd,
    }
 
    struct nvk_cmd_mem *mem;
-   VkResult result = nvk_cmd_buffer_alloc_mem(cmd, true, &mem);
+   VkResult result = nvk_cmd_buffer_alloc_mem(cmd, false, &mem);
    if (unlikely(result != VK_SUCCESS))
       return result;
 
