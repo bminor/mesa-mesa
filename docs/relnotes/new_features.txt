@@ -19,3 +19,4 @@ VK_KHR_maintenance7 on panvk/v10+
 VK_KHR_maintenance8 on panvk/v10+
 VK_KHR_maintenance9 on panvk
 VK_AMD_buffer_marker on NVK
+VK_EXT_ycbcr_2plane_444_formats on radv

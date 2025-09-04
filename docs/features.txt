@@ -510,7 +510,7 @@ Vulkan 1.3 -- all DONE: anv, hk, lvp, nvk, panvk/v10+, radv, tu, vn, v3dv
   VK_EXT_texel_buffer_alignment                         DONE (anv, hasvk, lvp, nvk, panvk, pvr, radv, tu, v3dv, vn)
   VK_EXT_texture_compression_astc_hdr                   DONE (panvk, vn)
   VK_EXT_tooling_info                                   DONE (anv, hasvk, lvp, nvk, panvk, pvr, radv, tu, v3dv, vn)
-  VK_EXT_ycbcr_2plane_444_formats                       DONE (anv, lvp, nvk, panvk/v10+, vn)
+  VK_EXT_ycbcr_2plane_444_formats                       DONE (anv, lvp, nvk, panvk/v10+, radv, vn)
 
 Vulkan 1.4 -- all DONE: anv, hk, lvp, nvk, panvk/v10+, radv/gfx8+, tu/a7xx+, vn
 

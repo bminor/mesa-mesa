@@ -754,6 +754,7 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
       .EXT_transform_feedback = true,
       .EXT_vertex_attribute_divisor = true,
       .EXT_vertex_input_dynamic_state = !pdev->use_llvm,
+      .EXT_ycbcr_2plane_444_formats = true,
       .EXT_ycbcr_image_arrays = true,
       .EXT_zero_initialize_device_memory = true,
       .AMD_buffer_marker = true,
@@ -1392,6 +1393,9 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
 
       /* VK_KHR_shader_untyped_pointers */
       .shaderUntypedPointers = true,
+
+      /* VK_EXT_ycbcr_2plane_444_formats */
+      .ycbcr2plane444Formats = true,
    };
 }
 
