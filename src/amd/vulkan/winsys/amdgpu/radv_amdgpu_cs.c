@@ -346,6 +346,50 @@ get_nop_packet(struct radv_amdgpu_cs *cs)
    }
 }
 
+/**
+ * Emit a PKT3 NOP packet for the graphics or compute queue.
+ *
+ * Emit a single NOP packet to minimize CP overhead because NOP is a variable-sized
+ * packet. The size of the packet body after the header is always count + 1.
+ * If count == -1, there is no packet body. NOP is the only packet that can have
+ * count == -1, which is the definition of PKT3_NOP_PAD (count == 0x3fff means -1).
+ *
+ * Note that GFX6 doesn't support PKT3_NOP with count == -1
+ */
+static void
+radv_amdgpu_cs_emit_pkt3_nop(struct radv_amdgpu_cs *cs, const unsigned num_dw)
+{
+   assert(num_dw >= (cs->ws->info.gfx_ib_pad_with_type2 ? 2 : 1));
+
+   radeon_emit_unchecked(&cs->base, PKT3(PKT3_NOP, num_dw - 2, 0));
+   cs->base.cdw += num_dw - 1;
+}
+
+/**
+ * Emit one or more NOP packets to fill the specified amount of dwords.
+ * Should only be called for IP types that have a NOP packet.
+ */
+static void
+radv_amdgpu_cs_emit_nops(struct radv_amdgpu_cs *cs, const unsigned num_dw)
+{
+   const enum amd_ip_type ip_type = cs->hw_ip;
+   assert(ip_type != AMDGPU_HW_IP_VCN_ENC); /* VCN_ENC has no NOP packets. */
+
+   if (!num_dw)
+      return;
+
+   /* Emit a single, larger PKT3 NOP packet to fill the specified amount of dwords. */
+   if (num_dw > 1 && (ip_type == AMD_IP_GFX || ip_type == AMD_IP_COMPUTE)) {
+      radv_amdgpu_cs_emit_pkt3_nop(cs, num_dw);
+      return;
+   }
+
+   const uint32_t nop_packet = get_nop_packet(cs);
+
+   for (uint32_t i = 0; i < num_dw; ++i)
+      radeon_emit_unchecked(&cs->base, nop_packet);
+}
+
 static void
 radv_amdgpu_cs_add_ib_buffer(struct radv_amdgpu_cs *cs, struct radeon_winsys_bo *bo, uint64_t va, uint32_t cdw)
 {
@@ -431,44 +475,24 @@ radv_amdgpu_winsys_cs_pad(struct radeon_cmdbuf *_cs, unsigned leave_dw_space)
 {
    struct radv_amdgpu_cs *cs = radv_amdgpu_cs(_cs);
    const enum amd_ip_type ip_type = cs->hw_ip;
+
+   /* Don't pad on VCN encode/unified as no NOPs */
+   if (ip_type == AMDGPU_HW_IP_VCN_ENC)
+      return;
+
+   /* Don't add padding to 0 length UVD due to kernel. */
+   if (ip_type == AMDGPU_HW_IP_UVD && cs->base.cdw == 0)
+      return;
+
    const uint32_t pad_dw_mask = cs->ws->info.ip[ip_type].ib_pad_dw_mask;
    const uint32_t unaligned_dw = (cs->base.cdw + leave_dw_space) & pad_dw_mask;
 
-   if (ip_type == AMD_IP_GFX || ip_type == AMD_IP_COMPUTE) {
-      if (unaligned_dw) {
-         const int remaining = pad_dw_mask + 1 - unaligned_dw;
-
-         /* Only pad by 1 dword with the type-2 NOP if necessary. */
-         if (remaining == 1 && cs->ws->info.gfx_ib_pad_with_type2) {
-            radeon_emit_unchecked(&cs->base, PKT2_NOP_PAD);
-         } else {
-            /* Pad with a single NOP packet to minimize CP overhead because NOP is a variable-sized
-             * packet. The size of the packet body after the header is always count + 1.
-             * If count == -1, there is no packet body. NOP is the only packet that can have
-             * count == -1, which is the definition of PKT3_NOP_PAD (count == 0x3fff means -1).
-             */
-            radeon_emit_unchecked(&cs->base, PKT3(PKT3_NOP, remaining - 2, 0));
-            cs->base.cdw += remaining - 1;
-         }
-      } else if (cs->base.cdw == 0 && leave_dw_space == 0) {
-         /* Emit a NOP packet to avoid submitting a completely empty IB. */
-         const int remaining = pad_dw_mask + 1;
-         radeon_emit_unchecked(&cs->base, PKT3(PKT3_NOP, remaining - 2, 0));
-         cs->base.cdw += remaining - 1;
-      }
-   } else {
-      /* Don't pad on VCN encode/unified as no NOPs */
-      if (ip_type == AMDGPU_HW_IP_VCN_ENC)
-         return;
-
-      /* Don't add padding to 0 length UVD due to kernel */
-      if (ip_type == AMDGPU_HW_IP_UVD && cs->base.cdw == 0)
-         return;
-
-      const uint32_t nop_packet = get_nop_packet(cs);
-
-      while (!cs->base.cdw || (cs->base.cdw & pad_dw_mask))
-         radeon_emit_unchecked(&cs->base, nop_packet);
+   if (unaligned_dw) {
+      /* Pad the IB with NOP packets to ensure that the end of the IB is correctly aligned. */
+      radv_amdgpu_cs_emit_nops(cs, pad_dw_mask + 1 - unaligned_dw);
+   } else if (cs->base.cdw == 0 && leave_dw_space == 0) {
+      /* Emit NOPs to avoid submitting a completely empty IB. */
+      radv_amdgpu_cs_emit_nops(cs, pad_dw_mask + 1);
    }
 
    assert(((cs->base.cdw + leave_dw_space) & pad_dw_mask) == 0);
