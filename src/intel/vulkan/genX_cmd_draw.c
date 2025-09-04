@@ -455,8 +455,15 @@ cmd_buffer_flush_gfx_push_constants(struct anv_cmd_buffer *cmd_buffer,
                continue;
 
             /* Skip any push ranges that were not promoted from UBOs */
-            if (range->set >= MAX_SETS)
+            if (range->set >= MAX_SETS) {
+               /* The indexing in prog_data->robust_ubo_ranges is based off
+                * prog_data->ubo_ranges which does not include the
+                * prog_data->nr_params (Vulkan push constants).
+                */
+               if (range->set != ANV_DESCRIPTOR_SET_PUSH_CONSTANTS)
+                  ubo_range_index++;
                continue;
+            }
 
             assert(shader->prog_data->robust_ubo_ranges & (1 << ubo_range_index));
 
@@ -482,7 +489,7 @@ cmd_buffer_flush_gfx_push_constants(struct anv_cmd_buffer *cmd_buffer,
                gfx->base.push_constants_data_dirty = true;
             }
 
-            ++ubo_range_index;
+            ubo_range_index++;
          }
       }
    }
