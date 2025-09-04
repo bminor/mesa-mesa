@@ -256,6 +256,14 @@ struct fd_dev_info {
       float line_width_max;
 
       bool has_bin_mask;
+
+      /* On a618 at least, there seems to be an errata where a 3D draw
+       * followed by an A2D blit without any event or wait in between hangs
+       * waiting for the draw to complete. Seen on
+       * dEQP-VK.renderpass2.dedicated_allocation.attachment_allocation.grow.17
+       * with sysmem.
+       */
+      bool blit_wfi_quirk;
    } a6xx;
 
    struct {

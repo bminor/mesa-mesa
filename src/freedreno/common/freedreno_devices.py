@@ -486,7 +486,7 @@ add_gpus([
         GPUId(619),
     ], A6xxGPUInfo(
         CHIP.A6XX,
-        [a6xx_base, a6xx_gen1],
+        [a6xx_base, a6xx_gen1, A6XXProps(blit_wfi_quirk = True)],
         num_ccu = 1,
         tile_align_w = 32,
         tile_align_h = 32,

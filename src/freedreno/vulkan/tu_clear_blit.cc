@@ -565,6 +565,12 @@ r2d_run(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
          cmd->device->physical_device->info->a6xx.magic.RB_DBG_ECO_CNTL_blit);
    }
 
+   /* TODO: try to track when there has been a draw without any intervening
+    * WFI or CP_EVENT_WRITE and only WFI then.
+    */
+   if (cmd->device->physical_device->info->a6xx.blit_wfi_quirk)
+      tu_cs_emit_wfi(cs);
+
    tu_cs_emit_pkt7(cs, CP_BLIT, 1);
    tu_cs_emit(cs, CP_BLIT_0_OP(BLIT_OP_SCALE));
 
