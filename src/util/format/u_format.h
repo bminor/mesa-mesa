@@ -1545,9 +1545,6 @@ void pipe_swizzle_4f(float *dst, const float *src,
 void util_format_unswizzle_4f(float *dst, const float *src,
                               const unsigned char swz[4]);
 
-enum pipe_format
-util_format_snorm_to_sint(enum pipe_format format) ATTRIBUTE_CONST;
-
 extern void
 util_copy_rect(void * dst, enum pipe_format format,
                unsigned dst_stride, unsigned dst_x, unsigned dst_y,
@@ -1560,10 +1557,6 @@ util_copy_rect(void * dst, enum pipe_format format,
  */
 enum pipe_format
 util_format_rgb_to_bgr(enum pipe_format format);
-
-/* Returns the pipe format with SNORM formats cast to UNORM, otherwise the original pipe format. */
-enum pipe_format
-util_format_snorm_to_unorm(enum pipe_format format);
 
 enum pipe_format
 util_format_rgbx_to_rgba(enum pipe_format format);
