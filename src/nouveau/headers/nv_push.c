@@ -109,13 +109,6 @@ vk_push_print(FILE *fp, const struct nv_push *push,
          fprintf(fp, "HDR %x subch %i", hdr, subchan);
       }
 
-      if (mthd == 0) { /* SET_OBJECT */
-         curr_subchans[subchan] = value & 0xffff;
-      }
-      int class_id = curr_subchans[subchan];
-      int cls_hi = (class_id & 0xff00) >> 8;
-      int cls_lo = class_id & 0xff;
-
       cur++;
 
       const char *mthd_name = "";
@@ -174,6 +167,16 @@ vk_push_print(FILE *fp, const struct nv_push *push,
       }
 
       while (count--) {
+         if (!is_immd)
+            value = *cur;
+
+         if (mthd == 0) { /* SET_OBJECT */
+            curr_subchans[subchan] = value & 0xffff;
+         }
+         int class_id = curr_subchans[subchan];
+         int cls_hi = (class_id & 0xff00) >> 8;
+         int cls_lo = class_id & 0xff;
+
          if (!is_tert) {
             if (mthd < 0x100) {
                if (cls_hi >= 0xc5)
@@ -249,9 +252,6 @@ vk_push_print(FILE *fp, const struct nv_push *push,
                }
             }
          }
-
-         if (!is_immd)
-            value = *cur;
 
          fprintf(fp, "\tmthd %04x %s\n", mthd, mthd_name);
          if (mthd < 0x100) {
