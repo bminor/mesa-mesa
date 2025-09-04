@@ -111,6 +111,7 @@ struct rendering_state {
    bool ib_dirty;
    bool sample_mask_dirty;
    bool min_samples_dirty;
+   bool sample_locations_dirty;
    bool poison_mem;
    bool noop_fs_bound;
    struct pipe_draw_indirect_info indirect_info;
@@ -197,6 +198,9 @@ struct rendering_state {
    bool force_min_sample;
    bool sample_shading;
    bool depth_clamp_sets_clip;
+
+   bool sample_locations_enable;
+   uint8_t sample_locations[8];
 
    uint32_t num_so_targets;
    struct pipe_stream_output_target *so_targets[PIPE_MAX_SO_BUFFERS];
@@ -524,6 +528,13 @@ static void emit_state(struct rendering_state *state)
       state->pctx->set_scissor_states(state->pctx, 0, state->num_scissors, state->scissors);
       state->scissor_dirty = false;
    }
+
+   if (state->sample_locations_dirty) {
+      state->pctx->set_sample_locations(state->pctx,
+                                        state->sample_locations_enable ? sizeof(state->sample_locations) : 0,
+                                        state->sample_locations);
+      state->sample_locations_dirty = false;
+   }
 }
 
 static void
@@ -609,6 +620,17 @@ update_samples(struct rendering_state *state, VkSampleCountFlags samples)
    state->rs_dirty |= state->rs_state.multisample != (samples > 1);
    state->rs_state.multisample = samples > 1;
    state->min_samples_dirty = true;
+}
+
+static void
+update_samplelocs(struct rendering_state *state,
+                  unsigned num_samples,
+                  const struct VkSampleLocationEXT *locations)
+{
+   for (unsigned i = 0; i < MIN2(num_samples, 8); i++) {
+      state->sample_locations[i] = util_iround(CLAMP(locations[i].x, 0.0f, 0.9375f) * 16.0f);
+      state->sample_locations[i] |= util_iround(CLAMP(locations[i].y, 0.0f, 0.9375f) * 16.0f) << 4;
+   }
 }
 
 static void
@@ -910,6 +932,13 @@ static void handle_graphics_pipeline(struct lvp_pipeline *pipeline,
          state->sample_mask = ps->ms->sample_mask;
          state->sample_mask_dirty = true;
       }
+      if (!BITSET_TEST(ps->dynamic, MESA_VK_DYNAMIC_MS_SAMPLE_LOCATIONS_ENABLE))
+         state->sample_locations_enable = ps->ms->sample_locations_enable;
+      if (!BITSET_TEST(ps->dynamic, MESA_VK_DYNAMIC_MS_SAMPLE_LOCATIONS))
+         if (ps->ms->sample_locations != NULL)
+            update_samplelocs(state, ps->ms->sample_locations->per_pixel,
+                              ps->ms->sample_locations->locations);
+      state->sample_locations_dirty = true;
       if (!BITSET_TEST(ps->dynamic, MESA_VK_DYNAMIC_MS_ALPHA_TO_COVERAGE_ENABLE)) {
          state->blend_state.alpha_to_coverage = ps->ms->alpha_to_coverage_enable;
          state->blend_state.alpha_to_coverage_dither = state->blend_state.alpha_to_coverage;
@@ -927,6 +956,8 @@ static void handle_graphics_pipeline(struct lvp_pipeline *pipeline,
       if (!BITSET_TEST(ps->dynamic, MESA_VK_DYNAMIC_MS_SAMPLE_MASK) &&
           !BITSET_TEST(ps->dynamic, MESA_VK_DYNAMIC_MS_ALPHA_TO_ONE_ENABLE))
          state->rs_state.multisample = false;
+      state->sample_locations_enable = false;
+      state->sample_locations_dirty = true;
       state->sample_shading = false;
       state->force_min_sample = false;
       if (!BITSET_TEST(ps->dynamic, MESA_VK_DYNAMIC_MS_SAMPLE_MASK)) {
@@ -3667,6 +3698,24 @@ static void handle_set_alpha_to_one(struct vk_cmd_queue_entry *cmd,
       state->rs_state.multisample = true;
 }
 
+static void
+handle_set_sample_locations_enable(struct vk_cmd_queue_entry *cmd,
+                                   struct rendering_state *state)
+{
+   state->sample_locations_dirty |=
+      state->sample_locations_enable != !!cmd->u.set_sample_locations_enable_ext.sample_locations_enable;
+   state->sample_locations_enable = !!cmd->u.set_sample_locations_enable_ext.sample_locations_enable;
+}
+
+static void
+handle_set_sample_locations(struct vk_cmd_queue_entry *cmd,
+                            struct rendering_state *state)
+{
+   const struct VkSampleLocationsInfoEXT *sl_info = cmd->u.set_sample_locations_ext.sample_locations_info;
+   update_samplelocs(state, MIN2(sl_info->sampleLocationsCount, 8), sl_info->pSampleLocations);
+   state->sample_locations_dirty = true;
+}
+
 static void handle_set_halfz(struct vk_cmd_queue_entry *cmd,
                              struct rendering_state *state)
 {
@@ -4885,6 +4934,9 @@ void lvp_add_enqueue_cmd_entrypoints(struct vk_device_dispatch_table *disp)
 
    ENQUEUE_CMD(CmdSetDepthBias2EXT)
 
+   ENQUEUE_CMD(CmdSetSampleLocationsEnableEXT)
+   ENQUEUE_CMD(CmdSetSampleLocationsEXT)
+
 #undef ENQUEUE_CMD
 }
 
@@ -5301,6 +5353,12 @@ static void lvp_execute_cmd_buffer(struct list_head *cmds,
       case VK_CMD_SET_DEPTH_BIAS2_EXT:
          handle_set_depth_bias2(cmd, state);
          break;
+      case VK_CMD_SET_SAMPLE_LOCATIONS_ENABLE_EXT:
+         handle_set_sample_locations_enable(cmd, state);
+         break;
+      case VK_CMD_SET_SAMPLE_LOCATIONS_EXT:
+         handle_set_sample_locations(cmd, state);
+         break;
       default:
          fprintf(stderr, "Unsupported command %s\n", vk_cmd_queue_type_names[cmd->type]);
          UNREACHABLE("Unsupported command");
@@ -5326,6 +5384,7 @@ VkResult lvp_execute_cmds(struct lvp_device *device,
    state->dsa_dirty = true;
    state->rs_dirty = true;
    state->vp_dirty = true;
+   state->sample_locations_dirty = true;
    state->rs_state.point_line_tri_clip = true;
    state->rs_state.unclamped_fragment_depth_values = device->vk.enabled_extensions.EXT_depth_range_unrestricted;
    state->sample_mask_dirty = true;

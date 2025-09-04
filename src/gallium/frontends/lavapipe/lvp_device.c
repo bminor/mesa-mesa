@@ -71,6 +71,9 @@
 #define LVP_API_VERSION VK_MAKE_VERSION(1, 3, VK_HEADER_VERSION)
 #endif
 
+#define LVP_SAMPLE_COUNTS (VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_4_BIT | \
+                           VK_SAMPLE_COUNT_8_BIT)
+
 VKAPI_ATTR VkResult VKAPI_CALL lvp_EnumerateInstanceVersion(uint32_t* pApiVersion)
 {
    *pApiVersion = LVP_API_VERSION;
@@ -255,6 +258,7 @@ static const struct vk_device_extension_table lvp_device_extensions_supported = 
    .EXT_primitive_topology_list_restart   = true,
    .EXT_rasterization_order_attachment_access = true,
    .EXT_queue_family_foreign              = true,
+   .EXT_sample_locations                  = true,
    .EXT_sampler_filter_minmax             = true,
    .EXT_scalar_block_layout               = true,
    .EXT_separate_stencil_usage            = true,
@@ -879,9 +883,6 @@ static VkImageLayout lvp_host_copy_image_layouts[] = {
 static void
 lvp_get_properties(const struct lvp_physical_device *device, struct vk_properties *p)
 {
-   VkSampleCountFlags sample_counts = VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_4_BIT |
-                                      VK_SAMPLE_COUNT_8_BIT;
-
    const unsigned *grid_size = device->pscreen->compute_caps.max_grid_size;
    const unsigned *block_size = device->pscreen->compute_caps.max_block_size;
 
@@ -979,16 +980,16 @@ lvp_get_properties(const struct lvp_physical_device *device, struct vk_propertie
       .maxFramebufferWidth                      = device->pscreen->caps.max_texture_2d_size,
       .maxFramebufferHeight                     = device->pscreen->caps.max_texture_2d_size,
       .maxFramebufferLayers                     = device->pscreen->caps.max_texture_array_layers,
-      .framebufferColorSampleCounts             = sample_counts,
-      .framebufferDepthSampleCounts             = sample_counts,
-      .framebufferStencilSampleCounts           = sample_counts,
-      .framebufferNoAttachmentsSampleCounts     = sample_counts,
+      .framebufferColorSampleCounts             = LVP_SAMPLE_COUNTS,
+      .framebufferDepthSampleCounts             = LVP_SAMPLE_COUNTS,
+      .framebufferStencilSampleCounts           = LVP_SAMPLE_COUNTS,
+      .framebufferNoAttachmentsSampleCounts     = LVP_SAMPLE_COUNTS,
       .maxColorAttachments                      = max_render_targets,
-      .sampledImageColorSampleCounts            = sample_counts,
-      .sampledImageIntegerSampleCounts          = sample_counts,
-      .sampledImageDepthSampleCounts            = sample_counts,
-      .sampledImageStencilSampleCounts          = sample_counts,
-      .storageImageSampleCounts                 = sample_counts,
+      .sampledImageColorSampleCounts            = LVP_SAMPLE_COUNTS,
+      .sampledImageIntegerSampleCounts          = LVP_SAMPLE_COUNTS,
+      .sampledImageDepthSampleCounts            = LVP_SAMPLE_COUNTS,
+      .sampledImageStencilSampleCounts          = LVP_SAMPLE_COUNTS,
+      .storageImageSampleCounts                 = LVP_SAMPLE_COUNTS,
       .maxSampleMaskWords                       = 1,
       .timestampComputeAndGraphics              = true,
       .timestampPeriod                          = 1,
@@ -1089,7 +1090,7 @@ lvp_get_properties(const struct lvp_physical_device *device, struct vk_propertie
       .filterMinmaxSingleComponentFormats = true,
 
       .maxTimelineSemaphoreValueDifference = UINT64_MAX,
-      .framebufferIntegerColorSampleCounts = VK_SAMPLE_COUNT_1_BIT,
+      .framebufferIntegerColorSampleCounts = VK_SAMPLE_COUNT_1_BIT, /* LVP_SAMPLE_COUNTS? */ 
 
       /* Vulkan 1.3 */
       .minSubgroupSize = lp_native_vector_width / 32,
@@ -1249,6 +1250,15 @@ lvp_get_properties(const struct lvp_physical_device *device, struct vk_propertie
       .prefersLocalInvocationPrimitiveOutput = true,
       .prefersCompactVertexOutput = true,
       .prefersCompactPrimitiveOutput = false,
+
+      /* VK_EXT_sample_locations */
+      .sampleLocationSampleCounts = ~VK_SAMPLE_COUNT_1_BIT & LVP_SAMPLE_COUNTS,
+      .maxSampleLocationGridSize.width = 1,
+      .maxSampleLocationGridSize.height = 1,
+      .sampleLocationCoordinateRange[0] = 0.0f,
+      .sampleLocationCoordinateRange[1] = 0.9375f,
+      .sampleLocationSubPixelBits = 4,
+      .variableSampleLocations = true,
 
       /* VK_AMDX_shader_enqueue */
 #ifdef VK_ENABLE_BETA_EXTENSIONS
@@ -2762,6 +2772,29 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_GetPhysicalDeviceCalibrateableTimeDomainsEXT(
 
     return vk_outarray_status(&out);
 }
+
+VKAPI_ATTR void VKAPI_CALL lvp_GetPhysicalDeviceMultisamplePropertiesEXT(
+   VkPhysicalDevice                            physicalDevice,
+   VkSampleCountFlagBits                       samples,
+   VkMultisamplePropertiesEXT*                 pMultisampleProperties)
+{
+   assert(pMultisampleProperties->sType ==
+          VK_STRUCTURE_TYPE_MULTISAMPLE_PROPERTIES_EXT);
+
+   VkSampleCountFlags sample_counts =
+      ~VK_SAMPLE_COUNT_1_BIT & LVP_SAMPLE_COUNTS;
+
+   VkExtent2D grid_size;
+   if (samples & sample_counts) {
+      grid_size.width = 1;
+      grid_size.height = 1;
+   } else {
+      grid_size.width = 0;
+      grid_size.height = 0;
+   }
+   pMultisampleProperties->maxSampleLocationGridSize = grid_size;
+}
+
 
 VKAPI_ATTR VkResult VKAPI_CALL lvp_GetCalibratedTimestampsEXT(
    VkDevice device,
