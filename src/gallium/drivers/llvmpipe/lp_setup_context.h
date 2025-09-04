@@ -110,7 +110,8 @@ struct lp_setup_context
    unsigned multisample:1;
    unsigned rectangular_lines:1;
    unsigned cullmode:2; /**< PIPE_FACE_x */
-   unsigned bottom_edge_rule;
+   unsigned bottom_edge_rule:1;
+   unsigned sample_locations_enabled:1;
    float pixel_offset;
    float line_width;
    float point_size;
@@ -118,6 +119,7 @@ struct lp_setup_context
    int8_t viewport_index_slot;
    int8_t layer_slot;
    int8_t face_slot;
+   uint8_t sample_locations[LP_MAX_SAMPLES];
 
    struct pipe_framebuffer_state fb;
    struct u_rect framebuffer;

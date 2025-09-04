@@ -306,7 +306,8 @@ llvmpipe_update_derived(struct llvmpipe_context *llvmpipe)
                           LP_NEW_RASTERIZER |
                           LP_NEW_SAMPLER |
                           LP_NEW_SAMPLER_VIEW |
-                          LP_NEW_OCCLUSION_QUERY))
+                          LP_NEW_OCCLUSION_QUERY |
+                          LP_NEW_SAMPLE_LOCATIONS))
       llvmpipe_update_fs(llvmpipe);
 
    if (llvmpipe->dirty & (LP_NEW_FS |
@@ -330,6 +331,11 @@ llvmpipe_update_derived(struct llvmpipe_context *llvmpipe)
    if (llvmpipe->dirty & LP_NEW_BLEND_COLOR)
       lp_setup_set_blend_color(llvmpipe->setup,
                                &llvmpipe->blend_color);
+
+   if (llvmpipe->dirty & LP_NEW_SAMPLE_LOCATIONS)
+      lp_setup_set_sample_locations(llvmpipe->setup,
+                                    llvmpipe->sample_locations_enabled,
+                                    llvmpipe->sample_locations);
 
    if (llvmpipe->dirty & LP_NEW_SCISSOR)
       lp_setup_set_scissors(llvmpipe->setup, llvmpipe->scissors);

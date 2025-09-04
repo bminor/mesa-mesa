@@ -3362,22 +3362,44 @@ generate_fragment(struct llvmpipe_context *lp,
 
       if (key->multisample && key->coverage_samples == 4) {
          LLVMValueRef sample_pos_arr[8];
-         for (unsigned i = 0; i < 4; i++) {
-            sample_pos_arr[i * 2] = LLVMConstReal(flt_type,
-                                                  lp_sample_pos_4x[i][0]);
-            sample_pos_arr[i * 2 + 1] = LLVMConstReal(flt_type,
-                                                      lp_sample_pos_4x[i][1]);
+         if (key->sample_locations_enabled) {
+            for (unsigned i = 0; i < 4; i++) {
+               /*
+                * sample_locations holds 4 bit values, just divide by 16
+                * to get subpixel offset as float
+                */
+               sample_pos_arr[i * 2] = LLVMConstReal(flt_type,
+                                                     (key->sample_locations[i] & 0xF) * 0.0625);
+               sample_pos_arr[i * 2 + 1] = LLVMConstReal(flt_type,
+                                                         (key->sample_locations[i] >> 4) * 0.0625);
+            }
+         } else {
+            for (unsigned i = 0; i < 4; i++) {
+               sample_pos_arr[i * 2] = LLVMConstReal(flt_type,
+                                                     lp_sample_pos_4x[i][0]);
+               sample_pos_arr[i * 2 + 1] = LLVMConstReal(flt_type,
+                                                         lp_sample_pos_4x[i][1]);
+            }
          }
          sample_pos_array =
             LLVMConstArray(LLVMFloatTypeInContext(gallivm->context),
                            sample_pos_arr, 8);
       } else if (key->multisample && key->coverage_samples == 8) {
          LLVMValueRef sample_pos_arr[16];
-         for (unsigned i = 0; i < 8; i++) {
-            sample_pos_arr[i * 2] = LLVMConstReal(flt_type,
-                                                  lp_sample_pos_8x[i][0]);
-            sample_pos_arr[i * 2 + 1] = LLVMConstReal(flt_type,
-                                                      lp_sample_pos_8x[i][1]);
+         if (key->sample_locations_enabled) {
+            for (unsigned i = 0; i < 8; i++) {
+               sample_pos_arr[i * 2] = LLVMConstReal(flt_type,
+                                                     (key->sample_locations[i] & 0xF) * 0.0625);
+               sample_pos_arr[i * 2 + 1] = LLVMConstReal(flt_type,
+                                                         (key->sample_locations[i] >> 4) * 0.0625);
+            }
+         } else {
+            for (unsigned i = 0; i < 8; i++) {
+               sample_pos_arr[i * 2] = LLVMConstReal(flt_type,
+                                                     lp_sample_pos_8x[i][0]);
+               sample_pos_arr[i * 2 + 1] = LLVMConstReal(flt_type,
+                                                         lp_sample_pos_8x[i][1]);
+            }
          }
          sample_pos_array =
             LLVMConstArray(LLVMFloatTypeInContext(gallivm->context),
@@ -3616,6 +3638,15 @@ dump_fs_variant_key(struct lp_fragment_shader_variant_key *key)
       debug_printf("coverage samples = %d\n", key->coverage_samples);
       debug_printf("min samples = %d\n", key->min_samples);
    }
+
+   if (key->sample_locations_enabled) {
+      debug_printf("sample_locations_enabled = 1\n");
+      for (unsigned i = 0; i < LP_MAX_SAMPLES; i++) {
+         debug_printf("sample %d loc x = %d y = %d\n", i,
+                      key->sample_locations[i] & 0xF, key->sample_locations[i] >> 4);
+      }
+   }
+
    for (unsigned i = 0; i < key->nr_cbufs; ++i) {
       debug_printf("cbuf_format[%u] = %s\n", i, util_format_name(key->cbuf_format[i]));
       debug_printf("cbuf nr_samples[%u] = %d\n", i, key->cbuf_nr_samples[i]);
@@ -4538,6 +4569,14 @@ make_variant_key(struct llvmpipe_context *lp,
       if (lp->min_samples > 1 || nir->info.fs.uses_fbfetch_output)
          key->min_samples = key->coverage_samples;
    }
+
+   if (key->multisample) {
+      key->sample_locations_enabled = lp->sample_locations_enabled;
+      if (key->sample_locations_enabled) {
+         memcpy(key->sample_locations, lp->sample_locations, sizeof(key->sample_locations));
+      }
+   }
+
    key->nr_cbufs = lp->framebuffer.nr_cbufs;
 
    if (!key->blend.independent_blend_enable) {

@@ -113,6 +113,35 @@ lp_setup_get_empty_scene(struct lp_setup_context *setup)
 
    setup->scene = setup->scenes[i];
    setup->scene->permit_linear_rasterizer = setup->permit_linear_rasterizer;
+
+   /* XXX: doing that here is ugly... */
+   setup->scene->fb_max_samples = util_framebuffer_get_num_samples(&setup->fb);
+   if (setup->scene->fb_max_samples == 4) {
+      if (setup->sample_locations_enabled) {
+         for (unsigned i = 0; i < 4; i++) {
+            setup->scene->fixed_sample_pos[i][0] = (setup->sample_locations[i] & 0xF) << (FIXED_ORDER - 4);
+            setup->scene->fixed_sample_pos[i][1] = (setup->sample_locations[i] >> 4) << (FIXED_ORDER - 4);
+         }
+      } else {
+         for (unsigned i = 0; i < 4; i++) {
+            setup->scene->fixed_sample_pos[i][0] = util_iround(lp_sample_pos_4x[i][0] * FIXED_ONE);
+            setup->scene->fixed_sample_pos[i][1] = util_iround(lp_sample_pos_4x[i][1] * FIXED_ONE);
+         }
+      }
+   } else if (setup->scene->fb_max_samples == 8) {
+      if (setup->sample_locations_enabled) {
+         for (unsigned i = 0; i < 8; i++) {
+            setup->scene->fixed_sample_pos[i][0] = (setup->sample_locations[i] & 0xF) << (FIXED_ORDER - 4);
+            setup->scene->fixed_sample_pos[i][1] = (setup->sample_locations[i] >> 4) << (FIXED_ORDER - 4);
+         }
+      } else {
+         for (unsigned i = 0; i < 8; i++) {
+            setup->scene->fixed_sample_pos[i][0] = util_iround(lp_sample_pos_8x[i][0] * FIXED_ONE);
+            setup->scene->fixed_sample_pos[i][1] = util_iround(lp_sample_pos_8x[i][1] * FIXED_ONE);
+         }
+      }
+   }
+
    lp_scene_begin_binning(setup->scene, &setup->fb);
 }
 
@@ -165,7 +194,7 @@ first_point(struct lp_setup_context *setup,
 }
 
 
-void
+static void
 lp_setup_reset(struct lp_setup_context *setup)
 {
    LP_DBG(DEBUG_SETUP, "%s\n", __func__);
@@ -414,6 +443,21 @@ lp_setup_bind_framebuffer(struct lp_setup_context *setup,
    setup->dirty |= LP_SETUP_NEW_SCISSOR;
 }
 
+
+void
+lp_setup_set_sample_locations(struct lp_setup_context *setup,
+                              bool sample_locations_enabled,
+                              const uint8_t *sample_locations)
+{
+   LP_DBG(DEBUG_SETUP, "%s\n", __func__);
+
+   set_scene_state(setup, SETUP_FLUSHED, __func__);
+
+   assert(!setup->scene);
+
+   setup->sample_locations_enabled = sample_locations_enabled;
+   memcpy(setup->sample_locations, sample_locations, sizeof(setup->sample_locations));
+}
 
 /*
  * Try to clear one color buffer of the attached fb, either by binning a clear

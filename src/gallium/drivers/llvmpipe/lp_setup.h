@@ -45,9 +45,6 @@ struct pipe_fence_handle;
 struct lp_setup_variant;
 struct lp_setup_context;
 
-void
-lp_setup_reset(struct lp_setup_context *setup);
-
 struct lp_setup_context *
 lp_setup_create(struct pipe_context *pipe,
                 struct draw_context *draw);
@@ -133,6 +130,11 @@ lp_setup_is_resource_referenced(const struct lp_setup_context *setup,
 void
 lp_setup_set_sample_mask(struct lp_setup_context *setup,
                          uint32_t sample_mask);
+
+void
+lp_setup_set_sample_locations(struct lp_setup_context *setup,
+                              bool sample_locations_enabled,
+                              const uint8_t *sample_locations);
 
 void
 lp_setup_set_rasterizer_discard(struct lp_setup_context *setup,

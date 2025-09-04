@@ -360,6 +360,7 @@ llvmpipe_init_screen_caps(struct pipe_screen *screen)
    caps->memobj = true;
 #endif
    caps->sampler_reduction_minmax = true;
+   caps->programmable_sample_locations = true;
    caps->texture_query_samples = true;
    caps->shader_group_vote = true;
    caps->shader_ballot = true;
@@ -388,6 +389,26 @@ llvmpipe_init_screen_caps(struct pipe_screen *screen)
    caps->max_point_size_aa = LP_MAX_POINT_WIDTH; /* arbitrary */
    caps->max_texture_anisotropy = 16.0; /* not actually signficant at this time */
    caps->max_texture_lod_bias = 16.0; /* arbitrary */
+}
+
+
+static void
+llvmpipe_get_sample_pixel_grid(struct pipe_screen *pscreen,
+                               unsigned sample_count,
+                               unsigned *width, unsigned *height)
+{
+   switch (sample_count) {
+   case 0:
+   case 1:
+   case 2:
+   case 4:
+   case 8:
+      *width = 1;
+      *height = 1;
+      break;
+   default:
+      UNREACHABLE("illegal sample count");
+   }
 }
 
 
@@ -967,6 +988,7 @@ llvmpipe_create_screen(struct sw_winsys *winsys)
    screen->base.get_device_vendor = llvmpipe_get_vendor; // TODO should be the CPU vendor
    screen->base.get_screen_fd = llvmpipe_screen_get_fd;
    screen->base.is_format_supported = llvmpipe_is_format_supported;
+   screen->base.get_sample_pixel_grid = llvmpipe_get_sample_pixel_grid;
 
    screen->base.context_create = llvmpipe_create_context;
    screen->base.flush_frontbuffer = llvmpipe_flush_frontbuffer;

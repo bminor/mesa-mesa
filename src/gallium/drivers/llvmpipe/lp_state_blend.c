@@ -197,6 +197,29 @@ llvmpipe_set_min_samples(struct pipe_context *pipe,
    }
 }
 
+static void
+llvmpipe_set_sample_locations(struct pipe_context *pipe,
+                              size_t size, const uint8_t *locations)
+{
+   struct llvmpipe_context *llvmpipe = llvmpipe_context(pipe);
+
+   bool sample_locations_enabled = size && locations;
+
+   assert(size <= sizeof(llvmpipe->sample_locations));
+   if (sample_locations_enabled != llvmpipe->sample_locations_enabled) {
+      llvmpipe->sample_locations_enabled = sample_locations_enabled;
+      llvmpipe->dirty |= LP_NEW_SAMPLE_LOCATIONS;
+   }
+
+
+   if (sample_locations_enabled &&
+       memcmp(locations, llvmpipe->sample_locations, size)) {
+      memcpy(llvmpipe->sample_locations, locations, size);
+      llvmpipe->dirty |= LP_NEW_SAMPLE_LOCATIONS;
+  }
+}
+
+
 void
 llvmpipe_init_blend_funcs(struct llvmpipe_context *llvmpipe)
 {
@@ -213,6 +236,7 @@ llvmpipe_init_blend_funcs(struct llvmpipe_context *llvmpipe)
    llvmpipe->pipe.set_stencil_ref = llvmpipe_set_stencil_ref;
    llvmpipe->pipe.set_sample_mask = llvmpipe_set_sample_mask;
    llvmpipe->pipe.set_min_samples = llvmpipe_set_min_samples;
+   llvmpipe->pipe.set_sample_locations = llvmpipe_set_sample_locations;
 
    llvmpipe->dirty |= LP_NEW_SAMPLE_MASK;
    llvmpipe->sample_mask = ~0;
