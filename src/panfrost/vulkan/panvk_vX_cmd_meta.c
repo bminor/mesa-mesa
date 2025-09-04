@@ -23,7 +23,9 @@ copy_to_image_use_gfx_pipeline(struct panvk_device *dev,
    struct panvk_instance *instance =
       to_panvk_instance(dev->vk.physical->instance);
 
-   if (instance->debug_flags & PANVK_DEBUG_COPY_GFX)
+   /* Don't force gfx-based copies if the format is bigger than 32-bit. */
+   if ((instance->debug_flags & PANVK_DEBUG_COPY_GFX) &&
+       vk_format_get_blocksize(dst_img->vk.format) <= 4)
       return true;
 
    /* Writes to AFBC images must go through the graphics pipeline. */
@@ -391,14 +393,15 @@ panvk_per_arch(CmdCopyBufferToImage2)(
    VK_FROM_HANDLE(panvk_cmd_buffer, cmdbuf, commandBuffer);
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
    VK_FROM_HANDLE(panvk_image, img, pCopyBufferToImageInfo->dstImage);
-   struct vk_meta_copy_image_properties img_props =
-      panvk_meta_copy_get_image_properties(img);
 
    /* Early out if this operation was lowered. */
    if (lower_copy_buffer_to_image(commandBuffer, pCopyBufferToImageInfo))
       return;
 
    bool use_gfx_pipeline = copy_to_image_use_gfx_pipeline(dev, img);
+   struct vk_meta_copy_image_properties img_props =
+      panvk_meta_copy_get_image_properties(img, use_gfx_pipeline, true);
+
    if (use_gfx_pipeline) {
       struct panvk_cmd_meta_graphics_save_ctx save = {0};
 
@@ -427,7 +430,7 @@ panvk_per_arch(CmdCopyImageToBuffer2)(
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
    VK_FROM_HANDLE(panvk_image, img, pCopyImageToBufferInfo->srcImage);
    struct vk_meta_copy_image_properties img_props =
-      panvk_meta_copy_get_image_properties(img);
+      panvk_meta_copy_get_image_properties(img, false, false);
    struct panvk_cmd_meta_compute_save_ctx save = {0};
 
    panvk_per_arch(cmd_meta_compute_start)(cmdbuf, &save);
@@ -547,16 +550,17 @@ panvk_per_arch(CmdCopyImage2)(VkCommandBuffer commandBuffer,
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
    VK_FROM_HANDLE(panvk_image, src_img, pCopyImageInfo->srcImage);
    VK_FROM_HANDLE(panvk_image, dst_img, pCopyImageInfo->dstImage);
-   struct vk_meta_copy_image_properties src_img_props =
-      panvk_meta_copy_get_image_properties(src_img);
-   struct vk_meta_copy_image_properties dst_img_props =
-      panvk_meta_copy_get_image_properties(dst_img);
 
    /* Early out if this operation was lowered. */
    if (lower_copy_image(commandBuffer, pCopyImageInfo))
       return;
 
    bool use_gfx_pipeline = copy_to_image_use_gfx_pipeline(dev, dst_img);
+   struct vk_meta_copy_image_properties dst_img_props =
+      panvk_meta_copy_get_image_properties(dst_img, use_gfx_pipeline, true);
+   struct vk_meta_copy_image_properties src_img_props =
+      panvk_meta_copy_get_image_properties(src_img, use_gfx_pipeline, false);
+
    if (use_gfx_pipeline) {
       struct panvk_cmd_meta_graphics_save_ctx save = {0};
 

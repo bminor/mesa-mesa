@@ -29,11 +29,11 @@ panvk_meta_get_uint_format_for_blk_size(unsigned blk_sz)
    case 1:
       return VK_FORMAT_R8_UINT;
    case 2:
-      return VK_FORMAT_R16_UINT;
+      return VK_FORMAT_R8G8_UINT;
    case 3:
       return VK_FORMAT_R8G8B8_UINT;
    case 4:
-      return VK_FORMAT_R32_UINT;
+      return VK_FORMAT_R8G8B8A8_UINT;
    case 6:
       return VK_FORMAT_R16G16B16_UINT;
    case 8:
@@ -47,8 +47,31 @@ panvk_meta_get_uint_format_for_blk_size(unsigned blk_sz)
    }
 }
 
+static inline VkFormat
+panvk_meta_get_unorm_format_for_blk_size(unsigned blk_sz)
+{
+   /* We expect _UINT formats to be used if the blocksize is greater than
+    * 32-bit.
+    */
+   assert(blk_sz <= 4);
+
+   switch (blk_sz) {
+   case 1:
+      return VK_FORMAT_R8_UNORM;
+   case 2:
+      return VK_FORMAT_R8G8_UNORM;
+   case 3:
+      return VK_FORMAT_R8G8B8_UNORM;
+   case 4:
+      return VK_FORMAT_R8G8B8A8_UNORM;
+   default:
+      return VK_FORMAT_UNDEFINED;
+   }
+}
+
 static inline struct vk_meta_copy_image_properties
-panvk_meta_copy_get_image_properties(struct panvk_image *img)
+panvk_meta_copy_get_image_properties(struct panvk_image *img,
+                                     bool use_gfx_pipeline, bool is_destination)
 {
    uint64_t mod = img->vk.drm_format_mod;
    enum pipe_format pfmt = vk_format_to_pipe_format(img->vk.format);
@@ -56,63 +79,52 @@ panvk_meta_copy_get_image_properties(struct panvk_image *img)
    memset(&props, 0, sizeof(props));
    const struct vk_format_ycbcr_info *ycbcr_info =
       vk_format_get_ycbcr_info(img->vk.format);
+   const bool is_afbc = drm_is_afbc(img->vk.drm_format_mod);
+   /* Format re-interpretation is not an option on Bifrost */
+   const bool preserve_img_fmt = is_afbc && PAN_ARCH <= 7;
+   /* We want UNORM when the image is the destination of a copy and a graphics
+    * pipeline is used to avoid blend shaders. On Bifrost, only UNORM/sRGB
+    * is allowed, so we use UNORM formats when creating depth/stencil views too.
+    */
+   const bool use_unorm =
+      (use_gfx_pipeline && is_destination) || preserve_img_fmt;
 
-   if (drm_is_afbc(mod)) {
-      if (ycbcr_info) {
-         for (uint32_t p = 0; p < ycbcr_info->n_planes; p++)
-            props.plane[p].view_format = ycbcr_info->planes[p].format;
-      } else if (!vk_format_is_depth_or_stencil(img->vk.format)) {
-         props.color.view_format = img->vk.format;
-      } else {
-         switch (img->vk.format) {
-         case VK_FORMAT_D24_UNORM_S8_UINT:
-            props.depth.view_format = VK_FORMAT_R8G8B8A8_UNORM;
-            props.depth.component_mask = BITFIELD_MASK(3);
-            props.stencil.view_format = VK_FORMAT_R8G8B8A8_UNORM;
-            props.stencil.component_mask = BITFIELD_BIT(3);
-            break;
-         case VK_FORMAT_X8_D24_UNORM_PACK32:
-            props.depth.view_format = VK_FORMAT_R8G8B8A8_UNORM;
-            props.depth.component_mask = BITFIELD_MASK(3);
-            break;
-         case VK_FORMAT_D16_UNORM:
-            props.depth.view_format = VK_FORMAT_R8G8_UNORM;
-            props.depth.component_mask = BITFIELD_MASK(2);
-            break;
-         default:
-            assert(!"Invalid ZS format");
-            break;
-         }
-      }
-   } else if (vk_format_is_depth_or_stencil(img->vk.format)) {
+   if (vk_format_is_depth_or_stencil(img->vk.format)) {
       switch (img->vk.format) {
       case VK_FORMAT_S8_UINT:
-         props.stencil.view_format = VK_FORMAT_R8_UINT;
+         props.stencil.view_format =
+            use_unorm ? VK_FORMAT_R8_UNORM : VK_FORMAT_R8_UINT;
          props.stencil.component_mask = BITFIELD_MASK(1);
          break;
       case VK_FORMAT_D24_UNORM_S8_UINT:
-         props.depth.view_format = VK_FORMAT_R8G8B8A8_UINT;
+         props.depth.view_format =
+            use_unorm ? VK_FORMAT_R8G8B8A8_UNORM : VK_FORMAT_R8G8B8A8_UINT;
          props.depth.component_mask = BITFIELD_MASK(3);
-         props.stencil.view_format = VK_FORMAT_R8G8B8A8_UINT;
+         props.stencil.view_format = props.depth.view_format;
          props.stencil.component_mask = BITFIELD_BIT(3);
          break;
       case VK_FORMAT_X8_D24_UNORM_PACK32:
-         props.depth.view_format = VK_FORMAT_R8G8B8A8_UINT;
+         props.depth.view_format =
+            use_unorm ? VK_FORMAT_R8G8B8A8_UNORM : VK_FORMAT_R8G8B8A8_UINT;
          props.depth.component_mask = BITFIELD_MASK(3);
          break;
       case VK_FORMAT_D32_SFLOAT_S8_UINT:
-         props.depth.view_format = VK_FORMAT_R32_UINT;
-         props.depth.component_mask = BITFIELD_BIT(0);
-         props.stencil.view_format = VK_FORMAT_R8_UINT;
+         props.depth.view_format = use_unorm ? VK_FORMAT_R8G8B8A8_UNORM
+                                                    : VK_FORMAT_R8G8B8A8_UINT;
+         props.depth.component_mask = BITFIELD_MASK(4);
+         props.stencil.view_format =
+            use_unorm ? VK_FORMAT_R8_UNORM : VK_FORMAT_R8_UINT;
          props.stencil.component_mask = BITFIELD_BIT(0);
          break;
       case VK_FORMAT_D16_UNORM:
-         props.depth.view_format = VK_FORMAT_R16_UINT;
-         props.depth.component_mask = BITFIELD_BIT(0);
+         props.depth.view_format =
+            use_unorm ? VK_FORMAT_R8G8_UNORM : VK_FORMAT_R8G8_UINT;
+         props.depth.component_mask = BITFIELD_MASK(2);
          break;
       case VK_FORMAT_D32_SFLOAT:
-         props.depth.view_format = VK_FORMAT_R32_UINT;
-         props.depth.component_mask = BITFIELD_BIT(0);
+         props.depth.view_format = use_unorm ? VK_FORMAT_R8G8B8A8_UNORM
+                                                    : VK_FORMAT_R8G8B8A8_UINT;
+         props.depth.component_mask = BITFIELD_MASK(4);
          break;
       default:
          assert(!"Invalid ZS format");
@@ -124,12 +136,22 @@ panvk_meta_copy_get_image_properties(struct panvk_image *img)
             vk_format_get_blocksize(ycbcr_info->planes[p].format);
 
          props.plane[p].view_format =
+            use_unorm ?
+            panvk_meta_get_unorm_format_for_blk_size(blk_sz) :
             panvk_meta_get_uint_format_for_blk_size(blk_sz);
       }
    } else {
       unsigned blk_sz = util_format_get_blocksize(pfmt);
 
-      props.color.view_format = panvk_meta_get_uint_format_for_blk_size(blk_sz);
+      if (preserve_img_fmt) {
+         props.color.view_format = img->vk.format;
+      } else if (use_unorm) {
+         props.color.view_format =
+            panvk_meta_get_unorm_format_for_blk_size(blk_sz);
+      } else {
+         props.color.view_format =
+            panvk_meta_get_uint_format_for_blk_size(blk_sz);
+      }
    }
 
    if (mod == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED ||
