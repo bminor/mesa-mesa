@@ -121,8 +121,8 @@ nvk_reset_cmd_buffer(struct vk_command_buffer *vk_cmd_buffer,
    cmd->push_mem = NULL;
    cmd->push_mem_limit = NULL;
    cmd->push = (struct nv_push) {0};
-   cmd->cond_render_gart_mem = NULL;
-   cmd->cond_render_gart_offset = 0;
+   cmd->cond_render_mem = NULL;
+   cmd->cond_render_offset = 0;
 
    util_dynarray_clear(&cmd->pushes);
 
@@ -304,14 +304,14 @@ VkResult
 nvk_cmd_buffer_cond_render_alloc(struct nvk_cmd_buffer *cmd,
                                  uint64_t *addr)
 {
-   uint32_t offset = cmd->cond_render_gart_offset;
+   uint32_t offset = cmd->cond_render_offset;
    uint32_t size = 64;
 
    assert(offset <= NVK_CMD_MEM_SIZE);
-   if (cmd->cond_render_gart_mem != NULL && size <= NVK_CMD_MEM_SIZE - offset) {
-      *addr = cmd->cond_render_gart_mem->mem->va->addr + offset;
+   if (cmd->cond_render_mem != NULL && size <= NVK_CMD_MEM_SIZE - offset) {
+      *addr = cmd->cond_render_mem->mem->va->addr + offset;
 
-      cmd->cond_render_gart_offset = offset + size;
+      cmd->cond_render_offset = offset + size;
 
       return VK_SUCCESS;
    }
@@ -329,9 +329,9 @@ nvk_cmd_buffer_cond_render_alloc(struct nvk_cmd_buffer *cmd,
     * upload BO on this one allocation and continuing on the current upload
     * BO.
     */
-   if (cmd->cond_render_gart_mem == NULL || size < cmd->cond_render_gart_offset) {
-      cmd->cond_render_gart_mem = mem;
-      cmd->cond_render_gart_offset = size;
+   if (cmd->cond_render_mem == NULL || size < cmd->cond_render_offset) {
+      cmd->cond_render_mem = mem;
+      cmd->cond_render_offset = size;
    }
 
    return VK_SUCCESS;
