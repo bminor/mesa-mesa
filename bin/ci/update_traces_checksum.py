@@ -25,7 +25,7 @@ from gitlab_common import (get_gitlab_project, read_token, wait_for_pipeline,
 
 
 DESCRIPTION_FILE = "export PIGLIT_REPLAY_DESCRIPTION_FILE=.*/install/(.*)$"
-DEVICE_NAME = "declare -x PIGLIT_REPLAY_DEVICE_NAME='(.*)'$"
+DEVICE_NAME = "(?:declare -x|export) PIGLIT_REPLAY_DEVICE_NAME='?([^']*)'?$"
 
 
 def gather_results(
