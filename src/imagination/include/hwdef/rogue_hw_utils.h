@@ -39,8 +39,8 @@
 #define __pvr_make_address(addr_u64) PVR_DEV_ADDR(addr_u64)
 /* clang-format on */
 
-#include "csbgen/rogue_cdm.h"
-#include "csbgen/rogue_lls.h"
+#include "csbgen/rogue/cdm.h"
+#include "csbgen/rogue/lls.h"
 
 #undef __pvr_make_address
 #undef __pvr_get_address

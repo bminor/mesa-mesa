@@ -9,7 +9,7 @@
 #define __pvr_make_address(addr) addr
 #endif /* __pvr_address_type */
 
-#include "csbgen/rogue_texstate.h"
+#include "csbgen/rogue/texstate.h"
 #include "libcl.h"
 #include "util/u_math.h"
 

@@ -9,7 +9,7 @@
 #define __pvr_make_address(addr) addr
 #endif /* __pvr_address_type */
 
-#include "csbgen/rogue_cdm.h"
+#include "csbgen/rogue/cdm.h"
 #include "hwdef/rogue_hw_defs.h"
 #include "libcl.h"
 
