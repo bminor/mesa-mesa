@@ -455,24 +455,6 @@ vtn_handle_fp_fast_math(struct vtn_builder *b, struct vtn_value *val)
 #undef FLOAT_CONTROLS2_BITS
 }
 
-static void
-handle_no_contraction(struct vtn_builder *b, UNUSED struct vtn_value *val,
-                      UNUSED int member, const struct vtn_decoration *dec,
-                      UNUSED void *_void)
-{
-   vtn_assert(dec->scope == VTN_DEC_DECORATION);
-   if (dec->decoration != SpvDecorationNoContraction)
-      return;
-
-   b->nb.exact = true;
-}
-
-void
-vtn_handle_no_contraction(struct vtn_builder *b, struct vtn_value *val)
-{
-   vtn_foreach_decoration(b, val, handle_no_contraction, NULL);
-}
-
 nir_rounding_mode
 vtn_rounding_mode_to_nir(struct vtn_builder *b, SpvFPRoundingMode mode)
 {
@@ -524,54 +506,11 @@ handle_conversion_opts(struct vtn_builder *b, UNUSED struct vtn_value *val,
    }
 }
 
-static void
-handle_no_wrap(UNUSED struct vtn_builder *b, UNUSED struct vtn_value *val,
-               UNUSED int member,
-               const struct vtn_decoration *dec, void *_alu)
-{
-   nir_alu_instr *alu = _alu;
-   switch (dec->decoration) {
-   case SpvDecorationNoSignedWrap:
-      alu->no_signed_wrap = true;
-      break;
-   case SpvDecorationNoUnsignedWrap:
-      alu->no_unsigned_wrap = true;
-      break;
-   default:
-      /* Do nothing. */
-      break;
-   }
-}
-
-static void
-vtn_value_is_relaxed_precision_cb(struct vtn_builder *b,
-                          struct vtn_value *val, int member,
-                          const struct vtn_decoration *dec, void *void_ctx)
-{
-   bool *relaxed_precision = void_ctx;
-   switch (dec->decoration) {
-   case SpvDecorationRelaxedPrecision:
-      *relaxed_precision = true;
-      break;
-
-   default:
-      break;
-   }
-}
-
-bool
-vtn_value_is_relaxed_precision(struct vtn_builder *b, struct vtn_value *val)
-{
-   bool result = false;
-   vtn_foreach_decoration(b, val,
-                          vtn_value_is_relaxed_precision_cb, &result);
-   return result;
-}
-
 static bool
 vtn_alu_op_mediump_16bit(struct vtn_builder *b, SpvOp opcode, struct vtn_value *dest_val)
 {
-   if (!b->options->mediump_16bit_alu || !vtn_value_is_relaxed_precision(b, dest_val))
+   if (!b->options->mediump_16bit_alu ||
+       !vtn_has_decoration(b, dest_val, SpvDecorationRelaxedPrecision))
       return false;
 
    switch (opcode) {
@@ -790,7 +729,7 @@ vtn_handle_alu(struct vtn_builder *b, SpvOp opcode,
       return;
    }
 
-   vtn_handle_no_contraction(b, dest_val);
+   b->nb.exact |= vtn_has_decoration(b, dest_val, SpvDecorationNoContraction);
    vtn_handle_fp_fast_math(b, dest_val);
    bool mediump_16bit = vtn_alu_op_mediump_16bit(b, opcode, dest_val);
 
@@ -1148,7 +1087,8 @@ vtn_handle_alu(struct vtn_builder *b, SpvOp opcode,
    case SpvOpShiftLeftLogical:
    case SpvOpSNegate: {
       nir_alu_instr *alu = nir_def_as_alu(dest->def);
-      vtn_foreach_decoration(b, dest_val, handle_no_wrap, alu);
+      alu->no_signed_wrap |= vtn_has_decoration(b, dest_val, SpvDecorationNoSignedWrap);
+      alu->no_unsigned_wrap |= vtn_has_decoration(b, dest_val, SpvDecorationNoUnsignedWrap);
       break;
    }
    default:
@@ -1171,7 +1111,7 @@ vtn_handle_integer_dot(struct vtn_builder *b, SpvOp opcode,
    const struct glsl_type *dest_type = vtn_get_type(b, w[1])->type;
    const unsigned dest_size = glsl_get_bit_size(dest_type);
 
-   vtn_handle_no_contraction(b, dest_val);
+   b->nb.exact |= vtn_has_decoration(b, dest_val, SpvDecorationNoContraction);
 
    /* Collect the various SSA sources.
     *
