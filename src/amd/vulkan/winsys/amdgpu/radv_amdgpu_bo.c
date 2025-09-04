@@ -530,7 +530,7 @@ radv_amdgpu_winsys_bo_create(struct radeon_winsys *_ws, uint64_t size, unsigned 
 
    r = radv_amdgpu_bo_va_op(ws, kms_handle, 0, size, va, flags, 0, AMDGPU_VA_OP_MAP);
    if (r) {
-      result = VK_ERROR_UNKNOWN;
+      result = VK_ERROR_OUT_OF_DEVICE_MEMORY;
       goto error_va_map;
    }
 
@@ -806,7 +806,7 @@ radv_amdgpu_winsys_bo_from_fd(struct radeon_winsys *_ws, int fd, unsigned priori
 
    r = radv_amdgpu_bo_va_op(ws, kms_handle, 0, result.alloc_size, va, 0, 0, AMDGPU_VA_OP_MAP);
    if (r) {
-      vk_result = VK_ERROR_UNKNOWN;
+      vk_result = VK_ERROR_OUT_OF_DEVICE_MEMORY;
       goto error_va_map;
    }
 
