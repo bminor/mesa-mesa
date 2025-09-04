@@ -4866,7 +4866,7 @@ nvk_CmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer,
       }
 
       /* Zero-initialize the beginning of the buffer. As an invariant, the bytes
-       * for operand B are always zero
+       * for operand B and the upper half of operand A are always zero.
        */
       assert(cmd->cond_render_mem->mem->size_B > 32);
       memset(cmd->cond_render_mem->mem->map, 0x00, 32);
@@ -4876,11 +4876,7 @@ nvk_CmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer,
    /* Frustratingly, the u64s are not packed together */
    const uint64_t operand_a_addr = tmp_addr + 0;
 
-   struct nv_push *p = nvk_cmd_buffer_push(cmd, 20);
-
-   P_MTHD(p, NV90B5, LINE_LENGTH_IN);
-   P_NV90B5_LINE_LENGTH_IN(p, 1);
-   P_NV90B5_LINE_COUNT(p, 1);
+   struct nv_push *p = nvk_cmd_buffer_push(cmd, 19);
 
    /* Copy value into operand A */
    P_MTHD(p, NV90B5, OFFSET_IN_UPPER);
@@ -4888,16 +4884,10 @@ nvk_CmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer,
    P_NV90B5_OFFSET_IN_LOWER(p, addr & 0xffffffff);
    P_NV90B5_OFFSET_OUT_UPPER(p, operand_a_addr >> 32);
    P_NV90B5_OFFSET_OUT_LOWER(p, operand_a_addr & 0xffffffff);
-
-   P_IMMD(p, NV90B5, SET_REMAP_COMPONENTS, {
-      .dst_x = DST_X_SRC_X,
-      .dst_y = DST_Y_SRC_X,
-      .dst_z = DST_Z_NO_WRITE,
-      .dst_w = DST_W_NO_WRITE,
-      .component_size = COMPONENT_SIZE_FOUR,
-      .num_src_components = NUM_SRC_COMPONENTS_ONE,
-      .num_dst_components = NUM_DST_COMPONENTS_TWO,
-   });
+   P_NV90B5_PITCH_IN(p, 1);
+   P_NV90B5_PITCH_OUT(p, 1);
+   P_NV90B5_LINE_LENGTH_IN(p, 4);
+   P_NV90B5_LINE_COUNT(p, 1);
 
    P_IMMD(p, NV90B5, LAUNCH_DMA, {
       .data_transfer_type = DATA_TRANSFER_TYPE_PIPELINED,
@@ -4905,7 +4895,7 @@ nvk_CmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer,
       .flush_enable = FLUSH_ENABLE_TRUE,
       .src_memory_layout = SRC_MEMORY_LAYOUT_PITCH,
       .dst_memory_layout = DST_MEMORY_LAYOUT_PITCH,
-      .remap_enable = REMAP_ENABLE_TRUE,
+      .remap_enable = REMAP_ENABLE_FALSE,
    });
 
    /* Compare the operands */
