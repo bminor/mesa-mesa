@@ -525,6 +525,14 @@ pan_afbc_format(unsigned arch, enum pipe_format format, unsigned plane_idx)
     */
    format = util_format_linear(format);
 
+   /* AFBC is type agnostic on v9+ (it just doesn't support float types except
+    * for D32 which is mapped to RGBA8 internally), but most of the following
+    * tests are done on UNORM for simplicity, so make sure we convert to _UNORM
+    * first in that case.
+    */
+   if (arch >= 9 && !util_format_is_float(format))
+      format = util_format_any_to_unorm(format);
+
    /* Luminance-alpha not supported for AFBC on v7+ */
    switch (format) {
    case PIPE_FORMAT_A8_UNORM:
