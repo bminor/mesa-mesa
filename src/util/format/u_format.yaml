@@ -2122,6 +2122,32 @@
   channels: [X4, UN12]
   swizzles: [X, Y, Z, W]
 
+# VK_EXT_ycbcr_2plane_444_formats
+- name: G8_B8R8_444_UNORM
+  layout: planar2
+  colorspace: RGB
+  block: {width: 1, height: 1, depth: 1}
+  channels: [UN8]
+  swizzles: [X, Y, Z, W]
+- name: X6G10_X6B10X6R10_444_UNORM
+  layout: planar2
+  colorspace: RGB
+  block: {width: 1, height: 1, depth: 1}
+  channels: [X6, UN10]
+  swizzles: [X, Y, Z, W]
+- name: X4G12_X4B12X4R12_444_UNORM
+  layout: planar2
+  colorspace: RGB
+  block: {width: 1, height: 1, depth: 1}
+  channels: [X4, UN12]
+  swizzles: [X, Y, Z, W]
+- name: Y16_U16V16_444_UNORM
+  layout: planar2
+  colorspace: YUV
+  block: {width: 1, height: 1, depth: 1}
+  channels: []
+  swizzles: [X, Y, Z, W]
+
 # for YUV420_8BIT, each 2x2 block needs 6 8 bit values to describe it
 - name: R8G8B8_420_UNORM_PACKED
   layout: subsampled

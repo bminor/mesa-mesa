@@ -143,6 +143,10 @@ def has_access(format):
         'y8_unorm',
         'y8u8v8_420_unorm_packed',
         'y10u10v10_420_unorm_packed',
+        'g8_b8r8_444_unorm',
+        'x6g10_x6b10x6r10_444_unorm',
+        'x4g12_x4b12x4r12_444_unorm',
+        'y16_u16v16_444_unorm',
     ]
     if format.short_name() in noaccess_formats:
         return False
