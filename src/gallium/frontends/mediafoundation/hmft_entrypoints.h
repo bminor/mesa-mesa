@@ -504,6 +504,45 @@ DEFINE_CODECAPI_GUID( AVEncVideoRateControlFramePreAnalysisExternalReconDownscal
    DEFINE_CODECAPI_GUIDNAMED( AVEncVideoRateControlFramePreAnalysisExternalReconDownscale )
 #endif
 
+#ifndef CODECAPI_AVEncWorkGlobalPriority
+// AVEncWorkGlobalPriority (VT_UI4) (Experimental, Testing only)
+// Indicates global priority for all work submitted by the encoder to the GPU
+// VARIANT_FALSE: disable; VARIANT_TRUE: enable
+DEFINE_CODECAPI_GUID( AVEncWorkGlobalPriority,
+                      "CA123CAA-A17B-4BBA-9E08-269F3CF5D636",
+                      0xca123caa,
+                      0xa17b,
+                      0x4bba,
+                      0x9e,
+                      0x8,
+                      0x26,
+                      0x9f,
+                      0x3c,
+                      0xf5,
+                      0xd6,
+                      0x36 )
+#define CODECAPI_AVEncWorkGlobalPriority DEFINE_CODECAPI_GUIDNAMED( AVEncWorkGlobalPriority )
+#endif
+
+#ifndef CODECAPI_AVEncWorkProcessPriority
+// AVEncWorkProcessPriority (VT_UI4) (Experimental, Testing only)
+// Indicates global priority for all work submitted by the encoder to the GPU
+// VARIANT_FALSE: disable; VARIANT_TRUE: enable
+DEFINE_CODECAPI_GUID( AVEncWorkProcessPriority,
+                      "FB123CAA-B778-4BBA-9E08-269F3CF5D125",
+                      0xfb123caa,
+                      0xb778,
+                      0x4bba,
+                      0x9e,
+                      0x8,
+                      0x26,
+                      0x9f,
+                      0x3c,
+                      0xf5,
+                      0xd1,
+                      0x25 )
+#define CODECAPI_AVEncWorkProcessPriority DEFINE_CODECAPI_GUIDNAMED( AVEncWorkProcessPriority )
+#endif
 
 #if MFT_CODEC_H264ENC
 #define HMFT_GUID "8994db7c-288a-4c62-a136-a3c3c2a208a8"
@@ -694,6 +733,13 @@ class __declspec( uuid( HMFT_GUID ) ) CDX12EncHMFT : CMFD3DManager,
 
    BOOL m_bRateControlFramePreAnalysis = FALSE;
    BOOL m_bRateControlFramePreAnalysisExternalReconDownscale = FALSE;
+
+#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+   D3D12_COMMAND_QUEUE_PROCESS_PRIORITY m_WorkProcessPriority = {};
+   BOOL m_bWorkProcessPrioritySet = FALSE;
+   D3D12_COMMAND_QUEUE_GLOBAL_PRIORITY m_WorkGlobalPriority = {};
+   BOOL m_bWorkGlobalPrioritySet = FALSE;
+#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
 
    struct pipe_video_codec *m_pPipeVideoCodec = nullptr;
    struct pipe_video_codec *m_pPipeVideoBlitter = nullptr;

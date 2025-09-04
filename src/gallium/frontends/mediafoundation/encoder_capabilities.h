@@ -134,4 +134,7 @@ class encoder_capabilities
 
    // PSNR frame stats
    union pipe_enc_cap_gpu_stats_psnr m_PSNRStatsSupport = {};
+
+   // Driver supports queue priority management
+   bool m_bHWSupportsQueuePriorityManagement = false;
 };

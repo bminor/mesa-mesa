@@ -248,11 +248,70 @@ CMFD3DManager::UpdateGPUFeatureFlags()
    */
 }
 
+#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+
+int MFTRegisterWorkQueue(struct d3d12_context_queue_priority_manager* manager, ID3D12CommandQueue* queue)
+{
+   mft_context_queue_priority_manager* mft_mgr = (mft_context_queue_priority_manager*) manager;
+   mtx_lock(&mft_mgr->m_lock);
+
+   ComPtr<IUnknown> queue_unknown;
+   if (FAILED(queue->QueryInterface(IID_PPV_ARGS( &queue_unknown ))))
+   {
+      mtx_unlock(&mft_mgr->m_lock);
+      return -1;
+   }
+
+   // Only register the queue if not already registered
+   auto it = std::find(mft_mgr->m_registeredQueues.begin(), mft_mgr->m_registeredQueues.end(), queue);
+   if (it == mft_mgr->m_registeredQueues.end())
+   {
+      //
+      // Register the queue_unknown with the MFT.
+      //
+
+      mft_mgr->m_registeredQueues.push_back(queue);
+   }
+
+   mtx_unlock(&mft_mgr->m_lock);
+   return 0;
+}
+
+int MFTUnregisterWorkQueue(struct d3d12_context_queue_priority_manager* manager, ID3D12CommandQueue* queue)
+{
+   mft_context_queue_priority_manager* mft_mgr = (mft_context_queue_priority_manager*) manager;
+   mtx_lock(&mft_mgr->m_lock);
+
+   ComPtr<IUnknown> queue_unknown;
+   if (FAILED(queue->QueryInterface(IID_PPV_ARGS( &queue_unknown ))))
+   {
+      mtx_unlock(&mft_mgr->m_lock);
+      return -1;
+   }
+
+   //
+   // Unregister the queue_unknown with the MFT.
+   //
+
+   auto it = std::find(mft_mgr->m_registeredQueues.begin(), mft_mgr->m_registeredQueues.end(), queue);
+   if (it != mft_mgr->m_registeredQueues.end())
+      mft_mgr->m_registeredQueues.erase(it);
+
+   mtx_unlock(&mft_mgr->m_lock);
+   return 0;
+}
+
+#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+
 HRESULT
 CMFD3DManager::xOnSetD3DManager( ULONG_PTR ulParam )
 {
    HRESULT hr = S_OK;
    Shutdown();
+
+#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+   d3d12_interop_device_info1 screen_interop_info = {};
+#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
 
    if( ulParam == 0 )
    {
@@ -271,8 +330,38 @@ CMFD3DManager::xOnSetD3DManager( ULONG_PTR ulParam )
                    MF_E_DXGI_DEVICE_NOT_INITIALIZED,
                    done );
    CHECKNULL_GOTO( m_pPipeContext = pipe_create_multimedia_context( m_pVlScreen->pscreen, false ),
-                   MF_E_DXGI_DEVICE_NOT_INITIALIZED,
-                   done );
+                  MF_E_DXGI_DEVICE_NOT_INITIALIZED,
+                  done );
+
+#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+   if ((m_pVlScreen->pscreen->interop_query_device_info(m_pVlScreen->pscreen, sizeof(d3d12_interop_device_info1), &screen_interop_info) != 0) &&
+       (screen_interop_info.set_context_queue_priority_manager != NULL))
+   {
+      CHECKBOOL_GOTO( thrd_success == mtx_init(&m_ContextPriorityMgr.m_lock, mtx_plain),
+                     MF_E_DXGI_DEVICE_NOT_INITIALIZED,
+                     done );
+
+      m_ContextPriorityMgr.base.register_work_queue = MFTRegisterWorkQueue;
+      m_ContextPriorityMgr.base.unregister_work_queue = MFTUnregisterWorkQueue;
+
+      CHECKBOOL_GOTO( screen_interop_info.set_context_queue_priority_manager( m_pPipeContext, &m_ContextPriorityMgr.base ) == 0,
+                     MF_E_DXGI_DEVICE_NOT_INITIALIZED,
+                     done );
+
+      //
+      // Verify that the callbacks have been filled by the driver
+      //
+      CHECKNULL_GOTO( m_ContextPriorityMgr.base.context,
+                     MF_E_DXGI_DEVICE_NOT_INITIALIZED,
+                     done );
+      CHECKNULL_GOTO( m_ContextPriorityMgr.base.set_queue_priority,
+                     MF_E_DXGI_DEVICE_NOT_INITIALIZED,
+                     done );
+      CHECKNULL_GOTO( m_ContextPriorityMgr.base.get_queue_priority,
+                     MF_E_DXGI_DEVICE_NOT_INITIALIZED,
+                     done );
+   }
+#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
    CHECKHR_GOTO( MFCreateVideoSampleAllocatorEx( IID_PPV_ARGS( &m_spVideoSampleAllocator ) ), done );
 
    CHECKHR_GOTO( GetDeviceInfo(), done );

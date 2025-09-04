@@ -282,6 +282,14 @@ StringFromCodecAPI( const GUID *Api )
    {
       return "CODECAPI_AVEncVideoInputAbsoluteQPBlockSettings";
    }
+   else if( *Api == CODECAPI_AVEncWorkGlobalPriority )
+   {
+      return "CODECAPI_AVEncWorkGlobalPriority";
+   }
+   else if( *Api == CODECAPI_AVEncWorkProcessPriority )
+   {
+      return "CODECAPI_AVEncWorkProcessPriority";
+   }
    return "Unknown CodecAPI";
 }
 
@@ -404,6 +412,17 @@ CDX12EncHMFT::IsSupported( const GUID *Api )
          return hr;
       }
    }
+
+#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+      if( (*Api == CODECAPI_AVEncWorkGlobalPriority) || (*Api == CODECAPI_AVEncWorkProcessPriority) )
+      {
+         if(m_EncoderCapabilities.m_bHWSupportsQueuePriorityManagement)
+         {
+            hr = S_OK;
+            return hr;
+         }
+      }
+#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
 
    if( m_EncoderCapabilities.m_TwoPassSupport.bits.supports_1pass_recon_writing_skip )
    {
@@ -890,6 +909,18 @@ CDX12EncHMFT::GetValue( const GUID *Api, VARIANT *Value )
       Value->vt = VT_BOOL;
       Value->boolVal = m_bRateControlFramePreAnalysisExternalReconDownscale ? VARIANT_TRUE : VARIANT_FALSE;
    }
+#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+   else if( *Api == CODECAPI_AVEncWorkGlobalPriority )
+   {
+      Value->vt = VT_UI4;
+      Value->ulVal = (UINT32) m_WorkGlobalPriority;
+   }
+   else if( *Api == CODECAPI_AVEncWorkProcessPriority )
+   {
+      Value->vt = VT_UI4;
+      Value->ulVal = (UINT32) m_WorkProcessPriority;
+   }
+#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
    else if( *Api == CODECAPI_AVEncVideoInputDeltaQPBlockSettings )
    {
       InputQPSettings hevcDeltaQPSettings;
@@ -1566,6 +1597,40 @@ CDX12EncHMFT::SetValue( const GUID *Api, VARIANT *Value )
          CHECKHR_GOTO( E_INVALIDARG, done );
       }
       m_bVideoEnableSpatialAdaptiveQuantization = Value->ulVal ? TRUE : FALSE;
+   }
+   else if( *Api == CODECAPI_AVEncWorkProcessPriority )
+   {
+      debug_printf( "[dx12 hmft 0x%p] SET CODECAPI_AVEncWorkProcessPriority - %u\n", this, Value->ulVal );
+      if( Value->vt != VT_UI4 )
+      {
+         CHECKHR_GOTO( E_INVALIDARG, done );
+      }
+
+      if(!m_EncoderCapabilities.m_bHWSupportsQueuePriorityManagement)
+      {
+         CHECKHR_GOTO( E_INVALIDARG, done );
+      }
+#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+      m_WorkProcessPriority = (D3D12_COMMAND_QUEUE_PROCESS_PRIORITY) (Value->ulVal);;
+      m_bWorkProcessPrioritySet = TRUE;
+#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+   }
+   else if( *Api == CODECAPI_AVEncWorkGlobalPriority )
+   {
+      debug_printf( "[dx12 hmft 0x%p] SET CODECAPI_AVEncWorkGlobalPriority - %u\n", this, Value->ulVal );
+      if( Value->vt != VT_UI4 )
+      {
+         CHECKHR_GOTO( E_INVALIDARG, done );
+      }
+
+      if(!m_EncoderCapabilities.m_bHWSupportsQueuePriorityManagement)
+      {
+         CHECKHR_GOTO( E_INVALIDARG, done );
+      }
+#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+      m_WorkGlobalPriority = (D3D12_COMMAND_QUEUE_GLOBAL_PRIORITY) Value->ulVal;
+      m_bWorkGlobalPrioritySet = TRUE;
+#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
    }
    else if( *Api == CODECAPI_AVEncVideoOutputQPMapBlockSize )
    {

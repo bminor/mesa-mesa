@@ -456,6 +456,40 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
 
    pDX12EncodeContext->pVlScreen = m_pVlScreen;   // weakref
 
+#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+
+   //
+   // Update the encoder priorities (if any set)
+   //
+   
+#if 0 // For testing priorities
+   {
+      m_bWorkProcessPrioritySet = ((pipeEncoderInputFenceHandleValue % 2) == 0) ? TRUE : FALSE;
+      m_WorkGlobalPriority = static_cast<D3D12_COMMAND_QUEUE_GLOBAL_PRIORITY>((pipeEncoderInputFenceHandleValue % 14) + 18); // 18-31 range (no hard realtime privileges)
+      m_bWorkGlobalPrioritySet = ((pipeEncoderInputFenceHandleValue % 2) == 0) ? TRUE : FALSE;
+      m_WorkProcessPriority = static_cast<D3D12_COMMAND_QUEUE_PROCESS_PRIORITY>(pipeEncoderInputFenceHandleValue % 2); // 0-1 range
+   }
+#endif // For testing priorities
+
+   if (m_bWorkProcessPrioritySet || m_bWorkGlobalPrioritySet)
+   {
+      for (ID3D12CommandQueue* queue : m_ContextPriorityMgr.m_registeredQueues)
+      {
+         mtx_lock(&m_ContextPriorityMgr.m_lock);
+         int result = m_ContextPriorityMgr.base.set_queue_priority(&m_ContextPriorityMgr.base, queue, reinterpret_cast<uint32_t*>(&m_WorkGlobalPriority), reinterpret_cast<uint32_t*>(&m_WorkProcessPriority));
+         mtx_unlock(&m_ContextPriorityMgr.m_lock);
+
+         CHECKBOOL_GOTO(result == 0, MF_E_UNEXPECTED, done);
+      }
+
+      // Once set in the underlying pipe context, don't set them again
+      // until they're modified by the CodecAPI SetValue function.
+      m_bWorkProcessPrioritySet = FALSE;
+      m_bWorkGlobalPrioritySet = FALSE;
+   }
+
+#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+
    // Call the helper for encoder specific work
    pDX12EncodeContext->encoderPicInfo.base.in_fence = pPipeEncoderInputFenceHandle;
    pDX12EncodeContext->encoderPicInfo.base.in_fence_value = pipeEncoderInputFenceHandleValue;
