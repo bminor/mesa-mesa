@@ -39,6 +39,7 @@
 #include "util/u_framebuffer.h"
 #include "util/u_suballoc.h"
 #include "util/u_threaded_context.h"
+struct d3d12_context_queue_priority_manager;
 
 #define D3D12_GFX_SHADER_STAGES (MESA_SHADER_STAGES - 1)
 
@@ -297,6 +298,11 @@ struct d3d12_context {
    /* used by d3d12_blit.cpp */
    void *stencil_resolve_vs, *stencil_resolve_fs, *stencil_resolve_fs_no_flip, *sampler_state;
 #endif // HAVE_GALLIUM_D3D12_GRAPHICS
+
+#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+   struct d3d12_context_queue_priority_manager* priority_manager; // Object passed and managed by frontend
+   mtx_t priority_manager_lock; // Mutex to protect access to priority_manager
+#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
 };
 
 static inline struct d3d12_context *
@@ -323,6 +329,11 @@ d3d12_current_batch(struct d3d12_context *ctx)
 
 struct pipe_context *
 d3d12_context_create(struct pipe_screen *pscreen, void *priv, unsigned flags);
+
+#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+int
+d3d12_context_set_queue_priority_manager(struct pipe_context *ctx, struct d3d12_context_queue_priority_manager *priority_manager);
+#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
 
 bool
 d3d12_enable_fake_so_buffers(struct d3d12_context *ctx, unsigned factor);

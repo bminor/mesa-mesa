@@ -1157,6 +1157,15 @@ d3d12_interop_query_device_info(struct pipe_screen *pscreen, uint32_t data_size,
    memcpy(&info->adapter_luid, &screen->adapter_luid, sizeof(screen->adapter_luid));
    info->device = screen->dev;
    info->queue = screen->cmdqueue;
+
+#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+   if (data_size >= sizeof(d3d12_interop_device_info1)) {
+      d3d12_interop_device_info1 *info1 = (d3d12_interop_device_info1 *)data;
+      info1->set_context_queue_priority_manager = d3d12_context_set_queue_priority_manager;
+      return sizeof(*info1);
+   }
+#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+
    return sizeof(*info);
 }
 
@@ -1426,6 +1435,32 @@ try_create_device_factory(util_dl_library *d3d12_mod)
 }
 #endif
 
+static bool
+d3d12_init_screen_command_queue(struct d3d12_screen *screen, D3D12_COMMAND_QUEUE_FLAGS queue_flags)
+{
+   D3D12_COMMAND_QUEUE_DESC queue_desc = {};
+   queue_desc.Type = screen->queue_type;
+   queue_desc.Flags = queue_flags;
+
+#ifndef _GAMING_XBOX
+   ID3D12Device9 *device9 = NULL;
+   if (SUCCEEDED(screen->dev->QueryInterface(&device9))) {
+      if (FAILED(device9->CreateCommandQueue1(&queue_desc, OpenGLOn12CreatorID,
+                                              IID_PPV_ARGS(&screen->cmdqueue)))) {
+         device9->Release();
+         return false;
+      }
+      device9->Release();
+   } else
+#endif
+   {
+      if (FAILED(screen->dev->CreateCommandQueue(&queue_desc,
+                                                 IID_PPV_ARGS(&screen->cmdqueue))))
+         return false;
+   }
+   return true;
+}
+
 bool
 d3d12_init_screen(struct d3d12_screen *screen, IUnknown *adapter)
 {
@@ -1578,25 +1613,17 @@ d3d12_init_screen(struct d3d12_screen *screen, IUnknown *adapter)
    }
 #endif // HAVE_GALLIUM_D3D12_GRAPHICS
 
-   D3D12_COMMAND_QUEUE_DESC queue_desc;
-   queue_desc.Type = screen->queue_type;
-   queue_desc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
-   queue_desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-   queue_desc.NodeMask = 0;
-
-#ifndef _GAMING_XBOX
-   ID3D12Device9 *device9;
-   if (SUCCEEDED(screen->dev->QueryInterface(&device9))) {
-      if (FAILED(device9->CreateCommandQueue1(&queue_desc, OpenGLOn12CreatorID,
-                                              IID_PPV_ARGS(&screen->cmdqueue))))
-         return false;
-      device9->Release();
+#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+   if (d3d12_init_screen_command_queue(screen, D3D12_COMMAND_QUEUE_FLAG_ALLOW_DYNAMIC_PRIORITY)) {
+      screen->supports_dynamic_queue_priority = true;
    } else
-#endif
+#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
    {
-      if (FAILED(screen->dev->CreateCommandQueue(&queue_desc,
-                                                 IID_PPV_ARGS(&screen->cmdqueue))))
+      screen->supports_dynamic_queue_priority = false;
+      if (!d3d12_init_screen_command_queue(screen, D3D12_COMMAND_QUEUE_FLAG_NONE)) {
+         debug_printf("D3D12: failed to create command queue\n");
          return false;
+      }
    }
 
    if (FAILED(screen->dev->CreateFence(0, D3D12_FENCE_FLAG_SHARED, IID_PPV_ARGS(&screen->fence))))

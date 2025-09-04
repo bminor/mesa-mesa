@@ -45,6 +45,136 @@ struct d3d12_interop_resource_info {
    uint64_t buffer_offset;
 };
 
+#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+
+/*
+ * Structure that contains information about scheduling priority management
+ * for GPU workloads exposed through work queues.
+ *
+ * Used by gallium frontend and driver to manage scheduling priority
+ * of GPU workloads.
+ *
+ * The frontend passes the [Input] callbacks after context creation
+ * and the gallium driver fills the callbacks in this structure
+ * annotated as [Output] parameters.
+ *
+ */
+struct d3d12_context_queue_priority_manager
+{
+   /*
+    * [Input] Register a work queue.
+    *
+    * The driver must call register_work_queue()
+    * callback ONCE for every queue created. Multiple registrations of the same
+    * queue are idempotent.
+    *
+    * The callback passed is expected to be thread safe.
+    *
+    * Parameters:
+    * manager: [In] Pointer to the manager structure itself
+    * queue: [In] Driver passes the queue to be registered in the frontend
+    *
+    * return: 0 for success, error code otherwise
+    */
+   int (*register_work_queue)(struct d3d12_context_queue_priority_manager* manager, ID3D12CommandQueue *queue);
+
+   /*
+    * [Input] Unregister a work queue.
+    *
+    * The driver must call unregister_work_queue()
+    * callback ONCE for every queue destroyed
+    * that was previously registered by register_work_queue()
+    *
+    * The callback passed is expected to be thread safe.
+    *
+    * The driver will call unregister_work_queue() for all registered queues
+    * on destruction of the pipe_context for sanity.
+    *
+    * Parameters:
+    * manager: [In] Pointer to the manager structure itself
+    * queue: [In] Driver passes the queue to be unregistered in the frontend
+    *
+    * return: 0 for success, error code otherwise
+    */
+   int (*unregister_work_queue)(struct d3d12_context_queue_priority_manager* manager, ID3D12CommandQueue *queue);
+
+   /*
+    * [Output] Set the scheduling priority of a registered work queue.
+    *
+    * Frontend can call set_queue_priority() to set the priority of a registered queue.
+    *
+    * The function returned is expected to be thread safe.
+    *
+    * Parameters:
+    * manager: [In] Pointer to the manager structure itself
+    * queue: [In] The frontend sends one of the queues previously
+    *               registered by the driver in register_work_queue, representing the
+    *               queue to set the priority for
+    * global_priority: [In] the global priority to be set. Value castable from D3D12_COMMAND_QUEUE_GLOBAL_PRIORITY
+    * local_priority: [In] the local priority to be set. Value castable from D3D12_COMMAND_QUEUE_PROCESS_PRIORITY
+    *
+    * return: 0 for success, error code otherwise
+    */
+   int (*set_queue_priority)(struct d3d12_context_queue_priority_manager* manager,
+                             ID3D12CommandQueue *queue,
+                             const uint32_t* global_priority,
+                             const uint32_t* local_priority);
+
+   /*
+    * [Output] Get the scheduling priority of a registered work queue.
+    *
+    * The function returned is expected to be thread safe.
+    *
+    * Parameters:
+    * manager: [In] Pointer to the manager structure itself
+    * queue: [In] The frontend sends one of the queues previously
+    *               registered by the driver in register_work_queue, representing the
+    *               queue to set the priority for
+    * global_priority: [Out] the current global priority of the queue. Value castable to D3D12_COMMAND_QUEUE_GLOBAL_PRIORITY
+    * local_priority: [Out] the current local priority of the queue. Value castable to D3D12_COMMAND_QUEUE_PROCESS_PRIORITY
+    *
+    * return: 0 for success, error code otherwise
+    */
+   int (*get_queue_priority)(struct d3d12_context_queue_priority_manager* manager,
+                             ID3D12CommandQueue *queue,
+                             uint32_t *global_priority,
+                             uint32_t *local_priority);
+
+   struct pipe_context *context;
+};
+
+struct d3d12_interop_device_info1 {
+   uint64_t adapter_luid;
+   ID3D12Device *device;
+   ID3D12CommandQueue *queue;
+
+   /*
+    * Function pointer to set a queue priority manager for a context.
+    * If this function is NULL, the driver does not support queue priority management.
+    *
+    * The lifetime of the d3d12_context_queue_priority_manager is managed by the caller,
+    * and it must be valid for the duration of the context's usage.
+    * The caller is responsible for destroying and cleaning up any previously
+    * set manager before calling this function.
+    *
+    * Any objects created by pipe_context that also create work queues
+    * such as pipe_video_codec, must also use the d3d12_context_queue_priority_manager,
+    * and unregister any queues on destruction of such children objects.
+    *
+    * The driver must call unregister_work_queue() for each registered queue
+    * on destruction of the pipe_context for sanity.
+    *
+    * Parameters:
+    *   - pipe_context*: context to configure
+    *   - d3d12_context_queue_priority_manager*: manager to use
+    *
+    * Returns int (0 for success, error code otherwise)
+    */
+   int (*set_context_queue_priority_manager)(struct pipe_context *context, struct d3d12_context_queue_priority_manager *manager);
+};
+
+#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+
 #ifdef __cplusplus
 }
 #endif

@@ -46,6 +46,7 @@
 #include "d3d12_video_encoder_references_manager_hevc.h"
 #include "d3d12_video_encoder_references_manager_av1.h"
 #include "d3d12_residency.h"
+#include "d3d12_interop_public.h"
 
 #include "vl/vl_video_buffer.h"
 #include "util/format/u_format.h"
@@ -256,6 +257,20 @@ d3d12_video_encoder_destroy(struct pipe_video_codec *codec)
 
    if (pD3D12Enc->m_SliceHeaderRepackBuffer)
       pD3D12Enc->m_screen->resource_destroy(pD3D12Enc->m_screen, pD3D12Enc->m_SliceHeaderRepackBuffer);
+
+#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+
+   struct d3d12_context* ctx = d3d12_context(pD3D12Enc->base.context);
+   if (ctx->priority_manager)
+   {
+      if (ctx->priority_manager->unregister_work_queue(ctx->priority_manager, pD3D12Enc->m_spEncodeCommandQueue.Get()) != 0)
+      {
+         debug_printf("D3D12: Failed to unregister command queue with frontend priority manager\n");
+         assert(false);
+      }
+   }
+
+#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
 
    // Call d3d12_video_encoder dtor to make ComPtr and other member's destructors work
    delete pD3D12Enc;
@@ -2324,6 +2339,10 @@ d3d12_video_encoder_create_command_objects(struct d3d12_video_encoder *pD3D12Enc
    assert(pD3D12Enc->m_spD3D12VideoDevice);
 
    D3D12_COMMAND_QUEUE_DESC commandQueueDesc = { D3D12_COMMAND_LIST_TYPE_VIDEO_ENCODE };
+#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+   if (pD3D12Enc->m_pD3D12Screen->supports_dynamic_queue_priority)
+      commandQueueDesc.Flags |= D3D12_COMMAND_QUEUE_FLAG_ALLOW_DYNAMIC_PRIORITY;
+#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
    HRESULT                  hr               = pD3D12Enc->m_pD3D12Screen->dev->CreateCommandQueue(
       &commandQueueDesc,
       IID_PPV_ARGS(pD3D12Enc->m_spEncodeCommandQueue.GetAddressOf()));
@@ -2451,6 +2470,21 @@ d3d12_video_encoder_create_encoder(struct pipe_context *context, const struct pi
                                                                               codec->entrypoint,
                                                                               PIPE_VIDEO_CAP_ENC_SLICED_NOTIFICATIONS);
    d3d12_video_encoder_initialize_two_pass(pD3D12Enc, codec->two_pass);
+
+#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+
+   if (pD3D12Ctx->priority_manager)
+   {
+      // Register queue with priority manager
+      if (pD3D12Ctx->priority_manager->register_work_queue(pD3D12Ctx->priority_manager, pD3D12Enc->m_spEncodeCommandQueue.Get()) != 0)
+      {
+         debug_printf("[d3d12_video_encoder] d3d12_video_encoder_create_encoder - Failure on "
+                      "pipe_priority_manager::register_work_queue\n");
+         goto failed;
+      }
+   }
+
+#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
 
    return &pD3D12Enc->base;
 

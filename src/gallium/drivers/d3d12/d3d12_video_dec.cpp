@@ -41,6 +41,7 @@
 #endif
 #include "d3d12_video_buffer.h"
 #include "d3d12_residency.h"
+#include "d3d12_interop_public.h"
 
 #include "vl/vl_video_buffer.h"
 #include "util/format/u_format.h"
@@ -131,6 +132,21 @@ d3d12_video_create_decoder(struct pipe_context *context, const struct pipe_video
       goto failed;
    }
 
+#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+
+   if (pD3D12Ctx->priority_manager)
+   {
+      // Register queue with priority manager
+      if (pD3D12Ctx->priority_manager->register_work_queue(pD3D12Ctx->priority_manager, pD3D12Dec->m_spDecodeCommandQueue.Get()) != 0)
+      {
+         debug_printf("[d3d12_video_decoder] d3d12_video_create_decoder - Failure on "
+                      "pipe_priority_manager::register_work_queue\n");
+         goto failed;
+      }
+   }
+
+#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+
    return &pD3D12Dec->base;
 
 failed:
@@ -180,6 +196,20 @@ d3d12_video_decoder_destroy(struct pipe_video_codec *codec)
    //    All the objects created here are smart pointer members of d3d12_video_decoder
 
    // No need for m_pD3D12Screen as it is not managed by d3d12_video_decoder
+
+#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+
+   struct d3d12_context* ctx = d3d12_context(pD3D12Dec->base.context);
+   if (ctx->priority_manager)
+   {
+      if (ctx->priority_manager->unregister_work_queue(ctx->priority_manager, pD3D12Dec->m_spDecodeCommandQueue.Get()) != 0)
+      {
+         debug_printf("D3D12: Failed to unregister command queue with frontend priority manager\n");
+         assert(false);
+      }
+   }
+
+#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
 
    // Call dtor to make ComPtr work
    delete pD3D12Dec;
@@ -824,6 +854,11 @@ d3d12_video_decoder_create_command_objects(const struct d3d12_screen *pD3D12Scre
    assert(pD3D12Dec->m_spD3D12VideoDevice);
 
    D3D12_COMMAND_QUEUE_DESC commandQueueDesc = { D3D12_COMMAND_LIST_TYPE_VIDEO_DECODE };
+#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+   if (pD3D12Screen->supports_dynamic_queue_priority)
+      commandQueueDesc.Flags |= D3D12_COMMAND_QUEUE_FLAG_ALLOW_DYNAMIC_PRIORITY;
+#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+
    HRESULT hr = pD3D12Screen->dev->CreateCommandQueue(&commandQueueDesc,
                                                       IID_PPV_ARGS(pD3D12Dec->m_spDecodeCommandQueue.GetAddressOf()));
    if (FAILED(hr)) {
