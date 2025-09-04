@@ -2368,12 +2368,9 @@ radv_enc_av1_tile_config(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncode
       }
    }
 
-   vid->tile_config.num_tile_groups = vid->tile_config.num_tile_cols * vid->tile_config.num_tile_rows;
-
-   for (unsigned i = 0; i < vid->tile_config.num_tile_groups; i++) {
-      vid->tile_config.tile_groups[i].start = i;
-      vid->tile_config.tile_groups[i].end = i;
-   }
+   vid->tile_config.num_tile_groups = 1;
+   vid->tile_config.tile_groups[0].start = 0;
+   vid->tile_config.tile_groups[0].end = vid->tile_config.num_tile_cols * vid->tile_config.num_tile_rows - 1;
 
    if (pdev->enc_hw_ver < RADV_VIDEO_ENC_HW_5)
       return;
@@ -2457,12 +2454,11 @@ radv_enc_av1_obu_instruction(struct radv_cmd_buffer *cmd_buffer, const VkVideoEn
 
    RADEON_ENC_BEGIN(pdev->vcn_enc_cmds.bitstream_instruction_av1);
 
-   /* OBU_FRAME_HEADER */
+   /* OBU_FRAME */
    radv_enc_av1_bs_instruction_type(cmd_buffer, RENCODE_AV1_BITSTREAM_INSTRUCTION_OBU_START,
-                                    RENCODE_OBU_START_TYPE_FRAME_HEADER);
-
+                                    RENCODE_OBU_START_TYPE_FRAME);
    radv_enc_av1_bs_instruction_type(cmd_buffer, RENCODE_AV1_BITSTREAM_INSTRUCTION_COPY, 0);
-   radv_enc_av1_obu_header(cmd_buffer, RENCODE_OBU_TYPE_FRAME_HEADER, ext_header);
+   radv_enc_av1_obu_header(cmd_buffer, RENCODE_OBU_TYPE_FRAME, ext_header);
    radv_enc_av1_bs_instruction_type(cmd_buffer, RENCODE_AV1_BITSTREAM_INSTRUCTION_OBU_SIZE, 0);
    radv_enc_av1_bs_instruction_type(cmd_buffer, RENCODE_AV1_BITSTREAM_INSTRUCTION_COPY, 0);
 
@@ -2714,14 +2710,6 @@ radv_enc_av1_obu_instruction(struct radv_cmd_buffer *cmd_buffer, const VkVideoEn
          /*  is_global  */
          radv_enc_code_fixed_bits(cmd_buffer, 0, 1);
 
-   radv_enc_av1_bs_instruction_type(cmd_buffer, RENCODE_AV1_BITSTREAM_INSTRUCTION_OBU_END, 0);
-
-   /* OBU_TILE_GROUP */
-   radv_enc_av1_bs_instruction_type(cmd_buffer, RENCODE_AV1_BITSTREAM_INSTRUCTION_OBU_START,
-                                    RENCODE_OBU_START_TYPE_TILE_GROUP);
-   radv_enc_av1_bs_instruction_type(cmd_buffer, RENCODE_AV1_BITSTREAM_INSTRUCTION_COPY, 0);
-   radv_enc_av1_obu_header(cmd_buffer, RENCODE_OBU_TYPE_TILE_GROUP, ext_header);
-   radv_enc_av1_bs_instruction_type(cmd_buffer, RENCODE_AV1_BITSTREAM_INSTRUCTION_OBU_SIZE, 0);
    radv_enc_av1_bs_instruction_type(cmd_buffer, RENCODE_AV1_BITSTREAM_INSTRUCTION_TILE_GROUP_OBU, 0);
    radv_enc_av1_bs_instruction_type(cmd_buffer, RENCODE_AV1_BITSTREAM_INSTRUCTION_OBU_END, 0);
 
