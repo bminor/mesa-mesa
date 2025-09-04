@@ -52,3 +52,11 @@ dEQP-VK.compute.shader_object_spirv.cooperative_matrix.khr_r.subgroupscope.conve
 dEQP-VK.compute.shader_object_spirv.cooperative_matrix.khr_r.subgroupscope.convert.input_float32_t_output_bfloat16_t.buffer.rowmajor,Fail
 dEQP-VK.compute.shader_object_spirv.cooperative_matrix.khr_r.subgroupscope.convert.input_float32_t_output_bfloat16_t.physical_buffer.rowmajor,Fail
 dEQP-VK.compute.shader_object_spirv.cooperative_matrix.khr_r.subgroupscope.convert.input_float32_t_output_bfloat16_t.workgroup.rowmajor,Fail
+
+# CTS bug https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/5983
+dEQP-VK.glsl.bfloat16.constant.fragmentbf16,Fail
+dEQP-VK.glsl.bfloat16.constant.fragmentfe4m3,Fail
+dEQP-VK.glsl.bfloat16.constant.fragmentfe5m2,Fail
+dEQP-VK.glsl.bfloat16.constant.vertexbf16,Fail
+dEQP-VK.glsl.bfloat16.constant.vertexfe4m3,Fail
+dEQP-VK.glsl.bfloat16.constant.vertexfe5m2,Fail
