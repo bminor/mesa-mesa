@@ -268,6 +268,13 @@ fd6_sampler_state_create(struct pipe_context *pctx,
    if (cso->min_mip_filter == PIPE_TEX_MIPFILTER_LINEAR)
       miplinear = true;
 
+   /* We don't know if the format is going to be YUV.  Setting CHROMA_LINEAR
+    * unconditionally seems fine.
+    */
+   bool chroma_linear =
+      cso->mag_img_filter == PIPE_TEX_FILTER_LINEAR &&
+      cso->min_img_filter == PIPE_TEX_FILTER_LINEAR;
+
    bool needs_border = false;
    so->descriptor[0] =
       COND(miplinear, A6XX_TEX_SAMP_0_MIPFILTER_LINEAR_NEAR) |
@@ -276,21 +283,21 @@ fd6_sampler_state_create(struct pipe_context *pctx,
       A6XX_TEX_SAMP_0_ANISO((enum a6xx_tex_aniso)aniso) |
       A6XX_TEX_SAMP_0_WRAP_S(tex_clamp(cso->wrap_s, &needs_border)) |
       A6XX_TEX_SAMP_0_WRAP_T(tex_clamp(cso->wrap_t, &needs_border)) |
-      A6XX_TEX_SAMP_0_WRAP_R(tex_clamp(cso->wrap_r, &needs_border));
+      A6XX_TEX_SAMP_0_WRAP_R(tex_clamp(cso->wrap_r, &needs_border)) |
+      A6XX_TEX_SAMP_0_LOD_BIAS(cso->lod_bias);
 
    so->descriptor[1] =
+      COND(cso->compare_mode, A6XX_TEX_SAMP_1_COMPARE_FUNC((enum adreno_compare_func)cso->compare_func)) |
       COND(cso->min_mip_filter == PIPE_TEX_MIPFILTER_NONE,
            A6XX_TEX_SAMP_1_MIPFILTER_LINEAR_FAR) |
       COND(!cso->seamless_cube_map, A6XX_TEX_SAMP_1_CUBEMAPSEAMLESSFILTOFF) |
-      COND(cso->unnormalized_coords, A6XX_TEX_SAMP_1_UNNORM_COORDS);
+      COND(cso->unnormalized_coords, A6XX_TEX_SAMP_1_UNNORM_COORDS) |
+      A6XX_TEX_SAMP_1_MIN_LOD(cso->min_lod) |
+      A6XX_TEX_SAMP_1_MAX_LOD(cso->max_lod);
 
-   so->descriptor[0] |= A6XX_TEX_SAMP_0_LOD_BIAS(cso->lod_bias);
-   so->descriptor[1] |= A6XX_TEX_SAMP_1_MIN_LOD(cso->min_lod) |
-                        A6XX_TEX_SAMP_1_MAX_LOD(cso->max_lod);
-
-   if (cso->compare_mode)
-      so->descriptor[1] |=
-         A6XX_TEX_SAMP_1_COMPARE_FUNC((enum adreno_compare_func)cso->compare_func); /* maps 1:1 */
+   so->descriptor[2] =
+      A6XX_TEX_SAMP_2_REDUCTION_MODE(reduction_mode(cso->reduction_mode)) |
+      COND(chroma_linear, A6XX_TEX_SAMP_2_CHROMA_LINEAR);
 
    if (needs_border) {
       bool fast_border_color_enable = false;
@@ -322,22 +329,12 @@ fd6_sampler_state_create(struct pipe_context *pctx,
       }
 
       if (fast_border_color_enable) {
-         so->descriptor[2] = A6XX_TEX_SAMP_2_FASTBORDERCOLOR(fast_border_color) |
-                             A6XX_TEX_SAMP_2_FASTBORDERCOLOREN;
+         so->descriptor[2] |= A6XX_TEX_SAMP_2_FASTBORDERCOLOR(fast_border_color) |
+                              A6XX_TEX_SAMP_2_FASTBORDERCOLOREN;
       } else {
-         so->descriptor[2] = A6XX_TEX_SAMP_2_BCOLOR(get_bcolor_offset(ctx, cso));
+         so->descriptor[2] |= A6XX_TEX_SAMP_2_BCOLOR(get_bcolor_offset(ctx, cso));
       }
    }
-
-   /* We don't know if the format is going to be YUV.  Setting CHROMA_LINEAR
-    * unconditionally seems fine.
-    */
-   if (cso->mag_img_filter == PIPE_TEX_FILTER_LINEAR &&
-       cso->min_img_filter == PIPE_TEX_FILTER_LINEAR)
-      so->descriptor[2] |= A6XX_TEX_SAMP_2_CHROMA_LINEAR;
-
-   so->descriptor[2] |=
-      A6XX_TEX_SAMP_2_REDUCTION_MODE(reduction_mode(cso->reduction_mode));
 
    return so;
 }
