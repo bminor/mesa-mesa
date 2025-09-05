@@ -738,7 +738,7 @@ panthor_kmod_vm_create(struct pan_kmod_dev *dev, uint32_t flags,
       goto err_destroy_sync;
    }
 
-   pan_kmod_vm_init(&panthor_vm->base, dev, req.id, flags);
+   pan_kmod_vm_init(&panthor_vm->base, dev, req.id, flags, PAN_PGSIZE_4K | PAN_PGSIZE_2M);
    return &panthor_vm->base;
 
 err_destroy_sync:

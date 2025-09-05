@@ -55,8 +55,14 @@ enum pan_kmod_vm_flags {
    PAN_KMOD_VM_FLAG_TRACK_ACTIVITY = BITFIELD_BIT(1),
 };
 
+#define PAN_PGSIZE_4K (uint64_t)0x1000
+#define PAN_PGSIZE_2M (uint64_t)0x200000
+
 /* Object representing a GPU VM. */
 struct pan_kmod_vm {
+   /* Page sizes supported by this VM. */
+   uint64_t pgsize_bitmap;
+
    /* Combination of pan_kmod_vm_flags flags. */
    uint32_t flags;
 

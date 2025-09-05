@@ -88,11 +88,12 @@ pan_kmod_bo_init(struct pan_kmod_bo *bo, struct pan_kmod_dev *dev,
 
 static inline void
 pan_kmod_vm_init(struct pan_kmod_vm *vm, struct pan_kmod_dev *dev,
-                 uint32_t handle, uint32_t flags)
+                 uint32_t handle, uint32_t flags, uint64_t pgsize_bitmap)
 {
    vm->dev = dev;
    vm->handle = handle;
    vm->flags = flags;
+   vm->pgsize_bitmap = pgsize_bitmap;
 }
 
 static inline int

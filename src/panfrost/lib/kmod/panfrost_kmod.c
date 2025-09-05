@@ -410,7 +410,7 @@ panfrost_kmod_vm_create(struct pan_kmod_dev *dev, uint32_t flags,
       return NULL;
    }
 
-   pan_kmod_vm_init(&vm->base, dev, 0, flags);
+   pan_kmod_vm_init(&vm->base, dev, 0, flags, PAN_PGSIZE_4K);
    panfrost_dev->vm = vm;
    return &vm->base;
 }
