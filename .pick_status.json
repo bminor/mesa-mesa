@@ -5884,7 +5884,7 @@
         "description": "isl: Respect driconf option for EnableSamplerRoutetoLSC",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7934b70ff1e5785b30c8a3635ebb84f5786688b7",
         "notes": null
