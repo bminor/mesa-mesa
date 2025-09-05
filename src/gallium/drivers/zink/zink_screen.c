@@ -3599,14 +3599,6 @@ zink_internal_create_screen(const struct pipe_screen_config *config, int64_t dev
          }
          can_db = false;
       }
-      if (!screen->resizable_bar) {
-         if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB) {
-            if (!screen->driver_name_is_inferred)
-               mesa_loge("Cannot use db descriptor mode without resizable bar");
-            goto fail;
-         }
-         can_db = false;
-      }
       if (!screen->info.have_EXT_non_seamless_cube_map) {
          if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB) {
             if (!screen->driver_name_is_inferred)
