@@ -128,6 +128,19 @@ get_iusage(struct panvk_image *image, const VkImageCreateInfo *create_info)
    return iusage;
 }
 
+static unsigned
+get_plane_count(struct panvk_image *image)
+{
+   /* Z32_S8X24 is not supported on v9+, and we don't want to use it
+    * on v7- anyway, because it's less efficient than the multiplanar
+    * alternative.
+    */
+   if (image->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT)
+      return 2;
+
+   return vk_format_get_plane_count(image->vk.format);
+}
+
 static bool
 panvk_image_can_use_mod(struct panvk_image *image,
                         const struct pan_image_usage *iusage, uint64_t mod,
@@ -469,6 +482,9 @@ VkResult
 panvk_image_init(struct panvk_image *image,
                  const VkImageCreateInfo *pCreateInfo)
 {
+   /* Needs to happen early for some panvk_image_ helpers to work. */
+   image->plane_count = get_plane_count(image);
+
    /* Add any create/usage flags that might be needed for meta operations.
     * This is run before the modifier selection because some
     * usage/create_flags influence the modifier selection logic. */
