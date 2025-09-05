@@ -8154,7 +8154,7 @@
         "description": "mesa: clamp fog scale to -FLT_MAX instead of FLT_MIN",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "35ae5dce39cddb71f217b3f73c8e1244ff0c5b1e",
         "notes": null
