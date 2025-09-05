@@ -317,7 +317,7 @@ fetch_state(struct gl_context *ctx, const gl_state_index16 state[],
        * The division by 2 makes it less likely that ALU ops will generate
        * Inf.
        */
-      scale = CLAMP(scale, FLT_MIN / 2, FLT_MAX / 2);
+      scale = CLAMP(scale, -FLT_MAX / 2, FLT_MAX / 2);
       value[0] = ctx->Fog.Density;
       value[1] = ctx->Fog.Start;
       value[2] = ctx->Fog.End;

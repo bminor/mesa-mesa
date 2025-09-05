@@ -586,10 +586,6 @@ spec@!opengl 1.1@line-smooth-stipple,Fail
 # bookworm update
 spec@ext_framebuffer_multisample@renderbufferstorage-samples,Fail
 
-# remove this after https://gitlab.freedesktop.org/mesa/piglit/-/merge_requests/843
-# is merged and piglit is updated
-spec@glsl-1.10@execution@glsl-1.10-built-in-uniform-state,Fail
-
 x11-dEQP-EGL.functional.wide_color.pbuffer_888_colorspace_srgb,Fail
 x11-dEQP-EGL.functional.wide_color.window_888_colorspace_srgb,Fail
 
