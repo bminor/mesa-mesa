@@ -83,7 +83,7 @@ panvk_copy_image_to_from_memory(struct image_params img,
     */
    assert(util_bitcount(img.subres.aspectMask) == 1);
    unsigned plane_idx =
-      panvk_plane_index(img.img->vk.format, img.subres.aspectMask);
+      panvk_plane_index(img.img, img.subres.aspectMask);
    assert(plane_idx < PANVK_MAX_PLANES);
    struct panvk_image_plane *plane = &img.img->planes[plane_idx];
    const struct pan_image_layout *plane_layout = &plane->plane.layout;
@@ -260,8 +260,8 @@ panvk_CopyMemoryToImage(VkDevice device, const VkCopyMemoryToImageInfo *info)
    VkResult result = VK_SUCCESS;
 
    for (unsigned i = 0; i < info->regionCount; i++) {
-      uint8_t p = panvk_plane_index(
-         dst->vk.format, info->pRegions[i].imageSubresource.aspectMask);
+      uint8_t p =
+         panvk_plane_index(dst, info->pRegions[i].imageSubresource.aspectMask);
 
       result = mmap_plane(dst, p, PROT_WRITE, dst_cpu);
       if (result != VK_SUCCESS)
@@ -304,8 +304,8 @@ panvk_CopyImageToMemory(VkDevice device, const VkCopyImageToMemoryInfo *info)
    VkResult result = VK_SUCCESS;
 
    for (unsigned i = 0; i < info->regionCount; i++) {
-      uint8_t p = panvk_plane_index(
-         src->vk.format, info->pRegions[i].imageSubresource.aspectMask);
+      uint8_t p =
+         panvk_plane_index(src, info->pRegions[i].imageSubresource.aspectMask);
 
       result = mmap_plane(src, p, PROT_READ, src_cpu);
       if (result != VK_SUCCESS)
@@ -337,10 +337,8 @@ panvk_copy_image_to_image(struct panvk_image *dst, void *dst_cpu,
    VkImageSubresourceLayers src_subres = region->srcSubresource;
    VkImageSubresourceLayers dst_subres = region->dstSubresource;
 
-   unsigned src_plane_idx =
-      panvk_plane_index(src->vk.format, src_subres.aspectMask);
-   unsigned dst_plane_idx =
-      panvk_plane_index(dst->vk.format, dst_subres.aspectMask);
+   unsigned src_plane_idx = panvk_plane_index(src, src_subres.aspectMask);
+   unsigned dst_plane_idx = panvk_plane_index(dst, dst_subres.aspectMask);
    assert(src_plane_idx < PANVK_MAX_PLANES);
    assert(dst_plane_idx < PANVK_MAX_PLANES);
    struct panvk_image_plane *src_plane = &src->planes[src_plane_idx];
@@ -482,10 +480,10 @@ panvk_CopyImageToImage(VkDevice device, const VkCopyImageToImageInfo *info)
    void *dst_cpu[PANVK_MAX_PLANES] = {NULL};
 
    for (unsigned i = 0; i < info->regionCount; i++) {
-      uint8_t src_p = panvk_plane_index(
-         src->vk.format, info->pRegions[i].srcSubresource.aspectMask);
-      uint8_t dst_p = panvk_plane_index(
-         dst->vk.format, info->pRegions[i].dstSubresource.aspectMask);
+      uint8_t src_p =
+         panvk_plane_index(src, info->pRegions[i].srcSubresource.aspectMask);
+      uint8_t dst_p =
+         panvk_plane_index(dst, info->pRegions[i].dstSubresource.aspectMask);
 
       result = mmap_plane(dst, dst_p, PROT_WRITE, dst_cpu);
       if (result != VK_SUCCESS)

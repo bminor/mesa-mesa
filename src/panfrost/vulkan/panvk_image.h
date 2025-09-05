@@ -48,7 +48,8 @@ bool panvk_image_can_use_afbc(
    VkImageCreateFlags flags);
 
 static inline unsigned
-panvk_plane_index(VkFormat format, VkImageAspectFlags aspect_mask)
+panvk_plane_index(const struct panvk_image *image,
+                  VkImageAspectFlags aspect_mask)
 {
    switch (aspect_mask) {
    default:
@@ -58,7 +59,8 @@ panvk_plane_index(VkFormat format, VkImageAspectFlags aspect_mask)
    case VK_IMAGE_ASPECT_PLANE_2_BIT:
       return 2;
    case VK_IMAGE_ASPECT_STENCIL_BIT:
-      return format == VK_FORMAT_D32_SFLOAT_S8_UINT;
+      assert(image->plane_count > 0);
+      return image->plane_count - 1;
    }
 }
 

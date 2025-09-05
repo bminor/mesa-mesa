@@ -574,7 +574,7 @@ get_image_subresource_layout(const struct panvk_image *image,
 {
    const VkImageSubresource *subres = &subres2->imageSubresource;
    VkSubresourceLayout *layout = &layout2->subresourceLayout;
-   unsigned plane = panvk_plane_index(image->vk.format, subres->aspectMask);
+   unsigned plane = panvk_plane_index(image, subres->aspectMask);
    assert(plane < PANVK_MAX_PLANES);
 
    const struct pan_image_slice_layout *slice_layout =
@@ -658,7 +658,7 @@ panvk_GetImageMemoryRequirements2(VkDevice device,
    const bool disjoint = is_disjoint(image);
    const VkImageAspectFlags aspects =
       plane_info ? plane_info->planeAspect : image->vk.aspects;
-   uint8_t plane = panvk_plane_index(image->vk.format, aspects);
+   uint8_t plane = panvk_plane_index(image, aspects);
    const uint64_t size =
       disjoint ? image->planes[plane].plane.layout.data_size_B :
       panvk_image_get_total_size(image);
@@ -754,7 +754,7 @@ panvk_image_bind(struct panvk_device *dev,
       const VkBindImagePlaneMemoryInfo *plane_info =
          vk_find_struct_const(bind_info->pNext, BIND_IMAGE_PLANE_MEMORY_INFO);
       const uint8_t plane =
-         panvk_plane_index(image->vk.format, plane_info->planeAspect);
+         panvk_plane_index(image, plane_info->planeAspect);
       panvk_image_plane_bind(dev, &image->planes[plane], mem, offset);
    } else {
       for (unsigned plane = 0; plane < image->plane_count; plane++)

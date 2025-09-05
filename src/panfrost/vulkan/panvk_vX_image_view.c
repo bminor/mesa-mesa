@@ -329,8 +329,7 @@ panvk_per_arch(CreateImageView)(VkDevice _device,
    panvk_convert_swizzle(&view->vk.swizzle, view->pview.swizzle);
 
    u_foreach_bit(aspect_bit, view->vk.aspects) {
-      uint8_t image_plane =
-         panvk_plane_index(image->vk.format, 1u << aspect_bit);
+      uint8_t image_plane = panvk_plane_index(image, 1u << aspect_bit);
 
       /* Place the view plane at index 0 for single-plane views of multiplane
        * formats. Does not apply to YCbCr views of multiplane images since
