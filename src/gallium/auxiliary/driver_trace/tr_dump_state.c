@@ -1187,6 +1187,10 @@ void trace_dump_grid_info(const struct pipe_grid_info *state)
    trace_dump_member(ptr, state, indirect);
    trace_dump_member(uint, state, indirect_offset);
 
+   trace_dump_member(uint, state, draw_count);
+   trace_dump_member(uint, state, indirect_draw_count_offset);
+   trace_dump_member(ptr, state, indirect_draw_count);
+
    trace_dump_member_begin("globals");
    trace_dump_array(ptr, state->globals, state->num_globals);
    trace_dump_member_end();
