@@ -1033,7 +1033,8 @@ static inline nir_def *
 nir_iadd_nuw(nir_builder *b, nir_def *x, nir_def *y)
 {
    nir_def *d = nir_iadd(b, x, y);
-   nir_def_as_alu(d)->no_unsigned_wrap = true;
+   if (d->parent_instr->type == nir_instr_type_alu)
+      nir_def_as_alu(d)->no_unsigned_wrap = true;
    return d;
 }
 
