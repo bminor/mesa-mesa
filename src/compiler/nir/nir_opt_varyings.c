@@ -2248,15 +2248,15 @@ clone_ssa_impl(struct linkage_info *linkage, nir_builder *b, nir_def *ssa)
          return get_stored_value_for_load(linkage, &alu->instr);
       }
 
-      nir_def *src[4] = { 0 };
       unsigned num_srcs = nir_op_infos[alu->op].num_inputs;
-      assert(num_srcs <= ARRAY_SIZE(src));
+      nir_alu_instr *alu_clone = nir_alu_instr_create(b->shader, alu->op);
 
-      for (unsigned i = 0; i < num_srcs; i++)
-         src[i] = clone_ssa_impl(linkage, b, alu->src[i].src.ssa);
-
-      clone = nir_build_alu(b, alu->op, src[0], src[1], src[2], src[3]);
-      nir_alu_instr *alu_clone = nir_def_as_alu(clone);
+      for (unsigned i = 0; i < num_srcs; i++) {
+         nir_def *src = clone_ssa_impl(linkage, b, alu->src[i].src.ssa);
+         alu_clone->src[i].src = nir_src_for_ssa(src);
+         memcpy(alu_clone->src[i].swizzle, alu->src[i].swizzle,
+                NIR_MAX_VEC_COMPONENTS);
+      }
 
       alu_clone->exact = alu->exact;
       alu_clone->no_signed_wrap = alu->no_signed_wrap;
@@ -2264,10 +2264,7 @@ clone_ssa_impl(struct linkage_info *linkage, nir_builder *b, nir_def *ssa)
       alu_clone->def.num_components = alu->def.num_components;
       alu_clone->def.bit_size = alu->def.bit_size;
 
-      for (unsigned i = 0; i < num_srcs; i++) {
-         memcpy(alu_clone->src[i].swizzle, alu->src[i].swizzle,
-                NIR_MAX_VEC_COMPONENTS);
-      }
+      clone = nir_builder_alu_instr_finish_and_insert(b, alu_clone);
       break;
    }
 
