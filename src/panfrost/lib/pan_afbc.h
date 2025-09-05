@@ -566,6 +566,7 @@ pan_afbc_format(unsigned arch, enum pipe_format format, unsigned plane_idx)
    case PIPE_FORMAT_Z24_UNORM_S8_UINT: return PAN_AFBC_MODE_R8G8B8A8;
    case PIPE_FORMAT_Z24X8_UNORM:       return PAN_AFBC_MODE_R8G8B8A8;
    case PIPE_FORMAT_X24S8_UINT:        return PAN_AFBC_MODE_R8G8B8A8;
+   case PIPE_FORMAT_Z24_UNORM_PACKED:  return PAN_AFBC_MODE_R8G8B8;
 
    /* AFBC(S8) only supported on v9+ */
    case PIPE_FORMAT_S8_UINT:

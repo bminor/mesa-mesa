@@ -140,6 +140,8 @@ translate_zs_format(enum pipe_format in)
       return MALI_ZS_FORMAT_D24S8;
    case PIPE_FORMAT_Z24X8_UNORM:
       return MALI_ZS_FORMAT_D24X8;
+   case PIPE_FORMAT_Z24_UNORM_PACKED:
+      return MALI_ZS_FORMAT_D24;
    case PIPE_FORMAT_Z32_FLOAT:
       return MALI_ZS_FORMAT_D32;
 #if PAN_ARCH < 9

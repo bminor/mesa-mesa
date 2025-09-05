@@ -563,6 +563,7 @@ const struct pan_format GENX(pan_pipe_format)[PIPE_FORMAT_COUNT] = {
     * we want stencil in the red channel, so we use the GRBA swizzles.
     */
    FMT(Z32_FLOAT_S8X24_UINT,    R32F,            GRBA, L, _T_Z_),
+   FMT(Z24_UNORM_PACKED,        Z24X8_UNORM,     RGBA, L, _T_Z_),
    FMT(X32_S8X24_UINT,          S8,              GRBA, L, _T_Z_),
    FMT(X24S8_UINT,              S8,              GRBA, L, _T_Z_),
    FMT(S8_UINT,                 S8,              GRBA, L, _T_Z_),

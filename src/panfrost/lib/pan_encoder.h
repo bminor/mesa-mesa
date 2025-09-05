@@ -269,6 +269,7 @@ pan_get_z_internal_format(enum pipe_format fmt)
       return MALI_Z_INTERNAL_FORMAT_D16;
    case PIPE_FORMAT_Z24_UNORM_S8_UINT:
    case PIPE_FORMAT_Z24X8_UNORM:
+   case PIPE_FORMAT_Z24_UNORM_PACKED:
       return MALI_Z_INTERNAL_FORMAT_D24;
    case PIPE_FORMAT_Z32_FLOAT:
    case PIPE_FORMAT_Z32_FLOAT_S8X24_UINT:
