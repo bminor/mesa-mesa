@@ -58,7 +58,6 @@ vlVaPostProcCompositor(vlVaDriver *drv,
                        struct pipe_vpp_desc *param)
 {
    struct pipe_surface *surfaces;
-   enum pipe_video_vpp_matrix_coefficients coeffs;
    enum vl_compositor_rotation rotation;
    enum vl_compositor_mirror mirror;
    bool src_yuv = util_format_is_yuv(src->buffer_format);
@@ -75,14 +74,37 @@ vlVaPostProcCompositor(vlVaDriver *drv,
    if (!surfaces[0].texture)
       return VA_STATUS_ERROR_INVALID_SURFACE;
 
-   if (src_yuv == dst_yuv || util_format_get_nr_components(src->buffer_format) == 1)
-      coeffs = PIPE_VIDEO_VPP_MCF_RGB; /* identity */
-   else
-      coeffs = src_yuv ? param->in_matrix_coefficients : param->out_matrix_coefficients;
+   if (util_format_get_nr_components(src->buffer_format) == 1) {
+      /* Identity */
+      vl_csc_get_rgbyuv_matrix(PIPE_VIDEO_VPP_MCF_RGB, src->buffer_format, dst->buffer_format,
+                               param->in_color_range, param->out_color_range, &drv->cstate.yuv2rgb);
+      vl_csc_get_rgbyuv_matrix(PIPE_VIDEO_VPP_MCF_RGB, src->buffer_format, dst->buffer_format,
+                               param->in_color_range, param->out_color_range, &drv->cstate.rgb2yuv);
+   } else if (src_yuv == dst_yuv) {
+      if (!src_yuv) {
+         /* RGB to RGB */
+         vl_csc_get_rgbyuv_matrix(PIPE_VIDEO_VPP_MCF_RGB, src->buffer_format, dst->buffer_format,
+                                  param->in_color_range, param->out_color_range, &drv->cstate.yuv2rgb);
+      } else {
+         /* YUV to YUV (convert to RGB for transfer function and primaries) */
+         enum pipe_format rgb_format = PIPE_FORMAT_B8G8R8A8_UNORM;
+         vl_csc_get_rgbyuv_matrix(param->in_matrix_coefficients, src->buffer_format, rgb_format,
+                                  param->in_color_range, PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_FULL,
+                                  &drv->cstate.yuv2rgb);
+         vl_csc_get_rgbyuv_matrix(param->out_matrix_coefficients, rgb_format, dst->buffer_format,
+                                  PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_FULL, param->out_color_range,
+                                  &drv->cstate.rgb2yuv);
+      }
+   } else if (src_yuv) {
+      /* YUV to RGB */
+      vl_csc_get_rgbyuv_matrix(param->in_matrix_coefficients, src->buffer_format, dst->buffer_format,
+                               param->in_color_range, param->out_color_range, &drv->cstate.yuv2rgb);
+   } else {
+      /* RGB to YUV */
+      vl_csc_get_rgbyuv_matrix(param->out_matrix_coefficients, src->buffer_format, dst->buffer_format,
+                               param->in_color_range, param->out_color_range, &drv->cstate.rgb2yuv);
+   }
 
-   vl_csc_get_rgbyuv_matrix(coeffs, src->buffer_format, dst->buffer_format,
-                            param->in_color_range, param->out_color_range, &drv->csc);
-   vl_compositor_set_csc_matrix(&drv->cstate, &drv->csc, 1.0f, 0.0f);
 
    if (src_yuv || dst_yuv) {
       enum pipe_format format = src_yuv ? src->buffer_format : dst->buffer_format;

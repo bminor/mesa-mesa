@@ -402,7 +402,7 @@ vlVaPutSurface(VADriverContextP ctx, VASurfaceID surface_id, void* draw, short s
 
    vl_csc_get_rgbyuv_matrix(coeffs, format, surf_templ.format,
                             PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_REDUCED,
-                            PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_FULL, &drv->cstate.csc_matrix);
+                            PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_FULL, &drv->cstate.yuv2rgb);
 
    vl_compositor_clear_layers(&drv->cstate);
 
