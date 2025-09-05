@@ -3604,7 +3604,7 @@ zink_internal_create_screen(const struct pipe_screen_config *config, int64_t dev
       if (screen->info.db_props.maxDescriptorBufferBindings < 2 || screen->info.db_props.maxSamplerDescriptorBufferBindings < 2) {
          if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB) {
             /* allow for testing, but disable bindless */
-            mesa_logw("Cannot use bindless and db descriptor mode with (maxDescriptorBufferBindings||maxSamplerDescriptorBufferBindings) < 2");
+            mesa_logd("Cannot use bindless and db descriptor mode with (maxDescriptorBufferBindings||maxSamplerDescriptorBufferBindings) < 2");
          } else {
             can_db = false;
          }
