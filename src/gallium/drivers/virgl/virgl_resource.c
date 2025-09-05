@@ -20,6 +20,7 @@
  * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
  * USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+#include "util/u_drm.h"
 #include "util/format/u_format.h"
 #include "util/u_inlines.h"
 #include "util/u_memory.h"
@@ -29,6 +30,10 @@
 #include "virgl_screen.h"
 #include "virgl_staging_mgr.h"
 #include "virgl_encode.h" // for declaration of virgl_encode_copy_transfer
+
+#if !defined(_WIN32)
+#include "drm-uapi/drm_fourcc.h"
+#endif
 
 /* A (soft) limit for the amount of memory we want to allow for queued staging
  * resources. This is used to decide when we should force a flush, in order to
@@ -707,6 +712,22 @@ static struct pipe_resource *virgl_resource_create(struct pipe_screen *screen,
    return virgl_resource_create_front(screen, templ, NULL);
 }
 
+#if !defined(_WIN32)
+static struct pipe_resource *
+virgl_resource_create_with_modifiers(struct pipe_screen *screen,
+                                     const struct pipe_resource *templ,
+                                     const uint64_t *modifiers,
+                                     int count)
+{
+   if (!drm_find_modifier(DRM_FORMAT_MOD_LINEAR, modifiers, count)) {
+        mesa_loge("unsupported modifier requested\n");
+        return NULL;
+   }
+
+   return virgl_resource_create_front(screen, templ, NULL);
+}
+#endif
+
 static struct pipe_resource *virgl_resource_from_handle(struct pipe_screen *screen,
                                                         const struct pipe_resource *templ,
                                                         struct winsys_handle *whandle,
@@ -842,6 +863,9 @@ void virgl_init_screen_resource_functions(struct pipe_screen *screen)
     screen->resource_get_handle = virgl_resource_get_handle;
     screen->resource_destroy = virgl_resource_destroy;
     screen->resource_get_param = virgl_resource_get_param;
+#if !defined(_WIN32)
+    screen->resource_create_with_modifiers = virgl_resource_create_with_modifiers;
+#endif
 }
 
 static void virgl_buffer_subdata(struct pipe_context *pipe,
