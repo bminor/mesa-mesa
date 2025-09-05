@@ -148,6 +148,7 @@ panvk_image_can_use_mod(struct panvk_image *image,
 {
    struct panvk_physical_device *phys_dev =
       to_panvk_physical_device(image->vk.base.device->physical);
+   unsigned arch = pan_arch(phys_dev->kmod.props.gpu_id);
    struct panvk_instance *instance =
       to_panvk_instance(image->vk.base.device->physical->instance);
    bool forced_linear = (instance->debug_flags & PANVK_DEBUG_LINEAR) ||
@@ -160,10 +161,26 @@ panvk_image_can_use_mod(struct panvk_image *image,
       return mod == DRM_FORMAT_MOD_LINEAR;
 
    if (drm_is_afbc(mod)) {
-      if (!panvk_image_can_use_afbc(phys_dev, image->vk.format,
-                                    image->vk.usage | image->vk.stencil_usage,
-                                    image->vk.image_type, image->vk.tiling,
-                                    image->vk.create_flags))
+      /* AFBC explicitly disabled. */
+      if (instance->debug_flags & PANVK_DEBUG_NO_AFBC)
+         return false;
+
+      /* Non-optimal tiling requested. */
+      if (image->vk.tiling != VK_IMAGE_TILING_OPTIMAL)
+         return false;
+
+      /* Can't do AFBC if store/host copy is requested. */
+      if ((image->vk.usage | image->vk.stencil_usage) &
+          (VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_HOST_TRANSFER_BIT))
+         return false;
+
+      /* Can't do AFBC on v7- if mutable format is requested. */
+      if ((image->vk.create_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) &&
+          arch <= 7)
+         return false;
+
+      /* Disable AFBC on YUV-planar for now. */
+      if (vk_format_get_plane_count(image->vk.format) > 1)
          return false;
 
       /* We can't have separate depth/stencil layout transitions with
