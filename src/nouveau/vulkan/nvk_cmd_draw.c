@@ -1223,8 +1223,9 @@ nvk_CmdBeginRendering(VkCommandBuffer commandBuffer,
       P_NV9097_SET_ZT_B(p, addr);
 
       /* We want the combined Z/S format for the SET_ZT_FORMAT packet */
-      const uint8_t zs_format =
-         nil_format_to_depth_stencil(nil_image.format.p_format);
+      const enum pipe_format zs_p_format =
+         nvk_format_to_pipe_format(image->vk.format);
+      const uint8_t zs_format = nil_format_to_depth_stencil(zs_p_format);
 
       if (pdev->info.cls_eng3d >= BLACKWELL_A) {
          P_NVCD97_SET_ZT_FORMAT(p, {
