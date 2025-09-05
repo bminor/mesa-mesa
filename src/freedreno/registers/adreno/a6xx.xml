@@ -3266,7 +3266,7 @@ by a particular renderpass/blit.
 	<reg32 offset="0xae6b" name="SP_UNKNOWN_AE6B" variants="A7XX-" usage="cmd"/>
 	<reg32 offset="0xae6c" name="SP_HLSQ_DBG_ECO_CNTL" variants="A7XX-" usage="cmd"/>
 	<reg32 offset="0xae6d" name="SP_READ_SEL" variants="A7XX-">
-		<bitfield name="LOCATION" low="18" high="19" type="a7xx_state_location"/>
+		<bitfield name="LOCATION" low="18" high="20" type="a7xx_state_location"/>
 		<bitfield name="PIPE" low="16" high="17" type="a7xx_pipe"/>
 		<bitfield name="STATETYPE" low="8" high="15" type="a7xx_statetype_id"/>
 		<bitfield name="USPTP" low="4" high="7"/>
