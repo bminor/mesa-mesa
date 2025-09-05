@@ -36,20 +36,20 @@ traces:
       checksum: f53ac20e17da91c0359c31f2fa3f401e
   0ad/0ad-v2.trace:
     gl-intel-apl:
-      checksum: b25b9dfce05def046f6277d05b3cba98
+      checksum: 6c9f66db38f03847574c543de48fa203
     gl-intel-glk:
-      checksum: b25b9dfce05def046f6277d05b3cba98
+      checksum: 6c9f66db38f03847574c543de48fa203
     gl-intel-amly:
-      checksum: b25b9dfce05def046f6277d05b3cba98
+      checksum: 6c9f66db38f03847574c543de48fa203
     gl-intel-kbl:
-      checksum: b25b9dfce05def046f6277d05b3cba98
+      checksum: 6c9f66db38f03847574c543de48fa203
     gl-intel-whl:
       checksum: e67b7a93bac02e41de0326419ee17a3e
     gl-intel-cml:
-      checksum: b25b9dfce05def046f6277d05b3cba98
+      checksum: 6c9f66db38f03847574c543de48fa203
     gl-intel-adl:
       label: [no-perf]
-      checksum: b25b9dfce05def046f6277d05b3cba98
+      checksum: 6c9f66db38f03847574c543de48fa203
   pathfinder/demo-v2.trace:
     gl-intel-apl:
       checksum: d9b33f0a2efe17c21b7933242afd9ec7

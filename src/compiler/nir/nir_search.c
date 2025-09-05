@@ -494,15 +494,24 @@ construct_value(nir_builder *build,
                                        state, instr);
       }
 
-      nir_builder_instr_insert(build, &alu->instr);
-
-      assert(alu->def.index ==
+      /* Immediately try to constant-fold the expression, in order to allow
+       * for more expressions to be matched within a single pass.
+       */
+      nir_def *def = &alu->def;
+      nir_def *const_expr = nir_try_constant_fold_alu(build, alu);
+      if (const_expr) {
+         nir_instr_free(&alu->instr);
+         def = const_expr;
+      } else {
+         nir_builder_instr_insert(build, &alu->instr);
+      }
+      assert(def->index ==
              util_dynarray_num_elements(state->states, uint16_t));
       util_dynarray_append_typed(state->states, uint16_t, 0);
-      nir_algebraic_automaton(&alu->instr, state->states, state->pass_op_table);
+      nir_algebraic_automaton(def->parent_instr, state->states, state->pass_op_table);
 
       nir_alu_src val;
-      val.src = nir_src_for_ssa(&alu->def);
+      val.src = nir_src_for_ssa(def);
       if (expr->swizzle < 0)
          memcpy(val.swizzle, identity_swizzle, sizeof(val.swizzle));
       else
