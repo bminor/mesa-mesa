@@ -5190,7 +5190,6 @@ bool nir_lower_io_vars_to_temporaries(nir_shader *shader,
                                       nir_variable_mode modes);
 
 bool nir_lower_vars_to_scratch(nir_shader *shader,
-                               nir_variable_mode modes,
                                int size_threshold,
                                glsl_type_size_align_func variable_size_align,
                                glsl_type_size_align_func scratch_layout_size_align);

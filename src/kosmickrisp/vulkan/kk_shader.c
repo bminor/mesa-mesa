@@ -442,7 +442,7 @@ kk_lower_nir(struct kk_device *dev, nir_shader *nir,
       /* kk_nir_lower_vs_multiview may create a temporary array to assign the
        * correct view index. Since we don't handle derefs, we need to get rid of
        * them. */
-      NIR_PASS(_, nir, nir_lower_vars_to_scratch, nir_var_function_temp, 0,
+      NIR_PASS(_, nir, nir_lower_vars_to_scratch, 0,
                glsl_get_natural_size_align_bytes,
                glsl_get_natural_size_align_bytes);
 

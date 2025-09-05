@@ -93,7 +93,6 @@ only_used_for_load_store(nir_deref_instr *deref)
 
 bool
 nir_lower_vars_to_scratch(nir_shader *shader,
-                          nir_variable_mode modes,
                           int size_threshold,
                           glsl_type_size_align_func variable_size_align,
                           glsl_type_size_align_func scratch_layout_size_align)
@@ -115,7 +114,7 @@ nir_lower_vars_to_scratch(nir_shader *shader,
                continue;
 
             nir_deref_instr *deref = nir_src_as_deref(intrin->src[0]);
-            if (!nir_deref_mode_is_one_of(deref, modes))
+            if (!nir_deref_mode_is_one_of(deref, nir_var_function_temp))
                continue;
 
             if (!nir_deref_instr_has_indirect(nir_src_as_deref(intrin->src[0])))
@@ -227,3 +226,4 @@ nir_lower_vars_to_scratch(nir_shader *shader,
 
    return progress;
 }
+

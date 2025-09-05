@@ -227,7 +227,7 @@ ac_nir_lower_indirect_derefs(nir_shader *shader,
    /* Lower large variables to scratch first so that we won't bloat the
     * shader by generating large if ladders for them.
     */
-   NIR_PASS(progress, shader, nir_lower_vars_to_scratch, nir_var_function_temp, 256,
+   NIR_PASS(progress, shader, nir_lower_vars_to_scratch, 256,
             glsl_get_natural_size_align_bytes, glsl_get_natural_size_align_bytes);
 
    /* This lowers indirect indexing to if-else ladders. */

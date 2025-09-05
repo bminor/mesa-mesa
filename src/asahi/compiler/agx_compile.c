@@ -3685,7 +3685,7 @@ agx_preprocess_nir(nir_shader *nir)
    NIR_PASS(_, nir, nir_lower_vars_to_ssa);
 
    /* Lower large arrays to scratch and small arrays to csel */
-   NIR_PASS(_, nir, nir_lower_vars_to_scratch, nir_var_function_temp, 256,
+   NIR_PASS(_, nir, nir_lower_vars_to_scratch, 256,
             glsl_get_natural_size_align_bytes, glsl_get_word_size_align_bytes);
    NIR_PASS(_, nir, nir_lower_indirect_derefs_to_if_else_trees,
             nir_var_function_temp, ~0);
@@ -3801,7 +3801,7 @@ agx_compile_shader_nir(nir_shader *nir, struct agx_shader_key *key,
    /* Optimize scratch access for silly internal CL shaders */
    if (nir->info.internal) {
       NIR_PASS(_, nir, nir_lower_scratch_to_var);
-      NIR_PASS(_, nir, nir_lower_vars_to_scratch, nir_var_function_temp, 256,
+      NIR_PASS(_, nir, nir_lower_vars_to_scratch, 256,
                glsl_get_natural_size_align_bytes,
                glsl_get_natural_size_align_bytes);
       NIR_PASS(_, nir, nir_lower_indirect_derefs_to_if_else_trees,

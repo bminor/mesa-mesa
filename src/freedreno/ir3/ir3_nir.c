@@ -1199,7 +1199,7 @@ ir3_nir_lower_variant(struct ir3_shader_variant *so,
     * expensive.
     */
    if (so->compiler->has_pvtmem) {
-      progress |= OPT(s, nir_lower_vars_to_scratch, nir_var_function_temp,
+      progress |= OPT(s, nir_lower_vars_to_scratch,
                       16 * 16 /* bytes */,
                       ir3_get_variable_size_align_bytes, glsl_get_natural_size_align_bytes);
    }

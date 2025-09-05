@@ -596,7 +596,6 @@ void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
       NIR_PASS(_,
                nir,
                nir_lower_vars_to_scratch,
-               nir_var_function_temp,
                8,
                glsl_get_natural_size_align_bytes,
                glsl_get_word_size_align_bytes);
