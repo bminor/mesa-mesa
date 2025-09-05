@@ -124,6 +124,7 @@
 #include "state.h"
 #include "util/u_debug.h"
 #include "util/disk_cache.h"
+#include "util/log.h"
 #include "util/strtod.h"
 #include "util/u_call_once.h"
 #include "stencil.h"
@@ -749,15 +750,15 @@ _mesa_noop_entrypoint(const char *name)
    GET_CURRENT_CONTEXT(ctx);
    if (ctx) {
       _mesa_error(ctx, GL_INVALID_OPERATION, "%s(invalid call)", name);
+   } else {
+      char s[MAX_LOG_MESSAGE_LENGTH];
+      ASSERTED int len =
+         snprintf(s, MAX_LOG_MESSAGE_LENGTH,
+                  "GL User Error: %s called without a rendering context",
+                  name);
+      assert(len >= 0 && len < MAX_LOG_MESSAGE_LENGTH);
+      mesa_log_if_debug(MESA_LOG_ERROR, s);
    }
-#ifndef NDEBUG
-   else if (getenv("MESA_DEBUG") || getenv("LIBGL_DEBUG")) {
-      fprintf(stderr,
-              "GL User Error: gl%s called without a rendering context\n",
-              name);
-      fflush(stderr);
-   }
-#endif
 }
 
 
