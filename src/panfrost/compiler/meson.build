@@ -144,7 +144,7 @@ libpanfrost_bifrost = static_library(
   'panfrost_bifrost',
   [libpanfrost_bifrost_files, bi_opcodes_c, bi_swizzles_c, bi_printer_c, bi_packer_c, bifrost_nir_algebraic_c, valhall_c ],
   include_directories : [inc_include, inc_src, inc_valhall],
-  dependencies: [idep_nir, idep_bi_opcodes_h, idep_bi_builder_h, idep_valhall_enums_h],
+  dependencies: [idep_nir, idep_bi_opcodes_h, idep_bi_builder_h, idep_valhall_enums_h, libpanfrost_model_dep],
   link_with: [libpanfrost_util, libpanfrost_bifrost_disasm, libpanfrost_valhall_disasm],
   c_args : [no_override_init_args],
   gnu_symbol_visibility : 'hidden',

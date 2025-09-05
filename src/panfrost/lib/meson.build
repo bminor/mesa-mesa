@@ -7,7 +7,7 @@ subdir('kmod')
 pixel_format_versions = ['5', '6', '7', '9', '10', '12', '13']
 libpanfrost_pixel_format = []
 
-deps_for_libpanfrost = [dep_libdrm, idep_pan_packers, idep_mesautil]
+deps_for_libpanfrost = [dep_libdrm, idep_pan_packers, idep_mesautil, libpanfrost_model_dep]
 
 foreach ver : pixel_format_versions
   libpanfrost_pixel_format += static_library(
@@ -60,7 +60,7 @@ libpanfrost_lib = static_library(
   include_directories : [inc_include, inc_src, inc_panfrost],
   c_args : [no_override_init_args],
   gnu_symbol_visibility : 'hidden',
-  dependencies: [dep_libdrm, idep_nir, idep_mesautil],
+  dependencies: [dep_libdrm, idep_nir, idep_mesautil, libpanfrost_model_dep],
   build_by_default : false,
   link_with: [libpanfrost_pixel_format, libpanfrost_per_arch, libpankmod_lib],
 )

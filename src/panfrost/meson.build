@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 inc_panfrost = include_directories([
-   '.', 'shared', 'midgard', 'compiler', 'lib', 'libpan',
+   '.', 'shared', 'midgard', 'compiler', 'lib', 'libpan', 'model',
 ])
 
 compile_args_panfrost = [
@@ -13,6 +13,7 @@ compile_args_panfrost = [
 subdir('shared')
 subdir('util')
 subdir('midgard')
+subdir('model')
 subdir('compiler')
 
 if with_gallium_panfrost or with_panfrost_vk or with_tools.contains('panfrost')

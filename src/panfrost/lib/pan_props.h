@@ -32,78 +32,11 @@
 
 #include "util/macros.h"
 
+#include "pan_model.h"
+
 struct pan_kmod_dev;
 struct pan_kmod_dev_props;
 struct pan_kmod_vm;
-
-/** Implementation-defined tiler features */
-struct pan_tiler_features {
-   /** Number of bytes per tiler bin */
-   unsigned bin_size;
-
-   /** Maximum number of levels that may be simultaneously enabled.
-    * Invariant: bitcount(hierarchy_mask) <= max_levels */
-   unsigned max_levels;
-};
-
-#define ARCH_MAJOR     BITFIELD_RANGE(28, 4)
-#define ARCH_MINOR     BITFIELD_RANGE(24, 4)
-#define ARCH_REV       BITFIELD_RANGE(20, 4)
-#define PRODUCT_MAJOR  BITFIELD_RANGE(16, 4)
-#define VERSION_MAJOR  BITFIELD_RANGE(12, 4)
-#define VERSION_MINOR  BITFIELD_RANGE(4, 8)
-#define VERSION_STATUS BITFIELD_RANGE(0, 4)
-
-struct pan_model {
-   /* GPU product ID */
-   uint32_t gpu_prod_id;
-
-   /* Mask to apply to the GPU ID to get a product ID. */
-   uint32_t gpu_prod_id_mask;
-
-   /* GPU variant. */
-   uint32_t gpu_variant;
-
-   /* Marketing name for the GPU, used as the GL_RENDERER */
-   const char *name;
-
-   /* Set of associated performance counters */
-   const char *performance_counters;
-
-   /* Minimum GPU revision required for anisotropic filtering. ~0 and 0
-    * means "no revisions support anisotropy" and "all revisions support
-    * anistropy" respectively -- so checking for anisotropy is simply
-    * comparing the reivsion.
-    */
-   uint32_t min_rev_anisotropic;
-
-   struct {
-      /* Default tilebuffer size in bytes for the model. */
-      uint32_t color_size;
-
-      /* Default tilebuffer depth size in bytes for the model. */
-      uint32_t z_size;
-   } tilebuffer;
-
-   /* Maximum number of pixels, texels, and FMA ops, per clock per shader
-    * core, or 0 if it can't be determined for the given GPU. */
-   struct {
-      uint32_t pixel;
-      uint32_t texel;
-      uint32_t fma;
-   } rates;
-
-   struct {
-      /* The GPU lacks the capability for hierarchical tiling, without
-       * an "Advanced Tiling Unit", instead requiring a single bin
-       * size for the entire framebuffer be selected by the driver
-       */
-      bool no_hierarchical_tiling;
-      bool max_4x_msaa;
-   } quirks;
-};
-
-const struct pan_model *pan_get_model(uint32_t gpu_id, uint32_t gpu_variant);
 
 unsigned pan_query_l2_slices(const struct pan_kmod_dev_props *props);
 
