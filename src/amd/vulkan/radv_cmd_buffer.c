@@ -12362,13 +12362,13 @@ radv_before_draw(struct radv_cmd_buffer *cmd_buffer, const struct radv_draw_info
       cmd_buffer->state.last_index_type = -1;
    }
 
-   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_GRAPHICS_SHADERS) {
-      radv_bind_graphics_shaders(cmd_buffer);
-   }
-
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_FBFETCH_OUTPUT) {
       radv_handle_fbfetch_output(cmd_buffer);
       cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_FBFETCH_OUTPUT;
+   }
+
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_GRAPHICS_SHADERS) {
+      radv_bind_graphics_shaders(cmd_buffer);
    }
 
    /* This is the optimal packet order:
