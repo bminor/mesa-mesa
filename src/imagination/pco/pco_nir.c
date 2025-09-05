@@ -69,6 +69,8 @@ static const nir_shader_compiler_options nir_options = {
 
    .lower_interpolate_at = true,
 
+   .lower_helper_invocation = true,
+
    .max_unroll_iterations = 16,
 
    .io_options = nir_io_vectorizer_ignores_types,
@@ -537,6 +539,10 @@ void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
       };
       NIR_PASS(_, nir, nir_lower_sysvals_to_varyings, &sysvals_to_varyings);
       NIR_PASS(_, nir, nir_lower_helper_writes, true);
+      NIR_PASS(_, nir, nir_lower_is_helper_invocation);
+      NIR_PASS(_, nir, nir_lower_terminate_to_demote);
+      NIR_PASS(_, nir, nir_lower_halt_to_return);
+      NIR_PASS(_, nir, nir_lower_returns);
    }
 
    NIR_PASS(_, nir, nir_lower_system_values);

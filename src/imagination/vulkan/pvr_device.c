@@ -202,6 +202,7 @@ static void pvr_physical_device_get_supported_extensions(
       .KHR_shader_float_controls = true,
       .KHR_shader_subgroup_extended_types = true,
       .KHR_spirv_1_4 = true,
+      .KHR_shader_terminate_invocation = true,
       .KHR_swapchain = PVR_USE_WSI_PLATFORM,
       .KHR_swapchain_mutable_format = PVR_USE_WSI_PLATFORM,
       .KHR_timeline_semaphore = true,
@@ -228,6 +229,7 @@ static void pvr_physical_device_get_supported_extensions(
       .EXT_queue_family_foreign = true,
       .EXT_separate_stencil_usage = true,
       .EXT_scalar_block_layout = true,
+      .EXT_shader_demote_to_helper_invocation = true,
       .EXT_texel_buffer_alignment = false,
       .EXT_tooling_info = true,
       .EXT_vertex_attribute_divisor = true,
@@ -447,6 +449,12 @@ static void pvr_physical_device_get_supported_features(
 
       /* VK_KHR_shader_expect_assume */
       .shaderExpectAssume = false,
+
+      /* VK_EXT_shader_demote_to_helper_invocation */
+      .shaderDemoteToHelperInvocation = true,
+
+      /* VK_KHR_shader_terminate_invocation */
+      .shaderTerminateInvocation = true,
 
       /* VK_KHR_present_id2 */
       .presentId2 = PVR_USE_WSI_PLATFORM,
