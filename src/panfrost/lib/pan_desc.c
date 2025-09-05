@@ -698,6 +698,13 @@ GENX(pan_emit_afbc_color_attachment)(const struct pan_fb_info *fb,
       cfg.write_enable = true;
       get_rt_formats(iview->format, &cfg.writeback_format, &cfg.internal_format,
                      &cfg.swizzle);
+
+      /* AFBC+RAW24 is not supported on v9+. Use RAW32 instead, and let the AFBC
+       * compression mode select the actual size.
+       */
+      if (PAN_ARCH >= 9 && cfg.writeback_format == MALI_COLOR_FORMAT_RAW24)
+         cfg.writeback_format = MALI_COLOR_FORMAT_RAW32;
+
       cfg.srgb = util_format_is_srgb(iview->format);
       cfg.writeback_block_format = get_afbc_block_format(image->props.modifier);
       cfg.yuv_transform = image->props.modifier & AFBC_FORMAT_MOD_YTR;
