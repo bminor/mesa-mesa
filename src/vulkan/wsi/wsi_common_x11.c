@@ -401,13 +401,13 @@ wsi_x11_connection_destroy(struct wsi_device *wsi_dev,
 static bool
 wsi_x11_check_for_dri3(struct wsi_x11_connection *wsi_conn)
 {
-  if (wsi_conn->has_dri3)
-    return true;
-  if (!wsi_conn->is_proprietary_x11) {
-    fprintf(stderr, "vulkan: No DRI3 support detected - required for presentation\n"
-                    "Note: you can probably enable DRI3 in your Xorg config\n");
-  }
-  return false;
+   if (wsi_conn->has_dri3)
+      return true;
+   if (!wsi_conn->is_proprietary_x11) {
+      mesa_logi("vulkan: No DRI3 support detected - required for presentation\n"
+                "Note: you can probably enable DRI3 in your Xorg config\n");
+   }
+   return false;
 }
 
 /**
@@ -1239,8 +1239,8 @@ _x11_swapchain_result(struct x11_swapchain *chain, VkResult result,
    /* If we have a new error, mark it as permanent on the chain and return. */
    if (result < 0) {
 #ifndef NDEBUG
-      fprintf(stderr, "%s:%d: Swapchain status changed to %s\n",
-              file, line, vk_Result_to_str(result));
+      mesa_logd("%s:%d: Swapchain status changed to %s\n",
+                file, line, vk_Result_to_str(result));
 #endif
       chain->status = result;
       return result;
@@ -1256,8 +1256,8 @@ _x11_swapchain_result(struct x11_swapchain *chain, VkResult result,
    if (result == VK_SUBOPTIMAL_KHR) {
 #ifndef NDEBUG
       if (chain->status != VK_SUBOPTIMAL_KHR) {
-         fprintf(stderr, "%s:%d: Swapchain status changed to %s\n",
-                 file, line, vk_Result_to_str(result));
+         mesa_logd("%s:%d: Swapchain status changed to %s\n",
+                   file, line, vk_Result_to_str(result));
       }
 #endif
       chain->status = result;
