@@ -12,7 +12,9 @@ section_start rust "Building Rust toolchain"
 # DEBIAN_BUILD_BASE_TAG
 # DEBIAN_TEST_BASE_TAG
 
-# Pick a specific patch version from rustup so the compiler doesn't drift on us.
+# This version number should match what we require in meson.build so we catch
+# build issues from patches relying on new features in newer Rust versions.
+# If we need to bump this, we should also bump the version in meson.build.
 RUST_VERSION=1.82.0
 
 # For rust in Mesa, we use rustup to install.  This lets us pick an arbitrary
