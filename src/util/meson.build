@@ -64,6 +64,7 @@ files_mesa_util = files(
   'u_idalloc.h',
   'list.h',
   'log.c',
+  'lut.c',
   'macros.h',
   'memstream.c',
   'memstream.h',
