@@ -57,6 +57,7 @@ static const nir_shader_compiler_options nir_options = {
    .lower_uadd_carry = true,
    .lower_uadd_sat = true,
    .lower_usub_borrow = true,
+   .lower_usub_sat = true,
    .lower_mul_2x32_64 = true,
    .compact_arrays = true,
    .scalarize_ddx = true,
@@ -838,6 +839,13 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
 
    if (data->common.robust_buffer_access)
       NIR_PASS(_, nir, nir_lower_robust_access, robustness_filter, NULL);
+
+   if (data->common.null_descriptor) {
+      NIR_PASS(_,
+               nir,
+               pco_nir_lower_null_descriptors,
+               pco_nir_lower_null_descriptor_all);
+   }
 
    NIR_PASS(_, nir, pco_nir_lower_vk, data);
    NIR_PASS(_, nir, pco_nir_lower_io);

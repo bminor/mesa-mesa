@@ -1043,6 +1043,8 @@ nir_get_io_index_src_number(const nir_intrinsic_instr *instr)
    switch (instr->intrinsic) {
    case nir_intrinsic_load_ubo:
    case nir_intrinsic_load_ssbo:
+   case nir_intrinsic_get_ubo_size:
+   case nir_intrinsic_get_ssbo_size:
    case nir_intrinsic_load_input_vertex:
    case nir_intrinsic_load_per_vertex_input:
    case nir_intrinsic_load_per_vertex_output:

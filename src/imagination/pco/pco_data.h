@@ -223,6 +223,7 @@ typedef struct _pco_common_data {
    } uses;
 
    bool robust_buffer_access;
+   bool null_descriptor;
    bool image_2d_view_of_3d;
    bool multiview;
 } pco_common_data;

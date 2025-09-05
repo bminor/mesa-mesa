@@ -220,6 +220,31 @@ lower_image_derefs(nir_builder *b, nir_intrinsic_instr *intr, pco_data *data)
    return NIR_LOWER_INSTR_PROGRESS;
 }
 
+static nir_def *lower_is_null_descriptor(nir_builder *b,
+                                         nir_intrinsic_instr *intr)
+{
+   nir_src *deref_src = &intr->src[0];
+   nir_deref_instr *deref = nir_src_as_deref(*deref_src);
+
+   /* Will be taken care of by lower_load_vulkan_descriptor. */
+   if (!deref)
+      return NULL;
+
+   b->cursor = nir_before_instr(&intr->instr);
+
+   nir_variable *var = nir_deref_instr_get_variable(deref);
+   assert(var);
+   unsigned desc_set = var->data.descriptor_set;
+   unsigned binding = var->data.binding;
+   nir_def *elem = array_elem_from_deref(b, deref);
+
+   uint32_t desc_set_binding = pco_pack_desc(desc_set, binding);
+   nir_def *index = nir_vec2(b, nir_imm_int(b, desc_set_binding), elem);
+
+   nir_src_rewrite(deref_src, index);
+   return NIR_LOWER_INSTR_PROGRESS;
+}
+
 /**
  * \brief Lowers a Vulkan-related instruction.
  *
@@ -246,6 +271,9 @@ static nir_def *lower_vk(nir_builder *b, nir_instr *instr, void *cb_data)
       case nir_intrinsic_image_deref_atomic_swap:
       case nir_intrinsic_image_deref_size:
          return lower_image_derefs(b, intr, data);
+
+      case nir_intrinsic_is_null_descriptor:
+         return lower_is_null_descriptor(b, intr);
 
       default:
          break;
@@ -281,6 +309,7 @@ static bool is_vk(const nir_instr *instr, UNUSED const void *cb_data)
       nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
       switch (intr->intrinsic) {
       case nir_intrinsic_load_vulkan_descriptor:
+      case nir_intrinsic_is_null_descriptor:
       case nir_intrinsic_image_deref_load:
       case nir_intrinsic_image_deref_store:
       case nir_intrinsic_image_deref_atomic:

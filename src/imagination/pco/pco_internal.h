@@ -1782,6 +1782,20 @@ bool pco_ra(pco_shader *shader);
 bool pco_schedule(pco_shader *shader);
 bool pco_shrink_vecs(pco_shader *shader);
 
+typedef enum {
+   pco_nir_lower_null_descriptor_ubo = (1 << 0),
+   pco_nir_lower_null_descriptor_ssbo = (1 << 1),
+   pco_nir_lower_null_descriptor_global = (1 << 2),
+   pco_nir_lower_null_descriptor_texture = (1 << 3),
+   pco_nir_lower_null_descriptor_image = (1 << 4),
+
+   pco_nir_lower_null_descriptor_all = BITFIELD_MASK(5),
+} pco_nir_lower_null_descriptor_options;
+
+bool pco_nir_lower_null_descriptors(
+   nir_shader *shader,
+   pco_nir_lower_null_descriptor_options options);
+
 /**
  * \brief Returns the PCO bits for a bit size.
  *

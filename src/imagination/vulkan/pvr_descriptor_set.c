@@ -467,8 +467,8 @@ pvr_AllocateDescriptorSets(VkDevice _device,
 
    for (i = 0; i < pAllocateInfo->descriptorSetCount; i++) {
       VK_FROM_HANDLE(pvr_descriptor_set_layout,
-                      layout,
-                      pAllocateInfo->pSetLayouts[i]);
+                     layout,
+                     pAllocateInfo->pSetLayouts[i]);
       struct pvr_descriptor_set *set;
 
       result = pvr_descriptor_set_create(device, pool, layout, &set);
@@ -519,9 +519,15 @@ write_buffer(const struct pvr_descriptor_set *set,
              const struct pvr_descriptor_set_layout_binding *binding,
              uint32_t elem)
 {
-   VK_FROM_HANDLE(pvr_buffer, buffer, buffer_info->buffer);
    const unsigned desc_offset = binding->offset + (elem * binding->stride);
    void *desc_mapping = (uint8_t *)set->mapping + desc_offset;
+
+   if (buffer_info->buffer == VK_NULL_HANDLE) {
+      memset(desc_mapping, 0, sizeof(struct pvr_buffer_descriptor));
+      return;
+   }
+
+   VK_FROM_HANDLE(pvr_buffer, buffer, buffer_info->buffer);
 
    const pvr_dev_addr_t buffer_addr =
       PVR_DEV_ADDR_OFFSET(buffer->dev_addr, buffer_info->offset);
@@ -543,11 +549,17 @@ write_dynamic_buffer(struct pvr_descriptor_set *set,
                      const struct pvr_descriptor_set_layout_binding *binding,
                      uint32_t elem)
 {
-   VK_FROM_HANDLE(pvr_buffer, buffer, buffer_info->buffer);
    assert(binding->dynamic_buffer_idx != ~0);
    const unsigned desc_offset = binding->dynamic_buffer_idx + elem;
    struct pvr_buffer_descriptor *desc_mapping =
       &set->dynamic_buffers[desc_offset];
+
+   if (buffer_info->buffer == VK_NULL_HANDLE) {
+      memset(desc_mapping, 0, sizeof(*desc_mapping));
+      return;
+   }
+
+   VK_FROM_HANDLE(pvr_buffer, buffer, buffer_info->buffer);
 
    const pvr_dev_addr_t buffer_addr =
       PVR_DEV_ADDR_OFFSET(buffer->dev_addr, buffer_info->offset);
@@ -587,20 +599,23 @@ write_image_sampler(const struct pvr_descriptor_set *set,
                     const struct pvr_descriptor_set_layout_binding *binding,
                     uint32_t elem)
 {
-   VK_FROM_HANDLE(pvr_sampler, info_sampler, image_info->sampler);
-   VK_FROM_HANDLE(pvr_image_view, image_view, image_info->imageView);
-
    const unsigned desc_offset = binding->offset + (elem * binding->stride);
    void *desc_mapping = (uint8_t *)set->mapping + desc_offset;
 
+   struct pvr_combined_image_sampler_descriptor image_sampler_desc = { 0 };
+
+   VK_FROM_HANDLE(pvr_sampler, info_sampler, image_info->sampler);
    struct pvr_sampler *sampler = binding->immutable_sampler_count
                                     ? binding->immutable_samplers[elem]
                                     : info_sampler;
 
-   struct pvr_combined_image_sampler_descriptor image_sampler_desc = {
-      .image = image_view->image_state[PVR_TEXTURE_STATE_SAMPLE],
-      .sampler = sampler->descriptor,
-   };
+   image_sampler_desc.sampler = sampler->descriptor;
+
+   if (image_info->imageView != VK_NULL_HANDLE) {
+      VK_FROM_HANDLE(pvr_image_view, image_view, image_info->imageView);
+      image_sampler_desc.image =
+         image_view->image_state[PVR_TEXTURE_STATE_SAMPLE];
+   }
 
    memcpy(desc_mapping, &image_sampler_desc, sizeof(image_sampler_desc));
 }
@@ -647,13 +662,18 @@ write_storage_image(const struct pvr_descriptor_set *set,
                     uint32_t elem,
                     const struct pvr_device_info *dev_info)
 {
+   const unsigned desc_offset = binding->offset + (elem * binding->stride);
+   void *desc_mapping = (uint8_t *)set->mapping + desc_offset;
+
+   if (image_info->imageView == VK_NULL_HANDLE) {
+      memset(desc_mapping, 0, sizeof(struct pvr_image_descriptor));
+      return;
+   }
+
    VK_FROM_HANDLE(pvr_image_view, image_view, image_info->imageView);
 
    bool is_cube = image_view->vk.view_type == VK_IMAGE_VIEW_TYPE_CUBE ||
                   image_view->vk.view_type == VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
-
-   const unsigned desc_offset = binding->offset + (elem * binding->stride);
-   void *desc_mapping = (uint8_t *)set->mapping + desc_offset;
 
    struct pvr_image_descriptor storage_image_desc =
       image_view->image_state[is_cube ? PVR_TEXTURE_STATE_STORAGE
@@ -680,11 +700,15 @@ write_buffer_view(const struct pvr_descriptor_set *set,
                   bool is_texel_buffer,
                   const struct pvr_device_info *dev_info)
 {
-   VK_FROM_HANDLE(pvr_buffer_view, buffer_view, _buffer_view);
-
    const unsigned desc_offset = binding->offset + (elem * binding->stride);
    void *desc_mapping = (uint8_t *)set->mapping + desc_offset;
 
+   if (_buffer_view == VK_NULL_HANDLE) {
+      memset(desc_mapping, 0, sizeof(struct pvr_image_descriptor));
+      return;
+   }
+
+   VK_FROM_HANDLE(pvr_buffer_view, buffer_view, _buffer_view);
    struct pvr_image_descriptor buffer_view_state = buffer_view->image_state;
 
    if (is_texel_buffer &&

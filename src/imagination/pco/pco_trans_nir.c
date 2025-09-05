@@ -724,6 +724,7 @@ static unsigned fetch_resource_base_reg(const pco_common_data *common,
                                         unsigned desc_set,
                                         unsigned binding,
                                         unsigned elem,
+                                        unsigned *stride,
                                         bool *is_img_smp)
 {
    const pco_range *range;
@@ -755,6 +756,9 @@ static unsigned fetch_resource_base_reg(const pco_common_data *common,
          *is_img_smp = binding_data->is_img_smp;
    }
 
+   if (stride)
+      *stride = range->stride;
+
    unsigned reg_offset = elem * range->stride;
    assert(reg_offset < range->count);
 
@@ -765,13 +769,19 @@ static unsigned fetch_resource_base_reg(const pco_common_data *common,
 static unsigned fetch_resource_base_reg_packed(const pco_common_data *common,
                                                uint32_t packed_desc,
                                                unsigned elem,
+                                               unsigned *stride,
                                                bool *is_img_smp)
 {
    unsigned desc_set;
    unsigned binding;
    pco_unpack_desc(packed_desc, &desc_set, &binding);
 
-   return fetch_resource_base_reg(common, desc_set, binding, elem, is_img_smp);
+   return fetch_resource_base_reg(common,
+                                  desc_set,
+                                  binding,
+                                  elem,
+                                  stride,
+                                  is_img_smp);
 }
 
 /**
@@ -1119,7 +1129,7 @@ static pco_instr *trans_load_buffer(trans_ctx *tctx,
    uint32_t packed_desc = nir_src_comp_as_uint(intr->src[0], 0);
    unsigned elem = nir_src_comp_as_uint(intr->src[0], 1);
    unsigned sh_index =
-      fetch_resource_base_reg_packed(common, packed_desc, elem, NULL);
+      fetch_resource_base_reg_packed(common, packed_desc, elem, NULL, NULL);
 
    pco_ref base_addr[2];
    pco_ref_hwreg_addr_comps(sh_index, PCO_REG_CLASS_SHARED, base_addr);
@@ -1175,7 +1185,7 @@ trans_get_buffer_size(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
    uint32_t packed_desc = nir_src_comp_as_uint(intr->src[0], 0);
    unsigned elem = nir_src_comp_as_uint(intr->src[0], 1);
    unsigned sh_index =
-      fetch_resource_base_reg_packed(common, packed_desc, elem, NULL);
+      fetch_resource_base_reg_packed(common, packed_desc, elem, NULL, NULL);
 
    pco_ref size_reg = pco_ref_hwreg(sh_index, PCO_REG_CLASS_SHARED);
    size_reg = pco_ref_offset(size_reg, 2);
@@ -1196,7 +1206,7 @@ static pco_instr *trans_store_buffer(trans_ctx *tctx,
    uint32_t packed_desc = nir_src_comp_as_uint(intr->src[1], 0);
    unsigned elem = nir_src_comp_as_uint(intr->src[1], 1);
    unsigned sh_index =
-      fetch_resource_base_reg_packed(common, packed_desc, elem, NULL);
+      fetch_resource_base_reg_packed(common, packed_desc, elem, NULL, NULL);
 
    pco_ref base_addr[2];
    pco_ref_hwreg_addr_comps(sh_index, PCO_REG_CLASS_SHARED, base_addr);
@@ -1275,7 +1285,7 @@ static pco_instr *trans_atomic_buffer(trans_ctx *tctx,
    uint32_t packed_desc = nir_src_comp_as_uint(intr->src[0], 0);
    unsigned elem = nir_src_comp_as_uint(intr->src[0], 1);
    unsigned sh_index =
-      fetch_resource_base_reg_packed(common, packed_desc, elem, NULL);
+      fetch_resource_base_reg_packed(common, packed_desc, elem, NULL, NULL);
 
    pco_ref base_addr[2];
    pco_ref_hwreg_addr_comps(sh_index, PCO_REG_CLASS_SHARED, base_addr);
@@ -1554,8 +1564,12 @@ static pco_instr *lower_load_tex_smp_state(trans_ctx *tctx,
 
    const pco_common_data *common = &tctx->shader->data.common;
    bool is_img_smp;
-   unsigned sh_index =
-      fetch_resource_base_reg(common, desc_set, binding, elem, &is_img_smp);
+   unsigned sh_index = fetch_resource_base_reg(common,
+                                               desc_set,
+                                               binding,
+                                               elem,
+                                               NULL,
+                                               &is_img_smp);
    pco_ref state_words =
       pco_ref_hwreg_vec(sh_index, PCO_REG_CLASS_SHARED, chans);
 
@@ -1591,8 +1605,12 @@ static pco_instr *lower_load_tex_smp_meta(trans_ctx *tctx,
 
    const pco_common_data *common = &tctx->shader->data.common;
    bool is_img_smp;
-   unsigned sh_index =
-      fetch_resource_base_reg(common, desc_set, binding, elem, &is_img_smp);
+   unsigned sh_index = fetch_resource_base_reg(common,
+                                               desc_set,
+                                               binding,
+                                               elem,
+                                               NULL,
+                                               &is_img_smp);
    pco_ref state_words =
       pco_ref_hwreg_vec(sh_index, PCO_REG_CLASS_SHARED, chans);
 
@@ -2002,6 +2020,56 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
    case nir_intrinsic_global_atomic_pco:
       instr = trans_global_atomic_buffer(tctx, intr, dest, src[0]);
       break;
+
+   case nir_intrinsic_is_null_descriptor: {
+      const pco_common_data *common = &tctx->shader->data.common;
+      uint32_t packed_desc = nir_src_comp_as_uint(intr->src[0], 0);
+      unsigned elem = nir_src_comp_as_uint(intr->src[0], 1);
+      unsigned stride;
+      bool is_img_smp;
+      unsigned sh_index = fetch_resource_base_reg_packed(common,
+                                                         packed_desc,
+                                                         elem,
+                                                         &stride,
+                                                         &is_img_smp);
+
+      if (is_img_smp)
+         stride = ROGUE_NUM_TEXSTATE_DWORDS;
+
+      pco_ref all_words_zero;
+      for (unsigned u = 0; u < stride; ++u) {
+         pco_ref word = pco_ref_hwreg(sh_index + u, PCO_REG_CLASS_SHARED);
+         pco_ref word_is_zero =
+            pco_ref_new_ssa(tctx->func, pco_ref_get_bits(dest), 1);
+
+         pco_tstz(&tctx->b,
+                  word_is_zero,
+                  pco_ref_null(),
+                  word,
+                  .tst_type_main = PCO_TST_TYPE_MAIN_U32);
+
+         if (!u) {
+            all_words_zero = word_is_zero;
+            continue;
+         }
+
+         pco_ref _all_words_zero =
+            pco_ref_new_ssa(tctx->func, pco_ref_get_bits(dest), 1);
+         pco_logical(&tctx->b,
+                     _all_words_zero,
+                     pco_ref_null(),
+                     all_words_zero,
+                     pco_ref_null(),
+                     word_is_zero,
+                     .logiop = PCO_LOGIOP_AND);
+
+         all_words_zero = _all_words_zero;
+      }
+
+      instr = pco_mov(&tctx->b, dest, all_words_zero);
+
+      break;
+   }
 
    case nir_intrinsic_load_scratch:
       instr = trans_scratch(tctx, dest, src[0], src[1]);

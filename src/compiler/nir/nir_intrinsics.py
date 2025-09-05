@@ -2798,3 +2798,6 @@ intrinsic("load_fs_coeffs_pco", dest_comp=3, flags=[CAN_ELIMINATE, CAN_REORDER],
 
 # load_packed_sample_location_pco(dword_index)
 intrinsic("load_packed_sample_location_pco", src_comp=[1], dest_comp=1, flags=[CAN_ELIMINATE, CAN_REORDER], bit_sizes=[32])
+
+# src[] = { buffer_index/deref }.
+intrinsic("is_null_descriptor", src_comp=[-1], dest_comp=1, flags=[CAN_ELIMINATE, CAN_REORDER], bit_sizes=[1])

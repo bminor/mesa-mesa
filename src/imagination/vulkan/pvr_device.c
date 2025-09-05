@@ -195,6 +195,7 @@ static void pvr_physical_device_get_supported_extensions(
       .KHR_multiview = true,
       .KHR_present_id2 = PVR_USE_WSI_PLATFORM,
       .KHR_present_wait2 = PVR_USE_WSI_PLATFORM,
+      .KHR_robustness2 = true,
       .KHR_separate_depth_stencil_layouts = true,
       .KHR_shader_draw_parameters = true,
       .KHR_shader_expect_assume = false,
@@ -223,6 +224,7 @@ static void pvr_physical_device_get_supported_extensions(
       .EXT_physical_device_drm = true,
       .EXT_private_data = true,
       .EXT_provoking_vertex = true,
+      .EXT_robustness2 = true,
       .EXT_queue_family_foreign = true,
       .EXT_separate_stencil_usage = true,
       .EXT_scalar_block_layout = true,
@@ -370,6 +372,11 @@ static void pvr_physical_device_get_supported_features(
 
       /* Vulkan 1.2 / VK_KHR_shader_subgroup_extended_types */
       .shaderSubgroupExtendedTypes = true,
+
+      /* Vulkan 1.1 / VK_KHR_robustness2 */
+      .robustBufferAccess2 = false,
+      .robustImageAccess2 = false,
+      .nullDescriptor = true,
 
       /* Vulkan 1.2 / VK_KHR_uniform_buffer_standard_layout */
       .uniformBufferStandardLayout = true,
@@ -758,6 +765,10 @@ static bool pvr_physical_device_get_properties(
       /* VK_EXT_provoking_vertex */
       .provokingVertexModePerPipeline = true,
       .transformFeedbackPreservesTriangleFanProvokingVertex = false,
+
+      /* Vulkan 1.1 / VK_KHR_robustness2 */
+      .robustStorageBufferAccessSizeAlignment = PVR_STORAGE_BUFFER_OFFSET_ALIGNMENT,
+      .robustUniformBufferAccessSizeAlignment = PVR_STORAGE_BUFFER_OFFSET_ALIGNMENT,
 
       /* Vulkan 1.2 / VK_KHR_shader_float_controls */
       .denormBehaviorIndependence =

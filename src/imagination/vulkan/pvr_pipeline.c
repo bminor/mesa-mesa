@@ -2253,6 +2253,8 @@ static void pvr_init_descriptors(pco_data *data,
    data->common.robust_buffer_access =
       device->vk.enabled_features.robustBufferAccess;
 
+   data->common.null_descriptor = device->vk.enabled_features.nullDescriptor;
+
    data->common.image_2d_view_of_3d =
       device->vk.enabled_features.image2DViewOf3D;
 
