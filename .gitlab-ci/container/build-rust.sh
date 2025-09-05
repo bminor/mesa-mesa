@@ -8,7 +8,7 @@ set -ex
 section_start rust "Building Rust toolchain"
 
 # Pick a specific snapshot from rustup so the compiler doesn't drift on us.
-RUST_VERSION=1.81.0-2024-09-05
+RUST_VERSION=1.78.0-2024-05-02
 
 # For rust in Mesa, we use rustup to install.  This lets us pick an arbitrary
 # version of the compiler, rather than whatever the container's Debian comes

@@ -19,7 +19,7 @@ include:
   - .gitlab-ci/conditional-build-image-tags.yml
 
 variables:
-  DEBIAN_BASE_TAG: "20250715-apitrace"
+  DEBIAN_BASE_TAG: "20250925-rust-252"
 
   DEBIAN_BUILD_TAG: "20250710-libwayland"
 
