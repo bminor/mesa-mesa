@@ -274,7 +274,6 @@ dEQP-VK.tessellation.invariance.*
 # Updated by ci-collate
 spec@arb_gpu_shader_fp64@execution@arb_gpu_shader_fp64-wrong-type-setter
 spec@ext_external_objects@vk-image-display-overwrite
-bypass-dEQP-VK.renderpass2.fragment_density_map.2_views.render.non_divisible_density_size.2_samples.static_subsampled_2_2_multiviewport
 
 # SKQP test which seems to flake out
 SRGBReadWritePixels
