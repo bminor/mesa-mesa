@@ -581,7 +581,7 @@ panvk_image_has_afbc(struct panvk_image *img, VkImageSubresourceRange range)
    VkImageAspectFlags aspect_mask =
       vk_image_expand_aspect_mask(&img->vk, range.aspectMask);
    u_foreach_bit(aspect, aspect_mask) {
-      unsigned plane_index = panvk_plane_index(img->vk.format, aspect);
+      unsigned plane_index = panvk_plane_index(img->vk.format, 1u << aspect);
       struct panvk_image_plane *plane = &img->planes[plane_index];
 
       if (drm_is_afbc(plane->image.props.modifier))
@@ -608,7 +608,7 @@ cmd_clear_afbc_metadata(VkCommandBuffer _cmdbuf,
    panvk_per_arch(cmd_meta_compute_start)(cmdbuf, &save);
 
    u_foreach_bit(aspect, aspect_mask) {
-      unsigned plane_index = panvk_plane_index(img->vk.format, aspect);
+      unsigned plane_index = panvk_plane_index(img->vk.format, 1u << aspect);
       struct panvk_image_plane *plane = &img->planes[plane_index];
 
       if (!drm_is_afbc(plane->image.props.modifier))
