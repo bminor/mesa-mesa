@@ -1080,6 +1080,12 @@ isl_genX(buffer_fill_state_s)(const struct isl_device *dev, void *state,
 
 #if GFX_VERx10 >= 200
    s.EnableSamplerRoutetoLSC = isl_format_support_sampler_route_to_lsc(info->format);
+   /* Per-application override.
+    *
+    * Bspec 57023: "Enable Sampler Route to LSC" programming note states that,
+    * this bit can be set for surface type SURFTYPE_2D or SURFTYPE_BUFFER.
+    */
+   s.EnableSamplerRoutetoLSC &= dev->sampler_route_to_lsc;
 #endif /* if GFX_VERx10 >= 200 */
 
    s.SurfaceBaseAddress = info->address;
