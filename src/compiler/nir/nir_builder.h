@@ -1111,6 +1111,24 @@ nir_imul_imm(nir_builder *build, nir_def *x, uint64_t y)
 }
 
 static inline nir_def *
+nir_imul_imm_nuw(nir_builder *build, nir_def *x, uint64_t y)
+{
+   nir_def *d = nir_imul_imm(build, x, y);
+   if (d != x && d->parent_instr->type == nir_instr_type_alu)
+      nir_def_as_alu(d)->no_unsigned_wrap = true;
+   return d;
+}
+
+static inline nir_def *
+nir_imul_nuw(nir_builder *build, nir_def *x, nir_def *y)
+{
+   nir_def *d = nir_imul(build, x, y);
+   if (d->parent_instr->type == nir_instr_type_alu)
+      nir_def_as_alu(d)->no_unsigned_wrap = true;
+   return d;
+}
+
+static inline nir_def *
 nir_amul_imm(nir_builder *build, nir_def *x, uint64_t y)
 {
    return _nir_mul_imm(build, x, y, true);

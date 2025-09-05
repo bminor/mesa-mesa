@@ -77,11 +77,8 @@ visit_vulkan_resource_index(nir_builder *b, apply_layout_state *state, nir_intri
       stride = layout->binding[binding].size;
    }
 
-   nir_def *binding_ptr = nir_imul_imm(b, intrin->src[0].ssa, stride);
-   nir_def_as_alu(binding_ptr)->no_unsigned_wrap = true;
-
-   binding_ptr = nir_iadd_imm(b, binding_ptr, offset);
-   nir_def_as_alu(binding_ptr)->no_unsigned_wrap = true;
+   nir_def *binding_ptr = nir_imul_imm_nuw(b, intrin->src[0].ssa, stride);
+   binding_ptr = nir_iadd_imm_nuw(b, binding_ptr, offset);
 
    if (layout->binding[binding].type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR) {
       assert(stride == 16);
@@ -100,8 +97,7 @@ visit_vulkan_resource_reindex(nir_builder *b, apply_layout_state *state, nir_int
       nir_def *set_ptr = nir_unpack_64_2x32_split_x(b, intrin->src[0].ssa);
       nir_def *binding_ptr = nir_unpack_64_2x32_split_y(b, intrin->src[0].ssa);
 
-      nir_def *index = nir_imul_imm(b, intrin->src[1].ssa, 16);
-      nir_def_as_alu(index)->no_unsigned_wrap = true;
+      nir_def *index = nir_imul_imm_nuw(b, intrin->src[1].ssa, 16);
 
       binding_ptr = nir_iadd_nuw(b, binding_ptr, index);
 
@@ -112,9 +108,7 @@ visit_vulkan_resource_reindex(nir_builder *b, apply_layout_state *state, nir_int
       nir_def *binding_ptr = nir_channel(b, intrin->src[0].ssa, 1);
       nir_def *stride = nir_channel(b, intrin->src[0].ssa, 2);
 
-      nir_def *index = nir_imul(b, intrin->src[1].ssa, stride);
-      nir_def_as_alu(index)->no_unsigned_wrap = true;
-
+      nir_def *index = nir_imul_nuw(b, intrin->src[1].ssa, stride);
       binding_ptr = nir_iadd_nuw(b, binding_ptr, index);
 
       nir_def_rewrite_uses(&intrin->def, nir_vector_insert_imm(b, intrin->src[0].ssa, binding_ptr, 1));
@@ -240,13 +234,10 @@ get_sampler_desc(nir_builder *b, apply_layout_state *state, nir_deref_instr *der
       unsigned array_size = MAX2(glsl_get_aoa_size(deref->type), 1);
       array_size *= binding->size;
 
-      nir_def *tmp = nir_imul_imm(b, deref->arr.index.ssa, array_size);
-      if (tmp != deref->arr.index.ssa)
-         nir_def_as_alu(tmp)->no_unsigned_wrap = true;
+      nir_def *tmp = nir_imul_imm_nuw(b, deref->arr.index.ssa, array_size);
 
       if (index) {
-         index = nir_iadd(b, tmp, index);
-         nir_def_as_alu(index)->no_unsigned_wrap = true;
+         index = nir_iadd_nuw(b, tmp, index);
       } else {
          index = tmp;
       }
@@ -254,9 +245,7 @@ get_sampler_desc(nir_builder *b, apply_layout_state *state, nir_deref_instr *der
       deref = nir_deref_instr_parent(deref);
    }
 
-   nir_def *index_offset = index ? nir_iadd_imm(b, index, offset) : nir_imm_int(b, offset);
-   if (index && index_offset != index)
-      nir_def_as_alu(index_offset)->no_unsigned_wrap = true;
+   nir_def *index_offset = index ? nir_iadd_imm_nuw(b, index, offset) : nir_imm_int(b, offset);
 
    if (non_uniform)
       return nir_iadd(b, load_desc_ptr(b, state, desc_set), index_offset);
