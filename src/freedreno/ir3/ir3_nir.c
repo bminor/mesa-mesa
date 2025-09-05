@@ -7,6 +7,7 @@
  */
 
 #include "util/u_debug.h"
+#include "util/u_dynarray.h"
 #include "util/u_math.h"
 
 #include "ir3_compiler.h"
@@ -275,31 +276,6 @@ ir3_lower_bit_size(const nir_instr *instr, UNUSED void *data)
    }
 
    return 0;
-}
-
-static void
-ir3_get_variable_size_align_bytes(const glsl_type *type, unsigned *size, unsigned *align)
-{
-   switch (type->base_type) {
-   case GLSL_TYPE_ARRAY:
-   case GLSL_TYPE_INTERFACE:
-   case GLSL_TYPE_STRUCT:
-      glsl_size_align_handle_array_and_structs(type, ir3_get_variable_size_align_bytes,
-                                               size, align);
-      break;
-   case GLSL_TYPE_UINT8:
-   case GLSL_TYPE_INT8:
-      /* 8-bit values are handled through 16-bit half-registers, so the resulting size
-       * and alignment value has to be doubled to reflect the actual variable size
-       * requirement.
-       */
-      *size = 2 * glsl_get_components(type);
-      *align = 2;
-      break;
-   default:
-      glsl_get_natural_size_align_bytes(type, size, align);
-      break;
-   }
 }
 
 #define OPT(nir, pass, ...)                                                    \
@@ -1115,6 +1091,174 @@ atomic_supported(const nir_instr * instr, const void * data)
 }
 
 /**
+ * Like glsl_get_natural_size_align_bytes, but for ir3 RA, where all <32-bit
+ * components are stored in half regs.
+ */
+static void
+ir3_get_ra_size_align_bytes(const glsl_type *type, unsigned *size, unsigned *align)
+{
+   switch (type->base_type) {
+   case GLSL_TYPE_BOOL:
+   case GLSL_TYPE_UINT8:
+   case GLSL_TYPE_INT8:
+   case GLSL_TYPE_UINT16:
+   case GLSL_TYPE_INT16:
+   case GLSL_TYPE_FLOAT16:
+   case GLSL_TYPE_BFLOAT16:
+      *size = 2 * glsl_get_components(type);
+      *align = 2;
+      break;
+
+   case GLSL_TYPE_FLOAT_E4M3FN:
+   case GLSL_TYPE_FLOAT_E5M2:
+   case GLSL_TYPE_UINT:
+   case GLSL_TYPE_INT:
+   case GLSL_TYPE_FLOAT:
+   case GLSL_TYPE_DOUBLE:
+   case GLSL_TYPE_UINT64:
+   case GLSL_TYPE_INT64: {
+      unsigned N = glsl_get_bit_size(type) / 8;
+      *size = N * glsl_get_components(type);
+      *align = N;
+      break;
+   }
+
+   case GLSL_TYPE_ARRAY:
+   case GLSL_TYPE_INTERFACE:
+   case GLSL_TYPE_STRUCT:
+      glsl_size_align_handle_array_and_structs(type,
+                                               ir3_get_ra_size_align_bytes,
+                                               size, align);
+      break;
+
+   case GLSL_TYPE_SAMPLER:
+   case GLSL_TYPE_TEXTURE:
+   case GLSL_TYPE_IMAGE:
+      /* Bindless samplers and images. */
+      *size = 8;
+      *align = 8;
+      break;
+
+   case GLSL_TYPE_COOPERATIVE_MATRIX:
+   case GLSL_TYPE_ATOMIC_UINT:
+   case GLSL_TYPE_SUBROUTINE:
+   case GLSL_TYPE_VOID:
+   case GLSL_TYPE_ERROR:
+      UNREACHABLE("type does not have a natural size");
+   }
+}
+
+static int
+variable_size_sort(const void *a, const void *b)
+{
+   const nir_variable *var_a = *(const nir_variable **)a;
+   const nir_variable *var_b = *(const nir_variable **)b;
+
+   uint32_t size_a, align_a;
+   ir3_get_ra_size_align_bytes(var_a->type, &size_a, &align_a);
+
+   uint32_t size_b, align_b;
+   ir3_get_ra_size_align_bytes(var_b->type, &size_b, &align_b);
+
+   return size_a - size_b;
+}
+
+/* Filters out variables from the set that might go to ir3 RA, in order to avoid
+ * exceeding the limit of register pressure in a single instruction.
+ *
+ * A single instruction could require up to 4 array vars to be fully loaded in
+ * GPR space: 1 destination and 3 src operands (since we reload full arrays when
+ * unspilling)
+ */
+static void
+ir3_filter_vars_to_scratch_single_instr_limit(struct set *set, uint32_t limit,
+                                              bool limit_for_half)
+{
+   struct util_dynarray candidate_nonspilled;
+   util_dynarray_init(&candidate_nonspilled, NULL);
+
+   /* Create an array of vars to potentially not spill sorted by increasing
+    * size.
+    */
+   set_foreach(set, entry) {
+      const nir_variable *var = entry->key;
+
+      /* If it's definitely a 32/64-bit array that will be stored in full regs,
+       * then don't consider it while we're limiting for half-reg accesses. This
+       * is conservative when we can't figure out the array type, but thanks to
+       * struct splitting we always successfully determine it on fossils db.
+       */
+      if (glsl_type_is_array_or_matrix(var->type)) {
+         const struct glsl_type *elem_type = glsl_without_array_or_matrix(var->type);
+         if (limit_for_half && glsl_type_is_vector_or_scalar(elem_type) &&
+             glsl_get_bit_size(elem_type) > 16) {
+            continue;
+         }
+      }
+      util_dynarray_append(&candidate_nonspilled, var);
+   }
+
+   qsort(
+      util_dynarray_begin(&candidate_nonspilled),
+      util_dynarray_num_elements(&candidate_nonspilled, const nir_variable *),
+      sizeof(nir_variable *), variable_size_sort);
+
+   /* Loop removing variables from the set of variables to not spill, until the
+    * worst case set of variables remaining fit under the limit.
+    */
+   for (;;) {
+      int last =
+         util_dynarray_num_elements(&candidate_nonspilled, nir_variable *) - 1;
+
+      uint32_t total_size = 0;
+      for (int i = last; i >= MAX2(last - 3, 0); i--) {
+         nir_variable *var =
+            *util_dynarray_element(&candidate_nonspilled, nir_variable *, i);
+         uint32_t size, align;
+         ir3_get_ra_size_align_bytes(var->type, &size, &align);
+         total_size += size;
+      }
+
+      if (total_size <= limit)
+         break;
+
+      nir_variable *var =
+         util_dynarray_pop(&candidate_nonspilled, nir_variable *);
+      _mesa_set_remove_key(set, var);
+   }
+
+   util_dynarray_fini(&candidate_nonspilled);
+}
+
+static void
+ir3_vars_to_scratch_cb(struct set *set, void *data)
+{
+   struct ir3_pressure *limit_pressure = data;
+
+   struct set *nonspilled = _mesa_pointer_set_create(NULL);
+   set_foreach(set, entry) {
+      _mesa_set_add(nonspilled, entry->key);
+   }
+   /* Filter for the half vars first, which may let the full limit (which
+    * considers all vars) succeed on vars it wouldn't otherwise.
+    *
+    * We decrement the limit for the array's sizes by a vec4's size, because an
+    * instruction will likely have non-array sources that also need to be
+    * present, so we can't have the whole register file taken up by an array.
+    */
+   ir3_filter_vars_to_scratch_single_instr_limit(
+      nonspilled, (limit_pressure->half * 2) - 16, true);
+   ir3_filter_vars_to_scratch_single_instr_limit(
+      nonspilled, (limit_pressure->full * 2) - 16, false);
+
+   set_foreach(set, entry) {
+      const nir_variable *var = entry->key;
+      if (_mesa_set_search(nonspilled, var))
+         _mesa_set_remove_key(set, var);
+   }
+}
+
+/**
  * Filters the real_wavesize that was set based on API requirements, to an
  * appopriate value given hardware limits and the NIR shader we get.
  *
@@ -1249,9 +1393,10 @@ ir3_nir_lower_variant(struct ir3_shader_variant *so,
     * expensive.
     */
    if (so->compiler->has_pvtmem) {
-      progress |= OPT(s, nir_lower_vars_to_scratch,
-                      16 * 16 /* bytes */,
-                      ir3_get_variable_size_align_bytes, glsl_get_natural_size_align_bytes);
+      struct ir3_pressure limit_pressure = ir3_ra_get_reg_file_limits(so);
+      progress |=
+         OPT(s, nir_lower_vars_to_scratch_global,
+             glsl_get_natural_size_align_bytes, ir3_vars_to_scratch_cb, &limit_pressure);
    }
 
    /* Lower scratch writemasks */
