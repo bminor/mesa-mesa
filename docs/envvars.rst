@@ -81,6 +81,10 @@ Core Mesa environment variables
    purposes (e.g. for driconf option matching, logging, artifact storage,
    etc.).
 
+.. envvar:: MESA_LOG_LEVEL
+
+   specifies the maximum log level
+
 .. envvar:: MESA_LOG_FILE
 
    specifies a file name for logging all errors, warnings, etc., rather
