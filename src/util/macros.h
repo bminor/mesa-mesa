@@ -564,4 +564,15 @@ typedef int lock_cap_t;
    } \
 } while (0)
 
+/*
+ * Swap bits a and b. From Bithacks
+ * https://graphics.stanford.edu/~seander/bithacks.html#SwappingBitsXOR
+ */
+static inline uint32_t
+util_bit_swap(uint32_t v, unsigned a, unsigned b)
+{
+   uint32_t x = ((v >> a) ^ (v >> b)) & 1;
+   return v ^ ((x << a) | (x << b));
+}
+
 #endif /* UTIL_MACROS_H */
