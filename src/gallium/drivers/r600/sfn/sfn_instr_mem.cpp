@@ -716,8 +716,7 @@ RatInstr::emit_ssbo_atomic_op(nir_intrinsic_instr *intr, Shader& shader)
 {
    auto& vf = shader.value_factory();
    auto [imageid, image_offset] = shader.evaluate_resource_offset(intr, 0);
-   {
-   }
+   const unsigned res_id = imageid + shader.ssbo_image_offset();
 
    bool read_result = !list_is_empty(&intr->def.uses);
    auto opcode = read_result ? get_rat_opcode(nir_intrinsic_atomic_op(intr))
@@ -749,15 +748,8 @@ RatInstr::emit_ssbo_atomic_op(nir_intrinsic_instr *intr, Shader& shader)
 
    RegisterVec4 out_vec(coord, coord, coord, coord, pin_chgr);
 
-   auto atomic = new RatInstr(cf_mem_rat,
-                              opcode,
-                              data_vec4,
-                              out_vec,
-                              imageid + shader.ssbo_image_offset(),
-                              image_offset,
-                              1,
-                              0xf,
-                              0);
+   auto atomic =
+      new RatInstr(cf_mem_rat, opcode, data_vec4, out_vec, res_id, image_offset, 1, 0xf, 0);
    shader.emit_instruction(atomic);
 
    atomic->set_ack();
@@ -778,7 +770,7 @@ RatInstr::emit_ssbo_atomic_op(nir_intrinsic_instr *intr, Shader& shader)
                                   fmt_32,
                                   vtx_nf_int,
                                   vtx_es_none,
-                                  R600_IMAGE_IMMED_RESOURCE_OFFSET + imageid,
+                                  R600_IMAGE_IMMED_RESOURCE_OFFSET + res_id,
                                   image_offset);
       fetch->set_mfc(15);
       fetch->set_fetch_flag(FetchInstr::srf_mode);
