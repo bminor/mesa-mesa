@@ -91,11 +91,37 @@ only_used_for_load_store(nir_deref_instr *deref)
    return true;
 }
 
+/**
+ * Lowers indirect-addressed function temporary variables to scratch accesses
+ * based on a driver-provided callback selecting which variables to lower.
+ *
+ * Most drivers need this in some form -- a large array may be larger than the
+ * register space, so for an indirect store (not lowered to a series of csels
+ * using nir_lower_indirect_derefs) you would simply not be able to register
+ * allocate for the instruction.  In that case you want to move the whole array
+ * to scratch memory and have the load/stores be handled using NIR scratch
+ * intrinsics.
+ *
+ * The callback lets you make a global decision of which vars to spill based on
+ * the set of indirect-addressed function temps.  If scheduling an instruction
+ * could mean more than one array must be fully unspilled, then you might want
+ * to decide which variables to spill as a maximum register pressure calculation
+ * of variables you're going to leave as function temps.
+ *
+ * @scratch_layout_size_align function to use to compute the size and alignment
+ *                             of the values in scratch space.
+ * @cb driver callback that will be called if there are any candidates to spill.
+ *     It will be passed the set of candidate nir_variables, along with the
+ *     driver-provided @data, and any variables left in the set after the
+ *     callback will be spilled to scratch.
+ * @data driver data to pass to the callback The callback is passed the set of
+ *       nir_variable pointers to consider.  Any variables not removed from the
+ *       set will be spilled to scratch after the callback.
+ */
 bool
-nir_lower_vars_to_scratch(nir_shader *shader,
-                          int size_threshold,
-                          glsl_type_size_align_func variable_size_align,
-                          glsl_type_size_align_func scratch_layout_size_align)
+nir_lower_vars_to_scratch_global(nir_shader *shader,
+                                 glsl_type_size_align_func scratch_layout_size_align,
+                                 nir_lower_vars_to_scratch_cb cb, void *data)
 {
    struct set *set = _mesa_pointer_set_create(NULL);
 
@@ -130,15 +156,14 @@ nir_lower_vars_to_scratch(nir_shader *shader,
             if (var->data.mode == 0)
                continue;
 
-            unsigned var_size, var_align;
-            variable_size_align(var->type, &var_size, &var_align);
-            if (var_size <= size_threshold)
-               continue;
-
             _mesa_set_add(set, var);
          }
       }
    }
+
+   /* Have the driver pick which variables to lower (if any) */
+   if (set->entries != 0)
+      cb(set, data);
 
    if (set->entries == 0) {
       _mesa_set_destroy(set, NULL);
@@ -227,3 +252,46 @@ nir_lower_vars_to_scratch(nir_shader *shader,
    return progress;
 }
 
+struct nir_lower_vars_to_scratch_state {
+   int size_threshold;
+   glsl_type_size_align_func variable_size_align;
+};
+
+/**
+ * Callback for nir_lower_vars_to_scratch: Remove any vars from the set to spill
+ * that are under the size threshold.
+ */
+static void
+nir_lower_vars_to_scratch_size_cb(struct set *set, void *data)
+{
+   struct nir_lower_vars_to_scratch_state *state = data;
+
+   set_foreach(set, entry) {
+      nir_variable *var = (void *)entry->key;
+      unsigned var_size, var_align;
+      state->variable_size_align(var->type, &var_size, &var_align);
+      if (var_size <= state->size_threshold)
+         _mesa_set_remove(set, entry);
+   }
+}
+
+/**
+ * Lowers indirect-addressed function temporary variables to scratch accesses
+ * based on a size threshold for variables to lower.
+ *
+ * See nir_lower_vars_to_scratch_global for more explanation.
+*/
+bool
+nir_lower_vars_to_scratch(nir_shader *shader,
+                          int size_threshold,
+                          glsl_type_size_align_func variable_size_align,
+                          glsl_type_size_align_func scratch_layout_size_align)
+{
+   struct nir_lower_vars_to_scratch_state state = {
+      .size_threshold = size_threshold,
+      .variable_size_align = variable_size_align,
+   };
+
+   return nir_lower_vars_to_scratch_global(shader, scratch_layout_size_align,
+                                           nir_lower_vars_to_scratch_size_cb, &state);
+}

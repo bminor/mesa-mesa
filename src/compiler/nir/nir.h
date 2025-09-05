@@ -5194,6 +5194,12 @@ bool nir_lower_vars_to_scratch(nir_shader *shader,
                                glsl_type_size_align_func variable_size_align,
                                glsl_type_size_align_func scratch_layout_size_align);
 
+typedef void (*nir_lower_vars_to_scratch_cb)(struct set *, void *);
+
+bool nir_lower_vars_to_scratch_global(nir_shader *shader,
+                                      glsl_type_size_align_func scratch_layout_size_align,
+                                      nir_lower_vars_to_scratch_cb cb, void *data);
+
 bool nir_lower_scratch_to_var(nir_shader *nir);
 
 bool nir_lower_clip_halfz(nir_shader *shader);
