@@ -36,7 +36,7 @@ struct constant_fold_state {
    bool has_indirect_load_const;
 };
 
-static bool
+static nir_def *
 try_fold_alu(nir_builder *b, nir_alu_instr *alu)
 {
    nir_const_value src[NIR_ALU_MAX_INPUTS][NIR_MAX_VEC_COMPONENTS];
@@ -62,7 +62,7 @@ try_fold_alu(nir_builder *b, nir_alu_instr *alu)
       nir_instr *src_instr = alu->src[i].src.ssa->parent_instr;
 
       if (src_instr->type != nir_instr_type_load_const)
-         return false;
+         return NULL;
       nir_load_const_instr *load_const = nir_instr_as_load_const(src_instr);
 
       for (unsigned j = 0; j < nir_ssa_alu_instr_src_components(alu, i);
@@ -83,14 +83,9 @@ try_fold_alu(nir_builder *b, nir_alu_instr *alu)
                          bit_size, srcs,
                          b->shader->info.float_controls_execution_mode);
 
-   b->cursor = nir_before_instr(&alu->instr);
-   nir_def *imm = nir_build_imm(b, alu->def.num_components,
+   return nir_build_imm(b, alu->def.num_components,
                                 alu->def.bit_size,
                                 dest);
-   nir_def_replace(&alu->def, imm);
-   nir_instr_free(&alu->instr);
-
-   return true;
 }
 
 static nir_const_value *
@@ -168,7 +163,7 @@ fail:
    return NULL;
 }
 
-static bool
+static nir_def *
 try_fold_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin,
                    struct constant_fold_state *state)
 {
@@ -177,7 +172,6 @@ try_fold_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin,
    case nir_intrinsic_terminate_if:
       if (nir_src_is_const(intrin->src[0])) {
          if (nir_src_as_bool(intrin->src[0])) {
-            b->cursor = nir_before_instr(&intrin->instr);
             nir_intrinsic_op op;
             switch (intrin->intrinsic) {
             case nir_intrinsic_demote_if:
@@ -193,22 +187,18 @@ try_fold_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin,
                nir_intrinsic_instr_create(b->shader, op);
             nir_builder_instr_insert(b, &new_instr->instr);
          }
-         nir_instr_remove(&intrin->instr);
-         return true;
+         return NIR_LOWER_INSTR_PROGRESS_REPLACE;
       }
-      return false;
+      return NULL;
 
    case nir_intrinsic_load_deref: {
       nir_deref_instr *deref = nir_src_as_deref(intrin->src[0]);
       nir_const_value *v = const_value_for_deref(deref);
       if (v) {
-         b->cursor = nir_before_instr(&intrin->instr);
-         nir_def *val = nir_build_imm(b, intrin->def.num_components,
-                                      intrin->def.bit_size, v);
-         nir_def_replace(&intrin->def, val);
-         return true;
+         return nir_build_imm(b, intrin->def.num_components,
+                              intrin->def.bit_size, v);
       }
-      return false;
+      return NULL;
    }
 
    case nir_intrinsic_load_constant: {
@@ -216,7 +206,7 @@ try_fold_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin,
 
       if (!nir_src_is_const(intrin->src[0])) {
          state->has_indirect_load_const = true;
-         return false;
+         return NULL;
       }
 
       unsigned offset = nir_src_as_uint(intrin->src[0]);
@@ -224,7 +214,6 @@ try_fold_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin,
       unsigned range = nir_intrinsic_range(intrin);
       assert(base + range <= b->shader->constant_data_size);
 
-      b->cursor = nir_before_instr(&intrin->instr);
       nir_def *val;
       if (offset >= range) {
          val = nir_undef(b, intrin->def.num_components,
@@ -243,8 +232,7 @@ try_fold_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin,
          val = nir_build_imm(b, intrin->def.num_components,
                              intrin->def.bit_size, imm);
       }
-      nir_def_replace(&intrin->def, val);
-      return true;
+      return val;
    }
 
    case nir_intrinsic_ddx:
@@ -254,22 +242,18 @@ try_fold_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin,
    case nir_intrinsic_ddy_fine:
    case nir_intrinsic_ddy_coarse: {
       if (!nir_src_is_const(intrin->src[0]))
-         return false;
+         return NULL;
 
       /* Derivative of a constant is zero, except for NaNs and Infs */
       nir_const_value imm[NIR_MAX_VEC_COMPONENTS];
       unsigned sz = intrin->def.bit_size;
-
-      b->cursor = nir_before_instr(&intrin->instr);
 
       for (unsigned i = 0; i < intrin->def.num_components; i++) {
          bool finite = isfinite(nir_src_comp_as_float(intrin->src[0], i));
          imm[i] = nir_const_value_for_float(finite ? 0 : NAN, sz);
       }
 
-      nir_def_replace(&intrin->def,
-                      nir_build_imm(b, intrin->def.num_components, sz, imm));
-      return true;
+      return nir_build_imm(b, intrin->def.num_components, sz, imm);
    }
 
    case nir_intrinsic_vote_any:
@@ -292,23 +276,20 @@ try_fold_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin,
        * the data is constant.
        */
       if (nir_src_is_const(intrin->src[0])) {
-         nir_def_replace(&intrin->def, intrin->src[0].ssa);
-         return true;
+         return intrin->src[0].ssa;
       }
-      return false;
+      return NULL;
 
    case nir_intrinsic_vote_feq:
    case nir_intrinsic_vote_ieq:
       if (nir_src_is_const(intrin->src[0])) {
-         b->cursor = nir_before_instr(&intrin->instr);
-         nir_def_replace(&intrin->def, nir_imm_true(b));
-         return true;
+         return nir_imm_true(b);
       }
-      return false;
+      return NULL;
 
    case nir_intrinsic_inverse_ballot: {
       if (!nir_src_is_const(intrin->src[0]))
-         return false;
+         return NULL;
       bool constant_true = true;
       bool constant_false = true;
       for (unsigned i = 0; i < nir_src_num_components(intrin->src[0]); i++) {
@@ -317,14 +298,13 @@ try_fold_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin,
          constant_false &= value == 0;
       }
       if (!constant_true && !constant_false)
-         return false;
-      b->cursor = nir_before_instr(&intrin->instr);
-      nir_def_replace(&intrin->def, nir_imm_bool(b, constant_true));
-      return true;
+         return NULL;
+
+      return nir_imm_bool(b, constant_true);
    }
 
    default:
-      return false;
+      return NULL;
    }
 }
 
@@ -429,7 +409,7 @@ try_fold_texel_offset_src(nir_tex_instr *tex)
    return true;
 }
 
-static bool
+static nir_def *
 try_fold_tex(nir_builder *b, nir_tex_instr *tex)
 {
    bool progress = false;
@@ -449,10 +429,10 @@ try_fold_tex(nir_builder *b, nir_tex_instr *tex)
    /* tex with a zero offset is just tex. */
    progress |= try_fold_texel_offset_src(tex);
 
-   return progress;
+   return progress ? NIR_LOWER_INSTR_PROGRESS : NULL;
 }
 
-static bool
+static nir_def *
 try_fold_instr(nir_builder *b, nir_instr *instr, void *_state)
 {
    switch (instr->type) {
@@ -464,7 +444,7 @@ try_fold_instr(nir_builder *b, nir_instr *instr, void *_state)
       return try_fold_tex(b, nir_instr_as_tex(instr));
    default:
       /* Don't know how to constant fold */
-      return false;
+      return NULL;
    }
 }
 
@@ -475,9 +455,8 @@ nir_opt_constant_folding(nir_shader *shader)
    state.has_load_constant = false;
    state.has_indirect_load_const = false;
 
-   bool progress = nir_shader_instructions_pass(shader, try_fold_instr,
-                                                nir_metadata_control_flow,
-                                                &state);
+   bool progress = nir_shader_lower_instructions(shader, NULL, try_fold_instr,
+                                                 &state);
 
    /* This doesn't free the constant data if there are no constant loads because
     * the data might still be used but the loads have been lowered to load_ubo

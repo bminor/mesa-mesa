@@ -227,7 +227,6 @@ TEST_P(rgba, pack)
 
    nir_lower_undef_to_zero(b->shader);
    ASSERT_TRUE(nir_opt_constant_folding(b->shader));
-   ASSERT_TRUE(nir_opt_dce(b->shader));
 
    for (unsigned i = 0; i < NUM_COLORS; i++) {
       char expected[16] = { 0, };
@@ -289,7 +288,6 @@ TEST_P(rgba, unpack)
 
    nir_lower_undef_to_zero(b->shader);
    ASSERT_TRUE(nir_opt_constant_folding(b->shader));
-   ASSERT_TRUE(nir_opt_dce(b->shader));
 
    for (unsigned i = 0; i < NUM_COLORS; i++) {
       char expected[16] = { 0, };
