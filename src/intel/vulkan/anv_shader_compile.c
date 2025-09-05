@@ -1868,7 +1868,7 @@ anv_shader_compile(struct vk_device *vk_device,
             result = vk_errorf(device, VK_ERROR_UNKNOWN, "%s", error_str);
          else
             result = vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
-         goto fail;
+         goto end;
       }
 
       anv_nir_validate_push_layout(device->physical,
@@ -1881,8 +1881,10 @@ anv_shader_compile(struct vk_device *vk_device,
                                  mem_ctx, shader_data, pAllocator,
                                  shader_data->shader_out);
       if (result != VK_SUCCESS)
-         goto fail;
+         goto end;
    }
+
+end:
 
    ralloc_free(mem_ctx);
 
@@ -1893,14 +1895,11 @@ anv_shader_compile(struct vk_device *vk_device,
    }
 #endif
 
-   return VK_SUCCESS;
-
-fail:
-   ralloc_free(mem_ctx);
-
-   for (unsigned s = 0; s < shader_count; s++) {
-      if (shaders_out[s] != NULL)
-         vk_shader_free(vk_device, &vk_device->alloc, shaders_out[s]);
+   if (result != VK_SUCCESS) {
+      for (unsigned s = 0; s < shader_count; s++) {
+         if (shaders_out[s] != NULL)
+            vk_shader_free(vk_device, &vk_device->alloc, shaders_out[s]);
+      }
    }
 
    return result;
