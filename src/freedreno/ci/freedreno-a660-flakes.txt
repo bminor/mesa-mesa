@@ -2,10 +2,6 @@ KHR-GL46.buffer_storage.map_persistent_dispatch
 KHR-GL46.buffer_storage.map_persistent_flush
 KHR-GL46.shader_subroutine.control_flow_and_returned_subroutine_values_used_as_subroutine_input
 
-# FDM flakes:
-# See https://gitlab.freedesktop.org/mesa/mesa/-/issues/13534 for possible reproducer.
-.*dEQP-VK.renderpass2.fragment_density_map.2_views.render.*divisible_density_size.2_samples.static_subsampled_[12]_[12]_multiviewport
-
 # a618 and a660 seem to have some general instability in tesselation and GS.
 # Some tess tests also use the GS (tesselation.invariance), but others
 # don't (spirv_assembly).  They don't appear to be correlated to any GPU

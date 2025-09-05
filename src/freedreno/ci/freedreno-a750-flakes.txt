@@ -204,10 +204,6 @@ dEQP-VK.query_pool.statistics_query.fragment_shader_invocations.primary.64bits_d
 
 dEQP-VK.renderpass.suballocation.multisample_resolve.layers_6.r16_sfloat.samples_4_resolve_level_2
 
-# FDM flakes:
-# See https://gitlab.freedesktop.org/mesa/mesa/-/issues/13534 for possible reproducer.
-.*dEQP-VK.renderpass2.fragment_density_map.2_views.render.*divisible_density_size.2_samples.static_subsampled_[12]_[12]_multiviewport
-
 dEQP-VK.renderpass2.suballocation.multisample_resolve.layers_6.r8g8b8a8_snorm.samples_4_resolve_level_2
 dEQP-VK.renderpass2.suballocation.multisample_resolve.r32g32b32a32_sfloat.max_attachments_8_samples_4
 

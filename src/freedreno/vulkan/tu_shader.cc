@@ -1220,6 +1220,29 @@ tu_nir_lower_layered_fdm(nir_shader *shader,
                                      nir_metadata_control_flow, &state);
 }
 
+static bool
+lower_view_to_zero_filter(const nir_instr *instr, const void *cb)
+{
+   return instr->type == nir_instr_type_intrinsic;
+}
+
+static nir_def *
+lower_view_to_zero(nir_builder *b, nir_instr *instr, void *cb)
+{
+   nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
+   if (intrin->intrinsic != nir_intrinsic_load_view_index)
+      return NULL;
+
+   return nir_imm_int(b, 0);
+}
+
+static bool
+tu_nir_lower_view_to_zero(nir_shader *shader)
+{
+   return nir_shader_lower_instructions(shader, lower_view_to_zero_filter,
+                                        lower_view_to_zero, NULL);
+}
+
 static void
 shared_type_info(const struct glsl_type *type, unsigned *size, unsigned *align)
 {
@@ -2671,6 +2694,9 @@ tu_shader_create(struct tu_device *dev,
    if (nir->info.stage == MESA_SHADER_VERTEX && key->multiview_mask) {
       tu_nir_lower_multiview(nir, key->multiview_mask, dev);
    }
+
+   if (!key->multiview_mask)
+      tu_nir_lower_view_to_zero(nir);
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT && key->force_sample_interp) {
       nir->info.fs.uses_sample_shading = true;
