@@ -97,11 +97,21 @@ panvk_meta_copy_get_image_properties(struct panvk_image *img,
          props.stencil.component_mask = BITFIELD_MASK(1);
          break;
       case VK_FORMAT_D24_UNORM_S8_UINT:
-         props.depth.view_format =
-            use_unorm ? VK_FORMAT_R8G8B8A8_UNORM : VK_FORMAT_R8G8B8A8_UINT;
-         props.depth.component_mask = BITFIELD_MASK(3);
-         props.stencil.view_format = props.depth.view_format;
-         props.stencil.component_mask = BITFIELD_BIT(3);
+         if (panvk_image_is_planar_depth_stencil(img)) {
+            props.depth.view_format =
+               use_unorm ? VK_FORMAT_R8G8B8_UNORM : VK_FORMAT_R8G8B8_UINT;
+            props.depth.component_mask = BITFIELD_MASK(3);
+            props.stencil.view_format =
+               use_unorm ? VK_FORMAT_R8_UNORM : VK_FORMAT_R8_UINT;
+            props.stencil.component_mask = BITFIELD_BIT(0);
+         } else {
+            props.depth.view_format = use_unorm
+                                         ? VK_FORMAT_R8G8B8A8_UNORM
+                                         : VK_FORMAT_R8G8B8A8_UINT;
+            props.depth.component_mask = BITFIELD_MASK(3);
+            props.stencil.view_format = props.depth.view_format;
+            props.stencil.component_mask = BITFIELD_BIT(3);
+         }
          break;
       case VK_FORMAT_X8_D24_UNORM_PACK32:
          props.depth.view_format =
@@ -109,8 +119,9 @@ panvk_meta_copy_get_image_properties(struct panvk_image *img,
          props.depth.component_mask = BITFIELD_MASK(3);
          break;
       case VK_FORMAT_D32_SFLOAT_S8_UINT:
-         props.depth.view_format = use_unorm ? VK_FORMAT_R8G8B8A8_UNORM
-                                                    : VK_FORMAT_R8G8B8A8_UINT;
+         assert(panvk_image_is_planar_depth_stencil(img));
+         props.depth.view_format =
+            use_unorm ? VK_FORMAT_R8G8B8A8_UNORM : VK_FORMAT_R8G8B8A8_UINT;
          props.depth.component_mask = BITFIELD_MASK(4);
          props.stencil.view_format =
             use_unorm ? VK_FORMAT_R8_UNORM : VK_FORMAT_R8_UINT;

@@ -6,6 +6,9 @@
 #ifndef PANVK_IMAGE_H
 #define PANVK_IMAGE_H
 
+#include "util/format/u_format.h"
+
+#include "vk_format.h"
 #include "vk_image.h"
 
 #include "pan_image.h"
@@ -62,6 +65,37 @@ panvk_plane_index(const struct panvk_image *image,
       assert(image->plane_count > 0);
       return image->plane_count - 1;
    }
+}
+
+static inline bool
+panvk_image_is_interleaved_depth_stencil(const struct panvk_image *image){
+   return image->plane_count == 1 &&
+          vk_format_aspects(image->vk.format) ==
+             (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+}
+
+static inline bool
+panvk_image_is_planar_depth_stencil(const struct panvk_image *image){
+   return image->plane_count > 1 &&
+          vk_format_aspects(image->vk.format) ==
+             (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+}
+
+static inline enum pipe_format
+panvk_image_depth_only_pfmt(const struct panvk_image *image)
+{
+   assert(vk_format_has_depth(image->vk.format));
+
+   return util_format_get_depth_only(image->planes[0].image.props.format);
+}
+
+static inline enum pipe_format
+panvk_image_stencil_only_pfmt(const struct panvk_image *image)
+{
+   assert(vk_format_has_stencil(image->vk.format));
+
+   return util_format_stencil_only(
+      image->planes[image->plane_count - 1].image.props.format);
 }
 
 VkResult panvk_image_init(struct panvk_image *image,

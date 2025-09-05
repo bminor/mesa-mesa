@@ -131,6 +131,17 @@ get_iusage(struct panvk_image *image, const VkImageCreateInfo *create_info)
 static unsigned
 get_plane_count(struct panvk_image *image)
 {
+   bool combined_ds = vk_format_aspects(image->vk.format) ==
+                      (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+
+   /* Only depth+stencil images can be made multiplanar behind the scene. */
+   if (!combined_ds)
+      return vk_format_get_plane_count(image->vk.format);
+
+   struct panvk_physical_device *phys_dev =
+      to_panvk_physical_device(image->vk.base.device->physical);
+   unsigned arch = pan_arch(phys_dev->kmod.props.gpu_id);
+
    /* Z32_S8X24 is not supported on v9+, and we don't want to use it
     * on v7- anyway, because it's less efficient than the multiplanar
     * alternative.
@@ -138,7 +149,49 @@ get_plane_count(struct panvk_image *image)
    if (image->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT)
       return 2;
 
-   return vk_format_get_plane_count(image->vk.format);
+   assert(image->vk.format == VK_FORMAT_D24_UNORM_S8_UINT);
+
+   /* We can do AFBC(S8) on Valhall and we're thus better off using planar
+    * Z24+S8 so we can use AFBC when separateDepthStencilLayouts=true.
+    */
+   return arch >= 9 ? 2 : 1;
+}
+
+static enum pipe_format
+select_depth_plane_pfmt(struct panvk_image *image)
+{
+   switch (image->vk.format) {
+   case VK_FORMAT_D24_UNORM_S8_UINT:
+      return PIPE_FORMAT_Z24_UNORM_PACKED;
+   case VK_FORMAT_D32_SFLOAT_S8_UINT:
+      return PIPE_FORMAT_Z32_FLOAT;
+   default:
+      UNREACHABLE("Invalid depth+stencil format");
+   }
+}
+
+static enum pipe_format
+select_stencil_plane_pfmt(struct panvk_image *image)
+{
+   switch (image->vk.format) {
+   case VK_FORMAT_D24_UNORM_S8_UINT:
+   case VK_FORMAT_D32_SFLOAT_S8_UINT:
+      return PIPE_FORMAT_S8_UINT;
+   default:
+      UNREACHABLE("Invalid depth+stencil format");
+   }
+}
+
+static enum pipe_format
+select_plane_pfmt(struct panvk_image *image, unsigned plane)
+{
+   if (panvk_image_is_planar_depth_stencil(image)) {
+      return plane > 0 ? select_stencil_plane_pfmt(image)
+                       : select_depth_plane_pfmt(image);
+   }
+
+   VkFormat plane_format = vk_format_get_plane_format(image->vk.format, plane);
+   return vk_format_to_pipe_format(plane_format);
 }
 
 static bool
@@ -184,14 +237,11 @@ panvk_image_can_use_mod(struct panvk_image *image,
          return false;
 
       /* We can't have separate depth/stencil layout transitions with
-       * interleaved Z24S8, so make sure we always disallow AFBC on Z24S8 until
-       * we've extended the image logic to support planar Z24+S8. Note that
-       * AFBC(S8) is not supported on Bifrost, so we want to keep support for
-       * interleaved Z24S8 to at least have AFBC(Z24S8) when
-       * separateDepthStencilLayouts=false.
+       * interleaved ZS, so make sure we disallow AFBC on ZS unless
+       * it's using a planar layout.
        */
       if (image->vk.base.device->enabled_features.separateDepthStencilLayouts &&
-          image->vk.format == VK_FORMAT_D24_UNORM_S8_UINT)
+          panvk_image_is_interleaved_depth_stencil(image))
          return false;
    }
 
@@ -220,26 +270,14 @@ panvk_image_can_use_mod(struct panvk_image *image,
    /* Defer the rest of the checks to the mod handler. */
    struct pan_image_props iprops = {
       .modifier = mod,
-      .format = vk_format_to_pipe_format(image->vk.format),
       .dim = panvk_image_type_to_mali_tex_dim(image->vk.image_type),
       .array_size = image->vk.array_layers,
       .nr_samples = image->vk.samples,
       .nr_slices = image->vk.mip_levels,
    };
-   const unsigned plane_count =
-      image->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT
-         ? 2
-         : vk_format_get_plane_count(image->vk.format);
 
-   for (uint8_t plane = 0; plane < plane_count; plane++) {
-      VkFormat format;
-
-      if (image->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT)
-         format = plane == 0 ? VK_FORMAT_D32_SFLOAT : VK_FORMAT_S8_UINT;
-      else
-         format = vk_format_get_plane_format(image->vk.format, plane);
-
-      iprops.format = vk_format_to_pipe_format(format);
+   for (uint8_t plane = 0; plane < image->plane_count; plane++) {
+      iprops.format = select_plane_pfmt(image, plane);
       iprops.extent_px = (struct pan_image_extent){
          .width = vk_format_get_plane_width(image->vk.format, plane,
                                             image->vk.extent.width),
@@ -332,7 +370,7 @@ static bool
 is_disjoint(const struct panvk_image *image)
 {
    assert((image->plane_count > 1 &&
-           image->vk.format != VK_FORMAT_D32_SFLOAT_S8_UINT) ||
+           !vk_format_is_depth_or_stencil(image->vk.format)) ||
           (image->vk.create_flags & VK_IMAGE_CREATE_ALIAS_BIT) ||
           !(image->vk.create_flags & VK_IMAGE_CREATE_DISJOINT_BIT));
    return image->vk.create_flags & VK_IMAGE_CREATE_DISJOINT_BIT;
@@ -364,27 +402,13 @@ panvk_image_init_layouts(struct panvk_image *image,
          pCreateInfo->pNext,
          IMAGE_DRM_FORMAT_MODIFIER_EXPLICIT_CREATE_INFO_EXT);
 
-   image->plane_count = vk_format_get_plane_count(pCreateInfo->format);
-
-   /* Z32_S8X24 is not supported on v9+, and we don't want to use it
-    * on v7- anyway, because it's less efficient than the multiplanar
-    * alternative.
-    */
-   if (image->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT)
-      image->plane_count = 2;
-
    const struct pan_mod_handler *mod_handler =
       pan_mod_get_handler(arch, image->vk.drm_format_mod);
    struct pan_image_layout_constraints plane_layout = {
       .offset_B = 0,
    };
    for (uint8_t plane = 0; plane < image->plane_count; plane++) {
-      VkFormat format;
-
-      if (image->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT)
-         format = plane == 0 ? VK_FORMAT_D32_SFLOAT : VK_FORMAT_S8_UINT;
-      else
-         format = vk_format_get_plane_format(image->vk.format, plane);
+      enum pipe_format pfmt = select_plane_pfmt(image, plane);
 
       if (explicit_info) {
          plane_layout = (struct pan_image_layout_constraints){
@@ -396,7 +420,7 @@ panvk_image_init_layouts(struct panvk_image *image,
       image->planes[plane].image = (struct pan_image){
          .props = {
             .modifier = image->vk.drm_format_mod,
-            .format = vk_format_to_pipe_format(format),
+            .format = pfmt,
             .dim = panvk_image_type_to_mali_tex_dim(image->vk.image_type),
             .extent_px = {
                .width = vk_format_get_plane_width(image->vk.format, plane,
@@ -621,7 +645,8 @@ get_image_subresource_layout(const struct panvk_image *image,
        * path because we need to interleave the depth/stencil components. For
        * the stencil aspect, the copied data only needs 1 byte/px instead of 4.
        */
-      if (image->vk.format == VK_FORMAT_D24_UNORM_S8_UINT) {
+      if (image->vk.format == VK_FORMAT_D24_UNORM_S8_UINT &&
+          image->plane_count == 1) {
          switch (subres->aspectMask) {
             case VK_IMAGE_ASPECT_DEPTH_BIT:
                memcpy_size->size = slice_layout->size_B;

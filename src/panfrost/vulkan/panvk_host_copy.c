@@ -92,9 +92,10 @@ panvk_copy_image_to_from_memory(struct image_params img,
 
    /* D24S8 is a special case because the aspects are interleaved in a single
     * plane */
-   VkFormat vkfmt = img.img->vk.format == VK_FORMAT_D24_UNORM_S8_UINT ?
-      img.img->vk.format :
-      vk_format_get_aspect_format(img.img->vk.format, img.subres.aspectMask);
+   VkFormat vkfmt = panvk_image_is_interleaved_depth_stencil(img.img)
+                       ? img.img->vk.format
+                       : vk_format_get_aspect_format(img.img->vk.format,
+                                                     img.subres.aspectMask);
    enum pipe_format pfmt = vk_format_to_pipe_format(vkfmt);
    const struct util_format_description *fmt = util_format_description(pfmt);
 

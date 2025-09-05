@@ -83,12 +83,15 @@ prepare_tex_descs(struct panvk_image_view *view)
    struct panvk_image *image =
       container_of(view->vk.image, struct panvk_image, vk);
    struct panvk_device *dev = to_panvk_device(view->vk.base.device);
+   bool img_combined_ds =
+      vk_format_aspects(image->vk.format) ==
+      (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+   bool view_combined_ds = view->vk.aspects ==
+      (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
    bool can_preload_other_aspect =
       (view->vk.usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) &&
-      (image->vk.format == VK_FORMAT_D24_UNORM_S8_UINT ||
-       (image->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT &&
-        view->vk.aspects ==
-           (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)));
+      (img_combined_ds &&
+       (view_combined_ds || panvk_image_is_interleaved_depth_stencil(image)));
 
    if (util_format_is_depth_or_stencil(view->pview.format)) {
       /* Vulkan wants R001, where the depth/stencil is stored in the red
@@ -113,8 +116,12 @@ prepare_tex_descs(struct panvk_image_view *view)
    /* If the view contains both stencil and depth, we need to keep only the
     * depth. We'll create another texture with only the stencil.
     */
-   if (pview.format == PIPE_FORMAT_Z32_FLOAT_S8X24_UINT)
-      pview.format = PIPE_FORMAT_Z32_FLOAT;
+   if (view->vk.aspects & VK_IMAGE_ASPECT_DEPTH_BIT) {
+      /* View and image formats must match. */
+      assert(view->vk.format == vk_format_depth_only(image->vk.format) ||
+             view->vk.format == image->vk.format);
+      pview.format = panvk_image_depth_only_pfmt(image);
+   }
 
    uint32_t plane_count = vk_format_get_plane_count(view->vk.format);
    uint32_t tex_payload_size = GENX(pan_texture_estimate_payload_size)(&pview);
@@ -196,23 +203,13 @@ prepare_tex_descs(struct panvk_image_view *view)
    if (!can_preload_other_aspect)
       return VK_SUCCESS;
 
-   switch (pview.format) {
-   case PIPE_FORMAT_Z24X8_UNORM:
-   case PIPE_FORMAT_Z24_UNORM_S8_UINT:
-      pview.format = PIPE_FORMAT_X24S8_UINT;
-      break;
-   case PIPE_FORMAT_X24S8_UINT:
-      pview.format = PIPE_FORMAT_Z24X8_UNORM;
-      break;
-   case PIPE_FORMAT_Z32_FLOAT:
-      pview.format = PIPE_FORMAT_S8_UINT;
-      break;
-   case PIPE_FORMAT_S8_UINT:
-      pview.format = PIPE_FORMAT_Z32_FLOAT;
-      break;
-   default:
-      assert(!"Invalid format");
-   }
+   /* If the depth was present in the aspects mask, we've handled it already, so
+    * move on to the stencil. If it wasn't present, it's the stencil texture we
+    * create first, and we need t handle the depth here.
+    */
+   pview.format = (view->vk.aspects & VK_IMAGE_ASPECT_DEPTH_BIT)
+                     ? panvk_image_stencil_only_pfmt(image)
+                     : panvk_image_depth_only_pfmt(image);
 
    ptr.cpu += tex_payload_size;
    ptr.gpu += tex_payload_size;
@@ -346,7 +343,7 @@ panvk_per_arch(CreateImageView)(VkDevice _device,
 
    /* Depth/stencil are viewed as color for copies. */
    if (view->vk.aspects == VK_IMAGE_ASPECT_COLOR_BIT &&
-       image->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT &&
+       panvk_image_is_planar_depth_stencil(image) &&
        vk_format_get_blocksize(view->vk.view_format) == 1) {
       view->pview.planes[0] = (struct pan_image_plane_ref) {
          .image = &image->planes[1].image,
@@ -358,9 +355,10 @@ panvk_per_arch(CreateImageView)(VkDevice _device,
     * depth and stencil but the view only contains one of these components, so
     * we can ignore the component we don't use.
     */
-   if (view->vk.view_format == VK_FORMAT_S8_UINT &&
-       image->vk.format == VK_FORMAT_D24_UNORM_S8_UINT)
-      view->pview.format = PIPE_FORMAT_X24S8_UINT;
+   if (view->vk.aspects == VK_IMAGE_ASPECT_STENCIL_BIT)
+      view->pview.format = panvk_image_stencil_only_pfmt(image);
+   else if (view->vk.aspects == VK_IMAGE_ASPECT_DEPTH_BIT)
+      view->pview.format = panvk_image_depth_only_pfmt(image);
 
    /* Attachments need a texture for the FB preload logic. */
    VkImageUsageFlags tex_usage_mask =

@@ -129,11 +129,9 @@ render_state_set_z_attachment(struct panvk_cmd_buffer *cmdbuf,
    state->render.zs_pview = iview->pview;
    fbinfo->zs.view.zs = &state->render.zs_pview;
 
-   /* D32_S8 is a multiplanar format, so we need to adjust the format of the
-    * depth-only view to match the one of the depth plane.
-    */
-   if (iview->pview.format == PIPE_FORMAT_Z32_FLOAT_S8X24_UINT)
-      state->render.zs_pview.format = PIPE_FORMAT_Z32_FLOAT;
+   /* Fixup view format when the image is multiplanar. */
+   if (panvk_image_is_planar_depth_stencil(img))
+      state->render.zs_pview.format = panvk_image_depth_only_pfmt(img);
 
    state->render.zs_pview.planes[0] = (struct pan_image_plane_ref){
       .image = &img->planes[0].image,
@@ -149,13 +147,12 @@ render_state_set_z_attachment(struct panvk_cmd_buffer *cmdbuf,
     * If we touch the depth component, we need to make sure the stencil
     * component is preserved, hence the preload, and the view format adjusment.
     */
-   if (img->vk.format == VK_FORMAT_D24_UNORM_S8_UINT) {
+   if (panvk_image_is_interleaved_depth_stencil(img)) {
       fbinfo->zs.preload.s = true;
       cmdbuf->state.gfx.render.zs_pview.format =
-         PIPE_FORMAT_Z24_UNORM_S8_UINT;
+         img->planes[0].image.props.format;
    } else {
-      state->render.zs_pview.format =
-         vk_format_to_pipe_format(vk_format_depth_only(img->vk.format));
+      state->render.zs_pview.format = panvk_image_depth_only_pfmt(img);
    }
 
    if (att->loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR)
@@ -195,19 +192,15 @@ render_state_set_s_attachment(struct panvk_cmd_buffer *cmdbuf,
    state->render.s_pview = iview->pview;
    fbinfo->zs.view.s = &state->render.s_pview;
 
-   /* D32_S8 is a multiplanar format, so we need to adjust the format of the
-    * stencil-only view to match the one of the stencil plane.
-    */
-   state->render.s_pview.format = img->vk.format == VK_FORMAT_D24_UNORM_S8_UINT
-                                     ? PIPE_FORMAT_Z24_UNORM_S8_UINT
-                                     : PIPE_FORMAT_S8_UINT;
-   if (img->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT) {
+   if (panvk_image_is_planar_depth_stencil(img)) {
+      state->render.s_pview.format = panvk_image_stencil_only_pfmt(img);
       state->render.s_pview.planes[0] = (struct pan_image_plane_ref){0};
       state->render.s_pview.planes[1] = (struct pan_image_plane_ref){
          .image = &img->planes[1].image,
          .plane_idx = 0,
       };
    } else {
+      state->render.s_pview.format = panvk_image_stencil_only_pfmt(img);
       state->render.s_pview.planes[0] = (struct pan_image_plane_ref){
          .image = &img->planes[0].image,
          .plane_idx = 0,
@@ -224,7 +217,7 @@ render_state_set_s_attachment(struct panvk_cmd_buffer *cmdbuf,
     * and the format is D24S8, we can combine them in a single view
     * addressing both components.
     */
-   if (img->vk.format == VK_FORMAT_D24_UNORM_S8_UINT &&
+   if (state->render.s_pview.format == PIPE_FORMAT_X24S8_UINT &&
        state->render.z_attachment.iview &&
        state->render.z_attachment.iview->vk.image == iview->vk.image) {
       state->render.zs_pview.format = PIPE_FORMAT_Z24_UNORM_S8_UINT;
@@ -236,6 +229,7 @@ render_state_set_s_attachment(struct panvk_cmd_buffer *cmdbuf,
     * is not supported on the stencil-only slot on Bifrost.
     */
    } else if (img->vk.format == VK_FORMAT_D24_UNORM_S8_UINT &&
+              state->render.s_pview.format == PIPE_FORMAT_X24S8_UINT &&
               fbinfo->zs.view.zs == NULL) {
       fbinfo->zs.view.zs = &state->render.s_pview;
       state->render.s_pview.format = PIPE_FORMAT_Z24_UNORM_S8_UINT;
