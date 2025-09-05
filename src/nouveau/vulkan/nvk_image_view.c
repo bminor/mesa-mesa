@@ -158,7 +158,9 @@ nvk_image_view_init(struct nvk_device *dev,
       if (image->separate_zs)
          p_format = nil_image.format.p_format;
       else if (view->vk.aspects == VK_IMAGE_ASPECT_STENCIL_BIT)
-         p_format = util_format_stencil_only(p_format);
+         p_format = util_format_stencil_only(nil_image.format.p_format);
+      else if (view->vk.aspects & VK_IMAGE_ASPECT_DEPTH_BIT)
+         p_format = nil_image.format.p_format;
 
       struct nil_view nil_view = {
          .view_type = vk_image_view_type_to_nil_view_type(view->vk.view_type),
