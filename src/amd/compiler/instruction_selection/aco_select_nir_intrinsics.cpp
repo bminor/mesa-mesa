@@ -4707,7 +4707,8 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
 
       if (src.regClass() == s1) {
          bld.copy(Definition(dst), src);
-      } else if (dst.regClass() == v1 && src.regClass() == v1) {
+      } else if (dst.type() == RegType::vgpr && src.type() == RegType::vgpr && dst.size() == 1 &&
+                 src.size() == 1) {
          bld.vop3(aco_opcode::v_permlane16_b32, Definition(dst), src,
                   bld.as_uniform(get_ssa_temp(ctx, instr->src[1].ssa)),
                   bld.as_uniform(get_ssa_temp(ctx, instr->src[2].ssa)));
