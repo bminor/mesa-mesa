@@ -7474,7 +7474,7 @@
         "description": "freedreno/registers: Re-enable validation for gen_header.py",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "84e93daa265687ee6a54506c197e99793e7d3b2f",
         "notes": null
