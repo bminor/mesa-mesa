@@ -41,7 +41,7 @@ def gather_results(
             cur_job = project.jobs.get(job.id)
             # get variables
             print(f"👁  {job.name}...")
-            log: list[str] = cur_job.trace().decode("unicode_escape", "ignore").splitlines()
+            log: list[str] = cur_job.trace().decode().splitlines()
             filename: str = ''
             dev_name: str = ''
             for logline in log:
