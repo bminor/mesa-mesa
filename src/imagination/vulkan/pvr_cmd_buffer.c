@@ -7201,6 +7201,47 @@ void pvr_CmdDrawIndirect(VkCommandBuffer commandBuffer,
                            stride);
 }
 
+static inline void
+pvr_resolve_subresource_layer_init(const struct pvr_image_view *const iview,
+                                   VkImageSubresourceLayers *subresource)
+{
+   *subresource = (VkImageSubresourceLayers){
+      .mipLevel = iview->vk.base_mip_level,
+      .baseArrayLayer = iview->vk.base_array_layer,
+      .layerCount = iview->vk.layer_count,
+   };
+}
+
+static inline void
+pvr_resolve_offset_init(const struct pvr_render_pass_info *const info,
+                        VkOffset3D *offset)
+{
+   *offset = (VkOffset3D){
+      .x = info->render_area.offset.x,
+      .y = info->render_area.offset.y,
+   };
+}
+
+/* clang-format off */
+static inline void
+pvr_resolve_image_copy_region_init(const struct pvr_image_view *const src_view,
+                                   const struct pvr_image_view *const dst_view,
+                                   const struct pvr_render_pass_info *const info,
+                                   VkImageCopy2 *region)
+{
+   pvr_resolve_subresource_layer_init(src_view, &region->srcSubresource);
+   pvr_resolve_subresource_layer_init(dst_view, &region->dstSubresource);
+   pvr_resolve_offset_init(info, &region->srcOffset);
+   pvr_resolve_offset_init(info, &region->dstOffset);
+
+   region->extent = (VkExtent3D){
+      .width = info->render_area.extent.width,
+      .height = info->render_area.extent.height,
+      .depth = 1
+   };
+}
+/* clang-format on */
+
 static VkResult
 pvr_resolve_unemitted_resolve_attachments(struct pvr_cmd_buffer *cmd_buffer,
                                           struct pvr_render_pass_info *info)
@@ -7214,8 +7255,6 @@ pvr_resolve_unemitted_resolve_attachments(struct pvr_cmd_buffer *cmd_buffer,
          &hw_render->eot_surfaces[i];
       const uint32_t color_attach_idx = surface->src_attachment_idx;
       const uint32_t resolve_attach_idx = surface->attachment_idx;
-      VkImageSubresourceLayers src_subresource;
-      VkImageSubresourceLayers dst_subresource;
       struct pvr_image_view *dst_view;
       struct pvr_image_view *src_view;
       VkFormat src_format;
@@ -7224,34 +7263,16 @@ pvr_resolve_unemitted_resolve_attachments(struct pvr_cmd_buffer *cmd_buffer,
       VkResult result;
 
       if (!surface->need_resolve ||
-          surface->resolve_type != PVR_RESOLVE_TYPE_TRANSFER)
+          surface->resolve_type != PVR_RESOLVE_TYPE_TRANSFER) {
          continue;
+      }
 
       dst_view = info->attachments[resolve_attach_idx];
       src_view = info->attachments[color_attach_idx];
 
-      src_subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-      src_subresource.mipLevel = src_view->vk.base_mip_level;
-      src_subresource.baseArrayLayer = src_view->vk.base_array_layer;
-      src_subresource.layerCount = src_view->vk.layer_count;
-
-      dst_subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-      dst_subresource.mipLevel = dst_view->vk.base_mip_level;
-      dst_subresource.baseArrayLayer = dst_view->vk.base_array_layer;
-      dst_subresource.layerCount = dst_view->vk.layer_count;
-
-      region.srcOffset = (VkOffset3D){ info->render_area.offset.x,
-                                       info->render_area.offset.y,
-                                       0 };
-      region.dstOffset = (VkOffset3D){ info->render_area.offset.x,
-                                       info->render_area.offset.y,
-                                       0 };
-      region.extent = (VkExtent3D){ info->render_area.extent.width,
-                                    info->render_area.extent.height,
-                                    1 };
-
-      region.srcSubresource = src_subresource;
-      region.dstSubresource = dst_subresource;
+      pvr_resolve_image_copy_region_init(src_view, dst_view, info, &region);
+      region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+      region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
       /* TODO: if ERN_46863 is supported, Depth and stencil are sampled
        * separately from images with combined depth+stencil. Add logic here to
