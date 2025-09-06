@@ -567,7 +567,7 @@ class Parser(object):
 		self.variants.add(reg.domain)
 
 	def do_validate(self, schemafile):
-		if self.validate == False:
+		if not self.validate:
 			return
 
 		try:
@@ -972,7 +972,8 @@ def main():
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--rnn', type=str, required=True)
 	parser.add_argument('--xml', type=str, required=True)
-	parser.add_argument('--validate', action=argparse.BooleanOptionalAction)
+	parser.add_argument('--validate', default=False, action='store_true')
+	parser.add_argument('--no-validate', dest='validate', action='store_false')
 
 	subparsers = parser.add_subparsers()
 	subparsers.required = True
