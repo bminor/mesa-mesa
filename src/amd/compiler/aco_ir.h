@@ -2431,6 +2431,7 @@ void setup_reduce_temp(Program* program);
 void lower_to_cssa(Program* program);
 void register_allocation(Program* program, ra_test_policy = {});
 void reindex_ssa(Program* program);
+void spill_preserved(Program* program);
 void ssa_elimination(Program* program);
 void lower_to_hw_instr(Program* program);
 void schedule_program(Program* program);
@@ -2592,5 +2593,11 @@ typedef struct {
 extern const Info instr_info;
 
 } // namespace aco
+
+namespace std {
+template <> struct hash<aco::PhysReg> {
+   size_t operator()(aco::PhysReg reg) const noexcept { return std::hash<uint32_t>{}(reg.reg_b); }
+};
+} // namespace std
 
 #endif /* ACO_IR_H */
