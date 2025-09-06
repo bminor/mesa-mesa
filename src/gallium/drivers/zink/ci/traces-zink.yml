@@ -209,8 +209,8 @@ traces:
     gl-zink-anv-tgl:
       checksum: 8c053a06021678e28bfffd68705c6293
     zink-radv-vangogh:
-      checksum: c04caac15209f09a7f88de14c45f9899
-      checksum: 6cee4922acd96cc47083f622813d5a65
+      # checksum: c04caac15209f09a7f88de14c45f9899
+      # checksum: 6cee4922acd96cc47083f622813d5a65
       text: "oscillates between the two checksums above"
       label: [skip, flakes]
     zink-radv-gfx1201:
@@ -364,8 +364,8 @@ traces:
     zink-radv-vangogh:
       checksum: b7393d5d8c0aa09485880ccd6310fed8
     zink-radv-gfx1201:
-      checksum: b7393d5d8c0aa09485880ccd6310fed8
-      checksum: 870de613d477af42e9b3f81a081d4e7f
+      # checksum: b7393d5d8c0aa09485880ccd6310fed8
+      # checksum: 870de613d477af42e9b3f81a081d4e7f
       text: "oscillates between the two checksums above"
       label: [skip, flakes]
 
@@ -377,8 +377,8 @@ traces:
     zink-radv-vangogh:
       checksum: 08f44ba93a13220f5e6db3a00e6449ea
     zink-radv-gfx1201:
-      checksum: 08f44ba93a13220f5e6db3a00e6449ea
-      checksum: 5078d9c5d272fa231da4d960c90baead
+      # checksum: 08f44ba93a13220f5e6db3a00e6449ea
+      # checksum: 5078d9c5d272fa231da4d960c90baead
       text: "oscillates between the two checksums above"
       label: [skip, flakes]
 
