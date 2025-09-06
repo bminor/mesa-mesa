@@ -13,7 +13,7 @@ traces:
       checksum: e038ef82470fff7b94cf958fa869d130
   angle/libangle_restricted_traces_candy_crush_soda_saga.so:
     vk-anv-adl:
-      checksum: f013d27a2bc6b8983d375d6ac3f97422
+      checksum: dcfc2dbc1e383d10b86a9c3a52452aa8
   angle/libangle_restricted_traces_free_fire.so:
     vk-anv-adl:
       checksum: 1a9f03ed30ee254842afe7ab7792a493
