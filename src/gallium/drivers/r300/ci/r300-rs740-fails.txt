@@ -1065,8 +1065,6 @@ spec@glsl-1.10@execution@varying-packing@simple vec3 separate,Fail
 spec@glsl-1.10@execution@varying-packing@simple vec4 array,Fail
 spec@glsl-1.10@execution@varying-packing@simple vec4 separate,Fail
 
-spec@glsl-1.10@execution@glsl-1.10-built-in-uniform-state,Fail
-
 spec@glsl-1.10@execution@interpolation@interpolation-none-gl_backcolor-flat-vertex,Fail
 spec@glsl-1.10@execution@interpolation@interpolation-none-gl_backcolor-smooth-vertex,Fail
 spec@glsl-1.10@execution@interpolation@interpolation-none-gl_backsecondarycolor-flat-vertex,Fail
