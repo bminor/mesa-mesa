@@ -9,6 +9,3 @@ test_sampler_feedback_implicit_lod_aniso,Fail
 
 test_derivative_hoisting_dxbc,Fail
 test_derivative_hoisting_dxil,Fail
-
-test_conditional_rendering,Fail
-test_execute_indirect_state_predication,Fail
