@@ -35,11 +35,10 @@
 #include "util/macros.h"
 
 #include "v3d_context.h"
-#include "v3d_format_table.h"
 
 /* The format internal types are the same across V3D versions */
 #define V3D_VERSION 42
-#include "broadcom/cle/v3dx_pack.h"
+#include "v3d_format_table.h"
 
 bool
 v3d_rt_format_supported(const struct v3d_device_info *devinfo,

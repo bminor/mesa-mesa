@@ -35,10 +35,9 @@
 
 #include "v3d_context.h"
 #include "broadcom/common/v3d_tiling.h"
-#include "broadcom/common/v3d_macros.h"
 #include "broadcom/common/v3d_util.h"
 #include "broadcom/compiler/v3d_compiler.h"
-#include "broadcom/cle/v3dx_pack.h"
+#include "v3dx_format_table.h"
 
 static void
 v3d_generic_cso_state_delete(struct pipe_context *pctx, void *hwcso)

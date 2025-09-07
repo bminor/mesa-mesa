@@ -31,6 +31,9 @@
 #include "broadcom/common/v3d_tiling.h"
 #include "broadcom/common/v3d_tfu.h"
 
+#define V3D_VERSION 42
+#include "v3dx_format_table.h"
+
 /**
  * The param @op_blit is used to tell if we are saving state for blitter_blit
  * (if true) or blitter_clear (if false). If other blitter functions are used

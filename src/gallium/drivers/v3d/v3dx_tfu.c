@@ -24,6 +24,7 @@
 #include "v3d_context.h"
 #include "broadcom/common/v3d_tfu.h"
 #include "util/perf/cpu_trace.h"
+#include "v3dx_format_table.h"
 
 bool
 v3dX(tfu)(struct pipe_context *pctx,

@@ -24,9 +24,8 @@
 #include "util/format/u_format.h"
 
 #include "v3d_context.h"
-#include "broadcom/cle/v3dx_pack.h"
-#include "broadcom/common/v3d_macros.h"
 #include "v3d_format_table.h"
+#include "v3dx_format_table.h"
 
 #define SWIZ(x,y,z,w) {          \
         PIPE_SWIZZLE_##x, \

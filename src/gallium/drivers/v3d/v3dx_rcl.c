@@ -24,10 +24,9 @@
 #include "util/format/u_format.h"
 #include "util/macros.h"
 #include "v3d_context.h"
-#include "broadcom/common/v3d_macros.h"
 #include "broadcom/common/v3d_tiling.h"
 #include "broadcom/common/v3d_util.h"
-#include "broadcom/cle/v3dx_pack.h"
+#include "v3dx_format_table.h"
 
 #define PIPE_CLEAR_COLOR_BUFFERS (PIPE_CLEAR_COLOR0 |                   \
                                   PIPE_CLEAR_COLOR1 |                   \

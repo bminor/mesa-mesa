@@ -26,6 +26,19 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#ifdef v3dX
+#  include "v3dx_context.h"
+#  include "broadcom/cle/v3dx_pack.h"
+#else
+#  define v3dX(x) v3d42_##x
+#  include "v3dx_format_table.h"
+#  undef v3dX
+
+#  define v3dX(x) v3d71_##x
+#  include "v3dx_format_table.h"
+#  undef v3dX
+#endif
+
 struct v3d_format {
         /** Set if the pipe format is defined in the table. */
         bool present;
