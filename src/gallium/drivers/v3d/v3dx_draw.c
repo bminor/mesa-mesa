@@ -405,7 +405,7 @@ v3d_emit_tes_gs_common_params(struct v3d_job *job,
         }
 }
 
-static uint8_t
+static enum V3DX(Pack_Mode)
 simd_width_to_gs_pack_mode(uint32_t width)
 {
     switch (width) {

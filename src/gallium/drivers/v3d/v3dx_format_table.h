@@ -24,14 +24,15 @@
 #include "broadcom/common/v3d_macros.h"
 #include "broadcom/cle/v3dx_pack.h"
 
-uint8_t v3d_get_tex_format(const struct v3d_device_info *devinfo, enum pipe_format f);
+enum V3DX(Texture_Data_Formats) v3d_get_tex_format(const struct v3d_device_info *devinfo,
+                                                    enum pipe_format f);
 
-uint8_t v3d_get_rt_format(const struct v3d_device_info *devinfo, enum pipe_format f);
+enum V3DX(Output_Image_Format) v3d_get_rt_format(const struct v3d_device_info *devinfo,
+                                                 enum pipe_format f);
 
-bool v3dX(tfu_supports_tex_format)(uint32_t tex_format,
-                                   bool for_mipmap);
+bool v3dX(tfu_supports_tex_format)(enum V3DX(Texture_Data_Formats) tex_format,
+                                    bool for_mipmap);
 
-void v3dX(get_internal_type_bpp_for_output_format)(uint32_t format,
-                                                   uint32_t *type,
-                                                   uint32_t *bpp);
+void v3dX(get_internal_type_bpp_for_output_format)(enum V3DX(Output_Image_Format) format,
+                                                    uint32_t *type, uint32_t *bpp);
 

@@ -29,7 +29,7 @@
 #include "broadcom/common/v3d_util.h"
 #include "broadcom/compiler/v3d_compiler.h"
 
-static uint8_t
+static enum V3DX(Blend_Factor)
 v3d_factor(enum pipe_blendfactor factor, bool dst_alpha_one)
 {
         /* We may get a bad blendfactor when blending is disabled. */

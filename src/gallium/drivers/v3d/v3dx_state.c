@@ -158,7 +158,7 @@ v3d_create_blend_state(struct pipe_context *pctx,
         return so;
 }
 
-static uint32_t
+static enum V3DX(Stencil_Op)
 translate_stencil_op(enum pipe_stencil_op op)
 {
         switch (op) {
@@ -535,7 +535,7 @@ v3d_set_framebuffer_state(struct pipe_context *pctx,
 }
 
 static enum V3DX(Wrap_Mode)
-translate_wrap(uint32_t pipe_wrap)
+translate_wrap(enum pipe_tex_wrap pipe_wrap)
 {
         switch (pipe_wrap) {
         case PIPE_TEX_WRAP_REPEAT:

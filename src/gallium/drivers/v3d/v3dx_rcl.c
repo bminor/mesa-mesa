@@ -391,11 +391,12 @@ v3d_rcl_emit_generic_per_tile_list(struct v3d_job *job, int layer)
  * Note: rt_type is in fact a "enum V3DX(Internal_Type)".
  *
  */
-static uint32_t
-v3dX(clamp_for_format_and_type)(uint32_t rt_type,
+
+#if V3D_VERSION == 42
+static enum V3DX(Render_Target_Clamp)
+v3dX(clamp_for_format_and_type)(enum V3DX(Internal_Type) rt_type,
                                 enum pipe_format format)
 {
-#if V3D_VERSION == 42
         if (util_format_is_srgb(format)) {
                 return V3D_RENDER_TARGET_CLAMP_NORM;
         } else if (util_format_is_pure_integer(format)) {
@@ -403,8 +404,15 @@ v3dX(clamp_for_format_and_type)(uint32_t rt_type,
         } else {
                 return V3D_RENDER_TARGET_CLAMP_NONE;
         }
+        UNREACHABLE("Wrong V3D_VERSION");
+}
 #endif
+
 #if V3D_VERSION >= 71
+static enum V3DX(Render_Target_Type_Clamp)
+v3dX(clamp_for_format_and_type)(enum V3DX(Internal_Type) rt_type,
+                                enum pipe_format format)
+{
         switch (rt_type) {
         case V3D_INTERNAL_TYPE_8I:
                 return V3D_RENDER_TARGET_TYPE_CLAMP_8I_CLAMPED;
@@ -430,9 +438,10 @@ v3dX(clamp_for_format_and_type)(uint32_t rt_type,
                 UNREACHABLE("Unknown internal render target type");
         }
         return V3D_RENDER_TARGET_TYPE_CLAMP_INVALID;
-#endif
+
         UNREACHABLE("Wrong V3D_VERSION");
 }
+#endif
 
 #if V3D_VERSION >= 71
 static void

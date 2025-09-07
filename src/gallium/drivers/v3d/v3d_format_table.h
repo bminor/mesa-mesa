@@ -44,10 +44,10 @@ struct v3d_format {
         bool present;
 
         /** One of V3D42_OUTPUT_IMAGE_FORMAT_*, or OUTPUT_IMAGE_FORMAT_NO */
-        uint8_t rt_type;
+        enum V3DX(Output_Image_Format) rt_type;
 
         /** One of V3D42_TEXTURE_DATA_FORMAT_*. */
-        uint8_t tex_type;
+        enum V3DX(Texture_Data_Formats) tex_type;
 
         /**
          * Swizzle to apply to the RGBA shader output for storing to the tile

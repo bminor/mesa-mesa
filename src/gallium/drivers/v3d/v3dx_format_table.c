@@ -217,7 +217,7 @@ v3dX(get_format_desc)(enum pipe_format f)
 }
 
 void
-v3dX(get_internal_type_bpp_for_output_format)(uint32_t format,
+v3dX(get_internal_type_bpp_for_output_format)(enum V3DX(Output_Image_Format) format,
                                               uint32_t *type,
                                               uint32_t *bpp)
 {
@@ -341,7 +341,7 @@ v3dX(get_internal_type_bpp_for_output_format)(uint32_t format,
 }
 
 bool
-v3dX(tfu_supports_tex_format)(uint32_t tex_format,
+v3dX(tfu_supports_tex_format)(enum V3DX(Texture_Data_Formats) tex_format,
                               bool for_mipmap)
 {
         switch (tex_format) {

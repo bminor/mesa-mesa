@@ -33,7 +33,6 @@
  */
 
 #include "util/macros.h"
-
 #include "v3d_context.h"
 
 /* The format internal types are the same across V3D versions */
@@ -52,7 +51,7 @@ v3d_rt_format_supported(const struct v3d_device_info *devinfo,
         return vf->rt_type != V3D_OUTPUT_IMAGE_FORMAT_NO;
 }
 
-uint8_t
+enum V3DX(Output_Image_Format)
 v3d_get_rt_format(const struct v3d_device_info *devinfo, enum pipe_format f)
 {
         const struct v3d_format *vf = v3d_X(devinfo, get_format_desc)(f);
@@ -72,7 +71,7 @@ v3d_tex_format_supported(const struct v3d_device_info *devinfo,
         return vf != NULL;
 }
 
-uint8_t
+enum V3DX(Texture_Data_Formats)
 v3d_get_tex_format(const struct v3d_device_info *devinfo, enum pipe_format f)
 {
         const struct v3d_format *vf = v3d_X(devinfo, get_format_desc)(f);
@@ -184,7 +183,7 @@ v3d_format_get_internal_type_and_bpp(const struct v3d_device_info *devinfo,
                 }
         } else {
                 uint32_t bpp, type;
-                uint16_t rt_format = v3d_get_rt_format(devinfo, format);
+                enum V3DX(Output_Image_Format) rt_format = v3d_get_rt_format(devinfo, format);
                 v3d_X(devinfo, get_internal_type_bpp_for_output_format)
                         (rt_format, &type, &bpp);
                 if (internal_bpp)
