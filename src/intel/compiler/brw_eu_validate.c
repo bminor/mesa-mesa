@@ -2731,7 +2731,7 @@ brw_hw_decode_inst(const struct brw_isa_info *isa,
          inst->dst.file = brw_eu_inst_3src_a1_dst_reg_file(devinfo, raw);
          inst->dst.type = brw_eu_inst_3src_a1_dst_type(devinfo, raw);
          inst->dst.nr = brw_eu_inst_3src_dst_reg_nr(devinfo, raw);
-         inst->dst.subnr = brw_eu_inst_3src_a1_dst_subreg_nr(devinfo, raw) * 8;
+         inst->dst.subnr = brw_eu_inst_3src_a1_dst_subreg_nr(devinfo, raw);
          inst->dst.hstride = DST_STRIDE_3SRC(brw_eu_inst_3src_a1_dst_hstride(devinfo, raw));
 
          inst->src[0].file = brw_eu_inst_3src_a1_src0_reg_file(devinfo, raw);

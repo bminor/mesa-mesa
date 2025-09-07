@@ -508,7 +508,7 @@ FC(3src_a1_src0_hstride,    /* 9+ */   70,  69,  /* 12+ */ 65, 64, devinfo->ver 
 FDC(3src_a1_src0_vstride,   /* 9+ */   68,  67,  /* 12+ */ 43, 43, 35, 35, devinfo->ver >= 10)
 FC(3src_a1_src0_hw_type,    /* 9+ */   66,  64,  /* 12+ */ 42, 40, devinfo->ver >= 10)
 /* dst_reg_nr same in align16 */
-FC(3src_a1_dst_subreg_nr,   /* 9+ */   55,  54,  /* 12+ */ 55, 54, devinfo->ver >= 10)
+FD20(3src_a1_dst_subreg_nr, /* 9+ */   55,  51,  /* 12+ */ 55, 51, /* 20+ */ 55, 51, -1)
 FC(3src_a1_special_acc,     /* 9+ */   55,  52,  /* 12+ */ 54, 51, devinfo->ver >= 10) /* aliases dst_subreg_nr */
 /* Reserved 51:50 */
 FC(3src_a1_dst_hstride,     /* 9+ */   49,  49,  /* 12+ */ 48, 48, devinfo->ver >= 10)
