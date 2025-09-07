@@ -228,7 +228,6 @@ spec@ext_framebuffer_multisample@accuracy 2 srgb depthstencil linear,Fail
 spec@ext_framebuffer_multisample@accuracy 2 srgb depthstencil,Fail
 spec@ext_framebuffer_multisample@accuracy 4 srgb depthstencil linear,Fail
 spec@ext_framebuffer_multisample@accuracy 4 srgb depthstencil,Fail
-spec@ext_framebuffer_multisample@accuracy all_samples depth_draw small depthstencil,Fail
 spec@ext_framebuffer_multisample@accuracy all_samples srgb depthstencil linear,Fail
 spec@ext_framebuffer_multisample@accuracy all_samples srgb depthstencil,Fail
 spec@ext_framebuffer_multisample@accuracy all_samples stencil_draw small depthstencil,Fail
