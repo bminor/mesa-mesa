@@ -1253,7 +1253,7 @@ emit_instruction(asm_context& ctx, std::vector<uint32_t>& out, Instruction* inst
    } else if (instr->opcode == aco_opcode::p_debug_info) {
       assert(instr->operands[0].isConstant());
       uint32_t index = instr->operands[0].constantValue();
-      ctx.program->debug_info[index].offset = (out.size() - 1) * 4;
+      ctx.program->debug_info[index].offset = out.size() * 4;
       return;
    }
 
