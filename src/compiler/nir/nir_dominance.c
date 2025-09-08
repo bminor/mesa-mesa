@@ -157,7 +157,7 @@ calc_dom_children(nir_function_impl *impl)
 }
 
 static void
-calc_dfs_indicies(nir_block *block, uint32_t *index)
+calc_dfs_indices(nir_block *block, uint32_t *index)
 {
    /* UINT32_MAX has special meaning. See nir_block_dominates. */
    assert(*index < UINT32_MAX - 2);
@@ -165,7 +165,7 @@ calc_dfs_indicies(nir_block *block, uint32_t *index)
    block->dom_pre_index = (*index)++;
 
    for (unsigned i = 0; i < block->num_dom_children; i++)
-      calc_dfs_indicies(block->dom_children[i], index);
+      calc_dfs_indices(block->dom_children[i], index);
 
    block->dom_post_index = (*index)++;
 }
@@ -201,7 +201,7 @@ nir_calc_dominance_impl(nir_function_impl *impl)
    calc_dom_children(impl);
 
    uint32_t dfs_index = 1;
-   calc_dfs_indicies(start_block, &dfs_index);
+   calc_dfs_indices(start_block, &dfs_index);
 }
 
 void

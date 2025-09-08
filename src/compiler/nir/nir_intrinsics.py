@@ -53,7 +53,7 @@ class Intrinsic(object):
        - dest_components: number of destination components, -1 means no
          dest, 0 means number of components given in num_components field
          in nir_intrinsic_instr.
-       - indices: list of constant indicies
+       - indices: list of constant indices
        - flags: list of semantic flags
        - sysval: is this a system-value intrinsic
        - bit_sizes: allowed dest bit_sizes or the source it must match

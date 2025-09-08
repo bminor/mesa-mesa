@@ -208,7 +208,7 @@ pan_pack_work_groups_compute(struct mali_invocation_packed *out, unsigned num_x,
                              bool quirk_graphics, bool indirect_dispatch)
 {
    /* The values needing packing, in order, and the corresponding shifts.
-    * Indicies into shift are off-by-one to make the logic easier */
+    * Indices into shift are off-by-one to make the logic easier */
 
    unsigned values[6] = {size_x, size_y, size_z, num_x, num_y, num_z};
    unsigned shifts[7] = {0};
