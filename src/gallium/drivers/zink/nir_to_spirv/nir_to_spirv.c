@@ -3329,6 +3329,16 @@ emit_subgroup(struct ntv_context *ctx, nir_intrinsic_instr *intr)
       atype = nir_type_float;
       src0 = emit_bitcast(ctx, get_def_type(ctx, intr->src[0].ssa, atype), src0);
       break;
+   case SpvOpGroupNonUniformUMin:
+   case SpvOpGroupNonUniformUMax:
+      atype = nir_type_uint;
+      src0 = emit_bitcast(ctx, get_def_type(ctx, intr->src[0].ssa, atype), src0);
+      break;
+   case SpvOpGroupNonUniformSMin:
+   case SpvOpGroupNonUniformSMax:
+      atype = nir_type_int;
+      src0 = emit_bitcast(ctx, get_def_type(ctx, intr->src[0].ssa, atype), src0);
+      break;
    default: break;
    }
    SpvId type = get_def_type(ctx, intr->src[0].ssa, atype);
