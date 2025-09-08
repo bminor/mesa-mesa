@@ -1113,6 +1113,53 @@ atomic_supported(const nir_instr * instr, const void * data)
    return nir_instr_as_intrinsic(instr)->def.bit_size != 64;
 }
 
+/**
+ * Filters the real_wavesize that was set based on API requirements, to an
+ * appopriate value given hardware limits and the NIR shader we get.
+ *
+ * The final wavesize in the SINGLE_OR_DOUBLE case will be determined later
+ * based on register allocation.
+ */
+static void
+ir3_nir_set_threadsize(struct ir3_shader_variant *v, const nir_shader *s)
+{
+   if (v->shader_options.real_wavesize != IR3_SINGLE_OR_DOUBLE)
+      return;
+
+   if (mesa_shader_stage_is_compute(v->type)) {
+      struct ir3_compiler *compiler = v->compiler;
+      const shader_info *info = &s->info;
+      unsigned threads_per_wg = info->workgroup_size[0] *
+                                info->workgroup_size[1] *
+                                info->workgroup_size[2];
+
+      /* If the workgroups fit in the base threadsize, then doubling would just
+       * leave us with an unused second half of each wave for no gain (the HW
+       * can't pack multiple workgroups into a wave, because the workgroups
+       * might make different barrier choices).
+       */
+      if (!info->workgroup_size_variable) {
+         if (threads_per_wg <= compiler->threadsize_base)
+            v->shader_options.real_wavesize = IR3_SINGLE_ONLY;
+      }
+
+      /* For a5xx, if the workgroup size is greater than the maximum number
+       * of threads per core with 32 threads per wave (512) then we have to
+       * use the doubled threadsize because otherwise the workgroup wouldn't
+       * fit. For smaller workgroup sizes, we follow the blob and use the
+       * smaller threadsize.
+       *
+       * For a6xx, because threadsize_base is bumped to 64, we don't have to
+       * worry about the workgroup fitting.
+       */
+      if (compiler->gen < 6 &&
+          (info->workgroup_size_variable ||
+           threads_per_wg > compiler->threadsize_base * compiler->max_waves)) {
+         v->shader_options.real_wavesize = IR3_DOUBLE_ONLY;
+      };
+   }
+}
+
 void
 ir3_nir_lower_variant(struct ir3_shader_variant *so,
                       const struct ir3_shader_nir_options *options,
@@ -1125,6 +1172,8 @@ ir3_nir_lower_variant(struct ir3_shader_variant *so,
       nir_log_shaderi(s);
       mesa_logi("----------------------");
    }
+
+   ir3_nir_set_threadsize(so, s);
 
    bool progress = false;
 
