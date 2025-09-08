@@ -353,7 +353,7 @@ BlockScheduler::schedule_block(Block& in_block,
 
       if (!m_current_block->lds_group_active() &&
           m_current_block->expected_ar_uses() == 0) {
-         if (last_shed != sched_free && free_ready.size() > 8)
+         if (last_shed != sched_free && free_ready.size() >= 4)
             current_shed = sched_free;
          else if (tex_ready.size() > (m_chip_class >= ISA_CC_EVERGREEN ? 15 : 7))
             current_shed = sched_tex;
