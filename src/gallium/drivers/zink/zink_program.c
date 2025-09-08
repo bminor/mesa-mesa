@@ -2102,11 +2102,11 @@ zink_bind_cs_state(struct pipe_context *pctx,
       ctx->compute_pipeline_state.module_hash = 0;
    }
    ctx->compute_pipeline_state.dirty = true;
-   ctx->curr_compute = comp;
    if (comp && comp != ctx->curr_compute) {
       if (ctx->compute_pipeline_state.key.base.nonseamless_cube_mask)
          ctx->compute_dirty = true;
    }
+   ctx->curr_compute = comp;
    zink_select_launch_grid(ctx);
 }
 
