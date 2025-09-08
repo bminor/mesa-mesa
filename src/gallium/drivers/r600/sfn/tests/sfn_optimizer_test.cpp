@@ -772,6 +772,37 @@ BLOCK_END
    check(sh, expect);
 };
 
+TEST_F(TestShaderFromNir, OptimizeOmodAdd_d2)
+{
+   const char *input =
+      R"(VS
+CHIPCLASS CAYMAN
+INPUT LOC:0
+OUTPUT LOC:0 VARYING_SLOT:0 MASK:15
+REGISTERS R0.x R1.x R2.x
+SHADER
+BLOCK_START
+  ALU ADD S4.x : R0.x R1.x {W}
+  ALU MUL S5.y : S4.x L[0x3f000000] {W}
+  EXPORT_DONE PARAM 0 S5.yyyy
+BLOCK_END)";
+
+   const char *expect =
+      R"(VS
+CHIPCLASS CAYMAN
+INPUT LOC:0
+OUTPUT LOC:0 VARYING_SLOT:0 MASK:15
+REGISTERS R0.x R1.x R2.x
+SHADER
+BLOCK_START
+  ALU ADD D2 S4.x : R0.x R1.x {W}
+  EXPORT_DONE PARAM 0 S4.xxxx
+BLOCK_END
+)";
+   auto sh = from_string(input);
+   optimize(*sh);
+   check(sh, expect);
+};
 
 TEST_F(TestShaderFromNir, OptimizeIntoGroup)
 {
