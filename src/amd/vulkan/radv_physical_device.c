@@ -2324,6 +2324,9 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
             pdev->gfx12_hiz_wa = RADV_GFX12_HIZ_WA_PARTIAL;
          } else if (!strcmp(gfx12_hiz_wa_str, "full")) {
             pdev->gfx12_hiz_wa = RADV_GFX12_HIZ_WA_FULL;
+         } else {
+            fprintf(stderr, "radv: Invalid value found for radv_gfx12_hiz_wa. "
+                            "Accepted values are: disabled, partial or full.\n");
          }
       }
    }
