@@ -254,6 +254,7 @@ by a particular renderpass/blit.
 		<bitfield name="CONTEXT" low="4" high="5"/>
 	</bitset>
 	<reg64 offset="0x0980" name="CP_ALWAYS_ON_COUNTER"/>
+	<reg64 offset="0x0982" name="CP_ALWAYS_ON_CONTEXT"/>
 	<reg32 offset="0x098D" name="CP_AHB_CNTL"/>
 	<reg32 offset="0x0A00" name="CP_APERTURE_CNTL_HOST" variants="A6XX"/>
 	<reg32 offset="0x0A00" name="CP_APERTURE_CNTL_HOST" type="a7xx_aperture_cntl" variants="A7XX-"/>
