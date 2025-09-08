@@ -1515,7 +1515,6 @@ struct zink_screen {
       bool track_renderpasses;
       bool no_linestipple;
       bool no_linesmooth;
-      bool no_hw_gl_point;
       bool can_do_invalid_linear_modifier;
       bool inconsistent_interpolation;
       bool can_2d_view_sparse;

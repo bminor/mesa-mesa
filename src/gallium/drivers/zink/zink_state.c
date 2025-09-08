@@ -614,7 +614,7 @@ zink_create_rasterizer_state(struct pipe_context *pctx,
       debug_printf("BUG: vulkan doesn't support different front and back fill modes\n");
 
    if (rs_state->fill_front == PIPE_POLYGON_MODE_POINT &&
-       screen->driver_workarounds.no_hw_gl_point) {
+       !screen->info.maint5_props.polygonModePointSize) {
       state->hw_state.polygon_mode = VK_POLYGON_MODE_FILL;
       state->cull_mode = VK_CULL_MODE_NONE;
    } else {
@@ -734,7 +734,7 @@ zink_bind_rasterizer_state(struct pipe_context *pctx, void *cso)
       if (fabs(ctx->rast_state->base.line_width - line_width) > FLT_EPSILON)
          ctx->line_width_changed = true;
 
-      bool lower_gl_point = screen->driver_workarounds.no_hw_gl_point;
+      bool lower_gl_point = !screen->info.maint5_props.polygonModePointSize;
       lower_gl_point &= ctx->rast_state->base.fill_front == PIPE_POLYGON_MODE_POINT;
       if (zink_get_gs_key(ctx)->lower_gl_point != lower_gl_point)
          zink_set_gs_key(ctx)->lower_gl_point = lower_gl_point;

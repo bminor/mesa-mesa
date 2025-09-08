@@ -2871,19 +2871,6 @@ init_driver_workarounds(struct zink_screen *screen)
        screen->info.feats.features.geometryShader)
       screen->driver_workarounds.no_linesmooth = true;
 
-   /* This is a workarround for the lack of
-    * gl_PointSize + glPolygonMode(..., GL_LINE), in the imagination
-    * proprietary driver.
-    */
-   switch (zink_driverid(screen)) {
-   case VK_DRIVER_ID_IMAGINATION_PROPRIETARY:
-      screen->driver_workarounds.no_hw_gl_point = true;
-      break;
-   default:
-      screen->driver_workarounds.no_hw_gl_point = false;
-      break;
-   }
-
    /* these drivers don't use VK_PIPELINE_CREATE_COLOR_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT, so it can always be set */
    switch (zink_driverid(screen)) {
    case VK_DRIVER_ID_MESA_RADV:
@@ -3089,7 +3076,7 @@ init_optimal_keys(struct zink_screen *screen)
                           !screen->driconf.inline_uniforms &&
                           !screen->driver_workarounds.no_linestipple &&
                           !screen->driver_workarounds.no_linesmooth &&
-                          !screen->driver_workarounds.no_hw_gl_point &&
+                          screen->info.maint5_props.polygonModePointSize &&
                           !screen->driver_compiler_workarounds.lower_robustImageAccess2 &&
                           !screen->driconf.emulate_point_smooth &&
                           !screen->driver_compiler_workarounds.needs_zs_shader_swizzle;
@@ -3111,8 +3098,7 @@ init_optimal_keys(struct zink_screen *screen)
       CHECK_OR_PRINT(have_EXT_provoking_vertex);
       if (screen->driver_workarounds.no_linesmooth)
          fprintf(stderr, "driver does not support smooth lines\n");
-      if (screen->driver_workarounds.no_hw_gl_point)
-         fprintf(stderr, "driver does not support hardware GL_POINT\n");
+      CHECK_OR_PRINT(maint5_props.polygonModePointSize);
       CHECK_OR_PRINT(rb2_feats.robustImageAccess2);
       CHECK_OR_PRINT(feats.features.robustBufferAccess);
       CHECK_OR_PRINT(rb_image_feats.robustImageAccess);
