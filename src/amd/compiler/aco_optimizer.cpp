@@ -3445,12 +3445,12 @@ combine_vop3p(opt_ctx& ctx, aco_ptr<Instruction>& instr)
                   continue;
             }
 
-            Operand op[3] = {op_instr->operands[0], op_instr->operands[1], instr->operands[1 - i]};
-            if (ctx.uses[instr->operands[i].tempId()] >= uses || !check_vop3_operands(ctx, 3, op))
-               continue;
-
             /* no clamp allowed between mul and add */
             if (op_instr->valu().clamp)
+               continue;
+
+            Operand op[3] = {op_instr->operands[0], op_instr->operands[1], instr->operands[1 - i]};
+            if (ctx.uses[instr->operands[i].tempId()] >= uses || !check_vop3_operands(ctx, 3, op))
                continue;
 
             mul_instr = op_instr;
