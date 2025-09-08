@@ -3401,11 +3401,14 @@ zink_flush_clears(struct zink_context *ctx)
    struct zink_screen *screen = zink_screen(ctx->base.screen);
    bool general_layout = screen->driver_workarounds.general_layout;
    bool queries_disabled = ctx->queries_disabled;
+   bool has_swapchain = ctx->has_swapchain;
    bool blitting = ctx->blitting;
    struct pipe_framebuffer_state fb = ctx->fb_state;
    if (!blitting) {
       for (unsigned i = 0; i < ctx->fb_state.nr_cbufs; i++) {
          if (!ctx->fb_state.cbufs[i].texture || !zink_fb_clear_enabled(ctx, i)) {
+            if (ctx->fb_state.cbufs[i].texture && zink_is_swapchain(zink_resource(ctx->fb_state.cbufs[i].texture)))
+               ctx->has_swapchain = false;
             ctx->fb_state.cbufs[i].texture = NULL;
             continue;
          }
@@ -3439,6 +3442,7 @@ zink_flush_clears(struct zink_context *ctx)
    zink_batch_rp(ctx);
    ctx->queries_disabled = queries_disabled;
    ctx->blitting = blitting;
+   ctx->has_swapchain = has_swapchain;
    if (!blitting)
       ctx->fb_state = fb;
    zink_batch_no_rp(ctx);
