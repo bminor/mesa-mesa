@@ -1285,20 +1285,24 @@ cmd_buffer_state_set_clear_values(struct v3dv_cmd_buffer *cmd_buffer,
       const struct v3dv_render_pass_attachment *attachment =
          &pass->attachments[i];
 
-      if (attachment->desc.loadOp != VK_ATTACHMENT_LOAD_OP_CLEAR)
-         continue;
-
       VkImageAspectFlags aspects = vk_format_aspects(attachment->desc.format);
       if (aspects & VK_IMAGE_ASPECT_COLOR_BIT) {
-         cmd_buffer_state_set_attachment_clear_color(cmd_buffer, i,
-                                                     &values[i].color);
-      } else if (aspects & (VK_IMAGE_ASPECT_DEPTH_BIT |
-                            VK_IMAGE_ASPECT_STENCIL_BIT)) {
-         cmd_buffer_state_set_attachment_clear_depth_stencil(
-            cmd_buffer, i,
-            aspects & VK_IMAGE_ASPECT_DEPTH_BIT,
-            aspects & VK_IMAGE_ASPECT_STENCIL_BIT,
-            &values[i].depthStencil);
+         if (attachment->desc.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
+            cmd_buffer_state_set_attachment_clear_color(cmd_buffer, i,
+                                                        &values[i].color);
+         }
+      } else {
+         bool clear_depth = aspects & VK_IMAGE_ASPECT_DEPTH_BIT &&
+            attachment->desc.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR;
+         bool clear_stencil = aspects & VK_IMAGE_ASPECT_STENCIL_BIT &&
+            attachment->desc.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR;
+         if (clear_depth || clear_stencil) {
+            cmd_buffer_state_set_attachment_clear_depth_stencil(
+               cmd_buffer, i,
+               clear_depth,
+               clear_stencil,
+               &values[i].depthStencil);
+         }
       }
    }
 }
