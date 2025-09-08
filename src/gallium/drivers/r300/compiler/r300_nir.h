@@ -50,7 +50,7 @@ static inline bool
 is_only_used_by_intrinsic(const nir_alu_instr *instr, nir_intrinsic_op op)
 {
    bool is_used = false;
-   nir_foreach_use(src, &instr->def) {
+   nir_foreach_use (src, &instr->def) {
       is_used = true;
 
       nir_instr *user_instr = nir_src_parent_instr(src);
@@ -60,7 +60,7 @@ is_only_used_by_intrinsic(const nir_alu_instr *instr, nir_intrinsic_op op)
       const nir_intrinsic_instr *const user_intrinsic = nir_instr_as_intrinsic(user_instr);
 
       if (user_intrinsic->intrinsic != op)
-            return false;
+         return false;
    }
    return is_used;
 }

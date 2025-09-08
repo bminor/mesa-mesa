@@ -11,8 +11,6 @@
 #include "compiler/nir/nir_worklist.h"
 #include "compiler/radeon_code.h"
 #include "compiler/radeon_program_constants.h"
-#include "r300_nir.h"
-#include "r300_screen.h"
 #include "pipe/p_screen.h"
 #include "pipe/p_state.h"
 #include "tgsi/tgsi_dump.h"
@@ -126,53 +124,53 @@ ntr_insn(struct ntr_compile *c, enum tgsi_opcode opcode, struct ureg_dst dst, st
    return util_dynarray_top_ptr(&c->cur_block->insns, struct ntr_insn);
 }
 
-#define OP00(op)                                                                                   \
-   static inline void ntr_##op(struct ntr_compile *c)                                              \
-   {                                                                                               \
-      ntr_insn(c, TGSI_OPCODE_##op, ureg_dst_undef(), ureg_src_undef(), ureg_src_undef(),          \
-               ureg_src_undef(), ureg_src_undef());                                                \
+#define OP00(op)                                                                          \
+   static inline void ntr_##op(struct ntr_compile *c)                                     \
+   {                                                                                      \
+      ntr_insn(c, TGSI_OPCODE_##op, ureg_dst_undef(), ureg_src_undef(), ureg_src_undef(), \
+               ureg_src_undef(), ureg_src_undef());                                       \
    }
 
-#define OP01(op)                                                                                   \
-   static inline void ntr_##op(struct ntr_compile *c, struct ureg_src src0)                        \
-   {                                                                                               \
-      ntr_insn(c, TGSI_OPCODE_##op, ureg_dst_undef(), src0, ureg_src_undef(), ureg_src_undef(),    \
-               ureg_src_undef());                                                                  \
+#define OP01(op)                                                                                \
+   static inline void ntr_##op(struct ntr_compile *c, struct ureg_src src0)                     \
+   {                                                                                            \
+      ntr_insn(c, TGSI_OPCODE_##op, ureg_dst_undef(), src0, ureg_src_undef(), ureg_src_undef(), \
+               ureg_src_undef());                                                               \
    }
 
-#define OP10(op)                                                                                   \
-   static inline void ntr_##op(struct ntr_compile *c, struct ureg_dst dst)                         \
-   {                                                                                               \
-      ntr_insn(c, TGSI_OPCODE_##op, dst, ureg_src_undef(), ureg_src_undef(), ureg_src_undef(),     \
-               ureg_src_undef());                                                                  \
+#define OP10(op)                                                                               \
+   static inline void ntr_##op(struct ntr_compile *c, struct ureg_dst dst)                     \
+   {                                                                                           \
+      ntr_insn(c, TGSI_OPCODE_##op, dst, ureg_src_undef(), ureg_src_undef(), ureg_src_undef(), \
+               ureg_src_undef());                                                              \
    }
 
-#define OP11(op)                                                                                   \
-   static inline void ntr_##op(struct ntr_compile *c, struct ureg_dst dst, struct ureg_src src0)   \
-   {                                                                                               \
-      ntr_insn(c, TGSI_OPCODE_##op, dst, src0, ureg_src_undef(), ureg_src_undef(),                 \
-               ureg_src_undef());                                                                  \
+#define OP11(op)                                                                                 \
+   static inline void ntr_##op(struct ntr_compile *c, struct ureg_dst dst, struct ureg_src src0) \
+   {                                                                                             \
+      ntr_insn(c, TGSI_OPCODE_##op, dst, src0, ureg_src_undef(), ureg_src_undef(),               \
+               ureg_src_undef());                                                                \
    }
 
-#define OP12(op)                                                                                   \
-   static inline void ntr_##op(struct ntr_compile *c, struct ureg_dst dst, struct ureg_src src0,   \
-                               struct ureg_src src1)                                               \
-   {                                                                                               \
-      ntr_insn(c, TGSI_OPCODE_##op, dst, src0, src1, ureg_src_undef(), ureg_src_undef());          \
+#define OP12(op)                                                                                 \
+   static inline void ntr_##op(struct ntr_compile *c, struct ureg_dst dst, struct ureg_src src0, \
+                               struct ureg_src src1)                                             \
+   {                                                                                             \
+      ntr_insn(c, TGSI_OPCODE_##op, dst, src0, src1, ureg_src_undef(), ureg_src_undef());        \
    }
 
-#define OP13(op)                                                                                   \
-   static inline void ntr_##op(struct ntr_compile *c, struct ureg_dst dst, struct ureg_src src0,   \
-                               struct ureg_src src1, struct ureg_src src2)                         \
-   {                                                                                               \
-      ntr_insn(c, TGSI_OPCODE_##op, dst, src0, src1, src2, ureg_src_undef());                      \
+#define OP13(op)                                                                                 \
+   static inline void ntr_##op(struct ntr_compile *c, struct ureg_dst dst, struct ureg_src src0, \
+                               struct ureg_src src1, struct ureg_src src2)                       \
+   {                                                                                             \
+      ntr_insn(c, TGSI_OPCODE_##op, dst, src0, src1, src2, ureg_src_undef());                    \
    }
 
-#define OP14(op)                                                                                   \
-   static inline void ntr_##op(struct ntr_compile *c, struct ureg_dst dst, struct ureg_src src0,   \
-                               struct ureg_src src1, struct ureg_src src2, struct ureg_src src3)   \
-   {                                                                                               \
-      ntr_insn(c, TGSI_OPCODE_##op, dst, src0, src1, src2, src3);                                  \
+#define OP14(op)                                                                                 \
+   static inline void ntr_##op(struct ntr_compile *c, struct ureg_dst dst, struct ureg_src src0, \
+                               struct ureg_src src1, struct ureg_src src2, struct ureg_src src3) \
+   {                                                                                             \
+      ntr_insn(c, TGSI_OPCODE_##op, dst, src0, src1, src2, src3);                                \
    }
 
 /* We hand-craft our tex instructions */

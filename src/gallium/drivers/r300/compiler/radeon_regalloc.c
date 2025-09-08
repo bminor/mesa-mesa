@@ -9,10 +9,10 @@
 
 #define VERBOSE 0
 
-#define DBG(...)                                                                                   \
-   do {                                                                                            \
-      if (VERBOSE)                                                                                 \
-         fprintf(stderr, __VA_ARGS__);                                                             \
+#define DBG(...)                       \
+   do {                                \
+      if (VERBOSE)                     \
+         fprintf(stderr, __VA_ARGS__); \
    } while (0)
 
 const struct rc_class rc_class_list_vp[] = {

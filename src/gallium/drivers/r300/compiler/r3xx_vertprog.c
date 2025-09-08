@@ -25,9 +25,9 @@
  * Take an already-setup and valid source then swizzle it appropriately to
  * obtain a constant ZERO or ONE source.
  */
-#define __CONST(x, y)                                                                              \
-   (PVS_SRC_OPERAND(t_src_index(vp, &vpi->SrcReg[x]), t_swizzle(y), t_swizzle(y), t_swizzle(y),    \
-                    t_swizzle(y), t_src_class(vpi->SrcReg[x].File), RC_MASK_NONE) |                \
+#define __CONST(x, y)                                                                           \
+   (PVS_SRC_OPERAND(t_src_index(vp, &vpi->SrcReg[x]), t_swizzle(y), t_swizzle(y), t_swizzle(y), \
+                    t_swizzle(y), t_src_class(vpi->SrcReg[x].File), RC_MASK_NONE) |             \
     (vpi->SrcReg[x].RelAddr << 4))
 
 static unsigned long
