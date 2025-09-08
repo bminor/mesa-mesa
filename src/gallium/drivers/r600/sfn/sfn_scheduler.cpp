@@ -365,6 +365,7 @@ BlockScheduler::schedule_block(Block& in_block,
             current_shed = sched_alu;
             break;
          }
+         break;
       case sched_alu:
          if (!schedule_alu(out_blocks, vf)) {
             assert(!m_current_block->lds_group_active());
