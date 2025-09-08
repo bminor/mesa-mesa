@@ -463,7 +463,7 @@
             },
             "properties": {
                 "VkPhysicalDeviceGraphicsPipelineLibraryPropertiesEXT": {
-
+                    "graphicsPipelineLibraryFastLinking": true
                 }
             }
         },
