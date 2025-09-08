@@ -923,7 +923,7 @@ fs_nir_emit_alu(nir_to_elk_state &ntb, nir_alu_instr *instr,
 #ifndef NDEBUG
    /* Everything except raw moves, some type conversions, iabs, and ineg
     * should have 8-bit sources lowered by nir_lower_bit_size in
-    * elk_preprocess_nir or by elk_nir_lower_conversions in
+    * elk_preprocess_nir or by nir_split_conversion in
     * elk_postprocess_nir.
     */
    switch (instr->op) {
@@ -1032,7 +1032,7 @@ fs_nir_emit_alu(nir_to_elk_state &ntb, nir_alu_instr *instr,
       if (ELK_RND_MODE_UNSPECIFIED != rnd)
          bld.exec_all().emit(ELK_SHADER_OPCODE_RND_MODE, bld.null_reg_ud(), elk_imm_d(rnd));
 
-      assert(type_sz(op[0].type) < 8); /* elk_nir_lower_conversions */
+      assert(type_sz(op[0].type) < 8); /* nir_split_conversion */
       inst = bld.F32TO16(result, op[0]);
       break;
    }
@@ -1075,19 +1075,19 @@ fs_nir_emit_alu(nir_to_elk_state &ntb, nir_alu_instr *instr,
       if (result.type == ELK_REGISTER_TYPE_B ||
           result.type == ELK_REGISTER_TYPE_UB ||
           result.type == ELK_REGISTER_TYPE_HF)
-         assert(type_sz(op[0].type) < 8); /* elk_nir_lower_conversions */
+         assert(type_sz(op[0].type) < 8); /* nir_split_conversion */
 
       if (op[0].type == ELK_REGISTER_TYPE_B ||
           op[0].type == ELK_REGISTER_TYPE_UB ||
           op[0].type == ELK_REGISTER_TYPE_HF)
-         assert(type_sz(result.type) < 8); /* elk_nir_lower_conversions */
+         assert(type_sz(result.type) < 8); /* nir_split_conversion */
 
       inst = bld.MOV(result, op[0]);
       break;
 
    case nir_op_i2i8:
    case nir_op_u2u8:
-      assert(type_sz(op[0].type) < 8); /* elk_nir_lower_conversions */
+      assert(type_sz(op[0].type) < 8); /* nir_split_conversion */
       FALLTHROUGH;
    case nir_op_i2i16:
    case nir_op_u2u16: {
@@ -1150,7 +1150,7 @@ fs_nir_emit_alu(nir_to_elk_state &ntb, nir_alu_instr *instr,
       }
 
       if (op[0].type == ELK_REGISTER_TYPE_HF)
-         assert(type_sz(result.type) < 8); /* elk_nir_lower_conversions */
+         assert(type_sz(result.type) < 8); /* nir_split_conversion */
 
       inst = bld.MOV(result, op[0]);
       break;

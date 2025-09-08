@@ -931,7 +931,7 @@ brw_from_nir_emit_alu(nir_to_brw_state &ntb, nir_alu_instr *instr,
 #ifndef NDEBUG
    /* Everything except raw moves, some type conversions, iabs, and ineg
     * should have 8-bit sources lowered by nir_lower_bit_size in
-    * brw_preprocess_nir or by brw_nir_lower_conversions in
+    * brw_preprocess_nir or by nir_split_conversion in
     * brw_postprocess_nir.
     */
    switch (instr->op) {
@@ -1048,7 +1048,7 @@ brw_from_nir_emit_alu(nir_to_brw_state &ntb, nir_alu_instr *instr,
       if (BRW_RND_MODE_UNSPECIFIED != rnd)
          bld.exec_all().emit(SHADER_OPCODE_RND_MODE, bld.null_reg_ud(), brw_imm_d(rnd));
 
-      assert(brw_type_size_bytes(op[0].type) < 8); /* brw_nir_lower_conversions */
+      assert(brw_type_size_bytes(op[0].type) < 8); /* nir_split_conversion */
       bld.MOV(result, op[0]);
       break;
    }
@@ -1091,19 +1091,19 @@ brw_from_nir_emit_alu(nir_to_brw_state &ntb, nir_alu_instr *instr,
       if (result.type == BRW_TYPE_B ||
           result.type == BRW_TYPE_UB ||
           result.type == BRW_TYPE_HF)
-         assert(brw_type_size_bytes(op[0].type) < 8); /* brw_nir_lower_conversions */
+         assert(brw_type_size_bytes(op[0].type) < 8); /* nir_split_conversion */
 
       if (op[0].type == BRW_TYPE_B ||
           op[0].type == BRW_TYPE_UB ||
           op[0].type == BRW_TYPE_HF)
-         assert(brw_type_size_bytes(result.type) < 8); /* brw_nir_lower_conversions */
+         assert(brw_type_size_bytes(result.type) < 8); /* nir_split_conversion */
 
       bld.MOV(result, op[0]);
       break;
 
    case nir_op_i2i8:
    case nir_op_u2u8:
-      assert(brw_type_size_bytes(op[0].type) < 8); /* brw_nir_lower_conversions */
+      assert(brw_type_size_bytes(op[0].type) < 8); /* nir_split_conversion */
       FALLTHROUGH;
    case nir_op_i2i16:
    case nir_op_u2u16: {
@@ -1176,7 +1176,7 @@ brw_from_nir_emit_alu(nir_to_brw_state &ntb, nir_alu_instr *instr,
       }
 
       if (op[0].type == BRW_TYPE_HF)
-         assert(brw_type_size_bytes(result.type) < 8); /* brw_nir_lower_conversions */
+         assert(brw_type_size_bytes(result.type) < 8); /* nir_split_conversion */
 
       bld.MOV(result, op[0]);
       break;
