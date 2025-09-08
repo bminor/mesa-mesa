@@ -7494,7 +7494,7 @@
         "description": "v3dv: Fix stencil clear values for only stencil clears",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4d0e497a3e69c9665b12bed87b964f35d3142f7d",
         "notes": null
