@@ -66,10 +66,10 @@ Cpp11BracedListStyle: false
 ########################
 # Whitespace Alignment #
 ########################
-AlignConsecutiveAssignments: false
+AlignConsecutiveAssignments: None
 #AlignConsecutiveBitFields: false  # Requires clang-11
-AlignConsecutiveDeclarations: false
-AlignConsecutiveMacros: false
+AlignConsecutiveDeclarations: None
+AlignConsecutiveMacros: None
 AlignTrailingComments: false
 
 AlignEscapedNewlines: Left
@@ -93,7 +93,7 @@ SpaceBeforeRangeBasedForLoopColon: true
 SpaceBeforeSquareBrackets: false
 SpaceInEmptyBlock: false
 SpaceInEmptyParentheses: false
-SpacesInAngles: false
+SpacesInAngles: Never
 SpacesInCStyleCastParentheses: false
 SpacesInConditionalStatement: false
 SpacesInContainerLiterals: false
@@ -158,7 +158,7 @@ SortUsingDeclarations: true
 ############
 # TODO: Temporary config
 IncludeBlocks: Preserve
-SortIncludes: false
+SortIncludes: Never
 # TODO: This requires additional work to clean up headers & includes first
 #IncludeBlocks: Regroup
 #SortIncludes: true

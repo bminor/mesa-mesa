@@ -1,15 +1,15 @@
 
-AlignAfterOpenBracket: true
-AlignConsecutiveMacros: true
+AlignAfterOpenBracket: Align
+AlignConsecutiveMacros: Consecutive
 
 AllowAllArgumentsOnNextLine: false
 AllowShortCaseLabelsOnASingleLine: false
-AllowShortFunctionsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
 
 AlwaysBreakAfterReturnType: TopLevelDefinitions
 
 BraceWrapping:
-  AfterControlStatement: false
+  AfterControlStatement: Never
   AfterEnum: false
   AfterFunction: true
   AfterStruct: false
