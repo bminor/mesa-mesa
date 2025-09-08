@@ -25,7 +25,7 @@
 /* Arbitrary limit of the maximum number of sequences per IB to simplify the DGC IB chaining
  * implementation which is already quite complicated.
  */
-#define MAX_SEQUENCES_PER_IB       65536
+#define MAX_SEQUENCES_PER_IB 65536
 
 /* The DGC command buffer layout is quite complex, here's some explanations:
  *

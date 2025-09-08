@@ -325,10 +325,9 @@ lower_load_vs_input(nir_builder *b, nir_intrinsic_instr *intrin, lower_vs_inputs
        * Typed loads can cause GPU hangs when used with improper alignment.
        */
       if (can_use_untyped_load(f, bit_size)) {
-         loads[num_loads++] = nir_load_buffer_amd(b, channels, bit_size, descriptor, zero, zero, index,
-                                                  .base = const_off, .memory_modes = nir_var_shader_in,
-                                                  .align_mul = align_mul, .align_offset = align_offset,
-                                                  .access = ACCESS_CAN_REORDER | ACCESS_CAN_SPECULATE);
+         loads[num_loads++] = nir_load_buffer_amd(
+            b, channels, bit_size, descriptor, zero, zero, index, .base = const_off, .memory_modes = nir_var_shader_in,
+            .align_mul = align_mul, .align_offset = align_offset, .access = ACCESS_CAN_REORDER | ACCESS_CAN_SPECULATE);
       } else {
          loads[num_loads++] = nir_load_typed_buffer_amd(
             b, channels, bit_size, descriptor, zero, zero, index, .base = const_off, .format = fetch_format,

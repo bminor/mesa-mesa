@@ -3032,29 +3032,28 @@ struct matrix_prop {
    bool saturate;
 };
 
-static void fill_matrix_prop_khr(struct __vk_outarray *base,
-                                 struct matrix_prop *prop)
+static void
+fill_matrix_prop_khr(struct __vk_outarray *base, struct matrix_prop *prop)
 {
    vk_outarray(VkCooperativeMatrixPropertiesKHR) *out = (void *)base;
 
    vk_outarray_append_typed(VkCooperativeMatrixPropertiesKHR, out, p)
    {
-      *p = (struct VkCooperativeMatrixPropertiesKHR){
-         .sType = VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_KHR,
-         .MSize = 16,
-         .NSize = 16,
-         .KSize = 16,
-         .AType = prop->a_type,
-         .BType = prop->b_type,
-         .CType = prop->c_type,
-         .ResultType = prop->r_type,
-         .saturatingAccumulation = prop->saturate,
-         .scope = VK_SCOPE_SUBGROUP_KHR};
+      *p = (struct VkCooperativeMatrixPropertiesKHR){.sType = VK_STRUCTURE_TYPE_COOPERATIVE_MATRIX_PROPERTIES_KHR,
+                                                     .MSize = 16,
+                                                     .NSize = 16,
+                                                     .KSize = 16,
+                                                     .AType = prop->a_type,
+                                                     .BType = prop->b_type,
+                                                     .CType = prop->c_type,
+                                                     .ResultType = prop->r_type,
+                                                     .saturatingAccumulation = prop->saturate,
+                                                     .scope = VK_SCOPE_SUBGROUP_KHR};
    }
 }
 
-static void fill_flexible_matrix_prop_nv(struct __vk_outarray *base,
-                                         struct matrix_prop *prop)
+static void
+fill_flexible_matrix_prop_nv(struct __vk_outarray *base, struct matrix_prop *prop)
 {
    vk_outarray(VkCooperativeMatrixFlexibleDimensionsPropertiesNV) *out = (void *)base;
 
@@ -3074,9 +3073,9 @@ static void fill_flexible_matrix_prop_nv(struct __vk_outarray *base,
    }
 }
 
-static void fill_array_sizes_structs(const struct radv_physical_device *pdev,
-                                     struct __vk_outarray *base,
-                                     void (*array_size_cb)(struct __vk_outarray *base, struct matrix_prop *prop))
+static void
+fill_array_sizes_structs(const struct radv_physical_device *pdev, struct __vk_outarray *base,
+                         void (*array_size_cb)(struct __vk_outarray *base, struct matrix_prop *prop))
 {
    /* The Vulkan spec says:
     * If some types are preferred over other types (e.g. for performance),
@@ -3140,8 +3139,9 @@ radv_GetPhysicalDeviceCooperativeMatrixPropertiesKHR(VkPhysicalDevice physicalDe
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
-radv_GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
-                                                                      VkCooperativeMatrixFlexibleDimensionsPropertiesNV *pProperties)
+radv_GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
+   VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
+   VkCooperativeMatrixFlexibleDimensionsPropertiesNV *pProperties)
 {
    VK_FROM_HANDLE(radv_physical_device, pdev, physicalDevice);
    VK_OUTARRAY_MAKE_TYPED(VkCooperativeMatrixFlexibleDimensionsPropertiesNV, out, pProperties, pPropertyCount);

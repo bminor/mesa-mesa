@@ -2477,8 +2477,8 @@ fill_ref_buffer(rvcn_dec_ref_buffer_t *ref, struct radv_image *img, uint32_t sli
 
 static bool
 rvcn_dec_message_decode(struct radv_cmd_buffer *cmd_buffer, struct radv_video_session *vid,
-                        struct vk_video_session_parameters *params, void *ptr, void *it_probs_ptr, uint32_t *slice_offset,
-                        const struct VkVideoDecodeInfoKHR *frame_info)
+                        struct vk_video_session_parameters *params, void *ptr, void *it_probs_ptr,
+                        uint32_t *slice_offset, const struct VkVideoDecodeInfoKHR *frame_info)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);

@@ -507,8 +507,8 @@ radv_meta_nir_build_itob_compute_shader(struct radv_device *dev, bool is_3d)
    nir_def *stride = nir_load_push_constant(&b, 1, 32, nir_imm_int(&b, 12), .range = 16);
 
    nir_def *img_coord = nir_iadd(&b, global_id, offset);
-   nir_def *outval = nir_txf(&b, nir_trim_vector(&b, img_coord, 2 + is_3d),
-                             .texture_deref = nir_build_deref_var(&b, input_img));
+   nir_def *outval =
+      nir_txf(&b, nir_trim_vector(&b, img_coord, 2 + is_3d), .texture_deref = nir_build_deref_var(&b, input_img));
 
    nir_def *pos_x = nir_channel(&b, global_id, 0);
    nir_def *pos_y = nir_channel(&b, global_id, 1);
@@ -649,7 +649,8 @@ radv_meta_nir_build_itoi_compute_shader(struct radv_device *dev, bool src_3d, bo
    nir_def *tex_vals[8];
    if (is_multisampled) {
       for (uint32_t i = 0; i < samples; i++) {
-         tex_vals[i] = nir_txf_ms(&b, nir_trim_vector(&b, src_coord, 2), nir_imm_int(&b, i), .texture_deref = input_img_deref);
+         tex_vals[i] =
+            nir_txf_ms(&b, nir_trim_vector(&b, src_coord, 2), nir_imm_int(&b, i), .texture_deref = input_img_deref);
       }
    } else {
       tex_vals[0] = nir_txf(&b, nir_trim_vector(&b, src_coord, 2 + src_3d), .texture_deref = input_img_deref);
@@ -1179,10 +1180,8 @@ radv_meta_nir_build_fmask_copy_compute_shader(struct radv_device *dev, int sampl
    nir_def *dst_coord = nir_vec4(&b, nir_channel(&b, src_coord, 0), nir_channel(&b, src_coord, 1), nir_undef(&b, 1, 32),
                                  nir_undef(&b, 1, 32));
 
-   nir_def *frag_mask =
-      nir_build_tex(&b, nir_texop_fragment_mask_fetch_amd,
-                    .coord = src_coord,
-                    .texture_deref = nir_build_deref_var(&b, input_img));
+   nir_def *frag_mask = nir_build_tex(&b, nir_texop_fragment_mask_fetch_amd, .coord = src_coord,
+                                      .texture_deref = nir_build_deref_var(&b, input_img));
 
    /* Get the maximum sample used in this fragment. */
    nir_def *max_sample_index = nir_imm_int(&b, 0);
@@ -1198,8 +1197,7 @@ radv_meta_nir_build_fmask_copy_compute_shader(struct radv_device *dev, int sampl
    nir_loop *loop = nir_push_loop(&b);
    {
       nir_def *sample_id = nir_load_var(&b, counter);
-      nir_def *outval = nir_build_tex(&b, nir_texop_fragment_fetch_amd,
-                                      .coord = src_coord, .ms_index = sample_id,
+      nir_def *outval = nir_build_tex(&b, nir_texop_fragment_fetch_amd, .coord = src_coord, .ms_index = sample_id,
                                       .texture_deref = nir_build_deref_var(&b, input_img));
 
       nir_image_deref_store(&b, &nir_build_deref_var(&b, output_img)->def, dst_coord, sample_id, outval,

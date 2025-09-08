@@ -135,7 +135,8 @@ bit_writer_finish(inout bit_writer writer)
    writer.total_count = 0;
 }
 
-#define RADV_GFX12_UPDATABLE_PRIMITIVE_NODE_INDICES_OFFSET (align(RADV_GFX12_PRIMITIVE_NODE_HEADER_SIZE, 32) / 8 + 9 * 4)
+#define RADV_GFX12_UPDATABLE_PRIMITIVE_NODE_INDICES_OFFSET                                                             \
+   (align(RADV_GFX12_PRIMITIVE_NODE_HEADER_SIZE, 32) / 8 + 9 * 4)
 
 void
 radv_encode_triangle_gfx12(VOID_REF dst, vk_ir_triangle_node src)
