@@ -1074,13 +1074,19 @@ brw_from_nir_emit_alu(nir_to_brw_state &ntb, nir_alu_instr *instr,
    case nir_op_i2i32:
    case nir_op_u2u32:
    case nir_op_f2i32:
+   case nir_op_f2i32_sat:
    case nir_op_f2u32:
+   case nir_op_f2u32_sat:
    case nir_op_i2f16:
    case nir_op_u2f16:
    case nir_op_f2i16:
+   case nir_op_f2i16_sat:
    case nir_op_f2u16:
+   case nir_op_f2u16_sat:
    case nir_op_f2i8:
+   case nir_op_f2i8_sat:
    case nir_op_f2u8:
+   case nir_op_f2u8_sat:
       if (result.type == BRW_TYPE_B ||
           result.type == BRW_TYPE_UB ||
           result.type == BRW_TYPE_HF)
