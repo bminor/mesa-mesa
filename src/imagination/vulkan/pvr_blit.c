@@ -869,6 +869,7 @@ pvr_copy_buffer_to_image_region_format(struct pvr_cmd_buffer *const cmd_buffer,
             region->imageExtent.height,
             row_length_in_texels);
 
+         transfer_cmd->sources[0].surface.sample_count = image->vk.samples;
          transfer_cmd->sources[0].surface.depth = 1;
          transfer_cmd->source_count = 1;
 
@@ -1012,6 +1013,7 @@ pvr_copy_image_to_buffer_region_format(struct pvr_cmd_buffer *const cmd_buffer,
 
    dst_rect.extent.width = region->imageExtent.width;
    dst_rect.extent.height = region->imageExtent.height;
+   dst_surface.sample_count = image->vk.samples;
 
    if (util_format_is_compressed(pformat)) {
       uint32_t block_width = util_format_get_blockwidth(pformat);
