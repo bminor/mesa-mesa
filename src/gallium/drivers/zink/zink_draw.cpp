@@ -289,6 +289,7 @@ update_gfx_pipeline(struct zink_context *ctx, struct zink_batch_state *bs, enum 
          VKCTX(CmdSetTessellationDomainOriginEXT)(bs->cmdbuf, VK_TESSELLATION_DOMAIN_ORIGIN_LOWER_LEFT);
          VKCTX(CmdSetSampleLocationsEnableEXT)(bs->cmdbuf, ctx->gfx_pipeline_state.sample_locations_enabled);
          VKCTX(CmdSetRasterizationStreamEXT)(bs->cmdbuf, 0);
+         pipeline_changed = true;
       }
       ctx->shobj_draw = true;
    }
