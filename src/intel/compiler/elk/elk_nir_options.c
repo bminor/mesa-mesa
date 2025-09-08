@@ -8,6 +8,8 @@
 #define COMMON_OPTIONS                                                        \
    .compact_arrays = true,                                                    \
    .discard_is_demote = true,                                                 \
+   .has_f2i_sat = true,                                                       \
+   .has_f2u_sat = true,                                                       \
    .has_uclz = true,                                                          \
    .lower_fdiv = true,                                                        \
    .lower_scmp = true,                                                        \

@@ -1122,7 +1122,9 @@ vec4_visitor::nir_emit_alu(nir_alu_instr *instr)
 
    case nir_op_f2f32:
    case nir_op_f2i32:
+   case nir_op_f2i32_sat:
    case nir_op_f2u32:
+   case nir_op_f2u32_sat:
       if (nir_src_bit_size(instr->src[0].src) == 64)
          emit_conversion_from_double(dst, op[0]);
       else
