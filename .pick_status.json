@@ -7584,7 +7584,7 @@
         "description": "zink: toggle ctx->has_swapchain when flushing clears",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b122c3eaa9eff5c5c778d7dd7e06614b21a8c55b",
         "notes": null
