@@ -281,6 +281,19 @@ AluInstr::do_print(std::ostream& os) const
       if (has_alu_flag(alu_dst_clamp))
          os << " CLAMP";
 
+      switch (output_modifier()) {
+      case omod_mul2:
+         os << " M2";
+         break;
+      case omod_mul4:
+         os << " M4";
+         break;
+      case omod_div2:
+         os << " D2";
+         break;
+      default:;
+      }
+
       if (m_dest) {
          if (has_alu_flag(alu_write) || m_dest->has_flag(Register::addr_or_idx)) {
             os << " " << *m_dest;
@@ -958,6 +971,8 @@ AluInstr::split(AluGroup& group)
       if (has_alu_flag(alu_update_exec))
          instr->set_alu_flag(alu_update_exec);
 
+      instr->set_output_modifier(output_modifier());
+
       if (has_alu_flag(alu_write) && m_dest && (dest_slot == m_dest->chan()))
          instr->set_alu_flag(alu_write);
 
@@ -1131,9 +1146,21 @@ AluInstr::from_string(istream& is, ValueFactory& value_factory, AluGroup *group,
 
    string opstr = *t++;
    string deststr = *t++;
+   OutputMod omod = omod_none;
 
-   if (deststr == "CLAMP") {
-      flags.insert(alu_dst_clamp);
+   while (*t != ":") {
+      if (deststr == "CLAMP") {
+         flags.insert(alu_dst_clamp);
+      }
+      if (deststr == "M2") {
+         omod = omod_mul2;
+      }
+      if (deststr == "M4") {
+         omod = omod_mul4;
+      }
+      if (deststr == "D2") {
+         omod = omod_div2;
+      }
       deststr = *t++;
    }
 
@@ -1325,6 +1352,8 @@ AluInstr::from_string(istream& is, ValueFactory& value_factory, AluGroup *group,
             retval->set_alu_flag(f);
       }
    }
+
+   retval->set_output_modifier(omod);
 
    retval->m_source_modifiers = src_mods;
    retval->set_bank_swizzle(bank_swizzle);

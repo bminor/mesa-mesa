@@ -249,13 +249,6 @@ enum AluModifiers {
    alu_flag_count
 };
 
-enum AluDstModifiers {
-   omod_off = 0,
-   omod_mul2 = 1,
-   omod_mul4 = 2,
-   omod_divl2 = 3
-};
-
 enum AluPredSel {
    pred_off = 0,
    pred_zero = 2,

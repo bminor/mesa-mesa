@@ -351,6 +351,22 @@ TEST_F(TestInstrFromString, test_alu_interp_xy)
    check(init, expect);
 }
 
+TEST_F(TestInstrFromString, test_alu_add_d2)
+{
+   add_dest_from_string("R0.y@fully");
+   add_dest_from_string("R0.x@fully");
+   auto init = std::string("ALU ADD D2 R1024.z@chan : R0.y@fully R0.x@fully {W}");
+
+   auto r0x = new Register(0, 0, pin_fully);
+   auto r0y = new Register(0, 1, pin_fully);
+   r0y->set_flag(Register::pin_start);
+   r0x->set_flag(Register::pin_start);
+   AluInstr expect(op2_add, new Register(1024, 2, pin_chan), r0y, r0x, AluInstr::write);
+   expect.set_output_modifier(AluInstr::omod_div2);
+
+   check(init, expect);
+}
+
 TEST_F(TestInstrFromString, test_alu_interp_xy_no_write)
 {
    add_dest_from_string("R0.x@fully");

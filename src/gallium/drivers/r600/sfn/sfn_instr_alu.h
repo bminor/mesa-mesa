@@ -35,6 +35,12 @@ public:
       mod_neg = 2
    };
 
+   enum OutputMod {
+      omod_none = 0,
+      omod_mul2 = 1,
+      omod_mul4 = 2,
+      omod_div2 = 3,
+   };
 
    static constexpr const AluBankSwizzle bs[6] = {
       alu_vec_012, alu_vec_021, alu_vec_120, alu_vec_102, alu_vec_201, alu_vec_210};
@@ -199,6 +205,10 @@ public:
       m_source_modifiers &= ~(mod << (2 * src));
    }
 
+   auto set_output_modifier(const OutputMod m) { m_output_modifier = m; }
+   auto output_modifier() const { return m_output_modifier; }
+   auto has_output_modifier() const { return m_output_modifier != omod_none; }
+
 private:
    friend class AluGroup;
 
@@ -236,6 +246,7 @@ private:
    unsigned m_allowed_dest_mask{0xf};
    unsigned m_num_ar_uses{0};
    uint32_t m_source_modifiers{0};
+   OutputMod m_output_modifier{omod_none};
 };
 
 class AluInstrVisitor : public InstrVisitor {

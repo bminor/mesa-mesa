@@ -317,6 +317,9 @@ AssamblerVisitor::emit_alu_op(const AluInstr& ai)
    alu.dst.clamp = ai.has_alu_flag(alu_dst_clamp);
    alu.is_op3 = ai.n_sources() == 3;
 
+   if (!alu.is_op3)
+      alu.omod = ai.output_modifier();
+
    EBufferIndexMode kcache_index_mode = bim_none;
    PVirtualValue buffer_offset = nullptr;
 
