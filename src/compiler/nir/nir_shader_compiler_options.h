@@ -486,6 +486,19 @@ typedef struct nir_shader_compiler_options {
     */
    bool lower_bfloat16_conversions;
 
+   /**
+    * Set if f2u_sat (or f2i_sat) is supported for converting from 16-, 32-,
+    * or 64-bit float types to 8-, 16-, or 32-bit integer types (with small
+    * exceptions).
+    *
+    * Due to the prevalence of drivers using \c nir_split_conversion for
+    * conversions from 64-bit float to 8-bit integer, these flags will not
+    * enable generation of f2u_sat from 64-bit float types to 8-bit integer
+    * types.
+    */
+   bool has_f2u_sat;
+   bool has_f2i_sat;
+
    bool vectorize_tess_levels;
    bool lower_to_scalar;
    nir_instr_filter_cb lower_to_scalar_filter;
