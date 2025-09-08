@@ -1330,15 +1330,6 @@ anv_shader_lower_nir(struct anv_device *device,
       nir_lower_non_uniform_image_access |
       nir_lower_non_uniform_get_ssbo_size;
 
-   /* For textures, images, sampler, NonUniform decoration is required but not
-    * for offsets, so we rely on divergence information for this. Offsets used
-    * to be constants until KHR_maintenance8.
-    */
-   if (device->vk.enabled_features.maintenance8) {
-      nir_foreach_function_impl(impl, nir)
-         nir_metadata_require(impl, nir_metadata_divergence);
-   }
-
    /* In practice, most shaders do not have non-uniform-qualified
     * accesses (see
     * https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/17558#note_1475069)
