@@ -5657,8 +5657,7 @@ vtn_handle_execution_mode(struct vtn_builder *b, struct vtn_value *entry_point,
 
    case SpvExecutionModeSubgroupSize:
       vtn_assert(b->shader->info.stage == MESA_SHADER_KERNEL);
-      vtn_assert(b->shader->info.subgroup_size == SUBGROUP_SIZE_VARYING);
-      b->shader->info.subgroup_size = mode->operands[0];
+      vtn_assert(!b->shader->info.api_subgroup_size);
       b->shader->info.api_subgroup_size = mode->operands[0];
       b->shader->info.max_subgroup_size = mode->operands[0];
       b->shader->info.min_subgroup_size = mode->operands[0];
@@ -7218,7 +7217,6 @@ spirv_to_nir(const uint32_t *words, size_t word_count,
       vtn_dump_shader(b, dump_path, "spirv");
 
    b->shader = nir_shader_create(b, stage, nir_options);
-   b->shader->info.subgroup_size = options->subgroup_size;
    b->shader->info.float_controls_execution_mode = options->float_controls_execution_mode;
    b->shader->info.cs.shader_index = options->shader_index;
    b->shader->has_debug_info = options->debug_info;
@@ -7230,10 +7228,6 @@ spirv_to_nir(const uint32_t *words, size_t word_count,
    /* Handle all the preamble instructions */
    words = vtn_foreach_instruction(b, words, word_end,
                                    vtn_handle_preamble_instruction);
-
-   if (b->shader->info.subgroup_size == SUBGROUP_SIZE_UNIFORM &&
-       b->enabled_capabilities.GroupNonUniform)
-      b->shader->info.subgroup_size = SUBGROUP_SIZE_API_CONSTANT;
 
    if (b->enabled_capabilities.GroupNonUniform && options->group_non_uniform_subgroup_size) {
       b->shader->info.api_subgroup_size = options->group_non_uniform_subgroup_size;

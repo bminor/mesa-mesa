@@ -944,7 +944,6 @@ create_new_program(struct gl_context *ctx, struct state_key *key,
    nir_shader *s = b.shader;
 
    s->info.separate_shader = true;
-   s->info.subgroup_size = SUBGROUP_SIZE_UNIFORM;
    s->info.api_subgroup_size_draw_uniform = true;
    s->info.io_lowered = true;
 

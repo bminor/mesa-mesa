@@ -119,7 +119,6 @@ nir_shader *
 vk_spirv_to_nir(struct vk_device *device,
                 const uint32_t *spirv_data, size_t spirv_size_B,
                 mesa_shader_stage stage, const char *entrypoint_name,
-                enum gl_subgroup_size subgroup_size,
                 const VkSpecializationInfo *spec_info,
                 const struct spirv_to_nir_options *spirv_options,
                 const struct nir_shader_compiler_options *nir_options,
@@ -136,7 +135,6 @@ vk_spirv_to_nir(struct vk_device *device,
    spirv_options_local.capabilities = &spirv_caps;
    spirv_options_local.debug.func = spirv_nir_debug;
    spirv_options_local.debug.private_data = (void *)device;
-   spirv_options_local.subgroup_size = subgroup_size;
 
    uint32_t num_spec_entries = 0;
    struct nir_spirv_specialization *spec_entries =

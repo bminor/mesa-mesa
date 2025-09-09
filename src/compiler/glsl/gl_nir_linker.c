@@ -2703,8 +2703,6 @@ link_intrastage_shaders(void *mem_ctx,
       gl_prog->nir->info.api_subgroup_size = ctx->screen->caps.shader_subgroup_size;
       gl_prog->nir->info.max_subgroup_size = ctx->screen->caps.shader_subgroup_size;
    }
-   gl_prog->nir->info.subgroup_size = KHR_shader_subgroup_basic_enable ?
-      SUBGROUP_SIZE_API_CONSTANT : SUBGROUP_SIZE_UNIFORM;
 
    /* Move any instructions other than variable declarations or function
     * declarations into main.

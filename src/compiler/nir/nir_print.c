@@ -2725,8 +2725,6 @@ print_shader_info(const struct shader_info *info, FILE *fp)
 
    print_nz_unsigned(fp, "ray queries", info->ray_queries);
 
-   fprintf(fp, "subgroup_size: %u\n", info->subgroup_size);
-
    print_nz_unsigned(fp, "api_subgroup_size", info->api_subgroup_size);
    fprintf(fp, "max_subgroup_size: %u\n", info->max_subgroup_size);
    fprintf(fp, "min_subgroup_size: %u\n", info->min_subgroup_size);

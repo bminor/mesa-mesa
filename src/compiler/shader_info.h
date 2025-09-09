@@ -174,8 +174,6 @@ typedef struct shader_info {
 
    uint8_t num_subgroups;
 
-   enum gl_subgroup_size subgroup_size; /* To be removed. */
-
    /* The value reported in gl_SubgroupSize.
     * Must be a power of two between 1 and 128
     * or 0 if still unknown.

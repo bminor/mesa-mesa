@@ -102,31 +102,6 @@ get_required_subgroup_size(const void *info_pNext)
    return rss_info != NULL ? rss_info->requiredSubgroupSize : 0;
 }
 
-enum gl_subgroup_size
-vk_get_subgroup_size(uint32_t spirv_version,
-                     mesa_shader_stage stage,
-                     const void *info_pNext,
-                     bool allow_varying,
-                     bool require_full)
-{
-   uint32_t req_subgroup_size = get_required_subgroup_size(info_pNext);
-   if (req_subgroup_size > 0) {
-      assert(util_is_power_of_two_nonzero(req_subgroup_size));
-      assert(req_subgroup_size >= 4 && req_subgroup_size <= 128);
-      return req_subgroup_size;
-   } else if (allow_varying || spirv_version >= 0x10600) {
-      /* Starting with SPIR-V 1.6, varying subgroup size the default */
-      return SUBGROUP_SIZE_VARYING;
-   } else if (require_full) {
-      assert(stage == MESA_SHADER_COMPUTE ||
-             stage == MESA_SHADER_MESH ||
-             stage == MESA_SHADER_TASK);
-      return SUBGROUP_SIZE_FULL_SUBGROUPS;
-   } else {
-      return SUBGROUP_SIZE_API_CONSTANT;
-   }
-}
-
 void
 vk_set_subgroup_size(struct vk_device *device,
                      nir_shader *shader,
@@ -211,14 +186,8 @@ vk_pipeline_shader_stage_to_nir(struct vk_device *device,
       spirv_size = minfo->codeSize;
    }
 
-   enum gl_subgroup_size subgroup_size = vk_get_subgroup_size(
-      vk_spirv_version(spirv_data, spirv_size),
-      stage, info->pNext,
-      info->flags & VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT,
-      info->flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT);
-
    nir_shader *nir = vk_spirv_to_nir(device, spirv_data, spirv_size, stage,
-                                     info->pName, subgroup_size,
+                                     info->pName,
                                      info->pSpecializationInfo,
                                      spirv_options, nir_options,
                                      false /* internal */,
