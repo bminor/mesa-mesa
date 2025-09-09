@@ -34,6 +34,7 @@
 
 struct pan_kmod_dev;
 struct pan_kmod_dev_props;
+struct pan_kmod_vm;
 
 /** Implementation-defined tiler features */
 struct pan_tiler_features {
@@ -154,6 +155,9 @@ pan_query_optimal_z_tib_size(unsigned arch, const struct pan_model *model)
 
 uint64_t pan_clamp_to_usable_va_range(const struct pan_kmod_dev *dev,
                                       uint64_t va);
+
+uint64_t pan_choose_gpu_va_alignment(const struct pan_kmod_vm *vm,
+                                     uint64_t size);
 
 unsigned pan_compute_max_thread_count(const struct pan_kmod_dev_props *props,
                                       unsigned work_reg_count);

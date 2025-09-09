@@ -21,6 +21,7 @@
 #include "drm-uapi/panthor_drm.h"
 
 #include "pan_kmod_backend.h"
+#include "pan_props.h"
 
 /* Maximum kmod BO label length, including NUL-terminator */
 #define PANTHOR_BO_LABEL_MAXLEN 4096
@@ -829,7 +830,7 @@ panthor_kmod_vm_alloc_va(struct panthor_kmod_vm *panthor_vm, uint64_t size)
    simple_mtx_lock(&panthor_vm->auto_va.lock);
    panthor_kmod_vm_collect_freed_vas(panthor_vm);
    va = util_vma_heap_alloc(&panthor_vm->auto_va.heap, size,
-                            size > 0x200000 ? 0x200000 : 0x1000);
+      pan_choose_gpu_va_alignment(&panthor_vm->base, size));
    simple_mtx_unlock(&panthor_vm->auto_va.lock);
 
    return va;

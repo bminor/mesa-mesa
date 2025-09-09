@@ -302,3 +302,18 @@ pan_clamp_to_usable_va_range(const struct pan_kmod_dev *dev, uint64_t va)
 
    return va;
 }
+
+uint64_t
+pan_choose_gpu_va_alignment(const struct pan_kmod_vm *vm, uint64_t size)
+{
+   assert(vm->pgsize_bitmap != 0);
+
+   uint64_t align = 0;
+   u_foreach_bit64(pgsize_bit, vm->pgsize_bitmap) {
+      uint64_t pgsize = (uint64_t)1 << pgsize_bit;
+      if (align > 0 && pgsize > size)
+         break;
+      align = pgsize;
+   }
+   return align;
+}

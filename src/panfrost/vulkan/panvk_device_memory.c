@@ -12,6 +12,8 @@
 #include "panvk_device_memory.h"
 #include "panvk_entrypoints.h"
 
+#include "pan_props.h"
+
 #include "vk_log.h"
 
 static void *
@@ -118,9 +120,8 @@ panvk_AllocateMemory(VkDevice _device,
    };
 
    if (!(device->kmod.vm->flags & PAN_KMOD_VM_FLAG_AUTO_VA)) {
-      op.va.start =
-         panvk_as_alloc(device, op.va.size,
-                        op.va.size > 0x200000 ? 0x200000 : 0x1000);
+      op.va.start = panvk_as_alloc(device, op.va.size,
+         pan_choose_gpu_va_alignment(device->kmod.vm, op.va.size));
       if (!op.va.start) {
          result = panvk_error(device, VK_ERROR_OUT_OF_DEVICE_MEMORY);
          goto err_put_bo;
