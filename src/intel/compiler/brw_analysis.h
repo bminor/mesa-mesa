@@ -83,10 +83,9 @@ operator|(brw_analysis_dependency_class x, brw_analysis_dependency_class y)
 }
 
 inline brw_analysis_dependency_class
-operator|=(brw_analysis_dependency_class x, brw_analysis_dependency_class y)
+operator|=(brw_analysis_dependency_class &x, brw_analysis_dependency_class y)
 {
-   return static_cast<brw_analysis_dependency_class>(
-      static_cast<unsigned>(x) | static_cast<unsigned>(y));
+   return x = x | y;
 }
 
 /**
