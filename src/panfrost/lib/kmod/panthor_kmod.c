@@ -38,7 +38,7 @@ struct panthor_kmod_va_collect {
    uint64_t va;
 
    /* Size of the VA range to release. */
-   size_t size;
+   uint64_t size;
 };
 
 struct panthor_kmod_vm {
@@ -331,7 +331,7 @@ to_panthor_bo_flags(uint32_t flags)
 
 static struct pan_kmod_bo *
 panthor_kmod_bo_alloc(struct pan_kmod_dev *dev,
-                      struct pan_kmod_vm *exclusive_vm, size_t size,
+                      struct pan_kmod_vm *exclusive_vm, uint64_t size,
                       uint32_t flags)
 {
    /* We don't support allocating on-fault. */
@@ -400,7 +400,7 @@ panthor_kmod_bo_free(struct pan_kmod_bo *bo)
 }
 
 static struct pan_kmod_bo *
-panthor_kmod_bo_import(struct pan_kmod_dev *dev, uint32_t handle, size_t size,
+panthor_kmod_bo_import(struct pan_kmod_dev *dev, uint32_t handle, uint64_t size,
                        uint32_t flags)
 {
    struct panthor_kmod_bo *panthor_bo =
@@ -820,7 +820,7 @@ panthor_kmod_vm_destroy(struct pan_kmod_vm *vm)
 }
 
 static uint64_t
-panthor_kmod_vm_alloc_va(struct panthor_kmod_vm *panthor_vm, size_t size)
+panthor_kmod_vm_alloc_va(struct panthor_kmod_vm *panthor_vm, uint64_t size)
 {
    uint64_t va;
 
@@ -837,7 +837,7 @@ panthor_kmod_vm_alloc_va(struct panthor_kmod_vm *panthor_vm, size_t size)
 
 static void
 panthor_kmod_vm_free_va(struct panthor_kmod_vm *panthor_vm, uint64_t va,
-                        size_t size)
+                        uint64_t size)
 {
    assert(panthor_vm->base.flags & PAN_KMOD_VM_FLAG_AUTO_VA);
 

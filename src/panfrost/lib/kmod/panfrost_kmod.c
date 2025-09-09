@@ -237,9 +237,13 @@ to_panfrost_bo_flags(struct pan_kmod_dev *dev, uint32_t flags)
 
 static struct pan_kmod_bo *
 panfrost_kmod_bo_alloc(struct pan_kmod_dev *dev,
-                       struct pan_kmod_vm *exclusive_vm, size_t size,
+                       struct pan_kmod_vm *exclusive_vm, uint64_t size,
                        uint32_t flags)
 {
+   /* The ioctl uses u32 for size. */
+   if ((uint64_t)(uint32_t)size != size)
+      return NULL;
+
    /* We can't map GPU uncached. */
    if (flags & PAN_KMOD_BO_FLAG_GPU_UNCACHED)
       return NULL;
@@ -276,7 +280,7 @@ panfrost_kmod_bo_free(struct pan_kmod_bo *bo)
 }
 
 static struct pan_kmod_bo *
-panfrost_kmod_bo_import(struct pan_kmod_dev *dev, uint32_t handle, size_t size,
+panfrost_kmod_bo_import(struct pan_kmod_dev *dev, uint32_t handle, uint64_t size,
                         uint32_t flags)
 {
    struct panfrost_kmod_bo *panfrost_bo =

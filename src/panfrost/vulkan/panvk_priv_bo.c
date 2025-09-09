@@ -16,7 +16,7 @@
 #include "genxml/decode.h"
 
 VkResult
-panvk_priv_bo_create(struct panvk_device *dev, size_t size, uint32_t flags,
+panvk_priv_bo_create(struct panvk_device *dev, uint64_t size, uint32_t flags,
                      VkSystemAllocationScope scope, struct panvk_priv_bo **out)
 {
    VkResult result;

@@ -36,7 +36,7 @@ panvk_utrace_create_buffer(struct u_trace_context *utctx, uint64_t size_B)
 
    if (!addr_dev) {
       mesa_loge("Couldn't allocate utrace buffer (size = 0x%" PRIx64 ")."
-                "Provide larger PANVK_UTRACE_CLONE_MEM_SIZE (current = 0x%zx)",
+                "Provide larger PANVK_UTRACE_CLONE_MEM_SIZE (current = 0x%" PRIx64 ")",
                 size_B, dev->utrace.copy_buf_heap_bo->bo->size);
       return NULL;
    }
