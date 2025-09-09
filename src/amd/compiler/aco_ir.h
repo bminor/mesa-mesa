@@ -68,7 +68,8 @@ enum memory_semantics : uint8_t {
    semantic_acquire = 0x1,
    /* for stores: don't move any access before this store to after this store
     * for barriers: don't move any access before the barrier to after any
-    * atomic_stores/control_barriers/sendmsg_gs_done/position-primitive-export after the barrier */
+    * atomic_stores/control_barriers/p_pops_gfx9_ordered_section_done or
+    * certain sendmsg/exports after the barrier */
    semantic_release = 0x2,
 
    /* the rest are for load/stores/atomics only */
@@ -1877,7 +1878,9 @@ is_phi(aco_ptr<Instruction>& instr)
 
 bool is_wait_export_ready(amd_gfx_level gfx_level, const Instruction* instr);
 
-uint16_t is_atomic_or_control_instr(amd_gfx_level gfx_level, const Instruction* instr,
+class Program;
+
+uint16_t is_atomic_or_control_instr(Program* program, const Instruction* instr,
                                     memory_sync_info sync, unsigned semantic);
 
 memory_sync_info get_sync_info(const Instruction* instr);

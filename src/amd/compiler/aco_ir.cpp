@@ -262,8 +262,22 @@ is_pos_prim_export(amd_gfx_level gfx_level, const Instruction* instr)
           instr->exp().dest >= V_008DFC_SQ_EXP_POS && instr->exp().dest <= V_008DFC_SQ_EXP_PRIM;
 }
 
+static bool
+is_pops_end_export(Program* program, const Instruction* instr)
+{
+   return program->gfx_level >= GFX11 && instr->opcode == aco_opcode::exp &&
+          instr->exp().dest <= V_008DFC_SQ_EXP_NULL && program->has_pops_overlapped_waves_wait;
+}
+
+static bool
+is_ordered_ps_done_sendmsg(const Instruction* instr)
+{
+   return instr->opcode == aco_opcode::s_sendmsg &&
+          (instr->salu().imm & sendmsg_id_mask) == sendmsg_ordered_ps_done;
+}
+
 uint16_t
-is_atomic_or_control_instr(amd_gfx_level gfx_level, const Instruction* instr, memory_sync_info sync,
+is_atomic_or_control_instr(Program* program, const Instruction* instr, memory_sync_info sync,
                            unsigned semantic)
 {
    bool is_acquire = semantic & semantic_acquire;
@@ -279,8 +293,15 @@ is_atomic_or_control_instr(amd_gfx_level gfx_level, const Instruction* instr, me
    }
 
    uint16_t cls = BITFIELD_MASK(storage_count);
-   if (is_release && (is_done_sendmsg(gfx_level, instr) || is_pos_prim_export(gfx_level, instr)))
-      return cls & ~storage_shared;
+   if (is_release) {
+      if (is_done_sendmsg(program->gfx_level, instr) ||
+          is_pos_prim_export(program->gfx_level, instr))
+         return cls & ~storage_shared;
+
+      if (is_pops_end_export(program, instr) || is_ordered_ps_done_sendmsg(instr) ||
+          instr->opcode == aco_opcode::p_pops_gfx9_ordered_section_done)
+         return cls & ~storage_shared;
+   }
    return (instr->isBarrier() && instr->barrier().exec_scope > scope_invocation) ? cls : 0;
 }
 
