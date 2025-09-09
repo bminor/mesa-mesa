@@ -1,4 +1,4 @@
-/*
+ /*
  * Copyright © Microsoft Corporation
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -415,7 +415,7 @@ static void d3d12_video_encoder_is_gpu_qmap_input_feature_enabled(struct d3d12_v
 
 void
 d3d12_video_encoder_update_qpmap_input(struct d3d12_video_encoder *pD3D12Enc,
-                                       struct pipe_resource* qpmap,
+                                       struct pipe_enc_qpmap_input_info &qpmap_info,
                                        struct pipe_enc_roi roi,
                                        uint32_t temporal_id)
 {
@@ -429,10 +429,12 @@ d3d12_video_encoder_update_qpmap_input(struct d3d12_video_encoder *pD3D12Enc,
    //
    // Check if CPU/GPU QP Maps are enabled and store it in the context
    //
-   if (qpmap)
+   if (qpmap_info.input_qp_mode == PIPE_ENC_QPMAP_INPUT_MODE_GPU_RESOURCE &&
+       qpmap_info.input_gpu_qpmap)
    {
       pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.GPUInput.AppRequested = true;
-      pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.GPUInput.InputMap = d3d12_resource(qpmap);
+      pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.GPUInput.InputMap =
+         d3d12_resource(qpmap_info.input_gpu_qpmap);
       pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[temporal_id].m_Flags |=
          D3D12_VIDEO_ENCODER_RATE_CONTROL_FLAG_ENABLE_DELTA_QP;
    }
@@ -445,8 +447,34 @@ d3d12_video_encoder_update_qpmap_input(struct d3d12_video_encoder *pD3D12Enc,
       // from the different ROI structures/ranges passed by the application
       pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[temporal_id].m_Flags |=
          D3D12_VIDEO_ENCODER_RATE_CONTROL_FLAG_ENABLE_DELTA_QP;
-   }
+   } else if (qpmap_info.qp_map_values_count > 0 &&
+              (qpmap_info.input_qp_mode == PIPE_ENC_QPMAP_INPUT_MODE_CPU_BUFFER_16BIT ||
+               qpmap_info.input_qp_mode == PIPE_ENC_QPMAP_INPUT_MODE_CPU_BUFFER_8BIT))
+   {
+      pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.CPUInputBuffer.AppRequested = true;
+      pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.CPUInputBuffer.m_qp_map_count =
+         qpmap_info.qp_map_values_count;
+      pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.CPUInputBuffer.m_input_qp_mode =
+         static_cast<d3d12_video_encoder_input_qp_mode>(qpmap_info.input_qp_mode);
+      pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[temporal_id].m_Flags |=
+         D3D12_VIDEO_ENCODER_RATE_CONTROL_FLAG_ENABLE_DELTA_QP;
+      if (qpmap_info.input_qp_mode == PIPE_ENC_QPMAP_INPUT_MODE_CPU_BUFFER_8BIT && qpmap_info.input_qpmap_cpu) {
+         // 8-bit Path
+         pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.CPUInputBuffer.m_p_qp_map_cpu =
+            qpmap_info.input_qpmap_cpu;
+         debug_printf("[d3d12_video_encoder_update_qpmap_input] Using 8-bit CPU QP Map input mode with %u QP values Map Ptr = %p.\n",
+            qpmap_info.qp_map_values_count,
+            pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.CPUInputBuffer.m_p_qp_map_cpu);
 
+      } else if (qpmap_info.input_qp_mode == PIPE_ENC_QPMAP_INPUT_MODE_CPU_BUFFER_16BIT && qpmap_info.input_qpmap_cpu) {
+         // 16-bit Path
+         pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.CPUInputBuffer.m_p_qp_map_cpu =
+            qpmap_info.input_qpmap_cpu;
+         debug_printf("[d3d12_video_encoder_update_qpmap_input] Using 16-bit CPU QP Map input mode with %u QP values Map Ptr = %p.\n",
+                      qpmap_info.qp_map_values_count,
+                      pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.CPUInputBuffer.m_p_qp_map_cpu);
+      }
+   }
 #endif
 }
 
@@ -2278,7 +2306,7 @@ d3d12_video_encoder_update_current_encoder_config_state(struct d3d12_video_encod
 
          d3d12_video_encoder_update_move_rects(pD3D12Enc, ((struct pipe_h264_enc_picture_desc *)picture)->move_info);
          d3d12_video_encoder_update_dirty_rects(pD3D12Enc, ((struct pipe_h264_enc_picture_desc *)picture)->dirty_info);
-         d3d12_video_encoder_update_qpmap_input(pD3D12Enc, ((struct pipe_h264_enc_picture_desc *)picture)->input_gpu_qpmap,
+         d3d12_video_encoder_update_qpmap_input(pD3D12Enc, ((struct pipe_h264_enc_picture_desc *)picture)->input_qpmap_info,
                                                            ((struct pipe_h264_enc_picture_desc *)picture)->roi,
                                                            ((struct pipe_h264_enc_picture_desc *)picture)->pic_ctrl.temporal_id);
          d3d12_video_encoder_update_two_pass_frame_settings(pD3D12Enc, codec, picture);
@@ -2297,7 +2325,7 @@ d3d12_video_encoder_update_current_encoder_config_state(struct d3d12_video_encod
 
          d3d12_video_encoder_update_move_rects(pD3D12Enc, ((struct pipe_h265_enc_picture_desc *)picture)->move_info);
          d3d12_video_encoder_update_dirty_rects(pD3D12Enc, ((struct pipe_h265_enc_picture_desc *)picture)->dirty_info);
-         d3d12_video_encoder_update_qpmap_input(pD3D12Enc, ((struct pipe_h265_enc_picture_desc *)picture)->input_gpu_qpmap,
+         d3d12_video_encoder_update_qpmap_input(pD3D12Enc, ((struct pipe_h265_enc_picture_desc *) picture)->input_qpmap_info,
                                                            ((struct pipe_h265_enc_picture_desc *)picture)->roi,
                                                            ((struct pipe_h265_enc_picture_desc *)picture)->pic.temporal_id);
          d3d12_video_encoder_update_two_pass_frame_settings(pD3D12Enc, codec, picture);
@@ -2308,7 +2336,7 @@ d3d12_video_encoder_update_current_encoder_config_state(struct d3d12_video_encod
 #if VIDEO_CODEC_AV1ENC
       case PIPE_VIDEO_FORMAT_AV1:
       {
-         d3d12_video_encoder_update_qpmap_input(pD3D12Enc, ((struct pipe_av1_enc_picture_desc *)picture)->input_gpu_qpmap,
+         d3d12_video_encoder_update_qpmap_input(pD3D12Enc, ((struct pipe_av1_enc_picture_desc *) picture)->input_qpmap_info,
                                                            ((struct pipe_av1_enc_picture_desc *)picture)->roi,
                                                            ((struct pipe_av1_enc_picture_desc *)picture)->temporal_id);
          // ...encoder_config_state_av1 calls encoder support cap, set any state before this call

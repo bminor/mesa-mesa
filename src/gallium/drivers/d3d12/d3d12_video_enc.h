@@ -255,6 +255,14 @@ struct D3D12EncodeRateControlState
    }
 };
 
+enum d3d12_video_encoder_input_qp_mode
+{
+   d3d12_video_encoder_input_disable = 0,
+   d3d12_video_encoder_input8_cpu_mode = 1,
+   d3d12_video_encoder_input16_cpu_mode = 2,
+   d3d12_video_encoder_input_gpu_mode = 3,
+};
+
 struct D3D12EncodeConfiguration
 {
    d3d12_video_encoder_config_dirty_flags m_ConfigDirtyFlags = d3d12_video_encoder_config_dirty_flag_none;
@@ -367,12 +375,21 @@ struct D3D12EncodeConfiguration
          struct d3d12_resource* InputMap;
          D3D12_FEATURE_DATA_VIDEO_ENCODER_RESOLVE_INPUT_PARAM_LAYOUT capInputLayoutQPMap;
       } GPUInput;
+      // ROI map provided in CPU memory
       struct {
          bool AppRequested;
          // AV1 uses 16 bit integers, H26x uses 8 bit integers
          std::vector<int8_t> m_pRateControlQPMap8Bit;
          std::vector<int16_t> m_pRateControlQPMap16Bit;
       } CPUInput;
+      // When app provides a QP Map with handle and size
+      struct
+      {
+         bool AppRequested;
+         enum d3d12_video_encoder_input_qp_mode m_input_qp_mode;
+         void *m_p_qp_map_cpu;
+         uint32_t m_qp_map_count;
+      } CPUInputBuffer;
    } m_QuantizationMatrixDesc = {};
    struct{
       D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE MapSource;
@@ -772,7 +789,7 @@ d3d12_video_encoder_prepare_input_buffers(struct d3d12_video_encoder *pD3D12Enc)
 
 void
 d3d12_video_encoder_update_qpmap_input(struct d3d12_video_encoder *pD3D12Enc,
-                                       struct pipe_resource* qpmap,
+                                       struct pipe_enc_qpmap_input_info &qp_info,
                                        struct pipe_enc_roi roi,
                                        uint32_t temporal_id);
 void

@@ -986,7 +986,6 @@ struct pipe_h264_enc_picture_desc
    /* See PIPE_VIDEO_CAP_ENC_GPU_STATS_PSNR */
    struct pipe_resource *gpu_stats_psnr;
 
-   struct pipe_resource *input_gpu_qpmap; // to be removed.
    struct pipe_enc_qpmap_input_info input_qpmap_info;
 
    bool not_referenced;
@@ -1386,7 +1385,6 @@ struct pipe_h265_enc_picture_desc
    /* See PIPE_VIDEO_CAP_ENC_GPU_STATS_PSNR */
    struct pipe_resource *gpu_stats_psnr;
 
-   struct pipe_resource *input_gpu_qpmap; // to be remove
    struct pipe_enc_qpmap_input_info input_qpmap_info;
 
    unsigned num_ref_idx_l0_active_minus1;
@@ -1570,7 +1568,6 @@ struct pipe_av1_enc_picture_desc
    struct pipe_enc_quality_modes quality_modes;
    struct pipe_enc_intra_refresh intra_refresh;
    struct pipe_enc_roi roi;
-   struct pipe_resource *input_gpu_qpmap; // to be removed
    struct pipe_enc_qpmap_input_info input_qpmap_info;
    uint32_t tile_rows;
    uint32_t tile_cols;

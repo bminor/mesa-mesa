@@ -394,6 +394,16 @@ d3d12_video_encoder_update_current_frame_pic_params_info_h264(struct d3d12_video
          pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.CPUInput.m_pRateControlQPMap8Bit);
       pH264PicData->pRateControlQPMap = pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.CPUInput.m_pRateControlQPMap8Bit.data();
       pH264PicData->QPMapValuesCount = static_cast<UINT>(pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.CPUInput.m_pRateControlQPMap8Bit.size());
+   } else if (pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.CPUInputBuffer.AppRequested &&
+         pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.CPUInputBuffer.m_qp_map_count > 0 &&
+              pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.CPUInputBuffer.m_p_qp_map_cpu)
+   {
+      pH264PicData->pRateControlQPMap =
+         static_cast<INT8 *>(pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.CPUInputBuffer.m_p_qp_map_cpu);
+      pH264PicData->QPMapValuesCount =
+         static_cast<UINT>(pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.CPUInputBuffer.m_qp_map_count);
+      debug_printf("[d3d12_video_encoder_update_current_frame_pic_params_info_h264] Using user-provided CPU 8-bit QP map buffer with %d entries ptr = %p\n",
+         pH264PicData->QPMapValuesCount, pH264PicData->pRateControlQPMap);
    }
 #endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
 
