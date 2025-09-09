@@ -72,6 +72,18 @@ CMFD3DManager::Shutdown( bool bReleaseDeviceManager )
       m_spVideoSampleAllocator = nullptr;
    }
 
+   if( m_spSATDMapAllocator )
+   {
+      m_spSATDMapAllocator->UninitializeSampleAllocator();
+      m_spSATDMapAllocator = nullptr;
+   }
+
+   if( m_spBitsusedMapAllocator )
+   {
+      m_spBitsusedMapAllocator->UninitializeSampleAllocator();
+      m_spBitsusedMapAllocator = nullptr;
+   }
+
    if( m_spDeviceManager != nullptr )
    {
       if( m_hDevice != NULL )
@@ -363,6 +375,8 @@ CMFD3DManager::xOnSetD3DManager( ULONG_PTR ulParam )
    }
 #endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
    CHECKHR_GOTO( MFCreateVideoSampleAllocatorEx( IID_PPV_ARGS( &m_spVideoSampleAllocator ) ), done );
+   CHECKHR_GOTO( MFCreateVideoSampleAllocatorEx( IID_PPV_ARGS( &m_spSATDMapAllocator ) ), done );
+   CHECKHR_GOTO( MFCreateVideoSampleAllocatorEx( IID_PPV_ARGS( &m_spBitsusedMapAllocator ) ), done );
 
    CHECKHR_GOTO( GetDeviceInfo(), done );
 

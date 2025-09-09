@@ -55,6 +55,7 @@
 #include <d3d11_3.h>
 #include <d3d11_4.h>
 #include <dxgi1_2.h>
+#include <d3d9types.h>
 
 #include "context.h"
 #include "encoder_capabilities.h"
@@ -246,6 +247,11 @@ typedef enum IntraRefreshMode
    HMFT_INTRA_REFRESH_MODE_CONTINUAL = 2,
    HMFT_INTRA_REFRESH_MODE_MAX
 } IntraRefreshMode;
+
+// IMFVideoSampleAllocatorEx only works with MFVideoFormat.
+#ifndef MFVideoFormat_L32
+DEFINE_MEDIATYPE_GUID( MFVideoFormat_L32, D3DFMT_INDEX32 );
+#endif
 
 #ifndef CODECAPI_AVEncVideoEnableFramePsnrYuv
 // AVEncVideoEnableFramePsnrYuv (BOOL)
@@ -594,6 +600,8 @@ class __declspec( uuid( HMFT_GUID ) ) CDX12EncHMFT : CMFD3DManager,
    HRESULT OnFlush();
 
    HRESULT ConfigureSampleAllocator();
+   HRESULT ConfigureMapSampleAllocator( IMFVideoSampleAllocatorEx *spAllocator, UINT32 width, UINT32 height, GUID subtype, UINT32 poolSize );
+   void ConfigureMapSampleAllocatorHelper( ComPtr<IMFVideoSampleAllocatorEx> &allocator, const union pipe_enc_cap_gpu_stats_map &outputStatsMap, uint32_t blockSize, BOOL &useAllocatorFlag );
    HRESULT UpdateAvailableInputType();
    HRESULT InternalCheckInputType( IMFMediaType *pType );
    HRESULT InternalCheckOutputType( IMFMediaType *pType );

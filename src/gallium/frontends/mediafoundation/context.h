@@ -46,6 +46,8 @@ typedef class DX12EncodeContext
    pipe_resource *pPipeResourceSATDMapStats = nullptr;
    pipe_resource *pPipeResourceRCBitAllocMapStats = nullptr;
    pipe_resource *pPipeResourcePSNRStats = nullptr;
+   BOOL bUseSATDMapAllocator = FALSE;
+   BOOL bUseBitsusedMapAllocator = FALSE;
 
    // Keep all the media and sync objects until encode is done
    // and then signal EnqueueResourceRelease so the media
@@ -185,10 +187,27 @@ typedef class DX12EncodeContext
 
       if( pPipeResourceQPMapStats )
          pVlScreen->pscreen->resource_destroy( pVlScreen->pscreen, pPipeResourceQPMapStats );
-      if( pPipeResourceSATDMapStats )
-         pVlScreen->pscreen->resource_destroy( pVlScreen->pscreen, pPipeResourceSATDMapStats );
-      if( pPipeResourceRCBitAllocMapStats )
-         pVlScreen->pscreen->resource_destroy( pVlScreen->pscreen, pPipeResourceRCBitAllocMapStats );
+
+      if( bUseSATDMapAllocator )
+      {
+         pPipeResourceSATDMapStats = nullptr;
+      }
+      else
+      {
+         if( pPipeResourceSATDMapStats )
+            pVlScreen->pscreen->resource_destroy( pVlScreen->pscreen, pPipeResourceSATDMapStats );
+      }
+
+      if( bUseBitsusedMapAllocator )
+      {
+         pPipeResourceRCBitAllocMapStats = nullptr;
+      }
+      else
+      {
+         if( pPipeResourceRCBitAllocMapStats )
+            pVlScreen->pscreen->resource_destroy( pVlScreen->pscreen, pPipeResourceRCBitAllocMapStats );
+      }
+
       if( pPipeVideoBuffer )
          pPipeVideoBuffer->destroy( pPipeVideoBuffer );
       if( pDownscaledTwoPassPipeVideoBuffer )

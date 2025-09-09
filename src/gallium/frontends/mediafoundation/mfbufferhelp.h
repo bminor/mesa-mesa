@@ -54,3 +54,8 @@ MFAttachPipeResourceAsSampleExtension( struct pipe_context *pPipeContext,
                                        ID3D12CommandQueue *pSyncObjectQueue,
                                        REFGUID guidExtension,
                                        IMFSample *pSample );
+
+struct pipe_resource *
+AllocatePipeResourceFromAllocator( IMFVideoSampleAllocatorEx *pAllocator,
+                                   struct pipe_screen *pScreen,
+                                   const struct pipe_resource *templ );

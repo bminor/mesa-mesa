@@ -100,6 +100,10 @@ class CMFD3DManager
    ComPtr<ID3D12VideoDevice> m_spVideoDevice;
    ComPtr<ID3D12CommandQueue> m_spStagingQueue;
    ComPtr<IMFVideoSampleAllocatorEx> m_spVideoSampleAllocator;   // Used for software input samples that need to be copied
+   ComPtr<IMFVideoSampleAllocatorEx> m_spSATDMapAllocator;
+   ComPtr<IMFVideoSampleAllocatorEx> m_spBitsusedMapAllocator;
+   BOOL m_bUseSATDMapAllocator = FALSE;
+   BOOL m_bUseBitsusedMapAllocator = FALSE;
    UINT32 m_uiResetToken = 0;
    HANDLE m_hDevice = NULL;
    struct vl_screen *m_pVlScreen = nullptr;

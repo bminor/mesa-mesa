@@ -385,10 +385,20 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
          templ.format = (enum pipe_format) m_EncoderCapabilities.m_HWSupportStatsSATDMapOutput.bits.pipe_pixel_format;
          templ.width0 = static_cast<uint32_t>( std::ceil( m_uiOutputWidth / static_cast<float>( block_size ) ) );
          templ.height0 = static_cast<uint16_t>( std::ceil( m_uiOutputHeight / static_cast<float>( block_size ) ) );
-         CHECKNULL_GOTO(
-            pDX12EncodeContext->pPipeResourceSATDMapStats = m_pVlScreen->pscreen->resource_create( m_pVlScreen->pscreen, &templ ),
-            E_OUTOFMEMORY,
-            done );
+         pDX12EncodeContext->bUseSATDMapAllocator = m_bUseSATDMapAllocator;
+         if ( m_bUseSATDMapAllocator )
+         {
+            pDX12EncodeContext->pPipeResourceSATDMapStats =
+               AllocatePipeResourceFromAllocator( m_spSATDMapAllocator.Get(), m_pVlScreen->pscreen, &templ );
+            CHECKNULL_GOTO( pDX12EncodeContext->pPipeResourceSATDMapStats, E_OUTOFMEMORY, done );
+         }
+         else
+         {
+            CHECKNULL_GOTO(
+               pDX12EncodeContext->pPipeResourceSATDMapStats = m_pVlScreen->pscreen->resource_create( m_pVlScreen->pscreen, &templ ),
+               E_OUTOFMEMORY,
+               done );
+         }
       }
 
       if( m_EncoderCapabilities.m_HWSupportStatsRCBitAllocationMapOutput.bits.supported && m_uiVideoOutputBitsUsedMapBlockSize > 0 )
@@ -397,10 +407,21 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
          templ.format = (enum pipe_format) m_EncoderCapabilities.m_HWSupportStatsRCBitAllocationMapOutput.bits.pipe_pixel_format;
          templ.width0 = static_cast<uint32_t>( std::ceil( m_uiOutputWidth / static_cast<float>( block_size ) ) );
          templ.height0 = static_cast<uint16_t>( std::ceil( m_uiOutputHeight / static_cast<float>( block_size ) ) );
-         CHECKNULL_GOTO( pDX12EncodeContext->pPipeResourceRCBitAllocMapStats =
+
+         pDX12EncodeContext->bUseBitsusedMapAllocator = m_bUseBitsusedMapAllocator;
+         if( m_bUseBitsusedMapAllocator )
+         {
+            pDX12EncodeContext->pPipeResourceRCBitAllocMapStats =
+               AllocatePipeResourceFromAllocator( m_spBitsusedMapAllocator.Get(), m_pVlScreen->pscreen, &templ );
+            CHECKNULL_GOTO( pDX12EncodeContext->pPipeResourceRCBitAllocMapStats, E_OUTOFMEMORY, done );
+         }
+         else
+         {
+            CHECKNULL_GOTO( pDX12EncodeContext->pPipeResourceRCBitAllocMapStats =
                             m_pVlScreen->pscreen->resource_create( m_pVlScreen->pscreen, &templ ),
-                         E_OUTOFMEMORY,
-                         done );
+                            E_OUTOFMEMORY,
+                            done );
+         }
       }
 
       if( m_EncoderCapabilities.m_PSNRStatsSupport.bits.supports_y_channel && m_bVideoEnableFramePsnrYuv )
