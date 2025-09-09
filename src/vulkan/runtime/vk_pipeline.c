@@ -3046,7 +3046,6 @@ vk_create_rt_pipeline(struct vk_device *device,
             .shader = vk_shader_ref(group_stages[s].shader),
          };
       }
-      assert(group->stage_count > 0);
 
       qsort(group->stages, group->stage_count, sizeof(*group->stages),
             cmp_vk_rt_pipeline_stages);
