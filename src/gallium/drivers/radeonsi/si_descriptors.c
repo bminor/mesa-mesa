@@ -1112,17 +1112,6 @@ static struct si_descriptors *si_const_and_shader_buffer_descriptors(struct si_c
    return &sctx->descriptors[si_const_and_shader_buffer_descriptors_idx(shader)];
 }
 
-static void si_upload_const_buffer(struct si_context *sctx, struct si_resource **buf,
-                                   const uint8_t *ptr, unsigned size, uint32_t *const_offset)
-{
-   void *tmp;
-
-   u_upload_alloc_ref(sctx->b.const_uploader, 0, size, si_optimal_tcc_alignment(sctx, size),
-                  const_offset, (struct pipe_resource **)buf, &tmp);
-   if (*buf)
-      util_memcpy_cpu_to_le32(tmp, ptr, size);
-}
-
 static void si_set_constant_buffer(struct si_context *sctx, struct si_buffer_resources *buffers,
                                    unsigned descriptors_idx, uint slot,
                                    const struct pipe_constant_buffer *input)
@@ -1142,9 +1131,14 @@ static void si_set_constant_buffer(struct si_context *sctx, struct si_buffer_res
 
       /* Upload the user buffer if needed. */
       if (input->user_buffer) {
-         si_upload_const_buffer(sctx, (struct si_resource **)&buffer, input->user_buffer,
-                                input->buffer_size, &buffer_offset);
-         if (!buffer) {
+         void *tmp;
+
+         u_upload_alloc_ref(sctx->b.const_uploader, 0, input->buffer_size,
+                            si_optimal_tcc_alignment(sctx, input->buffer_size),
+                            &buffer_offset, &buffer, &tmp);
+         if (buffer) {
+            util_memcpy_cpu_to_le32(tmp, input->user_buffer, input->buffer_size);
+         } else {
             /* Just unbind on failure. */
             si_set_constant_buffer(sctx, buffers, descriptors_idx, slot, NULL);
             return;
