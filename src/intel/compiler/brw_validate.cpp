@@ -31,63 +31,59 @@
 #include "brw_cfg.h"
 #include "brw_eu.h"
 
-#define fsv_assert(assertion)                                           \
-   {                                                                    \
-      if (!(assertion)) {                                               \
-         fprintf(stderr, "ASSERT: Scalar %s validation failed!\n",      \
-                 _mesa_shader_stage_to_abbrev(s.stage));                \
-         brw_print_instruction(s, inst, stderr);                        \
-         fprintf(stderr, "%s:%d: '%s' failed\n", __FILE__, __LINE__, #assertion);  \
-         abort();                                                       \
-      }                                                                 \
-   }
-
-#define fsv_assert_eq(A, B)                                             \
-   {                                                                    \
-      uintptr_t a = uintptr_t(A);                                       \
-      uintptr_t b = uintptr_t(B);                                       \
-      if (a != b) {                                                     \
-         fprintf(stderr, "ASSERT: Scalar %s validation failed!\n",      \
-                 _mesa_shader_stage_to_abbrev(s.stage));                \
-         brw_print_instruction(s, inst, stderr);                        \
-         fprintf(stderr, "%s:%d: A == B failed\n", __FILE__, __LINE__); \
-         fprintf(stderr, "  A = %s = %" PRIuPTR "\n", #A, a);           \
-         fprintf(stderr, "  B = %s = %" PRIuPTR "\n", #B, b);           \
-         abort();                                                       \
-      }                                                                 \
-   }
-
-#define fsv_assert_ne(A, B)                                             \
-   {                                                                    \
-      unsigned a = (A);                                                 \
-      unsigned b = (B);                                                 \
-      if (a == b) {                                                     \
-         fprintf(stderr, "ASSERT: Scalar %s validation failed!\n",      \
-                 _mesa_shader_stage_to_abbrev(s.stage));                \
-         brw_print_instruction(s, inst, stderr);                        \
-         fprintf(stderr, "%s:%d: A != B failed\n", __FILE__, __LINE__); \
-         fprintf(stderr, "  A = %s = %u\n", #A, a);                     \
-         fprintf(stderr, "  B = %s = %u\n", #B, b);                     \
-         abort();                                                       \
-      }                                                                 \
-   }
-
-#define fsv_assert_lte(A, B)                                            \
-   {                                                                    \
-      unsigned a = (A);                                                 \
-      unsigned b = (B);                                                 \
-      if (a > b) {                                                      \
-         fprintf(stderr, "ASSERT: Scalar %s validation failed!\n",      \
-                 _mesa_shader_stage_to_abbrev(s.stage));                \
-         brw_print_instruction(s, inst, stderr);                        \
-         fprintf(stderr, "%s:%d: A <= B failed\n", __FILE__, __LINE__); \
-         fprintf(stderr, "  A = %s = %u\n", #A, a);                     \
-         fprintf(stderr, "  B = %s = %u\n", #B, b);                     \
-         abort();                                                       \
-      }                                                                 \
-   }
-
 #ifndef NDEBUG
+static void
+brw_validate_abort_with_message_fmt(const brw_shader &s,
+                                    const brw_inst *inst,
+                                    const char *filename,
+                                    unsigned line,
+                                    const char *fmt, ...)
+{
+   fprintf(stderr,
+           "ASSERT: BRW %s validation failed!\n",
+           _mesa_shader_stage_to_abbrev(s.stage));
+
+   brw_print_instruction(s, inst, stderr);
+
+   fprintf(stderr, "%s:%d: ", filename, line);
+
+   va_list args;
+   va_start(args, fmt);
+   vfprintf(stderr, fmt, args);
+   va_end(args);
+
+   fputc('\n', stderr);
+   abort();
+}
+
+#define VAL_ASSERT(assertion)                                           \
+   if (!(assertion)) {                                                  \
+      brw_validate_abort_with_message_fmt(                              \
+         s, inst, __FILE__, __LINE__,                                   \
+         "'%s' failed\n", #assertion);                                  \
+   }
+
+#define VAL_ASSERT_CMP(A, COMPARATOR, B)                                \
+   {                                                                    \
+      const uintptr_t a = uintptr_t(A);                                 \
+      const uintptr_t b = uintptr_t(B);                                 \
+      if (!(a COMPARATOR b)) {                                          \
+         brw_validate_abort_with_message_fmt(                           \
+            s, inst, __FILE__, __LINE__,                                \
+            "A %s B failed\n"                                           \
+            "  A = %s = %" PRIuPTR "\n"                                 \
+            "  B = %s = %" PRIuPTR "\n",                                \
+            #COMPARATOR, #A, a, #B, b);                                 \
+      }                                                                 \
+   }
+
+#define VAL_ASSERT_EQ(A, B) VAL_ASSERT_CMP(A, ==, B)
+#define VAL_ASSERT_NE(A, B) VAL_ASSERT_CMP(A, !=, B)
+#define VAL_ASSERT_LT(A, B) VAL_ASSERT_CMP(A,  <, B)
+#define VAL_ASSERT_LE(A, B) VAL_ASSERT_CMP(A, <=, B)
+#define VAL_ASSERT_GT(A, B) VAL_ASSERT_CMP(A,  >, B)
+#define VAL_ASSERT_GE(A, B) VAL_ASSERT_CMP(A, >=, B)
+
 static inline bool
 is_ud_imm(const brw_reg &reg)
 {
@@ -105,15 +101,15 @@ validate_memory_logical(const brw_shader &s, const brw_inst *inst)
 {
    const intel_device_info *devinfo = s.devinfo;
 
-   fsv_assert(is_ud_imm(inst->src[MEMORY_LOGICAL_OPCODE]));
-   fsv_assert(is_ud_imm(inst->src[MEMORY_LOGICAL_MODE]));
-   fsv_assert(is_ud_imm(inst->src[MEMORY_LOGICAL_BINDING_TYPE]));
-   fsv_assert(is_ud_imm(inst->src[MEMORY_LOGICAL_COORD_COMPONENTS]));
-   fsv_assert(is_ud_imm(inst->src[MEMORY_LOGICAL_ALIGNMENT]));
-   fsv_assert(is_ud_imm(inst->src[MEMORY_LOGICAL_DATA_SIZE]));
-   fsv_assert(is_ud_imm(inst->src[MEMORY_LOGICAL_COMPONENTS]));
-   fsv_assert(is_ud_imm(inst->src[MEMORY_LOGICAL_FLAGS]));
-   fsv_assert(is_d_imm(inst->src[MEMORY_LOGICAL_ADDRESS_OFFSET]));
+   VAL_ASSERT(is_ud_imm(inst->src[MEMORY_LOGICAL_OPCODE]));
+   VAL_ASSERT(is_ud_imm(inst->src[MEMORY_LOGICAL_MODE]));
+   VAL_ASSERT(is_ud_imm(inst->src[MEMORY_LOGICAL_BINDING_TYPE]));
+   VAL_ASSERT(is_ud_imm(inst->src[MEMORY_LOGICAL_COORD_COMPONENTS]));
+   VAL_ASSERT(is_ud_imm(inst->src[MEMORY_LOGICAL_ALIGNMENT]));
+   VAL_ASSERT(is_ud_imm(inst->src[MEMORY_LOGICAL_DATA_SIZE]));
+   VAL_ASSERT(is_ud_imm(inst->src[MEMORY_LOGICAL_COMPONENTS]));
+   VAL_ASSERT(is_ud_imm(inst->src[MEMORY_LOGICAL_FLAGS]));
+   VAL_ASSERT(is_d_imm(inst->src[MEMORY_LOGICAL_ADDRESS_OFFSET]));
 
    enum lsc_opcode op = (enum lsc_opcode) inst->src[MEMORY_LOGICAL_OPCODE].ud;
    enum memory_flags flags = (memory_flags)inst->src[MEMORY_LOGICAL_FLAGS].ud;
@@ -127,7 +123,7 @@ validate_memory_logical(const brw_shader &s, const brw_inst *inst)
    unsigned data_size_B = lsc_data_size_bytes(data_size);
 
    if (!devinfo->has_lsc) {
-      fsv_assert(data_size == LSC_DATA_SIZE_D8U32 ||
+      VAL_ASSERT(data_size == LSC_DATA_SIZE_D8U32 ||
                  data_size == LSC_DATA_SIZE_D16U32 ||
                  data_size == LSC_DATA_SIZE_D32 ||
                  data_size == LSC_DATA_SIZE_D64);
@@ -135,62 +131,62 @@ validate_memory_logical(const brw_shader &s, const brw_inst *inst)
       if (transpose) {
          const unsigned min_alignment =
             mode == MEMORY_MODE_SHARED_LOCAL ? 16 : 4;
-         fsv_assert(inst->src[MEMORY_LOGICAL_ALIGNMENT].ud >= min_alignment);
+         VAL_ASSERT_GE(inst->src[MEMORY_LOGICAL_ALIGNMENT].ud, min_alignment);
       }
    }
 
-   fsv_assert(!transpose || !include_helpers);
-   fsv_assert(!transpose || lsc_opcode_has_transpose(op));
+   VAL_ASSERT(!transpose || !include_helpers);
+   VAL_ASSERT(!transpose || lsc_opcode_has_transpose(op));
 
    if (inst->src[MEMORY_LOGICAL_BINDING_TYPE].ud == LSC_ADDR_SURFTYPE_FLAT)
-      fsv_assert(inst->src[MEMORY_LOGICAL_BINDING].file == BAD_FILE);
+      VAL_ASSERT_EQ(inst->src[MEMORY_LOGICAL_BINDING].file, BAD_FILE);
 
    if (inst->src[MEMORY_LOGICAL_DATA1].file != BAD_FILE) {
-      fsv_assert(inst->src[MEMORY_LOGICAL_COMPONENTS].ud ==
-                 inst->components_read(MEMORY_LOGICAL_DATA1));
+      VAL_ASSERT_EQ(inst->src[MEMORY_LOGICAL_COMPONENTS].ud,
+                    inst->components_read(MEMORY_LOGICAL_DATA1));
 
-      fsv_assert(inst->src[MEMORY_LOGICAL_DATA0].type ==
-                 inst->src[MEMORY_LOGICAL_DATA1].type);
+      VAL_ASSERT_EQ(inst->src[MEMORY_LOGICAL_DATA0].type,
+                    inst->src[MEMORY_LOGICAL_DATA1].type);
    }
 
    if (inst->src[MEMORY_LOGICAL_DATA0].file != BAD_FILE) {
-      fsv_assert(inst->src[MEMORY_LOGICAL_COMPONENTS].ud ==
-                 inst->components_read(MEMORY_LOGICAL_DATA0));
+      VAL_ASSERT_EQ(inst->src[MEMORY_LOGICAL_COMPONENTS].ud,
+                    inst->components_read(MEMORY_LOGICAL_DATA0));
 
-      fsv_assert(brw_type_size_bytes(inst->src[MEMORY_LOGICAL_DATA0].type) ==
-                 data_size_B);
+      VAL_ASSERT_EQ(brw_type_size_bytes(inst->src[MEMORY_LOGICAL_DATA0].type),
+                    data_size_B);
    }
 
    if (inst->dst.file != BAD_FILE)
-      fsv_assert(brw_type_size_bytes(inst->dst.type) == data_size_B);
+      VAL_ASSERT_EQ(brw_type_size_bytes(inst->dst.type), data_size_B);
 
    /** TGM messages cannot have a base offset */
    if (mode == MEMORY_MODE_TYPED)
-      fsv_assert(inst->src[MEMORY_LOGICAL_ADDRESS_OFFSET].d == 0);
+      VAL_ASSERT_EQ(inst->src[MEMORY_LOGICAL_ADDRESS_OFFSET].d, 0);
 
    /* Offset must be DWord aligned */
-   fsv_assert((inst->src[MEMORY_LOGICAL_ADDRESS_OFFSET].d % 4) == 0);
+   VAL_ASSERT_EQ((inst->src[MEMORY_LOGICAL_ADDRESS_OFFSET].d % 4), 0);
 
    switch (inst->opcode) {
    case SHADER_OPCODE_MEMORY_LOAD_LOGICAL:
-      fsv_assert(op == LSC_OP_LOAD || op == LSC_OP_LOAD_CMASK ||
+      VAL_ASSERT(op == LSC_OP_LOAD || op == LSC_OP_LOAD_CMASK ||
                  op == LSC_OP_LOAD_CMASK_MSRT);
-      fsv_assert(inst->src[MEMORY_LOGICAL_DATA0].file == BAD_FILE);
-      fsv_assert(inst->src[MEMORY_LOGICAL_DATA1].file == BAD_FILE);
+      VAL_ASSERT_EQ(inst->src[MEMORY_LOGICAL_DATA0].file, BAD_FILE);
+      VAL_ASSERT_EQ(inst->src[MEMORY_LOGICAL_DATA1].file, BAD_FILE);
       break;
    case SHADER_OPCODE_MEMORY_STORE_LOGICAL:
-      fsv_assert(lsc_opcode_is_store(op));
-      fsv_assert(inst->src[MEMORY_LOGICAL_DATA0].file != BAD_FILE);
-      fsv_assert(inst->src[MEMORY_LOGICAL_DATA1].file == BAD_FILE);
+      VAL_ASSERT(lsc_opcode_is_store(op));
+      VAL_ASSERT_NE(inst->src[MEMORY_LOGICAL_DATA0].file, BAD_FILE);
+      VAL_ASSERT_EQ(inst->src[MEMORY_LOGICAL_DATA1].file, BAD_FILE);
       break;
    case SHADER_OPCODE_MEMORY_ATOMIC_LOGICAL:
-      fsv_assert(lsc_opcode_is_atomic(op));
-      fsv_assert((inst->src[MEMORY_LOGICAL_DATA0].file == BAD_FILE)
-                  == (lsc_op_num_data_values(op) < 1));
-      fsv_assert((inst->src[MEMORY_LOGICAL_DATA1].file == BAD_FILE)
-                  == (lsc_op_num_data_values(op) < 2));
-      fsv_assert(inst->src[MEMORY_LOGICAL_COMPONENTS].ud == 1);
-      fsv_assert(!include_helpers);
+      VAL_ASSERT(lsc_opcode_is_atomic(op));
+      VAL_ASSERT_EQ((inst->src[MEMORY_LOGICAL_DATA0].file == BAD_FILE),
+                    (lsc_op_num_data_values(op) < 1));
+      VAL_ASSERT_EQ((inst->src[MEMORY_LOGICAL_DATA1].file == BAD_FILE),
+                    (lsc_op_num_data_values(op) < 2));
+      VAL_ASSERT_EQ(inst->src[MEMORY_LOGICAL_COMPONENTS].ud, 1);
+      VAL_ASSERT(!include_helpers);
       break;
    default:
       UNREACHABLE("invalid opcode");
@@ -312,27 +308,27 @@ brw_validate(const brw_shader &s)
 
          switch (inst->opcode) {
          case SHADER_OPCODE_SEND:
-            fsv_assert(inst->sources == SEND_NUM_SRCS);
-            fsv_assert(is_uniform(inst->src[SEND_SRC_DESC]));
-            fsv_assert(is_uniform(inst->src[SEND_SRC_EX_DESC]));
-            fsv_assert(inst->src[SEND_SRC_PAYLOAD1].file != BAD_FILE);
-            fsv_assert(inst->ex_mlen > 0 ||
+            VAL_ASSERT_EQ(inst->sources, SEND_NUM_SRCS);
+            VAL_ASSERT(is_uniform(inst->src[SEND_SRC_DESC]));
+            VAL_ASSERT(is_uniform(inst->src[SEND_SRC_EX_DESC]));
+            VAL_ASSERT_NE(inst->src[SEND_SRC_PAYLOAD1].file, BAD_FILE);
+            VAL_ASSERT(inst->ex_mlen > 0 ||
                        inst->src[SEND_SRC_PAYLOAD2].file == BAD_FILE);
             /* Send payloads cannot be immediates nor have source modifiers */
             for (unsigned i = 0; i < 2; i++) {
-               fsv_assert(inst->src[SEND_SRC_PAYLOAD1 + i].file != IMM);
-               fsv_assert(!inst->src[SEND_SRC_PAYLOAD1 + i].abs);
-               fsv_assert(!inst->src[SEND_SRC_PAYLOAD1 + i].negate);
+               VAL_ASSERT_NE(inst->src[SEND_SRC_PAYLOAD1 + i].file, IMM);
+               VAL_ASSERT(!inst->src[SEND_SRC_PAYLOAD1 + i].abs);
+               VAL_ASSERT(!inst->src[SEND_SRC_PAYLOAD1 + i].negate);
             }
             break;
 
          case SHADER_OPCODE_SEND_GATHER:
-            fsv_assert(is_uniform(inst->src[0]) && is_uniform(inst->src[1]));
-            fsv_assert(devinfo->ver >= 30);
+            VAL_ASSERT(is_uniform(inst->src[0]) && is_uniform(inst->src[1]));
+            VAL_ASSERT_GE(devinfo->ver, 30);
             break;
 
          case BRW_OPCODE_MOV:
-            fsv_assert(inst->sources == 1);
+            VAL_ASSERT_EQ(inst->sources, 1);
             break;
 
          case SHADER_OPCODE_MEMORY_LOAD_LOGICAL:
@@ -343,26 +339,26 @@ brw_validate(const brw_shader &s)
 
          case SHADER_OPCODE_MEMORY_FENCE:
          case SHADER_OPCODE_INTERLOCK:
-            fsv_assert(inst->exec_size == 1);
-            fsv_assert(inst->force_writemask_all);
-            fsv_assert(inst->sources == 2);
-            fsv_assert(is_ud_imm(inst->src[1])); /* commit enable */
+            VAL_ASSERT_EQ(inst->exec_size, 1);
+            VAL_ASSERT(inst->force_writemask_all);
+            VAL_ASSERT_EQ(inst->sources, 2);
+            VAL_ASSERT(is_ud_imm(inst->src[1])); /* commit enable */
             break;
 
          case SHADER_OPCODE_LOAD_REG: {
-            fsv_assert_eq(inst->sources, 1);
-            fsv_assert_eq(s.alloc.sizes[inst->dst.nr] * REG_SIZE, inst->size_written);
-            fsv_assert(!inst->is_partial_write());
-            fsv_assert_lte(inst->src[0].stride, 1);
+            VAL_ASSERT_EQ(inst->sources, 1);
+            VAL_ASSERT_EQ(s.alloc.sizes[inst->dst.nr] * REG_SIZE, inst->size_written);
+            VAL_ASSERT(!inst->is_partial_write());
+            VAL_ASSERT_LE(inst->src[0].stride, 1);
 
             /* For example, if file == UNIFORM, stride will be zero and offset
              * may be non-zero.
              */
             if (inst->src[0].stride != 0)
-               fsv_assert_eq(inst->src[0].offset, 0);
+               VAL_ASSERT_EQ(inst->src[0].offset, 0);
 
             const brw_def_analysis &defs = s.def_analysis.require();
-            fsv_assert_eq(inst, defs.get(inst->dst));
+            VAL_ASSERT_EQ(inst, defs.get(inst->dst));
 
             break;
          }
@@ -376,7 +372,7 @@ brw_validate(const brw_shader &s)
           * feature earlier in the process.
           */
          if (devinfo->ver >= 20 && inst->writes_accumulator) {
-            fsv_assert(inst->dst.is_accumulator() ||
+            VAL_ASSERT(inst->dst.is_accumulator() ||
                        inst->opcode == BRW_OPCODE_ADDC ||
                        inst->opcode == BRW_OPCODE_MACH ||
                        inst->opcode == BRW_OPCODE_SUBB);
@@ -392,7 +388,7 @@ brw_validate(const brw_shader &s)
                brw_type_is_float_or_bfloat(inst->src[1].type) +
                brw_type_is_float_or_bfloat(inst->src[2].type);
 
-            fsv_assert((integer_sources == 3 && float_sources == 0) ||
+            VAL_ASSERT((integer_sources == 3 && float_sources == 0) ||
                        (integer_sources == 0 && float_sources == 3));
 
             if (devinfo->ver >= 10) {
@@ -408,15 +404,15 @@ brw_validate(const brw_shader &s)
                      break;
 
                   case BRW_VERTICAL_STRIDE_1:
-                     fsv_assert_lte(12, devinfo->ver);
+                     VAL_ASSERT_GE(devinfo->ver, 12);
                      break;
 
-               case BRW_VERTICAL_STRIDE_2:
-                  fsv_assert_lte(devinfo->ver, 11);
-                  break;
+                  case BRW_VERTICAL_STRIDE_2:
+                     VAL_ASSERT_LE(devinfo->ver, 11);
+                     break;
 
                   default:
-                     fsv_assert(!"invalid vstride");
+                     VAL_ASSERT(!"invalid vstride");
                      break;
                   }
                }
@@ -430,7 +426,7 @@ brw_validate(const brw_shader &s)
                 * fix them.
                 */
                for (unsigned i = 0; i < 3; i++) {
-                  fsv_assert_ne(inst->src[i].file, IMM);
+                  VAL_ASSERT_NE(inst->src[i].file, IMM);
 
                   /* A stride of 1 (the usual case) or 0, with a special
                    * "repctrl" bit, is allowed. The repctrl bit doesn't work
@@ -449,32 +445,32 @@ brw_validate(const brw_shader &s)
                       * after SIMD splitting.
                       */
                      if (!inst->src[i].is_scalar)
-                        fsv_assert_lte(size_in_bytes, 4);
+                        VAL_ASSERT_LE(size_in_bytes, 4);
                   } else {
-                     fsv_assert_eq(stride_in_bytes, size_in_bytes);
+                     VAL_ASSERT_EQ(stride_in_bytes, size_in_bytes);
                   }
                }
             }
          }
 
          if (inst->dst.file == VGRF) {
-            fsv_assert_lte(inst->dst.offset / REG_SIZE + regs_written(inst),
-                           s.alloc.sizes[inst->dst.nr]);
+            VAL_ASSERT_LE(inst->dst.offset / REG_SIZE + regs_written(inst),
+                          s.alloc.sizes[inst->dst.nr]);
             if (inst->exec_size > 1)
-               fsv_assert_ne(inst->dst.stride, 0);
+               VAL_ASSERT_NE(inst->dst.stride, 0);
          } else if (inst->dst.is_address()) {
-            fsv_assert(inst->dst.nr != 0);
+            VAL_ASSERT_NE(inst->dst.nr, 0);
          }
 
          bool read_address_reg = false;
          for (unsigned i = 0; i < inst->sources; i++) {
             if (inst->src[i].file == VGRF) {
-               fsv_assert_lte(inst->src[i].offset / REG_SIZE + regs_read(devinfo, inst, i),
-                              s.alloc.sizes[inst->src[i].nr]);
+               VAL_ASSERT_LE(inst->src[i].offset / REG_SIZE + regs_read(devinfo, inst, i),
+                             s.alloc.sizes[inst->src[i].nr]);
             } else if (inst->src[i].is_address()) {
-               fsv_assert(inst->src[i].nr != 0);
+               VAL_ASSERT_NE(inst->src[i].nr, 0);
                for (unsigned hw = 0; hw < inst->size_read(devinfo, i); hw += 2) {
-                  fsv_assert_eq(inst->src[i].nr,
+                  VAL_ASSERT_EQ(inst->src[i].nr,
                                 last_used_address_register[inst->src[i].address_slot(hw)]);
                }
                read_address_reg = true;
@@ -489,7 +485,7 @@ brw_validate(const brw_shader &s)
          if (intel_needs_workaround(devinfo, 14014617373) &&
              inst->dst.is_accumulator() &&
              phys_subnr(devinfo, inst->dst) == 0) {
-            fsv_assert_eq(inst->dst.hstride, 1);
+            VAL_ASSERT_EQ(inst->dst.hstride, 1);
          }
 
          if (inst->is_math() && intel_needs_workaround(devinfo, 22016140776)) {
@@ -505,7 +501,7 @@ brw_validate(const brw_shader &s)
              * potential problems sooner rather than later.
              */
             if (devinfo->ver >= 20 && inst->writes_accumulator) {
-               fsv_assert(inst->dst.is_accumulator() ||
+               VAL_ASSERT(inst->dst.is_accumulator() ||
                           inst->opcode == BRW_OPCODE_ADDC ||
                           inst->opcode == BRW_OPCODE_MACH ||
                           inst->opcode == BRW_OPCODE_SUBB);
@@ -521,7 +517,7 @@ brw_validate(const brw_shader &s)
                   brw_type_is_float(inst->src[1].type) +
                   brw_type_is_float(inst->src[2].type);
 
-               fsv_assert((integer_sources == 3 && float_sources == 0) ||
+               VAL_ASSERT((integer_sources == 3 && float_sources == 0) ||
                           (integer_sources == 0 && float_sources == 3));
 
                if (devinfo->ver >= 10) {
@@ -537,15 +533,15 @@ brw_validate(const brw_shader &s)
                         break;
 
                      case BRW_VERTICAL_STRIDE_1:
-                        fsv_assert_lte(12, devinfo->ver);
+                        VAL_ASSERT_GE(devinfo->ver, 12);
                         break;
 
                      case BRW_VERTICAL_STRIDE_2:
-                        fsv_assert_lte(devinfo->ver, 11);
+                        VAL_ASSERT_LE(devinfo->ver, 11);
                         break;
 
                      default:
-                        fsv_assert(!"invalid vstride");
+                        VAL_ASSERT(!"invalid vstride");
                         break;
                      }
                   }
@@ -559,7 +555,7 @@ brw_validate(const brw_shader &s)
                    * will fix them.
                    */
                   for (unsigned i = 0; i < 3; i++) {
-                     fsv_assert_ne(inst->src[i].file, IMM);
+                     VAL_ASSERT_NE(inst->src[i].file, IMM);
 
                      /* A stride of 1 (the usual case) or 0, with a special
                       * "repctrl" bit, is allowed. The repctrl bit doesn't
@@ -574,21 +570,21 @@ brw_validate(const brw_shader &s)
                      const unsigned stride_in_bytes = byte_stride(inst->src[i]);
                      const unsigned size_in_bytes = brw_type_size_bytes(inst->src[i].type);
                      if (stride_in_bytes == 0) {
-                        fsv_assert_lte(size_in_bytes, 4);
+                        VAL_ASSERT_LE(size_in_bytes, 4);
                      } else {
-                        fsv_assert_eq(stride_in_bytes, size_in_bytes);
+                        VAL_ASSERT_EQ(stride_in_bytes, size_in_bytes);
                      }
                   }
                }
             }
 
             if (inst->dst.file == VGRF) {
-               fsv_assert_lte(inst->dst.offset / REG_SIZE + regs_written(inst),
-                              s.alloc.sizes[inst->dst.nr]);
+               VAL_ASSERT_LE(inst->dst.offset / REG_SIZE + regs_written(inst),
+                             s.alloc.sizes[inst->dst.nr]);
             }
 
             for (unsigned i = 0; i < inst->sources; i++) {
-               fsv_assert(inst->src[i].is_scalar ||
+               VAL_ASSERT(inst->src[i].is_scalar ||
                           !is_uniform(inst->src[i]) ||
                           inst->src[i].type != BRW_TYPE_HF);
             }
