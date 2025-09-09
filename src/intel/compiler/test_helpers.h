@@ -135,7 +135,7 @@ protected:
       if (dispatch_width == 0)
          dispatch_width = devinfo->ver >= 20 ? 16 : 8;
 
-      nir_shader *nir = nir_shader_create(mem_ctx, stage, NULL, NULL);
+      nir_shader *nir = nir_shader_create(mem_ctx, stage, NULL);
       brw_stage_prog_data *pd =
          (struct brw_stage_prog_data *)rzalloc(mem_ctx, brw_any_prog_data);
 

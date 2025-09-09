@@ -107,8 +107,7 @@ void cmod_propagation_vec4_test::SetUp()
    params.mem_ctx = ctx;
 
    prog_data = ralloc(ctx, struct elk_vue_prog_data);
-   nir_shader *shader =
-      nir_shader_create(ctx, MESA_SHADER_VERTEX, NULL, NULL);
+   nir_shader *shader = nir_shader_create(ctx, MESA_SHADER_VERTEX, NULL);
 
    v = new cmod_propagation_vec4_visitor(compiler, &params, shader, prog_data);
 

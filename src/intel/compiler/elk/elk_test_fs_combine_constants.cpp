@@ -26,8 +26,7 @@ struct FSCombineConstantsTest : public ::testing::Test {
       params.mem_ctx = mem_ctx;
 
       prog_data = {};
-      nir_shader *nir =
-         nir_shader_create(mem_ctx, MESA_SHADER_COMPUTE, NULL, NULL);
+      nir_shader *nir = nir_shader_create(mem_ctx, MESA_SHADER_COMPUTE, NULL);
 
       shader = new elk_fs_visitor(&compiler, &params, NULL,
                               &prog_data.base, nir, 8, false, false);

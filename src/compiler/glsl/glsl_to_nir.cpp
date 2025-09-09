@@ -177,8 +177,7 @@ glsl_to_nir(struct gl_shader *gl_shader,
 {
    MESA_TRACE_FUNC();
 
-   nir_shader *shader =
-      nir_shader_create(NULL, gl_shader->Stage, options, NULL);
+   nir_shader *shader = nir_shader_create(NULL, gl_shader->Stage, options);
 
    nir_visitor v1(shader, src_blake3);
    nir_function_visitor v2(&v1);

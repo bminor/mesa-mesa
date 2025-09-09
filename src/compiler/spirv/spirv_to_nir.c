@@ -7214,7 +7214,7 @@ spirv_to_nir(const uint32_t *words, size_t word_count,
    if (dump_path)
       vtn_dump_shader(b, dump_path, "spirv");
 
-   b->shader = nir_shader_create(b, stage, nir_options, NULL);
+   b->shader = nir_shader_create(b, stage, nir_options);
    b->shader->info.subgroup_size = options->subgroup_size;
    b->shader->info.float_controls_execution_mode = options->float_controls_execution_mode;
    b->shader->info.cs.shader_index = options->shader_index;

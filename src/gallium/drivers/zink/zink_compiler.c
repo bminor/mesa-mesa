@@ -6602,7 +6602,7 @@ zink_shader_tcs_create(struct zink_screen *screen, unsigned vertices_per_patch)
    zs->programs = _mesa_pointer_set_create(NULL);
    simple_mtx_init(&zs->lock, mtx_plain);
 
-   nir_shader *nir = nir_shader_create(NULL, MESA_SHADER_TESS_CTRL, &screen->nir_options, NULL);
+   nir_shader *nir = nir_shader_create(NULL, MESA_SHADER_TESS_CTRL, &screen->nir_options);
    nir_function *fn = nir_function_create(nir, "main");
    fn->is_entrypoint = true;
    nir_function_impl_create(fn);

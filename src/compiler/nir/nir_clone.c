@@ -809,7 +809,7 @@ nir_shader_clone(void *mem_ctx, const nir_shader *s)
    clone_state state;
    init_clone_state(&state, NULL, true, false);
 
-   nir_shader *ns = nir_shader_create(mem_ctx, s->info.stage, s->options, NULL);
+   nir_shader *ns = nir_shader_create(mem_ctx, s->info.stage, s->options);
    state.ns = ns;
 
    ns->has_debug_info = s->has_debug_info;

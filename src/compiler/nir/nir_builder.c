@@ -38,7 +38,7 @@ nir_builder MUST_CHECK PRINTFLIKE(3, 4)
    nir_builder b;
 
    memset(&b, 0, sizeof(b));
-   b.shader = nir_shader_create(NULL, stage, options, NULL);
+   b.shader = nir_shader_create(NULL, stage, options);
 
    if (name) {
       va_list args;

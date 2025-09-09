@@ -2232,7 +2232,7 @@ nir_deserialize(void *mem_ctx,
    struct shader_info info;
    blob_copy_bytes(blob, (uint8_t *)&info, sizeof(info));
 
-   ctx.nir = nir_shader_create(mem_ctx, info.stage, options, NULL);
+   ctx.nir = nir_shader_create(mem_ctx, info.stage, options);
 
    ctx.nir->has_debug_info = !!(flags & NIR_SERIALIZE_DEBUG_INFO);
    if (ctx.nir->has_debug_info)
@@ -2294,7 +2294,7 @@ nir_deserialize_function(void *mem_ctx,
    ctx.idx_table_len = blob_read_uint32(blob);
    ctx.idx_table = calloc(ctx.idx_table_len, sizeof(uintptr_t));
 
-   ctx.nir = nir_shader_create(mem_ctx, 0 /* stage */, options, NULL);
+   ctx.nir = nir_shader_create(mem_ctx, 0 /* stage */, options);
 
    nir_function *fxn = read_function(&ctx);
    nir_function_set_impl(fxn, read_function_impl(&ctx));

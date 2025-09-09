@@ -3972,8 +3972,7 @@ void nir_fixup_is_exported(nir_shader *shader);
 
 nir_shader *nir_shader_create(void *mem_ctx,
                               mesa_shader_stage stage,
-                              const nir_shader_compiler_options *options,
-                              shader_info *si);
+                              const nir_shader_compiler_options *options);
 
 /** Adds a variable to the appropriate list in nir_shader */
 void nir_shader_add_variable(nir_shader *shader, nir_variable *var);
