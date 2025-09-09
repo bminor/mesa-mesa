@@ -369,12 +369,6 @@ rusticl_c = static_library(
   ],
 )
 
-idep_rusticl_gen = declare_dependency(
-  sources: [
-    rusticl_opencl_bindings_rs,
-  ],
-)
-
 libmesa_rust_gen = static_library(
   'mesa_rust_gen',
   rusticl_mesa_bindings[0],
@@ -445,8 +439,5 @@ librusticl = static_library(
     rusticl_llvm_gen,
     rusticl_opencl_gen,
     rusticl_proc_macros,
-  ],
-  dependencies : [
-    idep_rusticl_gen,
   ],
 )
