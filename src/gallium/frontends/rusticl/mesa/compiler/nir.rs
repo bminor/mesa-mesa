@@ -322,20 +322,7 @@ impl NirShader {
     }
 
     pub fn subgroup_size(&self) -> u8 {
-        let subgroup_size = unsafe { (*self.nir.as_ptr()).info.subgroup_size };
-        let valid_subgroup_sizes = [
-            gl_subgroup_size::SUBGROUP_SIZE_REQUIRE_8,
-            gl_subgroup_size::SUBGROUP_SIZE_REQUIRE_16,
-            gl_subgroup_size::SUBGROUP_SIZE_REQUIRE_32,
-            gl_subgroup_size::SUBGROUP_SIZE_REQUIRE_64,
-            gl_subgroup_size::SUBGROUP_SIZE_REQUIRE_128,
-        ];
-
-        if valid_subgroup_sizes.contains(&subgroup_size) {
-            subgroup_size as u8
-        } else {
-            0
-        }
+        unsafe { (*self.nir.as_ptr()).info.api_subgroup_size }
     }
 
     pub fn num_subgroups(&self) -> u8 {
