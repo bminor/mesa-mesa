@@ -441,6 +441,8 @@ st_translate_atifs_program(struct ati_fragment_shader *atifs,
 
    /* Copy the shader_info from the gl_program */
    t->b->shader->info = program->info;
+   t->b->shader->info.max_subgroup_size = 128;
+   t->b->shader->info.min_subgroup_size = 1;
 
    nir_shader *s = t->b->shader;
    s->info.name = ralloc_asprintf(s, "ATIFS%d", program->Id);

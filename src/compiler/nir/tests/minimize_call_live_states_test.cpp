@@ -39,7 +39,8 @@ TEST_F(nir_minimize_call_live_states_test, no_live_states)
       shader: MESA_SHADER_COMPUTE
       name: nir_minimize_call_live_states_test
       workgroup_size: 1, 1, 1
-      subgroup_size: 0
+      max_subgroup_size: 128
+      min_subgroup_size: 1
       decl_function main () (entrypoint)
 
       impl main {
@@ -76,7 +77,8 @@ TEST_F(nir_minimize_call_live_states_test, life_intrinsics)
       shader: MESA_SHADER_COMPUTE
       name: nir_minimize_call_live_states_test
       workgroup_size: 1, 1, 1
-      subgroup_size: 0
+      max_subgroup_size: 128
+      min_subgroup_size: 1
       decl_function main () (entrypoint)
 
       impl main {
@@ -123,7 +125,8 @@ TEST_F(nir_minimize_call_live_states_test, life_alu)
       shader: MESA_SHADER_COMPUTE
       name: nir_minimize_call_live_states_test
       workgroup_size: 1, 1, 1
-      subgroup_size: 0
+      max_subgroup_size: 128
+      min_subgroup_size: 1
       decl_function main () (entrypoint)
 
       impl main {
@@ -174,7 +177,8 @@ TEST_F(nir_minimize_call_live_states_test, call_inside_if)
       shader: MESA_SHADER_COMPUTE
       name: nir_minimize_call_live_states_test
       workgroup_size: 1, 1, 1
-      subgroup_size: 0
+      max_subgroup_size: 128
+      min_subgroup_size: 1
       decl_function main () (entrypoint)
 
       impl main {
@@ -249,7 +253,8 @@ TEST_F(nir_minimize_call_live_states_test, call_inside_loop)
       shader: MESA_SHADER_COMPUTE
       name: nir_minimize_call_live_states_test
       workgroup_size: 1, 1, 1
-      subgroup_size: 0
+      max_subgroup_size: 128
+      min_subgroup_size: 1
       decl_function main () (entrypoint)
 
       impl main {

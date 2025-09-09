@@ -217,6 +217,8 @@ nir_shader_create(void *mem_ctx,
     */
    shader->info.prev_stage = MESA_SHADER_NONE;
    shader->info.next_stage = MESA_SHADER_NONE;
+   shader->info.max_subgroup_size = 128;
+   shader->info.min_subgroup_size = 1;
 
    exec_list_make_empty(&shader->functions);
 

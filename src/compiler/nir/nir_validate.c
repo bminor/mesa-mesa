@@ -2225,6 +2225,19 @@ nir_validate_shader(nir_shader *shader, const char *when)
       validate_assert(&state, shader->xfb_info->output_count > 0);
    }
 
+   validate_assert(&state,
+                   util_is_power_of_two_or_zero(shader->info.api_subgroup_size));
+   validate_assert(&state,
+                   util_is_power_of_two_nonzero(shader->info.max_subgroup_size));
+   validate_assert(&state,
+                   util_is_power_of_two_nonzero(shader->info.min_subgroup_size));
+   validate_assert(&state, shader->info.max_subgroup_size <= 128);
+   validate_assert(&state, shader->info.min_subgroup_size <= 128);
+   validate_assert(&state, shader->info.api_subgroup_size == 0 ||
+                              shader->info.api_subgroup_size >= shader->info.max_subgroup_size);
+   validate_assert(&state,
+                   shader->info.min_subgroup_size <= shader->info.max_subgroup_size);
+
    if (_mesa_hash_table_num_entries(state.errors) > 0)
       dump_errors(&state, when);
 

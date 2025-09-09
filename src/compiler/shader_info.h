@@ -172,13 +172,40 @@ typedef struct shader_info {
     */
    uint16_t workgroup_size[3];
 
-   enum gl_subgroup_size subgroup_size;
    uint8_t num_subgroups;
+
+   enum gl_subgroup_size subgroup_size; /* To be removed. */
+
+   /* The value reported in gl_SubgroupSize.
+    * Must be a power of two between 1 and 128
+    * or 0 if still unknown.
+    */
+   uint8_t api_subgroup_size;
+
+   /* The maximum subgroup size dispatched by the hw.
+    * Must be a power of two between 1 and 128.
+    * Must not be larger than api_subgroup_size,
+    * (unless api_subgroup_size is 0).
+    */
+   uint8_t max_subgroup_size;
+
+   /* The minimum subgroup size dispatched by the hw.
+    * Must be a power of two between 1 and 128.
+    * Must not be larger than max_subgroup_size.
+    */
+   uint8_t min_subgroup_size;
+
+   /* api_subgroup_size must appear to be uniform in
+    * the current stage for a whole draw.
+    * There is no equivalent for dispatches,
+    * because it would be required to be true.
+    */
+   bool api_subgroup_size_draw_uniform:1;
 
    /**
     * Uses subgroup intrinsics which can communicate across a quad.
     */
-   bool uses_wide_subgroup_intrinsics;
+   bool uses_wide_subgroup_intrinsics:1;
 
    /* Transform feedback buffer strides in dwords, max. 1K - 4. */
    uint8_t xfb_stride[MAX_XFB_BUFFERS];

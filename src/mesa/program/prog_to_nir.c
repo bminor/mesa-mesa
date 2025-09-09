@@ -819,6 +819,8 @@ prog_to_nir(const struct gl_context *ctx, const struct gl_program *prog)
 
    /* Copy the shader_info from the gl_program */
    c->build.shader->info = prog->info;
+   c->build.shader->info.max_subgroup_size = 128;
+   c->build.shader->info.min_subgroup_size = 1;
 
    s = c->build.shader;
 
