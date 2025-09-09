@@ -401,6 +401,7 @@ if with_tests
     'tests/half_float_test.cpp',
     'tests/int_min_max.cpp',
     'tests/linear_test.cpp',
+    'tests/list_test.cpp',
     'tests/mesa-sha1_test.cpp',
     'tests/os_mman_test.cpp',
     'tests/perf/u_trace_test.cpp',
