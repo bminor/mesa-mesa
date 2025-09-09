@@ -1138,10 +1138,6 @@ brw_IF(struct brw_codegen *p, unsigned execute_size)
 
    insn = next_insn(p, BRW_OPCODE_IF);
 
-   /* Override the defaults for this instruction:
-    */
-   brw_set_dest(p, insn, vec1(retype(brw_null_reg(), BRW_TYPE_D)));
-
    /* UIP and JIP set by patch_IF_ELSE(). */
 
    brw_eu_inst_set_exec_size(devinfo, insn, execute_size);
@@ -1216,8 +1212,6 @@ brw_ELSE(struct brw_codegen *p)
 
    insn = next_insn(p, BRW_OPCODE_ELSE);
 
-   brw_set_dest(p, insn, retype(brw_null_reg(), BRW_TYPE_D));
-
    /* UIP and JIP set by patch_IF_ELSE(). */
 
    brw_eu_inst_set_qtr_control(devinfo, insn, BRW_COMPRESSION_NONE);
@@ -1282,7 +1276,6 @@ brw_BREAK(struct brw_codegen *p)
    brw_eu_inst *insn;
 
    insn = next_insn(p, BRW_OPCODE_BREAK);
-   brw_set_dest(p, insn, retype(brw_null_reg(), BRW_TYPE_D));
 
    /* UIP and JIP set by brw_set_uip_jip(). */
 
@@ -1299,7 +1292,6 @@ brw_CONT(struct brw_codegen *p)
    brw_eu_inst *insn;
 
    insn = next_insn(p, BRW_OPCODE_CONTINUE);
-   brw_set_dest(p, insn, brw_ip_reg());
 
    /* UIP and JIP set by brw_set_uip_jip(). */
 
@@ -1315,7 +1307,6 @@ brw_HALT(struct brw_codegen *p)
    brw_eu_inst *insn;
 
    insn = next_insn(p, BRW_OPCODE_HALT);
-   brw_set_dest(p, insn, retype(brw_null_reg(), BRW_TYPE_D));
 
    /* UIP and JIP set by brw_set_uip_jip(). */
 
@@ -1353,7 +1344,6 @@ brw_WHILE(struct brw_codegen *p)
    insn = next_insn(p, BRW_OPCODE_WHILE);
    do_insn = get_inner_do_insn(p);
 
-   brw_set_dest(p, insn, retype(brw_null_reg(), BRW_TYPE_D));
    brw_eu_inst_set_jip(devinfo, insn, br * (do_insn - insn));
    brw_eu_inst_set_unused_uip(devinfo, insn);
 
