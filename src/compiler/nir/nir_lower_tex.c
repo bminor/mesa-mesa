@@ -1752,7 +1752,9 @@ nir_lower_tex_block(nir_block *block, nir_builder *b,
             tex->sampler_dim == GLSL_SAMPLER_DIM_CUBE) ||
            (options->lower_txd_3d &&
             tex->sampler_dim == GLSL_SAMPLER_DIM_3D) ||
-           (options->lower_txd_array && tex->is_array))) {
+           (options->lower_txd_array && tex->is_array) ||
+           (options->lower_txd_cb &&
+            options->lower_txd_cb(tex, options->lower_txd_data)))) {
          lower_gradient(b, tex);
          progress = true;
          continue;

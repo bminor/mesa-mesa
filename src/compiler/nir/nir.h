@@ -5779,6 +5779,12 @@ typedef struct nir_lower_tex_options {
    bool lower_txd_offset_clamp;
 
    /**
+    * A generic callback to nir_texop_txd.
+    */
+   bool (*lower_txd_cb)(const nir_tex_instr *tex, const void *data);
+   const void *lower_txd_data;
+
+   /**
     * If true, lower nir_texop_txd with min_lod to a nir_texop_txl if the
     * sampler is bindless.
     */
