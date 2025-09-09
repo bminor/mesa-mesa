@@ -10834,6 +10834,7 @@ radv_need_late_scissor_emission(struct radv_cmd_buffer *cmd_buffer, const struct
    uint64_t used_dynamic_states = radv_get_needed_dynamic_states(cmd_buffer);
 
    used_dynamic_states &= ~RADV_DYNAMIC_VERTEX_INPUT;
+   used_dynamic_states &= ~RADV_DYNAMIC_VERTEX_INPUT_BINDING_STRIDE;
 
    if (cmd_buffer->state.dirty_dynamic & used_dynamic_states)
       return true;
