@@ -5659,6 +5659,9 @@ vtn_handle_execution_mode(struct vtn_builder *b, struct vtn_value *entry_point,
       vtn_assert(b->shader->info.stage == MESA_SHADER_KERNEL);
       vtn_assert(b->shader->info.subgroup_size == SUBGROUP_SIZE_VARYING);
       b->shader->info.subgroup_size = mode->operands[0];
+      b->shader->info.api_subgroup_size = mode->operands[0];
+      b->shader->info.max_subgroup_size = mode->operands[0];
+      b->shader->info.min_subgroup_size = mode->operands[0];
       break;
 
    case SpvExecutionModeSubgroupsPerWorkgroup:
@@ -7231,6 +7234,11 @@ spirv_to_nir(const uint32_t *words, size_t word_count,
    if (b->shader->info.subgroup_size == SUBGROUP_SIZE_UNIFORM &&
        b->enabled_capabilities.GroupNonUniform)
       b->shader->info.subgroup_size = SUBGROUP_SIZE_API_CONSTANT;
+
+   if (b->enabled_capabilities.GroupNonUniform && options->group_non_uniform_subgroup_size) {
+      b->shader->info.api_subgroup_size = options->group_non_uniform_subgroup_size;
+      b->shader->info.max_subgroup_size = options->group_non_uniform_subgroup_size;
+   }
 
    /* DirectXShaderCompiler and glslang/shaderc both create OpKill from HLSL's
     * discard/clip, which uses demote semantics. DirectXShaderCompiler will use

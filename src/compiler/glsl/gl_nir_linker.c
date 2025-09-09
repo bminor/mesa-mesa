@@ -2697,6 +2697,12 @@ link_intrastage_shaders(void *mem_ctx,
    link_layer_viewport_relative_qualifier(prog, gl_prog, shader_list, num_shaders);
 
    gl_prog->nir->info.view_mask = view_mask;
+   gl_prog->nir->info.api_subgroup_size_draw_uniform =
+      !mesa_shader_stage_uses_workgroup(gl_prog->nir->info.stage);
+   if (KHR_shader_subgroup_basic_enable) {
+      gl_prog->nir->info.api_subgroup_size = ctx->screen->caps.shader_subgroup_size;
+      gl_prog->nir->info.max_subgroup_size = ctx->screen->caps.shader_subgroup_size;
+   }
    gl_prog->nir->info.subgroup_size = KHR_shader_subgroup_basic_enable ?
       SUBGROUP_SIZE_API_CONSTANT : SUBGROUP_SIZE_UNIFORM;
 

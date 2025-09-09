@@ -2352,6 +2352,8 @@ ttn_compile_init(const void *tgsi_tokens,
       }
    }
 
+   s->info.api_subgroup_size_draw_uniform = s->info.stage != MESA_SHADER_COMPUTE;
+
    if (s->info.stage == MESA_SHADER_COMPUTE &&
        (!s->info.workgroup_size[0] ||
         !s->info.workgroup_size[1] ||

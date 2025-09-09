@@ -152,6 +152,8 @@ struct spirv_to_nir_options {
    /* Shader index provided by VkPipelineShaderStageNodeCreateInfoAMDX */
    uint32_t shader_index;
 
+   /* If GroupNonUniform capability is used, set this api subgroup size. */
+   uint8_t group_non_uniform_subgroup_size;
 };
 
 enum spirv_verify_result {
