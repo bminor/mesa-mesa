@@ -535,7 +535,12 @@ panfrost_resource_get_param(struct pipe_screen *pscreen,
                             enum pipe_resource_param param, unsigned usage,
                             uint64_t *value)
 {
-   struct panfrost_resource *rsrc = pan_resource(prsc);
+   struct panfrost_resource *rsrc =
+      pan_resource(util_resource_at_index(prsc, plane));
+
+   /* Lowered multi plane resource gets each plane allocated independently. */
+   if (!rsrc->image.planes[plane])
+      plane = 0;
 
    switch (param) {
    case PIPE_RESOURCE_PARAM_STRIDE:
