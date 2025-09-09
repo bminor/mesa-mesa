@@ -646,11 +646,12 @@ cmd_clear_afbc_metadata(VkCommandBuffer _cmdbuf,
             .p = ptr,
             .layer_or_slice_stride = layer_or_slice_stride,
          };
-         panlib_clear_afbc_metadata_struct(&precomp_ctx,
-            panlib_3d(
-               slayout->afbc.header.surface_size_B / 16,
-               layers_or_slices, 1),
-            PANLIB_BARRIER_NONE, args);
+         panlib_clear_afbc_metadata_struct(
+            &precomp_ctx,
+            panlib_3d(slayout->afbc.header.surface_size_B / 16,
+                      layers_or_slices, 1),
+            PAN_ARCH >= 10 ? PANLIB_BARRIER_NONE : PANLIB_BARRIER_JM_BARRIER,
+            args);
       }
    }
 
