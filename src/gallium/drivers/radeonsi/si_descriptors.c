@@ -1118,7 +1118,6 @@ static void si_set_constant_buffer(struct si_context *sctx, struct si_buffer_res
 {
    struct si_descriptors *descs = &sctx->descriptors[descriptors_idx];
    assert(slot < descs->num_elements);
-   pipe_resource_reference(&buffers->buffers[slot], NULL);
 
    /* GFX7 cannot unbind a constant buffer (S_BUFFER_LOAD is buggy
     * with a NULL buffer). We need to use a dummy buffer instead. */
@@ -1131,11 +1130,13 @@ static void si_set_constant_buffer(struct si_context *sctx, struct si_buffer_res
 
       /* Upload the user buffer if needed. */
       if (input->user_buffer) {
+         struct pipe_resource *release_buf = NULL;
          void *tmp;
 
-         u_upload_alloc_ref(sctx->b.const_uploader, 0, input->buffer_size,
-                            si_optimal_tcc_alignment(sctx, input->buffer_size),
-                            &buffer_offset, &buffer, &tmp);
+         u_upload_alloc(sctx->b.const_uploader, 0, input->buffer_size,
+                        si_optimal_tcc_alignment(sctx, input->buffer_size),
+                        &buffer_offset, &buffer, &release_buf, &tmp);
+         pipe_resource_release(&sctx->b, release_buf);
          if (buffer) {
             util_memcpy_cpu_to_le32(tmp, input->user_buffer, input->buffer_size);
          } else {
@@ -1144,7 +1145,7 @@ static void si_set_constant_buffer(struct si_context *sctx, struct si_buffer_res
             return;
          }
       } else {
-         pipe_resource_reference(&buffer, input->buffer);
+         buffer = input->buffer;
          buffer_offset = input->buffer_offset;
       }
 
@@ -1153,7 +1154,7 @@ static void si_set_constant_buffer(struct si_context *sctx, struct si_buffer_res
       si_set_buf_desc_address(si_resource(buffer), buffer_offset, desc);
       desc[2] = input->buffer_size;
 
-      buffers->buffers[slot] = buffer;
+      pipe_resource_reference(&buffers->buffers[slot], buffer);
       buffers->offsets[slot] = buffer_offset;
       radeon_add_to_buffer_list(sctx, &sctx->gfx_cs, si_resource(buffer),
                                 RADEON_USAGE_READ | buffers->priority_constbuf);
@@ -1161,6 +1162,7 @@ static void si_set_constant_buffer(struct si_context *sctx, struct si_buffer_res
    } else {
       /* Clear the descriptor. Only 3 dwords are cleared. The 4th dword is immutable. */
       memset(descs->list + slot * 4, 0, sizeof(uint32_t) * 3);
+      pipe_resource_reference(&buffers->buffers[slot], NULL);
       buffers->enabled_mask &= ~(1llu << slot);
    }
 
