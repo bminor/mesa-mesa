@@ -528,6 +528,26 @@ struct pipe_enc_roi
    struct pipe_enc_region_in_roi region[PIPE_ENC_ROI_REGION_NUM_MAX];
 };
 
+enum pipe_enc_qpmap_input_mode
+{
+   PIPE_ENC_QPMAP_INPUT_MODE_DISABLED = 0,
+   PIPE_ENC_QPMAP_INPUT_MODE_CPU_BUFFER_8BIT = 1,
+   PIPE_ENC_QPMAP_INPUT_MODE_CPU_BUFFER_16BIT = 2,
+   PIPE_ENC_QPMAP_INPUT_MODE_GPU_RESOURCE = 3,
+};
+
+struct pipe_enc_qpmap_input_info
+{
+   /* Selects the input mode and app sets different params below */
+   enum pipe_enc_qpmap_input_mode input_qp_mode;
+   /* Count of the number entries contained by input_qpmap_cpu */
+   uint32_t qp_map_values_count;
+    /* Used with CPU modes */
+   void *input_qpmap_cpu;
+   /* Used with PIPE_ENC_QPMAP_INPUT_GPU_MODE */
+   struct pipe_resource *input_gpu_qpmap;
+};
+
 enum pipe_enc_dirty_info_type
 {
    PIPE_ENC_DIRTY_INFO_TYPE_DIRTY = 0,
@@ -966,8 +986,8 @@ struct pipe_h264_enc_picture_desc
    /* See PIPE_VIDEO_CAP_ENC_GPU_STATS_PSNR */
    struct pipe_resource *gpu_stats_psnr;
 
-   /* See PIPE_VIDEO_CAP_ENC_QP_MAPS */
-   struct pipe_resource *input_gpu_qpmap;
+   struct pipe_resource *input_gpu_qpmap; // to be removed.
+   struct pipe_enc_qpmap_input_info input_qpmap_info;
 
    bool not_referenced;
    bool is_ltr;
@@ -1366,8 +1386,8 @@ struct pipe_h265_enc_picture_desc
    /* See PIPE_VIDEO_CAP_ENC_GPU_STATS_PSNR */
    struct pipe_resource *gpu_stats_psnr;
 
-   /* See PIPE_VIDEO_CAP_ENC_QP_MAPS */
-   struct pipe_resource *input_gpu_qpmap;
+   struct pipe_resource *input_gpu_qpmap; // to be remove
+   struct pipe_enc_qpmap_input_info input_qpmap_info;
 
    unsigned num_ref_idx_l0_active_minus1;
    unsigned num_ref_idx_l1_active_minus1;
@@ -1550,8 +1570,8 @@ struct pipe_av1_enc_picture_desc
    struct pipe_enc_quality_modes quality_modes;
    struct pipe_enc_intra_refresh intra_refresh;
    struct pipe_enc_roi roi;
-   /* See PIPE_VIDEO_CAP_ENC_QP_MAPS */
-   struct pipe_resource *input_gpu_qpmap;
+   struct pipe_resource *input_gpu_qpmap; // to be removed
+   struct pipe_enc_qpmap_input_info input_qpmap_info;
    uint32_t tile_rows;
    uint32_t tile_cols;
    unsigned num_tile_groups;
