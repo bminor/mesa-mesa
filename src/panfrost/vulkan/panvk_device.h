@@ -152,6 +152,12 @@ panvk_device_adjust_bo_flags(const struct panvk_device *device,
 }
 
 static inline uint64_t
+panvk_get_gpu_page_size(const struct panvk_device *device)
+{
+   return (uint64_t)1 << (ffsll(device->kmod.vm->pgsize_bitmap) - 1);
+}
+
+static inline uint64_t
 panvk_as_alloc(struct panvk_device *device, uint64_t size, uint64_t alignment)
 {
    simple_mtx_lock(&device->as.lock);

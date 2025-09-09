@@ -23,6 +23,7 @@
  *
  */
 
+#include "panvk_device.h"
 #include "panvk_mempool.h"
 #include "panvk_priv_bo.h"
 
@@ -55,7 +56,8 @@ panvk_bo_pool_cleanup(struct panvk_bo_pool *bo_pool)
 static struct panvk_priv_bo *
 panvk_pool_alloc_backing(struct panvk_pool *pool, size_t sz)
 {
-   size_t bo_sz = ALIGN_POT(MAX2(pool->base.slab_size, sz), 4096);
+   size_t bo_sz = ALIGN_POT(MAX2(pool->base.slab_size, sz),
+                            panvk_get_gpu_page_size(pool->dev));
    struct panvk_priv_bo *bo = NULL;
 
    /* If there's a free BO in our BO pool, let's pick it. */

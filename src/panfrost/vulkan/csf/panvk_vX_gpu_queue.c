@@ -190,7 +190,7 @@ finish_subqueue_tracing(struct panvk_gpu_queue *queue,
    struct panvk_subqueue *subq = &queue->subqueues[subqueue];
 
    if (subq->tracebuf.addr.dev) {
-      size_t pgsize = getpagesize();
+      uint64_t pgsize = panvk_get_gpu_page_size(dev);
 
       pandecode_inject_free(dev->debug.decode_ctx, subq->tracebuf.addr.dev,
                             subq->tracebuf.size);
@@ -265,7 +265,7 @@ init_subqueue_tracing(struct panvk_gpu_queue *queue,
    }
 
    /* Add a guard page. */
-   size_t pgsize = getpagesize();
+   uint64_t pgsize = panvk_get_gpu_page_size(dev);
    dev_addr = panvk_as_alloc(dev, subq->tracebuf.size + pgsize, pgsize);
 
    if (!dev_addr)
