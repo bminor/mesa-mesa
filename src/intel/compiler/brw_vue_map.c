@@ -352,12 +352,14 @@ brw_compute_tess_vue_map(struct intel_vue_map *vue_map,
    assign_vue_slot(vue_map, VARYING_SLOT_TESS_LEVEL_OUTER, slot++);
 
    /* first assign per-patch varyings */
-   while (patch_slots != 0) {
-      const int varying = ffsll(patch_slots) - 1;
-      if (vue_map->varying_to_slot[varying + VARYING_SLOT_PATCH0] == -1) {
-         assign_vue_slot(vue_map, varying + VARYING_SLOT_PATCH0, slot++);
+   const int first_patch_slot = slot;
+   u_foreach_bit64(patch, patch_slots) {
+      if (separate) {
+         slot = first_patch_slot + patch;
+         assign_vue_slot(vue_map, VARYING_SLOT_PATCH0 + patch, slot++);
+      } else {
+         assign_vue_slot(vue_map, VARYING_SLOT_PATCH0 + patch, slot++);
       }
-      patch_slots &= ~BITFIELD64_BIT(varying);
    }
 
    /* apparently, including the patch header... */
