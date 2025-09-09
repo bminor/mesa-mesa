@@ -2426,12 +2426,11 @@ brw_postprocess_nir(nir_shader *nir, const struct brw_compiler *compiler,
 static unsigned
 get_subgroup_size(const struct shader_info *info, unsigned max_subgroup_size)
 {
-   switch (info->subgroup_size) {
-   case SUBGROUP_SIZE_API_CONSTANT:
-      /* We have to use the global constant size. */
-      return BRW_SUBGROUP_SIZE;
-
-   case SUBGROUP_SIZE_UNIFORM:
+   if (info->api_subgroup_size) {
+      /* We have to use the global/required constant size. */
+      assert(info->api_subgroup_size >= 8 && info->api_subgroup_size <= 32);
+      return info->api_subgroup_size;
+   } else if (info->api_subgroup_size_draw_uniform) {
       /* It has to be uniform across all invocations but can vary per stage
        * if we want.  This gives us a bit more freedom.
        *
@@ -2441,8 +2440,7 @@ get_subgroup_size(const struct shader_info *info, unsigned max_subgroup_size)
        * to be uniform across invocations.
        */
       return max_subgroup_size;
-
-   case SUBGROUP_SIZE_VARYING:
+   } else {
       /* The subgroup size is allowed to be fully varying.  For geometry
        * stages, we know it's always 8 which is max_subgroup_size so we can
        * return that.  For compute, brw_nir_apply_key is called once per
@@ -2454,25 +2452,7 @@ get_subgroup_size(const struct shader_info *info, unsigned max_subgroup_size)
        * size.
        */
       return info->stage == MESA_SHADER_FRAGMENT ? 0 : max_subgroup_size;
-
-   case SUBGROUP_SIZE_REQUIRE_4:
-      UNREACHABLE("Unsupported subgroup size type");
-
-   case SUBGROUP_SIZE_REQUIRE_8:
-   case SUBGROUP_SIZE_REQUIRE_16:
-   case SUBGROUP_SIZE_REQUIRE_32:
-      /* These enum values are expressly chosen to be equal to the subgroup
-       * size that they require.
-       */
-      return info->subgroup_size;
-
-   case SUBGROUP_SIZE_FULL_SUBGROUPS:
-   case SUBGROUP_SIZE_REQUIRE_64:
-   case SUBGROUP_SIZE_REQUIRE_128:
-      break;
    }
-
-   UNREACHABLE("Invalid subgroup size type");
 }
 
 unsigned

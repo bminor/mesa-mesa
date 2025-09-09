@@ -30,11 +30,8 @@
 unsigned
 brw_required_dispatch_width(const struct shader_info *info)
 {
-   if ((int)info->subgroup_size >= (int)SUBGROUP_SIZE_REQUIRE_8) {
-      /* These enum values are expressly chosen to be equal to the subgroup
-       * size that they require.
-       */
-      return (unsigned)info->subgroup_size;
+   if (info->min_subgroup_size == info->max_subgroup_size) {
+      return info->max_subgroup_size;
    } else {
       return 0;
    }

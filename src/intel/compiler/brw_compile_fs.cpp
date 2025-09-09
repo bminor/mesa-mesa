@@ -1576,8 +1576,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
     * data clear shaders.
     */
    const unsigned reqd_dispatch_width = brw_required_dispatch_width(&nir->info);
-   assert(reqd_dispatch_width == SUBGROUP_SIZE_VARYING ||
-          reqd_dispatch_width == SUBGROUP_SIZE_REQUIRE_16);
+   assert(reqd_dispatch_width == 0 || reqd_dispatch_width == 16);
 
    /* Limit identified when first variant is compiled, see
     * brw_shader::limit_dispatch_width().
@@ -1750,7 +1749,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
 
    } else {
       if ((!has_spilled && dispatch_width_limit >= 16 && INTEL_SIMD(FS, 16)) ||
-          reqd_dispatch_width == SUBGROUP_SIZE_REQUIRE_16) {
+          reqd_dispatch_width == 16) {
          /* Try a SIMD16 compile */
          brw_shader_params shader_params = base_shader_params;
          shader_params.dispatch_width = 16;
@@ -1783,7 +1782,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
       /* Currently, the compiler only supports SIMD32 on SNB+ */
       if (!has_spilled &&
           dispatch_width_limit >= 32 &&
-          reqd_dispatch_width == SUBGROUP_SIZE_VARYING &&
+          reqd_dispatch_width == 0 &&
           !simd16_failed && INTEL_SIMD(FS, 32) &&
           !prog_data->base.ray_queries) {
          /* Try a SIMD32 compile */
@@ -1818,7 +1817,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
 
       if (devinfo->ver >= 12 && !has_spilled &&
           max_polygons >= 2 && !key->coarse_pixel &&
-          reqd_dispatch_width == SUBGROUP_SIZE_VARYING) {
+          reqd_dispatch_width == 0) {
 
          if (devinfo->ver >= 20 && max_polygons >= 4 &&
              dispatch_width_limit >= 32 &&
@@ -1890,7 +1889,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
    /* When the caller compiles a repclear or fast clear shader, they
     * want SIMD16-only.
     */
-   if (reqd_dispatch_width == SUBGROUP_SIZE_REQUIRE_16)
+   if (reqd_dispatch_width == 16)
       v8.reset();
 
    brw_generator g(compiler, &params->base, &prog_data->base,

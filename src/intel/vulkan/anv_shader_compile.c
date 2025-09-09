@@ -652,29 +652,21 @@ anv_fixup_subgroup_size(struct anv_instance *instance, struct shader_info *info)
     */
    if (instance->assume_full_subgroups &&
        info->uses_wide_subgroup_intrinsics &&
-       info->subgroup_size == SUBGROUP_SIZE_API_CONSTANT &&
+       info->api_subgroup_size == BRW_SUBGROUP_SIZE &&
        local_size &&
-       local_size % BRW_SUBGROUP_SIZE == 0)
-      info->subgroup_size = SUBGROUP_SIZE_FULL_SUBGROUPS;
-
-   /* If the client requests that we dispatch full subgroups but doesn't
-    * allow us to pick a subgroup size, we have to smash it to the API
-    * value of 32.  Performance will likely be terrible in this case but
-    * there's nothing we can do about that.  The client should have chosen
-    * a size.
-    */
-   if (info->subgroup_size == SUBGROUP_SIZE_FULL_SUBGROUPS)
-      info->subgroup_size =
-         instance->assume_full_subgroups != 0 ?
-         instance->assume_full_subgroups : BRW_SUBGROUP_SIZE;
+       local_size % BRW_SUBGROUP_SIZE == 0) {
+      info->max_subgroup_size = BRW_SUBGROUP_SIZE;
+      info->min_subgroup_size = BRW_SUBGROUP_SIZE;
+   }
 
    /* Cooperative matrix extension requires that all invocations in a subgroup
     * be active. As a result, when the application does not request a specific
     * subgroup size, we must use SIMD32.
     */
    if (info->stage == MESA_SHADER_COMPUTE && info->cs.has_cooperative_matrix &&
-       info->subgroup_size < SUBGROUP_SIZE_REQUIRE_8) {
-      info->subgroup_size = BRW_SUBGROUP_SIZE;
+       info->max_subgroup_size > info->min_subgroup_size) {
+      info->api_subgroup_size = info->max_subgroup_size;
+      info->min_subgroup_size = info->max_subgroup_size;
    }
 }
 
@@ -1244,7 +1236,7 @@ anv_shader_lower_nir(struct anv_device *device,
    if (nir->info.stage == MESA_SHADER_COMPUTE &&
        nir->info.cs.has_cooperative_matrix) {
       anv_fixup_subgroup_size(pdevice->instance, &nir->info);
-      NIR_PASS(_, nir, brw_nir_lower_cmat, nir->info.subgroup_size);
+      NIR_PASS(_, nir, brw_nir_lower_cmat, nir->info.api_subgroup_size);
       NIR_PASS(_, nir, nir_lower_indirect_derefs, nir_var_function_temp, 16);
    }
 

@@ -36,8 +36,11 @@ blorp_compile_fs_brw(struct blorp_context *blorp, void *mem_ctx,
    brw_preprocess_nir(compiler, nir, &opts);
    nir_remove_dead_variables(nir, nir_var_shader_in, NULL);
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
-   if (is_fast_clear || use_repclear)
-      nir->info.subgroup_size = SUBGROUP_SIZE_REQUIRE_16;
+   if (is_fast_clear || use_repclear) {
+      nir->info.api_subgroup_size = 16;
+      nir->info.max_subgroup_size = 16;
+      nir->info.min_subgroup_size = 16;
+   }
 
    struct brw_wm_prog_key wm_key;
    memset(&wm_key, 0, sizeof(wm_key));
