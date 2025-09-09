@@ -559,31 +559,53 @@ panfrost_batch_to_fb_info(const struct panfrost_batch *batch,
 
    if (batch->key.zsbuf.texture) {
       const struct pipe_surface *surf = &batch->key.zsbuf;
-      z_rsrc = pan_resource(surf->texture);
+      const struct util_format_description *fdesc =
+         util_format_description(surf->format);
 
-      zs->format = surf->format == PIPE_FORMAT_Z32_FLOAT_S8X24_UINT
-                      ? PIPE_FORMAT_Z32_FLOAT
-                      : surf->format;
-      zs->dim = MALI_TEXTURE_DIMENSION_2D;
-      zs->last_level = zs->first_level = surf->level;
-      zs->first_layer = surf->first_layer;
-      zs->last_layer = surf->last_layer;
-      zs->planes[0] = (struct pan_image_plane_ref){
-         .image = &z_rsrc->image,
-         .plane_idx = 0,
-      };
-      zs->nr_samples = surf->nr_samples ?: MAX2(surf->texture->nr_samples, 1);
-      memcpy(zs->swizzle, id_swz, sizeof(zs->swizzle));
-      fb->zs.view.zs = zs;
-      z_view = zs;
-      if (util_format_is_depth_and_stencil(zs->format)) {
-         s_view = zs;
-         s_rsrc = z_rsrc;
-      }
+      if (util_format_has_depth(fdesc)) {
+         z_rsrc = pan_resource(surf->texture);
 
-      if (z_rsrc->separate_stencil) {
-         s_rsrc = z_rsrc->separate_stencil;
-         s->format = PIPE_FORMAT_S8_UINT;
+         zs->format = surf->format == PIPE_FORMAT_Z32_FLOAT_S8X24_UINT
+                         ? PIPE_FORMAT_Z32_FLOAT
+                         : surf->format;
+         zs->dim = MALI_TEXTURE_DIMENSION_2D;
+         zs->last_level = zs->first_level = surf->level;
+         zs->first_layer = surf->first_layer;
+         zs->last_layer = surf->last_layer;
+         zs->planes[0] = (struct pan_image_plane_ref){
+            .image = &z_rsrc->image,
+            .plane_idx = 0,
+         };
+         zs->nr_samples = surf->nr_samples ?: MAX2(surf->texture->nr_samples, 1);
+         memcpy(zs->swizzle, id_swz, sizeof(zs->swizzle));
+         fb->zs.view.zs = zs;
+         z_view = zs;
+
+         if (util_format_has_stencil(fdesc)) {
+            s_view = zs;
+            s_rsrc = z_rsrc;
+         }
+
+         if (z_rsrc->separate_stencil) {
+            s_rsrc = z_rsrc->separate_stencil;
+            s->format = PIPE_FORMAT_S8_UINT;
+            s->dim = MALI_TEXTURE_DIMENSION_2D;
+            s->last_level = s->first_level = surf->level;
+            s->first_layer = surf->first_layer;
+            s->last_layer = surf->last_layer;
+            s->planes[0] = (struct pan_image_plane_ref){
+               .image = &s_rsrc->image,
+               .plane_idx = 0,
+            };
+            s->nr_samples =
+               surf->nr_samples ?: MAX2(surf->texture->nr_samples, 1);
+            memcpy(s->swizzle, id_swz, sizeof(s->swizzle));
+            fb->zs.view.s = s;
+            s_view = s;
+         }
+      } else if (util_format_has_stencil(fdesc)) {
+         s_rsrc = pan_resource(surf->texture);
+         s->format = surf->format;
          s->dim = MALI_TEXTURE_DIMENSION_2D;
          s->last_level = s->first_level = surf->level;
          s->first_layer = surf->first_layer;
