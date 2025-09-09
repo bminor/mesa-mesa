@@ -4644,7 +4644,7 @@
         "description": "panfrost: fix image plane array copy",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "53e5e07c4b7caf3afaa541fef4666453c8b4c8ef",
         "notes": null

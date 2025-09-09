@@ -141,11 +141,9 @@ panfrost_resource_init_image(
 
    assert(plane_idx == util_format_get_num_planes(iprops->format));
 
-   plane_idx = 1;
    for (struct panfrost_resource *plane = pan_resource(rsc->base.next);
         plane; plane = pan_resource(plane->base.next)) {
-      memcpy(plane->image.planes, rsc->image.planes,
-             plane_idx * sizeof(plane->image.planes[0]));
+      memcpy(plane->image.planes, rsc->image.planes, sizeof(plane->image.planes));
    }
 
    return true;
