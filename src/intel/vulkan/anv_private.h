@@ -6620,7 +6620,7 @@ anv_image_dmv_top_address(const struct anv_image_view *iv,
       return addr;
 
    return anv_address_add(addr, iv->image->vid_dmv_top_surface_pitch_B *
-                                    (iv->vk.base_array_layer + arrayLayer));
+                                    ((uint64_t)iv->vk.base_array_layer + arrayLayer));
 }
 
 static inline struct anv_address MUST_CHECK
@@ -6637,7 +6637,7 @@ anv_image_av1_table_address(const struct anv_image_view *iv,
       return addr;
 
    return anv_address_add(addr, iv->image->av1_cdf_table_pitch_B *
-                                    (iv->vk.base_array_layer + arrayLayer));
+                                    ((uint64_t)iv->vk.base_array_layer + arrayLayer));
 }
 
 void
