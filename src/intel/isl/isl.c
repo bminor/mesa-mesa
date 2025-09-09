@@ -3606,7 +3606,7 @@ isl_surf_init_interleaved_arrays(const struct isl_device *dev,
 
       surfs_offsets[i] = offset;
 
-      offset += uninterleaved_surfs[i].row_pitch_B *
+      offset += (uint64_t)uninterleaved_surfs[i].row_pitch_B *
          align(uninterleaved_surfs[i].array_pitch_el_rows,
                tile_info.logical_extent_el.h);
    }
