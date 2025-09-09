@@ -957,13 +957,12 @@ fn create_build_closure(
 
             let device_build = build_info.dev_build_mut(device);
             // skip compilation if we already have the right thing.
-            if program.is_bin() {
-                if device_build.bin_type == CL_PROGRAM_BINARY_TYPE_EXECUTABLE && !is_lib
-                    || device_build.bin_type == CL_PROGRAM_BINARY_TYPE_LIBRARY && is_lib
-                {
-                    device_build.status = CL_BUILD_SUCCESS as cl_build_status;
-                    continue;
-                }
+            if program.is_bin()
+                && (device_build.bin_type == CL_PROGRAM_BINARY_TYPE_EXECUTABLE && !is_lib
+                    || device_build.bin_type == CL_PROGRAM_BINARY_TYPE_LIBRARY && is_lib)
+            {
+                device_build.status = CL_BUILD_SUCCESS as cl_build_status;
+                continue;
             }
 
             let spirv = device_build.spirv.take().unwrap();

@@ -501,6 +501,7 @@ impl DeviceBase {
         let exts: Vec<&str> = self.extension_string.split(' ').collect();
         let mut res = CLVersion::Cl3_0;
 
+        #[allow(clippy::collapsible_if)]
         if self.embedded {
             if self.caps.has_images {
                 let supports_array_writes = !FORMATS
