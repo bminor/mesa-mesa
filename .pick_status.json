@@ -6264,7 +6264,7 @@
         "description": "intel/brw: Fix implementaiton of |= operator for enum",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "df37c7ca743f6407cee4cc6cde7a33fdfe8ed3b7",
         "notes": null
