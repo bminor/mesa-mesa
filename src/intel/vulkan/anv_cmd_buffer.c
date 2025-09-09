@@ -53,6 +53,7 @@ anv_cmd_state_init(struct anv_cmd_buffer *cmd_buffer)
    state->gfx.restart_index = UINT32_MAX;
    state->gfx.object_preemption = true;
    state->gfx.dirty = 0;
+   state->gfx.streamout_stage = MESA_SHADER_NONE;
 
    state->compute.pixel_async_compute_thread_limit = UINT8_MAX;
    state->compute.z_pass_async_compute_thread_limit = UINT8_MAX;
@@ -1480,7 +1481,7 @@ bind_graphics_shaders(struct anv_cmd_buffer *cmd_buffer,
    gfx->active_stages = 0;
    gfx->instance_multiplier = 0;
 
-   mesa_shader_stage new_streamout_stage = -1;
+   mesa_shader_stage new_streamout_stage = MESA_SHADER_NONE;
    /* Find the last pre-rasterization stage */
    for (uint32_t i = 0; i < ANV_GRAPHICS_SHADER_STAGE_COUNT; i++) {
       mesa_shader_stage s = ANV_GRAPHICS_SHADER_STAGE_COUNT - i - 1;
@@ -1499,6 +1500,53 @@ bind_graphics_shaders(struct anv_cmd_buffer *cmd_buffer,
 
       new_streamout_stage = MAX2(new_streamout_stage, s);
    }
+
+#define diff_fix_state_stage(bit, name, old_stage, shader)              \
+      do {                                                              \
+         /* Fixed states should always have matching sizes */           \
+         assert(old_stage == MESA_SHADER_NONE ||                        \
+                gfx->shaders[old_stage] == NULL ||                      \
+                gfx->shaders[old_stage]->name.len == shader->name.len); \
+         /* Don't bother memcmp if the state is already dirty */        \
+         if (!BITSET_TEST(hw_state->pack_dirty, ANV_GFX_STATE_##bit) && \
+             (old_stage == MESA_SHADER_NONE ||                          \
+              gfx->shaders[old_stage] == NULL ||                        \
+              memcmp(&gfx->shaders[old_stage]->cmd_data[                \
+                        gfx->shaders[old_stage]->name.offset],          \
+                     &shader->cmd_data[                                 \
+                        shader->name.offset],                           \
+                     4 * shader->name.len) != 0))                       \
+            BITSET_SET(hw_state->pack_dirty, ANV_GFX_STATE_##bit);      \
+      } while (0)
+#define diff_var_state_stage(bit, name, old_stage,shader)               \
+      do {                                                              \
+         /* Don't bother memcmp if the state is already dirty */        \
+         /* Also if the new state is empty, avoid marking dirty */      \
+         if (!BITSET_TEST(hw_state->pack_dirty, ANV_GFX_STATE_##bit) && \
+             shader->name.len != 0 &&                                   \
+             (gfx->shaders[old_stage] == NULL ||                        \
+              gfx->shaders[old_stage]->name.len != shader->name.len ||  \
+              memcmp(&gfx->shaders[old_stage]->cmd_data[                \
+                        gfx->shaders[old_stage]->name.offset],          \
+                     &shader->cmd_data[shader->name.offset],            \
+                     4 * shader->name.len) != 0))                       \
+            BITSET_SET(hw_state->pack_dirty, ANV_GFX_STATE_##bit);      \
+      } while (0)
+
+   if (new_streamout_stage != MESA_SHADER_NONE) {
+      /* Compare the stream instructions first because we go through the
+       * stages of shaders and update gfx->shaders[], we can't compare the old
+       * streamout configuration from the old vertex shader with the new
+       * configuration of the tessellation shader.
+       */
+      diff_fix_state_stage(STREAMOUT,    so,           gfx->streamout_stage, new_shaders[new_streamout_stage]);
+      diff_var_state_stage(SO_DECL_LIST, so_decl_list, gfx->streamout_stage, new_shaders[new_streamout_stage]);
+
+      gfx->streamout_stage = new_streamout_stage;
+   }
+
+#undef diff_fix_state_stage
+#undef diff_var_state_stage
 
    for (uint32_t s = 0; s < ANV_GRAPHICS_SHADER_STAGE_COUNT; s++) {
       struct anv_shader *shader = new_shaders[s];
@@ -1543,39 +1591,6 @@ bind_graphics_shaders(struct anv_cmd_buffer *cmd_buffer,
               gfx->shaders[s]->name.len != shader->name.len ||          \
               memcmp(&gfx->shaders[s]->cmd_data[                        \
                         gfx->shaders[s]->name.offset],                  \
-                     &shader->cmd_data[shader->name.offset],            \
-                     4 * shader->name.len) != 0))                       \
-            BITSET_SET(hw_state->pack_dirty, ANV_GFX_STATE_##bit);      \
-      } while (0)
-#define diff_fix_state_stage(bit, name, old_stage)                      \
-      do {                                                              \
-         /* Fixed states should always have matching sizes */           \
-         assert(old_stage == MESA_SHADER_NONE ||                        \
-                gfx->shaders[old_stage] == NULL ||                      \
-                gfx->shaders[old_stage]->name.len == shader->name.len); \
-         /* Don't bother memcmp if the state is already dirty */        \
-         if (!BITSET_TEST(hw_state->pack_dirty,                         \
-                          ANV_GFX_STATE_##bit) &&                       \
-             (old_stage == MESA_SHADER_NONE ||                          \
-              gfx->shaders[old_stage] == NULL ||                        \
-              memcmp(&gfx->shaders[old_stage]->cmd_data[                \
-                        gfx->shaders[old_stage]->name.offset],          \
-                     &shader->cmd_data[                                 \
-                        shader->name.offset],                           \
-                     4 * shader->name.len) != 0))                       \
-            BITSET_SET(hw_state->pack_dirty, ANV_GFX_STATE_##bit);      \
-      } while (0)
-#define diff_var_state_stage(bit, name, old_stage)                      \
-      do {                                                              \
-         /* Don't bother memcmp if the state is already dirty */        \
-         /* Also if the new state is empty, avoid marking dirty */      \
-         if (!BITSET_TEST(hw_state->pack_dirty,                         \
-                          ANV_GFX_STATE_##bit) &&                       \
-             shader->name.len != 0 &&                                   \
-             (gfx->shaders[old_stage] == NULL ||                        \
-              gfx->shaders[old_stage]->name.len != shader->name.len ||  \
-              memcmp(&gfx->shaders[old_stage]->cmd_data[                \
-                        gfx->shaders[old_stage]->name.offset],          \
                      &shader->cmd_data[shader->name.offset],            \
                      4 * shader->name.len) != 0))                       \
             BITSET_SET(hw_state->pack_dirty, ANV_GFX_STATE_##bit);      \
@@ -1656,21 +1671,11 @@ bind_graphics_shaders(struct anv_cmd_buffer *cmd_buffer,
          UNREACHABLE("Invalid shader stage");
       }
 
-      /* Only diff those field on the streamout stage */
-      if (s == new_streamout_stage) {
-         diff_fix_state_stage(STREAMOUT,    so,           gfx->streamout_stage);
-         diff_var_state_stage(SO_DECL_LIST, so_decl_list, gfx->streamout_stage);
-      }
-
       gfx->shaders[s] = shader;
    }
 
-   gfx->streamout_stage = new_streamout_stage;
-
 #undef diff_fix_state
 #undef diff_var_state
-#undef diff_fix_state_stage
-#undef diff_var_state_stage
 
    update_push_descriptor_flags(&gfx->base,
                                 cmd_buffer->state.gfx.shaders,

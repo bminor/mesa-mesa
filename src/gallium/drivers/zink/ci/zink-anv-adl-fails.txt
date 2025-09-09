@@ -668,7 +668,6 @@ wayland-dEQP-EGL.functional.resize.surface_size.stretch_width,Fail
 
 
 # shader objects #13839
-KHR-GL46.separable_programs_tf.tessellation_active,Fail
 spec@arb_fragment_program@fog-modes,Crash
 spec@arb_occlusion_query@occlusion_query_meta_fragments,Fail
 spec@arb_occlusion_query@occlusion_query_meta_save,Fail
