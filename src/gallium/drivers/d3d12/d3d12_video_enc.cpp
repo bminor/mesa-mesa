@@ -3267,10 +3267,12 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
 
          // Transition all subresources of each reference frame independent resource allocation
          for (uint32_t referenceIdx = 0; referenceIdx < referenceFramesDescriptor.NumTexture2Ds; referenceIdx++) {
-            rgReferenceTransitions.push_back(
-               CD3DX12_RESOURCE_BARRIER::Transition(referenceFramesDescriptor.ppTexture2Ds[referenceIdx],
-                                                    D3D12_RESOURCE_STATE_COMMON,
-                                                    D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ));
+            if (reconPicOutputTextureDesc.pReconstructedPicture != referenceFramesDescriptor.ppTexture2Ds[referenceIdx]) {
+               rgReferenceTransitions.push_back(
+                  CD3DX12_RESOURCE_BARRIER::Transition(referenceFramesDescriptor.ppTexture2Ds[referenceIdx],
+                                                      D3D12_RESOURCE_STATE_COMMON,
+                                                      D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ));
+            }
          }
 
          // Transition all subresources the output recon pic independent resource allocation
