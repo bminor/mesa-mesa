@@ -47,6 +47,17 @@
 
 /* TODO: Investigate where this limit comes from. */
 #define PVR_MAX_TRANSFER_SIZE_IN_TEXELS 2048U
+#define PVR_RESOLVE_DEFAULT PVR_RESOLVE_BLEND
+
+static inline void
+pvr_transfer_cmd_init_default(struct pvr_cmd_buffer *cmd_buffer,
+                              struct pvr_transfer_cmd *transfer_cmd)
+{
+   transfer_cmd->sources[0].filter = PVR_FILTER_POINT;
+   transfer_cmd->sources[0].resolve_op = PVR_RESOLVE_DEFAULT;
+   transfer_cmd->sources[0].addr_mode = ROGUE_TEXSTATE_ADDRMODE_CLAMP_TO_EDGE;
+   transfer_cmd->cmd_buffer = cmd_buffer;
+}
 
 static struct pvr_transfer_cmd *
 pvr_transfer_cmd_alloc(struct pvr_cmd_buffer *cmd_buffer)
@@ -63,10 +74,7 @@ pvr_transfer_cmd_alloc(struct pvr_cmd_buffer *cmd_buffer)
    }
 
    /* transfer_cmd->mapping_count is already set to zero. */
-   transfer_cmd->sources[0].filter = PVR_FILTER_POINT;
-   transfer_cmd->sources[0].resolve_op = PVR_RESOLVE_BLEND;
-   transfer_cmd->sources[0].addr_mode = ROGUE_TEXSTATE_ADDRMODE_CLAMP_TO_EDGE;
-   transfer_cmd->cmd_buffer = cmd_buffer;
+   pvr_transfer_cmd_init_default(cmd_buffer, transfer_cmd);
 
    return transfer_cmd;
 }
@@ -485,7 +493,8 @@ pvr_copy_or_resolve_image_region(struct pvr_cmd_buffer *cmd_buffer,
                                  enum pvr_resolve_op resolve_op,
                                  const struct pvr_image *src,
                                  const struct pvr_image *dst,
-                                 const VkImageCopy2 *region)
+                                 const VkImageCopy2 *region,
+                                 struct pvr_transfer_cmd *ds_transfer_cmd)
 {
    enum pipe_format src_pformat = vk_format_to_pipe_format(src->vk.format);
    enum pipe_format dst_pformat = vk_format_to_pipe_format(dst->vk.format);
@@ -514,6 +523,19 @@ pvr_copy_or_resolve_image_region(struct pvr_cmd_buffer *cmd_buffer,
           */
          flags |= PVR_TRANSFER_CMD_FLAGS_PICKD;
       }
+   }
+
+   if (src->vk.samples > 1U && dst->vk.samples < 2U) {
+      /* Blend is not defined for integer formats */
+      if (resolve_op == PVR_RESOLVE_BLEND && vk_format_is_int(src->vk.format)) {
+         /* Override for either color or DS */
+         resolve_op = PVR_RESOLVE_SAMPLE0;
+      }
+   } else {
+      assert(!ds_transfer_cmd ||
+             ds_transfer_cmd->sources[0].resolve_op == PVR_RESOLVE_DEFAULT);
+      /* Override for either color or DS */
+      resolve_op = PVR_RESOLVE_DEFAULT;
    }
 
    src_extent = region->extent;
@@ -564,8 +586,11 @@ pvr_copy_or_resolve_image_region(struct pvr_cmd_buffer *cmd_buffer,
       if (!transfer_cmd)
          return VK_ERROR_OUT_OF_HOST_MEMORY;
 
-      transfer_cmd->flags |= flags;
+      if (ds_transfer_cmd)
+         memcpy(transfer_cmd, ds_transfer_cmd, sizeof(*transfer_cmd));
+
       transfer_cmd->sources[0].resolve_op = resolve_op;
+      transfer_cmd->flags |= flags;
 
       pvr_setup_surface_for_image(
          cmd_buffer->device,
@@ -614,19 +639,39 @@ pvr_copy_or_resolve_color_image_region(struct pvr_cmd_buffer *cmd_buffer,
                                        const struct pvr_image *dst,
                                        const VkImageCopy2 *region)
 {
-   enum pvr_resolve_op resolve_op = PVR_RESOLVE_BLEND;
+   return pvr_copy_or_resolve_image_region(cmd_buffer,
+                                           PVR_RESOLVE_DEFAULT,
+                                           src,
+                                           dst,
+                                           region,
+                                           NULL);
+}
 
-   if (src->vk.samples > 1U && dst->vk.samples < 2U) {
-      /* Integer resolve picks a single sample. */
-      if (vk_format_is_int(src->vk.format))
-         resolve_op = PVR_RESOLVE_SAMPLE0;
+VkResult pvr_copy_or_resolve_depth_stencil_region(
+   struct pvr_cmd_buffer *cmd_buffer,
+   const struct pvr_image *src_image,
+   const struct pvr_image *dst_image,
+   int resolve_op,
+   bool clear_complement,
+   const VkClearDepthStencilValue *ds_clear_values,
+   const VkImageCopy2 *region)
+{
+   struct pvr_transfer_cmd transfer_cmd = { 0 };
+
+   pvr_transfer_cmd_init_default(cmd_buffer, &transfer_cmd);
+
+   if (clear_complement) {
+      transfer_cmd.clear_color[1].ui = ds_clear_values->stencil;
+      transfer_cmd.clear_color[0].f = ds_clear_values->depth;
+      transfer_cmd.flags |= PVR_TRANSFER_CMD_FLAGS_FILL;
    }
 
    return pvr_copy_or_resolve_image_region(cmd_buffer,
                                            resolve_op,
-                                           src,
-                                           dst,
-                                           region);
+                                           src_image,
+                                           dst_image,
+                                           region,
+                                           &transfer_cmd);
 }
 
 static bool pvr_can_merge_ds_regions(const VkImageCopy2 *pRegionA,
@@ -1209,16 +1254,12 @@ void pvr_CmdClearColorImage(VkCommandBuffer commandBuffer,
    }
 }
 
-void pvr_CmdClearDepthStencilImage(VkCommandBuffer commandBuffer,
-                                   VkImage _image,
-                                   VkImageLayout imageLayout,
+void pvr_clear_depth_stencil_image(struct pvr_cmd_buffer *cmd_buffer,
+                                   const struct pvr_image *image,
                                    const VkClearDepthStencilValue *pDepthStencil,
                                    uint32_t rangeCount,
                                    const VkImageSubresourceRange *pRanges)
 {
-   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
-   VK_FROM_HANDLE(pvr_image, image, _image);
-
    for (uint32_t i = 0; i < rangeCount; i++) {
       const VkImageAspectFlags ds_aspect = VK_IMAGE_ASPECT_DEPTH_BIT |
                                            VK_IMAGE_ASPECT_STENCIL_BIT;
@@ -1245,6 +1286,23 @@ void pvr_CmdClearDepthStencilImage(VkCommandBuffer commandBuffer,
       if (result != VK_SUCCESS)
          return;
    }
+}
+
+void pvr_CmdClearDepthStencilImage(VkCommandBuffer commandBuffer,
+                                   VkImage _image,
+                                   VkImageLayout imageLayout,
+                                   const VkClearDepthStencilValue *pDepthStencil,
+                                   uint32_t rangeCount,
+                                   const VkImageSubresourceRange *pRanges)
+{
+   VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(pvr_image, image, _image);
+
+   pvr_clear_depth_stencil_image(cmd_buffer,
+                                 image,
+                                 pDepthStencil,
+                                 rangeCount,
+                                 pRanges);
 }
 
 static VkResult pvr_cmd_copy_buffer_region(struct pvr_cmd_buffer *cmd_buffer,

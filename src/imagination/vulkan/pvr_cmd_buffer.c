@@ -7201,6 +7201,24 @@ void pvr_CmdDrawIndirect(VkCommandBuffer commandBuffer,
                            stride);
 }
 
+static inline enum pvr_resolve_op
+pvr_resolve_mode_to_op(enum VkResolveModeFlagBits mode)
+{
+   switch (mode) {
+   default:
+      UNREACHABLE("invalid resolve mode");
+      FALLTHROUGH;
+   case VK_RESOLVE_MODE_AVERAGE_BIT:
+      return PVR_RESOLVE_BLEND;
+   case VK_RESOLVE_MODE_SAMPLE_ZERO_BIT:
+      return PVR_RESOLVE_SAMPLE0;
+   case VK_RESOLVE_MODE_MIN_BIT:
+      return PVR_RESOLVE_MIN;
+   case VK_RESOLVE_MODE_MAX_BIT:
+      return PVR_RESOLVE_MAX;
+   }
+}
+
 static inline void
 pvr_resolve_subresource_layer_init(const struct pvr_image_view *const iview,
                                    VkImageSubresourceLayers *subresource)
@@ -7296,6 +7314,100 @@ pvr_resolve_unemitted_resolve_attachments(struct pvr_cmd_buffer *cmd_buffer,
 
       if (result != VK_SUCCESS)
          return result;
+   }
+
+   if (hw_render->stencil_resolve_mode || hw_render->depth_resolve_mode) {
+      const struct pvr_render_pass_attachment resolve_attachment =
+         info->pass->attachments[hw_render->ds_attach_resolve_idx];
+      const struct pvr_image_view *dst_view =
+         info->attachments[hw_render->ds_attach_resolve_idx];
+      const struct pvr_image_view *src_view =
+         info->attachments[hw_render->ds_attach_idx];
+      const VkClearValue *resolve_clear_values =
+         &state->render_pass_info.clear_values[hw_render->ds_attach_resolve_idx];
+      const bool both_stencil = vk_format_has_stencil(dst_view->vk.format) &&
+                                vk_format_has_stencil(src_view->vk.format);
+      const bool both_depth = vk_format_has_depth(dst_view->vk.format) &&
+                              vk_format_has_depth(src_view->vk.format);
+      bool clear_depth = false, clear_stencil = false;
+      VkClearDepthStencilValue clear_values;
+      VkImageCopy2 region;
+
+      pvr_resolve_image_copy_region_init(src_view, dst_view, info, &region);
+
+      if (both_depth &&
+          !hw_render->depth_resolve_mode &&
+          resolve_attachment.store_op == VK_ATTACHMENT_STORE_OP_STORE &&
+          resolve_attachment.load_op == VK_ATTACHMENT_LOAD_OP_CLEAR) {
+         clear_values.depth = resolve_clear_values->depthStencil.depth;
+         clear_depth = true;
+      }
+
+      if (both_stencil &&
+          !hw_render->stencil_resolve_mode &&
+          resolve_attachment.stencil_store_op == VK_ATTACHMENT_STORE_OP_STORE &&
+          resolve_attachment.stencil_load_op == VK_ATTACHMENT_LOAD_OP_CLEAR) {
+         clear_values.stencil = resolve_clear_values->depthStencil.stencil;
+         clear_stencil = true;
+      }
+
+      /* Resolve depth and if it can clear stencil */
+      if (both_depth && hw_render->depth_resolve_mode) {
+         region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+         region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+
+         pvr_copy_or_resolve_depth_stencil_region(
+            cmd_buffer,
+            vk_to_pvr_image(src_view->vk.image),
+            vk_to_pvr_image(dst_view->vk.image),
+            pvr_resolve_mode_to_op(hw_render->depth_resolve_mode),
+            clear_stencil,
+            &clear_values,
+            &region);
+
+         state->current_sub_cmd->transfer.serialize_with_frag = true;
+         clear_stencil = false;
+      }
+
+      /* Resolve stencil and if it can clear depth */
+      if (both_stencil && hw_render->stencil_resolve_mode) {
+         region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+         region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+
+         pvr_copy_or_resolve_depth_stencil_region(
+            cmd_buffer,
+            vk_to_pvr_image(src_view->vk.image),
+            vk_to_pvr_image(dst_view->vk.image),
+            pvr_resolve_mode_to_op(hw_render->stencil_resolve_mode),
+            clear_depth,
+            &clear_values,
+            &region);
+
+         state->current_sub_cmd->transfer.serialize_with_frag = true;
+         clear_depth = false;
+      }
+
+      /* Clear what it couldn't be cleared yet */
+      if (clear_stencil || clear_depth) {
+         const VkImageAspectFlagBits aspect =
+            (clear_depth ? VK_IMAGE_ASPECT_DEPTH_BIT : 0) |
+            (clear_stencil ? VK_IMAGE_ASPECT_STENCIL_BIT : 0);
+         VkImageSubresourceRange range = (VkImageSubresourceRange){
+            .aspectMask = aspect,
+            .baseMipLevel = dst_view->vk.base_mip_level,
+            .levelCount = 1,
+            .baseArrayLayer = dst_view->vk.base_array_layer,
+            .layerCount = dst_view->vk.layer_count,
+         };
+
+         pvr_clear_depth_stencil_image(cmd_buffer,
+                                       vk_to_pvr_image(dst_view->vk.image),
+                                       &clear_values,
+                                       1,
+                                       &range);
+
+         state->current_sub_cmd->transfer.serialize_with_frag = true;
+      }
    }
 
    return pvr_cmd_buffer_end_sub_cmd(cmd_buffer);

@@ -1097,6 +1097,10 @@ struct pvr_render_subpass {
 
    uint32_t depth_stencil_attachment;
 
+   uint32_t depth_stencil_resolve_attachment;
+   VkResolveModeFlagBits depth_resolve_mode;
+   VkResolveModeFlagBits stencil_resolve_mode;
+
    /*  Derived and other state. */
    uint32_t dep_count;
    uint32_t *dep_list;

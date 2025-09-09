@@ -174,6 +174,7 @@ static void pvr_physical_device_get_supported_extensions(
       .KHR_copy_commands2 = true,
       .KHR_create_renderpass2 = true,
       .KHR_dedicated_allocation = true,
+      .KHR_depth_stencil_resolve = true,
       .KHR_descriptor_update_template = true,
       .KHR_driver_properties = true,
       .KHR_external_fence = true,
@@ -424,8 +425,7 @@ static void pvr_physical_device_get_supported_features(
    };
 }
 
-static uint32_t
-get_api_version(void)
+static uint32_t get_api_version(void)
 {
    const uint32_t version_override = vk_get_version_override();
    if (version_override)
@@ -676,10 +676,6 @@ static bool pvr_physical_device_get_properties(
       .maxDescriptorSetUpdateAfterBindSampledImages = 0,
       .maxDescriptorSetUpdateAfterBindStorageImages = 0,
       .maxDescriptorSetUpdateAfterBindInputAttachments = 0,
-      .supportedDepthResolveModes = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT,
-      .supportedStencilResolveModes = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT,
-      .independentResolveNone = true,
-      .independentResolve = true,
       .filterMinmaxSingleComponentFormats = false,
       .filterMinmaxImageComponentMapping = false,
       .framebufferIntegerColorSampleCounts =
@@ -755,6 +751,14 @@ static bool pvr_physical_device_get_properties(
       .drmHasRender = true,
       .drmRenderMajor = (int64_t) major(pdevice->render_devid),
       .drmRenderMinor = (int64_t) minor(pdevice->render_devid),
+
+      /* Vulkan 1.2 / VK_KHR_depth_stencil_resolve */
+      .supportedDepthResolveModes =
+         VK_RESOLVE_MODE_SAMPLE_ZERO_BIT,
+      .supportedStencilResolveModes =
+         VK_RESOLVE_MODE_SAMPLE_ZERO_BIT,
+      .independentResolveNone = true,
+      .independentResolve = true,
    };
 
    if (PVR_HAS_FEATURE(dev_info, gpu_multicore_support)) {
@@ -961,7 +965,7 @@ static VkResult pvr_physical_device_init(struct pvr_physical_device *pdevice,
    struct vk_properties supported_properties;
    struct vk_features supported_features;
    struct pvr_winsys *ws;
-   struct stat primary_stat = {0}, render_stat = {0};
+   struct stat primary_stat = { 0 }, render_stat = { 0 };
    char *primary_path;
    char *display_path;
    char *render_path;
@@ -989,7 +993,8 @@ static VkResult pvr_physical_device_init(struct pvr_physical_device *pdevice,
 
    primary_path = drm_render_device->nodes[DRM_NODE_PRIMARY];
    if (stat(primary_path, &primary_stat) != 0) {
-      result = vk_errorf(instance, VK_ERROR_INITIALIZATION_FAILED,
+      result = vk_errorf(instance,
+                         VK_ERROR_INITIALIZATION_FAILED,
                          "failed to stat DRM primary node %s",
                          primary_path);
       goto err_vk_free_display_path;
@@ -997,7 +1002,8 @@ static VkResult pvr_physical_device_init(struct pvr_physical_device *pdevice,
    pdevice->primary_devid = primary_stat.st_rdev;
 
    if (stat(render_path, &render_stat) != 0) {
-      result = vk_errorf(instance, VK_ERROR_INITIALIZATION_FAILED,
+      result = vk_errorf(instance,
+                         VK_ERROR_INITIALIZATION_FAILED,
                          "failed to stat DRM render node %s",
                          render_path);
       goto err_vk_free_display_path;

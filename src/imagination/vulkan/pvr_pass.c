@@ -38,6 +38,7 @@
 #include "vk_format.h"
 #include "vk_log.h"
 #include "vk_render_pass.h"
+#include "vk_util.h"
 
 static inline bool pvr_subpass_has_msaa_input_attachment(
    struct pvr_render_subpass *subpass,
@@ -1051,6 +1052,9 @@ VkResult pvr_CreateRenderPass2(VkDevice _device,
    for (uint32_t i = 0; i < pass->subpass_count; i++) {
       const VkSubpassDescription2 *desc = &pCreateInfo->pSubpasses[i];
       struct pvr_render_subpass *subpass = &pass->subpasses[i];
+      const VkSubpassDescriptionDepthStencilResolve *resolve_desc =
+         vk_find_struct_const(desc->pNext,
+                              SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE);
 
       subpass->pipeline_bind_point = desc->pipelineBindPoint;
       subpass->view_mask = desc->viewMask;
@@ -1081,6 +1085,33 @@ VkResult pvr_CreateRenderPass2(VkDevice _device,
          subpass->depth_stencil_attachment = index;
       } else {
          subpass->depth_stencil_attachment = VK_ATTACHMENT_UNUSED;
+      }
+
+      subpass->depth_stencil_resolve_attachment = VK_ATTACHMENT_UNUSED;
+
+      if (resolve_desc) {
+         uint32_t index = VK_ATTACHMENT_UNUSED;
+
+         if (resolve_desc->pDepthStencilResolveAttachment)
+            index = resolve_desc->pDepthStencilResolveAttachment->attachment;
+         else if (subpass->depth_stencil_attachment != VK_ATTACHMENT_UNUSED)
+            index = subpass->depth_stencil_attachment;
+
+         if (index != VK_ATTACHMENT_UNUSED) {
+            const VkFormat format = pCreateInfo->pAttachments[index].format;
+            const bool stencil_has_store = vk_format_has_stencil(format) &&
+               (pass->attachments[index].stencil_store_op ==
+                VK_ATTACHMENT_STORE_OP_STORE);
+            const bool depth_has_store = vk_format_has_depth(format) &&
+               (pass->attachments[index].store_op ==
+                VK_ATTACHMENT_STORE_OP_STORE);
+
+            if (stencil_has_store || depth_has_store) {
+               subpass->stencil_resolve_mode = resolve_desc->stencilResolveMode;
+               subpass->depth_resolve_mode = resolve_desc->depthResolveMode;
+               subpass->depth_stencil_resolve_attachment = index;
+            }
+         }
       }
 
       subpass->color_count = desc->colorAttachmentCount;
@@ -1150,13 +1181,19 @@ VkResult pvr_CreateRenderPass2(VkDevice _device,
           dep->dstSubpass != VK_SUBPASS_EXTERNAL &&
           dep->srcSubpass != dep->dstSubpass) {
          struct pvr_render_subpass *subpass = &pass->subpasses[dep->dstSubpass];
-         bool is_dep_fb_local =
+         const bool is_dep_fb_local =
             vk_subpass_dependency_is_fb_local(dep,
                                               dep->srcStageMask,
                                               dep->dstStageMask);
+         const bool dst_has_resolve = subpass->stencil_resolve_mode ||
+                                      subpass->depth_resolve_mode;
+         const bool src_has_resolve =
+            pass->subpasses[dep->srcSubpass].stencil_resolve_mode ||
+            pass->subpasses[dep->srcSubpass].depth_resolve_mode;
 
          subpass->dep_list[subpass->dep_count] = dep->srcSubpass;
-         if (pvr_subpass_has_msaa_input_attachment(subpass, pCreateInfo) ||
+         if (dst_has_resolve || src_has_resolve ||
+             pvr_subpass_has_msaa_input_attachment(subpass, pCreateInfo) ||
              !is_dep_fb_local) {
             subpass->flush_on_dep[subpass->dep_count] = true;
          }

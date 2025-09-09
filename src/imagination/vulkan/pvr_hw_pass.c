@@ -1058,6 +1058,9 @@ static bool pvr_render_has_side_effects(struct pvr_renderpass_context *ctx)
       return true;
    }
 
+   if (hw_render->stencil_resolve_mode || hw_render->depth_resolve_mode)
+      return true;
+
    for (uint32_t i = 0U; i < hw_render->eot_surface_count; i++) {
       const struct pvr_renderpass_hwsetup_eot_surface *eot_attach =
          &hw_render->eot_surfaces[i];
@@ -1123,6 +1126,16 @@ static VkResult pvr_close_render(const struct pvr_device *device,
 
          /* Allocate memory for the attachment. */
          pvr_mark_surface_alloc(ctx, ctx->int_ds_attach);
+      }
+
+      if (ctx->hw_render->stencil_resolve_mode ||
+          ctx->hw_render->depth_resolve_mode) {
+         assert(ctx->ds_resolve_surface);
+
+         hw_render->ds_attach_resolve_idx =
+            ctx->ds_resolve_surface - ctx->int_attach;
+
+         pvr_mark_surface_alloc(ctx, ctx->ds_resolve_surface);
       }
 
       /* Load the depth and stencil before the next use. */
@@ -2369,6 +2382,33 @@ static VkResult pvr_schedule_subpass(const struct pvr_device *device,
        */
       int_depth_attach->load_op = VK_ATTACHMENT_LOAD_OP_LOAD;
       int_depth_attach->stencil_load_op = VK_ATTACHMENT_LOAD_OP_LOAD;
+
+      if (subpass->depth_stencil_resolve_attachment != VK_ATTACHMENT_UNUSED) {
+         struct pvr_render_int_attachment *int_resolve_attach =
+            &ctx->int_attach[subpass->depth_stencil_resolve_attachment];
+
+         assert(int_depth_attach->last_resolve_src_render <
+                (int32_t)ctx->hw_setup->render_count - 1);
+         int_depth_attach->last_resolve_src_render =
+            ctx->hw_setup->render_count - 1;
+
+         assert(int_depth_attach->last_resolve_dst_render <
+                (int32_t)ctx->hw_setup->render_count - 1);
+         int_depth_attach->last_resolve_dst_render =
+            ctx->hw_setup->render_count - 1;
+
+         assert(!ctx->ds_resolve_surface);
+         ctx->ds_resolve_surface = int_resolve_attach;
+
+         hw_render->stencil_resolve_mode = subpass->stencil_resolve_mode;
+         hw_render->depth_resolve_mode = subpass->depth_resolve_mode;
+
+         if (hw_render->depth_resolve_mode)
+            int_depth_attach->remaining_count++;
+
+         if (hw_render->stencil_resolve_mode)
+            int_depth_attach->stencil_remaining_count++;
+      }
    }
 
    /* Mark surfaces which have been the source or destination of an MSAA resolve

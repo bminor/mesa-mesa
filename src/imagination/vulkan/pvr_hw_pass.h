@@ -220,6 +220,16 @@ struct pvr_renderpass_hwsetup_render {
     */
    uint32_t ds_attach_idx;
 
+   /* Index of the attachment to use for depth/stencil resolve load/store in
+    * this render.
+    */
+   uint32_t ds_attach_resolve_idx;
+
+   /* Resolve mode to perform for this render originally set for each subpass.
+    */
+   VkResolveModeFlagBits stencil_resolve_mode;
+   VkResolveModeFlagBits depth_resolve_mode;
+
    /* Operation on the on-chip depth at the start of the render.
     * Either load from 'ds_attach_idx', clear using 'ds_attach_idx' or leave
     * uninitialized.
