@@ -180,6 +180,13 @@ vk_shader_to_nir(struct vk_device *device,
    if (nir == NULL)
       return NULL;
 
+   vk_set_subgroup_size(
+      device, nir,
+      vk_spirv_version(info->pCode, info->codeSize),
+      info->pNext,
+      info->flags & VK_SHADER_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT_EXT,
+      info->flags & VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT);
+
    if (ops->preprocess_nir != NULL)
       ops->preprocess_nir(device->physical, nir, rs);
 

@@ -61,6 +61,16 @@ vk_get_subgroup_size(uint32_t spirv_version,
                      bool allow_varying,
                      bool require_full);
 
+typedef struct nir_shader nir_shader;
+
+void
+vk_set_subgroup_size(struct vk_device *device,
+                     nir_shader *shader,
+                     uint32_t spirv_version,
+                     const void *info_pNext,
+                     bool allow_varying,
+                     bool require_full);
+
 struct vk_pipeline_robustness_state {
    VkPipelineRobustnessBufferBehaviorEXT storage_buffers;
    VkPipelineRobustnessBufferBehaviorEXT uniform_buffers;
