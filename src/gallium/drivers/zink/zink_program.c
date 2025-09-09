@@ -1752,6 +1752,9 @@ zink_get_compute_pipeline(struct zink_screen *screen,
       state->pipeline = comp->base_pipeline;
       return state->pipeline;
    }
+   state->module_hash = comp->curr->hash;
+   state->module = comp->curr->obj.mod;
+   state->final_hash ^= state->module_hash;
    entry = _mesa_hash_table_search_pre_hashed(&comp->pipelines, state->final_hash, state);
 
    if (!entry) {
@@ -2097,10 +2100,6 @@ zink_bind_cs_state(struct pipe_context *pctx,
    ctx->compute_pipeline_state.dirty = true;
    ctx->curr_compute = comp;
    if (comp && comp != ctx->curr_compute) {
-      ctx->compute_pipeline_state.module_hash = ctx->curr_compute->curr->hash;
-      if (util_queue_fence_is_signalled(&comp->base.cache_fence))
-         ctx->compute_pipeline_state.module = ctx->curr_compute->curr->obj.mod;
-      ctx->compute_pipeline_state.final_hash ^= ctx->compute_pipeline_state.module_hash;
       if (ctx->compute_pipeline_state.key.base.nonseamless_cube_mask)
          ctx->compute_dirty = true;
    }
