@@ -402,7 +402,7 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
 
    info->base.use_aco_amd = nir->info.use_aco_amd;
    info->base.writes_memory = nir->info.writes_memory;
-   info->base.subgroup_size = nir->info.subgroup_size;
+   info->base.api_subgroup_size = nir->info.api_subgroup_size;
 
    info->base.num_ubos = nir->info.num_ubos;
    info->base.num_ssbos = nir->info.num_ssbos;

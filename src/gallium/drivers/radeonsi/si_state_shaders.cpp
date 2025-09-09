@@ -45,9 +45,10 @@ unsigned si_determine_wave_size(struct si_screen *sscreen, struct si_shader *sha
       return 64;
 
    /* For KHR_shader_subgroup which require a constant subgroup size known by user. */
-   if (info->base.subgroup_size == SUBGROUP_SIZE_API_CONSTANT ||
-       (prev_sel && prev_sel->info.base.subgroup_size == SUBGROUP_SIZE_API_CONSTANT))
-      return 64;
+   if (info->base.api_subgroup_size)
+      return info->base.api_subgroup_size;
+   else if (prev_sel && prev_sel->info.base.api_subgroup_size)
+      return prev_sel->info.base.api_subgroup_size;
 
    /* Workgroup sizes that are not divisible by 64 use Wave32. */
    if (stage == MESA_SHADER_COMPUTE && !info->base.workgroup_size_variable &&

@@ -23,7 +23,7 @@ struct si_shader_info {
 
       bool use_aco_amd:1;
       bool writes_memory:1;
-      enum gl_subgroup_size subgroup_size;
+      uint8_t api_subgroup_size;
 
       uint8_t num_ubos;
       uint8_t num_ssbos;
