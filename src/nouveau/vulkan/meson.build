@@ -143,8 +143,6 @@ libnvk = static_library(
     sha1_h,
   ],
   include_directories : [
-    inc_gallium,
-    inc_gallium_aux,
     inc_include,
     inc_src,
   ],
