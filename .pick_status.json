@@ -6744,7 +6744,7 @@
         "description": "zink: ensure transient surface is created when doing msaa expand",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ef3f7989574332758b962b990f1808b27e611cdb",
         "notes": null
