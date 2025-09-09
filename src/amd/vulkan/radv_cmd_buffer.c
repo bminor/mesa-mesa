@@ -1770,7 +1770,11 @@ radv_emit_userdata_address(const struct radv_device *device, struct radv_cmd_str
       return;
 
    radeon_begin(cs);
-   radeon_emit_32bit_pointer(offset, va, &pdev->info);
+   if (pdev->info.gfx_level >= GFX12) {
+      gfx12_push_32bit_pointer(offset, va, &pdev->info);
+   } else {
+      radeon_emit_32bit_pointer(offset, va, &pdev->info);
+   }
    radeon_end();
 }
 
@@ -3123,8 +3127,14 @@ radv_emit_hw_ngg(struct radv_cmd_buffer *cmd_buffer, const struct radv_shader *e
 
    radeon_set_uconfig_reg(R_03096C_GE_CNTL, ge_cntl);
 
+   const uint32_t ngg_lds_layout_offset = radv_get_user_sgpr_loc(shader, AC_UD_NGG_LDS_LAYOUT);
+   assert(ngg_lds_layout_offset);
+   assert(!(shader->info.ngg_info.esgs_ring_size & 0xffff0000));
+
    if (pdev->info.gfx_level >= GFX12) {
       radeon_set_uconfig_reg(R_030988_VGT_PRIMITIVEID_EN, shader->info.regs.ngg.vgt_primitiveid_en);
+      gfx12_push_sh_reg(ngg_lds_layout_offset,
+                        SET_SGPR_FIELD(NGG_LDS_LAYOUT_GS_OUT_VERTEX_BASE, shader->info.ngg_info.esgs_ring_size));
    } else {
       if (pdev->info.gfx_level >= GFX7) {
          radeon_set_sh_reg_idx(&pdev->info, R_00B21C_SPI_SHADER_PGM_RSRC3_GS, 3,
@@ -3135,14 +3145,11 @@ radv_emit_hw_ngg(struct radv_cmd_buffer *cmd_buffer, const struct radv_shader *e
                             shader->info.regs.spi_shader_pgm_rsrc4_gs);
 
       radeon_set_uconfig_reg(R_030980_GE_PC_ALLOC, shader->info.regs.ge_pc_alloc);
+
+      radeon_set_sh_reg(ngg_lds_layout_offset,
+                        SET_SGPR_FIELD(NGG_LDS_LAYOUT_GS_OUT_VERTEX_BASE, shader->info.ngg_info.esgs_ring_size));
    }
 
-   const uint32_t ngg_lds_layout_offset = radv_get_user_sgpr_loc(shader, AC_UD_NGG_LDS_LAYOUT);
-   assert(ngg_lds_layout_offset);
-   assert(!(shader->info.ngg_info.esgs_ring_size & 0xffff0000));
-
-   radeon_set_sh_reg(ngg_lds_layout_offset,
-                     SET_SGPR_FIELD(NGG_LDS_LAYOUT_GS_OUT_VERTEX_BASE, shader->info.ngg_info.esgs_ring_size));
    radeon_end();
 }
 
@@ -5960,6 +5967,9 @@ static void
 emit_prolog_inputs(struct radv_cmd_buffer *cmd_buffer, const struct radv_shader *vs_shader,
                    uint32_t nontrivial_divisors)
 {
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+
    /* no need to re-emit anything in this case */
    if (!nontrivial_divisors && cmd_buffer->state.emitted_vs_prolog &&
        !cmd_buffer->state.emitted_vs_prolog->nontrivial_divisors)
@@ -5998,7 +6008,11 @@ emit_prolog_inputs(struct radv_cmd_buffer *cmd_buffer, const struct radv_shader 
 
    const uint32_t vs_prolog_inputs_offset = radv_get_user_sgpr_loc(vs_shader, AC_UD_VS_PROLOG_INPUTS);
    radeon_begin(cmd_buffer->cs);
-   radeon_emit_64bit_pointer(vs_prolog_inputs_offset, input_va);
+   if (pdev->info.gfx_level >= GFX12) {
+      gfx12_push_64bit_pointer(vs_prolog_inputs_offset, input_va);
+   } else {
+      radeon_emit_64bit_pointer(vs_prolog_inputs_offset, input_va);
+   }
    radeon_end();
 }
 
@@ -6302,7 +6316,11 @@ radv_emit_push_constants_per_stage(const struct radv_device *device, struct radv
    if (push_constants_offset) {
       radeon_check_space(device->ws, cs->b, 3);
       radeon_begin(cs);
-      radeon_emit_32bit_pointer(push_constants_offset, push_constants_va, &pdev->info);
+      if (pdev->info.gfx_level >= GFX12) {
+         gfx12_push_32bit_pointer(push_constants_offset, push_constants_va, &pdev->info);
+      } else {
+         radeon_emit_32bit_pointer(push_constants_offset, push_constants_va, &pdev->info);
+      }
       radeon_end();
    }
 }
@@ -13648,14 +13666,22 @@ radv_trace_rays(struct radv_cmd_buffer *cmd_buffer, VkTraceRaysIndirectCommand2K
    const uint32_t sbt_descriptors_offset = radv_get_user_sgpr_loc(rt_prolog, AC_UD_CS_SBT_DESCRIPTORS);
    if (sbt_descriptors_offset) {
       radeon_begin(cs);
-      radeon_emit_64bit_pointer(sbt_descriptors_offset, sbt_va);
+      if (pdev->info.gfx_level >= GFX12) {
+         gfx12_push_64bit_pointer(sbt_descriptors_offset, sbt_va);
+      } else {
+         radeon_emit_64bit_pointer(sbt_descriptors_offset, sbt_va);
+      }
       radeon_end();
    }
 
    const uint32_t ray_launch_size_addr_offset = radv_get_user_sgpr_loc(rt_prolog, AC_UD_CS_RAY_LAUNCH_SIZE_ADDR);
    if (ray_launch_size_addr_offset) {
       radeon_begin(cs);
-      radeon_emit_64bit_pointer(ray_launch_size_addr_offset, launch_size_va);
+      if (pdev->info.gfx_level >= GFX12) {
+         gfx12_push_64bit_pointer(ray_launch_size_addr_offset, launch_size_va);
+      } else {
+         radeon_emit_64bit_pointer(ray_launch_size_addr_offset, launch_size_va);
+      }
       radeon_end();
    }
 
@@ -13673,7 +13699,11 @@ radv_trace_rays(struct radv_cmd_buffer *cmd_buffer, VkTraceRaysIndirectCommand2K
       radv_upload_trace_rays_params(cmd_buffer, tables, mode, &launch_size_va, NULL);
       if (ray_launch_size_addr_offset) {
          radeon_begin(cs);
-         radeon_emit_64bit_pointer(ray_launch_size_addr_offset, launch_size_va);
+         if (pdev->info.gfx_level >= GFX12) {
+            gfx12_push_64bit_pointer(ray_launch_size_addr_offset, launch_size_va);
+         } else {
+            radeon_emit_64bit_pointer(ray_launch_size_addr_offset, launch_size_va);
+         }
          radeon_end();
       }
 
