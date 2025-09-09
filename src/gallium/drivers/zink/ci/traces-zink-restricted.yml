@@ -192,6 +192,12 @@ traces:
     gl-zink-anv-tgl:
       checksum: 35397140d1fe2cc92146a4e3474df08b
 
+  minecraft/minecraft-loading.trace:
+    gl-zink-anv-adl:
+      checksum: 31e922dc761aeffd6674b78706228f79
+    gl-zink-anv-tgl:
+      checksum: 31e922dc761aeffd6674b78706228f79
+
   overcooked2/Overcooked2-trim--f3301-v20201203-v2.trace:
     gl-zink-anv-adl:
       label: [skip, flakes]
