@@ -1116,10 +1116,9 @@ branchinstruction:
    {
       brw_next_insn(p, $2);
       brw_asm_label_use_jip($5);
+      brw_eu_inst_set_unused_uip(p->devinfo, brw_last_inst);
       i965_asm_set_instruction_options(p, $6);
       brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
-
-      brw_set_src0(p, brw_last_inst, brw_imm_d(0x0));
 
       brw_pop_insn_state(p);
    }
@@ -1132,8 +1131,6 @@ branchinstruction:
       brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $2);
 
       brw_set_dest(p, brw_last_inst, retype(brw_null_reg(), BRW_TYPE_D));
-      if (p->devinfo->ver < 12)
-         brw_set_src0(p, brw_last_inst, brw_imm_d(0));
    }
    | predicate IF execsize JIP JUMP_LABEL UIP JUMP_LABEL instoptions
    {
@@ -1144,8 +1141,6 @@ branchinstruction:
       brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
 
       brw_set_dest(p, brw_last_inst, vec1(retype(brw_null_reg(), BRW_TYPE_D)));
-      if (p->devinfo->ver < 12)
-         brw_set_src0(p, brw_last_inst, brw_imm_d(0x0));
 
       brw_pop_insn_state(p);
    }
@@ -1166,6 +1161,7 @@ joininstruction:
    {
       brw_next_insn(p, $2);
       brw_asm_label_use_jip($5);
+      brw_eu_inst_set_unused_uip(p->devinfo, brw_last_inst);
       i965_asm_set_instruction_options(p, $6);
       brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
 
@@ -1185,7 +1181,6 @@ breakinstruction:
       brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
 
       brw_set_dest(p, brw_last_inst, retype(brw_null_reg(), BRW_TYPE_D));
-      brw_set_src0(p, brw_last_inst, brw_imm_d(0x0));
 
       brw_pop_insn_state(p);
    }
@@ -1199,10 +1194,6 @@ breakinstruction:
 
       brw_set_dest(p, brw_last_inst, retype(brw_null_reg(), BRW_TYPE_D));
 
-      if (p->devinfo->ver < 12) {
-         brw_set_src0(p, brw_last_inst, brw_imm_d(0x0));
-      }
-
       brw_pop_insn_state(p);
    }
    | predicate CONT execsize JIP JUMP_LABEL UIP JUMP_LABEL instoptions
@@ -1214,8 +1205,6 @@ breakinstruction:
       brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
       brw_set_dest(p, brw_last_inst, brw_ip_reg());
 
-      brw_set_src0(p, brw_last_inst, brw_imm_d(0x0));
-
       brw_pop_insn_state(p);
    }
    ;
@@ -1226,12 +1215,11 @@ loopinstruction:
    {
       brw_next_insn(p, $2);
       brw_asm_label_use_jip($5);
+      brw_eu_inst_set_unused_uip(p->devinfo, brw_last_inst);
       i965_asm_set_instruction_options(p, $6);
       brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
 
       brw_set_dest(p, brw_last_inst, retype(brw_null_reg(), BRW_TYPE_D));
-      if (p->devinfo->ver < 12)
-         brw_set_src0(p, brw_last_inst, brw_imm_d(0x0));
 
       brw_pop_insn_state(p);
    }

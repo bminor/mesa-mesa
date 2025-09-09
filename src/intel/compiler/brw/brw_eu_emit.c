@@ -1141,10 +1141,8 @@ brw_IF(struct brw_codegen *p, unsigned execute_size)
    /* Override the defaults for this instruction:
     */
    brw_set_dest(p, insn, vec1(retype(brw_null_reg(), BRW_TYPE_D)));
-   if (devinfo->ver < 12)
-      brw_set_src0(p, insn, brw_imm_d(0));
-   brw_eu_inst_set_jip(devinfo, insn, 0);
-   brw_eu_inst_set_uip(devinfo, insn, 0);
+
+   /* UIP and JIP set by patch_IF_ELSE(). */
 
    brw_eu_inst_set_exec_size(devinfo, insn, execute_size);
    brw_eu_inst_set_qtr_control(devinfo, insn, BRW_COMPRESSION_NONE);
@@ -1219,10 +1217,8 @@ brw_ELSE(struct brw_codegen *p)
    insn = next_insn(p, BRW_OPCODE_ELSE);
 
    brw_set_dest(p, insn, retype(brw_null_reg(), BRW_TYPE_D));
-   if (devinfo->ver < 12)
-      brw_set_src0(p, insn, brw_imm_d(0));
-   brw_eu_inst_set_jip(devinfo, insn, 0);
-   brw_eu_inst_set_uip(devinfo, insn, 0);
+
+   /* UIP and JIP set by patch_IF_ELSE(). */
 
    brw_eu_inst_set_qtr_control(devinfo, insn, BRW_COMPRESSION_NONE);
    brw_eu_inst_set_mask_control(devinfo, insn, BRW_MASK_ENABLE);
@@ -1270,12 +1266,12 @@ brw_ENDIF(struct brw_codegen *p)
    }
    if_inst = tmp;
 
-   brw_set_src0(p, insn, brw_imm_d(0));
-
    brw_eu_inst_set_qtr_control(devinfo, insn, BRW_COMPRESSION_NONE);
    brw_eu_inst_set_mask_control(devinfo, insn, BRW_MASK_ENABLE);
 
    brw_eu_inst_set_jip(devinfo, insn, 2);
+   brw_eu_inst_set_unused_uip(devinfo, insn);
+
    patch_IF_ELSE(p, if_inst, else_inst, insn);
 }
 
@@ -1287,7 +1283,9 @@ brw_BREAK(struct brw_codegen *p)
 
    insn = next_insn(p, BRW_OPCODE_BREAK);
    brw_set_dest(p, insn, retype(brw_null_reg(), BRW_TYPE_D));
-   brw_set_src0(p, insn, brw_imm_d(0x0));
+
+   /* UIP and JIP set by brw_set_uip_jip(). */
+
    brw_eu_inst_set_qtr_control(devinfo, insn, BRW_COMPRESSION_NONE);
    brw_eu_inst_set_exec_size(devinfo, insn, brw_get_default_exec_size(p));
 
@@ -1302,7 +1300,8 @@ brw_CONT(struct brw_codegen *p)
 
    insn = next_insn(p, BRW_OPCODE_CONTINUE);
    brw_set_dest(p, insn, brw_ip_reg());
-   brw_set_src0(p, insn, brw_imm_d(0x0));
+
+   /* UIP and JIP set by brw_set_uip_jip(). */
 
    brw_eu_inst_set_qtr_control(devinfo, insn, BRW_COMPRESSION_NONE);
    brw_eu_inst_set_exec_size(devinfo, insn, brw_get_default_exec_size(p));
@@ -1317,9 +1316,8 @@ brw_HALT(struct brw_codegen *p)
 
    insn = next_insn(p, BRW_OPCODE_HALT);
    brw_set_dest(p, insn, retype(brw_null_reg(), BRW_TYPE_D));
-   if (devinfo->ver < 12) {
-      brw_set_src0(p, insn, brw_imm_d(0x0));
-   }
+
+   /* UIP and JIP set by brw_set_uip_jip(). */
 
    brw_eu_inst_set_qtr_control(devinfo, insn, BRW_COMPRESSION_NONE);
    brw_eu_inst_set_exec_size(devinfo, insn, brw_get_default_exec_size(p));
@@ -1356,9 +1354,8 @@ brw_WHILE(struct brw_codegen *p)
    do_insn = get_inner_do_insn(p);
 
    brw_set_dest(p, insn, retype(brw_null_reg(), BRW_TYPE_D));
-   if (devinfo->ver < 12)
-      brw_set_src0(p, insn, brw_imm_d(0));
    brw_eu_inst_set_jip(devinfo, insn, br * (do_insn - insn));
+   brw_eu_inst_set_unused_uip(devinfo, insn);
 
    brw_eu_inst_set_exec_size(devinfo, insn, brw_get_default_exec_size(p));
 

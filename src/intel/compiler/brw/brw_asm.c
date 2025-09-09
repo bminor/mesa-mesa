@@ -63,6 +63,8 @@ brw_asm_label_use_jip(const char *name)
    brw_asm_label *label = brw_asm_label_lookup(name);
    int offset = p->next_insn_offset - sizeof(brw_eu_inst);
    util_dynarray_append(&label->jip_uses, offset);
+   /* Will be patched later. */
+   brw_eu_inst_set_jip(p->devinfo, brw_last_inst, 0);
 }
 
 void
@@ -71,6 +73,8 @@ brw_asm_label_use_uip(const char *name)
    brw_asm_label *label = brw_asm_label_lookup(name);
    int offset = p->next_insn_offset - sizeof(brw_eu_inst);
    util_dynarray_append(&label->uip_uses, offset);
+   /* Will be patched later. */
+   brw_eu_inst_set_uip(p->devinfo, brw_last_inst, 0);
 }
 
 static bool

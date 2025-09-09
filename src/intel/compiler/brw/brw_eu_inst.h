@@ -676,43 +676,6 @@ REG_TYPE(src2)
 #undef REG_TYPE
 
 /**
- * Flow control instruction bits:
- *  @{
- */
-static inline void
-brw_eu_inst_set_uip(const struct intel_device_info *devinfo,
-                 brw_eu_inst *inst, int32_t value)
-{
-   if (devinfo->ver >= 12)
-      brw_eu_inst_set_src1_is_imm(devinfo, inst, 1);
-
-   brw_eu_inst_set_bits(inst, 95, 64, (uint32_t)value);
-}
-
-static inline int32_t
-brw_eu_inst_uip(const struct intel_device_info *devinfo, const brw_eu_inst *inst)
-{
-   return brw_eu_inst_bits(inst, 95, 64);
-}
-
-static inline void
-brw_eu_inst_set_jip(const struct intel_device_info *devinfo,
-                 brw_eu_inst *inst, int32_t value)
-{
-   if (devinfo->ver >= 12)
-      brw_eu_inst_set_src0_is_imm(devinfo, inst, 1);
-
-   brw_eu_inst_set_bits(inst, 127, 96, (uint32_t)value);
-}
-
-static inline int32_t
-brw_eu_inst_jip(const struct intel_device_info *devinfo, const brw_eu_inst *inst)
-{
-   return brw_eu_inst_bits(inst, 127, 96);
-}
-/** @} */
-
-/**
  * SEND instructions:
  *  @{
  */
@@ -1124,6 +1087,66 @@ REG_TYPE(dst)
 REG_TYPE(src0)
 REG_TYPE(src1)
 #undef REG_TYPE
+
+
+/**
+ * Flow control instruction bits:
+ *  @{
+ */
+static inline void
+brw_eu_inst_set_uip(const struct intel_device_info *devinfo,
+                    brw_eu_inst *inst, int32_t value)
+{
+   if (devinfo->ver >= 12)
+      brw_eu_inst_set_src1_is_imm(devinfo, inst, 1);
+   else
+      brw_eu_inst_set_src1_file_type(devinfo, inst, IMM, BRW_TYPE_D);
+
+   brw_eu_inst_set_bits(inst, 95, 64, (uint32_t)value);
+}
+
+static inline int32_t
+brw_eu_inst_uip(const struct intel_device_info *devinfo, const brw_eu_inst *inst)
+{
+   return brw_eu_inst_bits(inst, 95, 64);
+}
+
+static inline void
+brw_eu_inst_set_unused_uip(const struct intel_device_info *devinfo,
+                           brw_eu_inst *inst)
+{
+   if (devinfo->ver < 12) {
+      /* When Src1 is not used, old versions required its file to be ARF and
+       * its type to match Src0 type.  See "Non-present Operands" in PRM for
+       * SKL, vol 7 "3D-Media-GPGPU".
+       *
+       * Note: in BRW we only use immediate sources for the branching
+       * instructions.
+       */
+      brw_eu_inst_set_src1_file_type(devinfo, inst, ARF, BRW_TYPE_D);
+      assert(brw_eu_inst_src0_reg_hw_type(devinfo, inst) ==
+             brw_eu_inst_src1_reg_hw_type(devinfo, inst));
+   }
+}
+
+static inline void
+brw_eu_inst_set_jip(const struct intel_device_info *devinfo,
+                    brw_eu_inst *inst, int32_t value)
+{
+   if (devinfo->ver >= 12)
+      brw_eu_inst_set_src0_is_imm(devinfo, inst, 1);
+   else
+      brw_eu_inst_set_src0_file_type(devinfo, inst, IMM, BRW_TYPE_D);
+
+   brw_eu_inst_set_bits(inst, 127, 96, (uint32_t)value);
+}
+
+static inline int32_t
+brw_eu_inst_jip(const struct intel_device_info *devinfo, const brw_eu_inst *inst)
+{
+   return brw_eu_inst_bits(inst, 127, 96);
+}
+/** @} */
 
 
 /* The AddrImm fields are split into two discontiguous sections on Gfx9+ */
