@@ -537,6 +537,17 @@ radv_cmd_buffer_resolve_rendering(struct radv_cmd_buffer *cmd_buffer)
 
    radv_describe_begin_render_pass_resolve(cmd_buffer);
 
+   /* Resolves happen before the end-of-subpass barriers get executed, so we have to make the
+    * attachment shader-readable.
+    */
+   struct radv_resolve_barrier barrier;
+   barrier.src_stage_mask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+   barrier.dst_stage_mask = VK_PIPELINE_STAGE_2_RESOLVE_BIT;
+   barrier.src_access_mask = (has_color_resolve ? VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT : 0) |
+                             (has_ds_resolve ? VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT : 0);
+   barrier.dst_access_mask = VK_ACCESS_2_SHADER_READ_BIT;
+   radv_emit_resolve_barrier(cmd_buffer, &barrier);
+
    if (render->ds_att.resolve_iview != NULL) {
       struct radv_image_view *src_iview = render->ds_att.iview;
       struct radv_image_view *dst_iview = render->ds_att.resolve_iview;
@@ -590,19 +601,9 @@ radv_cmd_buffer_resolve_rendering(struct radv_cmd_buffer *cmd_buffer)
    if (has_color_resolve) {
       uint32_t layer_count = render->layer_count;
       VkRect2D resolve_area = render->area;
-      struct radv_resolve_barrier barrier;
 
       if (render->view_mask)
          layer_count = util_last_bit(render->view_mask);
-
-      /* Resolves happen before the end-of-subpass barriers get executed, so we have to make the
-       * attachment shader-readable.
-       */
-      barrier.src_stage_mask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
-      barrier.dst_stage_mask = VK_PIPELINE_STAGE_2_RESOLVE_BIT;
-      barrier.src_access_mask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
-      barrier.dst_access_mask = VK_ACCESS_2_SHADER_READ_BIT;
-      radv_emit_resolve_barrier(cmd_buffer, &barrier);
 
       for (uint32_t i = 0; i < render->color_att_count; ++i) {
          if (render->color_att[i].resolve_iview == NULL)

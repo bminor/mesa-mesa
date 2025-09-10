@@ -506,15 +506,6 @@ radv_depth_stencil_resolve_rendering_cs(struct radv_cmd_buffer *cmd_buffer, VkIm
    if (render->view_mask)
       layer_count = util_last_bit(render->view_mask);
 
-   /* Resolves happen before the end-of-subpass barriers get executed, so
-    * we have to make the attachment shader-readable.
-    */
-   cmd_buffer->state.flush_bits |=
-      radv_src_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-                            VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, 0, NULL, NULL) |
-      radv_dst_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_SHADER_READ_BIT, 0, NULL,
-                            NULL);
-
    struct radv_image_view *src_iview = render->ds_att.iview;
    VkImageLayout src_image_layout =
       aspects & VK_IMAGE_ASPECT_DEPTH_BIT ? render->ds_att.layout : render->ds_att.stencil_layout;
