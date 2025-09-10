@@ -731,6 +731,14 @@ static bool pco_ra_func(pco_func *func, pco_ra_ctx *ctx)
       }
    }
 
+   /* If there are instructions left with any unused dests that aren't/couldn't
+    * be DCEd (e.g. because of side effects), ensure their range ends are setup
+    * to avoid missing overlaps and clobbering regs.
+    */
+   for (unsigned var = 0; var < num_vars; ++var)
+      if (live_ranges[var].start != ~0U && live_ranges[var].end == 0)
+         live_ranges[var].end = live_ranges[var].start;
+
    /* Build interference graph from overlapping live ranges. */
    for (unsigned var0 = 0; var0 < num_vars; ++var0) {
       for (unsigned var1 = var0 + 1; var1 < num_vars; ++var1) {
