@@ -690,6 +690,7 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
       .EXT_conditional_rendering = true,
       .EXT_conservative_rasterization = pdev->info.gfx_level >= GFX9,
       .EXT_custom_border_color = true,
+      .EXT_custom_resolve = true,
       .EXT_debug_marker = instance->vk.trace_mode & RADV_TRACE_MODE_RGP,
       .EXT_depth_bias_control = true,
       .EXT_depth_clamp_zero_one = true,
@@ -1434,6 +1435,9 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
 
       /* VK_VALVE_video_encode_rgb_conversion */
       .videoEncodeRgbConversion = true,
+
+      /* VK_EXT_custom_resolve */
+      .customResolve = true,
    };
 }
 
@@ -1748,10 +1752,10 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
       .maxDescriptorSetUpdateAfterBindInputAttachments = max_descriptor_set_size,
       /* We support all of the depth resolve modes */
       .supportedDepthResolveModes = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT | VK_RESOLVE_MODE_AVERAGE_BIT |
-                                    VK_RESOLVE_MODE_MIN_BIT | VK_RESOLVE_MODE_MAX_BIT,
+                                    VK_RESOLVE_MODE_MIN_BIT | VK_RESOLVE_MODE_MAX_BIT | VK_RESOLVE_MODE_CUSTOM_BIT_EXT,
       /* Average doesn't make sense for stencil so we don't support that */
-      .supportedStencilResolveModes =
-         VK_RESOLVE_MODE_SAMPLE_ZERO_BIT | VK_RESOLVE_MODE_MIN_BIT | VK_RESOLVE_MODE_MAX_BIT,
+      .supportedStencilResolveModes = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT | VK_RESOLVE_MODE_MIN_BIT |
+                                      VK_RESOLVE_MODE_MAX_BIT | VK_RESOLVE_MODE_CUSTOM_BIT_EXT,
       .independentResolveNone = true,
       .independentResolve = true,
       /* GFX6-8 only support single channel min/max filter. */
