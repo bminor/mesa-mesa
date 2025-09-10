@@ -103,6 +103,7 @@ static const struct fd6_format formats[PIPE_FORMAT_COUNT] = {
    _TC(R8G8_SRGB,    8_8_UNORM,                 WZYX),
 
    _T_(L8A8_UNORM,   8_8_UNORM,                 WZYX),
+   _T_(L8A8_SNORM,   8_8_SNORM,                 WZYX),
    _T_(L8A8_UINT,    8_8_UINT,                  WZYX),
    _T_(L8A8_SINT,    8_8_SINT,                  WZYX),
 
