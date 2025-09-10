@@ -2508,14 +2508,15 @@ create_drm_physical_device(struct vk_instance *vk_instance, struct _drmDevice *d
 #ifndef _WIN32
    bool supported_device = false;
 
-   if (!(device->available_nodes & (1 << DRM_NODE_RENDER)) || device->bustype != DRM_BUS_PCI)
+   if (!(device->available_nodes & (1 << DRM_NODE_RENDER)))
       return VK_ERROR_INCOMPATIBLE_DRIVER;
 
 #ifdef HAVE_AMDGPU_VIRTIO
-   supported_device |= device->deviceinfo.pci->vendor_id == VIRTGPU_PCI_VENDOR_ID;
+   supported_device |= device->bustype == DRM_BUS_PCI && device->deviceinfo.pci->vendor_id == VIRTGPU_PCI_VENDOR_ID;
+   supported_device |= device->bustype == DRM_BUS_PLATFORM; /* virtio-mmio */
 #endif
 
-   supported_device |= device->deviceinfo.pci->vendor_id == ATI_VENDOR_ID;
+   supported_device |= device->bustype == DRM_BUS_PCI && device->deviceinfo.pci->vendor_id == ATI_VENDOR_ID;
 
    if (!supported_device)
       return VK_ERROR_INCOMPATIBLE_DRIVER;
