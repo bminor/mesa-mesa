@@ -226,6 +226,12 @@ fd_blitter_blit(struct fd_context *ctx, const struct pipe_blit_info *info)
    /* Initialize the sampler view. */
    default_src_texture(&src_templ, src, info->src.level);
    src_templ.format = info->src.format;
+   if (info->swizzle_enable) {
+      src_templ.swizzle_r = info->swizzle[0];
+      src_templ.swizzle_g = info->swizzle[1];
+      src_templ.swizzle_b = info->swizzle[2];
+      src_templ.swizzle_a = info->swizzle[3];
+   }
    src_view = pipe->create_sampler_view(pipe, src, &src_templ);
 
    /* Note: a2xx does not support fp16: */
