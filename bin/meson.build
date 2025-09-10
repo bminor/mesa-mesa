@@ -1,7 +1,6 @@
 # Copyright © 2017 Eric Engestrom
 # SPDX-License-Identifier: MIT
 
-git_sha1_gen_py = files('git_sha1_gen.py')
 gen_vs_module_defs_py = files('gen_vs_module_defs.py')
 gen_vs_module_defs_normal_command = [
   prog_python, gen_vs_module_defs_py,
