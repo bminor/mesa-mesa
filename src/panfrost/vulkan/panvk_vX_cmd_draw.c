@@ -737,7 +737,7 @@ panvk_per_arch(cmd_prepare_draw_sysvals)(struct panvk_cmd_buffer *cmdbuf,
    if (dyn_gfx_state_dirty(cmdbuf, CB_BLEND_CONSTANTS)) {
       for (unsigned i = 0; i < ARRAY_SIZE(cb->blend_constants); i++) {
          set_gfx_sysval(cmdbuf, dirty_sysvals, blend.constants[i],
-                        CLAMP(cb->blend_constants[i], 0.0f, 1.0f));
+                        cb->blend_constants[i]);
       }
    }
 
