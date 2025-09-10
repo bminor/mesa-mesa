@@ -6928,6 +6928,18 @@ radv_BeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBegi
              */
             render->has_hiz_his = true;
          }
+
+         const VkRenderingAttachmentLocationInfo *ral_info =
+            vk_find_struct_const(pBeginInfo->pInheritanceInfo->pNext, RENDERING_ATTACHMENT_LOCATION_INFO);
+         if (ral_info) {
+            radv_CmdSetRenderingAttachmentLocations(commandBuffer, ral_info);
+         }
+
+         const VkRenderingInputAttachmentIndexInfo *ria_info =
+            vk_find_struct_const(pBeginInfo->pInheritanceInfo->pNext, RENDERING_INPUT_ATTACHMENT_INDEX_INFO);
+         if (ria_info) {
+            radv_CmdSetRenderingInputAttachmentIndices(commandBuffer, ria_info);
+         }
       }
 
       cmd_buffer->state.inherited_pipeline_statistics = pBeginInfo->pInheritanceInfo->pipelineStatistics;
