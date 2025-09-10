@@ -473,7 +473,7 @@ zink_blit(struct pipe_context *pctx,
       ctx->in_rp = false;
       ctx->rp_changed = true;
       ctx->queries_disabled = true;
-      ctx->pipeline_changed[0] = true;
+      ctx->pipeline_changed[ZINK_PIPELINE_GFX] = true;
       zink_reset_ds3_states(ctx);
       zink_select_draw_vbo(ctx);
    }
@@ -521,7 +521,7 @@ zink_blit(struct pipe_context *pctx,
       ctx->dynamic_fb.tc_info.data = tc_data;
       ctx->bs->cmdbuf = cmdbuf;
       ctx->gfx_pipeline_state.pipeline = pipeline;
-      ctx->pipeline_changed[0] = true;
+      ctx->pipeline_changed[ZINK_PIPELINE_GFX] = true;
       ctx->ds3_states = ds3_states;
       zink_select_draw_vbo(ctx);
    }

@@ -652,7 +652,8 @@ zink_descriptor_program_init(struct zink_context *ctx, struct zink_program *pg)
    for (unsigned i = 0; i < ZINK_DESCRIPTOR_BASE_TYPES; i++)
       wd_count[i + 1] = pg->dd.pool_key[i] ? pg->dd.pool_key[i]->layout->num_bindings : 0;
 
-   VkDescriptorUpdateTemplateEntry *push_entries[2] = {
+   enum zink_pipeline_idx pidx = pg->is_compute ? ZINK_PIPELINE_COMPUTE : ZINK_PIPELINE_GFX;
+   VkDescriptorUpdateTemplateEntry *push_entries[] = {
       ctx->dd.push_entries,
       &ctx->dd.compute_push_entry,
    };
@@ -667,7 +668,7 @@ zink_descriptor_program_init(struct zink_context *ctx, struct zink_program *pg)
       assert(wd_count[i]);
       template[i].descriptorUpdateEntryCount = wd_count[i];
       if (is_push)
-         template[i].pDescriptorUpdateEntries = push_entries[pg->is_compute];
+         template[i].pDescriptorUpdateEntries = push_entries[pidx];
       else
          template[i].pDescriptorUpdateEntries = entries[i - 1];
       template[i].templateType = types[i];
@@ -1162,10 +1163,11 @@ update_separable(struct zink_context *ctx, struct zink_program *pg)
 
 /* updates the mask of changed_sets and binds the mask of bind_sets */
 static void
-zink_descriptors_update_masked_buffer(struct zink_context *ctx, bool is_compute, uint8_t changed_sets, uint8_t bind_sets)
+zink_descriptors_update_masked_buffer(struct zink_context *ctx, enum zink_pipeline_idx pidx, uint8_t changed_sets, uint8_t bind_sets)
 {
    struct zink_screen *screen = zink_screen(ctx->base.screen);
    struct zink_batch_state *bs = ctx->bs;
+   bool is_compute = pidx == ZINK_PIPELINE_COMPUTE;
    struct zink_program *pg = is_compute ? &ctx->curr_compute->base : &ctx->curr_program->base;
 
    /* skip if no descriptors are updated */
@@ -1236,11 +1238,12 @@ zink_descriptors_update_masked_buffer(struct zink_context *ctx, bool is_compute,
 }
 
 /* updates the mask of changed_sets and binds the mask of bind_sets */
-void
-zink_descriptors_update_masked(struct zink_context *ctx, bool is_compute, uint8_t changed_sets, uint8_t bind_sets)
+static void
+zink_descriptors_update_masked(struct zink_context *ctx, enum zink_pipeline_idx pidx, uint8_t changed_sets, uint8_t bind_sets)
 {
    struct zink_screen *screen = zink_screen(ctx->base.screen);
    struct zink_batch_state *bs = ctx->bs;
+   bool is_compute = pidx == ZINK_PIPELINE_COMPUTE;
    struct zink_program *pg = is_compute ? &ctx->curr_compute->base : &ctx->curr_program->base;
    VkDescriptorSet desc_sets[ZINK_DESCRIPTOR_BASE_TYPES];
 
@@ -1309,26 +1312,27 @@ bind_bindless_db(struct zink_context *ctx, struct zink_program *pg)
  * - always called from driver thread
  */
 void
-zink_descriptors_update(struct zink_context *ctx, bool is_compute)
+zink_descriptors_update(struct zink_context *ctx, enum zink_pipeline_idx pidx)
 {
    struct zink_batch_state *bs = ctx->bs;
+   bool is_compute = pidx == ZINK_PIPELINE_COMPUTE;
    struct zink_program *pg = is_compute ? &ctx->curr_compute->base : &ctx->curr_program->base;
    struct zink_screen *screen = zink_screen(ctx->base.screen);
    bool have_KHR_push_descriptor = screen->info.have_KHR_push_descriptor;
 
-   bool batch_changed = !bs->dd.pg[is_compute];
+   bool batch_changed = !bs->dd.pg[pidx];
    if (batch_changed) {
       /* update all sets and bind null sets */
-      ctx->dd.state_changed[is_compute] = pg->dd.binding_usage & BITFIELD_MASK(ZINK_DESCRIPTOR_TYPE_UNIFORMS);
-      ctx->dd.push_state_changed[is_compute] = !!pg->dd.push_usage || ctx->dd.has_fbfetch != bs->dd.has_fbfetch;
+      ctx->dd.state_changed[pidx] = pg->dd.binding_usage & BITFIELD_MASK(ZINK_DESCRIPTOR_TYPE_UNIFORMS);
+      ctx->dd.push_state_changed[pidx] = !!pg->dd.push_usage || ctx->dd.has_fbfetch != bs->dd.has_fbfetch;
    }
 
    if (!is_compute) {
       struct zink_gfx_program *prog = (struct zink_gfx_program*)pg;
       if (prog->is_separable) {
          /* force all descriptors update on next pass: separables use different layouts */
-         ctx->dd.state_changed[is_compute] = BITFIELD_MASK(ZINK_DESCRIPTOR_TYPE_UNIFORMS);
-         ctx->dd.push_state_changed[is_compute] = true;
+         ctx->dd.state_changed[pidx] = BITFIELD_MASK(ZINK_DESCRIPTOR_TYPE_UNIFORMS);
+         ctx->dd.push_state_changed[pidx] = true;
          update_separable(ctx, pg);
          if (pg->dd.bindless)
             bind_bindless_db(ctx, pg);
@@ -1336,34 +1340,34 @@ zink_descriptors_update(struct zink_context *ctx, bool is_compute)
       }
    }
 
-   if (pg != bs->dd.pg[is_compute]) {
+   if (pg != bs->dd.pg[pidx]) {
       /* if we don't already know that we have to update all sets,
        * check to see if any dsls changed
        *
        * also always update the dsl pointers on program change
        */
-       for (unsigned i = 0; i < ARRAY_SIZE(bs->dd.dsl[is_compute]); i++) {
+       for (unsigned i = 0; i < ARRAY_SIZE(bs->dd.dsl[pidx]); i++) {
           /* push set is already detected, start at 1 */
-          if (bs->dd.dsl[is_compute][i] != pg->dsl[i + 1])
-             ctx->dd.state_changed[is_compute] |= BITFIELD_BIT(i);
-          bs->dd.dsl[is_compute][i] = pg->dsl[i + 1];
+          if (bs->dd.dsl[pidx][i] != pg->dsl[i + 1])
+             ctx->dd.state_changed[pidx] |= BITFIELD_BIT(i);
+          bs->dd.dsl[pidx][i] = pg->dsl[i + 1];
        }
-       ctx->dd.push_state_changed[is_compute] |= bs->dd.push_usage[is_compute] != pg->dd.push_usage;
-       bs->dd.push_usage[is_compute] = pg->dd.push_usage;
+       ctx->dd.push_state_changed[pidx] |= bs->dd.push_usage[pidx] != pg->dd.push_usage;
+       bs->dd.push_usage[pidx] = pg->dd.push_usage;
    }
 
-   uint8_t changed_sets = pg->dd.binding_usage & ctx->dd.state_changed[is_compute];
+   uint8_t changed_sets = pg->dd.binding_usage & ctx->dd.state_changed[pidx];
    /*
     * when binding a pipeline, the pipeline can correctly access any previously bound
     * descriptor sets which were bound with compatible pipeline layouts
     * VK 14.2.2
     */
-   uint8_t bind_sets = bs->dd.pg[is_compute] && bs->dd.compat_id[is_compute] == pg->compat_id ? 0 : pg->dd.binding_usage;
+   uint8_t bind_sets = bs->dd.pg[pidx] && bs->dd.compat_id[pidx] == pg->compat_id ? 0 : pg->dd.binding_usage;
 
    if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB) {
       size_t check_size = 0;
-      if (pg->dd.push_usage && ctx->dd.push_state_changed[is_compute])
-         check_size += ctx->dd.db_size[is_compute];
+      if (pg->dd.push_usage && ctx->dd.push_state_changed[pidx])
+         check_size += ctx->dd.db_size[pidx];
       for (unsigned i = 0; i < ZINK_DESCRIPTOR_BASE_TYPES; i++) {
          if (changed_sets & BITFIELD_BIT(i))
             check_size += pg->dd.db_size[i];
@@ -1372,21 +1376,21 @@ zink_descriptors_update(struct zink_context *ctx, bool is_compute)
       if (bs->dd.db_offset + check_size >= bs->dd.db->base.b.width0) {
          enlarge_db(ctx);
          changed_sets = pg->dd.binding_usage;
-         ctx->dd.push_state_changed[is_compute] = true;
+         ctx->dd.push_state_changed[pidx] = true;
       }
 
       if (!bs->dd.db_bound)
          zink_batch_bind_db(ctx);
    }
 
-   if (pg->dd.push_usage && (ctx->dd.push_state_changed[is_compute] || bind_sets)) {
+   if (pg->dd.push_usage && (ctx->dd.push_state_changed[pidx] || bind_sets)) {
       if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB) {
          uint32_t index = 0;
-         uint64_t offset = ctx->dd.push_state_changed[is_compute] ?
+         uint64_t offset = ctx->dd.push_state_changed[pidx] ?
                            bs->dd.db_offset :
                            bs->dd.cur_db_offset[ZINK_DESCRIPTOR_TYPE_UNIFORMS];
-         if (ctx->dd.push_state_changed[is_compute]) {
-            assert(bs->dd.db->base.b.width0 > bs->dd.db_offset + ctx->dd.db_size[is_compute]);
+         if (ctx->dd.push_state_changed[pidx]) {
+            assert(bs->dd.db->base.b.width0 > bs->dd.db_offset + ctx->dd.db_size[pidx]);
             for (unsigned i = 0; i < (is_compute ? 1 : ZINK_GFX_SHADER_COUNT); i++) {
                VkDescriptorGetInfoEXT info;
                info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT;
@@ -1414,7 +1418,7 @@ zink_descriptors_update(struct zink_context *ctx, bool is_compute)
                }
             }
             bs->dd.cur_db_offset[ZINK_DESCRIPTOR_TYPE_UNIFORMS] = bs->dd.db_offset;
-            bs->dd.db_offset += ctx->dd.db_size[is_compute];
+            bs->dd.db_offset += ctx->dd.db_size[pidx];
          }
          VKCTX(CmdSetDescriptorBufferOffsetsEXT)(bs->cmdbuf,
                                                  is_compute ? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -1424,31 +1428,31 @@ zink_descriptors_update(struct zink_context *ctx, bool is_compute)
                                                  &offset);
       } else {
          if (have_KHR_push_descriptor) {
-            if (ctx->dd.push_state_changed[is_compute])
+            if (ctx->dd.push_state_changed[pidx])
                VKCTX(CmdPushDescriptorSetWithTemplateKHR)(bs->cmdbuf, pg->dd.templates[0],
                                                          pg->layout, 0, ctx);
          } else {
-            if (ctx->dd.push_state_changed[is_compute]) {
-               struct zink_descriptor_pool *pool = check_push_pool_alloc(ctx, &bs->dd.push_pool[pg->is_compute], bs, pg->is_compute);
+            if (ctx->dd.push_state_changed[pidx]) {
+               struct zink_descriptor_pool *pool = check_push_pool_alloc(ctx, &bs->dd.push_pool[is_compute], bs, is_compute);
                VkDescriptorSet push_set = get_descriptor_set(pool);
                if (!push_set)
                   mesa_loge("ZINK: failed to get push descriptor set! prepare to crash!");
                VKCTX(UpdateDescriptorSetWithTemplate)(screen->dev, push_set, pg->dd.templates[0], ctx);
-               bs->dd.sets[is_compute][0] = push_set;
+               bs->dd.sets[pidx][0] = push_set;
             }
-            assert(bs->dd.sets[is_compute][0]);
+            assert(bs->dd.sets[pidx][0]);
             VKCTX(CmdBindDescriptorSets)(bs->cmdbuf,
                                     is_compute ? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                    pg->layout, 0, 1, &bs->dd.sets[is_compute][0],
+                                    pg->layout, 0, 1, &bs->dd.sets[pidx][0],
                                     0, NULL);
          }
       }
    }
-   ctx->dd.push_state_changed[is_compute] = false;
+   ctx->dd.push_state_changed[pidx] = false;
    if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB)
-      zink_descriptors_update_masked_buffer(ctx, is_compute, changed_sets, bind_sets);
+      zink_descriptors_update_masked_buffer(ctx, pidx, changed_sets, bind_sets);
    else
-      zink_descriptors_update_masked(ctx, is_compute, changed_sets, bind_sets);
+      zink_descriptors_update_masked(ctx, pidx, changed_sets, bind_sets);
    /* bindless descriptors are context-based and get updated elsewhere */
    if (pg->dd.bindless && unlikely(!ctx->dd.bindless_bound)) {
       if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB) {
@@ -1460,10 +1464,10 @@ zink_descriptors_update(struct zink_context *ctx, bool is_compute)
       }
       ctx->dd.bindless_bound = true;
    }
-   bs->dd.pg[is_compute] = pg;
-   ctx->dd.pg[is_compute] = pg;
-   bs->dd.compat_id[is_compute] = pg->compat_id;
-   ctx->dd.state_changed[is_compute] = 0;
+   bs->dd.pg[pidx] = pg;
+   ctx->dd.pg[pidx] = pg;
+   bs->dd.compat_id[pidx] = pg->compat_id;
+   ctx->dd.state_changed[pidx] = 0;
 }
 
 /* called from gallium descriptor change hooks, e.g., set_sampler_views */

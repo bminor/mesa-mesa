@@ -34,6 +34,8 @@ extern "C" {
 
 #define ZINK_DESCRIPTOR_COMPACT 2
 
+enum zink_pipeline_idx;
+
 
 #define ZINK_BINDLESS_IS_BUFFER(HANDLE) (HANDLE >= ZINK_MAX_BINDLESS_HANDLES)
 
@@ -166,7 +168,7 @@ void
 zink_descriptor_program_deinit(struct zink_screen *screen, struct zink_program *pg);
 
 void
-zink_descriptors_update(struct zink_context *ctx, bool is_compute);
+zink_descriptors_update(struct zink_context *ctx, enum zink_pipeline_idx pidx);
 
 
 void
@@ -187,8 +189,6 @@ zink_descriptors_init(struct zink_context *ctx);
 void
 zink_descriptors_deinit(struct zink_context *ctx);
 
-void
-zink_descriptors_update_masked(struct zink_context *ctx, bool is_compute, uint8_t changed_sets, uint8_t bind_sets);
 #ifdef __cplusplus
 }
 #endif

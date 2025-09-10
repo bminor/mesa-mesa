@@ -100,6 +100,12 @@
 #define VKCTX(fn) zink_screen(ctx->base.screen)->vk.fn
 #define VKSCR(fn) screen->vk.fn
 
+enum zink_pipeline_idx {
+   ZINK_PIPELINE_GFX,
+   ZINK_PIPELINE_COMPUTE,
+   ZINK_PIPELINE_MAX,
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -425,8 +431,8 @@ struct zink_descriptor_data {
    bool bindless_bound;
    bool bindless_init;
    bool has_fbfetch;
-   bool push_state_changed[2]; //gfx, compute
-   uint8_t state_changed[2]; //gfx, compute
+   bool push_state_changed[ZINK_PIPELINE_MAX]; //gfx, compute
+   uint8_t state_changed[ZINK_PIPELINE_MAX]; //gfx, compute
    struct zink_descriptor_layout_key *push_layout_keys[2]; //gfx, compute
    struct zink_descriptor_layout *push_dsl[2]; //gfx, compute
    VkDescriptorUpdateTemplate push_template[2]; //gfx, compute
@@ -448,13 +454,13 @@ struct zink_descriptor_data {
       } db;
    };
 
-   struct zink_program *pg[2]; //gfx, compute
+   struct zink_program *pg[ZINK_PIPELINE_MAX]; //gfx, compute
 
    VkDescriptorUpdateTemplateEntry push_entries[MESA_SHADER_STAGES]; //gfx+fbfetch
    VkDescriptorUpdateTemplateEntry compute_push_entry;
 
    /* push descriptor layout size and binding offsets */
-   uint32_t db_size[2]; //gfx, compute
+   uint32_t db_size[ZINK_PIPELINE_MAX]; //gfx, compute
    uint32_t db_offset[ZINK_GFX_SHADER_COUNT + 1]; //gfx + fbfetch
    /* compute offset is always 0 */
 };
@@ -516,18 +522,18 @@ struct zink_batch_descriptor_data {
    struct util_dynarray pools[ZINK_DESCRIPTOR_BASE_TYPES];
    struct zink_descriptor_pool_multi push_pool[2]; //gfx, compute
    /* the current program (for descriptor updating) */
-   struct zink_program *pg[2]; //gfx, compute
+   struct zink_program *pg[ZINK_PIPELINE_MAX]; //gfx, compute
    /* the current pipeline compatibility id (for pipeline compatibility rules) */
-   uint32_t compat_id[2]; //gfx, compute
+   uint32_t compat_id[ZINK_PIPELINE_MAX]; //gfx, compute
    /* the current set layout */
-   VkDescriptorSetLayout dsl[2][ZINK_DESCRIPTOR_BASE_TYPES]; //gfx, compute
+   VkDescriptorSetLayout dsl[ZINK_PIPELINE_MAX][ZINK_DESCRIPTOR_BASE_TYPES]; //gfx, compute
    union {
       /* the current set for a given type; used for rebinding if pipeline compat id changes and current set must be rebound */
-      VkDescriptorSet sets[2][ZINK_DESCRIPTOR_NON_BINDLESS_TYPES]; //gfx, compute
-      uint64_t cur_db_offset[ZINK_DESCRIPTOR_NON_BINDLESS_TYPES]; //gfx, compute; the current offset of a descriptor buffer for rebinds
+      VkDescriptorSet sets[ZINK_PIPELINE_MAX][ZINK_DESCRIPTOR_NON_BINDLESS_TYPES]; //gfx, compute
+      uint64_t cur_db_offset[ZINK_DESCRIPTOR_NON_BINDLESS_TYPES]; //the current offset of a descriptor buffer for rebinds
    };
    /* mask of push descriptor usage */
-   unsigned push_usage[2]; //gfx, compute
+   unsigned push_usage[ZINK_PIPELINE_MAX]; //gfx, compute
 
    struct zink_resource *db; //the descriptor buffer for a given type
    uint8_t *db_map; //the host map for the buffer
@@ -1741,7 +1747,7 @@ struct zink_context {
    struct zink_depth_stencil_alpha_state *dsa_state;
 
    bool has_swapchain;
-   bool pipeline_changed[2]; //gfx, compute
+   bool pipeline_changed[ZINK_PIPELINE_MAX]; //gfx, compute
 
    struct zink_shader *gfx_stages[ZINK_GFX_SHADER_COUNT];
    struct zink_shader *last_vertex_stage;

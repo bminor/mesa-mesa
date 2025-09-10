@@ -3798,7 +3798,7 @@ flush_batch(struct zink_context *ctx, bool sync)
       zink_start_batch(ctx);
       if (screen->info.have_EXT_transform_feedback && ctx->num_so_targets)
          ctx->dirty_so_targets = true;
-      ctx->pipeline_changed[0] = ctx->pipeline_changed[1] = true;
+      memset(ctx->pipeline_changed, 1, sizeof(ctx->pipeline_changed));
       zink_select_draw_vbo(ctx);
       zink_select_launch_grid(ctx);
 
@@ -5519,7 +5519,7 @@ zink_context_create(struct pipe_screen *pscreen, void *priv, unsigned flags)
       goto fail;
 
    ctx->flags = flags;
-   ctx->pipeline_changed[0] = ctx->pipeline_changed[1] = true;
+   memset(ctx->pipeline_changed, 1, sizeof(ctx->pipeline_changed));
    ctx->gfx_pipeline_state.dirty = true;
    ctx->gfx_pipeline_state.dyn_state2.vertices_per_patch = 1;
    ctx->gfx_pipeline_state.uses_dynamic_stride = screen->info.have_EXT_extended_dynamic_state ||
