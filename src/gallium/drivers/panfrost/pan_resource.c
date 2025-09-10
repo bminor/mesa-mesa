@@ -617,6 +617,21 @@ panfrost_should_afbc(struct panfrost_device *dev,
    if (!pan_afbc_supports_format(dev->arch, fmt))
       return false;
 
+   /* According to the GL spec, -2^(b-1) and -2^(b-1)+1 both map to -1 in the
+    * SNORM representation. The Mali implementation seems to clamp the value
+    * to the [-2^(b-1)+1, 2^(b-1)-1] range, which is problematic in our
+    * staging_resource (LINEAR) -> final_resource (AFBC) transfer path, because
+    * we need a bit-exact copy (typically fails tests like
+    * dEQP-GLES31.functional.copy_image.non_compressed.viewclass_16_bits.rg8_snorm_r16ui.texture2d_to_renderbuffer
+    * if we don't).
+    * FIXME: We could get away with src/dst view format adjustments
+    * (SNORM->UNORM) in our blits, but we'd have to clearly identify which
+    * copies/blits we want to act like that and which ones we don't, and this is
+    * far from obvious when looking at the code, so let's filter out AFBC(SNORM)
+    * for now. */
+   if (util_format_is_snorm(fmt))
+      return false;
+
    /* AFBC does not support layered (GLES3 style) multisampling. Use
     * EXT_multisampled_render_to_texture instead */
    if (pres->base.nr_samples > 1)
