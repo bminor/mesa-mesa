@@ -276,15 +276,21 @@ void radv_cmd_buffer_resolve_rendering_cs(struct radv_cmd_buffer *cmd_buffer, st
                                           VkImageLayout src_layout, struct radv_image_view *dst_iview,
                                           VkImageLayout dst_layout, const VkImageResolve2 *region);
 
-void radv_depth_stencil_resolve_rendering_cs(struct radv_cmd_buffer *cmd_buffer, VkImageAspectFlags aspects,
-                                             VkResolveModeFlagBits resolve_mode);
+void radv_meta_resolve_depth_stencil_cs(struct radv_cmd_buffer *cmd_buffer, struct radv_image *src_image,
+                                        VkFormat src_format, VkImageLayout src_image_layout,
+                                        struct radv_image *dst_image, VkFormat dst_format,
+                                        VkImageLayout dst_image_layout, VkResolveModeFlagBits resolve_mode,
+                                        const VkImageResolve2 *region);
 
 void radv_cmd_buffer_resolve_rendering_fs(struct radv_cmd_buffer *cmd_buffer, struct radv_image_view *src_iview,
                                           VkImageLayout src_layout, struct radv_image_view *dst_iview,
                                           VkImageLayout dst_layout);
 
-void radv_depth_stencil_resolve_rendering_fs(struct radv_cmd_buffer *cmd_buffer, VkImageAspectFlags aspects,
-                                             VkResolveModeFlagBits resolve_mode);
+void radv_meta_resolve_depth_stencil_fs(struct radv_cmd_buffer *cmd_buffer, struct radv_image *src_image,
+                                        VkFormat src_format, VkImageLayout src_image_layout,
+                                        struct radv_image *dst_image, VkFormat dst_format,
+                                        VkImageLayout dst_image_layout, VkResolveModeFlagBits resolve_mode,
+                                        const VkImageResolve2 *region, uint32_t view_mask);
 
 VkResult radv_meta_get_noop_pipeline_layout(struct radv_device *device, VkPipelineLayout *layout_out);
 

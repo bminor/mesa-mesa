@@ -366,7 +366,7 @@ radv_cmd_buffer_resolve_rendering_cs(struct radv_cmd_buffer *cmd_buffer, struct 
                                                          VK_ACCESS_2_SHADER_WRITE_BIT, 0, NULL, NULL);
 }
 
-static void
+void
 radv_meta_resolve_depth_stencil_cs(struct radv_cmd_buffer *cmd_buffer, struct radv_image *src_image,
                                    VkFormat src_format, VkImageLayout src_image_layout, struct radv_image *dst_image,
                                    VkFormat dst_format, VkImageLayout dst_image_layout,
@@ -494,52 +494,4 @@ radv_meta_resolve_depth_stencil_cs(struct radv_cmd_buffer *cmd_buffer, struct ra
 
       cmd_buffer->state.flush_bits |= radv_clear_htile(cmd_buffer, dst_image, &range, htile_value, false);
    }
-}
-
-void
-radv_depth_stencil_resolve_rendering_cs(struct radv_cmd_buffer *cmd_buffer, VkImageAspectFlags aspects,
-                                        VkResolveModeFlagBits resolve_mode)
-{
-   const struct radv_rendering_state *render = &cmd_buffer->state.render;
-   uint32_t layer_count = render->layer_count;
-
-   if (render->view_mask)
-      layer_count = util_last_bit(render->view_mask);
-
-   struct radv_image_view *src_iview = render->ds_att.iview;
-   VkImageLayout src_image_layout =
-      aspects & VK_IMAGE_ASPECT_DEPTH_BIT ? render->ds_att.layout : render->ds_att.stencil_layout;
-
-   struct radv_image_view *dst_iview = render->ds_att.resolve_iview;
-   VkImageLayout dst_image_layout =
-      aspects & VK_IMAGE_ASPECT_DEPTH_BIT ? render->ds_att.resolve_layout : render->ds_att.stencil_resolve_layout;
-
-   const VkImageResolve2 region = {
-      .sType = VK_STRUCTURE_TYPE_IMAGE_RESOLVE_2,
-      .extent =
-         {
-            .width = render->area.extent.width,
-            .height = render->area.extent.height,
-            .depth = layer_count,
-         },
-      .srcSubresource =
-         (VkImageSubresourceLayers){
-            .aspectMask = aspects,
-            .mipLevel = 0,
-            .baseArrayLayer = src_iview->vk.base_array_layer,
-            .layerCount = layer_count,
-         },
-      .dstSubresource =
-         (VkImageSubresourceLayers){
-            .aspectMask = aspects,
-            .mipLevel = dst_iview->vk.base_mip_level,
-            .baseArrayLayer = dst_iview->vk.base_array_layer,
-            .layerCount = layer_count,
-         },
-      .srcOffset = {render->area.offset.x, render->area.offset.y, 0},
-      .dstOffset = {render->area.offset.x, render->area.offset.y, 0},
-   };
-
-   radv_meta_resolve_depth_stencil_cs(cmd_buffer, src_iview->image, src_iview->vk.format, src_image_layout,
-                                      dst_iview->image, dst_iview->vk.format, dst_image_layout, resolve_mode, &region);
 }

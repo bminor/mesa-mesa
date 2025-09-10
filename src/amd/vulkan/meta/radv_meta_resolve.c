@@ -524,6 +524,11 @@ radv_cmd_buffer_resolve_rendering(struct radv_cmd_buffer *cmd_buffer)
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_rendering_state *render = &cmd_buffer->state.render;
    enum radv_resolve_method resolve_method = pdev->info.gfx_level >= GFX11 ? RESOLVE_FRAGMENT : RESOLVE_HW;
+   uint32_t layer_count = render->layer_count;
+   VkRect2D resolve_area = render->area;
+
+   if (render->view_mask)
+      layer_count = util_last_bit(render->view_mask);
 
    bool has_color_resolve = false;
    for (uint32_t i = 0; i < render->color_att_count; ++i) {
@@ -556,24 +561,68 @@ radv_cmd_buffer_resolve_rendering(struct radv_cmd_buffer *cmd_buffer)
                                       dst_iview->vk.base_mip_level, VK_IMAGE_LAYOUT_UNDEFINED, cmd_buffer,
                                       &resolve_method);
 
-      if ((src_iview->vk.aspects & VK_IMAGE_ASPECT_DEPTH_BIT) && render->ds_att.resolve_mode != VK_RESOLVE_MODE_NONE) {
+      VkImageResolve2 region = {
+         .sType = VK_STRUCTURE_TYPE_IMAGE_RESOLVE_2,
+         .extent =
+            {
+               .width = resolve_area.extent.width,
+               .height = resolve_area.extent.height,
+               .depth = layer_count,
+            },
+         .srcSubresource =
+            (VkImageSubresourceLayers){
+               .aspectMask = src_iview->vk.aspects,
+               .mipLevel = src_iview->vk.base_mip_level,
+               .baseArrayLayer = src_iview->vk.base_array_layer,
+               .layerCount = layer_count,
+            },
+         .dstSubresource =
+            (VkImageSubresourceLayers){
+               .aspectMask = dst_iview->vk.aspects,
+               .mipLevel = dst_iview->vk.base_mip_level,
+               .baseArrayLayer = dst_iview->vk.base_array_layer,
+               .layerCount = layer_count,
+            },
+         .srcOffset = {resolve_area.offset.x, resolve_area.offset.y, 0},
+         .dstOffset = {resolve_area.offset.x, resolve_area.offset.y, 0},
+      };
+
+      if ((region.srcSubresource.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) &&
+          render->ds_att.resolve_mode != VK_RESOLVE_MODE_NONE) {
+         VkImageResolve2 depth_region = region;
+         depth_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+         depth_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+
          if (resolve_method == RESOLVE_FRAGMENT) {
-            radv_depth_stencil_resolve_rendering_fs(cmd_buffer, VK_IMAGE_ASPECT_DEPTH_BIT, render->ds_att.resolve_mode);
+            radv_meta_resolve_depth_stencil_fs(cmd_buffer, src_iview->image, src_iview->vk.format,
+                                               render->ds_att.layout, dst_iview->image, dst_iview->vk.format,
+                                               render->ds_att.resolve_layout, render->ds_att.resolve_mode,
+                                               &depth_region, render->view_mask);
          } else {
             assert(resolve_method == RESOLVE_COMPUTE);
-            radv_depth_stencil_resolve_rendering_cs(cmd_buffer, VK_IMAGE_ASPECT_DEPTH_BIT, render->ds_att.resolve_mode);
+            radv_meta_resolve_depth_stencil_cs(
+               cmd_buffer, src_iview->image, src_iview->vk.format, render->ds_att.layout, dst_iview->image,
+               dst_iview->vk.format, render->ds_att.resolve_layout, render->ds_att.resolve_mode, &depth_region);
          }
       }
 
-      if ((src_iview->vk.aspects & VK_IMAGE_ASPECT_STENCIL_BIT) &&
+      if ((region.srcSubresource.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) &&
           render->ds_att.stencil_resolve_mode != VK_RESOLVE_MODE_NONE) {
+         VkImageResolve2 stencil_region = region;
+         stencil_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+         stencil_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+
          if (resolve_method == RESOLVE_FRAGMENT) {
-            radv_depth_stencil_resolve_rendering_fs(cmd_buffer, VK_IMAGE_ASPECT_STENCIL_BIT,
-                                                    render->ds_att.stencil_resolve_mode);
+            radv_meta_resolve_depth_stencil_fs(cmd_buffer, src_iview->image, src_iview->vk.format,
+                                               render->ds_att.stencil_layout, dst_iview->image, dst_iview->vk.format,
+                                               render->ds_att.stencil_resolve_layout,
+                                               render->ds_att.stencil_resolve_mode, &stencil_region, render->view_mask);
          } else {
             assert(resolve_method == RESOLVE_COMPUTE);
-            radv_depth_stencil_resolve_rendering_cs(cmd_buffer, VK_IMAGE_ASPECT_STENCIL_BIT,
-                                                    render->ds_att.stencil_resolve_mode);
+            radv_meta_resolve_depth_stencil_cs(cmd_buffer, src_iview->image, src_iview->vk.format,
+                                               render->ds_att.stencil_layout, dst_iview->image, dst_iview->vk.format,
+                                               render->ds_att.stencil_resolve_layout,
+                                               render->ds_att.stencil_resolve_mode, &stencil_region);
          }
       }
 
@@ -599,12 +648,6 @@ radv_cmd_buffer_resolve_rendering(struct radv_cmd_buffer *cmd_buffer)
    }
 
    if (has_color_resolve) {
-      uint32_t layer_count = render->layer_count;
-      VkRect2D resolve_area = render->area;
-
-      if (render->view_mask)
-         layer_count = util_last_bit(render->view_mask);
-
       for (uint32_t i = 0; i < render->color_att_count; ++i) {
          if (render->color_att[i].resolve_iview == NULL)
             continue;
