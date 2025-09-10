@@ -23,6 +23,7 @@
 #include "panvk_image.h"
 #include "panvk_image_view.h"
 #include "panvk_instance.h"
+#include "panvk_meta.h"
 #include "panvk_priv_bo.h"
 #include "panvk_shader.h"
 

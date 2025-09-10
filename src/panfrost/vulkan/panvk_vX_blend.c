@@ -17,6 +17,7 @@
 #include "panvk_blend.h"
 #include "panvk_cmd_buffer.h"
 #include "panvk_device.h"
+#include "panvk_meta.h"
 #include "panvk_shader.h"
 
 struct panvk_blend_shader_key {

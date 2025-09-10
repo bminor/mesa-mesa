@@ -7,6 +7,7 @@
 #include "panvk_entrypoints.h"
 #include "panvk_event.h"
 #include "panvk_instr.h"
+#include "panvk_meta.h"
 
 #include "util/bitscan.h"
 

@@ -6,6 +6,10 @@
 #ifndef PANVK_META_H
 #define PANVK_META_H
 
+#ifndef PAN_ARCH
+#error "PAN_ARCH must be defined"
+#endif
+
 #include "panvk_image.h"
 #include "panvk_mempool.h"
 
@@ -144,7 +148,7 @@ panvk_meta_copy_get_image_properties(struct panvk_image *img)
    return props;
 }
 
-#if defined(PAN_ARCH) && PAN_ARCH < 9
+#if PAN_ARCH < 9
 struct panvk_cmd_buffer;
 struct panvk_descriptor_state;
 struct panvk_device;
@@ -158,13 +162,11 @@ VkResult panvk_per_arch(meta_get_copy_desc_job)(
    uint32_t attrib_buf_idx_offset, struct pan_ptr *job_desc);
 #endif
 
-#if defined(PAN_ARCH)
 void panvk_per_arch(transition_image_layout_sync_scope)(
    const VkImageMemoryBarrier2 *barrier,
    VkPipelineStageFlags2 *out_stages, VkAccessFlags2 *out_access);
 void panvk_per_arch(cmd_transition_image_layout)(
    VkCommandBuffer _cmdbuf,
    const VkImageMemoryBarrier2 *barrier);
-#endif
 
 #endif

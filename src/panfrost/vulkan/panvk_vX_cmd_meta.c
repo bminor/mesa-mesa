@@ -6,6 +6,7 @@
 
 #include "panvk_cmd_meta.h"
 #include "panvk_entrypoints.h"
+#include "panvk_meta.h"
 #include "panvk_tracepoints.h"
 #if PAN_ARCH >= 10
 #include "csf/panvk_instr.h"

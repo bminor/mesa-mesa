@@ -6,6 +6,7 @@
 #include "panvk_android.h"
 
 #include "panvk_device.h"
+#include "panvk_image.h"
 
 #include "vndk/hardware_buffer.h"
 #include "vulkan/vk_android_native_buffer.h"

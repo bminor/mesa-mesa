@@ -16,7 +16,6 @@
 #include "panvk_instance.h"
 #include "panvk_macros.h"
 #include "panvk_mempool.h"
-#include "panvk_meta.h"
 #include "panvk_physical_device.h"
 #include "panvk_utrace_perfetto.h"
 

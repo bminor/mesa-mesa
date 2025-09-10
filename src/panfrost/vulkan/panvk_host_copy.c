@@ -9,6 +9,7 @@
 #include "pan_tiling.h"
 #include "panvk_image.h"
 
+#include "vk_format.h"
 #include "vk_object.h"
 #include "vk_util.h"
 

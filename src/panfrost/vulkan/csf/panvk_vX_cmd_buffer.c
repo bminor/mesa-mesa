@@ -41,6 +41,7 @@
 #include "panvk_entrypoints.h"
 #include "panvk_instance.h"
 #include "panvk_instr.h"
+#include "panvk_meta.h"
 #include "panvk_physical_device.h"
 #include "panvk_priv_bo.h"
 #include "panvk_tracepoints.h"
