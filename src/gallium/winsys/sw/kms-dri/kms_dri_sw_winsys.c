@@ -221,6 +221,55 @@ kms_sw_displaytarget_create(struct sw_winsys *ws,
    return NULL;
 }
 
+static struct sw_displaytarget *
+kms_sw_displaytarget_create_mapped(struct sw_winsys *ws,
+                                   unsigned tex_usage,
+                                   enum pipe_format format,
+                                   unsigned width, unsigned height,
+                                   unsigned stride,
+                                   void *data,
+                                   struct winsys_handle *whandle)
+{
+   struct kms_sw_winsys *kms_sw = kms_sw_winsys(ws);
+   struct kms_sw_displaytarget *kms_sw_dt;
+   unsigned nblocksy, size;
+
+   kms_sw_dt = CALLOC_STRUCT(kms_sw_displaytarget);
+   if (!kms_sw_dt)
+      return NULL;
+
+   list_inithead(&kms_sw_dt->planes);
+   kms_sw_dt->ref_count = 1;
+   kms_sw_dt->mapped = data;
+   kms_sw_dt->ro_mapped = MAP_FAILED;
+
+   kms_sw_dt->format = format;
+
+   mtx_init(&kms_sw_dt->map_lock, mtx_plain);
+
+   nblocksy = util_format_get_nblocksy(format, height);
+   size = stride * nblocksy;
+   kms_sw_dt->size = size;
+   kms_sw_dt->handle = -1;
+   struct kms_sw_plane *plane = get_plane(kms_sw_dt, format, width, height,
+                                          stride, 0);
+   if (!plane) {
+      FREE(kms_sw_dt);
+      return NULL;
+   }
+
+   list_add(&kms_sw_dt->link, &kms_sw->bo_list);
+
+   if (whandle) {
+      uint32_t handle = -1;
+
+      drmPrimeFDToHandle(kms_sw->fd, whandle->handle, &handle);
+      kms_sw_dt->handle = handle;
+   }
+
+   return sw_displaytarget(plane);
+}
+
 static void
 kms_sw_displaytarget_destroy(struct sw_winsys *ws,
                              struct sw_displaytarget *dt)
@@ -228,7 +277,6 @@ kms_sw_displaytarget_destroy(struct sw_winsys *ws,
    struct kms_sw_winsys *kms_sw = kms_sw_winsys(ws);
    struct kms_sw_plane *plane = kms_sw_plane(dt);
    struct kms_sw_displaytarget *kms_sw_dt = plane->dt;
-   struct drm_mode_destroy_dumb destroy_req;
 
    kms_sw_dt->ref_count --;
    if (kms_sw_dt->ref_count > 0)
@@ -238,9 +286,13 @@ kms_sw_displaytarget_destroy(struct sw_winsys *ws,
       DEBUG_PRINT("KMS-DEBUG: leaked map buffer %u\n", kms_sw_dt->handle);
    }
 
-   memset(&destroy_req, 0, sizeof destroy_req);
-   destroy_req.handle = kms_sw_dt->handle;
-   drmIoctl(kms_sw->fd, DRM_IOCTL_MODE_DESTROY_DUMB, &destroy_req);
+   if (kms_sw_dt->handle != -1) {
+      struct drm_mode_destroy_dumb destroy_req;
+
+      memset(&destroy_req, 0, sizeof destroy_req);
+      destroy_req.handle = kms_sw_dt->handle;
+      drmIoctl(kms_sw->fd, DRM_IOCTL_MODE_DESTROY_DUMB, &destroy_req);
+   }
 
    list_del(&kms_sw_dt->link);
 
@@ -526,6 +578,7 @@ kms_dri_create_winsys(int fd)
 
    /* screen texture functions */
    ws->base.displaytarget_create = kms_sw_displaytarget_create;
+   ws->base.displaytarget_create_mapped = kms_sw_displaytarget_create_mapped;
    ws->base.displaytarget_destroy = kms_sw_displaytarget_destroy;
    ws->base.displaytarget_from_handle = kms_sw_displaytarget_from_handle;
    ws->base.displaytarget_get_handle = kms_sw_displaytarget_get_handle;
