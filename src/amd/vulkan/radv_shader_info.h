@@ -89,7 +89,6 @@ struct radv_shader_info {
    bool uses_invocation_id;
    bool uses_prim_id;
    uint8_t wave_size;
-   uint8_t ballot_bit_size;
    struct radv_userdata_locations user_sgprs_locs;
    bool is_ngg;
    bool is_ngg_passthrough;

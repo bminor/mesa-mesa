@@ -502,16 +502,6 @@ radv_get_wave_size(struct radv_device *device, mesa_shader_stage stage, const st
       return pdev->ge_wave_size;
 }
 
-static uint8_t
-radv_get_ballot_bit_size(struct radv_device *device, mesa_shader_stage stage, const struct radv_shader_info *info,
-                         const struct radv_shader_stage_key *stage_key)
-{
-   if (stage_key->subgroup_required_size)
-      return stage_key->subgroup_required_size * 32;
-
-   return 64;
-}
-
 static uint32_t
 radv_compute_esgs_itemsize(const struct radv_device *device, uint32_t num_varyings)
 {
@@ -1191,7 +1181,6 @@ radv_nir_shader_info_pass(struct radv_device *device, const struct nir_shader *n
    }
 
    info->wave_size = radv_get_wave_size(device, nir->info.stage, info, stage_key);
-   info->ballot_bit_size = radv_get_ballot_bit_size(device, nir->info.stage, info, stage_key);
 
    switch (nir->info.stage) {
    case MESA_SHADER_COMPUTE:
