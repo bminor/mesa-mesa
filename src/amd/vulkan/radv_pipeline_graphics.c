@@ -2265,6 +2265,15 @@ radv_fill_shader_info_ngg(struct radv_device *device, struct radv_shader_stage *
          stages[MESA_SHADER_GEOMETRY].info.is_ngg = false;
       }
    }
+
+   /* Now that we know if ngg is used for geometry shaders, determine the subgroup size. */
+   if (stages[MESA_SHADER_GEOMETRY].nir) {
+      unsigned wave_size = stages[MESA_SHADER_GEOMETRY].info.is_ngg
+                              ? stages[MESA_SHADER_GEOMETRY].nir->info.min_subgroup_size
+                              : stages[MESA_SHADER_GEOMETRY].nir->info.max_subgroup_size;
+      stages[MESA_SHADER_GEOMETRY].nir->info.max_subgroup_size = wave_size;
+      stages[MESA_SHADER_GEOMETRY].nir->info.min_subgroup_size = wave_size;
+   }
 }
 
 static bool

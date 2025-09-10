@@ -481,27 +481,6 @@ radv_set_vs_output_param(struct radv_device *device, const struct nir_shader *ni
    outinfo->prim_param_exports = total_param_exports - outinfo->param_exports;
 }
 
-static uint8_t
-radv_get_wave_size(struct radv_device *device, mesa_shader_stage stage, const struct radv_shader_info *info,
-                   const struct radv_shader_stage_key *stage_key)
-{
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-
-   if (stage_key->subgroup_required_size)
-      return stage_key->subgroup_required_size * 32;
-
-   if (stage == MESA_SHADER_GEOMETRY && !info->is_ngg)
-      return 64;
-   else if (stage == MESA_SHADER_COMPUTE || stage == MESA_SHADER_TASK)
-      return info->wave_size;
-   else if (stage == MESA_SHADER_FRAGMENT)
-      return pdev->ps_wave_size;
-   else if (mesa_shader_stage_is_rt(stage))
-      return pdev->rt_wave_size;
-   else
-      return pdev->ge_wave_size;
-}
-
 static uint32_t
 radv_compute_esgs_itemsize(const struct radv_device *device, uint32_t num_varyings)
 {
@@ -920,32 +899,6 @@ gather_shader_info_cs(struct radv_device *device, const nir_shader *nir, const s
                       struct radv_shader_info *info)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   unsigned default_wave_size = pdev->cs_wave_size;
-   if (info->cs.uses_rt)
-      default_wave_size = pdev->rt_wave_size;
-
-   unsigned local_size = nir->info.workgroup_size[0] * nir->info.workgroup_size[1] * nir->info.workgroup_size[2];
-
-   /* Games don't always request full subgroups when they should, which can cause bugs if cswave32
-    * is enabled. Furthermore, if cooperative matrices or subgroup info are used, we can't transparently change
-    * the subgroup size.
-    */
-   const bool require_full_subgroups =
-      stage_key->subgroup_require_full || nir->info.cs.has_cooperative_matrix ||
-      (default_wave_size == 32 && nir->info.uses_wide_subgroup_intrinsics && local_size % RADV_SUBGROUP_SIZE == 0);
-
-   const unsigned required_subgroup_size = stage_key->subgroup_required_size * 32;
-
-   if (required_subgroup_size) {
-      info->wave_size = required_subgroup_size;
-   } else if (require_full_subgroups) {
-      info->wave_size = RADV_SUBGROUP_SIZE;
-   } else if (pdev->info.gfx_level >= GFX10 && local_size <= 32) {
-      /* Use wave32 for small workgroups. */
-      info->wave_size = 32;
-   } else {
-      info->wave_size = default_wave_size;
-   }
 
    if (pdev->info.has_cs_regalloc_hang_bug) {
       info->cs.regalloc_hang_bug = info->cs.block_size[0] * info->cs.block_size[1] * info->cs.block_size[2] > 256;
@@ -1180,7 +1133,11 @@ radv_nir_shader_info_pass(struct radv_device *device, const struct nir_shader *n
       break;
    }
 
-   info->wave_size = radv_get_wave_size(device, nir->info.stage, info, stage_key);
+   info->wave_size = nir->info.min_subgroup_size;
+   assert(info->wave_size == nir->info.max_subgroup_size);
+   assert(info->wave_size == 32 || info->wave_size == 64);
+   assert(pdev->info.gfx_level >= GFX10 || info->wave_size == 64);
+   assert(nir->info.stage != MESA_SHADER_GEOMETRY || info->is_ngg || info->wave_size == 64);
 
    switch (nir->info.stage) {
    case MESA_SHADER_COMPUTE:

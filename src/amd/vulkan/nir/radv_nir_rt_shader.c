@@ -1754,6 +1754,9 @@ radv_build_traversal_shader(struct radv_device *device, struct radv_ray_tracing_
    b.shader->info.internal = false;
    b.shader->info.workgroup_size[0] = 8;
    b.shader->info.workgroup_size[1] = pdev->rt_wave_size == 64 ? 8 : 4;
+   b.shader->info.api_subgroup_size = pdev->rt_wave_size;
+   b.shader->info.max_subgroup_size = pdev->rt_wave_size;
+   b.shader->info.min_subgroup_size = pdev->rt_wave_size;
    b.shader->info.shared_size = pdev->rt_wave_size * MAX_STACK_ENTRY_COUNT * sizeof(uint32_t);
    struct rt_variables vars = create_rt_variables(b.shader, device, create_flags, false);
 
