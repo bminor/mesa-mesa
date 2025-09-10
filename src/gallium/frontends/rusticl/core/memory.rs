@@ -1963,7 +1963,7 @@ impl Image {
         let pixel_size = self.image_format.pixel_size().unwrap();
 
         let tx;
-        let src_row_pitch;
+        let mut src_row_pitch;
         let src_slice_pitch;
         if let Some(Mem::Buffer(buffer)) = self.parent() {
             src_row_pitch = self.image_desc.image_row_pitch;
@@ -1981,6 +1981,10 @@ impl Image {
             tx = self.tx_image(ctx, &bx, RWFlags::RD)?;
             src_row_pitch = tx.row_pitch() as usize;
             src_slice_pitch = tx.slice_pitch();
+
+            if self.mem_type == CL_MEM_OBJECT_IMAGE1D_ARRAY {
+                src_row_pitch = src_slice_pitch;
+            }
         };
 
         perf_warning!("clEnqueueReadImage and clEnqueueMapImage stall the GPU");
