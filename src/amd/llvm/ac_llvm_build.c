@@ -38,15 +38,13 @@ struct ac_llvm_flow {
  */
 void ac_llvm_context_init(struct ac_llvm_context *ctx, struct ac_llvm_compiler *compiler,
                           const struct radeon_info *info, enum ac_float_mode float_mode,
-                          unsigned wave_size, unsigned ballot_mask_bits, bool exports_color_null,
-                          bool exports_mrtz)
+                          unsigned wave_size, bool exports_color_null, bool exports_mrtz)
 {
    ctx->context = LLVMContextCreate();
 
    ctx->info = info;
    ctx->gfx_level = info->gfx_level;
    ctx->wave_size = wave_size;
-   ctx->ballot_mask_bits = ballot_mask_bits;
    ctx->float_mode = float_mode;
    ctx->exports_color_null = exports_color_null;
    ctx->exports_mrtz = exports_mrtz;
@@ -79,7 +77,6 @@ void ac_llvm_context_init(struct ac_llvm_context *ctx, struct ac_llvm_compiler *
    ctx->v4f32 = LLVMVectorType(ctx->f32, 4);
    ctx->v8i32 = LLVMVectorType(ctx->i32, 8);
    ctx->iN_wavemask = LLVMIntTypeInContext(ctx->context, ctx->wave_size);
-   ctx->iN_ballotmask = LLVMIntTypeInContext(ctx->context, ballot_mask_bits);
 
    ctx->i8_0 = LLVMConstInt(ctx->i8, 0, false);
    ctx->i8_1 = LLVMConstInt(ctx->i8, 1, false);

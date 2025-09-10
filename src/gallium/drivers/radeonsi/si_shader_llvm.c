@@ -117,7 +117,7 @@ static void si_llvm_context_init(struct si_shader_context *ctx, struct si_screen
    ctx->compiler = compiler;
 
    ac_llvm_context_init(&ctx->ac, compiler, &sscreen->info, float_mode,
-                        wave_size, 64, exports_color_null, exports_mrtz);
+                        wave_size, exports_color_null, exports_mrtz);
 }
 
 void si_llvm_create_func(struct si_shader_context *ctx, const char *name, LLVMTypeRef *return_types,
