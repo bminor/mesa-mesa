@@ -66,8 +66,8 @@ panvk_image_can_use_afbc(
     * - tiling is set to linear
     * - this is a 1D image
     * - this is a 3D image on a pre-v7 GPU
-    * - this is a mutable format image on v7 (the BGR emulation we have with
-    *   the texture swizzle gets in the way).
+    * - this is a mutable format image on v7- (format re-interpretation is
+    *   not possible on Bifrost hardware).
     *
     * Some of these checks are redundant with tests provided by the AFBC mod
     * handler when pan_image_test_props() is called, but we need them because
@@ -82,7 +82,7 @@ panvk_image_can_use_afbc(
           pan_afbc_supports_format(arch, pfmt) &&
           tiling == VK_IMAGE_TILING_OPTIMAL && type != VK_IMAGE_TYPE_1D &&
           (type != VK_IMAGE_TYPE_3D || arch >= 7) &&
-          (!(flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) || arch != 7);
+          (!(flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) || arch >= 9);
 }
 
 static enum mali_texture_dimension
