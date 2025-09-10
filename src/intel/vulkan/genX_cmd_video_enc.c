@@ -2375,8 +2375,8 @@ anv_h265_encode_video(struct anv_cmd_buffer *cmd, const VkVideoEncodeInfoKHR *en
       }
 
       anv_batch_emit(&cmd->batch, GENX(VDENC_WALKER_STATE), vdenc_walker) {
-         uint32_t slice_block_rows = DIV_ROUND_UP(src_img->vk.extent.height, ANV_MAX_H265_CTB_SIZE);
-         uint32_t slice_block_cols = DIV_ROUND_UP(src_img->vk.extent.width, ANV_MAX_H265_CTB_SIZE);
+         uint32_t slice_block_rows = DIV_ROUND_UP(height_in_pix, ANV_MAX_H265_CTB_SIZE);
+         uint32_t slice_block_cols = DIV_ROUND_UP(width_in_pix, ANV_MAX_H265_CTB_SIZE);
          uint32_t num_ctu_in_slice = slice_block_cols * slice_block_rows;
 
          vdenc_walker.MBLCUStartYPosition = slice_header->slice_segment_address % ctb_w;
