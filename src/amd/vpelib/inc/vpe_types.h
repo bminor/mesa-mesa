@@ -1,4 +1,4 @@
-/* Copyright 2022 Advanced Micro Devices, Inc.
+/* Copyright 2022-2025 Advanced Micro Devices, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -746,7 +746,8 @@ struct vpe_tonemap_params {
     enum vpe_color_primaries   lut_out_gamut;        /**< Output color primary */
     uint16_t                   input_pq_norm_factor; /**< Perceptual Quantizer normalization
                                                         factor. */
-    uint16_t                   lut_dim;              /**< Size of one dimension of the 3D-LUT */
+    uint16_t                   lut_dim;              /**< Size of one dimension of the 3D-LUT data*/
+    uint16_t                   lut_container_dim;    /**< Size of one dimension of the 3D-LUT container*/
     /** @brief 3D LUT settings
      */
     union {
