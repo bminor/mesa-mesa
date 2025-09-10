@@ -231,7 +231,7 @@ pp_filter_setup_out(struct pp_program *p, struct pipe_resource *out)
 void
 pp_filter_end_pass(struct pp_program *p)
 {
-   pipe_sampler_view_reference(&p->view, NULL);
+   pipe_sampler_view_release_ptr(&p->view);
 }
 
 /**
