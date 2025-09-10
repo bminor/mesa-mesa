@@ -585,6 +585,12 @@ static bool pvr_physical_device_get_properties(
       .optimalBufferCopyRowPitchAlignment = PVR_STORAGE_BUFFER_OFFSET_ALIGNMENT,
       .nonCoherentAtomSize = 1U,
 
+      /* Vulkan 1.1 */
+      .subgroupSize = 1,
+      .subgroupSupportedStages = VK_SHADER_STAGE_COMPUTE_BIT,
+      .subgroupSupportedOperations = VK_SUBGROUP_FEATURE_BASIC_BIT,
+      .subgroupQuadOperationsInAllStages = false,
+
       /* Vulkan 1.0 / VK_KHR_maintenance2 */
       .pointClippingBehavior =
          VK_POINT_CLIPPING_BEHAVIOR_USER_CLIP_PLANES_ONLY,

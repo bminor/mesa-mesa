@@ -43,7 +43,8 @@ static nir_def *lower_barrier(nir_builder *b, nir_instr *instr, void *cb_data)
    unsigned wg_size = info->workgroup_size[0] * info->workgroup_size[1] *
                       info->workgroup_size[2];
 
-   if (wg_size <= ROGUE_MAX_INSTANCES_PER_TASK || exec_scope == SCOPE_NONE)
+   if (wg_size <= ROGUE_MAX_INSTANCES_PER_TASK || exec_scope == SCOPE_NONE ||
+       exec_scope == SCOPE_SUBGROUP)
       return NIR_LOWER_INSTR_PROGRESS_REPLACE;
 
    /* TODO: We might be able to re-use barrier counters. */
@@ -170,4 +171,74 @@ bool pco_nir_lower_atomics(nir_shader *shader, pco_data *data)
                                         is_lowerable_atomic,
                                         lower_atomic,
                                         &data->common.uses.usclib);
+}
+
+static nir_def *
+lower_subgroup_intrinsic(nir_builder *b, nir_instr *instr, void *cb_data)
+{
+   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+   assert(intr->def.num_components == 1);
+
+   switch (intr->intrinsic) {
+   case nir_intrinsic_load_subgroup_size:
+      return nir_imm_int(b, 1);
+
+   case nir_intrinsic_load_subgroup_invocation:
+      return nir_imm_int(b, 0);
+
+   case nir_intrinsic_load_num_subgroups:
+      return nir_imm_int(b,
+                         b->shader->info.workgroup_size[0] *
+                            b->shader->info.workgroup_size[1] *
+                            b->shader->info.workgroup_size[2]);
+
+   case nir_intrinsic_load_subgroup_id:
+      return nir_load_local_invocation_index(b);
+
+   case nir_intrinsic_first_invocation:
+      return nir_imm_int(b, 0);
+
+   case nir_intrinsic_elect:
+      return nir_imm_true(b);
+
+   default:
+      break;
+   }
+
+   UNREACHABLE("");
+}
+
+static bool is_subgroup_intrinsic(const nir_instr *instr,
+                                  UNUSED const void *cb_data)
+{
+   if (instr->type != nir_instr_type_intrinsic)
+      return false;
+
+   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+   switch (intr->intrinsic) {
+   case nir_intrinsic_load_subgroup_size:
+   case nir_intrinsic_load_subgroup_invocation:
+   case nir_intrinsic_load_num_subgroups:
+   case nir_intrinsic_load_subgroup_id:
+   case nir_intrinsic_first_invocation:
+   case nir_intrinsic_elect:
+      return true;
+
+   default:
+      break;
+   }
+
+   return false;
+}
+
+bool pco_nir_lower_subgroups(nir_shader *shader)
+{
+   shader->info.api_subgroup_size = 1;
+   shader->info.min_subgroup_size = 1;
+   shader->info.max_subgroup_size = 1;
+
+   return nir_shader_lower_instructions(shader,
+                                        is_subgroup_intrinsic,
+                                        lower_subgroup_intrinsic,
+                                        NULL);
 }

@@ -547,6 +547,8 @@ void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
                });
    }
 
+   NIR_PASS(_, nir, pco_nir_lower_subgroups);
+
    NIR_PASS(_,
             nir,
             nir_lower_io_vars_to_temporaries,
