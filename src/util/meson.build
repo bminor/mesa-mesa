@@ -404,6 +404,7 @@ if with_tests
     'tests/int_min_max.cpp',
     'tests/linear_test.cpp',
     'tests/list_test.cpp',
+    'tests/lut_test.cpp',
     'tests/mesa-sha1_test.cpp',
     'tests/os_mman_test.cpp',
     'tests/perf/u_trace_test.cpp',
