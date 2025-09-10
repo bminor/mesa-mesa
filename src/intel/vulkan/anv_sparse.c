@@ -686,11 +686,18 @@ anv_trtt_first_bind_init(struct anv_device *device)
       return VK_SUCCESS;
    }
 
+   /* We lock around execbuf because the algorithm we use for building the
+    * list of unique buffers isn't thread-safe. Lock the device mutex
+    * before the TRTT mutex for consistency with the order of other paths
+    * (e.g., anv_queue_submit_cmd_buffers_locked()).
+    */
+   pthread_mutex_lock(&device->mutex);
    simple_mtx_lock(&trtt->mutex);
 
    /* This means we have already initialized the first bind. */
    if (likely(trtt->l3_addr)) {
       simple_mtx_unlock(&trtt->mutex);
+      pthread_mutex_unlock(&device->mutex);
       return VK_SUCCESS;
    }
 
@@ -736,6 +743,7 @@ out:
       trtt->l3_addr = 0;
 
    simple_mtx_unlock(&trtt->mutex);
+   pthread_mutex_unlock(&device->mutex);
    return result;
 }
 
@@ -765,6 +773,12 @@ anv_sparse_bind_trtt(struct anv_device *device,
    if (result != VK_SUCCESS)
       goto out_async;
 
+   /* We lock around execbuf because the algorithm we use for building the
+    * list of unique buffers isn't thread-safe. Lock the device mutex
+    * before the TRTT mutex for consistency with the order that locking is
+    * done around other paths (e.g., anv_queue_submit_cmd_buffers_locked()).
+    */
+   pthread_mutex_lock(&device->mutex);
    simple_mtx_lock(&trtt->mutex);
 
    /* Do this so we can avoid reallocs later. */
@@ -871,6 +885,7 @@ anv_sparse_bind_trtt(struct anv_device *device,
    list_addtail(&submit->link, &trtt->in_flight_batches);
 
    simple_mtx_unlock(&trtt->mutex);
+   pthread_mutex_unlock(&device->mutex);
 
    ANV_RMV(vm_binds, device, sparse_submit->binds, sparse_submit->binds_len);
 
@@ -881,6 +896,7 @@ anv_sparse_bind_trtt(struct anv_device *device,
    util_dynarray_fini(&l3l2_binds);
  out_add_bind:
    simple_mtx_unlock(&trtt->mutex);
+   pthread_mutex_unlock(&device->mutex);
    anv_async_submit_fini(&submit->base);
  out_async:
    vk_free(&device->vk.alloc, submit);

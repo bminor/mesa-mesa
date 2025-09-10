@@ -1386,8 +1386,8 @@ can_chain_query_pools(struct anv_query_pool *p1, struct anv_query_pool *p2)
 }
 
 static VkResult
-anv_queue_submit_sparse_bind_locked(struct anv_queue *queue,
-                                    struct vk_queue_submit *submit)
+anv_queue_submit_sparse_bind(struct anv_queue *queue,
+                             struct vk_queue_submit *submit)
 {
    struct anv_device *device = queue->device;
    VkResult result;
@@ -1647,16 +1647,16 @@ anv_queue_submit(struct vk_queue *vk_queue,
 
    uint64_t start_ts = intel_ds_begin_submit(&queue->ds);
 
-   pthread_mutex_lock(&device->mutex);
    if (submit->buffer_bind_count ||
        submit->image_opaque_bind_count ||
        submit->image_bind_count) {
-      result = anv_queue_submit_sparse_bind_locked(queue, submit);
+      result = anv_queue_submit_sparse_bind(queue, submit);
    } else {
+      pthread_mutex_lock(&device->mutex);
       result = anv_queue_submit_cmd_buffers_locked(queue, submit,
                                                    utrace_submit);
+      pthread_mutex_unlock(&device->mutex);
    }
-   pthread_mutex_unlock(&device->mutex);
 
    intel_ds_end_submit(&queue->ds, start_ts);
    intel_ds_device_process(&device->ds, false);
