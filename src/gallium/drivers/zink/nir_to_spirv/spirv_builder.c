@@ -1764,6 +1764,28 @@ spirv_builder_import(struct spirv_builder *b, const char *name)
    return result;
 }
 
+void
+spirv_builder_emit_mesh_outputs(struct spirv_builder *b, SpvId vtx_count, SpvId prim_count)
+{
+   spirv_buffer_prepare(&b->instructions, b->mem_ctx, 3);
+   spirv_buffer_emit_word(&b->instructions, SpvOpSetMeshOutputsEXT | (3 << 16));
+   spirv_buffer_emit_word(&b->instructions, vtx_count);
+   spirv_buffer_emit_word(&b->instructions, prim_count);
+}
+
+void
+spirv_builder_emit_launch_mesh(struct spirv_builder *b, SpvId x, SpvId y, SpvId z, SpvId task_block)
+{
+   unsigned num_words = 4 + !!task_block;
+   spirv_buffer_prepare(&b->instructions, b->mem_ctx, num_words);
+   spirv_buffer_emit_word(&b->instructions, SpvOpEmitMeshTasksEXT | (num_words << 16));
+   spirv_buffer_emit_word(&b->instructions, x);
+   spirv_buffer_emit_word(&b->instructions, y);
+   spirv_buffer_emit_word(&b->instructions, z);
+   if (task_block)
+      spirv_buffer_emit_word(&b->instructions, task_block);
+}
+
 size_t
 spirv_builder_get_num_words(struct spirv_builder *b)
 {

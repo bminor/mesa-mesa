@@ -491,6 +491,12 @@ spirv_builder_emit_control_barrier(struct spirv_builder *b, SpvScope scope, SpvS
 SpvId
 spirv_builder_import(struct spirv_builder *b, const char *name);
 
+void
+spirv_builder_emit_mesh_outputs(struct spirv_builder *b, SpvId vtx_count, SpvId prim_count);
+
+void
+spirv_builder_emit_launch_mesh(struct spirv_builder *b, SpvId x, SpvId y, SpvId z, SpvId task_block);
+
 size_t
 spirv_builder_get_num_words(struct spirv_builder *b);
 

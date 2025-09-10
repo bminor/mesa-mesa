@@ -2382,6 +2382,7 @@ filter_io_instr(nir_intrinsic_instr *intr, bool *is_load, bool *is_input, bool *
       FALLTHROUGH;
    case nir_intrinsic_load_input:
    case nir_intrinsic_load_per_vertex_input:
+   case nir_intrinsic_load_per_primitive_input:
       *is_input = true;
       FALLTHROUGH;
    case nir_intrinsic_load_output:
@@ -3275,7 +3276,10 @@ zink_get_next_stage(mesa_shader_stage stage)
       return VK_SHADER_STAGE_GEOMETRY_BIT |
              VK_SHADER_STAGE_FRAGMENT_BIT;
    case MESA_SHADER_GEOMETRY:
+   case MESA_SHADER_MESH:
       return VK_SHADER_STAGE_FRAGMENT_BIT;
+   case MESA_SHADER_TASK:
+      return VK_SHADER_STAGE_MESH_BIT_EXT;
    case MESA_SHADER_FRAGMENT:
    case MESA_SHADER_COMPUTE:
    case MESA_SHADER_KERNEL:
@@ -3302,6 +3306,8 @@ zink_shader_spirv_compile(struct zink_screen *screen, struct zink_shader *zs, st
    }
 
    sci.sType = VK_STRUCTURE_TYPE_SHADER_CREATE_INFO_EXT;
+   if (zs->info.stage == MESA_SHADER_MESH && zs->info.prev_stage != MESA_SHADER_TASK)
+      sci.flags = VK_SHADER_CREATE_NO_TASK_SHADER_BIT_EXT;
    sci.stage = mesa_to_vk_shader_stage(zs->info.stage);
    sci.nextStage = zink_get_next_stage(zs->info.stage);
    sci.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
@@ -5354,7 +5360,10 @@ create_io_var(nir_shader *nir, struct rework_io_state *ris)
    if (ris->arrayed_io) {
       /* tess size may be unknown with generated tcs */
       unsigned arrayed = nir->info.stage == MESA_SHADER_GEOMETRY ?
-                         nir->info.gs.vertices_in : 32 /* MAX_PATCH_VERTICES */;
+                         nir->info.gs.vertices_in :
+                         nir->info.stage == MESA_SHADER_MESH ?
+                         nir->info.mesh.max_primitives_out :
+                         32 /* MAX_PATCH_VERTICES */;
       vec_type = glsl_array_type(vec_type, arrayed, glsl_get_explicit_stride(vec_type));
    }
    nir_variable *var = nir_variable_create(nir, ris->mode, vec_type, name);
@@ -5363,18 +5372,22 @@ create_io_var(nir_shader *nir, struct rework_io_state *ris)
    /* gallium vertex inputs use intrinsic 'base' indexing */
    if (nir->info.stage == MESA_SHADER_VERTEX && ris->mode == nir_var_shader_in)
       var->data.driver_location = ris->base;
-   var->data.patch = ris->location >= VARYING_SLOT_PATCH0 ||
-                     ((nir->info.stage == MESA_SHADER_TESS_CTRL || nir->info.stage == MESA_SHADER_TESS_EVAL) &&
-                      (ris->location == VARYING_SLOT_TESS_LEVEL_INNER || ris->location == VARYING_SLOT_TESS_LEVEL_OUTER));
+   bool is_tess_level = (nir->info.stage == MESA_SHADER_TESS_CTRL || nir->info.stage == MESA_SHADER_TESS_EVAL) &&
+                        (ris->location == VARYING_SLOT_TESS_LEVEL_INNER || ris->location == VARYING_SLOT_TESS_LEVEL_OUTER);
+   var->data.patch = ris->location >= VARYING_SLOT_PATCH0 || is_tess_level;
    /* set flat by default: add_derefs will fill this in later after more shader passes */
    if (nir->info.stage == MESA_SHADER_FRAGMENT && ris->mode == nir_var_shader_in)
       var->data.interpolation = INTERP_MODE_FLAT;
    var->data.fb_fetch_output = ris->fb_fetch_output;
    var->data.index = ris->dual_source_blend_index;
    var->data.precision = ris->medium_precision;
+   if (nir->info.stage == MESA_SHADER_MESH && ris->mode == nir_var_shader_out)
+      var->data.per_primitive = (nir->info.per_primitive_outputs & BITFIELD64_BIT(ris->location)) > 0;
+   else if (nir->info.stage == MESA_SHADER_FRAGMENT && ris->mode == nir_var_shader_in)
+      var->data.per_primitive = (nir->info.per_primitive_inputs & BITFIELD64_BIT(ris->location)) > 0;
    /* only clip/cull dist and tess levels are compact */
    if (nir->info.stage != MESA_SHADER_VERTEX || ris->mode != nir_var_shader_in)
-      var->data.compact = is_clipcull_dist(ris->location) || (ris->location == VARYING_SLOT_TESS_LEVEL_INNER || ris->location == VARYING_SLOT_TESS_LEVEL_OUTER);
+      var->data.compact = is_clipcull_dist(ris->location) || is_tess_level;
 }
 
 /* loop the i/o mask and generate variables for specified locations */
@@ -5552,12 +5565,30 @@ rework_io_vars(nir_shader *nir, nir_variable_mode mode, struct zink_shader *zs)
       if (!max_components)
          continue;
       switch (slot) {
+      case VARYING_SLOT_TESS_LEVEL_INNER:
+         /* actually VARYING_SLOT_PRIMITIVE_INDICES */
+         if (nir->info.stage == MESA_SHADER_MESH) {
+            switch (nir->info.mesh.primitive_type) {
+            case MESA_PRIM_POINTS:
+               max_components = 1;
+               break;
+            case MESA_PRIM_LINES:
+               max_components = 2;
+               break;
+            default:
+               max_components = 3;
+               break;
+            }
+            ris.component_mask = BITFIELD_MASK(max_components);
+            ris.type = nir_type_int32;
+            break;
+         }
+         FALLTHROUGH;
       case VARYING_SLOT_CLIP_DIST0:
       case VARYING_SLOT_CLIP_DIST1:
       case VARYING_SLOT_CULL_DIST0:
       case VARYING_SLOT_CULL_DIST1:
       case VARYING_SLOT_TESS_LEVEL_OUTER:
-      case VARYING_SLOT_TESS_LEVEL_INNER:
          /* compact arrays */
          ris.component_mask = 0x1;
          ris.array_size = max_components;
