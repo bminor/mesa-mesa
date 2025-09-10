@@ -70,6 +70,7 @@ enum radv_required_subgroup_size {
 struct radv_shader_stage_key {
    uint8_t subgroup_required_size : 2; /* radv_required_subgroup_size */
    uint8_t subgroup_require_full : 1;  /* whether full subgroups are required */
+   uint8_t subgroup_allow_varying : 1; /* whether subgroup size can differ from the api constant */
 
    uint8_t storage_robustness2 : 1;
    uint8_t uniform_robustness2 : 1;

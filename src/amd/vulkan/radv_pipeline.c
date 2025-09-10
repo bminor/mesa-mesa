@@ -174,6 +174,10 @@ radv_pipeline_get_shader_key(const struct radv_device *device, const VkPipelineS
       key.subgroup_require_full = 1;
    }
 
+   if (stage->flags & VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE_BIT) {
+      key.subgroup_allow_varying = 1;
+   }
+
    return key;
 }
 
