@@ -157,6 +157,7 @@ anv_shader_preprocess_nir(struct vk_physical_device *device,
    brw_preprocess_nir(compiler, nir, &opts);
 
    NIR_PASS(_, nir, nir_opt_barrier_modes);
+   NIR_PASS(_, nir, nir_opt_acquire_release_barriers, SCOPE_QUEUE_FAMILY);
 
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
 }
