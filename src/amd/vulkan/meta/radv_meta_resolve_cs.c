@@ -457,7 +457,8 @@ radv_depth_stencil_resolve_rendering_cs(struct radv_cmd_buffer *cmd_buffer, VkIm
 
    radv_decompress_resolve_src(cmd_buffer, src_image, src_layout, &region);
 
-   radv_meta_save(&saved_state, cmd_buffer, RADV_META_SAVE_COMPUTE_PIPELINE | RADV_META_SAVE_DESCRIPTORS);
+   radv_meta_save(&saved_state, cmd_buffer,
+                  RADV_META_SAVE_COMPUTE_PIPELINE | RADV_META_SAVE_DESCRIPTORS | RADV_META_SAVE_CONSTANTS);
 
    struct radv_image_view *dst_iview = render->ds_att.resolve_iview;
    VkImageLayout dst_layout =
