@@ -552,7 +552,7 @@ const struct pan_format GENX(pan_pipe_format)[PIPE_FORMAT_COUNT] = {
    FMT(Z16_UNORM,               Z16_UNORM,       RGBA, L, _T_Z_),
    FMT(Z24_UNORM_S8_UINT,       Z24X8_UNORM,     RGBA, L, _T_Z_),
    FMT(Z24X8_UNORM,             Z24X8_UNORM,     RGBA, L, _T_Z_),
-   FMT(Z32_FLOAT,               R32F,            RGBA, L, _T_Z_),
+   FMT(Z32_FLOAT,               Z32,             RGBA, L, _T_Z_),
 
 #if PAN_ARCH >= 9
    /* Specify interchange formats, the actual format for depth/stencil is
