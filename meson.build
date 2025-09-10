@@ -1061,6 +1061,7 @@ elif host_machine.system() == 'windows'
   if cc.get_argument_syntax() == 'msvc'
     pre_args += [
       '-D_USE_MATH_DEFINES',
+      '-D_CRT_NONSTDC_NO_DEPRECATE',
       '-D_CRT_SECURE_NO_WARNINGS',
       '-D_CRT_SECURE_NO_DEPRECATE',
       '-D_SCL_SECURE_NO_WARNINGS',
@@ -1103,7 +1104,6 @@ if cc.get_argument_syntax() == 'msvc'
     '/wd4351',  # new behavior: elements of array 'array' will be default initialized
     '/wd4756',  # overflow in constant arithmetic
     '/wd4800',  # forcing value to bool 'true' or 'false' (performance warning)
-    '/wd4996',  # disabled deprecated POSIX name warnings
     '/wd4291',  # no matching operator delete found
     '/wd4146',  # unary minus operator applied to unsigned type, result still unsigned
     '/wd4200',  # nonstandard extension used: zero-sized array in struct/union
