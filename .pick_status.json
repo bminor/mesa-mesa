@@ -5384,7 +5384,7 @@
         "description": "iris: Limit max_shader_buffer_size to INT32_MAX",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2f8b8649f015720fd1ac08f779accbfb4701c074",
         "notes": null
