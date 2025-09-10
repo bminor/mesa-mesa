@@ -557,16 +557,8 @@ get_image_plane_format_features(struct panvk_physical_device *physical_device,
 
    if (fmt.bind & PAN_BIND_RENDER_TARGET) {
       features |= VK_FORMAT_FEATURE_2_BLIT_DST_BIT;
-
-      /* SNORM rendering isn't working yet (nir_lower_blend bugs), disable for
-       * now.
-       *
-       * XXX: Enable once fixed.
-       */
-      if (!util_format_is_snorm(pfmt)) {
-         features |= VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT;
-         features |= VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT;
-      }
+      features |= VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT;
+      features |= VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT;
    }
 
    if (fmt.bind & PAN_BIND_STORAGE_IMAGE) {
