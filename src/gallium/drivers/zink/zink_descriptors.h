@@ -135,6 +135,17 @@ zink_descriptor_type_from_bindless_index(unsigned idx)
    }
 }
 
+ALWAYS_INLINE static unsigned
+zink_descriptor_stage_idx(enum mesa_shader_stage stage)
+{
+   if (stage == MESA_SHADER_TASK || stage == MESA_SHADER_MESH)
+      return stage - MESA_SHADER_TASK;
+   /* clamp compute bindings for better driver efficiency */
+   if (mesa_shader_stage_is_compute(stage))
+      return 0;
+   return stage;
+}
+
 bool
 zink_descriptor_layouts_init(struct zink_screen *screen);
 

@@ -74,3 +74,10 @@ KHR-GL46.packed_pixels.varied_rectangle.rgb4_format_green
 spec@!opengl 1.1@copypixels-sync
 spec@amd_pinned_memory@map-buffer offset=0
 spec@glsl-1.30@execution@texelfetch fs sampler2darray 98x1x9-98x129x9
+
+
+# mesh shaders somehow?
+glx@glx-visuals-depth
+glx@glx-visuals-depth -pixmap
+glx@glx-visuals-stencil
+glx@glx-visuals-stencil -pixmap

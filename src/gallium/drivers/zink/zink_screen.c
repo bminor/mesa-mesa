@@ -1493,6 +1493,8 @@ zink_destroy_screen(struct pipe_screen *pscreen)
 
    for (unsigned i = 0; i < ARRAY_SIZE(screen->pipeline_libs); i++)
       _mesa_set_fini(&screen->pipeline_libs[i], NULL);
+   for (unsigned i = 0; i < ARRAY_SIZE(screen->mesh_pipeline_libs); i++)
+      _mesa_set_fini(&screen->mesh_pipeline_libs[i], NULL);
 
    u_transfer_helper_destroy(pscreen->transfer_helper);
    if (util_queue_is_initialized(&screen->cache_get_thread)) {
@@ -3528,10 +3530,6 @@ zink_internal_create_screen(const struct pipe_screen_config *config, int64_t dev
       goto fail;
    }
 
-   zink_init_shader_caps(screen);
-   zink_init_compute_caps(screen);
-   zink_init_screen_caps(screen);
-
    if (screen->info.have_EXT_sample_locations) {
       VkMultisamplePropertiesEXT prop;
       prop.sType = VK_STRUCTURE_TYPE_MULTISAMPLE_PROPERTIES_EXT;
@@ -3674,6 +3672,10 @@ zink_internal_create_screen(const struct pipe_screen_config *config, int64_t dev
    simple_mtx_init(&screen->copy_context_lock, mtx_plain);
 
    init_optimal_keys(screen);
+
+   zink_init_shader_caps(screen);
+   zink_init_compute_caps(screen);
+   zink_init_screen_caps(screen);
 
    screen->screen_id = p_atomic_inc_return(&num_screens);
    zink_tracing = screen->instance_info->have_EXT_debug_utils &&

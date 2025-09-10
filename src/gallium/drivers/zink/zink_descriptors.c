@@ -249,6 +249,8 @@ create_gfx_layout(struct zink_context *ctx, struct zink_descriptor_layout_key **
    VkDescriptorType vktype = get_push_types(screen, &dsl_type);
    for (unsigned i = 0; i < ZINK_GFX_SHADER_COUNT; i++) {
       unsigned stage_bits = BITFIELD_BIT(i);
+      if (i < MESA_SHADER_TESS_EVAL && screen->info.have_EXT_mesh_shader)
+         stage_bits |= BITFIELD_BIT(i + MESA_SHADER_TASK);
       init_push_binding(&bindings[i], i, stage_bits, vktype);
    }
    if (fbfetch) {
@@ -657,10 +659,11 @@ zink_descriptor_program_init(struct zink_context *ctx, struct zink_program *pg)
    for (unsigned i = 0; i < ZINK_DESCRIPTOR_BASE_TYPES; i++)
       wd_count[i + 1] = pg->dd.pool_key[i] ? pg->dd.pool_key[i]->layout->num_bindings : 0;
 
-   enum zink_pipeline_idx pidx = pg->is_compute ? ZINK_PIPELINE_COMPUTE : ZINK_PIPELINE_GFX;
+   enum zink_pipeline_idx pidx = pg->is_compute ? ZINK_PIPELINE_COMPUTE : stages[MESA_SHADER_VERTEX]? ZINK_PIPELINE_GFX : ZINK_PIPELINE_MESH;
    VkDescriptorUpdateTemplateEntry *push_entries[] = {
       ctx->dd.push_entries,
       &ctx->dd.compute_push_entry,
+      ctx->dd.mesh_push_entries,
    };
    for (unsigned i = 0; i < pg->num_dsl; i++) {
       bool is_push = i == 0;
@@ -1173,7 +1176,7 @@ zink_descriptors_update_masked_buffer(struct zink_context *ctx, enum zink_pipeli
    struct zink_screen *screen = zink_screen(ctx->base.screen);
    struct zink_batch_state *bs = ctx->bs;
    bool is_compute = pidx == ZINK_PIPELINE_COMPUTE;
-   struct zink_program *pg = is_compute ? &ctx->curr_compute->base : &ctx->curr_program->base;
+   struct zink_program *pg = is_compute ? &ctx->curr_compute->base : pidx == ZINK_PIPELINE_GFX ? &ctx->curr_program->base : &ctx->mesh_program->base;
 
    /* skip if no descriptors are updated */
    if (!pg->dd.binding_usage || (!changed_sets && !bind_sets))
@@ -1249,7 +1252,7 @@ zink_descriptors_update_masked(struct zink_context *ctx, enum zink_pipeline_idx 
    struct zink_screen *screen = zink_screen(ctx->base.screen);
    struct zink_batch_state *bs = ctx->bs;
    bool is_compute = pidx == ZINK_PIPELINE_COMPUTE;
-   struct zink_program *pg = is_compute ? &ctx->curr_compute->base : &ctx->curr_program->base;
+   struct zink_program *pg = is_compute ? &ctx->curr_compute->base : pidx == ZINK_PIPELINE_GFX ? &ctx->curr_program->base : &ctx->mesh_program->base;
    VkDescriptorSet desc_sets[ZINK_DESCRIPTOR_BASE_TYPES];
 
    /* skip if no descriptors are updated */
@@ -1321,7 +1324,8 @@ zink_descriptors_update(struct zink_context *ctx, enum zink_pipeline_idx pidx)
 {
    struct zink_batch_state *bs = ctx->bs;
    bool is_compute = pidx == ZINK_PIPELINE_COMPUTE;
-   struct zink_program *pg = is_compute ? &ctx->curr_compute->base : &ctx->curr_program->base;
+   bool is_mesh = pidx == ZINK_PIPELINE_MESH;
+   struct zink_program *pg = is_compute ? &ctx->curr_compute->base : pidx == ZINK_PIPELINE_GFX ? &ctx->curr_program->base : &ctx->mesh_program->base;
    struct zink_screen *screen = zink_screen(ctx->base.screen);
    bool have_KHR_push_descriptor = screen->info.have_KHR_push_descriptor;
 
@@ -1401,7 +1405,9 @@ zink_descriptors_update(struct zink_context *ctx, enum zink_pipeline_idx pidx)
                info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT;
                info.pNext = NULL;
                info.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-               info.data.pUniformBuffer = &ctx->di.db.ubos[is_compute ? MESA_SHADER_COMPUTE : i][0];
+               /* mesh push consts pack as VS/TCS */
+               enum mesa_shader_stage stage = is_compute ? MESA_SHADER_COMPUTE : is_mesh && i <= MESA_SHADER_TESS_CTRL ? i + MESA_SHADER_TASK : i;
+               info.data.pUniformBuffer = &ctx->di.db.ubos[stage][0];
                uint64_t stage_offset = offset + (is_compute ? 0 : ctx->dd.db_offset[i]);
                VKSCR(GetDescriptorEXT)(screen->dev, &info, screen->info.db_props.robustUniformBufferDescriptorSize,
                                                            bs->dd.db_map + stage_offset);
@@ -1484,15 +1490,20 @@ zink_context_invalidate_descriptor_state(struct zink_context *ctx, mesa_shader_s
          ctx->dd.push_state_changed[ZINK_PIPELINE_COMPUTE] = true;
       else if (shader < MESA_SHADER_FRAGMENT)
          ctx->dd.push_state_changed[ZINK_PIPELINE_GFX] = true;
+      else if (shader > MESA_SHADER_FRAGMENT)
+         ctx->dd.push_state_changed[ZINK_PIPELINE_MESH] = true;
       else
-         ctx->dd.push_state_changed[ZINK_PIPELINE_GFX] = true;
+         ctx->dd.push_state_changed[ZINK_PIPELINE_GFX] = ctx->dd.push_state_changed[ZINK_PIPELINE_MESH] = true;
    } else {
       if (shader == MESA_SHADER_COMPUTE)
          ctx->dd.state_changed[ZINK_PIPELINE_COMPUTE] |= BITFIELD_BIT(type);
       else if (shader < MESA_SHADER_FRAGMENT)
          ctx->dd.state_changed[ZINK_PIPELINE_GFX] |= BITFIELD_BIT(type);
+      else if (shader > MESA_SHADER_FRAGMENT)
+         ctx->dd.state_changed[ZINK_PIPELINE_MESH] |= BITFIELD_BIT(type);
       else {
          ctx->dd.state_changed[ZINK_PIPELINE_GFX] |= BITFIELD_BIT(type);
+         ctx->dd.state_changed[ZINK_PIPELINE_MESH] |= BITFIELD_BIT(type);
       }
    }
 }
@@ -1504,8 +1515,10 @@ zink_context_invalidate_descriptor_state_compact(struct zink_context *ctx, mesa_
          ctx->dd.push_state_changed[ZINK_PIPELINE_COMPUTE] = true;
       else if (shader < MESA_SHADER_FRAGMENT)
          ctx->dd.push_state_changed[ZINK_PIPELINE_GFX] = true;
+      else if (shader > MESA_SHADER_FRAGMENT)
+         ctx->dd.push_state_changed[ZINK_PIPELINE_MESH] = true;
       else
-         ctx->dd.push_state_changed[ZINK_PIPELINE_GFX] = true;
+         ctx->dd.push_state_changed[ZINK_PIPELINE_GFX] = ctx->dd.push_state_changed[ZINK_PIPELINE_MESH] = true;
    else {
       if (type > ZINK_DESCRIPTOR_TYPE_SAMPLER_VIEW)
          type -= ZINK_DESCRIPTOR_COMPACT;
@@ -1513,8 +1526,11 @@ zink_context_invalidate_descriptor_state_compact(struct zink_context *ctx, mesa_
          ctx->dd.state_changed[ZINK_PIPELINE_COMPUTE] |= BITFIELD_BIT(type);
       else if (shader < MESA_SHADER_FRAGMENT)
          ctx->dd.state_changed[ZINK_PIPELINE_GFX] |= BITFIELD_BIT(type);
+      else if (shader > MESA_SHADER_FRAGMENT)
+         ctx->dd.state_changed[ZINK_PIPELINE_MESH] |= BITFIELD_BIT(type);
       else {
          ctx->dd.state_changed[ZINK_PIPELINE_GFX] |= BITFIELD_BIT(type);
+         ctx->dd.state_changed[ZINK_PIPELINE_MESH] |= BITFIELD_BIT(type);
       }
    }
 }
@@ -1657,6 +1673,13 @@ zink_descriptors_init(struct zink_context *ctx)
    struct zink_screen *screen = zink_screen(ctx->base.screen);
    for (unsigned i = 0; i < ZINK_GFX_SHADER_COUNT; i++) {
       VkDescriptorUpdateTemplateEntry *entry = &ctx->dd.push_entries[i];
+      init_push_template_entry(entry, i, i);
+   }
+   /* task+mesh occupy vs+tcs */
+   init_push_template_entry(&ctx->dd.mesh_push_entries[0], zink_descriptor_stage_idx(MESA_SHADER_TASK), MESA_SHADER_TASK);
+   init_push_template_entry(&ctx->dd.mesh_push_entries[1], zink_descriptor_stage_idx(MESA_SHADER_MESH), MESA_SHADER_MESH);
+   for (unsigned i = MESA_SHADER_TESS_EVAL; i < ZINK_GFX_SHADER_COUNT; i++) {
+      VkDescriptorUpdateTemplateEntry *entry = &ctx->dd.mesh_push_entries[i];
       init_push_template_entry(entry, i, i);
    }
    init_push_template_entry(&ctx->dd.compute_push_entry, MESA_SHADER_COMPUTE, MESA_SHADER_COMPUTE);

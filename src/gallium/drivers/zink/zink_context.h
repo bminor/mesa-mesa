@@ -62,12 +62,18 @@ zink_fb_clear_enabled(const struct zink_context *ctx, unsigned idx)
    return ctx->clears_enabled & (PIPE_CLEAR_COLOR0 << idx);
 }
 
-static inline uint32_t
+static ALWAYS_INLINE uint32_t
 zink_program_cache_stages(uint32_t stages_present)
 {
    return (stages_present & ((1 << MESA_SHADER_TESS_CTRL) |
                              (1 << MESA_SHADER_TESS_EVAL) |
                              (1 << MESA_SHADER_GEOMETRY))) >> 1;
+}
+
+static ALWAYS_INLINE uint32_t
+zink_mesh_cache_stages(uint32_t stages_present)
+{
+   return !!(stages_present & BITFIELD_BIT(MESA_SHADER_TASK));
 }
 
 static ALWAYS_INLINE bool
@@ -118,7 +124,8 @@ zink_fence_wait(struct pipe_context *ctx);
 static ALWAYS_INLINE void
 zink_update_dirty_gfx_stages(struct zink_context *ctx, uint32_t pstages)
 {
-   ctx->dirty_gfx_stages |= pstages;
+   ctx->dirty_gfx_stages |= (pstages & BITFIELD_MASK(MESA_SHADER_COMPUTE));
+   ctx->dirty_mesh_stages |= (pstages & (BITFIELD_BIT(MESA_SHADER_FRAGMENT) | BITFIELD_BIT(MESA_SHADER_MESH) | BITFIELD_BIT(MESA_SHADER_TASK)));
 }
 
 void
@@ -195,6 +202,10 @@ zink_pipeline_flags_from_pipe_stage(mesa_shader_stage pstage)
       return VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
    case MESA_SHADER_COMPUTE:
       return VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+   case MESA_SHADER_TASK:
+      return VK_PIPELINE_STAGE_TASK_SHADER_BIT_EXT;
+   case MESA_SHADER_MESH:
+      return VK_PIPELINE_STAGE_MESH_SHADER_BIT_EXT;
    default:
       UNREACHABLE("unknown shader stage");
    }

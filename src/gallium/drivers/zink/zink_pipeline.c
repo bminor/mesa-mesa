@@ -36,6 +36,8 @@
 #include "util/u_debug.h"
 #include "util/u_prim.h"
 
+#define GFX_INPUT_MESH 32
+
 VkPipeline
 zink_create_gfx_pipeline(struct zink_screen *screen,
                          struct zink_gfx_program *prog,
@@ -47,7 +49,8 @@ zink_create_gfx_pipeline(struct zink_screen *screen,
 {
    struct zink_rasterizer_hw_state *hw_rast_state = (void*)&state->dyn_state3;
    VkPipelineVertexInputStateCreateInfo vertex_input_state;
-   bool needs_vi = !screen->info.have_EXT_vertex_input_dynamic_state;
+   bool is_mesh = !prog->shaders[MESA_SHADER_VERTEX];
+   bool needs_vi = !screen->info.have_EXT_vertex_input_dynamic_state && !is_mesh;
    if (needs_vi) {
       memset(&vertex_input_state, 0, sizeof(vertex_input_state));
       vertex_input_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -76,7 +79,7 @@ zink_create_gfx_pipeline(struct zink_screen *screen,
    VkPipelineInputAssemblyStateCreateInfo primitive_state = {0};
    primitive_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
    primitive_state.topology = primitive_topology;
-   if (!screen->info.have_EXT_extended_dynamic_state2) {
+   if (!screen->info.have_EXT_extended_dynamic_state2 && !is_mesh) {
       switch (primitive_topology) {
       case VK_PRIMITIVE_TOPOLOGY_POINT_LIST:
       case VK_PRIMITIVE_TOPOLOGY_LINE_LIST:
@@ -226,15 +229,18 @@ zink_create_gfx_pipeline(struct zink_screen *screen,
       dynamicStateEnables[state_count++] = VK_DYNAMIC_STATE_VIEWPORT;
       dynamicStateEnables[state_count++] = VK_DYNAMIC_STATE_SCISSOR;
    }
-   if (screen->info.have_EXT_vertex_input_dynamic_state)
-      dynamicStateEnables[state_count++] = VK_DYNAMIC_STATE_VERTEX_INPUT_EXT;
-   else if (screen->info.have_EXT_extended_dynamic_state && state->uses_dynamic_stride && state->element_state->num_attribs)
-      dynamicStateEnables[state_count++] = VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE;
-   if (screen->info.have_EXT_extended_dynamic_state2) {
-      dynamicStateEnables[state_count++] = VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE;
+   if (screen->info.have_EXT_extended_dynamic_state2)
       dynamicStateEnables[state_count++] = VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE;
-      if (screen->info.dynamic_state2_feats.extendedDynamicState2PatchControlPoints)
-         dynamicStateEnables[state_count++] = VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT;
+   if (!is_mesh) {
+      if (screen->info.have_EXT_vertex_input_dynamic_state)
+         dynamicStateEnables[state_count++] = VK_DYNAMIC_STATE_VERTEX_INPUT_EXT;
+      else if (screen->info.have_EXT_extended_dynamic_state && state->uses_dynamic_stride && state->element_state->num_attribs)
+         dynamicStateEnables[state_count++] = VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE;
+      if (screen->info.have_EXT_extended_dynamic_state2) {
+         dynamicStateEnables[state_count++] = VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE;
+         if (screen->info.dynamic_state2_feats.extendedDynamicState2PatchControlPoints)
+            dynamicStateEnables[state_count++] = VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT;
+      }
    }
    if (screen->info.have_EXT_extended_dynamic_state3) {
       dynamicStateEnables[state_count++] = VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT;
@@ -270,10 +276,10 @@ zink_create_gfx_pipeline(struct zink_screen *screen,
    if (screen->info.have_EXT_color_write_enable)
       dynamicStateEnables[state_count++] = VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT;
 
-   assert(state->rast_prim != MESA_PRIM_COUNT || zink_debug & ZINK_DEBUG_SHADERDB);
+   assert(state->rast_prim != MESA_PRIM_COUNT || zink_debug & ZINK_DEBUG_SHADERDB || is_mesh);
 
    VkPipelineRasterizationLineStateCreateInfoEXT rast_line_state;
-   if (screen->info.have_EXT_line_rasterization &&
+   if (screen->info.have_EXT_line_rasterization && !is_mesh &&
        !state->shader_keys.key[MESA_SHADER_FRAGMENT].key.fs.lower_line_smooth) {
       rast_line_state.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_LINE_STATE_CREATE_INFO_EXT;
       rast_line_state.pNext = rast_state.pNext;
@@ -354,9 +360,11 @@ zink_create_gfx_pipeline(struct zink_screen *screen,
       pci.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
    pci.layout = prog->base.layout;
    pci.pNext = &state->rendering_info;
-   if (needs_vi)
-      pci.pVertexInputState = &vertex_input_state;
-   pci.pInputAssemblyState = &primitive_state;
+   if (!is_mesh) {
+      if (needs_vi)
+         pci.pVertexInputState = &vertex_input_state;
+      pci.pInputAssemblyState = &primitive_state;
+   }
    pci.pRasterizationState = &rast_state;
    pci.pColorBlendState = &blend_state;
    pci.pMultisampleState = &ms_state;
@@ -377,10 +385,10 @@ zink_create_gfx_pipeline(struct zink_screen *screen,
       tdci.domainOrigin = VK_TESSELLATION_DOMAIN_ORIGIN_LOWER_LEFT;
    }
 
-   VkPipelineShaderStageCreateInfo shader_stages[ZINK_GFX_SHADER_COUNT];
-   VkShaderModuleCreateInfo smci[ZINK_GFX_SHADER_COUNT] = {0};
+   VkPipelineShaderStageCreateInfo shader_stages[MESA_SHADER_MESH_STAGES];
+   VkShaderModuleCreateInfo smci[MESA_SHADER_MESH_STAGES] = {0};
    uint32_t num_stages = 0;
-   for (int i = 0; i < ZINK_GFX_SHADER_COUNT; ++i) {
+   for (int i = 0; i < MESA_SHADER_MESH_STAGES; ++i) {
       if (!(prog->stages_present & BITFIELD_BIT(i)))
          continue;
 
@@ -692,6 +700,35 @@ zink_create_gfx_pipeline_input(struct zink_screen *screen,
 }
 
 static VkPipeline
+zink_create_mesh_pipeline_input(struct zink_screen *screen)
+{
+   VkGraphicsPipelineLibraryCreateInfoEXT gplci = {
+      VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT,
+      NULL,
+      VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT
+   };
+
+   VkGraphicsPipelineCreateInfo pci = {0};
+   pci.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+   pci.pNext = &gplci;
+   pci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT;
+   if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB)
+      pci.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+
+   VkPipeline pipeline;
+   VkResult result;
+   VRAM_ALLOC_LOOP(result,
+      VKSCR(CreateGraphicsPipelines)(screen->dev, VK_NULL_HANDLE, 1, &pci, NULL, &pipeline),
+      if (result != VK_SUCCESS) {
+         mesa_loge("ZINK: vkCreateGraphicsPipelines failed (%s)", vk_Result_to_str(result));
+         return VK_NULL_HANDLE;
+      }
+   );
+
+   return pipeline;
+}
+
+static VkPipeline
 create_gfx_pipeline_library(struct zink_screen *screen, struct zink_shader_object *objs, unsigned stage_mask, VkPipelineLayout layout, VkPipelineCache pipeline_cache)
 {
    assert(screen->info.have_EXT_extended_dynamic_state && screen->info.have_EXT_extended_dynamic_state2);
@@ -704,7 +741,7 @@ create_gfx_pipeline_library(struct zink_screen *screen, struct zink_shader_objec
       &rendering_info,
       0
    };
-   if (stage_mask & BITFIELD_BIT(MESA_SHADER_VERTEX))
+   if (stage_mask & (BITFIELD_BIT(MESA_SHADER_VERTEX) | BITFIELD_BIT(MESA_SHADER_MESH)))
       gplci.flags |= VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT;
    if (stage_mask & BITFIELD_BIT(MESA_SHADER_FRAGMENT))
       gplci.flags |= VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;
@@ -743,7 +780,7 @@ create_gfx_pipeline_library(struct zink_screen *screen, struct zink_shader_objec
    dynamicStateEnables[state_count++] = VK_DYNAMIC_STATE_FRONT_FACE;
    dynamicStateEnables[state_count++] = VK_DYNAMIC_STATE_CULL_MODE;
    dynamicStateEnables[state_count++] = VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE;
-   if (screen->info.dynamic_state2_feats.extendedDynamicState2PatchControlPoints)
+   if (screen->info.dynamic_state2_feats.extendedDynamicState2PatchControlPoints && !(stage_mask & BITFIELD_BIT(MESA_SHADER_MESH)))
       dynamicStateEnables[state_count++] = VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT;
 
    dynamicStateEnables[state_count++] = VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT;
@@ -794,9 +831,9 @@ create_gfx_pipeline_library(struct zink_screen *screen, struct zink_shader_objec
       tdci.domainOrigin = VK_TESSELLATION_DOMAIN_ORIGIN_LOWER_LEFT;
    }
 
-   VkPipelineShaderStageCreateInfo shader_stages[ZINK_GFX_SHADER_COUNT];
+   VkPipelineShaderStageCreateInfo shader_stages[MESA_SHADER_MESH_STAGES];
    uint32_t num_stages = 0;
-   for (int i = 0; i < ZINK_GFX_SHADER_COUNT; ++i) {
+   for (int i = 0; i < MESA_SHADER_MESH_STAGES; ++i) {
       if (!(stage_mask & BITFIELD_BIT(i)))
          continue;
 
@@ -891,6 +928,21 @@ zink_create_gfx_pipeline_combined(struct zink_screen *screen, struct zink_gfx_pr
    return pipeline;
 }
 
+
+/* vertex input pipeline library states with mesh: nothing matters */
+struct zink_gfx_input_key *
+zink_find_or_create_input_mesh(struct zink_context *ctx)
+{
+   uint32_t hash = GFX_INPUT_MESH;
+   struct set_entry *he = _mesa_set_search_pre_hashed(&ctx->gfx_inputs, hash, &hash);
+   if (!he) {
+      struct zink_gfx_input_key *ikey = rzalloc(ctx, struct zink_gfx_input_key);
+      ikey->idx = hash;
+      ikey->pipeline = zink_create_mesh_pipeline_input(zink_screen(ctx->base.screen));
+      he = _mesa_set_add_pre_hashed(&ctx->gfx_inputs, hash, ikey);
+   }
+   return (struct zink_gfx_input_key *)he->key;
+}
 
 /* vertex input pipeline library states with dynamic vertex input: only the topology matters */
 struct zink_gfx_input_key *

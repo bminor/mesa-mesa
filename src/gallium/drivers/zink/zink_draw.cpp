@@ -267,9 +267,9 @@ update_gfx_pipeline(struct zink_context *ctx, struct zink_batch_state *bs, enum 
    VkPipeline pipeline = VK_NULL_HANDLE;
    if (!ctx->curr_program->base.uses_shobj) {
       if (screen->info.have_EXT_graphics_pipeline_library)
-         pipeline = zink_get_gfx_pipeline<DYNAMIC_STATE, true>(ctx, ctx->curr_program, &ctx->gfx_pipeline_state, mode);
+         pipeline = zink_get_gfx_pipeline<DYNAMIC_STATE, true, false>(ctx, ctx->curr_program, &ctx->gfx_pipeline_state, mode);
       else
-         pipeline = zink_get_gfx_pipeline<DYNAMIC_STATE, false>(ctx, ctx->curr_program, &ctx->gfx_pipeline_state, mode);
+         pipeline = zink_get_gfx_pipeline<DYNAMIC_STATE, false, false>(ctx, ctx->curr_program, &ctx->gfx_pipeline_state, mode);
    }
    if (pipeline) {
       pipeline_changed = prev_pipeline != pipeline;
@@ -961,6 +961,180 @@ zink_draw(struct pipe_context *pctx,
 
    ctx->last_work_was_compute = false;
    ctx->work_count = work_count;
+   if (!ctx->pipeline_changed[ZINK_PIPELINE_MESH]) {
+      ctx->pipeline_changed[ZINK_PIPELINE_MESH] = true;
+      zink_select_draw_mesh_tasks(ctx);
+   }
+   /* flush if there's >100k draws */
+   if (!ctx->unordered_blitting && (unlikely(work_count >= 30000) || ctx->oom_flush))
+      pctx->flush(pctx, NULL, 0);
+}
+
+
+template <bool BATCH_CHANGED>
+static bool
+update_mesh_pipeline(struct zink_context *ctx, struct zink_batch_state *bs)
+{
+   VkPipeline prev_pipeline = ctx->gfx_pipeline_state.pipeline;
+   const struct zink_screen *screen = zink_screen(ctx->base.screen);
+   bool shaders_changed = ctx->mesh_dirty || ctx->dirty_mesh_stages;
+   zink_mesh_program_update_optimal(ctx);
+   bool pipeline_changed = false;
+   VkPipeline pipeline = VK_NULL_HANDLE;
+   if (!ctx->mesh_program->base.uses_shobj) {
+      if (screen->info.have_EXT_graphics_pipeline_library)
+         pipeline = zink_get_gfx_pipeline<ZINK_DYNAMIC_STATE3, true, true>(ctx, ctx->mesh_program, &ctx->gfx_pipeline_state, MESA_PRIM_COUNT);
+      else
+         pipeline = zink_get_gfx_pipeline<ZINK_DYNAMIC_STATE3, false, true>(ctx, ctx->mesh_program, &ctx->gfx_pipeline_state, MESA_PRIM_COUNT);
+   }
+   if (pipeline) {
+      pipeline_changed = prev_pipeline != pipeline;
+      if (BATCH_CHANGED || pipeline_changed || ctx->shobj_draw)
+         VKCTX(CmdBindPipeline)(bs->cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+      ctx->shobj_draw = false;
+   } else {
+      if (BATCH_CHANGED || shaders_changed || !ctx->shobj_draw) {
+         VkShaderStageFlagBits stages[] = {
+            VK_SHADER_STAGE_VERTEX_BIT,
+            VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+            VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
+            VK_SHADER_STAGE_GEOMETRY_BIT,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM,
+            VK_SHADER_STAGE_TASK_BIT_EXT,
+            VK_SHADER_STAGE_MESH_BIT_EXT,
+         };
+         /* always rebind all stages */
+         VKCTX(CmdBindShadersEXT)(bs->cmdbuf, ZINK_GFX_SHADER_COUNT, stages, ctx->mesh_program->objects);
+         VKCTX(CmdBindShadersEXT)(bs->cmdbuf, 2, &stages[MESA_SHADER_TASK], &ctx->mesh_program->objects[MESA_SHADER_TASK]);
+         VKCTX(CmdSetSampleLocationsEnableEXT)(bs->cmdbuf, ctx->gfx_pipeline_state.sample_locations_enabled);
+         VKCTX(CmdSetDepthBiasEnable)(bs->cmdbuf, VK_TRUE);
+         pipeline_changed = true;
+      }
+      ctx->shobj_draw = true;
+   }
+   return pipeline_changed;
+}
+
+template <bool BATCH_CHANGED>
+void
+zink_draw_mesh_tasks(struct pipe_context *pctx, const struct pipe_grid_info *info)
+{
+   MESA_TRACE_FUNC();
+
+   struct zink_context *ctx = zink_context(pctx);
+   struct zink_screen *screen = zink_screen(pctx->screen);
+   struct zink_batch_state *bs = ctx->bs;
+   unsigned work_count = ctx->work_count;
+
+   if (ctx->memory_barrier && !ctx->blitting)
+      zink_flush_memory_barrier(ctx, false);
+
+   if (unlikely(ctx->buffer_rebind_counter < screen->buffer_rebind_counter && !ctx->blitting)) {
+      ctx->buffer_rebind_counter = screen->buffer_rebind_counter;
+      zink_rebind_all_buffers(ctx);
+   }
+
+   if (unlikely(ctx->image_rebind_counter < screen->image_rebind_counter && !ctx->blitting)) {
+      ctx->image_rebind_counter = screen->image_rebind_counter;
+      zink_rebind_all_images(ctx);
+   }
+
+   if (info->indirect) {
+      check_buffer_barrier(ctx, info->indirect,
+                           VK_ACCESS_INDIRECT_COMMAND_READ_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT);
+      if (info->indirect_draw_count)
+         check_buffer_barrier(ctx, info->indirect_draw_count,
+                              VK_ACCESS_INDIRECT_COMMAND_READ_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT);
+   }
+   zink_update_barriers(ctx, false, NULL, info->indirect, info->indirect_draw_count);
+
+   if (unlikely(zink_debug & ZINK_DEBUG_SYNC)) {
+      zink_batch_no_rp(ctx);
+      VkMemoryBarrier mb;
+      mb.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+      mb.pNext = NULL;
+      mb.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
+      mb.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+      VKSCR(CmdPipelineBarrier)(ctx->bs->cmdbuf,
+                                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                                0, 1, &mb, 0, NULL, 0, NULL);
+   }
+
+   bool need_rp_update = !ctx->in_rp || ctx->rp_changed;
+   zink_batch_rp(ctx);
+   /* check dead swapchain */
+   if (unlikely(!ctx->in_rp))
+      return;
+
+   if (BATCH_CHANGED)
+      zink_update_descriptor_refs(ctx, false);
+
+   bool pipeline_changed = need_rp_update || ctx->mesh_dirty || ctx->dirty_mesh_stages || BATCH_CHANGED ?
+                           update_mesh_pipeline<BATCH_CHANGED>(ctx, bs) :
+                           false;
+
+   emit_dynamic_state<ZINK_DYNAMIC_STATE3, BATCH_CHANGED>(ctx, pipeline_changed, ctx->vp_state.mesh_num_viewports);
+
+   struct zink_rasterizer_state *rast_state = ctx->rast_state;
+   bool using_depth_bias = !!rast_state->offset_fill;
+   if (BATCH_CHANGED || using_depth_bias != ctx->was_using_depth_bias || ctx->depth_bias_changed) {
+      if (using_depth_bias) {
+         VKCTX(CmdSetDepthBias)(bs->cmdbuf, rast_state->offset_units, rast_state->offset_clamp, rast_state->offset_scale);
+      } else {
+         VKCTX(CmdSetDepthBias)(bs->cmdbuf, 0.0f, 0.0f, 0.0f);
+      }
+   }
+   ctx->was_using_depth_bias = using_depth_bias;
+   ctx->depth_bias_changed = false;
+
+   if (zink_program_has_descriptors(&ctx->mesh_program->base) && (BATCH_CHANGED || ctx->dd.push_state_changed[ZINK_PIPELINE_MESH] || ctx->dd.state_changed[ZINK_PIPELINE_MESH] || pipeline_changed))
+      zink_descriptors_update(ctx, ZINK_PIPELINE_MESH);
+
+   if (ctx->di.any_bindless_dirty &&
+       /* some apps (d3dretrace) call MakeTextureHandleResidentARB randomly */
+       zink_program_has_descriptors(&ctx->mesh_program->base) &&
+       ctx->mesh_program->base.dd.bindless)
+      zink_descriptors_update_bindless(ctx);
+
+   if (BATCH_CHANGED) {
+      ctx->pipeline_changed[ZINK_PIPELINE_MESH] = false;
+      zink_select_draw_mesh_tasks(ctx);
+   }
+
+   bool marker = false;
+   if (unlikely(zink_tracing)) {
+      marker = zink_cmd_debug_marker_begin(ctx, VK_NULL_HANDLE, "draw_mesh(%u cbufs|%s, %dx%d)",
+                                             ctx->fb_state.nr_cbufs,
+                                             ctx->fb_state.zsbuf.texture ? "zsbuf" : "",
+                                             lround(ctx->fb_state.width), lround(ctx->fb_state.height));
+   }
+
+   if (info->indirect) {
+      struct zink_resource *indirect = zink_resource(info->indirect);
+      zink_batch_reference_resource_rw(ctx, indirect, false);
+      if (info->indirect_draw_count) {
+         struct zink_resource *indirect_draw_count = zink_resource(info->indirect_draw_count);
+         zink_batch_reference_resource_rw(ctx, indirect_draw_count, false);
+         VKCTX(CmdDrawMeshTasksIndirectCountEXT)(bs->cmdbuf, indirect->obj->buffer, info->indirect_offset,
+                                                 indirect_draw_count->obj->buffer, info->indirect_draw_count_offset,
+                                                 info->draw_count, info->indirect_stride);
+      } else
+         VKCTX(CmdDrawMeshTasksIndirectEXT)(bs->cmdbuf, indirect->obj->buffer, info->indirect_offset, info->draw_count, info->indirect_stride);
+   } else {
+      VKCTX(CmdDrawMeshTasksEXT)(bs->cmdbuf, info->grid[0], info->grid[1], info->grid[2]);
+   }
+
+   if (unlikely(zink_tracing))
+      zink_cmd_debug_marker_end(ctx, bs->cmdbuf, marker);
+
+   ctx->last_work_was_compute = false;
+   ctx->work_count++;
+   if (!ctx->pipeline_changed[ZINK_PIPELINE_GFX]) {
+      ctx->pipeline_changed[ZINK_PIPELINE_GFX] = true;
+      zink_select_draw_vbo(ctx);
+   }
    /* flush if there's >100k draws */
    if (!ctx->unordered_blitting && (unlikely(work_count >= 30000) || ctx->oom_flush))
       pctx->flush(pctx, NULL, 0);
@@ -1223,6 +1397,12 @@ zink_invalid_draw_vbo(struct pipe_context *pipe,
 }
 
 static void
+zink_invalid_draw_mesh_tasks(struct pipe_context *pctx, const struct pipe_grid_info *dinfo)
+{
+   UNREACHABLE("mesh shader not bound");
+}
+
+static void
 zink_invalid_draw_vertex_state(struct pipe_context *pipe,
                                struct pipe_vertex_state *vstate,
                                uint32_t partial_velem_mask,
@@ -1303,6 +1483,35 @@ equals_gfx_program(const void *a, const void *b)
    return !memcmp(a, b, sizeof(void*) * ZINK_GFX_SHADER_COUNT);
 }
 
+template <unsigned HAS_TASK>
+static uint32_t
+hash_mesh_program(const void *key)
+{
+   const struct zink_shader **shaders = (const struct zink_shader**)key;
+   uint32_t base_hash = shaders[MESA_SHADER_MESH]->hash ^ shaders[MESA_SHADER_FRAGMENT]->hash;
+   if (HAS_TASK == 0) //MS+FS
+      return base_hash;
+   //TS+MS+FS
+   return base_hash ^ shaders[MESA_SHADER_TASK]->hash;
+}
+
+template <unsigned HAS_TASK>
+static bool
+equals_mesh_program(const void *a, const void *b)
+{
+   const void **sa = (const void**)a;
+   const void **sb = (const void**)b;
+   STATIC_ASSERT(MESA_SHADER_TASK == 6);
+   STATIC_ASSERT(MESA_SHADER_MESH == 7);
+   STATIC_ASSERT(MESA_SHADER_FRAGMENT == 4);
+   if (HAS_TASK == 0) //MS+FS
+      return sa[MESA_SHADER_MESH] == sb[MESA_SHADER_MESH] &&
+             sa[MESA_SHADER_FRAGMENT] == sb[MESA_SHADER_FRAGMENT];
+   //TS+MS+FS
+   return sa[MESA_SHADER_FRAGMENT] == sb[MESA_SHADER_FRAGMENT] &&
+          !memcmp(&sa[MESA_SHADER_TASK], &sb[MESA_SHADER_TASK], sizeof(void*) * 2);
+}
+
 extern "C"
 void
 zink_init_draw_functions(struct zink_context *ctx, struct zink_screen *screen)
@@ -1355,6 +1564,15 @@ zink_init_draw_functions(struct zink_context *ctx, struct zink_screen *screen)
    _mesa_hash_table_init(&ctx->program_cache[7], ctx, hash_gfx_program<7>, equals_gfx_program<7>);
    for (unsigned i = 0; i < ARRAY_SIZE(ctx->program_lock); i++)
       simple_mtx_init(&ctx->program_lock[i], mtx_plain);
+
+   ctx->base.draw_mesh_tasks = zink_draw_mesh_tasks<true>;
+   _mesa_hash_table_init(&ctx->mesh_cache[0], ctx, hash_mesh_program<0>, equals_mesh_program<0>);
+   _mesa_hash_table_init(&ctx->mesh_cache[1], ctx, hash_mesh_program<1>, equals_mesh_program<1>);
+   for (unsigned i = 0; i < ARRAY_SIZE(ctx->mesh_lock); i++)
+      simple_mtx_init(&ctx->mesh_lock[i], mtx_plain);
+   ctx->draw_mesh_tasks[0] = zink_draw_mesh_tasks<false>;
+   ctx->draw_mesh_tasks[1] = zink_draw_mesh_tasks<true>;
+   ctx->base.draw_mesh_tasks = zink_invalid_draw_mesh_tasks;
 }
 
 void
@@ -1380,4 +1598,9 @@ zink_init_screen_pipeline_libs(struct zink_screen *screen)
    _mesa_set_init(&screen->pipeline_libs[7], NULL, hash_gfx_program<7>, equals_gfx_program<7>);
    for (unsigned i = 0; i < ARRAY_SIZE(screen->pipeline_libs_lock); i++)
       simple_mtx_init(&screen->pipeline_libs_lock[i], mtx_plain);
+
+   _mesa_set_init(&screen->mesh_pipeline_libs[0], NULL, hash_mesh_program<0>, equals_mesh_program<0>);
+   _mesa_set_init(&screen->mesh_pipeline_libs[1], NULL, hash_mesh_program<1>, equals_mesh_program<1>);
+   for (unsigned i = 0; i < ARRAY_SIZE(screen->mesh_pipeline_libs_lock); i++)
+      simple_mtx_init(&screen->mesh_pipeline_libs_lock[i], mtx_plain);
 }

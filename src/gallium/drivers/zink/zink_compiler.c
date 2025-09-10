@@ -3320,7 +3320,7 @@ zink_shader_spirv_compile(struct zink_screen *screen, struct zink_shader *zs, st
       sci.pSetLayouts = pg->dsl;
    } else {
       sci.setLayoutCount = zs->info.stage == MESA_SHADER_COMPUTE ? 1 : ZINK_GFX_SHADER_COUNT;
-      dsl[zs->info.stage] = zs->precompile.dsl;;
+      dsl[zink_descriptor_stage_idx(zs->info.stage)] = zs->precompile.dsl;;
       sci.pSetLayouts = dsl;
    }
    VkPushConstantRange pcr;
@@ -4495,10 +4495,7 @@ zink_binding(mesa_shader_stage stage, VkDescriptorType type, int index, bool com
    if (stage == MESA_SHADER_NONE) {
       UNREACHABLE("not supported");
    } else {
-      unsigned base = stage;
-      /* clamp compute bindings for better driver efficiency */
-      if (mesa_shader_stage_is_compute(stage))
-         base = 0;
+      unsigned base = zink_descriptor_stage_idx(stage);
       switch (type) {
       case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
       case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
@@ -6291,7 +6288,8 @@ zink_shader_init(struct zink_screen *screen, struct zink_shader *zs)
             ztype = ZINK_DESCRIPTOR_TYPE_UBO;
             /* buffer 0 is a push descriptor */
             var->data.descriptor_set = !!var->data.driver_location;
-            var->data.binding = !var->data.driver_location ? clamp_stage(&nir->info) :
+            unsigned clamped_stage = mesa_shader_stage_is_compute(nir->info.stage) ? MESA_SHADER_COMPUTE : mesa_shader_stage_is_mesh(nir->info.stage) ? nir->info.stage - MESA_SHADER_TASK : nir->info.stage;
+            var->data.binding = !var->data.driver_location ? clamped_stage :
                                 zink_binding(nir->info.stage,
                                              VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                                              var->data.driver_location,
@@ -6436,25 +6434,26 @@ gfx_shader_prune(struct zink_screen *screen, struct zink_shader *shader)
    if (!prog)
       return false;
    mesa_shader_stage stage = shader->info.stage;
-   assert(stage < ZINK_GFX_SHADER_COUNT);
+   assert(!mesa_shader_stage_is_compute(stage));
    util_queue_fence_wait(&prog->base.cache_fence);
    unsigned stages_present = prog->stages_present;
+   bool is_mesh = (stages_present & BITFIELD_BIT(MESA_SHADER_MESH)) > 0;
    unsigned stages_remaining = prog->stages_remaining;
-   if (prog->shaders[MESA_SHADER_TESS_CTRL] &&
-         prog->shaders[MESA_SHADER_TESS_CTRL]->non_fs.is_generated) {
+   if (!is_mesh && prog->shaders[MESA_SHADER_TESS_CTRL] && prog->shaders[MESA_SHADER_TESS_CTRL]->non_fs.is_generated) {
       stages_present &= ~BITFIELD_BIT(MESA_SHADER_TESS_CTRL);
       stages_remaining &= ~BITFIELD_BIT(MESA_SHADER_TESS_CTRL);
    }
-   unsigned idx = zink_program_cache_stages(stages_present);
+   unsigned idx = is_mesh ? zink_mesh_cache_stages(stages_present) : zink_program_cache_stages(stages_present);
    if (!prog->base.removed && stages_present == stages_remaining &&
          (stage == MESA_SHADER_FRAGMENT || !shader->non_fs.is_generated)) {
-      struct hash_table *ht = &prog->base.ctx->program_cache[idx];
-      simple_mtx_lock(&prog->base.ctx->program_lock[idx]);
+      struct hash_table *ht = is_mesh ? &prog->base.ctx->mesh_cache[idx] : &prog->base.ctx->program_cache[idx];
+      simple_mtx_t *lock = is_mesh ? &prog->base.ctx->mesh_lock[idx] : &prog->base.ctx->program_lock[idx];
+      simple_mtx_lock(lock);
       struct hash_entry *he = _mesa_hash_table_search(ht, prog->shaders);
       assert(he && he->data == prog);
       _mesa_hash_table_remove(ht, he);
       prog->base.removed = true;
-      simple_mtx_unlock(&prog->base.ctx->program_lock[idx]);
+      simple_mtx_unlock(lock);
 
       for (int i = 0; i < ARRAY_SIZE(prog->pipelines); ++i) {
          hash_table_foreach(&prog->pipelines[i], table_entry) {
@@ -6473,8 +6472,7 @@ gfx_shader_prune(struct zink_screen *screen, struct zink_shader *shader)
       prog->shaders[MESA_SHADER_TESS_CTRL] = NULL;
    if (stage != MESA_SHADER_FRAGMENT &&
       prog->shaders[MESA_SHADER_GEOMETRY] &&
-      prog->shaders[MESA_SHADER_GEOMETRY]->non_fs.parent ==
-      shader) {
+      prog->shaders[MESA_SHADER_GEOMETRY]->non_fs.parent == shader) {
       prog->shaders[MESA_SHADER_GEOMETRY] = NULL;
    }
    zink_gfx_program_reference(screen, &prog, NULL);
@@ -6494,10 +6492,17 @@ zink_gfx_shader_free(struct zink_screen *screen, struct zink_shader *shader)
       struct zink_gfx_lib_cache *libs = util_dynarray_pop(&shader->pipeline_libs, struct zink_gfx_lib_cache*);
       if (!libs->removed) {
          libs->removed = true;
-         unsigned idx = zink_program_cache_stages(libs->stages_present);
-         simple_mtx_lock(&screen->pipeline_libs_lock[idx]);
-         _mesa_set_remove_key(&screen->pipeline_libs[idx], libs);
-         simple_mtx_unlock(&screen->pipeline_libs_lock[idx]);
+         if (libs->stages_present & BITFIELD_BIT(MESA_SHADER_MESH)) {
+            unsigned idx = (libs->stages_present & BITFIELD_BIT(MESA_SHADER_TASK)) > 0;
+            simple_mtx_lock(&screen->mesh_pipeline_libs_lock[idx]);
+            _mesa_set_remove_key(&screen->mesh_pipeline_libs[idx], libs);
+            simple_mtx_unlock(&screen->mesh_pipeline_libs_lock[idx]);
+         } else {
+            unsigned idx = zink_program_cache_stages(libs->stages_present);
+            simple_mtx_lock(&screen->pipeline_libs_lock[idx]);
+            _mesa_set_remove_key(&screen->pipeline_libs[idx], libs);
+            simple_mtx_unlock(&screen->pipeline_libs_lock[idx]);
+         }
       }
       zink_gfx_lib_cache_unref(screen, libs);
    }
@@ -6507,7 +6512,7 @@ zink_gfx_shader_free(struct zink_screen *screen, struct zink_shader *shader)
       zink_gfx_shader_free(screen, shader->non_fs.generated_tcs);
       shader->non_fs.generated_tcs = NULL;
    }
-   if (shader->info.stage != MESA_SHADER_FRAGMENT) {
+   if (shader->info.stage < MESA_SHADER_FRAGMENT) {
       for (unsigned int i = 0; i < ARRAY_SIZE(shader->non_fs.generated_gs); i++) {
          for (int j = 0; j < ARRAY_SIZE(shader->non_fs.generated_gs[0]); j++) {
             if (shader->non_fs.generated_gs[i][j]) {

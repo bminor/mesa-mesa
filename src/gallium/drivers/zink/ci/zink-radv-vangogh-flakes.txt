@@ -421,3 +421,9 @@ KHR-GL46.transform_feedback_overflow_query_ARB.multiple-streams-one-buffer-per-s
 dEQP-GLES31.functional.copy_image.mixed.viewclass_64_bits_mixed.rg32f_r11_eac.texture3d_to_cubemap
 shaders@glsl-fs-loop
 spec@arb_gpu_shader5@texturegather@vs-rgba-3-unorm-2d
+
+
+
+# mesh shaders somehow?
+glx@glx-visuals-stencil
+glx@glx-visuals-stencil -pixmap

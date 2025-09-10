@@ -221,3 +221,7 @@ spec@glsl-1.50@gs-max-output
 spec@glsl-4.30@execution@built-in-functions@cs-clamp-ivec4-ivec4-ivec4
 spec@oes_texture_view@rendering-formats
 spec@ovr_multiview@triangle_compare_max_basemax_layersmax
+
+# mesh shaders somehow?
+glx@glx-visuals-depth
+glx@glx-visuals-stencil

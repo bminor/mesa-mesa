@@ -123,6 +123,8 @@ void
 zink_gfx_program_update(struct zink_context *ctx);
 void
 zink_gfx_program_update_optimal(struct zink_context *ctx);
+void
+zink_mesh_program_update_optimal(struct zink_context *ctx);
 
 
 struct zink_gfx_library_key *
@@ -156,7 +158,8 @@ struct zink_gfx_program *
 zink_create_gfx_program(struct zink_context *ctx,
                         struct zink_shader **stages,
                         unsigned vertices_per_patch,
-                        uint32_t gfx_hash);
+                        uint32_t gfx_hash,
+                        bool is_mesh);
 
 void
 zink_destroy_gfx_program(struct zink_screen *screen,
@@ -432,6 +435,31 @@ zink_can_use_shader_objects(const struct zink_context *ctx)
           !ctx->is_generated_gs_bound;
 }
 
+ALWAYS_INLINE static bool
+zink_can_use_pipeline_libs_mesh(const struct zink_context *ctx)
+{
+   return
+          /* this is just terrible */
+          !zink_get_fs_base_key(ctx)->shadow_needs_shader_swizzle &&
+          /* TODO: is sample shading even possible to handle with GPL? */
+          !ctx->gfx_stages[MESA_SHADER_FRAGMENT]->info.fs.uses_sample_shading &&
+          !zink_get_fs_base_key(ctx)->fbfetch_ms &&
+          !ctx->gfx_pipeline_state.force_persample_interp &&
+          !ctx->gfx_pipeline_state.min_samples;
+}
+
+/* stricter requirements */
+ALWAYS_INLINE static bool
+zink_can_use_shader_objects_mesh(const struct zink_context *ctx)
+{
+   return
+          ZINK_SHADER_KEY_OPTIMAL_IS_DEFAULT_MESH(ctx->gfx_pipeline_state.optimal_key) &&
+          /* TODO: is sample shading even possible to handle with GPL? */
+          !ctx->gfx_stages[MESA_SHADER_FRAGMENT]->info.fs.uses_sample_shading &&
+          !ctx->gfx_pipeline_state.force_persample_interp &&
+          !ctx->gfx_pipeline_state.min_samples;
+}
+
 bool
 zink_set_rasterizer_discard(struct zink_context *ctx, bool disable);
 void
@@ -459,6 +487,18 @@ zink_sanitize_optimal_key(struct zink_shader **shaders, uint32_t val)
       k.val = val;
    else
       k.val = zink_shader_key_optimal_no_tcs(val);
+   if (!zink_shader_uses_samples(shaders[MESA_SHADER_FRAGMENT]))
+      k.fs.samples = false;
+   if (!(shaders[MESA_SHADER_FRAGMENT]->info.outputs_written & BITFIELD64_BIT(FRAG_RESULT_DATA1)))
+      k.fs.force_dual_color_blend = false;
+   return k.val;
+}
+
+static inline uint32_t
+zink_sanitize_optimal_key_mesh(struct zink_shader **shaders, uint32_t val)
+{
+   union zink_shader_key_optimal k;
+   k.val = zink_shader_key_optimal_mesh(val);
    if (!zink_shader_uses_samples(shaders[MESA_SHADER_FRAGMENT]))
       k.fs.samples = false;
    if (!(shaders[MESA_SHADER_FRAGMENT]->info.outputs_written & BITFIELD64_BIT(FRAG_RESULT_DATA1)))

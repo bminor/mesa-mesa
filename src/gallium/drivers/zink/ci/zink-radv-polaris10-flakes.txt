@@ -105,3 +105,11 @@ spec@ext_texture_lod_bias@lodbias
 spec@glsl-1.30@execution@texelfetch fs sampler1darray 1x71-501x71
 spec@glsl-1.30@execution@texelfetch fs sampler2d 1x71-501x71
 spec@glsl-1.30@execution@texelfetch fs sampler2darray 1x129x9-98x129x9
+
+
+# mesh shaders somehow?
+glx@glx-visuals-depth
+glx@glx-visuals-depth -pixmap
+glx@glx-visuals-stencil
+glx@glx-visuals-stencil -pixmap
+

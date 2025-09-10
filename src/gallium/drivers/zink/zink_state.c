@@ -640,7 +640,7 @@ zink_bind_rasterizer_state(struct pipe_context *pctx, void *cso)
 
       if (clip_halfz != ctx->rast_state->base.clip_halfz) {
          if (screen->info.have_EXT_depth_clip_control)
-            ctx->gfx_pipeline_state.dirty = true;
+            ctx->gfx_pipeline_state.dirty = ctx->gfx_pipeline_state.mesh_dirty = true;
          else
             zink_set_last_vertex_key(ctx)->clip_halfz = ctx->rast_state->base.clip_halfz;
          ctx->vp_state_changed = true;
