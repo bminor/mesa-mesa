@@ -606,6 +606,13 @@ panfrost_should_afbc(struct panfrost_device *dev,
    if (pres->base.bind & PIPE_BIND_CONST_BW)
       return false;
 
+   /* We can't do AFBC(Z32)+S8 on v7- because the AFBC ZS target layout overlaps
+    * the S target layout. Since we don't know at this point if the Z32 buffer
+    * will be attached an S8 buffer, we have to reject AFBC(Z32)
+    * unconditionally. */
+   if (dev->arch <= 7 && fmt == PIPE_FORMAT_Z32_FLOAT)
+      return false;
+
    /* Only a small selection of formats are AFBC'able */
    if (!pan_afbc_supports_format(dev->arch, fmt))
       return false;
