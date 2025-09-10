@@ -623,6 +623,8 @@ zink_gfx_program_update(struct zink_context *ctx)
          for (unsigned i = 0; i < ZINK_GFX_SHADER_COUNT; i++) {
             if (prog->stages_present & ~ctx->dirty_gfx_stages & BITFIELD_BIT(i))
                ctx->gfx_pipeline_state.modules[i] = prog->objs[i].mod;
+            else
+               ctx->gfx_pipeline_state.modules[i] = VK_NULL_HANDLE;
          }
          /* ensure variants are always updated if keys have changed since last use */
          ctx->dirty_gfx_stages |= prog->stages_present;
@@ -1804,7 +1806,6 @@ bind_gfx_stage(struct zink_context *ctx, mesa_shader_stage stage, struct zink_sh
       if (shader->info.uses_bindless)
          zink_descriptors_init_bindless(ctx);
    } else {
-      ctx->gfx_pipeline_state.modules[stage] = VK_NULL_HANDLE;
       if (ctx->curr_program)
          ctx->gfx_pipeline_state.final_hash ^= ctx->curr_program->last_variant_hash;
       ctx->curr_program = NULL;
