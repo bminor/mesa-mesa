@@ -84,6 +84,15 @@ AddressSpaceStream* createVirtioGpuAddressSpaceStream(enum VirtGpuCapset capset)
     VirtGpuDevice* instance = VirtGpuDevice::getInstance();
     auto caps = instance->getCaps();
 
+    if (!caps.params[kParamResourceBlob]) {
+        mesa_loge("VirtGpuDevice does not support blob-resources!");
+        return nullptr;
+    }
+    if (!caps.params[kParamHostVisible] && !caps.params[kParamCreateGuestHandle]) {
+        mesa_loge("VirtGpuDevice must support at least one of: 1) host-visible memory (kParamHostVisible) or 2) host handles created from guest memory (kParamCreateGuestHandle).");
+        return nullptr;
+    }
+
     if (!GetRingParamsFromCapset(capset, caps, ringSize, bufferSize, blobAlignment)) {
         mesa_loge("Failed to get ring parameters");
         return nullptr;

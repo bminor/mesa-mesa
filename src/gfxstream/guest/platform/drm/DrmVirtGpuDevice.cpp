@@ -194,7 +194,7 @@ int32_t DrmVirtGpuDevice::init(int32_t descriptor) {
 
         ret = drmIoctl(mDeviceHandle, DRM_IOCTL_VIRTGPU_GETPARAM, &get_param);
         if (ret) {
-            mesa_logd("virtgpu backend not enabling %s", params[i].name);
+            mesa_logd("Could not query virtgpu param from device: %s", params[i].name);
             continue;
         }
 
