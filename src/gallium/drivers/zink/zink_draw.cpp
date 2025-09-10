@@ -1018,6 +1018,8 @@ zink_draw_vertex_state(struct pipe_context *pctx,
    zink_draw<HAS_MULTIDRAW, DYNAMIC_STATE, BATCH_CHANGED, true>(pctx, &dinfo, 0, NULL, draws, num_draws, vstate, partial_velem_mask);
    /* ensure ctx->vertex_buffers gets rebound on next non-vstate draw */
    ctx->vertex_buffers_dirty = true;
+   /* ensure ctx->element_state gets rebound on next non-vstate draw */
+   ctx->vertex_state_changed = true;
 
    if (info.take_vertex_state_ownership)
       pipe_vertex_state_reference(&vstate, NULL);
