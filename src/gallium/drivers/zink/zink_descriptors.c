@@ -522,7 +522,8 @@ zink_descriptor_program_init(struct zink_context *ctx, struct zink_program *pg)
       }
    }
 
-   unsigned num_shaders = pg->is_compute ? 1 : ZINK_GFX_SHADER_COUNT;
+   struct zink_gfx_program *prog;
+   unsigned num_shaders = pg->is_compute ? 1 : ARRAY_SIZE(prog->shaders);
    bool have_push = screen->info.have_KHR_push_descriptor;
    /* iterate over the shaders and generate binding/layout/template structs */
    for (int i = 0; i < num_shaders; i++) {
