@@ -601,7 +601,7 @@ radv_cmd_buffer_resolve_rendering(struct radv_cmd_buffer *cmd_buffer)
       barrier.src_stage_mask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
       barrier.dst_stage_mask = VK_PIPELINE_STAGE_2_RESOLVE_BIT;
       barrier.src_access_mask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
-      barrier.dst_access_mask = VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_SHADER_WRITE_BIT;
+      barrier.dst_access_mask = VK_ACCESS_2_SHADER_READ_BIT;
       radv_emit_resolve_barrier(cmd_buffer, &barrier);
 
       for (uint32_t i = 0; i < render->color_att_count; ++i) {
