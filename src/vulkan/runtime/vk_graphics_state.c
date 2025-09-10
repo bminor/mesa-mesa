@@ -2718,7 +2718,9 @@ vk_common_CmdSetSampleMaskEXT(VkCommandBuffer commandBuffer,
    VK_FROM_HANDLE(vk_command_buffer, cmd, commandBuffer);
    struct vk_dynamic_graphics_state *dyn = &cmd->dynamic_graphics_state;
 
-   VkSampleMask sample_mask = *pSampleMask & BITFIELD_MASK(MESA_VK_MAX_SAMPLES);
+   VkSampleMask sample_mask = BITFIELD_MASK(MESA_VK_MAX_SAMPLES);
+   if (pSampleMask != NULL)
+      sample_mask &= *pSampleMask;
 
    SET_DYN_VALUE(dyn, MS_SAMPLE_MASK, ms.sample_mask, sample_mask);
 }
