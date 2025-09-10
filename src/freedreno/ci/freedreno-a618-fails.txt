@@ -107,24 +107,6 @@ spec@ext_framebuffer_multisample@sample-alpha-to-coverage 4 depth,Fail
 spec@ext_framebuffer_object@fbo-alphatest-nocolor,Fail
 spec@ext_framebuffer_object@fbo-alphatest-nocolor-ff,Fail
 
-# These failures go away with FD_MESA_DEBUG=noblit, but don't seem to be related
-# to the actual mipmap generation blits (which we do fall back on)
-spec@ext_texture_snorm@fbo-generatemipmap-formats,Fail
-spec@ext_texture_snorm@fbo-generatemipmap-formats@GL_ALPHA16_SNORM,Fail
-spec@ext_texture_snorm@fbo-generatemipmap-formats@GL_ALPHA16_SNORM NPOT,Fail
-spec@ext_texture_snorm@fbo-generatemipmap-formats@GL_INTENSITY_SNORM,Fail
-spec@ext_texture_snorm@fbo-generatemipmap-formats@GL_INTENSITY_SNORM NPOT,Fail
-spec@ext_texture_snorm@fbo-generatemipmap-formats@GL_INTENSITY8_SNORM,Fail
-spec@ext_texture_snorm@fbo-generatemipmap-formats@GL_INTENSITY8_SNORM NPOT,Fail
-spec@ext_texture_snorm@fbo-generatemipmap-formats@GL_INTENSITY16_SNORM,Fail
-spec@ext_texture_snorm@fbo-generatemipmap-formats@GL_INTENSITY16_SNORM NPOT,Fail
-spec@ext_texture_snorm@fbo-generatemipmap-formats@GL_LUMINANCE16_ALPHA16_SNORM,Fail
-spec@ext_texture_snorm@fbo-generatemipmap-formats@GL_LUMINANCE16_ALPHA16_SNORM NPOT,Fail
-spec@ext_texture_snorm@fbo-generatemipmap-formats@GL_LUMINANCE16_SNORM,Fail
-spec@ext_texture_snorm@fbo-generatemipmap-formats@GL_LUMINANCE16_SNORM NPOT,Fail
-
-spec@ext_texture_snorm@multisample-formats 2 gl_ext_texture_snorm,Fail
-spec@ext_texture_snorm@multisample-formats 4 gl_ext_texture_snorm,Fail
 spec@ext_transform_feedback@tessellation triangle_fan flat_first,Fail
 spec@ext_transform_feedback@tessellation triangle_strip flat_first,Fail
 spec@glsl-1.30@execution@texelfetch fs sampler3d 1x129x9-98x129x9,Fail

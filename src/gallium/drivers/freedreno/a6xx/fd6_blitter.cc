@@ -1496,7 +1496,7 @@ handle_snorm_copy_blit(struct fd_context *ctx,
 
    blit.src.format = blit.dst.format = util_format_snorm_to_unorm(info->src.format);
 
-   return do_rewritten_blit<CHIP>(ctx, &blit);
+   return handle_rgba_blit<CHIP>(ctx, &blit);
 }
 
 template <chip CHIP>
