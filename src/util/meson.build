@@ -120,6 +120,7 @@ files_mesa_util = files(
   'sparse_array.h',
   'string_buffer.c',
   'string_buffer.h',
+  'strndup.c',
   'strndup.h',
   'strtod.c',
   'strtod.h',
