@@ -222,12 +222,14 @@ descriptor_util_pool_key_get(struct zink_screen *screen, enum zink_descriptor_ty
 }
 
 static void
-init_push_binding(VkDescriptorSetLayoutBinding *binding, unsigned i, VkDescriptorType type)
+init_push_binding(VkDescriptorSetLayoutBinding *binding, unsigned b, unsigned stage_bits, VkDescriptorType type)
 {
-   binding->binding = i;
+   binding->binding = b;
    binding->descriptorType = type;
    binding->descriptorCount = 1;
-   binding->stageFlags = mesa_to_vk_shader_stage(i);
+   binding->stageFlags = 0;
+   u_foreach_bit(stage, stage_bits)
+      binding->stageFlags |= mesa_to_vk_shader_stage(stage);
    binding->pImmutableSamplers = NULL;
 }
 
@@ -245,8 +247,10 @@ create_gfx_layout(struct zink_context *ctx, struct zink_descriptor_layout_key **
    VkDescriptorSetLayoutBinding bindings[MESA_SHADER_STAGES];
    enum zink_descriptor_type dsl_type;
    VkDescriptorType vktype = get_push_types(screen, &dsl_type);
-   for (unsigned i = 0; i < ZINK_GFX_SHADER_COUNT; i++)
-      init_push_binding(&bindings[i], i, vktype);
+   for (unsigned i = 0; i < ZINK_GFX_SHADER_COUNT; i++) {
+      unsigned stage_bits = BITFIELD_BIT(i);
+      init_push_binding(&bindings[i], i, stage_bits, vktype);
+   }
    if (fbfetch) {
       bindings[ZINK_GFX_SHADER_COUNT].binding = ZINK_FBFETCH_BINDING;
       bindings[ZINK_GFX_SHADER_COUNT].descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
@@ -264,7 +268,7 @@ zink_descriptor_util_push_layouts_get(struct zink_context *ctx)
    VkDescriptorSetLayoutBinding compute_binding;
    enum zink_descriptor_type dsl_type;
    VkDescriptorType vktype = get_push_types(screen, &dsl_type);
-   init_push_binding(&compute_binding, MESA_SHADER_COMPUTE, vktype);
+   init_push_binding(&compute_binding, MESA_SHADER_COMPUTE, BITFIELD_BIT(MESA_SHADER_COMPUTE), vktype);
    ctx->dd.push_dsl[0] = create_gfx_layout(ctx, &ctx->dd.push_layout_keys[0], false);
    ctx->dd.push_dsl[1] = create_layout(screen, dsl_type, &compute_binding, 1, &ctx->dd.push_layout_keys[1]);
    return ctx->dd.push_dsl[0] && ctx->dd.push_dsl[1];
@@ -1613,12 +1617,12 @@ zink_batch_descriptor_init(struct zink_screen *screen, struct zink_batch_state *
 }
 
 static void
-init_push_template_entry(VkDescriptorUpdateTemplateEntry *entry, unsigned i)
+init_push_template_entry(VkDescriptorUpdateTemplateEntry *entry, unsigned binding, enum mesa_shader_stage pstage)
 {
-   entry->dstBinding = i;
+   entry->dstBinding = binding;
    entry->descriptorCount = 1;
    entry->descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-   entry->offset = offsetof(struct zink_context, di.t.ubos[i][0]);
+   entry->offset = offsetof(struct zink_context, di.t.ubos[pstage][0]);
    entry->stride = sizeof(VkDescriptorBufferInfo);
 }
 
@@ -1629,9 +1633,9 @@ zink_descriptors_init(struct zink_context *ctx)
    struct zink_screen *screen = zink_screen(ctx->base.screen);
    for (unsigned i = 0; i < ZINK_GFX_SHADER_COUNT; i++) {
       VkDescriptorUpdateTemplateEntry *entry = &ctx->dd.push_entries[i];
-      init_push_template_entry(entry, i);
+      init_push_template_entry(entry, i, i);
    }
-   init_push_template_entry(&ctx->dd.compute_push_entry, MESA_SHADER_COMPUTE);
+   init_push_template_entry(&ctx->dd.compute_push_entry, MESA_SHADER_COMPUTE, MESA_SHADER_COMPUTE);
    VkDescriptorUpdateTemplateEntry *entry = &ctx->dd.push_entries[ZINK_GFX_SHADER_COUNT]; //fbfetch
    entry->dstBinding = ZINK_FBFETCH_BINDING;
    entry->descriptorCount = 1;
