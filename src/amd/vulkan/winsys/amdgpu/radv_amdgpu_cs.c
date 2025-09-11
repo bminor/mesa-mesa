@@ -1069,29 +1069,21 @@ radv_assign_last_submit(struct radv_amdgpu_ctx *ctx, struct radv_amdgpu_cs_reque
 }
 
 static unsigned
-radv_amdgpu_get_num_ibs_per_cs(const struct radv_amdgpu_cs *cs)
+radv_amdgpu_submitted_ibs_per_cs(const struct radv_amdgpu_cs *cs)
 {
-   unsigned num_ibs = 0;
-
-   if (cs->chain_ib) {
-      num_ibs = 1; /* Everything is chained. */
-   } else {
-      num_ibs = cs->num_ib_buffers;
-   }
-
-   return num_ibs;
+   return cs->chain_ib ? 1 : cs->num_ib_buffers;
 }
 
 static unsigned
-radv_amdgpu_count_ibs(struct radeon_cmdbuf **cs_array, unsigned cs_count, unsigned initial_preamble_count,
-                      unsigned continue_preamble_count, unsigned postamble_count)
+radv_amdgpu_count_submitted_ibs(struct radeon_cmdbuf **cs_array, unsigned cs_count, unsigned initial_preamble_count,
+                                unsigned continue_preamble_count, unsigned postamble_count)
 {
    unsigned num_ibs = 0;
 
    for (unsigned i = 0; i < cs_count; i++) {
       struct radv_amdgpu_cs *cs = radv_amdgpu_cs(cs_array[i]);
 
-      num_ibs += radv_amdgpu_get_num_ibs_per_cs(cs);
+      num_ibs += radv_amdgpu_submitted_ibs_per_cs(cs);
    }
 
    return MAX2(initial_preamble_count, continue_preamble_count) + num_ibs + postamble_count;
@@ -1111,8 +1103,8 @@ radv_amdgpu_winsys_cs_submit_internal(struct radv_amdgpu_ctx *ctx, int queue_idx
    struct radv_amdgpu_cs *last_cs = radv_amdgpu_cs(cs_array[cs_count - 1]);
    struct radv_amdgpu_winsys *ws = last_cs->ws;
 
-   const unsigned num_ibs =
-      radv_amdgpu_count_ibs(cs_array, cs_count, initial_preamble_count, continue_preamble_count, postamble_count);
+   const unsigned num_ibs = radv_amdgpu_count_submitted_ibs(cs_array, cs_count, initial_preamble_count,
+                                                            continue_preamble_count, postamble_count);
    const unsigned ib_array_size = MIN2(RADV_MAX_IBS_PER_SUBMIT, num_ibs);
 
    STACK_ARRAY(struct radv_amdgpu_cs_ib_info, ibs, ib_array_size);
@@ -1166,7 +1158,7 @@ radv_amdgpu_winsys_cs_submit_internal(struct radv_amdgpu_ctx *ctx, int queue_idx
 
          if (cs_ib_idx == 0) {
             /* Make sure the whole CS fits into the same submission. */
-            unsigned cs_num_ib = radv_amdgpu_get_num_ibs_per_cs(cs);
+            unsigned cs_num_ib = radv_amdgpu_submitted_ibs_per_cs(cs);
             if (i + cs_num_ib > ib_per_submit || ibs_per_ip[cs->hw_ip] + cs_num_ib > max_ib_per_ip[cs->hw_ip])
                break;
 
@@ -1178,7 +1170,7 @@ radv_amdgpu_winsys_cs_submit_internal(struct radv_amdgpu_ctx *ctx, int queue_idx
                assert(cs_idx != cs_count - 1);
                struct radv_amdgpu_cs *next_cs = radv_amdgpu_cs(cs_array[cs_idx + 1]);
                assert(next_cs->hw_ip == request.ip_type);
-               unsigned next_cs_num_ib = radv_amdgpu_get_num_ibs_per_cs(next_cs);
+               unsigned next_cs_num_ib = radv_amdgpu_submitted_ibs_per_cs(next_cs);
                if (i + cs_num_ib + next_cs_num_ib > ib_per_submit ||
                    ibs_per_ip[next_cs->hw_ip] + next_cs_num_ib > max_ib_per_ip[next_cs->hw_ip])
                   break;
