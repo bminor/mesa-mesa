@@ -28,6 +28,11 @@ struct tu_queue
    uint32_t msm_queue_id;
    uint32_t priority;
 
+   uint32_t sparse_queue_id;
+
+   uint32_t sparse_syncobj, gfx_syncobj;
+   uint64_t sparse_timepoint, gfx_timepoint;
+
    int fence;           /* timestamp/fence of the last queue submission */
 };
 VK_DEFINE_HANDLE_CASTS(tu_queue, vk.base, VkQueue, VK_OBJECT_TYPE_QUEUE)
