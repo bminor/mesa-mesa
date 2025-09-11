@@ -742,6 +742,12 @@ emit_blit_texture(struct fd_context *ctx, fd_cs &cs, const struct pipe_blit_info
    }
 }
 
+static inline uint32_t
+float_to_sbyte(float f)
+{
+   return util_iround(CLAMP(f, -1.0f, 1.0f) * 0x7f) & 0xff;
+}
+
 /* nregs: 4 */
 template <chip CHIP>
 static void
@@ -769,10 +775,10 @@ emit_clear_color(fd_ncrb<CHIP> &ncrb, enum pipe_format pfmt,
    case R2D_UNORM8_SRGB:
       /* The r2d ifmt is badly named, it also covers the signed case: */
       if (util_format_is_snorm(pfmt)) {
-         ncrb.add(A6XX_RB_A2D_CLEAR_COLOR_DW0(float_to_byte_tex(color->f[0])));
-         ncrb.add(A6XX_RB_A2D_CLEAR_COLOR_DW1(float_to_byte_tex(color->f[1])));
-         ncrb.add(A6XX_RB_A2D_CLEAR_COLOR_DW2(float_to_byte_tex(color->f[2])));
-         ncrb.add(A6XX_RB_A2D_CLEAR_COLOR_DW3(float_to_byte_tex(color->f[3])));
+         ncrb.add(A6XX_RB_A2D_CLEAR_COLOR_DW0(float_to_sbyte(color->f[0])));
+         ncrb.add(A6XX_RB_A2D_CLEAR_COLOR_DW1(float_to_sbyte(color->f[1])));
+         ncrb.add(A6XX_RB_A2D_CLEAR_COLOR_DW2(float_to_sbyte(color->f[2])));
+         ncrb.add(A6XX_RB_A2D_CLEAR_COLOR_DW3(float_to_sbyte(color->f[3])));
       } else {
          ncrb.add(A6XX_RB_A2D_CLEAR_COLOR_DW0(float_to_ubyte(color->f[0])));
          ncrb.add(A6XX_RB_A2D_CLEAR_COLOR_DW1(float_to_ubyte(color->f[1])));
