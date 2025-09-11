@@ -1892,9 +1892,10 @@ static LLVMValueRef get_global_address(struct ac_nir_context *ctx,
    bool is_store = instr->intrinsic == nir_intrinsic_store_global_amd;
    nir_src addr_src = instr->src[is_store ? 1 : 0];
    LLVMValueRef addr = get_src(ctx, addr_src);
+   bool smem = nir_intrinsic_has_access(instr) && nir_intrinsic_access(instr) & ACCESS_SMEM_AMD;
 
    unsigned address_space;
-   if (nir_intrinsic_access(instr) & ACCESS_SMEM_AMD) {
+   if (smem) {
       assert(!is_store);
       if (addr_src.ssa->bit_size == 64)
          address_space = AC_ADDR_SPACE_CONST;
@@ -1920,7 +1921,7 @@ static LLVMValueRef get_global_address(struct ac_nir_context *ctx,
    else
       addr = LLVMBuildGEP2(ctx->ac.builder, ctx->ac.i8, addr, &offset, 1, "");
 
-   if (nir_intrinsic_access(instr) & ACCESS_SMEM_AMD)
+   if (smem)
       LLVMSetMetadata(addr, ctx->ac.uniform_md_kind, ctx->ac.empty_md);
 
    return addr;
