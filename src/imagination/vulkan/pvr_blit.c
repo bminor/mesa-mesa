@@ -853,7 +853,7 @@ pvr_copy_buffer_to_image_region_format(struct pvr_cmd_buffer *const cmd_buffer,
    return VK_SUCCESS;
 }
 
-VkResult
+static VkResult
 pvr_copy_buffer_to_image_region(struct pvr_cmd_buffer *const cmd_buffer,
                                 const pvr_dev_addr_t buffer_dev_addr,
                                 const struct pvr_image *const image,
@@ -863,6 +863,12 @@ pvr_copy_buffer_to_image_region(struct pvr_cmd_buffer *const cmd_buffer,
    VkFormat src_format;
    VkFormat dst_format;
    uint32_t flags = 0;
+
+   /* From the Vulkan spec:
+    *
+    *    dstImage must have a sample count equal to VK_SAMPLE_COUNT_1_BIT
+    */
+   assert(image->vk.samples == VK_SAMPLE_COUNT_1_BIT);
 
    if (vk_format_has_depth(image->vk.format) &&
        vk_format_has_stencil(image->vk.format)) {
@@ -929,9 +935,6 @@ pvr_copy_image_to_buffer_region_format(struct pvr_cmd_buffer *const cmd_buffer,
    VkRect2D dst_rect = { 0 };
    uint32_t max_depth_slice;
    VkSubresourceLayout info;
-
-   /* Only images with VK_SAMPLE_COUNT_1_BIT can be copied to buffer. */
-   assert(image->vk.samples == 1);
 
    if (region->bufferRowLength == 0)
       buffer_row_length = region->imageExtent.width;
@@ -1042,7 +1045,7 @@ pvr_copy_image_to_buffer_region_format(struct pvr_cmd_buffer *const cmd_buffer,
    return VK_SUCCESS;
 }
 
-VkResult
+static VkResult
 pvr_copy_image_to_buffer_region(struct pvr_cmd_buffer *const cmd_buffer,
                                 const struct pvr_image *const image,
                                 const pvr_dev_addr_t buffer_dev_addr,
@@ -1052,6 +1055,12 @@ pvr_copy_image_to_buffer_region(struct pvr_cmd_buffer *const cmd_buffer,
 
    VkFormat src_format = pvr_get_copy_format(image->vk.format);
    VkFormat dst_format;
+
+   /* From the Vulkan spec:
+    *
+    *    srcImage must have a sample count equal to VK_SAMPLE_COUNT_1_BIT
+    */
+   assert(image->vk.samples == VK_SAMPLE_COUNT_1_BIT);
 
    /* Color and depth aspect copies can nearly all be done using an appropriate
     * raw format.

@@ -43,11 +43,6 @@ pvr_copy_or_resolve_color_image_region(struct pvr_cmd_buffer *cmd_buffer,
                                        const struct pvr_image *dst,
                                        const VkImageCopy2 *region);
 
-VkResult pvr_copy_buffer_to_image_region(struct pvr_cmd_buffer *cmd_buffer,
-                                         pvr_dev_addr_t buffer_dev_addr,
-                                         const struct pvr_image *image,
-                                         const VkBufferImageCopy2 *region);
-
 VkResult
 pvr_copy_buffer_to_image_region_format(struct pvr_cmd_buffer *cmd_buffer,
                                        pvr_dev_addr_t buffer_dev_addr,
@@ -56,11 +51,6 @@ pvr_copy_buffer_to_image_region_format(struct pvr_cmd_buffer *cmd_buffer,
                                        VkFormat src_format,
                                        VkFormat dst_format,
                                        uint32_t flags);
-
-VkResult pvr_copy_image_to_buffer_region(struct pvr_cmd_buffer *cmd_buffer,
-                                         const struct pvr_image *image,
-                                         pvr_dev_addr_t buffer_dev_addr,
-                                         const VkBufferImageCopy2 *region);
 
 VkResult
 pvr_copy_image_to_buffer_region_format(struct pvr_cmd_buffer *cmd_buffer,
