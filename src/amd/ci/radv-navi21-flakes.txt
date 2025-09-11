@@ -21,6 +21,7 @@ dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.instanced.draw_indexed_vk_primit
 dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.instanced.draw_vk_primitive_topology_line_list_attrib_divisor_4
 dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.instanced.dynamic_state_draw_indirect_vk_primitive_topology_line_list_khr_attrib_divisor_4
 dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.instanced.dynamic_state_draw_vk_primitive_topology_line_list_attrib_divisor_0
+dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.multi_draw.mosaic.indexed_random.16_draws.stride_extra_4.1_instance.with_tess.multiview.offset_6
 dEQP-VK.draw.renderpass.instanced.draw_indirect_vk_primitive_topology_line_list_khr_attrib_divisor_4
 dEQP-VK.draw.renderpass.instanced.dynamic_state_draw_indirect_vk_primitive_topology_triangle_strip_attrib_divisor_0_multiview
 dEQP-VK.draw.renderpass.instanced.dynamic_state_draw_vk_primitive_topology_line_list_attrib_divisor_20
@@ -74,11 +75,16 @@ dEQP-VK.pipeline.monolithic.image.suballocation.sampling_type.combined.view_type
 dEQP-VK.pipeline.monolithic.image.suballocation.sampling_type.combined.view_type.3d.format.r8g8b8a8_sint.count_1.size.5x5x5
 dEQP-VK.pipeline.monolithic.image.suballocation.sampling_type.combined.view_type.cube_array.format.r4g4b4a4_unorm_pack16.count_1.size.13x13_array_of_36
 dEQP-VK.pipeline.monolithic.image.suballocation.sampling_type.separate.view_type.3d.format.b10g11r11_ufloat_pack32.count_1.size.32x16x8
+dEQP-VK.pipeline.monolithic.image.suballocation.sampling_type.separate.view_type.3d.format.r8_srgb.count_1.size.32x16x8
 dEQP-VK.pipeline.monolithic.image.suballocation.sampling_type.separate.view_type.cube.format.r16g16b16a16_snorm.count_8.size.13x13
+dEQP-VK.pipeline.monolithic.image.suballocation.sampling_type.separate.view_type.cube_array.format.r8g8b8a8_unorm.count_4.size.13x13_array_of_36
 dEQP-VK.pipeline.monolithic.image_view.view_type.cube.format.r16g16b16a16_unorm.subresource_range.lod_mip_levels_array_layer_last
 dEQP-VK.pipeline.monolithic.sampler.separate_stencil_usage.view_type.cube_array.format.d32_sfloat_s8_uint.mipmap.nearest.lod.equal_min_3_max_3
+dEQP-VK.pipeline.monolithic.sampler.view_type.2d_array.format.a2r10g10b10_uint_pack32.mipmap.nearest.lod.select_max_4
 dEQP-VK.pipeline.monolithic.sampler.view_type.3d.format.r32_sfloat.min_filter.nearest
+dEQP-VK.pipeline.monolithic.sampler.view_type.cube_array.format.a8_unorm.min_reduce.comp_b_g_r_a.min
 dEQP-VK.pipeline.monolithic.stencil.format.d32_sfloat_s8_uint.states.fail_wrap.pass_repl.dfail_incc.comp_less.any
+dEQP-VK.pipeline.monolithic.vertex_input.multiple_attributes.layout_skip.binding_one_to_many.attributes.uvec3.float.vec2
 dEQP-VK.pipeline.monolithic.vertex_input.multiple_attributes.out_of_order.binding_one_to_many.attributes_sequential.f16vec3.f16vec4.mat3
 dEQP-VK.pipeline.pipeline_library.blend.dual_source.format.r8_snorm.output_variable.states.color_1msc_1ms1a_add_alpha_1mdc_1msa_sub-color_dc_1ms1c_rsub_alpha_z_1mdc_sub-color_ca_1ms1c_min_alpha_sas_ca_rsub-color_1ms1c_s1c_add_alpha_z_1mda_add
 dEQP-VK.pipeline.pipeline_library.render_to_image.core.cube_array.mipmap.a2b10g10r10_uint_pack32_s8_uint
@@ -113,6 +119,7 @@ dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_image_opaque_memor
 dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_image_opaque_memory_bind_info.3d.rgba32ui.512_256_6
 dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_memory_bind.3d.rg32i.512_256_6
 dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_memory_bind.3d.rgba32i.512_256_6
+dEQP-VK.sparse_resources.shader_intrinsics.2d_array_sparse_sample_implicit_lod.r8.11_37_3
 
 dEQP-VK.spirv_assembly.instruction.compute.opsdotkhr.all_us_v4i8_out16
 dEQP-VK.spirv_assembly.instruction.compute.opudotkhr.small_su_v3i8_out32
@@ -129,6 +136,7 @@ dEQP-VK.synchronization.global_priority_transition.low.semaphore.no_modifiers.fr
 dEQP-VK.tessellation.misc_draw.triangles_instances
 
 dEQP-VK.texture.filtering.cube.combinations.nearest.linear.clamp_to_edge.mirrored_repeat.non_seamless
+dEQP-VK.texture.filtering.cube.formats.r4g4b4a4_unorm.linear.seamless
 dEQP-VK.texture.filtering.cube.sizes.64x64.nearest
 dEQP-VK.texture.mipmap.cubemap.basic.nearest_linear_linear_mirror
 dEQP-VK.texture.mipmap.cubemap.projected.linear_nearest_nearest_mirror
@@ -139,3 +147,4 @@ dEQP-VK.texture.shadow.cube_array.nearest_mipmap_nearest.non_seamless_less_or_eq
 dEQP-VK.transform_feedback.primitives_generated_query.get.host_reset.64bit.geom.no_xfb.no_rast.triangle_fan.pgq_1.two_draws.pqg_first.before
 
 dEQP-VK.ycbcr.conversion.g8_b8r8_2plane_422_unorm.sampler_array.nearest_tiling_linear_binding_31
+dEQP-VK.ycbcr.query.lod.fragment.g8_b8_r8_3plane_420_unorm
