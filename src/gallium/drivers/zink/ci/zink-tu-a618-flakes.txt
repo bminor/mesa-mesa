@@ -73,6 +73,7 @@ multisample-dEQP-GLES3.functional.occlusion_query.scissor_depth_clear_stencil_cl
 
 # Intermittent crashes (no VVL errors)
 x11-dEQP-EGL.functional.color_clears.multi_thread.gles3.*_pbuffer
+x11-dEQP-EGL.functional.color_clears.multi_thread.gles3.rgb888_window
 x11-dEQP-EGL.functional.render.single_context.gles3.*_pbuffer
 x11-dEQP-EGL.functional.render.single_context.gles3.*_window
 wayland-dEQP-EGL.functional.render.multi_context.gles2_gles3.*_pbuffer

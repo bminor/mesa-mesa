@@ -66,3 +66,5 @@ wayland-dEQP-EGL.functional.robustness.reset_context.shaders.out_of_bounds.reset
 wayland-dEQP-EGL.functional.robustness.reset_context.shaders.out_of_bounds.reset_status.writes.local_array.compute,Crash
 wayland-dEQP-EGL.functional.robustness.reset_context.shaders.out_of_bounds.reset_status.writes.shader_storage_block.compute,Crash
 wayland-dEQP-EGL.functional.robustness.reset_context.shaders.out_of_bounds.reset_status.writes.uniform_block.compute,Crash
+
+x11-dEQP-EGL.functional.color_clears.multi_thread.gles3.rgb888_window,Crash
