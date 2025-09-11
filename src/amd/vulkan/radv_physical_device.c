@@ -2384,8 +2384,6 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
    radv_physical_device_get_supported_extensions(pdev, &pdev->vk.supported_extensions);
    radv_physical_device_get_features(pdev, &pdev->vk.supported_features);
 
-   radv_get_nir_options(pdev);
-
 #ifndef _WIN32
    if (drm_device) {
       struct stat primary_stat = {0}, render_stat = {0};
@@ -2412,6 +2410,8 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
 #endif
 
    radv_physical_device_init_cache_key(pdev);
+
+   radv_get_nir_options(pdev);
 
    if (radv_device_get_cache_uuid(pdev, pdev->cache_uuid)) {
       result = vk_errorf(instance, VK_ERROR_INITIALIZATION_FAILED, "cannot generate UUID");
