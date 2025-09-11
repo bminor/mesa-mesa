@@ -91,16 +91,6 @@ constant_denorm_flush_to_zero(nir_const_value *value, unsigned bit_size)
 }
 
 /**
- * Evaluate component 3 of packSnorm3x10_1x2.
- */
-static uint16_t
-pack_snorm_1x2(float x)
-{
-   return (uint16_t) (int)
-          _mesa_roundevenf(CLAMP(x, -1.0f, +1.0f) * 1.0f);
-}
-
-/**
  * Evaluate one component of packSnorm4x8.
  */
 static uint8_t
@@ -120,16 +110,6 @@ pack_snorm_1x8(float x)
      */
    return (uint8_t) (int)
           _mesa_roundevenf(CLAMP(x, -1.0f, +1.0f) * 127.0f);
-}
-
-/**
- * Evaluate component [0,2] of packSnorm3x10_1x2.
- */
-static uint16_t
-pack_snorm_1x10(float x)
-{
-   return (uint16_t) (int)
-          _mesa_roundevenf(CLAMP(x, -1.0f, +1.0f) * 511.0f);
 }
 
 /**
@@ -155,16 +135,6 @@ pack_snorm_1x16(float x)
 }
 
 /**
- * Evaluate component 3 of unpackSnorm3x10_1x2.
- */
-static float
-unpack_snorm_1x2(uint16_t u)
-{
-   u &= 0x0003;
-   return CLAMP((int16_t) u / 1.0f, -1.0f, +1.0f);
-}
-
-/**
  * Evaluate one component of unpackSnorm4x8.
  */
 static float
@@ -183,16 +153,6 @@ unpack_snorm_1x8(uint8_t u)
 }
 
 /**
- * Evaluate component [0,2] of unpackSnorm3x10_1x2.
- */
-static float
-unpack_snorm_1x10(uint16_t u)
-{
-   u &= 0x03FF;
-   return CLAMP((int16_t) u / 511.0f, -1.0f, +1.0f);
-}
-
-/**
  * Evaluate one component of unpackSnorm2x16.
  */
 static float
@@ -208,16 +168,6 @@ unpack_snorm_1x16(uint16_t u)
      *       unpackSnorm2x16: clamp(f / 32767.0, -1, +1)
      */
    return CLAMP((int16_t) u / 32767.0f, -1.0f, +1.0f);
-}
-
-/**
- * Evaluate component 3 of packUnorm3x10_1x2.
- */
-static uint16_t
-pack_unorm_1x2(float x)
-{
-   return (uint16_t) (int)
-          _mesa_roundevenf(CLAMP(x, 0.0f, 1.0f) * 3.0f);
 }
 
 /**
@@ -240,16 +190,6 @@ pack_unorm_1x8(float x)
 }
 
 /**
- * Evaluate component [0,2] of packUnorm3x10_1x2.
- */
-static uint16_t
-pack_unorm_1x10(float x)
-{
-   return (uint16_t) (int)
-          _mesa_roundevenf(CLAMP(x, 0.0f, 1.0f) * 1023.0f);
-}
-
-/**
  * Evaluate one component packUnorm2x16.
  */
 static uint16_t
@@ -266,16 +206,6 @@ pack_unorm_1x16(float x)
      */
    return (uint16_t) (int)
           _mesa_roundevenf(CLAMP(x, 0.0f, 1.0f) * 65535.0f);
-}
-
-/**
- * Evaluate component 3 of unpackUnorm3x10_1x2.
- */
-static float
-unpack_unorm_1x2(uint16_t u)
-{
-   u &= 0x0003;
-   return (float) u / 3.0f;
 }
 
 /**
@@ -297,16 +227,6 @@ unpack_unorm_1x8(uint8_t u)
 }
 
 /**
- * Evaluate component [0,2] of unpackUnorm3x10_1x2.
- */
-static float
-unpack_unorm_1x10(uint16_t u)
-{
-   u &= 0x03FF;
-   return (float) u / 1023.0f;
-}
-
-/**
  * Evaluate one component of unpackUnorm2x16.
  */
 static float
@@ -322,95 +242,6 @@ unpack_unorm_1x16(uint16_t u)
      *       unpackUnorm2x16: f / 65535.0
      */
    return (float) u / 65535.0f;
-}
-
-/**
- * Evaluate component 3 of packUscaled3x10_1x2.
- */
-static uint16_t
-pack_uscaled_1x2(float x)
-{
-   return (uint16_t) (int)
-          _mesa_roundevenf(CLAMP(x, 0.0f, 3.0f));
-}
-
-/**
- * Evaluate component [0,2] of packUscaled3x10_1x2.
- */
-static uint16_t
-pack_uscaled_1x10(float x)
-{
-   return (uint16_t) (int)
-          _mesa_roundevenf(CLAMP(x, 0.0f, 1023.0f));
-}
-
-/**
- * Evaluate component 3 of packSscaled3x10_1x2.
- */
-static uint16_t
-pack_sscaled_1x2(float x)
-{
-   return (uint16_t) (int)
-          _mesa_roundevenf(CLAMP(x, -2.0f, +1.0f));
-}
-
-/**
- * Evaluate component [0,2] of packSscaled3x10_1x2.
- */
-static uint16_t
-pack_sscaled_1x10(float x)
-{
-   return (uint16_t) (int)
-          _mesa_roundevenf(CLAMP(x, -512.0f, +511.0f));
-}
-
-/**
- * Evaluate component 3 of unpackSscaled3x10_1x2.
- */
-static float
-unpack_sscaled_1x2(uint16_t u)
-{
-   u &= 0x0003;
-   return CLAMP((int16_t) u, -2.0f, +1.0f);
-}
-
-/**
- * Evaluate one component of unpackSscaled4x8.
- */
-static float
-unpack_sscaled_1x8(uint8_t u)
-{
-   return CLAMP((int8_t) u, -128.0f, +127.0f);
-}
-
-/**
- * Evaluate component [0,2] of unpackSscaled3x10_1x2.
- */
-static float
-unpack_sscaled_1x10(uint16_t u)
-{
-   u &= 0x03FF;
-   return CLAMP((int16_t) u, -512.0f, +511.0f);
-}
-
-/**
- * Evaluate component 3 of unpackUscaled3x10_1x2.
- */
-static float
-unpack_uscaled_1x2(uint16_t u)
-{
-   u &= 0x0003;
-   return (float) u;
-}
-
-/**
- * Evaluate component [0,2] of unpackUscaled3x10_1x2.
- */
-static float
-unpack_uscaled_1x10(uint16_t u)
-{
-   u &= 0x03FF;
-   return (float) u;
 }
 
 /**

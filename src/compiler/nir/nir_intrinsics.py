@@ -2754,4 +2754,6 @@ intrinsic("alpha_to_coverage_pco", src_comp=[1], dest_comp=1, flags=[CAN_REORDER
 
 index("bool", "scale")
 index("bool", "roundzero")
+intrinsic("pack_pco", src_comp=[0], dest_comp=1, flags=[CAN_ELIMINATE, CAN_REORDER], indices=[FORMAT], bit_sizes=[32])
+intrinsic("unpack_pco", src_comp=[1], dest_comp=0, flags=[CAN_ELIMINATE, CAN_REORDER], indices=[FORMAT], bit_sizes=[32])
 intrinsic("pck_prog_pco", src_comp=[0, 1], dest_comp=0, flags=[CAN_ELIMINATE, CAN_REORDER], indices=[SCALE, ROUNDZERO], bit_sizes=[32])

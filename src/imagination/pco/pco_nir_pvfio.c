@@ -118,6 +118,30 @@ to_pbe_format(nir_builder *b, enum pipe_format format, nir_def **input)
    return format;
 }
 
+static unsigned format_chans_per_dword(enum pipe_format format)
+{
+   const struct util_format_description *desc = util_format_description(format);
+   unsigned accum_bits = 0;
+
+   for (unsigned u = 0; u < desc->nr_channels; ++u) {
+      /* Exactly one dword, great! */
+      if (accum_bits == 32)
+         return u;
+
+      /* Went over, back off by one. */
+      if (accum_bits > 32) {
+         /* We don't support formats with channels > 1 dword. */
+         assert(u > 1);
+         return u - 1;
+      }
+
+      accum_bits += desc->channel[u].size;
+   }
+
+   /* Loop finished, all channels can fit. */
+   return desc->nr_channels;
+}
+
 static nir_def *pack_to_format(nir_builder *b,
                                nir_def *input,
                                nir_alu_type src_type,
@@ -125,628 +149,153 @@ static nir_def *pack_to_format(nir_builder *b,
 {
    const struct util_format_description *desc = util_format_description(format);
 
-   src_type = nir_alu_type_get_base_type(src_type);
+   nir_def *zero = nir_imm_int(b, 0);
+   nir_def *one = nir_alu_type_get_base_type(src_type) == nir_type_float
+                     ? nir_imm_float(b, 1.0f)
+                     : nir_imm_int(b, 1);
 
    nir_def *input_comps[4];
-   for (unsigned u = 0; u < desc->nr_channels; ++u) {
+   /* Populate any missing components .*/
+   for (unsigned u = 0; u < ARRAY_SIZE(input_comps); ++u) {
       enum pipe_swizzle s = desc->swizzle[u];
-      if (s <= PIPE_SWIZZLE_W) {
+
+      if (s <= PIPE_SWIZZLE_W)
          input_comps[u] = nir_channel(b, input, s);
-      } else if (s == PIPE_SWIZZLE_0) {
-         input_comps[u] = nir_imm_int(b, 0);
-      } else if (s == PIPE_SWIZZLE_1) {
-         input_comps[u] = src_type == nir_type_float ? nir_imm_float(b, 1.0f)
-                                                     : nir_imm_int(b, 1);
-      } else {
+      else if (s == PIPE_SWIZZLE_0)
+         input_comps[u] = zero;
+      else if (s == PIPE_SWIZZLE_1)
+         input_comps[u] = one;
+      else
          UNREACHABLE("");
+   }
+
+   unsigned format_bits = util_format_get_blocksizebits(format);
+   unsigned format_dwords = DIV_ROUND_UP(format_bits, 32);
+   nir_def *packed_comps[] = { zero, zero, zero, zero };
+
+   /* Special case: no packing required. */
+   if (util_format_get_max_channel_size(format) == 32)
+      return nir_vec(b, input_comps, format_dwords);
+
+   /* Special case: can't be packed with op, need bit-packing instead. */
+   if (util_format_is_pure_integer(format)) {
+      for (unsigned u = 0; u < desc->nr_channels; ++u) {
+         unsigned dword = desc->channel[u].shift / 32;
+         unsigned offset = desc->channel[u].shift % 32;
+         unsigned size = desc->channel[u].size;
+
+         packed_comps[dword] = nir_bitfield_insert_imm(b,
+                                                       packed_comps[dword],
+                                                       input_comps[u],
+                                                       offset,
+                                                       size);
       }
+
+      return nir_vec(b, packed_comps, format_dwords);
    }
 
+   unsigned chans_per_dword = format_chans_per_dword(format);
+   unsigned chans_remaining = desc->nr_channels;
    input = nir_vec(b, input_comps, desc->nr_channels);
+   for (unsigned u = 0; u < format_dwords; ++u) {
+      unsigned chans_to_pack =
+         chans_remaining > chans_per_dword ? chans_per_dword : chans_remaining;
+      unsigned chans_packed = desc->nr_channels - chans_remaining;
 
-   nir_def *zero = nir_imm_int(b, 0);
-   nir_def *packed[4] = { zero, zero, zero, zero };
-   switch (format) {
-   case PIPE_FORMAT_R8_UNORM:
-      assert(src_type == nir_type_float);
-      packed[0] = nir_pack_unorm_8(b, input);
-      break;
+      nir_def *input_chans =
+         nir_channels(b, input, BITFIELD_RANGE(chans_packed, chans_to_pack));
+      packed_comps[u] = nir_pack_pco(b, input_chans, .format = format);
 
-   case PIPE_FORMAT_R8G8_UNORM:
-      assert(src_type == nir_type_float);
-      packed[0] = nir_pack_unorm_8_8(b, input);
-      break;
-
-   case PIPE_FORMAT_R8G8B8_UNORM:
-      assert(src_type == nir_type_float);
-      packed[0] = nir_pack_unorm_8_8_8(b, input);
-      break;
-
-   case PIPE_FORMAT_R8G8B8A8_UNORM:
-      assert(src_type == nir_type_float);
-      packed[0] = nir_pack_unorm_4x8(b, input);
-      break;
-
-   case PIPE_FORMAT_R8_SNORM:
-      assert(src_type == nir_type_float);
-      packed[0] = nir_pack_snorm_8(b, input);
-      break;
-
-   case PIPE_FORMAT_R8G8_SNORM:
-      assert(src_type == nir_type_float);
-      packed[0] = nir_pack_snorm_8_8(b, input);
-      break;
-
-   case PIPE_FORMAT_R8G8B8_SNORM:
-      assert(src_type == nir_type_float);
-      packed[0] = nir_pack_snorm_8_8_8(b, input);
-      break;
-
-   case PIPE_FORMAT_R8G8B8A8_SNORM:
-      assert(src_type == nir_type_float);
-      packed[0] = nir_pack_snorm_4x8(b, input);
-      break;
-
-   case PIPE_FORMAT_R8G8B8A8_UINT:
-   case PIPE_FORMAT_R8G8B8A8_SINT:
-      packed[0] = nir_bitfield_insert_imm(b, packed[0], input_comps[3], 24, 8);
-      FALLTHROUGH;
-
-   case PIPE_FORMAT_R8G8B8_UINT:
-   case PIPE_FORMAT_R8G8B8_SINT:
-      packed[0] = nir_bitfield_insert_imm(b, packed[0], input_comps[2], 16, 8);
-      FALLTHROUGH;
-
-   case PIPE_FORMAT_R8G8_UINT:
-   case PIPE_FORMAT_R8G8_SINT:
-      packed[0] = nir_bitfield_insert_imm(b, packed[0], input_comps[1], 8, 8);
-      FALLTHROUGH;
-
-   case PIPE_FORMAT_R8_UINT:
-   case PIPE_FORMAT_R8_SINT:
-      assert(src_type != nir_type_float);
-      /* TODO: sat/clamp? */
-      packed[0] = nir_bitfield_insert_imm(b, packed[0], input_comps[0], 0, 8);
-      break;
-
-   case PIPE_FORMAT_R10G10B10A2_UINT:
-      assert(src_type == nir_type_uint);
-      /* TODO: sat/clamp? */
-      packed[0] = nir_bitfield_insert_imm(b, packed[0], input_comps[0], 0, 10);
-      packed[0] = nir_bitfield_insert_imm(b, packed[0], input_comps[1], 10, 10);
-      packed[0] = nir_bitfield_insert_imm(b, packed[0], input_comps[2], 20, 10);
-      packed[0] = nir_bitfield_insert_imm(b, packed[0], input_comps[3], 30, 2);
-      break;
-
-   case PIPE_FORMAT_R11G11B10_FLOAT:
-      assert(src_type == nir_type_float);
-      packed[0] = nir_pack_float_11_11_10(b, input_comps[0]);
-      break;
-
-   case PIPE_FORMAT_R16_UNORM:
-      assert(src_type == nir_type_float);
-      packed[0] = nir_pack_unorm_16(b, input_comps[0]);
-      break;
-
-   case PIPE_FORMAT_R16G16_UNORM:
-      assert(src_type == nir_type_float);
-      packed[0] = nir_pack_unorm_2x16(b, input);
-      break;
-
-   case PIPE_FORMAT_R16G16B16_UNORM:
-      assert(src_type == nir_type_float);
-      packed[0] = nir_pack_unorm_2x16(b, nir_channels(b, input, 0b0011));
-      packed[1] = nir_pack_unorm_16(b, input_comps[2]);
-      break;
-
-   case PIPE_FORMAT_R16G16B16A16_UNORM:
-      assert(src_type == nir_type_float);
-      packed[0] = nir_pack_unorm_2x16(b, nir_channels(b, input, 0b0011));
-      packed[1] = nir_pack_unorm_2x16(b, nir_channels(b, input, 0b1100));
-      break;
-
-   case PIPE_FORMAT_R16_SNORM:
-      assert(src_type == nir_type_float);
-      packed[0] = nir_pack_snorm_16(b, input_comps[0]);
-      break;
-
-   case PIPE_FORMAT_R16G16_SNORM:
-      assert(src_type == nir_type_float);
-      packed[0] = nir_pack_snorm_2x16(b, input);
-      break;
-
-   case PIPE_FORMAT_R16G16B16_SNORM:
-      assert(src_type == nir_type_float);
-      packed[0] = nir_pack_snorm_2x16(b, nir_channels(b, input, 0b0011));
-      packed[1] = nir_pack_snorm_16(b, input_comps[2]);
-      break;
-
-   case PIPE_FORMAT_R16G16B16A16_SNORM:
-      assert(src_type == nir_type_float);
-      packed[0] = nir_pack_snorm_2x16(b, nir_channels(b, input, 0b0011));
-      packed[1] = nir_pack_snorm_2x16(b, nir_channels(b, input, 0b1100));
-      break;
-
-   case PIPE_FORMAT_R16G16B16A16_UINT:
-   case PIPE_FORMAT_R16G16B16A16_SINT:
-      packed[1] = nir_bitfield_insert_imm(b, packed[1], input_comps[3], 16, 16);
-      FALLTHROUGH;
-
-   case PIPE_FORMAT_R16G16B16_UINT:
-   case PIPE_FORMAT_R16G16B16_SINT:
-      packed[1] = nir_bitfield_insert_imm(b, packed[1], input_comps[2], 0, 16);
-      FALLTHROUGH;
-
-   case PIPE_FORMAT_R16G16_UINT:
-   case PIPE_FORMAT_R16G16_SINT:
-      packed[0] = nir_bitfield_insert_imm(b, packed[0], input_comps[1], 16, 16);
-      FALLTHROUGH;
-
-   case PIPE_FORMAT_R16_UINT:
-   case PIPE_FORMAT_R16_SINT:
-      assert(src_type != nir_type_float);
-      /* TODO: sat/clamp? */
-      packed[0] = nir_bitfield_insert_imm(b, packed[0], input_comps[0], 0, 16);
-      break;
-
-   case PIPE_FORMAT_R16_FLOAT:
-      assert(src_type == nir_type_float);
-      packed[0] = nir_pack_half_16(b, input);
-      break;
-
-   case PIPE_FORMAT_R16G16_FLOAT:
-      assert(src_type == nir_type_float);
-      packed[0] = nir_pack_half_2x16(b, input);
-      break;
-
-   case PIPE_FORMAT_R16G16B16_FLOAT:
-      assert(src_type == nir_type_float);
-      packed[0] = nir_pack_half_2x16(b, nir_channels(b, input, 0b0011));
-      packed[1] = nir_pack_half_16(b, input_comps[2]);
-      break;
-
-   case PIPE_FORMAT_R16G16B16A16_FLOAT:
-      assert(src_type == nir_type_float);
-      packed[0] = nir_pack_half_2x16(b, nir_channels(b, input, 0b0011));
-      packed[1] = nir_pack_half_2x16(b, nir_channels(b, input, 0b1100));
-      break;
-
-   case PIPE_FORMAT_R32G32B32A32_UINT:
-   case PIPE_FORMAT_R32G32B32A32_SINT:
-   case PIPE_FORMAT_R32G32B32A32_FLOAT:
-      packed[3] = input_comps[3];
-      FALLTHROUGH;
-
-   case PIPE_FORMAT_R32G32B32_UINT:
-   case PIPE_FORMAT_R32G32B32_SINT:
-   case PIPE_FORMAT_R32G32B32_FLOAT:
-      packed[2] = input_comps[2];
-      FALLTHROUGH;
-
-   case PIPE_FORMAT_R32G32_UINT:
-   case PIPE_FORMAT_R32G32_SINT:
-   case PIPE_FORMAT_R32G32_FLOAT:
-      packed[1] = input_comps[1];
-      FALLTHROUGH;
-
-   case PIPE_FORMAT_R32_UINT:
-   case PIPE_FORMAT_R32_SINT:
-   case PIPE_FORMAT_R32_FLOAT:
-      packed[0] = input_comps[0];
-      break;
-
-   default:
-      printf("Unsupported pack format %s.\n", util_format_name(format));
-      UNREACHABLE("");
+      chans_remaining -= chans_to_pack;
    }
 
-   unsigned packed_comps = 1;
-
-   if (packed[3] != zero)
-      packed_comps = 4;
-   else if (packed[2] != zero)
-      packed_comps = 3;
-   else if (packed[1] != zero)
-      packed_comps = 2;
-
-   assert(packed[0] != zero);
-
-   return nir_vec(b, packed, packed_comps);
+   assert(!chans_remaining);
+   return nir_vec(b, packed_comps, format_dwords);
 }
 
 static nir_def *unpack_from_format(nir_builder *b,
-                                   nir_def *input,
+                                   nir_def *packed_comps[static 4],
                                    nir_alu_type dest_type,
-                                   enum pipe_format format)
+                                   enum pipe_format format,
+                                   unsigned components_needed)
 {
    const struct util_format_description *desc = util_format_description(format);
 
-   dest_type = nir_alu_type_get_base_type(dest_type);
+   nir_def *unpacked_comps[4];
 
-   nir_def *input_comps[4] = {
-      nir_channel(b, input, 0),
-      nir_channel(b, input, 1),
-      nir_channel(b, input, 2),
-      nir_channel(b, input, 3),
-   };
+   unsigned format_bits = util_format_get_blocksizebits(format);
+   unsigned format_dwords = DIV_ROUND_UP(format_bits, 32);
 
-   nir_def *unpacked = nir_undef(b, 4, 32);
-   switch (format) {
-   case PIPE_FORMAT_R8_UNORM:
-      assert(dest_type == nir_type_float);
-      unpacked = nir_unpack_unorm_8(b, input);
-      break;
-
-   case PIPE_FORMAT_R8G8_UNORM:
-      assert(dest_type == nir_type_float);
-      unpacked = nir_unpack_unorm_8_8(b, input);
-      break;
-
-   case PIPE_FORMAT_R8G8B8_UNORM:
-      assert(dest_type == nir_type_float);
-      unpacked = nir_unpack_unorm_8_8_8(b, input);
-      break;
-
-   case PIPE_FORMAT_R8G8B8A8_UNORM:
-   case PIPE_FORMAT_B8G8R8A8_UNORM:
-      assert(dest_type == nir_type_float);
-      unpacked = nir_unpack_unorm_4x8(b, input);
-      break;
-
-   case PIPE_FORMAT_R8_SNORM:
-      assert(dest_type == nir_type_float);
-      unpacked = nir_unpack_snorm_8(b, input);
-      break;
-
-   case PIPE_FORMAT_R8G8_SNORM:
-      assert(dest_type == nir_type_float);
-      unpacked = nir_unpack_snorm_8_8(b, input);
-      break;
-
-   case PIPE_FORMAT_R8G8B8_SNORM:
-      assert(dest_type == nir_type_float);
-      unpacked = nir_unpack_snorm_8_8_8(b, input);
-      break;
-
-   case PIPE_FORMAT_R8G8B8A8_SNORM:
-      assert(dest_type == nir_type_float);
-      unpacked = nir_unpack_snorm_4x8(b, input);
-      break;
-
-   case PIPE_FORMAT_R8_SSCALED:
-      assert(dest_type == nir_type_float);
-      unpacked = nir_unpack_sscaled_8(b, input);
-      break;
-
-   case PIPE_FORMAT_R8G8_SSCALED:
-      assert(dest_type == nir_type_float);
-      unpacked = nir_unpack_sscaled_8_8(b, input);
-      break;
-
-   case PIPE_FORMAT_R8G8B8_SSCALED:
-      assert(dest_type == nir_type_float);
-      unpacked = nir_unpack_sscaled_8_8_8(b, input);
-      break;
-
-   case PIPE_FORMAT_R8G8B8A8_SSCALED:
-      assert(dest_type == nir_type_float);
-      unpacked = nir_unpack_sscaled_8_8_8_8(b, input);
-      break;
-
-   case PIPE_FORMAT_R8G8B8A8_UINT:
-      unpacked = nir_vector_insert_imm(
-         b,
-         unpacked,
-         nir_ubitfield_extract_imm(b, input_comps[0], 24, 8),
-         3);
-      FALLTHROUGH;
-
-   case PIPE_FORMAT_R8G8B8_UINT:
-      unpacked = nir_vector_insert_imm(
-         b,
-         unpacked,
-         nir_ubitfield_extract_imm(b, input_comps[0], 16, 8),
-         2);
-      FALLTHROUGH;
-
-   case PIPE_FORMAT_R8G8_UINT:
-      unpacked = nir_vector_insert_imm(
-         b,
-         unpacked,
-         nir_ubitfield_extract_imm(b, input_comps[0], 8, 8),
-         1);
-      FALLTHROUGH;
-
-   case PIPE_FORMAT_R8_UINT:
-      assert(dest_type == nir_type_uint);
-      unpacked = nir_vector_insert_imm(
-         b,
-         unpacked,
-         nir_ubitfield_extract_imm(b, input_comps[0], 0, 8),
-         0);
-      break;
-
-   case PIPE_FORMAT_R8G8B8A8_SINT:
-      unpacked = nir_vector_insert_imm(
-         b,
-         unpacked,
-         nir_ibitfield_extract_imm(b, input_comps[0], 24, 8),
-         3);
-      FALLTHROUGH;
-
-   case PIPE_FORMAT_R8G8B8_SINT:
-      unpacked = nir_vector_insert_imm(
-         b,
-         unpacked,
-         nir_ibitfield_extract_imm(b, input_comps[0], 16, 8),
-         2);
-      FALLTHROUGH;
-
-   case PIPE_FORMAT_R8G8_SINT:
-      unpacked = nir_vector_insert_imm(
-         b,
-         unpacked,
-         nir_ibitfield_extract_imm(b, input_comps[0], 8, 8),
-         1);
-      FALLTHROUGH;
-
-   case PIPE_FORMAT_R8_SINT:
-      assert(dest_type == nir_type_int);
-      unpacked = nir_vector_insert_imm(
-         b,
-         unpacked,
-         nir_ibitfield_extract_imm(b, input_comps[0], 0, 8),
-         0);
-      break;
-
-   case PIPE_FORMAT_R10G10B10A2_UNORM:
-      assert(dest_type == nir_type_float);
-      unpacked = nir_unpack_unorm_10_10_10_2(b, input_comps[0]);
-      break;
-
-   case PIPE_FORMAT_R10G10B10A2_SNORM:
-      assert(dest_type == nir_type_float);
-      unpacked = nir_unpack_snorm_10_10_10_2(b, input_comps[0]);
-      break;
-
-   case PIPE_FORMAT_R10G10B10A2_UINT:
-      assert(dest_type == nir_type_uint);
-      unpacked = nir_vec4(b,
-                          nir_ubitfield_extract_imm(b, input_comps[0], 0, 10),
-                          nir_ubitfield_extract_imm(b, input_comps[0], 10, 10),
-                          nir_ubitfield_extract_imm(b, input_comps[0], 20, 10),
-                          nir_ubitfield_extract_imm(b, input_comps[0], 30, 2));
-      break;
-
-   case PIPE_FORMAT_R10G10B10A2_USCALED:
-   case PIPE_FORMAT_B10G10R10A2_USCALED:
-      assert(dest_type == nir_type_float);
-      unpacked = nir_unpack_uscaled_10_10_10_2(b, input_comps[0]);
-      break;
-
-   case PIPE_FORMAT_R10G10B10A2_SSCALED:
-   case PIPE_FORMAT_B10G10R10A2_SSCALED:
-      assert(dest_type == nir_type_float);
-      unpacked = nir_unpack_sscaled_10_10_10_2(b, input_comps[0]);
-      break;
-
-   case PIPE_FORMAT_R11G11B10_FLOAT:
-      assert(dest_type == nir_type_float);
-      unpacked = nir_unpack_float_11_11_10(b, input_comps[0]);
-      break;
-
-   case PIPE_FORMAT_R16_UNORM:
-      assert(dest_type == nir_type_float);
-      unpacked = nir_unpack_unorm_16(b, input_comps[0]);
-      break;
-
-   case PIPE_FORMAT_R16G16_UNORM:
-      assert(dest_type == nir_type_float);
-      unpacked = nir_unpack_unorm_2x16(b, input_comps[0]);
-      break;
-
-   case PIPE_FORMAT_R16G16B16_UNORM: {
-      assert(dest_type == nir_type_float);
-      nir_def *lo2 = nir_unpack_unorm_2x16(b, input_comps[0]);
-      unpacked = nir_vector_insert_imm(b, unpacked, nir_channel(b, lo2, 0), 0);
-      unpacked = nir_vector_insert_imm(b, unpacked, nir_channel(b, lo2, 1), 1);
-      unpacked = nir_vector_insert_imm(b,
-                                       unpacked,
-                                       nir_unpack_unorm_16(b, input_comps[1]),
-                                       2);
-      break;
+   /* Special case: no unpacking required. */
+   if (util_format_get_max_channel_size(format) == 32) {
+      for (unsigned u = 0; u < desc->nr_channels; ++u)
+         unpacked_comps[u] = packed_comps[u];
    }
 
-   case PIPE_FORMAT_R16G16B16A16_UNORM:
-      assert(dest_type == nir_type_float);
-      nir_def *lo2 = nir_unpack_unorm_2x16(b, input_comps[0]);
-      nir_def *hi2 = nir_unpack_unorm_2x16(b, input_comps[1]);
-      unpacked = nir_vector_insert_imm(b, unpacked, nir_channel(b, lo2, 0), 0);
-      unpacked = nir_vector_insert_imm(b, unpacked, nir_channel(b, lo2, 1), 1);
-      unpacked = nir_vector_insert_imm(b, unpacked, nir_channel(b, hi2, 0), 2);
-      unpacked = nir_vector_insert_imm(b, unpacked, nir_channel(b, hi2, 1), 3);
-      break;
+   /* Special case: can't be unpacked with op, need bit-unpacking instead. */
+   else if (util_format_is_pure_integer(format)) {
+      nir_def *(*nir_bitfield_extract_imm)(nir_builder *,
+                                           nir_def *,
+                                           uint32_t,
+                                           uint32_t) =
+         util_format_is_pure_uint(format) ? nir_ubitfield_extract_imm
+                                          : nir_ibitfield_extract_imm;
 
-   case PIPE_FORMAT_R16_SNORM:
-      assert(dest_type == nir_type_float);
-      unpacked = nir_unpack_snorm_16(b, input_comps[0]);
-      break;
+      for (unsigned u = 0; u < desc->nr_channels; ++u) {
+         unsigned dword = desc->channel[u].shift / 32;
+         unsigned offset = desc->channel[u].shift % 32;
+         unsigned size = desc->channel[u].size;
 
-   case PIPE_FORMAT_R16G16_SNORM:
-      assert(dest_type == nir_type_float);
-      unpacked = nir_unpack_snorm_2x16(b, input_comps[0]);
-      break;
-
-   case PIPE_FORMAT_R16G16B16_SNORM: {
-      assert(dest_type == nir_type_float);
-      nir_def *lo2 = nir_unpack_snorm_2x16(b, input_comps[0]);
-      unpacked = nir_vector_insert_imm(b, unpacked, nir_channel(b, lo2, 0), 0);
-      unpacked = nir_vector_insert_imm(b, unpacked, nir_channel(b, lo2, 1), 1);
-      unpacked = nir_vector_insert_imm(b,
-                                       unpacked,
-                                       nir_unpack_snorm_16(b, input_comps[1]),
-                                       2);
-      break;
-   }
-
-   case PIPE_FORMAT_R16G16B16A16_SNORM: {
-      assert(dest_type == nir_type_float);
-      nir_def *lo2 = nir_unpack_snorm_2x16(b, input_comps[0]);
-      nir_def *hi2 = nir_unpack_snorm_2x16(b, input_comps[1]);
-      unpacked = nir_vector_insert_imm(b, unpacked, nir_channel(b, lo2, 0), 0);
-      unpacked = nir_vector_insert_imm(b, unpacked, nir_channel(b, lo2, 1), 1);
-      unpacked = nir_vector_insert_imm(b, unpacked, nir_channel(b, hi2, 0), 2);
-      unpacked = nir_vector_insert_imm(b, unpacked, nir_channel(b, hi2, 1), 3);
-      break;
-   }
-
-   case PIPE_FORMAT_R16G16B16A16_UINT:
-      unpacked = nir_vector_insert_imm(
-         b,
-         unpacked,
-         nir_ubitfield_extract_imm(b, input_comps[1], 16, 16),
-         3);
-      FALLTHROUGH;
-
-   case PIPE_FORMAT_R16G16B16_UINT:
-      unpacked = nir_vector_insert_imm(
-         b,
-         unpacked,
-         nir_ubitfield_extract_imm(b, input_comps[1], 0, 16),
-         2);
-      FALLTHROUGH;
-
-   case PIPE_FORMAT_R16G16_UINT:
-      unpacked = nir_vector_insert_imm(
-         b,
-         unpacked,
-         nir_ubitfield_extract_imm(b, input_comps[0], 16, 16),
-         1);
-      FALLTHROUGH;
-
-   case PIPE_FORMAT_R16_UINT:
-      assert(dest_type == nir_type_uint);
-      unpacked = nir_vector_insert_imm(
-         b,
-         unpacked,
-         nir_ubitfield_extract_imm(b, input_comps[0], 0, 16),
-         0);
-      break;
-
-   case PIPE_FORMAT_R16G16B16A16_SINT:
-      unpacked = nir_vector_insert_imm(
-         b,
-         unpacked,
-         nir_ibitfield_extract_imm(b, input_comps[1], 16, 16),
-         3);
-      FALLTHROUGH;
-
-   case PIPE_FORMAT_R16G16B16_SINT:
-      unpacked = nir_vector_insert_imm(
-         b,
-         unpacked,
-         nir_ibitfield_extract_imm(b, input_comps[1], 0, 16),
-         2);
-      FALLTHROUGH;
-
-   case PIPE_FORMAT_R16G16_SINT:
-      unpacked = nir_vector_insert_imm(
-         b,
-         unpacked,
-         nir_ibitfield_extract_imm(b, input_comps[0], 16, 16),
-         1);
-      FALLTHROUGH;
-
-   case PIPE_FORMAT_R16_SINT:
-      assert(dest_type == nir_type_int);
-      unpacked = nir_vector_insert_imm(
-         b,
-         unpacked,
-         nir_ibitfield_extract_imm(b, input_comps[0], 0, 16),
-         0);
-      break;
-
-   case PIPE_FORMAT_R16_FLOAT:
-      assert(dest_type == nir_type_float);
-      unpacked = nir_unpack_half_16(b, input_comps[0]);
-      break;
-
-   case PIPE_FORMAT_R16G16_FLOAT:
-      assert(dest_type == nir_type_float);
-      unpacked = nir_unpack_half_2x16(b, input_comps[0]);
-      break;
-
-   case PIPE_FORMAT_R16G16B16_FLOAT: {
-      assert(dest_type == nir_type_float);
-      nir_def *lo2 = nir_unpack_half_2x16(b, input_comps[0]);
-
-      unpacked = nir_vector_insert_imm(b, unpacked, nir_channel(b, lo2, 0), 0);
-      unpacked = nir_vector_insert_imm(b, unpacked, nir_channel(b, lo2, 1), 1);
-      unpacked = nir_vector_insert_imm(b,
-                                       unpacked,
-                                       nir_unpack_half_16(b, input_comps[1]),
-                                       2);
-      break;
-   }
-
-   case PIPE_FORMAT_R16G16B16A16_FLOAT: {
-      assert(dest_type == nir_type_float);
-      nir_def *lo2 = nir_unpack_half_2x16(b, input_comps[0]);
-      nir_def *hi2 = nir_unpack_half_2x16(b, input_comps[1]);
-
-      unpacked = nir_vector_insert_imm(b, unpacked, nir_channel(b, lo2, 0), 0);
-      unpacked = nir_vector_insert_imm(b, unpacked, nir_channel(b, lo2, 1), 1);
-      unpacked = nir_vector_insert_imm(b, unpacked, nir_channel(b, hi2, 0), 2);
-      unpacked = nir_vector_insert_imm(b, unpacked, nir_channel(b, hi2, 1), 3);
-
-      break;
-   }
-
-   case PIPE_FORMAT_R32G32B32A32_UINT:
-   case PIPE_FORMAT_R32G32B32A32_SINT:
-   case PIPE_FORMAT_R32G32B32A32_FLOAT:
-      unpacked = nir_vector_insert_imm(b, unpacked, input_comps[3], 3);
-      FALLTHROUGH;
-
-   case PIPE_FORMAT_R32G32B32_UINT:
-   case PIPE_FORMAT_R32G32B32_SINT:
-   case PIPE_FORMAT_R32G32B32_FLOAT:
-      unpacked = nir_vector_insert_imm(b, unpacked, input_comps[2], 2);
-      FALLTHROUGH;
-
-   case PIPE_FORMAT_R32G32_UINT:
-   case PIPE_FORMAT_R32G32_SINT:
-   case PIPE_FORMAT_R32G32_FLOAT:
-      unpacked = nir_vector_insert_imm(b, unpacked, input_comps[1], 1);
-      FALLTHROUGH;
-
-   case PIPE_FORMAT_R32_UINT:
-   case PIPE_FORMAT_R32_SINT:
-   case PIPE_FORMAT_R32_FLOAT:
-      unpacked = nir_vector_insert_imm(b, unpacked, input_comps[0], 0);
-      break;
-
-   default:
-      printf("Unsupported unpack format %s.\n", util_format_name(format));
-      UNREACHABLE("");
-   }
-
-   nir_def *output_comps[4];
-   for (unsigned u = 0; u < ARRAY_SIZE(output_comps); ++u) {
-      enum pipe_swizzle s = desc->swizzle[u];
-      if (s <= PIPE_SWIZZLE_W) {
-         output_comps[u] = nir_channel(b, unpacked, s);
-      } else if (s == PIPE_SWIZZLE_0) {
-         output_comps[u] = nir_imm_int(b, 0);
-      } else if (s == PIPE_SWIZZLE_1) {
-         output_comps[u] = dest_type == nir_type_float ? nir_imm_float(b, 1.0f)
-                                                       : nir_imm_int(b, 1);
-      } else {
-         UNREACHABLE("");
+         unpacked_comps[u] =
+            nir_bitfield_extract_imm(b, packed_comps[dword], offset, size);
       }
    }
 
-   return nir_vec(b, output_comps, ARRAY_SIZE(output_comps));
+   else {
+      unsigned chans_per_dword = format_chans_per_dword(format);
+      unsigned chans_remaining = desc->nr_channels;
+
+      for (unsigned u = 0; u < format_dwords; ++u) {
+         unsigned chans_to_unpack = chans_remaining > chans_per_dword
+                                       ? chans_per_dword
+                                       : chans_remaining;
+
+         nir_def *unpacked = nir_unpack_pco(b,
+                                            chans_to_unpack,
+                                            packed_comps[u],
+                                            .format = format);
+
+         unsigned chans_unpacked = desc->nr_channels - chans_remaining;
+         for (unsigned v = 0; v < chans_to_unpack; ++v)
+            unpacked_comps[chans_unpacked + v] = nir_channel(b, unpacked, v);
+
+         chans_remaining -= chans_to_unpack;
+      }
+
+      assert(!chans_remaining);
+   }
+
+   nir_def *zero = nir_imm_int(b, 0);
+   nir_def *one = nir_alu_type_get_base_type(dest_type) == nir_type_float
+                     ? nir_imm_float(b, 1.0f)
+                     : nir_imm_int(b, 1);
+
+   nir_def *output_comps[4];
+   /* Populate any missing components .*/
+   for (unsigned u = 0; u < ARRAY_SIZE(output_comps); ++u) {
+      enum pipe_swizzle s = desc->swizzle[u];
+
+      if (s <= PIPE_SWIZZLE_W)
+         output_comps[u] = unpacked_comps[s];
+      else if (s == PIPE_SWIZZLE_0)
+         output_comps[u] = zero;
+      else if (s == PIPE_SWIZZLE_1)
+         output_comps[u] = one;
+      else
+         UNREACHABLE("");
+   }
+
+   return nir_vec(b, output_comps, components_needed);
 }
 
 static inline bool is_processed(nir_intrinsic_instr *intr)
@@ -854,30 +403,29 @@ static nir_def *lower_pfo_load(nir_builder *b,
 
    format = to_pbe_format(b, format, NULL);
 
-   nir_def *input_comps[4];
-   for (unsigned c = 0; c < ARRAY_SIZE(input_comps); ++c) {
-      input_comps[c] = nir_load_output(b,
-                                       1,
-                                       32,
-                                       offset->ssa,
-                                       .base = base,
-                                       .component = c,
-                                       .dest_type = nir_type_invalid | 32,
-                                       .io_semantics = io_semantics);
+   nir_def *packed_comps[4];
+   for (unsigned c = 0; c < ARRAY_SIZE(packed_comps); ++c) {
+      packed_comps[c] = nir_load_output(b,
+                                        1,
+                                        32,
+                                        offset->ssa,
+                                        .base = base,
+                                        .component = c,
+                                        .dest_type = nir_type_invalid | 32,
+                                        .io_semantics = io_semantics);
 
       nir_intrinsic_instr *load =
-         nir_instr_as_intrinsic(input_comps[c]->parent_instr);
+         nir_instr_as_intrinsic(packed_comps[c]->parent_instr);
 
       util_dynarray_append(&state->loads, nir_intrinsic_instr *, load);
    }
 
-   nir_def *input = nir_vec(b, input_comps, ARRAY_SIZE(input_comps));
    nir_alu_type dest_type = nir_intrinsic_dest_type(intr);
-   nir_def *output = unpack_from_format(b, input, dest_type, format);
-   if (output->num_components > intr->def.num_components)
-      output = nir_trim_vector(b, output, intr->def.num_components);
-
-   return output;
+   return unpack_from_format(b,
+                             packed_comps,
+                             dest_type,
+                             format,
+                             intr->def.num_components);
 }
 
 /**
@@ -1412,23 +960,23 @@ bool pco_nir_pvi(nir_shader *shader, pco_vs_data *vs)
          DIV_ROUND_UP(util_format_get_blocksize(format), sizeof(uint32_t));
       var->type = glsl_uvec_type(format_dwords);
 
-      nir_def *input_comps[4];
-      for (unsigned c = 0; c < ARRAY_SIZE(input_comps); ++c) {
-         input_comps[c] = nir_load_input(&b,
-                                         1,
-                                         32,
-                                         nir_imm_int(&b, 0),
-                                         .range = 1,
-                                         .component = c,
-                                         .dest_type = nir_type_invalid | 32,
-                                         .io_semantics = (nir_io_semantics){
-                                            .location = location,
-                                            .num_slots = 1,
-                                         });
+      nir_def *packed_comps[4];
+      for (unsigned c = 0; c < ARRAY_SIZE(packed_comps); ++c) {
+         packed_comps[c] = nir_load_input(&b,
+                                          1,
+                                          32,
+                                          nir_imm_int(&b, 0),
+                                          .range = 1,
+                                          .component = c,
+                                          .dest_type = nir_type_invalid | 32,
+                                          .io_semantics = (nir_io_semantics){
+                                             .location = location,
+                                             .num_slots = 1,
+                                          });
       }
 
-      nir_def *input = nir_vec(&b, input_comps, ARRAY_SIZE(input_comps));
-      state.attribs[u] = unpack_from_format(&b, input, base_type, format);
+      state.attribs[u] =
+         unpack_from_format(&b, packed_comps, base_type, format, 4);
    }
 
    nir_shader_lower_instructions(shader, is_pvi, lower_pvi, &state);
