@@ -19,6 +19,14 @@
 #define NUM_OF_CYCLES 3
 #define NUM_OF_COMPONENTS 4
 
+/* This GPR is sacrificed for the cases where we write to a op3, but
+ * actually use the result only via PS/PV.
+ * TODO: consider tracking this better in RA and by assigning
+ * a live range only consisting of the one group. With that we might not
+ * need to completely sacrifice this register.
+ */
+#define R600_DUMMY_GPR 123
+
 static inline bool alu_writes(struct r600_bytecode_alu *alu)
 {
 	return alu->dst.write || alu->is_op3;
@@ -1305,14 +1313,14 @@ int r600_bytecode_add_alu_type(struct r600_bytecode *bc,
 	}
 	/* number of gpr == the last gpr used in any alu */
 	for (i = 0; i < 3; i++) {
-		if (nalu->src[i].sel >= bc->ngpr && nalu->src[i].sel < 123) {
+		if (nalu->src[i].sel >= bc->ngpr && nalu->src[i].sel < R600_DUMMY_GPR) {
 			bc->ngpr = nalu->src[i].sel + 1;
 		}
 		if (nalu->src[i].sel == V_SQ_ALU_SRC_LITERAL)
 			r600_bytecode_special_constants(nalu->src[i].value,
 				&nalu->src[i].sel);
 	}
-	if (nalu->dst.write && nalu->dst.sel >= bc->ngpr && nalu->dst.sel < 123) {
+	if (nalu->dst.write && nalu->dst.sel >= bc->ngpr && nalu->dst.sel < R600_DUMMY_GPR) {
 		bc->ngpr = nalu->dst.sel + 1;
 	}
 	list_addtail(&nalu->list, &bc->cf_last->alu);
@@ -1983,7 +1991,8 @@ static int print_sel(unsigned sel, unsigned rel, unsigned index_mode,
 	if (rel || need_brackets) {
 		o += fprintf(stderr, "[");
 	}
-	o += fprintf(stderr, "%d", sel);
+	if (sel != R600_DUMMY_GPR)
+		o += fprintf(stderr, "%d", sel);
 	if (rel) {
 		if (index_mode == 0 || index_mode == 6)
 			o += fprintf(stderr, "+AR");
@@ -1996,7 +2005,7 @@ static int print_sel(unsigned sel, unsigned rel, unsigned index_mode,
 	return o;
 }
 
-static int print_dst(struct r600_bytecode_alu *alu)
+static int print_dst(struct r600_bytecode_alu *alu, bool is_t)
 {
 	int o = 0;
 	unsigned sel = alu->dst.sel;
@@ -2004,11 +2013,14 @@ static int print_dst(struct r600_bytecode_alu *alu)
 	if (sel >= 128 - 4) { /* clause temporary gpr */
 		sel -= 128 - 4;
 		reg_char = 'T';
+	} else if (sel == R600_DUMMY_GPR) {
+		reg_char = 'P';
 	}
 
 	if (alu_writes(alu)) {
 		o += fprintf(stderr, "%c", reg_char);
 		o += print_sel(sel, alu->dst.rel, alu->index_mode, 0);
+		if (sel == R600_DUMMY_GPR) o += fprintf(stderr, "%c", (is_t ? 'S' : 'V'));
 	} else {
 		o += fprintf(stderr, "__");
 	}
@@ -2407,7 +2419,7 @@ void r600_bytecode_disasm(struct r600_bytecode *bc)
 			const char *omod_str[] = {"","*2","*4","/2"};
 			const struct alu_op_info *aop = r600_isa_alu(alu->op);
 			int o = 0;
-
+			bool is_t = false;
 			r600_bytecode_alu_nliterals(alu, literal, &nliteral);
 			o += fprintf(stderr, " %04d %08X %08X  ", id, bc->bytecode[id], bc->bytecode[id+1]);
 			if (last)
@@ -2416,9 +2428,10 @@ void r600_bytecode_disasm(struct r600_bytecode *bc)
 				o += fprintf(stderr, "     ");
 
 			if ((chan_mask & (1 << alu->dst.chan)) ||
-				((aop->slots[bc->isa->hw_class] == AF_S) && !(bc->isa->hw_class == ISA_CC_CAYMAN)))
+				((aop->slots[bc->isa->hw_class] == AF_S) && !(bc->isa->hw_class == ISA_CC_CAYMAN))) {
 				o += fprintf(stderr, "t:");
-			else
+				is_t = true;
+			} else
 				o += fprintf(stderr, "%c:", chan[alu->dst.chan]);
 			chan_mask |= 1 << alu->dst.chan;
 
@@ -2437,7 +2450,7 @@ void r600_bytecode_disasm(struct r600_bytecode *bc)
 				case 3: fprintf(stderr, "CF_IDX1"); break;
 				}
 			} else {
-				o += print_dst(alu);
+				o += print_dst(alu, is_t);
 			}
 			for (int i = 0; i < aop->src_count; ++i) {
 				o += fprintf(stderr, i == 0 ? ",  ": ", ");
