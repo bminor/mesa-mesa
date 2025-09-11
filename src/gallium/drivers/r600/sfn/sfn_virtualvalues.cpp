@@ -49,7 +49,7 @@ VirtualValue::VirtualValue(int sel, int chan, Pin pin):
     m_pins(pin)
 {
 #if __cpp_exceptions >= 199711L
-   ASSERT_OR_THROW(m_sel < virtual_register_base || pin != pin_fully,
+   ASSERT_OR_THROW(m_sel < g_registers_end || pin != pin_fully,
                    "Register is virtual but pinned to sel");
 #endif
 }

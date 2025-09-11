@@ -442,7 +442,7 @@ LiveRangeInstrVisitor::record_write(int block, const Register *reg)
          auto& rav = m_register_access(array(i, reg->chan()));
          rav.record_write(block, m_line > 0 ? m_line - 1 : 0, m_current_scope);
       }
-   } else {
+   } else if (reg->sel() != g_registers_unused) {
       auto& ra = m_register_access(*reg);
       sfn_log << SfnLog::merge << *reg << " write:" << block << ":" << m_line << "\n";
       ra.record_write(block, m_line, m_current_scope);

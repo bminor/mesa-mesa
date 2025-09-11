@@ -1190,7 +1190,7 @@ AssamblerVisitor::emit_loop_cont()
 bool
 AssamblerVisitor::copy_dst(r600_bytecode_alu_dst& dst, const Register& d, bool write)
 {
-   if (write && d.sel() > g_clause_local_end) {
+   if (write && d.sel() > g_clause_local_end && d.sel() != g_registers_unused) {
       R600_ASM_ERR("shader_from_nir: Don't support more then 123 GPRs + 4 clause "
                    "local, but try using %d\n",
                    d.sel());
@@ -1198,7 +1198,7 @@ AssamblerVisitor::copy_dst(r600_bytecode_alu_dst& dst, const Register& d, bool w
       return false;
    }
 
-   dst.sel = d.sel();
+   dst.sel = d.sel() != g_registers_unused ? d.sel() : g_registers_end;
    dst.chan = d.chan();
 
    if (m_last_addr && m_last_addr->equal_to(d))

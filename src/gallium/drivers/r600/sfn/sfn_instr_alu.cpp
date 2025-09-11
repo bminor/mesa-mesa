@@ -296,7 +296,10 @@ AluInstr::do_print(std::ostream& os) const
 
       if (m_dest) {
          if (has_alu_flag(alu_write) || m_dest->has_flag(Register::addr_or_idx)) {
-            os << " " << *m_dest;
+            if (unlikely(m_dest->sel() == g_registers_unused))
+               os << " ()" << "." << swzchar[dest_chan()];
+            else
+               os << " " << *m_dest;
          } else {
             os << " __"
                << "." << swzchar[m_dest->chan()];

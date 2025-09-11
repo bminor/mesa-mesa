@@ -616,7 +616,7 @@ ValueFactory::dest_from_string(const std::string& s, int *dest_chan)
 
    assert(s.length() >= 4);
 
-   assert(strchr("ARS_", s[0]));
+   assert(strchr("ARS_(", s[0]));
 
    split_register_string(s, index_str, size_str, swizzle_str, pin_str);
 
@@ -625,6 +625,8 @@ ValueFactory::dest_from_string(const std::string& s, int *dest_chan)
       /* Since these instructions still may use or switch to a different
        * channel we have to create a new instance for each occurrence */
       sel = -1;
+   } else if (s[0] == '(') {
+      sel = g_registers_unused;
    } else {
       std::istringstream n(index_str);
       n >> sel;
@@ -644,6 +646,7 @@ ValueFactory::dest_from_string(const std::string& s, int *dest_chan)
    case '_':
       pool = vp_ignore;
       break;
+   case '(':
    case 'S':
       pool = vp_ssa;
       break;
@@ -982,7 +985,7 @@ ValueFactory::prepare_live_range_map()
             result.append_register(a);
          }
       } else {
-         if (reg->chan() < 4)
+         if (reg->chan() < 4 && reg->sel() != g_registers_unused)
             result.append_register(reg);
       }
    }

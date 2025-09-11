@@ -18,6 +18,7 @@ namespace r600 {
 static const int g_registers_end = 123;
 static const int g_clause_local_start = 124;
 static const int g_clause_local_end = 128;
+static const int g_registers_unused = 0x7fffffff;
 
 /* ALU op2 instructions 17:7 top three bits always zero. */
 enum EAluOp {

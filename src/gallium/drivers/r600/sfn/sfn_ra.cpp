@@ -210,7 +210,7 @@ scalar_allocation(LiveRangeMap& lrm, const Interference& interference)
    for (int comp = 0; comp < 4; ++comp) {
       auto& live_ranges = lrm.component(comp);
       for (auto& r : live_ranges) {
-         if (r.m_color != -1)
+         if (r.m_color != g_registers_unused)
             continue;
 
          if (r.m_start == -1 && r.m_end == -1)
@@ -272,7 +272,7 @@ scalar_clause_local_allocation (LiveRangeMap& lrm, const Interference&  interfer
                   << " ], AC: " << r.m_alu_clause_local
                   << " Color; " << r.m_color << "\n";
 
-         if (r.m_color != -1)
+         if (r.m_color != g_registers_unused)
             continue;
 
          if (r.m_start == -1 &&
