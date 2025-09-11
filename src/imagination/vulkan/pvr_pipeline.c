@@ -1666,6 +1666,19 @@ static void try_allocate_vars(pco_range *allocation_list,
    *bitset |= skipped;
 }
 
+static void check_unused_sysvals(
+   BITSET_WORD system_values_read[static BITSET_WORDS(SYSTEM_VALUE_MAX)])
+{
+#if MESA_DEBUG
+   if (!__bitset_is_empty(system_values_read, BITSET_WORDS(SYSTEM_VALUE_MAX))) {
+      gl_system_value sysval;
+      BITSET_FOREACH_SET (sysval, system_values_read, SYSTEM_VALUE_MAX) {
+         debug_printf("unhandled sysval: %s\n", gl_system_value_name(sysval));
+      }
+   }
+#endif
+}
+
 static void pvr_alloc_vs_sysvals(pco_data *data, nir_shader *nir)
 {
    BITSET_DECLARE(system_values_read, SYSTEM_VALUE_MAX);
@@ -1692,6 +1705,7 @@ static void pvr_alloc_vs_sysvals(pco_data *data, nir_shader *nir)
       }
    }
 
+   check_unused_sysvals(system_values_read);
    assert(BITSET_IS_EMPTY(system_values_read));
 }
 
@@ -1858,6 +1872,7 @@ static void pvr_alloc_fs_sysvals(pco_data *data, nir_shader *nir)
    for (unsigned u = 0; u < ARRAY_SIZE(builtin_sys_vals); ++u)
       BITSET_CLEAR(system_values_read, builtin_sys_vals[u]);
 
+   check_unused_sysvals(system_values_read);
    assert(BITSET_IS_EMPTY(system_values_read));
 
    has_meta |= data->fs.meta_present.alpha_to_one;
@@ -2250,6 +2265,7 @@ static void pvr_alloc_cs_sysvals(pco_data *data, nir_shader *nir)
       }
    }
 
+   check_unused_sysvals(system_values_read);
    assert(BITSET_IS_EMPTY(system_values_read));
 }
 
