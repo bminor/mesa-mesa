@@ -86,6 +86,80 @@ submit_add_entries(struct tu_device *dev, void *submit,
 }
 
 static VkResult
+queue_submit_sparse(struct vk_queue *_queue, struct vk_queue_submit *vk_submit)
+{
+   struct tu_queue *queue = list_entry(_queue, struct tu_queue, vk);
+   struct tu_device *device = queue->device;
+
+   pthread_mutex_lock(&device->submit_mutex);
+
+   void *submit = tu_submit_create(device);
+   if (!submit)
+      return VK_ERROR_OUT_OF_HOST_MEMORY;
+
+   for (uint32_t i = 0; i < vk_submit->buffer_bind_count; i++) {
+      const VkSparseBufferMemoryBindInfo *bind = &vk_submit->buffer_binds[i];
+      VK_FROM_HANDLE(tu_buffer, buffer, bind->buffer);
+
+      for (uint32_t j = 0; j < bind->bindCount; j++) {
+         const VkSparseMemoryBind *range = &bind->pBinds[j];
+         VK_FROM_HANDLE(tu_device_memory, mem, range->memory);
+
+         tu_submit_add_bind(queue->device, submit,
+                            &buffer->vma, range->resourceOffset,
+                            mem ? mem->bo : NULL,
+                            mem ? range->memoryOffset : 0,
+                            range->size);
+      }
+   }
+
+   for (uint32_t i = 0; i < vk_submit->image_bind_count; i++) {
+      const VkSparseImageMemoryBindInfo *bind = &vk_submit->image_binds[i];
+      VK_FROM_HANDLE(tu_image, image, bind->image);
+
+      for (uint32_t j = 0; j < bind->bindCount; j++)
+         tu_bind_sparse_image(device, submit, image, &bind->pBinds[j]);
+   }
+
+   for (uint32_t i = 0; i < vk_submit->image_opaque_bind_count; i++) {
+      const VkSparseImageOpaqueMemoryBindInfo *bind =
+         &vk_submit->image_opaque_binds[i];
+      VK_FROM_HANDLE(tu_image, image, bind->image);
+
+      for (uint32_t j = 0; j < bind->bindCount; j++) {
+         const VkSparseMemoryBind *range = &bind->pBinds[j];
+         VK_FROM_HANDLE(tu_device_memory, mem, range->memory);
+
+         tu_submit_add_bind(queue->device, submit,
+                            &image->vma, range->resourceOffset,
+                            mem ? mem->bo : NULL,
+                            mem ? range->memoryOffset : 0,
+                            range->size);
+      }
+   }
+
+   VkResult result =
+      tu_queue_submit(queue, submit, vk_submit->waits, vk_submit->wait_count,
+                      vk_submit->signals, vk_submit->signal_count,
+                      NULL);
+
+   if (result != VK_SUCCESS) {
+      pthread_mutex_unlock(&device->submit_mutex);
+      goto out;
+   }
+
+   device->submit_count++;
+
+   pthread_mutex_unlock(&device->submit_mutex);
+   pthread_cond_broadcast(&queue->device->timeline_cond);
+
+out:
+   tu_submit_finish(device, submit);
+
+   return result;
+}
+
+static VkResult
 queue_submit(struct vk_queue *_queue, struct vk_queue_submit *vk_submit)
 {
    MESA_TRACE_FUNC();
@@ -93,6 +167,11 @@ queue_submit(struct vk_queue *_queue, struct vk_queue_submit *vk_submit)
    struct tu_device *device = queue->device;
    bool u_trace_enabled = u_trace_should_process(&queue->device->trace_context);
    struct util_dynarray dump_cmds;
+
+   if (vk_submit->buffer_bind_count ||
+       vk_submit->image_bind_count ||
+       vk_submit->image_opaque_bind_count)
+      return queue_submit_sparse(_queue, vk_submit);
 
    util_dynarray_init(&dump_cmds, NULL);
 
@@ -260,79 +339,6 @@ fail_create_submit:
    return result;
 }
 
-static VkResult
-queue_submit_sparse(struct vk_queue *_queue, struct vk_queue_submit *vk_submit)
-{
-   struct tu_queue *queue = list_entry(_queue, struct tu_queue, vk);
-   struct tu_device *device = queue->device;
-
-   pthread_mutex_lock(&device->submit_mutex);
-
-   void *submit = tu_submit_create(device);
-   if (!submit)
-      return VK_ERROR_OUT_OF_HOST_MEMORY;
-
-   for (uint32_t i = 0; i < vk_submit->buffer_bind_count; i++) {
-      const VkSparseBufferMemoryBindInfo *bind = &vk_submit->buffer_binds[i];
-      VK_FROM_HANDLE(tu_buffer, buffer, bind->buffer);
-
-      for (uint32_t j = 0; j < bind->bindCount; j++) {
-         const VkSparseMemoryBind *range = &bind->pBinds[j];
-         VK_FROM_HANDLE(tu_device_memory, mem, range->memory);
-
-         tu_submit_add_bind(queue->device, submit,
-                            &buffer->vma, range->resourceOffset,
-                            mem ? mem->bo : NULL,
-                            mem ? range->memoryOffset : 0,
-                            range->size);
-      }
-   }
-
-   for (uint32_t i = 0; i < vk_submit->image_bind_count; i++) {
-      const VkSparseImageMemoryBindInfo *bind = &vk_submit->image_binds[i];
-      VK_FROM_HANDLE(tu_image, image, bind->image);
-
-      for (uint32_t j = 0; j < bind->bindCount; j++)
-         tu_bind_sparse_image(device, submit, image, &bind->pBinds[j]);
-   }
-
-   for (uint32_t i = 0; i < vk_submit->image_opaque_bind_count; i++) {
-      const VkSparseImageOpaqueMemoryBindInfo *bind =
-         &vk_submit->image_opaque_binds[i];
-      VK_FROM_HANDLE(tu_image, image, bind->image);
-
-      for (uint32_t j = 0; j < bind->bindCount; j++) {
-         const VkSparseMemoryBind *range = &bind->pBinds[j];
-         VK_FROM_HANDLE(tu_device_memory, mem, range->memory);
-
-         tu_submit_add_bind(queue->device, submit,
-                            &image->vma, range->resourceOffset,
-                            mem ? mem->bo : NULL,
-                            mem ? range->memoryOffset : 0,
-                            range->size);
-      }
-   }
-
-   VkResult result =
-      tu_queue_submit(queue, submit, vk_submit->waits, vk_submit->wait_count,
-                      vk_submit->signals, vk_submit->signal_count,
-                      NULL);
-
-   if (result != VK_SUCCESS) {
-      pthread_mutex_unlock(&device->submit_mutex);
-      goto out;
-   }
-
-   device->submit_count++;
-
-   pthread_mutex_unlock(&device->submit_mutex);
-   pthread_cond_broadcast(&queue->device->timeline_cond);
-
-out:
-   tu_submit_finish(device, submit);
-
-   return result;
-}
 VkResult
 tu_queue_init(struct tu_device *device,
               struct tu_queue *queue,
