@@ -1585,6 +1585,8 @@ zink_batch_descriptor_reset(struct zink_screen *screen, struct zink_batch_state 
 bool
 zink_batch_descriptor_init(struct zink_screen *screen, struct zink_batch_state *bs)
 {
+   if (bs->ctx->flags & ZINK_CONTEXT_COPY_ONLY)
+      return true;
    if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_LAZY) {
       for (unsigned i = 0; i < ZINK_DESCRIPTOR_BASE_TYPES; i++)
          util_dynarray_init(&bs->dd.pools[i], bs);
@@ -1595,7 +1597,7 @@ zink_batch_descriptor_init(struct zink_screen *screen, struct zink_batch_state *
             util_dynarray_init(&bs->dd.push_pool[i].overflowed_pools[1], bs);
          }
       }
-   } else if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB && !(bs->ctx->flags & ZINK_CONTEXT_COPY_ONLY)) {
+   } else if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB) {
       unsigned bind = ZINK_BIND_DESCRIPTOR;
       struct pipe_resource *pres = pipe_buffer_create(&screen->base, bind, 0, bs->ctx->dd.db.max_db_size * screen->base_descriptor_size);
       if (!pres)
