@@ -249,10 +249,8 @@ anv_image_choose_isl_surf_usage(struct anv_physical_device *device,
          isl_usage |= ISL_SURF_USAGE_DISABLE_AUX_BIT;
    }
 
-   /* TODO: consider whether compression with sparse is workable. */
    if (vk_create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT)
-      isl_usage |= ISL_SURF_USAGE_SPARSE_BIT |
-                   ISL_SURF_USAGE_DISABLE_AUX_BIT;
+      isl_usage |= ISL_SURF_USAGE_SPARSE_BIT;
 
    if (vk_usage & VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR ||
        vk_usage & VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR ||

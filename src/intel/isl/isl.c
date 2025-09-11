@@ -3740,6 +3740,9 @@ isl_surf_get_hiz_surf(const struct isl_device *dev,
    if (!isl_surf_usage_is_depth(surf->usage))
       return false;
 
+   if (surf->usage & ISL_SURF_USAGE_SPARSE_BIT)
+      return false;
+
    /* From the Sandy Bridge PRM, Vol 2 Part 1,
     * 3DSTATE_DEPTH_BUFFER::Hierarchical Depth Buffer Enable,
     *
@@ -3811,6 +3814,9 @@ isl_surf_get_mcs_surf(const struct isl_device *dev,
    if (surf->usage & ISL_SURF_USAGE_DISABLE_AUX_BIT)
       return false;
 
+   if (surf->usage & ISL_SURF_USAGE_SPARSE_BIT)
+      return false;
+
    /* It must be multisampled with an array layout */
    if (surf->msaa_layout != ISL_MSAA_LAYOUT_ARRAY)
       return false;
@@ -3869,6 +3875,9 @@ _isl_surf_info_supports_ccs(const struct isl_device *dev,
     * CPU, compression would only introduce expensive resolves.
     */
    if (usage & ISL_SURF_USAGE_STAGING_BIT)
+      return false;
+
+   if (usage & ISL_SURF_USAGE_SPARSE_BIT)
       return false;
 
    if (usage & ISL_SURF_USAGE_DISABLE_AUX_BIT)
