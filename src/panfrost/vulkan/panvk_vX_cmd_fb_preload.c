@@ -441,6 +441,13 @@ cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
 
    struct mali_draw_packed dcd_base;
 
+   /* If we got a preload without any draw, we end up with a NULL TLS
+    * descriptor. Allocate a dummy one (no TLS, no WLS) to get things working. */
+   if (!batch->tls.cpu) {
+      panvk_per_arch(cmd_alloc_tls_desc)(cmdbuf, true);
+      GENX(pan_emit_tls)(&batch->tlsinfo, batch->tls.cpu);
+   }
+
    pan_pack(&dcd_base, DRAW, cfg) {
       cfg.thread_storage = batch->tls.gpu;
       cfg.state = rsd.gpu;
