@@ -861,7 +861,8 @@ static struct pipe_context *si_create_context(struct pipe_screen *screen, unsign
             saux->b.destroy(&saux->b);
 
             saux = (struct si_context *)si_create_context(&sscreen->b, context_flags);
-            saux->b.set_log_context(&saux->b, &sscreen->aux_contexts[i].log);
+            if (sscreen->options.aux_debug)
+               saux->b.set_log_context(&saux->b, &sscreen->aux_contexts[i].log);
 
             sscreen->aux_contexts[i].ctx = &saux->b;
          }
