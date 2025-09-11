@@ -5614,7 +5614,7 @@
         "description": "zink: use implicit offsets for function temp variables in ntv",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0b7611824a1ab95a37577bed8d11b1e110b036b7",
         "notes": null
