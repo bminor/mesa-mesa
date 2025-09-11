@@ -975,11 +975,18 @@ FragmentShaderEG::load_interpolated_one_comp(RegisterVec4& dest,
       if (op == op2_interp_z)
          chan += 2;
 
-      ir = new AluInstr(op,
-                        dest[chan],
-                        i & 1 ? params.j : params.i,
-                        new InlineConstant(ALU_SRC_PARAM_BASE + params.base, chan),
-                        i == 0 ? AluInstr::write : AluInstr::empty);
+      if (i == 0)
+         ir = new AluInstr(op,
+                           dest[chan],
+                           params.i,
+                           new InlineConstant(ALU_SRC_PARAM_BASE + params.base, chan),
+                           AluInstr::write);
+      else
+         ir = new AluInstr(op,
+                           chan,
+                           {params.j,
+                            new InlineConstant(ALU_SRC_PARAM_BASE + params.base, chan)},
+                           AluInstr::empty);
 
       ir->set_bank_swizzle(alu_vec_210);
       success = group->add_instruction(ir);
@@ -1002,11 +1009,18 @@ FragmentShaderEG::load_interpolated_two_comp(RegisterVec4& dest,
    assert(params.j);
    assert(params.i);
    for (unsigned i = 0; i < 4; ++i) {
-      ir = new AluInstr(op,
-                        dest[i],
-                        i & 1 ? params.j : params.i,
-                        new InlineConstant(ALU_SRC_PARAM_BASE + params.base, i),
-                        (writemask & (1 << i)) ? AluInstr::write : AluInstr::empty);
+      if (writemask & (1 << i))
+         ir = new AluInstr(op,
+                           dest[i],
+                           i & 1 ? params.j : params.i,
+                           new InlineConstant(ALU_SRC_PARAM_BASE + params.base, i),
+                           AluInstr::write);
+      else
+         ir = new AluInstr(op,
+                           i,
+                           {i & 1 ? params.j : params.i,
+                            new InlineConstant(ALU_SRC_PARAM_BASE + params.base, i)},
+                           AluInstr::empty);
       ir->set_bank_swizzle(alu_vec_210);
       success = group->add_instruction(ir);
    }
@@ -1026,11 +1040,19 @@ FragmentShaderEG::load_interpolated_two_comp_for_one(RegisterVec4& dest,
    AluInstr *ir = nullptr;
 
    for (int i = 0; i < 4; ++i) {
-      ir = new AluInstr(op,
-                        dest[i],
-                        i & 1 ? params.j : params.i,
-                        new InlineConstant(ALU_SRC_PARAM_BASE + params.base, i),
-                        i == comp ? AluInstr::write : AluInstr::empty);
+      if (i == comp) {
+         ir = new AluInstr(op,
+                           dest[i],
+                           i & 1 ? params.j : params.i,
+                           new InlineConstant(ALU_SRC_PARAM_BASE + params.base, i),
+                           AluInstr::write);
+      } else {
+         ir = new AluInstr(op,
+                           i,
+                           {i & 1 ? params.j : params.i,
+                            new InlineConstant(ALU_SRC_PARAM_BASE + params.base, i)},
+                           AluInstr::empty);
+      }
       ir->set_bank_swizzle(alu_vec_210);
       success = group->add_instruction(ir);
    }
