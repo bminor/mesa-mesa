@@ -26,6 +26,7 @@ dEQP-GLES2.functional.color_clear.masked_scissored_rgba
 dEQP-GLES2.functional.fragment_ops.random.79
 dEQP-GLES3.functional.default_vertex_attrib.mat3x2.vertex_attrib_4f
 dEQP-GLES3.functional.fbo.blit.conversion.rg32ui_to_r16ui
+dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_mag_reverse_src_dst_x
 dEQP-GLES3.functional.fbo.multiview.samples_1
 dEQP-GLES3.functional.fbo.multiview.samples_2
 dEQP-GLES3.functional.fbo.multiview.samples_4
@@ -37,6 +38,7 @@ dEQP-GLES3.functional.occlusion_query.conservative_depth_write_stencil_write_ste
 dEQP-GLES3.functional.occlusion_query.depth_write_depth_clear
 dEQP-GLES3.functional.occlusion_query.scissor_depth_clear_stencil_write
 dEQP-GLES3.functional.occlusion_query.scissor_depth_write_depth_clear
+dEQP-GLES3.functional.texture.specification.texsubimage2d_pbo.rg16i_cube
 dEQP-GLES31.functional.copy_image.mixed.viewclass_64_bits_mixed.rg32ui_signed_r11_eac.cubemap_to_cubemap
 dEQP-GLES31.functional.copy_image.mixed.viewclass_64_bits_mixed.signed_r11_eac_rg32i.cubemap_to_texture2d_array
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.srgb8_alpha8_r32ui.texture2d_array_to_texture2d
@@ -56,14 +58,18 @@ spec@!opengl 1.1@copypixels-sync
 spec@!opengl 1.1@depthstencil-default_fb-blit samples=4
 spec@!opengl 1.1@depthstencil-default_fb-blit samples=6
 spec@!opengl 1.1@depthstencil-default_fb-copypixels samples=6
+spec@!opengl 1.1@draw-sync
 spec@!opengl 1.1@ppgtt_memory_alignment
+spec@!opengl 1.1@teximage-colors gl_luminance12
 spec@!opengl 1.2@tex3d
 spec@!opengl 2.0@tex3d-npot
+spec@arb_color_buffer_float@gl_rgba16f-render-fog
 spec@arb_compute_shader@local-id-explosion
 spec@arb_copy_image@arb_copy_image-targets gl_texture_cube_map_array 32 32 18 gl_texture_2d 32 16 1 11 12 13 5 7 0 14 8 1
 spec@arb_depth_texture@fbo-depth-gl_depth_component16-blit
 spec@arb_fragment_shader_interlock@arb_fragment_shader_interlock-image-load-store
 spec@arb_pixel_buffer_object@texsubimage array pbo
+spec@arb_pixel_buffer_object@texsubimage-unpack pbo
 spec@arb_point_parameters@arb_point_parameters-point-attenuation
 spec@arb_point_parameters@arb_point_parameters-point-attenuation@Aliased combinations
 spec@arb_sampler_objects@framebufferblit
@@ -96,6 +102,8 @@ spec@arb_shader_texture_lod@execution@glsl-fs-shadow2dgradarb-cumulative
 spec@arb_texture_multisample@arb_texture_multisample-dsa-texelfetch
 spec@arb_texture_multisample@arb_texture_multisample-dsa-texelfetch@Texture type: GL_RGB9_E5
 spec@arb_texture_multisample@texelfetch fs sampler2dmsarray 4 1x129x9-98x129x9
+spec@arb_texture_multisample@texelfetch fs sampler2dmsarray 4 98x1x9-98x129x9
+spec@arb_texture_multisample@texelfetch@2-gs-isampler2dms
 spec@arb_texture_rg@texture-rg
 spec@arb_timer_query@timestamp-get
 spec@ext_framebuffer_multisample@accuracy all_samples srgb depthstencil linear
@@ -104,17 +112,27 @@ spec@ext_framebuffer_multisample@clip-and-scissor-blit 8 downsample
 spec@ext_framebuffer_object@getteximage-formats init-by-rendering
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_yuyv
 spec@ext_packed_depth_stencil@fbo-depth-gl_depth24_stencil8-copypixels
+spec@ext_packed_depth_stencil@fbo-stencil-gl_depth24_stencil8-copypixels
+spec@ext_texture_array@fbo-depth-array depth-draw
+spec@ext_texture_array@fbo-depth-array fs-writes-stencil
 spec@ext_texture_array@fbo-depth-array stencil-clear
 spec@ext_texture_array@fbo-depth-array stencil-draw
 spec@ext_texture_array@fbo-depth-array stencil-layered-clear
+spec@ext_texture_lod_bias@lodbias
 spec@ext_texture_shared_exponent@texwrap formats
 spec@ext_texture_swizzle@ext_texture_swizzle-swizzle
 spec@ext_transform_feedback@discard-bitmap
+spec@ext_transform_feedback@max-varyings
+spec@glsl-1.10@execution@samplers@glsl-fs-shadow2d-clamp-z
+spec@glsl-1.30@execution@texelfetch fs sampler1d 1-513
+spec@glsl-1.30@execution@texelfetch fs sampler1darray 1x281-501x281
 spec@glsl-1.30@execution@texelfetch fs sampler1darray 1x71-501x71
 spec@glsl-1.30@execution@texelfetch fs sampler2darray 1x129x9-98x129x9
 spec@glsl-1.30@execution@texelfetch@fs-texelfetch-sampler2darray-swizzle
 spec@glsl-1.50@execution@geometry@point-size-out
 spec@glsl-1.50@execution@redeclare-pervertex-out-subset-gs
+spec@glsl-1.50@execution@texelfetch@gs-texelfetch-sampler2d
+spec@nv_copy_image@nv_copy_image-formats
 spec@nv_copy_image@nv_copy_image-formats --samples=8
 
 glx@glx-multithread-texture
