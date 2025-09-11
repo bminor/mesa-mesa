@@ -1117,7 +1117,7 @@ brw_allocate_registers(brw_shader &s, bool allow_spilling)
    };
 
    uint32_t best_register_pressure = UINT32_MAX;
-   float best_perf = 0;
+   float best_perf = -INFINITY;
    unsigned best_press_idx = 0;
    unsigned best_perf_idx = 0;
 
