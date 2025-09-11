@@ -8,6 +8,7 @@ wayland-dEQP-EGL.functional.sharing.gles2.multithread.random.programs.link.7
 KHR-GLES31.core.constant_expressions.array_mod_vec2_float_compute
 KHR-GLES31.core.shader_atomic_counters.basic-usage-no-offset
 KHR-GLES31.core.shader_image_load_store.basic-allFormats-load-cs
+KHR-GLES31.core.shader_image_load_store.basic-allFormats-loadStoreComputeStage
 KHR-GLES31.core.shader_image_load_store.basic-allFormats-store-fs
 KHR-GLES31.core.shader_image_load_store.basic-glsl-earlyFragTests
 KHR-GLES31.core.shader_storage_buffer_object.advanced-indirectAddressing-case1-cs
@@ -124,6 +125,7 @@ dEQP-VK.draw.renderpass.multiple_interpolation.separate.no_sample_decoration.4_s
 dEQP-VK.draw.renderpass.multiple_interpolation.structured.no_sample_decoration.4_samples
 dEQP-VK.draw\..*\.multi_draw\.mosaic\..*\.max_draws\..*no_draw_id
 dEQP-VK.fragment_operations.occlusion_query.precise_test_depth_write_stencil_clear
+dEQP-VK.fragment_operations.occlusion_query.precise_test_scissors_depth_clear
 dEQP-VK.fragment_operations.occlusion_query.precise_test_scissors_depth_write_stencil_clear
 dEQP-VK.fragment_operations.occlusion_query.precise_test_scissors_depth_write_stencil_clear_stencil_write
 dEQP-VK.glsl.builtin.function.integer.findlsb.uvec2_highp_geometry
@@ -149,6 +151,9 @@ dEQP-VK.robustness.image_robustness.bind.notemplate.rg32f.unroll.volatile.storag
 dEQP-VK.spirv_assembly.instruction.graphics.float_controls2.fp32.input_args.ord_gt_testedWithout_NotInf_arg1_inf_arg2_one_res_one_deco_vert
 dEQP-VK.ssbo.phys.layout.basic_unsized_array.std430.row_major_mat2x4_store_cols
 dEQP-VK.ssbo.phys.layout.random.basic_types.15
+dEQP-VK.synchronization.cross_instance.suballocated.write_copy_image_to_buffer_read_vertex_input.buffer_262144_binary_semaphore_dma_buf
+dEQP-VK.synchronization.signal_order.shared_binary_semaphore.write_ssbo_compute_read_vertex_input.buffer_262144_opaque_fd
+dEQP-VK.synchronization.signal_order.shared_binary_semaphore.write_ssbo_vertex_read_vertex_input.buffer_262144_opaque_fd
 dEQP-VK.synchronization2.timeline_semaphore.device_host.write_ssbo_fragment_read_vertex_input.buffer_262144
 dEQP-VK.tessellation.invariance.one_minus_tess_coord_component.isolines_fractional_odd_spacing_ccw
 dEQP-VK.tessellation.invariance.tess_coord_component_range.isolines_fractional_even_spacing_cw
