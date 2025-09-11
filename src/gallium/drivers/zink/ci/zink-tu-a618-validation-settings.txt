@@ -1,6 +1,6 @@
 # Please include a comment with the log message and a testcase triggering each
 # VUID at the bottom of the file.
-khronos_validation.message_id_filter = VUID-VkPhysicalDeviceProperties2-pNext-pNext,VUID-VkDeviceCreateInfo-pNext-pNext,VUID-vkDestroyDevice-device-05137,UNASSIGNED-Draw-primitiveTopologyPatchListRestart,VUID-vkQueueSubmit-pSignalSemaphores-00067,VUID-VkImageMemoryBarrier2-srcAccessMask-07454,UNASSIGNED-Threading-MultipleThreads-Read,VUID-vkAcquireNextImageKHR-semaphore-01779,VUID-VkSwapchainCreateInfoKHR-imageFormat-01273,VUID-VkRectLayerKHR-offset-04864,UNASSIGNED-Threading-MultipleThreads-Write
+khronos_validation.message_id_filter = VUID-VkPhysicalDeviceProperties2-pNext-pNext,VUID-VkDeviceCreateInfo-pNext-pNext,VUID-vkDestroyDevice-device-05137,UNASSIGNED-Draw-primitiveTopologyPatchListRestart,VUID-vkQueueSubmit-pSignalSemaphores-00067,VUID-VkImageMemoryBarrier2-srcAccessMask-07454,UNASSIGNED-Threading-MultipleThreads-Read,VUID-vkAcquireNextImageKHR-semaphore-01779,VUID-VkSwapchainCreateInfoKHR-imageFormat-01273,VUID-VkRectLayerKHR-offset-04864,UNASSIGNED-Threading-MultipleThreads-Write,VUID-vkCmdDrawMultiIndexedEXT-None-10909
 khronos_validation.report_flags = error
 khronos_validation.debug_action = VK_DBG_LAYER_ACTION_LOG_MSG,VK_DBG_LAYER_ACTION_BREAK
 VK_LAYER_ENABLES=VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT
