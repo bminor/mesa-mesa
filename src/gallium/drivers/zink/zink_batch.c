@@ -424,11 +424,11 @@ find_screen_state(struct zink_screen *screen, struct zink_context *ctx)
    return bs;
 }
 
+/* only returns batch state for COPY_ONLY contexts */
 static struct zink_batch_state *
 find_completed_batch_state(struct zink_context *ctx)
 {
    struct zink_screen *screen = zink_screen(ctx->base.screen);
-   struct zink_batch_state *bs = NULL;
 
    /* states are stored sequentially, so if the first one doesn't work, none of them will */
    struct zink_batch_state *i = ctx->batch_states;
@@ -440,15 +440,20 @@ find_completed_batch_state(struct zink_context *ctx)
           (zink_screen_check_last_finished(screen, i->fence.batch_id) || i->fence.completed)) {
          pop_batch_state(ctx);
          reset_batch_state_ctx(ctx, i);
+         if (ctx->flags & ZINK_CONTEXT_COPY_ONLY) {
+            /* copy context batch states don't have descriptors and cannot be used interchangeably with others */
+            reset_batch_state_internal(screen, i);
+            return i;
+         }
          simple_mtx_lock(&screen->active_batch_states_lock);
          zink_batch_state_append(&screen->active_batch_states, &screen->last_active_batch_state, i);
          simple_mtx_unlock(&screen->active_batch_states_lock);
          i = j;
       } else {
-         return bs;
+         break;
       }
    }
-   return bs;
+   return NULL;
 }
 
 /* find a "free" batch state */
