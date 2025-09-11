@@ -282,6 +282,8 @@ spec@ext_texture_array@compressed teximage,Fail
 spec@ext_texture_array@compressed teximage pbo,Fail
 spec@ext_texture_array@compressed texsubimage,Fail
 spec@ext_texture_array@compressed texsubimage pbo,Fail
+spec@ext_texture_array@copyteximage 1d_array samples=2,Crash
+spec@ext_texture_array@copyteximage 1d_array samples=4,Crash
 spec@ext_texture_array@copyteximage 1d_array,Fail
 spec@ext_texture_array@fbo-generatemipmap-array,Fail
 spec@ext_texture_array@glsl-fs-shadow1darray-07,Fail
