@@ -76,8 +76,8 @@ alias_srcs(struct ir3_instruction *instr)
 
    struct ir3_register **old_srcs = instr->srcs;
    unsigned old_srcs_count = instr->srcs_count;
-   instr->srcs =
-      ir3_alloc(instr->block->shader, new_srcs_count * sizeof(instr->srcs[0]));
+   instr->srcs = linear_alloc_array(instr->block->shader->lin_ctx,
+                                    struct ir3_register *, new_srcs_count);
    instr->srcs_count = 0;
    unsigned num_aliases = 0;
 

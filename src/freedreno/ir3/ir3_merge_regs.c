@@ -183,14 +183,15 @@ get_merge_set(struct ir3_register *def)
    if (def->merge_set)
       return def->merge_set;
 
-   struct ir3_merge_set *set = ralloc(def, struct ir3_merge_set);
+   struct ir3_merge_set *set =
+      linear_alloc(def->instr->block->shader->lin_ctx, struct ir3_merge_set);
    set->preferred_reg = ~0;
    set->interval_start = ~0;
    set->spill_slot = ~0;
    set->size = reg_size(def);
    set->alignment = (def->flags & IR3_REG_HALF) ? 1 : 2;
    set->regs_count = 1;
-   set->regs = ralloc(set, struct ir3_register *);
+   set->regs = linear_alloc(def->instr->block->shader->lin_ctx, struct ir3_register *);
    set->regs[0] = def;
 
    return set;
@@ -204,7 +205,8 @@ merge_merge_sets(struct ir3_merge_set *a, struct ir3_merge_set *b, int b_offset)
       return merge_merge_sets(b, a, -b_offset);
 
    struct ir3_register **new_regs =
-      rzalloc_array(a, struct ir3_register *, a->regs_count + b->regs_count);
+      linear_zalloc_array(a->regs[0]->instr->block->shader->lin_ctx,
+                          struct ir3_register *, a->regs_count + b->regs_count);
 
    unsigned a_index = 0, b_index = 0, new_index = 0;
    for (; a_index < a->regs_count || b_index < b->regs_count; new_index++) {
@@ -226,7 +228,6 @@ merge_merge_sets(struct ir3_merge_set *a, struct ir3_merge_set *b, int b_offset)
     */
    a->alignment = MAX2(a->alignment, b->alignment);
    a->regs_count += b->regs_count;
-   ralloc_free(a->regs);
    a->regs = new_regs;
    a->size = MAX2(a->size, b->size + b_offset);
 

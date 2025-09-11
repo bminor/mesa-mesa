@@ -26,6 +26,7 @@ struct ir3_compiler;
 struct ir3;
 struct ir3_instruction;
 struct ir3_block;
+struct linear_context;
 
 struct ir3_info {
    /* Size in bytes of the shader binary, including NIR constants and
@@ -640,6 +641,11 @@ struct ir3_instruction_rpt {
 struct ir3 {
    struct ir3_compiler *compiler;
    mesa_shader_stage type;
+
+   /* Ralloc linear context we use for instructions and regs, to reduce
+    * allocation overhead and pack better than using ralloc directly.
+    */
+   struct linear_ctx *lin_ctx;
 
    DECLARE_ARRAY(struct ir3_instruction *, inputs);
 

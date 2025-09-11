@@ -36,6 +36,7 @@ ir3_create(struct ir3_compiler *compiler, struct ir3_shader_variant *v)
 
    shader->compiler = compiler;
    shader->type = v->type;
+   shader->lin_ctx = linear_context(shader);
 
    list_inithead(&shader->block_list);
    list_inithead(&shader->array_list);
@@ -605,7 +606,7 @@ ir3_collect_info(struct ir3_shader_variant *v)
 static struct ir3_register *
 reg_create(struct ir3 *shader, int num, int flags)
 {
-   struct ir3_register *reg = ir3_alloc(shader, sizeof(struct ir3_register));
+   struct ir3_register *reg = linear_zalloc(shader->lin_ctx, struct ir3_register);
    reg->wrmask = 1;
    reg->flags = flags;
    reg->num = num;
