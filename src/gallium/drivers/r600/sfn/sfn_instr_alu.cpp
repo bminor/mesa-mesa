@@ -750,7 +750,9 @@ AluInstr::check_readport_validation(PRegister old_src, PVirtualValue new_src) co
    bool success = true;
    AluReadportReservation rpr_sum;
 
-   unsigned nsrc = alu_ops.at(m_opcode).nsrc;
+   unsigned nsrc = !has_alu_flag(alu_is_lds) ? alu_ops.at(m_opcode).nsrc
+                                             : lds_ops.at(m_lds_opcode).nsrc;
+
    assert(nsrc * m_alu_slots == m_src.size());
 
    for (int s = 0; s < m_alu_slots && success; ++s) {
