@@ -149,26 +149,39 @@ radv_get_max_anisotropy(struct radv_device *device, const VkSamplerCreateInfo *p
    return 0;
 }
 
-static uint32_t
-radv_register_border_color(struct radv_device *device, VkClearColorValue value)
+static VkResult
+radv_register_border_color(struct radv_device *device, VkClearColorValue value, bool request_index, uint32_t *index)
 {
-   uint32_t index;
+   VkResult result = VK_SUCCESS;
 
    mtx_lock(&device->border_color_data.mutex);
 
-   for (index = 0; index < RADV_BORDER_COLOR_COUNT; index++) {
-      if (!device->border_color_data.used[index]) {
-         /* Copy to the GPU wrt endian-ness. */
-         util_memcpy_cpu_to_le32(&device->border_color_data.colors_gpu_ptr[index], &value, sizeof(VkClearColorValue));
+   if (request_index) {
+      if (device->border_color_data.used[*index]) {
+         result = VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS;
+         goto exit;
+      }
+   } else {
+      for (uint32_t i = 0; i < RADV_BORDER_COLOR_COUNT; i++) {
+         if (!device->border_color_data.used[i]) {
+            *index = i;
+            break;
+         }
+      }
 
-         device->border_color_data.used[index] = true;
-         break;
+      if (*index == RADV_BORDER_COLOR_COUNT) {
+         result = VK_ERROR_UNKNOWN;
+         goto exit;
       }
    }
 
-   mtx_unlock(&device->border_color_data.mutex);
+   /* Copy to the GPU wrt endian-ness. */
+   util_memcpy_cpu_to_le32(&device->border_color_data.colors_gpu_ptr[*index], &value, sizeof(VkClearColorValue));
+   device->border_color_data.used[*index] = true;
 
-   return index;
+exit:
+   mtx_unlock(&device->border_color_data.mutex);
+   return result;
 }
 
 static void
@@ -181,7 +194,7 @@ radv_unregister_border_color(struct radv_device *device, uint32_t index)
    mtx_unlock(&device->border_color_data.mutex);
 }
 
-void
+VkResult
 radv_sampler_init(struct radv_device *device, struct radv_sampler *sampler, const VkSamplerCreateInfo *pCreateInfo)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -209,7 +222,22 @@ radv_sampler_init(struct radv_device *device, struct radv_sampler *sampler, cons
    sampler->border_color_index = RADV_BORDER_COLOR_COUNT;
 
    if (vk_border_color_is_custom(border_color)) {
-      sampler->border_color_index = radv_register_border_color(device, sampler->vk.border_color_value);
+      uint32_t border_color_index = 0;
+      bool request_index = false;
+      VkResult result;
+
+      const VkOpaqueCaptureDescriptorDataCreateInfoEXT *opaque_info =
+         vk_find_struct_const(pCreateInfo->pNext, OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT);
+      if (opaque_info) {
+         request_index = true;
+         border_color_index = *((const uint32_t *)opaque_info->opaqueCaptureDescriptorData);
+      }
+
+      result = radv_register_border_color(device, sampler->vk.border_color_value, request_index, &border_color_index);
+      if (result != VK_SUCCESS)
+         return result;
+
+      sampler->border_color_index = border_color_index;
    }
 
    /* If we don't have a custom color, set the ptr to 0 */
@@ -237,6 +265,15 @@ radv_sampler_init(struct radv_device *device, struct radv_sampler *sampler, cons
    };
 
    ac_build_sampler_descriptor(pdev->info.gfx_level, &ac_state, sampler->state);
+
+   return VK_SUCCESS;
+}
+
+static void
+radv_destroy_sampler(struct radv_device *device, const VkAllocationCallbacks *pAllocator, struct radv_sampler *sampler)
+{
+   radv_sampler_finish(device, sampler);
+   vk_free2(&device->vk.alloc, pAllocator, sampler);
 }
 
 void
@@ -254,12 +291,17 @@ radv_CreateSampler(VkDevice _device, const VkSamplerCreateInfo *pCreateInfo, con
 {
    VK_FROM_HANDLE(radv_device, device, _device);
    struct radv_sampler *sampler;
+   VkResult result;
 
    sampler = vk_zalloc2(&device->vk.alloc, pAllocator, sizeof(*sampler), 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
    if (!sampler)
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   radv_sampler_init(device, sampler, pCreateInfo);
+   result = radv_sampler_init(device, sampler, pCreateInfo);
+   if (result != VK_SUCCESS) {
+      radv_destroy_sampler(device, pAllocator, sampler);
+      return result;
+   }
 
    *pSampler = radv_sampler_to_handle(sampler);
 
@@ -275,6 +317,15 @@ radv_DestroySampler(VkDevice _device, VkSampler _sampler, const VkAllocationCall
    if (!sampler)
       return;
 
-   radv_sampler_finish(device, sampler);
-   vk_free2(&device->vk.alloc, pAllocator, sampler);
+   radv_destroy_sampler(device, pAllocator, sampler);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL
+radv_GetSamplerOpaqueCaptureDescriptorDataEXT(VkDevice _device, const VkSamplerCaptureDescriptorDataInfoEXT *pInfo,
+                                              void *pData)
+{
+   VK_FROM_HANDLE(radv_sampler, sampler, pInfo->sampler);
+
+   *(uint32_t *)pData = sampler->border_color_index;
+   return VK_SUCCESS;
 }
