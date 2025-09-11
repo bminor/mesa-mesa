@@ -345,37 +345,34 @@ virtio_device_check_status(struct tu_device *device)
 }
 
 static int
-virtio_submitqueue_new(struct tu_device *dev,
-                       enum tu_queue_type type,
-                       int priority,
-                       uint32_t *queue_id)
+virtio_submitqueue_new(struct tu_device *dev, struct tu_queue *queue)
 {
    MESA_TRACE_FUNC();
 
-   assert(priority >= 0 &&
-          priority < dev->physical_device->submitqueue_priority_count);
+   assert(queue->priority >= 0 &&
+          queue->priority < dev->physical_device->submitqueue_priority_count);
 
    struct drm_msm_submitqueue req = {
-      .flags = type == TU_QUEUE_SPARSE ? MSM_SUBMITQUEUE_VM_BIND :
+      .flags = queue->type == TU_QUEUE_SPARSE ? MSM_SUBMITQUEUE_VM_BIND :
          (dev->physical_device->info->chip >= 7 &&
           dev->physical_device->has_preemption ?
           MSM_SUBMITQUEUE_ALLOW_PREEMPT : 0),
-      .prio = priority,
+      .prio = queue->priority,
    };
 
    int ret = virtio_simple_ioctl(dev->vdev->vdrm, DRM_IOCTL_MSM_SUBMITQUEUE_NEW, &req);
    if (ret)
       return ret;
 
-   *queue_id = req.id;
+   queue->msm_queue_id = req.id;
    return 0;
 }
 
 static void
-virtio_submitqueue_close(struct tu_device *dev, uint32_t queue_id)
+virtio_submitqueue_close(struct tu_device *dev, struct tu_queue *queue)
 {
    MESA_TRACE_FUNC();
-   virtio_simple_ioctl(dev->vdev->vdrm, DRM_IOCTL_MSM_SUBMITQUEUE_CLOSE, &queue_id);
+   virtio_simple_ioctl(dev->vdev->vdrm, DRM_IOCTL_MSM_SUBMITQUEUE_CLOSE, &queue->msm_queue_id);
 }
 
 static bool

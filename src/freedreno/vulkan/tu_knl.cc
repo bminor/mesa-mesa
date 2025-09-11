@@ -304,18 +304,15 @@ tu_device_check_status(struct vk_device *vk_device)
 }
 
 int
-tu_drm_submitqueue_new(struct tu_device *dev,
-                       enum tu_queue_type type,
-                       int priority,
-                       uint32_t *queue_id)
+tu_drm_submitqueue_new(struct tu_device *dev, struct tu_queue *queue)
 {
-   return dev->instance->knl->submitqueue_new(dev, type, priority, queue_id);
+   return dev->instance->knl->submitqueue_new(dev, queue);
 }
 
 void
-tu_drm_submitqueue_close(struct tu_device *dev, uint32_t queue_id)
+tu_drm_submitqueue_close(struct tu_device *dev, struct tu_queue *queue)
 {
-   dev->instance->knl->submitqueue_close(dev, queue_id);
+   dev->instance->knl->submitqueue_close(dev, queue);
 }
 
 void *

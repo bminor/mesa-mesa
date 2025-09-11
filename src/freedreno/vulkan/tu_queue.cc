@@ -366,7 +366,7 @@ tu_queue_init(struct tu_device *device,
       (type == TU_QUEUE_SPARSE) ? queue_submit_sparse : queue_submit;
    queue->type = type;
 
-   int ret = tu_drm_submitqueue_new(device, type, priority, &queue->msm_queue_id);
+   int ret = tu_drm_submitqueue_new(device, queue);
    if (ret)
       return vk_startup_errorf(device->instance, VK_ERROR_INITIALIZATION_FAILED,
                                "submitqueue create failed");
@@ -380,6 +380,6 @@ void
 tu_queue_finish(struct tu_queue *queue)
 {
    vk_queue_finish(&queue->vk);
-   tu_drm_submitqueue_close(queue->device, queue->msm_queue_id);
+   tu_drm_submitqueue_close(queue->device, queue);
 }
 

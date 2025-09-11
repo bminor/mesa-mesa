@@ -50,10 +50,7 @@ safe_ioctl(int fd, unsigned long request, void *arg)
 }
 
 static int
-kgsl_submitqueue_new(struct tu_device *dev,
-                     enum tu_queue_type type,
-                     int priority,
-                     uint32_t *queue_id)
+kgsl_submitqueue_new(struct tu_device *dev, struct tu_queue *queue)
 {
    struct kgsl_drawctxt_create req = {
       .flags = KGSL_CONTEXT_SAVE_GMEM |
@@ -65,16 +62,16 @@ kgsl_submitqueue_new(struct tu_device *dev,
    if (ret)
       return ret;
 
-   *queue_id = req.drawctxt_id;
+   queue->msm_queue_id = req.drawctxt_id;
 
    return 0;
 }
 
 static void
-kgsl_submitqueue_close(struct tu_device *dev, uint32_t queue_id)
+kgsl_submitqueue_close(struct tu_device *dev, struct tu_queue *queue)
 {
    struct kgsl_drawctxt_destroy req = {
-      .drawctxt_id = queue_id,
+      .drawctxt_id = queue->msm_queue_id,
    };
 
    safe_ioctl(dev->physical_device->local_fd, IOCTL_KGSL_DRAWCTXT_DESTROY, &req);
