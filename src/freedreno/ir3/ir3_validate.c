@@ -20,10 +20,11 @@ struct ir3_validate_ctx {
    /* Current instruction being validated: */
    struct ir3_instruction *current_instr;
 
-   /* Set of instructions found so far, used to validate that we
-    * don't have SSA uses that occure before def's
+   /* Bitset of instructions found so far, used to validate that we don't have
+    * SSA uses that occur before defs.
     */
-   struct set *defs;
+   BITSET_WORD *defs;
+   unsigned defs_count;
 };
 
 static void
@@ -99,7 +100,8 @@ validate_src(struct ir3_validate_ctx *ctx, struct ir3_instruction *instr,
 
    struct ir3_register *src = reg->def;
 
-   validate_assert(ctx, _mesa_set_search(ctx->defs, src->instr));
+   validate_assert(ctx, src->instr->serialno < ctx->defs_count &&
+                           BITSET_TEST(ctx->defs, src->instr->serialno));
 
    if (src->instr->opc == OPC_META_COLLECT) {
       /* We only support reading a subset of written components from collects.
@@ -153,9 +155,21 @@ validate_phi_src(struct ir3_validate_ctx *ctx, struct ir3_block *block,
 }
 
 static void
+validate_def(struct ir3_validate_ctx *ctx, struct ir3_instruction *instr)
+{
+   /* Should have been initialized when it was inserted. */
+   validate_assert(ctx, instr->serialno != 0);
+   /* The def should only be seen once (no
+                                 duplicate serialnos). */
+   validate_assert(ctx, instr->serialno < ctx->defs_count &&
+                           !BITSET_TEST(ctx->defs, instr->serialno));
+   BITSET_SET(ctx->defs, instr->serialno);
+}
+
+static void
 validate_phi(struct ir3_validate_ctx *ctx, struct ir3_instruction *phi)
 {
-   _mesa_set_add(ctx->defs, phi);
+   validate_def(ctx, phi);
    validate_assert(ctx, phi->dsts_count == 1);
    validate_assert(ctx, is_dest_gpr(phi->dsts[0]));
 }
@@ -306,7 +320,7 @@ validate_instr(struct ir3_validate_ctx *ctx, struct ir3_instruction *instr)
       validate_dst(ctx, instr, reg);
    }
 
-   _mesa_set_add(ctx->defs, instr);
+   validate_def(ctx, instr);
 
    if ((opc_cat(instr->opc) == 2 || opc_cat(instr->opc) == 3 ||
         opc_cat(instr->opc) == 4)) {
@@ -604,7 +618,8 @@ ir3_validate(struct ir3 *ir)
    struct ir3_validate_ctx *ctx = ralloc_size(NULL, sizeof(*ctx));
 
    ctx->ir = ir;
-   ctx->defs = _mesa_pointer_set_create(ctx);
+   ctx->defs_count = ir->instr_count + 1; /* serialno comes from pre-incrementing this. */
+   ctx->defs = rzalloc_array(ctx, BITSET_WORD, BITSET_WORDS(ctx->defs_count));
 
    foreach_block (block, &ir->block_list) {
       ctx->current_block = block;
