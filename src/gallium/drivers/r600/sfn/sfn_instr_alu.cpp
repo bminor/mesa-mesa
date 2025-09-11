@@ -537,6 +537,14 @@ bool AluInstr::do_replace_source(PRegister old_src, PVirtualValue new_src)
    return process;
 }
 
+void
+AluInstr::override_or_clear_dest(PRegister dummy_reg)
+{
+   m_alu_flags.reset(alu_write);
+   m_fallback_chan = m_dest->chan();
+   m_dest = m_src.size() < 3 ? nullptr : dummy_reg;
+}
+
 bool AluInstr::replace_src(int i, PVirtualValue new_src, uint32_t to_set,
                            SourceMod to_clear)
 {

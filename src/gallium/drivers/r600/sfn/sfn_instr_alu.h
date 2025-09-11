@@ -209,6 +209,8 @@ public:
    auto output_modifier() const { return m_output_modifier; }
    auto has_output_modifier() const { return m_output_modifier != omod_none; }
 
+   void override_or_clear_dest(PRegister dummy_reg);
+
 private:
    friend class AluGroup;
 
