@@ -958,7 +958,8 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
     * image to 0, drawing geometry with Z = 1 to it discarding all fragments in the shader, then
     * reading it in vkCmdCopyImageToBuffer fetching 1 where 0 is supposed to be).
     */
-   info->has_htile_tc_z_clear_bug_without_stencil = info->gfx_level == GFX8;
+   info->has_htile_tc_z_clear_bug_without_stencil = info->gfx_level == GFX8 ||
+                                                    info->family == CHIP_GFX1013;
    info->has_htile_tc_z_clear_bug_with_stencil = info->has_htile_tc_z_clear_bug_without_stencil ||
                                                  info->gfx_level == GFX9;
 
