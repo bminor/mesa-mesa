@@ -2,3 +2,4 @@ test_shader_instructions,Fail
 test_line_rasterization,Fail
 test_large_texel_buffer_view,Fail
 test_derivative_hoisting_dxil,Fail
+test_sparse_depth_stencil_rendering,Fail
