@@ -150,8 +150,7 @@ public:
    void finalize();
 
 private:
-   void
-   schedule_block(Block& in_block, Shader::ShaderBlocks& out_blocks, ValueFactory& vf);
+   void schedule_block(Block& in_block, Shader::ShaderBlocks& out_blocks);
 
    bool collect_ready(CollectInstructions& available);
 
@@ -174,11 +173,11 @@ private:
    template <typename I>
    bool schedule_cf(Shader::ShaderBlocks& out_blocks, std::list<I *>& ready_list);
 
-   bool schedule_alu(Shader::ShaderBlocks& out_blocks, ValueFactory& vf);
+   bool schedule_alu(Shader::ShaderBlocks& out_blocks);
    void start_new_block(Shader::ShaderBlocks& out_blocks, Block::Type type);
 
    bool schedule_alu_to_group_vec(AluGroup *group);
-   bool schedule_alu_multislot_to_group_vec(AluGroup *group, ValueFactory& vf);
+   bool schedule_alu_multislot_to_group_vec(AluGroup *group);
    bool schedule_alu_to_group_trans(AluGroup *group, std::list<AluInstr *>& readylist);
 
    bool schedule_exports(Shader::ShaderBlocks& out_blocks,
@@ -235,6 +234,8 @@ private:
 
    ArrayCheckSet m_last_indirect_array_write;
    ArrayCheckSet m_last_direct_array_write;
+
+   ValueFactory *m_vf{nullptr};
 };
 
 Shader *
@@ -291,6 +292,7 @@ void
 BlockScheduler::run(Shader *shader)
 {
    Shader::ShaderBlocks scheduled_blocks;
+   m_vf = &shader->value_factory();
 
    for (auto& block : shader->func()) {
       sfn_log << SfnLog::schedule << "Process block " << block->id() << "\n";
@@ -299,16 +301,14 @@ BlockScheduler::run(Shader *shader)
          block->print(ss);
          sfn_log << ss.str() << "\n";
       }
-      schedule_block(*block, scheduled_blocks, shader->value_factory());
+      schedule_block(*block, scheduled_blocks);
    }
 
    shader->reset_function(scheduled_blocks);
 }
 
 void
-BlockScheduler::schedule_block(Block& in_block,
-                              Shader::ShaderBlocks& out_blocks,
-                              ValueFactory& vf)
+BlockScheduler::schedule_block(Block& in_block, Shader::ShaderBlocks& out_blocks)
 {
 
    assert(in_block.id() >= 0);
@@ -316,7 +316,7 @@ BlockScheduler::schedule_block(Block& in_block,
    current_shed = sched_fetch;
    auto last_shed = sched_fetch;
 
-   CollectInstructions cir(vf);
+   CollectInstructions cir(*m_vf);
    in_block.accept(cir);
 
    bool have_instr = collect_ready(cir);
@@ -370,7 +370,7 @@ BlockScheduler::schedule_block(Block& in_block,
          }
          break;
       case sched_alu:
-         if (!schedule_alu(out_blocks, vf)) {
+         if (!schedule_alu(out_blocks)) {
             assert(!m_current_block->lds_group_active());
             current_shed = sched_tex;
             continue;
@@ -530,7 +530,7 @@ BlockScheduler::finalize()
 }
 
 bool
-BlockScheduler::schedule_alu(Shader::ShaderBlocks& out_blocks, ValueFactory& vf)
+BlockScheduler::schedule_alu(Shader::ShaderBlocks& out_blocks)
 {
    bool success = false;
    AluGroup *group = nullptr;
@@ -613,7 +613,7 @@ BlockScheduler::schedule_alu(Shader::ShaderBlocks& out_blocks, ValueFactory& vf)
    while (free_slots && has_alu_ready) {
 
       if (!alu_multi_slot_ready.empty()) {
-         success |= schedule_alu_multislot_to_group_vec(group, vf);
+         success |= schedule_alu_multislot_to_group_vec(group);
          free_slots = group->free_slot_mask();
       }
 
@@ -957,7 +957,7 @@ BlockScheduler::schedule_alu_to_group_vec(AluGroup *group)
 }
 
 bool
-BlockScheduler::schedule_alu_multislot_to_group_vec(AluGroup *group, ValueFactory& vf)
+BlockScheduler::schedule_alu_multislot_to_group_vec(AluGroup *group)
 {
    assert(group);
    assert(!alu_multi_slot_ready.empty());
