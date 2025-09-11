@@ -36,7 +36,6 @@
 #include "pvr_transfer_frag_store.h"
 #include "pvr_types.h"
 #include "pvr_usc.h"
-#include "usc/pvr_uscgen.h"
 #include "util/hash_table.h"
 #include "util/macros.h"
 #include "util/ralloc.h"

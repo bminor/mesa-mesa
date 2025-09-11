@@ -41,7 +41,6 @@
 #include "pvr_tex_state.h"
 #include "pvr_types.h"
 #include "pvr_usc.h"
-#include "usc/pvr_uscgen.h"
 #include "util/bitscan.h"
 #include "util/macros.h"
 #include "util/simple_mtx.h"

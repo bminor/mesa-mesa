@@ -24,7 +24,6 @@
 #include "pvr_formats.h"
 #include "pvr_private.h"
 #include "pvr_usc.h"
-#include "usc/pvr_uscgen.h"
 #include "util/macros.h"
 
 #define PVR_MAX_SAMPLE_COUNT 8
