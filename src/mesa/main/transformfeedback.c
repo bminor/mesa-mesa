@@ -884,6 +884,7 @@ transform_feedback_varyings(struct gl_context *ctx,
 
    if (!shProg->TransformFeedback.VaryingNames) {
       _mesa_error(ctx, GL_OUT_OF_MEMORY, "glTransformFeedbackVaryings()");
+      shProg->TransformFeedback.NumVarying = 0;
       return;
    }
 
