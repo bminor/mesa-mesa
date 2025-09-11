@@ -2091,7 +2091,6 @@ static uint16_t ALWAYS_INLINE
 tc_call_set_shader_buffers(struct pipe_context *pipe, void *call)
 {
    struct tc_shader_buffers *p = (struct tc_shader_buffers *)call;
-   unsigned count = p->count;
 
    if (p->unbind) {
       pipe->set_shader_buffers(pipe, p->shader, p->start, p->count, NULL, 0);
@@ -2100,9 +2099,6 @@ tc_call_set_shader_buffers(struct pipe_context *pipe, void *call)
 
    pipe->set_shader_buffers(pipe, p->shader, p->start, p->count, p->slot,
                             p->writable_bitmask);
-
-   for (unsigned i = 0; i < count; i++)
-      tc_drop_resource_reference(p->slot[i].buffer);
 
    return p->base.num_slots;
 }
@@ -2135,9 +2131,7 @@ tc_set_shader_buffers(struct pipe_context *_pipe,
          struct pipe_shader_buffer *dst = &p->slot[i];
          const struct pipe_shader_buffer *src = buffers + i;
 
-         tc_set_resource_reference(&dst->buffer, src->buffer);
-         dst->buffer_offset = src->buffer_offset;
-         dst->buffer_size = src->buffer_size;
+         *dst = *src;
 
          if (src->buffer) {
             struct threaded_resource *tres = threaded_resource(src->buffer);
