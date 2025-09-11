@@ -163,10 +163,6 @@ TEST_F(LiveRangeTests, SimpleArrayAccess)
 
    auto array = vf.array_from_string("A0[2].xy");
 
-   auto s1 = vf.dest_from_string("S1.x@chan");
-   auto s2x = vf.dest_from_string("S2.x@chan");
-   auto s2y = vf.dest_from_string("S2.y@chan");
-
    auto s3 = vf.dest_vec4_from_string("S3.xy01", dummy, pin_chgr);
 
    LiveRangeMap expect = vf.prepare_live_range_map();
@@ -176,11 +172,6 @@ TEST_F(LiveRangeTests, SimpleArrayAccess)
    expect.set_life_range(*array->element(1, nullptr, 0), 1, 4);
 
    expect.set_life_range(*array->element(1, nullptr, 1), 2, 4);
-
-   expect.set_life_range(*s1, 2, 3);
-
-   expect.set_life_range(*s2x, 5, 6);
-   expect.set_life_range(*s2y, 5, 6);
 
    expect.set_life_range(*s3[0], 6, 7);
    expect.set_life_range(*s3[1], 6, 7);

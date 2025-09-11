@@ -415,29 +415,29 @@ BLOCK_START ALU
 ALU_GROUP_BEGIN
 ALU INTERP_ZW  __.x@chan : R0.y@fully Param0.x VEC_210 {}
 ALU INTERP_ZW  __.y@chan : R0.x@fully Param0.y VEC_210 {}
-ALU INTERP_ZW  S1025.z@chan : R0.y@fully Param0.z VEC_210 {W}
+ALU INTERP_ZW  __.z@chan : R0.y@fully Param0.z VEC_210 {}
 ALU INTERP_ZW  S1025.w@chan : R0.x@fully Param0.w VEC_210 {W}
-ALU MOV S1024.x : I[0] {WL}
+ALU MOV __.x : I[0] {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-ALU INTERP_XY  S1025.x@chan : R0.y@fully Param0.x VEC_210 {W}
-ALU INTERP_XY  S1025.y@chan : R0.x@fully Param0.y VEC_210 {W}
+ALU INTERP_XY  __.x@chan : R0.y@fully Param0.x VEC_210 {}
+ALU INTERP_XY  __.y@chan : R0.x@fully Param0.y VEC_210 {}
 ALU INTERP_XY  __.z@chan : R0.y@fully Param0.z VEC_210 {}
 ALU INTERP_XY  __.w@chan : R0.x@fully Param0.w VEC_210 {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-ALU FLT_TO_INT S1026.x : S1025.x@chan {W}
-ALU FLT_TO_INT S1026.y : S1025.y@chan {W}
-ALU FLT_TO_INT S1026.z : S1025.w@chan {WL}
+ALU FLT_TO_INT __.x : I[PV].x@chan {}
+ALU FLT_TO_INT __.y : I[PV].y@chan {}
+ALU FLT_TO_INT __.z : S1025.w@chan {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-ALU MOV S1027.x : S1026.x {W}
-ALU MOV S1027.y : S1026.y {W}
-ALU MOV S1028.w@group : S1026.z {WL}
+ALU MOV __.x : I[PV].x {}
+ALU MOV __.y : I[PV].y {}
+ALU MOV S1028.w@group : I[PV].z {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-ALU MOV S1028.x@group : S1027.x {W}
-ALU MOV S1028.y@group : S1027.y {WL}
+ALU MOV S1028.x@group : I[PV].x {W}
+ALU MOV S1028.y@group : I[PV].y {WL}
 ALU_GROUP_END
 BLOCK_END
 BLOCK_START TEX
@@ -500,28 +500,28 @@ BLOCK_START ALU
 ALU_GROUP_BEGIN
 ALU INTERP_ZW __.x@chan : R0.y@fully Param0.x {} VEC_210
 ALU INTERP_ZW __.y@chan : R0.x@fully Param0.y {} VEC_210
-ALU INTERP_ZW S1025.z@chan : R0.y@fully Param0.z {W} VEC_210
+ALU INTERP_ZW __.z@chan : R0.y@fully Param0.z {} VEC_210
 ALU INTERP_ZW S1025.w@chan : R0.x@fully Param0.w {WL} VEC_210
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-ALU INTERP_XY S1025.x@chan : R0.y@fully Param0.x {W} VEC_210
-ALU INTERP_XY S1025.y@chan : R0.x@fully Param0.y {W} VEC_210
+ALU INTERP_XY __.x@chan : R0.y@fully Param0.x {} VEC_210
+ALU INTERP_XY __.y@chan : R0.x@fully Param0.y {} VEC_210
 ALU INTERP_XY __.z@chan : R0.y@fully Param0.z {} VEC_210
 ALU INTERP_XY __.w@chan : R0.x@fully Param0.w {L} VEC_210
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-ALU FLT_TO_INT S1026.x : S1025.x@chan {W}
-ALU FLT_TO_INT S1026.y : S1025.y@chan {W}
-ALU FLT_TO_INT S1026.z : S1025.w@chan {WL}
+ALU FLT_TO_INT __.x : I[PV].x {}
+ALU FLT_TO_INT __.y : I[PV].y {}
+ALU FLT_TO_INT __.z : S1025.w@chan {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-ALU MOV S1027.x : S1026.x {W}
-ALU MOV S1027.y : S1026.y {W}
-ALU MOV S1028.w@group : S1026.z {WL}
+ALU MOV __.x : I[PV].x {}
+ALU MOV __.y : I[PV].y {}
+ALU MOV S1028.w@group : I[PV].z {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-ALU MOV S1028.x@group : S1027.x {W}
-ALU MOV S1028.y@group : S1027.y {WL}
+ALU MOV S1028.x@group : I[PV].x {W}
+ALU MOV S1028.y@group : I[PV].y {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
 ALU MOV S1024.x : I[0] {WL}
@@ -549,18 +549,18 @@ BLOCK_START ALU
 ALU_GROUP_BEGIN
 ALU INTERP_ZW __.x@chan : R0.y@fully Param0.x {} VEC_210
 ALU INTERP_ZW __.y@chan : R0.x@fully Param0.y {} VEC_210
-ALU INTERP_ZW S1025.z@chan : R0.y@fully Param0.z {W} VEC_210
+ALU INTERP_ZW __.z : R0.y@fully Param0.z {} VEC_210
 ALU INTERP_ZW S1025.w@chan : R0.x@fully Param0.w {WL} VEC_210
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-ALU INTERP_XY S1025.x@chan : R0.y@fully Param0.x {W} VEC_210
-ALU INTERP_XY S1025.y@chan : R0.x@fully Param0.y {W} VEC_210
+ALU INTERP_XY __.x : R0.y@fully Param0.x {} VEC_210
+ALU INTERP_XY __.y : R0.x@fully Param0.y {} VEC_210
 ALU INTERP_XY __.z@chan : R0.y@fully Param0.z {} VEC_210
 ALU INTERP_XY __.w@chan : R0.x@fully Param0.w {L} VEC_210
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-ALU FLT_TO_INT S1026.x@group : S1025.x@chan {W}
-ALU FLT_TO_INT S1026.y@group : S1025.y@chan {W}
+ALU FLT_TO_INT S1026.x@group : I[PV].x {W}
+ALU FLT_TO_INT S1026.y@group : I[PV].y {W}
 ALU FLT_TO_INT S1026.z@group : S1025.w@chan {WL}
 ALU_GROUP_END
 BLOCK_END
@@ -1410,27 +1410,27 @@ OUTPUT LOC:0 FRAG_RESULT:2 MASK:15
 SHADER
 BLOCK_START ALU
 ALU_GROUP_BEGIN
-  ALU ADD S4.x@chan : |KC0[0].x| -KC0[2].x {W}
-  ALU ADD S4.y@chan : |KC0[0].y| -KC0[2].y {WL}
+  ALU ADD __.x : |KC0[0].x| -KC0[2].x {}
+  ALU ADD __.y : |KC0[0].y| -KC0[2].y {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU DOT4_IEEE S5.x@chan : S4.x@chan S4.x@chan {W}
-  ALU DOT4_IEEE __.y : S4.y@chan S4.y@chan {}
+  ALU DOT4_IEEE __.x : I[PV].x I[PV].x {}
+  ALU DOT4_IEEE __.y : I[PV].y I[PV].y {}
   ALU DOT4_IEEE __.z : I[0] I[0] {}
   ALU DOT4_IEEE __.w : I[0] I[0] {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU SQRT_IEEE S6.x@chan : S5.x@chan {WL}
+  ALU SQRT_IEEE __.x : I[PV].x {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU SETGE_DX10 S8.x@chan : KC0[1].x S6.x {WL}
+  ALU SETGE_DX10 __.x : KC0[1].x I[PV].x {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU NOT_INT S9.x@chan : S8.x@chan {W}
-  ALU AND_INT S12.y@chgr : S8.x@chan I[1.0] {WL}
+  ALU NOT_INT __.x@chan : I[PV].x {}
+  ALU AND_INT S12.y@chgr : I[PV].x I[1.0] {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU AND_INT S12.x@chgr : S9.x@chan I[1.0] {WL}
+  ALU AND_INT S12.x@chgr : I[PV].x I[1.0] {WL}
 ALU_GROUP_END
 BLOCK_END
 BLOCK_START
@@ -1532,20 +1532,20 @@ ALU_GROUP_BEGIN
   ALU SETNE S13.y@chan : KC0[4].y KC0[0].y {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU SETNE S15.x@chan : KC0[4].w KC0[0].w {W}
-  ALU SETNE S14.y@chan : KC0[4].z KC0[0].z {WL}
+  ALU SETNE __.x@chan : KC0[4].w KC0[0].w {}
+  ALU SETNE __.y@chan : KC0[4].z KC0[0].z {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU MAX4 S16.x@chan : S12.x@chan {W}
+  ALU MAX4 __.x : S12.x@chan {}
   ALU MAX4 __.y@chgr : S13.y@chan {}
-  ALU MAX4 __.z@chgr : S14.y@chan {}
-  ALU MAX4 __.w@chgr : S15.x@chan {L}
+  ALU MAX4 __.z@chgr : I[PV].y {}
+  ALU MAX4 __.w@chgr : I[PV].x {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU SETE_DX10 S17.x@free : S16.x@chan I[1.0] {WL}
+  ALU SETE_DX10 __.x : I[PV].x I[1.0] {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU NOT_INT S19.x@chgr : S17.x@free {WL}
+  ALU NOT_INT S19.x@chgr : I[PV].x {WL}
 ALU_GROUP_END
 BLOCK_END
 BLOCK_START
@@ -1602,30 +1602,30 @@ OUTPUT LOC:0 FRAG_RESULT:2 MASK:15
 SHADER
 BLOCK_START ALU
 ALU_GROUP_BEGIN
-  ALU SETNE_DX10 S5.x@chan : KC0[2].y KC0[0].y {W}
-  ALU SETNE_DX10 S5.y@chan : KC0[2].x KC0[0].x {WL}
+  ALU SETNE_DX10 __.x : KC0[2].y KC0[0].y {}
+  ALU SETNE_DX10 __.y : KC0[2].x KC0[0].x {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU SETNE_DX10 S9.x@chan : KC0[3].y KC0[1].y {W}
-  ALU SETNE_DX10 S9.y@chan : KC0[3].x KC0[1].x {W}
-  ALU OR_INT S6.x@chan : S5.x@chan S5.y@chan {WL}
+  ALU SETNE_DX10 __.x : KC0[3].y KC0[1].y {}
+  ALU SETNE_DX10 __.y : KC0[3].x KC0[1].x {}
+  ALU OR_INT S6.x@chan : I[PV].x I[PV].y {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU OR_INT S10.x@chan : S9.x@chan S9.y@chan {WL}
+  ALU OR_INT __.x : I[PV].x I[PV].y {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU OR_INT S11.x@chan : S10.x@chan S6.x@chan {WL}
+  ALU OR_INT __.x : I[PV].x S6.x@chan {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU NOT_INT S12.x@chan : S11.x@chan {W}
-  ALU AND_INT S15.z@chgr : S11.x@chan I[1.0] {WL}
+  ALU NOT_INT __.x : I[PV].x {}
+  ALU AND_INT S15.z@chgr : I[PV].x I[1.0] {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU AND_INT S13.x@chan : S12.x@chan I[1.0] {WL}
+  ALU AND_INT __.x : I[PV].x I[1.0] {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU MOV S15.x@chgr : S13.x@chan {W}
-  ALU MOV S15.y@chgr : S13.x@chan {WL}
+  ALU MOV S15.x@chgr : I[PV].x {W}
+  ALU MOV S15.y@chgr : I[PV].x {WL}
 ALU_GROUP_END
 BLOCK_END
 BLOCK_START
@@ -1873,53 +1873,53 @@ ALU_GROUP_BEGIN
   ALU MOV A2[1].y : L[0x40066666] {W}
   ALU MOV A2[1].z : L[0x40c00000] {W}
   ALU MOV A2[1].w : L[0x40c33333] {W}
-  ALU MUL_IEEE S14.x : KC0[2].x R1.y@fully {WL}
+  ALU MUL_IEEE __.x : KC0[2].x R1.y@fully {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
   ALU MOV A2[3].x : L[0x40800000] {W}
   ALU MOV A2[2].y : L[0x40466666] {W}
   ALU MOV A2[2].z : L[0x40e00000] {W}
   ALU MOV A2[2].w : L[0x40e33333] {W}
-  ALU MULADD_IEEE S15.x : KC0[1].x R1.x@fully S14.x {WL}
+  ALU MULADD_IEEE __.x : KC0[1].x R1.x@fully I[PS] {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU MULADD_IEEE S17.x : KC0[3].x R1.z@fully S15.x {W}
+  ALU MULADD_IEEE __.x : KC0[3].x R1.z@fully I[PS] {}
   ALU MOV A2[3].y : L[0x40833333] {W}
   ALU MOV A2[3].z : L[0x41000000] {W}
   ALU MOV A2[3].w : L[0x4101999a] {W}
-  ALU MUL_IEEE S14.y : KC0[2].y R1.y@fully {WL}
+  ALU MUL_IEEE __.y : KC0[2].y R1.y@fully {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU MULADD_IEEE S19.x@group : KC0[4].x R1.w@fully S17.x {W}
-  ALU MULADD_IEEE S15.y : KC0[1].y R1.x@fully S14.y {WL}
+  ALU MULADD_IEEE S19.x@group : KC0[4].x R1.w@fully I[PV].x {W}
+  ALU MULADD_IEEE __.y : KC0[1].y R1.x@fully I[PS] {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU MULADD_IEEE S17.y : KC0[3].y R1.z@fully S15.y {W}
-  ALU MUL_IEEE S14.z : KC0[2].z R1.y@fully {W}
-  ALU MUL_IEEE S14.w : KC0[2].w R1.y@fully {WL}
+  ALU MULADD_IEEE __.y : KC0[3].y R1.z@fully I[PV].y {}
+  ALU MUL_IEEE __.z : KC0[2].z R1.y@fully {}
+  ALU MUL_IEEE __.w : KC0[2].w R1.y@fully {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU MULADD_IEEE S19.y@group : KC0[4].y R1.w@fully S17.y {W}
-  ALU MULADD_IEEE S15.z : KC0[1].z R1.x@fully S14.z {W}
-  ALU MULADD_IEEE S15.w : KC0[1].w R1.x@fully S14.w {WL}
+  ALU MULADD_IEEE S19.y@group : KC0[4].y R1.w@fully I[PV].y {W}
+  ALU MULADD_IEEE __.z : KC0[1].z R1.x@fully I[PV].z {}
+  ALU MULADD_IEEE __.w : KC0[1].w R1.x@fully I[PV].w {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU MULADD_IEEE S17.z : KC0[3].z R1.z@fully S15.z {W}
-  ALU MULADD_IEEE S17.w : KC0[3].w R1.z@fully S15.w {WL}
+  ALU MULADD_IEEE __.z : KC0[3].z R1.z@fully I[PV].z {}
+  ALU MULADD_IEEE __.w : KC0[3].w R1.z@fully I[PV].w {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
   ALU PRED_SETGE_INT __.x@chan : KC0[0].x L[0x4] {EP} PUSH_BEFORE
-  ALU MULADD_IEEE S19.z@group : KC0[4].z R1.w@fully S17.z {W}
-  ALU MULADD_IEEE S19.w@group : KC0[4].w R1.w@fully S17.w {WL}
+  ALU MULADD_IEEE S19.z@group : KC0[4].z R1.w@fully I[PV].z {W}
+  ALU MULADD_IEEE S19.w@group : KC0[4].w R1.w@fully I[PV].w {WL}
 ALU_GROUP_END
 IF (( ALU PRED_SETGE_INT __.x@chan : KC0[0].x L[0x4] {EP} PUSH_BEFORE ))
 BLOCK_END
 BLOCK_START ALU
   ALU_GROUP_BEGIN
-    ALU ADD_INT S34.x : KC0[0].x L[0xfffffffc] {WL}
+    ALU ADD_INT __.x : KC0[0].x L[0xfffffffc] {L}
   ALU_GROUP_END
   ALU_GROUP_BEGIN
-     ALU MOVA_INT AR : S34.x {L}
+     ALU MOVA_INT AR : I[PV].x {L}
   ALU_GROUP_END
   ALU_GROUP_BEGIN
     ALU MOV A2[AR].z : I[0] {W}
@@ -1929,10 +1929,10 @@ ELSE
 BLOCK_END
 BLOCK_START ALU
   ALU_GROUP_BEGIN
-     ALU MOV S37.x : KC0[0].x {WL}
+     ALU MOV __.x : KC0[0].x {L}
   ALU_GROUP_END
   ALU_GROUP_BEGIN
-     ALU MOVA_INT AR : S37.x {L}
+     ALU MOVA_INT AR : I[PV].x {L}
   ALU_GROUP_END
   ALU_GROUP_BEGIN
     ALU MOV A2[AR].x : I[0] {W}
@@ -1972,7 +1972,7 @@ EXPORT PARAM 0 S46.xyzw
 EXPORT PARAM 1 S47.xyzw
 EXPORT PARAM 2 S48.xyzw
 EXPORT_DONE PARAM 3 S49.xyzw
-BLOCK END\n
+BLOCK_END
 )";
 
 const char *shader_with_dest_array2 =
@@ -2020,23 +2020,23 @@ ALU_GROUP_BEGIN
   ALU MOV A0[1].x : KC0[1].x {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU MOV S1.x : KC0[2].x {W}
+  ALU MOV __.x : KC0[2].x {}
   ALU MOV A0[1].y : KC0[1].y {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU MOVA_INT AR : S1.x {L}
+  ALU MOVA_INT AR : I[PV].x {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
   ALU MOV A0[AR].x : I[1.0] {W}
   ALU MOV A0[AR].y : L[2.0] {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU MOV S2.x : A0[0].x {W}
-  ALU MOV S2.y : A0[0].y {WL}
+  ALU MOV __.x : A0[0].x {}
+  ALU MOV __.y : A0[0].y {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU MUL_IEEE S3.x@group : S2.x KC0[2].y {W}
-  ALU MUL_IEEE S3.y@group : S2.y KC0[2].y {WL}
+  ALU MUL_IEEE S3.x@group : I[PV].x KC0[2].y {W}
+  ALU MUL_IEEE S3.y@group : I[PV].y KC0[2].y {WL}
 ALU_GROUP_END
 BLOCK_END
 BLOCK_START
@@ -2061,23 +2061,23 @@ ALU_GROUP_BEGIN
   ALU MOV A0[1].x : KC0[1].x {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU MOV R2.x : KC0[2].x {W}
+  ALU MOV __.x : KC0[2].x {}
   ALU MOV A0[1].y : KC0[1].y {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU MOVA_INT AR : R2.x {L}
+  ALU MOVA_INT AR : I[PV].x {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
   ALU MOV A0[AR].x : I[1.0] {W}
   ALU MOV A0[AR].y : L[2.0] {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU MOV R0.x : A0[0].x {W}
-  ALU MOV R0.y : A0[0].y {WL}
+  ALU MOV __.x : A0[0].x {}
+  ALU MOV __.y : A0[0].y {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU MUL_IEEE R0.x : R0.x KC0[2].y {W}
-  ALU MUL_IEEE R0.y : R0.y KC0[2].y {WL}
+  ALU MUL_IEEE R0.x : I[PV].x KC0[2].y {W}
+  ALU MUL_IEEE R0.y : I[PV].y KC0[2].y {WL}
 ALU_GROUP_END
 BLOCK_END
 BLOCK_START
@@ -2404,14 +2404,14 @@ ALU_GROUP_END
 ALU_GROUP_BEGIN
   ALU INTERP_ZW __.x@chan : R0.y@fully Param0.x {} VEC_210
   ALU INTERP_ZW __.y@chan : R0.x@fully Param0.y {} VEC_210
-  ALU INTERP_ZW S1.z@chan : R0.y@fully Param0.z {W} VEC_210
-  ALU INTERP_ZW S1.w@chan : R0.x@fully Param0.w {WL} VEC_210
+  ALU INTERP_ZW __.z : R0.y@fully Param0.z {} VEC_210
+  ALU INTERP_ZW __.w : R0.x@fully Param0.w {L} VEC_210
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU ADD S2.x@group : S1.x@chan S1.z@chan {W}
-  ALU ADD S2.y@group : S1.y@chan S1.w@chan {W}
-  ALU MUL_IEEE S3.z@chgr : S1.x@chan S1.z@chan {W}
-  ALU MUL_IEEE S3.w@chgr : S1.y@chan S1.w@chan {WL}
+  ALU ADD S2.x@group : S1.x@chan I[PV].z {W}
+  ALU ADD S2.y@group : S1.y@chan I[PV].w {W}
+  ALU MUL_IEEE S3.z@chgr : S1.x@chan I[PV].z {W}
+  ALU MUL_IEEE S3.w@chgr : S1.y@chan I[PV].w {WL}
 ALU_GROUP_END
 BLOCK_END
 BLOCK_START TEX
@@ -2476,12 +2476,12 @@ BLOCK_START ALU_PUSH_BEFORE
     ALU RECIPSQRT_IEEE __.z@chgr : |R1.x@free| {L}
   ALU_GROUP_END
   ALU_GROUP_BEGIN
-    ALU SETGT_DX10 S4.x@chan : S3.x@chan S2.y@free {WL}
+    ALU SETGT_DX10 __.x : I[PV].x S2.y@free {L}
   ALU_GROUP_END
   ALU_GROUP_BEGIN
-    ALU PRED_SETNE_INT __.x@chan : S4.x@chan I[0] {LEP} PUSH_BEFORE
+    ALU PRED_SETNE_INT __.x@chan : I[PV].x I[0] {LEP} PUSH_BEFORE
   ALU_GROUP_END
-  IF (( ALU PRED_SETNE_INT __.x@chan : S4.x@chan I[0] {LEP} PUSH_BEFORE ))
+  IF (( ALU PRED_SETNE_INT __.x@chan : I[PV].x I[0] {LEP} PUSH_BEFORE ))
      BREAK
 BLOCK_END
 BLOCK_START
@@ -2489,10 +2489,10 @@ BLOCK_START
 BLOCK_END
 BLOCK_START ALU
   ALU_GROUP_BEGIN
-    ALU ADD S5.x@free : S3.x@chan  L[0x38f00000] {WL}
+    ALU ADD __.x : S3.x@chan  L[0x38f00000] {L}
   ALU_GROUP_END
   ALU_GROUP_BEGIN
-    ALU MUL R1.x@free : S5.x@free  L[0x38f00000] {WL}
+    ALU MUL R1.x@free : I[PV].x  L[0x38f00000] {WL}
   ALU_GROUP_END
 LOOP_END
 BLOCK_END
@@ -2727,7 +2727,7 @@ ALU_GROUP_BEGIN
   ALU MUL_UINT24 S10.x@chan : S8.y@chgr R0.y@fully {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-  ALU ADD_INT S12.x@chan : L[0x8] S10.x@chan {WL}
+  ALU ADD_INT S12.x@chan : L[0x8] I[PV].x {WL}
 ALU_GROUP_END
 BLOCK_END
 BLOCK_START VTX
@@ -3063,20 +3063,20 @@ REGISTERS R0.x@fully R0.y@fully R0.z@fully
 SHADER
 BLOCK_START ALU
 ALU_GROUP_BEGIN
-  ALU ADD S1026.x@chan : R0.x@fully R0.y@fully {W}
+  ALU ADD __.x : R0.x@fully R0.y@fully {}
    ALU MOV S1033.y@chan : I[0] {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-   ALU ADD S1028.x@chan : I[1.0] -S1026.x@chan {WL}
+   ALU ADD __.x : I[1.0] -I[PV].x {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-   ALU MULADD_IEEE S1029.x@chan : L[0x40000000] S1028.x@chan R0.y@fully {WL}
+   ALU MULADD_IEEE __.x@chan : L[0x40000000] I[PV].x R0.y@fully {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-   ALU TRUNC S1030.x@chan : S1029.x@chan {WL}
+   ALU TRUNC __.x : I[PV].x {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-   ALU FLT_TO_INT S1031.x@chan : S1030.x@chan {WL}
+   ALU FLT_TO_INT S1031.x@chan : I[PV].x {WL}
 ALU_GROUP_END
 BLOCK_END
 BLOCK_START VTX
@@ -3084,19 +3084,19 @@ LOAD_BUF S1034.xyzw : S1033.y@chan RID:16 SRF
 BLOCK_END
 BLOCK_START ALU
 ALU_GROUP_BEGIN
-   ALU MULADD_UINT24 S1036.x@chan : S1034.x@chgr R0.z@fully S1034.z@chgr {WL}
+   ALU MULADD_UINT24 __.x@chan : S1034.x@chgr R0.z@fully S1034.z@chgr {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-   ALU MULADD_UINT24 S1037.x@chan : S1034.y@chgr S1031.x@chan S1036.x@chan {WL}
+   ALU MULADD_UINT24 __.x@chan : S1034.y@chgr S1031.x@chan I[PV].x {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-   ALU ADD_INT S1039.x : I[0] S1037.x@chan {W}
-   ALU ADD_INT S1039.y : L[0x4] S1037.x@chan {W}
-   ALU ADD_INT S1039.z : L[0x8] S1037.x@chan {W}
-   ALU ADD_INT S1039.w : L[0xc] S1037.x@chan {WL}
+   ALU ADD_INT __.x : I[0] I[PV].x {}
+   ALU ADD_INT S1039.y : L[0x4] I[PV].x {W}
+   ALU ADD_INT S1039.z : L[0x8] I[PV].x {W}
+   ALU ADD_INT S1039.w : L[0xc] I[PV].x {WL}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
-   ALU LDS READ_RET __.x@chan : S1039.x {L}
+   ALU LDS READ_RET __.x@chan : I[PV].x {L}
 ALU_GROUP_END
 ALU_GROUP_BEGIN
    ALU LDS READ_RET __.x@chan : S1039.y {L}

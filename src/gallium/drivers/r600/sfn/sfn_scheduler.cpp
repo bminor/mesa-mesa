@@ -185,6 +185,12 @@ private:
 
    void maybe_split_alu_block(Shader::ShaderBlocks& out_blocks);
 
+   void apply_pv_ps_to_group(AluGroup& group, AluGroup& prev_group);
+   void apply_pv_ps_to_instr(AluGroup& group,
+                             AluInstr *prev,
+                             AluInlineConstants reg,
+                             int chan);
+
    template <typename I> bool schedule(std::list<I *>& ready_list);
 
    template <typename I> bool schedule_block(std::list<I *>& ready_list);
@@ -795,6 +801,8 @@ void BlockScheduler::maybe_split_alu_block(Shader::ShaderBlocks& out_blocks)
    int used_slots = 0;
    int pending_slots = 0;
 
+   AluGroup *prev_group = nullptr;
+
    Instr *next_block_start = nullptr;
    for (auto cur_group : *m_current_block) {
 
@@ -834,8 +842,15 @@ void BlockScheduler::maybe_split_alu_block(Shader::ShaderBlocks& out_blocks)
                                          m_next_block_id++);
          sub_block->set_type(Block::alu, m_chip_class);
          sub_block->set_instr_flag(Instr::force_cf);
+         prev_group = nullptr;
       }
+
+      if (prev_group) {
+         apply_pv_ps_to_group(*group, *prev_group);
+      }
+
       sub_block->push_back(group);
+      prev_group = group;
       if (group->has_lds_group_start())
          sub_block->lds_group_start(*group->begin());
 
@@ -847,6 +862,49 @@ void BlockScheduler::maybe_split_alu_block(Shader::ShaderBlocks& out_blocks)
    }
    if (!sub_block->empty())
       out_blocks.push_back(sub_block);
+}
+
+void
+BlockScheduler::apply_pv_ps_to_group(AluGroup& group, AluGroup& prev_group)
+{
+
+   for (int i = 0; i < 4; ++i)
+      apply_pv_ps_to_instr(group, prev_group[i], ALU_SRC_PV, i);
+
+   if (prev_group.has_t())
+      apply_pv_ps_to_instr(group, prev_group[4], ALU_SRC_PS, 0);
+
+   for (auto instr : prev_group) {
+      if (!instr)
+         continue;
+
+      auto d = instr->dest();
+      if (d && d->uses().empty() && !(d->pin() == pin_array)) {
+         instr->override_or_clear_dest(m_vf->dummy_dest(instr->dest()->chan()));
+      }
+   }
+}
+
+void
+BlockScheduler::apply_pv_ps_to_instr(AluGroup& group,
+                                     AluInstr *prev,
+                                     AluInlineConstants reg,
+                                     int chan)
+{
+   if (!prev || !prev->has_alu_flag(alu_write))
+      return;
+
+   PRegister d = prev->dest();
+   if (d) {
+      auto ps = m_vf->inline_const(reg, chan);
+
+      for (auto instr : group) {
+         if (!instr)
+            continue;
+
+         instr->replace_source(d, ps);
+      }
+   }
 }
 
 template <typename I>
