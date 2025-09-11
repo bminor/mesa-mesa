@@ -1932,7 +1932,7 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
       .bufferCaptureReplayDescriptorDataSize = 8,
       .imageCaptureReplayDescriptorDataSize = 8,
       .imageViewCaptureReplayDescriptorDataSize = 1,
-      .samplerCaptureReplayDescriptorDataSize = 1,
+      .samplerCaptureReplayDescriptorDataSize = 4,
       .accelerationStructureCaptureReplayDescriptorDataSize = 1,
       .samplerDescriptorSize = RADV_SAMPLER_DESC_SIZE,
       .combinedImageSamplerDescriptorSize = RADV_COMBINED_IMAGE_SAMPLER_DESC_SIZE,
