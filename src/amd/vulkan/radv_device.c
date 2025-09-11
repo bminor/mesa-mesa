@@ -1379,7 +1379,7 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
        device->vk.enabled_features.extendedDynamicState3ColorBlendEquation)
       radv_shader_part_cache_init(&device->ps_epilogs, &ps_epilog_ops);
 
-   if (pdev->info.has_graphics && !(instance->debug_flags & RADV_DEBUG_NO_IBS))
+   if (pdev->info.has_graphics && !(instance->debug_flags & RADV_DEBUG_NO_IB_CHAINING))
       radv_create_gfx_preamble(device);
 
    if (!device->vk.disable_internal_cache) {

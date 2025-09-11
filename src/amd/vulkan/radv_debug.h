@@ -20,7 +20,7 @@ enum {
    RADV_DEBUG_NO_HIZ = 1ull << 5,
    RADV_DEBUG_NO_COMPUTE_QUEUE = 1ull << 6,
    RADV_DEBUG_ALL_BOS = 1ull << 7,
-   RADV_DEBUG_NO_IBS = 1ull << 8,
+   RADV_DEBUG_NO_IB_CHAINING = 1ull << 8,
    RADV_DEBUG_DUMP_SPIRV = 1ull << 9,
    RADV_DEBUG_ZERO_VRAM = 1ull << 10,
    RADV_DEBUG_SYNC_SHADERS = 1ull << 11,

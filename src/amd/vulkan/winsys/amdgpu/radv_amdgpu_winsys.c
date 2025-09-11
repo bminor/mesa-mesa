@@ -236,7 +236,7 @@ radv_amdgpu_winsys_create(int fd, uint64_t debug_flags, uint64_t perftest_flags,
       /* Check that options don't differ from the existing winsys. */
       if (((debug_flags & RADV_DEBUG_ALL_BOS) && !ws->debug_all_bos) ||
           ((debug_flags & RADV_DEBUG_HANG) && !ws->debug_log_bos) ||
-          ((debug_flags & RADV_DEBUG_NO_IBS) && ws->chain_ib) || (perftest_flags != ws->perftest)) {
+          ((debug_flags & RADV_DEBUG_NO_IB_CHAINING) && ws->chain_ib) || (perftest_flags != ws->perftest)) {
          fprintf(stderr, "radv/amdgpu: Found options that differ from the existing winsys.\n");
          return VK_ERROR_INITIALIZATION_FAILED;
       }
@@ -283,7 +283,7 @@ radv_amdgpu_winsys_create(int fd, uint64_t debug_flags, uint64_t perftest_flags,
    ws->info.ip[AMD_IP_SDMA].num_queues = MIN2(ws->info.ip[AMD_IP_SDMA].num_queues, MAX_RINGS_PER_TYPE);
    ws->info.ip[AMD_IP_COMPUTE].num_queues = MIN2(ws->info.ip[AMD_IP_COMPUTE].num_queues, MAX_RINGS_PER_TYPE);
 
-   ws->chain_ib = !(debug_flags & RADV_DEBUG_NO_IBS);
+   ws->chain_ib = !(debug_flags & RADV_DEBUG_NO_IB_CHAINING);
    ws->debug_all_bos = !!(debug_flags & RADV_DEBUG_ALL_BOS);
    ws->debug_log_bos = debug_flags & RADV_DEBUG_HANG;
 

@@ -1442,8 +1442,8 @@ RADV driver environment variables
       disable VK_EXT_graphics_pipeline_library
    ``nohiz``
       disable HIZ for depthstencil images
-   ``noibs``
-      disable directly recording command buffers in GPU-visible memory
+   ``noibchaining``
+      disable chaining IB buffers
    ``nomeshshader``
       disable mesh shader support on GFX10.3+
    ``nongg``
