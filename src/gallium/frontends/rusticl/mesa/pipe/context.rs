@@ -490,7 +490,8 @@ impl PipeContext {
                 idx,
                 &cb,
             );
-            self.pipe.as_ref().resource_release.unwrap()(self.pipe.as_ptr(), releasebuf);
+
+            pipe_resource_release(self.pipe.as_ptr(), releasebuf);
 
             true
         }
