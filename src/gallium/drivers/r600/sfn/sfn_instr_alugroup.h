@@ -35,6 +35,11 @@ public:
    auto end() { return m_slots.begin() + s_max_slots; }
    auto begin() const { return m_slots.begin(); }
    auto end() const { return m_slots.begin() + s_max_slots; }
+   auto operator[](int i)
+   {
+      assert(i < s_max_slots);
+      return m_slots[i];
+   }
 
    bool end_group() const override { return true; }
 
