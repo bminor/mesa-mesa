@@ -75,7 +75,7 @@ if __name__ == '__main__':
         },
     }
 
-    if args.sizeof_pointer:
+    if args.sizeof_pointer and ('/' in lib_path or '\\' in lib_path):
         bit_width = args.sizeof_pointer * 8
         if bit_width in [32, 64]:
             json_data['ICD']['library_arch'] = str(bit_width)
