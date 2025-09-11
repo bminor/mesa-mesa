@@ -5725,7 +5725,7 @@ ir3_compile_shader_nir(struct ir3_compiler *compiler,
       for (unsigned i = 0; i < outputs_count; i++)
          __ssa_src(chmask, outputs[i], 0)->num = regids[i];
 
-      chmask->end.outidxs = ralloc_array(chmask, unsigned, outputs_count);
+      chmask->end.outidxs = linear_alloc_array(ir->lin_ctx, unsigned, outputs_count);
       memcpy(chmask->end.outidxs, outidxs, sizeof(unsigned) * outputs_count);
 
       array_insert(ctx->block, ctx->block->keeps, chmask);
@@ -5816,7 +5816,7 @@ ir3_compile_shader_nir(struct ir3_compiler *compiler,
          __ssa_src(end, outputs[i], 0);
       }
 
-      end->end.outidxs = ralloc_array(end, unsigned, outputs_count);
+      end->end.outidxs = linear_alloc_array(ir->lin_ctx, unsigned, outputs_count);
       memcpy(end->end.outidxs, outidxs, sizeof(unsigned) * outputs_count);
 
       array_insert(ctx->block, ctx->block->keeps, end);

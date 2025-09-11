@@ -883,7 +883,7 @@ instr_create(struct ir3_block *block, opc_t opc, int ndst, int nsrc)
    struct ir3_instruction *instr;
    unsigned sz = sizeof(*instr) + (ndst * sizeof(instr->dsts[0])) +
                  (nsrc * sizeof(instr->srcs[0]));
-   char *ptr = ir3_alloc(block->shader, sz);
+   char *ptr = linear_zalloc_child(block->shader->lin_ctx, sz);
 
    instr = (struct ir3_instruction *)ptr;
    ptr += sizeof(*instr);
@@ -1012,7 +1012,7 @@ ir3_instr_add_dep(struct ir3_instruction *instr, struct ir3_instruction *dep)
          return;
    }
 
-   array_insert(instr, instr->deps, dep);
+   array_insert(instr->block->shader, instr->deps, dep);
 }
 
 void
