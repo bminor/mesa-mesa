@@ -4524,6 +4524,8 @@ vtn_handle_atomics(struct vtn_builder *b, SpvOp opcode,
 
       if (ptr->mode != vtn_variable_mode_workgroup)
          access |= ACCESS_COHERENT;
+      if (ptr->access & ACCESS_NON_UNIFORM)
+         access |= ACCESS_NON_UNIFORM;
 
       nir_intrinsic_set_access(atomic, access);
 
