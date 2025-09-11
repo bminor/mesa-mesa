@@ -3969,10 +3969,13 @@ impl<'a> ShaderFromNir<'a> {
             Op::Exit(OpExit {})
         } else {
             self.cfg.add_edge(nb.index, target.index);
-            Op::Bra(OpBra {
-                target: self.get_block_label(target),
-                cond: true.into(),
-            })
+            Op::Bra(
+                OpBra {
+                    target: self.get_block_label(target),
+                    cond: true.into(),
+                }
+                .into(),
+            )
         };
         b.predicate(pred).push_op(op);
     }

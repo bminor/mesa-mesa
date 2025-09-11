@@ -265,7 +265,7 @@ impl Shader<'_> {
                                 .into(),
                         }));
                     }
-                    match lower_par_copy(pc, sm) {
+                    match lower_par_copy(*pc, sm) {
                         MappedInstrs::None => {
                             if let Some(instr) = instrs.pop() {
                                 MappedInstrs::One(instr)

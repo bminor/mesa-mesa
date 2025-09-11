@@ -260,7 +260,7 @@ impl LowerCopySwap {
                                 .into(),
                         }));
                     }
-                    self.lower_r2ur(&mut b, r2ur);
+                    self.lower_r2ur(&mut b, *r2ur);
                     b.into_mapped_instrs()
                 }
                 Op::Copy(copy) => {
@@ -272,7 +272,7 @@ impl LowerCopySwap {
                                 .into(),
                         }));
                     }
-                    self.lower_copy(&mut b, copy);
+                    self.lower_copy(&mut b, *copy);
                     b.into_mapped_instrs()
                 }
                 Op::Swap(swap) => {
@@ -284,7 +284,7 @@ impl LowerCopySwap {
                                 .into(),
                         }));
                     }
-                    self.lower_swap(&mut b, swap);
+                    self.lower_swap(&mut b, *swap);
                     b.into_mapped_instrs()
                 }
                 _ => MappedInstrs::One(instr),

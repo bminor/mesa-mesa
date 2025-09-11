@@ -87,10 +87,13 @@ fn jump_thread(func: &mut Function) -> bool {
                     .get(&target_label)
                     .map(clone_branch)
                     .unwrap_or_else(|| {
-                        Op::Bra(OpBra {
-                            target: target_label,
-                            cond: true.into(),
-                        })
+                        Op::Bra(
+                            OpBra {
+                                target: target_label,
+                                cond: true.into(),
+                            }
+                            .into(),
+                        )
                     });
                 replacements.insert(block_label, replacement);
             }
@@ -139,10 +142,8 @@ fn rewrite_cfg(func: &mut Function) {
 fn opt_fall_through(func: &mut Function) {
     for i in 0..func.blocks.len() - 1 {
         let remove_last_instr = match func.blocks[i].branch() {
-            Some(b) => match b.op {
-                Op::Bra(OpBra { target, .. }) => {
-                    target == func.blocks[i + 1].label
-                }
+            Some(b) => match &b.op {
+                Op::Bra(bra) => bra.target == func.blocks[i + 1].label,
                 _ => false,
             },
             None => false,

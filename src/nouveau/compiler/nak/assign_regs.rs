@@ -1134,8 +1134,14 @@ impl AssignRegsBlock {
                     Some(instr)
                 }
             }
-            Op::Pin(OpPin { src, dst }) | Op::Unpin(OpUnpin { src, dst }) => {
+            Op::Pin(_) | Op::Unpin(_) => {
                 assert!(instr.pred.is_true());
+
+                let (src, dst) = match &instr.op {
+                    Op::Pin(pin) => (&pin.src, &pin.dst),
+                    Op::Unpin(unpin) => (&unpin.src, &unpin.dst),
+                    _ => unreachable!(),
+                };
 
                 // These basically act as a vector version of OpCopy except that
                 // they only work on SSA values and we pin the destination if

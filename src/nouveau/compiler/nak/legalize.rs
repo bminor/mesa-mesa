@@ -459,20 +459,17 @@ fn legalize_instr(
     }
 
     // OpBreak and OpBSsy impose additional RA constraints
-    match &mut instr.op {
-        Op::Break(OpBreak {
-            bar_in, bar_out, ..
-        })
-        | Op::BSSy(OpBSSy {
-            bar_in, bar_out, ..
-        }) => {
-            let bar_in_ssa = bar_in.src_ref.as_ssa().unwrap();
-            if !bar_out.is_none() && bl.is_live_after_ip(&bar_in_ssa[0], ip) {
-                let gpr = b.bmov_to_gpr(bar_in.clone());
-                let tmp = b.bmov_to_bar(gpr.into());
-                *bar_in = tmp.into();
-            }
+    let mut legalize_break_bssy = |bar_in: &mut Src, bar_out: &mut Dst| {
+        let bar_in_ssa = bar_in.src_ref.as_ssa().unwrap();
+        if !bar_out.is_none() && bl.is_live_after_ip(&bar_in_ssa[0], ip) {
+            let gpr = b.bmov_to_gpr(bar_in.clone());
+            let tmp = b.bmov_to_bar(gpr.into());
+            *bar_in = tmp.into();
         }
+    };
+    match &mut instr.op {
+        Op::Break(op) => legalize_break_bssy(&mut op.bar_in, &mut op.bar_out),
+        Op::BSSy(op) => legalize_break_bssy(&mut op.bar_in, &mut op.bar_out),
         _ => (),
     }
 
