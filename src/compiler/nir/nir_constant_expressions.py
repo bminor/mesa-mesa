@@ -66,6 +66,7 @@ template = """\
 #include "util/format/format_utils.h"
 #include "util/format_r11g11b10f.h"
 #include "util/u_math.h"
+#include "util/u_overflow.h"
 #include "nir_constant_expressions.h"
 #include "nir.h"
 
@@ -392,6 +393,26 @@ typedef bool bool8_t;
 typedef bool bool16_t;
 typedef bool bool32_t;
 typedef bool bool64_t;
+
+static inline bool
+util_add_check_overflow_int1_t(int1_t a, int1_t b)
+{
+   return (a & 1 && b & 1);
+}
+static inline bool
+util_add_check_overflow_uint1_t(uint1_t a, int1_t b)
+{
+   return (a & 1 && b & 1);
+}
+static inline bool
+util_sub_check_overflow_int1_t(int1_t a, int1_t b)
+{
+   /* int1_t uses 0/-1 convention, so the only
+    * overflow case is "0 - (-1)".
+    */
+   return a == 0 && b != 0;
+}
+
 % for type in ["float", "int", "uint", "bool"]:
 % for width in type_sizes(type):
 struct ${type}${width}_vec {
@@ -477,12 +498,15 @@ struct ${type}${width}_vec {
          ## Create an appropriately-typed variable dst and assign the
          ## result of the const_expr to it.  If const_expr already contains
          ## writes to dst, just include const_expr directly.
+         <%
+         expr = op.render(output_type + '_t')
+         %>
          % if "dst" in op.const_expr:
             ${output_type}_t dst;
 
-            ${op.const_expr}
+            ${expr}
          % else:
-            ${output_type}_t dst = ${op.const_expr};
+            ${output_type}_t dst = ${expr};
          % endif
 
          ## Store the current component of the actual destination to the

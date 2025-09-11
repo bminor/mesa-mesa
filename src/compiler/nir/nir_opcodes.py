@@ -34,7 +34,7 @@ class Opcode(object):
    """
    def __init__(self, name, output_size, output_type, input_sizes,
                 input_types, is_conversion, algebraic_properties, const_expr,
-                description):
+                description, needs_dest_type):
       """Parameters:
 
       - name is the name of the opcode (prepend nir_op_ for the enum name)
@@ -46,6 +46,8 @@ class Opcode(object):
       - const_expr is an expression or series of statements that computes the
         constant value of the opcode given the constant values of its inputs.
       - Optional description of the opcode for documentation.
+      - needs_dest_type means const_expr depends on the destination type and
+        needs a formatting step.
 
       Constant expressions are formed from the variables src0, src1, ...,
       src(N-1), where N is the number of arguments.  The output of the
@@ -93,6 +95,12 @@ class Opcode(object):
       self.algebraic_properties = algebraic_properties
       self.const_expr = const_expr
       self.description = description
+      self.needs_dest_type = needs_dest_type
+
+   def render(self, dest_type):
+      if self.needs_dest_type:
+         return self.const_expr.format(dest_type=dest_type)
+      return self.const_expr
 
 # helper variables for strings
 tfloat = "float"
@@ -157,11 +165,12 @@ selection = "selection "
 opcodes = {}
 
 def opcode(name, output_size, output_type, input_sizes, input_types,
-           is_conversion, algebraic_properties, const_expr, description = ""):
+           is_conversion, algebraic_properties, const_expr, description = "",
+           needs_dest_type=False):
    assert name not in opcodes
    opcodes[name] = Opcode(name, output_size, output_type, input_sizes,
                           input_types, is_conversion, algebraic_properties,
-                          const_expr, description)
+                          const_expr, description, needs_dest_type)
 
 def unop_convert(name, out_type, in_type, const_expr, description = ""):
    opcode(name, 0, out_type, [0], [in_type], False, "", const_expr, description)
@@ -545,14 +554,14 @@ for (unsigned bit = 0; bit < bit_size; bit++) {
 unop_reduce("fsum", 1, tfloat, tfloat, "{src}", "{src0} + {src1}", "{src}",
             description = "Sum of vector components")
 
-def binop_convert(name, out_type, in_type1, alg_props, const_expr, description="", in_type2=None):
+def binop_convert(name, out_type, in_type1, alg_props, const_expr, description="", in_type2=None, needs_dest_type=False):
    if in_type2 is None:
       in_type2 = in_type1
    opcode(name, 0, out_type, [0, 0], [in_type1, in_type2],
-          False, alg_props, const_expr, description)
+          False, alg_props, const_expr, description, needs_dest_type)
 
-def binop(name, ty, alg_props, const_expr, description = ""):
-   binop_convert(name, ty, ty, alg_props, const_expr, description)
+def binop(name, ty, alg_props, const_expr, description = "", needs_dest_type=False):
+   binop_convert(name, ty, ty, alg_props, const_expr, description, needs_dest_type=needs_dest_type)
 
 def binop_compare(name, ty, alg_props, const_expr, description = "", ty2=None):
    binop_convert(name, tbool1, ty, alg_props, const_expr, description, ty2)
@@ -626,17 +635,16 @@ if (nir_is_rounding_mode_rtz(execution_mode, bit_size)) {
 """)
 binop("iadd", tint, _2src_commutative + associative, "(uint64_t)src0 + (uint64_t)src1")
 binop("iadd_sat", tint, _2src_commutative, """
-      src1 > 0 ?
-         (src0 + src1 < src0 ? u_intN_max(bit_size) : src0 + src1) :
-         (src0 < src0 + src1 ? u_intN_min(bit_size) : src0 + src1)
-""")
+      util_add_check_overflow({dest_type}, src0, src1) ?
+         (src1 < 0 ? u_intN_max(bit_size) : u_uintN_max(bit_size)) : (src0 + src1)
+""", "", True)
 binop("uadd_sat", tuint, _2src_commutative,
-      "(src0 + src1) < src0 ? u_uintN_max(sizeof(src0) * 8) : (src0 + src1)")
+      "util_add_check_overflow({dest_type}, src0, src1) ? u_uintN_max(sizeof(src0) * 8) : (src0 + src1)",
+      "", True)
 binop("isub_sat", tint, "", """
-      src1 < 0 ?
-         (src0 - src1 < src0 ? u_intN_max(bit_size) : src0 - src1) :
-         (src0 < src0 - src1 ? u_intN_min(bit_size) : src0 - src1)
-""")
+      util_sub_check_overflow({dest_type}, src0, src1) ?
+         (src1 < 0 ? u_intN_max(bit_size) : u_intN_min(bit_size)) : (src0 - src1)
+""", "", True)
 binop("usub_sat", tuint, "", "src0 < src1 ? 0 : src0 - src1")
 
 opcode("uadd64_32", 2, tuint32, [1, 1, 1], [tuint32, tuint32, tuint32], False, "", """
@@ -762,11 +770,11 @@ binop("idiv", tint, "", "src1 == 0 ? 0 : (src0 / src1)")
 binop("udiv", tuint, "", "src1 == 0 ? 0 : (src0 / src1)")
 
 binop_convert("uadd_carry", tuint, tuint, _2src_commutative,
-              "src0 + src1 < src0",
+              "util_add_check_overflow({dest_type}, src0, src1)",
               description = """
 Return an integer (1 or 0) representing the carry resulting from the
 addition of the two unsigned arguments.
-              """)
+              """, needs_dest_type = True)
 
 binop_convert("usub_borrow", tuint, tuint, "", "src0 < src1", description = """
 Return an integer (1 or 0) representing the borrow resulting from the
