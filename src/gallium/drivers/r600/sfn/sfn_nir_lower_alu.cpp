@@ -184,6 +184,8 @@ OptNotFromComparison::filter(const nir_instr *instr) const
          return false;
       }
    case nir_op_b2f32:
+      if (p->src[0].src.ssa->bit_size != 32)
+         return false;
       switch (p->op) {
       case nir_op_fge:
       case nir_op_flt:
@@ -241,8 +243,6 @@ OptNotFromComparison::lower(nir_instr *instr)
          return 0;
       }
    case nir_op_b2f32:
-      if (p->src[0].src.ssa->bit_size != 32)
-         return 0;
       switch (p->op) {
       case nir_op_fge:
          return nir_sge(b, src0, src1);
