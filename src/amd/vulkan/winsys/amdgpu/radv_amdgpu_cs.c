@@ -72,7 +72,7 @@ struct radv_amdgpu_cs {
    unsigned *ib_size_ptr;
    VkResult status;
    struct radv_amdgpu_cs *chained_to;
-   bool use_ib;
+   bool chain_ib;
    bool is_secondary;
 
    int buffer_hash_table[1024];
@@ -127,12 +127,6 @@ static inline struct radv_amdgpu_cs *
 radv_amdgpu_cs(struct radeon_cmdbuf *base)
 {
    return (struct radv_amdgpu_cs *)base;
-}
-
-static bool
-ring_can_use_ib_bos(const struct radv_amdgpu_winsys *ws, enum amd_ip_type ip_type)
-{
-   return ws->use_ib_bos && (ip_type == AMD_IP_GFX || ip_type == AMD_IP_COMPUTE);
 }
 
 struct radv_amdgpu_cs_request {
@@ -290,7 +284,7 @@ radv_amdgpu_cs_get_new_ib(struct radeon_cmdbuf *_cs, uint32_t ib_size)
    cs->ib.size = 0;
    cs->ib.ip_type = cs->hw_ip;
 
-   if (cs->use_ib)
+   if (cs->chain_ib)
       cs->ib_size_ptr = &cs->ib.size;
 
    cs->ws->base.cs_add_buffer(&cs->base, cs->ib_buffer);
@@ -320,7 +314,7 @@ radv_amdgpu_cs_create(struct radeon_winsys *ws, enum amd_ip_type ip_type, bool i
    cs->ws = radv_amdgpu_winsys(ws);
    radv_amdgpu_init_cs(cs, ip_type);
 
-   cs->use_ib = ring_can_use_ib_bos(cs->ws, ip_type);
+   cs->chain_ib = cs->ws->chain_ib && (ip_type == AMD_IP_GFX || ip_type == AMD_IP_COMPUTE);
 
    VkResult result = radv_amdgpu_cs_get_new_ib(&cs->base, ib_size);
    if (result != VK_SUCCESS) {
@@ -417,7 +411,7 @@ radv_amdgpu_cs_grow(struct radeon_cmdbuf *_cs, size_t min_size)
 
    cs->ws->base.cs_add_buffer(&cs->base, cs->ib_buffer);
 
-   if (cs->use_ib) {
+   if (cs->chain_ib) {
       cs->base.buf[cs->base.cdw - 4] = PKT3(PKT3_INDIRECT_BUFFER, 2, 0);
       cs->base.buf[cs->base.cdw - 3] = radv_amdgpu_winsys_bo(cs->ib_buffer)->base.va;
       cs->base.buf[cs->base.cdw - 2] = radv_amdgpu_winsys_bo(cs->ib_buffer)->base.va >> 32;
@@ -487,7 +481,7 @@ radv_amdgpu_cs_finalize(struct radeon_cmdbuf *_cs)
 
    assert(cs->base.cdw <= cs->base.reserved_dw);
 
-   if (cs->use_ib) {
+   if (cs->chain_ib) {
       const uint32_t nop_packet = get_nop_packet(cs);
 
       /* Pad with NOPs but leave 4 dwords for INDIRECT_BUFFER. */
@@ -506,7 +500,7 @@ radv_amdgpu_cs_finalize(struct radeon_cmdbuf *_cs)
 
    /* Append the current (last) IB to the array of IB buffers. */
    radv_amdgpu_cs_add_ib_buffer(cs, cs->ib_buffer, cs->ib_buffer->va,
-                                cs->use_ib ? G_3F2_IB_SIZE(*cs->ib_size_ptr) : cs->base.cdw);
+                                cs->chain_ib ? G_3F2_IB_SIZE(*cs->ib_size_ptr) : cs->base.cdw);
 
    /* Prevent freeing this BO twice. */
    cs->ib_buffer = NULL;
@@ -554,7 +548,7 @@ radv_amdgpu_cs_reset(struct radeon_cmdbuf *_cs)
 
    cs->ib.size = 0;
 
-   if (cs->use_ib)
+   if (cs->chain_ib)
       cs->ib_size_ptr = &cs->ib.size;
 
    _mesa_hash_table_destroy(cs->annotations, radv_amdgpu_cs_free_annotation);
@@ -595,7 +589,7 @@ radv_amdgpu_cs_chain(struct radeon_cmdbuf *cs, struct radeon_cmdbuf *next_cs, bo
    struct radv_amdgpu_cs *next_acs = radv_amdgpu_cs(next_cs);
 
    /* Only some HW IP types have packets that we can use for chaining. */
-   if (!acs->use_ib)
+   if (!acs->chain_ib)
       return false;
 
    assert(cs->cdw <= cs->max_dw + 4);
@@ -736,7 +730,7 @@ radv_amdgpu_cs_execute_secondary(struct radeon_cmdbuf *_parent, struct radeon_cm
    struct radv_amdgpu_cs *child = radv_amdgpu_cs(_child);
    struct radv_amdgpu_winsys *ws = parent->ws;
    const bool use_ib2 =
-      parent->use_ib && !parent->is_secondary && allow_ib2 && parent->hw_ip == AMD_IP_GFX && ws->info.gfx_level >= GFX7;
+      parent->chain_ib && !parent->is_secondary && allow_ib2 && parent->hw_ip == AMD_IP_GFX && ws->info.gfx_level >= GFX7;
 
    if (parent->status != VK_SUCCESS || child->status != VK_SUCCESS)
       return;
@@ -761,7 +755,7 @@ radv_amdgpu_cs_execute_secondary(struct radeon_cmdbuf *_parent, struct radeon_cm
       radeon_emit(&parent->base, child->ib.ib_mc_address >> 32);
       radeon_emit(&parent->base, child->ib.size);
    } else {
-      assert(parent->use_ib == child->use_ib);
+      assert(parent->chain_ib == child->chain_ib);
 
       /* Grow the current CS and copy the contents of the secondary CS. */
       for (unsigned i = 0; i < child->num_ib_buffers; i++) {
@@ -770,7 +764,7 @@ radv_amdgpu_cs_execute_secondary(struct radeon_cmdbuf *_parent, struct radeon_cm
          uint8_t *mapped;
 
          /* Do not copy the original chain link for IBs. */
-         if (child->use_ib)
+         if (child->chain_ib)
             cdw -= 4;
 
          assert(ib->bo);
@@ -1065,7 +1059,7 @@ radv_amdgpu_get_num_ibs_per_cs(const struct radv_amdgpu_cs *cs)
 {
    unsigned num_ibs = 0;
 
-   if (cs->use_ib) {
+   if (cs->chain_ib) {
       num_ibs = 1; /* Everything is chained. */
    } else {
       num_ibs = cs->num_ib_buffers;
@@ -1181,7 +1175,7 @@ radv_amdgpu_winsys_cs_submit_internal(struct radv_amdgpu_ctx *ctx, int queue_idx
           * else is chained to the first IB. Otherwise we must submit all IBs in the ib_buffers
           * array.
           */
-         if (cs->use_ib) {
+         if (cs->chain_ib) {
             ib = radv_amdgpu_cs_ib_to_info(cs, cs->ib_buffers[0]);
             cs_idx++;
          } else {
@@ -1469,7 +1463,7 @@ radv_amdgpu_winsys_cs_dump(struct radeon_cmdbuf *_cs, FILE *file, const int *tra
    struct radv_amdgpu_cs *cs = (struct radv_amdgpu_cs *)_cs;
    struct radv_amdgpu_winsys *ws = cs->ws;
 
-   if (cs->use_ib) {
+   if (cs->chain_ib) {
       struct radv_amdgpu_cs_ib_info ib_info = radv_amdgpu_cs_ib_to_info(cs, cs->ib_buffers[0]);
 
       struct ac_addr_info addr_info;
