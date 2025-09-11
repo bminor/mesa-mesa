@@ -912,6 +912,7 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
          NIR_PASS(_, nir, pco_nir_point_size);
 
       NIR_PASS(_, nir, pco_nir_pvi, &data->vs);
+      NIR_PASS(_, nir, pco_nir_lower_vs_intrinsics);
    }
 
    if (data->common.uses.usclib) {

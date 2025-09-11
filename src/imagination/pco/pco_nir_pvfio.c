@@ -1121,6 +1121,35 @@ bool pco_nir_lower_fs_intrinsics(nir_shader *shader)
    return nir_shader_lower_instructions(shader, is_fs_intr, lower_fs_intr, NULL);
 }
 
+static bool
+lower_vs_intr(nir_builder *b, nir_intrinsic_instr *intr, UNUSED void *cb_data)
+{
+   b->cursor = nir_before_instr(&intr->instr);
+
+   switch (intr->intrinsic) {
+   /* First vs base vertex is handled in the PDS, so they're equivalent. */
+   case nir_intrinsic_load_first_vertex:
+      nir_def_replace(&intr->def, nir_load_base_vertex(b));
+      nir_instr_free(&intr->instr);
+      return true;
+
+   default:
+      break;
+   }
+
+   return false;
+}
+
+bool pco_nir_lower_vs_intrinsics(nir_shader *shader)
+{
+   assert(shader->info.stage == MESA_SHADER_VERTEX);
+
+   return nir_shader_intrinsics_pass(shader,
+                                     lower_vs_intr,
+                                     nir_metadata_control_flow,
+                                     NULL);
+}
+
 bool pco_nir_lower_clip_cull_vars(nir_shader *shader)
 {
    if (shader->info.internal)

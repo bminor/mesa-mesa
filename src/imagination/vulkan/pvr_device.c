@@ -194,6 +194,7 @@ static void pvr_physical_device_get_supported_extensions(
       .KHR_present_id2 = PVR_USE_WSI_PLATFORM,
       .KHR_present_wait2 = PVR_USE_WSI_PLATFORM,
       .KHR_separate_depth_stencil_layouts = true,
+      .KHR_shader_draw_parameters = true,
       .KHR_shader_expect_assume = false,
       .KHR_shader_float_controls = true,
       .KHR_shader_subgroup_extended_types = true,
@@ -241,7 +242,7 @@ static void pvr_physical_device_get_supported_features(
       .dualSrcBlend = false,
       .logicOp = true,
       .multiDrawIndirect = false,
-      .drawIndirectFirstInstance = false,
+      .drawIndirectFirstInstance = true,
       .depthClamp = false,
       .depthBiasClamp = false,
       .fillModeNonSolid = false,
@@ -300,6 +301,9 @@ static void pvr_physical_device_get_supported_features(
       .multiview = true,
       .multiviewGeometryShader = false,
       .multiviewTessellationShader = false,
+
+      /* Vulkan 1.1 / VK_KHR_shader_draw_parameters */
+      .shaderDrawParameters = true,
 
       /* Vulkan 1.2 / VK_KHR_timeline_semaphore */
       .timelineSemaphore = true,
