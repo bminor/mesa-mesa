@@ -48,6 +48,7 @@ vk_bvh_includes = files(
   'vk_build_helpers.h',
   'vk_build_interface.h',
   'vk_bvh.h',
+  'vk_debug.h',
 )
 
 vk_glsl_shader_extensions = [
