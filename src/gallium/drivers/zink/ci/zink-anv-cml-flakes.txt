@@ -1,2 +1,0 @@
-dEQP-GLES31.functional.draw_base_vertex.draw_elements_instanced_base_vertex.triangle_strip.instanced_attributes
-dEQP-GLES31.functional.texture.texture_buffer.render_modify.as_vertex_array_as_index_array.bufferdata
