@@ -2682,6 +2682,8 @@ vk_video_encode_h265_slice_header(const StdVideoEncodeH265PictureInfo *pic_info,
       /* colour_plane_id */
       vl_bitstream_put_bits(&enc, 2, 0);
 
+   const StdVideoH265ShortTermRefPicSet *st_rps;
+
    if (pic_info->pic_type != STD_VIDEO_H265_PICTURE_TYPE_IDR) {
       /* slice_pic_order_cnt_lsb */
       uint32_t slice_pic_order_cnt_lsb =
@@ -2690,9 +2692,10 @@ vk_video_encode_h265_slice_header(const StdVideoEncodeH265PictureInfo *pic_info,
       vl_bitstream_put_bits(&enc, sps->log2_max_pic_order_cnt_lsb_minus4 + 4, slice_pic_order_cnt_lsb);
       vl_bitstream_put_bits(&enc, 1, pic_info->flags.short_term_ref_pic_set_sps_flag);
 
+      unsigned num_st_rps = sps->num_short_term_ref_pic_sets;
+
       if (!pic_info->flags.short_term_ref_pic_set_sps_flag) {
          const StdVideoH265ShortTermRefPicSet* pic_st_rps = pic_info->pShortTermRefPicSet;
-         unsigned num_st_rps = sps->num_short_term_ref_pic_sets;
          bool rps_predict = false;
 
          if (num_st_rps) {
@@ -2701,13 +2704,12 @@ vk_video_encode_h265_slice_header(const StdVideoEncodeH265PictureInfo *pic_info,
          }
 
          if (rps_predict) {
-            const StdVideoH265ShortTermRefPicSet *st_rps;
             int ref_rps_idx = num_st_rps - (pic_st_rps->delta_idx_minus1 +1);
             vl_bitstream_exp_golomb_ue(&enc, pic_st_rps->delta_idx_minus1);
             vl_bitstream_put_bits(&enc, 1, pic_st_rps->flags.delta_rps_sign);
             vl_bitstream_exp_golomb_ue(&enc, pic_st_rps->abs_delta_rps_minus1);
 
-            if (ref_rps_idx == sps->num_short_term_ref_pic_sets)
+            if (ref_rps_idx == num_st_rps)
                st_rps = pic_st_rps;
             else
                st_rps = &sps->pShortTermRefPicSet[ref_rps_idx];
@@ -2716,6 +2718,8 @@ vk_video_encode_h265_slice_header(const StdVideoEncodeH265PictureInfo *pic_info,
                vl_bitstream_put_bits(&enc, 1, !!(st_rps->used_by_curr_pic_flag & (1 << i)));
                if (!(st_rps->used_by_curr_pic_flag & (1 << i))) {
                   vl_bitstream_put_bits(&enc, 1, !!(st_rps->use_delta_flag & (1 << i)));
+               } else {
+                  num_pic_total_curr++;
                }
             }
          } else {
@@ -2735,11 +2739,25 @@ vk_video_encode_h265_slice_header(const StdVideoEncodeH265PictureInfo *pic_info,
                   num_pic_total_curr++;
             }
          }
-      } else if (sps->num_short_term_ref_pic_sets > 1) {
-         unsigned num_st_rps = sps->num_short_term_ref_pic_sets;
+      } else {
+         unsigned rps_idx = 0;
 
          int numbits = util_logbase2_ceil(num_st_rps);
-         vl_bitstream_put_bits(&enc, numbits, pic_info->short_term_ref_pic_set_idx);
+         if (numbits > 0) {
+            vl_bitstream_put_bits(&enc, numbits, pic_info->short_term_ref_pic_set_idx);
+            rps_idx = pic_info->short_term_ref_pic_set_idx;
+         }
+
+         st_rps = &sps->pShortTermRefPicSet[rps_idx];
+
+         for (unsigned i = 0; i < st_rps->num_negative_pics; i++) {
+            if (st_rps->used_by_curr_pic_s0_flag & (1 << i))
+               num_pic_total_curr++;
+         }
+         for (unsigned i = 0; i < st_rps->num_positive_pics; i++) {
+            if (st_rps->used_by_curr_pic_s1_flag & (1 << i))
+               num_pic_total_curr++;
+         }
       }
 
       if (sps->flags.long_term_ref_pics_present_flag) {
@@ -2762,10 +2780,16 @@ vk_video_encode_h265_slice_header(const StdVideoEncodeH265PictureInfo *pic_info,
                   vl_bitstream_put_bits(&enc, util_logbase2_ceil(sps->num_long_term_ref_pics_sps),
                         lt_pics->lt_idx_sps[i]);
                }
+
+               const StdVideoH265LongTermRefPicsSps* it_ref_pic_sps = sps->pLongTermRefPicsSps;
+               if (it_ref_pic_sps->used_by_curr_pic_lt_sps_flag)
+                  num_pic_total_curr++;
             } else {
                vl_bitstream_put_bits(&enc, sps->log2_max_pic_order_cnt_lsb_minus4 + 4,
                      lt_pics->poc_lsb_lt[i]),
                vl_bitstream_put_bits(&enc, 1, lt_pics->used_by_curr_pic_lt_flag);
+               if (lt_pics->used_by_curr_pic_lt_flag & (1 << i))
+                  num_pic_total_curr++;
             }
 
             vl_bitstream_put_bits(&enc, 1, lt_pics->delta_poc_msb_present_flag[i]);
