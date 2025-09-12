@@ -20,7 +20,6 @@
 #include "r300_screen_buffer.h"
 #include "r300_state_inlines.h"
 #include "r300_public.h"
-#include "r300_meminfo.h"
 
 #include "draw/draw_context.h"
 
@@ -638,6 +637,34 @@ static int r300_screen_get_fd(struct pipe_screen *screen)
     struct radeon_winsys *rws = r300_screen(screen)->rws;
 
     return rws->get_fd(rws);
+}
+
+static void r300_query_memory_info(struct pipe_screen *pscreen, 
+                                   struct pipe_memory_info *info)
+{
+   struct r300_screen *rscreen = (struct r300_screen*) pscreen;
+   struct radeon_winsys *ws = rscreen->rws;
+
+   info->total_device_memory = rscreen->info.vram_size_kb;
+   info->total_staging_memory = rscreen->info.gart_size_kb;
+
+   /* The real TTM memory usage is somewhat random, because:
+    *
+    * 1) TTM delays freeing memory, because it can only free it after
+    *    fences expire.
+    *
+    * 2) The memory usage can be really low if big VRAM evictions are
+    *    taking place, but the real usage is well above the size of VRAM.
+    *
+    * Instead, return statistics of this process.
+    */
+   unsigned vram_used = ws->query_value(ws, RADEON_VRAM_USAGE) / 1024;
+   unsigned gtt_used = ws->query_value(ws, RADEON_GTT_USAGE) / 1024;
+
+   info->avail_device_memory = (vram_used > info->total_device_memory) ? 0 : info->total_device_memory - vram_used;
+   info->avail_staging_memory = (gtt_used > info->total_staging_memory) ? 0 : info->total_staging_memory - gtt_used;
+   info->device_memory_evicted = ws->query_value(ws, RADEON_NUM_BYTES_MOVED) / 1024;
+   info->nr_device_memory_evictions = ws->query_value(ws, RADEON_NUM_EVICTIONS);
 }
 
 struct pipe_screen* r300_screen_create(struct radeon_winsys *rws,

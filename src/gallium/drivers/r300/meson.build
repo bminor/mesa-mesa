@@ -28,8 +28,6 @@ files_r300 = files(
   'r300_screen_buffer.h',
   'r300_screen.c',
   'r300_screen.h',
-  'r300_meminfo.c',
-  'r300_meminfo.h',
   'r300_shader_semantics.h',
   'r300_state.c',
   'r300_state_derived.c',
