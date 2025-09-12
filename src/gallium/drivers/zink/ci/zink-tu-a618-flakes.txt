@@ -83,3 +83,5 @@ wayland-dEQP-EGL.functional.render.single_context.gles3.*_pbuffer
 wayland-dEQP-EGL.functional.render.single_context.gles3.*_window
 wayland-dEQP-EGL.functional.sharing.gles2.multithread.simple.images.texture_source.create_texture_render
 wayland-dEQP-EGL.functional.sharing.gles2.multithread.simple.images.texture_source.texsubimage2d_render
+.*dEQP-EGL.functional.*.multithread.*
+dEQP-EGL.functional.*.multi_thread.*
