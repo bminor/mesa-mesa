@@ -1669,8 +1669,5 @@ anv_sparse_image_check_support(struct anv_physical_device *pdevice,
    if (valid_samples_out)
       *valid_samples_out = valid_samples;
 
-   if (!valid_samples)
-      return VK_ERROR_FORMAT_NOT_SUPPORTED;
-
    return VK_SUCCESS;
 }
