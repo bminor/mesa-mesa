@@ -9375,10 +9375,10 @@ radv_handle_color_fbfetch_output(struct radv_cmd_buffer *cmd_buffer, uint32_t in
    if (!att->iview)
       return;
 
-   const struct radv_image *image = att->iview->image;
-   if (!(image->vk.usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT))
+   if (!(att->flags & VK_RENDERING_ATTACHMENT_INPUT_ATTACHMENT_FEEDBACK_BIT_KHR))
       return;
 
+   const struct radv_image *image = att->iview->image;
    const uint32_t queue_mask = radv_image_queue_family_mask(att->iview->image, cmd_buffer->qf, cmd_buffer->qf);
    const bool is_dcc_compressed =
       radv_layout_dcc_compressed(device, image, att->iview->vk.base_mip_level, att->layout, queue_mask);
@@ -9430,8 +9430,7 @@ radv_handle_depth_fbfetch_output(struct radv_cmd_buffer *cmd_buffer)
    if (!att->iview)
       return;
 
-   const struct radv_image *image = att->iview->image;
-   if (!(image->vk.usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT))
+   if (!(att->flags & VK_RENDERING_ATTACHMENT_INPUT_ATTACHMENT_FEEDBACK_BIT_KHR))
       return;
 
    if (!radv_layout_is_htile_compressed(
@@ -9751,6 +9750,29 @@ get_image_layout(const VkRenderingAttachmentInfo *att)
    return att->imageLayout;
 }
 
+static VkRenderingAttachmentFlagsKHR
+get_rendering_attachment_flags(const VkRenderingInfo *rendering_info, const VkRenderingAttachmentInfo *att_info)
+{
+   VkRenderingAttachmentFlagsKHR flags = 0;
+
+   const VkRenderingAttachmentFlagsInfoKHR *att_flags_info =
+      vk_find_struct_const(att_info->pNext, RENDERING_ATTACHMENT_FLAGS_INFO_KHR);
+   if (att_flags_info)
+      flags = att_flags_info->flags;
+
+   if (!(rendering_info->flags & VK_RENDERING_LOCAL_READ_CONCURRENT_ACCESS_CONTROL_BIT_KHR)) {
+      /* When this flag isn't set, we have to pessimize and assume that any attachments with the
+       * input usage flag might be using feedback loops.
+       */
+      VK_FROM_HANDLE(radv_image_view, iview, att_info->imageView);
+
+      if (iview->image->vk.usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)
+         flags |= VK_RENDERING_ATTACHMENT_INPUT_ATTACHMENT_FEEDBACK_BIT_KHR;
+   }
+
+   return flags;
+}
+
 VKAPI_ATTR void VKAPI_CALL
 radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo)
 {
@@ -9802,6 +9824,7 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
 
       color_att[i].format = iview->vk.format;
       color_att[i].iview = iview;
+      color_att[i].flags = get_rendering_attachment_flags(pRenderingInfo, att_info);
       color_att[i].layout = get_image_layout(att_info);
       radv_initialise_color_surface(device, &color_att[i].cb, iview);
 
@@ -9830,6 +9853,9 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
 
       screen_scissor.width = MIN2(screen_scissor.width, iview->vk.extent.width);
       screen_scissor.height = MIN2(screen_scissor.height, iview->vk.extent.height);
+
+      if (color_att[i].flags & VK_RENDERING_ATTACHMENT_INPUT_ATTACHMENT_FEEDBACK_BIT_KHR)
+         has_input_attachment_concurrent_writes = true;
    }
 
    struct radv_attachment ds_att = {.iview = NULL};
@@ -9874,10 +9900,14 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
 
       if (d_iview && s_iview) {
          ds_att_aspects = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+         ds_att.flags = get_rendering_attachment_flags(pRenderingInfo, d_att_info) |
+                        get_rendering_attachment_flags(pRenderingInfo, s_att_info);
       } else if (d_iview) {
          ds_att_aspects = VK_IMAGE_ASPECT_DEPTH_BIT;
+         ds_att.flags = get_rendering_attachment_flags(pRenderingInfo, d_att_info);
       } else {
          ds_att_aspects = VK_IMAGE_ASPECT_STENCIL_BIT;
+         ds_att.flags = get_rendering_attachment_flags(pRenderingInfo, s_att_info);
       }
 
       if (pdev->info.gfx_level >= GFX12) {
@@ -9902,6 +9932,9 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
 
       screen_scissor.width = MIN2(screen_scissor.width, ds_att.iview->vk.extent.width);
       screen_scissor.height = MIN2(screen_scissor.height, ds_att.iview->vk.extent.height);
+
+      if (ds_att.flags & VK_RENDERING_ATTACHMENT_INPUT_ATTACHMENT_FEEDBACK_BIT_KHR)
+         has_input_attachment_concurrent_writes = true;
    }
    if (cmd_buffer->vk.render_pass)
       radv_describe_barrier_end(cmd_buffer);
