@@ -628,8 +628,12 @@ v3d_update_compiled_fs(struct v3d_context *v3d, uint8_t prim_mode)
         key->can_earlyz_with_discard = s->info.fs.uses_discard &&
                 !s->info.fs.uses_fbfetch_output &&
                 (!v3d->zsa || !job->zsbuf.texture ||
-                !v3d->zsa->base.depth_enabled ||
-                 !v3d->zsa->base.depth_writemask) &&
+                 ((!v3d->zsa->base.depth_enabled ||
+                   !v3d->zsa->base.depth_writemask) &&
+                  (!v3d->zsa->base.stencil[0].enabled ||
+                   !v3d->zsa->base.stencil[0].writemask) &&
+                  (!v3d->zsa->base.stencil[1].enabled ||
+                   !v3d->zsa->base.stencil[1].writemask))) &&
                 !(v3d->active_queries && v3d->current_oq);
 
         key->software_blend = v3d->blend->use_software;
