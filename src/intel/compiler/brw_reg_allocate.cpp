@@ -675,9 +675,19 @@ brw_reg_alloc::setup_inst_interference(const brw_inst *inst)
 
       /* All the EOT messages should have the same amount of payload as we
        * only use this for last render target write on Gfx11.
+       *
+       * Unfortunately opt_register_coalesce can merge 2 registers of
+       * different sizes (effectively increasing the allocated size of one of
+       * the EOT SEND sources). If that register gets spilled, the spiller
+       * might reduce the size of the register since it sees some of it is
+       * unused. This leads to the computed sizes[] values to change as we
+       * register allocate the program.
+       *
+       * Here we stick to the largest EOT size found during register
+       * allocation.
        */
-      assert(eot_reg == -1 || eot_reg == MIN2(regs[0], regs[1]));
-      eot_reg = MIN2(regs[0], regs[1]);
+      assert(eot_reg == -1 || eot_reg <= MIN2(regs[0], regs[1]));
+      eot_reg = MIN3(eot_reg == -1 ? BRW_MAX_GRF : eot_reg, regs[0], regs[1]);
    }
 }
 
