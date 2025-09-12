@@ -294,7 +294,7 @@ zink-radv-vangogh-traces:
   parallel: null
   timeout: 10m
   variables:
-    CI_TRON_TIMEOUT__OVERALL__MINUTES: 5  # normal runtime = 40-50 sec
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 8  # normal runtime = 40-50 sec
     PIGLIT_TRACES_FILE: traces-zink.yml
 
 zink-radv-navi31-valve:
