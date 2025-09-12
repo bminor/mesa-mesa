@@ -33,7 +33,7 @@ struct radeon_info;
  * around each command needed. The primary user of this is RGP.
  */
 struct ac_sqtt {
-   /* struct radeon_cmdbuf from RADV or RadeonSI */
+   /* ac_cmdbuf or radeon_cmdbuf */
    void *start_cs[2];
    void *stop_cs[2];
    /* struct radeon_winsys_bo or struct pb_buffer */

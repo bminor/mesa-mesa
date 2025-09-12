@@ -222,7 +222,7 @@ radv_finish_trace(struct radv_device *device)
 }
 
 static void
-radv_dump_trace(const struct radv_device *device, struct radeon_cmdbuf *cs, FILE *f)
+radv_dump_trace(const struct radv_device *device, struct ac_cmdbuf *cs, FILE *f)
 {
    fprintf(f, "Trace ID: %x\n", device->trace_data->primary_id);
    device->ws->cs_dump(cs, f, (const int *)&device->trace_data->primary_id, 2, RADV_CS_DUMP_TYPE_IBS);

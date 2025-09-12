@@ -12,12 +12,12 @@
 #include "util/u_memory.h"
 
 struct radv_null_cs {
-   struct radeon_cmdbuf base;
+   struct ac_cmdbuf base;
    struct radv_null_winsys *ws;
 };
 
 static inline struct radv_null_cs *
-radv_null_cs(struct radeon_cmdbuf *base)
+radv_null_cs(struct ac_cmdbuf *base)
 {
    return (struct radv_null_cs *)base;
 }
@@ -47,7 +47,7 @@ radv_null_cs_domain(const struct radeon_winsys *_ws)
    return RADEON_DOMAIN_GTT;
 }
 
-static struct radeon_cmdbuf *
+static struct ac_cmdbuf *
 radv_null_cs_create(struct radeon_winsys *ws, enum amd_ip_type ip_type, UNUSED bool is_secondary)
 {
    struct radv_null_cs *cs = calloc(1, sizeof(struct radv_null_cs));
@@ -67,20 +67,20 @@ radv_null_cs_create(struct radeon_winsys *ws, enum amd_ip_type ip_type, UNUSED b
 }
 
 static void
-radv_null_cs_pad(struct radeon_cmdbuf *_cs, unsigned leave_dw_space)
+radv_null_cs_pad(struct ac_cmdbuf *_cs, unsigned leave_dw_space)
 {
 }
 
 static VkResult
-radv_null_cs_finalize(struct radeon_cmdbuf *_cs)
+radv_null_cs_finalize(struct ac_cmdbuf *_cs)
 {
    return VK_SUCCESS;
 }
 
 static void
-radv_null_cs_destroy(struct radeon_cmdbuf *rcs)
+radv_null_cs_destroy(struct ac_cmdbuf *_cs)
 {
-   struct radv_null_cs *cs = radv_null_cs(rcs);
+   struct radv_null_cs *cs = radv_null_cs(_cs);
    FREE(cs->base.buf);
    FREE(cs);
 }

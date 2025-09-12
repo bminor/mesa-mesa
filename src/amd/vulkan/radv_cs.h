@@ -18,7 +18,7 @@
 #include "sid.h"
 
 static inline unsigned
-radeon_check_space(struct radeon_winsys *ws, struct radeon_cmdbuf *cs, unsigned needed)
+radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned needed)
 {
    assert(cs->cdw <= cs->reserved_dw);
    if (cs->max_dw - cs->cdw < needed)

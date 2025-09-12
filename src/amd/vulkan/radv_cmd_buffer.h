@@ -578,7 +578,7 @@ struct gfx12_reg {
 };
 
 struct radv_cmd_stream {
-   struct radeon_cmdbuf *b;
+   struct ac_cmdbuf *b;
 
    bool context_roll_without_scissor_emitted;
 

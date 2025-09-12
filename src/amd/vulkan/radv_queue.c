@@ -1706,7 +1706,7 @@ radv_queue_submit_normal(struct radv_queue *queue, struct vk_queue_submit *submi
    const unsigned max_cs_submission = radv_device_fault_detection_enabled(device) ? 1 : cmd_buffer_count;
    const unsigned cs_array_size = (use_ace ? 2 : 1) * MIN2(max_cs_submission, cmd_buffer_count);
 
-   struct radeon_cmdbuf **cs_array = malloc(sizeof(struct radeon_cmdbuf *) * cs_array_size);
+   struct ac_cmdbuf **cs_array = malloc(sizeof(struct ac_cmdbuf *) * cs_array_size);
    if (!cs_array)
       return VK_ERROR_OUT_OF_HOST_MEMORY;
 
@@ -1740,9 +1740,9 @@ radv_queue_submit_normal(struct radv_queue *queue, struct vk_queue_submit *submi
    unsigned num_initial_preambles = 0;
    unsigned num_continue_preambles = 0;
    unsigned num_postambles = 0;
-   struct radeon_cmdbuf *initial_preambles[5] = {0};
-   struct radeon_cmdbuf *continue_preambles[5] = {0};
-   struct radeon_cmdbuf *postambles[4] = {0};
+   struct ac_cmdbuf *initial_preambles[5] = {0};
+   struct ac_cmdbuf *continue_preambles[5] = {0};
+   struct ac_cmdbuf *postambles[4] = {0};
 
    if (queue->state.qf == RADV_QUEUE_GENERAL || queue->state.qf == RADV_QUEUE_COMPUTE) {
       initial_preambles[num_initial_preambles++] =
@@ -1816,8 +1816,8 @@ radv_queue_submit_normal(struct radv_queue *queue, struct vk_queue_submit *submi
       if (radv_device_fault_detection_enabled(device))
          device->trace_data->primary_id = 0;
 
-      struct radeon_cmdbuf *chainable = NULL;
-      struct radeon_cmdbuf *chainable_ace = NULL;
+      struct ac_cmdbuf *chainable = NULL;
+      struct ac_cmdbuf *chainable_ace = NULL;
 
       /* Add CS from submitted command buffers. */
       for (unsigned c = 0; c < advance; ++c) {
@@ -1979,7 +1979,7 @@ fail:
 }
 
 bool
-radv_queue_internal_submit(struct radv_queue *queue, struct radeon_cmdbuf *cs)
+radv_queue_internal_submit(struct radv_queue *queue, struct ac_cmdbuf *cs)
 {
    struct radv_device *device = radv_queue_device(queue);
    struct radeon_winsys_ctx *ctx = queue->hw_ctx;
