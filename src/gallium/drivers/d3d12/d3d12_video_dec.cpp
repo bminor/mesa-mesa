@@ -132,8 +132,6 @@ d3d12_video_create_decoder(struct pipe_context *context, const struct pipe_video
       goto failed;
    }
 
-#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
-
    if (pD3D12Ctx->priority_manager)
    {
       // Register queue with priority manager
@@ -144,8 +142,6 @@ d3d12_video_create_decoder(struct pipe_context *context, const struct pipe_video
          goto failed;
       }
    }
-
-#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
 
    return &pD3D12Dec->base;
 
@@ -197,8 +193,6 @@ d3d12_video_decoder_destroy(struct pipe_video_codec *codec)
 
    // No need for m_pD3D12Screen as it is not managed by d3d12_video_decoder
 
-#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
-
    struct d3d12_context* ctx = d3d12_context(pD3D12Dec->base.context);
    if (ctx->priority_manager)
    {
@@ -208,8 +202,6 @@ d3d12_video_decoder_destroy(struct pipe_video_codec *codec)
          assert(false);
       }
    }
-
-#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
 
    // Call dtor to make ComPtr work
    delete pD3D12Dec;
@@ -854,10 +846,8 @@ d3d12_video_decoder_create_command_objects(const struct d3d12_screen *pD3D12Scre
    assert(pD3D12Dec->m_spD3D12VideoDevice);
 
    D3D12_COMMAND_QUEUE_DESC commandQueueDesc = { D3D12_COMMAND_LIST_TYPE_VIDEO_DECODE };
-#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
    if (pD3D12Screen->supports_dynamic_queue_priority)
       commandQueueDesc.Flags |= D3D12_COMMAND_QUEUE_FLAG_ALLOW_DYNAMIC_PRIORITY;
-#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
 
    HRESULT hr = pD3D12Screen->dev->CreateCommandQueue(&commandQueueDesc,
                                                       IID_PPV_ARGS(pD3D12Dec->m_spDecodeCommandQueue.GetAddressOf()));

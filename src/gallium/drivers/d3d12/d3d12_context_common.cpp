@@ -67,8 +67,6 @@ d3d12_context_destroy(struct pipe_context *pctx)
 {
    struct d3d12_context *ctx = d3d12_context(pctx);
 
-#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
-
    if (ctx->priority_manager)
    {
       struct d3d12_screen *screen = d3d12_screen(pctx->screen);
@@ -80,8 +78,6 @@ d3d12_context_destroy(struct pipe_context *pctx)
 
       mtx_destroy(&ctx->priority_manager_lock);
    }
-
-#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
 
    struct d3d12_screen *screen = d3d12_screen(pctx->screen);
    mtx_lock(&screen->submit_mutex);
@@ -356,8 +352,6 @@ d3d12_video_create_codec(struct pipe_context *context,
 }
 #endif
 
-#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
-
 int
 d3d12_context_set_queue_priority(struct d3d12_context_queue_priority_manager* manager,
                                      ID3D12CommandQueue *d3d12_queue,
@@ -371,7 +365,7 @@ d3d12_context_set_queue_priority(struct d3d12_context_queue_priority_manager* ma
    mtx_lock(&ctx12->priority_manager_lock);
    {
       // Set the queue priority
-      ComPtr<ID3D12CommandQueueDynamicPriorityPreview> prio_iface;
+      ComPtr<ID3D12CommandQueue1> prio_iface;
       if(FAILED(d3d12_queue->QueryInterface(IID_PPV_ARGS(&prio_iface))))
       {
          mtx_unlock(&ctx12->priority_manager_lock);
@@ -407,7 +401,7 @@ d3d12_context_get_queue_priority(struct d3d12_context_queue_priority_manager* ma
 
    mtx_lock(&ctx12->priority_manager_lock);
    {
-      ComPtr<ID3D12CommandQueueDynamicPriorityPreview> prio_iface;
+      ComPtr<ID3D12CommandQueue1> prio_iface;
       if (FAILED(d3d12_queue->QueryInterface(IID_PPV_ARGS(&prio_iface))))
       {
          mtx_unlock(&ctx12->priority_manager_lock);
@@ -478,8 +472,6 @@ d3d12_context_set_queue_priority_manager(struct pipe_context *ctx, struct d3d12_
 
    return 0;
 }
-
-#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
 
 int
 d3d12_video_encoder_set_max_async_queue_depth(struct pipe_context *ctx, uint32_t max_async_depth)

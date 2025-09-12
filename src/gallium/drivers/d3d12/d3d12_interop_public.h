@@ -45,8 +45,6 @@ struct d3d12_interop_resource_info {
    uint64_t buffer_offset;
 };
 
-#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
-
 /*
  * Structure that contains information about scheduling priority management
  * for GPU workloads exposed through work queues.
@@ -192,8 +190,6 @@ struct d3d12_interop_device_info1 {
     */
    int (*set_video_encoder_max_async_queue_depth)(struct pipe_context *context, uint32_t max_async_queue_depth);
 };
-
-#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
 
 #ifdef __cplusplus
 }

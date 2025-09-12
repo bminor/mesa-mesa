@@ -52,12 +52,8 @@ void
 d3d12_video_encoder_update_current_frame_pic_params_info_hevc(struct d3d12_video_encoder *pD3D12Enc,
                                                               struct pipe_video_buffer *  srcTexture,
                                                               struct pipe_picture_desc *  picture,
-#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
                                                               D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC2 *pHEVCPicData,
-#else
-                                                              D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA_HEVC *pHEVCPicData,
-#endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
-                                                             bool &bUsedAsReference);
+                                                              bool &bUsedAsReference);
 uint32_t
 d3d12_video_encoder_build_codec_headers_hevc(struct d3d12_video_encoder *pD3D12Enc,
                                              std::vector<uint64_t> &pWrittenCodecUnitsSizes);

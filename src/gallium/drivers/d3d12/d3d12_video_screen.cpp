@@ -593,7 +593,7 @@ d3d12_video_encode_supported_slice_structures(const D3D12_VIDEO_ENCODER_CODEC &c
 /*
    All these structures must be present in memory (stack scope) when calling
    CheckFeatureSupport and for any subsequent read from d3d12_video_encode_support_caps
-   capEncoderSupportData1 in/out parameter
+   capEncoderSupportData in/out parameter
 */
 struct d3d12_encode_support_cap_allocations
 {
@@ -619,42 +619,37 @@ d3d12_video_encode_support_caps(const D3D12_VIDEO_ENCODER_CODEC &argTargetCodec,
                                 DXGI_FORMAT encodeFormat,
                                 ID3D12VideoDevice3 *pD3D12VideoDevice,
                                 D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_SUPPORT codecSupport,
-#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
-                                D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT2 &capEncoderSupportData1,
+                                D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT2 &capEncoderSupportData,
                                 D3D12_FEATURE_DATA_VIDEO_ENCODER_RESOLUTION_SUPPORT_LIMITS1 &resolutionDepCaps,
-#else
-                                D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT1 &capEncoderSupportData1,
-                                D3D12_FEATURE_DATA_VIDEO_ENCODER_RESOLUTION_SUPPORT_LIMITS &resolutionDepCaps,
-#endif
                                 uint32_t &maxQualityLevels,
                                 struct d3d12_encode_support_cap_allocations &cap_allocations,
                                 union pipe_enc_cap_spatial_adaptive_quantization &saqSupport)
 {
-   capEncoderSupportData1.NodeIndex = 0;
-   capEncoderSupportData1.Codec = argTargetCodec;
-   capEncoderSupportData1.InputFormat = encodeFormat;
-   capEncoderSupportData1.RateControl = {};
-   capEncoderSupportData1.RateControl.Mode = D3D12_VIDEO_ENCODER_RATE_CONTROL_MODE_CQP;
-   capEncoderSupportData1.RateControl.TargetFrameRate.Numerator = 60;
-   capEncoderSupportData1.RateControl.TargetFrameRate.Denominator = 1;
-   capEncoderSupportData1.RateControl.ConfigParams.pConfiguration_CQP = &cap_allocations.rcCqp;
-   capEncoderSupportData1.RateControl.ConfigParams.DataSize = sizeof(cap_allocations.rcCqp);
-   capEncoderSupportData1.IntraRefresh = D3D12_VIDEO_ENCODER_INTRA_REFRESH_MODE_NONE;
-   capEncoderSupportData1.ResolutionsListCount = 1;
-   capEncoderSupportData1.pResolutionList = &maxResolution;
-   capEncoderSupportData1.MaxReferenceFramesInDPB = 1;
+   capEncoderSupportData.NodeIndex = 0;
+   capEncoderSupportData.Codec = argTargetCodec;
+   capEncoderSupportData.InputFormat = encodeFormat;
+   capEncoderSupportData.RateControl = {};
+   capEncoderSupportData.RateControl.Mode = D3D12_VIDEO_ENCODER_RATE_CONTROL_MODE_CQP;
+   capEncoderSupportData.RateControl.TargetFrameRate.Numerator = 60;
+   capEncoderSupportData.RateControl.TargetFrameRate.Denominator = 1;
+   capEncoderSupportData.RateControl.ConfigParams.pConfiguration_CQP = &cap_allocations.rcCqp;
+   capEncoderSupportData.RateControl.ConfigParams.DataSize = sizeof(cap_allocations.rcCqp);
+   capEncoderSupportData.IntraRefresh = D3D12_VIDEO_ENCODER_INTRA_REFRESH_MODE_NONE;
+   capEncoderSupportData.ResolutionsListCount = 1;
+   capEncoderSupportData.pResolutionList = &maxResolution;
+   capEncoderSupportData.MaxReferenceFramesInDPB = 1;
    switch (argTargetCodec) {
       case D3D12_VIDEO_ENCODER_CODEC_H264:
       {
          // assert(codecSupport.pH264Support); // Fill this in caller if ever used
-         capEncoderSupportData1.SuggestedProfile.pH264Profile = &cap_allocations.h264prof;
-         capEncoderSupportData1.SuggestedProfile.DataSize = sizeof(cap_allocations.h264prof);
-         capEncoderSupportData1.SuggestedLevel.pH264LevelSetting = &cap_allocations.h264lvl;
-         capEncoderSupportData1.SuggestedLevel.DataSize = sizeof(cap_allocations.h264lvl);
-         capEncoderSupportData1.CodecGopSequence.pH264GroupOfPictures = &cap_allocations.h264Gop;
-         capEncoderSupportData1.CodecGopSequence.DataSize = sizeof(cap_allocations.h264Gop);
-         capEncoderSupportData1.CodecConfiguration.DataSize = sizeof(cap_allocations.h264Config);
-         capEncoderSupportData1.CodecConfiguration.pH264Config = &cap_allocations.h264Config;
+         capEncoderSupportData.SuggestedProfile.pH264Profile = &cap_allocations.h264prof;
+         capEncoderSupportData.SuggestedProfile.DataSize = sizeof(cap_allocations.h264prof);
+         capEncoderSupportData.SuggestedLevel.pH264LevelSetting = &cap_allocations.h264lvl;
+         capEncoderSupportData.SuggestedLevel.DataSize = sizeof(cap_allocations.h264lvl);
+         capEncoderSupportData.CodecGopSequence.pH264GroupOfPictures = &cap_allocations.h264Gop;
+         capEncoderSupportData.CodecGopSequence.DataSize = sizeof(cap_allocations.h264Gop);
+         capEncoderSupportData.CodecConfiguration.DataSize = sizeof(cap_allocations.h264Config);
+         capEncoderSupportData.CodecConfiguration.pH264Config = &cap_allocations.h264Config;
       } break;
 
       case D3D12_VIDEO_ENCODER_CODEC_HEVC:
@@ -674,24 +669,24 @@ d3d12_video_encode_support_caps(const D3D12_VIDEO_ENCODER_CODEC &argTargetCodec,
          if ((codecSupport.pHEVCSupport->SupportFlags & D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_SUPPORT_HEVC_FLAG_ASYMETRIC_MOTION_PARTITION_REQUIRED) != 0)
             cap_allocations.hevcConfig.ConfigurationFlags |= D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION_HEVC_FLAG_USE_ASYMETRIC_MOTION_PARTITION;
 
-         capEncoderSupportData1.SuggestedProfile.pHEVCProfile = &cap_allocations.hevcprof;
-         capEncoderSupportData1.SuggestedProfile.DataSize = sizeof(cap_allocations.hevcprof);
-         capEncoderSupportData1.SuggestedLevel.pHEVCLevelSetting = &cap_allocations.hevcLvl;
-         capEncoderSupportData1.SuggestedLevel.DataSize = sizeof(cap_allocations.hevcLvl);
-         capEncoderSupportData1.CodecGopSequence.pHEVCGroupOfPictures = &cap_allocations.hevcGop;
-         capEncoderSupportData1.CodecGopSequence.DataSize = sizeof(cap_allocations.hevcGop);
-         capEncoderSupportData1.CodecConfiguration.DataSize = sizeof(cap_allocations.hevcConfig);
-         capEncoderSupportData1.CodecConfiguration.pHEVCConfig = &cap_allocations.hevcConfig;
+         capEncoderSupportData.SuggestedProfile.pHEVCProfile = &cap_allocations.hevcprof;
+         capEncoderSupportData.SuggestedProfile.DataSize = sizeof(cap_allocations.hevcprof);
+         capEncoderSupportData.SuggestedLevel.pHEVCLevelSetting = &cap_allocations.hevcLvl;
+         capEncoderSupportData.SuggestedLevel.DataSize = sizeof(cap_allocations.hevcLvl);
+         capEncoderSupportData.CodecGopSequence.pHEVCGroupOfPictures = &cap_allocations.hevcGop;
+         capEncoderSupportData.CodecGopSequence.DataSize = sizeof(cap_allocations.hevcGop);
+         capEncoderSupportData.CodecConfiguration.DataSize = sizeof(cap_allocations.hevcConfig);
+         capEncoderSupportData.CodecConfiguration.pHEVCConfig = &cap_allocations.hevcConfig;
       } break;
 
       case D3D12_VIDEO_ENCODER_CODEC_AV1:
       {
-         capEncoderSupportData1.SuggestedProfile.pAV1Profile = &cap_allocations.av1prof;
-         capEncoderSupportData1.SuggestedProfile.DataSize = sizeof(cap_allocations.av1prof);
-         capEncoderSupportData1.SuggestedLevel.pAV1LevelSetting = &cap_allocations.av1Lvl;
-         capEncoderSupportData1.SuggestedLevel.DataSize = sizeof(cap_allocations.av1Lvl);
-         capEncoderSupportData1.CodecGopSequence.pAV1SequenceStructure = &cap_allocations.av1Gop;
-         capEncoderSupportData1.CodecGopSequence.DataSize = sizeof(cap_allocations.av1Gop);
+         capEncoderSupportData.SuggestedProfile.pAV1Profile = &cap_allocations.av1prof;
+         capEncoderSupportData.SuggestedProfile.DataSize = sizeof(cap_allocations.av1prof);
+         capEncoderSupportData.SuggestedLevel.pAV1LevelSetting = &cap_allocations.av1Lvl;
+         capEncoderSupportData.SuggestedLevel.DataSize = sizeof(cap_allocations.av1Lvl);
+         capEncoderSupportData.CodecGopSequence.pAV1SequenceStructure = &cap_allocations.av1Gop;
+         capEncoderSupportData.CodecGopSequence.DataSize = sizeof(cap_allocations.av1Gop);
          D3D12_FEATURE_DATA_VIDEO_ENCODER_CODEC_CONFIGURATION_SUPPORT capCodecConfigData = { };
          capCodecConfigData.NodeIndex = 0;
          capCodecConfigData.Codec = D3D12_VIDEO_ENCODER_CODEC_AV1;
@@ -710,8 +705,8 @@ d3d12_video_encode_support_caps(const D3D12_VIDEO_ENCODER_CODEC &argTargetCodec,
          }
          cap_allocations.av1Config.OrderHintBitsMinus1 = 7;
          cap_allocations.av1Config.FeatureFlags = av1CodecSupport.RequiredFeatureFlags;
-         capEncoderSupportData1.CodecConfiguration.DataSize = sizeof(cap_allocations.av1Config);
-         capEncoderSupportData1.CodecConfiguration.pAV1Config = &cap_allocations.av1Config;
+         capEncoderSupportData.CodecConfiguration.DataSize = sizeof(cap_allocations.av1Config);
+         capEncoderSupportData.CodecConfiguration.pAV1Config = &cap_allocations.av1Config;
       } break;
       default:
       {
@@ -721,12 +716,11 @@ d3d12_video_encode_support_caps(const D3D12_VIDEO_ENCODER_CODEC &argTargetCodec,
 
    // prepare inout storage for the resolution dependent result.
    resolutionDepCaps = {};
-   capEncoderSupportData1.pResolutionDependentSupport = &resolutionDepCaps;
+   capEncoderSupportData.pResolutionDependentSupport = &resolutionDepCaps;
 
-#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
    HRESULT hr = pD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_SUPPORT2,
-                                                       &capEncoderSupportData1,
-                                                       sizeof(capEncoderSupportData1));
+                                                       &capEncoderSupportData,
+                                                       sizeof(capEncoderSupportData));
 
    if (FAILED(hr)) {
       debug_printf("CheckFeatureSupport D3D12_FEATURE_VIDEO_ENCODER_SUPPORT2 failed with HR %x\n", (unsigned)hr);
@@ -734,17 +728,11 @@ d3d12_video_encode_support_caps(const D3D12_VIDEO_ENCODER_CODEC &argTargetCodec,
 
       // D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT2 extends D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT1
       // in a binary compatible way, so just cast it and try with the older query D3D12_FEATURE_VIDEO_ENCODER_SUPPORT1
-      D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT1 * casted_down_cap_data = reinterpret_cast<D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT1*>(&capEncoderSupportData1);
+      D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT1 * casted_down_cap_data = reinterpret_cast<D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT1*>(&capEncoderSupportData);
       hr = pD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_SUPPORT1,
                                                   casted_down_cap_data,
                                                   sizeof(D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT1));
    }
-
-#else
-   HRESULT hr = pD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_SUPPORT1,
-                                                       &capEncoderSupportData1,
-                                                       sizeof(capEncoderSupportData1));
-#endif
 
    if (FAILED(hr)) {
       debug_printf("CheckFeatureSupport D3D12_FEATURE_VIDEO_ENCODER_SUPPORT1 failed with HR %x\n", (unsigned)hr);
@@ -752,7 +740,7 @@ d3d12_video_encode_support_caps(const D3D12_VIDEO_ENCODER_CODEC &argTargetCodec,
 
       // D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT1 extends D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT
       // in a binary compatible way, so just cast it and try with the older query D3D12_FEATURE_VIDEO_ENCODER_SUPPORT
-      D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT * casted_down_cap_data = reinterpret_cast<D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT*>(&capEncoderSupportData1);
+      D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT * casted_down_cap_data = reinterpret_cast<D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT*>(&capEncoderSupportData);
       hr = pD3D12VideoDevice->CheckFeatureSupport(D3D12_FEATURE_VIDEO_ENCODER_SUPPORT,
                                                                          casted_down_cap_data,
                                                                          sizeof(D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT));
@@ -771,18 +759,18 @@ d3d12_video_encode_support_caps(const D3D12_VIDEO_ENCODER_CODEC &argTargetCodec,
    // A lower value means higher quality, and a value of 1 represents the highest quality. 
    // The quality level setting is used as a trade-off between quality and speed/power 
    // consumption, with higher quality corresponds to lower speed and higher power consumption.
-   maxQualityLevels = capEncoderSupportData1.MaxQualityVsSpeed + 1; // VA range starts from 1, D3D12 starts from 0
+   maxQualityLevels = capEncoderSupportData.MaxQualityVsSpeed + 1; // VA range starts from 1, D3D12 starts from 0
 
    saqSupport.bits.max_spatial_adaptive_quantization_strength = 0u;
 
-   if ((capEncoderSupportData1.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RATE_CONTROL_SPATIAL_ADAPTIVE_QP_AVAILABLE) != 0)
+   if ((capEncoderSupportData.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RATE_CONTROL_SPATIAL_ADAPTIVE_QP_AVAILABLE) != 0)
    {
       saqSupport.bits.max_spatial_adaptive_quantization_strength = 1u;
    }
 
    bool configSupported =
-      (((capEncoderSupportData1.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_GENERAL_SUPPORT_OK) != 0) &&
-         (capEncoderSupportData1.ValidationFlags == D3D12_VIDEO_ENCODER_VALIDATION_FLAG_NONE));
+      (((capEncoderSupportData.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_GENERAL_SUPPORT_OK) != 0) &&
+         (capEncoderSupportData.ValidationFlags == D3D12_VIDEO_ENCODER_VALIDATION_FLAG_NONE));
 
    return configSupported;
 }
@@ -986,8 +974,6 @@ d3d12_has_video_process_support(struct pipe_screen *pscreen,
 
    return VideoFeatureAreaSupport.VideoProcessSupport && bSupportsAny;
 }
-
-#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
 
 static
 union pipe_enc_cap_two_pass
@@ -1467,8 +1453,6 @@ get_qpmap_gpuinput_support(D3D12_VIDEO_ENCODER_INPUT_MAP_SESSION_INFO sessionInf
    return qpmap_gpu_support;
 }
 
-#endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
-
 static bool
 d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                                enum pipe_video_profile profile,
@@ -1561,38 +1545,33 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                                                                                      profile,
                                                                                      level,
                                                                                      spD3D12VideoDevice.Get());
-#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
-            D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT2 capEncoderSupportData1 = {};
+            D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT2 capEncoderSupportData = {};
             D3D12_FEATURE_DATA_VIDEO_ENCODER_RESOLUTION_SUPPORT_LIMITS1 resolutionDepCaps;
-#else
-            D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT1 capEncoderSupportData1 = {};
-            D3D12_FEATURE_DATA_VIDEO_ENCODER_RESOLUTION_SUPPORT_LIMITS resolutionDepCaps;
-#endif
-            capEncoderSupportData1.SubregionFrameEncoding = (supportedSliceStructures == PIPE_VIDEO_CAP_SLICE_STRUCTURE_NONE) ?
+            capEncoderSupportData.SubregionFrameEncoding = (supportedSliceStructures == PIPE_VIDEO_CAP_SLICE_STRUCTURE_NONE) ?
                                                              D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE_FULL_FRAME :
                                                              D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE_UNIFORM_PARTITIONING_SUBREGIONS_PER_FRAME;
             D3D12_VIDEO_ENCODER_PICTURE_CONTROL_SUBREGIONS_LAYOUT_DATA_SLICES sliceData = { };
-            capEncoderSupportData1.SubregionFrameEncodingData.DataSize = sizeof(sliceData);
-            capEncoderSupportData1.SubregionFrameEncodingData.pSlicesPartition_H264 = &sliceData;
+            capEncoderSupportData.SubregionFrameEncodingData.DataSize = sizeof(sliceData);
+            capEncoderSupportData.SubregionFrameEncodingData.pSlicesPartition_H264 = &sliceData;
             d3d12_encode_support_cap_allocations cap_allocations = {};
             supportsProfile = supportsProfile && d3d12_video_encode_support_caps(codecDesc,
                                                                                  maxRes,
                                                                                  encodeFormat,
                                                                                  spD3D12VideoDevice.Get(),
                                                                                  d3d12_codec_support,
-                                                                                 capEncoderSupportData1,
+                                                                                 capEncoderSupportData,
                                                                                  resolutionDepCaps,
                                                                                  maxQualityLevels,
                                                                                  cap_allocations,
                                                                                  saqSupport);
-            bVideoEncodeRequiresTextureArray = (capEncoderSupportData1.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RECONSTRUCTED_FRAMES_REQUIRE_TEXTURE_ARRAYS) != 0;
+            bVideoEncodeRequiresTextureArray = (capEncoderSupportData.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RECONSTRUCTED_FRAMES_REQUIRE_TEXTURE_ARRAYS) != 0;
             if (supportedSliceStructures == PIPE_VIDEO_CAP_SLICE_STRUCTURE_NONE)
                maxSlices = 0;
             else
                maxSlices = resolutionDepCaps.MaxSubregionsNumber;
 
             maxIRDuration = resolutionDepCaps.MaxIntraRefreshFrameDuration;
-            isRCMaxFrameSizeSupported = ((capEncoderSupportData1.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RATE_CONTROL_MAX_FRAME_SIZE_AVAILABLE) != 0) ? 1 : 0;
+            isRCMaxFrameSizeSupported = ((capEncoderSupportData.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RATE_CONTROL_MAX_FRAME_SIZE_AVAILABLE) != 0) ? 1 : 0;
             maxReferencesPerFrame =
                d3d12_video_encode_supported_references_per_frame_structures(codecDesc,
                                                                             profile,
@@ -1602,47 +1581,44 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                                                                             maxDPBCapacity);
 
             memset(&roi_support, 0, sizeof(roi_support));
-            roi_support.bits.roi_rc_qp_delta_support = ((capEncoderSupportData1.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RATE_CONTROL_DELTA_QP_AVAILABLE) != 0) ? 1 : 0;
+            roi_support.bits.roi_rc_qp_delta_support = ((capEncoderSupportData.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RATE_CONTROL_DELTA_QP_AVAILABLE) != 0) ? 1 : 0;
             roi_support.bits.num_roi_regions = roi_support.bits.roi_rc_qp_delta_support ? PIPE_ENC_ROI_REGION_NUM_MAX : 0;
-            roi_support.bits.log2_roi_min_block_pixel_size = static_cast<uint32_t>(std::log2(capEncoderSupportData1.pResolutionDependentSupport[0].QPMapRegionPixelsSize));
+            roi_support.bits.log2_roi_min_block_pixel_size = static_cast<uint32_t>(std::log2(capEncoderSupportData.pResolutionDependentSupport[0].QPMapRegionPixelsSize));
 
             supportsProfile = d3d12_video_encode_get_h264_codec_support(profDesc,
                                                                         spD3D12VideoDevice.Get(),
                                                                         codecSupport.h264_support.d3d12_caps);
 
-#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
-
             D3D12_VIDEO_ENCODER_INPUT_MAP_SESSION_INFO sessionInfo =
             {
                // D3D12_VIDEO_ENCODER_CODEC Codec;
-               capEncoderSupportData1.Codec,
+               capEncoderSupportData.Codec,
                // D3D12_VIDEO_ENCODER_PROFILE_DESC Profile;
                profDesc,
                // D3D12_VIDEO_ENCODER_LEVEL_SETTING Level;
                maxLvl,
                // DXGI_FORMAT InputFormat;
-               capEncoderSupportData1.InputFormat,
+               capEncoderSupportData.InputFormat,
                // D3D12_VIDEO_ENCODER_PICTURE_RESOLUTION_DESC InputResolution;
                maxRes,
                // D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION CodecConfiguration;
-               capEncoderSupportData1.CodecConfiguration,
+               capEncoderSupportData.CodecConfiguration,
                // D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE SubregionFrameEncoding;
-               capEncoderSupportData1.SubregionFrameEncoding,
+               capEncoderSupportData.SubregionFrameEncoding,
                // D3D12_VIDEO_ENCODER_PICTURE_CONTROL_SUBREGIONS_LAYOUT_DATA SubregionFrameEncodingData;
-               capEncoderSupportData1.SubregionFrameEncodingData,
+               capEncoderSupportData.SubregionFrameEncodingData,
             };
 
             dirty_rects_support = get_dirty_rects_support(sessionInfo, spD3D12VideoDevice.Get(), D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER);
             dirty_rects_support_gpu = get_dirty_rects_support(sessionInfo, spD3D12VideoDevice.Get(), D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_GPU_TEXTURE);
             move_rects_support = get_move_rects_support(sessionInfo, spD3D12VideoDevice.Get());
-            get_gpu_output_stats_support(sessionInfo, capEncoderSupportData1.SupportFlags, spD3D12VideoDevice.Get(), gpu_stats_qp, gpu_stats_satd, gpu_stats_rcbits, psnr_support);
-            sliced_encode_support = get_sliced_encode_support(capEncoderSupportData1.SupportFlags);
+            get_gpu_output_stats_support(sessionInfo, capEncoderSupportData.SupportFlags, spD3D12VideoDevice.Get(), gpu_stats_qp, gpu_stats_satd, gpu_stats_rcbits, psnr_support);
+            sliced_encode_support = get_sliced_encode_support(capEncoderSupportData.SupportFlags);
             qpmap_support = get_qpmap_gpuinput_support(sessionInfo, spD3D12VideoDevice.Get());
             gpu_motion_input_support = get_motion_gpuinput_support(sessionInfo, spD3D12VideoDevice.Get());
             two_pass_support = query_two_pass_support(pscreen, sessionInfo, spD3D12VideoDevice.Get(),
-                                          ((capEncoderSupportData1.SupportFlags &
+                                          ((capEncoderSupportData.SupportFlags &
                                              D3D12_VIDEO_ENCODER_SUPPORT_FLAG_READABLE_RECONSTRUCTED_PICTURE_LAYOUT_AVAILABLE) != 0));
-#endif
          }
       } break;
 #endif
@@ -1659,14 +1635,10 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
          if ((profile != PIPE_VIDEO_PROFILE_HEVC_MAIN) &&
              (profile != PIPE_VIDEO_PROFILE_HEVC_MAIN_10))
          {
-#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
             // Video encode support in underlying d3d12 device needs ID3D12VideoDevice4
             // for this HEVC 422/444 d3d12 gallium driver implementation
             ComPtr<ID3D12VideoDevice4> spD3D12VideoDevice4;
             bRuntimeSupportsProfile = SUCCEEDED(spD3D12VideoDevice->QueryInterface(IID_PPV_ARGS(spD3D12VideoDevice4.GetAddressOf())));
-#else
-            bRuntimeSupportsProfile = false;
-#endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
          }
 
          D3D12_VIDEO_ENCODER_PROFILE_DESC profDesc = {};
@@ -1903,76 +1875,68 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                supportsProfile = supportsProfile &&
                                  d3d12_video_encode_supported_resolution_range(codecDesc, minRes, maxRes, alignRes, spD3D12VideoDevice.Get());
 
-#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
-               D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT2 capEncoderSupportData1 = {};
+               D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT2 capEncoderSupportData = {};
                D3D12_FEATURE_DATA_VIDEO_ENCODER_RESOLUTION_SUPPORT_LIMITS1 resolutionDepCaps;
-#else
-               D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT1 capEncoderSupportData1 = {};
-               D3D12_FEATURE_DATA_VIDEO_ENCODER_RESOLUTION_SUPPORT_LIMITS resolutionDepCaps;
-#endif
-               capEncoderSupportData1.SubregionFrameEncoding = (supportedSliceStructures == PIPE_VIDEO_CAP_SLICE_STRUCTURE_NONE) ?
+               capEncoderSupportData.SubregionFrameEncoding = (supportedSliceStructures == PIPE_VIDEO_CAP_SLICE_STRUCTURE_NONE) ?
                                                                 D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE_FULL_FRAME :
                                                                 D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE_UNIFORM_PARTITIONING_SUBREGIONS_PER_FRAME;
                D3D12_VIDEO_ENCODER_PICTURE_CONTROL_SUBREGIONS_LAYOUT_DATA_SLICES sliceData = { };
-               capEncoderSupportData1.SubregionFrameEncodingData.DataSize = sizeof(sliceData);
-               capEncoderSupportData1.SubregionFrameEncodingData.pSlicesPartition_HEVC = &sliceData;
+               capEncoderSupportData.SubregionFrameEncodingData.DataSize = sizeof(sliceData);
+               capEncoderSupportData.SubregionFrameEncodingData.pSlicesPartition_HEVC = &sliceData;
                d3d12_encode_support_cap_allocations cap_allocations = {};
                supportsProfile = supportsProfile && d3d12_video_encode_support_caps(codecDesc,
                                                                                     maxRes,
                                                                                     encodeFormat,
                                                                                     spD3D12VideoDevice.Get(),
                                                                                     d3d12_codec_support,
-                                                                                    capEncoderSupportData1,
+                                                                                    capEncoderSupportData,
                                                                                     resolutionDepCaps,
                                                                                     maxQualityLevels,
                                                                                     cap_allocations,
                                                                                     saqSupport);
-               bVideoEncodeRequiresTextureArray = (capEncoderSupportData1.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RECONSTRUCTED_FRAMES_REQUIRE_TEXTURE_ARRAYS) != 0;
+               bVideoEncodeRequiresTextureArray = (capEncoderSupportData.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RECONSTRUCTED_FRAMES_REQUIRE_TEXTURE_ARRAYS) != 0;
                if (supportedSliceStructures == PIPE_VIDEO_CAP_SLICE_STRUCTURE_NONE)
                   maxSlices = 0;
                else
                   maxSlices = resolutionDepCaps.MaxSubregionsNumber;
 
                maxIRDuration = resolutionDepCaps.MaxIntraRefreshFrameDuration;
-               isRCMaxFrameSizeSupported = ((capEncoderSupportData1.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RATE_CONTROL_MAX_FRAME_SIZE_AVAILABLE) != 0) ? 1 : 0;
+               isRCMaxFrameSizeSupported = ((capEncoderSupportData.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RATE_CONTROL_MAX_FRAME_SIZE_AVAILABLE) != 0) ? 1 : 0;
 
                memset(&roi_support, 0, sizeof(roi_support));
-               roi_support.bits.roi_rc_qp_delta_support = ((capEncoderSupportData1.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RATE_CONTROL_DELTA_QP_AVAILABLE) != 0) ? 1 : 0;
+               roi_support.bits.roi_rc_qp_delta_support = ((capEncoderSupportData.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RATE_CONTROL_DELTA_QP_AVAILABLE) != 0) ? 1 : 0;
                roi_support.bits.num_roi_regions = roi_support.bits.roi_rc_qp_delta_support ? PIPE_ENC_ROI_REGION_NUM_MAX : 0;
-               roi_support.bits.log2_roi_min_block_pixel_size = static_cast<uint32_t>(std::log2(capEncoderSupportData1.pResolutionDependentSupport[0].QPMapRegionPixelsSize));
-
-#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
+               roi_support.bits.log2_roi_min_block_pixel_size = static_cast<uint32_t>(std::log2(capEncoderSupportData.pResolutionDependentSupport[0].QPMapRegionPixelsSize));
 
                D3D12_VIDEO_ENCODER_INPUT_MAP_SESSION_INFO sessionInfo =
                {
                   // D3D12_VIDEO_ENCODER_CODEC Codec;
-                  capEncoderSupportData1.Codec,
+                  capEncoderSupportData.Codec,
                   // D3D12_VIDEO_ENCODER_PROFILE_DESC Profile;
                   profDesc,
                   // D3D12_VIDEO_ENCODER_LEVEL_SETTING Level;
                   maxLvl,
                   // DXGI_FORMAT InputFormat;
-                  capEncoderSupportData1.InputFormat,
+                  capEncoderSupportData.InputFormat,
                   // D3D12_VIDEO_ENCODER_PICTURE_RESOLUTION_DESC InputResolution;
-                  capEncoderSupportData1.pResolutionList[0],
+                  capEncoderSupportData.pResolutionList[0],
                   // D3D12_VIDEO_ENCODER_CODEC_CONFIGURATION CodecConfiguration;
-                  capEncoderSupportData1.CodecConfiguration,
+                  capEncoderSupportData.CodecConfiguration,
                   // D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE SubregionFrameEncoding;
-                  capEncoderSupportData1.SubregionFrameEncoding,
+                  capEncoderSupportData.SubregionFrameEncoding,
                   // D3D12_VIDEO_ENCODER_PICTURE_CONTROL_SUBREGIONS_LAYOUT_DATA SubregionFrameEncodingData;
-                  capEncoderSupportData1.SubregionFrameEncodingData,
+                  capEncoderSupportData.SubregionFrameEncodingData,
                };
 
                dirty_rects_support = get_dirty_rects_support(sessionInfo, spD3D12VideoDevice.Get(), D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_CPU_BUFFER);
                dirty_rects_support_gpu = get_dirty_rects_support(sessionInfo, spD3D12VideoDevice.Get(), D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_GPU_TEXTURE);
                move_rects_support = get_move_rects_support(sessionInfo, spD3D12VideoDevice.Get());
-               get_gpu_output_stats_support(sessionInfo, capEncoderSupportData1.SupportFlags, spD3D12VideoDevice.Get(), gpu_stats_qp, gpu_stats_satd, gpu_stats_rcbits, psnr_support);
-               sliced_encode_support = get_sliced_encode_support(capEncoderSupportData1.SupportFlags);
+               get_gpu_output_stats_support(sessionInfo, capEncoderSupportData.SupportFlags, spD3D12VideoDevice.Get(), gpu_stats_qp, gpu_stats_satd, gpu_stats_rcbits, psnr_support);
+               sliced_encode_support = get_sliced_encode_support(capEncoderSupportData.SupportFlags);
                gpu_motion_input_support = get_motion_gpuinput_support(sessionInfo, spD3D12VideoDevice.Get());
                two_pass_support = query_two_pass_support(pscreen, sessionInfo, spD3D12VideoDevice.Get(),
-                                                         ((capEncoderSupportData1.SupportFlags &
+                                                         ((capEncoderSupportData.SupportFlags &
                                                             D3D12_VIDEO_ENCODER_SUPPORT_FLAG_READABLE_RECONSTRUCTED_PICTURE_LAYOUT_AVAILABLE) != 0));
-#endif
             }
          }
       } break;
@@ -2208,31 +2172,26 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
 
                DXGI_FORMAT encodeFormat = d3d12_convert_pipe_video_profile_to_dxgi_format(profile);
 
-#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
-               D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT2 capEncoderSupportData1 = {};
+               D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT2 capEncoderSupportData = {};
                D3D12_FEATURE_DATA_VIDEO_ENCODER_RESOLUTION_SUPPORT_LIMITS1 resolutionDepCaps;
-#else
-               D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT1 capEncoderSupportData1 = {};
-               D3D12_FEATURE_DATA_VIDEO_ENCODER_RESOLUTION_SUPPORT_LIMITS resolutionDepCaps;
-#endif
-               capEncoderSupportData1.SubregionFrameEncoding = (supportedSliceStructures == PIPE_VIDEO_CAP_SLICE_STRUCTURE_NONE) ?
+               capEncoderSupportData.SubregionFrameEncoding = (supportedSliceStructures == PIPE_VIDEO_CAP_SLICE_STRUCTURE_NONE) ?
                                                                 D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE_FULL_FRAME :
                                                                 D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE_UNIFORM_GRID_PARTITION;
 
-               capEncoderSupportData1.SubregionFrameEncodingData.DataSize = sizeof(av1TileSupport.TilesConfiguration);
-               capEncoderSupportData1.SubregionFrameEncodingData.pTilesPartition_AV1 = &av1TileSupport.TilesConfiguration;
+               capEncoderSupportData.SubregionFrameEncodingData.DataSize = sizeof(av1TileSupport.TilesConfiguration);
+               capEncoderSupportData.SubregionFrameEncodingData.pTilesPartition_AV1 = &av1TileSupport.TilesConfiguration;
                d3d12_encode_support_cap_allocations cap_allocations = {};
                supportsProfile = supportsProfile && d3d12_video_encode_support_caps(codecDesc,
                                                                                     maxRes,
                                                                                     encodeFormat,
                                                                                     spD3D12VideoDevice.Get(),
                                                                                     d3d12_codec_support,
-                                                                                    capEncoderSupportData1,
+                                                                                    capEncoderSupportData,
                                                                                     resolutionDepCaps,
                                                                                     maxQualityLevels,
                                                                                     cap_allocations,
                                                                                     saqSupport);
-               bVideoEncodeRequiresTextureArray = (capEncoderSupportData1.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RECONSTRUCTED_FRAMES_REQUIRE_TEXTURE_ARRAYS) != 0;                                                                                 
+               bVideoEncodeRequiresTextureArray = (capEncoderSupportData.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RECONSTRUCTED_FRAMES_REQUIRE_TEXTURE_ARRAYS) != 0;
                if (supportedSliceStructures == PIPE_VIDEO_CAP_SLICE_STRUCTURE_NONE)
                   maxSlices = 0;
                else
@@ -2241,11 +2200,11 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                maxIRDuration = resolutionDepCaps.MaxIntraRefreshFrameDuration;
                codecSupport.av1_support.features_ext2.bits.max_tile_num_minus1 = maxSlices - 1;
 
-               isRCMaxFrameSizeSupported = ((capEncoderSupportData1.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RATE_CONTROL_MAX_FRAME_SIZE_AVAILABLE) != 0) ? 1 : 0;
+               isRCMaxFrameSizeSupported = ((capEncoderSupportData.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RATE_CONTROL_MAX_FRAME_SIZE_AVAILABLE) != 0) ? 1 : 0;
                memset(&roi_support, 0, sizeof(roi_support));
-               roi_support.bits.roi_rc_qp_delta_support = ((capEncoderSupportData1.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RATE_CONTROL_DELTA_QP_AVAILABLE) != 0) ? 1 : 0;
+               roi_support.bits.roi_rc_qp_delta_support = ((capEncoderSupportData.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RATE_CONTROL_DELTA_QP_AVAILABLE) != 0) ? 1 : 0;
                roi_support.bits.num_roi_regions = roi_support.bits.roi_rc_qp_delta_support ? PIPE_ENC_ROI_REGION_NUM_MAX : 0;
-               roi_support.bits.log2_roi_min_block_pixel_size = static_cast<uint32_t>(std::log2(capEncoderSupportData1.pResolutionDependentSupport[0].QPMapRegionPixelsSize));
+               roi_support.bits.log2_roi_min_block_pixel_size = static_cast<uint32_t>(std::log2(capEncoderSupportData.pResolutionDependentSupport[0].QPMapRegionPixelsSize));
             }
          }
       } break;

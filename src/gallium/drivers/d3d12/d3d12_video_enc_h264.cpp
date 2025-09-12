@@ -380,7 +380,6 @@ d3d12_video_encoder_update_current_frame_pic_params_info_h264(struct d3d12_video
    if (h264Pic->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_B)
       pH264PicData->List1ReferenceFramesCount = h264Pic->num_ref_idx_l1_active_minus1 + 1;
 
-#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
    if (pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.CPUInput.AppRequested)
    {
       // Use 8 bit qpmap array for H264 picparams (-51, 51 range and int8_t pRateControlQPMap type)
@@ -405,9 +404,8 @@ d3d12_video_encoder_update_current_frame_pic_params_info_h264(struct d3d12_video
       debug_printf("[d3d12_video_encoder_update_current_frame_pic_params_info_h264] Using user-provided CPU 8-bit QP map buffer with %d entries ptr = %p\n",
          pH264PicData->QPMapValuesCount, pH264PicData->pRateControlQPMap);
    }
-#endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
 
-   D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA picParams = {};
+   D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA1 picParams = {};
    picParams.pH264PicData = pH264PicData;
    picParams.DataSize = sizeof(*pH264PicData);
    pD3D12Enc->m_upDPBManager->begin_frame(picParams, bUsedAsReference, picture);
@@ -537,7 +535,6 @@ d3d12_video_encoder_negotiate_current_h264_slices_configuration(struct d3d12_vid
          return false;
       }
    }
-#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
    else if(picture->slice_mode == PIPE_VIDEO_SLICE_MODE_AUTO) {
       if (d3d12_video_encoder_check_subregion_mode_support(
          pD3D12Enc,
@@ -553,7 +550,6 @@ d3d12_video_encoder_negotiate_current_h264_slices_configuration(struct d3d12_vid
          return false;
       }
    }
-#endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
    else {
       requestedSlicesMode = D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE_FULL_FRAME;
       requestedSlicesConfig.NumberOfSlicesPerFrame = 1;
@@ -1073,17 +1069,13 @@ d3d12_video_encoder_update_current_encoder_config_state_h264(struct d3d12_video_
 
    // Will call for d3d12 driver support based on the initial requested features, then
    // try to fallback if any of them is not supported and return the negotiated d3d12 settings
-#if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
-   D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT2 capEncoderSupportData1 = {};
-#else
-   D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT1 capEncoderSupportData1 = {};
-#endif
-   if (!d3d12_video_encoder_negotiate_requested_features_and_d3d12_driver_caps(pD3D12Enc, capEncoderSupportData1)) {
+   D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT2 capEncoderSupportData2 = {};
+   if (!d3d12_video_encoder_negotiate_requested_features_and_d3d12_driver_caps(pD3D12Enc, capEncoderSupportData2)) {
       debug_printf("[d3d12_video_encoder_h264] After negotiating caps, D3D12_FEATURE_VIDEO_ENCODER_SUPPORT1 "
                       "arguments are not supported - "
                       "ValidationFlags: 0x%x - SupportFlags: 0x%x\n",
-                      capEncoderSupportData1.ValidationFlags,
-                      capEncoderSupportData1.SupportFlags);
+                      capEncoderSupportData2.ValidationFlags,
+                      capEncoderSupportData2.SupportFlags);
       return false;
    }
 
@@ -1198,7 +1190,7 @@ uint32_t
 d3d12_video_encoder_build_codec_headers_h264(struct d3d12_video_encoder *pD3D12Enc,
                                              std::vector<uint64_t> &pWrittenCodecUnitsSizes)
 {
-   D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA currentPicParams =
+   D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA1 currentPicParams =
       d3d12_video_encoder_get_current_picture_param_settings(pD3D12Enc);
 
    auto levelDesc = d3d12_video_encoder_get_current_level_desc(pD3D12Enc);
