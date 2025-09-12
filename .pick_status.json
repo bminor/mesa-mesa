@@ -5184,7 +5184,7 @@
         "description": "virgl: Skip resource destruction only when there are actually needed references",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6c1c116a0fb66f2d74976260775ec73025c4a697",
         "notes": null
