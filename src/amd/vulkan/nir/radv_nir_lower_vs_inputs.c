@@ -235,7 +235,7 @@ lower_load_vs_input(nir_builder *b, nir_intrinsic_instr *intrin, lower_vs_inputs
    nir_def *vertex_buffers_arg = ac_nir_load_arg(b, &s->args->ac, s->args->ac.vertex_buffers);
    nir_def *vertex_buffers = nir_pack_64_2x32_split(b, vertex_buffers_arg, nir_imm_int(b, s->gpu_info->address32_hi));
    nir_def *descriptor =
-      ac_nir_load_smem(b, 4, vertex_buffers, nir_imm_int(b, desc_index * 16), 16, ACCESS_CAN_SPECULATE);
+      ac_nir_load_smem(b, 4, vertex_buffers, nir_imm_int(b, desc_index * 16), 4, ACCESS_CAN_SPECULATE);
    nir_def *base_index = calc_vs_input_index(b, location, s);
    nir_def *zero = nir_imm_int(b, 0);
 

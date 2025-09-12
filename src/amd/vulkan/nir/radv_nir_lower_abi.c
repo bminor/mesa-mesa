@@ -367,7 +367,7 @@ lower_abi_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
       nir_def *ptr = nir_pack_64_2x32_split(b, ac_nir_load_arg(b, &s->args->ac, s->args->streamout_buffers),
                                             nir_imm_int(b, s->address32_hi));
       replacement =
-         ac_nir_load_smem(b, 4, ptr, nir_imm_int(b, nir_intrinsic_base(intrin) * 16), 16, ACCESS_CAN_SPECULATE);
+         ac_nir_load_smem(b, 4, ptr, nir_imm_int(b, nir_intrinsic_base(intrin) * 16), 4, ACCESS_CAN_SPECULATE);
       break;
    }
    case nir_intrinsic_load_xfb_state_address_gfx12_amd:
