@@ -9475,7 +9475,7 @@ radv_handle_fbfetch_output(struct radv_cmd_buffer *cmd_buffer)
    const struct radv_rendering_state *render = &cmd_buffer->state.render;
 
    /* Nothing to do when dynamic rendering doesn't use concurrent input attachment writes. */
-   if (render->has_input_attachment_no_concurrent_writes)
+   if (!render->has_input_attachment_concurrent_writes)
       return;
 
    /* Nothing to do when the bound fragment shader doesn't use subpass input attachments. */
@@ -9758,8 +9758,12 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    VkExtent2D screen_scissor = {pdev->image_props.max_dims.width, pdev->image_props.max_dims.height};
+   bool has_input_attachment_concurrent_writes = false;
    struct radv_cmd_stream *cs = cmd_buffer->cs;
    bool disable_constant_encode_ac01 = false;
+
+   if (!(pRenderingInfo->flags & VK_RENDERING_INPUT_ATTACHMENT_NO_CONCURRENT_WRITES_BIT_MESA))
+      has_input_attachment_concurrent_writes = true;
 
    const struct VkSampleLocationsInfoEXT *sample_locs_info =
       vk_find_struct_const(pRenderingInfo->pNext, SAMPLE_LOCATIONS_INFO_EXT);
@@ -9924,8 +9928,7 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
    struct radv_rendering_state *render = &cmd_buffer->state.render;
    render->active = true;
    render->has_image_views = true;
-   render->has_input_attachment_no_concurrent_writes =
-      !!(pRenderingInfo->flags & VK_RENDERING_INPUT_ATTACHMENT_NO_CONCURRENT_WRITES_BIT_MESA);
+   render->has_input_attachment_concurrent_writes = has_input_attachment_concurrent_writes;
    render->area = pRenderingInfo->renderArea;
    render->view_mask = pRenderingInfo->viewMask;
    render->layer_count = pRenderingInfo->layerCount;
