@@ -1746,7 +1746,7 @@ panfrost_create_sampler_view_bo(struct panfrost_sampler_view *so,
          return;
       }
 
-      so->state = panfrost_pool_take_ref(&ctx->descs, payload.gpu);
+      so->state = panfrost_pool_take_ref(pool, payload.gpu);
 
       void *tex = (PAN_ARCH >= 6) ? &so->bifrost_descriptor : payload.cpu;
 
@@ -1811,7 +1811,7 @@ panfrost_create_sampler_view_bo(struct panfrost_sampler_view *so,
       return;
    }
 
-   so->state = panfrost_pool_take_ref(&ctx->descs, payload.gpu);
+   so->state = panfrost_pool_take_ref(pool, payload.gpu);
 
    void *tex = (PAN_ARCH >= 6) ? &so->bifrost_descriptor : payload.cpu;
 

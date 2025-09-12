@@ -5474,7 +5474,7 @@
         "description": "panfrost: take reference from pool used for allocation",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0795f3d7e40120329e81094ffc1085a1178dbaaf",
         "notes": null
