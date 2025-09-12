@@ -82,7 +82,7 @@ static void virgl_hw_res_destroy(struct virgl_drm_winsys *qdws,
          return;
       }
 
-      if (!--res->needed_references) {
+      if (--res->needed_references > 0) {
          mtx_unlock(&qdws->bo_handles_mutex);
          return;
       }
