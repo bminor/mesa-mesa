@@ -3386,8 +3386,8 @@ static pco_instr *trans_const(trans_ctx *tctx, nir_load_const_instr *nconst)
       return pco_mov(&tctx->b, dest, imm_reg);
    }
 
-   /* TODO: support more bit sizes/components. */
-   assert(num_bits == 32);
+   /* No 64-bit support yet. */
+   assert(num_bits <= 32);
 
    if (pco_ref_is_scalar(dest)) {
       assert(chans == 1);
@@ -3395,6 +3395,10 @@ static pco_instr *trans_const(trans_ctx *tctx, nir_load_const_instr *nconst)
       uint64_t val = nir_const_value_as_uint(nconst->value[0], num_bits);
       pco_ref imm =
          pco_ref_imm(val, pco_bits(num_bits), pco_ref_get_dtype(dest));
+
+      /* Override to 32-bit. */
+      dest = pco_ref_bits(dest, 32);
+      imm = pco_ref_bits(imm, 32);
 
       return pco_movi32(&tctx->b, dest, imm);
    }
