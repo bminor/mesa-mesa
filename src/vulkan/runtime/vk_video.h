@@ -245,6 +245,7 @@ struct vk_video_h265_slice_params {
    uint8_t num_ref_idx_l0_active;
    uint8_t num_ref_idx_l1_active;
    uint8_t rpl_modification_flag[2];
+   uint32_t list_entry_lx[2][32];
    uint8_t cabac_init_idc;
    int8_t slice_qp_delta;
    int8_t slice_cb_qp_offset;

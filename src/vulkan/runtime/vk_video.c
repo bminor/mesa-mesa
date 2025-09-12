@@ -1219,6 +1219,7 @@ vk_fill_video_h265_reference_info(const VkVideoDecodeInfoKHR *frame_info,
    uint8_t list_cnt = slice_params->slice_type == STD_VIDEO_H265_SLICE_TYPE_B ? 2 : 1;
    uint8_t list_idx;
    int i, j;
+   struct vk_video_h265_reference ref_slots_tmp[2][8] = { 0, };
 
    for (list_idx = 0; list_idx < list_cnt; list_idx++) {
       /* The order is
@@ -1236,14 +1237,25 @@ vk_fill_video_h265_reference_info(const VkVideoDecodeInfoKHR *frame_info,
          const uint8_t *cur_rps = rps[i];
 
          for (j = 0; (cur_rps[j] != 0xff) && ((j + ref_idx) < 8); j++) {
-            ref_slots[list_idx][j + ref_idx].slot_index = cur_rps[j];
-            ref_slots[list_idx][j + ref_idx].pic_order_cnt = vk_video_h265_poc_by_slot(frame_info, cur_rps[j]);
+            ref_slots_tmp[list_idx][j + ref_idx].slot_index = cur_rps[j];
+            ref_slots_tmp[list_idx][j + ref_idx].pic_order_cnt =
+               vk_video_h265_poc_by_slot(frame_info, cur_rps[j]);
          }
          ref_idx += j;
       }
 
-      /* TODO: should handle cases where rpl_modification_flag is true. */
-      assert(!slice_params->rpl_modification_flag[0] && !slice_params->rpl_modification_flag[1]);
+      if (slice_params->rpl_modification_flag[list_idx]) {
+         uint32_t nb_refs = list_idx == 0 ? slice_params->num_ref_idx_l0_active :
+                                            slice_params->num_ref_idx_l1_active;
+         for (i = 0; i < nb_refs; i++) {
+            ref_slots[list_idx][i].slot_index =
+               ref_slots_tmp[list_idx][slice_params->list_entry_lx[list_idx][i]].slot_index;
+            ref_slots[list_idx][i].pic_order_cnt =
+               ref_slots_tmp[list_idx][slice_params->list_entry_lx[list_idx][i]].pic_order_cnt;
+         }
+      } else {
+         memcpy(ref_slots, &ref_slots_tmp, sizeof(ref_slots_tmp));
+      }
    }
 }
 
@@ -1431,6 +1443,8 @@ vk_video_parse_h265_slice_header(const struct VkVideoDecodeInfoKHR *frame_info,
       /* colour_plane_id */
       vl_rbsp_u(&rbsp, 2);
 
+   uint32_t nb_refs = 0;
+
    if (!pic_info->pStdPictureInfo->flags.IdrPicFlag) {
       /* slice_pic_order_cnt_lsb */
       params->pic_order_cnt_lsb =
@@ -1455,6 +1469,8 @@ vk_video_parse_h265_slice_header(const struct VkVideoDecodeInfoKHR *frame_info,
                uint8_t used = vl_rbsp_u(&rbsp, 1);
                if (!used)
                   vl_rbsp_u(&rbsp, 1);
+               else
+                  nb_refs++;
             }
          } else {
             /* num_negative_pics */
@@ -1466,24 +1482,38 @@ vk_video_parse_h265_slice_header(const struct VkVideoDecodeInfoKHR *frame_info,
                /* delta_poc_s0_minus1 */
                vl_rbsp_ue(&rbsp);
                /* used_by_curr_pic_s0_flag */
-               vl_rbsp_u(&rbsp, 1);
+               if (vl_rbsp_u(&rbsp, 1))
+                  nb_refs++;
             }
 
             for(unsigned i = 0; i < num_pos_pics; ++i) {
                /* delta_poc_s1_minus1 */
                vl_rbsp_ue(&rbsp);
                /* used_by_curr_pic_s0_flag */
-               vl_rbsp_u(&rbsp, 1);
+               if (vl_rbsp_u(&rbsp, 1))
+                  nb_refs++;
             }
          }
-
       } else {
+         unsigned st_rps_idx = 0;
          unsigned num_st_rps = sps->num_short_term_ref_pic_sets;
 
          int numbits = util_logbase2_ceil(num_st_rps);
          if (numbits > 0)
             /* short_term_ref_pic_set_idx */
-            vl_rbsp_u(&rbsp, numbits);
+            st_rps_idx = vl_rbsp_u(&rbsp, numbits);
+
+         const StdVideoH265ShortTermRefPicSet *st_rps =
+            &sps->pShortTermRefPicSet[st_rps_idx];
+
+         for (unsigned i = 0; i < st_rps->num_negative_pics; i++) {
+            if (st_rps->used_by_curr_pic_s0_flag & (1 << i))
+               nb_refs++;
+         }
+         for (unsigned i = 0; i < st_rps->num_positive_pics; i++) {
+            if (st_rps->used_by_curr_pic_s1_flag & (1 << i))
+               nb_refs++;
+         }
       }
 
       if (sps->flags.long_term_ref_pics_present_flag) {
@@ -1501,11 +1531,15 @@ vk_video_parse_h265_slice_header(const struct VkVideoDecodeInfoKHR *frame_info,
                   /* lt_idx_sps */
                   vl_rbsp_u(&rbsp,
                         util_logbase2_ceil(sps->num_long_term_ref_pics_sps));
+
+               if (sps->pLongTermRefPicsSps->used_by_curr_pic_lt_sps_flag)
+                  nb_refs++;
             } else {
                /* poc_lsb_lt */
                vl_rbsp_u(&rbsp, sps->log2_max_pic_order_cnt_lsb_minus4 + 4);
                /* used_by_curr_pic_lt_flag */
-               vl_rbsp_u(&rbsp, 1);
+               if (vl_rbsp_u(&rbsp, 1))
+                  nb_refs++;
             }
 
             /* poc_msb_present */
@@ -1544,13 +1578,13 @@ vk_video_parse_h265_slice_header(const struct VkVideoDecodeInfoKHR *frame_info,
             params->num_ref_idx_l1_active = vl_rbsp_ue(&rbsp) + 1;
       }
 
-      if (pps->flags.lists_modification_present_flag) {
+      if (pps->flags.lists_modification_present_flag && nb_refs > 1) {
          params->rpl_modification_flag[0] = vl_rbsp_u(&rbsp, 1);
          if (params->rpl_modification_flag[0]) {
             for (int i = 0; i < params->num_ref_idx_l0_active; i++) {
                /* list_entry_l0 */
-               vl_rbsp_u(&rbsp,
-                     util_logbase2_ceil(params->num_ref_idx_l0_active + params->num_ref_idx_l1_active));
+               params->list_entry_lx[0][i] = vl_rbsp_u(&rbsp,
+                     util_logbase2_ceil(nb_refs));
             }
          }
 
@@ -1559,8 +1593,8 @@ vk_video_parse_h265_slice_header(const struct VkVideoDecodeInfoKHR *frame_info,
             if (params->rpl_modification_flag[1]) {
                for (int i = 0; i < params->num_ref_idx_l1_active; i++) {
                   /* list_entry_l1 */
-                  vl_rbsp_u(&rbsp,
-                        util_logbase2_ceil(params->num_ref_idx_l0_active + params->num_ref_idx_l1_active));
+                  params->list_entry_lx[1][i] = vl_rbsp_u(&rbsp,
+                        util_logbase2_ceil(nb_refs));
                }
             }
          }
