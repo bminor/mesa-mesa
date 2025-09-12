@@ -148,7 +148,7 @@ pvr_drm_display_buffer_create(struct pvr_drm_winsys *drm_ws,
    if (result != VK_SUCCESS)
       return result;
 
-   ret = drmPrimeHandleToFD(drm_ws->base.display_fd, handle, DRM_CLOEXEC, &fd);
+   ret = drmPrimeHandleToFD(drm_ws->base.display_fd, handle, DRM_CLOEXEC | DRM_RDWR, &fd);
    pvr_winsys_helper_display_buffer_destroy(&drm_ws->base, handle);
    if (ret)
       return vk_error(NULL, VK_ERROR_OUT_OF_HOST_MEMORY);
@@ -290,7 +290,7 @@ VkResult pvr_drm_winsys_buffer_get_fd(struct pvr_winsys_bo *bo,
 
    ret = drmPrimeHandleToFD(drm_ws->base.render_fd,
                             drm_bo->handle,
-                            DRM_CLOEXEC,
+                            DRM_CLOEXEC | DRM_RDWR,
                             fd_out);
    if (ret)
       return vk_error(NULL, VK_ERROR_OUT_OF_HOST_MEMORY);

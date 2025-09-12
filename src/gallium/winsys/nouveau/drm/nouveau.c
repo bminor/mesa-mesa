@@ -852,7 +852,7 @@ nouveau_bo_set_prime(struct nouveau_bo *bo, int *prime_fd)
    struct nouveau_bo_priv *nvbo = nouveau_bo(bo);
    int ret;
 
-   ret = drmPrimeHandleToFD(drm->fd, nvbo->base.handle, O_CLOEXEC, prime_fd);
+   ret = drmPrimeHandleToFD(drm->fd, nvbo->base.handle, DRM_CLOEXEC | DRM_RDWR, prime_fd);
    if (ret)
       return ret;
 

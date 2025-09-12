@@ -1327,7 +1327,7 @@ static bool radeon_winsys_bo_get_handle(struct radeon_winsys *rws,
    } else if (whandle->type == WINSYS_HANDLE_TYPE_KMS) {
       whandle->handle = bo->handle;
    } else if (whandle->type == WINSYS_HANDLE_TYPE_FD) {
-      if (drmPrimeHandleToFD(ws->fd, bo->handle, DRM_CLOEXEC, (int*)&whandle->handle))
+      if (drmPrimeHandleToFD(ws->fd, bo->handle, DRM_CLOEXEC | DRM_RDWR, (int*)&whandle->handle))
          return false;
    }
 

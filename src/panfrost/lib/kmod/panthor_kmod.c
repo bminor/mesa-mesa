@@ -511,7 +511,7 @@ panthor_kmod_bo_wait(struct pan_kmod_bo *bo, int64_t timeout_ns,
        */
       int dmabuf_fd;
       int ret =
-         drmPrimeHandleToFD(bo->dev->fd, bo->handle, DRM_CLOEXEC, &dmabuf_fd);
+         drmPrimeHandleToFD(bo->dev->fd, bo->handle, DRM_CLOEXEC | DRM_RDWR, &dmabuf_fd);
 
       if (ret) {
          mesa_loge("drmPrimeHandleToFD() failed (err=%d)", errno);
@@ -592,7 +592,7 @@ panthor_kmod_bo_attach_sync_point(struct pan_kmod_bo *bo, uint32_t sync_handle,
       }
 
       ret =
-         drmPrimeHandleToFD(bo->dev->fd, bo->handle, DRM_CLOEXEC, &dmabuf_fd);
+         drmPrimeHandleToFD(bo->dev->fd, bo->handle, DRM_CLOEXEC | DRM_RDWR, &dmabuf_fd);
       if (ret) {
          mesa_loge("drmPrimeHandleToFD() failed (err=%d)", errno);
          close(isync.fd);
@@ -654,7 +654,7 @@ panthor_kmod_bo_get_sync_point(struct pan_kmod_bo *bo, uint32_t *sync_handle,
        */
       int dmabuf_fd;
       int ret =
-         drmPrimeHandleToFD(bo->dev->fd, bo->handle, DRM_CLOEXEC, &dmabuf_fd);
+         drmPrimeHandleToFD(bo->dev->fd, bo->handle, DRM_CLOEXEC | DRM_RDWR, &dmabuf_fd);
       if (ret) {
          mesa_loge("drmPrimeHandleToFD() failed (err=%d)\n", errno);
          return -1;

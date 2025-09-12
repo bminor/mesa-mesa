@@ -2103,7 +2103,7 @@ device_alloc_for_wsi(struct v3dv_device *device,
 
    int fd;
    err =
-      drmPrimeHandleToFD(display_fd, create_dumb.handle, O_CLOEXEC, &fd);
+      drmPrimeHandleToFD(display_fd, create_dumb.handle, DRM_CLOEXEC | DRM_RDWR, &fd);
    if (err < 0)
       goto fail_export;
 
@@ -2916,7 +2916,7 @@ v3dv_GetMemoryFdKHR(VkDevice _device,
    int fd, ret;
    ret = drmPrimeHandleToFD(device->pdevice->render_fd,
                             mem->bo->handle,
-                            DRM_CLOEXEC, &fd);
+                            DRM_CLOEXEC | DRM_RDWR, &fd);
    if (ret)
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
