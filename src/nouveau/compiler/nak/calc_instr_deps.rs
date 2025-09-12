@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: MIT
 
 use crate::api::{GetDebugFlags, DEBUG};
-use crate::dataflow::ForwardDataflow;
 use crate::ir::*;
 use crate::opt_instr_sched_common::estimate_block_weight;
 use crate::reg_tracker::RegTracker;
 
+use compiler::dataflow::ForwardDataflow;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::cmp::max;
 use std::ops::Range;

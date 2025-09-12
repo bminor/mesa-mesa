@@ -5,6 +5,7 @@ _compiler_rs_sources = [
   'as_slice.rs',
   'bitset.rs',
   'cfg.rs',
+  'dataflow.rs',
   'memstream.rs',
   'nir_instr_printer.rs',
   'nir.rs',

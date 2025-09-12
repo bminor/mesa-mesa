@@ -10,8 +10,8 @@
 //! this terminology.
 //! https://en.wikipedia.org/wiki/Data-flow_analysis#Basic_principles
 
-use compiler::bitset::BitSet;
-use compiler::cfg::CFG;
+use crate::bitset::BitSet;
+use crate::cfg::CFG;
 use std::collections::VecDeque;
 
 /// A FIFO where each item is unique
@@ -187,8 +187,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use compiler::bitset::BitSet;
-    use compiler::cfg::CFGBuilder;
+    use crate::bitset::BitSet;
+    use crate::cfg::CFGBuilder;
     use std::hash::RandomState;
 
     fn check_graph_reachability(
