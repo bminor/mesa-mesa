@@ -88,7 +88,7 @@ Interference::initialize(ComponentInterference& comp_interference,
       comp_interference.prepare_row(row);
       for (size_t col = 0; col < row; ++col) {
          auto& col_entry = clr[col];
-         if (row_entry.m_end >= col_entry.m_start && row_entry.m_start <= col_entry.m_end)
+         if (row_entry.m_end > col_entry.m_start && row_entry.m_start < col_entry.m_end)
             comp_interference.add(row, col);
       }
    }
