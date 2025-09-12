@@ -531,6 +531,9 @@ static nir_def *lower_pfo(nir_builder *b, nir_instr *instr, void *cb_data)
 
 static bool lower_isp_fb(nir_builder *b, struct pfo_state *state)
 {
+   if (b->shader->info.internal)
+      return false;
+
    bool has_depth_feedback = !!state->depth_feedback_src;
    if (b->shader->info.writes_memory && !has_depth_feedback) {
       nir_variable *var_pos = nir_get_variable_with_location(b->shader,
@@ -557,8 +560,20 @@ static bool lower_isp_fb(nir_builder *b, struct pfo_state *state)
       has_depth_feedback = true;
    }
 
-   if (!has_depth_feedback && !state->has_discards)
-      return false;
+   if (!state->has_discards) {
+      b->cursor = nir_after_instr(&state->last_discard_store->instr);
+
+      nir_def *smp_msk = nir_ishl(b, nir_imm_int(b, 1), nir_load_sample_id(b));
+      smp_msk = nir_iand(b, smp_msk, nir_load_sample_mask_in(b));
+      nir_def *cond = nir_ieq_imm(b, smp_msk, 0);
+
+      nir_def *val = nir_load_reg(b, state->discard_cond_reg);
+      val = nir_ior(b, val, cond);
+      state->last_discard_store =
+         nir_build_store_reg(b, val, state->discard_cond_reg);
+
+      state->has_discards = true;
+   }
 
    /* Insert isp feedback instruction before the first store,
     * or if there are no stores, at the end.
