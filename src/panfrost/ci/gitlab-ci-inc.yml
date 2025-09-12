@@ -14,6 +14,7 @@
         - src/panfrost/ci/$GPU_VERSION-fails.txt
         - src/panfrost/ci/$GPU_VERSION-flakes.txt
         - src/panfrost/ci/$GPU_VERSION-skips.txt
+        - src/panfrost/ci/$GPU_VERSION-gles2-extensions.txt
         - src/panfrost/ci/$DRIVER_NAME-skips.txt
         - src/panfrost/ci/$PIGLIT_TRACES_FILE
         - src/panfrost/genxml/*
