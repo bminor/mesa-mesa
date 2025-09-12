@@ -61,9 +61,6 @@ brw_do_emit_fb_writes(brw_shader &s, int nr_color_regions, bool replicate_alpha)
    struct brw_wm_prog_data *prog_data = brw_wm_prog_data(s.prog_data);
    const brw_builder bld = brw_builder(&s);
 
-   const bool double_rt_writes = s.devinfo->ver == 11 &&
-      prog_data->coarse_pixel_dispatch == INTEL_SOMETIMES;
-
    brw_fb_write_inst *write = NULL;
    for (int target = 0; target < nr_color_regions; target++) {
       /* Skip over outputs that weren't written. */
@@ -82,7 +79,6 @@ brw_do_emit_fb_writes(brw_shader &s, int nr_color_regions, bool replicate_alpha)
                                        target, 4, false);
    }
 
-   bool flag_dummy_message = write && double_rt_writes;
    if (write) {
       write->last_rt = true;
       write->eot = true;
@@ -114,7 +110,6 @@ brw_do_emit_fb_writes(brw_shader &s, int nr_color_regions, bool replicate_alpha)
       write = brw_emit_single_fb_write(s, bld, tmp, reg_undef, reg_undef,
                                       0, 4, use_null_rt);
       write->last_rt = true;
-      write->has_no_mask_send_params = flag_dummy_message;
       write->eot = true;
    }
 }

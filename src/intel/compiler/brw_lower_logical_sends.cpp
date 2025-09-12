@@ -467,11 +467,13 @@ lower_fb_write_logical_send(const brw_builder &bld, brw_fb_write_inst *write,
       brw_fb_write_desc(devinfo, target, msg_ctl, last_rt,
                         0 /* coarse_rt_write */);
 
+   const bool double_rt_writes = devinfo->verx10 == 110 &&
+      prog_data->coarse_pixel_dispatch == INTEL_SOMETIMES;
+
    brw_reg desc_reg = brw_imm_ud(0);
-   if (prog_data->coarse_pixel_dispatch == INTEL_SOMETIMES &&
-       !write->has_no_mask_send_params) {
+   if (prog_data->coarse_pixel_dispatch == INTEL_SOMETIMES) {
       assert(devinfo->ver >= 11);
-      if (devinfo->ver != 11) {
+      if (!double_rt_writes) {
          const brw_builder &ubld =
             bld.scalar_group().annotate("Coarse bit");
          brw_reg coarse_bit =
@@ -518,8 +520,6 @@ lower_fb_write_logical_send(const brw_builder &bld, brw_fb_write_inst *write,
    send->check_tdr = true;
    send->has_side_effects = true;
 
-   const bool double_rt_writes = devinfo->ver == 11 &&
-      prog_data->coarse_pixel_dispatch == INTEL_SOMETIMES;
    if (double_rt_writes) {
       brw_check_dynamic_msaa_flag(bld, prog_data,
                                   INTEL_MSAA_FLAG_COARSE_RT_WRITES);
