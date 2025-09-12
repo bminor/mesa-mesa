@@ -4614,7 +4614,7 @@
         "description": "v3d: Don't enable Early-z with discards when stencil updates are enabled",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5b951bcdd7faf1cbfc189a953c33334378ada3df",
         "notes": null
