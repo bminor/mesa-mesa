@@ -427,7 +427,7 @@ spec@!opengl 2.1@polygon-stipple-fs,Fail
 # Works when run individually, but fail consistently on the CI
 dEQP-GLES3.functional.texture.specification.teximage2d_pbo.rgba32i_cube,Fail
 
-# uprev Piglit in Mesa
+# https://gitlab.freedesktop.org/mesa/piglit/-/merge_requests/1034
 spec@glsl-1.40@uniform_buffer@two-stages,Fail
 
 # RPI4 only supports 4RT, so this tests with 8RT will fail

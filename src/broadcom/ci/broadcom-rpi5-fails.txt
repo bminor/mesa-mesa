@@ -350,7 +350,7 @@ spec@arb_clear_texture@arb_clear_texture-sized-formats,Fail
 spec@!opengl 2.0@max-samplers border,Fail
 spec@!opengl 2.0@max-samplers,Fail
 
-# uprev Piglit in Mesa
+# https://gitlab.freedesktop.org/mesa/piglit/-/merge_requests/1034
 spec@glsl-1.40@uniform_buffer@two-stages,Fail
 
 # Precision differences between expected and obtained; works if
