@@ -289,6 +289,10 @@ static void gfx10_emit_barrier(struct si_context *ctx, struct radeon_cmdbuf *cs)
    } else if (flags & SI_BARRIER_PFP_SYNC_ME) {
       si_cp_pfp_sync_me(cs);
    }
+
+   /* Increase task wait count if not done before. */
+   if (ctx->task_wait_count == ctx->last_task_wait_count)
+      ctx->task_wait_count++;
 }
 
 static void gfx6_emit_barrier(struct si_context *sctx, struct radeon_cmdbuf *cs)
