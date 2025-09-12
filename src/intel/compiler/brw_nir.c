@@ -2115,6 +2115,54 @@ nir_shader_has_local_variables(const nir_shader *nir)
    return false;
 }
 
+static bool
+lower_txd_cb(const nir_tex_instr *tex, const void *data)
+{
+   const struct intel_device_info *devinfo = data;
+
+   int min_lod_index = nir_tex_instr_src_index(tex, nir_tex_src_min_lod);
+   if (tex->is_shadow && min_lod_index >= 0)
+      return true;
+
+   int offset_index = nir_tex_instr_src_index(tex, nir_tex_src_offset);
+   if (tex->is_shadow && offset_index >= 0 && min_lod_index >= 0)
+      return true;
+
+   /* Cases that require a sampler header and the payload is already too large
+    * for the HW to handle.
+    */
+   const int sampler_offset_idx =
+      nir_tex_instr_src_index(tex, nir_tex_src_sampler_offset);
+   if (min_lod_index >= 0 && sampler_offset_idx >= 0) {
+      if (!nir_src_is_const(tex->src[sampler_offset_idx].src) ||
+          (nir_src_is_const(tex->src[sampler_offset_idx].src) &&
+           (tex->sampler_index +
+            nir_src_as_uint(tex->src[sampler_offset_idx].src)) >= 16))
+         return true;
+   }
+
+   const int sampler_handle_idx =
+      nir_tex_instr_src_index(tex, nir_tex_src_sampler_handle);
+   if (sampler_handle_idx >= 0 && min_lod_index >= 0)
+      return true;
+
+   if (tex->sampler_dim == GLSL_SAMPLER_DIM_CUBE)
+      return true;
+
+   if (devinfo->verx10 >= 125) {
+      /* For below, See bspec 45942, "Enable new message layout for cube
+       * array"
+       */
+      if (tex->sampler_dim == GLSL_SAMPLER_DIM_3D)
+         return true;
+
+      if (tex->is_array)
+         return true;
+   }
+
+   return false;
+}
+
 /* Prepare the given shader for codegen
  *
  * This function is intended to be called right before going into the actual
@@ -2132,21 +2180,15 @@ brw_postprocess_nir_opts(nir_shader *nir, const struct brw_compiler *compiler,
       .lower_txp = ~0,
       .lower_txf_offset = true,
       .lower_rect_offset = true,
-      .lower_txd_cube_map = true,
-      /* For below, See bspec 45942, "Enable new message layout for cube array" */
-      .lower_txd_3d = devinfo->verx10 >= 125,
-      .lower_txd_array = devinfo->verx10 >= 125,
       .lower_txb_shadow_clamp = true,
-      .lower_txd_shadow_clamp = true,
-      .lower_txd_offset_clamp = true,
       .lower_tg4_offsets = true,
       .lower_txs_lod = true, /* Wa_14012320009 */
       .lower_offset_filter =
          devinfo->verx10 >= 125 ? lower_xehp_tg4_offset_filter : NULL,
-      .lower_txd_clamp_bindless_sampler = true,
-      .lower_txd_clamp_if_sampler_index_not_lt_16 = true,
       .lower_invalid_implicit_lod = true,
       .lower_index_to_offset = true,
+      .lower_txd_cb = lower_txd_cb,
+      .lower_txd_data = devinfo,
    };
 
    /* In the case where TG4 coords are lowered to offsets and we have a
