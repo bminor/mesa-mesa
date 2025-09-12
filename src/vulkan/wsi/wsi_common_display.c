@@ -75,6 +75,7 @@
 #include "util/hash_table.h"
 #include "util/list.h"
 #include "util/os_time.h"
+#include "util/u_overflow.h"
 #include "util/timespec.h"
 
 #include "vk_device.h"
@@ -491,12 +492,12 @@ wsi_display_mode_refresh(struct wsi_display_mode *wsi)
 static uint64_t wsi_rel_to_abs_time(uint64_t rel_time)
 {
    uint64_t current_time = os_time_get_nano();
+   uint64_t abs;
 
-   /* check for overflow */
-   if (rel_time > UINT64_MAX - current_time)
+   if (util_add_overflow(uint64_t, current_time, rel_time, &abs))
       return UINT64_MAX;
 
-   return current_time + rel_time;
+   return abs;
 }
 
 static struct wsi_display_mode *
