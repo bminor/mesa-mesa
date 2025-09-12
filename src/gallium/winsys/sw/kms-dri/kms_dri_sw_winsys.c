@@ -42,6 +42,7 @@
 #include <fcntl.h>
 #include <xf86drm.h>
 
+#include "drm-uapi/drm_fourcc.h"
 #include "util/compiler.h"
 #include "util/format/u_formats.h"
 #include "pipe/p_state.h"
@@ -514,12 +515,14 @@ kms_sw_displaytarget_get_handle(struct sw_winsys *winsys,
       whandle->handle = kms_sw_dt->handle;
       whandle->stride = plane->stride;
       whandle->offset = plane->offset;
+      whandle->modifier = DRM_FORMAT_MOD_LINEAR;
       return true;
    case WINSYS_HANDLE_TYPE_FD:
       if (!drmPrimeHandleToFD(kms_sw->fd, kms_sw_dt->handle,
                              DRM_CLOEXEC | DRM_RDWR, (int*)&whandle->handle)) {
          whandle->stride = plane->stride;
          whandle->offset = plane->offset;
+         whandle->modifier = DRM_FORMAT_MOD_LINEAR;
          return true;
       }
       FALLTHROUGH;
