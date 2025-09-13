@@ -2900,7 +2900,7 @@ zink_update_vk_sample_locations(struct zink_context *ctx)
             unsigned ri = (pixel_y * grid_size.width + pixel_x % grid_size.width);
             ri = ri * samples + sample;
             ctx->vk_sample_locations[wi].x = (ctx->sample_locations[ri] & 0xf) / 16.0f;
-            ctx->vk_sample_locations[wi].y = (16 - (ctx->sample_locations[ri] >> 4)) / 16.0f;
+            ctx->vk_sample_locations[wi].y = (ctx->sample_locations[ri] >> 4) / 16.0f;
          }
       }
    }

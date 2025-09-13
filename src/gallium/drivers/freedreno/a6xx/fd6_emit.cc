@@ -357,7 +357,7 @@ build_sample_locations(struct fd6_emit *emit)
    uint32_t sample_locations = 0;
    for (int i = 0; i < 4; i++) {
       float x = (ctx->sample_locations[i] & 0xf) / 16.0f;
-      float y = (16 - (ctx->sample_locations[i] >> 4)) / 16.0f;
+      float y = (ctx->sample_locations[i] >> 4) / 16.0f;
 
       x = CLAMP(x, 0.0f, 0.9375f);
       y = CLAMP(y, 0.0f, 0.9375f);
