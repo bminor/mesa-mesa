@@ -2884,7 +2884,7 @@
         "description": "anv: Fix tiling for AV1 IntraBC surface on Gfx125+",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3c7a834ebc7e6aefa87e5e902491025de5e7d82a",
         "notes": null
