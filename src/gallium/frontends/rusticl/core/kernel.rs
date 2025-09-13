@@ -1407,6 +1407,34 @@ impl Kernel {
         })
     }
 
+    /// Returns a mutable reference to the `Kernel` corresponding to the
+    /// provided pointer.
+    ///
+    /// # Safety
+    ///
+    /// The provided pointer must be valid for a read of `ptr` size.
+    /// Additionally, no other threads must hold a reference to this
+    /// `cl_kernel`.
+    pub unsafe fn mut_ref_from_raw<'a>(kernel: cl_kernel) -> CLResult<&'a mut Self> {
+        let ty = crate::api::icd::CLObjectBase::<CL_INVALID_KERNEL>::check_ptr(kernel.cast())?;
+        if ty != RusticlTypes::Kernel {
+            return Err(CL_INVALID_KERNEL);
+        }
+
+        let offset = ::std::mem::offset_of!(Kernel, base);
+
+        // SAFETY: We offset the pointer back from the ICD specified base type to our
+        //         internal type.
+        let obj_ptr: *mut Self = unsafe { kernel.byte_sub(offset) }.cast();
+
+        // Check at compile-time that we indeed got the right path
+        unsafe {
+            let _: &crate::api::icd::CLObjectBase<CL_INVALID_KERNEL> = &(*obj_ptr).base;
+        }
+
+        Ok(unsafe { &mut *obj_ptr })
+    }
+
     pub fn suggest_local_size(
         &self,
         d: &Device,
