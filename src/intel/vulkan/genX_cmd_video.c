@@ -1531,6 +1531,9 @@ anv_av1_decode_video_tile(struct anv_cmd_buffer *cmd_buffer,
 
       buf.IntraBCDecodedOutputFrameBufferAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
          .MOCS = anv_mocs(cmd_buffer->device, buf.IntraBCDecodedOutputFrameBufferAddress.bo, 0),
+#if GFX_VERx10 >= 125
+         .TiledResourceMode = TRMODE_TILEF,
+#endif
       };
 
       if (use_internal_cache_mem) {
