@@ -1761,7 +1761,7 @@ impl Kernel {
             ctx.bind_kernel(&nir_kernel_builds, variant)?;
             ctx.bind_sampler_states(samplers);
             ctx.bind_sampler_views(sviews);
-            ctx.bind_shader_images(&iviews);
+            ctx.bind_shader_images(iviews);
             ctx.set_global_binding(resources, &mut globals);
 
             for z in 0..grid[2].div_ceil(hw_max_grid[2]) {

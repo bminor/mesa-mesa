@@ -547,7 +547,7 @@ impl PipeContext {
         }
     }
 
-    pub fn set_sampler_views(&self, mut views: Vec<PipeSamplerView>, unbind_trailing: u32) {
+    pub fn set_sampler_views(&self, views: &mut [PipeSamplerView], unbind_trailing: u32) {
         unsafe {
             self.pipe.as_ref().set_sampler_views.unwrap()(
                 self.pipe.as_ptr(),
@@ -555,7 +555,7 @@ impl PipeContext {
                 0,
                 views.len() as u32,
                 unbind_trailing,
-                PipeSamplerView::as_pipe(views.as_mut_slice()),
+                PipeSamplerView::as_pipe(views),
             );
         }
     }

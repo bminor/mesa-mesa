@@ -2154,7 +2154,7 @@ impl Image {
         ))
     }
 
-    pub fn sampler_view<'c>(&self, ctx: &'c QueueContext) -> CLResult<PipeSamplerView<'c, '_>> {
+    pub fn sampler_view<'c>(&self, ctx: &'c QueueContext) -> CLResult<PipeSamplerView<'c>> {
         let res = self.get_res_for_access(ctx, RWFlags::RD)?;
 
         let mut template = if let Some(Mem::Buffer(parent)) = self.parent() {

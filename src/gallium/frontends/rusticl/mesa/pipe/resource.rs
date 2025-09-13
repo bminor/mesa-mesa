@@ -353,17 +353,16 @@ impl ToOwned for PipeResource {
 ///
 /// It deals with the refcounting and frees the object automatically if not needed anymore.
 #[repr(transparent)]
-pub struct PipeSamplerView<'c, 'r> {
+pub struct PipeSamplerView<'c> {
     view: NonNull<pipe_sampler_view>,
     // the pipe_sampler_view object references both a context and a resource.
     _ctx: PhantomData<&'c PipeContext>,
-    _res: PhantomData<&'r PipeResourceOwned>,
 }
 
-impl<'c, 'r> PipeSamplerView<'c, 'r> {
+impl<'c> PipeSamplerView<'c> {
     pub fn new(
         ctx: &'c PipeContext,
-        res: &'r PipeResourceOwned,
+        res: &PipeResourceOwned,
         template: &pipe_sampler_view,
     ) -> Option<Self> {
         let view = unsafe {
@@ -378,12 +377,12 @@ impl<'c, 'r> PipeSamplerView<'c, 'r> {
         unsafe {
             debug_assert_eq!(view.as_ref().context, ctx.pipe().as_ptr());
             debug_assert_eq!(view.as_ref().texture, res.pipe());
+            pipe_resource_reference(&mut ptr::null_mut(), res.pipe());
         }
 
         Some(Self {
             view: view,
             _ctx: PhantomData,
-            _res: PhantomData,
         })
     }
 
@@ -393,10 +392,12 @@ impl<'c, 'r> PipeSamplerView<'c, 'r> {
     }
 }
 
-impl Drop for PipeSamplerView<'_, '_> {
+impl Drop for PipeSamplerView<'_> {
     fn drop(&mut self) {
         unsafe {
+            let mut res = self.view.as_ref().texture;
             pipe_sampler_view_release(self.view.as_ptr());
+            pipe_resource_reference(&mut res, ptr::null_mut());
         }
     }
 }
