@@ -1021,6 +1021,7 @@ void u_vbuf_set_vertex_buffers(struct u_vbuf *mgr,
    uint32_t incompatible_vb_mask = 0;
    /* which buffers are unaligned to 2/4 bytes */
    uint32_t unaligned_vb_mask[2] = {0};
+   unsigned num_identical = 0;
 
    for (i = 0; i < count; i++) {
       const struct pipe_vertex_buffer *vb = &bufs[i];
@@ -1032,6 +1033,12 @@ void u_vbuf_set_vertex_buffers(struct u_vbuf *mgr,
          memset(real_vb, 0, sizeof(*real_vb));
          continue;
       }
+
+      /* The structure has holes: do not use memcmp. */
+      if (orig_vb->is_user_buffer == vb->is_user_buffer &&
+          orig_vb->buffer_offset == vb->buffer_offset &&
+          orig_vb->buffer.resource == vb->buffer.resource)
+         num_identical++;
 
       *orig_vb = *vb;
 
@@ -1064,6 +1071,10 @@ void u_vbuf_set_vertex_buffers(struct u_vbuf *mgr,
    }
 
    unsigned last_count = mgr->num_vertex_buffers;
+
+   if (num_identical == count && count == last_count)
+      return;
+
    for (; i < last_count; i++) {
       memset(&mgr->vertex_buffer[i], 0, sizeof(struct pipe_vertex_buffer));
       memset(&mgr->real_vertex_buffer[i], 0, sizeof(struct pipe_vertex_buffer));
