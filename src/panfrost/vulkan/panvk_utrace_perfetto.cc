@@ -288,8 +288,30 @@ PANVK_UTRACE_PERFETTO_PROCESS_EVENT(sync64_wait, SYNC_WAIT)
 static uint32_t
 get_gpu_clock_id(void)
 {
-   /* see https://perfetto.dev/docs/concepts/clock-sync */
-   return _mesa_hash_string("org.freedesktop.mesa.panfrost") | 0x80000000;
+   /* see https://perfetto.dev/docs/concepts/clock-sync
+    *
+    * Use sequence-scoped clock (64 <= ID < 128) for GPU clock because there's
+    * no central daemon emitting consistent snapshots for synchronization
+    * between CPU and GPU clocks on behalf of renderstages and counters
+    * producers.
+    *
+    * When CPU clock is the same with the authoritative trace clock (normally
+    * default to CLOCK_BOOTTIME), perfetto drops the non-monotonic snapshots
+    * to ensure validity of the global source clock in the resolution graph.
+    * When they are different, the clocks are marked invalid and the rest of
+    * the clock syncs will fail during trace processing.
+    *
+    * Now that PanVK has switched to use CLOCK_MONOTONIC_RAW CPU clock, here
+    * we make the GPU clock sequence-scoped so that clock sync for all the
+    * trace packets emitted with the same trusted_packet_sequence_id will be
+    * done in an isolated manner (basically perfetto makes each scoped GPU
+    * clock globally unique).
+    *
+    * Meanwhile, since the clock is now sequence-scoped (unique per producer +
+    * writer pair within the tracing session), we can simply pick 64 to start
+    * with since there's no multi-mali-gpu setup yet.
+    */
+   return 64;
 }
 
 static void
