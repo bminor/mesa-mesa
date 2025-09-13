@@ -37,8 +37,6 @@ use std::os::raw::c_void;
 use std::ptr;
 use std::slice;
 use std::sync::Arc;
-use std::sync::Mutex;
-use std::sync::MutexGuard;
 use std::sync::OnceLock;
 use std::sync::Weak;
 
@@ -559,9 +557,9 @@ pub struct Kernel {
     pub base: CLObjectBase<CL_INVALID_KERNEL>,
     pub prog: Arc<Program>,
     pub name: String,
-    values: Mutex<Vec<Option<KernelArgValue>>>,
-    pub bdas: Mutex<Vec<cl_mem_device_address_ext>>,
-    pub svms: Mutex<HashSet<usize>>,
+    values: Vec<Option<KernelArgValue>>,
+    pub bdas: Vec<cl_mem_device_address_ext>,
+    pub svms: HashSet<usize>,
     builds: HashMap<&'static Device, Arc<NirKernelBuilds>>,
     pub kernel_info: Arc<KernelInfo>,
 }
@@ -1397,13 +1395,13 @@ impl Kernel {
         let values = vec![None; kernel_info.args.len()];
         Arc::new(Self {
             base: CLObjectBase::new(RusticlTypes::Kernel),
-            prog: prog,
-            name: name,
-            values: Mutex::new(values),
-            bdas: Mutex::new(Vec::new()),
-            svms: Mutex::new(HashSet::new()),
-            builds: builds,
-            kernel_info: kernel_info,
+            prog,
+            name,
+            values,
+            bdas: Vec::new(),
+            svms: HashSet::new(),
+            builds,
+            kernel_info,
         })
     }
 
@@ -1504,10 +1502,10 @@ impl Kernel {
     ) -> CLResult<EventSig> {
         // Clone all the data we need to execute this kernel
         let kernel_info = Arc::clone(&self.kernel_info);
-        let arg_values = self.arg_values().clone();
+        let arg_values = self.values.clone();
         let nir_kernel_builds = Arc::clone(&self.builds[q.device]);
-        let mut bdas = self.bdas.lock().unwrap().clone();
-        let svms = self.svms.lock().unwrap().clone();
+        let mut bdas = self.bdas.clone();
+        let svms = self.svms.clone();
 
         let mut buffer_arcs = HashMap::new();
         let mut image_arcs = HashMap::new();
@@ -1846,17 +1844,16 @@ impl Kernel {
         }))
     }
 
-    pub fn arg_values(&self) -> MutexGuard<'_, Vec<Option<KernelArgValue>>> {
-        self.values.lock().unwrap()
+    pub fn arg_values(&self) -> &[Option<KernelArgValue>] {
+        &self.values
     }
 
-    pub fn set_kernel_arg(&self, idx: usize, arg: KernelArgValue) -> CLResult<()> {
+    pub fn set_kernel_arg(&mut self, idx: usize, arg: KernelArgValue) -> CLResult<()> {
         self.values
-            .lock()
-            .unwrap()
             .get_mut(idx)
             .ok_or(CL_INVALID_ARG_INDEX)?
             .replace(arg);
+
         Ok(())
     }
 
@@ -1958,7 +1955,7 @@ impl Kernel {
         let local =
             self.builds.get(dev).unwrap()[NirKernelVariant::Default].shared_size as cl_ulong;
         let args: cl_ulong = self
-            .arg_values()
+            .values
             .iter()
             .map(|arg| match arg {
                 Some(KernelArgValue::LocalMem(val)) => *val as cl_ulong,
@@ -2027,9 +2024,9 @@ impl Clone for Kernel {
             base: CLObjectBase::new(RusticlTypes::Kernel),
             prog: Arc::clone(&self.prog),
             name: self.name.clone(),
-            values: Mutex::new(self.arg_values().clone()),
-            bdas: Mutex::new(self.bdas.lock().unwrap().clone()),
-            svms: Mutex::new(self.svms.lock().unwrap().clone()),
+            values: self.values.clone(),
+            bdas: self.bdas.clone(),
+            svms: self.svms.clone(),
             builds: self.builds.clone(),
             kernel_info: Arc::clone(&self.kernel_info),
         }
