@@ -1154,12 +1154,6 @@ struct si_context {
    uint16_t vertex_buffer_unaligned; /* bitmask of not dword-aligned buffers */
    struct pipe_vertex_buffer vertex_buffer[SI_NUM_VERTEX_BUFFERS];
 
-   /* Even though we don't need this variable, u_upload_alloc_ref has an optimization that skips
-    * reference counting when the new upload buffer is the same as the last one. So keep
-    * the last upload buffer here and always pass &last_const_upload_buffer to u_upload_alloc_ref.
-    */
-   struct si_resource *last_const_upload_buffer;
-
    /* MSAA config state. */
    uint8_t ps_iter_samples;
    uint8_t last_ps_iter_samples;

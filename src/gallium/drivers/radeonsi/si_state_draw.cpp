@@ -1863,24 +1863,26 @@ static bool si_upload_and_prefetch_VB_descriptors(struct si_context *sctx,
       uint32_t *ptr;
 
       if (alloc_size) {
+         struct pipe_resource *upload_buf, *release_buf;
          unsigned offset;
 
          /* Vertex buffer descriptors are the only ones which are uploaded directly
           * and don't go through si_upload_graphics_shader_descriptors.
           */
-         u_upload_alloc_ref(sctx->b.const_uploader, 0, alloc_size,
-                        si_optimal_tcc_alignment(sctx, alloc_size), &offset,
-                        (struct pipe_resource **)&sctx->last_const_upload_buffer, (void **)&ptr);
-         if (!sctx->last_const_upload_buffer)
+         u_upload_alloc(sctx->b.const_uploader, 0, alloc_size,
+                        si_optimal_tcc_alignment(sctx, alloc_size), &offset, &upload_buf,
+                        &release_buf, (void **)&ptr);
+         pipe_resource_release(&sctx->b, release_buf);
+         if (!upload_buf)
             return false;
 
-         radeon_add_to_buffer_list(sctx, &sctx->gfx_cs, sctx->last_const_upload_buffer,
+         radeon_add_to_buffer_list(sctx, &sctx->gfx_cs, si_resource(upload_buf),
                                    RADEON_USAGE_READ | RADEON_PRIO_DESCRIPTORS);
-         vb_descriptors_address = sctx->last_const_upload_buffer->gpu_address + offset;
+         vb_descriptors_address = si_resource(upload_buf)->gpu_address + offset;
 
          /* GFX6 doesn't support the L2 prefetch. */
          if (GFX_VERSION >= GFX7) {
-            uint64_t address = sctx->last_const_upload_buffer->gpu_address + offset;
+            uint64_t address = si_resource(upload_buf)->gpu_address + offset;
             si_cp_dma_prefetch_inline<GFX_VERSION>(sctx, address, alloc_size);
          }
       }
