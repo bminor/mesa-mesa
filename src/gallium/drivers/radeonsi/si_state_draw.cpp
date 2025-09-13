@@ -2077,7 +2077,7 @@ static void si_emit_all_states(struct si_context *sctx, uint64_t skip_atom_mask)
 }
 
 #define DRAW_CLEANUP do {                                 \
-      if (index_size && indexbuf != info->index.resource) \
+      if (release_indexbuf) \
          pipe_resource_reference(&indexbuf, NULL);        \
    } while (0)
 
@@ -2171,6 +2171,7 @@ static void si_draw(struct pipe_context *ctx,
    }
 
    struct pipe_resource *indexbuf = info->index.resource;
+   bool release_indexbuf = false;
    unsigned index_size = info->index_size;
    unsigned index_offset = indirect && indirect->buffer ? draws[0].start * index_size : 0;
 
@@ -2189,6 +2190,7 @@ static void si_draw(struct pipe_context *ctx,
          if (unlikely(!indexbuf))
             return;
 
+         release_indexbuf = true;
          si_compute_shorten_ubyte_buffer(sctx, indexbuf, info->index.resource, start_offset,
                                          index_offset + start, count, sctx->render_cond_enabled);
          si_barrier_after_simple_buffer_op(sctx, 0, indexbuf, info->index.resource);
@@ -2201,6 +2203,7 @@ static void si_draw(struct pipe_context *ctx,
          si_mark_atom_dirty(sctx, &sctx->atoms.s.barrier);
          si_resource(indexbuf)->L2_cache_dirty = false;
       } else if (!IS_DRAW_VERTEX_STATE && info->has_user_indices) {
+         struct pipe_resource *release_buf = NULL;
          unsigned start_offset;
 
          assert(!indirect);
@@ -2208,9 +2211,14 @@ static void si_draw(struct pipe_context *ctx,
          start_offset = draws[0].start * index_size;
 
          indexbuf = NULL;
-         u_upload_data_ref(ctx->stream_uploader, start_offset, draws[0].count * index_size,
+         /* Note that stream_uploader mustn't be used by si_draw in any other place because
+          * the next use of stream_uploader could release indexbuf before si_draw finishes.
+          */
+         u_upload_data(ctx->stream_uploader, start_offset, draws[0].count * index_size,
                        sctx->screen->info.tcc_cache_line_size,
-                       (char *)info->index.user + start_offset, &index_offset, &indexbuf);
+                       (char *)info->index.user + start_offset, &index_offset, &indexbuf,
+                       &release_buf);
+         pipe_resource_release(ctx, release_buf);
          if (unlikely(!indexbuf))
             return;
 
