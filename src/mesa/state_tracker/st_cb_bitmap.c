@@ -140,7 +140,7 @@ st_make_bitmap_texture(struct gl_context *ctx, GLsizei width, GLsizei height,
     * Create texture to hold bitmap pattern.
     */
    pt = st_texture_create(st, st->internal_target, st->bitmap.tex_format,
-                          0, width, height, 1, 1, 0,
+                          0, width, height, 1, 1, 0, 0,
                           PIPE_BIND_SAMPLER_VIEW, false,
                           PIPE_COMPRESSION_FIXED_RATE_NONE);
    if (!pt) {
@@ -373,7 +373,7 @@ reset_cache(struct st_context *st)
    cache->texture = st_texture_create(st, st->internal_target,
                                       st->bitmap.tex_format, 0,
                                       BITMAP_CACHE_WIDTH, BITMAP_CACHE_HEIGHT,
-                                      1, 1, 0,
+                                      1, 1, 0, 0,
                                       PIPE_BIND_SAMPLER_VIEW,
                                       false,
                                       PIPE_COMPRESSION_FIXED_RATE_NONE);

@@ -291,7 +291,7 @@ cs_encode_bc1(struct st_context *st,
    struct pipe_resource *bc1_tex =
       st_texture_create(st, PIPE_TEXTURE_2D, PIPE_FORMAT_R32G32_UINT, 0,
                         DIV_ROUND_UP(rgba8_tex->width0, 4),
-                        DIV_ROUND_UP(rgba8_tex->height0, 4), 1, 1, 0,
+                        DIV_ROUND_UP(rgba8_tex->height0, 4), 1, 1, 0, 0,
                         PIPE_BIND_SHADER_IMAGE |
                         PIPE_BIND_SAMPLER_VIEW, false,
                         PIPE_COMPRESSION_FIXED_RATE_NONE);
@@ -352,7 +352,7 @@ cs_encode_bc4(struct st_context *st,
    struct pipe_resource *bc4_tex =
       st_texture_create(st, PIPE_TEXTURE_2D, PIPE_FORMAT_R32G32_UINT, 0,
                         DIV_ROUND_UP(rgba8_tex->width0, 4),
-                        DIV_ROUND_UP(rgba8_tex->height0, 4), 1, 1, 0,
+                        DIV_ROUND_UP(rgba8_tex->height0, 4), 1, 1, 0, 0,
                         PIPE_BIND_SHADER_IMAGE |
                         PIPE_BIND_SAMPLER_VIEW, false,
                         PIPE_COMPRESSION_FIXED_RATE_NONE);
@@ -414,7 +414,7 @@ cs_stitch_64bpb_textures(struct st_context *st,
    stitched_tex =
       st_texture_create(st, PIPE_TEXTURE_2D, PIPE_FORMAT_R32G32B32A32_UINT, 0,
                         tex_hi->width0,
-                        tex_hi->height0, 1, 1, 0,
+                        tex_hi->height0, 1, 1, 0, 0,
                         PIPE_BIND_SHADER_IMAGE |
                         PIPE_BIND_SAMPLER_VIEW, false,
                         PIPE_COMPRESSION_FIXED_RATE_NONE);
@@ -481,7 +481,7 @@ sw_decode_astc(struct st_context *st,
    /* Create the destination */
    struct pipe_resource *rgba8_tex =
       st_texture_create(st, PIPE_TEXTURE_2D, PIPE_FORMAT_R8G8B8A8_UNORM, 0,
-                        width_px, height_px, 1, 1, 0,
+                        width_px, height_px, 1, 1, 0, 0,
                         PIPE_BIND_SAMPLER_VIEW, false,
                         PIPE_COMPRESSION_FIXED_RATE_NONE);
    if (!rgba8_tex)
@@ -576,7 +576,7 @@ get_astc_partition_table_view(struct st_context *st,
    struct pipe_resource *res =
       st_texture_create(st, PIPE_TEXTURE_2D, PIPE_FORMAT_R8_UINT, 0,
                         ptable_box.width, ptable_box.height,
-                        1, 1, 0,
+                        1, 1, 0, 0,
                         PIPE_BIND_SAMPLER_VIEW, false,
                         PIPE_COMPRESSION_FIXED_RATE_NONE);
    if (!res)
@@ -649,7 +649,7 @@ cs_decode_astc(struct st_context *st,
    /* Create the destination */
    struct pipe_resource *rgba8_tex =
       st_texture_create(st, PIPE_TEXTURE_2D, PIPE_FORMAT_R8G8B8A8_UNORM, 0,
-                        width_px, height_px, 1, 1, 0,
+                        width_px, height_px, 1, 1, 0, 0,
                         PIPE_BIND_SAMPLER_VIEW, false,
                         PIPE_COMPRESSION_FIXED_RATE_NONE);
 

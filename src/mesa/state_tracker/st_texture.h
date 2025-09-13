@@ -139,6 +139,7 @@ st_texture_create(struct st_context *st,
                   GLuint depth0,
                   GLuint layers,
                   GLuint nr_samples,
+                  unsigned flags,
                   GLuint tex_usage,
                   bool sparse,
                   uint32_t compression);
