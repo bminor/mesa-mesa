@@ -67,12 +67,13 @@ static void si_emit_cp_dma(struct si_context *sctx, struct radeon_cmdbuf *cs, ui
       command |= S_415_RAW_WAIT(1);
 
    /* Src and dst flags. */
-   if (sctx->screen->info.cp_dma_use_L2)
+   /* GFX12: TC_L2 means MALL, which should always be set. */
+   if (sctx->screen->info.cp_dma_use_L2 || sctx->gfx_level == GFX12)
       header |= S_501_DST_SEL(V_501_DST_ADDR_TC_L2);
 
    if (flags & CP_DMA_CLEAR) {
       header |= S_411_SRC_SEL(V_411_DATA);
-   } else if (sctx->screen->info.cp_dma_use_L2) {
+   } else if (sctx->screen->info.cp_dma_use_L2 || sctx->gfx_level == GFX12) {
       header |= S_501_SRC_SEL(V_501_SRC_ADDR_TC_L2);
    }
 
