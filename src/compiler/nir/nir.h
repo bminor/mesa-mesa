@@ -6477,8 +6477,6 @@ nir_deref_count_slots(nir_deref_instr *deref, nir_variable *var)
 
 /* See default_ub_config in nir_range_analysis.c for documentation. */
 typedef struct nir_unsigned_upper_bound_config {
-   unsigned min_subgroup_size;
-   unsigned max_subgroup_size;
    unsigned max_workgroup_invocations;
    unsigned max_workgroup_count[3];
    unsigned max_workgroup_size[3];

@@ -369,10 +369,13 @@ init_context(isel_context* ctx, nir_shader* shader)
    nir_function_impl* impl = nir_shader_get_entrypoint(shader);
    ctx->shader = shader;
 
+   assert(shader->info.max_subgroup_size >= ctx->program->wave_size);
+   assert(shader->info.min_subgroup_size <= ctx->program->wave_size);
+   shader->info.max_subgroup_size = ctx->program->wave_size;
+   shader->info.min_subgroup_size = ctx->program->wave_size;
+
    /* Init NIR range analysis. */
    ctx->range_ht = _mesa_pointer_hash_table_create(NULL);
-   ctx->ub_config.min_subgroup_size = ctx->program->wave_size;
-   ctx->ub_config.max_subgroup_size = ctx->program->wave_size;
    ctx->ub_config.max_workgroup_invocations = 2048;
    ctx->ub_config.max_workgroup_count[0] = 4294967295;
    ctx->ub_config.max_workgroup_count[1] = 65535;

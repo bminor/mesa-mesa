@@ -1565,8 +1565,6 @@ search_phi_bcsel(nir_scalar scalar, nir_scalar *buf, unsigned buf_size, struct s
 
 /* The config here should be generic enough to be correct on any HW. */
 static const nir_unsigned_upper_bound_config default_ub_config = {
-   .min_subgroup_size = 1u,
-   .max_subgroup_size = 128u,
    .max_workgroup_invocations = UINT16_MAX,
 
    /* max_workgroup_count represents the maximum compute shader / kernel
@@ -1663,14 +1661,14 @@ get_intrinsic_uub(struct analysis_state *state, struct scalar_query q, uint32_t 
       break;
    case nir_intrinsic_load_subgroup_invocation:
    case nir_intrinsic_first_invocation:
-      *result = config->max_subgroup_size - 1;
+      *result = shader->info.max_subgroup_size - 1;
       break;
    case nir_intrinsic_mbcnt_amd: {
       if (!q.head.pushed_queries) {
          push_scalar_query(state, nir_get_scalar(intrin->src[1].ssa, 0));
          return;
       } else {
-         uint32_t src0 = config->max_subgroup_size - 1;
+         uint32_t src0 = shader->info.max_subgroup_size - 1;
          uint32_t src1 = src[0];
          if (src0 + src1 >= src0) /* check overflow */
             *result = src0 + src1;
@@ -1678,7 +1676,10 @@ get_intrinsic_uub(struct analysis_state *state, struct scalar_query q, uint32_t 
       break;
    }
    case nir_intrinsic_load_subgroup_size:
-      *result = config->max_subgroup_size;
+      if (shader->info.api_subgroup_size)
+         *result = shader->info.api_subgroup_size;
+      else
+         *result = shader->info.max_subgroup_size;
       break;
    case nir_intrinsic_load_subgroup_id:
    case nir_intrinsic_load_num_subgroups: {
@@ -1689,7 +1690,7 @@ get_intrinsic_uub(struct analysis_state *state, struct scalar_query q, uint32_t 
                           shader->info.workgroup_size[1] *
                           shader->info.workgroup_size[2];
       }
-      *result = DIV_ROUND_UP(workgroup_size, config->min_subgroup_size);
+      *result = DIV_ROUND_UP(workgroup_size, shader->info.min_subgroup_size);
       if (intrin->intrinsic == nir_intrinsic_load_subgroup_id)
          (*result)--;
       break;
@@ -1732,7 +1733,7 @@ get_intrinsic_uub(struct analysis_state *state, struct scalar_query q, uint32_t 
          *result = bitmask(util_last_bit64(src[0]));
          break;
       case nir_op_iadd:
-         *result = MIN2(*result, (uint64_t)src[0] * (config->max_subgroup_size - exclusive));
+         *result = MIN2(*result, (uint64_t)src[0] * (shader->info.max_subgroup_size - exclusive));
          break;
       default:
          UNREACHABLE("unhandled op");
