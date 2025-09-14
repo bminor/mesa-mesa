@@ -392,7 +392,10 @@ radv_shader_choose_subgroup_size(struct radv_device *device, nir_shader *nir,
       /* Legacy GS doesn't support wave32. */
       wave_size = 64;
    } else if (nir->info.stage == MESA_SHADER_FRAGMENT) {
-      wave_size = pdev->ps_wave_size;
+      if (nir->info.ray_queries)
+         wave_size = pdev->rt_wave_size;
+      else
+         wave_size = pdev->ps_wave_size;
    } else if (mesa_shader_stage_is_rt(nir->info.stage)) {
       wave_size = pdev->rt_wave_size;
    } else {
