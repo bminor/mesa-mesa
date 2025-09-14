@@ -3672,7 +3672,6 @@ nvir_nir_shader_compiler_options(int chipset, uint8_t shader_type)
       ((chipset >= NVISA_GV100_CHIPSET) ? nir_lower_ddiv : 0)
    );
    op.discard_is_demote = true;
-   op.has_ddx_intrinsics = true;
    op.scalarize_ddx = true;
    op.support_indirect_inputs = (uint8_t)BITFIELD_MASK(MESA_SHADER_GEOMETRY + 1);
    op.support_indirect_outputs = (uint8_t)BITFIELD_MASK(MESA_SHADER_GEOMETRY + 1);

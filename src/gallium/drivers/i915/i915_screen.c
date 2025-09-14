@@ -171,7 +171,6 @@ static const struct nir_shader_compiler_options gallivm_nir_options = {
    /* .support_16bit_alu = true, */
    .support_indirect_inputs = (uint8_t)BITFIELD_MASK(MESA_SHADER_STAGES),
    .support_indirect_outputs = (uint8_t)BITFIELD_MASK(MESA_SHADER_STAGES),
-   .has_ddx_intrinsics = true,
    .no_integers = true,
 };
 
