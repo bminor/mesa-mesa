@@ -14,7 +14,8 @@ use std::{
 };
 
 /// A wrapper around pointers to C data type which are considered thread safe.
-#[derive(Eq)]
+#[derive(Copy, Clone, Eq)]
+#[repr(transparent)]
 pub struct ThreadSafeCPtr<T>(NonNull<T>);
 
 impl<T> ThreadSafeCPtr<T> {
