@@ -314,6 +314,9 @@ hk_CreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
       oq_index[pool->oq_queries++] = index;
    }
 
+   if (pCreateInfo->flags & VK_QUERY_POOL_CREATE_RESET_BIT_KHR)
+      host_zero_queries(dev, pool, 0, pool->vk.query_count, false);
+
    *pQueryPool = hk_query_pool_to_handle(pool);
 
    return VK_SUCCESS;
