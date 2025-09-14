@@ -1573,11 +1573,6 @@ static const nir_unsigned_upper_bound_config default_ub_config = {
     * max_workgroup_count[2] may be smaller.
     */
    .max_workgroup_count = { UINT32_MAX, UINT32_MAX, UINT32_MAX },
-
-   /* max_workgroup_size is the local invocation maximum. This is generally
-    * small the OpenGL 4.2 minimum maximum is 1024.
-    */
-   .max_workgroup_size = { UINT16_MAX, UINT16_MAX, UINT16_MAX },
 };
 
 struct scalar_query {
@@ -1632,7 +1627,7 @@ get_intrinsic_uub(struct analysis_state *state, struct scalar_query q, uint32_t 
       break;
    case nir_intrinsic_load_local_invocation_id:
       if (shader->info.workgroup_size_variable)
-         *result = config->max_workgroup_size[q.scalar.comp] - 1u;
+         *result = config->max_workgroup_invocations - 1u;
       else
          *result = shader->info.workgroup_size[q.scalar.comp] - 1u;
       break;
@@ -1644,7 +1639,7 @@ get_intrinsic_uub(struct analysis_state *state, struct scalar_query q, uint32_t 
       break;
    case nir_intrinsic_load_global_invocation_id:
       if (shader->info.workgroup_size_variable) {
-         *result = mul_clamp(config->max_workgroup_size[q.scalar.comp],
+         *result = mul_clamp(config->max_workgroup_invocations,
                              config->max_workgroup_count[q.scalar.comp]) -
                    1u;
       } else {

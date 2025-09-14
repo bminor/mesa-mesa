@@ -6479,7 +6479,6 @@ nir_deref_count_slots(nir_deref_instr *deref, nir_variable *var)
 typedef struct nir_unsigned_upper_bound_config {
    unsigned max_workgroup_invocations;
    unsigned max_workgroup_count[3];
-   unsigned max_workgroup_size[3];
 } nir_unsigned_upper_bound_config;
 
 uint32_t
