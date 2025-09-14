@@ -6474,22 +6474,13 @@ nir_deref_count_slots(nir_deref_instr *deref, nir_variable *var)
    }
    return glsl_count_attribute_slots(deref->type, false);
 }
-
-/* See default_ub_config in nir_range_analysis.c for documentation. */
-typedef struct nir_unsigned_upper_bound_config {
-   unsigned max_workgroup_invocations;
-   unsigned max_workgroup_count[3];
-} nir_unsigned_upper_bound_config;
-
 uint32_t
 nir_unsigned_upper_bound(nir_shader *shader, struct hash_table *range_ht,
-                         nir_scalar scalar,
-                         const nir_unsigned_upper_bound_config *config);
+                         nir_scalar scalar);
 
 bool
 nir_addition_might_overflow(nir_shader *shader, struct hash_table *range_ht,
-                            nir_scalar ssa, unsigned const_val,
-                            const nir_unsigned_upper_bound_config *config);
+                            nir_scalar ssa, unsigned const_val);
 
 typedef struct nir_opt_preamble_options {
    /* True if gl_DrawID is considered uniform, i.e. if the preamble is run

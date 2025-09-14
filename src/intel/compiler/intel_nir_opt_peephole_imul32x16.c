@@ -170,8 +170,7 @@ signed_integer_range_analysis(nir_shader *shader, struct hash_table *range_ht,
     * two ranges for any value of bound with the sign-bit set is [INT_MIN,
     * INT_MAX].
     */
-   const int32_t bound = nir_unsigned_upper_bound(shader, range_ht,
-                                                     scalar, NULL);
+   const int32_t bound = nir_unsigned_upper_bound(shader, range_ht, scalar);
    if (bound < 0) {
       *lo = INT32_MIN;
       *hi = INT32_MAX;

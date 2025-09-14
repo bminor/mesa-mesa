@@ -66,8 +66,8 @@ try_extract_const_addition(nir_builder *b, opt_offsets_state *state, nir_scalar 
       }
 
       /* Check if there can really be an unsigned wrap. */
-      uint32_t ub0 = nir_unsigned_upper_bound(b->shader, state->range_ht, src[0], NULL);
-      uint32_t ub1 = nir_unsigned_upper_bound(b->shader, state->range_ht, src[1], NULL);
+      uint32_t ub0 = nir_unsigned_upper_bound(b->shader, state->range_ht, src[0]);
+      uint32_t ub1 = nir_unsigned_upper_bound(b->shader, state->range_ht, src[1]);
 
       if ((UINT32_MAX - ub0) < ub1)
          return false;

@@ -138,7 +138,6 @@ struct isel_context {
 
    /* NIR range analysis. */
    struct hash_table* range_ht;
-   nir_unsigned_upper_bound_config ub_config;
 
    Temp arg_temps[AC_MAX_ARGS];
    Operand workgroup_id[3];

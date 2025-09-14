@@ -41,7 +41,6 @@ struct analysis_query {
 
 struct analysis_state {
    nir_shader *shader;
-   const nir_unsigned_upper_bound_config *config;
    struct hash_table *range_ht;
 
    struct util_dynarray query_stack;
@@ -1563,17 +1562,28 @@ search_phi_bcsel(nir_scalar scalar, nir_scalar *buf, unsigned buf_size, struct s
    return 1;
 }
 
-/* The config here should be generic enough to be correct on any HW. */
-static const nir_unsigned_upper_bound_config default_ub_config = {
-   .max_workgroup_invocations = UINT16_MAX,
+static uint32_t
+get_max_workgroup_invocations(nir_shader *nir)
+{
+   if (!nir->options || !nir->options->max_workgroup_invocations)
+      return UINT16_MAX;
 
+   return nir->options->max_workgroup_invocations;
+}
+
+static uint32_t
+get_max_workgroup_count(nir_shader *nir, unsigned dim)
+{
    /* max_workgroup_count represents the maximum compute shader / kernel
     * dispatchable work size. On most hardware, this is essentially
     * unbounded. On some hardware max_workgroup_count[1] and
     * max_workgroup_count[2] may be smaller.
     */
-   .max_workgroup_count = { UINT32_MAX, UINT32_MAX, UINT32_MAX },
-};
+   if (!nir->options || !nir->options->max_workgroup_count[dim])
+      return UINT32_MAX;
+
+   return nir->options->max_workgroup_count[dim];
+}
 
 struct scalar_query {
    struct analysis_query head;
@@ -1603,7 +1613,6 @@ get_intrinsic_uub(struct analysis_state *state, struct scalar_query q, uint32_t 
                   const uint32_t *src)
 {
    nir_shader *shader = state->shader;
-   const nir_unsigned_upper_bound_config *config = state->config;
 
    nir_intrinsic_instr *intrin = nir_def_as_intrinsic(q.scalar.def);
    switch (intrin->intrinsic) {
@@ -1617,7 +1626,7 @@ get_intrinsic_uub(struct analysis_state *state, struct scalar_query q, uint32_t 
        */
       if (!mesa_shader_stage_uses_workgroup(shader->info.stage) ||
           shader->info.workgroup_size_variable) {
-         *result = config->max_workgroup_invocations - 1;
+         *result = get_max_workgroup_invocations(shader) - 1;
       } else {
          *result = (shader->info.workgroup_size[0] *
                     shader->info.workgroup_size[1] *
@@ -1627,24 +1636,24 @@ get_intrinsic_uub(struct analysis_state *state, struct scalar_query q, uint32_t 
       break;
    case nir_intrinsic_load_local_invocation_id:
       if (shader->info.workgroup_size_variable)
-         *result = config->max_workgroup_invocations - 1u;
+         *result = get_max_workgroup_invocations(shader) - 1u;
       else
          *result = shader->info.workgroup_size[q.scalar.comp] - 1u;
       break;
    case nir_intrinsic_load_workgroup_id:
-      *result = config->max_workgroup_count[q.scalar.comp] - 1u;
+      *result = get_max_workgroup_count(shader, q.scalar.comp) - 1u;
       break;
    case nir_intrinsic_load_num_workgroups:
-      *result = config->max_workgroup_count[q.scalar.comp];
+      *result = get_max_workgroup_count(shader, q.scalar.comp);
       break;
    case nir_intrinsic_load_global_invocation_id:
       if (shader->info.workgroup_size_variable) {
-         *result = mul_clamp(config->max_workgroup_invocations,
-                             config->max_workgroup_count[q.scalar.comp]) -
+         *result = mul_clamp(get_max_workgroup_invocations(shader),
+                             get_max_workgroup_count(shader, q.scalar.comp)) -
                    1u;
       } else {
          *result = (shader->info.workgroup_size[q.scalar.comp] *
-                    config->max_workgroup_count[q.scalar.comp]) -
+                    get_max_workgroup_count(shader, q.scalar.comp)) -
                    1u;
       }
       break;
@@ -1678,7 +1687,7 @@ get_intrinsic_uub(struct analysis_state *state, struct scalar_query q, uint32_t 
       break;
    case nir_intrinsic_load_subgroup_id:
    case nir_intrinsic_load_num_subgroups: {
-      uint32_t workgroup_size = config->max_workgroup_invocations;
+      uint32_t workgroup_size = get_max_workgroup_invocations(shader);
       if (mesa_shader_stage_uses_workgroup(shader->info.stage) &&
           !shader->info.workgroup_size_variable) {
          workgroup_size = shader->info.workgroup_size[0] *
@@ -1772,7 +1781,7 @@ get_intrinsic_uub(struct analysis_state *state, struct scalar_query q, uint32_t 
    case nir_intrinsic_load_tess_rel_patch_id_amd:
    case nir_intrinsic_load_tcs_num_patches_amd:
       /* Very generous maximum: TCS/TES executed by largest possible workgroup */
-      *result = config->max_workgroup_invocations / MAX2(shader->info.tess.tcs_vertices_out, 1u);
+      *result = get_max_workgroup_invocations(shader) / MAX2(shader->info.tess.tcs_vertices_out, 1u);
       break;
    case nir_intrinsic_load_typed_buffer_amd: {
       const enum pipe_format format = nir_intrinsic_format(intrin);
@@ -2102,18 +2111,13 @@ process_uub_query(struct analysis_state *state, struct analysis_query *aq, uint3
 
 uint32_t
 nir_unsigned_upper_bound(nir_shader *shader, struct hash_table *range_ht,
-                         nir_scalar scalar,
-                         const nir_unsigned_upper_bound_config *config)
+                         nir_scalar scalar)
 {
-   if (!config)
-      config = &default_ub_config;
-
    struct scalar_query query_alloc[16];
    uint32_t result_alloc[16];
 
    struct analysis_state state;
    state.shader = shader;
-   state.config = config;
    state.range_ht = range_ht;
    util_dynarray_init_from_stack(&state.query_stack, query_alloc, sizeof(query_alloc));
    util_dynarray_init_from_stack(&state.result_stack, result_alloc, sizeof(result_alloc));
@@ -2128,10 +2132,9 @@ nir_unsigned_upper_bound(nir_shader *shader, struct hash_table *range_ht,
 
 bool
 nir_addition_might_overflow(nir_shader *shader, struct hash_table *range_ht,
-                            nir_scalar ssa, unsigned const_val,
-                            const nir_unsigned_upper_bound_config *config)
+                            nir_scalar ssa, unsigned const_val)
 {
-   uint32_t ub = nir_unsigned_upper_bound(shader, range_ht, ssa, config);
+   uint32_t ub = nir_unsigned_upper_bound(shader, range_ht, ssa);
    return const_val + ub < const_val;
 }
 
@@ -2506,7 +2509,6 @@ nir_def_num_lsb_zero(struct hash_table *numlsb_ht, nir_scalar def)
 
    struct analysis_state state;
    state.shader = NULL;
-   state.config = NULL;
    state.range_ht = numlsb_ht;
    util_dynarray_init_from_stack(&state.query_stack, query_alloc, sizeof(query_alloc));
    util_dynarray_init_from_stack(&state.result_stack, result_alloc, sizeof(result_alloc));

@@ -172,9 +172,8 @@ apply_nuw_to_ssa(isel_context* ctx, nir_def* ssa)
       std::swap(src0, src1);
    }
 
-   uint32_t src1_ub = nir_unsigned_upper_bound(ctx->shader, ctx->range_ht, src1, &ctx->ub_config);
-   add->no_unsigned_wrap =
-      !nir_addition_might_overflow(ctx->shader, ctx->range_ht, src0, src1_ub, &ctx->ub_config);
+   uint32_t src1_ub = nir_unsigned_upper_bound(ctx->shader, ctx->range_ht, src1);
+   add->no_unsigned_wrap = !nir_addition_might_overflow(ctx->shader, ctx->range_ht, src0, src1_ub);
 }
 
 void
@@ -376,10 +375,6 @@ init_context(isel_context* ctx, nir_shader* shader)
 
    /* Init NIR range analysis. */
    ctx->range_ht = _mesa_pointer_hash_table_create(NULL);
-   ctx->ub_config.max_workgroup_invocations = 2048;
-   ctx->ub_config.max_workgroup_count[0] = 4294967295;
-   ctx->ub_config.max_workgroup_count[1] = 65535;
-   ctx->ub_config.max_workgroup_count[2] = 65535;
 
    uint32_t options =
       shader->options->divergence_analysis_options | nir_divergence_ignore_undef_if_phi_srcs;

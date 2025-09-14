@@ -114,6 +114,10 @@ void ac_nir_set_options(struct radeon_info *info, bool use_llvm,
       BITFIELD_BIT(nir_lower_packing_op_unpack_32_2x16) |
       BITFIELD_BIT(nir_lower_packing_op_pack_32_4x8) |
       BITFIELD_BIT(nir_lower_packing_op_unpack_32_4x8);
+   options->max_workgroup_invocations = 1024;
+   options->max_workgroup_count[0] = UINT32_MAX;
+   options->max_workgroup_count[1] = UINT16_MAX;
+   options->max_workgroup_count[2] = UINT16_MAX;
 }
 
 /* Sleep for the given number of clock cycles. */

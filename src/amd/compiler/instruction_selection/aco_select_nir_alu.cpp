@@ -159,7 +159,7 @@ uint32_t
 get_alu_src_ub(isel_context* ctx, nir_alu_instr* instr, int src_idx)
 {
    nir_scalar scalar = nir_scalar{instr->src[src_idx].src.ssa, instr->src[src_idx].swizzle[0]};
-   return nir_unsigned_upper_bound(ctx->shader, ctx->range_ht, scalar, &ctx->ub_config);
+   return nir_unsigned_upper_bound(ctx->shader, ctx->range_ht, scalar);
 }
 
 void

@@ -836,6 +836,12 @@ typedef struct nir_shader_compiler_options {
     * Passed to the callbacks that accept a data pointer.
     */
    const void *cb_data;
+
+   /** Maximum amount of invocations per workgroup. */
+   unsigned max_workgroup_invocations;
+
+   /** Maximum compute shader / kernel dispatchable work size. */
+   unsigned max_workgroup_count[3];
 } nir_shader_compiler_options;
 
 #ifdef __cplusplus

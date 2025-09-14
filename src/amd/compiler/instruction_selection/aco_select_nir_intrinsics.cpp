@@ -306,7 +306,7 @@ add_might_overflow(isel_context* ctx, nir_src* offset, uint32_t const_offset)
    if (!offset)
       return true;
    return nir_addition_might_overflow(ctx->shader, ctx->range_ht, nir_get_scalar(offset->ssa, 0),
-                                      const_offset, &ctx->ub_config);
+                                      const_offset);
 }
 
 void
