@@ -15,6 +15,7 @@ use mesa_rust_util::ptr::ThreadSafeCPtr;
 use std::ffi::c_int;
 use std::ffi::CStr;
 use std::num::NonZeroU64;
+use std::ops::Deref;
 use std::os::raw::c_schar;
 use std::os::raw::c_uchar;
 use std::os::raw::c_void;
@@ -23,8 +24,14 @@ use std::ptr::NonNull;
 use std::sync::Arc;
 
 #[derive(PartialEq)]
-pub struct PipeScreen {
+pub struct PipeScreenWithLdev {
     ldev: PipeLoaderDevice,
+    screen: Arc<PipeScreen>,
+}
+
+#[derive(PartialEq)]
+#[repr(transparent)]
+pub struct PipeScreen {
     screen: ThreadSafeCPtr<pipe_screen>,
 }
 
@@ -69,7 +76,11 @@ impl Drop for ScreenVMAllocation<'_> {
     }
 }
 
-impl PipeScreen {
+/// A PipeScreen wrapper also containing an owned PipeLoaderDevice reference.
+///
+/// TODO: This exist purely for convenience reasons and we might want to split those objects
+/// properly.
+impl PipeScreenWithLdev {
     pub(super) fn new(ldev: PipeLoaderDevice, screen: *mut pipe_screen) -> Option<Self> {
         if screen.is_null() || !has_required_cbs(screen) {
             return None;
@@ -78,10 +89,30 @@ impl PipeScreen {
         Some(Self {
             ldev,
             // SAFETY: `pipe_screen` is considered a thread-safe type
-            screen: unsafe { ThreadSafeCPtr::new(screen)? },
+            screen: Arc::new(PipeScreen {
+                screen: unsafe { ThreadSafeCPtr::new(screen)? },
+            }),
         })
     }
 
+    pub fn driver_name(&self) -> &CStr {
+        self.ldev.driver_name()
+    }
+
+    pub fn device_type(&self) -> pipe_loader_device_type {
+        self.ldev.device_type()
+    }
+}
+
+impl Deref for PipeScreenWithLdev {
+    type Target = Arc<PipeScreen>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.screen
+    }
+}
+
+impl PipeScreen {
     fn screen(&self) -> &pipe_screen {
         // SAFETY: We own the pointer, so it's valid for every caller of this function as we are
         //         responsible of freeing it.
@@ -306,10 +337,6 @@ impl PipeScreen {
         &self.screen().compute_caps
     }
 
-    pub fn driver_name(&self) -> &CStr {
-        self.ldev.driver_name()
-    }
-
     pub fn name(&self) -> &CStr {
         unsafe { CStr::from_ptr(self.screen().get_name.unwrap()(self.pipe())) }
     }
@@ -338,10 +365,6 @@ impl PipeScreen {
 
     pub fn device_vendor(&self) -> &CStr {
         unsafe { CStr::from_ptr(self.screen().get_device_vendor.unwrap()(self.pipe())) }
-    }
-
-    pub fn device_type(&self) -> pipe_loader_device_type {
-        self.ldev.device_type()
     }
 
     pub fn driver_uuid(&self) -> Option<[c_schar; UUID_SIZE]> {

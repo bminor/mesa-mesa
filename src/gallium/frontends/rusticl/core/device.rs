@@ -40,7 +40,7 @@ use std::sync::MutexGuard;
 
 /// Contains basic stuff we need to partially initialize Device
 pub struct DeviceBase {
-    pub screen: Arc<PipeScreen>,
+    pub screen: PipeScreenWithLdev,
     pub cl_version: CLVersion,
     pub clc_version: CLVersion,
     pub clc_versions: Vec<cl_name_version>,
@@ -1273,12 +1273,11 @@ impl DeviceBase {
 }
 
 impl Device {
-    fn new(screen: PipeScreen) -> Option<Device> {
+    fn new(screen: PipeScreenWithLdev) -> Option<Device> {
         if !Self::check_valid(&screen) {
             return None;
         }
 
-        let screen = Arc::new(screen);
         // Create before loading libclc as llvmpipe only creates the shader cache with the first
         // context being created.
         let helper_ctx = PipeContext::new(PipeContextPrio::Med, &screen)?;
