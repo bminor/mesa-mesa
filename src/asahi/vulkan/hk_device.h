@@ -69,8 +69,6 @@ struct hk_device {
    struct hk_descriptor_table occlusion_queries;
    struct hk_sampler_heap samplers;
 
-   struct hk_queue queue;
-
    struct vk_pipeline_cache *mem_cache;
 
    struct vk_meta_device meta;

@@ -38,7 +38,7 @@ hk_queue_device(struct hk_queue *queue)
    return (struct hk_device *)queue->vk.base.device;
 }
 
-VkResult hk_queue_init(struct hk_device *dev, struct hk_queue *queue,
+VkResult hk_queue_init(struct hk_device *dev,
                        const VkDeviceQueueCreateInfo *pCreateInfo,
                        uint32_t index_in_family);
 

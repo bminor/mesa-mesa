@@ -388,10 +388,14 @@ hk_CreateDevice(VkPhysicalDevice physicalDevice,
    if (result != VK_SUCCESS)
       goto fail_internal_shaders;
 
-   result =
-      hk_queue_init(dev, &dev->queue, &pCreateInfo->pQueueCreateInfos[0], 0);
-   if (result != VK_SUCCESS)
-      goto fail_internal_shaders_2;
+   for (unsigned i = 0; i < pCreateInfo->queueCreateInfoCount; i++) {
+      for (unsigned q = 0; q < pCreateInfo->pQueueCreateInfos[i].queueCount;
+           q++) {
+         result = hk_queue_init(dev, &pCreateInfo->pQueueCreateInfos[i], q);
+         if (result != VK_SUCCESS)
+            goto fail_queues;
+      }
+   }
 
    struct vk_pipeline_cache_create_info cache_info = {
       .weak_ref = true,
@@ -399,7 +403,7 @@ hk_CreateDevice(VkPhysicalDevice physicalDevice,
    dev->mem_cache = vk_pipeline_cache_create(&dev->vk, &cache_info, NULL);
    if (dev->mem_cache == NULL) {
       result = VK_ERROR_OUT_OF_HOST_MEMORY;
-      goto fail_queue;
+      goto fail_queues;
    }
 
    result = hk_device_init_meta(dev);
@@ -440,16 +444,18 @@ fail_meta:
    hk_device_finish_meta(dev);
 fail_mem_cache:
    vk_pipeline_cache_destroy(dev->mem_cache, NULL);
-fail_queue:
-   hk_queue_finish(dev, &dev->queue);
-fail_rodata:
-   agx_bo_unreference(&dev->dev, dev->rodata.bo);
-fail_bg_eot:
-   agx_bg_eot_cleanup(&dev->bg_eot);
-fail_internal_shaders_2:
+fail_queues:
+   vk_foreach_queue_safe(iter, &dev->vk) {
+      struct hk_queue *queue = container_of(iter, struct hk_queue, vk);
+      hk_queue_finish(dev, queue);
+   }
    hk_destroy_internal_shaders(dev, &dev->kernels, false);
 fail_internal_shaders:
    hk_destroy_internal_shaders(dev, &dev->prolog_epilog, true);
+fail_bg_eot:
+   agx_bg_eot_cleanup(&dev->bg_eot);
+fail_rodata:
+   agx_bo_unreference(&dev->dev, dev->rodata.bo);
 fail_queries:
    hk_descriptor_table_finish(dev, &dev->occlusion_queries);
 fail_samplers:
@@ -482,7 +488,12 @@ hk_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
    hk_destroy_internal_shaders(dev, &dev->prolog_epilog, true);
 
    vk_pipeline_cache_destroy(dev->mem_cache, NULL);
-   hk_queue_finish(dev, &dev->queue);
+
+   vk_foreach_queue_safe(iter, &dev->vk) {
+      struct hk_queue *queue = container_of(iter, struct hk_queue, vk);
+      hk_queue_finish(dev, queue);
+   }
+
    vk_device_finish(&dev->vk);
 
    agx_scratch_fini(&dev->scratch.vs);

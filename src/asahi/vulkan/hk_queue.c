@@ -943,14 +943,18 @@ translate_priority(VkQueueGlobalPriorityKHR prio)
 }
 
 VkResult
-hk_queue_init(struct hk_device *dev, struct hk_queue *queue,
-              const VkDeviceQueueCreateInfo *pCreateInfo,
+hk_queue_init(struct hk_device *dev, const VkDeviceQueueCreateInfo *pCreateInfo,
               uint32_t index_in_family)
 {
    struct hk_physical_device *pdev = hk_device_physical(dev);
    VkResult result;
 
    assert(pCreateInfo->queueFamilyIndex < pdev->queue_family_count);
+
+   struct hk_queue *queue = vk_zalloc(&dev->vk.alloc, sizeof(struct hk_queue),
+                                      8, VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
+   if (!queue)
+      return VK_ERROR_OUT_OF_HOST_MEMORY;
 
    const VkDeviceQueueGlobalPriorityCreateInfoKHR *priority_info =
       vk_find_struct_const(pCreateInfo->pNext,
@@ -1002,4 +1006,5 @@ hk_queue_finish(struct hk_device *dev, struct hk_queue *queue)
    drmSyncobjDestroy(dev->dev.fd, queue->drm.syncobj);
    agx_destroy_command_queue(&dev->dev, queue->drm.id);
    vk_queue_finish(&queue->vk);
+   vk_free(&dev->vk.alloc, queue);
 }
