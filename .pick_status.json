@@ -5404,7 +5404,7 @@
         "description": "anti-lag: Don't force enable every supported feature on device creation.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "722ffe9a739152626894acf4b1248f8848b88b96",
         "notes": null
