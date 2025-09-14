@@ -89,6 +89,7 @@ hk_get_device_extensions(const struct hk_instance *instance,
       .KHR_maintenance6 = true,
       .KHR_maintenance7 = true,
       .KHR_maintenance8 = true,
+      .KHR_maintenance9 = true,
       .KHR_map_memory2 = true,
       .KHR_multiview = true,
       .KHR_pipeline_executable_properties = true,
@@ -392,6 +393,9 @@ hk_get_device_features(
 
       /* VK_KHR_maintenance8 */
       .maintenance8 = true,
+
+      /* VK_KHR_maintenance9 */
+      .maintenance9 = true,
 
       /* VK_KHR_pipeline_executable_properties */
       .pipelineExecutableInfo = true,
@@ -917,6 +921,10 @@ hk_get_device_properties(const struct agx_device *dev,
          HK_MAX_DYNAMIC_BUFFERS / 2,
       .maxDescriptorSetUpdateAfterBindTotalBuffersDynamic =
          HK_MAX_DYNAMIC_BUFFERS,
+
+      /* VK_KHR_maintenance9 */
+      .image2DViewOf3DSparse = false,
+      .defaultVertexAttributeValue = VK_DEFAULT_VERTEX_ATTRIBUTE_VALUE_ZERO_ZERO_ZERO_ONE_KHR,
 
       /* VK_EXT_map_memory_placed */
       .minPlacedMemoryMapAlignment = os_page_size,
