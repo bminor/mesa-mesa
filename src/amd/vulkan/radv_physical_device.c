@@ -1703,7 +1703,9 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
       .minSubgroupSize = pdev->info.gfx_level >= GFX10 ? 32 : 64,
       .maxSubgroupSize = 64,
       .maxComputeWorkgroupSubgroups = UINT32_MAX,
-      .requiredSubgroupSizeStages = pdev->info.gfx_level >= GFX10 ? VK_SHADER_STAGE_COMPUTE_BIT | taskmesh_stages : 0,
+      .requiredSubgroupSizeStages = pdev->info.gfx_level >= GFX10
+                                       ? VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | taskmesh_stages
+                                       : 0,
       .maxInlineUniformBlockSize = MAX_INLINE_UNIFORM_BLOCK_SIZE,
       .maxPerStageDescriptorInlineUniformBlocks = MAX_INLINE_UNIFORM_BLOCK_SIZE * MAX_SETS,
       .maxPerStageDescriptorUpdateAfterBindInlineUniformBlocks = MAX_INLINE_UNIFORM_BLOCK_SIZE * MAX_SETS,
