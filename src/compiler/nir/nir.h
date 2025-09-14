@@ -6482,8 +6482,6 @@ typedef struct nir_unsigned_upper_bound_config {
    unsigned max_workgroup_invocations;
    unsigned max_workgroup_count[3];
    unsigned max_workgroup_size[3];
-
-   uint32_t vertex_attrib_max[32];
 } nir_unsigned_upper_bound_config;
 
 uint32_t

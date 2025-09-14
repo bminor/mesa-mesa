@@ -1563,13 +1563,6 @@ search_phi_bcsel(nir_scalar scalar, nir_scalar *buf, unsigned buf_size, struct s
    return 1;
 }
 
-static nir_variable *
-lookup_input(nir_shader *shader, unsigned driver_location)
-{
-   return nir_find_variable_with_driver_location(shader, nir_var_shader_in,
-                                                 driver_location);
-}
-
 /* The config here should be generic enough to be correct on any HW. */
 static const nir_unsigned_upper_bound_config default_ub_config = {
    .min_subgroup_size = 1u,
@@ -1587,41 +1580,6 @@ static const nir_unsigned_upper_bound_config default_ub_config = {
     * small the OpenGL 4.2 minimum maximum is 1024.
     */
    .max_workgroup_size = { UINT16_MAX, UINT16_MAX, UINT16_MAX },
-
-   .vertex_attrib_max = {
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-      UINT32_MAX,
-   },
 };
 
 struct scalar_query {
@@ -1734,17 +1692,6 @@ get_intrinsic_uub(struct analysis_state *state, struct scalar_query q, uint32_t 
       *result = DIV_ROUND_UP(workgroup_size, config->min_subgroup_size);
       if (intrin->intrinsic == nir_intrinsic_load_subgroup_id)
          (*result)--;
-      break;
-   }
-   case nir_intrinsic_load_input: {
-      if (shader->info.stage == MESA_SHADER_VERTEX && nir_src_is_const(intrin->src[0])) {
-         nir_variable *var = lookup_input(shader, nir_intrinsic_base(intrin));
-         if (var) {
-            int loc = var->data.location - VERT_ATTRIB_GENERIC0;
-            if (loc >= 0)
-               *result = config->vertex_attrib_max[loc];
-         }
-      }
       break;
    }
    case nir_intrinsic_reduce:
