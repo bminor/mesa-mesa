@@ -98,19 +98,15 @@ impl PipeScreen {
         &self.screen().caps
     }
 
-    pub fn create_context(self: &Arc<Self>, prio: PipeContextPrio) -> Option<PipeContext> {
+    pub(super) fn create_context(&self, prio: PipeContextPrio) -> *mut pipe_context {
         let flags: u32 = prio.into();
-        PipeContext::new(
-            unsafe {
-                self.screen().context_create.unwrap()(
-                    self.screen.as_ptr(),
-                    ptr::null_mut(),
-                    flags | PIPE_CONTEXT_COMPUTE_ONLY | PIPE_CONTEXT_NO_LOD_BIAS,
-                )
-            },
-            prio,
-            self,
-        )
+        unsafe {
+            self.screen().context_create.unwrap()(
+                self.pipe(),
+                ptr::null_mut(),
+                flags | PIPE_CONTEXT_COMPUTE_ONLY | PIPE_CONTEXT_NO_LOD_BIAS,
+            )
+        }
     }
 
     pub fn alloc_vm(&self, start: NonZeroU64, size: NonZeroU64) -> Option<ScreenVMAllocation<'_>> {

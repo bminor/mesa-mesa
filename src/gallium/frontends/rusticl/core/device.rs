@@ -1141,7 +1141,7 @@ impl DeviceBase {
         let res = (prio == PipeContextPrio::Med)
             .then(|| self.reusable_ctx().pop())
             .flatten()
-            .or_else(|| self.screen.create_context(prio))?;
+            .or_else(|| PipeContext::new(prio, &self.screen))?;
 
         debug_assert_eq!(res.prio, prio);
 
@@ -1281,7 +1281,7 @@ impl Device {
         let screen = Arc::new(screen);
         // Create before loading libclc as llvmpipe only creates the shader cache with the first
         // context being created.
-        let helper_ctx = screen.create_context(PipeContextPrio::Med)?;
+        let helper_ctx = PipeContext::new(PipeContextPrio::Med, &screen)?;
         let mut dev_base = DeviceBase {
             caps: DeviceCaps::new(&screen, &helper_ctx),
             helper_ctx: Mutex::new(helper_ctx),

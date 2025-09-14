@@ -52,11 +52,8 @@ impl From<RWFlags> for pipe_map_flags {
 }
 
 impl PipeContext {
-    pub(super) fn new(
-        context: *mut pipe_context,
-        prio: PipeContextPrio,
-        screen: &Arc<PipeScreen>,
-    ) -> Option<Self> {
+    pub fn new(prio: PipeContextPrio, screen: &Arc<PipeScreen>) -> Option<Self> {
+        let context = screen.create_context(prio);
         let s = Self {
             pipe: NonNull::new(context)?,
             screen: Arc::clone(screen),
