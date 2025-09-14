@@ -7,7 +7,7 @@ use libc_rust_gen::close;
 use mesa_rust_gen::*;
 use mesa_rust_util::ptr::ThreadSafeCPtr;
 
-use std::{ffi::c_int, sync::Arc};
+use std::ffi::c_int;
 
 pub struct FenceFd {
     pub fd: i32,
@@ -23,16 +23,16 @@ impl Drop for FenceFd {
 
 pub struct PipeFence {
     fence: ThreadSafeCPtr<pipe_fence_handle>,
-    screen: Arc<PipeScreen>,
+    screen: PipeScreenOwned,
 }
 
 unsafe impl Send for PipeFence {}
 
 impl PipeFence {
-    pub fn new(fence: *mut pipe_fence_handle, screen: &Arc<PipeScreen>) -> Option<Self> {
+    pub fn new(fence: *mut pipe_fence_handle, screen: &PipeScreen) -> Option<Self> {
         Some(Self {
             fence: unsafe { ThreadSafeCPtr::new(fence)? },
-            screen: Arc::clone(screen),
+            screen: screen.to_owned(),
         })
     }
 

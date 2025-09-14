@@ -34,7 +34,6 @@ use std::mem::transmute;
 use std::num::NonZeroU64;
 use std::ops::Deref;
 use std::os::raw::*;
-use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::MutexGuard;
 
@@ -1132,7 +1131,7 @@ impl DeviceBase {
         self.reusable_ctx.lock().unwrap()
     }
 
-    pub fn screen(&self) -> &Arc<PipeScreen> {
+    pub fn screen(&self) -> &PipeScreen {
         &self.screen
     }
 

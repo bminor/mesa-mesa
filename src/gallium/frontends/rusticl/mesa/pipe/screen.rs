@@ -11,9 +11,12 @@ use crate::util::disk_cache::*;
 use mesa_rust_gen::*;
 use mesa_rust_util::has_required_feature;
 use mesa_rust_util::ptr::ThreadSafeCPtr;
+use mesa_rust_util::static_assert;
 
+use std::borrow::Borrow;
 use std::ffi::c_int;
 use std::ffi::CStr;
+use std::mem;
 use std::num::NonZeroU64;
 use std::ops::Deref;
 use std::os::raw::c_schar;
@@ -21,19 +24,23 @@ use std::os::raw::c_uchar;
 use std::os::raw::c_void;
 use std::ptr;
 use std::ptr::NonNull;
-use std::sync::Arc;
+use std::sync::atomic::AtomicI32;
+use std::sync::atomic::Ordering;
 
 #[derive(PartialEq)]
 pub struct PipeScreenWithLdev {
     ldev: PipeLoaderDevice,
-    screen: Arc<PipeScreen>,
+    screen: PipeScreenOwned,
 }
 
 #[derive(PartialEq)]
 #[repr(transparent)]
-pub struct PipeScreen {
+pub struct PipeScreenOwned {
     screen: ThreadSafeCPtr<pipe_screen>,
 }
+
+#[repr(transparent)]
+pub struct PipeScreen(pipe_screen);
 
 pub const UUID_SIZE: usize = PIPE_UUID_SIZE as usize;
 const LUID_SIZE: usize = PIPE_LUID_SIZE as usize;
@@ -86,13 +93,18 @@ impl PipeScreenWithLdev {
             return None;
         }
 
-        Some(Self {
-            ldev,
+        let screen = Self {
+            ldev: ldev,
             // SAFETY: `pipe_screen` is considered a thread-safe type
-            screen: Arc::new(PipeScreen {
+            screen: PipeScreenOwned {
                 screen: unsafe { ThreadSafeCPtr::new(screen)? },
-            }),
-        })
+            },
+        };
+
+        // We use SeqCst here as refcnt might be accessed behind a mutex.
+        screen.refcnt().store(1, Ordering::SeqCst);
+
+        Some(screen)
     }
 
     pub fn driver_name(&self) -> &CStr {
@@ -105,24 +117,79 @@ impl PipeScreenWithLdev {
 }
 
 impl Deref for PipeScreenWithLdev {
-    type Target = Arc<PipeScreen>;
+    type Target = PipeScreenOwned;
 
     fn deref(&self) -> &Self::Target {
         &self.screen
     }
 }
 
-impl PipeScreen {
-    fn screen(&self) -> &pipe_screen {
-        // SAFETY: We own the pointer, so it's valid for every caller of this function as we are
-        //         responsible of freeing it.
-        unsafe { self.screen.as_ref() }
+impl Borrow<PipeScreen> for PipeScreenOwned {
+    fn borrow(&self) -> &PipeScreen {
+        // SAFETY: PipeScreen is transparent over pipe_screen, so we can convert a &pipe_screen to
+        //         &PipeScreen.
+        unsafe { mem::transmute(self.screen) }
+    }
+}
+
+impl Deref for PipeScreenOwned {
+    type Target = PipeScreen;
+
+    fn deref(&self) -> &Self::Target {
+        self.borrow()
+    }
+}
+
+impl Drop for PipeScreenOwned {
+    fn drop(&mut self) {
+        if self.refcnt().fetch_sub(1, Ordering::SeqCst) == 1 {
+            unsafe { self.screen().destroy.unwrap()(self.pipe()) }
+        }
+    }
+}
+
+impl PipeScreenOwned {
+    /// Turns a raw pointer into an owned reference.
+    ///
+    /// # Safety
+    ///
+    /// `screen` must be equivalent to a pointer retrieved via [PipeScreenOwned::into_raw].
+    /// This function does not increase reference count; use with a pointer not accounted
+    /// for in the reference count could lead to undefined behavior.
+    pub(super) unsafe fn from_raw<'s>(screen: *mut pipe_screen) -> Self {
+        // SAFETY: PipeScreenOwned is transparent over *mut pipe_screen
+        unsafe { mem::transmute(screen) }
     }
 
-    fn pipe(&self) -> *mut pipe_screen {
+    /// Turns self into a raw pointer leaking the reference count.
+    pub(super) fn into_raw(self) -> *mut pipe_screen {
+        // SAFETY: PipeScreenOwned is transparent over *mut pipe_screen
+        unsafe { mem::transmute(self) }
+    }
+}
+
+impl PipeScreen {
+    fn screen(&self) -> &pipe_screen {
+        &self.0
+    }
+
+    pub(super) fn pipe(&self) -> *mut pipe_screen {
         // screen methods are all considered thread safe, so we can just pass the mut pointer
         // around.
-        self.screen.as_ptr()
+        ((&self.0) as *const pipe_screen).cast_mut()
+    }
+
+    fn refcnt(&self) -> &AtomicI32 {
+        static_assert!(mem::align_of::<i32>() >= mem::align_of::<AtomicI32>());
+
+        let refcnt: *const _ = &self.screen().refcnt;
+
+        // SAFETY: refcnt is supposed to be atomically accessed
+        unsafe { AtomicI32::from_ptr(refcnt.cast_mut()) }
+    }
+
+    pub(super) fn from_raw<'s>(screen: &'s *mut pipe_screen) -> &'s Self {
+        unsafe { mem::transmute(*screen) }
     }
 
     pub fn caps(&self) -> &pipe_caps {
@@ -452,7 +519,7 @@ impl PipeScreen {
         }
     }
 
-    pub fn create_semaphore(self: &Arc<PipeScreen>) -> Option<PipeFence> {
+    pub fn create_semaphore(&self) -> Option<PipeFence> {
         let fence = unsafe { self.screen().semaphore_create.unwrap()(self.pipe()) };
         PipeFence::new(fence, self)
     }
@@ -495,9 +562,19 @@ impl PipeScreen {
     }
 }
 
-impl Drop for PipeScreen {
-    fn drop(&mut self) {
-        unsafe { self.screen().destroy.unwrap()(self.pipe()) }
+impl ToOwned for PipeScreen {
+    type Owned = PipeScreenOwned;
+
+    fn to_owned(&self) -> Self::Owned {
+        let refcnt = self.refcnt().fetch_add(1, Ordering::SeqCst);
+
+        // refcnt is not supposed to be 0 at any given point in time.
+        assert!(refcnt > 0, "Reference count underflow detected!");
+
+        PipeScreenOwned {
+            // SAFETY: self.pipe() is a valid pointer.
+            screen: unsafe { ThreadSafeCPtr::new(self.pipe()).unwrap() },
+        }
     }
 }
 

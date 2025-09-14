@@ -13,7 +13,6 @@ use mesa_rust_util::has_required_feature;
 use std::os::raw::*;
 use std::ptr;
 use std::ptr::*;
-use std::sync::Arc;
 
 #[repr(u32)]
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -31,7 +30,6 @@ impl From<PipeContextPrio> for u32 {
 
 pub struct PipeContext {
     pipe: NonNull<pipe_context>,
-    screen: Arc<PipeScreen>,
     pub prio: PipeContextPrio,
 }
 
@@ -52,11 +50,11 @@ impl From<RWFlags> for pipe_map_flags {
 }
 
 impl PipeContext {
-    pub fn new(prio: PipeContextPrio, screen: &Arc<PipeScreen>) -> Option<Self> {
+    pub fn new(prio: PipeContextPrio, screen: &PipeScreen) -> Option<Self> {
+        let screen = screen.to_owned();
         let context = screen.create_context(prio);
         let s = Self {
             pipe: NonNull::new(context)?,
-            screen: Arc::clone(screen),
             prio: prio,
         };
 
@@ -65,11 +63,20 @@ impl PipeContext {
             return None;
         }
 
+        // As the raw type already stores the pointer we can safely leak it here and turn it back
+        // into the owned wrapper on `drop`.
+        let ptr = screen.into_raw();
+        assert_eq!(ptr, s.screen().pipe());
         Some(s)
     }
 
     pub(crate) fn pipe(&self) -> NonNull<pipe_context> {
         self.pipe
+    }
+
+    pub fn screen(&self) -> &PipeScreen {
+        // SAFETY: self.pipe() is a valid pointer.
+        PipeScreen::from_raw(&unsafe { self.pipe().as_ref() }.screen)
     }
 
     pub fn buffer_subdata(
@@ -637,7 +644,7 @@ impl PipeContext {
             let mut fence = ptr::null_mut();
             self.pipe.as_ref().flush.unwrap()(self.pipe.as_ptr(), &mut fence, 0);
             // TODO: handle properly
-            PipeFence::new(fence, &self.screen).unwrap()
+            PipeFence::new(fence, self.screen()).unwrap()
         }
     }
 
@@ -650,7 +657,7 @@ impl PipeContext {
                 fence_fd.fd,
                 fence_type,
             );
-            PipeFence::new(fence, &self.screen)
+            PipeFence::new(fence, self.screen())
         }
     }
 
@@ -695,9 +702,15 @@ impl PipeContext {
 impl Drop for PipeContext {
     fn drop(&mut self) {
         self.flush().wait();
+        let screen = self.screen().pipe();
         unsafe {
             self.pipe.as_ref().destroy.unwrap()(self.pipe.as_ptr());
         }
+
+        // In new we check that screen is identical to the pointer we retrieved from into_raw. We
+        // convert the pointer back to an owned reference so we release our reference to prevent
+        // leaking memory.
+        unsafe { PipeScreenOwned::from_raw(screen) };
     }
 }
 
