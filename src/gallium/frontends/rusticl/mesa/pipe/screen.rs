@@ -63,7 +63,7 @@ impl Drop for ScreenVMAllocation<'_> {
     fn drop(&mut self) {
         if let Some(free_vm) = self.screen.screen().free_vm {
             unsafe {
-                free_vm(self.screen.screen.as_ptr(), self.alloc.as_ptr());
+                free_vm(self.screen.pipe(), self.alloc.as_ptr());
             }
         }
     }
@@ -88,6 +88,12 @@ impl PipeScreen {
         unsafe { self.screen.as_ref() }
     }
 
+    fn pipe(&self) -> *mut pipe_screen {
+        // screen methods are all considered thread safe, so we can just pass the mut pointer
+        // around.
+        self.screen.as_ptr()
+    }
+
     pub fn caps(&self) -> &pipe_caps {
         &self.screen().caps
     }
@@ -108,8 +114,7 @@ impl PipeScreen {
     }
 
     pub fn alloc_vm(&self, start: NonZeroU64, size: NonZeroU64) -> Option<ScreenVMAllocation<'_>> {
-        let alloc =
-            unsafe { self.screen().alloc_vm?(self.screen.as_ptr(), start.get(), size.get()) };
+        let alloc = unsafe { self.screen().alloc_vm?(self.pipe(), start.get(), size.get()) };
         Some(ScreenVMAllocation {
             screen: self,
             alloc: NonNull::new(alloc)?,
@@ -126,7 +131,7 @@ impl PipeScreen {
                         .is_none());
                 }
             }
-            unsafe { resource_assign_vma(self.screen.as_ptr(), res.pipe(), address) }
+            unsafe { resource_assign_vma(self.pipe(), res.pipe(), address) }
         } else {
             false
         }
@@ -134,7 +139,7 @@ impl PipeScreen {
 
     fn resource_create(&self, tmpl: &pipe_resource) -> Option<PipeResourceOwned> {
         PipeResourceOwned::new(
-            unsafe { self.screen().resource_create.unwrap()(self.screen.as_ptr(), tmpl) },
+            unsafe { self.screen().resource_create.unwrap()(self.pipe(), tmpl) },
             false,
         )
     }
@@ -145,7 +150,7 @@ impl PipeScreen {
         mem: *mut c_void,
     ) -> Option<PipeResourceOwned> {
         PipeResourceOwned::new(
-            unsafe { self.screen().resource_from_user_memory?(self.screen.as_ptr(), tmpl, mem) },
+            unsafe { self.screen().resource_from_user_memory?(self.pipe(), tmpl, mem) },
             true,
         )
     }
@@ -291,12 +296,7 @@ impl PipeScreen {
 
         unsafe {
             PipeResourceOwned::new(
-                self.screen().resource_from_handle.unwrap()(
-                    self.screen.as_ptr(),
-                    &tmpl,
-                    &mut handle,
-                    0,
-                ),
+                self.screen().resource_from_handle.unwrap()(self.pipe(), &tmpl, &mut handle, 0),
                 false,
             )
         }
@@ -315,18 +315,18 @@ impl PipeScreen {
     }
 
     pub fn name(&self) -> &CStr {
-        unsafe { CStr::from_ptr(self.screen().get_name.unwrap()(self.screen.as_ptr())) }
+        unsafe { CStr::from_ptr(self.screen().get_name.unwrap()(self.pipe())) }
     }
 
     pub fn device_node_mask(&self) -> Option<u32> {
-        unsafe { Some(self.screen().get_device_node_mask?(self.screen.as_ptr())) }
+        unsafe { Some(self.screen().get_device_node_mask?(self.pipe())) }
     }
 
     pub fn device_uuid(&self) -> Option<[c_uchar; UUID_SIZE]> {
         let mut uuid = [0; UUID_SIZE];
         let ptr = uuid.as_mut_ptr();
         unsafe {
-            self.screen().get_device_uuid?(self.screen.as_ptr(), ptr.cast());
+            self.screen().get_device_uuid?(self.pipe(), ptr.cast());
         }
 
         Some(uuid)
@@ -335,17 +335,13 @@ impl PipeScreen {
     pub fn device_luid(&self) -> Option<[c_uchar; LUID_SIZE]> {
         let mut luid = [0; LUID_SIZE];
         let ptr = luid.as_mut_ptr();
-        unsafe { self.screen().get_device_luid?(self.screen.as_ptr(), ptr.cast()) }
+        unsafe { self.screen().get_device_luid?(self.pipe(), ptr.cast()) }
 
         Some(luid)
     }
 
     pub fn device_vendor(&self) -> &CStr {
-        unsafe {
-            CStr::from_ptr(self.screen().get_device_vendor.unwrap()(
-                self.screen.as_ptr(),
-            ))
-        }
+        unsafe { CStr::from_ptr(self.screen().get_device_vendor.unwrap()(self.pipe())) }
     }
 
     pub fn device_type(&self) -> pipe_loader_device_type {
@@ -356,7 +352,7 @@ impl PipeScreen {
         let mut uuid = [0; UUID_SIZE];
         let ptr = uuid.as_mut_ptr();
         unsafe {
-            self.screen().get_driver_uuid?(self.screen.as_ptr(), ptr.cast());
+            self.screen().get_driver_uuid?(self.pipe(), ptr.cast());
         }
 
         Some(uuid)
@@ -368,7 +364,7 @@ impl PipeScreen {
                 .screen()
                 .get_cl_cts_version
                 .map_or(ptr::null(), |get_cl_cts_version| {
-                    get_cl_cts_version(self.screen.as_ptr())
+                    get_cl_cts_version(self.pipe())
                 });
             if ptr.is_null() {
                 // this string is good enough to pass the CTS
@@ -386,14 +382,7 @@ impl PipeScreen {
         bindings: u32,
     ) -> bool {
         unsafe {
-            self.screen().is_format_supported.unwrap()(
-                self.screen.as_ptr(),
-                format,
-                target,
-                0,
-                0,
-                bindings,
-            )
+            self.screen().is_format_supported.unwrap()(self.pipe(), format, target, 0, 0, bindings)
         }
     }
 
@@ -401,7 +390,7 @@ impl PipeScreen {
         unsafe {
             self.screen()
                 .get_timestamp
-                .unwrap_or(u_default_get_timestamp)(self.screen.as_ptr())
+                .unwrap_or(u_default_get_timestamp)(self.pipe())
         }
     }
 
@@ -427,7 +416,7 @@ impl PipeScreen {
     }
 
     pub fn shader_cache(&self) -> Option<DiskCacheBorrowed> {
-        let ptr = unsafe { self.screen().get_disk_shader_cache?(self.screen.as_ptr()) };
+        let ptr = unsafe { self.screen().get_disk_shader_cache?(self.pipe()) };
 
         DiskCacheBorrowed::from_ptr(ptr)
     }
@@ -436,7 +425,7 @@ impl PipeScreen {
     pub fn finalize_nir(&self, nir: &NirShader) -> bool {
         if let Some(func) = self.screen().finalize_nir {
             unsafe {
-                func(self.screen.as_ptr(), nir.get_nir().cast());
+                func(self.pipe(), nir.get_nir().cast());
             }
             true
         } else {
@@ -445,24 +434,20 @@ impl PipeScreen {
     }
 
     pub fn create_semaphore(self: &Arc<PipeScreen>) -> Option<PipeFence> {
-        let fence = unsafe { self.screen().semaphore_create.unwrap()(self.screen.as_ptr()) };
+        let fence = unsafe { self.screen().semaphore_create.unwrap()(self.pipe()) };
         PipeFence::new(fence, self)
     }
 
     pub(super) fn unref_fence(&self, mut fence: *mut pipe_fence_handle) {
         unsafe {
-            self.screen().fence_reference.unwrap()(
-                self.screen.as_ptr(),
-                &mut fence,
-                ptr::null_mut(),
-            );
+            self.screen().fence_reference.unwrap()(self.pipe(), &mut fence, ptr::null_mut());
         }
     }
 
     pub(super) fn fence_finish(&self, fence: *mut pipe_fence_handle) -> bool {
         unsafe {
             self.screen().fence_finish.unwrap()(
-                self.screen.as_ptr(),
+                self.pipe(),
                 ptr::null_mut(),
                 fence,
                 OS_TIMEOUT_INFINITE as u64,
@@ -471,13 +456,13 @@ impl PipeScreen {
     }
 
     pub(super) fn fence_get_fd(&self, fence: *mut pipe_fence_handle) -> c_int {
-        unsafe { self.screen().fence_get_fd.unwrap()(self.screen.as_ptr(), fence) }
+        unsafe { self.screen().fence_get_fd.unwrap()(self.pipe(), fence) }
     }
 
     pub fn query_memory_info(&self) -> Option<pipe_memory_info> {
         let mut info = pipe_memory_info::default();
         unsafe {
-            self.screen().query_memory_info?(self.screen.as_ptr(), &mut info);
+            self.screen().query_memory_info?(self.pipe(), &mut info);
         }
         Some(info)
     }
@@ -493,7 +478,7 @@ impl PipeScreen {
 
 impl Drop for PipeScreen {
     fn drop(&mut self) {
-        unsafe { self.screen().destroy.unwrap()(self.screen.as_ptr()) }
+        unsafe { self.screen().destroy.unwrap()(self.pipe()) }
     }
 }
 
