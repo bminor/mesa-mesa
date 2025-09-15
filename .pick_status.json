@@ -4154,7 +4154,7 @@
         "description": "nir/shrink_stores: Don't shrink stores to an invalid num_components.",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2dba7e60567fe0b2742a0a4b4bba618123153757",
         "notes": null
