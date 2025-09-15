@@ -18,6 +18,7 @@ from dateutil import parser
 from typing import Optional
 
 import gitlab
+from gitlab.base import RESTObjectList
 from gitlab.v4.objects import Project, ProjectMergeRequest
 from gitlab_common import read_token, pretty_duration
 
@@ -56,11 +57,7 @@ class MargeMergeRequest:
         self.assigned_at = self.__find_last_assign_to_marge()
 
     def __find_last_assign_to_marge(self) -> Optional[datetime]:
-        for note in self.mr.notes.list(
-            iterator=True,
-            order_by="updated_at",
-            sort="desc"
-        ):  # start with the most recent
+        for note in self.__get_mr_notes_iterator():
             if note.body.startswith(ASSIGNED_TO_MARGE):
                 return parser.parse(note.created_at)
 
@@ -80,6 +77,11 @@ class MargeMergeRequest:
     @property
     def title(self) -> str:
         return self.mr.title
+
+    def __get_mr_notes_iterator(self) -> RESTObjectList:
+        return self.mr.notes.list(
+            iterator=True, order_by="updated_at", sort="desc"
+        )  # start with the most recent
 
 
 @dataclass
@@ -126,12 +128,7 @@ class MargeQueue:
 
 def get_merge_queue(project: Project) -> MargeQueue:
     queue = MargeQueue()
-    for mr in project.mergerequests.list(
-        assignee_id=MARGE_BOT_USER_ID,
-        scope="all",
-        state="opened",
-        get_all=True,
-    ):
+    for mr in __get_project_marge_merge_requests(project):
         marge_merge_request = MargeMergeRequest(mr)
         queue.append(marge_merge_request)
     for mr in queue.sorted_queue:
@@ -152,12 +149,31 @@ def get_merge_queue(project: Project) -> MargeQueue:
     return queue
 
 
+def __get_gitlab_object(token: str) -> gitlab.Gitlab:
+    return gitlab.Gitlab(url="https://gitlab.freedesktop.org", private_token=token, retry_transient_errors=True)
+
+
+def __get_gitlab_project(gl: gitlab.Gitlab) -> Project:
+    return gl.projects.get("mesa/mesa")
+
+
+def __get_project_marge_merge_requests(
+    project: Project
+) -> list[ProjectMergeRequest]:
+    return project.mergerequests.list(
+        assignee_id=MARGE_BOT_USER_ID,
+        scope="all",
+        state="opened",
+        get_all=True,
+    )
+
+
 def main():
     args = parse_args()
     token = read_token(args.token)
-    gl = gitlab.Gitlab(url="https://gitlab.freedesktop.org", private_token=token, retry_transient_errors=True)
+    gl = __get_gitlab_object(token)
 
-    project = gl.projects.get("mesa/mesa")
+    project = __get_gitlab_project(gl)
 
     while True:
         n_mrs = get_merge_queue(project).n_merge_requests_enqueued
