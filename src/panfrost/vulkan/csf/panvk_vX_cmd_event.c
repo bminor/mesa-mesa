@@ -74,7 +74,7 @@ panvk_per_arch(CmdSetEvent2)(VkCommandBuffer commandBuffer, VkEvent _event,
 
    for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
       struct cs_builder *b = panvk_get_cs_builder(cmdbuf, i);
-      uint16_t sb_mask = deps.src[i].wait_sb_mask;
+      uint32_t sb_mask = deps.src[i].wait_sb_mask;
       struct cs_index sync_addr = cs_scratch_reg64(b, 0);
       struct cs_index seqno = cs_scratch_reg32(b, 2);
       struct cs_index cmp_scratch = cs_scratch_reg32(b, 3);
