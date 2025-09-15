@@ -27,6 +27,7 @@
 #include "brw_disasm_info.h"
 #include "dev/intel_debug.h"
 #include "compiler/nir/nir.h"
+#include "util/lut.h"
 
 static bool
 is_do_block(struct bblock_t *block)
@@ -172,6 +173,9 @@ disasm_annotate(struct disasm_info *disasm,
 #ifndef NDEBUG
    if (INTEL_DEBUG(DEBUG_ANNOTATION)) {
       group->annotation = inst->annotation;
+
+      if (group->annotation == NULL && inst->opcode == BRW_OPCODE_BFN)
+         group->annotation = util_lut3_to_str[inst->src[3].ud & 0xff];
    }
 #endif
 
