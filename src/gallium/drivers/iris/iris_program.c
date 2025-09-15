@@ -66,7 +66,6 @@ vue_layout(bool separate_shader)
    .prefix.limit_trig_input_range =                        \
       screen->driconf.limit_trig_input_range
 #define BRW_KEY_INIT(base_key, _vue_layout) \
-   .base.program_string_id = (base_key).program_string_id,     \
    .base.limit_trig_input_range = (base_key).limit_trig_input_range, \
    .base.vue_layout = _vue_layout
 
