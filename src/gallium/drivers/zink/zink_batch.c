@@ -229,6 +229,8 @@ zink_batch_state_destroy(struct zink_screen *screen, struct zink_batch_state *bs
    if (!bs)
       return;
 
+   reset_batch_state_internal(screen, bs);
+
    util_queue_fence_destroy(&bs->flush_completed);
 
    cnd_destroy(&bs->usage.flush);
