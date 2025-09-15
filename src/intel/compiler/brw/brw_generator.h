@@ -30,7 +30,8 @@ private:
                       struct brw_reg desc,
                       struct brw_reg ex_desc,
                       struct brw_reg payload,
-                      struct brw_reg payload2);
+                      struct brw_reg payload2,
+                      bool ex_bso);
    void generate_barrier(brw_inst *inst, struct brw_reg src);
    void generate_ddx(const brw_inst *inst,
                      struct brw_reg dst, struct brw_reg src);

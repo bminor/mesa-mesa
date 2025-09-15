@@ -257,9 +257,10 @@ struct brw_send_inst : brw_inst {
          bool is_volatile:1;
 
          /**
-          * Use extended bindless surface offset (26bits instead of 20bits)
+          * The surface used for this message is bindless and therefore should
+          * go into the address register.
           */
-         bool ex_bso:1;
+         bool bindless_surface:1;
 
          /**
           * Serialize the message (Gfx12.x only)

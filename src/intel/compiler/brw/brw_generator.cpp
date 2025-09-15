@@ -166,7 +166,8 @@ brw_generator::generate_send(brw_send_inst *inst,
                              struct brw_reg desc,
                              struct brw_reg ex_desc,
                              struct brw_reg payload,
-                             struct brw_reg payload2)
+                             struct brw_reg payload2,
+                             bool ex_bso)
 {
    const bool gather = inst->opcode == SHADER_OPCODE_SEND_GATHER;
    if (gather) {
@@ -192,7 +193,7 @@ brw_generator::generate_send(brw_send_inst *inst,
       brw_send_indirect_split_message(p, inst->sfid, dst, payload, payload2,
                                       desc, ex_desc,
                                       inst->ex_desc_imm ? inst->offset : 0,
-                                      inst->ex_mlen, inst->ex_bso,
+                                      inst->ex_mlen, ex_bso,
                                       inst->eot, gather);
       if (inst->check_tdr)
          brw_eu_inst_set_opcode(p->isa, brw_last_inst,
@@ -1166,14 +1167,18 @@ brw_generator::generate_code(const brw_shader &s,
 
       case SHADER_OPCODE_SEND:
          generate_send(inst->as_send(), dst, src[SEND_SRC_DESC], src[SEND_SRC_EX_DESC],
-                       src[SEND_SRC_PAYLOAD1], src[SEND_SRC_PAYLOAD2]);
+                       src[SEND_SRC_PAYLOAD1], src[SEND_SRC_PAYLOAD2],
+                       inst->as_send()->bindless_surface &&
+                       compiler->extended_bindless_surface_offset);
          send_count++;
          break;
 
       case SHADER_OPCODE_SEND_GATHER:
          generate_send(inst->as_send(), dst,
                        src[SEND_GATHER_SRC_DESC], src[SEND_GATHER_SRC_EX_DESC],
-                       src[SEND_GATHER_SRC_SCALAR], brw_null_reg());
+                       src[SEND_GATHER_SRC_SCALAR], brw_null_reg(),
+                       inst->as_send()->bindless_surface &&
+                       compiler->extended_bindless_surface_offset);
          send_count++;
          break;
 
