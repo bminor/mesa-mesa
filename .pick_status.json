@@ -4184,7 +4184,7 @@
         "description": "nvk: remove unused relative_dir variable",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f35172b6a46558fc628dcc18d41f1a036f93fa1f",
         "notes": null

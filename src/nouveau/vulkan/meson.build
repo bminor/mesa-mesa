@@ -93,8 +93,6 @@ nvk_entrypoints = custom_target(
   depend_files : vk_entrypoints_gen_depend_files,
 )
 
-relative_dir = fs.relative_to(meson.global_source_root(), meson.global_build_root())
-
 nvkcl_spv = custom_target(
   input : nvkcl_files,
   output : 'nvkcl.spv',
