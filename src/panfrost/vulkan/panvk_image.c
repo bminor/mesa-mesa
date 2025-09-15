@@ -67,7 +67,8 @@ panvk_image_can_use_afbc(
     * - this is a 1D image
     * - this is a 3D image on a pre-v7 GPU
     * - this is a mutable format image on v7- (format re-interpretation is
-    *   not possible on Bifrost hardware).
+    *   not possible on Bifrost hardware)
+    * - this is a sparse image
     *
     * Some of these checks are redundant with tests provided by the AFBC mod
     * handler when pan_image_test_props() is called, but we need them because
@@ -82,7 +83,8 @@ panvk_image_can_use_afbc(
           pan_afbc_supports_format(arch, pfmt) &&
           tiling == VK_IMAGE_TILING_OPTIMAL && type != VK_IMAGE_TYPE_1D &&
           (type != VK_IMAGE_TYPE_3D || arch >= 7) &&
-          (!(flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) || arch >= 9);
+          (!(flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) || arch >= 9) &&
+          (!(flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT));
 }
 
 static enum mali_texture_dimension
@@ -519,6 +521,15 @@ panvk_image_get_total_size(const struct panvk_image *image)
    return size;
 }
 
+static uint64_t
+panvk_image_get_sparse_size(const struct panvk_image *image)
+{
+   struct panvk_device *device = to_panvk_device(image->vk.base.device);
+   uint64_t image_size = panvk_image_get_total_size(image);
+   uint64_t page_size = panvk_get_gpu_page_size(device);
+   return ALIGN_POT(image_size, page_size);
+}
+
 VkResult
 panvk_image_init(struct panvk_image *image,
                  const VkImageCreateInfo *pCreateInfo)
@@ -538,13 +549,21 @@ panvk_image_init(struct panvk_image *image,
 }
 
 static void
-panvk_image_plane_bind(struct panvk_device *dev,
-                       struct panvk_image_plane *plane,
-                       struct panvk_device_memory *mem, uint64_t offset)
+panvk_image_plane_bind_mem(struct panvk_device *dev,
+                           struct panvk_image_plane *plane,
+                           struct panvk_device_memory *mem, uint64_t offset)
 {
    plane->plane.base = mem->addr.dev + offset;
    plane->mem = mem;
    plane->mem_offset = offset;
+}
+
+static void
+panvk_image_plane_bind_addr(struct panvk_device *dev,
+                            struct panvk_image_plane *plane,
+                            uint64_t addr)
+{
+   plane->plane.base = addr;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
@@ -554,6 +573,9 @@ panvk_CreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
    VK_FROM_HANDLE(panvk_device, dev, device);
    struct panvk_physical_device *phys_dev =
       to_panvk_physical_device(dev->vk.physical);
+   struct panvk_instance *instance =
+      to_panvk_instance(phys_dev->vk.instance);
+   VkResult result;
 
    if (panvk_android_is_gralloc_image(pCreateInfo)) {
       return panvk_android_create_gralloc_image(device, pCreateInfo, pAllocator,
@@ -574,11 +596,13 @@ panvk_CreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
    if (!image)
       return panvk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   VkResult result = panvk_image_init(image, pCreateInfo);
+   result = panvk_image_init(image, pCreateInfo);
    if (result != VK_SUCCESS) {
       vk_image_destroy(&dev->vk, pAllocator, &image->vk);
       return result;
    }
+
+   uint64_t size = panvk_image_get_total_size(image);
 
    /*
     * From the Vulkan spec:
@@ -586,13 +610,51 @@ panvk_CreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
     *    If the size of the resultant image would exceed maxResourceSize, then
     *    vkCreateImage must fail and return VK_ERROR_OUT_OF_DEVICE_MEMORY.
     */
-   if (panvk_image_get_total_size(image) > UINT32_MAX) {
-      vk_image_destroy(&dev->vk, pAllocator, &image->vk);
-      return panvk_error(device, VK_ERROR_OUT_OF_DEVICE_MEMORY);
+   if (size > UINT32_MAX) {
+      result = panvk_error(device, VK_ERROR_OUT_OF_DEVICE_MEMORY);
+      goto err_destroy_image;
+   }
+
+   if (image->vk.create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
+      uint64_t va_range = panvk_image_get_sparse_size(image);
+
+      image->sparse.device_address = panvk_as_alloc(dev, va_range,
+         pan_choose_gpu_va_alignment(dev->kmod.vm, va_range));
+      if (!image->sparse.device_address) {
+         result = panvk_error(device, VK_ERROR_OUT_OF_DEVICE_MEMORY);
+         goto err_destroy_image;
+      }
+
+      for (unsigned plane = 0; plane < image->plane_count; plane++) {
+         panvk_image_plane_bind_addr(dev, &image->planes[plane],
+                                     image->sparse.device_address);
+      }
+
+      if ((image->vk.create_flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) ||
+          (instance->debug_flags & PANVK_DEBUG_FORCE_BLACKHOLE)) {
+         /* Map last so that we don't have a possibility of getting any more
+          * errors, in which case we'd have to unmap.
+          */
+         result = panvk_map_to_blackhole(dev, image->sparse.device_address,
+                                         va_range);
+         if (result != VK_SUCCESS) {
+            result = panvk_error(dev, result);
+            goto err_free_va;
+         }
+      }
    }
 
    *pImage = panvk_image_to_handle(image);
    return VK_SUCCESS;
+
+err_free_va:
+   if (image->vk.create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT)
+      panvk_as_free(dev, image->sparse.device_address,
+                    panvk_image_get_sparse_size(image));
+
+err_destroy_image:
+   vk_image_destroy(&dev->vk, pAllocator, &image->vk);
+   return result;
 }
 
 VKAPI_ATTR void VKAPI_CALL
@@ -604,6 +666,23 @@ panvk_DestroyImage(VkDevice _device, VkImage _image,
 
    if (!image)
       return;
+
+   if (image->vk.create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
+      uint64_t va_range = panvk_image_get_sparse_size(image);
+
+      struct pan_kmod_vm_op unmap = {
+         .type = PAN_KMOD_VM_OP_TYPE_UNMAP,
+         .va = {
+            .start = image->sparse.device_address,
+            .size = va_range,
+         },
+      };
+      ASSERTED int ret =
+         pan_kmod_vm_bind(device->kmod.vm, PAN_KMOD_VM_OP_TYPE_UNMAP, &unmap, 1);
+      assert(!ret);
+
+      panvk_as_free(device, image->sparse.device_address, va_range);
+   }
 
    vk_image_destroy(&device->vk, pAllocator, &image->vk);
 }
@@ -692,18 +771,30 @@ panvk_GetImageMemoryRequirements2(VkDevice device,
                                   const VkImageMemoryRequirementsInfo2 *pInfo,
                                   VkMemoryRequirements2 *pMemoryRequirements)
 {
+   VK_FROM_HANDLE(panvk_device, dev, device);
    VK_FROM_HANDLE(panvk_image, image, pInfo->image);
 
-   const uint64_t alignment = 4096;
+   /* For sparse resources alignment specifies binding granularity, rather than
+    * the alignment requirement. It's up to us to satisfy the alignment
+    * requirement when allocating the VA range.
+    */
+   const uint64_t alignment =
+      image->vk.create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT
+         ? panvk_get_gpu_page_size(dev)
+         : 4096;
    const VkImagePlaneMemoryRequirementsInfo *plane_info =
       vk_find_struct_const(pInfo->pNext, IMAGE_PLANE_MEMORY_REQUIREMENTS_INFO);
    const bool disjoint = is_disjoint(image);
    const VkImageAspectFlags aspects =
       plane_info ? plane_info->planeAspect : image->vk.aspects;
    uint8_t plane = panvk_plane_index(image, aspects);
-   const uint64_t size =
+   const uint64_t size_non_sparse =
       disjoint ? image->planes[plane].plane.layout.data_size_B :
       panvk_image_get_total_size(image);
+   const uint64_t size =
+      image->vk.create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT
+         ? align64(size_non_sparse, panvk_get_gpu_page_size(dev))
+         : size_non_sparse;
 
    pMemoryRequirements->memoryRequirements.memoryTypeBits = 1;
    pMemoryRequirements->memoryRequirements.alignment = alignment;
@@ -772,6 +863,8 @@ panvk_image_bind(struct panvk_device *dev,
    VK_FROM_HANDLE(panvk_device_memory, mem, bind_info->memory);
    uint64_t offset = bind_info->memoryOffset;
 
+   assert(!(image->vk.create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT));
+
    if (!mem) {
       VkDeviceMemory mem_handle;
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
@@ -797,10 +890,10 @@ panvk_image_bind(struct panvk_device *dev,
          vk_find_struct_const(bind_info->pNext, BIND_IMAGE_PLANE_MEMORY_INFO);
       const uint8_t plane =
          panvk_plane_index(image, plane_info->planeAspect);
-      panvk_image_plane_bind(dev, &image->planes[plane], mem, offset);
+      panvk_image_plane_bind_mem(dev, &image->planes[plane], mem, offset);
    } else {
       for (unsigned plane = 0; plane < image->plane_count; plane++)
-         panvk_image_plane_bind(dev, &image->planes[plane], mem, offset);
+         panvk_image_plane_bind_mem(dev, &image->planes[plane], mem, offset);
    }
 
    return VK_SUCCESS;

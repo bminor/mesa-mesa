@@ -34,6 +34,10 @@ struct panvk_image_plane {
 struct panvk_image {
    struct vk_image vk;
 
+   struct {
+      VkDeviceAddress device_address;
+   } sparse;
+
    uint8_t plane_count;
    struct panvk_image_plane planes[PANVK_MAX_PLANES];
 };
