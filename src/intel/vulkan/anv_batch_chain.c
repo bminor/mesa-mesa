@@ -1608,10 +1608,9 @@ anv_queue_submit(struct vk_queue *vk_queue,
    if (result != VK_SUCCESS)
       return result;
 
-   pthread_mutex_lock(&device->mutex);
-
    uint64_t start_ts = intel_ds_begin_submit(&queue->ds);
 
+   pthread_mutex_lock(&device->mutex);
    if (submit->buffer_bind_count ||
        submit->image_opaque_bind_count ||
        submit->image_bind_count) {
@@ -1620,12 +1619,9 @@ anv_queue_submit(struct vk_queue *vk_queue,
       result = anv_queue_submit_cmd_buffers_locked(queue, submit,
                                                    utrace_submit);
    }
-
-   /* Take submission ID under lock */
-   intel_ds_end_submit(&queue->ds, start_ts);
-
    pthread_mutex_unlock(&device->mutex);
 
+   intel_ds_end_submit(&queue->ds, start_ts);
    intel_ds_device_process(&device->ds, false);
 
    return result;
