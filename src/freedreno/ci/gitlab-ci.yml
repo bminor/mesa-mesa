@@ -300,11 +300,12 @@ a750-gl-cl:
 a750-vk:
   extends:
     - .ci-tron-arm64-test-vk
-    - .a750-mupuf
+    - .a750-kws
     - .valve-turnip-manual-rules
-  timeout: 75m  # base runtime 54min total, 51min of testing
+  parallel: 5
+  timeout: 20m  # base runtime is 14.5, 12.5min of testing
   variables:
-    CI_TRON_TIMEOUT__OVERALL__MINUTES: 70
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 18
     DEQP_SUITE: freedreno-a750-vk
 
 a750-vkd3d:
