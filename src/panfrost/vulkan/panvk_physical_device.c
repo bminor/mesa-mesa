@@ -1294,35 +1294,3 @@ panvk_GetPhysicalDeviceExternalBufferProperties(
          .compatibleHandleTypes = handle_types,
       };
 }
-
-static const VkTimeDomainKHR panvk_time_domains[] = {
-   VK_TIME_DOMAIN_DEVICE_KHR,
-   VK_TIME_DOMAIN_CLOCK_MONOTONIC_KHR,
-#ifdef CLOCK_MONOTONIC_RAW
-   VK_TIME_DOMAIN_CLOCK_MONOTONIC_RAW_KHR,
-#endif
-};
-
-VKAPI_ATTR VkResult VKAPI_CALL
-panvk_GetPhysicalDeviceCalibrateableTimeDomainsKHR(
-   VkPhysicalDevice physicalDevice, uint32_t *pTimeDomainCount,
-   VkTimeDomainKHR *pTimeDomains)
-{
-   VK_FROM_HANDLE(panvk_physical_device, pdev, physicalDevice);
-   VK_OUTARRAY_MAKE_TYPED(VkTimeDomainKHR, out, pTimeDomains, pTimeDomainCount);
-
-   int d = 0;
-
-   /* If GPU query timestamp isn't supported, skip device domain */
-   if (!pdev->kmod.props.gpu_can_query_timestamp)
-      d++;
-
-   for (; d < ARRAY_SIZE(panvk_time_domains); d++) {
-      vk_outarray_append_typed(VkTimeDomainKHR, &out, i)
-      {
-         *i = panvk_time_domains[d];
-      }
-   }
-
-   return vk_outarray_status(&out);
-}

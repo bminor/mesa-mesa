@@ -260,6 +260,17 @@ panvk_device_check_status(struct vk_device *vk_dev)
 }
 
 static VkResult
+panvk_device_get_timestamp(struct vk_device *vk_dev, uint64_t *timestamp)
+{
+   struct panvk_physical_device *pdev =
+      to_panvk_physical_device(vk_dev->physical);
+
+   *timestamp = pan_kmod_query_timestamp(pdev->kmod.dev);
+
+   return VK_SUCCESS;
+}
+
+static VkResult
 panvk_queue_create(struct panvk_device *dev,
                    const VkDeviceQueueCreateInfo *create_info,
                    uint32_t queue_idx,
@@ -344,6 +355,7 @@ panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
    device->vk.command_buffer_ops = &panvk_per_arch(cmd_buffer_ops);
    device->vk.shader_ops = &panvk_per_arch(device_shader_ops);
    device->vk.check_status = panvk_device_check_status;
+   device->vk.get_timestamp = panvk_device_get_timestamp;
    device->vk.copy_sync_payloads = vk_drm_syncobj_copy_payloads;
 
    device->kmod.allocator = (struct pan_kmod_allocator){
@@ -623,72 +635,4 @@ panvk_per_arch(GetRenderingAreaGranularityKHR)(
    VkExtent2D *pGranularity)
 {
    *pGranularity = (VkExtent2D){32, 32};
-}
-
-VKAPI_ATTR VkResult VKAPI_CALL
-panvk_per_arch(GetCalibratedTimestampsKHR)(
-   VkDevice _device, uint32_t timestampCount,
-   const VkCalibratedTimestampInfoKHR *pTimestampInfos, uint64_t *pTimestamps,
-   uint64_t *pMaxDeviation)
-{
-   VK_FROM_HANDLE(panvk_device, device, _device);
-   struct panvk_physical_device *pdev =
-      to_panvk_physical_device(device->vk.physical);
-
-   bool requested_domain[] = {
-      [VK_TIME_DOMAIN_DEVICE_KHR] = false,
-      [VK_TIME_DOMAIN_CLOCK_MONOTONIC_KHR] = false,
-      [VK_TIME_DOMAIN_CLOCK_MONOTONIC_RAW_KHR] = false,
-   };
-   uint64_t timestamps[] = {
-      [VK_TIME_DOMAIN_DEVICE_KHR] = 0,
-      [VK_TIME_DOMAIN_CLOCK_MONOTONIC_KHR] = 0,
-      [VK_TIME_DOMAIN_CLOCK_MONOTONIC_RAW_KHR] = 0,
-   };
-   uint64_t max_period = 0;
-
-   for (uint32_t idx = 0; idx < timestampCount; ++idx)
-      requested_domain[pTimestampInfos[idx].timeDomain] |= true;
-
-   uint64_t begin, end;
-#ifdef CLOCK_MONOTONIC_RAW
-   requested_domain[VK_TIME_DOMAIN_CLOCK_MONOTONIC_RAW_KHR] = true;
-   begin = vk_clock_gettime(CLOCK_MONOTONIC_RAW);
-#else
-   requested_domain[VK_TIME_DOMAIN_CLOCK_MONOTONIC_KHR] = true;
-   begin = vk_clock_gettime(CLOCK_MONOTONIC);
-#endif
-
-   if (requested_domain[VK_TIME_DOMAIN_DEVICE_KHR]) {
-      timestamps[VK_TIME_DOMAIN_DEVICE_KHR] =
-         pan_kmod_query_timestamp(pdev->kmod.dev);
-      max_period = MAX2(max_period, panvk_get_gpu_system_timestamp_period(pdev));
-   }
-
-   if (requested_domain[VK_TIME_DOMAIN_CLOCK_MONOTONIC_KHR]) {
-      timestamps[VK_TIME_DOMAIN_CLOCK_MONOTONIC_KHR] =
-         vk_clock_gettime(CLOCK_MONOTONIC);
-      max_period = MAX2(max_period, 1);
-   }
-
-#ifdef CLOCK_MONOTONIC_RAW
-   if (requested_domain[VK_TIME_DOMAIN_CLOCK_MONOTONIC_RAW_KHR]) {
-      timestamps[VK_TIME_DOMAIN_CLOCK_MONOTONIC_RAW_KHR] =
-         vk_clock_gettime(CLOCK_MONOTONIC_RAW);
-      max_period = MAX2(max_period, 1);
-   }
-#endif
-
-#ifdef CLOCK_MONOTONIC_RAW
-   end = timestamps[VK_TIME_DOMAIN_CLOCK_MONOTONIC_RAW_KHR];
-#else
-   end = timestamps[VK_TIME_DOMAIN_CLOCK_MONOTONIC_KHR];
-#endif
-
-   for (uint32_t idx = 0; idx < timestampCount; ++idx)
-      pTimestamps[idx] = timestamps[pTimestampInfos[idx].timeDomain];
-
-   *pMaxDeviation = vk_time_max_deviation(begin, end, max_period);
-
-   return VK_SUCCESS;
 }
