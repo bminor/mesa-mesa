@@ -164,6 +164,7 @@ foreach arch : [6, 7, 10, 12, 13]
       idep_libpan_per_arch[arch.to_string()],
     ],
     c_args : [no_override_init_args, panvk_flags, '-DPAN_ARCH=@0@'.format(arch)],
+    gnu_symbol_visibility : 'hidden',
   )
 endforeach
 
@@ -213,9 +214,23 @@ libvulkan_panfrost = shared_library(
     idep_mesautil,
   ],
   c_args : [no_override_init_args, panvk_flags],
-  link_args : [ld_args_bsymbolic, ld_args_gc_sections, ld_args_build_id],
+  link_args : [vulkan_icd_link_args, ld_args_bsymbolic, ld_args_gc_sections, ld_args_build_id],
+  gnu_symbol_visibility : 'hidden',
   install : true,
 )
+
+if with_symbols_check
+  test(
+    'panvk symbols check',
+    symbols_check,
+    args : [
+      '--lib', libvulkan_panfrost,
+      '--symbols-file', vulkan_icd_symbols,
+      symbols_check_args,
+    ],
+    suite : ['panfrost'],
+  )
+endif
 
 panfrost_icd = custom_target(
   'panfrost_icd',
