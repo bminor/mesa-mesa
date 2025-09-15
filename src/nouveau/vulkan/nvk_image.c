@@ -1183,17 +1183,16 @@ nvk_get_image_memory_requirements(struct nvk_device *dev,
    uint32_t memory_types = (1 << pdev->mem_type_count) - 1;
 
    /* Remove non host visible heaps from the types for host image copy in case
-    * of potential issues. This should be removed when we get ReBAR.
+    * of potential issues when we do not have ReBAR.
     */
-   if (image->vk.usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) {
+   if (pdev->info.bar_size_B < pdev->info.vram_size_B &&
+       image->vk.usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT) {
       for (uint32_t i = 0; i < pdev->mem_type_count; i++) {
          if (!(pdev->mem_types[i].propertyFlags &
              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT))
             memory_types &= ~BITFIELD_BIT(i);
       }
    }
-
-   // TODO hope for the best?
 
    uint64_t size_B = 0;
    uint32_t align_B = 0;
