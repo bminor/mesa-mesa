@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2021 Collabora Ltd.
+ * Copyright (C) 2025 Arm Ltd.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -32,7 +33,7 @@
  * respected by RA. This could be optimized, but this is deferred for now.
  */
 static void
-lower_split_src(bi_context *ctx, bi_instr *I, unsigned s)
+lower_split_src(bi_context *ctx, bi_instr *I, unsigned s, bi_instr** lut)
 {
    /* Skip sources that are already split properly */
    bi_index offset_fau = I->src[s];
@@ -41,6 +42,16 @@ lower_split_src(bi_context *ctx, bi_instr *I, unsigned s)
    if (I->src[s].type == BI_INDEX_FAU && I->src[s].offset == 0 &&
        bi_is_value_equiv(offset_fau, I->src[s + 1])) {
       return;
+   }
+
+   /* Check if the source regs are already coming from a split. */
+   bi_index* src_a = &I->src[s];
+   bi_index* src_b = &I->src[s + 1];
+   if (bi_is_ssa(*src_a) && bi_is_ssa(*src_b)) {
+      bi_instr* src_ins_a = lut[src_a->value];
+      bi_instr* src_ins_b = lut[src_b->value];
+      if (src_ins_a->op == BI_OPCODE_SPLIT_I32 && src_ins_a == src_ins_b)
+         return;
    }
 
    /* Allocate temporary before the instruction */
@@ -61,6 +72,21 @@ lower_split_src(bi_context *ctx, bi_instr *I, unsigned s)
 void
 va_lower_split_64bit(bi_context *ctx)
 {
+   unsigned count = ctx->ssa_alloc;
+   bi_instr **lut = rzalloc_array(ctx, bi_instr *, count);
+
+   if (!lut)
+      return;
+
+   /* Record producers */
+   bi_foreach_block(ctx, block) {
+      bi_foreach_instr_in_block(block, I) {
+         bi_foreach_dest(I, d) {
+            lut[I->dest[d].value] = I;
+         }
+      }
+   }
+
    bi_foreach_instr_global(ctx, I) {
       bi_foreach_src(I, s) {
          if (bi_is_null(I->src[s]) || s >= 4)
@@ -69,7 +95,9 @@ va_lower_split_64bit(bi_context *ctx)
          struct va_src_info info = va_src_info(I->op, s);
 
          if (info.size == VA_SIZE_64)
-            lower_split_src(ctx, I, s);
+            lower_split_src(ctx, I, s, lut);
       }
    }
+
+   ralloc_free(lut);
 }
