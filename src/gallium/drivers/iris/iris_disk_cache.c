@@ -59,7 +59,7 @@ iris_disk_cache_compute_key(struct disk_cache *cache,
     * It's essentially random data which we don't want to include in our
     * hashing and comparisons.  We'll set a proper value on a cache hit.
     */
-   union brw_any_prog_key prog_key;
+   union iris_any_prog_key prog_key;
    memcpy(&prog_key, orig_prog_key, prog_key_size);
    prog_key.base.program_string_id = 0;
 
