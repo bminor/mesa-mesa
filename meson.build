@@ -48,7 +48,7 @@ with_mesa_debug = get_option('buildtype') == 'debug'
 with_mesa_ndebug = get_option('b_ndebug') == 'true' or (get_option('buildtype') == 'release' and get_option('b_ndebug') == 'if-release')
 
 # We need to set -fmacro-prefix-map properly for driver CL reproducability.
-relative_dir = fs.relative_to(meson.global_source_root(), meson.global_build_root())
+relative_dir = fs.relative_to(meson.project_source_root(), meson.project_build_root())
 
 cl_args = [
   '-fmacro-prefix-map=@0@/='.format(relative_dir),
