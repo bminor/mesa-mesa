@@ -655,9 +655,9 @@ by a particular renderpass/blit.
 	<reg64 offset="0x0E09" name="UCHE_TRAP_BASE"/>
 	<reg64 offset="0x0E0B" name="UCHE_GMEM_RANGE_MIN"/>
 	<reg64 offset="0x0E0D" name="UCHE_GMEM_RANGE_MAX"/>
-	<reg32 offset="0x0E17" name="UCHE_CACHE_WAYS" usage="cmd"/>
+	<reg32 offset="0x0E17" name="UCHE_CACHE_WAYS" usage="init"/>
 	<reg32 offset="0x0E18" name="UCHE_FILTER_CNTL"/>
-	<reg32 offset="0x0E19" name="UCHE_CLIENT_PF" usage="cmd">
+	<reg32 offset="0x0E19" name="UCHE_CLIENT_PF" usage="init">
 		<bitfield high="7" low="0" name="PERFSEL"/>
 	</reg32>
 	<array offset="0x0E1C" name="UCHE_PERFCTR_UCHE_SEL" stride="1" length="12"/>
@@ -802,10 +802,10 @@ by a particular renderpass/blit.
 
 	<reg32 offset="0x0d08" name="VSC_UNKNOWN_0D08" variants="A7XX-" usage="rp_blit"/>
 
-	<reg32 offset="0x0E10" name="UCHE_UNKNOWN_0E10" variants="A7XX-" usage="cmd"/>
-	<reg32 offset="0x0E11" name="UCHE_UNKNOWN_0E11" variants="A7XX-" usage="cmd"/>
+	<reg32 offset="0x0E10" name="UCHE_UNKNOWN_0E10" variants="A7XX-" usage="init"/>
+	<reg32 offset="0x0E11" name="UCHE_UNKNOWN_0E11" variants="A7XX-" usage="init"/>
 	<!-- always 0x03200000 ? -->
-	<reg32 offset="0x0e12" name="UCHE_UNKNOWN_0E12"  usage="cmd"/>
+	<reg32 offset="0x0e12" name="UCHE_UNKNOWN_0E12"  usage="init"/>
 
 	<!-- adreno_reg_xy has 15 bits per coordinate, but a6xx registers only have 14 -->
 	<bitset name="a6xx_reg_xy" inline="yes">
@@ -1408,7 +1408,7 @@ by a particular renderpass/blit.
 	<reg32 offset="0x840b" name="GRAS_A2D_SCISSOR_BR" type="a6xx_reg_xy" variants="A6XX-A7XX" usage="rp_blit"/>
 
 	<!-- always 0x880 ? (and 0 in a640/a650 traces?) -->
-	<reg32 offset="0x8600" name="GRAS_DBG_ECO_CNTL" usage="cmd">
+	<reg32 offset="0x8600" name="GRAS_DBG_ECO_CNTL" usage="init">
 		<bitfield name="UNK7" pos="7" type="boolean"/>
 		<bitfield name="LRZCACHELOCKDIS" pos="11" type="boolean"/>
 	</reg32>
@@ -1990,7 +1990,7 @@ by a particular renderpass/blit.
 	<!-- address for GMEM save/restore? -->
 	<reg32 offset="0x8e51" name="RB_CONTEXT_SWITCH_GMEM_SAVE_RESTORE_ADDR" type="waddress" align="1"/>
 	<!-- 0x8e53-0x8e7f invalid -->
-	<reg32 offset="0x8e79" name="RB_UNKNOWN_8E79" variants="A7XX-" usage="cmd"/>
+	<reg32 offset="0x8e79" name="RB_UNKNOWN_8E79" variants="A7XX-" usage="init"/>
 	<!-- 0x8e80-0x8e83 are valid -->
 	<!-- 0x8e84-0x90ff invalid -->
 
@@ -2254,10 +2254,10 @@ by a particular renderpass/blit.
 
 	<reg32 offset="0x9307" name="VPC_PS_RAST_CNTL" type="a6xx_rast_cntl" variants="A6XX-A7XX" usage="rp_blit"/>
 
-	<reg32 offset="0x9308" name="VPC_ATTR_BUF_GMEM_SIZE" variants="A7XX" type="uint" usage="rp_blit"/>
-	<reg32 offset="0x9309" name="VPC_ATTR_BUF_GMEM_BASE" variants="A7XX" type="uint" usage="rp_blit"/>
+	<reg32 offset="0x9308" name="VPC_ATTR_BUF_GMEM_SIZE" variants="A7XX" type="uint" usage="cmd"/>
+	<reg32 offset="0x9309" name="VPC_ATTR_BUF_GMEM_BASE" variants="A7XX" type="uint" usage="cmd"/>
 
-	<reg32 offset="0x9b09" name="PC_ATTR_BUF_GMEM_SIZE" variants="A7XX" type="uint" usage="rp_blit"/>
+	<reg32 offset="0x9b09" name="PC_ATTR_BUF_GMEM_SIZE" variants="A7XX" type="uint" usage="cmd"/>
 
 	<reg32 offset="0x930a" name="VPC_UNKNOWN_930A" variants="A7XX"/>
 
@@ -2266,9 +2266,9 @@ by a particular renderpass/blit.
 	<!-- 0x9307-0x95ff invalid -->
 
 	<!-- TODO: 0x9600-0x97ff range -->
-	<reg32 offset="0x9600" name="VPC_DBG_ECO_CNTL" usage="cmd"/> <!-- always 0x0 ? TODO: 0x1fbf37ff valid mask -->
+	<reg32 offset="0x9600" name="VPC_DBG_ECO_CNTL" usage="init"/> <!-- always 0x0 ? TODO: 0x1fbf37ff valid mask -->
 	<reg32 offset="0x9601" name="VPC_ADDR_MODE_CNTL" pos="0" type="a5xx_address_mode" usage="cmd"/>
-	<reg32 offset="0x9602" name="VPC_UNKNOWN_9602" pos="0" usage="cmd"/> <!-- always 0x0 ? -->
+	<reg32 offset="0x9602" name="VPC_UNKNOWN_9602" pos="0" usage="init"/> <!-- always 0x0 ? -->
 	<reg32 offset="0x9603" name="VPC_UNKNOWN_9603" low="0" high="26"/>
 	<array offset="0x9604" name="VPC_PERFCTR_VPC_SEL" stride="1" length="6" variants="A6XX"/>
 	<array offset="0x960b" name="VPC_PERFCTR_VPC_SEL" stride="1" length="12" variants="A7XX-"/>
@@ -2400,7 +2400,7 @@ by a particular renderpass/blit.
 	</reg32>
 	<!-- 0x9c01-0x9dff invalid -->
 	<!-- TODO: 0x9e00-0xa000 range incomplete -->
-	<reg32 offset="0x9e00" name="PC_DBG_ECO_CNTL"/>
+	<reg32 offset="0x9e00" name="PC_DBG_ECO_CNTL" usage="init"/>
 	<reg32 offset="0x9e01" name="PC_ADDR_MODE_CNTL" type="a5xx_address_mode"/>
 	<reg64 offset="0x9e04" name="PC_DMA_BASE" type="address" variants="A6XX-A7XX"/>
 	<reg32 offset="0x9e06" name="PC_DMA_OFFSET" type="uint" variants="A6XX-A7XX"/>
@@ -2436,13 +2436,13 @@ by a particular renderpass/blit.
 
 	<reg32 offset="0x9e1c" name="PC_DRAWCALL_CNTL_OVERRIDE" type="a6xx_pc_drawcall_cntl_override" variants="A6XX-A7XX"/>
 
-	<reg32 offset="0x9e24" name="PC_UNKNOWN_9E24" variants="A7XX-" usage="cmd"/>
+	<reg32 offset="0x9e24" name="PC_UNKNOWN_9E24" variants="A7XX-" usage="init"/>
 
 	<array offset="0x9e34" name="PC_PERFCTR_PC_SEL" stride="1" length="8" variants="A6XX"/>
 	<array offset="0x9e42" name="PC_PERFCTR_PC_SEL" stride="1" length="16" variants="A7XX-"/>
 
 	<!-- always 0x0 -->
-	<reg32 offset="0x9e72" name="PC_UNKNOWN_9E72" usage="cmd"/>
+	<reg32 offset="0x9e72" name="PC_UNKNOWN_9E72" usage="init"/>
 
 	<reg32 offset="0xa000" name="VFD_CNTL_0" usage="rp_blit">
 		<bitfield name="FETCH_CNT" low="0" high="5" type="uint"/>
@@ -2529,7 +2529,7 @@ by a particular renderpass/blit.
 
 	<reg32 offset="0xa0f8" name="VFD_POWER_CNTL" low="0" high="2" usage="rp_blit"/>
 
-	<reg32 offset="0xa600" name="VFD_DBG_ECO_CNTL" variants="A7XX-" usage="cmd"/>
+	<reg32 offset="0xa600" name="VFD_DBG_ECO_CNTL" variants="A7XX-" usage="init"/>
 
 	<reg32 offset="0xa601" name="VFD_ADDR_MODE_CNTL" type="a5xx_address_mode"/>
 	<array offset="0xa610" name="VFD_PERFCTR_VFD_SEL" stride="1" length="8" variants="A6XX"/>
@@ -3233,22 +3233,22 @@ by a particular renderpass/blit.
 	<reg32 offset="0xacc0" name="SP_A2D_OUTPUT_INFO" type="a6xx_sp_a2d_output_info" variants="A6XX" usage="rp_blit"/>
 	<reg32 offset="0xa9bf" name="SP_A2D_OUTPUT_INFO" type="a6xx_sp_a2d_output_info" variants="A7XX-" usage="rp_blit"/>
 
-	<reg32 offset="0xae00" name="SP_DBG_ECO_CNTL" usage="cmd"/>
+	<reg32 offset="0xae00" name="SP_DBG_ECO_CNTL" usage="init"/>
 	<reg32 offset="0xae01" name="SP_ADDR_MODE_CNTL" pos="0" type="a5xx_address_mode"/>
 	<reg32 offset="0xae02" name="SP_NC_MODE_CNTL">
 		<!-- TODO: valid bits 0x3c3f, see kernel -->
 	</reg32>
-	<reg32 offset="0xae03" name="SP_CHICKEN_BITS" usage="cmd"/>
-	<reg32 offset="0xae04" name="SP_NC_MODE_CNTL_2" usage="cmd">
+	<reg32 offset="0xae03" name="SP_CHICKEN_BITS" usage="init"/>
+	<reg32 offset="0xae04" name="SP_NC_MODE_CNTL_2" usage="init">
 		<bitfield name="F16_NO_INF" pos="3" type="boolean"/>
 	</reg32>
 
-	<reg32 offset="0xae06" name="SP_UNKNOWN_AE06" variants="A7XX-" usage="cmd"/>
-	<reg32 offset="0xae08" name="SP_CHICKEN_BITS_1" variants="A7XX-" usage="cmd"/>
-	<reg32 offset="0xae09" name="SP_CHICKEN_BITS_2" variants="A7XX-" usage="cmd"/>
-	<reg32 offset="0xae0a" name="SP_CHICKEN_BITS_3" variants="A7XX-" usage="cmd"/>
+	<reg32 offset="0xae06" name="SP_UNKNOWN_AE06" variants="A7XX-" usage="init"/>
+	<reg32 offset="0xae08" name="SP_CHICKEN_BITS_1" variants="A7XX-" usage="init"/>
+	<reg32 offset="0xae09" name="SP_CHICKEN_BITS_2" variants="A7XX-" usage="init"/>
+	<reg32 offset="0xae0a" name="SP_CHICKEN_BITS_3" variants="A7XX-" usage="init"/>
 
-	<reg32 offset="0xae0f" name="SP_PERFCTR_SHADER_MASK" usage="cmd">
+	<reg32 offset="0xae0f" name="SP_PERFCTR_SHADER_MASK" usage="init">
 		<!-- some perfcntrs are affected by a per-stage enable bit
 		     (PERF_SP_ALU_WORKING_CYCLES for example)
 		     TODO: verify position of HS/DS/GS bits -->
@@ -3261,9 +3261,9 @@ by a particular renderpass/blit.
 	</reg32>
 	<array offset="0xae10" name="SP_PERFCTR_SP_SEL" stride="1" length="24"/>
 	<array offset="0xae60" name="SP_PERFCTR_HLSQ_SEL" stride="1" length="6" variants="A7XX-"/>
-	<reg32 offset="0xae6a" name="SP_UNKNOWN_AE6A" variants="A7XX-" usage="cmd"/>
-	<reg32 offset="0xae6b" name="SP_UNKNOWN_AE6B" variants="A7XX-" usage="cmd"/>
-	<reg32 offset="0xae6c" name="SP_HLSQ_DBG_ECO_CNTL" variants="A7XX-" usage="cmd"/>
+	<reg32 offset="0xae6a" name="SP_UNKNOWN_AE6A" variants="A7XX-" usage="init"/>
+	<reg32 offset="0xae6b" name="SP_UNKNOWN_AE6B" variants="A7XX-" usage="init"/>
+	<reg32 offset="0xae6c" name="SP_HLSQ_DBG_ECO_CNTL" variants="A7XX-" usage="init"/>
 	<reg32 offset="0xae6d" name="SP_READ_SEL" variants="A7XX-">
 		<bitfield name="LOCATION" low="18" high="20" type="a7xx_state_location"/>
 		<bitfield name="PIPE" low="16" high="17" type="a7xx_pipe"/>
@@ -3272,7 +3272,7 @@ by a particular renderpass/blit.
 		<bitfield name="SPTP" low="0" high="3"/>
 	</reg32>
 	<reg32 offset="0xae71" name="SP_DBG_CNTL" variants="A7XX-"/>
-	<reg32 offset="0xae73" name="SP_UNKNOWN_AE73" variants="A7XX-" usage="cmd"/>
+	<reg32 offset="0xae73" name="SP_UNKNOWN_AE73" variants="A7XX-" usage="init"/>
 	<array offset="0xae80" name="SP_PERFCTR_SP_SEL" stride="1" length="36" variants="A7XX-"/>
 	<!-- TODO: there are 4 more percntr select registers (0xae28-0xae2b) -->
 	<!-- TODO: there are a few unknown registers in the 0xae30-0xae52 range -->
@@ -3388,9 +3388,9 @@ by a particular renderpass/blit.
 	<reg32 offset="0xab21" name="SP_WINDOW_OFFSET" type="a6xx_reg_xy" variants="A7XX" usage="rp_blit"/>
 
 	<!-- always 0x100000 or 0x1000000? -->
-	<reg32 offset="0xb600" name="TPL1_DBG_ECO_CNTL" low="0" high="25" usage="cmd"/>
+	<reg32 offset="0xb600" name="TPL1_DBG_ECO_CNTL" low="0" high="25" usage="init"/>
 	<reg32 offset="0xb601" name="TPL1_ADDR_MODE_CNTL" type="a5xx_address_mode"/>
-	<reg32 offset="0xb602" name="TPL1_DBG_ECO_CNTL1" usage="cmd">
+	<reg32 offset="0xb602" name="TPL1_DBG_ECO_CNTL1" usage="init">
 		<!-- Affects UBWC in some way, if BLIT_OP_SCALE is done with this bit set
 		     and if other blit is done without it - UBWC image may be copied incorrectly.
 		 -->
@@ -3403,7 +3403,7 @@ by a particular renderpass/blit.
 		<bitfield name="UPPER_BIT" pos="4" type="uint"/>
 		<bitfield name="UNK6" low="6" high="7"/>
 	</reg32>
-	<reg32 offset="0xb605" name="TPL1_UNKNOWN_B605" low="0" high="7" type="uint" variants="A6XX" usage="cmd"/> <!-- always 0x0 or 0x44 ? -->
+	<reg32 offset="0xb605" name="TPL1_UNKNOWN_B605" low="0" high="7" type="uint" variants="A6XX" usage="init"/> <!-- always 0x0 or 0x44 ? -->
 
 	<array offset="0xb608" name="TPL1_BICUBIC_WEIGHTS_TABLE" stride="1" length="5" variants="A6XX">
 		<reg32 offset="0" name="REG" low="0" high="29"/>
@@ -3780,9 +3780,9 @@ by a particular renderpass/blit.
 		<bitfield name="EVENT" low="0" high="6" type="vgt_event_type"/>
 	</reg32>
 
-	<reg32 offset="0xbe00" name="HLSQ_UNKNOWN_BE00" variants="A6XX" usage="cmd"/> <!-- all bits valid except bit 29 -->
-	<reg32 offset="0xbe01" name="HLSQ_UNKNOWN_BE01" low="4" high="6" variants="A6XX" usage="cmd"/>
-	<reg32 offset="0xbe04" name="HLSQ_DBG_ECO_CNTL" variants="A6XX" usage="cmd"/>
+	<reg32 offset="0xbe00" name="HLSQ_UNKNOWN_BE00" variants="A6XX" usage="init"/> <!-- all bits valid except bit 29 -->
+	<reg32 offset="0xbe01" name="HLSQ_UNKNOWN_BE01" low="4" high="6" variants="A6XX" usage="init"/>
+	<reg32 offset="0xbe04" name="HLSQ_DBG_ECO_CNTL" variants="A6XX" usage="init"/>
 	<reg32 offset="0xbe05" name="HLSQ_ADDR_MODE_CNTL" type="a5xx_address_mode"/>
 	<reg32 offset="0xbe08" name="HLSQ_UNKNOWN_BE08" low="0" high="15"/>
 	<array offset="0xbe10" name="HLSQ_PERFCTR_HLSQ_SEL" stride="1" length="6"/>
