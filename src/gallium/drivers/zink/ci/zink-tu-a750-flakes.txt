@@ -11,8 +11,11 @@ glx@glx-multithread-clearbuffer
 glx@glx-multithread-texture
 glx@glx-swap-singlebuffer
 spec@!opengl 1.0@gl-1.0-ortho-pos
+spec@arb_direct_state_access@gettextureimage-formats init-by-rendering
 spec@arb_shader_image_load_store@coherency
 spec@arb_shader_image_load_store@coherency@Vertex-Geometry shader/'coherent' qualifier coherency test/256x256
 spec@arb_timer_query@timestamp-get
 spec@ext_external_objects@vk-ping-pong-multi-sem
 spec@ext_external_objects@vk-ping-pong-single-sem
+spec@ext_framebuffer_multisample@accuracy all_samples depth_draw small depthstencil
+spec@ext_framebuffer_multisample@accuracy all_samples stencil_draw small depthstencil
