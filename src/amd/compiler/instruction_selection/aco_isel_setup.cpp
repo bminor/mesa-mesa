@@ -727,7 +727,7 @@ init_context(isel_context* ctx, nir_shader* shader)
                                       (uint8_t*)shader->constant_data,
                                       (uint8_t*)shader->constant_data + shader->constant_data_size);
 
-   BITSET_CLEAR_RANGE(ctx->output_args, 0, BITSET_SIZE(ctx->output_args));
+   BITSET_ZERO(ctx->output_args);
 }
 
 void
