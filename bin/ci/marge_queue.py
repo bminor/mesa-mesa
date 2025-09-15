@@ -155,7 +155,7 @@ def get_merge_queue(project: Project) -> MargeQueue:
 def main():
     args = parse_args()
     token = read_token(args.token)
-    gl = gitlab.Gitlab(url="https://gitlab.freedesktop.org", private_token=token)
+    gl = gitlab.Gitlab(url="https://gitlab.freedesktop.org", private_token=token, retry_transient_errors=True)
 
     project = gl.projects.get("mesa/mesa")
 
