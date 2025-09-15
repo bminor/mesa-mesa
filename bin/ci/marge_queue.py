@@ -16,13 +16,14 @@ from datetime import datetime, timezone
 from dateutil import parser
 
 import gitlab
+from gitlab.v4.objects import Project
 from gitlab_common import read_token, pretty_duration
 
 REFRESH_WAIT = 30
 MARGE_BOT_USER_ID = 9716
 
 
-def parse_args() -> None:
+def parse_args() -> argparse.Namespace:
     """Parse args"""
     parse = argparse.ArgumentParser(
         description="Tool to show merge requests assigned to the marge-bot",
@@ -38,7 +39,27 @@ def parse_args() -> None:
     return parse.parse_args()
 
 
-if __name__ == "__main__":
+def get_merge_queue(project: Project) -> int:
+    mrs = project.mergerequests.list(
+        assignee_id=MARGE_BOT_USER_ID,
+        scope="all",
+        state="opened",
+        get_all=True
+    )
+
+    n_mrs = len(mrs)
+    for mr in mrs:
+        updated = parser.parse(mr.updated_at)
+        now = datetime.now(timezone.utc)
+        diff = (now - updated).total_seconds()
+        print(
+            f"⛭ \u001b]8;;{mr.web_url}\u001b\\"
+            f"{mr.title}\u001b]8;;\u001b\\ ({pretty_duration(diff)})"
+        )
+    return n_mrs
+
+
+def main():
     args = parse_args()
     token = read_token(args.token)
     gl = gitlab.Gitlab(url="https://gitlab.freedesktop.org", private_token=token)
@@ -46,22 +67,17 @@ if __name__ == "__main__":
     project = gl.projects.get("mesa/mesa")
 
     while True:
-        mrs = project.mergerequests.list(assignee_id=MARGE_BOT_USER_ID, scope="all", state="opened", get_all=True)
+        n_mrs = get_merge_queue(project)
 
-        jobs_num = len(mrs)
-        for mr in mrs:
-            updated = parser.parse(mr.updated_at)
-            now = datetime.now(timezone.utc)
-            diff = (now - updated).total_seconds()
-            print(
-                f"⛭ \u001b]8;;{mr.web_url}\u001b\\{mr.title}\u001b]8;;\u001b\\ ({pretty_duration(diff)})"
-            )
+        print(f"Job waiting: {n_mrs}")
 
-        print("Job waiting: " + str(jobs_num))
-
-        if jobs_num == 0:
+        if n_mrs == 0:
             sys.exit(0)
         if not args.wait:
-            sys.exit(min(jobs_num, 127))
+            sys.exit(min(n_mrs, 127))
 
         time.sleep(REFRESH_WAIT)
+
+
+if __name__ == "__main__":
+    main()
