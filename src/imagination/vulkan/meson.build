@@ -120,6 +120,7 @@ libvulkan_powervr_mesa = shared_library(
   ],
   c_args : pvr_flags,
   link_args : [
+    vulkan_icd_link_args,
     ld_args_build_id,
     ld_args_bsymbolic,
     ld_args_gc_sections
