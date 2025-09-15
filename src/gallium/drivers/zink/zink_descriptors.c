@@ -1479,20 +1479,43 @@ zink_descriptors_update(struct zink_context *ctx, enum zink_pipeline_idx pidx)
 void
 zink_context_invalidate_descriptor_state(struct zink_context *ctx, mesa_shader_stage shader, enum zink_descriptor_type type, unsigned start, unsigned count)
 {
-   if (type == ZINK_DESCRIPTOR_TYPE_UBO && !start)
-      ctx->dd.push_state_changed[shader == MESA_SHADER_COMPUTE] = true;
-   else
-      ctx->dd.state_changed[shader == MESA_SHADER_COMPUTE] |= BITFIELD_BIT(type);
+   if (type == ZINK_DESCRIPTOR_TYPE_UBO && !start) {
+      if (shader == MESA_SHADER_COMPUTE)
+         ctx->dd.push_state_changed[shader == MESA_SHADER_COMPUTE] = true;
+      else if (shader < MESA_SHADER_FRAGMENT)
+         ctx->dd.push_state_changed[shader == MESA_SHADER_COMPUTE] = true;
+      else
+         ctx->dd.push_state_changed[shader == MESA_SHADER_COMPUTE] = true;
+   } else {
+      if (shader == MESA_SHADER_COMPUTE)
+         ctx->dd.state_changed[shader == MESA_SHADER_COMPUTE] |= BITFIELD_BIT(type);
+      else if (shader < MESA_SHADER_FRAGMENT)
+         ctx->dd.state_changed[shader == MESA_SHADER_COMPUTE] |= BITFIELD_BIT(type);
+      else {
+         ctx->dd.state_changed[shader == MESA_SHADER_COMPUTE] |= BITFIELD_BIT(type);
+      }
+   }
 }
 void
 zink_context_invalidate_descriptor_state_compact(struct zink_context *ctx, mesa_shader_stage shader, enum zink_descriptor_type type, unsigned start, unsigned count)
 {
    if (type == ZINK_DESCRIPTOR_TYPE_UBO && !start)
-      ctx->dd.push_state_changed[shader == MESA_SHADER_COMPUTE] = true;
+      if (shader == MESA_SHADER_COMPUTE)
+         ctx->dd.push_state_changed[shader == MESA_SHADER_COMPUTE] = true;
+      else if (shader < MESA_SHADER_FRAGMENT)
+         ctx->dd.push_state_changed[shader == MESA_SHADER_COMPUTE] = true;
+      else
+         ctx->dd.push_state_changed[shader == MESA_SHADER_COMPUTE] = true;
    else {
       if (type > ZINK_DESCRIPTOR_TYPE_SAMPLER_VIEW)
          type -= ZINK_DESCRIPTOR_COMPACT;
-      ctx->dd.state_changed[shader == MESA_SHADER_COMPUTE] |= BITFIELD_BIT(type);
+      if (shader == MESA_SHADER_COMPUTE)
+         ctx->dd.state_changed[shader == MESA_SHADER_COMPUTE] |= BITFIELD_BIT(type);
+      else if (shader < MESA_SHADER_FRAGMENT)
+         ctx->dd.state_changed[shader == MESA_SHADER_COMPUTE] |= BITFIELD_BIT(type);
+      else {
+         ctx->dd.state_changed[shader == MESA_SHADER_COMPUTE] |= BITFIELD_BIT(type);
+      }
    }
 }
 
