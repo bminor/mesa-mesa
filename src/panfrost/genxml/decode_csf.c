@@ -511,7 +511,7 @@ print_cs_instr(FILE *fp, const uint64_t *instr)
 
    case MALI_CS_OPCODE_SYNC_SET32: {
       cs_unpack(instr, CS_SYNC_SET32, I);
-      fprintf(fp, "SYNC_SET32.%s%s [d%u], r%u, #%x, #%u",
+      fprintf(fp, "SYNC_SET32%s%s [d%u], r%u, #%x, #%u",
               I.error_propagate ? ".error_propagate" : "",
               I.scope == MALI_CS_SYNC_SCOPE_CSG ? ".csg" : ".system", I.address,
               I.data, I.wait_mask, I.signal_slot);
