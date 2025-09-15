@@ -1481,18 +1481,18 @@ zink_context_invalidate_descriptor_state(struct zink_context *ctx, mesa_shader_s
 {
    if (type == ZINK_DESCRIPTOR_TYPE_UBO && !start) {
       if (shader == MESA_SHADER_COMPUTE)
-         ctx->dd.push_state_changed[shader == MESA_SHADER_COMPUTE] = true;
+         ctx->dd.push_state_changed[ZINK_PIPELINE_COMPUTE] = true;
       else if (shader < MESA_SHADER_FRAGMENT)
-         ctx->dd.push_state_changed[shader == MESA_SHADER_COMPUTE] = true;
+         ctx->dd.push_state_changed[ZINK_PIPELINE_GFX] = true;
       else
-         ctx->dd.push_state_changed[shader == MESA_SHADER_COMPUTE] = true;
+         ctx->dd.push_state_changed[ZINK_PIPELINE_GFX] = true;
    } else {
       if (shader == MESA_SHADER_COMPUTE)
-         ctx->dd.state_changed[shader == MESA_SHADER_COMPUTE] |= BITFIELD_BIT(type);
+         ctx->dd.state_changed[ZINK_PIPELINE_COMPUTE] |= BITFIELD_BIT(type);
       else if (shader < MESA_SHADER_FRAGMENT)
-         ctx->dd.state_changed[shader == MESA_SHADER_COMPUTE] |= BITFIELD_BIT(type);
+         ctx->dd.state_changed[ZINK_PIPELINE_GFX] |= BITFIELD_BIT(type);
       else {
-         ctx->dd.state_changed[shader == MESA_SHADER_COMPUTE] |= BITFIELD_BIT(type);
+         ctx->dd.state_changed[ZINK_PIPELINE_GFX] |= BITFIELD_BIT(type);
       }
    }
 }
@@ -1501,20 +1501,20 @@ zink_context_invalidate_descriptor_state_compact(struct zink_context *ctx, mesa_
 {
    if (type == ZINK_DESCRIPTOR_TYPE_UBO && !start)
       if (shader == MESA_SHADER_COMPUTE)
-         ctx->dd.push_state_changed[shader == MESA_SHADER_COMPUTE] = true;
+         ctx->dd.push_state_changed[ZINK_PIPELINE_COMPUTE] = true;
       else if (shader < MESA_SHADER_FRAGMENT)
-         ctx->dd.push_state_changed[shader == MESA_SHADER_COMPUTE] = true;
+         ctx->dd.push_state_changed[ZINK_PIPELINE_GFX] = true;
       else
-         ctx->dd.push_state_changed[shader == MESA_SHADER_COMPUTE] = true;
+         ctx->dd.push_state_changed[ZINK_PIPELINE_GFX] = true;
    else {
       if (type > ZINK_DESCRIPTOR_TYPE_SAMPLER_VIEW)
          type -= ZINK_DESCRIPTOR_COMPACT;
       if (shader == MESA_SHADER_COMPUTE)
-         ctx->dd.state_changed[shader == MESA_SHADER_COMPUTE] |= BITFIELD_BIT(type);
+         ctx->dd.state_changed[ZINK_PIPELINE_COMPUTE] |= BITFIELD_BIT(type);
       else if (shader < MESA_SHADER_FRAGMENT)
-         ctx->dd.state_changed[shader == MESA_SHADER_COMPUTE] |= BITFIELD_BIT(type);
+         ctx->dd.state_changed[ZINK_PIPELINE_GFX] |= BITFIELD_BIT(type);
       else {
-         ctx->dd.state_changed[shader == MESA_SHADER_COMPUTE] |= BITFIELD_BIT(type);
+         ctx->dd.state_changed[ZINK_PIPELINE_GFX] |= BITFIELD_BIT(type);
       }
    }
 }
