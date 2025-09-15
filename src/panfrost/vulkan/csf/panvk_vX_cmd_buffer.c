@@ -553,12 +553,28 @@ void
 panvk_per_arch(add_cs_deps)(struct panvk_cmd_buffer *cmdbuf,
                             enum panvk_barrier_stage barrier_stage,
                             const VkDependencyInfo *in,
-                            struct panvk_cs_deps *out)
+                            struct panvk_cs_deps *out,
+                            bool is_set_event)
 {
+   bool is_asymmetric_event =
+      is_set_event &&
+      in->dependencyFlags & VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR;
+
+   /* As per Vulkan spec, this should look like a vkCmdSetEvent */
+   assert(!is_asymmetric_event ||
+          (in->memoryBarrierCount == 1 && in->bufferMemoryBarrierCount == 0 &&
+           in->imageMemoryBarrierCount == 0));
+
    for (uint32_t i = 0; i < in->memoryBarrierCount; i++) {
       const VkMemoryBarrier2 *barrier = &in->pMemoryBarriers[i];
       struct panvk_sync_scope src = {barrier->srcStageMask, barrier->srcAccessMask};
       struct panvk_sync_scope dst = {barrier->dstStageMask, barrier->dstAccessMask};
+
+      /* In case of asymmetric event, we need to use the src stages mask just
+       * like vkCmdSetEvent */
+      if (is_asymmetric_event)
+         dst.stages = src.stages;
+
       normalize_dependency(&src, &dst, (struct panvk_sync_scope){0},
                            VK_QUEUE_FAMILY_IGNORED,
                            VK_QUEUE_FAMILY_IGNORED,
@@ -728,7 +744,7 @@ panvk_per_arch(CmdPipelineBarrier2)(VkCommandBuffer commandBuffer,
 
    struct panvk_cs_deps deps = {0};
 
-   panvk_per_arch(add_cs_deps)(cmdbuf, PANVK_BARRIER_STAGE_FIRST, pDependencyInfo, &deps);
+   panvk_per_arch(add_cs_deps)(cmdbuf, PANVK_BARRIER_STAGE_FIRST, pDependencyInfo, &deps, false);
 
    if (deps.needs_draw_flush)
       panvk_per_arch(cmd_flush_draws)(cmdbuf);
@@ -746,7 +762,7 @@ panvk_per_arch(CmdPipelineBarrier2)(VkCommandBuffer commandBuffer,
 
       panvk_per_arch(add_cs_deps)(
          cmdbuf, PANVK_BARRIER_STAGE_AFTER_LAYOUT_TRANSITION,
-         pDependencyInfo, &trans_deps);
+         pDependencyInfo, &trans_deps, false);
 
       assert(!trans_deps.needs_draw_flush);
 

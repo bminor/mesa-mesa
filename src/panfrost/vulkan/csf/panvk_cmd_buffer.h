@@ -483,7 +483,8 @@ void panvk_per_arch(add_cs_deps)(
    struct panvk_cmd_buffer *cmdbuf,
    enum panvk_barrier_stage barrier_stage,
    const VkDependencyInfo *in,
-   struct panvk_cs_deps *out);
+   struct panvk_cs_deps *out,
+   bool is_set_event);
 
 VkResult panvk_per_arch(cmd_prepare_exec_cmd_for_draws)(
    struct panvk_cmd_buffer *primary, struct panvk_cmd_buffer *secondary);
