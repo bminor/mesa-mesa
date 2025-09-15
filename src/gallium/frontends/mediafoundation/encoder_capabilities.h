@@ -137,4 +137,7 @@ class encoder_capabilities
 
    // Driver supports queue priority management
    bool m_bHWSupportsQueuePriorityManagement = false;
+
+   // Spatial Adaptive Quantization
+   union pipe_enc_cap_spatial_adaptive_quantization m_HWSupportSpatialAdaptiveQuantization = {};
 };

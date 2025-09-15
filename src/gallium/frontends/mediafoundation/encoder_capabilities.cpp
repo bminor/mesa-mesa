@@ -161,4 +161,7 @@ encoder_capabilities::initialize( pipe_screen *pScreen, pipe_video_profile video
    d3d12_interop_device_info1 screen_interop_info = {};
    bool successQuery = pScreen->interop_query_device_info(pScreen, sizeof(d3d12_interop_device_info1), &screen_interop_info) != 0;
    m_bHWSupportsQueuePriorityManagement = successQuery && screen_interop_info.set_context_queue_priority_manager != NULL;
+
+   m_HWSupportSpatialAdaptiveQuantization.value =
+      pScreen->get_video_param( pScreen, videoProfile, PIPE_VIDEO_ENTRYPOINT_ENCODE, PIPE_VIDEO_CAP_ENC_SPATIAL_ADAPTIVE_QUANTIZATION );
 }

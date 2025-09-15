@@ -626,6 +626,10 @@ CDX12EncHMFT::PrepareForEncodeHelper( LPDX12EncodeContext pDX12EncodeContext, bo
    pPicInfo->rate_ctrl[rate_ctrl_active_layer_index].frame_rate_num = m_FrameRate.Numerator;
    pPicInfo->rate_ctrl[rate_ctrl_active_layer_index].frame_rate_den = m_FrameRate.Denominator;
 
+   // Spatial Quantization
+   pPicInfo->rate_ctrl[rate_ctrl_active_layer_index].spatial_adaptive_quantization_strength =
+      m_bVideoEnableSpatialAdaptiveQuantization ? 1u : 0u;
+
    debug_printf( "[dx12 hmft 0x%p] MFT frontend submission - POC %d picture_type %s num_slice_descriptors %d\n",
                  this,
                  pPicInfo->pic_order_cnt,

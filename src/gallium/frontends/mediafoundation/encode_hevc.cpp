@@ -609,6 +609,10 @@ CDX12EncHMFT::PrepareForEncodeHelper( LPDX12EncodeContext pDX12EncodeContext, bo
       pPicInfo->rc[rate_ctrl_active_layer_index].vbv_buf_initial_size = m_uiBufferInLevel;
    }
 
+   // Spatial Quantization
+   pPicInfo->rc[rate_ctrl_active_layer_index].spatial_adaptive_quantization_strength =
+      m_bVideoEnableSpatialAdaptiveQuantization ? 1u : 0u;
+
    // Frame Rate
    pPicInfo->rc[rate_ctrl_active_layer_index].frame_rate_num = m_FrameRate.Numerator;
    pPicInfo->rc[rate_ctrl_active_layer_index].frame_rate_den = m_FrameRate.Denominator;

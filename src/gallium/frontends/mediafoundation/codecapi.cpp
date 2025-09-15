@@ -449,6 +449,15 @@ CDX12EncHMFT::IsSupported( const GUID *Api )
       }
    }
 
+   if( m_EncoderCapabilities.m_HWSupportSpatialAdaptiveQuantization.bits.max_spatial_adaptive_quantization_strength > 0 )
+   {
+      if( *Api == CODECAPI_AVEncVideoEnableSpatialAdaptiveQuantization )
+      {
+         hr = S_OK;
+         return hr;
+      }
+   }
+
 done:
    return hr;
 }
