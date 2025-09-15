@@ -3344,7 +3344,7 @@
         "description": "pan/decode: Fix SYNC_SET32 double dots",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3778df877898e07931d1323b23a315966227f6b1",
         "notes": null
