@@ -422,16 +422,14 @@ CDX12EncHMFT::IsSupported( const GUID *Api )
       }
    }
 
-#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
-      if( (*Api == CODECAPI_AVEncWorkGlobalPriority) || (*Api == CODECAPI_AVEncWorkProcessPriority) )
+   if( (*Api == CODECAPI_AVEncWorkGlobalPriority) || (*Api == CODECAPI_AVEncWorkProcessPriority) )
+   {
+      if(m_EncoderCapabilities.m_bHWSupportsQueuePriorityManagement)
       {
-         if(m_EncoderCapabilities.m_bHWSupportsQueuePriorityManagement)
-         {
-            hr = S_OK;
-            return hr;
-         }
+         hr = S_OK;
+         return hr;
       }
-#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+   }
 
    if( m_EncoderCapabilities.m_TwoPassSupport.bits.supports_1pass_recon_writing_skip )
    {
@@ -931,7 +929,6 @@ CDX12EncHMFT::GetValue( const GUID *Api, VARIANT *Value )
       Value->vt = VT_BOOL;
       Value->boolVal = m_bRateControlFramePreAnalysisExternalReconDownscale ? VARIANT_TRUE : VARIANT_FALSE;
    }
-#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
    else if( *Api == CODECAPI_AVEncWorkGlobalPriority )
    {
       Value->vt = VT_UI4;
@@ -942,7 +939,6 @@ CDX12EncHMFT::GetValue( const GUID *Api, VARIANT *Value )
       Value->vt = VT_UI4;
       Value->ulVal = (UINT32) m_WorkProcessPriority;
    }
-#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
    else if( *Api == CODECAPI_AVEncVideoInputDeltaQPBlockSettings )
    {
       InputQPSettings hevcDeltaQPSettings;
@@ -1659,10 +1655,8 @@ CDX12EncHMFT::SetValue( const GUID *Api, VARIANT *Value )
       {
          CHECKHR_GOTO( E_INVALIDARG, done );
       }
-#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
       m_WorkProcessPriority = (D3D12_COMMAND_QUEUE_PROCESS_PRIORITY) (Value->ulVal);;
       m_bWorkProcessPrioritySet = TRUE;
-#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
    }
    else if( *Api == CODECAPI_AVEncWorkGlobalPriority )
    {
@@ -1676,10 +1670,8 @@ CDX12EncHMFT::SetValue( const GUID *Api, VARIANT *Value )
       {
          CHECKHR_GOTO( E_INVALIDARG, done );
       }
-#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
       m_WorkGlobalPriority = (D3D12_COMMAND_QUEUE_GLOBAL_PRIORITY) Value->ulVal;
       m_bWorkGlobalPrioritySet = TRUE;
-#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
    }
    else if( *Api == CODECAPI_AVEncVideoOutputQPMapBlockSize )
    {

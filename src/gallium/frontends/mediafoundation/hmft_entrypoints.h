@@ -742,12 +742,10 @@ class __declspec( uuid( HMFT_GUID ) ) CDX12EncHMFT : CMFD3DManager,
    BOOL m_bRateControlFramePreAnalysis = FALSE;
    BOOL m_bRateControlFramePreAnalysisExternalReconDownscale = FALSE;
 
-#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
    D3D12_COMMAND_QUEUE_PROCESS_PRIORITY m_WorkProcessPriority = {};
    BOOL m_bWorkProcessPrioritySet = FALSE;
    D3D12_COMMAND_QUEUE_GLOBAL_PRIORITY m_WorkGlobalPriority = {};
    BOOL m_bWorkGlobalPrioritySet = FALSE;
-#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
 
    UINT m_uiMaxOutputBitstreamSize = 0u;
    struct pipe_video_codec *m_pPipeVideoCodec = nullptr;

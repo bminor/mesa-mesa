@@ -38,10 +38,8 @@ typedef class DX12EncodeContext
    struct pipe_fence_handle *pAsyncFence = NULL;
    std::vector<struct pipe_resource *> pOutputBitRes;
    std::vector<struct pipe_fence_handle *> pSliceFences;
-#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
    D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM_NOTIFICATION_MODE sliceNotificationMode =
       D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM_NOTIFICATION_MODE_FULL_FRAME;
-#endif   // (USE_D3D12_PREVIEW_HEADERS && (D3D12_PREVIEW_SDK_VERSION >= 717))
    pipe_resource *pPipeResourceQPMapStats = nullptr;
    pipe_resource *pPipeResourceSATDMapStats = nullptr;
    pipe_resource *pPipeResourceRCBitAllocMapStats = nullptr;

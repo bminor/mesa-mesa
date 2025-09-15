@@ -68,14 +68,12 @@ typedef union
    uint64_t version;   // bits field
 } MFAdapterDriverVersion;
 
-#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
 struct mft_context_queue_priority_manager
 {
    struct d3d12_context_queue_priority_manager base;
    std::vector<ID3D12CommandQueue*> m_registeredQueues;
    mtx_t m_lock;
 };
-#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
 
 class CMFD3DManager
 {
@@ -110,9 +108,7 @@ class CMFD3DManager
    struct sw_winsys *m_pWinsys = nullptr;
    struct pipe_context *m_pPipeContext = nullptr;
 
-#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
    struct mft_context_queue_priority_manager m_ContextPriorityMgr = {};
-#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
 
    uint32_t m_deviceVendorId {};
    uint32_t m_deviceDeviceId {};

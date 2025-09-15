@@ -943,14 +943,12 @@ CDX12EncHMFT::InitializeEncoder( pipe_video_profile videoProfile, UINT32 Width, 
          }
       }
 
-#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
       struct d3d12_interop_device_info1 screen_interop_info = {};
       if ((m_pPipeContext->screen->interop_query_device_info(m_pPipeContext->screen, sizeof(d3d12_interop_device_info1), &screen_interop_info) != 0) &&
           (screen_interop_info.set_video_encoder_max_async_queue_depth != nullptr))
       {
          screen_interop_info.set_video_encoder_max_async_queue_depth(m_pPipeContext, (m_bLowLatency ? 1 : MFT_INPUT_QUEUE_DEPTH));
       }
-#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
 
       CHECKNULL_GOTO( m_pPipeVideoCodec = m_pPipeContext->create_video_codec( m_pPipeContext, &encoderSettings ),
                       MF_E_UNEXPECTED,
@@ -1184,7 +1182,6 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
 
             metadata.encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;   // default to failure
 
-#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
             // If sliced fences supported, we asynchronously copy here every slice as it is ready
             // Otherwise, let's copy all the sliced together here after full frame completion (see below)
             if( pDX12EncodeContext->sliceNotificationMode == D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM_NOTIFICATION_MODE_SUBREGIONS )
@@ -1269,7 +1266,6 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                spMemoryBuffer->SetCurrentLength( static_cast<DWORD>( output_buffer_offset ) );
                spOutputSample->AddBuffer( spMemoryBuffer.Get() );
             }
-#endif   // (USE_D3D12_PREVIEW_HEADERS && (D3D12_PREVIEW_SDK_VERSION >= 717))
 
             // Still wait for pAsyncFence (full frame fence) before calling get_feedback for full frame stats
             // First wait on the D3D12 encoder_fence
@@ -1506,10 +1502,8 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
 
                // If sliced fences supported, we asynchronously copied every slice as it was ready (see above)
                // into spMemoryBuffer. Otherwise, let's copy all the sliced together here after full frame completion
-#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
                if( pDX12EncodeContext->sliceNotificationMode ==
                    D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM_NOTIFICATION_MODE_FULL_FRAME )
-#endif   // (USE_D3D12_PREVIEW_HEADERS && (D3D12_PREVIEW_SDK_VERSION >= 717))
                {
                   // Readback full encoded frame bitstream from GPU memory onto CPU buffer
                   struct pipe_box box = { 0 };
@@ -2200,7 +2194,6 @@ CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD 
                                       pDX12EncodeContext->pPipeVideoBuffer,
                                       &pDX12EncodeContext->encoderPicInfo.base );
 
-#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
       if( pDX12EncodeContext->sliceNotificationMode == D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM_NOTIFICATION_MODE_SUBREGIONS )
       {
          m_pPipeVideoCodec->encode_bitstream_sliced( m_pPipeVideoCodec,
@@ -2211,7 +2204,6 @@ CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD 
                                                      &pDX12EncodeContext->pAsyncCookie );
       }
       else
-#endif   // (USE_D3D12_PREVIEW_HEADERS && (D3D12_PREVIEW_SDK_VERSION >= 717))
       {
          m_pPipeVideoCodec->encode_bitstream( m_pPipeVideoCodec,
                                               pDX12EncodeContext->pPipeVideoBuffer,

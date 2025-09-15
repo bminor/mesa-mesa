@@ -116,13 +116,11 @@ CMFD3DManager::Shutdown( bool bReleaseDeviceManager )
       m_pWinsys->destroy( this->m_pWinsys );
       m_pWinsys = nullptr;
    }
-#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
    if(m_ContextPriorityMgr.base.register_work_queue)
    {
       mtx_destroy(&m_ContextPriorityMgr.m_lock);
       m_ContextPriorityMgr.base.register_work_queue = nullptr;
    }
-#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
 
    return hr;
 }
@@ -267,8 +265,6 @@ CMFD3DManager::UpdateGPUFeatureFlags()
    */
 }
 
-#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
-
 int MFTRegisterWorkQueue(struct d3d12_context_queue_priority_manager* manager, ID3D12CommandQueue* queue)
 {
    mft_context_queue_priority_manager* mft_mgr = (mft_context_queue_priority_manager*) manager;
@@ -320,17 +316,13 @@ int MFTUnregisterWorkQueue(struct d3d12_context_queue_priority_manager* manager,
    return 0;
 }
 
-#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
-
 HRESULT
 CMFD3DManager::xOnSetD3DManager( ULONG_PTR ulParam )
 {
    HRESULT hr = S_OK;
    Shutdown();
 
-#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
    d3d12_interop_device_info1 screen_interop_info = {};
-#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
 
    if( ulParam == 0 )
    {
@@ -352,7 +344,6 @@ CMFD3DManager::xOnSetD3DManager( ULONG_PTR ulParam )
                   MF_E_DXGI_DEVICE_NOT_INITIALIZED,
                   done );
 
-#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
    if ((m_pVlScreen->pscreen->interop_query_device_info(m_pVlScreen->pscreen, sizeof(d3d12_interop_device_info1), &screen_interop_info) != 0) &&
        (screen_interop_info.set_context_queue_priority_manager != NULL))
    {
@@ -380,7 +371,7 @@ CMFD3DManager::xOnSetD3DManager( ULONG_PTR ulParam )
                      MF_E_DXGI_DEVICE_NOT_INITIALIZED,
                      done );
    }
-#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+
    CHECKHR_GOTO( MFCreateVideoSampleAllocatorEx( IID_PPV_ARGS( &m_spVideoSampleAllocator ) ), done );
    CHECKHR_GOTO( MFCreateVideoSampleAllocatorEx( IID_PPV_ARGS( &m_spSATDMapAllocator ) ), done );
    CHECKHR_GOTO( MFCreateVideoSampleAllocatorEx( IID_PPV_ARGS( &m_spBitsusedMapAllocator ) ), done );
