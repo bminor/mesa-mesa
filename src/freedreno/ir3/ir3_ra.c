@@ -1382,6 +1382,34 @@ try_allocate_src(struct ra_ctx *ctx, struct ra_file *file,
    return ~0;
 }
 
+static physreg_t
+try_allocate_src_subreg(struct ra_ctx *ctx, struct ra_file *file,
+                        struct ir3_register *reg,
+                        enum ir3_subreg_move subreg_move)
+{
+   assert(subreg_move != IR3_SUBREG_MOVE_NONE);
+
+   /* Subreg moves always write a half register. */
+   assert(reg_elem_size(reg) == 1);
+
+   struct ir3_register *src = reg->instr->srcs[0];
+   if (!ra_reg_is_src(src) || ra_get_file(ctx, src) != file)
+      return ~0;
+
+   unsigned offset = subreg_move == IR3_SUBREG_MOVE_LOWER ? 0 : 1;
+   struct ra_interval *src_interval = ra_interval_get(ctx, src->def);
+   physreg_t src_physreg = ra_interval_get_physreg(src_interval) + offset;
+   unsigned file_size = reg_file_size(file, reg);
+   unsigned size = reg_size(reg);
+
+   if (src_physreg + size <= file_size &&
+       get_reg_specified(ctx, file, reg, src_physreg, false)) {
+      return src_physreg;
+   }
+
+   return ~0;
+}
+
 static bool
 rpt_has_unique_merge_set(struct ir3_instruction *instr)
 {
@@ -1456,6 +1484,16 @@ get_reg(struct ra_ctx *ctx, struct ra_file *file, struct ir3_register *reg)
          best_reg += reg->merge_set_offset;
          return best_reg;
       }
+   }
+
+   /* For subreg moves (see ir3_is_subreg_move), try to allocate half of their
+    * full src for their dst. If this succeeds, the instruction can be removed.
+    */
+   enum ir3_subreg_move subreg_move = ir3_is_subreg_move(reg->instr);
+   if (subreg_move != IR3_SUBREG_MOVE_NONE) {
+      physreg_t src_reg = try_allocate_src_subreg(ctx, file, reg, subreg_move);
+      if (src_reg != (physreg_t)~0)
+         return src_reg;
    }
 
    /* For ALU and SFU instructions, if the src reg is avail to pick, use it.
