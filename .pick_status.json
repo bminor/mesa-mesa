@@ -3434,7 +3434,7 @@
         "description": "aco/isel: fix output args init stack buffer overflow",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "eb249bb18e250dca198332def96a1ad921cfd77b",
         "notes": null
