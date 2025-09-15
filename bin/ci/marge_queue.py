@@ -124,24 +124,32 @@ class MargeQueue:
         return self.sorted_queue + self.undetermined
 
 
-def get_merge_queue(project: Project) -> int:
-    mrs = project.mergerequests.list(
+def get_merge_queue(project: Project) -> MargeQueue:
+    queue = MargeQueue()
+    for mr in project.mergerequests.list(
         assignee_id=MARGE_BOT_USER_ID,
         scope="all",
         state="opened",
-        get_all=True
-    )
-
-    n_mrs = len(mrs)
-    for mr in mrs:
-        updated = parser.parse(mr.updated_at)
-        now = datetime.now(timezone.utc)
-        diff = (now - updated).total_seconds()
+        get_all=True,
+    ):
+        marge_merge_request = MargeMergeRequest(mr)
+        queue.append(marge_merge_request)
+    for mr in queue.sorted_queue:
         print(
-            f"⛭ \u001b]8;;{mr.web_url}\u001b\\"
-            f"{mr.title}\u001b]8;;\u001b\\ ({pretty_duration(diff)})"
+            f"⛭ {mr.assigned_at:%Y-%m-%d %H:%M:%S} "
+            f"({pretty_duration(mr.time_enqueued.total_seconds())}) "
+            f"\u001b]8;;{mr.web_url}\u001b\\{mr.title}\u001b]8;;\u001b\\"
         )
-    return n_mrs
+    if queue.undetermined:
+        print(
+            "Unable to determine when they where assigned to Marge:"
+        )
+        for mr in queue.undetermined:
+            print(
+                f"⛭ {mr.updated_at:%Y-%m-%d %H:%M:%S} "
+                f"\u001b]8;;{mr.web_url}\u001b\\{mr.title}\u001b]8;;\u001b\\"
+            )
+    return queue
 
 
 def main():
@@ -152,7 +160,7 @@ def main():
     project = gl.projects.get("mesa/mesa")
 
     while True:
-        n_mrs = get_merge_queue(project)
+        n_mrs = get_merge_queue(project).n_merge_requests_enqueued
 
         print(f"Job waiting: {n_mrs}")
 
@@ -164,7 +172,10 @@ def main():
         try:
             time.sleep(REFRESH_WAIT)
         except KeyboardInterrupt:
-            print("Sleep interrupted from keyboard, doing one last iteration before finish.")
+            print(
+                "Sleep interrupted from keyboard, "
+                "doing one last iteration before finish."
+            )
             args.wait = False
 
 
