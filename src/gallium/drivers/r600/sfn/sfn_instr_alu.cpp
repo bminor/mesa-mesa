@@ -953,6 +953,10 @@ AluInstr::split(AluGroup& group)
       }
       if (has_alu_flag(alu_dst_clamp))
          instr->set_alu_flag(alu_dst_clamp);
+      if (has_alu_flag(alu_update_pred))
+         instr->set_alu_flag(alu_update_pred);
+      if (has_alu_flag(alu_update_exec))
+         instr->set_alu_flag(alu_update_exec);
 
       if (has_alu_flag(alu_write) && m_dest && (dest_slot == m_dest->chan()))
          instr->set_alu_flag(alu_write);
