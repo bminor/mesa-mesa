@@ -1,21 +1,22 @@
 include:
   - local: 'src/freedreno/ci/gitlab-ci-inc.yml'
 
-.a306-gl:
+a306-gl:
   extends:
-    - .baremetal-deqp-test
-    - .a306-test
+    - .lava-arm64-test-gl
+    - .lava-dragonboard-410c:arm64
+    - .collabora-freedreno-rules
   variables:
     DEQP_SUITE: freedreno-a306
     FDO_CI_CONCURRENT: 6
   parallel: 5
 
-.a306-piglit:
+a306-piglit:
   extends:
-    - .baremetal-deqp-test
-    - .a306-test
+    - .lava-arm64-test-gl
+    - .lava-dragonboard-410c:arm64
     - .test-piglit
-    - .google-freedreno-manual-rules
+    - .collabora-freedreno-manual-rules
   timeout: 40m
   variables:
     DEQP_SUITE: freedreno-a306-piglit
@@ -26,53 +27,64 @@ include:
 # it started.
 .a306-piglit-gl:
   extends:
-    - .baremetal-deqp-test
-    - .a306-test
+    - .lava-arm64-test-gl
+    - .lava-dragonboard-410c:arm64
     - .test-piglit
-    - .google-freedreno-manual-rules
+    - .collabora-freedreno-manual-rules
   variables:
     BM_KERNEL_EXTRA_ARGS: "msm.num_hw_submissions=1"
     DEQP_SUITE: freedreno-a306-piglit-quick-gl
     FDO_CI_CONCURRENT: 3
     HWCI_START_WESTON: 1
 
-.a306-piglit-shader:
+a306-piglit-shader:
   extends:
-    - .baremetal-deqp-test
-    - .a306-test
+    - .lava-arm64-test-gl
+    - .lava-dragonboard-410c:arm64
     - .test-piglit
-    - .google-freedreno-manual-rules
+    - .collabora-freedreno-manual-rules
   variables:
     DEQP_SUITE: freedreno-a306-piglit-quick-shader
     FDO_CI_CONCURRENT: 6
     HWCI_START_WESTON: 1
 
-.a306-traces:
+a306-traces:
   extends:
-    - .google-freedreno-test-traces
-    - .a306-test
+    - .lava-arm64-piglit-traces
+    - .lava-dragonboard-410c:arm64
+    - .collabora-freedreno-rules
+  variables:
+    HWCI_START_WESTON: 1
+    PIGLIT_REPLAY_DEVICE_NAME: "${GPU_VERSION}"
+    PIGLIT_TRACES_FILE: traces-freedreno.yml
 
-.a530-gl:
+a530-gl:
   extends:
-    - .baremetal-deqp-test
+    - .lava-arm64-test-gl
+    - .lava-dragonboard-820c:arm64
     - .test-piglit
-    - .a530-test
+    - .collabora-freedreno-rules
   variables:
     DEQP_SUITE: freedreno-a530
     FDO_CI_CONCURRENT: 3  # if 4, sometimes "deqp-gles31, not enough memory for the allocation" appears
   parallel: 6
 
-.a530-traces:
+a530-traces:
   extends:
-    - .google-freedreno-test-traces
-    - .a530-test
+    - .lava-arm64-piglit-traces
+    - .lava-dragonboard-820c:arm64
+    - .collabora-freedreno-rules
+  variables:
+    HWCI_START_WESTON: 1
+    PIGLIT_REPLAY_DEVICE_NAME: "${GPU_VERSION}"
+    PIGLIT_TRACES_FILE: traces-freedreno.yml
 
-.a530-piglit:
+a530-piglit:
   extends:
-    - .baremetal-deqp-test
-    - .a530-test
+    - .lava-arm64-test-gl
+    - .lava-dragonboard-820c:arm64
     - .test-piglit
-    - .google-freedreno-manual-rules
+    - .collabora-freedreno-manual-rules
   parallel: 2
   variables:
     DEQP_SUITE: freedreno-a530-piglit

@@ -230,6 +230,35 @@
       artifacts: false # we pull the artifacts from S3
   dependencies: null
 
+# Status: https://lava.collabora.dev/scheduler/device_type/dragonboard-410c
+.lava-dragonboard-410c:arm64:
+  variables:
+    BOOT_METHOD: fastboot
+    DEVICE_TYPE: dragonboard-410c
+    DTB: apq8016-sbc-usb-host
+    FDO_CI_CONCURRENT: 8
+    FARM: collabora
+    GPU_VERSION: freedreno-a306
+    KERNEL_IMAGE_NAME: "Image.gz"
+    KERNEL_IMAGE_TYPE: ""
+    RUNNER_TAG: mesa-ci-x86-64-lava-dragonboard-410c
+    LAVA_FIRMWARE: qcom-lava
+    KERNEL_TAG: msm-fixes-for-mesa-ci-14102025
+
+# Status: https://lava.collabora.dev/scheduler/device_type/dragonboard-820c
+.lava-dragonboard-820c:arm64:
+  variables:
+    BOOT_METHOD: fastboot
+    DEVICE_TYPE: dragonboard-820c
+    DTB: apq8096-db820c
+    FDO_CI_CONCURRENT: 8
+    FARM: collabora
+    GPU_VERSION: freedreno-a530
+    KERNEL_IMAGE_NAME: "Image.gz"
+    KERNEL_IMAGE_TYPE: ""
+    RUNNER_TAG: mesa-ci-x86-64-lava-dragonboard-820c
+    LAVA_FIRMWARE: qcom-lava
+    KERNEL_TAG: msm-fixes-for-mesa-ci-14102025
 
 # Status: https://lava.collabora.dev/scheduler/device_type/sc7180-trogdor-kingoftown
 .lava-sc7180-trogdor-kingoftown:arm64:
