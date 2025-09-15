@@ -3334,7 +3334,7 @@
         "description": "panvk: Fix wrong type for sb_mask in CmdSetEvent2",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f8598e599e1ff0031988b863fab35c01d7d6dd20",
         "notes": null
