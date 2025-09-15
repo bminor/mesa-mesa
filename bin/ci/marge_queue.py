@@ -76,7 +76,11 @@ def main():
         if not args.wait:
             sys.exit(min(n_mrs, 127))
 
-        time.sleep(REFRESH_WAIT)
+        try:
+            time.sleep(REFRESH_WAIT)
+        except KeyboardInterrupt:
+            print("Sleep interrupted from keyboard, doing one last iteration before finish.")
+            args.wait = False
 
 
 if __name__ == "__main__":
