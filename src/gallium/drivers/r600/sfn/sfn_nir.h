@@ -43,7 +43,7 @@ bool
 r600_nir_split_64bit_io(nir_shader *sh);
 
 bool
-r600_nir_64_to_vec2(nir_shader *sh);
+r600_nir_64_to_vec2(nir_shader *sh, bool support_fp64);
 
 bool
 r600_merge_vec2_stores(nir_shader *shader);

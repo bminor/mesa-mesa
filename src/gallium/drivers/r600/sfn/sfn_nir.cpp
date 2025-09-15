@@ -846,11 +846,14 @@ r600_lower_and_optimize_nir(nir_shader *sh,
    NIR_PASS(_, sh, nir_lower_ubo_vec4);
    NIR_PASS(_, sh, r600_opt_indirect_fbo_loads);
 
-   if (lower_64bit)
-      NIR_PASS(_, sh, r600::r600_nir_64_to_vec2);
-
-   if (lower_64bit_io_to_vec2)
+   if (lower_64bit_io_to_vec2) {
       NIR_PASS(_, sh, r600::r600_split_64bit_uniforms_and_ubo);
+      NIR_PASS(_, sh, nir_lower_alu_to_scalar, r600_lower_to_scalar_instr_filter, NULL);
+      NIR_PASS(_, sh, nir_lower_phis_to_scalar, NULL, NULL);
+      while (optimize_once(sh))
+         ;
+      NIR_PASS(_, sh, r600::r600_nir_64_to_vec2, gfx_level >= CAYMAN);
+   }
 
    /* Lower to scalar to let some optimization work out better */
    while (optimize_once(sh))

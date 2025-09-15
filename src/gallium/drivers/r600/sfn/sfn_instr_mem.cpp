@@ -588,6 +588,8 @@ RatInstr::emit_ssbo_load(nir_intrinsic_instr *intr, Shader& shader)
    auto& vf = shader.value_factory();
    auto dest = vf.dest_vec4(intr->def, pin_group);
 
+   int components = intr->def.bit_size / 32 * intr->def.num_components;
+
    /** src0 not used, should be some offset */
    auto addr = vf.src(intr->src[1], 0);
    auto addr_temp = vf.temp_register();
@@ -605,11 +607,9 @@ RatInstr::emit_ssbo_load(nir_intrinsic_instr *intr, Shader& shader)
       {0, 1, 2, 3}
    };
 
-   int comp_idx = intr->def.num_components - 1;
+   int comp_idx = components - 1;
 
    auto [offset, res_offset] = shader.evaluate_resource_offset(intr, 0);
-   {
-   }
 
    auto res_id = R600_IMAGE_REAL_RESOURCE_OFFSET + offset + shader.ssbo_image_offset();
 
