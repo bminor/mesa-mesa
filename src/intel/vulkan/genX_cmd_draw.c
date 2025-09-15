@@ -665,7 +665,7 @@ cmd_buffer_maybe_flush_rt_writes(struct anv_cmd_buffer *cmd_buffer,
    /* Build a map of fragment color output to attachment */
    uint8_t rt_to_att[MAX_RTS];
    memset(rt_to_att, ANV_COLOR_OUTPUT_DISABLED, MAX_RTS);
-   for (uint32_t i = 0; i < MAX_RTS; i++) {
+   for (uint32_t i = 0; i < gfx->color_att_count; i++) {
       if (dyn->cal.color_map[i] != MESA_VK_ATTACHMENT_UNUSED)
          rt_to_att[dyn->cal.color_map[i]] = i;
    }
