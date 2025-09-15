@@ -1,8 +1,11 @@
+
+KHR-GL46.es_31_compatibility.shader_storage_buffer_object.advanced-usage-sync-cs
 KHR-GL46.shader_atomic_counters.basic-usage-tes
 KHR-GL46.shader_bitfield_operation.bitfieldInsert.ivec3_2
 KHR-GL46.shader_bitfield_operation.bitfieldReverse.int_2
 KHR-GL46.shader_bitfield_operation.findMSB.uint_0
 KHR-GL46.shader_bitfield_operation.unpackUnorm4x8.1
+KHR-GL46.shader_draw_parameters_tests.MultiDrawArraysIndirectCountParameters
 KHR-GL46.shader_draw_parameters_tests.ShaderMultiDrawElementsIndirectParameters
 KHR-GL46.shader_group_vote.all_invocations
 KHR-GL46.shader_group_vote.all_invocations_equal
@@ -27,6 +30,8 @@ KHR-GLES31.core.shader_bitfield_operation.bitfieldReverse.uint_3
 KHR-GLES31.core.shader_bitfield_operation.findMSB.ivec2_1
 KHR-GLES31.core.shader_storage_buffer_object.advanced-usage-sync-cs
 KHR-GLES31.core.texture_cube_map_array.color_depth_attachments
+custom@buffer flags
+custom@buffer flags@in-0x8-out-0x20
 dEQP-GLES3.functional.polygon_offset.fixed16_enable
 dEQP-GLES3.functional.polygon_offset.fixed16_render_with_units
 dEQP-GLES3.functional.polygon_offset.fixed24_enable
@@ -48,6 +53,7 @@ dEQP-GLES31.functional.ssbo.layout.multi_nested_struct.single_buffer.packed
 dEQP-GLES31.functional.ssbo.layout.random.all_per_block_buffers.49
 dEQP-GLES31.functional.ssbo.layout.random.arrays_of_arrays.4
 dEQP-GLES31.functional.ssbo.layout.random.nested_structs_arrays.14
+dEQP-GLES31.functional.ssbo.layout.random.nested_structs_arrays_instance_arrays.21
 dEQP-GLES31.functional.ssbo.layout.random.nested_structs_instance_arrays.11
 dEQP-GLES31.functional.ssbo.layout.random.nested_structs_instance_arrays.12
 dEQP-GLES31.functional.ssbo.layout.single_basic_array.packed.bvec3
@@ -151,6 +157,7 @@ dEQP-VK.dynamic_rendering.primary_cmd_buff.suballocation.formats.r8g8_uint.dont_
 dEQP-VK.dynamic_rendering.primary_cmd_buff.suballocation.multisample_resolve.r16g16b16a16_snorm.samples_4_baseLayer1
 
 dEQP-VK.glsl.builtin.precision.distance.mediump.vec4
+dEQP-VK.glsl.builtin.precision_fp16_storage32b.tanh.compute.vec2
 dEQP-VK.glsl.conversions.vector_to_vector.ivec4_to_ivec2_vertex
 dEQP-VK.glsl.matrix.mul.uniform.mediump_mat4x3_mat4_vertex
 dEQP-VK.glsl.matrix.unary_addition.mediump_mat3x2_float_fragment
@@ -274,6 +281,8 @@ dEQP-VK.texture.shadow.cube_array.nearest_mipmap_nearest.non_seamless_less_or_eq
 
 dEQP-VK.ubo.2_level_array.scalar.column_major_mat3.fragment
 dEQP-VK.ubo.3_level_array.std430.mat4x2.both_comp_access
+
+dynamic-dEQP-VK.renderpass2.suballocation.attachment_sparse_filling.input_attachment_1
 
 gmem-dEQP-VK.api.image_clearing.dedicated_allocation.clear_color_image.2d.linear.remaining_array_layers.r16g16_unorm_33x128
 
