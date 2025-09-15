@@ -25,6 +25,12 @@ from gitlab_common import read_token, pretty_duration
 REFRESH_WAIT = 30
 MARGE_BOT_USER_ID = 9716
 ASSIGNED_TO_MARGE = "assigned to @marge-bot"
+ASSIGNED_AT_PADDING = 19
+WAITING_PADDING = 8
+MR_ID_PADDING = 5
+URL_START = "\u001b]8;;"
+URL_SEPARATOR = "\u001b\\"
+URL_END = "\u001b]8;;\u001b\\"
 
 
 def parse_args() -> argparse.Namespace:
@@ -132,19 +138,23 @@ def get_merge_queue(project: Project) -> MargeQueue:
         marge_merge_request = MargeMergeRequest(mr)
         queue.append(marge_merge_request)
     for mr in queue.sorted_queue:
+        assigned_at = f"{mr.assigned_at:%Y-%m-%d %H:%M:%S}"
+        time_enqueued = f"{pretty_duration(mr.time_enqueued.total_seconds())}"
         print(
-            f"⛭ {mr.assigned_at:%Y-%m-%d %H:%M:%S} "
-            f"({pretty_duration(mr.time_enqueued.total_seconds())}) "
-            f"\u001b]8;;{mr.web_url}\u001b\\{mr.title}\u001b]8;;\u001b\\"
+            f"⛭ {assigned_at:<{ASSIGNED_AT_PADDING}} "
+            f"{time_enqueued:>{WAITING_PADDING}} "
+            f"{link2print(mr.web_url, mr.id, MR_ID_PADDING)} {mr.title}"
         )
     if queue.undetermined:
         print(
             "Unable to determine when they where assigned to Marge:"
         )
         for mr in queue.undetermined:
+            updated_at = f"{mr.updated_at:%Y-%m-%d %H:%M:%S}"
             print(
-                f"⛭ {mr.updated_at:%Y-%m-%d %H:%M:%S} "
-                f"\u001b]8;;{mr.web_url}\u001b\\{mr.title}\u001b]8;;\u001b\\"
+                f"⛭ {updated_at:<{ASSIGNED_AT_PADDING}} "
+                f"{" ":{WAITING_PADDING}} "
+                f"{link2print(mr.web_url, mr.id, MR_ID_PADDING)} {mr.title}"
             )
     return queue
 
@@ -168,6 +178,12 @@ def __get_project_marge_merge_requests(
     )
 
 
+def link2print(url: str, text: str, text_pad: int = 0) -> str:
+    text = str(text)
+    text_pad = len(text) if text_pad < 1 else text_pad
+    return f"{URL_START}{url}{URL_SEPARATOR}{text:{text_pad}}{URL_END}"
+
+
 def main():
     args = parse_args()
     token = read_token(args.token)
@@ -175,6 +191,15 @@ def main():
 
     project = __get_gitlab_project(gl)
 
+    assigned_at = "Assigned at"
+    waiting = "Waiting"
+    mr = "MR"
+    title = "Title"
+    print(
+        f"  {assigned_at:<{ASSIGNED_AT_PADDING}} "
+        f"{waiting:<{WAITING_PADDING}} "
+        f"{mr:<{MR_ID_PADDING}} {title}"
+    )
     while True:
         n_mrs = get_merge_queue(project).n_merge_requests_enqueued
 
