@@ -24,6 +24,7 @@
 #include "util/perf/cpu_trace.h"
 #include "util/u_blitter.h"
 #include "util/u_draw.h"
+#include "util/u_inlines.h"
 #include "util/u_prim.h"
 #include "util/format/u_format.h"
 #include "util/u_helpers.h"
@@ -1071,7 +1072,7 @@ v3d_update_job_tlb_load_store(struct v3d_job *job) {
                 struct v3d_resource *rsc = v3d_resource(job->zsbuf.texture);
                 v3d_job_add_bo(job, rsc->bo);
                 job->load |= PIPE_CLEAR_DEPTH & ~no_load_mask;
-                if (v3d->zsa->base.depth_writemask)
+                if (util_writes_depth(&v3d->zsa->base))
                         job->store |= PIPE_CLEAR_DEPTH;
                 rsc->initialized_buffers |= PIPE_CLEAR_DEPTH;
         }
@@ -1085,8 +1086,8 @@ v3d_update_job_tlb_load_store(struct v3d_job *job) {
                 v3d_job_add_bo(job, rsc->bo);
 
                 job->load |= PIPE_CLEAR_STENCIL & ~no_load_mask;
-                if (v3d->zsa->base.stencil[0].writemask ||
-                    v3d->zsa->base.stencil[1].writemask) {
+                if (util_writes_stencil(&v3d->zsa->base.stencil[0]) ||
+                    util_writes_stencil(&v3d->zsa->base.stencil[1])) {
                         job->store |= PIPE_CLEAR_STENCIL;
                 }
                 rsc->initialized_buffers |= PIPE_CLEAR_STENCIL;
