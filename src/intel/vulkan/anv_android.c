@@ -23,6 +23,40 @@
 
 #include "anv_private.h"
 
+VkResult
+anv_android_import_from_handle(struct anv_device *device,
+                               const buffer_handle_t handle,
+                               uint64_t modifier,
+                               struct anv_bo **bo_out)
+{
+   /* NOTE - We support buffers with only one handle but do not error on
+    * multiple handle case. Reason is that we want to support YUV formats
+    * where we have many logical planes but they all point to the same
+    * buffer, like is the case with VK_FORMAT_G8_B8R8_2PLANE_420_UNORM.
+    *
+    * Do not close the gralloc handle's dma_buf. The lifetime of the dma_buf
+    * must exceed that of the gralloc handle, and we do not own the gralloc
+    * handle.
+    */
+   int dma_buf = (handle && handle->numFds) ? handle->data[0] : -1;
+   if (dma_buf < 0)
+      return VK_ERROR_INVALID_EXTERNAL_HANDLE;
+
+   enum anv_bo_alloc_flags alloc_flags = ANV_BO_ALLOC_EXTERNAL;
+   if (device->info->ver >= 20 && isl_drm_modifier_has_aux(modifier)) {
+      /* We always set scanout flag when importing buffers with Xe2
+       * modifiers, same as the rest in anv and iris drivers.
+       */
+      alloc_flags |= ANV_BO_ALLOC_COMPRESSED | ANV_BO_ALLOC_SCANOUT;
+   }
+
+   return anv_device_import_bo(device,
+                               dma_buf,
+                               alloc_flags,
+                               0 /* client_address */,
+                               bo_out);
+}
+
 /*
  * Called from anv_AllocateMemory when import AHardwareBuffer.
  */

@@ -33,12 +33,18 @@
 #include <vulkan/vulkan_android.h>
 #include <vulkan/vk_android_native_buffer.h>
 
+struct anv_bo;
 struct anv_device_memory;
 struct anv_device;
 struct anv_image;
 struct u_gralloc_buffer_handle;
 enum isl_tiling;
 
+VkResult
+anv_android_import_from_handle(struct anv_device *device,
+                               const buffer_handle_t handle,
+                               uint64_t modifier,
+                               struct anv_bo **bo_out);
 VkResult
 anv_android_get_tiling(struct anv_device *device,
                        struct u_gralloc_buffer_handle *gr_handle,
