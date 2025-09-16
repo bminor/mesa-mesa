@@ -744,7 +744,7 @@
         "description": "brw/nir: nir_intrinsic_load_reloc_const_intel may not be scalar [v3]",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f3593df877f84fd2ed2a565b66ecab322cd8c3f1",
         "notes": null

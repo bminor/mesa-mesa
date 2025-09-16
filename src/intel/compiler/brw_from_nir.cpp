@@ -6332,10 +6332,20 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
       uint32_t id = nir_intrinsic_param_idx(instr);
       uint32_t base = nir_intrinsic_base(instr);
 
-      assert(dest.is_scalar);
+      /* Emit the reloc in the smallest SIMD size to limit register usage. */
+      const brw_builder ubld = dest.is_scalar ? xbld : bld.exec_all().group(1, 0);
+      brw_reg small_dest = dest.is_scalar ? dest : ubld.vgrf(dest.type);
 
-      xbld.emit(SHADER_OPCODE_MOV_RELOC_IMM, retype(dest, BRW_TYPE_D),
+      if (!dest.is_scalar)
+         ubld.UNDEF(small_dest);
+
+      ubld.emit(SHADER_OPCODE_MOV_RELOC_IMM, retype(small_dest, BRW_TYPE_D),
                 brw_imm_ud(id), brw_imm_ud(base));
+
+      /* Copy propagation will get rid of this MOV. */
+      if (!dest.is_scalar)
+         bld.MOV(dest, component(small_dest, 0));
+
       break;
    }
 
