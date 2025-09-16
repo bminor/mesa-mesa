@@ -71,7 +71,7 @@ template = """\
 #include "nir.h"
 
 /**
- * \brief Checks if the provided value is a denorm and flushes it to zero.
+ * Checks if the provided value is a denorm and flushes it to zero.
  */
 static void
 constant_denorm_flush_to_zero(nir_const_value *value, unsigned bit_size)
