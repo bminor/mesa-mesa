@@ -22,6 +22,7 @@
 #include "clb097.h"
 #include "clcb97.h"
 #include "nv_push_cl906f.h"
+#include "nv_push_cla16f.h"
 #include "nv_push_cl9097.h"
 #include "nv_push_cl90b5.h"
 #include "nv_push_cla097.h"
@@ -451,6 +452,10 @@ nvk_barrier_flushes_waits(VkPipelineStageFlags2 stages,
    access = vk_filter_src_access_flags2(stages, access);
 
    enum nvk_barrier barriers = 0;
+
+   if (stages &
+       vk_expand_pipeline_stage_flags2(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT))
+      barriers |= NVK_BARRIER_WFI;
 
    if (access & VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT) {
       barriers |= NVK_BARRIER_FLUSH_SHADER_DATA;
