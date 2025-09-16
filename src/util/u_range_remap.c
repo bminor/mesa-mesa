@@ -24,21 +24,6 @@
 #include "ralloc.h"
 #include "u_range_remap.h"
 
-/* Loop over the list and get the list entry after i interations*/
-static struct range_entry *
-get_list_entry(unsigned n, const struct list_head *r_list)
-{
-   unsigned i = 0;
-   list_for_each_entry_safe(struct range_entry, entry, r_list, node) {
-      if (i == n)
-         return entry;
-
-      i++;
-   }
-
-   return NULL;
-}
-
 /* Binary search for the range that contains n */
 static struct range_entry *
 get_range_entry(unsigned n, const struct list_head *r_list)
@@ -48,25 +33,49 @@ get_range_entry(unsigned n, const struct list_head *r_list)
 
    unsigned low = 0;
    unsigned high = list_length(r_list) - 1;
+   unsigned mid = (low + high) / 2;
+
+   struct range_entry *mid_entry =
+      list_first_entry(r_list, struct range_entry, node);
+
+   /* Advance to the initial mid position */
+   unsigned i = 0;
+   while (i < mid) {
+      mid_entry = list_entry(mid_entry->node.next, struct range_entry, node);
+      i++;
+   }
 
    while (low <= high) {
-      int mid = (low + high) / 2;
-      struct range_entry *mid_entry = get_list_entry(mid, r_list);
       if (n < mid_entry->start) {
-         if (low == high || low == mid) {
+         if (low == high || mid == low) {
             /* No entry found for n */
             return NULL;
          }
 
          high = mid - 1;
+         unsigned new_mid = (low + high) / 2;
+
+         /* Move backward to new_mid */
+         while (mid > new_mid) {
+            mid_entry = list_entry(mid_entry->node.prev, struct range_entry, node);
+            mid--;
+         }
       } else if (n > mid_entry->end) {
-         if (low == high) {
+         if (low == high || mid == high) {
             /* No entry found for n */
             return NULL;
          }
 
          low = mid + 1;
+         unsigned new_mid = (low + high) / 2;
+
+         /* Move forward to new_mid */
+         while (mid < new_mid) {
+            mid_entry = list_entry(mid_entry->node.next, struct range_entry, node);
+            mid++;
+        }
       } else {
+         /* n is within the current range */
          return mid_entry;
       }
    }
@@ -100,30 +109,47 @@ util_range_insert_remap(unsigned start, unsigned end,
 
    unsigned low = 0;
    unsigned high = list_length(r_list) - 1;
+   unsigned mid = (low + high) / 2;
+
+   struct range_entry *mid_entry =
+      list_first_entry(r_list, struct range_entry, node);
+   unsigned i = 0;
+   while (i < mid) {
+      mid_entry = list_entry(mid_entry->node.next, struct range_entry, node);
+      i++;
+   }
 
    while (low <= high) {
-      int mid = (low + high) / 2;
-
-      struct range_entry *mid_entry = get_list_entry(mid, r_list);
       if (end < mid_entry->start) {
-         if (low == high || low == mid) {
+         if (low == high || mid == low) {
             entry = rzalloc(r_list, struct range_entry);
-            list_addtail(&entry->node, &mid_entry->node);
-            break;
+            list_addtail(&entry->node, &mid_entry->node); /* insert before mid */
+            goto insert_end;
          }
 
          high = mid - 1;
+         unsigned new_mid = (low + high) / 2;
+         while (mid > new_mid) {
+            mid_entry = list_entry(mid_entry->node.prev, struct range_entry, node);
+            mid--;
+         }
       } else if (start > mid_entry->end) {
-         if (low == high) {
+         if (low == high || mid == high) {
             entry = rzalloc(r_list, struct range_entry);
-            list_add(&entry->node, &mid_entry->node);
-            break;
+            list_add(&entry->node, &mid_entry->node); /* insert after mid */
+            goto insert_end;
          }
 
          low = mid + 1;
+         unsigned new_mid = (low + high) / 2;
+         while (mid < new_mid) {
+            mid_entry =
+               list_entry(mid_entry->node.next, struct range_entry, node);
+            mid++;
+         }
       } else if (mid_entry->start == start && mid_entry->end == end) {
          entry = mid_entry;
-         break;
+         goto insert_end;
       } else {
          /* Attempting to insert an entry that overlaps an existing range */
          return NULL;
