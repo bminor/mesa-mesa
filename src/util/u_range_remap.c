@@ -89,6 +89,15 @@ util_range_insert_remap(unsigned start, unsigned end,
       goto insert_end;
    }
 
+   /* Shortcut for consecutive location inserts */
+   struct range_entry *last_entry =
+      list_last_entry(r_list, struct range_entry, node);
+   if (last_entry->end < start) {
+      entry = rzalloc(r_list, struct range_entry);
+      list_addtail(&entry->node, r_list);
+      goto insert_end;
+   }
+
    unsigned low = 0;
    unsigned high = list_length(r_list) - 1;
 
