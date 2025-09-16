@@ -84,6 +84,8 @@ TEMPLATE_H = Template(COPYRIGHT + """\
 #include <vulkan/vulkan_beta.h>
 #endif
 
+#include "vk_internal_exts.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -681,6 +683,16 @@ def get_types_defines(doc):
 
     return types_to_defines
 
+INTERNAL_STRUCT_EXTENSIONS = {
+    "VkRenderingAttachmentInfo": EntrypointType(
+        name="VkRenderingAttachmentInitialLayoutInfoMESA",
+        enum="VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INITIAL_LAYOUT_INFO_MESA",
+        members=[],
+        extended_by=[],
+        guard=None
+    )
+}
+
 def get_types(doc, beta, api, types_to_defines):
     """Extract the types from the registry."""
     types = {}
@@ -731,6 +743,9 @@ def get_types(doc, beta, api, types_to_defines):
             if extended not in required:
                 continue
             types[extended].extended_by.append(types[_type.attrib['name']])
+
+    for extended in INTERNAL_STRUCT_EXTENSIONS:
+        types[extended].extended_by.append(INTERNAL_STRUCT_EXTENSIONS[extended])
 
     return types
 
