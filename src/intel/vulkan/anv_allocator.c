@@ -1811,8 +1811,9 @@ anv_device_map_bo(struct anv_device *device,
    if (real != bo) {
       offset += (bo->offset - real->offset);
 
+      const uint64_t page_size = device->physical->page_size;
       /* KMD rounds munmap() to whole pages, so here doing some adjustments */
-      const uint64_t munmap_offset = ROUND_DOWN_TO(offset, 4096);
+      const uint64_t munmap_offset = ROUND_DOWN_TO(offset, page_size);
       if (munmap_offset != offset) {
          offset_adjustment = offset - munmap_offset;
          size += offset_adjustment;
@@ -1822,7 +1823,7 @@ anv_device_map_bo(struct anv_device *device,
             placed_addr -= offset_adjustment;
       }
 
-      assert((offset & (4096 - 1)) == 0);
+      assert((offset & (page_size - 1)) == 0);
    }
 
    void *map = device->kmd_backend->gem_mmap(device, bo, offset, size, placed_addr);
@@ -1850,14 +1851,15 @@ anv_device_unmap_bo(struct anv_device *device,
 
    struct anv_bo *real = anv_bo_get_real(bo);
    if (real != bo) {
+      const uint64_t page_size = device->physical->page_size;
       uint64_t slab_offset = bo->offset - real->offset;
 
-      if (ROUND_DOWN_TO(slab_offset, 4096) != slab_offset) {
-         slab_offset -= ROUND_DOWN_TO(slab_offset, 4096);
+      if (ROUND_DOWN_TO(slab_offset, page_size) != slab_offset) {
+         slab_offset -= ROUND_DOWN_TO(slab_offset, page_size);
          map -= slab_offset;
          map_size += slab_offset;
       }
-      assert(((uintptr_t)map & (4096 - 1)) == 0);
+      assert(((uintptr_t)map & (page_size - 1)) == 0);
    }
 
    if (replace) {
