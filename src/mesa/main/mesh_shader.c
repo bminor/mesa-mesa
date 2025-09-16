@@ -15,6 +15,12 @@
 #include "pipe/p_context.h"
 #include "pipe/p_screen.h"
 
+typedef struct {
+   GLuint x;
+   GLuint y;
+   GLuint z;
+} DrawMeshTasksIndirectCommand;
+
 static bool
 check_mesh_shader_present(struct gl_context *ctx, const char *function)
 {
@@ -144,7 +150,7 @@ validate_draw_mesh_tasks_indirect(struct gl_context *ctx, GLintptr indirect,
       return false;
    }
 
-   if (stride < 3 * sizeof(GLuint)) {
+   if (stride < sizeof(DrawMeshTasksIndirectCommand)) {
       _mesa_error(ctx, GL_INVALID_VALUE,
                   "%s(stride is less then DrawMeshTasksIndirectCommandEXT)", name);
       return false;
@@ -156,7 +162,7 @@ validate_draw_mesh_tasks_indirect(struct gl_context *ctx, GLintptr indirect,
       return false;
    }
 
-   GLsizei size = stride * drawcount;
+   GLsizei size = stride * (drawcount - 1) + sizeof(DrawMeshTasksIndirectCommand);
    const uint64_t end = (uint64_t) indirect + size;
 
    if (ctx->DrawIndirectBuffer->Size < end) {
@@ -175,7 +181,8 @@ _mesa_DrawMeshTasksIndirectEXT(GLintptr indirect)
 
    if (!_mesa_is_no_error_enabled(ctx) &&
        !validate_draw_mesh_tasks_indirect(
-          ctx, indirect, 1, 3 * sizeof(GLuint), "glDrawMeshTasksIndirectEXT"))
+          ctx, indirect, 1, sizeof(DrawMeshTasksIndirectCommand),
+          "glDrawMeshTasksIndirectEXT"))
       return;
 
    struct pipe_grid_info info = {
@@ -196,7 +203,7 @@ _mesa_MultiDrawMeshTasksIndirectEXT(GLintptr indirect,
 
    /* If <stride> is zero, the array elements are treated as tightly packed. */
    if (stride == 0)
-      stride = 3 * sizeof(GLuint);
+      stride = sizeof(DrawMeshTasksIndirectCommand);
 
    if (!_mesa_is_no_error_enabled(ctx) &&
        !validate_draw_mesh_tasks_indirect(
@@ -270,7 +277,7 @@ _mesa_MultiDrawMeshTasksIndirectCountEXT(GLintptr indirect,
 
    /* If <stride> is zero, the array elements are treated as tightly packed. */
    if (stride == 0)
-      stride = 3 * sizeof(GLuint);
+      stride = sizeof(DrawMeshTasksIndirectCommand);
 
    if (!_mesa_is_no_error_enabled(ctx) &&
        !validate_multi_draw_mesh_tasks_indirect_count(ctx, indirect, drawcount,
