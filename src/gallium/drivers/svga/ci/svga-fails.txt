@@ -857,7 +857,6 @@ spec@glsl-1.10@execution@clipping@clip-plane-transformation pos_clipvert,Fail
 spec@glsl-1.30@execution@clipping@clip-plane-transformation pos,Fail
 spec@glsl-1.30@execution@fs-logic-joined-comparisons-with-nan2,Fail
 spec@glsl-1.30@execution@range_analysis_fsat_of_nan,Fail
-spec@glsl-1.40@uniform_buffer@two-stages,Fail
 spec@glsl-1.50@execution@geometry@primitive-id-restart gl_line_loop ffs,Fail
 spec@glsl-1.50@execution@geometry@primitive-id-restart gl_line_loop other,Fail
 spec@glsl-1.50@execution@geometry@primitive-id-restart gl_line_strip ffs,Fail

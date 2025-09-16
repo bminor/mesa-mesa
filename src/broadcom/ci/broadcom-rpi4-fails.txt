@@ -410,9 +410,6 @@ spec@!opengl 2.1@polygon-stipple-fs,Fail
 # Works when run individually, but fail consistently on the CI
 dEQP-GLES3.functional.texture.specification.teximage2d_pbo.rgba32i_cube,Fail
 
-# https://gitlab.freedesktop.org/mesa/piglit/-/merge_requests/1034
-spec@glsl-1.40@uniform_buffer@two-stages,Fail
-
 # RPI4 only supports 4RT, so this tests with 8RT will fail
 spec@arb_texture_barrier@arb_texture_barrier-blending-in-shader 32 1 8 128 1,Fail
 spec@arb_texture_barrier@arb_texture_barrier-blending-in-shader 32 1 8 128 2,Fail
