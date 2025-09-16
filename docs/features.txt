@@ -537,7 +537,7 @@ Khronos extensions that are not part of any Vulkan version:
   VK_KHR_android_surface                                not started
   VK_KHR_calibrated_timestamps                          DONE (anv, hk, nvk, panvk/v10+, radv, tu/a750+, vn)
   VK_KHR_compute_shader_derivatives                     DONE (anv, lvp, nvk, radv, tu/a7xx+, vn)
-  VK_KHR_cooperative_matrix                             DONE (anv, radv/gfx11+)
+  VK_KHR_cooperative_matrix                             DONE (anv, nvk/Turing+, radv/gfx11+)
   VK_KHR_depth_clamp_zero_one                           DONE (anv, nvk, panvk, radv, vn)
   VK_KHR_deferred_host_operations                       DONE (anv, hasvk, lvp, radv, tu, vn)
   VK_KHR_display                                        DONE (anv, nvk, panvk, pvr, radv, tu, v3dv, vn)
