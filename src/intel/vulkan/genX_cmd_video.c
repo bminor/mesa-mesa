@@ -1486,9 +1486,9 @@ anv_av1_decode_video_tile(struct anv_cmd_buffer *cmd_buffer,
 
    anv_batch_emit(&cmd_buffer->batch, GENX(AVP_SURFACE_STATE), ss) {
       ss.SurfaceFormat = is_10bit ? AVP_P010 : AVP_PLANAR_420_8;
-      ss.SurfacePitchMinus1 = dst_img->planes[0].primary_surface.isl.row_pitch_B - 1;
-      ss.YOffsetforUCb = dst_img->planes[1].primary_surface.memory_range.offset /
-                         dst_img->planes[0].primary_surface.isl.row_pitch_B;
+      ss.SurfacePitchMinus1 = dpb_img->planes[0].primary_surface.isl.row_pitch_B - 1;
+      ss.YOffsetforUCb = dpb_img->planes[1].primary_surface.memory_range.offset /
+                         dpb_img->planes[0].primary_surface.isl.row_pitch_B;
    };
 
    if (!frame_is_key_or_intra(std_pic_info->frame_type)) {
@@ -1509,9 +1509,9 @@ anv_av1_decode_video_tile(struct anv_cmd_buffer *cmd_buffer,
       anv_batch_emit(&cmd_buffer->batch, GENX(AVP_SURFACE_STATE), ss) {
          ss.SurfaceID = 0xE;
          ss.SurfaceFormat = is_10bit ? AVP_P010 : AVP_PLANAR_420_8;
-         ss.SurfacePitchMinus1 = dst_img->planes[0].primary_surface.isl.row_pitch_B - 1;
-         ss.YOffsetforUCb = dst_img->planes[1].primary_surface.memory_range.offset /
-                            dst_img->planes[0].primary_surface.isl.row_pitch_B;
+         ss.SurfacePitchMinus1 = dpb_img->planes[0].primary_surface.isl.row_pitch_B - 1;
+         ss.YOffsetforUCb = dpb_img->planes[1].primary_surface.memory_range.offset /
+                            dpb_img->planes[0].primary_surface.isl.row_pitch_B;
       }
    }
 
@@ -1522,11 +1522,11 @@ anv_av1_decode_video_tile(struct anv_cmd_buffer *cmd_buffer,
 #endif
    anv_batch_emit(&cmd_buffer->batch, GENX(AVP_PIPE_BUF_ADDR_STATE), buf) {
       buf.DecodedOutputFrameBufferAddress =
-         anv_image_dpb_address(dst_iv, frame_info->dstPictureResource.baseArrayLayer);
+         anv_image_dpb_address(dpb_iv, dpb_array_layer);
       buf.DecodedOutputFrameBufferAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
          .MOCS = anv_mocs(cmd_buffer->device, buf.DecodedOutputFrameBufferAddress.bo, 0),
 #if GFX_VERx10 >= 125
-	 .TiledResourceMode = TRMODE_TILEF,
+         .TiledResourceMode = TRMODE_TILEF,
 #endif
       };
       buf.CurrentFrameMVWriteBufferAddress =
@@ -1537,7 +1537,7 @@ anv_av1_decode_video_tile(struct anv_cmd_buffer *cmd_buffer,
 
       if (std_pic_info->flags.allow_intrabc) {
          buf.IntraBCDecodedOutputFrameBufferAddress =
-            anv_image_dpb_address(dst_iv, frame_info->dstPictureResource.baseArrayLayer);
+            anv_image_dpb_address(dpb_iv, dpb_array_layer);
       }
 
       buf.IntraBCDecodedOutputFrameBufferAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
