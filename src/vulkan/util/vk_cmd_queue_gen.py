@@ -489,7 +489,6 @@ def get_pnext_member_copy(builder, struct, src_type, member, types):
     builder.level += 1
     builder.add("switch ((int32_t)pnext->sType) {")
 
-    case_stmts = ""
     for type in types[src_type].extended_by:
         if type.guard is not None:
             builder.code += "#ifdef %s\n" % (type.guard)
