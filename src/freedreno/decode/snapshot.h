@@ -462,7 +462,7 @@ snapshot_indexed_regs(const char *name, uint32_t *regs, uint32_t sizedwords)
 }
 
 static inline void
-snapshot_cluster_regs(const char *pipe_name, const char *cluster_name, int context,
+snapshot_cluster_regs(uint32_t pipe_id, uint32_t cluster_id, int context,
                       uint32_t location)
 {
    uint32_t count = reg_buf.count;
@@ -478,8 +478,8 @@ snapshot_cluster_regs(const char *pipe_name, const char *cluster_name, int conte
    /* TODO, 8xx should use snapshot_mvc_regs_v3: */
    struct snapshot_mvc_regs_v2 cluster_regs = {
       .ctxt_id = context,
-      .cluster_id = enumval("a7xx_cluster", cluster_name),
-      .pipe_id = enumval("a7xx_pipe", pipe_name),
+      .cluster_id = cluster_id,
+      .pipe_id = pipe_id,
       .location_id = location,
    };
 
@@ -492,13 +492,13 @@ snapshot_cluster_regs(const char *pipe_name, const char *cluster_name, int conte
 }
 
 static inline void
-snapshot_debugbus(const char *block, uint32_t *buf, uint32_t sizedwords)
+snapshot_debugbus(uint32_t block, uint32_t *buf, uint32_t sizedwords)
 {
    if (!snapshot)
       return;
 
    struct snapshot_debugbus debugbus = {
-      .id = enumval("a7xx_debugbus_id", block),
+      .id = block,
       .count = sizedwords,
    };
 
@@ -511,7 +511,7 @@ snapshot_debugbus(const char *block, uint32_t *buf, uint32_t sizedwords)
 }
 
 static inline void
-snapshot_shader_block(const char *type, const char *pipe, int sp, int usptp,
+snapshot_shader_block(uint32_t type, uint32_t pipe, int sp, int usptp,
                       int location, uint32_t *buf, uint32_t sizedwords)
 {
    if (!snapshot)
@@ -519,10 +519,10 @@ snapshot_shader_block(const char *type, const char *pipe, int sp, int usptp,
 
    /* TODO, 8xx should use snapshot_shader_v3: */
    struct snapshot_shader_v2 shader_block = {
-      .type = enumval("a7xx_statetype_id", type),
+      .type = type,
       .index = sp,
       .usptp = usptp,
-      .pipe_id = enumval("a7xx_pipe", pipe),
+      .pipe_id = pipe,
       .location = location,
       .size = sizedwords,
    };
