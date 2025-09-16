@@ -68,8 +68,11 @@ encoder_capabilities::initialize( pipe_screen *pScreen, pipe_video_profile video
       ( pScreen->get_video_param( pScreen, videoProfile, PIPE_VIDEO_ENTRYPOINT_ENCODE, PIPE_VIDEO_CAP_ENC_RATE_CONTROL_QVBR ) ==
         1 );
 
-   m_uiHWSupportsIntraRefreshModes =
-      pScreen->get_video_param( pScreen, videoProfile, PIPE_VIDEO_ENTRYPOINT_ENCODE, PIPE_VIDEO_CAP_ENC_INTRA_REFRESH );
+   m_HWSupportsIntraRefreshModes =
+      (enum pipe_video_enc_intra_refresh_mode) pScreen->get_video_param( pScreen,
+                                                                         videoProfile,
+                                                                         PIPE_VIDEO_ENTRYPOINT_ENCODE,
+                                                                         PIPE_VIDEO_CAP_ENC_INTRA_REFRESH );
 
    m_HWSupportedMetadataFlags =
       (enum pipe_video_feedback_metadata_type) pScreen->get_video_param( pScreen,
@@ -83,7 +86,7 @@ encoder_capabilities::initialize( pipe_screen *pScreen, pipe_video_profile video
       PIPE_VIDEO_ENTRYPOINT_ENCODE,
       PIPE_VIDEO_CAP_ENC_H264_DISABLE_DBK_FILTER_MODES_SUPPORTED );
 
-   if( m_uiHWSupportsIntraRefreshModes )
+   if( m_HWSupportsIntraRefreshModes )
    {
       m_uiMaxHWSupportedIntraRefreshSize = pScreen->get_video_param( pScreen,
                                                                      videoProfile,

@@ -75,7 +75,7 @@ class encoder_capabilities
    BOOL m_bHWSupportsQualityVBRRateControlMode = FALSE;
 
    // PIPE_VIDEO_CAP_ENC_INTRA_REFRESH
-   BOOL m_uiHWSupportsIntraRefreshModes = FALSE;
+   enum pipe_video_enc_intra_refresh_mode m_HWSupportsIntraRefreshModes = PIPE_VIDEO_ENC_INTRA_REFRESH_NONE;
 
    // PIPE_VIDEO_CAP_ENC_SUPPORTS_FEEDBACK_METADATA
    enum pipe_video_feedback_metadata_type m_HWSupportedMetadataFlags = PIPE_VIDEO_FEEDBACK_METADATA_TYPE_BITSTREAM_SIZE;
