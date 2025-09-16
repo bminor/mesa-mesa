@@ -635,7 +635,9 @@ static const uint8_t av1_buffer_size[ANV_VID_MEM_AV1_MAX][4] = {
    { 9 ,   17  ,   11  ,    22 }, /* lrTileColYBuf, */
    { 5 ,   9   ,   6   ,    12 }, /* lrTileColUBuf, */
    { 5 ,   9   ,   6   ,    12 }, /* lrTileColVBuf, */
-   { 4,    8   ,   5   ,    10 }, /* lrTileColAlignBuffer, */
+   { 4 ,   8   ,   5   ,    10 }, /* lrTileColAlignBuffer, */
+   { 2 ,   4   ,   3   ,    5 },  /* fgTileColBuf, */
+   { 96,   96  ,   192 ,    192 },/* fgSampleTmpBuf, */
 };
 
 static const uint8_t av1_buffer_size_ext[ANV_VID_MEM_AV1_MAX][4] = {
@@ -670,7 +672,9 @@ static const uint8_t av1_buffer_size_ext[ANV_VID_MEM_AV1_MAX][4] = {
    { 2 ,    2    ,    2    ,    2 },  /* lrTileColYBuf, */
    { 1 ,    1    ,    1    ,    1 },  /* lrTileColUBuf, */
    { 1 ,    1    ,    1    ,    1 },  /* lrTileColVBuf, */
-   { 1,     1    ,    1    ,    1 },  /* lrTileColAlignBuffer, */
+   { 1 ,    1    ,    1    ,    1 },  /* lrTileColAlignBuffer, */
+   { 1 ,    1    ,    1    ,    1 },  /* fgTileColBuf, */
+   { 0 ,    0    ,    0    ,    0 },  /* fgSampleTmpBuf, */
 };
 
 const uint32_t av1_mi_size_log2         = 2;
@@ -695,7 +699,8 @@ get_av1_sb_size(uint32_t *w_in_sb, uint32_t *h_in_sb)
 }
 
 static void
-get_av1_video_session_mem_reqs(struct anv_video_session *vid,
+get_av1_video_session_mem_reqs(struct anv_device *dev,
+                               struct anv_video_session *vid,
                                VkVideoSessionMemoryRequirementsKHR *mem_reqs,
                                uint32_t *pVideoSessionMemoryRequirementsCount,
                                uint32_t memory_types)
@@ -771,9 +776,26 @@ get_av1_video_session_mem_reqs(struct anv_video_session *vid,
       case ANV_VID_MEM_AV1_LOOP_RESTORATION_FILTER_TILE_COLUMN_Y:
       case ANV_VID_MEM_AV1_LOOP_RESTORATION_FILTER_TILE_COLUMN_U:
       case ANV_VID_MEM_AV1_LOOP_RESTORATION_FILTER_TILE_COLUMN_V:
-      case ANV_VID_MEM_AV1_LOOP_RESTORATION_FILTER_TILE_COLUMN_ALIGNMENT_RW:
       case ANV_VID_MEM_AV1_LOOP_RESTORATION_META_TILE_COLUMN:
          buffer_size = height_in_sb * av1_buffer_size[mem][buf_size_idx] +
+            av1_buffer_size_ext[mem][buf_size_idx];
+         break;
+      case ANV_VID_MEM_AV1_LOOP_RESTORATION_FILTER_TILE_COLUMN_ALIGNMENT_RW:
+         if (dev->info->ver < 20)
+            continue;
+         buffer_size = height_in_sb * av1_buffer_size[mem][buf_size_idx] +
+            av1_buffer_size_ext[mem][buf_size_idx];
+         break;
+      case ANV_VID_MEM_AV1_FILM_GRAIN_TILE_COLUMN_RW:
+         if (dev->info->ver < 20 || !vid->vk.av1.film_grain_support)
+            continue;
+         buffer_size = height_in_sb * av1_buffer_size[mem][buf_size_idx] +
+            av1_buffer_size_ext[mem][buf_size_idx];
+         break;
+      case ANV_VID_MEM_AV1_FILM_GRAIN_SAMPLE_TEMPLATE:
+         if (dev->info->ver < 20 || !vid->vk.av1.film_grain_support)
+            continue;
+         buffer_size = av1_buffer_size[mem][buf_size_idx] +
             av1_buffer_size_ext[mem][buf_size_idx];
          break;
       case ANV_VID_MEM_AV1_CDF_DEFAULTS_0:
@@ -839,7 +861,8 @@ anv_GetVideoSessionMemoryRequirementsKHR(VkDevice _device,
                                       memory_types);
       break;
    case VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR:
-      get_av1_video_session_mem_reqs(vid,
+      get_av1_video_session_mem_reqs(device,
+                                     vid,
                                      mem_reqs,
                                      pVideoSessionMemoryRequirementsCount,
                                      memory_types);

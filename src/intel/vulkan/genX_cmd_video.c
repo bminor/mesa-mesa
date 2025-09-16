@@ -1440,6 +1440,13 @@ anv_av1_decode_video_tile(struct anv_cmd_buffer *cmd_buffer,
       frame_info->dstPictureResource.baseArrayLayer;
    const struct anv_image *dpb_img = dpb_iv->image;
    const bool is_10bit = seq_hdr->pColorConfig->BitDepth == 10;
+   const bool is_grain = vid->vk.av1.film_grain_support && std_pic_info->flags.apply_grain;
+
+#if GFX_VER < 20
+   if (is_grain) {
+      anv_finishme("Film grain synthesis on pre-Xe2 hardware via shader kernel");
+   }
+#endif
 
    VkExtent2D frameExtent = frame_info->dstPictureResource.codedExtent;
    int denom = std_pic_info->coded_denom + 9;
@@ -1512,6 +1519,16 @@ anv_av1_decode_video_tile(struct anv_cmd_buffer *cmd_buffer,
          ss.SurfacePitchMinus1 = dpb_img->planes[0].primary_surface.isl.row_pitch_B - 1;
          ss.YOffsetforUCb = dpb_img->planes[1].primary_surface.memory_range.offset /
                             dpb_img->planes[0].primary_surface.isl.row_pitch_B;
+      }
+   }
+
+   if (is_grain) {
+      anv_batch_emit(&cmd_buffer->batch, GENX(AVP_SURFACE_STATE), ss) {
+         ss.SurfaceID = 0x2;
+         ss.SurfaceFormat = is_10bit ? AVP_P010 : AVP_PLANAR_420_8;
+         ss.SurfacePitchMinus1 = dst_img->planes[0].primary_surface.isl.row_pitch_B - 1;
+         ss.YOffsetforUCb = dst_img->planes[1].primary_surface.memory_range.offset /
+                            dst_img->planes[0].primary_surface.isl.row_pitch_B;
       }
    }
 
@@ -1998,14 +2015,27 @@ anv_av1_decode_video_tile(struct anv_cmd_buffer *cmd_buffer,
       };
 #endif
 #if GFX_VER >= 20
+      if (is_grain) {
+         buf.FilmGrainInjectedOutputFrameBufferAddress =
+            anv_image_dpb_address(dst_iv, frame_info->dstPictureResource.baseArrayLayer);
+         buf.FilmGrainSampleTemplateAddress = (struct anv_address) {
+            vid->vid_mem[ANV_VID_MEM_AV1_FILM_GRAIN_SAMPLE_TEMPLATE].mem->bo,
+            vid->vid_mem[ANV_VID_MEM_AV1_FILM_GRAIN_SAMPLE_TEMPLATE].offset
+         };
+         buf.FilmGrainTileColumnDataReadWriteBufferAddress = (struct anv_address) {
+            vid->vid_mem[ANV_VID_MEM_AV1_FILM_GRAIN_TILE_COLUMN_RW].mem->bo,
+            vid->vid_mem[ANV_VID_MEM_AV1_FILM_GRAIN_TILE_COLUMN_RW].offset
+         };
+      }
       buf.FilmGrainInjectedOutputFrameBufferAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
-         .MOCS = anv_mocs(cmd_buffer->device, NULL, 0),
+         .MOCS = anv_mocs(cmd_buffer->device, buf.FilmGrainInjectedOutputFrameBufferAddress.bo, 0),
+         .TiledResourceMode = TRMODE_TILEF,
       };
       buf.FilmGrainSampleTemplateAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
-         .MOCS = anv_mocs(cmd_buffer->device, NULL, 0),
+         .MOCS = anv_mocs(cmd_buffer->device, buf.FilmGrainSampleTemplateAddress.bo, 0),
       };
       buf.FilmGrainTileColumnDataReadWriteBufferAddressAttributes = (struct GENX(MEMORYADDRESSATTRIBUTES)) {
-         .MOCS = anv_mocs(cmd_buffer->device, NULL, 0),
+         .MOCS = anv_mocs(cmd_buffer->device, buf.FilmGrainTileColumnDataReadWriteBufferAddress.bo, 0),
       };
 #endif
    };
@@ -2208,6 +2238,9 @@ anv_av1_decode_video_tile(struct anv_cmd_buffer *cmd_buffer,
       pic.GlobalMotionType6 = std_pic_info->pGlobalMotion->GmType[6];
       pic.GlobalMotionType7 = std_pic_info->pGlobalMotion->GmType[7];
       pic.FrameLevelGlobalMotionInvalidFlags = 0;
+#if GFX_VER >= 20
+      pic.ApplyFilmGrainFlag = is_grain;
+#endif
 
       uint8_t idx = 0;
       int warp_params[8][6] = { 0, };
@@ -2470,6 +2503,51 @@ anv_av1_decode_video_tile(struct anv_cmd_buffer *cmd_buffer,
       fil.ChromaPlanex0_qn = chroma_x0_qn[tile_idx];
 
    };
+
+#if GFX_VER >= 20
+   if (is_grain) {
+      const StdVideoAV1FilmGrain* filmGrainParams = std_pic_info->pFilmGrain;
+      anv_batch_emit(&cmd_buffer->batch, GENX(AVP_FILM_GRAIN_STATE), fg) {
+         fg.GrainRandomSeed = filmGrainParams->grain_seed;
+         fg.ClipToRestrictedRangeFlag = filmGrainParams->flags.clip_to_restricted_range;
+         fg.GrainNoiseOverlapFlag = filmGrainParams->flags.overlap_flag;
+         fg.ChromaScalingFromLumaFlag = filmGrainParams->flags.chroma_scaling_from_luma;
+         fg.MCIdentityFlag = seq_hdr->pColorConfig->matrix_coefficients == STD_VIDEO_AV1_MATRIX_COEFFICIENTS_IDENTITY;
+         fg.NumberofLumaPoints = filmGrainParams->num_y_points;
+         fg.NumberofChromaCbPoints = filmGrainParams->num_cb_points;
+         fg.NumberofChromaCrPoints = filmGrainParams->num_cr_points;
+         fg.GrainScalingMinus8 = filmGrainParams->grain_scaling_minus_8;
+         fg.ARCoeffLag = filmGrainParams->ar_coeff_lag;
+         fg.ARCoeffShiftMinus6 = filmGrainParams->ar_coeff_shift_minus_6;
+         fg.GrainScaleShift = filmGrainParams->grain_scale_shift;
+         for (unsigned i = 0; i < STD_VIDEO_AV1_MAX_NUM_Y_POINTS; ++i) {
+            fg.PointLumaValue[i] = filmGrainParams->point_y_value[i];
+            fg.PointLumaScaling[i] = filmGrainParams->point_y_scaling[i];
+         }
+         for (unsigned i = 0; i < STD_VIDEO_AV1_MAX_NUM_CB_POINTS; ++i) {
+            fg.PointCBValue[i] = filmGrainParams->point_cb_value[i];
+            fg.PointCBScaling[i] = filmGrainParams->point_cb_scaling[i];
+         }
+         for (unsigned i = 0; i < STD_VIDEO_AV1_MAX_NUM_CR_POINTS; ++i) {
+            fg.PointCRValue[i] = filmGrainParams->point_cr_value[i];
+            fg.PointCRScaling[i] = filmGrainParams->point_cr_scaling[i];
+         }
+         for (unsigned i = 0; i < STD_VIDEO_AV1_MAX_NUM_POS_LUMA; ++i) {
+            fg.ARCoeffLumaPlus128[i] = (uint8_t) filmGrainParams->ar_coeffs_y_plus_128[i];
+         }
+         for (unsigned i = 0; i < STD_VIDEO_AV1_MAX_NUM_POS_CHROMA; ++i) {
+            fg.ARCoeffChromaCBPlus128[i] = (uint8_t) filmGrainParams->ar_coeffs_cb_plus_128[i];
+            fg.ARCoeffChromaCRPlus128[i] = (uint8_t) filmGrainParams->ar_coeffs_cr_plus_128[i];
+         }
+         fg.CBMult = filmGrainParams->cb_mult;
+         fg.CBLumaMult = filmGrainParams->cb_luma_mult;
+         fg.CBOffset = filmGrainParams->cb_offset;
+         fg.CRMult = filmGrainParams->cr_mult;
+         fg.CRLumaMult = filmGrainParams->cr_luma_mult;
+         fg.CROffset = filmGrainParams->cr_offset;
+      };
+   }
+#endif
 
    unsigned column = tile_idx % std_pic_info->pTileInfo->TileCols;
    unsigned row = tile_idx / std_pic_info->pTileInfo->TileCols;
