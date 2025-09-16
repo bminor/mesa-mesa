@@ -213,7 +213,12 @@ struct brw_inst : brw_exec_node {
           */
          bool has_no_mask_send_params:1;
 
-         uint8_t pad:5;
+         /**
+          * Serialize the message (Gfx12.x only)
+          */
+         bool fused_eu_disable:1;
+
+         uint8_t pad:4;
       };
       uint16_t bits;
    };
@@ -262,13 +267,18 @@ struct brw_send_inst : brw_inst {
          bool ex_bso:1;
 
          /**
+          * Serialize the message (Gfx12.x only)
+          */
+         bool fused_eu_disable:1;
+
+         /**
           * Only for SHADER_OPCODE_SEND, @offset field contains an immediate
           * part of the extended descriptor that must be encoded in the
           * instruction.
           */
          bool ex_desc_imm:1;
 
-         uint8_t pad:3;
+         uint8_t pad:2;
       };
       uint8_t send_bits;
    };
@@ -279,9 +289,28 @@ struct brw_tex_inst : brw_inst {
    uint32_t offset;
    uint8_t coord_components;
    uint8_t grad_components;
-   bool residency:1;
-   bool surface_bindless:1;
-   bool sampler_bindless:1;
+   union {
+      struct {
+         /**
+          * Whether the instruction requests the residency data (additional register
+          * written).
+          */
+         bool residency:1;
+         /**
+          * Serialize the message (Gfx12.x only)
+          */
+         bool fused_eu_disable:1;
+         /**
+          * Whether the surface handle is bindless
+          */
+         bool surface_bindless:1;
+         /**
+          * Whether the sampler handle is bindless
+          */
+         bool sampler_bindless:1;
+      };
+      uint8_t bits;
+   };
 };
 
 struct brw_mem_inst : brw_inst {

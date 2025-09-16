@@ -712,6 +712,10 @@ enum memory_flags {
    MEMORY_FLAG_VOLATILE_ACCESS = 1 << 2,
    /** Whether memory access is marked coherent by GLSL/SPIR-V. */
    MEMORY_FLAG_COHERENT_ACCESS = 1 << 3,
+   /** Whether this instruction should run serialized with regard to EU
+    *  fusion (Gfx12.x only).
+    */
+   MEMORY_FLAG_FUSED_EU_DISABLE = 1 << 4,
 };
 
 enum rt_logical_srcs {

@@ -391,9 +391,7 @@ hash_inst(const void *v)
       const uint8_t tex_u8data[] = {
          tex->coord_components,
          tex->grad_components,
-         tex->residency,
-         tex->surface_bindless,
-         tex->sampler_bindless,
+         tex->bits,
       };
       const uint32_t tex_u32data[] = {
          tex->sampler_opcode,

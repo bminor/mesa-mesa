@@ -206,6 +206,11 @@ static const char *const branch_ctrl[2] = {
    [1] = "BranchCtrl"
 };
 
+static const char *const fusion_ctrl[2] = {
+   [0] = "",
+   [1] = "FusionCtrl"
+};
+
 static const char *const wectrl[2] = {
    [0] = "",
    [1] = "WE_all"
@@ -2619,6 +2624,12 @@ brw_disassemble_inst(FILE *file, const struct brw_isa_info *isa,
          err |= control(file, "acc write control", accwr,
                         brw_eu_inst_acc_wr_control(devinfo, inst), &space);
       }
+
+      if (devinfo->ver == 12 && is_send(opcode)) {
+         err |= control(file, "fusion ctrl", fusion_ctrl,
+                        brw_eu_inst_fusion_ctrl(devinfo, inst), &space);
+      }
+
       if (is_send(opcode))
          err |= control(file, "end of thread", end_of_thread,
                         brw_eu_inst_eot(devinfo, inst), &space);

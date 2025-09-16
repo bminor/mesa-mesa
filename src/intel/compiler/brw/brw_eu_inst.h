@@ -897,6 +897,7 @@ brw_eu_inst_sends_ex_desc(const struct intel_device_info *devinfo,
  *  @{
  */
 F(eot,                 /* 9+ */ 127, 127,       /* 12+ */ 34, 34)
+F(fusion_ctrl,         /* 9+ */ -1, -1,         /* 12+ */ 33, 33)
 F(mlen,                /* 9+ */ 124, 121,       /* 12+ */ MD12(28), MD12(25))
 F(rlen,                /* 9+ */ 120, 116,       /* 12+ */ MD12(24), MD12(20))
 F(header_present,      /* 9+ */ 115, 115,       /* 12+ */ MD12(19), MD12(19))

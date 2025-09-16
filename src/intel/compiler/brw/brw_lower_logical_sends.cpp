@@ -1217,9 +1217,12 @@ lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
       }
    }
 
+   const bool fused_eu_disable = tex->fused_eu_disable;
+
    brw_send_inst *send = brw_transform_inst_to_send(bld, tex);
    tex = NULL;
 
+   send->fused_eu_disable = fused_eu_disable;
    send->mlen = mlen;
    send->header_size = header_size;
    send->sfid = BRW_SFID_SAMPLER;
@@ -1481,6 +1484,7 @@ lower_lsc_memory_logical_send(const brw_builder &bld, brw_mem_inst *mem)
    const bool volatile_access = mem->flags & MEMORY_FLAG_VOLATILE_ACCESS;
    const bool coherent_access = mem->flags & MEMORY_FLAG_COHERENT_ACCESS;
    const bool has_side_effects = mem->has_side_effects();
+   const bool fused_eu_disable = mem->flags & MEMORY_FLAG_FUSED_EU_DISABLE;
 
    const uint32_t data_size_B = lsc_data_size_bytes(data_size);
    const enum brw_reg_type data_type =
@@ -1634,6 +1638,7 @@ lower_lsc_memory_logical_send(const brw_builder &bld, brw_mem_inst *mem)
    send->header_size = 0;
    send->has_side_effects = has_side_effects;
    send->is_volatile = !has_side_effects || volatile_access;
+   send->fused_eu_disable = fused_eu_disable;
 
    /* Finally, the payload */
    send->src[SEND_SRC_PAYLOAD1] = payload;
@@ -1692,6 +1697,7 @@ lower_hdc_memory_logical_send(const brw_builder &bld, brw_mem_inst *mem)
    const bool block = mem->flags & MEMORY_FLAG_TRANSPOSE;
    const bool include_helpers = mem->flags & MEMORY_FLAG_INCLUDE_HELPERS;
    const bool volatile_access = mem->flags & MEMORY_FLAG_VOLATILE_ACCESS;
+   const bool fused_eu_disable = mem->flags & MEMORY_FLAG_FUSED_EU_DISABLE;
    const bool has_side_effects = mem->has_side_effects();
    const bool has_dest = mem->dst.file != BAD_FILE && !mem->dst.is_null();
    assert(mem->address_offset == 0);
@@ -1903,6 +1909,7 @@ lower_hdc_memory_logical_send(const brw_builder &bld, brw_mem_inst *mem)
    send->header_size = header.file != BAD_FILE ? 1 : 0;
    send->has_side_effects = has_side_effects;
    send->is_volatile = !has_side_effects || volatile_access;
+   send->fused_eu_disable = fused_eu_disable;
 
    if (block) {
       assert(send->force_writemask_all);
@@ -2447,6 +2454,7 @@ lower_get_buffer_size(const brw_builder &bld, brw_inst *inst)
    brw_reg surface = inst->src[GET_BUFFER_SIZE_SRC_SURFACE];
    brw_reg surface_handle = inst->src[GET_BUFFER_SIZE_SRC_SURFACE_HANDLE];
    brw_reg lod = bld.move_to_vgrf(inst->src[GET_BUFFER_SIZE_SRC_LOD], 1);
+   const bool fused_eu_disable = inst->fused_eu_disable;
 
    brw_send_inst *send = brw_transform_inst_to_send(bld, inst);
    inst = NULL;
@@ -2468,6 +2476,7 @@ lower_get_buffer_size(const brw_builder &bld, brw_inst *inst)
 
    send->dst = retype(send->dst, BRW_TYPE_UW);
    send->sfid = BRW_SFID_SAMPLER;
+   send->fused_eu_disable = fused_eu_disable;
    setup_surface_descriptors(bld, send, desc, surface, surface_handle);
 }
 

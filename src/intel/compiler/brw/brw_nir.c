@@ -2065,6 +2065,86 @@ lower_txd_cb(const nir_tex_instr *tex, const void *data)
    return false;
 }
 
+static bool
+flag_fused_eu_disable_instr(nir_builder *b, nir_instr *instr, void *data)
+{
+   switch (instr->type) {
+   case nir_instr_type_tex: {
+      nir_tex_instr *tex = nir_instr_as_tex(instr);
+
+      for (unsigned i = 0; i < tex->num_srcs; ++i) {
+         nir_tex_src_type src_type = tex->src[i].src_type;
+
+         if (src_type != nir_tex_src_texture_handle &&
+             src_type != nir_tex_src_sampler_handle &&
+             src_type != nir_tex_src_texture_offset &&
+             src_type != nir_tex_src_sampler_offset)
+            continue;
+
+         if (nir_src_is_divergent(&tex->src[i].src)) {
+            tex->backend_flags |= BRW_TEX_INSTR_FUSED_EU_DISABLE;
+            return true;
+         }
+      }
+      return false;
+   }
+
+   case nir_instr_type_intrinsic: {
+      nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
+      /* We only need to care of intrinsics that refers to a structure/descriptor
+       * outside of the EU's registers like RENDER_SURFACE_STATE/SAMPLER_STATE,
+       * because the fusing will pick one thread's descriptor handle and use that
+       * for the 2 fused threads.
+       *
+       * Global pointers don't have that problem since all the access' data is
+       * per lane in the payload of the SEND message (the 64bit pointer).
+       *
+       * URB/shared-memory don't have that problem either because there is no
+       * descriptor information outside the EU, it's just a per lane
+       * handle/offset.
+       */
+      switch (intrin->intrinsic) {
+      case nir_intrinsic_load_ssbo_uniform_block_intel:
+      case nir_intrinsic_load_ubo_uniform_block_intel:
+      case nir_intrinsic_load_ssbo_block_intel:
+      case nir_intrinsic_load_ssbo_intel:
+      case nir_intrinsic_store_ssbo_intel:
+      case nir_intrinsic_load_ssbo:
+      case nir_intrinsic_store_ssbo:
+      case nir_intrinsic_get_ssbo_size:
+      case nir_intrinsic_load_ubo:
+      case nir_intrinsic_image_load:
+      case nir_intrinsic_image_store:
+      case nir_intrinsic_image_size:
+      case nir_intrinsic_image_levels:
+      case nir_intrinsic_image_atomic:
+      case nir_intrinsic_image_atomic_swap:
+      case nir_intrinsic_bindless_image_load:
+      case nir_intrinsic_bindless_image_store:
+      case nir_intrinsic_bindless_image_size:
+      case nir_intrinsic_bindless_image_levels:
+      case nir_intrinsic_bindless_image_atomic:
+      case nir_intrinsic_bindless_image_atomic_swap: {
+         int src_idx = nir_get_io_index_src_number(intrin);
+         if (nir_src_is_divergent(&intrin->src[src_idx])) {
+            nir_intrinsic_set_access(intrin,
+                                     nir_intrinsic_access(intrin) |
+                                     ACCESS_FUSED_EU_DISABLE_INTEL);
+            return true;
+         }
+         return false;
+      }
+
+      default:
+         return false;
+      }
+   }
+
+   default:
+      return false;
+   }
+}
+
 /* Prepare the given shader for codegen
  *
  * This function is intended to be called right before going into the actual
@@ -2282,6 +2362,28 @@ brw_postprocess_nir_opts(nir_shader *nir, const struct brw_compiler *compiler,
       brw_nir_optimize(nir, devinfo);
 
       OPT(nir_lower_subgroups, &subgroups_options);
+   }
+
+   /* Deal with EU fusion */
+   if (devinfo->ver == 12) {
+      nir_divergence_options options =
+         nir_divergence_across_subgroups |
+         nir_divergence_multiple_workgroup_per_compute_subgroup;
+
+      nir_foreach_function_impl(impl, nir) {
+         nir_divergence_analysis_impl(impl, options);
+      }
+
+      nir_shader_instructions_pass(nir,
+                                   flag_fused_eu_disable_instr,
+                                   nir_metadata_all, NULL);
+
+      /* We request a special divergence information which is not needed
+       * after.
+       */
+      nir_foreach_function_impl(impl, nir) {
+         nir_progress(true, impl, ~nir_metadata_divergence);
+      }
    }
 }
 

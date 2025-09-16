@@ -6471,6 +6471,8 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
       brw_inst *inst = ubld.emit(SHADER_OPCODE_GET_BUFFER_SIZE, ret_payload,
                                 srcs, GET_BUFFER_SIZE_SRCS);
       inst->size_written = 4 * REG_SIZE * reg_unit(devinfo);
+      inst->fused_eu_disable =
+         (nir_intrinsic_access(instr) & ACCESS_FUSED_EU_DISABLE_INTEL) != 0;
 
       /* SKL PRM, vol07, 3D Media GPGPU Engine, Bounds Checking and Faulting:
        *
@@ -7016,12 +7018,15 @@ brw_from_nir_emit_memory_access(nir_to_brw_state &ntb,
       (nir_intrinsic_access(instr) & ACCESS_VOLATILE);
    const bool coherent_access = nir_intrinsic_has_access(instr) &&
       (nir_intrinsic_access(instr) & ACCESS_COHERENT);
+   const bool fused_eu_disable = nir_intrinsic_has_access(instr) &&
+      (nir_intrinsic_access(instr) & ACCESS_FUSED_EU_DISABLE_INTEL);
    const unsigned align =
       nir_intrinsic_has_align(instr) ? nir_intrinsic_align(instr) : 0;
    uint8_t flags =
       (include_helpers ? MEMORY_FLAG_INCLUDE_HELPERS : 0) |
       (volatile_access ? MEMORY_FLAG_VOLATILE_ACCESS : 0) |
-      (coherent_access ? MEMORY_FLAG_COHERENT_ACCESS : 0);
+      (coherent_access ? MEMORY_FLAG_COHERENT_ACCESS : 0) |
+      (fused_eu_disable ? MEMORY_FLAG_FUSED_EU_DISABLE : 0);
    bool no_mask_handle = false;
    int data_src = -1;
 
@@ -7661,6 +7666,7 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
    tex->residency = instr->is_sparse;
    tex->coord_components = instr->coord_components;
    tex->grad_components = lod_components;
+   tex->fused_eu_disable = (instr->backend_flags & BRW_TEX_INSTR_FUSED_EU_DISABLE) != 0;
 
    /* Wa_14012688258:
     *

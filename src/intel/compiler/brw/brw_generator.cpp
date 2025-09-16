@@ -198,6 +198,10 @@ brw_generator::generate_send(brw_send_inst *inst,
          brw_eu_inst_set_opcode(p->isa, brw_last_inst,
                              devinfo->ver >= 12 ? BRW_OPCODE_SENDC : BRW_OPCODE_SENDSC);
    }
+
+   /* Serialize messages if needed */
+   if (devinfo->ver == 12 && inst->fused_eu_disable)
+      brw_eu_inst_set_fusion_ctrl(devinfo, brw_last_inst, true);
 }
 
 void

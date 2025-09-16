@@ -32,6 +32,8 @@
 extern "C" {
 #endif
 
+#define BRW_TEX_INSTR_FUSED_EU_DISABLE (1u << 30)
+
 extern const struct nir_shader_compiler_options brw_scalar_nir_options;
 
 int type_size_vec4(const struct glsl_type *type, bool bindless);
