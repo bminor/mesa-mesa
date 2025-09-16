@@ -583,6 +583,46 @@ lima_calculate_depth_test(struct LIMA_RENDER_STATE* state, struct pipe_depth_ste
    state->depth_offset_units = offset_units & 0xff;
 }
 
+static enum lima_logic_op
+lima_logic_op(enum pipe_logicop pipe)
+{
+   switch (pipe) {
+   case PIPE_LOGICOP_CLEAR:
+      return LIMA_LOGIC_OP_CLEAR;
+   case PIPE_LOGICOP_NOR:
+      return LIMA_LOGIC_OP_NOR;
+   case PIPE_LOGICOP_AND_INVERTED:
+      return LIMA_LOGIC_OP_AND_INVERTED;
+   case PIPE_LOGICOP_COPY_INVERTED:
+      return LIMA_LOGIC_OP_COPY_INVERTED;
+   case PIPE_LOGICOP_AND_REVERSE:
+      return LIMA_LOGIC_OP_AND_REVERSE;
+   case PIPE_LOGICOP_INVERT:
+      return LIMA_LOGIC_OP_INVERT;
+   case PIPE_LOGICOP_XOR:
+      return LIMA_LOGIC_OP_XOR;
+   case PIPE_LOGICOP_NAND:
+      return LIMA_LOGIC_OP_NAND;
+   case PIPE_LOGICOP_AND:
+      return LIMA_LOGIC_OP_AND;
+   case PIPE_LOGICOP_EQUIV:
+      return LIMA_LOGIC_OP_EQUIV;
+   case PIPE_LOGICOP_NOOP:
+      return LIMA_LOGIC_OP_NOOP;
+   case PIPE_LOGICOP_OR_INVERTED:
+      return LIMA_LOGIC_OP_OR_INVERTED;
+   case PIPE_LOGICOP_COPY:
+      return LIMA_LOGIC_OP_COPY;
+   case PIPE_LOGICOP_OR_REVERSE:
+      return LIMA_LOGIC_OP_OR_REVERSE;
+   case PIPE_LOGICOP_OR:
+      return LIMA_LOGIC_OP_OR;
+   case PIPE_LOGICOP_SET:
+      return LIMA_LOGIC_OP_SET;
+   }
+   return -1;
+}
+
 static void
 lima_pack_render_state(struct lima_context *ctx, const struct pipe_draw_info *info)
 {
@@ -598,8 +638,15 @@ lima_pack_render_state(struct lima_context *ctx, const struct pipe_draw_info *in
       state.blend_color_a = ctx->blend_color.color[3];
 
       struct pipe_rt_blend_state* rt = ctx->blend->base.rt;
+      struct pipe_blend_state* bs = &ctx->blend->base;
 
-      if (rt->blend_enable) {
+      if (bs->logicop_enable) {
+         state.blend_func_rgb = LIMA_BLEND_FUNC_LOGICOP;
+         state.blend_func_a = LIMA_BLEND_FUNC_LOGICOP;
+         state.logicop_rgb = lima_logic_op(bs->logicop_func);
+         state.logicop_a = lima_logic_op(bs->logicop_func);
+      }
+      else if (rt->blend_enable) {
          lima_calculate_alpha_blend(&state, rt);
       }
       else {
@@ -699,7 +746,7 @@ lima_pack_render_state(struct lima_context *ctx, const struct pipe_draw_info *in
          state.pixel_kill = false;
       }
 
-      if (rt->blend_enable)
+      if (rt->blend_enable || bs->logicop_enable)
          state.pixel_kill = false;
 
       state.color_mask = rt->colormask & PIPE_MASK_RGBA;

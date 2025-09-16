@@ -63,6 +63,7 @@
     <value name="Subtract" value="0"/>
     <value name="Reverse Subtract" value="1"/>
     <value name="Add" value="2"/>
+    <value name="Logicop" value="3"/>
     <value name="Min" value="4"/>
     <value name="Max" value="5"/>
   </enum>
@@ -99,6 +100,24 @@
     <value name="INV Const Alpha" value="10"/>
     <value name="One" value="11"/>
     <value name="INV SRC1 Alpha" value="13"/>
+  </enum>
+  <enum name="Logic Op">
+    <value name="CLEAR" value="0"/>
+    <value name="NOR" value="1"/>
+    <value name="AND Inverted" value="2"/>
+    <value name="COPY Inverted" value="3"/>
+    <value name="AND Reverse" value="4"/>
+    <value name="INVERT" value="5"/>
+    <value name="XOR" value="6"/>
+    <value name="NAND" value="7"/>
+    <value name="AND" value="8"/>
+    <value name="EQUIV" value="9"/>
+    <value name="NOOP" value="10"/>
+    <value name="OR Inverted" value="11"/>
+    <value name="COPY" value="12"/>
+    <value name="OR Reverse" value="13"/>
+    <value name="OR" value="14"/>
+    <value name="SET" value="15"/>
   </enum>
   <enum name="Draw mode">
     <value name="Points" value="0"/>
@@ -258,8 +277,10 @@
     <field name="Blend Color A" start="1:16" size="8" type="unorm8"/>
     <field name="Blend Func RGB" start="2:0" size="3" type="Blend Func"/>
     <field name="Blend Func A" start="2:3" size="3" type="Blend Func"/>
+    <field name="Logicop RGB" start="2:6" size="4" type="Logic Op"/>
     <field name="Blend Factor SRC RGB" start="2:6" size="5" type="Blend Factor Color"/>
     <field name="Blend Factor DST RGB" start="2:11" size="5" type="Blend Factor Color"/>
+    <field name="Logicop A" start="2:16" size="4" type="Logic Op"/>
     <field name="Blend Factor SRC A" start="2:16" size="4" type="Blend Factor Alpha"/>
     <field name="Blend Factor DST A" start="2:20" size="4" type="Blend Factor Alpha"/>
     <!-- 0xC for normal drawcalls, 0x0 for blits -->
