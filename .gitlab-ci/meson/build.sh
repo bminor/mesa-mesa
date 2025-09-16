@@ -41,6 +41,13 @@ if test -n "$LLVM_VERSION"; then
     $LLVM_CONFIG --version
 fi
 
+# Android manages the rust toolchain differently, ignore that case
+if [ "$CI_JOB_STAGE" = "build-for-tests" ] && [[ "$CI_JOB_NAME" != *android* ]]; then
+  # Keep this in sync with the `rustc.version()` check in meson.build, and
+  # MINIMUM_SUPPORTED_RUST_VERSION in .gitlab-ci/container/build-rust.sh
+  rustup default 1.82.0
+fi
+
 # cross-xfail-$CROSS, if it exists, contains a list of tests that are expected
 # to fail for the $CROSS configuration, one per line. you can then mark those
 # tests in their meson.build with:

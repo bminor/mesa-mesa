@@ -115,7 +115,7 @@ arch=armhf
 
 . .gitlab-ci/container/build-libclc.sh
 
-. .gitlab-ci/container/build-rust.sh
+. .gitlab-ci/container/build-rust.sh build
 
 . .gitlab-ci/container/build-bindgen.sh
 

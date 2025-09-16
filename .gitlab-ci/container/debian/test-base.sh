@@ -223,7 +223,7 @@ section_end debian_setup
 
 ############### Install Rust toolchain
 
-. .gitlab-ci/container/build-rust.sh
+. .gitlab-ci/container/build-rust.sh test
 
 ############### Build Crosvm
 

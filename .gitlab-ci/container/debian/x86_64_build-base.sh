@@ -103,7 +103,7 @@ pip3 install --break-system-packages "ci-fairy[s3] @ git+https://gitlab.freedesk
 
 . .gitlab-ci/container/install-meson.sh
 
-. .gitlab-ci/container/build-rust.sh
+. .gitlab-ci/container/build-rust.sh build
 
 ############### Uninstall ephemeral packages
 

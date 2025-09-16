@@ -760,6 +760,9 @@ if with_gallium_rusticl or with_nouveau_vk or with_tools.contains('etnaviv') or 
   rustc = meson.get_compiler('rust')
   rust = import('rust')
 
+  # Keep this in sync with the MINIMUM_SUPPORTED_RUST_VERSION in
+  # .gitlab-ci/container/build-rust.sh and the `rustup default` line in
+  # .gitlab-ci/meson/build.sh
   if rustc.version().version_compare('< 1.82')
     error('Mesa requires Rust 1.82.0 or newer')
   endif

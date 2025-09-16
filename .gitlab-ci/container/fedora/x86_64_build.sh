@@ -103,7 +103,7 @@ rm -rf $XORGMACROS_VERSION
 
 . .gitlab-ci/container/install-meson.sh
 
-. .gitlab-ci/container/build-rust.sh
+. .gitlab-ci/container/build-rust.sh build
 
 . .gitlab-ci/container/build-bindgen.sh
 
