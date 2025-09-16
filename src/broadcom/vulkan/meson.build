@@ -103,7 +103,7 @@ libvulkan_broadcom = shared_library(
   ],
   dependencies : v3dv_deps,
   c_args : v3dv_flags,
-  link_args : [vulkan_icd_link_args, '-Wl,--build-id=sha1', ld_args_bsymbolic, ld_args_gc_sections],
+  link_args : [vulkan_icd_link_args, ld_args_build_id, ld_args_bsymbolic, ld_args_gc_sections],
   link_depends : vulkan_icd_link_depends,
   gnu_symbol_visibility : 'hidden',
   install : true,
