@@ -78,7 +78,6 @@ DEPS=(
     python3-ply
     python3-pycparser
     python3-yaml
-    rust-packaging
     spirv-tools-devel
     spirv-llvm-translator-devel
     vulkan-headers
@@ -103,6 +102,8 @@ cd $XORGMACROS_VERSION; ./configure; make install; cd ..
 rm -rf $XORGMACROS_VERSION
 
 . .gitlab-ci/container/install-meson.sh
+
+. .gitlab-ci/container/build-rust.sh
 
 . .gitlab-ci/container/build-bindgen.sh
 
