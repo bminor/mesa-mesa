@@ -3514,7 +3514,7 @@
         "description": "ci/android: Use aapt from Debian packages again",
         "nominated": true,
         "nomination_type": 3,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "c9a8e1f49a3c5d0f27dd20ae1068c7ef8bec202e",
         "notes": null
