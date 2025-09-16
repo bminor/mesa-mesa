@@ -4024,6 +4024,10 @@ for s in [16, 32, 64]:
         (('bcsel@{}'.format(s), ('ine', 0, 'a@{}'.format(s)), 'b@{}'.format(s), 'c@{}'.format(s)), ('icsel_eqz', a, c, b), "options->has_icsel_eqz{} && !options->no_integers".format(s)),
     ])
 
+late_optimizations += [
+    (('f2i32', ('fround_even(is_used_once)', 'a@32')), ('f2i32_rtne', a), 'options->has_f2i32_rtne'),
+]
+
 distribute_src_mods = [
    # Try to remove some spurious negations rather than pushing them down.
    (('fmul', ('fneg', a), ('fneg', b)), ('fmul', a, b)),
