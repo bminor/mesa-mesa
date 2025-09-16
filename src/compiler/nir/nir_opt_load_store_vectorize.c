@@ -400,13 +400,16 @@ parse_offset(nir_scalar base, uint64_t *offset)
          add += add2 * mul;
       }
 
-      if (nir_scalar_is_alu(base) && (nir_scalar_alu_op(base) == nir_op_mov ||
-                                      nir_scalar_alu_op(base) == nir_op_u2u64)) {
-         if (nir_scalar_alu_op(base) == nir_op_u2u64) {
+      if (nir_scalar_is_alu(base)) {
+         if (nir_scalar_alu_op(base) == nir_op_mov) {
+            base = nir_scalar_chase_alu_src(base, 0);
+         } else if (nir_scalar_alu_op(base) == nir_op_u2u64) {
+            base = nir_scalar_chase_alu_src(base, 0);
             require_nuw = true;
             uub = u_uintN_max(base.def->bit_size);
+         } else {
+            continue;
          }
-         base = nir_scalar_chase_alu_src(base, 0);
          progress = true;
       }
    } while (progress);
