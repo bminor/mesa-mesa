@@ -42,6 +42,9 @@ then
   rustup toolchain install --profile minimal --component clippy,rustfmt $MINIMUM_SUPPORTED_RUST_VERSION
 fi
 
+find "$HOME"/.rustup/toolchains/*/lib -type f -name "*.so" -exec strip {} \;
+find "$HOME"/.rustup/toolchains -type f -executable -exec strip {} \;
+
 # Set up a config script for cross compiling -- cargo needs your system cc for
 # linking in cross builds, but doesn't know what you want to use for system cc.
 cat > "$HOME/.cargo/config" <<EOF
