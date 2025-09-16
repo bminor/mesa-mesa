@@ -831,7 +831,7 @@ fd6_emit_static_non_context_regs(struct fd_context *ctx, fd_cs &cs)
 {
    struct fd_screen *screen = ctx->screen;
 
-   fd_ncrb<CHIP> ncrb(cs, 27 + ARRAY_SIZE(screen->info->a6xx.magic_raw));
+   fd_ncrb<CHIP> ncrb(cs, 28 + ARRAY_SIZE(screen->info->a6xx.magic_raw));
 
    if (CHIP >= A7XX) {
       /* On A7XX, RB_CCU_CNTL was broken into two registers, RB_CCU_CNTL which has
@@ -907,6 +907,8 @@ fd6_emit_static_non_context_regs(struct fd_context *ctx, fd_cs &cs)
       ncrb.add(GRAS_BIN_FOVEAT(CHIP));
       ncrb.add(RB_BIN_FOVEAT(CHIP));
    }
+
+   ncrb.add(A6XX_PC_UNKNOWN_9E72());
 }
 
 /**
@@ -936,15 +938,8 @@ fd6_emit_static_context_regs(struct fd_context *ctx, fd_cs &cs)
    );
 
    crb.add(A6XX_VFD_MODE_CNTL(.vertex = true, .instance = true));
-   if (CHIP == A6XX) {
+   if (CHIP == A6XX)
       crb.add(VPC_UNKNOWN_9107(CHIP));
-   } else {
-      /* This seems to be load-bearing, we need to set it both here
-       * and below.  Previously we were unconditionally zero'ing
-       * VPC_UNKNOWN_9107 which happens to be the same offset.
-       */
-      crb.add(VPC_RAST_STREAM_CNTL(CHIP));
-   }
    crb.add(A6XX_RB_UNKNOWN_8811(.dword = 0x00000010));
    crb.add(PC_MODE_CNTL(CHIP, .dword=screen->info->a6xx.magic.PC_MODE_CNTL));
    crb.add(GRAS_LRZ_PS_INPUT_CNTL(CHIP));
@@ -981,8 +976,6 @@ fd6_emit_static_context_regs(struct fd_context *ctx, fd_cs &cs)
    if (CHIP == A6XX) {
       crb.add(VPC_UNKNOWN_9210(CHIP));
    }
-
-   crb.add(A6XX_PC_UNKNOWN_9E72());
 
    crb.add(A6XX_TPL1_MODE_CNTL(
          .isammode = ISAMMODE_GL,
