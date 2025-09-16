@@ -1593,7 +1593,7 @@ zink_batch_descriptor_reset(struct zink_screen *screen, struct zink_batch_state 
    if (zink_descriptor_mode == ZINK_DESCRIPTOR_MODE_DB) {
       bs->dd.db_offset = 0;
       memset(bs->dd.cur_db_offset, 0, sizeof(bs->dd.cur_db_offset));
-      if (bs->dd.db && bs->dd.db->base.b.width0 < bs->ctx->dd.db.max_db_size * screen->base_descriptor_size)
+      if (bs->dd.db && bs->ctx && bs->dd.db->base.b.width0 < bs->ctx->dd.db.max_db_size * screen->base_descriptor_size)
          reinit_db(screen, bs);
       bs->dd.db_bound = false;
    } else {
