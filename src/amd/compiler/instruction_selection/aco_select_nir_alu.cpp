@@ -875,26 +875,24 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
 
          if (use_s_pack) {
             for (unsigned i = 0; i < dst.size(); i++) {
-               bool same = !!packed[i * 2].id() == !!packed[i * 2 + 1].id();
-
-               if (packed[i * 2].id() && packed[i * 2 + 1].id())
+               if (packed[i * 2].id() && packed[i * 2 + 1].id()) {
                   packed[i] = bld.sop2(aco_opcode::s_pack_ll_b32_b16, bld.def(s1), packed[i * 2],
                                        packed[i * 2 + 1]);
-               else if (packed[i * 2 + 1].id())
+                  const_vals[i] = const_vals[i * 2] | (const_vals[i * 2 + 1] << 16);
+               } else if (packed[i * 2 + 1].id()) {
                   packed[i] = bld.sop2(aco_opcode::s_pack_ll_b32_b16, bld.def(s1),
                                        Operand::c32(const_vals[i * 2]), packed[i * 2 + 1]);
-               else if (packed[i * 2].id())
+                  const_vals[i] = const_vals[i * 2 + 1] << 16;
+               } else if (packed[i * 2].id()) {
                   packed[i] = bld.sop2(aco_opcode::s_pack_ll_b32_b16, bld.def(s1), packed[i * 2],
                                        Operand::c32(const_vals[i * 2 + 1]));
-               else
+                  const_vals[i] = const_vals[i * 2];
+               } else {
                   packed[i] = Temp(0, s1); /* Both constants, so reset the entry */
+                  const_vals[i] = const_vals[i * 2] | (const_vals[i * 2 + 1] << 16);
+               }
 
                undef_mask[i] = undef_mask[i * 2] && undef_mask[i * 2 + 1];
-
-               if (same)
-                  const_vals[i] = const_vals[i * 2] | (const_vals[i * 2 + 1] << 16);
-               else
-                  const_vals[i] = 0;
             }
          }
 
