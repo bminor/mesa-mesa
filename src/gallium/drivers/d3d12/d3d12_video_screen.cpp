@@ -2613,13 +2613,15 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
                } else if (param == PIPE_VIDEO_CAP_ENC_INTRA_REFRESH_MAX_DURATION) {
                   return maxIRDuration;
                } else if (param == PIPE_VIDEO_CAP_ENC_INTRA_REFRESH) {
-                  return (maxIRDuration == 0) ? 0 :
+                  bool bSupportsNSlicedIntraRefresh = (supportedSliceStructures != PIPE_VIDEO_CAP_SLICE_STRUCTURE_NONE) && // IR requires N slices as per DX12 spec
+                                                      (maxIRDuration != 0);
+                  return bSupportsNSlicedIntraRefresh ?
                          (PIPE_VIDEO_ENC_INTRA_REFRESH_ROW |
                           PIPE_VIDEO_ENC_INTRA_REFRESH_ADAPTIVE |
                           PIPE_VIDEO_ENC_INTRA_REFRESH_CYCLIC |
                           PIPE_VIDEO_ENC_INTRA_REFRESH_P_FRAME |
                           PIPE_VIDEO_ENC_INTRA_REFRESH_B_FRAME |
-                          PIPE_VIDEO_ENC_INTRA_REFRESH_MULTI_REF);
+                          PIPE_VIDEO_ENC_INTRA_REFRESH_MULTI_REF) : 0;
                } else if (param == PIPE_VIDEO_CAP_ENC_SUPPORTS_MAX_FRAME_SIZE) {
                   return isRCMaxFrameSizeSupported;
                } else if (param == PIPE_VIDEO_CAP_ENC_HEVC_FEATURE_FLAGS) {
