@@ -754,8 +754,6 @@ tu_bo_init(struct tu_device *dev,
       result = tu_bo_add_to_bo_list(dev, gem_handle, flags, iova, &idx);
       if (result != VK_SUCCESS) {
          mtx_unlock(&dev->bo_mutex);
-         if (dev->physical_device->has_set_iova)
-            util_vma_heap_free(&dev->vma, iova, size);
          tu_gem_close(dev, gem_handle);
          return result;
       }
