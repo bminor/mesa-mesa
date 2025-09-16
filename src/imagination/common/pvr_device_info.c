@@ -56,6 +56,7 @@ static const struct pvr_device_info *device_infos[] = {
    &pvr_device_info_36_50_54_182,
    &pvr_device_info_36_52_104_182,
    &pvr_device_info_36_53_104_796,
+   &pvr_device_info_36_56_104_183,
    /* clang-format on */
 };
 
@@ -87,6 +88,7 @@ int pvr_device_info_init(struct pvr_device_info *info, uint64_t bvnc)
       CASE_PACKED_BVNC_DEVICE_INFO(36, 50, 54, 182);
       CASE_PACKED_BVNC_DEVICE_INFO(36, 52, 104, 182);
       CASE_PACKED_BVNC_DEVICE_INFO(36, 53, 104, 796);
+      CASE_PACKED_BVNC_DEVICE_INFO(36, 56, 104, 183);
    }
 
 #undef CASE_PACKED_BVNC_DEVICE_INFO
