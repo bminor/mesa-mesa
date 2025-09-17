@@ -275,20 +275,9 @@ lower_urb_write_logical_send_xe2(const brw_builder &bld, brw_urb_inst *urb)
 }
 
 static void
-setup_color_payload(const brw_builder &bld, const brw_wm_prog_key *key,
-                    brw_reg *dst, brw_reg color, unsigned components)
+setup_color_payload(const brw_builder &bld, brw_reg *dst, brw_reg color,
+                    unsigned components)
 {
-   if (key->clamp_fragment_color) {
-      brw_reg tmp = bld.vgrf(BRW_TYPE_F, 4);
-      assert(color.type == BRW_TYPE_F);
-
-      for (unsigned i = 0; i < components; i++)
-         set_saturate(true,
-                      bld.MOV(offset(tmp, bld, i), offset(color, bld, i)));
-
-      color = tmp;
-   }
-
    for (unsigned i = 0; i < components; i++)
       dst[i] = offset(color, bld, i);
 }
@@ -399,7 +388,7 @@ lower_fb_write_logical_send(const brw_builder &bld, brw_fb_write_inst *write,
                                       .annotate("FB write src0 alpha");
          const brw_reg tmp = ubld.vgrf(BRW_TYPE_F);
          ubld.MOV(tmp, horiz_offset(src0_alpha, i * 8));
-         setup_color_payload(ubld, key, &sources[length], tmp, 1);
+         setup_color_payload(ubld, &sources[length], tmp, 1);
          length++;
       }
    }
@@ -430,11 +419,11 @@ lower_fb_write_logical_send(const brw_builder &bld, brw_fb_write_inst *write,
 
    payload_header_size = length;
 
-   setup_color_payload(bld, key, &sources[length], color0, components);
+   setup_color_payload(bld, &sources[length], color0, components);
    length += 4;
 
    if (color1.file != BAD_FILE) {
-      setup_color_payload(bld, key, &sources[length], color1, components);
+      setup_color_payload(bld, &sources[length], color1, components);
       length += 4;
    }
 

@@ -2252,7 +2252,6 @@ struct iris_rasterizer_state {
    bool depth_clip_far; /* for CC_VIEWPORT */
    bool flatshade; /* for shader state */
    bool flatshade_first; /* for stream output */
-   bool clamp_fragment_color; /* for shader state */
    bool light_twoside; /* for shader state */
    bool rasterizer_discard; /* for 3DSTATE_STREAMOUT and 3DSTATE_CLIP */
    bool half_pixel_center; /* for 3DSTATE_MULTISAMPLE */
@@ -2316,7 +2315,6 @@ iris_create_rasterizer_state(struct pipe_context *ctx,
    cso->depth_clip_far = state->depth_clip_far;
    cso->flatshade = state->flatshade;
    cso->flatshade_first = state->flatshade_first;
-   cso->clamp_fragment_color = state->clamp_fragment_color;
    cso->light_twoside = state->light_twoside;
    cso->rasterizer_discard = state->rasterizer_discard;
    cso->half_pixel_center = state->half_pixel_center;
@@ -5043,8 +5041,6 @@ iris_populate_fs_key(const struct iris_context *ice,
    const struct iris_blend_state *blend = ice->state.cso_blend;
 
    key->nr_color_regions = fb->nr_cbufs;
-
-   key->clamp_fragment_color = rast->clamp_fragment_color;
 
    key->alpha_to_coverage = blend->alpha_to_coverage;
 

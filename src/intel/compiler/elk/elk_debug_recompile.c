@@ -164,7 +164,6 @@ debug_fs_recompile(const struct elk_compiler *c, void *log,
    found |= check("number of color buffers", nr_color_regions);
    found |= check("MRT alpha test", alpha_test_replicate_alpha);
    found |= check("alpha to coverage", alpha_to_coverage);
-   found |= check("fragment color clamping", clamp_fragment_color);
    found |= check("per-sample interpolation", persample_interp);
    found |= check("multisampled FBO", multisample_fbo);
    found |= check("line smoothing", line_aa);

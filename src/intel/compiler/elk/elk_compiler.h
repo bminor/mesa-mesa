@@ -496,7 +496,6 @@ struct elk_wm_prog_key {
    enum compare_func alpha_test_func:3; /* < For Gfx4/5 MRT alpha test */
    bool alpha_test_replicate_alpha:1;
    enum elk_sometimes alpha_to_coverage:2;
-   bool clamp_fragment_color:1;
 
    bool force_dual_color_blend:1;
 
@@ -518,7 +517,7 @@ struct elk_wm_prog_key {
    bool coherent_fb_fetch:1;
    bool ignore_sample_mask_out:1;
 
-   uint64_t padding:56;
+   uint64_t padding:57;
 };
 
 struct elk_cs_prog_key {

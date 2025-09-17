@@ -399,7 +399,6 @@ struct brw_wm_prog_key {
    unsigned nr_color_regions:5;
    bool alpha_test_replicate_alpha:1;
    enum intel_sometimes alpha_to_coverage:2;
-   bool clamp_fragment_color:1;
 
    bool force_dual_color_blend:1;
 
@@ -427,6 +426,7 @@ struct brw_wm_prog_key {
    bool coarse_pixel:1;
    bool null_push_constant_tbimr_workaround:1;
    bool api_sample_shading:1;
+   unsigned pad:1;
 };
 
 static inline bool

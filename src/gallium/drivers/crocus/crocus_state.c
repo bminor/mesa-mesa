@@ -4850,8 +4850,6 @@ crocus_populate_fs_key(const struct crocus_context *ice,
 
    key->nr_color_regions = fb->nr_cbufs;
 
-   key->clamp_fragment_color = rast->cso.clamp_fragment_color;
-
    key->alpha_to_coverage = blend->cso.alpha_to_coverage ?
       ELK_ALWAYS : ELK_NEVER;
 

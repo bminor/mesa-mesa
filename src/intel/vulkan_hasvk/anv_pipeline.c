@@ -286,9 +286,6 @@ populate_wm_prog_key(const struct anv_graphics_pipeline *pipeline,
     */
    key->input_slots_valid = 0;
 
-   /* XXX Vulkan doesn't appear to specify */
-   key->clamp_fragment_color = false;
-
    key->ignore_sample_mask_out = false;
 
    assert(rp->color_attachment_count <= MAX_RTS);
