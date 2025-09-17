@@ -212,6 +212,7 @@ enum
 
    DBG_TMZ,
    DBG_SQTT,
+   DBG_EXPORT_MODIFIER,
 
    DBG_COUNT
 };

@@ -84,6 +84,7 @@ static const struct debug_named_value radeonsi_debug_options[] = {
 
    {"tmz", DBG(TMZ), "Force allocation of scanout/depth/stencil buffer as encrypted"},
    {"sqtt", DBG(SQTT), "Enable SQTT"},
+   {"export_modifier", DBG(EXPORT_MODIFIER), "Export real modifier instead of DRM_FORMAT_MOD_INVALID"},
 
    DEBUG_NAMED_VALUE_END /* must be last */
 };

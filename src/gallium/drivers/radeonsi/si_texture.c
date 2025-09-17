@@ -674,7 +674,8 @@ static bool si_resource_get_param(struct pipe_screen *screen, struct pipe_contex
     * PIPE_RESOURCE_PARAM_MODIFIER queries.
     */
    if ((param == PIPE_RESOURCE_PARAM_NPLANES || param == PIPE_RESOURCE_PARAM_MODIFIER) &&
-       resource->target != PIPE_BUFFER)
+       resource->target != PIPE_BUFFER &&
+       (sscreen->debug_flags & DBG(EXPORT_MODIFIER)))
          ac_compute_surface_modifier(&sscreen->info, &tex->surface, resource->nr_samples);
 
    switch (param) {

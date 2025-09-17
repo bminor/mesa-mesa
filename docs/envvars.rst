@@ -1786,6 +1786,9 @@ RadeonSI driver environment variables
       Disable tier3 for video decode.
    ``noenctier2``
       Disable tier2 for video encode.
+   ``export_modifier``
+      Export real modifier instead of DRM_FORMAT_MOD_INVALID to user. For example
+      by eglExportDMABUFImageQueryMESA.
 
 r600 driver environment variables
 ---------------------------------
