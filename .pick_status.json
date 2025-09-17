@@ -4614,7 +4614,7 @@
         "description": "radv/sqtt: Ensure that present fence gets signalled.",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "88cbe32048aff3d7a873474bebc2d1068c21ce46",
         "notes": null
