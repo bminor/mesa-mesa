@@ -178,6 +178,23 @@ panvk_copy_image_to_from_memory(struct image_params img,
 }
 
 static void
+img_to_from_mem_with_ds_split(struct image_params img, struct memory_params mem,
+                              VkExtent3D extent, VkHostImageCopyFlags flags,
+                              bool memory_to_img)
+{
+   if (img.subres.aspectMask ==
+          (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) &&
+       !panvk_image_is_interleaved_depth_stencil(img.img)) {
+      img.subres.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+      panvk_copy_image_to_from_memory(img, mem, extent, flags, memory_to_img);
+      img.subres.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+      panvk_copy_image_to_from_memory(img, mem, extent, flags, memory_to_img);
+   } else {
+      panvk_copy_image_to_from_memory(img, mem, extent, flags, memory_to_img);
+   }
+}
+
+static void
 panvk_copy_memory_to_image(struct panvk_image *dst, void *dst_cpu,
                            const VkMemoryToImageCopy *region,
                            VkHostImageCopyFlags flags)
@@ -194,8 +211,8 @@ panvk_copy_memory_to_image(struct panvk_image *dst, void *dst_cpu,
       .subres = region->imageSubresource,
    };
 
-   panvk_copy_image_to_from_memory(
-      dst_params, src_params, region->imageExtent, flags, true);
+   img_to_from_mem_with_ds_split(dst_params, src_params, region->imageExtent,
+                                 flags, true);
 }
 
 static VkResult
@@ -292,8 +309,8 @@ panvk_copy_image_to_memory(struct panvk_image *src, void *src_cpu,
       .subres = region->imageSubresource,
    };
 
-   panvk_copy_image_to_from_memory(
-      src_params, dst_params, region->imageExtent, flags, false);
+   img_to_from_mem_with_ds_split(src_params, dst_params, region->imageExtent,
+                                 flags, false);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
@@ -480,21 +497,58 @@ panvk_CopyImageToImage(VkDevice device, const VkCopyImageToImageInfo *info)
    void *dst_cpu[PANVK_MAX_PLANES] = {NULL};
 
    for (unsigned i = 0; i < info->regionCount; i++) {
-      uint8_t src_p =
-         panvk_plane_index(src, info->pRegions[i].srcSubresource.aspectMask);
-      uint8_t dst_p =
-         panvk_plane_index(dst, info->pRegions[i].dstSubresource.aspectMask);
+      u_foreach_bit(a, info->pRegions[i].srcSubresource.aspectMask) {
+         uint8_t src_p = panvk_plane_index(src, 1 << a);
 
-      result = mmap_plane(dst, dst_p, PROT_WRITE, dst_cpu);
-      if (result != VK_SUCCESS)
-         goto out_unmap;
+         result = mmap_plane(src, src_p, PROT_READ, src_cpu);
+         if (result != VK_SUCCESS)
+            goto out_unmap;
+      }
 
-      result = mmap_plane(src, src_p, PROT_READ, src_cpu);
-      if (result != VK_SUCCESS)
-         goto out_unmap;
+      u_foreach_bit(a, info->pRegions[i].dstSubresource.aspectMask) {
+         uint8_t dst_p = panvk_plane_index(dst, 1 << a);
 
-      panvk_copy_image_to_image(dst, dst_cpu[dst_p], src, src_cpu[src_p],
-                                &info->pRegions[i], info->flags);
+         result = mmap_plane(dst, dst_p, PROT_WRITE, dst_cpu);
+         if (result != VK_SUCCESS)
+            goto out_unmap;
+      }
+   }
+
+   for (unsigned i = 0; i < info->regionCount; i++) {
+      bool depth_and_stencil =
+         info->pRegions[i].srcSubresource.aspectMask ==
+         (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+
+      if (depth_and_stencil) {
+         VkImageCopy2 region = info->pRegions[i];
+         uint8_t src_p, dst_p;
+
+         assert(info->pRegions[i].srcSubresource.aspectMask ==
+                info->pRegions[i].dstSubresource.aspectMask);
+         region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+         region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+         src_p = panvk_plane_index(src, VK_IMAGE_ASPECT_DEPTH_BIT);
+         dst_p = panvk_plane_index(dst, VK_IMAGE_ASPECT_DEPTH_BIT);
+         panvk_copy_image_to_image(dst, dst_cpu[dst_p], src, src_cpu[src_p],
+                                   &region, info->flags);
+
+         region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+         region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+         src_p = panvk_plane_index(src, VK_IMAGE_ASPECT_STENCIL_BIT);
+         dst_p = panvk_plane_index(dst, VK_IMAGE_ASPECT_STENCIL_BIT);
+         panvk_copy_image_to_image(dst, dst_cpu[dst_p], src, src_cpu[src_p],
+                                   &region, info->flags);
+      } else {
+         assert(
+            util_bitcount(info->pRegions[i].srcSubresource.aspectMask) == 1 &&
+            util_bitcount(info->pRegions[i].dstSubresource.aspectMask) == 1);
+
+         uint8_t src_p = panvk_plane_index(src, info->pRegions[i].srcSubresource.aspectMask);
+         uint8_t dst_p = panvk_plane_index(dst, info->pRegions[i].dstSubresource.aspectMask);
+
+         panvk_copy_image_to_image(dst, dst_cpu[dst_p], src, src_cpu[src_p],
+                                   &info->pRegions[i], info->flags);
+      }
    }
 
 out_unmap:
