@@ -121,6 +121,30 @@ debian/ppc64el_build:
     - job: debian/ppc64el_build
       optional: true
 
+# Debian based RISC-V 64 cross-build image
+debian/riscv64_build:
+  extends:
+    - .use-debian/x86_64_build-base
+  variables:
+    MESA_IMAGE_TAG: &debian-riscv64_build ${DEBIAN_BUILD_TAG}
+    LLVM_VERSION: &debian-riscv64-llvm 19
+
+.use-debian/riscv64_build:
+  tags:
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64
+  extends:
+    - .set-image-base-tag
+  variables:
+    MESA_BASE_TAG: *debian-x86_64_build-base
+    MESA_IMAGE_PATH: "debian/riscv64_build"
+    MESA_IMAGE_TAG: *debian-riscv64_build
+    LLVM_VERSION: *debian-riscv64-llvm
+  needs:
+    - job: sanity
+      optional: true
+    - job: debian/riscv64_build
+      optional: true
+
 # Debian based s390x cross-build image
 debian/s390x_build:
   extends:

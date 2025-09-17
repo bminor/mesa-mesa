@@ -751,6 +751,22 @@ debian-x86_32:
       -D mesa-clc=enabled
       -D install-mesa-clc=true
 
+# In case of issues with this job, contact @frankbinns
+debian-riscv64:
+  extends:
+    - .meson-cross
+    - .use-debian/riscv64_build
+    - .meson-build-only
+  tags:
+    - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64_KVM
+  variables:
+    BUILDTYPE: debug
+    CROSS: riscv64
+    GALLIUM_DRIVERS: "llvmpipe,zink"
+    VULKAN_DRIVERS: "swrast"
+    # See https://gitlab.freedesktop.org/mesa/mesa/-/issues/14123
+    MESON_TEST_ARGS: "--no-suite mesa:llvmpipe"
+
 # While s390 is dead, s390x is very much alive, and one of the last major
 # big-endian platforms, so it provides useful coverage.
 # In case of issues with this job, contact @ajax
