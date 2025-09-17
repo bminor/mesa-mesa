@@ -628,6 +628,7 @@ if with_gallium_d3d12 and not _with_gallium_d3d12_video.disabled()
   pre_args += '-DHAVE_GALLIUM_D3D12_VIDEO'
 endif
 
+with_bvh = with_amd_vk or with_intel_vk or with_swrast_vk or with_freedreno_vk
 _glslang_preamble_version = '12.2'
 
 # GLSL has interesting version output and Meson doesn't parse it correctly as of
@@ -635,7 +636,7 @@ _glslang_preamble_version = '12.2'
 prog_glslang = find_program(
   'glslangValidator',
   native : true,
-  required : with_vulkan_overlay_layer or with_aco_tests or with_amd_vk or with_intel_vk or with_swrast_vk or with_freedreno_vk
+  required : with_vulkan_overlay_layer or with_aco_tests or with_bvh
 )
 
 if prog_glslang.found()
@@ -651,7 +652,7 @@ if prog_glslang.found()
   else
     glslang_depfile = []
   endif
-  if _glslang_version.version_compare('< ' + _glslang_preamble_version)
+  if with_bvh and _glslang_version.version_compare('< ' + _glslang_preamble_version)
     error('glslang >= ' + _glslang_preamble_version + ' is required.')
   endif
   if run_command(prog_glslang, [ '--quiet', '--version' ], check : false).returncode() == 0
