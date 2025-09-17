@@ -1230,6 +1230,10 @@ void
 zink_kopper_prune_batch_usage(struct kopper_displaytarget *cdt, const struct zink_batch_usage *u)
 {
    struct kopper_swapchain *cswap = cdt->swapchain;
+
+   if (!cswap)
+      return;
+
    swapchain_prune_batch_usage(cswap, u);
    for (cswap = cdt->old_swapchain; cswap; cswap = cswap->next)
       swapchain_prune_batch_usage(cswap, u);

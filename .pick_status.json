@@ -5044,7 +5044,7 @@
         "description": "zink: account for kopper dt not having a swapchain when pruning batch usage",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
