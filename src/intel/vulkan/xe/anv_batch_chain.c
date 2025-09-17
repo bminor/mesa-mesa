@@ -132,12 +132,13 @@ xe_exec_print_debug(struct anv_queue *queue, uint32_t cmd_buffer_count,
                                    perf_query_pool, perf_query_pass);
 }
 
-#define xe_exec_ioctl(d, e) xe_exec_ioctl_impl((d), (e), __func__, __LINE__)
+#define xe_exec_ioctl(q, e) xe_exec_ioctl_impl((q), (e), __func__, __LINE__)
 
 static VkResult
-xe_exec_ioctl_impl(struct anv_device *device, struct drm_xe_exec *exec,
+xe_exec_ioctl_impl(struct anv_queue *queue, struct drm_xe_exec *exec,
                    const char *func, int line)
 {
+   struct anv_device *device = queue->device;
    int ret;
 
    if (unlikely(device->info->no_hw))
@@ -145,7 +146,7 @@ xe_exec_ioctl_impl(struct anv_device *device, struct drm_xe_exec *exec,
 
    ret = intel_ioctl(device->fd, DRM_IOCTL_XE_EXEC, exec);
    if (ret)
-      return vk_device_set_lost(&device->vk, "%s(%d) failed: %m", func, line);
+      return vk_queue_set_lost(&queue->vk, "%s(%d) failed: %m", func, line);
 
    return VK_SUCCESS;
 }
@@ -215,7 +216,7 @@ xe_queue_exec_async(struct anv_async_submit *submit,
    xe_exec_print_debug(queue, 0, NULL, NULL, 0, &exec);
    anv_async_submit_print_batch(submit);
 
-   VkResult result = xe_exec_ioctl(device, &exec);
+   VkResult result = xe_exec_ioctl(queue, &exec);
    if (result != VK_SUCCESS)
       return result;
 
@@ -262,7 +263,7 @@ xe_companion_rcs_queue_exec_locked(struct anv_queue *queue,
    anv_measure_submit(companion_rcs_cmd_buffer);
    xe_exec_print_debug(queue, 1, &companion_rcs_cmd_buffer, NULL, 0, &exec);
 
-   result = xe_exec_ioctl(device, &exec);
+   result = xe_exec_ioctl(queue, &exec);
 
    vk_free(&device->vk.alloc, xe_syncs);
 
@@ -383,11 +384,11 @@ xe_queue_exec_locked(struct anv_queue *queue,
       }
 
       if (result == VK_SUCCESS)
-         result = xe_exec_ioctl(device, &perf_query_exec);
+         result = xe_exec_ioctl(queue, &perf_query_exec);
    }
 
    if (result == VK_SUCCESS)
-      result = xe_exec_ioctl(device, &exec);
+      result = xe_exec_ioctl(queue, &exec);
 
    vk_free(&device->vk.alloc, xe_syncs);
 
