@@ -852,6 +852,7 @@ print_access(enum gl_access_qualifier access, print_state *state, const char *se
       { ACCESS_SMEM_AMD, "smem-amd" },
       { ACCESS_SKIP_HELPERS, "skip-helpers" },
       { ACCESS_ATOMIC, "atomic" },
+      { ACCESS_FUSED_EU_DISABLE_INTEL, "fused-eu-disable-intel" },
    };
 
    bool first = true;

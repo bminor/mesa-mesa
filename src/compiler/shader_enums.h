@@ -1235,6 +1235,12 @@ enum gl_access_qualifier
     * the load never tears.
     */
    ACCESS_ATOMIC = (1 << 18),
+
+   /**
+    * Indicates that access should be serialized with regard to the Intel EU
+    * fusion feature.
+    */
+   ACCESS_FUSED_EU_DISABLE_INTEL = (1 << 19),
 };
 
 /**
