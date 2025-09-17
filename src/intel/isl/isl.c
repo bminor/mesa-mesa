@@ -3880,8 +3880,15 @@ _isl_surf_info_supports_ccs(const struct isl_device *dev,
    /* Xe2 and newer don't require additional space to be allocated by the
     * driver for plain CCS, so we can trivially allow sparse.
     */
-   if (ISL_GFX_VER(dev) < 20 && (usage & ISL_SURF_USAGE_SPARSE_BIT))
-      return false;
+   if (ISL_GFX_VER(dev) < 20 && (usage & ISL_SURF_USAGE_SPARSE_BIT)) {
+      if (dev->info->has_flat_ccs) {
+         /* Here we can allow STC_CCS for the same reason. */
+         if (!isl_surf_usage_is_stencil(usage))
+            return false;
+      } else {
+         return false;
+      }
+   }
 
    if (usage & ISL_SURF_USAGE_DISABLE_AUX_BIT)
       return false;
