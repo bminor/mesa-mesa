@@ -170,3 +170,9 @@ spec@glsl-1.50@execution@built-in-functions@gs-op-sub-ivec2-ivec2
 spec@glsl-1.50@execution@texelfetchoffset@gs-texelfetch-isampler1d
 spec@glsl-1.50@execution@texelfetchoffset@gs-texelfetch-usampler2darray
 spec@glsl-4.30@execution@built-in-functions@cs-op-selection-bool-bvec4-bvec4
+
+# mesh shaders somehow?
+glx@glx-visuals-depth
+glx@glx-visuals-depth -pixmap
+glx@glx-visuals-stencil
+glx@glx-visuals-stencil -pixmap
