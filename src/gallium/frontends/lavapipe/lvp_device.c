@@ -874,7 +874,8 @@ static VkImageLayout lvp_host_copy_image_layouts[] = {
 static void
 lvp_get_properties(const struct lvp_physical_device *device, struct vk_properties *p)
 {
-   VkSampleCountFlags sample_counts = VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_4_BIT;
+   VkSampleCountFlags sample_counts = VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_4_BIT |
+                                      VK_SAMPLE_COUNT_8_BIT;
 
    const unsigned *grid_size = device->pscreen->compute_caps.max_grid_size;
    const unsigned *block_size = device->pscreen->compute_caps.max_block_size;

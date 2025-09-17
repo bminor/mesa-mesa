@@ -325,7 +325,7 @@ static VkResult lvp_get_image_format_properties(struct lvp_physical_device *phys
           !(info->flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) &&
           !util_format_is_compressed(pformat) &&
           (format_feature_flags & (VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT)))
-         sampleCounts |= VK_SAMPLE_COUNT_4_BIT;
+         sampleCounts |= VK_SAMPLE_COUNT_4_BIT | VK_SAMPLE_COUNT_8_BIT;
       break;
    case VK_IMAGE_TYPE_3D:
       maxExtent.width = max_2d_ext;
