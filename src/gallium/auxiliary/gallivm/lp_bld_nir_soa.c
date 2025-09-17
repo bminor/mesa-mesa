@@ -3241,12 +3241,37 @@ do_alu_action(struct lp_build_nir_soa_context *bld,
    case nir_op_f2f16:
    case nir_op_f2f32:
    case nir_op_f2f64:
+      /*
+       * FIXME: for f2f16 we can get here even without lp_has_fp16(), despite
+       * not announcing f16 capability. Should not happen from GL side (glsl has
+       * lowering pass for f16 pack/unpack functions if not supported) however
+       * from Vulkan side things like quantizeToF16, unpack2x16float use this.
+       * Need to fix up the llvm type in this case at least, although on some
+       * platforms this will still crash if the llvm backend doesn't handle half
+       * type on its own (but works on x86 even without f16c).
+       * Alternatively could use lp_build_half_to_float/float_to_half() but need
+       * to modify to handle rounding differently (need RNE instead of RTZ here).
+       * Ideally would be able to just use llvm half type consistently for f16,
+       * but not all backends are ready for that.
+       */
       if (src_bit_size[0] > instr->def.bit_size) {
-         result = LLVMBuildFPTrunc(builder, src[0],
-                                 dst_float_bld->vec_type, "");
+         LLVMTypeRef llvm_dst_type = dst_float_bld->vec_type;
+         if (instr->def.bit_size == 16 && !lp_has_fp16()) {
+            llvm_dst_type = LLVMHalfTypeInContext(gallivm->context);
+            if (dst_float_bld->type.length != 1)
+               llvm_dst_type = LLVMVectorType(llvm_dst_type, dst_float_bld->type.length);
+         }
+         result = LLVMBuildFPTrunc(builder, src[0], llvm_dst_type, "");
+         /* don't need a bit cast for f16, caller already has one */
       } else {
-         result = LLVMBuildFPExt(builder, src[0],
-                                 dst_float_bld->vec_type, "");
+         LLVMValueRef src0 = src[0];
+         if (src_bit_size[0] == 16 && !lp_has_fp16()) {
+            LLVMTypeRef llvm_src_type = LLVMHalfTypeInContext(gallivm->context);
+            if (dst_float_bld->type.length != 1)
+               llvm_src_type = LLVMVectorType(llvm_src_type, dst_float_bld->type.length);
+            src0 = LLVMBuildBitCast(builder, src0, llvm_src_type, "");
+         }
+         result = LLVMBuildFPExt(builder, src0, dst_float_bld->vec_type, "");
       }
       break;
    case nir_op_f2i8:

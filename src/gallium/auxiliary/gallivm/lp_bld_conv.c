@@ -198,7 +198,8 @@ lp_build_float_to_half(struct gallivm_state *gallivm,
       if (length == 4) {
          result = lp_build_extract_range(gallivm, result, 0, 4);
       }
-      result = LLVMBuildBitCast(builder, result, lp_build_vec_type(gallivm, lp_type_float_vec(16, 16 * length)), "");
+      result = LLVMBuildBitCast(builder, result,
+                                lp_build_vec_type(gallivm, lp_type_float_vec(16, 16 * length)), "");
    }
 
    else {
