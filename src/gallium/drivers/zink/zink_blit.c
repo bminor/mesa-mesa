@@ -438,21 +438,52 @@ zink_blit(struct pipe_context *pctx,
    zink_fb_clears_apply_region(ctx, info->src.resource, zink_rect_from_box(&info->src.box), info->src.box.z, info->src.box.depth);
    unsigned rp_clears_enabled = ctx->rp_clears_enabled;
    unsigned clears_enabled = ctx->clears_enabled;
-   if (!dst->fb_bind_count) {
-      /* avoid applying clears from fb unbind by storing and re-setting them after the blit */
-      ctx->rp_clears_enabled = 0;
-      ctx->clears_enabled = 0;
-   } else {
-      unsigned bit;
-      /* convert to PIPE_CLEAR_XYZ */
-      if (dst->fb_binds & BITFIELD_BIT(PIPE_MAX_COLOR_BUFS))
-         bit = PIPE_CLEAR_DEPTHSTENCIL;
-      else
-         bit = dst->fb_binds << 2;
-      rp_clears_enabled &= ~bit;
-      clears_enabled &= ~bit;
-      ctx->rp_clears_enabled &= bit;
-      ctx->clears_enabled &= bit;
+
+   /* test whether clears can be stored to avoid unnecessary memory bandwidth */
+   bool can_store_clears = true;
+   struct pipe_surface templ = {
+      .texture = &dst->base.b,
+      .first_layer = info->dst.box.z,
+      .last_layer = info->dst.box.z + info->dst.box.depth - 1,
+      .level = info->dst.level,
+   };
+   /* 1. compare surface binds */
+   u_foreach_bit(slot, dst->fb_binds) {
+      if (slot == PIPE_MAX_COLOR_BUFS) {
+         if (&dst->base.b != ctx->fb_state.zsbuf.texture) {
+            can_store_clears = false;
+         } else {
+            templ.format = ctx->fb_state.zsbuf.format;
+            can_store_clears &= pipe_surface_equal(&templ, &ctx->fb_state.zsbuf);
+         }
+      } else {
+         if (&dst->base.b != ctx->fb_state.cbufs[slot].texture) {
+            can_store_clears = false;
+         } else {
+            templ.format = ctx->fb_state.cbufs[slot].format;
+            can_store_clears &= pipe_surface_equal(&templ, &ctx->fb_state.cbufs[slot]);
+         }
+      }
+   }
+   /* 2. check base framebuffer state */
+   can_store_clears &= ctx->dynamic_fb.info.layerCount == info->dst.box.depth && ctx->fb_state.width == info->dst.box.width && ctx->fb_state.height == info->dst.box.height;
+   if (can_store_clears) {
+      if (!dst->fb_binds) {
+         /* avoid applying clears from fb unbind by storing and re-setting them after the blit */
+         ctx->rp_clears_enabled = 0;
+         ctx->clears_enabled = 0;
+      } else {
+         unsigned bit;
+         /* convert to PIPE_CLEAR_XYZ */
+         if (dst->fb_binds & BITFIELD_BIT(PIPE_MAX_COLOR_BUFS))
+            bit = PIPE_CLEAR_DEPTHSTENCIL;
+         else
+            bit = dst->fb_binds << 2;
+         rp_clears_enabled &= ~bit;
+         clears_enabled &= ~bit;
+         ctx->rp_clears_enabled &= bit;
+         ctx->clears_enabled &= bit;
+      }
    }
 
    /* this will draw a full-resource quad, so ignore existing data */
@@ -487,6 +518,15 @@ zink_blit(struct pipe_context *pctx,
    if (zink_format_needs_mutable(info->dst.format, info->dst.resource->format))
       zink_resource_object_init_mutable(ctx, dst);
    zink_blit_barriers(ctx, use_src, dst, whole);
+   /* if clears can't be stored, set blit barriers for all attachments because clears will be flushed */
+   if (!can_store_clears && ctx->clears_enabled) {
+      for (unsigned i = 0; i < ctx->fb_state.nr_cbufs; i++) {
+         if (ctx->fb_state.cbufs[i].texture && ctx->fb_state.cbufs[i].texture != info->src.resource && ctx->fb_state.cbufs[i].texture != info->dst.resource)
+            zink_blit_barriers(ctx, NULL, zink_resource(ctx->fb_state.cbufs[i].texture), whole);
+      }
+      if (ctx->fb_state.zsbuf.texture && ctx->fb_state.zsbuf.texture != info->src.resource && ctx->fb_state.zsbuf.texture != info->dst.resource)
+         zink_blit_barriers(ctx, NULL, zink_resource(ctx->fb_state.zsbuf.texture), whole);
+   }
    ctx->blitting = true;
    ctx->blit_scissor = info->scissor_enable;
    ctx->blit_nearest = info->filter == PIPE_TEX_FILTER_NEAREST;
@@ -513,8 +553,10 @@ zink_blit(struct pipe_context *pctx,
       util_blitter_blit(ctx->blitter, &new_info, NULL);
    }
    ctx->blitting = false;
-   ctx->rp_clears_enabled = rp_clears_enabled;
-   ctx->clears_enabled = clears_enabled;
+   if (can_store_clears) {
+      ctx->rp_clears_enabled = rp_clears_enabled;
+      ctx->clears_enabled = clears_enabled;
+   }
    if (ctx->unordered_blitting) {
       zink_batch_no_rp(ctx);
       ctx->in_rp = in_rp;
