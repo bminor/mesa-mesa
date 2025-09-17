@@ -435,6 +435,8 @@ struct pipe_framebuffer_state
 
    /** multiple color buffers for multiple render targets */
    uint8_t nr_cbufs;
+   /** true if pixel local storage is enabled */
+   bool pls_enabled;
    /** used for multiview */
    uint8_t viewmask;
    struct pipe_surface cbufs[PIPE_MAX_COLOR_BUFS];

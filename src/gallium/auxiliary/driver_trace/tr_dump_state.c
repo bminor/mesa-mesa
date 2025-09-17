@@ -560,6 +560,7 @@ void trace_dump_framebuffer_state(const struct pipe_framebuffer_state *state)
    trace_dump_member(uint, state, samples);
    trace_dump_member(uint, state, layers);
    trace_dump_member(uint, state, nr_cbufs);
+   trace_dump_member(bool, state, pls_enabled);
    trace_dump_member_begin("cbufs");
    trace_dump_array_impl(surface, state->cbufs, state->nr_cbufs, &);
    trace_dump_member_end();
@@ -580,6 +581,7 @@ void trace_dump_framebuffer_state_deep(const struct pipe_framebuffer_state *stat
    trace_dump_member(uint, state, samples);
    trace_dump_member(uint, state, layers);
    trace_dump_member(uint, state, nr_cbufs);
+   trace_dump_member(bool, state, pls_enabled);
    trace_dump_member_begin("cbufs");
    trace_dump_array_impl(surface, state->cbufs, state->nr_cbufs, &);
    trace_dump_member_end();

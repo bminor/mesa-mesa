@@ -148,6 +148,8 @@ st_update_framebuffer_state( struct st_context *st )
     */
    framebuffer.nr_cbufs = fb->_NumColorDrawBuffers;
 
+   framebuffer.pls_enabled = ctx->PixelLocalStorage;
+
    unsigned num_multiview_layer = 0;
    for (i = 0; i < fb->_NumColorDrawBuffers; i++) {
       rb = fb->_ColorDrawBuffers[i];
