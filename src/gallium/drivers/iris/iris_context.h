@@ -278,7 +278,6 @@ struct iris_fs_prog_key {
    uint8_t color_outputs_valid;
 
    unsigned nr_color_regions:5;
-   bool flat_shade:1;
    bool alpha_test_replicate_alpha:1;
    bool alpha_to_coverage:1;
    bool persample_interp:1;
@@ -286,7 +285,7 @@ struct iris_fs_prog_key {
    bool force_dual_color_blend:1;
    bool coherent_fb_fetch:1;
    enum intel_vue_layout vue_layout:2;
-   uint64_t padding:42;
+   uint64_t padding:43;
 };
 
 struct iris_cs_prog_key {

@@ -567,19 +567,8 @@ elk_nir_lower_fs_inputs(nir_shader *nir,
    nir_foreach_shader_in_variable(var, nir) {
       var->data.driver_location = var->data.location;
 
-      /* Apply default interpolation mode.
-       *
-       * Everything defaults to smooth except for the legacy GL color
-       * built-in variables, which might be flat depending on API state.
-       */
-      if (var->data.interpolation == INTERP_MODE_NONE) {
-         const bool flat = key->flat_shade &&
-            (var->data.location == VARYING_SLOT_COL0 ||
-             var->data.location == VARYING_SLOT_COL1);
-
-         var->data.interpolation = flat ? INTERP_MODE_FLAT
-                                        : INTERP_MODE_SMOOTH;
-      }
+      if (var->data.interpolation == INTERP_MODE_NONE)
+         var->data.interpolation = INTERP_MODE_SMOOTH;
 
       /* On Ironlake and below, there is only one interpolation mode.
        * Centroid interpolation doesn't mean anything on this hardware --

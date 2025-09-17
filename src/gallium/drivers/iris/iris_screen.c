@@ -447,6 +447,9 @@ iris_init_screen_caps(struct iris_screen *screen)
       PIPE_CONTEXT_PRIORITY_MEDIUM |
       PIPE_CONTEXT_PRIORITY_HIGH;
 
+   /* Let mesa/st lower for us */
+   caps->flatshade = false;
+
    caps->frontend_noop = true;
 
    // XXX: don't hardcode 00:00:02.0 PCI here

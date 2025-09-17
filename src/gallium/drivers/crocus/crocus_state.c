@@ -4855,9 +4855,6 @@ crocus_populate_fs_key(const struct crocus_context *ice,
 
    key->alpha_test_replicate_alpha = fb->nr_cbufs > 1 && zsa->cso.alpha_enabled;
 
-   key->flat_shade = rast->cso.flatshade &&
-      (info->inputs_read & (VARYING_BIT_COL0 | VARYING_BIT_COL1));
-
    const bool multisample_fbo = rast->cso.multisample && fb->samples > 1;
    key->multisample_fbo = multisample_fbo ? ELK_ALWAYS : ELK_NEVER;
    key->persample_interp =

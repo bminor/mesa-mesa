@@ -395,7 +395,6 @@ struct brw_wm_prog_key {
    uint8_t color_outputs_valid;
 
    /* Some collection of BRW_WM_IZ_* */
-   bool flat_shade:1;
    unsigned nr_color_regions:5;
    bool alpha_test_replicate_alpha:1;
    enum intel_sometimes alpha_to_coverage:2;
@@ -426,7 +425,7 @@ struct brw_wm_prog_key {
    bool coarse_pixel:1;
    bool null_push_constant_tbimr_workaround:1;
    bool api_sample_shading:1;
-   unsigned pad:1;
+   unsigned pad:2;
 };
 
 static inline bool

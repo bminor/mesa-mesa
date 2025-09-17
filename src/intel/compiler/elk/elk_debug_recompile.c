@@ -160,7 +160,6 @@ debug_fs_recompile(const struct elk_compiler *c, void *log,
    found |= check("alphatest, computed depth, depth test, or depth write",
                   iz_lookup);
    found |= check("depth statistics", stats_wm);
-   found |= check("flat shading", flat_shade);
    found |= check("number of color buffers", nr_color_regions);
    found |= check("MRT alpha test", alpha_test_replicate_alpha);
    found |= check("alpha to coverage", alpha_to_coverage);

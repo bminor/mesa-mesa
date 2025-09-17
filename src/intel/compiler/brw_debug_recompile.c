@@ -132,7 +132,6 @@ debug_fs_recompile(const struct brw_compiler *c, void *log,
 {
    bool found = false;
 
-   found |= check("flat shading", flat_shade);
    found |= check("number of color buffers", nr_color_regions);
    found |= check("MRT alpha test", alpha_test_replicate_alpha);
    found |= check("alpha to coverage", alpha_to_coverage);
