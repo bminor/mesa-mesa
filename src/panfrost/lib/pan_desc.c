@@ -371,7 +371,8 @@ GENX(pan_emit_afbc_zs_attachment)(const struct pan_fb_info *fb,
 
 #if PAN_ARCH >= 6
       cfg.header_row_stride =
-         pan_afbc_stride_blocks(pref.image->props.modifier, hdr_row_stride);
+         pan_afbc_stride_blocks(pref.image->props.format,
+                                pref.image->props.modifier, hdr_row_stride);
 #else
       cfg.body_size = 0x1000;
       cfg.chunk_size = 9;
@@ -727,7 +728,8 @@ GENX(pan_emit_afbc_color_attachment)(const struct pan_fb_info *fb,
 
 #if PAN_ARCH >= 6
       cfg.row_stride =
-         pan_afbc_stride_blocks(image->props.modifier, hdr_row_stride);
+         pan_afbc_stride_blocks(image->props.format,
+                                image->props.modifier, hdr_row_stride);
 #else
       const struct pan_image_plane *plane = image->planes[pref.plane_idx];
       const struct pan_image_slice_layout *slayout =

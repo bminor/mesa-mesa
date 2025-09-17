@@ -387,12 +387,16 @@ pan_afbc_body_offset(unsigned arch, uint64_t modifier, uint32_t header_size)
 
 /*
  * Determine the tile size used by AFBC. This tiles superblocks themselves.
- * Current GPUs support either 8x8 tiling or no tiling (1x1)
+ * Current GPUs support either 8x8 tiling or no tiling (1x1) for most
+ * formats; but note that formats with more than 32bpp use 4x4 tiling
  */
 static inline unsigned
-pan_afbc_tile_size(uint64_t modifier)
+pan_afbc_tile_size(enum pipe_format format, uint64_t modifier)
 {
-   return (modifier & AFBC_FORMAT_MOD_TILED) ? 8 : 1;
+   if ( !(modifier & AFBC_FORMAT_MOD_TILED) ) {
+      return 1;
+   }
+   return util_format_get_blocksizebits(format) <= 32 ? 8 : 4;
 }
 
 /*
@@ -403,11 +407,11 @@ pan_afbc_tile_size(uint64_t modifier)
  * header blocks are in a tile together.
  */
 static inline uint32_t
-pan_afbc_row_stride(uint64_t modifier, uint32_t width)
+pan_afbc_row_stride(enum pipe_format format, uint64_t modifier, uint32_t width)
 {
    unsigned block_width = pan_afbc_superblock_width(modifier);
 
-   return (width / block_width) * pan_afbc_tile_size(modifier) *
+   return (width / block_width) * pan_afbc_tile_size(format, modifier) *
           AFBC_HEADER_BYTES_PER_TILE;
 }
 
@@ -418,21 +422,21 @@ pan_afbc_row_stride(uint64_t modifier, uint32_t width)
  * blocks, rather than a real row stride. This is required by Bifrost.
  */
 static inline uint32_t
-pan_afbc_stride_blocks(uint64_t modifier, uint32_t row_stride_bytes)
+pan_afbc_stride_blocks(enum pipe_format format, uint64_t modifier, uint32_t row_stride_bytes)
 {
    return row_stride_bytes /
-          (AFBC_HEADER_BYTES_PER_TILE * pan_afbc_tile_size(modifier));
+      (AFBC_HEADER_BYTES_PER_TILE * pan_afbc_tile_size(format, modifier));
 }
 
 /* Returns a height in superblocks taking into account the tile alignment
  * requirement coming from the modifier.
  */
 static inline uint32_t
-pan_afbc_height_blocks(uint64_t modifier, uint32_t height_px)
+pan_afbc_height_blocks(enum pipe_format format, uint64_t modifier, uint32_t height_px)
 {
    return ALIGN_POT(
       DIV_ROUND_UP(height_px, pan_afbc_superblock_height(modifier)),
-      pan_afbc_tile_size(modifier));
+      pan_afbc_tile_size(format, modifier));
 }
 
 static inline enum pipe_format

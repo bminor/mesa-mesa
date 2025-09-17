@@ -2013,6 +2013,7 @@ pan_resource_afbcp_get_payload_sizes(struct panfrost_context *ctx,
 
    struct panfrost_screen *screen = pan_screen(ctx->base.screen);
    struct panfrost_device *dev = pan_device(ctx->base.screen);
+   enum pipe_format format = prsrc->base.format;
    uint64_t modifier = prsrc->modifier;
    unsigned last_level = prsrc->base.last_level;
    unsigned layout_size = 0;
@@ -2022,9 +2023,9 @@ pan_resource_afbcp_get_payload_sizes(struct panfrost_context *ctx,
          &prsrc->plane.layout.slices[level];
       unsigned nr_blocks =
          pan_afbc_stride_blocks(
-            modifier, slice->afbc.header.row_stride_B) *
+            format, modifier, slice->afbc.header.row_stride_B) *
          pan_afbc_height_blocks(
-            modifier, u_minify(prsrc->image.props.extent_px.height, level));
+            format, modifier, u_minify(prsrc->image.props.extent_px.height, level));
       prsrc->afbcp->layout_offsets[level] = layout_size;
       layout_size += nr_blocks * sizeof(struct pan_afbc_payload_extent);
    }
@@ -2111,6 +2112,7 @@ pan_resource_afbcp_get_payload_offsets(struct panfrost_context *ctx,
 
    struct panfrost_device *dev = pan_device(ctx->base.screen);
    uint64_t modifier = prsrc->modifier;
+   enum pipe_format format = prsrc->base.format;
    unsigned last_level = prsrc->base.last_level;
    unsigned total_size = 0;
 
@@ -2121,9 +2123,9 @@ pan_resource_afbcp_get_payload_offsets(struct panfrost_context *ctx,
          &prsrc->afbcp->plane.layout.slices[level];
       unsigned nr_blocks_total =
          pan_afbc_stride_blocks(
-            modifier, src_slice->afbc.header.row_stride_B) *
+            format, modifier, src_slice->afbc.header.row_stride_B) *
          pan_afbc_height_blocks(
-            modifier, u_minify(prsrc->image.props.extent_px.height, level));
+            format, modifier, u_minify(prsrc->image.props.extent_px.height, level));
       uint32_t body_offset_B = pan_afbc_body_offset(
          dev->arch, modifier, src_slice->afbc.header.surface_size_B);
       struct pan_afbc_payload_extent *layout =

@@ -45,7 +45,8 @@ pan_mod_afbc_get_wsi_row_pitch(const struct pan_image *image,
       tile_extent_el.width * tile_extent_el.height *
       pan_format_get_plane_blocksize(props->format, plane_idx);
    const unsigned tile_row_payload_size_B =
-      pan_afbc_stride_blocks(props->modifier, header_row_stride_B) *
+      pan_afbc_stride_blocks(props->format,
+                             props->modifier, header_row_stride_B) *
       tile_payload_size_B;
 
    return tile_row_payload_size_B / pan_afbc_superblock_height(props->modifier);
@@ -95,10 +96,10 @@ pan_mod_afbc_init_slice_layout(
    if (props->modifier & AFBC_FORMAT_MOD_TILED) {
       align_px.width =
          ALIGN_POT(align_px.width, afbc_tile_extent_px.width *
-                                      pan_afbc_tile_size(props->modifier));
+                   pan_afbc_tile_size(props->format, props->modifier));
       align_px.height =
          ALIGN_POT(align_px.height, afbc_tile_extent_px.height *
-                                       pan_afbc_tile_size(props->modifier));
+                   pan_afbc_tile_size(props->format, props->modifier));
    }
 
    struct pan_image_extent aligned_extent_px = {
@@ -134,7 +135,7 @@ pan_mod_afbc_init_slice_layout(
       }
 
       slayout->afbc.header.row_stride_B =
-         pan_afbc_row_stride(props->modifier, width_from_wsi_row_stride);
+         pan_afbc_row_stride(props->format, props->modifier, width_from_wsi_row_stride);
       if (slayout->afbc.header.row_stride_B & row_align_mask) {
          mesa_loge("WSI pitch not properly aligned");
          return false;
@@ -150,7 +151,7 @@ pan_mod_afbc_init_slice_layout(
        * the resource width to get the size. */
       if (!layout_constraints->strict) {
          slayout->afbc.header.row_stride_B = ALIGN_POT(
-            pan_afbc_row_stride(props->modifier, aligned_extent_px.width),
+            pan_afbc_row_stride(props->format, props->modifier, aligned_extent_px.width),
             row_align_mask + 1);
       }
    } else {
@@ -158,12 +159,13 @@ pan_mod_afbc_init_slice_layout(
          ALIGN_POT(layout_constraints ? layout_constraints->offset_B : 0,
                    offset_align_mask + 1);
       slayout->afbc.header.row_stride_B = ALIGN_POT(
-         pan_afbc_row_stride(props->modifier, aligned_extent_px.width),
+         pan_afbc_row_stride(props->format, props->modifier, aligned_extent_px.width),
          row_align_mask + 1);
    }
 
-   const unsigned row_stride_sb = pan_afbc_stride_blocks(
-      props->modifier, slayout->afbc.header.row_stride_B);
+   const unsigned row_stride_sb = pan_afbc_stride_blocks(props->format,
+                                                         props->modifier,
+                                                         slayout->afbc.header.row_stride_B);
    const unsigned surface_stride_sb =
       row_stride_sb * (aligned_extent_px.height / afbc_tile_extent_px.height);
 

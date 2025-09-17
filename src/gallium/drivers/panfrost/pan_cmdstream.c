@@ -3618,10 +3618,11 @@ panfrost_afbc_size(struct panfrost_batch *batch, struct panfrost_resource *src,
       .src = src->plane.base + slice->offset_B,
       .layout = layout->ptr.gpu + offset,
    };
-   unsigned stride_sb = pan_afbc_stride_blocks(src->image.props.modifier,
+   unsigned stride_sb = pan_afbc_stride_blocks(src->image.props.format,
+                                               src->image.props.modifier,
                                                slice->afbc.header.row_stride_B);
    unsigned nr_sblocks =
-      stride_sb * pan_afbc_height_blocks(
+      stride_sb * pan_afbc_height_blocks(src->image.props.format,
                      src->image.props.modifier,
                      u_minify(src->image.props.extent_px.height, level));
 
@@ -3642,12 +3643,12 @@ panfrost_afbc_pack(struct panfrost_batch *batch, struct panfrost_resource *src,
 
    struct panfrost_device *dev = pan_device(src->base.screen);
    struct pan_image_slice_layout *src_slice = &src->plane.layout.slices[level];
-   unsigned src_stride_sb = pan_afbc_stride_blocks(
+   unsigned src_stride_sb = pan_afbc_stride_blocks(src->image.props.format,
       src->image.props.modifier, src_slice->afbc.header.row_stride_B);
-   unsigned dst_stride_sb = pan_afbc_stride_blocks(
+   unsigned dst_stride_sb = pan_afbc_stride_blocks(src->image.props.format,
       src->image.props.modifier, dst_slice->afbc.header.row_stride_B);
    unsigned nr_sblocks =
-      src_stride_sb * pan_afbc_height_blocks(
+      src_stride_sb * pan_afbc_height_blocks(src->image.props.format,
                          src->image.props.modifier,
                          u_minify(src->image.props.extent_px.height, level));
    struct panfrost_afbc_pack_info consts = {
