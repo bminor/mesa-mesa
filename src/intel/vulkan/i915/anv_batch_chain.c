@@ -669,23 +669,31 @@ setup_async_execbuf(struct anv_execbuf *execbuf,
    return VK_SUCCESS;
 }
 
-static int
-anv_gem_execbuffer(struct anv_device *device,
-                   struct drm_i915_gem_execbuffer2 *execbuf)
+#define anv_gem_execbuffer(q, e) anv_gem_execbuffer_impl((q), (e), __func__, __LINE__)
+
+static VkResult
+anv_gem_execbuffer_impl(struct anv_queue *queue,
+                        struct drm_i915_gem_execbuffer2 *execbuf,
+                        const char *func, int line)
 {
+   struct anv_device *device = queue->device;
+
    int ret;
    const unsigned long request = (execbuf->flags & I915_EXEC_FENCE_OUT) ?
       DRM_IOCTL_I915_GEM_EXECBUFFER2_WR :
       DRM_IOCTL_I915_GEM_EXECBUFFER2;
 
    if (unlikely(device->info->no_hw))
-      return 0;
+      return VK_SUCCESS;
 
    do {
       ret = intel_ioctl(device->fd, request, execbuf);
    } while (ret && errno == ENOMEM);
 
-   return ret;
+   if (ret)
+      return vk_queue_set_lost(&queue->vk, "%s(%d) failed: %m", func, line);
+
+   return VK_SUCCESS;
 }
 
 static void
@@ -743,9 +751,7 @@ i915_queue_exec_async(struct anv_async_submit *submit,
 
    ANV_RMV(bos_gtt_map, device, execbuf.bos, execbuf.bo_count);
 
-   int ret = anv_gem_execbuffer(queue->device, &execbuf.execbuf);
-   if (ret)
-      result = vk_queue_set_lost(&queue->vk, "execbuf2 failed: %m");
+   result = anv_gem_execbuffer(queue, &execbuf.execbuf);
 
    result = anv_queue_post_submit(queue, result);
 
@@ -806,11 +812,9 @@ i915_companion_rcs_queue_exec_locked(struct anv_queue *queue,
 
    ANV_RMV(bos_gtt_map, device, execbuf.bos, execbuf.bo_count);
 
-   int ret = anv_gem_execbuffer(queue->device, &execbuf.execbuf);
-   if (ret) {
+   result = anv_gem_execbuffer(queue, &execbuf.execbuf);
+   if (result != VK_SUCCESS)
       anv_i915_debug_submit(&execbuf);
-      result = vk_queue_set_lost(&queue->vk, "execbuf2 failed: %m");
-   }
 
  error:
    anv_execbuf_finish(&execbuf);
@@ -964,18 +968,17 @@ i915_queue_exec_locked(struct anv_queue *queue,
       };
       query_pass_execbuf.batch_start_offset += calc_batch_start_offset(pass_batch_bo);
 
-      int ret = anv_gem_execbuffer(queue->device, &query_pass_execbuf);
-      if (ret)
-         result = vk_queue_set_lost(&queue->vk, "execbuf2 failed: %m");
+      VkResult tmp_result = anv_gem_execbuffer(queue, &query_pass_execbuf);
+      if (tmp_result != VK_SUCCESS)
+         result = tmp_result;
    }
 
    ANV_RMV(bos_gtt_map, device, execbuf.bos, execbuf.bo_count);
 
    if (result == VK_SUCCESS) {
-      if (anv_gem_execbuffer(queue->device, &execbuf.execbuf)) {
+      result = anv_gem_execbuffer(queue, &execbuf.execbuf);
+      if (result != VK_SUCCESS)
          anv_i915_debug_submit(&execbuf);
-         result = vk_queue_set_lost(&queue->vk, "execbuf2 failed: %m");
-      }
    }
 
    if (cmd_buffer_count != 0 && cmd_buffers[0]->companion_rcs_cmd_buffer &&
