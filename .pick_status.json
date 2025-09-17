@@ -1594,7 +1594,7 @@
         "description": "pvr: don't csb emit multi-layer clear attachments without rta support",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "95820584d06e067766283ccb76c33a75c383a203",
         "notes": null
