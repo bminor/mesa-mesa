@@ -603,11 +603,9 @@ zink_start_batch(struct zink_context *ctx)
 
 /* common operations to run post submit; split out for clarity */
 static void
-post_submit(void *data, void *gdata, int thread_index)
+post_submit(struct zink_batch_state *bs, struct zink_screen *screen)
 {
    MESA_TRACE_FUNC();
-   struct zink_batch_state *bs = data;
-   struct zink_screen *screen = zink_screen(bs->ctx->base.screen);
 
    if (bs->is_device_lost) {
       if (bs->ctx->reset.reset)
@@ -822,6 +820,8 @@ submit_queue(void *data, void *gdata, int thread_index)
 end:
    cnd_broadcast(&bs->usage.flush);
 
+   post_submit(bs, screen);
+
    p_atomic_set(&bs->fence.submitted, true);
 
    simple_mtx_lock(&screen->active_batch_states_lock);
@@ -930,10 +930,9 @@ zink_end_batch(struct zink_context *ctx)
 
    if (screen->threaded_submit) {
       util_queue_add_job(&screen->flush_queue, bs, &bs->flush_completed,
-                         submit_queue, post_submit, 0);
+                         submit_queue, NULL, 0);
    } else {
       submit_queue(bs, NULL, 0);
-      post_submit(bs, NULL, 0);
    }
 
    if (!(ctx->flags & ZINK_CONTEXT_COPY_ONLY) && screen->renderdoc_capturing && !screen->renderdoc_capture_all &&
