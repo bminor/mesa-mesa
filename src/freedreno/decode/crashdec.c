@@ -236,9 +236,9 @@ statetype_id(const char *name)
 static uint32_t
 pipe_id(const char *name)
 {
-   if (!is_a7xx())
+   if (!name)
       return 0;
-   return enumval("a7xx_pipe", name);
+   return enumval("adreno_pipe", name);
 }
 
 static uint32_t
