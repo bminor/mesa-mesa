@@ -2698,7 +2698,7 @@ brw_nir_create_passthrough_tcs(void *mem_ctx, const struct brw_compiler *compile
    assert(key->input_vertices > 0);
 
    const nir_shader_compiler_options *options =
-      compiler->nir_options[MESA_SHADER_TESS_CTRL];
+      &compiler->nir_options[MESA_SHADER_TESS_CTRL];
 
    uint64_t inputs_read = key->outputs_written &
       ~(VARYING_BIT_TESS_LEVEL_INNER | VARYING_BIT_TESS_LEVEL_OUTER);

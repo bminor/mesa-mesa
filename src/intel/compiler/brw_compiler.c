@@ -164,7 +164,7 @@ brw_compiler_create(void *mem_ctx, const struct intel_device_info *devinfo)
    /* We want the GLSL compiler to emit code that uses condition codes */
    for (int i = 0; i < MESA_ALL_SHADER_STAGES; i++) {
       struct nir_shader_compiler_options *nir_options =
-         rzalloc(compiler, struct nir_shader_compiler_options);
+         &compiler->nir_options[i];
       *nir_options = brw_scalar_nir_options;
       int64_options |= nir_lower_usub_sat64;
 
@@ -201,8 +201,6 @@ brw_compiler_create(void *mem_ctx, const struct intel_device_info *devinfo)
       if (devinfo->ver < 12)
          nir_options->divergence_analysis_options |=
             nir_divergence_single_prim_per_subgroup;
-
-      compiler->nir_options[i] = nir_options;
    }
 
    /* Build a list of storage format compatible in component bit size &

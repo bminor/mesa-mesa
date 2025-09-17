@@ -377,7 +377,7 @@ iris_ensure_indirect_generation_shader(struct iris_batch *batch)
 #ifdef INTEL_USE_ELK
       screen->elk ? screen->elk->nir_options[MESA_SHADER_COMPUTE] :
 #endif
-      screen->brw->nir_options[MESA_SHADER_COMPUTE];
+      &screen->brw->nir_options[MESA_SHADER_COMPUTE];
 
    nir_builder b = nir_builder_init_simple_shader(MESA_SHADER_FRAGMENT,
                                                   nir_options,

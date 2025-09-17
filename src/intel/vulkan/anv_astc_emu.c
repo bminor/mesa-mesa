@@ -197,7 +197,7 @@ astc_emu_init_flush_denorm_pipeline_locked(struct anv_device *device)
 
    if (astc_emu->pipeline == VK_NULL_HANDLE) {
       const struct nir_shader_compiler_options *options =
-         device->physical->compiler->nir_options[MESA_SHADER_COMPUTE];
+         &device->physical->compiler->nir_options[MESA_SHADER_COMPUTE];
       nir_builder b = nir_builder_init_simple_shader(
             MESA_SHADER_COMPUTE, options, "astc_emu_flush_denorm");
       astc_emu_init_flush_denorm_shader(&b);

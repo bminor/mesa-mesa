@@ -147,7 +147,7 @@ anv_shader_get_nir_options(struct vk_physical_device *device,
       container_of(device, struct anv_physical_device, vk);
    const struct brw_compiler *compiler = pdevice->compiler;
 
-   return compiler->nir_options[stage];
+   return &compiler->nir_options[stage];
 }
 
 static struct spirv_to_nir_options
@@ -1563,7 +1563,7 @@ anv_shaders_post_lower_gfx(struct anv_device *device,
 
       struct shader_info *cur_info = &shader_data->info->nir->info;
 
-      if (prev_stage && compiler->nir_options[info->stage]->unify_interfaces) {
+      if (prev_stage && compiler->nir_options[info->stage].unify_interfaces) {
          struct shader_info *prev_info = &prev_stage->nir->info;
 
          prev_info->outputs_written |= cur_info->inputs_read &

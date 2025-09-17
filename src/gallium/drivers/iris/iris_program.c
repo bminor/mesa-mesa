@@ -4002,10 +4002,10 @@ iris_get_compiler_options(struct pipe_screen *pscreen,
    struct iris_screen *screen = (struct iris_screen *) pscreen;
 
 #ifdef INTEL_USE_ELK
-   return screen->brw ? screen->brw->nir_options[stage]
+   return screen->brw ? &screen->brw->nir_options[stage]
                       : screen->elk->nir_options[stage];
 #else
-   return screen->brw->nir_options[stage];
+   return &screen->brw->nir_options[stage];
 #endif
 }
 

@@ -35,6 +35,7 @@
 #include "util/u_printf.h"
 #include "brw_isa_info.h"
 #include "intel_shader_enums.h"
+#include "nir_shader_compiler_options.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,7 +47,6 @@ struct nir_def;
 struct nir_shader;
 struct shader_info;
 
-struct nir_shader_compiler_options;
 typedef struct nir_builder nir_builder;
 typedef struct nir_def nir_def;
 typedef struct nir_shader nir_shader;
@@ -82,7 +82,7 @@ struct brw_compiler {
    void (*shader_perf_log)(void *, unsigned *id, const char *str, ...) PRINTFLIKE(3, 4);
 
    bool use_tcs_multi_patch;
-   struct nir_shader_compiler_options *nir_options[MESA_ALL_SHADER_STAGES];
+   struct nir_shader_compiler_options nir_options[MESA_ALL_SHADER_STAGES];
 
    /**
     * Apply workarounds for SIN and COS output range problems.

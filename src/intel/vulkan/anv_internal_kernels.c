@@ -58,7 +58,7 @@ compile_shader(struct anv_device *device,
                uint32_t sends_count_expectation)
 {
    const nir_shader_compiler_options *nir_options =
-      device->physical->compiler->nir_options[stage];
+      &device->physical->compiler->nir_options[stage];
 
    nir_builder b = nir_builder_init_simple_shader(stage, nir_options,
                                                   "%s", name);
