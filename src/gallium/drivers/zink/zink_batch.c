@@ -79,11 +79,6 @@ reset_batch_state_internal(struct zink_screen *screen, struct zink_batch_state *
 
    memset(&bs->buffer_indices_hashlist, -1, sizeof(bs->buffer_indices_hashlist));
 
-   /* queries must only be destroyed once they are inactive */
-   set_foreach_remove(&bs->active_queries, entry) {
-      struct zink_query *query = (void*)entry->key;
-      zink_prune_query(bs, query);
-   }
    util_dynarray_foreach(&bs->dead_querypools, VkQueryPool, pool)
       VKSCR(DestroyQueryPool)(screen->dev, *pool, NULL);
    util_dynarray_clear(&bs->dead_querypools);
@@ -176,6 +171,12 @@ reset_batch_state_ctx(struct zink_context *ctx, struct zink_batch_state *bs)
          struct util_idalloc *ids = i ? &ctx->di.bindless[is_buffer].img_slots : &ctx->di.bindless[is_buffer].tex_slots;
          util_idalloc_free(ids, is_buffer ? handle - ZINK_MAX_BINDLESS_HANDLES : handle);
       }
+   }
+
+   /* queries must only be destroyed once they are inactive */
+   set_foreach_remove(&bs->active_queries, entry) {
+      struct zink_query *query = (void*)entry->key;
+      zink_prune_query(bs, query);
    }
 }
 
