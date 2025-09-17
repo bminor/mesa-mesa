@@ -292,7 +292,7 @@ struct lvp_image {
 
 struct lvp_image_view {
    struct vk_image_view vk;
-   const struct lvp_image *image; /**< VkImageViewCreateInfo::image */
+   struct lvp_image *image; /**< VkImageViewCreateInfo::image */
 
    enum pipe_format pformat;
 

@@ -1455,6 +1455,7 @@ destroy_multisample_surface(struct rendering_state *state, struct lvp_image_view
 {
    assert(imgv->image->vk.samples > 1);
    struct lvp_image_view *base = imgv->multisample;
+   pipe_resource_reference(&imgv->image->planes[0].bo, NULL);
    base->multisample = NULL;
    free((void*)imgv->image);
    free(imgv);
