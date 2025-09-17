@@ -150,8 +150,6 @@ struct brw_compiler {
     */
    int spilling_rate;
 
-   struct nir_shader *clc_shader;
-
    /**
     * A list of storage formats to lower from the matching return HW format.
     *
