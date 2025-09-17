@@ -4784,7 +4784,7 @@
         "description": "radv: make sure fp16 is enabled consistently on gfx8",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f0f4ae17136c9b90eb471bc7ea848196effa2b0b",
         "notes": null
