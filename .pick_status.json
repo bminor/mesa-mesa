@@ -704,7 +704,7 @@
         "description": "Revert \"pvr: treat VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT as not supported\"",
         "nominated": true,
         "nomination_type": 3,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "6619802446549fb03af70e5001e4eb04499b1eb7",
         "notes": null
