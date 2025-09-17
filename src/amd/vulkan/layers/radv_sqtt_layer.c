@@ -717,12 +717,17 @@ radv_sqtt_wsi_submit(VkQueue _queue, uint32_t submitCount, const VkSubmitInfo2 *
 
       radv_describe_queue_present(queue, cpu_timestamp, gpu_timestamp_ptr);
 
-      result = device->layer_dispatch.rgp.QueueSubmit2(_queue, 1, &sqtt_submit, _fence);
+      result = device->layer_dispatch.rgp.QueueSubmit2(_queue, 1, &sqtt_submit,
+                                                       i + 1 == submitCount ? _fence : VK_NULL_HANDLE);
+
       if (result != VK_SUCCESS)
          goto fail;
 
       FREE(new_cmdbufs);
    }
+
+   if (submitCount == 0 && _fence != VK_NULL_HANDLE)
+      result = device->layer_dispatch.rgp.QueueSubmit2(_queue, 0, NULL, _fence);
 
    return result;
 
