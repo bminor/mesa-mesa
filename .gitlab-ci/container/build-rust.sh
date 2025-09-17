@@ -24,13 +24,12 @@ curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
     --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- \
       --default-toolchain $RUST_VERSION \
       --profile minimal \
+      --component clippy,rustfmt \
       -y
 
 # Make rustup tools available in the PATH environment variable
 # shellcheck disable=SC1091
 . "$HOME/.cargo/env"
-
-rustup component add clippy rustfmt
 
 # Set up a config script for cross compiling -- cargo needs your system cc for
 # linking in cross builds, but doesn't know what you want to use for system cc.
