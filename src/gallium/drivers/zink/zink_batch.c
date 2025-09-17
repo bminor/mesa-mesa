@@ -447,6 +447,7 @@ find_completed_batch_state(struct zink_context *ctx)
             return i;
          }
          simple_mtx_lock(&screen->active_batch_states_lock);
+         i->ctx = NULL;
          zink_batch_state_append(&screen->active_batch_states, &screen->last_active_batch_state, i);
          simple_mtx_unlock(&screen->active_batch_states_lock);
          i = j;
@@ -541,6 +542,7 @@ zink_start_batch(struct zink_context *ctx)
    zink_reset_batch(ctx);
    struct zink_batch_state *bs = ctx->bs;
 
+   bs->ctx = ctx;
    bs->usage.unflushed = true;
 
    VkCommandBufferBeginInfo cbbi = {0};
