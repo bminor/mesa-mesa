@@ -116,6 +116,13 @@ CMFD3DManager::Shutdown( bool bReleaseDeviceManager )
       m_pWinsys->destroy( this->m_pWinsys );
       m_pWinsys = nullptr;
    }
+#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+   if(m_ContextPriorityMgr.base.register_work_queue)
+   {
+      mtx_destroy(&m_ContextPriorityMgr.m_lock);
+      m_ContextPriorityMgr.base.register_work_queue = nullptr;
+   }
+#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
 
    return hr;
 }
