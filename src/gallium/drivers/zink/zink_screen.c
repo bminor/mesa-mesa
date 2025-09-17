@@ -118,6 +118,7 @@ zink_debug_options[] = {
    { "nopc", ZINK_DEBUG_NOPC, "No precompilation" },
    { "msaaopt", ZINK_DEBUG_MSAAOPT, "Optimize out loads/stores of MSAA attachments" },
    { "rploads", ZINK_DEBUG_RPLOADS, "Zap renderpass loads for DONT_CARE" },
+   { "nogeneral", ZINK_DEBUG_NOGENERAL, "Disable GENERAL layout usage for supported hardware" },
    DEBUG_NAMED_VALUE_END
 };
 
@@ -3061,6 +3062,9 @@ init_driver_workarounds(struct zink_screen *screen)
       screen->driver_workarounds.general_layout = screen->info.have_KHR_unified_image_layouts;
       break;
    }
+
+   if (zink_debug & ZINK_DEBUG_NOGENERAL)
+      screen->driver_workarounds.general_layout = false;
 
    if (!screen->resizable_bar)
       screen->info.have_EXT_host_image_copy = false;

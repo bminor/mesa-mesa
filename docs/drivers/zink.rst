@@ -329,6 +329,8 @@ variable:
     Optimize out loads/stores of MSAA attachments (nonconformant)
   ``rploads``
     Zap renderpass loads for DONT_CARE
+  ``nogeneral``
+    Disable GENERAL layout usage for supported hardware
 
 Vulkan Validation Layers
 ^^^^^^^^^^^^^^^^^^^^^^^^
