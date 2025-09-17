@@ -8040,12 +8040,6 @@ brw_from_nir(brw_shader *s)
    if (ENABLE_TEST_DISPATCH_PACKING)
       brw_test_dispatch_packing(ntb.bld);
 
-   for (unsigned i = 0; i < s->nir->printf_info_count; i++) {
-      brw_stage_prog_data_add_printf(s->prog_data,
-                                     s->mem_ctx,
-                                     &s->nir->printf_info[i]);
-   }
-
    emit_shader_float_controls_execution_mode(ntb);
 
    /* emit the arrays used for inputs and outputs - load/store intrinsics will

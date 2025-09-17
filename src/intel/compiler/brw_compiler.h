@@ -32,7 +32,6 @@
 #include "util/enum_operators.h"
 #include "util/ralloc.h"
 #include "util/u_math.h"
-#include "util/u_printf.h"
 #include "brw_isa_info.h"
 #include "intel_shader_enums.h"
 #include "nir_shader_compiler_options.h"
@@ -684,10 +683,6 @@ struct brw_stage_prog_data {
 
    /* Whether shader uses atomic operations. */
    bool uses_atomic_load_store;
-
-   /* Printf descriptions contained by the shader */
-   uint32_t printf_info_count;
-   u_printf_info *printf_info;
 };
 
 /**
@@ -695,11 +690,6 @@ struct brw_stage_prog_data {
  * a number of GRF register blocks supported by the hardware on PTL+.
  */
 unsigned ptl_register_blocks(unsigned grf_used);
-
-void
-brw_stage_prog_data_add_printf(struct brw_stage_prog_data *prog_data,
-                               void *mem_ctx,
-                               const u_printf_info *print);
 
 enum brw_pixel_shader_computed_depth_mode {
    BRW_PSCDEPTH_OFF   = 0, /* PS does not compute depth */
