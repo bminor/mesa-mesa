@@ -1863,6 +1863,9 @@ si_nir_generate_gs_copy_shader(struct si_screen *sscreen,
             sscreen->info.has_ls_vgpr_init_bug, AC_HW_VERTEX_SHADER, 64, 64,
             &linked.consumer.args.ac);
 
+   NIR_PASS(_, nir, ac_nir_lower_global_access);
+   NIR_PASS(_, nir, nir_lower_int64);
+
    si_nir_opts(gs_selector->screen, nir, false);
 
    NIR_PASS(_, nir, nir_lower_load_const_to_scalar);
