@@ -3650,6 +3650,7 @@ for sz, mulz in itertools.product([16, 32, 64], [False, True]):
 
     fadd = 'fadd@{}(contract)'.format(sz)
     option = 'options->fuse_ffma{}'.format(sz)
+    option_with_abs = 'options->fuse_ffma{}  && !options->avoid_ternary_with_fabs'.format(sz)
 
     late_optimizations.extend([
         ((fadd, (fmul, a, b), c), (ffma, a, b, c), option),
@@ -3658,10 +3659,10 @@ for sz, mulz in itertools.product([16, 32, 64], [False, True]):
          (ffma, ('fneg', a), b, c), option),
 
         ((fadd, ('fabs(is_only_used_by_fadd)', (fmul, a, b)), c),
-         (ffma, ('fabs', a), ('fabs', b), c), option),
+         (ffma, ('fabs', a), ('fabs', b), c), option_with_abs),
 
         ((fadd, ('fneg(is_only_used_by_fadd)', ('fabs', (fmul, a, b))), c),
-         (ffma, ('fneg', ('fabs', a)), ('fabs', b), c), option),
+         (ffma, ('fneg', ('fabs', a)), ('fabs', b), c), option_with_abs),
     ])
 
 late_optimizations.extend([

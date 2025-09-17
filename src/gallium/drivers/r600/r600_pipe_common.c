@@ -1166,6 +1166,7 @@ bool r600_common_screen_init(struct r600_common_screen *rscreen,
 		.vectorize_tess_levels = 1,
 		.io_options = nir_io_mediump_is_32bit,
 		.vertex_id_zero_based = rscreen->info.gfx_level >= EVERGREEN,
+		.avoid_ternary_with_fabs = 1,
 	};
 
 	rscreen->nir_options = nir_options;

@@ -665,6 +665,11 @@ typedef struct nir_shader_compiler_options {
     */
    bool avoid_ternary_with_two_constants;
 
+   /* Avoid using fabs on sources to ternary operations
+    * r600 can't use source modifiers for these
+    */
+   bool avoid_ternary_with_fabs;
+
    /** Whether 8-bit ALU is supported. */
    bool support_8bit_alu;
 
