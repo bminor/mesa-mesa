@@ -20,6 +20,7 @@
 #include "drm-uapi/virtgpu_drm.h"
 #include "util/detect_os.h"
 #include "util/log.h"
+#include "util/os_misc.h"
 
 #ifdef MAJOR_IN_MKDEV
 #include <sys/mkdev.h>
@@ -242,6 +243,11 @@ int32_t DrmVirtGpuDevice::init(int32_t descriptor) {
     if (!mCaps.vulkanCapset.blobAlignment) {
         mCaps.vulkanCapset.blobAlignment = 4096;
     }
+
+    uint64_t guest_page_size = 4096;
+    os_get_page_size(&guest_page_size);
+    mCaps.vulkanCapset.blobAlignment =
+        std::max((uint32_t)guest_page_size, mCaps.vulkanCapset.blobAlignment);
 
     ctx_set_params[0].param = VIRTGPU_CONTEXT_PARAM_NUM_RINGS;
     ctx_set_params[0].value = 2;

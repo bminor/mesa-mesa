@@ -8,10 +8,13 @@
 #include <errno.h>
 
 #include "util/log.h"
+#include "util/os_misc.h"
 
 static bool GetRingParamsFromCapset(enum VirtGpuCapset capset, const VirtGpuCaps& caps,
                                     uint32_t& ringSize, uint32_t& bufferSize,
                                     uint32_t& blobAlignment) {
+    uint64_t guest_page_size = 4096;
+    os_get_page_size(&guest_page_size);
     switch (capset) {
         case kCapsetGfxStreamVulkan:
             ringSize = caps.vulkanCapset.ringSize;
@@ -37,6 +40,7 @@ static bool GetRingParamsFromCapset(enum VirtGpuCapset capset, const VirtGpuCaps
             return false;
     }
 
+    blobAlignment = std::max(blobAlignment, (uint32_t)guest_page_size);
     return true;
 }
 
