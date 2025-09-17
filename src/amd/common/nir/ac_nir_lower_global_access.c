@@ -8,18 +8,10 @@
 #include "nir.h"
 #include "nir_builder.h"
 
-static bool
+static inline bool
 is_u2u64(nir_scalar scalar)
 {
-   if (nir_scalar_is_alu(scalar) && nir_scalar_alu_op(scalar) == nir_op_u2u64)
-      return true;
-
-   if (nir_scalar_is_alu(scalar) && nir_scalar_alu_op(scalar) == nir_op_pack_64_2x32_split) {
-      nir_scalar src1 = nir_scalar_chase_alu_src(scalar, 1);
-      return nir_scalar_is_const(src1) && nir_scalar_as_uint(src1) == 0;
-   }
-
-   return false;
+   return nir_scalar_is_alu(scalar) && nir_scalar_alu_op(scalar) == nir_op_u2u64;
 }
 
 static nir_def *
