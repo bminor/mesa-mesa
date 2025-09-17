@@ -161,46 +161,48 @@ brw_compiler_create(void *mem_ctx, const struct intel_device_info *devinfo)
                         nir_lower_scan_reduce_iadd64 | nir_lower_subgroup_shuffle64 |
                         nir_lower_iadd_sat64 | nir_lower_uadd_sat64);
 
-   /* We want the GLSL compiler to emit code that uses condition codes */
+   struct nir_shader_compiler_options *nir_options = &compiler->nir_options[0];
+   *nir_options = brw_scalar_nir_options;
+   int64_options |= nir_lower_usub_sat64;
+
+   /* Gfx11 loses LRP. */
+   nir_options->lower_flrp32 = devinfo->ver >= 11;
+
+   nir_options->lower_fpow = devinfo->ver >= 12;
+
+   nir_options->has_rotate16 = devinfo->ver >= 11;
+   nir_options->has_rotate32 = devinfo->ver >= 11;
+   nir_options->has_iadd3 = devinfo->verx10 >= 125;
+
+   nir_options->has_sdot_4x8 = devinfo->ver >= 12;
+   nir_options->has_udot_4x8 = devinfo->ver >= 12;
+   nir_options->has_sudot_4x8 = devinfo->ver >= 12;
+   nir_options->has_sdot_4x8_sat = devinfo->ver >= 12;
+   nir_options->has_udot_4x8_sat = devinfo->ver >= 12;
+   nir_options->has_sudot_4x8_sat = devinfo->ver >= 12;
+
+   nir_options->lower_int64_options = int64_options;
+   nir_options->lower_doubles_options = fp64_options;
+
+   if (compiler->use_tcs_multi_patch) {
+      /* TCS MULTI_PATCH mode has multiple patches per subgroup */
+      nir_options->divergence_analysis_options &=
+         ~nir_divergence_single_patch_per_tcs_subgroup;
+   }
+
+   if (devinfo->ver < 12)
+      nir_options->divergence_analysis_options |=
+         nir_divergence_single_prim_per_subgroup;
+
    for (int i = 0; i < MESA_ALL_SHADER_STAGES; i++) {
-      struct nir_shader_compiler_options *nir_options =
+      struct nir_shader_compiler_options *stage_options =
          &compiler->nir_options[i];
-      *nir_options = brw_scalar_nir_options;
-      int64_options |= nir_lower_usub_sat64;
+      *stage_options = compiler->nir_options[0];
 
-      /* Gfx11 loses LRP. */
-      nir_options->lower_flrp32 = devinfo->ver >= 11;
+      stage_options->unify_interfaces = i < MESA_SHADER_FRAGMENT;
 
-      nir_options->lower_fpow = devinfo->ver >= 12;
-
-      nir_options->has_rotate16 = devinfo->ver >= 11;
-      nir_options->has_rotate32 = devinfo->ver >= 11;
-      nir_options->has_iadd3 = devinfo->verx10 >= 125;
-
-      nir_options->has_sdot_4x8 = devinfo->ver >= 12;
-      nir_options->has_udot_4x8 = devinfo->ver >= 12;
-      nir_options->has_sudot_4x8 = devinfo->ver >= 12;
-      nir_options->has_sdot_4x8_sat = devinfo->ver >= 12;
-      nir_options->has_udot_4x8_sat = devinfo->ver >= 12;
-      nir_options->has_sudot_4x8_sat = devinfo->ver >= 12;
-
-      nir_options->lower_int64_options = int64_options;
-      nir_options->lower_doubles_options = fp64_options;
-
-      nir_options->unify_interfaces = i < MESA_SHADER_FRAGMENT;
-
-      nir_options->force_indirect_unrolling |=
+      stage_options->force_indirect_unrolling |=
          brw_nir_no_indirect_mask(compiler, i);
-
-      if (compiler->use_tcs_multi_patch) {
-         /* TCS MULTI_PATCH mode has multiple patches per subgroup */
-         nir_options->divergence_analysis_options &=
-            ~nir_divergence_single_patch_per_tcs_subgroup;
-      }
-
-      if (devinfo->ver < 12)
-         nir_options->divergence_analysis_options |=
-            nir_divergence_single_prim_per_subgroup;
    }
 
    /* Build a list of storage format compatible in component bit size &
