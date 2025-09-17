@@ -67,6 +67,7 @@
 #include "vk_render_pass.h"
 #include "vk_util.h"
 #include "vulkan/runtime/vk_pipeline.h"
+#include "vulkan/vulkan_core.h"
 
 /*****************************************************************************
    PDS functions
@@ -951,12 +952,14 @@ pvr_preprocess_shader_data(pco_data *data,
                            nir_shader *nir,
                            const void *pCreateInfo,
                            struct vk_pipeline_layout *layout,
-                           const struct vk_graphics_pipeline_state *state);
+                           const struct vk_graphics_pipeline_state *state,
+                           struct usc_mrt_setup *mrt_setup);
 
 static void pvr_postprocess_shader_data(pco_data *data,
                                         nir_shader *nir,
                                         const void *pCreateInfo,
-                                        struct vk_pipeline_layout *layout);
+                                        struct vk_pipeline_layout *layout,
+                                        struct usc_mrt_setup *setup);
 
 /******************************************************************************
    Compute pipeline functions
@@ -1005,10 +1008,10 @@ static VkResult pvr_compute_pipeline_compile(
 
    pvr_early_init_shader_data(&shader_data, nir, pCreateInfo);
    pco_preprocess_nir(pco_ctx, nir);
-   pvr_preprocess_shader_data(&shader_data, nir, pCreateInfo, layout, NULL);
+   pvr_preprocess_shader_data(&shader_data, nir, pCreateInfo, layout, NULL, NULL);
    pco_lower_nir(pco_ctx, nir, &shader_data);
    pco_postprocess_nir(pco_ctx, nir, &shader_data);
-   pvr_postprocess_shader_data(&shader_data, nir, pCreateInfo, layout);
+   pvr_postprocess_shader_data(&shader_data, nir, pCreateInfo, layout, NULL);
 
    cs = pco_trans_nir(pco_ctx, nir, &shader_data, shader_mem_ctx);
    if (!cs) {
@@ -1955,6 +1958,37 @@ pvr_init_fs_outputs(pco_data *data,
 }
 
 static void
+pvr_init_fs_outputs_mrt(pco_data *data,
+                        const struct vk_render_pass_state *rp,
+                        const struct usc_mrt_setup *setup)
+{
+   unsigned u;
+   pco_fs_data *fs = &data->fs;
+
+   for (u = 0; u < PVR_MAX_COLOR_ATTACHMENTS; u++) {
+      if (!(rp->attachments & MESA_VK_RP_ATTACHMENT_COLOR_BIT(u)))
+         continue;
+
+      const struct usc_mrt_resource *mrt_resource = &setup->mrt_resources[u];
+      bool tile_buffer;
+
+      gl_frag_result location = FRAG_RESULT_DATA0 + u;
+      VkFormat vk_format = rp->color_attachment_formats[u];
+      fs->output_formats[location] = vk_format_to_pipe_format(vk_format);
+
+      tile_buffer = mrt_resource->type != USC_MRT_RESOURCE_TYPE_OUTPUT_REG;
+
+      if (tile_buffer) {
+         fs->num_tile_buffers =
+            MAX2(fs->num_tile_buffers, mrt_resource->mem.tile_buffer + 1);
+         fs->output_tile_buffers |= BITFIELD_BIT(u);
+      }
+   }
+
+   fs->z_replicate = ~0u;
+}
+
+static void
 pvr_setup_fs_outputs(pco_data *data,
                      nir_shader *nir,
                      const struct pvr_render_subpass *const subpass,
@@ -2019,6 +2053,42 @@ pvr_setup_fs_outputs(pco_data *data,
    assert(!outputs_written);
 }
 
+static void
+pvr_setup_fs_outputs_mrt(pco_data *data,
+                         nir_shader *nir,
+                         const struct usc_mrt_setup *setup)
+{
+   uint64_t outputs_written = nir->info.outputs_written;
+   pco_fs_data *fs = &data->fs;
+
+   unsigned u;
+   for (u = 0; u < setup->num_render_targets; u++) {
+      gl_frag_result location = FRAG_RESULT_DATA0 + u;
+      const struct usc_mrt_resource *mrt_resource = &setup->mrt_resources[u];
+      bool tile_buffer;
+      nir_variable *var;
+
+      var = nir_find_variable_with_location(nir, nir_var_shader_out, location);
+      if (!var)
+         continue;
+
+      tile_buffer = fs->output_tile_buffers & BITFIELD_BIT(u);
+
+      set_var(fs->outputs,
+              tile_buffer ? mrt_resource->mem.tile_buffer
+                          : mrt_resource->reg.output_reg,
+              var,
+              DIV_ROUND_UP(mrt_resource->intermediate_size, sizeof(uint32_t)));
+
+      if (tile_buffer)
+         fs->outputs[location].offset = mrt_resource->mem.offset_dw;
+
+      outputs_written &= ~BITFIELD64_BIT(location);
+   }
+
+   assert(!outputs_written);
+}
+
 static void pvr_init_fs_input_attachments(
    pco_data *data,
    const struct pvr_render_pass *pass,
@@ -2052,6 +2122,32 @@ static void pvr_init_fs_input_attachments(
       const struct usc_mrt_resource *mrt_resource =
          &hw_subpass->setup.mrt_resources[mrt_idx];
 
+      bool tile_buffer = mrt_resource->type != USC_MRT_RESOURCE_TYPE_OUTPUT_REG;
+
+      if (tile_buffer) {
+         fs->num_tile_buffers =
+            MAX2(fs->num_tile_buffers, mrt_resource->mem.tile_buffer + 1);
+         fs->ia_tile_buffers |= BITFIELD_BIT(u);
+      }
+   }
+}
+
+static void pvr_init_fs_input_attachments_mrt(
+   pco_data *data,
+   const struct vk_render_pass_state *rp,
+   const struct usc_mrt_setup *setup)
+{
+   pco_fs_data *fs = &data->fs;
+   for (unsigned u = 0; u < rp->color_attachment_count; u++) {
+      VkFormat vk_format = rp->color_attachment_formats[u];
+      bool has_stencil = vk_format_has_stencil(vk_format);
+
+      fs->ia_formats[u] = vk_format_to_pipe_format(vk_format);
+      assert(fs->ia_formats[u] != PIPE_FORMAT_NONE);
+      if (has_stencil)
+         fs->ia_has_stencil |= BITFIELD_BIT(u);
+
+      const struct usc_mrt_resource *mrt_resource = &setup->mrt_resources[u];
       bool tile_buffer = mrt_resource->type != USC_MRT_RESOURCE_TYPE_OUTPUT_REG;
 
       if (tile_buffer) {
@@ -2127,6 +2223,29 @@ static void pvr_setup_fs_input_attachments(
       unsigned mrt_idx = hw_subpass->input_access[u].on_chip_rt;
       const struct usc_mrt_resource *mrt_resource =
          &hw_subpass->setup.mrt_resources[mrt_idx];
+
+      bool tile_buffer = fs->ia_tile_buffers & BITFIELD_BIT(u);
+
+      fs->ias_onchip[u] = (pco_range){
+         .start = tile_buffer ? mrt_resource->mem.tile_buffer
+                              : mrt_resource->reg.output_reg,
+         .count =
+            DIV_ROUND_UP(mrt_resource->intermediate_size, sizeof(uint32_t)),
+      };
+
+      if (tile_buffer)
+         fs->ias_onchip[u].offset = mrt_resource->mem.offset_dw;
+   }
+}
+
+static void pvr_setup_fs_input_attachments_mrt(
+   pco_data *data,
+   nir_shader *nir,
+   struct usc_mrt_setup *setup)
+{
+   pco_fs_data *fs = &data->fs;
+   for (unsigned u = 0; u < setup->num_render_targets; ++u) {
+      const struct usc_mrt_resource *mrt_resource = &setup->mrt_resources[u];
 
       bool tile_buffer = fs->ia_tile_buffers & BITFIELD_BIT(u);
 
@@ -2466,7 +2585,8 @@ pvr_preprocess_shader_data(pco_data *data,
                            nir_shader *nir,
                            const void *pCreateInfo,
                            struct vk_pipeline_layout *layout,
-                           const struct vk_graphics_pipeline_state *state)
+                           const struct vk_graphics_pipeline_state *state,
+                           struct usc_mrt_setup *mrt_setup)
 {
    const VkGraphicsPipelineCreateInfo *pGraphicsCreateInfo = pCreateInfo;
 
@@ -2480,17 +2600,23 @@ pvr_preprocess_shader_data(pco_data *data,
    }
 
    case MESA_SHADER_FRAGMENT: {
-      VK_FROM_HANDLE(pvr_render_pass, pass, pGraphicsCreateInfo->renderPass);
-      const struct pvr_render_subpass *const subpass =
-         &pass->subpasses[pGraphicsCreateInfo->subpass];
-      const struct pvr_renderpass_hw_map *subpass_map =
-         &pass->hw_setup->subpass_map[pGraphicsCreateInfo->subpass];
-      const struct pvr_renderpass_hwsetup_subpass *hw_subpass =
-         &pass->hw_setup->renders[subpass_map->render]
-             .subpasses[subpass_map->subpass];
+      if (pGraphicsCreateInfo->renderPass) {
+         VK_FROM_HANDLE(pvr_render_pass, pass, pGraphicsCreateInfo->renderPass);
+         const struct pvr_render_subpass *const subpass =
+            &pass->subpasses[pGraphicsCreateInfo->subpass];
+         const struct pvr_renderpass_hw_map *subpass_map =
+            &pass->hw_setup->subpass_map[pGraphicsCreateInfo->subpass];
+         const struct pvr_renderpass_hwsetup_subpass *hw_subpass =
+            &pass->hw_setup->renders[subpass_map->render]
+                .subpasses[subpass_map->subpass];
 
-      pvr_init_fs_outputs(data, pass, subpass, hw_subpass);
-      pvr_init_fs_input_attachments(data, pass, subpass, hw_subpass);
+         pvr_init_fs_outputs(data, pass, subpass, hw_subpass);
+         pvr_init_fs_input_attachments(data, pass, subpass, hw_subpass);
+      } else {
+         pvr_init_fs_outputs_mrt(data, state->rp, mrt_setup);
+         pvr_init_fs_input_attachments_mrt(data, state->rp, mrt_setup);
+      }
+
       pvr_init_fs_blend(data, state->cb);
       pvr_init_fs_tile_buffers(data);
 
@@ -2522,7 +2648,8 @@ pvr_preprocess_shader_data(pco_data *data,
 static void pvr_postprocess_shader_data(pco_data *data,
                                         nir_shader *nir,
                                         const void *pCreateInfo,
-                                        struct vk_pipeline_layout *layout)
+                                        struct vk_pipeline_layout *layout,
+                                        struct usc_mrt_setup *mrt_setup)
 {
    const VkGraphicsPipelineCreateInfo *pGraphicsCreateInfo = pCreateInfo;
 
@@ -2535,19 +2662,25 @@ static void pvr_postprocess_shader_data(pco_data *data,
    }
 
    case MESA_SHADER_FRAGMENT: {
-      VK_FROM_HANDLE(pvr_render_pass, pass, pGraphicsCreateInfo->renderPass);
-      const struct pvr_render_subpass *const subpass =
-         &pass->subpasses[pGraphicsCreateInfo->subpass];
-      const struct pvr_renderpass_hw_map *subpass_map =
-         &pass->hw_setup->subpass_map[pGraphicsCreateInfo->subpass];
-      const struct pvr_renderpass_hwsetup_subpass *hw_subpass =
-         &pass->hw_setup->renders[subpass_map->render]
-             .subpasses[subpass_map->subpass];
-
       pvr_alloc_fs_sysvals(data, nir);
       pvr_alloc_fs_varyings(data, nir);
-      pvr_setup_fs_outputs(data, nir, subpass, hw_subpass);
-      pvr_setup_fs_input_attachments(data, nir, subpass, hw_subpass);
+
+      if (pGraphicsCreateInfo->renderPass) {
+         VK_FROM_HANDLE(pvr_render_pass, pass, pGraphicsCreateInfo->renderPass);
+         const struct pvr_render_subpass *const subpass =
+            &pass->subpasses[pGraphicsCreateInfo->subpass];
+         const struct pvr_renderpass_hw_map *subpass_map =
+            &pass->hw_setup->subpass_map[pGraphicsCreateInfo->subpass];
+         const struct pvr_renderpass_hwsetup_subpass *hw_subpass =
+            &pass->hw_setup->renders[subpass_map->render]
+                .subpasses[subpass_map->subpass];
+         pvr_setup_fs_outputs(data, nir, subpass, hw_subpass);
+         pvr_setup_fs_input_attachments(data, nir, subpass, hw_subpass);
+      } else {
+         pvr_setup_fs_outputs_mrt(data, nir, mrt_setup);
+         pvr_setup_fs_input_attachments_mrt(data, nir, mrt_setup);
+      }
+
       pvr_setup_fs_blend(data);
       pvr_setup_fs_tile_buffers(data);
       pvr_setup_fs_sample_locations(data);
@@ -2581,7 +2714,21 @@ static void pvr_early_init_shader_data(pco_data *data,
    case MESA_SHADER_VERTEX:
    case MESA_SHADER_FRAGMENT: {
       VK_FROM_HANDLE(pvr_render_pass, pass, pGraphicsCreateInfo->renderPass);
-      data->common.multiview = pass->multiview_enabled;
+      if (pass) {
+         data->common.multiview = pass->multiview_enabled;
+      } else {
+         const VkPipelineRenderingCreateInfo *ri =
+            vk_find_struct_const(pGraphicsCreateInfo->pNext,
+                                 PIPELINE_RENDERING_CREATE_INFO);
+         data->common.multiview = !!ri->viewMask;
+      }
+
+      nir_foreach_variable_with_modes (var, nir, nir_var_system_value) {
+         if (var->data.location == SYSTEM_VALUE_VIEW_INDEX) {
+            data->common.multiview = true;
+            break;
+         }
+      }
 
       break;
    }
@@ -2612,6 +2759,19 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
       &gfx_pipeline->shader_state.vertex;
    struct pvr_fragment_shader_state *fragment_state =
       &gfx_pipeline->shader_state.fragment;
+
+   struct usc_mrt_setup mrt_setup = { 0 };
+
+   if (!pCreateInfo->renderPass) {
+      const struct vk_render_pass_state *rp = state->rp;
+
+      result = pvr_init_usc_mrt_setup(device,
+                                     rp->color_attachment_count,
+                                     rp->color_attachment_formats,
+                                     &mrt_setup);
+      if (result != VK_SUCCESS)
+         return result;
+   }
 
    pco_ctx *pco_ctx = device->pdevice->pco_ctx;
 
@@ -2685,7 +2845,8 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
                                  nir_shaders[stage],
                                  pCreateInfo,
                                  layout,
-                                 state);
+                                 state,
+                                 &mrt_setup);
 
       pco_lower_nir(pco_ctx, nir_shaders[stage], &shader_data[stage]);
 
@@ -2694,8 +2855,12 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
       pvr_postprocess_shader_data(&shader_data[stage],
                                   nir_shaders[stage],
                                   pCreateInfo,
-                                  layout);
+                                  layout,
+                                  &mrt_setup);
    }
+
+   if (!pCreateInfo->renderPass)
+      pvr_destroy_mrt_setup(device, &mrt_setup);
 
    for (mesa_shader_stage stage = 0; stage < MESA_SHADER_STAGES; ++stage) {
       pco_shader **pco = &pco_shaders[stage];
@@ -2834,16 +2999,67 @@ err_free_vertex_bo:
    pvr_bo_suballoc_free(vertex_state->shader_bo);
 err_free_build_context:
    ralloc_free(shader_mem_ctx);
+   if (!pCreateInfo->renderPass)
+      pvr_destroy_mrt_setup(device, &mrt_setup);
    return result;
 }
 
-static struct vk_render_pass_state
-pvr_create_renderpass_state(const VkGraphicsPipelineCreateInfo *const info)
+static void
+pvr_rendering_info_setup(const VkGraphicsPipelineCreateInfo *const info,
+                         struct vk_render_pass_state *rp)
 {
+   const VkPipelineRenderingCreateInfo *ri =
+      vk_find_struct_const(info->pNext,
+                           PIPELINE_RENDERING_CREATE_INFO);
+
+   if (!ri) {
+      /* From the Vulkan spec for VkPipelineRenderingCreateInfo:
+       *
+       *    "if this structure is not specified, and the pipeline does not include
+       *     a VkRenderPass, viewMask and colorAttachmentCount are 0, and
+       *     depthAttachmentFormat and stencilAttachmentFormat are
+       *     VK_FORMAT_UNDEFINED.
+       */
+      *rp = (struct vk_render_pass_state){
+         .view_mask = 0,
+         .attachments = 0,
+         .color_attachment_count = 0,
+         .depth_attachment_format = VK_FORMAT_UNDEFINED,
+         .stencil_attachment_format = VK_FORMAT_UNDEFINED,
+      };
+
+      return;
+   }
+
+   rp->view_mask = ri->viewMask;
+   rp->attachments = 0;
+
+   rp->color_attachment_count = ri->colorAttachmentCount;
+   for (int i = 0; i < ri->colorAttachmentCount; i++) {
+      rp->color_attachment_formats[i] = ri->pColorAttachmentFormats[i];
+      if (rp->color_attachment_formats[i] != VK_FORMAT_UNDEFINED)
+         rp->attachments |= MESA_VK_RP_ATTACHMENT_COLOR_BIT(i);
+   }
+
+   rp->depth_attachment_format = ri->depthAttachmentFormat;
+   if (ri->depthAttachmentFormat != VK_FORMAT_UNDEFINED)
+      rp->attachments |= MESA_VK_RP_ATTACHMENT_DEPTH_BIT;
+
+   rp->stencil_attachment_format = ri->stencilAttachmentFormat;
+   if (ri->stencilAttachmentFormat != VK_FORMAT_UNDEFINED)
+      rp->attachments |= MESA_VK_RP_ATTACHMENT_STENCIL_BIT;
+}
+
+static void
+pvr_create_renderpass_state(const VkGraphicsPipelineCreateInfo *const info,
+                            struct vk_render_pass_state *rp)
+{
+   if (!info->renderPass)
+      return pvr_rendering_info_setup(info, rp);
+
    VK_FROM_HANDLE(pvr_render_pass, pass, info->renderPass);
    const struct pvr_render_subpass *const subpass =
       &pass->subpasses[info->subpass];
-
    enum vk_rp_attachment_flags attachments = 0;
 
    assert(info->subpass < pass->subpass_count);
@@ -2865,7 +3081,7 @@ pvr_create_renderpass_state(const VkGraphicsPipelineCreateInfo *const info)
          attachments |= MESA_VK_RP_ATTACHMENT_STENCIL_BIT;
    }
 
-   return (struct vk_render_pass_state){
+   *rp = (struct vk_render_pass_state){
       .attachments = attachments,
       .view_mask = subpass->view_mask,
    };
@@ -2880,13 +3096,12 @@ pvr_graphics_pipeline_init(struct pvr_device *device,
 {
    struct vk_dynamic_graphics_state *const dynamic_state =
       &gfx_pipeline->dynamic_state;
-   const struct vk_render_pass_state rp_state =
-      pvr_create_renderpass_state(pCreateInfo);
-
    struct vk_graphics_pipeline_all_state all_state;
    struct vk_graphics_pipeline_state state = { 0 };
-
+   struct vk_render_pass_state rp_state;
    VkResult result;
+
+   pvr_create_renderpass_state(pCreateInfo, &rp_state);
 
    pvr_pipeline_init(device,
                      PVR_PIPELINE_TYPE_GRAPHICS,
