@@ -56,7 +56,7 @@ VkResult pvr_wsi_init(struct pvr_physical_device *pdevice)
    if (result != VK_SUCCESS)
       return result;
 
-   pdevice->wsi_device.supports_modifiers = true;
+   pdevice->wsi_device.supports_modifiers = false;
    pdevice->vk.wsi_device = &pdevice->wsi_device;
 
    return VK_SUCCESS;
