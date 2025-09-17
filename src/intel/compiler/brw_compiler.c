@@ -125,7 +125,8 @@ brw_compiler_create(void *mem_ctx, const struct intel_device_info *devinfo)
       nir_lower_bit_count64 |
       nir_lower_iadd3_64 |
       nir_lower_bitfield_extract64 |
-      nir_lower_bitfield_reverse64;
+      nir_lower_bitfield_reverse64 |
+      nir_lower_usub_sat64;
    nir_lower_doubles_options fp64_options =
       nir_lower_drcp |
       nir_lower_dsqrt |
@@ -163,7 +164,6 @@ brw_compiler_create(void *mem_ctx, const struct intel_device_info *devinfo)
 
    struct nir_shader_compiler_options *nir_options = &compiler->nir_options[0];
    *nir_options = brw_scalar_nir_options;
-   int64_options |= nir_lower_usub_sat64;
 
    /* Gfx11 loses LRP. */
    nir_options->lower_flrp32 = devinfo->ver >= 11;
