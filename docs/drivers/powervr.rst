@@ -13,10 +13,24 @@ The following hardware is currently in active development:
 ========= =========== ============== ======= ==========
 Product   Series      B.V.N.C        Vulkan  Conformant
 ========= =========== ============== ======= ==========
-GX6250    Series 6XT  4.40.2.51      1.0     No
 AXE-1-16M A-Series    33.15.11.3     1.0     No
 BXS-4-64  B-Series    36.53.104.796  1.0     No
 ========= =========== ============== ======= ==========
+
+The following hardware is partially supported and not currently
+under active development:
+
+========= =========== ============== ======= ========== ==========
+Product   Series      B.V.N.C        Vulkan  Conformant Notes
+========= =========== ============== ======= ========== ==========
+GX6250    Series 6XT  4.40.2.51      1.0     No         [#GX6250]_
+========= =========== ============== ======= ========== ==========
+
+.. [#GX6250]
+   Various core-specific texture, compute, and other workarounds are
+   currently unimplemented for this device. Some very simple Vulkan applications
+   may run unhindered, but instability and corruption are to be expected until
+   the aforementioned workarounds are in place.
 
 In some cases, a product name is shared across multiple BVNCs so to check for
 support make sure the BVNC matches the one listed. As the feature set and
