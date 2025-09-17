@@ -1279,7 +1279,7 @@ zink_descriptors_update_masked(struct zink_context *ctx, enum zink_pipeline_idx 
                                  /* same set indexing as above */
                                  pg->layout, type + 1, 1, &desc_sets[type],
                                  0, NULL);
-         bs->dd.sets[is_compute][type + 1] = desc_sets[type];
+         bs->dd.sets[pidx][type + 1] = desc_sets[type];
       }
    }
    /* these are the unchanged sets being rebound across pipeline changes when compat_id changes but the set is the same
@@ -1289,11 +1289,11 @@ zink_descriptors_update_masked(struct zink_context *ctx, enum zink_pipeline_idx 
       if (!pg->dd.pool_key[type])
          continue;
       /* same set indexing as above */
-      assert(bs->dd.sets[is_compute][type + 1]);
+      assert(bs->dd.sets[pidx][type + 1]);
       VKSCR(CmdBindDescriptorSets)(bs->cmdbuf,
                               is_compute ? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_GRAPHICS,
                               /* same set indexing as above */
-                              pg->layout, type + 1, 1, &bs->dd.sets[is_compute][type + 1],
+                              pg->layout, type + 1, 1, &bs->dd.sets[pidx][type + 1],
                               0, NULL);
    }
 }
@@ -1703,6 +1703,7 @@ zink_descriptors_init(struct zink_context *ctx)
          VKSCR(GetDescriptorSetLayoutSizeEXT)(screen->dev, ctx->dd.push_dsl[i]->layout, &val);
          ctx->dd.db_size[i] = align64(val, screen->info.db_props.descriptorBufferOffsetAlignment);
       }
+      ctx->dd.db_size[ZINK_PIPELINE_MESH] = ctx->dd.db_size[ZINK_PIPELINE_GFX];
       for (unsigned i = 0; i < ZINK_GFX_SHADER_COUNT; i++) {
          VKSCR(GetDescriptorSetLayoutBindingOffsetEXT)(screen->dev, ctx->dd.push_dsl[0]->layout, i, &val);
          ctx->dd.db_offset[i] = val;
