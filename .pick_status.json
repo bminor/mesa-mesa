@@ -2134,7 +2134,7 @@
         "description": "pvr: correctly return core count for pvrsrvkm",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "76ee1671f6d8b99619abdba10fc328ea7f085bf3",
         "notes": null
