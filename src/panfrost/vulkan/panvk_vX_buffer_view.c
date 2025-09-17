@@ -70,11 +70,14 @@ panvk_per_arch(CreateBufferView)(VkDevice _device,
       if (!panvk_priv_mem_check_alloc(view->mem))
          return panvk_error(device, VK_ERROR_OUT_OF_DEVICE_MEMORY);
 
-      struct pan_ptr ptr = {
-         .gpu = panvk_priv_mem_dev_addr(view->mem),
-         .cpu = panvk_priv_mem_host_addr(view->mem),
-      };
-      GENX(pan_buffer_texture_emit)(&bview, &view->descs.tex, &ptr);
+      panvk_priv_mem_write(view->mem, 0, struct mali_surface_with_stride_packed, sd) {
+         struct pan_ptr ptr = {
+            .gpu = panvk_priv_mem_dev_addr(view->mem),
+            .cpu = sd,
+         };
+
+         GENX(pan_buffer_texture_emit)(&bview, &view->descs.tex, &ptr);
+      }
 #endif
    }
 

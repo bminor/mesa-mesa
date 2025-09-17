@@ -70,7 +70,8 @@ static void
 panvk_device_init_mempools(struct panvk_device *dev)
 {
    struct panvk_pool_properties rw_pool_props = {
-      .create_flags = 0,
+      .create_flags =
+         panvk_device_adjust_bo_flags(dev, PAN_KMOD_BO_FLAG_WB_MMAP),
       .slab_size = 16 * 1024,
       .label = "Device RW cached memory pool",
       .owns_bos = false,
@@ -93,7 +94,8 @@ panvk_device_init_mempools(struct panvk_device *dev)
    panvk_pool_init(&dev->mempools.rw_nc, dev, NULL, NULL, &rw_nc_pool_props);
 
    struct panvk_pool_properties exec_pool_props = {
-      .create_flags = PAN_KMOD_BO_FLAG_EXECUTABLE,
+      .create_flags = panvk_device_adjust_bo_flags(
+         dev, PAN_KMOD_BO_FLAG_EXECUTABLE | PAN_KMOD_BO_FLAG_WB_MMAP),
       .slab_size = 16 * 1024,
       .label = "Device executable memory pool (shaders)",
       .owns_bos = false,

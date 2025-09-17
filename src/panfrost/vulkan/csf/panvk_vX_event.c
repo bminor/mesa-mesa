@@ -34,8 +34,10 @@ panvk_per_arch(CreateEvent)(VkDevice _device,
       return panvk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
    }
 
-   memset(panvk_priv_mem_host_addr(event->syncobjs), 0,
-          sizeof(struct panvk_cs_sync32) * PANVK_SUBQUEUE_COUNT);
+   panvk_priv_mem_write_array(event->syncobjs, 0, struct panvk_cs_sync32,
+                              PANVK_SUBQUEUE_COUNT, sobjs) {
+      memset(sobjs, 0, sizeof(struct panvk_cs_sync32) * PANVK_SUBQUEUE_COUNT);
+   }
 
    *pEvent = panvk_event_to_handle(event);
    return VK_SUCCESS;
@@ -61,11 +63,12 @@ panvk_per_arch(GetEventStatus)(VkDevice _device, VkEvent _event)
 {
    VK_FROM_HANDLE(panvk_event, event, _event);
 
-   struct panvk_cs_sync32 *syncobjs = panvk_priv_mem_host_addr(event->syncobjs);
-
-   for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
-      if (!syncobjs[i].seqno)
-         return VK_EVENT_RESET;
+   panvk_priv_mem_readback_array(event->syncobjs, 0, struct panvk_cs_sync32,
+                                 PANVK_SUBQUEUE_COUNT, syncobjs) {
+      for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
+         if (!syncobjs[i].seqno)
+            return VK_EVENT_RESET;
+      }
    }
 
    return VK_EVENT_SET;
@@ -76,10 +79,11 @@ panvk_per_arch(SetEvent)(VkDevice _device, VkEvent _event)
 {
    VK_FROM_HANDLE(panvk_event, event, _event);
 
-   struct panvk_cs_sync32 *syncobjs = panvk_priv_mem_host_addr(event->syncobjs);
-
-   for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++)
-      syncobjs[i].seqno = 1;
+   panvk_priv_mem_write_array(event->syncobjs, 0, struct panvk_cs_sync32,
+                              PANVK_SUBQUEUE_COUNT, syncobjs) {
+      for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++)
+         syncobjs[i].seqno = 1;
+   }
 
    return VK_SUCCESS;
 }
@@ -89,8 +93,10 @@ panvk_per_arch(ResetEvent)(VkDevice _device, VkEvent _event)
 {
    VK_FROM_HANDLE(panvk_event, event, _event);
 
-   struct panvk_cs_sync32 *syncobjs = panvk_priv_mem_host_addr(event->syncobjs);
+   panvk_priv_mem_write_array(event->syncobjs, 0, struct panvk_cs_sync32,
+                              PANVK_SUBQUEUE_COUNT, syncobjs) {
+      memset(syncobjs, 0, sizeof(*syncobjs) * PANVK_SUBQUEUE_COUNT);
+   }
 
-   memset(syncobjs, 0, sizeof(*syncobjs) * PANVK_SUBQUEUE_COUNT);
    return VK_SUCCESS;
 }

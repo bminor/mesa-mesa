@@ -173,8 +173,7 @@ get_preload_shader(struct panvk_device *dev,
       return panvk_error(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY);
    }
 
-   pan_cast_and_pack(panvk_priv_mem_host_addr(shader->spd), SHADER_PROGRAM,
-                     cfg) {
+   panvk_priv_mem_write_desc(shader->spd, 0, SHADER_PROGRAM, cfg) {
       cfg.stage = MALI_SHADER_STAGE_FRAGMENT;
       cfg.fragment_coverage_bitmask_type = MALI_COVERAGE_BITMASK_TYPE_GL;
       cfg.register_allocation = MALI_SHADER_REGISTER_ALLOCATION_32_PER_THREAD;

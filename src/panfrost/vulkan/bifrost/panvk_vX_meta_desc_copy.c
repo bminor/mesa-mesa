@@ -326,8 +326,7 @@ panvk_meta_desc_copy_rsd(struct panvk_device *dev)
       return 0;
    }
 
-   pan_cast_and_pack(panvk_priv_mem_host_addr(shader->rsd), RENDERER_STATE,
-                     cfg) {
+   panvk_priv_mem_write_desc(shader->rsd, 0, RENDERER_STATE, cfg) {
       pan_shader_prepare_rsd(&shader->info,
                              panvk_priv_mem_dev_addr(shader->code_mem), &cfg);
    }

@@ -168,11 +168,11 @@ init_render_desc_ringbuf(struct panvk_gpu_queue *queue)
       return panvk_errorf(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY,
                           "Failed to create the render desc ringbuf context");
 
-   struct panvk_cs_sync32 *syncobj = panvk_priv_mem_host_addr(ringbuf->syncobj);
-
-   *syncobj = (struct panvk_cs_sync32){
-      .seqno = RENDER_DESC_RINGBUF_SIZE,
-   };
+   panvk_priv_mem_write(ringbuf->syncobj, 0, struct panvk_cs_sync32, syncobj) {
+      *syncobj = (struct panvk_cs_sync32){
+         .seqno = RENDER_DESC_RINGBUF_SIZE,
+      };
+   }
 
    return VK_SUCCESS;
 }
@@ -350,7 +350,6 @@ init_subqueue(struct panvk_gpu_queue *queue, enum panvk_subqueue_id subqueue)
    struct panvk_subqueue *subq = &queue->subqueues[subqueue];
    const struct panvk_physical_device *phys_dev =
       to_panvk_physical_device(queue->vk.base.device->physical);
-   struct panvk_cs_sync64 *syncobjs = panvk_priv_mem_host_addr(queue->syncobjs);
 
    VkResult result = init_subqueue_tracing(queue, subqueue);
    if (result != VK_SUCCESS)
@@ -401,6 +400,8 @@ init_subqueue(struct panvk_gpu_queue *queue, enum panvk_subqueue_id subqueue)
    assert(cs_is_valid(&b));
    subq->req_resource.cs_buffer_size = cs_root_chunk_size(&b);
    subq->req_resource.cs_buffer_addr = cs_root_chunk_gpu_addr(&b);
+   panvk_priv_mem_flush(subq->req_resource.buf, 0,
+                        subq->req_resource.cs_buffer_size);
 
    alloc_info.size = sizeof(struct panvk_cs_subqueue_context);
    alloc_info.alignment = 64;
@@ -410,25 +411,43 @@ init_subqueue(struct panvk_gpu_queue *queue, enum panvk_subqueue_id subqueue)
       return panvk_errorf(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY,
                           "Failed to create a queue context");
 
-   struct panvk_cs_subqueue_context *cs_ctx =
-      panvk_priv_mem_host_addr(subq->context);
-
-   *cs_ctx = (struct panvk_cs_subqueue_context){
-      .syncobjs = panvk_priv_mem_dev_addr(queue->syncobjs),
-      .debug.tracebuf.cs = subq->tracebuf.addr.dev,
+   panvk_priv_mem_write(subq->context, 0, struct panvk_cs_subqueue_context,
+                        cs_ctx) {
+      *cs_ctx = (struct panvk_cs_subqueue_context){
+         .syncobjs = panvk_priv_mem_dev_addr(queue->syncobjs),
+         .debug.tracebuf.cs = subq->tracebuf.addr.dev,
 #if PAN_ARCH == 10
-      /* On the VT/COMPUTE queue, the first iter_sb will skipped since
-       * cs_next_iter_sb() is called before the first use, but that's okay,
-       * because the next slot will be equally free, and the skipped one will
-       * be re-used at some point.
-       * On the fragment queue, we increment the iterator when the
-       * FINISH_FRAGMENT job is issued, which is why we need this value
-       * to point to a valid+free scoreboard from the start.
-       */
-      .iter_sb = SB_ITER(0),
+         /* On the VT/COMPUTE queue, the first iter_sb will skipped since
+          * cs_next_iter_sb() is called before the first use, but that's okay,
+          * because the next slot will be equally free, and the skipped one will
+          * be re-used at some point.
+          * On the fragment queue, we increment the iterator when the
+          * FINISH_FRAGMENT job is issued, which is why we need this value
+          * to point to a valid+free scoreboard from the start.
+          */
+         .iter_sb = SB_ITER(0),
 #endif
-      .reg_dump_addr = panvk_priv_mem_dev_addr(subq->regs_save),
-   };
+         .reg_dump_addr = panvk_priv_mem_dev_addr(subq->regs_save),
+      };
+
+      if (subqueue != PANVK_SUBQUEUE_COMPUTE) {
+         cs_ctx->render.tiler_heap =
+            panvk_priv_mem_dev_addr(queue->tiler_heap.desc);
+         /* Our geometry buffer comes 4k after the tiler heap, and we encode the
+          * size in the lower 12 bits so the address can be copied directly
+          * to the tiler descriptors. */
+         cs_ctx->render.geom_buf =
+            (cs_ctx->render.tiler_heap + 4096) | ((64 * 1024) >> 12);
+
+         /* Initialize the ringbuf */
+         cs_ctx->render.desc_ringbuf = (struct panvk_cs_desc_ringbuf){
+            .syncobj =
+               panvk_priv_mem_dev_addr(queue->render_desc_ringbuf.syncobj),
+            .ptr = queue->render_desc_ringbuf.addr.dev,
+            .pos = 0,
+         };
+      }
+   }
 
    /* We use the geometry buffer for our temporary CS buffer. */
    root_cs = (struct cs_buffer){
@@ -465,24 +484,13 @@ init_subqueue(struct panvk_gpu_queue *queue, enum panvk_subqueue_id subqueue)
    /* We do greater than test on sync objects, and given the reference seqno
     * registers are all zero at init time, we need to initialize all syncobjs
     * with a seqno of one. */
-   syncobjs[subqueue].seqno = 1;
+   panvk_priv_mem_write(queue->syncobjs,
+                        subqueue * sizeof(struct panvk_cs_sync64),
+                        struct panvk_cs_sync64, syncobj) {
+      syncobj->seqno = 1;
+   }
 
    if (subqueue != PANVK_SUBQUEUE_COMPUTE) {
-      cs_ctx->render.tiler_heap =
-         panvk_priv_mem_dev_addr(queue->tiler_heap.desc);
-      /* Our geometry buffer comes 4k after the tiler heap, and we encode the
-       * size in the lower 12 bits so the address can be copied directly
-       * to the tiler descriptors. */
-      cs_ctx->render.geom_buf =
-         (cs_ctx->render.tiler_heap + 4096) | ((64 * 1024) >> 12);
-
-      /* Initialize the ringbuf */
-      cs_ctx->render.desc_ringbuf = (struct panvk_cs_desc_ringbuf){
-         .syncobj = panvk_priv_mem_dev_addr(queue->render_desc_ringbuf.syncobj),
-         .ptr = queue->render_desc_ringbuf.addr.dev,
-         .pos = 0,
-      };
-
       struct cs_index heap_ctx_addr = cs_scratch_reg64(&b, 0);
 
       /* Pre-set the heap context on the vertex-tiler/fragment queues. */
@@ -492,6 +500,8 @@ init_subqueue(struct panvk_gpu_queue *queue, enum panvk_subqueue_id subqueue)
    cs_finish(&b);
 
    assert(cs_is_valid(&b));
+
+   panvk_priv_mem_flush(queue->tiler_heap.desc, 4096, cs_root_chunk_size(&b));
 
    struct drm_panthor_sync_op syncop = {
       .flags =
@@ -700,8 +710,7 @@ init_tiler(struct panvk_gpu_queue *queue)
    tiler_heap->context.handle = thc.handle;
    tiler_heap->context.dev_addr = thc.tiler_heap_ctx_gpu_va;
 
-   pan_cast_and_pack(panvk_priv_mem_host_addr(tiler_heap->desc), TILER_HEAP,
-                     cfg) {
+   panvk_priv_mem_write_desc(tiler_heap->desc, 0, TILER_HEAP, cfg) {
       cfg.size = tiler_heap->chunk_size;
       cfg.base = thc.first_heap_chunk_gpu_va;
       cfg.bottom = cfg.base + 64;
@@ -1125,16 +1134,17 @@ panvk_queue_submit_ioctl(struct panvk_queue_submit *submit)
       /* If we're tracing, we need to reset the desc ringbufs and the CS
        * tracebuf. */
       for (uint32_t i = 0; i < ARRAY_SIZE(queue->subqueues); i++) {
-         struct panvk_cs_subqueue_context *ctx =
-            panvk_priv_mem_host_addr(queue->subqueues[i].context);
+         panvk_priv_mem_rmw(queue->subqueues[i].context, 0,
+                            struct panvk_cs_subqueue_context, ctx) {
+            if (ctx->render.desc_ringbuf.ptr) {
+               ctx->render.desc_ringbuf.ptr =
+                  queue->render_desc_ringbuf.addr.dev;
+               ctx->render.desc_ringbuf.pos = 0;
+            }
 
-         if (ctx->render.desc_ringbuf.ptr) {
-            ctx->render.desc_ringbuf.ptr = queue->render_desc_ringbuf.addr.dev;
-            ctx->render.desc_ringbuf.pos = 0;
+            if (ctx->debug.tracebuf.cs)
+               ctx->debug.tracebuf.cs = queue->subqueues[i].tracebuf.addr.dev;
          }
-
-         if (ctx->debug.tracebuf.cs)
-            ctx->debug.tracebuf.cs = queue->subqueues[i].tracebuf.addr.dev;
       }
    }
 
@@ -1235,28 +1245,30 @@ panvk_queue_submit_process_debug(const struct panvk_queue_submit *submit,
       }
 
       for (uint32_t i = 0; i < ARRAY_SIZE(queue->subqueues); i++) {
-         struct panvk_cs_subqueue_context *ctx =
-            panvk_priv_mem_host_addr(queue->subqueues[i].context);
+         panvk_priv_mem_readback(queue->subqueues[i].context, 0,
+                                 struct panvk_cs_subqueue_context, ctx) {
+            size_t trace_size = trace_size =
+               ctx->debug.tracebuf.cs - queue->subqueues[i].tracebuf.addr.dev;
 
-         size_t trace_size =
-            ctx->debug.tracebuf.cs - queue->subqueues[i].tracebuf.addr.dev;
-         if (!trace_size)
-            continue;
+            if (trace_size) {
+               assert(
+                  trace_size <= queue->subqueues[i].tracebuf.size ||
+                  !"OOB access on the CS tracebuf, pass a bigger PANVK_CS_TRACEBUF_SIZE");
 
-         assert(
-            trace_size <= queue->subqueues[i].tracebuf.size ||
-            !"OOB access on the CS tracebuf, pass a bigger PANVK_CS_TRACEBUF_SIZE");
+               assert(
+                  !ctx->render.desc_ringbuf.ptr ||
+                  ctx->render.desc_ringbuf.pos <=
+                     queue->render_desc_ringbuf.size ||
+                  !"OOB access on the desc tracebuf, pass a bigger PANVK_DESC_TRACEBUF_SIZE");
 
-         assert(
-            !ctx->render.desc_ringbuf.ptr ||
-            ctx->render.desc_ringbuf.pos <= queue->render_desc_ringbuf.size ||
-            !"OOB access on the desc tracebuf, pass a bigger PANVK_DESC_TRACEBUF_SIZE");
+               uint64_t trace = queue->subqueues[i].tracebuf.addr.dev;
 
-         uint64_t trace = queue->subqueues[i].tracebuf.addr.dev;
-
-         pandecode_user_msg(decode_ctx, "\nCS traces on subqueue %d\n\n", i);
-         pandecode_cs_trace(decode_ctx, trace, trace_size, props->gpu_id);
-         pandecode_user_msg(decode_ctx, "\n");
+               pandecode_user_msg(decode_ctx, "\nCS traces on subqueue %d\n\n",
+                                  i);
+               pandecode_cs_trace(decode_ctx, trace, trace_size, props->gpu_id);
+               pandecode_user_msg(decode_ctx, "\n");
+            }
+         }
       }
    }
 
@@ -1407,10 +1419,11 @@ panvk_per_arch(gpu_queue_check_status)(struct vk_queue *vk_queue)
 
    /* check for CS error and treat it as device lost */
    for (uint32_t i = 0; i < PANVK_SUBQUEUE_COUNT; i++) {
-      const struct panvk_cs_subqueue_context *subq_ctx =
-         panvk_priv_mem_host_addr(queue->subqueues[i].context);
-      if (subq_ctx->last_error != 0)
-         return vk_queue_set_lost(&queue->vk, "CS_FAULT");
+      panvk_priv_mem_readback(queue->subqueues[i].context, 0,
+                              struct panvk_cs_subqueue_context, subq_ctx) {
+         if (subq_ctx->last_error != 0)
+            return vk_queue_set_lost(&queue->vk, "CS_FAULT");
+      }
    }
 
    int ret = pan_kmod_ioctl(dev->drm_fd, DRM_IOCTL_PANTHOR_GROUP_GET_STATE,

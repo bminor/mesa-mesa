@@ -153,69 +153,73 @@ prepare_tex_descs(struct panvk_image_view *view)
    if (!panvk_priv_mem_check_alloc(view->mem))
       return panvk_error(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY);
 
-   struct pan_ptr ptr = {
-      .gpu = panvk_priv_mem_dev_addr(view->mem),
-      .cpu = panvk_priv_mem_host_addr(view->mem),
-   };
+   panvk_priv_mem_write_array(view->mem, 0, uint8_t, alloc_info.size, cpu_ptr) {
+      struct pan_ptr ptr = {
+         .gpu = panvk_priv_mem_dev_addr(view->mem),
+         .cpu = cpu_ptr,
+      };
 
 #if PAN_ARCH >= 9
-   struct pan_ptr storage_ptr = ptr;
-   if (view->vk.usage & VK_IMAGE_USAGE_STORAGE_BIT) {
-      uint32_t storage_payload_offset = alloc_info.size - storage_payload_size;
-      storage_ptr.gpu += storage_payload_offset;
-      storage_ptr.cpu += storage_payload_offset;
-   }
+      struct pan_ptr storage_ptr = ptr;
+      if (view->vk.usage & VK_IMAGE_USAGE_STORAGE_BIT) {
+         uint32_t storage_payload_offset =
+            alloc_info.size - storage_payload_size;
+         storage_ptr.gpu += storage_payload_offset;
+         storage_ptr.cpu += storage_payload_offset;
+      }
 #endif
 
-   if (plane_count > 1) {
-      memset(pview.planes, 0, sizeof(pview.planes));
+      if (plane_count > 1) {
+         memset(pview.planes, 0, sizeof(pview.planes));
 
-      for (uint32_t plane = 0; plane < plane_count; plane++) {
-         VkFormat plane_format =
-            vk_format_get_plane_format(view->vk.view_format, plane);
+         for (uint32_t plane = 0; plane < plane_count; plane++) {
+            VkFormat plane_format =
+               vk_format_get_plane_format(view->vk.view_format, plane);
 
-         /* We need a per-plane pview. */
-         pview.planes[0] = view->pview.planes[plane];
-         pview.format = vk_format_to_pipe_format(plane_format);
+            /* We need a per-plane pview. */
+            pview.planes[0] = view->pview.planes[plane];
+            pview.format = vk_format_to_pipe_format(plane_format);
 
-         GENX(pan_sampled_texture_emit)(&pview, &view->descs.tex[plane], &ptr);
+            GENX(pan_sampled_texture_emit)(&pview, &view->descs.tex[plane],
+                                           &ptr);
 #if PAN_ARCH >= 9
-         if (view->vk.usage & VK_IMAGE_USAGE_STORAGE_BIT) {
-            GENX(pan_storage_texture_emit)(
-               &pview, &view->descs.storage_tex[plane], &storage_ptr);
-            storage_ptr.cpu += tex_payload_size;
-            storage_ptr.gpu += tex_payload_size;
+            if (view->vk.usage & VK_IMAGE_USAGE_STORAGE_BIT) {
+               GENX(pan_storage_texture_emit)(
+                  &pview, &view->descs.storage_tex[plane], &storage_ptr);
+               storage_ptr.cpu += tex_payload_size;
+               storage_ptr.gpu += tex_payload_size;
+            }
+#endif
+
+            ptr.cpu += tex_payload_size;
+            ptr.gpu += tex_payload_size;
          }
+      } else {
+         GENX(pan_sampled_texture_emit)(&pview, &view->descs.tex[0], &ptr);
+#if PAN_ARCH >= 9
+         if (view->vk.usage & VK_IMAGE_USAGE_STORAGE_BIT)
+            GENX(pan_storage_texture_emit)(&pview, &view->descs.storage_tex[0],
+                                           &storage_ptr);
 #endif
+      }
+
+      if (can_preload_other_aspect) {
+         /* If the depth was present in the aspects mask, we've handled it
+          * already, so move on to the stencil. If it wasn't present, it's the
+          * stencil texture we create first, and we need t handle the depth here.
+          */
+         pview.format = (view->vk.aspects & VK_IMAGE_ASPECT_DEPTH_BIT)
+                           ? panvk_image_stencil_only_pfmt(image)
+                           : panvk_image_depth_only_pfmt(image);
 
          ptr.cpu += tex_payload_size;
          ptr.gpu += tex_payload_size;
+
+         GENX(pan_sampled_texture_emit)(&pview,
+                                        &view->descs.zs.other_aspect_tex, &ptr);
       }
-   } else {
-      GENX(pan_sampled_texture_emit)(&pview, &view->descs.tex[0], &ptr);
-#if PAN_ARCH >= 9
-      if (view->vk.usage & VK_IMAGE_USAGE_STORAGE_BIT)
-         GENX(pan_storage_texture_emit)(&pview, &view->descs.storage_tex[0],
-                                        &storage_ptr);
-#endif
    }
 
-   if (!can_preload_other_aspect)
-      return VK_SUCCESS;
-
-   /* If the depth was present in the aspects mask, we've handled it already, so
-    * move on to the stencil. If it wasn't present, it's the stencil texture we
-    * create first, and we need t handle the depth here.
-    */
-   pview.format = (view->vk.aspects & VK_IMAGE_ASPECT_DEPTH_BIT)
-                     ? panvk_image_stencil_only_pfmt(image)
-                     : panvk_image_depth_only_pfmt(image);
-
-   ptr.cpu += tex_payload_size;
-   ptr.gpu += tex_payload_size;
-
-   GENX(pan_sampled_texture_emit)(&pview, &view->descs.zs.other_aspect_tex,
-                                  &ptr);
    return VK_SUCCESS;
 }
 

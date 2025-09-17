@@ -1093,8 +1093,7 @@ panvk_shader_upload(struct panvk_device *dev,
    if (!panvk_priv_mem_check_alloc(shader->rsd))
       return panvk_error(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY);
 
-   pan_cast_and_pack(panvk_priv_mem_host_addr(shader->rsd), RENDERER_STATE,
-                     cfg) {
+   panvk_priv_mem_write_desc(shader->rsd, 0, RENDERER_STATE, cfg) {
       pan_shader_prepare_rsd(&shader->info,
                              panvk_shader_variant_get_dev_addr(shader), &cfg);
    }
@@ -1104,8 +1103,7 @@ panvk_shader_upload(struct panvk_device *dev,
       if (!panvk_priv_mem_check_alloc(shader->spd))
          return panvk_error(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY);
 
-      pan_cast_and_pack(panvk_priv_mem_host_addr(shader->spd), SHADER_PROGRAM,
-                        cfg) {
+      panvk_priv_mem_write_desc(shader->spd, 0, SHADER_PROGRAM, cfg) {
          cfg.stage = pan_shader_stage(&shader->info);
 
          if (cfg.stage == MALI_SHADER_STAGE_FRAGMENT)
@@ -1131,8 +1129,8 @@ panvk_shader_upload(struct panvk_device *dev,
       if (!panvk_priv_mem_check_alloc(shader->spds.all_points))
          return panvk_error(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY);
 
-      pan_cast_and_pack(panvk_priv_mem_host_addr(shader->spds.all_points),
-                        SHADER_PROGRAM, cfg) {
+      panvk_priv_mem_write_desc(shader->spds.all_points, 0, SHADER_PROGRAM,
+                                cfg) {
          cfg.stage = pan_shader_stage(&shader->info);
          cfg.register_allocation =
             pan_register_allocation(shader->info.work_reg_count);
@@ -1146,8 +1144,8 @@ panvk_shader_upload(struct panvk_device *dev,
       if (!panvk_priv_mem_check_alloc(shader->spds.all_triangles))
          return panvk_error(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY);
 
-      pan_cast_and_pack(panvk_priv_mem_host_addr(shader->spds.all_triangles),
-                        SHADER_PROGRAM, cfg) {
+      panvk_priv_mem_write_desc(shader->spds.all_triangles, 0, SHADER_PROGRAM,
+                                cfg) {
          cfg.stage = pan_shader_stage(&shader->info);
          cfg.register_allocation =
             pan_register_allocation(shader->info.work_reg_count);
@@ -1162,8 +1160,8 @@ panvk_shader_upload(struct panvk_device *dev,
       if (!panvk_priv_mem_check_alloc(shader->spds.pos_points))
          return panvk_error(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY);
 
-      pan_cast_and_pack(panvk_priv_mem_host_addr(shader->spds.pos_points),
-                        SHADER_PROGRAM, cfg) {
+      panvk_priv_mem_write_desc(shader->spds.pos_points, 0, SHADER_PROGRAM,
+                                cfg) {
          cfg.stage = pan_shader_stage(&shader->info);
          cfg.vertex_warp_limit = MALI_WARP_LIMIT_HALF;
          cfg.register_allocation =
@@ -1178,8 +1176,8 @@ panvk_shader_upload(struct panvk_device *dev,
       if (!panvk_priv_mem_check_alloc(shader->spds.pos_triangles))
          return panvk_error(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY);
 
-      pan_cast_and_pack(panvk_priv_mem_host_addr(shader->spds.pos_triangles),
-                        SHADER_PROGRAM, cfg) {
+      panvk_priv_mem_write_desc(shader->spds.pos_triangles, 0, SHADER_PROGRAM,
+                                cfg) {
          cfg.stage = pan_shader_stage(&shader->info);
          cfg.vertex_warp_limit = MALI_WARP_LIMIT_HALF;
          cfg.register_allocation =
@@ -1196,8 +1194,7 @@ panvk_shader_upload(struct panvk_device *dev,
          if (!panvk_priv_mem_check_alloc(shader->spds.var))
             return panvk_error(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY);
 
-         pan_cast_and_pack(panvk_priv_mem_host_addr(shader->spds.var),
-                           SHADER_PROGRAM, cfg) {
+         panvk_priv_mem_write_desc(shader->spds.var, 0, SHADER_PROGRAM, cfg) {
             unsigned work_count = shader->info.vs.secondary_work_reg_count;
 
             cfg.stage = pan_shader_stage(&shader->info);
@@ -1583,13 +1580,13 @@ shader_desc_info_deserialize(struct panvk_device *dev,
       };
       shader->desc_info.others.map =
          panvk_pool_alloc_mem(&dev->mempools.rw, alloc_info);
-      uint32_t *copy_table =
-         panvk_priv_mem_host_addr(shader->desc_info.others.map);
-
-      if (!copy_table)
+      if (!panvk_priv_mem_check_alloc(shader->desc_info.others.map))
          return panvk_error(shader, VK_ERROR_OUT_OF_DEVICE_MEMORY);
 
-      blob_copy_bytes(blob, copy_table, others_count * sizeof(*copy_table));
+      panvk_priv_mem_write_array(shader->desc_info.others.map, 0, uint32_t,
+                                 others_count, copy_table) {
+         blob_copy_bytes(blob, copy_table, others_count * sizeof(*copy_table));
+      }
    }
 #else
    shader->desc_info.dyn_bufs.count = blob_read_uint32(blob);
@@ -1738,6 +1735,8 @@ shader_desc_info_serialize(struct blob *blob,
       others_count += shader->desc_info.others.count[i];
    }
 
+   /* No need to wrap this one in panvk_priv_mem_readback(), because the
+    * GPU is not supposed to touch it. */
    blob_write_bytes(blob,
                     panvk_priv_mem_host_addr(shader->desc_info.others.map),
                     sizeof(uint32_t) * others_count);
@@ -2080,33 +2079,40 @@ emit_varying_attrs(struct panvk_pool *desc_pool,
                    unsigned varying_count, const struct varyings_info *info,
                    unsigned *buf_offsets, struct panvk_priv_mem *mem)
 {
-   *mem = panvk_pool_alloc_desc_array(desc_pool, varying_count, ATTRIBUTE);
+   if (!varying_count) {
+      *mem = (struct panvk_priv_mem){0};
+      return VK_SUCCESS;
+   }
 
-   if (varying_count && !panvk_priv_mem_check_alloc(*mem))
+   *mem = panvk_pool_alloc_desc_array(desc_pool, varying_count, ATTRIBUTE);
+   if (!panvk_priv_mem_check_alloc(*mem))
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
-   struct mali_attribute_packed *attrs = panvk_priv_mem_host_addr(*mem);
-   unsigned attr_idx = 0;
+   panvk_priv_mem_write_array(*mem, 0, struct mali_attribute_packed,
+                              varying_count, attrs) {
+      unsigned attr_idx = 0;
 
-   for (unsigned i = 0; i < varying_count; i++) {
-      pan_pack(&attrs[attr_idx++], ATTRIBUTE, cfg) {
-         gl_varying_slot loc = varyings[i].location;
-         enum pipe_format pfmt = varyings[i].format != PIPE_FORMAT_NONE
-                                    ? info->fmts[loc]
-                                    : PIPE_FORMAT_NONE;
+      for (unsigned i = 0; i < varying_count; i++) {
+         pan_pack(&attrs[attr_idx++], ATTRIBUTE, cfg) {
+            gl_varying_slot loc = varyings[i].location;
+            enum pipe_format pfmt = varyings[i].format != PIPE_FORMAT_NONE
+                                       ? info->fmts[loc]
+                                       : PIPE_FORMAT_NONE;
 
-         if (pfmt == PIPE_FORMAT_NONE) {
+            if (pfmt == PIPE_FORMAT_NONE) {
 #if PAN_ARCH >= 7
-            cfg.format = (MALI_CONSTANT << 12) | MALI_RGB_COMPONENT_ORDER_0000;
+               cfg.format =
+                  (MALI_CONSTANT << 12) | MALI_RGB_COMPONENT_ORDER_0000;
 #else
-            cfg.format = (MALI_CONSTANT << 12) | PAN_V6_SWIZZLE(0, 0, 0, 0);
+               cfg.format = (MALI_CONSTANT << 12) | PAN_V6_SWIZZLE(0, 0, 0, 0);
 #endif
-         } else {
-            cfg.buffer_index = varying_buf_id(loc);
-            cfg.offset = buf_offsets[loc];
-            cfg.format = varying_format(loc, info->fmts[loc]);
+            } else {
+               cfg.buffer_index = varying_buf_id(loc);
+               cfg.offset = buf_offsets[loc];
+               cfg.format = varying_format(loc, info->fmts[loc]);
+            }
+            cfg.offset_enable = false;
          }
-         cfg.offset_enable = false;
       }
    }
 
