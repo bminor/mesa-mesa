@@ -624,7 +624,7 @@
         "description": "pvr: Fix error value returned by pvr_rt_datas_init",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "8991e646411b73c1e03278267c80758e921f2352",
         "notes": null
