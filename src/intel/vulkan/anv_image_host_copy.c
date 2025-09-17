@@ -82,7 +82,6 @@ anv_copy_image_memory(struct anv_device *device,
                       uint64_t binding_offset,
                       void *mem_ptr,
                       uint64_t mem_row_pitch_B,
-                      uint64_t mem_height_pitch_B,
                       const VkOffset3D *offset_el,
                       const VkExtent3D *extent_el,
                       uint32_t level,
@@ -113,15 +112,12 @@ anv_copy_image_memory(struct anv_device *device,
 
    uint32_t img_depth_or_layer = MAX2(base_img_array_layer + array_layer,
                                       base_img_z_offset_px + z_offset_px);
-   uint32_t mem_depth_or_layer = MAX2(z_offset_px, array_layer);
 
    if (surf->tiling == ISL_TILING_LINEAR) {
       uint64_t img_col_offset = offset_el->x * bs;
       uint64_t row_copy_size = extent_el->width * bs;
       for (uint32_t h_el = 0; h_el < extent_el->height; h_el++) {
-         uint64_t mem_row_offset =
-            mem_height_pitch_B * mem_depth_or_layer +
-            h_el * mem_row_pitch_B;
+         uint64_t mem_row_offset = h_el * mem_row_pitch_B;
          uint64_t img_row = h_el + offset_el->y;
          uint64_t img_offset =
             start_tile_B + img_row * surf->row_pitch_B + img_col_offset;
@@ -140,7 +136,7 @@ anv_copy_image_memory(struct anv_device *device,
       if (mem_to_img) {
          isl_memcpy_linear_to_tiled(x1, x2, y1, y2,
                                     img_ptr,
-                                    mem_ptr + mem_height_pitch_B * mem_depth_or_layer,
+                                    mem_ptr,
                                     surf->row_pitch_B,
                                     mem_row_pitch_B,
                                     false,
@@ -148,7 +144,7 @@ anv_copy_image_memory(struct anv_device *device,
                                     ISL_MEMCPY);
       } else {
          isl_memcpy_tiled_to_linear(x1, x2, y1, y2,
-                                    mem_ptr + mem_height_pitch_B * mem_depth_or_layer,
+                                    mem_ptr,
                                     img_ptr,
                                     mem_row_pitch_B,
                                     surf->row_pitch_B,
@@ -218,7 +214,6 @@ anv_CopyMemoryToImage(
       assert(binding->host_map != NULL);
       void *img_ptr = binding->host_map + binding->map_delta +
                       anv_surf->memory_range.offset;
-      const void *mem_ptr = region->pHostPointer;
 
       /* Memory distance between each row */
       uint64_t mem_row_pitch_B =
@@ -242,6 +237,7 @@ anv_CopyMemoryToImage(
             assert((region->imageOffset.z == 0 && z == 0) ||
                    (region->imageSubresource.baseArrayLayer == 0 && a == 0));
             uint64_t mem_row_offset = (z + a) * mem_height_pitch_B;
+            const void *mem_ptr = region->pHostPointer + mem_row_offset;
             uint64_t start_tile_B, end_tile_B;
             if ((pCopyMemoryToImageInfo->flags &
                  VK_HOST_IMAGE_COPY_MEMCPY) &&
@@ -251,14 +247,13 @@ anv_CopyMemoryToImage(
                    region->imageSubresource.baseArrayLayer + a, 1,
                    &start_tile_B, &end_tile_B)) {
                memcpy(img_ptr + start_tile_B,
-                      mem_ptr + mem_row_offset,
+                      mem_ptr,
                       end_tile_B - start_tile_B);
             } else {
                anv_copy_image_memory(device, surf,
                                      binding, anv_surf->memory_range.offset,
-                                     (void *)region->pHostPointer,
+                                     (void *)mem_ptr,
                                      mem_row_pitch_B,
-                                     mem_height_pitch_B,
                                      &offset_el,
                                      &extent_el,
                                      region->imageSubresource.mipLevel,
@@ -295,7 +290,6 @@ anv_CopyImageToMemory(
       assert(binding->host_map != NULL);
       const void *img_ptr = binding->host_map + binding->map_delta +
                             anv_surf->memory_range.offset;
-      void *mem_ptr = region->pHostPointer;
 
       VkOffset3D offset_el =
          vk_offset3d_to_el(surf->format, region->imageOffset);
@@ -319,6 +313,7 @@ anv_CopyImageToMemory(
             assert((region->imageOffset.z == 0 && z == 0) ||
                    (region->imageSubresource.baseArrayLayer == 0 && a == 0));
             uint64_t mem_row_offset = (z + a) * mem_height_pitch_B;
+            void *mem_ptr = region->pHostPointer + mem_row_offset;
             uint64_t start_tile_B, end_tile_B;
             if ((pCopyImageToMemoryInfo->flags &
                  VK_HOST_IMAGE_COPY_MEMCPY) &&
@@ -327,15 +322,14 @@ anv_CopyImageToMemory(
                    region->imageOffset.z + z +
                    region->imageSubresource.baseArrayLayer + a, 1,
                    &start_tile_B, &end_tile_B)) {
-               memcpy(mem_ptr + mem_row_offset,
+               memcpy(mem_ptr,
                       img_ptr + start_tile_B,
                       end_tile_B - start_tile_B);
             } else {
                anv_copy_image_memory(device, surf,
                                      binding, anv_surf->memory_range.offset,
-                                     region->pHostPointer,
+                                     mem_ptr,
                                      mem_row_pitch_B,
-                                     mem_height_pitch_B,
                                      &offset_el,
                                      &extent_el,
                                      region->imageSubresource.mipLevel,
@@ -429,7 +423,7 @@ copy_image_to_image(struct anv_device *device,
                                      src_binding,
                                      src_anv_surf->memory_range.offset,
                                      tmp_map,
-                                     tile_width_B, 0,
+                                     tile_width_B,
                                      &src_offset, &extent,
                                      region->srcSubresource.mipLevel,
                                      region->srcSubresource.baseArrayLayer,
@@ -440,7 +434,7 @@ copy_image_to_image(struct anv_device *device,
                                      dst_binding,
                                      dst_anv_surf->memory_range.offset,
                                      tmp_map,
-                                     tile_width_B, 0,
+                                     tile_width_B,
                                      &dst_offset, &extent,
                                      region->dstSubresource.mipLevel,
                                      region->dstSubresource.baseArrayLayer,
