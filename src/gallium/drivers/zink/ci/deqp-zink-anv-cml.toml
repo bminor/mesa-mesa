@@ -12,5 +12,3 @@ version_check = "GL ES 3.2.*git"
 renderer_check = "zink.*Intel.*"
 [deqp.env]
   ZINK_DEBUG = "validation"
-  # Leaks in various random tests that can't be reproduced locally
-  ASAN_OPTIONS = "detect_leaks=0"
