@@ -77,6 +77,8 @@ d3d12_context_destroy(struct pipe_context *pctx)
          debug_printf("D3D12: Failed to unregister command queue with frontend priority manager\n");
          assert(false);
       }
+
+      mtx_destroy(&ctx->priority_manager_lock);
    }
 
 #endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
