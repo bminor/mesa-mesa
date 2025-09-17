@@ -1310,7 +1310,7 @@ anv_graphics_pipeline_compile(struct anv_graphics_pipeline *pipeline,
 
       anv_pipeline_lower_nir(&pipeline->base, stage_ctx, &stages[s], layout);
 
-      if (prev_stage && compiler->nir_options[s]->unify_interfaces) {
+      if (prev_stage && s < MESA_SHADER_FRAGMENT) {
          prev_stage->nir->info.outputs_written |= stages[s].nir->info.inputs_read &
                   ~(VARYING_BIT_TESS_LEVEL_INNER | VARYING_BIT_TESS_LEVEL_OUTER);
          stages[s].nir->info.inputs_read |= prev_stage->nir->info.outputs_written &

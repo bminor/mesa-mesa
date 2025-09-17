@@ -1554,8 +1554,6 @@ anv_shaders_post_lower_gfx(struct anv_device *device,
                            uint32_t shader_count,
                            const struct vk_graphics_pipeline_state *state)
 {
-   const struct brw_compiler *compiler = device->physical->compiler;
-
    struct vk_shader_compile_info *prev_stage = NULL;
    for (uint32_t s = 0; s < shader_count; s++) {
       struct anv_shader_data *shader_data = &shaders_data[s];
@@ -1563,7 +1561,7 @@ anv_shaders_post_lower_gfx(struct anv_device *device,
 
       struct shader_info *cur_info = &shader_data->info->nir->info;
 
-      if (prev_stage && compiler->nir_options[info->stage].unify_interfaces) {
+      if (prev_stage && info->stage < MESA_SHADER_FRAGMENT) {
          struct shader_info *prev_info = &prev_stage->nir->info;
 
          prev_info->outputs_written |= cur_info->inputs_read &
