@@ -1173,6 +1173,7 @@ nir_clone_uniform_variable(nir_shader *nir, nir_variable *uniform, bool spirv)
            v->data.binding == uniform->data.binding) ||
           (!spirv &&
            (!strcmp(uniform->name, v->name) &&
+            glsl_type_compare_no_precision(uniform->type, v->type) &&
             uniform->data.explicit_binding == v->data.explicit_binding &&
             uniform->data.binding == v->data.binding))) {
          new_var = v;

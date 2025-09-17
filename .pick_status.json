@@ -4464,7 +4464,7 @@
         "description": "nir: fix uniform cloning helper again",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b47b8d16d94792cc4694f350b4bad212e357e9f0",
         "notes": null
