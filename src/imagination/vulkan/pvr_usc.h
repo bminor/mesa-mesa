@@ -42,8 +42,7 @@ pco_shader *pvr_usc_eot(pco_ctx *ctx,
                         const struct pvr_device_info *dev_info);
 
 /* Transfer queue shader generation. */
-struct pvr_tq_props {
-};
+struct pvr_tq_props {};
 
 pco_shader *pvr_usc_tq(pco_ctx *ctx, struct pvr_tq_props *props);
 

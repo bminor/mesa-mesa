@@ -92,8 +92,9 @@ __pvr_uint_unpack(uint64_t packed, uint32_t start, uint32_t end)
    return (packed >> start) & mask;
 }
 
-static inline __attribute__((always_inline)) uint64_t
-__pvr_sint(int64_t v, uint32_t start, uint32_t end)
+static inline __attribute__((always_inline)) uint64_t __pvr_sint(int64_t v,
+                                                                 uint32_t start,
+                                                                 uint32_t end)
 {
    const int width = end - start + 1;
 

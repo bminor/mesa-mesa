@@ -141,9 +141,9 @@
 #define PVR_SRV_VERSION_MAJ 1U
 #define PVR_SRV_VERSION_MIN 17U
 
-#define PVR_SRV_VERSION                                            \
-   (((uint32_t)((uint32_t)(PVR_SRV_VERSION_MAJ)&0xFFFFU) << 16U) | \
-    (((PVR_SRV_VERSION_MIN)&0xFFFFU) << 0U))
+#define PVR_SRV_VERSION                                              \
+   (((uint32_t)((uint32_t)(PVR_SRV_VERSION_MAJ) & 0xFFFFU) << 16U) | \
+    (((PVR_SRV_VERSION_MIN) & 0xFFFFU) << 0U))
 
 #define PVR_SRV_VERSION_BUILD 6256262
 

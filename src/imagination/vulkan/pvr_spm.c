@@ -991,8 +991,7 @@ pvr_spm_init_bgobj_state(struct pvr_device *device,
       sampler.dadjust = ROGUE_TEXSTATE_DADJUST_ZERO_UINT;
    }
 
-   pvr_csb_pack (&descriptor->words[1], TEXSTATE_SAMPLER_WORD1, sampler) {
-   }
+   pvr_csb_pack (&descriptor->words[1], TEXSTATE_SAMPLER_WORD1, sampler) {}
 
    /* Even if we might have 8 output regs we can only pack and write 4 dwords
     * using R32G32B32A32_UINT.

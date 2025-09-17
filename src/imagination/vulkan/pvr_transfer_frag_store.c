@@ -54,10 +54,13 @@ struct pvr_transfer_frag_store_entry_data {
    struct pvr_tq_frag_sh_reg_layout sh_reg_layout;
 };
 
-#define to_pvr_entry_data(_entry) \
-   _Generic((_entry), \
-            struct hash_entry *: (struct pvr_transfer_frag_store_entry_data *)((_entry)->data), \
-            const struct hash_entry *: (const struct pvr_transfer_frag_store_entry_data *)((_entry)->data))
+#define to_pvr_entry_data(_entry)                                          \
+   _Generic((_entry),                                                      \
+      struct hash_entry *: (struct pvr_transfer_frag_store_entry_data      \
+                               *)((_entry)->data),                         \
+      const struct hash_entry *: (                                         \
+               const struct pvr_transfer_frag_store_entry_data *)((_entry) \
+                                                                     ->data))
 
 VkResult pvr_transfer_frag_store_init(struct pvr_device *device,
                                       struct pvr_transfer_frag_store *store)
@@ -122,10 +125,10 @@ static uint32_t pvr_transfer_frag_shader_key(
    hash |= layer->sample;
 
    shift_hash(hash, 1U);
-   hash |= (uint32_t) false;
+   hash |= (uint32_t)false;
 
    shift_hash(hash, 1U);
-   hash |= (uint32_t) false;
+   hash |= (uint32_t)false;
 
    shift_hash(hash, pixel_src_bits);
    hash |= (uint32_t)layer->pbe_format;

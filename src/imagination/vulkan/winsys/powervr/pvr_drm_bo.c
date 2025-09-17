@@ -121,9 +121,9 @@ static void pvr_drm_buffer_release(struct pvr_drm_winsys_bo *drm_bo)
        * so we don't want to free the BO pointer, instead we want to reset it
        * to 0, to signal that array entry as being free.
        *
-       * We must do the reset before we actually free the BO in the kernel, since
-       * otherwise there is a chance the application creates another BO in a
-       * different thread and gets the same array entry, causing a race.
+       * We must do the reset before we actually free the BO in the kernel,
+       * since otherwise there is a chance the application creates another BO in
+       * a different thread and gets the same array entry, causing a race.
        */
       memset(drm_bo, 0, sizeof(*drm_bo));
 
@@ -180,10 +180,10 @@ static uint64_t pvr_drm_get_alloc_flags(uint32_t ws_flags)
 }
 
 static inline struct pvr_drm_winsys_bo *
-pvr_drm_winsys_lookup_bo(struct pvr_drm_winsys *drm_ws,
-                         uint32_t handle)
+pvr_drm_winsys_lookup_bo(struct pvr_drm_winsys *drm_ws, uint32_t handle)
 {
-   return (struct pvr_drm_winsys_bo *) util_sparse_array_get(&drm_ws->bo_map, handle);
+   return (struct pvr_drm_winsys_bo *)util_sparse_array_get(&drm_ws->bo_map,
+                                                            handle);
 }
 
 VkResult pvr_drm_winsys_buffer_create(struct pvr_winsys *ws,

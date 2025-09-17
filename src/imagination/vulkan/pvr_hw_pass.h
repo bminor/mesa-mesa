@@ -183,7 +183,7 @@ struct pvr_renderpass_hwsetup_subpass {
    struct {
       enum pvr_renderpass_hwsetup_input_access type;
       uint32_t on_chip_rt;
-   } * input_access;
+   } *input_access;
 
    uint8_t output_register_mask;
    bool has_stencil_self_dep;

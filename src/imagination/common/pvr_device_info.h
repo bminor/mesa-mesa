@@ -87,7 +87,7 @@
  * #pvr_get_packed_bvnc() and #PVR_BVNC_PACK()
  */
 #define PVR_BVNC_UNPACK_B(bvnc) \
-   ((uint16_t)(((bvnc)&PVR_BVNC_PACK_MASK_B) >> PVR_BVNC_PACK_SHIFT_B))
+   ((uint16_t)(((bvnc) & PVR_BVNC_PACK_MASK_B) >> PVR_BVNC_PACK_SHIFT_B))
 
 /**
  * Unpacks V value (version ID) from packed BVNC.
@@ -99,7 +99,7 @@
  * #pvr_get_packed_bvnc() and #PVR_BVNC_PACK()
  */
 #define PVR_BVNC_UNPACK_V(bvnc) \
-   ((uint16_t)(((bvnc)&PVR_BVNC_PACK_MASK_V) >> PVR_BVNC_PACK_SHIFT_V))
+   ((uint16_t)(((bvnc) & PVR_BVNC_PACK_MASK_V) >> PVR_BVNC_PACK_SHIFT_V))
 
 /**
  * Unpacks N value (number of scalable units) from packed BVNC.
@@ -111,7 +111,7 @@
  * #pvr_get_packed_bvnc() and #PVR_BVNC_PACK()
  */
 #define PVR_BVNC_UNPACK_N(bvnc) \
-   ((uint16_t)(((bvnc)&PVR_BVNC_PACK_MASK_N) >> PVR_BVNC_PACK_SHIFT_N))
+   ((uint16_t)(((bvnc) & PVR_BVNC_PACK_MASK_N) >> PVR_BVNC_PACK_SHIFT_N))
 
 /**
  * Unpacks C value (config ID) from packed BVNC.
@@ -123,7 +123,7 @@
  * #pvr_get_packed_bvnc() and #PVR_BVNC_PACK()
  */
 #define PVR_BVNC_UNPACK_C(bvnc) \
-   ((uint16_t)(((bvnc)&PVR_BVNC_PACK_MASK_C) >> PVR_BVNC_PACK_SHIFT_C))
+   ((uint16_t)(((bvnc) & PVR_BVNC_PACK_MASK_C) >> PVR_BVNC_PACK_SHIFT_C))
 
 /**
  * Tests whether a physical device has a given feature.

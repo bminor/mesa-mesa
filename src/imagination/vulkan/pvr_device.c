@@ -3350,8 +3350,7 @@ VkResult pvr_CreateSampler(VkDevice _device,
          word.non_normalized_coords = true;
    }
 
-   pvr_csb_pack (&sampler->descriptor.words[1], TEXSTATE_SAMPLER_WORD1, word) {
-   }
+   pvr_csb_pack (&sampler->descriptor.words[1], TEXSTATE_SAMPLER_WORD1, word) {}
 
    /* Setup gather sampler. */
 

@@ -37,8 +37,7 @@
 #define ROGUE_NUM_SHADER_STATE_BUFFERS 2U
 
 /* TODO: Add reset framework support. */
-struct pvr_reset_cmd {
-};
+struct pvr_reset_cmd {};
 
 struct rogue_sr_programs {
    struct pvr_bo *store_load_state_bo;

@@ -674,8 +674,7 @@ static VkResult pvr_setup_texture_state_words(
 
    pvr_csb_pack (&descriptor->sampler.words[1],
                  TEXSTATE_SAMPLER_WORD1,
-                 sampler) {
-   }
+                 sampler) {}
 
    return VK_SUCCESS;
 }
@@ -1087,7 +1086,7 @@ static void pvr_setup_pbe_state(
       break;
    }
 
-#define PVR_DEC_IF_NOT_ZERO(_v) (((_v) > 0) ? (_v)-1 : 0)
+#define PVR_DEC_IF_NOT_ZERO(_v) (((_v) > 0) ? (_v) - 1 : 0)
 
    render_params.min_x_clip = MAX2(0, render_area->offset.x);
    render_params.min_y_clip = MAX2(0, render_area->offset.y);
@@ -3896,8 +3895,7 @@ static VkResult pvr_setup_descriptor_mappings(
 
             pvr_csb_pack (&point_sampler_words[1],
                           TEXSTATE_SAMPLER_WORD1,
-                          sampler) {
-            }
+                          sampler) {}
 
             struct pvr_suballoc_bo *point_sampler_bo;
             result = pvr_cmd_buffer_upload_general(cmd_buffer,
@@ -3932,8 +3930,7 @@ static VkResult pvr_setup_descriptor_mappings(
 
             pvr_csb_pack (&ia_sampler_words[1],
                           TEXSTATE_SAMPLER_WORD1,
-                          sampler) {
-            }
+                          sampler) {}
 
             struct pvr_suballoc_bo *ia_sampler_bo;
             result = pvr_cmd_buffer_upload_general(cmd_buffer,

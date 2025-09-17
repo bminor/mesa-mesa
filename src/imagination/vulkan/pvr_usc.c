@@ -1207,7 +1207,8 @@ pco_shader *pvr_uscgen_loadop(pco_ctx *ctx, struct pvr_load_op *load_op)
          };
 
          nir_intrinsic_instr *smp = pco_emit_nir_smp(&b, &params);
-         nir_def *smp_data = nir_channels(&b, &smp->def, nir_component_mask(chans));
+         nir_def *smp_data =
+            nir_channels(&b, &smp->def, nir_component_mask(chans));
 
          nir_store_output(&b,
                           smp_data,

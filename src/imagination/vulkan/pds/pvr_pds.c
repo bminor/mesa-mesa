@@ -36,7 +36,7 @@
 #include "util/macros.h"
 
 #define H32(X) (uint32_t)((((X) >> 32U) & 0xFFFFFFFFUL))
-#define L32(X) (uint32_t)(((X)&0xFFFFFFFFUL))
+#define L32(X) (uint32_t)(((X) & 0xFFFFFFFFUL))
 
 /*****************************************************************************
  Macro definitions

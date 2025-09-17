@@ -2220,8 +2220,8 @@ static const struct pvr_shader_factory_info spm_load_4X_2_regs_info = {
 static const uint8_t spm_load_4X_4_regs_shader_code[8] = { 0 };
 
 static const struct pvr_shader_factory_info spm_load_4X_4_regs_info = {
-   0, 0, 0,    0, 0,    0, spm_load_4X_4_regs_shader_code, 0, 0, NULL,
-   0, 0, NULL, 0, NULL, 0, 4
+   0, 0,    0, 0,    0, 0, spm_load_4X_4_regs_shader_code, 0, 0, NULL, 0,
+   0, NULL, 0, NULL, 0, 4
 };
 
 static const uint8_t spm_load_4X_1_buffers_shader_code[8] = { 0 };
