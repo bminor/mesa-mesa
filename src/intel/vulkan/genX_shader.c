@@ -1373,8 +1373,6 @@ genX(write_rt_shader_group)(struct anv_device *device,
                             void *output)
 {
 #if GFX_VERx10 >= 125
-   assert(shader_count >= 1);
-
    switch (type) {
    case VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR: {
       assert(shader_count == 1);
