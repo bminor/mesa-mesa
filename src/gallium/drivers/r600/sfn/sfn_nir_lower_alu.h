@@ -14,9 +14,6 @@ bool
 r600_nir_lower_pack_unpack_2x16(nir_shader *shader);
 
 bool
-r600_nir_opt_compare_results(nir_shader *shader);
-
-bool
 r600_nir_lower_trigen(nir_shader *shader, enum amd_gfx_level gfx_level);
 
 bool

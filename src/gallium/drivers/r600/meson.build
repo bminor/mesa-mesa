@@ -144,6 +144,17 @@ egd_tables_h = custom_target(
   capture : true,
 )
 
+sfn_nir_algebraic_c = custom_target(
+  'sfn_nir_algebraic_c',
+  input : 'sfn/sfn_nir_algebraic.py',
+  output : 'sfn_nir_algebraic.c',
+  command : [
+    prog_python, '@INPUT@', '-p', dir_compiler_nir,
+  ],
+  capture : true,
+  depend_files : nir_algebraic_depends,
+)
+
 r600_c_args = []
 
 r600_cpp_args = []
@@ -154,7 +165,7 @@ endif
 
 libr600 = static_library(
   'r600',
-  [files_r600, egd_tables_h, sha1_h],
+  [files_r600, egd_tables_h, sfn_nir_algebraic_c, sha1_h],
   c_args : [r600_c_args, '-Wstrict-overflow=0'],
   cpp_args: r600_cpp_args,
   gnu_symbol_visibility : 'hidden',
