@@ -628,6 +628,8 @@ if with_gallium_d3d12 and not _with_gallium_d3d12_video.disabled()
   pre_args += '-DHAVE_GALLIUM_D3D12_VIDEO'
 endif
 
+_glslang_preamble_version = '12.2'
+
 # GLSL has interesting version output and Meson doesn't parse it correctly as of
 # Meson 1.4.0
 prog_glslang = find_program(
@@ -637,16 +639,20 @@ prog_glslang = find_program(
 )
 
 if prog_glslang.found()
+  _glslang_version = run_command(prog_glslang, ['--version'], check : false).stdout().split(':')[2]
   # Check if glslang has depfile support. Support was added in 11.3.0, but
   # Windows path support was broken until 11.9.0.
   #
   # It is intentional to check the build machine, since we need to ensure that
   # glslang will output valid paths on the build platform
   _glslang_check = build_machine.system() == 'windows' ? '>= 11.9.0' : '>= 11.3.0'
-  if run_command(prog_glslang, ['--version'], check : false).stdout().split(':')[2].version_compare(_glslang_check)
+  if _glslang_version.version_compare(_glslang_check)
     glslang_depfile = ['--depfile', '@DEPFILE@']
   else
     glslang_depfile = []
+  endif
+  if _glslang_version.version_compare('< ' + _glslang_preamble_version)
+    error('glslang >= ' + _glslang_preamble_version + ' is required.')
   endif
   if run_command(prog_glslang, [ '--quiet', '--version' ], check : false).returncode() == 0
     glslang_quiet = ['--quiet']
