@@ -150,6 +150,10 @@ panvk_device_adjust_bo_flags(const struct panvk_device *device,
    if (PANVK_DEBUG(DUMP) || PANVK_DEBUG(TRACE))
       bo_flags &= ~PAN_KMOD_BO_FLAG_NO_MMAP;
 
+   if (!(device->kmod.dev->props.supported_bo_flags &
+         PAN_KMOD_BO_FLAG_GPU_UNCACHED))
+      bo_flags &= ~PAN_KMOD_BO_FLAG_GPU_UNCACHED;
+
    return bo_flags;
 }
 
