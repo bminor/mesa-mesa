@@ -553,7 +553,9 @@ decode_bos(void)
             dump_hex_ascii(buf, size, 1);
 
          add_buffer(iova, size, buf);
-         snapshot_gpu_object(iova, size, buf);
+
+         if (size <= 0x40000)
+            snapshot_gpu_object(iova, size, buf);
 
          continue;
       }
