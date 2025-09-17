@@ -212,8 +212,6 @@ enum
 
    DBG_TMZ,
    DBG_SQTT,
-   DBG_USE_ACO,
-   DBG_USE_LLVM,
 
    DBG_COUNT
 };
@@ -249,6 +247,9 @@ enum
    DBG_CHECK_IR,
    DBG_MONOLITHIC_SHADERS,
    DBG_NO_OPT_VARIANT,
+
+   DBG_USE_ACO,
+   DBG_USE_LLVM,
 };
 
 /* Debug options for multimedia. */
