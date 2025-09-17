@@ -511,6 +511,8 @@ init_subqueue(struct panvk_gpu_queue *queue, enum panvk_subqueue_id subqueue)
       .queue_submits = DRM_PANTHOR_OBJ_ARRAY(1, &qsubmit),
    };
 
+   pan_kmod_flush_bo_map_syncs(dev->kmod.dev);
+
    int ret = pan_kmod_ioctl(dev->drm_fd, DRM_IOCTL_PANTHOR_GROUP_SUBMIT,
                             &gsubmit);
    if (ret)
@@ -1135,6 +1137,10 @@ panvk_queue_submit_ioctl(struct panvk_queue_submit *submit)
             ctx->debug.tracebuf.cs = queue->subqueues[i].tracebuf.addr.dev;
       }
    }
+
+   /* Flush pending synchronization requests before submitting the job, to
+    * make sure things are GPU-visible. */
+   pan_kmod_flush_bo_map_syncs(dev->kmod.dev);
 
    struct drm_panthor_group_submit gsubmit = {
       .group_handle = queue->group_handle,

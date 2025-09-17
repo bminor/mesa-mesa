@@ -56,6 +56,10 @@ panvk_queue_submit_batch(struct panvk_gpu_queue *queue, struct panvk_batch *batc
       }
    }
 
+   /* Flush pending synchronization requests before submitting the job, to
+    * make sure things are GPU-visible. */
+   pan_kmod_flush_bo_map_syncs(dev->kmod.dev);
+
    if (batch->vtc_jc.first_job) {
       struct drm_panfrost_submit submit = {
          .bo_handles = (uintptr_t)bos,
