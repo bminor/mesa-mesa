@@ -1533,7 +1533,7 @@ lp_setup_flush_and_restart(struct lp_setup_context *setup)
 void
 lp_setup_add_scissor_planes(const struct u_rect *scissor,
                             struct lp_rast_plane *plane_s,
-                            bool s_planes[4], bool multisample)
+                            bool s_planes[4])
 {
    /*
     * When rasterizing scissored tris, use the intersection of the
@@ -1555,43 +1555,53 @@ lp_setup_add_scissor_planes(const struct u_rect *scissor,
     * (Or only store the c value together with a bit indicating which
     * scissor edge this is, so rasterization would treat them differently
     * (easier to evaluate) to ordinary planes.)
+    *
+    * Note it's important the planes are defined precisely.
+    * For msaa, need to cover exactly 1 pixel, and even without msaa, the
+    * scissor boundaries are actually at exact pixel locations (since there's
+    * no half center offset used in rasterization itself, although could
+    * shift scissor planes in this case instead).
     */
-   int adj = multisample ? 127 : 0;
    if (s_planes[0]) {
-      int x0 = scissor->x0 - 1;
+      int x0 = scissor->x0;
       plane_s->dcdx = ~0U << 8;
       plane_s->dcdy = 0;
       plane_s->c = x0 << 8;
-      plane_s->c += adj;
       plane_s->c = -plane_s->c; /* flip sign */
+      /*
+       * we need x0 to be exactly on plane edge, adjust by 1 since
+       * this is an inclusive edge.
+       */
+      plane_s->c += 1;
       plane_s->eo = 1 << 8;
       plane_s++;
    }
    if (s_planes[1]) {
-      int x1 = scissor->x1;
+      int x1 = scissor->x1 + 1;
       plane_s->dcdx = 1 << 8;
       plane_s->dcdy = 0;
       plane_s->c = x1 << 8;
-      plane_s->c += 127 + adj;
+      /*
+       * no c adjustment, this edge should be exclusive.
+       */
       plane_s->eo = 0 << 8;
       plane_s++;
    }
    if (s_planes[2]) {
-      int y0 = scissor->y0 - 1;
+      int y0 = scissor->y0;
       plane_s->dcdx = 0;
       plane_s->dcdy = 1 << 8;
       plane_s->c = y0 << 8;
-      plane_s->c += adj;
       plane_s->c = -plane_s->c; /* flip sign */
+      plane_s->c += 1;
       plane_s->eo = 1 << 8;
       plane_s++;
    }
    if (s_planes[3]) {
-      int y1 = scissor->y1;
+      int y1 = scissor->y1 + 1;
       plane_s->dcdx = 0;
       plane_s->dcdy = ~0U << 8;
       plane_s->c = y1 << 8;
-      plane_s->c += 127 + adj;
       plane_s->eo = 0;
       plane_s++;
    }

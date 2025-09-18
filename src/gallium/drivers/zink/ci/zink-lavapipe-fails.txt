@@ -85,10 +85,6 @@ spec@ext_framebuffer_multisample@accuracy 4 srgb depthstencil,Fail
 spec@ext_framebuffer_multisample@accuracy 4 srgb depthstencil linear,Fail
 spec@ext_framebuffer_multisample@accuracy all_samples srgb depthstencil,Fail
 spec@ext_framebuffer_multisample@accuracy all_samples srgb depthstencil linear,Fail
-spec@ext_framebuffer_multisample@clip-and-scissor-blit 2 msaa,Fail
-spec@ext_framebuffer_multisample@clip-and-scissor-blit 2 upsample,Fail
-spec@ext_framebuffer_multisample@clip-and-scissor-blit 4 msaa,Fail
-spec@ext_framebuffer_multisample@clip-and-scissor-blit 4 upsample,Fail
 spec@ext_framebuffer_multisample@enable-flag,Fail
 spec@ext_framebuffer_multisample@interpolation 2 centroid-deriv-disabled,Fail
 spec@ext_framebuffer_multisample@interpolation 2 centroid-disabled,Fail
