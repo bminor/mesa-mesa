@@ -1381,10 +1381,16 @@ void *r600_texture_transfer_map(struct pipe_context *ctx,
 				return NULL;
 			}
 
-			rctx->blit_decompress_depth(ctx, rtex, staging_depth,
-						    level, level,
-						    box->z, box->z + box->depth - 1,
-						    0, 0);
+			if (!(usage & PIPE_MAP_DISCARD_WHOLE_RESOURCE)) {
+				rctx->blit_decompress_depth(ctx, rtex, staging_depth,
+							    level, level,
+							    box->z, box->z + box->depth - 1,
+							    0, 0);
+				/* Since we have to wait for the blit_decompress_depth to finish,
+				 * we have to clear PIPE_MAP_UNSYNCHRONIZED here.
+				 */
+				usage &= ~PIPE_MAP_UNSYNCHRONIZED;
+			}
 
 			offset = r600_texture_get_offset(rctx->screen, staging_depth,
 							 level, box,
