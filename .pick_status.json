@@ -4594,7 +4594,7 @@
         "description": "pan/va: fix bi_is_imm_desc_handle early return",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "652e1c2e13946de1e6dc6ae94b8b1f4af6685732",
         "notes": null
