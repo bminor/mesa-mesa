@@ -675,7 +675,14 @@ CDX12EncHMFT::GetParameterValues( const GUID *Api, VARIANT **Values, ULONG *Valu
       }
       else if( *Api == CODECAPI_AVEncVideoLTRBufferControl )
       {
-         *ValuesCount = m_EncoderCapabilities.m_uiMaxHWSupportedLongTermReferences + 1;
+         // reserve one dpb spot for short term reference frame.
+         // when m_EncoderCapabilities.m_uiMaxHWSupportedLongTermReferences = m_EncoderCapabilities.m_uiMaxHWSupportedDPBCapacity, we subtract one.
+         ULONG numSupportedLTR = m_EncoderCapabilities.m_uiMaxHWSupportedLongTermReferences;
+         if( numSupportedLTR > 0 && numSupportedLTR == m_EncoderCapabilities.m_uiMaxHWSupportedDPBCapacity )
+         {
+            numSupportedLTR -= 1;
+         }
+         *ValuesCount = numSupportedLTR + 1;
          CHECKNULL_GOTO( *Values = (VARIANT *) CoTaskMemAlloc( ( *ValuesCount ) * sizeof( VARIANT ) ), E_OUTOFMEMORY, done );
          for( ULONG i = 0; i < *ValuesCount; i++ )
          {
