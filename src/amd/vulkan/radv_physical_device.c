@@ -877,6 +877,9 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
       .storagePushConstant8 = true,
       .shaderBufferInt64Atomics = true,
       .shaderSharedInt64Atomics = true,
+      /* GFX8 supports fp16, but not double rate packed math.
+       * We don't enable that by default because it can sometimes hurt perf.
+       */
       .shaderFloat16 = pdev->info.has_packed_math_16bit ||
                        (pdev->info.gfx_level == GFX8 && instance->drirc.features.expose_float16_gfx8),
       .shaderInt8 = true,
@@ -1470,6 +1473,9 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
       device_type = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
    }
 
+   /* GFX8 supports fp16, but not double rate packed math.
+    * We don't enable that by default because it can sometimes hurt perf.
+    */
    bool has_fp16 = pdev->info.has_packed_math_16bit ||
       (pdev->info.gfx_level == GFX8 && instance->drirc.features.expose_float16_gfx8);
 
