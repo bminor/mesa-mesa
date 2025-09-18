@@ -3379,40 +3379,66 @@ static bool pvr_loadops_contain_clear(struct pvr_renderpass_hwsetup *hw_setup)
    return false;
 }
 
+static inline void
+pvr_cmd_buffer_clear_values_free(struct pvr_cmd_buffer *cmd_buffer)
+{
+   struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
+
+   vk_free(&cmd_buffer->vk.pool->alloc, state->render_pass_info.clear_values);
+   state->render_pass_info.clear_value_count = 0;
+   state->render_pass_info.clear_values = NULL;
+}
+
 static VkResult
-pvr_cmd_buffer_set_clear_values(struct pvr_cmd_buffer *cmd_buffer,
-                                const VkRenderPassBeginInfo *pRenderPassBegin)
+pvr_cmd_buffer_clear_values_alloc(struct pvr_cmd_buffer *cmd_buffer,
+                                  uint32_t clear_value_count)
 {
    struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
 
    /* Free any previously allocated clear values. */
    vk_free(&cmd_buffer->vk.pool->alloc, state->render_pass_info.clear_values);
 
-   if (pRenderPassBegin->clearValueCount) {
-      const size_t size = pRenderPassBegin->clearValueCount *
-                          sizeof(*state->render_pass_info.clear_values);
-
-      state->render_pass_info.clear_values =
-         vk_zalloc(&cmd_buffer->vk.pool->alloc,
-                   size,
-                   8,
-                   VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-      if (!state->render_pass_info.clear_values) {
-         return vk_command_buffer_set_error(&cmd_buffer->vk,
-                                            VK_ERROR_OUT_OF_HOST_MEMORY);
-      }
-
-      memcpy(state->render_pass_info.clear_values,
-             pRenderPassBegin->pClearValues,
-             size);
-   } else {
+   state->render_pass_info.clear_value_count = clear_value_count;
+   if (!clear_value_count) {
       state->render_pass_info.clear_values = NULL;
+      return VK_SUCCESS;
    }
 
-   state->render_pass_info.clear_value_count =
-      pRenderPassBegin->clearValueCount;
+   const size_t size = clear_value_count *
+      sizeof(*state->render_pass_info.clear_values);
+
+   state->render_pass_info.clear_values =
+      vk_zalloc(&cmd_buffer->vk.pool->alloc,
+                size,
+                8,
+                VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+   if (!state->render_pass_info.clear_values) {
+      return vk_command_buffer_set_error(&cmd_buffer->vk,
+                                         VK_ERROR_OUT_OF_HOST_MEMORY);
+   }
 
    return VK_SUCCESS;
+}
+
+static VkResult
+pvr_cmd_buffer_set_clear_values(struct pvr_cmd_buffer *cmd_buffer,
+                                const VkRenderPassBeginInfo *pRenderPassBegin)
+{
+   struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
+   const size_t size = pRenderPassBegin->clearValueCount *
+      sizeof(*state->render_pass_info.clear_values);
+   VkResult result;
+
+   result = pvr_cmd_buffer_clear_values_alloc(cmd_buffer,
+                                              pRenderPassBegin->clearValueCount);
+   if (result != VK_SUCCESS)
+      return result;
+
+   memcpy(state->render_pass_info.clear_values,
+          pRenderPassBegin->pClearValues,
+          size);
+
+   return result;
 }
 
 /**
