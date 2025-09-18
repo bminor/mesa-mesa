@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include "ac_nir.h"
 #include "ac_rtld.h"
 #include "nir_builder.h"
 #include "nir_serialize.h"
@@ -1707,7 +1708,9 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
    static const nir_opt_offsets_options offset_options = {
       .uniform_max = 0,
       .buffer_max = ~0,
-      .shared_max = ~0,
+      .shared_max = UINT16_MAX,
+      .shared_atomic_max = UINT16_MAX,
+      .allow_offset_wrap_cb = ac_nir_allow_offset_wrap_cb,
    };
    NIR_PASS(_, nir, nir_opt_offsets, &offset_options);
 
