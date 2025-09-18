@@ -268,9 +268,9 @@ end_event(struct intel_ds_queue *queue, uint64_t ts_ns,
       return;
 
    IntelRenderpassDataSource::Trace([=](IntelRenderpassDataSource::TraceContext tctx) {
-      setup_incremental_state(tctx, queue->device);
+      setup_incremental_state(tctx, device);
 
-      sync_timestamp(tctx, queue->device);
+      sync_timestamp(tctx, device);
 
       uint64_t evt_id = device->event_id++;
 
@@ -285,16 +285,16 @@ end_event(struct intel_ds_queue *queue, uint64_t ts_ns,
       auto packet = tctx.NewTracePacket();
 
       packet->set_timestamp(start_ns);
-      packet->set_timestamp_clock_id(queue->device->gpu_clock_id);
+      packet->set_timestamp_clock_id(device->gpu_clock_id);
 
       assert(ts_ns >= start_ns);
 
       auto event = packet->set_gpu_render_stage_event();
-      event->set_gpu_id(queue->device->gpu_id);
+      event->set_gpu_id(device->gpu_id);
 
       event->set_hw_queue_iid(stage->queue_iid);
       event->set_stage_iid(stage_iid);
-      event->set_context(queue->device->iid);
+      event->set_context(device->iid);
       event->set_event_id(evt_id);
       event->set_duration(ts_ns - start_ns);
       event->set_submission_id(submission_id);
@@ -537,8 +537,6 @@ intel_ds_end_submit(struct intel_ds_queue *queue,
       auto event = packet->set_vulkan_api_event();
       auto submit = event->set_vk_queue_submit();
 
-      // submit->set_pid(os_get_pid());
-      // submit->set_tid(os_get_tid());
       submit->set_duration_ns(end_ts - start_ts);
       submit->set_vk_queue((uintptr_t) queue);
       submit->set_submission_id(submission_id);
