@@ -930,7 +930,7 @@ fd6_emit_static_context_regs(struct fd_context *ctx, fd_cs &cs)
    crb.add(SP_GFX_USIZE(CHIP));
    crb.add(A6XX_SP_UNKNOWN_B182());
 
-   crb.add(A6XX_RB_UNKNOWN_8E01(.dword = screen->info->a6xx.magic.RB_UNKNOWN_8E01));
+   crb.add(A6XX_RB_RBP_CNTL(.dword = screen->info->a6xx.magic.RB_RBP_CNTL));
    crb.add(A6XX_SP_UNKNOWN_A9A8());
 
    crb.add(A6XX_SP_MODE_CNTL(

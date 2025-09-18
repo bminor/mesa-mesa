@@ -1928,7 +1928,7 @@ by a particular renderpass/blit.
 	<!-- 0x8c35-0x8dff invalid -->
 
 	<!-- always 0x1 ? either doesn't exist for a650 or write-only: -->
-	<reg32 offset="0x8e01" name="RB_UNKNOWN_8E01" usage="cmd"/>
+	<reg32 offset="0x8e01" name="RB_RBP_CNTL" usage="cmd"/>
 	<!-- 0x8e00-0x8e03 invalid -->
 	<reg32 offset="0x8e04" name="RB_DBG_ECO_CNTL" usage="cmd"/> <!-- TODO: valid mask 0xfffffeff -->
 	<reg32 offset="0x8e05" name="RB_ADDR_MODE_CNTL" pos="0" type="a5xx_address_mode"/>
@@ -2436,6 +2436,8 @@ by a particular renderpass/blit.
 	<reg32 offset="0x9e11" name="PC_VIS_STREAM_CNTL" type="a6xx_pc_vis_stream_cntl" variants="A6XX-A7XX"/>
 	<reg64 offset="0x9e12" name="PC_PVIS_STREAM_BIN_BASE" type="waddress" align="32" variants="A6XX-A7XX"/>
 	<reg64 offset="0x9e14" name="PC_DVIS_STREAM_BIN_BASE" type="waddress" align="32" variants="A6XX-A7XX"/>
+
+	<reg32 offset="0x9e0a" name="PC_AUTO_VERTEX_STRIDE"/>
 
 	<bitset name="a6xx_pc_drawcall_cntl_override" inline="yes">
 		<doc>Written by CP_SET_VISIBILITY_OVERRIDE handler</doc>
@@ -3251,10 +3253,12 @@ by a particular renderpass/blit.
 		<bitfield name="F16_NO_INF" pos="3" type="boolean"/>
 	</reg32>
 
-	<reg32 offset="0xae06" name="SP_UNKNOWN_AE06" variants="A7XX-" usage="init"/>
+	<reg32 offset="0xae06" name="SP_ISDB_CNTL" variants="A7XX-" usage="init"/>
+	<reg32 offset="0xae07" name="SP_PERFCTR_CNTL"/>
 	<reg32 offset="0xae08" name="SP_CHICKEN_BITS_1" variants="A7XX-" usage="init"/>
 	<reg32 offset="0xae09" name="SP_CHICKEN_BITS_2" variants="A7XX-" usage="init"/>
 	<reg32 offset="0xae0a" name="SP_CHICKEN_BITS_3" variants="A7XX-" usage="init"/>
+	<reg32 offset="0xae0c" name="SP_STATUS"/>
 
 	<reg32 offset="0xae0f" name="SP_PERFCTR_SHADER_MASK" usage="init">
 		<!-- some perfcntrs are affected by a per-stage enable bit
@@ -3270,7 +3274,7 @@ by a particular renderpass/blit.
 	<array offset="0xae10" name="SP_PERFCTR_SP_SEL" stride="1" length="24"/>
 	<array offset="0xae60" name="SP_PERFCTR_HLSQ_SEL" stride="1" length="6" variants="A7XX-"/>
 	<reg32 offset="0xae6a" name="SP_UNKNOWN_AE6A" variants="A7XX-" usage="init"/>
-	<reg32 offset="0xae6b" name="SP_UNKNOWN_AE6B" variants="A7XX-" usage="init"/>
+	<reg32 offset="0xae6b" name="SP_HLSQ_TIMEOUT_THRESHOLD_DP" variants="A7XX-" usage="init"/>
 	<reg32 offset="0xae6c" name="SP_HLSQ_DBG_ECO_CNTL" variants="A7XX-" usage="init"/>
 	<reg32 offset="0xae6d" name="SP_READ_SEL" variants="A7XX-">
 		<bitfield name="LOCATION" low="18" high="20" type="a7xx_state_location"/>
@@ -3280,11 +3284,24 @@ by a particular renderpass/blit.
 		<bitfield name="SPTP" low="0" high="3"/>
 	</reg32>
 	<reg32 offset="0xae71" name="SP_DBG_CNTL" variants="A7XX-"/>
-	<reg32 offset="0xae73" name="SP_UNKNOWN_AE73" variants="A7XX-" usage="init"/>
+	<reg32 offset="0xae73" name="SP_HLSQ_DBG_ECO_CNTL_1" variants="A7XX-"/>
+	<reg32 offset="0xae74" name="SP_HLSQ_DBG_ECO_CNTL_2" variants="A7XX-"/>
 	<array offset="0xae80" name="SP_PERFCTR_SP_SEL" stride="1" length="36" variants="A7XX-"/>
 	<!-- TODO: there are 4 more percntr select registers (0xae28-0xae2b) -->
 	<!-- TODO: there are a few unknown registers in the 0xae30-0xae52 range -->
 	<reg32 offset="0xae52" name="SP_CONTEXT_SWITCH_GFX_PREEMPTION_SAFE_MODE"/>
+
+	<reg32 offset="0xae30" name="SP_ISDB_BATCH_COUNT" variants="A7XX-"/>
+	<reg32 offset="0xae31" name="SP_ISDB_BATCH_COUNT_INCR_EN" variants="A7XX-"/>
+	<reg32 offset="0xae32" name="SP_ISDB_BATCH_COUNT_SHADERS" variants="A7XX-"/>
+	<reg32 offset="0xae35" name="SP_ISDB_DEBUG_CONFIG" variants="A7XX-"/>
+
+	<reg32 offset="0xae3a" name="SP_SELF_THROTTLE_CONTROL" variants="A7XX-"/>
+	<reg32 offset="0xae3b" name="SP_DISPATCH_CNTL" variants="A7XX-"/>
+	<reg64 offset="0xae3c" name="SP_SW_DEBUG_ADDR" variants="A7XX-"/>
+	<reg64 offset="0xae3e" name="SP_ISDB_DEBUG_ADDR" variants="A7XX-"/>
+
+	<array offset="0xaec0" name="SP_PERFCTR_HLSQ_SEL_2_0" stride="1" length="6" variants="A7XX-"/>
 
 	<!--
 	The downstream kernel calls the debug cluster of registers
