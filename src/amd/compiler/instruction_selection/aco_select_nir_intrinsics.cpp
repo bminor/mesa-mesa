@@ -15,6 +15,7 @@
 #include "ac_nir.h"
 #include "amdgfxregs.h"
 #include <numeric>
+#include <stdint.h>
 
 namespace aco {
 namespace {
@@ -2932,12 +2933,7 @@ visit_load_shared(isel_context* ctx, nir_intrinsic_instr* instr)
    }
 
    unsigned const_offset = nir_intrinsic_base(instr);
-   unsigned const_offset_range = 65536;
-   if (const_offset >= const_offset_range) {
-      unsigned excess = const_offset - (const_offset % const_offset_range);
-      address = bld.vadd32(bld.def(v1), address, Operand::c32(excess));
-      const_offset -= excess;
-   }
+   assert(const_offset <= UINT16_MAX);
 
    Definition def = dst.regClass().type() == RegType::sgpr
                        ? bld.def(RegClass::get(RegType::vgpr, bytes))
@@ -2992,12 +2988,7 @@ visit_store_shared(isel_context* ctx, nir_intrinsic_instr* instr)
    }
 
    unsigned const_offset = nir_intrinsic_base(instr);
-   unsigned const_offset_range = 65536;
-   if (const_offset >= const_offset_range) {
-      unsigned excess = const_offset - (const_offset % const_offset_range);
-      address = bld.vadd32(bld.def(v1), address, Operand::c32(excess));
-      const_offset -= excess;
-   }
+   assert(const_offset <= UINT16_MAX);
 
    Instruction* ds = bld.ds(op, address, data, m, const_offset);
    ds->ds().sync = memory_sync_info(storage_shared);
