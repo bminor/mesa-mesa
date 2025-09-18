@@ -3977,6 +3977,8 @@ nir_shader *nir_shader_create(void *mem_ctx,
                               mesa_shader_stage stage,
                               const nir_shader_compiler_options *options);
 
+bool nir_shader_bisect_select(nir_shader *s);
+
 /** Adds a variable to the appropriate list in nir_shader */
 void nir_shader_add_variable(nir_shader *shader, nir_variable *var);
 
