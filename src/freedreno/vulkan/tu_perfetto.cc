@@ -100,14 +100,7 @@ static const struct {
 static uint32_t gpu_clock_id;
 static uint64_t next_clock_sync_ns; /* cpu time of next clk sync */
 
-/**
- * The timestamp at the point where we first emitted the clock_sync..
- * this  will be a *later* timestamp that the first GPU traces (since
- * we capture the first clock_sync from the CPU *after* the first GPU
- * tracepoints happen).  To avoid confusing perfetto we need to drop
- * the GPU traces with timestamps before this.
- */
-static uint64_t sync_gpu_ts;
+static uint64_t last_sync_gpu_ts;
 
 static uint64_t last_suspend_count;
 
@@ -277,13 +270,6 @@ stage_end(struct tu_device *dev, uint64_t ts_ns, enum tu_stage_id stage_id,
       return;
    }
 
-   /* If we haven't managed to calibrate the alignment between GPU and CPU
-    * timestamps yet, then skip this trace, otherwise perfetto won't know
-    * what to do with it.
-    */
-   if (!sync_gpu_ts)
-      return;
-
    TuRenderpassDataSource::Trace([=](TuRenderpassDataSource::TraceContext tctx) {
       setup_incremental_state(tctx);
 
@@ -400,7 +386,6 @@ sync_clocks(struct tu_device *dev,
 
       clocks.gpu_ts_offset = MAX2(gpu_timestamp_offset, clocks.gpu_ts_offset);
       gpu_timestamp_offset = clocks.gpu_ts_offset;
-      sync_gpu_ts = clocks.gpu_ts + clocks.gpu_ts_offset;
    } else {
       clocks.gpu_ts = 0;
       clocks.gpu_ts_offset = gpu_timestamp_offset;
@@ -439,19 +424,19 @@ sync_clocks(struct tu_device *dev,
       /* Fallback check, detect non-monotonic cases which would happen
        * if we cannot retrieve suspend count.
        */
-      if (sync_gpu_ts > gpu_absolute_ts) {
+      if (last_sync_gpu_ts > gpu_absolute_ts) {
          gpu_absolute_ts += (gpu_max_timestamp - gpu_timestamp_offset);
          gpu_timestamp_offset = gpu_max_timestamp;
          clocks.gpu_ts = gpu_absolute_ts - gpu_timestamp_offset;
       }
 
-      if (sync_gpu_ts > gpu_absolute_ts) {
+      if (last_sync_gpu_ts > gpu_absolute_ts) {
          PERFETTO_ELOG("Non-monotonic gpu timestamp detected, bailing out");
          return {};
       }
 
       gpu_max_timestamp = clocks.gpu_ts;
-      sync_gpu_ts = clocks.gpu_ts;
+      last_sync_gpu_ts = clocks.gpu_ts;
       next_clock_sync_ns = clocks.cpu + 30000000;
    }
 
