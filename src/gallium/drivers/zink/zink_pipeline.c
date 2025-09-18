@@ -930,21 +930,6 @@ zink_create_gfx_pipeline_combined(struct zink_screen *screen, struct zink_gfx_pr
 }
 
 
-/* vertex input pipeline library states with mesh: nothing matters */
-struct zink_gfx_input_key *
-zink_find_or_create_input_mesh(struct zink_context *ctx)
-{
-   uint32_t hash = GFX_INPUT_MESH;
-   struct set_entry *he = _mesa_set_search_pre_hashed(&ctx->gfx_inputs, hash, &hash);
-   if (!he) {
-      struct zink_gfx_input_key *ikey = rzalloc(ctx, struct zink_gfx_input_key);
-      ikey->idx = hash;
-      ikey->pipeline = zink_create_mesh_pipeline_input(zink_screen(ctx->base.screen));
-      he = _mesa_set_add_pre_hashed(&ctx->gfx_inputs, hash, ikey);
-   }
-   return (struct zink_gfx_input_key *)he->key;
-}
-
 /* vertex input pipeline library states with dynamic vertex input: only the topology matters */
 struct zink_gfx_input_key *
 zink_find_or_create_input_dynamic(struct zink_context *ctx, VkPrimitiveTopology vkmode)

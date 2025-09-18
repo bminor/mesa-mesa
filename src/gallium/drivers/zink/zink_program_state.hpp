@@ -247,7 +247,7 @@ zink_get_gfx_pipeline(struct zink_context *ctx,
             gkey = zink_create_pipeline_lib(screen, prog, &ctx->gfx_pipeline_state);
          }
          simple_mtx_unlock(&prog->libs->lock);
-         struct zink_gfx_input_key *ikey = IS_MESH ? zink_find_or_create_input_mesh(ctx) :
+         struct zink_gfx_input_key *ikey = IS_MESH ? NULL :
                                              DYNAMIC_STATE == ZINK_DYNAMIC_VERTEX_INPUT ?
                                              zink_find_or_create_input_dynamic(ctx, vkmode) :
                                              zink_find_or_create_input(ctx, vkmode);
@@ -260,10 +260,10 @@ zink_get_gfx_pipeline(struct zink_context *ctx,
          pc_entry->gpl.okey = okey;
          /* try to hit optimized compile cache first if possible */
          if (!prog->is_separable)
-            pc_entry->pipeline = zink_create_gfx_pipeline_combined(screen, prog, ikey->pipeline, &gkey->pipeline, 1, okey->pipeline, true, true);
+            pc_entry->pipeline = zink_create_gfx_pipeline_combined(screen, prog, ikey ? ikey->pipeline : VK_NULL_HANDLE, &gkey->pipeline, 1, okey->pipeline, true, true);
          if (!pc_entry->pipeline) {
             /* create the non-optimized pipeline first using fast-linking to avoid stuttering */
-            pc_entry->pipeline = zink_create_gfx_pipeline_combined(screen, prog, ikey->pipeline, &gkey->pipeline, 1, okey->pipeline, false, false);
+            pc_entry->pipeline = zink_create_gfx_pipeline_combined(screen, prog, ikey ? ikey->pipeline : VK_NULL_HANDLE, &gkey->pipeline, 1, okey->pipeline, false, false);
             if (!prog->is_separable)
                /* trigger async optimized pipeline compile if this was the fast-linked unoptimized pipeline */
                zink_gfx_program_compile_queue(ctx, pc_entry);

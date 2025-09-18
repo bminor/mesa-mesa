@@ -39,8 +39,6 @@ struct zink_gfx_input_key *
 zink_find_or_create_input(struct zink_context *ctx, VkPrimitiveTopology vkmode);
 struct zink_gfx_input_key *
 zink_find_or_create_input_dynamic(struct zink_context *ctx, VkPrimitiveTopology vkmode);
-struct zink_gfx_input_key *
-zink_find_or_create_input_mesh(struct zink_context *ctx);
 
 VkPipeline
 zink_create_gfx_pipeline(struct zink_screen *screen,

@@ -936,7 +936,7 @@ optimized_compile_job(void *data, void *gdata, int thread_index)
    bool is_mesh = !!pc_entry->prog->shaders[MESA_SHADER_MESH];
    VkPrimitiveTopology vkmode = is_mesh ? VK_PRIMITIVE_TOPOLOGY_MAX_ENUM : zink_primitive_topology(pc_entry->state.gfx_prim_mode);
    if (pc_entry->gpl.gkey)
-      pipeline = zink_create_gfx_pipeline_combined(screen, pc_entry->prog, pc_entry->gpl.ikey->pipeline, &pc_entry->gpl.gkey->pipeline, 1, pc_entry->gpl.okey->pipeline, true, false);
+      pipeline = zink_create_gfx_pipeline_combined(screen, pc_entry->prog, pc_entry->gpl.ikey ? pc_entry->gpl.ikey->pipeline : VK_NULL_HANDLE, &pc_entry->gpl.gkey->pipeline, 1, pc_entry->gpl.okey->pipeline, true, false);
    else
       pipeline = zink_create_gfx_pipeline(screen, pc_entry->prog, pc_entry->prog->objs, &pc_entry->state, pc_entry->state.element_state->binding_map, vkmode, true);
    if (pipeline) {
