@@ -1361,9 +1361,10 @@ panvk_compile_shader(struct panvk_device *dev,
           */
          nir_variants[v] = last ? nir : nir_shader_clone(NULL, nir);
 
-         panvk_lower_nir(dev, nir, info->set_layout_count, info->set_layouts,
-                         info->robustness, noperspective_varyings, state,
-                         &inputs, variant);
+         panvk_lower_nir(dev, nir_variants[v], info->set_layout_count,
+                         info->set_layouts, info->robustness,
+                         noperspective_varyings, state, &input_variants[v],
+                         variant);
 
          /* Allow the remaining FAU space to be filled with constants. */
          input_variants[v].fau_consts.max_amount =
