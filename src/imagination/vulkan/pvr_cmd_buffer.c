@@ -3038,38 +3038,66 @@ void pvr_CmdPushConstants2KHR(VkCommandBuffer commandBuffer,
    }
 }
 
-static VkResult pvr_cmd_buffer_attachments_setup(
+static inline void
+pvr_cmd_buffer_attachments_free(struct pvr_cmd_buffer *cmd_buffer)
+{
+   struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
+
+   vk_free(&cmd_buffer->vk.pool->alloc, state->render_pass_info.attachments);
+   state->render_pass_info.attachment_count = 0;
+   state->render_pass_info.attachments = NULL;
+}
+
+static VkResult pvr_cmd_buffer_attachments_alloc(
    struct pvr_cmd_buffer *cmd_buffer,
-   const struct pvr_render_pass *pass,
-   const struct pvr_framebuffer *framebuffer,
-   const VkRenderPassBeginInfo *pRenderPassBeginInfo)
+   uint32_t attachment_count)
 {
    struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
    struct pvr_render_pass_info *info = &state->render_pass_info;
-   const VkRenderPassAttachmentBeginInfo *pImageless =
-      vk_find_struct_const(pRenderPassBeginInfo->pNext,
-                           RENDER_PASS_ATTACHMENT_BEGIN_INFO);
-
-   if (!pImageless)
-      assert(pass->attachment_count == framebuffer->attachment_count);
 
    /* Free any previously allocated attachments. */
    vk_free(&cmd_buffer->vk.pool->alloc, state->render_pass_info.attachments);
 
-   if (pass->attachment_count == 0) {
+   state->render_pass_info.attachment_count = attachment_count;
+   if (attachment_count == 0) {
       info->attachments = NULL;
       return VK_SUCCESS;
    }
 
+   const size_t size = attachment_count * sizeof(*info->attachments);
+
    info->attachments =
       vk_zalloc(&cmd_buffer->vk.pool->alloc,
-                pass->attachment_count * sizeof(*info->attachments),
+                size,
                 8,
                 VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
    if (!info->attachments) {
       return vk_command_buffer_set_error(&cmd_buffer->vk,
                                          VK_ERROR_OUT_OF_HOST_MEMORY);
    }
+
+   return VK_SUCCESS;
+}
+
+static VkResult pvr_cmd_buffer_attachments_setup(
+   struct pvr_cmd_buffer *cmd_buffer,
+   const struct pvr_render_pass *pass,
+   const struct pvr_framebuffer *framebuffer,
+   const VkRenderPassBeginInfo *pRenderPassBeginInfo)
+{
+   const VkRenderPassAttachmentBeginInfo *pImageless =
+      vk_find_struct_const(pRenderPassBeginInfo->pNext,
+                           RENDER_PASS_ATTACHMENT_BEGIN_INFO);
+   struct pvr_render_pass_info *info = &cmd_buffer->state.render_pass_info;
+
+   VkResult result;
+
+   if (!pImageless)
+      assert(pass->attachment_count == framebuffer->attachment_count);
+
+   result = pvr_cmd_buffer_attachments_alloc(cmd_buffer, pass->attachment_count);
+   if (result != VK_SUCCESS)
+      return result;
 
    for (uint32_t i = 0; i < pass->attachment_count; i++) {
       if (pImageless && pImageless->attachmentCount) {
@@ -3081,7 +3109,7 @@ static VkResult pvr_cmd_buffer_attachments_setup(
       }
    }
 
-   return VK_SUCCESS;
+   return result;
 }
 
 static inline VkResult pvr_render_targets_datasets_create(
