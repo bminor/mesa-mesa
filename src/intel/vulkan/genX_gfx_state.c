@@ -1291,13 +1291,13 @@ update_cps(struct anv_gfx_dynamic_state *hw_state,
            const struct vk_dynamic_graphics_state *dyn)
 {
 #if GFX_VER >= 30
-   SET(COARSE_PIXEL, coarse_pixel.CPSizeX,
+   SET(CPS, coarse_pixel.CPSizeX,
        get_cps_size(dyn->fsr.fragment_size.width));
-   SET(COARSE_PIXEL, coarse_pixel.CPSizeY,
+   SET(CPS, coarse_pixel.CPSizeY,
        get_cps_size(dyn->fsr.fragment_size.height));
-   SET(COARSE_PIXEL, coarse_pixel.CPSizeCombiner0Opcode,
+   SET(CPS, coarse_pixel.CPSizeCombiner0Opcode,
        vk_to_intel_shading_rate_combiner_op[dyn->fsr.combiner_ops[0]]);
-   SET(COARSE_PIXEL, coarse_pixel.CPSizeCombiner1Opcode,
+   SET(CPS, coarse_pixel.CPSizeCombiner1Opcode,
        vk_to_intel_shading_rate_combiner_op[dyn->fsr.combiner_ops[1]]);
 #elif GFX_VER >= 12
    SET(CPS, cps.CoarsePixelShadingStateArrayPointer,
@@ -2855,8 +2855,8 @@ cmd_buffer_repack_gfx_state(struct anv_gfx_dynamic_state *hw_state,
       }
    }
 
-#if GFX_VER >= 30
    if (IS_DIRTY(CPS)) {
+#if GFX_VER >= 30
       anv_gfx_pack(cps, GENX(3DSTATE_COARSE_PIXEL), coarse_pixel) {
          coarse_pixel.DisableCPSPointers = true;
          SET(coarse_pixel, coarse_pixel, CPSizeX);
@@ -2864,22 +2864,18 @@ cmd_buffer_repack_gfx_state(struct anv_gfx_dynamic_state *hw_state,
          SET(coarse_pixel, coarse_pixel, CPSizeCombiner0Opcode);
          SET(coarse_pixel, coarse_pixel, CPSizeCombiner1Opcode);
       }
-   }
-#else
-   if (IS_DIRTY(CPS)) {
-#if GFX_VER == 11
+#elif GFX_VER >= 12
+      anv_gfx_pack(cps, GENX(3DSTATE_CPS_POINTERS), cps) {
+         SET(cps, cps, CoarsePixelShadingStateArrayPointer);
+      }
+#elif GFX_VER == 11
       anv_gfx_pack(cps, GENX(3DSTATE_CPS), cps) {
          SET(cps, cps, CoarsePixelShadingMode);
          SET(cps, cps, MinCPSizeX);
          SET(cps, cps, MinCPSizeY);
       }
-#elif GFX_VER >= 12
-      anv_gfx_pack(cps, GENX(3DSTATE_CPS_POINTERS), cps) {
-         SET(cps, cps, CoarsePixelShadingStateArrayPointer);
-      }
 #endif
    }
-#endif /* GFX_VER >= 30 */
 
    if (IS_DIRTY(SF)) {
       anv_gfx_pack(sf, GENX(3DSTATE_SF), sf) {
