@@ -231,30 +231,17 @@ by a particular renderpass/blit.
 	<reg32 offset="0x0946" name="CP_MRB_INIT_SIZE"/>
 	<reg32 offset="0x0947" name="CP_VSD_INIT_SIZE"/>
 
-	<reg32 offset="0x0948" name="CP_ROQ_AVAIL_RB">
+	<bitset name="a6xx_cp_roq_avail" inline="yes">
 		<doc>number of remaining dwords incl current dword being consumed?</doc>
 		<bitfield name="REM" low="16" high="31"/>
-	</reg32>
-	<reg32 offset="0x0949" name="CP_ROQ_AVAIL_IB1">
-		<doc>number of remaining dwords incl current dword being consumed?</doc>
-		<bitfield name="REM" low="16" high="31"/>
-	</reg32>
-	<reg32 offset="0x094a" name="CP_ROQ_AVAIL_IB2">
-		<doc>number of remaining dwords incl current dword being consumed?</doc>
-		<bitfield name="REM" low="16" high="31"/>
-	</reg32>
-	<reg32 offset="0x094b" name="CP_ROQ_AVAIL_SDS">
-		<doc>number of remaining dwords incl current dword being consumed?</doc>
-		<bitfield name="REM" low="16" high="31"/>
-	</reg32>
-	<reg32 offset="0x094c" name="CP_ROQ_AVAIL_MRB">
-		<doc>number of dwords that have already been read but haven't been consumed by $addr</doc>
-		<bitfield name="REM" low="16" high="31"/>
-	</reg32>
-	<reg32 offset="0x094d" name="CP_ROQ_AVAIL_VSD">
-		<doc>number of remaining dwords incl current dword being consumed?</doc>
-		<bitfield name="REM" low="16" high="31"/>
-	</reg32>
+	</bitset>
+
+	<reg32 offset="0x0948" name="CP_ROQ_AVAIL_RB" type="a6xx_cp_roq_avail" variants="A6XX-A7XX"/>
+	<reg32 offset="0x0949" name="CP_ROQ_AVAIL_IB1" type="a6xx_cp_roq_avail" variants="A6XX-A7XX"/>
+	<reg32 offset="0x094a" name="CP_ROQ_AVAIL_IB2" type="a6xx_cp_roq_avail" variants="A6XX-A7XX"/>
+	<reg32 offset="0x094b" name="CP_ROQ_AVAIL_SDS" type="a6xx_cp_roq_avail" variants="A6XX-A7XX"/>
+	<reg32 offset="0x094c" name="CP_ROQ_AVAIL_MRB" type="a6xx_cp_roq_avail" variants="A6XX-A7XX"/>
+	<reg32 offset="0x094d" name="CP_ROQ_AVAIL_VSD" type="a6xx_cp_roq_avail" variants="A6XX-A7XX"/>
 
 	<bitset name="a7xx_aperture_cntl" inline="yes">
 		<bitfield name="PIPE" low="12" high="13" type="a7xx_pipe"/>
