@@ -141,6 +141,16 @@ panvk_pool_alloc_backing(struct panvk_pool *pool, size_t sz)
 struct panvk_priv_mem
 panvk_pool_alloc_mem(struct panvk_pool *pool, struct panvk_pool_alloc_info info)
 {
+   struct panvk_physical_device *pdev =
+      to_panvk_physical_device(pool->dev->vk.physical);
+
+   /* Make sure objects allocated from shared BOs are aligned on a cacheline. */
+   if (!pool->props.owns_bos &&
+       (pool->props.create_flags & PAN_KMOD_BO_FLAG_WB_MMAP)) {
+      info.alignment =
+         MAX2(pdev->vk.properties.nonCoherentAtomSize, info.alignment);
+   }
+
    assert(info.alignment == util_next_power_of_two(info.alignment));
 
    if (pool->props.needs_locking)
