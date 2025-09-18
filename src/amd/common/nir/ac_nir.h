@@ -441,6 +441,9 @@ ac_nir_store_may_be_subdword(const nir_intrinsic_instr *instr);
 uint8_t
 ac_nir_lower_phis_to_scalar_cb(const nir_instr *instr, const void *_);
 
+bool
+ac_nir_allow_offset_wrap_cb(nir_intrinsic_instr *instr, const void *data);
+
 #ifdef __cplusplus
 }
 #endif

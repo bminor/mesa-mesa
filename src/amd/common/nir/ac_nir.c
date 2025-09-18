@@ -8,6 +8,7 @@
 #include "ac_nir.h"
 #include "ac_nir_helpers.h"
 #include "nir_builder.h"
+#include "nir_intrinsics.h"
 
 /* Set NIR options shared by ACO, LLVM, RADV, and radeonsi. */
 void ac_nir_set_options(struct radeon_info *info, bool use_llvm,
@@ -892,4 +893,17 @@ ac_nir_lower_phis_to_scalar_cb(const nir_instr *instr, const void *_)
       return 1;
 
    return 32 / phi->def.bit_size;
+}
+
+bool
+ac_nir_allow_offset_wrap_cb(nir_intrinsic_instr *instr, const void *data)
+{
+   switch (instr->intrinsic) {
+   case nir_intrinsic_load_shared:
+   case nir_intrinsic_store_shared:
+   case nir_intrinsic_shared_atomic:
+   case nir_intrinsic_shared_atomic_swap:
+      return true;
+   default: return false;
+   }
 }
