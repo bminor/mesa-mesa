@@ -270,8 +270,8 @@ update_gfx_pipeline(struct zink_context *ctx, struct zink_batch_state *bs, enum 
          pipeline = zink_get_gfx_pipeline<DYNAMIC_STATE, false>(ctx, ctx->curr_program, &ctx->gfx_pipeline_state, mode);
    }
    if (pipeline) {
-      pipeline_changed = prev_pipeline != pipeline;
-      if (BATCH_CHANGED || pipeline_changed || ctx->shobj_draw)
+      pipeline_changed = prev_pipeline != pipeline || ctx->shobj_draw;
+      if (BATCH_CHANGED || pipeline_changed)
          VKCTX(CmdBindPipeline)(bs->cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
       ctx->shobj_draw = false;
    } else {
