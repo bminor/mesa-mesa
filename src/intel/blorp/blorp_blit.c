@@ -2474,6 +2474,12 @@ blorp_copy_supports_blitter(struct blorp_context *blorp,
    if (devinfo->ver < 12)
       return false;
 
+   if (devinfo->verx10 == 120 &&
+       (src_surf->tiling != ISL_TILING_LINEAR ||
+        dst_surf->tiling != ISL_TILING_LINEAR)) {
+      return false;
+   }
+
    if (dst_surf->samples > 1 || src_surf->samples > 1)
       return false;
 
