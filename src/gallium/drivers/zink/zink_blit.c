@@ -190,6 +190,10 @@ blit_native(struct zink_context *ctx, const struct pipe_blit_info *info, bool *n
                              vk_format_get_aspect_format(dst_vkformat, dst_aspects);
    if (src->format != zink_get_format(screen, info->src.format) || dst_aspect_fmt != dst_vkformat)
       return false;
+   /* TODO: remove this in the future when spec permits to allow single-aspected blits */
+   if (src->format != zink_get_format(screen, info->src.format) ||
+       dst->format != zink_get_format(screen, info->dst.format))
+      return false;
    if (src->format != VK_FORMAT_A8_UNORM_KHR && zink_format_is_emulated_alpha(info->src.format))
       return false;
 
