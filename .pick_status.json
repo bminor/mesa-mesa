@@ -4624,7 +4624,7 @@
         "description": "freedreno/decode: Fix preamble decoding",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "46ad5a01a89959726769b869b1e5019813c5e48d",
         "notes": null
