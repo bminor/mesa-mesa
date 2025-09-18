@@ -408,12 +408,13 @@ xe_batch_submit(struct iris_batch *batch)
       .syncs = (uintptr_t)syncs,
       .num_syncs = sync_len,
    };
-   if (!batch->screen->devinfo->no_hw)
+   if (!batch->screen->devinfo->no_hw) {
       ret = intel_ioctl(iris_bufmgr_get_fd(bufmgr), DRM_IOCTL_XE_EXEC, &exec);
 
-   if (ret) {
-      ret = -errno;
-      goto error_exec;
+      if (ret) {
+         ret = -errno;
+         goto error_exec;
+      }
    }
 
    if (!iris_implicit_sync_export(batch, &implicit_sync))
