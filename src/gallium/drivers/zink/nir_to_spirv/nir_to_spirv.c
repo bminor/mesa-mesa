@@ -5136,6 +5136,9 @@ nir_to_spirv(struct nir_shader *s, const struct zink_shader_info *sinfo, const s
    case MESA_SHADER_MESH: {
       unsigned mode = 0;
       switch (s->info.mesh.primitive_type) {
+      case MESA_PRIM_POINTS:
+         mode = SpvExecutionModeOutputPoints;
+         break;
       case MESA_PRIM_LINES:
          mode = SpvExecutionModeOutputLinesEXT;
          break;
