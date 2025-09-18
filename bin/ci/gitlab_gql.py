@@ -22,6 +22,7 @@ from gitlab_common import get_token_from_default_dir
 from gql import Client, gql
 from gql.transport.requests import RequestsHTTPTransport
 from graphql import DocumentNode
+from rich.console import Console
 
 DEFAULT_TERMINAL_SIZE: int = 80  # columns
 
@@ -39,6 +40,9 @@ Dag = dict[str, DagNode]
 
 
 StageSeq = OrderedDict[str, set[str]]
+
+console = Console(highlight=False)
+print = console.print
 
 
 def get_project_root_dir():
@@ -343,13 +347,13 @@ def filter_dag(dag: Dag, job_filter: callable) -> Dag:
     })
 
 
-def print_dag(dag: Dag, indentation: int = 0) -> None:
+def print_dag(dag: Dag, indentation: int = 0, color: str = "") -> None:
     for job, data in sorted(dag.items()):
-        print(f"{' '*indentation}{job}:")
-        print_formatted_list(list(data['needs']), indentation=indentation+8)
+        print(f"{color}{' '*indentation}{job}:")
+        print_formatted_list(list(data['needs']), indentation=indentation+8, color=color)
 
 
-def print_formatted_list(elements: list[str], indentation: int = 0) -> None:
+def print_formatted_list(elements: list[str], indentation: int = 0, color: str = "") -> None:
     """
     When a list of elements is going to be printed, if it is longer than one line, reformat it to be multiple
     lines with a 'ls' command style.
@@ -364,7 +368,7 @@ def print_formatted_list(elements: list[str], indentation: int = 0) -> None:
     except OSError:
         h_size = DEFAULT_TERMINAL_SIZE
     if indentation + sum(len(element) for element in elements) + (len(elements)*2) < h_size:  # fits in one line
-        print(f"{' '*indentation}{', '.join([element for element in elements])}")
+        print(f"{color}{' '*indentation}{', '.join([element for element in elements])}")
         return
     column_separator_size = 2
     column_width: int = len(max(elements, key=len)) + column_separator_size
@@ -375,7 +379,7 @@ def print_formatted_list(elements: list[str], indentation: int = 0) -> None:
         print(' '*indentation, end='')
         for column in range(len(line)):
             if line[column] is not None:
-                print(f"{line[column]:<{column_width}}", end='')
+                print(f"{color}{line[column]:<{column_width}}", end='')
         print()
 
 

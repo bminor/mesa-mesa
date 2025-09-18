@@ -26,7 +26,6 @@ from typing import Callable, Dict, TYPE_CHECKING, Iterable, Literal, Optional, T
 
 import gitlab
 import gitlab.v4.objects
-from colorama import Fore, Style
 from gitlab_common import (
     GITLAB_URL,
     TOKEN_DIR,
@@ -34,11 +33,11 @@ from gitlab_common import (
     get_gitlab_project,
     get_token_from_default_dir,
     pretty_duration,
-    print_once,
     read_token,
     wait_for_pipeline,
 )
 from gitlab_gql import GitlabGQL, create_job_needs_dag, filter_dag, print_dag, print_formatted_list
+from rich.console import Console
 
 if TYPE_CHECKING:
     from gitlab_gql import Dag
@@ -47,16 +46,13 @@ REFRESH_WAIT_LOG = 10
 REFRESH_WAIT_JOBS = 6
 MAX_ENABLE_JOB_ATTEMPTS = 3
 
-URL_START = "\033]8;;"
-URL_END = "\033]8;;\a"
-
 STATUS_COLORS = {
     "created": "",
-    "running": Fore.BLUE,
-    "success": Fore.GREEN,
-    "failed": Fore.RED,
-    "canceled": Fore.MAGENTA,
-    "canceling": Fore.MAGENTA,
+    "running": "[blue]",
+    "success": "[green]",
+    "failed": "[red]",
+    "canceled": "[magenta]",
+    "canceling": "[magenta]",
     "manual": "",
     "pending": "",
     "skipped": "",
@@ -64,6 +60,9 @@ STATUS_COLORS = {
 
 COMPLETED_STATUSES = frozenset({"success", "failed"})
 RUNNING_STATUSES = frozenset({"created", "pending", "running"})
+
+console = Console(highlight=False)
+print = console.print
 
 
 def print_job_status(
@@ -86,13 +85,12 @@ def print_job_status(
 
     duration = job_duration(job)
 
-    print_once(
-        STATUS_COLORS[job.status]
-        + f"{jtype:{type_field_pad}} "  # U+1F78B Round target
-        + link2print(job.web_url, job.name, name_field_pad)
-        + (f" has new status: {job.status}" if new_status else f" {job.status}")
-        + (f" ({pretty_duration(duration)})" if job.started_at else "")
-        + Style.RESET_ALL
+    print(
+        f"{STATUS_COLORS[job.status]}"
+        f"{jtype:{type_field_pad}} "  # U+1F78B Round target
+        f"{link2print(job.web_url, job.name, name_field_pad)} "
+        f"{f"has new status: {job.status} " if new_status else f"{job.status}"} "
+        f"{f"({pretty_duration(duration)})" if job.started_at else ""}"
     )
 
 
@@ -246,9 +244,8 @@ def monitor_pipeline(
                 continue
 
         if jobs_waiting:
-            print(f"{Fore.YELLOW}Waiting for jobs to update status:")
-            print_formatted_list(jobs_waiting, indentation=8)
-            print(Style.RESET_ALL, end='')
+            print(f"[yellow]Waiting for jobs to update status:")
+            print_formatted_list(jobs_waiting, indentation=8, color="[yellow]")
             pretty_wait(REFRESH_WAIT_JOBS)
             continue
 
@@ -270,10 +267,7 @@ def monitor_pipeline(
             and not RUNNING_STATUSES.intersection(target_statuses.values())
         ):
             print(
-                Fore.RED,
-                "Target in skipped state, aborting. Failed dependencies:",
-                deps_failed,
-                Fore.RESET,
+                f"[red]Target in skipped state, aborting. Failed dependencies:{deps_failed}"
             )
             return None, 1, execution_times
 
@@ -349,9 +343,7 @@ def enable_job(
     type_field_pad = len(jtype) if len(jtype) > type_field_pad else type_field_pad
     name_field_pad = len(job_name) if len(job_name) > name_field_pad else name_field_pad
     print(
-        Fore.MAGENTA +
-        f"{jtype:{type_field_pad}} {job.name:{name_field_pad}} manually enabled" +
-        Style.RESET_ALL
+        f"[magenta]{jtype:{type_field_pad}} {job.name:{name_field_pad}} manually enabled"
     )
 
     return True
@@ -417,7 +409,7 @@ def print_log(
         printed_lines = len(lines)
 
         if job.status in COMPLETED_STATUSES:
-            print(Fore.GREEN + f"Job finished: {job.web_url}" + Style.RESET_ALL)
+            print(f"[green]Job finished: {job.web_url}")
             return
         pretty_wait(REFRESH_WAIT_LOG)
 
@@ -552,15 +544,13 @@ def print_detected_jobs(
 ) -> None:
     def print_job_set(color: str, kind: str, job_set: Iterable[str]):
         job_list = list(job_set)
-        print(color + f"Running {len(job_list)} {kind} jobs:")
-        print_formatted_list(job_list, indentation=8)
-        print(Style.RESET_ALL)
+        print(f"{color}Running {len(job_list)} {kind} jobs:")
+        print_formatted_list(job_list, indentation=8, color=color)
 
-    print(Fore.YELLOW + "Detected target job and its dependencies:")
-    print_dag(target_dep_dag, indentation=8)
-    print(Style.RESET_ALL)
-    print_job_set(Fore.MAGENTA, "dependency", dependency_jobs)
-    print_job_set(Fore.BLUE, "target", target_jobs)
+    print("[yellow]Detected target job and its dependencies:")
+    print_dag(target_dep_dag, indentation=8, color="[yellow]")
+    print_job_set("[magenta]", "dependency", dependency_jobs)
+    print_job_set("[blue]", "target", target_jobs)
 
 
 def find_dependencies(
@@ -601,7 +591,7 @@ def find_dependencies(
 
     target_dep_dag = filter_dag(dag, job_filter)
     if not target_dep_dag:
-        print(Fore.RED + "The job(s) were not found in the pipeline." + Fore.RESET)
+        print("[red]The job(s) were not found in the pipeline.")
         sys.exit(1)
 
     dependency_jobs = set(chain.from_iterable(d["needs"] for d in target_dep_dag.values()))
@@ -638,15 +628,16 @@ def __job_duration_record(dict_item: tuple) -> str:
     """
     job_id = f"{dict_item[0]}"  # dictionary key
     job_duration, job_status, job_url = dict_item[1]  # dictionary value, the tuple
-    return (f"{STATUS_COLORS[job_status]}"
-            f"{link2print(job_url, job_id)}: {pretty_duration(job_duration):>8}"
-            f"{Style.RESET_ALL}")
+    return (
+        f"{STATUS_COLORS[job_status]}"
+        f"{link2print(job_url, job_id)}: {pretty_duration(job_duration):>8}"
+    )
 
 
 def link2print(url: str, text: str, text_pad: int = 0) -> str:
     text = str(text)
     text_pad = len(text) if text_pad < 1 else text_pad
-    return f"{URL_START}{url}\a{text:{text_pad}}{URL_END}"
+    return f"[link={url}]{text:{text_pad}}[/link]"
 
 
 def main() -> None:
@@ -711,7 +702,7 @@ def main() -> None:
         target = '|'.join(args.target)
         target = target.strip()
 
-        print("🞋 target job: " + Fore.BLUE + target + Style.RESET_ALL)  # U+1F78B Round target
+        print(f"🞋 target job: [blue]{target}")  # U+1F78B Round target
 
         # Implicitly include `parallel:` jobs
         target = f'({target})' + r'( \d+/\d+)?'
@@ -721,18 +712,18 @@ def main() -> None:
         include_stage = '|'.join(args.include_stage)
         include_stage = include_stage.strip()
 
-        print("🞋 target from stages: " + Fore.BLUE + include_stage + Style.RESET_ALL)  # U+1F78B Round target
+        print(f"🞋 target from stages: [blue]{include_stage}")  # U+1F78B Round target
 
         include_stage_regex = re.compile(include_stage)
 
         exclude_stage = '|'.join(args.exclude_stage)
         exclude_stage = exclude_stage.strip()
 
-        print("🞋 target excluding stages: " + Fore.BLUE + exclude_stage + Style.RESET_ALL)  # U+1F78B Round target
+        print(f"🞋 target excluding stages: [blue]{exclude_stage}")  # U+1F78B Round target
 
         exclude_stage_regex = re.compile(exclude_stage)
 
-        print("🞋 target jobs with tags: " + Fore.BLUE + str(args.job_tags) + Style.RESET_ALL)  # U+1F78B Round target
+        print(f"🞋 target jobs with tags: [blue]{str(args.job_tags)}")  # U+1F78B Round target
         job_tags_regexes = [re.compile(job_tag) for job_tag in args.job_tags]
 
         def job_filter(
