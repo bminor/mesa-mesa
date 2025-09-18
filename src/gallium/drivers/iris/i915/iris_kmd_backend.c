@@ -387,7 +387,7 @@ i915_batch_submit(struct iris_batch *batch)
    }
 
    int ret = 0;
-   if (!batch->screen->devinfo->no_hw) {
+   if (likely(!batch->screen->devinfo->no_hw)) {
       do {
          ret = intel_ioctl(batch->screen->fd, DRM_IOCTL_I915_GEM_EXECBUFFER2, &execbuf);
       } while (ret && errno == ENOMEM);
