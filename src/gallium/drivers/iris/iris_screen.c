@@ -316,6 +316,7 @@ iris_init_screen_caps(struct iris_screen *screen)
    caps->texture_multisample = true;
    caps->cube_map_array = true;
    caps->texture_buffer_objects = true;
+   caps->sampler_reduction_minmax_arb = devinfo->ver > 8;
    caps->query_pipeline_statistics_single = true;
    caps->texture_query_lod = true;
    caps->sample_shading = true;

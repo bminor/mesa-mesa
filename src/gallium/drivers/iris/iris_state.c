@@ -313,6 +313,19 @@ translate_wrap(unsigned pipe_wrap)
    return map[pipe_wrap];
 }
 
+#if GFX_VER > 8
+static uint32_t
+translate_tex_filter_mode(unsigned mode)
+{
+   static const unsigned map[] = {
+      [PIPE_TEX_REDUCTION_WEIGHTED_AVERAGE] = STD_FILTER,
+      [PIPE_TEX_REDUCTION_MIN]              = MINIMUM,
+      [PIPE_TEX_REDUCTION_MAX]              = MAXIMUM,
+   };
+   return map[mode];
+}
+#endif
+
 /**
  * Allocate space for some indirect state.
  *
@@ -2527,6 +2540,11 @@ fill_sampler_state(uint32_t *sampler_state,
       mag_img_filter = state->min_img_filter;
    }
 
+#if GFX_VER > 8
+   uint32_t reduction_mode =
+      translate_tex_filter_mode(state->reduction_mode);
+#endif
+
    iris_pack_state(GENX(SAMPLER_STATE), sampler_state, samp) {
       samp.TCXAddressControlMode = translate_wrap(state->wrap_s);
       samp.TCYAddressControlMode = translate_wrap(state->wrap_t);
@@ -2537,7 +2555,11 @@ fill_sampler_state(uint32_t *sampler_state,
       samp.MagModeFilter = mag_img_filter;
       samp.MipModeFilter = translate_mip_filter(state->min_mip_filter);
       samp.MaximumAnisotropy = RATIO21;
-
+#if GFX_VER > 8
+      samp.ReductionType = reduction_mode;
+      samp.ReductionTypeEnable =
+         reduction_mode != PIPE_TEX_REDUCTION_WEIGHTED_AVERAGE;
+#endif
       if (max_anisotropy >= 2) {
          if (state->min_img_filter == PIPE_TEX_FILTER_LINEAR) {
 #if GFX_VER >= 30
