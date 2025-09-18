@@ -1990,8 +1990,8 @@ by a particular renderpass/blit.
 	<!-- 0x8e29-0x8e2b invalid -->
 	<array offset="0x8e2c" name="RB_PERFCTR_CMP_SEL" stride="1" length="4"/>
 	<array offset="0x8e30" name="RB_PERFCTR_UFC_SEL" stride="1" length="6" variants="A7XX-"/>
-	<reg32 offset="0x8e3b" name="RB_RB_SUB_BLOCK_SEL_CNTL_HOST"/>
-	<reg32 offset="0x8e3d" name="RB_RB_SUB_BLOCK_SEL_CNTL_CD"/>
+	<reg32 offset="0x8e3b" name="RB_SUB_BLOCK_SEL_CNTL_HOST"/>
+	<reg32 offset="0x8e3d" name="RB_SUB_BLOCK_SEL_CNTL_CD"/>
 	<!-- 0x8e3e-0x8e4f invalid -->
 	<!-- GMEM save/restore for preemption: -->
 	<reg32 offset="0x8e50" name="RB_CONTEXT_SWITCH_GMEM_SAVE_RESTORE_ENABLE" pos="0" type="boolean"/>
