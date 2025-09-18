@@ -25,10 +25,12 @@ static struct rnnenum *pm4_packets;
 static int
 find_reg(struct rnndomain *dom, const char *name)
 {
-   for (int i = 0; i < dom->subelemsnum; i++)
+   for (int i = 0; i < dom->subelemsnum; i++) {
+      if (!rnndec_varmatch(ctx, &dom->subelems[i]->varinfo))
+         continue;
       if (!strcmp(name, dom->subelems[i]->name))
          return dom->subelems[i]->offset;
-
+   }
    return -1;
 }
 
