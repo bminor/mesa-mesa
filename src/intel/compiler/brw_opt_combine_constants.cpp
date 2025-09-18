@@ -821,18 +821,18 @@ struct imm {
    /** When promoting half-float we need to account for certain restrictions */
    bool is_half_float;
 
+   /** Is the value used only in a single basic block? */
+   bool used_in_single_block;
+
    /**
     * The GRF register and subregister number where we've decided to store the
     * constant value.
     */
    uint8_t subreg_offset;
-   uint16_t nr;
+   uint32_t nr;
 
-   /** Is the value used only in a single basic block? */
-   bool used_in_single_block;
-
-   uint16_t first_use_ip;
-   uint16_t last_use_ip;
+   uint32_t first_use_ip;
+   uint32_t last_use_ip;
 };
 
 /** The working set of information about immediates. */
@@ -1433,7 +1433,7 @@ brw_opt_combine_constants(brw_shader &s)
 
       imm->is_half_float = false;
 
-      imm->first_use_ip = UINT16_MAX;
+      imm->first_use_ip = UINT32_MAX;
       imm->last_use_ip = 0;
 
       imm->uses = new(const_ctx) exec_list;
