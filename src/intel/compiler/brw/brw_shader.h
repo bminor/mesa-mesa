@@ -155,6 +155,7 @@ public:
    brw_reg sample_mask;
    brw_reg outputs[VARYING_SLOT_MAX];
    brw_reg dual_src_output;
+   /* This includes HW thread payload + push constants + URB(after brw_assign_xs_urb_setup()) */
    int first_non_payload_grf;
 
    enum brw_shader_phase phase;
