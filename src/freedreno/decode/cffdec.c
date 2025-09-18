@@ -2920,7 +2920,7 @@ cp_reg_write(uint32_t *dwords, uint32_t sizedwords, int level)
 }
 
 static void
-cp_set_ctxswitch_ib(uint32_t *dwords, uint32_t sizedwords, int level)
+cp_set_amble(uint32_t *dwords, uint32_t sizedwords, int level)
 {
    uint64_t addr;
    uint32_t size = dwords[2] & 0xffff;
@@ -3005,7 +3005,7 @@ static const struct type3_op {
    CP(REG_WRITE, cp_reg_write),
    CP(DRAW_AUTO, cp_draw_auto, {.load_all_groups = true}),
 
-   CP(SET_CTXSWITCH_IB, cp_set_ctxswitch_ib),
+   CP(SET_AMBLE, cp_set_amble),
 
    CP(START_BIN, cp_start_bin),
 
