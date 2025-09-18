@@ -132,6 +132,15 @@ xe_exec_print_debug(struct anv_queue *queue, uint32_t cmd_buffer_count,
                                    perf_query_pool, perf_query_pass);
 }
 
+static int
+xe_exec_ioctl(struct anv_device *device, struct drm_xe_exec *exec)
+{
+   if (unlikely(device->info->no_hw))
+      return 0;
+
+   return intel_ioctl(device->fd, DRM_IOCTL_XE_EXEC, exec);
+}
+
 VkResult
 xe_queue_exec_async(struct anv_async_submit *submit,
                     uint32_t wait_count,
@@ -197,10 +206,8 @@ xe_queue_exec_async(struct anv_async_submit *submit,
    xe_exec_print_debug(queue, 0, NULL, NULL, 0, &exec);
    anv_async_submit_print_batch(submit);
 
-   if (likely(!device->info->no_hw)) {
-      if (intel_ioctl(device->fd, DRM_IOCTL_XE_EXEC, &exec))
-         return vk_device_set_lost(&device->vk, "anv_xe_queue_exec_locked failed: %m");
-   }
+   if (xe_exec_ioctl(device, &exec))
+      return vk_device_set_lost(&device->vk, "anv_xe_queue_exec_locked failed: %m");
 
    return anv_queue_post_submit(queue, VK_SUCCESS);
 }
@@ -245,10 +252,9 @@ xe_companion_rcs_queue_exec_locked(struct anv_queue *queue,
    anv_measure_submit(companion_rcs_cmd_buffer);
    xe_exec_print_debug(queue, 1, &companion_rcs_cmd_buffer, NULL, 0, &exec);
 
-   if (!device->info->no_hw) {
-      if (intel_ioctl(device->fd, DRM_IOCTL_XE_EXEC, &exec))
-         result = vk_device_set_lost(&device->vk, "anv_xe_queue_exec_locked failed: %m");
-   }
+   if (xe_exec_ioctl(device, &exec))
+      result = vk_device_set_lost(&device->vk, "anv_xe_queue_exec_locked failed: %m");
+
    vk_free(&device->vk.alloc, xe_syncs);
 
    return result;
@@ -367,14 +373,14 @@ xe_queue_exec_locked(struct anv_queue *queue,
          xe_syncs[1].timeline_value = intel_bind_timeline_get_last_point(&device->perf_timeline);
       }
 
-      if (!device->info->no_hw && result == VK_SUCCESS) {
-         if (intel_ioctl(device->fd, DRM_IOCTL_XE_EXEC, &perf_query_exec))
+      if (result == VK_SUCCESS) {
+         if (xe_exec_ioctl(device, &perf_query_exec))
             result = vk_device_set_lost(&device->vk, "perf_query_exec failed: %m");
       }
    }
 
-   if (!device->info->no_hw && result == VK_SUCCESS) {
-      if (intel_ioctl(device->fd, DRM_IOCTL_XE_EXEC, &exec))
+   if (result == VK_SUCCESS) {
+      if (xe_exec_ioctl(device, &exec))
          result = vk_device_set_lost(&device->vk, "anv_xe_queue_exec_locked failed: %m");
    }
    vk_free(&device->vk.alloc, xe_syncs);
