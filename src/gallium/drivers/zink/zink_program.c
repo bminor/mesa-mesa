@@ -933,10 +933,12 @@ optimized_compile_job(void *data, void *gdata, int thread_index)
    struct zink_gfx_pipeline_cache_entry *pc_entry = data;
    struct zink_screen *screen = gdata;
    VkPipeline pipeline;
+   bool is_mesh = !!pc_entry->prog->shaders[MESA_SHADER_MESH];
+   VkPrimitiveTopology vkmode = is_mesh ? VK_PRIMITIVE_TOPOLOGY_MAX_ENUM : zink_primitive_topology(pc_entry->state.gfx_prim_mode);
    if (pc_entry->gpl.gkey)
       pipeline = zink_create_gfx_pipeline_combined(screen, pc_entry->prog, pc_entry->gpl.ikey->pipeline, &pc_entry->gpl.gkey->pipeline, 1, pc_entry->gpl.okey->pipeline, true, false);
    else
-      pipeline = zink_create_gfx_pipeline(screen, pc_entry->prog, pc_entry->prog->objs, &pc_entry->state, pc_entry->state.element_state->binding_map, zink_primitive_topology(pc_entry->state.gfx_prim_mode), true);
+      pipeline = zink_create_gfx_pipeline(screen, pc_entry->prog, pc_entry->prog->objs, &pc_entry->state, pc_entry->state.element_state->binding_map, vkmode, true);
    if (pipeline) {
       pc_entry->gpl.unoptimized_pipeline = pc_entry->pipeline;
       pc_entry->pipeline = pipeline;
@@ -948,13 +950,15 @@ optimized_shobj_compile_job(void *data, void *gdata, int thread_index)
 {
    struct zink_gfx_pipeline_cache_entry *pc_entry = data;
    struct zink_screen *screen = gdata;
+   bool is_mesh = !!pc_entry->prog->shaders[MESA_SHADER_MESH];
+   VkPrimitiveTopology vkmode = is_mesh ? VK_PRIMITIVE_TOPOLOGY_MAX_ENUM : zink_primitive_topology(pc_entry->state.gfx_prim_mode);
 
    struct zink_shader_object objs[MESA_SHADER_MESH_STAGES];
    for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       objs[i].mod = VK_NULL_HANDLE;
       objs[i].spirv = pc_entry->shobjs[i].spirv;
    }
-   pc_entry->pipeline = zink_create_gfx_pipeline(screen, pc_entry->prog, objs, &pc_entry->state, NULL, zink_primitive_topology(pc_entry->state.gfx_prim_mode), true);
+   pc_entry->pipeline = zink_create_gfx_pipeline(screen, pc_entry->prog, objs, &pc_entry->state, NULL, vkmode, true);
    /* no unoptimized_pipeline dance */
 }
 

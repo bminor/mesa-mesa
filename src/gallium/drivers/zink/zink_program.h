@@ -445,7 +445,8 @@ zink_can_use_pipeline_libs_mesh(const struct zink_context *ctx)
           !ctx->gfx_stages[MESA_SHADER_FRAGMENT]->info.fs.uses_sample_shading &&
           !zink_get_fs_base_key(ctx)->fbfetch_ms &&
           !ctx->gfx_pipeline_state.force_persample_interp &&
-          !ctx->gfx_pipeline_state.min_samples;
+          !ctx->gfx_pipeline_state.min_samples &&
+          !ctx->fb_state.viewmask;
 }
 
 /* stricter requirements */
@@ -456,6 +457,8 @@ zink_can_use_shader_objects_mesh(const struct zink_context *ctx)
           ZINK_SHADER_KEY_OPTIMAL_IS_DEFAULT_MESH(ctx->gfx_pipeline_state.optimal_key) &&
           /* TODO: is sample shading even possible to handle with GPL? */
           !ctx->gfx_stages[MESA_SHADER_FRAGMENT]->info.fs.uses_sample_shading &&
+          /* TODO: maybe someday shader objects + viewmask */
+          !ctx->gfx_stages[MESA_SHADER_MESH]->info.view_mask &&
           !ctx->gfx_pipeline_state.force_persample_interp &&
           !ctx->gfx_pipeline_state.min_samples;
 }
