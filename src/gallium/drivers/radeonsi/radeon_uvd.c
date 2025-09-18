@@ -655,7 +655,7 @@ static struct ruvd_h265 get_h265_msg(struct ruvd_decoder *dec, struct pipe_video
    result.curr_poc = pic->CurrPicOrderCntVal;
 
    for (i = 0; i < 16; i++) {
-      for (j = 0; (pic->ref[j] != NULL) && (j < 16); j++) {
+      for (j = 0; (j < 16) && (pic->ref[j] != NULL); j++) {
          if (dec->render_pic_list[i] == pic->ref[j])
             break;
          if (j == 15)
