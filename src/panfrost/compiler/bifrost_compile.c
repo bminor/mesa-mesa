@@ -455,10 +455,11 @@ bi_is_imm_desc_handle(bi_builder *b, nir_intrinsic_instr *instr,
       uint32_t table_index = pan_res_handle_get_table(res_handle);
       uint32_t res_index = pan_res_handle_get_index(res_handle);
 
+      *immediate = res_handle;
+
       if (!va_is_valid_const_table(table_index) || res_index >= max)
          return false;
 
-      *immediate = res_handle;
       return true;
    }
 
