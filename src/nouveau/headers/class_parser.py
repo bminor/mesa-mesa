@@ -27,6 +27,7 @@ METHOD_ARRAY_SIZES = {
     'SET_COLOR_COMPRESSION'                                 : 8,
     'SET_COLOR_CLEAR_VALUE'                                 : 4,
     'SET_CT_WRITE'                                          : 8,
+    # For compute, this is only 8:
     'SET_MME_SHADOW_SCRATCH'                                : 256,
     'SET_MULTI_VIEW_RENDER_TARGET_ARRAY_INDEX_OFFSET'       : 4,
     'SET_PIPELINE_*'                                        : 6,
