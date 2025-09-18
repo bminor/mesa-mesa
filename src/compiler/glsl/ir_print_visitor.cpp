@@ -211,7 +211,7 @@ void ir_print_visitor::visit(ir_variable *ir)
    const char *const mode[] = { "", "uniform ", "shader_storage ",
                                 "shader_shared ", "task_payload ", "shader_in ", "shader_out ",
                                 "in ", "out ", "inout ",
-			        "const_in ", "sys ", "temporary " };
+                                "const_in ", "sys ", "temporary " };
    const char *const per_primitive = (ir->data.per_primitive) ? "per_primitive " : "";
    STATIC_ASSERT(ARRAY_SIZE(mode) == ir_var_mode_count);
    const char *const interp[] = { "", "smooth", "flat", "noperspective", "explicit" };
