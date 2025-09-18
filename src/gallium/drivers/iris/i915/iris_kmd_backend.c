@@ -393,7 +393,7 @@ i915_batch_submit(struct iris_batch *batch)
       } while (ret && errno == ENOMEM);
 
       if (ret)
-    ret = -errno;
+         ret = -errno;
    }
 
    simple_mtx_unlock(bo_deps_lock);
