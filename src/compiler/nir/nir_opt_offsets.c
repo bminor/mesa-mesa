@@ -180,23 +180,20 @@ try_fold_shared2(nir_builder *b,
    bool is_load = intrin->intrinsic == nir_intrinsic_load_shared2_amd;
    unsigned comp_size = (is_load ? intrin->def.bit_size : intrin->src[0].ssa->bit_size) / 8;
    unsigned stride = (nir_intrinsic_st64(intrin) ? 64 : 1) * comp_size;
-   unsigned offset0 = nir_intrinsic_offset0(intrin) * stride;
-   unsigned offset1 = nir_intrinsic_offset1(intrin) * stride;
+   uint32_t offset0 = nir_intrinsic_offset0(intrin) * stride;
+   uint32_t offset1 = nir_intrinsic_offset1(intrin) * stride;
    nir_src *off_src = &intrin->src[offset_src_idx];
 
    uint32_t const_offset = 0;
    nir_scalar replace_src = { NULL, 0 };
    bool modified_shader = false;
    if (!nir_src_is_const(*off_src)) {
-      opt_offsets_state state2 = *state;
-      state2.progress = false;
-
-      uint32_t max = UINT32_MAX - MAX2(offset0, offset1);
+      uint32_t max = INT32_MAX - MAX2(offset0, offset1); /* Avoid negative offsets. */
       replace_src = nir_get_scalar(off_src->ssa, 0);
-      if (!try_extract_const_addition(b, state, &replace_src, &const_offset, max, true))
+      if (!try_extract_const_addition(b, state, &replace_src, &const_offset, max, false))
          return false;
 
-      modified_shader = state2.progress;
+      modified_shader = true;
    } else {
       const_offset = nir_src_as_uint(*off_src);
    }
