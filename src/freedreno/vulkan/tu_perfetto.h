@@ -12,6 +12,7 @@
 #include <stdint.h>
 
 #include <vulkan/vulkan.h>
+#include "c11/threads.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,10 +35,21 @@ struct tu_perfetto_stage {
    void* start_payload_function;
 };
 
+struct tu_perfetto_clocks
+{
+   uint64_t cpu;
+   uint64_t gpu_ts;
+   uint64_t gpu_ts_offset;
+};
+
 struct tu_perfetto_state {
    struct tu_perfetto_stage stages[TU_PERFETTO_MAX_STACK_DEPTH];
    unsigned stage_depth;
    unsigned skipped_depth;
+
+   bool has_pending_clocks_sync;
+   mtx_t pending_clocks_sync_mtx;
+   struct tu_perfetto_clocks pending_clocks_sync;
 
    uint64_t next_clock_sync_ns; /* cpu time of next clk sync */
    uint64_t last_sync_gpu_ts;
@@ -49,13 +61,6 @@ struct tu_perfetto_state {
 };
 
 void tu_perfetto_init(void);
-
-struct tu_perfetto_clocks
-{
-   uint64_t cpu;
-   uint64_t gpu_ts;
-   uint64_t gpu_ts_offset;
-};
 
 uint64_t
 tu_perfetto_begin_submit();
