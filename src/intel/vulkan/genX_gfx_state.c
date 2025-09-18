@@ -1099,6 +1099,12 @@ update_ps_extra_wm(struct anv_gfx_dynamic_state *hw_state,
 
    SET(WM, wm.BarycentricInterpolationMode,
            wm_prog_data_barycentric_modes(wm_prog_data, hw_state->fs_msaa_flags));
+
+#if INTEL_WA_18038825448_GFX_VER
+   SET(WA_18038825448, coarse_state, uses_coarse_pixel ?
+                                     ANV_COARSE_PIXEL_STATE_ENABLED :
+                                     ANV_COARSE_PIXEL_STATE_DISABLED);
+#endif
 }
 
 ALWAYS_INLINE static void
@@ -3701,8 +3707,8 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
    }
 
 #if INTEL_WA_18038825448_GFX_VER
-   if (IS_DIRTY(PS_EXTRA) || IS_DIRTY(CPS)) {
-      if (IS_DIRTY(CPS))
+   if (IS_DIRTY(PS_EXTRA) || IS_DIRTY(WA_18038825448)) {
+      if (IS_DIRTY(WA_18038825448))
          anv_batch_emit_gfx(batch, GENX(3DSTATE_PS_EXTRA), ps_extra_dep);
       else
          anv_batch_emit_gfx(batch, GENX(3DSTATE_PS_EXTRA), ps_extra);
