@@ -147,7 +147,6 @@ sync_timestamp(IntelRenderpassDataSource::TraceContext &ctx,
 
    PERFETTO_LOG("sending clocks gpu=0x%08x", device->gpu_clock_id);
 
-   device->sync_gpu_ts = gpu_ts;
    device->next_clock_sync_ns = boottime + 1000000000ull;
 
    MesaRenderpassDataSource<IntelRenderpassDataSource, IntelRenderpassTraits>::EmitClockSync(ctx,
@@ -231,7 +230,6 @@ setup_incremental_state(IntelRenderpassDataSource::TraceContext &ctx,
    }
 
    device->next_clock_sync_ns = 0;
-   sync_timestamp(ctx, device);
 }
 
 static void
@@ -239,14 +237,6 @@ begin_event(struct intel_ds_queue *queue, uint64_t ts_ns,
             enum intel_ds_queue_stage stage_id)
 {
    uint32_t level = queue->stages[stage_id].level;
-   /* If we haven't managed to calibrate the alignment between GPU and CPU
-    * timestamps yet, then skip this trace, otherwise perfetto won't know
-    * what to do with it.
-    */
-   if (!queue->device->sync_gpu_ts) {
-      queue->stages[stage_id].start_ns[level] = 0;
-      return;
-   }
 
    if (level >= (ARRAY_SIZE(queue->stages[stage_id].start_ns) - 1))
       return;
@@ -266,13 +256,6 @@ end_event(struct intel_ds_queue *queue, uint64_t ts_ns,
           trace_payload_as_extra_func payload_as_extra = nullptr)
 {
    struct intel_ds_device *device = queue->device;
-
-   /* If we haven't managed to calibrate the alignment between GPU and CPU
-    * timestamps yet, then skip this trace, otherwise perfetto won't know
-    * what to do with it.
-    */
-   if (!device->sync_gpu_ts)
-      return;
 
    if (queue->stages[stage_id].level == 0)
       return;
@@ -540,18 +523,13 @@ void
 intel_ds_end_submit(struct intel_ds_queue *queue,
                     uint64_t start_ts)
 {
-   if (!u_trace_should_process(&queue->device->trace_context)) {
-      queue->device->sync_gpu_ts = 0;
-      queue->device->next_clock_sync_ns = 0;
+   if (!u_trace_should_process(&queue->device->trace_context))
       return;
-   }
 
    uint64_t end_ts = perfetto::base::GetBootTimeNs().count();
    uint32_t submission_id = queue->submission_id++;
 
    IntelRenderpassDataSource::Trace([=](IntelRenderpassDataSource::TraceContext tctx) {
-      sync_timestamp(tctx, queue->device);
-
       auto packet = tctx.NewTracePacket();
 
       packet->set_timestamp(start_ts);
