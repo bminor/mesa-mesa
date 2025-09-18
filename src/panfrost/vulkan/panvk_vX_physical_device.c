@@ -989,6 +989,12 @@ panvk_per_arch(get_physical_device_properties)(
       .robustStorageBufferAccessSizeAlignment = 1,
       .robustUniformBufferAccessSizeAlignment = 1,
 
+      /* VK_EXT_shader_object */
+      /* We do not currently support VK_EXT_shader_object but this is used
+       * internally by vk_shader
+       */
+      .shaderBinaryVersion = 0,
+
       /* VK_KHR_maintenance7 */
       /* We don't implement VK_KHR_fragment_shading_rate */
       .robustFragmentShadingRateAttachmentAccess = false,
@@ -1038,6 +1044,7 @@ panvk_per_arch(get_physical_device_properties)(
             device->name);
 
    memcpy(properties->pipelineCacheUUID, device->cache_uuid, VK_UUID_SIZE);
+   memcpy(properties->shaderBinaryUUID, device->cache_uuid, VK_UUID_SIZE);
 
    const struct {
       uint16_t vendor_id;
