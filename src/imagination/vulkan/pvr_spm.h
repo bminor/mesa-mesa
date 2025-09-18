@@ -51,6 +51,7 @@ struct pvr_device;
 struct pvr_framebuffer;
 struct pvr_render_pass;
 struct pvr_renderpass_hwsetup_render;
+struct pvr_render_state;
 struct pvr_spm_scratch_buffer;
 
 struct pvr_spm_scratch_buffer_store {
@@ -93,9 +94,12 @@ void pvr_spm_finish_scratch_buffer_store(struct pvr_device *device);
  *    attachments with no backing.
  */
 uint64_t
-pvr_spm_scratch_buffer_calc_required_size(const struct pvr_render_pass *pass,
-                                          uint32_t framebuffer_width,
-                                          uint32_t framebuffer_height);
+pvr_spm_scratch_buffer_calc_required_size(
+   const struct pvr_renderpass_hwsetup_render *renders,
+   uint32_t render_count,
+   uint32_t sample_count,
+   uint32_t framebuffer_width,
+   uint32_t framebuffer_height);
 VkResult pvr_spm_scratch_buffer_get_buffer(
    struct pvr_device *device,
    uint64_t size,
@@ -110,7 +114,7 @@ void pvr_device_finish_spm_load_state(struct pvr_device *device);
 VkResult
 pvr_spm_init_eot_state(struct pvr_device *device,
                        struct pvr_spm_eot_state *spm_eot_state,
-                       const struct pvr_framebuffer *framebuffer,
+                       const struct pvr_render_state *rstate,
                        const struct pvr_renderpass_hwsetup_render *hw_render);
 
 void pvr_spm_finish_eot_state(struct pvr_device *device,
@@ -119,7 +123,7 @@ void pvr_spm_finish_eot_state(struct pvr_device *device,
 VkResult
 pvr_spm_init_bgobj_state(struct pvr_device *device,
                          struct pvr_spm_bgobj_state *spm_bgobj_state,
-                         const struct pvr_framebuffer *framebuffer,
+                         const struct pvr_render_state *rstate,
                          const struct pvr_renderpass_hwsetup_render *hw_render);
 
 void pvr_spm_finish_bgobj_state(struct pvr_device *device,

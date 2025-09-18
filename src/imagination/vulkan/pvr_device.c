@@ -1827,8 +1827,8 @@ VkResult pvr_gpu_upload_pds(struct pvr_device *device,
 }
 
 static VkResult
-pvr_framebuffer_create_ppp_state(struct pvr_device *device,
-                                 struct pvr_framebuffer *framebuffer)
+pvr_render_state_create_ppp_state(struct pvr_device *device,
+                                  struct pvr_render_state *rstate)
 {
    const uint32_t cache_line_size =
       pvr_get_slc_cache_line_size(&device->pdevice->dev_info);
@@ -1842,12 +1842,12 @@ pvr_framebuffer_create_ppp_state(struct pvr_device *device,
    pvr_csb_pack (&ppp_state[1], TA_STATE_TERMINATE0, term0) {
       term0.clip_right =
          DIV_ROUND_UP(
-            framebuffer->width,
+            rstate->width,
             ROGUE_TA_STATE_TERMINATE0_CLIP_RIGHT_BLOCK_SIZE_IN_PIXELS) -
          1;
       term0.clip_bottom =
          DIV_ROUND_UP(
-            framebuffer->height,
+            rstate->height,
             ROGUE_TA_STATE_TERMINATE0_CLIP_BOTTOM_BLOCK_SIZE_IN_PIXELS) -
          1;
    }
@@ -1862,12 +1862,12 @@ pvr_framebuffer_create_ppp_state(struct pvr_device *device,
                            ppp_state,
                            sizeof(ppp_state),
                            cache_line_size,
-                           &framebuffer->ppp_state_bo);
+                           &rstate->ppp_state_bo);
    if (result != VK_SUCCESS)
       return result;
 
    /* Calculate the size of PPP state in dwords. */
-   framebuffer->ppp_state_size = sizeof(ppp_state) / sizeof(uint32_t);
+   rstate->ppp_state_size = sizeof(ppp_state) / sizeof(uint32_t);
 
    return VK_SUCCESS;
 }
@@ -1900,37 +1900,56 @@ static void pvr_render_targets_fini(struct pvr_render_target *render_targets,
    }
 }
 
-VkResult pvr_CreateFramebuffer(VkDevice _device,
-                               const VkFramebufferCreateInfo *pCreateInfo,
-                               const VkAllocationCallbacks *pAllocator,
-                               VkFramebuffer *pFramebuffer)
+static inline uint64_t
+pvr_render_pass_get_scratch_buffer_size(struct pvr_device *device,
+                                        const struct pvr_render_pass *pass,
+                                        const struct pvr_render_state *rstate)
 {
-   VK_FROM_HANDLE(pvr_render_pass, pass, pCreateInfo->renderPass);
-   VK_FROM_HANDLE(pvr_device, device, _device);
-   const VkFramebufferAttachmentsCreateInfoKHR *pImageless;
+   return pvr_spm_scratch_buffer_calc_required_size(
+      pass->hw_setup->renders,
+      pass->hw_setup->render_count,
+      pass->max_sample_count,
+      rstate->width,
+      rstate->height);
+}
+
+void pvr_render_state_cleanup(struct pvr_device *device,
+                              const struct pvr_render_state *rstate)
+{
+   if (!rstate)
+      return;
+
+   for (uint32_t i = 0; i < rstate->render_count; i++) {
+      pvr_spm_finish_bgobj_state(device,
+                                 &rstate->spm_bgobj_state_per_render[i]);
+
+      pvr_spm_finish_eot_state(device,
+                               &rstate->spm_eot_state_per_render[i]);
+   }
+
+   pvr_spm_scratch_buffer_release(device, rstate->scratch_buffer);
+   pvr_render_targets_fini(rstate->render_targets,
+                           rstate->render_targets_count);
+   pvr_bo_suballoc_free(rstate->ppp_state_bo);
+}
+
+VkResult pvr_render_state_setup(
+   struct pvr_device *device,
+   const VkAllocationCallbacks *pAllocator,
+   struct pvr_render_state *rstate,
+   uint32_t render_count,
+   const struct pvr_renderpass_hwsetup_render *renders)
+{
    struct pvr_spm_bgobj_state *spm_bgobj_state_per_render;
    struct pvr_spm_eot_state *spm_eot_state_per_render;
    struct pvr_render_target *render_targets;
-   struct pvr_framebuffer *framebuffer;
-   struct pvr_image_view **attachments;
    uint32_t render_targets_count;
-   uint64_t scratch_buffer_size;
    VkResult result;
-
-   assert(pCreateInfo->sType == VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO);
-
-   pImageless = vk_find_struct_const(pCreateInfo->pNext,
-                                     FRAMEBUFFER_ATTACHMENTS_CREATE_INFO);
 
    render_targets_count =
       PVR_RENDER_TARGETS_PER_FRAMEBUFFER(&device->pdevice->dev_info);
 
    VK_MULTIALLOC(ma);
-   vk_multialloc_add(&ma, &framebuffer, __typeof__(*framebuffer), 1);
-   vk_multialloc_add(&ma,
-                     &attachments,
-                     __typeof__(*attachments),
-                     pCreateInfo->attachmentCount);
    vk_multialloc_add(&ma,
                      &render_targets,
                      __typeof__(*render_targets),
@@ -1938,75 +1957,50 @@ VkResult pvr_CreateFramebuffer(VkDevice _device,
    vk_multialloc_add(&ma,
                      &spm_eot_state_per_render,
                      __typeof__(*spm_eot_state_per_render),
-                     pass->hw_setup->render_count);
+                     render_count);
    vk_multialloc_add(&ma,
                      &spm_bgobj_state_per_render,
                      __typeof__(*spm_bgobj_state_per_render),
-                     pass->hw_setup->render_count);
+                     render_count);
 
    if (!vk_multialloc_zalloc2(&ma,
                               &device->vk.alloc,
                               pAllocator,
-                              VK_SYSTEM_ALLOCATION_SCOPE_OBJECT))
+                              VK_SYSTEM_ALLOCATION_SCOPE_OBJECT)) {
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
-
-   vk_object_base_init(&device->vk,
-                       &framebuffer->base,
-                       VK_OBJECT_TYPE_FRAMEBUFFER);
-
-   framebuffer->width = pCreateInfo->width;
-   framebuffer->height = pCreateInfo->height;
-   framebuffer->layers = pCreateInfo->layers;
-
-   framebuffer->attachments = attachments;
-   if (!pImageless)
-      framebuffer->attachment_count = pCreateInfo->attachmentCount;
-   else
-      framebuffer->attachment_count = pImageless->attachmentImageInfoCount;
-   for (uint32_t i = 0; i < framebuffer->attachment_count; i++) {
-      if (!pImageless) {
-         framebuffer->attachments[i] =
-            pvr_image_view_from_handle(pCreateInfo->pAttachments[i]);
-      } else {
-         assert(i < pImageless->attachmentImageInfoCount);
-      }
    }
 
-   result = pvr_framebuffer_create_ppp_state(device, framebuffer);
-   if (result != VK_SUCCESS)
-      goto err_free_framebuffer;
-
-   framebuffer->render_targets = render_targets;
-   framebuffer->render_targets_count = render_targets_count;
-   if (!pvr_render_targets_init(framebuffer->render_targets,
+   rstate->render_targets = render_targets;
+   rstate->render_targets_count = render_targets_count;
+   if (!pvr_render_targets_init(rstate->render_targets,
                                 render_targets_count)) {
       result = vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
-      goto err_free_ppp_state_bo;
+      goto err_free_render_targets;
    }
 
-   scratch_buffer_size =
-      pvr_spm_scratch_buffer_calc_required_size(pass,
-                                                framebuffer->width,
-                                                framebuffer->height);
-
+   assert(rstate->scratch_buffer_size);
    result = pvr_spm_scratch_buffer_get_buffer(device,
-                                              scratch_buffer_size,
-                                              &framebuffer->scratch_buffer);
+                                              rstate->scratch_buffer_size,
+                                              &rstate->scratch_buffer);
    if (result != VK_SUCCESS)
       goto err_finish_render_targets;
 
-   for (uint32_t i = 0; i < pass->hw_setup->render_count; i++) {
+   result = pvr_render_state_create_ppp_state(device, rstate);
+   if (result != VK_SUCCESS)
+      goto err_release_scratch_buffer;
+
+   for (uint32_t i = 0; i < render_count; i++) {
       result = pvr_spm_init_eot_state(device,
                                       &spm_eot_state_per_render[i],
-                                      framebuffer,
-                                      &pass->hw_setup->renders[i]);
+                                      rstate,
+                                      &renders[i]);
       if (result != VK_SUCCESS)
          goto err_finish_eot_state;
 
       result = pvr_spm_init_bgobj_state(device,
                                         &spm_bgobj_state_per_render[i],
-                                        framebuffer,
-                                        &pass->hw_setup->renders[i]);
+                                        rstate,
+                                        &renders[i]);
       if (result != VK_SUCCESS)
          goto err_finish_bgobj_state;
 
@@ -2022,22 +2016,101 @@ err_finish_eot_state:
       for (uint32_t j = 0; j < i; j++)
          pvr_spm_finish_eot_state(device, &spm_eot_state_per_render[j]);
 
-      goto err_finish_render_targets;
+      goto err_free_ppp_state_bo;
    }
 
-   framebuffer->render_count = pass->hw_setup->render_count;
-   framebuffer->spm_eot_state_per_render = spm_eot_state_per_render;
-   framebuffer->spm_bgobj_state_per_render = spm_bgobj_state_per_render;
+   rstate->render_count = render_count;
+   rstate->spm_eot_state_per_render = spm_eot_state_per_render;
+   rstate->spm_bgobj_state_per_render = spm_bgobj_state_per_render;
+
+   return VK_SUCCESS;
+
+err_free_ppp_state_bo:
+   pvr_bo_suballoc_free(rstate->ppp_state_bo);
+
+err_release_scratch_buffer:
+   pvr_spm_scratch_buffer_release(device, rstate->scratch_buffer);
+
+err_finish_render_targets:
+   pvr_render_targets_fini(rstate->render_targets, render_targets_count);
+
+err_free_render_targets:
+   vk_free2(&device->vk.alloc, pAllocator, rstate->render_targets);
+
+   return result;
+}
+
+VkResult pvr_CreateFramebuffer(VkDevice _device,
+                               const VkFramebufferCreateInfo *pCreateInfo,
+                               const VkAllocationCallbacks *pAllocator,
+                               VkFramebuffer *pFramebuffer)
+{
+   VK_FROM_HANDLE(pvr_render_pass, pass, pCreateInfo->renderPass);
+   VK_FROM_HANDLE(pvr_device, device, _device);
+   const VkFramebufferAttachmentsCreateInfoKHR *pImageless;
+   struct pvr_framebuffer *framebuffer;
+   struct pvr_image_view **attachments;
+   struct pvr_render_state *rstate;
+   VkResult result;
+
+   assert(pCreateInfo->sType == VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO);
+
+   pImageless = vk_find_struct_const(pCreateInfo->pNext,
+                                     FRAMEBUFFER_ATTACHMENTS_CREATE_INFO);
+
+   VK_MULTIALLOC(ma);
+   vk_multialloc_add(&ma, &framebuffer, __typeof__(*framebuffer), 1);
+   vk_multialloc_add(&ma, &rstate, __typeof__(*rstate), 1);
+   vk_multialloc_add(&ma,
+                     &attachments,
+                     __typeof__(*attachments),
+                     pCreateInfo->attachmentCount);
+
+   if (!vk_multialloc_zalloc2(&ma,
+                              &device->vk.alloc,
+                              pAllocator,
+                              VK_SYSTEM_ALLOCATION_SCOPE_OBJECT))
+      return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+
+   vk_object_base_init(&device->vk,
+                       &framebuffer->base,
+                       VK_OBJECT_TYPE_FRAMEBUFFER);
+
+   framebuffer->attachments = attachments;
+   if (!pImageless)
+      framebuffer->attachment_count = pCreateInfo->attachmentCount;
+   else
+      framebuffer->attachment_count = pImageless->attachmentImageInfoCount;
+   for (uint32_t i = 0; i < framebuffer->attachment_count; i++) {
+      if (!pImageless) {
+         framebuffer->attachments[i] =
+            pvr_image_view_from_handle(pCreateInfo->pAttachments[i]);
+      } else {
+         assert(i < pImageless->attachmentImageInfoCount);
+      }
+   }
+
+   rstate->width = pCreateInfo->width;
+   rstate->height = pCreateInfo->height;
+   rstate->layers = pCreateInfo->layers;
+   rstate->scratch_buffer_size =
+      pvr_render_pass_get_scratch_buffer_size(device,
+                                              pass,
+                                              rstate);
+
+   result = pvr_render_state_setup(device,
+                                   pAllocator,
+                                   rstate,
+                                   pass->hw_setup->render_count,
+                                   pass->hw_setup->renders);
+   if (result != VK_SUCCESS)
+      goto err_free_framebuffer;
+
+   framebuffer->rstate = rstate;
 
    *pFramebuffer = pvr_framebuffer_to_handle(framebuffer);
 
    return VK_SUCCESS;
-
-err_finish_render_targets:
-   pvr_render_targets_fini(framebuffer->render_targets, render_targets_count);
-
-err_free_ppp_state_bo:
-   pvr_bo_suballoc_free(framebuffer->ppp_state_bo);
 
 err_free_framebuffer:
    vk_object_base_finish(&framebuffer->base);
@@ -2056,18 +2129,8 @@ void pvr_DestroyFramebuffer(VkDevice _device,
    if (!framebuffer)
       return;
 
-   for (uint32_t i = 0; i < framebuffer->render_count; i++) {
-      pvr_spm_finish_bgobj_state(device,
-                                 &framebuffer->spm_bgobj_state_per_render[i]);
+   pvr_render_state_cleanup(device, framebuffer->rstate);
 
-      pvr_spm_finish_eot_state(device,
-                               &framebuffer->spm_eot_state_per_render[i]);
-   }
-
-   pvr_spm_scratch_buffer_release(device, framebuffer->scratch_buffer);
-   pvr_render_targets_fini(framebuffer->render_targets,
-                           framebuffer->render_targets_count);
-   pvr_bo_suballoc_free(framebuffer->ppp_state_bo);
    vk_object_base_finish(&framebuffer->base);
    vk_free2(&device->vk.alloc, pAllocator, framebuffer);
 }

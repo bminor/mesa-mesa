@@ -369,8 +369,8 @@ static VkResult
 pvr_cmd_buffer_emit_ppp_state(const struct pvr_cmd_buffer *const cmd_buffer,
                               struct pvr_csb *const csb)
 {
-   const struct pvr_framebuffer *const framebuffer =
-      cmd_buffer->state.render_pass_info.framebuffer;
+   const struct pvr_render_state *const rstate =
+      cmd_buffer->state.render_pass_info.rstate;
 
    assert(csb->stream_type == PVR_CMD_STREAM_TYPE_GRAPHICS ||
           csb->stream_type == PVR_CMD_STREAM_TYPE_GRAPHICS_DEFERRED);
@@ -378,12 +378,12 @@ pvr_cmd_buffer_emit_ppp_state(const struct pvr_cmd_buffer *const cmd_buffer,
    pvr_csb_set_relocation_mark(csb);
 
    pvr_csb_emit (csb, VDMCTRL_PPP_STATE0, state0) {
-      state0.addrmsb = framebuffer->ppp_state_bo->dev_addr;
-      state0.word_count = framebuffer->ppp_state_size;
+      state0.addrmsb = rstate->ppp_state_bo->dev_addr;
+      state0.word_count = rstate->ppp_state_size;
    }
 
    pvr_csb_emit (csb, VDMCTRL_PPP_STATE1, state1) {
-      state1.addrlsb = framebuffer->ppp_state_bo->dev_addr;
+      state1.addrlsb = rstate->ppp_state_bo->dev_addr;
    }
 
    pvr_csb_clear_relocation_mark(csb);
@@ -1060,7 +1060,7 @@ static inline uint32_t pvr_stride_from_pitch(uint32_t pitch, VkFormat vk_format)
 
 static void pvr_setup_pbe_state(
    const struct pvr_device_info *dev_info,
-   const struct pvr_framebuffer *framebuffer,
+   const struct pvr_render_state *rstate,
    uint32_t mrt_index,
    const struct usc_mrt_resource *mrt_resource,
    const struct pvr_image_view *const iview,
@@ -1170,10 +1170,10 @@ static void pvr_setup_pbe_state(
    render_params.min_x_clip = MAX2(0, render_area->offset.x);
    render_params.min_y_clip = MAX2(0, render_area->offset.y);
    render_params.max_x_clip = MIN2(
-      framebuffer->width - 1,
+      rstate->width - 1,
       PVR_DEC_IF_NOT_ZERO(render_area->offset.x + render_area->extent.width));
    render_params.max_y_clip = MIN2(
-      framebuffer->height - 1,
+      rstate->height - 1,
       PVR_DEC_IF_NOT_ZERO(render_area->offset.y + render_area->extent.height));
 
 #undef PVR_DEC_IF_NOT_ZERO
@@ -1190,12 +1190,9 @@ static void pvr_setup_pbe_state(
 }
 
 static struct pvr_render_target *
-pvr_get_render_target(const struct pvr_render_pass *pass,
-                      const struct pvr_framebuffer *framebuffer,
-                      uint32_t idx)
+pvr_get_render_target(const struct pvr_renderpass_hwsetup_render *hw_render,
+                      const struct pvr_render_state *rstate)
 {
-   const struct pvr_renderpass_hwsetup_render *hw_render =
-      &pass->hw_setup->renders[idx];
    uint32_t rt_idx = 0;
 
    switch (hw_render->sample_count) {
@@ -1211,16 +1208,13 @@ pvr_get_render_target(const struct pvr_render_pass *pass,
       break;
    }
 
-   return &framebuffer->render_targets[rt_idx];
+   return &rstate->render_targets[rt_idx];
 }
 
 static uint32_t
-pvr_pass_get_pixel_output_width(const struct pvr_render_pass *pass,
-                                uint32_t idx,
-                                const struct pvr_device_info *dev_info)
+pvr_get_pixel_output_width(const struct pvr_renderpass_hwsetup_render *hw_render,
+                           const struct pvr_device_info *dev_info)
 {
-   const struct pvr_renderpass_hwsetup_render *hw_render =
-      &pass->hw_setup->renders[idx];
    /* Default value based on the maximum value found in all existing cores. The
     * maximum is used as this is being treated as a lower bound, making it a
     * "safer" choice than the minimum value found in all existing cores.
@@ -1484,8 +1478,8 @@ pvr_setup_emit_state(const struct pvr_device_info *dev_info,
         resource_type <= USC_MRT_RESOURCE_TYPE_MEMORY;
         resource_type++) {
       for (uint32_t i = 0; i < hw_render->eot_surface_count; i++) {
-         const struct pvr_framebuffer *framebuffer =
-            render_pass_info->framebuffer;
+         const struct pvr_render_state *rstate =
+            render_pass_info->rstate;
          const struct pvr_renderpass_hwsetup_eot_surface *surface =
             &hw_render->eot_surfaces[i];
          const struct pvr_image_view *iview =
@@ -1522,7 +1516,7 @@ pvr_setup_emit_state(const struct pvr_device_info *dev_info,
                : ~0;
 
          pvr_setup_pbe_state(dev_info,
-                             framebuffer,
+                             rstate,
                              emit_state->emit_count,
                              mrt_resource,
                              iview,
@@ -1551,6 +1545,13 @@ pvr_is_render_area_tile_aligned(const struct pvr_cmd_buffer *cmd_buffer,
           render_area->extent.width == iview->vk.extent.width;
 }
 
+static inline struct pvr_renderpass_hwsetup_render *
+pvr_pass_info_get_hw_render(const struct pvr_render_pass_info *render_pass_info,
+                            uint32_t idx)
+{
+   return &render_pass_info->pass->hw_setup->renders[idx];
+}
+
 static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
                                          struct pvr_cmd_buffer *cmd_buffer,
                                          struct pvr_sub_cmd_gfx *sub_cmd)
@@ -1565,13 +1566,13 @@ static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
    struct pvr_render_pass_info *render_pass_info =
       &cmd_buffer->state.render_pass_info;
    const struct pvr_renderpass_hwsetup_render *hw_render =
-      &render_pass_info->pass->hw_setup->renders[sub_cmd->hw_render_idx];
+      pvr_pass_info_get_hw_render(render_pass_info, sub_cmd->hw_render_idx);
    struct pvr_render_job *job = &sub_cmd->job;
-   struct pvr_framebuffer *framebuffer = render_pass_info->framebuffer;
+   struct pvr_render_state *rstate = render_pass_info->rstate;
    struct pvr_spm_bgobj_state *spm_bgobj_state =
-      &framebuffer->spm_bgobj_state_per_render[sub_cmd->hw_render_idx];
+      &rstate->spm_bgobj_state_per_render[sub_cmd->hw_render_idx];
    struct pvr_spm_eot_state *spm_eot_state =
-      &framebuffer->spm_eot_state_per_render[sub_cmd->hw_render_idx];
+      &rstate->spm_eot_state_per_render[sub_cmd->hw_render_idx];
    struct pvr_render_target *render_target;
    VkResult result;
 
@@ -1622,9 +1623,7 @@ static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
                               &emit_state);
 
          unsigned pixel_output_width =
-            pvr_pass_get_pixel_output_width(render_pass_info->pass,
-                                            sub_cmd->hw_render_idx,
-                                            dev_info);
+            pvr_get_pixel_output_width(hw_render, dev_info);
 
          result = pvr_sub_cmd_gfx_per_job_fragment_programs_create_and_upload(
             cmd_buffer,
@@ -1703,9 +1702,7 @@ static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
          spm_eot_state->pixel_event_program_data_offset;
    }
 
-   render_target = pvr_get_render_target(render_pass_info->pass,
-                                         framebuffer,
-                                         sub_cmd->hw_render_idx);
+   render_target = pvr_get_render_target(hw_render, render_pass_info->rstate);
    job->view_state.rt_datasets = &render_target->rt_dataset[0];
 
    job->ctrl_stream_addr = pvr_csb_get_start_address(&sub_cmd->control_stream);
@@ -1721,9 +1718,7 @@ static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
       job->scissor_table_addr = PVR_DEV_ADDR_INVALID;
 
    job->pixel_output_width =
-      pvr_pass_get_pixel_output_width(render_pass_info->pass,
-                                      sub_cmd->hw_render_idx,
-                                      dev_info);
+      pvr_get_pixel_output_width(hw_render, dev_info);
 
    /* Setup depth/stencil job information. */
    if (hw_render->ds_attach_idx != VK_ATTACHMENT_UNUSED) {
@@ -2603,9 +2598,8 @@ static inline uint32_t
 pvr_render_pass_info_get_view_mask(const struct pvr_render_pass_info *rp_info)
 {
    const uint32_t hw_render_idx = rp_info->current_hw_subpass;
-   const struct pvr_render_pass *pass = rp_info->pass;
    const struct pvr_renderpass_hwsetup_render *hw_render =
-      &pass->hw_setup->renders[hw_render_idx];
+      pvr_pass_info_get_hw_render(rp_info, hw_render_idx);
 
    return hw_render->view_mask;
 }
@@ -2660,7 +2654,7 @@ VkResult pvr_cmd_buffer_start_sub_cmd(struct pvr_cmd_buffer *cmd_buffer,
                                isp_max_tiles_in_flight,
                                1);
       sub_cmd->gfx.hw_render_idx = state->render_pass_info.current_hw_subpass;
-      sub_cmd->gfx.framebuffer = state->render_pass_info.framebuffer;
+      sub_cmd->gfx.rstate = state->render_pass_info.rstate;
       sub_cmd->gfx.empty_cmd = true;
       sub_cmd->gfx.view_mask =
          pvr_render_pass_info_get_view_mask(&state->render_pass_info);
@@ -3092,13 +3086,13 @@ static VkResult pvr_cmd_buffer_attachments_setup(
 
 static inline VkResult pvr_render_targets_datasets_create(
    struct pvr_device *device,
-   struct pvr_framebuffer *framebuffer,
+   struct pvr_render_state *rstate,
    const struct pvr_renderpass_hwsetup_render *hw_render,
    struct pvr_render_target *render_target)
 {
    const struct pvr_device_info *const dev_info = &device->pdevice->dev_info;
    const uint32_t layers =
-      PVR_HAS_FEATURE(dev_info, gs_rta_support) ? framebuffer->layers : 1;
+      PVR_HAS_FEATURE(dev_info, gs_rta_support) ? rstate->layers : 1;
 
    pthread_mutex_lock(&render_target->mutex);
 
@@ -3110,8 +3104,8 @@ static inline VkResult pvr_render_targets_datasets_create(
          continue;
 
       result = pvr_render_target_dataset_create(device,
-                                                framebuffer->width,
-                                                framebuffer->height,
+                                                rstate->width,
+                                                rstate->height,
                                                 hw_render->sample_count,
                                                 layers,
                                                 &rt_dataset);
@@ -3130,21 +3124,33 @@ static inline VkResult pvr_render_targets_datasets_create(
    return VK_SUCCESS;
 }
 
-static VkResult pvr_render_targets_init(struct pvr_device *device,
-                                        struct pvr_render_pass *pass,
-                                        struct pvr_framebuffer *framebuffer)
+static VkResult
+pvr_render_targets_init(struct pvr_device *device,
+                        struct pvr_render_state *rstate,
+                        const struct pvr_renderpass_hwsetup_render *hw_render)
+{
+   struct pvr_render_target *render_target =
+      pvr_get_render_target(hw_render, rstate);
+
+   return pvr_render_targets_datasets_create(device,
+                                             rstate,
+                                             hw_render,
+                                             render_target);
+}
+
+static VkResult
+pvr_render_targets_init_for_render(struct pvr_device *device,
+                                   struct pvr_render_pass *pass,
+                                   struct pvr_framebuffer *framebuffer)
 {
    for (uint32_t i = 0; i < pass->hw_setup->render_count; i++) {
-      struct pvr_render_target *render_target =
-         pvr_get_render_target(pass, framebuffer, i);
       const struct pvr_renderpass_hwsetup_render *hw_render =
          &pass->hw_setup->renders[i];
       VkResult result;
 
-      result = pvr_render_targets_datasets_create(device,
-                                                  framebuffer,
-                                                  hw_render,
-                                                  render_target);
+      result = pvr_render_targets_init(device,
+                                       framebuffer->rstate,
+                                       hw_render);
       if (result != VK_SUCCESS)
          return result;
    }
@@ -3163,7 +3169,7 @@ pvr_get_hw_subpass(const struct pvr_render_pass *pass, const uint32_t subpass)
 
 static void pvr_perform_start_of_render_attachment_clear(
    struct pvr_cmd_buffer *cmd_buffer,
-   const struct pvr_framebuffer *framebuffer,
+   uint32_t layers,
    uint32_t index,
    bool is_depth_stencil,
    uint32_t *index_list_clear_mask)
@@ -3173,9 +3179,11 @@ static void pvr_perform_start_of_render_attachment_clear(
       VK_IMAGE_ASPECT_COLOR_BIT;
    struct pvr_render_pass_info *info = &cmd_buffer->state.render_pass_info;
    const struct pvr_render_pass *pass = info->pass;
-   const struct pvr_renderpass_hwsetup *hw_setup = pass->hw_setup;
+   const struct pvr_renderpass_hwsetup *hw_setup = pass ? pass->hw_setup : NULL;
+   const uint32_t hw_render_idx = hw_setup ?
+      hw_setup->subpass_map[info->subpass_idx].render : 0;
    const struct pvr_renderpass_hwsetup_render *hw_render =
-      &hw_setup->renders[hw_setup->subpass_map[info->subpass_idx].render];
+      pvr_pass_info_get_hw_render(info, hw_render_idx);
    VkImageAspectFlags image_aspect;
    struct pvr_image_view *iview;
    uint32_t view_idx;
@@ -3217,8 +3225,7 @@ static void pvr_perform_start_of_render_attachment_clear(
    /* If this is single-layer fullscreen, we already do the clears in
     * pvr_sub_cmd_gfx_job_init().
     */
-   if (pvr_is_render_area_tile_aligned(cmd_buffer, iview) &&
-       framebuffer->layers == 1) {
+   if (pvr_is_render_area_tile_aligned(cmd_buffer, iview) && layers == 1) {
       return;
    }
 
@@ -3244,7 +3251,13 @@ static void pvr_perform_start_of_render_attachment_clear(
       VkClearRect rect = {
          .rect = info->render_area,
          .baseArrayLayer = 0,
-         .layerCount = info->framebuffer->layers,
+         /* TODO:
+          *
+          * Verify where layers should come from, info->framebuffer
+          * vs layers (function argument). Aren't they the same?
+          * If they are, drop the argument altogether.
+          */
+         .layerCount = info->rstate->layers,
       };
 
       assert(view_idx < info->clear_value_count);
@@ -3259,11 +3272,9 @@ static void
 pvr_perform_start_of_render_clears(struct pvr_cmd_buffer *cmd_buffer)
 {
    struct pvr_render_pass_info *info = &cmd_buffer->state.render_pass_info;
-   const struct pvr_framebuffer *framebuffer = info->framebuffer;
-   const struct pvr_render_pass *pass = info->pass;
-   const struct pvr_renderpass_hwsetup *hw_setup = pass->hw_setup;
+   const struct pvr_renderpass_hwsetup *hw_setup = info->pass->hw_setup;
    const struct pvr_renderpass_hwsetup_render *hw_render =
-      &hw_setup->renders[hw_setup->subpass_map[info->subpass_idx].render];
+      pvr_pass_info_get_hw_render(info, hw_setup->subpass_map[info->subpass_idx].render);
 
    /* Mask of attachment clears using index lists instead of background object
     * to clear.
@@ -3272,7 +3283,7 @@ pvr_perform_start_of_render_clears(struct pvr_cmd_buffer *cmd_buffer)
 
    for (uint32_t i = 0; i < hw_render->color_init_count; i++) {
       pvr_perform_start_of_render_attachment_clear(cmd_buffer,
-                                                   framebuffer,
+                                                   info->rstate->layers,
                                                    i,
                                                    false,
                                                    &index_list_clear_mask);
@@ -3294,7 +3305,7 @@ pvr_perform_start_of_render_clears(struct pvr_cmd_buffer *cmd_buffer)
       uint32_t ds_index_list = 0;
 
       pvr_perform_start_of_render_attachment_clear(cmd_buffer,
-                                                   framebuffer,
+                                                   info->rstate->layers,
                                                    0,
                                                    true,
                                                    &ds_index_list);
@@ -3304,9 +3315,8 @@ pvr_perform_start_of_render_clears(struct pvr_cmd_buffer *cmd_buffer)
 static void pvr_stash_depth_format(struct pvr_cmd_buffer_state *state,
                                    struct pvr_sub_cmd_gfx *const sub_cmd)
 {
-   const struct pvr_render_pass *pass = state->render_pass_info.pass;
    const struct pvr_renderpass_hwsetup_render *hw_render =
-      &pass->hw_setup->renders[sub_cmd->hw_render_idx];
+      pvr_pass_info_get_hw_render(&state->render_pass_info, sub_cmd->hw_render_idx);
 
    if (hw_render->ds_attach_idx != VK_ATTACHMENT_UNUSED) {
       struct pvr_image_view **iviews = state->render_pass_info.attachments;
@@ -3563,6 +3573,7 @@ void pvr_CmdBeginRenderPass2(VkCommandBuffer commandBuffer,
     * look at cmd_buffer_begin_subpass() for example. */
    state->render_pass_info.pass = pass;
    state->render_pass_info.framebuffer = framebuffer;
+   state->render_pass_info.rstate = framebuffer->rstate;
    state->render_pass_info.subpass_idx = 0;
    state->render_pass_info.render_area = pRenderPassBeginInfo->renderArea;
    state->render_pass_info.current_hw_subpass = 0;
@@ -3578,7 +3589,7 @@ void pvr_CmdBeginRenderPass2(VkCommandBuffer commandBuffer,
    if (result != VK_SUCCESS)
       return;
 
-   result = pvr_render_targets_init(cmd_buffer->device, pass, framebuffer);
+   result = pvr_render_targets_init_for_render(cmd_buffer->device, pass, framebuffer);
    if (result != VK_SUCCESS) {
       pvr_cmd_buffer_set_error_unwarned(cmd_buffer, result);
       return;
@@ -7295,7 +7306,7 @@ pvr_resolve_unemitted_resolve_attachments(struct pvr_cmd_buffer *cmd_buffer,
 {
    struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
    const struct pvr_renderpass_hwsetup_render *hw_render =
-      &state->render_pass_info.pass->hw_setup->renders[info->current_hw_subpass];
+      pvr_pass_info_get_hw_render(&state->render_pass_info, info->current_hw_subpass);
 
    for (uint32_t i = 0U; i < hw_render->eot_surface_count; i++) {
       const struct pvr_renderpass_hwsetup_eot_surface *surface =
@@ -8054,7 +8065,7 @@ static bool pvr_is_stencil_store_load_needed(
       return false;
 
    hw_render_idx = state->current_sub_cmd->gfx.hw_render_idx;
-   hw_render = &pass->hw_setup->renders[hw_render_idx];
+   hw_render = pvr_pass_info_get_hw_render(&state->render_pass_info, hw_render_idx);
 
    if (hw_render->ds_attach_idx == VK_ATTACHMENT_UNUSED)
       return false;

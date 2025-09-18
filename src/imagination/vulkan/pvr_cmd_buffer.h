@@ -119,7 +119,7 @@ struct pvr_transfer_cmd {
 };
 
 struct pvr_sub_cmd_gfx {
-   const struct pvr_framebuffer *framebuffer;
+   const struct pvr_render_state *rstate;
 
    struct pvr_render_job job;
 
@@ -272,6 +272,9 @@ struct pvr_render_pass_info {
    const struct pvr_render_pass *pass;
    struct pvr_framebuffer *framebuffer;
 
+   struct pvr_render_state *rstate;
+
+   uint32_t attachment_count;
    struct pvr_image_view **attachments;
 
    uint32_t subpass_idx;
@@ -536,7 +539,7 @@ pvr_cmd_buffer_set_error_unwarned(struct pvr_cmd_buffer *cmd_buffer,
 static inline bool pvr_sub_cmd_gfx_requires_split_submit(
    const struct pvr_sub_cmd_gfx *const sub_cmd)
 {
-   return sub_cmd->job.run_frag && sub_cmd->framebuffer->layers > 1;
+   return sub_cmd->job.run_frag && sub_cmd->rstate->layers > 1;
 }
 
 #define PVR_CHECK_COMMAND_BUFFER_BUILDING_STATE(cmd_buffer)                  \

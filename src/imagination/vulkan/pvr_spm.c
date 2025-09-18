@@ -86,10 +86,12 @@ void pvr_spm_finish_scratch_buffer_store(struct pvr_device *device)
    }
 }
 
-uint64_t
-pvr_spm_scratch_buffer_calc_required_size(const struct pvr_render_pass *pass,
-                                          uint32_t framebuffer_width,
-                                          uint32_t framebuffer_height)
+uint64_t pvr_spm_scratch_buffer_calc_required_size(
+   const struct pvr_renderpass_hwsetup_render *renders,
+   uint32_t render_count,
+   uint32_t sample_count,
+   uint32_t framebuffer_width,
+   uint32_t framebuffer_height)
 {
    uint64_t dwords_per_pixel;
    uint64_t buffer_size;
@@ -100,16 +102,15 @@ pvr_spm_scratch_buffer_calc_required_size(const struct pvr_render_pass *pass,
    uint32_t nr_tile_buffers = 1;
    uint32_t nr_output_regs = 1;
 
-   for (uint32_t i = 0; i < pass->hw_setup->render_count; i++) {
-      const struct pvr_renderpass_hwsetup_render *hw_render =
-         &pass->hw_setup->renders[i];
+   for (uint32_t i = 0; i < render_count; i++) {
+      const struct pvr_renderpass_hwsetup_render *hw_render = &renders[i];
 
       nr_tile_buffers = MAX2(nr_tile_buffers, hw_render->tile_buffers_count);
       nr_output_regs = MAX2(nr_output_regs, hw_render->output_regs_count);
    }
 
    dwords_per_pixel =
-      (uint64_t)pass->max_sample_count * nr_output_regs * nr_tile_buffers;
+      (uint64_t)sample_count * nr_output_regs * nr_tile_buffers;
 
    buffer_size = ALIGN_POT((uint64_t)framebuffer_width,
                            ROGUE_CR_PBE_WORD0_MRT0_LINESTRIDE_ALIGNMENT);
@@ -641,12 +642,12 @@ static VkResult pvr_pds_pixel_event_program_create_and_upload(
 VkResult
 pvr_spm_init_eot_state(struct pvr_device *device,
                        struct pvr_spm_eot_state *spm_eot_state,
-                       const struct pvr_framebuffer *framebuffer,
+                       const struct pvr_render_state *rstate,
                        const struct pvr_renderpass_hwsetup_render *hw_render)
 {
    const VkExtent2D framebuffer_size = {
-      .width = framebuffer->width,
-      .height = framebuffer->height,
+      .width = rstate->width,
+      .height = rstate->height,
    };
    uint32_t pbe_state_words[PVR_MAX_COLOR_ATTACHMENTS]
                            [ROGUE_NUM_PBESTATE_STATE_WORDS];
@@ -659,7 +660,7 @@ pvr_spm_init_eot_state(struct pvr_device *device,
    VkResult result;
 
    pvr_dev_addr_t next_scratch_buffer_addr =
-      framebuffer->scratch_buffer->bo->vma->dev_addr;
+      rstate->scratch_buffer->bo->vma->dev_addr;
    uint64_t mem_stored;
 
    /* TODO: See if instead of having a separate path for devices with 8 output
@@ -942,15 +943,15 @@ static VkResult pvr_pds_bgnd_program_create_and_upload(
 VkResult
 pvr_spm_init_bgobj_state(struct pvr_device *device,
                          struct pvr_spm_bgobj_state *spm_bgobj_state,
-                         const struct pvr_framebuffer *framebuffer,
+                         const struct pvr_render_state *rstate,
                          const struct pvr_renderpass_hwsetup_render *hw_render)
 {
    const VkExtent2D framebuffer_size = {
-      .width = framebuffer->width,
-      .height = framebuffer->height,
+      .width = rstate->width,
+      .height = rstate->height,
    };
    pvr_dev_addr_t next_scratch_buffer_addr =
-      framebuffer->scratch_buffer->bo->vma->dev_addr;
+      rstate->scratch_buffer->bo->vma->dev_addr;
    struct pvr_spm_per_load_program_state *load_program_state;
    struct pvr_pds_upload pds_texture_data_upload;
    struct pvr_sampler_descriptor *descriptor;
