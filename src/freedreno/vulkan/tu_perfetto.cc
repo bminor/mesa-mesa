@@ -98,15 +98,6 @@ static const struct {
 };
 
 static uint32_t gpu_clock_id;
-static uint64_t next_clock_sync_ns; /* cpu time of next clk sync */
-
-static uint64_t last_sync_gpu_ts;
-
-static uint64_t last_suspend_count;
-
-static uint64_t gpu_max_timestamp;
-static uint64_t gpu_timestamp_offset;
-
 struct TuRenderpassTraits : public perfetto::DefaultDataSourceTraits {
    using IncrementalStateType = MesaRenderpassIncrementalState;
 };
@@ -123,10 +114,6 @@ class TuRenderpassDataSource : public MesaRenderpassDataSource<TuRenderpassDataS
        */
       gpu_clock_id =
          _mesa_hash_string("org.freedesktop.mesa.freedreno") | 0x80000000;
-
-      gpu_timestamp_offset = 0;
-      gpu_max_timestamp = 0;
-      last_suspend_count = 0;
    }
 };
 
@@ -250,6 +237,7 @@ stage_end(struct tu_device *dev, uint64_t ts_ns, enum tu_stage_id stage_id,
           const void *indirect = nullptr,
           trace_payload_as_extra_func payload_as_extra = nullptr)
 {
+   struct tu_perfetto_state *state = &dev->perfetto;
    struct tu_perfetto_stage *stage = stage_pop(dev);
    auto trace_flush_data =
       (const struct tu_u_trace_submission_data *) flush_data;
@@ -275,7 +263,7 @@ stage_end(struct tu_device *dev, uint64_t ts_ns, enum tu_stage_id stage_id,
 
       auto packet = tctx.NewTracePacket();
 
-      gpu_max_timestamp = MAX2(gpu_max_timestamp, ts_ns + gpu_ts_offset);
+      state->gpu_max_timestamp = MAX2(state->gpu_max_timestamp, ts_ns + gpu_ts_offset);
 
       packet->set_timestamp(stage->start_ts + gpu_ts_offset);
       packet->set_timestamp_clock_id(gpu_clock_id);
@@ -371,6 +359,7 @@ static struct tu_perfetto_clocks
 sync_clocks(struct tu_device *dev,
             const struct tu_perfetto_clocks *gpu_clocks)
 {
+   struct tu_perfetto_state *state = &dev->perfetto;
    struct tu_perfetto_clocks clocks {};
    if (gpu_clocks) {
       clocks = *gpu_clocks;
@@ -384,13 +373,13 @@ sync_clocks(struct tu_device *dev,
        * equal to GetBootTimeNs.
        */
 
-      clocks.gpu_ts_offset = MAX2(gpu_timestamp_offset, clocks.gpu_ts_offset);
-      gpu_timestamp_offset = clocks.gpu_ts_offset;
+      clocks.gpu_ts_offset = MAX2(state->gpu_timestamp_offset, clocks.gpu_ts_offset);
+      state->gpu_timestamp_offset = clocks.gpu_ts_offset;
    } else {
       clocks.gpu_ts = 0;
-      clocks.gpu_ts_offset = gpu_timestamp_offset;
+      clocks.gpu_ts_offset = state->gpu_timestamp_offset;
 
-      if (clocks.cpu < next_clock_sync_ns)
+      if (clocks.cpu < state->next_clock_sync_ns)
          return clocks;
 
       if (tu_device_get_gpu_timestamp(dev, &clocks.gpu_ts)) {
@@ -413,31 +402,31 @@ sync_clocks(struct tu_device *dev,
        * Perfetto requires clock snapshots to be monotonic,
        * so we have to fix-up the time.
        */
-      if (current_suspend_count != last_suspend_count) {
-         gpu_timestamp_offset = gpu_max_timestamp;
-         last_suspend_count = current_suspend_count;
+      if (current_suspend_count != state->last_suspend_count) {
+         state->gpu_timestamp_offset = state->gpu_max_timestamp;
+         state->last_suspend_count = current_suspend_count;
       }
-      clocks.gpu_ts_offset = gpu_timestamp_offset;
+      clocks.gpu_ts_offset = state->gpu_timestamp_offset;
 
       uint64_t gpu_absolute_ts = clocks.gpu_ts + clocks.gpu_ts_offset;
 
       /* Fallback check, detect non-monotonic cases which would happen
        * if we cannot retrieve suspend count.
        */
-      if (last_sync_gpu_ts > gpu_absolute_ts) {
-         gpu_absolute_ts += (gpu_max_timestamp - gpu_timestamp_offset);
-         gpu_timestamp_offset = gpu_max_timestamp;
-         clocks.gpu_ts = gpu_absolute_ts - gpu_timestamp_offset;
+      if (state->last_sync_gpu_ts > gpu_absolute_ts) {
+         gpu_absolute_ts += (state->gpu_max_timestamp - state->gpu_timestamp_offset);
+         state->gpu_timestamp_offset = state->gpu_max_timestamp;
+         clocks.gpu_ts = gpu_absolute_ts - state->gpu_timestamp_offset;
       }
 
-      if (last_sync_gpu_ts > gpu_absolute_ts) {
+      if (state->last_sync_gpu_ts > gpu_absolute_ts) {
          PERFETTO_ELOG("Non-monotonic gpu timestamp detected, bailing out");
          return {};
       }
 
-      gpu_max_timestamp = clocks.gpu_ts;
-      last_sync_gpu_ts = clocks.gpu_ts;
-      next_clock_sync_ns = clocks.cpu + 30000000;
+      state->gpu_max_timestamp = clocks.gpu_ts;
+      state->last_sync_gpu_ts = clocks.gpu_ts;
+      state->next_clock_sync_ns = clocks.cpu + 30000000;
    }
 
    return clocks;

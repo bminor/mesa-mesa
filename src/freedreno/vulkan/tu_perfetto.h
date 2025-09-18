@@ -38,6 +38,14 @@ struct tu_perfetto_state {
    struct tu_perfetto_stage stages[TU_PERFETTO_MAX_STACK_DEPTH];
    unsigned stage_depth;
    unsigned skipped_depth;
+
+   uint64_t next_clock_sync_ns; /* cpu time of next clk sync */
+   uint64_t last_sync_gpu_ts;
+
+   uint64_t last_suspend_count;
+
+   uint64_t gpu_max_timestamp;
+   uint64_t gpu_timestamp_offset;
 };
 
 void tu_perfetto_init(void);
