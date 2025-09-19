@@ -400,8 +400,6 @@ radv_sqtt_init(struct radv_device *device)
    if (!radv_device_acquire_performance_counters(device))
       return false;
 
-   ac_sqtt_init(sqtt);
-
    radv_register_queues(device, sqtt);
 
    return true;
@@ -424,8 +422,6 @@ radv_sqtt_finish(struct radv_device *device)
    }
 
    radv_unregister_queues(device, sqtt);
-
-   ac_sqtt_finish(sqtt);
 }
 
 static bool

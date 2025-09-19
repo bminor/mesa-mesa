@@ -1139,6 +1139,8 @@ radv_destroy_device(struct radv_device *device, const VkAllocationCallbacks *pAl
    if (device->capture_replay_arena_vas)
       _mesa_hash_table_u64_destroy(device->capture_replay_arena_vas);
 
+   ac_sqtt_finish(&device->sqtt);
+
    vk_device_finish(&device->vk);
    vk_free(&device->vk.alloc, device);
 }
@@ -1184,6 +1186,8 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
 
    init_dispatch_tables(device, pdev);
 
+   /* Initialize everything required for compilation, first. */
+
    simple_mtx_init(&device->ctx_roll_mtx, mtx_plain);
    simple_mtx_init(&device->trace_mtx, mtx_plain);
    simple_mtx_init(&device->pstate_mtx, mtx_plain);
@@ -1191,6 +1195,52 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
    simple_mtx_init(&device->pso_cache_stats_mtx, mtx_plain);
 
    device->rt_handles = _mesa_hash_table_create(NULL, _mesa_hash_u32, _mesa_key_u32_equal);
+
+   radv_init_shader_arenas(device);
+
+   /* Initialize the per-device cache key. */
+   radv_device_init_cache_key(device);
+
+   if (!device->vk.disable_internal_cache) {
+      result = radv_device_init_memory_cache(device);
+      if (result != VK_SUCCESS)
+         goto fail;
+   }
+
+   if (pdev->info.gfx_level == GFX10_3) {
+      if (os_get_option("RADV_FORCE_VRS_CONFIG_FILE")) {
+         const char *file = radv_get_force_vrs_config_file();
+
+         device->force_vrs = radv_parse_force_vrs_config_file(file);
+
+         if (radv_device_init_notifier(device)) {
+            device->force_vrs_enabled = true;
+         } else {
+            fprintf(stderr, "radv: Failed to initialize the notifier for RADV_FORCE_VRS_CONFIG_FILE!\n");
+         }
+      } else if (os_get_option("RADV_FORCE_VRS")) {
+         const char *vrs_rates = os_get_option("RADV_FORCE_VRS");
+
+         device->force_vrs = radv_parse_vrs_rates(vrs_rates);
+         device->force_vrs_enabled = device->force_vrs != RADV_FORCE_VRS_1x1;
+      }
+   }
+
+   device->force_aniso = MIN2(16, (int)debug_get_num_option("RADV_TEX_ANISO", -1));
+   if (device->force_aniso >= 0) {
+      fprintf(stderr, "radv: Forcing anisotropy filter to %ix\n", 1 << util_logbase2(device->force_aniso));
+   }
+
+   /* PKT3_LOAD_SH_REG_INDEX is supported on GFX8+, but it hangs with compute queues until GFX10.3. */
+   device->load_grid_size_from_user_sgpr = pdev->info.gfx_level >= GFX10_3;
+
+   ac_sqtt_init(&device->sqtt);
+
+   /* If this is a NULL device, we are done here. */
+   if (pdev->info.family_overridden) {
+      *pDevice = radv_device_to_handle(device);
+      return VK_SUCCESS;
+   }
 
    device->ws = pdev->ws;
    device->vk.sync = device->ws->get_sync_provider(device->ws);
@@ -1216,8 +1266,6 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
          fprintf(stderr, "radv: Can't disable the global BO list because some features require it!\n");
       }
    }
-
-   radv_init_shader_arenas(device);
 
    device->overallocation_disallowed = overallocation_disallowed;
    mtx_init(&device->overallocation_mutex, mtx_plain);
@@ -1325,33 +1373,8 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
     */
    device->dispatch_initiator_task = device->dispatch_initiator | S_00B800_DISABLE_DISP_PREMPT_EN(1);
 
-   if (pdev->info.gfx_level == GFX10_3) {
-      if (os_get_option("RADV_FORCE_VRS_CONFIG_FILE")) {
-         const char *file = radv_get_force_vrs_config_file();
-
-         device->force_vrs = radv_parse_force_vrs_config_file(file);
-
-         if (radv_device_init_notifier(device)) {
-            device->force_vrs_enabled = true;
-         } else {
-            fprintf(stderr, "radv: Failed to initialize the notifier for RADV_FORCE_VRS_CONFIG_FILE!\n");
-         }
-      } else if (os_get_option("RADV_FORCE_VRS")) {
-         const char *vrs_rates = os_get_option("RADV_FORCE_VRS");
-
-         device->force_vrs = radv_parse_vrs_rates(vrs_rates);
-         device->force_vrs_enabled = device->force_vrs != RADV_FORCE_VRS_1x1;
-      }
-   }
-
-   /* PKT3_LOAD_SH_REG_INDEX is supported on GFX8+, but it hangs with compute queues until GFX10.3. */
-   device->load_grid_size_from_user_sgpr = pdev->info.gfx_level >= GFX10_3;
-
    /* Keep shader info for GPU hangs debugging. */
    device->keep_shader_info = radv_device_fault_detection_enabled(device) || radv_trap_handler_enabled();
-
-   /* Initialize the per-device cache key before compiling meta shaders. */
-   radv_device_init_cache_key(device);
 
    result = radv_device_init_tools(device);
    if (result != VK_SUCCESS)
@@ -1386,17 +1409,6 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
 
    if (pdev->info.has_graphics && !(instance->debug_flags & RADV_DEBUG_NO_IB_CHAINING))
       radv_create_gfx_preamble(device);
-
-   if (!device->vk.disable_internal_cache) {
-      result = radv_device_init_memory_cache(device);
-      if (result != VK_SUCCESS)
-         goto fail;
-   }
-
-   device->force_aniso = MIN2(16, (int)debug_get_num_option("RADV_TEX_ANISO", -1));
-   if (device->force_aniso >= 0) {
-      fprintf(stderr, "radv: Forcing anisotropy filter to %ix\n", 1 << util_logbase2(device->force_aniso));
-   }
 
    if (device->vk.enabled_features.performanceCounterQueryPools) {
       result = radv_device_init_perf_counter(device);
