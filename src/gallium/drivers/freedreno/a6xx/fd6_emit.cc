@@ -909,6 +909,8 @@ fd6_emit_static_non_context_regs(struct fd_context *ctx, fd_cs &cs)
    }
 
    ncrb.add(A6XX_PC_UNKNOWN_9E72());
+   if (CHIP == A7XX)
+      ncrb.add(RB_UNKNOWN_8E09(CHIP, 0x4));
 }
 
 /**

@@ -1052,13 +1052,12 @@ template <chip CHIP>
 static void
 fd7_emit_static_binning_regs(fd_cs &cs)
 {
-   fd_ncrb<CHIP> ncrb(cs, 6);
+   fd_ncrb<CHIP> ncrb(cs, 5);
 
    ncrb.add(RB_UNKNOWN_8812(CHIP, 0x0));
    ncrb.add(RB_CCU_DBG_ECO_CNTL(CHIP, 0x0));
    ncrb.add(GRAS_UNKNOWN_8007(CHIP, 0x0));
    ncrb.add(GRAS_MODE_CNTL(CHIP, 0x2));
-   ncrb.add(RB_UNKNOWN_8E09(CHIP, 0x4));
    ncrb.add(RB_CLEAR_TARGET(CHIP, .clear_mode = CLEAR_MODE_GMEM));
 }
 
@@ -2045,7 +2044,7 @@ fd6_emit_sysmem_prep(struct fd_batch *batch) assert_dt
          .add(GRAS_MODE_CNTL(CHIP, 0x2));
    }
 
-   with_crb (cs, 12) {
+   with_crb (cs, 11) {
       set_window_offset<CHIP>(crb, 0, 0);
 
       set_bin_size<CHIP>(crb, NULL, {
@@ -2057,7 +2056,6 @@ fd6_emit_sysmem_prep(struct fd_batch *batch) assert_dt
          crb.add(RB_UNKNOWN_8812(CHIP, 0x3ff)); // all buffers in sysmem
          crb.add(RB_CCU_DBG_ECO_CNTL(CHIP, batch->ctx->screen->info->a6xx.magic.RB_CCU_DBG_ECO_CNTL));
          crb.add(GRAS_UNKNOWN_8007(CHIP, 0x0));
-         crb.add(RB_UNKNOWN_8E09(CHIP, 0x4));
       }
 
       /* enable stream-out, with sysmem there is only one pass: */
