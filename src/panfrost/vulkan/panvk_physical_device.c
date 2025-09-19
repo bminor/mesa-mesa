@@ -369,11 +369,21 @@ panvk_fill_global_priority(const struct panvk_physical_device *physical_device,
                            uint32_t family_idx,
                            VkQueueFamilyGlobalPriorityPropertiesKHR *prio)
 {
+   const unsigned arch = pan_arch(physical_device->kmod.props.gpu_id);
    uint32_t prio_idx = 0;
+
    switch (family_idx) {
    case PANVK_QUEUE_FAMILY_GPU: {
       enum pan_kmod_group_allow_priority_flags prio_mask =
          physical_device->kmod.props.allowed_group_priorities_mask;
+
+      /* Non-medium priority context is not hooked-up in the JM backend, even
+       * though the panfrost kmod advertize it. Manually filter non-medium
+       * priority for now.
+       */
+      if (arch < 10)
+         prio_mask &= PAN_KMOD_GROUP_ALLOW_PRIORITY_MEDIUM;
+
       if (prio_mask & PAN_KMOD_GROUP_ALLOW_PRIORITY_LOW)
          prio->priorities[prio_idx++] = VK_QUEUE_GLOBAL_PRIORITY_LOW_KHR;
       if (prio_mask & PAN_KMOD_GROUP_ALLOW_PRIORITY_MEDIUM)
