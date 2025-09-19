@@ -122,11 +122,11 @@ vk_set_subgroup_size(struct vk_device *device,
       /* Starting with SPIR-V 1.6, varying subgroup size is the default */
    } else {
       shader->info.api_subgroup_size = properties->subgroupSize;
+      shader->info.max_subgroup_size = properties->subgroupSize;
       if (require_full) {
          assert(shader->info.stage == MESA_SHADER_COMPUTE ||
                 shader->info.stage == MESA_SHADER_MESH ||
                 shader->info.stage == MESA_SHADER_TASK);
-         shader->info.max_subgroup_size = properties->subgroupSize;
          shader->info.min_subgroup_size = properties->subgroupSize;
       }
    }
