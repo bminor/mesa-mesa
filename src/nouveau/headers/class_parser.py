@@ -149,9 +149,9 @@ __${nvcl}_${mthd.name}(uint32_t *val_out, struct nv_${nvcl.lower()}_${mthd.name}
 
 %endfor
 
-const char *P_PARSE_${nvcl}_MTHD(uint16_t idx);
+const char *P_PARSE_${nvcl}_MTHD(uint16_t idx) ATTRIBUTE_COLD;
 void P_DUMP_${nvcl}_MTHD_DATA(FILE *fp, uint16_t idx, uint32_t data,
-                              const char *prefix);
+                              const char *prefix) ATTRIBUTE_COLD;
 """)
 
 TEMPLATE_C = Template("""\
