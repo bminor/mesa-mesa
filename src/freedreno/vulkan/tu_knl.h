@@ -102,6 +102,7 @@ struct tu_sparse_vma {
       struct {
          uint64_t iova;
          uint64_t size;
+         bool backs_lazy_bo;
       } msm;
       struct {
          struct tu_bo *virtual_bo;

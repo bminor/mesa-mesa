@@ -890,7 +890,10 @@ msm_bo_init(struct tu_device *dev,
          TU_RMV(internal_resource_create, dev, bo);
          TU_RMV(resource_name, dev, bo, name);
       }
-      bo->lazy = !!lazy_vma;
+      if (lazy_vma) {
+         lazy_vma->msm.backs_lazy_bo = true;
+         bo->lazy = true;
+      }
    } else {
       if (!lazy_vma)
          tu_free_iova(dev, iova, size);
@@ -1155,7 +1158,11 @@ msm_sparse_vma_finish(struct tu_device *dev,
                      vma->msm.size);
    }
 
-   tu_free_iova(dev, vma->msm.iova, vma->msm.size);
+   /* For has_set_iova, if a lazy BO was mapped into this sparse VMA
+    * the allocation will be handed off to the zombie VMA mechanism.
+    */
+   if (dev->physical_device->has_vm_bind || !vma->msm.backs_lazy_bo)
+      tu_free_iova(dev, vma->msm.iova, vma->msm.size);
 }
 
 static int
