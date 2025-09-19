@@ -8265,7 +8265,7 @@ tu_CmdEndRendering2EXT(VkCommandBuffer commandBuffer,
    }
 
    const VkRenderPassFragmentDensityMapOffsetEndInfoEXT *fdm_offset_info =
-      vk_find_struct_const(pRenderingEndInfo->pNext,
+      vk_find_struct_const(pRenderingEndInfo,
                            RENDER_PASS_FRAGMENT_DENSITY_MAP_OFFSET_END_INFO_EXT);
    const VkOffset2D *fdm_offsets =
       (fdm_offset_info && fdm_offset_info->fragmentDensityOffsetCount > 0) ?
