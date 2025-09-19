@@ -226,7 +226,7 @@ ci-tron-v3d-rpi4-gl:arm32:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 30
     DEQP_SUITE: broadcom-rpi4-gl-arm32
 
-v3d-rpi4-gl-asan:arm64:
+.v3d-rpi4-gl-asan:arm64:
   extends:
     - .igalia-bcm2711-rpi-4
     - .broadcom-asan-test:arm64-gl
@@ -329,7 +329,7 @@ v3dv-rpi4-vk-full:arm64:
     DEQP_SUITE: broadcom-rpi4-vk
     DEQP_FRACTION: 1
 
-v3dv-rpi4-vk-asan:arm64:
+.v3dv-rpi4-vk-asan:arm64:
   extends:
     - .igalia-bcm2711-rpi-4
     - .broadcom-asan-test:arm64-vk
@@ -459,6 +459,18 @@ v3d-rpi5-traces:arm64:
   variables:
     PIGLIT_TRACES_FILE: traces-broadcom.yml
 
+v3d-rpi5-gl-asan:arm64:
+  extends:
+    - .igalia-bcm2712-rpi-5
+    - .broadcom-asan-test:arm64-gl
+    - .v3d-manual-rules
+  timeout: 25m
+  variables:
+    FDO_CI_CONCURRENT: 1
+    DEQP_SUITE: broadcom-rpi5-gl-asan
+    # FIXME: set to 9 once the new failures are investigated
+    DEQP_FRACTION: 30
+
 .ci-tron-v3d-rpi5-traces:arm64:
   extends:
     - .ci-tron-v3d-traces:arm64
@@ -516,6 +528,17 @@ v3dv-rpi5-vk-full:arm64:
   variables:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 145
     DEQP_FRACTION: 1
+
+v3dv-rpi5-vk-asan:arm64:
+  extends:
+    - .igalia-bcm2712-rpi-5
+    - .broadcom-asan-test:arm64-vk
+    - .v3dv-manual-rules
+  timeout: 25m
+  variables:
+    FDO_CI_CONCURRENT: 1
+    DEQP_SUITE: broadcom-rpi5-vk-asan
+    DEQP_FRACTION: 200
 
 # This is quite unstable. Keep it disabled
 .rpi3-skqp:arm64:

@@ -733,6 +733,9 @@ dEQP-VK.pipeline.monolithic.logic_op_na_formats.r8g8b8a8_srgb.or_reverse_blend,F
 dEQP-VK.pipeline.monolithic.logic_op_na_formats.r8g8b8a8_srgb.set_blend,Fail
 dEQP-VK.pipeline.monolithic.logic_op_na_formats.r8g8b8a8_srgb.xor_blend,Fail
 
+# ASAN failures
+asan-dEQP-VK.pipeline.monolithic.logic_op_na_formats.r8g8b8a8_srgb.or_inverted_blend,Fail
+
 # SKQP failing tests
 ES2BlendWithNoTexture,Fail
 SRGBReadWritePixels,Fail
