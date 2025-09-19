@@ -3276,7 +3276,7 @@ by a particular renderpass/blit.
 	<array offset="0xae80" name="SP_PERFCTR_SP_SEL" stride="1" length="36" variants="A7XX-"/>
 	<!-- TODO: there are 4 more percntr select registers (0xae28-0xae2b) -->
 	<!-- TODO: there are a few unknown registers in the 0xae30-0xae52 range -->
-	<reg32 offset="0xbe22" name="SP_CONTEXT_SWITCH_GFX_PREEMPTION_SAFE_MODE"/>
+	<reg32 offset="0xae52" name="SP_CONTEXT_SWITCH_GFX_PREEMPTION_SAFE_MODE"/>
 
 	<!--
 	The downstream kernel calls the debug cluster of registers
@@ -3788,7 +3788,7 @@ by a particular renderpass/blit.
 	<array offset="0xbe10" name="HLSQ_PERFCTR_HLSQ_SEL" stride="1" length="6"/>
 
 	<!-- TODO: some valid registers between 0xbe20 and 0xbe33 -->
-	<reg32 offset="0xbe22" name="HLSQ_CONTEXT_SWITCH_GFX_PREEMPTION_SAFE_MODE"/>
+	<reg32 offset="0xbe22" name="HLSQ_CONTEXT_SWITCH_GFX_PREEMPTION_SAFE_MODE" variants="A6XX"/>
 
 	<reg32 offset="0xc000" name="SP_AHB_READ_APERTURE" variants="A7XX-"/>
 
