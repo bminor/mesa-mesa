@@ -251,6 +251,24 @@ dumpregs = executable(
   install: false,
 )
 
+checkregs = executable(
+  'checkregs',
+  [ 'checkregs.c' ],
+  include_directories: [
+    inc_freedreno,
+    inc_freedreno_rnn,
+    inc_include,
+    inc_src,
+  ],
+  gnu_symbol_visibility: 'hidden',
+  dependencies: [],
+  link_with: [
+    libfreedreno_cffdec,
+  ],
+  build_by_default: with_tools.contains('freedreno'),
+  install: false,
+)
+
 if with_tests
   crashdec_tests = [
     ['crash', ['-sf']],
@@ -274,7 +292,14 @@ if with_tests
       suite: 'freedreno',
       workdir: dir_source_root
     )
-
+  endforeach
+  foreach gen : ['a6xx', 'a7xx']
+    test('checkregs-' + gen,
+      checkregs,
+      args: gen,
+      suite: 'freedreno',
+      workdir: dir_source_root,
+    )
   endforeach
 endif
 
