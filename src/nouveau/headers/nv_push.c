@@ -5,33 +5,7 @@
 #include <inttypes.h>
 #include "util/os_misc.h"
 
-#include "nv_push_cl902d.h"
-#include "nv_push_cl9039.h"
-#include "nv_push_cl906f.h"
-#include "nv_push_cl9097.h"
-#include "nv_push_cl90b5.h"
-#include "nv_push_cla097.h"
-#include "nv_push_cla0b5.h"
-#include "nv_push_cla040.h"
-#include "nv_push_cla0c0.h"
-#include "nv_push_cla140.h"
-#include "nv_push_clb06f.h"
-#include "nv_push_clb197.h"
-#include "nv_push_clc0c0.h"
-#include "nv_push_clc1b5.h"
-#include "nv_push_clc397.h"
-#include "nv_push_clc3c0.h"
-#include "nv_push_clc56f.h"
-#include "nv_push_clc597.h"
-#include "nv_push_clc5b5.h"
-#include "nv_push_clc5c0.h"
-#include "nv_push_clc5b0.h"
-#include "nv_push_clc697.h"
-#include "nv_push_clc6b5.h"
-#include "nv_push_clc6c0.h"
-#include "nv_push_clc797.h"
-#include "nv_push_clc7c0.h"
-#include "nv_push_clcab5.h"
+#include "nv_push_class_dump.h"
 
 #ifndef NDEBUG
 void
@@ -83,8 +57,6 @@ vk_push_print(FILE *fp, const struct nv_push *push,
    curr_subchans[2] = devinfo->cls_m2mf;
    curr_subchans[3] = 0x2d;
    curr_subchans[4] = devinfo->cls_copy;
-
-
 
    const bool print_offsets = true;
 
@@ -174,143 +146,12 @@ vk_push_print(FILE *fp, const struct nv_push *push,
             curr_subchans[subchan] = value & 0xffff;
          }
          int class_id = curr_subchans[subchan];
-         int cls_hi = (class_id & 0xff00) >> 8;
-         int cls_lo = class_id & 0xff;
 
-         if (!is_tert) {
-            if (mthd < 0x100) {
-               if (cls_hi >= 0xc5)
-                  mthd_name = P_PARSE_NVC56F_MTHD(mthd);
-               else if (cls_hi >= 0xb0)
-                  mthd_name = P_PARSE_NVB06F_MTHD(mthd);
-               else
-                  mthd_name = P_PARSE_NV906F_MTHD(mthd);
-            } else {
-               switch (cls_lo) {
-               case 0x97:
-                  if (cls_hi >= 0xc7)
-                     mthd_name = P_PARSE_NVC797_MTHD(mthd);
-                  else if (cls_hi >= 0xc6)
-                     mthd_name = P_PARSE_NVC697_MTHD(mthd);
-                  else if (cls_hi >= 0xc5)
-                     mthd_name = P_PARSE_NVC597_MTHD(mthd);
-                  else if (cls_hi >= 0xc3)
-                     mthd_name = P_PARSE_NVC397_MTHD(mthd);
-                  else if (cls_hi >= 0xb1)
-                     mthd_name = P_PARSE_NVB197_MTHD(mthd);
-                  else if (cls_hi >= 0xa0)
-                     mthd_name = P_PARSE_NVA097_MTHD(mthd);
-                  else
-                     mthd_name = P_PARSE_NV9097_MTHD(mthd);
-                  break;
-               case 0xc0:
-                  if (cls_hi >= 0xc7)
-                     mthd_name = P_PARSE_NVC7C0_MTHD(mthd);
-                  else if (cls_hi >= 0xc6)
-                     mthd_name = P_PARSE_NVC6C0_MTHD(mthd);
-                  else if (cls_hi >= 0xc5)
-                     mthd_name = P_PARSE_NVC5C0_MTHD(mthd);
-                  else if (cls_hi >= 0xc3)
-                     mthd_name = P_PARSE_NVC3C0_MTHD(mthd);
-                  else if (cls_hi >= 0xc0)
-                     mthd_name = P_PARSE_NVC0C0_MTHD(mthd);
-                  else
-                     mthd_name = P_PARSE_NVA0C0_MTHD(mthd);
-                  break;
-               case 0x39:
-               case 0x40:
-                  if (cls_hi >= 0xa1)
-                     mthd_name = P_PARSE_NVA140_MTHD(mthd);
-                  else if (cls_hi >= 0xa0)
-                     mthd_name = P_PARSE_NVA040_MTHD(mthd);
-                  else if (cls_hi >= 0x90)
-                     mthd_name = P_PARSE_NV9039_MTHD(mthd);
-                  break;
-               case 0x2d:
-                  mthd_name = P_PARSE_NV902D_MTHD(mthd);
-                  break;
-               case 0xb5:
-                  if (cls_hi >= 0xca)
-                     mthd_name = P_PARSE_NVCAB5_MTHD(mthd);
-                  else if (cls_hi >= 0xc6)
-                     mthd_name = P_PARSE_NVC6B5_MTHD(mthd);
-                  else if (cls_hi >= 0xc5)
-                     mthd_name = P_PARSE_NVC5B5_MTHD(mthd);
-                  else if (cls_hi >= 0xc1)
-                     mthd_name = P_PARSE_NVC1B5_MTHD(mthd);
-                  else if (cls_hi >= 0xa0)
-                     mthd_name = P_PARSE_NVA0B5_MTHD(mthd);
-                  else
-                     mthd_name = P_PARSE_NV90B5_MTHD(mthd);
-                  break;
-               case 0xb0:
-                  mthd_name = P_PARSE_NVC5B0_MTHD(mthd);
-                  break;
-               default:
-                  mthd_name = "unknown method";
-                  break;
-               }
-            }
-         }
+         if (!is_tert)
+            mthd_name = P_PARSE_NV_MTHD(class_id, mthd);
 
          fprintf(fp, "\tmthd %04x %s\n", mthd, mthd_name);
-         if (mthd < 0x100) {
-            if (cls_hi >= 0xb0)
-               P_DUMP_NVB06F_MTHD_DATA(fp, mthd, value, "\t\t");
-            else
-               P_DUMP_NV906F_MTHD_DATA(fp, mthd, value, "\t\t");
-         } else {
-            switch (cls_lo) {
-            case 0x97:
-               if (cls_hi >= 0xc5)
-                  P_DUMP_NVC597_MTHD_DATA(fp, mthd, value, "\t\t");
-               else if (cls_hi >= 0xc3)
-                  P_DUMP_NVC397_MTHD_DATA(fp, mthd, value, "\t\t");
-               else if (cls_hi >= 0xb1)
-                  P_DUMP_NVB197_MTHD_DATA(fp, mthd, value, "\t\t");
-               else if (cls_hi >= 0xa0)
-                  P_DUMP_NVA097_MTHD_DATA(fp, mthd, value, "\t\t");
-               else
-                  P_DUMP_NV9097_MTHD_DATA(fp, mthd, value, "\t\t");
-               break;
-            case 0xc0:
-               if (cls_hi >= 0xc3)
-                  P_DUMP_NVC3C0_MTHD_DATA(fp, mthd, value, "\t\t");
-               else if (cls_hi >= 0xc0)
-                  P_DUMP_NVC0C0_MTHD_DATA(fp, mthd, value, "\t\t");
-               else
-                  P_DUMP_NVA0C0_MTHD_DATA(fp, mthd, value, "\t\t");
-               break;
-            case 0x39:
-            case 0x40:
-               if (cls_hi >= 0xa1)
-                  P_DUMP_NVA140_MTHD_DATA(fp, mthd, value, "\t\t");
-               else if (cls_hi >= 0xa0)
-                  P_DUMP_NVA040_MTHD_DATA(fp, mthd, value, "\t\t");
-               else if (cls_hi >= 0x90)
-                  P_DUMP_NV9039_MTHD_DATA(fp, mthd, value, "\t\t");
-               break;
-            case 0x2d:
-               P_DUMP_NV902D_MTHD_DATA(fp, mthd, value, "\t\t");
-               break;
-            case 0xb5:
-               if (cls_hi >= 0xca)
-                  P_DUMP_NVCAB5_MTHD_DATA(fp, mthd, value, "\t\t");
-               else if (cls_hi >= 0xc1)
-                  P_DUMP_NVC1B5_MTHD_DATA(fp, mthd, value, "\t\t");
-               else if (cls_hi >= 0xa0)
-                  P_DUMP_NVA0B5_MTHD_DATA(fp, mthd, value, "\t\t");
-               else
-                  P_DUMP_NV90B5_MTHD_DATA(fp, mthd, value, "\t\t");
-               break;
-            case 0xb0:
-                  P_DUMP_NVC5B0_MTHD_DATA(fp, mthd, value, "\t\t");
-                  break;
-            default:
-               fprintf(fp, "%s.VALUE = 0x%x\n", "\t\t", value);
-               break;
-            }
-         }
+         P_DUMP_NV_MTHD_DATA(fp, class_id, mthd, value, "\t\t");
 
          if (!is_immd)
             cur++;

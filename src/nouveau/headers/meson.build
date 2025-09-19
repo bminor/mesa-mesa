@@ -50,8 +50,11 @@ hwref_gens = [
   'turing/tu102',
 ]
 
+flat_nv_classes = ''
+
 cl_generated = []
 foreach cl : nv_classes
+  flat_nv_classes = flat_nv_classes + cl + ' '
   cl_generated += custom_target(
     cl + '.h',
     input : ['class_parser.py', 'nvidia/classes/'+cl+'.h', 'util.py'],
@@ -61,9 +64,16 @@ foreach cl : nv_classes
   )
 endforeach
 
+nv_push_class_dump_h = custom_target(
+  'nv_push_class_dump.h',
+  input : ['nv_push_class_dump_h.py', 'nvidia/classes/'+cl+'.h', 'util.py'],
+  output : ['nv_push_class_dump.h'],
+  command : [prog_python, '@INPUT0@', '--classes', flat_nv_classes, '--out-h', '@OUTPUT0@'],
+)
+
 _libnvidia_headers = static_library(
   'nvidia_headers_c',
-  ['nv_push.c', cl_generated],
+  ['nv_push.c', cl_generated, nv_push_class_dump_h],
   include_directories : ['.', 'nvidia/classes', inc_include, inc_src],
   c_args : [no_override_init_args],
   gnu_symbol_visibility : 'hidden',
