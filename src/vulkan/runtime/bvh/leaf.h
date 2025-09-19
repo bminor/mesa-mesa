@@ -148,6 +148,9 @@ build_instance(inout vk_aabb bounds, VOID_REF src_ptr, VOID_REF dst_ptr, uint32_
 
    vk_aabb blas_aabb = DEREF(REF(vk_aabb)(instance.accelerationStructureReference + BVH_BOUNDS_OFFSET));
 
+   if (any(isnan(blas_aabb.min)) || any(isnan(blas_aabb.max)))
+      return false;
+
    bounds = calculate_instance_node_bounds(blas_aabb, mat3x4(transform));
 
 #ifdef CALCULATE_FINE_INSTANCE_NODE_BOUNDS
