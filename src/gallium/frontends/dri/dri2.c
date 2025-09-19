@@ -1265,9 +1265,8 @@ dri2_from_planar(struct dri_image *image, int plane, void *loaderPrivate)
    if (plane < 0) {
       return NULL;
    } else if (plane > 0) {
-      uint64_t planes;
-      if (!dri2_resource_get_param(image, PIPE_RESOURCE_PARAM_NPLANES, 0,
-                                   &planes) ||
+      int planes;
+      if (!dri2_query_image(image, __DRI_IMAGE_ATTRIB_NUM_PLANES, &planes) ||
           plane >= planes) {
          return NULL;
       }
