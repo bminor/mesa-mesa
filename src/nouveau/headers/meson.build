@@ -7,11 +7,13 @@ nv_classes = [
   'cl90b5',
   'cl90c0',
   'cl91c0',
+  'cl9297',
   'cla040',
   'cla0b5',
   'cla097',
   'cla140',
   'cla1c0',
+  'cla197',
   'cla297',
   'clb06f',
   'clb097',
@@ -43,6 +45,7 @@ nv_classes = [
   'clc7c0',
   'clc86f',
   'clc8b5',
+  'clc997',
   'clc9b0',
   'clc9b5',
   'clc9c0',
@@ -52,6 +55,7 @@ nv_classes = [
   'clcd97',
   'clcdc0',
   'clcec0',
+  'clce97',
 ]
 
 hwref_gens = [
