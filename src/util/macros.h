@@ -173,6 +173,12 @@ do {                       \
 #define ATTRIBUTE_CONST
 #endif
 
+#if defined(HAVE_FUNC_ATTRIBUTE_COLD)
+#define ATTRIBUTE_COLD __attribute__((__cold__))
+#else
+#define ATTRIBUTE_COLD
+#endif
+
 #ifdef HAVE_FUNC_ATTRIBUTE_FLATTEN
 #define FLATTEN __attribute__((__flatten__))
 #else
