@@ -322,36 +322,6 @@ static void pvr_reset_render(struct pvr_renderpass_context *ctx)
    ctx->ds_load_surface = NULL;
 }
 
-/** Gets the amount of memory to allocate per-core for a tile buffer. */
-static uint32_t
-pvr_get_tile_buffer_size_per_core(const struct pvr_device *device)
-{
-   uint32_t clusters =
-      PVR_GET_FEATURE_VALUE(&device->pdevice->dev_info, num_clusters, 1U);
-
-   /* Round the number of clusters up to the next power of two. */
-   if (!PVR_HAS_FEATURE(&device->pdevice->dev_info, tile_per_usc))
-      clusters = util_next_power_of_two(clusters);
-
-   /* Tile buffer is (total number of partitions across all clusters) * 16 * 16
-    * (quadrant size in pixels).
-    */
-   return device->pdevice->dev_runtime_info.total_reserved_partition_size *
-          clusters * sizeof(uint32_t);
-}
-
-/**
- * Gets the amount of memory to allocate for a tile buffer on the current BVNC.
- */
-static uint32_t
-pvr_get_tile_buffer_size(const struct pvr_device *device)
-{
-   /* On a multicore system duplicate the buffer for each core. */
-   /* TODO: Optimise tile buffer size to use core_count, not max_num_cores. */
-   return pvr_get_tile_buffer_size_per_core(device) *
-          rogue_get_max_num_cores(&device->pdevice->dev_info);
-}
-
 static void
 pvr_finalise_mrt_setup(const struct pvr_device *device,
                        struct pvr_renderpass_hwsetup_render *hw_render,
@@ -359,7 +329,6 @@ pvr_finalise_mrt_setup(const struct pvr_device *device,
 {
    mrt->num_output_regs = hw_render->output_regs_count;
    mrt->num_tile_buffers = hw_render->tile_buffers_count;
-   mrt->tile_buffer_size = pvr_get_tile_buffer_size(device);
 }
 
 /**

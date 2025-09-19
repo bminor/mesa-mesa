@@ -41,6 +41,7 @@
 #include <vulkan/vulkan.h>
 
 #include "hwdef/pvr_hw_utils.h"
+#include "hwdef/rogue_hw_utils.h"
 #include "pco_uscgen_programs.h"
 #include "pvr_bo.h"
 #include "pvr_border.h"
@@ -728,6 +729,36 @@ static void pvr_device_finish_tile_buffer_state(struct pvr_device *device)
       pvr_bo_free(device, device->tile_buffer_state.buffers[i]);
 }
 
+/** Gets the amount of memory to allocate per-core for a tile buffer. */
+static uint32_t
+pvr_get_tile_buffer_size_per_core(const struct pvr_device *device)
+{
+   uint32_t clusters =
+      PVR_GET_FEATURE_VALUE(&device->pdevice->dev_info, num_clusters, 1U);
+
+   /* Round the number of clusters up to the next power of two. */
+   if (!PVR_HAS_FEATURE(&device->pdevice->dev_info, tile_per_usc))
+      clusters = util_next_power_of_two(clusters);
+
+   /* Tile buffer is (total number of partitions across all clusters) * 16 * 16
+    * (quadrant size in pixels).
+    */
+   return device->pdevice->dev_runtime_info.total_reserved_partition_size *
+          clusters * sizeof(uint32_t);
+}
+
+/**
+ * Gets the amount of memory to allocate for a tile buffer on the current BVNC.
+ */
+static uint32_t
+pvr_get_tile_buffer_size(const struct pvr_device *device)
+{
+   /* On a multicore system duplicate the buffer for each core. */
+   /* TODO: Optimise tile buffer size to use core_count, not max_num_cores. */
+   return pvr_get_tile_buffer_size_per_core(device) *
+          rogue_get_max_num_cores(&device->pdevice->dev_info);
+}
+
 /**
  * \brief Ensures that a certain amount of tile buffers are allocated.
  *
@@ -735,9 +766,9 @@ static void pvr_device_finish_tile_buffer_state(struct pvr_device *device)
  * present, append new tile buffers of \p size_in_bytes each to reach the quota.
  */
 VkResult pvr_device_tile_buffer_ensure_cap(struct pvr_device *device,
-                                           uint32_t capacity,
-                                           uint32_t size_in_bytes)
+                                           uint32_t capacity)
 {
+   uint32_t size_in_bytes = pvr_get_tile_buffer_size(device);
    struct pvr_device_tile_buffer_state *tile_buffer_state =
       &device->tile_buffer_state;
    const uint32_t cache_line_size =

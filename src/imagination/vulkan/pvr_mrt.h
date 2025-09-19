@@ -78,9 +78,6 @@ struct usc_mrt_setup {
    /* Number of tile buffers used. */
    uint32_t num_tile_buffers;
 
-   /* Size of a tile buffer in bytes. */
-   uint32_t tile_buffer_size;
-
    /* Array of MRT resources allocated for each render target. The number of
     * elements is determined by usc_mrt_setup::num_render_targets.
     */

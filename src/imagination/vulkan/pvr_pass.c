@@ -814,8 +814,7 @@ static inline VkResult pvr_hw_render_load_ops_setup(
    if (hw_render->tile_buffers_count) {
       result = pvr_device_tile_buffer_ensure_cap(
          device,
-         hw_render->tile_buffers_count,
-         hw_render->eot_setup.tile_buffer_size);
+         hw_render->tile_buffers_count);
       if (result != VK_SUCCESS)
          return result;
    }
