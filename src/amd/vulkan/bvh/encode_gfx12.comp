@@ -271,8 +271,12 @@ encode_gfx12(uint32_t ir_leaf_node_size, REF(vk_ir_box_node) intermediate_intern
    }
 
    if (is_root_node && cluster.invocation_index == 0) {
+      vk_aabb aabb = src.base.aabb;
+      if (DEREF(args.header).active_leaf_count == 0)
+         aabb = vk_aabb(vec3(NAN), vec3(NAN));
+
       REF(radv_accel_struct_header) header = REF(radv_accel_struct_header)(args.output_base);
-      DEREF(header).aabb = src.base.aabb;
+      DEREF(header).aabb = aabb;
       DEREF(header).bvh_offset = args.output_bvh_offset;
 
       set_parent(RADV_BVH_ROOT_NODE, RADV_BVH_INVALID_NODE);
