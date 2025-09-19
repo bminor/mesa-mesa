@@ -1253,6 +1253,9 @@ get_hole(struct radv_shader_arena *arena, struct list_head *head)
 void
 radv_free_shader_memory(struct radv_device *device, union radv_shader_arena_block *alloc)
 {
+   if (!alloc)
+      return;
+
    mtx_lock(&device->shader_arena_mutex);
 
    union radv_shader_arena_block *hole_prev = get_hole(alloc->arena, alloc->list.prev);
@@ -2860,6 +2863,11 @@ radv_shader_create_uncached(struct radv_device *device, const struct radv_shader
       }
    }
 
+   if (radv_device_physical(device)->info.family_overridden) {
+      *out_shader = shader;
+      return VK_SUCCESS;
+   }
+
    if (replay_block) {
       shader->alloc = radv_replay_shader_arena_block(device, replay_block, shader);
       if (!shader->alloc) {
@@ -2961,6 +2969,9 @@ radv_shader_part_create(struct radv_device *device, struct radv_shader_part_bina
    shader_part->spi_shader_col_format = binary->info.spi_shader_col_format;
    shader_part->cb_shader_mask = binary->info.cb_shader_mask;
    shader_part->spi_shader_z_format = binary->info.spi_shader_z_format;
+
+   if (radv_device_physical(device)->info.family_overridden)
+      return shader_part;
 
    /* Allocate memory and upload. */
    shader_part->alloc = radv_alloc_shader_memory(device, shader_part->code_size, false, NULL);
@@ -3562,8 +3573,7 @@ radv_shader_part_destroy(struct radv_device *device, struct radv_shader_part *sh
       radv_shader_wait_for_upload(device, shader_part->upload_seq);
    }
 
-   if (shader_part->alloc)
-      radv_free_shader_memory(device, shader_part->alloc);
+   radv_free_shader_memory(device, shader_part->alloc);
    free(shader_part->disasm_string);
    free(shader_part);
 }

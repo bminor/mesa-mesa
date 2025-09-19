@@ -156,8 +156,7 @@ radv_sqtt_reloc_graphics_shaders(struct radv_device *device, struct radv_graphic
    return VK_SUCCESS;
 
 fail:
-   if (reloc->alloc)
-      radv_free_shader_memory(device, reloc->alloc);
+   radv_free_shader_memory(device, reloc->alloc);
    free(reloc);
    return result;
 }
