@@ -896,6 +896,11 @@ Intel driver environment variables
    Prefix added to the mda.tar filenames generated when using INTEL_DEBUG=mda.
    If set to ``timestamp`` it will generate the current time/date as prefix.
 
+.. envvar:: MDA_FILTER
+
+   When set, will only generate mda.tar files which names contain any of the
+   comma-separated filter values as substrings.
+
 Anvil(ANV) driver environment variables
 ---------------------------------------
 

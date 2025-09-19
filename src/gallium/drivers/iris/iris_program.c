@@ -1858,8 +1858,10 @@ iris_debug_archiver_open(void *tmp_ctx, struct iris_screen *screen,
    debug_archiver *debug_archiver =
       debug_archiver_open(tmp_ctx, name, PACKAGE_VERSION MESA_GIT_SHA1);
 
-   debug_archiver_set_prefix(debug_archiver,
-                             _mesa_shader_stage_to_abbrev(ish->nir->info.stage));
+   if (debug_archiver) {
+      debug_archiver_set_prefix(debug_archiver,
+                                _mesa_shader_stage_to_abbrev(ish->nir->info.stage));
+   }
    return debug_archiver;
 }
 

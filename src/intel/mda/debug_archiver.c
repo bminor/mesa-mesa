@@ -5,6 +5,7 @@
 
 #include "debug_archiver.h"
 
+#include "slice.h"
 #include "tar.h"
 #include "util/ralloc.h"
 #include "util/u_debug.h"
@@ -26,6 +27,7 @@ struct debug_archiver
 
 DEBUG_GET_ONCE_OPTION(mda_output_dir, "MDA_OUTPUT_DIR", ".")
 DEBUG_GET_ONCE_OPTION(mda_prefix, "MDA_PREFIX", NULL)
+DEBUG_GET_ONCE_OPTION(mda_filter, "MDA_FILTER", NULL)
 
 static bool
 ensure_output_dir(const char *dir)
@@ -40,9 +42,38 @@ ensure_output_dir(const char *dir)
    return mkdir(dir, 0755) == 0;
 }
 
+static bool
+debug_archiver_should_create(const char *name_str)
+{
+   const char *filter_str = debug_get_option_mda_filter();
+   if (filter_str && *filter_str) {
+      slice filter = slice_from_cstr(filter_str);
+      slice name = slice_from_cstr(name_str);
+
+      while (!slice_is_empty(filter)) {
+         slice_cut_result cut = slice_cut(filter, ',');
+         slice pattern = cut.before;
+
+         if (!slice_is_empty(pattern) &&
+             slice_contains_str(name, pattern))
+            return true;
+
+         filter = cut.after;
+      }
+
+      /* MDA_FILTER exist but did not match, don't create. */
+      return false;
+   }
+
+   return true;
+}
+
 debug_archiver *
 debug_archiver_open(void *mem_ctx, const char *name, const char *info)
 {
+   if (!debug_archiver_should_create(name))
+      return NULL;
+
    debug_archiver *da = rzalloc(mem_ctx, debug_archiver);
 
    char *filename = ralloc_asprintf(mem_ctx, "%s.mda.tar", name);
@@ -117,6 +148,9 @@ debug_archiver_open(void *mem_ctx, const char *name, const char *info)
 void
 debug_archiver_set_prefix(debug_archiver *da, const char *prefix)
 {
+   if (!da)
+      return;
+
    if (!prefix || !*prefix) {
       snprintf(da->prefix, ARRAY_SIZE(da->prefix) - 1, "%s", da->mda_dir_in_archive);
    } else {

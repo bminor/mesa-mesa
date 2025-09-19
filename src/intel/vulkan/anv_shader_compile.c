@@ -1690,8 +1690,10 @@ anv_debug_archiver_init(void *mem_ctx, struct anv_shader_data *shaders_data,
       shader_data->archiver =
          debug_archiver_open(mem_ctx, name, PACKAGE_VERSION MESA_GIT_SHA1);
 
-      debug_archiver_set_prefix(shader_data->archiver,
+      if (shader_data->archiver) {
+         debug_archiver_set_prefix(shader_data->archiver,
             _mesa_shader_stage_to_abbrev(info->stage));
+      }
    }
 }
 
