@@ -25,6 +25,7 @@ builtin_types_c = custom_target(
 float64_glsl_file = files('glsl/float64.glsl')
 
 astc_decoder_glsl_file = files('glsl/astc_decoder.glsl')
+float32_glsl_file = files('glsl/float32.glsl')
 
 files_libcompiler = files(
   'glsl_types.c',

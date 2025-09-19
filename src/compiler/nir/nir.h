@@ -6063,6 +6063,7 @@ bool nir_lower_int64_float_conversions(nir_shader *shader);
 nir_lower_doubles_options nir_lower_doubles_op_to_options_mask(nir_op opcode);
 bool nir_lower_doubles(nir_shader *shader, const nir_shader *softfp64,
                        nir_lower_doubles_options options);
+bool nir_lower_floats(nir_shader *shader, const nir_shader *softfp32);
 bool nir_lower_pack(nir_shader *shader);
 
 nir_intrinsic_instr *nir_get_io_intrinsic(nir_instr *instr, nir_variable_mode modes,
