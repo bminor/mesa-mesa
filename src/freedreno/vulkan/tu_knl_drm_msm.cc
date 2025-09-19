@@ -718,6 +718,18 @@ tu_allocate_iova(struct tu_device *dev,
    return result;
 }
 
+void
+tu_free_iova(struct tu_device *dev,
+             uint64_t iova,
+             uint64_t size)
+{
+   msm_vma_lock(dev);
+
+   if (dev->physical_device->has_set_iova)
+      util_vma_heap_free(&dev->vma, iova, size);
+
+   msm_vma_unlock(dev);
+}
 
 static VkResult
 tu_bo_init(struct tu_device *dev,
@@ -859,11 +871,8 @@ msm_bo_init(struct tu_device *dev,
    int ret = drmCommandWriteRead(dev->fd,
                                  DRM_MSM_GEM_NEW, &req, sizeof(req));
    if (ret) {
-      if (!lazy_vma) {
-         msm_vma_lock(dev);
-         util_vma_heap_free(&dev->vma, iova, size);
-         msm_vma_unlock(dev);
-      }
+      if (!lazy_vma)
+         tu_free_iova(dev, iova, size);
       return vk_error(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY);
    }
 
@@ -883,11 +892,8 @@ msm_bo_init(struct tu_device *dev,
       }
       bo->lazy = !!lazy_vma;
    } else {
-      if (!lazy_vma) {
-         msm_vma_lock(dev);
-         util_vma_heap_free(&dev->vma, iova, size);
-         msm_vma_unlock(dev);
-      }
+      if (!lazy_vma)
+         tu_free_iova(dev, iova, size);
       memset(bo, 0, sizeof(*bo));
    }
 
@@ -966,9 +972,7 @@ msm_bo_init_dmabuf(struct tu_device *dev,
       tu_bo_init(dev, NULL, bo, gem_handle, size, iova, TU_BO_ALLOC_DMABUF, "dmabuf");
 
    if (result != VK_SUCCESS) {
-      msm_vma_lock(dev);
-      util_vma_heap_free(&dev->vma, iova, size);
-      msm_vma_unlock(dev);
+      tu_free_iova(dev, iova, size);
       memset(bo, 0, sizeof(*bo));
    } else {
       *out_bo = bo;
@@ -1094,10 +1098,7 @@ msm_bo_finish(struct tu_device *dev, struct tu_bo *bo)
       if (!bo->lazy) {
          tu_map_vm_bind(dev, MSM_VM_BIND_OP_UNMAP, 0, bo->iova, 0, 0,
                         bo->size);
-
-         mtx_lock(&dev->vma_mutex);
-         util_vma_heap_free(&dev->vma, bo->iova, bo->size);
-         mtx_unlock(&dev->vma_mutex);
+         tu_free_iova(dev, bo->iova, bo->size);
       }
 
       msm_bo_gem_close(dev, bo);
@@ -1154,9 +1155,7 @@ msm_sparse_vma_finish(struct tu_device *dev,
                      vma->msm.size);
    }
 
-   mtx_lock(&dev->vma_mutex);
-   util_vma_heap_free(&dev->vma, vma->msm.iova, vma->msm.size);
-   mtx_unlock(&dev->vma_mutex);
+   tu_free_iova(dev, vma->msm.iova, vma->msm.size);
 }
 
 static int
