@@ -2974,7 +2974,7 @@
         "description": "elk: Increase the size of some structure fields in combine_constants",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2dad1e3abdb1ad153289455f3e273101e5bac1a8",
         "notes": null
