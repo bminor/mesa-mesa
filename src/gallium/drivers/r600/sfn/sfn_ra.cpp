@@ -393,7 +393,11 @@ register_allocation(LiveRangeMap& lrm)
       for (auto& entry : comp) {
          sfn_log << SfnLog::merge << "Set " << *entry.m_register << " to ";
          entry.m_register->set_sel(entry.m_color);
+         /* No need for any pinning past this point, keeping the flags just makes
+          * testing more difficult.
+          */
          entry.m_register->set_pin(pin_none);
+         entry.m_register->reset_flag(Register::pin_start);
          sfn_log << SfnLog::merge << *entry.m_register << "\n";
       }
    }
