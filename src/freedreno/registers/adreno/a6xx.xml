@@ -1373,7 +1373,7 @@ by a particular renderpass/blit.
 		<value value="0x5" name="ROTATE_VFLIP"/>
 	</enum>
 
-	<bitset name="a6xx_a2d_bit_cntl" inline="yes">
+	<bitset name="a6xx_a2d_blt_cntl" inline="yes">
 		<bitfield name="ROTATE" low="0" high="2" type="a6xx_rotation"/>
 		<bitfield name="OVERWRITEEN" pos="3" type="boolean"/>
 		<bitfield name="UNK4" low="4" high="6"/>
@@ -1392,7 +1392,7 @@ by a particular renderpass/blit.
 		<bitfield name="COPY" pos="30" type="boolean" variants="A7XX-"/>
 	</bitset>
 
-	<reg32 offset="0x8400" name="GRAS_A2D_BLT_CNTL" type="a6xx_a2d_bit_cntl" variants="A6XX-A7XX" usage="rp_blit"/>
+	<reg32 offset="0x8400" name="GRAS_A2D_BLT_CNTL" type="a6xx_a2d_blt_cntl" variants="A6XX-A7XX" usage="rp_blit"/>
 	<!-- note: the low 8 bits for src coords are valid, probably fixed point
 	     it would be a bit weird though, since we subtract 1 from BR coords
 	     apparently signed, gallium driver uses negative coords and it works?
@@ -1863,7 +1863,7 @@ by a particular renderpass/blit.
 	<reg32 offset="0x8a20" name="RB_UNKNOWN_8A20" variants="A6XX" usage="rp_blit"/>
 	<reg32 offset="0x8a30" name="RB_UNKNOWN_8A30" variants="A6XX" usage="rp_blit"/>
 
-	<reg32 offset="0x8c00" name="RB_A2D_BLT_CNTL" type="a6xx_a2d_bit_cntl" usage="rp_blit"/>
+	<reg32 offset="0x8c00" name="RB_A2D_BLT_CNTL" type="a6xx_a2d_blt_cntl" usage="rp_blit"/>
 	<reg32 offset="0x8c01" name="RB_A2D_PIXEL_CNTL" low="0" high="31" usage="rp_blit"/>
 
 	<bitset name="a6xx_a2d_src_texture_info" inline="yes">
