@@ -613,6 +613,7 @@ void vlVaDecoderVP9BitstreamHeader(vlVaContext *context, vlVaBuffer *buf);
 void vlVaDecoderHEVCBitstreamHeader(vlVaContext *context, vlVaBuffer *buf);
 VAStatus vlVaHandlePictureParameterBufferAV1(vlVaDriver *drv, vlVaContext *context, vlVaBuffer *buf);
 void vlVaHandleSliceParameterBufferAV1(vlVaContext *context, vlVaBuffer *buf);
+VAStatus vlVaHandleEncBufferType(vlVaDriver *drv, vlVaContext *context, vlVaBuffer *buf);
 void vlVaHandleVAEncMiscParameterTypeQualityLevel(struct pipe_enc_quality_modes *p, vlVaQualityBits *in);
 VAStatus vlVaHandleVAEncPictureParameterBufferTypeH264(vlVaDriver *drv, vlVaContext *context, vlVaBuffer *buf);
 VAStatus vlVaHandleVAEncSliceParameterBufferTypeH264(vlVaDriver *drv, vlVaContext *context, vlVaBuffer *buf);
