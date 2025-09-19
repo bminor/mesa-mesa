@@ -3977,8 +3977,12 @@ fdm_apply_sysmem_clear_coords(struct tu_cmd_buffer *cmd,
 
    VkExtent2D frag_area = frag_areas[MIN2(state->view, views - 1)];
    VkRect2D bin = bins[MIN2(state->view, views - 1)];
+   VkOffset2D hw_viewport_offset =
+      hw_viewport_offsets[MIN2(state->view, views - 1)];
 
    VkOffset2D offset = tu_fdm_per_bin_offset(frag_area, bin, common_bin_offset);
+   offset.x -= hw_viewport_offset.x;
+   offset.y -= hw_viewport_offset.y;
 
    unsigned x1 = state->rect.offset.x / frag_area.width + offset.x;
    unsigned x2 = DIV_ROUND_UP(state->rect.offset.x + state->rect.extent.width,
@@ -4886,11 +4890,16 @@ fdm_apply_load_coords(struct tu_cmd_buffer *cmd,
       (const struct apply_load_coords_state *)data;
    VkExtent2D frag_area = frag_areas[MIN2(state->view, views - 1)];
    VkRect2D bin = bins[MIN2(state->view, views - 1)];
+   VkOffset2D hw_viewport_offset =
+      hw_viewport_offsets[MIN2(state->view, views - 1)];
 
    assert(bin.extent.width % frag_area.width == 0);
    assert(bin.extent.height % frag_area.height == 0);
    uint32_t scaled_width = bin.extent.width / frag_area.width;
    uint32_t scaled_height = bin.extent.height / frag_area.height;
+
+   common_bin_offset.x -= hw_viewport_offset.x;
+   common_bin_offset.y -= hw_viewport_offset.y;
 
    const float coords[] = {
       common_bin_offset.x,                common_bin_offset.y,
