@@ -23,6 +23,8 @@
 #include "clc697.h"
 #include "clc997.h"
 #include "clcb97.h"
+#include "clcd97.h"
+#include "clce97.h"
 
 #include "cla0b5.h"
 #include "clb0b5.h"
@@ -30,6 +32,8 @@
 #include "clc3b5.h"
 #include "clc5b5.h"
 #include "clc6b5.h"
+#include "clc9b5.h"
+#include "clcab5.h"
 
 #include "clb0c0.h"
 #include "clc0c0.h"
@@ -38,6 +42,8 @@
 #include "clc7c0.h"
 #include "clc9c0.h"
 #include "clcbc0.h"
+#include "clcdc0.h"
+#include "clcec0.h"
 
 static struct nv_device_info get_fake_device_info(const char *arch_name) {
   struct nv_device_info info;
@@ -76,6 +82,14 @@ static struct nv_device_info get_fake_device_info(const char *arch_name) {
     info.cls_eng3d = HOPPER_A;
     info.cls_compute = HOPPER_COMPUTE_A;
     info.cls_copy = AMPERE_DMA_COPY_A;
+  } else if (!strcmp(arch_name, "BLACKWELL_A")) {
+    info.cls_eng3d = BLACKWELL_A;
+    info.cls_compute = BLACKWELL_COMPUTE_A;
+    info.cls_copy = BLACKWELL_DMA_COPY_A;
+  } else if (!strcmp(arch_name, "BLACKWELL_B")) {
+    info.cls_eng3d = BLACKWELL_B;
+    info.cls_compute = BLACKWELL_COMPUTE_B;
+    info.cls_copy = BLACKWELL_DMA_COPY_B;
   } else {
     fprintf(stderr, "Unknown architecture \"%s\", defaulting to Turing",
             arch_name);
@@ -101,7 +115,7 @@ int main(int argc, char **argv) {
 
   if (argc != 3) {
     fprintf(stderr, "Usage: nv_push_dump file.bin "
-                    "<KEPLER|MAXWELL|VOLTA|TURING|AMPERE|ADA|HOPPER>\n");
+                    "<KEPLER|MAXWELL|VOLTA|TURING|AMPERE|ADA|HOPPER|BLACKWELL_A|BLACKWELL_B>\n");
     return 1;
   }
 
