@@ -23,6 +23,7 @@ from gitlab.base import RESTObjectList
 from gitlab.exceptions import GitlabAuthenticationError
 from gitlab.v4.objects import Project, ProjectMergeRequest
 from gitlab_common import read_token, pretty_duration
+from rich.console import Console
 
 REFRESH_WAIT = 30
 MARGE_BOT_USER_ID = 9716
@@ -30,9 +31,9 @@ ASSIGNED_TO_MARGE = "assigned to @marge-bot"
 ASSIGNED_AT_PADDING = 19
 WAITING_PADDING = 8
 MR_ID_PADDING = 5
-URL_START = "\u001b]8;;"
-URL_SEPARATOR = "\u001b\\"
-URL_END = "\u001b]8;;\u001b\\"
+
+console = Console(highlight=False)
+print = console.print
 
 
 def parse_args() -> argparse.Namespace:
@@ -183,7 +184,7 @@ def __get_project_marge_merge_requests(
 def link2print(url: str, text: str, text_pad: int = 0) -> str:
     text = str(text)
     text_pad = len(text) if text_pad < 1 else text_pad
-    return f"{URL_START}{url}{URL_SEPARATOR}{text:{text_pad}}{URL_END}"
+    return f"[link={url}]{text:{text_pad}}[/link]"
 
 
 def main():
