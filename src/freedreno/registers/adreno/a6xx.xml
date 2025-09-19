@@ -453,8 +453,6 @@ by a particular renderpass/blit.
 		<bitfield pos="0" name="WAIT_GPU_IDLE" type="boolean"/>
 	</reg32>
 
-	<reg32 offset="0x00016" name="RBBM_GBIF_HALT" variants="A7XX-"/>
-	<reg32 offset="0x00017" name="RBBM_GBIF_HALT_ACK" variants="A7XX-"/>
 	<reg32 offset="0x0001f" name="RBBM_INTERFACE_HANG_INT_CNTL"/>
 	<reg32 offset="0x00037" name="RBBM_INT_CLEAR_CMD" type="A6XX_RBBM_INT_0_MASK"/>
 	<reg32 offset="0x00038" name="RBBM_INT_0_MASK" type="A6XX_RBBM_INT_0_MASK"/>
