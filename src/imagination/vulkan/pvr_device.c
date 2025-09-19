@@ -724,9 +724,7 @@ static void pvr_device_finish_tile_buffer_state(struct pvr_device *device)
     * allocated.
     */
    simple_mtx_destroy(&device->tile_buffer_state.mtx);
-
-   for (uint32_t i = 0; i < device->tile_buffer_state.buffer_count; i++)
-      pvr_bo_free(device, device->tile_buffer_state.buffers[i]);
+   pvr_device_free_tile_buffer_state(device);
 }
 
 /** Gets the amount of memory to allocate per-core for a tile buffer. */

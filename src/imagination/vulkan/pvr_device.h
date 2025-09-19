@@ -180,6 +180,12 @@ uint32_t pvr_calc_fscommon_size_and_tiles_in_flight(
 VkResult pvr_device_tile_buffer_ensure_cap(struct pvr_device *device,
                                            uint32_t capacity);
 
+static inline void pvr_device_free_tile_buffer_state(struct pvr_device *device)
+{
+   for (uint32_t i = 0; i < device->tile_buffer_state.buffer_count; i++)
+      pvr_bo_free(device, device->tile_buffer_state.buffers[i]);
+}
+
 VkResult pvr_pds_compute_shader_create_and_upload(
    struct pvr_device *device,
    struct pvr_pds_compute_shader_program *program,
