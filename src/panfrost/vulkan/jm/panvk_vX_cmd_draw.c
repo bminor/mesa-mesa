@@ -1362,8 +1362,6 @@ prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_data *draw)
    if (result != VK_SUCCESS)
       return result;
 
-   panvk_draw_prepare_attributes(cmdbuf, draw);
-
    uint32_t used_set_mask =
       vs->desc_info.used_set_mask | (fs ? fs->desc_info.used_set_mask : 0);
 
@@ -1380,8 +1378,6 @@ prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_data *draw)
          cmdbuf, desc_state, vs, vs_desc_state);
       if (result != VK_SUCCESS)
          return result;
-
-      panvk_draw_prepare_vs_copy_desc_job(cmdbuf, draw);
    }
 
    /* No need to setup the FS desc tables if the FS is not executed. */
@@ -1396,6 +1392,11 @@ prepare_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_data *draw)
       if (result != VK_SUCCESS)
          return result;
    }
+
+   panvk_draw_prepare_attributes(cmdbuf, draw);
+
+   if (gfx_state_dirty(cmdbuf, DESC_STATE) || gfx_state_dirty(cmdbuf, VS))
+      panvk_draw_prepare_vs_copy_desc_job(cmdbuf, draw);
 
    draw->tls = batch->tls.gpu;
    draw->fb = batch->fb.desc.gpu;
