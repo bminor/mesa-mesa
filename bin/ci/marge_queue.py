@@ -15,10 +15,12 @@ import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from dateutil import parser
+from traceback import print_exc
 from typing import Optional
 
 import gitlab
 from gitlab.base import RESTObjectList
+from gitlab.exceptions import GitlabAuthenticationError
 from gitlab.v4.objects import Project, ProjectMergeRequest
 from gitlab_common import read_token, pretty_duration
 
@@ -201,7 +203,15 @@ def main():
         f"{mr:<{MR_ID_PADDING}} {title}"
     )
     while True:
-        n_mrs = get_merge_queue(project).n_merge_requests_enqueued
+        try:
+            n_mrs = get_merge_queue(project).n_merge_requests_enqueued
+        except GitlabAuthenticationError as autherror:
+            if autherror.response_code == 401:  # 401 Unauthorized
+                print(f"Alert! Tool action requires authentication. Use the --token argument")
+            else:
+                print(f"Alert! Something went wrong: {autherror.responce_body}")
+                print_exc()
+            sys.exit(-1)
 
         print(f"Job waiting: {n_mrs}")
 
