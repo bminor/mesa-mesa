@@ -587,6 +587,7 @@ void vlVaSetSurfaceContext(vlVaDriver *drv, vlVaSurface *surf, vlVaContext *cont
 VAStatus vlVaPostProcCompositor(vlVaDriver *drv, struct pipe_video_buffer *src, struct pipe_video_buffer *dst,
                                 enum vl_compositor_deinterlace deinterlace, struct pipe_vpp_desc *param);
 void vlVaGetReferenceFrame(vlVaDriver *drv, VASurfaceID surface_id, struct pipe_video_buffer **ref_frame);
+VAStatus vlVaHandleDecBufferType(vlVaDriver *drv, vlVaContext *context, vlVaBuffer *buf);
 void vlVaHandlePictureParameterBufferMPEG12(vlVaDriver *drv, vlVaContext *context, vlVaBuffer *buf);
 void vlVaHandleIQMatrixBufferMPEG12(vlVaContext *context, vlVaBuffer *buf);
 void vlVaHandleSliceParameterBufferMPEG12(vlVaContext *context, vlVaBuffer *buf);
