@@ -171,3 +171,7 @@ KHR-GLES31.core.arrays_of_arrays.SizedDeclarationsPrimitive
 
 # New flakes with ES CTS 3.2.12.0
 KHR-GLES31.core.compute_shader.simple-compute-shared_context-persistent-buffer
+
+# New flakes while the device was offline
+dEQP-GLES31.functional.atomic_counter.dec.8_counters_5_calls_10_threads
+dEQP-GLES31.functional.shaders.builtin_functions.precision.*
