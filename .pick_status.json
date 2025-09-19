@@ -3064,7 +3064,7 @@
         "description": "panvk: fix FS driver set layout when LD_VAR_BUF is disabled",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7b949dd8c40de9d3ca5cc3d42ba09a38af2f89a0",
         "notes": null
