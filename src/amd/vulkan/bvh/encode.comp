@@ -234,10 +234,14 @@ main()
    }
 
    if (is_root_node) {
+      vk_aabb aabb = src.base.aabb;
+      if (DEREF(args.header).active_leaf_count == 0)
+         aabb = vk_aabb(vec3(NAN), vec3(NAN));
+
       REF(radv_accel_struct_header) header = REF(radv_accel_struct_header)(args.output_bvh - args.output_bvh_offset);
       DEREF(header).bvh_offset = args.output_bvh_offset;
       DEREF(header).root_flags = src.flags;
-      DEREF(header).aabb = src.base.aabb;
+      DEREF(header).aabb = aabb;
 
       set_parent(RADV_BVH_ROOT_NODE, RADV_BVH_INVALID_NODE);
    }
