@@ -3,14 +3,18 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include "nv_device_info.h"
-#include "nv_push.h"
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "nv_device_info.h"
+#include "nv_push.h"
 
 #include "cl902d.h"
+
+#include "cla040.h"
+#include "cla140.h"
+
 #include "cla097.h"
 #include "clb097.h"
 #include "clc097.h"
@@ -20,25 +24,20 @@
 #include "clc997.h"
 #include "clcb97.h"
 
-#include "clc5b0.h"
-#include "cla0c0.h"
+#include "cla0b5.h"
+#include "clb0b5.h"
+#include "clc0b5.h"
+#include "clc3b5.h"
+#include "clc5b5.h"
+#include "clc6b5.h"
+
 #include "clb0c0.h"
 #include "clc0c0.h"
 #include "clc3c0.h"
 #include "clc5c0.h"
-#include "clc6c0.h"
 #include "clc7c0.h"
 #include "clc9c0.h"
 #include "clcbc0.h"
-
-#define KEPLER_DMA_COPY_A 0x0000a0b5
-#define MAXWELL_DMA_COPY_A 0x0000b0b5
-#define PASCAL_DMA_COPY_A 0x0000c0b5
-#define VOLTA_DMA_COPY_A 0x0000c3b5
-#define TURING_DMA_COPY_A 0x0000c5b5
-#define AMPERE_DMA_COPY_A 0x0000c6b5
-#define KEPLER_INLINE_TO_MEMORY_A 0xa040
-#define KEPLER_INLINE_TO_MEMORY_B 0xa140
 
 static struct nv_device_info get_fake_device_info(const char *arch_name) {
   struct nv_device_info info;
