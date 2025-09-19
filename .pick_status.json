@@ -1454,7 +1454,7 @@
         "description": "vulkan/video: fix misuse of CLAMP in h265 slice parsing.",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "79981063552ce879ca64ce58eb70754b28d6d1ae",
         "notes": null
