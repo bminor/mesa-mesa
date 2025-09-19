@@ -855,6 +855,11 @@ typedef enum
    /** Required for VK_KHX_multiview */
    SYSTEM_VALUE_VIEW_INDEX,
 
+   /** Metal's amplification_id. Required to emulate view index on the vertex
+    * shaders. This value is present in both vertex and fragment shaders
+    */
+   SYSTEM_VALUE_AMPLIFICATION_ID_KK,
+
    /**
     * Driver internal vertex-count, used (for example) for drivers to
     * calculate stride for stream-out outputs.  Not externally visible.

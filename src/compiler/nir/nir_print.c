@@ -1919,6 +1919,9 @@ print_tex_instr(nir_tex_instr *instr, print_state *state)
       case nir_tex_src_min_lod:
          fprintf(fp, "(min_lod)");
          break;
+      case nir_tex_src_max_lod_kk:
+         fprintf(fp, "(max_lod_kk)");
+         break;
       case nir_tex_src_ms_index:
          fprintf(fp, "(ms_index)");
          break;

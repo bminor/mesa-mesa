@@ -2453,6 +2453,8 @@ nir_intrinsic_from_system_value(gl_system_value val)
       return nir_intrinsic_load_color1;
    case SYSTEM_VALUE_VIEW_INDEX:
       return nir_intrinsic_load_view_index;
+   case SYSTEM_VALUE_AMPLIFICATION_ID_KK:
+      return nir_intrinsic_load_amplification_id_kk;
    case SYSTEM_VALUE_SUBGROUP_SIZE:
       return nir_intrinsic_load_subgroup_size;
    case SYSTEM_VALUE_SUBGROUP_INVOCATION:
@@ -2635,6 +2637,8 @@ nir_system_value_from_intrinsic(nir_intrinsic_op intrin)
       return SYSTEM_VALUE_COLOR1;
    case nir_intrinsic_load_view_index:
       return SYSTEM_VALUE_VIEW_INDEX;
+   case nir_intrinsic_load_amplification_id_kk:
+      return SYSTEM_VALUE_AMPLIFICATION_ID_KK;
    case nir_intrinsic_load_subgroup_size:
       return SYSTEM_VALUE_SUBGROUP_SIZE;
    case nir_intrinsic_load_subgroup_invocation:
@@ -3515,6 +3519,7 @@ nir_tex_instr_src_type(const nir_tex_instr *instr, unsigned src)
    case nir_tex_src_comparator:
    case nir_tex_src_bias:
    case nir_tex_src_min_lod:
+   case nir_tex_src_max_lod_kk:
    case nir_tex_src_ddx:
    case nir_tex_src_ddy:
    case nir_tex_src_backend1:

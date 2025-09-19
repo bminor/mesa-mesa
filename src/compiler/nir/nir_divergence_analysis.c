@@ -471,6 +471,7 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
       is_divergent = !(options & nir_divergence_single_prim_per_subgroup);
       break;
    case nir_intrinsic_load_view_index:
+   case nir_intrinsic_load_amplification_id_kk:
       assert(stage != MESA_SHADER_COMPUTE && stage != MESA_SHADER_KERNEL);
       if (options & nir_divergence_view_index_uniform)
          is_divergent = false;
@@ -742,7 +743,11 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_load_frag_offset_ir3:
    case nir_intrinsic_bindless_resource_ir3:
    case nir_intrinsic_ray_intersection_ir3:
-   case nir_intrinsic_read_attribute_payload_intel: {
+   case nir_intrinsic_read_attribute_payload_intel:
+   case nir_intrinsic_load_buffer_ptr_kk:
+   case nir_intrinsic_load_texture_handle_kk:
+   case nir_intrinsic_load_depth_texture_kk:
+   case nir_intrinsic_load_sampler_handle_kk: {
       unsigned num_srcs = nir_intrinsic_infos[instr->intrinsic].num_srcs;
       for (unsigned i = 0; i < num_srcs; i++) {
          if (src_divergent(instr->src[i], state)) {

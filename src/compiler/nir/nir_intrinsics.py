@@ -980,6 +980,7 @@ system_value("layer_id", 1)
 system_value("view_index", 1)
 system_value("subgroup_size", 1)
 system_value("subgroup_invocation", 1)
+system_value("amplification_id_kk", 1)
 
 # These intrinsics provide a bitmask for all invocations, with one bit per
 # invocation starting with the least significant bit, according to the
@@ -2799,3 +2800,17 @@ intrinsic("load_packed_sample_location_pco", src_comp=[1], dest_comp=1, flags=[C
 
 # src[] = { buffer_index/deref }.
 intrinsic("is_null_descriptor", src_comp=[-1], dest_comp=1, flags=[CAN_ELIMINATE, CAN_REORDER], bit_sizes=[1])
+
+# KosmicKrisp-specific intrinsics
+
+# Represents a pointer to the start of an argument buffer at the
+# given binding
+load("buffer_ptr_kk", [], [BINDING], [CAN_ELIMINATE, CAN_REORDER])
+# Opaque texture<T> handle, with DEST_TYPE representing T
+load("texture_handle_kk", [1], [DEST_TYPE, IMAGE_DIM, IMAGE_ARRAY, FLAGS], [CAN_ELIMINATE])
+# Same as above but for depth<T> textures, T is always float
+load("depth_texture_kk", [1], [IMAGE_DIM, IMAGE_ARRAY], [CAN_ELIMINATE])
+# Load a bindless sampler handle mapping a binding table sampler.
+intrinsic("load_sampler_handle_kk", [1], 1, [],
+          flags=[CAN_ELIMINATE, CAN_REORDER],
+          bit_sizes=[16])

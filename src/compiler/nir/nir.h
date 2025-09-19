@@ -2227,6 +2227,13 @@ typedef enum nir_tex_src_type {
     */
    nir_tex_src_min_lod,
 
+   /** Max LOD
+    *
+    * The computed LOD is clamped to be at most as large as max_lod before
+    * mip-mapping.
+    */
+   nir_tex_src_max_lod_kk,
+
    /** LOD bias + min LOD packed together into 32-bits. This is the common case
     * for texturing on Honeykrisp with DX12, where both LOD bias and min LOD are
     * emulated and passed in a single hardware source together. So it's

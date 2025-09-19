@@ -734,6 +734,7 @@ gather_intrinsic_info(nir_intrinsic_instr *instr, nir_shader *shader)
    case nir_intrinsic_load_work_dim:
    case nir_intrinsic_load_user_data_amd:
    case nir_intrinsic_load_view_index:
+   case nir_intrinsic_load_amplification_id_kk:
    case nir_intrinsic_load_barycentric_model:
    case nir_intrinsic_load_ray_launch_id:
    case nir_intrinsic_load_ray_launch_size:
