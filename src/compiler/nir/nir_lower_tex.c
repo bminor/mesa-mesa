@@ -1484,6 +1484,7 @@ nir_lower_lod_zero_width(nir_builder *b, nir_tex_instr *tex)
 static void
 lower_sampler_lod_bias(nir_builder *b, nir_tex_instr *tex)
 {
+   b->cursor = nir_before_instr(&tex->instr);
    nir_def *bias = nir_build_texture_query(b, tex, nir_texop_lod_bias, 1,
                                            nir_type_float16, false, false);
 
