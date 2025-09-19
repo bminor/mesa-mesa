@@ -158,6 +158,11 @@ radv_null_winsys_query_info(struct radeon_winsys *rws, struct radeon_info *gpu_i
        gpu_info->family == CHIP_RAVEN2 || gpu_info->family == CHIP_RENOIR || gpu_info->gfx_level >= GFX10_3);
 
    gpu_info->has_gang_submit = true;
+   gpu_info->mesh_fast_launch_2 = gpu_info->gfx_level >= GFX11;
+   gpu_info->hs_offchip_workgroup_dw_size = gpu_info->family == CHIP_HAWAII ? 4096 : 8192;
+   gpu_info->has_ls_vgpr_init_bug = gpu_info->family == CHIP_VEGA10 || gpu_info->family == CHIP_RAVEN;
+   gpu_info->has_graphics = true;
+   gpu_info->ip[AMD_IP_GFX].num_queues = 1;
 
    gpu_info->gart_page_size = 4096;
 }
