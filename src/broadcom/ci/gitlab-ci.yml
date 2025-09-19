@@ -58,7 +58,7 @@ vc4-rpi3-gl:arm32:
   variables:
     DEQP_SUITE: broadcom-rpi3-gl-arm32
 
-.ci-tron-vc4-rpi3-gl:arm32:
+ci-tron-vc4-rpi3-gl:arm32:
   extends:
     - .ci-tron-arm32-test-gl
     - .ci-tron-broadcom-rpi3:arm32
@@ -67,7 +67,6 @@ vc4-rpi3-gl:arm32:
   timeout: 25m
   variables:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 20
-    HWCI_START_WESTON: 1
     DEQP_SUITE: broadcom-rpi3-gl-arm32
 
 vc4-rpi3-gl-asan:arm64:
@@ -217,7 +216,7 @@ v3d-rpi4-gl:arm32:
   variables:
     DEQP_SUITE: broadcom-rpi4-gl-arm32
 
-.ci-tron-v3d-rpi4-gl:arm32:
+ci-tron-v3d-rpi4-gl:arm32:
   extends:
     - .ci-tron-arm32-test-gl
     - .ci-tron-broadcom-rpi4:arm32
