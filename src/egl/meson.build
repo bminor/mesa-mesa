@@ -123,6 +123,7 @@ if with_dri
     link_for_egl += libloader_wayland_helper
     files_egl += files('drivers/dri2/platform_wayland.c')
     files_egl += wp_files['linux-dmabuf-unstable-v1']
+    files_egl += wp_files['presentation-time']
     if with_wayland_bind_display
       files_egl += [wayland_drm_client_protocol_h]
       link_for_egl += [libwayland_drm]
