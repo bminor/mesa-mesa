@@ -168,7 +168,7 @@ get_preload_shader(struct panvk_device *dev,
 
 #if PAN_ARCH >= 9
    shader->spd = panvk_pool_alloc_desc(&dev->mempools.rw, SHADER_PROGRAM);
-   if (!panvk_priv_mem_host_addr(shader->spd)) {
+   if (!panvk_priv_mem_check_alloc(shader->spd)) {
       vk_shader_destroy(&dev->vk, &shader->vk, NULL);
       return panvk_error(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY);
    }

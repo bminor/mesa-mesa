@@ -67,6 +67,9 @@ panvk_per_arch(CreateBufferView)(VkDevice _device,
 #else
       view->mem =
          panvk_pool_alloc_desc(&device->mempools.rw, SURFACE_WITH_STRIDE);
+      if (!panvk_priv_mem_check_alloc(view->mem))
+         return panvk_error(device, VK_ERROR_OUT_OF_DEVICE_MEMORY);
+
       struct pan_ptr ptr = {
          .gpu = panvk_priv_mem_dev_addr(view->mem),
          .cpu = panvk_priv_mem_host_addr(view->mem),

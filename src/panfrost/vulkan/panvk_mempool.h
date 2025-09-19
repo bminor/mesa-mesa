@@ -148,6 +148,12 @@ panvk_priv_mem_flags(struct panvk_priv_mem mem)
    return mem.bo & PANVK_PRIV_MEM_FLAGS_MASK;
 }
 
+static inline bool
+panvk_priv_mem_check_alloc(struct panvk_priv_mem mem)
+{
+   return panvk_priv_mem_bo(mem) != NULL;
+}
+
 static inline uint64_t
 panvk_priv_mem_dev_addr(struct panvk_priv_mem mem)
 {

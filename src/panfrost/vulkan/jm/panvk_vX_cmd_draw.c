@@ -1420,7 +1420,7 @@ panvk_cmd_draw(struct panvk_cmd_buffer *cmdbuf, struct panvk_draw_data *draw)
    VkResult result;
 
    /* If there's no vertex shader, we can skip the draw. */
-   if (!panvk_priv_mem_dev_addr(vs->rsd))
+   if (!panvk_priv_mem_check_alloc(vs->rsd))
       return;
 
    /* Needs to be done before get_fs() is called because it depends on
@@ -1528,7 +1528,7 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
    VkResult result;
 
    /* If there's no vertex shader, we can skip the draw. */
-   if (!panvk_priv_mem_dev_addr(vs->rsd))
+   if (!panvk_priv_mem_check_alloc(vs->rsd))
       return;
 
    /* Needs to be done before get_fs() is called because it depends on

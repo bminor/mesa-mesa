@@ -321,7 +321,7 @@ panvk_meta_desc_copy_rsd(struct panvk_device *dev)
       DIV_ROUND_UP(sizeof(struct pan_nir_desc_copy_info), 4);
 
    shader->rsd = panvk_pool_alloc_desc(&dev->mempools.rw, RENDERER_STATE);
-   if (!panvk_priv_mem_host_addr(shader->rsd)) {
+   if (!panvk_priv_mem_check_alloc(shader->rsd)) {
       vk_shader_destroy(&dev->vk, &shader->vk, NULL);
       return 0;
    }

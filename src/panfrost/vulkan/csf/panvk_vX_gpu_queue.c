@@ -164,12 +164,11 @@ init_render_desc_ringbuf(struct panvk_gpu_queue *queue)
    };
 
    ringbuf->syncobj = panvk_pool_alloc_mem(&dev->mempools.rw, alloc_info);
-
-   struct panvk_cs_sync32 *syncobj = panvk_priv_mem_host_addr(ringbuf->syncobj);
-
-   if (!syncobj)
+   if (!panvk_priv_mem_check_alloc(ringbuf->syncobj))
       return panvk_errorf(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY,
                           "Failed to create the render desc ringbuf context");
+
+   struct panvk_cs_sync32 *syncobj = panvk_priv_mem_host_addr(ringbuf->syncobj);
 
    *syncobj = (struct panvk_cs_sync32){
       .seqno = RENDER_DESC_RINGBUF_SIZE,
@@ -363,7 +362,7 @@ init_subqueue(struct panvk_gpu_queue *queue, enum panvk_subqueue_id subqueue)
       alloc_info.size = dev->dump_region_size[subqueue];
       alloc_info.alignment = sizeof(uint32_t);
       subq->regs_save = panvk_pool_alloc_mem(&dev->mempools.rw, alloc_info);
-      if (!panvk_priv_mem_host_addr(subq->regs_save)) {
+      if (!panvk_priv_mem_check_alloc(subq->regs_save)) {
          return panvk_errorf(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY,
                              "Failed to allocate register save area");
       }
@@ -377,7 +376,7 @@ init_subqueue(struct panvk_gpu_queue *queue, enum panvk_subqueue_id subqueue)
    alloc_info.size = sizeof(uint64_t);
    alloc_info.alignment = 64;
    subq->req_resource.buf = panvk_pool_alloc_mem(mempool, alloc_info);
-   if (!panvk_priv_mem_host_addr(subq->req_resource.buf))
+   if (!panvk_priv_mem_check_alloc(subq->req_resource.buf))
       return panvk_errorf(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY,
                           "Failed to create a req_resource buffer");
 
@@ -407,7 +406,7 @@ init_subqueue(struct panvk_gpu_queue *queue, enum panvk_subqueue_id subqueue)
    alloc_info.alignment = 64;
 
    subq->context = panvk_pool_alloc_mem(mempool, alloc_info);
-   if (!panvk_priv_mem_host_addr(subq->context))
+   if (!panvk_priv_mem_check_alloc(subq->context))
       return panvk_errorf(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY,
                           "Failed to create a queue context");
 
@@ -566,7 +565,7 @@ init_queue(struct panvk_gpu_queue *queue)
    };
 
    queue->syncobjs = panvk_pool_alloc_mem(&dev->mempools.rw, alloc_info);
-   if (!panvk_priv_mem_host_addr(queue->syncobjs))
+   if (!panvk_priv_mem_check_alloc(queue->syncobjs))
       return panvk_errorf(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY,
                           "Failed to allocate subqueue sync objects");
 
@@ -672,7 +671,7 @@ init_tiler(struct panvk_gpu_queue *queue)
    };
 
    tiler_heap->desc = panvk_pool_alloc_mem(&dev->mempools.rw, alloc_info);
-   if (!panvk_priv_mem_host_addr(tiler_heap->desc)) {
+   if (!panvk_priv_mem_check_alloc(tiler_heap->desc)) {
       result = panvk_errorf(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY,
                             "Failed to create a tiler heap context");
       goto err_free_desc;

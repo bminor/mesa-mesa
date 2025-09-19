@@ -68,7 +68,7 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
    VkResult result;
 
    /* If there's no compute shader, we can skip the dispatch. */
-   if (!panvk_priv_mem_dev_addr(cs->rsd))
+   if (!panvk_priv_mem_check_alloc(cs->rsd))
       return;
 
    panvk_per_arch(cmd_close_batch)(cmdbuf);
