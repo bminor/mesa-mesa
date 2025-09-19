@@ -31,24 +31,23 @@ panvk_interleaved_copy(void *dst, void *src, unsigned size_bl,
                        bool is_store)
 {
    switch (interleave) {
-      case PAN_INTERLEAVE_NONE:
-         if (is_store)
-            memcpy(dst, src, size_bl * block_size_B);
-         else
-            memcpy(src, dst, size_bl * block_size_B);
-         break;
-      case PAN_INTERLEAVE_DEPTH:
-         assert(block_size_B == 4);
-         for (unsigned i = 0; i < size_bl; i++)
-            pan_access_image_pixel(dst + i * 4, src + i * 4, 4, interleave,
-                                   is_store);
-         break;
-      case PAN_INTERLEAVE_STENCIL:
-         assert(block_size_B == 4);
-         for (unsigned i = 0; i < size_bl; i++)
-            pan_access_image_pixel(dst + i * 4, src + i, 4, interleave,
-                                   is_store);
-         break;
+   case PAN_INTERLEAVE_NONE:
+      if (is_store)
+         memcpy(dst, src, size_bl * block_size_B);
+      else
+         memcpy(src, dst, size_bl * block_size_B);
+      break;
+   case PAN_INTERLEAVE_DEPTH:
+      assert(block_size_B == 4);
+      for (unsigned i = 0; i < size_bl; i++)
+         pan_access_image_pixel(dst + i * 4, src + i * 4, 4, interleave,
+                                is_store);
+      break;
+   case PAN_INTERLEAVE_STENCIL:
+      assert(block_size_B == 4);
+      for (unsigned i = 0; i < size_bl; i++)
+         pan_access_image_pixel(dst + i * 4, src + i, 4, interleave, is_store);
+      break;
    }
 }
 
