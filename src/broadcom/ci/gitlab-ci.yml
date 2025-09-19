@@ -69,7 +69,7 @@ ci-tron-vc4-rpi3-gl:arm32:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 20
     DEQP_SUITE: broadcom-rpi3-gl-arm32
 
-vc4-rpi3-gl-asan:arm64:
+.vc4-rpi3-gl-asan:arm64:
   extends:
     - .igalia-bcm2837-rpi-3-b
     - .broadcom-asan-test:arm64-gl
