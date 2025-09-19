@@ -1996,33 +1996,20 @@ lower_lsc_varying_pull_constant_logical_send(const brw_builder &bld,
    send->src[SEND_SRC_PAYLOAD1] = ubo_offset;
    send->src[SEND_SRC_PAYLOAD2] = brw_reg();
 
-   if (alignment >= 4) {
-      send->desc =
-         lsc_msg_desc(devinfo, LSC_OP_LOAD,
-                      surf_type, LSC_ADDR_SIZE_A32,
-                      LSC_DATA_SIZE_D32,
-                      4 /* num_channels */,
-                      false /* transpose */,
-                      LSC_CACHE(devinfo, LOAD, L1STATE_L3MOCS));
-      send->mlen = lsc_msg_addr_len(devinfo, LSC_ADDR_SIZE_A32, send->exec_size);
+   send->desc =
+      lsc_msg_desc(devinfo, LSC_OP_LOAD,
+                   surf_type, LSC_ADDR_SIZE_A32,
+                   LSC_DATA_SIZE_D32,
+                   alignment >= 4 ? 4 : 1 /* num_channels */,
+                   false /* transpose */,
+                   LSC_CACHE(devinfo, LOAD, L1STATE_L3MOCS));
+   send->mlen = lsc_msg_addr_len(devinfo, LSC_ADDR_SIZE_A32, send->exec_size);
 
-      setup_lsc_surface_descriptors(bld, send, send->desc,
-                                    surface.file != BAD_FILE ?
-                                    surface : surface_handle, 0);
-   } else {
-      send->desc =
-         lsc_msg_desc(devinfo, LSC_OP_LOAD,
-                      surf_type, LSC_ADDR_SIZE_A32,
-                      LSC_DATA_SIZE_D32,
-                      1 /* num_channels */,
-                      false /* transpose */,
-                      LSC_CACHE(devinfo, LOAD, L1STATE_L3MOCS));
-      send->mlen = lsc_msg_addr_len(devinfo, LSC_ADDR_SIZE_A32, send->exec_size);
+   setup_lsc_surface_descriptors(bld, send, send->desc,
+                                 surface.file != BAD_FILE ?
+                                 surface : surface_handle, 0);
 
-      setup_lsc_surface_descriptors(bld, send, send->desc,
-                                    surface.file != BAD_FILE ?
-                                    surface : surface_handle, 0);
-
+   if (alignment < 4) {
       /* The byte scattered messages can only read one dword at a time so
        * we have to duplicate the message 4 times to read the full vec4.
        * Hopefully, dead code will clean up the mess if some of them aren't
