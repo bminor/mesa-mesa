@@ -1631,8 +1631,10 @@ vk_video_parse_h265_slice_header(const struct VkVideoDecodeInfoKHR *frame_info,
    params->slice_qp_delta = vl_rbsp_se(&rbsp);
 
    if (pps->flags.pps_slice_chroma_qp_offsets_present_flag) {
-      params->slice_cb_qp_offset = CLAMP(vl_rbsp_se(&rbsp), -12, 12);
-      params->slice_cr_qp_offset = CLAMP(vl_rbsp_se(&rbsp), -12, 12);
+      int8_t slice_cb_qp_offset = vl_rbsp_se(&rbsp);
+      int8_t slice_cr_qp_offset = vl_rbsp_se(&rbsp);
+      params->slice_cb_qp_offset = CLAMP(slice_cb_qp_offset, -12, 12);
+      params->slice_cr_qp_offset = CLAMP(slice_cr_qp_offset, -12, 12);
    }
 
    if (pps->flags.pps_slice_act_qp_offsets_present_flag) {
@@ -1660,8 +1662,10 @@ vk_video_parse_h265_slice_header(const struct VkVideoDecodeInfoKHR *frame_info,
       deblocking_filter_disabled_flag = vl_rbsp_u(&rbsp, 1);
 
       if (!deblocking_filter_disabled_flag) {
-         params->beta_offset_div2 = CLAMP(vl_rbsp_se(&rbsp), -6, 6);
-         params->tc_offset_div2 = CLAMP(vl_rbsp_se(&rbsp), -6, 6);
+         int8_t beta_offset_div2 = vl_rbsp_se(&rbsp);
+         int8_t tc_offset_div2 = vl_rbsp_se(&rbsp);
+         params->beta_offset_div2 = CLAMP(beta_offset_div2, -6, 6);
+         params->tc_offset_div2 = CLAMP(tc_offset_div2, -6, 6);
       }
    }
 
