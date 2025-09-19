@@ -2508,6 +2508,30 @@ tu_device_get_timestamp(struct vk_device *vk_device, uint64_t *timestamp)
    return ret == 0 ? VK_SUCCESS : VK_ERROR_UNKNOWN;
 }
 
+void
+tu_device_destroy_mutexes(struct tu_device *device)
+{
+   mtx_destroy(&device->bo_mutex);
+   mtx_destroy(&device->pipeline_mutex);
+   mtx_destroy(&device->autotune_mutex);
+   mtx_destroy(&device->kgsl_profiling_mutex);
+   mtx_destroy(&device->event_mutex);
+   mtx_destroy(&device->trace_mutex);
+   mtx_destroy(&device->radix_sort_mutex);
+   mtx_destroy(&device->fiber_pvtmem_bo.mtx);
+   mtx_destroy(&device->wave_pvtmem_bo.mtx);
+   mtx_destroy(&device->mutex);
+   for (unsigned i = 0; i < ARRAY_SIZE(device->scratch_bos); i++)
+      mtx_destroy(&device->scratch_bos[i].construct_mtx);
+
+   u_rwlock_destroy(&device->dma_bo_lock);
+   pthread_mutex_destroy(&device->submit_mutex);
+
+   if (device->physical_device->has_set_iova) {
+      mtx_destroy(&device->vma_mutex);
+   }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL
 tu_CreateDevice(VkPhysicalDevice physicalDevice,
                 const VkDeviceCreateInfo *pCreateInfo,
@@ -2598,6 +2622,13 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
    mtx_init(&device->kgsl_profiling_mutex, mtx_plain);
    mtx_init(&device->event_mutex, mtx_plain);
    mtx_init(&device->trace_mutex, mtx_plain);
+   mtx_init(&device->radix_sort_mutex, mtx_plain);
+   mtx_init(&device->fiber_pvtmem_bo.mtx, mtx_plain);
+   mtx_init(&device->wave_pvtmem_bo.mtx, mtx_plain);
+   mtx_init(&device->mutex, mtx_plain);
+   for (unsigned i = 0; i < ARRAY_SIZE(device->scratch_bos); i++)
+      mtx_init(&device->scratch_bos[i].construct_mtx, mtx_plain);
+
    u_rwlock_init(&device->dma_bo_lock);
    pthread_mutex_init(&device->submit_mutex, NULL);
 
@@ -2655,8 +2686,6 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
       goto fail_queues;
 
    util_sparse_array_init(&device->accel_struct_ranges, sizeof(VkDeviceSize), 256);
-
-   mtx_init(&device->radix_sort_mutex, mtx_plain);
 
    {
       struct ir3_compiler_options ir3_options = {
@@ -2854,14 +2883,6 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
       goto fail_timeline_cond;
    }
 
-   for (unsigned i = 0; i < ARRAY_SIZE(device->scratch_bos); i++)
-      mtx_init(&device->scratch_bos[i].construct_mtx, mtx_plain);
-
-   mtx_init(&device->fiber_pvtmem_bo.mtx, mtx_plain);
-   mtx_init(&device->wave_pvtmem_bo.mtx, mtx_plain);
-
-   mtx_init(&device->mutex, mtx_plain);
-
    device->use_z24uint_s8uint =
       physical_device->info->a6xx.has_z24uint_s8uint &&
       (!border_color_without_format ||
@@ -2954,7 +2975,7 @@ fail_queues:
          vk_free(&device->vk.alloc, device->queues[i]);
    }
 
-   u_rwlock_destroy(&device->dma_bo_lock);
+   tu_device_destroy_mutexes(device);
    tu_drm_device_finish(device);
    vk_device_finish(&device->vk);
    vk_free(&device->vk.alloc, device);
@@ -3055,7 +3076,7 @@ tu_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
       util_vma_heap_finish(&device->vma);
 
    util_sparse_array_finish(&device->bo_map);
-   u_rwlock_destroy(&device->dma_bo_lock);
+   tu_device_destroy_mutexes(device);
 
    u_vector_finish(&device->zombie_vmas);
 
