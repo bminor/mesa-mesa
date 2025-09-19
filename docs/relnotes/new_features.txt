@@ -23,3 +23,5 @@ VK_EXT_ycbcr_2plane_444_formats on radv
 Removed VDPAU frontend
 GL_NV_representative_fragment_test on zink
 VK_KHR_maintenance9 on HoneyKrisp
+sparseBinding on panvk/v10+
+sparseResidencyBuffer on panvk/v10+
