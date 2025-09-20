@@ -222,12 +222,13 @@ format_srgb = custom_target(
   capture : true,
 )
 
-files_mesa_util += custom_target(
+shader_stats_h = custom_target(
   input : ['process_shader_stats.py', 'shader_stats.rnc', 'shader_stats.xml'],
   output : 'shader_stats.h',
   command : [prog_python, '@INPUT@'],
   capture : true,
 )
+files_mesa_util += shader_stats_h
 
 # subdir format provide files_mesa_format
 subdir('format')
@@ -316,6 +317,7 @@ _libmesa_util = static_library(
 )
 
 idep_mesautil = declare_dependency(
+  sources : [shader_stats_h],
   link_with : _libmesa_util,
   include_directories : [inc_util],
   dependencies : deps_for_libmesa_util,
