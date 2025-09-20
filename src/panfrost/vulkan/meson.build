@@ -121,6 +121,7 @@ common_per_arch_files = [
   'panvk_vX_nir_lower_descriptors.c',
   'panvk_vX_sampler.c',
   'panvk_vX_shader.c',
+  sha1_h,
 ]
 
 foreach arch : [6, 7, 10, 12, 13]
