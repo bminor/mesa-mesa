@@ -313,12 +313,9 @@ static bool lower_resource_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin
       nir_instr_remove(&intrin->instr);
       break;
    }
-   case nir_intrinsic_get_ssbo_size: {
+   case nir_intrinsic_ssbo_descriptor_amd: {
       assert(!(nir_intrinsic_access(intrin) & ACCESS_NON_UNIFORM));
-
-      nir_def *desc = load_ssbo_desc(b, &intrin->src[0], s);
-      nir_def *size = nir_channel(b, desc, 2);
-      nir_def_replace(&intrin->def, size);
+      nir_def_replace(&intrin->def, load_ssbo_desc(b, &intrin->src[0], s));
       break;
    }
    case nir_intrinsic_image_deref_load:

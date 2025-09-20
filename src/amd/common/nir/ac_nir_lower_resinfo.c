@@ -235,16 +235,25 @@ lower_query_size(nir_builder *b, nir_def *desc, nir_src *lod,
 static bool lower_resinfo(nir_builder *b, nir_instr *instr, void *data)
 {
    enum amd_gfx_level gfx_level = *(enum amd_gfx_level*)data;
-   nir_def *result = NULL, *dst = NULL;
+   nir_def *result = NULL;
 
-   if (instr->type == nir_instr_type_intrinsic) {
+   if (instr->type == nir_instr_type_intrinsic &&
+       nir_instr_as_intrinsic(instr)->intrinsic == nir_intrinsic_get_ssbo_size) {
+      /* Lower get_ssbo_size to ssbo_descriptor_amd. */
+      nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
+
+      b->cursor = nir_before_instr(instr);
+
+      nir_def *desc = nir_ssbo_descriptor_amd(b, intr->src[0].ssa,
+                                              .access = nir_intrinsic_access(intr));
+      result = nir_channel(b, desc, 2);
+   } else if (instr->type == nir_instr_type_intrinsic) {
       nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
       const struct glsl_type *type;
       enum glsl_sampler_dim dim;
       bool is_array;
       nir_def *desc = NULL;
 
-      dst = &intr->def;
       b->cursor = nir_before_instr(instr);
 
       switch (intr->intrinsic) {
@@ -306,7 +315,6 @@ static bool lower_resinfo(nir_builder *b, nir_instr *instr, void *data)
       nir_def *desc = NULL;
       nir_src *lod = NULL;
 
-      dst = &tex->def;
       b->cursor = nir_before_instr(instr);
 
       switch (tex->op) {
@@ -365,6 +373,7 @@ static bool lower_resinfo(nir_builder *b, nir_instr *instr, void *data)
    if (!result)
       return false;
 
+   nir_def *dst = nir_instr_def(instr);
    assert(dst->bit_size == 32 || dst->bit_size == 16);
    if (dst->bit_size == 16)
       result = nir_u2u16(b, result);

@@ -166,25 +166,22 @@ load_buffer_descriptor(nir_builder *b, apply_layout_state *state, nir_def *rsrc,
 }
 
 static void
-visit_get_ssbo_size(nir_builder *b, apply_layout_state *state, nir_intrinsic_instr *intrin)
+visit_ssbo_descriptor_amd(nir_builder *b, apply_layout_state *state, nir_intrinsic_instr *intrin)
 {
    nir_def *rsrc = intrin->src[0].ssa;
+   nir_def *desc;
 
-   nir_def *size;
    if (nir_intrinsic_access(intrin) & ACCESS_NON_UNIFORM) {
       nir_def *ptr = nir_iadd(b, nir_channel(b, rsrc, 0), nir_channel(b, rsrc, 1));
-      ptr = nir_iadd_imm(b, ptr, 8);
       ptr = convert_pointer_to_64_bit(b, state, ptr);
-      size = nir_load_global(b, 4, 32, ptr, .access = ACCESS_NON_WRITEABLE | ACCESS_CAN_REORDER, .align_mul = 16,
-                             .align_offset = 4);
+      desc = nir_load_global(b, 4, 32, ptr, .access = ACCESS_NON_WRITEABLE | ACCESS_CAN_REORDER, .align_mul = 16);
    } else {
       /* load the entire descriptor so it can be CSE'd */
       nir_def *ptr = convert_pointer_to_64_bit(b, state, nir_channel(b, rsrc, 0));
-      nir_def *desc = ac_nir_load_smem(b, 4, ptr, nir_channel(b, rsrc, 1), 4, 0);
-      size = nir_channel(b, desc, 2);
+      desc = ac_nir_load_smem(b, 4, ptr, nir_channel(b, rsrc, 1), 4, 0);
    }
 
-   nir_def_replace(&intrin->def, size);
+   nir_def_replace(&intrin->def, desc);
 }
 
 static nir_def *
@@ -399,8 +396,8 @@ apply_layout_to_intrin(nir_builder *b, apply_layout_state *state, nir_intrinsic_
       rsrc = load_buffer_descriptor(b, state, intrin->src[1].ssa, nir_intrinsic_access(intrin));
       nir_src_rewrite(&intrin->src[1], rsrc);
       break;
-   case nir_intrinsic_get_ssbo_size:
-      visit_get_ssbo_size(b, state, intrin);
+   case nir_intrinsic_ssbo_descriptor_amd:
+      visit_ssbo_descriptor_amd(b, state, intrin);
       break;
    case nir_intrinsic_image_deref_load:
    case nir_intrinsic_image_deref_sparse_load:
