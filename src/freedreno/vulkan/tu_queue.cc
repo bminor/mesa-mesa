@@ -163,7 +163,7 @@ queue_submit(struct vk_queue *_queue, struct vk_queue_submit *vk_submit)
 
    if (cmdbuf_count && FD_RD_DUMP(ENABLE) &&
        fd_rd_output_begin(&queue->device->rd_output,
-                          queue->device->submit_count)) {
+                          queue->device->vk.current_frame, queue->device->submit_count)) {
       struct tu_device *device = queue->device;
       struct fd_rd_output *rd_output = &device->rd_output;
 

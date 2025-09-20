@@ -409,6 +409,11 @@ Output dump files and trigger file (when enabled) are hard-coded to be placed
 under ``/tmp``, or ``/data/local/tmp`` under Android. `FD_RD_DUMP_TESTNAME` can
 be used to specify a more descriptive prefix for the output or trigger files.
 
+Dumping can be limited to specific ranges of frames or submits. For example,
+``FD_RD_DUMP_SUBMITS=120-140,160,165`` will dump command streams only for the
+specified submits. Similarly, ``FD_RD_DUMP_FRAMES`` can be set to specify for
+which frames any submitted command stream should be dumped.
+
 Functionality is generic to any Freedreno-based backend, but is currently only
 integrated in the MSM backend of Turnip. Using the existing ``TU_DEBUG=rd``
 option will translate to ``FD_RD_DUMP=enable``.
