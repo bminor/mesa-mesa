@@ -75,12 +75,25 @@ flat_nv_classes = ''
 
 cl_generated = []
 foreach cl : nv_classes
+  prev_cl_h = []
+  prev_cl_args = []
+  foreach prev_cl : nv_classes
+    if prev_cl == cl
+      break
+    endif
+
+    if prev_cl.substring(-2) == cl.substring(-2)
+      prev_cl_h = 'nvidia/classes/'+prev_cl+'.h'
+      prev_cl_args = ['--prev-in-h', '@INPUT2@']
+    endif
+  endforeach
+
   flat_nv_classes = flat_nv_classes + cl + ' '
   cl_generated += custom_target(
     cl + '.h',
-    input : ['class_parser.py', 'nvidia/classes/'+cl+'.h', 'util.py'],
+    input : ['class_parser.py', 'nvidia/classes/'+cl+'.h', prev_cl_h, 'util.py'],
     output : ['nv_push_'+cl+'.h', 'nv_push_'+cl+'.c'],
-    command : [prog_python, '@INPUT0@', '--in-h', '@INPUT1@',
+    command : [prog_python, '@INPUT0@', '--in-h', '@INPUT1@', prev_cl_args,
                '--out-h', '@OUTPUT0@', '--out-c', '@OUTPUT1@'],
   )
 endforeach
