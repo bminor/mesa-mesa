@@ -300,7 +300,8 @@ gmemtool = executable(
   'gmemtool',
   [
     'gmemtool.c',
-    freedreno_tracepoints[1]
+    freedreno_tracepoints[1],
+    freedreno_xml_header_files,
   ],
   include_directories : freedreno_includes,
   dependencies : [
