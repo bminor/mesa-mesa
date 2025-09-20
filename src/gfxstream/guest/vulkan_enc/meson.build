@@ -85,4 +85,4 @@ files_lib_vulkan_enc = files(
   'VulkanStreamGuest.cpp',
   'gfxstream_vk_private.cpp',
   'GfxStreamVulkanConnection.cpp',
-)
+) + sha1_h
