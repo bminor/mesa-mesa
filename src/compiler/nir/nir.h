@@ -5767,34 +5767,10 @@ typedef struct nir_lower_tex_options {
    bool lower_txb_shadow_clamp;
 
    /**
-    * If true, lower nir_texop_txd on shadow samplers when it uses min_lod
-    * with nir_texop_txl.  This includes cube maps.
-    */
-   bool lower_txd_shadow_clamp;
-
-   /**
-    * If true, lower nir_texop_txd on when it uses both offset and min_lod
-    * with nir_texop_txl.  This includes cube maps.
-    */
-   bool lower_txd_offset_clamp;
-
-   /**
     * A generic callback to nir_texop_txd.
     */
    bool (*lower_txd_cb)(const nir_tex_instr *tex, const void *data);
    const void *lower_txd_data;
-
-   /**
-    * If true, lower nir_texop_txd with min_lod to a nir_texop_txl if the
-    * sampler is bindless.
-    */
-   bool lower_txd_clamp_bindless_sampler;
-
-   /**
-    * If true, lower nir_texop_txd with min_lod to a nir_texop_txl if the
-    * sampler index is not statically determinable to be less than 16.
-    */
-   bool lower_txd_clamp_if_sampler_index_not_lt_16;
 
    /**
     * If true, lower nir_texop_txs with a non-0-lod into nir_texop_txs with
