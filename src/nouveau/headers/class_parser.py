@@ -159,6 +159,16 @@ TEMPLATE_C = Template("""\
 
 #include <stdio.h>
 
+<%def name="cases(mthd)">
+  %if mthd.is_array:
+    %for i in range(mthd.array_size):
+    case ${nvcl}_${mthd.name}(${i}):
+    %endfor
+  % else:
+    case ${nvcl}_${mthd.name}:
+  %endif
+</%def>
+
 const char*
 P_PARSE_${nvcl}_MTHD(uint16_t idx)
 {
@@ -192,13 +202,7 @@ P_DUMP_${nvcl}_MTHD_DATA(FILE *fp, uint16_t idx, uint32_t data,
   %if mthd.is_array and mthd.array_size == 0:
     <% continue %>
   %endif
-  %if mthd.is_array:
-    %for i in range(mthd.array_size):
-    case ${nvcl}_${mthd.name}(${i}):
-    %endfor
-  % else:
-    case ${nvcl}_${mthd.name}:
-  %endif
+  ${cases(mthd)}
   %for field in mthd.fields:
     <% field_width = field.end - field.start + 1 %>
     %if field_width == 32:
