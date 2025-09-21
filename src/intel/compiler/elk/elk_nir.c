@@ -1646,7 +1646,6 @@ elk_nir_apply_sampler_key(nir_shader *nir,
 {
    const struct intel_device_info *devinfo = compiler->devinfo;
    nir_lower_tex_options tex_options = {
-      .lower_txd_clamp_bindless_sampler = true,
       .lower_txd_clamp_if_sampler_index_not_lt_16 = true,
       .lower_invalid_implicit_lod = true,
       .lower_index_to_offset = true,
