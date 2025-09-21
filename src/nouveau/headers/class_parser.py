@@ -170,11 +170,15 @@ TEMPLATE_C = Template("""\
 </%def>
 
 <%def name="prev_cases()">
-  %for mthd in methods:
-    %if prev_methods.get(mthd.name, None) == mthd:
-      ${cases(mthd)}
-    %endif
-  %endfor
+  %if any_method_removed:
+    %for mthd in methods:
+      %if prev_methods.get(mthd.name, None) == mthd:
+        ${cases(mthd)}
+      %endif
+    %endfor
+  %else:
+    default:
+  %endif
 </%def>
 
 %if prev_nvcl:
@@ -211,8 +215,10 @@ P_PARSE_${nvcl}_MTHD(uint16_t idx)
   %endif
 %endfor
 
+%if not prev_nvcl or any_method_removed:
     default:
         return "unknown method";
+%endif
     }
 }
 
@@ -266,9 +272,11 @@ P_DUMP_${nvcl}_MTHD_DATA(FILE *fp, uint16_t idx, uint32_t data,
   %endfor
         break;
 %endfor
+%if not prev_nvcl or any_method_removed:
     default:
         fprintf(fp, "%s.VALUE = 0x%x${bs}n", prefix, data);
         break;
+%endif
     }
 }
 """)
@@ -631,6 +639,8 @@ def main():
         with open(args.prev_in_h, 'r', encoding='utf-8') as f:
             (prev_version, prev_methods) = parse_header(prev_nvcl, f)
 
+    any_method_removed = any(x not in methods for x in prev_methods)
+
     environment = {
         'clheader': clheader,
         'nvcl': nvcl,
@@ -639,6 +649,7 @@ def main():
         'prev_mod': prev_mod,
         'prev_methods': prev_methods,
         'prev_nvcl': prev_nvcl,
+        'any_method_removed': any_method_removed,
         'to_camel': to_camel,
         'bs': '\\'
     }
