@@ -23,6 +23,7 @@
 
 #include "intel_decoder.h"
 #include "intel_decoder_private.h"
+#include "intel/common/intel_gem.h"
 
 #include "util/macros.h"
 #include "util/u_debug.h"
@@ -134,7 +135,7 @@ ctx_get_bo(struct intel_batch_decode_ctx *ctx, bool ppgtt, uint64_t addr)
        * bits. In order to correctly handle those aub dumps, we need to mask
        * off the top 16 bits.
        */
-      addr &= (~0ull >> 16);
+      addr = intel_48b_address(addr);
    }
 
    struct intel_batch_decode_bo bo = ctx->get_bo(ctx->user_data, ppgtt, addr);
