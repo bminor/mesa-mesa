@@ -462,7 +462,7 @@ iris_ensure_indirect_generation_shader(struct iris_batch *batch)
 
       brw_nir_analyze_ubo_ranges(screen->brw, nir, prog_data->base.ubo_ranges);
 
-      struct brw_compile_stats stats[3];
+      struct genisa_stats stats[3];
       struct brw_compile_fs_params params = {
          .base = {
             .nir = nir,

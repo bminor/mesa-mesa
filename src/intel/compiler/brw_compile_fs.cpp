@@ -1917,7 +1917,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
                                      nir->info.name));
    }
 
-   struct brw_compile_stats *stats = params->base.stats;
+   struct genisa_stats *stats = params->base.stats;
    uint32_t max_dispatch_width = 0;
 
    if (vmulti) {
@@ -1947,7 +1947,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
       max_dispatch_width = 32;
    }
 
-   for (struct brw_compile_stats *s = params->base.stats; s != NULL && s != stats; s++)
+   for (struct genisa_stats *s = params->base.stats; s != NULL && s != stats; s++)
       s->max_dispatch_width = max_dispatch_width;
 
    g.add_const_data(nir->constant_data, nir->constant_data_size);

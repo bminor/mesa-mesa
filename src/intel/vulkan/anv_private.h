@@ -1225,7 +1225,7 @@ struct anv_shader {
 
    const struct brw_stage_prog_data *prog_data;
 
-   struct brw_compile_stats stats[3];
+   struct genisa_stats stats[3];
    uint32_t num_stats;
 
    char *nir_str;
@@ -5097,7 +5097,7 @@ struct anv_shader_upload_params {
    const struct brw_stage_prog_data *prog_data;
    uint32_t prog_data_size;
 
-   const struct brw_compile_stats *stats;
+   const struct genisa_stats *stats;
    uint32_t num_stats;
 
    const struct nir_xfb_info *xfb_info;
@@ -5145,7 +5145,7 @@ struct anv_shader_bin {
    const struct brw_stage_prog_data *prog_data;
    uint32_t prog_data_size;
 
-   struct brw_compile_stats stats[3];
+   struct genisa_stats stats[3];
    uint32_t num_stats;
 
    struct nir_xfb_info *xfb_info;
@@ -5178,7 +5178,7 @@ anv_shader_bin_unref(struct anv_device *device, struct anv_shader_bin *shader)
 struct anv_pipeline_executable {
    mesa_shader_stage stage;
 
-   struct brw_compile_stats stats;
+   struct genisa_stats stats;
 
    char *nir;
    char *disasm;

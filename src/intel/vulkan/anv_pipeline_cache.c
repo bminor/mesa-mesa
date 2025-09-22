@@ -103,7 +103,7 @@ anv_shader_bin_create(struct anv_device *device,
                       const void *kernel_data, uint32_t kernel_size,
                       const struct brw_stage_prog_data *prog_data_in,
                       uint32_t prog_data_size,
-                      const struct brw_compile_stats *stats, uint32_t num_stats,
+                      const struct genisa_stats *stats, uint32_t num_stats,
                       const nir_xfb_info *xfb_info_in,
                       const struct anv_pipeline_bind_map *bind_map,
                       const struct anv_push_descriptor_info *push_desc_info)
@@ -381,7 +381,7 @@ anv_shader_bin_deserialize(struct vk_pipeline_cache *cache,
 
    void *mem_ctx = ralloc_context(NULL);
    uint32_t num_stats = blob_read_uint32(blob);
-   const struct brw_compile_stats *stats =
+   const struct genisa_stats *stats =
       blob_read_bytes(blob, num_stats * sizeof(stats[0]));
 
    const nir_xfb_info *xfb_info = NULL;

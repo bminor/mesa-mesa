@@ -19,7 +19,7 @@ public:
 
    void enable_debug(const char *shader_name);
    int generate_code(const brw_shader &s,
-                     struct brw_compile_stats *stats);
+                     struct genisa_stats *stats);
    void add_const_data(void *data, unsigned size);
    void add_resume_sbt(unsigned num_resume_shaders, uint64_t *sbt);
    const unsigned *get_assembly();

@@ -733,7 +733,7 @@ brw_generator::enable_debug(const char *shader_name)
 
 int
 brw_generator::generate_code(const brw_shader &s,
-                             struct brw_compile_stats *stats)
+                             struct genisa_stats *stats)
 {
    const int dispatch_width = s.dispatch_width;
    struct brw_shader_stats shader_stats = s.shader_stats;
@@ -1512,15 +1512,30 @@ brw_generator::generate_code(const brw_shader &s,
    if (stats) {
       stats->dispatch_width = dispatch_width;
       stats->max_polygons = s.max_polygons;
-      stats->max_dispatch_width = dispatch_width;
-      stats->instructions = before_size / 16 - nop_count - sync_nop_count;
-      stats->sends = send_count;
-      stats->loops = loop_count;
-      stats->cycles = perf.latency;
-      stats->spills = shader_stats.spill_count;
-      stats->fills = shader_stats.fill_count;
+      stats->instrs = before_size / 16 - nop_count - sync_nop_count;
+      stats->send_messages = send_count;
+      stats->loop_count = loop_count;
+      stats->cycle_count = perf.latency;
+      stats->spill_count = shader_stats.spill_count;
+      stats->fill_count = shader_stats.fill_count;
       stats->max_live_registers = shader_stats.max_register_pressure;
-      stats->non_ssa_registers_after_nir = shader_stats.non_ssa_registers_after_nir;
+      stats->non_ssa_regs_after_nir = shader_stats.non_ssa_registers_after_nir;
+      stats->source_hash = prog_data->source_hash;
+      stats->grf_registers = devinfo->ver >= 30 ? prog_data->grf_used : 0;
+
+      /* Report the max dispatch width only on the smallest SIMD variant.
+       *
+       * XXX: SIMD8 is not the smallest on Xe2. This logic should be adjusted.
+       */
+      if (stage != MESA_SHADER_FRAGMENT || dispatch_width == 8)
+         stats->max_dispatch_width = dispatch_width;
+      else
+         stats->max_dispatch_width = 0;
+
+      if (mesa_shader_stage_uses_workgroup(stage))
+         stats->workgroup_memory_size = prog_data->total_shared;
+      else
+         stats->workgroup_memory_size = 0;
    }
 
    return start_offset;

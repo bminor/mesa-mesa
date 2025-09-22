@@ -69,7 +69,7 @@ compile_single_bs(const struct brw_compiler *compiler,
                   struct brw_bs_prog_data *prog_data,
                   nir_shader *shader,
                   brw_generator *g,
-                  struct brw_compile_stats *stats,
+                  struct genisa_stats *stats,
                   int *prog_offset,
                   uint64_t *bsr)
 {

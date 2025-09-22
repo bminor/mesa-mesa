@@ -8,6 +8,7 @@
 #include "nir/nir_serialize.h"
 
 #include "compiler/brw_disasm.h"
+#include "util/shader_stats.h"
 
 static void
 anv_shader_destroy(struct vk_device *vk_device,
@@ -174,7 +175,7 @@ anv_shader_get_executable_properties(struct vk_device *device,
       container_of(vk_shader, struct anv_shader, vk);
 
    for (uint32_t i = 0; i < shader->num_stats; i++) {
-      const struct brw_compile_stats *stats = &shader->stats[i];
+      const struct genisa_stats *stats = &shader->stats[i];
 
       vk_outarray_append_typed(VkPipelineExecutablePropertiesKHR, &out, props) {
          mesa_shader_stage stage = vk_shader->stage;
@@ -219,145 +220,11 @@ anv_shader_get_executable_statistics(struct vk_device *vk_device,
 {
    VK_OUTARRAY_MAKE_TYPED(VkPipelineExecutableStatisticKHR, out,
                           statistics, statistic_count);
-   struct anv_device *device =
-      container_of(vk_device, struct anv_device, vk);
    struct anv_shader *shader =
       container_of(vk_shader, struct anv_shader, vk);
 
    assert(executable_index < shader->num_stats);
-
-   const struct brw_compile_stats *stats = &shader->stats[executable_index];
-   const struct brw_stage_prog_data *prog_data = shader->prog_data;
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      VK_COPY_STR(stat->name, "Instruction Count");
-      VK_COPY_STR(stat->description,
-                  "Number of GEN instructions in the final generated "
-                  "shader executable.");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = stats->instructions;
-   }
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      VK_COPY_STR(stat->name, "SEND Count");
-      VK_COPY_STR(stat->description,
-                  "Number of instructions in the final generated shader "
-                  "executable which access external units such as the "
-                  "constant cache or the sampler.");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = stats->sends;
-   }
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      VK_COPY_STR(stat->name, "Loop Count");
-      VK_COPY_STR(stat->description,
-                  "Number of loops (not unrolled) in the final generated "
-                  "shader executable.");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = stats->loops;
-   }
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      VK_COPY_STR(stat->name, "Cycle Count");
-      VK_COPY_STR(stat->description,
-                  "Estimate of the number of EU cycles required to execute "
-                  "the final generated executable.  This is an estimate only "
-                  "and may vary greatly from actual run-time performance.");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = stats->cycles;
-   }
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      VK_COPY_STR(stat->name, "Spill Count");
-      VK_COPY_STR(stat->description,
-                  "Number of scratch spill operations.  This gives a rough "
-                  "estimate of the cost incurred due to spilling temporary "
-                  "values to memory.  If this is non-zero, you may want to "
-                  "adjust your shader to reduce register pressure.");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = stats->spills;
-   }
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      VK_COPY_STR(stat->name, "Fill Count");
-      VK_COPY_STR(stat->description,
-                  "Number of scratch fill operations.  This gives a rough "
-                  "estimate of the cost incurred due to spilling temporary "
-                  "values to memory.  If this is non-zero, you may want to "
-                  "adjust your shader to reduce register pressure.");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = stats->fills;
-   }
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      VK_COPY_STR(stat->name, "Scratch Memory Size");
-      VK_COPY_STR(stat->description,
-                  "Number of bytes of scratch memory required by the "
-                  "generated shader executable.  If this is non-zero, you "
-                  "may want to adjust your shader to reduce register "
-                  "pressure.");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = prog_data->total_scratch;
-   }
-
-   if (device->info->ver >= 30) {
-      vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-         VK_COPY_STR(stat->name, "GRF registers");
-         VK_COPY_STR(stat->description,
-                     "Number of GRF registers required by the shader.");
-         stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-         stat->value.u64 = prog_data->grf_used;
-      }
-   }
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      VK_COPY_STR(stat->name, "Max dispatch width");
-      VK_COPY_STR(stat->description,
-                  "Largest SIMD dispatch width.");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      /* Report the max dispatch width only on the smallest SIMD variant */
-      if (vk_shader->stage != MESA_SHADER_FRAGMENT || stats->dispatch_width == 8)
-         stat->value.u64 = stats->max_dispatch_width;
-      else
-         stat->value.u64 = 0;
-   }
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      VK_COPY_STR(stat->name, "Max live registers");
-      VK_COPY_STR(stat->description,
-                  "Maximum number of registers used across the entire shader.");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = stats->max_live_registers;
-   }
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      VK_COPY_STR(stat->name, "Workgroup Memory Size");
-      VK_COPY_STR(stat->description,
-                  "Number of bytes of workgroup shared memory used by this "
-                  "shader including any padding.");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      if (mesa_shader_stage_uses_workgroup(vk_shader->stage))
-         stat->value.u64 = prog_data->total_shared;
-      else
-         stat->value.u64 = 0;
-   }
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      VK_COPY_STR(stat->name, "Source hash");
-      VK_PRINT_STR(stat->description,
-                   "hash = 0x%08x. Hash generated from shader source.",
-                   prog_data->source_hash);
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = prog_data->source_hash;
-   }
-
-   vk_outarray_append_typed(VkPipelineExecutableStatisticKHR, &out, stat) {
-      VK_COPY_STR(stat->name, "Non SSA regs after NIR");
-      VK_COPY_STR(stat->description, "Non SSA regs after NIR translation to BRW.");
-      stat->format = VK_PIPELINE_EXECUTABLE_STATISTIC_FORMAT_UINT64_KHR;
-      stat->value.u64 = stats->non_ssa_registers_after_nir;
-   }
-
+   vk_add_genisa_stats(out, &shader->stats[executable_index]);
    return VK_SUCCESS;
 }
 

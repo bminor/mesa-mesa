@@ -93,7 +93,7 @@ struct anv_shader_data {
    const nir_xfb_info *xfb_info;
 
    uint32_t num_stats;
-   struct brw_compile_stats stats[3];
+   struct genisa_stats stats[3];
    char *disasm[3];
 
    bool use_primitive_replication;

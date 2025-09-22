@@ -48,6 +48,14 @@ lower_base_workgroup_id(nir_builder *b, nir_intrinsic_instr *intrin,
    return true;
 }
 
+static void
+check_sends(struct genisa_stats *stats, unsigned send_count)
+{
+   assert(stats->spill_count == 0);
+   assert(stats->fill_count == 0);
+   assert(stats->send_messages == send_count);
+}
+
 static struct anv_shader_bin *
 compile_shader(struct anv_device *device,
                enum anv_internal_kernel_name shader_name,
@@ -153,7 +161,7 @@ compile_shader(struct anv_device *device,
 
    const unsigned *program;
    if (stage == MESA_SHADER_FRAGMENT) {
-      struct brw_compile_stats stats[3];
+      struct genisa_stats stats[3];
       struct brw_compile_fs_params params = {
          .base = {
             .nir = nir,
@@ -170,28 +178,18 @@ compile_shader(struct anv_device *device,
       if (!INTEL_DEBUG(DEBUG_SHADER_PRINT)) {
          unsigned stat_idx = 0;
          if (prog_data.wm.dispatch_8) {
-            assert(stats[stat_idx].spills == 0);
-            assert(stats[stat_idx].fills == 0);
-            assert(stats[stat_idx].sends == sends_count_expectation);
-            stat_idx++;
+            check_sends(&stats[stat_idx++], sends_count_expectation);
          }
          if (prog_data.wm.dispatch_16) {
-            assert(stats[stat_idx].spills == 0);
-            assert(stats[stat_idx].fills == 0);
-            assert(stats[stat_idx].sends == sends_count_expectation);
-            stat_idx++;
+            check_sends(&stats[stat_idx++], sends_count_expectation);
          }
          if (prog_data.wm.dispatch_32) {
-            assert(stats[stat_idx].spills == 0);
-            assert(stats[stat_idx].fills == 0);
-            assert(stats[stat_idx].sends ==
-                   sends_count_expectation *
-                   (device->info->ver < 20 ? 2 : 1));
-            stat_idx++;
+            check_sends(&stats[stat_idx++], sends_count_expectation *
+                                            (device->info->ver < 20 ? 2 : 1));
          }
       }
    } else {
-      struct brw_compile_stats stats;
+      struct genisa_stats stats;
       struct brw_compile_cs_params params = {
          .base = {
             .nir = nir,
@@ -206,9 +204,7 @@ compile_shader(struct anv_device *device,
       program = brw_compile_cs(compiler, &params);
 
       if (!INTEL_DEBUG(DEBUG_SHADER_PRINT)) {
-         assert(stats.spills == 0);
-         assert(stats.fills == 0);
-         assert(stats.sends == sends_count_expectation);
+         check_sends(&stats, sends_count_expectation);
       }
    }
 

@@ -291,7 +291,7 @@ brw_compile_cs(const struct brw_compiler *compiler,
 
    uint32_t max_dispatch_width = 8u << (util_last_bit(prog_data->prog_mask) - 1);
 
-   struct brw_compile_stats *stats = params->base.stats;
+   struct genisa_stats *stats = params->base.stats;
    for (unsigned simd = 0; simd < 3; simd++) {
       if (prog_data->prog_mask & (1u << simd)) {
          assert(v[simd]);

@@ -33,6 +33,7 @@
 #include "util/mesa-sha1.h"
 #include "util/enum_operators.h"
 #include "util/ralloc.h"
+#include "util/shader_stats.h"
 #include "util/u_math.h"
 #include "brw_isa_info.h"
 #include "intel_shader_enums.h"
@@ -1427,20 +1428,6 @@ DEFINE_PROG_DATA_DOWNCAST(mesh, prog_data->stage == MESA_SHADER_MESH)
 
 #undef DEFINE_PROG_DATA_DOWNCAST
 
-struct brw_compile_stats {
-   uint32_t dispatch_width; /**< 0 for vec4 */
-   uint32_t max_polygons;
-   uint32_t max_dispatch_width;
-   uint32_t instructions;
-   uint32_t sends;
-   uint32_t loops;
-   uint32_t cycles;
-   uint32_t spills;
-   uint32_t fills;
-   uint32_t max_live_registers;
-   uint32_t non_ssa_registers_after_nir;
-};
-
 /** @} */
 
 struct brw_compiler *
@@ -1483,7 +1470,7 @@ struct brw_compile_params {
 
    nir_shader *nir;
 
-   struct brw_compile_stats *stats;
+   struct genisa_stats *stats;
 
    void *log_data;
 

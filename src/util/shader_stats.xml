@@ -121,4 +121,63 @@
       <stat name="SMEM">Number of SMEM instructions</stat>
       <stat name="VOPD" more="better">Number of VOPD instructions</stat>
    </isa>
+
+   <family name="Intel">
+      <isa name="GenISA">
+         <stat name="Dispatch width" hidden="true">0 for vec4</stat>
+         <stat name="Max polygons" hidden="true"/>
+         <stat name="Instruction Count" display="Instrs">
+            Number of GEN instructions in the final generated shader executable.
+         </stat>
+         <stat name="SEND Count" display="Send messages">
+            Number of instructions in the final generated shader executable
+            which access external units such as the constant cache or the sampler.
+         </stat>
+         <stat name="Loop Count" display="Loop count">
+            Number of loops (not unrolled) in the final generated shader
+            executable.
+         </stat>
+         <stat name="Cycle Count" display="Cycle count">
+            Estimate of the number of EU cycles required to execute the final
+            generated executable. This is an estimate only and may vary greatly
+            from actual run-time performance.
+         </stat>
+         <stat name="Spill Count" display="Spill count">
+            Number of scratch spill operations. This gives a rough estimate of
+            the cost incurred due to spilling temporary values to memory. If
+            this is non-zero, you may want to adjust your shader to reduce
+            register pressure.
+         </stat>
+         <stat name="Fill Count" display="Fill count">
+            Number of scratch fill operations. This gives a rough estimate of
+            the cost incurred due to spilling temporary values to memory. If
+            this is non-zero, you may want to adjust your shader to reduce
+            register pressure.
+         </stat>
+         <stat name="Scratch Memory Size">
+            Number of bytes of scratch memory required by the generated shader
+            executable. If this is non-zero, you may want to adjust your shader
+            to reduce register pressure.
+         </stat>
+         <stat name="GRF registers">
+            Number of GRF registers required by the shader.
+         </stat>
+         <stat name="Max dispatch width" more="better">
+            Largest SIMD dispatch width.
+         </stat>
+         <stat name="Max live registers">
+            Maximum number of registers used across the entire shader.
+         </stat>
+         <stat name="Workgroup Memory Size">
+            Number of bytes of workgroup shared memory used by this shader
+            including any padding.
+         </stat>
+         <stat name="Non SSA regs after NIR">
+            Non SSA regs after NIR translation to BRW.
+         </stat>
+         <stat name="Source hash" hash="true">
+            Hash generated from shader source.
+         </stat>
+       </isa>
+    </family>
 </shaderdb>
