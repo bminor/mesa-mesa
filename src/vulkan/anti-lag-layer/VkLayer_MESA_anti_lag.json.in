@@ -21,6 +21,9 @@
       ],
       "disable_environment": {
          "DISABLE_LAYER_MESA_ANTI_LAG": "1"
+      },
+      "enable_environment": {
+         "ENABLE_LAYER_MESA_ANTI_LAG": "1"
       }
    }
 }
