@@ -2360,10 +2360,9 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
 #endif
 
    snprintf(pdev->name, sizeof(pdev->name), "AMD RADV %s%s", pdev->info.name, radv_get_compiler_string(pdev));
-
-   const char *marketing_name = pdev->ws->get_chip_name(pdev->ws);
-   snprintf(pdev->marketing_name, sizeof(pdev->name), "%s (RADV %s%s)", marketing_name ? marketing_name : "AMD Unknown",
-            pdev->info.name, radv_get_compiler_string(pdev));
+   snprintf(pdev->marketing_name, sizeof(pdev->name), "%s (RADV %s%s)",
+            pdev->info.marketing_name ? pdev->info.marketing_name : "AMD Unknown", pdev->info.name,
+            radv_get_compiler_string(pdev));
 
    if (pdev->info.gfx_level >= GFX12)
       vk_warn_non_conformant_implementation("radv");
