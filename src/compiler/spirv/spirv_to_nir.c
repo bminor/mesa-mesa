@@ -5327,6 +5327,7 @@ vtn_handle_preamble_instruction(struct vtn_builder *b, SpvOp opcode,
       case SpvMemoryModelVulkan:
          vtn_fail_if(!b->supported_capabilities.VulkanMemoryModel,
                      "Vulkan memory model is unsupported by this driver");
+         b->shader->info.assume_no_data_races = true;
          break;
       default:
          vtn_fail("Unsupported memory model: %s",

@@ -334,6 +334,12 @@ typedef struct shader_info {
     */
    enum gl_derivative_group derivative_group:2;
 
+   /* Assume that data races do not happen. If this isn't set, data races
+    * read/write undefined values, but do not cause undefined behaviour. This
+    * is set when the Vulkan memory model is used.
+    */
+   bool assume_no_data_races:1;
+
    union {
       struct {
          /* Which inputs are doubles */
