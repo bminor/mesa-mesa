@@ -1090,8 +1090,8 @@ elif host_machine.system() == 'windows'
       '-D_UCRT_NOISY_NAN', # https://developercommunity.visualstudio.com/t/NAN-is-no-longer-compile-time-constant-i/10688907?viewtype=all
     ]
   else
-    # When the target is not mingw/ucrt
-    # NOTE: clang's stddef.h are conflict with mingw/ucrt's stddef.h
+    # When the target is not (mingw with ucrt)
+    # NOTE: clang's stddef.h are conflict with mingw or ucrt's stddef.h
     # So do not include headers that defined in clang for detecting
     # _UCRT
     if cc.compiles('''
