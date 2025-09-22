@@ -891,6 +891,11 @@ deallocate_vgprs(wait_ctx& ctx, std::vector<aco_ptr<Instruction>>& instructions)
    if (ctx.gfx_level < GFX11)
       return;
 
+   /* New waves are likely not vgpr limited. */
+   unsigned max_waves_limit = ctx.program->dev.physical_vgprs / ctx.program->dev.max_waves_per_simd;
+   if (ctx.program->config->num_vgprs <= max_waves_limit)
+      return;
+
    /* s_sendmsg dealloc_vgprs waits for all counters except stores. */
    if (!(ctx.nonzero & counter_vs))
       return;
