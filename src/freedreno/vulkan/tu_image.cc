@@ -601,13 +601,10 @@ tu_image_update_layout(struct tu_device *device, struct tu_image *image,
       uint32_t extra_width = 0, extra_height = 0;
       if (image->vk.create_flags &
           VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT) {
-         uint32_t gmem_pixels =
-            device->physical_device->gmem_size /
-            (desc->block.bits / 8);
-         extra_width = gmem_pixels /
-            device->physical_device->info->tile_align_h;
-         extra_height = gmem_pixels /
-            device->physical_device->info->tile_align_w;
+         extra_width =
+            device->physical_device->info->tile_max_w;
+         extra_height =
+            device->physical_device->info->tile_max_h;
       }
 
       fdl6_lrz_layout_init<CHIP>(&image->lrz_layout, &image->layout[0],
