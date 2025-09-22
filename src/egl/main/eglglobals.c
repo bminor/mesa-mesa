@@ -116,17 +116,25 @@ _eglAtExit(void)
 }
 
 void
+_eglRegisterAtExit(void)
+{
+   static EGLBoolean registered = EGL_FALSE;
+
+   simple_mtx_lock(_eglGlobal.Mutex);
+
+   if (!registered) {
+      atexit(_eglAtExit);
+      registered = EGL_TRUE;
+   }
+
+   simple_mtx_unlock(_eglGlobal.Mutex);
+}
+
+void
 _eglAddAtExitCall(void (*func)(void))
 {
    if (func) {
-      static EGLBoolean registered = EGL_FALSE;
-
       simple_mtx_lock(_eglGlobal.Mutex);
-
-      if (!registered) {
-         atexit(_eglAtExit);
-         registered = EGL_TRUE;
-      }
 
       assert(_eglGlobal.NumAtExitCalls < ARRAY_SIZE(_eglGlobal.AtExitCalls));
       _eglGlobal.AtExitCalls[_eglGlobal.NumAtExitCalls++] = func;

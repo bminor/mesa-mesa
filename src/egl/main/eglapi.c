@@ -670,6 +670,7 @@ eglInitialize(EGLDisplay dpy, EGLint *major, EGLint *minor)
    _EGL_FUNC_START(disp, EGL_OBJECT_DISPLAY_KHR, NULL);
 
    _eglDeviceRefreshList();
+   _eglRegisterAtExit();
 
    if (!disp)
       RETURN_EGL_ERROR(NULL, EGL_BAD_DISPLAY, EGL_FALSE);

@@ -75,6 +75,9 @@ struct _egl_global {
 extern struct _egl_global _eglGlobal;
 
 extern void
+_eglRegisterAtExit(void);
+
+extern void
 _eglAddAtExitCall(void (*func)(void));
 
 static inline unsigned int
