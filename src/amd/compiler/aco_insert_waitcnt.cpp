@@ -577,6 +577,10 @@ kill(wait_imm& imm, depctr_wait& depctr, Instruction* instr, wait_ctx& ctx,
 
    check_instr(ctx, imm, instr);
 
+   /* Only inserted by this pass, and outside loops. */
+   assert(ctx.gfx_level < GFX11 || instr->opcode != aco_opcode::s_sendmsg ||
+          instr->salu().imm != sendmsg_dealloc_vgprs);
+
    if (instr->opcode == aco_opcode::ds_ordered_count &&
        ((instr->ds().offset1 | (instr->ds().offset0 >> 8)) & 0x1)) {
       barrier_info& bar = ctx.bar[barrier_info_release_dep];
@@ -881,6 +885,49 @@ emit_depctr(wait_ctx& ctx, std::vector<aco_ptr<Instruction>>& instructions, depc
    depctr = depctr_wait();
 }
 
+void
+deallocate_vgprs(wait_ctx& ctx, std::vector<aco_ptr<Instruction>>& instructions)
+{
+   if (ctx.gfx_level < GFX11)
+      return;
+
+   /* s_sendmsg dealloc_vgprs waits for all counters except stores. */
+   if (!(ctx.nonzero & counter_vs))
+      return;
+
+   const uint32_t exp_events = event_exp_pos | event_exp_param | event_exp_mrt_null |
+                               event_exp_prim | event_exp_dual_src_blend;
+
+   for (std::pair<const PhysReg, wait_entry>& e : ctx.gpr_map) {
+      wait_entry& entry = e.second;
+
+      /* Exports are high latency operations too, and we would wait for them.
+       * Assume any potential stores don't take much longer, and avoid
+       * the message bus traffic.
+       */
+      if (entry.events & exp_events)
+         return;
+   }
+
+   /* Scratch is deallocated early too. To avoid write after free,
+    * we have to wait for scratch stores.
+    */
+   barrier_info& bar = ctx.bar[barrier_info_release_dep];
+   wait_imm imm;
+   imm.combine(bar.imm[ffs(storage_scratch) - 1]);
+   imm.combine(bar.imm[ffs(storage_vgpr_spill) - 1]);
+
+   /* Waiting for all stores is pointless */
+   if (imm.vs == 0)
+      return;
+
+   Builder bld(ctx.program, &instructions);
+
+   if (!imm.empty())
+      imm.build_waitcnt(bld);
+   bld.sopp(aco_opcode::s_sendmsg, sendmsg_dealloc_vgprs);
+}
+
 bool
 check_clause_raw(std::bitset<512>& regs_written, Instruction* instr)
 {
@@ -942,6 +989,9 @@ handle_block(Program* program, Block& block, wait_ctx& ctx)
             kill(queued_imm, queued_depctr, next, ctx, get_sync_info(next));
          }
       }
+
+      if (instr->opcode == aco_opcode::s_endpgm)
+         deallocate_vgprs(ctx, new_instructions);
 
       gen(instr.get(), ctx);
 
