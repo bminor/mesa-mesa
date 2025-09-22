@@ -2071,6 +2071,14 @@ iris_bo_import_dmabuf(struct iris_bufmgr *bufmgr, int prime_fd,
 
 out:
    simple_mtx_unlock(&bufmgr->lock);
+   /* Type of an existing BO's heap should be consistent with the modifier in
+    * terms of compression state when importing it. Compressed heaps are only
+    * present on Xe2+.
+    */
+   assert(!bo || (iris_heap_is_compressed(bo->real.heap) ==
+                  (isl_drm_modifier_has_aux(modifier) &&
+                   bufmgr->devinfo.ver >= 20)));
+
    return bo;
 
 err_vm_alloc:
