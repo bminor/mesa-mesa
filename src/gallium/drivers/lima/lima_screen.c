@@ -210,6 +210,7 @@ lima_init_screen_caps(struct pipe_screen *screen)
    caps->max_point_size =
    caps->max_point_size_aa = 100.0f;
 
+   caps->anisotropic_filter = true;
    caps->max_texture_anisotropy = 16.0f;
 
    caps->max_texture_lod_bias = 15.0f;

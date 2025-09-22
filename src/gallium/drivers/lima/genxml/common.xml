@@ -170,7 +170,7 @@
     <field name="Min Lod" start="1:12" size="8" type="ulod"/>
     <field name="Max Lod" start="1:20" size="8" type="ulod"/>
     <field name="Lod Bias" start="1:28" size="9" type="slod"/>
-    <field name="Unknown 3" start="2:5" size="3" type="hex"/>
+    <field name="Max Anisotropy" start="2:5" size="3" type="uint" modifier="log2"/>
     <field name="Has Stride" start="2:8" size="1" type="bool"/>
     <field name="Mipfilter" start="2:9" size="2" type="Mipfilter"/>
     <field name="Min Img Filter Nearest" start="2:11" size="1" type="bool"/>
