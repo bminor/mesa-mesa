@@ -51,13 +51,6 @@ struct _egl_global _eglGlobal = {
    .Mutex = &_eglGlobalMutex,
    .DisplayList = NULL,
    .DeviceList = &_eglSoftwareDevice,
-   .NumAtExitCalls = 2,
-   .AtExitCalls =
-      {
-         /* default AtExitCalls, called in reverse order */
-         _eglFiniDevice, /* always called last */
-         _eglFiniDisplay,
-      },
 
 #if USE_LIBGLVND
    .ClientOnlyExtensionString =
@@ -110,9 +103,8 @@ struct _egl_global _eglGlobal = {
 static void
 _eglAtExit(void)
 {
-   EGLint i;
-   for (i = _eglGlobal.NumAtExitCalls - 1; i >= 0; i--)
-      _eglGlobal.AtExitCalls[i]();
+   _eglFiniDisplay();
+   _eglFiniDevice(); /* always called last */
 }
 
 void
@@ -128,19 +120,6 @@ _eglRegisterAtExit(void)
    }
 
    simple_mtx_unlock(_eglGlobal.Mutex);
-}
-
-void
-_eglAddAtExitCall(void (*func)(void))
-{
-   if (func) {
-      simple_mtx_lock(_eglGlobal.Mutex);
-
-      assert(_eglGlobal.NumAtExitCalls < ARRAY_SIZE(_eglGlobal.AtExitCalls));
-      _eglGlobal.AtExitCalls[_eglGlobal.NumAtExitCalls++] = func;
-
-      simple_mtx_unlock(_eglGlobal.Mutex);
-   }
 }
 
 EGLBoolean
