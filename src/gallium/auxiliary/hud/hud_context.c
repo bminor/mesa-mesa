@@ -600,10 +600,8 @@ hud_draw_results(struct hud_context *hud, struct pipe_resource *tex)
 
       cso_set_vertex_buffers(cso, 1, &hud->bg.vbuf);
       cso_draw_arrays(cso, MESA_PRIM_QUADS, 0, hud->bg.num_vertices);
-      hud->bg.vbuf.buffer.resource = NULL;
-   } else {
-      pipe_resource_reference(&hud->bg.vbuf.buffer.resource, NULL);
    }
+   hud->bg.vbuf.buffer.resource = NULL;
 
    /* draw accumulated vertices for text */
    if (hud->text.num_vertices) {
@@ -613,10 +611,8 @@ hud_draw_results(struct hud_context *hud, struct pipe_resource *tex)
       cso_set_fragment_shader_handle(hud->cso, hud->fs_text);
       cso_draw_arrays(cso, MESA_PRIM_QUADS, 0, hud->text.num_vertices);
       cso_set_vertex_elements(cso, &hud->velems);
-      hud->text.vbuf.buffer.resource = NULL;
-   } else {
-      pipe_resource_reference(&hud->text.vbuf.buffer.resource, NULL);
    }
+   hud->text.vbuf.buffer.resource = NULL;
 
    if (hud->simple)
       goto done;
@@ -639,10 +635,8 @@ hud_draw_results(struct hud_context *hud, struct pipe_resource *tex)
       cso_set_vertex_buffers(cso, 1, &hud->whitelines.vbuf);
       cso_set_fragment_shader_handle(hud->cso, hud->fs_color);
       cso_draw_arrays(cso, MESA_PRIM_LINES, 0, hud->whitelines.num_vertices);
-      hud->whitelines.vbuf.buffer.resource = NULL;
-   } else {
-      pipe_resource_reference(&hud->whitelines.vbuf.buffer.resource, NULL);
    }
+   hud->whitelines.vbuf.buffer.resource = NULL;
 
    /* draw the rest */
    cso_set_blend(cso, &hud->alpha_blend);
@@ -705,9 +699,9 @@ hud_stop_queries(struct hud_context *hud, struct pipe_context *pipe)
                   (void**)&hud->bg.vertices);
    if (!hud->bg.vertices)
       return;
-   pipe_resource_reference(&hud->bg.vbuf.buffer.resource, pres);
-   pipe_resource_reference(&hud->whitelines.vbuf.buffer.resource, hud->bg.vbuf.buffer.resource);
-   pipe_resource_reference(&hud->text.vbuf.buffer.resource, hud->bg.vbuf.buffer.resource);
+   hud->bg.vbuf.buffer.resource = pres;
+   hud->whitelines.vbuf.buffer.resource = pres;
+   hud->text.vbuf.buffer.resource = pres;
    pipe_resource_release(pipe, releasebuf);
 
    hud->whitelines.vbuf.buffer_offset = hud->bg.vbuf.buffer_offset +
