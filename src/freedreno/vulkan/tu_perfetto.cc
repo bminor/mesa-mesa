@@ -355,14 +355,16 @@ PERFETTO_DEFINE_DATA_SOURCE_STATIC_MEMBERS(TuMemoryDataSource);
 extern "C" {
 #endif
 
+static once_flag tu_perfetto_init_once_flag = ONCE_FLAG_INIT;
+
 void
-tu_perfetto_init(void)
+tu_perfetto_init_once()
 {
    {
-   perfetto::DataSourceDescriptor dsd;
+      perfetto::DataSourceDescriptor dsd;
 #if DETECT_OS_ANDROID
-     // Android tooling expects this data source name
-     dsd.set_name("gpu.renderstages");
+      // Android tooling expects this data source name
+      dsd.set_name("gpu.renderstages");
 #else
       dsd.set_name("gpu.renderstages.msm");
 #endif
@@ -370,10 +372,16 @@ tu_perfetto_init(void)
    }
 
    {
-     perfetto::DataSourceDescriptor dsd;
-     dsd.set_name("gpu.memory.msm");
-     TuMemoryDataSource::Register(dsd);
+      perfetto::DataSourceDescriptor dsd;
+      dsd.set_name("gpu.memory.msm");
+      TuMemoryDataSource::Register(dsd);
    }
+}
+
+void
+tu_perfetto_init(void)
+{
+   call_once(&tu_perfetto_init_once_flag, tu_perfetto_init_once);
 }
 
 uint64_t
