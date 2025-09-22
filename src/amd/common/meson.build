@@ -76,6 +76,8 @@ amd_common_files = files(
   'ac_formats.c',
   'ac_formats.h',
   'ac_linux_drm.h',
+  'ac_null_device.c',
+  'ac_null_device.h',
   'ac_shadowed_regs.c',
   'ac_shadowed_regs.h',
   'ac_spm.c',
