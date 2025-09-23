@@ -5,10 +5,10 @@
  */
 
 #include "ac_gpu_info.h"
+#include "ac_null_device.h"
 #include "ac_shader_util.h"
 #include "ac_debug.h"
 #include "ac_surface.h"
-#include "ac_fake_hw_db.h"
 #include "ac_linux_drm.h"
 #include "util/u_sync_provider.h"
 
@@ -222,25 +222,14 @@ static void set_custom_cu_en_mask(struct radeon_info *info)
    }
 }
 
-static void handle_env_var_force_family(struct radeon_info *info)
+static bool handle_env_var_force_family(struct radeon_info *info)
 {
    const char *family = debug_get_option("AMD_FORCE_FAMILY", NULL);
 
-   if (!family)
-      return;
+   if (family)
+      return ac_null_device_create(info, family);
 
-   for (size_t i = 0; i < ARRAY_SIZE(ac_fake_hw_db); i++) {
-      if (!strcmp(family, ac_fake_hw_db[i].name)) {
-         get_radeon_info(info, &ac_fake_hw_db[i]);
-         info->name = "NOOP";
-         info->family_overridden = true;
-         info->chip_rev = 1;
-         return;
-      }
-   }
-
-   fprintf(stderr, "radeonsi: Unknown family: %s\n", family);
-   exit(1);
+   return true;
 }
 
 enum ac_query_gpu_info_result
@@ -265,7 +254,8 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    STATIC_ASSERT(AMDGPU_HW_IP_VCN_JPEG == AMD_IP_VCN_JPEG);
    STATIC_ASSERT(AMDGPU_HW_IP_VPE == AMD_IP_VPE);
 
-   handle_env_var_force_family(info);
+   if (!handle_env_var_force_family(info))
+      return AC_QUERY_GPU_INFO_UNIMPLEMENTED_HW;
 
    info->pci.valid = ac_drm_query_pci_bus_info(dev, info) == 0;
    if (require_pci_bus_info && !info->pci.valid)
