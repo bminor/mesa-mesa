@@ -143,8 +143,10 @@ static bool frag_in_scalar_filter(const nir_instr *instr, const void *data)
    nir_shader *nir = (nir_shader *)data;
 
    nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
-   if (intr->intrinsic != nir_intrinsic_load_input)
+   if (intr->intrinsic != nir_intrinsic_load_input &&
+       intr->intrinsic != nir_intrinsic_load_interpolated_input) {
       return false;
+   }
 
    gl_varying_slot location = nir_intrinsic_io_semantics(intr).location;
    if (location == VARYING_SLOT_POS)
@@ -154,7 +156,16 @@ static bool frag_in_scalar_filter(const nir_instr *instr, const void *data)
       nir_find_variable_with_location(nir, nir_var_shader_in, location);
    assert(var);
 
-   if (var->data.interpolation == INTERP_MODE_FLAT)
+   enum glsl_interp_mode interp_mode = var->data.interpolation;
+
+   if (intr->intrinsic == nir_intrinsic_load_interpolated_input) {
+      nir_intrinsic_instr *bary = nir_src_as_intrinsic(intr->src[0]);
+      assert(bary);
+
+      interp_mode = nir_intrinsic_interp_mode(bary);
+   }
+
+   if (interp_mode == INTERP_MODE_FLAT)
       return true;
 
    return false;
@@ -829,7 +840,8 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
             nir_lower_io,
             nir_var_shader_in | nir_var_shader_out,
             glsl_type_size,
-            nir_lower_io_lower_64bit_to_32);
+            nir_lower_io_lower_64bit_to_32 |
+               nir_lower_io_use_interpolated_input_intrinsics);
 
    nir_variable_mode vec_modes = nir->info.stage == MESA_SHADER_FRAGMENT
                                     ? nir_var_shader_out
