@@ -238,25 +238,39 @@ fn find_back_edges<N>(nodes: &[CFGNode<N>]) -> Vec<(usize, usize)> {
     be_dfs.back_edges
 }
 
-/// Computes the set of nodes that reach the given node without going through
-/// stop
-fn reaches_dfs<N>(
-    nodes: &Vec<CFGNode<N>>,
-    id: usize,
+struct ReachesDFS<'a, N> {
+    nodes: &'a [CFGNode<N>],
     stop: usize,
-    reaches: &mut BitSet,
-) {
-    if id == stop || reaches.contains(id) {
-        return;
-    }
+    reaches: BitSet,
+}
 
-    reaches.insert(id);
+impl<'a, N> DepthFirstSearch for ReachesDFS<'a, N> {
+    type ChildIter = Cloned<std::slice::Iter<'a, usize>>;
 
-    // Since we're trying to find the set of things that reach the start node,
-    // not the set of things reachable from the start node, walk predecessors.
-    for &s in nodes[id].pred.iter() {
-        reaches_dfs(nodes, s, stop, reaches);
+    fn pre(&mut self, id: usize) -> Self::ChildIter {
+        if id == self.stop || self.reaches.contains(id) {
+            return (&[]).iter().cloned();
+        }
+
+        self.reaches.insert(id);
+
+        // Since we're trying to find the set of things that reach the start
+        // node, not the set of things reachable from the start node, walk
+        // predecessors.
+        self.nodes[id].pred.iter().cloned()
     }
+}
+
+/// Computes the set of nodes that reach the given edge without going through
+/// the edge
+fn reaches<N>(nodes: &Vec<CFGNode<N>>, edge: (usize, usize)) -> BitSet {
+    let mut r_dfs = ReachesDFS {
+        nodes,
+        stop: edge.1,
+        reaches: Default::default(),
+    };
+    dfs(&mut r_dfs, edge.0);
+    r_dfs.reaches
 }
 
 fn detect_loops<N>(nodes: &mut Vec<CFGNode<N>>) -> bool {
@@ -276,11 +290,7 @@ fn detect_loops<N>(nodes: &mut Vec<CFGNode<N>>) -> bool {
         // Stash the loop headers while we're here
         loops.insert(h);
 
-        // re-use dfs_pre for our reaches set
-        let mut reaches = BitSet::new();
-        reaches_dfs(nodes, c, h, &mut reaches);
-
-        for n in reaches.iter() {
+        for n in reaches(nodes, (c, h)).iter() {
             node_loops[n].insert(h);
         }
     }
