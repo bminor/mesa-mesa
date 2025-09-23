@@ -2,8 +2,10 @@
 // SPDX-License-Identifier: MIT
 
 use crate::bitset::BitSet;
+use crate::depth_first_search::{dfs, DepthFirstSearch};
 use std::collections::HashMap;
 use std::hash::{BuildHasher, Hash};
+use std::iter::{Cloned, Rev};
 use std::ops::{Deref, DerefMut, Index, IndexMut};
 use std::slice;
 
@@ -32,49 +34,61 @@ impl<N> DerefMut for CFGNode<N> {
     }
 }
 
-fn graph_post_dfs<N>(
-    nodes: &[CFGNode<N>],
-    id: usize,
-    seen: &mut BitSet,
-    post_idx: &mut Vec<usize>,
-    count: &mut usize,
-) {
-    if seen.contains(id) {
-        return;
-    }
-    seen.insert(id);
+struct PostOrderSort {
+    post_idx: Vec<usize>,
+    count: usize,
+}
 
-    // Reverse the order of the successors so that any successors which are
-    // forward edges get descending indices.  This ensures that, in the reverse
-    // post order, successors (and their dominated children) come in-order.
-    // In particular, as long as fall-through edges are only ever used for
-    // forward edges and the fall-through edge comes first, we guarantee that
-    // the fallthrough block comes immediately after its predecessor.
-    for s in nodes[id].succ.iter().rev() {
-        graph_post_dfs(nodes, *s, seen, post_idx, count);
+struct PostOrderSortDFS<'a, N> {
+    nodes: &'a [CFGNode<N>],
+    sort: PostOrderSort,
+}
+
+impl<'a, N> DepthFirstSearch for PostOrderSortDFS<'a, N> {
+    type ChildIter = Cloned<Rev<std::slice::Iter<'a, usize>>>;
+
+    fn pre(&mut self, id: usize) -> Self::ChildIter {
+        // Reverse the order of the successors so that any successors which are
+        // forward edges get descending indices.  This ensures that, in the
+        // reverse post order, successors (and their dominated children) come
+        // in-order.  In particular, as long as fall-through edges are only ever
+        // used for forward edges and the fall-through edge comes first, we
+        // guarantee that the fallthrough block comes immediately after its
+        // predecessor.
+        self.nodes[id].succ.iter().rev().cloned()
     }
 
-    post_idx[id] = *count;
-    *count += 1;
+    fn post(&mut self, id: usize) {
+        self.sort.post_idx[id] = self.sort.count;
+        self.sort.count += 1;
+    }
+}
+
+impl PostOrderSort {
+    fn new<N>(nodes: &[CFGNode<N>]) -> Self {
+        let mut post_idx: Vec<usize> = Vec::new();
+        post_idx.resize(nodes.len(), usize::MAX);
+
+        let mut sort_dfs = PostOrderSortDFS {
+            nodes,
+            sort: PostOrderSort { post_idx, count: 0 },
+        };
+        dfs(&mut sort_dfs, 0);
+
+        sort_dfs.sort
+    }
 }
 
 fn rev_post_order_sort<N>(nodes: &mut Vec<CFGNode<N>>) {
-    let mut seen = BitSet::new();
-    let mut post_idx = Vec::new();
-    post_idx.resize(nodes.len(), usize::MAX);
-    let mut count = 0;
-
-    graph_post_dfs(nodes, 0, &mut seen, &mut post_idx, &mut count);
-
-    assert!(count <= nodes.len());
+    let sort = PostOrderSort::new(nodes);
 
     let remap_idx = |i: usize| {
-        let pid = post_idx[i];
+        let pid = sort.post_idx[i];
         if pid == usize::MAX {
             None
         } else {
-            assert!(pid < count);
-            Some((count - 1) - pid)
+            assert!(pid < sort.count);
+            Some((sort.count - 1) - pid)
         }
     };
     assert!(remap_idx(0) == Some(0));
@@ -95,13 +109,13 @@ fn rev_post_order_sort<N>(nodes: &mut Vec<CFGNode<N>>) {
 
     // We know a priori that each non-MAX post_idx is unique so we can sort the
     // nodes by inserting them into a new array by index.
-    let mut sorted: Vec<CFGNode<N>> = Vec::with_capacity(count);
+    let mut sorted: Vec<CFGNode<N>> = Vec::with_capacity(sort.count);
     for (i, n) in nodes.drain(..).enumerate() {
         if let Some(r) = remap_idx(i) {
             unsafe { sorted.as_mut_ptr().add(r).write(n) };
         }
     }
-    unsafe { sorted.set_len(count) };
+    unsafe { sorted.set_len(sort.count) };
 
     std::mem::swap(nodes, &mut sorted);
 }
