@@ -136,21 +136,26 @@ fn find_common_dom<N>(
     a
 }
 
-fn dom_idx_dfs<N>(
-    nodes: &mut Vec<CFGNode<N>>,
-    dom_children: &[Vec<usize>],
-    id: usize,
-    count: &mut usize,
-) {
-    nodes[id].dom_pre_idx = *count;
-    *count += 1;
+struct DominanceDFS<'a, N> {
+    nodes: &'a mut [CFGNode<N>],
+    dom_children: &'a [Vec<usize>],
+    count: usize,
+}
 
-    for c in dom_children[id].iter() {
-        dom_idx_dfs(nodes, dom_children, *c, count);
+impl<'a, N> DepthFirstSearch for DominanceDFS<'a, N> {
+    type ChildIter = Cloned<std::slice::Iter<'a, usize>>;
+
+    fn pre(&mut self, id: usize) -> Self::ChildIter {
+        self.nodes[id].dom_pre_idx = self.count;
+        self.count += 1;
+
+        self.dom_children[id].iter().cloned()
     }
 
-    nodes[id].dom_post_idx = *count;
-    *count += 1;
+    fn post(&mut self, id: usize) {
+        self.nodes[id].dom_post_idx = self.count;
+        self.count += 1;
+    }
 }
 
 fn calc_dominance<N>(nodes: &mut Vec<CFGNode<N>>) {
@@ -186,9 +191,13 @@ fn calc_dominance<N>(nodes: &mut Vec<CFGNode<N>>) {
         }
     }
 
-    let mut count = 0_usize;
-    dom_idx_dfs(nodes, &dom_children, 0, &mut count);
-    debug_assert!(count == nodes.len() * 2);
+    let mut dom_dfs = DominanceDFS {
+        nodes,
+        dom_children: &dom_children,
+        count: 0,
+    };
+    dfs(&mut dom_dfs, 0);
+    debug_assert!(dom_dfs.count == nodes.len() * 2);
 }
 
 fn loop_detect_dfs<N>(
