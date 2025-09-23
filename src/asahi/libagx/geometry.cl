@@ -745,10 +745,9 @@ libagx_work_group_scan_inclusive_add(uint x, local uint *scratch)
    return (uint2)(prefix, reduction);
 }
 
-KERNEL(1024)
-_libagx_prefix_sum(global uint *buffer, uint len, uint words, uint word)
+static void
+_libagx_prefix_sum(local uint *scratch, global uint *buffer, uint len, uint words, uint word)
 {
-   local uint scratch[32];
    uint tid = cl_local_id.x;
 
    /* Main loop: complete workgroups processing 1024 values at once */
@@ -780,7 +779,8 @@ _libagx_prefix_sum(global uint *buffer, uint len, uint words, uint word)
 KERNEL(1024)
 libagx_prefix_sum_geom(constant struct agx_geometry_params *p)
 {
-   _libagx_prefix_sum(p->count_buffer, p->input_primitives,
+   local uint scratch[32];
+   _libagx_prefix_sum(scratch, p->count_buffer, p->input_primitives,
                       p->count_buffer_stride / 4, cl_group_id.x);
 }
 
@@ -788,7 +788,8 @@ KERNEL(1024)
 libagx_prefix_sum_tess(global struct libagx_tess_args *p, global uint *c_prims,
                        global uint *c_invs, uint increment_stats__2)
 {
-   _libagx_prefix_sum(p->counts, p->nr_patches, 1 /* words */, 0 /* word */);
+   local uint scratch[32];
+   _libagx_prefix_sum(scratch, p->counts, p->nr_patches, 1 /* words */, 0 /* word */);
 
    /* After prefix summing, we know the total # of indices, so allocate the
     * index buffer now. Elect a thread for the allocation.
