@@ -203,6 +203,11 @@ etna_create_sampler_view_desc(struct pipe_context *pctx, struct pipe_resource *p
       break;
    }
 
+   if (so->format == PIPE_FORMAT_S8X24_UINT) {
+      sv->SAMP_CTRL0_MASK &= ~VIVS_NTE_DESCRIPTOR_SAMP_CTRL0_DEPTH_STENCIL_MODE__MASK;
+      sv->SAMP_CTRL0 |= VIVS_NTE_DESCRIPTOR_SAMP_CTRL0_DEPTH_STENCIL_MODE_STENCIL;
+   }
+
 #define DESC_SET(x, y) buf[(TEXDESC_##x)>>2] = (y)
    DESC_SET(CONFIG0, COND(!ext && !astc, VIVS_TE_SAMPLER_CONFIG0_FORMAT(format))
                    | VIVS_TE_SAMPLER_CONFIG0_TYPE(target_hw) |
