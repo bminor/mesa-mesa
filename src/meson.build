@@ -114,6 +114,9 @@ endif
 if with_gallium_asahi or with_asahi_vk or with_tools.contains('asahi')
   subdir('asahi')
 endif
+if with_kosmickrisp_vk
+  subdir('kosmickrisp')
+endif
 if with_gallium
   subdir('mesa')
 endif
