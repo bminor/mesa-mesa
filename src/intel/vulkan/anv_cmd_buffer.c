@@ -1518,13 +1518,14 @@ bind_graphics_shaders(struct anv_cmd_buffer *cmd_buffer,
                      4 * shader->name.len) != 0))                       \
             BITSET_SET(hw_state->pack_dirty, ANV_GFX_STATE_##bit);      \
       } while (0)
-#define diff_var_state_stage(bit, name, old_stage,shader)               \
+#define diff_var_state_stage(bit, name, old_stage, shader)              \
       do {                                                              \
          /* Don't bother memcmp if the state is already dirty */        \
          /* Also if the new state is empty, avoid marking dirty */      \
          if (!BITSET_TEST(hw_state->pack_dirty, ANV_GFX_STATE_##bit) && \
              shader->name.len != 0 &&                                   \
-             (gfx->shaders[old_stage] == NULL ||                        \
+             (old_stage == MESA_SHADER_NONE ||                          \
+              gfx->shaders[old_stage] == NULL ||                        \
               gfx->shaders[old_stage]->name.len != shader->name.len ||  \
               memcmp(&gfx->shaders[old_stage]->cmd_data[                \
                         gfx->shaders[old_stage]->name.offset],          \
