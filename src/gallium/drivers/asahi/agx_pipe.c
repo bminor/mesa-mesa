@@ -191,7 +191,11 @@ agx_resource_from_handle(struct pipe_screen *pscreen,
    pipe_reference_init(&prsc->reference, 1);
    prsc->screen = pscreen;
 
-   prsc->bind |= PIPE_BIND_SHARED;
+   /* Set PIPE_BIND_SCANOUT for lazy on-demand creation of renderonly
+    * scanout resource if agx_resource_get_handle is called for
+    * WINSYS_HANDLE_TYPE_KMS on a kms-ro screen.
+    */
+   prsc->bind |= PIPE_BIND_SHARED | PIPE_BIND_SCANOUT;
 
    rsc->bo = agx_bo_import(dev, whandle->handle);
    /* Sometimes an import can fail e.g. on an invalid buffer fd, out of
