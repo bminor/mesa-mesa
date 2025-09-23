@@ -1790,6 +1790,16 @@ can_fast_clear_color_att(struct anv_cmd_buffer *cmd_buffer,
    if (pRects[0].layerCount > 1)
       return false;
 
+   if (att->iview->n_planes != 1) {
+      anv_perf_warn(VK_LOG_OBJS(&cmd_buffer->device->vk.base),
+                    "Fast clears for vkCmdClearAttachments not supported on "
+                    "multiplanar images");
+      return false;
+   }
+
+   VkClearRect rect = pRects[0];
+   rect.baseArrayLayer += att->iview->planes[0].isl.base_array_layer;
+
    bool is_multiview = cmd_buffer->state.gfx.view_mask != 0;
    if (is_multiview && (cmd_buffer->state.gfx.view_mask != 1))
       return false;
@@ -1797,7 +1807,7 @@ can_fast_clear_color_att(struct anv_cmd_buffer *cmd_buffer,
    return anv_can_fast_clear_color(cmd_buffer, att->iview->image,
                                    att->iview->vk.aspects,
                                    att->iview->vk.base_mip_level,
-                                   pRects, att->layout,
+                                   &rect, att->layout,
                                    att->iview->planes[0].isl.format,
                                    clear_color);
 }
