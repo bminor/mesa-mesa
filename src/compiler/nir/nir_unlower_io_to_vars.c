@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include "st_nir.h"
 #include "nir_builder.h"
 
 struct io_desc {
@@ -676,8 +675,11 @@ unlower_io_to_vars(nir_builder *b, nir_intrinsic_instr *intr, void *opaque)
    return true;
 }
 
+/* If keep_intrinsics is set, the pass will skip unlowering lowered I/O
+ * intrinsics to derefs, and only (re)create I/O variables from them.
+ */
 bool
-st_nir_unlower_io_to_vars(nir_shader *nir)
+nir_unlower_io_to_vars(nir_shader *nir, bool keep_intrinsics)
 {
    if (nir->info.stage == MESA_SHADER_COMPUTE)
       return false;
@@ -691,7 +693,12 @@ st_nir_unlower_io_to_vars(nir_shader *nir)
    assert(!(nir->options->io_options &
             nir_io_mix_convergent_flat_with_interpolated));
 
-   nir_foreach_variable_with_modes(var, nir, nir_var_shader_in | nir_var_shader_out) {
+   nir_foreach_variable_with_modes_safe(var, nir, nir_var_shader_in | nir_var_shader_out) {
+      if (keep_intrinsics) {
+         exec_node_remove(&var->node);
+         continue;
+      }
+
       UNREACHABLE("the shader should have no IO variables");
    }
 
@@ -719,11 +726,13 @@ st_nir_unlower_io_to_vars(nir_shader *nir)
    }
 
    /* Unlower IO using the created variables. */
-   ASSERTED bool lower_progress =
-      nir_shader_intrinsics_pass(nir, unlower_io_to_vars,
-                                 nir_metadata_control_flow, NULL);
-   assert(lower_progress);
-   nir->info.io_lowered = false;
+   if (!keep_intrinsics) {
+      ASSERTED bool lower_progress =
+         nir_shader_intrinsics_pass(nir, unlower_io_to_vars,
+                                    nir_metadata_control_flow, NULL);
+      assert(lower_progress);
+      nir->info.io_lowered = false;
+   }
 
    /* Count IO variables. */
    nir->num_inputs = 0;

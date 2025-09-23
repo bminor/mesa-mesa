@@ -332,6 +332,7 @@ else
   'nir_to_lcssa.c',
   'nir_tcs_info.h',
   'nir_trivialize_registers.c',
+  'nir_unlower_io_to_vars.c',
   'nir_use_dominance.c',
   'nir_validate.c',
   'nir_vla.h',

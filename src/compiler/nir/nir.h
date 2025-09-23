@@ -6771,6 +6771,8 @@ void nir_gather_output_clipper_var_groups(nir_shader *nir,
 
 bool nir_lower_cooperative_matrix_flexible_dimensions(nir_shader *shader, unsigned m_gran, unsigned n_gran, unsigned k_gran);
 
+bool nir_unlower_io_to_vars(nir_shader *nir, bool keep_intrinsics);
+
 #include "nir_inline_helpers.h"
 
 #ifdef __cplusplus

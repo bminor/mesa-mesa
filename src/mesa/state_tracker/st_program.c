@@ -873,7 +873,7 @@ st_create_common_variant(struct st_context *st,
        * are still counted as enabled IO, which breaks things.
        */
       NIR_PASS(_, state.ir.nir, nir_opt_dce);
-      NIR_PASS(_, state.ir.nir, st_nir_unlower_io_to_vars);
+      NIR_PASS(_, state.ir.nir, nir_unlower_io_to_vars, false);
 
       if (state.ir.nir->info.stage == MESA_SHADER_TESS_CTRL &&
           state.ir.nir->options->compact_arrays &&
@@ -1256,7 +1256,7 @@ st_create_fp_variant(struct st_context *st,
        * are still counted as enabled IO, which breaks things.
        */
       NIR_PASS(_, state.ir.nir, nir_opt_dce);
-      NIR_PASS(_, state.ir.nir, st_nir_unlower_io_to_vars);
+      NIR_PASS(_, state.ir.nir, nir_unlower_io_to_vars, false);
       gl_nir_opts(state.ir.nir);
       finalize = true;
    }
