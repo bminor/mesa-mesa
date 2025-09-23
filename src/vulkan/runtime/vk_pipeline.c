@@ -120,7 +120,7 @@ vk_set_subgroup_size(struct vk_device *device,
       shader->info.min_subgroup_size = req_subgroup_size;
    } else if (allow_varying || spirv_version >= 0x10600) {
       /* Starting with SPIR-V 1.6, varying subgroup size is the default */
-   } else {
+   } else if (properties->subgroupSize) {
       shader->info.api_subgroup_size = properties->subgroupSize;
       shader->info.max_subgroup_size = properties->subgroupSize;
       if (require_full) {
