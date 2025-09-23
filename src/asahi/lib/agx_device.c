@@ -283,8 +283,7 @@ agx_bo_import(struct agx_device *dev, int fd)
        * for zero sized maps and fail nicely too
        */
       if ((bo->size == 0) || (bo->size == (size_t)-1)) {
-         pthread_mutex_unlock(&dev->bo_map_lock);
-         return NULL;
+         goto error;
       }
       if (bo->size & (AIL_PAGESIZE - 1)) {
          fprintf(
