@@ -2314,7 +2314,7 @@
         "description": "nak: Don't copy-prop adds that flush to zero",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "29bfdcd7c15b41e387b5fc7ed3ef9d958ec1444a",
         "notes": null
