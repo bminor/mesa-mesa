@@ -1254,7 +1254,7 @@
         "description": "anv: Use image view base-layer in can_fast_clear_color_att()",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "44351d67f8f0e20a50544b1c6ffca9fa90d0ce36",
         "notes": null
