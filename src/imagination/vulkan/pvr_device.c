@@ -233,7 +233,7 @@ static void pvr_physical_device_get_supported_features(
       .independentBlend = false,
       .geometryShader = false,
       .tessellationShader = false,
-      .sampleRateShading = false,
+      .sampleRateShading = true,
       .dualSrcBlend = false,
       .logicOp = true,
       .multiDrawIndirect = false,
@@ -534,9 +534,9 @@ static bool pvr_physical_device_get_properties(
       .maxTexelGatherOffset = 0U,
 
       /* Requires sampleRateShading */
-      .minInterpolationOffset = 0.0f,
-      .maxInterpolationOffset = 0.0f,
-      .subPixelInterpolationOffsetBits = 0U,
+      .minInterpolationOffset = -0.5f,
+      .maxInterpolationOffset = 0.5f,
+      .subPixelInterpolationOffsetBits = 4U,
 
       .maxFramebufferWidth = 4096U,
       .maxFramebufferHeight = 4096U,
