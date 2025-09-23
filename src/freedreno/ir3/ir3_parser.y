@@ -970,7 +970,7 @@ cat0_src2:         '!' T_P0        { instr->cat0.inv2 = true; $$ = new_src((62 <
 |                  T_P0            { $$ = new_src((62 << 3) + $1, IR3_REG_PREDICATE); }
 
 cat0_immed:        '#' integer     { instr->cat0.immed = $2; }
-|                  '#' T_IDENTIFIER { ralloc_steal(instr, (void *)$2); instr->cat0.target_label = $2; }
+|                  '#' T_IDENTIFIER { ralloc_steal(variant->ir, (void *)$2); instr->cat0.target_label = $2; }
 
 cat0_instr:        T_OP_NOP        { new_instr(OPC_NOP); }
 |                  T_OP_BR         { new_instr(OPC_BR);   } cat0_src1 ',' cat0_immed
