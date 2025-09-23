@@ -24,7 +24,7 @@
 #include "util/mesa-sha1.h"
 #include "addrlib/inc/addrinterface.h"
 
-#include "ac_fake_hw_db.h"
+#include "ac_surface_test.h"
 
 /*
  * The main goal of this test is to validate that our dcc/htile addressing
