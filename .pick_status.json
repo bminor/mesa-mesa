@@ -2354,7 +2354,7 @@
         "description": "asahi: Fix lseek failure error handling in agx_bo_import().",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "df725d4f642a1a83dada9814d7c46eae347cf04a",
         "notes": null
