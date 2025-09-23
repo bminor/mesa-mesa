@@ -20,8 +20,8 @@
  * is its own inverse. It is hence used both vertex fetch and transform
  * feedback.
  */
-uint
-libagx_map_vertex_in_tri_strip(uint prim, uint vert, bool flatshade_first)
+static uint
+map_vertex_in_tri_strip(uint prim, uint vert, bool flatshade_first)
 {
    unsigned pv = flatshade_first ? 0 : 2;
 
@@ -61,7 +61,7 @@ libagx_xfb_vertex_offset(uint n, uint invocation_base_prim,
    uint vert = vert_0 - copy;
 
    if (n == 3) {
-      vert = libagx_map_vertex_in_tri_strip(prim, vert, flatshade_first);
+      vert = map_vertex_in_tri_strip(prim, vert, flatshade_first);
    }
 
    /* Tally up in the whole buffer */
@@ -79,8 +79,8 @@ libagx_xfb_vertex_address(constant struct agx_geometry_params *p, uint index,
    return (uintptr_t)(p->xfb_base[buffer]) + xfb_offset;
 }
 
-uint
-libagx_vertex_id_for_line_loop(uint prim, uint vert, uint num_prims)
+static uint
+vertex_id_for_line_loop(uint prim, uint vert, uint num_prims)
 {
    /* (0, 1), (1, 2), (2, 0) */
    if (prim == (num_prims - 1) && vert == 1)
@@ -103,8 +103,8 @@ libagx_vertex_id_for_line_class(enum mesa_prim mode, uint prim, uint vert,
    return prim + vert;
 }
 
-uint
-libagx_vertex_id_for_tri_fan(uint prim, uint vert, bool flatshade_first)
+static uint
+vertex_id_for_tri_fan(uint prim, uint vert, bool flatshade_first)
 {
    /* Vulkan spec section 20.1.7 gives (i + 1, i + 2, 0) for a provoking
     * first. OpenGL instead wants (0, i + 1, i + 2) with a provoking last.
@@ -159,9 +159,9 @@ libagx_vertex_id_for_line_adj_class(enum mesa_prim mode, uint prim, uint vert)
    return prim + vert;
 }
 
-uint
-libagx_vertex_id_for_tri_strip_adj(uint prim, uint vert, uint num_prims,
-                                   bool flatshade_first)
+static uint
+vertex_id_for_tri_strip_adj(uint prim, uint vert, uint num_prims,
+                            bool flatshade_first)
 {
    /* See Vulkan spec section 20.1.11 "Triangle Strips With Adjancency".
     *
@@ -211,8 +211,7 @@ libagx_vertex_id_for_tri_adj_class(enum mesa_prim mode, uint prim, uint vert,
 {
    /* Tri adj list or tri adj strip */
    if (mode == MESA_PRIM_TRIANGLE_STRIP_ADJACENCY) {
-      return libagx_vertex_id_for_tri_strip_adj(prim, vert, nr,
-                                                flatshade_first);
+      return vertex_id_for_tri_strip_adj(prim, vert, nr, flatshade_first);
    } else {
       return (6 * prim) + vert;
    }
@@ -232,7 +231,7 @@ vertex_id_for_topology(enum mesa_prim mode, bool flatshade_first, uint prim,
       return (prim * mesa_vertices_per_prim(mode)) + vert;
 
    case MESA_PRIM_LINE_LOOP:
-      return libagx_vertex_id_for_line_loop(prim, vert, num_prims);
+      return vertex_id_for_line_loop(prim, vert, num_prims);
 
    case MESA_PRIM_LINE_STRIP:
    case MESA_PRIM_LINE_STRIP_ADJACENCY:
@@ -247,15 +246,15 @@ vertex_id_for_topology(enum mesa_prim mode, bool flatshade_first, uint prim,
        *
        * Pull the (maybe swapped) vert from the corresponding primitive
        */
-      return prim + libagx_map_vertex_in_tri_strip(prim, vert, flatshade_first);
+      return prim + map_vertex_in_tri_strip(prim, vert, flatshade_first);
    }
 
    case MESA_PRIM_TRIANGLE_FAN:
-      return libagx_vertex_id_for_tri_fan(prim, vert, flatshade_first);
+      return vertex_id_for_tri_fan(prim, vert, flatshade_first);
 
    case MESA_PRIM_TRIANGLE_STRIP_ADJACENCY:
-      return libagx_vertex_id_for_tri_strip_adj(prim, vert, num_prims,
-                                                flatshade_first);
+      return vertex_id_for_tri_strip_adj(prim, vert, num_prims,
+                                         flatshade_first);
 
    default:
       return 0;
@@ -581,10 +580,9 @@ libagx_unroll_restart(global struct agx_heap *heap, uint64_t index_buffer,
       out_draw[0] = out_prims * per_prim;
 }
 
-uint
-libagx_setup_xfb_buffer(global struct agx_geometry_params *p, uint i,
-                        uint stride, uint max_output_end,
-                        uint vertices_per_prim)
+static uint
+setup_xfb_buffer(global struct agx_geometry_params *p, uint i, uint stride,
+                 uint max_output_end, uint vertices_per_prim)
 {
    uint xfb_offset = *(p->xfb_offs_ptrs[i]);
    p->xfb_base[i] = p->xfb_base_original[i] + xfb_offset;
@@ -746,7 +744,8 @@ libagx_work_group_scan_inclusive_add(uint x, local uint *scratch)
 }
 
 static void
-_libagx_prefix_sum(local uint *scratch, global uint *buffer, uint len, uint words, uint word)
+_libagx_prefix_sum(local uint *scratch, global uint *buffer, uint len,
+                   uint words, uint word)
 {
    uint tid = cl_local_id.x;
 
@@ -789,7 +788,8 @@ libagx_prefix_sum_tess(global struct libagx_tess_args *p, global uint *c_prims,
                        global uint *c_invs, uint increment_stats__2)
 {
    local uint scratch[32];
-   _libagx_prefix_sum(scratch, p->counts, p->nr_patches, 1 /* words */, 0 /* word */);
+   _libagx_prefix_sum(scratch, p->counts, p->nr_patches, 1 /* words */,
+                      0 /* word */);
 
    /* After prefix summing, we know the total # of indices, so allocate the
     * index buffer now. Elect a thread for the allocation.
@@ -917,8 +917,8 @@ libagx_pre_gs(global struct agx_geometry_params *p, uint streams,
 
    if (buffers_written) {
       libagx_foreach_xfb(buffers_written, i) {
-         uint max_prims = libagx_setup_xfb_buffer(
-            p, i, stride[i], output_end[i], vertices_per_prim);
+         uint max_prims =
+            setup_xfb_buffer(p, i, stride[i], output_end[i], vertices_per_prim);
 
          unsigned stream = buffer_to_stream[i];
          prims[stream] = min(prims[stream], max_prims);
