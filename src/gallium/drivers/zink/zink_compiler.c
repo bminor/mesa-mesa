@@ -2127,6 +2127,7 @@ rewrite_bo_access_instr(nir_builder *b, nir_instr *instr, void *data)
       }
       return true;
    }
+   case nir_intrinsic_load_task_payload:
    case nir_intrinsic_load_scratch:
    case nir_intrinsic_load_shared: {
       b->cursor = nir_before_instr(instr);
@@ -2165,6 +2166,7 @@ rewrite_bo_access_instr(nir_builder *b, nir_instr *instr, void *data)
       }
       return true;
    }
+   case nir_intrinsic_store_task_payload:
    case nir_intrinsic_store_scratch:
    case nir_intrinsic_store_shared: {
       b->cursor = nir_before_instr(instr);
