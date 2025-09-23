@@ -974,8 +974,6 @@ anv_shader_compile_fs(struct anv_device *device,
                        nir->info.separate_shader,
                        pos_slots);
 
-   shader_data->key.wm.input_slots_valid = prev_vue_map.slots_valid;
-
    struct brw_compile_fs_params params = {
       .base = {
          .nir = nir,

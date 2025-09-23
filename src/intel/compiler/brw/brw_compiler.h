@@ -401,8 +401,6 @@ struct brw_mesh_prog_key
 struct brw_wm_prog_key {
    struct brw_base_prog_key base;
 
-   uint64_t input_slots_valid;
-
    float min_sample_shading;
 
    uint8_t color_outputs_valid;
