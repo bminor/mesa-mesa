@@ -13,6 +13,3 @@ KHR-GLES31.core.texture_border_clamp.Texture2DDC16Linear,Fail
 
 # new with ANGLE 2024-10-17
 KHR-GLES31.core.blend_equation_advanced.test_coherency.multiplySequence,Fail
-
-# New failures with ES CTS 3.2.12.0
-KHR-GLES3.framebuffer_blit.scissor_blit,Fail

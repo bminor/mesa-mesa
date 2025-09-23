@@ -1,2 +1,0 @@
-# New failures with ES CTS 3.2.12.0
-KHR-GLES3.framebuffer_blit.scissor_blit,Fail

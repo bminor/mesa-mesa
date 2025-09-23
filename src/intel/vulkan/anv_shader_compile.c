@@ -395,8 +395,14 @@ rp_color_mask(const struct vk_graphics_pipeline_state *state)
 
    uint32_t color_mask = 0;
    for (uint32_t i = 0; i < state->rp->color_attachment_count; i++) {
-      if (state->rp->color_attachment_formats[i] != VK_FORMAT_UNDEFINED)
-         color_mask |= BITFIELD_BIT(i);
+      if (state->rp->color_attachment_formats[i] != VK_FORMAT_UNDEFINED) {
+         if (state->cal) {
+            if (state->cal->color_map[i] != MESA_VK_ATTACHMENT_UNUSED)
+               color_mask |= BITFIELD_BIT(state->cal->color_map[i]);
+         } else {
+            color_mask |= BITFIELD_BIT(i);
+         }
+      }
    }
 
    return color_mask;
