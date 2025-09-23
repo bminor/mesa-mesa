@@ -3575,19 +3575,23 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
 #define anv_batch_emit_gfx(batch, cmd, name) ({                         \
       void *__dst = anv_batch_emit_dwords(                              \
          batch, __anv_cmd_length(cmd));                                 \
-      memcpy(__dst, hw_state->packed.name,                              \
-             4 * __anv_cmd_length(cmd));                                \
-      VG(VALGRIND_CHECK_MEM_IS_DEFINED(                                 \
-            __dst, __anv_cmd_length(cmd) * 4));                         \
+      if (__dst != NULL) {                                              \
+         memcpy(__dst, hw_state->packed.name,                           \
+               4 * __anv_cmd_length(cmd));                              \
+         VG(VALGRIND_CHECK_MEM_IS_DEFINED(                              \
+               __dst, __anv_cmd_length(cmd) * 4));                      \
+      }                                                                 \
       __dst;                                                            \
    })
 #define anv_batch_emit_gfx_variable(batch, name) do {                   \
       void *__dst = anv_batch_emit_dwords(                              \
          batch, hw_state->packed.name##_len);                           \
-      memcpy(__dst, hw_state->packed.name,                              \
-             4 * hw_state->packed.name##_len);                          \
-      VG(VALGRIND_CHECK_MEM_IS_DEFINED(                                 \
-            __dst, 4 * hw_state->packed.name##_len));                   \
+      if (__dst != NULL) {                                              \
+         memcpy(__dst, hw_state->packed.name,                           \
+               4 * hw_state->packed.name##_len);                        \
+         VG(VALGRIND_CHECK_MEM_IS_DEFINED(                              \
+               __dst, 4 * hw_state->packed.name##_len));                \
+      }                                                                 \
    } while (0)
 
    if (IS_DIRTY(URB)) {

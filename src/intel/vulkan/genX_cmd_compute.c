@@ -144,12 +144,14 @@ cmd_buffer_flush_compute_state(struct anv_cmd_buffer *cmd_buffer)
 #define anv_batch_emit_cs(batch, cmd, field) ({                         \
             void *__dst = anv_batch_emit_dwords(                        \
                batch, __anv_cmd_length(cmd));                           \
-            memcpy(__dst,                                               \
-                   &comp_state->shader->cmd_data[                       \
-                      comp_state->shader->field.offset],                \
-                   4 * __anv_cmd_length(cmd));                          \
-            VG(VALGRIND_CHECK_MEM_IS_DEFINED(                           \
-                  __dst, __anv_cmd_length(cmd) * 4));                   \
+            if (__dst != NULL) {                                        \
+               memcpy(__dst,                                            \
+                     &comp_state->shader->cmd_data[                     \
+                        comp_state->shader->field.offset],              \
+                     4 * __anv_cmd_length(cmd));                        \
+               VG(VALGRIND_CHECK_MEM_IS_DEFINED(                        \
+                     __dst, __anv_cmd_length(cmd) * 4));                \
+            }                                                           \
             __dst;                                                      \
          })
 
