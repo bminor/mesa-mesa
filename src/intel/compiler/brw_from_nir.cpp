@@ -7373,13 +7373,9 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
          src_type = BRW_TYPE_D;
          break;
 
-      case nir_tex_src_backend1:
-      case nir_tex_src_backend2:
-         src_type = BRW_TYPE_UD;
-         break;
-
       default:
          src_type = default_src_type;
+         break;
       }
 
       switch (instr->src[i].src_type) {
