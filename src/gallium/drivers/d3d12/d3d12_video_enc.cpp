@@ -2812,7 +2812,7 @@ d3d12_video_encoder_begin_frame(struct pipe_video_codec * codec,
    ///
    /// Wait here to make sure the next in flight resource set is empty before using it
    ///
-   if (pD3D12Enc->m_fenceValue >= pD3D12Enc->m_MaxQueueAsyncDepth) {
+   if (pD3D12Enc->m_fenceValue > pD3D12Enc->m_MaxQueueAsyncDepth) {
       debug_printf("[d3d12_video_encoder] d3d12_video_encoder_begin_frame Waiting for completion of in flight resource sets with previous work for pool index:"
                    "%" PRIu64 "\n",
                    (uint64_t)d3d12_video_encoder_pool_current_index(pD3D12Enc));
