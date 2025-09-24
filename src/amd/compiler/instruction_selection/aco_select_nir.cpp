@@ -1208,6 +1208,8 @@ select_program_rt(isel_context& ctx, unsigned shader_count, struct nir_shader* c
        */
       if (shader_count > 1 || shaders[i]->info.stage != MESA_SHADER_RAYGEN)
          insert_rt_jump_next(ctx, args);
+      else
+         Builder(ctx.program, ctx.block).sopp(aco_opcode::s_endpgm);
 
       cleanup_context(&ctx);
    }

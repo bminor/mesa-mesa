@@ -2075,9 +2075,7 @@ radv_nir_lower_rt_abi(nir_shader *shader, const VkRayTracingPipelineCreateInfoKH
 
    b.cursor = nir_after_impl(impl);
 
-   if (monolithic) {
-      nir_terminate(&b);
-   } else {
+   if (!monolithic) {
       /* select next shader */
       shader_addr = nir_load_var(&b, vars.shader_addr);
       nir_def *next = select_next_shader(&b, shader_addr, info->wave_size);
