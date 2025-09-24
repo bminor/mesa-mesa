@@ -332,15 +332,7 @@ ms_store_arrayed_output(nir_builder *b,
                            .access = ACCESS_COHERENT | ACCESS_IS_SWIZZLED_AMD,
                            .align_mul = 16, .align_offset = const_off % 16u);
    } else if (out_mode == ms_out_mode_var) {
-      unsigned write_mask_32 = write_mask;
-      if (store_val->bit_size > 32) {
-         /* Split 64-bit store values to 32-bit components. */
-         store_val = nir_bitcast_vector(b, store_val, 32);
-         /* Widen the write mask so it is in 32-bit components. */
-         write_mask_32 = util_widen_mask(write_mask, store_val->bit_size / 32);
-      }
-
-      u_foreach_bit(comp, write_mask_32) {
+      u_foreach_bit(comp, write_mask) {
          unsigned idx = io_sem.location * 4 + comp + component_offset;
          nir_def *val = nir_channel(b, store_val, comp);
          nir_def *v = nir_load_var(b, s->out_variables[idx]);
