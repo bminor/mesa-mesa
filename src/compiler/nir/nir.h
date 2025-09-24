@@ -5843,11 +5843,16 @@ typedef struct nir_lower_tex_options {
     */
    bool lower_index_to_offset;
 
+   /* Optimize txd(coord, ddxy_coarse(coord)) to tex(coord). */
+   bool optimize_txd;
+
    /**
     * Payload data to be sent to callback / filter functions.
     */
    void *callback_data;
 } nir_lower_tex_options;
+
+unsigned nir_tex_parse_txd_coords(nir_shader *shader, nir_tex_instr *tex, nir_instr **ddxy_instrs);
 
 /** Lowers complex texture instructions to simpler ones */
 bool nir_lower_tex(nir_shader *shader,

@@ -788,6 +788,12 @@ typedef struct nir_shader_compiler_options {
    bool scalarize_ddx;
 
    /**
+    * Whether unspecified derivative intrinsics are always coarse.
+    * If this is false, they might be either coarse or fine.
+    */
+   bool coarse_ddx;
+
+   /**
     * Assign a range of driver locations to per-view outputs, with unique
     * slots for each view. If unset, per-view outputs will be treated
     * similarly to other arrayed IO, and only slots for one view will be
