@@ -737,7 +737,8 @@ bi_compute_reg_alignment(bi_context *ctx)
 /* Once we've chosen a spill node, spill it and return new (aligned) offset */
 
 static unsigned
-bi_spill_register(bi_context *ctx, bi_index index, uint32_t offset)
+bi_spill_register(bi_context *ctx, bi_index index, uint32_t offset,
+                  bi_index spill_point)
 {
    bi_builder b = {.shader = ctx};
    unsigned alignment = 4;
@@ -755,34 +756,45 @@ bi_spill_register(bi_context *ctx, bi_index index, uint32_t offset)
    offset = ALIGN_POT(offset, alignment);
 
    /* Spill after every store, fill before every load */
-   bi_foreach_instr_global_safe(ctx, I) {
-      bi_foreach_dest(I, d) {
-         if (!bi_is_equiv(I->dest[d], index))
-            continue;
+   bi_foreach_block(ctx, block) {
+      bool fill = true;
+      bool found_spill_point = false;
+      bi_foreach_instr_in_block_safe(block, I) {
+         bi_foreach_dest(I, d) {
+            if (bi_is_equiv(I->dest[d], spill_point)) {
+               found_spill_point = true;
+               fill = true;
+            }
+            if (!bi_is_equiv(I->dest[d], index))
+               continue;
 
-         unsigned count = bi_count_write_registers(I, d);
-         unsigned extra = I->dest[d].offset;
+            unsigned count = bi_count_write_registers(I, d);
+            unsigned extra = I->dest[d].offset;
 
-         channels = MAX2(channels, extra + count);
-         I->no_spill = true;
+            channels = MAX2(channels, extra + count);
+            I->no_spill = true;
 
-         if (channels == extra + count) {
-            b.cursor = bi_after_instr(I);
-            bi_store_tl(&b, channels * 32, index, offset);
-            ctx->spills++;
+            if (channels == extra + count) {
+               b.cursor = bi_after_instr(I);
+               bi_store_tl(&b, channels * 32, index, offset);
+
+               ctx->spills++;
+               /* Don't disable filling if spill_point is before index. */
+               fill = found_spill_point;
+            }
          }
-      }
 
-      if (bi_has_arg(I, index)) {
-         b.cursor = bi_before_instr(I);
-         bi_index tmp = bi_temp(ctx);
+         if (bi_has_arg(I, index) && fill) {
+            b.cursor = bi_before_instr(I);
+            bi_index tmp = bi_temp(ctx);
 
-         unsigned bits = bi_count_read_index(I, index) * 32;
-         bi_rewrite_index_src_single(I, index, tmp);
+            unsigned bits = bi_count_read_index(I, index) * 32;
+            bi_rewrite_index_src_single(I, index, tmp);
 
-         bi_instr *ld = bi_load_tl(&b, bits, tmp, offset);
-         ld->no_spill = true;
-         ctx->fills++;
+            bi_instr *ld = bi_load_tl(&b, bits, tmp, offset);
+            ld->no_spill = true;
+            ctx->fills++;
+         }
       }
    }
 
@@ -1182,8 +1194,6 @@ bi_register_allocate(bi_context *ctx)
          ctx->info.work_reg_count = BI_MAX_REGS;
       } else {
          signed spill_node = bi_choose_spill_node(ctx, l);
-         lcra_free(l);
-         l = NULL;
 
          if (spill_node == -1)
             UNREACHABLE("Failed to choose spill node\n");
@@ -1192,8 +1202,11 @@ bi_register_allocate(bi_context *ctx)
             UNREACHABLE("Blend shaders may not spill");
 
          spill_count =
-            bi_spill_register(ctx, bi_get_index(spill_node), spill_count);
+            bi_spill_register(ctx, bi_get_index(spill_node), spill_count,
+                              bi_get_index(l->spill_node));
 
+         lcra_free(l);
+         l = NULL;
          /* In case the spill affected an instruction with tied
           * operands, we need to fix up.
           */
