@@ -1588,42 +1588,8 @@ vk_graphics_pipeline_state_fill(const struct vk_device *device,
       if (info->pMultisampleState != NULL)
          needs |= MESA_VK_GRAPHICS_STATE_MULTISAMPLE_BIT;
 
-      /* From the Vulkan 1.3.218 spec:
-       *
-       *    VUID-VkGraphicsPipelineCreateInfo-renderPass-06043
-       *
-       *    "If renderPass is not VK_NULL_HANDLE, the pipeline is being
-       *    created with fragment shader state, and subpass uses a
-       *    depth/stencil attachment, pDepthStencilState must be a valid
-       *    pointer to a valid VkPipelineDepthStencilStateCreateInfo
-       *    structure"
-       *
-       *    VUID-VkGraphicsPipelineCreateInfo-renderPass-06053
-       *
-       *    "If renderPass is VK_NULL_HANDLE, the pipeline is being created
-       *    with fragment shader state and fragment output interface state,
-       *    and either of VkPipelineRenderingCreateInfo::depthAttachmentFormat
-       *    or VkPipelineRenderingCreateInfo::stencilAttachmentFormat are not
-       *    VK_FORMAT_UNDEFINED, pDepthStencilState must be a valid pointer to
-       *    a valid VkPipelineDepthStencilStateCreateInfo structure"
-       *
-       *    VUID-VkGraphicsPipelineCreateInfo-renderPass-06590
-       *
-       *    "If renderPass is VK_NULL_HANDLE and the pipeline is being created
-       *    with fragment shader state but not fragment output interface
-       *    state, pDepthStencilState must be a valid pointer to a valid
-       *    VkPipelineDepthStencilStateCreateInfo structure"
-       *
-       * In the first case, we'll have a real set of aspects in rp.  In the
-       * second case, where we have both fragment shader and fragment output
-       * state, we will also have a valid set of aspects.  In the third case
-       * where we only have fragment shader state and no render pass, the
-       * vk_render_pass_state will be incomplete.
-       */
-      if (!vk_render_pass_state_has_attachment_info(&rp) ||
-          (rp.attachments & (MESA_VK_RP_ATTACHMENT_DEPTH_BIT |
-                             MESA_VK_RP_ATTACHMENT_STENCIL_BIT)))
-         needs |= MESA_VK_GRAPHICS_STATE_DEPTH_STENCIL_BIT;
+      /* Always need D/S state due to VK_EXT_dynamic_rendering_unused_attachments */
+      needs |= MESA_VK_GRAPHICS_STATE_DEPTH_STENCIL_BIT;
 
       needs |= MESA_VK_GRAPHICS_STATE_INPUT_ATTACHMENT_MAP_BIT;
    }
@@ -1766,6 +1732,29 @@ vk_graphics_pipeline_state_fill(const struct vk_device *device,
 
    const VkRenderingAttachmentLocationInfoKHR *cal_info =
       vk_find_struct_const(info->pNext, RENDERING_ATTACHMENT_LOCATION_INFO_KHR);
+
+   VkPipelineDepthStencilStateCreateInfo custom_ds_info;
+   /* With VK_EXT_dynamic_rendering_unused_attachments, we must explicitly
+    * disable depth and stencil if pDepthStencilState may not be a valid
+    * pointer. Dynamic renderpasses are allowed to have depth/stencil
+    * attachments even when the pipeline have them as VK_FORMAT_UNDEFINED,
+    * in which case pDepthStencilState may not be a valid pointer and we
+    * cannot access it even if depth/stencil state is statically specified
+    * by the pipeline.
+    */
+   if ((needs & MESA_VK_GRAPHICS_STATE_DEPTH_STENCIL_BIT) &&
+       vk_render_pass_state_has_attachment_info(&rp)) {
+      bool has_depth = rp.attachments & MESA_VK_RP_ATTACHMENT_DEPTH_BIT;
+      bool has_stencil = rp.attachments & MESA_VK_RP_ATTACHMENT_STENCIL_BIT;
+
+      if (!has_depth && !has_stencil) {
+         custom_ds_info = (VkPipelineDepthStencilStateCreateInfo){
+            .depthTestEnable = false,
+            .stencilTestEnable = false,
+         };
+         ds_info = &custom_ds_info;
+      }
+   }
 
    /*
     * Finally, fill out all the states
