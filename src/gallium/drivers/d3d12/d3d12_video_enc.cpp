@@ -2293,7 +2293,7 @@ d3d12_video_encoder_update_current_encoder_config_state(struct d3d12_video_encod
                                                            ((struct pipe_h265_enc_picture_desc *)picture)->gpu_stats_qp_map,
                                                            ((struct pipe_h265_enc_picture_desc *)picture)->gpu_stats_satd_map,
                                                            ((struct pipe_h265_enc_picture_desc *)picture)->gpu_stats_rc_bitallocation_map,
-                                                           ((struct pipe_h264_enc_picture_desc *)picture)->gpu_stats_psnr);
+                                                           ((struct pipe_h265_enc_picture_desc *)picture)->gpu_stats_psnr);
 
          d3d12_video_encoder_update_move_rects(pD3D12Enc, ((struct pipe_h265_enc_picture_desc *)picture)->move_info);
          d3d12_video_encoder_update_dirty_rects(pD3D12Enc, ((struct pipe_h265_enc_picture_desc *)picture)->dirty_info);
