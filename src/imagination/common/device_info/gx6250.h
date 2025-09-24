@@ -124,6 +124,7 @@ static const struct pvr_device_quirks pvr_device_quirks_4_40_2_51 = {
    .has_brn62269 = true,
    .has_brn66011 = true,
    .has_brn70165 = true,
+   .has_brn74056 = true,
 };
 
 static const struct pvr_device_info pvr_device_info_4_40_2_51 = {

@@ -108,6 +108,7 @@ static const struct pvr_device_enhancements pvr_device_enhancements_33_15_11_3 =
 
 static const struct pvr_device_quirks pvr_device_quirks_33_15_11_3 = {
    .has_brn70165 = true,
+   .has_brn74056 = true,
 };
 
 static const struct pvr_device_info pvr_device_info_33_15_11_3 = {

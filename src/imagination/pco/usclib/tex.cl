@@ -87,3 +87,35 @@ usclib_tex_state_size(uint4 tex_state, uint num_comps, bool is_1d, bool is_array
 
    return size_comps;
 }
+
+uint
+usclib_tex_state_base_level(uint4 tex_state)
+{
+   uint32_t texstate_image_word1[] = {tex_state.z, tex_state.w};
+   struct ROGUE_TEXSTATE_IMAGE_WORD1 texstate_image_struct;
+
+   ROGUE_TEXSTATE_IMAGE_WORD1_unpack(texstate_image_word1, &texstate_image_struct);
+
+   return texstate_image_struct.baselevel;
+}
+
+bool
+usclib_smp_state_mipfilter(uint4 smp_state)
+{
+   uint32_t texstate_sampler_word0[] = {smp_state.x, smp_state.y};
+   struct ROGUE_TEXSTATE_SAMPLER_WORD0 texstate_sampler_struct;
+
+   ROGUE_TEXSTATE_SAMPLER_WORD0_unpack(texstate_sampler_word0, &texstate_sampler_struct);
+
+   return texstate_sampler_struct.mipfilter;
+}
+
+float
+usclib_tex_lod_dval_post_clamp_resource_to_view_space(uint4 tex_state, uint4 smp_state, float lod_dval_post_clamp)
+{
+   lod_dval_post_clamp -= (float)usclib_tex_state_base_level(tex_state);
+   if (!usclib_smp_state_mipfilter(smp_state))
+      lod_dval_post_clamp = floor(lod_dval_post_clamp + 0.5f);
+
+   return MAX2(lod_dval_post_clamp, 0.0f);
+}

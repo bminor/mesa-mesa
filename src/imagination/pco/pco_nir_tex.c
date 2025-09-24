@@ -25,6 +25,11 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+struct state {
+   pco_data *data;
+   pco_ctx *ctx;
+};
+
 static inline nir_def *get_src_def(nir_tex_instr *tex,
                                    nir_tex_src_type src_type)
 {
@@ -108,8 +113,12 @@ static inline enum pco_dim to_pco_dim(enum glsl_sampler_dim dim)
    UNREACHABLE("");
 }
 
-static nir_def *
-lower_tex_query_lod(nir_builder *b, nir_def *coords, nir_def *smp_coeffs)
+static nir_def *lower_tex_query_lod(nir_builder *b,
+                                    nir_def *coords,
+                                    nir_def *smp_coeffs,
+                                    pco_smp_params *params,
+                                    pco_data *data,
+                                    pco_ctx *ctx)
 {
    nir_def *lod_dval_post_clamp =
       nir_channel(b, smp_coeffs, ROGUE_SMP_COEFF_LOD_DVAL_POST_CLAMP);
@@ -130,6 +139,17 @@ lower_tex_query_lod(nir_builder *b, nir_def *coords, nir_def *smp_coeffs)
    /* Scale. */
    tfrac_post_clamp = nir_fdiv_imm(b, tfrac_post_clamp, 256.0f);
    tfrac_pre_clamp = nir_fdiv_imm(b, tfrac_pre_clamp, 256.0f);
+
+   if (PVR_HAS_QUIRK(ctx->dev_info, 74056)) {
+      lod_dval_post_clamp =
+         usclib_tex_lod_dval_post_clamp_resource_to_view_space(
+            b,
+            params->tex_state,
+            params->smp_state,
+            lod_dval_post_clamp);
+
+      data->common.uses.usclib = true;
+   }
 
    /* Calculate coord deltas. */
    nir_def *coord_deltas = nir_imm_int(b, 0);
@@ -422,7 +442,9 @@ static nir_def *lower_tex_shadow(nir_builder *b,
 static nir_def *lower_tex(nir_builder *b, nir_instr *instr, void *cb_data)
 {
    nir_tex_instr *tex = nir_instr_as_tex(instr);
-   pco_data *data = cb_data;
+   struct state *state = cb_data;
+   pco_data *data = state->data;
+   pco_ctx *ctx = state->ctx;
 
    unsigned tex_desc_set;
    unsigned tex_binding;
@@ -677,7 +699,8 @@ static nir_def *lower_tex(nir_builder *b, nir_instr *instr, void *cb_data)
    case nir_texop_lod:
       params.sample_coeffs = true;
       smp = pco_emit_nir_smp(b, &params);
-      result = lower_tex_query_lod(b, float_coords, &smp->def);
+      result =
+         lower_tex_query_lod(b, float_coords, &smp->def, &params, data, ctx);
       break;
 
    case nir_texop_txf:
@@ -736,11 +759,17 @@ static bool is_tex(const nir_instr *instr, UNUSED const void *cb_data)
  *
  * \param[in,out] shader NIR shader.
  * \param[in,out] data Shader data.
+ * \param[in] ctx PCO compiler context.
  * \return True if the pass made progress.
  */
-bool pco_nir_lower_tex(nir_shader *shader, pco_data *data)
+bool pco_nir_lower_tex(nir_shader *shader, pco_data *data, pco_ctx *ctx)
 {
-   return nir_shader_lower_instructions(shader, is_tex, lower_tex, data);
+   struct state state = {
+      .data = data,
+      .ctx = ctx,
+   };
+
+   return nir_shader_lower_instructions(shader, is_tex, lower_tex, &state);
 }
 
 static enum util_format_type nir_type_to_util_type(nir_alu_type nir_type)
