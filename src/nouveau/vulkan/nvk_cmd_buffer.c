@@ -457,30 +457,11 @@ nvk_barrier_flushes_waits(VkPipelineStageFlags2 stages,
        vk_expand_pipeline_stage_flags2(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT))
       barriers |= NVK_BARRIER_WFI;
 
-   if (access & VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT) {
+   if (access & VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT)
       barriers |= NVK_BARRIER_FLUSH_SHADER_DATA;
 
-      if (vk_pipeline_stage_flags2_has_graphics_shader(stages))
-         barriers |= NVK_BARRIER_WFI;
-
-      if (vk_pipeline_stage_flags2_has_compute_shader(stages))
-         barriers |= NVK_BARRIER_WFI;
-   }
-
-   if (access & (VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT |
-                 VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
-                 VK_ACCESS_2_TRANSFORM_FEEDBACK_WRITE_BIT_EXT))
-      barriers |= NVK_BARRIER_WFI;
-
-   if ((access & VK_ACCESS_2_TRANSFER_WRITE_BIT) &&
-       (stages & (VK_PIPELINE_STAGE_2_RESOLVE_BIT |
-                  VK_PIPELINE_STAGE_2_BLIT_BIT |
-                  VK_PIPELINE_STAGE_2_CLEAR_BIT)))
-      barriers |= NVK_BARRIER_WFI;
-
    if (access & VK_ACCESS_2_COMMAND_PREPROCESS_WRITE_BIT_EXT)
-      barriers |= NVK_BARRIER_FLUSH_SHADER_DATA |
-                  NVK_BARRIER_WFI;
+      barriers |= NVK_BARRIER_FLUSH_SHADER_DATA;
 
    return barriers;
 }
