@@ -307,7 +307,7 @@ amdvgpu_cs_submit_raw2(amdvgpu_device_handle dev, uint32_t ctx_id,
 
 
          *syncobjs = realloc(*syncobjs, (*count + new_syncobj_count) * sizeof(struct drm_virtgpu_execbuffer_syncobj));
-         if (syncobjs == NULL) {
+         if (*syncobjs == NULL) {
             ret = -ENOMEM;
             goto error;
          }
