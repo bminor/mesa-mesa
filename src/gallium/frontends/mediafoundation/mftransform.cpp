@@ -542,6 +542,20 @@ CDX12EncHMFT::OnOutputTypeChanged()
    {
       CleanupEncoder();
    }
+
+   if( m_gpuFeatureFlags.m_bDisableAsync )
+   {
+      MFE_INFO( "[dx12 hmft 0x%p] Async is disabled due to lack of GPU support.", this );
+      m_bLowLatency = TRUE;
+   }
+   else
+   {
+      if( SUCCEEDED( m_spMFAttributes->GetUINT32( MF_LOW_LATENCY, &uiLowLatency ) ) )
+      {
+         m_bLowLatency = ( uiLowLatency == 0 ? FALSE : TRUE );
+      }
+   }
+
    CHECKHR_GOTO( InitializeEncoder( m_outputPipeProfile, m_uiOutputWidth, m_uiOutputHeight ), done );
 
    if( bResolutionChange )
@@ -555,19 +569,6 @@ CDX12EncHMFT::OnOutputTypeChanged()
                                          m_EncoderCapabilities.m_HWSupportStatsRCBitAllocationMapOutput,
                                          m_uiVideoOutputBitsUsedMapBlockSize,
                                          m_bUseBitsusedMapAllocator );
-   }
-
-   if( m_gpuFeatureFlags.m_bDisableAsync )
-   {
-      MFE_INFO( "[dx12 hmft 0x%p] Async is disabled due to lack of GPU support.", this );
-      m_bLowLatency = TRUE;
-   }
-   else
-   {
-      if( SUCCEEDED( m_spMFAttributes->GetUINT32( MF_LOW_LATENCY, &uiLowLatency ) ) )
-      {
-         m_bLowLatency = ( uiLowLatency == 0 ? FALSE : TRUE );
-      }
    }
 
    // Indicate that we'll be adding MF_NALU_LENGTH_INFORMATION on each output sample that comes
@@ -941,6 +942,15 @@ CDX12EncHMFT::InitializeEncoder( pipe_video_profile videoProfile, UINT32 Width, 
                             done );
          }
       }
+
+#if ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
+      struct d3d12_interop_device_info1 screen_interop_info = {};
+      if ((m_pPipeContext->screen->interop_query_device_info(m_pPipeContext->screen, sizeof(d3d12_interop_device_info1), &screen_interop_info) != 0) &&
+          (screen_interop_info.set_video_encoder_max_async_queue_depth != nullptr))
+      {
+         screen_interop_info.set_video_encoder_max_async_queue_depth(m_pPipeContext, (m_bLowLatency ? 1 : MFT_INPUT_QUEUE_DEPTH));
+      }
+#endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
 
       CHECKNULL_GOTO( m_pPipeVideoCodec = m_pPipeContext->create_video_codec( m_pPipeContext, &encoderSettings ),
                       MF_E_UNEXPECTED,
