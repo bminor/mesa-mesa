@@ -417,23 +417,12 @@ dEQP-VK.dynamic_rendering.primary_cmd_buff.basic.contents_secondary_2_primary_cm
 dEQP-VK.dynamic_rendering.primary_cmd_buff.basic.contents_secondary_primary_cmdbuffers_resuming,Fail
 dEQP-VK.dynamic_rendering.primary_cmd_buff.basic.single_cmdbuffer_resuming,Fail
 
-# CTS bug, see https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/5700
-dEQP-VK.image.load_store.without_any_format.buffer.b8g8r8_srgb,Fail
-dEQP-VK.image.load_store.without_any_format.buffer.b8g8r8_srgb_linear,Fail
-dEQP-VK.image.load_store.without_any_format.buffer.b8g8r8_srgb_minalign,Fail
-dEQP-VK.image.load_store.without_any_format.buffer.b8g8r8_srgb_minalign_linear,Fail
-dEQP-VK.image.load_store.without_any_format.buffer.r8g8b8_srgb,Fail
-dEQP-VK.image.load_store.without_any_format.buffer.r8g8b8_srgb_linear,Fail
-dEQP-VK.image.load_store.without_any_format.buffer.r8g8b8_srgb_minalign,Fail
-dEQP-VK.image.load_store.without_any_format.buffer.r8g8b8_srgb_minalign_linear,Fail
-
-# CTS bug, see https://github.com/KhronosGroup/VK-GL-CTS/issues/523
-dEQP-VK.image.load_store.without_any_format.buffer.b8g8r8_srgb_minalign_uniform,Fail
-dEQP-VK.image.load_store.without_any_format.buffer.b8g8r8_srgb_minalign_uniform_linear,Fail
-dEQP-VK.image.load_store.without_any_format.buffer.r8g8b8_srgb_minalign_uniform,Fail
-dEQP-VK.image.load_store.without_any_format.buffer.r8g8b8_srgb_minalign_uniform_linear,Fail
-
 dEQP-VK.rasterization.rasterization_order_attachment_access.depth.samples_1.multi_draw_barriers,Crash
 dEQP-VK.rasterization.rasterization_order_attachment_access.depth.samples_4.multi_draw_barriers,Crash
 dEQP-VK.rasterization.rasterization_order_attachment_access.stencil.samples_1.multi_draw_barriers,Crash
 dEQP-VK.rasterization.rasterization_order_attachment_access.stencil.samples_4.multi_draw_barriers,Crash
+
+# New fails in 1.4.3.3
+dEQP-VK.pipeline.fast_linked_library.empty_fs.masked_samples,Fail
+dEQP-VK.pipeline.monolithic.empty_fs.masked_samples,Fail
+dEQP-VK.pipeline.pipeline_library.empty_fs.masked_samples,Fail

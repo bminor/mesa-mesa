@@ -51,3 +51,8 @@ dEQP-VK.wsi.*.swapchain.simulate_oom.*
 
 # These intermittently crash on mt8186, but they passed on meson-g12b-a311d-khadas-vim3
 dEQP-VK.texture.explicit_lod.2d.sizes.128x128_*
+
+# New flakes in 1.4.3.3
+dEQP-VK.dynamic_rendering.graphics_pipeline_library.suballocation.attachment.8.615
+dEQP-VK.renderpass.dedicated_allocation.attachment.8.753
+dEQP-VK.renderpass2.dedicated_allocation.attachment.8.603

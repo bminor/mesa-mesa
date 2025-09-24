@@ -29,3 +29,8 @@ dEQP-VK.dynamic_state.monolithic.compute_transfer.single.compute.vertex_input_bi
 # New fails in 1.4.1.1
 dEQP-VK.pipeline.pipeline_library.bind_buffers_2.maintenance5.robustness2.triangle_list.buffers9.stride_offset_rnd654.true_size.beyond_size,Fail
 
+# New fails in 1.4.3.3
+dEQP-VK.api.fragment_shader_output.different_signedness.sint2sint_unorm2snorm,Fail
+dEQP-VK.pipeline.fast_linked_library.color_write_enable.alpha_channel.cmd_buffer_start.enable_first,Fail
+dEQP-VK.pipeline.fast_linked_library.color_write_enable.red_channel.before_draw.enable_second,Fail
+dEQP-VK.pipeline.fast_linked_library.multisample.multisampled_render_to_single_sampled.multi_renderpass.r8g8b8a8_unorm_r16g16b16a16_sfloat_r32g32b32a32_uint_d24_unorm_s8_uint.random_326,Fail

@@ -229,8 +229,30 @@ wayland-dEQP-EGL.functional.image.modify.tex_rgb5_a1_renderbuffer_clear_color,Fa
 
 # GL tests above, Vulkan tests below
 
-# New fails in 1.3.10.0
-dEQP-VK.dynamic_rendering.primary_cmd_buff.local_read.max_input_attachments,Fail
+# New fails in 1.4.3.3
+dEQP-VK.memory.concurrent_access.shader_and_host,Fail
+dEQP-VK.pipeline.fast_linked_library.vertex_input.misc.unused_binding_dynamic,Crash
+dEQP-VK.pipeline.monolithic.vertex_input.misc.unused_binding_dynamic,Crash
+dEQP-VK.transform_feedback.simple.draw_indirect_counter_offset_16,Fail
+dEQP-VK.transform_feedback.simple.draw_indirect_counter_offset_244,Fail
+dEQP-VK.transform_feedback.simple.draw_indirect_counter_offset_508,Fail
+dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_offset_16,Fail
+dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_offset_244,Fail
+dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_offset_508,Fail
+dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_16,Fail
+dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_244,Fail
+dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_counter_offset_508,Fail
+dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_multiview_counter_offset_16,Fail
+dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_multiview_counter_offset_244,Fail
+dEQP-VK.transform_feedback.simple_fast_gpl.draw_indirect_multiview_counter_offset_508,Fail
+dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_counter_offset_16,Fail
+dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_counter_offset_244,Fail
+dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_counter_offset_508,Fail
+dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_multiview_counter_offset_16,Fail
+dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_multiview_counter_offset_244,Fail
+dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_multiview_counter_offset_508,Fail
+gmem-dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_offset_16,Fail
+nobin-dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_offset_16,Fail
 
 # OpenCL tests below
 #

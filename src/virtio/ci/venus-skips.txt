@@ -37,5 +37,10 @@ dEQP-VK.ubo.random.16bit.all_per_block_buffers.8
 dEQP-VK.spirv_assembly.instruction.graphics.8bit_storage.struct_mixed_types.storage_buffer_frag
 
 # Timeout in venus-lavapipe-full
+dEQP-VK.ray_tracing_pipeline.acceleration_structures.dynamic_indexing.traditional_structures.dynamic_indexing
+dEQP-VK.ray_tracing_pipeline.build.gpu.level_instances.triangles_65536_1_1
+dEQP-VK.ray_tracing_pipeline.misc.cullmask_AABB_extrabits
 dEQP-VK.ray_tracing_pipeline.misc.cullmask_tri
+dEQP-VK.ray_tracing_pipeline.misc.recursiveTraces_tri_15
 dEQP-VK.ray_tracing_pipeline.trace_rays_cmds_maintenance_1.indirect2_cpu.11_13_5
+dEQP-VK.ray_tracing_pipeline.watertightness.closedFan2.1024
