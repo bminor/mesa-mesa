@@ -760,19 +760,17 @@ bi_spill_register(bi_context *ctx, bi_index index, uint32_t offset)
          if (!bi_is_equiv(I->dest[d], index))
             continue;
 
+         unsigned count = bi_count_write_registers(I, d);
          unsigned extra = I->dest[d].offset;
-         bi_index tmp = bi_temp(ctx);
 
-         I->dest[d] = bi_replace_index(I->dest[d], tmp);
+         channels = MAX2(channels, extra + count);
          I->no_spill = true;
 
-         unsigned count = bi_count_write_registers(I, d);
-         unsigned bits = count * 32;
-
-         b.cursor = bi_after_instr(I);
-         bi_store_tl(&b, bits, tmp, offset + 4 * extra);
-         ctx->spills++;
-         channels = MAX2(channels, extra + count);
+         if (channels == extra + count) {
+            b.cursor = bi_after_instr(I);
+            bi_store_tl(&b, channels * 32, index, offset);
+            ctx->spills++;
+         }
       }
 
       if (bi_has_arg(I, index)) {
