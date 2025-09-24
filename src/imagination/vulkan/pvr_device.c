@@ -107,8 +107,6 @@
 #   define PVR_USE_WSI_PLATFORM false
 #endif
 
-#define PVR_API_VERSION VK_MAKE_VERSION(1, 0, VK_HEADER_VERSION)
-
 /* Amount of padding required for VkBuffers to ensure we don't read beyond
  * a page boundary.
  */
@@ -356,6 +354,16 @@ static void pvr_physical_device_get_supported_features(
    };
 }
 
+static uint32_t
+get_api_version(void)
+{
+   const uint32_t version_override = vk_get_version_override();
+   if (version_override)
+      return version_override;
+
+   return VK_MAKE_API_VERSION(0, 1, 0, VK_HEADER_VERSION);
+}
+
 static bool pvr_physical_device_get_properties(
    const struct pvr_physical_device *const pdevice,
    struct vk_properties *const properties)
@@ -411,7 +419,7 @@ static bool pvr_physical_device_get_properties(
 
    *properties = (struct vk_properties){
       /* Vulkan 1.0 */
-      .apiVersion = PVR_API_VERSION,
+      .apiVersion = get_api_version(),
       .driverVersion = vk_get_driver_version(),
       .vendorID = VK_VENDOR_ID_IMAGINATION,
       .deviceID = dev_info->ident.device_id,
