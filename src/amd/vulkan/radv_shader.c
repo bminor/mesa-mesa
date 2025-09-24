@@ -249,6 +249,7 @@ radv_optimize_nir_algebraic(nir_shader *nir, bool opt_offsets, bool opt_mqsad)
          .discard_ok = true,
       };
       NIR_PASS(_, nir, nir_opt_peephole_select, &peephole_select_options);
+      NIR_PASS(_, nir, nir_opt_undef);
       NIR_PASS(_, nir, nir_opt_phi_to_bool);
       NIR_PASS(more_algebraic, nir, nir_opt_algebraic);
       NIR_PASS(_, nir, nir_opt_generate_bfi);
