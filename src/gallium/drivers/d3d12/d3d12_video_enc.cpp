@@ -2402,6 +2402,55 @@ d3d12_video_encoder_create_command_objects(struct d3d12_video_encoder *pD3D12Enc
    return true;
 }
 
+// Helper function to calculate the max output bitstream size based on width, height, and format
+// This function uses an approach based on common video formats and their typical compression ratios
+inline
+UINT d3d12_video_encoder_calculate_max_output_compressed_bitstream_size(
+   UINT uiWidth,
+   UINT uiHeight,
+   DXGI_FORMAT format
+)
+{
+   assert((uiHeight > 16) &&
+         (uiWidth > 16) &&
+         (format != DXGI_FORMAT_UNKNOWN));
+
+   const UINT MIN_BUFFER_SIZE = 128 * 128 * 2; // Minimum buffer size for very small frames: 128x128 pixels at 2 bytes/pixel
+   const UINT MAX_BUFFER_SIZE = 20 * 1024 * 1024; // Maximum buffer size of 20MB
+   const float EXPECTED_COMPRESSION_FACTOR = 2.0f; // Assume 50% of calculated size after compression of raw pixel sizes
+
+   UINT alignedWidth = (uiWidth + 15) & ~15;
+   UINT alignedHeight = (uiHeight + 15) & ~15;
+   UINT bufferSize = 0;
+   switch (format) {
+      case DXGI_FORMAT_NV12:
+         // NV12: Y plane (1 byte/pixel) + UV plane (1/2 byte/pixel) = 1.5 bytes/pixel
+         bufferSize = alignedWidth * alignedHeight * 3 / 2;
+         break;
+      case DXGI_FORMAT_P010:
+         // P010: Y plane (2 bytes/pixel) + UV plane (1 byte/pixel) = 3 bytes/pixel
+         bufferSize = alignedWidth * alignedHeight * 3;
+         break;
+      case DXGI_FORMAT_AYUV:
+         // AYUV: 4 bytes/pixel
+         bufferSize = alignedWidth * alignedHeight * 4;
+         break;
+      default:
+         // Fallback formula for other formats: assume 15 bits/pixel (1.875 bytes/pixel)
+         bufferSize = (((alignedHeight) * (alignedWidth) * 15) >> 3);
+         break;
+   }
+
+   // Apply EXPECTED_COMPRESSION_FACTOR constant (% of calculated size)
+   bufferSize = static_cast<UINT>(std::ceil(bufferSize / EXPECTED_COMPRESSION_FACTOR));
+
+   // Clamp buffer size between minimum and maximum limits
+   bufferSize = std::max(MIN_BUFFER_SIZE, std::min(bufferSize, MAX_BUFFER_SIZE));
+
+   return bufferSize;
+}
+
+
 struct pipe_video_codec *
 d3d12_video_encoder_create_encoder(struct pipe_context *context, const struct pipe_video_codec *codec)
 {
@@ -2444,6 +2493,20 @@ d3d12_video_encoder_create_encoder(struct pipe_context *context, const struct pi
          "[d3d12_video_encoder] d3d12_video_encoder_create_encoder - D3D12 Device has no Video encode support\n");
       goto failed;
    }
+
+   pD3D12Enc->m_MaxOutputBitstreamSize = d3d12_video_encoder_calculate_max_output_compressed_bitstream_size(
+      codec->width,
+      codec->height,
+      d3d12_convert_pipe_video_profile_to_dxgi_format(pD3D12Enc->base.profile)
+   );
+
+   debug_printf("[d3d12_video_encoder] d3d12_video_encoder_create_encoder - Calculated max output bitstream size: %u bytes (%u Kb, %u Mb) for %ux%u DXGI_FORMAT %u\n",
+                pD3D12Enc->m_MaxOutputBitstreamSize,
+                pD3D12Enc->m_MaxOutputBitstreamSize / 1024,
+                pD3D12Enc->m_MaxOutputBitstreamSize / (1024 * 1024),
+                codec->width,
+                codec->height,
+                static_cast<UINT>(d3d12_convert_pipe_video_profile_to_dxgi_format(pD3D12Enc->base.profile)));
 
    if (!d3d12_video_encoder_create_command_objects(pD3D12Enc)) {
       debug_printf("[d3d12_video_encoder] d3d12_video_encoder_create_encoder - Failure on "
@@ -3225,7 +3288,7 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spStagingBitstreams[0/*first slice*/];
          } else if (pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spStagingBitstreams[slice_idx] == nullptr) {
             D3D12_HEAP_PROPERTIES Properties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-            CD3DX12_RESOURCE_DESC resolvedMetadataBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(D3D12_DEFAULT_COMPBIT_STAGING_SIZE);
+            CD3DX12_RESOURCE_DESC resolvedMetadataBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(pD3D12Enc->m_MaxOutputBitstreamSize);
             HRESULT hr = pD3D12Enc->m_pD3D12Screen->dev->CreateCommittedResource(
                &Properties,
                D3D12_HEAP_FLAG_NONE,
@@ -4356,7 +4419,7 @@ d3d12_video_encoder_get_feedback(struct pipe_video_codec *codec,
                templ.target = PIPE_BUFFER;
                templ.usage = PIPE_USAGE_DEFAULT;
                templ.format = PIPE_FORMAT_R8_UINT;
-               templ.width0 = D3D12_DEFAULT_COMPBIT_STAGING_SIZE;
+               templ.width0 = pD3D12Enc->m_MaxOutputBitstreamSize;
                templ.height0 = 1;
                templ.depth0 = 1;
                templ.array_size = 1;

@@ -75,8 +75,6 @@ const size_t D3D12_VIDEO_ENC_METADATA_BUFFERS_COUNT = static_cast<size_t>(debug_
 
 constexpr unsigned int D3D12_VIDEO_H264_MB_IN_PIXELS = 16;
 
-constexpr size_t D3D12_DEFAULT_COMPBIT_STAGING_SIZE = (1024 /*1K*/ * 1024/*1MB*/) * 8/*8 MB*/; // 8MB 
-
 /* If enabled, the D3D12 AV1 encoder will use always ...CONFIGURABLE_GRID_PARTITION mode */
 /* If disabled, the D3D12 AV1 encoder will try to use ...UNIFORM_GRID_PARTITION first and then fallback to ...CONFIGURABLE_GRID_PARTITION if not possible */
 const bool D3D12_VIDEO_FORCE_TILE_MODE = debug_get_bool_option("D3D12_VIDEO_FORCE_TILE_MODE", false);

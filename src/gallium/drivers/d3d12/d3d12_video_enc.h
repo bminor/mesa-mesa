@@ -574,6 +574,7 @@ struct d3d12_video_encoder
 
    const uint m_NodeMask  = 0u;
    const uint m_NodeIndex = 0u;
+   UINT m_MaxOutputBitstreamSize  = 0;
 
    ComPtr<ID3D12Fence> m_spFence;
    uint64_t            m_fenceValue = 1u;
