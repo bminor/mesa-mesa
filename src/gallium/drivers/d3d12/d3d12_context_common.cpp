@@ -481,6 +481,19 @@ d3d12_context_set_queue_priority_manager(struct pipe_context *ctx, struct d3d12_
 
 #endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
 
+int
+d3d12_video_encoder_set_max_async_queue_depth(struct pipe_context *ctx, uint32_t max_async_depth)
+{
+   if (max_async_depth > 8) {
+      debug_printf("d3d12_video_encoder_set_max_async_queue_depth: max_async_depth must be between 1 and 8\n");
+      return -1;
+   }
+
+   struct d3d12_context *d3d12_ctx = d3d12_context(ctx);
+   d3d12_ctx->max_video_encoding_async_depth = max_async_depth;
+   return 0;
+}
+
 struct pipe_context *
 d3d12_context_create(struct pipe_screen *pscreen, void *priv, unsigned flags)
 {
@@ -513,6 +526,7 @@ d3d12_context_create(struct pipe_screen *pscreen, void *priv, unsigned flags)
    if (!ctx)
       return NULL;
 
+   ctx->max_video_encoding_async_depth = static_cast<uint32_t>(debug_get_num_option("D3D12_VIDEO_ENC_ASYNC_DEPTH", 8));
    ctx->base.screen = pscreen;
    ctx->base.priv = priv;
 

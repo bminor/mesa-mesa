@@ -88,13 +88,13 @@ d3d12_video_encoder_convert_codec_to_d3d12_enc_codec(enum pipe_video_profile pro
 size_t
 d3d12_video_encoder_pool_current_index(struct d3d12_video_encoder *pD3D12Enc)
 {
-   return static_cast<size_t>(pD3D12Enc->m_fenceValue % D3D12_VIDEO_ENC_ASYNC_DEPTH);
+   return static_cast<size_t>(pD3D12Enc->m_fenceValue % pD3D12Enc->m_MaxQueueAsyncDepth);
 }
 
 size_t
 d3d12_video_encoder_metadata_current_index(struct d3d12_video_encoder *pD3D12Enc)
 {
-   return static_cast<size_t>(pD3D12Enc->m_fenceValue % D3D12_VIDEO_ENC_METADATA_BUFFERS_COUNT);
+   return static_cast<size_t>(pD3D12Enc->m_fenceValue % pD3D12Enc->m_MaxMetadataBuffersCount);
 }
 
 void
@@ -2454,6 +2454,8 @@ UINT d3d12_video_encoder_calculate_max_output_compressed_bitstream_size(
 struct pipe_video_codec *
 d3d12_video_encoder_create_encoder(struct pipe_context *context, const struct pipe_video_codec *codec)
 {
+   struct d3d12_context *pD3D12Ctx = (struct d3d12_context *) context;
+
    ///
    /// Initialize d3d12_video_encoder
    ///
@@ -2461,8 +2463,12 @@ d3d12_video_encoder_create_encoder(struct pipe_context *context, const struct pi
    // Not using new doesn't call ctor and the initializations in the class declaration are lost
    struct d3d12_video_encoder *pD3D12Enc = new d3d12_video_encoder;
 
-   pD3D12Enc->m_spEncodedFrameMetadata.resize(D3D12_VIDEO_ENC_METADATA_BUFFERS_COUNT);
-   pD3D12Enc->m_inflightResourcesPool.resize(D3D12_VIDEO_ENC_ASYNC_DEPTH);
+   pD3D12Enc->m_MaxQueueAsyncDepth = pD3D12Ctx->max_video_encoding_async_depth;
+   assert(pD3D12Enc->m_MaxQueueAsyncDepth > 0);
+   pD3D12Enc->m_MaxMetadataBuffersCount = 2 * pD3D12Enc->m_MaxQueueAsyncDepth;
+
+   pD3D12Enc->m_spEncodedFrameMetadata.resize(pD3D12Enc->m_MaxMetadataBuffersCount);
+   pD3D12Enc->m_inflightResourcesPool.resize(pD3D12Enc->m_MaxQueueAsyncDepth);
 
    pD3D12Enc->base         = *codec;
    pD3D12Enc->m_screen     = context->screen;
@@ -2484,7 +2490,6 @@ d3d12_video_encoder_create_encoder(struct pipe_context *context, const struct pi
    pD3D12Enc->base.encode_bitstream_sliced = d3d12_video_encoder_encode_bitstream_sliced;
    pD3D12Enc->base.get_slice_bitstream_data = d3d12_video_encoder_get_slice_bitstream_data;
 
-   struct d3d12_context *pD3D12Ctx = (struct d3d12_context *) context;
    pD3D12Enc->m_pD3D12Screen       = d3d12_screen(pD3D12Ctx->base.screen);
 
    if (FAILED(pD3D12Enc->m_pD3D12Screen->dev->QueryInterface(
@@ -2807,7 +2812,7 @@ d3d12_video_encoder_begin_frame(struct pipe_video_codec * codec,
    ///
    /// Wait here to make sure the next in flight resource set is empty before using it
    ///
-   if (pD3D12Enc->m_fenceValue >= D3D12_VIDEO_ENC_ASYNC_DEPTH) {
+   if (pD3D12Enc->m_fenceValue >= pD3D12Enc->m_MaxQueueAsyncDepth) {
       debug_printf("[d3d12_video_encoder] d3d12_video_encoder_begin_frame Waiting for completion of in flight resource sets with previous work for pool index:"
                    "%" PRIu64 "\n",
                    (uint64_t)d3d12_video_encoder_pool_current_index(pD3D12Enc));
@@ -2939,7 +2944,7 @@ d3d12_video_encoder_get_slice_bitstream_data(struct pipe_video_codec *codec,
    //
    // Only resolve them once and cache them for future calls
    //
-   size_t current_metadata_slot = (requested_metadata_fence % D3D12_VIDEO_ENC_METADATA_BUFFERS_COUNT);
+   size_t current_metadata_slot = (requested_metadata_fence % pD3D12Enc->m_MaxMetadataBuffersCount);
 
    if (pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppResolvedSubregionSizes[slice_idx] == 0)
    {
@@ -2964,14 +2969,14 @@ d3d12_video_encoder_get_slice_bitstream_data(struct pipe_video_codec *codec,
          return;
       }
 
-      if((pD3D12Enc->m_fenceValue - requested_metadata_fence) > D3D12_VIDEO_ENC_METADATA_BUFFERS_COUNT)
+      if((pD3D12Enc->m_fenceValue - requested_metadata_fence) > pD3D12Enc->m_MaxMetadataBuffersCount)
       {
          debug_printf("[d3d12_video_encoder_get_slice_bitstream_data] Requested metadata for fence %" PRIu64 " at current fence %" PRIu64
             " is too far back in time for the ring buffer of size %" PRIu64 " we keep track off - "
-            " Please increase the D3D12_VIDEO_ENC_METADATA_BUFFERS_COUNT environment variable and try again.\n",
+            " Please increase the m_MaxMetadataBuffersCount of the encoder and try again.\n",
             requested_metadata_fence,
             pD3D12Enc->m_fenceValue,
-            static_cast<uint64_t>(D3D12_VIDEO_ENC_METADATA_BUFFERS_COUNT));
+            static_cast<uint64_t>(pD3D12Enc->m_MaxMetadataBuffersCount));
          if (codec_unit_metadata_count)
             *codec_unit_metadata_count = 0u;
          assert(false);
@@ -3173,7 +3178,7 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
 
    /* Warning if the previous finished async execution stored was read not by get_feedback()
       before overwriting. This should be handled correctly by the app by calling vaSyncBuffer/vaSyncSurface
-      without having the async depth going beyond D3D12_VIDEO_ENC_METADATA_BUFFERS_COUNT frames without syncing */
+      without having the async depth going beyond pD3D12Enc->m_MaxMetadataBuffersCount frames without syncing */
    if(!pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].bRead) {
       debug_printf("WARNING: [d3d12_video_encoder] d3d12_video_encoder_encode_bitstream - overwriting metadata slot %" PRIu64 " before calling get_feedback", static_cast<uint64_t>(current_metadata_slot));
       assert(false);
@@ -3885,7 +3890,7 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
             debug_printf("User requested sliced encoding, but there is no HW support for it (PIPE_VIDEO_CAP_ENC_SLICED_NOTIFICATIONS)\n");
             assert(pD3D12Enc->supports_sliced_fences.bits.supported);
             pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;
-            pD3D12Enc->m_spEncodedFrameMetadata[pD3D12Enc->m_fenceValue % D3D12_VIDEO_ENC_METADATA_BUFFERS_COUNT].encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;
+            pD3D12Enc->m_spEncodedFrameMetadata[pD3D12Enc->m_fenceValue % pD3D12Enc->m_MaxMetadataBuffersCount].encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;
             assert(false);
             return;
          }
@@ -4304,7 +4309,7 @@ d3d12_video_encoder_get_feedback(struct pipe_video_codec *codec,
       return;
    }
 
-   size_t current_metadata_slot = static_cast<size_t>(requested_metadata_fence % D3D12_VIDEO_ENC_METADATA_BUFFERS_COUNT);
+   size_t current_metadata_slot = static_cast<size_t>(requested_metadata_fence % pD3D12Enc->m_MaxMetadataBuffersCount);
    opt_metadata.encode_result = pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].encode_result;
    if (opt_metadata.encode_result & PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED) {
       debug_printf("Error: d3d12_video_encoder_get_feedback for Encode GPU command for fence %" PRIu64 " failed on submission with encode_result: %x\n",
@@ -4341,18 +4346,18 @@ d3d12_video_encoder_get_feedback(struct pipe_video_codec *codec,
 
    debug_printf("d3d12_video_encoder_get_feedback with feedback: %" PRIu64 ", resources slot %" PRIu64 " metadata resolved ID3D12Resource buffer %p metadata required size %" PRIu64 "\n",
       requested_metadata_fence,
-      (requested_metadata_fence % D3D12_VIDEO_ENC_ASYNC_DEPTH),
+      (requested_metadata_fence % pD3D12Enc->m_MaxQueueAsyncDepth),
       pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spBuffer.Get(),
       pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].bufferSize);
 
-   if((pD3D12Enc->m_fenceValue - requested_metadata_fence) > D3D12_VIDEO_ENC_METADATA_BUFFERS_COUNT)
+   if((pD3D12Enc->m_fenceValue - requested_metadata_fence) > pD3D12Enc->m_MaxMetadataBuffersCount)
    {
       debug_printf("[d3d12_video_encoder_get_feedback] Requested metadata for fence %" PRIu64 " at current fence %" PRIu64
          " is too far back in time for the ring buffer of size %" PRIu64 " we keep track off - "
-         " Please increase the D3D12_VIDEO_ENC_METADATA_BUFFERS_COUNT environment variable and try again.\n",
+         " Please increase the m_MaxMetadataBuffersCount of the encoder and try again.\n",
          requested_metadata_fence,
          pD3D12Enc->m_fenceValue,
-         static_cast<uint64_t>(D3D12_VIDEO_ENC_METADATA_BUFFERS_COUNT));
+         static_cast<uint64_t>(pD3D12Enc->m_MaxMetadataBuffersCount));
       opt_metadata.encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;
       assert(false);
       if(pMetadata)
@@ -4938,13 +4943,15 @@ d3d12_video_encoder_fence_wait(struct pipe_video_codec *codec,
                                struct pipe_fence_handle *_fence,
                                uint64_t timeout)
 {
+   struct d3d12_video_encoder *pD3D12Enc = (struct d3d12_video_encoder *) codec;
+   assert(pD3D12Enc);
    struct d3d12_fence *fence = (struct d3d12_fence *) _fence;
    assert(fence);
 
    bool wait_res = d3d12_fence_finish(fence, timeout);
    if (wait_res) {
       // Opportunistically reset batches
-      for (uint32_t i = 0; i < D3D12_VIDEO_ENC_ASYNC_DEPTH; ++i)
+      for (uint32_t i = 0; i < pD3D12Enc->m_MaxQueueAsyncDepth; ++i)
          d3d12_video_encoder_sync_completion(codec, i, 0);
    }
 

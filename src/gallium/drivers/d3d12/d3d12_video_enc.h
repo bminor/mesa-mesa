@@ -536,7 +536,7 @@ struct EncodedBitstreamResolvedMetadata
    */
    std::vector<uint8_t> m_StagingBitstreamConstruction;
 
-   /* Stores encode result for get_feedback readback in the D3D12_VIDEO_ENC_METADATA_BUFFERS_COUNT slots */
+   /* Stores encode result for get_feedback readback in the m_MaxMetadataBuffersCount slots */
    enum pipe_video_feedback_encode_result_flags encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_OK;
 
    /* Expected max frame, slice sizes */
@@ -575,6 +575,8 @@ struct d3d12_video_encoder
    const uint m_NodeMask  = 0u;
    const uint m_NodeIndex = 0u;
    UINT m_MaxOutputBitstreamSize  = 0;
+   size_t m_MaxQueueAsyncDepth = 0;
+   size_t m_MaxMetadataBuffersCount = 0;
 
    ComPtr<ID3D12Fence> m_spFence;
    uint64_t            m_fenceValue = 1u;
@@ -616,7 +618,7 @@ struct d3d12_video_encoder
       uint64_t m_InputSurfaceFenceValue = 0;
       d3d12_unique_fence m_CompletionFence;
 
-      /* Stores encode result for submission error control in the D3D12_VIDEO_ENC_ASYNC_DEPTH slots */
+      /* Stores encode result for submission error control in the m_MaxQueueAsyncDepth slots */
       enum pipe_video_feedback_encode_result_flags encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_OK;
 
       ComPtr<ID3D12Resource> m_spDirtyRectsResolvedOpaqueMap; // output of ID3D12VideoEncodeCommandList::ResolveInputParamLayout

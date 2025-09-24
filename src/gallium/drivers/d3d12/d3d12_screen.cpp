@@ -1162,6 +1162,7 @@ d3d12_interop_query_device_info(struct pipe_screen *pscreen, uint32_t data_size,
    if (data_size >= sizeof(d3d12_interop_device_info1)) {
       d3d12_interop_device_info1 *info1 = (d3d12_interop_device_info1 *)data;
       info1->set_context_queue_priority_manager = d3d12_context_set_queue_priority_manager;
+      info1->set_video_encoder_max_async_queue_depth = d3d12_video_encoder_set_max_async_queue_depth;
       return sizeof(*info1);
    }
 #endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )

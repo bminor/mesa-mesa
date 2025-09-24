@@ -633,7 +633,7 @@ d3d12_video_encoder_update_current_frame_pic_params_info_hevc(struct d3d12_video
 #endif // D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
 
    // Save state snapshot from record time to resolve headers at get_feedback time
-   size_t current_metadata_slot = static_cast<size_t>(pD3D12Enc->m_fenceValue % D3D12_VIDEO_ENC_METADATA_BUFFERS_COUNT);
+   size_t current_metadata_slot = static_cast<size_t>(pD3D12Enc->m_fenceValue % pD3D12Enc->m_MaxMetadataBuffersCount);
    pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_associatedEncodeCapabilities =
       pD3D12Enc->m_currentEncodeCapabilities;
    pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_associatedEncodeConfig =

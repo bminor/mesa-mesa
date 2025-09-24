@@ -171,6 +171,26 @@ struct d3d12_interop_device_info1 {
     * Returns int (0 for success, error code otherwise)
     */
    int (*set_context_queue_priority_manager)(struct pipe_context *context, struct d3d12_context_queue_priority_manager *manager);
+
+   /*
+    * Function pointer to set the maximum queue async depth for video encode work queues.
+    * If this function is NULL, the driver does not support setting max queue depth.
+    * Some frontends that have modes where they limit the number of frames in flight
+    * and this function allows the frontend to communicate that to the driver.
+    * That way the driver can allocate less command allocators and resources for
+    * video in flight frames and reduce memory usage.
+    *
+    * A call to this function alters the behavior of pipe_context::create_video_codec
+    * and any video codec created AFTER a call to this function will have the specified
+    * max async queue depth. Created video codecs previous to calling this function are not affected.
+    *
+    * Parameters:
+    *   - pipe_context*: context to configure
+    *   - unsigned int: maximum queue depth to set
+    *
+    * Returns int (0 for success, error code otherwise)
+    */
+   int (*set_video_encoder_max_async_queue_depth)(struct pipe_context *context, uint32_t max_async_queue_depth);
 };
 
 #endif // ( USE_D3D12_PREVIEW_HEADERS && ( D3D12_PREVIEW_SDK_VERSION >= 717 ) )
