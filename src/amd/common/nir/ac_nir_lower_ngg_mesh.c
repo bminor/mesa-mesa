@@ -136,15 +136,20 @@ ms_store_prim_indices(nir_builder *b,
    assert(nir_src_is_const(*nir_get_io_offset_src(intrin)));
    assert(nir_src_as_uint(*nir_get_io_offset_src(intrin)) == 0);
 
+   const unsigned write_mask = nir_intrinsic_write_mask(intrin);
    const unsigned component_offset = nir_intrinsic_component(intrin);
    nir_def *store_val = intrin->src[0].ssa;
    assert(store_val->num_components <= 3);
+   assert(write_mask && write_mask <= BITFIELD_MASK(s->vertices_per_prim));
 
    if (store_val->num_components > s->vertices_per_prim)
       store_val = nir_trim_vector(b, store_val, s->vertices_per_prim);
 
    if (s->layout.var.prm_attr.mask & VARYING_BIT_PRIMITIVE_INDICES) {
       for (unsigned c = 0; c < store_val->num_components; ++c) {
+         if (!(write_mask & BITFIELD_BIT(c)))
+            continue;
+
          const unsigned i = VARYING_SLOT_PRIMITIVE_INDICES * 4 + c + component_offset;
          nir_store_var(b, s->out_variables[i], nir_channel(b, store_val, c), 0x1);
       }
@@ -157,7 +162,9 @@ ms_store_prim_indices(nir_builder *b,
    /* The max vertex count is 256, so these indices always fit 8 bits.
     * To reduce LDS use, store these as a flat array of 8-bit values.
     */
-   nir_store_shared(b, nir_u2u8(b, store_val), offset, .base = s->layout.lds.indices_addr + component_offset);
+   nir_store_shared(b, nir_u2u8(b, store_val), offset,
+                    .base = s->layout.lds.indices_addr + component_offset,
+                    .write_mask = write_mask);
 }
 
 static void
