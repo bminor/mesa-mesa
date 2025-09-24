@@ -1524,7 +1524,7 @@
         "description": "blorp: add missing pipecontrol after 3DSTATE_WM_HZ_OP for Xe2+",
         "nominated": true,
         "nomination_type": 4,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null

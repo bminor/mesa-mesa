@@ -1588,6 +1588,20 @@ blorp_emit_gfx8_hiz_op(struct blorp_batch *batch,
 
    blorp_emit(batch, GENX(3DSTATE_WM_HZ_OP), hzp);
 
+#if GFX_VER >= 20
+   /* Xe2-3 Bspec 56469 (r52926):
+    *
+    *  "8. 3DSTATE_WM_HZ_OP w/ none of the clear/resolve bits set
+    *  followed by similar PC as 7 to commit this state."
+    *
+    * "7" refers to step 7 of the WM_HZ_OP command sequence.
+    */
+   blorp_emit(batch, GENX(PIPE_CONTROL), pc) {
+      pc.PostSyncOperation = WriteImmediateData;
+      pc.Address = blorp_get_workaround_address(batch);
+   }
+#endif
+
    blorp_measure_end(batch, params);
 }
 
