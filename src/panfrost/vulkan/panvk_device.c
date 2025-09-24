@@ -122,8 +122,8 @@ err_unmap:
             .size = size,
          },
       };
-      ASSERTED int ret =
-         pan_kmod_vm_bind(device->kmod.vm, PAN_KMOD_VM_OP_TYPE_UNMAP, &unmap, 1);
+      ASSERTED int ret = pan_kmod_vm_bind(
+         device->kmod.vm, PAN_KMOD_VM_OP_MODE_IMMEDIATE, &unmap, 1);
       assert(!ret);
    }
 
