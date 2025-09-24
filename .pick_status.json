@@ -874,7 +874,7 @@
         "description": "ac/nir/ngg: Fix scalarized mesh primitive indices",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8e24d3426d93096f52d7f7128ce088083a7ca308",
         "notes": null
