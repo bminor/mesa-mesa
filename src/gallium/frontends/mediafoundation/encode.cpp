@@ -542,19 +542,19 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
          if( m_EncoderCapabilities.m_HWSupportSlicedFences.bits.multiple_buffers_required )
          {
             // Buffer byte size for sliced buffers + notifications with multiple individual buffers per slice
-            templ.width0 = ( 1024 /*1K*/ * 1024 /*1MB*/ ) * 8 /*8 MB*/;
+            templ.width0 = m_uiMaxOutputBitstreamSize;
          }
          else
          {
             // Buffer byte size for sliced buffers + notifications with a single buffer (suballocated by driver for each slice)
-            templ.width0 = ( 1024 /*1K*/ * 1024 /*1MB*/ ) * 8 /*8 MB*/;
+            templ.width0 = m_uiMaxOutputBitstreamSize;
          }
       }
       else
 #endif   // (USE_D3D12_PREVIEW_HEADERS && (D3D12_PREVIEW_SDK_VERSION >= 717))
       {
          // Buffer byte size for full frame bitstream (when num_output_buffers == 1)
-         templ.width0 = ( 1024 /*1K*/ * 1024 /*1MB*/ ) * 8 /*8 MB*/;
+         templ.width0 = m_uiMaxOutputBitstreamSize;
       }
 
       templ.target = PIPE_BUFFER;

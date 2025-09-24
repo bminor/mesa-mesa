@@ -809,6 +809,53 @@ done:
    return hr;
 }
 
+// Helper function to calculate the max output bitstream size based on width, height, and format
+// This function uses an approach based on common video formats and their typical compression ratios
+UINT CalculateMaxOutputBitstreamSize(
+   UINT uiWidth,
+   UINT uiHeight,
+   enum pipe_format format
+)
+{
+   assert((uiHeight > 16) &&
+         (uiWidth > 16) &&
+         (format != PIPE_FORMAT_NONE));
+
+   const UINT MIN_BUFFER_SIZE = 128 * 128 * 2; // Minimum buffer size for very small frames: 128x128 pixels at 2 bytes/pixel
+   const UINT MAX_BUFFER_SIZE = 20 * 1024 * 1024; // Maximum buffer size of 20MB
+   const float EXPECTED_COMPRESSION_FACTOR = 2.0f; // Assume 50% of calculated size after compression of raw pixel sizes
+
+   UINT alignedWidth = (uiWidth + 15) & ~15;
+   UINT alignedHeight = (uiHeight + 15) & ~15;
+   UINT bufferSize = 0;
+   switch (format) {
+      case PIPE_FORMAT_NV12:
+         // NV12: Y plane (1 byte/pixel) + UV plane (1/2 byte/pixel) = 1.5 bytes/pixel
+         bufferSize = alignedWidth * alignedHeight * 3 / 2;
+         break;
+      case PIPE_FORMAT_P010:
+         // P010: Y plane (2 bytes/pixel) + UV plane (1 byte/pixel) = 3 bytes/pixel
+         bufferSize = alignedWidth * alignedHeight * 3;
+         break;
+      case PIPE_FORMAT_AYUV:
+         // AYUV: 4 bytes/pixel
+         bufferSize = alignedWidth * alignedHeight * 4;
+         break;
+      default:
+         // Fallback formula for other formats: assume 15 bits/pixel (1.875 bytes/pixel)
+         bufferSize = (((alignedHeight) * (alignedWidth) * 15) >> 3);
+         break;
+   }
+
+   // Apply EXPECTED_COMPRESSION_FACTOR constant (% of calculated size)
+   bufferSize = static_cast<UINT>(std::ceil(bufferSize / EXPECTED_COMPRESSION_FACTOR));
+
+   // Clamp buffer size between minimum and maximum limits
+   bufferSize = std::max(MIN_BUFFER_SIZE, std::min(bufferSize, MAX_BUFFER_SIZE));
+
+   return bufferSize;
+}
+
 // internal function to initialize the encoder
 HRESULT
 CDX12EncHMFT::InitializeEncoder( pipe_video_profile videoProfile, UINT32 Width, UINT32 Height )
@@ -898,6 +945,21 @@ CDX12EncHMFT::InitializeEncoder( pipe_video_profile videoProfile, UINT32 Width, 
       CHECKNULL_GOTO( m_pPipeVideoCodec = m_pPipeContext->create_video_codec( m_pPipeContext, &encoderSettings ),
                       MF_E_UNEXPECTED,
                       done );
+
+      // Calculate and cache the expected output buffer max bitstream size for a single frame
+      m_uiMaxOutputBitstreamSize = CalculateMaxOutputBitstreamSize(
+         encoderSettings.width,
+         encoderSettings.height,
+         ConvertProfileToFormat(encoderSettings.profile));
+
+      debug_printf("[dx12 hmft 0x%p] Calculated max output bitstream size: %u bytes (%u Kb, %u Mb) for %ux%u pipe_format %u\n",
+                   this,
+                   m_uiMaxOutputBitstreamSize,
+                   m_uiMaxOutputBitstreamSize / 1024,
+                   m_uiMaxOutputBitstreamSize / (1024 * 1024),
+                   encoderSettings.width,
+                   encoderSettings.height,
+                   ConvertProfileToFormat(encoderSettings.profile));
 
       // Create DX12 fence and share it as handle for using it with DX11/create_fence_win32
       CHECKHR_GOTO( m_spDevice->CreateFence( 0, D3D12_FENCE_FLAG_SHARED, IID_PPV_ARGS( &m_spStagingFence12 ) ), done );
@@ -1121,10 +1183,11 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                // Wait for each slice fence and resolve offset/size as each slice is ready
                //
                ComPtr<IMFMediaBuffer> spMemoryBuffer;
-               // TODO: Estimate size of entire frame (e.g all slices) instead of assuming 8MBs here...
+               // Create a single large buffer to hold all slices using the max output bitstream size for the whole frame
+               // it can be possible that slices have padding between them so more size may be needed.
                // TODO: or even better allow multiple buffers (one per slice) in the MFSample or multiple MFSamples (one per slice)
                // with tight allocations
-               MFCreateMemoryBuffer( ( 1024 /*1K*/ * 1024 /*1MB*/ ) * 8 /*8 MB*/, &spMemoryBuffer );
+               MFCreateMemoryBuffer( pThis->m_uiMaxOutputBitstreamSize, &spMemoryBuffer );
                uint64_t output_buffer_offset = 0u;
                LPBYTE lpBuffer;
                spMemoryBuffer->Lock( &lpBuffer, NULL, NULL );
