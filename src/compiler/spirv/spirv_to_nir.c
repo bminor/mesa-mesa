@@ -2652,6 +2652,54 @@ vtn_handle_constant(struct vtn_builder *b, SpvOp opcode,
       vtn_foreach_decoration(b, val, spec_constant_decoration_cb, &u32op);
       SpvOp opcode = u32op.u32;
       switch (opcode) {
+      case SpvOpBitcast: {
+         struct vtn_value *src = &b->values[w[4]];
+
+         vtn_assert(src->value_type == vtn_value_type_constant ||
+                    src->value_type == vtn_value_type_undef);
+
+         unsigned src_len = glsl_get_vector_elements(src->type->type);
+         unsigned dst_len = glsl_get_vector_elements(val->type->type);
+
+         unsigned src_bit_size = glsl_get_bit_size(src->type->type);
+         unsigned dst_bit_size = glsl_get_bit_size(val->type->type);
+
+         vtn_assert(src_len * src_bit_size == dst_len * dst_bit_size);
+
+         /* This will end up being zero */
+         if (src->value_type == vtn_value_type_undef)
+            break;
+
+         if (src_bit_size == dst_bit_size) {
+            /* This is just a copy */
+            for (unsigned i = 0; i < src_len; i++)
+               val->constant->values[i] = src->constant->values[i];
+         } else {
+            /* You can't non-trivially bitcast booleans */
+            vtn_assert(src_bit_size >= 8 && dst_bit_size >= 8);
+            const unsigned src_byte_size = src_bit_size / 8;
+            const unsigned dst_byte_size = dst_bit_size / 8;
+
+            vtn_assert(src_len <= NIR_MAX_VEC_COMPONENTS &&
+                       dst_len <= NIR_MAX_VEC_COMPONENTS);
+
+            uint8_t bits[NIR_MAX_VEC_COMPONENTS * sizeof(nir_const_value)];
+
+            for (unsigned i = 0; i < src_len; i++) {
+               uint64_t v = nir_const_value_as_int(src->constant->values[i],
+                                                   src_bit_size);
+               memcpy(bits + i * src_byte_size, &v, src_byte_size);
+            }
+
+            for (unsigned i = 0; i < dst_len; i++) {
+               uint64_t v = 0;
+               memcpy(&v, bits + i * dst_byte_size, dst_byte_size);
+               val->constant->values[i] =
+                  nir_const_value_for_uint(v, dst_bit_size);
+            }
+         }
+         break;
+      }
       case SpvOpVectorShuffle: {
          struct vtn_value *v0 = &b->values[w[4]];
          struct vtn_value *v1 = &b->values[w[5]];
