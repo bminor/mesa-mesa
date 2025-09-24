@@ -2100,6 +2100,38 @@ done:
    return hr;
 }
 
+static HRESULT
+GetQPMapBufferFromSampleLockHeld( IMFSample *pSample, BYTE **ppData, DWORD *pSize, ComPtr<IMFMediaBuffer> &outBuffer )
+{
+   if( !pSample || !ppData || !pSize )
+      return E_POINTER;
+
+   ComPtr<IMFAttributes> attrs;
+   HRESULT hr = pSample->QueryInterface( IID_PPV_ARGS( &attrs ) );
+   if( FAILED( hr ) || !attrs )
+      return hr;
+
+   ComPtr<IUnknown> unk;
+   hr = attrs->GetUnknown( MFSampleExtension_VideoEncodeInputDeltaQPMap, IID_PPV_ARGS( &unk ) );
+   if( FAILED( hr ) || !unk )
+      return hr;
+
+   hr = unk.As( &outBuffer );
+   if( FAILED( hr ) || !outBuffer )
+      return hr;
+
+   BYTE *pData = nullptr;
+   DWORD maxLen = 0, curLen = 0;
+   hr = outBuffer->Lock( &pData, &maxLen, &curLen );
+   if( FAILED( hr ) )
+      return hr;
+
+   *ppData = pData;
+   *pSize = curLen;
+
+   return S_OK;
+}
+
 // IMFTransform::ProcessInput
 // https://learn.microsoft.com/en-us/windows/win32/api/mftransform/nf-mftransform-imftransform-processinput
 HRESULT
@@ -2109,6 +2141,9 @@ CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD 
    HRESULT hr = S_OK;
    UINT32 unChromaOnly = 0;
    LPDX12EncodeContext pDX12EncodeContext = nullptr;
+   BYTE *qpData = nullptr;
+   DWORD qpSize = 0;
+   ComPtr<IMFMediaBuffer> qpMapBuffer;
    std::lock_guard<std::mutex> lock( m_lock );
 
    CHECKHR_GOTO( IsUnlocked(), done );
@@ -2143,6 +2178,17 @@ CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD 
 
    // setup the source buffer
    CHECKHR_HRGOTO( PrepareForEncode( pSample, &pDX12EncodeContext ), MF_E_INVALIDMEDIATYPE, done );
+   if( SUCCEEDED( GetQPMapBufferFromSampleLockHeld( pSample, &qpData, &qpSize, qpMapBuffer ) ) && qpMapBuffer )
+   {
+      pDX12EncodeContext->SetPipeQPMapBufferInfo( qpData, qpSize );
+   }
+   else
+   {
+      // make sure it's null/zero if we failed to get it
+      qpData = nullptr;
+      qpSize = 0;
+      qpMapBuffer = nullptr;
+   }
 
    // Submit work
    {
@@ -2193,6 +2239,11 @@ CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD 
       HMFT_ETW_EVENT_START( "PipeFlush", this );
       m_pPipeVideoCodec->flush( m_pPipeVideoCodec );
       HMFT_ETW_EVENT_STOP( "PipeFlush", this );
+   }
+   // Release the QP map buffer after encode_bitstream call returns.
+   if( qpMapBuffer && qpSize != 0 && qpData != nullptr )
+   {
+      qpMapBuffer->Unlock();
    }
    m_EncodingQueue.push( pDX12EncodeContext );
    // Moves the GOP tracker state to the next frame for having next
