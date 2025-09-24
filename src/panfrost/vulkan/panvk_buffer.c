@@ -169,8 +169,8 @@ panvk_DestroyBuffer(VkDevice _device, VkBuffer _buffer,
             .size = va_range,
          },
       };
-      ASSERTED int ret =
-         pan_kmod_vm_bind(device->kmod.vm, PAN_KMOD_VM_OP_TYPE_UNMAP, &unmap, 1);
+      ASSERTED int ret = pan_kmod_vm_bind(
+         device->kmod.vm, PAN_KMOD_VM_OP_MODE_IMMEDIATE, &unmap, 1);
       assert(!ret);
 
       panvk_as_free(device, buffer->vk.device_address, va_range);
