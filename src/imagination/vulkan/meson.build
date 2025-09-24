@@ -142,7 +142,7 @@ powervr_mesa_icd = custom_target(
   output : 'powervr_mesa_icd.@0@.json'.format(host_machine.cpu()),
   command : [
     prog_python, '@INPUT0@',
-    '--api-version', '1.0', '--xml', '@INPUT1@',
+    '--api-version', '1.4', '--xml', '@INPUT1@',
     '--sizeof-pointer', sizeof_pointer,
     '--lib-path', get_option('prefix') / get_option('libdir') / 'libvulkan_powervr_mesa.so',
     '--out', '@OUTPUT@',
@@ -159,7 +159,7 @@ _dev_icd = custom_target(
   output : 'powervr_mesa_devenv_icd.@0@.json'.format(host_machine.cpu()),
   command : [
     prog_python, '@INPUT0@',
-    '--api-version', '1.0', '--xml', '@INPUT1@',
+    '--api-version', '1.4', '--xml', '@INPUT1@',
     '--sizeof-pointer', sizeof_pointer,
     '--lib-path', meson.current_build_dir() / 'libvulkan_powervr_mesa.so',
     '--out', '@OUTPUT@',

@@ -647,7 +647,7 @@ static bool pvr_physical_device_get_properties(
 
 VkResult pvr_EnumerateInstanceVersion(uint32_t *pApiVersion)
 {
-   *pApiVersion = PVR_API_VERSION;
+   *pApiVersion = VK_MAKE_API_VERSION(0, 1, 4, VK_HEADER_VERSION);
    return VK_SUCCESS;
 }
 
