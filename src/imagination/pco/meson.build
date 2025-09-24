@@ -1,8 +1,6 @@
 # Copyright © 2024 Imagination Technologies Ltd.
 # SPDX-License-Identifier: MIT
 
-subdir('usclib')
-
 inc_powervr_compiler = include_directories(['.'])
 
 libpowervr_compiler_files = files(
@@ -88,19 +86,23 @@ pco_ops_h = custom_target(
   depend_files : pco_pygen_dep_files,
 )
 
+pco_pygen_sources = [
+  pco_builder_ops_h,
+  pco_common_h,
+  pco_info_c,
+  pco_isa_h,
+  pco_map_h,
+  pco_ops_h,
+]
+
 idep_pco_pygen = declare_dependency(
-  sources : [
-    pco_builder_ops_h,
-    pco_common_h,
-    pco_info_c,
-    pco_isa_h,
-    pco_map_h,
-    pco_ops_h,
-  ],
+  sources : pco_pygen_sources,
   include_directories : inc_powervr_compiler,
 )
 
 pco_pygen_c_files = [pco_info_c]
+
+subdir('usclib')
 
 pco_nir_algebraic_c = custom_target(
   'pco_nir_algebraic.c',

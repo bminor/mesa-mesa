@@ -24,6 +24,7 @@ pco_usclib_spv = custom_target(
     '-I' + join_paths(meson.current_build_dir(), '../..'),
     cl_args,
   ],
+  depends : [pco_pygen_sources, pvr_xml_pack],
   depfile : 'pco_usclib.h.d',
 )
 
