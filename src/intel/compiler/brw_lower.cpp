@@ -235,7 +235,7 @@ brw_lower_sub_sat(brw_shader &s)
             brw_inst *add;
 
             brw_reg tmp = ibld.vgrf(inst->src[0].type);
-            ibld.SHR(tmp, inst->src[1], brw_imm_d(1));
+            ibld.ASR(tmp, inst->src[1], brw_imm_ud(1));
 
             brw_reg s1_sub_t = ibld.ADD(inst->src[1], negate(tmp));
             brw_reg sat_s0_sub_t = ibld.ADD(inst->src[0], negate(tmp), &add);
