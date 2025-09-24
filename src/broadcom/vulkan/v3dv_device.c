@@ -872,7 +872,8 @@ get_device_properties(const struct v3dv_physical_device *device,
                       VK_SUBGROUP_FEATURE_SHUFFLE_BIT |
                       VK_SUBGROUP_FEATURE_SHUFFLE_RELATIVE_BIT |
                       VK_SUBGROUP_FEATURE_VOTE_BIT |
-                      VK_SUBGROUP_FEATURE_QUAD_BIT;
+                      VK_SUBGROUP_FEATURE_QUAD_BIT |
+                      VK_SUBGROUP_FEATURE_ARITHMETIC_BIT;
    }
 
    /* FIXME: this will probably require an in-depth review */
