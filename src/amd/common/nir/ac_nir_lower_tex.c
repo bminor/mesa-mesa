@@ -271,6 +271,11 @@ struct move_tex_coords_state {
    nir_builder toplevel_b;
 };
 
+struct loop_if_state {
+   bool inside_loop;
+   bool divergent_discard;
+};
+
 static nir_def *
 build_coordinate(struct move_tex_coords_state *state, nir_scalar scalar, coord_info info)
 {
@@ -406,10 +411,11 @@ move_ddxy(struct move_tex_coords_state *state, nir_function_impl *impl, nir_intr
    return true;
 }
 
-static bool
-move_coords_from_divergent_cf(struct move_tex_coords_state *state, nir_function_impl *impl,
-                              struct exec_list *cf_list, bool *divergent_discard, bool divergent_cf)
+static bool move_coords_from_divergent_cf(struct move_tex_coords_state *state,
+                                          struct loop_if_state *loop_if, struct exec_list *cf_list)
 {
+   nir_function_impl *impl = state->toplevel_b.impl;
+
    bool progress = false;
    foreach_list_typed (nir_cf_node, cf_node, node, cf_list) {
       switch (cf_node->type) {
@@ -419,21 +425,27 @@ move_coords_from_divergent_cf(struct move_tex_coords_state *state, nir_function_
          bool top_level = cf_list == &impl->body;
 
          nir_foreach_instr (instr, block) {
-            if (top_level && !*divergent_discard)
+            if (top_level && !loop_if->divergent_discard)
                state->toplevel_b.cursor = nir_before_instr(instr);
 
-            if (instr->type == nir_instr_type_tex && (divergent_cf || *divergent_discard)) {
+            /* Assume quads might be incomplete when inside loops in case of a
+             * divergent terminate from a previous iteration.
+             */
+            bool incomplete_quad =
+               block->divergent || loop_if->divergent_discard || loop_if->inside_loop;
+
+            if (instr->type == nir_instr_type_tex && incomplete_quad) {
                progress |= move_tex_coords(state, impl, instr);
             } else if (instr->type == nir_instr_type_intrinsic) {
                nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
                switch (intrin->intrinsic) {
                case nir_intrinsic_terminate:
-                  if (divergent_cf)
-                     *divergent_discard = true;
+                  if (block->divergent)
+                     loop_if->divergent_discard = true;
                   break;
                case nir_intrinsic_terminate_if:
-                  if (divergent_cf || nir_src_is_divergent(&intrin->src[0]))
-                     *divergent_discard = true;
+                  if (block->divergent || nir_src_is_divergent(&intrin->src[0]))
+                     loop_if->divergent_discard = true;
                   break;
                case nir_intrinsic_ddx:
                case nir_intrinsic_ddy:
@@ -441,7 +453,7 @@ move_coords_from_divergent_cf(struct move_tex_coords_state *state, nir_function_
                case nir_intrinsic_ddy_fine:
                case nir_intrinsic_ddx_coarse:
                case nir_intrinsic_ddy_coarse:
-                  if (divergent_cf || *divergent_discard)
+                  if (incomplete_quad)
                      progress |= move_ddxy(state, impl, intrin);
                   break;
                default:
@@ -450,27 +462,26 @@ move_coords_from_divergent_cf(struct move_tex_coords_state *state, nir_function_
             }
          }
 
-         if (top_level && !*divergent_discard)
+         if (top_level && !loop_if->divergent_discard)
             state->toplevel_b.cursor = nir_after_block_before_jump(block);
          break;
       }
       case nir_cf_node_if: {
          nir_if *nif = nir_cf_node_as_if(cf_node);
-         bool divergent_discard_then = *divergent_discard;
-         bool divergent_discard_else = *divergent_discard;
-         bool then_else_divergent = divergent_cf || nir_src_is_divergent(&nif->condition);
-         progress |= move_coords_from_divergent_cf(state, impl, &nif->then_list,
-                                                   &divergent_discard_then, then_else_divergent);
-         progress |= move_coords_from_divergent_cf(state, impl, &nif->else_list,
-                                                   &divergent_discard_else, then_else_divergent);
-         *divergent_discard |= divergent_discard_then || divergent_discard_else;
+         struct loop_if_state inner_then = *loop_if;
+         struct loop_if_state inner_else = *loop_if;
+         progress |= move_coords_from_divergent_cf(state, &inner_then, &nif->then_list);
+         progress |= move_coords_from_divergent_cf(state, &inner_else, &nif->else_list);
+         loop_if->divergent_discard |= inner_then.divergent_discard || inner_else.divergent_discard;
          break;
       }
       case nir_cf_node_loop: {
          nir_loop *loop = nir_cf_node_as_loop(cf_node);
          assert(!nir_loop_has_continue_construct(loop));
-         progress |=
-            move_coords_from_divergent_cf(state, impl, &loop->body, divergent_discard, true);
+         struct loop_if_state inner = *loop_if;
+         inner.inside_loop = true;
+         progress |= move_coords_from_divergent_cf(state, &inner, &loop->body);
+         loop_if->divergent_discard |= inner.divergent_discard;
          break;
       }
       case nir_cf_node_function:
@@ -494,11 +505,10 @@ ac_nir_lower_tex(nir_shader *nir, const ac_nir_lower_tex_options *options)
       state.options = options;
       state.num_wqm_vgprs = 0;
 
-      bool divergent_discard = false;
-      bool impl_progress = move_coords_from_divergent_cf(&state, impl,
-                                                         &impl->body,
-                                                         &divergent_discard,
-                                                         false);
+      struct loop_if_state loop_if;
+      loop_if.inside_loop = false;
+      loop_if.divergent_discard = false;
+      bool impl_progress = move_coords_from_divergent_cf(&state, &loop_if, &impl->body);
       progress |= nir_progress(impl_progress, impl, nir_metadata_control_flow);
    }
 
