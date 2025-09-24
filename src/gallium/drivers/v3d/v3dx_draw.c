@@ -1501,7 +1501,7 @@ v3d_launch_grid(struct pipe_context *pctx, const struct pipe_grid_info *info)
         uint32_t wgs_per_sg =
                 v3d_csd_choose_workgroups_per_supergroup(
                         &v3d->screen->devinfo,
-                        compute->has_subgroups,
+                        compute->can_use_supergroups,
                         compute->base.has_control_barrier,
                         compute->base.threads,
                         num_wgs, wg_size);

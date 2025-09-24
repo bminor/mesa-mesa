@@ -958,7 +958,7 @@ v3d_cs_set_prog_data(struct v3d_compile *c,
         prog_data->local_size[1] = c->s->info.workgroup_size[1];
         prog_data->local_size[2] = c->s->info.workgroup_size[2];
 
-        prog_data->has_subgroups = c->has_subgroups;
+        prog_data->can_use_supergroups = c->can_use_supergroups;
 }
 
 static void
@@ -1679,7 +1679,7 @@ lower_subgroup_intrinsics(struct v3d_compile *c,
         bool progress = false;
         nir_foreach_instr_safe(inst, block) {
                 if (inst->type != nir_instr_type_intrinsic)
-                        continue;;
+                        continue;
 
                 nir_intrinsic_instr *intr =
                         nir_instr_as_intrinsic(inst);
@@ -1690,9 +1690,7 @@ lower_subgroup_intrinsics(struct v3d_compile *c,
                 case nir_intrinsic_load_num_subgroups:
                         lower_load_num_subgroups(c, b, intr);
                         progress = true;
-                        FALLTHROUGH;
-                case nir_intrinsic_load_subgroup_id:
-                case nir_intrinsic_load_subgroup_size:
+                        break;
                 case nir_intrinsic_load_subgroup_invocation:
                 case nir_intrinsic_elect:
                 case nir_intrinsic_ballot:
@@ -1725,7 +1723,7 @@ lower_subgroup_intrinsics(struct v3d_compile *c,
                 case nir_intrinsic_quad_swap_horizontal:
                 case nir_intrinsic_quad_swap_vertical:
                 case nir_intrinsic_quad_swap_diagonal:
-                        c->has_subgroups = true;
+                        c->can_use_supergroups = false;
                         break;
                 default:
                         break;
@@ -1739,6 +1737,7 @@ static bool
 v3d_nir_lower_subgroup_intrinsics(nir_shader *s, struct v3d_compile *c)
 {
         bool progress = false;
+        c->can_use_supergroups = true;
         nir_foreach_function_impl(impl, s) {
                 nir_builder b = nir_builder_create(impl);
 

@@ -831,7 +831,7 @@ struct v3d_compile {
         struct qreg start_msf;
 
         /* If the shader uses subgroup functionality */
-        bool has_subgroups;
+        bool can_use_supergroups;
 
         uint8_t vattr_sizes[V3D_MAX_VS_INPUTS / 4];
         uint32_t vpm_output_size;
@@ -1096,7 +1096,7 @@ struct v3d_compute_prog_data {
         uint32_t shared_size;
         uint16_t local_size[3];
         /* If the shader uses subgroup functionality */
-        bool has_subgroups;
+        bool can_use_supergroups;
 };
 
 struct vpm_config {
