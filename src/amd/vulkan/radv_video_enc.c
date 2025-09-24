@@ -75,39 +75,27 @@ radv_probe_video_encode(struct radv_physical_device *pdev)
          return;
       if (pdev->info.vcn_enc_minor_version < RENCODE_V4_FW_INTERFACE_MINOR_VERSION)
          return;
-
-      /* VCN 4 FW 1.22 has all the necessary pieces to pass CTS */
-      if (pdev->info.vcn_enc_minor_version >= 22) {
-         pdev->video_encode_enabled = true;
-         return;
-      }
    } else if (pdev->info.vcn_ip_version >= VCN_3_0_0) {
       if (pdev->info.vcn_enc_major_version != RENCODE_V3_FW_INTERFACE_MAJOR_VERSION)
          return;
       if (pdev->info.vcn_enc_minor_version < RENCODE_V3_FW_INTERFACE_MINOR_VERSION)
          return;
-
-      /* VCN 3 FW 1.33 has all the necessary pieces to pass CTS */
-      if (pdev->info.vcn_enc_minor_version >= 33) {
-         pdev->video_encode_enabled = true;
-         return;
-      }
    } else if (pdev->info.vcn_ip_version >= VCN_2_0_0) {
       if (pdev->info.vcn_enc_major_version != RENCODE_V2_FW_INTERFACE_MAJOR_VERSION)
          return;
       if (pdev->info.vcn_enc_minor_version < RENCODE_V2_FW_INTERFACE_MINOR_VERSION)
          return;
-
-      /* VCN 2 FW 1.24 has all the necessary pieces to pass CTS */
-      if (pdev->info.vcn_enc_minor_version >= 24) {
-         pdev->video_encode_enabled = true;
-         return;
-      }
    } else {
       if (pdev->info.vcn_enc_major_version != RENCODE_FW_INTERFACE_MAJOR_VERSION)
          return;
       if (pdev->info.vcn_enc_minor_version < RENCODE_FW_INTERFACE_MINOR_VERSION)
          return;
+   }
+
+   /* WRITE_MEMORY is needed for SetEvent and is required to pass CTS */
+   if (radv_video_write_memory_supported(pdev)) {
+      pdev->video_encode_enabled = true;
+      return;
    }
 
    pdev->video_encode_enabled = !!(instance->perftest_flags & RADV_PERFTEST_VIDEO_ENCODE);
@@ -3427,4 +3415,19 @@ radv_video_encode_qp_map_supported(const struct radv_physical_device *pdev)
    if (pdev->info.vcn_ip_version >= VCN_5_0_0)
       return radv_check_vcn_fw_version(pdev, 9, 9, 28);
    return true;
+}
+
+bool
+radv_video_write_memory_supported(const struct radv_physical_device *pdev)
+{
+   if (pdev->info.vcn_ip_version >= VCN_5_0_0)
+      return true;
+   else if (pdev->info.vcn_ip_version >= VCN_4_0_0)
+      return pdev->info.vcn_enc_minor_version >= 22;
+   else if (pdev->info.vcn_ip_version >= VCN_3_0_0)
+      return pdev->info.vcn_enc_minor_version >= 33;
+   else if (pdev->info.vcn_ip_version >= VCN_2_0_0)
+      return pdev->info.vcn_enc_minor_version >= 24;
+   else /* VCN 1 and UVD */
+      return false;
 }

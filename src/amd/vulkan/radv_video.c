@@ -150,8 +150,7 @@ radv_vcn_write_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t va, unsigned 
    struct rvcn_sq_var sq;
    struct radv_cmd_stream *cs = cmd_buffer->cs;
 
-   /* UVD doesn't support events, and probably never will */
-   if (pdev->vid_decode_ip == AMD_IP_UVD)
+   if (!radv_video_write_memory_supported(pdev))
       return;
 
    bool separate_queue = pdev->vid_decode_ip != AMD_IP_VCN_UNIFIED;
@@ -307,28 +306,9 @@ radv_probe_video_decode(struct radv_physical_device *pdev)
    if (instance->debug_flags & RADV_DEBUG_NO_VIDEO)
       return;
 
-   /* The support for decode events are available at the same time as encode */
-   if (pdev->info.vcn_ip_version >= VCN_5_0_0) {
-      pdev->video_decode_enabled = true;
-   } else if (pdev->info.vcn_ip_version >= VCN_4_0_0) {
-      if (pdev->info.vcn_enc_major_version > 1)
-         pdev->video_decode_enabled = true;
-      /* VCN 4 FW 1.22 has all the necessary pieces to pass CTS */
-      if (pdev->info.vcn_enc_major_version == 1 && pdev->info.vcn_enc_minor_version >= 22)
-         pdev->video_decode_enabled = true;
-   } else if (pdev->info.vcn_ip_version >= VCN_3_0_0) {
-      if (pdev->info.vcn_enc_major_version > 1)
-         pdev->video_decode_enabled = true;
-      /* VCN 3 FW 1.33 has all the necessary pieces to pass CTS */
-      if (pdev->info.vcn_enc_major_version == 1 && pdev->info.vcn_enc_minor_version >= 33)
-         pdev->video_decode_enabled = true;
-   } else if (pdev->info.vcn_ip_version >= VCN_2_0_0) {
-      if (pdev->info.vcn_enc_major_version > 1)
-         pdev->video_decode_enabled = true;
-      /* VCN 2 FW 1.24 has all the necessary pieces to pass CTS */
-      if (pdev->info.vcn_enc_major_version == 1 && pdev->info.vcn_enc_minor_version >= 24)
-         pdev->video_decode_enabled = true;
-   }
+   /* WRITE_MEMORY is needed for SetEvent and is required to pass CTS */
+   pdev->video_decode_enabled = radv_video_write_memory_supported(pdev);
+
    if (instance->perftest_flags & RADV_PERFTEST_VIDEO_DECODE) {
       pdev->video_decode_enabled = true;
    }
