@@ -831,10 +831,11 @@ insert_rt_case(nir_builder *b, nir_shader *shader, struct rt_variables *vars, ni
    struct rt_variables src_vars = create_rt_variables(shader, vars->device, vars->flags, vars->monolithic);
    map_rt_variables(var_remap, &src_vars, vars);
 
-   NIR_PASS(_, shader, lower_rt_instructions, &src_vars, false, NULL);
+   /* These can't use NIR_PASS because NIR_DEBUG=serialize,clone invalidates pointers. */
+   lower_rt_instructions(shader, &src_vars, false, NULL);
 
-   NIR_PASS(_, shader, nir_lower_returns);
-   NIR_PASS(_, shader, nir_opt_dce);
+   nir_lower_returns(shader);
+   nir_opt_dce(shader);
 
    inline_constants(b->shader, shader);
 
