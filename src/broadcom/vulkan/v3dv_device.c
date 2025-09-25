@@ -1249,7 +1249,8 @@ get_device_properties(const struct v3dv_physical_device *device,
 
 static VkResult
 create_physical_device(struct v3dv_instance *instance,
-                       int32_t render_fd, int32_t display_fd)
+                       int32_t primary_fd, int32_t render_fd,
+                       int32_t display_fd)
 {
    VkResult result = VK_SUCCESS;
 
@@ -1272,18 +1273,14 @@ create_physical_device(struct v3dv_instance *instance,
    if (result != VK_SUCCESS)
       goto fail;
 
-   struct stat display_stat = {0}, render_stat = {0};
-
-   device->has_primary = display_fd >= 0;
-   if (device->has_primary) {
-      if (fstat(display_fd, &display_stat) != 0) {
-         result = vk_errorf(instance, VK_ERROR_INITIALIZATION_FAILED,
-                            "failed to stat DRM display node");
-         goto fail;
-      }
-
-      device->primary_devid = display_stat.st_rdev;
+   struct stat primary_stat = {0}, render_stat = {0};
+   if (fstat(primary_fd, &primary_stat) != 0) {
+      result = vk_errorf(instance, VK_ERROR_INITIALIZATION_FAILED,
+                         "failed to stat DRM primary node");
+      goto fail;
    }
+   device->has_primary = true;
+   device->primary_devid = primary_stat.st_rdev;
 
    if (fstat(render_fd, &render_stat) != 0) {
       result = vk_errorf(instance, VK_ERROR_INITIALIZATION_FAILED,
@@ -1298,6 +1295,7 @@ create_physical_device(struct v3dv_instance *instance,
    device->sim_file = v3d_simulator_init(render_fd);
 #endif
 
+   device->primary_fd = primary_fd;
    device->render_fd = render_fd;
    device->display_fd = display_fd;
 
@@ -1411,6 +1409,8 @@ fail:
    vk_physical_device_finish(&device->vk);
    vk_free(&instance->vk.alloc, device);
 
+   if (primary_fd >= 0)
+      close(primary_fd);
    if (render_fd >= 0)
       close(render_fd);
    if (display_fd >= 0)
@@ -1543,6 +1543,7 @@ enumerate_devices(struct vk_instance *vk_instance)
 
    VkResult result = VK_SUCCESS;
 
+   int32_t primary_fd = -1;
    int32_t render_fd = -1;
    int32_t display_fd = -1;
    for (unsigned i = 0; i < (unsigned)max_devices; i++) {
@@ -1553,8 +1554,10 @@ enumerate_devices(struct vk_instance *vk_instance)
            devices[i]->bustype == DRM_BUS_PCI &&
           (devices[i]->deviceinfo.pci->vendor_id == 0x8086 ||
            devices[i]->deviceinfo.pci->vendor_id == 0x1002)) {
-         if (try_device(devices[i]->nodes[DRM_NODE_RENDER], &render_fd, NULL))
+         if (try_device(devices[i]->nodes[DRM_NODE_RENDER], &render_fd, NULL)) {
+            try_device(devices[i]->nodes[DRM_NODE_PRIMARY], &primary_fd, NULL);
             try_device(devices[i]->nodes[DRM_NODE_PRIMARY], &display_fd, NULL);
+         }
       }
 #else
       /* On actual hardware, we should have a gpu device (v3d) and a display
@@ -1567,6 +1570,7 @@ enumerate_devices(struct vk_instance *vk_instance)
          continue;
 
       if ((devices[i]->available_nodes & 1 << DRM_NODE_RENDER)) {
+         try_device(devices[i]->nodes[DRM_NODE_PRIMARY], &primary_fd, "v3d");
          try_device(devices[i]->nodes[DRM_NODE_RENDER], &render_fd, "v3d");
       } else if (display_fd == -1 &&
                  (devices[i]->available_nodes & 1 << DRM_NODE_PRIMARY)) {
@@ -1578,10 +1582,12 @@ enumerate_devices(struct vk_instance *vk_instance)
          break;
    }
 
+   assert(primary_fd >= 0);
+
    if (render_fd < 0)
       result = VK_ERROR_INCOMPATIBLE_DRIVER;
    else
-      result = create_physical_device(instance, render_fd, display_fd);
+      result = create_physical_device(instance, primary_fd, render_fd, display_fd);
 
    drmFreeDevices(devices, max_devices);
 

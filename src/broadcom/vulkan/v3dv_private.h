@@ -128,7 +128,12 @@ struct v3dv_physical_device {
    struct vk_physical_device vk;
 
    char *name;
+
+   /* primary node (cardN) of the render device */
+   int32_t primary_fd;
+   /* render node (renderN) of the render device */
    int32_t render_fd;
+   /* primary node (cardN) of the display device, if available */
    int32_t display_fd;
 
    /* We need these because it is not clear how to detect
