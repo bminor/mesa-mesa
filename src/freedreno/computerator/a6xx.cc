@@ -701,7 +701,9 @@ a6xx_init(struct fd_device *dev, const struct fd_dev_id *dev_id)
       .read_perfcntrs = a6xx_read_perfcntrs,
    };
 
-   struct ir3_compiler_options compiler_options = {};
+   struct ir3_compiler_options compiler_options = {
+      .disable_cache = true,
+   };
    a6xx_backend->compiler =
       ir3_compiler_create(dev, dev_id, fd_dev_info_raw(dev_id), &compiler_options);
    a6xx_backend->dev = dev;
