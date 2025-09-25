@@ -3122,7 +3122,6 @@ tc_call_buffer_subdata(struct pipe_context *pipe, void *call)
 
    pipe->buffer_subdata(pipe, p->resource, p->usage, p->offset, p->size,
                         p->slot);
-   tc_drop_resource_reference(p->resource);
    return p->base.num_slots;
 }
 
@@ -3219,7 +3218,7 @@ tc_buffer_subdata(struct pipe_context *_pipe,
    struct tc_buffer_subdata *p =
       tc_add_slot_based_call(tc, TC_CALL_buffer_subdata, tc_buffer_subdata, size);
 
-   tc_set_resource_reference(&p->resource, resource);
+   p->resource = resource;
    /* This is will always be busy because if it wasn't, tc_improve_map_buffer-
     * _flags would set UNSYNCHRONIZED and we wouldn't get here.
     */
