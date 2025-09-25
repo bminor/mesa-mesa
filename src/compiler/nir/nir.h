@@ -4779,7 +4779,7 @@ nir_metadata_require_most(nir_shader *shader)
 static inline struct blob
 nir_validate_progress_setup(nir_shader *shader)
 {
-   return (struct blob){};
+   return (struct blob){0};
 }
 static inline void
 nir_validate_progress_finish(nir_shader *shader, struct blob *setup_blob, bool progress, const char *when)
