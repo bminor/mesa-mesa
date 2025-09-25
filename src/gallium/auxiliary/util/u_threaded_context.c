@@ -5201,8 +5201,6 @@ tc_call_draw_mesh_tasks(struct pipe_context *pipe, void *call)
    struct tc_draw_mesh_tasks *p = to_call(call, tc_draw_mesh_tasks);
 
    pipe->draw_mesh_tasks(pipe, &p->info);
-   tc_drop_resource_reference(p->info.indirect);
-   tc_drop_resource_reference(p->info.indirect_draw_count);
    return call_size(tc_draw_mesh_tasks);
 }
 
@@ -5214,8 +5212,6 @@ tc_draw_mesh_tasks(struct pipe_context *_pipe,
    struct tc_draw_mesh_tasks *p = tc_add_call(tc, TC_CALL_draw_mesh_tasks,
                                               tc_draw_mesh_tasks);
 
-   tc_set_resource_reference(&p->info.indirect, info->indirect);
-   tc_set_resource_reference(&p->info.indirect_draw_count, info->indirect_draw_count);
    memcpy(&p->info, info, sizeof(*info));
 
    if (info->indirect)
