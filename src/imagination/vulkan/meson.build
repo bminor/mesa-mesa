@@ -146,7 +146,7 @@ powervr_mesa_icd = custom_target(
     prog_python, '@INPUT0@',
     '--api-version', '1.4', '--xml', '@INPUT1@',
     '--sizeof-pointer', sizeof_pointer,
-    '--lib-path', get_option('prefix') / get_option('libdir') / icd_file_name,
+    '--lib-path', vulkan_icd_lib_path / icd_file_name,
     '--out', '@OUTPUT@',
   ],
   build_by_default : true,

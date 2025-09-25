@@ -2273,6 +2273,12 @@ devenv = environment()
 dir_compiler_nir = join_paths(meson.current_source_dir(), 'src/compiler/nir/')
 dir_source_root = meson.project_source_root()
 
+if host_machine.system() == 'windows'
+  vulkan_icd_lib_path = import('fs').relative_to(get_option('bindir'), with_vulkan_icd_dir)
+else
+  vulkan_icd_lib_path = get_option('prefix') / get_option('libdir')
+endif
+
 
 subdir('include')
 subdir('bin')

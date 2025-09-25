@@ -20,17 +20,11 @@ libvulkan_lvp = shared_library(
 
 icd_file_name = libname_prefix + 'vulkan_lvp.' + libname_suffix
 
-if host_machine.system() == 'windows'
-  icd_lib_path = import('fs').relative_to(get_option('bindir'), with_vulkan_icd_dir)
-else
-  icd_lib_path = join_paths(get_option('prefix'), get_option('libdir'))
-endif
-
 icd_command = [
   prog_python, '@INPUT0@',
   '--api-version', '1.4', '--xml', '@INPUT1@',
   '--sizeof-pointer', sizeof_pointer,
-  '--lib-path', join_paths(icd_lib_path, icd_file_name),
+  '--lib-path', vulkan_icd_lib_path / icd_file_name,
   '--out', '@OUTPUT@',
 ]
 if host_machine.system() == 'windows'
