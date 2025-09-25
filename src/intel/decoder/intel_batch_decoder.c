@@ -61,7 +61,7 @@ intel_batch_decode_ctx_init(struct intel_batch_decode_ctx *ctx,
    ctx->get_state_size = get_state_size;
    ctx->user_data = user_data;
    ctx->fp = fp;
-   ctx->flags = parse_enable_string(getenv("INTEL_DECODE"), flags, debug_control);
+   ctx->flags = parse_enable_string(os_get_option("INTEL_DECODE"), flags, debug_control);
    ctx->max_vbo_decoded_lines = -1; /* No limit! */
    ctx->engine = INTEL_ENGINE_CLASS_RENDER;
 
@@ -75,7 +75,7 @@ intel_batch_decode_ctx_init(struct intel_batch_decode_ctx *ctx,
    ctx->stats =
       _mesa_hash_table_create(NULL, _mesa_hash_string, _mesa_key_string_equal);
 
-   const char *filters = getenv("INTEL_DECODE_FILTERS");
+   const char *filters = os_get_option("INTEL_DECODE_FILTERS");
    if (filters != NULL) {
       ctx->filters =
          _mesa_hash_table_create(NULL, _mesa_hash_string, _mesa_key_string_equal);

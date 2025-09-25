@@ -77,7 +77,7 @@ bool IntelDriver::init_perfcnt()
 
    perf = std::make_unique<IntelPerf>(drm_device.fd);
 
-   const char *metric_set_name = getenv("INTEL_PERFETTO_METRIC_SET");
+   const char *metric_set_name = os_get_option("INTEL_PERFETTO_METRIC_SET");
 
    struct intel_perf_query_info *default_query = nullptr;
    selected_query = nullptr;

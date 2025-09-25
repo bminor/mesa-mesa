@@ -14,6 +14,7 @@
 #include <unistd.h>
 
 #include "util/os_file.h"
+#include "util/os_misc.h"
 #include "util/ralloc.h"
 #include "util/u_dynarray.h"
 
@@ -126,7 +127,7 @@ diff(context *ctx, slice a, slice b)
    fclose(file_a.f);
    fclose(file_b.f);
 
-   const char *diff_cmd = getenv("MDA_DIFF_COMMAND");
+   const char *diff_cmd = os_get_option("MDA_DIFF_COMMAND");
    if (!diff_cmd) {
       if (ctx->diff.mode == DIFF_UNIFIED) {
          diff_cmd = ralloc_asprintf(mem_ctx, "git diff --no-index --color-words -U%d -- %%s %%s | tail -n +5", ctx->diff.param);
@@ -1092,10 +1093,10 @@ static pid_t
 setup_pager()
 {
    if (!isatty(STDOUT_FILENO) ||
-       getenv("NO_PAGER"))
+       os_get_option("NO_PAGER"))
       return 0;
 
-   const char *term = getenv("TERM");
+   const char *term = os_get_option("TERM");
    if (!term || !strcmp(term, "dumb"))
       return 0;
 
@@ -1119,7 +1120,7 @@ setup_pager()
       dup2(pipefd[0], STDIN_FILENO);
       close(pipefd[0]);
 
-      const char *pager = getenv("PAGER");
+      const char *pager = os_get_option("PAGER");
       if (pager && *pager)
          execlp(pager, pager, NULL);
 

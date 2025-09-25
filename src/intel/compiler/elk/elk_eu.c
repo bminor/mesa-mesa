@@ -409,7 +409,7 @@ void elk_dump_shader_bin(void *assembly, int start_offset, int end_offset,
 bool elk_try_override_assembly(struct elk_codegen *p, int start_offset,
                                const char *identifier)
 {
-   const char *read_path = getenv("INTEL_SHADER_ASM_READ_PATH");
+   const char *read_path = os_get_option("INTEL_SHADER_ASM_READ_PATH");
    if (!read_path) {
       return false;
    }

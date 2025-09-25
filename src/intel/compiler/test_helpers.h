@@ -43,7 +43,7 @@ EXPECT_PROGRESS_RESULT(bool should_progress, PASS pass, brw_shader *s)
 
    brw_validate(*s);
 
-   if (progress != should_progress || getenv("TEST_DEBUG")) {
+   if (progress != should_progress || os_get_option("TEST_DEBUG")) {
       fprintf(stderr, "= Before =\n"
                       "%s\n"
                       "\n"

@@ -1441,7 +1441,7 @@ scan_for_force_probe(int pci_id, bool *force_on, bool *force_off)
    *force_on = false;
    *force_off = false;
 
-   const char *env = getenv("INTEL_FORCE_PROBE");
+   const char *env = os_get_option("INTEL_FORCE_PROBE");
    if (env == NULL)
       return;
 
@@ -1860,7 +1860,7 @@ intel_device_info_update_after_hwconfig(struct intel_device_info *devinfo)
 bool
 intel_get_device_info_from_fd(int fd, struct intel_device_info *devinfo, int min_ver, int max_ver)
 {
-   if (NULL != getenv("INTEL_STUB_GPU_JSON")) {
+   if (NULL != os_get_option("INTEL_STUB_GPU_JSON")) {
       /* This call will succeed when shim-drm has been initialized with a
        * serialized intel_device_info structure.
        */

@@ -110,7 +110,7 @@ instruction(elk_bblock_t *block, int num)
 static bool
 cmod_propagation(elk_fs_visitor *v)
 {
-   const bool print = getenv("TEST_DEBUG");
+   const bool print = os_get_option("TEST_DEBUG");
 
    if (print) {
       fprintf(stderr, "= Before =\n");

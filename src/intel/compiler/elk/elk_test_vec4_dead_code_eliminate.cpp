@@ -117,7 +117,7 @@ void dead_code_eliminate_vec4_test::TearDown()
 static void
 dead_code_eliminate(vec4_visitor *v)
 {
-   const bool print = getenv("TEST_DEBUG");
+   const bool print = os_get_option("TEST_DEBUG");
 
    if (print) {
       fprintf(stderr, "instructions before:\n");

@@ -107,7 +107,7 @@ INSTANTIATE_TEST_SUITE_P(
 static bool
 validate(struct brw_codegen *p, char **error = nullptr)
 {
-   const bool print = getenv("TEST_DEBUG");
+   const bool print = os_get_option("TEST_DEBUG");
    struct disasm_info *disasm = disasm_initialize(p->isa, NULL);
 
    struct inst_group *group = disasm_new_inst_group(disasm, 0);

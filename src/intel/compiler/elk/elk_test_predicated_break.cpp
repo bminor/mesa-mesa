@@ -32,7 +32,7 @@ public:
 void
 PredicatedBreakTest::SetUp()
 {
-   debug = getenv("TEST_DEBUG");
+   debug = os_get_option("TEST_DEBUG");
 
    mem_ctx = ralloc_context(NULL);
 
@@ -69,7 +69,7 @@ PredicatedBreakTest::TearDown()
 bool
 PredicatedBreakTest::elk_opt_predicated_break(elk_fs_visitor *s)
 {
-   const bool print = getenv("TEST_DEBUG");
+   const bool print = os_get_option("TEST_DEBUG");
 
    if (print) {
       fprintf(stderr, "= Before =\n");

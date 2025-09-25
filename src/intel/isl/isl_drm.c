@@ -208,7 +208,7 @@ isl_drm_modifier_get_score(const struct intel_device_info *devinfo,
     * and don't want to provide a default value either, so we don't
     * use debug_get_num_option() here.
     */
-   const char *mod_str = getenv("INTEL_MODIFIER_OVERRIDE");
+   const char *mod_str = os_get_option("INTEL_MODIFIER_OVERRIDE");
    if (mod_str != NULL) {
       return modifier == strtoul(mod_str, NULL, 0);
    }
