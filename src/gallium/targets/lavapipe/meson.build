@@ -24,7 +24,8 @@ icd_command = [
   prog_python, '@INPUT0@',
   '--api-version', '1.4', '--xml', '@INPUT1@',
   '--sizeof-pointer', sizeof_pointer,
-  '--lib-path', vulkan_icd_lib_path / icd_file_name,
+  '--icd-lib-path', vulkan_icd_lib_path,
+  '--icd-filename', icd_file_name,
   '--out', '@OUTPUT@',
 ]
 if host_machine.system() == 'windows'
@@ -34,7 +35,7 @@ endif
 lvp_icd = custom_target(
   'lvp_icd',
   input : [vk_icd_gen, vk_api_xml],
-  output : 'lvp_icd.@0@.json'.format(host_machine.cpu()),
+  output : 'lvp_icd.' + vulkan_manifest_suffix,
   command : icd_command,
   build_by_default : true,
   install_dir : with_vulkan_icd_dir,
@@ -51,7 +52,8 @@ _dev_icd = custom_target(
     prog_python, '@INPUT0@',
     '--api-version', '1.4', '--xml', '@INPUT1@',
     '--sizeof-pointer', sizeof_pointer,
-    '--lib-path', meson.current_build_dir() / icd_file_name,
+    '--icd-lib-path', meson.current_build_dir(),
+    '--icd-filename', icd_file_name,
     '--out', '@OUTPUT@',
   ],
   build_by_default : true,

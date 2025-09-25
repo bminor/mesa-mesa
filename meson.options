@@ -287,6 +287,19 @@ option(
 )
 
 option(
+  'vulkan-manifest-per-architecture',
+  type : 'boolean',
+  value : true,
+  description : 'If true, Vulkan ICDs have a separate JSON manifest per ' +
+                'architecture, for example lvp_icd.x86_64.json. ' +
+                '(Recommended for non-default ${prefix}.) ' +
+                'If false, all architectures share a single JSON manifest, ' +
+                'for example lvp_icd.json, referencing the library by its ' +
+                'basename. ' +
+                '(Recommended for Unix OS distros installing into /usr.)'
+)
+
+option(
   'moltenvk-dir',
   type : 'string',
   value : '',

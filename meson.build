@@ -2304,6 +2304,13 @@ else
   vulkan_icd_lib_path = get_option('prefix') / get_option('libdir')
 endif
 
+vulkan_manifest_per_architecture = get_option('vulkan-manifest-per-architecture')
+
+if vulkan_manifest_per_architecture
+  vulkan_manifest_suffix = '@0@.json'.format(host_machine.cpu())
+else
+  vulkan_manifest_suffix = 'json'
+endif
 
 subdir('include')
 subdir('bin')

@@ -177,14 +177,17 @@ libvulkan_kosmickrisp = shared_library(
   install : true,
 )
 
+icd_file_name = libname_prefix + 'vulkan_kosmickrisp.' + libname_suffix
+
 kosmickrisp_mesa_icd = custom_target(
   'kosmickrisp_mesa_icd',
   input : [vk_icd_gen, vk_api_xml],
-  output : 'kosmickrisp_mesa_icd.@0@.json'.format(host_machine.cpu()),
+  output : 'kosmickrisp_mesa_icd.' + vulkan_manifest_suffix,
   command : [
     prog_python, '@INPUT0@',
     '--api-version', '1.3', '--xml', '@INPUT1@',
-    '--lib-path', get_option('prefix') / get_option('libdir') / 'libvulkan_kosmickrisp.dylib',
+    '--icd-lib-path', vulkan_icd_lib_path,
+    '--icd-filename', icd_file_name,
     '--out', '@OUTPUT@',
   ],
   build_by_default : true,
@@ -200,7 +203,8 @@ kosmickrisp_icd = custom_target(
   command : [
     prog_python, '@INPUT0@',
     '--api-version', '1.3', '--xml', '@INPUT1@',
-    '--lib-path', meson.current_build_dir() / 'libvulkan_kosmickrisp.dylib',
+    '--icd-lib-path', meson.current_build_dir(),
+    '--icd-filename', icd_file_name,
     '--out', '@OUTPUT@',
   ],
   build_by_default : true,
