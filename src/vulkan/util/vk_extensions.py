@@ -382,6 +382,15 @@ ALLOWED_ANDROID_VERSION = {
     # "VK_KHR_video_encode_queue": 35,
     # "VK_KHR_video_maintenance1": 35,
 
+    # on android16-tests-release
+    "VK_KHR_compute_shader_derivatives": 36,
+    "VK_KHR_maintenance7": 36,
+    "VK_KHR_pipeline_binary": 36,
+    "VK_KHR_shader_relaxed_extended_instruction": 36,
+    # blocked by testVulkanBlockedExtensions
+    # "VK_KHR_video_encode_av1": 36,
+    # "VK_KHR_video_encode_quantization_map": 36,
+
     # testNoUnknownExtensions on oreo-cts-release
     "VK_GOOGLE_display_timing": 26,
     # on pie-cts-release
