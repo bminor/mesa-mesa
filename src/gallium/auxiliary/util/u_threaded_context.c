@@ -1324,7 +1324,6 @@ tc_call_get_query_result_resource(struct pipe_context *pipe, void *call)
 
    pipe->get_query_result_resource(pipe, p->query, p->flags, p->result_type,
                                    p->index, p->resource, p->offset);
-   tc_drop_resource_reference(p->resource);
    return call_size(tc_query_result_resource);
 }
 
@@ -1346,7 +1345,7 @@ tc_get_query_result_resource(struct pipe_context *_pipe,
    p->flags = flags;
    p->result_type = result_type;
    p->index = index;
-   tc_set_resource_reference(&p->resource, resource);
+   p->resource = resource;
    tc_add_to_buffer_list(&tc->buffer_lists[tc->next_buf_list], resource);
    p->offset = offset;
 }
