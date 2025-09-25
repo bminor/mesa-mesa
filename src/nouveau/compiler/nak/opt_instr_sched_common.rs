@@ -145,7 +145,7 @@ pub fn side_effect_type(op: &Op) -> SideEffect {
         }
 
         // Move ops
-        Op::Mov(_) | Op::Prmt(_) | Op::Sel(_) => SideEffect::None,
+        Op::Mov(_) | Op::Prmt(_) | Op::Sel(_) | Op::Sgxt(_) => SideEffect::None,
         Op::Shfl(_) => SideEffect::None,
 
         // Predicate ops

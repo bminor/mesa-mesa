@@ -69,7 +69,7 @@ impl RegLatencySM75 {
             Op::IAdd3(_) | Op::IAdd3X(_) => CoupledAlu,
 
             Op::BMsk(_) => CoupledAlu,
-            // Sgxt => CoupledAlu,
+            Op::Sgxt(_) => CoupledAlu,
             Op::Lop3(_) => CoupledAlu,
             Op::Flo(_) => Decoupled,
             Op::ISetP(_) => CoupledAlu,
@@ -954,7 +954,7 @@ impl URegLatencySM75 {
             Op::PSetP(_) => vcoupled,
             // UR2UP
             Op::Sel(_) => vcoupled,
-            // SGXT
+            Op::Sgxt(_) => vcoupled,
             Op::Shf(_) => vcoupled,
             Op::Shfl(_) => vdecoupled,
 

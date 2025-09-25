@@ -750,3 +750,30 @@ pub fn test_match() {
         c.check(sm);
     }
 }
+
+#[test]
+pub fn test_sgxt() {
+    let r0 = RegRef::new(RegFile::GPR, 0, 1);
+    let r1 = RegRef::new(RegFile::GPR, 1, 1);
+    let r2 = RegRef::new(RegFile::GPR, 2, 1);
+
+    for sm in SM_LIST {
+        let mut c = DisasmCheck::new();
+        for signed in [false, true] {
+            let instr = OpSgxt {
+                dst: Dst::Reg(r0),
+                a: SrcRef::Reg(r1).into(),
+                bits: SrcRef::Reg(r2).into(),
+                signed,
+            };
+
+            let disasm = if signed {
+                "sgxt r0, r1, r2;"
+            } else {
+                "sgxt.u32 r0, r1, r2;"
+            };
+            c.push(instr, disasm);
+        }
+        c.check(sm);
+    }
+}

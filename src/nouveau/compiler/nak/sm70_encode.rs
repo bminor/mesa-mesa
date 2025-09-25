@@ -2138,6 +2138,35 @@ impl SM70Op for OpSel {
     }
 }
 
+impl SM70Op for OpSgxt {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        let gpr = op_gpr(self);
+        b.copy_alu_src_if_not_reg(&mut self.a, gpr, SrcType::ALU);
+    }
+
+    fn encode(&self, e: &mut SM70Encoder<'_>) {
+        if self.is_uniform() {
+            e.encode_ualu(
+                0x09a,
+                Some(&self.dst),
+                Some(&self.a),
+                Some(&self.bits),
+                None,
+            );
+        } else {
+            e.encode_alu(
+                0x01a,
+                Some(&self.dst),
+                Some(&self.a),
+                Some(&self.bits),
+                None,
+            );
+        }
+        e.set_bit(73, self.signed);
+        e.set_bit(75, false); // .W (wrap vs clamp)
+    }
+}
+
 impl SM70Op for OpShfl {
     fn legalize(&mut self, b: &mut LegalizeBuilder) {
         let gpr = op_gpr(self);
@@ -4047,6 +4076,7 @@ macro_rules! sm70_op_match {
             Op::Mov($x) => $y,
             Op::Prmt($x) => $y,
             Op::Sel($x) => $y,
+            Op::Sgxt($x) => $y,
             Op::Shfl($x) => $y,
             Op::PLop3($x) => $y,
             Op::R2UR($x) => $y,

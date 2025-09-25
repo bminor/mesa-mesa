@@ -5113,6 +5113,52 @@ impl DisplayOp for OpSel {
 impl_display_for_op!(OpSel);
 
 #[repr(C)]
+#[derive(Clone, SrcsAsSlice, DstsAsSlice)]
+pub struct OpSgxt {
+    #[dst_type(GPR)]
+    pub dst: Dst,
+
+    #[src_type(ALU)]
+    pub a: Src,
+
+    #[src_type(ALU)]
+    pub bits: Src,
+
+    pub signed: bool,
+}
+
+impl DisplayOp for OpSgxt {
+    fn fmt_op(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let modifier = if self.signed { "" } else { ".u32" };
+        write!(f, "sgxt{} {} {}", modifier, self.a, self.bits)
+    }
+}
+impl_display_for_op!(OpSgxt);
+
+impl Foldable for OpSgxt {
+    fn fold(&self, _sm: &dyn ShaderModel, f: &mut OpFoldData<'_>) {
+        let a = f.get_u32_src(self, &self.a);
+        let bits = f.get_u32_src(self, &self.bits);
+
+        let dst = if bits >= 32 {
+            a
+        } else if bits == 0 {
+            0
+        } else {
+            let shift = 32 - bits;
+            let a = a << shift;
+            if self.signed {
+                let a = a as i32;
+                (a >> shift) as u32
+            } else {
+                a >> shift
+            }
+        };
+        f.set_u32_dst(self, &self.dst, dst);
+    }
+}
+
+#[repr(C)]
 #[derive(SrcsAsSlice, DstsAsSlice)]
 pub struct OpShfl {
     #[dst_type(GPR)]
@@ -7895,6 +7941,7 @@ pub enum Op {
     Mov(Box<OpMov>),
     Prmt(Box<OpPrmt>),
     Sel(Box<OpSel>),
+    Sgxt(Box<OpSgxt>),
     Shfl(Box<OpShfl>),
     PLop3(Box<OpPLop3>),
     PSetP(Box<OpPSetP>),
@@ -8068,7 +8115,7 @@ impl Op {
             }
 
             // Move ops
-            Op::Mov(_) | Op::Prmt(_) | Op::Sel(_) => true,
+            Op::Mov(_) | Op::Prmt(_) | Op::Sel(_) | Op::Sgxt(_) => true,
             Op::Shfl(_) => false,
 
             // Predicate ops

@@ -1924,3 +1924,30 @@ fn test_render_enable() -> io::Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn test_op_sgxt() {
+    let sm = &RunSingleton::get().sm;
+    if sm.sm() < 70 {
+        return;
+    }
+
+    for signed in [false, true] {
+        let op = OpSgxt {
+            dst: Dst::None,
+            a: 0.into(),
+            bits: 0.into(),
+            signed,
+        };
+
+        let bits_idx = op.src_idx(&op.bits);
+        let mut a = Acorn::new();
+        test_foldable_op_with(op, &mut |i| {
+            if i == bits_idx && a.get_bool() {
+                a.get_uint(5) as u32
+            } else {
+                a.get_u32()
+            }
+        });
+    }
+}

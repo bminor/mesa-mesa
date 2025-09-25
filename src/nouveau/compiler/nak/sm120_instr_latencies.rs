@@ -42,7 +42,7 @@ fn op_reg_latency(op: &Op, reader: bool, op_reg_idx: usize) -> RegLatencySM100 {
         Op::IAdd3(_) | Op::IAdd3X(_) => Alu,
 
         Op::BMsk(_) => Alu,
-        // Sgxt => Alu,
+        Op::Sgxt(_) => Alu,
         Op::Lop3(_) => Alu,
         Op::Flo(_) => Decoupled,
         Op::ISetP(_) => Dualalu,
@@ -282,7 +282,7 @@ fn op_ureg_latency(
         Op::PSetP(_) => coupled,
         // UR2UP
         Op::Sel(_) => coupled,
-        // SGXT
+        Op::Sgxt(_) => coupled,
         Op::Shf(_) => coupled,
         Op::Shfl(_) => decoupled,
 

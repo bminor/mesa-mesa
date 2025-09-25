@@ -136,6 +136,7 @@ impl ShaderModel for ShaderModel70 {
             | Op::Prmt(_)
             | Op::PSetP(_)
             | Op::Sel(_)
+            | Op::Sgxt(_)
             | Op::Shf(_)
             | Op::Shl(_)
             | Op::Shr(_)
