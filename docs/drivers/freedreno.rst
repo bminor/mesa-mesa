@@ -648,8 +648,9 @@ Runtime toggling of ``TU_DEBUG`` options
 In some cases, it is useful to toggle ``TU_DEBUG`` options at runtime, such as
 when assessing the performance impact of a particular option. This can be done
 by setting the ``TU_DEBUG_FILE`` environment variable to a file path, and writing
-the desired ``TU_DEBUG`` options to that file. The driver will check the file for
-changes and apply them.
+the desired ``TU_DEBUG`` options to that file. The driver will check the file at
+startup and apply all debug options (runtime and non-runtime) but then will
+continue to monitor the file for changes and only apply runtime options.
 
 The folder containing the file should exist prior to running the application, and
 deleting the folder during runtime will result in the driver no longer picking up

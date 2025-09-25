@@ -2961,7 +2961,7 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
       physical_device->info->a6xx.has_z24uint_s8uint &&
       (!border_color_without_format ||
        physical_device->instance->disable_d24s8_border_color_workaround);
-   device->use_lrz = !TU_DEBUG_ENV(NOLRZ);
+   device->use_lrz = !TU_DEBUG_START(NOLRZ);
 
    tu_gpu_tracepoint_config_variable();
 

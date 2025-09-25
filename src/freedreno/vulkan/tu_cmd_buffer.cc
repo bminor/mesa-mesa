@@ -3345,7 +3345,7 @@ tu_create_cmd_buffer(struct vk_command_pool *pool,
       u_trace_begin_iterator(&cmd_buffer->rp_trace);
    list_inithead(&cmd_buffer->renderpass_autotune_results);
 
-   if (TU_DEBUG_ENV(CHECK_CMD_BUFFER_STATUS)) {
+   if (TU_DEBUG_START(CHECK_CMD_BUFFER_STATUS)) {
       cmd_buffer->status_bo = tu_cmd_buffer_setup_status_tracking(device);
       if (cmd_buffer->status_bo == NULL) {
          mesa_logw("Failed creating cmd_buffer status_bo. "
@@ -3383,7 +3383,7 @@ tu_cmd_buffer_destroy(struct vk_command_buffer *vk_cmd_buffer)
    tu_cs_finish(&cmd_buffer->pre_chain.draw_cs);
    tu_cs_finish(&cmd_buffer->pre_chain.draw_epilogue_cs);
 
-   if (TU_DEBUG_ENV(CHECK_CMD_BUFFER_STATUS)) {
+   if (TU_DEBUG_START(CHECK_CMD_BUFFER_STATUS)) {
       tu_cmd_buffer_status_check_idle(cmd_buffer);
       tu_bo_unmap(cmd_buffer->device, cmd_buffer->status_bo, false);
       tu_bo_finish(cmd_buffer->device, cmd_buffer->status_bo);
@@ -3420,12 +3420,12 @@ tu_reset_cmd_buffer(struct vk_command_buffer *vk_cmd_buffer,
       container_of(vk_cmd_buffer, struct tu_cmd_buffer, vk);
 
    VkResult status_check_result = VK_SUCCESS;
-   if (TU_DEBUG_ENV(CHECK_CMD_BUFFER_STATUS))
+   if (TU_DEBUG_START(CHECK_CMD_BUFFER_STATUS))
       status_check_result = tu_cmd_buffer_status_check_idle(cmd_buffer);
 
     vk_command_buffer_reset(&cmd_buffer->vk);
 
-    if (TU_DEBUG_ENV(CHECK_CMD_BUFFER_STATUS) &&
+    if (TU_DEBUG_START(CHECK_CMD_BUFFER_STATUS) &&
         status_check_result != VK_SUCCESS) {
        cmd_buffer->vk.record_result = status_check_result;
     }
@@ -4455,7 +4455,7 @@ tu_EndCommandBuffer(VkCommandBuffer commandBuffer)
          cmd_buffer->state.pass ? &cmd_buffer->draw_cs : &cmd_buffer->cs);
    }
 
-   if (TU_DEBUG_ENV(CHECK_CMD_BUFFER_STATUS))
+   if (TU_DEBUG_START(CHECK_CMD_BUFFER_STATUS))
       tu_cmd_buffer_status_gpu_write(cmd_buffer, TU_CMD_BUFFER_STATUS_IDLE);
 
    tu_cs_end(&cmd_buffer->cs);

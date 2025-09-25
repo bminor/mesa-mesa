@@ -624,7 +624,7 @@ struct tu_cmd_buffer
    struct tu_cmd_state state;
    uint32_t queue_family_index;
 
-   /* For TU_DEBUG_ENV(CHECK_CMD_BUFFER_STATUS) functionality. */
+   /* For TU_DEBUG_START(CHECK_CMD_BUFFER_STATUS) functionality. */
    struct tu_bo *status_bo;
 
    uint32_t push_constants[MAX_PUSH_CONSTANTS_SIZE / 4];

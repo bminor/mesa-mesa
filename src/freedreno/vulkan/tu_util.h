@@ -29,12 +29,12 @@
 #define TU_DEBUG(name) unlikely(tu_env.debug.load(std::memory_order_acquire) & TU_DEBUG_##name)
 
 /*
- * Same as TU_DEBUG, but only uses the environment variable's value rather
- * than TU_DEBUG_FILE. This is useful for flags that should not be changed
+ * Same as TU_DEBUG, but only uses the initial value without any runtime changes
+ * from TU_DEBUG_FILE. This is useful for flags that should not be changed
  * at runtime or when a flag has different behavior depending on whether it
  * is set in TU_DEBUG or TU_DEBUG_FILE.
  */
-#define TU_DEBUG_ENV(name) unlikely(tu_env.env_debug & TU_DEBUG_##name)
+#define TU_DEBUG_START(name) unlikely(tu_env.start_debug & TU_DEBUG_##name)
 
 enum tu_debug_flags : uint64_t
 {
@@ -77,7 +77,7 @@ enum tu_debug_flags : uint64_t
 
 struct tu_env {
     std::atomic<uint64_t> debug;
-    uint64_t env_debug;
+    uint64_t start_debug;
 };
 
 extern struct tu_env tu_env;
