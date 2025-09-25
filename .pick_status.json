@@ -1274,7 +1274,7 @@
         "description": "nak: Fix divergence test for redux availability",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "295373f29f129acdfa23262f446e53942c0d4807",
         "notes": null

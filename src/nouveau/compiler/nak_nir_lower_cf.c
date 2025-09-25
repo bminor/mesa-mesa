@@ -498,3 +498,36 @@ nak_nir_lower_cf(nir_shader *nir)
 
    return progress;
 }
+
+bool
+nak_block_is_divergent(const nir_block *block)
+{
+   const nir_cf_node* node = &block->cf_node;
+
+   while (node) {
+      switch (node->type) {
+         case nir_cf_node_if: {
+            nir_if *nif = nir_cf_node_as_if(node);
+            if (nir_src_is_divergent(&nif->condition))
+               return true;
+            break;
+         }
+         case nir_cf_node_loop: {
+            nir_loop *loop = nir_cf_node_as_loop(node);
+            if (nir_loop_is_divergent(loop))
+               return true;
+            break;
+         }
+         case nir_cf_node_block: {
+            nir_block *block = nir_cf_node_as_block(node);
+            if (block->divergent)
+               return true;
+            break;
+         }
+         case nir_cf_node_function:
+            break;
+      }
+      node = node->parent;
+   }
+   return false;
+}

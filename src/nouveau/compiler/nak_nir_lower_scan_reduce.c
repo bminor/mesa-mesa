@@ -229,7 +229,7 @@ nak_nir_lower_scan_reduce_intrin(nir_builder *b,
               nir_op_infos[red_op].output_type != nir_type_float &&
               intrin->src[0].ssa->bit_size == 32 &&
               cluster_size == 32 &&
-              !intrin->instr.block->divergent) {
+              !nak_block_is_divergent(intrin->instr.block)) {
       /* TODO: We could probably also use REDUX for the non-uniform case if we
        *       were allowed to write uregs from non-uniform control flow.
        */
