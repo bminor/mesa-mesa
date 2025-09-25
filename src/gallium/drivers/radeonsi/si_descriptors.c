@@ -1118,36 +1118,36 @@ static void si_set_constant_buffer(struct si_context *sctx, struct si_buffer_res
 {
    struct si_descriptors *descs = &sctx->descriptors[descriptors_idx];
    assert(slot < descs->num_elements);
+   struct pipe_constant_buffer uploaded_constbuf;
 
    /* GFX7 cannot unbind a constant buffer (S_BUFFER_LOAD is buggy
     * with a NULL buffer). We need to use a dummy buffer instead. */
-   if (sctx->gfx_level == GFX7 && (!input || (!input->buffer && !input->user_buffer)))
+   if (sctx->gfx_level == GFX7 && (!input || (!input->buffer && !input->user_buffer))) {
       input = &sctx->null_const_buf;
+   } else if (input && input->user_buffer) {
+      /* Upload the user buffer. */
+      struct pipe_resource *release_buf = NULL;
+      void *tmp;
 
-   if (input && (input->buffer || input->user_buffer)) {
-      struct pipe_resource *buffer = NULL;
-      unsigned buffer_offset;
+      u_upload_alloc(sctx->b.const_uploader, 0, input->buffer_size,
+                     si_optimal_tcc_alignment(sctx, input->buffer_size),
+                     &uploaded_constbuf.buffer_offset, &uploaded_constbuf.buffer, &release_buf,
+                     &tmp);
+      pipe_resource_release(&sctx->b, release_buf);
 
-      /* Upload the user buffer if needed. */
-      if (input->user_buffer) {
-         struct pipe_resource *release_buf = NULL;
-         void *tmp;
-
-         u_upload_alloc(sctx->b.const_uploader, 0, input->buffer_size,
-                        si_optimal_tcc_alignment(sctx, input->buffer_size),
-                        &buffer_offset, &buffer, &release_buf, &tmp);
-         pipe_resource_release(&sctx->b, release_buf);
-         if (buffer) {
-            util_memcpy_cpu_to_le32(tmp, input->user_buffer, input->buffer_size);
-         } else {
-            /* Just unbind on failure. */
-            si_set_constant_buffer(sctx, buffers, descriptors_idx, slot, NULL);
-            return;
-         }
+      if (uploaded_constbuf.buffer) {
+         util_memcpy_cpu_to_le32(tmp, input->user_buffer, input->buffer_size);
+         uploaded_constbuf.buffer_size = input->buffer_size;
+         input = &uploaded_constbuf;
       } else {
-         buffer = input->buffer;
-         buffer_offset = input->buffer_offset;
+         /* Failure to upload. Bind NULL. */
+         input = NULL;
       }
+   }
+
+   if (input && input->buffer) {
+      struct pipe_resource *buffer = input->buffer;
+      unsigned buffer_offset = input->buffer_offset;
 
       /* Set the descriptor. */
       uint32_t *desc = descs->list + slot * 4;
