@@ -4418,7 +4418,6 @@ tc_call_launch_grid(struct pipe_context *pipe, void *call)
    struct pipe_grid_info *p = &to_call(call, tc_launch_grid_call)->info;
 
    pipe->launch_grid(pipe, p);
-   tc_drop_resource_reference(p->indirect);
    return call_size(tc_launch_grid_call);
 }
 
@@ -4430,7 +4429,6 @@ tc_launch_grid(struct pipe_context *_pipe,
    struct tc_launch_grid_call *p = tc_add_call(tc, TC_CALL_launch_grid,
                                                tc_launch_grid_call);
 
-   tc_set_resource_reference(&p->info.indirect, info->indirect);
    memcpy(&p->info, info, sizeof(*info));
 
    if (info->indirect)
