@@ -282,10 +282,9 @@ if with_symbols_check
 endif
 
 icd_lib_path = join_paths(get_option('prefix'), get_option('libdir'))
-icd_file_name = 'libvulkan_radeon.so'
+icd_file_name = libname_prefix + 'vulkan_radeon.' + libname_suffix
 if with_platform_windows
   icd_lib_path = import('fs').relative_to(get_option('bindir'), with_vulkan_icd_dir)
-  icd_file_name = 'vulkan_radeon.dll'
 endif
 
 icd_command = [

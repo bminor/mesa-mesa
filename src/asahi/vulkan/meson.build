@@ -103,10 +103,9 @@ libvulkan_asahi = shared_library(
 )
 
 icd_lib_path = join_paths(get_option('prefix'), get_option('libdir'))
-icd_file_name = 'libvulkan_asahi.so'
+icd_file_name = libname_prefix + 'vulkan_asahi.' + libname_suffix
 if with_platform_windows
   icd_lib_path = import('fs').relative_to(get_option('bindir'), with_vulkan_icd_dir)
-  icd_file_name = 'vulkan_asahi.dll'
 endif
 
 asahi_icd = custom_target(

@@ -136,6 +136,8 @@ if with_symbols_check
   )
 endif
 
+icd_file_name = libname_prefix + 'vulkan_powervr_mesa.' + libname_suffix
+
 powervr_mesa_icd = custom_target(
   'powervr_mesa_icd',
   input : [vk_icd_gen, vk_api_xml],
@@ -144,7 +146,7 @@ powervr_mesa_icd = custom_target(
     prog_python, '@INPUT0@',
     '--api-version', '1.4', '--xml', '@INPUT1@',
     '--sizeof-pointer', sizeof_pointer,
-    '--lib-path', get_option('prefix') / get_option('libdir') / 'libvulkan_powervr_mesa.so',
+    '--lib-path', get_option('prefix') / get_option('libdir') / icd_file_name,
     '--out', '@OUTPUT@',
   ],
   build_by_default : true,
@@ -161,7 +163,7 @@ _dev_icd = custom_target(
     prog_python, '@INPUT0@',
     '--api-version', '1.4', '--xml', '@INPUT1@',
     '--sizeof-pointer', sizeof_pointer,
-    '--lib-path', meson.current_build_dir() / 'libvulkan_powervr_mesa.so',
+    '--lib-path', meson.current_build_dir() / icd_file_name,
     '--out', '@OUTPUT@',
   ],
   build_by_default : true,

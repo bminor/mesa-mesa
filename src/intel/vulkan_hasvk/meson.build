@@ -16,6 +16,8 @@ anv_hasvk_entrypoints = custom_target(
   depend_files : vk_entrypoints_gen_depend_files,
 )
 
+icd_file_name = libname_prefix + 'vulkan_intel_hasvk.' + libname_suffix
+
 intel_hasvk_icd = custom_target(
   'intel_hasvk_icd',
   input : [vk_icd_gen, vk_api_xml],
@@ -25,7 +27,7 @@ intel_hasvk_icd = custom_target(
     '--api-version', '1.3', '--xml', '@INPUT1@',
     '--sizeof-pointer', sizeof_pointer,
     '--lib-path', join_paths(get_option('prefix'), get_option('libdir'),
-                             'libvulkan_intel_hasvk.so'),
+                             icd_file_name),
     '--out', '@OUTPUT@',
   ],
   build_by_default : true,
@@ -43,7 +45,7 @@ _dev_icd = custom_target(
     prog_python, '@INPUT0@',
     '--api-version', '1.3', '--xml', '@INPUT1@',
     '--sizeof-pointer', sizeof_pointer,
-    '--lib-path', meson.current_build_dir() / 'libvulkan_intel_hasvk.so',
+    '--lib-path', meson.current_build_dir() / icd_file_name,
     '--out', '@OUTPUT@',
   ],
   build_by_default : true,

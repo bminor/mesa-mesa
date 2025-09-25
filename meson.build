@@ -20,10 +20,13 @@ project(
 if host_machine.system() == 'darwin'
   add_languages('objc', native : false)
   add_project_arguments('-fobjc-arc', language : 'objc')
+  libname_prefix = 'lib'
   libname_suffix = 'dylib'
 elif host_machine.system() == 'windows'
+  libname_prefix = ''
   libname_suffix = 'dll'
 else
+  libname_prefix = 'lib'
   libname_suffix = 'so'
 endif
 
