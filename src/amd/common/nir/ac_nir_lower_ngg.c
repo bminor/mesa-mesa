@@ -390,10 +390,10 @@ remove_culling_shader_outputs(nir_shader *culling_shader, lower_ngg_nogs_state *
    /* Remove dead code resulting from the deleted outputs. */
    bool progress;
    do {
-      progress = false;
-      NIR_PASS(progress, culling_shader, nir_opt_dead_write_vars);
-      NIR_PASS(progress, culling_shader, nir_opt_dce);
-      NIR_PASS(progress, culling_shader, nir_opt_dead_cf);
+      /* These can't use NIR_PASS because NIR_DEBUG=serialize,clone invalidates pointers. */
+      progress = nir_opt_dead_write_vars(culling_shader);
+      progress |= nir_opt_dce(culling_shader);
+      progress |= nir_opt_dead_cf(culling_shader);
    } while (progress);
 }
 
@@ -957,11 +957,11 @@ prepare_shader_for_culling(nir_shader *shader, nir_function_impl *impl,
    /* Cleanup. This is done so that we can accurately gather info from the deferred part. */
    bool progress;
    do {
-      progress = false;
-      NIR_PASS(progress, shader, nir_opt_undef);
-      NIR_PASS(progress, shader, nir_copy_prop);
-      NIR_PASS(progress, shader, nir_opt_dce);
-      NIR_PASS(progress, shader, nir_opt_dead_cf);
+      /* These can't use NIR_PASS because NIR_DEBUG=serialize,clone invalidates pointers. */
+      progress = nir_opt_undef(shader);
+      progress |= nir_copy_prop(shader);
+      progress |= nir_opt_dce(shader);
+      progress |= nir_opt_dead_cf(shader);
    } while (progress);
 
    s->deferred.uses_tess_primitive_id = s->options->export_primitive_id;
@@ -1778,11 +1778,11 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
 
    bool progress;
    do {
-      progress = false;
-      NIR_PASS(progress, shader, nir_opt_undef);
-      NIR_PASS(progress, shader, nir_copy_prop);
-      NIR_PASS(progress, shader, nir_opt_dce);
-      NIR_PASS(progress, shader, nir_opt_dead_cf);
+      /* These can't use NIR_PASS because NIR_DEBUG=serialize,clone invalidates pointers. */
+      progress = nir_opt_undef(shader);
+      progress |= nir_copy_prop(shader);
+      progress |= nir_opt_dce(shader);
+      progress |= nir_opt_dead_cf(shader);
    } while (progress);
 
    *out_lds_vertex_size =
