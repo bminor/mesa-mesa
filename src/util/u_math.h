@@ -735,6 +735,12 @@ util_align_npot(size_t value, size_t alignment)
    return value;
 }
 
+static inline size_t
+util_round_down_npot(size_t value, size_t alignment)
+{
+   return value - (value % alignment);
+}
+
 static inline unsigned
 u_minify(unsigned value, unsigned levels)
 {
