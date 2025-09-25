@@ -1128,7 +1128,7 @@ lower_any_hit_for_intersection(nir_shader *any_hit)
 static void
 nir_lower_intersection_shader(nir_shader *intersection, nir_shader *any_hit)
 {
-   void *dead_ctx = ralloc_context(intersection);
+   void *dead_ctx = ralloc_context(NULL);
 
    nir_function_impl *any_hit_impl = NULL;
    struct hash_table *any_hit_var_remap = NULL;

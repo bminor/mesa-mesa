@@ -395,6 +395,7 @@ radv_rt_nir_to_asm(struct radv_device *device, struct vk_pipeline_cache *cache,
 
    uint32_t num_resume_shaders = 0;
    nir_shader **resume_shaders = NULL;
+   void *mem_ctx = ralloc_context(NULL);
 
    if (stage->stage != MESA_SHADER_INTERSECTION && !monolithic) {
       nir_builder b = nir_builder_at(nir_after_impl(nir_shader_get_entrypoint(stage->nir)));
@@ -407,11 +408,11 @@ radv_rt_nir_to_asm(struct radv_device *device, struct vk_pipeline_cache *cache,
          .vectorizer_callback = ac_nir_mem_vectorize_callback,
          .vectorizer_data = &(struct ac_nir_config){pdev->info.gfx_level, !radv_use_llvm_for_stage(pdev, stage->stage)},
       };
-      nir_lower_shader_calls(stage->nir, &opts, &resume_shaders, &num_resume_shaders, stage->nir);
+      nir_lower_shader_calls(stage->nir, &opts, &resume_shaders, &num_resume_shaders, mem_ctx);
    }
 
    unsigned num_shaders = num_resume_shaders + 1;
-   nir_shader **shaders = ralloc_array(stage->nir, nir_shader *, num_shaders);
+   nir_shader **shaders = ralloc_array(mem_ctx, nir_shader *, num_shaders);
    if (!shaders)
       return VK_ERROR_OUT_OF_HOST_MEMORY;
 
@@ -474,6 +475,7 @@ radv_rt_nir_to_asm(struct radv_device *device, struct vk_pipeline_cache *cache,
          if (dump_shader)
             simple_mtx_unlock(&instance->shader_dump_mtx);
 
+         ralloc_free(mem_ctx);
          free(binary);
          return result;
       }
@@ -495,6 +497,7 @@ radv_rt_nir_to_asm(struct radv_device *device, struct vk_pipeline_cache *cache,
    if (dump_shader)
       simple_mtx_unlock(&instance->shader_dump_mtx);
 
+   ralloc_free(mem_ctx);
    free(binary);
 
    *out_shader = shader;
