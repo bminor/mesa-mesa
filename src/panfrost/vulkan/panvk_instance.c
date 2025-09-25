@@ -12,6 +12,7 @@
 #include "util/build_id.h"
 #include "util/driconf.h"
 #include "util/mesa-sha1.h"
+#include "util/os_misc.h"
 
 #include "vk_alloc.h"
 #include "vk_log.h"
@@ -244,7 +245,7 @@ panvk_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
    instance->vk.physical_devices.destroy = panvk_destroy_physical_device;
 
    instance->debug_flags =
-      parse_debug_string(getenv("PANVK_DEBUG"), panvk_debug_options);
+      parse_debug_string(os_get_option("PANVK_DEBUG"), panvk_debug_options);
 
    if (instance->debug_flags & PANVK_DEBUG_STARTUP)
       vk_logi(VK_LOG_NO_OBJS(instance), "Created an instance");

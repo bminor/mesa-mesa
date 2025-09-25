@@ -13,6 +13,7 @@
 #include <sys/sysinfo.h>
 
 #include "util/disk_cache.h"
+#include "util/os_misc.h"
 #include "git_sha1.h"
 
 #include "vk_android.h"
@@ -268,7 +269,7 @@ panvk_physical_device_init(struct panvk_physical_device *device,
    switch (arch) {
    case 6:
    case 7:
-      if (!getenv("PAN_I_WANT_A_BROKEN_VULKAN_DRIVER")) {
+      if (!os_get_option("PAN_I_WANT_A_BROKEN_VULKAN_DRIVER")) {
          result = panvk_errorf(instance, VK_ERROR_INCOMPATIBLE_DRIVER,
                                "WARNING: panvk is not well-tested on v%d, "
                                "pass PAN_I_WANT_A_BROKEN_VULKAN_DRIVER=1 "

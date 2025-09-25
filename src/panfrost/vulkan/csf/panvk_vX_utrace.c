@@ -6,6 +6,8 @@
 
 #include "panvk_utrace.h"
 
+#include "util/os_misc.h"
+
 #include "drm-uapi/panthor_drm.h"
 
 #include "genxml/cs_builder.h"
@@ -168,7 +170,7 @@ panvk_utrace_capture_data(struct u_trace *ut, void *cs, void *dst_buffer,
 static uint32_t
 get_utrace_clone_mem_size()
 {
-   const char *v = getenv("PANVK_UTRACE_CLONE_MEM_SIZE");
+   const char *v = os_get_option("PANVK_UTRACE_CLONE_MEM_SIZE");
    if (v) {
       uint32_t size = 0;
       sscanf(v, "%u", &size);
