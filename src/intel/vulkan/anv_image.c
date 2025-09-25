@@ -3151,8 +3151,8 @@ anv_bind_image_memory(struct anv_device *device,
        !image->device_registered) {
       pthread_mutex_lock(&device->mutex);
       list_addtail(&image->link, &device->image_private_objects);
-      image->device_registered = true;
       pthread_mutex_unlock(&device->mutex);
+      image->device_registered = true;
    }
 
    if (bind_status)
