@@ -1317,6 +1317,42 @@ brw_generator::generate_code(const brw_shader &s,
             if (unlikely(annotate)) {
                disasm_info->use_tail = true;
             }
+         } else if (devinfo->ver >= 12) {
+            /* This works around synchronization issues consequence of the
+             * HALT instruction not being considered a control flow
+             * instruction by the back-end -- The fact that it doesn't
+             * cause the CFG pass to introduce an edge in the graph means
+             * that the software scoreboard pass is completely blind to the
+             * effect of discard jumps on control flow, so it doesn't
+             * introduce the required annotations to avoid data hazards
+             * when the discard path of the CFG is taken.  Note that
+             * because of the very limited set of instructions that can
+             * follow the HALT target in a fragment shader this was very
+             * unlikely to lead to issues in practice, but starting on xe3
+             * it appears to have become far more likely due to the use of
+             * SENDG, since SENDG requires the scalar register to be set
+             * prior to the submission of the render target write payloads,
+             * which can easily lead to a WaR hazard if there was another
+             * SENDG before the HALT jump that wasn't done reading out its
+             * payload from the GRF.
+             *
+             * In an ideal world this would be avoided by having HALT be a
+             * normal control flow instruction represented as an edge in
+             * the control flow graph -- But unfortunately that would
+             * prevent the optimizations we currently do that take
+             * advantage of the ability of reordering code past the HALT
+             * instruction, so it would have a pretty large performance
+             * cost.  Instead this simply adds a SYNC.ALLWR instruction
+             * after the HALT target to guarantee that all pending SEND
+             * messages have finished execution -- That may also seem
+             * costly, however its cost in practice appears to be minimal
+             * since at the point of the program when the target HALT is
+             * executed there is almost nothing left to do other than send
+             * out the render target write payloads, so any pending
+             * operations had to be waited on at roughly this point of the
+             * program regardless.
+             */
+            brw_SYNC(p, TGL_SYNC_ALLWR);
          }
          break;
 
