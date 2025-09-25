@@ -70,15 +70,6 @@ OUT_ARRAY_COUNTS = OUT_ARRAYS.values()
 SPECIALIZED_PROPERTY_STRUCTS = [
 ]
 
-# Properties not extending VkPhysicalDeviceProperties2 in the XML,
-# but which might still be present (in Android for instance)
-#
-# TODO: remove the workaround after spec registry fix is merged:
-# https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7587
-ANDROID_PROPERTIES = [
-    "VkPhysicalDevicePresentationPropertiesANDROID",
-]
-
 @dataclass
 class Property:
     decl: str
@@ -289,8 +280,7 @@ def get_property_structs(doc, api, beta):
         full_name = _type.attrib.get("name")
 
         if _type.attrib.get("structextends") != "VkPhysicalDeviceProperties2":
-            if full_name not in ANDROID_PROPERTIES:
-                continue
+            continue
 
         if full_name not in required:
             continue
