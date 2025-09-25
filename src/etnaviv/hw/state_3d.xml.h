@@ -8,14 +8,14 @@ http://0x04.net/cgit/index.cgi/rules-ng-ng
 git clone git://0x04.net/rules-ng-ng
 
 The rules-ng-ng source files this header was generated from are:
-- state.xml     (  30672 bytes, from 2025-09-11 10:10:54)
-- common.xml    (  35664 bytes, from 2025-09-11 10:10:54)
-- common_3d.xml (  15069 bytes, from 2025-09-11 10:10:54)
-- state_hi.xml  (  35909 bytes, from 2025-09-11 10:10:54)
+- state.xml     (  30672 bytes, from 2025-09-25 09:52:24)
+- common.xml    (  35664 bytes, from 2025-09-25 09:52:24)
+- common_3d.xml (  15069 bytes, from 2025-09-25 09:52:24)
+- state_hi.xml  (  35909 bytes, from 2025-09-25 09:52:24)
 - copyright.xml (   1597 bytes, from 2024-04-10 16:26:25)
 - state_2d.xml  (  52271 bytes, from 2024-04-10 16:26:25)
-- state_3d.xml  (  91329 bytes, from 2025-09-11 10:26:23)
-- state_blt.xml (  14592 bytes, from 2025-09-11 10:10:54)
+- state_3d.xml  (  92108 bytes, from 2025-09-25 10:08:31)
+- state_blt.xml (  14592 bytes, from 2025-09-25 09:52:24)
 - state_vg.xml  (   5975 bytes, from 2024-04-10 16:26:25)
 
 Copyright (C) 2012-2025 by the following authors:
@@ -1964,6 +1964,10 @@ DEALINGS IN THE SOFTWARE.
 #define VIVS_NTE_DESCRIPTOR_SAMP_CTRL0_MAG__MASK		0x00006000
 #define VIVS_NTE_DESCRIPTOR_SAMP_CTRL0_MAG__SHIFT		13
 #define VIVS_NTE_DESCRIPTOR_SAMP_CTRL0_MAG(x)			(((x) << VIVS_NTE_DESCRIPTOR_SAMP_CTRL0_MAG__SHIFT) & VIVS_NTE_DESCRIPTOR_SAMP_CTRL0_MAG__MASK)
+#define VIVS_NTE_DESCRIPTOR_SAMP_CTRL0_DEPTH_STENCIL_MODE__MASK	0x00010000
+#define VIVS_NTE_DESCRIPTOR_SAMP_CTRL0_DEPTH_STENCIL_MODE__SHIFT	16
+#define VIVS_NTE_DESCRIPTOR_SAMP_CTRL0_DEPTH_STENCIL_MODE_DEPTH	0x00000000
+#define VIVS_NTE_DESCRIPTOR_SAMP_CTRL0_DEPTH_STENCIL_MODE_STENCIL	0x00010000
 #define VIVS_NTE_DESCRIPTOR_SAMP_CTRL0_COMPARE_ENABLE		0x00020000
 #define VIVS_NTE_DESCRIPTOR_SAMP_CTRL0_COMPARE_FUNC__MASK	0x001c0000
 #define VIVS_NTE_DESCRIPTOR_SAMP_CTRL0_COMPARE_FUNC__SHIFT	18
