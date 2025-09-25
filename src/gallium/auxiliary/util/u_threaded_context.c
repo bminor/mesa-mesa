@@ -3847,8 +3847,6 @@ tc_call_draw_indirect(struct pipe_context *pipe, void *call)
 
    pipe->draw_vbo(pipe, &info->info, 0, &info->indirect, &info->draw, 1);
 
-   tc_drop_resource_reference(info->indirect.buffer);
-   tc_drop_resource_reference(info->indirect.indirect_draw_count);
    tc_drop_so_target_reference(info->indirect.count_from_stream_output);
    return call_size(tc_draw_indirect);
 }
@@ -4156,9 +4154,6 @@ tc_draw_indirect(struct pipe_context *_pipe, const struct pipe_draw_info *info,
    }
    memcpy(&p->info, info, DRAW_INFO_SIZE_WITHOUT_MIN_MAX_INDEX);
 
-   tc_set_resource_reference(&p->indirect.buffer, indirect->buffer);
-   tc_set_resource_reference(&p->indirect.indirect_draw_count,
-                             indirect->indirect_draw_count);
    p->indirect.count_from_stream_output = NULL;
    pipe_so_target_reference(&p->indirect.count_from_stream_output,
                             indirect->count_from_stream_output);
