@@ -2976,7 +2976,6 @@ tc_call_buffer_unmap(struct pipe_context *pipe, void *call)
       /* Nothing to do except keeping track of staging uploads */
       assert(tres->pending_staging_uploads > 0);
       p_atomic_dec(&tres->pending_staging_uploads);
-      tc_drop_resource_reference(p->resource);
    } else {
       pipe->buffer_unmap(pipe, p->transfer);
    }
@@ -3055,7 +3054,7 @@ tc_buffer_unmap(struct pipe_context *_pipe, struct pipe_transfer *transfer)
    struct tc_buffer_unmap *p = tc_add_call(tc, TC_CALL_buffer_unmap,
                                            tc_buffer_unmap);
    if (was_staging_transfer) {
-      tc_set_resource_reference(&p->resource, &tres->b);
+      p->resource = &tres->b;
       p->was_staging_transfer = true;
    } else {
       p->transfer = transfer;
