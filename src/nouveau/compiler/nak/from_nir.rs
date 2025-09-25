@@ -752,22 +752,33 @@ impl<'a> ShaderFromNir<'a> {
             }
             nir_op_bitfield_reverse => b.brev(srcs(0)).into(),
             nir_op_ibitfield_extract | nir_op_ubitfield_extract => {
-                let range = b.alloc_ssa(RegFile::GPR);
-                b.push_op(OpPrmt {
-                    dst: range.into(),
-                    srcs: [srcs(1), srcs(2)],
-                    sel: 0x0040.into(),
-                    mode: PrmtMode::Index,
-                });
-
                 let dst = b.alloc_ssa(RegFile::GPR);
-                b.push_op(OpBfe {
-                    dst: dst.into(),
-                    base: srcs(0),
-                    signed: !matches!(alu.op, nir_op_ubitfield_extract),
-                    range: range.into(),
-                    reverse: false,
-                });
+                let signed = !matches!(alu.op, nir_op_ubitfield_extract);
+                if self.sm.sm() >= 70 {
+                    let shifted = b.shr(srcs(0), srcs(1), signed);
+                    b.push_op(OpSgxt {
+                        dst: dst.into(),
+                        a: shifted.into(),
+                        bits: srcs(2),
+                        signed,
+                    });
+                } else {
+                    let range = b.alloc_ssa(RegFile::GPR);
+                    b.push_op(OpPrmt {
+                        dst: range.into(),
+                        srcs: [srcs(1), srcs(2)],
+                        sel: 0x0040.into(),
+                        mode: PrmtMode::Index,
+                    });
+
+                    b.push_op(OpBfe {
+                        dst: dst.into(),
+                        base: srcs(0),
+                        signed,
+                        range: range.into(),
+                        reverse: false,
+                    });
+                };
                 dst.into()
             }
             nir_op_extract_u8 | nir_op_extract_i8 | nir_op_extract_u16
