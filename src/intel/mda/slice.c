@@ -53,7 +53,7 @@ slice_find_char(slice s, char c)
          return slice_substr_from(s, i);
       }
    }
-   return (slice){};
+   return (slice){0};
 }
 
 slice
@@ -62,14 +62,14 @@ slice_find_str(slice s, slice needle)
    if (needle.len == 0)
       return s;
    if (needle.len > s.len)
-      return (slice){};
+      return (slice){0};
 
    for (int i = 0; i <= s.len - needle.len; i++) {
       if (memcmp(s.data + i, needle.data, needle.len) == 0) {
          return slice_substr_from(s, i);
       }
    }
-   return (slice){};
+   return (slice){0};
 }
 
 bool
@@ -108,7 +108,7 @@ slice_substr_from(slice s, int start)
    if (start < 0)
       start = 0;
    if (start >= s.len)
-      return (slice){};
+      return (slice){0};
    return (slice){.data = s.data + start, .len = s.len - start};
 }
 
@@ -131,7 +131,7 @@ slice_substr(slice s, int start, int end)
       end = s.len;
 
    if (start >= end)
-      return (slice){};
+      return (slice){0};
    return (slice){.data = s.data + start, .len = end - start};
 }
 
@@ -145,7 +145,7 @@ slice_cut_result
 slice_cut_n(slice s, char c, int n)
 {
    if (n <= 0) {
-      slice_cut_result result = { .before = s, .after = {}, .found = false };
+      slice_cut_result result = { .before = s, .after = {0}, .found = false };
       return result;
    }
 
@@ -173,7 +173,7 @@ slice_cut_n(slice s, char c, int n)
    }
 
    /* Not enough occurrences found. */
-   slice_cut_result result = { .before = s, .after = {}, .found = false };
+   slice_cut_result result = { .before = s, .after = {0}, .found = false };
    return result;
 }
 
