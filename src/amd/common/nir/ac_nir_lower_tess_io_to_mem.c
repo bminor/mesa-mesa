@@ -1676,5 +1676,5 @@ ac_nir_compute_tess_wg_info(const struct radeon_info *info, const ac_nir_tess_io
    assert(lds_size <= (info->gfx_level >= GFX9 ? 65536 : 32768));
 
    *num_patches_per_wg = num_patches;
-   *hw_lds_size = DIV_ROUND_UP(lds_size, info->lds_encode_granularity);
+   *hw_lds_size = ALIGN(lds_size, info->lds_alloc_granularity);
 }

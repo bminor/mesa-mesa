@@ -435,17 +435,17 @@ static void calculate_needed_lds_size(struct si_screen *sscreen, struct si_shade
          size_in_dw += shader->ngg.info.ngg_out_lds_size;
 
       shader->config.lds_size =
-         DIV_ROUND_UP(size_in_dw * 4, get_lds_granularity(sscreen, stage));
+         ALIGN(size_in_dw * 4, get_lds_granularity(sscreen, stage));
    }
 
    if (stage == MESA_SHADER_COMPUTE) {
-      shader->config.lds_size = DIV_ROUND_UP(shader->selector->info.base.shared_size,
-                                             sscreen->info.lds_encode_granularity);
+      shader->config.lds_size = ALIGN(shader->selector->info.base.shared_size,
+                                      sscreen->info.lds_alloc_granularity);
    }
 
    /* Check that the LDS size is within hw limits. */
-   assert(shader->config.lds_size * get_lds_granularity(sscreen, stage) <=
-          (sscreen->info.gfx_level == GFX6 ? 32 : 64) * 1024);
+   assert(shader->config.lds_size % sscreen->info.lds_alloc_granularity == 0);
+   assert(shader->config.lds_size <= (sscreen->info.gfx_level == GFX6 ? 32 : 64) * 1024);
 }
 
 static int upload_binary_raw(struct si_screen *sscreen, struct si_shader *shader,
@@ -623,13 +623,12 @@ static void si_calculate_max_simd_waves(struct si_shader *shader)
        * Other stages don't know the size at compile time or don't
        * allocate LDS per wave, but instead they do it per thread group.
        */
-      lds_per_wave = conf->lds_size * lds_increment +
+      lds_per_wave = conf->lds_size +
                      align(shader->info.num_ps_inputs * 48, lds_increment);
       break;
    case MESA_SHADER_COMPUTE: {
          unsigned max_workgroup_size = si_get_max_workgroup_size(shader);
-         lds_per_wave = (conf->lds_size * lds_increment) /
-                        DIV_ROUND_UP(max_workgroup_size, shader->wave_size);
+         lds_per_wave = conf->lds_size / DIV_ROUND_UP(max_workgroup_size, shader->wave_size);
       }
       break;
    default:;
@@ -777,8 +776,7 @@ static void si_shader_dump_stats(struct si_screen *sscreen, struct si_shader *sh
            "********************\n\n\n",
            conf->num_sgprs, conf->num_vgprs, conf->spilled_sgprs, conf->spilled_vgprs,
            shader->info.private_mem_vgprs, si_get_shader_binary_size(sscreen, shader),
-           conf->lds_size * get_lds_granularity(sscreen, shader->selector->stage),
-           conf->scratch_bytes_per_wave, shader->info.max_simd_waves);
+           conf->lds_size, conf->scratch_bytes_per_wave, shader->info.max_simd_waves);
 }
 
 const char *si_get_shader_name(const struct si_shader *shader)
@@ -2405,7 +2403,7 @@ void si_multiwave_lds_size_workaround(struct si_screen *sscreen, unsigned *lds_s
     *   It applies to workgroup sizes of more than one wavefront.
     */
    if (sscreen->info.family == CHIP_BONAIRE || sscreen->info.family == CHIP_KABINI)
-      *lds_size = MAX2(*lds_size, 8);
+      *lds_size = MAX2(*lds_size, 8 * sscreen->info.lds_alloc_granularity);
 }
 
 static void si_fix_resource_usage(struct si_screen *sscreen, struct si_shader *shader)

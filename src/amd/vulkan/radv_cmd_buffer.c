@@ -3341,7 +3341,8 @@ radv_emit_hw_gs(struct radv_cmd_buffer *cmd_buffer, const struct radv_shader *gs
 
          radeon_set_sh_reg_seq(gs->info.regs.pgm_rsrc1, 2);
          radeon_emit(gs->config.rsrc1);
-         radeon_emit(gs->config.rsrc2 | S_00B22C_LDS_SIZE(gs_state->lds_size));
+         radeon_emit(gs->config.rsrc2 |
+                     S_00B22C_LDS_SIZE(DIV_ROUND_UP(gs_state->lds_size, pdev->info.lds_encode_granularity)));
       }
 
       radeon_opt_set_context_reg(R_028A44_VGT_GS_ONCHIP_CNTL, RADV_TRACKED_VGT_GS_ONCHIP_CNTL,
@@ -11188,6 +11189,9 @@ radv_emit_tcs_tes_state(struct radv_cmd_buffer *cmd_buffer)
    if (!tcs)
       return;
 
+   assert(cmd_buffer->state.tess_lds_size % pdev->info.lds_alloc_granularity == 0);
+   unsigned lds_alloc = DIV_ROUND_UP(cmd_buffer->state.tess_lds_size, pdev->info.lds_encode_granularity);
+
    if (pdev->info.gfx_level >= GFX9) {
       if (tcs->info.merged_shader_compiled_separately) {
          radv_shader_combine_cfg_vs_tcs(cmd_buffer->state.shaders[MESA_SHADER_VERTEX], tcs, NULL, &pgm_hs_rsrc2);
@@ -11196,9 +11200,9 @@ radv_emit_tcs_tes_state(struct radv_cmd_buffer *cmd_buffer)
       }
 
       if (pdev->info.gfx_level >= GFX10) {
-         pgm_hs_rsrc2 |= S_00B42C_LDS_SIZE_GFX10(cmd_buffer->state.tess_lds_size);
+         pgm_hs_rsrc2 |= S_00B42C_LDS_SIZE_GFX10(lds_alloc);
       } else {
-         pgm_hs_rsrc2 |= S_00B42C_LDS_SIZE_GFX9(cmd_buffer->state.tess_lds_size);
+         pgm_hs_rsrc2 |= S_00B42C_LDS_SIZE_GFX9(lds_alloc);
       }
    }
 
@@ -11233,7 +11237,7 @@ radv_emit_tcs_tes_state(struct radv_cmd_buffer *cmd_buffer)
       if (pdev->info.gfx_level >= GFX9) {
          radeon_set_sh_reg(tcs->info.regs.pgm_rsrc2, pgm_hs_rsrc2);
       } else {
-         const uint32_t ls_rsrc2 = vs->config.rsrc2 | S_00B52C_LDS_SIZE(cmd_buffer->state.tess_lds_size);
+         const uint32_t ls_rsrc2 = vs->config.rsrc2 | S_00B52C_LDS_SIZE(lds_alloc);
 
          radeon_set_sh_reg(vs->info.regs.pgm_rsrc2, ls_rsrc2);
       }

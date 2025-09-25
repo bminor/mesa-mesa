@@ -870,9 +870,6 @@ radv_GetPipelineExecutableStatisticsKHR(VkDevice _device, const VkPipelineExecut
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const enum amd_gfx_level gfx_level = pdev->info.gfx_level;
 
-   unsigned lds_increment =
-      gfx_level >= GFX11 && stage == MESA_SHADER_FRAGMENT ? 1024 : pdev->info.lds_encode_granularity;
-
    VK_OUTARRAY_MAKE_TYPED(VkPipelineExecutableStatisticKHR, out, pStatistics, pStatisticCount);
 
    struct amd_stats stats = {0};
@@ -884,7 +881,7 @@ radv_GetPipelineExecutableStatisticsKHR(VkDevice _device, const VkPipelineExecut
    stats.spillsgprs = shader->config.spilled_sgprs;
    stats.spillvgprs = shader->config.spilled_vgprs;
    stats.codesize = shader->exec_size;
-   stats.lds = align(shader->config.lds_size * lds_increment, pdev->info.lds_alloc_granularity);
+   stats.lds = shader->config.lds_size;
    stats.scratch = shader->config.scratch_bytes_per_wave;
    stats.maxwaves = shader->max_waves;
 

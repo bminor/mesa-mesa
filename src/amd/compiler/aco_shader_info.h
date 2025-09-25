@@ -121,7 +121,7 @@ struct aco_shader_info {
    } vs;
    struct {
       /* Vulkan only */
-      uint32_t num_lds_blocks;
+      uint32_t lds_size;
    } tcs;
    struct {
       uint32_t num_inputs;

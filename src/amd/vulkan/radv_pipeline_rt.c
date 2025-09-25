@@ -842,14 +842,16 @@ combine_config(struct ac_shader_config *config, struct ac_shader_config *other)
 }
 
 static void
-postprocess_rt_config(struct ac_shader_config *config, enum amd_gfx_level gfx_level, unsigned wave_size)
+postprocess_rt_config(struct ac_shader_config *config, const struct radeon_info *info, unsigned wave_size)
 {
    config->rsrc1 =
       (config->rsrc1 & C_00B848_VGPRS) | S_00B848_VGPRS((config->num_vgprs - 1) / (wave_size == 32 ? 8 : 4));
-   if (gfx_level < GFX10)
+   if (info->gfx_level < GFX10)
       config->rsrc1 = (config->rsrc1 & C_00B848_SGPRS) | S_00B848_SGPRS((config->num_sgprs - 1) / 8);
 
-   config->rsrc2 = (config->rsrc2 & C_00B84C_LDS_SIZE) | S_00B84C_LDS_SIZE(config->lds_size);
+   assert(config->lds_size % info->lds_alloc_granularity == 0);
+   unsigned lds_alloc = DIV_ROUND_UP(config->lds_size, info->lds_encode_granularity);
+   config->rsrc2 = (config->rsrc2 & C_00B84C_LDS_SIZE) | S_00B84C_LDS_SIZE(lds_alloc);
    config->rsrc3 = (config->rsrc3 & C_00B8A0_SHARED_VGPR_CNT) | S_00B8A0_SHARED_VGPR_CNT(config->num_shared_vgprs / 8);
 }
 
@@ -869,7 +871,7 @@ compile_rt_prolog(struct radv_device *device, struct radv_ray_tracing_pipeline *
    if (pipeline->base.base.shaders[MESA_SHADER_INTERSECTION])
       combine_config(config, &pipeline->base.base.shaders[MESA_SHADER_INTERSECTION]->config);
 
-   postprocess_rt_config(config, pdev->info.gfx_level, pdev->rt_wave_size);
+   postprocess_rt_config(config, &pdev->info, pdev->rt_wave_size);
 
    pipeline->prolog->max_waves = radv_get_max_waves(device, config, &pipeline->prolog->info);
 }

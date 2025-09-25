@@ -776,8 +776,6 @@ si_sqtt_add_code_object(struct si_context *sctx,
       memcpy(code, shader->binary.uploaded_code, shader->binary.uploaded_code_size);
 
       uint64_t va = pipeline->bo->gpu_address + (is_compute ? 0 : gfx_sh_offsets[i]);
-      unsigned lds_increment = sctx->gfx_level >= GFX11 && i == MESA_SHADER_FRAGMENT ?
-         1024 : sctx->screen->info.lds_encode_granularity;
 
       memset(record->shader_data[i].rt_shader_name, 0, sizeof(record->shader_data[i].rt_shader_name));
       record->shader_data[i].hash[0] = _mesa_hash_data(code, shader->binary.uploaded_code_size);
@@ -791,7 +789,7 @@ si_sqtt_add_code_object(struct si_context *sctx,
       record->shader_data[i].hw_stage = hw_stage;
       record->shader_data[i].is_combined = false;
       record->shader_data[i].scratch_memory_size = shader->config.scratch_bytes_per_wave;
-      record->shader_data[i].lds_size = shader->config.lds_size * lds_increment;
+      record->shader_data[i].lds_size = shader->config.lds_size;
       record->shader_data[i].wavefront_size = shader->wave_size;
 
       record->shader_stages_mask |= 1 << i;

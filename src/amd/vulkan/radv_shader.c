@@ -2073,11 +2073,11 @@ radv_postprocess_binary_config(struct radv_device *device, struct radv_shader_bi
       else if (pdev->info.gfx_level >= GFX9 && binary->info.stage == MESA_SHADER_GEOMETRY)
          lds_size = binary->info.gs_ring_info.lds_size;
       else if (binary->info.stage == MESA_SHADER_TESS_CTRL)
-         lds_size = binary->info.tcs.num_lds_blocks * pdev->info.lds_encode_granularity; /* only used by stats */
+         lds_size = binary->info.tcs.lds_size; /* only used by stats */
       else
          lds_size = binary->info.nir_shared_size;
 
-      config->lds_size = DIV_ROUND_UP(lds_size, pdev->info.lds_encode_granularity);
+      config->lds_size = ALIGN(lds_size, pdev->info.lds_alloc_granularity);
 
       assert(!binary->info.has_ngg_culling || config->lds_size);
       ac_rtld_close(&rtld_binary);
@@ -2172,6 +2172,8 @@ radv_postprocess_binary_config(struct radv_device *device, struct radv_shader_bi
    }
 
    bool wgp_mode = radv_should_use_wgp_mode(device, stage, info);
+   assert(config->lds_size % pdev->info.lds_alloc_granularity == 0);
+   unsigned lds_alloc = DIV_ROUND_UP(config->lds_size, pdev->info.lds_encode_granularity);
 
    switch (stage) {
    case MESA_SHADER_TESS_EVAL:
@@ -2278,7 +2280,7 @@ radv_postprocess_binary_config(struct radv_device *device, struct radv_shader_bi
                        S_00B84C_TIDIG_COMP_CNT(info->cs.uses_thread_id[2]   ? 2
                                                : info->cs.uses_thread_id[1] ? 1
                                                                             : 0) |
-                       S_00B84C_TG_SIZE_EN(info->cs.uses_local_invocation_idx) | S_00B84C_LDS_SIZE(config->lds_size) |
+                       S_00B84C_TG_SIZE_EN(info->cs.uses_local_invocation_idx) | S_00B84C_LDS_SIZE(lds_alloc) |
                        S_00B84C_EXCP_EN(excp_en) | S_00B84C_EXCP_EN_MSB(excp_en_msb);
       config->rsrc3 |= S_00B8A0_SHARED_VGPR_CNT(num_shared_vgpr_blocks);
 
@@ -2358,7 +2360,7 @@ radv_postprocess_binary_config(struct radv_device *device, struct radv_shader_bi
        * disable exactly 1 CU per SA for GS.
        */
       config->rsrc1 |= S_00B228_GS_VGPR_COMP_CNT(gs_vgpr_comp_cnt) | S_00B228_WGP_MODE(wgp_mode);
-      config->rsrc2 |= S_00B22C_ES_VGPR_COMP_CNT(es_vgpr_comp_cnt) | S_00B22C_LDS_SIZE(config->lds_size) |
+      config->rsrc2 |= S_00B22C_ES_VGPR_COMP_CNT(es_vgpr_comp_cnt) | S_00B22C_LDS_SIZE(lds_alloc) |
                        S_00B22C_OC_LDS_EN(es_stage == MESA_SHADER_TESS_EVAL);
    } else if (pdev->info.gfx_level >= GFX9 && stage == MESA_SHADER_GEOMETRY) {
       unsigned gs_vgpr_comp_cnt, es_vgpr_comp_cnt;
@@ -2461,12 +2463,12 @@ radv_shader_combine_cfg_vs_gs(const struct radv_device *device, const struct rad
       rsrc2 |= gs->config.rsrc2 & ~(C_00B12C_SCRATCH_EN & C_00B12C_SO_EN & C_00B12C_SO_BASE0_EN & C_00B12C_SO_BASE1_EN &
                                     C_00B12C_SO_BASE2_EN & C_00B12C_SO_BASE3_EN);
       if (gs->info.is_ngg) {
-         lds_size = DIV_ROUND_UP(gs->info.ngg_info.lds_size, pdev->info.lds_encode_granularity);
+         lds_size = gs->info.ngg_info.lds_size;
       } else {
          lds_size = gs->info.gs_ring_info.lds_size;
       }
 
-      rsrc2 |= S_00B22C_LDS_SIZE(lds_size);
+      rsrc2 |= S_00B22C_LDS_SIZE(DIV_ROUND_UP(lds_size, pdev->info.lds_encode_granularity));
 
       *rsrc2_out = rsrc2;
    }
@@ -2749,8 +2751,7 @@ radv_get_max_waves(const struct radv_device *device, const struct ac_shader_conf
    const uint8_t wave_size = info->wave_size;
    mesa_shader_stage stage = info->stage;
    unsigned max_simd_waves = gpu_info->max_waves_per_simd;
-   unsigned lds_per_workgroup = align(conf->lds_size * gpu_info->lds_encode_granularity,
-                                      gpu_info->lds_alloc_granularity);
+   unsigned lds_per_workgroup = conf->lds_size;
    unsigned waves_per_workgroup = DIV_ROUND_UP(info->workgroup_size, wave_size);
 
    if (stage == MESA_SHADER_FRAGMENT) {

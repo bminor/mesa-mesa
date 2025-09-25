@@ -1017,6 +1017,8 @@ static void si_shader_gs(struct si_screen *sscreen, struct si_shader *shader)
       else
          num_user_sgprs = GFX9_GS_NUM_USER_SGPR;
 
+      unsigned lds_alloc = DIV_ROUND_UP(shader->config.lds_size, sscreen->info.lds_encode_granularity);
+
       if (sscreen->info.gfx_level >= GFX10) {
          ac_pm4_set_reg(&pm4->base, R_00B320_SPI_SHADER_PGM_LO_ES, va >> 8);
       } else {
@@ -1032,7 +1034,7 @@ static void si_shader_gs(struct si_screen *sscreen, struct si_shader *shader)
       uint32_t rsrc2 = S_00B22C_USER_SGPR(num_user_sgprs) |
                        S_00B22C_ES_VGPR_COMP_CNT(es_vgpr_comp_cnt) |
                        S_00B22C_OC_LDS_EN(es_stage == MESA_SHADER_TESS_EVAL) |
-                       S_00B22C_LDS_SIZE(shader->config.lds_size) |
+                       S_00B22C_LDS_SIZE(lds_alloc) |
                        S_00B22C_SCRATCH_EN(shader->config.scratch_bytes_per_wave > 0);
 
       if (sscreen->info.gfx_level >= GFX10) {
@@ -1453,6 +1455,8 @@ static void gfx10_shader_ngg(struct si_screen *sscreen, struct si_shader *shader
       num_user_sgprs = GFX9_GS_NUM_USER_SGPR;
    }
 
+   unsigned lds_alloc = DIV_ROUND_UP(shader->config.lds_size, sscreen->info.lds_encode_granularity);
+
    /* Primitives with adjancency can only occur without tessellation. */
    assert(gs_input_verts_per_prim <= 3 || es_stage == MESA_SHADER_VERTEX);
 
@@ -1501,7 +1505,7 @@ static void gfx10_shader_ngg(struct si_screen *sscreen, struct si_shader *shader
                   S_00B22C_USER_SGPR(num_user_sgprs) |
                   S_00B22C_ES_VGPR_COMP_CNT(es_vgpr_comp_cnt) |
                   S_00B22C_OC_LDS_EN(es_stage == MESA_SHADER_TESS_EVAL) |
-                  S_00B22C_LDS_SIZE(shader->config.lds_size) |
+                  S_00B22C_LDS_SIZE(lds_alloc) |
                   S_00B22C_USER_SGPR_MSB_GFX10(num_user_sgprs >> 5) |
                   S_00B22C_SHARED_VGPR_CNT(shader->config.num_shared_vgprs / 8));
 
@@ -2196,8 +2200,10 @@ static void si_shader_ps(struct si_screen *sscreen, struct si_shader *shader)
                   S_00B028_DX10_CLAMP(sscreen->info.gfx_level < GFX12) |
                   S_00B028_MEM_ORDERED(si_shader_mem_ordered(shader)) |
                   S_00B028_FLOAT_MODE(shader->config.float_mode));
+
+   unsigned lds_alloc = DIV_ROUND_UP(shader->config.lds_size, sscreen->info.lds_encode_granularity);
    ac_pm4_set_reg(&pm4->base, R_00B02C_SPI_SHADER_PGM_RSRC2_PS,
-                  S_00B02C_EXTRA_LDS_SIZE(shader->config.lds_size) |
+                  S_00B02C_EXTRA_LDS_SIZE(lds_alloc) |
                   S_00B02C_USER_SGPR(SI_PS_NUM_USER_SGPR) |
                   S_00B02C_SCRATCH_EN(shader->config.scratch_bytes_per_wave > 0) |
                   S_00B02C_SHARED_VGPR_CNT(shader->config.num_shared_vgprs / 8));
@@ -4712,6 +4718,7 @@ void si_update_tess_io_layout_state(struct si_context *sctx)
                                tcs->info.base.tess.tcs_vertices_out, ls_current->wave_size,
                                tess_uses_primid, num_tcs_input_cp, lds_input_vertex_size,
                                num_remapped_tess_level_outputs, &num_patches, &lds_size);
+   unsigned lds_alloc = DIV_ROUND_UP(lds_size, sctx->screen->info.lds_encode_granularity);
 
    if (sctx->num_patches_per_workgroup != num_patches) {
       sctx->num_patches_per_workgroup = num_patches;
@@ -4751,14 +4758,15 @@ void si_update_tess_io_layout_state(struct si_context *sctx)
       ls_hs_rsrc2 = sctx->shader.tcs.current->config.rsrc2;
 
       if (sctx->gfx_level >= GFX10)
-         ls_hs_rsrc2 |= S_00B42C_LDS_SIZE_GFX10(lds_size);
+         ls_hs_rsrc2 |= S_00B42C_LDS_SIZE_GFX10(lds_alloc);
       else
-         ls_hs_rsrc2 |= S_00B42C_LDS_SIZE_GFX9(lds_size);
+         ls_hs_rsrc2 |= S_00B42C_LDS_SIZE_GFX9(lds_alloc);
    } else {
       ls_hs_rsrc2 = sctx->shader.vs.current->config.rsrc2;
 
       si_multiwave_lds_size_workaround(sctx->screen, &lds_size);
-      ls_hs_rsrc2 |= S_00B52C_LDS_SIZE(lds_size);
+      lds_alloc = DIV_ROUND_UP(lds_size, sctx->screen->info.lds_encode_granularity);
+      ls_hs_rsrc2 |= S_00B52C_LDS_SIZE(lds_alloc);
    }
 
    sctx->ls_hs_rsrc2 = ls_hs_rsrc2;

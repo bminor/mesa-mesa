@@ -613,7 +613,7 @@ gather_shader_info_tcs(struct radv_device *device, const nir_shader *nir,
       radv_get_tess_wg_info(pdev, &info->tcs.io_info, nir->info.tess.tcs_vertices_out,
                             gfx_state->ts.patch_control_points,
                             /* TODO: This should be only inputs in LDS (not VGPR inputs) to reduce LDS usage */
-                            info->tcs.num_linked_inputs, &info->num_tess_patches, &info->tcs.num_lds_blocks);
+                            info->tcs.num_linked_inputs, &info->num_tess_patches, &info->tcs.lds_size);
    }
 }
 
@@ -663,13 +663,13 @@ radv_get_legacy_gs_info(const struct radv_device *device, struct radv_shader_inf
    ac_legacy_gs_compute_subgroup_info(gs_info->gs.input_prim, gs_info->gs.vertices_out, gs_info->gs.invocations,
                                       esgs_vertex_stride, &info);
 
-   const uint32_t lds_granularity = pdev->info.lds_encode_granularity;
+   const uint32_t lds_granularity = pdev->info.lds_alloc_granularity;
    const uint32_t total_lds_bytes = align(info.esgs_lds_size * 4, lds_granularity);
 
    out->gs_inst_prims_in_subgroup = info.gs_inst_prims_in_subgroup;
    out->es_verts_per_subgroup = info.es_verts_per_subgroup;
    out->gs_prims_per_subgroup = info.gs_prims_per_subgroup;
-   out->lds_size = total_lds_bytes / lds_granularity;
+   out->lds_size = total_lds_bytes;
 
    unsigned num_se = pdev->info.max_se;
    unsigned wave_size = 64;

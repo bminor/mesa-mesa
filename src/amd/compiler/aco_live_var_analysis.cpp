@@ -575,8 +575,7 @@ max_suitable_waves(Program* program, uint16_t waves)
    unsigned num_workgroups = waves * num_simd / waves_per_workgroup;
 
    /* Adjust #workgroups for LDS */
-   unsigned lds_per_workgroup = align(program->config->lds_size * program->dev.lds_encoding_granule,
-                                      program->dev.lds_alloc_granule);
+   unsigned lds_per_workgroup = align(program->config->lds_size, program->dev.lds_alloc_granule);
 
    if (program->stage == fragment_fs) {
       /* PS inputs are moved from PC (parameter cache) to LDS before PS waves are launched.
