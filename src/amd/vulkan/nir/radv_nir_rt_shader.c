@@ -1992,7 +1992,8 @@ radv_nir_lower_rt_abi(nir_shader *shader, const VkRayTracingPipelineCreateInfoKH
    }
    shader->scratch_size = 0;
 
-   NIR_PASS(_, shader, nir_lower_returns);
+   /* This can't use NIR_PASS because NIR_DEBUG=serialize,clone invalidates pointers. */
+   nir_lower_returns(shader);
 
    nir_cf_list list;
    nir_cf_extract(&list, nir_before_impl(impl), nir_after_impl(impl));
