@@ -4967,7 +4967,6 @@ tc_call_clear_buffer(struct pipe_context *pipe, void *call)
 
    pipe->clear_buffer(pipe, p->res, p->offset, p->size, p->clear_value,
                       p->clear_value_size);
-   tc_drop_resource_reference(p->res);
    return call_size(tc_clear_buffer);
 }
 
@@ -4983,7 +4982,7 @@ tc_clear_buffer(struct pipe_context *_pipe, struct pipe_resource *res,
 
    tc_buffer_disable_cpu_storage(res);
 
-   tc_set_resource_reference(&p->res, res);
+   p->res = res;
    tc_add_to_buffer_list(&tc->buffer_lists[tc->next_buf_list], res);
    p->offset = offset;
    p->size = size;
