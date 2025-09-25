@@ -2608,10 +2608,33 @@ d3d12_video_encoder_prepare_output_buffers(struct d3d12_video_encoder *pD3D12Enc
       pD3D12Enc->m_currentEncodeConfig.m_currentResolution;
 
 #if D3D12_VIDEO_USE_NEW_ENCODECMDLIST4_INTERFACE
-   // Assume all stats will be required and use max allocation to avoid reallocating between frames
-   pD3D12Enc->m_currentEncodeCapabilities.m_ResourceRequirementsCaps.OptionalMetadata = D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_QP_MAP |
-                                                                                        D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_SATD_MAP |
-                                                                                        D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_RC_BIT_ALLOCATION_MAP;
+   // Assume all stats supported by the driver will be required and use max allocation to avoid reallocating between frames
+   pD3D12Enc->m_currentEncodeCapabilities.m_ResourceRequirementsCaps.OptionalMetadata = D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_NONE;
+
+   if ((pD3D12Enc->m_currentEncodeCapabilities.m_SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_PER_BLOCK_QP_MAP_METADATA_AVAILABLE))
+   {
+      pD3D12Enc->m_currentEncodeCapabilities.m_ResourceRequirementsCaps.OptionalMetadata |=
+         D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_QP_MAP;
+   }
+
+   if ((pD3D12Enc->m_currentEncodeCapabilities.m_SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_PER_BLOCK_SATD_MAP_METADATA_AVAILABLE))
+   {
+      pD3D12Enc->m_currentEncodeCapabilities.m_ResourceRequirementsCaps.OptionalMetadata |=
+         D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_SATD_MAP;
+   }
+
+   if ((pD3D12Enc->m_currentEncodeCapabilities.m_SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_PER_BLOCK_RC_BIT_ALLOCATION_MAP_METADATA_AVAILABLE))
+   {
+      pD3D12Enc->m_currentEncodeCapabilities.m_ResourceRequirementsCaps.OptionalMetadata |=
+         D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_RC_BIT_ALLOCATION_MAP;
+   }
+
+   if ((pD3D12Enc->m_currentEncodeCapabilities.m_SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_FRAME_PSNR_METADATA_AVAILABLE))
+   {
+      pD3D12Enc->m_currentEncodeCapabilities.m_ResourceRequirementsCaps.OptionalMetadata |=
+         D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_FRAME_PSNR;
+   }
+
    pD3D12Enc->m_currentEncodeCapabilities.m_ResourceRequirementsCaps.CodecConfiguration = d3d12_video_encoder_get_current_codec_config_desc(pD3D12Enc);
 
    HRESULT hr = pD3D12Enc->m_spD3D12VideoDevice->CheckFeatureSupport(
