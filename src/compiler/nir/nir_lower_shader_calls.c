@@ -1993,6 +1993,11 @@ nir_lower_shader_calls(nir_shader *shader,
       bool progress = false;
       NIR_PASS(progress, shader, wrap_instrs, instr_is_shader_call);
 
+      /* NIR_PASS might recreate the function_impl when NIR_DEBUG=serialize or
+       * NIR_DEBUG=clone is used.
+       */
+      impl = nir_shader_get_entrypoint(shader);
+
       nir_rematerialize_derefs_in_use_blocks_impl(impl);
 
       if (progress)
