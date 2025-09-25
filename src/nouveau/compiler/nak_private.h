@@ -343,6 +343,16 @@ bool nak_nir_add_barriers(nir_shader *nir, const struct nak_compiler *nak);
 bool nak_nir_lower_cf(nir_shader *nir);
 bool nak_nir_lower_cmat(nir_shader *shader, const struct nak_compiler *nak);
 
+/**
+ * Check if, for nak's purposes, a block is divergent
+ *
+ * Note that this differs from block->divergent because in nir's terms, the
+ * start block of a loop with divergent continues can be non-divergent but nak
+ * will always consider this divergent. This matters because nak does not allow
+ * writing uregs from these blocks.
+ */
+bool nak_block_is_divergent(const nir_block *block);
+
 void nak_optimize_nir(nir_shader *nir, const struct nak_compiler *nak);
 
 #ifdef __cplusplus
