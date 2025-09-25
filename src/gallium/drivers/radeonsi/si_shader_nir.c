@@ -300,6 +300,7 @@ static void si_lower_nir(struct si_screen *sscreen, struct nir_shader *nir)
       .lower_tg4_offsets = true,
       .lower_to_fragment_fetch_amd = sscreen->info.gfx_level < GFX11,
       .lower_1d = sscreen->info.gfx_level == GFX9,
+      .optimize_txd = true,
    };
    NIR_PASS(_, nir, nir_lower_tex, &lower_tex_options);
 
