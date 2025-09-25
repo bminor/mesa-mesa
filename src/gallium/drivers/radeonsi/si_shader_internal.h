@@ -96,6 +96,7 @@ unsigned si_get_max_workgroup_size(const struct si_shader *shader);
 enum ac_hw_stage si_select_hw_stage(const mesa_shader_stage stage, const union si_shader_key *const key,
                                     const enum amd_gfx_level gfx_level);
 bool gfx10_ngg_export_prim_early(struct si_shader *shader);
+unsigned si_calculate_needed_lds_size(enum amd_gfx_level gfx_level, struct si_shader *shader);
 
 /* si_shader_args.c */
 void si_init_shader_args(struct si_shader *shader, struct si_shader_args *args,

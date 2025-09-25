@@ -77,6 +77,7 @@ si_fill_aco_shader_info(struct si_shader *shader, struct aco_shader_info *info,
 
    info->image_2d_view_of_3d = gfx_level == GFX9;
    info->hw_stage = si_select_hw_stage(stage, key, gfx_level);
+   info->lds_size = si_calculate_needed_lds_size(gfx_level, shader);
 
    if (stage <= MESA_SHADER_GEOMETRY && key->ge.as_ngg && !key->ge.as_es) {
       info->schedule_ngg_pos_exports = sel->screen->info.gfx_level < GFX11 &&

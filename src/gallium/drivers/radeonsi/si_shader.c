@@ -421,12 +421,13 @@ static int upload_binary_elf(struct si_screen *sscreen, struct si_shader *shader
    return size;
 }
 
-static void calculate_needed_lds_size(struct si_screen *sscreen, struct si_shader *shader)
+unsigned si_calculate_needed_lds_size(enum amd_gfx_level gfx_level, struct si_shader *shader)
 {
    mesa_shader_stage stage =
       shader->is_gs_copy_shader ? MESA_SHADER_VERTEX : shader->selector->stage;
+   unsigned lds_size = 0;
 
-   if (sscreen->info.gfx_level >= GFX9 && stage <= MESA_SHADER_GEOMETRY &&
+   if (gfx_level >= GFX9 && stage <= MESA_SHADER_GEOMETRY &&
        (stage == MESA_SHADER_GEOMETRY || shader->key.ge.as_ngg)) {
       unsigned size_in_dw = shader->key.ge.as_ngg ? shader->ngg.info.esgs_lds_size
                                                   : shader->gs_info.esgs_lds_size;
@@ -434,18 +435,16 @@ static void calculate_needed_lds_size(struct si_screen *sscreen, struct si_shade
       if (stage == MESA_SHADER_GEOMETRY && shader->key.ge.as_ngg)
          size_in_dw += shader->ngg.info.ngg_out_lds_size;
 
-      shader->config.lds_size =
-         ALIGN(size_in_dw * 4, get_lds_granularity(sscreen, stage));
+      lds_size = size_in_dw * 4;
    }
 
    if (stage == MESA_SHADER_COMPUTE) {
-      shader->config.lds_size = ALIGN(shader->selector->info.base.shared_size,
-                                      sscreen->info.lds_alloc_granularity);
+      lds_size = shader->selector->info.base.shared_size;
    }
 
    /* Check that the LDS size is within hw limits. */
-   assert(shader->config.lds_size % sscreen->info.lds_alloc_granularity == 0);
-   assert(shader->config.lds_size <= (sscreen->info.gfx_level == GFX6 ? 32 : 64) * 1024);
+   assert(lds_size <= (gfx_level == GFX6 ? 32 : 64) * 1024);
+   return lds_size;
 }
 
 static int upload_binary_raw(struct si_screen *sscreen, struct si_shader *shader,
@@ -518,7 +517,9 @@ int si_shader_binary_upload_at(struct si_screen *sscreen, struct si_shader *shad
       r = upload_binary_raw(sscreen, shader, scratch_va, dma_upload, bo_offset);
    }
 
-   calculate_needed_lds_size(sscreen, shader);
+   unsigned lds_size = si_calculate_needed_lds_size(sscreen->info.gfx_level, shader);
+   shader->config.lds_size = ALIGN(lds_size, sscreen->info.lds_alloc_granularity);
+
    return r;
 }
 
