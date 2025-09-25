@@ -232,14 +232,8 @@ setup_tcs_info(isel_context* ctx)
 void
 setup_lds_size(isel_context* ctx, nir_shader* nir)
 {
-   /* TCS and GFX9 GS are special cases, already in units of the allocation granule. */
-   if (ctx->stage.has(SWStage::TCS))
-      ctx->program->config->lds_size = ctx->program->info.tcs.lds_size;
-   else if (ctx->stage.hw == AC_HW_LEGACY_GEOMETRY_SHADER && ctx->options->gfx_level >= GFX9)
-      ctx->program->config->lds_size = ctx->program->info.gfx9_gs_ring_lds_size;
-   else
-      ctx->program->config->lds_size =
-         ALIGN(nir->info.shared_size, ctx->program->dev.lds_alloc_granule);
+   ctx->program->config->lds_size =
+      ALIGN(ctx->program->info.lds_size, ctx->program->dev.lds_alloc_granule);
 
    /* Make sure we fit the available LDS space. */
    assert(ctx->program->config->lds_size <= ctx->program->dev.lds_limit);

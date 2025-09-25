@@ -2944,7 +2944,7 @@ radv_graphics_shaders_compile(struct radv_device *device, struct vk_pipeline_cac
 
       if ((gs_stage ? gs_stage : es_stage)->info.is_ngg) {
          gfx10_get_ngg_info(device, &es_stage->info, gs_stage ? &gs_stage->info : NULL, &stage->info.ngg_info);
-         stage->nir->info.shared_size = stage->info.ngg_info.lds_size;
+         stage->info.nir_shared_size = stage->info.ngg_info.lds_size;
       }
    }
 

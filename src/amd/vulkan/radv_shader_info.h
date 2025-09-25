@@ -112,7 +112,7 @@ struct radv_shader_info {
    bool merged_shader_compiled_separately; /* GFX9+ */
    bool force_indirect_descriptors;
    uint64_t gs_inputs_read;  /* Mask of GS inputs read (only used by linked ES) */
-   unsigned nir_shared_size; /* Only used by LLVM. */
+   unsigned nir_shared_size;
 
    struct {
       uint8_t output_usage_mask[VARYING_SLOT_VAR31 + 1];

@@ -2066,20 +2066,10 @@ radv_postprocess_binary_config(struct radv_device *device, struct radv_shader_bi
          return false;
       }
 
-      unsigned lds_size = 0;
-
-      if (binary->info.is_ngg)
-         lds_size = binary->info.ngg_info.lds_size;
-      else if (pdev->info.gfx_level >= GFX9 && binary->info.stage == MESA_SHADER_GEOMETRY)
-         lds_size = binary->info.gs_ring_info.lds_size;
-      else if (binary->info.stage == MESA_SHADER_TESS_CTRL)
-         lds_size = binary->info.tcs.lds_size; /* only used by stats */
-      else
-         lds_size = binary->info.nir_shared_size;
-
+      /* Calculate LDS allocation requirements. */
+      unsigned lds_size = radv_calculate_lds_size(&binary->info, pdev->info.gfx_level);
       config->lds_size = ALIGN(lds_size, pdev->info.lds_alloc_granularity);
 
-      assert(!binary->info.has_ngg_culling || config->lds_size);
       ac_rtld_close(&rtld_binary);
 #endif
    }

@@ -111,6 +111,7 @@ struct aco_shader_info {
    bool schedule_ngg_pos_exports; /* Whether we should schedule position exports up or not. */
    bool image_2d_view_of_3d;
    unsigned workgroup_size;
+   unsigned lds_size;
    bool merged_shader_compiled_separately; /* GFX9+ */
    struct ac_arg next_stage_pc;
    struct ac_arg epilog_pc; /* Vulkan only */
@@ -119,10 +120,6 @@ struct aco_shader_info {
       bool any_tcs_inputs_via_lds;
       bool has_prolog;
    } vs;
-   struct {
-      /* Vulkan only */
-      uint32_t lds_size;
-   } tcs;
    struct {
       uint32_t num_inputs;
       unsigned spi_ps_input_ena;
@@ -136,8 +133,6 @@ struct aco_shader_info {
    struct {
       bool uses_full_subgroups;
    } cs;
-
-   uint32_t gfx9_gs_ring_lds_size;
 };
 
 enum aco_compiler_debug_level {
