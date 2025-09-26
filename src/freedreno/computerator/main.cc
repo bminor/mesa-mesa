@@ -29,8 +29,8 @@
 
 #include "util/u_math.h"
 
-#include "perfcntrs/freedreno_perfcntr.h"
 #include "ir3/ir3_shader.h"
+#include "perfcntrs/freedreno_perfcntr.h"
 
 #include "main.h"
 
@@ -96,12 +96,14 @@ dump_hex(void *buf, int sz)
    }
 }
 
-static const char *shortopts = "df:g:hp:";
+static const char *shortopts = "drf:g:hp:";
 
 static const struct option longopts[] = {
    {"disasm", no_argument, 0, 'd'},         {"file", required_argument, 0, 'f'},
    {"groups", required_argument, 0, 'g'},   {"help", no_argument, 0, 'h'},
-   {"perfcntr", required_argument, 0, 'p'}, {0, 0, 0, 0}};
+   {"perfcntr", required_argument, 0, 'p'},
+   {"disasm-print-raw", no_argument, 0, 'r'},
+   {0, 0, 0, 0}};
 
 static void
 usage(const char *name)
@@ -206,6 +208,7 @@ main(int argc, char **argv)
    struct perfcntr *perfcntrs = NULL;
    unsigned num_perfcntrs = 0;
    bool disasm = false;
+   bool disasm_print_raw = false;
    uint32_t grid[3] = {0};
    int opt, ret;
 
@@ -216,6 +219,9 @@ main(int argc, char **argv)
       switch (opt) {
       case 'd':
          disasm = true;
+         break;
+      case 'r':
+         disasm_print_raw = true;
          break;
       case 'f':
          in = fopen(optarg, "r");
@@ -283,6 +289,7 @@ main(int argc, char **argv)
    if (disasm) {
       struct ir3_disasm_options options = {
          .out = stdout,
+         .print_raw = disasm_print_raw,
       };
       backend->disassemble(kernel, &options);
    }

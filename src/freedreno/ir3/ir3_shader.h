@@ -574,6 +574,7 @@ struct ir3_disasm_info {
 
 struct ir3_disasm_options {
    FILE *out;
+   bool print_raw;
 };
 
 /* Represents half register in regid */
