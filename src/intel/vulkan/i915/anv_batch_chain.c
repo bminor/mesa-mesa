@@ -677,17 +677,15 @@ anv_gem_execbuffer_impl(struct anv_queue *queue,
                         const char *func, int line)
 {
    struct anv_device *device = queue->device;
-
    int ret;
-   const unsigned long request = (execbuf->flags & I915_EXEC_FENCE_OUT) ?
-      DRM_IOCTL_I915_GEM_EXECBUFFER2_WR :
-      DRM_IOCTL_I915_GEM_EXECBUFFER2;
+
+   assert((execbuf->flags & I915_EXEC_FENCE_OUT) == 0);
 
    if (unlikely(device->info->no_hw))
       return VK_SUCCESS;
 
    do {
-      ret = intel_ioctl(device->fd, request, execbuf);
+      ret = intel_ioctl(device->fd, DRM_IOCTL_I915_GEM_EXECBUFFER2, execbuf);
    } while (ret && errno == ENOMEM);
 
    if (ret)
