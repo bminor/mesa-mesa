@@ -104,9 +104,9 @@ a6xx_assemble(struct backend *b, FILE *in)
 }
 
 static void
-a6xx_disassemble(struct kernel *kernel, FILE *out)
+a6xx_disassemble(struct kernel *kernel, struct ir3_disasm_options *options)
 {
-   ir3_asm_disassemble(to_ir3_kernel(kernel), out);
+   ir3_asm_disassemble(to_ir3_kernel(kernel), options);
 }
 
 template<chip CHIP>

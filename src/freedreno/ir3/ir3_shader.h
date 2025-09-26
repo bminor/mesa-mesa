@@ -572,6 +572,10 @@ struct ir3_disasm_info {
    char *disasm;
 };
 
+struct ir3_disasm_options {
+   FILE *out;
+};
+
 /* Represents half register in regid */
 #define HALF_REG_ID 0x100
 
@@ -1185,6 +1189,8 @@ struct ir3_shader *
 ir3_shader_passthrough_tcs(struct ir3_shader *vs, unsigned patch_vertices);
 void ir3_shader_destroy(struct ir3_shader *shader);
 void ir3_shader_disasm(struct ir3_shader_variant *so, uint32_t *bin, FILE *out);
+void ir3_shader_disasm_options(struct ir3_shader_variant *so, uint32_t *bin,
+                               struct ir3_disasm_options *options);
 uint64_t ir3_shader_outputs(const struct ir3_shader *so);
 
 int ir3_glsl_type_size(const struct glsl_type *type, bool bindless);

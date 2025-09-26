@@ -1091,8 +1091,10 @@ print_raw(FILE *out, const BITSET_WORD *data, size_t size) {
 }
 
 void
-ir3_shader_disasm(struct ir3_shader_variant *so, uint32_t *bin, FILE *out)
+ir3_shader_disasm_options(struct ir3_shader_variant *so, uint32_t *bin,
+                          struct ir3_disasm_options *options)
 {
+   FILE *out = options->out;
    struct ir3 *ir = so->ir;
    struct ir3_register *reg;
    const char *type = ir3_shader_stage(so);
@@ -1241,6 +1243,16 @@ ir3_shader_disasm(struct ir3_shader_variant *so, uint32_t *bin, FILE *out)
    }
 
    fprintf(out, "\n");
+}
+
+void
+ir3_shader_disasm(struct ir3_shader_variant *so, uint32_t *bin, FILE *out)
+{
+   struct ir3_disasm_options options = {
+      .out = out,
+   };
+
+   ir3_shader_disasm_options(so, bin, &options);
 }
 
 uint64_t

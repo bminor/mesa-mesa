@@ -30,6 +30,7 @@
 #include "util/u_math.h"
 
 #include "perfcntrs/freedreno_perfcntr.h"
+#include "ir3/ir3_shader.h"
 
 #include "main.h"
 
@@ -279,8 +280,12 @@ main(int argc, char **argv)
       }
    }
 
-   if (disasm)
-      backend->disassemble(kernel, stdout);
+   if (disasm) {
+      struct ir3_disasm_options options = {
+         .out = stdout,
+      };
+      backend->disassemble(kernel, &options);
+   }
 
    if (grid[0] == 0)
       return 0;
