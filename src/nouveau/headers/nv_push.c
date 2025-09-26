@@ -55,7 +55,7 @@ vk_push_print(FILE *fp, const struct nv_push *push,
    curr_subchans[0] = devinfo->cls_eng3d;
    curr_subchans[1] = devinfo->cls_compute;
    curr_subchans[2] = devinfo->cls_m2mf;
-   curr_subchans[3] = 0x2d;
+   curr_subchans[3] = devinfo->cls_eng2d;
    curr_subchans[4] = devinfo->cls_copy;
 
    const bool print_offsets = true;
