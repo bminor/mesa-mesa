@@ -36,7 +36,8 @@
 #   define PVR_USE_WSI_PLATFORM_DISPLAY false
 #endif
 
-#if PVR_USE_WSI_PLATFORM_DISPLAY
+#if defined(VK_USE_PLATFORM_DISPLAY_KHR) || \
+    defined(VK_USE_PLATFORM_WAYLAND_KHR)
 #   define PVR_USE_WSI_PLATFORM true
 #else
 #   define PVR_USE_WSI_PLATFORM false

@@ -161,6 +161,9 @@ static const struct vk_instance_extension_table pvr_instance_extensions = {
    .KHR_get_physical_device_properties2 = true,
    .KHR_get_surface_capabilities2 = PVR_USE_WSI_PLATFORM,
    .KHR_surface = PVR_USE_WSI_PLATFORM,
+#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+   .KHR_wayland_surface = true,
+#endif
 #ifndef VK_USE_PLATFORM_WIN32_KHR
    .EXT_headless_surface = PVR_USE_WSI_PLATFORM && false,
 #endif
