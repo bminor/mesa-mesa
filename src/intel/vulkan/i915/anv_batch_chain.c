@@ -21,6 +21,7 @@
  * IN THE SOFTWARE.
  */
 
+#include "common/i915/intel_gem.h"
 #include "i915/anv_batch_chain.h"
 #include "anv_private.h"
 #include "anv_measure.h"
@@ -677,17 +678,8 @@ anv_gem_execbuffer_impl(struct anv_queue *queue,
                         const char *func, int line)
 {
    struct anv_device *device = queue->device;
-   int ret;
 
-   assert((execbuf->flags & I915_EXEC_FENCE_OUT) == 0);
-
-   if (unlikely(device->info->no_hw))
-      return VK_SUCCESS;
-
-   do {
-      ret = intel_ioctl(device->fd, DRM_IOCTL_I915_GEM_EXECBUFFER2, execbuf);
-   } while (ret && errno == ENOMEM);
-
+   int ret = i915_gem_execbuf_ioctl(device->fd, device->info, execbuf);
    if (ret)
       return vk_queue_set_lost(&queue->vk, "%s(%d) failed: %m", func, line);
 
