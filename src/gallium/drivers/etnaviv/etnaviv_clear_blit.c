@@ -133,10 +133,6 @@ etna_blit(struct pipe_context *pctx, const struct pipe_blit_info *blit_info)
    if (ctx->blit(pctx, &info))
       goto success;
 
-   if (etna_format_needs_yuv_tiler(blit_info->src.format) &&
-       etna_try_yuv_blit(pctx, blit_info))
-      goto success;
-
    if (util_try_blit_via_copy_region(pctx, &info, false))
       goto success;
 
@@ -274,7 +270,10 @@ etna_copy_resource(struct pipe_context *pctx, struct pipe_resource *dst,
 
       for (int z = 0; z < depth; z++) {
          blit.src.box.z = blit.dst.box.z = z;
-         ctx->blit(pctx, &blit);
+         if (unlikely(etna_format_needs_yuv_tiler(blit.src.format)))
+            etna_try_yuv_blit(pctx, &blit);
+         else
+            ctx->blit(pctx, &blit);
       }
 
       if (src == dst)
@@ -313,7 +312,10 @@ etna_copy_resource_box(struct pipe_context *pctx, struct pipe_resource *dst,
 
    for (int z = 0; z < box->depth; z++) {
       blit.src.box.z = blit.dst.box.z = box->z + z;
-      ctx->blit(pctx, &blit);
+      if (unlikely(etna_format_needs_yuv_tiler(blit.src.format)))
+         etna_try_yuv_blit(pctx, &blit);
+      else
+         ctx->blit(pctx, &blit);
    }
 
    if (src == dst)

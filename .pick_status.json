@@ -1554,7 +1554,7 @@
         "description": "etnaviv: fix YUV tiler blits",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d4780f03fca5321b02b71dd03afe6b66c40d9cc8",
         "notes": null
