@@ -147,6 +147,11 @@ vk_push_print(FILE *fp, const struct nv_push *push,
          }
          int class_id = curr_subchans[subchan];
 
+         /* If the sub channel is unbound, the expected behavior is to have it
+          * routed to the GPFIFO class */
+         if (class_id == 0)
+            class_id = devinfo->cls_gpfifo;
+
          if (!is_tert)
             mthd_name = P_PARSE_NV_MTHD(class_id, mthd);
 

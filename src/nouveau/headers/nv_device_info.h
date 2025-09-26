@@ -44,6 +44,7 @@ struct nv_device_info {
    uint16_t cls_eng3d;
    uint16_t cls_m2mf;
    uint16_t cls_compute;
+   uint16_t cls_gpfifo;
 
    uint64_t vram_size_B;
    uint64_t bar_size_B;

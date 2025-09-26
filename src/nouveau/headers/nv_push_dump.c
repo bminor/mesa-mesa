@@ -26,6 +26,26 @@
 #include "clcd97.h"
 #include "clce97.h"
 
+#include "cla06f.h"
+#include "clb06f.h"
+#include "clc06f.h"
+#include "clc36f.h"
+#include "clc46f.h"
+#include "clc56f.h"
+
+/* AMPERE_CHANNEL_GPFIFO_B has one typo and as we are replacing
+ * headers with the ones from the open-gpu-doc repo, let's hack around this for
+ * now
+ * XXX: Remove this once it's fixed
+ */
+#define AmpereAControlGPFifo AmpereBControlGPFifo
+#include "clc76f.h"
+#undef AmpereAControlGPFifo
+
+#include "clc86f.h"
+#include "clc96f.h"
+#include "clca6f.h"
+
 #include "cla0b5.h"
 #include "clb0b5.h"
 #include "clc0b5.h"
@@ -54,48 +74,59 @@ static struct nv_device_info get_fake_device_info(const char *arch_name) {
     info.cls_eng3d = KEPLER_A;
     info.cls_copy = KEPLER_DMA_COPY_A;
     info.cls_m2mf = KEPLER_INLINE_TO_MEMORY_A;
+    info.cls_gpfifo = KEPLER_CHANNEL_GPFIFO_A;
   } else if (!strcmp(arch_name, "MAXWELL")) {
     info.cls_eng3d = MAXWELL_A;
     info.cls_compute = MAXWELL_COMPUTE_A;
     info.cls_copy = MAXWELL_DMA_COPY_A;
+    info.cls_gpfifo = MAXWELL_CHANNEL_GPFIFO_A;
   } else if (!strcmp(arch_name, "PASCAL")) {
     info.cls_eng3d = PASCAL_A;
     info.cls_compute = PASCAL_COMPUTE_A;
     info.cls_copy = PASCAL_DMA_COPY_A;
+    info.cls_gpfifo = PASCAL_CHANNEL_GPFIFO_A;
   } else if (!strcmp(arch_name, "VOLTA")) {
     info.cls_eng3d = VOLTA_A;
     info.cls_compute = VOLTA_COMPUTE_A;
     info.cls_copy = VOLTA_DMA_COPY_A;
+    info.cls_gpfifo = VOLTA_CHANNEL_GPFIFO_A;
   } else if (!strcmp(arch_name, "TURING")) {
     info.cls_eng3d = TURING_A;
     info.cls_compute = TURING_COMPUTE_A;
     info.cls_copy = TURING_DMA_COPY_A;
+    info.cls_gpfifo = TURING_CHANNEL_GPFIFO_A;
   } else if (!strcmp(arch_name, "AMPERE")) {
     info.cls_eng3d = AMPERE_A;
     info.cls_compute = AMPERE_COMPUTE_B;
     info.cls_copy = AMPERE_DMA_COPY_A;
+    info.cls_gpfifo = AMPERE_CHANNEL_GPFIFO_A;
   } else if (!strcmp(arch_name, "ADA")) {
     info.cls_eng3d = ADA_A;
     info.cls_compute = ADA_COMPUTE_A;
     info.cls_copy = AMPERE_DMA_COPY_A;
+    info.cls_gpfifo = AMPERE_CHANNEL_GPFIFO_B;
   } else if (!strcmp(arch_name, "HOPPER")) {
     info.cls_eng3d = HOPPER_A;
     info.cls_compute = HOPPER_COMPUTE_A;
     info.cls_copy = AMPERE_DMA_COPY_A;
+    info.cls_gpfifo = HOPPER_CHANNEL_GPFIFO_A;
   } else if (!strcmp(arch_name, "BLACKWELL_A")) {
     info.cls_eng3d = BLACKWELL_A;
     info.cls_compute = BLACKWELL_COMPUTE_A;
     info.cls_copy = BLACKWELL_DMA_COPY_A;
+    info.cls_gpfifo = BLACKWELL_CHANNEL_GPFIFO_A;
   } else if (!strcmp(arch_name, "BLACKWELL_B")) {
     info.cls_eng3d = BLACKWELL_B;
     info.cls_compute = BLACKWELL_COMPUTE_B;
     info.cls_copy = BLACKWELL_DMA_COPY_B;
+    info.cls_gpfifo = BLACKWELL_CHANNEL_GPFIFO_B;
   } else {
     fprintf(stderr, "Unknown architecture \"%s\", defaulting to Turing",
             arch_name);
     info.cls_eng3d = TURING_A;
     info.cls_compute = TURING_COMPUTE_A;
     info.cls_copy = TURING_DMA_COPY_A;
+    info.cls_gpfifo = TURING_CHANNEL_GPFIFO_A;
   }
 
   info.cls_eng2d = FERMI_TWOD_A;
