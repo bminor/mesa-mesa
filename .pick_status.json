@@ -1364,7 +1364,7 @@
         "description": "r600: fix r600_draw_rectangle refcnt imbalance",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "cbb6e0277f687b38a45ed5e0845a38b39485708f",
         "notes": null
