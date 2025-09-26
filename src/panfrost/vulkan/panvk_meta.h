@@ -98,8 +98,16 @@ panvk_meta_copy_get_image_properties(struct panvk_image *img,
          break;
       case VK_FORMAT_D24_UNORM_S8_UINT:
          if (panvk_image_is_planar_depth_stencil(img)) {
-            props.depth.view_format =
-               use_unorm ? VK_FORMAT_R8G8B8_UNORM : VK_FORMAT_R8G8B8_UINT;
+            if (img->planes[0].image.props.format ==
+                PIPE_FORMAT_Z24_UNORM_PACKED) {
+               props.depth.view_format =
+                  use_unorm ? VK_FORMAT_R8G8B8_UNORM : VK_FORMAT_R8G8B8_UINT;
+            } else {
+               assert(img->planes[0].image.props.format ==
+                      PIPE_FORMAT_Z24X8_UNORM);
+               props.depth.view_format = use_unorm ? VK_FORMAT_R8G8B8A8_UNORM
+                                                   : VK_FORMAT_R8G8B8A8_UINT;
+            }
             props.depth.component_mask = BITFIELD_MASK(3);
             props.stencil.view_format =
                use_unorm ? VK_FORMAT_R8_UNORM : VK_FORMAT_R8_UINT;

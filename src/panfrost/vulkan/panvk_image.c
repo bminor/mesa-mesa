@@ -160,11 +160,15 @@ get_plane_count(struct panvk_image *image)
 }
 
 static enum pipe_format
-select_depth_plane_pfmt(struct panvk_image *image)
+select_depth_plane_pfmt(struct panvk_image *image, uint64_t mod)
 {
    switch (image->vk.format) {
    case VK_FORMAT_D24_UNORM_S8_UINT:
-      return PIPE_FORMAT_Z24_UNORM_PACKED;
+      /* We only use packed Z24 when AFBC is involved, to simplify copies on on
+       * AFBC resources.
+       */
+      return drm_is_afbc(mod) ? PIPE_FORMAT_Z24_UNORM_PACKED
+                              : PIPE_FORMAT_Z24X8_UNORM;
    case VK_FORMAT_D32_SFLOAT_S8_UINT:
       return PIPE_FORMAT_Z32_FLOAT;
    default:
@@ -185,11 +189,11 @@ select_stencil_plane_pfmt(struct panvk_image *image)
 }
 
 static enum pipe_format
-select_plane_pfmt(struct panvk_image *image, unsigned plane)
+select_plane_pfmt(struct panvk_image *image, uint64_t mod, unsigned plane)
 {
    if (panvk_image_is_planar_depth_stencil(image)) {
       return plane > 0 ? select_stencil_plane_pfmt(image)
-                       : select_depth_plane_pfmt(image);
+                       : select_depth_plane_pfmt(image, mod);
    }
 
    VkFormat plane_format = vk_format_get_plane_format(image->vk.format, plane);
@@ -279,7 +283,7 @@ panvk_image_can_use_mod(struct panvk_image *image,
    };
 
    for (uint8_t plane = 0; plane < image->plane_count; plane++) {
-      iprops.format = select_plane_pfmt(image, plane);
+      iprops.format = select_plane_pfmt(image, mod, plane);
       iprops.extent_px = (struct pan_image_extent){
          .width = vk_format_get_plane_width(image->vk.format, plane,
                                             image->vk.extent.width),
@@ -410,7 +414,8 @@ panvk_image_init_layouts(struct panvk_image *image,
       .offset_B = 0,
    };
    for (uint8_t plane = 0; plane < image->plane_count; plane++) {
-      enum pipe_format pfmt = select_plane_pfmt(image, plane);
+      enum pipe_format pfmt =
+         select_plane_pfmt(image, image->vk.drm_format_mod, plane);
 
       if (explicit_info) {
          plane_layout = (struct pan_image_layout_constraints){
