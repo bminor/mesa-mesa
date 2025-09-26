@@ -17,6 +17,8 @@
 
 #if DETECT_OS_WINDOWS
 #include <io.h>
+
+#include "vulkan/vulkan_win32.h"
 #define VK_LIBNAME "vulkan-1.dll"
 #else
 #include <unistd.h>
@@ -207,16 +209,22 @@ GfxStreamVulkanMapper* GfxStreamVulkanMapper::getInstance(std::optional<DeviceId
         // useful, but not safe for multi-threaded tests.  For now, since this is only
         // used for end2end tests, we should be good.
         const char* driver = os_get_option(VK_ICD_FILENAMES);
+
+	// HACK: Need equivalents on Windows
+#if DETECT_OS_LINUX
         unsetenv(VK_ICD_FILENAMES);
+#endif
         sVkMapper = std::make_unique<GfxStreamVulkanMapper>();
         if (!sVkMapper->initialize(*deviceIdOpt)) {
             sVkMapper = nullptr;
             return nullptr;
         }
 
+#if DETECT_OS_LINUX
         if (driver) {
             setenv(VK_ICD_FILENAMES, driver, 1);
         }
+#endif
     }
 
     return sVkMapper.get();
@@ -234,7 +242,7 @@ int32_t GfxStreamVulkanMapper::map(struct VulkanMapperData* mapData) {
         VK_STRUCTURE_TYPE_IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR,
         0,
         VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT,
-        static_cast<HANDLE>(mapData->handle),
+        reinterpret_cast<HANDLE>(mapData->handle),
         L"",
     };
 
