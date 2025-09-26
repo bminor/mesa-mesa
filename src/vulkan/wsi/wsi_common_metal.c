@@ -375,36 +375,23 @@ wsi_metal_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
                                       const VkAllocationCallbacks* pAllocator,
                                       struct wsi_swapchain **swapchain_out)
 {
-   VkResult result;
-
    VkIcdSurfaceMetal *metal_surface = (VkIcdSurfaceMetal *)icd_surface;
    assert(metal_surface->pLayer);
 
    assert(pCreateInfo->sType == VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR);
 
-   MTLPixelFormat metal_format;
-   switch (pCreateInfo->imageFormat)
-   {
-      case VK_FORMAT_B8G8R8A8_SRGB:
-         metal_format = MTLPixelFormatBGRA8Unorm_sRGB;
-         break;
-      case VK_FORMAT_B8G8R8A8_UNORM:
-         metal_format = MTLPixelFormatBGRA8Unorm;
-         break;
-      case VK_FORMAT_R16G16B16A16_SFLOAT:
-         metal_format = MTLPixelFormatRGBA16Float;
-         break;
-      case VK_FORMAT_A2B10G10R10_UNORM_PACK32:
-         metal_format = MTLPixelFormatRGB10A2Unorm;
-         break;
-      case VK_FORMAT_A2R10G10B10_UNORM_PACK32:
-         metal_format = MTLPixelFormatBGR10A2Unorm;
-         break;
-      default:
-         return VK_ERROR_FORMAT_NOT_SUPPORTED;
-   }
+   const int num_images = pCreateInfo->minImageCount;
+   const bool opaque_composition =
+      pCreateInfo->compositeAlpha & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+   const bool immediate_mode =
+      pCreateInfo->presentMode == VK_PRESENT_MODE_IMMEDIATE_KHR;
 
-   int num_images = pCreateInfo->minImageCount;
+   VkResult result = wsi_metal_layer_configure(metal_surface->pLayer,
+      pCreateInfo->imageExtent.width, pCreateInfo->imageExtent.height,
+      num_images, pCreateInfo->imageFormat,
+      opaque_composition, immediate_mode);
+   if (result != VK_SUCCESS)
+      return result;
 
    struct wsi_metal_swapchain *chain;
    size_t size = sizeof(*chain) + num_images * sizeof(chain->images[0]);
@@ -432,12 +419,6 @@ wsi_metal_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
    chain->extent = pCreateInfo->imageExtent;
    chain->vk_format = pCreateInfo->imageFormat;
    chain->surface = metal_surface;
-
-   wsi_metal_layer_configure(metal_surface->pLayer,
-      pCreateInfo->imageExtent.width, pCreateInfo->imageExtent.height,
-      num_images, metal_format,
-      pCreateInfo->compositeAlpha & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-      pCreateInfo->presentMode == VK_PRESENT_MODE_IMMEDIATE_KHR);
 
    chain->current_image_index = 0;
    for (uint32_t i = 0; i < chain->base.image_count; i++) {

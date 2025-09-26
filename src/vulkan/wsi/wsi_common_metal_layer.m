@@ -22,15 +22,46 @@ wsi_metal_layer_size(const CAMetalLayer *metal_layer,
    }
 }
 
-void
+static VkResult
+get_mtl_pixel_format(VkFormat format, MTLPixelFormat *metal_format)
+{
+   switch (format) {
+      case VK_FORMAT_B8G8R8A8_SRGB:
+         *metal_format = MTLPixelFormatBGRA8Unorm_sRGB;
+         break;
+      case VK_FORMAT_B8G8R8A8_UNORM:
+         *metal_format = MTLPixelFormatBGRA8Unorm;
+         break;
+      case VK_FORMAT_R16G16B16A16_SFLOAT:
+         *metal_format = MTLPixelFormatRGBA16Float;
+         break;
+      case VK_FORMAT_A2B10G10R10_UNORM_PACK32:
+         *metal_format = MTLPixelFormatRGB10A2Unorm;
+         break;
+      case VK_FORMAT_A2R10G10B10_UNORM_PACK32:
+         *metal_format = MTLPixelFormatBGR10A2Unorm;
+         break;
+      default:
+         return VK_ERROR_FORMAT_NOT_SUPPORTED;
+   }
+
+   return VK_SUCCESS;
+}
+
+VkResult
 wsi_metal_layer_configure(const CAMetalLayer *metal_layer,
    uint32_t width, uint32_t height, uint32_t image_count,
-   MTLPixelFormat format, bool enable_opaque, bool enable_immediate)
+   VkFormat format,
+   bool enable_opaque, bool enable_immediate)
 {
    @autoreleasepool {
-      if (metal_layer.device == nil) {
+      MTLPixelFormat metal_format;
+      VkResult result = get_mtl_pixel_format(format, &metal_format);
+      if (result != VK_SUCCESS)
+         return result;
+
+      if (metal_layer.device == nil)
          metal_layer.device = metal_layer.preferredDevice;
-      }
 
       /* So acquire timeout works */
       metal_layer.allowsNextDrawableTimeout = YES;
@@ -39,10 +70,12 @@ wsi_metal_layer_configure(const CAMetalLayer *metal_layer,
 
       metal_layer.maximumDrawableCount = image_count;
       metal_layer.drawableSize = (CGSize){.width = width, .height = height};
-      metal_layer.pixelFormat = format;
       metal_layer.opaque = enable_opaque;
       metal_layer.displaySyncEnabled = !enable_immediate;
+      metal_layer.pixelFormat = metal_format;
    }
+
+   return VK_SUCCESS;
 }
 
 CAMetalDrawableBridged *
