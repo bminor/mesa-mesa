@@ -420,10 +420,8 @@ wsi_metal_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
 
    result = wsi_swapchain_init(wsi_device, &chain->base, device,
                                pCreateInfo, &cpu_params.base, pAllocator);
-   if (result != VK_SUCCESS) {
-      vk_free(pAllocator, chain);
-      return result;
-   }
+   if (result != VK_SUCCESS)
+      goto fail_chain_alloc;
 
    chain->base.destroy = wsi_metal_swapchain_destroy;
    chain->base.get_wsi_image = wsi_metal_swapchain_get_wsi_image;
@@ -434,15 +432,17 @@ wsi_metal_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
    chain->extent = pCreateInfo->imageExtent;
    chain->vk_format = pCreateInfo->imageFormat;
    chain->surface = metal_surface;
-
    chain->current_image_index = 0;
+
+   uint32_t created_image_count = 0;
    for (uint32_t i = 0; i < chain->base.image_count; i++) {
       result = wsi_create_image(&chain->base, &chain->base.image_info,
                                 &chain->images[i].base);
       if (result != VK_SUCCESS)
-         return result;
+         goto fail_init_images;
 
       chain->images[i].drawable = NULL;
+      created_image_count++;
    }
 
    chain->blit_context = wsi_create_metal_layer_blit_context();
@@ -450,6 +450,17 @@ wsi_metal_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
    *swapchain_out = &chain->base;
 
    return VK_SUCCESS;
+
+fail_init_images:
+   for (uint32_t i = 0; i < created_image_count; i++)
+      wsi_destroy_image(&chain->base, &chain->images[i].base);
+
+   wsi_swapchain_finish(&chain->base);
+
+fail_chain_alloc:
+   vk_free(pAllocator, chain);
+
+   return result;
 }
 
 VkResult
