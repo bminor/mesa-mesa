@@ -1704,7 +1704,7 @@
         "description": "gallivm: handle u8/u16 const loads properly on big-endian.",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
