@@ -29,6 +29,7 @@
 #include "compiler/glsl/glsl_to_nir.h"
 #include "compiler/glsl_types.h"
 #include "compiler/nir/nir_builder.h"
+#include "compiler/nir/nir_deref.h"
 #include "panfrost/util/pan_ir.h"
 #include "util/perf/cpu_trace.h"
 #include "util/u_debug.h"
@@ -1124,6 +1125,78 @@ bi_emit_fragment_out(bi_builder *b, nir_intrinsic_instr *instr)
    }
 }
 
+static unsigned
+bi_is_zs(unsigned location)
+{
+   return location == FRAG_RESULT_DEPTH || location == FRAG_RESULT_STENCIL;
+}
+
+static unsigned
+bi_pls_fmt_conv(bi_builder *b, enum pipe_format fmt)
+{
+   assert(fmt != PIPE_FORMAT_NONE);
+   assert(b->shader->inputs->get_conv_desc &&
+          "Unable to convert format to descriptor");
+   return (*b->shader->inputs->get_conv_desc)(fmt, 0, 32, false);
+}
+
+static void
+bi_emit_load_pls(bi_builder *b, nir_intrinsic_instr *instr)
+{
+   bi_index dest = bi_def_index(&instr->def);
+   nir_alu_type T = nir_intrinsic_dest_type(instr);
+   nir_io_semantics sem = nir_intrinsic_io_semantics(instr);
+   enum bi_register_format regfmt = bi_reg_fmt_for_nir(T);
+   unsigned size = instr->def.bit_size;
+   unsigned nr = instr->num_components;
+   enum pipe_format fmt = nir_intrinsic_format(instr);
+
+   assert (!bi_is_zs(sem.location) && "bad ld_pls: depth/stencil access");
+   assert (nir_src_is_const(instr->src[0]) && "bad ld_pls: non-constant src");
+   unsigned target =
+      nir_src_as_uint(instr->src[0]) + (sem.location - FRAG_RESULT_DATA0);
+   assert(target < 8);
+
+   bi_index pi = bi_imm_u32(128); /* mega-sample mode */
+
+   unsigned offset = target * 4;
+   bi_index coverage = bi_imm_u32(0xffff | (offset << 16));
+
+   bi_index conv_desc = bi_imm_u32(bi_pls_fmt_conv(b, fmt));
+
+   bi_instr *I = bi_ld_tile_to(b, dest, pi, coverage,
+                               conv_desc, regfmt, nr - 1);
+   assert(I);
+   bi_emit_cached_split(b, dest, size * nr);
+}
+
+static void
+bi_emit_store_pls(bi_builder *b, nir_intrinsic_instr *instr)
+{
+   nir_alu_type T = nir_intrinsic_src_type(instr);
+   nir_io_semantics sem = nir_intrinsic_io_semantics(instr);
+   enum bi_register_format regfmt = bi_reg_fmt_for_nir(T);
+   bi_index color = bi_src_color_vec4(b, &instr->src[0], T);
+   enum pipe_format fmt = nir_intrinsic_format(instr);
+
+   assert(!bi_is_zs(sem.location) && "st_pls only supported for colors");
+   assert(nir_src_is_const(instr->src[1]) && "no indirect render targets");
+   unsigned target =
+      nir_src_as_uint(instr->src[1]) + (sem.location - FRAG_RESULT_DATA0);
+
+   bi_index pi = bi_imm_u32(128); /* mega-sample mode */
+
+   unsigned offset = target * 4;
+   bi_index coverage = bi_imm_u32(0xffff | (offset << 16));
+
+   bi_index conv_desc = bi_imm_u32(bi_pls_fmt_conv(b, fmt));
+
+   bi_instr *I =
+      bi_st_tile(b, color, pi, coverage,
+                 conv_desc, regfmt, BI_VECSIZE_V4);
+   assert(I);
+}
+
 static enum va_shader_output
 va_shader_output_from_semantics(const nir_io_semantics *sem)
 {
@@ -1997,8 +2070,7 @@ bi_emit_ld_tile(bi_builder *b, nir_intrinsic_instr *instr)
    bi_index dest = bi_def_index(&instr->def);
    nir_alu_type T = nir_intrinsic_dest_type(instr);
    nir_io_semantics sem = nir_intrinsic_io_semantics(instr);
-   bool is_zs =
-      sem.location == FRAG_RESULT_DEPTH || sem.location == FRAG_RESULT_STENCIL;
+   bool is_zs = bi_is_zs(sem.location);
    enum bi_register_format regfmt = bi_reg_fmt_for_nir(T);
    unsigned size = instr->def.bit_size;
    unsigned nr = instr->num_components;
@@ -2164,7 +2236,14 @@ bi_emit_intrinsic(bi_builder *b, nir_intrinsic_instr *instr)
       else
          UNREACHABLE("Unsupported shader stage");
       break;
-
+   case nir_intrinsic_load_pixel_local:
+      assert(stage == MESA_SHADER_FRAGMENT);
+      bi_emit_load_pls(b, instr);
+      break;
+   case nir_intrinsic_store_pixel_local:
+      assert(stage == MESA_SHADER_FRAGMENT);
+      bi_emit_store_pls(b, instr);
+      break;
    case nir_intrinsic_store_combined_output_pan:
       assert(stage == MESA_SHADER_FRAGMENT);
       bi_emit_fragment_out(b, instr);

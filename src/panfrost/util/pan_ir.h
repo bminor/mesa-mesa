@@ -98,6 +98,11 @@ unsigned pan_lookup_pushed_ubo(struct pan_ubo_push *push, unsigned ubo,
 struct pan_compile_inputs {
    unsigned gpu_id;
    uint32_t gpu_variant;
+   /* Used on Bifrost and Valhall for pixel_local_storage load/store to convert
+    * the format to a descriptor.
+    */
+   uint64_t (*get_conv_desc)(enum pipe_format fmt, unsigned rt,
+                             unsigned force_size, bool dithered);
    bool is_blend, is_blit;
    struct {
       unsigned nr_samples;
