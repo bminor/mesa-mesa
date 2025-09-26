@@ -1404,7 +1404,7 @@
         "description": "aco/lower_branches: update branch hints after changing jump targets",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "13ad3db43f9a56fb99f2347edfec8af0407d3973",
         "notes": null
