@@ -1267,8 +1267,10 @@ emit_load_const(struct lp_build_nir_soa_context *bld,
 
    for (unsigned i = 0; i < instr->def.num_components; i++) {
      outval[i] = lp_build_const_int_vec(bld->base.gallivm, int_bld->type,
-                                        bits == 32 ? instr->value[i].u32
-                                                   : instr->value[i].u64);
+                                        bits == 8 ? instr->value[i].u8 :
+                                        bits == 16 ? instr->value[i].u32 :
+                                        bits == 32 ? instr->value[i].u32 :
+                                                     instr->value[i].u64);
    }
    for (unsigned i = instr->def.num_components; i < NIR_MAX_VEC_COMPONENTS; i++) {
       outval[i] = NULL;
