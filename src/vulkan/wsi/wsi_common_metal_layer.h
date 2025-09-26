@@ -22,7 +22,7 @@ wsi_metal_layer_size(const CAMetalLayer *metal_layer,
 VkResult
 wsi_metal_layer_configure(const CAMetalLayer *metal_layer,
    uint32_t width, uint32_t height, uint32_t image_count,
-   VkFormat format,
+   VkFormat format, VkColorSpaceKHR color_space,
    bool enable_opaque, bool enable_immediate);
 
 CAMetalDrawableBridged *

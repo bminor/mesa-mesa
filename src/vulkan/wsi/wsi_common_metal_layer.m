@@ -48,15 +48,68 @@ get_mtl_pixel_format(VkFormat format, MTLPixelFormat *metal_format)
    return VK_SUCCESS;
 }
 
+static VkResult
+get_cg_color_space(VkColorSpaceKHR color_space, CGColorSpaceRef *cg_color_space)
+{
+   CFStringRef color_space_name;
+   switch (color_space) {
+      case VK_COLOR_SPACE_SRGB_NONLINEAR_KHR:
+         color_space_name = kCGColorSpaceSRGB;
+         break;
+      case VK_COLOR_SPACE_DISPLAY_P3_NONLINEAR_EXT:
+         color_space_name = kCGColorSpaceDisplayP3;
+         break;
+      case VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT:
+         color_space_name = kCGColorSpaceExtendedLinearSRGB;
+         break;
+      case VK_COLOR_SPACE_DISPLAY_P3_LINEAR_EXT:
+         color_space_name = kCGColorSpaceLinearDisplayP3;
+         break;
+      case VK_COLOR_SPACE_DCI_P3_NONLINEAR_EXT:
+         color_space_name = kCGColorSpaceDCIP3;
+         break;
+      case VK_COLOR_SPACE_BT709_NONLINEAR_EXT:
+         color_space_name = kCGColorSpaceITUR_709;
+         break;
+      case VK_COLOR_SPACE_BT2020_LINEAR_EXT:
+         color_space_name = kCGColorSpaceLinearITUR_2020;
+         break;
+      case VK_COLOR_SPACE_ADOBERGB_NONLINEAR_EXT:
+         color_space_name = kCGColorSpaceAdobeRGB1998;
+         break;
+      case VK_COLOR_SPACE_PASS_THROUGH_EXT:
+         color_space_name = nil;
+         break;
+      case VK_COLOR_SPACE_EXTENDED_SRGB_NONLINEAR_EXT:
+         color_space_name = kCGColorSpaceExtendedSRGB;
+         break;
+      default:
+         return VK_ERROR_FORMAT_NOT_SUPPORTED;
+   }
+
+   if (color_space_name) {
+      *cg_color_space = CGColorSpaceCreateWithName(color_space_name);
+   } else {
+      *cg_color_space = nil;
+   }
+
+   return VK_SUCCESS;
+}
+
 VkResult
 wsi_metal_layer_configure(const CAMetalLayer *metal_layer,
    uint32_t width, uint32_t height, uint32_t image_count,
-   VkFormat format,
+   VkFormat format, VkColorSpaceKHR color_space,
    bool enable_opaque, bool enable_immediate)
 {
    @autoreleasepool {
       MTLPixelFormat metal_format;
       VkResult result = get_mtl_pixel_format(format, &metal_format);
+      if (result != VK_SUCCESS)
+         return result;
+
+      CGColorSpaceRef cg_color_space;
+      result = get_cg_color_space(color_space, &cg_color_space);
       if (result != VK_SUCCESS)
          return result;
 
@@ -73,6 +126,10 @@ wsi_metal_layer_configure(const CAMetalLayer *metal_layer,
       metal_layer.opaque = enable_opaque;
       metal_layer.displaySyncEnabled = !enable_immediate;
       metal_layer.pixelFormat = metal_format;
+
+      metal_layer.colorspace = cg_color_space;
+      /* Needs release: https://github.com/KhronosGroup/MoltenVK/issues/940 */
+      CGColorSpaceRelease(cg_color_space);
    }
 
    return VK_SUCCESS;
