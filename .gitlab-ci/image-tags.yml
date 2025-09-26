@@ -19,12 +19,12 @@ include:
   - .gitlab-ci/conditional-build-image-tags.yml
 
 variables:
-  DEBIAN_BUILD_BASE_TAG: "20250917-two-rust"
-  DEBIAN_BUILD_TAG: "20250917-two-rust"
+  DEBIAN_BUILD_BASE_TAG: "20250926-gitlab"
+  DEBIAN_BUILD_TAG: "20250926-gitlab"
 
-  DEBIAN_TEST_BASE_TAG: "20250901-trixie2"
-  DEBIAN_TEST_ANDROID_TAG: "20250917-two-rust"
-  DEBIAN_TEST_GL_TAG: "20250911-piglit"
+  DEBIAN_TEST_BASE_TAG: "20250926-gitlab"
+  DEBIAN_TEST_ANDROID_TAG: "20250926-gitlab"
+  DEBIAN_TEST_GL_TAG: "20250926-gitlab"
   DEBIAN_TEST_VIDEO_TAG: "20250813-vector"
   DEBIAN_TEST_VK_TAG: "20250911-piglit"
 

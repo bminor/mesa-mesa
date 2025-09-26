@@ -45,7 +45,6 @@ workflow:
         JOB_PRIORITY: 75
         # fast-fail in merge pipelines: stop early if we get this many unexpected fails/crashes
         DEQP_RUNNER_MAX_FAILS: 40
-        S3_PROJECT_PATH: ${CI_MERGE_REQUEST_SOURCE_PROJECT_PATH}
     # Post-merge pipeline
     - if: &is-post-merge $GITLAB_USER_LOGIN == "marge-bot" && $CI_PIPELINE_SOURCE == "push"
       variables:
@@ -54,8 +53,6 @@ workflow:
         FDO_RUNNER_JOB_PRIORITY_TAG_AARCH64: priority:high-aarch64
     # Pre-merge pipeline (because merge pipelines are already caught above)
     - if: &is-merge-request $CI_PIPELINE_SOURCE == "merge_request_event"
-      variables:
-        S3_PROJECT_PATH: ${CI_MERGE_REQUEST_SOURCE_PROJECT_PATH}
     # Push to a branch on a fork
     - if: &is-push-to-fork $CI_PROJECT_NAMESPACE != "mesa" && $CI_PIPELINE_SOURCE == "push"
     # Nightly pipeline
@@ -107,11 +104,8 @@ variables:
   S3_TRACIE_PRIVATE_BUCKET: mesa-tracie-private
   # Base path used for various artifacts
   S3_BASE_PATH: "${S3_HOST}/${S3_KERNEL_BUCKET}"
-  # Since GitLab 18.2.2, the JWT subject for MRs are the target project path
-  # This can be overridden by the variables in the workflow rules
-  S3_PROJECT_PATH: ${CI_PROJECT_PATH}
   # per-pipeline artifact storage on MinIO
-  PIPELINE_ARTIFACTS_BASE: ${S3_HOST}/${S3_ARTIFACTS_BUCKET}/${S3_PROJECT_PATH}/${CI_PIPELINE_ID}
+  PIPELINE_ARTIFACTS_BASE: ${S3_HOST}/${S3_ARTIFACTS_BUCKET}/${CI_PROJECT_PATH}/${CI_PIPELINE_ID}
   # per-job artifact storage on MinIO
   JOB_ARTIFACTS_BASE: ${PIPELINE_ARTIFACTS_BASE}/${CI_JOB_ID}
   # reference images stored for traces

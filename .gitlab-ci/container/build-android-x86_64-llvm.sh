@@ -9,7 +9,7 @@ set -exu
 
 # If CI vars are not set, assign an empty value, this prevents -u to fail
 : "${CI:=}"
-: "${S3_PROJECT_PATH:=}"
+: "${CI_PROJECT_PATH:=}"
 
 # Early check for required env variables, relies on `set -u`
 : "$ANDROID_NDK_VERSION"
@@ -116,7 +116,7 @@ tar --zstd -cf "${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst" "$LLVM_INSTALL_PREFIX"
 # version does not change, and delete it.
 # The file is not deleted for non-CI because it can be useful in local runs.
 if [ -n "$CI" ]; then
-  ci-fairy s3cp --token-file "${S3_JWT_FILE}" "${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst" "https://${S3_HOST}/${S3_ANDROID_BUCKET}/${S3_PROJECT_PATH}/${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst"
+  ci-fairy s3cp --token-file "${S3_JWT_FILE}" "${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst" "https://${S3_HOST}/${S3_ANDROID_BUCKET}/${CI_PROJECT_PATH}/${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst"
   rm "${ANDROID_LLVM_ARTIFACT_NAME}.tar.zst"
 fi
 

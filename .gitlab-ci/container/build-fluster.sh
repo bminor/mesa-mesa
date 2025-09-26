@@ -45,7 +45,7 @@ else
     # Build fluster vectors archive and upload it
     tar --zstd -cf "vectors.tar.zst" fluster/resources/
     ci-fairy s3cp --token-file "${S3_JWT_FILE}" "vectors.tar.zst" \
-        "https://${S3_BASE_PATH}/${S3_PROJECT_PATH}/${ARTIFACT_PATH}"
+        "https://${S3_BASE_PATH}/${CI_PROJECT_PATH}/${ARTIFACT_PATH}"
     mv fluster/ /
 fi
 

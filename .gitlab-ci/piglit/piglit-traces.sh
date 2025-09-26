@@ -115,7 +115,7 @@ replay_s3_upload_images() {
 
         __TRACE="${line%-*-*}"
         if grep -q "^$__PREFIX/$__TRACE: pass$" ".gitlab-ci/piglit/$PIGLIT_RESULTS.txt.orig"; then
-            if [ "x$S3_PROJECT_PATH" != "x$FDO_UPSTREAM_REPO" ]; then
+            if [ "x$CI_PROJECT_PATH" != "x$FDO_UPSTREAM_REPO" ]; then
                 continue
             fi
             __S3_PATH="$PIGLIT_REPLAY_REFERENCE_IMAGES_BASE"

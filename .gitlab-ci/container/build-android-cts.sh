@@ -61,7 +61,7 @@ else
     # the extraction is faster, also LAVA overlays don't support zip compression.
     tar --zstd -cf "${CTS_FILENAME}.tar.zst" /android-cts
     ci-fairy s3cp --token-file "${S3_JWT_FILE}" "${CTS_FILENAME}.tar.zst" \
-        "https://${S3_BASE_PATH}/${S3_PROJECT_PATH}/${ARTIFACT_PATH}"
+        "https://${S3_BASE_PATH}/${CI_PROJECT_PATH}/${ARTIFACT_PATH}"
 fi
 
 section_end android-cts
