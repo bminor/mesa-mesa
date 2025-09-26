@@ -460,6 +460,11 @@ typedef struct shader_info {
          bool sample_interlock_unordered:1;
 
          /**
+          * whether this shader has pixel_local_storage load/store instructions
+          */
+         bool accesses_pixel_local_storage:1;
+
+         /**
           * Flags whether NIR's base types on the FS color outputs should be
           * ignored.
           *

@@ -2284,6 +2284,9 @@ nir_validate_shader(nir_shader *shader, const char *when)
       nir_var_mem_global |
       nir_var_mem_push_const |
       nir_var_mem_constant |
+      nir_var_mem_pixel_local_in |
+      nir_var_mem_pixel_local_out |
+      nir_var_mem_pixel_local_inout |
       nir_var_image;
 
    if (mesa_shader_stage_is_callable(shader->info.stage))

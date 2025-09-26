@@ -514,6 +514,9 @@ gather_intrinsic_info(nir_intrinsic_instr *instr, nir_shader *shader)
       }
       if (nir_intrinsic_writes_external_memory(instr))
          shader->info.writes_memory = true;
+      if (shader->info.stage == MESA_SHADER_FRAGMENT &&
+          nir_deref_mode_is_one_of(deref, nir_var_any_pixel_local))
+         shader->info.fs.accesses_pixel_local_storage = true;
       break;
    }
    case nir_intrinsic_image_deref_load:
@@ -1049,6 +1052,7 @@ nir_shader_gather_info(nir_shader *shader, nir_function_impl *entrypoint)
       shader->info.vs.double_inputs = 0;
    }
    if (shader->info.stage == MESA_SHADER_FRAGMENT) {
+      shader->info.fs.accesses_pixel_local_storage = false;
       shader->info.fs.uses_sample_qualifier = false;
       shader->info.fs.uses_discard = false;
       shader->info.fs.color_is_dual_source = false;

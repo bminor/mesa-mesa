@@ -467,6 +467,11 @@ struct glsl_struct_field {
          unsigned precision:2;
 
          /**
+          * Pixel local storage qualifier
+          */
+         unsigned pixel_local_storage:2;
+
+         /**
           * Memory qualifiers, applicable to buffer variables defined in shader
           * storage buffer objects (SSBOs)
           */

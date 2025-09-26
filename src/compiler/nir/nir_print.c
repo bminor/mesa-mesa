@@ -752,6 +752,12 @@ get_variable_mode_str(nir_variable_mode mode, bool want_local_global_mode)
       return "push_const";
    case nir_var_mem_constant:
       return "constant";
+   case nir_var_mem_pixel_local_in:
+      return "pixel_local_in";
+   case nir_var_mem_pixel_local_out:
+      return "pixel_local_out";
+   case nir_var_mem_pixel_local_inout:
+      return "pixel_local";
    case nir_var_image:
       return "image";
    case nir_var_shader_temp:
@@ -1054,6 +1060,11 @@ print_deref_link(const nir_deref_instr *instr, bool whole_chain, print_state *st
    case nir_deref_type_struct:
       fprintf(fp, "%s%s", is_parent_pointer ? "->" : ".",
               glsl_get_struct_elem_name(parent->type, instr->strct.index));
+      if (whole_chain &&
+          parent->type->fields.structure[instr->strct.index].pixel_local_storage) {
+         fprintf(fp, " (%s)",
+                 util_format_short_name(parent->type->fields.structure[instr->strct.index].image_format));
+      }
       break;
 
    case nir_deref_type_array:
