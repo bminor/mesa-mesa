@@ -711,6 +711,13 @@ INTERNAL_STRUCT_EXTENSIONS = {
         members=[],
         extended_by=[],
         guard=None
+    ),
+    "VkRenderingInfo": EntrypointType(
+        name="VkSampleLocationsInfoEXT",
+        enum=None,
+        members=None,
+        extended_by=None,
+        guard=None
     )
 }
 
@@ -766,7 +773,10 @@ def get_types(doc, beta, api, types_to_defines):
             types[extended].extended_by.append(types[_type.attrib['name']])
 
     for extended in INTERNAL_STRUCT_EXTENSIONS:
-        types[extended].extended_by.append(INTERNAL_STRUCT_EXTENSIONS[extended])
+        extension = INTERNAL_STRUCT_EXTENSIONS[extended]
+        if extension.name in types:
+            extension = types[extension.name]
+        types[extended].extended_by.append(extension)
 
     return types
 
