@@ -4,7 +4,7 @@
 project(
   'rustix',
   'rust',
-  version : '1.0.7',
+  version : '1.1.2',
   license : 'Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT',
 )
 
