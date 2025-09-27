@@ -909,7 +909,14 @@ tu_get_physical_device_properties_1_2(struct tu_physical_device *pdevice,
    p->shaderSignedZeroInfNanPreserveFloat16  = true;
 
    p->shaderDenormFlushToZeroFloat32         = true;
-   p->shaderDenormPreserveFloat32            = false;
+
+   /* FP32 denorm preserve has to be emulated via soft-float. Normal
+    * applications should not use this, and we don't want to advertize it and
+    * get people confused, but vkd3d-proton cannot emulate it itself so we
+    * have to allow it to use our emulation.
+    */
+   p->shaderDenormPreserveFloat32 = pdevice->instance->enable_softfloat32;
+
    p->shaderRoundingModeRTEFloat32           = true;
    p->shaderRoundingModeRTZFloat32           = false;
    p->shaderSignedZeroInfNanPreserveFloat32  = true;
@@ -1774,6 +1781,7 @@ static const driOptionDescription tu_dri_options[] = {
       DRI_CONF_TU_DISABLE_D24S8_BORDER_COLOR_WORKAROUND(false)
       DRI_CONF_TU_USE_TEX_COORD_ROUND_NEAREST_EVEN_MODE(false)
       DRI_CONF_TU_IGNORE_FRAG_DEPTH_DIRECTION(false)
+      DRI_CONF_TU_ENABLE_SOFTFLOAT32(false)
    DRI_CONF_SECTION_END
 };
 
@@ -1800,6 +1808,8 @@ tu_init_dri_options(struct tu_instance *instance)
          driQueryOptionb(&instance->dri_options, "tu_use_tex_coord_round_nearest_even_mode");
    instance->ignore_frag_depth_direction =
          driQueryOptionb(&instance->dri_options, "tu_ignore_frag_depth_direction");
+   instance->enable_softfloat32 =
+         driQueryOptionb(&instance->dri_options, "tu_enable_softfloat32");
 }
 
 static uint32_t instance_count = 0;
@@ -2816,6 +2826,8 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
       goto fail_compiler;
    }
 
+   tu_init_softfloat32(device);
+
    /* Initialize sparse array for refcounting imported BOs */
    util_sparse_array_init(&device->bo_map, sizeof(struct tu_bo), 512);
 
@@ -3079,6 +3091,7 @@ fail_global_bo:
 fail_free_zombie_vma:
    util_sparse_array_finish(&device->bo_map);
    u_vector_finish(&device->zombie_vmas);
+   tu_destroy_softfloat32(device);
    ir3_compiler_destroy(device->compiler);
 fail_compiler:
    vk_meta_device_finish(&device->vk, &device->meta);
@@ -3132,6 +3145,8 @@ tu_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
    tu_destroy_dynamic_rendering(device);
 
    vk_meta_device_finish(&device->vk, &device->meta);
+
+   tu_destroy_softfloat32(device);
 
    ir3_compiler_destroy(device->compiler);
 

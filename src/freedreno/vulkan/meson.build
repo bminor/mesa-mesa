@@ -51,6 +51,17 @@ libtu_files = files(
   'tu_util.cc',
 )
 
+libtu_files += custom_target(
+  'float32_spv.h',
+  input : float32_glsl_file,
+  output : 'float32_spv.h',
+  command : [
+    prog_glslang, '--no-link', '-V', '-S', 'comp', '-x', '-o', '@OUTPUT@', '@INPUT@',
+    glslang_quiet, glslang_depfile,
+  ],
+  depfile : 'float32_spv.h.d',
+)
+
 subdir('bvh')
 
 libtu_includes = [

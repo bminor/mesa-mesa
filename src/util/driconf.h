@@ -647,6 +647,10 @@
    DRI_CONF_OPT_B(tu_ignore_frag_depth_direction, def, \
                   "Ignore direction specified for gl_FragDepth output")
 
+#define DRI_CONF_TU_ENABLE_SOFTFLOAT32(def) \
+   DRI_CONF_OPT_B(tu_enable_softfloat32, def, \
+                  "Enable softfloat emulation for float32 denormals")
+
 /**
  * \brief Honeykrisp specific configuration options
  */
