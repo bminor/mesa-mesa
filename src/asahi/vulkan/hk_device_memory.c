@@ -211,6 +211,8 @@ hk_AllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
       enum agx_bo_flags flags = 0;
       if (handle_types)
          flags |= AGX_BO_SHAREABLE;
+      if (type->propertyFlags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT)
+         flags |= AGX_BO_WRITEBACK;
 
       mem->bo = agx_bo_create(&dev->dev, aligned_size, 0, flags, "App memory");
       if (!mem->bo) {
