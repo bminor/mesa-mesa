@@ -2349,7 +2349,7 @@ struct blob
 nir_validate_progress_setup(nir_shader *shader)
 {
    if (!NIR_DEBUG(PROGRESS_VALIDATION))
-      return (struct blob){};
+      return (struct blob){0};
 
    struct blob blob_before;
    blob_init(&blob_before);
