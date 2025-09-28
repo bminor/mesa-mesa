@@ -301,7 +301,7 @@ a750-vk:
   extends:
     - .ci-tron-arm64-test-vk
     - .a750-kws
-    - .valve-turnip-manual-rules
+    - .valve-turnip-rules
   parallel: 5
   timeout: 20m  # base runtime is 14.5, 12.5min of testing
   variables:

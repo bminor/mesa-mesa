@@ -165,6 +165,13 @@
     - !reference [.valve-farm-manual-rules, rules]
     - !reference [.freedreno-manual-rules, rules]
 
+.valve-turnip-rules:
+  stage: freedreno
+  rules:
+    - !reference [.test, rules]
+    - !reference [.valve-farm-rules, rules]
+    - !reference [.turnip-rules, rules]
+
 .valve-turnip-manual-rules:
   stage: freedreno-nightly
   extends: .no-auto-retry
@@ -367,7 +374,7 @@
     VK_DRIVER: freedreno
 
 
-# 4 devices (+2 more coming) (2025-09-15)
+# 6 devices (2025-09-28)
 .a750-kws:
   extends:
     - .a750
