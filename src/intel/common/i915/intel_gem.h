@@ -27,6 +27,7 @@
 #include <stdint.h>
 
 #include "common/intel_gem.h"
+#include "util/os_time.h"
 
 #include "drm-uapi/i915_drm.h"
 
@@ -145,16 +146,22 @@ static inline int
 i915_gem_execbuf_ioctl(int fd, const struct intel_device_info *info,
                        struct drm_i915_gem_execbuffer2 *execbuf)
 {
-   int ret;
+   int ret, retries = 0;
 
    assert((execbuf->flags & I915_EXEC_FENCE_OUT) == 0);
 
    if (unlikely(info->no_hw))
       return 0;
 
-   do {
+   while (true) {
       ret = intel_ioctl(fd, DRM_IOCTL_I915_GEM_EXECBUFFER2, execbuf);
-   } while (ret && errno == ENOMEM);
+
+      if (likely(!(ret && errno == ENOMEM)))
+         break;
+
+      os_time_sleep(100 * retries * retries);
+      retries++;
+   }
 
    return ret;
 }
