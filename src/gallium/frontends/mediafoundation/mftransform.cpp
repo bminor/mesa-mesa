@@ -1200,6 +1200,9 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                spMemoryBuffer->Lock( &lpBuffer, NULL, NULL );
 
                uint32_t num_slice_buffers = static_cast<uint32_t>( pDX12EncodeContext->pSliceFences.size() );
+               std::vector<struct codec_unit_location_t> codec_unit_metadata;
+               const size_t max_default_init_alloc_count_nals = 64u;
+               codec_unit_metadata.reserve(max_default_init_alloc_count_nals);
                for( uint32_t slice_idx = 0; slice_idx < num_slice_buffers; slice_idx++ )
                {
                   assert( pDX12EncodeContext->pSliceFences[slice_idx] );
@@ -1211,7 +1214,6 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                   pThis->m_pPipeVideoCodec->destroy_fence( pThis->m_pPipeVideoCodec, pDX12EncodeContext->pSliceFences[slice_idx] );
                   if( fenceWaitResult )
                   {
-                     std::vector<struct codec_unit_location_t> codec_unit_metadata;
                      unsigned codec_unit_metadata_count = 0u;
                      pThis->m_pPipeVideoCodec->get_slice_bitstream_data( pThis->m_pPipeVideoCodec,
                                                                          pDX12EncodeContext->pAsyncCookie,
@@ -1219,6 +1221,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                                                                          NULL /*get size*/,
                                                                          &codec_unit_metadata_count );
                      assert( codec_unit_metadata_count > 0 );
+                     codec_unit_metadata.clear();
                      codec_unit_metadata.resize( codec_unit_metadata_count, {} );
                      pThis->m_pPipeVideoCodec->get_slice_bitstream_data( pThis->m_pPipeVideoCodec,
                                                                          pDX12EncodeContext->pAsyncCookie,
