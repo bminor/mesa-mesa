@@ -150,6 +150,18 @@ radv_cooperative_matrix2_nv_enabled(const struct radv_physical_device *pdev)
    return instance->drirc.features.cooperative_matrix2_nv;
 }
 
+static bool
+radv_shader_fp16_enabled(const struct radv_physical_device *pdev)
+{
+   const struct radv_instance *instance = radv_physical_device_instance(pdev);
+
+   /* GFX8 supports fp16, but not double rate packed math.  We don't enable
+    * that by default because it can sometimes hurt perf.
+    */
+   return pdev->info.has_packed_math_16bit ||
+          (pdev->info.gfx_level == GFX8 && instance->drirc.features.expose_float16_gfx8);
+}
+
 bool
 radv_host_image_copy_enabled(const struct radv_physical_device *pdev)
 {
@@ -877,11 +889,7 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
       .storagePushConstant8 = true,
       .shaderBufferInt64Atomics = true,
       .shaderSharedInt64Atomics = true,
-      /* GFX8 supports fp16, but not double rate packed math.
-       * We don't enable that by default because it can sometimes hurt perf.
-       */
-      .shaderFloat16 = pdev->info.has_packed_math_16bit ||
-                       (pdev->info.gfx_level == GFX8 && instance->drirc.features.expose_float16_gfx8),
+      .shaderFloat16 = radv_shader_fp16_enabled(pdev),
       .shaderInt8 = true,
 
       .descriptorIndexing = pdev->info.has_vm_always_valid,
@@ -1461,7 +1469,6 @@ radv_get_compiler_string(struct radv_physical_device *pdev)
 static void
 radv_get_physical_device_properties(struct radv_physical_device *pdev)
 {
-   const struct radv_instance *instance = radv_physical_device_instance(pdev);
    VkSampleCountFlags sample_counts = 0xf;
 
    size_t max_descriptor_set_size = radv_max_descriptor_set_size();
@@ -1473,11 +1480,7 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
       device_type = VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
    }
 
-   /* GFX8 supports fp16, but not double rate packed math.
-    * We don't enable that by default because it can sometimes hurt perf.
-    */
-   bool has_fp16 = pdev->info.has_packed_math_16bit ||
-      (pdev->info.gfx_level == GFX8 && instance->drirc.features.expose_float16_gfx8);
+   const bool has_fp16 = radv_shader_fp16_enabled(pdev);
 
    VkShaderStageFlags taskmesh_stages =
       radv_taskmesh_enabled(pdev) ? VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT : 0;
