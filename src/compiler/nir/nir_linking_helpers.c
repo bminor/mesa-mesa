@@ -1434,6 +1434,15 @@ nir_link_opt_varyings(nir_shader *producer, nir_shader *consumer)
 
    _mesa_hash_table_destroy(varying_values, NULL);
 
+   if (should_print_nir(producer)) {
+      printf("nir_link_opt_varyings\n");
+      nir_print_shader(producer, stdout);
+   }
+   if (should_print_nir(consumer)) {
+      printf("nir_link_opt_varyings\n");
+      nir_print_shader(consumer, stdout);
+   }
+
    return progress;
 }
 
