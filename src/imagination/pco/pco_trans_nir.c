@@ -31,6 +31,7 @@ typedef struct _trans_ctx {
    pco_builder b; /** Builder. */
    mesa_shader_stage stage; /** Shader stage. */
    enum pco_cf_node_flag flag; /** Implementation-defined control-flow flag. */
+   bool ftz32b;
    bool olchk;
 
    BITSET_WORD *float_types; /** NIR SSA float vars. */
@@ -3299,14 +3300,16 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
       instr = pco_unpck(&tctx->b,
                         dest,
                         pco_ref_elem(src[0], 0),
-                        .pck_fmt = PCO_PCK_FMT_S32);
+                        .pck_fmt = PCO_PCK_FMT_S32,
+                        .roundzero = tctx->ftz32b);
       break;
 
    case nir_op_u2f32:
       instr = pco_unpck(&tctx->b,
                         dest,
                         pco_ref_elem(src[0], 0),
-                        .pck_fmt = PCO_PCK_FMT_U32);
+                        .pck_fmt = PCO_PCK_FMT_U32,
+                        .roundzero = tctx->ftz32b);
       break;
 
    case nir_op_fmin:
@@ -3794,6 +3797,8 @@ pco_trans_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data, void *mem_ctx)
       .pco_ctx = ctx,
       .shader = shader,
       .stage = shader->stage,
+      .ftz32b =
+         nir_is_rounding_mode_rtz(nir->info.float_controls_execution_mode, 32),
    };
 
    if (shader->stage == MESA_SHADER_FRAGMENT)
