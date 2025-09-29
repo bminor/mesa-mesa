@@ -391,6 +391,19 @@ v3d_init_screen_caps(struct v3d_screen *screen)
 
         caps->device_reset_status_query = screen->devinfo.has_reset_counter;
         caps->robust_buffer_access_behavior = true;
+
+        /* FIXME: same settings as v3dv, maybe put them in a common place. */
+        if (screen->devinfo.ver >= 71) {
+           caps->shader_subgroup_size = V3D_CHANNELS;
+           caps->shader_subgroup_supported_stages =
+              BITFIELD_BIT(MESA_SHADER_FRAGMENT) | BITFIELD_BIT(MESA_SHADER_COMPUTE);
+           caps->shader_subgroup_supported_features = PIPE_SHADER_SUBGROUP_FEATURE_BASIC |
+              PIPE_SHADER_SUBGROUP_FEATURE_BALLOT | PIPE_SHADER_SUBGROUP_FEATURE_SHUFFLE |
+              PIPE_SHADER_SUBGROUP_FEATURE_SHUFFLE_RELATIVE |
+              PIPE_SHADER_SUBGROUP_FEATURE_VOTE | PIPE_SHADER_SUBGROUP_FEATURE_ARITHMETIC |
+              PIPE_SHADER_SUBGROUP_FEATURE_QUAD;
+           caps->shader_subgroup_quad_all_stages = false;
+   }
 }
 
 static bool
