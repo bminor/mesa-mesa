@@ -708,7 +708,10 @@ nir_unlower_io_to_vars(nir_shader *nir, bool keep_intrinsics)
    nir_variable_mode modes =
       nir_var_shader_out |
       (nir->info.stage != MESA_SHADER_VERTEX ? nir_var_shader_in : 0);
-   bool progress = nir_recompute_io_bases(nir, modes);
+   bool progress = false;
+
+   if (!keep_intrinsics)
+      progress = nir_recompute_io_bases(nir, modes);
 
    /* Gather component masks. */
    uint8_t component_masks[NUM_TOTAL_VARYING_SLOTS * 2] = {0};
