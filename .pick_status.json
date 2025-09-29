@@ -774,7 +774,7 @@
         "description": "egl: Fix invalid device UUID returned by EGL_EXT_device_persistent_id",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
