@@ -764,7 +764,7 @@
         "description": "device-select: Fix error check.",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "355b96413d63b9be09814961f073ee2d6f8eccc7",
         "notes": null
