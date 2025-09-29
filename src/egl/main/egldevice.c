@@ -295,6 +295,15 @@ _eglQueryDeviceBinaryEXT(_EGLDevice *dev, EGLint name, EGLint max_size,
    }
 
 #ifdef HAVE_LIBDRM
+   drmDevicePtr device = _eglDeviceDrm(dev);
+   /* Software device does not have render node. */
+   const char *render_node =
+      _eglDeviceSupports(dev, _EGL_DEVICE_SOFTWARE) ?
+      "" : device->nodes[DRM_NODE_RENDER];
+   if (!_eglDriver.QueryDeviceInfo(render_node, &dev->device_info)) {
+      _eglError(EGL_BAD_DEVICE_EXT, "eglQueryDeviceBinaryEXT");
+      return EGL_FALSE;
+   }
    if (value && name == EGL_DEVICE_UUID_EXT) {
       memcpy(value, dev->device_info.device_uuid, EGL_UUID_SIZE);
    }
@@ -361,7 +370,7 @@ _eglQueryDeviceStringEXT(_EGLDevice *dev, EGLint name)
          break;
 #ifdef HAVE_LIBDRM
       if (!_eglDriver.QueryDeviceInfo(render_node, &dev->device_info)) {
-         _eglError(EGL_BAD_DEVICE_EXT, "_eglQueryDeviceStringEXT");
+         _eglError(EGL_BAD_DEVICE_EXT, "eglQueryDeviceStringEXT");
          return NULL;
       }
       return dev->device_info.vendor_name;
@@ -375,7 +384,7 @@ _eglQueryDeviceStringEXT(_EGLDevice *dev, EGLint name)
          break;
 #ifdef HAVE_LIBDRM
       if (!_eglDriver.QueryDeviceInfo(render_node, &dev->device_info)) {
-         _eglError(EGL_BAD_DEVICE_EXT, "_eglQueryDeviceStringEXT");
+         _eglError(EGL_BAD_DEVICE_EXT, "eglQueryDeviceStringEXT");
          return NULL;
       }
       return dev->device_info.renderer_name;
@@ -390,7 +399,7 @@ _eglQueryDeviceStringEXT(_EGLDevice *dev, EGLint name)
          break;
 #ifdef HAVE_LIBDRM
       if (!_eglDriver.QueryDeviceInfo(render_node, &dev->device_info)) {
-         _eglError(EGL_BAD_DEVICE_EXT, "_eglQueryDeviceStringEXT");
+         _eglError(EGL_BAD_DEVICE_EXT, "eglQueryDeviceStringEXT");
          return NULL;
       }
       return dev->device_info.driver_name;
