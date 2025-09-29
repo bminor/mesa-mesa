@@ -32,7 +32,7 @@
 #include "main/context.h"
 #include "main/shaderapi.h"
 #include "main/shaderobj.h"
-#include "main/texcompress_astc.h"
+#include "util/texcompress_astc.h"
 #include "util/texcompress_astc_luts_wrap.h"
 #include "main/uniforms.h"
 

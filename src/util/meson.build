@@ -130,6 +130,8 @@ files_mesa_util = files(
   'texcompress_astc_luts.h',
   'texcompress_astc_luts_wrap.cpp',
   'texcompress_astc_luts_wrap.h',
+  'texcompress_astc.cpp',
+  'texcompress_astc.h',
   'timespec.h',
   'u_atomic.c',
   'u_atomic.h',

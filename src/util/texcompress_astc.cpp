@@ -38,6 +38,7 @@
 #include "util/half_float.h"
 #include <stdio.h>
 #include <cstdlib>  // for abort() on windows
+#include <stdarg.h>
 
 static bool VERBOSE_DECODE = false;
 static bool VERBOSE_WRITE = false;
@@ -1810,13 +1811,15 @@ _mesa_unpack_astc_2d_ldr(uint8_t *dst_row,
                          unsigned src_stride,
                          unsigned src_width,
                          unsigned src_height,
-                         mesa_format format)
+                         enum pipe_format format)
 {
-   assert(_mesa_is_format_astc_2d(format));
-   bool srgb = _mesa_is_format_srgb(format);
+   const struct util_format_description *desc =
+      util_format_description(format);
+   assert(desc && desc->layout == UTIL_FORMAT_LAYOUT_ASTC &&
+          desc->block.depth == 1);
+   bool srgb = util_format_is_srgb(format);
 
-   unsigned blk_w, blk_h;
-   _mesa_get_format_block_size(format, &blk_w, &blk_h);
+   unsigned blk_w = desc->block.width, blk_h = desc->block.height;
 
    const unsigned block_size = 16;
    unsigned x_blocks = (src_width + blk_w - 1) / blk_w;

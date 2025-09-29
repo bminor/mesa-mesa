@@ -45,7 +45,7 @@
 #include "main/pixeltransfer.h"
 #include "main/renderbuffer.h"
 #include "main/texcompress.h"
-#include "main/texcompress_astc.h"
+#include "util/texcompress_astc.h"
 #include "main/texcompress_bptc.h"
 #include "main/texcompress_etc.h"
 #include "main/texcompress_rgtc.h"

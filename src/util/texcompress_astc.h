@@ -25,7 +25,7 @@
 #define TEXCOMPRESS_ASTC_H
 
 #include <inttypes.h>
-#include "texcompress.h"
+#include "util/format/u_format.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,7 +38,7 @@ _mesa_unpack_astc_2d_ldr(uint8_t *dst_row,
                          unsigned src_stride,
                          unsigned src_width,
                          unsigned src_height,
-                         mesa_format format);
+                         enum pipe_format format);
 
 #ifdef __cplusplus
 }
