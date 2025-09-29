@@ -2923,6 +2923,12 @@ lower_io_to_scalar_early(nir_shader *nir, nir_variable_mode mask)
        */
       NIR_PASS(_, nir, nir_opt_copy_prop_vars);
 
+      /* This must be called before nir_link_opt_varyings() and after
+       * nir_opt_copy_prop_vars(), otherwise repeated (scalarized) stores in the
+       * last block will propagate the wrong values into the consumer.
+       */
+      NIR_PASS(_, nir, nir_opt_dead_write_vars);
+
       NIR_PASS(_, nir, nir_opt_dce);
 
       const nir_remove_dead_variables_options var_opts = {
