@@ -43,7 +43,7 @@ lower_insert_extract = [
    (('extract_i16', 'a@32', b), ('ibitfield_extract', a, ('imul', b, 16), 16)),
 ]
 
-lower_algebraic.extend(lower_insert_extract)
+lower_algebraic_late.extend(lower_insert_extract)
 
 lower_b2b = [
    (('b2b32', a), ('ineg', ('b2i32', a))),

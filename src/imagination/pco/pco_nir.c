@@ -440,7 +440,7 @@ static bool should_vectorize_mem_cb(unsigned align_mul,
    return true;
 }
 
-static void pco_nir_opt(pco_ctx *ctx, nir_shader *nir)
+static void pco_nir_opt(pco_ctx *ctx, nir_shader *nir, bool algebraic)
 {
    bool progress;
 
@@ -487,8 +487,11 @@ static void pco_nir_opt(pco_ctx *ctx, nir_shader *nir)
       NIR_PASS(progress, nir, nir_opt_phi_precision);
       NIR_PASS(progress, nir, nir_lower_alu);
       NIR_PASS(progress, nir, nir_lower_pack);
-      NIR_PASS(progress, nir, nir_opt_algebraic);
-      NIR_PASS(progress, nir, pco_nir_lower_algebraic);
+
+      if (algebraic) {
+         NIR_PASS(progress, nir, nir_opt_algebraic);
+         NIR_PASS(progress, nir, pco_nir_lower_algebraic);
+      }
 
       NIR_PASS(progress, nir, nir_opt_constant_folding);
 
@@ -579,7 +582,7 @@ void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
             nir_split_array_vars,
             nir_var_function_temp | nir_var_shader_temp);
 
-   pco_nir_opt(ctx, nir);
+   pco_nir_opt(ctx, nir, true);
 
    NIR_PASS(_,
             nir,
@@ -606,7 +609,7 @@ void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
             nir_var_function_temp,
             UINT32_MAX);
 
-   pco_nir_opt(ctx, nir);
+   pco_nir_opt(ctx, nir, true);
    NIR_PASS(_, nir, nir_opt_idiv_const, 32);
    NIR_PASS(_,
             nir,
@@ -640,7 +643,7 @@ void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
             nir_lower_io_array_vars_to_elements_no_indirects,
             nir->info.stage == MESA_SHADER_VERTEX);
 
-   pco_nir_opt(ctx, nir);
+   pco_nir_opt(ctx, nir, true);
 
    if (pco_should_print_nir(nir)) {
       puts("after pco_preprocess_nir:");
@@ -678,11 +681,11 @@ void pco_link_nir(pco_ctx *ctx,
    NIR_PASS(_, producer, nir_lower_io_vars_to_scalar, nir_var_shader_out);
    NIR_PASS(_, consumer, nir_lower_io_vars_to_scalar, nir_var_shader_in);
 
-   pco_nir_opt(ctx, producer);
-   pco_nir_opt(ctx, consumer);
+   pco_nir_opt(ctx, producer, true);
+   pco_nir_opt(ctx, consumer, true);
 
    if (nir_link_opt_varyings(producer, consumer))
-      pco_nir_opt(ctx, consumer);
+      pco_nir_opt(ctx, consumer, true);
 
    nir_remove_dead_variables_options rdv = {
       .can_remove_var = can_remove_var,
@@ -709,8 +712,8 @@ void pco_link_nir(pco_ctx *ctx,
                nir_var_shader_in | nir_var_shader_out,
                UINT32_MAX);
 
-      pco_nir_opt(ctx, producer);
-      pco_nir_opt(ctx, consumer);
+      pco_nir_opt(ctx, producer, true);
+      pco_nir_opt(ctx, consumer, true);
    }
 
    NIR_PASS(_, producer, nir_opt_vectorize_io_vars, nir_var_shader_out);
@@ -968,20 +971,7 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
    NIR_PASS(_, nir, nir_opt_dead_write_vars);
    NIR_PASS(_, nir, nir_opt_combine_stores, nir_var_all);
 
-   pco_nir_opt(ctx, nir);
-
-   bool progress;
-   do {
-      progress = false;
-
-      NIR_PASS(_, nir, nir_opt_algebraic_late);
-      NIR_PASS(_, nir, pco_nir_lower_algebraic_late);
-      NIR_PASS(_, nir, nir_opt_constant_folding);
-      NIR_PASS(_, nir, nir_lower_load_const_to_scalar);
-      NIR_PASS(_, nir, nir_copy_prop);
-      NIR_PASS(_, nir, nir_opt_dce);
-      NIR_PASS(_, nir, nir_opt_cse);
-   } while (progress);
+   pco_nir_opt(ctx, nir, true);
 
    vec_modes = nir_var_shader_in;
    /* Fragment shader needs scalar writes after pfo. */
@@ -1004,7 +994,7 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
                nir);
    }
 
-   pco_nir_opt(ctx, nir);
+   pco_nir_opt(ctx, nir, true);
 
    if (pco_should_print_nir(nir)) {
       puts("after pco_lower_nir:");
@@ -1085,6 +1075,21 @@ void pco_postprocess_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
    NIR_PASS(_, nir, nir_opt_sink, move_options);
    NIR_PASS(_, nir, nir_opt_move, move_options);
 
+   bool progress;
+   do {
+      progress = false;
+
+      NIR_PASS(_, nir, nir_opt_algebraic_late);
+      NIR_PASS(_, nir, pco_nir_lower_algebraic_late);
+      NIR_PASS(_, nir, nir_opt_constant_folding);
+      NIR_PASS(_, nir, nir_lower_load_const_to_scalar);
+      NIR_PASS(_, nir, nir_copy_prop);
+      NIR_PASS(_, nir, nir_opt_dce);
+      NIR_PASS(_, nir, nir_opt_cse);
+   } while (progress);
+
+   pco_nir_opt(ctx, nir, false);
+
    NIR_PASS(_, nir, nir_lower_all_phis_to_scalar);
 
    /* Temporary: lower phi undefs to zero because at this stage we don't want to
@@ -1100,7 +1105,7 @@ void pco_postprocess_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
    NIR_PASS(_, nir, nir_move_vec_src_uses_to_dest, false);
    NIR_PASS(_, nir, nir_opt_dce);
 
-   bool progress = false;
+   progress = false;
    NIR_PASS(progress, nir, nir_opt_rematerialize_compares);
    if (progress)
       NIR_PASS(_, nir, nir_opt_dce);
