@@ -208,7 +208,7 @@ device_select_find_wayland_pci_default(struct device_pci_info *devices, uint32_t
    wl_display_dispatch(display);
    wl_display_roundtrip(display);
 
-   drmDevicePtr target;
+   drmDevicePtr target = NULL;
    if (info.dmabuf_dev_info != NULL) {
       target = info.dmabuf_dev_info;
    }
@@ -217,7 +217,7 @@ device_select_find_wayland_pci_default(struct device_pci_info *devices, uint32_t
       target = info.drm_dev_info;
    }
 #endif
-   if (target != NULL) {
+   if (target == NULL) {
       goto done;
    }
 
