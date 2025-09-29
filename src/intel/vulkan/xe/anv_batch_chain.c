@@ -26,6 +26,7 @@
 #include "anv_private.h"
 #include "anv_measure.h"
 #include "common/intel_bind_timeline.h"
+#include "common/xe/intel_gem.h"
 #include "perf/intel_perf.h"
 
 #include "drm-uapi/xe_drm.h"
@@ -139,12 +140,8 @@ xe_exec_ioctl_impl(struct anv_queue *queue, struct drm_xe_exec *exec,
                    const char *func, int line)
 {
    struct anv_device *device = queue->device;
-   int ret;
 
-   if (unlikely(device->info->no_hw))
-      return VK_SUCCESS;
-
-   ret = intel_ioctl(device->fd, DRM_IOCTL_XE_EXEC, exec);
+   int ret = xe_gem_exec_ioctl(device->fd, device->info, exec);
    if (ret)
       return vk_queue_set_lost(&queue->vk, "%s(%d) failed: %m", func, line);
 
