@@ -639,12 +639,11 @@
         },
         "GL_ARB_sample_locations": {
             "extensions": {
-                "VK_EXT_extended_dynamic_state": 1,
                 "VK_EXT_sample_locations": 1
             },
-            "features": {
-                "VkPhysicalDeviceExtendedDynamicStateFeaturesEXT": {
-                    "extendedDynamicState": true
+            "properties": {
+                "VkPhysicalDeviceSampleLocationsPropertiesEXT": {
+                    "variableSampleLocations": true
                 }
             }
         },

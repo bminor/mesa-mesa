@@ -2884,24 +2884,22 @@ zink_update_fbfetch(struct zink_context *ctx)
    return ret;
 }
 
-void
+static void
 zink_update_vk_sample_locations(struct zink_context *ctx)
 {
-   if (ctx->gfx_pipeline_state.sample_locations_enabled && ctx->sample_locations_changed) {
-      unsigned samples = ctx->gfx_pipeline_state.rast_samples + 1;
-      unsigned idx = util_logbase2_ceil(MAX2(samples, 1));
-      VkExtent2D grid_size = zink_screen(ctx->base.screen)->maxSampleLocationGridSize[idx];
- 
-      for (unsigned pixel = 0; pixel < grid_size.width * grid_size.height; pixel++) {
-         for (unsigned sample = 0; sample < samples; sample++) {
-            unsigned pixel_x = pixel % grid_size.width;
-            unsigned pixel_y = pixel / grid_size.width;
-            unsigned wi = pixel * samples + sample;
-            unsigned ri = (pixel_y * grid_size.width + pixel_x % grid_size.width);
-            ri = ri * samples + sample;
-            ctx->vk_sample_locations[wi].x = (ctx->sample_locations[ri] & 0xf) / 16.0f;
-            ctx->vk_sample_locations[wi].y = (ctx->sample_locations[ri] >> 4) / 16.0f;
-         }
+   unsigned samples = ctx->gfx_pipeline_state.rast_samples + 1;
+   unsigned idx = util_logbase2_ceil(MAX2(samples, 1));
+   VkExtent2D grid_size = zink_screen(ctx->base.screen)->maxSampleLocationGridSize[idx];
+
+   for (unsigned pixel = 0; pixel < grid_size.width * grid_size.height; pixel++) {
+      for (unsigned sample = 0; sample < samples; sample++) {
+         unsigned pixel_x = pixel % grid_size.width;
+         unsigned pixel_y = pixel / grid_size.width;
+         unsigned wi = pixel * samples + sample;
+         unsigned ri = (pixel_y * grid_size.width + pixel_x % grid_size.width);
+         ri = ri * samples + sample;
+         ctx->vk_sample_locations[wi].x = (ctx->sample_locations[ri] & 0xf) / 16.0f;
+         ctx->vk_sample_locations[wi].y = (ctx->sample_locations[ri] >> 4) / 16.0f;
       }
    }
 }
@@ -3042,7 +3040,8 @@ begin_rendering(struct zink_context *ctx, bool check_msaa_expand)
 {
    unsigned clear_buffers = 0;
    struct zink_screen *screen = zink_screen(ctx->base.screen);
-   zink_update_vk_sample_locations(ctx);
+   if (ctx->gfx_pipeline_state.custom_sample_locations && ctx->sample_locations_changed)
+      zink_update_vk_sample_locations(ctx);
    if (ctx->has_swapchain)
       zink_render_fixup_swapchain(ctx);
    bool has_depth = false;
@@ -3608,9 +3607,9 @@ zink_init_vk_sample_locations(struct zink_context *ctx, VkSampleLocationsInfoEXT
    unsigned idx = util_logbase2_ceil(MAX2(ctx->gfx_pipeline_state.rast_samples + 1, 1));
    loc->sType = VK_STRUCTURE_TYPE_SAMPLE_LOCATIONS_INFO_EXT;
    loc->pNext = NULL;
-   loc->sampleLocationsPerPixel = 1 << idx;
-   loc->sampleLocationsCount = ctx->gfx_pipeline_state.rast_samples + 1;
    loc->sampleLocationGridSize = screen->maxSampleLocationGridSize[idx];
+   loc->sampleLocationsPerPixel = ctx->gfx_pipeline_state.rast_samples + 1;
+   loc->sampleLocationsCount = loc->sampleLocationGridSize.width * loc->sampleLocationGridSize.height * loc->sampleLocationsPerPixel;
    loc->pSampleLocations = ctx->vk_sample_locations;
 }
 
@@ -3828,7 +3827,7 @@ flush_batch(struct zink_context *ctx, bool sync)
       ctx->dd.bindless_bound = false;
       ctx->di.bindless_refs_dirty = true;
       ctx->index_buffer = NULL;
-      ctx->sample_locations_changed = ctx->gfx_pipeline_state.sample_locations_enabled;
+      ctx->sample_locations_changed = ctx->base.screen->caps.programmable_sample_locations;
       if (zink_screen(ctx->base.screen)->info.dynamic_state2_feats.extendedDynamicState2PatchControlPoints) {
          VKCTX(CmdSetPatchControlPointsEXT)(ctx->bs->cmdbuf, ctx->gfx_pipeline_state.dyn_state2.vertices_per_patch);
          VKCTX(CmdSetPatchControlPointsEXT)(ctx->bs->reordered_cmdbuf, 1);
@@ -4123,10 +4122,9 @@ zink_set_framebuffer_state(struct pipe_context *pctx,
       ctx->scissor_changed = true;
 
    uint8_t rast_samples = ctx->fb_state.samples - 1;
-   if (rast_samples != ctx->gfx_pipeline_state.rast_samples)
+   if (rast_samples != ctx->gfx_pipeline_state.rast_samples) {
       zink_update_fs_key_samples(ctx);
-   if (ctx->gfx_pipeline_state.rast_samples != rast_samples) {
-      ctx->sample_locations_changed |= ctx->gfx_pipeline_state.sample_locations_enabled;
+      ctx->sample_locations_changed |= ctx->gfx_pipeline_state.custom_sample_locations;
       if (screen->have_full_ds3)
          ctx->sample_mask_changed = true;
       else
@@ -4179,8 +4177,8 @@ zink_set_sample_locations(struct pipe_context *pctx, size_t size, const uint8_t 
 {
    struct zink_context *ctx = zink_context(pctx);
 
-   ctx->gfx_pipeline_state.sample_locations_enabled = size && locations;
-   ctx->sample_locations_changed = ctx->gfx_pipeline_state.sample_locations_enabled;
+   ctx->gfx_pipeline_state.custom_sample_locations = size && locations;
+   ctx->sample_locations_changed = true;
    if (size > sizeof(ctx->sample_locations))
       size = sizeof(ctx->sample_locations);
 
@@ -5547,6 +5545,7 @@ zink_context_create(struct pipe_screen *pscreen, void *priv, unsigned flags)
    ctx->compute_pipeline_state.dirty = true;
    ctx->rp_changed = true;
    ctx->sample_mask_changed = true;
+   ctx->sample_locations_changed = pscreen->caps.programmable_sample_locations;
    ctx->gfx_pipeline_state.gfx_prim_mode = MESA_PRIM_COUNT;
    ctx->gfx_pipeline_state.shader_rast_prim = MESA_PRIM_COUNT;
    ctx->gfx_pipeline_state.rast_prim = MESA_PRIM_COUNT;

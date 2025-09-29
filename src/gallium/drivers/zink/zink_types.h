@@ -883,10 +883,11 @@ struct zink_gfx_pipeline_state {
    /* order matches zink_gfx_output_key */
    unsigned force_persample_interp:1;
    uint32_t rast_samples:6;
-   uint32_t min_samples:6;
+   uint32_t min_samples:5;
    uint32_t feedback_loop : 1;
    uint32_t feedback_loop_zs : 1;
    uint32_t rast_attachment_order : 1;
+   uint32_t custom_sample_locations : 1;
    uint32_t rp_state : 16;
    VkSampleMask sample_mask;
    uint32_t blend_id;
@@ -930,7 +931,6 @@ struct zink_gfx_pipeline_state {
    uint32_t vertex_strides[PIPE_MAX_ATTRIBS];
    struct zink_vertex_elements_hw_state *element_state;
    struct zink_zs_swizzle_key *shadow;
-   bool sample_locations_enabled;
    enum mesa_prim shader_rast_prim, rast_prim; /* reduced type or max for unknown */
    union {
       struct {
@@ -1068,10 +1068,11 @@ struct zink_gfx_output_key {
       struct {
          unsigned force_persample_interp:1;
          uint32_t rast_samples:6;
-         uint32_t min_samples:6;
+         uint32_t min_samples:5;
          uint32_t feedback_loop : 1;
          uint32_t feedback_loop_zs : 1;
          uint32_t rast_attachment_order : 1;
+         uint32_t custom_sample_locations : 1;
          uint32_t rp_state : 16;
       };
       uint32_t key;
@@ -1841,6 +1842,7 @@ struct zink_context {
    bool sample_locations_changed;
    VkSampleLocationEXT vk_sample_locations[PIPE_MAX_SAMPLE_LOCATION_GRID_SIZE * PIPE_MAX_SAMPLE_LOCATION_GRID_SIZE];
    uint8_t sample_locations[2 * 4 * 8 * 16];
+   unsigned num_sample_locations;
 
    struct pipe_stencil_ref stencil_ref;
 
