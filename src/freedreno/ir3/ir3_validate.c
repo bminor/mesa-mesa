@@ -20,6 +20,10 @@ struct ir3_validate_ctx {
    /* Current instruction being validated: */
    struct ir3_instruction *current_instr;
 
+   /* Lazily set up set of instructions that are rpts within the current block. */
+   struct set *rpt_set;
+   struct ir3_block *rpt_block;
+
    /* Bitset of instructions found so far, used to validate that we don't have
     * SSA uses that occur before defs.
     */
@@ -221,14 +225,19 @@ validate_dst(struct ir3_validate_ctx *ctx, struct ir3_instruction *instr,
       ctx, (type_size(type) <= 16) == !!((reg)->flags & IR3_REG_HALF))
 
 static bool
-block_contains(struct ir3_block *block, struct ir3_instruction *instr)
+block_contains_rpt(struct ir3_validate_ctx *ctx, struct ir3_block *block,
+                   struct ir3_instruction *instr)
 {
-   foreach_instr (block_instr, &block->instr_list) {
-      if (block_instr == instr)
-         return true;
+   if (ctx->rpt_block != block) {
+      _mesa_set_clear(ctx->rpt_set, NULL);
+      foreach_instr (block_instr, &block->instr_list) {
+         if (ir3_instr_is_rpt(block_instr))
+            _mesa_set_add(ctx->rpt_set, block_instr);
+      }
+      ctx->rpt_block = block;
    }
 
-   return false;
+   return _mesa_set_search(ctx->rpt_set, instr);
 }
 
 static void
@@ -245,7 +254,7 @@ validate_rpt(struct ir3_validate_ctx *ctx, struct ir3_instruction *instr)
           * fail if, for example, list_delinit is called instead of
           * ir3_instr_remove.
           */
-         validate_assert(ctx, block_contains(instr->block, rpt));
+         validate_assert(ctx, block_contains_rpt(ctx, instr->block, rpt));
       }
    } else if (instr->repeat) {
       validate_assert(ctx, ir3_supports_rpt(ctx->ir->compiler, instr->opc));
@@ -620,6 +629,8 @@ ir3_validate(struct ir3 *ir)
    ctx->ir = ir;
    ctx->defs_count = ir->instr_count + 1; /* serialno comes from pre-incrementing this. */
    ctx->defs = rzalloc_array(ctx, BITSET_WORD, BITSET_WORDS(ctx->defs_count));
+   ctx->rpt_set = _mesa_pointer_set_create(ctx);
+   ctx->rpt_block = NULL;
 
    foreach_block (block, &ir->block_list) {
       ctx->current_block = block;
