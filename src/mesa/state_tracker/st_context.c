@@ -968,6 +968,8 @@ st_destroy_context(struct st_context *st)
    st_release_program(st, &st->tcp);
    st_release_program(st, &st->tep);
    st_release_program(st, &st->cp);
+   st_release_program(st, &st->tp);
+   st_release_program(st, &st->mp);
 
    if (st->hw_select_shaders) {
       hash_table_foreach(st->hw_select_shaders, entry)

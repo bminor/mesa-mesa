@@ -1088,6 +1088,9 @@ _mesa_free_context_data(struct gl_context *ctx, bool destroy_debug_output)
    _mesa_reference_program(ctx, &ctx->FragmentProgram._Current, NULL);
    _mesa_reference_program(ctx, &ctx->FragmentProgram._TexEnvProgram, NULL);
 
+   _mesa_reference_program(ctx, &ctx->TaskProgram._Current, NULL);
+   _mesa_reference_program(ctx, &ctx->MeshProgram._Current, NULL);
+
    _mesa_reference_program(ctx, &ctx->ComputeProgram._Current, NULL);
 
    _mesa_reference_vao(ctx, &ctx->Array.VAO, NULL);
