@@ -1297,7 +1297,7 @@ fail_pdev_alloc:
    if (pdev->master_fd)
       close(pdev->master_fd);
 
-   vk_free(&pdev->vk.instance->alloc, pdev);
+   vk_free(&instance->vk.alloc, pdev);
 fail_fd:
    close(fd);
    return result;
