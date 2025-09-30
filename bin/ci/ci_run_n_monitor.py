@@ -13,7 +13,6 @@ and show the job(s) logs.
 """
 
 import argparse
-import os
 import re
 import sys
 import time
