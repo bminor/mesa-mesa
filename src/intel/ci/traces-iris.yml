@@ -403,13 +403,13 @@ traces:
       checksum: 6517788d0f65166239e4f3000ebf5d95
   supertuxkart/supertuxkart-antediluvian-abyss.rdc:
     gl-intel-apl:
-      checksum: 0af2faa0d9183c1bc4dc7612befe1f0a
+      checksum: 8e16741f5d3409740bdf5c8835ed01b9
     gl-intel-glk:
-      checksum: 0af2faa0d9183c1bc4dc7612befe1f0a
+      checksum: 8e16741f5d3409740bdf5c8835ed01b9
     gl-intel-amly:
       checksum: 0af2faa0d9183c1bc4dc7612befe1f0a
     gl-intel-kbl:
-      checksum: 0af2faa0d9183c1bc4dc7612befe1f0a
+      checksum: 8e16741f5d3409740bdf5c8835ed01b9
     gl-intel-whl:
       checksum: 0af2faa0d9183c1bc4dc7612befe1f0a
     gl-intel-cml:
@@ -435,13 +435,13 @@ traces:
       checksum: 0a4095dc7b441643a3336975b61c9e6a
   supertuxkart/supertuxkart-ravenbridge-mansion.rdc:
     gl-intel-apl:
-      checksum: ca0b64f1a62e01765146be8391eae636
+      checksum: 6901ed686bce207a3b0d7454761d9018
     gl-intel-glk:
-      checksum: ca0b64f1a62e01765146be8391eae636
+      checksum: 6901ed686bce207a3b0d7454761d9018
     gl-intel-amly:
       checksum: ca0b64f1a62e01765146be8391eae636
     gl-intel-kbl:
-      checksum: ca0b64f1a62e01765146be8391eae636
+      checksum: 6901ed686bce207a3b0d7454761d9018
     gl-intel-whl:
       checksum: ca0b64f1a62e01765146be8391eae636
     gl-intel-cml:
