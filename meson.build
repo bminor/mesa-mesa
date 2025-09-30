@@ -1400,11 +1400,11 @@ endforeach
 functions_to_detect = {
   'strtof': '',
   'mkostemp': '',
-  'memfd_create': '',
+  'memfd_create': '#include <sys/mman.h>',
   'random_r': '',
   'flock': '',
   'strtok_r': '',
-  'getrandom': '',
+  'getrandom': '#include <sys/random.h>',
   'qsort_s': '',
   'posix_fallocate': '',
   'secure_getenv': '',
@@ -1412,7 +1412,7 @@ functions_to_detect = {
 }
 
 foreach f, prefix: functions_to_detect
-  if cc.has_function(f, prefix: prefix)
+  if cc.has_function(f, args: pre_args, prefix: prefix)
     pre_args += '-DHAVE_@0@'.format(f.to_upper())
   endif
 endforeach
