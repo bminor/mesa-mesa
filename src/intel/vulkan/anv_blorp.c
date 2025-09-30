@@ -371,9 +371,9 @@ get_blorp_surf_for_anv_image(const struct anv_cmd_buffer *cmd_buffer,
 static void
 copy_image(struct anv_cmd_buffer *cmd_buffer,
            struct blorp_batch *batch,
-           struct anv_image *src_image,
+           const struct anv_image *src_image,
            VkImageLayout src_image_layout,
-           struct anv_image *dst_image,
+           const struct anv_image *dst_image,
            VkImageLayout dst_image_layout,
            const VkImageCopy2 *region)
 {
@@ -516,7 +516,7 @@ end_main_rcs_cmd_buffer_done(struct anv_cmd_buffer *cmd_buffer,
 
 static bool
 anv_blorp_blitter_execute_on_companion(struct anv_cmd_buffer *cmd_buffer,
-                                       struct anv_image *image,
+                                       const struct anv_image *image,
                                        uint32_t region_count,
                                        const VkBufferImageCopy2* regions)
 {
@@ -550,19 +550,19 @@ anv_blorp_blitter_execute_on_companion(struct anv_cmd_buffer *cmd_buffer,
 }
 
 static bool
-is_image_multisampled(struct anv_image *image)
+is_image_multisampled(const struct anv_image *image)
 {
    return image->vk.samples > 1;
 }
 
 static bool
-is_image_emulated(struct anv_image *image)
+is_image_emulated(const struct anv_image *image)
 {
    return image->emu_plane_format != VK_FORMAT_UNDEFINED;
 }
 
 static bool
-is_image_hiz_compressed(struct anv_image *image)
+is_image_hiz_compressed(const struct anv_image *image)
 {
    if (!(image->vk.aspects & VK_IMAGE_ASPECT_DEPTH_BIT))
       return false;
@@ -573,7 +573,7 @@ is_image_hiz_compressed(struct anv_image *image)
 }
 
 static bool
-is_image_hiz_non_wt_ccs_compressed(struct anv_image *image)
+is_image_hiz_non_wt_ccs_compressed(const struct anv_image *image)
 {
    if (!(image->vk.aspects & VK_IMAGE_ASPECT_DEPTH_BIT))
       return false;
@@ -585,7 +585,7 @@ is_image_hiz_non_wt_ccs_compressed(struct anv_image *image)
 }
 
 static bool
-is_image_hiz_non_ccs_compressed(struct anv_image *image)
+is_image_hiz_non_ccs_compressed(const struct anv_image *image)
 {
    if (!(image->vk.aspects & VK_IMAGE_ASPECT_DEPTH_BIT))
       return false;
@@ -596,7 +596,7 @@ is_image_hiz_non_ccs_compressed(struct anv_image *image)
 }
 
 static bool
-is_image_stc_ccs_compressed(struct anv_image *image)
+is_image_stc_ccs_compressed(const struct anv_image *image)
 {
    /* STC_CCS is used for the CPS surfaces, hence the COLOR_BIT inclusion */
    if (!(image->vk.aspects & (VK_IMAGE_ASPECT_STENCIL_BIT |
@@ -613,8 +613,8 @@ is_image_stc_ccs_compressed(struct anv_image *image)
 
 static bool
 anv_blorp_execute_on_companion(struct anv_cmd_buffer *cmd_buffer,
-                               struct anv_image *src_image,
-                               struct anv_image *dst_image)
+                               const struct anv_image *src_image,
+                               const struct anv_image *dst_image)
 {
    const struct intel_device_info *devinfo = cmd_buffer->device->info;
 
@@ -734,7 +734,7 @@ copy_buffer_to_image(struct anv_cmd_buffer *cmd_buffer,
                      struct blorp_batch *batch,
                      struct anv_address mem_addr,
                      const struct vk_image_buffer_layout *mem_layout,
-                     struct anv_image *anv_image,
+                     const struct anv_image *anv_image,
                      VkImageLayout image_layout,
                      VkImageSubresourceLayers sub_resource,
                      VkOffset3D image_offset,
@@ -743,7 +743,7 @@ copy_buffer_to_image(struct anv_cmd_buffer *cmd_buffer,
 {
    struct {
       struct blorp_surf surf;
-      struct isl_surf *isl_surf;
+      const struct isl_surf *isl_surf;
       enum isl_format copy_format;
       uint32_t level;
       VkOffset3D offset;
@@ -985,9 +985,9 @@ flip_coords(unsigned *src0, unsigned *src1, unsigned *dst0, unsigned *dst1)
 static void
 blit_image(struct anv_cmd_buffer *cmd_buffer,
            struct blorp_batch *batch,
-           struct anv_image *src_image,
+           const struct anv_image *src_image,
            VkImageLayout src_image_layout,
-           struct anv_image *dst_image,
+           const struct anv_image *dst_image,
            VkImageLayout dst_image_layout,
            const VkImageBlit2 *region,
            VkFilter filter)
@@ -2469,9 +2469,9 @@ anv_attachment_msaa_resolve(struct anv_cmd_buffer *cmd_buffer,
 
 static void
 resolve_image(struct anv_cmd_buffer *cmd_buffer,
-              struct anv_image *src_image,
+              const struct anv_image *src_image,
               VkImageLayout src_image_layout,
-              struct anv_image *dst_image,
+              const struct anv_image *dst_image,
               VkImageLayout dst_image_layout,
               const VkImageResolve2 *region,
               const VkResolveImageModeInfoKHR *res_info)
