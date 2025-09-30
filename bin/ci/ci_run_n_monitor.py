@@ -234,7 +234,6 @@ def monitor_pipeline(
                     f"* {job_name:{name_field_pad}} succ: {n_succeed}; "
                     f"fail: {n_failed}; "
                     f"total: {n_total_seen} of {stress}",
-                    flush=False,
                 )
                 if stress < 0 or n_total_completed < stress:
                     enough = False
