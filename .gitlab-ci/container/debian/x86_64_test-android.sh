@@ -31,6 +31,8 @@ EPHEMERAL=(
 
 DEPS=(
     aapt
+    cuttlefish-base
+    cuttlefish-user
     iproute2
 )
 apt-get install -y --no-remove --no-install-recommends \
@@ -111,7 +113,7 @@ rm -rf /VK-GL-CTS
 
 ############### Downloading Cuttlefish resources ...
 
-section_start cuttlefish "Downloading, building and installing Cuttlefish"
+section_start cuttlefish "Downloading and setting up Cuttlefish"
 
 mkdir /cuttlefish
 pushd /cuttlefish
@@ -134,24 +136,6 @@ curl -L --retry 4 -f --retry-all-errors --retry-delay 60 \
   -O "https://${S3_HOST}/${S3_ANDROID_BUCKET}/${AOSP_KERNEL_PROJECT_PATH}/aosp-kernel-common-${AOSP_KERNEL_BUILD_VERSION_TAGS}.${AOSP_KERNEL_BUILD_NUMBER}/initramfs.img"
 
 popd
-
-############### Building and installing Debian package ...
-
-ANDROID_CUTTLEFISH_VERSION=v1.0.1
-
-mkdir android-cuttlefish
-pushd android-cuttlefish
-git init
-git remote add origin https://github.com/google/android-cuttlefish.git
-git fetch --depth 1 origin "$ANDROID_CUTTLEFISH_VERSION"
-git checkout FETCH_HEAD
-
-./tools/buildutils/build_packages.sh
-
-apt-get install -y --allow-downgrades ./cuttlefish-base_*.deb ./cuttlefish-user_*.deb
-
-popd
-rm -rf android-cuttlefish
 
 addgroup --system kvm
 usermod -a -G kvm,cvdnetwork root
