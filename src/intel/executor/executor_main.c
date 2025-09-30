@@ -726,6 +726,15 @@ executor_context_dispatch(executor_context *ec)
       err = intel_ioctl(ec->fd, DRM_IOCTL_SYNCOBJ_WAIT, &wait);
       if (err)
          failf("syncobj_wait");
+
+      for (int i = 0; i < ARRAY_SIZE(sync_handles); i++) {
+         struct drm_syncobj_destroy sync_destroy = {
+            .handle = sync_handles[i],
+         };
+         err = intel_ioctl(ec->fd, DRM_IOCTL_SYNCOBJ_DESTROY, &sync_destroy);
+         if (err)
+            failf("syncobj_destroy");
+      }
    }
 }
 
