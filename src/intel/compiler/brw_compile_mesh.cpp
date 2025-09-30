@@ -100,6 +100,8 @@ brw_nir_lower_launch_mesh_workgroups(nir_shader *nir)
                                        NULL);
 }
 
+#define BRW_PER_TASK_DATA_START_DW 8
+
 static void
 brw_nir_lower_tue_outputs(nir_shader *nir, brw_tue_map *map)
 {
@@ -113,7 +115,7 @@ brw_nir_lower_tue_outputs(nir_shader *nir, brw_tue_map *map)
     * alignment.  This allows the TUE Header to always be written as 32 bytes
     * with 32B alignment, the most optimal write performance case."
     */
-   map->per_task_data_start_dw = 8;
+   map->per_task_data_start_dw = BRW_PER_TASK_DATA_START_DW;
 
    /* Lowering to explicit types will start offsets from task_payload_size, so
     * set it to start after the header.
@@ -488,10 +490,13 @@ brw_compile_task(const struct brw_compiler *compiler,
 static void
 brw_nir_lower_tue_inputs(nir_shader *nir, const brw_tue_map *map)
 {
-   if (!map)
-      return;
-
-   nir->info.task_payload_size = map->per_task_data_start_dw * 4;
+   /* See brw_nir_lower_tue_outputs. If a task payload is read by this shader,
+    * task_payload_size will be used to start offsets, and that's always
+    * header + padding.
+    * We can't always use map, as it may not be present if task and mesh
+    * shaders are not compiled together. This is possible with shader objects.
+    */
+   nir->info.task_payload_size = BRW_PER_TASK_DATA_START_DW * 4;
 
    bool progress = false;
 
@@ -502,7 +507,7 @@ brw_nir_lower_tue_inputs(nir_shader *nir, const brw_tue_map *map)
       /* The types for Task Output and Mesh Input should match, so their sizes
        * should also match.
        */
-      assert(map->size_dw == ALIGN(DIV_ROUND_UP(nir->info.task_payload_size, 4), 8));
+      assert(!map || map->size_dw == ALIGN(DIV_ROUND_UP(nir->info.task_payload_size, 4), 8));
    } else {
       /* Mesh doesn't read any input, to make it clearer set the
        * task_payload_size to zero instead of keeping an incomplete size that
