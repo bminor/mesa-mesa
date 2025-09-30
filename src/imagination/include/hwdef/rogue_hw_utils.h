@@ -449,7 +449,7 @@ rogue_max_wg_temps(const struct pvr_device_info *dev_info,
 {
    assert(wg_size <= rogue_get_max_total_instances(dev_info));
    if (!wg_size)
-      return rogue_get_compute_max_work_group_size(dev_info);
+      wg_size = rogue_get_compute_max_work_group_size(dev_info);
 
    if (wg_size > ROGUE_MAX_INSTANCES_PER_TASK && has_barrier) {
       /* Number of slots allocated for each workgroup. */
