@@ -6,6 +6,7 @@
 #include <ctype.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <libgen.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/mman.h>
@@ -935,6 +936,8 @@ main(int argc, char *argv[])
       return 1;
    }
 
+   void *mem_ctx = ralloc_context(NULL);
+
    const char *filename = argv[optind];
 
    process_intel_debug_variable();
@@ -969,6 +972,26 @@ main(int argc, char *argv[])
    }
    lua_setglobal(L, "arg");
 
+   /* Add the script's directory to package.path so scripts can require()
+    * files from the same directory.
+    */
+   {
+      char *script = ralloc_strdup(mem_ctx, filename);
+      const char *script_dir = dirname(script);
+
+      lua_getglobal(L, "package");
+      lua_getfield(L, -1, "path");
+      const char *original_path = lua_tostring(L, -1);
+
+      const char *new_path =
+         ralloc_asprintf(mem_ctx, "%s/?.lua;%s", script_dir, original_path);
+
+      lua_pop(L, 1);
+      lua_pushstring(L, new_path);
+      lua_setfield(L, -2, "path");
+      lua_pop(L, 1);
+   }
+
    lua_newtable(L);
    {
       lua_pushinteger(L, E.devinfo.ver);
@@ -995,6 +1018,8 @@ main(int argc, char *argv[])
 
    lua_close(L);
    close(E.fd);
+
+   ralloc_free(mem_ctx);
 
    return 0;
 }
