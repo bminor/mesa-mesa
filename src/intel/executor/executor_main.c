@@ -39,7 +39,7 @@ enum {
    EXECUTOR_BO_SIZE = 10 * 1024 * 1024,
 };
 
-const char usage_line[] = "usage: executor [-d DEVICE] FILENAME";
+const char usage_line[] = "usage: executor [-d DEVICE] FILENAME [ARGS...]";
 
 static void
 open_manual()
@@ -65,7 +65,7 @@ open_manual()
       "",
       ".SH SYNOPSIS",
       "",
-      "executor [-d DEVICE] FILENAME",
+      "executor [-d DEVICE] FILENAME [ARGS...]",
       "",
       "executor -d list",
       "",
@@ -94,6 +94,11 @@ open_manual()
       "  executed.  The 'data' argument will be used to fill the data buffer with 32-bit",
       "  values.  The function returns an ARRAY with the contents of the data buffer",
       "  after the shader completes.",
+      "",
+      "- arg",
+      "  Table containing the command line arguments passed to the script, arg[0]",
+      "  is the script filename, followed by the ARGS.  Arguments consumed by",
+      "  executor itself are not in this table.",
       "",
       "- dump(ARRAY, COUNT)",
       "  Pretty print the COUNT first elements of an array of 32-bit values.",
@@ -206,6 +211,7 @@ print_help()
       "\n"
       "SCRIPTING ENVIRONMENT:\n"
       "- execute({src=STR, data=ARRAY}) -> ARRAY\n"
+      "- arg (table with command line arguments)\n"
       "- dump(ARRAY, COUNT)\n"
       "- check_ver(V, ...), check_verx10(V, ...), ver, verx10\n"
       "\n"
@@ -930,7 +936,10 @@ main(int argc, char *argv[])
        {},
    };
 
-   while ((opt = getopt_long(argc, argv, "d:h", long_options, NULL)) != -1) {
+   /* The `+` ensures that arguments are not reordered (the default), since
+    * the arguments after the script name are made available to the script.
+    */
+   while ((opt = getopt_long(argc, argv, "+d:h", long_options, NULL)) != -1) {
       switch (opt) {
       case 'd':
          if (!strcmp(optarg, "list")) {
@@ -980,6 +989,16 @@ main(int argc, char *argv[])
     */
 
    luaL_openlibs(L);
+
+   /* Command line arguments starting from the script name are
+    * available to the script to use.
+    */
+   lua_newtable(L);
+   for (int i = optind; i < argc; i++) {
+      lua_pushstring(L, argv[i]);
+      lua_seti(L, -2, i - optind);
+   }
+   lua_setglobal(L, "arg");
 
    lua_pushinteger(L, E.devinfo.ver);
    lua_setglobal(L, "ver");
