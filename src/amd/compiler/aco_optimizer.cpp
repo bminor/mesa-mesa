@@ -3757,7 +3757,7 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
 
    /* neg(mul(a, b)) -> mul(neg(a), b), abs(mul(a, b)) -> mul(abs(a), abs(b)) */
    if ((ctx.info[instr->definitions[0].tempId()].label & (label_neg | label_abs)) &&
-       ctx.uses[instr->operands[1].tempId()] == 1) {
+       ctx.uses[ctx.info[instr->definitions[0].tempId()].temp.id()] == 1) {
       Temp val = ctx.info[instr->definitions[0].tempId()].temp;
       Instruction* mul_instr = ctx.info[val.id()].parent_instr;
 
