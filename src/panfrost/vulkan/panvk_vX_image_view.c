@@ -309,6 +309,17 @@ panvk_per_arch(CreateImageView)(VkDevice _device,
    if (view == NULL)
       return panvk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
+   /* vk_image_view_init() sanitizes depth/stencil formats to use the
+    * single-plane format, which panvk rely on.  It doesn't do this with
+    * driver-internal images, though.  We have to do that ourselves.
+    */
+   if (view->vk.create_flags & VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA) {
+      if (view->vk.aspects == VK_IMAGE_ASPECT_DEPTH_BIT)
+         view->vk.view_format = vk_format_depth_only(view->vk.view_format);
+      else if (view->vk.aspects == VK_IMAGE_ASPECT_STENCIL_BIT)
+         view->vk.view_format = vk_format_stencil_only(view->vk.view_format);
+   }
+
    enum pipe_format pfmt = vk_format_to_pipe_format(view->vk.view_format);
    view->pview = (struct pan_image_view){
       .format = pfmt,
