@@ -1994,7 +1994,7 @@
         "description": "pvr: amend num temps calculation when wg_size is not provided",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7a32dc673ba6544000f0a9ed0aa36f792ba0cfce",
         "notes": null
