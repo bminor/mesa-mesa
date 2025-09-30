@@ -423,6 +423,71 @@ static void r600_reallocate_texture_inplace(struct r600_common_context *rctx,
 	p_atomic_inc(&rctx->screen->dirty_tex_counter);
 }
 
+static bool r600_texture_get_param(struct pipe_screen *screen,
+				    struct pipe_context *context,
+				    struct pipe_resource *resource,
+				    unsigned plane,
+				    unsigned layer,
+				    unsigned level,
+				    enum pipe_resource_param param,
+				    unsigned handle_usage,
+				    uint64_t *value)
+{
+	struct r600_common_screen *rscreen = (struct r600_common_screen*)screen;
+	struct r600_texture *rtex = r600_as_texture(resource);
+	struct winsys_handle whandle;
+
+	if (!rscreen || !rtex)
+		return false;
+
+	switch (param) {
+	case PIPE_RESOURCE_PARAM_NPLANES:
+		*value = 1;
+		return true;
+
+	case PIPE_RESOURCE_PARAM_STRIDE:
+		if (resource->target == PIPE_BUFFER)
+			*value = 0;
+		else
+			*value = rtex->surface.u.legacy.level[level].nblk_x * rtex->surface.bpe;
+		return true;
+
+	case PIPE_RESOURCE_PARAM_OFFSET:
+		if (resource->target == PIPE_BUFFER)
+			*value = 0;
+		else
+			*value = (uint64_t)rtex->surface.u.legacy.level[level].offset_256B * 256;
+		return true;
+
+	case PIPE_RESOURCE_PARAM_HANDLE_TYPE_SHARED:
+	case PIPE_RESOURCE_PARAM_HANDLE_TYPE_KMS:
+	case PIPE_RESOURCE_PARAM_HANDLE_TYPE_FD:
+		memset(&whandle, 0, sizeof(whandle));
+
+		if (param == PIPE_RESOURCE_PARAM_HANDLE_TYPE_SHARED)
+			whandle.type = WINSYS_HANDLE_TYPE_SHARED;
+		else if (param == PIPE_RESOURCE_PARAM_HANDLE_TYPE_KMS)
+			whandle.type = WINSYS_HANDLE_TYPE_KMS;
+		else if (param == PIPE_RESOURCE_PARAM_HANDLE_TYPE_FD)
+			whandle.type = WINSYS_HANDLE_TYPE_FD;
+
+		if (!screen->resource_get_handle(screen, context, resource, &whandle, handle_usage))
+			return false;
+
+		*value = whandle.handle;
+		return true;
+
+	case PIPE_RESOURCE_PARAM_DISJOINT_PLANES:
+		*value = false;
+		return true;
+
+	case PIPE_RESOURCE_PARAM_MODIFIER:
+	case PIPE_RESOURCE_PARAM_LAYER_STRIDE:
+	default:
+		return false;
+	}
+}
+
 static void r600_texture_get_info(struct pipe_screen* screen,
 				  struct pipe_resource *resource,
 				  unsigned *pstride,
@@ -1695,6 +1760,7 @@ void r600_init_screen_texture_functions(struct r600_common_screen *rscreen)
 {
 	rscreen->b.resource_from_handle = r600_texture_from_handle;
 	rscreen->b.resource_get_handle = r600_texture_get_handle;
+	rscreen->b.resource_get_param = r600_texture_get_param;
 	rscreen->b.resource_get_info = r600_texture_get_info;
 	rscreen->b.resource_from_memobj = r600_texture_from_memobj;
 	rscreen->b.memobj_create_from_handle = r600_memobj_from_handle;
