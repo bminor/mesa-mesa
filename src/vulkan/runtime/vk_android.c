@@ -757,6 +757,13 @@ get_ahb_buffer_format_properties2(
    if (!gpu_usage)
       return VK_ERROR_INVALID_EXTERNAL_HANDLE;
 
+   /* No known gralloc implementations currently allocate with a
+    * layers > 1. So return an error if we happen to get one since
+    * the rest of mesa won't handle it properly.
+    */
+   if (desc.layers > 1)
+      return VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR;
+
    /* Fill properties fields based on description. */
    VkAndroidHardwareBufferFormatProperties2ANDROID *p = pProperties;
 
