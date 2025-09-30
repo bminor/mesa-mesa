@@ -1835,14 +1835,7 @@ if with_clc
   # Require an SPIRV-LLVM-Translator version compatible with the chosen LLVM
   # one.
 
-  # This first version check is still needed as maybe LLVM 8.0 was picked but
-  # we do not want to accept SPIRV-LLVM-Translator 8.0.0.1 as that version
-  # does not have the required API and those are only available starting from
-  # 8.0.1.3.
-  _llvmspirvlib_min_version = '>= 8.0.1.3'
-  if with_clc
-    _llvmspirvlib_min_version = '>= 15.0.0.0'
-  endif
+  _llvmspirvlib_min_version = '>= 15.0.0.0'
 
   _llvmspirvlib_version = [
     _llvmspirvlib_min_version,
