@@ -88,11 +88,22 @@ pco_shader *pvr_usc_eot(pco_ctx *ctx,
 
          assert(props->msaa_samples);
          if (props->msaa_samples > 1) {
-            if (PVR_HAS_FEATURE(dev_info, pbe2_in_xe) &&
-                PVR_GET_FEATURE_VALUE(dev_info, isp_samples_per_pixel, 0U) ==
+            if (PVR_HAS_FEATURE(dev_info, pbe2_in_xe)) {
+               if (PVR_GET_FEATURE_VALUE(dev_info, isp_samples_per_pixel, 0U) ==
                    4) {
-               data_size *= props->msaa_samples;
+                  /* Scale the size according to the number of samples. */
+                  data_size *= props->msaa_samples;
+               }
+
+               /* Else, the size is reduced proportionally so the
+                * total amount of data remains the same as for non-MSAA, i.e.
+                * data_size is unchanged.
+                */
             } else {
+               /* The size is multiplied by the number of samples, but, for the
+                * 4x and 8x modes the size is reduced proportionally so the
+                * total amount of data remains the same as for 2x.
+                */
                data_size *= 2;
             }
          }
