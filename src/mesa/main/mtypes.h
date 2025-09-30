@@ -2887,6 +2887,7 @@ struct gl_dlist_state
        */
       GLenum16 ShadeModel;
       bool UseLoopback;
+      bool NeedsFlush;
    } Current;
 };
 

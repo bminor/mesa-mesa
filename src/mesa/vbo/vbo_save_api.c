@@ -851,6 +851,7 @@ compile_vertex_list(struct gl_context *ctx)
                            node->cold->ib.obj);
    save->current_bo_bytes_used += total_vert_count * save->vertex_size * sizeof(fi_type);
    node->cold->bo_bytes_used = save->current_bo_bytes_used;
+   ctx->ListState.Current.NeedsFlush = true;
 
   if (vertex_to_index) {
       _mesa_hash_table_destroy(vertex_to_index, _free_entry);
