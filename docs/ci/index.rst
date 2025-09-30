@@ -37,7 +37,7 @@ If the GitLab CI doesn't seem to be running on your fork (or MRs, as they run
 in the context of your fork), you should check the "Settings" of your fork.
 Under "CI / CD" → "General pipelines", make sure "Custom CI config path" is
 empty (or set to the default ``.gitlab-ci.yml``), and that the
-"Public pipelines" box is checked.
+"Project-based pipeline visibility" box is checked.
 
 If a specific CI farm is failing for reasons unrelated to your changes, make an
 MR to disable the farm following the `farm management <#farm-management>`__
