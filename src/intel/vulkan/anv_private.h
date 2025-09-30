@@ -708,8 +708,6 @@ union anv_free_list {
    alignas(8) uint64_t u64;
 };
 
-#define ANV_FREE_LIST_EMPTY ((union anv_free_list) { { UINT32_MAX, 0 } })
-
 struct anv_block_state {
    union {
       struct {

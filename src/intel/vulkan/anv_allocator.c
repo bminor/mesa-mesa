@@ -104,7 +104,9 @@
 
 /* Allocations are always at least 64 byte aligned, so 1 is an invalid value.
  * We use it to indicate the free list is empty. */
-#define EMPTY UINT32_MAX
+#define ANV_FREE_LIST_EMPTY_VAL UINT32_MAX
+
+#define ANV_FREE_LIST_EMPTY ((union anv_free_list) { { ANV_FREE_LIST_EMPTY_VAL, 0 } })
 
 /* On FreeBSD PAGE_SIZE is already defined in
  * /usr/include/machine/param.h that is indirectly
@@ -329,7 +331,7 @@ anv_free_list_pop(union anv_free_list *list,
    union anv_free_list current, new, old;
 
    current.u64 = list->u64;
-   while (current.offset != EMPTY) {
+   while (current.offset != ANV_FREE_LIST_EMPTY_VAL) {
       __sync_synchronize();
       new.offset = table->map[current.offset].next;
       new.count = current.count + 1;
