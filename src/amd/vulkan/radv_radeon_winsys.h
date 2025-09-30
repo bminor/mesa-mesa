@@ -23,6 +23,7 @@
 #include "amd_family.h"
 
 struct radeon_info;
+struct vk_device;
 struct vk_sync_type;
 struct vk_sync_wait;
 struct vk_sync_signal;
@@ -321,6 +322,13 @@ struct radeon_winsys {
    const struct vk_sync_type *const *(*get_sync_types)(struct radeon_winsys *ws);
 
    struct util_sync_provider *(*get_sync_provider)(struct radeon_winsys *ws);
+
+   VkResult (*copy_sync_payloads)(struct vk_device *device,
+                                  uint32_t wait_count,
+                                  const struct vk_sync_wait *waits,
+                                  uint32_t signal_count,
+                                  const struct vk_sync_signal *signals);
+
 };
 
 static inline uint64_t

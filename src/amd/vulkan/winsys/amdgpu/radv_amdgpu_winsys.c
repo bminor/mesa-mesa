@@ -340,6 +340,7 @@ radv_amdgpu_winsys_create(int fd, uint64_t debug_flags, uint64_t perftest_flags,
    ws->base.get_fd = radv_amdgpu_winsys_get_fd;
    ws->base.get_sync_types = radv_amdgpu_winsys_get_sync_types;
    ws->base.get_sync_provider = radv_amdgpu_winsys_get_sync_provider;
+   ws->base.copy_sync_payloads = vk_drm_syncobj_copy_payloads;
    radv_amdgpu_bo_init_functions(ws);
    radv_amdgpu_cs_init_functions(ws);
 
