@@ -2078,7 +2078,7 @@ aspect_masks_valid(struct vk_image *src_img, struct vk_image *dst_img,
       vk_format_get_ycbcr_info(dst_img->format);
 
    if (!src_ycbcr_info && !dst_ycbcr_info) {
-      const VkImageAspectFlags valid_aspects =
+      ASSERTED const VkImageAspectFlags valid_aspects =
          VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT |
          VK_IMAGE_ASPECT_STENCIL_BIT;
 
