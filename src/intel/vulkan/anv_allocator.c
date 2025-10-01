@@ -897,7 +897,7 @@ anv_state_pool_alloc_no_vg(struct anv_state_pool *pool,
       state = anv_free_list_pop(&pool->buckets[b].free_list, &pool->table);
       if (state) {
          unsigned chunk_size = anv_state_pool_get_bucket_size(b);
-         int64_t chunk_offset = state->offset;
+         int64_t chunk_offset = state->offset - pool->start_offset;
 
          /* First lets update the state we got to its new size. offset and map
           * remain the same.
