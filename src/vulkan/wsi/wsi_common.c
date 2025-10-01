@@ -391,6 +391,21 @@ get_blit_type(const struct wsi_device *wsi,
       return wsi_dxgi_image_needs_blit(wsi, dxgi_params, device);
    }
 #endif
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+   case WSI_IMAGE_TYPE_METAL: {
+      /* Due to mismatches between WSI and Metal, we require rendering into an
+       * intermediate texture and later blit that texture to the display
+       * texture. There is not much we can do about this since users can get
+       * the VkImages before acquiring the display image for command buffer
+       * recording as long as they acquire the image before submission. Metal
+       * on the other hand will only give us a texture handle after acquiring
+       * which leads to us having to provide an intermediate texture just for
+       * this. We could move the acquisition to the first usage of the VkImage
+       * but that's something we can contemplate if the performace gain is
+       * considerable. */
+      return WSI_SWAPCHAIN_IMAGE_BLIT;
+   }
+#endif
    default:
       UNREACHABLE("Invalid image type");
    }
@@ -423,6 +438,13 @@ configure_image(const struct wsi_swapchain *chain,
       const struct wsi_dxgi_image_params *dxgi_params =
          container_of(params, const struct wsi_dxgi_image_params, base);
       return wsi_dxgi_configure_image(chain, pCreateInfo, dxgi_params, info);
+   }
+#endif
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+   case WSI_IMAGE_TYPE_METAL: {
+      const struct wsi_metal_image_params *metal_params =
+         container_of(params, const struct wsi_metal_image_params, base);
+      return wsi_metal_configure_image(chain, pCreateInfo, metal_params, info);
    }
 #endif
    default:

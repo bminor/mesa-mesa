@@ -137,6 +137,14 @@ struct wsi_device {
                                       VkDeviceMemory *out);
    } win32;
 
+   struct {
+      VkResult (*bind_drawable_to_vkimage)(VkImage image, void *drawable);
+      /* Does not transfer the ownership to the command buffer. The command
+       * buffer must retain the drawable to ensure lifespan. */
+      void (*encode_drawable_present)(VkCommandBuffer cmd, void *drawable);
+   } metal;
+
+
    bool sw;
 
    /* Set to true if the implementation is ok with linear WSI images. */

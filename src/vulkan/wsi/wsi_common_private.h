@@ -48,6 +48,7 @@ enum wsi_image_type {
    WSI_IMAGE_TYPE_CPU,
    WSI_IMAGE_TYPE_DRM,
    WSI_IMAGE_TYPE_DXGI,
+   WSI_IMAGE_TYPE_METAL,
 };
 
 struct wsi_base_image_params {
@@ -495,6 +496,22 @@ void wsi_headless_finish_wsi(struct wsi_device *wsi_device,
 
 VK_DEFINE_NONDISP_HANDLE_CASTS(wsi_swapchain, base, VkSwapchainKHR,
                                VK_OBJECT_TYPE_SWAPCHAIN_KHR)
+
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+struct wsi_metal_image_params {
+   struct wsi_base_image_params base;
+   /* Software implementations like lavapipe cannot render to an MTLTexture
+    * directly and therefore require a blit
+    */
+   bool can_render_to_texture;
+};
+
+VkResult
+wsi_metal_configure_image(const struct wsi_swapchain *chain,
+                          const VkSwapchainCreateInfoKHR *pCreateInfo,
+                          const struct wsi_metal_image_params *params,
+                          struct wsi_image_info *info);
+#endif /* defined(VK_USE_PLATFORM_METAL_EXT) */
 
 #ifdef __cplusplus
 }
