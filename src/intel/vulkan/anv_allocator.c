@@ -595,13 +595,13 @@ anv_block_pool_grow(struct anv_block_pool *pool, struct anv_block_state *state,
    return pool->size;
 }
 
-static VkResult
-anv_block_pool_alloc_new(struct anv_block_pool *pool,
-                         struct anv_block_state *pool_state,
-                         uint32_t block_size,
-                         int64_t *offset,
-                         uint32_t *padding)
+VkResult
+anv_block_pool_alloc(struct anv_block_pool *pool,
+                     uint32_t block_size,
+                     int64_t *offset,
+                     uint32_t *padding)
 {
+   struct anv_block_state *pool_state = &pool->state;
    struct anv_block_state state, old, new;
 
    /* Most allocations won't generate any padding */
@@ -656,14 +656,6 @@ anv_block_pool_alloc_new(struct anv_block_pool *pool,
          continue;
       }
    }
-}
-
-VkResult
-anv_block_pool_alloc(struct anv_block_pool *pool,
-                     uint32_t block_size,
-                     int64_t *offset, uint32_t *padding)
-{
-   return anv_block_pool_alloc_new(pool, &pool->state, block_size, offset, padding);
 }
 
 VkResult
