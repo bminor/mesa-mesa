@@ -865,8 +865,7 @@ VkResult anv_block_pool_alloc(struct anv_block_pool *pool,
                               uint32_t block_size,
                               int64_t *offset,
                               uint32_t *padding);
-void* anv_block_pool_map(struct anv_block_pool *pool, int32_t offset, uint32_t
-size);
+void *anv_block_pool_map(struct anv_block_pool *pool, int64_t offset, uint32_t size);
 
 struct anv_state_pool_params {
    const char *name;
