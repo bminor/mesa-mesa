@@ -1876,6 +1876,8 @@ optimizations.extend([
    # Conversions
    (('f2i', ('ftrunc', a)), ('f2i', a)),
    (('f2u', ('ftrunc', a)), ('f2u', a)),
+   (('f2i', ('ffloor', 'a(is_not_negative)')), ('f2i', a)),
+   (('f2u', ('ffloor', a)), ('f2u', a)),
 
    # Conversions from 16 bits to 32 bits and back can always be removed
    (('f2fmp', ('f2f32', 'a@16')), a),
