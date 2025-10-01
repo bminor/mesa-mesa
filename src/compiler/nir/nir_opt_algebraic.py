@@ -1879,6 +1879,16 @@ optimizations.extend([
    (('f2i', ('ffloor', 'a(is_not_negative)')), ('f2i', a)),
    (('f2u', ('ffloor', a)), ('f2u', a)),
 
+   # Section 3.3.11 (Conversion Instructions) of the SPIR-V 1.6 spec says:
+   #
+   #    "Behavior is undefined if Result Type is not wide enough to hold the
+   #    converted value."
+   #
+   # Unsigned integers cannot hold negative values, so squash them to
+   # zero. This is what the conversion instruction on many GPUs would do
+   # anyway.
+   (('f2u', 'a(is_not_positive)'), 0),
+
    # Conversions from 16 bits to 32 bits and back can always be removed
    (('f2fmp', ('f2f32', 'a@16')), a),
    (('i2imp', ('i2i32', 'a@16')), a),
