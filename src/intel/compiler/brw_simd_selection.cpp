@@ -103,7 +103,9 @@ brw_simd_should_compile(brw_simd_selection_state &state, unsigned simd)
 
       const unsigned min_simd = state.devinfo->ver >= 20 ? 1 : 0;
 
-      if (simd > min_simd && state.beyond_threshold[simd]) {
+      if (simd > min_simd &&
+          state.beyond_threshold[simd] &&
+          brw_simd_any_compiled(state)) {
          state.error[simd] = "estimated to be beyond the pressure threshold";
          return false;
       }
