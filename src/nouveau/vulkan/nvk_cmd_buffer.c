@@ -434,14 +434,13 @@ nvk_CmdExecuteCommands(VkCommandBuffer commandBuffer,
 }
 
 enum nvk_barrier {
-   NVK_BARRIER_RENDER_WFI              = 1 << 0,
-   NVK_BARRIER_COMPUTE_WFI             = 1 << 1,
-   NVK_BARRIER_FLUSH_SHADER_DATA       = 1 << 2,
-   NVK_BARRIER_INVALIDATE_SHADER_DATA  = 1 << 3,
-   NVK_BARRIER_INVALIDATE_TEX_DATA     = 1 << 4,
-   NVK_BARRIER_INVALIDATE_CONSTANT     = 1 << 5,
-   NVK_BARRIER_INVALIDATE_MME_DATA     = 1 << 6,
-   NVK_BARRIER_INVALIDATE_QMD_DATA     = 1 << 7,
+   NVK_BARRIER_WFI                     = 1 << 0,
+   NVK_BARRIER_FLUSH_SHADER_DATA       = 1 << 1,
+   NVK_BARRIER_INVALIDATE_SHADER_DATA  = 1 << 2,
+   NVK_BARRIER_INVALIDATE_TEX_DATA     = 1 << 3,
+   NVK_BARRIER_INVALIDATE_CONSTANT     = 1 << 4,
+   NVK_BARRIER_INVALIDATE_MME_DATA     = 1 << 5,
+   NVK_BARRIER_INVALIDATE_QMD_DATA     = 1 << 6,
 };
 
 static enum nvk_barrier
@@ -457,26 +456,26 @@ nvk_barrier_flushes_waits(VkPipelineStageFlags2 stages,
       barriers |= NVK_BARRIER_FLUSH_SHADER_DATA;
 
       if (vk_pipeline_stage_flags2_has_graphics_shader(stages))
-         barriers |= NVK_BARRIER_RENDER_WFI;
+         barriers |= NVK_BARRIER_WFI;
 
       if (vk_pipeline_stage_flags2_has_compute_shader(stages))
-         barriers |= NVK_BARRIER_COMPUTE_WFI;
+         barriers |= NVK_BARRIER_WFI;
    }
 
    if (access & (VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT |
                  VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT |
                  VK_ACCESS_2_TRANSFORM_FEEDBACK_WRITE_BIT_EXT))
-      barriers |= NVK_BARRIER_RENDER_WFI;
+      barriers |= NVK_BARRIER_WFI;
 
    if ((access & VK_ACCESS_2_TRANSFER_WRITE_BIT) &&
        (stages & (VK_PIPELINE_STAGE_2_RESOLVE_BIT |
                   VK_PIPELINE_STAGE_2_BLIT_BIT |
                   VK_PIPELINE_STAGE_2_CLEAR_BIT)))
-      barriers |= NVK_BARRIER_RENDER_WFI;
+      barriers |= NVK_BARRIER_WFI;
 
    if (access & VK_ACCESS_2_COMMAND_PREPROCESS_WRITE_BIT_EXT)
       barriers |= NVK_BARRIER_FLUSH_SHADER_DATA |
-                  NVK_BARRIER_COMPUTE_WFI;
+                  NVK_BARRIER_WFI;
 
    return barriers;
 }
@@ -567,13 +566,14 @@ nvk_cmd_flush_wait_dep(struct nvk_cmd_buffer *cmd,
             .flush_data = FLUSH_DATA_TRUE,
          });
       }
-   } else if (barriers & NVK_BARRIER_RENDER_WFI) {
-      /* If this comes from a vkCmdSetEvent, we don't need to wait */
+   } else if (barriers & NVK_BARRIER_WFI) {
+      /* If this comes from a vkCmdSetEvent, we don't need to wait
+       *
+       * We only need to WFI on a single channel. The others will implicitly get
+       * a WFI from the channel switch.
+       */
       if (wait)
          P_IMMD(p, NVA097, WAIT_FOR_IDLE, 0);
-   } else {
-      /* Compute WFI only happens when shader data is flushed */
-      assert(!(barriers & NVK_BARRIER_COMPUTE_WFI));
    }
 }
 
