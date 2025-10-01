@@ -55,17 +55,16 @@ xe_gem_exec_ioctl(int fd, const struct intel_device_info *info,
    if (unlikely(info->no_hw))
       return 0;
 
-   /* After 80 retries, we spent more than 16s sleeping. */
-   for (retries = 0; retries < 80; retries++) {
+   for (retries = 0; retries < INTEL_EXEC_IOCTL_MAX_RETRIES; retries++) {
       ret = intel_ioctl(fd, DRM_IOCTL_XE_EXEC, exec);
 
       if (likely(!(ret && errno == ENOMEM)))
          break;
 
-      if (unlikely(retries == 40))
+      if (unlikely(retries == INTEL_EXEC_IOCTL_RETRY_WARN))
          fprintf(stderr, "intel: the execbuf ioctl keeps returning ENOMEM\n");
 
-      os_time_sleep(100 * retries * retries);
+      os_time_sleep(intel_exec_ioctl_sleep_us(retries));
    }
 
    return ret;
