@@ -160,6 +160,9 @@ i915_gem_execbuf_ioctl(int fd, const struct intel_device_info *info,
       if (likely(!(ret && errno == ENOMEM)))
          break;
 
+      if (unlikely(retries == 40))
+         fprintf(stderr, "intel: the execbuf ioctl keeps returning ENOMEM\n");
+
       os_time_sleep(100 * retries * retries);
    }
 
