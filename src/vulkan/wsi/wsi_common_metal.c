@@ -272,7 +272,7 @@ wsi_metal_surface_get_present_rectangles(VkIcdSurfaceBase *surface,
 
 struct wsi_metal_image {
    struct wsi_image base;
-   CAMetalDrawableBridged *drawable;
+   CAMetalDrawable *drawable;
 };
 
 struct wsi_metal_swapchain {
@@ -317,7 +317,7 @@ wsi_metal_swapchain_acquire_next_image(struct wsi_swapchain *wsi_chain,
 
    while (1) {
       /* Try to acquire an drawable. Unfortunately we might block for up to 1 second. */
-      CAMetalDrawableBridged *drawable = wsi_metal_layer_acquire_drawable(chain->surface->pLayer);
+      CAMetalDrawable *drawable = wsi_metal_layer_acquire_drawable(chain->surface->pLayer);
       if (drawable) {
          uint32_t i = (chain->current_image_index++) % chain->base.image_count;
          *image_index = i;
@@ -363,9 +363,14 @@ wsi_metal_swapchain_destroy(struct wsi_swapchain *wsi_chain,
       (struct wsi_metal_swapchain *)wsi_chain;
 
    for (uint32_t i = 0; i < chain->base.image_count; i++) {
-      wsi_metal_layer_cancel_present(chain->blit_context, &chain->images[i].drawable);
-      if (chain->images[i].base.image != VK_NULL_HANDLE)
-         wsi_destroy_image(&chain->base, &chain->images[i].base);
+      struct wsi_metal_image *image = &chain->images[i];
+      if (image->drawable) {
+         wsi_metal_release_drawable(image->drawable);
+         image->drawable = NULL;
+      }
+
+      if (image->base.image != VK_NULL_HANDLE)
+         wsi_destroy_image(&chain->base, &image->base);
    }
 
    wsi_destroy_metal_layer_blit_context(chain->blit_context);

@@ -13,7 +13,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-typedef void CAMetalDrawableBridged;
+typedef void CAMetalDrawable;
 
 void
 wsi_metal_layer_size(const CAMetalLayer *metal_layer,
@@ -25,8 +25,11 @@ wsi_metal_layer_configure(const CAMetalLayer *metal_layer,
    VkFormat format, VkColorSpaceKHR color_space,
    bool enable_opaque, bool enable_immediate);
 
-CAMetalDrawableBridged *
+CAMetalDrawable *
 wsi_metal_layer_acquire_drawable(const CAMetalLayer *metal_layer);
+
+void
+wsi_metal_release_drawable(CAMetalDrawable *drawable_ptr);
 
 struct wsi_metal_layer_blit_context;
 
@@ -38,11 +41,7 @@ wsi_destroy_metal_layer_blit_context(struct wsi_metal_layer_blit_context *contex
 
 void
 wsi_metal_layer_blit_and_present(struct wsi_metal_layer_blit_context *context,
-   CAMetalDrawableBridged **drawable_ptr, void *buffer,
+   CAMetalDrawable **drawable_ptr, void *buffer,
    uint32_t width, uint32_t height, uint32_t row_pitch);
-
-void
-wsi_metal_layer_cancel_present(struct wsi_metal_layer_blit_context *context,
-   CAMetalDrawableBridged **drawable_ptr);
 
 #endif // WSI_COMMON_METAL_LAYER_H

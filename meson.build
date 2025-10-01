@@ -19,7 +19,6 @@ project(
 
 if host_machine.system() == 'darwin'
   add_languages('objc', native : false)
-  add_project_arguments('-fobjc-arc', language : 'objc')
   libname_prefix = 'lib'
   libname_suffix = 'dylib'
 elif host_machine.system() == 'windows'
@@ -2197,6 +2196,9 @@ endif
 
 add_project_arguments(pre_args, language : ['c', 'cpp'])
 add_project_arguments(c_cpp_args, language : ['c', 'cpp'])
+if host_machine.system() == 'darwin'
+  add_project_arguments(pre_args, language : ['objc'])
+endif
 
 add_project_arguments(c_args,   language : ['c'])
 add_project_arguments(cpp_args, language : ['cpp'])

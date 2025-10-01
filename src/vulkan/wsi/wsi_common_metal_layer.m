@@ -135,13 +135,19 @@ wsi_metal_layer_configure(const CAMetalLayer *metal_layer,
    return VK_SUCCESS;
 }
 
-CAMetalDrawableBridged *
+CAMetalDrawable *
 wsi_metal_layer_acquire_drawable(const CAMetalLayer *metal_layer)
 {
    @autoreleasepool {
       id<CAMetalDrawable> drawable = [metal_layer nextDrawable];
-      return (__bridge_retained CAMetalDrawableBridged *)drawable;
+      return (CAMetalDrawable *)[drawable retain];
    }
+}
+
+void
+wsi_metal_release_drawable(CAMetalDrawable *drawable_ptr)
+{
+   [(id<CAMetalDrawable>)drawable_ptr release];
 }
 
 struct wsi_metal_layer_blit_context {
@@ -166,29 +172,29 @@ wsi_create_metal_layer_blit_context()
 void
 wsi_destroy_metal_layer_blit_context(struct wsi_metal_layer_blit_context *context)
 {
-   @autoreleasepool {
-      context->device = nil;
-      context->commandQueue = nil;
-      free(context);
-   }
+   [context->commandQueue release];
+   [context->device release];
+   context->device = nil;
+   context->commandQueue = nil;
+   free(context);
 }
 
 void
 wsi_metal_layer_blit_and_present(struct wsi_metal_layer_blit_context *context,
-   CAMetalDrawableBridged **drawable_ptr, void *buffer,
+   CAMetalDrawable **drawable_ptr, void *buffer,
    uint32_t width, uint32_t height, uint32_t row_pitch)
 {
    @autoreleasepool {
-      id<CAMetalDrawable> drawable = (__bridge_transfer id<CAMetalDrawable>)*drawable_ptr;
+      id<CAMetalDrawable> drawable = [(id<CAMetalDrawable>)*drawable_ptr autorelease];
 
       id<MTLCommandBuffer> commandBuffer = [context->commandQueue commandBuffer];
       id<MTLBlitCommandEncoder> commandEncoder = [commandBuffer blitCommandEncoder];
 
       NSUInteger image_size = height * row_pitch;
-      id<MTLBuffer> image_buffer = [context->device newBufferWithBytesNoCopy:buffer
+      id<MTLBuffer> image_buffer = [[context->device newBufferWithBytesNoCopy:buffer
          length:image_size
          options:MTLResourceStorageModeShared
-         deallocator:nil];
+         deallocator:nil] autorelease];
 
       [commandEncoder copyFromBuffer:image_buffer
          sourceOffset:0
@@ -200,24 +206,6 @@ wsi_metal_layer_blit_and_present(struct wsi_metal_layer_blit_context *context,
          destinationLevel:0
          destinationOrigin:MTLOriginMake(0, 0, 0)];
       [commandEncoder endEncoding];
-      [commandBuffer presentDrawable:drawable];
-      [commandBuffer commit];
-
-      *drawable_ptr = nil;
-   }
-}
-
-void
-wsi_metal_layer_cancel_present(struct wsi_metal_layer_blit_context *context,
-   CAMetalDrawableBridged **drawable_ptr)
-{
-   @autoreleasepool {
-      id<CAMetalDrawable> drawable = (__bridge_transfer id<CAMetalDrawable>)*drawable_ptr;
-      if (drawable == nil)
-         return;
-
-      /* We need to present the drawable to release it... */
-      id<MTLCommandBuffer> commandBuffer = [context->commandQueue commandBuffer];
       [commandBuffer presentDrawable:drawable];
       [commandBuffer commit];
 
