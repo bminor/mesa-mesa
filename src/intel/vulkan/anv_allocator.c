@@ -801,10 +801,12 @@ anv_state_pool_return_blocks(struct anv_state_pool *pool,
       /* update states that were added back to the state table */
       struct anv_state *state_i = anv_state_table_get(&pool->table,
                                                       st_idx + i);
+      const int64_t offset = chunk_offset + block_size * i;
       state_i->alloc_size = block_size;
-      state_i->offset = pool->start_offset + chunk_offset + block_size * i;
+      state_i->offset = pool->start_offset + offset;
+
       state_i->map = anv_block_pool_map(&pool->block_pool,
-                                        state_i->offset,
+                                        offset,
                                         state_i->alloc_size);
    }
 
