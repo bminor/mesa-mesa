@@ -222,10 +222,12 @@ wsi_metal_surface_get_formats2(VkIcdSurfaceBase *icd_surface,
    get_sorted_vk_formats(wsi_device->force_bgra8_unorm_first, sorted_formats);
 
    for (unsigned i = 0; i < ARRAY_SIZE(sorted_formats); i++) {
-      vk_outarray_append_typed(VkSurfaceFormat2KHR, &out, f) {
-         assert(f->sType == VK_STRUCTURE_TYPE_SURFACE_FORMAT_2_KHR);
-         f->surfaceFormat.format = sorted_formats[i];
-         f->surfaceFormat.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+      for (unsigned j = 0; j < ARRAY_SIZE(available_surface_color_spaces); j++) {
+         vk_outarray_append_typed(VkSurfaceFormat2KHR, &out, f) {
+            assert(f->sType == VK_STRUCTURE_TYPE_SURFACE_FORMAT_2_KHR);
+            f->surfaceFormat.format = sorted_formats[i];
+            f->surfaceFormat.colorSpace = available_surface_color_spaces[j];
+         }
       }
    }
 
