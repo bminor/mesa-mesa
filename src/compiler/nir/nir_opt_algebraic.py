@@ -1875,7 +1875,7 @@ optimizations.extend([
 
    # Conversions
    (('f2i', ('ftrunc', a)), ('f2i', a)),
-   (('f2u', ('ftrunc', a)), ('f2u', a)),
+   (('f2u', ('ftrunc', 'a(is_not_negative)')), ('f2u', a)),
    (('f2i', ('ffloor', 'a(is_not_negative)')), ('f2i', a)),
    (('f2u', ('ffloor', a)), ('f2u', a)),
 
@@ -3667,6 +3667,8 @@ for int_sz in (8, 16, 32):
             # This does not require is_a_number because both f2u_sat(NaN) and
             # fmax(NaN, 0) are zero.
             ((f'f2u{int_sz}', ('fmax', f'a@{float_sz}', 0.0)), ('f2u{int_sz}_sat', a), 'options->has_f2u_sat'),
+
+            ((f'f2u{int_sz}', ('ftrunc', f'a@{float_sz}')), (f'f2u{int_sz}_sat', a), 'options->has_f2u_sat'),
 
             # f2i(NaN) and f2u(NaN) are zero.
             ((f'f2i{int_sz}', ('bcsel', ('feq', f'a@{float_sz}', a), a, 0.0)), (f'f2i{int_sz}_sat', a), 'options->has_f2i_sat'),
