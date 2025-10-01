@@ -465,12 +465,17 @@ anv_block_pool_expand_range(struct anv_block_pool *pool, uint32_t size)
  * The returned pointer points to the map for the memory at the specified
  * offset. The offset parameter is relative to the "center" of the block pool
  * rather than the start of the block pool BO map.
+ *
+ * offset parameter here is a offset from the beginning of block_pool.
  */
-void*
-anv_block_pool_map(struct anv_block_pool *pool, int32_t offset, uint32_t size)
+void *
+anv_block_pool_map(struct anv_block_pool *pool, int64_t offset, uint32_t size)
 {
    struct anv_bo *bo = NULL;
-   int32_t bo_offset = 0;
+   int64_t bo_offset = 0;
+
+   assert(offset + size <= pool->max_size);
+
    anv_block_pool_foreach_bo(iter_bo, pool) {
       if (offset < bo_offset + iter_bo->size) {
          bo = iter_bo;
@@ -774,7 +779,7 @@ anv_state_pool_get_bucket_size(uint32_t bucket)
  */
 static void
 anv_state_pool_return_blocks(struct anv_state_pool *pool,
-                             uint32_t chunk_offset, uint32_t count,
+                             uint64_t chunk_offset, uint32_t count,
                              uint32_t block_size)
 {
    /* Disallow returning 0 chunks */
@@ -818,7 +823,7 @@ anv_state_pool_return_blocks(struct anv_state_pool *pool,
  */
 static void
 anv_state_pool_return_chunk(struct anv_state_pool *pool,
-                            uint32_t chunk_offset, uint32_t chunk_size,
+                            uint64_t chunk_offset, uint32_t chunk_size,
                             uint32_t small_size)
 {
    uint32_t divisor = pool->block_size;
@@ -831,7 +836,7 @@ anv_state_pool_return_chunk(struct anv_state_pool *pool,
        * aligned to divisor. Also anv_state_pool_return_blocks() only accepts
        * aligned chunks.
        */
-      uint32_t offset = chunk_offset + rest;
+      uint64_t offset = chunk_offset + rest;
       anv_state_pool_return_blocks(pool, offset, nblocks, divisor);
    }
 
@@ -884,7 +889,7 @@ anv_state_pool_alloc_no_vg(struct anv_state_pool *pool,
       state = anv_free_list_pop(&pool->buckets[b].free_list, &pool->table);
       if (state) {
          unsigned chunk_size = anv_state_pool_get_bucket_size(b);
-         int32_t chunk_offset = state->offset;
+         int64_t chunk_offset = state->offset;
 
          /* First lets update the state we got to its new size. offset and map
           * remain the same.
@@ -950,7 +955,7 @@ anv_state_pool_alloc_no_vg(struct anv_state_pool *pool,
    state->map = anv_block_pool_map(&pool->block_pool, offset, alloc_size);
 
    if (padding > 0) {
-      uint32_t return_offset = offset - padding;
+      uint64_t return_offset = offset - padding;
       anv_state_pool_return_chunk(pool, return_offset, padding, 0);
    }
 
