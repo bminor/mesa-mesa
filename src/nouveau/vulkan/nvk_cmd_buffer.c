@@ -18,6 +18,7 @@
 
 #include "vk_pipeline_layout.h"
 #include "vk_synchronization.h"
+#include "util/compiler.h"
 
 #include "clb097.h"
 #include "clcb97.h"
@@ -533,9 +534,9 @@ nvk_cmd_flush_wait_dep(struct nvk_cmd_buffer *cmd,
    if (!barriers)
       return;
 
-   struct nv_push *p = nvk_cmd_buffer_push(cmd, 2);
-
    if (barriers & NVK_BARRIER_FLUSH_SHADER_DATA) {
+      struct nv_push *p = nvk_cmd_buffer_push(cmd, 2);
+
       /* This is also implicitly a WFI */
       if (nvk_cmd_buffer_last_subchannel(cmd) == SUBC_NVA097) {
          P_IMMD(p, NVA097, INVALIDATE_SHADER_CACHES, {
@@ -548,14 +549,44 @@ nvk_cmd_flush_wait_dep(struct nvk_cmd_buffer *cmd,
             .flush_data = FLUSH_DATA_TRUE,
          });
       }
-   } else if (barriers & NVK_BARRIER_WFI) {
+   } else if ((barriers & NVK_BARRIER_WFI) && wait) {
       /* If this comes from a vkCmdSetEvent, we don't need to wait
        *
        * We only need to WFI on a single channel. The others will implicitly get
        * a WFI from the channel switch.
        */
-      if (wait)
-         P_IMMD(p, NVA097, WAIT_FOR_IDLE, 0);
+      switch (nvk_cmd_buffer_last_subchannel(cmd)) {
+      case SUBC_NV9097: {
+         struct nv_push *p = nvk_cmd_buffer_push(cmd, 2);
+         P_IMMD(p, NV9097, WAIT_FOR_IDLE, 0);
+         break;
+      }
+      case SUBC_NV90C0: {
+         struct nv_push *p = nvk_cmd_buffer_push(cmd, 2);
+         P_IMMD(p, NVA0C0, WAIT_FOR_IDLE, 0);
+         break;
+      }
+      default:
+         assert(!"Unknown subc");
+         FALLTHROUGH;
+      case SUBC_NV90B5: {
+         struct nv_push *p = nvk_cmd_buffer_push(cmd, 5);
+         P_MTHD(p, NV90B5, LINE_LENGTH_IN);
+         P_NV90B5_LINE_LENGTH_IN(p, 0);
+         P_NV90B5_LINE_COUNT(p, 0);
+
+         P_IMMD(p, NV90B5, LAUNCH_DMA, {
+            .data_transfer_type = DATA_TRANSFER_TYPE_NON_PIPELINED,
+            .multi_line_enable = false,
+            .flush_enable = FLUSH_ENABLE_TRUE,
+            /* Note: FLUSH_TYPE=SYS implicitly for NVC3B5+ */
+            .src_memory_layout = SRC_MEMORY_LAYOUT_PITCH,
+            .dst_memory_layout = DST_MEMORY_LAYOUT_PITCH,
+            .remap_enable = REMAP_ENABLE_TRUE,
+         });
+         break;
+      }
+      }
    }
 }
 
