@@ -6770,6 +6770,8 @@ bool nir_lower_cooperative_matrix_flexible_dimensions(nir_shader *shader, unsign
 
 bool nir_unlower_io_to_vars(nir_shader *nir, bool keep_intrinsics);
 
+bool nir_opt_barycentric(nir_shader *shader, bool lower_sample_to_pos);
+
 #include "nir_inline_helpers.h"
 
 #ifdef __cplusplus
