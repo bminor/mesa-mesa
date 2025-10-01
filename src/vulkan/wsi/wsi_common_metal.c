@@ -352,7 +352,10 @@ wsi_metal_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
       chain->extent.width, chain->extent.height,
       image->base.row_pitches[0]);
 
-   return VK_SUCCESS;
+   uint32_t width = 0u, height = 0u;
+   wsi_metal_layer_size(chain->surface->pLayer, &width, &height);
+   bool is_optimal = (width == chain->extent.width && height == chain->extent.height);
+   return is_optimal ? VK_SUCCESS : VK_SUBOPTIMAL_KHR;
 }
 
 static VkResult

@@ -14,7 +14,25 @@ wsi_metal_layer_size(const CAMetalLayer *metal_layer,
    uint32_t *width, uint32_t *height)
 {
    @autoreleasepool {
-      CGSize size = [metal_layer drawableSize];
+      /* The reason why "drawableSize" is not being used here because it will
+       * only return non-zero values if there has actually been any kind of
+       * drawable allocated (acquired). Without this we also run into crashes
+       * in KosmicKrisp. Initializing the CAMetalLayer with a NSView with
+       * a frame does not create the drawable. Due to this, we fail/crash
+       * tests in the following Vulkan CTS test family:
+       * dEQP-VK.wsi.metal.surface.*
+       *
+       * There are 2 possible ways to fix this:
+       * 1. The one implemented.
+       * 2. Return the special value allowed by the spec to state that we will
+       *    actually give it a value once the swapchain is created
+       *    https://registry.khronos.org/vulkan/specs/latest/man/html/VkSurfaceCapabilitiesKHR.html
+       */
+      CGSize size = metal_layer.bounds.size;
+      CGFloat scaleFactor = metal_layer.contentsScale;
+      size.width *= scaleFactor;
+      size.height *= scaleFactor;
+
       if (width)
          *width = size.width;
       if (height)
