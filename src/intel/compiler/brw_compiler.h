@@ -1302,8 +1302,6 @@ struct brw_gs_prog_data
 
 struct brw_tue_map {
    uint32_t size_dw;
-
-   uint32_t per_task_data_start_dw;
 };
 
 struct brw_mue_map {

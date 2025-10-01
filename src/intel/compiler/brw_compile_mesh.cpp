@@ -100,6 +100,11 @@ brw_nir_lower_launch_mesh_workgroups(nir_shader *nir)
                                        NULL);
 }
 
+/* From bspec: "It is suggested that SW reserve the 16 bytes following the
+ * TUE Header, and therefore start the SW-defined data structure at 32B
+ * alignment.  This allows the TUE Header to always be written as 32 bytes
+ * with 32B alignment, the most optimal write performance case."
+ */
 #define BRW_PER_TASK_DATA_START_DW 8
 
 static void
@@ -110,17 +115,10 @@ brw_nir_lower_tue_outputs(nir_shader *nir, brw_tue_map *map)
    NIR_PASS(_, nir, nir_lower_io, nir_var_shader_out,
             type_size_scalar_dwords, nir_lower_io_lower_64bit_to_32);
 
-   /* From bspec: "It is suggested that SW reserve the 16 bytes following the
-    * TUE Header, and therefore start the SW-defined data structure at 32B
-    * alignment.  This allows the TUE Header to always be written as 32 bytes
-    * with 32B alignment, the most optimal write performance case."
-    */
-   map->per_task_data_start_dw = BRW_PER_TASK_DATA_START_DW;
-
    /* Lowering to explicit types will start offsets from task_payload_size, so
     * set it to start after the header.
     */
-   nir->info.task_payload_size = map->per_task_data_start_dw * 4;
+   nir->info.task_payload_size = BRW_PER_TASK_DATA_START_DW * 4;
    NIR_PASS(_, nir, nir_lower_vars_to_explicit_types,
             nir_var_mem_task_payload, shared_type_info);
    NIR_PASS(_, nir, nir_lower_explicit_io,
@@ -368,7 +366,7 @@ brw_compile_task(const struct brw_compiler *compiler,
       /* The actual payload data starts after the TUE header and padding,
        * so skip those when copying.
        */
-      .payload_offset_in_bytes = prog_data->map.per_task_data_start_dw * 4,
+      .payload_offset_in_bytes = BRW_PER_TASK_DATA_START_DW * 4,
    };
    NIR_PASS(_, nir, nir_lower_task_shader, lower_ts_opt);
 
