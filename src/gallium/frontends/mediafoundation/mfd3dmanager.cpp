@@ -372,7 +372,6 @@ CMFD3DManager::xOnSetD3DManager( ULONG_PTR ulParam )
                      done );
    }
 
-   CHECKHR_GOTO( MFCreateVideoSampleAllocatorEx( IID_PPV_ARGS( &m_spVideoSampleAllocator ) ), done );
    CHECKHR_GOTO( MFCreateVideoSampleAllocatorEx( IID_PPV_ARGS( &m_spSATDMapAllocator ) ), done );
    CHECKHR_GOTO( MFCreateVideoSampleAllocatorEx( IID_PPV_ARGS( &m_spBitsusedMapAllocator ) ), done );
 

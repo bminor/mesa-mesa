@@ -72,6 +72,12 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
    {
       ComPtr<IMFSample> spSample;
       ComPtr<IMFMediaBuffer> spBuffer;
+      // create sample allocator for SW input sample on demand to save video memory.
+      if( !m_spVideoSampleAllocator )
+      {
+         CHECKHR_GOTO( MFCreateVideoSampleAllocatorEx( IID_PPV_ARGS( &m_spVideoSampleAllocator ) ), done );
+         CHECKHR_GOTO( ConfigureSampleAllocator(), done );
+      }
       // Allocate a video buffer
       CHECKHR_GOTO( m_spVideoSampleAllocator->AllocateSample( &spSample ), done );
       CHECKHR_GOTO( MFCopySample( spSample.Get(), pSample, m_spInputType.Get() ), done );

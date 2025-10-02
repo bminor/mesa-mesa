@@ -439,7 +439,12 @@ CDX12EncHMFT::OnInputTypeChanged()
       CHECKHR_GOTO( hr, done );
    }
 
-   CHECKHR_GOTO( ConfigureSampleAllocator(), done );
+   // when input type changes, clear m_spVideoSampleAllocator so we can recreate it later.
+   if( m_spVideoSampleAllocator )
+   {
+      m_spVideoSampleAllocator->UninitializeSampleAllocator();
+      m_spVideoSampleAllocator = nullptr;
+   }
 
 done:
    if( hr != S_OK )
@@ -2070,7 +2075,6 @@ CDX12EncHMFT::ProcessMessage( MFT_MESSAGE_TYPE eMessage, ULONG_PTR ulParam )
          std::lock_guard<std::mutex> lock( m_lock );
          CleanupEncoder();
          CHECKHR_GOTO( xOnSetD3DManager( ulParam ), done );
-         CHECKHR_GOTO( ConfigureSampleAllocator(), done );
          if( m_pPipeContext )
          {
             m_EncoderCapabilities.initialize( m_pPipeContext->screen, m_outputPipeProfile );
