@@ -888,7 +888,7 @@ vl_compositor_init_state(struct vl_compositor_state *s, struct pipe_context *pip
       pipe->screen,
       PIPE_BIND_CONSTANT_BUFFER,
       PIPE_USAGE_DEFAULT,
-      sizeof(csc_matrix) + 32 * sizeof(float) + 2 * sizeof(int)
+      sizeof(vl_csc_matrix) + 32 * sizeof(float) + 2 * sizeof(int)
    );
 
    if (!s->shader_params)
@@ -896,7 +896,9 @@ vl_compositor_init_state(struct vl_compositor_state *s, struct pipe_context *pip
 
    vl_compositor_clear_layers(s);
 
-   vl_csc_get_matrix(VL_CSC_COLOR_STANDARD_IDENTITY, NULL, true, &csc_matrix);
+   vl_csc_get_rgbyuv_matrix(PIPE_VIDEO_VPP_MCF_BT709, PIPE_FORMAT_NV12, PIPE_FORMAT_B8G8R8A8_UNORM,
+                            PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_REDUCED, PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_FULL,
+                            &csc_matrix);
    if (!vl_compositor_set_csc_matrix(s, (const vl_csc_matrix *)&csc_matrix, 1.0f, 0.0f))
       return false;
 
