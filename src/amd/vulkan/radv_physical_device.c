@@ -770,7 +770,7 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
       .EXT_ycbcr_image_arrays = true,
       .EXT_zero_initialize_device_memory = true,
       .AMD_buffer_marker = true,
-      .AMD_device_coherent_memory = true,
+      .AMD_device_coherent_memory = pdev->info.has_l2_uncached,
       .AMD_draw_indirect_count = true,
       .AMD_gcn_shader = true,
       .AMD_gpu_shader_half_float = pdev->info.has_packed_math_16bit,
