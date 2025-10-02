@@ -1536,14 +1536,14 @@ try_vectorize_shared2(struct vectorize_ctx *ctx,
          return false;
    }
 
-   /* vectorize the accesses */
-   nir_builder b = nir_builder_at(nir_after_instr(first->is_store ? second->instr : first->instr));
-
-   nir_def *offset = first->intrin->src[first->is_store].ssa;
-   offset = nir_iadd_imm(&b, offset, nir_intrinsic_base(first->intrin));
+   /* Take low as base address. */
+   nir_def *offset = low->intrin->src[first->is_store].ssa;
    if (first != low)
-      offset = nir_iadd_imm(&b, offset, -(int)diff);
+      hoist_base_addr(&first->intrin->instr, offset->parent_instr);
+   nir_builder b = nir_builder_at(nir_after_instr(first->is_store ? second->instr : first->instr));
+   offset = nir_iadd_imm(&b, offset, nir_intrinsic_base(low->intrin));
 
+   /* vectorize the accesses */
    uint32_t access = nir_intrinsic_access(first->intrin);
    if (first->is_store) {
       nir_def *low_val = low->intrin->src[low->info->value_src].ssa;
