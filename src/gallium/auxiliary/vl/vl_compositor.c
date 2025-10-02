@@ -508,17 +508,6 @@ vl_compositor_cleanup(struct vl_compositor *c)
    cleanup_pipe_state(c);
 }
 
-bool
-vl_compositor_set_csc_matrix(struct vl_compositor_state *s,
-                             vl_csc_matrix const *matrix)
-{
-   assert(s);
-
-   memcpy(&s->csc_matrix, matrix, sizeof(vl_csc_matrix));
-
-   return true;
-}
-
 void
 vl_compositor_set_dst_clip(struct vl_compositor_state *s, struct u_rect *dst_clip)
 {
@@ -864,8 +853,6 @@ vl_compositor_init(struct vl_compositor *c, struct pipe_context *pipe, bool comp
 bool
 vl_compositor_init_state(struct vl_compositor_state *s, struct pipe_context *pipe)
 {
-   vl_csc_matrix csc_matrix;
-
    assert(s);
 
    memset(s, 0, sizeof(*s));
@@ -895,9 +882,7 @@ vl_compositor_init_state(struct vl_compositor_state *s, struct pipe_context *pip
 
    vl_csc_get_rgbyuv_matrix(PIPE_VIDEO_VPP_MCF_BT709, PIPE_FORMAT_NV12, PIPE_FORMAT_B8G8R8A8_UNORM,
                             PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_REDUCED, PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_FULL,
-                            &csc_matrix);
-   if (!vl_compositor_set_csc_matrix(s, (const vl_csc_matrix *)&csc_matrix))
-      return false;
+                            &s->csc_matrix);
 
    return true;
 }

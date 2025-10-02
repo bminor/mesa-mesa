@@ -137,7 +137,7 @@ struct vl_compositor_state
    vl_csc_matrix rgb2yuv;
    vl_csc_matrix primaries;
 
-   vl_csc_matrix csc_matrix;
+   vl_csc_matrix csc_matrix; /* gfx compositor only */
 };
 
 struct vl_compositor
@@ -222,13 +222,6 @@ vl_compositor_init(struct vl_compositor *compositor, struct pipe_context *pipe, 
  */
 bool
 vl_compositor_init_state(struct vl_compositor_state *state, struct pipe_context *pipe);
-
-/**
- * set yuv -> rgba conversion matrix
- */
-bool
-vl_compositor_set_csc_matrix(struct vl_compositor_state *settings,
-                             const vl_csc_matrix *matrix);
 
 /**
  * reset dirty area, so it's cleared with the clear colour
