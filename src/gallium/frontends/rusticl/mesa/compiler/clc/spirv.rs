@@ -258,18 +258,16 @@ impl SPIRVBin {
                     .iter()
                     .map(|a| SPIRVKernelArg {
                         // SAFETY: we have a valid C string pointer here
-                        name: a
-                            .name
-                            .is_null()
-                            .not()
-                            .then(|| unsafe { CStr::from_ptr(a.name) }.to_owned())
-                            .unwrap_or_default(),
-                        type_name: a
-                            .type_name
-                            .is_null()
-                            .not()
-                            .then(|| unsafe { CStr::from_ptr(a.type_name) }.to_owned())
-                            .unwrap_or_default(),
+                        name: if !a.name.is_null() {
+                            unsafe { CStr::from_ptr(a.name) }.to_owned()
+                        } else {
+                            Default::default()
+                        },
+                        type_name: if !a.type_name.is_null() {
+                            unsafe { CStr::from_ptr(a.type_name) }.to_owned()
+                        } else {
+                            Default::default()
+                        },
                         access_qualifier: clc_kernel_arg_access_qualifier(a.access_qualifier),
                         address_qualifier: a.address_qualifier,
                         type_qualifier: clc_kernel_arg_type_qualifier(a.type_qualifier),

@@ -106,9 +106,9 @@ impl DeviceCaps {
         Self {
             has_images: has_images,
             has_timestamp: cap_timestamp && timer_resolution > 0,
-            image_2d_size: has_images.then_some(image_2d_size).unwrap_or_default(),
-            max_read_images: has_images.then_some(max_read_images).unwrap_or_default(),
-            max_write_images: has_images.then_some(max_write_images).unwrap_or_default(),
+            image_2d_size: if has_images { image_2d_size } else { 0 },
+            max_read_images: if has_images { max_read_images } else { 0 },
+            max_write_images: if has_images { max_write_images } else { 0 },
             timer_resolution: timer_resolution,
             has_create_fence_fd: ctx.is_create_fence_fd_supported(),
             ..Default::default()
