@@ -39,4 +39,8 @@ void vl_csc_get_rgbyuv_matrix(enum pipe_video_vpp_matrix_coefficients coefficien
                               enum pipe_video_vpp_color_range out_color_range,
                               vl_csc_matrix *matrix);
 
+void vl_csc_get_primaries_matrix(enum pipe_video_vpp_color_primaries in_color_primaries,
+                                 enum pipe_video_vpp_color_primaries out_color_primaries,
+                                 vl_csc_matrix *matrix);
+
 #endif /* vl_csc_h */

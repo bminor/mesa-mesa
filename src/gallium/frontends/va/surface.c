@@ -360,6 +360,7 @@ vlVaPutSurface(VADriverContextP ctx, VASurfaceID surface_id, void* draw, short s
    enum pipe_format format;
    VAStatus status;
    enum pipe_video_vpp_matrix_coefficients coeffs;
+   enum pipe_video_vpp_color_primaries primaries;
 
    if (!ctx)
       return VA_STATUS_ERROR_INVALID_CONTEXT;
@@ -393,16 +394,22 @@ vlVaPutSurface(VADriverContextP ctx, VASurfaceID surface_id, void* draw, short s
 
    format = surf->buffer->buffer_format;
 
-   if (flags & VA_SRC_BT601)
+   if (flags & VA_SRC_BT601) {
       coeffs = PIPE_VIDEO_VPP_MCF_SMPTE170M;
-   else if (flags & VA_SRC_SMPTE_240)
-      coeffs = PIPE_VIDEO_VPP_MCF_SMPTE240M;
-   else
+      primaries = PIPE_VIDEO_VPP_PRI_SMPTE170M;
+   } else {
       coeffs = PIPE_VIDEO_VPP_MCF_BT709;
+      primaries = PIPE_VIDEO_VPP_PRI_BT709;
+   }
 
    vl_csc_get_rgbyuv_matrix(coeffs, format, surf_templ.format,
                             PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_REDUCED,
                             PIPE_VIDEO_VPP_CHROMA_COLOR_RANGE_FULL, &drv->cstate.yuv2rgb);
+   vl_csc_get_primaries_matrix(primaries, PIPE_VIDEO_VPP_PRI_BT709, &drv->cstate.primaries);
+   drv->cstate.in_transfer_characteristic = PIPE_VIDEO_VPP_TRC_BT709;
+   drv->cstate.out_transfer_characteristic = PIPE_VIDEO_VPP_TRC_BT709;
+   drv->cstate.chroma_location =
+      VL_COMPOSITOR_LOCATION_HORIZONTAL_LEFT | VL_COMPOSITOR_LOCATION_VERTICAL_CENTER;
 
    vl_compositor_clear_layers(&drv->cstate);
 

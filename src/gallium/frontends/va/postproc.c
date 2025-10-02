@@ -105,6 +105,11 @@ vlVaPostProcCompositor(vlVaDriver *drv,
                                param->in_color_range, param->out_color_range, &drv->cstate.rgb2yuv);
    }
 
+   vl_csc_get_primaries_matrix(param->in_color_primaries, param->out_color_primaries,
+                               &drv->cstate.primaries);
+
+   drv->cstate.in_transfer_characteristic = param->in_transfer_characteristics;
+   drv->cstate.out_transfer_characteristic = param->out_transfer_characteristics;
 
    if (src_yuv || dst_yuv) {
       enum pipe_format format = src_yuv ? src->buffer_format : dst->buffer_format;
@@ -172,8 +177,6 @@ vlVaPostProcCompositor(vlVaDriver *drv,
       vl_compositor_set_layer_dst_area(&drv->cstate, 0, &param->dst_region);
       vl_compositor_render(&drv->cstate, &drv->compositor, &surfaces[0], NULL, false);
    }
-
-   drv->cstate.chroma_location = VL_COMPOSITOR_LOCATION_NONE;
 
    return VA_STATUS_SUCCESS;
 }
