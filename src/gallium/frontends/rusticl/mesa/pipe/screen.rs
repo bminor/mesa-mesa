@@ -189,7 +189,7 @@ impl PipeScreen {
     }
 
     pub(super) fn from_raw<'s>(screen: &'s *mut pipe_screen) -> &'s Self {
-        unsafe { mem::transmute(*screen) }
+        unsafe { &*(*screen).cast() }
     }
 
     pub fn caps(&self) -> &pipe_caps {
