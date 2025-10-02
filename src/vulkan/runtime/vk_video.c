@@ -3222,3 +3222,163 @@ vk_video_encode_av1_seq_hdr(const struct vk_video_session_parameters *params,
 
    return VK_SUCCESS;
 }
+
+static VkResult
+is_h264_profile_supported(const VkVideoProfileInfoKHR *video_profile,
+                          StdVideoH264ProfileIdc profile_idc)
+{
+   /* Only High and High 4:4:4 Predictive allow chroma_format_idc to be 0 */
+   if (video_profile->chromaSubsampling == VK_VIDEO_CHROMA_SUBSAMPLING_MONOCHROME_BIT_KHR &&
+       (profile_idc != STD_VIDEO_H264_PROFILE_IDC_HIGH &&
+        profile_idc != STD_VIDEO_H264_PROFILE_IDC_HIGH_444_PREDICTIVE))
+      return VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR;
+
+   /* Only High 4:4:4 Predictive allows chroma_format_idc to be > 1 */
+   if ((video_profile->chromaSubsampling != VK_VIDEO_CHROMA_SUBSAMPLING_MONOCHROME_BIT_KHR &&
+        video_profile->chromaSubsampling != VK_VIDEO_CHROMA_SUBSAMPLING_420_BIT_KHR) &&
+       profile_idc != STD_VIDEO_H264_PROFILE_IDC_HIGH_444_PREDICTIVE)
+      return VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR;
+
+   /* Only High 4:4:4 Predictive allows bit_depth_{luma,chroma}_minus8 != 0 */
+   if ((video_profile->lumaBitDepth != VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR ||
+        (video_profile->chromaSubsampling != VK_VIDEO_CHROMA_SUBSAMPLING_MONOCHROME_BIT_KHR &&
+         video_profile->chromaBitDepth != VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR)) &&
+       profile_idc != STD_VIDEO_H264_PROFILE_IDC_HIGH_444_PREDICTIVE)
+      return VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR;
+
+   return VK_SUCCESS;
+}
+
+static VkResult
+is_h265_profile_supported(const VkVideoProfileInfoKHR *video_profile,
+                          StdVideoH265ProfileIdc profile_idc)
+{
+   /* The Main profiles require chroma_format_idc == 1 */
+   if (video_profile->chromaSubsampling != VK_VIDEO_CHROMA_SUBSAMPLING_420_BIT_KHR &&
+       (profile_idc == STD_VIDEO_H265_PROFILE_IDC_MAIN ||
+        profile_idc == STD_VIDEO_H265_PROFILE_IDC_MAIN_10 ||
+        profile_idc == STD_VIDEO_H265_PROFILE_IDC_MAIN_STILL_PICTURE))
+      return VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR;
+
+   /* The Screen Content Coding extensions do not support chroma_format_idc = 2 */
+   if (video_profile->chromaSubsampling != VK_VIDEO_CHROMA_SUBSAMPLING_422_BIT_KHR &&
+       profile_idc == STD_VIDEO_H265_PROFILE_IDC_SCC_EXTENSIONS)
+      return VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR;
+
+   /* Main and Main Still Picture profiles require bit_depth_{luma,chroma}_minus8 = 0 */
+   if ((video_profile->lumaBitDepth != VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR ||
+        video_profile->chromaBitDepth != VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR) &&
+       (profile_idc == STD_VIDEO_H265_PROFILE_IDC_MAIN ||
+        profile_idc == STD_VIDEO_H265_PROFILE_IDC_MAIN_STILL_PICTURE))
+      return VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR;
+
+   /* The Main 10 and Screen Content Coding extensions only allow
+    * bit_depth_{luma,chroma}_minus8 = 0..2 */
+   if ((video_profile->lumaBitDepth == VK_VIDEO_COMPONENT_BIT_DEPTH_12_BIT_KHR ||
+        video_profile->chromaBitDepth == VK_VIDEO_COMPONENT_BIT_DEPTH_12_BIT_KHR) &&
+       (profile_idc == STD_VIDEO_H265_PROFILE_IDC_SCC_EXTENSIONS ||
+        profile_idc == STD_VIDEO_H265_PROFILE_IDC_MAIN_10))
+      return VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR;
+
+   return VK_SUCCESS;
+}
+
+static VkResult
+is_av1_profile_supported(const VkVideoProfileInfoKHR *video_profile,
+                         StdVideoAV1Profile profile)
+{
+   /* AV1 requires equal luma and chroma bit-depths, unless monochrome */
+   if (video_profile->lumaBitDepth != video_profile->chromaBitDepth &&
+       video_profile->chromaSubsampling != VK_VIDEO_CHROMA_SUBSAMPLING_MONOCHROME_BIT_KHR)
+      return VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR;
+
+   /* AV1 Main only supports Monochrome, 4:2:0 */
+   if (profile == STD_VIDEO_AV1_PROFILE_MAIN &&
+       (video_profile->chromaSubsampling != VK_VIDEO_CHROMA_SUBSAMPLING_MONOCHROME_BIT_KHR &&
+        video_profile->chromaSubsampling != VK_VIDEO_CHROMA_SUBSAMPLING_420_BIT_KHR))
+      return VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR;
+  
+   /* AV1 High profile only supports 4:4:4 */
+   if (profile == STD_VIDEO_AV1_PROFILE_HIGH &&
+       video_profile->chromaSubsampling != VK_VIDEO_CHROMA_SUBSAMPLING_444_BIT_KHR)
+      return VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR;
+
+   /* AV1 Professional if and only if 12-bit */
+   if ((video_profile->lumaBitDepth == VK_VIDEO_COMPONENT_BIT_DEPTH_12_BIT_KHR &&
+        profile != STD_VIDEO_AV1_PROFILE_PROFESSIONAL) ||
+       (video_profile->lumaBitDepth != VK_VIDEO_COMPONENT_BIT_DEPTH_12_BIT_KHR &&
+        profile == STD_VIDEO_AV1_PROFILE_PROFESSIONAL))
+      return VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR;
+
+   return VK_SUCCESS;
+}
+
+static VkResult
+is_vp9_profile_supported(const VkVideoProfileInfoKHR *video_profile,
+                         StdVideoVP9Profile profile)
+{
+   /* VP9 requires equal luma and chroma bit-depths, and does not support monochrome */
+   if (video_profile->lumaBitDepth != video_profile->chromaBitDepth ||
+       video_profile->chromaSubsampling == VK_VIDEO_CHROMA_SUBSAMPLING_MONOCHROME_BIT_KHR)
+      return VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR;
+
+   /* Profiles 0 and 1 if and only if 8-bit */
+   if (((profile == STD_VIDEO_VP9_PROFILE_0 || profile == STD_VIDEO_VP9_PROFILE_1) &&
+        (video_profile->lumaBitDepth != VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR)) ||
+       ((profile != STD_VIDEO_VP9_PROFILE_0 && profile != STD_VIDEO_VP9_PROFILE_1) &&
+        (video_profile->lumaBitDepth == VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR)))
+      return VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR;
+
+   /* Profiles 0 and 2 if and only if 4:2:0 */
+   if (((profile == STD_VIDEO_VP9_PROFILE_0 || profile == STD_VIDEO_VP9_PROFILE_2) &&
+        (video_profile->chromaSubsampling != VK_VIDEO_CHROMA_SUBSAMPLING_420_BIT_KHR)) ||
+       ((profile != STD_VIDEO_VP9_PROFILE_0 && profile != STD_VIDEO_VP9_PROFILE_2) &&
+        (video_profile->chromaSubsampling == VK_VIDEO_CHROMA_SUBSAMPLING_420_BIT_KHR)))
+      return VK_ERROR_VIDEO_PROFILE_CODEC_NOT_SUPPORTED_KHR;
+
+   return VK_SUCCESS;
+}
+
+VkResult
+vk_video_is_profile_supported(const VkVideoProfileInfoKHR *video_profile)
+{
+   switch (video_profile->videoCodecOperation) {
+   case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR: {
+      const struct VkVideoDecodeH264ProfileInfoKHR *h264_profile =
+         vk_find_struct_const(video_profile->pNext, VIDEO_DECODE_H264_PROFILE_INFO_KHR);
+      return is_h264_profile_supported(video_profile, h264_profile->stdProfileIdc);
+   }
+   case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR: {
+      const struct VkVideoDecodeH265ProfileInfoKHR *h265_profile =
+         vk_find_struct_const(video_profile->pNext, VIDEO_DECODE_H265_PROFILE_INFO_KHR);
+      return is_h265_profile_supported(video_profile, h265_profile->stdProfileIdc);
+   }
+   case VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR: {
+      const struct VkVideoDecodeAV1ProfileInfoKHR *av1_profile =
+         vk_find_struct_const(video_profile->pNext, VIDEO_DECODE_AV1_PROFILE_INFO_KHR);
+      return is_av1_profile_supported(video_profile, av1_profile->stdProfile);
+   }
+   case VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR: {
+      const struct VkVideoDecodeVP9ProfileInfoKHR *vp9_profile =
+         vk_find_struct_const(video_profile->pNext, VIDEO_DECODE_VP9_PROFILE_INFO_KHR);
+      return is_vp9_profile_supported(video_profile, vp9_profile->stdProfile);
+   }
+   case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {
+      const struct VkVideoEncodeH264ProfileInfoKHR *h264_profile =
+         vk_find_struct_const(video_profile->pNext, VIDEO_ENCODE_H264_PROFILE_INFO_KHR);
+      return is_h264_profile_supported(video_profile, h264_profile->stdProfileIdc);
+   }
+   case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
+      const struct VkVideoEncodeH265ProfileInfoKHR *h265_profile =
+         vk_find_struct_const(video_profile->pNext, VIDEO_ENCODE_H265_PROFILE_INFO_KHR);
+      return is_h265_profile_supported(video_profile, h265_profile->stdProfileIdc);
+   }
+   case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR: {
+      const struct VkVideoEncodeAV1ProfileInfoKHR *av1_profile =
+         vk_find_struct_const(video_profile->pNext, VIDEO_ENCODE_AV1_PROFILE_INFO_KHR);
+      return is_av1_profile_supported(video_profile, av1_profile->stdProfile);
+   }
+   default:
+      return VK_ERROR_VIDEO_PROFILE_OPERATION_NOT_SUPPORTED_KHR;
+   }
+}

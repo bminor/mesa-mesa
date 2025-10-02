@@ -375,6 +375,10 @@ vk_video_encode_av1_seq_hdr(const struct vk_video_session_parameters *params,
                             size_t size_limit,
                             size_t *data_size_ptr,
                             void *data_ptr);
+
+VkResult
+vk_video_is_profile_supported(const VkVideoProfileInfoKHR *video_profile);
+
 #ifdef __cplusplus
 }
 #endif
