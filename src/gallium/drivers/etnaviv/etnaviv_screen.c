@@ -257,7 +257,7 @@ etna_init_screen_caps(struct etna_screen *screen)
    caps->texrect = false;
 
    /* Stream output. */
-   caps->max_stream_output_buffers = VIV_FEATURE(screen, ETNA_FEATURE_HWTFB) ? 4 : 0;
+   caps->max_stream_output_buffers = VIV_FEATURE(screen, ETNA_FEATURE_HWTFB) || DBG_ENABLED(ETNA_DBG_DEQP) ? 4 : 0;
    caps->max_stream_output_separate_components = 64;
    caps->max_stream_output_interleaved_components = 64;
 
