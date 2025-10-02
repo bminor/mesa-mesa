@@ -232,7 +232,7 @@ radv_optimize_nir(struct nir_shader *shader, bool optimize_conservatively)
 }
 
 void
-radv_optimize_nir_algebraic(nir_shader *nir, bool opt_offsets, bool opt_mqsad)
+radv_optimize_nir_algebraic(nir_shader *nir, bool opt_offsets, bool opt_mqsad, enum amd_gfx_level gfx_level)
 {
    bool more_algebraic = true;
    while (more_algebraic) {
@@ -258,12 +258,13 @@ radv_optimize_nir_algebraic(nir_shader *nir, bool opt_offsets, bool opt_mqsad)
    }
 
    if (opt_offsets) {
-      static const nir_opt_offsets_options offset_options = {
+      const nir_opt_offsets_options offset_options = {
          .uniform_max = 0,
          .buffer_max = ~0,
          .shared_max = UINT16_MAX,
          .shared_atomic_max = UINT16_MAX,
          .allow_offset_wrap_cb = ac_nir_allow_offset_wrap_cb,
+         .cb_data = &gfx_level,
       };
       NIR_PASS(_, nir, nir_opt_offsets, &offset_options);
    }
@@ -885,7 +886,7 @@ radv_lower_ngg(struct radv_device *device, struct radv_shader_stage *ngg_stage,
       assert(info->is_ngg);
 
       if (info->has_ngg_culling)
-         radv_optimize_nir_algebraic(nir, false, false);
+         radv_optimize_nir_algebraic(nir, false, false, pdev->info.gfx_level);
 
       options.num_vertices_per_primitive = num_vertices_per_prim;
       options.early_prim_export = info->has_ngg_early_prim_export;

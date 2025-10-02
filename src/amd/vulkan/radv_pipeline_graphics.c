@@ -1698,7 +1698,7 @@ radv_graphics_shaders_fill_linked_io_info(struct radv_shader_stage *producer_sta
  * than running the same optimizations on I/O derefs.
  */
 static void
-radv_graphics_shaders_link_varyings(struct radv_shader_stage *stages)
+radv_graphics_shaders_link_varyings(struct radv_shader_stage *stages, enum amd_gfx_level gfx_level)
 {
    /* Prepare shaders before running nir_opt_varyings. */
    for (int i = 0; i < ARRAY_SIZE(graphics_shader_order); ++i) {
@@ -1747,13 +1747,13 @@ radv_graphics_shaders_link_varyings(struct radv_shader_stage *stages)
 
       /* Run algebraic optimizations on shaders that changed. */
       if (p & nir_progress_producer) {
-         radv_optimize_nir_algebraic(producer, false, false);
+         radv_optimize_nir_algebraic(producer, false, false, gfx_level);
          NIR_PASS(_, producer, nir_opt_undef);
 
          highest_changed_producer = i;
       }
       if (p & nir_progress_consumer) {
-         radv_optimize_nir_algebraic(consumer, false, false);
+         radv_optimize_nir_algebraic(consumer, false, false, gfx_level);
          NIR_PASS(_, consumer, nir_opt_undef);
       }
    }
@@ -1775,11 +1775,11 @@ radv_graphics_shaders_link_varyings(struct radv_shader_stage *stages)
 
       /* Run algebraic optimizations on shaders that changed. */
       if (p & nir_progress_producer) {
-         radv_optimize_nir_algebraic(producer, true, false);
+         radv_optimize_nir_algebraic(producer, true, false, gfx_level);
          NIR_PASS(_, producer, nir_opt_undef);
       }
       if (p & nir_progress_consumer) {
-         radv_optimize_nir_algebraic(consumer, true, false);
+         radv_optimize_nir_algebraic(consumer, true, false, gfx_level);
          NIR_PASS(_, consumer, nir_opt_undef);
       }
    }
@@ -2902,7 +2902,7 @@ radv_graphics_shaders_compile(struct radv_device *device, struct vk_pipeline_cac
    }
 
    /* Optimize varyings on lowered shader I/O (more efficient than optimizing I/O derefs). */
-   radv_graphics_shaders_link_varyings(stages);
+   radv_graphics_shaders_link_varyings(stages, pdev->info.gfx_level);
 
    /* Optimize constant clip/cull distance after linking to operate on scalar io in the last
     * pre raster stage.

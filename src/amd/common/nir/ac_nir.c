@@ -898,12 +898,14 @@ ac_nir_lower_phis_to_scalar_cb(const nir_instr *instr, const void *_)
 bool
 ac_nir_allow_offset_wrap_cb(nir_intrinsic_instr *instr, const void *data)
 {
+   enum amd_gfx_level gfx_level = *(enum amd_gfx_level *)data;
    switch (instr->intrinsic) {
    case nir_intrinsic_load_shared:
    case nir_intrinsic_store_shared:
    case nir_intrinsic_shared_atomic:
    case nir_intrinsic_shared_atomic_swap:
-      return true;
+      /* GFX6 uses a 16-bit adder and can't handle unsigned wrap. */
+      return gfx_level >= GFX7;
    default: return false;
    }
 }
