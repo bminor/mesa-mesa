@@ -960,10 +960,7 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
                         nir_var_shader_temp,
                .callback = ac_nir_mem_vectorize_callback,
                .cb_data = &(struct ac_nir_config){sel->screen->info.gfx_level, sel->info.base.use_aco_amd},
-               /* On GFX6, read2/write2 is out-of-bounds if the offset register is negative, even if
-                * the final offset is not.
-                */
-               .has_shared2_amd = sel->screen->info.gfx_level >= GFX7,
+               .has_shared2_amd = true,
             });
 
    /* This must be done again if 8-bit or 16-bit buffer stores were vectorized. */

@@ -583,10 +583,7 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
          .callback = ac_nir_mem_vectorize_callback,
          .cb_data = &(struct ac_nir_config){gfx_level, !use_llvm},
          .robust_modes = 0,
-         /* On GFX6, read2/write2 is out-of-bounds if the offset register is negative, even if
-          * the final offset is not.
-          */
-         .has_shared2_amd = gfx_level >= GFX7,
+         .has_shared2_amd = true,
       };
       NIR_PASS(_, stage->nir, nir_opt_load_store_vectorize, &late_vectorize_opts);
    }

@@ -3216,8 +3216,6 @@ visit_access_shared2_amd(isel_context* ctx, nir_intrinsic_instr* instr)
    Temp address = as_vgpr(ctx, get_ssa_temp(ctx, instr->src[is_store].ssa));
    Builder bld(ctx->program, ctx->block);
 
-   assert(bld.program->gfx_level >= GFX7);
-
    bool is64bit = (is_store ? instr->src[0].ssa->bit_size : instr->def.bit_size) == 64;
    uint8_t offset0 = nir_intrinsic_offset0(instr);
    uint8_t offset1 = nir_intrinsic_offset1(instr);
