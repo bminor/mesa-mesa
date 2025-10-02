@@ -472,7 +472,9 @@ CDX12EncHMFT::PrepareForEncodeHelper( LPDX12EncodeContext pDX12EncodeContext, bo
       {
          // Use current encoder slice config for when NOT doing an intra-refresh wave
          intra_refresh_slices_config non_ir_wave_slices_config = {};
-         CHECKBOOL_GOTO( (m_EncoderCapabilities.m_HWSupportsIntraRefreshModes != PIPE_VIDEO_ENC_INTRA_REFRESH_NONE), MF_E_UNEXPECTED, done );
+         CHECKBOOL_GOTO( ( m_EncoderCapabilities.m_HWSupportsIntraRefreshModes != PIPE_VIDEO_ENC_INTRA_REFRESH_NONE ),
+                         MF_E_UNEXPECTED,
+                         done );
          non_ir_wave_slices_config.slice_mode = pPicInfo->slice_mode;
          non_ir_wave_slices_config.num_slice_descriptors = pPicInfo->num_slice_descriptors;
          memcpy( non_ir_wave_slices_config.slices_descriptors,

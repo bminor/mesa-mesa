@@ -135,13 +135,13 @@ typedef class DX12EncodeContext
       return result;
    }
 
-   void SetPipeQPMapBufferInfo(void *pQPMap, const uint32_t QPMapSize)
+   void SetPipeQPMapBufferInfo( void *pQPMap, const uint32_t QPMapSize )
    {
       switch( m_Codec )
       {
          case D3D12_VIDEO_ENCODER_CODEC_H264:
             encoderPicInfo.h264enc.input_qpmap_info.input_qpmap_cpu = static_cast<int8_t *>( pQPMap );
-            encoderPicInfo.h264enc.input_qpmap_info.qp_map_values_count = QPMapSize / sizeof(int8_t);
+            encoderPicInfo.h264enc.input_qpmap_info.qp_map_values_count = QPMapSize / sizeof( int8_t );
             encoderPicInfo.h264enc.input_qpmap_info.input_qp_mode = PIPE_ENC_QPMAP_INPUT_MODE_CPU_BUFFER_8BIT;
             break;
          case D3D12_VIDEO_ENCODER_CODEC_HEVC:

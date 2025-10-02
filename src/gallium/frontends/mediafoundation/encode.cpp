@@ -392,7 +392,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
          templ.width0 = static_cast<uint32_t>( std::ceil( m_uiOutputWidth / static_cast<float>( block_size ) ) );
          templ.height0 = static_cast<uint16_t>( std::ceil( m_uiOutputHeight / static_cast<float>( block_size ) ) );
          pDX12EncodeContext->bUseSATDMapAllocator = m_bUseSATDMapAllocator;
-         if ( m_bUseSATDMapAllocator )
+         if( m_bUseSATDMapAllocator )
          {
             pDX12EncodeContext->pPipeResourceSATDMapStats =
                AllocatePipeResourceFromAllocator( m_spSATDMapAllocator.Get(), m_pVlScreen->pscreen, &templ );
@@ -400,10 +400,10 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
          }
          else
          {
-            CHECKNULL_GOTO(
-               pDX12EncodeContext->pPipeResourceSATDMapStats = m_pVlScreen->pscreen->resource_create( m_pVlScreen->pscreen, &templ ),
-               E_OUTOFMEMORY,
-               done );
+            CHECKNULL_GOTO( pDX12EncodeContext->pPipeResourceSATDMapStats =
+                               m_pVlScreen->pscreen->resource_create( m_pVlScreen->pscreen, &templ ),
+                            E_OUTOFMEMORY,
+                            done );
          }
       }
 
@@ -424,7 +424,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
          else
          {
             CHECKNULL_GOTO( pDX12EncodeContext->pPipeResourceRCBitAllocMapStats =
-                            m_pVlScreen->pscreen->resource_create( m_pVlScreen->pscreen, &templ ),
+                               m_pVlScreen->pscreen->resource_create( m_pVlScreen->pscreen, &templ ),
                             E_OUTOFMEMORY,
                             done );
          }
@@ -486,25 +486,28 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
    //
    // Update the encoder priorities (if any set)
    //
-   
-#if 0 // For testing priorities
+
+#if 0    // For testing priorities
    {
       m_bWorkProcessPrioritySet = ((pipeEncoderInputFenceHandleValue % 2) == 0) ? TRUE : FALSE;
       m_WorkGlobalPriority = static_cast<D3D12_COMMAND_QUEUE_GLOBAL_PRIORITY>((pipeEncoderInputFenceHandleValue % 14) + 18); // 18-31 range (no hard realtime privileges)
       m_bWorkGlobalPrioritySet = ((pipeEncoderInputFenceHandleValue % 2) == 0) ? TRUE : FALSE;
       m_WorkProcessPriority = static_cast<D3D12_COMMAND_QUEUE_PROCESS_PRIORITY>(pipeEncoderInputFenceHandleValue % 2); // 0-1 range
    }
-#endif // For testing priorities
+#endif   // For testing priorities
 
-   if (m_bWorkProcessPrioritySet || m_bWorkGlobalPrioritySet)
+   if( m_bWorkProcessPrioritySet || m_bWorkGlobalPrioritySet )
    {
-      for (ID3D12CommandQueue* queue : m_ContextPriorityMgr.m_registeredQueues)
+      for( ID3D12CommandQueue *queue : m_ContextPriorityMgr.m_registeredQueues )
       {
-         mtx_lock(&m_ContextPriorityMgr.m_lock);
-         int result = m_ContextPriorityMgr.base.set_queue_priority(&m_ContextPriorityMgr.base, queue, reinterpret_cast<uint32_t*>(&m_WorkGlobalPriority), reinterpret_cast<uint32_t*>(&m_WorkProcessPriority));
-         mtx_unlock(&m_ContextPriorityMgr.m_lock);
+         mtx_lock( &m_ContextPriorityMgr.m_lock );
+         int result = m_ContextPriorityMgr.base.set_queue_priority( &m_ContextPriorityMgr.base,
+                                                                    queue,
+                                                                    reinterpret_cast<uint32_t *>( &m_WorkGlobalPriority ),
+                                                                    reinterpret_cast<uint32_t *>( &m_WorkProcessPriority ) );
+         mtx_unlock( &m_ContextPriorityMgr.m_lock );
 
-         CHECKBOOL_GOTO(result == 0, MF_E_UNEXPECTED, done);
+         CHECKBOOL_GOTO( result == 0, MF_E_UNEXPECTED, done );
       }
 
       // Once set in the underlying pipe context, don't set them again

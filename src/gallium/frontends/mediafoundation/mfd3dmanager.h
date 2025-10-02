@@ -40,11 +40,11 @@
 #include <mferror.h>
 #include <mfidl.h>   // for IMFVideoSampleAllocatorEx
 #include <mutex>
-#include <wrl/client.h>
-#include <wrl/implements.h>
-#include <c11/threads.h>
 #include <vector>
 #include "gallium/drivers/d3d12/d3d12_interop_public.h"
+#include <c11/threads.h>
+#include <wrl/client.h>
+#include <wrl/implements.h>
 
 #include "macros.h"
 
@@ -71,7 +71,7 @@ typedef union
 struct mft_context_queue_priority_manager
 {
    struct d3d12_context_queue_priority_manager base;
-   std::vector<ID3D12CommandQueue*> m_registeredQueues;
+   std::vector<ID3D12CommandQueue *> m_registeredQueues;
    mtx_t m_lock;
 };
 

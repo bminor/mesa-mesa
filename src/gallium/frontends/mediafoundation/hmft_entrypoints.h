@@ -37,6 +37,7 @@
 #include <codecapi.h>
 #include <combaseapi.h>
 #include <concrt.h>
+#include <d3d9types.h>
 #include <initguid.h>
 #include <mfapi.h>
 #include <mfd3d12.h>   // For IMFD3D12SynchronizationObjectCommands
@@ -55,7 +56,6 @@
 #include <d3d11_3.h>
 #include <d3d11_4.h>
 #include <dxgi1_2.h>
-#include <d3d9types.h>
 
 #include "context.h"
 #include "encoder_capabilities.h"
@@ -600,8 +600,12 @@ class __declspec( uuid( HMFT_GUID ) ) CDX12EncHMFT : CMFD3DManager,
    HRESULT OnFlush();
 
    HRESULT ConfigureSampleAllocator();
-   HRESULT ConfigureMapSampleAllocator( IMFVideoSampleAllocatorEx *spAllocator, UINT32 width, UINT32 height, GUID subtype, UINT32 poolSize );
-   void ConfigureMapSampleAllocatorHelper( ComPtr<IMFVideoSampleAllocatorEx> &allocator, const union pipe_enc_cap_gpu_stats_map &outputStatsMap, uint32_t blockSize, BOOL &useAllocatorFlag );
+   HRESULT ConfigureMapSampleAllocator(
+      IMFVideoSampleAllocatorEx *spAllocator, UINT32 width, UINT32 height, GUID subtype, UINT32 poolSize );
+   void ConfigureMapSampleAllocatorHelper( ComPtr<IMFVideoSampleAllocatorEx> &allocator,
+                                           const union pipe_enc_cap_gpu_stats_map &outputStatsMap,
+                                           uint32_t blockSize,
+                                           BOOL &useAllocatorFlag );
    HRESULT UpdateAvailableInputType();
    HRESULT InternalCheckInputType( IMFMediaType *pType );
    HRESULT InternalCheckOutputType( IMFMediaType *pType );

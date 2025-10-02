@@ -21,8 +21,8 @@
  * IN THE SOFTWARE.
  */
 #include <utility>
-#include <encoder_capabilities.h>
 #include "gallium/drivers/d3d12/d3d12_interop_public.h"
+#include <encoder_capabilities.h>
 
 // Initializes encoder capabilities by querying hardware-specific parameters from pipe given the video profile.
 void
@@ -69,10 +69,8 @@ encoder_capabilities::initialize( pipe_screen *pScreen, pipe_video_profile video
         1 );
 
    m_HWSupportsIntraRefreshModes =
-      (enum pipe_video_enc_intra_refresh_mode) pScreen->get_video_param( pScreen,
-                                                                         videoProfile,
-                                                                         PIPE_VIDEO_ENTRYPOINT_ENCODE,
-                                                                         PIPE_VIDEO_CAP_ENC_INTRA_REFRESH );
+      (enum pipe_video_enc_intra_refresh_mode)
+         pScreen->get_video_param( pScreen, videoProfile, PIPE_VIDEO_ENTRYPOINT_ENCODE, PIPE_VIDEO_CAP_ENC_INTRA_REFRESH );
 
    m_HWSupportedMetadataFlags =
       (enum pipe_video_feedback_metadata_type) pScreen->get_video_param( pScreen,
@@ -159,9 +157,12 @@ encoder_capabilities::initialize( pipe_screen *pScreen, pipe_video_profile video
       pScreen->get_video_param( pScreen, videoProfile, PIPE_VIDEO_ENTRYPOINT_ENCODE, PIPE_VIDEO_CAP_ENC_GPU_STATS_PSNR );
 
    d3d12_interop_device_info1 screen_interop_info = {};
-   bool successQuery = pScreen->interop_query_device_info(pScreen, sizeof(d3d12_interop_device_info1), &screen_interop_info) != 0;
+   bool successQuery =
+      pScreen->interop_query_device_info( pScreen, sizeof( d3d12_interop_device_info1 ), &screen_interop_info ) != 0;
    m_bHWSupportsQueuePriorityManagement = successQuery && screen_interop_info.set_context_queue_priority_manager != NULL;
 
-   m_HWSupportSpatialAdaptiveQuantization.value =
-      pScreen->get_video_param( pScreen, videoProfile, PIPE_VIDEO_ENTRYPOINT_ENCODE, PIPE_VIDEO_CAP_ENC_SPATIAL_ADAPTIVE_QUANTIZATION );
+   m_HWSupportSpatialAdaptiveQuantization.value = pScreen->get_video_param( pScreen,
+                                                                            videoProfile,
+                                                                            PIPE_VIDEO_ENTRYPOINT_ENCODE,
+                                                                            PIPE_VIDEO_CAP_ENC_SPATIAL_ADAPTIVE_QUANTIZATION );
 }

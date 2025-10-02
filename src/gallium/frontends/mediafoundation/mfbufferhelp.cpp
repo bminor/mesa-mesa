@@ -386,10 +386,12 @@ AllocatePipeResourceFromAllocator( IMFVideoSampleAllocatorEx *pAllocator,
    // Call resource_from_handle with the same templ for resource_create.
    struct pipe_resource *pres = pScreen->resource_from_handle( pScreen, templ, &whandle, PIPE_USAGE_DEFAULT );
 
-   if (!pres) {
+   if( !pres )
+   {
       // Release the detached COM object if resource_from_handle fails
-      if (whandle.com_obj) {
-         static_cast<ID3D12Resource*>(whandle.com_obj)->Release();
+      if( whandle.com_obj )
+      {
+         static_cast<ID3D12Resource *>( whandle.com_obj )->Release();
       }
       return nullptr;
    }

@@ -817,24 +817,20 @@ done:
 
 // Helper function to calculate the max output bitstream size based on width, height, and format
 // This function uses an approach based on common video formats and their typical compression ratios
-UINT CalculateMaxOutputBitstreamSize(
-   UINT uiWidth,
-   UINT uiHeight,
-   enum pipe_format format
-)
+UINT
+CalculateMaxOutputBitstreamSize( UINT uiWidth, UINT uiHeight, enum pipe_format format )
 {
-   assert((uiHeight > 16) &&
-         (uiWidth > 16) &&
-         (format != PIPE_FORMAT_NONE));
+   assert( ( uiHeight > 16 ) && ( uiWidth > 16 ) && ( format != PIPE_FORMAT_NONE ) );
 
-   const UINT MIN_BUFFER_SIZE = 128 * 128 * 2; // Minimum buffer size for very small frames: 128x128 pixels at 2 bytes/pixel
-   const UINT MAX_BUFFER_SIZE = 20 * 1024 * 1024; // Maximum buffer size of 20MB
-   const float EXPECTED_COMPRESSION_FACTOR = 2.0f; // Assume 50% of calculated size after compression of raw pixel sizes
+   const UINT MIN_BUFFER_SIZE = 128 * 128 * 2;       // Minimum buffer size for very small frames: 128x128 pixels at 2 bytes/pixel
+   const UINT MAX_BUFFER_SIZE = 20 * 1024 * 1024;    // Maximum buffer size of 20MB
+   const float EXPECTED_COMPRESSION_FACTOR = 2.0f;   // Assume 50% of calculated size after compression of raw pixel sizes
 
-   UINT alignedWidth = (uiWidth + 15) & ~15;
-   UINT alignedHeight = (uiHeight + 15) & ~15;
+   UINT alignedWidth = ( uiWidth + 15 ) & ~15;
+   UINT alignedHeight = ( uiHeight + 15 ) & ~15;
    UINT bufferSize = 0;
-   switch (format) {
+   switch( format )
+   {
       case PIPE_FORMAT_NV12:
          // NV12: Y plane (1 byte/pixel) + UV plane (1/2 byte/pixel) = 1.5 bytes/pixel
          bufferSize = alignedWidth * alignedHeight * 3 / 2;
@@ -849,15 +845,15 @@ UINT CalculateMaxOutputBitstreamSize(
          break;
       default:
          // Fallback formula for other formats: assume 15 bits/pixel (1.875 bytes/pixel)
-         bufferSize = (((alignedHeight) * (alignedWidth) * 15) >> 3);
+         bufferSize = ( ( ( alignedHeight ) * ( alignedWidth ) * 15 ) >> 3 );
          break;
    }
 
    // Apply EXPECTED_COMPRESSION_FACTOR constant (% of calculated size)
-   bufferSize = static_cast<UINT>(std::ceil(bufferSize / EXPECTED_COMPRESSION_FACTOR));
+   bufferSize = static_cast<UINT>( std::ceil( bufferSize / EXPECTED_COMPRESSION_FACTOR ) );
 
    // Clamp buffer size between minimum and maximum limits
-   bufferSize = std::max(MIN_BUFFER_SIZE, std::min(bufferSize, MAX_BUFFER_SIZE));
+   bufferSize = std::max( MIN_BUFFER_SIZE, std::min( bufferSize, MAX_BUFFER_SIZE ) );
 
    return bufferSize;
 }
@@ -949,10 +945,13 @@ CDX12EncHMFT::InitializeEncoder( pipe_video_profile videoProfile, UINT32 Width, 
       }
 
       struct d3d12_interop_device_info1 screen_interop_info = {};
-      if ((m_pPipeContext->screen->interop_query_device_info(m_pPipeContext->screen, sizeof(d3d12_interop_device_info1), &screen_interop_info) != 0) &&
-          (screen_interop_info.set_video_encoder_max_async_queue_depth != nullptr))
+      if( ( m_pPipeContext->screen->interop_query_device_info( m_pPipeContext->screen,
+                                                               sizeof( d3d12_interop_device_info1 ),
+                                                               &screen_interop_info ) != 0 ) &&
+          ( screen_interop_info.set_video_encoder_max_async_queue_depth != nullptr ) )
       {
-         screen_interop_info.set_video_encoder_max_async_queue_depth(m_pPipeContext, (m_bLowLatency ? 1 : MFT_INPUT_QUEUE_DEPTH));
+         screen_interop_info.set_video_encoder_max_async_queue_depth( m_pPipeContext,
+                                                                      ( m_bLowLatency ? 1 : MFT_INPUT_QUEUE_DEPTH ) );
       }
 
       CHECKNULL_GOTO( m_pPipeVideoCodec = m_pPipeContext->create_video_codec( m_pPipeContext, &encoderSettings ),
@@ -960,19 +959,18 @@ CDX12EncHMFT::InitializeEncoder( pipe_video_profile videoProfile, UINT32 Width, 
                       done );
 
       // Calculate and cache the expected output buffer max bitstream size for a single frame
-      m_uiMaxOutputBitstreamSize = CalculateMaxOutputBitstreamSize(
-         encoderSettings.width,
-         encoderSettings.height,
-         ConvertProfileToFormat(encoderSettings.profile));
+      m_uiMaxOutputBitstreamSize = CalculateMaxOutputBitstreamSize( encoderSettings.width,
+                                                                    encoderSettings.height,
+                                                                    ConvertProfileToFormat( encoderSettings.profile ) );
 
-      debug_printf("[dx12 hmft 0x%p] Calculated max output bitstream size: %u bytes (%u Kb, %u Mb) for %ux%u pipe_format %u\n",
-                   this,
-                   m_uiMaxOutputBitstreamSize,
-                   m_uiMaxOutputBitstreamSize / 1024,
-                   m_uiMaxOutputBitstreamSize / (1024 * 1024),
-                   encoderSettings.width,
-                   encoderSettings.height,
-                   ConvertProfileToFormat(encoderSettings.profile));
+      debug_printf( "[dx12 hmft 0x%p] Calculated max output bitstream size: %u bytes (%u Kb, %u Mb) for %ux%u pipe_format %u\n",
+                    this,
+                    m_uiMaxOutputBitstreamSize,
+                    m_uiMaxOutputBitstreamSize / 1024,
+                    m_uiMaxOutputBitstreamSize / ( 1024 * 1024 ),
+                    encoderSettings.width,
+                    encoderSettings.height,
+                    ConvertProfileToFormat( encoderSettings.profile ) );
 
       // Create DX12 fence and share it as handle for using it with DX11/create_fence_win32
       CHECKHR_GOTO( m_spDevice->CreateFence( 0, D3D12_FENCE_FLAG_SHARED, IID_PPV_ARGS( &m_spStagingFence12 ) ), done );
@@ -1077,11 +1075,8 @@ done:
 
 // Utility function to configure the sample allocator to allocate map samples
 HRESULT
-CDX12EncHMFT::ConfigureMapSampleAllocator( IMFVideoSampleAllocatorEx *spAllocator,
-                                           UINT32 width,
-                                           UINT32 height,
-                                           GUID subtype,
-                                           UINT32 poolSize )
+CDX12EncHMFT::ConfigureMapSampleAllocator(
+   IMFVideoSampleAllocatorEx *spAllocator, UINT32 width, UINT32 height, GUID subtype, UINT32 poolSize )
 {
    if( !spAllocator )
       return E_POINTER;
@@ -1207,7 +1202,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                uint32_t num_slice_buffers = static_cast<uint32_t>( pDX12EncodeContext->pSliceFences.size() );
                std::vector<struct codec_unit_location_t> codec_unit_metadata;
                const size_t max_default_init_alloc_count_nals = 64u;
-               codec_unit_metadata.reserve(max_default_init_alloc_count_nals);
+               codec_unit_metadata.reserve( max_default_init_alloc_count_nals );
                for( uint32_t slice_idx = 0; slice_idx < num_slice_buffers; slice_idx++ )
                {
                   assert( pDX12EncodeContext->pSliceFences[slice_idx] );
