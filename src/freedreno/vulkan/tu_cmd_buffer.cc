@@ -8408,7 +8408,8 @@ tu_barrier(struct tu_cmd_buffer *cmd,
 
          bool sparse_aliasing =
             image->vk.create_flags & VK_BUFFER_CREATE_SPARSE_ALIASED_BIT;
-         if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
+         if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED ||
+             old_layout == VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT) {
             /* The underlying memory for this image may have been used earlier
              * within the same queue submission for a different image, which
              * means that there may be old, stale cache entries which are in the

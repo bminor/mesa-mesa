@@ -335,6 +335,7 @@ get_device_extensions(const struct tu_physical_device *device,
       .EXT_transform_feedback = true,
       .EXT_vertex_attribute_divisor = true,
       .EXT_vertex_input_dynamic_state = true,
+      .EXT_zero_initialize_device_memory = true,
 
       /* For Graphics Flight Recorder (GFR) */
       .AMD_buffer_marker = true,
@@ -803,6 +804,9 @@ tu_get_features(struct tu_physical_device *pdevice,
    /* VK_KHR_unified_layouts */
    features->unifiedImageLayouts = true;
    features->unifiedImageLayoutsVideo = false;
+
+   /* VK_EXT_zero_initialize_device_memory */
+   features->zeroInitializeDeviceMemory = true;
 
    /* VK_VALVE_fragment_density_map_layered */
    features->fragmentDensityMapLayered = true;
