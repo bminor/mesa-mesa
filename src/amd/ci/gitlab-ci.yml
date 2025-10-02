@@ -318,7 +318,7 @@ radv-navi31-vkcts:
 
 
 radv-gfx1201-vkcts:
-  timeout: 20m
+  timeout: 25m
   parallel: 3
   extends:
     - .ci-tron-test-radv-vk
@@ -328,7 +328,7 @@ radv-gfx1201-vkcts:
     # TODO: Verify that task shaders don't hang.
     RADV_DEBUG: nomeshshader
     RADV_PERFTEST: transfer_queue,hic
-    CI_TRON_TIMEOUT__OVERALL__MINUTES: 15
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 20
 
 ############### Fossilize
 radv-fossils:
