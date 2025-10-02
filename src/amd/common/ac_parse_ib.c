@@ -1558,6 +1558,8 @@ static void parse_vcn_enc_ib(FILE *f, struct ac_ib_parser *ib)
                     instruction == RENCODE_HEVC_HEADER_INSTRUCTION_SLICE_QP_DELTA ? "SLICE QP DELTA" :
                     instruction == RENCODE_HEVC_HEADER_INSTRUCTION_SAO_ENABLE ? "SAO ENABLE" :
                     instruction == RENCODE_HEVC_HEADER_INSTRUCTION_LOOP_FILTER_ACROSS_SLICES_ENABLE ? "LOOP FILTER ACROSS SLICES ENABLE" :
+                    instruction == RENCODE_HEVC_HEADER_INSTRUCTION_SLICE_SEGMENT_ADDRESS ? "SLICE SEGMENT ADDRESS" :
+                    instruction == RENCODE_HEVC_HEADER_INSTRUCTION_DEPENDENT_SLICE_SEGMENT_FLAG ? "DEPENDENT SLICE SEGMENT FLAG" :
                     instruction == RENCODE_H264_HEADER_INSTRUCTION_FIRST_MB ? "FIRST MB" :
                     instruction == RENCODE_H264_HEADER_INSTRUCTION_SLICE_QP_DELTA ? "SLICE QP DELTA" :
                     "???");
