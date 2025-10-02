@@ -22,18 +22,22 @@ Matrix.set = function(self, i, j, value)
   self.data[i][j] = value
 end
 
-Matrix.print = function(self, fmt)
+Matrix.print_submatrix = function(self, rows, cols, fmt)
   local fmt = fmt or "%4u"
-  print(string.format("# %dx%d matrix", self.rows, self.cols))
+  print(string.format("# %dx%d matrix", rows, cols))
   io.write("[\n")
-  for i = 0, self.rows - 1 do
-    for j = 0, self.cols - 1 do
+  for i = 0, rows - 1 do
+    for j = 0, cols - 1 do
       io.write(string.format(fmt, self.data[i][j]))
-      if j < self.cols - 1 then io.write(" ") end
+      if j < cols - 1 then io.write(" ") end
     end
     io.write("\n")
   end
   io.write("]\n")
+end
+
+Matrix.print = function(self, fmt)
+  self:print_submatrix(self.rows, self.cols, fmt)
 end
 
 -- "Interleaved" row major is like row major except that
@@ -134,6 +138,14 @@ M.from_row_major_buffer = function(rows, cols, data)
   end
 
   return self
+end
+
+Matrix.apply = function(self, func)
+  for i = 0, self.rows - 1 do
+    for j = 0, self.cols - 1 do
+      self.data[i][j] = func(self.data[i][j])
+    end
+  end
 end
 
 return M
