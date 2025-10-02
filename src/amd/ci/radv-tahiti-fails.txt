@@ -1,2 +1,21 @@
 # Video failures
 dEQP-VK.video.capabilities.queue_support_query,Fail
+
+# RADV/ACO regression: https://gitlab.freedesktop.org/mesa/mesa/-/issues/14026
+dEQP-VK.compute.pipeline.basic.branch_past_barrier,Fail
+dEQP-VK.compute.pipeline.basic.shared_var_multiple_groups,Fail
+dEQP-VK.compute.pipeline.basic.shared_var_single_group,Fail
+dEQP-VK.compute.shader_object_binary.basic.shared_var_multiple_groups,Fail
+dEQP-VK.compute.shader_object_binary.basic.shared_var_single_group,Fail
+dEQP-VK.compute.shader_object_spirv.basic.shared_var_multiple_groups,Fail
+dEQP-VK.compute.shader_object_spirv.basic.shared_var_single_group,Fail
+dEQP-VK.spirv_assembly.instruction.compute.workgroup_memory.float32,Fail
+dEQP-VK.spirv_assembly.instruction.compute.workgroup_memory.float64,Fail
+dEQP-VK.spirv_assembly.instruction.compute.workgroup_memory.int16,Fail
+dEQP-VK.spirv_assembly.instruction.compute.workgroup_memory.int32,Fail
+dEQP-VK.spirv_assembly.instruction.compute.workgroup_memory.int64,Fail
+dEQP-VK.spirv_assembly.instruction.compute.workgroup_memory.int8,Fail
+dEQP-VK.spirv_assembly.instruction.compute.workgroup_memory.uint16,Fail
+dEQP-VK.spirv_assembly.instruction.compute.workgroup_memory.uint32,Fail
+dEQP-VK.spirv_assembly.instruction.compute.workgroup_memory.uint64,Fail
+dEQP-VK.spirv_assembly.instruction.compute.workgroup_memory.uint8,Fail
