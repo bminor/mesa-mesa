@@ -186,7 +186,9 @@ nil_to_nvcab5_gob_type(enum nil_gob_type gob_type)
 }
 
 static void
-nouveau_copy_rect(struct nvk_cmd_buffer *cmd, struct nouveau_copy *copy)
+nouveau_copy_rect(struct nvk_cmd_buffer *cmd,
+                  struct nouveau_copy *copy,
+                  uint8_t data_transfer_type)
 {
    uint32_t src_bw, dst_bw;
    if (copy->remap.comp_size > 0) {
@@ -357,7 +359,7 @@ nouveau_copy_rect(struct nvk_cmd_buffer *cmd, struct nouveau_copy *copy)
       }
 
       P_IMMD(p, NV90B5, LAUNCH_DMA, {
-         .data_transfer_type = DATA_TRANSFER_TYPE_NON_PIPELINED,
+         .data_transfer_type = data_transfer_type,
          .multi_line_enable = MULTI_LINE_ENABLE_TRUE,
          .flush_enable = FLUSH_ENABLE_TRUE,
          .src_memory_layout = src_layout,
@@ -515,9 +517,11 @@ nvk_CmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
                                     &region->imageSubresource);
       }
 
-      nouveau_copy_rect(cmd, &copy);
+      nouveau_copy_rect(cmd, &copy,
+                        NV90B5_LAUNCH_DMA_DATA_TRANSFER_TYPE_PIPELINED);
       if (copy2.extent_el.width > 0)
-         nouveau_copy_rect(cmd, &copy2);
+         nouveau_copy_rect(cmd, &copy2,
+                           NV90B5_LAUNCH_DMA_DATA_TRANSFER_TYPE_NON_PIPELINED);
 
       vk_foreach_struct_const(ext, region->pNext) {
          switch (ext->sType) {
@@ -640,9 +644,11 @@ nvk_CmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
                                     &region->imageSubresource);
       }
 
-      nouveau_copy_rect(cmd, &copy);
+      nouveau_copy_rect(cmd, &copy,
+                        NV90B5_LAUNCH_DMA_DATA_TRANSFER_TYPE_PIPELINED);
       if (copy2.extent_el.width > 0)
-         nouveau_copy_rect(cmd, &copy2);
+         nouveau_copy_rect(cmd, &copy2,
+                           NV90B5_LAUNCH_DMA_DATA_TRANSFER_TYPE_NON_PIPELINED);
 
       vk_foreach_struct_const(ext, region->pNext) {
          switch (ext->sType) {
@@ -708,7 +714,8 @@ nvk_linear_render_copy(struct nvk_cmd_buffer *cmd,
 
    assert(src_plane->nil.format.p_format == dst_plane->nil.format.p_format);
    copy.remap = nouveau_copy_remap_format(src_plane->nil.format.p_format);
-   nouveau_copy_rect(cmd, &copy);
+   nouveau_copy_rect(cmd, &copy,
+                     NV90B5_LAUNCH_DMA_DATA_TRANSFER_TYPE_NON_PIPELINED);
 }
 
 static void
@@ -823,7 +830,8 @@ nvk_CmdCopyImage2(VkCommandBuffer commandBuffer,
                .extent_el = nil_extent4d_px_to_el(extent4d_px, format,
                                                   sample_layout),
             };
-            nouveau_copy_rect(cmd, &copy);
+            nouveau_copy_rect(cmd, &copy,
+                              NV90B5_LAUNCH_DMA_DATA_TRANSFER_TYPE_PIPELINED);
          }
       } else {
          uint8_t src_plane = nvk_image_aspects_to_plane(src, src_aspects);
@@ -876,9 +884,11 @@ nvk_CmdCopyImage2(VkCommandBuffer commandBuffer,
             copy.remap = nouveau_copy_remap_format(src_format.p_format);
          }
 
-         nouveau_copy_rect(cmd, &copy);
+         nouveau_copy_rect(cmd, &copy,
+                           NV90B5_LAUNCH_DMA_DATA_TRANSFER_TYPE_PIPELINED);
          if (copy2.extent_el.width > 0)
-            nouveau_copy_rect(cmd, &copy2);
+            nouveau_copy_rect(cmd, &copy2,
+                              NV90B5_LAUNCH_DMA_DATA_TRANSFER_TYPE_NON_PIPELINED);
       }
    }
 }
