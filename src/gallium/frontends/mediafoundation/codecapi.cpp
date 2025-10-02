@@ -1674,7 +1674,6 @@ CDX12EncHMFT::SetValue( const GUID *Api, VARIANT *Value )
          CHECKHR_GOTO( E_INVALIDARG, done );
       }
       m_WorkProcessPriority = (D3D12_COMMAND_QUEUE_PROCESS_PRIORITY) ( Value->ulVal );
-      ;
       m_bWorkProcessPrioritySet = TRUE;
    }
    else if( *Api == CODECAPI_AVEncWorkGlobalPriority )
