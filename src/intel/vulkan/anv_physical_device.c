@@ -310,7 +310,7 @@ get_device_extensions(const struct anv_physical_device *device,
                                                VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR,
       .EXT_graphics_pipeline_library         = !(device->instance->debug & ANV_DEBUG_NO_GPL),
       .EXT_hdr_metadata = true,
-      .EXT_host_image_copy                   = !device->emu_astc_ldr,
+      .EXT_host_image_copy                   = true,
       .EXT_host_query_reset                  = true,
       .EXT_image_2d_view_of_3d               = true,
       /* Because of Xe2 PAT selected compression and the Vulkan spec
