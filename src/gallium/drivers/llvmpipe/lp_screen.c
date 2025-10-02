@@ -1031,6 +1031,11 @@ llvmpipe_create_screen(struct sw_winsys *winsys)
    util_vma_heap_init(&screen->mem_heap, alignment, UINT64_MAX - alignment);
    screen->mem_heap.alloc_high = false;
    screen->fd_mem_alloc = os_create_anonymous_file(0, "allocation fd");
+   if (screen->fd_mem_alloc == -1) {
+      mesa_loge("Failed to create anonymous file for memory allocations\n");
+      llvmpipe_destroy_screen(&screen->base);
+      return NULL;
+   }
 #endif
 
    snprintf(screen->renderer_string, sizeof(screen->renderer_string),
