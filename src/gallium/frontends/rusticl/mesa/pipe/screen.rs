@@ -156,7 +156,7 @@ impl PipeScreenOwned {
     /// `screen` must be equivalent to a pointer retrieved via [PipeScreenOwned::into_raw].
     /// This function does not increase reference count; use with a pointer not accounted
     /// for in the reference count could lead to undefined behavior.
-    pub(super) unsafe fn from_raw<'s>(screen: *mut pipe_screen) -> Self {
+    pub(super) unsafe fn from_raw(screen: *mut pipe_screen) -> Self {
         // SAFETY: PipeScreenOwned is transparent over *mut pipe_screen
         unsafe { mem::transmute(screen) }
     }
