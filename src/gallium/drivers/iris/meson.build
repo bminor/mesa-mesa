@@ -77,7 +77,7 @@ endforeach
 
 libiris = static_library(
   'iris',
-  [files_libiris, gen_xml_pack],
+  [files_libiris, gen_xml_pack, sha1_h],
   include_directories : [
     inc_src, inc_include, inc_gallium, inc_gallium_aux, inc_intel,
     inc_gallium_drivers,
