@@ -30,7 +30,6 @@ use std::convert::TryInto;
 use std::env;
 use std::ffi::CStr;
 use std::fmt::Debug;
-use std::mem::transmute;
 use std::num::NonZeroU64;
 use std::ops::Deref;
 use std::os::raw::*;
@@ -1421,7 +1420,7 @@ pub fn get_devs_for_type(device_type: cl_device_type) -> Vec<&'static Device> {
 
 pub fn get_dev_for_uuid(uuid: [c_char; UUID_SIZE]) -> Option<&'static Device> {
     devs().iter().find(|d| {
-        let uuid: [c_uchar; UUID_SIZE] = unsafe { transmute(uuid) };
+        let uuid: [c_uchar; UUID_SIZE] = uuid.map(|val| val as c_uchar);
         uuid == d.screen().device_uuid().unwrap()
     })
 }

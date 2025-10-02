@@ -17,7 +17,6 @@ use rusticl_proc_macros::cl_info_entrypoint;
 
 use std::ffi::c_char;
 use std::ffi::c_void;
-use std::mem::transmute;
 use std::ptr;
 use std::slice;
 
@@ -191,8 +190,11 @@ fn create_context(
         }
 
         // gl sharing is only supported on devices with an UUID, so we can simply unwrap it
-        let dev_uuid: [c_char; UUID_SIZE] =
-            unsafe { transmute(dev.screen().device_uuid().unwrap_or_default()) };
+        let dev_uuid: [c_char; UUID_SIZE] = dev
+            .screen()
+            .device_uuid()
+            .unwrap_or_default()
+            .map(|val| val as c_char);
         if gl_ctx_manager.interop_dev_info.device_uuid != dev_uuid {
             // we only support gl_sharing on the same device
             return Err(CL_INVALID_OPERATION);
