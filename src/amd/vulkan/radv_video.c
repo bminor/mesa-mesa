@@ -1252,6 +1252,14 @@ radv_GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysicalDevice physicalDevice,
    if ((src_dst || qp_map) && pdev->info.gfx_level >= GFX9)
       tiling[num_tiling++] = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
 
+   VkImageUsageFlags usage_flags = pVideoFormatInfo->imageUsage;
+
+   if (usage_flags & VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR)
+      usage_flags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+
+   if (usage_flags & VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR)
+      usage_flags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
    VK_OUTARRAY_MAKE_TYPED(VkVideoFormatPropertiesKHR, out, pVideoFormatProperties, pVideoFormatPropertyCount);
 
    for (uint32_t i = 0; i < num_tiling; i++) {
@@ -1267,7 +1275,7 @@ radv_GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysicalDevice physicalDevice,
             p->imageCreateFlags |= VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT;
          p->imageType = VK_IMAGE_TYPE_2D;
          p->imageTiling = tiling[i];
-         p->imageUsageFlags = pVideoFormatInfo->imageUsage;
+         p->imageUsageFlags = usage_flags;
 
          if (qp_map) {
             struct VkVideoFormatQuantizationMapPropertiesKHR *qp_map_props =
