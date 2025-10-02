@@ -84,8 +84,6 @@ static nir_def *cs_create_shader(struct vl_compositor *c, struct cs_shader *s)
       layout (std140, binding = 0) uniform ubo
       {
          vec4 yuv2rgb[3];      // params[0-2]
-         float luma_min;       // params[3].x
-         float luma_max;       // params[3].y
          vec2 chroma_offset;   // params[3].zw
          int trc_in;           // params[4].x
          int trc_out;          // params[4].y
@@ -196,19 +194,6 @@ static inline nir_def *cs_proj(struct cs_shader *s, nir_def *src, unsigned flags
    nir_def *x = nir_fdot3(b, src, s->params[idx]);
    nir_def *y = nir_fdot3(b, src, s->params[idx + 1]);
    return nir_vec3(b, x, y, s->fzero);
-}
-
-static inline nir_def *cs_luma_key(struct cs_shader *s, nir_def *src)
-{
-   /*
-      bool luma_min = params[3].x >= src;
-      bool luma_max = params[3].y < src;
-      return float(luma_min || luma_max);
-   */
-   nir_builder *b = &s->b;
-   nir_def *luma_min = nir_fge(b, nir_channel(b, s->params[3], 0), src);
-   nir_def *luma_max = nir_flt(b, nir_channel(b, s->params[3], 1), src);
-   return nir_b2f32(b, nir_ior(b, luma_min, luma_max));
 }
 
 static inline nir_def *cs_chroma_offset(struct cs_shader *s, nir_def *src, unsigned flags)
@@ -496,13 +481,11 @@ static void *create_video_buffer_shader(struct vl_compositor *c)
    for (unsigned i = 0; i < 3; ++i)
       col[i] = cs_fetch_texel(&s, pos[MIN2(i, 1)], i);
 
-   nir_def *alpha = cs_luma_key(&s, col[2]);
-
    nir_def *color = nir_vec4(b, col[0], col[1], col[2], s.fone);
    for (unsigned i = 0; i < 3; ++i)
       col[i] = cs_color_conversion(&s, color, i, YUV2RGB);
 
-   color = nir_vec4(b, col[0], col[1], col[2], alpha);
+   color = nir_vec4(b, col[0], col[1], col[2], s.fone);
    color = cs_prim_trc_conversion(&s, color);
    cs_image_store(&s, cs_translate(&s, ipos), color);
 
@@ -743,10 +726,9 @@ static nir_def *create_weave_shader(struct vl_compositor *c, bool rgb, bool y)
    nir_def *color = nir_flrp(b, color_down, color_top, tex_layer);
 
    if (rgb) {
-      nir_def *alpha = cs_luma_key(&s, nir_channel(b, color, 2));
       for (unsigned i = 0; i < 3; ++i)
          col[i] = cs_color_conversion(&s, color, i, YUV2RGB);
-      color = nir_vec4(b, col[0], col[1], col[2], alpha);
+      color = nir_vec4(b, col[0], col[1], col[2], s.fone);
    } else if (y) {
       color = nir_channel(b, color, 0);
    } else {
@@ -963,8 +945,8 @@ set_viewport(struct vl_compositor_state *s,
 
    float *ptr_float = (float *)ptr;
    ptr_float += sizeof(vl_csc_matrix) / sizeof(float);
-   *ptr_float++ = s->luma_min;
-   *ptr_float++ = s->luma_max;
+
+   ptr_float += 2; /* pad */
    *ptr_float++ = drawn->chroma_offset_x;
    *ptr_float++ = drawn->chroma_offset_y;
 

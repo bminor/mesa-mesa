@@ -138,7 +138,6 @@ struct vl_compositor_state
    vl_csc_matrix primaries;
 
    vl_csc_matrix csc_matrix;
-   float luma_min, luma_max;
 };
 
 struct vl_compositor
@@ -229,8 +228,7 @@ vl_compositor_init_state(struct vl_compositor_state *state, struct pipe_context 
  */
 bool
 vl_compositor_set_csc_matrix(struct vl_compositor_state *settings,
-                             const vl_csc_matrix *matrix,
-                             float luma_min, float luma_max);
+                             const vl_csc_matrix *matrix);
 
 /**
  * reset dirty area, so it's cleared with the clear colour

@@ -661,8 +661,8 @@ set_csc_matrix(struct vl_compositor_state *s)
    memcpy(ptr, &s->csc_matrix, sizeof(vl_csc_matrix));
 
    ptr += sizeof(vl_csc_matrix) / sizeof(float);
-   *ptr++ = s->luma_min;
-   *ptr++ = s->luma_max;
+   *ptr++ = 0.0f; /* luma_min */
+   *ptr++ = 1.0f; /* luma_max */
 
    pipe_buffer_unmap(s->pipe, buf_transfer);
 }
