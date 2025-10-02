@@ -904,6 +904,8 @@ ac_nir_allow_offset_wrap_cb(nir_intrinsic_instr *instr, const void *data)
    case nir_intrinsic_store_shared:
    case nir_intrinsic_shared_atomic:
    case nir_intrinsic_shared_atomic_swap:
+   case nir_intrinsic_load_shared2_amd:
+   case nir_intrinsic_store_shared2_amd:
       /* GFX6 uses a 16-bit adder and can't handle unsigned wrap. */
       return gfx_level >= GFX7;
    default: return false;

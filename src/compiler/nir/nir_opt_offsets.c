@@ -175,7 +175,8 @@ static bool
 try_fold_shared2(nir_builder *b,
                  nir_intrinsic_instr *intrin,
                  opt_offsets_state *state,
-                 unsigned offset_src_idx)
+                 unsigned offset_src_idx,
+                 bool need_nuw)
 {
    bool is_load = intrin->intrinsic == nir_intrinsic_load_shared2_amd;
    unsigned comp_size = (is_load ? intrin->def.bit_size : intrin->src[0].ssa->bit_size) / 8;
@@ -190,7 +191,7 @@ try_fold_shared2(nir_builder *b,
    if (!nir_src_is_const(*off_src)) {
       uint32_t max = INT32_MAX - MAX2(offset0, offset1); /* Avoid negative offsets. */
       replace_src = nir_get_scalar(off_src->ssa, 0);
-      if (!try_extract_const_addition(b, state, &replace_src, &const_offset, max, false))
+      if (!try_extract_const_addition(b, state, &replace_src, &const_offset, max, need_nuw))
          return false;
 
       modified_shader = true;
@@ -271,9 +272,9 @@ process_instr(nir_builder *b, nir_instr *instr, void *s)
    case nir_intrinsic_store_shared_ir3:
       return try_fold_load_store(b, intrin, state, 1, get_max(state, intrin, state->options->shared_max), need_nuw);
    case nir_intrinsic_load_shared2_amd:
-      return try_fold_shared2(b, intrin, state, 0);
+      return try_fold_shared2(b, intrin, state, 0, need_nuw);
    case nir_intrinsic_store_shared2_amd:
-      return try_fold_shared2(b, intrin, state, 1);
+      return try_fold_shared2(b, intrin, state, 1, need_nuw);
    case nir_intrinsic_load_buffer_amd:
       need_nuw &= !!(nir_intrinsic_access(intrin) & ACCESS_IS_SWIZZLED_AMD);
       return try_fold_load_store(b, intrin, state, 1, get_max(state, intrin, state->options->buffer_max), need_nuw);
