@@ -14,7 +14,7 @@
         "description": "gallivm: orcjit: remember Context in addition to ThreadSafeContext",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "cd129dbf8af2d16b1243f2ce287ff69c6a5dc557",
         "notes": null
