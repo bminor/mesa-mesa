@@ -123,7 +123,7 @@ libagx_memset_small(global uchar *dst, uchar b, int len, uint tid)
  */
 KERNEL(32)
 libagx_draw_robust_index(global uint32_t *vdm,
-                         global struct agx_geometry_state *heap,
+                         global struct agx_heap *heap,
                          constant VkDrawIndexedIndirectCommand *cmd,
                          uint64_t in_buf_ptr, uint32_t in_buf_range_B,
                          ushort restart, enum agx_primitive topology,

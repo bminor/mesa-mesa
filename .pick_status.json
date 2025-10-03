@@ -5444,7 +5444,7 @@
         "description": "libagx: fix heap argument type in libagx_draw_robust_index",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d339bf7a98eae1e238d9a9e37d479c17675d074f",
         "notes": null
