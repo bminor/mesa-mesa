@@ -16,6 +16,7 @@ void
 fdl_layout_buffer(struct fdl_layout *layout, uint32_t size)
 {
    layout->width0 = size;
+   layout->pitch0 = size;
    layout->height0 = 1;
    layout->depth0 = 1;
    layout->cpp = 1;
