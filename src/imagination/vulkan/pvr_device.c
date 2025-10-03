@@ -163,6 +163,7 @@ static const struct pvr_drm_device_config pvr_drm_configs[] = {
 #undef DEF_CONFIG
 
 static const struct vk_instance_extension_table pvr_instance_extensions = {
+   .KHR_device_group_creation = true,
    .KHR_display = PVR_USE_WSI_PLATFORM_DISPLAY,
    .KHR_external_fence_capabilities = true,
    .KHR_external_memory_capabilities = true,
