@@ -15,6 +15,7 @@
 #define PVR_DEVICE_H
 
 #include "vk_device.h"
+#include "vk_device_memory.h"
 #include "vk_instance.h"
 #include "vk_physical_device.h"
 
@@ -205,7 +206,7 @@ struct pvr_device {
 };
 
 struct pvr_device_memory {
-   struct vk_object_base base;
+   struct vk_device_memory vk;
    struct pvr_winsys_bo *bo;
 };
 
@@ -220,7 +221,7 @@ VK_DEFINE_HANDLE_CASTS(pvr_physical_device,
                        VK_OBJECT_TYPE_PHYSICAL_DEVICE)
 
 VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_device_memory,
-                               base,
+                               vk.base,
                                VkDeviceMemory,
                                VK_OBJECT_TYPE_DEVICE_MEMORY)
 

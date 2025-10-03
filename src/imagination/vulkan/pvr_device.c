@@ -83,6 +83,7 @@
 #include "util/os_misc.h"
 #include "util/u_math.h"
 #include "vk_alloc.h"
+#include "vk_device_memory.h"
 #include "vk_extensions.h"
 #include "vk_log.h"
 #include "vk_object.h"
@@ -205,6 +206,7 @@ static void pvr_physical_device_get_supported_extensions(
       .KHR_maintenance1 = true,
       .KHR_maintenance2 = true,
       .KHR_maintenance3 = true,
+      .KHR_map_memory2 = true,
       .KHR_multiview = true,
       .KHR_present_id2 = PVR_USE_WSI_PLATFORM,
       .KHR_present_wait2 = PVR_USE_WSI_PLATFORM,
@@ -2591,10 +2593,10 @@ VkResult pvr_AllocateMemory(VkDevice _device,
    if (aligned_alloc_size > mem_heap->size)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
-   mem = vk_object_alloc(&device->vk,
-                         pAllocator,
-                         sizeof(*mem),
-                         VK_OBJECT_TYPE_DEVICE_MEMORY);
+   mem = vk_device_memory_create(&device->vk,
+                                 pAllocateInfo,
+                                 pAllocator,
+                                 sizeof(*mem));
    if (!mem)
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
@@ -2629,7 +2631,7 @@ VkResult pvr_AllocateMemory(VkDevice _device,
                                                       fd_info->fd,
                                                       &mem->bo);
       if (result != VK_SUCCESS)
-         goto err_vk_object_free_mem;
+         goto err_vk_device_memory_destroy;
 
       /* For security purposes, we reject importing the bo if it's smaller
        * than the requested allocation size. This prevents a malicious client
@@ -2647,7 +2649,7 @@ VkResult pvr_AllocateMemory(VkDevice _device,
                             pAllocateInfo->allocationSize,
                             mem->bo->size);
          device->ws->ops->buffer_destroy(mem->bo);
-         goto err_vk_object_free_mem;
+         goto err_vk_device_memory_destroy;
       }
 
       /* From the Vulkan spec:
@@ -2681,15 +2683,15 @@ VkResult pvr_AllocateMemory(VkDevice _device,
                                               PVR_WINSYS_BO_FLAG_CPU_ACCESS,
                                               &mem->bo);
       if (result != VK_SUCCESS)
-         goto err_vk_object_free_mem;
+         goto err_vk_device_memory_destroy;
    }
 
    *pMem = pvr_device_memory_to_handle(mem);
 
    return VK_SUCCESS;
 
-err_vk_object_free_mem:
-   vk_object_free(&device->vk, pAllocator, mem);
+err_vk_device_memory_destroy:
+   vk_device_memory_destroy(&device->vk, pAllocator, &mem->vk);
 
    return result;
 }
@@ -2754,18 +2756,17 @@ void pvr_FreeMemory(VkDevice _device,
 
    device->ws->ops->buffer_destroy(mem->bo);
 
-   vk_object_free(&device->vk, pAllocator, mem);
+   vk_device_memory_destroy(&device->vk, pAllocator, &mem->vk);
 }
 
-VkResult pvr_MapMemory(VkDevice _device,
-                       VkDeviceMemory _memory,
-                       VkDeviceSize offset,
-                       VkDeviceSize size,
-                       VkMemoryMapFlags flags,
-                       void **ppData)
+VkResult pvr_MapMemory2(VkDevice _device,
+                        const VkMemoryMapInfo *pMemoryMapInfo,
+                        void **ppData)
 {
    VK_FROM_HANDLE(pvr_device, device, _device);
-   VK_FROM_HANDLE(pvr_device_memory, mem, _memory);
+   VK_FROM_HANDLE(pvr_device_memory, mem, pMemoryMapInfo->memory);
+   VkDeviceSize offset;
+   VkDeviceSize size;
    VkResult result;
 
    if (!mem) {
@@ -2773,8 +2774,8 @@ VkResult pvr_MapMemory(VkDevice _device,
       return VK_SUCCESS;
    }
 
-   if (size == VK_WHOLE_SIZE)
-      size = mem->bo->size - offset;
+   offset = pMemoryMapInfo->offset;
+   size = vk_device_memory_range(&mem->vk, offset, pMemoryMapInfo->size);
 
    /* From the Vulkan spec version 1.0.32 docs for MapMemory:
     *
@@ -2787,10 +2788,18 @@ VkResult pvr_MapMemory(VkDevice _device,
    assert(size > 0);
    assert(offset + size <= mem->bo->size);
 
-   /* Check if already mapped */
-   if (mem->bo->map) {
-      *ppData = (uint8_t *)mem->bo->map + offset;
-      return VK_SUCCESS;
+   /* From the Vulkan 1.2.194 spec:
+    *
+    *    "memory must not be currently host mapped"
+    */
+   if (mem->bo->map != NULL) {
+      return vk_errorf(device,
+                       VK_ERROR_MEMORY_MAP_FAILED,
+                       "Memory object already mapped.");
+   }
+
+   vk_foreach_struct_const (ext, pMemoryMapInfo->pNext) {
+      vk_debug_ignored_stype(ext->sType);
    }
 
    /* Map it all at once */
@@ -2803,15 +2812,16 @@ VkResult pvr_MapMemory(VkDevice _device,
    return VK_SUCCESS;
 }
 
-void pvr_UnmapMemory(VkDevice _device, VkDeviceMemory _memory)
+VkResult pvr_UnmapMemory2(VkDevice _device,
+                          const VkMemoryUnmapInfo *pMemoryUnmapInfo)
 {
    VK_FROM_HANDLE(pvr_device, device, _device);
-   VK_FROM_HANDLE(pvr_device_memory, mem, _memory);
+   VK_FROM_HANDLE(pvr_device_memory, mem, pMemoryUnmapInfo->memory);
 
-   if (!mem || !mem->bo->map)
-      return;
+   if (mem && mem->bo->map)
+      device->ws->ops->buffer_unmap(mem->bo);
 
-   device->ws->ops->buffer_unmap(mem->bo);
+   return VK_SUCCESS;
 }
 
 VkResult pvr_FlushMappedMemoryRanges(VkDevice _device,

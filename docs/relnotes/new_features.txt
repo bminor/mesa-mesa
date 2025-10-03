@@ -80,3 +80,4 @@ VK_KHR_shader_non_semantic_info on pvr
 VK_KHR_shader_relaxed_extended_instruction on pvr
 VK_EXT_shader_replicated_composites on pvr
 VK_KHR_device_group_creation on pvr
+VK_KHR_map_memory2 on pvr
