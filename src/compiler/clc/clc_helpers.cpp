@@ -867,7 +867,7 @@ clc_compile_to_llvm_module(LLVMContext &llvm_ctx,
    c->getDiagnosticOpts().ShowCarets = false;
 
    c->createDiagnostics(
-#if LLVM_VERSION_MAJOR >= 20
+#if LLVM_VERSION_MAJOR >= 20 && LLVM_VERSION_MAJOR < 22
                    *llvm::vfs::getRealFileSystem(),
 #endif
                    new clang::TextDiagnosticPrinter(
