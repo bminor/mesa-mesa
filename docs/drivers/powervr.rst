@@ -4,8 +4,8 @@ PowerVR
 PowerVR is a Vulkan driver for Imagination Technologies PowerVR GPUs, starting
 with those based on the Rogue architecture.
 
-The driver is conformant on `BXS-4-64 <https://www.khronos.org/conformance/adopters/conformant-products#submission_936>`__,
-but **not yet on other GPUs**, so it requires exporting
+The driver is conformant to Vulkan 1.0 on `BXS-4-64 <https://www.khronos.org/conformance/adopters/conformant-products#submission_936>`__,
+but **not yet on other GPUs and Vulkan versions**, so it requires exporting
 ``PVR_I_WANT_A_BROKEN_VULKAN_DRIVER=1`` to the environment before running any
 Vulkan content.
 
@@ -14,8 +14,8 @@ The following hardware is currently in active development:
 ========= =========== ============== =======
 Product   Series      B.V.N.C        Vulkan
 ========= =========== ============== =======
-AXE-1-16M A-Series    33.15.11.3     1.0
-BXS-4-64  B-Series    36.53.104.796  1.0
+AXE-1-16M A-Series    33.15.11.3     1.2
+BXS-4-64  B-Series    36.53.104.796  1.2
 ========= =========== ============== =======
 
 The following hardware is partially supported and not currently
@@ -24,7 +24,7 @@ under active development:
 ========= =========== ============== ======= ==========
 Product   Series      B.V.N.C        Vulkan  Notes
 ========= =========== ============== ======= ==========
-GX6250    Series 6XT  4.40.2.51      1.0     [#GX6250]_
+GX6250    Series 6XT  4.40.2.51      1.2     [#GX6250]_
 ========= =========== ============== ======= ==========
 
 .. [#GX6250]
