@@ -333,9 +333,6 @@ spec@arb_texture_cube_map_array@arb_texture_cube_map_array-sampler-cube-array-sh
 spec@!opengl 2.0@max-samplers border,Fail
 spec@!opengl 2.0@max-samplers,Fail
 
-# https://gitlab.freedesktop.org/mesa/piglit/-/merge_requests/1034
-spec@glsl-1.40@uniform_buffer@two-stages,Fail
-
 # Precision differences between expected and obtained; works if
 # exporting V3D_DEBUG=tmu32.
 spec@oes_texture_view@rendering-formats,Fail
