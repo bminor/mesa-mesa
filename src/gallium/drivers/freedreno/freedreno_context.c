@@ -46,12 +46,6 @@ fd_context_flush(struct pipe_context *pctx, struct pipe_fence_handle **fencep,
     * one created earlier
     */
    if ((flags & TC_FLUSH_ASYNC) && fencep) {
-      /* We don't currently expect async+flush in the fence-fd
-       * case.. for that to work properly we'd need TC to tell
-       * us in the create_fence callback that it needs an fd.
-       */
-      assert(!(flags & PIPE_FLUSH_FENCE_FD));
-
       fd_pipe_fence_set_batch(*fencep, batch);
       fd_pipe_fence_ref(&batch->fence, *fencep);
 
