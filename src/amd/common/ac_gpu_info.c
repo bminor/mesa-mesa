@@ -1179,6 +1179,10 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    info->gart_page_size = device_info.gart_page_size;
 
    info->gfx_ib_pad_with_type2 = info->gfx_level == GFX6;
+
+   /* GFX6 supports IB2, but not chaining inside IB2. See waCpIb2ChainingUnsupported in PAL */
+   info->can_chain_ib2 = info->gfx_level >= GFX7;
+
    /* CDNA starting with GFX940 shouldn't use CP DMA. */
    info->has_cp_dma = info->has_graphics || info->family < CHIP_GFX940;
 
@@ -1790,6 +1794,7 @@ void ac_print_gpu_info(const struct radeon_info *info, FILE *f)
 
    fprintf(f, "CP info:\n");
    fprintf(f, "    gfx_ib_pad_with_type2 = %i\n", info->gfx_ib_pad_with_type2);
+   fprintf(f, "    can_chain_ib2 = %i\n", info->can_chain_ib2);
    fprintf(f, "    has_cp_dma = %i\n", info->has_cp_dma);
    fprintf(f, "    me_fw_version = %i\n", info->me_fw_version);
    fprintf(f, "    me_fw_feature = %i\n", info->me_fw_feature);
