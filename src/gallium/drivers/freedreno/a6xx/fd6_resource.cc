@@ -118,15 +118,7 @@ ok_ubwc_format(struct pipe_screen *pscreen, enum pipe_format pfmt, unsigned nr_s
 static bool
 can_do_ubwc(struct pipe_resource *prsc)
 {
-   /* limit things to simple single level 2d for now: */
-   if ((prsc->depth0 != 1) || (prsc->array_size != 1) ||
-       (prsc->last_level != 0))
-      return false;
-   if (prsc->target != PIPE_TEXTURE_2D)
-      return false;
-   if (!ok_ubwc_format(prsc->screen, prsc->format, prsc->nr_samples))
-      return false;
-   return true;
+   return ok_ubwc_format(prsc->screen, prsc->format, prsc->nr_samples);
 }
 
 static bool
