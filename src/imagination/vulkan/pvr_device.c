@@ -245,6 +245,7 @@ static void pvr_physical_device_get_supported_extensions(
       .EXT_texel_buffer_alignment = false,
       .EXT_tooling_info = true,
       .EXT_vertex_attribute_divisor = true,
+      .EXT_zero_initialize_device_memory = true,
    };
 }
 
@@ -494,6 +495,9 @@ static void pvr_physical_device_get_supported_features(
 
       /* VK_KHR_line_rasterization */
       .bresenhamLines = true,
+
+      /* VK_EXT_zero_initialize_device_memory */
+      .zeroInitializeDeviceMemory = true,
    };
 }
 

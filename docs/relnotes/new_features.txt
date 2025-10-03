@@ -74,3 +74,4 @@ shaderStorageImageReadWithoutFormat on pvr
 shaderStorageImageWriteWithoutFormat on pvr
 shaderClipDistance on pvr
 shaderCullDistance on pvr
+VK_EXT_zero_initialize_device_memory on pvr
