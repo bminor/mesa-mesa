@@ -778,6 +778,9 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
       radv_optimize_nir(nir, false);
    }
 
+   /* Lower immutable/embedded sampler derefs to vec4. */
+   NIR_PASS(_, nir, radv_nir_lower_immediate_samplers, device, stage);
+
    progress = false;
    NIR_PASS(progress, nir, nir_vk_lower_ycbcr_tex, ycbcr_conversion_lookup, &stage->layout);
    /* Gather info in the case that nir_vk_lower_ycbcr_tex might have emitted resinfo instructions. */
