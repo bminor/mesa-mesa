@@ -1172,6 +1172,58 @@ static pco_instr *trans_load_buffer(trans_ctx *tctx,
                  addr);
 }
 
+static pco_instr *trans_load_global(trans_ctx *tctx,
+                                    nir_intrinsic_instr *intr,
+                                    pco_ref dest,
+                                    pco_ref addr)
+{
+   unsigned chans = pco_ref_get_chans(dest);
+   ASSERTED unsigned bits = pco_ref_get_bits(dest);
+   assert(bits == 32);
+
+   return pco_ld(&tctx->b,
+                 dest,
+                 pco_ref_drc(PCO_DRC_0),
+                 pco_ref_imm8(chans),
+                 addr);
+}
+
+static pco_instr *
+trans_store_global(trans_ctx *tctx, pco_ref data_src, pco_ref addr_src)
+{
+   unsigned chans = pco_ref_get_chans(data_src);
+   unsigned bits = pco_ref_get_bits(data_src);
+
+   pco_ref addr_data_comps[3] = {
+      [2] = data_src,
+   };
+
+   pco_ref_new_ssa_addr_comps(tctx->func, addr_data_comps);
+   pco_comp(&tctx->b, addr_data_comps[0], addr_src, pco_ref_val16(0));
+   pco_comp(&tctx->b, addr_data_comps[1], addr_src, pco_ref_val16(1));
+
+   pco_ref addr_data = pco_ref_new_ssa_addr_data(tctx->func, chans);
+   pco_vec(&tctx->b, addr_data, ARRAY_SIZE(addr_data_comps), addr_data_comps);
+
+   pco_ref data_comp = pco_ref_new_ssa(tctx->func, bits, chans);
+   pco_comp(&tctx->b, data_comp, addr_data, pco_ref_val16(2));
+
+   switch (bits) {
+   case 32:
+      return pco_st32(&tctx->b,
+                      data_comp,
+                      pco_ref_drc(PCO_DRC_0),
+                      pco_ref_imm8(chans),
+                      addr_data,
+                      pco_ref_null());
+
+   default:
+      break;
+   }
+
+   UNREACHABLE("");
+}
+
 static pco_instr *
 trans_get_buffer_size(trans_ctx *tctx, nir_intrinsic_instr *intr, pco_ref dest)
 {
@@ -2003,6 +2055,14 @@ static pco_instr *trans_intr(trans_ctx *tctx, nir_intrinsic_instr *intr)
    case nir_intrinsic_load_ubo:
    case nir_intrinsic_load_ssbo:
       instr = trans_load_buffer(tctx, intr, dest, src[1]);
+      break;
+
+   case nir_intrinsic_load_global_2x32:
+      instr = trans_load_global(tctx, intr, dest, src[0]);
+      break;
+
+   case nir_intrinsic_store_global_2x32:
+      instr = trans_store_global(tctx, src[0], src[1]);
       break;
 
    case nir_intrinsic_get_ubo_size:

@@ -24,6 +24,7 @@ static const struct spirv_to_nir_options spirv_options = {
 
    .ubo_addr_format = nir_address_format_vec2_index_32bit_offset,
    .ssbo_addr_format = nir_address_format_vec2_index_32bit_offset,
+   .phys_ssbo_addr_format = nir_address_format_2x32bit_global,
    .push_const_addr_format = nir_address_format_32bit_offset,
    .shared_addr_format = nir_address_format_32bit_offset,
 
@@ -496,7 +497,7 @@ static void pco_nir_opt(pco_ctx *ctx, nir_shader *nir, bool algebraic)
       NIR_PASS(progress, nir, nir_opt_constant_folding);
 
       nir_load_store_vectorize_options vectorize_opts = {
-         .modes = nir_var_mem_ubo | nir_var_mem_ssbo,
+         .modes = nir_var_mem_ubo | nir_var_mem_ssbo | nir_var_mem_global,
          .callback = should_vectorize_mem_cb,
       };
       NIR_PASS(progress, nir, nir_opt_load_store_vectorize, &vectorize_opts);
@@ -821,9 +822,16 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
             nir_var_mem_ubo | nir_var_mem_ssbo,
             nir_address_format_vec2_index_32bit_offset);
 
-   nir_move_options move_options =
-      nir_move_load_ubo | nir_move_load_ssbo | nir_move_load_input |
-      nir_move_load_frag_coord | nir_intrinsic_load_uniform;
+   NIR_PASS(_,
+            nir,
+            nir_lower_explicit_io,
+            nir_var_mem_global,
+            nir_address_format_2x32bit_global);
+
+   nir_move_options move_options = nir_move_load_global | nir_move_load_ubo |
+                                   nir_move_load_ssbo | nir_move_load_input |
+                                   nir_move_load_frag_coord |
+                                   nir_intrinsic_load_uniform;
    NIR_PASS(_, nir, nir_opt_sink, move_options);
    NIR_PASS(_, nir, nir_opt_move, move_options);
 
