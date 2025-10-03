@@ -39,8 +39,10 @@
 #include "vk_debug_report.h"
 #include "vk_format.h"
 #include "vk_nir.h"
+#include "vk_nir_convert_ycbcr.h"
 #include "vk_semaphore.h"
 #include "vk_sync.h"
+#include "vk_ycbcr_conversion.h"
 
 #include "aco_shader_info.h"
 #include "radv_aco_shader_info.h"
@@ -419,6 +421,20 @@ radv_shader_choose_subgroup_size(struct radv_device *device, nir_shader *nir,
       nir->info.min_subgroup_size = wave_size;
 }
 
+static const struct vk_ycbcr_conversion_state *
+ycbcr_conversion_lookup(const void *data, uint32_t set, uint32_t binding, uint32_t array_index)
+{
+   const struct radv_shader_layout *layout = data;
+
+   const struct radv_descriptor_set_layout *set_layout = layout->set[set].layout;
+   const struct vk_ycbcr_conversion_state *ycbcr_samplers = radv_immutable_ycbcr_samplers(set_layout, binding);
+
+   if (!ycbcr_samplers)
+      return NULL;
+
+   return ycbcr_samplers + array_index;
+}
+
 nir_shader *
 radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_stage *stage,
                          const struct radv_spirv_to_nir_options *options, bool is_internal)
@@ -426,6 +442,7 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
    nir_shader *nir;
+   bool progress;
 
    if (stage->internal_nir) {
       /* Some things such as our meta clear/blit code will give us a NIR
@@ -506,7 +523,8 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
        */
       NIR_PASS(_, nir, nir_lower_variable_initializers, nir_var_function_temp);
       NIR_PASS(_, nir, nir_lower_returns);
-      bool progress = false;
+
+      progress = false;
       NIR_PASS(progress, nir, nir_inline_functions);
       if (progress) {
          NIR_PASS(_, nir, nir_opt_copy_prop_vars);
@@ -702,7 +720,7 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
    unsigned lower_flrp = (nir->options->lower_flrp16 ? 16 : 0) | (nir->options->lower_flrp32 ? 32 : 0) |
                          (nir->options->lower_flrp64 ? 64 : 0);
    if (lower_flrp != 0) {
-      bool progress = false;
+      progress = false;
       NIR_PASS(progress, nir, nir_lower_flrp, lower_flrp, false /* always precise */);
       if (progress)
          NIR_PASS(_, nir, nir_opt_constant_folding);
@@ -759,6 +777,12 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
       /* Optimize the lowered code before the linking optimizations. */
       radv_optimize_nir(nir, false);
    }
+
+   progress = false;
+   NIR_PASS(progress, nir, nir_vk_lower_ycbcr_tex, ycbcr_conversion_lookup, &stage->layout);
+   /* Gather info in the case that nir_vk_lower_ycbcr_tex might have emitted resinfo instructions. */
+   if (progress)
+      nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
 
    return nir;
 }

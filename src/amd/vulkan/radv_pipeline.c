@@ -34,8 +34,6 @@
 #include "aco_interface.h"
 #include "sid.h"
 #include "vk_format.h"
-#include "vk_nir_convert_ycbcr.h"
-#include "vk_ycbcr_conversion.h"
 
 bool
 radv_pipeline_capture_shaders(const struct radv_device *device, VkPipelineCreateFlags2 flags)
@@ -236,20 +234,6 @@ radv_shader_layout_init(const struct radv_pipeline_layout *pipeline_layout, mesa
                                      (pipeline_layout->dynamic_shader_stages & mesa_to_vk_shader_stage(stage));
 }
 
-static const struct vk_ycbcr_conversion_state *
-ycbcr_conversion_lookup(const void *data, uint32_t set, uint32_t binding, uint32_t array_index)
-{
-   const struct radv_shader_layout *layout = data;
-
-   const struct radv_descriptor_set_layout *set_layout = layout->set[set].layout;
-   const struct vk_ycbcr_conversion_state *ycbcr_samplers = radv_immutable_ycbcr_samplers(set_layout, binding);
-
-   if (!ycbcr_samplers)
-      return NULL;
-
-   return ycbcr_samplers + array_index;
-}
-
 static uint8_t
 max_alu_src_identity_swizzle(const nir_alu_instr *alu, const nir_alu_src *src)
 {
@@ -431,12 +415,6 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
    NIR_PASS(progress, stage->nir, ac_nir_lower_mem_access_bit_sizes, gfx_level, use_llvm);
    if (progress)
       constant_fold_for_push_const = true;
-
-   progress = false;
-   NIR_PASS(progress, stage->nir, nir_vk_lower_ycbcr_tex, ycbcr_conversion_lookup, &stage->layout);
-   /* Gather info in the case that nir_vk_lower_ycbcr_tex might have emitted resinfo instructions. */
-   if (progress)
-      nir_shader_gather_info(stage->nir, nir_shader_get_entrypoint(stage->nir));
 
    NIR_PASS(_, stage->nir, ac_nir_lower_tex,
             &(ac_nir_lower_tex_options){
