@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: MIT
+--
 -- Parse cmdstream dump and analyse blits and batches
 
 --local posix = require "posix"
