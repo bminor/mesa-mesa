@@ -1501,8 +1501,8 @@ get_properties(const struct anv_physical_device *pdevice,
 
    /* VK_KHR_maintenance5 */
    {
-      props->earlyFragmentMultisampleCoverageAfterSampleCounting = false;
-      props->earlyFragmentSampleMaskTestBeforeSampleCounting = false;
+      props->earlyFragmentMultisampleCoverageAfterSampleCounting = devinfo->verx10 >= 200;
+      props->earlyFragmentSampleMaskTestBeforeSampleCounting = devinfo->verx10 >= 200;
       props->depthStencilSwizzleOneSupport = true;
       props->polygonModePointSize = true;
       props->nonStrictSinglePixelWideLinesUseParallelogram = false;
