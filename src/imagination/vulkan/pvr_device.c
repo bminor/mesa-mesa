@@ -240,6 +240,7 @@ static void pvr_physical_device_get_supported_extensions(
       .EXT_image_2d_view_of_3d = true,
       .EXT_index_type_uint8 = false,
       .EXT_line_rasterization = true,
+      .EXT_map_memory_placed = true,
       .EXT_physical_device_drm = true,
       .EXT_private_data = true,
       .EXT_provoking_vertex = true,
@@ -456,6 +457,11 @@ static void pvr_physical_device_get_supported_features(
       /* VK_EXT_image_2d_view_of_3d */
       .image2DViewOf3D = true,
       .sampler2DViewOf3D = true,
+
+      /* VK_EXT_map_memory_placed */
+      .memoryMapPlaced = true,
+      .memoryMapRangePlaced = false,
+      .memoryUnmapReserve = false,
 
       /* Vulkan 1.3 / VK_EXT_private_data */
       .privateData = true,
@@ -798,6 +804,9 @@ static bool pvr_physical_device_get_properties(
 
       /* VK_EXT_extended_dynamic_state3 */
       .dynamicPrimitiveTopologyUnrestricted = false,
+
+      /* VK_EXT_map_memory_placed */
+      .minPlacedMemoryMapAlignment = pdevice->ws->page_size,
 
       /* VK_EXT_provoking_vertex */
       .provokingVertexModePerPipeline = true,
@@ -2777,6 +2786,14 @@ VkResult pvr_MapMemory2(VkDevice _device,
    offset = pMemoryMapInfo->offset;
    size = vk_device_memory_range(&mem->vk, offset, pMemoryMapInfo->size);
 
+   void *addr = NULL;
+   if (pMemoryMapInfo->flags & VK_MEMORY_MAP_PLACED_BIT_EXT) {
+      const VkMemoryMapPlacedInfoEXT *placed_info =
+         vk_find_struct_const(pMemoryMapInfo->pNext,
+                              MEMORY_MAP_PLACED_INFO_EXT);
+      addr = placed_info->pPlacedAddress;
+   }
+
    /* From the Vulkan spec version 1.0.32 docs for MapMemory:
     *
     *  * If size is not equal to VK_WHOLE_SIZE, size must be greater than 0
@@ -2803,7 +2820,7 @@ VkResult pvr_MapMemory2(VkDevice _device,
    }
 
    /* Map it all at once */
-   result = device->ws->ops->buffer_map(mem->bo);
+   result = device->ws->ops->buffer_map(mem->bo, addr);
    if (result != VK_SUCCESS)
       return result;
 

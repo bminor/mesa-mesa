@@ -82,14 +82,18 @@ pvr_winsys_helper_fill_static_memory(struct pvr_winsys *const ws,
                                      struct pvr_winsys_vma *const pds_vma,
                                      struct pvr_winsys_vma *const usc_vma);
 
-static inline VkResult pvr_mmap(const size_t len,
+static inline VkResult pvr_mmap(void *addr,
+                                const size_t len,
                                 const int prot,
-                                const int flags,
+                                int flags,
                                 const int fd,
                                 const off_t offset,
                                 void **const map_out)
 {
-   void *const map = mmap(NULL, len, prot, flags, fd, offset);
+   if (addr)
+      flags |= MAP_FIXED;
+
+   void *const map = mmap(addr, len, prot, flags, fd, offset);
    if (map == MAP_FAILED) {
       const int err = errno;
       return vk_errorf(NULL,

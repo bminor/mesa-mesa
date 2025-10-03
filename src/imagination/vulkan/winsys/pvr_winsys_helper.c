@@ -322,15 +322,15 @@ pvr_winsys_helper_fill_static_memory(struct pvr_winsys *const ws,
 {
    VkResult result;
 
-   result = ws->ops->buffer_map(general_vma->bo);
+   result = ws->ops->buffer_map(general_vma->bo, NULL);
    if (result != VK_SUCCESS)
       goto err_out;
 
-   result = ws->ops->buffer_map(pds_vma->bo);
+   result = ws->ops->buffer_map(pds_vma->bo, NULL);
    if (result != VK_SUCCESS)
       goto err_pvr_srv_winsys_buffer_unmap_general;
 
-   result = ws->ops->buffer_map(usc_vma->bo);
+   result = ws->ops->buffer_map(usc_vma->bo, NULL);
    if (result != VK_SUCCESS)
       goto err_pvr_srv_winsys_buffer_unmap_pds;
 

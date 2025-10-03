@@ -365,7 +365,7 @@ VkResult pvr_bo_alloc(struct pvr_device *device,
       goto err_free_bo;
 
    if (flags & PVR_BO_ALLOC_FLAG_CPU_MAPPED) {
-      result = device->ws->ops->buffer_map(pvr_bo->bo);
+      result = device->ws->ops->buffer_map(pvr_bo->bo, NULL);
       if (result != VK_SUCCESS)
          goto err_buffer_destroy;
 
@@ -419,7 +419,7 @@ VkResult pvr_bo_cpu_map(struct pvr_device *device, struct pvr_bo *pvr_bo)
 {
    assert(!pvr_bo->bo->map);
 
-   return device->ws->ops->buffer_map(pvr_bo->bo);
+   return device->ws->ops->buffer_map(pvr_bo->bo, NULL);
 }
 
 /**

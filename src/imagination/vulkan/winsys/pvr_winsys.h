@@ -369,7 +369,7 @@ struct pvr_winsys_ops {
 
    VkResult (*buffer_get_fd)(struct pvr_winsys_bo *bo, int *const fd_out);
 
-   VkResult (*buffer_map)(struct pvr_winsys_bo *bo);
+   VkResult (*buffer_map)(struct pvr_winsys_bo *bo, void *addr);
    void (*buffer_unmap)(struct pvr_winsys_bo *bo);
 
    VkResult (*heap_alloc)(struct pvr_winsys_heap *heap,
