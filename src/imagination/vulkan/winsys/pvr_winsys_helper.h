@@ -108,8 +108,29 @@ static inline VkResult pvr_mmap(void *addr,
    return VK_SUCCESS;
 }
 
-static inline VkResult pvr_munmap(void *const addr, const size_t len)
+static inline VkResult
+pvr_munmap(void *const addr, const size_t len, bool reserve)
 {
+   if (reserve) {
+      void *ret = mmap(addr,
+                       len,
+                       PROT_NONE,
+                       MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED,
+                       -1,
+                       0);
+
+      if (ret == MAP_FAILED) {
+         const int err = errno;
+         return vk_errorf(NULL,
+                          VK_ERROR_UNKNOWN,
+                          "mmap(reserve) failed (errno %d: %s)",
+                          err,
+                          strerror(err));
+      }
+
+      return VK_SUCCESS;
+   }
+
    const int ret = munmap(addr, len);
    if (ret) {
       const int err = errno;

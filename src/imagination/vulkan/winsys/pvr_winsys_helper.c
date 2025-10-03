@@ -342,17 +342,17 @@ pvr_winsys_helper_fill_static_memory(struct pvr_winsys *const ws,
    pvr_setup_static_pixel_event_program(pds_vma->bo->map,
                                         pds_vma->heap->static_data_offsets.eot);
 
-   ws->ops->buffer_unmap(usc_vma->bo);
-   ws->ops->buffer_unmap(pds_vma->bo);
-   ws->ops->buffer_unmap(general_vma->bo);
+   ws->ops->buffer_unmap(usc_vma->bo, false);
+   ws->ops->buffer_unmap(pds_vma->bo, false);
+   ws->ops->buffer_unmap(general_vma->bo, false);
 
    return VK_SUCCESS;
 
 err_pvr_srv_winsys_buffer_unmap_pds:
-   ws->ops->buffer_unmap(pds_vma->bo);
+   ws->ops->buffer_unmap(pds_vma->bo, false);
 
 err_pvr_srv_winsys_buffer_unmap_general:
-   ws->ops->buffer_unmap(general_vma->bo);
+   ws->ops->buffer_unmap(general_vma->bo, false);
 
 err_out:
    return result;

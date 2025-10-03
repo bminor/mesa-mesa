@@ -390,7 +390,7 @@ err_heap_free:
 
 err_buffer_unmap:
    if (flags & PVR_BO_ALLOC_FLAG_CPU_MAPPED)
-      device->ws->ops->buffer_unmap(pvr_bo->bo);
+      device->ws->ops->buffer_unmap(pvr_bo->bo, false);
 
 err_buffer_destroy:
    device->ws->ops->buffer_destroy(pvr_bo->bo);
@@ -455,7 +455,7 @@ void pvr_bo_cpu_unmap(struct pvr_device *device, struct pvr_bo *pvr_bo)
    }
 #endif /* defined(HAVE_VALGRIND) */
 
-   device->ws->ops->buffer_unmap(bo);
+   device->ws->ops->buffer_unmap(bo, false);
 }
 
 /**
@@ -484,7 +484,7 @@ void pvr_bo_free(struct pvr_device *device, struct pvr_bo *pvr_bo)
    device->ws->ops->heap_free(pvr_bo->vma);
 
    if (pvr_bo->bo->map)
-      device->ws->ops->buffer_unmap(pvr_bo->bo);
+      device->ws->ops->buffer_unmap(pvr_bo->bo, false);
 
    device->ws->ops->buffer_destroy(pvr_bo->bo);
 

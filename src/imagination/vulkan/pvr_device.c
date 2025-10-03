@@ -461,7 +461,7 @@ static void pvr_physical_device_get_supported_features(
       /* VK_EXT_map_memory_placed */
       .memoryMapPlaced = true,
       .memoryMapRangePlaced = false,
-      .memoryUnmapReserve = false,
+      .memoryUnmapReserve = true,
 
       /* Vulkan 1.3 / VK_EXT_private_data */
       .privateData = true,
@@ -2761,7 +2761,7 @@ void pvr_FreeMemory(VkDevice _device,
     *   unmapped.
     */
    if (mem->bo->map)
-      device->ws->ops->buffer_unmap(mem->bo);
+      device->ws->ops->buffer_unmap(mem->bo, false);
 
    device->ws->ops->buffer_destroy(mem->bo);
 
@@ -2835,8 +2835,11 @@ VkResult pvr_UnmapMemory2(VkDevice _device,
    VK_FROM_HANDLE(pvr_device, device, _device);
    VK_FROM_HANDLE(pvr_device_memory, mem, pMemoryUnmapInfo->memory);
 
-   if (mem && mem->bo->map)
-      device->ws->ops->buffer_unmap(mem->bo);
+   if (mem && mem->bo->map) {
+      bool reserve =
+         !!(pMemoryUnmapInfo->flags & VK_MEMORY_UNMAP_RESERVE_BIT_EXT);
+      return device->ws->ops->buffer_unmap(mem->bo, reserve);
+   }
 
    return VK_SUCCESS;
 }
