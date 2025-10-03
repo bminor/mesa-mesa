@@ -7,6 +7,8 @@
 
 #include "aco_ir.h"
 
+#include "ac_shader_util.h"
+
 namespace aco {
 
 RegisterDemand
@@ -575,7 +577,8 @@ max_suitable_waves(Program* program, uint16_t waves)
    unsigned num_workgroups = waves * num_simd / waves_per_workgroup;
 
    /* Adjust #workgroups for LDS */
-   unsigned lds_per_workgroup = align(program->config->lds_size, program->dev.lds_alloc_granule);
+   unsigned lds_increment = ac_shader_get_lds_alloc_granularity(program->gfx_level);
+   unsigned lds_per_workgroup = align(program->config->lds_size, lds_increment);
 
    if (program->stage == fragment_fs) {
       /* PS inputs are moved from PC (parameter cache) to LDS before PS waves are launched.
@@ -584,7 +587,7 @@ max_suitable_waves(Program* program, uint16_t waves)
        */
       unsigned lds_bytes_per_interp = 3 * 16;
       unsigned lds_param_bytes = lds_bytes_per_interp * program->info.ps.num_inputs;
-      lds_per_workgroup += align(lds_param_bytes, program->dev.lds_alloc_granule);
+      lds_per_workgroup += align(lds_param_bytes, lds_increment);
    }
    unsigned lds_limit = program->wgp_mode ? program->dev.lds_limit * 2 : program->dev.lds_limit;
    if (lds_per_workgroup)

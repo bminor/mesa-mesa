@@ -2229,8 +2229,6 @@ static constexpr Stage geometry_gs(AC_HW_LEGACY_GEOMETRY_SHADER, SWStage::GS);
 static constexpr Stage raytracing_cs(AC_HW_COMPUTE_SHADER, SWStage::RT);
 
 struct DeviceInfo {
-   uint16_t lds_encoding_granule;
-   uint16_t lds_alloc_granule;
    uint32_t lds_limit; /* in bytes */
    bool has_16bank_lds;
    uint16_t physical_sgprs;

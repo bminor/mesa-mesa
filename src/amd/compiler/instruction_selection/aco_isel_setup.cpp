@@ -230,16 +230,6 @@ setup_tcs_info(isel_context* ctx)
 }
 
 void
-setup_lds_size(isel_context* ctx, nir_shader* nir)
-{
-   ctx->program->config->lds_size =
-      ALIGN(ctx->program->info.lds_size, ctx->program->dev.lds_alloc_granule);
-
-   /* Make sure we fit the available LDS space. */
-   assert(ctx->program->config->lds_size <= ctx->program->dev.lds_limit);
-}
-
-void
 setup_nir(isel_context* ctx, nir_shader* nir)
 {
    nir_convert_to_lcssa(nir, true, false);
@@ -771,16 +761,16 @@ setup_isel_context(Program* program, unsigned shader_count, struct nir_shader* c
    calc_min_waves(program);
 
    unsigned scratch_size = 0;
-   for (unsigned i = 0; i < shader_count; i++) {
-      nir_shader* nir = shaders[i];
-      setup_nir(&ctx, nir);
-      setup_lds_size(&ctx, nir);
-   }
+   for (unsigned i = 0; i < shader_count; i++)
+      setup_nir(&ctx, shaders[i]);
 
    for (unsigned i = 0; i < shader_count; i++)
       scratch_size = std::max(scratch_size, shaders[i]->scratch_size);
 
    ctx.program->config->scratch_bytes_per_wave = align(scratch_size, 4) * ctx.program->wave_size;
+   ctx.program->config->lds_size = align(
+      ctx.program->info.lds_size, ac_shader_get_lds_alloc_granularity(ctx.program->gfx_level));
+   assert(ctx.program->config->lds_size <= ctx.program->dev.lds_limit);
 
    unsigned nir_num_blocks = 0;
    for (unsigned i = 0; i < shader_count; i++)
