@@ -245,6 +245,7 @@ static void pvr_physical_device_get_supported_extensions(
       .EXT_separate_stencil_usage = true,
       .EXT_scalar_block_layout = true,
       .EXT_shader_demote_to_helper_invocation = true,
+      .EXT_shader_replicated_composites = true,
       .EXT_texel_buffer_alignment = false,
       .EXT_tooling_info = true,
       .EXT_vertex_attribute_divisor = true,
@@ -471,6 +472,9 @@ static void pvr_physical_device_get_supported_features(
 
       /* VK_EXT_shader_demote_to_helper_invocation */
       .shaderDemoteToHelperInvocation = true,
+
+      /* VK_EXT_shader_replicated_composites */
+      .shaderReplicatedComposites = true,
 
       /* VK_KHR_shader_terminate_invocation */
       .shaderTerminateInvocation = true,
