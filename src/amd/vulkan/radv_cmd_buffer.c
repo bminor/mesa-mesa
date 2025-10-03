@@ -10,6 +10,7 @@
 
 #include "radv_cmd_buffer.h"
 #include "meta/radv_meta.h"
+#include "ac_shader_util.h"
 #include "radv_cp_dma.h"
 #include "radv_cs.h"
 #include "radv_debug.h"
@@ -3341,8 +3342,8 @@ radv_emit_hw_gs(struct radv_cmd_buffer *cmd_buffer, const struct radv_shader *gs
 
          radeon_set_sh_reg_seq(gs->info.regs.pgm_rsrc1, 2);
          radeon_emit(gs->config.rsrc1);
-         radeon_emit(gs->config.rsrc2 |
-                     S_00B22C_LDS_SIZE(DIV_ROUND_UP(gs_state->lds_size, pdev->info.lds_encode_granularity)));
+         radeon_emit(gs->config.rsrc2 | S_00B22C_LDS_SIZE(ac_shader_encode_lds_size(
+                                           gs_state->lds_size, pdev->info.gfx_level, MESA_SHADER_GEOMETRY)));
       }
 
       radeon_opt_set_context_reg(R_028A44_VGT_GS_ONCHIP_CNTL, RADV_TRACKED_VGT_GS_ONCHIP_CNTL,
@@ -11189,8 +11190,8 @@ radv_emit_tcs_tes_state(struct radv_cmd_buffer *cmd_buffer)
    if (!tcs)
       return;
 
-   assert(cmd_buffer->state.tess_lds_size % pdev->info.lds_alloc_granularity == 0);
-   unsigned lds_alloc = DIV_ROUND_UP(cmd_buffer->state.tess_lds_size, pdev->info.lds_encode_granularity);
+   unsigned lds_alloc =
+      ac_shader_encode_lds_size(cmd_buffer->state.tess_lds_size, pdev->info.gfx_level, MESA_SHADER_VERTEX);
 
    if (pdev->info.gfx_level >= GFX9) {
       if (tcs->info.merged_shader_compiled_separately) {

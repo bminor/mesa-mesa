@@ -7,6 +7,7 @@
 #include "ac_gpu_info.h"
 #include "ac_nir.h"
 #include "ac_nir_helpers.h"
+#include "ac_shader_util.h"
 #include "nir_builder.h"
 #include "nir_tcs_info.h"
 #include "util/u_math.h"
@@ -1676,5 +1677,5 @@ ac_nir_compute_tess_wg_info(const struct radeon_info *info, const ac_nir_tess_io
    assert(lds_size <= (info->gfx_level >= GFX9 ? 65536 : 32768));
 
    *num_patches_per_wg = num_patches;
-   *hw_lds_size = ALIGN(lds_size, info->lds_alloc_granularity);
+   *hw_lds_size = ALIGN(lds_size, ac_shader_get_lds_alloc_granularity(info->gfx_level));
 }

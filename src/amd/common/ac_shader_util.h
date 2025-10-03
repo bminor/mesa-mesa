@@ -11,6 +11,7 @@
 #include "amd_family.h"
 #include "compiler/shader_enums.h"
 #include "util/format/u_format.h"
+#include "util/u_math.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -339,6 +340,22 @@ ac_ngg_compute_subgroup_info(enum amd_gfx_level gfx_level, mesa_shader_stage es_
                              unsigned max_workgroup_size, unsigned wave_size, unsigned esgs_vertex_stride,
                              unsigned ngg_lds_vertex_size, unsigned ngg_lds_scratch_size, bool tess_turns_off_ngg,
                              unsigned max_esgs_lds_padding, ac_ngg_subgroup_info *out);
+
+static unsigned inline
+ac_shader_get_lds_alloc_granularity(enum amd_gfx_level gfx_level)
+{
+   return gfx_level >= GFX10_3 ? 1024 : gfx_level >= GFX7 ? 512 : 256;
+}
+
+static unsigned inline
+ac_shader_encode_lds_size(unsigned lds_size, enum amd_gfx_level gfx_level, mesa_shader_stage stage)
+{
+   unsigned lds_increment = ac_shader_get_lds_alloc_granularity(gfx_level);
+   lds_size = align(lds_size, lds_increment);
+
+   unsigned lds_encode_granularity = gfx_level >= GFX11 && stage == MESA_SHADER_FRAGMENT ? 1024 : gfx_level >= GFX7 ? 512 : 256;
+   return lds_size / lds_encode_granularity;
+}
 
 #ifdef __cplusplus
 }

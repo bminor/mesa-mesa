@@ -6,9 +6,9 @@
 
 #include "ac_rtld.h"
 #include "nir/tgsi_to_nir.h"
+#include "ac_shader_util.h"
 #include "si_build_pm4.h"
 #include "si_shader_internal.h"
-#include "util/macros.h"
 #include "util/u_async_debug.h"
 #include "util/u_memory.h"
 #include "util/u_upload_mgr.h"
@@ -134,7 +134,7 @@ static void si_create_compute_state_async(void *job, void *gdata, int thread_ind
                              S_00B84C_TIDIG_COMP_CNT(sel->info.uses_thread_id[2]
                                                         ? 2
                                                         : sel->info.uses_thread_id[1] ? 1 : 0) |
-                             S_00B84C_LDS_SIZE(DIV_ROUND_UP(shader->config.lds_size, sscreen->info.lds_encode_granularity));
+                             S_00B84C_LDS_SIZE(ac_shader_encode_lds_size(shader->config.lds_size, sscreen->info.gfx_level, MESA_SHADER_COMPUTE));
 
       /* COMPUTE_PGM_RSRC3 is only present on GFX10+ and GFX940+. */
       shader->config.rsrc3 = S_00B8A0_SHARED_VGPR_CNT(shader->config.num_shared_vgprs / 8);

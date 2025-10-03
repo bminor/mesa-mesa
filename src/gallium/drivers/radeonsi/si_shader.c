@@ -6,6 +6,7 @@
 
 #include "ac_nir.h"
 #include "ac_rtld.h"
+#include "ac_shader_util.h"
 #include "nir_builder.h"
 #include "nir_serialize.h"
 #include "nir_tcs_info.h"
@@ -158,12 +159,6 @@ unsigned si_get_max_workgroup_size(const struct si_shader *shader)
                                   (uint32_t)local_size[2];
    assert(max_work_group_size);
    return max_work_group_size;
-}
-
-static unsigned get_lds_granularity(struct si_screen *screen, mesa_shader_stage stage)
-{
-   return screen->info.gfx_level >= GFX11 && stage == MESA_SHADER_FRAGMENT ? 1024 :
-          screen->info.gfx_level >= GFX7 ? 512 : 256;
 }
 
 static bool si_shader_binary_open(struct si_screen *screen, struct si_shader *shader,
@@ -518,7 +513,7 @@ int si_shader_binary_upload_at(struct si_screen *sscreen, struct si_shader *shad
    }
 
    unsigned lds_size = si_calculate_needed_lds_size(sscreen->info.gfx_level, shader);
-   shader->config.lds_size = ALIGN(lds_size, sscreen->info.lds_alloc_granularity);
+   shader->config.lds_size = ALIGN(lds_size, ac_shader_get_lds_alloc_granularity(sscreen->info.gfx_level));
 
    return r;
 }
@@ -605,7 +600,7 @@ static void si_calculate_max_simd_waves(struct si_shader *shader)
 {
    struct si_screen *sscreen = shader->selector->screen;
    struct ac_shader_config *conf = &shader->config;
-   unsigned lds_increment = get_lds_granularity(sscreen, shader->selector->stage);
+   unsigned lds_increment = ac_shader_get_lds_alloc_granularity(sscreen->info.gfx_level);
    unsigned lds_per_wave = 0;
    unsigned max_simd_waves;
 
@@ -2404,7 +2399,7 @@ void si_multiwave_lds_size_workaround(struct si_screen *sscreen, unsigned *lds_s
     *   It applies to workgroup sizes of more than one wavefront.
     */
    if (sscreen->info.family == CHIP_BONAIRE || sscreen->info.family == CHIP_KABINI)
-      *lds_size = MAX2(*lds_size, 8 * sscreen->info.lds_alloc_granularity);
+      *lds_size = MAX2(*lds_size, 8 * ac_shader_get_lds_alloc_granularity(sscreen->info.gfx_level));
 }
 
 static void si_fix_resource_usage(struct si_screen *sscreen, struct si_shader *shader)

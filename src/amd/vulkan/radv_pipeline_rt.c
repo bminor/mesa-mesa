@@ -8,6 +8,7 @@
 #include "nir/nir_builder.h"
 #include "nir/nir_serialize.h"
 
+#include "ac_shader_util.h"
 #include "vk_shader_module.h"
 
 #include "nir/radv_nir.h"
@@ -849,8 +850,7 @@ postprocess_rt_config(struct ac_shader_config *config, const struct radeon_info 
    if (info->gfx_level < GFX10)
       config->rsrc1 = (config->rsrc1 & C_00B848_SGPRS) | S_00B848_SGPRS((config->num_sgprs - 1) / 8);
 
-   assert(config->lds_size % info->lds_alloc_granularity == 0);
-   unsigned lds_alloc = DIV_ROUND_UP(config->lds_size, info->lds_encode_granularity);
+   unsigned lds_alloc = ac_shader_encode_lds_size(config->lds_size, info->gfx_level, MESA_SHADER_COMPUTE);
    config->rsrc2 = (config->rsrc2 & C_00B84C_LDS_SIZE) | S_00B84C_LDS_SIZE(lds_alloc);
    config->rsrc3 = (config->rsrc3 & C_00B8A0_SHARED_VGPR_CNT) | S_00B8A0_SHARED_VGPR_CNT(config->num_shared_vgprs / 8);
 }

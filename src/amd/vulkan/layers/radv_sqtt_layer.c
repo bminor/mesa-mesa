@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include "ac_shader_util.h"
 #include "radv_cmd_buffer.h"
 #include "radv_cs.h"
 #include "radv_entrypoints.h"
@@ -1383,9 +1384,7 @@ radv_fill_code_object_record(struct radv_device *device, struct rgp_shader_data 
                              struct radv_shader *shader, uint64_t va)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   unsigned lds_increment = pdev->info.gfx_level >= GFX11 && shader->info.stage == MESA_SHADER_FRAGMENT
-                               ? 1024
-                               : pdev->info.lds_encode_granularity;
+   unsigned lds_increment = ac_shader_get_lds_alloc_granularity(pdev->info.gfx_level);
 
    memset(shader_data->rt_shader_name, 0, sizeof(shader_data->rt_shader_name));
    shader_data->hash[0] = (uint64_t)(uintptr_t)shader;

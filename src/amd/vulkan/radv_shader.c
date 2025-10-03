@@ -20,6 +20,7 @@
 #include "util/mesa-sha1.h"
 #include "util/streaming-load-memcpy.h"
 #include "util/u_atomic.h"
+#include "ac_shader_util.h"
 #include "radv_cs.h"
 #include "radv_debug.h"
 #include "radv_debug_nir.h"
@@ -2068,7 +2069,7 @@ radv_postprocess_binary_config(struct radv_device *device, struct radv_shader_bi
 
       /* Calculate LDS allocation requirements. */
       unsigned lds_size = radv_calculate_lds_size(&binary->info, pdev->info.gfx_level);
-      config->lds_size = ALIGN(lds_size, pdev->info.lds_alloc_granularity);
+      config->lds_size = ALIGN(lds_size, ac_shader_get_lds_alloc_granularity(pdev->info.gfx_level));
 
       ac_rtld_close(&rtld_binary);
 #endif
@@ -2162,8 +2163,7 @@ radv_postprocess_binary_config(struct radv_device *device, struct radv_shader_bi
    }
 
    bool wgp_mode = radv_should_use_wgp_mode(device, stage, info);
-   assert(config->lds_size % pdev->info.lds_alloc_granularity == 0);
-   unsigned lds_alloc = DIV_ROUND_UP(config->lds_size, pdev->info.lds_encode_granularity);
+   unsigned lds_alloc = ac_shader_encode_lds_size(config->lds_size, pdev->info.gfx_level, stage);
 
    switch (stage) {
    case MESA_SHADER_TESS_EVAL:
@@ -2458,7 +2458,7 @@ radv_shader_combine_cfg_vs_gs(const struct radv_device *device, const struct rad
          lds_size = gs->info.gs_ring_info.lds_size;
       }
 
-      rsrc2 |= S_00B22C_LDS_SIZE(DIV_ROUND_UP(lds_size, pdev->info.lds_encode_granularity));
+      rsrc2 |= S_00B22C_LDS_SIZE(ac_shader_encode_lds_size(lds_size, pdev->info.gfx_level, MESA_SHADER_VERTEX));
 
       *rsrc2_out = rsrc2;
    }
@@ -2745,7 +2745,7 @@ radv_get_max_waves(const struct radv_device *device, const struct ac_shader_conf
    unsigned waves_per_workgroup = DIV_ROUND_UP(info->workgroup_size, wave_size);
 
    if (stage == MESA_SHADER_FRAGMENT) {
-      lds_per_workgroup += align(info->ps.num_inputs * 48, gpu_info->lds_alloc_granularity);
+      lds_per_workgroup += align(info->ps.num_inputs * 48, ac_shader_get_lds_alloc_granularity(gfx_level));
    }
 
    if (conf->num_sgprs && gfx_level < GFX10) {

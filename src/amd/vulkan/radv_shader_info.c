@@ -7,6 +7,7 @@
 #include "nir/nir.h"
 #include "nir/nir_xfb_info.h"
 #include "nir/radv_nir.h"
+#include "ac_shader_util.h"
 #include "nir_tcs_info.h"
 #include "radv_device.h"
 #include "radv_physical_device.h"
@@ -663,7 +664,7 @@ radv_get_legacy_gs_info(const struct radv_device *device, struct radv_shader_inf
    ac_legacy_gs_compute_subgroup_info(gs_info->gs.input_prim, gs_info->gs.vertices_out, gs_info->gs.invocations,
                                       esgs_vertex_stride, &info);
 
-   const uint32_t lds_granularity = pdev->info.lds_alloc_granularity;
+   const uint32_t lds_granularity = ac_shader_get_lds_alloc_granularity(pdev->info.gfx_level);
    const uint32_t total_lds_bytes = align(info.esgs_lds_size * 4, lds_granularity);
 
    out->gs_inst_prims_in_subgroup = info.gs_inst_prims_in_subgroup;
