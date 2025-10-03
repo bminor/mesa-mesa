@@ -36,6 +36,7 @@ static const nir_shader_compiler_options nir_options = {
    .discard_is_demote = true,
    .fuse_ffma32 = true,
 
+   .has_f2i32_rtne = true,
    .has_fused_comp_and_csel = true,
 
    .instance_id_includes_base_index = true,
