@@ -874,12 +874,6 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
                                   : info->gfx_level >= GFX7 ? 64 * 1024
                                                             : 32 * 1024;
 
-   /* lds_encode_granularity is the block size used for encoding registers.
-    * lds_alloc_granularity is what the hardware will align the LDS size to.
-    */
-   info->lds_encode_granularity = info->gfx_level >= GFX7 ? 128 * 4 : 64 * 4;
-   info->lds_alloc_granularity = info->gfx_level >= GFX10_3 ? 256 * 4 : info->lds_encode_granularity;
-
    /* The mere presence of CLEAR_STATE in the IB causes random GPU hangs on GFX6. CLEAR_STATE
     * causes GPU hangs with the radeon kernel driver, so only enable GFX7 CLEAR_STATE on amdgpu.
     * GFX11+ supports CLEAR_STATE, but we have decided not to use it.
@@ -1788,8 +1782,7 @@ void ac_print_gpu_info(const struct radeon_info *info, FILE *f)
    fprintf(f, "    cp_sdma_ge_use_system_memory_scope = %u\n", info->cp_sdma_ge_use_system_memory_scope);
    fprintf(f, "    pc_lines = %u\n", info->pc_lines);
    fprintf(f, "    lds_size_per_workgroup = %u\n", info->lds_size_per_workgroup);
-   fprintf(f, "    lds_alloc_granularity = %i\n", info->lds_alloc_granularity);
-   fprintf(f, "    lds_encode_granularity = %i\n", info->lds_encode_granularity);
+   fprintf(f, "    lds_alloc_granularity = %i\n", ac_shader_get_lds_alloc_granularity(info->gfx_level));
    fprintf(f, "    max_memory_clock = %i MHz\n", info->memory_freq_mhz);
 
    fprintf(f, "CP info:\n");

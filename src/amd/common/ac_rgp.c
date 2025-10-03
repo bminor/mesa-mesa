@@ -12,6 +12,7 @@
 #include "util/u_process.h"
 #include "util/u_math.h"
 
+#include "ac_shader_util.h"
 #include "ac_spm.h"
 #include "ac_sqtt.h"
 #include "ac_gpu_info.h"
@@ -480,7 +481,7 @@ static void ac_sqtt_fill_asic_info(const struct radeon_info *rad_info,
    chunk->max_memory_clock = rad_info->memory_freq_mhz * 1000000;
    chunk->memory_ops_per_clock = ac_memory_ops_per_clock(rad_info->vram_type);
    chunk->memory_chip_type = ac_vram_type_to_sqtt_memory_type(rad_info->vram_type);
-   chunk->lds_granularity = rad_info->lds_encode_granularity;
+   chunk->lds_granularity = ac_shader_get_lds_alloc_granularity(rad_info->gfx_level);
 
    for (unsigned se = 0; se < AMD_MAX_SE; se++) {
       for (unsigned sa = 0; sa < AMD_MAX_SA_PER_SE; sa++) {
