@@ -77,3 +77,4 @@ shaderCullDistance on pvr
 VK_EXT_zero_initialize_device_memory on pvr
 VK_KHR_sampler_mirror_clamp_to_edge on pvr
 VK_KHR_shader_non_semantic_info on pvr
+VK_KHR_shader_relaxed_extended_instruction on pvr

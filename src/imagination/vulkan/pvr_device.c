@@ -214,6 +214,7 @@ static void pvr_physical_device_get_supported_extensions(
       .KHR_shader_expect_assume = false,
       .KHR_shader_float_controls = true,
       .KHR_shader_non_semantic_info = true,
+      .KHR_shader_relaxed_extended_instruction = true,
       .KHR_shader_subgroup_extended_types = true,
       .KHR_spirv_1_4 = true,
       .KHR_shader_terminate_invocation = true,
@@ -386,6 +387,9 @@ static void pvr_physical_device_get_supported_features(
 
       /* Vulkan 1.2 / VK_KHR_separate_depth_stencil_layouts */
       .separateDepthStencilLayouts = true,
+
+      /* VK_KHR_shader_relaxed_extended_instruction */
+      .shaderRelaxedExtendedInstruction = true,
 
       /* Vulkan 1.2 / VK_KHR_shader_subgroup_extended_types */
       .shaderSubgroupExtendedTypes = true,
