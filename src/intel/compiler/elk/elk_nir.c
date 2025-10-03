@@ -1035,6 +1035,7 @@ elk_preprocess_nir(const struct elk_compiler *compiler, nir_shader *nir,
       .lower_txs_lod = true, /* Wa_14012320009 */
       .lower_invalid_implicit_lod = true,
       .lower_txd_cb = lower_txd_cb,
+      .lower_txd_data = devinfo,
    };
 
    OPT(nir_lower_tex, &tex_options);
