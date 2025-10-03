@@ -1104,8 +1104,11 @@ fd_resource_get_handle(struct pipe_screen *pscreen, struct pipe_context *pctx,
 
       pctx = threaded_context_unwrap_sync(pctx);
 
-      struct fd_context *ctx = pctx ?
-            fd_context(pctx) : fd_screen_aux_context_get(pscreen);
+      /* Always use aux ctx, even if we are provided a valid pctx, since in
+       * the TC case this could be called from something other than the
+       * driver thread
+       */
+      struct fd_context *ctx = fd_screen_aux_context_get(pscreen);
 
       /* Since gl is horrible, we can end up getting asked to export a handle
        * for a rsc which was not originally allocated in a way that can be
@@ -1119,8 +1122,7 @@ fd_resource_get_handle(struct pipe_screen *pscreen, struct pipe_context *pctx,
 
       ret = fd_try_shadow_resource(ctx, rsc, 0, NULL, handle->modifier);
 
-      if (!pctx)
-         fd_screen_aux_context_put(pscreen);
+      fd_screen_aux_context_put(pscreen);
 
       if (!ret)
          return false;
