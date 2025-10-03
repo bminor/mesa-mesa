@@ -1513,8 +1513,11 @@ fd_resource_from_handle(struct pipe_screen *pscreen,
 
    rsc->internal_format = tmpl->format;
 
-   if (!screen->layout_resource_for_handle(rsc, handle))
+   if (tmpl->target == PIPE_BUFFER) {
+      fdl_layout_buffer(&rsc->layout, tmpl->width0);
+   } else if (!screen->layout_resource_for_handle(rsc, handle)) {
       goto fail;
+   }
 
    if (rsc->layout.pitch0 != handle->stride)
       goto fail;
