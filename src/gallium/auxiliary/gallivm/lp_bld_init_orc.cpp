@@ -555,8 +555,8 @@ init_gallivm_state(struct gallivm_state *gallivm, const char *name,
 
    gallivm->cache = cache;
 
-   gallivm->_ts_context = context->ref;
-   gallivm->context = LLVMContextCreate();
+   gallivm->_ts_context = context->tsref;
+   gallivm->context = context->ref;
 
    gallivm->module_name = LPJit::get_unique_name(name);
    gallivm->module = LLVMModuleCreateWithNameInContext(gallivm->module_name,
