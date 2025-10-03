@@ -3678,6 +3678,21 @@ void pvr_CmdBeginRenderPass2(VkCommandBuffer commandBuffer,
                           &cmd_buffer->state.current_sub_cmd->gfx);
 }
 
+static inline void pvr_cmd_buffer_state_from_render_pass_inheritance(
+   struct pvr_cmd_buffer_state *state,
+   const VkCommandBufferInheritanceInfo *inheritance_info)
+{
+   struct pvr_render_pass *pass =
+      pvr_render_pass_from_handle(inheritance_info->renderPass);
+
+   state->render_pass_info.pass = pass;
+   state->render_pass_info.framebuffer =
+      pvr_framebuffer_from_handle(inheritance_info->framebuffer);
+   state->render_pass_info.subpass_idx = inheritance_info->subpass;
+   state->render_pass_info.isp_userpass =
+      pass->subpasses[inheritance_info->subpass].isp_userpass;
+}
+
 VkResult pvr_BeginCommandBuffer(VkCommandBuffer commandBuffer,
                                 const VkCommandBufferBeginInfo *pBeginInfo)
 {
@@ -3707,24 +3722,17 @@ VkResult pvr_BeginCommandBuffer(VkCommandBuffer commandBuffer,
    if (cmd_buffer->vk.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) {
       if (cmd_buffer->usage_flags &
           VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
-         const VkCommandBufferInheritanceInfo *inheritance_info =
-            pBeginInfo->pInheritanceInfo;
-         struct pvr_render_pass *pass;
-
-         pass = pvr_render_pass_from_handle(inheritance_info->renderPass);
-         state->render_pass_info.pass = pass;
-         state->render_pass_info.framebuffer =
-            pvr_framebuffer_from_handle(inheritance_info->framebuffer);
-         state->render_pass_info.subpass_idx = inheritance_info->subpass;
-         state->render_pass_info.isp_userpass =
-            pass->subpasses[inheritance_info->subpass].isp_userpass;
+         pvr_cmd_buffer_state_from_render_pass_inheritance(
+            state,
+            pBeginInfo->pInheritanceInfo);
 
          result =
             pvr_cmd_buffer_start_sub_cmd(cmd_buffer, PVR_SUB_CMD_TYPE_GRAPHICS);
          if (result != VK_SUCCESS)
             return result;
 
-         state->vis_test_enabled = inheritance_info->occlusionQueryEnable;
+         state->vis_test_enabled =
+            pBeginInfo->pInheritanceInfo->occlusionQueryEnable;
       }
 
       state->dirty.isp_userpass = true;
