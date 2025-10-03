@@ -1112,16 +1112,19 @@ nvk_CreateImage(VkDevice _device,
       return result;
    }
 
-   for (uint8_t plane = 0; plane < image->plane_count; plane++) {
-      result = nvk_image_plane_alloc_va(dev, image, &image->planes[plane]);
-      if (result != VK_SUCCESS)
-         goto fail;
-   }
+   if (image->vk.create_flags & (VK_IMAGE_CREATE_SPARSE_BINDING_BIT |
+                                 VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT)) {
+      for (uint8_t plane = 0; plane < image->plane_count; plane++) {
+         result = nvk_image_plane_alloc_va(dev, image, &image->planes[plane]);
+         if (result != VK_SUCCESS)
+            goto fail;
+      }
 
-   if (image->stencil_copy_temp.nil.size_B > 0) {
-      result = nvk_image_plane_alloc_va(dev, image, &image->stencil_copy_temp);
-      if (result != VK_SUCCESS)
-         goto fail;
+      if (image->stencil_copy_temp.nil.size_B > 0) {
+         result = nvk_image_plane_alloc_va(dev, image, &image->stencil_copy_temp);
+         if (result != VK_SUCCESS)
+            goto fail;
+      }
    }
 
    if (image->linear_tiled_shadow.nil.size_B > 0) {
@@ -1476,14 +1479,16 @@ nvk_image_plane_bind(struct nvk_device *dev,
                                 &plane_size_B, &plane_align_B);
    *offset_B = align64(*offset_B, plane_align_B);
 
-   if (plane->va != NULL) {
-      VkResult result = nvkmd_va_bind_mem(plane->va, &image->vk.base, 0,
-                                          mem->mem, *offset_B,
-                                          plane->va->size_B);
+   if (plane->nil.pte_kind != 0) {
+      VkResult result = nvk_image_plane_alloc_va(dev, image, plane);
+      if (result != VK_SUCCESS)
+         return result;
+      result = nvkmd_va_bind_mem(plane->va, &image->vk.base, 0,
+                                 mem->mem, *offset_B,
+                                 plane->va->size_B);
       if (result != VK_SUCCESS)
          return result;
    } else {
-      assert(plane->nil.pte_kind == 0);
       plane->addr = mem->mem->va->addr + *offset_B;
    }
 
