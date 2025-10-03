@@ -5314,7 +5314,7 @@
         "description": "amd: require LLVM when amd-use-llvm is enabled",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "82047fa82f1bbbbd4f1a9b05c034f79a00d85e31",
         "notes": null
