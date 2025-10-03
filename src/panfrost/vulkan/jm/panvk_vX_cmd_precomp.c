@@ -21,6 +21,10 @@ panvk_per_arch(dispatch_precomp)(struct panvk_precomp_ctx *ctx,
                                  enum libpan_shaders_program idx, void *data,
                                  size_t data_size)
 {
+   enum panlib_barrier supported_barriers =
+      PANLIB_BARRIER_JM_BARRIER | PANLIB_BARRIER_JM_SUPPRESS_PREFETCH;
+   assert(!(barrier & ~supported_barriers) && "Unsupported barrier flags");
+
    struct panvk_cmd_buffer *cmdbuf = ctx->cmdbuf;
 
    /* Make sure we have a batch opened to queue our COMPUTE job to. */

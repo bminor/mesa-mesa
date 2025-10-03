@@ -651,7 +651,8 @@ cmd_clear_afbc_metadata(VkCommandBuffer _cmdbuf,
             &precomp_ctx,
             panlib_3d(slayout->afbc.header.surface_size_B / 16,
                       layers_or_slices, 1),
-            PAN_ARCH >= 10 ? PANLIB_BARRIER_NONE : PANLIB_BARRIER_JM_BARRIER,
+            PAN_ARCH >= 10 ? PANLIB_BARRIER_CSF_SYNC :
+                             PANLIB_BARRIER_JM_BARRIER,
             args);
       }
    }

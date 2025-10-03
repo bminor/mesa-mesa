@@ -635,7 +635,7 @@ panvk_copy_timestamp_query_results(struct panvk_cmd_buffer *cmd,
 
    struct panvk_precomp_ctx precomp_ctx = panvk_per_arch(precomp_cs)(cmd);
    panlib_copy_ts_query_result_struct(&precomp_ctx, panlib_1d(query_count),
-                                      PANLIB_BARRIER_NONE, push);
+                                      PANLIB_BARRIER_CSF_SYNC, push);
 }
 
 VKAPI_ATTR void VKAPI_CALL
