@@ -208,6 +208,7 @@ static void pvr_physical_device_get_supported_extensions(
       .KHR_present_id2 = PVR_USE_WSI_PLATFORM,
       .KHR_present_wait2 = PVR_USE_WSI_PLATFORM,
       .KHR_robustness2 = true,
+      .KHR_sampler_mirror_clamp_to_edge = true,
       .KHR_separate_depth_stencil_layouts = true,
       .KHR_shader_draw_parameters = true,
       .KHR_shader_expect_assume = false,
