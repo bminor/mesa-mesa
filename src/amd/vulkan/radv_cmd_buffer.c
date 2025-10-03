@@ -12897,6 +12897,8 @@ radv_dgc_execute_ib(struct radv_cmd_buffer *cmd_buffer, const VkGeneratedCommand
    const uint64_t main_trailer_va = ib_va + radv_get_indirect_main_trailer_offset(pGeneratedCommandsInfo);
    struct radv_cmd_stream *cs = cmd_buffer->cs;
 
+   radeon_check_space(device->ws, cs->b, 64);
+
    device->ws->cs_chain_dgc_ib(cs->b, main_ib_va, cmdbuf_size >> 2, main_trailer_va, cmd_buffer->state.predicating);
 
    if (task_shader) {
@@ -13012,6 +13014,8 @@ radv_CmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPr
    }
 
    if (!radv_cmd_buffer_uses_mec(cmd_buffer)) {
+      radeon_check_space(device->ws, cs->b, 2);
+
       radeon_begin(cs);
       radeon_emit(PKT3(PKT3_PFP_SYNC_ME, 0, cmd_buffer->state.predicating));
       radeon_emit(0);
