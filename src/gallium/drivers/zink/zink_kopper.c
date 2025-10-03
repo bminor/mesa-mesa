@@ -282,7 +282,10 @@ kopper_CreateSwapchain(struct zink_screen *screen, struct kopper_displaytarget *
       cswap->scci.surface = cdt->surface;
       cswap->scci.flags = zink_kopper_has_srgb(cdt) ? VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR : 0;
       cswap->scci.imageFormat = cdt->formats[0];
-      cswap->scci.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+      if (cdt->type == KOPPER_WAYLAND)
+          cswap->scci.imageColorSpace = VK_COLOR_SPACE_PASS_THROUGH_EXT;
+      else
+          cswap->scci.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
       // TODO: This is where you'd hook up stereo
       cswap->scci.imageArrayLayers = 1;
       cswap->scci.imageUsage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
