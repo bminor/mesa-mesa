@@ -768,8 +768,7 @@ setup_isel_context(Program* program, unsigned shader_count, struct nir_shader* c
       scratch_size = std::max(scratch_size, shaders[i]->scratch_size);
 
    ctx.program->config->scratch_bytes_per_wave = align(scratch_size, 4) * ctx.program->wave_size;
-   ctx.program->config->lds_size = align(
-      ctx.program->info.lds_size, ac_shader_get_lds_alloc_granularity(ctx.program->gfx_level));
+   ctx.program->config->lds_size = program->info.lds_size;
    assert(ctx.program->config->lds_size <= ctx.program->dev.lds_limit);
 
    unsigned nir_num_blocks = 0;

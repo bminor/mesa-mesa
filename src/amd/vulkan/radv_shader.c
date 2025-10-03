@@ -2068,8 +2068,7 @@ radv_postprocess_binary_config(struct radv_device *device, struct radv_shader_bi
       }
 
       /* Calculate LDS allocation requirements. */
-      unsigned lds_size = radv_calculate_lds_size(&binary->info, pdev->info.gfx_level);
-      config->lds_size = ALIGN(lds_size, ac_shader_get_lds_alloc_granularity(pdev->info.gfx_level));
+      config->lds_size = radv_calculate_lds_size(&binary->info, pdev->info.gfx_level);
 
       ac_rtld_close(&rtld_binary);
 #endif
@@ -2741,11 +2740,12 @@ radv_get_max_waves(const struct radv_device *device, const struct ac_shader_conf
    const uint8_t wave_size = info->wave_size;
    mesa_shader_stage stage = info->stage;
    unsigned max_simd_waves = gpu_info->max_waves_per_simd;
-   unsigned lds_per_workgroup = conf->lds_size;
+   unsigned lds_increment = ac_shader_get_lds_alloc_granularity(gfx_level);
+   unsigned lds_per_workgroup = align(conf->lds_size, lds_increment);
    unsigned waves_per_workgroup = DIV_ROUND_UP(info->workgroup_size, wave_size);
 
    if (stage == MESA_SHADER_FRAGMENT) {
-      lds_per_workgroup += align(info->ps.num_inputs * 48, ac_shader_get_lds_alloc_granularity(gfx_level));
+      lds_per_workgroup += align(info->ps.num_inputs * 48, lds_increment);
    }
 
    if (conf->num_sgprs && gfx_level < GFX10) {
@@ -3726,12 +3726,12 @@ radv_get_user_sgpr(const struct radv_shader *shader, int idx)
 void
 radv_get_tess_wg_info(const struct radv_physical_device *pdev, const ac_nir_tess_io_info *io_info,
                       unsigned tcs_vertices_out, unsigned tcs_num_input_vertices, unsigned tcs_num_lds_inputs,
-                      unsigned *num_patches_per_wg, unsigned *hw_lds_size)
+                      unsigned *num_patches_per_wg, unsigned *lds_size)
 {
    const uint32_t lds_input_vertex_size = get_tcs_input_vertex_stride(tcs_num_lds_inputs);
 
    ac_nir_compute_tess_wg_info(&pdev->info, io_info, tcs_vertices_out, pdev->ge_wave_size, false,
-                               tcs_num_input_vertices, lds_input_vertex_size, 0, num_patches_per_wg, hw_lds_size);
+                               tcs_num_input_vertices, lds_input_vertex_size, 0, num_patches_per_wg, lds_size);
 }
 
 VkResult

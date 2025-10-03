@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include "ac_shader_util.h"
 #include "amd_family.h"
 #include "si_build_pm4.h"
 #include "si_pipe.h"
@@ -789,7 +790,7 @@ si_sqtt_add_code_object(struct si_context *sctx,
       record->shader_data[i].hw_stage = hw_stage;
       record->shader_data[i].is_combined = false;
       record->shader_data[i].scratch_memory_size = shader->config.scratch_bytes_per_wave;
-      record->shader_data[i].lds_size = shader->config.lds_size;
+      record->shader_data[i].lds_size = ALIGN(shader->config.lds_size, ac_shader_get_lds_alloc_granularity(sctx->gfx_level));
       record->shader_data[i].wavefront_size = shader->wave_size;
 
       record->shader_stages_mask |= 1 << i;

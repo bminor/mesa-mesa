@@ -512,8 +512,7 @@ int si_shader_binary_upload_at(struct si_screen *sscreen, struct si_shader *shad
       r = upload_binary_raw(sscreen, shader, scratch_va, dma_upload, bo_offset);
    }
 
-   unsigned lds_size = si_calculate_needed_lds_size(sscreen->info.gfx_level, shader);
-   shader->config.lds_size = ALIGN(lds_size, ac_shader_get_lds_alloc_granularity(sscreen->info.gfx_level));
+   shader->config.lds_size = si_calculate_needed_lds_size(sscreen->info.gfx_level, shader);
 
    return r;
 }
@@ -619,12 +618,12 @@ static void si_calculate_max_simd_waves(struct si_shader *shader)
        * Other stages don't know the size at compile time or don't
        * allocate LDS per wave, but instead they do it per thread group.
        */
-      lds_per_wave = conf->lds_size +
+      lds_per_wave = align(conf->lds_size, lds_increment) +
                      align(shader->info.num_ps_inputs * 48, lds_increment);
       break;
    case MESA_SHADER_COMPUTE: {
          unsigned max_workgroup_size = si_get_max_workgroup_size(shader);
-         lds_per_wave = conf->lds_size / DIV_ROUND_UP(max_workgroup_size, shader->wave_size);
+         lds_per_wave = align(conf->lds_size, lds_increment) / DIV_ROUND_UP(max_workgroup_size, shader->wave_size);
       }
       break;
    default:;
@@ -714,7 +713,8 @@ void si_shader_dump_stats_for_shader_db(struct si_screen *screen, struct si_shad
                       "HSPatchOuts: %u ESOutputs: %u GSOutputs: %u VSOutputs: %u PSOutputs: %u "
                       "InlineUniforms: %u DivergentLoop: %u (%s, W%u)",
                       conf->num_sgprs, conf->num_vgprs, si_get_shader_binary_size(screen, shader),
-                      conf->lds_size, conf->scratch_bytes_per_wave, shader->info.max_simd_waves,
+                      ALIGN(conf->lds_size, ac_shader_get_lds_alloc_granularity(screen->info.gfx_level)),
+                      conf->scratch_bytes_per_wave, shader->info.max_simd_waves,
                       conf->spilled_sgprs, conf->spilled_vgprs, shader->info.private_mem_vgprs,
                       num_ls_outputs, num_hs_outputs,
                       shader->selector->info.tess_io_info.highest_remapped_vram_patch_output,

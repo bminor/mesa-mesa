@@ -1654,7 +1654,7 @@ ac_nir_compute_tess_wg_info(const struct radeon_info *info, const ac_nir_tess_io
                             unsigned tcs_vertices_out, unsigned wave_size, bool tess_uses_primid,
                             unsigned num_tcs_input_cp, unsigned lds_input_vertex_size,
                             unsigned num_remapped_tess_level_outputs, unsigned *num_patches_per_wg,
-                            unsigned *hw_lds_size)
+                            unsigned *lds_size)
 {
    unsigned lds_per_patch = num_tcs_input_cp * lds_input_vertex_size +
                             get_lds_output_patch_stride(io_info, tcs_vertices_out);
@@ -1663,7 +1663,7 @@ ac_nir_compute_tess_wg_info(const struct radeon_info *info, const ac_nir_tess_io
                                                       MAX2(io_info->highest_remapped_vram_patch_output,
                                                            num_remapped_tess_level_outputs),
                                                       lds_per_patch, wave_size, tess_uses_primid);
-   unsigned lds_size = lds_per_patch * num_patches + AC_TESS_LEVEL_VOTE_LDS_BYTES;
+   *lds_size = lds_per_patch * num_patches + AC_TESS_LEVEL_VOTE_LDS_BYTES;
 
    /* SPI_SHADER_PGM_RSRC2_HS.LDS_SIZE specifies the allocation size only for LDS. The HS offchip
     * ring buffer always uses a fixed allocation size per workgroup determined by
@@ -1674,8 +1674,7 @@ ac_nir_compute_tess_wg_info(const struct radeon_info *info, const ac_nir_tess_io
     * if they need to be re-read in invocation 0), while the HS ring buffer is only used for TCS
     * outputs consumed by TES.
     */
-   assert(lds_size <= (info->gfx_level >= GFX9 ? 65536 : 32768));
+   assert(*lds_size <= (info->gfx_level >= GFX9 ? 65536 : 32768));
 
    *num_patches_per_wg = num_patches;
-   *hw_lds_size = ALIGN(lds_size, ac_shader_get_lds_alloc_granularity(info->gfx_level));
 }
