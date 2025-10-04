@@ -1368,7 +1368,7 @@ impl<'a> ShaderFromNir<'a> {
                 let src = srcs(0).to_ssa();
                 if src_bits == 64 {
                     if dst_bits == 64 {
-                        src.into()
+                        src
                     } else {
                         b.prmt(src[0].into(), src[1].into(), prmt_lo).into()
                     }
@@ -3822,7 +3822,7 @@ impl<'a> ShaderFromNir<'a> {
                             dst_type: dst_type,
                             src_type: FloatType::F16,
                             mat_size: mat_size,
-                            srcs: [cmat_a.into(), cmat_b.into(), cmat_c.into()],
+                            srcs: [cmat_a, cmat_b, cmat_c],
                         });
                     }
                     NAK_CMAT_TYPE_M8N8K16_INT
@@ -3849,7 +3849,7 @@ impl<'a> ShaderFromNir<'a> {
                         b.push_op(OpImma {
                             dst: dst.clone().into(),
                             mat_size,
-                            srcs: [cmat_a.into(), cmat_b.into(), cmat_c.into()],
+                            srcs: [cmat_a, cmat_b, cmat_c],
                             src_types: [a_type, b_type],
                             saturate: flags.sat(),
                         });
@@ -3857,7 +3857,7 @@ impl<'a> ShaderFromNir<'a> {
                     val => unreachable!("Unknown cmat_type {val}"),
                 }
 
-                self.set_dst(&intrin.def, dst.into());
+                self.set_dst(&intrin.def, dst);
             }
             _ => panic!(
                 "Unsupported intrinsic instruction: {}",

@@ -642,7 +642,7 @@ fn fill_qmd<Q: QMD>(
     qmd.set_slm_size(info.slm_size);
 
     assert!(qmd_info.smem_size <= u32::from(dev.max_smem_per_wg_kB) * 1024);
-    qmd.set_smem_size(qmd_info.smem_size.into(), dev, info);
+    qmd.set_smem_size(qmd_info.smem_size, dev, info);
 
     for i in 0..qmd_info.num_cbufs {
         let cb = &qmd_info.cbufs[usize::try_from(i).unwrap()];

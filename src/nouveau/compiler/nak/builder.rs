@@ -728,7 +728,7 @@ pub trait SSABuilder: Builder {
                 op: RroOp::SinCos,
                 src,
             });
-            tmp.into()
+            tmp
         };
         self.mufu(MuFuOp::Sin, tmp.into())
     }
@@ -744,7 +744,7 @@ pub trait SSABuilder: Builder {
                 op: RroOp::SinCos,
                 src,
             });
-            tmp.into()
+            tmp
         };
         self.mufu(MuFuOp::Cos, tmp.into())
     }
@@ -861,7 +861,7 @@ pub trait SSABuilder: Builder {
             self.alloc_ssa(RegFile::GPR)
         };
         self.copy_to(dst.into(), src);
-        dst.into()
+        dst
     }
 
     fn bmov_to_bar(&mut self, src: Src) -> SSAValue {

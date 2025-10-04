@@ -846,12 +846,9 @@ fn instr_assign_regs_file(
         }
 
         let align = vec_dst.comps.next_power_of_two();
-        if let Some(reg) = ra.try_find_unused_reg_range(
-            next_dst_reg,
-            vec_dst.comps.try_into().unwrap(),
-            align,
-            0,
-        ) {
+        if let Some(reg) =
+            ra.try_find_unused_reg_range(next_dst_reg, vec_dst.comps, align, 0)
+        {
             vec_dst.reg = reg;
             next_dst_reg = reg + u32::from(vec_dst.comps);
         } else {

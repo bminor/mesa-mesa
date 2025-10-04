@@ -404,7 +404,7 @@ pub fn test_foldable_op_with(
         for ssa in &vec[..] {
             let u = match ssa.file() {
                 RegFile::Pred => b.sel((*ssa).into(), 1.into(), 0.into()),
-                RegFile::GPR => (*ssa).into(),
+                RegFile::GPR => *ssa,
                 RegFile::Carry => {
                     let gpr = b.alloc_ssa(RegFile::GPR);
                     b.push_op(OpIAdd2X {
@@ -413,7 +413,7 @@ pub fn test_foldable_op_with(
                         srcs: [0.into(), 0.into()],
                         carry_in: (*ssa).into(),
                     });
-                    gpr.into()
+                    gpr
                 }
                 file => panic!("Can't auto-test {file:?} data"),
             };
@@ -1666,7 +1666,7 @@ fn test_op_ldsm() {
     b.push_op(OpSt {
         addr: offset.into(),
         data: input.into(),
-        offset: 0.into(),
+        offset: 0,
         access: MemAccess {
             mem_type: MemType::B128,
             space: MemSpace::Shared,
@@ -1685,9 +1685,9 @@ fn test_op_ldsm() {
         mat_size: LdsmSize::M8N8,
         mat_count: 4,
         addr: addr.into(),
-        offset: 0.into(),
+        offset: 0,
     });
-    b.st_test_data(16, MemType::B128, res.into());
+    b.st_test_data(16, MemType::B128, res);
 
     type Data = [u16; 4 * 2 * 2];
     b.set_shared_size((size_of::<Data>() * 32 / 2) as u16);
