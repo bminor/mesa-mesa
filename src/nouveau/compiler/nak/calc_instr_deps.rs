@@ -1174,7 +1174,7 @@ mod tests {
         assert_eq!(c_sim.push(reg_gpr(6..7)), None);
         // D: flushes the tex pushed by A
         let mut d_sim = b_sim;
-        d_sim.merge(&mut c_sim);
+        d_sim.merge(&c_sim);
         assert_eq!(c_sim.flush(reg_gpr(0..4)), Some(3));
         // the "shortest push path" would pass by B but in fact
         // by passing in B our texture is flushed off the queue.
