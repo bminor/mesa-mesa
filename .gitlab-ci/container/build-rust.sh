@@ -15,7 +15,8 @@ section_start rust "Building Rust toolchain"
 # This version number should match what we require in meson.build so we catch
 # build issues from patches relying on new features in newer Rust versions.
 # Keep this is sync with the `rustc.version()` check in meson.build, and with
-# the `rustup default` line in .gitlab-ci/meson/build.sh
+# the `rustup default` line in .gitlab-ci/meson/build.sh and the `msrv` in
+# clippy.toml
 MINIMUM_SUPPORTED_RUST_VERSION=1.82.0
 
 # This version number can be bumped freely, to benefit from the latest
