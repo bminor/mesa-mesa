@@ -37,7 +37,11 @@
 #include <unordered_set>
 
 #ifdef HAVE_PERFETTO
+#ifndef ANDROID_LIBPERFETTO
+#include <perfetto.h>
+#else
 #include <perfetto/tracing.h>
+#endif
 
 #define GFXSTREAM_TRACE_DEFAULT_CATEGORY "gfxstream.default"
 

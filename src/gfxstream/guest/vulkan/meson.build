@@ -18,6 +18,14 @@ if with_platform_wayland
    gfxstream_vk_wsi_args += '-DGFXSTREAM_VK_WAYLAND'
 endif
 
+gfxstream_deps = [dep_libdrm, idep_vulkan_wsi_headers,
+                  idep_vulkan_lite_runtime, idep_vulkan_util_headers,
+                  idep_vulkan_wsi, dep_valgrind]
+
+if with_perfetto
+  gfxstream_deps += dep_perfetto
+endif
+
 lib_vulkan_gfxstream = shared_library(
    'vulkan_gfxstream',
    files_lib_vulkan_gfxstream + files_lib_vulkan_enc + gfxstream_vk_entrypoints +
@@ -32,9 +40,7 @@ lib_vulkan_gfxstream = shared_library(
                libconnection_manager, libaemu],
    link_args: [vulkan_icd_link_args, ld_args_bsymbolic, ld_args_gc_sections],
    link_depends: vulkan_icd_link_depends,
-   dependencies: [dep_libdrm, idep_vulkan_wsi_headers,
-                  idep_vulkan_lite_runtime, idep_vulkan_util_headers,
-                  idep_vulkan_wsi, dep_valgrind],
+   dependencies: gfxstream_deps,
    install: true,
 )
 
