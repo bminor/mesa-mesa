@@ -11,3 +11,4 @@ VK_EXT_shader_uniform_buffer_unsized_array on NVK, RADV
 VK_EXT_device_memory_report on panvk
 VK_VALVE_video_encode_rgb_conversion on radv
 VK_EXT_custom_resolve on RADV
+GL_EXT_shader_pixel_local_storage on Panfrost v6+

@@ -4459,6 +4459,17 @@ emit_write_timestamp(struct panfrost_batch *batch,
    JOBX(emit_write_timestamp)(batch, dst, offset);
 }
 
+static uint64_t
+get_conv_desc(enum pipe_format fmt, unsigned rt,
+              unsigned force_size, bool dithered)
+{
+#if PAN_ARCH >= 6
+   return GENX(pan_blend_get_internal_desc)(fmt, rt, force_size, dithered) >> 32;
+#else
+   return 0;
+#endif
+}
+
 void
 GENX(panfrost_cmdstream_screen_init)(struct panfrost_screen *screen)
 {
@@ -4479,6 +4490,7 @@ GENX(panfrost_cmdstream_screen_init)(struct panfrost_screen *screen)
    screen->vtbl.mtk_detile = panfrost_mtk_detile_compute;
    screen->vtbl.emit_write_timestamp = emit_write_timestamp;
    screen->vtbl.select_tile_size = GENX(pan_select_tile_size);
+   screen->vtbl.get_conv_desc = get_conv_desc;
 
    pan_blend_shader_cache_init(&dev->blend_shaders, panfrost_device_gpu_id(dev),
                                dev->kmod.props.gpu_variant,

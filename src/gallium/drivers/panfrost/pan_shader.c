@@ -145,6 +145,7 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
    struct pan_compile_inputs inputs = {
       .gpu_id = panfrost_device_gpu_id(dev),
       .gpu_variant = dev->kmod.props.gpu_variant,
+      .get_conv_desc = screen->vtbl.get_conv_desc,
    };
 
    /* Lower this early so the backends don't have to worry about it */
@@ -501,6 +502,42 @@ panfrost_create_shader_state(struct pipe_context *pctx,
 
    so->stream_output = cso->stream_output;
    so->nir = nir;
+
+   /* PLS lowering is not taken care of by glsl_to_nir(), so do it here. */
+   if (nir->info.stage == MESA_SHADER_FRAGMENT &&
+       nir->info.fs.accesses_pixel_local_storage) {
+      /* Try to optimize the case where inout PLS vars are never
+       * read/written to. Needs to be called before
+       * nir_lower_io_vars_to_temporaries() because the copy_derefs
+       * inserted there prevent us from detecting PLS usage.
+       */
+      NIR_PASS(_, nir, nir_downgrade_pls_vars);
+
+      /* Lower PLS vars to temporaries before we lower IOs. */
+      NIR_PASS(_, nir, nir_lower_io_vars_to_temporaries,
+               nir_shader_get_entrypoint(nir), nir_var_any_pixel_local);
+
+      /* We need to lower all the copy_deref's introduced by lower_io_to-
+       * _temporaries before calling nir_lower_io.
+       */
+      NIR_PASS(_, nir, nir_split_var_copies);
+      NIR_PASS(_, nir, nir_lower_var_copies);
+      NIR_PASS(_, nir, nir_lower_global_vars_to_local);
+
+      /* Lower all PLS IOs. */
+      NIR_PASS(_, nir, nir_lower_io, nir_var_any_pixel_local, glsl_type_size,
+               0);
+
+      /* Lower and remove dead derefs and variables to clean up the IR. */
+      NIR_PASS(_, nir, nir_lower_vars_to_ssa);
+      NIR_PASS(_, nir, nir_opt_dce);
+      NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
+
+      /* Re-run gather_info() to get the latest accesses_pixel_local_storage
+       * state.
+       */
+      nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
+   }
 
    /* gl_FragColor needs to be lowered before lowering I/O, do that now */
    if (nir->info.stage == MESA_SHADER_FRAGMENT &&

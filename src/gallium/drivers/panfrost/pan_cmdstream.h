@@ -232,6 +232,10 @@ panfrost_fs_required(struct panfrost_compiled_shader *fs,
    if (PAN_ARCH <= 5 && zsa->base.alpha_func != PIPE_FUNC_ALWAYS)
       return true;
 
+   /* if pixel local storage is enabled we need to execute */
+   if (state->pls_enabled)
+      return true;
+
    /* If colour is written we need to execute */
    for (unsigned i = 0; i < state->nr_cbufs; ++i) {
       if (state->cbufs[i].texture && blend->info[i].enabled)
