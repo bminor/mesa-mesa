@@ -974,6 +974,8 @@ fd_screen_create(int fd,
          !driQueryOptionb(config->options, "disable_throttling");
    screen->driconf.dual_color_blend_by_location =
          driQueryOptionb(config->options, "dual_color_blend_by_location");
+   if (driQueryOptionb(config->options, "disable_explicit_sync_heuristic"))
+      fd_device_disable_explicit_sync_heuristic(dev);
 
    struct sysinfo si;
    sysinfo(&si);
