@@ -114,7 +114,7 @@ pub fn derive_as_slice(
                             f_attr.is_none(),
                             "{attr_name} attribute is only allowed on {slice_type}"
                         );
-                        if !first.is_none() {
+                        if first.is_some() {
                             found_last = true;
                         }
                     }
