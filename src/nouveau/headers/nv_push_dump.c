@@ -81,121 +81,125 @@
 #include "util/macros.h"
 
 struct device_info {
-  const char *gen_name;
-  const char *alias_name;
-  uint16_t cls_eng3d;
-  uint16_t cls_compute;
-  uint16_t cls_copy;
-  uint16_t cls_m2mf;
-  uint16_t cls_gpfifo;
+   const char *gen_name;
+   const char *alias_name;
+   uint16_t cls_eng3d;
+   uint16_t cls_compute;
+   uint16_t cls_copy;
+   uint16_t cls_m2mf;
+   uint16_t cls_gpfifo;
 };
 
 struct device_info fake_devices[] = {
-  { "KEPLER_A", "KEPLER", KEPLER_A, KEPLER_COMPUTE_A, KEPLER_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_A, KEPLER_CHANNEL_GPFIFO_A },
-  { "KEPLER_B", NULL, KEPLER_B, KEPLER_COMPUTE_B, KEPLER_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, KEPLER_CHANNEL_GPFIFO_B },
-  { "KEPLER_C", NULL, KEPLER_C, KEPLER_COMPUTE_B, KEPLER_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, KEPLER_CHANNEL_GPFIFO_C },
-  { "MAXWELL_A", "MAXWELL", MAXWELL_A, MAXWELL_COMPUTE_A, MAXWELL_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, MAXWELL_CHANNEL_GPFIFO_A },
-  { "MAXWELL_B", NULL, MAXWELL_B, MAXWELL_COMPUTE_B, MAXWELL_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, MAXWELL_CHANNEL_GPFIFO_A },
-  { "PASCAL_A", "PASCAL", PASCAL_A, PASCAL_COMPUTE_A, PASCAL_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, PASCAL_CHANNEL_GPFIFO_A },
-  { "PASCAL_B", NULL, PASCAL_B, PASCAL_COMPUTE_B, PASCAL_DMA_COPY_B, KEPLER_INLINE_TO_MEMORY_B, PASCAL_CHANNEL_GPFIFO_A },
-  { "VOLTA_A", "VOLTA", VOLTA_A, VOLTA_COMPUTE_A, VOLTA_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, VOLTA_CHANNEL_GPFIFO_A },
-  { "TURING_A", "TURING", TURING_A, TURING_COMPUTE_A, TURING_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, TURING_CHANNEL_GPFIFO_A },
-  { "AMPERE_A", "AMPERE", AMPERE_A, AMPERE_COMPUTE_A, AMPERE_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, AMPERE_CHANNEL_GPFIFO_A },
-  { "AMPERE_B", NULL, AMPERE_B, AMPERE_COMPUTE_B, AMPERE_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, AMPERE_CHANNEL_GPFIFO_B },
-  { "ADA_A", "ADA", ADA_A, ADA_COMPUTE_A, AMPERE_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, AMPERE_CHANNEL_GPFIFO_B },
-  { "HOPPER_A", "HOPPER", HOPPER_A, HOPPER_COMPUTE_A, AMPERE_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, HOPPER_CHANNEL_GPFIFO_A },
-  { "BLACKWELL_A", NULL, BLACKWELL_A, BLACKWELL_COMPUTE_A, BLACKWELL_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, BLACKWELL_CHANNEL_GPFIFO_A },
-  { "BLACKWELL_B", NULL, BLACKWELL_B, BLACKWELL_COMPUTE_B, BLACKWELL_DMA_COPY_B, KEPLER_INLINE_TO_MEMORY_B, BLACKWELL_CHANNEL_GPFIFO_B },
+   {"KEPLER_A", "KEPLER", KEPLER_A, KEPLER_COMPUTE_A, KEPLER_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_A, KEPLER_CHANNEL_GPFIFO_A},
+   {"KEPLER_B", NULL, KEPLER_B, KEPLER_COMPUTE_B, KEPLER_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, KEPLER_CHANNEL_GPFIFO_B},
+   {"KEPLER_C", NULL, KEPLER_C, KEPLER_COMPUTE_B, KEPLER_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, KEPLER_CHANNEL_GPFIFO_C},
+   {"MAXWELL_A", "MAXWELL", MAXWELL_A, MAXWELL_COMPUTE_A, MAXWELL_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, MAXWELL_CHANNEL_GPFIFO_A},
+   {"MAXWELL_B", NULL, MAXWELL_B, MAXWELL_COMPUTE_B, MAXWELL_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, MAXWELL_CHANNEL_GPFIFO_A},
+   {"PASCAL_A", "PASCAL", PASCAL_A, PASCAL_COMPUTE_A, PASCAL_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, PASCAL_CHANNEL_GPFIFO_A},
+   {"PASCAL_B", NULL, PASCAL_B, PASCAL_COMPUTE_B, PASCAL_DMA_COPY_B, KEPLER_INLINE_TO_MEMORY_B, PASCAL_CHANNEL_GPFIFO_A},
+   {"VOLTA_A", "VOLTA", VOLTA_A, VOLTA_COMPUTE_A, VOLTA_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, VOLTA_CHANNEL_GPFIFO_A},
+   {"TURING_A", "TURING", TURING_A, TURING_COMPUTE_A, TURING_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, TURING_CHANNEL_GPFIFO_A},
+   {"AMPERE_A", "AMPERE", AMPERE_A, AMPERE_COMPUTE_A, AMPERE_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, AMPERE_CHANNEL_GPFIFO_A},
+   {"AMPERE_B", NULL, AMPERE_B, AMPERE_COMPUTE_B, AMPERE_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, AMPERE_CHANNEL_GPFIFO_B},
+   {"ADA_A", "ADA", ADA_A, ADA_COMPUTE_A, AMPERE_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, AMPERE_CHANNEL_GPFIFO_B},
+   {"HOPPER_A", "HOPPER", HOPPER_A, HOPPER_COMPUTE_A, AMPERE_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, HOPPER_CHANNEL_GPFIFO_A},
+   {"BLACKWELL_A", NULL, BLACKWELL_A, BLACKWELL_COMPUTE_A, BLACKWELL_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, BLACKWELL_CHANNEL_GPFIFO_A},
+   {"BLACKWELL_B", NULL, BLACKWELL_B, BLACKWELL_COMPUTE_B, BLACKWELL_DMA_COPY_B, KEPLER_INLINE_TO_MEMORY_B, BLACKWELL_CHANNEL_GPFIFO_B},
 };
 
-static struct nv_device_info get_fake_device_info(const char *arch_name) {
-  struct nv_device_info info;
+static struct nv_device_info
+get_fake_device_info(const char *arch_name)
+{
+   struct nv_device_info info;
 
-  memset(&info, 0, sizeof(info));
-  info.cls_eng2d = FERMI_TWOD_A;
+   memset(&info, 0, sizeof(info));
+   info.cls_eng2d = FERMI_TWOD_A;
 
-  for (int i = 0; i < ARRAY_SIZE(fake_devices); i++) {
-    const struct device_info *fake_device = &fake_devices[i];
+   for (int i = 0; i < ARRAY_SIZE(fake_devices); i++) {
+      const struct device_info *fake_device = &fake_devices[i];
 
-    if ((fake_device->alias_name && !strcmp(arch_name, fake_device->alias_name)) ||
-        !strcmp(arch_name, fake_device->gen_name)) {
-      info.cls_eng3d = fake_device->cls_eng3d;
-      info.cls_compute = fake_device->cls_compute;
-      info.cls_copy = fake_device->cls_copy;
-      info.cls_m2mf = fake_device->cls_m2mf;
-      info.cls_gpfifo = fake_device->cls_gpfifo;
+      if ((fake_device->alias_name && !strcmp(arch_name, fake_device->alias_name)) ||
+          !strcmp(arch_name, fake_device->gen_name)) {
+         info.cls_eng3d = fake_device->cls_eng3d;
+         info.cls_compute = fake_device->cls_compute;
+         info.cls_copy = fake_device->cls_copy;
+         info.cls_m2mf = fake_device->cls_m2mf;
+         info.cls_gpfifo = fake_device->cls_gpfifo;
 
-      return info;
-    }
-  }
+         return info;
+      }
+   }
 
-  fprintf(stderr, "Unknown architecture \"%s\", defaulting to Turing",
-          arch_name);
-  info.cls_eng3d = TURING_A;
-  info.cls_compute = TURING_COMPUTE_A;
-  info.cls_copy = TURING_DMA_COPY_A;
-  info.cls_gpfifo = TURING_CHANNEL_GPFIFO_A;
-  info.cls_m2mf = KEPLER_INLINE_TO_MEMORY_B;
+   fprintf(stderr, "Unknown architecture \"%s\", defaulting to Turing",
+           arch_name);
+   info.cls_eng3d = TURING_A;
+   info.cls_compute = TURING_COMPUTE_A;
+   info.cls_copy = TURING_DMA_COPY_A;
+   info.cls_gpfifo = TURING_CHANNEL_GPFIFO_A;
+   info.cls_m2mf = KEPLER_INLINE_TO_MEMORY_B;
 
-  return info;
+   return info;
 }
 
-int main(int argc, char **argv) {
-  const char *arch_name;
-  const char *file_name;
-  FILE *file;
-  long file_size;
-  uint32_t *data;
-  struct nv_device_info device_info;
-  struct nv_push pushbuf;
+int
+main(int argc, char **argv)
+{
+   const char *arch_name;
+   const char *file_name;
+   FILE *file;
+   long file_size;
+   uint32_t *data;
+   struct nv_device_info device_info;
+   struct nv_push pushbuf;
 
-  if (argc != 3) {
-    fprintf(stderr, "Usage: nv_push_dump file.bin "
-                    "<KEPLER|MAXWELL|VOLTA|TURING|AMPERE|ADA|HOPPER|BLACKWELL_A|BLACKWELL_B>\n");
-    return 1;
-  }
+   if (argc != 3) {
+      fprintf(stderr, "Usage: nv_push_dump file.bin "
+                      "<KEPLER|MAXWELL|VOLTA|TURING|AMPERE|ADA|HOPPER|BLACKWELL_A|BLACKWELL_B>\n");
+      return 1;
+   }
 
-  file_name = argv[1];
-  arch_name = argv[2];
+   file_name = argv[1];
+   arch_name = argv[2];
 
-  device_info = get_fake_device_info(arch_name);
+   device_info = get_fake_device_info(arch_name);
 
-  file = fopen(file_name, "r");
+   file = fopen(file_name, "r");
 
-  if (file == NULL) {
-    fprintf(stderr, "couldn't open file \"%s\"\n", file_name);
-    return 1;
-  }
+   if (file == NULL) {
+      fprintf(stderr, "couldn't open file \"%s\"\n", file_name);
+      return 1;
+   }
 
-  fseek(file, 0L, SEEK_END);
-  file_size = ftell(file);
-  fseek(file, 0L, SEEK_SET);
+   fseek(file, 0L, SEEK_END);
+   file_size = ftell(file);
+   fseek(file, 0L, SEEK_SET);
 
-  if (file_size % 4 != 0) {
-    fclose(file);
+   if (file_size % 4 != 0) {
+      fclose(file);
 
-    fprintf(stderr, "invalid file, data isn't aligned to 4 bytes\n");
-    return 1;
-  }
+      fprintf(stderr, "invalid file, data isn't aligned to 4 bytes\n");
+      return 1;
+   }
 
-  data = malloc(file_size);
+   data = malloc(file_size);
 
-  if (data == NULL) {
-    fclose(file);
+   if (data == NULL) {
+      fclose(file);
 
-    fprintf(stderr, "memory allocation failed\n");
-    return 1;
-  }
+      fprintf(stderr, "memory allocation failed\n");
+      return 1;
+   }
 
-  fread(data, file_size, 1, file);
-  fclose(file);
+   fread(data, file_size, 1, file);
+   fclose(file);
 
-  nv_push_init(&pushbuf, data, file_size / 4, SUBC_MASK_ALL);
-  pushbuf.end = pushbuf.limit;
+   nv_push_init(&pushbuf, data, file_size / 4, SUBC_MASK_ALL);
+   pushbuf.end = pushbuf.limit;
 
-  vk_push_print(stdout, &pushbuf, &device_info);
+   vk_push_print(stdout, &pushbuf, &device_info);
 
-  free(data);
+   free(data);
 
-  return 0;
+   return 0;
 }
