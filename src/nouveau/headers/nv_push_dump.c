@@ -16,8 +16,12 @@
 #include "cla140.h"
 
 #include "cla097.h"
+#include "cla197.h"
+#include "cla297.h"
 #include "clb097.h"
+#include "clb197.h"
 #include "clc097.h"
+#include "clc197.h"
 #include "clc397.h"
 #include "clc597.h"
 #include "clc697.h"
@@ -28,6 +32,8 @@
 #include "clce97.h"
 
 #include "cla06f.h"
+#include "cla16f.h"
+#include "cla26f.h"
 #include "clb06f.h"
 #include "clc06f.h"
 #include "clc36f.h"
@@ -50,6 +56,7 @@
 #include "cla0b5.h"
 #include "clb0b5.h"
 #include "clc0b5.h"
+#include "clc1b5.h"
 #include "clc3b5.h"
 #include "clc5b5.h"
 #include "clc6b5.h"
@@ -57,8 +64,11 @@
 #include "clcab5.h"
 
 #include "cla0c0.h"
+#include "cla1c0.h"
 #include "clb0c0.h"
+#include "clb1c0.h"
 #include "clc0c0.h"
+#include "clc1c0.h"
 #include "clc3c0.h"
 #include "clc5c0.h"
 #include "clc6c0.h"
@@ -82,8 +92,12 @@ struct device_info {
 
 struct device_info fake_devices[] = {
   { "KEPLER_A", "KEPLER", KEPLER_A, KEPLER_COMPUTE_A, KEPLER_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_A, KEPLER_CHANNEL_GPFIFO_A },
+  { "KEPLER_B", NULL, KEPLER_B, KEPLER_COMPUTE_B, KEPLER_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, KEPLER_CHANNEL_GPFIFO_B },
+  { "KEPLER_C", NULL, KEPLER_C, KEPLER_COMPUTE_B, KEPLER_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, KEPLER_CHANNEL_GPFIFO_C },
   { "MAXWELL_A", "MAXWELL", MAXWELL_A, MAXWELL_COMPUTE_A, MAXWELL_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, MAXWELL_CHANNEL_GPFIFO_A },
+  { "MAXWELL_B", NULL, MAXWELL_B, MAXWELL_COMPUTE_B, MAXWELL_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, MAXWELL_CHANNEL_GPFIFO_A },
   { "PASCAL_A", "PASCAL", PASCAL_A, PASCAL_COMPUTE_A, PASCAL_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, PASCAL_CHANNEL_GPFIFO_A },
+  { "PASCAL_B", NULL, PASCAL_B, PASCAL_COMPUTE_B, PASCAL_DMA_COPY_B, KEPLER_INLINE_TO_MEMORY_B, PASCAL_CHANNEL_GPFIFO_A },
   { "VOLTA_A", "VOLTA", VOLTA_A, VOLTA_COMPUTE_A, VOLTA_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, VOLTA_CHANNEL_GPFIFO_A },
   { "TURING_A", "TURING", TURING_A, TURING_COMPUTE_A, TURING_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, TURING_CHANNEL_GPFIFO_A },
   { "AMPERE_A", "AMPERE", AMPERE_A, AMPERE_COMPUTE_A, AMPERE_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, AMPERE_CHANNEL_GPFIFO_A },
