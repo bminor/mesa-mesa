@@ -2080,6 +2080,11 @@ translate_buffer_image_atomic_op(const nir_atomic_op op, aco_opcode* buf_op, aco
       *buf_op64 = aco_opcode::buffer_atomic_add_x2;
       *image_op = aco_opcode::image_atomic_add;
       break;
+   case nir_atomic_op_isub:
+      *buf_op = aco_opcode::buffer_atomic_sub;
+      *buf_op64 = aco_opcode::buffer_atomic_sub_x2;
+      *image_op = aco_opcode::image_atomic_sub;
+      break;
    case nir_atomic_op_umin:
       *buf_op = aco_opcode::buffer_atomic_umin;
       *buf_op64 = aco_opcode::buffer_atomic_umin_x2;
@@ -2515,6 +2520,10 @@ visit_global_atomic(isel_context* ctx, nir_intrinsic_instr* instr)
       case nir_atomic_op_iadd:
          op32 = global ? aco_opcode::global_atomic_add : aco_opcode::flat_atomic_add;
          op64 = global ? aco_opcode::global_atomic_add_x2 : aco_opcode::flat_atomic_add_x2;
+         break;
+      case nir_atomic_op_isub:
+         op32 = global ? aco_opcode::global_atomic_sub : aco_opcode::flat_atomic_sub;
+         op64 = global ? aco_opcode::global_atomic_sub_x2 : aco_opcode::flat_atomic_sub_x2;
          break;
       case nir_atomic_op_imin:
          op32 = global ? aco_opcode::global_atomic_smin : aco_opcode::flat_atomic_smin;
@@ -3014,6 +3023,12 @@ visit_shared_atomic(isel_context* ctx, nir_intrinsic_instr* instr)
       op64 = aco_opcode::ds_add_u64;
       op32_rtn = aco_opcode::ds_add_rtn_u32;
       op64_rtn = aco_opcode::ds_add_rtn_u64;
+      break;
+   case nir_atomic_op_isub:
+      op32 = aco_opcode::ds_sub_u32;
+      op64 = aco_opcode::ds_sub_u64;
+      op32_rtn = aco_opcode::ds_sub_rtn_u32;
+      op64_rtn = aco_opcode::ds_sub_rtn_u64;
       break;
    case nir_atomic_op_imin:
       op32 = aco_opcode::ds_min_i32;
