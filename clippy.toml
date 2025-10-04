@@ -1,4 +1,2 @@
-# Keep this in sync with the `rustc.version()` check in meson.build, the
-# MINIMUM_SUPPORTED_RUST_VERSION in .gitlab-ci/container/build-rust.sh, the
-# `rustup default` line in .gitlab-ci/meson/build.sh
+# Keep this in sync with the `rustc.version()` check in meson.build
 msrv = "1.82.0"

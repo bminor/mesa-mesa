@@ -43,10 +43,7 @@ fi
 
 # Android manages the rust toolchain differently, ignore that case
 if [ "$CI_JOB_STAGE" = "build-for-tests" ] && [[ "$CI_JOB_NAME" != *android* ]]; then
-  # Keep this in sync with the `rustc.version()` check in meson.build, and
-  # MINIMUM_SUPPORTED_RUST_VERSION in .gitlab-ci/container/build-rust.sh and the
-  # `msrv` in clippy.toml
-  rustup default 1.82.0
+  rustup default "$(python3 -c 'import tomllib; print(tomllib.load(open("'"$CI_PROJECT_DIR"'/clippy.toml", "rb"))["msrv"])')"
 fi
 
 # cross-xfail-$CROSS, if it exists, contains a list of tests that are expected
