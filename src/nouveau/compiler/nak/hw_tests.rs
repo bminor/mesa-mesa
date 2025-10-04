@@ -1727,6 +1727,7 @@ fn test_op_ldsm() {
     //
     // and each thread loads from the address from thread (thread_id >> 4)
     // plus the offset (thread_id & 0x3) * 2
+    #[expect(clippy::erasing_op)]
     for i in 0..32 {
         assert_eq!(i * 2 + 64 * 0 + 0, data[i][8].into());
         assert_eq!(i * 2 + 64 * 0 + 1, data[i][9].into());
