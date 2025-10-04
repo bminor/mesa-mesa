@@ -66,15 +66,12 @@ pub fn derive_as_slice(
         Data::Struct(s) => {
             let mut has_repr_c = false;
             for attr in attrs {
-                match attr.meta {
-                    Meta::List(ml) => {
-                        if ml.path.is_ident("repr")
-                            && format!("{}", ml.tokens) == "C"
-                        {
-                            has_repr_c = true;
-                        }
+                if let Meta::List(ml) = attr.meta {
+                    if ml.path.is_ident("repr")
+                        && format!("{}", ml.tokens) == "C"
+                    {
+                        has_repr_c = true;
                     }
-                    _ => (),
                 }
             }
             assert!(has_repr_c, "Struct must be declared #[repr(C)]");
