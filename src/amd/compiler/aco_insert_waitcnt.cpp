@@ -974,9 +974,10 @@ handle_block(Program* program, Block& block, wait_ctx& ctx)
       kill(queued_imm, queued_depctr, instr.get(), ctx, sync_info);
 
       /* At the start of a possible clause, also emit waitcnts for each instruction to avoid
-       * splitting the clause.
+       * splitting the clause. For LDS, clauses don't have a cache benefit, so only do this for
+       * memory instructions.
        */
-      if (i >= clause_end || !queued_imm.empty()) {
+      if ((i >= clause_end || !queued_imm.empty()) && !instr->isDS()) {
          std::optional<std::bitset<512>> regs_written;
          for (clause_end = i + 1; clause_end < block.instructions.size(); clause_end++) {
             Instruction* next = block.instructions[clause_end].get();
