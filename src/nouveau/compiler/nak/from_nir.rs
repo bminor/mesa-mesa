@@ -3261,7 +3261,7 @@ impl<'a> ShaderFromNir<'a> {
                 // for 32-bit we have 2x32 return type,
                 // for 64-bit we need 2x64, so is_locked must be a 64-bit val.
                 // we can fill the remaining SSAValue with a copy of is_locked
-                let locked_dst = std::iter::repeat(locked_gpr).take(dst.len());
+                let locked_dst = std::iter::repeat_n(locked_gpr, dst.len());
                 let nir_dst: Vec<_> =
                     dst.iter().copied().chain(locked_dst).collect();
                 self.set_ssa(intrin.def.as_def(), nir_dst);
