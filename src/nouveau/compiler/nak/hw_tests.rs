@@ -432,7 +432,7 @@ pub fn test_foldable_op_with(
     // to give us 2500 iterations.
     let invocations = src_comps * src_comps * 100;
 
-    let mut data = Vec::new();
+    let mut data = Vec::with_capacity(invocations * (dst_comps + src_comps));
     for _ in 0..invocations {
         for (i, src) in op.srcs_as_slice().iter().enumerate() {
             let SrcRef::SSA(vec) = &src.src_ref else {
@@ -449,9 +449,7 @@ pub fn test_foldable_op_with(
                 }
             }
         }
-        for _ in 0..dst_comps {
-            data.push(0_u32);
-        }
+        data.extend(std::iter::repeat_n(0_u32, dst_comps));
     }
     debug_assert!(data.len() == invocations * comps);
 
