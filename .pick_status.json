@@ -4914,7 +4914,7 @@
         "description": "freedreno: Disable explicit sync heuristic for Xwayland",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "137cd3b0fa939ffe66c37ffdcd2ad0e133c42b85",
         "notes": null
