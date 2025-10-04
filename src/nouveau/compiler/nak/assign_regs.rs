@@ -685,7 +685,7 @@ impl<'a> VecRegAllocator<'a> {
 
         if let Some(reg) = self.ra.try_find_unused_reg_range(0, comps, align, 0)
         {
-            return self.assign_pin_vec_reg(&vec, reg);
+            return self.assign_pin_vec_reg(vec, reg);
         }
 
         let reg = self
@@ -695,7 +695,7 @@ impl<'a> VecRegAllocator<'a> {
         for c in 0..comps {
             self.evict_reg_if_used(reg + u32::from(c));
         }
-        self.assign_pin_vec_reg(&vec, reg)
+        self.assign_pin_vec_reg(vec, reg)
     }
 
     pub fn free_killed(&mut self, killed: &KillSet) {

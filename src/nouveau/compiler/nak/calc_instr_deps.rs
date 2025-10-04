@@ -542,7 +542,7 @@ impl TexQueueSimulationState {
 
         // Push registers (if we are a tex instruction)
         // We might need to insert a barrier if the queue is full
-        let push_level = if instr_needs_texbar(&instr) {
+        let push_level = if instr_needs_texbar(instr) {
             let dst = instr.dsts()[0].as_reg().unwrap();
             self.push(*dst)
         } else {
@@ -615,7 +615,7 @@ fn insert_texture_barriers(f: &mut Function, sm: &ShaderModelInfo) {
 
             for instr in block.instrs.iter() {
                 // Ignore the barrier, we will recompute this later
-                let _bar = sim.visit_instr(&instr);
+                let _bar = sim.visit_instr(instr);
             }
 
             if *sim_out == sim {

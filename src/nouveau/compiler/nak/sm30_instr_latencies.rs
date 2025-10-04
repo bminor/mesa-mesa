@@ -155,7 +155,7 @@ where
         debug_assert!(bv.bits() == 8 * 7);
 
         for (i, instr) in sched_chunk.iter().enumerate() {
-            encoder.encode_instr(&instr, &labels, &mut encoded);
+            encoder.encode_instr(instr, &labels, &mut encoded);
 
             let sched = calc_instr_sched(prev_op, &instr.op, &instr.deps);
             bv.set_field(i * 8..(i + 1) * 8, sched);

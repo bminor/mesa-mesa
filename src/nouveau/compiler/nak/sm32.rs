@@ -642,7 +642,7 @@ impl SM32Op for OpRro {
             }
             SrcRef::CBuf(cb) => {
                 e.set_opcode(0x648, 2);
-                e.set_src_cbuf(23..42, &cb);
+                e.set_src_cbuf(23..42, cb);
             }
             _ => panic!("Invalid Rro src"),
         }
@@ -1087,7 +1087,7 @@ impl SM32Op for OpFlo {
             }
             SrcRef::CBuf(cb) => {
                 e.set_opcode(0x618, 2);
-                e.set_src_cbuf(23..42, &cb);
+                e.set_src_cbuf(23..42, cb);
             }
             _ => panic!("Invalid flo src"),
         }
@@ -2387,7 +2387,7 @@ impl SM32Op for OpSuLdGa {
                 e.set_mem_type(56..59, self.mem_type);
 
                 e.set_ld_cache_op(54..56, self.cache_op);
-                e.set_src_cbuf(23..42, &cb);
+                e.set_src_cbuf(23..42, cb);
             }
             SrcRef::Zero | SrcRef::Reg(_) => {
                 e.set_opcode(0x798, 2);
@@ -2440,7 +2440,7 @@ impl SM32Op for OpSuStGa {
                 };
 
                 e.set_su_ga_offset_mode(8..10, self.offset_mode);
-                e.set_src_cbuf(23..42, &cb);
+                e.set_src_cbuf(23..42, cb);
                 e.set_st_cache_op(54..56, self.cache_op);
             }
             SrcRef::Zero | SrcRef::Reg(_) => {

@@ -87,7 +87,7 @@ pub fn derive_as_slice(
             if let Fields::Named(named) = s.fields {
                 for f in named.named {
                     let f_count = count_type(&f.ty, slice_type);
-                    let f_attr = get_attr(&f, &attr_name);
+                    let f_attr = get_attr(&f, attr_name);
 
                     if f_count > 0 {
                         assert!(

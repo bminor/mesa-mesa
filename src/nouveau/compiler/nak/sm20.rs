@@ -484,7 +484,7 @@ impl SM20Encoder<'_> {
         self.set_opcode(unit, opcode);
         self.set_dst(14..20, dst);
 
-        match AluSrc::from_src(Some(&src)) {
+        match AluSrc::from_src(Some(src)) {
             AluSrc::None => panic!("src is always Some"),
             AluSrc::Reg(reg) => {
                 self.set_reg(26..32, reg);
