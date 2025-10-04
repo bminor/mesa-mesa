@@ -393,12 +393,12 @@ fn eprint_hex(label: &str, data: &[u32]) {
     eprint!("{}:", label);
     for i in 0..data.len() {
         if (i % 8) == 0 {
-            eprintln!("");
+            eprintln!();
             eprint!(" ");
         }
         eprint!(" {:08x}", data[i]);
     }
-    eprintln!("");
+    eprintln!();
 }
 
 macro_rules! pass {
