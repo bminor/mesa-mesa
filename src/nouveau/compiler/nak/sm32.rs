@@ -358,7 +358,7 @@ impl SM32Encoder<'_> {
             RRR,
         }
         let src1 = AluSrc::from_src(src1);
-        let src2 = src2.map(|s| AluSrc::from_src(s));
+        let src2 = src2.map(AluSrc::from_src);
 
         if let Some(dst) = dst {
             self.set_dst(dst);

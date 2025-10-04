@@ -211,8 +211,7 @@ fn sched_buffer(
     let (new_order, cycle_count) = generate_order(&mut g, init_ready_list);
 
     // Apply the new instruction order
-    let mut instrs: Vec<Option<Instr>> =
-        instrs.into_iter().map(|instr| Some(instr)).collect();
+    let mut instrs: Vec<Option<Instr>> = instrs.into_iter().map(Some).collect();
     let instrs = new_order.into_iter().rev().map(move |i| {
         std::mem::take(&mut instrs[i]).expect("Instruction scheduled twice")
     });
