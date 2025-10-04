@@ -2889,14 +2889,14 @@ impl<'a> ShaderFromNir<'a> {
                 };
 
                 for i in 0..32 {
-                    if !self.fs_out_regs[i].is_none() {
+                    if self.fs_out_regs[i].is_some() {
                         info.writes_color |= 1 << i;
                     }
                 }
                 let mask_idx = (NAK_FS_OUT_SAMPLE_MASK / 4) as usize;
-                info.writes_sample_mask = !self.fs_out_regs[mask_idx].is_none();
+                info.writes_sample_mask = self.fs_out_regs[mask_idx].is_some();
                 let depth_idx = (NAK_FS_OUT_DEPTH / 4) as usize;
-                info.writes_depth = !self.fs_out_regs[depth_idx].is_none();
+                info.writes_depth = self.fs_out_regs[depth_idx].is_some();
 
                 let mut srcs = Vec::new();
                 for i in 0..8 {

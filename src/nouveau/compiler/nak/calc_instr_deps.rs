@@ -551,7 +551,7 @@ impl TexQueueSimulationState {
 
         // If the flush needs a barrier, the queue will not be full,
         // therefore the push will not need a barrier.
-        debug_assert!(!flush_level.is_some() || !push_level.is_some());
+        debug_assert!(flush_level.is_none() || push_level.is_none());
         flush_level.or(push_level)
     }
 }
