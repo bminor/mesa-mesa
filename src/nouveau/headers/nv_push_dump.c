@@ -21,6 +21,7 @@
 #include "clc397.h"
 #include "clc597.h"
 #include "clc697.h"
+#include "clc797.h"
 #include "clc997.h"
 #include "clcb97.h"
 #include "clcd97.h"
@@ -55,81 +56,71 @@
 #include "clc9b5.h"
 #include "clcab5.h"
 
+#include "cla0c0.h"
 #include "clb0c0.h"
 #include "clc0c0.h"
 #include "clc3c0.h"
 #include "clc5c0.h"
+#include "clc6c0.h"
 #include "clc7c0.h"
 #include "clc9c0.h"
 #include "clcbc0.h"
 #include "clcdc0.h"
 #include "clcec0.h"
 
+#include "util/macros.h"
+
+struct device_info {
+  const char *gen_name;
+  const char *alias_name;
+  uint16_t cls_eng3d;
+  uint16_t cls_compute;
+  uint16_t cls_copy;
+  uint16_t cls_m2mf;
+  uint16_t cls_gpfifo;
+};
+
+struct device_info fake_devices[] = {
+  { "KEPLER_A", "KEPLER", KEPLER_A, KEPLER_COMPUTE_A, KEPLER_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_A, KEPLER_CHANNEL_GPFIFO_A },
+  { "MAXWELL_A", "MAXWELL", MAXWELL_A, MAXWELL_COMPUTE_A, MAXWELL_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, MAXWELL_CHANNEL_GPFIFO_A },
+  { "PASCAL_A", "PASCAL", PASCAL_A, PASCAL_COMPUTE_A, PASCAL_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, PASCAL_CHANNEL_GPFIFO_A },
+  { "VOLTA_A", "VOLTA", VOLTA_A, VOLTA_COMPUTE_A, VOLTA_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, VOLTA_CHANNEL_GPFIFO_A },
+  { "TURING_A", "TURING", TURING_A, TURING_COMPUTE_A, TURING_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, TURING_CHANNEL_GPFIFO_A },
+  { "AMPERE_A", "AMPERE", AMPERE_A, AMPERE_COMPUTE_A, AMPERE_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, AMPERE_CHANNEL_GPFIFO_A },
+  { "AMPERE_B", NULL, AMPERE_B, AMPERE_COMPUTE_B, AMPERE_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, AMPERE_CHANNEL_GPFIFO_B },
+  { "ADA_A", "ADA", ADA_A, ADA_COMPUTE_A, AMPERE_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, AMPERE_CHANNEL_GPFIFO_B },
+  { "HOPPER_A", "HOPPER", HOPPER_A, HOPPER_COMPUTE_A, AMPERE_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, HOPPER_CHANNEL_GPFIFO_A },
+  { "BLACKWELL_A", NULL, BLACKWELL_A, BLACKWELL_COMPUTE_A, BLACKWELL_DMA_COPY_A, KEPLER_INLINE_TO_MEMORY_B, BLACKWELL_CHANNEL_GPFIFO_A },
+  { "BLACKWELL_B", NULL, BLACKWELL_B, BLACKWELL_COMPUTE_B, BLACKWELL_DMA_COPY_B, KEPLER_INLINE_TO_MEMORY_B, BLACKWELL_CHANNEL_GPFIFO_B },
+};
+
 static struct nv_device_info get_fake_device_info(const char *arch_name) {
   struct nv_device_info info;
 
   memset(&info, 0, sizeof(info));
+  info.cls_eng2d = FERMI_TWOD_A;
 
-  if (!strcmp(arch_name, "KEPLER")) {
-    info.cls_eng3d = KEPLER_A;
-    info.cls_copy = KEPLER_DMA_COPY_A;
-    info.cls_m2mf = KEPLER_INLINE_TO_MEMORY_A;
-    info.cls_gpfifo = KEPLER_CHANNEL_GPFIFO_A;
-  } else if (!strcmp(arch_name, "MAXWELL")) {
-    info.cls_eng3d = MAXWELL_A;
-    info.cls_compute = MAXWELL_COMPUTE_A;
-    info.cls_copy = MAXWELL_DMA_COPY_A;
-    info.cls_gpfifo = MAXWELL_CHANNEL_GPFIFO_A;
-  } else if (!strcmp(arch_name, "PASCAL")) {
-    info.cls_eng3d = PASCAL_A;
-    info.cls_compute = PASCAL_COMPUTE_A;
-    info.cls_copy = PASCAL_DMA_COPY_A;
-    info.cls_gpfifo = PASCAL_CHANNEL_GPFIFO_A;
-  } else if (!strcmp(arch_name, "VOLTA")) {
-    info.cls_eng3d = VOLTA_A;
-    info.cls_compute = VOLTA_COMPUTE_A;
-    info.cls_copy = VOLTA_DMA_COPY_A;
-    info.cls_gpfifo = VOLTA_CHANNEL_GPFIFO_A;
-  } else if (!strcmp(arch_name, "TURING")) {
-    info.cls_eng3d = TURING_A;
-    info.cls_compute = TURING_COMPUTE_A;
-    info.cls_copy = TURING_DMA_COPY_A;
-    info.cls_gpfifo = TURING_CHANNEL_GPFIFO_A;
-  } else if (!strcmp(arch_name, "AMPERE")) {
-    info.cls_eng3d = AMPERE_A;
-    info.cls_compute = AMPERE_COMPUTE_B;
-    info.cls_copy = AMPERE_DMA_COPY_A;
-    info.cls_gpfifo = AMPERE_CHANNEL_GPFIFO_A;
-  } else if (!strcmp(arch_name, "ADA")) {
-    info.cls_eng3d = ADA_A;
-    info.cls_compute = ADA_COMPUTE_A;
-    info.cls_copy = AMPERE_DMA_COPY_A;
-    info.cls_gpfifo = AMPERE_CHANNEL_GPFIFO_B;
-  } else if (!strcmp(arch_name, "HOPPER")) {
-    info.cls_eng3d = HOPPER_A;
-    info.cls_compute = HOPPER_COMPUTE_A;
-    info.cls_copy = AMPERE_DMA_COPY_A;
-    info.cls_gpfifo = HOPPER_CHANNEL_GPFIFO_A;
-  } else if (!strcmp(arch_name, "BLACKWELL_A")) {
-    info.cls_eng3d = BLACKWELL_A;
-    info.cls_compute = BLACKWELL_COMPUTE_A;
-    info.cls_copy = BLACKWELL_DMA_COPY_A;
-    info.cls_gpfifo = BLACKWELL_CHANNEL_GPFIFO_A;
-  } else if (!strcmp(arch_name, "BLACKWELL_B")) {
-    info.cls_eng3d = BLACKWELL_B;
-    info.cls_compute = BLACKWELL_COMPUTE_B;
-    info.cls_copy = BLACKWELL_DMA_COPY_B;
-    info.cls_gpfifo = BLACKWELL_CHANNEL_GPFIFO_B;
-  } else {
-    fprintf(stderr, "Unknown architecture \"%s\", defaulting to Turing",
-            arch_name);
-    info.cls_eng3d = TURING_A;
-    info.cls_compute = TURING_COMPUTE_A;
-    info.cls_copy = TURING_DMA_COPY_A;
-    info.cls_gpfifo = TURING_CHANNEL_GPFIFO_A;
+  for (int i = 0; i < ARRAY_SIZE(fake_devices); i++) {
+    const struct device_info *fake_device = &fake_devices[i];
+
+    if ((fake_device->alias_name && !strcmp(arch_name, fake_device->alias_name)) ||
+        !strcmp(arch_name, fake_device->gen_name)) {
+      info.cls_eng3d = fake_device->cls_eng3d;
+      info.cls_compute = fake_device->cls_compute;
+      info.cls_copy = fake_device->cls_copy;
+      info.cls_m2mf = fake_device->cls_m2mf;
+      info.cls_gpfifo = fake_device->cls_gpfifo;
+
+      return info;
+    }
   }
 
-  info.cls_eng2d = FERMI_TWOD_A;
+  fprintf(stderr, "Unknown architecture \"%s\", defaulting to Turing",
+          arch_name);
+  info.cls_eng3d = TURING_A;
+  info.cls_compute = TURING_COMPUTE_A;
+  info.cls_copy = TURING_DMA_COPY_A;
+  info.cls_gpfifo = TURING_CHANNEL_GPFIFO_A;
   info.cls_m2mf = KEPLER_INLINE_TO_MEMORY_B;
 
   return info;
