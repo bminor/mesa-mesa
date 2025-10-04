@@ -1727,6 +1727,7 @@ translate_atomic_op_str(nir_atomic_op op)
 {
    switch (op) {
    case nir_atomic_op_iadd:     return "add";
+   case nir_atomic_op_isub:     return "sub";
    case nir_atomic_op_imin:     return "smin";
    case nir_atomic_op_umin:     return "umin";
    case nir_atomic_op_imax:     return "smax";
@@ -1751,6 +1752,7 @@ translate_atomic_op(nir_atomic_op op)
 {
    switch (op) {
    case nir_atomic_op_iadd: return LLVMAtomicRMWBinOpAdd;
+   case nir_atomic_op_isub: return LLVMAtomicRMWBinOpSub;
    case nir_atomic_op_xchg: return LLVMAtomicRMWBinOpXchg;
    case nir_atomic_op_iand: return LLVMAtomicRMWBinOpAnd;
    case nir_atomic_op_ior:  return LLVMAtomicRMWBinOpOr;
