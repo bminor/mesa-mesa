@@ -170,6 +170,9 @@ struct pan_fb_info {
    /* Only used on Valhall */
    bool sprite_coord_origin;
    bool first_provoking_vertex;
+
+   /* indicates whether pixel local storage is enabled */
+   bool pls_enabled;
 };
 
 static inline unsigned
