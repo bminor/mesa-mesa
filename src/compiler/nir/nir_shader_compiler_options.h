@@ -649,6 +649,9 @@ typedef struct nir_shader_compiler_options {
    /** Backend supports f2i32_rtne opcode. */
    bool has_f2i32_rtne;
 
+   /** Backend supports atomic isub. */
+   bool has_atomic_isub;
+
    /**
     * Is this the Intel vec4 backend?
     *

@@ -325,6 +325,26 @@ try_opt_exclusive_scan_to_inclusive(nir_builder *b, nir_intrinsic_instr *intrin)
 }
 
 static bool
+try_opt_atomic_isub(nir_builder *b, nir_intrinsic_instr *intrin,
+                    const struct nir_shader_compiler_options *options,
+                    unsigned data_idx)
+{
+   if (nir_intrinsic_atomic_op(intrin) != nir_atomic_op_iadd || !options->has_atomic_isub)
+      return false;
+
+   nir_scalar data = nir_scalar_resolved(intrin->src[data_idx].ssa, 0);
+
+   if (!nir_scalar_is_alu(data) || nir_scalar_alu_op(data) != nir_op_ineg)
+      return false;
+
+   data = nir_scalar_chase_alu_src(data, 0);
+
+   nir_src_rewrite(&intrin->src[data_idx], nir_mov_scalar(b, data));
+   nir_intrinsic_set_atomic_op(intrin, nir_atomic_op_isub);
+   return true;
+}
+
+static bool
 opt_intrinsics_intrin(nir_builder *b, nir_intrinsic_instr *intrin,
                       const struct nir_shader_compiler_options *options)
 {
@@ -379,6 +399,17 @@ opt_intrinsics_intrin(nir_builder *b, nir_intrinsic_instr *intrin,
    }
    case nir_intrinsic_exclusive_scan:
       return try_opt_exclusive_scan_to_inclusive(b, intrin);
+   case nir_intrinsic_shared_atomic:
+   case nir_intrinsic_global_atomic:
+   case nir_intrinsic_global_atomic_amd:
+   case nir_intrinsic_deref_atomic:
+      return try_opt_atomic_isub(b, intrin, options, 1);
+   case nir_intrinsic_ssbo_atomic:
+      return try_opt_atomic_isub(b, intrin, options, 2);
+   case nir_intrinsic_image_deref_atomic:
+   case nir_intrinsic_image_atomic:
+   case nir_intrinsic_bindless_image_atomic:
+      return try_opt_atomic_isub(b, intrin, options, 3);
    default:
       return false;
    }
