@@ -1268,6 +1268,9 @@ print_intrinsic_instr(nir_intrinsic_instr *instr, print_state *state)
          case nir_atomic_op_iadd:
             fprintf(fp, "iadd");
             break;
+         case nir_atomic_op_isub:
+            fprintf(fp, "isub");
+            break;
          case nir_atomic_op_imin:
             fprintf(fp, "imin");
             break;

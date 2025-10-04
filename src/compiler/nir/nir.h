@@ -1251,6 +1251,7 @@ nir_op nir_type_conversion_op(nir_alu_type src, nir_alu_type dst,
  */
 typedef enum {
    nir_atomic_op_iadd,
+   nir_atomic_op_isub,
    nir_atomic_op_imin,
    nir_atomic_op_umin,
    nir_atomic_op_imax,
@@ -1284,6 +1285,7 @@ nir_atomic_op_type(nir_atomic_op op)
       return nir_type_float;
 
    case nir_atomic_op_iadd:
+   case nir_atomic_op_isub:
    case nir_atomic_op_iand:
    case nir_atomic_op_ior:
    case nir_atomic_op_ixor:

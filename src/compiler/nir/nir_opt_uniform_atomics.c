@@ -191,6 +191,9 @@ static void
 reduce_data(nir_builder *b, nir_op op, nir_def *data,
             nir_def **reduce, nir_def **scan)
 {
+   if (op == nir_op_isub)
+      op = nir_op_iadd;
+
    if (scan) {
       *scan = nir_exclusive_scan(b, data, .reduction_op = op);
       if (reduce) {

@@ -3804,6 +3804,8 @@ nir_atomic_op_to_alu(nir_atomic_op op)
    switch (op) {
    case nir_atomic_op_iadd:
       return nir_op_iadd;
+   case nir_atomic_op_isub:
+      return nir_op_isub;
    case nir_atomic_op_imin:
       return nir_op_imin;
    case nir_atomic_op_umin:
