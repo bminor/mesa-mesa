@@ -4432,7 +4432,7 @@ fn reduce_shift_imm(shift: &mut Src, wrap: bool, bits: u32) {
     debug_assert!(shift.src_mod.is_none());
     if let SrcRef::Imm32(shift) = &mut shift.src_ref {
         if wrap {
-            *shift = *shift & (bits - 1);
+            *shift &= bits - 1;
         } else {
             *shift = std::cmp::min(*shift, bits)
         }

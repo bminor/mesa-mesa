@@ -1053,7 +1053,7 @@ impl SM32Op for OpBfe {
         use RegFile::GPR;
         b.copy_alu_src_if_not_reg(&mut self.base, GPR, SrcType::ALU);
         if let SrcRef::Imm32(imm) = &mut self.range.src_ref {
-            *imm = *imm & 0xffff; // Only the lower 2 bytes matter
+            *imm &= 0xffff; // Only the lower 2 bytes matter
         }
     }
 
