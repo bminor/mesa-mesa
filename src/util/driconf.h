@@ -595,6 +595,10 @@
    DRI_CONF_OPT_B(disable_conservative_lrz, def, \
                   "Disable conservative LRZ")
 
+#define DRI_CONF_DISABLE_EXPLICIT_SYNC_HEURISTIC(def) \
+   DRI_CONF_OPT_B(disable_explicit_sync_heuristic, def, \
+                  "Disable Explicit-sync heuristic")
+
 /**
  * \brief panfrost specific configuration options
  */

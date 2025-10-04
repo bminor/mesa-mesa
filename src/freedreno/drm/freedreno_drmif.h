@@ -179,6 +179,7 @@ enum fd_version {
    FD_VERSION_VA_SIZE = 9,
 };
 enum fd_version fd_device_version(struct fd_device *dev);
+void fd_device_disable_explicit_sync_heuristic(struct fd_device *dev);
 
 bool fd_has_syncobj(struct fd_device *dev);
 
