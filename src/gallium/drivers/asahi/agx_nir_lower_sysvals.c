@@ -166,7 +166,7 @@ lower_intrinsic(nir_builder *b, nir_intrinsic_instr *intr,
       return load_sysval_root(b, 1, 16, &u->sample_mask);
    case nir_intrinsic_load_sample_positions_agx:
       return load_sysval_root(b, 1, 32, &u->ppp_multisamplectl);
-   case nir_intrinsic_load_stat_query_address_agx:
+   case nir_intrinsic_load_stat_query_address_poly:
       return load_sysval_root(
          b, 1, 64, &u->pipeline_statistics[nir_intrinsic_base(intr)]);
    case nir_intrinsic_load_ssbo_address:

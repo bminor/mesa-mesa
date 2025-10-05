@@ -706,7 +706,7 @@ agx_nir_lower_stats_fs(nir_shader *s)
    nir_def *samples = nir_bit_count(b, nir_load_sample_mask_in(b));
    unsigned query = PIPE_STAT_QUERY_PS_INVOCATIONS;
 
-   nir_def *addr = nir_load_stat_query_address_agx(b, .base = query);
+   nir_def *addr = nir_load_stat_query_address_poly(b, .base = query);
    nir_global_atomic(b, 32, addr, samples, .atomic_op = nir_atomic_op_iadd);
 
    nir_pop_if(b, NULL);

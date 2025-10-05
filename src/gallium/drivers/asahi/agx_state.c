@@ -2072,7 +2072,7 @@ static bool
 lower_fs_prolog_abi(nir_builder *b, nir_intrinsic_instr *intr, UNUSED void *_)
 {
    if (intr->intrinsic != nir_intrinsic_load_polygon_stipple_agx &&
-       intr->intrinsic != nir_intrinsic_load_stat_query_address_agx)
+       intr->intrinsic != nir_intrinsic_load_stat_query_address_poly)
       return false;
 
    b->cursor = nir_before_instr(&intr->instr);

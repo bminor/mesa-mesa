@@ -946,12 +946,13 @@ agx_nir_create_pre_gs(struct agx_xfb_key *key)
       nir_imm_ivec4(b, key->static_count[0], key->static_count[1],
                     key->static_count[2], key->static_count[3]),
       nir_imm_int(b, key->invocations), nir_imm_int(b, key->vertices_per_prim),
-      nir_load_stat_query_address_agx(b,
-                                      .base = PIPE_STAT_QUERY_GS_INVOCATIONS),
-      nir_load_stat_query_address_agx(b, .base = PIPE_STAT_QUERY_GS_PRIMITIVES),
-      nir_load_stat_query_address_agx(b, .base = PIPE_STAT_QUERY_C_PRIMITIVES),
-      nir_load_stat_query_address_agx(b,
-                                      .base = PIPE_STAT_QUERY_C_INVOCATIONS));
+      nir_load_stat_query_address_poly(b,
+                                       .base = PIPE_STAT_QUERY_GS_INVOCATIONS),
+      nir_load_stat_query_address_poly(b,
+                                       .base = PIPE_STAT_QUERY_GS_PRIMITIVES),
+      nir_load_stat_query_address_poly(b, .base = PIPE_STAT_QUERY_C_PRIMITIVES),
+      nir_load_stat_query_address_poly(b,
+                                       .base = PIPE_STAT_QUERY_C_INVOCATIONS));
    agx_preprocess_nir(b->shader);
    return b->shader;
 }

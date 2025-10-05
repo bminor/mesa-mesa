@@ -1426,6 +1426,9 @@ system_value("geometry_param_buffer_poly", 1, bit_sizes=[64])
 # Address of the parameter buffer for poly tessellation shaders
 system_value("tess_param_buffer_poly", 1, bit_sizes=[64])
 
+# Address of the pipeline statistic query result indexed by BASE
+system_value("stat_query_address_poly", 1, bit_sizes=[64], indices=[BASE])
+
 # IR3-specific version of most SSBO intrinsics. The only different
 # compare to the originals is that they add an extra source to hold
 # the dword-offset, which is needed by the backend code apart from
@@ -2326,9 +2329,6 @@ barrier("fence_pbe_to_tex_pixel_agx")
 
 # Unknown fence used in the helper program on exit.
 barrier("fence_helper_exit_agx")
-
-# Address of the pipeline statistic query result indexed by BASE
-system_value("stat_query_address_agx", 1, bit_sizes=[64], indices=[BASE])
 
 # Helper shader intrinsics
 # src[] = { value }.

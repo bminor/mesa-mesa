@@ -478,7 +478,7 @@ lower_uvs_index(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
       return true;
    }
 
-   case nir_intrinsic_load_stat_query_address_agx: {
+   case nir_intrinsic_load_stat_query_address_poly: {
       b->cursor = nir_instr_remove(&intrin->instr);
 
       unsigned off1 = hk_root_descriptor_offset(draw.pipeline_stats);
