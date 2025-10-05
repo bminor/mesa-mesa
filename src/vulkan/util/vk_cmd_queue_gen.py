@@ -583,6 +583,7 @@ def get_struct_copy(builder, dst, src_name, src_type, types, parent_name=None, l
                 get_pnext_member_copy(builder, tmp_dst_name, src_type, member, types)
 
     if struct_array_copy:
+        builder.level -= 1
         builder.add("}")
 
     builder.level -= 1
