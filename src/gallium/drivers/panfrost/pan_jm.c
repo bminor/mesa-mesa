@@ -1057,9 +1057,9 @@ GENX(jm_init_context)(struct panfrost_context *ctx)
       .priority = prio,
    };
 
-   int ret = ret = pan_kmod_ioctl(panfrost_device_fd(dev),
-                                  DRM_IOCTL_PANFROST_JM_CTX_CREATE,
-                                  &args);
+   int ret = pan_kmod_ioctl(panfrost_device_fd(dev),
+                            DRM_IOCTL_PANFROST_JM_CTX_CREATE,
+                            &args);
    if (ret)
       return -1;
 
