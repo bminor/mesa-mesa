@@ -1034,7 +1034,7 @@ hud_graph_destroy(struct hud_graph *graph, struct pipe_context *pipe)
    FREE(graph->vertices);
    if (graph->free_query_data)
       graph->free_query_data(graph->query_data, pipe);
-   if (graph->fd)
+   if (graph->fd && graph->fd != stdout)
       fclose(graph->fd);
    FREE(graph);
 }
