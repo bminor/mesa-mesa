@@ -441,8 +441,7 @@ lower_id(nir_builder *b, nir_intrinsic_instr *intr, void *data)
  * counts are statically known.
  */
 static nir_shader *
-agx_nir_create_geometry_count_shader(nir_shader *gs,
-                                     struct lower_gs_state *state)
+create_geometry_count_shader(nir_shader *gs, struct lower_gs_state *state)
 {
    /* Don't muck up the original shader */
    nir_shader *shader = nir_shader_clone(NULL, gs);
@@ -617,8 +616,7 @@ stream_multiplier(const nir_shader *gs)
  * shades each rasterized output vertex in parallel.
  */
 static nir_shader *
-agx_nir_create_gs_rast_shader(const nir_shader *gs,
-                              const struct lower_gs_state *state)
+create_gs_rast_shader(const nir_shader *gs, const struct lower_gs_state *state)
 {
    /* Don't muck up the original shader */
    nir_shader *shader = nir_shader_clone(NULL, gs);
@@ -926,7 +924,7 @@ struct agx_xfb_key {
  * transform feedback offsets and counters as applicable.
  */
 static nir_shader *
-agx_nir_create_pre_gs(struct agx_xfb_key *key)
+create_pre_gs(struct agx_xfb_key *key)
 {
    nir_builder b_ = nir_builder_init_simple_shader(
       MESA_SHADER_COMPUTE, &agx_nir_options, "Pre-GS patch up");
@@ -975,7 +973,7 @@ rewrite_invocation_id(nir_builder *b, nir_intrinsic_instr *intr, void *data)
  * counts.
  */
 static void
-agx_nir_lower_gs_instancing(nir_shader *gs)
+lower_gs_instancing(nir_shader *gs)
 {
    unsigned nr_invocations = gs->info.gs.invocations;
    nir_function_impl *impl = nir_shader_get_entrypoint(gs);
@@ -1202,7 +1200,7 @@ agx_nir_lower_gs(nir_shader *gs, nir_shader **gs_count, nir_shader **gs_copy,
     * anything. Otherwise, smash the invocation ID to zero.
     */
    if (gs->info.gs.invocations != 1) {
-      agx_nir_lower_gs_instancing(gs);
+      lower_gs_instancing(gs);
    } else {
       nir_function_impl *impl = nir_shader_get_entrypoint(gs);
       nir_builder b = nir_builder_at(nir_before_impl(impl));
@@ -1280,7 +1278,7 @@ agx_nir_lower_gs(nir_shader *gs, nir_shader **gs_count, nir_shader **gs_copy,
       info->shape = AGX_GS_SHAPE_DYNAMIC_INDEXED;
    }
 
-   *gs_copy = agx_nir_create_gs_rast_shader(gs, &gs_state);
+   *gs_copy = create_gs_rast_shader(gs, &gs_state);
 
    NIR_PASS(_, gs, nir_shader_intrinsics_pass, lower_id,
             nir_metadata_control_flow, NULL);
@@ -1293,7 +1291,7 @@ agx_nir_lower_gs(nir_shader *gs, nir_shader **gs_count, nir_shader **gs_copy,
 
    /* If there is any unknown count, we need a geometry count shader */
    if (info->count_words > 0)
-      *gs_count = agx_nir_create_geometry_count_shader(gs, &gs_state);
+      *gs_count = create_geometry_count_shader(gs, &gs_state);
    else
       *gs_count = NULL;
 
@@ -1387,7 +1385,7 @@ agx_nir_lower_gs(nir_shader *gs, nir_shader **gs_count, nir_shader **gs_copy,
    }
 
    /* Create auxiliary programs */
-   *pre_gs = agx_nir_create_pre_gs(&key);
+   *pre_gs = create_pre_gs(&key);
    return true;
 }
 
