@@ -1563,7 +1563,7 @@ agx_compile_variant(struct agx_device *dev, struct pipe_context *pctx,
    if (nir->info.stage == MESA_SHADER_VERTEX) {
       struct asahi_vs_shader_key *key = &key_->vs;
 
-      if (nir->info.vs.tes_agx) {
+      if (nir->info.vs.tes_poly) {
          NIR_PASS(_, nir, agx_nir_lower_tes, key->hw);
       } else {
          NIR_PASS(_, nir, agx_nir_gather_vs_inputs, attrib_components_read);
@@ -1865,7 +1865,7 @@ agx_shader_initialize(struct agx_device *dev, struct agx_uncompiled_shader *so,
 
    if (nir->info.stage == MESA_SHADER_TESS_EVAL) {
       nir->info.stage = MESA_SHADER_VERTEX;
-      nir->info.vs.tes_agx = true;
+      nir->info.vs.tes_poly = true;
    }
 
    blob_init(&so->serialized_nir);

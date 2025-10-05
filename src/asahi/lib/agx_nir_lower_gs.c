@@ -1425,7 +1425,7 @@ lower_vs_before_gs(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    }
 
    if (b->shader->info.stage == MESA_SHADER_VERTEX &&
-       !b->shader->info.vs.tes_agx) {
+       !b->shader->info.vs.tes_poly) {
       primitive_id = nir_load_vertex_id_zero_base(b);
       instance_id = nir_load_instance_id(b);
    } else {

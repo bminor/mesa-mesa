@@ -255,7 +255,7 @@ agx_nir_lower_tes(nir_shader *tes, bool to_hw_vs)
        */
       tes->info.stage = MESA_SHADER_VERTEX;
       memset(&tes->info.vs, 0, sizeof(tes->info.vs));
-      tes->info.vs.tes_agx = true;
+      tes->info.vs.tes_poly = true;
    } else {
       /* If we're running as a compute shader, we need to load from the index
        * buffer manually. Fortunately, this doesn't require a shader key:

@@ -96,7 +96,7 @@ static unsigned
 stage_table(nir_builder *b)
 {
    mesa_shader_stage stage = b->shader->info.stage;
-   if (stage == MESA_SHADER_VERTEX && b->shader->info.vs.tes_agx)
+   if (stage == MESA_SHADER_VERTEX && b->shader->info.vs.tes_poly)
       stage = MESA_SHADER_TESS_EVAL;
 
    assert(stage < MESA_SHADER_STAGES);
