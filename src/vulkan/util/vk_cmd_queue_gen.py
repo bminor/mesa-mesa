@@ -600,7 +600,7 @@ def get_command_struct_free(command, param, types):
     builder.add("vk_free(queue->alloc, (void*)%s);" % (field_name))
     return builder.code
 
-def get_struct_free(builder, field_name, nullable, struct_type, types):
+def get_struct_free(builder, field_name, nullable, struct_type, types, parent_name=None, len=None):
     if struct_type not in types:
         return
 
@@ -609,6 +609,15 @@ def get_struct_free(builder, field_name, nullable, struct_type, types):
     if members and nullable:
         builder.add("if (%s) {" % (field_name))
         builder.level += 1
+
+    struct_array_copy = len and len != "struct-ptr" and struct_type != "void"
+    if struct_array_copy:
+        array_index = builder.get_variable_name("i")
+        builder.add("for (uint32_t %s = 0; %s < %s->%s; %s++) {" % (array_index, array_index, parent_name, len, array_index))
+        builder.level += 1
+        element_name = builder.get_variable_name("element")
+        builder.add("%s *%s = %s + %s; (void)%s;" % (struct_type, element_name, field_name, array_index, element_name))
+        field_name = element_name
 
     for member in members:
         member_name = "%s->%s" % (field_name, member.name)
@@ -621,7 +630,7 @@ def get_struct_free(builder, field_name, nullable, struct_type, types):
                 builder.add("if (%s->%s) {" % (field_name, member.len))
                 builder.level += 1
 
-            get_struct_free(builder, local_member_name, not guard, member.type, types)
+            get_struct_free(builder, local_member_name, not guard, member.type, types, field_name, member.len)
 
             if guard:
                 builder.level -= 1
@@ -631,6 +640,10 @@ def get_struct_free(builder, field_name, nullable, struct_type, types):
 
         elif member.name == 'pNext':
             get_pnext_member_free(builder, struct_type, types, member_name)
+
+    if struct_array_copy:
+        builder.level -= 1
+        builder.add("}")
 
     if members and nullable:
         builder.level -= 1
