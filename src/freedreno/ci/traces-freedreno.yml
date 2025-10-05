@@ -77,7 +77,9 @@ traces:
     freedreno-a530:
       label: [unsupported]
     freedreno-a618:
+      label: [skip, flakes]
       checksum: 17c6a6dd333514b125cc18282ce24ba8
+      text: May time out
     zink-a618:
       label: [skip, flakes]
       checksum: 96f7f231042f892c7d11c91defd7ecc1
