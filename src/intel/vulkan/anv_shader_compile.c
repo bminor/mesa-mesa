@@ -12,8 +12,8 @@
 #include "common/intel_compute_slm.h"
 #include "common/intel_l3_config.h"
 
-#include "compiler/brw_nir.h"
-#include "compiler/brw_nir_rt.h"
+#include "compiler/brw/brw_nir.h"
+#include "compiler/brw/brw_nir_rt.h"
 #include "compiler/intel_nir.h"
 
 #include "git_sha1.h"

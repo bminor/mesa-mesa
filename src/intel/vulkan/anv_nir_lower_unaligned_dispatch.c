@@ -5,7 +5,7 @@
 
 #include "anv_nir.h"
 #include "nir_builder.h"
-#include "compiler/brw_nir.h"
+#include "compiler/brw/brw_nir.h"
 
 bool
 anv_nir_lower_unaligned_dispatch(nir_shader *shader)

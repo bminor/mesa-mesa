@@ -6,7 +6,7 @@
 #include <ctype.h>
 
 #include "util/ralloc.h"
-#include "intel/compiler/brw_asm.h"
+#include "intel/compiler/brw/brw_asm.h"
 
 #include "executor.h"
 

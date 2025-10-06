@@ -26,7 +26,7 @@
 
 #include <assert.h>
 #include "brw_reg.h"
-#include "brw_list.h"
+#include "compiler/brw_list.h"
 
 #define MAX_SAMPLER_MESSAGE_SIZE 11
 

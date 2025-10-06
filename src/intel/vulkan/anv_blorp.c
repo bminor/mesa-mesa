@@ -22,7 +22,7 @@
  */
 
 #include "anv_private.h"
-#include "compiler/brw_disasm.h"
+#include "compiler/brw/brw_disasm.h"
 #include "genxml/gen80_pack.h"
 
 static bool

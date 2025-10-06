@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 inc_intel = include_directories('.')
+inc_intel_compiler = include_directories('compiler')
 
 with_intel_elk = get_option('intel-elk')
 

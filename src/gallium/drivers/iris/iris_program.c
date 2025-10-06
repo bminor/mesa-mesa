@@ -42,8 +42,8 @@
 #include "compiler/nir/nir.h"
 #include "compiler/nir/nir_builder.h"
 #include "compiler/nir/nir_serialize.h"
-#include "intel/compiler/brw_compiler.h"
-#include "intel/compiler/brw_nir.h"
+#include "intel/compiler/brw/brw_compiler.h"
+#include "intel/compiler/brw/brw_nir.h"
 #include "intel/compiler/intel_nir.h"
 #include "intel/compiler/intel_prim.h"
 #ifdef INTEL_USE_ELK

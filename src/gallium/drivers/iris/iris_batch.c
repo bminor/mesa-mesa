@@ -48,7 +48,7 @@
 
 #include "common/intel_aux_map.h"
 #include "intel/common/intel_gem.h"
-#include "intel/compiler/brw_compiler.h"
+#include "intel/compiler/brw/brw_compiler.h"
 #ifdef INTEL_USE_ELK
 #include "intel/compiler/elk/elk_compiler.h"
 #endif

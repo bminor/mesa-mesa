@@ -33,7 +33,7 @@
 #include "anv_private.h"
 #include "vk_enum_to_str.h"
 
-#include "compiler/brw_nir_rt.h"
+#include "compiler/brw/brw_nir_rt.h"
 
 #ifdef NO_REGEX
 typedef int regex_t;

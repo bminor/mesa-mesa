@@ -23,7 +23,7 @@
 
 #include "anv_nir.h"
 #include "nir/nir_builder.h"
-#include "compiler/brw_nir.h"
+#include "compiler/brw/brw_nir.h"
 #include "util/mesa-sha1.h"
 #include "util/set.h"
 

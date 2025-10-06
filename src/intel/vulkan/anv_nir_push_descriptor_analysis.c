@@ -23,7 +23,7 @@
 
 #include "anv_nir.h"
 
-#include "compiler/brw_nir.h"
+#include "compiler/brw/brw_nir.h"
 
 static const struct anv_descriptor_set_layout *
 anv_pipeline_layout_get_push_set(struct anv_descriptor_set_layout * const *set_layouts,

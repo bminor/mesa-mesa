@@ -20,8 +20,8 @@
 #include "drm-uapi/i915_drm.h"
 #include "drm-uapi/xe_drm.h"
 
-#include "intel/compiler/brw_asm.h"
-#include "intel/compiler/brw_isa_info.h"
+#include "intel/compiler/brw/brw_asm.h"
+#include "intel/compiler/brw/brw_isa_info.h"
 #include "intel/common/intel_gem.h"
 #include "intel/common/xe/intel_engine.h"
 #include "intel/decoder/intel_decoder.h"

@@ -5,8 +5,8 @@
 
 #include "blorp_priv.h"
 #include "blorp_nir_builder.h"
-#include "compiler/brw_compiler.h"
-#include "compiler/brw_nir.h"
+#include "brw/brw_compiler.h"
+#include "brw/brw_nir.h"
 #include "dev/intel_debug.h"
 
 static const nir_shader_compiler_options *

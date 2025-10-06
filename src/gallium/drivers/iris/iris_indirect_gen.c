@@ -34,7 +34,7 @@
 #include "iris_genx_macros.h"
 
 #if GFX_VER >= 9
-#include "intel/compiler/brw_compiler.h"
+#include "intel/compiler/brw/brw_compiler.h"
 #include "intel/common/intel_genX_state_brw.h"
 #else
 #include "intel/compiler/elk/elk_compiler.h"

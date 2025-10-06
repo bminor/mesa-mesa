@@ -36,7 +36,7 @@
 #include "util/shader_stats.h"
 #include "util/u_math.h"
 #include "brw_isa_info.h"
-#include "intel_shader_enums.h"
+#include "compiler/intel_shader_enums.h"
 #include "nir_shader_compiler_options.h"
 
 #ifdef __cplusplus

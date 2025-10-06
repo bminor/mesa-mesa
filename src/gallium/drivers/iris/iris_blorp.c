@@ -42,7 +42,7 @@
 
 #include "util/u_upload_mgr.h"
 #include "intel/common/intel_l3_config.h"
-#include "intel/compiler/brw_compiler.h"
+#include "intel/compiler/brw/brw_compiler.h"
 
 #include "genxml/gen_macros.h"
 

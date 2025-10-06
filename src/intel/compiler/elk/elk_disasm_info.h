@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "../brw_list.h"
+#include "compiler/brw_list.h"
 
 #ifdef __cplusplus
 extern "C" {

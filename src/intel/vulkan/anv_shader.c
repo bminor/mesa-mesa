@@ -7,7 +7,7 @@
 
 #include "nir/nir_serialize.h"
 
-#include "compiler/brw_disasm.h"
+#include "compiler/brw/brw_disasm.h"
 #include "util/shader_stats.h"
 
 static void

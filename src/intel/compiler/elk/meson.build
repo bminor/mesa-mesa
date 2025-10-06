@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 libintel_compiler_elk_files = files(
+  '../brw_list.h',
   '../intel_prim.h',
   'elk_cfg.cpp',
   'elk_cfg.h',
