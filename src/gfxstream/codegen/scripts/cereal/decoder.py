@@ -71,9 +71,6 @@ decoder_impl_preamble ="""
 namespace gfxstream {
 namespace vk {
 
-using gfxstream::base::MetricEventBadPacketLength;
-using gfxstream::base::MetricEventDuplicateSequenceNum;
-
 class VkDecoder::Impl {
 public:
     Impl() : m_logCalls(gfxstream::base::getEnvironmentVariable("ANDROID_EMU_VK_LOG_CALLS") == "1"),
@@ -358,7 +355,7 @@ def emit_dispatch_call(api, cgen):
 
     cgen.vkApiCall(api, customPrefix=whichDispatch, customParameters=customParams, \
         globalStatePrefix=global_state_prefix, checkForDeviceLost=True,
-        checkForOutOfMemory=True, checkDispatcher=checkDispatcher)
+        checkDispatcher=checkDispatcher)
 
     if api.name in driver_workarounds_global_lock_apis:
         if not delay:
@@ -389,7 +386,7 @@ def emit_global_state_wrapped_call(api, cgen, context):
         checkDispatcher = None
     cgen.vkApiCall(api, customPrefix=global_state_prefix, \
         customParameters=customParams, globalStatePrefix=global_state_prefix, \
-        checkForDeviceLost=True, checkForOutOfMemory=True, checkDispatcher=checkDispatcher)
+        checkForDeviceLost=True, checkDispatcher=checkDispatcher)
 
     if delay:
         cgen.line("};")
@@ -881,8 +878,6 @@ size_t VkDecoder::Impl::decode(void* buf, size_t len, IOStream* ioStream,
 
         self.cgen.stmt("const char* processName = context.processName")
         self.cgen.stmt("auto& gfx_logger = *context.gfxApiLogger")
-        self.cgen.stmt("auto* healthMonitor = context.healthMonitor")
-        self.cgen.stmt("auto& metricsLogger = *context.metricsLogger")
         self.cgen.stmt("auto& shouldExit = *context.shouldExit")
         self.cgen.stmt("if (len < 8) return 0")
         self.cgen.stmt("unsigned char *ptr = (unsigned char *)buf")
@@ -902,7 +897,6 @@ size_t VkDecoder::Impl::decode(void* buf, size_t len, IOStream* ioStream,
         // packetLen should be at least 8 (op code and packet length) and should not be excessively large
         if (packetLen < 8 || packetLen > MAX_PACKET_LENGTH) {
             GFXSTREAM_WARNING("Bad packet length %d detected, decode may fail", packetLen);
-            metricsLogger.logMetricEvent(MetricEventBadPacketLength{ .len = packetLen });
         }
         """)
         self.cgen.stmt("if (end - ptr < packetLen) return ptr - (unsigned char*)buf")
@@ -915,53 +909,24 @@ size_t VkDecoder::Impl::decode(void* buf, size_t len, IOStream* ioStream,
         self.cgen.stmt("uint8_t* readStreamPtr = %s->getBuf(); uint8_t** readStreamPtrPtr = &readStreamPtr" % READ_STREAM)
         self.cgen.stmt("%s->setHandleMapping(&m_boxedHandleUnwrapMapping)" % READ_STREAM)
         self.cgen.line("""
-        std::unique_ptr<EventHangMetadata::HangAnnotations> executionData =
-            std::make_unique<EventHangMetadata::HangAnnotations>();
-        if (healthMonitor) {
-            executionData->insert(
-                 {{"packet_length", std::to_string(packetLen)},
-                 {"opcode", std::to_string(opcode)}});
-            if (processName) {
-                executionData->insert(
-                    {{"renderthread_guest_process", std::string(processName)}});
-            }
-            if (m_prevSeqno) {
-                executionData->insert({{"previous_seqno", std::to_string(m_prevSeqno.value())}});
-            }
-        }
-
         std::atomic<uint32_t>* seqnoPtr = processResources ?
                 processResources->getSequenceNumberPtr() : nullptr;
 
         if (m_queueSubmitWithCommandsEnabled && ((opcode >= OP_vkFirst && opcode < OP_vkLast) || (opcode >= OP_vkFirst_old && opcode < OP_vkLast_old))) {
             uint32_t seqno;
             memcpy(&seqno, *readStreamPtrPtr, sizeof(uint32_t)); *readStreamPtrPtr += sizeof(uint32_t);
-            if (healthMonitor) executionData->insert({{"seqno", std::to_string(seqno)}});
             if (m_prevSeqno  && seqno == m_prevSeqno.value()) {
                 GFXSTREAM_WARNING(
                     "Seqno %d is the same as previously processed on thread %d. It might be a "
                     "duplicate command.",
-                    seqno, getCurrentThreadId());
-                metricsLogger.logMetricEvent(MetricEventDuplicateSequenceNum{ .opcode = opcode });
+                    seqno, gfxstream::base::getCurrentThreadId());
             }
             if (seqnoPtr && !m_forSnapshotLoad) {
                 {
-                    auto seqnoWatchdog =
-                        WATCHDOG_BUILDER(healthMonitor,
-                                         "RenderThread seqno loop")
-                            .setHangType(EventHangMetadata::HangType::kRenderThread)
-                            .setAnnotations(std::make_unique<EventHangMetadata::HangAnnotations>(*executionData))
-                            /* Data gathered if this hangs*/
-                            .setOnHangCallback([=]() {
-                                auto annotations = std::make_unique<EventHangMetadata::HangAnnotations>();
-                                annotations->insert({{"seqnoPtr", std::to_string(seqnoPtr->load(std::memory_order_seq_cst))}});
-                                return annotations;
-                            })
-                            .build();
                     while ((seqno - seqnoPtr->load(std::memory_order_seq_cst) != 1)) {
                         if (shouldExit.load(std::memory_order_relaxed)) {
                             GFXSTREAM_WARNING("Process=%s is exitting. Skip processing seqno=%d on thread=0x%x.",
-                                 processName ? processName : "null", seqno, getCurrentThreadId());
+                                 processName ? processName : "null", seqno, gfxstream::base::getCurrentThreadId());
                             return 0;
                         }
                         #if (defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64)))
@@ -985,14 +950,6 @@ size_t VkDecoder::Impl::decode(void* buf, size_t len, IOStream* ioStream,
 
         self.cgen.line("""
         gfx_logger.recordCommandExecution();
-        """)
-
-        self.cgen.line("""
-        auto executionWatchdog =
-            WATCHDOG_BUILDER(healthMonitor, "RenderThread VkDecoder command execution")
-                .setHangType(EventHangMetadata::HangType::kRenderThread)
-                .setAnnotations(std::move(executionData))
-                .build();
         """)
 
         self.cgen.line("switch (opcode)")

@@ -515,7 +515,6 @@ using DlSymFunc = void* (void*, const char*);
 #include <memory>
 
 #include "VkSnapshotHandles.h"
-#include "gfxstream/HealthMonitor.h"
 #include "gfxstream/host/GfxApiLogger.h"
 #include "goldfish_vk_private_defs.h"
 """
@@ -551,10 +550,10 @@ class BumpPool;
 
 #include "gfxstream/BumpPool.h"
 #include "gfxstream/system/System.h"
-#include "gfxstream/Metrics.h"
 #include "FrameBuffer.h"
 #include "gfxstream/host/Tracing.h"
 #include "gfxstream/host/iostream.h"
+#include "gfxstream/threads/Thread.h"
 #include "gfxstream/common/logging.h"
 #include "VkDecoderGlobalState.h"
 #include "VkDecoderSnapshot.h"
