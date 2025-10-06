@@ -1451,6 +1451,9 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
          tu_cs_emit_wfi(cs);
       }
       tu_cs_emit_pkt7(cs, CP_WAIT_FOR_ME, 0);
+   } else if (cmd->device->physical_device->info->a7xx.has_hw_bin_scaling) {
+      tu_cs_emit_regs(cs, A7XX_GRAS_BIN_FOVEAT());
+      tu_cs_emit_regs(cs, A7XX_RB_BIN_FOVEAT());
    }
 }
 
