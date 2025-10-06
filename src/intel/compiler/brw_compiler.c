@@ -358,7 +358,7 @@ void
 brw_write_shader_relocs(const struct brw_isa_info *isa,
                         void *program,
                         const struct brw_stage_prog_data *prog_data,
-                        struct brw_shader_reloc_value *values,
+                        struct intel_shader_reloc_value *values,
                         unsigned num_values)
 {
    for (unsigned i = 0; i < prog_data->num_relocs; i++) {

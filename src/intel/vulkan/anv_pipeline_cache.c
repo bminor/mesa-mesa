@@ -93,7 +93,7 @@ anv_shader_internal_create(struct anv_device *device,
    VK_MULTIALLOC_DECL_SIZE(&ma, void, obj_key_data, key_size);
    VK_MULTIALLOC_DECL_SIZE(&ma, struct brw_stage_prog_data, prog_data,
                                 prog_data_size);
-   VK_MULTIALLOC_DECL(&ma, struct brw_shader_reloc, prog_data_relocs,
+   VK_MULTIALLOC_DECL(&ma, struct intel_shader_reloc, prog_data_relocs,
                            prog_data_in->num_relocs);
    VK_MULTIALLOC_DECL(&ma, uint32_t, prog_data_param, prog_data_in->nr_params);
 

@@ -176,7 +176,7 @@ iris_upload_shader(struct iris_screen *screen,
                                shader->const_data_offset;
 
    if (screen->brw) {
-      struct brw_shader_reloc_value reloc_values[] = {
+      struct intel_shader_reloc_value reloc_values[] = {
          {
             .id = BRW_SHADER_RELOC_CONST_DATA_ADDR_LOW,
             .value = shader_data_addr,

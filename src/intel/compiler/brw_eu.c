@@ -290,7 +290,7 @@ const unsigned *brw_get_program( struct brw_codegen *p,
    return (const unsigned *)p->store;
 }
 
-const struct brw_shader_reloc *
+const struct intel_shader_reloc *
 brw_get_shader_relocs(struct brw_codegen *p, unsigned *num_relocs)
 {
    *num_relocs = p->num_relocs;

@@ -462,16 +462,16 @@ brw_next_insn(struct brw_codegen *p, unsigned opcode)
 
 void
 brw_add_reloc(struct brw_codegen *p, uint32_t id,
-              enum brw_shader_reloc_type type,
+              enum intel_shader_reloc_type type,
               uint32_t offset, uint32_t delta)
 {
    if (p->num_relocs + 1 > p->reloc_array_size) {
       p->reloc_array_size = MAX2(16, p->reloc_array_size * 2);
       p->relocs = reralloc(p->mem_ctx, p->relocs,
-                           struct brw_shader_reloc, p->reloc_array_size);
+                           struct intel_shader_reloc, p->reloc_array_size);
    }
 
-   p->relocs[p->num_relocs++] = (struct brw_shader_reloc) {
+   p->relocs[p->num_relocs++] = (struct intel_shader_reloc) {
       .id = id,
       .type = type,
       .offset = offset,

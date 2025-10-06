@@ -151,7 +151,7 @@ iris_disk_cache_store(struct disk_cache *cache,
                     shader->num_system_values * sizeof(uint32_t));
    if (brw) {
       blob_write_bytes(&blob, brw->relocs,
-                       brw->num_relocs * sizeof(struct brw_shader_reloc));
+                       brw->num_relocs * sizeof(struct intel_shader_reloc));
       blob_write_bytes(&blob, brw->param,
                        brw->nr_params * sizeof(uint32_t));
    } else {
@@ -259,10 +259,10 @@ iris_disk_cache_retrieve(struct iris_screen *screen,
    if (brw) {
       brw->relocs = NULL;
       if (brw->num_relocs) {
-         struct brw_shader_reloc *relocs =
-            ralloc_array(NULL, struct brw_shader_reloc, brw->num_relocs);
+         struct intel_shader_reloc *relocs =
+            ralloc_array(NULL, struct intel_shader_reloc, brw->num_relocs);
          blob_copy_bytes(&blob, relocs,
-                         brw->num_relocs * sizeof(struct brw_shader_reloc));
+                         brw->num_relocs * sizeof(struct intel_shader_reloc));
          brw->relocs = relocs;
       }
 

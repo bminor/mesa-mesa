@@ -580,7 +580,7 @@ enum brw_param_builtin {
 
 #define BRW_MAX_EMBEDDED_SAMPLERS (4096)
 
-enum brw_shader_reloc_id {
+enum intel_shader_reloc_id {
    BRW_SHADER_RELOC_CONST_DATA_ADDR_LOW,
    BRW_SHADER_RELOC_CONST_DATA_ADDR_HIGH,
    BRW_SHADER_RELOC_SHADER_START_OFFSET,
@@ -598,7 +598,7 @@ enum brw_shader_reloc_id {
    BRW_SHADER_RELOC_EMBEDDED_SAMPLER_HANDLE + BRW_MAX_EMBEDDED_SAMPLERS - 1,
 };
 
-enum brw_shader_reloc_type {
+enum intel_shader_reloc_type {
    /** An arbitrary 32-bit value */
    BRW_SHADER_RELOC_TYPE_U32,
    /** A MOV instruction with an immediate source */
@@ -610,12 +610,12 @@ enum brw_shader_reloc_type {
  * Relocatable constants are immediates in the code which we want to be able
  * to replace post-compile with the actual value.
  */
-struct brw_shader_reloc {
+struct intel_shader_reloc {
    /** The 32-bit ID of the relocatable constant */
    uint32_t id;
 
    /** Type of this relocation */
-   enum brw_shader_reloc_type type;
+   enum intel_shader_reloc_type type;
 
    /** The offset in the shader to the relocated value
     *
@@ -629,7 +629,7 @@ struct brw_shader_reloc {
 };
 
 /** A value to write to a relocation */
-struct brw_shader_reloc_value {
+struct intel_shader_reloc_value {
    /** The 32-bit ID of the relocatable constant */
    uint32_t id;
 
@@ -666,7 +666,7 @@ struct brw_stage_prog_data {
    unsigned const_data_offset;
 
    unsigned num_relocs;
-   const struct brw_shader_reloc *relocs;
+   const struct intel_shader_reloc *relocs;
 
    /** Does this program pull from any UBO or other constant buffers? */
    bool has_ubo_pull;
@@ -1682,7 +1682,7 @@ void
 brw_write_shader_relocs(const struct brw_isa_info *isa,
                         void *program,
                         const struct brw_stage_prog_data *prog_data,
-                        struct brw_shader_reloc_value *values,
+                        struct intel_shader_reloc_value *values,
                         unsigned num_values);
 
 /**
