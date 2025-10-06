@@ -260,10 +260,10 @@ impl<K> BitSet<K> {
         added_bits
     }
 
-    pub fn s<'a>(
-        &'a self,
+    pub fn s(
+        &self,
         _: RangeFull,
-    ) -> BitSetStream<impl 'a + BitSetStreamTrait, K> {
+    ) -> BitSetStream<impl '_ + BitSetStreamTrait, K> {
         BitSetStream(
             BitSetStreamFromBitSet {
                 iter: self.words.iter().copied(),
