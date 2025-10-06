@@ -1,7 +1,7 @@
 # Copyright © 2017 Intel Corporation
 # SPDX-License-Identifier: MIT
 
-intel_nir_files = files(
+libintel_compiler_nir_files = files(
   'intel_nir.h',
   'intel_nir.c',
 
@@ -16,6 +16,17 @@ intel_nir_files = files(
   'intel_nir_opt_peephole_ffma.c',
   'intel_nir_opt_peephole_imul32x16.c',
   'intel_nir_tcs_workarounds.c',
+)
+
+libintel_compiler_nir = static_library(
+  'intel_compiler_nir',
+  [libintel_compiler_nir_files],
+  include_directories : [inc_include, inc_src, inc_intel],
+  c_args : [no_override_init_args],
+  cpp_args : ['-Werror=vla'],
+  gnu_symbol_visibility : 'hidden',
+  dependencies : [idep_nir_headers, idep_mesautil, idep_intel_dev, idep_vtn, idep_mda],
+  build_by_default : false,
 )
 
 libintel_compiler_brw_files = files(
@@ -154,11 +165,12 @@ brw_nir_workarounds = custom_target(
 
 libintel_compiler_brw = static_library(
   'intel_compiler',
-  [libintel_compiler_brw_files, intel_nir_files, brw_nir_lower_fsign, brw_nir_workarounds, [brw_device_sha1_gen_src]],
+  [libintel_compiler_brw_files, brw_nir_lower_fsign, brw_nir_workarounds, [brw_device_sha1_gen_src]],
   include_directories : [inc_include, inc_src, inc_intel],
   c_args : [no_override_init_args],
   cpp_args : ['-Werror=vla'],
   gnu_symbol_visibility : 'hidden',
+  link_with : libintel_compiler_nir,
   dependencies : [idep_nir_headers, idep_mesautil, idep_intel_dev, idep_vtn, idep_mda],
   build_by_default : false,
 )
