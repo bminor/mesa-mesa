@@ -63,6 +63,15 @@ fd_reg_stomp_allowed(chip CHIP, uint16_t reg)
       case REG_A7XX_SP_CS_VGS_CNTL:
          return false;
       }
+
+      /* The reg stomper doesn't play well with VSC registers because they are
+       * shared between BR and BV and it isn't part of the synchronization
+       * dance to enable BV and binning in BR with concurrent binning disabled
+       * to share the use of them.
+       */
+      if (reg >= REG_A6XX_VSC_BIN_SIZE && reg <= REG_A7XX_VSC_UNKNOWN_0D08)
+         return false;
+
       break;
    }
    default: {
