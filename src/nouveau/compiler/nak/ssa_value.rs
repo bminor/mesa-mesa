@@ -314,7 +314,7 @@ fn test_ssa_ref_round_trip() {
             .collect();
 
         let ssa_ref = SSARef::new(&vec);
-        assert!(ssa_ref[..] == vec[..]);
+        assert_eq!(ssa_ref[..], vec[..]);
     }
 }
 
