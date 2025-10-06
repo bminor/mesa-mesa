@@ -47,6 +47,7 @@ impl ${to_camel(reg_file)}Latency${sm.upper()} {
         use ${enum_name}::*;
         match ${bigcat.header.cat1} {
 % for cat in bigcat.header.cats:
+            #[allow(clippy::match_single_binding)]
             ${to_camel(cat)} => match ${bigcat.header.cat0} {
             <% has_non = False %>
 % for cat2 in bigcat.header.cats:
