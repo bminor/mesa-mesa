@@ -549,7 +549,10 @@ pub fn test_texture() {
             nodep: true,
             channel_mask: ChannelMask::for_comps(3),
         };
-        c.push(instr, format!("tmml.b.lod.nodep r2, r0, r1, r3, 2d, 0x7;"));
+        c.push(
+            instr,
+            "tmml.b.lod.nodep r2, r0, r1, r3, 2d, 0x7;".to_string(),
+        );
 
         let instr = OpTxd {
             dsts: [Dst::Reg(r0), Dst::Reg(r2)],
@@ -567,7 +570,7 @@ pub fn test_texture() {
         };
         c.push(
             instr,
-            format!("txd.b.ef.nodep p0, r2, r0, r1, r3, 2d, 0x7;"),
+            "txd.b.ef.nodep p0, r2, r0, r1, r3, 2d, 0x7;".to_string(),
         );
 
         for tex_query in tex_queries {
