@@ -292,6 +292,7 @@ impl FromIterator<usize> for BitSet {
     }
 }
 
+#[expect(clippy::len_without_is_empty)]
 pub trait BitSetStreamTrait {
     /// Get the next word
     ///

@@ -330,6 +330,7 @@ pub struct CFG<N> {
     nodes: Vec<CFGNode<N>>,
 }
 
+#[expect(clippy::len_without_is_empty)]
 impl<N> CFG<N> {
     /// Creates a new CFG from nodes and edges.
     pub fn from_blocks_edges(
