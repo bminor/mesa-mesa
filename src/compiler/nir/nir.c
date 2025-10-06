@@ -3355,6 +3355,8 @@ nir_tex_instr_need_sampler(const nir_tex_instr *instr)
    case nir_texop_samples_identical:
    case nir_texop_descriptor_amd:
    case nir_texop_image_min_lod_agx:
+   case nir_texop_fragment_mask_fetch_amd:
+   case nir_texop_fragment_fetch_amd:
       return false;
    default:
       return true;
