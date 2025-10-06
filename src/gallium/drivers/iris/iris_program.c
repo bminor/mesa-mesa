@@ -45,11 +45,10 @@
 #include "intel/compiler/brw_compiler.h"
 #include "intel/compiler/brw_nir.h"
 #include "intel/compiler/intel_nir.h"
-#include "intel/compiler/brw_prim.h"
+#include "intel/compiler/intel_prim.h"
 #ifdef INTEL_USE_ELK
 #include "intel/compiler/elk/elk_compiler.h"
 #include "intel/compiler/elk/elk_nir.h"
-#include "intel/compiler/elk/elk_prim.h"
 #endif
 #include "iris_context.h"
 #include "iris_pipe.h"

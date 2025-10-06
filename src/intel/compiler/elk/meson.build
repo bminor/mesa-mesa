@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 libintel_compiler_elk_files = files(
+  '../intel_prim.h',
   'elk_cfg.cpp',
   'elk_cfg.h',
   'elk_clip.h',
@@ -76,7 +77,6 @@ libintel_compiler_elk_files = files(
   'elk_nir_private.h',
   'elk_packed_float.c',
   'elk_predicated_break.cpp',
-  'elk_prim.h',
   'elk_private.h',
   'elk_reg.h',
   'elk_reg_type.c',

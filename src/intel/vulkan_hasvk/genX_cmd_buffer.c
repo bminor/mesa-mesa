@@ -35,7 +35,7 @@
 #include "genxml/gen_macros.h"
 #include "genxml/genX_pack.h"
 #include "common/intel_guardband.h"
-#include "compiler/elk/elk_prim.h"
+#include "compiler/intel_prim.h"
 
 #include "nir/nir_xfb_info.h"
 

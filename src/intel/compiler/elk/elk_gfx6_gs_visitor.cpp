@@ -31,7 +31,7 @@
 
 #include "elk_gfx6_gs_visitor.h"
 #include "elk_eu.h"
-#include "elk_prim.h"
+#include "compiler/intel_prim.h"
 
 namespace elk {
 

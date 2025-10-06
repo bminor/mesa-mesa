@@ -7,7 +7,7 @@
 #include "brw_shader.h"
 #include "brw_builder.h"
 #include "brw_generator.h"
-#include "brw_prim.h"
+#include "intel_prim.h"
 #include "brw_nir.h"
 #include "brw_private.h"
 #include "dev/intel_debug.h"

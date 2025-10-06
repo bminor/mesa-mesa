@@ -33,7 +33,7 @@
 #include "elk_cfg.h"
 #include "elk_fs.h"
 #include "elk_nir.h"
-#include "elk_prim.h"
+#include "compiler/intel_prim.h"
 #include "elk_private.h"
 #include "dev/intel_debug.h"
 

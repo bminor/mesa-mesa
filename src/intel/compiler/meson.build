@@ -30,6 +30,7 @@ libintel_compiler_nir = static_library(
 )
 
 libintel_compiler_brw_files = files(
+  'intel_prim.h',
   'brw_analysis.h',
   'brw_analysis.cpp',
   'brw_analysis_def.cpp',
@@ -115,7 +116,6 @@ libintel_compiler_brw_files = files(
   'brw_opt_virtual_grfs.cpp',
   'brw_packed_float.c',
   'brw_print.cpp',
-  'brw_prim.h',
   'brw_private.h',
   'brw_reg.cpp',
   'brw_reg.h',

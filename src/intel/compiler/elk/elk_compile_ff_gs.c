@@ -32,7 +32,7 @@
 #include "elk_compiler.h"
 #include "elk_disasm.h"
 #include "elk_eu.h"
-#include "elk_prim.h"
+#include "compiler/intel_prim.h"
 
 #include "dev/intel_debug.h"
 

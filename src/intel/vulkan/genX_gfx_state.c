@@ -34,7 +34,7 @@
 #include "common/intel_genX_state_brw.h"
 #include "common/intel_guardband.h"
 #include "common/intel_tiled_render.h"
-#include "compiler/brw_prim.h"
+#include "compiler/intel_prim.h"
 
 #include "genX_mi_builder.h"
 
