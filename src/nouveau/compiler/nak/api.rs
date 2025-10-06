@@ -111,88 +111,81 @@ pub extern "C" fn nak_debug_no_ugpr() -> bool {
 }
 
 fn nir_options(dev: &nv_device_info) -> nir_shader_compiler_options {
-    let mut op: nir_shader_compiler_options = Default::default();
+    nir_shader_compiler_options {
+        lower_fdiv: true,
+        fuse_ffma16: true,
+        fuse_ffma32: true,
+        fuse_ffma64: true,
+        lower_flrp16: true,
+        lower_flrp32: true,
+        lower_flrp64: true,
+        lower_fsqrt: dev.sm < 52,
+        lower_bitfield_extract: false,
+        lower_bitfield_extract8: true,
+        lower_bitfield_extract16: true,
+        lower_bitfield_insert: true,
+        lower_pack_half_2x16: true,
+        lower_pack_unorm_2x16: true,
+        lower_pack_snorm_2x16: true,
+        lower_pack_unorm_4x8: true,
+        lower_pack_snorm_4x8: true,
+        lower_unpack_half_2x16: true,
+        lower_unpack_unorm_2x16: true,
+        lower_unpack_snorm_2x16: true,
+        lower_unpack_unorm_4x8: true,
+        lower_unpack_snorm_4x8: true,
+        lower_insert_byte: true,
+        lower_insert_word: true,
+        lower_cs_local_index_to_id: true,
+        lower_device_index_to_zero: true,
+        lower_isign: true,
+        lower_uadd_sat: dev.sm < 70,
+        lower_usub_sat: dev.sm < 70,
+        lower_iadd_sat: true, // TODO
+        lower_doubles_options: nir_lower_drcp
+            | nir_lower_dsqrt
+            | nir_lower_drsq
+            | nir_lower_dtrunc
+            | nir_lower_dfloor
+            | nir_lower_dceil
+            | nir_lower_dfract
+            | nir_lower_dround_even
+            | nir_lower_dsat
+            | if dev.sm >= 70 { nir_lower_dminmax } else { 0 },
+        lower_int64_options: !(nir_lower_icmp64
+            | nir_lower_iadd64
+            | nir_lower_ineg64
+            | nir_lower_shift64
+            | nir_lower_imul_2x32_64
+            | nir_lower_vote_ieq64
+            | nir_lower_conv64)
+            | if dev.sm < 70 { nir_lower_vote_ieq64 } else { 0 }
+            | if dev.sm < 32 { nir_lower_shift64 } else { 0 },
+        lower_ldexp: true,
+        lower_fmod: true,
+        lower_ffract: true,
+        lower_fpow: true,
+        lower_scmp: true,
+        lower_uadd_carry: true,
+        lower_usub_borrow: true,
+        has_iadd3: dev.sm >= 70,
+        has_imad32: dev.sm >= 70,
+        has_sdot_4x8: dev.sm >= 70,
+        has_udot_4x8: dev.sm >= 70,
+        has_sudot_4x8: dev.sm >= 70,
+        // We set .ftz on f32 by default so we can support fmulz whenever the client
+        // doesn't explicitly request denorms.
+        has_fmulz_no_denorms: true,
+        has_find_msb_rev: true,
+        has_pack_half_2x16_rtz: true,
+        has_bfm: dev.sm >= 70,
+        discard_is_demote: true,
 
-    op.lower_fdiv = true;
-    op.fuse_ffma16 = true;
-    op.fuse_ffma32 = true;
-    op.fuse_ffma64 = true;
-    op.lower_flrp16 = true;
-    op.lower_flrp32 = true;
-    op.lower_flrp64 = true;
-    op.lower_fsqrt = dev.sm < 52;
-    op.lower_bitfield_extract = false;
-    op.lower_bitfield_extract8 = true;
-    op.lower_bitfield_extract16 = true;
-    op.lower_bitfield_insert = true;
-    op.lower_pack_half_2x16 = true;
-    op.lower_pack_unorm_2x16 = true;
-    op.lower_pack_snorm_2x16 = true;
-    op.lower_pack_unorm_4x8 = true;
-    op.lower_pack_snorm_4x8 = true;
-    op.lower_unpack_half_2x16 = true;
-    op.lower_unpack_unorm_2x16 = true;
-    op.lower_unpack_snorm_2x16 = true;
-    op.lower_unpack_unorm_4x8 = true;
-    op.lower_unpack_snorm_4x8 = true;
-    op.lower_insert_byte = true;
-    op.lower_insert_word = true;
-    op.lower_cs_local_index_to_id = true;
-    op.lower_device_index_to_zero = true;
-    op.lower_isign = true;
-    op.lower_uadd_sat = dev.sm < 70;
-    op.lower_usub_sat = dev.sm < 70;
-    op.lower_iadd_sat = true; // TODO
-    op.lower_doubles_options = nir_lower_drcp
-        | nir_lower_dsqrt
-        | nir_lower_drsq
-        | nir_lower_dtrunc
-        | nir_lower_dfloor
-        | nir_lower_dceil
-        | nir_lower_dfract
-        | nir_lower_dround_even
-        | nir_lower_dsat;
-    if dev.sm >= 70 {
-        op.lower_doubles_options |= nir_lower_dminmax;
+        max_unroll_iterations: 32,
+        max_samples: 8,
+        scalarize_ddx: true,
+        ..Default::default()
     }
-    op.lower_int64_options = !(nir_lower_icmp64
-        | nir_lower_iadd64
-        | nir_lower_ineg64
-        | nir_lower_shift64
-        | nir_lower_imul_2x32_64
-        | nir_lower_vote_ieq64
-        | nir_lower_conv64);
-    if dev.sm < 70 {
-        op.lower_int64_options |= nir_lower_vote_ieq64;
-    }
-    if dev.sm < 32 {
-        op.lower_int64_options |= nir_lower_shift64;
-    }
-    op.lower_ldexp = true;
-    op.lower_fmod = true;
-    op.lower_ffract = true;
-    op.lower_fpow = true;
-    op.lower_scmp = true;
-    op.lower_uadd_carry = true;
-    op.lower_usub_borrow = true;
-    op.has_iadd3 = dev.sm >= 70;
-    op.has_imad32 = dev.sm >= 70;
-    op.has_sdot_4x8 = dev.sm >= 70;
-    op.has_udot_4x8 = dev.sm >= 70;
-    op.has_sudot_4x8 = dev.sm >= 70;
-    // We set .ftz on f32 by default so we can support fmulz whenever the client
-    // doesn't explicitly request denorms.
-    op.has_fmulz_no_denorms = true;
-    op.has_find_msb_rev = true;
-    op.has_pack_half_2x16_rtz = true;
-    op.has_bfm = dev.sm >= 70;
-    op.discard_is_demote = true;
-
-    op.max_unroll_iterations = 32;
-    op.max_samples = 8;
-    op.scalarize_ddx = true;
-
-    op
 }
 
 #[no_mangle]
