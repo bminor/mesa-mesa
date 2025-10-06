@@ -27,7 +27,7 @@
 #include <getopt.h>
 
 #include "util/ralloc.h"
-#include "compiler/brw_eu_inst.h"
+#include "brw_eu_inst.h"
 #include "dev/intel_device_info.h"
 
 #include "brw_asm.h"
