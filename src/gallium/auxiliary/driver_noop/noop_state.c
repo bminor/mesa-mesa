@@ -185,12 +185,6 @@ static void noop_set_vertex_buffers(struct pipe_context *ctx,
                                     unsigned count,
                                     const struct pipe_vertex_buffer *buffers)
 {
-   for (unsigned i = 0; i < count; i++) {
-      if (!buffers[i].is_user_buffer) {
-         struct pipe_resource *buf = buffers[i].buffer.resource;
-         pipe_resource_reference(&buf, NULL);
-      }
-   }
 }
 
 static void *noop_create_vertex_elements(struct pipe_context *ctx,

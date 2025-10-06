@@ -714,7 +714,7 @@
         "description": "gallium/noop: don't unref buffers passed to set_vertex_buffers to fix crashes",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b3133e250e1c40496d98c4ba52386b7ae423d194",
         "notes": null
