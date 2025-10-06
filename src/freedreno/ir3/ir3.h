@@ -1299,58 +1299,6 @@ is_input(struct ir3_instruction *instr)
    }
 }
 
-/* Whether non-helper invocations can read the value of helper invocations. We
- * cannot insert (eq) before these instructions.
- */
-static inline bool
-uses_helpers(struct ir3_instruction *instr)
-{
-   switch (instr->opc) {
-   /* These require helper invocations to be present */
-   case OPC_SAMB:
-   case OPC_GETLOD:
-   case OPC_DSX:
-   case OPC_DSY:
-   case OPC_DSXPP_1:
-   case OPC_DSYPP_1:
-   case OPC_DSXPP_MACRO:
-   case OPC_DSYPP_MACRO:
-   case OPC_QUAD_SHUFFLE_BRCST:
-   case OPC_QUAD_SHUFFLE_HORIZ:
-   case OPC_QUAD_SHUFFLE_VERT:
-   case OPC_QUAD_SHUFFLE_DIAG:
-   case OPC_META_TEX_PREFETCH:
-      return true;
-
-   /* sam requires helper invocations except for dummy prefetch instructions */
-   case OPC_SAM:
-      return !has_dummy_dst(instr);
-
-   /* Subgroup operations don't require helper invocations to be present, but
-    * will use helper invocations if they are present.
-    */
-   case OPC_BALLOT_MACRO:
-   case OPC_ANY_MACRO:
-   case OPC_ALL_MACRO:
-   case OPC_READ_FIRST_MACRO:
-   case OPC_READ_COND_MACRO:
-   case OPC_MOVMSK:
-   case OPC_BRCST_ACTIVE:
-      return true;
-
-   /* Catch lowered READ_FIRST/READ_COND. For elect, don't include the getone
-    * in the preamble because it doesn't actually matter which fiber is
-    * selected.
-    */
-   case OPC_MOV:
-   case OPC_ELECT_MACRO:
-      return instr->flags & IR3_INSTR_NEEDS_HELPERS;
-
-   default:
-      return false;
-   }
-}
-
 static inline bool
 is_bool(struct ir3_instruction *instr)
 {
@@ -3302,7 +3250,8 @@ regmask_or_shared(regmask_t *dst, regmask_t *a, regmask_t *b)
 }
 
 static inline void
-regmask_set(regmask_t *regmask, struct ir3_register *reg)
+regmask_set_masked(regmask_t *regmask, struct ir3_register *reg,
+                   unsigned wrmask)
 {
    unsigned size = reg_elem_size(reg);
    enum ir3_reg_file file;
@@ -3311,10 +3260,16 @@ regmask_set(regmask_t *regmask, struct ir3_register *reg)
    if (reg->flags & IR3_REG_RELATIV) {
       __regmask_set(regmask, file, n, size * reg->size);
    } else {
-      for (unsigned mask = reg->wrmask; mask; mask >>= 1, n += size)
+      for (unsigned mask = reg->wrmask & wrmask; mask; mask >>= 1, n += size)
          if (mask & 1)
             __regmask_set(regmask, file, n, size);
    }
+}
+
+static inline void
+regmask_set(regmask_t *regmask, struct ir3_register *reg)
+{
+   regmask_set_masked(regmask, reg, ~0);
 }
 
 static inline void

@@ -1594,6 +1594,208 @@ dbg_expand_rpt(struct ir3 *ir)
    }
 }
 
+struct ir3_mark_helpers_data {
+   bool valid;
+   regmask_t needs_helpers;
+};
+
+static void
+instr_mark_helpers(struct ir3_mark_helpers_data *bd,
+                   struct ir3_instruction *instr)
+{
+   if (instr->flags & IR3_INSTR_NEEDS_HELPERS) {
+      return;
+   }
+
+   foreach_dst (dst, instr) {
+      if (dst->flags & (IR3_REG_RT | IR3_REG_DUMMY)) {
+         continue;
+      }
+
+      if (regmask_get(&bd->needs_helpers, dst)) {
+         instr->flags |= IR3_INSTR_NEEDS_HELPERS;
+         return;
+      }
+   }
+
+   switch (instr->opc) {
+   case OPC_MOVMSK:
+   case OPC_BRCST_ACTIVE:
+   case OPC_QUAD_SHUFFLE_BRCST:
+   case OPC_QUAD_SHUFFLE_HORIZ:
+   case OPC_QUAD_SHUFFLE_VERT:
+   case OPC_QUAD_SHUFFLE_DIAG:
+   case OPC_BALL:
+   case OPC_BANY:
+      /* Subgroup operations don't require helper invocations to be present, but
+       * will use helper invocations if they are present.
+       */
+      instr->flags |= IR3_INSTR_NEEDS_HELPERS;
+      return;
+
+   case OPC_SAM:
+   case OPC_SAMB:
+   case OPC_GETLOD:
+   case OPC_DSX:
+   case OPC_DSY:
+   case OPC_DSXPP_1:
+   case OPC_DSYPP_1: {
+      if (instr->opc == OPC_SAM && has_dummy_dst(instr)) {
+         /* sam requires helper invocations except for dummy prefetch
+          * instructions.
+          */
+         return;
+      }
+
+      /* These instructions don't use helpers themselves but have a src that
+       * needs to be calculated using helpers (e.g., the coordinates used to
+       * calculate derivatives). Mark the src register as needing helpers so
+       * that we can keep them enabled until it is written.
+       */
+      unsigned nsrcs;
+
+      if (instr->opc == OPC_SAM || instr->opc == OPC_SAMB ||
+          instr->opc == OPC_GETLOD) {
+         nsrcs = (instr->flags & IR3_INSTR_3D) ? 3 : 2;
+      } else {
+         /* dsx/dsy: derive the number of sources from the dst wrmask since the
+          * src itself may use aliases.
+          */
+         nsrcs = util_last_bit(instr->dsts[0]->wrmask);
+      }
+
+      if (instr->srcs[0]->flags & IR3_REG_FIRST_ALIAS) {
+         assert(nsrcs <= instr->srcs_count);
+
+         for (unsigned i = 0; i < nsrcs; i++) {
+            struct ir3_register *src = instr->srcs[i];
+
+            if (is_reg_gpr(src)) {
+               regmask_set(&bd->needs_helpers, src);
+            }
+         }
+      } else {
+         regmask_set_masked(&bd->needs_helpers, instr->srcs[0], MASK(nsrcs));
+      }
+
+      break;
+   }
+
+   default:
+      break;
+   }
+}
+
+/* Apply IR3_INSTR_NEEDS_HELPERS to instructions that need helper invocations to
+ * be active. Note that we don't necessarily apply it to all instructions that
+ * need helpers, just to the last one in each block, as that gives us enough
+ * information for inserting (eq) to kill helpers.
+ *
+ * We use a backwards data-flow analysis because we cannot always know whether
+ * an instruction needs helpers by just looking at the opcode. For example,
+ * instructions that calculate (implicit) derivatives don't need helpers to be
+ * active but the calculation of their src needs to be done with active helpers.
+ */
+static bool
+mark_helpers(struct ir3_legalize_ctx *ctx, struct ir3 *ir,
+             struct ir3_shader_variant *so)
+{
+   foreach_block (block, &ir->block_list) {
+      struct ir3_mark_helpers_data *bd =
+         ralloc(ctx, struct ir3_mark_helpers_data);
+      bd->valid = false;
+      regmask_init(&bd->needs_helpers, ctx->compiler->mergedregs);
+      block->data = bd;
+   }
+
+   bool uses_helpers = false;
+   bool progress;
+
+   do {
+      progress = false;
+
+      foreach_block_rev (block, &ir->block_list) {
+         struct ir3_mark_helpers_data *bd = block->data;
+
+         if (bd->valid) {
+            continue;
+         }
+
+         struct ir3_mark_helpers_data prev_bd = *bd;
+         regmask_init(&bd->needs_helpers, ctx->compiler->mergedregs);
+         bool may_have_needs_helpers_at_entry = true;
+
+         for (unsigned i = 0; i < ARRAY_SIZE(block->successors); i++) {
+            struct ir3_block *succ = block->successors[i];
+            if (!succ) {
+               continue;
+            }
+
+            struct ir3_mark_helpers_data *succ_bd = succ->data;
+            regmask_or(&bd->needs_helpers, &bd->needs_helpers,
+                       &succ_bd->needs_helpers);
+         }
+
+         foreach_instr_rev (instr, &block->instr_list) {
+            instr_mark_helpers(bd, instr);
+
+            /* We only care about the last instruction needing helpers. */
+            if (instr->flags & IR3_INSTR_NEEDS_HELPERS) {
+               uses_helpers = true;
+
+               /* This also means we can stop tracking needs_helpers. This saves
+                * us from unnecessarily invalidating predecessors. Making sure
+                * loops are handled correctly is done in helper_sched.
+                */
+               regmask_init(&bd->needs_helpers, ctx->compiler->mergedregs);
+               may_have_needs_helpers_at_entry = false;
+               break;
+            }
+         }
+
+         bd->valid = true;
+
+         /* We have to invalidate the block's predecessors whenever it has more
+          * needs_helpers registers as the previous time around because this may
+          * cause more instructions being marked as needing helpers in its
+          * predecessors. We don't have to do this when it has less
+          * needs_helpers registers as this won't change anything. This is
+          * checked using may_have_needs_helpers_at_entry which will be false
+          * whenever we cleared needs_helpers.
+          */
+         if (may_have_needs_helpers_at_entry &&
+             memcmp(&prev_bd.needs_helpers, &bd->needs_helpers,
+                    sizeof(prev_bd.needs_helpers)) != 0) {
+            progress = true;
+
+            for (unsigned i = 0; i < block->predecessors_count; i++) {
+               struct ir3_mark_helpers_data *pred_bd =
+                  block->predecessors[i]->data;
+               pred_bd->valid = false;
+            }
+         }
+      }
+   } while (progress);
+
+   struct ir3_block *start_block = ir3_start_block(ir);
+   struct ir3_mark_helpers_data *start_bd = start_block->data;
+
+   foreach_input (input, ir) {
+      if (regmask_get(&start_bd->needs_helpers, input->dsts[0])) {
+         /* If we need helpers for an input reg, we have to make sure helpers
+          * are enabled when we enter the shader. Just mark the first
+          * instruction as needing helpers.
+          */
+         struct ir3_instruction *first = ir3_block_get_first_instr(start_block);
+         first->flags |= IR3_INSTR_NEEDS_HELPERS;
+         uses_helpers = true;
+         break;
+      }
+   }
+
+   return uses_helpers;
+}
+
 struct ir3_helper_block_data {
    /* Whether helper invocations may be used on any path starting at the
     * beginning of the block.
@@ -1618,16 +1820,15 @@ static void
 helper_sched(struct ir3_legalize_ctx *ctx, struct ir3 *ir,
              struct ir3_shader_variant *so)
 {
-   bool non_prefetch_helpers = false;
-
    foreach_block (block, &ir->block_list) {
       struct ir3_helper_block_data *bd =
          rzalloc(ctx, struct ir3_helper_block_data);
       foreach_instr (instr, &block->instr_list) {
-         if (uses_helpers(instr)) {
+         if (instr->flags & IR3_INSTR_NEEDS_HELPERS) {
             bd->uses_helpers_beginning = true;
-            if (instr->opc != OPC_META_TEX_PREFETCH) {
-               non_prefetch_helpers = true;
+
+            if (is_terminator(instr)) {
+               bd->uses_helpers_end = true;
             }
          }
 
@@ -1640,26 +1841,7 @@ helper_sched(struct ir3_legalize_ctx *ctx, struct ir3 *ir,
          }
       }
 
-      struct ir3_instruction *terminator = ir3_block_get_terminator(block);
-      if (terminator) {
-         if (terminator->opc == OPC_BALL || terminator->opc == OPC_BANY ||
-             (terminator->opc == OPC_GETONE &&
-              (terminator->flags & IR3_INSTR_NEEDS_HELPERS))) {
-            bd->uses_helpers_beginning = true;
-            bd->uses_helpers_end = true;
-            non_prefetch_helpers = true;
-         }
-      }
-
       block->data = bd;
-   }
-
-   /* If only prefetches use helpers then we can disable them in the shader via
-    * a register setting.
-    */
-   if (!non_prefetch_helpers) {
-      so->prefetch_end_of_quad = true;
-      return;
    }
 
    bool progress;
@@ -1757,11 +1939,7 @@ helper_sched(struct ir3_legalize_ctx *ctx, struct ir3 *ir,
        */
       struct ir3_instruction *first_instr = NULL;
       foreach_instr_rev (instr, &block->instr_list) {
-         /* Skip prefetches because they actually execute before the block
-          * starts and at this stage they aren't guaranteed to be at the start
-          * of the block.
-          */
-         if (uses_helpers(instr) && instr->opc != OPC_META_TEX_PREFETCH)
+         if (instr->flags & IR3_INSTR_NEEDS_HELPERS)
             break;
          first_instr = instr;
       }
@@ -2286,8 +2464,16 @@ ir3_legalize(struct ir3 *ir, struct ir3_shader_variant *so, int *max_bary)
 
    /* TODO: does (eq) exist before a6xx? */
    if (so->type == MESA_SHADER_FRAGMENT && so->need_pixlod &&
-       so->compiler->gen >= 6)
-      helper_sched(ctx, ir, so);
+       so->compiler->gen >= 6) {
+      if (mark_helpers(ctx, ir, so)) {
+         helper_sched(ctx, ir, so);
+      } else {
+         /* If no instructions use helpers, we can disable them in the shader
+          * via a register setting.
+          */
+         so->prefetch_end_of_quad = true;
+      }
+   }
 
    if (ir3_shader_debug & IR3_DBG_FULLSYNC) {
       dbg_sync_sched(ir, so);
