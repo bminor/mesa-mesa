@@ -2500,6 +2500,16 @@ emit_pipe_control(struct anv_batch *batch,
       bits |= ANV_PIPE_HDC_PIPELINE_FLUSH_BIT;
 #endif
 
+   /* BSpec 47112 (xe), 56551 (xe2): Instruction_PIPE_CONTROL (ComputeCS):
+    * SW must follow below programming restrictions when programming
+    * PIPE_CONTROL command:
+    *
+    * "Command Streamer Stall Enable" must be always set.
+    * ...
+    */
+   if (batch->engine_class == INTEL_ENGINE_CLASS_COMPUTE)
+      bits |= ANV_PIPE_CS_STALL_BIT;
+
 #if GFX_VER < 12
    if (bits & ANV_PIPE_HDC_PIPELINE_FLUSH_BIT)
       bits |= ANV_PIPE_DATA_CACHE_FLUSH_BIT;
