@@ -30,10 +30,11 @@
 #include <string.h>
 #include <sys/mman.h>
 
+#include "lib/pan_props.h"
+#include "util/log.h"
 #include "util/macros.h"
 #include "util/u_debug.h"
 #include "util/u_hexdump.h"
-#include "lib/pan_props.h"
 #include "decode.h"
 
 #include "compiler/bifrost/disassemble.h"
@@ -261,12 +262,12 @@ pandecode_dump_file_open(struct pandecode_context *ctx)
       char buffer[1024];
       snprintf(buffer, sizeof(buffer), "%s.ctx-%d.%04d", dump_file_base,
                ctx->id, ctx->dump_frame_count);
-      printf("pandecode: dump command stream to file %s\n", buffer);
+      mesa_logd("pandecode: dump command stream to file %s", buffer);
       ctx->dump_stream = fopen(buffer, "w");
-      if (!ctx->dump_stream)
-         fprintf(stderr,
-                 "pandecode: failed to open command stream log file %s\n",
-                 buffer);
+      if (!ctx->dump_stream) {
+         mesa_loge("pandecode: failed to open command stream log file %s",
+                   buffer);
+      }
    }
 }
 
