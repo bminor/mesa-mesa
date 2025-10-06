@@ -8918,15 +8918,7 @@ impl BasicBlock {
     }
 
     pub fn branch(&self) -> Option<&Instr> {
-        if let Some(i) = self.instrs.last() {
-            if i.is_branch() {
-                Some(i)
-            } else {
-                None
-            }
-        } else {
-            None
-        }
+        self.instrs.last().filter(|&i| i.is_branch())
     }
 
     pub fn branch_ip(&self) -> Option<usize> {
@@ -8943,15 +8935,7 @@ impl BasicBlock {
 
     #[allow(dead_code)]
     pub fn branch_mut(&mut self) -> Option<&mut Instr> {
-        if let Some(i) = self.instrs.last_mut() {
-            if i.is_branch() {
-                Some(i)
-            } else {
-                None
-            }
-        } else {
-            None
-        }
+        self.instrs.last_mut().filter(|i| i.is_branch())
     }
 
     pub fn falls_through(&self) -> bool {
