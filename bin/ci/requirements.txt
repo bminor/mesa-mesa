@@ -1,4 +1,3 @@
--r requirements-lava.txt
 PyYAML==6.*
 filecache==0.81
 flake8==7.*
