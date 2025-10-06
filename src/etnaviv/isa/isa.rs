@@ -36,6 +36,7 @@ pub struct BitsetTemplate<'a> {
 
 /// A structure representing an Instruction Set Architecture (ISA),
 /// containing bitsets and enums.
+#[expect(clippy::upper_case_acronyms)]
 pub struct ISA<'a> {
     pub bitsets: IndexMap<&'a str, Bitset<'a>>,
     pub enums: IndexMap<&'a str, BitSetEnum<'a>>,
