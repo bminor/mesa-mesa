@@ -21,11 +21,6 @@ static bool GetRingParamsFromCapset(enum VirtGpuCapset capset, const VirtGpuCaps
             bufferSize = caps.vulkanCapset.bufferSize;
             blobAlignment = caps.vulkanCapset.blobAlignment;
             break;
-        case kCapsetGfxStreamMagma:
-            ringSize = caps.magmaCapset.ringSize;
-            bufferSize = caps.magmaCapset.bufferSize;
-            blobAlignment = caps.magmaCapset.blobAlignment;
-            break;
         case kCapsetGfxStreamGles:
             ringSize = caps.glesCapset.ringSize;
             bufferSize = caps.glesCapset.bufferSize;
