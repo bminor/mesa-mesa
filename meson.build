@@ -821,6 +821,9 @@ if with_gallium_rusticl or with_nouveau_vk or with_tools.contains('etnaviv') or 
   endif
 
   rust_global_args = [
+    # We want to be able to write `else { if {} }` when it makes more sense than
+    # collapsing it into `else if {}`.
+    '-Aclippy::collapsible_else_if',
   ]
 
   rust_2024_lint_args = [
