@@ -267,6 +267,16 @@ pandecode_dump_file_open(struct pandecode_context *ctx)
       if (!ctx->dump_stream) {
          mesa_loge("pandecode: failed to open command stream log file %s",
                    buffer);
+
+         /* Storage access on Android is quite restricted and varies across
+          * different processes. Meanwhile, PANDECODE_DUMP_FILE option is
+          * global on Android. So we have to fallback to log command stream to
+          * stderr (though won't show up in Android logcat) for those unable to
+          * create the dump file but involved during app launch animation (e.g.
+          * system_server priviledged process).
+          */
+         mesa_loge("pandecode: fall back to log command stream to stderr");
+         ctx->dump_stream = stderr;
       }
    }
 }
