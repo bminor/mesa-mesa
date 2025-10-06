@@ -280,7 +280,6 @@ struct move_tex_coords_state {
 };
 
 struct loop_if_state {
-   bool inside_loop;
    unsigned prev_terminate;
    unsigned prev_break_continue;
 };
@@ -324,8 +323,7 @@ static bool can_optimize_txd(nir_shader *shader, struct loop_if_state *loop_if, 
    if (!size)
       return false;
 
-   bool incomplete_quad =
-      tex->instr.block->divergent || loop_if->prev_terminate || loop_if->inside_loop;
+   bool incomplete_quad = tex->instr.block->divergent || loop_if->prev_terminate;
 
    *need_strict_wqm_coord = false;
    if (incomplete_quad) {
@@ -482,11 +480,7 @@ static bool move_coords_from_divergent_cf(struct move_tex_coords_state *state,
             if (top_level && !loop_if->prev_terminate)
                state->toplevel_b.cursor = nir_before_instr(instr);
 
-            /* Assume quads might be incomplete when inside loops in case of a
-             * divergent terminate from a previous iteration.
-             */
-            bool incomplete_quad =
-               block->divergent || loop_if->prev_terminate || loop_if->inside_loop;
+            bool incomplete_quad = block->divergent || loop_if->prev_terminate;
 
             if (instr->type == nir_instr_type_tex) {
                nir_tex_instr *tex = nir_instr_as_tex(instr);
@@ -548,7 +542,6 @@ static bool move_coords_from_divergent_cf(struct move_tex_coords_state *state,
          nir_loop *loop = nir_cf_node_as_loop(cf_node);
          assert(!nir_loop_has_continue_construct(loop));
          struct loop_if_state inner = *loop_if;
-         inner.inside_loop = true;
          progress |= move_coords_from_divergent_cf(state, &inner, &loop->body);
          loop_if->prev_terminate = inner.prev_terminate;
          break;
@@ -576,7 +569,6 @@ ac_nir_lower_tex(nir_shader *nir, const ac_nir_lower_tex_options *options)
       state.num_wqm_vgprs = 0;
 
       struct loop_if_state loop_if;
-      loop_if.inside_loop = false;
       loop_if.prev_terminate = 0;
       loop_if.prev_break_continue = 0;
       bool impl_progress = move_coords_from_divergent_cf(&state, &loop_if, &impl->body);
