@@ -8062,14 +8062,10 @@ const _: () = {
 
 impl Op {
     pub fn is_branch(&self) -> bool {
-        match self {
-            Op::Bra(_)
-            | Op::Sync(_)
-            | Op::Brk(_)
-            | Op::Cont(_)
-            | Op::Exit(_) => true,
-            _ => false,
-        }
+        matches!(
+            self,
+            Op::Bra(_) | Op::Sync(_) | Op::Brk(_) | Op::Cont(_) | Op::Exit(_)
+        )
     }
 
     pub fn is_fp64(&self) -> bool {
@@ -8248,21 +8244,21 @@ impl Op {
     /// Some decoupled instructions don't need
     /// scoreboards, due to our usage.
     pub fn no_scoreboard(&self) -> bool {
-        match self {
+        matches!(
+            self,
             Op::BClear(_)
-            | Op::Break(_)
-            | Op::BSSy(_)
-            | Op::BSync(_)
-            | Op::SSy(_)
-            | Op::Sync(_)
-            | Op::Brk(_)
-            | Op::PBk(_)
-            | Op::Cont(_)
-            | Op::PCnt(_)
-            | Op::Bra(_)
-            | Op::Exit(_) => true,
-            _ => false,
-        }
+                | Op::Break(_)
+                | Op::BSSy(_)
+                | Op::BSync(_)
+                | Op::SSy(_)
+                | Op::Sync(_)
+                | Op::Brk(_)
+                | Op::PBk(_)
+                | Op::Cont(_)
+                | Op::PCnt(_)
+                | Op::Bra(_)
+                | Op::Exit(_)
+        )
     }
 
     pub fn is_virtual(&self) -> bool {

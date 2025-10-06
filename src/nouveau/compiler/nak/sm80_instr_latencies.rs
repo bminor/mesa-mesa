@@ -1447,23 +1447,23 @@ pub struct SM80Latency {}
 impl SM80Latency {
     pub fn needs_scoreboards(op: &Op) -> bool {
         if op.is_uniform() {
-            match URegLatencySM80::op_category(op, false, 0) {
-                URegLatencySM80::ToUr => true,
-                _ => false,
-            }
+            matches!(
+                URegLatencySM80::op_category(op, false, 0),
+                URegLatencySM80::ToUr
+            )
         } else {
-            match RegLatencySM80::op_category(op, false, 0) {
+            matches!(
+                RegLatencySM80::op_category(op, false, 0),
                 RegLatencySM80::RedirectedFP64
-                | RegLatencySM80::Clmad
-                | RegLatencySM80::IMMA_88
-                | RegLatencySM80::MMA_1x_collect
-                | RegLatencySM80::MMA_2x_collect
-                | RegLatencySM80::DMMA
-                | RegLatencySM80::Cbu
-                | RegLatencySM80::Decoupled
-                | RegLatencySM80::DecoupledAgu => true,
-                _ => false,
-            }
+                    | RegLatencySM80::Clmad
+                    | RegLatencySM80::IMMA_88
+                    | RegLatencySM80::MMA_1x_collect
+                    | RegLatencySM80::MMA_2x_collect
+                    | RegLatencySM80::DMMA
+                    | RegLatencySM80::Cbu
+                    | RegLatencySM80::Decoupled
+                    | RegLatencySM80::DecoupledAgu
+            )
         }
     }
 

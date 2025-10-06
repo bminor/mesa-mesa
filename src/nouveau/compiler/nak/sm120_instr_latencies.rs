@@ -385,22 +385,22 @@ pub struct SM120Latency {}
 impl SM120Latency {
     pub fn needs_scoreboards(op: &Op) -> bool {
         if op.is_uniform() {
-            match op_ureg_latency(op, false, 0) {
+            matches!(
+                op_ureg_latency(op, false, 0),
                 UregLatencySM100::Uldc
-                | UregLatencySM100::ToUr
-                | UregLatencySM100::Tex => true,
-                _ => false,
-            }
+                    | UregLatencySM100::ToUr
+                    | UregLatencySM100::Tex
+            )
         } else {
-            match op_reg_latency(op, false, 0) {
+            matches!(
+                op_reg_latency(op, false, 0),
                 RegLatencySM100::Dmma
-                | RegLatencySM100::Hmma
-                | RegLatencySM100::RedirectedFp64
-                | RegLatencySM100::Branch
-                | RegLatencySM100::Decoupled
-                | RegLatencySM100::DecoupledAgu => true,
-                _ => false,
-            }
+                    | RegLatencySM100::Hmma
+                    | RegLatencySM100::RedirectedFp64
+                    | RegLatencySM100::Branch
+                    | RegLatencySM100::Decoupled
+                    | RegLatencySM100::DecoupledAgu
+            )
         }
     }
 

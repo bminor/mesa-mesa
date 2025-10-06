@@ -1187,10 +1187,10 @@ pub struct SM75Latency {}
 impl SM75Latency {
     pub fn needs_scoreboards(op: &Op) -> bool {
         if op.is_uniform() {
-            match URegLatencySM75::op_category(op, false, 0) {
-                URegLatencySM75::R2UR => true,
-                _ => false,
-            }
+            matches!(
+                URegLatencySM75::op_category(op, false, 0),
+                URegLatencySM75::R2UR
+            )
         } else {
             match RegLatencySM75::op_category(op, false, 0) {
                 RegLatencySM75::RedirectedFP64 |
