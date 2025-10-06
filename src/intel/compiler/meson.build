@@ -141,7 +141,7 @@ brw_nir_lower_fsign = custom_target(
   capture : true,
 )
 
-brw_nir_trig = custom_target(
+brw_nir_workarounds = custom_target(
   'brw_nir_workarounds.c',
   input : 'brw_nir_workarounds.py',
   output : 'brw_nir_workarounds.c',
@@ -154,7 +154,7 @@ brw_nir_trig = custom_target(
 
 libintel_compiler_brw = static_library(
   'intel_compiler',
-  [libintel_compiler_brw_files, intel_nir_files, brw_nir_lower_fsign, brw_nir_trig, [brw_device_sha1_gen_src]],
+  [libintel_compiler_brw_files, intel_nir_files, brw_nir_lower_fsign, brw_nir_workarounds, [brw_device_sha1_gen_src]],
   include_directories : [inc_include, inc_src, inc_intel],
   c_args : [no_override_init_args],
   cpp_args : ['-Werror=vla'],
