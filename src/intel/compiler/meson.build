@@ -154,7 +154,7 @@ brw_nir_trig = custom_target(
 
 libintel_compiler_brw = static_library(
   'intel_compiler',
-  [libintel_compiler_brw_files, intel_nir_files, brw_nir_lower_fsign, brw_nir_trig, ir_expression_operation_h, [brw_device_sha1_gen_src]],
+  [libintel_compiler_brw_files, intel_nir_files, brw_nir_lower_fsign, brw_nir_trig, [brw_device_sha1_gen_src]],
   include_directories : [inc_include, inc_src, inc_intel],
   c_args : [no_override_init_args],
   cpp_args : ['-Werror=vla'],
@@ -194,7 +194,6 @@ if with_tests
         'test_simd_selection.cpp',
         'test_vf_float_conversions.cpp',
       ),
-      ir_expression_operation_h,
       include_directories : [inc_include, inc_src, inc_intel],
       cpp_args : ['-Werror=vla'],
       link_with : libisl,
