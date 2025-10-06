@@ -4694,7 +4694,7 @@
         "description": "radv: fix expected disk cache size for meta shaders",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4fc856af98ecee00f07a039b68dd82fb47b4e6da",
         "notes": null

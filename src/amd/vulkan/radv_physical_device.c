@@ -2395,7 +2395,8 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
    mesa_bytes_to_hex(buf, pdev->cache_uuid, VK_UUID_SIZE);
    pdev->vk.disk_cache = disk_cache_create(pdev->name, buf, 0);
 
-   pdev->disk_cache_meta = disk_cache_create_custom(pdev->name, buf, 0, "radv_builtin_shaders", 1024 * 32 /* 32MiB */);
+   pdev->disk_cache_meta =
+      disk_cache_create_custom(pdev->name, buf, 0, "radv_builtin_shaders", 1024 * 1024 * 32 /* 32MiB */);
 
    radv_get_physical_device_properties(pdev);
 
