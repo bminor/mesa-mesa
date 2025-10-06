@@ -1348,6 +1348,10 @@ hk_compile_shader(struct hk_device *dev, struct vk_shader_compile_info *info,
       NIR_PASS(_, nir, agx_nir_lower_gs, &count, &rast, &pre_gs,
                &count_variant->info.gs);
 
+      agx_preprocess_nir(count);
+      agx_preprocess_nir(rast);
+      agx_preprocess_nir(pre_gs);
+
       struct hk_shader *shader = &obj->variants[HK_GS_VARIANT_RAST];
       hk_lower_hw_vs(rast, shader, false);
       shader->info.gs = count_variant->info.gs;

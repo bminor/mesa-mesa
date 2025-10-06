@@ -459,7 +459,6 @@ create_geometry_count_shader(nir_shader *gs, struct lower_gs_state *state)
    NIR_PASS(_, shader, nir_shader_intrinsics_pass, lower_id,
             nir_metadata_control_flow, NULL);
 
-   agx_preprocess_nir(shader);
    return shader;
 }
 
@@ -833,7 +832,6 @@ create_gs_rast_shader(const nir_shader *gs, const struct lower_gs_state *state)
       nir_lower_default_point_size(shader);
    }
 
-   agx_preprocess_nir(shader);
    return shader;
 }
 
@@ -951,7 +949,6 @@ create_pre_gs(struct agx_xfb_key *key)
       nir_load_stat_query_address_poly(b, .base = PIPE_STAT_QUERY_C_PRIMITIVES),
       nir_load_stat_query_address_poly(b,
                                        .base = PIPE_STAT_QUERY_C_INVOCATIONS));
-   agx_preprocess_nir(b->shader);
    return b->shader;
 }
 

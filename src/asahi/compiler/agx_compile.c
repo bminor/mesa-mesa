@@ -3672,6 +3672,9 @@ agx_nir_lower_fdiv(nir_builder *b, nir_alu_instr *alu, void *_)
 void
 agx_preprocess_nir(nir_shader *nir)
 {
+   if (!nir)
+      return;
+
    NIR_PASS(_, nir, nir_lower_vars_to_ssa);
 
    /* Lower large arrays to scratch and small arrays to csel */
