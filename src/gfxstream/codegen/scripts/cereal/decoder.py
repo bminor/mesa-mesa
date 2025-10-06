@@ -34,6 +34,7 @@ GLOBAL_COMMANDS_WITHOUT_DISPATCH = [
     "vkEnumerateInstanceVersion",
     "vkEnumerateInstanceExtensionProperties",
     "vkEnumerateInstanceLayerProperties",
+    "vkTraceAsyncGOOGLE",
 ]
 
 SNAPSHOT_API_CALL_HANDLE_VARNAME = "snapshotApiCallHandle"
