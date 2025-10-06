@@ -555,10 +555,7 @@ emit_mubuf_instruction(asm_context& ctx, std::vector<uint32_t>& out, const Instr
    bool dlc = mubuf.cache.value & ac_dlc;
 
    uint32_t encoding = (0b111000 << 26);
-   if (ctx.gfx_level >= GFX11 && mubuf.lds) /* GFX11 has separate opcodes for LDS loads */
-      opcode = opcode == 0 ? 0x32 : (opcode + 0x1d);
-   else
-      encoding |= (mubuf.lds ? 1 : 0) << 16;
+   encoding |= (mubuf.lds ? 1 : 0) << 16;
    encoding |= opcode << 18;
    encoding |= (glc ? 1 : 0) << 14;
    if (ctx.gfx_level <= GFX10_3)

@@ -630,45 +630,6 @@ BEGIN_TEST(assembler.mubuf)
          ->mubuf()
          .tfe = true;
 
-      /* LDS */
-      if (gfx == GFX11) {
-         //~gfx11! buffer_load_lds_b32 off, s[32:35], 0                        ; e0c40000 80080080
-         bld.mubuf(aco_opcode::buffer_load_dword, op_s4, Operand(v1), Operand::zero(), op_m0, 0,
-                   false)
-            ->mubuf()
-            .lds = true;
-
-         //~gfx11! buffer_load_lds_i8 off, s[32:35], 0                         ; e0b80000 80080080
-         bld.mubuf(aco_opcode::buffer_load_sbyte, op_s4, Operand(v1), Operand::zero(), op_m0, 0,
-                   false)
-            ->mubuf()
-            .lds = true;
-
-         //~gfx11! buffer_load_lds_i16 off, s[32:35], 0                        ; e0c00000 80080080
-         bld.mubuf(aco_opcode::buffer_load_sshort, op_s4, Operand(v1), Operand::zero(), op_m0, 0,
-                   false)
-            ->mubuf()
-            .lds = true;
-
-         //~gfx11! buffer_load_lds_u8 off, s[32:35], 0                         ; e0b40000 80080080
-         bld.mubuf(aco_opcode::buffer_load_ubyte, op_s4, Operand(v1), Operand::zero(), op_m0, 0,
-                   false)
-            ->mubuf()
-            .lds = true;
-
-         //~gfx11! buffer_load_lds_u16 off, s[32:35], 0                        ; e0bc0000 80080080
-         bld.mubuf(aco_opcode::buffer_load_ushort, op_s4, Operand(v1), Operand::zero(), op_m0, 0,
-                   false)
-            ->mubuf()
-            .lds = true;
-
-         //~gfx11! buffer_load_lds_format_x off, s[32:35], 0                   ; e0c80000 80080080
-         bld.mubuf(aco_opcode::buffer_load_format_x, op_s4, Operand(v1), Operand::zero(), op_m0, 0,
-                   false)
-            ->mubuf()
-            .lds = true;
-      }
-
       /* Stores */
       //~gfx11! buffer_store_b32 v10, off, s[32:35], s30                    ; e0680000 1e080a80
       //~gfx12! buffer_store_b32 v10, off, s[32:35], s30                    ; c406801e 0080400a 00000000

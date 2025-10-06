@@ -1761,12 +1761,6 @@ MUBUF = {
    ("buffer_gl0_inv",               op(gfx10=0x71, gfx11=0x2b, gfx12=-1)),
    ("buffer_gl1_inv",               op(gfx10=0x72, gfx11=0x2c, gfx12=-1)),
    ("buffer_atomic_csub",           op(gfx10=0x34, gfx11=0x37)), #GFX10.3+. seems glc must be set. buffer_atomic_csub_u32 in GFX11
-   ("buffer_load_lds_b32",          op(gfx11=0x31, gfx12=-1)),
-   ("buffer_load_lds_format_x",     op(gfx11=0x32, gfx12=-1)),
-   ("buffer_load_lds_i8",           op(gfx11=0x2e, gfx12=-1)),
-   ("buffer_load_lds_i16",          op(gfx11=0x30, gfx12=-1)),
-   ("buffer_load_lds_u8",           op(gfx11=0x2d, gfx12=-1)),
-   ("buffer_load_lds_u16",          op(gfx11=0x2f, gfx12=-1)),
    ("buffer_atomic_add_f32",        op(gfx11=0x56)),
    ("buffer_atomic_pk_add_f16",     op(gfx12=0x59)),
    ("buffer_atomic_pk_add_bf16",    op(gfx12=0x5a)),
