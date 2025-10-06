@@ -35,6 +35,7 @@
 #include "util/macros.h"
 #include "util/u_debug.h"
 #include "util/u_hexdump.h"
+#include "util/u_process.h"
 #include "decode.h"
 
 #include "compiler/bifrost/disassemble.h"
@@ -260,8 +261,8 @@ pandecode_dump_file_open(struct pandecode_context *ctx)
       ctx->dump_stream = stderr;
    else if (!ctx->dump_stream) {
       char buffer[1024];
-      snprintf(buffer, sizeof(buffer), "%s.ctx-%d.%04d", dump_file_base,
-               ctx->id, ctx->dump_frame_count);
+      snprintf(buffer, sizeof(buffer), "%s.%s.ctx-%d.%04d", dump_file_base,
+               util_get_process_name(), ctx->id, ctx->dump_frame_count);
       mesa_logd("pandecode: dump command stream to file %s", buffer);
       ctx->dump_stream = fopen(buffer, "w");
       if (!ctx->dump_stream) {
