@@ -433,6 +433,7 @@ radv_rt_nir_to_asm(struct radv_device *device, struct vk_pipeline_cache *cache,
 
       radv_optimize_nir(temp_stage.nir, stage->key.optimisations_disabled);
       radv_postprocess_nir(device, NULL, &temp_stage);
+      stage->info.nir_shared_size = MAX2(stage->info.nir_shared_size, temp_stage.info.nir_shared_size);
 
       if (stage_info)
          radv_gather_unused_args(stage_info, shaders[i]);
