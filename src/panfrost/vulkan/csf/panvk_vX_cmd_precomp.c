@@ -23,8 +23,13 @@ panvk_per_arch(dispatch_precomp)(struct panvk_precomp_ctx *ctx,
                                  enum libpan_shaders_program idx, void *data,
                                  size_t data_size)
 {
-   enum panlib_barrier supported_barriers = PANLIB_BARRIER_CSF_SYNC;
+   enum panlib_barrier supported_barriers =
+      PANLIB_BARRIER_CSF_SYNC | PANLIB_BARRIER_CSF_WAIT;
    assert(!(barrier & ~supported_barriers) && "Unsupported barrier flags");
+   assert(!(barrier & PANLIB_BARRIER_CSF_SYNC &&
+            barrier & PANLIB_BARRIER_CSF_WAIT) &&
+          "Cannot use both CSF_SYNC and CSF_WAIT barriers simultaneously");
+
 
    struct panvk_cmd_buffer *cmdbuf = ctx->cmdbuf;
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
@@ -164,6 +169,30 @@ panvk_per_arch(dispatch_precomp)(struct panvk_precomp_ctx *ctx,
 #endif
 
       ++cmdbuf->state.cs[PANVK_SUBQUEUE_COMPUTE].relative_sync_point;
+   } else if (barrier & PANLIB_BARRIER_CSF_WAIT) {
+#if PAN_ARCH >= 11
+      cs_wait_indirect(b);
+#else
+      struct cs_index iter_sb = cs_scratch_reg32(b, 0);
+      struct cs_index cmp_scratch = cs_scratch_reg32(b, 1);
+
+      cs_load32_to(b, iter_sb, cs_subqueue_ctx_reg(b),
+                   offsetof(struct panvk_cs_subqueue_context, iter_sb));
+
+      cs_match(b, iter_sb, cmp_scratch) {
+#define CASE(x)                                                                \
+      cs_case(b, SB_ITER(x)) {                                                 \
+         cs_wait_slot(b, SB_ITER(x));                                          \
+      }
+
+         CASE(0)
+         CASE(1)
+         CASE(2)
+         CASE(3)
+         CASE(4)
+#undef CASE
+      }
+#endif
    }
 
    /* XXX: clobbers the registers instead to avoid recreating them when calling
