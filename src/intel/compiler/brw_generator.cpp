@@ -1562,8 +1562,8 @@ brw_generator::add_resume_sbt(unsigned num_resume_shaders, uint64_t *sbt)
       for (unsigned i = 0; i < num_resume_shaders; i++) {
          size_t offset = bs_prog_data->resume_sbt_offset + i * sizeof(*sbt);
          assert(offset <= UINT32_MAX);
-         brw_add_reloc(p, BRW_SHADER_RELOC_SHADER_START_OFFSET,
-                       BRW_SHADER_RELOC_TYPE_U32,
+         brw_add_reloc(p, INTEL_SHADER_RELOC_SHADER_START_OFFSET,
+                       INTEL_SHADER_RELOC_TYPE_U32,
                        (uint32_t)offset, (uint32_t)sbt[i]);
       }
    }

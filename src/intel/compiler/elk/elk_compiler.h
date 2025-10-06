@@ -656,51 +656,6 @@ enum elk_param_builtin {
 #define ELK_PARAM_BUILTIN_CLIP_PLANE_COMP(param) \
    (((param) - ELK_PARAM_BUILTIN_CLIP_PLANE_0_X) & 0x3)
 
-enum elk_shader_reloc_id {
-   ELK_SHADER_RELOC_CONST_DATA_ADDR_LOW,
-   ELK_SHADER_RELOC_CONST_DATA_ADDR_HIGH,
-   ELK_SHADER_RELOC_SHADER_START_OFFSET,
-};
-
-enum elk_shader_reloc_type {
-   /** An arbitrary 32-bit value */
-   ELK_SHADER_RELOC_TYPE_U32,
-   /** A MOV instruction with an immediate source */
-   ELK_SHADER_RELOC_TYPE_MOV_IMM,
-};
-
-/** Represents a code relocation
- *
- * Relocatable constants are immediates in the code which we want to be able
- * to replace post-compile with the actual value.
- */
-struct elk_shader_reloc {
-   /** The 32-bit ID of the relocatable constant */
-   uint32_t id;
-
-   /** Type of this relocation */
-   enum elk_shader_reloc_type type;
-
-   /** The offset in the shader to the relocated value
-    *
-    * For MOV_IMM relocs, this is an offset to the MOV instruction.  This
-    * allows us to do some sanity checking while we update the value.
-    */
-   uint32_t offset;
-
-   /** Value to be added to the relocated value before it is written */
-   uint32_t delta;
-};
-
-/** A value to write to a relocation */
-struct elk_shader_reloc_value {
-   /** The 32-bit ID of the relocatable constant */
-   uint32_t id;
-
-   /** The value with which to replace the relocated immediate */
-   uint32_t value;
-};
-
 struct elk_stage_prog_data {
    struct elk_ubo_range ubo_ranges[4];
 
@@ -731,7 +686,7 @@ struct elk_stage_prog_data {
    unsigned const_data_offset;
 
    unsigned num_relocs;
-   const struct elk_shader_reloc *relocs;
+   const struct intel_shader_reloc *relocs;
 
    /** Does this program pull from any UBO or other constant buffers? */
    bool has_ubo_pull;
@@ -1661,7 +1616,7 @@ void
 elk_write_shader_relocs(const struct elk_isa_info *isa,
                         void *program,
                         const struct elk_stage_prog_data *prog_data,
-                        struct elk_shader_reloc_value *values,
+                        struct intel_shader_reloc_value *values,
                         unsigned num_values);
 
 /**

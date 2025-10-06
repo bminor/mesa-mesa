@@ -330,17 +330,17 @@ anv_shader_set_relocs(struct anv_device *device,
    };
    assert((device->physical->va.instruction_state_pool.addr & 0xffffffff) == 0);
    reloc_values[rv_count++] = (struct intel_shader_reloc_value) {
-      .id = BRW_SHADER_RELOC_CONST_DATA_ADDR_LOW,
+      .id = INTEL_SHADER_RELOC_CONST_DATA_ADDR_LOW,
       .value = shader_data_addr,
    };
    assert((device->physical->va.instruction_state_pool.addr & 0xffffffff) == 0);
    assert(shader_data_addr >> 32 == device->physical->va.instruction_state_pool.addr >> 32);
    reloc_values[rv_count++] = (struct intel_shader_reloc_value) {
-      .id = BRW_SHADER_RELOC_CONST_DATA_ADDR_HIGH,
+      .id = INTEL_SHADER_RELOC_CONST_DATA_ADDR_HIGH,
       .value = device->physical->va.instruction_state_pool.addr >> 32,
    };
    reloc_values[rv_count++] = (struct intel_shader_reloc_value) {
-      .id = BRW_SHADER_RELOC_SHADER_START_OFFSET,
+      .id = INTEL_SHADER_RELOC_SHADER_START_OFFSET,
       .value = shader->kernel.offset,
    };
    if (brw_shader_stage_is_bindless(shader->vk.stage)) {

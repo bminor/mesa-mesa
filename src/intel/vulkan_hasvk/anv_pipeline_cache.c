@@ -81,7 +81,7 @@ anv_shader_bin_create(struct anv_device *device,
    VK_MULTIALLOC_DECL_SIZE(&ma, void, obj_key_data, key_size);
    VK_MULTIALLOC_DECL_SIZE(&ma, struct elk_stage_prog_data, prog_data,
                                 prog_data_size);
-   VK_MULTIALLOC_DECL(&ma, struct elk_shader_reloc, prog_data_relocs,
+   VK_MULTIALLOC_DECL(&ma, struct intel_shader_reloc, prog_data_relocs,
                            prog_data_in->num_relocs);
    VK_MULTIALLOC_DECL(&ma, uint32_t, prog_data_param, prog_data_in->nr_params);
 
@@ -114,17 +114,17 @@ anv_shader_bin_create(struct anv_device *device,
                                prog_data_in->const_data_offset;
 
    int rv_count = 0;
-   struct elk_shader_reloc_value reloc_values[5];
-   reloc_values[rv_count++] = (struct elk_shader_reloc_value) {
-      .id = ELK_SHADER_RELOC_CONST_DATA_ADDR_LOW,
+   struct intel_shader_reloc_value reloc_values[5];
+   reloc_values[rv_count++] = (struct intel_shader_reloc_value) {
+      .id = INTEL_SHADER_RELOC_CONST_DATA_ADDR_LOW,
       .value = shader_data_addr,
    };
-   reloc_values[rv_count++] = (struct elk_shader_reloc_value) {
-      .id = ELK_SHADER_RELOC_CONST_DATA_ADDR_HIGH,
+   reloc_values[rv_count++] = (struct intel_shader_reloc_value) {
+      .id = INTEL_SHADER_RELOC_CONST_DATA_ADDR_HIGH,
       .value = shader_data_addr >> 32,
    };
-   reloc_values[rv_count++] = (struct elk_shader_reloc_value) {
-      .id = ELK_SHADER_RELOC_SHADER_START_OFFSET,
+   reloc_values[rv_count++] = (struct intel_shader_reloc_value) {
+      .id = INTEL_SHADER_RELOC_SHADER_START_OFFSET,
       .value = shader->kernel.offset,
    };
    elk_write_shader_relocs(&device->physical->compiler->isa,

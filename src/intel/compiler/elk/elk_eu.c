@@ -355,7 +355,7 @@ const unsigned *elk_get_program( struct elk_codegen *p,
    return (const unsigned *)p->store;
 }
 
-const struct elk_shader_reloc *
+const struct intel_shader_reloc *
 elk_get_shader_relocs(struct elk_codegen *p, unsigned *num_relocs)
 {
    *num_relocs = p->num_relocs;

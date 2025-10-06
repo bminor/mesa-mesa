@@ -219,7 +219,7 @@ void
 elk_write_shader_relocs(const struct elk_isa_info *isa,
                         void *program,
                         const struct elk_stage_prog_data *prog_data,
-                        struct elk_shader_reloc_value *values,
+                        struct intel_shader_reloc_value *values,
                         unsigned num_values)
 {
    for (unsigned i = 0; i < prog_data->num_relocs; i++) {
@@ -229,10 +229,10 @@ elk_write_shader_relocs(const struct elk_isa_info *isa,
          if (prog_data->relocs[i].id == values[j].id) {
             uint32_t value = values[j].value + prog_data->relocs[i].delta;
             switch (prog_data->relocs[i].type) {
-            case ELK_SHADER_RELOC_TYPE_U32:
+            case INTEL_SHADER_RELOC_TYPE_U32:
                *(uint32_t *)dst = value;
                break;
-            case ELK_SHADER_RELOC_TYPE_MOV_IMM:
+            case INTEL_SHADER_RELOC_TYPE_MOV_IMM:
                elk_update_reloc_imm(isa, dst, value);
                break;
             default:

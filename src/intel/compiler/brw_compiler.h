@@ -578,65 +578,6 @@ enum brw_param_builtin {
 #define BRW_PARAM_BUILTIN_CLIP_PLANE_COMP(param) \
    (((param) - BRW_PARAM_BUILTIN_CLIP_PLANE_0_X) & 0x3)
 
-#define BRW_MAX_EMBEDDED_SAMPLERS (4096)
-
-enum intel_shader_reloc_id {
-   BRW_SHADER_RELOC_CONST_DATA_ADDR_LOW,
-   BRW_SHADER_RELOC_CONST_DATA_ADDR_HIGH,
-   BRW_SHADER_RELOC_SHADER_START_OFFSET,
-   BRW_SHADER_RELOC_RESUME_SBT_ADDR_LOW,
-   BRW_SHADER_RELOC_RESUME_SBT_ADDR_HIGH,
-   BRW_SHADER_RELOC_DESCRIPTORS_ADDR_HIGH,
-   BRW_SHADER_RELOC_DESCRIPTORS_BUFFER_ADDR_HIGH,
-   BRW_SHADER_RELOC_INSTRUCTION_BASE_ADDR_HIGH,
-   BRW_SHADER_RELOC_PRINTF_BUFFER_ADDR_LOW,
-   BRW_SHADER_RELOC_PRINTF_BUFFER_ADDR_HIGH,
-   BRW_SHADER_RELOC_PRINTF_BUFFER_SIZE,
-   /* Leave this entry last: */
-   BRW_SHADER_RELOC_EMBEDDED_SAMPLER_HANDLE,
-   BRW_SHADER_RELOC_LAST_EMBEDDED_SAMPLER_HANDLE =
-   BRW_SHADER_RELOC_EMBEDDED_SAMPLER_HANDLE + BRW_MAX_EMBEDDED_SAMPLERS - 1,
-};
-
-enum intel_shader_reloc_type {
-   /** An arbitrary 32-bit value */
-   BRW_SHADER_RELOC_TYPE_U32,
-   /** A MOV instruction with an immediate source */
-   BRW_SHADER_RELOC_TYPE_MOV_IMM,
-};
-
-/** Represents a code relocation
- *
- * Relocatable constants are immediates in the code which we want to be able
- * to replace post-compile with the actual value.
- */
-struct intel_shader_reloc {
-   /** The 32-bit ID of the relocatable constant */
-   uint32_t id;
-
-   /** Type of this relocation */
-   enum intel_shader_reloc_type type;
-
-   /** The offset in the shader to the relocated value
-    *
-    * For MOV_IMM relocs, this is an offset to the MOV instruction.  This
-    * allows us to do some sanity checking while we update the value.
-    */
-   uint32_t offset;
-
-   /** Value to be added to the relocated value before it is written */
-   uint32_t delta;
-};
-
-/** A value to write to a relocation */
-struct intel_shader_reloc_value {
-   /** The 32-bit ID of the relocatable constant */
-   uint32_t id;
-
-   /** The value with which to replace the relocated immediate */
-   uint32_t value;
-};
-
 struct brw_stage_prog_data {
    struct brw_ubo_range ubo_ranges[4];
 

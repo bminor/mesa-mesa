@@ -175,32 +175,22 @@ iris_upload_shader(struct iris_screen *screen,
                                shader->assembly.offset +
                                shader->const_data_offset;
 
+   struct intel_shader_reloc_value reloc_values[] = {
+      {
+         .id = INTEL_SHADER_RELOC_CONST_DATA_ADDR_LOW,
+         .value = shader_data_addr,
+      },
+      {
+         .id = INTEL_SHADER_RELOC_CONST_DATA_ADDR_HIGH,
+         .value = shader_data_addr >> 32,
+      },
+   };
    if (screen->brw) {
-      struct intel_shader_reloc_value reloc_values[] = {
-         {
-            .id = BRW_SHADER_RELOC_CONST_DATA_ADDR_LOW,
-            .value = shader_data_addr,
-         },
-         {
-            .id = BRW_SHADER_RELOC_CONST_DATA_ADDR_HIGH,
-            .value = shader_data_addr >> 32,
-         },
-      };
       brw_write_shader_relocs(&screen->brw->isa, shader->map,
                               shader->brw_prog_data, reloc_values,
                               ARRAY_SIZE(reloc_values));
    } else {
 #ifdef INTEL_USE_ELK
-      struct elk_shader_reloc_value reloc_values[] = {
-         {
-            .id = BRW_SHADER_RELOC_CONST_DATA_ADDR_LOW,
-            .value = shader_data_addr,
-         },
-         {
-            .id = BRW_SHADER_RELOC_CONST_DATA_ADDR_HIGH,
-            .value = shader_data_addr >> 32,
-         },
-      };
       elk_write_shader_relocs(&screen->elk->isa, shader->map,
                               shader->elk_prog_data, reloc_values,
                               ARRAY_SIZE(reloc_values));

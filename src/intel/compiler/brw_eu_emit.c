@@ -1948,7 +1948,7 @@ brw_MOV_reloc_imm(struct brw_codegen *p,
    assert(brw_type_size_bytes(src_type) == 4);
    assert(brw_type_size_bytes(dst.type) == 4);
 
-   brw_add_reloc(p, id, BRW_SHADER_RELOC_TYPE_MOV_IMM,
+   brw_add_reloc(p, id, INTEL_SHADER_RELOC_TYPE_MOV_IMM,
                  p->next_insn_offset, base);
 
    brw_MOV(p, dst, retype(brw_imm_ud(DEFAULT_PATCH_IMM), src_type));

@@ -631,16 +631,16 @@ elk_next_insn(struct elk_codegen *p, unsigned opcode)
 
 void
 elk_add_reloc(struct elk_codegen *p, uint32_t id,
-              enum elk_shader_reloc_type type,
+              enum intel_shader_reloc_type type,
               uint32_t offset, uint32_t delta)
 {
    if (p->num_relocs + 1 > p->reloc_array_size) {
       p->reloc_array_size = MAX2(16, p->reloc_array_size * 2);
       p->relocs = reralloc(p->mem_ctx, p->relocs,
-                           struct elk_shader_reloc, p->reloc_array_size);
+                           struct intel_shader_reloc, p->reloc_array_size);
    }
 
-   p->relocs[p->num_relocs++] = (struct elk_shader_reloc) {
+   p->relocs[p->num_relocs++] = (struct intel_shader_reloc) {
       .id = id,
       .type = type,
       .offset = offset,
@@ -3216,7 +3216,7 @@ elk_MOV_reloc_imm(struct elk_codegen *p,
    assert(type_sz(src_type) == 4);
    assert(type_sz(dst.type) == 4);
 
-   elk_add_reloc(p, id, ELK_SHADER_RELOC_TYPE_MOV_IMM,
+   elk_add_reloc(p, id, INTEL_SHADER_RELOC_TYPE_MOV_IMM,
                  p->next_insn_offset, 0);
 
    elk_MOV(p, dst, retype(elk_imm_ud(DEFAULT_PATCH_IMM), src_type));

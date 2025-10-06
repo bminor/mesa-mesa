@@ -368,10 +368,10 @@ brw_write_shader_relocs(const struct brw_isa_info *isa,
          if (prog_data->relocs[i].id == values[j].id) {
             uint32_t value = values[j].value + prog_data->relocs[i].delta;
             switch (prog_data->relocs[i].type) {
-            case BRW_SHADER_RELOC_TYPE_U32:
+            case INTEL_SHADER_RELOC_TYPE_U32:
                *(uint32_t *)dst = value;
                break;
-            case BRW_SHADER_RELOC_TYPE_MOV_IMM:
+            case INTEL_SHADER_RELOC_TYPE_MOV_IMM:
                brw_update_reloc_imm(isa, dst, value);
                break;
             default:

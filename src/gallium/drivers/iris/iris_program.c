@@ -1014,7 +1014,7 @@ iris_setup_uniforms(ASSERTED const struct intel_device_info *devinfo,
             assert(IRIS_MEMZONE_SHADER_START >> 32 == 0ull);
 
             nir_def *const_data_addr =
-               nir_iadd(&b, nir_load_reloc_const_intel(&b, BRW_SHADER_RELOC_CONST_DATA_ADDR_LOW), offset);
+               nir_iadd(&b, nir_load_reloc_const_intel(&b, INTEL_SHADER_RELOC_CONST_DATA_ADDR_LOW), offset);
 
             nir_def *data =
                nir_load_global_constant(&b, nir_u2u64(&b, const_data_addr),

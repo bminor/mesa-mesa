@@ -157,7 +157,7 @@ iris_disk_cache_store(struct disk_cache *cache,
    } else {
 #ifdef INTEL_USE_ELK
       blob_write_bytes(&blob, elk->relocs,
-                       elk->num_relocs * sizeof(struct elk_shader_reloc));
+                       elk->num_relocs * sizeof(struct intel_shader_reloc));
       blob_write_bytes(&blob, elk->param,
                        elk->nr_params * sizeof(uint32_t));
 #else
@@ -275,10 +275,10 @@ iris_disk_cache_retrieve(struct iris_screen *screen,
 #ifdef INTEL_USE_ELK
       elk->relocs = NULL;
       if (elk->num_relocs) {
-         struct elk_shader_reloc *relocs =
-            ralloc_array(NULL, struct elk_shader_reloc, elk->num_relocs);
+         struct intel_shader_reloc *relocs =
+            ralloc_array(NULL, struct intel_shader_reloc, elk->num_relocs);
          blob_copy_bytes(&blob, relocs,
-                         elk->num_relocs * sizeof(struct elk_shader_reloc));
+                         elk->num_relocs * sizeof(struct intel_shader_reloc));
          elk->relocs = relocs;
       }
 
