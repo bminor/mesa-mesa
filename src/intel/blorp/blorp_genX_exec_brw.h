@@ -1835,9 +1835,18 @@ blorp_exec_compute(struct blorp_batch *batch, const struct blorp_params *params)
    /*
     * TDOD: Add INTEL_NEEDS_WA_14025112257 check once HSD is propogated for all
     * other impacted platforms.
+    *
+    * BSpec 47112 (xe), 56551 (xe2): Instruction_PIPE_CONTROL (ComputeCS):
+    * SW must follow below programming restrictions when programming
+    * PIPE_CONTROL command:
+    *
+    * "Command Streamer Stall Enable" must be always set.
+    * ...
     */
    if (devinfo->ver >= 20) {
       blorp_emit(batch, GENX(PIPE_CONTROL), pc) {
+         pc.CommandStreamerStallEnable =
+            batch->flags & BLORP_BATCH_COMPUTE_ENGINE;
          pc.StateCacheInvalidationEnable = true;
       }
    }

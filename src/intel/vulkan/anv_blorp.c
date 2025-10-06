@@ -185,6 +185,9 @@ anv_blorp_batch_init(struct anv_cmd_buffer *cmd_buffer,
    if (!cmd_buffer->device->physical->instance->enable_vf_distribution)
       flags |= BLORP_BATCH_DISABLE_VF_DISTRIBUTION;
 
+   if (cmd_buffer->batch.engine_class == INTEL_ENGINE_CLASS_COMPUTE)
+      flags |= BLORP_BATCH_COMPUTE_ENGINE;
+
    blorp_batch_init(&cmd_buffer->device->blorp.context, batch, cmd_buffer, flags);
 }
 
