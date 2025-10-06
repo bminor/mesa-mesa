@@ -53,6 +53,9 @@ if with_gallium_or_lvp or with_gbm or with_platform_wayland
   subdir('loader')
 endif
 subdir('compiler')
+if with_poly
+  subdir('poly')
+endif
 if with_tools.contains('drm-shim')
   subdir('drm-shim')
 endif

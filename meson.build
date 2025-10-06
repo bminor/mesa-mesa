@@ -845,6 +845,10 @@ endif
 with_llvm = with_llvm \
   .enable_if(with_clc, error_message : 'CLC requires LLVM')
 
+with_poly = [
+  with_gallium_asahi, with_asahi_vk, with_tools.contains('asahi'),
+].contains(true)
+
 dep_clc = null_dep
 if with_clc
   dep_clc = dependency('libclc')

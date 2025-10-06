@@ -18,13 +18,14 @@
 #include "asahi/lib/agx_tilebuffer.h"
 #include "asahi/lib/agx_uvs.h"
 #include "asahi/lib/pool.h"
-#include "asahi/libagx/geometry.h"
 #include "compiler/shader_enums.h"
 #include "gallium/auxiliary/util/u_blitter.h"
 #include "gallium/include/pipe/p_context.h"
 #include "gallium/include/pipe/p_screen.h"
 #include "gallium/include/pipe/p_state.h"
 #include "pipe/p_defines.h"
+#include "poly/geometry.h"
+#include "poly/nir/poly_nir_lower_gs.h"
 #include "util/bitset.h"
 #include "util/disk_cache.h"
 #include "util/hash_table.h"
@@ -32,7 +33,6 @@
 #include "util/u_range.h"
 #include "agx_bg_eot.h"
 #include "agx_helpers.h"
-#include "agx_nir_lower_gs.h"
 #include "agx_nir_texture.h"
 
 #ifdef __GLIBC__
@@ -248,7 +248,7 @@ struct agx_compiled_shader {
    struct agx_compiled_shader *gs_count, *pre_gs;
    struct agx_compiled_shader *gs_copy;
 
-   struct agx_gs_info gs;
+   struct poly_gs_info gs;
 
    /* Logical shader stage used for descriptor access. This may differ from the
     * physical shader stage of the compiled shader, for example when executing a

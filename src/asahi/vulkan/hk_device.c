@@ -19,8 +19,8 @@
 #include "asahi/genxml/agx_pack.h"
 #include "asahi/lib/agx_bo.h"
 #include "asahi/lib/agx_device.h"
-#include "asahi/libagx/geometry.h"
 #include "compiler/nir/nir_builder.h"
+#include "poly/geometry.h"
 #include "util/hash_table.h"
 #include "util/ralloc.h"
 #include "util/simple_mtx.h"
@@ -86,7 +86,7 @@ hk_upload_rodata(struct hk_device *dev)
     */
    offs = align(offs, sizeof(uint64_t));
    dev->rodata.heap = dev->rodata.bo->va->addr + offs;
-   offs += sizeof(struct agx_heap);
+   offs += sizeof(struct poly_heap);
 
    return VK_SUCCESS;
 }

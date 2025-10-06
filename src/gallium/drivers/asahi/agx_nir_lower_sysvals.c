@@ -5,10 +5,10 @@
 
 #include "compiler/nir/nir_builder.h"
 #include "pipe/p_defines.h"
+#include "poly/nir/poly_nir_lower_gs.h"
 #include "util/bitset.h"
 #include "util/u_dynarray.h"
 #include "agx_abi.h"
-#include "agx_nir_lower_gs.h"
 #include "agx_state.h"
 #include "nir.h"
 #include "nir_builder_opcodes.h"

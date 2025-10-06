@@ -5,11 +5,12 @@
  */
 
 #include "gallium/include/pipe/p_defines.h"
+#include "poly/cl/libpoly.h"
+#include "poly/nir/poly_nir_lower_gs.h"
 #include "util/format/u_formats.h"
 #include "agx_abi.h"
 #include "agx_linker.h"
 #include "agx_nir.h"
-#include "agx_nir_lower_gs.h"
 #include "agx_nir_lower_vbo.h"
 #include "agx_pack.h"
 #include "agx_tilebuffer.h"
@@ -149,11 +150,11 @@ lower_adjacency(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    nir_def *id = nir_load_vertex_id(b);
 
    if (key->adjacency == MESA_PRIM_LINES_ADJACENCY) {
-      id = libagx_map_to_line_adj(b, id);
+      id = poly_map_to_line_adj(b, id);
    } else if (key->adjacency == MESA_PRIM_TRIANGLE_STRIP_ADJACENCY) {
-      id = libagx_map_to_tri_strip_adj(b, id);
+      id = poly_map_to_tri_strip_adj(b, id);
    } else if (key->adjacency == MESA_PRIM_LINE_STRIP_ADJACENCY) {
-      id = libagx_map_to_line_strip_adj(b, id);
+      id = poly_map_to_line_strip_adj(b, id);
    } else if (key->adjacency == MESA_PRIM_TRIANGLES_ADJACENCY) {
       /* Sequence (0, 2, 4), (6, 8, 10), ... */
       id = nir_imul_imm(b, id, 2);
@@ -161,7 +162,7 @@ lower_adjacency(nir_builder *b, nir_intrinsic_instr *intr, void *data)
       UNREACHABLE("unknown");
    }
 
-   id = agx_nir_load_vertex_id(b, id, key->sw_index_size_B);
+   id = poly_nir_load_vertex_id(b, id, key->sw_index_size_B);
 
    nir_def_replace(&intr->def, id);
    return true;
@@ -215,7 +216,7 @@ agx_nir_vs_prolog(nir_builder *b, const void *key_)
    }
 
    if (!key->hw) {
-      agx_nir_lower_sw_vs(b->shader, key->sw_index_size_B);
+      poly_nir_lower_sw_vs(b->shader, key->sw_index_size_B);
    } else if (key->adjacency) {
       nir_shader_intrinsics_pass(b->shader, lower_adjacency,
                                  nir_metadata_control_flow, (void *)key);

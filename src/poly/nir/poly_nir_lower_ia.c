@@ -4,10 +4,15 @@
  */
 
 #include "compiler/nir/nir_builder.h"
-#include "libagx/geometry.h"
-#include "libagx/libagx.h"
-#include "agx_nir_lower_gs.h"
+#include "poly/cl/libpoly.h"
+#include "poly/geometry.h"
 #include "nir.h"
+
+/* XXX: Remove me later */
+nir_def *poly_nir_load_vertex_id(struct nir_builder *b, nir_def *id,
+                                 unsigned index_size_B);
+
+bool poly_nir_lower_sw_vs(struct nir_shader *s, unsigned index_size_B);
 
 /*
  * This file implements basic input assembly in software. It runs on software
@@ -15,14 +20,14 @@
  * the topology, which happens in the geometry shader.
  */
 nir_def *
-agx_nir_load_vertex_id(nir_builder *b, nir_def *id, unsigned index_size_B)
+poly_nir_load_vertex_id(nir_builder *b, nir_def *id, unsigned index_size_B)
 {
    /* If drawing with an index buffer, pull the vertex ID. Otherwise, the
     * vertex ID is just the index as-is.
     */
    if (index_size_B) {
       nir_def *ia = nir_load_input_assembly_buffer_poly(b);
-      id = libagx_load_index_buffer(b, ia, id, nir_imm_int(b, index_size_B));
+      id = poly_load_index_buffer(b, ia, id, nir_imm_int(b, index_size_B));
    }
 
    /* Add the "start", either an index bias or a base vertex. This must happen
@@ -39,7 +44,8 @@ lower(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 
    if (intr->intrinsic == nir_intrinsic_load_vertex_id) {
       nir_def *id = nir_channel(b, nir_load_global_invocation_id(b, 32), 0);
-      nir_def_replace(&intr->def, agx_nir_load_vertex_id(b, id, *index_size_B));
+      nir_def_replace(&intr->def,
+                      poly_nir_load_vertex_id(b, id, *index_size_B));
       return true;
    } else if (intr->intrinsic == nir_intrinsic_load_instance_id) {
       nir_def_replace(&intr->def,
@@ -51,7 +57,7 @@ lower(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 }
 
 bool
-agx_nir_lower_sw_vs(nir_shader *s, unsigned index_size_B)
+poly_nir_lower_sw_vs(nir_shader *s, unsigned index_size_B)
 {
    return nir_shader_intrinsics_pass(s, lower, nir_metadata_control_flow,
                                      &index_size_B);

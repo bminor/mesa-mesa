@@ -316,16 +316,6 @@ agx_fill_decompress_args(struct ail_layout *layout, unsigned layer,
       agx_fill_decompress_args(layout, layer, level, ptr, images),             \
       util_logbase2(layout->sample_count_sa))
 
-#define libagx_tessellate(context, grid, barrier, prim, mode, state)           \
-   if (prim == TESS_PRIMITIVE_QUADS) {                                         \
-      libagx_tess_quad(context, grid, barrier, state, mode);                   \
-   } else if (prim == TESS_PRIMITIVE_TRIANGLES) {                              \
-      libagx_tess_tri(context, grid, barrier, state, mode);                    \
-   } else {                                                                    \
-      assert(prim == TESS_PRIMITIVE_ISOLINES);                                 \
-      libagx_tess_isoline(context, grid, barrier, state, mode);                \
-   }
-
 struct agx_border_packed;
 
 void agx_pack_border(struct agx_border_packed *out, const uint32_t in[4],

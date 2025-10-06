@@ -237,7 +237,9 @@ ForEachMacros:
   - agx_foreach_reg_dest
   - agx_foreach_successor
   - foreach_next_use
-  - libagx_foreach_xfb
+
+# poly
+  - poly_foreach_xfb
 
 # radv
   - PHASE

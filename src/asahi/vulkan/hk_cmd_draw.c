@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
+#include "poly/nir/poly_nir_lower_gs.h"
 #include "agx_abi.h"
 #include "agx_bg_eot.h"
 #include "agx_bo.h"
@@ -13,7 +14,6 @@
 #include "agx_device.h"
 #include "agx_helpers.h"
 #include "agx_linker.h"
-#include "agx_nir_lower_gs.h"
 #include "agx_nir_lower_vbo.h"
 #include "agx_ppp.h"
 #include "agx_tilebuffer.h"
@@ -31,10 +31,10 @@
 
 #include "asahi/genxml/agx_pack.h"
 #include "asahi/libagx/compression.h"
-#include "asahi/libagx/geometry.h"
 #include "asahi/libagx/libagx.h"
 #include "asahi/libagx/query.h"
 #include "asahi/libagx/tessellator.h"
+#include "poly/geometry.h"
 #include "util/blend.h"
 #include "util/format/format_utils.h"
 #include "util/format/u_formats.h"
@@ -1007,9 +1007,9 @@ hk_heap(struct hk_cmd_buffer *cmd)
        * the CPU as rodata, even though the GPU uses it for scratch internally.
        */
       off_t off = dev->rodata.heap - dev->rodata.bo->va->addr;
-      struct agx_heap *map = agx_bo_map(dev->rodata.bo) + off;
+      struct poly_heap *map = agx_bo_map(dev->rodata.bo) + off;
 
-      *map = (struct agx_heap){
+      *map = (struct poly_heap){
          .base = dev->heap->va->addr,
          .size = size,
       };
@@ -1021,7 +1021,7 @@ hk_heap(struct hk_cmd_buffer *cmd)
       uint64_t addr = dev->rodata.heap;
 
       /* Zeroing the allocated index frees everything */
-      hk_queue_write(cmd, addr + offsetof(struct agx_heap, bottom), 0,
+      hk_queue_write(cmd, addr + offsetof(struct poly_heap, bottom), 0,
                      true /* after gfx */);
 
       cmd->uses_heap = true;
@@ -1045,7 +1045,7 @@ hk_upload_ia_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
 {
    assert(!agx_is_indirect(draw.b) && "indirect params written by GPU");
 
-   struct agx_ia_state ia = {.verts_per_instance = draw.b.count[0]};
+   struct poly_ia_state ia = {.verts_per_instance = draw.b.count[0]};
 
    if (draw.indexed) {
       unsigned index_size_B = agx_index_size_to_B(draw.index_size);
@@ -1115,7 +1115,7 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
       mode = u_decomposed_prim(mode);
    }
 
-   struct agx_geometry_params params = {
+   struct poly_geometry_params params = {
       .flat_outputs = fs->info.fs.interp.flat,
       .input_topology = mode,
 
@@ -1174,7 +1174,7 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
    params.vs_grid[4] = params.gs_grid[4] = 1;
    params.vs_grid[5] = params.gs_grid[5] = 1;
 
-   struct agx_gs_info *gsi = &count->info.gs;
+   struct poly_gs_info *gsi = &count->info.gs;
 
    if (indirect) {
       /* TODO: size */
@@ -1183,7 +1183,7 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
       params.indirect_desc = cmd->geom_indirect;
       params.vs_grid[2] = params.gs_grid[2] = 1;
 
-      if (gsi->shape == AGX_GS_SHAPE_DYNAMIC_INDEXED) {
+      if (gsi->shape == POLY_GS_SHAPE_DYNAMIC_INDEXED) {
          /* Need to allocate heap if we haven't yet */
          hk_heap(cmd);
 
@@ -1191,7 +1191,7 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
          cmd->geom_index_count = dev->heap->size;
       } else {
          cmd->geom_index_count =
-            agx_gs_rast_vertices(gsi->shape, gsi->max_indices, 1, 0);
+            poly_gs_rast_vertices(gsi->shape, gsi->max_indices, 1, 0);
       }
    } else {
       uint32_t verts = draw.b.count[0], instances = draw.b.count[1];
@@ -1207,13 +1207,13 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
          params.count_buffer = hk_pool_alloc(cmd, size, 4).gpu;
       }
 
-      cmd->geom_index_count = agx_gs_rast_vertices(
+      cmd->geom_index_count = poly_gs_rast_vertices(
          gsi->shape, gsi->max_indices, params.gs_grid[0], instances);
 
-      cmd->geom_instance_count = agx_gs_rast_instances(
+      cmd->geom_instance_count = poly_gs_rast_instances(
          gsi->shape, gsi->max_indices, params.gs_grid[0], instances);
 
-      if (gsi->shape == AGX_GS_SHAPE_DYNAMIC_INDEXED) {
+      if (gsi->shape == POLY_GS_SHAPE_DYNAMIC_INDEXED) {
          params.output_index_buffer =
             hk_pool_alloc(cmd, cmd->geom_index_count * 4, 4).gpu;
 
@@ -1221,7 +1221,7 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
       }
    }
 
-   if (gsi->shape == AGX_GS_SHAPE_STATIC_INDEXED) {
+   if (gsi->shape == POLY_GS_SHAPE_STATIC_INDEXED) {
       cmd->geom_index_buffer =
          hk_pool_upload(cmd, count->info.gs.topology, gsi->max_indices * 4, 4);
    }
@@ -1231,7 +1231,7 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
 }
 
 static void
-hk_upload_tess_params(struct hk_cmd_buffer *cmd, struct libagx_tess_args *out,
+hk_upload_tess_params(struct hk_cmd_buffer *cmd, struct poly_tess_args *out,
                       struct agx_draw draw)
 {
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
@@ -1239,14 +1239,14 @@ hk_upload_tess_params(struct hk_cmd_buffer *cmd, struct libagx_tess_args *out,
    struct hk_graphics_state *gfx = &cmd->state.gfx;
    struct hk_shader *tcs = hk_only_variant(gfx->shaders[MESA_SHADER_TESS_CTRL]);
 
-   enum libagx_tess_partitioning partitioning =
+   enum poly_tess_partitioning partitioning =
       gfx->tess.info.spacing == TESS_SPACING_EQUAL
-         ? LIBAGX_TESS_PARTITIONING_INTEGER
+         ? POLY_TESS_PARTITIONING_INTEGER
       : gfx->tess.info.spacing == TESS_SPACING_FRACTIONAL_ODD
-         ? LIBAGX_TESS_PARTITIONING_FRACTIONAL_ODD
-         : LIBAGX_TESS_PARTITIONING_FRACTIONAL_EVEN;
+         ? POLY_TESS_PARTITIONING_FRACTIONAL_ODD
+         : POLY_TESS_PARTITIONING_FRACTIONAL_EVEN;
 
-   struct libagx_tess_args args = {
+   struct poly_tess_args args = {
       .heap = hk_heap(cmd),
       .tcs_stride_el = tcs->info.tess.tcs_output_stride / 4,
       .statistic = hk_pipeline_stat_addr(
@@ -1428,7 +1428,7 @@ hk_draw_without_restart(struct hk_cmd_buffer *cmd, struct agx_draw draw,
 
    libagx_unroll_restart_struct(cmd, agx_1d(1024 * draw_count),
                                 AGX_BARRIER_ALL | AGX_PREGFX, ia,
-                                libagx_compact_prim(prim));
+                                poly_compact_prim(prim));
 
    return agx_draw_indexed_indirect(ia.out_draw, dev->heap->va->addr,
                                     dev->heap->size, draw.index_size,
@@ -1485,7 +1485,7 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
 
       if (cmd->state.gfx.shaders[MESA_SHADER_TESS_EVAL]) {
          gsi.vertex_buffer = desc->root.draw.tess_params +
-                             offsetof(struct libagx_tess_args, tes_buffer);
+                             offsetof(struct poly_tess_args, tes_buffer);
       } else {
          gsi.vertex_buffer = desc->root.root_desc_addr +
                              offsetof(struct hk_root_descriptor_table,
@@ -1501,10 +1501,10 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
                                       AGX_BARRIER_ALL | AGX_PREGFX, gsi);
 
       grid_vs = agx_grid_indirect_local(
-         geometry_params + offsetof(struct agx_geometry_params, vs_grid));
+         geometry_params + offsetof(struct poly_geometry_params, vs_grid));
 
       grid_gs = agx_grid_indirect_local(
-         geometry_params + offsetof(struct agx_geometry_params, gs_grid));
+         geometry_params + offsetof(struct poly_geometry_params, gs_grid));
    } else {
       grid_vs = grid_gs = draw.b;
       grid_gs.count[0] = u_decomposed_prims_for_vertices(mode, draw.b.count[0]);
@@ -1554,9 +1554,9 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    /* Pre-rast geometry shader */
    hk_dispatch_with_local_size(cmd, cs, main, grid_gs, wg);
 
-   if (agx_gs_indexed(count->info.gs.shape)) {
+   if (poly_gs_indexed(count->info.gs.shape)) {
       enum agx_index_size index_size =
-         agx_translate_index_size(agx_gs_index_size(count->info.gs.shape));
+         agx_translate_index_size(poly_gs_index_size(count->info.gs.shape));
 
       if (agx_is_indirect(draw.b)) {
          return agx_draw_indexed_indirect(
@@ -1661,13 +1661,13 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
 
    /* First generate counts, then prefix sum them, and then tessellate. */
    libagx_tessellate(cmd, grid_tess, AGX_BARRIER_ALL | AGX_PREGFX, info.mode,
-                     LIBAGX_TESS_MODE_COUNT, state);
+                     POLY_TESS_MODE_COUNT, state);
 
    libagx_prefix_sum_tess(cmd, agx_1d(1024), AGX_BARRIER_ALL | AGX_PREGFX,
                           state, c_prims, c_inv, c_prims || c_inv);
 
    libagx_tessellate(cmd, grid_tess, AGX_BARRIER_ALL | AGX_PREGFX, info.mode,
-                     LIBAGX_TESS_MODE_WITH_COUNTS, state);
+                     POLY_TESS_MODE_WITH_COUNTS, state);
 
    return agx_draw_indexed_indirect(gfx->tess.out_draws, dev->heap->va->addr,
                                     dev->heap->size, AGX_INDEX_SIZE_U32, false);
@@ -2219,8 +2219,9 @@ hk_flush_index(struct hk_cmd_buffer *cmd, struct hk_cs *cs)
    uint32_t index = cmd->state.gfx.index.restart;
 
    if (gs) {
-      enum agx_gs_shape shape = gs->variants[HK_GS_VARIANT_COUNT].info.gs.shape;
-      index = BITFIELD_MASK(8 * agx_gs_index_size(shape));
+      enum poly_gs_shape shape =
+         gs->variants[HK_GS_VARIANT_COUNT].info.gs.shape;
+      index = BITFIELD_MASK(8 * poly_gs_index_size(shape));
    }
 
    /* VDM State updates are relatively expensive, so only emit them when the
@@ -3061,7 +3062,7 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
       bool indirect = agx_is_indirect(draw.b) || draw.restart;
 
       desc->root.draw.input_assembly =
-         indirect ? hk_pool_alloc(cmd, sizeof(struct agx_ia_state), 4).gpu
+         indirect ? hk_pool_alloc(cmd, sizeof(struct poly_ia_state), 4).gpu
                   : hk_upload_ia_params(cmd, draw);
       desc->root_dirty = true;
    }
@@ -3078,7 +3079,7 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
       if (!indirect) {
          uint32_t verts = draw.b.count[0], instances = draw.b.count[1];
          unsigned vb_size =
-            libagx_tcs_in_size(verts * instances, vs->b.info.outputs);
+            poly_tcs_in_size(verts * instances, vs->b.info.outputs);
 
          /* Allocate if there are any outputs, or use the null sink to trap
           * reads if there aren't. Those reads are undefined but should not
@@ -3094,7 +3095,7 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
 
    struct agx_ptr tess_args = {0};
    if (gfx->shaders[MESA_SHADER_TESS_EVAL]) {
-      tess_args = hk_pool_alloc(cmd, sizeof(struct libagx_tess_args), 4);
+      tess_args = hk_pool_alloc(cmd, sizeof(struct poly_tess_args), 4);
       gfx->descriptors.root.draw.tess_params = tess_args.gpu;
       gfx->descriptors.root_dirty = true;
    }
