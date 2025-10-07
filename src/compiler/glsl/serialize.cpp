@@ -577,12 +577,12 @@ enum uniform_remap_type
 static void
 write_uniform_remap_list(struct blob *metadata,
                           gl_uniform_storage *uniform_storage,
-                          struct list_head *uniform_remap_list)
+                          struct range_remap *r_remap)
 {
-   blob_write_uint32(metadata, list_length(uniform_remap_list));
+   blob_write_uint32(metadata, r_remap->sorted_array_length);
 
-   list_for_each_entry_safe(struct list_range_entry, e, uniform_remap_list, node) {
-      gl_uniform_storage *u = (gl_uniform_storage *)e->entry.ptr;
+   for (unsigned i = 0; i < r_remap->sorted_array_length; i++) {
+      gl_uniform_storage *u = (gl_uniform_storage *)r_remap->sorted_array[i].ptr;
       uint32_t offset = u - uniform_storage;
 
       if (u == INACTIVE_UNIFORM_EXPLICIT_LOCATION) {
@@ -594,8 +594,8 @@ write_uniform_remap_list(struct blob *metadata,
          blob_write_uint32(metadata, offset);
       }
 
-      blob_write_uint32(metadata, e->entry.start);
-      blob_write_uint32(metadata, e->entry.end);
+      blob_write_uint32(metadata, r_remap->sorted_array[i].start);
+      blob_write_uint32(metadata, r_remap->sorted_array[i].end);
    }
 }
 
@@ -645,7 +645,7 @@ write_uniform_remap_tables(struct blob *metadata,
                            struct gl_shader_program *prog)
 {
    write_uniform_remap_list(metadata, prog->data->UniformStorage,
-                            &prog->UniformRemapTable->r_list);
+                            prog->UniformRemapTable);
 
    for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       struct gl_linked_shader *sh = prog->_LinkedShaders[i];
@@ -684,6 +684,8 @@ read_uniform_remap_list(struct blob_reader *metadata,
       unsigned end = blob_read_uint32(metadata);
       util_range_insert_remap(start, end, range_remap, uniform);
    }
+
+   util_range_switch_to_sorted_array(range_remap);
 }
 
 static struct gl_uniform_storage **

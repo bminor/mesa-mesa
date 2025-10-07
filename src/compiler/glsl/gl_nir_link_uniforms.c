@@ -379,6 +379,8 @@ setup_uniform_remap_tables(const struct gl_constants *consts,
                               prog->UniformRemapTable, uniform);
    }
 
+   util_range_switch_to_sorted_array(prog->UniformRemapTable);
+
    /* Verify that total amount of entries for explicit and implicit locations
     * is less than MAX_UNIFORM_LOCATIONS.
     */

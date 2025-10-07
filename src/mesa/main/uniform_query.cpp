@@ -211,7 +211,8 @@ validate_uniform_parameters(GLint location, GLsizei count,
 
    /* Check that the given location is in bounds of uniform remap table */
    if (unlikely(location >= 0 &&
-       (shProg->UniformRemapTable == NULL || list_is_empty(&shProg->UniformRemapTable->r_list)))) {
+       (shProg->UniformRemapTable == NULL ||
+        shProg->UniformRemapTable->sorted_array == NULL))) {
       if (!shProg->data->LinkStatus)
          _mesa_error(ctx, GL_INVALID_OPERATION, "%s(program not linked)",
                      caller);

@@ -26,24 +26,16 @@
 
 /* Binary search for the range that contains n */
 static struct range_entry *
-get_range_entry(unsigned n, const struct list_head *r_list)
+get_range_entry(unsigned n, const struct range_remap *r_remap)
 {
-   if (list_is_empty(r_list))
+   if (!r_remap->sorted_array)
       return NULL;
 
    unsigned low = 0;
-   unsigned high = list_length(r_list) - 1;
+   unsigned high = r_remap->sorted_array_length - 1;
    unsigned mid = (low + high) / 2;
 
-   struct range_entry *mid_entry =
-      list_first_entry(r_list, struct range_entry, node);
-
-   /* Advance to the initial mid position */
-   unsigned i = 0;
-   while (i < mid) {
-      mid_entry = list_entry(mid_entry->node.next, struct range_entry, node);
-      i++;
-   }
+   struct range_entry *mid_entry = &r_remap->sorted_array[mid];
 
    while (low <= high) {
       if (n < mid_entry->start) {
@@ -53,13 +45,10 @@ get_range_entry(unsigned n, const struct list_head *r_list)
          }
 
          high = mid - 1;
-         unsigned new_mid = (low + high) / 2;
+         mid = (low + high) / 2;
 
          /* Move backward to new_mid */
-         while (mid > new_mid) {
-            mid_entry = list_entry(mid_entry->node.prev, struct range_entry, node);
-            mid--;
-         }
+         mid_entry = &r_remap->sorted_array[mid];
       } else if (n > mid_entry->end) {
          if (low == high || mid == high) {
             /* No entry found for n */
@@ -67,13 +56,10 @@ get_range_entry(unsigned n, const struct list_head *r_list)
          }
 
          low = mid + 1;
-         unsigned new_mid = (low + high) / 2;
+         mid = (low + high) / 2;
 
          /* Move forward to new_mid */
-         while (mid < new_mid) {
-            mid_entry = list_entry(mid_entry->node.next, struct range_entry, node);
-            mid++;
-        }
+         mid_entry = &r_remap->sorted_array[mid];
       } else {
          /* n is within the current range */
          return mid_entry;
@@ -205,7 +191,7 @@ util_range_switch_to_sorted_array(struct range_remap *r_remap)
 struct range_entry *
 util_range_remap(unsigned n, const struct range_remap *r_remap)
 {
-   return get_range_entry(n, &r_remap->r_list);
+   return get_range_entry(n, r_remap);
 }
 
 struct range_remap *
