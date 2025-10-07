@@ -411,16 +411,10 @@ lower_image_store_instr(nir_builder *b,
 }
 
 static bool
-brw_nir_lower_storage_image_instr(nir_builder *b,
-                                  nir_instr *instr,
-                                  void *cb_data)
+lower(nir_builder *b, nir_intrinsic_instr *intrin, void *cb_data)
 {
-   if (instr->type != nir_instr_type_intrinsic)
-      return false;
-
    const struct brw_nir_lower_storage_image_state *state = cb_data;
 
-   nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
    switch (intrin->intrinsic) {
    case nir_intrinsic_image_deref_load: {
       if (nir_intrinsic_format(intrin) == PIPE_FORMAT_NONE) {
@@ -433,7 +427,7 @@ brw_nir_lower_storage_image_instr(nir_builder *b,
          }
       }
       return false;
-      }
+   }
 
    case nir_intrinsic_image_deref_sparse_load: {
       if (nir_intrinsic_format(intrin) == PIPE_FORMAT_NONE) {
@@ -476,10 +470,8 @@ brw_nir_lower_storage_image(nir_shader *shader,
       .compiler = compiler,
       .opts = *opts,
    };
-   progress |= nir_shader_instructions_pass(shader,
-                                            brw_nir_lower_storage_image_instr,
-                                            nir_metadata_none,
-                                            (void *)&storage_options);
+   progress |= nir_shader_intrinsics_pass(shader, lower, nir_metadata_none,
+                                         (void *)&storage_options);
 
    return progress;
 }
