@@ -149,23 +149,19 @@ store_resume_addr(nir_builder *b, nir_intrinsic_instr *call)
 }
 
 static bool
-lower_shader_trace_ray_instr(struct nir_builder *b, nir_instr *instr, void *data)
+lower_shader_trace_ray(nir_builder *b, nir_intrinsic_instr *call, void *data)
 {
    const struct brw_nir_lower_shader_calls_state *state = data;
    const struct intel_device_info *devinfo = state->devinfo;
    struct brw_bs_prog_key *key = state->key;
 
-   if (instr->type != nir_instr_type_intrinsic)
-      return false;
-
    /* Leave nir_intrinsic_rt_resume to be lowered by
     * brw_nir_lower_rt_intrinsics()
     */
-   nir_intrinsic_instr *call = nir_instr_as_intrinsic(instr);
    if (call->intrinsic != nir_intrinsic_rt_trace_ray)
       return false;
 
-   b->cursor = nir_instr_remove(instr);
+   b->cursor = nir_instr_remove(&call->instr);
 
    store_resume_addr(b, call);
 
@@ -288,10 +284,8 @@ bool
 brw_nir_lower_shader_calls(nir_shader *shader,
                            struct brw_nir_lower_shader_calls_state *state)
 {
-   bool a = nir_shader_instructions_pass(shader,
-                                         lower_shader_trace_ray_instr,
-                                         nir_metadata_none,
-                                         state);
+   bool a = nir_shader_intrinsics_pass(shader, lower_shader_trace_ray,
+                                       nir_metadata_none, state);
    bool b = nir_shader_intrinsics_pass(shader, lower_shader_call_instr,
                                          nir_metadata_control_flow,
                                          NULL);
