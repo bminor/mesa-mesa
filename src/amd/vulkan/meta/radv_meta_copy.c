@@ -74,6 +74,14 @@ alloc_transfer_temp_bo(struct radv_cmd_buffer *cmd_buffer)
    return true;
 }
 
+static void gfx_or_compute_copy_memory_to_image(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_addr,
+                                                uint64_t buffer_size, enum radv_copy_flags src_copy_flags,
+                                                struct radv_image *image, VkImageLayout layout,
+                                                const VkBufferImageCopy2 *region, const bool use_compute);
+
+static void compute_copy_image_to_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_addr, uint64_t buffer_size,
+                                         enum radv_copy_flags dst_copy_flags, struct radv_image *image,
+                                         VkImageLayout layout, const VkBufferImageCopy2 *region);
 static void
 transfer_copy_memory_image(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_va, uint64_t buffer_size,
                            enum radv_copy_flags buffer_flags, struct radv_image *image, const VkImageLayout layout,
@@ -90,6 +98,14 @@ transfer_copy_memory_image(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_v
          radv_wait_gang_leader(cmd_buffer);
 
       radv_gang_cache_flush(cmd_buffer);
+
+      if (to_image) {
+         gfx_or_compute_copy_memory_to_image(cmd_buffer, buffer_va, buffer_size, buffer_flags, image, layout, region,
+                                             true);
+      } else {
+         compute_copy_image_to_memory(cmd_buffer, buffer_va, buffer_size, buffer_flags, image, layout, region);
+      }
+
       return;
    }
 
@@ -390,6 +406,11 @@ radv_CmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBuf
    radv_resume_conditional_rendering(cmd_buffer);
 }
 
+static void gfx_or_compute_copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image *src_image,
+                                      VkImageLayout src_image_layout, struct radv_image *dst_image,
+                                      VkImageLayout dst_image_layout, const VkImageCopy2 *region,
+                                      const bool use_compute);
+
 static void
 transfer_copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image *src_image, VkImageLayout src_image_layout,
                     struct radv_image *dst_image, VkImageLayout dst_image_layout, const VkImageCopy2 *region)
@@ -406,6 +427,9 @@ transfer_copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image *src_i
          radv_wait_gang_leader(cmd_buffer);
 
       radv_gang_cache_flush(cmd_buffer);
+
+      gfx_or_compute_copy_image(cmd_buffer, src_image, src_image_layout, dst_image, dst_image_layout, region, true);
+
       return;
    }
 
