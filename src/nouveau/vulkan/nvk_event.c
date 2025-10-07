@@ -164,7 +164,8 @@ nvk_event_report_semaphore(struct nvk_cmd_buffer *cmd,
 {
    uint8_t subc = nvk_cmd_buffer_last_subchannel(cmd);
    if (subc == SUBC_NV9097) {
-      struct nv_push *p = nvk_cmd_buffer_push(cmd, 5);
+      struct nv_push *p = nvk_cmd_buffer_push(cmd, 7);
+      P_IMMD(p, NV9097, FLUSH_PENDING_WRITES, 0);
       P_MTHD(p, NV9097, SET_REPORT_SEMAPHORE_A);
       P_NV9097_SET_REPORT_SEMAPHORE_A(p, addr >> 32);
       P_NV9097_SET_REPORT_SEMAPHORE_B(p, addr);
