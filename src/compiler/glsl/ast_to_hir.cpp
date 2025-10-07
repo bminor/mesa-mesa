@@ -903,7 +903,8 @@ validate_assignment(struct _mesa_glsl_parse_state *state,
    }
    if (unsized_array) {
       if (is_initializer) {
-         if (glsl_get_scalar_type(rhs->type) == glsl_get_scalar_type(lhs->type))
+         if (glsl_without_array_or_matrix(rhs->type) ==
+               glsl_without_array_or_matrix(lhs->type))
             return rhs;
       } else {
          _mesa_glsl_error(&loc, state,

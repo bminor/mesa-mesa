@@ -764,7 +764,6 @@ spec@arb_clear_texture@arb_clear_texture-3d,Fail
 spec@arb_clear_texture@arb_clear_texture-sized-formats,Fail
 spec@glsl-1.10@execution@glsl-fs-inline-explosion,Crash
 spec@glsl-1.10@execution@glsl-vs-inline-explosion,Crash
-spec@glsl-1.20@compiler@invalid-vec4-array-to-vec3-array-conversion.vert,Fail
 
 # Bisected to b3133e250e1 ("gallium: add pipe_context::resource_release to eliminate buffer refcounting")
 spec@!opengl 1.1@longprim,Crash
