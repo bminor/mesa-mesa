@@ -3841,6 +3841,8 @@ iris_finalize_nir(struct pipe_screen *_screen, struct nir_shader *nir)
       struct brw_nir_compiler_opts opts = {};
       brw_preprocess_nir(screen->brw, nir, &opts);
 
+      NIR_PASS(_, nir, nir_update_image_intrinsic_from_var);
+
       NIR_PASS(_, nir, brw_nir_lower_storage_image,
                  screen->brw,
                  &(struct brw_nir_lower_storage_image_opts) {
