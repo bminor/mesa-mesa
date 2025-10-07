@@ -87,7 +87,7 @@ brw_nir_lower_alpha_to_coverage(nir_shader *shader)
    if (!(outputs_written & BITFIELD64_BIT(FRAG_RESULT_SAMPLE_MASK)) ||
        !(outputs_written & (BITFIELD64_BIT(FRAG_RESULT_COLOR) |
                             BITFIELD64_BIT(FRAG_RESULT_DATA0))))
-      goto skip;
+      return nir_no_progress(impl);
 
    nir_intrinsic_instr *sample_mask_write = NULL;
    nir_intrinsic_instr *color0_write = NULL;
@@ -148,7 +148,7 @@ brw_nir_lower_alpha_to_coverage(nir_shader *shader)
     * unaltered seems like the kindest thing to do to apps.
     */
    if (color0_write == NULL || sample_mask_write == NULL)
-      goto skip;
+      return nir_no_progress(impl);
 
    nir_def *color0 = color0_write->src[0].ssa;
    nir_def *sample_mask = sample_mask_write->src[0].ssa;
@@ -178,7 +178,4 @@ brw_nir_lower_alpha_to_coverage(nir_shader *shader)
    nir_src_rewrite(&sample_mask_write->src[0], dither_mask);
 
    return nir_progress(true, impl, nir_metadata_control_flow);
-
-skip:
-   return nir_no_progress(impl);
 }
