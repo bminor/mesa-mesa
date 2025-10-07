@@ -47,13 +47,10 @@ lower_flat_inputs(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
 
    nir_def *msaa_flags = nir_load_fs_msaa_intel(b);
 
-   nir_def *input_vertex = nir_bcsel(b,
-                                     nir_test_mask(b, msaa_flags,
-                                                   INTEL_MSAA_FLAG_PROVOKING_VERTEX_LAST),
-                                     last_vtx,
-                                     first_vtx);
-   nir_def_rewrite_uses_after(&intrin->def, input_vertex);
+   nir_def *last = nir_test_mask(b, msaa_flags, INTEL_MSAA_FLAG_PROVOKING_VERTEX_LAST);
+   nir_def *input_vertex = nir_bcsel(b, last, last_vtx, first_vtx);
 
+   nir_def_replace(&intrin->def, input_vertex);
    return true;
 }
 
