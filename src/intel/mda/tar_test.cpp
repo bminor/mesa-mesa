@@ -30,7 +30,7 @@ TEST(Tar, RoundtripSmallFile)
    char *contents = new char[size];
 
    fseek(f, 0, SEEK_SET);
-   fread(contents, size, 1, f);
+   ASSERT_EQ(fread(contents, size, 1, f), 1);
    fclose(f);
 
    {
@@ -79,7 +79,7 @@ TEST(Tar, RoundtripContentsWithRecordSize)
    char *contents = new char[size];
 
    fseek(f, 0, SEEK_SET);
-   fread(contents, size, 1, f);
+   ASSERT_EQ(fread(contents, size, 1, f), 1);
    fclose(f);
 
    {
@@ -128,7 +128,7 @@ TEST(Tar, TimestampRoundtrip)
    char *contents = new char[size];
 
    fseek(f, 0, SEEK_SET);
-   fread(contents, size, 1, f);
+   ASSERT_EQ(fread(contents, size, 1, f), 1);
    fclose(f);
 
    {
