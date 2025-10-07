@@ -199,6 +199,8 @@ anv_shader_preprocess_nir(struct vk_physical_device *device,
    };
    NIR_PASS(_, nir, nir_lower_sysvals_to_varyings, &sysvals_to_varyings);
 
+   NIR_PASS(_, nir, nir_update_image_intrinsic_from_var);
+
    const nir_opt_access_options opt_access_options = {
       .is_vulkan = true,
    };
