@@ -134,6 +134,7 @@ radv_pipeline_get_shader_key(const struct radv_device *device, const VkPipelineS
    struct radv_shader_stage_key key = {0};
 
    key.keep_statistic_info = radv_pipeline_capture_shader_stats(device, flags);
+   key.keep_executable_info = radv_pipeline_capture_shaders(device, flags);
 
    if (flags & VK_PIPELINE_CREATE_2_DISABLE_OPTIMIZATION_BIT)
       key.optimisations_disabled = 1;
