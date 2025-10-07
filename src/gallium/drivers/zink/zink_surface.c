@@ -295,6 +295,7 @@ zink_create_transient_surface(struct zink_context *ctx, const struct pipe_surfac
       /* transient fb attachment: not cached */
       struct pipe_resource rtempl = *psurf->texture;
       rtempl.nr_samples = nr_samples;
+      rtempl.bind &= ~(PIPE_BIND_LINEAR | ZINK_BIND_DMABUF);
       rtempl.bind |= ZINK_BIND_TRANSIENT;
       res->transient = zink_resource(ctx->base.screen->resource_create(ctx->base.screen, &rtempl));
       transient = res->transient;
