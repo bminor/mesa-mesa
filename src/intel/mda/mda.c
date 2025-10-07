@@ -165,10 +165,12 @@ last_version(object *obj)
 }
 
 static void
-print_repeated(char c, int count)
+print_separator(int count)
 {
-   for (; count > 0; count--)
-      putchar(c);
+   /* Negative numbers always result in just a new line*/
+   for (; count > 1; count--)
+      putchar('#');
+   putchar('\n');
 }
 
 static mesa_archive *
@@ -585,8 +587,8 @@ cmd_diff(context *ctx)
 
    int x = printf("# A: %.*s\n", SLICE_FMT(a.content->fullname));
    int y = printf("# B: %.*s\n", SLICE_FMT(b.content->fullname));
-   print_repeated('#', MAX2(x, y) - 1);
-   printf("\n\n");
+   print_separator(MAX2(x, y));
+   printf("\n");
 
    diff(ctx, a.content->data, b.content->data);
    printf("\n");
@@ -647,8 +649,8 @@ cmd_log(context *ctx)
       for (const content *c = start.content; c <= end.content; c++) {
          int x = printf("# %.*s/\n", SLICE_FMT(obj->fullname));
          int y = printf("# %.*s\n", SLICE_FMT(c->name));
-         print_repeated('#', MAX2(x, y) - 1);
-         printf("\n\n");
+         print_separator(MAX2(x, y));
+         printf("\n");
 
          printf("%.*s\n", SLICE_FMT(c->data));
       }
@@ -659,8 +661,8 @@ cmd_log(context *ctx)
 
          int x = printf("# %.*s/\n", SLICE_FMT(obj->fullname));
          int y = printf("# %.*s -> %.*s\n", SLICE_FMT(c->name), SLICE_FMT(next->name));
-         print_repeated('#', MAX2(x, y) - 1);
-         printf("\n\n");
+         print_separator(MAX2(x, y));
+         printf("\n");
 
          diff(ctx, c->data, next->data);
          printf("\n");
@@ -788,8 +790,8 @@ cmd_print(context *ctx)
          return print_disassembled_spirv(ctx, m.object);
 
       int x = printf("### %.*s\n", SLICE_FMT(m.content->fullname));
-      print_repeated('#', x-1);
-      printf("\n\n");
+      print_separator(x);
+      printf("\n");
    }
 
    printf("%.*s", SLICE_FMT(m.content->data));
