@@ -53,7 +53,7 @@ nir_intrinsics_h = custom_target(
   'nir_intrinsics.h',
   input : 'nir_intrinsics_h.py',
   output : 'nir_intrinsics.h',
-  command : [prog_python, '@INPUT@', '--outdir', meson.current_build_dir()],
+  command : [prog_python, '@INPUT@', '--out', '@OUTPUT@'],
   capture : false,
   depend_files : files('nir_intrinsics.py'),
 )
@@ -62,7 +62,7 @@ nir_intrinsics_indices_h = custom_target(
   'nir_intrinsics_indices.h',
   input : 'nir_intrinsics_indices_h.py',
   output : 'nir_intrinsics_indices.h',
-  command : [prog_python, '@INPUT@', '--outdir', meson.current_build_dir()],
+  command : [prog_python, '@INPUT@', '--out', '@OUTPUT@'],
   capture : false,
   depend_files : files('nir_intrinsics.py'),
 )
@@ -71,7 +71,7 @@ nir_intrinsics_c = custom_target(
   'nir_intrinsic.c',
   input : 'nir_intrinsics_c.py',
   output : 'nir_intrinsics.c',
-  command : [prog_python, '@INPUT@', '--outdir', meson.current_build_dir()],
+  command : [prog_python, '@INPUT@', '--out', '@OUTPUT@'],
   capture: false,
   depend_files : files('nir_intrinsics.py'),
 )

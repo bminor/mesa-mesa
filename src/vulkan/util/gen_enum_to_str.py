@@ -538,8 +538,14 @@ def main():
                         help='Vulkan API XML files',
                         action='append',
                         dest='xml_files')
-    parser.add_argument('--outdir',
-                        help='Directory to put the generated files in',
+    parser.add_argument('--out-c',
+                        help='Output C file',
+                        required=True)
+    parser.add_argument('--out-h',
+                        help='Output H file',
+                        required=True)
+    parser.add_argument('--out-d',
+                        help='Output defines H file',
                         required=True)
 
     args = parser.parse_args()
@@ -559,9 +565,9 @@ def main():
     bitmasks = sorted(bitmask_factory.registry.values(), key=lambda e: e.name)
     object_types = sorted(obj_type_factory.registry.values(), key=lambda e: e.name)
 
-    for template, file_ in [(C_TEMPLATE, os.path.join(args.outdir, 'vk_enum_to_str.c')),
-                            (H_TEMPLATE, os.path.join(args.outdir, 'vk_enum_to_str.h')),
-                            (H_DEFINE_TEMPLATE, os.path.join(args.outdir, 'vk_enum_defines.h'))]:
+    for template, file_ in [(C_TEMPLATE, args.out_c),
+                            (H_TEMPLATE, args.out_h),
+                            (H_DEFINE_TEMPLATE, args.out_d)]:
         with open(file_, 'w', encoding='utf-8') as f:
             f.write(template.render(
                 file=os.path.basename(__file__),

@@ -80,13 +80,12 @@ import os
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--outdir', required=True,
-                        help='Directory to put the generated files in')
+    parser.add_argument('--out', required=True,
+                        help='Output H file')
 
     args = parser.parse_args()
 
-    path = os.path.join(args.outdir, 'nir_intrinsics_indices.h')
-    with open(path, 'w', encoding='utf-8') as f:
+    with open(args.out, 'w', encoding='utf-8') as f:
         f.write(Template(template).render(INTR_INDICES=INTR_INDICES))
 
 if __name__ == '__main__':

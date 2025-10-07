@@ -127,7 +127,7 @@ libintel_compiler_brw_files = files(
 brw_device_sha1_gen_src = custom_target('brw_device_sha1_gen.c',
                                         input : ['brw_device_sha1_gen_c.py', '../dev/intel_device_info.py'],
                                         output : ['brw_device_sha1_gen.c'],
-                                        command : [prog_python, '@INPUT0@', '--outdir', meson.current_build_dir()])
+                                        command : [prog_python, '@INPUT0@', '--out', '@OUTPUT@'])
 
 
 brw_nir_lower_fsign = custom_target(
