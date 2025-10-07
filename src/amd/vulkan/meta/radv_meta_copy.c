@@ -101,11 +101,6 @@ copy_memory_to_image(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_addr, u
                      enum radv_copy_flags src_copy_flags, struct radv_image *image, VkImageLayout layout,
                      const VkBufferImageCopy2 *region)
 {
-   if (cmd_buffer->qf == RADV_QUEUE_TRANSFER) {
-      transfer_copy_memory_image(cmd_buffer, buffer_addr, image, region, true);
-      return;
-   }
-
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_meta_saved_state saved_state;
    bool cs;
@@ -233,8 +228,12 @@ radv_CmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToIm
 
       radv_cs_add_buffer(device->ws, cs->b, dst_image->bindings[bind_idx].bo);
 
-      copy_memory_to_image(cmd_buffer, src_buffer->vk.device_address, src_buffer->vk.size, src_copy_flags, dst_image,
-                           pCopyBufferToImageInfo->dstImageLayout, region);
+      if (cmd_buffer->qf == RADV_QUEUE_TRANSFER) {
+         transfer_copy_memory_image(cmd_buffer, src_buffer->vk.device_address, dst_image, region, true);
+      } else {
+         copy_memory_to_image(cmd_buffer, src_buffer->vk.device_address, src_buffer->vk.size, src_copy_flags, dst_image,
+                              pCopyBufferToImageInfo->dstImageLayout, region);
+      }
    }
 
    if (radv_is_format_emulated(pdev, dst_image->vk.format) && cmd_buffer->qf != RADV_QUEUE_TRANSFER) {
@@ -269,11 +268,6 @@ copy_image_to_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_addr, u
                      const VkBufferImageCopy2 *region)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   if (cmd_buffer->qf == RADV_QUEUE_TRANSFER) {
-      transfer_copy_memory_image(cmd_buffer, buffer_addr, image, region, false);
-      return;
-   }
-
    struct radv_meta_saved_state saved_state;
 
    radv_meta_save(&saved_state, cmd_buffer,
@@ -385,8 +379,12 @@ radv_CmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBuf
 
       radv_cs_add_buffer(device->ws, cs->b, src_image->bindings[bind_idx].bo);
 
-      copy_image_to_memory(cmd_buffer, dst_buffer->vk.device_address, dst_buffer->vk.size, dst_copy_flags, src_image,
-                           pCopyImageToBufferInfo->srcImageLayout, region);
+      if (cmd_buffer->qf == RADV_QUEUE_TRANSFER) {
+         transfer_copy_memory_image(cmd_buffer, dst_buffer->vk.device_address, src_image, region, false);
+      } else {
+         copy_image_to_memory(cmd_buffer, dst_buffer->vk.device_address, dst_buffer->vk.size, dst_copy_flags, src_image,
+                              pCopyImageToBufferInfo->srcImageLayout, region);
+      }
    }
 
    radv_resume_conditional_rendering(cmd_buffer);
@@ -453,12 +451,6 @@ copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image *src_image, VkI
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
-
-   if (cmd_buffer->qf == RADV_QUEUE_TRANSFER) {
-      transfer_copy_image(cmd_buffer, src_image, src_image_layout, dst_image, dst_image_layout, region);
-      return;
-   }
-
    struct radv_meta_saved_state saved_state;
    bool cs;
 
@@ -667,8 +659,13 @@ radv_CmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyI
       radv_cs_add_buffer(device->ws, cs->b, src_image->bindings[src_bind_idx].bo);
       radv_cs_add_buffer(device->ws, cs->b, dst_image->bindings[dst_bind_idx].bo);
 
-      copy_image(cmd_buffer, src_image, pCopyImageInfo->srcImageLayout, dst_image, pCopyImageInfo->dstImageLayout,
-                 region);
+      if (cmd_buffer->qf == RADV_QUEUE_TRANSFER) {
+         transfer_copy_image(cmd_buffer, src_image, pCopyImageInfo->srcImageLayout, dst_image,
+                             pCopyImageInfo->dstImageLayout, region);
+      } else {
+         copy_image(cmd_buffer, src_image, pCopyImageInfo->srcImageLayout, dst_image, pCopyImageInfo->dstImageLayout,
+                    region);
+      }
    }
 
    if (radv_is_format_emulated(pdev, dst_image->vk.format) && cmd_buffer->qf != RADV_QUEUE_TRANSFER) {
