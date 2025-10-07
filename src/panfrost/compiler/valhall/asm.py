@@ -22,11 +22,12 @@
 # IN THE SOFTWARE.
 
 import argparse
+import os
 import sys
 import struct
 from valhall import valhall_parse_isa
 
-(instructions, immediates, enums, typesize, safe_name) = valhall_parse_isa()
+(instructions, immediates, enums, typesize, safe_name) = valhall_parse_isa(os.path.join(os.path.dirname(__file__), 'ISA.xml'))
 
 LINE = ''
 

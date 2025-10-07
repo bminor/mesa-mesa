@@ -367,13 +367,12 @@ def typesize(opcode):
             return 32
 
 # Parse the ISA
-def valhall_parse_isa(xmlfile = False):
+def valhall_parse_isa(xmlfile):
     global MODIFIERS
     global enums
     global immediates
     global root
 
-    xmlfile = os.path.join(os.path.dirname(__file__), 'ISA.xml')
     tree = ET.parse(xmlfile)
     root = tree.getroot()
 

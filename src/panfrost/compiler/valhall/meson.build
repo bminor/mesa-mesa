@@ -6,7 +6,7 @@ valhall_c = custom_target(
   'valhall_c',
   input : ['valhall.c.py', 'ISA.xml'],
   output : 'valhall.c',
-  command : [prog_python, '@INPUT@'],
+  command : [prog_python, '@INPUT0@', '--xml', '@INPUT1@'],
   capture : true,
   depend_files : files('valhall.py'),
 )
@@ -15,7 +15,7 @@ valhall_enums_h = custom_target(
   'valhall_enums.h',
   input : ['valhall_enums.h.py', 'ISA.xml'],
   output : 'valhall_enums.h',
-  command : [prog_python, '@INPUT@'],
+  command : [prog_python, '@INPUT0@', '--xml', '@INPUT1@'],
   capture : true,
   depend_files : files('valhall.py'),
 )
@@ -29,7 +29,7 @@ valhall_disasm_c = custom_target(
   'valhall_disasm_c',
   input : ['disasm.py', 'ISA.xml'],
   output : 'valhall_disasm.c',
-  command : [prog_python, '@INPUT@'],
+  command : [prog_python, '@INPUT0@', '--xml', '@INPUT1@'],
   capture : true,
   depend_files : files('valhall.py'),
 )

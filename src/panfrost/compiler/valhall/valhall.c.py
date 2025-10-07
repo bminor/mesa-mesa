@@ -21,12 +21,18 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 
+import argparse
 import sys
 from valhall import valhall_parse_isa
 from mako.template import Template
 from mako import exceptions
 
-(instructions, immediates, enums, typesize, safe_name) = valhall_parse_isa()
+parser = argparse.ArgumentParser()
+parser.add_argument('--xml', required=True, help='Input ISA XML file')
+
+args = parser.parse_args()
+
+(instructions, immediates, enums, typesize, safe_name) = valhall_parse_isa(args.xml)
 
 SKIP = set([
         # Extra conversions

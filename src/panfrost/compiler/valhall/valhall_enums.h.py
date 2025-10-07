@@ -21,10 +21,16 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 
+import argparse
 import sys
 from valhall import valhall_parse_isa
 
-(_, _, enums, _, safe_name) = valhall_parse_isa()
+parser = argparse.ArgumentParser()
+parser.add_argument('--xml', required=True, help='Input ISA XML file')
+
+args = parser.parse_args()
+
+(_, _, enums, _, safe_name) = valhall_parse_isa(args.xml)
 
 print("#ifndef __VALHALL_ENUMS_H_")
 print("#define __VALHALL_ENUMS_H_")
