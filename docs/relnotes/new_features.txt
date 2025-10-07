@@ -25,7 +25,7 @@ GL_NV_representative_fragment_test on zink
 VK_KHR_maintenance9 on HoneyKrisp
 sparseBinding on panvk/v10+
 sparseResidencyBuffer on panvk/v10+
-Vulkan 1.0 on pvr
+Vulkan 1.2 on pvr
 VK_KHR_create_renderpass2 on pvr
 VK_KHR_dedicated_allocation on pvr
 VK_KHR_depth_stencil_resolve on pvr

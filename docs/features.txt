@@ -431,9 +431,9 @@ we DO NOT WANT implementations of these extensions for Mesa.
   GL_ARB_shadow_ambient                                 Superseded by GL_ARB_fragment_program
   GL_ARB_vertex_blend                                   Superseded by GL_ARB_vertex_program
 
-Vulkan 1.0 -- all DONE: anv, dzn, hk, lvp, nvk, panvk, radv, tu, v3dv, vn
+Vulkan 1.0 -- all DONE: anv, dzn, hk, lvp, nvk, panvk, pvr, radv, tu, v3dv, vn
 
-Vulkan 1.1 -- all DONE: anv, hk, lvp, nvk, panvk/v10+, radv, tu, vn
+Vulkan 1.1 -- all DONE: anv, hk, lvp, nvk, panvk/v10+, pvr, radv, tu, vn
 
   VK_KHR_16bit_storage                                  DONE (anv, dzn, hasvk, lvp, nvk, panvk, radv, tu/a650+, v3dv, vn)
   VK_KHR_bind_memory2                                   DONE (anv, dzn, hasvk, lvp, nvk, panvk, pvr, radv, tu, v3dv, vn)
@@ -459,7 +459,7 @@ Vulkan 1.1 -- all DONE: anv, hk, lvp, nvk, panvk/v10+, radv, tu, vn
   VK_KHR_storage_buffer_storage_class                   DONE (anv, dzn, hasvk, lvp, nvk, panvk, radv, tu, v3dv, vn)
   VK_KHR_variable_pointers                              DONE (anv, hasvk, lvp, nvk, panvk, radv, tu, v3dv, vn)
 
-Vulkan 1.2 -- all DONE: anv, hk, nvk, panvk/v10+, tu, vn
+Vulkan 1.2 -- all DONE: anv, hk, nvk, panvk/v10+, pvr, tu, vn
 
   VK_KHR_8bit_storage                                   DONE (anv, dzn, hasvk, lvp, nvk, panvk, radv, tu/a750+, v3dv, vn)
   VK_KHR_buffer_device_address                          DONE (anv, dzn, hasvk, lvp, nvk, panvk, radv, tu, v3dv, vn)
