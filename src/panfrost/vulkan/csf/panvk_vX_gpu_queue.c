@@ -29,9 +29,7 @@ static void
 finish_render_desc_ringbuf(struct panvk_gpu_queue *queue)
 {
    struct panvk_device *dev = to_panvk_device(queue->vk.base.device);
-   struct panvk_instance *instance =
-      to_panvk_instance(dev->vk.physical->instance);
-   bool tracing_enabled = instance->debug_flags & PANVK_DEBUG_TRACE;
+   const bool tracing_enabled = PANVK_DEBUG(TRACE);
    struct panvk_desc_ringbuf *ringbuf = &queue->render_desc_ringbuf;
 
    panvk_pool_free_mem(&ringbuf->syncobj);
@@ -74,9 +72,7 @@ static VkResult
 init_render_desc_ringbuf(struct panvk_gpu_queue *queue)
 {
    struct panvk_device *dev = to_panvk_device(queue->vk.base.device);
-   struct panvk_instance *instance =
-      to_panvk_instance(dev->vk.physical->instance);
-   bool tracing_enabled = instance->debug_flags & PANVK_DEBUG_TRACE;
+   const bool tracing_enabled = PANVK_DEBUG(TRACE);
    uint32_t flags = panvk_device_adjust_bo_flags(dev, PAN_KMOD_BO_FLAG_NO_MMAP);
    struct panvk_desc_ringbuf *ringbuf = &queue->render_desc_ringbuf;
    uint64_t dev_addr = 0;
@@ -228,12 +224,9 @@ init_subqueue_tracing(struct panvk_gpu_queue *queue,
 {
    struct panvk_device *dev = to_panvk_device(queue->vk.base.device);
    struct panvk_subqueue *subq = &queue->subqueues[subqueue];
-   struct panvk_instance *instance =
-      to_panvk_instance(dev->vk.physical->instance);
-   unsigned debug = instance->debug_flags;
    uint64_t dev_addr;
 
-   if (!(debug & PANVK_DEBUG_TRACE))
+   if (!PANVK_DEBUG(TRACE))
       return VK_SUCCESS;
 
    subq->reg_file =
@@ -342,9 +335,6 @@ init_subqueue(struct panvk_gpu_queue *queue, enum panvk_subqueue_id subqueue)
    struct panvk_subqueue *subq = &queue->subqueues[subqueue];
    const struct panvk_physical_device *phys_dev =
       to_panvk_physical_device(queue->vk.base.device->physical);
-   struct panvk_instance *instance =
-      to_panvk_instance(dev->vk.physical->instance);
-   unsigned debug = instance->debug_flags;
    struct panvk_cs_sync64 *syncobjs = panvk_priv_mem_host_addr(queue->syncobjs);
 
    VkResult result = init_subqueue_tracing(queue, subqueue);
@@ -369,7 +359,7 @@ init_subqueue(struct panvk_gpu_queue *queue, enum panvk_subqueue_id subqueue)
    /* When tracing is enabled, we want to use a non-cached pool, so can get
     * up-to-date context even if the CS crashed in the middle. */
    struct panvk_pool *mempool =
-      (debug & PANVK_DEBUG_TRACE) ? &dev->mempools.rw_nc : &dev->mempools.rw;
+      PANVK_DEBUG(TRACE) ? &dev->mempools.rw_nc : &dev->mempools.rw;
 
    subq->context = panvk_pool_alloc_mem(mempool, alloc_info);
    if (!panvk_priv_mem_host_addr(subq->context))
@@ -504,7 +494,7 @@ init_subqueue(struct panvk_gpu_queue *queue, enum panvk_subqueue_id subqueue)
 
    drmSyncobjReset(dev->drm_fd, &queue->syncobj_handle, 1);
 
-   if (debug & PANVK_DEBUG_TRACE) {
+   if (PANVK_DEBUG(TRACE)) {
       pandecode_user_msg(dev->debug.decode_ctx, "Init subqueue %d binary\n\n",
                          subqueue);
       pandecode_cs_binary(dev->debug.decode_ctx, qsubmit.stream_addr,
@@ -535,9 +525,6 @@ static VkResult
 init_queue(struct panvk_gpu_queue *queue)
 {
    struct panvk_device *dev = to_panvk_device(queue->vk.base.device);
-   struct panvk_instance *instance =
-      to_panvk_instance(dev->vk.physical->instance);
-   unsigned debug = instance->debug_flags;
    VkResult result;
 
    struct panvk_pool_alloc_info alloc_info = {
@@ -565,7 +552,7 @@ init_queue(struct panvk_gpu_queue *queue)
          goto err_cleanup_queue;
    }
 
-   if (debug & PANVK_DEBUG_TRACE)
+   if (PANVK_DEBUG(TRACE))
       pandecode_next_frame(dev->debug.decode_ctx);
 
    return VK_SUCCESS;
@@ -711,7 +698,6 @@ cleanup_tiler(struct panvk_gpu_queue *queue)
 }
 
 struct panvk_queue_submit {
-   const struct panvk_instance *instance;
    const struct panvk_physical_device *phys_dev;
    struct panvk_device *dev;
    struct panvk_gpu_queue *queue;
@@ -754,7 +740,6 @@ panvk_queue_submit_init(struct panvk_queue_submit *submit,
    struct vk_device *vk_dev = vk_queue->base.device;
 
    *submit = (struct panvk_queue_submit){
-      .instance = to_panvk_instance(vk_dev->physical->instance),
       .phys_dev = to_panvk_physical_device(vk_dev->physical),
       .dev = to_panvk_device(vk_dev),
       .queue = container_of(vk_queue, struct panvk_gpu_queue, vk),
@@ -764,8 +749,7 @@ panvk_queue_submit_init(struct panvk_queue_submit *submit,
       u_trace_should_process(&submit->dev->utrace.utctx) &&
       submit->phys_dev->kmod.props.timestamp_frequency;
 
-   submit->force_sync =
-      submit->instance->debug_flags & (PANVK_DEBUG_TRACE | PANVK_DEBUG_SYNC);
+   submit->force_sync = PANVK_DEBUG(TRACE) || PANVK_DEBUG(SYNC);
 }
 
 static void
@@ -1042,11 +1026,10 @@ static VkResult
 panvk_queue_submit_ioctl(struct panvk_queue_submit *submit)
 {
    const struct panvk_device *dev = submit->dev;
-   const struct panvk_instance *instance = submit->instance;
    struct panvk_gpu_queue *queue = submit->queue;
    int ret;
 
-   if (instance->debug_flags & PANVK_DEBUG_TRACE) {
+   if (PANVK_DEBUG(TRACE)) {
       /* If we're tracing, we need to reset the desc ringbufs and the CS
        * tracebuf. */
       for (uint32_t i = 0; i < ARRAY_SIZE(queue->subqueues); i++) {
@@ -1123,11 +1106,10 @@ panvk_queue_submit_process_signals(struct panvk_queue_submit *submit,
 static void
 panvk_queue_submit_process_debug(const struct panvk_queue_submit *submit)
 {
-   const struct panvk_instance *instance = submit->instance;
    struct panvk_gpu_queue *queue = submit->queue;
    struct pandecode_context *decode_ctx = submit->dev->debug.decode_ctx;
 
-   if (instance->debug_flags & PANVK_DEBUG_TRACE) {
+   if (PANVK_DEBUG(TRACE)) {
       const struct pan_kmod_dev_props *props = &submit->phys_dev->kmod.props;
 
       for (uint32_t i = 0; i < submit->qsubmit_count; i++) {
@@ -1168,10 +1150,10 @@ panvk_queue_submit_process_debug(const struct panvk_queue_submit *submit)
       }
    }
 
-   if (instance->debug_flags & PANVK_DEBUG_DUMP)
+   if (PANVK_DEBUG(DUMP))
       pandecode_dump_mappings(decode_ctx);
 
-   if (instance->debug_flags & PANVK_DEBUG_TRACE)
+   if (PANVK_DEBUG(TRACE))
       pandecode_next_frame(decode_ctx);
 
    /* validate last after the command streams are dumped */

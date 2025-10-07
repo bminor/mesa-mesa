@@ -774,8 +774,6 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
                 const struct pan_compile_inputs *compile_input,
                 struct panvk_shader_variant *shader)
 {
-   struct panvk_instance *instance =
-      to_panvk_instance(dev->vk.physical->instance);
    mesa_shader_stage stage = nir->info.stage;
 
    const nir_opt_access_options access_options = {
@@ -914,7 +912,7 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
    NIR_PASS(_, nir, nir_lower_global_vars_to_local);
 
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
-   if (unlikely(instance->debug_flags & PANVK_DEBUG_NIR)) {
+   if (PANVK_DEBUG(NIR)) {
       fprintf(stderr, "translated nir:\n");
       nir_print_shader(nir, stderr);
    }

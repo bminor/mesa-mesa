@@ -45,8 +45,6 @@ struct panvk_instance {
 
    uint32_t api_version;
 
-   enum panvk_debug_flags debug_flags;
-
    struct driOptionCache dri_options;
    struct driOptionCache available_dri_options;
 

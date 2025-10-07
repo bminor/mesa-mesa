@@ -120,8 +120,6 @@ static void
 finish_cs(struct panvk_cmd_buffer *cmdbuf, uint32_t subqueue)
 {
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
-   struct panvk_instance *instance =
-      to_panvk_instance(dev->vk.physical->instance);
    struct cs_builder *b = panvk_get_cs_builder(cmdbuf, subqueue);
 
    cs_wait_slots(b, dev->csf.sb.all_mask);
@@ -172,7 +170,7 @@ finish_cs(struct panvk_cmd_buffer *cmdbuf, uint32_t subqueue)
     * last render pass was suspended. In practice we could preserve only the
     * registers that matter, but this is a debug feature so let's keep things
     * simple with this all-or-nothing approach. */
-   if ((instance->debug_flags & PANVK_DEBUG_CS) &&
+   if (PANVK_DEBUG(CS) &&
        cmdbuf->vk.level != VK_COMMAND_BUFFER_LEVEL_SECONDARY &&
        !cmdbuf->state.gfx.render.suspended) {
       cs_update_cmdbuf_regs(b) {
@@ -866,8 +864,6 @@ static void
 init_cs_builders(struct panvk_cmd_buffer *cmdbuf)
 {
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
-   struct panvk_instance *instance =
-      to_panvk_instance(dev->vk.physical->instance);
    const reg_perm_cb_t base_reg_perms[PANVK_SUBQUEUE_COUNT] = {
       [PANVK_SUBQUEUE_VERTEX_TILER] = panvk_cs_vt_reg_perm,
       [PANVK_SUBQUEUE_FRAGMENT] = panvk_cs_frag_reg_perm,
@@ -890,7 +886,7 @@ init_cs_builders(struct panvk_cmd_buffer *cmdbuf)
          .ls_sb_slot = SB_ID(LS),
       };
 
-      if (instance->debug_flags & PANVK_DEBUG_CS) {
+      if (PANVK_DEBUG(CS)) {
          cmdbuf->state.cs[i].reg_access.upd_ctx_stack = NULL;
          cmdbuf->state.cs[i].reg_access.base_perm = base_reg_perms[i];
          conf.reg_perm = cs_reg_perm;
@@ -898,7 +894,7 @@ init_cs_builders(struct panvk_cmd_buffer *cmdbuf)
 
       cs_builder_init(b, &conf, root_cs);
 
-      if (instance->debug_flags & PANVK_DEBUG_TRACE) {
+      if (PANVK_DEBUG(TRACE)) {
          cmdbuf->state.cs[i].tracing = (struct cs_tracing_ctx){
             .enabled = true,
             .ctx_reg = cs_subqueue_ctx_reg(b),
@@ -1036,13 +1032,11 @@ panvk_per_arch(BeginCommandBuffer)(VkCommandBuffer commandBuffer,
                                    const VkCommandBufferBeginInfo *pBeginInfo)
 {
    VK_FROM_HANDLE(panvk_cmd_buffer, cmdbuf, commandBuffer);
-   struct panvk_instance *instance =
-      to_panvk_instance(cmdbuf->vk.base.device->physical->instance);
 
    vk_command_buffer_begin(&cmdbuf->vk, pBeginInfo);
    cmdbuf->flags = pBeginInfo->flags;
 
-   if (instance->debug_flags & PANVK_DEBUG_FORCE_SIMULTANEOUS) {
+   if (PANVK_DEBUG(FORCE_SIMULTANEOUS)) {
       cmdbuf->flags |= VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
       cmdbuf->flags &= ~VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
    }

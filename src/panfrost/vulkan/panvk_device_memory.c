@@ -55,8 +55,6 @@ panvk_AllocateMemory(VkDevice _device,
    }
 
    VK_FROM_HANDLE(panvk_device, device, _device);
-   struct panvk_instance *instance =
-      to_panvk_instance(device->vk.physical->instance);
    struct panvk_device_memory *mem;
    bool can_be_exported = false;
    VkResult result;
@@ -151,7 +149,7 @@ panvk_AllocateMemory(VkDevice _device,
    }
 
    if (device->debug.decode_ctx) {
-      if (instance->debug_flags & (PANVK_DEBUG_DUMP | PANVK_DEBUG_TRACE)) {
+      if (PANVK_DEBUG(DUMP) || PANVK_DEBUG(TRACE)) {
          void *cpu = pan_kmod_bo_mmap(mem->bo, 0, pan_kmod_bo_size(mem->bo),
                                       PROT_READ | PROT_WRITE, MAP_SHARED, NULL);
          if (cpu != MAP_FAILED)

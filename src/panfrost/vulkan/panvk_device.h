@@ -148,10 +148,7 @@ static inline uint32_t
 panvk_device_adjust_bo_flags(const struct panvk_device *device,
                              uint32_t bo_flags)
 {
-   struct panvk_instance *instance =
-      to_panvk_instance(device->vk.physical->instance);
-
-   if (instance->debug_flags & (PANVK_DEBUG_DUMP | PANVK_DEBUG_TRACE))
+   if (PANVK_DEBUG(DUMP) || PANVK_DEBUG(TRACE))
       bo_flags &= ~PAN_KMOD_BO_FLAG_NO_MMAP;
 
    return bo_flags;

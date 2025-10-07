@@ -271,10 +271,7 @@ panvk_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
       panvk_physical_device_try_create;
    instance->vk.physical_devices.destroy = panvk_destroy_physical_device;
 
-   instance->debug_flags =
-      parse_debug_string(os_get_option("PANVK_DEBUG"), panvk_debug_options);
-
-   if (instance->debug_flags & PANVK_DEBUG_STARTUP)
+   if (PANVK_DEBUG(STARTUP))
       vk_logi(VK_LOG_NO_OBJS(instance), "Created an instance");
 
    VG(VALGRIND_CREATE_MEMPOOL(instance, 0, false));

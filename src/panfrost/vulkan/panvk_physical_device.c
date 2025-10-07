@@ -94,7 +94,7 @@ create_kmod_dev(struct panvk_physical_device *device,
 
    drmFreeVersion(version);
 
-   if (instance->debug_flags & PANVK_DEBUG_STARTUP)
+   if (PANVK_DEBUG(STARTUP))
       vk_logi(VK_LOG_NO_OBJS(instance), "Found compatible device '%s'.", path);
 
    device->kmod.dev = pan_kmod_dev_create(fd, PAN_KMOD_DEV_FLAG_OWNS_FD,

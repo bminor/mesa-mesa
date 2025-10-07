@@ -95,8 +95,6 @@ panvk_CreateBuffer(VkDevice _device, const VkBufferCreateInfo *pCreateInfo,
                    const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer)
 {
    VK_FROM_HANDLE(panvk_device, device, _device);
-   struct panvk_instance *instance =
-      to_panvk_instance(device->vk.physical->instance);
    struct panvk_buffer *buffer;
    VkResult result;
 
@@ -123,7 +121,7 @@ panvk_CreateBuffer(VkDevice _device, const VkBufferCreateInfo *pCreateInfo,
       }
 
       if ((buffer->vk.create_flags & VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT) ||
-          (instance->debug_flags & PANVK_DEBUG_FORCE_BLACKHOLE)) {
+          PANVK_DEBUG(FORCE_BLACKHOLE)) {
          /* Map last so that we don't have a possibility of getting any more
           * errors, in which case we'd have to unmap.
           */

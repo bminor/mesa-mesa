@@ -310,9 +310,7 @@ generate_tiler_oom_handler(struct panvk_device *dev,
 VkResult
 panvk_per_arch(init_tiler_oom)(struct panvk_device *device)
 {
-   struct panvk_instance *instance =
-      to_panvk_instance(device->vk.physical->instance);
-   bool tracing_enabled = instance->debug_flags & PANVK_DEBUG_TRACE;
+   const bool tracing_enabled = PANVK_DEBUG(TRACE);
    VkResult result = panvk_priv_bo_create(
       device, TILER_OOM_HANDLER_MAX_SIZE * 2 * MAX_RTS, 0,
       VK_SYSTEM_ALLOCATION_SCOPE_DEVICE, &device->tiler_oom.handlers_bo);

@@ -119,10 +119,8 @@ panvk_bind_queue_submit_init(struct panvk_bind_queue_submit *submit,
 {
    struct panvk_bind_queue *queue =
       container_of(vk_queue, struct panvk_bind_queue, vk);
-   struct panvk_instance *instance =
-      to_panvk_instance(queue->vk.base.device->physical->base.instance);
 
-   bool force_sync = instance->debug_flags & PANVK_DEBUG_SYNC;
+   const bool force_sync = PANVK_DEBUG(SYNC);
 
    *submit = (struct panvk_bind_queue_submit){
       .queue = queue,

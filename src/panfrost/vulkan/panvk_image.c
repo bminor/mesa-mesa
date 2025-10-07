@@ -54,7 +54,6 @@ panvk_image_can_use_afbc(
    VkImageCreateFlags flags)
 {
    unsigned arch = pan_arch(phys_dev->kmod.props.gpu_id);
-   struct panvk_instance *instance = to_panvk_instance(phys_dev->vk.instance);
    enum pipe_format pfmt = vk_format_to_pipe_format(fmt);
 
    /* Disallow AFBC if either of these is true
@@ -76,7 +75,7 @@ panvk_image_can_use_afbc(
     * GetPhysicalDeviceImageFormatProperties2() and we don't have enough
     * information to conduct a full image property check in this context.
     */
-   return !(instance->debug_flags & PANVK_DEBUG_NO_AFBC) &&
+   return !PANVK_DEBUG(NO_AFBC) &&
           !(usage &
             (VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_HOST_TRANSFER_BIT)) &&
           pan_query_afbc(&phys_dev->kmod.props) &&
@@ -208,11 +207,9 @@ panvk_image_can_use_mod(struct panvk_image *image,
    struct panvk_physical_device *phys_dev =
       to_panvk_physical_device(image->vk.base.device->physical);
    unsigned arch = pan_arch(phys_dev->kmod.props.gpu_id);
-   struct panvk_instance *instance =
-      to_panvk_instance(image->vk.base.device->physical->instance);
-   bool forced_linear = (instance->debug_flags & PANVK_DEBUG_LINEAR) ||
-                        image->vk.tiling == VK_IMAGE_TILING_LINEAR ||
-                        image->vk.image_type == VK_IMAGE_TYPE_1D;
+   const bool forced_linear = PANVK_DEBUG(LINEAR) ||
+                              image->vk.tiling == VK_IMAGE_TILING_LINEAR ||
+                              image->vk.image_type == VK_IMAGE_TYPE_1D;
 
    /* If the image is meant to be linear, don't bother testing the
     * other cases. */
@@ -221,7 +218,7 @@ panvk_image_can_use_mod(struct panvk_image *image,
 
    if (drm_is_afbc(mod)) {
       /* AFBC explicitly disabled. */
-      if (instance->debug_flags & PANVK_DEBUG_NO_AFBC)
+      if (PANVK_DEBUG(NO_AFBC))
          return false;
 
       /* Non-optimal tiling requested. */
@@ -578,8 +575,6 @@ panvk_CreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
    VK_FROM_HANDLE(panvk_device, dev, device);
    struct panvk_physical_device *phys_dev =
       to_panvk_physical_device(dev->vk.physical);
-   struct panvk_instance *instance =
-      to_panvk_instance(phys_dev->vk.instance);
    VkResult result;
 
    if (panvk_android_is_gralloc_image(pCreateInfo)) {
@@ -636,7 +631,7 @@ panvk_CreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
       }
 
       if ((image->vk.create_flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) ||
-          (instance->debug_flags & PANVK_DEBUG_FORCE_BLACKHOLE)) {
+          PANVK_DEBUG(FORCE_BLACKHOLE)) {
          /* Map last so that we don't have a possibility of getting any more
           * errors, in which case we'd have to unmap.
           */
