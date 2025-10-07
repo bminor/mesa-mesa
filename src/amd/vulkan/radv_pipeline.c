@@ -64,11 +64,12 @@ radv_pipeline_skip_shaders_cache(const struct radv_device *device, const struct 
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
 
    /* Skip the shaders cache when any of the below are true:
+    * - trap handler is present
     * - shaders are dumped for debugging (RADV_DEBUG=shaders)
     * - shaders IR are captured (NIR, backend IR and ASM)
     * - binaries are captured (driver shouldn't store data to an internal cache)
     */
-   return (instance->debug_flags & RADV_DEBUG_DUMP_SHADERS) ||
+   return device->trap_handler_shader || (instance->debug_flags & RADV_DEBUG_DUMP_SHADERS) ||
           (pipeline->create_flags &
            (VK_PIPELINE_CREATE_2_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR | VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR));
 }

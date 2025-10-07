@@ -869,12 +869,10 @@ static void
 radv_device_init_cache_key(struct radv_device *device)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   const struct radv_instance *instance = radv_physical_device_instance(pdev);
    struct radv_device_cache_key *key = &device->cache_key;
    struct mesa_blake3 ctx;
 
    key->keep_shader_info = device->keep_shader_info;
-   key->trap_excp_flags = device->trap_handler_shader && instance->trap_excp_flags;
    key->image_2d_view_of_3d = device->vk.enabled_features.image2DViewOf3D && pdev->info.gfx_level == GFX9;
    key->mesh_shader_queries = device->vk.enabled_features.meshShaderQueries && pdev->emulate_mesh_shader_queries;
    key->primitives_generated_query = radv_uses_primitives_generated_query(device);
