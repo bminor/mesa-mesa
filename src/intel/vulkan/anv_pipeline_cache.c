@@ -29,6 +29,7 @@
 #include "nir/nir_serialize.h"
 #include "nir/nir.h"
 #include "anv_private.h"
+#include "anv_shader.h"
 #include "nir/nir_xfb_info.h"
 #include "vk_util.h"
 #include "compiler/spirv/nir_spirv.h"
@@ -74,27 +75,6 @@ const struct vk_pipeline_cache_object_ops *const anv_cache_import_ops[2] = {
    &anv_shader_bin_ops,
    NULL
 };
-
-static void
-anv_shader_bin_rewrite_embedded_samplers(struct anv_device *device,
-                                         struct anv_shader_bin *shader,
-                                         const struct anv_pipeline_bind_map *bind_map,
-                                         const struct brw_stage_prog_data *prog_data_in)
-{
-   int rv_count = 0;
-   struct brw_shader_reloc_value reloc_values[BRW_MAX_EMBEDDED_SAMPLERS];
-
-   for (uint32_t i = 0; i < bind_map->embedded_sampler_count; i++) {
-      reloc_values[rv_count++] = (struct brw_shader_reloc_value) {
-         .id = BRW_SHADER_RELOC_EMBEDDED_SAMPLER_HANDLE + i,
-         .value = shader->embedded_samplers[i]->sampler_state.offset,
-      };
-   }
-
-   brw_write_shader_relocs(&device->physical->compiler->isa,
-                           shader->kernel.map, prog_data_in,
-                           reloc_values, rv_count);
-}
 
 static struct anv_shader_bin *
 anv_shader_bin_create(struct anv_device *device,
@@ -159,86 +139,16 @@ anv_shader_bin_create(struct anv_device *device,
       }
    }
 
-   uint64_t shader_data_addr =
-      device->physical->va.instruction_state_pool.addr +
-      shader->kernel.offset +
-      prog_data_in->const_data_offset;
-
    int rv_count = 0;
    struct brw_shader_reloc_value reloc_values[11];
-   assert((device->physical->va.instruction_state_pool.addr & 0xffffffff) == 0);
-   reloc_values[rv_count++] = (struct brw_shader_reloc_value) {
-      .id = BRW_SHADER_RELOC_INSTRUCTION_BASE_ADDR_HIGH,
-      .value = device->physical->va.instruction_state_pool.addr >> 32,
-   };
-   assert((device->physical->va.dynamic_visible_pool.addr & 0xffffffff) == 0);
-   reloc_values[rv_count++] = (struct brw_shader_reloc_value) {
-      .id = BRW_SHADER_RELOC_DESCRIPTORS_BUFFER_ADDR_HIGH,
-      .value = device->physical->va.dynamic_visible_pool.addr >> 32,
-   };
-   assert((device->physical->va.indirect_descriptor_pool.addr & 0xffffffff) == 0);
-   assert((device->physical->va.internal_surface_state_pool.addr & 0xffffffff) == 0);
-   reloc_values[rv_count++] = (struct brw_shader_reloc_value) {
-      .id = BRW_SHADER_RELOC_DESCRIPTORS_ADDR_HIGH,
-      .value = device->physical->indirect_descriptors ?
-               (device->physical->va.indirect_descriptor_pool.addr >> 32) :
-               (device->physical->va.internal_surface_state_pool.addr >> 32),
-   };
-   assert((device->physical->va.instruction_state_pool.addr & 0xffffffff) == 0);
-   reloc_values[rv_count++] = (struct brw_shader_reloc_value) {
-      .id = BRW_SHADER_RELOC_CONST_DATA_ADDR_LOW,
-      .value = shader_data_addr,
-   };
-   assert((device->physical->va.instruction_state_pool.addr & 0xffffffff) == 0);
-   assert(shader_data_addr >> 32 == device->physical->va.instruction_state_pool.addr >> 32);
-   reloc_values[rv_count++] = (struct brw_shader_reloc_value) {
-      .id = BRW_SHADER_RELOC_CONST_DATA_ADDR_HIGH,
-      .value = device->physical->va.instruction_state_pool.addr >> 32,
-   };
-   reloc_values[rv_count++] = (struct brw_shader_reloc_value) {
-      .id = BRW_SHADER_RELOC_SHADER_START_OFFSET,
-      .value = shader->kernel.offset,
-   };
-   if (brw_shader_stage_is_bindless(stage)) {
-      const struct brw_bs_prog_data *bs_prog_data =
-         brw_bs_prog_data_const(prog_data_in);
-      uint64_t resume_sbt_addr =
-         device->physical->va.instruction_state_pool.addr +
-         shader->kernel.offset +
-         bs_prog_data->resume_sbt_offset;
-      reloc_values[rv_count++] = (struct brw_shader_reloc_value) {
-         .id = BRW_SHADER_RELOC_RESUME_SBT_ADDR_LOW,
-         .value = resume_sbt_addr,
-      };
-      reloc_values[rv_count++] = (struct brw_shader_reloc_value) {
-         .id = BRW_SHADER_RELOC_RESUME_SBT_ADDR_HIGH,
-         .value = resume_sbt_addr >> 32,
-      };
-   }
-
-   if (INTEL_DEBUG(DEBUG_SHADER_PRINT)) {
-      struct anv_bo *bo = device->printf.bo;
-      assert(bo != NULL);
-
-      reloc_values[rv_count++] = (struct brw_shader_reloc_value) {
-         .id = BRW_SHADER_RELOC_PRINTF_BUFFER_ADDR_LOW,
-         .value = bo->offset & 0xffffffff,
-      };
-      reloc_values[rv_count++] = (struct brw_shader_reloc_value) {
-         .id = BRW_SHADER_RELOC_PRINTF_BUFFER_ADDR_HIGH,
-         .value = bo->offset >> 32,
-      };
-      reloc_values[rv_count++] = (struct brw_shader_reloc_value) {
-         .id = BRW_SHADER_RELOC_PRINTF_BUFFER_SIZE,
-         .value = anv_printf_buffer_size(),
-      };
-   }
+   rv_count = anv_shader_set_relocs(device, reloc_values, stage,
+                                    &shader->kernel, prog_data_in, bind_map,
+                                    shader->embedded_samplers);
+   assert(rv_count <= ARRAY_SIZE(reloc_values));
 
    brw_write_shader_relocs(&device->physical->compiler->isa,
                            shader->kernel.map, prog_data_in,
                            reloc_values, rv_count);
-
-   anv_shader_bin_rewrite_embedded_samplers(device, shader, bind_map, prog_data_in);
 
    memcpy(prog_data, prog_data_in, prog_data_size);
    typed_memcpy(prog_data_relocs, prog_data_in->relocs,
