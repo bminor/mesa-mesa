@@ -72,6 +72,10 @@ VkResult getAndroidHardwareBufferPropertiesANDROID(
     const auto format = grallocHelper->getFormat(buffer);
     if (ahbFormatProps) {
         switch (format) {
+            case AHARDWAREBUFFER_FORMAT_B8G8R8A8_UNORM:
+                ahbFormatProps->format = VK_FORMAT_B8G8R8A8_UNORM;
+                ahbFormatProps->externalFormat = DRM_FORMAT_ARGB8888;
+                break;
             case AHARDWAREBUFFER_FORMAT_R8_UNORM:
                 ahbFormatProps->format = VK_FORMAT_R8_UNORM;
                 ahbFormatProps->externalFormat = DRM_FORMAT_R8;
@@ -127,6 +131,9 @@ VkResult getAndroidHardwareBufferPropertiesANDROID(
             default:
                 ahbFormatProps->format = VK_FORMAT_UNDEFINED;
                 ahbFormatProps->externalFormat = DRM_FORMAT_INVALID;
+                mesa_loge("Unhandled AHB format:%u", format);
+                break;
+
         }
 
         // The formatFeatures member must include
