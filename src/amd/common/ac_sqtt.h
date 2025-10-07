@@ -18,7 +18,6 @@
 
 #define SQTT_BUFFER_ALIGN_SHIFT 12
 
-struct radeon_cmdbuf;
 struct radeon_info;
 
 /**
@@ -34,8 +33,9 @@ struct radeon_info;
  * around each command needed. The primary user of this is RGP.
  */
 struct ac_sqtt {
-   struct radeon_cmdbuf *start_cs[2];
-   struct radeon_cmdbuf *stop_cs[2];
+   /* struct radeon_cmdbuf from RADV or RadeonSI */
+   void *start_cs[2];
+   void *stop_cs[2];
    /* struct radeon_winsys_bo or struct pb_buffer */
    void *bo;
    uint64_t buffer_va;
