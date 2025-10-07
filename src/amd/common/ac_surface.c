@@ -4614,15 +4614,28 @@ gfx10_surface_copy_mem_surface(struct ac_addrlib *addrlib, const struct radeon_i
                                const struct ac_surface_copy_region *surf_copy_region,
                                bool surface_is_dst)
 {
+   uint32_t format = bpe_to_format(surf);
+   uint32_t bpe = surf->bpe;
+   uint32_t texel_scale = 1;
+
+   /* Adjust surface info for 96-bits formats because addrlib expects a power
+    * of two.
+    */
+   if (format == ADDR_FMT_32_32_32) {
+      format = ADDR_FMT_32;
+      bpe = 4;
+      texel_scale = 3;
+   }
+
    ADDR2_COPY_MEMSURFACE_INPUT input = {0};
    input.size = sizeof(ADDR2_COPY_MEMSURFACE_INPUT);
    input.swizzleMode = surf->u.gfx9.swizzle_mode;
-   input.format = bpe_to_format(surf);
+   input.format = format;
    input.flags.color = !(surf->flags & RADEON_SURF_Z_OR_SBUFFER);
    input.flags.depth = (surf->flags & RADEON_SURF_ZBUFFER) != 0;
    input.resourceType = (AddrResourceType)surf->u.gfx9.resource_type;
-   input.bpp = surf->bpe * 8;
-   input.unAlignedDims.width = surf_info->width;
+   input.bpp = bpe * 8;
+   input.unAlignedDims.width = surf_info->width * texel_scale;
    input.unAlignedDims.height = surf_info->height;
    input.unAlignedDims.depth = surf->u.gfx9.resource_type == RADEON_RESOURCE_3D ?
                                surf_info->depth :
@@ -4642,7 +4655,7 @@ gfx10_surface_copy_mem_surface(struct ac_addrlib *addrlib, const struct radeon_i
                   surf_copy_region->offset.z :
                   surf_copy_region->base_layer;
    region.mipId = surf_copy_region->level;
-   region.copyDims.width = surf_copy_region->extent.width;
+   region.copyDims.width = surf_copy_region->extent.width * texel_scale;
    region.copyDims.height = surf_copy_region->extent.height;
    region.copyDims.depth = surf->u.gfx9.resource_type == RADEON_RESOURCE_3D ?
                            surf_copy_region->extent.depth :
@@ -4666,14 +4679,27 @@ gfx12_surface_copy_mem_surface(struct ac_addrlib *addrlib, const struct radeon_i
                                const struct ac_surface_copy_region *surf_copy_region,
                                bool surface_is_dst)
 {
+   uint32_t format = bpe_to_format(surf);
+   uint32_t bpe = surf->bpe;
+   uint32_t texel_scale = 1;
+
+   /* Adjust surface info for 96-bits formats because addrlib expects a power
+    * of two.
+    */
+   if (format == ADDR_FMT_32_32_32) {
+      format = ADDR_FMT_32;
+      bpe = 4;
+      texel_scale = 3;
+   }
+
    ADDR3_COPY_MEMSURFACE_INPUT input = {0};
    input.size = sizeof(ADDR3_COPY_MEMSURFACE_INPUT);
    input.swizzleMode = surf->u.gfx9.swizzle_mode;
-   input.format = bpe_to_format(surf);
+   input.format = format;
    input.flags.depth = (surf->flags & RADEON_SURF_ZBUFFER) != 0;
    input.resourceType = (AddrResourceType)surf->u.gfx9.resource_type;
-   input.bpp = surf->bpe * 8;
-   input.unAlignedDims.width = surf_info->width;
+   input.bpp = bpe * 8;
+   input.unAlignedDims.width = surf_info->width * texel_scale;
    input.unAlignedDims.height = surf_info->height;
    input.unAlignedDims.depth = surf->u.gfx9.resource_type == RADEON_RESOURCE_3D ?
                                surf_info->depth :
@@ -4693,7 +4719,7 @@ gfx12_surface_copy_mem_surface(struct ac_addrlib *addrlib, const struct radeon_i
                   surf_copy_region->offset.z :
                   surf_copy_region->base_layer;
    region.mipId = surf_copy_region->level;
-   region.copyDims.width = surf_copy_region->extent.width;
+   region.copyDims.width = surf_copy_region->extent.width * texel_scale;
    region.copyDims.height = surf_copy_region->extent.height;
    region.copyDims.depth = surf->u.gfx9.resource_type == RADEON_RESOURCE_3D ?
                            surf_copy_region->extent.depth :
