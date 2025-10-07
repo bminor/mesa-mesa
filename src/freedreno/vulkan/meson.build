@@ -62,6 +62,21 @@ libtu_files += custom_target(
   depfile : 'float32_spv.h.d',
 )
 
+libtu_files += custom_target(
+  'float64_spv.h',
+  input : [glsl2spirv, float64_glsl_file],
+  output : 'float64_spv.h',
+  command : [
+    prog_python, '@INPUT@', '@OUTPUT@',
+    prog_glslang,
+    '--vn', 'float64_spv_source',
+    '--glsl-version', '450',
+    '-Olib',
+    glslang_depfile,
+  ],
+  depfile : 'float64_spv.h.d',
+)
+
 subdir('bvh')
 
 libtu_includes = [

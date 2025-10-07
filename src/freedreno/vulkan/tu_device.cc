@@ -3144,7 +3144,7 @@ tu_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
 
    vk_meta_device_finish(&device->vk, &device->meta);
 
-   tu_destroy_softfloat32(device);
+   tu_destroy_softfloat(device);
 
    ir3_compiler_destroy(device->compiler);
 

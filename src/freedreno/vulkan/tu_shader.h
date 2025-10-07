@@ -134,7 +134,7 @@ struct tu_shader_key {
 extern const struct vk_pipeline_cache_object_ops tu_shader_ops;
 
 void
-tu_destroy_softfloat32(struct tu_device *device);
+tu_destroy_softfloat(struct tu_device *device);
 
 bool
 tu_nir_lower_multiview(nir_shader *nir, uint32_t mask, struct tu_device *dev);

@@ -129,6 +129,8 @@ static const uint32_t float32_spv[] = {
 #include "float32_spv.h"
 };
 
+#include "float64_spv.h"
+
 void
 tu_init_softfloat32(struct tu_device *dev)
 {
@@ -144,10 +146,26 @@ tu_init_softfloat32(struct tu_device *dev)
 }
 
 void
-tu_destroy_softfloat32(struct tu_device *dev)
+tu_init_softfloat64(struct tu_device *dev)
+{
+   if (dev->float64_shader)
+      return;
+
+   mtx_lock(&dev->softfloat_mutex);
+   if (!dev->float64_shader) {
+      dev->float64_shader = tu_spirv_to_nir_library(dev, float64_spv_source,
+                                                    ARRAY_SIZE(float64_spv_source));
+   }
+   mtx_unlock(&dev->softfloat_mutex);
+}
+
+void
+tu_destroy_softfloat(struct tu_device *dev)
 {
    if (dev->float32_shader)
       ralloc_free(dev->float32_shader);
+   if (dev->float64_shader)
+      ralloc_free(dev->float64_shader);
 }
 
 static void
@@ -156,6 +174,19 @@ tu_nir_lower_softfloat32(struct tu_device *dev, nir_shader *nir)
    tu_init_softfloat32(dev);
 
    NIR_PASS(_, nir, nir_lower_floats, dev->float32_shader);
+
+   /* Cleanup the result before linking to minimize shader size. */
+   struct ir3_optimize_options optimize_options = {};
+   ir3_optimize_loop(dev->compiler, &optimize_options, nir);
+}
+
+static void
+tu_nir_lower_softfloat64(struct tu_device *dev, nir_shader *nir)
+{
+   tu_init_softfloat64(dev);
+
+   NIR_PASS(_, nir, nir_lower_doubles, dev->float64_shader,
+            nir_lower_fp64_full_software);
 
    /* Cleanup the result before linking to minimize shader size. */
    struct ir3_optimize_options optimize_options = {};
@@ -250,6 +281,10 @@ tu_spirv_to_nir(struct tu_device *dev,
 
    if (nir_is_denorm_preserve(nir->info.float_controls_execution_mode, 32)) {
       tu_nir_lower_softfloat32(dev, nir);
+   }
+
+   if (nir->info.bit_sizes_float & 64) {
+      tu_nir_lower_softfloat64(dev, nir);
    }
 
    return nir;
