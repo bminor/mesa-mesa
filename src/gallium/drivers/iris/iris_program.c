@@ -1835,7 +1835,7 @@ iris_schedule_compile(struct iris_screen *screen,
 
 static debug_archiver *
 iris_debug_archiver_open(void *tmp_ctx, struct iris_screen *screen,
-                         struct iris_uncompiled_shader *ish, const void *key,
+                         const struct nir_shader *nir, const void *key,
                          unsigned key_size)
 {
    if (!INTEL_DEBUG(DEBUG_MDA) || !screen->brw)
@@ -1847,7 +1847,7 @@ iris_debug_archiver_open(void *tmp_ctx, struct iris_screen *screen,
       unsigned char hash[SHA1_DIGEST_LENGTH];
 
       _mesa_sha1_init(&ctx);
-      _mesa_sha1_update(&ctx, ish->nir->info.source_blake3, BLAKE3_OUT_LEN);
+      _mesa_sha1_update(&ctx, nir->info.source_blake3, BLAKE3_OUT_LEN);
       _mesa_sha1_update(&ctx, key, key_size);
       _mesa_sha1_final(&ctx, hash);
 
@@ -1860,7 +1860,7 @@ iris_debug_archiver_open(void *tmp_ctx, struct iris_screen *screen,
 
    if (debug_archiver) {
       debug_archiver_set_prefix(debug_archiver,
-                                _mesa_shader_stage_to_abbrev(ish->nir->info.stage));
+                                _mesa_shader_stage_to_abbrev(nir->info.stage));
    }
    return debug_archiver;
 }
@@ -1885,7 +1885,7 @@ iris_compile_vs(struct iris_screen *screen,
    const struct iris_vs_prog_key *const key = &shader->key.vs;
 
    debug_archiver *debug_archiver =
-      iris_debug_archiver_open(mem_ctx, screen, ish, key, sizeof(*key));
+      iris_debug_archiver_open(mem_ctx, screen, ish->nir, key, sizeof(*key));
 
    if (key->vue.nr_userclip_plane_consts) {
       nir_function_impl *impl = nir_shader_get_entrypoint(nir);
@@ -2144,7 +2144,7 @@ iris_compile_tcs(struct iris_screen *screen,
    }
 
    debug_archiver *debug_archiver =
-      iris_debug_archiver_open(mem_ctx, screen, ish, key, sizeof(*key));
+      iris_debug_archiver_open(mem_ctx, screen, nir, key, sizeof(*key));
 
    iris_setup_uniforms(devinfo, mem_ctx, nir, &system_values,
                        &num_system_values, &num_cbufs);
@@ -2333,7 +2333,7 @@ iris_compile_tes(struct iris_screen *screen,
    const struct iris_tes_prog_key *const key = &shader->key.tes;
 
    debug_archiver *debug_archiver =
-      iris_debug_archiver_open(mem_ctx, screen, ish, key, sizeof(*key));
+      iris_debug_archiver_open(mem_ctx, screen, ish->nir, key, sizeof(*key));
 
    if (key->vue.nr_userclip_plane_consts) {
       nir_function_impl *impl = nir_shader_get_entrypoint(nir);
@@ -2528,7 +2528,7 @@ iris_compile_gs(struct iris_screen *screen,
    const struct iris_gs_prog_key *const key = &shader->key.gs;
 
    debug_archiver *debug_archiver =
-      iris_debug_archiver_open(mem_ctx, screen, ish, key, sizeof(*key));
+      iris_debug_archiver_open(mem_ctx, screen, ish->nir, key, sizeof(*key));
 
    if (key->vue.nr_userclip_plane_consts) {
       nir_function_impl *impl = nir_shader_get_entrypoint(nir);
@@ -2717,7 +2717,7 @@ iris_compile_fs(struct iris_screen *screen,
    const struct iris_fs_prog_key *const key = &shader->key.fs;
 
    debug_archiver *debug_archiver =
-      iris_debug_archiver_open(mem_ctx, screen, ish, key, sizeof(*key));
+      iris_debug_archiver_open(mem_ctx, screen, ish->nir, key, sizeof(*key));
 
    iris_setup_uniforms(devinfo, mem_ctx, nir, &system_values,
                        &num_system_values, &num_cbufs);
@@ -3066,7 +3066,7 @@ iris_compile_cs(struct iris_screen *screen,
    const struct iris_cs_prog_key *const key = &shader->key.cs;
 
    debug_archiver *debug_archiver =
-      iris_debug_archiver_open(mem_ctx, screen, ish, key, sizeof(*key));
+      iris_debug_archiver_open(mem_ctx, screen, ish->nir, key, sizeof(*key));
 
    if (screen->brw)
       NIR_PASS(_, nir, brw_nir_lower_cs_intrinsics, devinfo, NULL);
