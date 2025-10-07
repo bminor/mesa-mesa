@@ -48,9 +48,12 @@ def define_tracepoints(args):
     def begin_end_tp(name, tp_args=[], tp_struct=None, tp_print=None,
                      tp_default_enabled=True, end_pipelined=True,
                      compute=False, repeat_last=False,
-                     need_cs_param=False):
+                     need_cs_param=False,
+                     toggle_name=None):
         global intel_default_tps
-        if tp_default_enabled:
+        if toggle_name is None:
+            toggle_name = name
+        if tp_default_enabled and toggle_name not in intel_default_tps:
             intel_default_tps.append(name)
 
         # Preprocess arguments to handle display_as_hex
@@ -62,7 +65,7 @@ def define_tracepoints(args):
             processed_args.append(arg)
 
         Tracepoint('intel_begin_{0}'.format(name),
-                   toggle_name=name,
+                   toggle_name=toggle_name,
                    tp_perfetto='intel_ds_begin_{0}'.format(name),
                    need_cs_param=need_cs_param)
         tp_flags = []
@@ -74,13 +77,16 @@ def define_tracepoints(args):
             else:
                 tp_flags.append('INTEL_DS_TRACEPOINT_FLAG_END_OF_PIPE')
         Tracepoint('intel_end_{0}'.format(name),
-                   toggle_name=name,
+                   toggle_name=toggle_name,
                    args=processed_args,
                    tp_struct=tp_struct,
                    tp_perfetto='intel_ds_end_{0}'.format(name),
                    tp_print=tp_print,
                    tp_flags=tp_flags,
                    need_cs_param=need_cs_param)
+
+    def draw_tp(name, tp_args=[]):
+        begin_end_tp(name, tp_args=tp_args, toggle_name='draw')
 
     # Frame tracepoints
     begin_end_tp('frame',
@@ -162,53 +168,53 @@ def define_tracepoints(args):
                  tp_args=[Arg(type='uint32_t', var='count', c_format='%u')])
 
     # Various draws/dispatch, Anv & Iris
-    begin_end_tp('draw',
-                 tp_args=[Arg(type='uint32_t', var='count', c_format='%u'),
-                          Arg(type='uint32_t', var='vs_hash', c_format='%u'),
-                          Arg(type='uint32_t', var='fs_hash', c_format='%u')])
-    begin_end_tp('draw_multi',
-                 tp_args=[Arg(type='uint32_t', var='count', c_format='%u'),
-                          Arg(type='uint32_t', var='vs_hash', c_format='%u'),
-                          Arg(type='uint32_t', var='fs_hash', c_format='%u')])
-    begin_end_tp('draw_indexed',
-                 tp_args=[Arg(type='uint32_t', var='count', c_format='%u'),
-                          Arg(type='uint32_t', var='vs_hash', c_format='%u'),
-                          Arg(type='uint32_t', var='fs_hash', c_format='%u')])
-    begin_end_tp('draw_indexed_multi',
-                 tp_args=[Arg(type='uint32_t', var='count', c_format='%u'),
-                          Arg(type='uint32_t', var='vs_hash', c_format='%u'),
-                          Arg(type='uint32_t', var='fs_hash', c_format='%u')])
-    begin_end_tp('draw_indirect_byte_count',
-                 tp_args=[Arg(type='uint32_t', var='instance_count', c_format='%u'),
-                          Arg(type='uint32_t', var='vs_hash', c_format='%u'),
-                          Arg(type='uint32_t', var='fs_hash', c_format='%u')])
-    begin_end_tp('draw_indirect',
-                 tp_args=[Arg(type='uint32_t', var='draw_count', c_format='%u'),
-                          Arg(type='uint32_t', var='vs_hash', c_format='%u'),
-                          Arg(type='uint32_t', var='fs_hash', c_format='%u')])
-    begin_end_tp('draw_indexed_indirect',
-                 tp_args=[Arg(type='uint32_t', var='draw_count', c_format='%u'),
-                          Arg(type='uint32_t', var='vs_hash', c_format='%u'),
-                          Arg(type='uint32_t', var='fs_hash', c_format='%u')])
-    begin_end_tp('draw_indirect_count',
-                 tp_args=[Arg(type='uint32_t', var='draw_count', c_format='%u',
-                              is_indirect=True),
-                          Arg(type='uint32_t', var='vs_hash', c_format='%u'),
-                          Arg(type='uint32_t', var='fs_hash', c_format='%u')])
-    begin_end_tp('draw_indexed_indirect_count',
-                 tp_args=[Arg(type='uint32_t', var='draw_count', c_format='%u',
-                              is_indirect=True),
-                          Arg(type='uint32_t', var='vs_hash', c_format='%u'),
-                          Arg(type='uint32_t', var='fs_hash', c_format='%u')])
+    draw_tp('draw',
+            tp_args=[Arg(type='uint32_t', var='count', c_format='%u'),
+                     Arg(type='uint32_t', var='vs_hash', c_format='%u'),
+                     Arg(type='uint32_t', var='fs_hash', c_format='%u')])
+    draw_tp('draw_multi',
+            tp_args=[Arg(type='uint32_t', var='count', c_format='%u'),
+                     Arg(type='uint32_t', var='vs_hash', c_format='%u'),
+                     Arg(type='uint32_t', var='fs_hash', c_format='%u')])
+    draw_tp('draw_indexed',
+            tp_args=[Arg(type='uint32_t', var='count', c_format='%u'),
+                     Arg(type='uint32_t', var='vs_hash', c_format='%u'),
+                     Arg(type='uint32_t', var='fs_hash', c_format='%u')])
+    draw_tp('draw_indexed_multi',
+            tp_args=[Arg(type='uint32_t', var='count', c_format='%u'),
+                     Arg(type='uint32_t', var='vs_hash', c_format='%u'),
+                     Arg(type='uint32_t', var='fs_hash', c_format='%u')])
+    draw_tp('draw_indirect_byte_count',
+            tp_args=[Arg(type='uint32_t', var='instance_count', c_format='%u'),
+                     Arg(type='uint32_t', var='vs_hash', c_format='%u'),
+                     Arg(type='uint32_t', var='fs_hash', c_format='%u')])
+    draw_tp('draw_indirect',
+            tp_args=[Arg(type='uint32_t', var='draw_count', c_format='%u'),
+                     Arg(type='uint32_t', var='vs_hash', c_format='%u'),
+                     Arg(type='uint32_t', var='fs_hash', c_format='%u')])
+    draw_tp('draw_indexed_indirect',
+            tp_args=[Arg(type='uint32_t', var='draw_count', c_format='%u'),
+                     Arg(type='uint32_t', var='vs_hash', c_format='%u'),
+                     Arg(type='uint32_t', var='fs_hash', c_format='%u')])
+    draw_tp('draw_indirect_count',
+            tp_args=[Arg(type='uint32_t', var='draw_count', c_format='%u',
+                         is_indirect=True),
+                     Arg(type='uint32_t', var='vs_hash', c_format='%u'),
+                     Arg(type='uint32_t', var='fs_hash', c_format='%u')])
+    draw_tp('draw_indexed_indirect_count',
+            tp_args=[Arg(type='uint32_t', var='draw_count', c_format='%u',
+                         is_indirect=True),
+                     Arg(type='uint32_t', var='vs_hash', c_format='%u'),
+                     Arg(type='uint32_t', var='fs_hash', c_format='%u')])
 
-    begin_end_tp('draw_mesh',
-                 tp_args=[Arg(type='uint32_t', var='group_x', c_format='%u'),
-                          Arg(type='uint32_t', var='group_y', c_format='%u'),
-                          Arg(type='uint32_t', var='group_z', c_format='%u'),])
-    begin_end_tp('draw_mesh_indirect',
-                 tp_args=[Arg(type='uint32_t', var='draw_count', c_format='%u'),])
-    begin_end_tp('draw_mesh_indirect_count',
-                 tp_args=[Arg(type='uint32_t', var='draw_count', c_format='%u',
+    draw_tp('draw_mesh',
+            tp_args=[Arg(type='uint32_t', var='group_x', c_format='%u'),
+                     Arg(type='uint32_t', var='group_y', c_format='%u'),
+                     Arg(type='uint32_t', var='group_z', c_format='%u'),])
+    draw_tp('draw_mesh_indirect',
+            tp_args=[Arg(type='uint32_t', var='draw_count', c_format='%u'),])
+    draw_tp('draw_mesh_indirect_count',
+            tp_args=[Arg(type='uint32_t', var='draw_count', c_format='%u',
                               is_indirect=True),])
 
     begin_end_tp('compute',
