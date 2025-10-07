@@ -7,5 +7,5 @@ deqp_args = [
     "--deqp-gl-config-name=rgba8888d24s8ms0",
 ]
 version_check = "GL ES 2.0.*git"
-renderer_check = "GC3000"
-extensions_check = "/install/etnaviv-gc3000-r5450-gles2-extensions.txt"
+renderer_check = "GC7000"
+extensions_check = "/install/etnaviv-gc7000-r6204-gles2-extensions.txt"

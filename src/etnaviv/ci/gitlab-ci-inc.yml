@@ -10,6 +10,7 @@
         - src/etnaviv/ci/deqp-$DEQP_SUITE.toml
         - src/etnaviv/ci/$GPU_VERSION-fails.txt
         - src/etnaviv/ci/$GPU_VERSION-flakes.txt
+        - src/etnaviv/ci/$GPU_VERSION-gles2-extensions.txt
         - src/etnaviv/ci/$GPU_VERSION-skips.txt
         - src/etnaviv/drm/**/*
         - src/etnaviv/drm-shim/**/*

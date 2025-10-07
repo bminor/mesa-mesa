@@ -8,3 +8,4 @@ deqp_args = [
 ]
 version_check = "GL ES 2.0.*git"
 renderer_check = "GC7000"
+extensions_check = "/install/etnaviv-gc7000-r6214-gles2-extensions.txt"
