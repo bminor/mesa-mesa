@@ -428,7 +428,7 @@ ${trace_toggle_name}_variable_once(void)
      ;
 
    ${trace_toggle_name} =
-      parse_enable_string(getenv("${trace_toggle_name.upper()}"),
+      parse_enable_string(os_get_option("${trace_toggle_name.upper()}"),
                           default_value,
                           config_control);
 }
