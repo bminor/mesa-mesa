@@ -11,7 +11,6 @@ dEQP-VK.api.copy_and_blit.dedicated_allocation.resolve_image.whole_copy_before_r
 
 # RADV_PERFTEST=hic failures
 dEQP-VK.image.host_image_copy.identical_memory_layout.optimal.b8g8r8a8_sint,Fail
-dEQP-VK.image.host_image_copy.identical_memory_layout.optimal.r16_sfloat,Fail
 dEQP-VK.image.host_image_copy.identical_memory_layout.optimal.r16_unorm,Fail
 dEQP-VK.image.host_image_copy.identical_memory_layout.optimal.r16g16_uint,Fail
 dEQP-VK.image.host_image_copy.identical_memory_layout.optimal.r8g8b8a8_unorm,Fail
