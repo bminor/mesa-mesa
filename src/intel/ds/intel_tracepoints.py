@@ -86,7 +86,8 @@ def define_tracepoints(args):
                    need_cs_param=need_cs_param)
 
     def draw_tp(name, tp_args=[]):
-        begin_end_tp(name, tp_args=tp_args, toggle_name='draw')
+        begin_end_tp(name, tp_args=tp_args, toggle_name='draw',
+                     tp_default_enabled=not args.android)
 
     # Frame tracepoints
     begin_end_tp('frame',
@@ -143,7 +144,8 @@ def define_tracepoints(args):
                           Arg(type='enum isl_format', var='dst_fmt', c_format='%s', to_prim_type='isl_format_get_short_name({})'),
                           Arg(type='enum isl_format', var='src_fmt', c_format='%s', to_prim_type='isl_format_get_short_name({})'),
                           Arg(type='uint8_t', var='predicated', c_format='%hhu'),
-                          ])
+                          ],
+                 tp_default_enabled=not args.android)
 
     # vkCmdWriteBufferMarker*, only for Anv
     begin_end_tp('write_buffer_marker',
@@ -339,6 +341,7 @@ def main():
     parser.add_argument('--utrace-src', required=True)
     parser.add_argument('--utrace-hdr', required=True)
     parser.add_argument('--perfetto-hdr', required=True)
+    parser.add_argument('--android', action="store_true")
     args = parser.parse_args()
     sys.path.insert(0, args.import_path)
     define_tracepoints(args)
