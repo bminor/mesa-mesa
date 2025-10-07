@@ -3834,7 +3834,7 @@
         "description": "zink: only add mutable bind for transient surfaces when necessary",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3cd3195d31961bf7f7e0743c22f14232b830e7b5",
         "notes": null

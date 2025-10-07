@@ -297,7 +297,7 @@ zink_create_transient_surface(struct zink_context *ctx, const struct pipe_surfac
       rtempl.nr_samples = nr_samples;
       rtempl.bind &= ~(PIPE_BIND_LINEAR | ZINK_BIND_DMABUF);
       rtempl.bind |= ZINK_BIND_TRANSIENT;
-      if (psurf->format != rtempl.format)
+      if (zink_format_needs_mutable(rtempl.format, psurf->format))
          rtempl.bind |= ZINK_BIND_MUTABLE;
       res->transient = zink_resource(ctx->base.screen->resource_create(ctx->base.screen, &rtempl));
       transient = res->transient;
