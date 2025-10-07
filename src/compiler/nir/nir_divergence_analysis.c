@@ -206,7 +206,8 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
        * subgroups, so subgroup ops are always divergent between vertices of
        * the same primitive.
        */
-      is_divergent = state->options & nir_divergence_vertex;
+      is_divergent = (state->options & nir_divergence_vertex) ||
+                     (state->options & nir_divergence_across_subgroups);
       break;
 
    /* Intrinsics which are always uniform */
@@ -398,6 +399,8 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
       } else {
          is_divergent = true;
       }
+      if (options & nir_divergence_across_subgroups)
+         is_divergent = true;
       break;
    case nir_intrinsic_load_attribute_pan:
       assert(stage == MESA_SHADER_VERTEX);
@@ -413,6 +416,8 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
       if (stage == MESA_SHADER_TESS_EVAL)
          is_divergent |= !(options & nir_divergence_single_patch_per_tes_subgroup);
       else
+         is_divergent = true;
+      if (options & nir_divergence_across_subgroups)
          is_divergent = true;
       break;
    case nir_intrinsic_load_input_vertex:
@@ -530,7 +535,8 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
           * vertices of the same primitive because they may be in
           * different subgroups.
           */
-         is_divergent = state->options & nir_divergence_vertex;
+         is_divergent = (state->options & nir_divergence_vertex) ||
+                        (state->options & nir_divergence_across_subgroups);
          break;
       }
       FALLTHROUGH;
@@ -538,7 +544,8 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_inclusive_scan_clusters_ir3: {
       nir_op op = nir_intrinsic_reduction_op(instr);
       is_divergent = src_divergent(instr->src[0], state) ||
-                     state->options & nir_divergence_vertex;
+                     (state->options & nir_divergence_vertex) ||
+                     (state->options & nir_divergence_across_subgroups);
       if (op != nir_op_umin && op != nir_op_imin && op != nir_op_fmin &&
           op != nir_op_umax && op != nir_op_imax && op != nir_op_fmax &&
           op != nir_op_iand && op != nir_op_ior)
@@ -550,7 +557,8 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
       /* This reduces the last invocations in all 8-wide clusters. It should
        * behave the same as reduce with cluster_size == subgroup_size.
        */
-      is_divergent = state->options & nir_divergence_vertex;
+      is_divergent = (state->options & nir_divergence_vertex) ||
+                     (state->options & nir_divergence_across_subgroups);
       break;
 
    case nir_intrinsic_load_ubo:
@@ -749,9 +757,13 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
       /* Not having the non_uniform flag with divergent sources is undefined
        * behavior. The Intel driver defines it pick the lowest numbered live
        * SIMD lane (via emit_uniformize).
+       *
+       * When gather the divergence across subgroups, we need propagate the
+       * divergence from the sources.
        */
       if ((nir_intrinsic_resource_access_intel(instr) &
-           nir_resource_intel_non_uniform) != 0) {
+           nir_resource_intel_non_uniform) != 0 ||
+          (state->options & nir_divergence_across_subgroups)) {
          unsigned num_srcs = nir_intrinsic_infos[instr->intrinsic].num_srcs;
          for (unsigned i = 0; i < num_srcs; i++) {
             if (src_divergent(instr->src[i], state)) {

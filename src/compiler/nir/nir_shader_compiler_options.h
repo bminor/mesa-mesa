@@ -77,12 +77,19 @@ typedef enum {
    nir_divergence_uniform_load_tears = (1 << 7),
    /* If used, this allows phis for divergent merges with undef and a uniform source to be considered uniform */
    nir_divergence_ignore_undef_if_phi_srcs = (1 << 8),
+
    /* Whether to compute vertex divergence (meaning between vertices
     * of the same primitive) instead of subgroup invocation divergence
     * (between invocations of the same subgroup). For example, patch input
     * loads are always convergent, while subgroup intrinsics are divergent.
     */
    nir_divergence_vertex = (1 << 11),
+
+   /* Whether to compute divergence of subgroup operations as if multiple
+    * subgroups ran in lock-step (for example subgroup operations normally
+    * convergent are divergent).
+    */
+   nir_divergence_across_subgroups = (1 << 12),
 } nir_divergence_options;
 
 /** An instruction filtering callback
