@@ -83,9 +83,10 @@ get_range_entry(unsigned n, const struct list_head *r_list)
    return NULL;
 }
 
-/* Insert a new range entry or update an existing entries pointer value if
- * start and end match exactly. If the range overlaps an existing entry we
- * return NULL.
+/* Insert a new range entry or if ptr is non-null update an existing entries
+ * pointer value if start and end match exactly. If the range overlaps an
+ * existing entry we return NULL or if start and end match an entry exactly
+ * but ptr is null we return the existing entry.
  */
 struct range_entry *
 util_range_insert_remap(unsigned start, unsigned end,
@@ -148,6 +149,9 @@ util_range_insert_remap(unsigned start, unsigned end,
             mid++;
          }
       } else if (mid_entry->start == start && mid_entry->end == end) {
+         if (!ptr)
+            return mid_entry;
+
          entry = mid_entry;
          goto insert_end;
       } else {

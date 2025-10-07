@@ -2975,23 +2975,20 @@ reserve_explicit_locations(struct gl_shader_program *prog,
    unsigned return_value = slots;
 
    struct range_entry *re =
-      util_range_remap(location, prog->UniformRemapTable);
+      util_range_insert_remap(location, max_loc, prog->UniformRemapTable,
+                              NULL);
    if (!re) {
-      re = util_range_insert_remap(location, max_loc,
-                                   prog->UniformRemapTable, NULL);
-      if (!re) {
-         /* ARB_explicit_uniform_location specification states:
-          *
-          *     "No two default-block uniform variables in the program can have
-          *     the same location, even if they are unused, otherwise a compiler
-          *     or linker error will be generated."
-          */
-         linker_error(prog,
-                      "location qualifier for uniform %s overlaps "
-                      "previously used location\n",
-                      *var_name);
-         return -1;
-      }
+      /* ARB_explicit_uniform_location specification states:
+       *
+       *     "No two default-block uniform variables in the program can have
+       *     the same location, even if they are unused, otherwise a compiler
+       *     or linker error will be generated."
+       */
+      linker_error(prog,
+                   "location qualifier for uniform %s overlaps "
+                   "previously used location\n",
+                   *var_name);
+      return -1;
    }
 
    /* Check if location is already used. */
