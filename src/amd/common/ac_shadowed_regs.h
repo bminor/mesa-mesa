@@ -9,8 +9,6 @@
 
 #include "ac_gpu_info.h"
 
-struct radeon_cmdbuf;
-
 struct ac_reg_range {
    unsigned offset;
    unsigned size;
