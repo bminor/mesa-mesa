@@ -26,7 +26,7 @@ struct ac_cmdbuf {
                             uint32_t __cs_num = __cs->cdw;                        \
                             UNUSED uint32_t __cs_num_initial = __cs_num;          \
                             UNUSED uint32_t __cs_reserved_dw = __cs->reserved_dw; \
-                            uint32_t *__cs_buf = __cs->buf
+                            UNUSED uint32_t *__cs_buf = __cs->buf
 
 #define ac_cmdbuf_begin_again(cs) do { \
    assert(__cs == NULL);               \

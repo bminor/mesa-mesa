@@ -14,27 +14,15 @@
 #include "si_pipe.h"
 #include "sid.h"
 
-#define radeon_begin(cs) struct radeon_cmdbuf *__cs = (cs); \
-                         unsigned __cs_num = __cs->current.cdw; \
-                         UNUSED unsigned __cs_num_initial = __cs_num; \
-                         uint32_t *__cs_buf = __cs->current.buf
+#define radeon_begin(cs) struct radeon_cmdbuf *__rcs = (cs); \
+                         ac_cmdbuf_begin(&__rcs->current)
 
-#define radeon_begin_again(cs) do { \
-   assert(__cs == NULL); \
-   __cs = (cs); \
-   __cs_num = __cs->current.cdw; \
-   __cs_num_initial = __cs_num; \
-   __cs_buf = __cs->current.buf; \
-} while (0)
+#define radeon_begin_again(cs) ac_cmdbuf_begin_again(&(cs)->current)
 
-#define radeon_end() do { \
-   __cs->current.cdw = __cs_num; \
-   assert(__cs->current.cdw <= __cs->current.max_dw); \
-   __cs = NULL; \
-} while (0)
+#define radeon_end() ac_cmdbuf_end()
 
-#define radeon_emit(value)  __cs_buf[__cs_num++] = (value)
-#define radeon_packets_added()  (__cs_num != __cs_num_initial)
+#define radeon_emit(value)  ac_cmdbuf_emit(value)
+#define radeon_packets_added()  ac_cmdbuf_packets_added()
 
 #define radeon_end_update_context_roll() do { \
    radeon_end(); \
@@ -209,7 +197,7 @@
 
 /* Packet building helpers for CONFIG registers. */
 #define radeon_set_config_reg(reg, value) \
-   radeon_set_reg(reg, 0, value, SI_CONFIG, PKT3_SET_CONFIG_REG)
+   ac_cmdbuf_set_config_reg(reg, value)
 
 /* Packet building helpers for CONTEXT registers. */
 #define radeon_set_context_reg_seq(reg, num) \
@@ -280,7 +268,7 @@
 #define radeon_set_uconfig_perfctr_reg_seq(reg, num) \
    radeon_set_reg_seq(reg, num, 0, CIK_UCONFIG, PKT3_SET_UCONFIG_REG, \
                       sctx->gfx_level >= GFX10 && \
-                      sctx->ws->cs_get_ip_type(__cs) == AMD_IP_GFX)
+                      sctx->ws->cs_get_ip_type(__rcs) == AMD_IP_GFX)
 
 #define radeon_set_uconfig_reg(reg, value) \
    radeon_set_reg(reg, 0, value, CIK_UCONFIG, PKT3_SET_UCONFIG_REG)

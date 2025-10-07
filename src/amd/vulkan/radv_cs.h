@@ -28,30 +28,21 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
 }
 
 #define radeon_begin(cs)                                                                                               \
-   struct radv_cmd_stream *__cs = (cs);                                                                                \
-   uint32_t __cs_num = __cs->b->cdw;                                                                                   \
-   UNUSED uint32_t __cs_reserved_dw = __cs->b->reserved_dw;                                                            \
-   UNUSED uint32_t *__cs_buf = __cs->b->buf
+   struct radv_cmd_stream *__rcs = (cs);                                                                               \
+   ac_cmdbuf_begin(__rcs->b);
 
-#define radeon_end()                                                                                                   \
-   do {                                                                                                                \
-      __cs->b->cdw = __cs_num;                                                                                         \
-      assert(__cs->b->cdw <= __cs->b->max_dw);                                                                         \
-      __cs = NULL;                                                                                                     \
-   } while (0)
+#define radeon_end() ac_cmdbuf_end()
 
 #define radeon_emit(value)                                                                                             \
    do {                                                                                                                \
       assert(__cs_num < __cs_reserved_dw);                                                                             \
-      __cs_buf[__cs_num++] = (value);                                                                                  \
+      ac_cmdbuf_emit(value);                                                                                           \
    } while (0)
 
 #define radeon_emit_array(values, num)                                                                                 \
    do {                                                                                                                \
-      unsigned __n = (num);                                                                                            \
-      assert(__cs_num + __n <= __cs_reserved_dw);                                                                      \
-      memcpy(__cs_buf + __cs_num, (values), __n * 4);                                                                  \
-      __cs_num += __n;                                                                                                 \
+      assert(__cs_num + (num) <= __cs_reserved_dw);                                                                    \
+      ac_cmdbuf_emit_array(values, num);                                                                               \
    } while (0)
 
 /* Packet building helpers. Don't use directly. */
@@ -69,9 +60,9 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
    } while (0)
 
 /* Packet building helpers for CONFIG registers. */
-#define radeon_set_config_reg_seq(reg, num) __radeon_set_reg_seq(reg, num, 0, SI_CONFIG, PKT3_SET_CONFIG_REG, 0)
+#define radeon_set_config_reg_seq(reg, num) ac_cmdbuf_set_config_reg_seq(reg, num)
 
-#define radeon_set_config_reg(reg, value) __radeon_set_reg(reg, 0, value, SI_CONFIG, PKT3_SET_CONFIG_REG)
+#define radeon_set_config_reg(reg, value) ac_cmdbuf_set_config_reg(reg, value)
 
 /* Packet building helpers for CONTEXT registers. */
 #define radeon_set_context_reg_seq(reg, num) __radeon_set_reg_seq(reg, num, 0, SI_CONTEXT, PKT3_SET_CONTEXT_REG, 0)
@@ -82,20 +73,20 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
 
 #define radeon_opt_set_context_reg(reg, reg_enum, value)                                                               \
    do {                                                                                                                \
-      struct radv_tracked_regs *__tracked_regs = &__cs->tracked_regs;                                                  \
+      struct radv_tracked_regs *__tracked_regs = &__rcs->tracked_regs;                                                 \
       const uint32_t __value = (value);                                                                                \
       if (!BITSET_TEST(__tracked_regs->reg_saved_mask, (reg_enum)) ||                                                  \
           __tracked_regs->reg_value[(reg_enum)] != __value) {                                                          \
          radeon_set_context_reg(reg, __value);                                                                         \
          BITSET_SET(__tracked_regs->reg_saved_mask, (reg_enum));                                                       \
          __tracked_regs->reg_value[(reg_enum)] = __value;                                                              \
-         __cs->context_roll_without_scissor_emitted = true;                                                            \
+         __rcs->context_roll_without_scissor_emitted = true;                                                           \
       }                                                                                                                \
    } while (0)
 
 #define radeon_opt_set_context_reg2(reg, reg_enum, v1, v2)                                                             \
    do {                                                                                                                \
-      struct radv_tracked_regs *__tracked_regs = &__cs->tracked_regs;                                                  \
+      struct radv_tracked_regs *__tracked_regs = &__rcs->tracked_regs;                                                 \
       const uint32_t __v1 = (v1), __v2 = (v2);                                                                         \
       if (!BITSET_TEST_RANGE_INSIDE_WORD(__tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 1, 0x3) ||           \
           __tracked_regs->reg_value[(reg_enum)] != __v1 || __tracked_regs->reg_value[(reg_enum) + 1] != __v2) {        \
@@ -105,13 +96,13 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
          BITSET_SET_RANGE_INSIDE_WORD(__tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 1);                     \
          __tracked_regs->reg_value[(reg_enum)] = __v1;                                                                 \
          __tracked_regs->reg_value[(reg_enum) + 1] = __v2;                                                             \
-         __cs->context_roll_without_scissor_emitted = true;                                                            \
+         __rcs->context_roll_without_scissor_emitted = true;                                                           \
       }                                                                                                                \
    } while (0)
 
 #define radeon_opt_set_context_reg3(reg, reg_enum, v1, v2, v3)                                                         \
    do {                                                                                                                \
-      struct radv_tracked_regs *__tracked_regs = &__cs->tracked_regs;                                                  \
+      struct radv_tracked_regs *__tracked_regs = &__rcs->tracked_regs;                                                 \
       const uint32_t __v1 = (v1), __v2 = (v2), __v3 = (v3);                                                            \
       if (!BITSET_TEST_RANGE_INSIDE_WORD(__tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 2, 0x7) ||           \
           __tracked_regs->reg_value[(reg_enum)] != __v1 || __tracked_regs->reg_value[(reg_enum) + 1] != __v2 ||        \
@@ -124,13 +115,13 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
          __tracked_regs->reg_value[(reg_enum)] = __v1;                                                                 \
          __tracked_regs->reg_value[(reg_enum) + 1] = __v2;                                                             \
          __tracked_regs->reg_value[(reg_enum) + 2] = __v3;                                                             \
-         __cs->context_roll_without_scissor_emitted = true;                                                            \
+         __rcs->context_roll_without_scissor_emitted = true;                                                           \
       }                                                                                                                \
    } while (0)
 
 #define radeon_opt_set_context_reg4(reg, reg_enum, v1, v2, v3, v4)                                                     \
    do {                                                                                                                \
-      struct radv_tracked_regs *__tracked_regs = &__cs->tracked_regs;                                                  \
+      struct radv_tracked_regs *__tracked_regs = &__rcs->tracked_regs;                                                 \
       const uint32_t __v1 = (v1), __v2 = (v2), __v3 = (v3), __v4 = (v4);                                               \
       if (!BITSET_TEST_RANGE_INSIDE_WORD(__tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 3, 0xf) ||           \
           __tracked_regs->reg_value[(reg_enum)] != __v1 || __tracked_regs->reg_value[(reg_enum) + 1] != __v2 ||        \
@@ -145,7 +136,7 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
          __tracked_regs->reg_value[(reg_enum) + 1] = __v2;                                                             \
          __tracked_regs->reg_value[(reg_enum) + 2] = __v3;                                                             \
          __tracked_regs->reg_value[(reg_enum) + 3] = __v4;                                                             \
-         __cs->context_roll_without_scissor_emitted = true;                                                            \
+         __rcs->context_roll_without_scissor_emitted = true;                                                           \
       }                                                                                                                \
    } while (0)
 
@@ -155,7 +146,7 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
          radeon_set_context_reg_seq(reg, num);                                                                         \
          radeon_emit_array(values, num);                                                                               \
          memcpy(saved_values, values, sizeof(uint32_t) * (num));                                                       \
-         __cs->context_roll_without_scissor_emitted = true;                                                            \
+         __rcs->context_roll_without_scissor_emitted = true;                                                           \
       }                                                                                                                \
    } while (0)
 
@@ -256,7 +247,7 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
 /* Set 1 context register optimally. */
 #define __gfx12_opt_set_reg(reg, reg_enum, value, base_offset)                                                         \
    do {                                                                                                                \
-      struct radv_tracked_regs *__tracked_regs = &__cs->tracked_regs;                                                  \
+      struct radv_tracked_regs *__tracked_regs = &__rcs->tracked_regs;                                                 \
       const uint32_t __value = (value);                                                                                \
       if (!BITSET_TEST(__tracked_regs->reg_saved_mask, (reg_enum)) ||                                                  \
           __tracked_regs->reg_value[(reg_enum)] != __value) {                                                          \
@@ -269,7 +260,7 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
 /* Set 2 context registers optimally. */
 #define __gfx12_opt_set_reg2(reg, reg_enum, v1, v2, base_offset)                                                       \
    do {                                                                                                                \
-      struct radv_tracked_regs *__tracked_regs = &__cs->tracked_regs;                                                  \
+      struct radv_tracked_regs *__tracked_regs = &__rcs->tracked_regs;                                                 \
       const uint32_t __v1 = (v1), __v2 = (v2);                                                                         \
       if (!BITSET_TEST_RANGE_INSIDE_WORD(__tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 1, 0x3) ||           \
           __tracked_regs->reg_value[(reg_enum)] != __v1 || __tracked_regs->reg_value[(reg_enum) + 1] != __v2) {        \
@@ -288,17 +279,17 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
          __cs_num--; /* no registers have been set, back off */                                                        \
       } else {                                                                                                         \
          unsigned __dw_count = __cs_num - (header) - 2;                                                                \
-         __cs_buf[(header)] = PKT3((packet), __dw_count, 0) | PKT3_RESET_FILTER_CAM_S(1);                              \
+         __rcs->b->buf[(header)] = PKT3((packet), __dw_count, 0) | PKT3_RESET_FILTER_CAM_S(1);                         \
       }                                                                                                                \
    } while (0)
 
 /* GFX12 generic packet building helpers for buffered registers. Don't use these directly. */
 #define __gfx12_push_reg(reg, value, base_offset)                                                                      \
    do {                                                                                                                \
-      unsigned __i = __cs->num_buffered_sh_regs++;                                                                     \
-      assert(__i < ARRAY_SIZE(__cs->gfx12.buffered_sh_regs));                                                          \
-      __cs->gfx12.buffered_sh_regs[__i].reg_offset = ((reg) - (base_offset)) >> 2;                                     \
-      __cs->gfx12.buffered_sh_regs[__i].reg_value = value;                                                             \
+      unsigned __i = __rcs->num_buffered_sh_regs++;                                                                    \
+      assert(__i < ARRAY_SIZE(__rcs->gfx12.buffered_sh_regs));                                                         \
+      __rcs->gfx12.buffered_sh_regs[__i].reg_offset = ((reg) - (base_offset)) >> 2;                                    \
+      __rcs->gfx12.buffered_sh_regs[__i].reg_value = value;                                                            \
    } while (0)
 
 /* GFX12 packet building helpers for PAIRS packets. */
