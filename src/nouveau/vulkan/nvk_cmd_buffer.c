@@ -443,6 +443,7 @@ enum nvk_barrier {
    NVK_BARRIER_INVALIDATE_CONSTANT     = 1 << 4,
    NVK_BARRIER_INVALIDATE_MME_DATA     = 1 << 5,
    NVK_BARRIER_INVALIDATE_QMD_DATA     = 1 << 6,
+   NVK_BARRIER_INVALIDATE_RASTER_CACHE = 1 << 7,
 };
 
 static enum nvk_barrier
@@ -502,6 +503,9 @@ nvk_barrier_invalidates(VkPipelineStageFlags2 stages,
        (stages & (VK_PIPELINE_STAGE_2_RESOLVE_BIT |
                   VK_PIPELINE_STAGE_2_BLIT_BIT)))
       barriers |= NVK_BARRIER_INVALIDATE_TEX_DATA;
+
+   if (access & VK_ACCESS_2_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR)
+      barriers |= NVK_BARRIER_INVALIDATE_RASTER_CACHE;
 
    return barriers;
 }
@@ -625,7 +629,7 @@ nvk_cmd_invalidate_deps(struct nvk_cmd_buffer *cmd,
    if (!barriers)
       return;
 
-   struct nv_push *p = nvk_cmd_buffer_push(cmd, 16);
+   struct nv_push *p = nvk_cmd_buffer_push(cmd, 18);
 
    if (barriers & NVK_BARRIER_INVALIDATE_TEX_DATA) {
       if (pdev->info.cls_eng3d >= MAXWELL_A) {
@@ -655,6 +659,10 @@ nvk_cmd_invalidate_deps(struct nvk_cmd_buffer *cmd,
          }
       }
    }
+
+   if (barriers & NVK_BARRIER_INVALIDATE_RASTER_CACHE &&
+       dev->vk.enabled_features.pipelineFragmentShadingRate)
+      P_IMMD(p, NVC597, INVALIDATE_RASTER_CACHE_NO_WFI, 0);
 
    if (barriers & (NVK_BARRIER_INVALIDATE_SHADER_DATA &
                    NVK_BARRIER_INVALIDATE_CONSTANT)) {
