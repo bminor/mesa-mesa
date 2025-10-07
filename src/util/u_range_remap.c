@@ -171,6 +171,36 @@ insert_end:
    return &lre->entry;
 }
 
+void
+util_range_switch_to_sorted_array(struct range_remap *r_remap)
+{
+   r_remap->sorted_array_length = list_length(&r_remap->r_list);
+
+   if (r_remap->sorted_array) {
+      ralloc_free(r_remap->sorted_array);
+      r_remap->sorted_array = NULL;
+   }
+
+   if (r_remap->sorted_array_length == 0)
+      return;
+
+   r_remap->sorted_array = rzalloc_array(r_remap, struct range_entry,
+                                         r_remap->sorted_array_length);
+
+   unsigned i = 0;
+   list_for_each_entry(struct list_range_entry, e, &r_remap->r_list, node) {
+      r_remap->sorted_array[i].start = e->entry.start;
+      r_remap->sorted_array[i].end = e->entry.end;
+      r_remap->sorted_array[i].ptr = e->entry.ptr;
+      i++;
+   }
+
+   /* Free linked list and reset head */
+   list_inithead(&r_remap->r_list);
+   ralloc_free(r_remap->list_mem_ctx);
+   r_remap->list_mem_ctx = ralloc_context(r_remap);
+}
+
 /* Return the range entry that maps to n or NULL if no match found. */
 struct range_entry *
 util_range_remap(unsigned n, const struct range_remap *r_remap)

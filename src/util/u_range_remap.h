@@ -32,6 +32,10 @@ struct range_remap {
    struct list_head r_list;
 
    void *list_mem_ctx;
+
+   /* Sorted array built from the linked list for fast binary searches */
+   struct range_entry *sorted_array;
+   unsigned sorted_array_length;
 };
 
 struct range_entry {
@@ -56,6 +60,9 @@ util_create_range_remap(void);
 
 struct range_remap *
 util_reset_range_remap(struct range_remap *r_remap);
+
+void
+util_range_switch_to_sorted_array(struct range_remap *r_remap);
 
 #ifdef __cplusplus
 }
