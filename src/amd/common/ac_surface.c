@@ -4629,7 +4629,9 @@ gfx10_surface_copy_mem_surface(struct ac_addrlib *addrlib, const struct radeon_i
 
    ADDR2_COPY_MEMSURFACE_INPUT input = {0};
    input.size = sizeof(ADDR2_COPY_MEMSURFACE_INPUT);
-   input.swizzleMode = surf->u.gfx9.swizzle_mode;
+   input.swizzleMode = surf->has_stencil ?
+                       surf->u.gfx9.zs.stencil_swizzle_mode :
+                       surf->u.gfx9.swizzle_mode;
    input.format = format;
    input.flags.color = !(surf->flags & RADEON_SURF_Z_OR_SBUFFER);
    input.flags.depth = (surf->flags & RADEON_SURF_ZBUFFER) != 0;
@@ -4694,7 +4696,9 @@ gfx12_surface_copy_mem_surface(struct ac_addrlib *addrlib, const struct radeon_i
 
    ADDR3_COPY_MEMSURFACE_INPUT input = {0};
    input.size = sizeof(ADDR3_COPY_MEMSURFACE_INPUT);
-   input.swizzleMode = surf->u.gfx9.swizzle_mode;
+   input.swizzleMode = surf->has_stencil ?
+                       surf->u.gfx9.zs.stencil_swizzle_mode :
+                       surf->u.gfx9.swizzle_mode;
    input.format = format;
    input.flags.depth = (surf->flags & RADEON_SURF_ZBUFFER) != 0;
    input.resourceType = (AddrResourceType)surf->u.gfx9.resource_type;
