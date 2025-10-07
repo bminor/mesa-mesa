@@ -7,9 +7,17 @@
 #include <cstring>
 #include "tar.h"
 
-TEST(Tar, RoundtripSmallFile)
+class TarTest : public testing::Test {
+  protected:
+   TarTest() : f{std::tmpfile()} {};
+   ~TarTest() { std::fclose(f); }
+
+   FILE *f;
+};
+
+
+TEST_F(TarTest, RoundtripSmallFile)
 {
-   FILE *f = tmpfile();
    const char *test = "TEST TEST TEST";
 
    {
@@ -31,7 +39,6 @@ TEST(Tar, RoundtripSmallFile)
 
    fseek(f, 0, SEEK_SET);
    ASSERT_EQ(fread(contents, size, 1, f), 1);
-   fclose(f);
 
    {
       tar_reader ar;
@@ -55,10 +62,8 @@ TEST(Tar, RoundtripSmallFile)
    delete[] contents;
 }
 
-TEST(Tar, RoundtripContentsWithRecordSize)
+TEST_F(TarTest, RoundtripContentsWithRecordSize)
 {
-   FILE *f = tmpfile();
-
    uint8_t test[512];
 
    for (unsigned i = 0; i < sizeof(test); i++) {
@@ -80,7 +85,6 @@ TEST(Tar, RoundtripContentsWithRecordSize)
 
    fseek(f, 0, SEEK_SET);
    ASSERT_EQ(fread(contents, size, 1, f), 1);
-   fclose(f);
 
    {
       tar_reader ar;
@@ -105,10 +109,8 @@ TEST(Tar, RoundtripContentsWithRecordSize)
    delete[] contents;
 }
 
-TEST(Tar, TimestampRoundtrip)
+TEST_F(TarTest, TimestampRoundtrip)
 {
-   FILE *f = tmpfile();
-
    const char *test = "TEST TIMESTAMP";
    const time_t test_timestamp = 1234567890; // Known timestamp (February 13, 2009)
 
@@ -129,7 +131,6 @@ TEST(Tar, TimestampRoundtrip)
 
    fseek(f, 0, SEEK_SET);
    ASSERT_EQ(fread(contents, size, 1, f), 1);
-   fclose(f);
 
    {
       tar_reader ar;
