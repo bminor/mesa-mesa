@@ -1475,8 +1475,7 @@ radv_gang_cache_flush(struct radv_cmd_buffer *cmd_buffer)
    const uint32_t flush_bits = cmd_buffer->gang.flush_bits;
    enum rgp_flush_bits sqtt_flush_bits = 0;
 
-   radv_cs_emit_cache_flush(device->ws, ace_cs, pdev->info.gfx_level, NULL, 0, RADV_QUEUE_COMPUTE, flush_bits,
-                            &sqtt_flush_bits, 0);
+   radv_cs_emit_cache_flush(device->ws, ace_cs, pdev->info.gfx_level, NULL, 0, flush_bits, &sqtt_flush_bits, 0);
 
    cmd_buffer->gang.flush_bits = 0;
 }
@@ -1649,12 +1648,11 @@ radv_cmd_buffer_after_draw(struct radv_cmd_buffer *cmd_buffer, enum radv_cmd_flu
 
       /* Force wait for graphics or compute engines to be idle. */
       radv_cs_emit_cache_flush(device->ws, cs, pdev->info.gfx_level, &cmd_buffer->gfx9_fence_idx,
-                               cmd_buffer->gfx9_fence_va, cmd_buffer->qf, flags, &sqtt_flush_bits,
-                               cmd_buffer->gfx9_eop_bug_va);
+                               cmd_buffer->gfx9_fence_va, flags, &sqtt_flush_bits, cmd_buffer->gfx9_eop_bug_va);
 
       if ((flags & RADV_CMD_FLAG_PS_PARTIAL_FLUSH) && radv_cmdbuf_has_stage(cmd_buffer, MESA_SHADER_TASK)) {
          /* Force wait for compute engines to be idle on the internal cmdbuf. */
-         radv_cs_emit_cache_flush(device->ws, cmd_buffer->gang.cs, pdev->info.gfx_level, NULL, 0, RADV_QUEUE_COMPUTE,
+         radv_cs_emit_cache_flush(device->ws, cmd_buffer->gang.cs, pdev->info.gfx_level, NULL, 0,
                                   RADV_CMD_FLAG_CS_PARTIAL_FLUSH, &sqtt_flush_bits, 0);
       }
    }
@@ -14226,8 +14224,7 @@ radv_emit_cache_flush(struct radv_cmd_buffer *cmd_buffer)
    }
 
    radv_cs_emit_cache_flush(device->ws, cs, pdev->info.gfx_level, &cmd_buffer->gfx9_fence_idx,
-                            cmd_buffer->gfx9_fence_va, cmd_buffer->qf,
-                            cmd_buffer->state.flush_bits, &cmd_buffer->state.sqtt_flush_bits,
+                            cmd_buffer->gfx9_fence_va, cmd_buffer->state.flush_bits, &cmd_buffer->state.sqtt_flush_bits,
                             cmd_buffer->gfx9_eop_bug_va);
 
    if (radv_device_fault_detection_enabled(device))

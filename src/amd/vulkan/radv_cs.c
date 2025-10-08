@@ -131,10 +131,10 @@ radv_emit_acquire_mem(struct radv_cmd_stream *cs, bool is_mec, bool is_gfx9, uns
 
 static void
 gfx10_cs_emit_cache_flush(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_level, uint32_t *flush_cnt,
-                          uint64_t flush_va, enum radv_queue_family qf, enum radv_cmd_flush_bits flush_bits,
-                          enum rgp_flush_bits *sqtt_flush_bits, uint64_t gfx9_eop_bug_va)
+                          uint64_t flush_va, enum radv_cmd_flush_bits flush_bits, enum rgp_flush_bits *sqtt_flush_bits,
+                          uint64_t gfx9_eop_bug_va)
 {
-   const bool is_mec = qf == RADV_QUEUE_COMPUTE;
+   const bool is_mec = cs->hw_ip == AMD_IP_COMPUTE;
    uint32_t gcr_cntl = 0;
    unsigned cb_db_event = 0;
 
@@ -357,15 +357,15 @@ gfx10_cs_emit_cache_flush(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_lev
    }
 
    if (flush_bits & RADV_CMD_FLAG_START_PIPELINE_STATS) {
-      if (qf == RADV_QUEUE_GENERAL) {
+      if (!is_mec) {
          radeon_event_write(V_028A90_PIPELINESTAT_START);
-      } else if (qf == RADV_QUEUE_COMPUTE) {
+      } else {
          radeon_set_sh_reg(R_00B828_COMPUTE_PIPELINESTAT_ENABLE, S_00B828_PIPELINESTAT_ENABLE(1));
       }
    } else if (flush_bits & RADV_CMD_FLAG_STOP_PIPELINE_STATS) {
-      if (qf == RADV_QUEUE_GENERAL) {
+      if (!is_mec) {
          radeon_event_write(V_028A90_PIPELINESTAT_STOP);
-      } else if (qf == RADV_QUEUE_COMPUTE) {
+      } else {
          radeon_set_sh_reg(R_00B828_COMPUTE_PIPELINESTAT_ENABLE, S_00B828_PIPELINESTAT_ENABLE(0));
       }
    }
@@ -375,9 +375,8 @@ gfx10_cs_emit_cache_flush(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_lev
 
 void
 radv_cs_emit_cache_flush(struct radeon_winsys *ws, struct radv_cmd_stream *cs, enum amd_gfx_level gfx_level,
-                         uint32_t *flush_cnt, uint64_t flush_va, enum radv_queue_family qf,
-                         enum radv_cmd_flush_bits flush_bits, enum rgp_flush_bits *sqtt_flush_bits,
-                         uint64_t gfx9_eop_bug_va)
+                         uint32_t *flush_cnt, uint64_t flush_va, enum radv_cmd_flush_bits flush_bits,
+                         enum rgp_flush_bits *sqtt_flush_bits, uint64_t gfx9_eop_bug_va)
 {
    unsigned cp_coher_cntl = 0;
    uint32_t flush_cb_db = flush_bits & (RADV_CMD_FLAG_FLUSH_AND_INV_CB | RADV_CMD_FLAG_FLUSH_AND_INV_DB);
@@ -386,11 +385,11 @@ radv_cs_emit_cache_flush(struct radeon_winsys *ws, struct radv_cmd_stream *cs, e
 
    if (gfx_level >= GFX10) {
       /* GFX10 cache flush handling is quite different. */
-      gfx10_cs_emit_cache_flush(cs, gfx_level, flush_cnt, flush_va, qf, flush_bits, sqtt_flush_bits, gfx9_eop_bug_va);
+      gfx10_cs_emit_cache_flush(cs, gfx_level, flush_cnt, flush_va, flush_bits, sqtt_flush_bits, gfx9_eop_bug_va);
       return;
    }
 
-   const bool is_mec = qf == RADV_QUEUE_COMPUTE && gfx_level >= GFX7;
+   const bool is_mec = cs->hw_ip == AMD_IP_COMPUTE && gfx_level >= GFX7;
 
    if (flush_bits & RADV_CMD_FLAG_INV_ICACHE) {
       cp_coher_cntl |= S_0085F0_SH_ICACHE_ACTION_ENA(1);
@@ -568,15 +567,15 @@ radv_cs_emit_cache_flush(struct radeon_winsys *ws, struct radv_cmd_stream *cs, e
    radeon_begin(cs);
 
    if (flush_bits & RADV_CMD_FLAG_START_PIPELINE_STATS) {
-      if (qf == RADV_QUEUE_GENERAL) {
+      if (!is_mec) {
          radeon_event_write(V_028A90_PIPELINESTAT_START);
-      } else if (qf == RADV_QUEUE_COMPUTE) {
+      } else {
          radeon_set_sh_reg(R_00B828_COMPUTE_PIPELINESTAT_ENABLE, S_00B828_PIPELINESTAT_ENABLE(1));
       }
    } else if (flush_bits & RADV_CMD_FLAG_STOP_PIPELINE_STATS) {
-      if (qf == RADV_QUEUE_GENERAL) {
+      if (!is_mec) {
          radeon_event_write(V_028A90_PIPELINESTAT_STOP);
-      } else if (qf == RADV_QUEUE_COMPUTE) {
+      } else {
          radeon_set_sh_reg(R_00B828_COMPUTE_PIPELINESTAT_ENABLE, S_00B828_PIPELINESTAT_ENABLE(0));
       }
    }
