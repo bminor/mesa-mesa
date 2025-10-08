@@ -338,12 +338,12 @@ radv_gfx12_emit_buffered_regs(struct radv_device *device, struct radv_cmd_stream
 }
 
 ALWAYS_INLINE static void
-radv_cp_wait_mem(struct radv_cmd_stream *cs, const enum radv_queue_family qf, const uint32_t op, const uint64_t va,
-                 const uint32_t ref, const uint32_t mask)
+radv_cp_wait_mem(struct radv_cmd_stream *cs, const uint32_t op, const uint64_t va, const uint32_t ref,
+                 const uint32_t mask)
 {
    assert(op == WAIT_REG_MEM_EQUAL || op == WAIT_REG_MEM_NOT_EQUAL || op == WAIT_REG_MEM_GREATER_OR_EQUAL);
 
-   if (qf == RADV_QUEUE_GENERAL || qf == RADV_QUEUE_COMPUTE) {
+   if (cs->hw_ip == AMD_IP_GFX || cs->hw_ip == AMD_IP_COMPUTE) {
       radeon_begin(cs);
       radeon_emit(PKT3(PKT3_WAIT_REG_MEM, 5, false));
       radeon_emit(op | WAIT_REG_MEM_MEM_SPACE(1));
@@ -353,7 +353,7 @@ radv_cp_wait_mem(struct radv_cmd_stream *cs, const enum radv_queue_family qf, co
       radeon_emit(mask); /* mask */
       radeon_emit(4);    /* poll interval */
       radeon_end();
-   } else if (qf == RADV_QUEUE_TRANSFER) {
+   } else if (cs->hw_ip == AMD_IP_SDMA) {
       radv_sdma_emit_wait_mem(cs, op, va, ref, mask);
    } else {
       UNREACHABLE("unsupported queue family");

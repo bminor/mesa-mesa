@@ -393,7 +393,7 @@ radv_copy_occlusion_query_result(struct radv_cmd_buffer *cmd_buffer, struct radv
             radeon_check_space(device->ws, cs->b, 7);
 
             /* Waits on the upper word of the last DB entry */
-            radv_cp_wait_mem(cs, cmd_buffer->qf, WAIT_REG_MEM_GREATER_OR_EQUAL, src_va, 0x80000000, 0xffffffff);
+            radv_cp_wait_mem(cs, WAIT_REG_MEM_GREATER_OR_EQUAL, src_va, 0x80000000, 0xffffffff);
          }
       }
    }
@@ -796,7 +796,7 @@ radv_copy_pipeline_stat_query_result(struct radv_cmd_buffer *cmd_buffer, struct 
          uint64_t avail_va = va + pool->availability_offset + 4 * query;
 
          /* This waits on the ME. All copies below are done on the ME */
-         radv_cp_wait_mem(cs, cmd_buffer->qf, WAIT_REG_MEM_EQUAL, avail_va, 1, 0xffffffff);
+         radv_cp_wait_mem(cs, WAIT_REG_MEM_EQUAL, avail_va, 1, 0xffffffff);
 
          if (pool->uses_ace && pdev->emulate_mesh_shader_queries) {
             const uint64_t src_va = va + query * pool->stride;
@@ -805,8 +805,8 @@ radv_copy_pipeline_stat_query_result(struct radv_cmd_buffer *cmd_buffer, struct 
 
             radeon_check_space(device->ws, cs->b, 7 * 2);
 
-            radv_cp_wait_mem(cs, cmd_buffer->qf, WAIT_REG_MEM_GREATER_OR_EQUAL, start_va, 0x80000000, 0xffffffff);
-            radv_cp_wait_mem(cs, cmd_buffer->qf, WAIT_REG_MEM_GREATER_OR_EQUAL, stop_va, 0x80000000, 0xffffffff);
+            radv_cp_wait_mem(cs, WAIT_REG_MEM_GREATER_OR_EQUAL, start_va, 0x80000000, 0xffffffff);
+            radv_cp_wait_mem(cs, WAIT_REG_MEM_GREATER_OR_EQUAL, stop_va, 0x80000000, 0xffffffff);
          }
       }
    }
@@ -1050,7 +1050,7 @@ radv_copy_tfb_query_result(struct radv_cmd_buffer *cmd_buffer, struct radv_query
 
          /* Wait on the upper word of all results. */
          for (unsigned j = 0; j < 4; j++, src_va += 8) {
-            radv_cp_wait_mem(cs, cmd_buffer->qf, WAIT_REG_MEM_GREATER_OR_EQUAL, src_va + 4, 0x80000000, 0xffffffff);
+            radv_cp_wait_mem(cs, WAIT_REG_MEM_GREATER_OR_EQUAL, src_va + 4, 0x80000000, 0xffffffff);
          }
       }
    }
@@ -1184,8 +1184,7 @@ radv_copy_timestamp_query_result(struct radv_cmd_buffer *cmd_buffer, struct radv
          /* Wait on the high 32 bits of the timestamp in
           * case the low part is 0xffffffff.
           */
-         radv_cp_wait_mem(cs, cmd_buffer->qf, WAIT_REG_MEM_NOT_EQUAL, local_src_va + 4, TIMESTAMP_NOT_READY >> 32,
-                          0xffffffff);
+         radv_cp_wait_mem(cs, WAIT_REG_MEM_NOT_EQUAL, local_src_va + 4, TIMESTAMP_NOT_READY >> 32, 0xffffffff);
       }
    }
 
@@ -1461,12 +1460,12 @@ radv_copy_pg_query_result(struct radv_cmd_buffer *cmd_buffer, struct radv_query_
          radeon_check_space(device->ws, cs->b, 7 * 4);
 
          /* Wait on the upper word of the PrimitiveStorageNeeded result. */
-         radv_cp_wait_mem(cs, cmd_buffer->qf, WAIT_REG_MEM_GREATER_OR_EQUAL, src_va + 4, 0x80000000, 0xffffffff);
-         radv_cp_wait_mem(cs, cmd_buffer->qf, WAIT_REG_MEM_GREATER_OR_EQUAL, src_va + 20, 0x80000000, 0xffffffff);
+         radv_cp_wait_mem(cs, WAIT_REG_MEM_GREATER_OR_EQUAL, src_va + 4, 0x80000000, 0xffffffff);
+         radv_cp_wait_mem(cs, WAIT_REG_MEM_GREATER_OR_EQUAL, src_va + 20, 0x80000000, 0xffffffff);
 
          if (uses_emulated_queries) {
-            radv_cp_wait_mem(cs, cmd_buffer->qf, WAIT_REG_MEM_GREATER_OR_EQUAL, src_va + 36, 0x80000000, 0xffffffff);
-            radv_cp_wait_mem(cs, cmd_buffer->qf, WAIT_REG_MEM_GREATER_OR_EQUAL, src_va + 44, 0x80000000, 0xffffffff);
+            radv_cp_wait_mem(cs, WAIT_REG_MEM_GREATER_OR_EQUAL, src_va + 36, 0x80000000, 0xffffffff);
+            radv_cp_wait_mem(cs, WAIT_REG_MEM_GREATER_OR_EQUAL, src_va + 44, 0x80000000, 0xffffffff);
          }
       }
    }
@@ -1673,7 +1672,7 @@ radv_copy_ms_prim_query_result(struct radv_cmd_buffer *cmd_buffer, struct radv_q
             uint64_t avail_va = va + pool->availability_offset + 4 * query;
 
             /* This waits on the ME. All copies below are done on the ME */
-            radv_cp_wait_mem(cs, cmd_buffer->qf, WAIT_REG_MEM_EQUAL, avail_va, 1, 0xffffffff);
+            radv_cp_wait_mem(cs, WAIT_REG_MEM_EQUAL, avail_va, 1, 0xffffffff);
          }
       }
 
@@ -1689,8 +1688,8 @@ radv_copy_ms_prim_query_result(struct radv_cmd_buffer *cmd_buffer, struct radv_q
             radeon_check_space(device->ws, cs->b, 7 * 2);
 
             /* Wait on the upper word. */
-            radv_cp_wait_mem(cs, cmd_buffer->qf, WAIT_REG_MEM_GREATER_OR_EQUAL, src_va + 4, 0x80000000, 0xffffffff);
-            radv_cp_wait_mem(cs, cmd_buffer->qf, WAIT_REG_MEM_GREATER_OR_EQUAL, src_va + 12, 0x80000000, 0xffffffff);
+            radv_cp_wait_mem(cs, WAIT_REG_MEM_GREATER_OR_EQUAL, src_va + 4, 0x80000000, 0xffffffff);
+            radv_cp_wait_mem(cs, WAIT_REG_MEM_GREATER_OR_EQUAL, src_va + 12, 0x80000000, 0xffffffff);
          }
       }
 

@@ -321,7 +321,7 @@ gfx10_cs_emit_cache_flush(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_lev
                                          S_490_SEQ(gcr_seq),
                                       EOP_DST_SEL_MEM, EOP_DATA_SEL_VALUE_32BIT, flush_va, *flush_cnt, gfx9_eop_bug_va);
 
-         radv_cp_wait_mem(cs, qf, WAIT_REG_MEM_EQUAL, flush_va, *flush_cnt, 0xffffffff);
+         radv_cp_wait_mem(cs, WAIT_REG_MEM_EQUAL, flush_va, *flush_cnt, 0xffffffff);
       }
    }
 
@@ -499,7 +499,7 @@ radv_cs_emit_cache_flush(struct radeon_winsys *ws, struct radv_cmd_stream *cs, e
 
       radv_cs_emit_write_event_eop(cs, gfx_level, cb_db_event, tc_flags, EOP_DST_SEL_MEM, EOP_DATA_SEL_VALUE_32BIT,
                                    flush_va, *flush_cnt, gfx9_eop_bug_va);
-      radv_cp_wait_mem(cs, qf, WAIT_REG_MEM_EQUAL, flush_va, *flush_cnt, 0xffffffff);
+      radv_cp_wait_mem(cs, WAIT_REG_MEM_EQUAL, flush_va, *flush_cnt, 0xffffffff);
    }
 
    /* VGT state sync */

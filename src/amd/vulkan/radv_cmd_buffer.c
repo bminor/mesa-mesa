@@ -1556,28 +1556,28 @@ radv_flush_gang_follower_semaphore(struct radv_cmd_buffer *cmd_buffer)
 }
 
 ALWAYS_INLINE static void
-radv_wait_gang_semaphore(struct radv_cmd_buffer *cmd_buffer, struct radv_cmd_stream *cs,
-                         const enum radv_queue_family qf, const uint32_t va_off, const uint32_t value)
+radv_wait_gang_semaphore(struct radv_cmd_buffer *cmd_buffer, struct radv_cmd_stream *cs, const uint32_t va_off,
+                         const uint32_t value)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
 
    assert(cmd_buffer->gang.sem.va);
    radeon_check_space(device->ws, cs->b, 7);
-   radv_cp_wait_mem(cs, qf, WAIT_REG_MEM_GREATER_OR_EQUAL, cmd_buffer->gang.sem.va + va_off, value, 0xffffffff);
+   radv_cp_wait_mem(cs, WAIT_REG_MEM_GREATER_OR_EQUAL, cmd_buffer->gang.sem.va + va_off, value, 0xffffffff);
 }
 
 ALWAYS_INLINE static void
 radv_wait_gang_leader(struct radv_cmd_buffer *cmd_buffer)
 {
    /* Follower waits for the semaphore which the gang leader wrote. */
-   radv_wait_gang_semaphore(cmd_buffer, cmd_buffer->gang.cs, RADV_QUEUE_COMPUTE, 0, cmd_buffer->gang.sem.leader_value);
+   radv_wait_gang_semaphore(cmd_buffer, cmd_buffer->gang.cs, 0, cmd_buffer->gang.sem.leader_value);
 }
 
 ALWAYS_INLINE static void
 radv_wait_gang_follower(struct radv_cmd_buffer *cmd_buffer)
 {
    /* Gang leader waits for the semaphore which the follower wrote. */
-   radv_wait_gang_semaphore(cmd_buffer, cmd_buffer->cs, cmd_buffer->qf, 4, cmd_buffer->gang.sem.follower_value);
+   radv_wait_gang_semaphore(cmd_buffer, cmd_buffer->cs, 4, cmd_buffer->gang.sem.follower_value);
 }
 
 bool
@@ -14536,7 +14536,7 @@ radv_CmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const Vk
 
       ASSERTED unsigned cdw_max = radeon_check_space(device->ws, cs->b, 7);
 
-      radv_cp_wait_mem(cs, cmd_buffer->qf, WAIT_REG_MEM_EQUAL, va, 1, 0xffffffff);
+      radv_cp_wait_mem(cs, WAIT_REG_MEM_EQUAL, va, 1, 0xffffffff);
       assert(cs->b->cdw <= cdw_max);
    }
 
