@@ -27,12 +27,17 @@ brw_insert_load_reg(brw_shader &s)
       /* These should not exist yet. */
       assert(inst->opcode != SHADER_OPCODE_LOAD_REG);
 
-      /* These opcodes may have the right source and destination patterns to
-       * have their sources replaced by load_reg, but these instructions are
-       * special and / or wierd. They should not be modified.
+      /* UNDEF/DPAS opcodes may have the right source and destination patterns
+       * to have their sources replaced by load_reg, but these instructions
+       * are special and / or wierd. They should not be modified.
+       *
+       * MOV_INDIRECT/BROADCAST read variable amount of GRF for src0. This
+       * pass does not handle this properly at the moment.
        */
       if (inst->opcode == SHADER_OPCODE_UNDEF ||
-          inst->opcode == BRW_OPCODE_DPAS) {
+          inst->opcode == BRW_OPCODE_DPAS ||
+          inst->opcode == SHADER_OPCODE_MOV_INDIRECT ||
+          inst->opcode == SHADER_OPCODE_BROADCAST) {
          continue;
       }
 
