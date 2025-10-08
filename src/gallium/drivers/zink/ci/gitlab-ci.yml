@@ -210,12 +210,13 @@ zink-tu-a618-traces-performance:
 zink-tu-a750:
   extends:
     - .tu-zink-test-valve
-    - .a750-mupuf
-    - .zink-turnip-valve-manual-rules
+    - .a750-kws
+    - .zink-turnip-valve-rules
     - .test-piglit
-  timeout: 30m  # base runtime 16min of testing, 18min total
+  parallel: 2
+  timeout: 15m  # base runtime 6.5min of testing, 8min total
   variables:
-    CI_TRON_TIMEOUT__OVERALL__MINUTES: 28
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 12
     DEQP_SUITE: zink-tu-a750
     GPU_VERSION: zink-tu-a750
     HWCI_START_WESTON: 1

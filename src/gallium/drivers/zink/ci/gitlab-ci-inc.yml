@@ -104,6 +104,13 @@
     - !reference [.collabora-turnip-manual-rules, rules]
     - !reference [.zink-common-manual-rules, rules]
 
+.zink-turnip-valve-rules:
+  stage: layered-backends
+  rules:
+    - !reference [.test, rules]
+    - !reference [.valve-turnip-rules, rules]
+    - !reference [.zink-common-rules, rules]
+
 .zink-turnip-valve-manual-rules:
   stage: layered-backends-nightly
   extends: .no-auto-retry
