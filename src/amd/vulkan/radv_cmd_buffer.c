@@ -1514,8 +1514,8 @@ radv_gang_follower_sem_dirty(const struct radv_cmd_buffer *cmd_buffer)
 }
 
 ALWAYS_INLINE static bool
-radv_flush_gang_semaphore(struct radv_cmd_buffer *cmd_buffer, struct radv_cmd_stream *cs,
-                          const enum radv_queue_family qf, const uint32_t va_off, const uint32_t value)
+radv_flush_gang_semaphore(struct radv_cmd_buffer *cmd_buffer, struct radv_cmd_stream *cs, const uint32_t va_off,
+                          const uint32_t value)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -1525,7 +1525,7 @@ radv_flush_gang_semaphore(struct radv_cmd_buffer *cmd_buffer, struct radv_cmd_st
 
    ASSERTED unsigned cdw_max = radeon_check_space(device->ws, cs->b, 12);
 
-   radv_cs_emit_write_event_eop(cs, pdev->info.gfx_level, qf, V_028A90_BOTTOM_OF_PIPE_TS, 0, EOP_DST_SEL_MEM,
+   radv_cs_emit_write_event_eop(cs, pdev->info.gfx_level, V_028A90_BOTTOM_OF_PIPE_TS, 0, EOP_DST_SEL_MEM,
                                 EOP_DATA_SEL_VALUE_32BIT, cmd_buffer->gang.sem.va + va_off, value,
                                 cmd_buffer->gfx9_eop_bug_va);
 
@@ -1541,7 +1541,7 @@ radv_flush_gang_leader_semaphore(struct radv_cmd_buffer *cmd_buffer)
 
    /* Gang leader writes a value to the semaphore which the follower can wait for. */
    cmd_buffer->gang.sem.emitted_leader_value = cmd_buffer->gang.sem.leader_value;
-   return radv_flush_gang_semaphore(cmd_buffer, cmd_buffer->cs, cmd_buffer->qf, 0, cmd_buffer->gang.sem.leader_value);
+   return radv_flush_gang_semaphore(cmd_buffer, cmd_buffer->cs, 0, cmd_buffer->gang.sem.leader_value);
 }
 
 ALWAYS_INLINE static bool
@@ -1552,8 +1552,7 @@ radv_flush_gang_follower_semaphore(struct radv_cmd_buffer *cmd_buffer)
 
    /* Follower writes a value to the semaphore which the gang leader can wait for. */
    cmd_buffer->gang.sem.emitted_follower_value = cmd_buffer->gang.sem.follower_value;
-   return radv_flush_gang_semaphore(cmd_buffer, cmd_buffer->gang.cs, RADV_QUEUE_COMPUTE, 4,
-                                    cmd_buffer->gang.sem.follower_value);
+   return radv_flush_gang_semaphore(cmd_buffer, cmd_buffer->gang.cs, 4, cmd_buffer->gang.sem.follower_value);
 }
 
 ALWAYS_INLINE static void
@@ -14485,8 +14484,8 @@ write_event(struct radv_cmd_buffer *cmd_buffer, struct radv_event *event, VkPipe
          event_type = V_028A90_BOTTOM_OF_PIPE_TS;
       }
 
-      radv_cs_emit_write_event_eop(cs, pdev->info.gfx_level, cmd_buffer->qf, event_type, 0, EOP_DST_SEL_MEM,
-                                   EOP_DATA_SEL_VALUE_32BIT, va, value, cmd_buffer->gfx9_eop_bug_va);
+      radv_cs_emit_write_event_eop(cs, pdev->info.gfx_level, event_type, 0, EOP_DST_SEL_MEM, EOP_DATA_SEL_VALUE_32BIT,
+                                   va, value, cmd_buffer->gfx9_eop_bug_va);
    }
 
    assert(cs->b->cdw <= cdw_max);
@@ -15189,8 +15188,8 @@ radv_CmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlag
       radeon_emit(va >> 32);
       radeon_end();
    } else {
-      radv_cs_emit_write_event_eop(cs, pdev->info.gfx_level, cmd_buffer->qf, V_028A90_BOTTOM_OF_PIPE_TS, 0,
-                                   EOP_DST_SEL_MEM, EOP_DATA_SEL_VALUE_32BIT, va, marker, cmd_buffer->gfx9_eop_bug_va);
+      radv_cs_emit_write_event_eop(cs, pdev->info.gfx_level, V_028A90_BOTTOM_OF_PIPE_TS, 0, EOP_DST_SEL_MEM,
+                                   EOP_DATA_SEL_VALUE_32BIT, va, marker, cmd_buffer->gfx9_eop_bug_va);
    }
 
    assert(cs->b->cdw <= cdw_max);
