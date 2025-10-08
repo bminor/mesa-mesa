@@ -417,10 +417,10 @@ radv_emit_pm4_commands(struct radv_cmd_stream *cs, const struct ac_pm4_state *pm
    radeon_end();
 }
 
-VkResult radv_create_cmd_stream(const struct radv_device *device, enum radv_queue_family family, bool is_secondary,
-                                struct radv_cmd_stream **cs_out);
+VkResult radv_create_cmd_stream(const struct radv_device *device, const enum amd_ip_type ip_type,
+                                const bool is_secondary, struct radv_cmd_stream **cs_out);
 
-void radv_init_cmd_stream(struct radv_cmd_stream *cs);
+void radv_init_cmd_stream(struct radv_cmd_stream *cs, const enum amd_ip_type ip_type);
 
 void radv_reset_cmd_stream(const struct radv_device *device, struct radv_cmd_stream *cs);
 

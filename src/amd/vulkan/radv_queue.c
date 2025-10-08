@@ -1121,11 +1121,13 @@ radv_update_preamble_cs(struct radv_queue_state *queue, struct radv_device *devi
       ws->buffer_unmap(ws, descriptor_bo, false);
    }
 
+   const enum amd_ip_type hw_ip = radv_queue_family_to_ring(pdev, queue->qf);
+
    for (int i = 0; i < 3; ++i) {
       enum rgp_flush_bits sqtt_flush_bits = 0;
       struct radv_cmd_stream *cs = NULL;
 
-      result = radv_create_cmd_stream(device, queue->qf, false, &cs);
+      result = radv_create_cmd_stream(device, hw_ip, false, &cs);
       if (result != VK_SUCCESS)
          goto fail;
 
@@ -1385,7 +1387,7 @@ radv_create_flush_postamble(struct radv_queue *queue)
    struct radv_cmd_stream *cs;
    VkResult result;
 
-   result = radv_create_cmd_stream(device, queue->state.qf, false, &cs);
+   result = radv_create_cmd_stream(device, ip, false, &cs);
    if (result != VK_SUCCESS)
       return result;
 
@@ -1423,6 +1425,7 @@ radv_create_gang_wait_preambles_postambles(struct radv_queue *queue)
 {
    struct radv_device *device = radv_queue_device(queue);
    const struct radv_physical_device *pdev = radv_device_physical(device);
+   const enum amd_ip_type ip = radv_queue_family_to_ring(pdev, queue->state.qf);
 
    if (queue->gang_sem_bo)
       return VK_SUCCESS;
@@ -1444,19 +1447,19 @@ radv_create_gang_wait_preambles_postambles(struct radv_queue *queue)
    struct radv_cmd_stream *leader_pre_cs = NULL, *leader_post_cs = NULL;
    struct radv_cmd_stream *ace_pre_cs = NULL, *ace_post_cs = NULL;
 
-   r = radv_create_cmd_stream(device, queue->state.qf, false, &leader_pre_cs);
+   r = radv_create_cmd_stream(device, ip, false, &leader_pre_cs);
    if (r != VK_SUCCESS)
       goto fail;
 
-   radv_create_cmd_stream(device, queue->state.qf, false, &leader_post_cs);
+   radv_create_cmd_stream(device, ip, false, &leader_post_cs);
    if (r != VK_SUCCESS)
       goto fail;
 
-   radv_create_cmd_stream(device, RADV_QUEUE_COMPUTE, false, &ace_pre_cs);
+   radv_create_cmd_stream(device, AMD_IP_COMPUTE, false, &ace_pre_cs);
    if (r != VK_SUCCESS)
       goto fail;
 
-   radv_create_cmd_stream(device, RADV_QUEUE_COMPUTE, false, &ace_post_cs);
+   radv_create_cmd_stream(device, AMD_IP_COMPUTE, false, &ace_post_cs);
    if (r != VK_SUCCESS)
       goto fail;
 
@@ -1592,7 +1595,7 @@ radv_create_perf_counter_lock_cs(struct radv_device *device, unsigned pass, bool
    if (*cs_ref)
       return *cs_ref;
 
-   result = radv_create_cmd_stream(device, RADV_QUEUE_GENERAL, false, &cs);
+   result = radv_create_cmd_stream(device, AMD_IP_GFX, false, &cs);
    if (result != VK_SUCCESS)
       return NULL;
 

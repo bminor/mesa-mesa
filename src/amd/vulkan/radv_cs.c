@@ -636,20 +636,19 @@ radv_init_tracked_regs(struct radv_cmd_stream *cs)
 }
 
 void
-radv_init_cmd_stream(struct radv_cmd_stream *cs)
+radv_init_cmd_stream(struct radv_cmd_stream *cs, const enum amd_ip_type ip_type)
 {
    cs->context_roll_without_scissor_emitted = false;
    cs->num_buffered_sh_regs = 0;
+   cs->hw_ip = ip_type;
 
    radv_init_tracked_regs(cs);
 }
 
 VkResult
-radv_create_cmd_stream(const struct radv_device *device, enum radv_queue_family family, bool is_secondary,
+radv_create_cmd_stream(const struct radv_device *device, const enum amd_ip_type ip_type, const bool is_secondary,
                        struct radv_cmd_stream **cs_out)
 {
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-   const enum amd_ip_type ip_type = radv_queue_family_to_ring(pdev, family);
    struct radeon_winsys *ws = device->ws;
    struct radv_cmd_stream *cs;
 
@@ -657,7 +656,7 @@ radv_create_cmd_stream(const struct radv_device *device, enum radv_queue_family 
    if (!cs)
       return VK_ERROR_OUT_OF_HOST_MEMORY;
 
-   radv_init_cmd_stream(cs);
+   radv_init_cmd_stream(cs, ip_type);
 
    cs->b = ws->cs_create(ws, ip_type, is_secondary);
    if (!cs->b) {
@@ -674,7 +673,7 @@ radv_reset_cmd_stream(const struct radv_device *device, struct radv_cmd_stream *
 {
    struct radeon_winsys *ws = device->ws;
 
-   radv_init_cmd_stream(cs);
+   radv_init_cmd_stream(cs, cs->hw_ip);
 
    ws->cs_reset(cs->b);
 }

@@ -583,6 +583,7 @@ struct radv_cmd_stream {
    bool context_roll_without_scissor_emitted;
 
    struct radv_tracked_regs tracked_regs;
+   enum amd_ip_type hw_ip;
 
    uint32_t num_buffered_sh_regs;
    struct {

@@ -1204,11 +1204,12 @@ radv_create_cmd_buffer(struct vk_command_pool *pool, VkCommandBufferLevel level,
    cmd_buffer->qf = vk_queue_to_radv(pdev, pool->queue_family_index);
 
    if (cmd_buffer->qf != RADV_QUEUE_SPARSE) {
+      const enum amd_ip_type ip = radv_queue_family_to_ring(pdev, cmd_buffer->qf);
       list_inithead(&cmd_buffer->upload.list);
 
       radv_cmd_buffer_init_shader_part_cache(device, cmd_buffer);
-      result = radv_create_cmd_stream(device, cmd_buffer->qf, cmd_buffer->vk.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY,
-                                      &cmd_buffer->cs);
+      result =
+         radv_create_cmd_stream(device, ip, cmd_buffer->vk.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY, &cmd_buffer->cs);
       if (result != VK_SUCCESS) {
          radv_destroy_cmd_buffer(&cmd_buffer->vk);
          return vk_error(device, VK_ERROR_OUT_OF_DEVICE_MEMORY);
@@ -1589,8 +1590,8 @@ radv_gang_init(struct radv_cmd_buffer *cmd_buffer)
    if (cmd_buffer->gang.cs)
       return true;
 
-   result = radv_create_cmd_stream(device, RADV_QUEUE_COMPUTE,
-                                   cmd_buffer->vk.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY, &cmd_buffer->gang.cs);
+   result = radv_create_cmd_stream(device, AMD_IP_COMPUTE, cmd_buffer->vk.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY,
+                                   &cmd_buffer->gang.cs);
    if (result != VK_SUCCESS) {
       vk_command_buffer_set_error(&cmd_buffer->vk, result);
       return false;

@@ -1432,7 +1432,7 @@ radv_init_shader_upload_queue(struct radv_device *device)
    for (unsigned i = 0; i < RADV_SHADER_UPLOAD_CS_COUNT; i++) {
       struct radv_shader_dma_submission *submission = calloc(1, sizeof(struct radv_shader_dma_submission));
 
-      result = radv_create_cmd_stream(device, RADV_QUEUE_TRANSFER, false, &submission->cs);
+      result = radv_create_cmd_stream(device, AMD_IP_SDMA, false, &submission->cs);
       if (result != VK_SUCCESS) {
          free(submission);
          return result;

@@ -22,7 +22,7 @@ radv_create_shadow_regs_preamble(struct radv_device *device, struct radv_queue_s
    struct radv_cmd_stream *cs;
    VkResult result;
 
-   result = radv_create_cmd_stream(device, RADV_QUEUE_GENERAL, false, &cs);
+   result = radv_create_cmd_stream(device, AMD_IP_GFX, false, &cs);
    if (result != VK_SUCCESS)
       return result;
 
@@ -115,7 +115,7 @@ radv_init_shadowed_regs_buffer_state(const struct radv_device *device, struct ra
    struct radv_cmd_stream *cs;
    VkResult result;
 
-   result = radv_create_cmd_stream(device, RADV_QUEUE_GENERAL, false, &cs);
+   result = radv_create_cmd_stream(device, AMD_IP_GFX, false, &cs);
    if (result != VK_SUCCESS)
       return result;
 

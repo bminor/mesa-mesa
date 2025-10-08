@@ -902,7 +902,7 @@ radv_create_gfx_preamble(struct radv_device *device)
    struct radv_cmd_stream *cs;
    VkResult result;
 
-   result = radv_create_cmd_stream(device, RADV_QUEUE_GENERAL, false, &cs);
+   result = radv_create_cmd_stream(device, AMD_IP_GFX, false, &cs);
    if (result != VK_SUCCESS)
       return;
 
