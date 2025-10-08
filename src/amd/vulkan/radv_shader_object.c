@@ -314,7 +314,6 @@ radv_shader_object_init(struct radv_shader_object *shader_obj, struct radv_devic
 
    shader_obj->stage = vk_to_mesa_shader_stage(pCreateInfo->stage);
    shader_obj->code_type = pCreateInfo->codeType;
-   shader_obj->push_constant_size = layout.push_constant_size;
    shader_obj->dynamic_offset_count = layout.dynamic_offset_count;
 
    if (pCreateInfo->codeType == VK_SHADER_CODE_TYPE_BINARY_EXT) {
@@ -510,7 +509,6 @@ radv_shader_object_create_linked(VkDevice _device, uint32_t createInfoCount, con
 
       shader_obj->stage = s;
       shader_obj->code_type = pCreateInfo->codeType;
-      shader_obj->push_constant_size = stages[s].layout.push_constant_size;
       shader_obj->dynamic_offset_count = stages[s].layout.dynamic_offset_count;
 
       if (s == MESA_SHADER_VERTEX) {
