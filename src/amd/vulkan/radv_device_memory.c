@@ -120,8 +120,9 @@ radv_alloc_memory(struct radv_device *device, const VkMemoryAllocateInfo *pAlloc
       mem->buffer = NULL;
    }
 
-   if (wsi_info && wsi_info->implicit_sync) {
-      flags |= RADEON_FLAG_IMPLICIT_SYNC;
+   if (wsi_info) {
+      if (wsi_info->implicit_sync)
+         flags |= RADEON_FLAG_IMPLICIT_SYNC;
 
       /* Mark the linear prime buffer (aka the destination of the prime blit
        * as uncached.
