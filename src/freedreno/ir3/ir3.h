@@ -3333,27 +3333,21 @@ static inline bool
 __regmask_get(regmask_t *regmask, enum ir3_reg_file file, unsigned n, unsigned size)
 {
    BITSET_WORD *regs = __regmask_file(regmask, file);
-   for (unsigned i = 0; i < size; i++) {
-      if (BITSET_TEST(regs, n + i))
-         return true;
-   }
-   return false;
+   return BITSET_TEST_RANGE(regs, n, n + size - 1);
 }
 
 static inline void
 __regmask_set(regmask_t *regmask, enum ir3_reg_file file, unsigned n, unsigned size)
 {
    BITSET_WORD *regs = __regmask_file(regmask, file);
-   for (unsigned i = 0; i < size; i++)
-      BITSET_SET(regs, n + i);
+   BITSET_SET_RANGE(regs, n, n + size - 1);
 }
 
 static inline void
 __regmask_clear(regmask_t *regmask, enum ir3_reg_file file, unsigned n, unsigned size)
 {
    BITSET_WORD *regs = __regmask_file(regmask, file);
-   for (unsigned i = 0; i < size; i++)
-      BITSET_CLEAR(regs, n + i);
+   BITSET_CLEAR_RANGE(regs, n, n + size - 1);
 }
 
 static inline void
