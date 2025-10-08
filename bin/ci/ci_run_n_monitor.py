@@ -87,9 +87,9 @@ def print_job_status(
     print(
         f"{STATUS_COLORS[job.status]}"
         f"{jtype:{type_field_pad}} "  # U+1F78B Round target
-        f"{link2print(job.web_url, job.name, name_field_pad)} "
-        f"{f"has new status: {job.status} " if new_status else f"{job.status}"} "
-        f"{f"({pretty_duration(duration)})" if job.started_at else ""}"
+        f"{link2print(job.web_url, job.name, name_field_pad)} " +
+        (f" has new status: {job.status}" if new_status else f" {job.status}") +
+        (f" ({pretty_duration(duration)})" if job.started_at else "")
     )
 
 
