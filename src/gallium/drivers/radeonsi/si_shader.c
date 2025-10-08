@@ -1627,7 +1627,7 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
    nir_divergence_analysis(nir); /* required by ac_nir_flag_smem_for_loads */
    /* This is required by ac_nir_scalarize_overfetching_loads_callback. */
    NIR_PASS(progress, nir, ac_nir_flag_smem_for_loads, sel->screen->info.gfx_level,
-            !sel->info.base.use_aco_amd, false);
+            !sel->info.base.use_aco_amd);
    /* Scalarize overfetching loads, so that we don't load more components than necessary.
     * Adjacent loads will be re-vectorized with a conservative overfetching limit.
     */

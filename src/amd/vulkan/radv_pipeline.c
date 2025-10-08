@@ -354,7 +354,7 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
    NIR_PASS(_, stage->nir, radv_nir_opt_tid_function, &tid_options);
 
    nir_divergence_analysis(stage->nir);
-   NIR_PASS(_, stage->nir, ac_nir_flag_smem_for_loads, gfx_level, use_llvm, false);
+   NIR_PASS(_, stage->nir, ac_nir_flag_smem_for_loads, gfx_level, use_llvm);
    NIR_PASS(_, stage->nir, radv_nir_opt_access_can_speculate);
 
    NIR_PASS(_, stage->nir, nir_lower_memory_model);

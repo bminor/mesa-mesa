@@ -13,7 +13,6 @@
 typedef struct {
    enum amd_gfx_level gfx_level;
    bool use_llvm;
-   bool after_lowering;
 } mem_access_cb_data;
 
 static bool
@@ -37,12 +36,6 @@ use_smem_for_load(nir_builder *b, nir_intrinsic_instr *intrin, void *cb_data_)
    }
 
    if (intrin->def.divergent)
-      return false;
-
-   /* ACO doesn't support instruction selection for multi-component 8/16-bit SMEM loads. */
-   const bool supports_scalar_subdword = cb_data->gfx_level >= GFX12 && !cb_data->use_llvm;
-   if (cb_data->after_lowering && intrin->def.bit_size < 32 &&
-       (intrin->def.num_components > 1 || !supports_scalar_subdword))
       return false;
 
    enum gl_access_qualifier access = nir_intrinsic_access(intrin);
@@ -169,12 +162,11 @@ lower_mem_access_cb(nir_intrinsic_op intrin, uint8_t bytes, uint8_t bit_size, ui
 }
 
 bool
-ac_nir_flag_smem_for_loads(nir_shader *shader, enum amd_gfx_level gfx_level, bool use_llvm, bool after_lowering)
+ac_nir_flag_smem_for_loads(nir_shader *shader, enum amd_gfx_level gfx_level, bool use_llvm)
 {
    mem_access_cb_data cb_data = {
       .gfx_level = gfx_level,
       .use_llvm = use_llvm,
-      .after_lowering = after_lowering,
    };
    return nir_shader_intrinsics_pass(shader, &use_smem_for_load, nir_metadata_all, &cb_data);
 }
