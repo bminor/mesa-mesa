@@ -3754,7 +3754,7 @@
         "description": "mesa: copy NumSamples in reuse_framebuffer_texture_attachment",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
