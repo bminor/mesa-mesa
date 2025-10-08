@@ -60,5 +60,5 @@
     - .anv-test
     - .test-angle
   variables:
-    ANDROID_GPU_MODE: venus_guest_angle
+    CUTTLEFISH_GPU_MODE: venus_guest_angle
     VK_DRIVER: intel

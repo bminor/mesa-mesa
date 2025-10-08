@@ -61,7 +61,7 @@ lavapipe-vkd3d:
 
 android-angle-lavapipe:
   variables:
-    ANDROID_GPU_MODE: mesa_swrast_guest_angle
+    CUTTLEFISH_GPU_MODE: mesa_swrast_guest_angle
     DEQP_SUITE: android-angle-lavapipe
     GPU_VERSION: lvp-android-angle
   timeout: 15m
@@ -72,7 +72,7 @@ android-angle-lavapipe:
 
 android-angle-lavapipe-cts:
   variables:
-    ANDROID_GPU_MODE: mesa_swrast_guest_angle
+    CUTTLEFISH_GPU_MODE: mesa_swrast_guest_angle
     GPU_VERSION: lvp-android-angle
   timeout: 15m
   extends:
