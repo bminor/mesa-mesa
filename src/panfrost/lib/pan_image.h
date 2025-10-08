@@ -262,8 +262,11 @@ struct pan_image_usage {
    /* Image frequently updated with host data. */
    bool frequent_host_updates;
 
-   /* Scanout image. */
-   bool scanout;
+   /* Legacy scanout image. */
+   bool legacy_scanout;
+
+   /* Image created by WSI. */
+   bool wsi;
 };
 
 static inline enum pan_mod_support

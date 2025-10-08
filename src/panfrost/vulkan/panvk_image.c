@@ -124,7 +124,8 @@ get_iusage(struct panvk_image *image, const VkImageCreateInfo *create_info)
 
    iusage.host_copy =
       !!(image->vk.usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT);
-   iusage.scanout = wsi_info && wsi_info->scanout;
+   iusage.legacy_scanout = wsi_info && wsi_info->scanout;
+   iusage.wsi = wsi_info != NULL;
 
    return iusage;
 }
@@ -373,6 +374,11 @@ panvk_image_get_mod(struct panvk_image *image,
       assert(!"Missing modifier info");
    }
 
+   /* legacy scanout (images without any external modifier info) should default to LINEAR. */
+   if (iusage.legacy_scanout)
+      return DRM_FORMAT_MOD_LINEAR;
+
+   /* Without external dependencies, pick the best modifier that supports the image. */
    return panvk_image_get_mod_from_list(image, &iusage, NULL, 0);
 }
 

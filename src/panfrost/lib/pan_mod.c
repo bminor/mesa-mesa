@@ -247,8 +247,8 @@ pan_mod_afbc_test_props(const struct pan_kmod_dev_props *dprops,
    if (iprops->extent_px.width <= 16 && iprops->extent_px.height <= 16)
       return PAN_MOD_NOT_OPTIMAL;
 
-   /* Reserve 32x8 tiles for scanout buffers. */
-   if (iusage && !iusage->scanout &&
+   /* Reserve 32x8 tiles for WSI images. */
+   if (iusage && !iusage->wsi &&
        pan_afbc_superblock_width(iprops->modifier) != 16)
       return PAN_MOD_NOT_OPTIMAL;
 
