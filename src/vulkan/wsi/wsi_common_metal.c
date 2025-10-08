@@ -279,11 +279,6 @@ struct wsi_metal_swapchain {
    VkExtent2D extent;
    VkFormat vk_format;
 
-   struct u_vector modifiers;
-
-   VkPresentModeKHR present_mode;
-   bool fifo_ready;
-
    VkIcdSurfaceMetal *surface;
 
    struct wsi_metal_layer_blit_context *blit_context;
@@ -370,8 +365,6 @@ wsi_metal_swapchain_destroy(struct wsi_swapchain *wsi_chain,
       if (chain->images[i].base.image != VK_NULL_HANDLE)
          wsi_destroy_image(&chain->base, &chain->images[i].base);
    }
-
-   u_vector_finish(&chain->modifiers);
 
    wsi_destroy_metal_layer_blit_context(chain->blit_context);
 
