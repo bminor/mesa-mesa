@@ -14226,7 +14226,7 @@ radv_emit_cache_flush(struct radv_cmd_buffer *cmd_buffer)
    }
 
    radv_cs_emit_cache_flush(device->ws, cs, pdev->info.gfx_level, &cmd_buffer->gfx9_fence_idx,
-                            cmd_buffer->gfx9_fence_va, radv_cmd_buffer_uses_mec(cmd_buffer),
+                            cmd_buffer->gfx9_fence_va, cmd_buffer->qf,
                             cmd_buffer->state.flush_bits, &cmd_buffer->state.sqtt_flush_bits,
                             cmd_buffer->gfx9_eop_bug_va);
 
