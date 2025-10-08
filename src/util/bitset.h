@@ -31,6 +31,7 @@
 #ifndef BITSET_H
 #define BITSET_H
 
+#include <stdlib.h>
 #include "util/bitscan.h"
 #include "util/macros.h"
 
@@ -487,6 +488,11 @@ __bitset_next_range(unsigned *start, unsigned *end, const BITSET_WORD *set,
         __start < __size; \
         __bitset_next_range(&__start, &__end, __set, __size))
 
+static inline BITSET_WORD *
+BITSET_CALLOC(unsigned size)
+{
+    return (BITSET_WORD *) calloc(BITSET_WORDS(size), sizeof(BITSET_WORD));
+}
 
 #ifdef __cplusplus
 
