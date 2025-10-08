@@ -483,10 +483,8 @@ panvk_image_pre_mod_select_meta_adjustments(struct panvk_image *image)
       if (aspects & VK_IMAGE_ASPECT_DEPTH_BIT)
          image->vk.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
-      if (aspects & VK_IMAGE_ASPECT_COLOR_BIT) {
+      if (aspects & VK_IMAGE_ASPECT_COLOR_BIT)
          image->vk.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-         image->vk.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
-      }
    }
 
    if (image->vk.stencil_usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT)
@@ -515,6 +513,20 @@ panvk_image_pre_mod_select_meta_adjustments(struct panvk_image *image)
        * vk_meta copies. */
       image->vk.create_flags |= VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT |
                                 VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT;
+   }
+}
+
+static void
+panvk_image_post_mod_select_meta_adjustments(struct panvk_image *image)
+{
+   const VkImageAspectFlags aspects = vk_format_aspects(image->vk.format);
+
+   /* If the image didn't end up using AFBC, we should add the storage flag
+    * to allow vkmeta to take the compute based copying path. */
+   if ((image->vk.usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) &&
+       (aspects & VK_IMAGE_ASPECT_COLOR_BIT) &&
+       !drm_is_afbc(image->vk.drm_format_mod)) {
+      image->vk.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
    }
 }
 
@@ -554,6 +566,12 @@ panvk_image_init(struct panvk_image *image,
    /* Now that we've patched the create/usage flags, we can proceed with the
     * modifier selection. */
    image->vk.drm_format_mod = panvk_image_get_mod(image, pCreateInfo);
+
+   /* Some modifiers like AFBC affect some decisions we make for vkmeta, but
+    * we don't want to outright prevent these modifiers. If those weren't used,
+    * we apply additional flags here. */
+   panvk_image_post_mod_select_meta_adjustments(image);
+
    return panvk_image_init_layouts(image, pCreateInfo);
 }
 
