@@ -1973,6 +1973,7 @@ wsi_create_buffer_blit_context(const struct wsi_swapchain *chain,
       .pNext = NULL,
       .implicit_sync = info->image_type == WSI_IMAGE_TYPE_DRM &&
                        !info->explicit_sync && !chain->dma_buf_semaphore,
+      .dma_buf_sync_file = chain->dma_buf_semaphore,
    };
    VkMemoryDedicatedAllocateInfo buf_mem_dedicated_info = {
       .sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO,

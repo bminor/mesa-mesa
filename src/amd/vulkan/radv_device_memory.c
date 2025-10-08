@@ -121,7 +121,13 @@ radv_alloc_memory(struct radv_device *device, const VkMemoryAllocateInfo *pAlloc
    }
 
    if (wsi_info) {
-      if (wsi_info->implicit_sync)
+      /* Even if the WSI is managing implicit-sync fencing on the dma-buf with
+       * dma-buf fence import/export, RADEON_FLAG_IMPLICIT_SYNC also controls
+       * whether other users of the BO (such as an X server using an
+       * implicit-syncing GL driver for rendering) will respect the BO's
+       * implicit sync.
+       */
+      if (wsi_info->implicit_sync || wsi_info->dma_buf_sync_file)
          flags |= RADEON_FLAG_IMPLICIT_SYNC;
 
       /* Mark the linear prime buffer (aka the destination of the prime blit

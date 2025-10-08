@@ -51,6 +51,16 @@ struct wsi_memory_allocate_info {
      * point DMA_BUF_IOCTL_IMPORT_SYNC_FILE was added.
      */
     bool implicit_sync;
+
+    /**
+     * If set, then the WSI will attach implicit synchronization's fences to
+     * (and reference implicit sync fences from) the dma-buf for this memory, to
+     * meet the requirement for implicit synchronization with the window system.
+     * This does mean that the kernel BO must be able to participate in implicit
+     * sync still when used as part of a non-explicit-synced submit (e.g. by a
+     * GL driver in the X server).
+     */
+    bool dma_buf_sync_file;
 };
 
 /* To be chained into VkSurfaceCapabilities2KHR */
