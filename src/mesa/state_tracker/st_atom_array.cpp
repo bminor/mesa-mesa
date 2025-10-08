@@ -477,7 +477,7 @@ st_update_array_templ(struct st_context *st,
       /* Set vertex buffers and elements. */
       if (FILL_TC_SET_VB) {
          void *state = cso_get_vertex_elements_for_bind(cso, &velements);
-         tc_set_vertex_elements_for_call(vbuffer, state);
+         tc_set_vertex_elements_for_call(st->pipe, vbuffer, state);
       } else {
          cso_set_vertex_buffers_and_elements(cso, &velements, num_vbuffers,
                                              uses_user_vertex_buffers, vbuffer);

@@ -559,6 +559,10 @@ tc_batch_flush(struct threaded_context *tc, bool full_copy)
    struct tc_batch *next = &tc->batch_slots[tc->next];
    unsigned next_id = (tc->next + 1) % TC_MAX_BATCHES;
 
+#if !defined(NDEBUG)
+   assert(!next->tc_set_vertex_elements_for_call_pending);
+#endif
+
    tc_assert(next->num_total_slots != 0);
    tc_add_call_end(next);
 
@@ -2296,6 +2300,12 @@ tc_add_set_vertex_elements_and_buffers_call(struct pipe_context *_pipe,
                                          tc_vertex_elements_and_buffers, count,
                                          extra_slots);
    p->count = count;
+
+#if !defined(NDEBUG)
+   struct tc_batch *next = &tc->batch_slots[tc->next];
+   next->tc_set_vertex_elements_for_call_pending = true;
+#endif
+
    return p->slot;
 }
 
@@ -5345,6 +5355,9 @@ tc_batch_execute(void *job, UNUSED void *gdata, int thread_index)
    tc_batch_check(batch);
    tc_set_driver_thread(batch->tc);
 
+#if !defined(NDEBUG)
+   assert(!batch->tc_set_vertex_elements_for_call_pending);
+#endif
    assert(!batch->token);
 
    /* setup renderpass info */
