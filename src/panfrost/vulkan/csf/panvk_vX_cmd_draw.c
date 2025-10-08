@@ -1962,6 +1962,10 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf,
       dyn_gfx_state_dirty(cmdbuf, DS_STENCIL_TEST_ENABLE) ||
       dyn_gfx_state_dirty(cmdbuf, DS_STENCIL_OP) ||
       dyn_gfx_state_dirty(cmdbuf, DS_STENCIL_WRITE_MASK) ||
+      /* fpk enablement depends on vk_color_blend_attachment_state */
+      dyn_gfx_state_dirty(cmdbuf, CB_BLEND_ENABLES) ||
+      dyn_gfx_state_dirty(cmdbuf, CB_BLEND_EQUATIONS) ||
+      dyn_gfx_state_dirty(cmdbuf, CB_WRITE_MASKS) ||
       /* line mode needs primitive topology */
       dyn_gfx_state_dirty(cmdbuf, IA_PRIMITIVE_TOPOLOGY) ||
       dyn_gfx_state_dirty(cmdbuf, INPUT_ATTACHMENT_MAP) ||
