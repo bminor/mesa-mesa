@@ -56,7 +56,7 @@ check_sends(struct genisa_stats *stats, unsigned send_count)
    assert(stats->send_messages == send_count);
 }
 
-static struct anv_shader_bin *
+static struct anv_shader_internal *
 compile_shader(struct anv_device *device,
                enum anv_internal_kernel_name shader_name,
                mesa_shader_stage stage,
@@ -210,7 +210,7 @@ compile_shader(struct anv_device *device,
 
    assert(prog_data.base.total_scratch == 0);
    assert(program != NULL);
-   struct anv_shader_bin *kernel = NULL;
+   struct anv_shader_internal *kernel = NULL;
    if (program == NULL)
       goto exit;
 
@@ -240,7 +240,7 @@ exit:
 VkResult
 anv_device_get_internal_shader(struct anv_device *device,
                                enum anv_internal_kernel_name name,
-                               struct anv_shader_bin **out_bin)
+                               struct anv_shader_internal **out_bin)
 {
    const struct {
       struct {
@@ -300,7 +300,7 @@ anv_device_get_internal_shader(struct anv_device *device,
       },
    };
 
-   struct anv_shader_bin *bin =
+   struct anv_shader_internal *bin =
       p_atomic_read(&device->internal_kernels[name]);
    if (bin != NULL) {
       *out_bin = bin;
@@ -333,7 +333,7 @@ anv_device_get_internal_shader(struct anv_device *device,
    /* The cache already has a reference and it's not going anywhere so
     * there is no need to hold a second reference.
     */
-   anv_shader_bin_unref(device, bin);
+   anv_shader_internal_unref(device, bin);
 
    p_atomic_set(&device->internal_kernels[name], bin);
 

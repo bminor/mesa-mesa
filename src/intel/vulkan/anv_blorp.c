@@ -33,7 +33,7 @@ lookup_blorp_shader(struct blorp_batch *batch,
    struct blorp_context *blorp = batch->blorp;
    struct anv_device *device = blorp->driver_ctx;
 
-   struct anv_shader_bin *bin =
+   struct anv_shader_internal *bin =
       anv_device_search_for_kernel(device, device->internal_cache,
                                    key, key_size, NULL);
    if (!bin)
@@ -42,7 +42,7 @@ lookup_blorp_shader(struct blorp_batch *batch,
    /* The cache already has a reference and it's not going anywhere so there
     * is no need to hold a second reference.
     */
-   anv_shader_bin_unref(device, bin);
+   anv_shader_internal_unref(device, bin);
 
    *kernel_out = bin->kernel.offset;
    *(const struct brw_stage_prog_data **)prog_data_out = bin->prog_data;
@@ -75,7 +75,7 @@ upload_blorp_shader(struct blorp_batch *batch, uint32_t stage,
       .push_desc_info      = &empty_push_desc_info,
    };
 
-   struct anv_shader_bin *bin =
+   struct anv_shader_internal *bin =
       anv_device_upload_kernel(device, device->internal_cache, &upload_params);
 
    if (!bin)
@@ -84,7 +84,7 @@ upload_blorp_shader(struct blorp_batch *batch, uint32_t stage,
    /* The cache already has a reference and it's not going anywhere so there
     * is no need to hold a second reference.
     */
-   anv_shader_bin_unref(device, bin);
+   anv_shader_internal_unref(device, bin);
 
    if (INTEL_DEBUG(DEBUG_SHADERS_LINENO)) {
       /* shader hash is zero in this context */

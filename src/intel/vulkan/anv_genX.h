@@ -295,7 +295,7 @@ void genX(batch_emit_fast_color_dummy_blit)(struct anv_batch *batch,
                                             struct anv_device *device);
 
 #if GFX_VERx10 >= 300
-#define anv_shader_bin_get_handler(bin, local_arg_offset) ({         \
+#define anv_shader_internal_get_handler(bin, local_arg_offset) ({    \
    assert((local_arg_offset) % 8 == 0);                              \
    const struct brw_bs_prog_data *prog_data =                        \
       brw_bs_prog_data_const(bin->prog_data);                        \
@@ -341,7 +341,7 @@ void genX(batch_emit_fast_color_dummy_blit)(struct anv_batch *batch,
 #endif
 
 #if GFX_VERx10 >= 300
-#define anv_shader_bin_get_bsr(bin, local_arg_offset) ({             \
+#define anv_shader_internal_get_bsr(bin, local_arg_offset) ({        \
    assert((local_arg_offset) % 8 == 0);                              \
    const struct brw_bs_prog_data *prog_data =                        \
       brw_bs_prog_data_const(bin->prog_data);                        \
@@ -355,7 +355,7 @@ void genX(batch_emit_fast_color_dummy_blit)(struct anv_batch *batch,
    };                                                                \
 })
 #else
-#define anv_shader_bin_get_bsr(bin, local_arg_offset) ({             \
+#define anv_shader_internal_get_bsr(bin, local_arg_offset) ({        \
    assert((local_arg_offset) % 8 == 0);                              \
    const struct brw_bs_prog_data *prog_data =                        \
       brw_bs_prog_data_const(bin->prog_data);                        \

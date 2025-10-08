@@ -225,7 +225,7 @@ anv_device_utrace_flush_cmd_buffers(struct anv_queue *queue,
 
          anv_genX(device->info, emit_so_memcpy_end)(&submit->memcpy_state);
       } else {
-         struct anv_shader_bin *copy_kernel;
+         struct anv_shader_internal *copy_kernel;
          VkResult ret =
             anv_device_get_internal_shader(device,
                                            ANV_INTERNAL_KERNEL_MEMCPY_COMPUTE,

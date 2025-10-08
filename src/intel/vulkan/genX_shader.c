@@ -1397,7 +1397,7 @@ genX(write_rt_shader_group)(struct anv_device *device,
          }
       }
       if (!anyhit_seen)
-         sh.AnyHit = anv_shader_bin_get_bsr(device->rt_null_ahs, 24);
+         sh.AnyHit = anv_shader_internal_get_bsr(device->rt_null_ahs, 24);
       GENX(RT_TRIANGLES_SBT_HANDLE_pack)(NULL, output, &sh);
       break;
    }

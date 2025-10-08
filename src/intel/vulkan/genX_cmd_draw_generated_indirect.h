@@ -173,7 +173,7 @@ genX(cmd_buffer_emit_indirect_generated_draws_init)(struct anv_cmd_buffer *cmd_b
 
    trace_intel_end_generate_draws(&cmd_buffer->trace);
 
-   struct anv_shader_bin *gen_kernel;
+   struct anv_shader_internal *gen_kernel;
    VkResult ret =
       anv_device_get_internal_shader(
          cmd_buffer->device,
@@ -509,7 +509,7 @@ genX(cmd_buffer_emit_indirect_generated_draws_inring)(struct anv_cmd_buffer *cmd
     */
    struct anv_address gen_addr = anv_batch_current_address(&cmd_buffer->batch);
 
-   struct anv_shader_bin *gen_kernel;
+   struct anv_shader_internal *gen_kernel;
    VkResult ret =
       anv_device_get_internal_shader(
          cmd_buffer->device,

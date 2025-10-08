@@ -1782,7 +1782,7 @@ struct anv_push_descriptor_info;
 
 extern const struct vk_pipeline_cache_object_ops *const anv_cache_import_ops[2];
 
-struct anv_shader_bin *
+struct anv_shader_internal *
 anv_device_search_for_kernel(struct anv_device *device,
                              struct vk_pipeline_cache *cache,
                              const void *key_data, uint32_t key_size,
@@ -1790,7 +1790,7 @@ anv_device_search_for_kernel(struct anv_device *device,
 
 struct anv_shader_upload_params;
 
-struct anv_shader_bin *
+struct anv_shader_internal *
 anv_device_upload_kernel(struct anv_device *device,
                          struct vk_pipeline_cache *cache,
                          const struct anv_shader_upload_params *params);
@@ -2553,16 +2553,16 @@ struct anv_device {
      */
     struct anv_bo                              *ray_query_bo[2];
 
-    struct anv_shader_bin                      *rt_trampoline;
-    struct anv_shader_bin                      *rt_trivial_return;
-    struct anv_shader_bin                      *rt_null_ahs;
+    struct anv_shader_internal                 *rt_trampoline;
+    struct anv_shader_internal                 *rt_trivial_return;
+    struct anv_shader_internal                 *rt_null_ahs;
 
     /** Draw generation shader
      *
      * Generates direct draw calls out of indirect parameters. Used to
      * workaround slowness with indirect draw calls.
      */
-    struct anv_shader_bin                      *internal_kernels[ANV_INTERNAL_KERNEL_COUNT];
+    struct anv_shader_internal                 *internal_kernels[ANV_INTERNAL_KERNEL_COUNT];
     const struct intel_l3_config               *internal_kernels_l3_config;
 
     pthread_mutex_t                             mutex;
@@ -4291,7 +4291,7 @@ struct anv_simple_shader {
    /* Where to emit the commands (can be different from cmd_buffer->batch) */
    struct anv_batch *batch;
    /* Shader to use */
-   struct anv_shader_bin *kernel;
+   struct anv_shader_internal *kernel;
 
    /* Managed by the simpler shader helper*/
    struct anv_state bt_state;
@@ -5134,7 +5134,7 @@ anv_device_get_embedded_samplers(struct anv_device *device,
                                  struct anv_embedded_sampler **out_samplers,
                                  const struct anv_pipeline_bind_map *bind_map);
 
-struct anv_shader_bin {
+struct anv_shader_internal {
    struct vk_pipeline_cache_object base;
 
    mesa_shader_stage stage;
@@ -5161,8 +5161,8 @@ struct anv_shader_bin {
    struct anv_embedded_sampler **embedded_samplers;
 };
 
-static inline struct anv_shader_bin *
-anv_shader_bin_ref(struct anv_shader_bin *shader)
+static inline struct anv_shader_internal *
+anv_shader_internal_ref(struct anv_shader_internal *shader)
 {
    vk_pipeline_cache_object_ref(&shader->base);
 
@@ -5170,7 +5170,7 @@ anv_shader_bin_ref(struct anv_shader_bin *shader)
 }
 
 static inline void
-anv_shader_bin_unref(struct anv_device *device, struct anv_shader_bin *shader)
+anv_shader_internal_unref(struct anv_device *device, struct anv_shader_internal *shader)
 {
    vk_pipeline_cache_object_unref(&device->vk, &shader->base);
 }
@@ -6697,7 +6697,7 @@ VkResult anv_device_init_internal_kernels(struct anv_device *device);
 void anv_device_finish_internal_kernels(struct anv_device *device);
 VkResult anv_device_get_internal_shader(struct anv_device *device,
                                         enum anv_internal_kernel_name name,
-                                        struct anv_shader_bin **out_bin);
+                                        struct anv_shader_internal **out_bin);
 
 VkResult anv_device_init_astc_emu(struct anv_device *device);
 void anv_device_finish_astc_emu(struct anv_device *device);

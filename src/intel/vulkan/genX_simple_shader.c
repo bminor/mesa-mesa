@@ -402,7 +402,7 @@ genX(emit_simpler_shader_init_compute)(struct anv_simple_shader *state)
           state->cmd_buffer->state.current_pipeline == GPGPU);
 
 #if GFX_VERx10 >= 125
-   struct anv_shader_bin *cs_bin = state->kernel;
+   struct anv_shader_internal *cs_bin = state->kernel;
    const struct brw_cs_prog_data *prog_data =
       (const struct brw_cs_prog_data *) cs_bin->prog_data;
    /* Currently our simple shaders are simple enough that they never spill. */

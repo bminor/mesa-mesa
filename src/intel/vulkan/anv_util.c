@@ -405,7 +405,7 @@ anv_device_init_rt_shaders(struct anv_device *device)
    /* The cache already has a reference and it's not going anywhere so there
     * is no need to hold a second reference.
     */
-   anv_shader_bin_unref(device, device->rt_trampoline);
+   anv_shader_internal_unref(device, device->rt_trampoline);
 
    struct brw_rt_trivial_return {
       char name[16];
@@ -463,7 +463,7 @@ anv_device_init_rt_shaders(struct anv_device *device)
    /* The cache already has a reference and it's not going anywhere so there
     * is no need to hold a second reference.
     */
-   anv_shader_bin_unref(device, device->rt_trivial_return);
+   anv_shader_internal_unref(device, device->rt_trivial_return);
 
    struct brw_rt_null_ahs {
       char name[16];
@@ -521,7 +521,7 @@ anv_device_init_rt_shaders(struct anv_device *device)
    /* The cache already has a reference and it's not going anywhere so there
     * is no need to hold a second reference.
     */
-   anv_shader_bin_unref(device, device->rt_null_ahs);
+   anv_shader_internal_unref(device, device->rt_null_ahs);
 
    return VK_SUCCESS;
 }

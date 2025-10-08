@@ -1911,7 +1911,7 @@ copy_query_results_with_shader(struct anv_cmd_buffer *cmd_buffer,
       genX(cmd_buffer_apply_pipe_flushes)(cmd_buffer);
    }
 
-   struct anv_shader_bin *copy_kernel;
+   struct anv_shader_internal *copy_kernel;
    VkResult ret =
       anv_device_get_internal_shader(
          cmd_buffer->device,
