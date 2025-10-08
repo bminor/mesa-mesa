@@ -323,36 +323,29 @@ si_vpe_maps_vpp_to_vpe_primaries(enum pipe_video_vpp_color_primaries colour_prim
 }
 
 static enum vpe_transfer_function
-si_vpe_maps_vpp_to_vpe_transfer_function(
-                        enum pipe_video_vpp_transfer_characteristic transfer_characteristics,
-                        enum pipe_video_vpp_matrix_coefficients matrix_coefficients)
+si_vpe_maps_vpp_to_vpe_transfer_function(enum pipe_video_vpp_transfer_characteristic trc)
 {
-   if (transfer_characteristics == PIPE_VIDEO_VPP_TRC_BT709)
-      return (matrix_coefficients == PIPE_VIDEO_VPP_MCF_RGB)? VPE_TF_SRGB : VPE_TF_BT709;
-
-   else if (transfer_characteristics == PIPE_VIDEO_VPP_TRC_GAMMA22)
+   switch (trc) {
+   case PIPE_VIDEO_VPP_TRC_GAMMA22:
       return VPE_TF_G22;
-
-   else if (transfer_characteristics == PIPE_VIDEO_VPP_TRC_SMPTEST2084)
+   case PIPE_VIDEO_VPP_TRC_LINEAR:
+      return VPE_TF_G10;
+   case PIPE_VIDEO_VPP_TRC_IEC61966_2_1:
+      return VPE_TF_SRGB;
+   case PIPE_VIDEO_VPP_TRC_SMPTEST2084:
       return VPE_TF_PQ;
-
-   else if (transfer_characteristics == PIPE_VIDEO_VPP_TRC_LINEAR)
-      return VPE_TF_G10;
-
-   else if (transfer_characteristics == PIPE_VIDEO_VPP_TRC_ARIB_STD_B67)
+   case PIPE_VIDEO_VPP_TRC_ARIB_STD_B67:
       return VPE_TF_HLG;
-
-   else if (transfer_characteristics == PIPE_VIDEO_VPP_TRC_BT2020_10)
-      return VPE_TF_G10;
-
-   else if (transfer_characteristics == PIPE_VIDEO_VPP_TRC_SMPTEST428_1)
+   case PIPE_VIDEO_VPP_TRC_BT709:
+   case PIPE_VIDEO_VPP_TRC_SMPTE170M:
+   case PIPE_VIDEO_VPP_TRC_SMPTE240M:
+   case PIPE_VIDEO_VPP_TRC_IEC61966_2_4:
+   case PIPE_VIDEO_VPP_TRC_BT1361_ECG:
+   case PIPE_VIDEO_VPP_TRC_BT2020_10:
+   case PIPE_VIDEO_VPP_TRC_BT2020_12:
+   default:
       return VPE_TF_G24;
-
-   else if (transfer_characteristics == PIPE_VIDEO_VPP_TRC_BT2020_12)
-      return (matrix_coefficients == PIPE_VIDEO_VPP_MCF_RGB)? VPE_TF_SRGB : VPE_TF_BT709;
-
-   SIVPE_PRINT("WARNING: map VA-API transfer_characteristics(%d) to BT709/SRGB\n", transfer_characteristics);
-   return (matrix_coefficients == PIPE_VIDEO_VPP_MCF_RGB)? VPE_TF_SRGB : VPE_TF_BT709;
+   }
 }
 
 static enum ToneMapTransferFunction
@@ -411,7 +404,6 @@ si_vpe_set_color_space(const struct pipe_vpp_desc *process_properties,
    enum pipe_video_vpp_chroma_siting chroma_siting;
    enum pipe_video_vpp_color_primaries colour_primaries;
    enum pipe_video_vpp_transfer_characteristic transfer_characteristics;
-   enum pipe_video_vpp_matrix_coefficients matrix_coefficients;
 
    if (which_surface == USE_SRC_SURFACE) {
       colors_standard          = process_properties->in_colors_standard;
@@ -419,14 +411,12 @@ si_vpe_set_color_space(const struct pipe_vpp_desc *process_properties,
       chroma_siting            = process_properties->in_chroma_siting;
       colour_primaries         = process_properties->in_color_primaries;
       transfer_characteristics = process_properties->in_transfer_characteristics;
-      matrix_coefficients      = process_properties->in_matrix_coefficients;
    } else {
       colors_standard          = process_properties->out_colors_standard;
       color_range              = process_properties->out_color_range;
       chroma_siting            = process_properties->out_chroma_siting;
       colour_primaries         = process_properties->out_color_primaries;
       transfer_characteristics = process_properties->out_transfer_characteristics;
-      matrix_coefficients      = process_properties->out_matrix_coefficients;
    }
 
    switch (colors_standard) {
@@ -437,20 +427,17 @@ si_vpe_set_color_space(const struct pipe_vpp_desc *process_properties,
    case PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_BT601:
       colour_primaries         = PIPE_VIDEO_VPP_PRI_SMPTE170M;
       transfer_characteristics = PIPE_VIDEO_VPP_TRC_SMPTE170M;
-      matrix_coefficients      = PIPE_VIDEO_VPP_MCF_SMPTE170M;
       break;
 
    case PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_BT2020:
       colour_primaries         = PIPE_VIDEO_VPP_PRI_BT2020;
       transfer_characteristics = PIPE_VIDEO_VPP_TRC_BT2020_10;
-      matrix_coefficients      = PIPE_VIDEO_VPP_MCF_BT2020_NCL;
       break;
 
    default:
    case PIPE_VIDEO_VPP_COLOR_STANDARD_TYPE_BT709:
       colour_primaries         = PIPE_VIDEO_VPP_PRI_BT709;
       transfer_characteristics = PIPE_VIDEO_VPP_TRC_BT709;
-      matrix_coefficients      = PIPE_VIDEO_VPP_MCF_BT709;
       break;
    }
 
@@ -473,7 +460,6 @@ si_vpe_set_color_space(const struct pipe_vpp_desc *process_properties,
    case PIPE_FORMAT_A2B10G10R10_UNORM:
    case PIPE_FORMAT_B10G10R10A2_UNORM:
    default:
-      matrix_coefficients = PIPE_VIDEO_VPP_MCF_RGB;
       color_space->encoding = VPE_PIXEL_ENCODING_RGB;
       break;
    }
@@ -508,7 +494,7 @@ si_vpe_set_color_space(const struct pipe_vpp_desc *process_properties,
    }
 
    color_space->primaries = si_vpe_maps_vpp_to_vpe_primaries(colour_primaries);
-   color_space->tf = si_vpe_maps_vpp_to_vpe_transfer_function(transfer_characteristics, matrix_coefficients);
+   color_space->tf = si_vpe_maps_vpp_to_vpe_transfer_function(transfer_characteristics);
 }
 
 static enum vpe_status
