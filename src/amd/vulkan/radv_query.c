@@ -2405,23 +2405,29 @@ radv_GetQueryPoolResults(VkDevice _device, VkQueryPool queryPool, uint32_t first
          if (flags & VK_QUERY_RESULT_64_BIT) {
             uint64_t *dest64 = (uint64_t *)dest;
             if (available || (flags & VK_QUERY_RESULT_PARTIAL_BIT)) {
-               dest64[0] = src32[5];
-               dest64[1] = src32[6] - src32[8];
+               if (pool->vk.encode_feedback_flags & VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR)
+                  *dest64++ = src32[5];
+               if (pool->vk.encode_feedback_flags & VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR)
+                  *dest64++ = src32[6] - src32[8];
             }
-            dest += 16;
+            dest += util_bitcount(pool->vk.encode_feedback_flags) * sizeof(uint64_t);
+
             if (flags & VK_QUERY_RESULT_WITH_STATUS_BIT_KHR) {
-               dest64[2] = 1;
-               dest += 8;
+               *dest64++ = 1;
+               dest += 4;
             }
          } else {
             uint32_t *dest32 = (uint32_t *)dest;
             if (available || (flags & VK_QUERY_RESULT_PARTIAL_BIT)) {
-               dest32[0] = src32[5];
-               dest32[1] = src32[6] - src32[8];
+               if (pool->vk.encode_feedback_flags & VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BUFFER_OFFSET_BIT_KHR)
+                  *dest32++ = src32[5];
+               if (pool->vk.encode_feedback_flags & VK_VIDEO_ENCODE_FEEDBACK_BITSTREAM_BYTES_WRITTEN_BIT_KHR)
+                  *dest32++ = src32[6] - src32[8];
             }
-            dest += 8;
+            dest += util_bitcount(pool->vk.encode_feedback_flags) * sizeof(uint32_t);
+
             if (flags & VK_QUERY_RESULT_WITH_STATUS_BIT_KHR) {
-               dest32[2] = 1;
+               *dest32++ = 1;
                dest += 4;
             }
          }
