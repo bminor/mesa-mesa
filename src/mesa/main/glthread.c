@@ -284,7 +284,7 @@ _mesa_glthread_destroy(struct gl_context *ctx)
          util_queue_fence_destroy(&glthread->batches[i].fence);
 
       _mesa_DeinitHashTable(&glthread->VAOs, free_vao, NULL);
-      _mesa_glthread_release_upload_buffer(ctx);
+      _mesa_glthread_release_upload_buffer(ctx, false);
    }
 }
 

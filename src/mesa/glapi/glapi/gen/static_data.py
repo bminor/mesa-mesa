@@ -1612,6 +1612,7 @@ all_functions = [
     "DrawArraysInstancedBaseInstanceDrawID",
     "DrawElementsInstancedBaseVertexBaseInstanceDrawID",
     "InternalInvalidateFramebufferAncillaryMESA",
+    "InternalReleaseBufferMESA",
     "DrawElementsPacked",
     "DrawElementsUserBufPacked",
     "TexStorageAttribs2DEXT",

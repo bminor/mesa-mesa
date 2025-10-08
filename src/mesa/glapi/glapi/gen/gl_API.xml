@@ -11097,6 +11097,11 @@
     <!-- Internal function for glthread to implement ancillary buffer invalidation. -->
     <function name="InternalInvalidateFramebufferAncillaryMESA" es2="3.0">
     </function>
+
+    <!-- Internal function for glthread to defer buffer release. -->
+    <function name="InternalReleaseBufferMESA" es2="3.0" marshal="async">
+        <param name="buffer" type="GLvoid *"/>
+    </function>
 </category>
 
 <xi:include href="OES_EGL_image.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
