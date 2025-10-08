@@ -9974,7 +9974,7 @@
         "description": "brw: prevent LOAD_REG modifications on MOV_INDIRECT/BROADCAST",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2d13acf9d98bbd5e97b85960693d60e5966a8d4f",
         "notes": null
