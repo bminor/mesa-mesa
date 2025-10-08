@@ -9,6 +9,3 @@ dEQP-VK.image.load_store.without_any_format.buffer.b8g8r8_srgb_minalign_uniform,
 dEQP-VK.image.load_store.without_any_format.buffer.b8g8r8_srgb_minalign_uniform_linear,Fail
 dEQP-VK.image.load_store.without_any_format.buffer.r8g8b8_srgb_minalign_uniform,Fail
 dEQP-VK.image.load_store.without_any_format.buffer.r8g8b8_srgb_minalign_uniform_linear,Fail
-
-# New fails in 1.4.3.3
-dEQP-VK.binding_model.descriptor_copy.graphics.combined_image_sampler_1,Crash
