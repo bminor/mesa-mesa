@@ -6594,6 +6594,18 @@ tu6_build_depth_plane_z_mode(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
        cmd->state.occlusion_query_may_be_running)
       zmode = A6XX_EARLY_Z_LATE_Z;
 
+   VkCompareOp compare_op =
+      cmd->vk.dynamic_graphics_state.ds.depth.compare_op;
+   /* This state combination wedges something in GPU causing hang.
+    * Forcing A6XX_LATE_Z prevents it. Prop driver does the same.
+    */
+   if (zmode == A6XX_EARLY_Z_LATE_Z && !depth_write &&
+       cmd->state.occlusion_query_may_be_running &&
+       (compare_op == VK_COMPARE_OP_ALWAYS ||
+        compare_op == VK_COMPARE_OP_NEVER)) {
+      zmode = A6XX_LATE_Z;
+   }
+
    if (zmode == A6XX_EARLY_Z_LATE_Z &&
        (cmd->state.stencil_written_on_depth_fail || fs->fs.sample_shading ||
         !vk_format_has_depth(depth_format) || !ds_test_enable)) {
