@@ -15,7 +15,6 @@
 
 struct radv_cmd_buffer;
 struct radv_device;
-enum radv_queue_family;
 
 struct radv_indirect_command_layout {
    struct vk_indirect_command_layout vk;
