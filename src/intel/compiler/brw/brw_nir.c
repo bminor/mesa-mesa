@@ -117,31 +117,6 @@ type_size_vec4(const struct glsl_type *type, bool bindless)
    return type_size_xvec4(type, true, bindless);
 }
 
-/**
- * Returns the minimum number of dvec4 elements needed to pack a type.
- *
- * For simple types, it will return 1 (a single dvec4); for matrices, the
- * number of columns; for array and struct, the sum of the dvec4_size of
- * each of its elements; and for sampler and atomic, zero.
- *
- * This method is useful to calculate how much register space is needed to
- * store a particular type.
- *
- * Measuring double-precision vertex inputs as dvec4 is required because
- * ARB_vertex_attrib_64bit states that these uses the same number of locations
- * than the single-precision version. That is, two consecutives dvec4 would be
- * located in location "x" and location "x+1", not "x+2".
- *
- * In order to map vec4/dvec4 vertex inputs in the proper ATTRs,
- * remap_vs_attrs() will take in account both the location and also if the
- * type fits in one or two vec4 slots.
- */
-int
-type_size_dvec4(const struct glsl_type *type, bool bindless)
-{
-   return type_size_xvec4(type, false, bindless);
-}
-
 static bool
 is_input(nir_intrinsic_instr *intrin)
 {
@@ -1055,7 +1030,7 @@ brw_nir_lower_fs_outputs(nir_shader *nir)
          SET_FIELD(var->data.location, BRW_NIR_FRAG_OUTPUT_LOCATION);
    }
 
-   NIR_PASS(_, nir, nir_lower_io, nir_var_shader_out, type_size_dvec4, 0);
+   NIR_PASS(_, nir, nir_lower_io, nir_var_shader_out, type_size_vec4, 0);
 }
 
 static bool
