@@ -3490,7 +3490,17 @@ radv_graphics_pipeline_init(struct radv_graphics_pipeline *pipeline, struct radv
    pipeline->uses_vrs_attachment = radv_pipeline_uses_vrs_attachment(pipeline, &gfx_state.vk);
    pipeline->uses_vrs_coarse_shading = !pipeline->uses_vrs && gfx103_pipeline_vrs_coarse_shading(device, pipeline);
 
-   pipeline->base.push_constant_size = gfx_state.layout.push_constant_size;
+   uint32_t push_constant_size = 0;
+   for (uint32_t i = 0; i < MESA_VULKAN_SHADER_STAGES; i++) {
+      const struct radv_shader *shader = pipeline->base.shaders[i];
+
+      if (!shader)
+         continue;
+
+      push_constant_size = MAX2(push_constant_size, shader->info.push_constant_size);
+   }
+
+   pipeline->base.push_constant_size = align(push_constant_size, 4);
    pipeline->base.dynamic_offset_count = gfx_state.layout.dynamic_offset_count;
 
    const VkGraphicsPipelineCreateInfoRADV *radv_info =
