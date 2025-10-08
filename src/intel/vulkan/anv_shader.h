@@ -129,12 +129,3 @@ VkResult anv_shader_deserialize(struct vk_device *device,
                                 struct vk_shader **shader_out);
 
 extern struct vk_device_shader_ops anv_device_shader_ops;
-
-int
-anv_shader_set_relocs(struct anv_device *device,
-                      struct brw_shader_reloc_value *reloc_values,
-                      mesa_shader_stage stage,
-                      struct anv_state *kernel,
-                      const struct brw_stage_prog_data *prog_data_in,
-                      const struct anv_pipeline_bind_map *bind_map,
-                      struct anv_embedded_sampler **embedded_samplers);

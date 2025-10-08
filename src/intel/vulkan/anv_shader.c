@@ -299,20 +299,16 @@ static struct vk_shader_ops anv_shader_ops = {
       anv_shader_get_executable_internal_representations,
 };
 
-int
+static int
 anv_shader_set_relocs(struct anv_device *device,
                       struct brw_shader_reloc_value *reloc_values,
-                      mesa_shader_stage stage,
-                      struct anv_state *kernel,
-                      const struct brw_stage_prog_data *prog_data_in,
-                      const struct anv_pipeline_bind_map *bind_map,
-                      struct anv_embedded_sampler **embedded_samplers)
+                      struct anv_shader *shader)
 {
    int rv_count = 0;
    const uint64_t shader_data_addr =
       device->physical->va.instruction_state_pool.addr +
-      kernel->offset +
-      prog_data_in->const_data_offset;
+      shader->kernel.offset +
+      shader->prog_data->const_data_offset;
 
    assert((device->physical->va.instruction_state_pool.addr & 0xffffffff) == 0);
    reloc_values[rv_count++] = (struct brw_shader_reloc_value) {
@@ -345,14 +341,14 @@ anv_shader_set_relocs(struct anv_device *device,
    };
    reloc_values[rv_count++] = (struct brw_shader_reloc_value) {
       .id = BRW_SHADER_RELOC_SHADER_START_OFFSET,
-      .value = kernel->offset,
+      .value = shader->kernel.offset,
    };
-   if (brw_shader_stage_is_bindless(stage)) {
+   if (brw_shader_stage_is_bindless(shader->vk.stage)) {
       const struct brw_bs_prog_data *bs_prog_data =
-         brw_bs_prog_data_const(prog_data_in);
+         brw_bs_prog_data_const(shader->prog_data);
       uint64_t resume_sbt_addr =
          device->physical->va.instruction_state_pool.addr +
-         kernel->offset +
+         shader->kernel.offset +
          bs_prog_data->resume_sbt_offset;
       reloc_values[rv_count++] = (struct brw_shader_reloc_value) {
          .id = BRW_SHADER_RELOC_RESUME_SBT_ADDR_LOW,
@@ -382,10 +378,10 @@ anv_shader_set_relocs(struct anv_device *device,
       };
    }
 
-   for (uint32_t i = 0; i < bind_map->embedded_sampler_count; i++) {
+   for (uint32_t i = 0; i < shader->bind_map.embedded_sampler_count; i++) {
       reloc_values[rv_count++] = (struct brw_shader_reloc_value) {
          .id = BRW_SHADER_RELOC_EMBEDDED_SAMPLER_HANDLE + i,
-         .value = embedded_samplers[i]->sampler_state.offset,
+         .value = shader->embedded_samplers[i]->sampler_state.offset,
       };
    }
 
@@ -409,10 +405,7 @@ anv_shader_reloc(struct anv_device *device,
    if (reloc_values == NULL)
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   rv_count = anv_shader_set_relocs(device, reloc_values, shader->vk.stage,
-                                    &shader->kernel, shader->prog_data,
-                                    &shader->bind_map,
-                                    shader->embedded_samplers);
+   rv_count = anv_shader_set_relocs(device, reloc_values, shader);
    assert(rv_count <= max_relocs);
 
    brw_write_shader_relocs(&device->physical->compiler->isa,
