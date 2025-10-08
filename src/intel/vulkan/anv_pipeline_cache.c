@@ -139,17 +139,6 @@ anv_shader_bin_create(struct anv_device *device,
       }
    }
 
-   int rv_count = 0;
-   struct brw_shader_reloc_value reloc_values[11];
-   rv_count = anv_shader_set_relocs(device, reloc_values, stage,
-                                    &shader->kernel, prog_data_in, bind_map,
-                                    shader->embedded_samplers);
-   assert(rv_count <= ARRAY_SIZE(reloc_values));
-
-   brw_write_shader_relocs(&device->physical->compiler->isa,
-                           shader->kernel.map, prog_data_in,
-                           reloc_values, rv_count);
-
    memcpy(prog_data, prog_data_in, prog_data_size);
    typed_memcpy(prog_data_relocs, prog_data_in->relocs,
                 prog_data_in->num_relocs);
