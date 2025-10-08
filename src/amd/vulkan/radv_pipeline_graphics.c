@@ -569,7 +569,6 @@ radv_graphics_pipeline_import_layout(struct radv_pipeline_layout *dst, const str
    }
 
    dst->independent_sets |= src->independent_sets;
-   dst->push_constant_size = MAX2(dst->push_constant_size, src->push_constant_size);
 }
 
 static void
