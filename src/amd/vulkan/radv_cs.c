@@ -410,7 +410,7 @@ radv_cs_emit_cache_flush(struct radeon_winsys *ws, struct radv_cmd_stream *cs, e
 
          /* Necessary for DCC */
          if (gfx_level >= GFX8) {
-            radv_cs_emit_write_event_eop(cs, gfx_level, is_mec, V_028A90_FLUSH_AND_INV_CB_DATA_TS, 0, EOP_DST_SEL_MEM,
+            radv_cs_emit_write_event_eop(cs, gfx_level, qf, V_028A90_FLUSH_AND_INV_CB_DATA_TS, 0, EOP_DST_SEL_MEM,
                                          EOP_DATA_SEL_DISCARD, 0, 0, gfx9_eop_bug_va);
          }
 
@@ -497,7 +497,7 @@ radv_cs_emit_cache_flush(struct radeon_winsys *ws, struct radv_cmd_stream *cs, e
       assert(flush_cnt);
       (*flush_cnt)++;
 
-      radv_cs_emit_write_event_eop(cs, gfx_level, false, cb_db_event, tc_flags, EOP_DST_SEL_MEM,
+      radv_cs_emit_write_event_eop(cs, gfx_level, qf, cb_db_event, tc_flags, EOP_DST_SEL_MEM,
                                    EOP_DATA_SEL_VALUE_32BIT, flush_va, *flush_cnt, gfx9_eop_bug_va);
       radv_cp_wait_mem(cs, qf, WAIT_REG_MEM_EQUAL, flush_va, *flush_cnt, 0xffffffff);
    }
