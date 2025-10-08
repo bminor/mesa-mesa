@@ -6,7 +6,6 @@
  */
 
 #include "agx_nir_lower_gs.h"
-#include "asahi/compiler/agx_compile.h"
 #include "compiler/nir/nir_builder.h"
 #include "gallium/include/pipe/p_defines.h"
 #include "libagx/geometry.h"
@@ -922,10 +921,11 @@ struct agx_xfb_key {
  * transform feedback offsets and counters as applicable.
  */
 static nir_shader *
-create_pre_gs(struct agx_xfb_key *key)
+create_pre_gs(struct agx_xfb_key *key,
+              const nir_shader_compiler_options *options)
 {
-   nir_builder b_ = nir_builder_init_simple_shader(
-      MESA_SHADER_COMPUTE, &agx_nir_options, "Pre-GS patch up");
+   nir_builder b_ = nir_builder_init_simple_shader(MESA_SHADER_COMPUTE, options,
+                                                   "Pre-GS patch up");
    nir_builder *b = &b_;
 
    libagx_pre_gs(
@@ -1382,7 +1382,7 @@ agx_nir_lower_gs(nir_shader *gs, nir_shader **gs_count, nir_shader **gs_copy,
    }
 
    /* Create auxiliary programs */
-   *pre_gs = create_pre_gs(&key);
+   *pre_gs = create_pre_gs(&key, gs->options);
    return true;
 }
 
