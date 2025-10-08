@@ -417,6 +417,14 @@ tu_render_pass_patch_input_gmem(struct tu_render_pass *pass)
          uint32_t a = subpass->input_attachments[j].attachment;
          if (a == VK_ATTACHMENT_UNUSED)
             continue;
+         /* Clears happen in GMEM, so we have to patch input attachments that
+          * are cleared to use GMEM and that requires us to invalidate UCHE to
+          * get the cleared value when reading as an input attachment.
+          */
+         if (!written[a] && pass->attachments[a].clear_mask) {
+            written[a] = true;
+            subpass->feedback_invalidate = true;
+         }
          subpass->input_attachments[j].patch_input_gmem = written[a];
       }
 
