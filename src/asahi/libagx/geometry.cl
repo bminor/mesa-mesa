@@ -9,9 +9,10 @@
 #include "util/macros.h"
 #include "util/u_math.h"
 #include "geometry.h"
-#include "libagx_intrinsics.h"
 #include "query.h"
 #include "tessellator.h"
+
+uint64_t nir_ro_to_rw_poly(uint64_t address);
 
 /* Swap the two non-provoking vertices in odd triangles. This generates a vertex
  * ID list with a consistent winding order.
@@ -941,10 +942,8 @@ libagx_pre_gs(global struct agx_geometry_params *p, uint streams,
          unsigned stream = buffer_to_stream[i];
 
          global uint *ptr = p->xfb_offs_ptrs[i];
-         if ((uintptr_t)ptr == AGX_ZERO_PAGE_ADDRESS) {
-            ptr = (global uint *)AGX_SCRATCH_PAGE_ADDRESS;
-         }
 
+         ptr = (global uint *)nir_ro_to_rw_poly((uint64_t)ptr);
          *ptr += prims[stream] * prim_stride_B;
       }
    }

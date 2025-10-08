@@ -1031,6 +1031,16 @@ hk_heap(struct hk_cmd_buffer *cmd)
 }
 
 static uint64_t
+hk_index_buffer(uint64_t index_buffer, uint size_el, uint offset_el,
+                uint elsize_B)
+{
+   if (offset_el < size_el)
+      return index_buffer + (offset_el * elsize_B);
+   else
+      return AGX_ZERO_PAGE_ADDRESS;
+}
+
+static uint64_t
 hk_upload_ia_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
 {
    assert(!agx_is_indirect(draw.b) && "indirect params written by GPU");
@@ -1041,8 +1051,8 @@ hk_upload_ia_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
       unsigned index_size_B = agx_index_size_to_B(draw.index_size);
       unsigned range_el = agx_draw_index_range_el(draw);
 
-      ia.index_buffer = libagx_index_buffer(agx_draw_index_buffer(draw),
-                                            range_el, 0, index_size_B);
+      ia.index_buffer = hk_index_buffer(agx_draw_index_buffer(draw), range_el,
+                                        0, index_size_B);
 
       ia.index_buffer_range_el = range_el;
    }

@@ -154,6 +154,18 @@ agx_heap_alloc_nonatomic(global struct agx_heap *heap, uint size_B)
 {
    return heap->base + agx_heap_alloc_nonatomic_offs(heap, size_B);
 }
+
+uint64_t nir_load_ro_sink_address_poly(void);
+
+static inline uint64_t
+libagx_index_buffer(uint64_t index_buffer, uint size_el, uint offset_el,
+                    uint elsize_B)
+{
+   if (offset_el < size_el)
+      return index_buffer + (offset_el * elsize_B);
+   else
+      return nir_load_ro_sink_address_poly();
+}
 #endif
 
 struct agx_ia_state {
@@ -169,16 +181,6 @@ struct agx_ia_state {
    uint32_t verts_per_instance;
 } PACKED;
 static_assert(sizeof(struct agx_ia_state) == 4 * 4);
-
-static inline uint64_t
-libagx_index_buffer(uint64_t index_buffer, uint size_el, uint offset_el,
-                    uint elsize_B)
-{
-   if (offset_el < size_el)
-      return index_buffer + (offset_el * elsize_B);
-   else
-      return AGX_ZERO_PAGE_ADDRESS;
-}
 
 static inline uint
 libagx_index_buffer_range_el(uint size_el, uint offset_el)

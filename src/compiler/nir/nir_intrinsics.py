@@ -1407,6 +1407,13 @@ intrinsic("select_vertex_poly", src_comp=[1], indices=[STREAM_ID])
 # Sources: (index offset, first vertex, number of vertices, # of XFB primitives before).
 intrinsic("emit_primitive_poly", src_comp=[1, 1, 1, 1], indices=[STREAM_ID])
 
+# Transform a given address to be used as read-write,
+# allowing to transition a "sink" read-only address to the read-write address.
+intrinsic("ro_to_rw_poly", src_comp=[1], dest_comp=1, flags=[CAN_ELIMINATE, CAN_REORDER], bit_sizes=[64])
+
+# Get the address representing the read-only "sink" address (always read 0)
+system_value("ro_sink_address_poly", 1, bit_sizes=[64])
+
 # mesa_prim for the input topology (in a geometry shader)
 system_value("input_topology_poly", 1)
 
