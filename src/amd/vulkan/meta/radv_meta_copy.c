@@ -97,24 +97,21 @@ transfer_copy_memory_image(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_v
 }
 
 static void
-copy_memory_to_image(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_addr, uint64_t buffer_size,
-                     enum radv_copy_flags src_copy_flags, struct radv_image *image, VkImageLayout layout,
-                     const VkBufferImageCopy2 *region)
+gfx_or_compute_copy_memory_to_image(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_addr, uint64_t buffer_size,
+                                    enum radv_copy_flags src_copy_flags, struct radv_image *image, VkImageLayout layout,
+                                    const VkBufferImageCopy2 *region, const bool use_compute)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_meta_saved_state saved_state;
-   bool cs;
 
    /* The Vulkan 1.0 spec says "dstImage must have a sample count equal to
     * VK_SAMPLE_COUNT_1_BIT."
     */
    assert(image->vk.samples == 1);
 
-   cs = cmd_buffer->qf == RADV_QUEUE_COMPUTE || !radv_image_is_renderable(device, image);
-
    radv_meta_save(&saved_state, cmd_buffer,
-                  (cs ? RADV_META_SAVE_COMPUTE_PIPELINE : RADV_META_SAVE_GRAPHICS_PIPELINE) | RADV_META_SAVE_CONSTANTS |
-                     RADV_META_SAVE_DESCRIPTORS);
+                  (use_compute ? RADV_META_SAVE_COMPUTE_PIPELINE : RADV_META_SAVE_GRAPHICS_PIPELINE) |
+                     RADV_META_SAVE_CONSTANTS | RADV_META_SAVE_DESCRIPTORS);
 
    /**
     * From the Vulkan 1.0.6 spec: 18.3 Copying Data Between Images
@@ -183,7 +180,7 @@ copy_memory_to_image(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_addr, u
       rect.dst_y = img_offset_el.y;
 
       /* Perform Blit */
-      if (cs) {
+      if (use_compute) {
          radv_meta_buffer_to_image_cs(cmd_buffer, &buf_bsurf, &img_bsurf, &rect);
       } else {
          radv_meta_blit2d(cmd_buffer, NULL, &buf_bsurf, &img_bsurf, &rect);
@@ -231,8 +228,10 @@ radv_CmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToIm
       if (cmd_buffer->qf == RADV_QUEUE_TRANSFER) {
          transfer_copy_memory_image(cmd_buffer, src_buffer->vk.device_address, dst_image, region, true);
       } else {
-         copy_memory_to_image(cmd_buffer, src_buffer->vk.device_address, src_buffer->vk.size, src_copy_flags, dst_image,
-                              pCopyBufferToImageInfo->dstImageLayout, region);
+         const bool use_compute = cmd_buffer->qf == RADV_QUEUE_COMPUTE || !radv_image_is_renderable(device, dst_image);
+         gfx_or_compute_copy_memory_to_image(cmd_buffer, src_buffer->vk.device_address, src_buffer->vk.size,
+                                             src_copy_flags, dst_image, pCopyBufferToImageInfo->dstImageLayout, region,
+                                             use_compute);
       }
    }
 
@@ -263,9 +262,9 @@ radv_CmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToIm
 }
 
 static void
-copy_image_to_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_addr, uint64_t buffer_size,
-                     enum radv_copy_flags dst_copy_flags, struct radv_image *image, VkImageLayout layout,
-                     const VkBufferImageCopy2 *region)
+compute_copy_image_to_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer_addr, uint64_t buffer_size,
+                             enum radv_copy_flags dst_copy_flags, struct radv_image *image, VkImageLayout layout,
+                             const VkBufferImageCopy2 *region)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_meta_saved_state saved_state;
@@ -382,8 +381,8 @@ radv_CmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBuf
       if (cmd_buffer->qf == RADV_QUEUE_TRANSFER) {
          transfer_copy_memory_image(cmd_buffer, dst_buffer->vk.device_address, src_image, region, false);
       } else {
-         copy_image_to_memory(cmd_buffer, dst_buffer->vk.device_address, dst_buffer->vk.size, dst_copy_flags, src_image,
-                              pCopyImageToBufferInfo->srcImageLayout, region);
+         compute_copy_image_to_memory(cmd_buffer, dst_buffer->vk.device_address, dst_buffer->vk.size, dst_copy_flags,
+                                      src_image, pCopyImageToBufferInfo->srcImageLayout, region);
       }
    }
 
@@ -446,13 +445,13 @@ radv_get_compat_color_ds_format(VkFormat format)
 }
 
 static void
-copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image *src_image, VkImageLayout src_image_layout,
-           struct radv_image *dst_image, VkImageLayout dst_image_layout, const VkImageCopy2 *region)
+gfx_or_compute_copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image *src_image,
+                          VkImageLayout src_image_layout, struct radv_image *dst_image, VkImageLayout dst_image_layout,
+                          const VkImageCopy2 *region, const bool use_compute)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radv_meta_saved_state saved_state;
-   bool cs;
 
    /* From the Vulkan 1.0 spec:
     *
@@ -469,13 +468,11 @@ copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image *src_image, VkI
    assert(src_image->plane_count == 1 || util_is_power_of_two_nonzero(region->srcSubresource.aspectMask));
    assert(dst_image->plane_count == 1 || util_is_power_of_two_nonzero(region->dstSubresource.aspectMask));
 
-   cs = cmd_buffer->qf == RADV_QUEUE_COMPUTE || !radv_image_is_renderable(device, dst_image);
-
    radv_meta_save(&saved_state, cmd_buffer,
-                  (cs ? RADV_META_SAVE_COMPUTE_PIPELINE : RADV_META_SAVE_GRAPHICS_PIPELINE) | RADV_META_SAVE_CONSTANTS |
-                     RADV_META_SAVE_DESCRIPTORS);
+                  (use_compute ? RADV_META_SAVE_COMPUTE_PIPELINE : RADV_META_SAVE_GRAPHICS_PIPELINE) |
+                     RADV_META_SAVE_CONSTANTS | RADV_META_SAVE_DESCRIPTORS);
 
-   if (cs) {
+   if (use_compute) {
       /* For partial copies, HTILE should be decompressed before copying because the metadata is
        * re-initialized to the uncompressed state after.
        */
@@ -598,7 +595,7 @@ copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image *src_image, VkI
       rect.src_y = src_offset_el.y;
 
       /* Perform Blit */
-      if (cs) {
+      if (use_compute) {
          radv_meta_image_to_image_cs(cmd_buffer, &b_src, &b_dst, &rect);
       } else {
          if (radv_can_use_fmask_copy(cmd_buffer, b_src.image, b_dst.image, &rect)) {
@@ -612,7 +609,7 @@ copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image *src_image, VkI
       b_dst.layer++;
    }
 
-   if (cs) {
+   if (use_compute) {
       /* Fixup HTILE after a copy on compute. */
       uint32_t queue_mask = radv_image_queue_family_mask(dst_image, cmd_buffer->qf, cmd_buffer->qf);
 
@@ -663,8 +660,9 @@ radv_CmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyI
          transfer_copy_image(cmd_buffer, src_image, pCopyImageInfo->srcImageLayout, dst_image,
                              pCopyImageInfo->dstImageLayout, region);
       } else {
-         copy_image(cmd_buffer, src_image, pCopyImageInfo->srcImageLayout, dst_image, pCopyImageInfo->dstImageLayout,
-                    region);
+         const bool use_compute = cmd_buffer->qf == RADV_QUEUE_COMPUTE || !radv_image_is_renderable(device, dst_image);
+         gfx_or_compute_copy_image(cmd_buffer, src_image, pCopyImageInfo->srcImageLayout, dst_image,
+                                   pCopyImageInfo->dstImageLayout, region, use_compute);
       }
    }
 
