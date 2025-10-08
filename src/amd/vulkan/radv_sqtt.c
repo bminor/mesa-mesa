@@ -32,39 +32,24 @@ radv_sqtt_queue_events_enabled(void)
    return debug_get_bool_option("RADV_THREAD_TRACE_QUEUE_EVENTS", true);
 }
 
-static enum radv_queue_family
-radv_ip_to_queue_family(enum amd_ip_type t)
-{
-   switch (t) {
-   case AMD_IP_GFX:
-      return RADV_QUEUE_GENERAL;
-   case AMD_IP_COMPUTE:
-      return RADV_QUEUE_COMPUTE;
-   case AMD_IP_SDMA:
-      return RADV_QUEUE_TRANSFER;
-   default:
-      UNREACHABLE("Unknown IP type");
-   }
-}
-
 static void
-radv_emit_wait_for_idle(const struct radv_device *device, struct radv_cmd_stream *cs, int family)
+radv_emit_wait_for_idle(const struct radv_device *device, struct radv_cmd_stream *cs)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    enum rgp_flush_bits sqtt_flush_bits = 0;
    radv_cs_emit_cache_flush(
       device->ws, cs, pdev->info.gfx_level, NULL, 0,
-      (family == RADV_QUEUE_COMPUTE ? RADV_CMD_FLAG_CS_PARTIAL_FLUSH
-                                    : (RADV_CMD_FLAG_CS_PARTIAL_FLUSH | RADV_CMD_FLAG_PS_PARTIAL_FLUSH)) |
+      (cs->hw_ip == AMD_IP_COMPUTE ? RADV_CMD_FLAG_CS_PARTIAL_FLUSH
+                                   : (RADV_CMD_FLAG_CS_PARTIAL_FLUSH | RADV_CMD_FLAG_PS_PARTIAL_FLUSH)) |
          RADV_CMD_FLAG_INV_ICACHE | RADV_CMD_FLAG_INV_SCACHE | RADV_CMD_FLAG_INV_VCACHE | RADV_CMD_FLAG_INV_L2,
       &sqtt_flush_bits, 0);
 }
 
 static void
-radv_emit_sqtt_start(const struct radv_device *device, struct radv_cmd_stream *cs, enum radv_queue_family qf)
+radv_emit_sqtt_start(const struct radv_device *device, struct radv_cmd_stream *cs)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   const bool is_compute_queue = qf == RADV_QUEUE_COMPUTE;
+   const bool is_compute_queue = cs->hw_ip == AMD_IP_COMPUTE;
    struct ac_pm4_state *pm4;
 
    pm4 = ac_pm4_create_sized(&pdev->info, false, 512, is_compute_queue);
@@ -81,10 +66,10 @@ radv_emit_sqtt_start(const struct radv_device *device, struct radv_cmd_stream *c
 }
 
 static void
-radv_emit_sqtt_stop(const struct radv_device *device, struct radv_cmd_stream *cs, enum radv_queue_family qf)
+radv_emit_sqtt_stop(const struct radv_device *device, struct radv_cmd_stream *cs)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   const bool is_compute_queue = qf == RADV_QUEUE_COMPUTE;
+   const bool is_compute_queue = cs->hw_ip == AMD_IP_COMPUTE;
    struct ac_pm4_state *pm4;
 
    pm4 = ac_pm4_create_sized(&pdev->info, false, 512, is_compute_queue);
@@ -101,7 +86,7 @@ radv_emit_sqtt_stop(const struct radv_device *device, struct radv_cmd_stream *cs
 
    if (pdev->info.has_sqtt_rb_harvest_bug) {
       /* Some chips with disabled RBs should wait for idle because FINISH_DONE doesn't work. */
-      radv_emit_wait_for_idle(device, cs, qf);
+      radv_emit_wait_for_idle(device, cs);
    }
 
    ac_sqtt_emit_wait(&pdev->info, pm4, &device->sqtt, is_compute_queue);
@@ -119,7 +104,6 @@ radv_emit_sqtt_userdata(const struct radv_cmd_buffer *cmd_buffer, const void *da
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const enum amd_gfx_level gfx_level = pdev->info.gfx_level;
-   const enum amd_ip_type ring = radv_queue_family_to_ring(pdev, cmd_buffer->qf);
    struct radv_cmd_stream *cs = cmd_buffer->cs;
    const uint32_t *dwords = (uint32_t *)data;
 
@@ -136,7 +120,7 @@ radv_emit_sqtt_userdata(const struct radv_cmd_buffer *cmd_buffer, const void *da
       /* Without the perfctr bit the CP might not always pass the
        * write on correctly. */
       if (pdev->info.gfx_level >= GFX10)
-         radeon_set_uconfig_perfctr_reg_seq(gfx_level, ring, R_030D08_SQ_THREAD_TRACE_USERDATA_2, count);
+         radeon_set_uconfig_perfctr_reg_seq(gfx_level, cs->hw_ip, R_030D08_SQ_THREAD_TRACE_USERDATA_2, count);
       else
          radeon_set_uconfig_reg_seq(R_030D08_SQ_THREAD_TRACE_USERDATA_2, count);
       radeon_emit_array(dwords, count);
@@ -532,25 +516,25 @@ radv_begin_sqtt(struct radv_queue *queue)
 
    radeon_begin(&cs);
 
-   switch (family) {
-   case RADV_QUEUE_GENERAL:
+   switch (cs.hw_ip) {
+   case AMD_IP_GFX:
       radeon_emit(PKT3(PKT3_CONTEXT_CONTROL, 1, 0));
       radeon_emit(CC0_UPDATE_LOAD_ENABLES(1));
       radeon_emit(CC1_UPDATE_SHADOW_ENABLES(1));
       break;
-   case RADV_QUEUE_COMPUTE:
+   case AMD_IP_COMPUTE:
       radeon_emit(PKT3(PKT3_NOP, 0, 0));
       radeon_emit(0);
       break;
    default:
-      UNREACHABLE("Incorrect queue family");
+      UNREACHABLE("Incorrect HW IP type");
       break;
    }
 
    radeon_end();
 
    /* Make sure to wait-for-idle before starting SQTT. */
-   radv_emit_wait_for_idle(device, &cs, family);
+   radv_emit_wait_for_idle(device, &cs);
 
    /* Disable clock gating before starting SQTT. */
    radv_emit_inhibit_clockgating(device, &cs, true);
@@ -564,15 +548,15 @@ radv_begin_sqtt(struct radv_queue *queue)
       /* Enable all shader stages by default. */
       radv_perfcounter_emit_shaders(device, &cs, ac_sqtt_get_shader_mask(&pdev->info));
 
-      radv_emit_spm_setup(device, &cs, family);
+      radv_emit_spm_setup(device, &cs);
    }
 
    /* Start SQTT. */
-   radv_emit_sqtt_start(device, &cs, family);
+   radv_emit_sqtt_start(device, &cs);
 
    if (device->spm.bo) {
       radeon_check_space(ws, cs.b, 8);
-      radv_perfcounter_emit_spm_start(device, &cs, family);
+      radv_perfcounter_emit_spm_start(device, &cs);
    }
 
    result = ws->cs_finalize(cs.b);
@@ -609,33 +593,33 @@ radv_end_sqtt(struct radv_queue *queue)
 
    radeon_begin(&cs);
 
-   switch (family) {
-   case RADV_QUEUE_GENERAL:
+   switch (cs.hw_ip) {
+   case AMD_IP_GFX:
       radeon_emit(PKT3(PKT3_CONTEXT_CONTROL, 1, 0));
       radeon_emit(CC0_UPDATE_LOAD_ENABLES(1));
       radeon_emit(CC1_UPDATE_SHADOW_ENABLES(1));
       break;
-   case RADV_QUEUE_COMPUTE:
+   case AMD_IP_COMPUTE:
       radeon_emit(PKT3(PKT3_NOP, 0, 0));
       radeon_emit(0);
       break;
    default:
-      UNREACHABLE("Incorrect queue family");
+      UNREACHABLE("Incorrect HW IP type");
       break;
    }
 
    radeon_end();
 
    /* Make sure to wait-for-idle before stopping SQTT. */
-   radv_emit_wait_for_idle(device, &cs, family);
+   radv_emit_wait_for_idle(device, &cs);
 
    if (device->spm.bo) {
       radeon_check_space(ws, cs.b, 8);
-      radv_perfcounter_emit_spm_stop(device, &cs, family);
+      radv_perfcounter_emit_spm_stop(device, &cs);
    }
 
    /* Stop SQTT. */
-   radv_emit_sqtt_stop(device, &cs, family);
+   radv_emit_sqtt_stop(device, &cs);
 
    radv_perfcounter_emit_reset(&cs, true);
 

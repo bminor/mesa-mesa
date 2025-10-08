@@ -68,10 +68,9 @@ radv_spm_resize_bo(struct radv_device *device)
 }
 
 static void
-radv_emit_spm_counters(struct radv_device *device, struct radv_cmd_stream *cs, enum radv_queue_family qf)
+radv_emit_spm_counters(struct radv_device *device, struct radv_cmd_stream *cs)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   const enum amd_ip_type ring = radv_queue_family_to_ring(pdev, qf);
    const enum amd_gfx_level gfx_level = pdev->info.gfx_level;
    struct ac_spm *spm = &device->spm;
 
@@ -91,7 +90,7 @@ radv_emit_spm_counters(struct radv_device *device, struct radv_cmd_stream *cs, e
             const struct ac_spm_counter_select *cntr_sel = &spm->sq_wgp[instance].counters[b];
             uint32_t reg_base = R_036700_SQ_PERFCOUNTER0_SELECT;
 
-            radeon_set_uconfig_perfctr_reg_seq(gfx_level, ring, reg_base + b * 4, 1);
+            radeon_set_uconfig_perfctr_reg_seq(gfx_level, cs->hw_ip, reg_base + b * 4, 1);
             radeon_emit(cntr_sel->sel0);
          }
 
@@ -116,7 +115,7 @@ radv_emit_spm_counters(struct radv_device *device, struct radv_cmd_stream *cs, e
          const struct ac_spm_counter_select *cntr_sel = &spm->sqg[instance].counters[b];
          uint32_t reg_base = R_036700_SQ_PERFCOUNTER0_SELECT;
 
-         radeon_set_uconfig_perfctr_reg_seq(gfx_level, ring, reg_base + b * 4, 1);
+         radeon_set_uconfig_perfctr_reg_seq(gfx_level, cs->hw_ip, reg_base + b * 4, 1);
          radeon_emit(cntr_sel->sel0 | S_036700_SQC_BANK_MASK(0xf)); /* SQC_BANK_MASK only gfx10 */
       }
 
@@ -141,10 +140,10 @@ radv_emit_spm_counters(struct radv_device *device, struct radv_cmd_stream *cs, e
             if (!cntr_sel->active)
                continue;
 
-            radeon_set_uconfig_perfctr_reg_seq(gfx_level, ring, regs->select0[c], 1);
+            radeon_set_uconfig_perfctr_reg_seq(gfx_level, cs->hw_ip, regs->select0[c], 1);
             radeon_emit(cntr_sel->sel0);
 
-            radeon_set_uconfig_perfctr_reg_seq(gfx_level, ring, regs->select1[c], 1);
+            radeon_set_uconfig_perfctr_reg_seq(gfx_level, cs->hw_ip, regs->select1[c], 1);
             radeon_emit(cntr_sel->sel1);
          }
 
@@ -160,10 +159,9 @@ radv_emit_spm_counters(struct radv_device *device, struct radv_cmd_stream *cs, e
 }
 
 static void
-radv_emit_spm_muxsel(struct radv_device *device, struct radv_cmd_stream *cs, enum radv_queue_family qf)
+radv_emit_spm_muxsel(struct radv_device *device, struct radv_cmd_stream *cs)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   const enum amd_ip_type ring = radv_queue_family_to_ring(pdev, qf);
    const struct ac_spm *spm = &device->spm;
 
    /* Upload each muxsel ram to the RLC. */
@@ -199,7 +197,7 @@ radv_emit_spm_muxsel(struct radv_device *device, struct radv_cmd_stream *cs, enu
          uint32_t *data = (uint32_t *)spm->muxsel_lines[s][l].muxsel;
 
          /* Select MUXSEL_ADDR to point to the next muxsel. */
-         radeon_set_uconfig_perfctr_reg(pdev->info.gfx_level, ring, rlc_muxsel_addr, l * AC_SPM_MUXSEL_LINE_SIZE);
+         radeon_set_uconfig_perfctr_reg(pdev->info.gfx_level, cs->hw_ip, rlc_muxsel_addr, l * AC_SPM_MUXSEL_LINE_SIZE);
 
          /* Write the muxsel line configuration with MUXSEL_DATA. */
          radeon_emit(PKT3(PKT3_WRITE_DATA, 2 + AC_SPM_MUXSEL_LINE_SIZE, 0));
@@ -215,7 +213,7 @@ radv_emit_spm_muxsel(struct radv_device *device, struct radv_cmd_stream *cs, enu
 }
 
 void
-radv_emit_spm_setup(struct radv_device *device, struct radv_cmd_stream *cs, enum radv_queue_family qf)
+radv_emit_spm_setup(struct radv_device *device, struct radv_cmd_stream *cs)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct ac_spm *spm = &device->spm;
@@ -268,10 +266,10 @@ radv_emit_spm_setup(struct radv_device *device, struct radv_cmd_stream *cs, enum
    radeon_end();
 
    /* Upload each muxsel ram to the RLC. */
-   radv_emit_spm_muxsel(device, cs, qf);
+   radv_emit_spm_muxsel(device, cs);
 
    /* Select SPM counters. */
-   radv_emit_spm_counters(device, cs, qf);
+   radv_emit_spm_counters(device, cs);
 }
 
 bool
