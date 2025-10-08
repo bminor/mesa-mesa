@@ -229,7 +229,6 @@ radv_shader_layout_init(const struct radv_pipeline_layout *pipeline_layout, mesa
       layout->set[i].dynamic_offset_start = pipeline_layout->set[i].dynamic_offset_start;
    }
 
-   layout->push_constant_size = pipeline_layout->push_constant_size;
    layout->use_dynamic_descriptors = pipeline_layout->dynamic_offset_count &&
                                      (pipeline_layout->dynamic_shader_stages & mesa_to_vk_shader_stage(stage));
 }

@@ -88,13 +88,6 @@ radv_shader_stage_init(const VkShaderCreateInfoEXT *sinfo, struct radv_shader_st
       out_stage->layout.use_dynamic_descriptors = true;
    }
 
-   for (unsigned i = 0; i < sinfo->pushConstantRangeCount; ++i) {
-      const VkPushConstantRange *range = sinfo->pPushConstantRanges + i;
-      out_stage->layout.push_constant_size = MAX2(out_stage->layout.push_constant_size, range->offset + range->size);
-   }
-
-   out_stage->layout.push_constant_size = align(out_stage->layout.push_constant_size, 16);
-
    const VkShaderRequiredSubgroupSizeCreateInfoEXT *const subgroup_size =
       vk_find_struct_const(sinfo->pNext, SHADER_REQUIRED_SUBGROUP_SIZE_CREATE_INFO_EXT);
 
@@ -272,15 +265,6 @@ radv_get_shader_layout(const VkShaderCreateInfoEXT *pCreateInfo, struct radv_sha
    if (layout->dynamic_offset_count && (dynamic_shader_stages & pCreateInfo->stage)) {
       layout->use_dynamic_descriptors = true;
    }
-
-   layout->push_constant_size = 0;
-
-   for (unsigned i = 0; i < pCreateInfo->pushConstantRangeCount; ++i) {
-      const VkPushConstantRange *range = pCreateInfo->pPushConstantRanges + i;
-      layout->push_constant_size = MAX2(layout->push_constant_size, range->offset + range->size);
-   }
-
-   layout->push_constant_size = align(layout->push_constant_size, 16);
 }
 
 static VkResult
