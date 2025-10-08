@@ -361,20 +361,20 @@ radv_cp_wait_mem(struct radv_cmd_stream *cs, const uint32_t op, const uint64_t v
 }
 
 ALWAYS_INLINE static unsigned
-radv_cs_write_data_head(const struct radv_device *device, struct radv_cmd_stream *cs, const enum radv_queue_family qf,
-                        const unsigned engine_sel, const uint64_t va, const unsigned count, const bool predicating)
+radv_cs_write_data_head(const struct radv_device *device, struct radv_cmd_stream *cs, const unsigned engine_sel,
+                        const uint64_t va, const unsigned count, const bool predicating)
 {
    /* Return the correct cdw at the end of the packet so the caller can assert it. */
    const unsigned cdw_end = radeon_check_space(device->ws, cs->b, 4 + count);
 
-   if (qf == RADV_QUEUE_GENERAL || qf == RADV_QUEUE_COMPUTE) {
+   if (cs->hw_ip == AMD_IP_COMPUTE || cs->hw_ip == AMD_IP_GFX) {
       radeon_begin(cs);
       radeon_emit(PKT3(PKT3_WRITE_DATA, 2 + count, predicating));
       radeon_emit(S_370_DST_SEL(V_370_MEM) | S_370_WR_CONFIRM(1) | S_370_ENGINE_SEL(engine_sel));
       radeon_emit(va);
       radeon_emit(va >> 32);
       radeon_end();
-   } else if (qf == RADV_QUEUE_TRANSFER) {
+   } else if (cs->hw_ip == AMD_IP_SDMA) {
       radv_sdma_emit_write_data_head(cs, va, count);
    } else {
       UNREACHABLE("unsupported queue family");
@@ -384,11 +384,10 @@ radv_cs_write_data_head(const struct radv_device *device, struct radv_cmd_stream
 }
 
 ALWAYS_INLINE static void
-radv_cs_write_data(const struct radv_device *device, struct radv_cmd_stream *cs, const enum radv_queue_family qf,
-                   const unsigned engine_sel, const uint64_t va, const unsigned count, const uint32_t *dwords,
-                   const bool predicating)
+radv_cs_write_data(const struct radv_device *device, struct radv_cmd_stream *cs, const unsigned engine_sel,
+                   const uint64_t va, const unsigned count, const uint32_t *dwords, const bool predicating)
 {
-   ASSERTED const unsigned cdw_end = radv_cs_write_data_head(device, cs, qf, engine_sel, va, count, predicating);
+   ASSERTED const unsigned cdw_end = radv_cs_write_data_head(device, cs, engine_sel, va, count, predicating);
 
    radeon_begin(cs);
    radeon_emit_array(dwords, count);

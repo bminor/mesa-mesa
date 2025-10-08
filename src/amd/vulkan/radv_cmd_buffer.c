@@ -1109,7 +1109,7 @@ radv_write_data(struct radv_cmd_buffer *cmd_buffer, const unsigned engine_sel, c
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
 
-   radv_cs_write_data(device, cmd_buffer->cs, cmd_buffer->qf, engine_sel, va, count, data, predicating);
+   radv_cs_write_data(device, cmd_buffer->cs, engine_sel, va, count, data, predicating);
 }
 
 static void
@@ -1618,7 +1618,7 @@ radv_gang_finalize(struct radv_cmd_buffer *cmd_buffer)
       const uint32_t zero = 0;
 
       /* Follower: write 0 to the leader->follower semaphore. */
-      radv_cs_write_data(device, ace_cs, RADV_QUEUE_COMPUTE, V_370_ME, leader2follower_va, 1, &zero, false);
+      radv_cs_write_data(device, ace_cs, V_370_ME, leader2follower_va, 1, &zero, false);
 
       /* Leader: write 0 to the follower->leader semaphore. */
       radv_write_data(cmd_buffer, V_370_ME, follower2leader_va, 1, &zero, false);
@@ -4915,8 +4915,8 @@ radv_set_ds_clear_metadata(struct radv_cmd_buffer *cmd_buffer, struct radv_image
       uint64_t va = radv_get_ds_clear_value_va(image, range->baseMipLevel);
 
       /* Use the fastest way when both aspects are used. */
-      ASSERTED unsigned cdw_end = radv_cs_write_data_head(device, cs, cmd_buffer->qf, V_370_PFP, va, 2 * level_count,
-                                                          cmd_buffer->state.predicating);
+      ASSERTED unsigned cdw_end =
+         radv_cs_write_data_head(device, cs, V_370_PFP, va, 2 * level_count, cmd_buffer->state.predicating);
 
       radeon_begin(cs);
 
@@ -4960,7 +4960,7 @@ radv_update_hiz_metadata(struct radv_cmd_buffer *cmd_buffer, struct radv_image *
    const uint32_t level_count = vk_image_subresource_level_count(&image->vk, range);
 
    ASSERTED unsigned cdw_end =
-      radv_cs_write_data_head(device, cs, cmd_buffer->qf, V_370_PFP, va, level_count, cmd_buffer->state.predicating);
+      radv_cs_write_data_head(device, cs, V_370_PFP, va, level_count, cmd_buffer->state.predicating);
 
    radeon_begin(cs);
    for (uint32_t l = 0; l < level_count; l++)
@@ -4987,7 +4987,7 @@ radv_set_tc_compat_zrange_metadata(struct radv_cmd_buffer *cmd_buffer, struct ra
    uint32_t level_count = vk_image_subresource_level_count(&image->vk, range);
 
    ASSERTED unsigned cdw_end =
-      radv_cs_write_data_head(device, cs, cmd_buffer->qf, V_370_PFP, va, level_count, cmd_buffer->state.predicating);
+      radv_cs_write_data_head(device, cs, V_370_PFP, va, level_count, cmd_buffer->state.predicating);
 
    radeon_begin(cs);
 
@@ -5104,8 +5104,7 @@ radv_update_fce_metadata(struct radv_cmd_buffer *cmd_buffer, struct radv_image *
    uint64_t va = radv_image_get_fce_pred_va(image, range->baseMipLevel);
    uint32_t level_count = vk_image_subresource_level_count(&image->vk, range);
 
-   ASSERTED unsigned cdw_end =
-      radv_cs_write_data_head(device, cs, cmd_buffer->qf, V_370_PFP, va, 2 * level_count, false);
+   ASSERTED unsigned cdw_end = radv_cs_write_data_head(device, cs, V_370_PFP, va, 2 * level_count, false);
 
    radeon_begin(cs);
 
@@ -5137,8 +5136,7 @@ radv_update_dcc_metadata(struct radv_cmd_buffer *cmd_buffer, struct radv_image *
 
    assert(radv_dcc_enabled(image, range->baseMipLevel));
 
-   ASSERTED unsigned cdw_end =
-      radv_cs_write_data_head(device, cs, cmd_buffer->qf, V_370_PFP, va, 2 * level_count, false);
+   ASSERTED unsigned cdw_end = radv_cs_write_data_head(device, cs, V_370_PFP, va, 2 * level_count, false);
 
    radeon_begin(cs);
 
@@ -5194,8 +5192,8 @@ radv_set_color_clear_metadata(struct radv_cmd_buffer *cmd_buffer, struct radv_im
    if (radv_image_has_clear_value(image)) {
       uint64_t va = radv_image_get_fast_clear_va(image, range->baseMipLevel);
 
-      ASSERTED unsigned cdw_end = radv_cs_write_data_head(device, cs, cmd_buffer->qf, V_370_PFP, va, 2 * level_count,
-                                                          cmd_buffer->state.predicating);
+      ASSERTED unsigned cdw_end =
+         radv_cs_write_data_head(device, cs, V_370_PFP, va, 2 * level_count, cmd_buffer->state.predicating);
 
       radeon_begin(cs);
 
