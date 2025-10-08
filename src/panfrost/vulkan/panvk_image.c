@@ -738,11 +738,10 @@ get_image_subresource_layout(const struct panvk_image *image,
    layout->arrayPitch = image->planes[plane].plane.layout.array_stride_B;
 
    if (drm_is_afbc(image->vk.drm_format_mod)) {
-      /* row/depth pitch expressed in AFBC superblocks. */
-      layout->rowPitch = pan_afbc_stride_blocks(
-         image->vk.drm_format_mod, slice_layout->afbc.header.row_stride_B);
-      layout->depthPitch = pan_afbc_stride_blocks(
-         image->vk.drm_format_mod, slice_layout->afbc.header.surface_size_B);
+      /* row/depth pitch expressed in (AFBC superblocks * payload size). */
+      layout->rowPitch = pan_image_get_wsi_row_pitch(
+         &image->planes[plane].image, plane, subres->mipLevel);
+      layout->depthPitch = slice_layout->afbc.surface_stride_B;
    } else {
       layout->rowPitch = slice_layout->tiled_or_linear.row_stride_B;
       layout->depthPitch = slice_layout->tiled_or_linear.surface_stride_B;
