@@ -3730,6 +3730,7 @@ reuse_framebuffer_texture_attachment(struct gl_framebuffer *fb,
    dst_att->Zoffset = src_att->Zoffset;
    dst_att->Layered = src_att->Layered;
    dst_att->NumViews = src_att->NumViews;
+   dst_att->NumSamples = src_att->NumSamples;
 }
 
 
