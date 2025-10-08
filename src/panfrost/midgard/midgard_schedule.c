@@ -113,8 +113,7 @@ mir_create_dependency_graph(midgard_instruction **instructions, unsigned count,
 
    /* Initialize dependency graph */
    for (unsigned i = 0; i < count; ++i) {
-      instructions[i]->dependents =
-         calloc(BITSET_WORDS(count), sizeof(BITSET_WORD));
+      instructions[i]->dependents = BITSET_CALLOC(count);
 
       instructions[i]->nr_dependencies = 0;
    }

@@ -136,8 +136,7 @@ trivialize_loads(nir_function_impl *impl, nir_block *block)
 {
    struct trivialize_src_state state = {
       .block = block,
-      .trivial_loads = calloc(BITSET_WORDS(impl->ssa_alloc),
-                              sizeof(BITSET_WORD)),
+      .trivial_loads = BITSET_CALLOC(impl->ssa_alloc),
    };
 
    nir_foreach_instr_safe(instr, block) {

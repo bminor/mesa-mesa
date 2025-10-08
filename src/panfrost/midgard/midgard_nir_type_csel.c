@@ -29,8 +29,7 @@ midgard_nir_type_csel(nir_shader *shader)
    nir_function_impl *impl = nir_shader_get_entrypoint(shader);
    nir_index_ssa_defs(impl);
 
-   BITSET_WORD *float_types =
-      calloc(BITSET_WORDS(impl->ssa_alloc), sizeof(BITSET_WORD));
+   BITSET_WORD *float_types = BITSET_CALLOC(impl->ssa_alloc);
    nir_gather_types(impl, float_types, NULL);
 
    bool progress =

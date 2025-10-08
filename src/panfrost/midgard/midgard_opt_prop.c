@@ -163,7 +163,7 @@ midgard_opt_prop_backward(compiler_context *ctx)
 {
    bool progress = false;
    enum outmod_state *state = calloc(ctx->temp_count, sizeof(*state));
-   BITSET_WORD *folded = calloc(BITSET_WORDS(ctx->temp_count), sizeof(*folded));
+   BITSET_WORD *folded = BITSET_CALLOC(ctx->temp_count);
 
    /* Scan for outmod states */
    mir_foreach_instr_global(ctx, I) {

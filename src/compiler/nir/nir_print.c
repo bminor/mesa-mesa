@@ -2433,8 +2433,8 @@ print_function_impl(nir_function_impl *impl, print_state *state, bool print_name
        * nir_print don't modify the shader.  If needed, a limit for ssa_alloc
        * can be added.
        */
-      state->float_types = calloc(BITSET_WORDS(impl->ssa_alloc), sizeof(BITSET_WORD));
-      state->int_types = calloc(BITSET_WORDS(impl->ssa_alloc), sizeof(BITSET_WORD));
+      state->float_types = BITSET_CALLOC(impl->ssa_alloc);
+      state->int_types = BITSET_CALLOC(impl->ssa_alloc);
       nir_gather_types(impl, state->float_types, state->int_types);
    }
 

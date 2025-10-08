@@ -512,7 +512,7 @@ agx_validate(agx_context *ctx, const char *after)
    }
 
    {
-      BITSET_WORD *defs = calloc(sizeof(BITSET_WORD), BITSET_WORDS(ctx->alloc));
+      BITSET_WORD *defs = BITSET_CALLOC(ctx->alloc);
 
       agx_foreach_instr_global(ctx, I) {
          if (!agx_validate_defs(I, defs)) {

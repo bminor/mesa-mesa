@@ -33,8 +33,7 @@
 void
 bi_opt_dce(bi_context *ctx, bool partial)
 {
-   BITSET_WORD *seen =
-      calloc(BITSET_WORDS(ctx->ssa_alloc), sizeof(BITSET_WORD));
+   BITSET_WORD *seen = BITSET_CALLOC(ctx->ssa_alloc);
 
    bi_foreach_block(ctx, block) {
       if (block->loop_header) {

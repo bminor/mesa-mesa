@@ -407,7 +407,7 @@ bi_opt_mod_prop_backward(bi_context *ctx)
 {
    unsigned count = ctx->ssa_alloc;
    bi_instr **uses = calloc(count, sizeof(*uses));
-   BITSET_WORD *multiple = calloc(BITSET_WORDS(count), sizeof(*multiple));
+   BITSET_WORD *multiple = BITSET_CALLOC(count);
 
    bi_foreach_block_rev(ctx, block) {
       /* Watch out for PHI instructions in loops!

@@ -596,8 +596,7 @@ static signed
 bi_choose_spill_node(bi_context *ctx, struct lcra_state *l)
 {
    /* Pick a node satisfying bi_spill_register's preconditions */
-   BITSET_WORD *no_spill =
-      calloc(sizeof(BITSET_WORD), BITSET_WORDS(l->node_count));
+   BITSET_WORD *no_spill = BITSET_CALLOC(l->node_count);
 
    bi_foreach_instr_global(ctx, ins) {
       bi_foreach_dest(ins, d) {
@@ -1042,10 +1041,8 @@ bi_out_of_ssa(bi_context *ctx)
     * algorithm is quadratic. This will go away when we go out of SSA after
     * RA.
     */
-   BITSET_WORD *used =
-      calloc(sizeof(BITSET_WORD), BITSET_WORDS(ctx->ssa_alloc));
-   BITSET_WORD *multiple_uses =
-      calloc(sizeof(BITSET_WORD), BITSET_WORDS(ctx->ssa_alloc));
+   BITSET_WORD *used = BITSET_CALLOC(ctx->ssa_alloc);
+   BITSET_WORD *multiple_uses = BITSET_CALLOC(ctx->ssa_alloc);
 
    bi_foreach_instr_global(ctx, I) {
       bi_foreach_ssa_src(I, s) {

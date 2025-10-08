@@ -931,8 +931,7 @@ nir_opt_preamble(nir_shader *shader, const nir_opt_preamble_options *options,
     * we did.
     */
    ctx.reconstructed_ifs = _mesa_pointer_set_create(NULL);
-   ctx.reconstructed_defs = calloc(BITSET_WORDS(impl->ssa_alloc),
-                                   sizeof(BITSET_WORD));
+   ctx.reconstructed_defs = BITSET_CALLOC(impl->ssa_alloc);
    analyze_reconstructed(&ctx, impl);
 
    /* If we make progress analyzing speculation, we need to re-analyze

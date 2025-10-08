@@ -262,10 +262,8 @@ nir_lower_int_to_float_impl(nir_function_impl *impl)
    nir_builder b = nir_builder_create(impl);
 
    nir_index_ssa_defs(impl);
-   float_types = calloc(BITSET_WORDS(impl->ssa_alloc),
-                        sizeof(BITSET_WORD));
-   int_types = calloc(BITSET_WORDS(impl->ssa_alloc),
-                      sizeof(BITSET_WORD));
+   float_types = BITSET_CALLOC(impl->ssa_alloc);
+   int_types = BITSET_CALLOC(impl->ssa_alloc);
    nir_gather_types(impl, float_types, int_types);
 
    nir_foreach_block(block, impl) {

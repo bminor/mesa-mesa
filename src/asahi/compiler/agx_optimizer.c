@@ -599,7 +599,7 @@ void
 agx_optimizer_backward(agx_context *ctx)
 {
    agx_instr **uses = calloc(ctx->alloc, sizeof(*uses));
-   BITSET_WORD *multiple = calloc(BITSET_WORDS(ctx->alloc), sizeof(*multiple));
+   BITSET_WORD *multiple = BITSET_CALLOC(ctx->alloc);
 
    agx_foreach_block_rev(ctx, block) {
       /* Phi sources are logically read at the end of predecessor, so process

@@ -253,8 +253,7 @@ static BITSET_WORD *
 mir_special_indices(compiler_context *ctx)
 {
    mir_compute_temp_count(ctx);
-   BITSET_WORD *bset =
-      calloc(BITSET_WORDS(ctx->temp_count), sizeof(BITSET_WORD));
+   BITSET_WORD *bset = BITSET_CALLOC(ctx->temp_count);
 
    mir_foreach_instr_global(ctx, ins) {
       /* Look for special instructions */

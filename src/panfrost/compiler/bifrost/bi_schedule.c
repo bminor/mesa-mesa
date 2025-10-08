@@ -231,7 +231,7 @@ bi_create_dependency_graph(struct bi_worklist st, bool inorder, bool is_blend)
 
    /* Initialize dependency graph */
    for (unsigned i = 0; i < st.count; ++i) {
-      st.dependents[i] = calloc(BITSET_WORDS(st.count), sizeof(BITSET_WORD));
+      st.dependents[i] = BITSET_CALLOC(st.count);
 
       st.dep_counts[i] = 0;
    }
@@ -510,7 +510,7 @@ bi_initialize_worklist(bi_block *block, bool inorder, bool is_blend)
    st.dep_counts = calloc(st.count, sizeof(st.dep_counts[0]));
 
    bi_create_dependency_graph(st, inorder, is_blend);
-   st.worklist = calloc(BITSET_WORDS(st.count), sizeof(BITSET_WORD));
+   st.worklist = BITSET_CALLOC(st.count);
 
    for (unsigned i = 0; i < st.count; ++i) {
       if (st.dep_counts[i] == 0)

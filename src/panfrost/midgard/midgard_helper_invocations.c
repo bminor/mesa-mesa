@@ -190,7 +190,7 @@ mir_analyze_helper_requirements(compiler_context *ctx)
 {
    mir_compute_temp_count(ctx);
    unsigned temp_count = ctx->temp_count;
-   BITSET_WORD *deps = calloc(sizeof(BITSET_WORD), BITSET_WORDS(temp_count));
+   BITSET_WORD *deps = BITSET_CALLOC(temp_count);
 
    /* Initialize with the sources of instructions consuming
     * derivatives */

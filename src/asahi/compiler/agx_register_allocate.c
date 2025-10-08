@@ -1461,7 +1461,7 @@ agx_ra(agx_context *ctx)
    enum ra_class *classes = calloc(ctx->alloc, sizeof(enum ra_class));
    agx_instr **src_to_collect_phi = calloc(ctx->alloc, sizeof(agx_instr *));
    enum agx_size *sizes = calloc(ctx->alloc, sizeof(enum agx_size));
-   BITSET_WORD *visited = calloc(BITSET_WORDS(ctx->alloc), sizeof(BITSET_WORD));
+   BITSET_WORD *visited = BITSET_CALLOC(ctx->alloc);
    unsigned max_ncomps = 1;
 
    agx_foreach_instr_global(ctx, I) {
