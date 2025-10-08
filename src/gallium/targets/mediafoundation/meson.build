@@ -60,7 +60,7 @@ foreach codec : mft_codecs
 
   major_version = '1'
   minor_version = '0'
-  patch_version = '6'
+  patch_version = '7'
   build_version = '0'
   mft_dll_version = '@0@.@1@.@2@'.format(major_version, minor_version, patch_version)
 
