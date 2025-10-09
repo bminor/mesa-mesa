@@ -266,7 +266,6 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_load_ring_es2gs_offset_amd:
    case nir_intrinsic_load_ring_task_draw_amd:
    case nir_intrinsic_load_ring_task_payload_amd:
-   case nir_intrinsic_load_sample_positions_amd:
    case nir_intrinsic_load_rasterization_samples_amd:
    case nir_intrinsic_load_ring_gsvs_amd:
    case nir_intrinsic_load_ring_gs2vs_offset_amd:
@@ -721,6 +720,7 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_sparse_residency_code_and:
    case nir_intrinsic_bvh64_intersect_ray_amd:
    case nir_intrinsic_bvh8_intersect_ray_amd:
+   case nir_intrinsic_load_sample_positions_amd:
    case nir_intrinsic_image_deref_load_param_intel:
    case nir_intrinsic_image_load_raw_intel:
    case nir_intrinsic_get_ubo_size:
