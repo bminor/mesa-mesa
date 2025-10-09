@@ -2914,7 +2914,7 @@
         "description": "vtn_bindgen2: use anonymous namespace to avoid name collisions",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b7447a94c832dfba5886d1c86c65299ee9147f95",
         "notes": null
