@@ -637,7 +637,7 @@ anv_blorp_execute_on_companion(struct anv_cmd_buffer *cmd_buffer,
        */
       if ((src_image && is_image_emulated(src_image)) ||
           (dst_image && is_image_emulated(dst_image)))
-         return false;
+         return true;
 
       /* Wa_22019225126: The compression pairing bit on blitter engine is not
        * programmed correctly for depth/stencil resources. Fallback to RCS
