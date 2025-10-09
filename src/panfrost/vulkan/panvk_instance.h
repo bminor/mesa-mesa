@@ -29,6 +29,7 @@ enum panvk_debug_flags {
    PANVK_DEBUG_FORCE_SIMULTANEOUS = 1 << 10,
    PANVK_DEBUG_IMPLICIT_OTHERS_INV = 1 << 11,
    PANVK_DEBUG_FORCE_BLACKHOLE = 1 << 12,
+   PANVK_DEBUG_WSI_AFBC = 1 << 13,
 };
 
 extern uint64_t panvk_debug;

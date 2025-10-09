@@ -759,6 +759,7 @@ panvk_GetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice,
                                          VkFormatProperties2 *pFormatProperties)
 {
    VK_FROM_HANDLE(panvk_physical_device, physical_device, physicalDevice);
+   const unsigned arch = pan_arch(physical_device->kmod.props.gpu_id);
 
    VkFormatFeatureFlags2 tex =
       get_image_format_features(physical_device, format);
@@ -785,6 +786,24 @@ panvk_GetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice,
       VK_OUTARRAY_MAKE_TYPED(VkDrmFormatModifierPropertiesEXT, out,
                              list->pDrmFormatModifierProperties,
                              &list->drmFormatModifierCount);
+      if (pFormatProperties->formatProperties.optimalTilingFeatures &&
+          PANVK_DEBUG(WSI_AFBC))
+      {
+         PAN_SUPPORTED_MODIFIERS(supported);
+         for (int mi = 0; mi < ARRAY_SIZE(supported); mi++) {
+            if (drm_is_afbc(supported[mi]) &&
+                pan_afbc_supports_format(arch, vk_format_to_pipe_format(format)))
+            {
+               vk_outarray_append_typed(VkDrmFormatModifierPropertiesEXT, &out, mod_props)
+               {
+                  mod_props->drmFormatModifier = supported[mi];
+                  mod_props->drmFormatModifierPlaneCount = 1;
+                  mod_props->drmFormatModifierTilingFeatures =
+                     pFormatProperties->formatProperties.optimalTilingFeatures;
+               }
+            }
+         }
+      }
 
       if (pFormatProperties->formatProperties.linearTilingFeatures) {
          vk_outarray_append_typed(VkDrmFormatModifierPropertiesEXT, &out,
@@ -878,7 +897,16 @@ get_image_format_properties(struct panvk_physical_device *physical_device,
       const VkPhysicalDeviceImageDrmFormatModifierInfoEXT *mod_info =
          vk_find_struct_const(
             info->pNext, PHYSICAL_DEVICE_IMAGE_DRM_FORMAT_MODIFIER_INFO_EXT);
-      if (mod_info->drmFormatModifier != DRM_FORMAT_MOD_LINEAR)
+
+      /* TODO: switch to using a more generic function for checking mod support here
+       * when adding new modifiers, so that this case doesn't become too big. */
+      const bool can_use_afbc = 
+         PANVK_DEBUG(WSI_AFBC) &&
+         panvk_image_can_use_afbc(physical_device, info->format, info->usage,
+                                  info->type, info->tiling, 0);
+      const bool supported = (drm_is_afbc(mod_info->drmFormatModifier) && can_use_afbc) ||
+         mod_info->drmFormatModifier == DRM_FORMAT_MOD_LINEAR;
+      if (!supported)
          goto unsupported;
 
       /* The only difference between optimal and linear is currently whether

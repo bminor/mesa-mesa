@@ -45,6 +45,7 @@ static const struct debug_control panvk_debug_options[] = {
    {"force_simultaneous", PANVK_DEBUG_FORCE_SIMULTANEOUS},
    {"implicit_others_inv", PANVK_DEBUG_IMPLICIT_OTHERS_INV},
    {"force_blackhole", PANVK_DEBUG_FORCE_BLACKHOLE},
+   {"wsi_afbc", PANVK_DEBUG_WSI_AFBC},
    {NULL, 0}};
 
 uint64_t panvk_debug;
