@@ -9,6 +9,7 @@
 
 #include "nir/radv_meta_nir.h"
 #include "radv_entrypoints.h"
+#include "radv_formats.h"
 #include "radv_meta.h"
 #include "vk_format.h"
 
@@ -418,22 +419,30 @@ resolve_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image *src_image, 
          }
       }
    } else {
+      VkFormat src_format = src_image->vk.format;
+      VkFormat dst_format = dst_image->vk.format;
+
+      if (resolve_mode_info && resolve_mode_info->flags & VK_RESOLVE_IMAGE_SKIP_TRANSFER_FUNCTION_BIT_KHR) {
+         src_format = vk_format_no_srgb(src_format);
+         dst_format = vk_format_no_srgb(dst_format);
+      }
+
       switch (resolve_method) {
       case RESOLVE_HW:
-         radv_meta_resolve_hardware_image(cmd_buffer, src_image, src_image->vk.format, src_image_layout, dst_image,
-                                          dst_image->vk.format, dst_image_layout, region);
+         radv_meta_resolve_hardware_image(cmd_buffer, src_image, src_format, src_image_layout, dst_image, dst_format,
+                                          dst_image_layout, region);
          break;
       case RESOLVE_FRAGMENT:
          radv_decompress_resolve_src(cmd_buffer, src_image, src_image_layout, region);
 
-         radv_meta_resolve_fragment_image(cmd_buffer, src_image, src_image->vk.format, src_image_layout, dst_image,
-                                          dst_image->vk.format, dst_image_layout, region);
+         radv_meta_resolve_fragment_image(cmd_buffer, src_image, src_format, src_image_layout, dst_image, dst_format,
+                                          dst_image_layout, region);
          break;
       case RESOLVE_COMPUTE:
          radv_decompress_resolve_src(cmd_buffer, src_image, src_image_layout, region);
 
-         radv_meta_resolve_compute_image(cmd_buffer, src_image, src_image->vk.format, src_image_layout, dst_image,
-                                         dst_image->vk.format, dst_image_layout, region);
+         radv_meta_resolve_compute_image(cmd_buffer, src_image, src_format, src_image_layout, dst_image, dst_format,
+                                         dst_image_layout, region);
          break;
       default:
          assert(!"Invalid resolve method selected");
@@ -662,6 +671,11 @@ radv_cmd_buffer_resolve_rendering(struct radv_cmd_buffer *cmd_buffer)
 
          VkFormat src_format = src_iview->vk.format;
          VkFormat dst_format = dst_iview->vk.format;
+
+         if (render->color_att[i].flags & VK_ATTACHMENT_DESCRIPTION_RESOLVE_SKIP_TRANSFER_FUNCTION_BIT_KHR) {
+            src_format = vk_format_no_srgb(src_format);
+            dst_format = vk_format_no_srgb(dst_format);
+         }
 
          switch (resolve_method) {
          case RESOLVE_HW:
