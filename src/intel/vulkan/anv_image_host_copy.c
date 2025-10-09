@@ -10,6 +10,8 @@
 #include "util/u_debug.h"
 #include "vk_util.h"
 
+#define TMP_BUFFER_SIZE 4096
+
 static inline VkOffset3D
 vk_offset3d_to_el(enum isl_format format, VkOffset3D offset)
 {
@@ -236,6 +238,109 @@ copy_rgb(const uint8_t *from,
    }
 }
 
+static void
+copy_intermediate_rgb_rgba_image(struct anv_device *device,
+                                 const void *mem_ptr,
+                                 uint32_t mem_row_pitch_B,
+                                 struct anv_image *image,
+                                 int plane,
+                                 const void *region_ptr,
+                                 bool mem_to_img,
+                                 void *tmp_mem,
+                                 uint32_t a, uint32_t z)
+{
+   /* Both VkMemoryToImageCopy and VkImageToMemoryCopy have compatible layouts
+    * for the fields we need (imageSubresource, imageOffset, imageExtent).
+    */
+   const VkMemoryToImageCopy *mem_to_img_region = region_ptr;
+   const VkImageToMemoryCopy *img_to_mem_region = region_ptr;
+   const VkImageSubresourceLayers *imageSubresource =
+      mem_to_img ? &mem_to_img_region->imageSubresource : &img_to_mem_region->imageSubresource;
+   VkOffset3D imageOffset = mem_to_img ? mem_to_img_region->imageOffset : img_to_mem_region->imageOffset;
+   VkExtent3D imageExtent = mem_to_img ? mem_to_img_region->imageExtent : img_to_mem_region->imageExtent;
+
+   const enum isl_format mem_format =
+            anv_get_format_plane(device->physical, image->vk.format, plane,
+                                 VK_IMAGE_TILING_LINEAR).isl_format;
+
+   const struct anv_surface *anv_surf =
+      &image->planes[plane].primary_surface;
+   const struct isl_surf *surf = &anv_surf->isl;
+   const struct anv_image_binding *binding =
+      &image->bindings[anv_surf->memory_range.binding];
+   const struct isl_format_layout *tmp_copy_fmt_layout =
+      isl_format_get_layout(surf->format);
+   uint32_t tmp_copy_bpp = tmp_copy_fmt_layout->bpb / 8;
+   const struct isl_format_layout *mem_fmt_layout =
+      isl_format_get_layout(mem_format);
+   uint32_t mem_bpp = mem_fmt_layout->bpb / 8;
+
+   /* There is no requirement that the extent be aligned to the texel block
+    * size.
+    */
+   VkOffset3D offset_el =
+      vk_offset3d_to_el(surf->format, imageOffset);
+   VkExtent3D extent_el =
+      vk_extent3d_to_el(surf->format, imageExtent);
+   struct isl_tile_info tile;
+   isl_surf_get_tile_info(surf, &tile);
+
+   uint32_t tile_width_B   = tile.phys_extent_B.w;
+   uint32_t tile_width_el  = tile.logical_extent_el.w;
+   uint32_t tile_height_el = tile.logical_extent_el.h;
+
+   for (uint32_t y_el = 0; y_el < extent_el.height; y_el += tile_height_el) {
+      for (uint32_t x_el = 0; x_el < extent_el.width; x_el += tile_width_el) {
+         VkOffset3D offset = {
+            .x = offset_el.x + x_el,
+            .y = offset_el.y + y_el,
+         };
+         VkExtent3D extent = {
+            .width  = MIN2(extent_el.width - x_el, tile_width_el),
+            .height = MIN2(extent_el.height - y_el, tile_height_el),
+            .depth  = 1,
+         };
+
+         VkOffset3D src_offset = {
+            .x = x_el,
+            .y = y_el,
+         };
+
+         const uint8_t *mem_ptr_offset =
+            mem_ptr + (src_offset.x * mem_bpp) +
+            (src_offset.y * mem_row_pitch_B);
+
+         if (mem_to_img) {
+            copy_rgb(mem_ptr_offset, mem_row_pitch_B, mem_bpp,
+                     tmp_mem, tile_width_B, tmp_copy_bpp, &extent);
+            anv_copy_image_memory(device, surf,
+                                 binding,
+                                 anv_surf->memory_range.offset,
+                                 tmp_mem,
+                                 tile_width_B,
+                                 &offset, &extent,
+                                 imageSubresource->mipLevel,
+                                 imageSubresource->baseArrayLayer,
+                                 imageOffset.z,
+                                 a, z, mem_to_img);
+         } else {
+            anv_copy_image_memory(device, surf,
+                                 binding,
+                                 anv_surf->memory_range.offset,
+                                 tmp_mem,
+                                 tile_width_B,
+                                 &offset, &extent,
+                                 imageSubresource->mipLevel,
+                                 imageSubresource->baseArrayLayer,
+                                 imageOffset.z,
+                                 a, z, mem_to_img);
+            copy_rgb(tmp_mem, tile_width_B, tmp_copy_bpp,
+                     (void *)mem_ptr_offset, mem_row_pitch_B, mem_bpp, &extent);
+         }
+      }
+   }
+}
+
 VkResult
 anv_CopyMemoryToImage(
     VkDevice                                 _device,
@@ -244,9 +349,17 @@ anv_CopyMemoryToImage(
    ANV_FROM_HANDLE(anv_device, device, _device);
    ANV_FROM_HANDLE(anv_image, image, pCopyMemoryToImageInfo->dstImage);
 
-   bool temp_copy = needs_temp_copy(image, pCopyMemoryToImageInfo->flags);
+   const bool use_memcpy =
+      (pCopyMemoryToImageInfo->flags & VK_HOST_IMAGE_COPY_MEMCPY) != 0;
+   const bool temp_copy = needs_temp_copy(image, pCopyMemoryToImageInfo->flags);
+
    void *tmp_mem = NULL;
-   uint64_t tmp_mem_size = 0;
+   if (temp_copy) {
+      tmp_mem = vk_alloc(&device->vk.alloc, TMP_BUFFER_SIZE, 8,
+                         VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+      if (tmp_mem == NULL)
+         return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+   }
 
    for (uint32_t r = 0; r < pCopyMemoryToImageInfo->regionCount; r++) {
       const VkMemoryToImageCopy *region =
@@ -263,42 +376,16 @@ anv_CopyMemoryToImage(
       void *img_ptr = binding->host_map + binding->map_delta +
                       anv_surf->memory_range.offset;
 
-      enum isl_format mem_format = surf->format;
+      const struct anv_format *anv_format =
+         anv_get_format(device->physical, image->vk.format);
+      struct anv_format_plane anv_plane_format = anv_format->planes[plane];
 
-      uint64_t tmp_copy_row_pitch_B = 0;
-      uint32_t mem_bpp = 0, tmp_copy_bpp = 0;
-
-      if (temp_copy) {
-         const struct isl_format_layout *tmp_copy_fmt_layout =
-            isl_format_get_layout(surf->format);
-         tmp_copy_bpp = tmp_copy_fmt_layout->bpb / 8;
-
-         mem_format =
-            anv_get_format_plane(device->physical, image->vk.format, plane,
-                                 VK_IMAGE_TILING_LINEAR).isl_format;
-
-         const struct isl_format_layout *mem_fmt_layout =
-            isl_format_get_layout(mem_format);
-         mem_bpp = mem_fmt_layout->bpb / 8;
-
-         tmp_copy_row_pitch_B =
-            calc_mem_row_pitch_B(surf->format, 0, &region->imageExtent);
-         uint64_t tmp_copy_height_pitch_B =
-            calc_mem_height_pitch_B(surf->format, tmp_copy_row_pitch_B, 0,
-                                    &region->imageExtent);
-
-         uint64_t tmp_mem_needed_size = tmp_copy_row_pitch_B * tmp_copy_height_pitch_B;
-         if (tmp_mem_needed_size > tmp_mem_size) {
-            void *new_tmp_mem = vk_realloc(&device->vk.alloc, tmp_mem, tmp_mem_needed_size, 8,
-                                 VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
-            if (new_tmp_mem == NULL) {
-               vk_free(&device->vk.alloc, tmp_mem);
-               return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
-            }
-            tmp_mem = new_tmp_mem;
-            tmp_mem_size = tmp_mem_needed_size;
-         }
-      }
+      /* We can use the image format to figure out all the pitches if using
+       * memcpy, otherwise memory & image might have different formats, so use
+       * the API format of the image.
+       */
+      enum isl_format mem_format = use_memcpy ?
+         surf->format : anv_plane_format.isl_format;
 
       /* Memory distance between each row */
       uint64_t mem_row_pitch_B =
@@ -324,9 +411,9 @@ anv_CopyMemoryToImage(
             uint64_t mem_row_offset = (z + a) * mem_height_pitch_B;
             const void *mem_ptr = region->pHostPointer + mem_row_offset;
             uint64_t start_tile_B, end_tile_B;
-            if ((pCopyMemoryToImageInfo->flags &
-                 VK_HOST_IMAGE_COPY_MEMCPY) &&
-                isl_surf_image_has_unique_tiles(surf,
+            if (use_memcpy &&
+                isl_surf_image_has_unique_tiles(
+                   surf,
                    region->imageSubresource.mipLevel,
                    region->imageOffset.z + z +
                    region->imageSubresource.baseArrayLayer + a, 1,
@@ -336,20 +423,22 @@ anv_CopyMemoryToImage(
                       end_tile_B - start_tile_B);
             } else {
                if (temp_copy) {
-                  copy_rgb(mem_ptr, mem_row_pitch_B, mem_bpp,
-                           tmp_mem, tmp_copy_row_pitch_B, tmp_copy_bpp,
-                           &region->imageExtent);
+                  copy_intermediate_rgb_rgba_image(device, mem_ptr, mem_row_pitch_B,
+                                                   image, plane, region,
+                                                   true, /* mem_to_img */
+                                                   tmp_mem, a, z);
+               } else {
+                  anv_copy_image_memory(device, surf,
+                                        binding, anv_surf->memory_range.offset,
+                                        (void *)mem_ptr,
+                                        mem_row_pitch_B,
+                                        &offset_el,
+                                        &extent_el,
+                                        region->imageSubresource.mipLevel,
+                                        region->imageSubresource.baseArrayLayer,
+                                        region->imageOffset.z,
+                                        a, z, true /* mem_to_img */);
                }
-               anv_copy_image_memory(device, surf,
-                                     binding, anv_surf->memory_range.offset,
-                                     temp_copy ? tmp_mem : (void *)mem_ptr,
-                                     temp_copy ? tmp_copy_row_pitch_B : mem_row_pitch_B,
-                                     &offset_el,
-                                     &extent_el,
-                                     region->imageSubresource.mipLevel,
-                                     region->imageSubresource.baseArrayLayer,
-                                     region->imageOffset.z,
-                                     a, z, true /* mem_to_img */);
             }
          }
       }
@@ -368,7 +457,9 @@ anv_CopyImageToMemory(
    ANV_FROM_HANDLE(anv_device, device, _device);
    ANV_FROM_HANDLE(anv_image, image, pCopyImageToMemoryInfo->srcImage);
 
-   bool temp_copy = needs_temp_copy(image, pCopyImageToMemoryInfo->flags);
+   const bool use_memcpy = (pCopyImageToMemoryInfo->flags &
+                            VK_HOST_IMAGE_COPY_MEMCPY) != 0;
+   const bool temp_copy = needs_temp_copy(image, pCopyImageToMemoryInfo->flags);
    void *tmp_mem = NULL;
    uint64_t tmp_mem_size = 0;
 
@@ -387,23 +478,23 @@ anv_CopyImageToMemory(
       const void *img_ptr = binding->host_map + binding->map_delta +
                             anv_surf->memory_range.offset;
 
-      enum isl_format mem_format = surf->format;
+      const struct anv_format *anv_format =
+         anv_get_format(device->physical, image->vk.format);
+      struct anv_format_plane anv_plane_format = anv_format->planes[plane];
+
+      /* We can use the image format to figure out all the pitches if using
+       * memcpy, otherwise memory & image might have different formats, so use
+       * the API format of the image.
+       */
+      enum isl_format mem_format = use_memcpy ?
+         surf->format : anv_plane_format.isl_format;
 
       uint64_t tmp_copy_row_pitch_B = 0;
-      uint32_t mem_bpp = 0, tmp_copy_bpp = 0;
 
       if (temp_copy) {
-         const struct isl_format_layout *tmp_copy_fmt_layout =
-            isl_format_get_layout(surf->format);
-         tmp_copy_bpp = tmp_copy_fmt_layout->bpb / 8;
-
          mem_format =
             anv_get_format_plane(device->physical, image->vk.format, plane,
                                  VK_IMAGE_TILING_LINEAR).isl_format;
-
-         const struct isl_format_layout *mem_fmt_layout =
-            isl_format_get_layout(mem_format);
-         mem_bpp = mem_fmt_layout->bpb / 8;
 
          tmp_copy_row_pitch_B =
             calc_mem_row_pitch_B(surf->format, 0, &region->imageExtent);
@@ -459,20 +550,22 @@ anv_CopyImageToMemory(
                       img_ptr + start_tile_B,
                       end_tile_B - start_tile_B);
             } else {
-               anv_copy_image_memory(device, surf,
-                                     binding, anv_surf->memory_range.offset,
-                                     temp_copy ? tmp_mem : mem_ptr,
-                                     temp_copy ? tmp_copy_row_pitch_B : mem_row_pitch_B,
-                                     &offset_el,
-                                     &extent_el,
-                                     region->imageSubresource.mipLevel,
-                                     region->imageSubresource.baseArrayLayer,
-                                     region->imageOffset.z,
-                                     a, z, false /* mem_to_img */);
                if (temp_copy) {
-                  copy_rgb(tmp_mem, tmp_copy_row_pitch_B, tmp_copy_bpp,
-                           mem_ptr, mem_row_pitch_B, mem_bpp,
-                           &region->imageExtent);
+                  copy_intermediate_rgb_rgba_image(device, mem_ptr, mem_row_pitch_B,
+                                       image, plane, region,
+                                       false, /* mem_to_img */
+                                       tmp_mem, a, z);
+               } else {
+                  anv_copy_image_memory(device, surf,
+                                        binding, anv_surf->memory_range.offset,
+                                        mem_ptr,
+                                        mem_row_pitch_B,
+                                        &offset_el,
+                                        &extent_el,
+                                        region->imageSubresource.mipLevel,
+                                        region->imageSubresource.baseArrayLayer,
+                                        region->imageOffset.z,
+                                        a, z, false /* mem_to_img */);
                }
             }
          }
@@ -601,7 +694,7 @@ anv_CopyImageToImage(
    ANV_FROM_HANDLE(anv_image, dst_image, pCopyImageToImageInfo->dstImage);
 
    /* Work with a tile's worth of data */
-   void *tmp_map = vk_alloc(&device->vk.alloc, 4096, 8,
+   void *tmp_map = vk_alloc(&device->vk.alloc, TMP_BUFFER_SIZE, 8,
                             VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
    if (tmp_map == NULL)
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
