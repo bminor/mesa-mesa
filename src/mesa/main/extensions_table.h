@@ -303,7 +303,7 @@ EXT(EXT_shader_image_load_store             , EXT_shader_image_load_store       
 EXT(EXT_shader_implicit_conversions         , dummy_true                             ,  x ,  x ,  x ,  31, 2013)
 EXT(EXT_shader_integer_mix                  , EXT_shader_integer_mix                 , GLL, GLC,  x ,  30, 2013)
 EXT(EXT_shader_io_blocks                    , dummy_true                             ,  x ,  x ,  x ,  31, 2014)
-EXT(EXT_shader_realtime_clock               , EXT_shader_realtime_clock              , GLL, GLC,  x ,  x , 2018)
+EXT(EXT_shader_realtime_clock               , EXT_shader_realtime_clock              , GLL, GLC,  x ,  31, 2018)
 EXT(EXT_shader_samples_identical            , EXT_shader_samples_identical           , GLL, GLC,  x ,  31, 2015)
 EXT(EXT_shadow_funcs                        , ARB_shadow                             , GLL,  x ,  x ,  x , 2002)
 EXT(EXT_shadow_samplers                     , ARB_shadow                             ,  x ,  x ,  x , ES2, 2012)
