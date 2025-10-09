@@ -30,6 +30,26 @@
 #include "nv_push_clc597.h"
 #include "nv_push_clc7c0.h"
 
+static uint32_t
+vk_query_pool_report_count(const struct vk_query_pool *vk_pool)
+{
+   switch (vk_pool->query_type) {
+   case VK_QUERY_TYPE_OCCLUSION:
+   case VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT:
+   case VK_QUERY_TYPE_TIMESTAMP:
+      return 1;
+
+   case VK_QUERY_TYPE_PIPELINE_STATISTICS:
+      return util_bitcount(vk_pool->pipeline_statistics);
+
+   case VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT:
+      return 2;
+
+   default:
+      UNREACHABLE("Unsupported query type");
+   }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL
 nvk_CreateQueryPool(VkDevice device,
                     const VkQueryPoolCreateInfo *pCreateInfo,
@@ -51,23 +71,12 @@ nvk_CreateQueryPool(VkDevice device,
                              sizeof(struct nvk_query_report));
 
    uint32_t reports_per_query;
-   switch (pCreateInfo->queryType) {
-   case VK_QUERY_TYPE_OCCLUSION:
-   case VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT:
-      reports_per_query = 2;
-      break;
-   case VK_QUERY_TYPE_TIMESTAMP:
+   if (pool->vk.query_type == VK_QUERY_TYPE_TIMESTAMP) {
+      /* Timestamps are just a single timestamp */
       reports_per_query = 1;
-      break;
-   case VK_QUERY_TYPE_PIPELINE_STATISTICS:
-      reports_per_query = 2 * util_bitcount(pool->vk.pipeline_statistics);
-      break;
-   case VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT:
-      // 2 for primitives succeeded 2 for primitives needed
-      reports_per_query = 4;
-      break;
-   default:
-      UNREACHABLE("Unsupported query type");
+   } else {
+      /* Everything else is two queries because we have to compute a delta */
+      reports_per_query = 2 * vk_query_pool_report_count(&pool->vk);
    }
    pool->query_stride = reports_per_query * sizeof(struct nvk_query_report);
 
@@ -644,45 +653,25 @@ nvk_GetQueryPoolResults(VkDevice device,
       assert(i * stride < dataSize);
       void *dst = (char *)pData + i * stride;
 
-      uint32_t available_dst_idx = 1;
-      switch (pool->vk.query_type) {
-      case VK_QUERY_TYPE_OCCLUSION:
-      case VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT:
-         if (write_results)
-            cpu_get_query_delta(dst, src, 0, flags);
-         break;
-      case VK_QUERY_TYPE_PIPELINE_STATISTICS: {
-         uint32_t stat_count = util_bitcount(pool->vk.pipeline_statistics);
-         available_dst_idx = stat_count;
-         if (write_results) {
-            for (uint32_t j = 0; j < stat_count; j++)
-               cpu_get_query_delta(dst, src, j, flags);
-         }
-         break;
-      }
-      case VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT: {
-         const int prims_succeeded_idx = 0;
-         const int prims_needed_idx = 1;
-         available_dst_idx = 2;
-         if (write_results) {
-            cpu_get_query_delta(dst, src, prims_succeeded_idx, flags);
-            cpu_get_query_delta(dst, src, prims_needed_idx, flags);
-         }
-         break;
-      }
-      case VK_QUERY_TYPE_TIMESTAMP:
+      const uint32_t report_count = vk_query_pool_report_count(&pool->vk);
+      if (pool->vk.query_type == VK_QUERY_TYPE_TIMESTAMP) {
+         /* Timestamps are just a single query */
+         assert(report_count == 1);
          if (write_results)
             cpu_write_query_result(dst, 0, flags, src->timestamp);
-         break;
-      default:
-         UNREACHABLE("Unsupported query type");
+      } else {
+         /* For everything else, we have to compute deltas */
+         if (write_results) {
+            for (uint32_t j = 0; j < report_count; j++)
+               cpu_get_query_delta(dst, src, j, flags);
+         }
       }
 
       if (!write_results)
          status = VK_NOT_READY;
 
       if (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT)
-         cpu_write_query_result(dst, available_dst_idx, flags, available);
+         cpu_write_query_result(dst, report_count, flags, available);
    }
 
    return status;
