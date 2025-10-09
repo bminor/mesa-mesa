@@ -763,22 +763,21 @@ brw_lower_alu_restrictions(brw_shader &s)
    return progress;
 }
 
-static void
-brw_lower_vgrf_to_fixed_grf(const struct intel_device_info *devinfo, brw_inst *inst,
-                            brw_reg *reg)
+brw_reg
+brw_lower_vgrf_to_fixed_grf(const struct intel_device_info *devinfo,
+                            const brw_inst *inst, const brw_reg &reg)
 {
-   if (reg->file != VGRF)
-      return;
+   if (reg.file != VGRF)
+      return reg;
 
-   struct brw_reg new_reg;
+   brw_reg new_reg;
 
-   if (reg->stride == 0) {
-      new_reg = brw_vec1_grf(reg->nr, 0);
-   } else if (reg->stride > 4) {
-      assert(reg != &inst->dst);
-      assert(reg->stride * brw_type_size_bytes(reg->type) <= REG_SIZE);
-      new_reg = brw_vecn_grf(1, reg->nr, 0);
-      new_reg = stride(new_reg, reg->stride, 1, 0);
+   if (reg.stride == 0) {
+      new_reg = brw_vec1_grf(reg.nr, 0);
+   } else if (reg.stride > 4) {
+      assert(reg.stride * brw_type_size_bytes(reg.type) <= REG_SIZE);
+      new_reg = brw_vecn_grf(1, reg.nr, 0);
+      new_reg = stride(new_reg, reg.stride, 1, 0);
    } else {
       /* From the Haswell PRM:
        *
@@ -789,7 +788,7 @@ brw_lower_vgrf_to_fixed_grf(const struct intel_device_info *devinfo, brw_inst *i
        * The maximum width value that could satisfy this restriction is:
        */
       const unsigned reg_width =
-         REG_SIZE / (reg->stride * brw_type_size_bytes(reg->type));
+         REG_SIZE / (reg.stride * brw_type_size_bytes(reg.type));
 
       /* Because the hardware can only split source regions at a whole
        * multiple of width during decompression (i.e. vertically), clamp
@@ -810,17 +809,17 @@ brw_lower_vgrf_to_fixed_grf(const struct intel_device_info *devinfo, brw_inst *i
       const unsigned max_hw_width = 16;
 
       const unsigned width = MIN3(reg_width, phys_width, max_hw_width);
-      new_reg = brw_vecn_grf(width, reg->nr, 0);
-      new_reg = stride(new_reg, width * reg->stride, width, reg->stride);
+      new_reg = brw_vecn_grf(width, reg.nr, 0);
+      new_reg = stride(new_reg, width * reg.stride, width, reg.stride);
    }
 
-   new_reg = retype(new_reg, reg->type);
-   new_reg = byte_offset(new_reg, reg->offset);
-   new_reg.abs = reg->abs;
-   new_reg.negate = reg->negate;
-   new_reg.is_scalar = reg->is_scalar;
+   new_reg = retype(new_reg, reg.type);
+   new_reg = byte_offset(new_reg, reg.offset);
+   new_reg.abs = reg.abs;
+   new_reg.negate = reg.negate;
+   new_reg.is_scalar = reg.is_scalar;
 
-   *reg = new_reg;
+   return new_reg;
 }
 
 void
@@ -829,9 +828,11 @@ brw_lower_vgrfs_to_fixed_grfs(brw_shader &s)
    assert(s.grf_used || !"Must be called after register allocation");
 
    foreach_block_and_inst(block, brw_inst, inst, s.cfg) {
-      brw_lower_vgrf_to_fixed_grf(s.devinfo, inst, &inst->dst);
+      assert(inst->dst.stride <= 4);
+      inst->dst = brw_lower_vgrf_to_fixed_grf(s.devinfo, inst, inst->dst);
       for (int i = 0; i < inst->sources; i++) {
-         brw_lower_vgrf_to_fixed_grf(s.devinfo, inst, &inst->src[i]);
+         inst->src[i] = brw_lower_vgrf_to_fixed_grf(s.devinfo, inst,
+                                                    inst->src[i]);
       }
    }
 
