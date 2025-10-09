@@ -355,11 +355,11 @@ radv_meta_resolve_compute_image(struct radv_cmd_buffer *cmd_buffer, struct radv_
 
 void
 radv_cmd_buffer_resolve_rendering_cs(struct radv_cmd_buffer *cmd_buffer, struct radv_image_view *src_iview,
-                                     VkImageLayout src_layout, struct radv_image_view *dst_iview,
-                                     VkImageLayout dst_layout, const VkImageResolve2 *region)
+                                     VkFormat src_format, VkImageLayout src_layout, struct radv_image_view *dst_iview,
+                                     VkFormat dst_format, VkImageLayout dst_layout, const VkImageResolve2 *region)
 {
-   radv_meta_resolve_compute_image(cmd_buffer, src_iview->image, src_iview->vk.format, src_layout, dst_iview->image,
-                                   dst_iview->vk.format, dst_layout, region);
+   radv_meta_resolve_compute_image(cmd_buffer, src_iview->image, src_format, src_layout, dst_iview->image, dst_format,
+                                   dst_layout, region);
 
    cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_CS_PARTIAL_FLUSH | RADV_CMD_FLAG_INV_VCACHE |
                                    radv_src_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,

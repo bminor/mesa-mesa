@@ -274,7 +274,8 @@ void radv_cmd_buffer_clear_rendering(struct radv_cmd_buffer *cmd_buffer, const V
 void radv_cmd_buffer_resolve_rendering(struct radv_cmd_buffer *cmd_buffer);
 
 void radv_cmd_buffer_resolve_rendering_cs(struct radv_cmd_buffer *cmd_buffer, struct radv_image_view *src_iview,
-                                          VkImageLayout src_layout, struct radv_image_view *dst_iview,
+                                          VkFormat src_format, VkImageLayout src_layout,
+                                          struct radv_image_view *dst_iview, VkFormat dst_format,
                                           VkImageLayout dst_layout, const VkImageResolve2 *region);
 
 void radv_meta_resolve_depth_stencil_cs(struct radv_cmd_buffer *cmd_buffer, struct radv_image *src_image,
@@ -284,7 +285,8 @@ void radv_meta_resolve_depth_stencil_cs(struct radv_cmd_buffer *cmd_buffer, stru
                                         const VkImageResolve2 *region);
 
 void radv_cmd_buffer_resolve_rendering_fs(struct radv_cmd_buffer *cmd_buffer, struct radv_image_view *src_iview,
-                                          VkImageLayout src_layout, struct radv_image_view *dst_iview,
+                                          VkFormat src_format, VkImageLayout src_layout,
+                                          struct radv_image_view *dst_iview, VkFormat dst_format,
                                           VkImageLayout dst_layout, const VkImageResolve2 *region);
 
 void radv_meta_resolve_depth_stencil_fs(struct radv_cmd_buffer *cmd_buffer, struct radv_image *src_image,

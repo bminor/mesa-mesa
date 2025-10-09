@@ -443,11 +443,11 @@ radv_CmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2 *
 
 static void
 radv_cmd_buffer_resolve_rendering_hw(struct radv_cmd_buffer *cmd_buffer, struct radv_image_view *src_iview,
-                                     VkImageLayout src_layout, struct radv_image_view *dst_iview,
-                                     VkImageLayout dst_layout, const VkImageResolve2 *region)
+                                     VkFormat src_format, VkImageLayout src_layout, struct radv_image_view *dst_iview,
+                                     VkFormat dst_format, VkImageLayout dst_layout, const VkImageResolve2 *region)
 {
-   radv_meta_resolve_hardware_image(cmd_buffer, src_iview->image, src_iview->vk.format, src_layout, dst_iview->image,
-                                    dst_iview->vk.format, dst_layout, region);
+   radv_meta_resolve_hardware_image(cmd_buffer, src_iview->image, src_format, src_layout, dst_iview->image, dst_format,
+                                    dst_layout, region);
 }
 
 /**
@@ -623,19 +623,25 @@ radv_cmd_buffer_resolve_rendering(struct radv_cmd_buffer *cmd_buffer)
             .dstOffset = {resolve_area.offset.x, resolve_area.offset.y, 0},
          };
 
+         VkFormat src_format = src_iview->vk.format;
+         VkFormat dst_format = dst_iview->vk.format;
+
          switch (resolve_method) {
          case RESOLVE_HW:
-            radv_cmd_buffer_resolve_rendering_hw(cmd_buffer, src_iview, src_layout, dst_iview, dst_layout, &region);
+            radv_cmd_buffer_resolve_rendering_hw(cmd_buffer, src_iview, src_format, src_layout, dst_iview, dst_format,
+                                                 dst_layout, &region);
             break;
          case RESOLVE_COMPUTE:
             radv_decompress_resolve_src(cmd_buffer, src_iview->image, src_layout, &region);
 
-            radv_cmd_buffer_resolve_rendering_cs(cmd_buffer, src_iview, src_layout, dst_iview, dst_layout, &region);
+            radv_cmd_buffer_resolve_rendering_cs(cmd_buffer, src_iview, src_format, src_layout, dst_iview, dst_format,
+                                                 dst_layout, &region);
             break;
          case RESOLVE_FRAGMENT:
             radv_decompress_resolve_src(cmd_buffer, src_iview->image, src_layout, &region);
 
-            radv_cmd_buffer_resolve_rendering_fs(cmd_buffer, src_iview, src_layout, dst_iview, dst_layout, &region);
+            radv_cmd_buffer_resolve_rendering_fs(cmd_buffer, src_iview, src_format, src_layout, dst_iview, dst_format,
+                                                 dst_layout, &region);
             break;
          default:
             UNREACHABLE("Invalid resolve method");
