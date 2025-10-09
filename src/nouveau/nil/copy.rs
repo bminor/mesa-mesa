@@ -181,6 +181,54 @@ impl<C: CopyBytes> CopyGOBLines for CopyGOBFermi<C> {
     }
 }
 
+/// Implements copies for [`GOBType::TegraColor`]
+struct CopyGOBTegra<C: CopyBytes> {
+    phantom: std::marker::PhantomData<C>,
+}
+
+impl<C: CopyBytes> CopyGOBLines for CopyGOBTegra<C> {
+    const GOB_EXTENT_B: Extent4D<units::Bytes> = Extent4D::new(64, 8, 1, 1);
+    const LINE_WIDTH_B: u32 = 16;
+    const X_DIVISOR: u32 = C::X_DIVISOR;
+
+    unsafe fn copy(tiled: *mut u8, linear: *mut u8, bytes: usize) {
+        unsafe {
+            C::copy(tiled, linear, bytes);
+        }
+    }
+
+    unsafe fn copy_whole_line(tiled: *mut u8, linear: *mut u8) {
+        unsafe {
+            C::copy_16b(tiled as *mut _, linear as *mut _);
+        }
+    }
+
+    #[inline(always)]
+    fn for_each_gob_line(mut f: impl FnMut(u32, u32, u32, u32)) {
+        for i in 0..2 {
+            f(i * 0x100 + 0x00, i * 32 + 0, 0, 0);
+            f(i * 0x100 + 0x10, i * 32 + 0, 1, 0);
+            f(i * 0x100 + 0x20, i * 32 + 16, 0, 0);
+            f(i * 0x100 + 0x30, i * 32 + 16, 1, 0);
+
+            f(i * 0x100 + 0x40, i * 32 + 0, 2, 0);
+            f(i * 0x100 + 0x50, i * 32 + 0, 3, 0);
+            f(i * 0x100 + 0x60, i * 32 + 16, 2, 0);
+            f(i * 0x100 + 0x70, i * 32 + 16, 3, 0);
+
+            f(i * 0x100 + 0x80, i * 32 + 0, 4, 0);
+            f(i * 0x100 + 0x90, i * 32 + 0, 5, 0);
+            f(i * 0x100 + 0xa0, i * 32 + 16, 4, 0);
+            f(i * 0x100 + 0xb0, i * 32 + 16, 5, 0);
+
+            f(i * 0x100 + 0xc0, i * 32 + 0, 6, 0);
+            f(i * 0x100 + 0xd0, i * 32 + 0, 7, 0);
+            f(i * 0x100 + 0xe0, i * 32 + 16, 6, 0);
+            f(i * 0x100 + 0xf0, i * 32 + 16, 7, 0);
+        }
+    }
+}
+
 /// Implements copies for [`GOBType::TuringColor2D`]
 struct CopyGOBTuring2D<C: CopyBytes> {
     phantom: std::marker::PhantomData<C>,
@@ -676,6 +724,16 @@ pub unsafe extern "C" fn nil_copy_linear_to_tiled(
                     end_B,
                 );
             }
+            GOBType::TegraColor => {
+                copy_tiled::<CopyGOBTegra<RawCopyToTiled>>(
+                    *tiling,
+                    level_extent_B,
+                    tiled_dst,
+                    linear_pointer,
+                    offset_B,
+                    end_B,
+                );
+            }
             GOBType::FermiColor => {
                 copy_tiled::<CopyGOBFermi<RawCopyToTiled>>(
                     *tiling,
@@ -737,6 +795,16 @@ pub unsafe extern "C" fn nil_copy_tiled_to_linear(
             }
             GOBType::TuringColor2D => {
                 copy_tiled::<CopyGOBTuring2D<RawCopyToLinear>>(
+                    *tiling,
+                    level_extent_B,
+                    tiled_src,
+                    linear_pointer,
+                    offset_B,
+                    end_B,
+                );
+            }
+            GOBType::TegraColor => {
+                copy_tiled::<CopyGOBTegra<RawCopyToLinear>>(
                     *tiling,
                     level_extent_B,
                     tiled_src,

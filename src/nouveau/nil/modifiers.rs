@@ -55,11 +55,16 @@ struct GOBTypeModifierInfo {
     sector_layout: SectorLayout,
 }
 
-const GOB_TYPE_MODIFIER_INFOS: [GOBTypeModifierInfo; 2] = [
+const GOB_TYPE_MODIFIER_INFOS: [GOBTypeModifierInfo; 3] = [
     GOBTypeModifierInfo {
         gob_type: GOBType::FermiColor,
         gob_kind_version: GOBKindVersion::Fermi,
         sector_layout: SectorLayout::Desktop,
+    },
+    GOBTypeModifierInfo {
+        gob_type: GOBType::TegraColor,
+        gob_kind_version: GOBKindVersion::Fermi,
+        sector_layout: SectorLayout::TegraK1,
     },
     GOBTypeModifierInfo {
         gob_type: GOBType::TuringColor2D,
