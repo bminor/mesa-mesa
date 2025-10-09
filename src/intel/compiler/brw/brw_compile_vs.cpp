@@ -283,18 +283,6 @@ brw_compile_vs(const struct brw_compiler *compiler,
                        params->base.archiver, debug_enabled,
                        key->base.robust_flags);
 
-   const bool has_clip_cull_dist =
-      nir->info.outputs_written & (VARYING_BIT_CLIP_DIST0 |
-                                   VARYING_BIT_CLIP_DIST1 |
-                                   VARYING_BIT_CULL_DIST0 |
-                                   VARYING_BIT_CULL_DIST1);
-   prog_data->base.clip_distance_mask = has_clip_cull_dist ?
-      ((1 << nir->info.clip_distance_array_size) - 1) : 0;
-   prog_data->base.cull_distance_mask =
-      (has_clip_cull_dist ?
-       ((1 << nir->info.cull_distance_array_size) - 1) : 0) <<
-      nir->info.clip_distance_array_size;
-
    unsigned nr_attribute_slots = util_bitcount64(prog_data->inputs_read);
    /* gl_VertexID and gl_InstanceID are system values, but arrive via an
     * incoming vertex attribute.  So, add an extra slot.

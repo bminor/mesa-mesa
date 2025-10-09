@@ -1192,17 +1192,6 @@ brw_compile_mesh(const struct brw_compiler *compiler,
    prog_data->base.local_size[1] = nir->info.workgroup_size[1];
    prog_data->base.local_size[2] = nir->info.workgroup_size[2];
 
-   const bool has_clip_cull_dist =
-      nir->info.outputs_written & (VARYING_BIT_CLIP_DIST0 |
-                                   VARYING_BIT_CLIP_DIST1 |
-                                   VARYING_BIT_CULL_DIST0 |
-                                   VARYING_BIT_CULL_DIST1);
-   prog_data->clip_distance_mask = has_clip_cull_dist ?
-      (1 << nir->info.clip_distance_array_size) - 1 : 0;
-   prog_data->cull_distance_mask =
-      (has_clip_cull_dist ?
-       ((1 << nir->info.cull_distance_array_size) - 1) : 0) <<
-      nir->info.clip_distance_array_size;
    prog_data->primitive_type = nir->info.mesh.primitive_type;
 
    /* Apply this workaround before trying to pack indices because this can

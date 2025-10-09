@@ -7924,6 +7924,29 @@ brw_test_dispatch_packing(const brw_builder &bld)
    }
 }
 
+static void
+set_clip_cull_distance_masks(brw_shader &s)
+{
+   const shader_info &info = s.nir->info;
+
+   if (info.stage >= MESA_SHADER_FRAGMENT && info.stage != MESA_SHADER_MESH)
+      return;
+
+   struct brw_vue_prog_data *prog_data = brw_vue_prog_data(s.prog_data);
+
+   if (info.outputs_written &
+       (VARYING_BIT_CLIP_DIST0 | VARYING_BIT_CLIP_DIST1 |
+        VARYING_BIT_CULL_DIST0 | VARYING_BIT_CULL_DIST1)) {
+
+      prog_data->clip_distance_mask =
+         ((1 << info.clip_distance_array_size) - 1);
+
+      prog_data->cull_distance_mask =
+         ((1 << info.cull_distance_array_size) - 1)
+         << info.clip_distance_array_size;
+   }
+}
+
 void
 brw_from_nir(brw_shader *s)
 {
@@ -7940,6 +7963,8 @@ brw_from_nir(brw_shader *s)
 
    if (ENABLE_TEST_DISPATCH_PACKING)
       brw_test_dispatch_packing(ntb.bld);
+
+   set_clip_cull_distance_masks(*s);
 
    emit_shader_float_controls_execution_mode(ntb);
 
