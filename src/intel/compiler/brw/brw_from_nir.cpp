@@ -7939,11 +7939,11 @@ set_clip_cull_distance_masks(brw_shader &s)
         VARYING_BIT_CULL_DIST0 | VARYING_BIT_CULL_DIST1)) {
 
       prog_data->clip_distance_mask =
-         ((1 << info.clip_distance_array_size) - 1);
+         BITFIELD_MASK(info.clip_distance_array_size);
 
       prog_data->cull_distance_mask =
-         ((1 << info.cull_distance_array_size) - 1)
-         << info.clip_distance_array_size;
+         BITFIELD_RANGE(info.clip_distance_array_size,
+                        info.cull_distance_array_size);
    }
 }
 
