@@ -222,7 +222,7 @@ radv_sampler_init(struct radv_device *device, struct radv_sampler *sampler, cons
    sampler->border_color_index = RADV_BORDER_COLOR_COUNT;
 
    if (vk_border_color_is_custom(border_color)) {
-      uint32_t border_color_index = 0;
+      uint32_t border_color_index = RADV_BORDER_COLOR_COUNT;
       bool request_index = false;
       VkResult result;
 
