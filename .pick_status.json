@@ -1,5 +1,635 @@
 [
     {
+        "sha": "73cbb35442035f89e2eaeabe336c5d5579b1ba31",
+        "description": "brw: Move into a new src/intel/compiler/brw subdirectory",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d1b0597213d714e0cbb580416b1beff4b49a771e",
+        "description": "brw: Drop compiler/ from brw includes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "af93215b7a2c1a6dbe68452d83aeb9a63024f6e2",
+        "description": "intel: Re-unify brw_prim.h and elk_prim.h",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d4c8ca43efe78623158f0b0828ef7fa9f0bf2e6a",
+        "description": "intel: Make a libintel_compiler_nir internal static library",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "86aa241c668f5f4bbbe7271b6759364bc394f736",
+        "description": "brw: Rename brw_nir_trig build target to brw_nir_workarounds",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b15b83f43f9455f177b51ec3d967e1e2f4d39040",
+        "description": "brw: Drop ir_expression_operation_h from build system",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a7c2b8787426e516d383a9b03622b6b029379c2a",
+        "description": "intel: Move intel_shader_reloc to common code and drop elk_shader_reloc",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "116c65cd3de629b34e08c2084817043273a7d88a",
+        "description": "brw: Rename brw_shader_reloc to intel_shader_reloc",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b458140b75bd5f4487170845888f4c938a5ec377",
+        "description": "elk: Delete ELK_SHADER_RELOC_DESCRIPTORS_ADDR_HIGH",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f448ad3adf74dc5165609f081f37a484d065095a",
+        "description": "freedreno/layout: gen8 descriptor support",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ed6f0b982b603d6e45d1cc661f809f58d4f8d214",
+        "description": "freedreno/layout: Convert fd6_view to c++",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "344486d583e7c2837c99c96b833f9b68a0b83f81",
+        "description": "freedreno/a6xx: Slight re-org of sampler descriptor building",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6195826826a9b6a9d6465bf2ff6a0b88c4d3a304",
+        "description": "freedreno/registers: pm4 updates for gen8",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8a68c6684b37ebd23b3026690fd3ee1b9fb8868b",
+        "description": "freedreno/registers: Add gen8 descriptor layout",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1d2895b23221ca37f5a65e7ddee889462f7d0c3a",
+        "description": "freedreno/registers: Add gen8 regs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8edd6eb42eb7e5ea5afaab9a813b35d3278d868d",
+        "description": "freedreno/registers: Common-ize PIPE definitions",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6959bd9f54eca3a0ae216af24c664abce40271da",
+        "description": "freedreno/decode: Move enum lookup out of snapshot",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d7db333b0ed8b56a96ecbf18bf63dc3082f90b06",
+        "description": "freedreno/decode: Add gen8 support",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c1d1ba613b72aaca3c7f2933aed189e4c2c7e979",
+        "description": "freedreno/registers: Extract out bitset for roq_avail",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "99b3283a5a81ecca6fb2d90bef4173f3ba5d589f",
+        "description": "freedreno/registers: Fix a couple reg names",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ed2e8d57e9cc9cec5de61c60be3264157498edaf",
+        "description": "freedreno/registers: x_ADDR_MODE_CNTL is a6xx and earlier",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "30e32c9c78c45e3f39f43bc0b3d8a235f10369f1",
+        "description": "freedreno/registers: Rename some unknowns",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "50ab38092fcbce0e73b04a2e4dc536799325a87d",
+        "description": "freedreno/registers: More register prep",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "67caa784cdb1a4965273832c66a9d59332b3e05b",
+        "description": "freedreno/afuc: Add missing varset check",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f7ce548d788f76682d571fae4366ef7436d1049c",
+        "description": "freedreno/decode/crashdec: Limit snapshot BO size",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1a8a16f99de9bf0c990279b4a3e1e92593968a8b",
+        "description": "freedreno/a6xx: Move reg to static-non-context",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "07f3b62d59d55fc22cf10f7c161b38fa2ab7f06b",
+        "description": "android: fix building rules for i915, r300",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "b8b38d38b1c14b60de0324ac2f98ff7f1f4cc3c5",
+        "notes": null
+    },
+    {
+        "sha": "cb86341829d6fb3873ad7e160dca8f3fff033c1b",
+        "description": "meson: remove '--outdir' argument in script",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "acf953757ef6c567dded4987599502780412a1f2",
+        "description": "brw: prevent LOAD_REG modifications on MOV_INDIRECT/BROADCAST",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "2d13acf9d98bbd5e97b85960693d60e5966a8d4f",
+        "notes": null
+    },
+    {
+        "sha": "a21b925caa88cce773de4227ea6df77b01812d2f",
+        "description": "anv: Rename anv_shader_bin to anv_shader_internal",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5c8d7c30f5359d691663575f9da407311990df11",
+        "description": "anv: Simply anv_shader_set_relocs() parameters",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d5b8c7c17e8773dcaa81121e38725058489b830c",
+        "description": "anv: Drop shader relocs from anv_shader_bin_create()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "62a746b353527e768556dd39ec6acc6b274cb561",
+        "description": "anv: Replace duplicated code set shader relocs by a function",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "16458f756ef1eda704aaa3004d8b1227afc08cfe",
+        "description": "ci/panfrost: udpate panfrost-g610-fails to reflect latest stats",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "23cdc0be2cdf1f8371e102cf9cb00506c0890be1",
+        "description": "docs: update khronos wiki url",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "30fe9b47f5de5093471a414e37f5f0c25483c596",
+        "description": "ci,crnm: Fix f-string print error",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "51c3f56aa3e52918751471903f0bdea196134d69",
+        "notes": null
+    },
+    {
+        "sha": "aeec53f0209777fd3a667b7ca1b0caa8b707453d",
+        "description": "radv,radeonsi: use new ac_cmdbuf macros",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "902f5a86187a1b12ff21fb9b63bc6267fd0acd85",
+        "description": "radv: replace radeon_cmdbuf by ac_cmdbuf completely",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "377f50129b8489cbc01c36a8bdc609a1963dc917",
+        "description": "radeonsi: replace radeon_cmdbuf_chunk by ac_cmdbuf",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9ff4750eafb6af9ee7ea73898f39e86a97c0cf2d",
+        "description": "ac/cmdbuf: introduce ac_cmdbuf",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a7ae26c96c6ee2e6b6c94ca19e50be42090977a1",
+        "description": "ac/sqtt: use void pointers for start/stop CS",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "12cccb2f756f3779f91e1bd467f7db6c8452f077",
+        "description": "radv: remove useless radeon_cmdbuf forwarded declaration",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "379617b77de7f4ef72e4e1d6309d4543b47693b1",
+        "description": "anv: Define bt_block only in the block that uses it in anv_cmd_buffer_alloc_binding_table()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d728c9702227fecfb7a7f85376d4a8e2c17e3d80",
+        "description": "anv: Add comment to anv_state->offset",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a90d8fc08ede85e3634991e41c40617e2e93ae1e",
+        "description": "anv/allocator: Subtract start_offset in chunk_offset",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4ca18c09c1b55eccfa8af6f4d15cab433ef94ea9",
+        "description": "anv/allocator: Don't call anv_block_pool_map() with an offset that includes start_offset",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ad62911683793f5b93e1f1f8698e1f38cf4f2a7d",
+        "description": "anv/allocator: Change some parameters and variables from 32bit to 64bits",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "27074cb48b6ec72d08001f98689435bcc163eb37",
+        "description": "anv/allocator: Drop uncessary function",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4aee4f097575bf8e7d4e4422d1620c5e6f4fefc3",
+        "description": "anv/allocator: Move definition of ANV_FREE_LIST_EMPTY to anv_allocator",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "950459d95ff8c714dbcb4c2efbee9a878d5aba29",
+        "description": "mesa: copy NumSamples in reuse_framebuffer_texture_attachment",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8f0ac427b350cc799b2aa8c0c086f307cafe1cdc",
+        "description": "glsl: fix gl_ViewID_OVR type to uint",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "390b5e6150ecfb71e12b53328e5fd216d3c1dcf0",
+        "description": "iris: Fix potential null deref in debug archiver",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "dedbe0e82662ba4fcef3e882a520de1e74750ddd",
+        "notes": null
+    },
+    {
+        "sha": "bb5eb9a0962faeea6ca3024cb9d5d8b173699dec",
+        "description": "intel/ds: disable draw/blorp tracepoints by default on android",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c4061b96f0c8890de459cd85e52232b1034a939e",
+        "description": "intel/ds: lump all the draw under the same toggle",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3df4d864091ed003d18ed75906210aa9784c2aa4",
+        "description": "u_trace: use os_get_option instead of getenv",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "05cd67628798335a11498b84699df60d0d7726b8",
+        "description": "gfxstream: delete magma-over-gfxstream",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5080f2b6f552875818229c4810e0221e9264e9b4",
+        "description": "zink: disable msrtss handling when blitting",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0ab8878a6e70a402ad082b2ddd6feff73d2c4290",
+        "description": "zink: only add mutable bind for transient surfaces when necessary",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "3cd3195d31961bf7f7e0743c22f14232b830e7b5",
+        "notes": null
+    },
+    {
+        "sha": "4043ea91b68d3e12d4aff89458b25902005c16ba",
+        "description": "tu: Support sparse binds on the gfx queue",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0cc0e786e096dca8cfd88d7088ab7e1a0147d045",
+        "description": "tu/drm: Emulate combined gfx/sparse queues",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6c296c1283d414087068accdbe456d917cb5d89d",
+        "description": "tu: Pass tu_queue to kernel create/destroy functions",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fff9f0a0e6802b8e12820a97ac479bbf658246ba",
+        "description": "docs/pvr: update vulkan version",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ad7bfc0562c72bd793d4e0e81e8942a151ce4e3c",
+        "description": "docs/pvr: update conformance status",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "8f535dea88cf5540f046ebdf99b4d4e0478f89fe",
         "description": "v3dv: use ld_args_build_id",
         "nominated": false,
