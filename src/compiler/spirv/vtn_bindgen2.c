@@ -409,14 +409,15 @@ main(int argc, char **argv)
       fprintf(fp, "#endif\n");
    }
 
-   fprintf(fp_c, "struct vtn_bindgen_dummy {\n");
-   fprintf(fp_c, "   vtn_bindgen_dummy() {\n");
-   fprintf(fp_c, "      /* Format strings:\n");
-   fprintf(fp_c, "       *\n");
+   fprintf(fp_c, "namespace {\n");
+   fprintf(fp_c, "   struct vtn_bindgen_dummy {\n");
+   fprintf(fp_c, "      vtn_bindgen_dummy() {\n");
+   fprintf(fp_c, "         /* Format strings:\n");
+   fprintf(fp_c, "          *\n");
    for (unsigned i = 0; i < nir->printf_info_count; ++i) {
       u_printf_info *info = &nir->printf_info[i];
       const char *str = info->strings;
-      fprintf(fp_c, "       * ");
+      fprintf(fp_c, "          * ");
 
       for (unsigned j = 0; j < strlen(str); ++j) {
          char c = str[j];
@@ -430,7 +431,7 @@ main(int argc, char **argv)
 
       fprintf(fp_c, "\n");
    }
-   fprintf(fp_c, "       */\n");
+   fprintf(fp_c, "          */\n");
 
    /* Stuff printf info into Mesa's singleton */
    struct blob blob;
@@ -440,19 +441,20 @@ main(int argc, char **argv)
                           (const uint32_t *)blob.data, blob.size, false);
    blob_finish(&blob);
 
-   fprintf(fp_c, "      u_printf_singleton_init_or_ref();\n");
+   fprintf(fp_c, "         u_printf_singleton_init_or_ref();\n");
    fprintf(
       fp_c,
-      "      u_printf_singleton_add_serialized((const void*)printf_0_blob, sizeof(printf_0_blob));\n");
+      "         u_printf_singleton_add_serialized((const void*)printf_0_blob, sizeof(printf_0_blob));\n");
 
-   fprintf(fp_c, "   }\n");
+   fprintf(fp_c, "      }\n");
    fprintf(fp_c, "\n");
-   fprintf(fp_c, "   ~vtn_bindgen_dummy() {\n");
-   fprintf(fp_c, "      u_printf_singleton_decref();\n");
-   fprintf(fp_c, "   }\n");
-   fprintf(fp_c, "};\n");
+   fprintf(fp_c, "      ~vtn_bindgen_dummy() {\n");
+   fprintf(fp_c, "         u_printf_singleton_decref();\n");
+   fprintf(fp_c, "      }\n");
+   fprintf(fp_c, "   };\n");
    fprintf(fp_c, "\n");
-   fprintf(fp_c, "static vtn_bindgen_dummy vtn_bindgen_dummy_instance;\n");
+   fprintf(fp_c, "   static vtn_bindgen_dummy vtn_bindgen_dummy_instance;\n");
+   fprintf(fp_c, "}\n");
 
    glsl_type_singleton_decref();
    fclose(fp_c);
