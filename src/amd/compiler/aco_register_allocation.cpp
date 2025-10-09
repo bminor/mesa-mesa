@@ -1196,6 +1196,20 @@ collect_vars(ra_ctx& ctx, RegisterFile& reg_file, const PhysRegInterval reg_inte
    return ids;
 }
 
+std::vector<unsigned>
+collect_vars_from_bitset(ra_ctx& ctx, RegisterFile& reg_file, const BITSET_DECLARE(set, 512))
+{
+   std::vector<unsigned> vars, vars2;
+   unsigned start, end;
+   BITSET_FOREACH_RANGE(start, end, set, 512) {
+      PhysRegInterval interval = PhysRegInterval{PhysReg{start}, end - start};
+      vars2 = collect_vars(ctx, reg_file, interval);
+      vars.insert(vars.end(), vars2.begin(), vars2.end());
+   }
+   assert(std::unique(vars.begin(), vars.end()) == vars.end());
+   return vars;
+}
+
 std::optional<PhysReg>
 get_reg_for_create_vector_copy(ra_ctx& ctx, RegisterFile& reg_file,
                                std::vector<parallelcopy>& parallelcopies,
@@ -3580,6 +3594,27 @@ emit_parallel_copy(ra_ctx& ctx, std::vector<parallelcopy>& copies,
                                register_file);
 }
 
+
+void
+handle_last_reload_preserved(ra_ctx& ctx, aco_ptr<Instruction>& instr,
+                             std::vector<parallelcopy>& parallelcopy, RegisterFile& register_file)
+{
+   BITSET_DECLARE(preserved_regs, 512);
+   ctx.program->callee_abi.preservedRegisters(preserved_regs);
+
+   std::vector<unsigned> vars = collect_vars_from_bitset(ctx, register_file, preserved_regs);
+
+   unsigned start, end;
+   BITSET_FOREACH_RANGE (start, end, preserved_regs, 512)
+      register_file.block(PhysRegInterval{PhysReg{start}, end - start});
+
+   ASSERTED bool success = false;
+   success = get_regs_for_copies(ctx, register_file, parallelcopy, vars, instr, PhysRegInterval{});
+   assert(success);
+
+   update_renames(ctx, register_file, parallelcopy, instr, false, false);
+}
+
 } /* end namespace */
 
 void
@@ -3683,6 +3718,14 @@ register_allocation(Program* program, ra_test_policy policy)
          for (const Operand& op : instr->operands) {
             if (op.isTemp() && op.isFirstKillBeforeDef())
                register_file.clear(op);
+         }
+
+         /* If this is the last p_reload_preserved, we have no more opportunities to restore
+          * overwritten ABI-preserved registers. Make sure all remaining temporaries are outside
+          * preserved registers, then block the preserved registers to mark them unusable.
+          */
+         if (instr->opcode == aco_opcode::p_reload_preserved && block.linear_succs.empty()) {
+            handle_last_reload_preserved(ctx, instr, parallelcopy, register_file);
          }
 
          /* handle fixed definitions first */
