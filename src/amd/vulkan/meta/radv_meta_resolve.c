@@ -236,7 +236,7 @@ radv_meta_resolve_hardware_image(struct radv_cmd_buffer *cmd_buffer, struct radv
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_meta_saved_state saved_state;
 
-   radv_meta_save(&saved_state, cmd_buffer, RADV_META_SAVE_GRAPHICS_PIPELINE);
+   radv_meta_save(&saved_state, cmd_buffer, RADV_META_SAVE_GRAPHICS_PIPELINE | RADV_META_SAVE_RENDER);
 
    assert(src_image->vk.samples > 1);
    assert(dst_image->vk.samples == 1);
@@ -444,75 +444,10 @@ radv_CmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2 *
 static void
 radv_cmd_buffer_resolve_rendering_hw(struct radv_cmd_buffer *cmd_buffer, struct radv_image_view *src_iview,
                                      VkImageLayout src_layout, struct radv_image_view *dst_iview,
-                                     VkImageLayout dst_layout)
+                                     VkImageLayout dst_layout, const VkImageResolve2 *region)
 {
-   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   struct radv_meta_saved_state saved_state;
-
-   radv_meta_save(&saved_state, cmd_buffer, RADV_META_SAVE_GRAPHICS_PIPELINE | RADV_META_SAVE_RENDER);
-
-   VkRect2D *resolve_area = &saved_state.render.area;
-
-   radv_CmdSetViewport(radv_cmd_buffer_to_handle(cmd_buffer), 0, 1,
-                       &(VkViewport){.x = resolve_area->offset.x,
-                                     .y = resolve_area->offset.y,
-                                     .width = resolve_area->extent.width,
-                                     .height = resolve_area->extent.height,
-                                     .minDepth = 0.0f,
-                                     .maxDepth = 1.0f});
-
-   radv_CmdSetScissor(radv_cmd_buffer_to_handle(cmd_buffer), 0, 1, resolve_area);
-
-   struct radv_image *src_img = src_iview->image;
-   struct radv_image *dst_img = dst_iview->image;
-   uint32_t queue_mask = radv_image_queue_family_mask(dst_img, cmd_buffer->qf, cmd_buffer->qf);
-
-   if (radv_layout_dcc_compressed(device, dst_img, dst_iview->vk.base_mip_level, dst_layout, queue_mask)) {
-      VkImageSubresourceRange range = {
-         .aspectMask = dst_iview->vk.aspects,
-         .baseMipLevel = dst_iview->vk.base_mip_level,
-         .levelCount = 1,
-         .baseArrayLayer = 0,
-         .layerCount = 1,
-      };
-
-      cmd_buffer->state.flush_bits |= radv_init_dcc(cmd_buffer, dst_img, &range, 0xffffffff);
-   }
-
-   const VkRenderingAttachmentInfo color_atts[2] = {
-      {
-         .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-         .imageView = radv_image_view_to_handle(src_iview),
-         .imageLayout = src_layout,
-         .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
-         .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-      },
-      {
-         .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-         .imageView = radv_image_view_to_handle(dst_iview),
-         .imageLayout = dst_layout,
-         .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
-         .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-      },
-   };
-
-   const VkRenderingInfo rendering_info = {
-      .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
-      .flags = VK_RENDERING_INPUT_ATTACHMENT_NO_CONCURRENT_WRITES_BIT_MESA,
-      .renderArea = saved_state.render.area,
-      .layerCount = 1,
-      .viewMask = saved_state.render.view_mask,
-      .colorAttachmentCount = 2,
-      .pColorAttachments = color_atts,
-   };
-
-   radv_CmdBeginRendering(radv_cmd_buffer_to_handle(cmd_buffer), &rendering_info);
-
-   emit_resolve(cmd_buffer, src_img, dst_img, dst_iview->vk.format);
-
-   radv_CmdEndRendering(radv_cmd_buffer_to_handle(cmd_buffer));
-
-   radv_meta_restore(&saved_state, cmd_buffer);
+   radv_meta_resolve_hardware_image(cmd_buffer, src_iview->image, src_iview->vk.format, src_layout, dst_iview->image,
+                                    dst_iview->vk.format, dst_layout, region);
 }
 
 /**
@@ -690,7 +625,7 @@ radv_cmd_buffer_resolve_rendering(struct radv_cmd_buffer *cmd_buffer)
 
          switch (resolve_method) {
          case RESOLVE_HW:
-            radv_cmd_buffer_resolve_rendering_hw(cmd_buffer, src_iview, src_layout, dst_iview, dst_layout);
+            radv_cmd_buffer_resolve_rendering_hw(cmd_buffer, src_iview, src_layout, dst_iview, dst_layout, &region);
             break;
          case RESOLVE_COMPUTE:
             radv_decompress_resolve_src(cmd_buffer, src_iview->image, src_layout, &region);
@@ -700,7 +635,7 @@ radv_cmd_buffer_resolve_rendering(struct radv_cmd_buffer *cmd_buffer)
          case RESOLVE_FRAGMENT:
             radv_decompress_resolve_src(cmd_buffer, src_iview->image, src_layout, &region);
 
-            radv_cmd_buffer_resolve_rendering_fs(cmd_buffer, src_iview, src_layout, dst_iview, dst_layout);
+            radv_cmd_buffer_resolve_rendering_fs(cmd_buffer, src_iview, src_layout, dst_iview, dst_layout, &region);
             break;
          default:
             UNREACHABLE("Invalid resolve method");
