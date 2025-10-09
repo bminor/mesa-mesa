@@ -652,6 +652,7 @@ nir_precompiled_build_variant(const nir_function *libfunc,
 
    assert(libfunc->workgroup_size[0] != 0 && "must set workgroup size");
 
+   b.shader->info.workgroup_size_variable = false;
    b.shader->info.workgroup_size[0] = libfunc->workgroup_size[0];
    b.shader->info.workgroup_size[1] = libfunc->workgroup_size[1];
    b.shader->info.workgroup_size[2] = libfunc->workgroup_size[2];
