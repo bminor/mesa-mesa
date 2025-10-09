@@ -2634,7 +2634,7 @@
         "description": "radv: Actually fail custom border color sampler creation.",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a52483d9e7214ded4401edc7e6e9c8bc3e768603",
         "notes": null
