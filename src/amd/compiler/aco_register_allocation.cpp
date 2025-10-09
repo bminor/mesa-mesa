@@ -3594,6 +3594,83 @@ emit_parallel_copy(ra_ctx& ctx, std::vector<parallelcopy>& copies,
                                register_file);
 }
 
+std::vector<Instruction*>
+split_blocking_vectors(ra_ctx& ctx, std::vector<unsigned>& vars, RegisterFile& file)
+{
+   std::vector<unsigned> blocked_defs;
+   std::vector<Instruction*> splits;
+
+   for (auto var_it = vars.begin(); var_it != vars.end();) {
+      unsigned id = *var_it;
+      RegClass rc = ctx.program->temp_rc[id];
+      if (rc.size() == 1) {
+         ++var_it;
+         continue;
+      }
+
+      /* If the vector is only partially blocking, clear the non-blocking parts */
+      PhysReg start = ctx.assignments[id].reg;
+      for (PhysReg reg = start; reg < reg + rc.size(); reg = reg.advance(4))
+         if (!file.is_blocked(reg))
+            file.clear(reg, RegClass(ctx.program->temp_rc[id].type(), 1));
+
+      aco_ptr<Instruction> split = aco_ptr<Instruction>(
+         create_instruction(aco_opcode::p_split_vector, Format::PSEUDO, 1, rc.size()));
+      split->operands[0] = Operand(Temp(id, rc), start);
+
+      for (unsigned def_idx = 0; def_idx < rc.size(); ++def_idx) {
+         RegClass def_rc = RegClass::get(rc.type(), MIN2(4, rc.bytes() - def_idx * 4));
+         Temp tmp = ctx.program->allocateTmp(def_rc);
+         PhysReg reg = start.advance(def_idx * 4);
+         ctx.assignments.emplace_back(reg, def_rc);
+         split->definitions[def_idx] = Definition(tmp, reg);
+
+         if (get_reg_specified(ctx, file, def_rc, split, reg, 0))
+            file.fill(split->definitions[def_idx]);
+         else
+            blocked_defs.push_back(tmp.id());
+      }
+      splits.push_back(split.release());
+      var_it = vars.erase(var_it);
+   }
+
+   vars.insert(vars.end(), blocked_defs.begin(), blocked_defs.end());
+
+   return splits;
+}
+
+void
+recreate_blocking_vectors(ra_ctx& ctx, const std::vector<Instruction*>& splits,
+                          std::vector<aco_ptr<Instruction>>& instructions, RegisterFile& reg_file)
+{
+   for (const auto& split : splits) {
+      std::vector<parallelcopy> parallelcopies;
+      RegClass rc = split->operands[0].regClass();
+      Temp tmp = ctx.program->allocateTmp(rc);
+      ctx.assignments.emplace_back();
+
+      aco_ptr<Instruction> vec = aco_ptr<Instruction>(create_instruction(
+         aco_opcode::p_create_vector, Format::PSEUDO, split->definitions.size(), 1));
+
+      for (unsigned op_idx = 0; op_idx < split->definitions.size(); ++op_idx)
+         vec->operands[op_idx] =
+            Operand(split->definitions[op_idx].getTemp(), split->definitions[op_idx].physReg());
+
+      bool temp_in_scc = reg_file[scc];
+
+      PhysReg reg = get_reg_create_vector(ctx, reg_file, tmp, parallelcopies, vec);
+      vec->definitions[0] = Definition(tmp, reg);
+      reg_file.fill(vec->definitions[0]);
+      ctx.assignments[tmp.id()].set(vec->definitions[0]);
+
+      update_renames(ctx, reg_file, parallelcopies, vec);
+      emit_parallel_copy(ctx, parallelcopies, vec, instructions, temp_in_scc, reg_file);
+      instructions.push_back(std::move(vec));
+
+      add_rename(ctx, split->operands[0].getTemp(), tmp);
+   }
+}
+
 
 void
 handle_last_reload_preserved(ra_ctx& ctx, aco_ptr<Instruction>& instr,
@@ -3613,6 +3690,36 @@ handle_last_reload_preserved(ra_ctx& ctx, aco_ptr<Instruction>& instr,
    assert(success);
 
    update_renames(ctx, register_file, parallelcopy, instr, false, false);
+}
+
+void
+handle_call(ra_ctx& ctx, aco_ptr<Instruction>& instr, BITSET_DECLARE(call_clobbered_regs, 512),
+            std::vector<Instruction*>& vector_splits, std::vector<parallelcopy>& parallelcopy,
+            RegisterFile& register_file)
+{
+   /* create parallelcopy pair to move blocking vars */
+   RegisterFile tmp_file = register_file;
+   std::vector<unsigned> vars = collect_vars_from_bitset(ctx, tmp_file, call_clobbered_regs);
+
+   tmp_file.fill_killed_operands(instr.get());
+   unsigned start, end;
+   BITSET_FOREACH_RANGE (start, end, call_clobbered_regs, 512) {
+      PhysRegInterval interval = PhysRegInterval{PhysReg{start}, end - start};
+      tmp_file.block(interval);
+   }
+
+   std::vector<struct parallelcopy> copies;
+   bool success = get_regs_for_copies(ctx, tmp_file, copies, vars, instr, PhysRegInterval{});
+   if (success) {
+      parallelcopy.insert(parallelcopy.end(), copies.begin(), copies.end());
+   } else {
+      vector_splits = split_blocking_vectors(ctx, vars, tmp_file);
+      success = get_regs_for_copies(ctx, tmp_file, parallelcopy, vars, instr, PhysRegInterval{});
+      /* With all blocking vars being scalar, assigning registers should always succeed. */
+      assert(success);
+   }
+
+   update_renames(ctx, register_file, parallelcopy, instr);
 }
 
 } /* end namespace */
@@ -3646,6 +3753,7 @@ register_allocation(Program* program, ra_test_policy policy)
       for (; instr_it != block.instructions.end(); ++instr_it) {
          aco_ptr<Instruction>& instr = *instr_it;
          std::vector<parallelcopy> parallelcopy;
+         std::vector<Instruction*> vector_splits;
          assert(!is_phi(instr));
 
          /* handle operands */
@@ -3728,6 +3836,29 @@ register_allocation(Program* program, ra_test_policy policy)
             handle_last_reload_preserved(ctx, instr, parallelcopy, register_file);
          }
 
+         BITSET_DECLARE(call_clobbered_regs, 512);
+         if (instr->isCall()) {
+            /* Calculate preserved registers, then invert */
+            instr->call().abi.preservedRegisters(call_clobbered_regs, ctx.limit);
+            for (auto& op : instr->operands) {
+               if (!op.isTemp() || !op.isPrecolored() || op.isClobbered())
+                  continue;
+               for (unsigned i = 0; i < op.size(); ++i)
+                  BITSET_SET(call_clobbered_regs, op.physReg().reg() + i);
+            }
+            BITSET_NOT(call_clobbered_regs);
+
+            /* Allow linear VGPRs in the clobbered range.
+             * Linear VGPRs are spilled in spill_preserved, and the stack pointer is always
+             * guaranteed to be preserved.
+             */
+            BITSET_CLEAR_RANGE(call_clobbered_regs, 256 + ctx.vgpr_bounds - ctx.num_linear_vgprs,
+                               256 + ctx.vgpr_bounds);
+
+            handle_call(ctx, instr, call_clobbered_regs, vector_splits, parallelcopy,
+                        register_file);
+         }
+
          /* handle fixed definitions first */
          for (unsigned i = 0; i < instr->definitions.size(); ++i) {
             auto& definition = instr->definitions[i];
@@ -3747,6 +3878,13 @@ register_allocation(Program* program, ra_test_policy policy)
                RegisterFile tmp_file(register_file);
                /* re-enable the killed operands, so that we don't move the blocking vars there */
                tmp_file.fill_killed_operands(instr.get());
+               if (instr->isCall()) {
+                  unsigned start, end;
+                  BITSET_FOREACH_RANGE (start, end, call_clobbered_regs, 512) {
+                     PhysRegInterval interval = PhysRegInterval{PhysReg{start}, end - start};
+                     tmp_file.block(interval);
+                  }
+               }
 
                ASSERTED bool success = false;
                success = get_regs_for_copies(ctx, tmp_file, parallelcopy, vars, instr, def_regs);
@@ -3865,6 +4003,9 @@ register_allocation(Program* program, ra_test_policy policy)
                add_subdword_operand(ctx, instr, i, op.physReg().byte(), op.regClass());
          }
 
+         for (auto split : vector_splits)
+            instructions.emplace_back(split);
+
          emit_parallel_copy(ctx, parallelcopy, instr, instructions, temp_in_scc, register_file);
 
          /* some instructions need VOP3 encoding if operand/definition is not assigned to VCC */
@@ -3923,6 +4064,13 @@ register_allocation(Program* program, ra_test_policy policy)
 
          instructions.emplace_back(std::move(*instr_it));
 
+         /* If we split any vectors to resolve packing constraints, recreate the vectors here.
+          * TODO: we could actually defer vector creation until next use or end of block. For now,
+          * having to split vectors because of register space constraints is a theoretical edge case
+          * that isn't really hit in practice, so spending effort on it wouldn't yield any benefit.
+          */
+         if (!vector_splits.empty())
+            recreate_blocking_vectors(ctx, vector_splits, instructions, register_file);
       } /* end for Instr */
 
       if ((block.kind & block_kind_top_level) && block.linear_succs.empty()) {
