@@ -100,6 +100,12 @@ compile(void *memctx, const uint32_t *spirv, size_t spirv_size, unsigned arch)
    nir_shader *nir =
       spirv_to_nir(spirv, spirv_size / 4, NULL, 0, MESA_SHADER_KERNEL,
                    "library", &spirv_options, nir_options);
+   /* Workgroup size may be different between different entrypoints, so we
+    * mark it as variable to prevent it from being lowered to a constant while
+    * we are still processing all entrypoints together. This is tempoary,
+    * nir_precompiled_build_variant will set the fixed workgroup size for each
+    * entrypoint and set workgroup_size_variable back to false. */
+   nir->info.workgroup_size_variable = true;
    nir_validate_shader(nir, "after spirv_to_nir");
    nir_validate_ssa_dominance(nir, "after spirv_to_nir");
    ralloc_steal(memctx, nir);
