@@ -80,7 +80,7 @@ panvk_image_can_use_afbc(
             (VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_HOST_TRANSFER_BIT)) &&
           pan_query_afbc(&phys_dev->kmod.props) &&
           pan_afbc_supports_format(arch, pfmt) &&
-          tiling == VK_IMAGE_TILING_OPTIMAL && type != VK_IMAGE_TYPE_1D &&
+          tiling != VK_IMAGE_TILING_LINEAR && type != VK_IMAGE_TYPE_1D &&
           (type != VK_IMAGE_TYPE_3D || arch >= 7) &&
           (!(flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) || arch >= 9) &&
           (!(flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT));
@@ -217,13 +217,12 @@ panvk_image_can_use_mod(struct panvk_image *image,
    if (forced_linear)
       return mod == DRM_FORMAT_MOD_LINEAR;
 
+   assert(image->vk.tiling == VK_IMAGE_TILING_OPTIMAL ||
+          image->vk.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT);
+
    if (drm_is_afbc(mod)) {
       /* AFBC explicitly disabled. */
       if (PANVK_DEBUG(NO_AFBC))
-         return false;
-
-      /* Non-optimal tiling requested. */
-      if (image->vk.tiling != VK_IMAGE_TILING_OPTIMAL)
          return false;
 
       /* Can't do AFBC if store/host copy is requested. */
