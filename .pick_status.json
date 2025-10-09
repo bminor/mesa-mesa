@@ -2864,7 +2864,7 @@
         "description": "anv: fix companion usage for emulated image",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e60416b4e427b120d1b77cbd15f659dc36daf97f",
         "notes": null
