@@ -8039,7 +8039,7 @@ radv_emit_compute_pipeline(struct radv_cmd_buffer *cmd_buffer, struct radv_compu
 }
 
 static void
-radv_mark_descriptor_sets_dirty(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoint bind_point)
+radv_mark_descriptors_dirty(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoint bind_point)
 {
    struct radv_descriptor_state *descriptors_state = radv_get_descriptors_state(cmd_buffer, bind_point);
 
@@ -8572,7 +8572,7 @@ radv_CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipeline
 
       if (cmd_buffer->state.compute_pipeline == compute_pipeline)
          return;
-      radv_mark_descriptor_sets_dirty(cmd_buffer, pipelineBindPoint);
+      radv_mark_descriptors_dirty(cmd_buffer, pipelineBindPoint);
 
       radv_bind_shader(cmd_buffer, compute_pipeline->base.shaders[MESA_SHADER_COMPUTE], MESA_SHADER_COMPUTE);
 
@@ -8586,7 +8586,7 @@ radv_CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipeline
 
       if (cmd_buffer->state.rt_pipeline == rt_pipeline)
          return;
-      radv_mark_descriptor_sets_dirty(cmd_buffer, pipelineBindPoint);
+      radv_mark_descriptors_dirty(cmd_buffer, pipelineBindPoint);
 
       radv_bind_shader(cmd_buffer, rt_pipeline->base.base.shaders[MESA_SHADER_INTERSECTION], MESA_SHADER_INTERSECTION);
       radv_bind_rt_prolog(cmd_buffer, rt_pipeline->prolog);
@@ -8620,7 +8620,7 @@ radv_CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipeline
 
       if (cmd_buffer->state.graphics_pipeline == graphics_pipeline)
          return;
-      radv_mark_descriptor_sets_dirty(cmd_buffer, pipelineBindPoint);
+      radv_mark_descriptors_dirty(cmd_buffer, pipelineBindPoint);
 
       radv_foreach_stage (
          stage, (cmd_buffer->state.active_stages | graphics_pipeline->active_stages) & RADV_GRAPHICS_STAGE_BITS) {
@@ -9615,8 +9615,8 @@ radv_CmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCou
    primary->state.dirty |= RADV_CMD_DIRTY_PIPELINE | RADV_CMD_DIRTY_INDEX_BUFFER | RADV_CMD_DIRTY_GUARDBAND |
                            RADV_CMD_DIRTY_SHADER_QUERY | RADV_CMD_DIRTY_OCCLUSION_QUERY |
                            RADV_CMD_DIRTY_DB_SHADER_CONTROL | RADV_CMD_DIRTY_FRAGMENT_OUTPUT;
-   radv_mark_descriptor_sets_dirty(primary, VK_PIPELINE_BIND_POINT_GRAPHICS);
-   radv_mark_descriptor_sets_dirty(primary, VK_PIPELINE_BIND_POINT_COMPUTE);
+   radv_mark_descriptors_dirty(primary, VK_PIPELINE_BIND_POINT_GRAPHICS);
+   radv_mark_descriptors_dirty(primary, VK_PIPELINE_BIND_POINT_COMPUTE);
 
    primary->state.last_first_instance = -1;
    primary->state.last_drawid = -1;
@@ -13032,7 +13032,7 @@ radv_CmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPr
       cmd_buffer->push_constant_stages |= VK_SHADER_STAGE_COMPUTE_BIT;
 
       if (ies)
-         radv_mark_descriptor_sets_dirty(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE);
+         radv_mark_descriptors_dirty(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE);
 
       radv_after_dispatch(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, true);
    } else {
@@ -13425,11 +13425,11 @@ radv_before_dispatch(struct radv_cmd_buffer *cmd_buffer, struct radv_compute_pip
        * the two we always need to switch pipelines.
        */
       if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
-         radv_mark_descriptor_sets_dirty(cmd_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+         radv_mark_descriptors_dirty(cmd_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
          cmd_buffer->push_constant_stages |= RADV_RT_STAGE_BITS;
       } else {
          assert(bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
-         radv_mark_descriptor_sets_dirty(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE);
+         radv_mark_descriptors_dirty(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE);
          cmd_buffer->push_constant_stages |= VK_SHADER_STAGE_COMPUTE_BIT;
       }
    }
@@ -15365,14 +15365,14 @@ radv_CmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount, const
 
    if (bound_stages & VK_SHADER_STAGE_COMPUTE_BIT) {
       radv_reset_pipeline_state(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE);
-      radv_mark_descriptor_sets_dirty(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE);
+      radv_mark_descriptors_dirty(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE);
 
       radv_bind_compute_shader(cmd_buffer, cmd_buffer->state.shader_objs[MESA_SHADER_COMPUTE]);
    }
 
    if (bound_stages & RADV_GRAPHICS_STAGE_BITS) {
       radv_reset_pipeline_state(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
-      radv_mark_descriptor_sets_dirty(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
+      radv_mark_descriptors_dirty(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 
       /* Graphics shaders are handled at draw time because of shader variants. */
    }
