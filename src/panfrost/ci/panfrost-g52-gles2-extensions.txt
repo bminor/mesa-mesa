@@ -40,6 +40,7 @@ GL_EXT_read_format_bgra
 GL_EXT_render_snorm
 GL_EXT_robustness
 GL_EXT_separate_shader_objects
+GL_EXT_shader_clock
 GL_EXT_shader_framebuffer_fetch
 GL_EXT_shader_framebuffer_fetch_non_coherent
 GL_EXT_shader_implicit_conversions

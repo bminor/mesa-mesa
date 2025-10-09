@@ -296,7 +296,7 @@ EXT(EXT_semaphore_fd                        , EXT_semaphore_fd                  
 EXT(EXT_semaphore_win32                     , EXT_semaphore_win32                    , GLL, GLC,  x , ES2, 2017)
 EXT(EXT_separate_shader_objects             , dummy_true                             ,  x ,  x ,  x , ES2, 2013)
 EXT(EXT_separate_specular_color             , dummy_true                             , GLL,  x ,  x ,  x , 1997)
-EXT(EXT_shader_clock                        , ARB_shader_clock                       , GLL, GLC,  x ,  x , 2025)
+EXT(EXT_shader_clock                        , ARB_shader_clock                       , GLL, GLC,  x ,  31, 2025)
 EXT(EXT_shader_framebuffer_fetch            , EXT_shader_framebuffer_fetch           , GLL, GLC,  x , ES2, 2013)
 EXT(EXT_shader_framebuffer_fetch_non_coherent, EXT_shader_framebuffer_fetch_non_coherent, GLL, GLC,  x, ES2, 2018)
 EXT(EXT_shader_group_vote                   , ARB_shader_group_vote                  ,   x,   x,  x ,  30, 2013)
