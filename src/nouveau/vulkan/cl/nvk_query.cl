@@ -26,7 +26,7 @@ nvk_copy_queries(uint64_t pool_addr, uint query_start, uint query_stride,
    uint64_t dst_offset = dst_stride * (uint64_t)i;
    uint num_reports = 1;
 
-   if (query_stride == sizeof(struct nvk_query_report)) {
+   if (flags & NVK_QUERY_IS_TIMESTAMP) {
       /* Timestamp queries are the only ones use a single report */
       if (write_results) {
          vk_write_query(dst_addr + dst_offset, 0, flags, report->timestamp);

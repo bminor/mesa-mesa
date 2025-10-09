@@ -796,6 +796,9 @@ nvk_meta_copy_query_pool_results(struct nvk_cmd_buffer *cmd,
       return;
    }
 
+   if (pool->vk.query_type == VK_QUERY_TYPE_TIMESTAMP)
+      flags |= NVK_QUERY_IS_TIMESTAMP;
+
    const struct nvk_copy_query_push push = {
       .pool_addr = pool->mem->va->addr,
       .query_start = pool->query_start,
