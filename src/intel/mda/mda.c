@@ -9,10 +9,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "util/hash_table.h"
 #include "util/os_file.h"
 #include "util/os_misc.h"
 #include "util/ralloc.h"
@@ -952,7 +954,7 @@ open_manual()
       "",
       ".SH SYNOPSIS",
       "",
-      "mda [[-f FILE]... [-U[nnn]] [-Y[nnn]]] COMMAND [args]",
+      "mda [[-f PATH]... [-U[nnn]] [-Y[nnn]]] COMMAND [args]",
       "",
       ".SH DESCRIPTION",
       "",
@@ -971,8 +973,9 @@ open_manual()
       "either first or last).",
       "",
       "By default all *.mda.tar files in the current directory are read.",
-      "To specify which files to read use one or more `-f FILENAME` flags",
-      "before the command.",
+      "To specify which files or directories to read use one or more `-f PATH`",
+      "flags before the command.  When PATH is a directory, all *.mda.tar files",
+      "in that directory (non-recursively) are loaded.",
       "",
       ".SH COMMANDS",
       "",
@@ -1002,7 +1005,9 @@ open_manual()
       "",
       ".SH OPTIONS",
       "",
-      "    -f FILENAME                    read from specific archive file",
+      "    -f PATH                        read a file, or mda.tar files in a directory",
+      "                                   non-recursively.  Multiple -f can be used.",
+      "                                   If no -f provided, current directory is used.",
       "",
       "    -U[nnn]                        use unified diff (default: 5 context lines)",
       "",
@@ -1046,11 +1051,13 @@ open_manual()
 static void
 print_help()
 {
-   printf("mda [[-f FILENAME]... [-U[nnn]] [-Y[nnn]]] CMD [ARGS...]\n"
+   printf("mda [[-f PATH]... [-U[nnn]] [-Y[nnn]]] CMD [ARGS...]\n"
           "\n"
           "OPTIONS\n"
           "\n"
-          "    -f FILENAME                    read from specific archive file\n"
+          "    -f PATH                        read a file, or mda.tar files in a directory\n"
+          "                                   non-recursively.  Multiple -f can be used.\n"
+          "                                   If no -f provided, current directory is used.\n"
           "    -U[nnn]                        use unified diff (default: 5 context lines)\n"
           "    -Y[nnn]                        use side-by-side diff (default: 240 width)\n"
           "\n"
@@ -1089,6 +1096,31 @@ load_archive(context *ctx, const char *filename)
    ctx->archives[ctx->archives_count] = ma;
    ctx->archives_count++;
    return true;
+}
+
+static void
+load_archives_from_directory(context *ctx, const char *dirpath)
+{
+   DIR *d = opendir(dirpath);
+   if (!d) {
+      fprintf(stderr, "mda: couldn't open directory %s: %s\n", dirpath, strerror(errno));
+      return;
+   }
+
+   struct dirent *dir;
+   while ((dir = readdir(d)) != NULL) {
+      slice filename = slice_from_cstr(dir->d_name);
+      slice mda_ext = slice_from_cstr(".mda.tar");
+      if (slice_ends_with(filename, mda_ext)) {
+         char *fullpath = ralloc_asprintf(ctx, "%s/%s", dirpath, dir->d_name);
+         if (!load_archive(ctx, fullpath)) {
+            /* Failed to parse. */
+            fprintf(stderr, "mda: ignoring file after parsing failure: %s\n", fullpath);
+         }
+         ralloc_free(fullpath);
+      }
+   }
+   closedir(d);
 }
 
 static pid_t
@@ -1161,26 +1193,35 @@ main(int argc, char *argv[])
    bool diff_set = false;
    int cur_arg = 1;
 
+   /* Set to deduplicate -f arguments. */
+   struct hash_table *seen_paths = _mesa_string_hash_table_create(NULL);
+
    while (cur_arg < argc && argv[cur_arg][0] == '-') {
       if (!strcmp(argv[cur_arg], "-f")) {
-      if (argc == cur_arg + 1)
-         failf("mda: missing filename after -f flag\n");
+         if (argc == cur_arg + 1)
+            failf("mda: missing filename after -f flag\n");
 
-      const char *filename = argv[cur_arg + 1];
-      cur_arg += 2;
+         const char *path = argv[cur_arg + 1];
+         cur_arg += 2;
 
-      for (int i = 0; i < ctx->archives_count; i++) {
-         mesa_archive *ma = ctx->archives[i];
+         /* Skip if we've already seen this path. */
+         if (_mesa_hash_table_search(seen_paths, path))
+            continue;
 
-         /* Don't load duplicate files from command line. */
-         if (slice_equal_cstr(ma->filename, filename)) {
-            filename = NULL;
-            break;
+         _mesa_hash_table_insert(seen_paths, path, NULL);
+
+         struct stat st;
+         if (stat(path, &st) != 0)
+            failf("mda: couldn't access path %s: %s\n", path, strerror(errno));
+
+         if (S_ISDIR(st.st_mode)) {
+            load_archives_from_directory(ctx, path);
+         } else if (S_ISREG(st.st_mode)) {
+            if (!load_archive(ctx, path))
+               failf("mda: failed to parse file: %s\n", path);
+         } else {
+            failf("mda: path is not a file or directory: %s\n", path);
          }
-      }
-
-      if (filename && !load_archive(ctx, filename))
-         failf("mda: failed to parse file: %s\n", filename);
       } else if (argv[cur_arg][1] == 'U' || argv[cur_arg][1] == 'Y') {
          if (diff_set)
             failf("mda: -U and -Y options are mutually exclusive\n");
@@ -1201,25 +1242,11 @@ main(int argc, char *argv[])
       }
    }
 
+   _mesa_hash_table_destroy(seen_paths, NULL);
+
    if (ctx->archives_count == 0) {
       /* Load all mda files in the current directory. */
-      DIR *d;
-      struct dirent *dir;
-      d = opendir(".");
-      if (!d)
-         failf("mda: couldn't find *.mda.tar files in current directory: %s\n", strerror(errno));
-
-      while ((dir = readdir(d)) != NULL) {
-         slice filename = slice_from_cstr(dir->d_name);
-         slice mda_ext = slice_from_cstr(".mda.tar");
-         if (slice_ends_with(filename, mda_ext)) {
-            if (!load_archive(ctx, dir->d_name)) {
-               fprintf(stderr, "mda: ignoring file after parsing failure: %s\n", dir->d_name);
-               continue;
-            }
-         }
-      }
-      closedir(d);
+      load_archives_from_directory(ctx, ".");
 
       if (ctx->archives_count == 0)
          failf("Couldn't load any *.mda.tar files in the current directory\n");
