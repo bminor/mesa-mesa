@@ -70,7 +70,7 @@ add_ud_arg(struct radv_shader_args *args, unsigned size, enum ac_arg_type type, 
 static void
 add_descriptor_set(struct radv_shader_args *args, uint32_t set)
 {
-   ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_CONST_ADDR, &args->descriptor_sets[set]);
+   ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_CONST_ADDR, &args->descriptors[set]);
 
    struct radv_userdata_info *ud_info = &args->user_sgprs_locs.descriptor_sets[set];
    ud_info->sgpr_idx = args->num_user_sgprs;
@@ -95,7 +95,7 @@ declare_global_input_sgprs(const enum amd_gfx_level gfx_level, const struct radv
             add_descriptor_set(args, i);
          }
       } else {
-         add_ud_arg(args, 1, AC_ARG_CONST_ADDR, &args->descriptor_sets[0], AC_UD_INDIRECT_DESCRIPTORS);
+         add_ud_arg(args, 1, AC_ARG_CONST_ADDR, &args->descriptors[0], AC_UD_INDIRECT_DESCRIPTORS);
       }
 
       if (info->merged_shader_compiled_separately ||
@@ -319,7 +319,7 @@ void
 radv_declare_rt_shader_args(enum amd_gfx_level gfx_level, struct radv_shader_args *args)
 {
    add_ud_arg(args, 2, AC_ARG_CONST_ADDR, &args->ac.rt.uniform_shader_addr, AC_UD_SCRATCH_RING_OFFSETS);
-   add_ud_arg(args, 1, AC_ARG_CONST_ADDR, &args->descriptor_sets[0], AC_UD_INDIRECT_DESCRIPTORS);
+   add_ud_arg(args, 1, AC_ARG_CONST_ADDR, &args->descriptors[0], AC_UD_INDIRECT_DESCRIPTORS);
    ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_CONST_ADDR, &args->ac.push_constants);
    ac_add_arg(&args->ac, AC_ARG_SGPR, 2, AC_ARG_CONST_ADDR, &args->ac.rt.sbt_descriptors);
    ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_CONST_ADDR, &args->ac.rt.traversal_shader_addr);
@@ -428,7 +428,7 @@ declare_unmerged_vs_tcs_args(const enum amd_gfx_level gfx_level, const struct ra
       ac_add_preserved(&args->ac, &args->ac.scratch_offset);
    }
 
-   ac_add_preserved(&args->ac, &args->descriptor_sets[0]);
+   ac_add_preserved(&args->ac, &args->descriptors[0]);
    ac_add_preserved(&args->ac, &args->ac.push_constants);
    ac_add_preserved(&args->ac, &args->ac.view_index);
    ac_add_preserved(&args->ac, &args->ac.tcs_offchip_layout);
@@ -493,7 +493,7 @@ declare_unmerged_vs_tes_gs_args(const enum amd_gfx_level gfx_level, const struct
       ac_add_preserved(&args->ac, &args->ac.scratch_offset);
    }
 
-   ac_add_preserved(&args->ac, &args->descriptor_sets[0]);
+   ac_add_preserved(&args->ac, &args->descriptors[0]);
    ac_add_preserved(&args->ac, &args->ac.push_constants);
    ac_add_preserved(&args->ac, &args->streamout_buffers);
    if (gfx_level >= GFX12)

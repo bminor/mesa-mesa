@@ -73,7 +73,7 @@ struct radv_userdata_locations {
 struct radv_shader_args {
    struct ac_shader_args ac;
 
-   struct ac_arg descriptor_sets[MAX_SETS];
+   struct ac_arg descriptors[MAX_SETS];
 
    /* Streamout */
    struct ac_arg streamout_buffers;
