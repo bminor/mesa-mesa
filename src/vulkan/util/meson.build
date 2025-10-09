@@ -133,7 +133,7 @@ libvulkan_util = static_library(
 )
 
 idep_vulkan_util_headers = declare_dependency(
-  sources : [vk_dispatch_table[1], vk_enum_to_str[1],
+  sources : [vk_dispatch_table[1], vk_enum_to_str[1], vk_enum_to_str[2],
              vk_struct_type_cast[0], vk_extensions[1]],
   include_directories : include_directories('.')
 )
