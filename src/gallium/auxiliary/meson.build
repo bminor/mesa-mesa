@@ -443,7 +443,7 @@ files_libgallium += custom_target(
   'tr_util.[ch]',
   input: ['../include/pipe/p_defines.h', '../include/pipe/p_video_enums.h', '../../util/blend.h'],
   output: ['tr_util.c', 'tr_util.h'],
-  command: [prog_python, prog_enums2names, '@INPUT@', '-C', '@OUTPUT0@', '-H', '@OUTPUT1@', '-I', 'tr_util.h'],
+  command: [prog_python, prog_enums2names, '@INPUT@', '-C', '@OUTPUT0@', '-H', '@OUTPUT1@'],
   depend_files: prog_enums2names,
 )
 
