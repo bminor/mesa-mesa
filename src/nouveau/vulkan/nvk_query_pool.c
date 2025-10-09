@@ -610,18 +610,20 @@ nvk_query_is_available(struct nvk_query_pool *pool, uint32_t query)
 static VkResult
 nvk_query_wait_for_available(struct nvk_device *dev,
                              struct nvk_query_pool *pool,
-                             uint32_t query)
+                             uint32_t query,
+                             uint64_t abs_timeout_ns)
 {
-   uint64_t abs_timeout_ns = os_time_get_absolute_timeout(NVK_QUERY_TIMEOUT);
+   if (nvk_query_is_available(pool, query))
+      return VK_SUCCESS;
 
-   while (os_time_get_nano() < abs_timeout_ns) {
-      if (nvk_query_is_available(pool, query))
-         return VK_SUCCESS;
-
+   do {
       VkResult status = vk_device_check_status(&dev->vk);
       if (status != VK_SUCCESS)
          return status;
-   }
+
+      if (nvk_query_is_available(pool, query))
+         return VK_SUCCESS;
+   } while (os_time_get_nano() < abs_timeout_ns);
 
    return vk_device_set_lost(&dev->vk, "query timeout");
 }
@@ -660,24 +662,27 @@ nvk_GetQueryPoolResults(VkDevice device,
 {
    VK_FROM_HANDLE(nvk_device, dev, device);
    VK_FROM_HANDLE(nvk_query_pool, pool, queryPool);
+   VkResult status = VK_SUCCESS;
 
    if (vk_device_is_lost(&dev->vk))
       return VK_ERROR_DEVICE_LOST;
 
-   VkResult status = VK_SUCCESS;
+   if (flags & VK_QUERY_RESULT_WAIT_BIT) {
+      uint64_t abs_timeout_ns = os_time_get_absolute_timeout(NVK_QUERY_TIMEOUT);
+      for (uint32_t i = 0; i < queryCount; i++) {
+         status = nvk_query_wait_for_available(dev, pool, firstQuery + i,
+                                               abs_timeout_ns);
+         if (status != VK_SUCCESS)
+            return status;
+      }
+   }
+
    for (uint32_t i = 0; i < queryCount; i++) {
       const uint32_t query = firstQuery + i;
 
-      bool available = nvk_query_is_available(pool, query);
-
-      if (!available && (flags & VK_QUERY_RESULT_WAIT_BIT)) {
-         status = nvk_query_wait_for_available(dev, pool, query);
-         if (status != VK_SUCCESS)
-            return status;
-
-         available = true;
-      }
-
+      /* If we waited, then we know it's available */
+      bool available = (flags & VK_QUERY_RESULT_WAIT_BIT) != 0 ||
+                       nvk_query_is_available(pool, query);
       bool write_results = available || (flags & VK_QUERY_RESULT_PARTIAL_BIT);
 
       const struct nvk_query_report *src = nvk_query_report_map(pool, query);
