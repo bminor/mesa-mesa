@@ -173,6 +173,13 @@ new_src(int num, unsigned flags)
       flags |= IR3_REG_HALF;
    reg = ir3_src_create(instr, num >> 1, flags);
    reg->wrmask = MAX2(1, rflags.wrmask);
+   /* Make sure that relative reads have a size as required, so that
+    * aliasing-related regmask checks in collect_info() aren't surprised by
+    * 0-length arrays.  We don't need a proper size, because aliases will
+    * never be indirectly referenced, anyway.
+    */
+   if (flags & IR3_REG_RELATIV)
+      reg->size = 1;
    rflags.flags = rflags.wrmask = 0;
    return reg;
 }
@@ -186,6 +193,13 @@ new_dst(int num, unsigned flags)
       flags |= IR3_REG_HALF;
    reg = ir3_dst_create(instr, num >> 1, flags);
    reg->wrmask = MAX2(1, rflags.wrmask);
+   /* Make sure that relative writes have a size as required, so that
+    * aliasing-related regmask checks in collect_info() aren't surprised by
+    * 0-length arrays.  We don't need a proper size, because aliases will
+    * never be indirectly referenced, anyway.
+    */
+   if (flags & IR3_REG_RELATIV)
+      reg->size = 1;
    rflags.flags = rflags.wrmask = 0;
    return reg;
 }
