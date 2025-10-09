@@ -765,7 +765,7 @@ brw_lower_alu_restrictions(brw_shader &s)
 
 static void
 brw_lower_vgrf_to_fixed_grf(const struct intel_device_info *devinfo, brw_inst *inst,
-                            brw_reg *reg, bool compressed)
+                            brw_reg *reg)
 {
    if (reg->file != VGRF)
       return;
@@ -829,26 +829,9 @@ brw_lower_vgrfs_to_fixed_grfs(brw_shader &s)
    assert(s.grf_used || !"Must be called after register allocation");
 
    foreach_block_and_inst(block, brw_inst, inst, s.cfg) {
-      /* If the instruction writes to more than one register, it needs to be
-       * explicitly marked as compressed on Gen <= 5.  On Gen >= 6 the
-       * hardware figures out by itself what the right compression mode is,
-       * but we still need to know whether the instruction is compressed to
-       * set up the source register regions appropriately.
-       *
-       * XXX - This is wrong for instructions that write a single register but
-       *       read more than one which should strictly speaking be treated as
-       *       compressed.  For instructions that don't write any registers it
-       *       relies on the destination being a null register of the correct
-       *       type and regioning so the instruction is considered compressed
-       *       or not accordingly.
-       */
-
-      const bool compressed =
-           inst->dst.component_size(inst->exec_size) > REG_SIZE;
-
-      brw_lower_vgrf_to_fixed_grf(s.devinfo, inst, &inst->dst, compressed);
+      brw_lower_vgrf_to_fixed_grf(s.devinfo, inst, &inst->dst);
       for (int i = 0; i < inst->sources; i++) {
-         brw_lower_vgrf_to_fixed_grf(s.devinfo, inst, &inst->src[i], compressed);
+         brw_lower_vgrf_to_fixed_grf(s.devinfo, inst, &inst->src[i]);
       }
    }
 
