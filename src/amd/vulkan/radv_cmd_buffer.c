@@ -13869,6 +13869,9 @@ radv_initialize_hiz(struct radv_cmd_buffer *cmd_buffer, struct radv_image *image
    struct radv_cmd_state *state = &cmd_buffer->state;
    struct radv_barrier_data barrier = {0};
 
+   if (cmd_buffer->qf == RADV_QUEUE_TRANSFER)
+      return;
+
    barrier.layout_transitions.init_mask_ram = 1;
    radv_describe_layout_transition(cmd_buffer, &barrier);
 
