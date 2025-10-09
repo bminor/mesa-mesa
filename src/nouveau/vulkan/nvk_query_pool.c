@@ -66,9 +66,7 @@ nvk_CreateQueryPool(VkDevice device,
    if (!pool)
       return vk_error(dev, VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   /* We place the availability first and then data */
-   pool->query_start = align(pool->vk.query_count * sizeof(uint32_t),
-                             sizeof(struct nvk_query_report));
+   pool->layout = NVK_QUERY_POOL_LAYOUT_SEPARATE;
 
    uint32_t reports_per_query;
    if (pool->vk.query_type == VK_QUERY_TYPE_TIMESTAMP) {
@@ -78,11 +76,30 @@ nvk_CreateQueryPool(VkDevice device,
       /* Everything else is two queries because we have to compute a delta */
       reports_per_query = 2 * vk_query_pool_report_count(&pool->vk);
    }
-   pool->query_stride = reports_per_query * sizeof(struct nvk_query_report);
 
-   if (pool->vk.query_count > 0) {
-      uint32_t mem_size = pool->query_start +
-                          pool->query_stride * pool->vk.query_count;
+   uint64_t mem_size = 0;
+   switch (pool->layout) {
+   case NVK_QUERY_POOL_LAYOUT_SEPARATE:
+      pool->reports_start = align(pool->vk.query_count * sizeof(uint32_t),
+                                  sizeof(struct nvk_query_report));
+      pool->query_stride = reports_per_query * sizeof(struct nvk_query_report);
+      mem_size = pool->reports_start +
+         pool->vk.query_count * (uint64_t)pool->query_stride;
+      break;
+
+   case NVK_QUERY_POOL_LAYOUT_ALIGNED_INTERLEAVED:
+      pool->reports_start = sizeof(struct nvk_query_report);
+      pool->query_stride =
+         align((reports_per_query + 1) * sizeof(struct nvk_query_report),
+               pdev->info.nc_atom_size_B);
+      mem_size = pool->vk.query_count * (uint64_t)pool->query_stride;
+      break;
+
+   default:
+      UNREACHABLE("Unsupported query layout");
+   }
+
+   if (mem_size > 0) {
       result = nvkmd_dev_alloc_mapped_mem(dev->nvkmd, &dev->vk.base,
                                           mem_size, 0 /* align_B */,
                                           NVKMD_MEM_GART,
@@ -119,11 +136,18 @@ nvk_DestroyQueryPool(VkDevice device,
    vk_query_pool_destroy(&dev->vk, pAllocator, &pool->vk);
 }
 
+static uint32_t
+nvk_query_available_stride_B(struct nvk_query_pool *pool)
+{
+   return pool->layout == NVK_QUERY_POOL_LAYOUT_SEPARATE ?
+          sizeof(uint32_t) : pool->query_stride;
+}
+
 static uint64_t
 nvk_query_available_offset_B(struct nvk_query_pool *pool, uint32_t query)
 {
    assert(query < pool->vk.query_count);
-   return query * sizeof(uint32_t);
+   return query * nvk_query_available_stride_B(pool);
 }
 
 static uint64_t
@@ -142,7 +166,7 @@ static uint64_t
 nvk_query_report_offset_B(struct nvk_query_pool *pool, uint32_t query)
 {
    assert(query < pool->vk.query_count);
-   return pool->query_start + query * pool->query_stride;
+   return pool->reports_start + query * pool->query_stride;
 }
 
 static uint64_t
@@ -200,8 +224,15 @@ nvk_ResetQueryPool(VkDevice device,
 {
    VK_FROM_HANDLE(nvk_query_pool, pool, queryPool);
 
-   uint32_t *available = nvk_query_available_map(pool, firstQuery);
-   memset(available, 0, queryCount * sizeof(*available));
+   if (pool->layout == NVK_QUERY_POOL_LAYOUT_SEPARATE) {
+      uint32_t *available = nvk_query_available_map(pool, firstQuery);
+      memset(available, 0, queryCount * sizeof(*available));
+   } else {
+      for (uint32_t i = 0; i < queryCount; i++) {
+         uint32_t *available = nvk_query_available_map(pool, firstQuery + i);
+         *available = 0;
+      }
+   }
 }
 
 VKAPI_ATTR void VKAPI_CALL
@@ -679,7 +710,9 @@ nvk_GetQueryPoolResults(VkDevice device,
 
 struct nvk_copy_query_push {
    uint64_t pool_addr;
-   uint32_t query_start;
+   uint32_t available_stride;
+   uint32_t reports_start;
+   uint32_t report_count;
    uint32_t query_stride;
    uint32_t first_query;
    uint32_t query_count;
@@ -706,13 +739,15 @@ build_copy_queries_shader(void)
 
    struct glsl_struct_field push_fields[] = {
       { .type = glsl_uint64_t_type(), .name = "pool_addr", .offset = 0 },
-      { .type = glsl_uint_type(), .name = "query_start", .offset = 8 },
-      { .type = glsl_uint_type(), .name = "query_stride", .offset = 12 },
-      { .type = glsl_uint_type(), .name = "first_query", .offset = 16 },
-      { .type = glsl_uint_type(), .name = "query_count", .offset = 20 },
-      { .type = glsl_uint64_t_type(), .name = "dst_addr", .offset = 24 },
-      { .type = glsl_uint64_t_type(), .name = "dst_stride", .offset = 32 },
-      { .type = glsl_uint_type(), .name = "flags", .offset = 40 },
+      { .type = glsl_uint_type(), .name = "available_stride", .offset = 8 },
+      { .type = glsl_uint_type(), .name = "reports_start", .offset = 12 },
+      { .type = glsl_uint_type(), .name = "report_count", .offset = 16 },
+      { .type = glsl_uint_type(), .name = "query_stride", .offset = 20 },
+      { .type = glsl_uint_type(), .name = "first_query", .offset = 24 },
+      { .type = glsl_uint_type(), .name = "query_count", .offset = 28 },
+      { .type = glsl_uint64_t_type(), .name = "dst_addr", .offset = 32 },
+      { .type = glsl_uint64_t_type(), .name = "dst_stride", .offset = 40 },
+      { .type = glsl_uint_type(), .name = "flags", .offset = 48 },
    };
    const struct glsl_type *push_iface_type =
       glsl_interface_type(push_fields, ARRAY_SIZE(push_fields),
@@ -726,7 +761,8 @@ build_copy_queries_shader(void)
    nvk_copy_queries(b, load_struct_var(b, push, 0), load_struct_var(b, push, 1),
                     load_struct_var(b, push, 2), load_struct_var(b, push, 3),
                     load_struct_var(b, push, 4), load_struct_var(b, push, 5),
-                    load_struct_var(b, push, 6), load_struct_var(b, push, 7));
+                    load_struct_var(b, push, 6), load_struct_var(b, push, 7),
+                    load_struct_var(b, push, 8), load_struct_var(b, push, 9));
 
    return build.shader;
 }
@@ -790,7 +826,9 @@ nvk_meta_copy_query_pool_results(struct nvk_cmd_buffer *cmd,
 
    const struct nvk_copy_query_push push = {
       .pool_addr = pool->mem->va->addr,
-      .query_start = pool->query_start,
+      .available_stride = nvk_query_available_stride_B(pool),
+      .reports_start = pool->reports_start,
+      .report_count = vk_query_pool_report_count(&pool->vk),
       .query_stride = pool->query_stride,
       .first_query = first_query,
       .query_count = query_count,
