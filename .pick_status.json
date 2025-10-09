@@ -2614,7 +2614,7 @@
         "description": "panfrost,mesa: Fix versions for EXT_shader_clock",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2ce201707e2a00f6bca9e94a78abcb4f7202526b",
         "notes": null
