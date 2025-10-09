@@ -1830,6 +1830,7 @@ emit_program(Program* program, std::vector<uint32_t>& code, std::vector<struct a
 
    program->config->scratch_bytes_per_wave =
       align(program->config->scratch_bytes_per_wave, program->dev.scratch_alloc_granule);
+   program->config->wgp_mode = program->wgp_mode;
 
    return exec_size;
 }

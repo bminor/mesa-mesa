@@ -390,6 +390,7 @@ ac_compile_llvm_module(struct ac_llvm_compiler *ac_llvm, LLVMModuleRef llvm_modu
 
    rbin->base.type = RADV_BINARY_TYPE_RTLD;
    rbin->base.total_size = alloc_size;
+   rbin->base.config.wgp_mode = options->wgp_mode;
    rbin->elf_size = elf_size;
    rbin->llvm_ir_size = llvm_ir_size;
    *rbinary = &rbin->base;
