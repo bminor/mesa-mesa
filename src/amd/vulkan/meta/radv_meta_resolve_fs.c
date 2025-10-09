@@ -431,8 +431,8 @@ emit_depth_stencil_resolve(struct radv_cmd_buffer *cmd_buffer, struct radv_image
 }
 
 void
-radv_meta_resolve_fragment_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image *src_image,
-                                 VkImageLayout src_image_layout, struct radv_image *dst_image,
+radv_meta_resolve_fragment_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image *src_image, VkFormat src_format,
+                                 VkImageLayout src_image_layout, struct radv_image *dst_image, VkFormat dst_format,
                                  VkImageLayout dst_image_layout, const VkImageResolve2 *region)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
@@ -473,7 +473,7 @@ radv_meta_resolve_fragment_image(struct radv_cmd_buffer *cmd_buffer, struct radv
                            .flags = VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA,
                            .image = radv_image_to_handle(src_image),
                            .viewType = VK_IMAGE_VIEW_TYPE_2D,
-                           .format = src_image->vk.format,
+                           .format = src_format,
                            .subresourceRange =
                               {
                                  .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -492,7 +492,7 @@ radv_meta_resolve_fragment_image(struct radv_cmd_buffer *cmd_buffer, struct radv
                            .flags = VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA,
                            .image = radv_image_to_handle(dst_image),
                            .viewType = radv_meta_get_view_type(dst_image),
-                           .format = dst_image->vk.format,
+                           .format = dst_format,
                            .subresourceRange =
                               {
                                  .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
