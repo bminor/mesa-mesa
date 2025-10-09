@@ -111,21 +111,26 @@ nvk_DestroyQueryPool(VkDevice device,
 }
 
 static uint64_t
-nvk_query_available_addr(struct nvk_query_pool *pool, uint32_t query)
+nvk_query_available_offset_B(struct nvk_query_pool *pool, uint32_t query)
 {
    assert(query < pool->vk.query_count);
-   return pool->mem->va->addr + query * sizeof(uint32_t);
+   return query * sizeof(uint32_t);
+}
+
+static uint64_t
+nvk_query_available_addr(struct nvk_query_pool *pool, uint32_t query)
+{
+   return pool->mem->va->addr + nvk_query_available_offset_B(pool, query);
 }
 
 static uint32_t *
 nvk_query_available_map(struct nvk_query_pool *pool, uint32_t query)
 {
-   assert(query < pool->vk.query_count);
-   return (uint32_t *)pool->mem->map + query;
+   return pool->mem->map + nvk_query_available_offset_B(pool, query);
 }
 
 static uint64_t
-nvk_query_offset(struct nvk_query_pool *pool, uint32_t query)
+nvk_query_report_offset_B(struct nvk_query_pool *pool, uint32_t query)
 {
    assert(query < pool->vk.query_count);
    return pool->query_start + query * pool->query_stride;
@@ -134,13 +139,13 @@ nvk_query_offset(struct nvk_query_pool *pool, uint32_t query)
 static uint64_t
 nvk_query_report_addr(struct nvk_query_pool *pool, uint32_t query)
 {
-   return pool->mem->va->addr + nvk_query_offset(pool, query);
+   return pool->mem->va->addr + nvk_query_report_offset_B(pool, query);
 }
 
 static struct nvk_query_report *
 nvk_query_report_map(struct nvk_query_pool *pool, uint32_t query)
 {
-   return (void *)((char *)pool->mem->map + nvk_query_offset(pool, query));
+   return pool->mem->map + nvk_query_report_offset_B(pool, query);
 }
 
 /**
