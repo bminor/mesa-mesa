@@ -66,7 +66,13 @@ nvk_CreateQueryPool(VkDevice device,
    if (!pool)
       return vk_error(dev, VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   pool->layout = NVK_QUERY_POOL_LAYOUT_SEPARATE;
+   /* Use interleaved layouts on Tegra so we can safely  handle non-coherent
+    * maps
+    */
+   if (pdev->info.type == NV_DEVICE_TYPE_SOC)
+      pool->layout = NVK_QUERY_POOL_LAYOUT_ALIGNED_INTERLEAVED;
+   else
+      pool->layout = NVK_QUERY_POOL_LAYOUT_SEPARATE;
 
    uint32_t reports_per_query;
    if (pool->vk.query_type == VK_QUERY_TYPE_TIMESTAMP) {
@@ -111,8 +117,10 @@ nvk_CreateQueryPool(VkDevice device,
       }
 
       if ((pdev->debug_flags & NVK_DEBUG_ZERO_MEMORY) ||
-          (pCreateInfo->flags & VK_QUERY_POOL_CREATE_RESET_BIT_KHR))
+          (pCreateInfo->flags & VK_QUERY_POOL_CREATE_RESET_BIT_KHR)) {
          memset(pool->mem->map, 0, mem_size);
+         nvkmd_mem_sync_map_to_gpu(pool->mem, 0, mem_size);
+      }
    }
 
    *pQueryPool = nvk_query_pool_to_handle(pool);
@@ -181,6 +189,30 @@ nvk_query_report_map(struct nvk_query_pool *pool, uint32_t query)
    return pool->mem->map + nvk_query_report_offset_B(pool, query);
 }
 
+static void
+nvk_sync_queries_to_gpu(struct nvk_query_pool *pool,
+                        uint32_t first_query, uint32_t count)
+{
+   if (pool->mem->flags & NVKMD_MEM_COHERENT)
+      return;
+
+   assert(pool->layout == NVK_QUERY_POOL_LAYOUT_ALIGNED_INTERLEAVED);
+   nvkmd_mem_sync_map_to_gpu(pool->mem, first_query * pool->query_stride,
+                             count * pool->query_stride);
+}
+
+static void
+nvk_sync_queries_from_gpu(struct nvk_query_pool *pool,
+                          uint32_t first_query, uint32_t count)
+{
+   if (pool->mem->flags & NVKMD_MEM_COHERENT)
+      return;
+
+   assert(pool->layout == NVK_QUERY_POOL_LAYOUT_ALIGNED_INTERLEAVED);
+   nvkmd_mem_sync_map_from_gpu(pool->mem, first_query * pool->query_stride,
+                               count * pool->query_stride);
+}
+
 /**
  * Goes through a series of consecutive query indices in the given pool,
  * setting all element values to 0 and emitting them as available.
@@ -225,6 +257,7 @@ nvk_ResetQueryPool(VkDevice device,
    VK_FROM_HANDLE(nvk_query_pool, pool, queryPool);
 
    if (pool->layout == NVK_QUERY_POOL_LAYOUT_SEPARATE) {
+      assert(pool->mem->flags & NVKMD_MEM_COHERENT);
       uint32_t *available = nvk_query_available_map(pool, firstQuery);
       memset(available, 0, queryCount * sizeof(*available));
    } else {
@@ -232,6 +265,7 @@ nvk_ResetQueryPool(VkDevice device,
          uint32_t *available = nvk_query_available_map(pool, firstQuery + i);
          *available = 0;
       }
+      nvk_sync_queries_to_gpu(pool, firstQuery, queryCount);
    }
 }
 
@@ -621,6 +655,8 @@ nvk_query_wait_for_available(struct nvk_device *dev,
       if (status != VK_SUCCESS)
          return status;
 
+      nvk_sync_queries_from_gpu(pool, query, 1);
+
       if (nvk_query_is_available(pool, query))
          return VK_SUCCESS;
    } while (os_time_get_nano() < abs_timeout_ns);
@@ -666,6 +702,8 @@ nvk_GetQueryPoolResults(VkDevice device,
 
    if (vk_device_is_lost(&dev->vk))
       return VK_ERROR_DEVICE_LOST;
+
+   nvk_sync_queries_from_gpu(pool, firstQuery, queryCount);
 
    if (flags & VK_QUERY_RESULT_WAIT_BIT) {
       uint64_t abs_timeout_ns = os_time_get_absolute_timeout(NVK_QUERY_TIMEOUT);
