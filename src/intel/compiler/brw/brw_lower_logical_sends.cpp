@@ -735,6 +735,30 @@ get_sampler_msg_payload_type_bit_size(const intel_device_info *devinfo,
    return src_type_size * 8;
 }
 
+/* Return one bit for each channel(ABGR), bit set means that channel should
+ * not be written back.
+ */
+static uint32_t
+sampler_calc_channel_mask(const intel_device_info *devinfo, brw_tex_inst *tex)
+{
+   /* If we're requesting fewer than four channels worth of response,
+    * and we have an explicit header, we need to set up the sampler
+    * writemask.  It's reversed from normal: 1 means "don't write".
+    */
+   unsigned comps_regs =
+      DIV_ROUND_UP(regs_written(tex) - reg_unit(devinfo) * tex->residency,
+                   reg_unit(devinfo));
+   unsigned comp_regs =
+      DIV_ROUND_UP(tex->dst.component_size(tex->exec_size),
+                   reg_unit(devinfo) * REG_SIZE);
+   if (comps_regs < 4 * comp_regs) {
+      assert(comps_regs % comp_regs == 0);
+      return ~((1 << (comps_regs / comp_regs)) - 1) & 0xf;
+   }
+
+   return 0;
+}
+
 static void
 lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
 {
@@ -796,21 +820,7 @@ lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
       if (tex->residency)
          g0_2 |= 1 << 23; /* g0.2 bit23 : Pixel Null Mask Enable */
 
-      /* If we're requesting fewer than four channels worth of response,
-       * and we have an explicit header, we need to set up the sampler
-       * writemask.  It's reversed from normal: 1 means "don't write".
-       */
-      unsigned comps_regs =
-         DIV_ROUND_UP(regs_written(tex) - reg_unit(devinfo) * tex->residency,
-                      reg_unit(devinfo));
-      unsigned comp_regs =
-         DIV_ROUND_UP(tex->dst.component_size(tex->exec_size),
-                      reg_unit(devinfo) * REG_SIZE);
-      if (comps_regs < 4 * comp_regs) {
-         assert(comps_regs % comp_regs == 0);
-         unsigned mask = ~((1 << (comps_regs / comp_regs)) - 1) & 0xf;
-         g0_2 |= mask << 12;
-      }
+      g0_2 |= sampler_calc_channel_mask(devinfo, tex) << 12;
 
       if (tex->has_const_offsets) {
          g0_2 |= ((tex->const_offsets[2] & 0xf) << 0) |
