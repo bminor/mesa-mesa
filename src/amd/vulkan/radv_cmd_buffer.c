@@ -1794,15 +1794,15 @@ radv_emit_descriptors_per_stage(const struct radv_device *device, struct radv_cm
                                 const struct radv_shader *shader, const struct radv_descriptor_state *descriptors_state)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   const uint32_t indirect_descriptor_sets_offset = radv_get_user_sgpr_loc(shader, AC_UD_INDIRECT_DESCRIPTOR_SETS);
+   const uint32_t indirect_descriptors_offset = radv_get_user_sgpr_loc(shader, AC_UD_INDIRECT_DESCRIPTORS);
 
-   if (indirect_descriptor_sets_offset) {
+   if (indirect_descriptors_offset) {
       radeon_begin(cs);
       if (pdev->info.gfx_level >= GFX12) {
-         gfx12_push_32bit_pointer(indirect_descriptor_sets_offset, descriptors_state->indirect_descriptor_sets_va,
+         gfx12_push_32bit_pointer(indirect_descriptors_offset, descriptors_state->indirect_descriptor_sets_va,
                                   &pdev->info);
       } else {
-         radeon_emit_32bit_pointer(indirect_descriptor_sets_offset, descriptors_state->indirect_descriptor_sets_va,
+         radeon_emit_32bit_pointer(indirect_descriptors_offset, descriptors_state->indirect_descriptor_sets_va,
                                    &pdev->info);
       }
       radeon_end();
@@ -6252,7 +6252,7 @@ radv_flush_descriptors(struct radv_cmd_buffer *cmd_buffer, VkShaderStageFlags st
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_cmd_stream *cs = cmd_buffer->cs;
 
-   if (descriptors_state->need_indirect_descriptor_sets)
+   if (descriptors_state->need_indirect_descriptors)
       radv_upload_indirect_descriptor_sets(cmd_buffer, descriptors_state);
 
    ASSERTED unsigned cdw_max = radeon_check_space(device->ws, cs->b, MAX_SETS * MESA_VULKAN_SHADER_STAGES * 4);
@@ -8673,8 +8673,8 @@ radv_CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipeline
       pipeline->need_push_constants_upload;
    cmd_buffer->push_constant_state[vk_to_bind_point(pipelineBindPoint)].dynamic_offset_count =
       pipeline->dynamic_offset_count;
-   cmd_buffer->descriptors[vk_to_bind_point(pipelineBindPoint)].need_indirect_descriptor_sets =
-      pipeline->need_indirect_descriptor_sets;
+   cmd_buffer->descriptors[vk_to_bind_point(pipelineBindPoint)].need_indirect_descriptors =
+      pipeline->need_indirect_descriptors;
 }
 
 VKAPI_ATTR void VKAPI_CALL
@@ -12289,7 +12289,7 @@ radv_bind_graphics_shaders(struct radv_cmd_buffer *cmd_buffer)
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    uint32_t push_constant_size = 0, dynamic_offset_count = 0;
-   bool need_indirect_descriptor_sets = false;
+   bool need_indirect_descriptors = false;
    bool need_push_constants_upload = false;
 
    for (unsigned s = 0; s <= MESA_SHADER_MESH; s++) {
@@ -12323,7 +12323,7 @@ radv_bind_graphics_shaders(struct radv_cmd_buffer *cmd_buffer)
          continue;
 
       /* Compute push constants/indirect descriptors state. */
-      need_indirect_descriptor_sets |= radv_shader_need_indirect_descriptor_sets(shader);
+      need_indirect_descriptors |= radv_shader_need_indirect_descriptors(shader);
       need_push_constants_upload |= radv_shader_need_push_constants_upload(shader);
       push_constant_size += shader_obj->push_constant_size;
       dynamic_offset_count += shader_obj->dynamic_offset_count;
@@ -12359,7 +12359,7 @@ radv_bind_graphics_shaders(struct radv_cmd_buffer *cmd_buffer)
       radv_get_descriptors_state(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
    struct radv_push_constant_state *pc_state = &cmd_buffer->push_constant_state[VK_PIPELINE_BIND_POINT_GRAPHICS];
 
-   descriptors_state->need_indirect_descriptor_sets = need_indirect_descriptor_sets;
+   descriptors_state->need_indirect_descriptors = need_indirect_descriptors;
    pc_state->need_upload = need_push_constants_upload;
    pc_state->size = push_constant_size;
    pc_state->dynamic_offset_count = dynamic_offset_count;
@@ -15333,7 +15333,7 @@ radv_bind_compute_shader(struct radv_cmd_buffer *cmd_buffer, struct radv_shader_
       radv_get_descriptors_state(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE);
    struct radv_push_constant_state *pc_state = &cmd_buffer->push_constant_state[VK_PIPELINE_BIND_POINT_COMPUTE];
 
-   descriptors_state->need_indirect_descriptor_sets = radv_shader_need_indirect_descriptor_sets(shader);
+   descriptors_state->need_indirect_descriptors = radv_shader_need_indirect_descriptors(shader);
    pc_state->need_upload = radv_shader_need_push_constants_upload(shader);
    pc_state->size = shader_obj->push_constant_size;
    pc_state->dynamic_offset_count = shader_obj->dynamic_offset_count;

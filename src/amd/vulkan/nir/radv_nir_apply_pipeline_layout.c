@@ -47,7 +47,7 @@ static nir_def *
 load_desc_ptr(nir_builder *b, apply_layout_state *state, unsigned set)
 {
    const struct radv_userdata_locations *user_sgprs_locs = &state->info->user_sgprs_locs;
-   if (user_sgprs_locs->shader_data[AC_UD_INDIRECT_DESCRIPTOR_SETS].sgpr_idx != -1) {
+   if (user_sgprs_locs->shader_data[AC_UD_INDIRECT_DESCRIPTORS].sgpr_idx != -1) {
       nir_def *addr = get_scalar_arg(b, 1, state->args->descriptor_sets[0]);
       addr = convert_pointer_to_64_bit(b, state, addr);
       return ac_nir_load_smem(b, 1, addr, nir_imm_int(b, set * 4), 4, 0);

@@ -95,7 +95,7 @@ declare_global_input_sgprs(const enum amd_gfx_level gfx_level, const struct radv
             add_descriptor_set(args, i);
          }
       } else {
-         add_ud_arg(args, 1, AC_ARG_CONST_ADDR, &args->descriptor_sets[0], AC_UD_INDIRECT_DESCRIPTOR_SETS);
+         add_ud_arg(args, 1, AC_ARG_CONST_ADDR, &args->descriptor_sets[0], AC_UD_INDIRECT_DESCRIPTORS);
       }
 
       if (info->merged_shader_compiled_separately ||
@@ -319,7 +319,7 @@ void
 radv_declare_rt_shader_args(enum amd_gfx_level gfx_level, struct radv_shader_args *args)
 {
    add_ud_arg(args, 2, AC_ARG_CONST_ADDR, &args->ac.rt.uniform_shader_addr, AC_UD_SCRATCH_RING_OFFSETS);
-   add_ud_arg(args, 1, AC_ARG_CONST_ADDR, &args->descriptor_sets[0], AC_UD_INDIRECT_DESCRIPTOR_SETS);
+   add_ud_arg(args, 1, AC_ARG_CONST_ADDR, &args->descriptor_sets[0], AC_UD_INDIRECT_DESCRIPTORS);
    ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_CONST_ADDR, &args->ac.push_constants);
    ac_add_arg(&args->ac, AC_ARG_SGPR, 2, AC_ARG_CONST_ADDR, &args->ac.rt.sbt_descriptors);
    ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_CONST_ADDR, &args->ac.rt.traversal_shader_addr);
@@ -903,7 +903,7 @@ radv_declare_shader_args(const struct radv_device *device, const struct radv_gra
 
    uint32_t num_desc_set = util_bitcount(info->desc_set_used_mask);
 
-   if (info->force_indirect_desc_sets || remaining_sgprs < num_desc_set) {
+   if (info->force_indirect_descriptors || remaining_sgprs < num_desc_set) {
       user_sgpr_info.indirect_all_descriptor_sets = true;
       user_sgpr_info.remaining_sgprs--;
    } else {

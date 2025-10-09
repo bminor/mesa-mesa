@@ -279,8 +279,8 @@ radv_get_sequence_size_compute(const struct radv_indirect_command_layout *layout
       /* precomputed CS size */
       *cmd_size += ies->cs_num_dw * 4;
 
-      if (ies->uses_indirect_desc_sets_sgpr) {
-         /* PKT3_SET_SH_REG for indirect descriptor sets pointer */
+      if (ies->uses_indirect_descriptors_sgpr) {
+         /* PKT3_SET_SH_REG for indirect descriptors pointer */
          *cmd_size += 3 * 4;
       }
 
@@ -762,7 +762,7 @@ struct radv_dgc_params {
    /* IES info */
    uint64_t ies_addr;
    uint32_t ies_stride;
-   uint32_t indirect_desc_sets_va;
+   uint32_t indirect_descriptors_va;
 
    /* For conditional rendering on ACE. */
    uint8_t predicating;
@@ -2500,17 +2500,17 @@ dgc_emit_draw_mesh_tasks_with_count_ace(struct dgc_cmdbuf *ace_cs, nir_def *stre
  * Indirect execution set
  */
 static void
-dgc_emit_indirect_sets(struct dgc_cmdbuf *cs)
+dgc_emit_indirect_descriptors(struct dgc_cmdbuf *cs)
 {
    nir_builder *b = cs->b;
 
-   nir_def *indirect_desc_sets_sgpr = load_shader_metadata32(cs, indirect_desc_sets_sgpr);
-   nir_push_if(b, nir_ine_imm(b, indirect_desc_sets_sgpr, 0));
+   nir_def *indirect_descriptors_sgpr = load_shader_metadata32(cs, indirect_descriptors_sgpr);
+   nir_push_if(b, nir_ine_imm(b, indirect_descriptors_sgpr, 0));
    {
       dgc_cs_begin(cs);
       dgc_cs_emit_imm(PKT3(PKT3_SET_SH_REG, 1, 0));
-      dgc_cs_emit(indirect_desc_sets_sgpr);
-      dgc_cs_emit(load_param32(b, indirect_desc_sets_va));
+      dgc_cs_emit(indirect_descriptors_sgpr);
+      dgc_cs_emit(load_param32(b, indirect_descriptors_va));
       dgc_cs_end();
    }
    nir_pop_if(b, NULL);
@@ -2545,7 +2545,7 @@ dgc_emit_ies(struct dgc_cmdbuf *cs)
    }
    nir_pop_loop(b, NULL);
 
-   dgc_emit_indirect_sets(cs);
+   dgc_emit_indirect_descriptors(cs);
 }
 
 /**
@@ -3070,7 +3070,7 @@ radv_prepare_dgc_compute(struct radv_cmd_buffer *cmd_buffer, const VkGeneratedCo
       radv_upload_indirect_descriptor_sets(cmd_buffer, descriptors_state);
 
       params->ies_stride = ies->stride;
-      params->indirect_desc_sets_va = descriptors_state->indirect_descriptor_sets_va;
+      params->indirect_descriptors_va = descriptors_state->indirect_descriptor_sets_va;
    } else {
       const VkGeneratedCommandsPipelineInfoEXT *pipeline_info =
          vk_find_struct_const(pGeneratedCommandsInfo->pNext, GENERATED_COMMANDS_PIPELINE_INFO_EXT);
@@ -3412,7 +3412,7 @@ radv_update_ies_shader(struct radv_device *device, struct radv_indirect_executio
    set->cs_num_dw = MAX2(set->cs_num_dw, cs.b->cdw);
    set->uses_grid_base_sgpr |= md.grid_base_sgpr;
    set->uses_upload_sgpr |= !!(md.push_const_sgpr & 0xffff);
-   set->uses_indirect_desc_sets_sgpr |= md.indirect_desc_sets_sgpr;
+   set->uses_indirect_descriptors_sgpr |= md.indirect_descriptors_sgpr;
    set->push_constant_size = MAX2(set->push_constant_size, shader->info.push_constant_size);
    set->compute_scratch_size_per_wave = MAX2(set->compute_scratch_size_per_wave, shader->config.scratch_bytes_per_wave);
    set->compute_scratch_waves = MAX2(set->compute_scratch_waves, radv_get_max_scratch_waves(device, shader));

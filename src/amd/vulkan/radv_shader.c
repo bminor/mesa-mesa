@@ -3385,7 +3385,7 @@ radv_create_rt_prolog(struct radv_device *device)
    struct radv_shader_info info = {0};
    info.stage = MESA_SHADER_COMPUTE;
    info.loads_push_constants = true;
-   info.force_indirect_desc_sets = true;
+   info.force_indirect_descriptors = true;
    info.wave_size = pdev->rt_wave_size;
    info.workgroup_size = info.wave_size;
    info.user_data_0 = R_00B900_COMPUTE_USER_DATA_0;
