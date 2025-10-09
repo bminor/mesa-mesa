@@ -892,8 +892,6 @@ void radv_begin_conditional_rendering(struct radv_cmd_buffer *cmd_buffer, uint64
 
 void radv_end_conditional_rendering(struct radv_cmd_buffer *cmd_buffer);
 
-uint64_t radv_descriptor_get_va(const struct radv_descriptor_state *descriptors_state, unsigned set_idx);
-
 struct radv_vbo_info {
    uint64_t va;
 

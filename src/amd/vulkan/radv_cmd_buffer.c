@@ -1774,7 +1774,7 @@ radv_emit_userdata_address(const struct radv_device *device, struct radv_cmd_str
    radeon_end();
 }
 
-uint64_t
+static uint64_t
 radv_descriptor_get_va(const struct radv_descriptor_state *descriptors_state, unsigned set_idx)
 {
    struct radv_descriptor_set *set = descriptors_state->sets[set_idx];
