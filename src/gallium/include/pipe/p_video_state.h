@@ -1931,6 +1931,7 @@ struct pipe_vp9_picture_desc
          uint32_t  segmentation_enabled:1;
          uint32_t  segmentation_temporal_update:1;
          uint32_t  segmentation_update_map:1;
+         uint32_t  segmentation_update_data:1;
          uint32_t  last_ref_frame:3;
          uint32_t  last_ref_frame_sign_bias:1;
          uint32_t  golden_ref_frame:3;
@@ -1938,6 +1939,7 @@ struct pipe_vp9_picture_desc
          uint32_t  alt_ref_frame:3;
          uint32_t  alt_ref_frame_sign_bias:1;
          uint32_t  lossless_flag:1;
+         uint32_t  use_prev_frame_mvs:1;
       } pic_fields;
 
       uint8_t filter_level;

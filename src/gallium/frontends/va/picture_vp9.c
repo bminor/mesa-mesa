@@ -67,6 +67,11 @@ void vlVaHandlePictureParameterBufferVP9(vlVaDriver *drv, vlVaContext *context, 
    context->desc.vp9.picture_parameter.pic_fields.alt_ref_frame = vp9->pic_fields.bits.alt_ref_frame;
    context->desc.vp9.picture_parameter.pic_fields.alt_ref_frame_sign_bias = vp9->pic_fields.bits.alt_ref_frame_sign_bias;
    context->desc.vp9.picture_parameter.pic_fields.lossless_flag = vp9->pic_fields.bits.lossless_flag;
+   context->desc.vp9.picture_parameter.pic_fields.use_prev_frame_mvs =
+      context->desc.vp9.picture_parameter.pic_fields.prev_show_frame &&
+      !context->desc.vp9.picture_parameter.pic_fields.error_resilient_mode &&
+      context->desc.vp9.picture_parameter.prev_frame_width == context->desc.vp9.picture_parameter.frame_width &&
+      context->desc.vp9.picture_parameter.prev_frame_height == context->desc.vp9.picture_parameter.frame_height;
 
    context->desc.vp9.picture_parameter.filter_level = vp9->filter_level;
    context->desc.vp9.picture_parameter.sharpness_level = vp9->sharpness_level;
@@ -399,8 +404,10 @@ void vlVaDecoderVP9BitstreamHeader(vlVaContext *context, vlVaBuffer *buf)
       }
    }
 
+   context->desc.vp9.picture_parameter.pic_fields.segmentation_update_data = vp9_u(&vlc, 1);
+
    /* update_data */
-   if (vp9_u(&vlc, 1)) {
+   if (context->desc.vp9.picture_parameter.pic_fields.segmentation_update_data) {
       /* abs_delta */
       context->desc.vp9.picture_parameter.abs_delta = vp9_u(&vlc, 1);
       for (i = 0; i < 8; ++i) {
