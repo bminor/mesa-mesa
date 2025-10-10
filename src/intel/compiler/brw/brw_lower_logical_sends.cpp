@@ -2468,7 +2468,7 @@ lower_get_buffer_size(const brw_builder &bld, brw_inst *inst)
 }
 
 static void
-lower_lsc_memory_fence_and_interlock(const brw_builder &bld, brw_inst *inst)
+lower_lsc_memory_fence_and_interlock(const brw_builder &bld, struct brw_send_inst *inst)
 {
    const intel_device_info *devinfo = bld.shader->devinfo;
    const bool interlock = inst->opcode == SHADER_OPCODE_INTERLOCK;
@@ -2481,6 +2481,7 @@ lower_lsc_memory_fence_and_interlock(const brw_builder &bld, brw_inst *inst)
 
    assert(inst->size_written == reg_unit(devinfo) * REG_SIZE);
 
+   const uint32_t intrinsic_desc = inst->desc;
    brw_send_inst *send = brw_transform_inst_to_send(bld, inst);
    inst = NULL;
 
@@ -2503,9 +2504,9 @@ lower_lsc_memory_fence_and_interlock(const brw_builder &bld, brw_inst *inst)
       send->header_size = 1;
    } else {
       enum lsc_fence_scope scope =
-         lsc_fence_msg_desc_scope(devinfo, send->desc);
+         lsc_fence_msg_desc_scope(devinfo, intrinsic_desc);
       enum lsc_flush_type flush_type =
-         lsc_fence_msg_desc_flush_type(devinfo, send->desc);
+         lsc_fence_msg_desc_flush_type(devinfo, intrinsic_desc);
 
       if (send->sfid == BRW_SFID_TGM) {
          scope = LSC_FENCE_TILE;
@@ -2666,7 +2667,7 @@ brw_lower_logical_sends(brw_shader &s)
       case SHADER_OPCODE_MEMORY_FENCE:
       case SHADER_OPCODE_INTERLOCK:
          if (devinfo->has_lsc)
-            lower_lsc_memory_fence_and_interlock(ibld, inst);
+            lower_lsc_memory_fence_and_interlock(ibld, inst->as_send());
          else
             lower_hdc_memory_fence_and_interlock(ibld, inst);
          break;
