@@ -242,39 +242,11 @@ gfx10_cs_emit_cache_flush(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_lev
 
    if (cb_db_event) {
       if (gfx_level >= GFX11) {
-         /* Get GCR_CNTL fields, because the encoding is different in RELEASE_MEM. */
-         unsigned glm_wb = G_586_GLM_WB(gcr_cntl);
-         unsigned glm_inv = G_586_GLM_INV(gcr_cntl);
-         unsigned glk_wb = G_586_GLK_WB(gcr_cntl);
-         unsigned glk_inv = G_586_GLK_INV(gcr_cntl);
-         unsigned glv_inv = G_586_GLV_INV(gcr_cntl);
-         unsigned gl1_inv = G_586_GL1_INV(gcr_cntl);
-         assert(G_586_GL2_US(gcr_cntl) == 0);
-         assert(G_586_GL2_RANGE(gcr_cntl) == 0);
-         assert(G_586_GL2_DISCARD(gcr_cntl) == 0);
-         unsigned gl2_inv = G_586_GL2_INV(gcr_cntl);
-         unsigned gl2_wb = G_586_GL2_WB(gcr_cntl);
-         unsigned gcr_seq = G_586_SEQ(gcr_cntl);
+         /* Send an event that flushes caches. */
+         ac_emit_cp_release_mem_pws(cs->b, gfx_level, cs->hw_ip, cb_db_event, gcr_cntl);
 
          gcr_cntl &= C_586_GLM_WB & C_586_GLM_INV & C_586_GLK_WB & C_586_GLK_INV & C_586_GLV_INV & C_586_GL1_INV &
                      C_586_GL2_INV & C_586_GL2_WB; /* keep SEQ */
-
-         radeon_begin(cs);
-
-         /* Send an event that flushes caches. */
-         radeon_emit(PKT3(PKT3_RELEASE_MEM, 6, 0));
-         radeon_emit(S_490_EVENT_TYPE(cb_db_event) | S_490_EVENT_INDEX(5) | S_490_GLM_WB(glm_wb) |
-                     S_490_GLM_INV(glm_inv) | S_490_GLV_INV(glv_inv) | S_490_GL1_INV(gl1_inv) | S_490_GL2_INV(gl2_inv) |
-                     S_490_GL2_WB(gl2_wb) | S_490_SEQ(gcr_seq) | S_490_GLK_WB(glk_wb) | S_490_GLK_INV(glk_inv) |
-                     S_490_PWS_ENABLE(1));
-         radeon_emit(0); /* DST_SEL, INT_SEL, DATA_SEL */
-         radeon_emit(0); /* ADDRESS_LO */
-         radeon_emit(0); /* ADDRESS_HI */
-         radeon_emit(0); /* DATA_LO */
-         radeon_emit(0); /* DATA_HI */
-         radeon_emit(0); /* INT_CTXID */
-
-         radeon_end();
 
          /* Wait for the event and invalidate remaining caches if needed. */
          ac_emit_cp_acquire_mem_pws(cs->b, gfx_level, cs->hw_ip, cb_db_event, V_580_CP_PFP, 0, gcr_cntl);

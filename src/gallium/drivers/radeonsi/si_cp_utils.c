@@ -6,59 +6,12 @@
 
 #include "si_build_pm4.h"
 
-static bool is_ts_event(unsigned event_type)
-{
-   return event_type == V_028A90_CACHE_FLUSH_TS ||
-          event_type == V_028A90_CACHE_FLUSH_AND_INV_TS_EVENT ||
-          event_type == V_028A90_BOTTOM_OF_PIPE_TS ||
-          event_type == V_028A90_FLUSH_AND_INV_DB_DATA_TS ||
-          event_type == V_028A90_FLUSH_AND_INV_CB_DATA_TS;
-}
-
-/* Insert CS_DONE, PS_DONE, or a *_TS event into the pipeline, which will signal after the work
- * indicated by the event is complete, which optionally includes flushing caches using "gcr_cntl"
- * after the completion of the work. *_TS events are always signaled at the end of the pipeline,
- * while CS_DONE and PS_DONE are signaled when those shaders finish. This call only inserts
- * the event into the pipeline. It doesn't wait for anything and it doesn't execute anything
- * immediately. The only way to wait for the event completion is to call si_cp_acquire_mem_pws
- * with the same "event_type".
- */
 void si_cp_release_mem_pws(struct si_context *sctx, struct radeon_cmdbuf *cs,
                            unsigned event_type, unsigned gcr_cntl)
 {
-   assert(sctx->gfx_level >= GFX11 && sctx->is_gfx_queue);
-   bool ts = is_ts_event(event_type);
-   /* Extract GCR_CNTL fields because the encoding is different in RELEASE_MEM. */
-   assert(G_586_GLI_INV(gcr_cntl) == 0);
-   assert(G_586_GL1_RANGE(gcr_cntl) == 0);
-   unsigned glm_wb = G_586_GLM_WB(gcr_cntl);
-   unsigned glm_inv = G_586_GLM_INV(gcr_cntl);
-   unsigned glk_wb = G_586_GLK_WB(gcr_cntl);
-   unsigned glk_inv = G_586_GLK_INV(gcr_cntl);
-   unsigned glv_inv = G_586_GLV_INV(gcr_cntl);
-   unsigned gl1_inv = G_586_GL1_INV(gcr_cntl);
-   assert(G_586_GL2_US(gcr_cntl) == 0);
-   assert(G_586_GL2_RANGE(gcr_cntl) == 0);
-   assert(G_586_GL2_DISCARD(gcr_cntl) == 0);
-   unsigned gl2_inv = G_586_GL2_INV(gcr_cntl);
-   unsigned gl2_wb = G_586_GL2_WB(gcr_cntl);
-   unsigned gcr_seq = G_586_SEQ(gcr_cntl);
-
-   radeon_begin(cs);
-   radeon_emit(PKT3(PKT3_RELEASE_MEM, 6, 0));
-   radeon_emit(S_490_EVENT_TYPE(event_type) |
-               S_490_EVENT_INDEX(ts ? 5 : 6) |
-               S_490_GLM_WB(glm_wb) | S_490_GLM_INV(glm_inv) | S_490_GLV_INV(glv_inv) |
-               S_490_GL1_INV(gl1_inv) | S_490_GL2_INV(gl2_inv) | S_490_GL2_WB(gl2_wb) |
-               S_490_SEQ(gcr_seq) | S_490_GLK_WB(glk_wb) | S_490_GLK_INV(glk_inv) |
-               S_490_PWS_ENABLE(1));
-   radeon_emit(0); /* DST_SEL, INT_SEL, DATA_SEL */
-   radeon_emit(0); /* ADDRESS_LO */
-   radeon_emit(0); /* ADDRESS_HI */
-   radeon_emit(0); /* DATA_LO */
-   radeon_emit(0); /* DATA_HI */
-   radeon_emit(0); /* INT_CTXID */
-   radeon_end();
+   ac_emit_cp_release_mem_pws(&cs->current, sctx->gfx_level,
+                              sctx->is_gfx_queue ? AMD_IP_GFX : AMD_IP_COMPUTE,
+                              event_type, gcr_cntl);
 }
 
 void si_cp_acquire_mem_pws(struct si_context *sctx, struct radeon_cmdbuf *cs,

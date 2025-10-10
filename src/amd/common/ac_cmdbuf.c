@@ -979,3 +979,59 @@ ac_emit_cp_acquire_mem_pws(struct ac_cmdbuf *cs, ASSERTED enum amd_gfx_level gfx
    ac_cmdbuf_emit(gcr_cntl); /* GCR_CNTL (this has no effect if PWS_STAGE_SEL isn't PFP or ME) */
    ac_cmdbuf_end();
 }
+
+/* Insert CS_DONE, PS_DONE, or a *_TS event into the pipeline, which will
+ * signal after the work indicated by the event is complete, which optionally
+ * includes flushing caches using "gcr_cntl" after the completion of the work.
+ * *_TS events are always signaled at the end of the pipeline, while CS_DONE
+ * and PS_DONE are signaled when those shaders finish. This call only inserts
+ * the event into the pipeline. It doesn't wait for anything and it doesn't
+ * execute anything immediately. The only way to wait for the event completion
+ * is to call si_cp_acquire_mem_pws with the same "event_type".
+ */
+void
+ac_emit_cp_release_mem_pws(struct ac_cmdbuf *cs, ASSERTED enum amd_gfx_level gfx_level,
+                           ASSERTED enum amd_ip_type ip_type, uint32_t event_type,
+                           uint32_t gcr_cntl)
+{
+   assert(gfx_level >= GFX11 && ip_type == AMD_IP_GFX);
+
+   /* Extract GCR_CNTL fields because the encoding is different in RELEASE_MEM. */
+   assert(G_586_GLI_INV(gcr_cntl) == 0);
+   assert(G_586_GL1_RANGE(gcr_cntl) == 0);
+   const uint32_t glm_wb = G_586_GLM_WB(gcr_cntl);
+   const uint32_t glm_inv = G_586_GLM_INV(gcr_cntl);
+   const uint32_t glk_wb = G_586_GLK_WB(gcr_cntl);
+   const uint32_t glk_inv = G_586_GLK_INV(gcr_cntl);
+   const uint32_t glv_inv = G_586_GLV_INV(gcr_cntl);
+   const uint32_t gl1_inv = G_586_GL1_INV(gcr_cntl);
+   assert(G_586_GL2_US(gcr_cntl) == 0);
+   assert(G_586_GL2_RANGE(gcr_cntl) == 0);
+   assert(G_586_GL2_DISCARD(gcr_cntl) == 0);
+   const uint32_t gl2_inv = G_586_GL2_INV(gcr_cntl);
+   const uint32_t gl2_wb = G_586_GL2_WB(gcr_cntl);
+   const uint32_t gcr_seq = G_586_SEQ(gcr_cntl);
+   const bool ts = is_ts_event(event_type);
+
+   ac_cmdbuf_begin(cs);
+   ac_cmdbuf_emit(PKT3(PKT3_RELEASE_MEM, 6, 0));
+   ac_cmdbuf_emit(S_490_EVENT_TYPE(event_type) |
+                   S_490_EVENT_INDEX(ts ? 5 : 6) |
+                   S_490_GLM_WB(glm_wb) |
+                   S_490_GLM_INV(glm_inv) |
+                   S_490_GLV_INV(glv_inv) |
+                   S_490_GL1_INV(gl1_inv) |
+                   S_490_GL2_INV(gl2_inv) |
+                   S_490_GL2_WB(gl2_wb) |
+                   S_490_SEQ(gcr_seq) |
+                   S_490_GLK_WB(glk_wb) |
+                   S_490_GLK_INV(glk_inv) |
+                   S_490_PWS_ENABLE(1));
+   ac_cmdbuf_emit(0); /* DST_SEL, INT_SEL, DATA_SEL */
+   ac_cmdbuf_emit(0); /* ADDRESS_LO */
+   ac_cmdbuf_emit(0); /* ADDRESS_HI */
+   ac_cmdbuf_emit(0); /* DATA_LO */
+   ac_cmdbuf_emit(0); /* DATA_HI */
+   ac_cmdbuf_emit(0); /* INT_CTXID */
+   ac_cmdbuf_end();
+}

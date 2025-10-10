@@ -115,6 +115,11 @@ ac_emit_cp_acquire_mem_pws(struct ac_cmdbuf *cs, ASSERTED enum amd_gfx_level gfx
                            uint32_t stage_sel, uint32_t count,
                            uint32_t gcr_cntl);
 
+void
+ac_emit_cp_release_mem_pws(struct ac_cmdbuf *cs, ASSERTED enum amd_gfx_level gfx_level,
+                           ASSERTED enum amd_ip_type ip_type, uint32_t event_type,
+                           uint32_t gcr_cntl);
+
 #ifdef __cplusplus
 }
 #endif
