@@ -884,7 +884,7 @@ radv_GetPipelineExecutableStatisticsKHR(VkDevice _device, const VkPipelineExecut
    stats.spillsgprs = shader->config.spilled_sgprs;
    stats.spillvgprs = shader->config.spilled_vgprs;
    stats.codesize = shader->exec_size;
-   stats.lds = shader->config.lds_size * lds_increment;
+   stats.lds = align(shader->config.lds_size * lds_increment, pdev->info.lds_alloc_granularity);
    stats.scratch = shader->config.scratch_bytes_per_wave;
    stats.maxwaves = shader->max_waves;
 
