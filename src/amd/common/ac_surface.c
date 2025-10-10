@@ -166,7 +166,7 @@ bool ac_modifier_supports_video(const struct radeon_info *info, uint64_t modifie
          return false;
 
       /* Only "S" swizzle modes supported */
-      if (info->vcn_ip_version < VCN_2_2_0 &&
+      if (info->vcn_ip_version < VCN_3_0_0 &&
           AMD_FMT_MOD_GET(TILE, modifier) != AMD_FMT_MOD_TILE_GFX9_64K_S)
          return false;
    }
