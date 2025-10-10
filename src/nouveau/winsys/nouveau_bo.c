@@ -114,6 +114,9 @@ nouveau_ws_bo_new_tiled_locked(struct nouveau_ws_device *dev,
    if (flags & NOUVEAU_WS_BO_NO_SHARE)
       req.info.domain |= NOUVEAU_GEM_DOMAIN_NO_SHARE;
 
+   if (flags & NOUVEAU_WS_BO_COHERENT)
+      req.info.domain |= NOUVEAU_GEM_DOMAIN_COHERENT;
+
    req.info.tile_flags = (uint32_t)pte_kind << 8;
    req.info.tile_mode = tile_mode;
 
@@ -195,6 +198,8 @@ nouveau_ws_bo_from_dma_buf_locked(struct nouveau_ws_device *dev, int fd)
       flags |= NOUVEAU_WS_BO_VRAM;
    if (info.domain & NOUVEAU_GEM_DOMAIN_GART)
       flags |= NOUVEAU_WS_BO_GART;
+   if (info.domain & NOUVEAU_GEM_DOMAIN_COHERENT)
+      flags |= NOUVEAU_WS_BO_COHERENT;
    if (info.map_handle)
       flags |= NOUVEAU_WS_BO_MAP;
 
