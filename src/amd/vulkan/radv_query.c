@@ -2727,7 +2727,7 @@ radv_write_timestamp(struct radv_cmd_buffer *cmd_buffer, uint64_t va, VkPipeline
       radeon_begin(cs);
       radeon_emit(PKT3(PKT3_COPY_DATA, 4, 0));
       radeon_emit(COPY_DATA_COUNT_SEL | COPY_DATA_WR_CONFIRM | COPY_DATA_SRC_SEL(COPY_DATA_TIMESTAMP) |
-                  COPY_DATA_DST_SEL(V_370_MEM));
+                  COPY_DATA_DST_SEL(COPY_DATA_DST_MEM));
       radeon_emit(0);
       radeon_emit(0);
       radeon_emit(va);
