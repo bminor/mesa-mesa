@@ -104,6 +104,8 @@ the steps above :
    mesa $ cd subprojects/perfetto
    perfetto $ ./tools/install-build-deps
    perfetto $ ./tools/gn gen --args='is_debug=false' out/linux
+   # Example arm64 cross compile instead
+   # perfetto $ ./tools/gn gen --args='is_debug=false target_cpu="arm64"' out/linux-arm64
    perfetto $ ./tools/ninja -C out/linux
 
    # Start perfetto
