@@ -1309,7 +1309,15 @@ radv_GetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice,
             !(instance->debug_flags & RADV_DEBUG_NO_DCC) && (base_info->usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
       }
 
-      host_perf_props->optimalDeviceAccess = pdev->info.gfx_level >= GFX12 || !might_enable_compression;
+      /**
+       * The Vulkan spec says:
+       *
+       *  "If VkPhysicalDeviceImageFormatInfo2::format is a block-compressed format and
+       *   vkGetPhysicalDeviceImageFormatProperties2 returns VK_SUCCESS, the implementation must
+       *   return VK_TRUE in optimalDeviceAccess."
+       */
+      host_perf_props->optimalDeviceAccess =
+         vk_format_is_block_compressed(format) || pdev->info.gfx_level >= GFX12 || !might_enable_compression;
       host_perf_props->identicalMemoryLayout = base_info->tiling == VK_IMAGE_TILING_LINEAR;
    }
 
