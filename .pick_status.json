@@ -1744,7 +1744,7 @@
         "description": "aco: fix global_atomic_swap offset overflow check",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d7dcd81c77efffce2ef122254c9dfc9dbb3bf447",
         "notes": null

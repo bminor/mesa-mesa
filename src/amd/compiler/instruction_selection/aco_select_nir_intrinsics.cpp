@@ -2667,10 +2667,13 @@ visit_global_atomic(isel_context* ctx, nir_intrinsic_instr* instr)
 
    const nir_atomic_op nir_op = nir_intrinsic_atomic_op(instr);
    const bool cmpswap = nir_op == nir_atomic_op_cmpxchg;
+   unsigned offset_idx = 2;
 
-   if (cmpswap)
+   if (cmpswap) {
+      offset_idx = 3;
       data = bld.pseudo(aco_opcode::p_create_vector, bld.def(RegType::vgpr, data.size() * 2),
                         get_ssa_temp(ctx, instr->src[2].ssa), data);
+   }
 
    Temp dst = get_ssa_temp(ctx, &instr->def);
 
@@ -2679,7 +2682,8 @@ visit_global_atomic(isel_context* ctx, nir_intrinsic_instr* instr)
    Temp addr, offset;
    uint32_t const_offset;
    parse_global(ctx, instr, &addr, &const_offset, &offset);
-   Format format = lower_global_address(ctx, bld, 0, &addr, &const_offset, &offset, &instr->src[2]);
+   Format format =
+      lower_global_address(ctx, bld, 0, &addr, &const_offset, &offset, &instr->src[offset_idx]);
 
    if (format != Format::MUBUF) {
       bool global = format == Format::GLOBAL;
