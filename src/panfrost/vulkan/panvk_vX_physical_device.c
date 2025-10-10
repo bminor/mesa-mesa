@@ -1123,4 +1123,9 @@ panvk_per_arch(get_physical_device_properties)(
    STATIC_ASSERT(sizeof(instance->driver_build_sha) >= VK_UUID_SIZE);
    memcpy(properties->optimalTilingLayoutUUID, instance->driver_build_sha,
           VK_UUID_SIZE);
+
+   if (PANVK_DEBUG(STARTUP)) {
+      mesa_logi("%s (%s) %s", properties->driverName, properties->deviceName,
+                properties->driverInfo);
+   }
 }
