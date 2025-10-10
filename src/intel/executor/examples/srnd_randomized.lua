@@ -1,4 +1,6 @@
-check_ver(20)
+if ver < 20 then
+  error("SRND instruction requires Gfx20+")
+end
 
 F32_VALUE        = 0x3F8016F0 -- 1.0007
 -- F32_VALUE     = 0x3F8009D5 -- 1.0003

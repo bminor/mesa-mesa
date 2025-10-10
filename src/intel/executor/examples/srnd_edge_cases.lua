@@ -1,4 +1,6 @@
-check_ver(20)
+if ver < 20 then
+  error("SRND instruction requires Gfx20+")
+end
 
 local r = execute {
   src = [[

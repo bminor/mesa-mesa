@@ -103,9 +103,6 @@ open_manual()
       "- dump(ARRAY, COUNT)",
       "  Pretty print the COUNT first elements of an array of 32-bit values.",
       "",
-      "- check_ver(V, ...), check_verx10(V, ...)",
-      "  Exit if the Gfx version being executed isn't in the arguments list.",
-      "",
       "- ver, verx10",
       "  Variables containing the Gfx version being executed.",
       "",
@@ -213,7 +210,7 @@ print_help()
       "- execute({src=STR, data=ARRAY}) -> ARRAY\n"
       "- arg (table with command line arguments)\n"
       "- dump(ARRAY, COUNT)\n"
-      "- check_ver(V, ...), check_verx10(V, ...), ver, verx10\n"
+      "- ver, verx10\n"
       "\n"
       "ASSEMBLY MACROS:\n"
       "- @eot, @syncnop\n"
@@ -890,35 +887,6 @@ l_dump(lua_State *L)
    return 0;
 }
 
-static int
-l_check_ver(lua_State *L)
-{
-   int top = lua_gettop(L);
-   for (int i = 1; i <= top; i++) {
-      lua_Integer v = luaL_checknumber(L, i);
-      if (E.devinfo.ver == v) {
-         return 0;
-      }
-   }
-   failf("script doesn't support version=%d verx10=%d\n",
-         E.devinfo.ver, E.devinfo.verx10);
-   return 0;
-}
-
-static int
-l_check_verx10(lua_State *L)
-{
-   int top = lua_gettop(L);
-   for (int i = 1; i <= top; i++) {
-      lua_Integer v = luaL_checknumber(L, i);
-      if (E.devinfo.verx10 == v) {
-         return 0;
-      }
-   }
-   failf("script doesn't support version=%d verx10=%d\n",
-         E.devinfo.ver, E.devinfo.verx10);
-   return 0;
-}
 
 /* TODO: Review numeric limits in the code, specially around Lua integer
  * conversion.
@@ -1011,12 +979,6 @@ main(int argc, char *argv[])
 
    lua_pushcfunction(L, l_dump);
    lua_setglobal(L, "dump");
-
-   lua_pushcfunction(L, l_check_ver);
-   lua_setglobal(L, "check_ver");
-
-   lua_pushcfunction(L, l_check_verx10);
-   lua_setglobal(L, "check_verx10");
 
    int err = luaL_loadfile(L, filename);
    if (err)
