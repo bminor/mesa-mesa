@@ -7929,21 +7929,30 @@ set_clip_cull_distance_masks(brw_shader &s)
 {
    const shader_info &info = s.nir->info;
 
-   if (info.stage >= MESA_SHADER_FRAGMENT && info.stage != MESA_SHADER_MESH)
+   if (info.stage != MESA_SHADER_VERTEX &&
+       info.stage != MESA_SHADER_TESS_EVAL &&
+       info.stage != MESA_SHADER_GEOMETRY &&
+       info.stage != MESA_SHADER_MESH)
       return;
-
-   struct brw_vue_prog_data *prog_data = brw_vue_prog_data(s.prog_data);
 
    if (info.outputs_written &
        (VARYING_BIT_CLIP_DIST0 | VARYING_BIT_CLIP_DIST1 |
         VARYING_BIT_CULL_DIST0 | VARYING_BIT_CULL_DIST1)) {
 
-      prog_data->clip_distance_mask =
-         BITFIELD_MASK(info.clip_distance_array_size);
+      uint32_t clip_mask = BITFIELD_MASK(info.clip_distance_array_size);
 
-      prog_data->cull_distance_mask =
-         BITFIELD_RANGE(info.clip_distance_array_size,
-                        info.cull_distance_array_size);
+      uint32_t cull_mask = BITFIELD_RANGE(info.clip_distance_array_size,
+                                          info.cull_distance_array_size);
+
+      if (info.stage == MESA_SHADER_MESH) {
+         struct brw_mesh_prog_data *prog_data = brw_mesh_prog_data(s.prog_data);
+         prog_data->clip_distance_mask = clip_mask;
+         prog_data->cull_distance_mask = cull_mask;
+      } else {
+         struct brw_vue_prog_data *prog_data = brw_vue_prog_data(s.prog_data);
+         prog_data->clip_distance_mask = clip_mask;
+         prog_data->cull_distance_mask = cull_mask;
+      }
    }
 }
 
