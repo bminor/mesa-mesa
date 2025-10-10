@@ -231,20 +231,19 @@ try_opt_quad_vote(nir_builder *b, nir_alu_instr *alu, bool block_has_discard)
 }
 
 static bool
-opt_intrinsics_alu(nir_builder *b, nir_alu_instr *alu,
-                   bool block_has_discard, const struct nir_shader_compiler_options *options)
+opt_intrinsics_alu(nir_builder *b, nir_alu_instr *alu, bool block_has_discard)
 {
    nir_def *replacement = NULL;
 
    switch (alu->op) {
    case nir_op_bcsel:
       replacement = try_opt_bcsel_of_shuffle(b, alu, block_has_discard);
-      if (!replacement && options->optimize_load_front_face_fsign)
+      if (!replacement && b->shader->options->optimize_load_front_face_fsign)
          replacement = try_opt_front_face_fsign(b, alu);
       break;
    case nir_op_iand:
    case nir_op_ior:
-      if (alu->def.bit_size == 1 && options->optimize_quad_vote_to_reduce)
+      if (alu->def.bit_size == 1 && b->shader->options->optimize_quad_vote_to_reduce)
          replacement = try_opt_quad_vote(b, alu, block_has_discard);
       break;
    default:
@@ -325,11 +324,9 @@ try_opt_exclusive_scan_to_inclusive(nir_builder *b, nir_intrinsic_instr *intrin)
 }
 
 static bool
-try_opt_atomic_isub(nir_builder *b, nir_intrinsic_instr *intrin,
-                    const struct nir_shader_compiler_options *options,
-                    unsigned data_idx)
+try_opt_atomic_isub(nir_builder *b, nir_intrinsic_instr *intrin, unsigned data_idx)
 {
-   if (nir_intrinsic_atomic_op(intrin) != nir_atomic_op_iadd || !options->has_atomic_isub)
+   if (nir_intrinsic_atomic_op(intrin) != nir_atomic_op_iadd || !b->shader->options->has_atomic_isub)
       return false;
 
    nir_scalar data = nir_scalar_resolved(intrin->src[data_idx].ssa, 0);
@@ -345,8 +342,7 @@ try_opt_atomic_isub(nir_builder *b, nir_intrinsic_instr *intrin,
 }
 
 static bool
-opt_intrinsics_intrin(nir_builder *b, nir_intrinsic_instr *intrin,
-                      const struct nir_shader_compiler_options *options)
+opt_intrinsics_intrin(nir_builder *b, nir_intrinsic_instr *intrin)
 {
    switch (intrin->intrinsic) {
    case nir_intrinsic_load_sample_mask_in: {
@@ -354,7 +350,7 @@ opt_intrinsics_intrin(nir_builder *b, nir_intrinsic_instr *intrin,
        *   gl_SampleMaskIn == 0 ---> gl_HelperInvocation
        *   gl_SampleMaskIn != 0 ---> !gl_HelperInvocation
        */
-      if (!options->optimize_sample_mask_in)
+      if (!b->shader->options->optimize_sample_mask_in)
          return false;
 
       bool progress = false;
@@ -403,21 +399,20 @@ opt_intrinsics_intrin(nir_builder *b, nir_intrinsic_instr *intrin,
    case nir_intrinsic_global_atomic:
    case nir_intrinsic_global_atomic_amd:
    case nir_intrinsic_deref_atomic:
-      return try_opt_atomic_isub(b, intrin, options, 1);
+      return try_opt_atomic_isub(b, intrin, 1);
    case nir_intrinsic_ssbo_atomic:
-      return try_opt_atomic_isub(b, intrin, options, 2);
+      return try_opt_atomic_isub(b, intrin, 2);
    case nir_intrinsic_image_deref_atomic:
    case nir_intrinsic_image_atomic:
    case nir_intrinsic_bindless_image_atomic:
-      return try_opt_atomic_isub(b, intrin, options, 3);
+      return try_opt_atomic_isub(b, intrin, 3);
    default:
       return false;
    }
 }
 
 static bool
-opt_intrinsics_impl(nir_function_impl *impl,
-                    const struct nir_shader_compiler_options *options)
+opt_intrinsics_impl(nir_function_impl *impl)
 {
    nir_builder b = nir_builder_create(impl);
    bool progress = false;
@@ -431,7 +426,7 @@ opt_intrinsics_impl(nir_function_impl *impl,
          switch (instr->type) {
          case nir_instr_type_alu:
             if (opt_intrinsics_alu(&b, nir_instr_as_alu(instr),
-                                   block_has_discard, options))
+                                   block_has_discard))
                progress = true;
             break;
 
@@ -443,7 +438,7 @@ opt_intrinsics_impl(nir_function_impl *impl,
                 intrin->intrinsic == nir_intrinsic_terminate_if)
                block_has_discard = true;
 
-            if (opt_intrinsics_intrin(&b, intrin, options))
+            if (opt_intrinsics_intrin(&b, intrin))
                progress = true;
             break;
          }
@@ -463,7 +458,7 @@ nir_opt_intrinsics(nir_shader *shader)
    bool progress = false;
 
    nir_foreach_function_impl(impl, shader) {
-      bool impl_progress = opt_intrinsics_impl(impl, shader->options);
+      bool impl_progress = opt_intrinsics_impl(impl);
       progress |= nir_progress(impl_progress, impl,
                                nir_metadata_control_flow);
    }
