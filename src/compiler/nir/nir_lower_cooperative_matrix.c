@@ -524,11 +524,10 @@ split_cmat_load_store(nir_builder *b,
          const struct glsl_type *scalar_type = glsl_get_scalar_type(glsl_get_cmat_element(var->type));
          unsigned elem_size = glsl_get_explicit_size(scalar_type, false);
          struct glsl_cmat_description desc = *glsl_get_cmat_description(split->split_vars[i]->type);
-         unsigned offset = desc.cols;
-
          unsigned row_offset, col_offset;
-         row_offset = i % split->num_col_splits;
-         col_offset = i / split->num_col_splits;
+
+         row_offset = (i % split->num_col_splits) * desc.cols;
+         col_offset = (i / split->num_col_splits) * desc.rows;
 
          if (layout == GLSL_MATRIX_LAYOUT_ROW_MAJOR)
             SWAP(row_offset, col_offset);
@@ -537,9 +536,9 @@ split_cmat_load_store(nir_builder *b,
          stride = nir_udiv_imm(b, nir_imul_imm(b, stride, deref_bytes_size), elem_size);
 
          if (col_offset)
-            this_index = nir_imm_intN_t(b, col_offset * offset, dst_bit_size);
+            this_index = nir_imm_intN_t(b, col_offset, dst_bit_size);
          if (row_offset)
-            this_index = nir_iadd(b, this_index, nir_u2uN(b, nir_imul_imm(b, stride, row_offset * offset), dst_bit_size));
+            this_index = nir_iadd(b, this_index, nir_u2uN(b, nir_imul_imm(b, stride, row_offset), dst_bit_size));
          ptr_deref = nir_build_deref_ptr_as_array(b, ptr_deref, this_index);
          ptr = &ptr_deref->def;
       }
