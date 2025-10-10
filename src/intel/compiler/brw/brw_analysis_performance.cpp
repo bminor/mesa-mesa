@@ -585,11 +585,6 @@ namespace {
                                   0, 2 /* XXX */,
                                   0, 0, 0, 8 /* XXX */, 0, 0);
 
-      case SHADER_OPCODE_GET_BUFFER_SIZE:
-         return calculate_desc(info, EU_UNIT_SAMPLER, 2, 0, 0, 0, 16 /* XXX */,
-                               8 /* XXX */, 750 /* XXX */, 0, 0,
-                               2 /* XXX */, 0);
-
       case FS_OPCODE_UNIFORM_PULL_CONSTANT_LOAD:
          return calculate_desc(info, EU_UNIT_DP_CC, 2, 0, 0, 0, 16 /* XXX */,
                                10 /* XXX */, 100 /* XXX */, 0, 0, 0, 0);

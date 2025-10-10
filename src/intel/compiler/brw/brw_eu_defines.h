@@ -471,8 +471,6 @@ enum ENUM_PACKED opcode {
     */
    SHADER_OPCODE_CLUSTER_BROADCAST,
 
-   SHADER_OPCODE_GET_BUFFER_SIZE,
-
    SHADER_OPCODE_INTERLOCK,
 
    /** Target for a HALT
@@ -629,17 +627,6 @@ enum pull_varying_constant_srcs {
    PULL_VARYING_CONSTANT_SRC_ALIGNMENT,
 
    PULL_VARYING_CONSTANT_SRCS,
-};
-
-enum get_buffer_size_srcs {
-   /** Surface binding table index */
-   GET_BUFFER_SIZE_SRC_SURFACE,
-   /** Surface bindless handle */
-   GET_BUFFER_SIZE_SRC_SURFACE_HANDLE,
-   /** LOD */
-   GET_BUFFER_SIZE_SRC_LOD,
-
-   GET_BUFFER_SIZE_SRCS
 };
 
 enum ENUM_PACKED memory_logical_mode {

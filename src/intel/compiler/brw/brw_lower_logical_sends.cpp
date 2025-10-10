@@ -2147,44 +2147,6 @@ lower_trace_ray_logical_send(const brw_builder &bld, brw_inst *inst)
 }
 
 static void
-lower_get_buffer_size(const brw_builder &bld, brw_inst *inst)
-{
-   const intel_device_info *devinfo = bld.shader->devinfo;
-   /* Since we can only execute this instruction on uniform bti/surface
-    * handles, brw_from_nir.cpp should already have limited this to SIMD8.
-    */
-   assert(inst->exec_size == (devinfo->ver < 20 ? 8 : 16));
-
-   brw_reg surface = inst->src[GET_BUFFER_SIZE_SRC_SURFACE];
-   brw_reg surface_handle = inst->src[GET_BUFFER_SIZE_SRC_SURFACE_HANDLE];
-   brw_reg lod = bld.move_to_vgrf(inst->src[GET_BUFFER_SIZE_SRC_LOD], 1);
-   const bool fused_eu_disable = inst->fused_eu_disable;
-
-   brw_send_inst *send = brw_transform_inst_to_send(bld, inst);
-   inst = NULL;
-
-   send->mlen = send->exec_size / 8;
-   send->ex_mlen = 0;
-   send->ex_desc = 0;
-
-   /* src[SEND_SRC_DESC/EX_DESC] are filled by setup_surface_descriptors() */
-   send->src[SEND_SRC_PAYLOAD1] = lod;
-   send->src[SEND_SRC_PAYLOAD2] = brw_reg();
-
-   const uint32_t return_format = GFX8_SAMPLER_RETURN_FORMAT_32BITS;
-
-   const uint32_t desc = brw_sampler_desc(devinfo, 0, 0,
-                                          GFX5_SAMPLER_MESSAGE_SAMPLE_RESINFO,
-                                          BRW_SAMPLER_SIMD_MODE_SIMD8,
-                                          return_format);
-
-   send->dst = retype(send->dst, BRW_TYPE_UW);
-   send->sfid = BRW_SFID_SAMPLER;
-   send->fused_eu_disable = fused_eu_disable;
-   setup_surface_descriptors(bld, send, desc, surface, surface_handle);
-}
-
-static void
 lower_lsc_memory_fence_and_interlock(const brw_builder &bld, struct brw_send_inst *inst)
 {
    const intel_device_info *devinfo = bld.shader->devinfo;
@@ -2327,10 +2289,6 @@ brw_lower_logical_sends(brw_shader &s)
 
       case SHADER_OPCODE_SAMPLER:
          lower_sampler_logical_send(ibld, inst->as_tex());
-         break;
-
-      case SHADER_OPCODE_GET_BUFFER_SIZE:
-         lower_get_buffer_size(ibld, inst);
          break;
 
       case SHADER_OPCODE_MEMORY_LOAD_LOGICAL:

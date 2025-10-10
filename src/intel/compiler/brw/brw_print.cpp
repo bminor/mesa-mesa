@@ -175,9 +175,6 @@ brw_instruction_name(const struct brw_isa_info *isa, const brw_inst *inst)
    case SHADER_OPCODE_CLUSTER_BROADCAST:
       return "cluster_broadcast";
 
-   case SHADER_OPCODE_GET_BUFFER_SIZE:
-      return "get_buffer_size";
-
    case FS_OPCODE_DDX_COARSE:
       return "ddx_coarse";
    case FS_OPCODE_DDX_FINE:

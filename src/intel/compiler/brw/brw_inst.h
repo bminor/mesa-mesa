@@ -213,12 +213,7 @@ struct brw_inst : brw_exec_node {
           */
          bool has_no_mask_send_params:1;
 
-         /**
-          * Serialize the message (Gfx12.x only)
-          */
-         bool fused_eu_disable:1;
-
-         uint8_t pad:5;
+         uint8_t pad:6;
       };
       uint16_t bits;
    };

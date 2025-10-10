@@ -6439,22 +6439,26 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
        * the dispatch width.
        */
       const brw_builder ubld = bld.scalar_group();
-      brw_reg ret_payload = ubld.vgrf(BRW_TYPE_UD, 4);
 
-      /* Set LOD = 0 */
-      brw_reg src_payload = ubld.MOV(brw_imm_ud(0));
+      brw_reg srcs[TEX_LOGICAL_NUM_SRCS];
+      srcs[TEX_LOGICAL_SRC_SURFACE] = get_nir_buffer_intrinsic_index(ntb, bld, instr);
+      srcs[TEX_LOGICAL_SRC_SAMPLER] = brw_imm_d(0);
+      srcs[TEX_LOGICAL_SRC_PAYLOAD0] = brw_imm_d(0); /* LOD (required) */
 
-      brw_reg srcs[GET_BUFFER_SIZE_SRCS];
-      srcs[get_nir_src_bindless(ntb, instr->src[0]) ?
-           GET_BUFFER_SIZE_SRC_SURFACE_HANDLE :
-           GET_BUFFER_SIZE_SRC_SURFACE] =
-         get_nir_buffer_intrinsic_index(ntb, bld, instr);
-      srcs[GET_BUFFER_SIZE_SRC_LOD] = src_payload;
-      brw_inst *inst = ubld.emit(SHADER_OPCODE_GET_BUFFER_SIZE, ret_payload,
-                                srcs, GET_BUFFER_SIZE_SRCS);
+      brw_reg tmp = ubld.vgrf(BRW_TYPE_UD, 4);
+      brw_tex_inst *inst = ubld.emit(SHADER_OPCODE_SAMPLER,
+                                     tmp, srcs, 3)->as_tex();
+      inst->required_params = 0x1 /* LOD */;
+      inst->sampler_opcode = BRW_SAMPLER_OPCODE_RESINFO;
+      inst->surface_bindless = get_nir_src_bindless(ntb, instr->src[0]);
       inst->size_written = 4 * REG_SIZE * reg_unit(devinfo);
       inst->fused_eu_disable =
          (nir_intrinsic_access(instr) & ACCESS_FUSED_EU_DISABLE_INTEL) != 0;
+
+      for (unsigned c = 0; c < instr->def.num_components; ++c) {
+         bld.MOV(offset(retype(dest, tmp.type), bld, c),
+                 component(offset(tmp, ubld, c), 0));
+      }
 
       /* SKL PRM, vol07, 3D Media GPGPU Engine, Bounds Checking and Faulting:
        *
@@ -6475,11 +6479,11 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
        *
        * buffer_size = surface_size & ~3 - surface_size & 3
        */
-      brw_reg size_padding  = ubld.AND(ret_payload, brw_imm_ud(3));
-      brw_reg size_aligned4 = ubld.AND(ret_payload, brw_imm_ud(~3));
+      brw_reg size_padding  = ubld.AND(tmp, brw_imm_ud(3));
+      brw_reg size_aligned4 = ubld.AND(tmp, brw_imm_ud(~3));
       brw_reg buffer_size   = ubld.ADD(size_aligned4, negate(size_padding));
 
-      bld.MOV(retype(dest, ret_payload.type), component(buffer_size, 0));
+      bld.MOV(retype(dest, tmp.type), component(buffer_size, 0));
       break;
    }
 

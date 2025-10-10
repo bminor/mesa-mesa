@@ -94,7 +94,6 @@ is_expression(const brw_shader *v, const brw_inst *const inst)
    case SHADER_OPCODE_CLUSTER_BROADCAST:
    case SHADER_OPCODE_MOV_INDIRECT:
    case SHADER_OPCODE_SAMPLER:
-   case SHADER_OPCODE_GET_BUFFER_SIZE:
    case FS_OPCODE_PACK:
    case FS_OPCODE_PACK_HALF_2x16_SPLIT:
    case SHADER_OPCODE_RCP:
