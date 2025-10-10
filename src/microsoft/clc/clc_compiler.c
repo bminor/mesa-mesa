@@ -1109,9 +1109,6 @@ clc_spirv_to_dxil(struct clc_libclc *lib,
    NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_ubo,
               nir_address_format_32bit_index_offset);
    NIR_PASS(_, nir, clc_nir_lower_system_values, work_properties_var);
-   const struct dxil_nir_lower_loads_stores_options loads_stores_options = {
-      .use_16bit_ssbo = false,
-   };
 
    /* Now that function-declared local vars have been sized, append args */
    for (unsigned i = 0; i < out_dxil->kernel->num_args; i++) {
@@ -1140,7 +1137,7 @@ clc_spirv_to_dxil(struct clc_libclc *lib,
       nir->info.shared_size += size;
    }
 
-   NIR_PASS(_, nir, dxil_nir_lower_loads_stores_to_dxil, &loads_stores_options);
+   NIR_PASS(_, nir, dxil_nir_scratch_and_shared_to_dxil);
    NIR_PASS(_, nir, dxil_nir_opt_alu_deref_srcs);
    NIR_PASS(_, nir, nir_lower_fp16_casts, nir_lower_fp16_all);
    NIR_PASS(_, nir, nir_lower_convert_alu_types, NULL);

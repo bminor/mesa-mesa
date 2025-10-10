@@ -41,11 +41,7 @@ bool dxil_nir_flatten_var_arrays(nir_shader *shader, nir_variable_mode modes);
 bool dxil_nir_lower_var_bit_size(nir_shader *shader, nir_variable_mode modes,
                                  unsigned min_bit_size, unsigned max_bit_size);
 bool dxil_nir_remove_oob_array_accesses(nir_shader *shader);
-struct dxil_nir_lower_loads_stores_options {
-   bool use_16bit_ssbo;
-};
-bool dxil_nir_lower_loads_stores_to_dxil(nir_shader *shader,
-                                         const struct dxil_nir_lower_loads_stores_options *options);
+bool dxil_nir_scratch_and_shared_to_dxil(nir_shader *shader);
 bool dxil_nir_lower_deref_ssbo(nir_shader *shader);
 bool dxil_nir_opt_alu_deref_srcs(nir_shader *shader);
 bool dxil_nir_lower_upcast_phis(nir_shader *shader, unsigned min_bit_size);

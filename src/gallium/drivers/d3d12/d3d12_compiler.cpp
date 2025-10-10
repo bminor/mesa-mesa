@@ -117,8 +117,7 @@ compile_nir(struct d3d12_context *ctx, struct d3d12_shader_selector *sel,
 
    NIR_PASS(_, nir, d3d12_lower_state_vars, shader);
 
-   const struct dxil_nir_lower_loads_stores_options loads_stores_options = {};
-   NIR_PASS(_, nir, dxil_nir_lower_loads_stores_to_dxil, &loads_stores_options);
+   NIR_PASS(_, nir, dxil_nir_scratch_and_shared_to_dxil);
 
    if (key->stage == MESA_SHADER_FRAGMENT && key->fs.multisample_disabled)
       NIR_PASS(_, nir, d3d12_disable_multisampling);

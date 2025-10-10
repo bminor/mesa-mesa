@@ -1016,6 +1016,7 @@ dxil_spirv_nir_passes(nir_shader *nir,
                  shared_var_info);
       NIR_PASS(_, nir, dxil_nir_split_unaligned_loads_stores, nir_var_mem_shared);
       NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_shared, nir_address_format_32bit_offset);
+      NIR_PASS(_, nir, dxil_nir_scratch_and_shared_to_dxil);
    } else {
       NIR_PASS(_, nir, nir_split_struct_vars, nir_var_mem_shared);
       NIR_PASS(_, nir, dxil_nir_flatten_var_arrays, nir_var_mem_shared);
@@ -1100,10 +1101,6 @@ dxil_spirv_nir_passes(nir_shader *nir,
    NIR_PASS(_, nir, nir_lower_tex, &lower_tex_options);
 
    NIR_PASS(_, nir, dxil_nir_split_clip_cull_distance);
-   const struct dxil_nir_lower_loads_stores_options loads_stores_options = {
-      .use_16bit_ssbo = conf->shader_model_max >= SHADER_MODEL_6_2,
-   };
-   NIR_PASS(_, nir, dxil_nir_lower_loads_stores_to_dxil, &loads_stores_options);
    NIR_PASS(_, nir, dxil_nir_split_typed_samplers);
    NIR_PASS(_, nir, dxil_nir_lower_ubo_array_one_to_static);
    NIR_PASS(_, nir, nir_opt_dce);
