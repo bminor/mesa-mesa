@@ -131,6 +131,9 @@ ac_emit_cp_copy_data(struct ac_cmdbuf *cs, uint32_t src_sel, uint32_t dst_sel,
                      uint64_t src_va, uint64_t dst_va,
                      enum ac_cp_copy_data_flags flags);
 
+void
+ac_emit_cp_pfp_sync_me(struct ac_cmdbuf *cs);
+
 #ifdef __cplusplus
 }
 #endif

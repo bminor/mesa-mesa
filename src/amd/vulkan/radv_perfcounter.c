@@ -603,11 +603,9 @@ radv_pc_wait_idle(struct radv_cmd_buffer *cmd_buffer)
    radeon_emit(0);          /* CP_COHER_BASE_HI */
    radeon_emit(0x0000000A); /* POLL_INTERVAL */
    radeon_emit(0);          /* GCR_CNTL */
-
-   radeon_emit(PKT3(PKT3_PFP_SYNC_ME, 0, 0));
-   radeon_emit(0);
-
    radeon_end();
+
+   ac_emit_cp_pfp_sync_me(cs->b);
 }
 
 static void

@@ -1060,3 +1060,12 @@ ac_emit_cp_copy_data(struct ac_cmdbuf *cs, uint32_t src_sel, uint32_t dst_sel,
    ac_cmdbuf_emit(dst_va >> 32);
    ac_cmdbuf_end();
 }
+
+void
+ac_emit_cp_pfp_sync_me(struct ac_cmdbuf *cs)
+{
+   ac_cmdbuf_begin(cs);
+   ac_cmdbuf_emit(PKT3(PKT3_PFP_SYNC_ME, 0, 0));
+   ac_cmdbuf_emit(0);
+   ac_cmdbuf_end();
+}

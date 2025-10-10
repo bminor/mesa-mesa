@@ -289,11 +289,11 @@ gfx10_cs_emit_cache_flush(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_lev
       }
    }
 
-   radeon_begin(cs);
-
    /* VGT state sync */
    if (flush_bits & RADV_CMD_FLAG_VGT_FLUSH) {
+      radeon_begin(cs);
       radeon_event_write(V_028A90_VGT_FLUSH);
+      radeon_end();
    }
 
    /* Ignore fields that only modify the behavior of other fields. */
@@ -302,6 +302,7 @@ gfx10_cs_emit_cache_flush(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_lev
        * The cache flush is executed in the ME, but the PFP waits
        * for completion.
        */
+      radeon_begin(cs);
       radeon_emit(PKT3(PKT3_ACQUIRE_MEM, 6, 0));
       radeon_emit(0);          /* CP_COHER_CNTL */
       radeon_emit(0xffffffff); /* CP_COHER_SIZE */
@@ -310,15 +311,17 @@ gfx10_cs_emit_cache_flush(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_lev
       radeon_emit(0);          /* CP_COHER_BASE_HI */
       radeon_emit(0x0000000A); /* POLL_INTERVAL */
       radeon_emit(gcr_cntl);   /* GCR_CNTL */
+      radeon_end();
    } else if ((cb_db_event || (flush_bits & (RADV_CMD_FLAG_VS_PARTIAL_FLUSH | RADV_CMD_FLAG_PS_PARTIAL_FLUSH |
                                              RADV_CMD_FLAG_CS_PARTIAL_FLUSH))) &&
               !is_mec) {
       /* We need to ensure that PFP waits as well. */
-      radeon_emit(PKT3(PKT3_PFP_SYNC_ME, 0, 0));
-      radeon_emit(0);
+      ac_emit_cp_pfp_sync_me(cs->b);
 
       *sqtt_flush_bits |= RGP_FLUSH_PFP_SYNC_ME;
    }
+
+   radeon_begin(cs);
 
    if (flush_bits & RADV_CMD_FLAG_START_PIPELINE_STATS) {
       if (!is_mec) {
@@ -485,10 +488,7 @@ radv_cs_emit_cache_flush(struct radeon_winsys *ws, struct radv_cmd_stream *cs, e
    if ((cp_coher_cntl || (flush_bits & (RADV_CMD_FLAG_CS_PARTIAL_FLUSH | RADV_CMD_FLAG_INV_VCACHE |
                                         RADV_CMD_FLAG_INV_L2 | RADV_CMD_FLAG_WB_L2))) &&
        !is_mec) {
-      radeon_begin(cs);
-      radeon_emit(PKT3(PKT3_PFP_SYNC_ME, 0, 0));
-      radeon_emit(0);
-      radeon_end();
+      ac_emit_cp_pfp_sync_me(cs->b);
 
       *sqtt_flush_bits |= RGP_FLUSH_PFP_SYNC_ME;
    }

@@ -5074,10 +5074,7 @@ radv_load_ds_clear_metadata(struct radv_cmd_buffer *cmd_buffer, const struct rad
       ac_emit_cp_copy_data(cs->b, COPY_DATA_SRC_MEM, COPY_DATA_REG, va, reg >> 2,
                            (reg_count == 2 ? AC_CP_COPY_DATA_COUNT_SEL : 0));
 
-      radeon_begin(cs);
-      radeon_emit(PKT3(PKT3_PFP_SYNC_ME, 0, 0));
-      radeon_emit(0);
-      radeon_end();
+      ac_emit_cp_pfp_sync_me(cs->b);
    }
 }
 
@@ -14656,10 +14653,7 @@ radv_begin_conditional_rendering(struct radv_cmd_buffer *cmd_buffer, uint64_t va
 
          ac_emit_cp_copy_data(cs->b, COPY_DATA_SRC_MEM, COPY_DATA_DST_MEM, va, emulated_va, AC_CP_COPY_DATA_WR_CONFIRM);
 
-         radeon_begin(cs);
-         radeon_emit(PKT3(PKT3_PFP_SYNC_ME, 0, 0));
-         radeon_emit(0);
-         radeon_end();
+         ac_emit_cp_pfp_sync_me(cs->b);
 
          pred_op = PREDICATION_OP_BOOL64;
 
@@ -15092,10 +15086,9 @@ radv_emit_strmout_buffer(struct radv_cmd_buffer *cmd_buffer, const struct radv_d
       /* Emitting a COPY_DATA packet should be enough because RADV doesn't support preemption
        * (shadow memory) but for unknown reasons, it can lead to GPU hangs on GFX10+.
        */
-      radeon_begin(cs);
-      radeon_emit(PKT3(PKT3_PFP_SYNC_ME, 0, 0));
-      radeon_emit(0);
+      ac_emit_cp_pfp_sync_me(cs->b);
 
+      radeon_begin(cs);
       radeon_emit(PKT3(PKT3_LOAD_CONTEXT_REG_INDEX, 3, 0));
       radeon_emit(draw_info->strmout_va);
       radeon_emit(draw_info->strmout_va >> 32);
