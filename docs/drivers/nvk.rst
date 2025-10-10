@@ -75,10 +75,10 @@ specific to NVK:
    poorly tested or completely broken.  This is intended for developer use
    only.
 
-Hardware Documentation
-----------------------
+Developer info
+--------------
 
-What little documentation we have can be found in the `NVIDIA open-gpu-doc
-repository <https://github.com/NVIDIA/open-gpu-doc>`__.  The majority of
-our documentation comes in the form of class headers which describe the
-class state registers.
+.. toctree::
+   :glob:
+
+   nvk/*
