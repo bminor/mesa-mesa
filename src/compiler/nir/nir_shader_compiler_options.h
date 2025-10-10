@@ -672,6 +672,9 @@ typedef struct nir_shader_compiler_options {
    /** Backend supports atomic isub. */
    bool has_atomic_isub;
 
+   /** Backend supports atomic load/store. */
+   bool has_atomic_load_store;
+
    /**
     * Is this the Intel vec4 backend?
     *
