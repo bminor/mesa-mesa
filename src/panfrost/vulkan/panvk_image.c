@@ -246,6 +246,13 @@ panvk_image_can_use_mod(struct panvk_image *image,
       if (image->vk.base.device->enabled_features.separateDepthStencilLayouts &&
           panvk_image_is_interleaved_depth_stencil(image))
          return false;
+
+      /* Aliased images not supported yet for single <-> multiplanar.
+       * The disjoint flag is what limits this to single <-> multiplanar.
+       * TODO: this can be relaxed once we have multiplanar AFBC. */
+      if ((image->vk.create_flags & VK_IMAGE_CREATE_ALIAS_BIT) &&
+          (image->vk.create_flags & VK_IMAGE_CREATE_DISJOINT_BIT))
+         return false;
    }
 
    if (mod == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED) {
