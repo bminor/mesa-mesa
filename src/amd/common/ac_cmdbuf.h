@@ -97,6 +97,10 @@ void
 ac_init_graphics_preamble_state(const struct ac_preamble_state *state,
                                 struct ac_pm4_state *pm4);
 
+void
+ac_emit_cond_exec(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
+                  uint64_t va, uint32_t count);
+
 #ifdef __cplusplus
 }
 #endif

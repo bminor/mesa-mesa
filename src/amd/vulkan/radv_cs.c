@@ -584,30 +584,6 @@ radv_cs_emit_cache_flush(struct radeon_winsys *ws, struct radv_cmd_stream *cs, e
 }
 
 void
-radv_emit_cond_exec(const struct radv_device *device, struct radv_cmd_stream *cs, uint64_t va, uint32_t count)
-{
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-   const enum amd_gfx_level gfx_level = pdev->info.gfx_level;
-
-   radeon_begin(cs);
-
-   if (gfx_level >= GFX7) {
-      radeon_emit(PKT3(PKT3_COND_EXEC, 3, 0));
-      radeon_emit(va);
-      radeon_emit(va >> 32);
-      radeon_emit(0);
-      radeon_emit(count);
-   } else {
-      radeon_emit(PKT3(PKT3_COND_EXEC, 2, 0));
-      radeon_emit(va);
-      radeon_emit(va >> 32);
-      radeon_emit(count);
-   }
-
-   radeon_end();
-}
-
-void
 radv_cs_write_data_imm(struct radv_cmd_stream *cs, unsigned engine_sel, uint64_t va, uint32_t imm)
 {
    radeon_begin(cs);

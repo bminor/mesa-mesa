@@ -857,3 +857,23 @@ ac_init_graphics_preamble_state(const struct ac_preamble_state *state,
       gfx6_init_graphics_preamble_state(state, pm4);
    }
 }
+
+void
+ac_emit_cond_exec(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
+                  uint64_t va, uint32_t count)
+{
+   ac_cmdbuf_begin(cs);
+   if (gfx_level >= GFX7) {
+      ac_cmdbuf_emit(PKT3(PKT3_COND_EXEC, 3, 0));
+      ac_cmdbuf_emit(va);
+      ac_cmdbuf_emit(va >> 32);
+      ac_cmdbuf_emit(0);
+      ac_cmdbuf_emit(count);
+   } else {
+      ac_cmdbuf_emit(PKT3(PKT3_COND_EXEC, 2, 0));
+      ac_cmdbuf_emit(va);
+      ac_cmdbuf_emit(va >> 32);
+      ac_cmdbuf_emit(count);
+   }
+   ac_cmdbuf_end();
+}

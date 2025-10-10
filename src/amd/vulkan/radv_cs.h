@@ -403,8 +403,6 @@ void radv_cs_emit_cache_flush(struct radeon_winsys *ws, struct radv_cmd_stream *
                               uint32_t *flush_cnt, uint64_t flush_va, enum radv_cmd_flush_bits flush_bits,
                               enum rgp_flush_bits *sqtt_flush_bits, uint64_t gfx9_eop_bug_va);
 
-void radv_emit_cond_exec(const struct radv_device *device, struct radv_cmd_stream *cs, uint64_t va, uint32_t count);
-
 void radv_cs_write_data_imm(struct radv_cmd_stream *cs, unsigned engine_sel, uint64_t va, uint32_t imm);
 
 static inline void
