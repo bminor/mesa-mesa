@@ -129,17 +129,20 @@ Currently, only EGL and the following drivers have CPU tracepoints.
 - VC4
 - V3DV
 
-Vulkan data sources
-~~~~~~~~~~~~~~~~~~~
+Render stage data sources
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The Vulkan API gives the application control over recording of command
-buffers as well as when they are submitted to the hardware. As a
-consequence, we need to ensure command buffers are properly
-instrumented for the Perfetto driver data sources prior to Perfetto
-actually collecting traces.
+The render stage data sources are the driver-specific traces of command buffer
+execution on the GPU.
 
-This can be achieved by setting the :envvar:`MESA_GPU_TRACES`
-environment variable before starting a Vulkan application :
+The Vulkan API gives the application control over recording of command buffers
+as well as when they are submitted to the hardware, and command buffers can be
+recorded once and reused repeatedly.  Trace commands are normally only recorded
+into a command buffer when a perfetto trace is active.  Most applications don't
+reuse command buffers, so you'll see traces appear shortly after the trace was
+started, but if you have one of the rare applications that reuses command
+buffers, you'll need to set the :envvar:`MESA_GPU_TRACES` environment variable
+before starting a Vulkan application :
 
 .. code-block:: sh
 
