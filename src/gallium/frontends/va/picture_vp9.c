@@ -230,7 +230,7 @@ void vlVaDecoderVP9BitstreamHeader(vlVaContext *context, vlVaBuffer *buf)
 {
    struct vl_vlc vlc;
    unsigned profile;
-   bool frame_type, show_frame, error_resilient_mode;
+   bool frame_type, show_frame, error_resilient_mode, intra_only = false;
    bool mode_ref_delta_enabled, mode_ref_delta_update = false;
    int i;
 
@@ -265,7 +265,7 @@ void vlVaDecoderVP9BitstreamHeader(vlVaContext *context, vlVaBuffer *buf)
       bitdepth_colorspace_sampling(&vlc, profile);
       frame_size(&vlc);
    } else {
-      bool intra_only, size_in_refs = false;
+      bool size_in_refs = false;
 
       intra_only = show_frame ? 0 : vp9_u(&vlc, 1);
       if (!error_resilient_mode)
@@ -277,7 +277,8 @@ void vlVaDecoderVP9BitstreamHeader(vlVaContext *context, vlVaBuffer *buf)
          if (vp9_u(&vlc, 24) != 0x498342)
             return;
 
-         bitdepth_colorspace_sampling(&vlc, profile);
+         if (profile > 0)
+            bitdepth_colorspace_sampling(&vlc, profile);
          /* refresh_frame_flags */
          vp9_u(&vlc, 8);
          frame_size(&vlc);
@@ -332,6 +333,16 @@ void vlVaDecoderVP9BitstreamHeader(vlVaContext *context, vlVaBuffer *buf)
    vp9_u(&vlc, 6);
    /* sharpness_level */
    vp9_u(&vlc, 3);
+
+   if (frame_type == 0 || intra_only || error_resilient_mode) {
+      context->desc.vp9.picture_parameter.ref_deltas[0] = 1;
+      context->desc.vp9.picture_parameter.ref_deltas[1] = 0;
+      context->desc.vp9.picture_parameter.ref_deltas[2] = -1;
+      context->desc.vp9.picture_parameter.ref_deltas[3] = -1;
+
+      context->desc.vp9.picture_parameter.mode_deltas[0] = 0;
+      context->desc.vp9.picture_parameter.mode_deltas[1] = 0;
+   }
 
    mode_ref_delta_enabled = vp9_u(&vlc, 1);
    if (mode_ref_delta_enabled) {
