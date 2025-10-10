@@ -46,7 +46,6 @@ set_smem_access_flags(nir_builder *b, nir_intrinsic_instr *intrin, void *cb_data
    case nir_intrinsic_load_ssbo:
    case nir_intrinsic_load_global:
    case nir_intrinsic_load_global_constant:
-   case nir_intrinsic_load_global_amd:
    case nir_intrinsic_load_constant:
       if (cb_data->use_llvm)
          return false;
@@ -82,6 +81,15 @@ set_smem_access_flags(nir_builder *b, nir_intrinsic_instr *intrin, void *cb_data
 bool
 ac_nir_flag_smem_for_loads(nir_shader *shader, enum amd_gfx_level gfx_level, bool use_llvm)
 {
+   /* Only use the 'ignore_undef' divergence option for ACO where we can guarantee that
+    * uniform phis with undef src are residing in SGPRs, and hence, indeed uniform.
+    */
+   uint32_t options =
+      shader->options->divergence_analysis_options | (use_llvm ? 0 : nir_divergence_ignore_undef_if_phi_srcs);
+   nir_foreach_function_impl(impl, shader) {
+      nir_divergence_analysis_impl(impl, (nir_divergence_options)options);
+   }
+
    mem_access_cb_data cb_data = {
       .gfx_level = gfx_level,
       .use_llvm = use_llvm,

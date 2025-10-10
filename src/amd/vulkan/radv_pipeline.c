@@ -353,7 +353,6 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
    };
    NIR_PASS(_, stage->nir, radv_nir_opt_tid_function, &tid_options);
 
-   nir_divergence_analysis(stage->nir);
    NIR_PASS(_, stage->nir, ac_nir_flag_smem_for_loads, gfx_level, use_llvm);
 
    NIR_PASS(_, stage->nir, nir_lower_memory_model);
@@ -573,6 +572,8 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
       NIR_PASS(_, stage->nir, nir_opt_constant_folding);
       NIR_PASS(_, stage->nir, nir_opt_cse);
       NIR_PASS(_, stage->nir, nir_opt_shrink_vectors, true);
+
+      NIR_PASS(_, stage->nir, ac_nir_flag_smem_for_loads, gfx_level, use_llvm);
       NIR_PASS(_, stage->nir, ac_nir_lower_mem_access_bit_sizes, gfx_level, use_llvm);
 
       nir_load_store_vectorize_options late_vectorize_opts = {

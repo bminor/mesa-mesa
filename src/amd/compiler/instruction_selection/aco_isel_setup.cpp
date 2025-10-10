@@ -381,7 +381,6 @@ init_context(isel_context* ctx, nir_shader* shader)
    nir_divergence_analysis_impl(impl, (nir_divergence_options)options);
 
    apply_nuw_to_offsets(ctx, impl);
-   ac_nir_flag_smem_for_loads(shader, ctx->program->gfx_level, false);
 
    if (shader->info.stage == MESA_SHADER_FRAGMENT) {
       nir_opt_load_skip_helpers_options skip_helper_options = {};
