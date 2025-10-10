@@ -593,7 +593,7 @@ setup_async_execbuf(struct anv_execbuf *execbuf,
 #ifdef SUPPORT_INTEL_INTEGRATED_GPUS
       if (device->physical->memory.need_flush &&
           anv_bo_needs_host_cache_flush(bo->alloc_flags))
-         intel_flush_range(bo->map, bo->size);
+         util_flush_range(bo->map, bo->size);
 #endif
    }
 

@@ -195,7 +195,7 @@ xe_queue_exec_async(struct anv_async_submit *submit,
    if (device->physical->memory.need_flush &&
        anv_bo_needs_host_cache_flush(device->utrace_bo_pool.bo_alloc_flags)) {
       util_dynarray_foreach(&submit->batch_bos, struct anv_bo *, bo)
-         intel_flush_range((*bo)->map, (*bo)->size);
+         util_flush_range((*bo)->map, (*bo)->size);
    }
 #endif
 

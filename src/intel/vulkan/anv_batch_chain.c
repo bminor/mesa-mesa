@@ -370,7 +370,7 @@ anv_batch_bo_link(struct anv_cmd_buffer *cmd_buffer,
 #ifdef SUPPORT_INTEL_INTEGRATED_GPUS
    if (cmd_buffer->device->physical->memory.need_flush &&
        anv_bo_needs_host_cache_flush(prev_bbo->bo->alloc_flags))
-      intel_flush_range(map, sizeof(uint64_t));
+      util_flush_range(map, sizeof(uint64_t));
 #endif
 }
 
@@ -1638,7 +1638,7 @@ anv_cmd_buffer_clflush(struct anv_cmd_buffer **cmd_buffers,
 
    for (uint32_t i = 0; i < num_cmd_buffers; i++) {
       u_vector_foreach(bbo, &cmd_buffers[i]->seen_bbos) {
-         intel_flush_range_no_fence((*bbo)->bo->map, (*bbo)->length);
+         util_flush_range_no_fence((*bbo)->bo->map, (*bbo)->length);
       }
    }
 

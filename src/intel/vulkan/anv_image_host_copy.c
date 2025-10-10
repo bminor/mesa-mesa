@@ -107,7 +107,7 @@ anv_copy_image_memory(struct anv_device *device,
       (binding->address.bo->flags & ANV_BO_ALLOC_HOST_COHERENT) == 0 &&
       device->physical->memory.need_flush;
    if (need_invalidate_flush && !mem_to_img)
-      intel_invalidate_range(img_ptr + start_tile_B, end_tile_B - start_tile_B);
+      util_flush_inval_range(img_ptr + start_tile_B, end_tile_B - start_tile_B);
 #endif
 
    uint32_t img_depth_or_layer = MAX2(base_img_array_layer + array_layer,
@@ -160,7 +160,7 @@ anv_copy_image_memory(struct anv_device *device,
 
 #ifdef SUPPORT_INTEL_INTEGRATED_GPUS
    if (need_invalidate_flush && mem_to_img)
-      intel_flush_range(img_ptr + start_tile_B, end_tile_B - start_tile_B);
+      util_flush_range(img_ptr + start_tile_B, end_tile_B - start_tile_B);
 #endif
 }
 

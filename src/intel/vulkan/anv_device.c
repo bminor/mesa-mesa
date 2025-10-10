@@ -1957,9 +1957,9 @@ VkResult anv_FlushMappedMemoryRanges(
       if (map_offset >= mem->map_size)
          continue;
 
-      intel_flush_range(mem->map + map_offset,
-                        MIN2(pMemoryRanges[i].size,
-                             mem->map_size - map_offset));
+      util_flush_range(mem->map + map_offset,
+                       MIN2(pMemoryRanges[i].size,
+                            mem->map_size - map_offset));
    }
 #endif
    return VK_SUCCESS;
@@ -1985,7 +1985,7 @@ VkResult anv_InvalidateMappedMemoryRanges(
       if (map_offset >= mem->map_size)
          continue;
 
-      intel_invalidate_range(mem->map + map_offset,
+      util_flush_inval_range(mem->map + map_offset,
                              MIN2(pMemoryRanges[i].size,
                                   mem->map_size - map_offset));
    }
