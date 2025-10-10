@@ -105,6 +105,10 @@ void
 ac_emit_write_data_imm(struct ac_cmdbuf *cs, unsigned engine_sel,
                        uint64_t va, uint32_t value);
 
+void
+ac_emit_cp_wait_mem(struct ac_cmdbuf *cs, uint64_t va, uint32_t ref,
+                    uint32_t mask, unsigned flags);
+
 #ifdef __cplusplus
 }
 #endif

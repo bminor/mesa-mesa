@@ -155,15 +155,7 @@ unsigned si_cp_write_fence_dwords(struct si_screen *screen)
 void si_cp_wait_mem(struct si_context *ctx, struct radeon_cmdbuf *cs, uint64_t va, uint32_t ref,
                     uint32_t mask, unsigned flags)
 {
-   radeon_begin(cs);
-   radeon_emit(PKT3(PKT3_WAIT_REG_MEM, 5, 0));
-   radeon_emit(WAIT_REG_MEM_MEM_SPACE(1) | flags);
-   radeon_emit(va);
-   radeon_emit(va >> 32);
-   radeon_emit(ref);  /* reference value */
-   radeon_emit(mask); /* mask */
-   radeon_emit(4);    /* poll interval */
-   radeon_end();
+   ac_emit_cp_wait_mem(&cs->current, va, ref, mask, flags);
 }
 
 static void si_add_fence_dependency(struct si_context *sctx, struct pipe_fence_handle *fence)

@@ -344,15 +344,7 @@ radv_cp_wait_mem(struct radv_cmd_stream *cs, const uint32_t op, const uint64_t v
    assert(op == WAIT_REG_MEM_EQUAL || op == WAIT_REG_MEM_NOT_EQUAL || op == WAIT_REG_MEM_GREATER_OR_EQUAL);
 
    if (cs->hw_ip == AMD_IP_GFX || cs->hw_ip == AMD_IP_COMPUTE) {
-      radeon_begin(cs);
-      radeon_emit(PKT3(PKT3_WAIT_REG_MEM, 5, false));
-      radeon_emit(op | WAIT_REG_MEM_MEM_SPACE(1));
-      radeon_emit(va);
-      radeon_emit(va >> 32);
-      radeon_emit(ref);  /* reference value */
-      radeon_emit(mask); /* mask */
-      radeon_emit(4);    /* poll interval */
-      radeon_end();
+      ac_emit_cp_wait_mem(cs->b, va, ref, mask, op);
    } else if (cs->hw_ip == AMD_IP_SDMA) {
       radv_sdma_emit_wait_mem(cs, op, va, ref, mask);
    } else {

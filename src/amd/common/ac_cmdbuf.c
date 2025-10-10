@@ -889,3 +889,18 @@ ac_emit_write_data_imm(struct ac_cmdbuf *cs, unsigned engine_sel, uint64_t va, u
    ac_cmdbuf_emit(value);
    ac_cmdbuf_end();
 }
+
+void
+ac_emit_cp_wait_mem(struct ac_cmdbuf *cs, uint64_t va, uint32_t ref,
+                    uint32_t mask, unsigned flags)
+{
+   ac_cmdbuf_begin(cs);
+   ac_cmdbuf_emit(PKT3(PKT3_WAIT_REG_MEM, 5, 0));
+   ac_cmdbuf_emit(WAIT_REG_MEM_MEM_SPACE(1) | flags);
+   ac_cmdbuf_emit(va);
+   ac_cmdbuf_emit(va >> 32);
+   ac_cmdbuf_emit(ref);  /* reference value */
+   ac_cmdbuf_emit(mask); /* mask */
+   ac_cmdbuf_emit(4);    /* poll interval */
+   ac_cmdbuf_end();
+}
