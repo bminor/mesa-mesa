@@ -1,5 +1,5 @@
 -- BFI seems available on Gfx9, need to fix the emission code for that.
-if verx10 < 110 then
+if devinfo.verx10 < 110 then
   error("BFI instruction requires Gfx11+")
 end
 

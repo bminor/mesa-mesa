@@ -1,4 +1,4 @@
-if ver < 20 then
+if devinfo.ver < 20 then
   error("SRND instruction requires Gfx20+")
 end
 

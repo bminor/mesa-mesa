@@ -103,8 +103,9 @@ open_manual()
       "- dump(ARRAY, COUNT)",
       "  Pretty print the COUNT first elements of an array of 32-bit values.",
       "",
-      "- ver, verx10",
-      "  Variables containing the Gfx version being executed.",
+      "- devinfo",
+      "  Table containing device information:",
+      "    - ver, verx10: Gfx version and detailed Gfx version",
       "",
       ".SH ASSEMBLY MACROS",
       "",
@@ -210,7 +211,7 @@ print_help()
       "- execute({src=STR, data=ARRAY}) -> ARRAY\n"
       "- arg (table with command line arguments)\n"
       "- dump(ARRAY, COUNT)\n"
-      "- ver, verx10\n"
+      "- devinfo = { ver, verx10 }\n"
       "\n"
       "ASSEMBLY MACROS:\n"
       "- @eot, @syncnop\n"
@@ -968,11 +969,15 @@ main(int argc, char *argv[])
    }
    lua_setglobal(L, "arg");
 
-   lua_pushinteger(L, E.devinfo.ver);
-   lua_setglobal(L, "ver");
+   lua_newtable(L);
+   {
+      lua_pushinteger(L, E.devinfo.ver);
+      lua_setfield(L, -2, "ver");
 
-   lua_pushinteger(L, E.devinfo.verx10);
-   lua_setglobal(L, "verx10");
+      lua_pushinteger(L, E.devinfo.verx10);
+      lua_setfield(L, -2, "verx10");
+   }
+   lua_setglobal(L, "devinfo");
 
    lua_pushcfunction(L, l_execute);
    lua_setglobal(L, "execute");

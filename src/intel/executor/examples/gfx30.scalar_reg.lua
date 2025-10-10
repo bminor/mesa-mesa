@@ -1,7 +1,7 @@
 -- Xe3 adds a new ARF to store scalar values.  It supports only a limited
 -- set of operations.
 
-if ver < 30 then
+if devinfo.ver < 30 then
   error("Scalar register requires Gfx30+")
 end
 

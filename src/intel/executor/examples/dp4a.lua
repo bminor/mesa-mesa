@@ -13,7 +13,7 @@ instruction as seen in the PRM.
 
 --]]
 
-if ver < 12 then
+if devinfo.ver < 12 then
   error("DP4A instruction requires Gfx12+")
 end
 
