@@ -71,8 +71,6 @@ struct radeon_decoder {
    unsigned frame_number;
    unsigned db_alignment;
    unsigned dpb_size;
-   unsigned last_width;
-   unsigned last_height;
    unsigned max_width;
    unsigned max_height;
    unsigned addr_gfx_mode;
@@ -104,7 +102,6 @@ struct radeon_decoder {
    unsigned h264_valid_ref_num[17];
    unsigned h264_valid_poc_num[34];
    unsigned av1_version;
-   bool show_frame;
    unsigned ref_idx;
    bool tmz_ctx;
    struct {
