@@ -1504,7 +1504,7 @@ radv_should_use_wgp_mode(const struct radv_device *device, mesa_shader_stage sta
    if (chip > GFX10 && info->is_ngg)
       return false;
 
-   if (stage == MESA_SHADER_MESH || stage == MESA_SHADER_TASK || stage == MESA_SHADER_FRAGMENT)
+   if (stage == MESA_SHADER_FRAGMENT)
       return false;
 
    /* VS+TCS programs might have an unknown LDS size if the input patch size is dynamic. */
