@@ -1438,6 +1438,33 @@ rpt_has_unique_merge_set(struct ir3_instruction *instr)
    return true;
 }
 
+/* Handles this case when a reg's merge set has a preferred reg but is currently
+ * unavailable. In this case, it's often preferable to reset its preferred reg
+ * and assign a new one, as this potentially reduces the number of movs needed
+ * for the as of yet unallocated regs.
+ */
+void
+ir3_ra_handle_unavailable_merge_set(struct ir3_register *reg)
+{
+   unsigned num_unallocated = 0;
+
+   for (unsigned i = 0; i < reg->merge_set->regs_count; i++) {
+      if (reg->merge_set->regs[i]->num == INVALID_REG) {
+         num_unallocated++;
+
+         /* Only reset the preferred reg if there are at least two still
+          * unallocated regs. It doesn't make sense to reassign the merge set
+          * for a single reg, and increasing the bound more doesn't seem to
+          * improve shader stats.
+          */
+         if (num_unallocated >= 2) {
+            reg->merge_set->preferred_reg = (physreg_t)~0;
+            return;
+         }
+      }
+   }
+}
+
 /* This is the main entrypoint for picking a register. Pick a free register
  * for "reg", shuffling around sources if necessary. In the normal case where
  * "is_source" is false, this register can overlap with killed sources
@@ -1458,6 +1485,8 @@ get_reg(struct ra_ctx *ctx, struct ra_file *file, struct ir3_register *reg)
           preferred_reg % reg_elem_size(reg) == 0 &&
           get_reg_specified(ctx, file, reg, preferred_reg, false))
          return preferred_reg;
+
+      ir3_ra_handle_unavailable_merge_set(reg);
    }
 
    /* For repeated instructions whose merge set is unique (i.e., only used for

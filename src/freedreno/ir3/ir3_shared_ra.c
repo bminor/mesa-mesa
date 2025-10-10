@@ -677,6 +677,8 @@ get_reg(struct ra_ctx *ctx, struct ir3_register *reg, bool src)
           preferred_reg % reg_elem_size(reg) == 0 &&
           get_reg_specified(ctx, reg, preferred_reg))
          return preferred_reg;
+
+      ir3_ra_handle_unavailable_merge_set(reg);
    }
 
    /* If this register is a subset of a merge set which we have not picked a
