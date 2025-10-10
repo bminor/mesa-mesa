@@ -48,7 +48,6 @@
 
 #include "errno.h"
 #include "common/intel_aux_map.h"
-#include "common/intel_mem.h"
 #include "c99_alloca.h"
 #include "dev/intel_debug.h"
 #include "common/intel_common.h"
