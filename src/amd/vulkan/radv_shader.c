@@ -2749,16 +2749,12 @@ radv_get_max_waves(const struct radv_device *device, const struct ac_shader_conf
    const uint8_t wave_size = info->wave_size;
    mesa_shader_stage stage = info->stage;
    unsigned max_simd_waves = gpu_info->max_waves_per_simd;
-   unsigned lds_per_workgroup = 0;
-   unsigned waves_per_workgroup = 1;
+   unsigned lds_per_workgroup = align(conf->lds_size * gpu_info->lds_encode_granularity,
+                                      gpu_info->lds_alloc_granularity);
+   unsigned waves_per_workgroup = DIV_ROUND_UP(info->workgroup_size, wave_size);
 
    if (stage == MESA_SHADER_FRAGMENT) {
-      lds_per_workgroup = conf->lds_size * gpu_info->lds_encode_granularity + info->ps.num_inputs * 48;
-      lds_per_workgroup = align(lds_per_workgroup, gpu_info->lds_alloc_granularity);
-   } else if (stage == MESA_SHADER_COMPUTE || stage == MESA_SHADER_TASK) {
-      unsigned max_workgroup_size = info->workgroup_size;
-      lds_per_workgroup = align(conf->lds_size * gpu_info->lds_encode_granularity, gpu_info->lds_alloc_granularity);
-      waves_per_workgroup = DIV_ROUND_UP(max_workgroup_size, wave_size);
+      lds_per_workgroup += align(info->ps.num_inputs * 48, gpu_info->lds_alloc_granularity);
    }
 
    if (conf->num_sgprs && gfx_level < GFX10) {
