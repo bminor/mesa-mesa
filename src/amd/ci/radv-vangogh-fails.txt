@@ -8,3 +8,14 @@ dEQP-VK.api.copy_and_blit.core.resolve_image.whole_copy_before_resolving_transfe
 dEQP-VK.api.copy_and_blit.dedicated_allocation.resolve_image.whole_copy_before_resolving_transfer.2_bit,Fail
 dEQP-VK.api.copy_and_blit.dedicated_allocation.resolve_image.whole_copy_before_resolving_transfer.4_bit,Fail
 dEQP-VK.api.copy_and_blit.dedicated_allocation.resolve_image.whole_copy_before_resolving_transfer.8_bit,Fail
+
+# CTS bug https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/6057
+dEQP-VK.image.host_image_copy.query.optimal.b8g8r8a8_sint,Fail
+dEQP-VK.image.host_image_copy.query.optimal.bc5_snorm_block,Fail
+dEQP-VK.image.host_image_copy.query.optimal.bc7_unorm_block,Fail
+dEQP-VK.image.host_image_copy.query.optimal.r16_sfloat,Fail
+dEQP-VK.image.host_image_copy.query.optimal.r16_unorm,Fail
+dEQP-VK.image.host_image_copy.query.optimal.r16g16_uint,Fail
+dEQP-VK.image.host_image_copy.query.optimal.r32g32b32a32_sfloat,Fail
+dEQP-VK.image.host_image_copy.query.optimal.r8g8b8a8_unorm,Fail
+dEQP-VK.image.host_image_copy.query.optimal.d32_sfloat,Fail

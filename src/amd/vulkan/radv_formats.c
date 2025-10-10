@@ -1310,7 +1310,7 @@ radv_GetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice,
       }
 
       host_perf_props->optimalDeviceAccess = pdev->info.gfx_level >= GFX12 || !might_enable_compression;
-      host_perf_props->identicalMemoryLayout = pdev->info.gfx_level >= GFX12 || !might_enable_compression;
+      host_perf_props->identicalMemoryLayout = base_info->tiling == VK_IMAGE_TILING_LINEAR;
    }
 
    return VK_SUCCESS;

@@ -178,3 +178,14 @@ dEQP-VK.query_pool.statistics_query.reset_after_copy.fragment_shader_invocations
 dEQP-VK.query_pool.statistics_query.reset_after_copy.fragment_shader_invocations.primary.64bits_dstoffset_cmdcopyquerypoolresults_triangle_list_with_no_color_attachments,Fail
 dEQP-VK.query_pool.statistics_query.reset_after_copy.fragment_shader_invocations.primary.64bits_dstoffset_cmdcopyquerypoolresults_triangle_strip_with_adjacency_with_no_color_attachments,Fail
 dEQP-VK.query_pool.statistics_query.reset_after_copy.fragment_shader_invocations.primary.64bits_dstoffset_cmdcopyquerypoolresults_triangle_strip_with_no_color_attachments,Fail
+
+# CTS bug https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/6057
+dEQP-VK.image.host_image_copy.query.optimal.b8g8r8a8_sint,Fail
+dEQP-VK.image.host_image_copy.query.optimal.bc5_snorm_block,Fail
+dEQP-VK.image.host_image_copy.query.optimal.bc7_unorm_block,Fail
+dEQP-VK.image.host_image_copy.query.optimal.r16_sfloat,Fail
+dEQP-VK.image.host_image_copy.query.optimal.r16_unorm,Fail
+dEQP-VK.image.host_image_copy.query.optimal.r16g16_uint,Fail
+dEQP-VK.image.host_image_copy.query.optimal.r32g32b32a32_sfloat,Fail
+dEQP-VK.image.host_image_copy.query.optimal.r8g8b8a8_unorm,Fail
+dEQP-VK.image.host_image_copy.query.optimal.d32_sfloat,Fail

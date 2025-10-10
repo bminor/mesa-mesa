@@ -20,3 +20,14 @@ dEQP-VK.video.formats.encode_h264_g8_b8r8_2plane_420_unorm_decode_dst_420_8bit,F
 dEQP-VK.video.formats.encode_h264_g8_b8r8_2plane_420_unorm_encode_src_420_8bit,Fail
 dEQP-VK.video.formats.encode_h265_g8_b8r8_2plane_420_unorm_decode_dst_420_8bit,Fail
 dEQP-VK.video.formats.encode_h265_g8_b8r8_2plane_420_unorm_encode_src_420_8bit,Fail
+
+# CTS bug https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/6057
+dEQP-VK.image.host_image_copy.query.optimal.b8g8r8a8_sint,Fail
+dEQP-VK.image.host_image_copy.query.optimal.bc5_snorm_block,Fail
+dEQP-VK.image.host_image_copy.query.optimal.bc7_unorm_block,Fail
+dEQP-VK.image.host_image_copy.query.optimal.r16_sfloat,Fail
+dEQP-VK.image.host_image_copy.query.optimal.r16_unorm,Fail
+dEQP-VK.image.host_image_copy.query.optimal.r16g16_uint,Fail
+dEQP-VK.image.host_image_copy.query.optimal.r32g32b32a32_sfloat,Fail
+dEQP-VK.image.host_image_copy.query.optimal.r8g8b8a8_unorm,Fail
+dEQP-VK.image.host_image_copy.query.optimal.d32_sfloat,Fail
