@@ -14,6 +14,7 @@
 #include "util/u_memory.h"
 #include "util/u_pack_color.h"
 #include "util/u_surface.h"
+#include "util/u_resource.h"
 #include "util/os_time.h"
 #include "frontend/winsys_handle.h"
 #include <errno.h>
@@ -442,7 +443,7 @@ static bool r600_texture_get_param(struct pipe_screen *screen,
 
 	switch (param) {
 	case PIPE_RESOURCE_PARAM_NPLANES:
-		*value = 1;
+		*value = util_resource_num(resource);
 		return true;
 
 	case PIPE_RESOURCE_PARAM_STRIDE:

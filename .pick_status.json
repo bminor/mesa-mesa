@@ -1354,7 +1354,7 @@
         "description": "r600: update nplanes support",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "02aaf360ae380eca49d1b3005b5176da1df6b966",
         "notes": null
