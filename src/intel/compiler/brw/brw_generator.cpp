@@ -750,7 +750,7 @@ brw_generator::generate_code(const brw_shader &s,
 
    int start_offset = p->next_insn_offset;
 
-   int loop_count = 0, send_count = 0, serialized_send_count = 0, nop_count = 0, sync_nop_count = 0;
+   int loop_count = 0, send_count = 0, nop_count = 0, sync_nop_count = 0;
    bool is_accum_used = false;
 
    struct disasm_info *disasm_info = disasm_initialize(p->isa, s.cfg);
@@ -1161,12 +1161,9 @@ brw_generator::generate_code(const brw_shader &s,
          generate_send(inst->as_send(), dst, src[SEND_SRC_DESC], src[SEND_SRC_EX_DESC],
                        src[SEND_SRC_PAYLOAD1], src[SEND_SRC_PAYLOAD2]);
          send_count++;
-         if (inst->as_send()->fused_eu_disable)
-            serialized_send_count++;
          break;
 
       case SHADER_OPCODE_SEND_GATHER:
-         assert(!inst->as_send()->fused_eu_disable);
          generate_send(inst->as_send(), dst,
                        src[SEND_GATHER_SRC_DESC], src[SEND_GATHER_SRC_EX_DESC],
                        src[SEND_GATHER_SRC_SCALAR], brw_null_reg());
@@ -1560,7 +1557,6 @@ brw_generator::generate_code(const brw_shader &s,
       stats->max_polygons = s.max_polygons;
       stats->instrs = before_size / 16 - nop_count - sync_nop_count;
       stats->send_messages = send_count;
-      stats->serialized_send_messages = serialized_send_count;
       stats->loop_count = loop_count;
       stats->cycle_count = perf.latency;
       stats->spill_count = shader_stats.spill_count;

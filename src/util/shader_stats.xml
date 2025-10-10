@@ -133,11 +133,6 @@
             Number of instructions in the final generated shader executable
             which access external units such as the constant cache or the sampler.
          </stat>
-         <stat name="Serialized SEND Count" display="Serialized send messages">
-            Number of instructions in the final generated shader
-            executable which access external units such as the
-            constant cache or the sampler in a serialized way.
-         </stat>
          <stat name="Loop Count" display="Loop count">
             Number of loops (not unrolled) in the final generated shader
             executable.
