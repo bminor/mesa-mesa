@@ -137,7 +137,7 @@ namespace {
          td(inst->dst.type), sd(DIV_ROUND_UP(inst->size_written, REG_SIZE)),
          tx(get_exec_type(inst)), sx(0), ss(0),
          sc(has_bank_conflict(isa, inst) ? sd : 0),
-         desc(0), sfid(0)
+         desc(0), sfid(0), fused_send_disable(false)
       {
          const brw_send_inst *send = inst->as_send();
          if (send) {
@@ -157,6 +157,7 @@ namespace {
                      ss += DIV_ROUND_UP(inst->size_read(devinfo, i), REG_SIZE);
                }
             }
+            fused_send_disable = send->fused_eu_disable;
          } else {
             for (unsigned i = 0; i < inst->sources; i++)
                ss = MAX2(ss, DIV_ROUND_UP(inst->size_read(devinfo, i), REG_SIZE));
@@ -201,6 +202,8 @@ namespace {
       uint8_t sfid;
       /** Repeat count for DPAS instructions. */
       uint8_t rcount;
+      /** Whether SEND message fusion is disabled (Gfx12.x only) */
+      bool fused_send_disable;
    };
 
    /**
@@ -274,6 +277,9 @@ namespace {
                   int ls_1, int ld_1, int la_1, int lf_1,
                   int l_ss, int l_sd)
    {
+      /* We fused SEND are disabled double those parameters */
+      ls_1 *= info.fused_send_disable ? 2 : 1;
+      l_ss *= info.fused_send_disable ? 2 : 1;
       return perf_desc(u, df_1 + df_sd * int(info.sd) + df_sc * int(info.sc),
                           db_1 + db_sx * int(info.sx),
                           ls_1 + l_ss * int(info.ss),
