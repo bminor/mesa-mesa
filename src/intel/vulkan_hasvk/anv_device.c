@@ -2258,7 +2258,7 @@ anv_device_init_trivial_batch(struct anv_device *device)
 
 #ifdef SUPPORT_INTEL_INTEGRATED_GPUS
    if (device->physical->memory.need_flush)
-      intel_flush_range(batch.start, batch.next - batch.start);
+      util_flush_range(batch.start, batch.next - batch.start);
 #endif
 
    return VK_SUCCESS;
@@ -3417,9 +3417,9 @@ VkResult anv_FlushMappedMemoryRanges(
          continue;
 
 #ifdef SUPPORT_INTEL_INTEGRATED_GPUS
-      intel_flush_range(mem->map + map_offset,
-                        MIN2(pMemoryRanges[i].size,
-                             mem->map_size - map_offset));
+      util_flush_range(mem->map + map_offset,
+                       MIN2(pMemoryRanges[i].size,
+                            mem->map_size - map_offset));
 #endif
    }
 
@@ -3446,7 +3446,7 @@ VkResult anv_InvalidateMappedMemoryRanges(
          continue;
 
 #ifdef SUPPORT_INTEL_INTEGRATED_GPUS
-      intel_invalidate_range(mem->map + map_offset,
+      util_flush_inval_range(mem->map + map_offset,
                              MIN2(pMemoryRanges[i].size,
                                   mem->map_size - map_offset));
 #endif

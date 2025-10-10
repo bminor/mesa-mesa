@@ -1895,7 +1895,7 @@ setup_execbuf_for_cmd_buffers(struct anv_execbuf *execbuf,
       __builtin_ia32_mfence();
       for (uint32_t i = 0; i < num_cmd_buffers; i++) {
          u_vector_foreach(bbo, &cmd_buffers[i]->seen_bbos) {
-            intel_flush_range_no_fence((*bbo)->bo->map, (*bbo)->length);
+            util_flush_range_no_fence((*bbo)->bo->map, (*bbo)->length);
          }
       }
       __builtin_ia32_mfence();
@@ -1981,7 +1981,7 @@ setup_utrace_execbuf(struct anv_execbuf *execbuf, struct anv_queue *queue,
 
 #ifdef SUPPORT_INTEL_INTEGRATED_GPUS
    if (device->physical->memory.need_flush)
-      intel_flush_range(flush->batch_bo->map, flush->batch_bo->size);
+      util_flush_range(flush->batch_bo->map, flush->batch_bo->size);
 #endif
 
    execbuf->execbuf = (struct drm_i915_gem_execbuffer2) {
@@ -2398,7 +2398,7 @@ anv_queue_submit_simple_batch(struct anv_queue *queue,
    memcpy(batch_bo->map, batch->start, batch_size);
 #ifdef SUPPORT_INTEL_INTEGRATED_GPUS
    if (device->physical->memory.need_flush)
-      intel_flush_range(batch_bo->map, batch_size);
+      util_flush_range(batch_bo->map, batch_size);
 #endif
 
    struct anv_execbuf execbuf = {

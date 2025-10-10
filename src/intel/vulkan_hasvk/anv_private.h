@@ -45,7 +45,6 @@
 #include "common/intel_gem.h"
 #include "common/intel_l3_config.h"
 #include "common/intel_measure.h"
-#include "common/intel_mem.h"
 #include "common/intel_sample_positions.h"
 #include "decoder/intel_decoder.h"
 #include "dev/intel_device_info.h"
@@ -54,6 +53,7 @@
 #include "ds/intel_driver_ds.h"
 #include "util/bitset.h"
 #include "util/bitscan.h"
+#include "util/cache_ops.h"
 #include "util/detect_os.h"
 #include "util/macros.h"
 #include "util/hash_table.h"
@@ -1396,7 +1396,7 @@ write_reloc(const struct anv_device *device, void *p, uint64_t v, bool flush)
 
 #ifdef SUPPORT_INTEL_INTEGRATED_GPUS
    if (flush && device->physical->memory.need_flush)
-      intel_flush_range(p, reloc_size);
+      util_flush_range(p, reloc_size);
 #endif
 }
 
