@@ -2184,7 +2184,7 @@
         "description": "nvk: Fix QMD buffer length on upload",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0e268dad00c2538cb5938a28a72b5a920e46c998",
         "notes": null
