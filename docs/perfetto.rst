@@ -61,9 +61,10 @@ To capture a trace with Perfetto you need to take the following steps:
 1. Build Perfetto from sources available at ``subprojects/perfetto`` following
    `this guide <https://perfetto.dev/docs/quickstart/linux-tracing>`__.
 
-2. Create a `trace config <https://perfetto.dev/docs/concepts/config>`__, which is
-   a json formatted text file with extension ``.cfg``, or use one of the config
-   files under the ``src/tool/pps/cfg`` directory. More examples of config files
+2. Select a `trace config <https://perfetto.dev/docs/concepts/config>`__, likely
+   ``src/tool/pps/cfg/system.cfg`` which does whole-system including GPU
+   profiling for any supported GPUs).  Other configs are available in that
+   directory for CPU-only or GPU-only tracing, and more examples of config files
    can be found in ``subprojects/perfetto/test/configs``.
 
 3. Change directory to ``subprojects/perfetto`` and run a
@@ -106,7 +107,7 @@ the steps above :
    perfetto $ ./tools/ninja -C out/linux
 
    # Start perfetto
-   perfetto $ CONFIG=../../src/tool/pps/cfg/gpu.cfg OUT=out/linux/ ./tools/tmux -n
+   perfetto $ CONFIG=../../src/tool/pps/cfg/system.cfg OUT=out/linux/ ./tools/tmux -n
 
    # In parallel from the Mesa repo, start the PPS producer
    mesa $ ./build/src/tool/pps/pps-producer
