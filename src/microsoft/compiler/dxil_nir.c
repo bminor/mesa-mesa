@@ -1943,7 +1943,7 @@ split_unaligned_store(nir_builder *b, nir_intrinsic_instr *intrin, unsigned alig
    nir_def *value = intrin->src[1].ssa;
    unsigned comp_size = value->bit_size / 8;
    unsigned num_comps = value->num_components;
-
+   
    b->cursor = nir_before_instr(&intrin->instr);
 
    nir_deref_instr *ptr = nir_src_as_deref(intrin->src[0]);
@@ -1953,9 +1953,13 @@ split_unaligned_store(nir_builder *b, nir_intrinsic_instr *intrin, unsigned alig
 
    unsigned num_stores = DIV_ROUND_UP(comp_size * num_comps, alignment);
    for (unsigned i = 0; i < num_stores; ++i) {
-      nir_def *substore_val = nir_extract_bits(b, &value, 1, i * alignment * 8, 1, alignment * 8);
-      nir_deref_instr *elem = nir_build_deref_ptr_as_array(b, cast, nir_imm_intN_t(b, i, cast->def.bit_size));
-      nir_store_deref_with_access(b, elem, substore_val, ~0, access);
+      unsigned first_src_comp = i * alignment / comp_size;
+      /* If write mask has holes, alignment will be set to scalar size */
+      if (nir_intrinsic_write_mask(intrin) & (1u << first_src_comp)) {
+         nir_def *substore_val = nir_extract_bits(b, &value, 1, i * alignment * 8, 1, alignment * 8);
+         nir_deref_instr *elem = nir_build_deref_ptr_as_array(b, cast, nir_imm_intN_t(b, i, cast->def.bit_size));
+         nir_store_deref_with_access(b, elem, substore_val, ~0, access);
+      }
    }
 }
 
@@ -2015,6 +2019,9 @@ lower_unaligned_load_store(nir_builder *b, nir_instr *instr, void *state)
    if (intrin->intrinsic == nir_intrinsic_load_deref)
       return split_unaligned_load(b, intrin, alignment);
    else {
+      /* If the write mask has holes, then force the split to be per-component */
+      if (nir_intrinsic_write_mask(intrin) != (1 << intrin->src[1].ssa->num_components) - 1)
+         alignment = MIN2(alignment, intrin->src[1].ssa->bit_size * 8);
       split_unaligned_store(b, intrin, alignment);
       return NIR_LOWER_INSTR_PROGRESS_REPLACE;
    }
