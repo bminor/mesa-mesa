@@ -66,12 +66,16 @@ void
 util_flush_range(void *start, size_t size)
 {
    __builtin_ia32_mfence();
-   util_clflush_range(start, size);
 #ifdef HAVE___BUILTIN_IA32_CLFLUSHOPT
-   /* clflushopt doesn't include an mfence like clflush */
-   if (util_get_cpu_caps()->has_clflushopt)
+   if (util_get_cpu_caps()->has_clflushopt) {
+      util_clflushopt_range(start, size);
+      /* clflushopt doesn't include an mfence like clflush */
       __builtin_ia32_mfence();
+      return;
+   }
 #endif
+   util_clflush_range(start, size);
+   /* The last clflush acts as an mfence */
 }
 
 void
@@ -79,8 +83,6 @@ util_flush_inval_range_no_fence(void *start, size_t size)
 {
    if (size == 0)
       return;
-
-   util_flush_range_no_fence(start, size);
 
    /* Modern Atom CPUs (Baytrail+) have issues with clflush serialization,
     * where mfence is not a sufficient synchronization barrier.  We must
@@ -94,12 +96,14 @@ util_flush_inval_range_no_fence(void *start, size_t size)
     */
 #ifdef HAVE___BUILTIN_IA32_CLFLUSHOPT
    if (util_get_cpu_caps()->has_clflushopt) {
+      util_clflushopt_range(start, size);
       /* clflushopt doesn't include an mfence like clflush */
       __builtin_ia32_mfence();
       util_clflushopt_range((char *)start + size - 1, 1);
       return;
    }
 #endif
+   util_clflush_range(start, size);
    __builtin_ia32_clflush((char *)start + size - 1);
 }
 
