@@ -583,18 +583,6 @@ radv_cs_emit_cache_flush(struct radeon_winsys *ws, struct radv_cmd_stream *cs, e
    radeon_end();
 }
 
-void
-radv_cs_write_data_imm(struct radv_cmd_stream *cs, unsigned engine_sel, uint64_t va, uint32_t imm)
-{
-   radeon_begin(cs);
-   radeon_emit(PKT3(PKT3_WRITE_DATA, 3, 0));
-   radeon_emit(S_370_DST_SEL(V_370_MEM) | S_370_WR_CONFIRM(1) | S_370_ENGINE_SEL(engine_sel));
-   radeon_emit(va);
-   radeon_emit(va >> 32);
-   radeon_emit(imm);
-   radeon_end();
-}
-
 static void
 radv_init_tracked_regs(struct radv_cmd_stream *cs)
 {

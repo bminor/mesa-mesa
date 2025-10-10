@@ -101,6 +101,10 @@ void
 ac_emit_cond_exec(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
                   uint64_t va, uint32_t count);
 
+void
+ac_emit_write_data_imm(struct ac_cmdbuf *cs, unsigned engine_sel,
+                       uint64_t va, uint32_t value);
+
 #ifdef __cplusplus
 }
 #endif

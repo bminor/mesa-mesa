@@ -667,7 +667,7 @@ radv_pc_stop_and_sample(struct radv_cmd_buffer *cmd_buffer, struct radv_pc_query
       if (end) {
          uint64_t signal_va = va + pool->b.stride - 8 - 8 * pass;
 
-         radv_cs_write_data_imm(cs, V_370_ME, signal_va, 1);
+         ac_emit_write_data_imm(cs->b, V_370_ME, signal_va, 1);
       }
 
       *skip_dwords = cs->b->buf + cs->b->cdw - skip_dwords - 1;
@@ -695,7 +695,7 @@ radv_pc_begin_query(struct radv_cmd_buffer *cmd_buffer, struct radv_pc_query_poo
    radv_cs_add_buffer(device->ws, cs->b, device->perf_counter_bo);
 
    uint64_t perf_ctr_va = radv_buffer_get_va(device->perf_counter_bo) + PERF_CTR_BO_FENCE_OFFSET;
-   radv_cs_write_data_imm(cs, V_370_ME, perf_ctr_va, 0);
+   ac_emit_write_data_imm(cs->b, V_370_ME, perf_ctr_va, 0);
 
    radv_pc_wait_idle(cmd_buffer);
    radv_perfcounter_emit_reset(cs, false);
