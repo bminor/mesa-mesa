@@ -5062,28 +5062,23 @@ radv_load_ds_clear_metadata(struct radv_cmd_buffer *cmd_buffer, const struct rad
 
    uint32_t reg = R_028028_DB_STENCIL_CLEAR + 4 * reg_offset;
 
-   radeon_begin(cs);
-
    if (pdev->info.has_load_ctx_reg_pkt) {
+      radeon_begin(cs);
       radeon_emit(PKT3(PKT3_LOAD_CONTEXT_REG_INDEX, 3, 0));
       radeon_emit(va);
       radeon_emit(va >> 32);
       radeon_emit((reg - SI_CONTEXT_REG_OFFSET) >> 2);
       radeon_emit(reg_count);
+      radeon_end();
    } else {
-      radeon_emit(PKT3(PKT3_COPY_DATA, 4, 0));
-      radeon_emit(COPY_DATA_SRC_SEL(COPY_DATA_SRC_MEM) | COPY_DATA_DST_SEL(COPY_DATA_REG) |
-                  (reg_count == 2 ? COPY_DATA_COUNT_SEL : 0));
-      radeon_emit(va);
-      radeon_emit(va >> 32);
-      radeon_emit(reg >> 2);
-      radeon_emit(0);
+      ac_emit_cp_copy_data(cs->b, COPY_DATA_SRC_MEM, COPY_DATA_REG, va, reg >> 2,
+                           (reg_count == 2 ? AC_CP_COPY_DATA_COUNT_SEL : 0));
 
+      radeon_begin(cs);
       radeon_emit(PKT3(PKT3_PFP_SYNC_ME, 0, 0));
       radeon_emit(0);
+      radeon_end();
    }
-
-   radeon_end();
 }
 
 /*
@@ -10061,15 +10056,8 @@ static void
 radv_emit_copy_data_imm(const struct radv_physical_device *pdev, struct radv_cmd_stream *cs, uint32_t src_imm,
                         uint64_t dst_va)
 {
-   radeon_begin(cs);
-   radeon_emit(PKT3(PKT3_COPY_DATA, 4, 0));
-   radeon_emit(COPY_DATA_SRC_SEL(COPY_DATA_IMM) | COPY_DATA_DST_SEL(COPY_DATA_DST_MEM) | COPY_DATA_WR_CONFIRM |
-               (pdev->info.gfx_level == GFX6 ? COPY_DATA_ENGINE_PFP : 0));
-   radeon_emit(src_imm);
-   radeon_emit(0);
-   radeon_emit(dst_va);
-   radeon_emit(dst_va >> 32);
-   radeon_end();
+   ac_emit_cp_copy_data(cs->b, COPY_DATA_IMM, COPY_DATA_DST_MEM, src_imm, dst_va,
+                        AC_CP_COPY_DATA_WR_CONFIRM | (pdev->info.gfx_level == GFX6 ? AC_CP_COPY_DATA_ENGINE_PFP : 0));
 }
 
 /**
@@ -10783,14 +10771,8 @@ radv_emit_indirect_taskmesh_draw_packets(const struct radv_device *device, struc
        * - When count != 0, write 0 to the workaround BO and execute the indirect dispatch
        * - When workaround BO != 0 (count was 0), execute an empty direct dispatch
        */
-      radeon_begin(ace_cs);
-      radeon_emit(PKT3(PKT3_COPY_DATA, 4, 0));
-      radeon_emit(COPY_DATA_SRC_SEL(COPY_DATA_IMM) | COPY_DATA_DST_SEL(COPY_DATA_DST_MEM) | COPY_DATA_WR_CONFIRM);
-      radeon_emit(1);
-      radeon_emit(0);
-      radeon_emit(workaround_cond_va);
-      radeon_emit(workaround_cond_va >> 32);
-      radeon_end();
+      ac_emit_cp_copy_data(ace_cs->b, COPY_DATA_IMM, COPY_DATA_DST_MEM, 1, workaround_cond_va,
+                           AC_CP_COPY_DATA_WR_CONFIRM);
 
       /* 2x COND_EXEC + 1x COPY_DATA + Nx DISPATCH_TASKMESH_DIRECT_ACE */
       ace_predication_size += 2 * 5 + 6 + 6 * num_views;
@@ -10803,14 +10785,8 @@ radv_emit_indirect_taskmesh_draw_packets(const struct radv_device *device, struc
       ac_emit_cond_exec(ace_cs->b, pdev->info.gfx_level, info->count_va,
                         6 + 11 * num_views /* 1x COPY_DATA + Nx DISPATCH_TASKMESH_INDIRECT_MULTI_ACE */);
 
-      radeon_begin(ace_cs);
-      radeon_emit(PKT3(PKT3_COPY_DATA, 4, 0));
-      radeon_emit(COPY_DATA_SRC_SEL(COPY_DATA_IMM) | COPY_DATA_DST_SEL(COPY_DATA_DST_MEM) | COPY_DATA_WR_CONFIRM);
-      radeon_emit(0);
-      radeon_emit(0);
-      radeon_emit(workaround_cond_va);
-      radeon_emit(workaround_cond_va >> 32);
-      radeon_end();
+      ac_emit_cp_copy_data(ace_cs->b, COPY_DATA_IMM, COPY_DATA_DST_MEM, 0, workaround_cond_va,
+                           AC_CP_COPY_DATA_WR_CONFIRM);
    }
 
    if (!view_mask) {
@@ -13147,21 +13123,12 @@ radv_save_dispatch_size(struct radv_cmd_buffer *cmd_buffer, uint64_t indirect_va
 
    uint64_t va = radv_buffer_get_va(device->trace_bo) + offsetof(struct radv_trace_data, indirect_dispatch);
 
-   radeon_begin(cs);
-
    for (uint32_t i = 0; i < 3; i++) {
-      radeon_emit(PKT3(PKT3_COPY_DATA, 4, 0));
-      radeon_emit(COPY_DATA_SRC_SEL(COPY_DATA_SRC_MEM) | COPY_DATA_DST_SEL(COPY_DATA_DST_MEM) | COPY_DATA_WR_CONFIRM);
-      radeon_emit(indirect_va);
-      radeon_emit(indirect_va >> 32);
-      radeon_emit(va);
-      radeon_emit(va >> 32);
+      ac_emit_cp_copy_data(cs->b, COPY_DATA_SRC_MEM, COPY_DATA_DST_MEM, indirect_va, va, AC_CP_COPY_DATA_WR_CONFIRM);
 
       indirect_va += 4;
       va += 4;
    }
-
-   radeon_end();
 }
 
 static void
@@ -13255,15 +13222,8 @@ radv_emit_dispatch_packets(struct radv_cmd_buffer *cmd_buffer, const struct radv
                const uint64_t src_va = unaligned_va + i * 4;
                const uint64_t dst_va = indirect_va + i * 4;
 
-               radeon_begin(cs);
-               radeon_emit(PKT3(PKT3_COPY_DATA, 4, 0));
-               radeon_emit(COPY_DATA_SRC_SEL(COPY_DATA_SRC_MEM) | COPY_DATA_DST_SEL(COPY_DATA_DST_MEM) |
-                           COPY_DATA_WR_CONFIRM);
-               radeon_emit(src_va);
-               radeon_emit(src_va >> 32);
-               radeon_emit(dst_va);
-               radeon_emit(dst_va >> 32);
-               radeon_end();
+               ac_emit_cp_copy_data(cs->b, COPY_DATA_SRC_MEM, COPY_DATA_DST_MEM, src_va, dst_va,
+                                    AC_CP_COPY_DATA_WR_CONFIRM);
             }
          }
 
@@ -14693,16 +14653,10 @@ radv_begin_conditional_rendering(struct radv_cmd_buffer *cmd_buffer, uint64_t va
          emulated_va = radv_buffer_get_va(cmd_buffer->upload.upload_bo) + pred_offset;
 
          radeon_check_space(device->ws, cs->b, 8);
+
+         ac_emit_cp_copy_data(cs->b, COPY_DATA_SRC_MEM, COPY_DATA_DST_MEM, va, emulated_va, AC_CP_COPY_DATA_WR_CONFIRM);
+
          radeon_begin(cs);
-
-         radeon_emit(PKT3(PKT3_COPY_DATA, 4, 0));
-         radeon_emit(COPY_DATA_SRC_SEL(COPY_DATA_SRC_MEM) | COPY_DATA_DST_SEL(COPY_DATA_DST_MEM) |
-                     COPY_DATA_WR_CONFIRM);
-         radeon_emit(va);
-         radeon_emit(va >> 32);
-         radeon_emit(emulated_va);
-         radeon_emit(emulated_va >> 32);
-
          radeon_emit(PKT3(PKT3_PFP_SYNC_ME, 0, 0));
          radeon_emit(0);
          radeon_end();
@@ -14965,32 +14919,25 @@ radv_CmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstC
          radv_cs_add_buffer(device->ws, cs->b, buffer->bo);
       }
 
-      radeon_begin(cs);
-
       if (pdev->info.gfx_level >= GFX12) {
          if (append) {
-            radeon_emit(PKT3(PKT3_COPY_DATA, 4, 0));
-            radeon_emit(COPY_DATA_SRC_SEL(COPY_DATA_SRC_MEM) | COPY_DATA_DST_SEL(COPY_DATA_DST_MEM) |
-                        COPY_DATA_WR_CONFIRM);
-            radeon_emit(va);
-            radeon_emit(va >> 32);
-            radeon_emit((so->state_va + i * 8 + 4));
-            radeon_emit((so->state_va + i * 8 + 4) >> 32);
+            ac_emit_cp_copy_data(cs->b, COPY_DATA_SRC_MEM, COPY_DATA_DST_MEM, va, so->state_va + i * 8 + 4,
+                                 AC_CP_COPY_DATA_WR_CONFIRM);
          }
       } else if (pdev->use_ngg_streamout) {
          if (append) {
-            radeon_emit(PKT3(PKT3_COPY_DATA, 4, 0));
-            radeon_emit(COPY_DATA_SRC_SEL(COPY_DATA_SRC_MEM) | COPY_DATA_DST_SEL(COPY_DATA_REG) | COPY_DATA_WR_CONFIRM);
-            radeon_emit(va);
-            radeon_emit(va >> 32);
-            radeon_emit((R_031088_GDS_STRMOUT_DWORDS_WRITTEN_0 >> 2) + i);
-            radeon_emit(0);
+            ac_emit_cp_copy_data(cs->b, COPY_DATA_SRC_MEM, COPY_DATA_REG, va,
+                                 (R_031088_GDS_STRMOUT_DWORDS_WRITTEN_0 >> 2) + i, AC_CP_COPY_DATA_WR_CONFIRM);
          } else {
             /* The PKT3 CAM bit workaround seems needed for initializing this GDS register to zero. */
+            radeon_begin(cs);
             radeon_set_uconfig_perfctr_reg(pdev->info.gfx_level, ring, R_031088_GDS_STRMOUT_DWORDS_WRITTEN_0 + i * 4,
                                            0);
+            radeon_end();
          }
       } else {
+         radeon_begin(cs);
+
          /* AMD GCN binds streamout buffers as shader resources.
           * VGT only counts primitives and tells the shader through
           * SGPRs what to do.
@@ -15017,9 +14964,9 @@ radv_CmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstC
             radeon_emit(0);                                                 /* unused */
             radeon_emit(0);                                                 /* unused */
          }
-      }
 
-      radeon_end();
+         radeon_end();
+      }
    }
 
    assert(cs->b->cdw <= cdw_max);
@@ -15077,28 +15024,19 @@ radv_CmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCou
          radv_cs_add_buffer(device->ws, cs->b, buffer->bo);
       }
 
-      radeon_begin(cs);
-
       if (pdev->info.gfx_level >= GFX12) {
          if (append) {
-            radeon_emit(PKT3(PKT3_COPY_DATA, 4, 0));
-            radeon_emit(COPY_DATA_SRC_SEL(COPY_DATA_SRC_MEM) | COPY_DATA_DST_SEL(COPY_DATA_DST_MEM) |
-                        COPY_DATA_WR_CONFIRM);
-            radeon_emit((so->state_va + i * 8 + 4));
-            radeon_emit((so->state_va + i * 8 + 4) >> 32);
-            radeon_emit(va);
-            radeon_emit(va >> 32);
+            ac_emit_cp_copy_data(cs->b, COPY_DATA_SRC_MEM, COPY_DATA_DST_MEM, so->state_va + i * 8 + 4, va,
+                                 AC_CP_COPY_DATA_WR_CONFIRM);
          }
       } else if (pdev->use_ngg_streamout) {
          if (append) {
-            radeon_emit(PKT3(PKT3_COPY_DATA, 4, 0));
-            radeon_emit(COPY_DATA_SRC_SEL(COPY_DATA_REG) | COPY_DATA_DST_SEL(COPY_DATA_DST_MEM) | COPY_DATA_WR_CONFIRM);
-            radeon_emit((R_031088_GDS_STRMOUT_DWORDS_WRITTEN_0 >> 2) + i);
-            radeon_emit(0);
-            radeon_emit(va);
-            radeon_emit(va >> 32);
+            ac_emit_cp_copy_data(cs->b, COPY_DATA_REG, COPY_DATA_DST_MEM,
+                                 (R_031088_GDS_STRMOUT_DWORDS_WRITTEN_0 >> 2) + i, va, AC_CP_COPY_DATA_WR_CONFIRM);
          }
       } else {
+         radeon_begin(cs);
+
          if (append) {
             radeon_emit(PKT3(PKT3_STRMOUT_BUFFER_UPDATE, 4, 0));
             radeon_emit(STRMOUT_SELECT_BUFFER(i) | STRMOUT_DATA_TYPE(1) | /* offset in bytes */
@@ -15116,10 +15054,10 @@ radv_CmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCou
           */
          radeon_set_context_reg(R_028AD0_VGT_STRMOUT_BUFFER_SIZE_0 + 16 * i, 0);
 
+         radeon_end();
+
          cmd_buffer->cs->context_roll_without_scissor_emitted = true;
       }
-
-      radeon_end();
    }
 
    assert(cs->b->cdw <= cdw_max);
@@ -15150,12 +15088,11 @@ radv_emit_strmout_buffer(struct radv_cmd_buffer *cmd_buffer, const struct radv_d
       radeon_end();
    }
 
-   radeon_begin(cs);
-
    if (gfx_level >= GFX10) {
       /* Emitting a COPY_DATA packet should be enough because RADV doesn't support preemption
        * (shadow memory) but for unknown reasons, it can lead to GPU hangs on GFX10+.
        */
+      radeon_begin(cs);
       radeon_emit(PKT3(PKT3_PFP_SYNC_ME, 0, 0));
       radeon_emit(0);
 
@@ -15164,16 +15101,11 @@ radv_emit_strmout_buffer(struct radv_cmd_buffer *cmd_buffer, const struct radv_d
       radeon_emit(draw_info->strmout_va >> 32);
       radeon_emit((R_028B2C_VGT_STRMOUT_DRAW_OPAQUE_BUFFER_FILLED_SIZE - SI_CONTEXT_REG_OFFSET) >> 2);
       radeon_emit(1); /* 1 DWORD */
+      radeon_end();
    } else {
-      radeon_emit(PKT3(PKT3_COPY_DATA, 4, 0));
-      radeon_emit(COPY_DATA_SRC_SEL(COPY_DATA_SRC_MEM) | COPY_DATA_DST_SEL(COPY_DATA_REG) | COPY_DATA_WR_CONFIRM);
-      radeon_emit(draw_info->strmout_va);
-      radeon_emit(draw_info->strmout_va >> 32);
-      radeon_emit(R_028B2C_VGT_STRMOUT_DRAW_OPAQUE_BUFFER_FILLED_SIZE >> 2);
-      radeon_emit(0); /* unused */
+      ac_emit_cp_copy_data(cs->b, COPY_DATA_SRC_MEM, COPY_DATA_REG, draw_info->strmout_va,
+                           R_028B2C_VGT_STRMOUT_DRAW_OPAQUE_BUFFER_FILLED_SIZE >> 2, AC_CP_COPY_DATA_WR_CONFIRM);
    }
-
-   radeon_end();
 }
 
 VKAPI_ATTR void VKAPI_CALL
@@ -15241,14 +15173,7 @@ radv_CmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlag
    ASSERTED unsigned cdw_max = radeon_check_space(device->ws, cs->b, 12);
 
    if (!(stage & ~VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT)) {
-      radeon_begin(cs);
-      radeon_emit(PKT3(PKT3_COPY_DATA, 4, 0));
-      radeon_emit(COPY_DATA_SRC_SEL(COPY_DATA_IMM) | COPY_DATA_DST_SEL(COPY_DATA_DST_MEM) | COPY_DATA_WR_CONFIRM);
-      radeon_emit(marker);
-      radeon_emit(0);
-      radeon_emit(va);
-      radeon_emit(va >> 32);
-      radeon_end();
+      ac_emit_cp_copy_data(cs->b, COPY_DATA_IMM, COPY_DATA_DST_MEM, marker, va, AC_CP_COPY_DATA_WR_CONFIRM);
    } else {
       radv_cs_emit_write_event_eop(cs, pdev->info.gfx_level, V_028A90_BOTTOM_OF_PIPE_TS, 0, EOP_DST_SEL_MEM,
                                    EOP_DATA_SEL_VALUE_32BIT, va, marker, cmd_buffer->gfx9_eop_bug_va);

@@ -560,15 +560,8 @@ radv_pc_emit_block_instance_read(struct radv_cmd_buffer *cmd_buffer, struct ac_p
       if (regs->counters)
          reg = regs->counters[idx];
 
-      radeon_begin(cs);
-      radeon_emit(PKT3(PKT3_COPY_DATA, 4, 0));
-      radeon_emit(COPY_DATA_SRC_SEL(COPY_DATA_PERF) | COPY_DATA_DST_SEL(COPY_DATA_TC_L2) | COPY_DATA_WR_CONFIRM |
-                  COPY_DATA_COUNT_SEL); /* 64 bits */
-      radeon_emit(reg >> 2);
-      radeon_emit(0); /* unused */
-      radeon_emit(va);
-      radeon_emit(va >> 32);
-      radeon_end();
+      ac_emit_cp_copy_data(cs->b, COPY_DATA_PERF, COPY_DATA_TC_L2, reg >> 2, va,
+                           AC_CP_COPY_DATA_WR_CONFIRM | AC_CP_COPY_DATA_COUNT_SEL);
 
       va += sizeof(uint64_t) * 2 * radv_pc_get_num_instances(pdev, block);
       reg += reg_delta;

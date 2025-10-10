@@ -120,6 +120,17 @@ ac_emit_cp_release_mem_pws(struct ac_cmdbuf *cs, ASSERTED enum amd_gfx_level gfx
                            ASSERTED enum amd_ip_type ip_type, uint32_t event_type,
                            uint32_t gcr_cntl);
 
+enum ac_cp_copy_data_flags {
+   AC_CP_COPY_DATA_WR_CONFIRM = 1u << 0,
+   AC_CP_COPY_DATA_COUNT_SEL = 1u << 1, /* 64 bits */
+   AC_CP_COPY_DATA_ENGINE_PFP = 1u << 2,
+};
+
+void
+ac_emit_cp_copy_data(struct ac_cmdbuf *cs, uint32_t src_sel, uint32_t dst_sel,
+                     uint64_t src_va, uint64_t dst_va,
+                     enum ac_cp_copy_data_flags flags);
+
 #ifdef __cplusplus
 }
 #endif

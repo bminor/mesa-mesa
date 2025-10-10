@@ -229,37 +229,24 @@ static void si_pc_emit_read(struct si_context *sctx, struct ac_pc_block *block, 
    unsigned reg = regs->counter0_lo;
    unsigned reg_delta = 8;
 
-   radeon_begin(cs);
-
    if (regs->select0) {
       for (idx = 0; idx < count; ++idx) {
          if (regs->counters)
             reg = regs->counters[idx];
 
-         radeon_emit(PKT3(PKT3_COPY_DATA, 4, 0));
-         radeon_emit(COPY_DATA_SRC_SEL(COPY_DATA_PERF) | COPY_DATA_DST_SEL(COPY_DATA_DST_MEM) |
-                            COPY_DATA_COUNT_SEL); /* 64 bits */
-         radeon_emit(reg >> 2);
-         radeon_emit(0); /* unused */
-         radeon_emit(va);
-         radeon_emit(va >> 32);
+         ac_emit_cp_copy_data(&cs->current, COPY_DATA_PERF, COPY_DATA_DST_MEM,
+               reg >> 2, va, AC_CP_COPY_DATA_COUNT_SEL);
          va += sizeof(uint64_t);
          reg += reg_delta;
       }
    } else {
       /* Fake counters. */
       for (idx = 0; idx < count; ++idx) {
-         radeon_emit(PKT3(PKT3_COPY_DATA, 4, 0));
-         radeon_emit(COPY_DATA_SRC_SEL(COPY_DATA_IMM) | COPY_DATA_DST_SEL(COPY_DATA_DST_MEM) |
-                     COPY_DATA_COUNT_SEL);
-         radeon_emit(0); /* immediate */
-         radeon_emit(0);
-         radeon_emit(va);
-         radeon_emit(va >> 32);
+         ac_emit_cp_copy_data(&cs->current, COPY_DATA_IMM, COPY_DATA_DST_MEM,
+               0, va, AC_CP_COPY_DATA_COUNT_SEL);
          va += sizeof(uint64_t);
       }
    }
-   radeon_end();
 }
 
 static void si_pc_query_destroy(struct si_context *sctx, struct si_query *squery)

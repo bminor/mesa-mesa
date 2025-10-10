@@ -379,12 +379,6 @@ void si_cp_copy_data(struct si_context *sctx, struct radeon_cmdbuf *cs, unsigned
    uint64_t dst_va = (dst ? dst->gpu_address : 0ull) + dst_offset;
    uint64_t src_va = (src ? src->gpu_address : 0ull) + src_offset;
 
-   radeon_begin(cs);
-   radeon_emit(PKT3(PKT3_COPY_DATA, 4, 0));
-   radeon_emit(COPY_DATA_SRC_SEL(src_sel) | COPY_DATA_DST_SEL(dst_sel) | COPY_DATA_WR_CONFIRM);
-   radeon_emit(src_va);
-   radeon_emit(src_va >> 32);
-   radeon_emit(dst_va);
-   radeon_emit(dst_va >> 32);
-   radeon_end();
+   ac_emit_cp_copy_data(&cs->current, src_sel, dst_sel, src_va, dst_va,
+                        AC_CP_COPY_DATA_WR_CONFIRM);
 }

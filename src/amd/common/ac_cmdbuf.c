@@ -1035,3 +1035,28 @@ ac_emit_cp_release_mem_pws(struct ac_cmdbuf *cs, ASSERTED enum amd_gfx_level gfx
    ac_cmdbuf_emit(0); /* INT_CTXID */
    ac_cmdbuf_end();
 }
+
+void
+ac_emit_cp_copy_data(struct ac_cmdbuf *cs, uint32_t src_sel, uint32_t dst_sel,
+                     uint64_t src_va, uint64_t dst_va,
+                     enum ac_cp_copy_data_flags flags)
+{
+   uint32_t dword0 = COPY_DATA_SRC_SEL(src_sel) |
+                     COPY_DATA_DST_SEL(dst_sel);
+
+   if (flags & AC_CP_COPY_DATA_WR_CONFIRM)
+      dword0 |= COPY_DATA_WR_CONFIRM;
+   if (flags & AC_CP_COPY_DATA_COUNT_SEL)
+      dword0 |= COPY_DATA_COUNT_SEL;
+   if (flags & AC_CP_COPY_DATA_ENGINE_PFP)
+      dword0 |= COPY_DATA_ENGINE_PFP;
+
+   ac_cmdbuf_begin(cs);
+   ac_cmdbuf_emit(PKT3(PKT3_COPY_DATA, 4, 0));
+   ac_cmdbuf_emit(dword0);
+   ac_cmdbuf_emit(src_va);
+   ac_cmdbuf_emit(src_va >> 32);
+   ac_cmdbuf_emit(dst_va);
+   ac_cmdbuf_emit(dst_va >> 32);
+   ac_cmdbuf_end();
+}
