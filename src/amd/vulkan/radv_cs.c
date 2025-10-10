@@ -274,18 +274,10 @@ gfx10_cs_emit_cache_flush(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_lev
          radeon_emit(0); /* DATA_HI */
          radeon_emit(0); /* INT_CTXID */
 
-         /* Wait for the event and invalidate remaining caches if needed. */
-         radeon_emit(PKT3(PKT3_ACQUIRE_MEM, 6, 0));
-         radeon_emit(S_580_PWS_STAGE_SEL(V_580_CP_PFP) | S_580_PWS_COUNTER_SEL(V_580_TS_SELECT) | S_580_PWS_ENA2(1) |
-                     S_580_PWS_COUNT(0));
-         radeon_emit(0xffffffff); /* GCR_SIZE */
-         radeon_emit(0x01ffffff); /* GCR_SIZE_HI */
-         radeon_emit(0);          /* GCR_BASE_LO */
-         radeon_emit(0);          /* GCR_BASE_HI */
-         radeon_emit(S_585_PWS_ENA(1));
-         radeon_emit(gcr_cntl); /* GCR_CNTL */
-
          radeon_end();
+
+         /* Wait for the event and invalidate remaining caches if needed. */
+         ac_emit_cp_acquire_mem_pws(cs->b, gfx_level, cs->hw_ip, cb_db_event, V_580_CP_PFP, 0, gcr_cntl);
 
          gcr_cntl = 0; /* all done */
       } else {
