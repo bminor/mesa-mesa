@@ -56,6 +56,8 @@ amd_common_files = files(
   'ac_binary.h',
   'ac_cmdbuf.c',
   'ac_cmdbuf.h',
+  'ac_cmdbuf_sdma.c',
+  'ac_cmdbuf_sdma.h',
   'ac_shader_args.c',
   'ac_shader_args.h',
   'ac_shader_util.c',

@@ -17,6 +17,8 @@
 #include "radv_sdma.h"
 #include "sid.h"
 
+#include "ac_cmdbuf_sdma.h"
+
 static inline unsigned
 radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned needed)
 {
@@ -337,7 +339,7 @@ radv_cp_wait_mem(struct radv_cmd_stream *cs, const uint32_t op, const uint64_t v
    if (cs->hw_ip == AMD_IP_GFX || cs->hw_ip == AMD_IP_COMPUTE) {
       ac_emit_cp_wait_mem(cs->b, va, ref, mask, op);
    } else if (cs->hw_ip == AMD_IP_SDMA) {
-      radv_sdma_emit_wait_mem(cs, op, va, ref, mask);
+      ac_emit_sdma_wait_mem(cs->b, op, va, ref, mask);
    } else {
       UNREACHABLE("unsupported queue family");
    }
@@ -353,7 +355,7 @@ radv_cs_write_data_head(const struct radv_device *device, struct radv_cmd_stream
    if (cs->hw_ip == AMD_IP_COMPUTE || cs->hw_ip == AMD_IP_GFX) {
       ac_emit_cp_write_data_head(cs->b, engine_sel, V_370_MEM, va, count, predicating);
    } else if (cs->hw_ip == AMD_IP_SDMA) {
-      radv_sdma_emit_write_data_head(cs, va, count);
+      ac_emit_sdma_write_data_head(cs->b, va, count);
    } else {
       UNREACHABLE("unsupported queue family");
    }

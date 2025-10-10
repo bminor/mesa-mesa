@@ -22,7 +22,7 @@ radv_cs_emit_write_event_eop(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_
                              uint32_t new_fence, uint64_t gfx9_eop_bug_va)
 {
    if (cs->hw_ip == AMD_IP_SDMA) {
-      radv_sdma_emit_fence(cs, va, new_fence);
+      ac_emit_sdma_fence(cs->b, va, new_fence);
       return;
    }
 

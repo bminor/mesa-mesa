@@ -13,6 +13,7 @@
 #include "radv_cs.h"
 #include "radv_formats.h"
 
+#include "ac_cmdbuf_sdma.h"
 #include "ac_formats.h"
 
 struct radv_sdma_chunked_copy_info {
@@ -348,56 +349,8 @@ radv_sdma_get_surf(const struct radv_device *const device, const struct radv_ima
 void
 radv_sdma_emit_nop(const struct radv_device *device, struct radv_cmd_stream *cs)
 {
-   /* SDMA NOP acts as a fence command and causes the SDMA engine to wait for pending copy operations. */
    radeon_check_space(device->ws, cs->b, 1);
-   radeon_begin(cs);
-   radeon_emit(SDMA_PACKET(SDMA_OPCODE_NOP, 0, 0));
-   radeon_end();
-}
-
-void
-radv_sdma_emit_write_timestamp(struct radv_cmd_stream *cs, uint64_t va)
-{
-   radeon_begin(cs);
-   radeon_emit(SDMA_PACKET(SDMA_OPCODE_TIMESTAMP, SDMA_TS_SUB_OPCODE_GET_GLOBAL_TIMESTAMP, 0));
-   radeon_emit(va);
-   radeon_emit(va >> 32);
-   radeon_end();
-}
-
-void
-radv_sdma_emit_fence(struct radv_cmd_stream *cs, uint64_t va, uint32_t fence)
-{
-   radeon_begin(cs);
-   radeon_emit(SDMA_PACKET(SDMA_OPCODE_FENCE, 0, SDMA_FENCE_MTYPE_UC));
-   radeon_emit(va);
-   radeon_emit(va >> 32);
-   radeon_emit(fence);
-   radeon_end();
-}
-
-void
-radv_sdma_emit_wait_mem(struct radv_cmd_stream *cs, uint32_t op, uint64_t va, uint32_t ref, uint32_t mask)
-{
-   radeon_begin(cs);
-   radeon_emit(SDMA_PACKET(SDMA_OPCODE_POLL_REGMEM, 0, 0) | op << 28 | SDMA_POLL_MEM);
-   radeon_emit(va);
-   radeon_emit(va >> 32);
-   radeon_emit(ref);
-   radeon_emit(mask);
-   radeon_emit(SDMA_POLL_INTERVAL_160_CLK | SDMA_POLL_RETRY_INDEFINITELY << 16);
-   radeon_end();
-}
-
-void
-radv_sdma_emit_write_data_head(struct radv_cmd_stream *cs, uint64_t va, uint32_t count)
-{
-   radeon_begin(cs);
-   radeon_emit(SDMA_PACKET(SDMA_OPCODE_WRITE, SDMA_WRITE_SUB_OPCODE_LINEAR, 0));
-   radeon_emit(va);
-   radeon_emit(va >> 32);
-   radeon_emit(count - 1);
-   radeon_end();
+   ac_emit_sdma_nop(cs->b);
 }
 
 void

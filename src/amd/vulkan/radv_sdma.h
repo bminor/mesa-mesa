@@ -82,14 +82,6 @@ void radv_sdma_fill_memory(const struct radv_device *device, struct radv_cmd_str
 
 void radv_sdma_emit_nop(const struct radv_device *device, struct radv_cmd_stream *cs);
 
-void radv_sdma_emit_write_timestamp(struct radv_cmd_stream *cs, uint64_t va);
-
-void radv_sdma_emit_fence(struct radv_cmd_stream *cs, uint64_t va, uint32_t fence);
-
-void radv_sdma_emit_wait_mem(struct radv_cmd_stream *cs, uint32_t op, uint64_t va, uint32_t ref, uint32_t mask);
-
-void radv_sdma_emit_write_data_head(struct radv_cmd_stream *cs, uint64_t va, uint32_t count);
-
 #ifdef __cplusplus
 }
 #endif

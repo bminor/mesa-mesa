@@ -2747,7 +2747,7 @@ radv_CmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 sta
 
       for (unsigned i = 0; i < num_queries; ++i, query_va += pool->stride) {
          radeon_check_space(device->ws, cs->b, 3);
-         radv_sdma_emit_write_timestamp(cs, query_va);
+         ac_emit_sdma_write_timestamp(cs->b, query_va);
       }
       return;
    }

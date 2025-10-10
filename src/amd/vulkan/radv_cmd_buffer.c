@@ -15121,7 +15121,7 @@ radv_CmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlag
 
    if (cmd_buffer->qf == RADV_QUEUE_TRANSFER) {
       radeon_check_space(device->ws, cs->b, 4);
-      radv_sdma_emit_fence(cs, va, marker);
+      ac_emit_sdma_fence(cmd_buffer->cs->b, va, marker);
       return;
    }
 
