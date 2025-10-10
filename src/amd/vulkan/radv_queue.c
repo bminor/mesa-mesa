@@ -635,37 +635,20 @@ radv_emit_ge_rings(struct radv_device *device, struct radv_cmd_stream *cs, struc
    if (!ge_rings_bo)
       return;
 
-   assert(pdev->info.gfx_level >= GFX11);
-
    va = radv_buffer_get_va(ge_rings_bo);
    assert((va >> 32) == pdev->info.address32_hi);
 
    radv_cs_add_buffer(device->ws, cs->b, ge_rings_bo);
 
-   radeon_begin(cs);
-
    /* We must wait for idle using an EOP event before changing the attribute ring registers. Use the
     * bottom-of-pipe EOP event, but increment the PWS counter instead of writing memory.
     */
-   radeon_emit(PKT3(PKT3_RELEASE_MEM, 6, 0));
-   radeon_emit(S_490_EVENT_TYPE(V_028A90_BOTTOM_OF_PIPE_TS) | S_490_EVENT_INDEX(5) | S_490_PWS_ENABLE(1));
-   radeon_emit(0); /* DST_SEL, INT_SEL, DATA_SEL */
-   radeon_emit(0); /* ADDRESS_LO */
-   radeon_emit(0); /* ADDRESS_HI */
-   radeon_emit(0); /* DATA_LO */
-   radeon_emit(0); /* DATA_HI */
-   radeon_emit(0); /* INT_CTXID */
+   ac_emit_cp_release_mem_pws(cs->b, pdev->info.gfx_level, AMD_IP_GFX, V_028A90_BOTTOM_OF_PIPE_TS, 0);
 
    /* Wait for the PWS counter. */
-   radeon_emit(PKT3(PKT3_ACQUIRE_MEM, 6, 0));
-   radeon_emit(S_580_PWS_STAGE_SEL(V_580_CP_ME) | S_580_PWS_COUNTER_SEL(V_580_TS_SELECT) | S_580_PWS_ENA2(1) |
-               S_580_PWS_COUNT(0));
-   radeon_emit(0xffffffff); /* GCR_SIZE */
-   radeon_emit(0x01ffffff); /* GCR_SIZE_HI */
-   radeon_emit(0);          /* GCR_BASE_LO */
-   radeon_emit(0);          /* GCR_BASE_HI */
-   radeon_emit(S_585_PWS_ENA(1));
-   radeon_emit(0); /* GCR_CNTL */
+   ac_emit_cp_acquire_mem_pws(cs->b, pdev->info.gfx_level, AMD_IP_GFX, V_028A90_BOTTOM_OF_PIPE_TS, V_580_CP_ME, 0, 0);
+
+   radeon_begin(cs);
 
    /* The PS will read inputs from this address. */
    radeon_set_uconfig_reg_seq(R_031110_SPI_GS_THROTTLE_CNTL1, 4);
