@@ -2535,7 +2535,7 @@ lower_lsc_memory_fence_and_interlock(const brw_builder &bld, struct brw_send_ins
 }
 
 static void
-lower_hdc_memory_fence_and_interlock(const brw_builder &bld, brw_inst *inst)
+lower_hdc_memory_fence_and_interlock(const brw_builder &bld, brw_send_inst *inst)
 {
    const intel_device_info *devinfo = bld.shader->devinfo;
    const bool interlock = inst->opcode == SHADER_OPCODE_INTERLOCK;
@@ -2547,15 +2547,14 @@ lower_hdc_memory_fence_and_interlock(const brw_builder &bld, brw_inst *inst)
 
    bool slm = false;
 
-   assert(inst->as_send() != NULL);
-   if (inst->as_send()->sfid == BRW_SFID_SLM) {
+   if (inst->sfid == BRW_SFID_SLM) {
       assert(devinfo->ver >= 11);
 
       /* This SFID doesn't exist on Gfx11-12.0, but we use it to represent
        * SLM fences, and map back here to the way Gfx11 represented that:
        * a special "SLM" binding table index and the data cache SFID.
        */
-      inst->as_send()->sfid = BRW_SFID_HDC0;
+      inst->sfid = BRW_SFID_HDC0;
       slm = true;
    }
 
@@ -2669,7 +2668,7 @@ brw_lower_logical_sends(brw_shader &s)
          if (devinfo->has_lsc)
             lower_lsc_memory_fence_and_interlock(ibld, inst->as_send());
          else
-            lower_hdc_memory_fence_and_interlock(ibld, inst);
+            lower_hdc_memory_fence_and_interlock(ibld, inst->as_send());
          break;
 
       default:
