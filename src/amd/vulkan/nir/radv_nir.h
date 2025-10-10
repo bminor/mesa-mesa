@@ -97,8 +97,6 @@ bool radv_nir_opt_tid_function(nir_shader *shader, const radv_nir_opt_tid_functi
 
 bool radv_nir_opt_fs_builtins(nir_shader *shader, const struct radv_graphics_state_key *gfx_state);
 
-bool radv_nir_opt_access_can_speculate(nir_shader *shader);
-
 bool radv_nir_lower_immediate_samplers(nir_shader *shader, struct radv_device *device,
                                        const struct radv_shader_stage *stage);
 

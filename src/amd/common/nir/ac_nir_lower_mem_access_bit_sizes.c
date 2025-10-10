@@ -13,12 +13,34 @@
 typedef struct {
    enum amd_gfx_level gfx_level;
    bool use_llvm;
+   bool had_terminate;
 } mem_access_cb_data;
 
 static bool
-use_smem_for_load(nir_builder *b, nir_intrinsic_instr *intrin, void *cb_data_)
+set_smem_access_flags(nir_builder *b, nir_intrinsic_instr *intrin, void *cb_data_)
 {
-   const mem_access_cb_data *cb_data = (mem_access_cb_data *)cb_data_;
+   mem_access_cb_data *cb_data = (mem_access_cb_data *)cb_data_;
+   intrin->instr.pass_flags = 0;
+
+   /* Detect descriptors that are used in top level control flow, and mark all smem users as CAN_SPECULATE. */
+   if (!cb_data->had_terminate) {
+      switch (intrin->intrinsic) {
+      case nir_intrinsic_terminate:
+      case nir_intrinsic_terminate_if:
+         cb_data->had_terminate = true;
+         return false;
+      case nir_intrinsic_load_ubo:
+      case nir_intrinsic_load_ssbo:
+         if (intrin->src[0].ssa->parent_instr->block->cf_node.parent->type != nir_cf_node_function)
+            break;
+         FALLTHROUGH;
+      case nir_intrinsic_load_constant:
+         intrin->src[0].ssa->parent_instr->pass_flags = 1;
+         break;
+      default:
+         break;
+      }
+   }
 
    switch (intrin->intrinsic) {
    case nir_intrinsic_load_ssbo:
@@ -38,7 +60,8 @@ use_smem_for_load(nir_builder *b, nir_intrinsic_instr *intrin, void *cb_data_)
    if (intrin->def.divergent)
       return false;
 
-   enum gl_access_qualifier access = nir_intrinsic_access(intrin);
+   /* Check if this instruction can use SMEM. */
+   const enum gl_access_qualifier access = nir_intrinsic_access(intrin);
    bool glc = access & (ACCESS_VOLATILE | ACCESS_COHERENT);
    bool reorder = nir_intrinsic_can_reorder(intrin) || ((access & ACCESS_NON_WRITEABLE) && !(access & ACCESS_VOLATILE));
    if (!reorder || (glc && cb_data->gfx_level < GFX8))
@@ -48,7 +71,23 @@ use_smem_for_load(nir_builder *b, nir_intrinsic_instr *intrin, void *cb_data_)
       return false;
 
    nir_intrinsic_set_access(intrin, access | ACCESS_SMEM_AMD);
-   return true;
+
+   /* Check if this instruction can be executed speculatively. */
+   if (intrin->src[0].ssa->parent_instr->pass_flags == 1)
+      nir_intrinsic_set_access(intrin, nir_intrinsic_access(intrin) | ACCESS_CAN_SPECULATE);
+
+   return access != nir_intrinsic_access(intrin);
+}
+
+bool
+ac_nir_flag_smem_for_loads(nir_shader *shader, enum amd_gfx_level gfx_level, bool use_llvm)
+{
+   mem_access_cb_data cb_data = {
+      .gfx_level = gfx_level,
+      .use_llvm = use_llvm,
+      .had_terminate = false,
+   };
+   return nir_shader_intrinsics_pass(shader, &set_smem_access_flags, nir_metadata_all, &cb_data);
 }
 
 static nir_mem_access_size_align
@@ -159,16 +198,6 @@ lower_mem_access_cb(nir_intrinsic_op intrin, uint8_t bytes, uint8_t bit_size, ui
    res.shift = nir_mem_access_shift_method_bytealign_amd;
 
    return res;
-}
-
-bool
-ac_nir_flag_smem_for_loads(nir_shader *shader, enum amd_gfx_level gfx_level, bool use_llvm)
-{
-   mem_access_cb_data cb_data = {
-      .gfx_level = gfx_level,
-      .use_llvm = use_llvm,
-   };
-   return nir_shader_intrinsics_pass(shader, &use_smem_for_load, nir_metadata_all, &cb_data);
 }
 
 bool
