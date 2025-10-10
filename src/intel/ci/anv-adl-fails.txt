@@ -4,16 +4,8 @@ dEQP-VK.sparse_resources.buffer.ssbo.sparse_residency.buffer_size_2_24,Crash
 # Tests incorrectly setting sampleMask=0xff when running at MSAA 16x
 # https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/5728
 
-# At least some print:
-# "MESA: warning: INTEL_HWCONFIG_MIN_HS_URB_ENTRIES (0) != devinfo->urb.min_entries[MESA_SHADER_TESS_CTRL] (1)"
-# and some assertion fail with:
-# "deqp-vk: ../src/util/bitpack_helpers.h:65: util_bitpack_uint: Assertion `v <= max' failed."
-# and others with:
-# "deqp-vk: ../src/intel/vulkan/anv_device.c:1404: anv_AllocateMemory: Assertion `pAllocateInfo->memoryTypeIndex < pdevice->memory.type_count' failed."
-# while other crashes are just segfaults.
-
-dEQP-VK.video.encode.h265.i_p_not_matching_order,Crash
-
-
+# This is a bug of CTS: https://gitlab.khronos.org/Tracker/vk-gl-cts/issues/6033
+dEQP-VK.video.capabilities.av1_decode_dst_video_format_support_query,Fail
+dEQP-VK.video.capabilities.av1_decode_dpb_video_format_support_query,Fail
 
 
