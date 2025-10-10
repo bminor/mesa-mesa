@@ -1859,8 +1859,12 @@ copy_query_results_with_shader(struct anv_cmd_buffer *cmd_buffer,
    /* If this is the first command in the batch buffer, make sure we have
     * consistent pipeline mode.
     */
-   if (cmd_buffer->state.current_pipeline == UINT32_MAX)
-      genX(flush_pipeline_select_3d)(cmd_buffer);
+   if (cmd_buffer->state.current_pipeline == UINT32_MAX) {
+      if (anv_cmd_buffer_is_render_queue(cmd_buffer))
+         genX(flush_pipeline_select_3d)(cmd_buffer);
+      else
+         genX(flush_pipeline_select_gpgpu)(cmd_buffer);
+   }
 
    if ((cmd_buffer->state.queries.buffer_write_bits |
         cmd_buffer->state.queries.clear_bits) & ANV_QUERY_WRITES_RT_FLUSH)
@@ -2029,7 +2033,8 @@ void genX(CmdCopyQueryPoolResults)(
    struct anv_device *device = cmd_buffer->device;
    struct anv_physical_device *pdevice = device->physical;
 
-   if (queryCount > pdevice->instance->query_copy_with_shader_threshold) {
+   if (queryCount > pdevice->instance->query_copy_with_shader_threshold &&
+       anv_cmd_buffer_is_render_or_compute_queue(cmd_buffer)) {
       copy_query_results_with_shader(cmd_buffer, pool,
                                      anv_address_add(buffer->address,
                                                      destOffset),
