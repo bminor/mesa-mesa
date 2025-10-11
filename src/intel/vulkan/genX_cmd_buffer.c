@@ -1316,34 +1316,36 @@ transition_color_buffer(struct anv_cmd_buffer *cmd_buffer,
        * we choose to ambiguate MCS as well.
        */
       if (image->vk.samples == 1) {
-         for (uint32_t l = 0; l < level_count; l++) {
-            const uint32_t level = base_level + l;
+         anv_blorp_require_rcs(cmd_buffer, NULL, image) {
+            for (uint32_t l = 0; l < level_count; l++) {
+               const uint32_t level = base_level + l;
 
-            uint32_t aux_layers = anv_image_aux_layers(image, aspect, level);
-            if (base_layer >= aux_layers)
-               break; /* We will only get fewer layers as level increases */
-            uint32_t level_layer_count =
-               MIN2(layer_count, aux_layers - base_layer);
+               uint32_t aux_layers = anv_image_aux_layers(image, aspect, level);
+               if (base_layer >= aux_layers)
+                  break; /* We will only get fewer layers as level increases */
+               uint32_t level_layer_count =
+                  MIN2(layer_count, aux_layers - base_layer);
 
-            /* If will_full_fast_clear is set, the caller promises to
-             * fast-clear the largest portion of the specified range as it can.
-             * For color images, that means only the first LOD and array slice.
-             */
-            if (level == 0 && base_layer == 0 && will_full_fast_clear) {
-               base_layer++;
-               level_layer_count--;
-               if (level_layer_count == 0)
-                  continue;
+               /* If will_full_fast_clear is set, the caller promises to
+                * fast-clear the largest portion of the specified range as it can.
+                * For color images, that means only the first LOD and array slice.
+                */
+               if (level == 0 && base_layer == 0 && will_full_fast_clear) {
+                  base_layer++;
+                  level_layer_count--;
+                  if (level_layer_count == 0)
+                     continue;
+               }
+
+               anv_image_ccs_op(cmd_buffer, image,
+                                image->planes[plane].primary_surface.isl.format,
+                                ISL_SWIZZLE_IDENTITY,
+                                aspect, level, base_layer, level_layer_count,
+                                ISL_AUX_OP_AMBIGUATE, NULL, false);
+
+               set_image_compressed_bit(cmd_buffer, image, aspect, level,
+                                        base_layer, level_layer_count, false);
             }
-
-            anv_image_ccs_op(cmd_buffer, image,
-                             image->planes[plane].primary_surface.isl.format,
-                             ISL_SWIZZLE_IDENTITY,
-                             aspect, level, base_layer, level_layer_count,
-                             ISL_AUX_OP_AMBIGUATE, NULL, false);
-
-            set_image_compressed_bit(cmd_buffer, image, aspect, level,
-                                     base_layer, level_layer_count, false);
          }
       } else {
          /* If will_full_fast_clear is set, the caller promises to fast-clear
@@ -1353,11 +1355,13 @@ transition_color_buffer(struct anv_cmd_buffer *cmd_buffer,
             return;
 
          assert(base_level == 0 && level_count == 1);
-         anv_image_mcs_op(cmd_buffer, image,
-                          image->planes[plane].primary_surface.isl.format,
-                          ISL_SWIZZLE_IDENTITY,
-                          aspect, base_layer, layer_count,
-                          ISL_AUX_OP_AMBIGUATE, NULL, false);
+         anv_blorp_require_rcs(cmd_buffer, NULL, image) {
+            anv_image_mcs_op(cmd_buffer, image,
+                             image->planes[plane].primary_surface.isl.format,
+                             ISL_SWIZZLE_IDENTITY,
+                             aspect, base_layer, layer_count,
+                             ISL_AUX_OP_AMBIGUATE, NULL, false);
+         }
       }
       return;
    }
@@ -1410,45 +1414,47 @@ transition_color_buffer(struct anv_cmd_buffer *cmd_buffer,
    if (resolve_op == ISL_AUX_OP_NONE)
       return;
 
-   for (uint32_t l = 0; l < level_count; l++) {
-      uint32_t level = base_level + l;
+   anv_blorp_require_rcs(cmd_buffer, NULL, image) {
+      for (uint32_t l = 0; l < level_count; l++) {
+         uint32_t level = base_level + l;
 
-      uint32_t aux_layers = anv_image_aux_layers(image, aspect, level);
-      if (base_layer >= aux_layers)
-         break; /* We will only get fewer layers as level increases */
-      uint32_t level_layer_count =
-         MIN2(layer_count, aux_layers - base_layer);
+         uint32_t aux_layers = anv_image_aux_layers(image, aspect, level);
+         if (base_layer >= aux_layers)
+            break; /* We will only get fewer layers as level increases */
+         uint32_t level_layer_count =
+            MIN2(layer_count, aux_layers - base_layer);
 
-      for (uint32_t a = 0; a < level_layer_count; a++) {
-         uint32_t array_layer = base_layer + a;
+         for (uint32_t a = 0; a < level_layer_count; a++) {
+            uint32_t array_layer = base_layer + a;
 
-         /* If will_full_fast_clear is set, the caller promises to fast-clear
-          * the largest portion of the specified range as it can.  For color
-          * images, that means only the first LOD and array slice.
-          */
-         if (level == 0 && array_layer == 0 && will_full_fast_clear)
-            continue;
-
-         if (image->vk.samples == 1) {
-            anv_cmd_predicated_ccs_resolve(cmd_buffer, image,
-                                           image->planes[plane].primary_surface.isl.format,
-                                           ISL_SWIZZLE_IDENTITY,
-                                           aspect, level, array_layer, resolve_op,
-                                           final_fast_clear);
-         } else {
-            /* We only support fast-clear on the first layer so partial
-             * resolves should not be used on other layers as they will use
-             * the clear color stored in memory that is only valid for layer0.
+            /* If will_full_fast_clear is set, the caller promises to fast-clear
+             * the largest portion of the specified range as it can.  For color
+             * images, that means only the first LOD and array slice.
              */
-            if (resolve_op == ISL_AUX_OP_PARTIAL_RESOLVE &&
-                array_layer != 0)
+            if (level == 0 && array_layer == 0 && will_full_fast_clear)
                continue;
 
-            anv_cmd_predicated_mcs_resolve(cmd_buffer, image,
-                                           image->planes[plane].primary_surface.isl.format,
-                                           ISL_SWIZZLE_IDENTITY,
-                                           aspect, array_layer, resolve_op,
-                                           final_fast_clear);
+            if (image->vk.samples == 1) {
+               anv_cmd_predicated_ccs_resolve(cmd_buffer, image,
+                                              image->planes[plane].primary_surface.isl.format,
+                                              ISL_SWIZZLE_IDENTITY,
+                                              aspect, level, array_layer, resolve_op,
+                                              final_fast_clear);
+            } else {
+               /* We only support fast-clear on the first layer so partial
+                * resolves should not be used on other layers as they will use
+                * the clear color stored in memory that is only valid for layer0.
+                */
+               if (resolve_op == ISL_AUX_OP_PARTIAL_RESOLVE &&
+                   array_layer != 0)
+                  continue;
+
+               anv_cmd_predicated_mcs_resolve(cmd_buffer, image,
+                                              image->planes[plane].primary_surface.isl.format,
+                                              ISL_SWIZZLE_IDENTITY,
+                                              aspect, array_layer, resolve_op,
+                                              final_fast_clear);
+            }
          }
       }
    }
