@@ -39,38 +39,38 @@
 #include "nir/nir.h"
 #include "nir/nir_builder.h"
 
-static nir_op
-parse_atomic_op(nir_intrinsic_instr *intr, unsigned *offset_src,
-                unsigned *data_src, unsigned *offset2_src)
+static bool
+parse_atomic(nir_intrinsic_instr *intr, unsigned *offset_src,
+             unsigned *data_src, unsigned *offset2_src)
 {
    switch (intr->intrinsic) {
    case nir_intrinsic_ssbo_atomic:
       *offset_src = 1;
       *data_src = 2;
       *offset2_src = *offset_src;
-      return nir_atomic_op_to_alu(nir_intrinsic_atomic_op(intr));
+      return true;
    case nir_intrinsic_shared_atomic:
    case nir_intrinsic_global_atomic:
    case nir_intrinsic_deref_atomic:
       *offset_src = 0;
       *data_src = 1;
       *offset2_src = *offset_src;
-      return nir_atomic_op_to_alu(nir_intrinsic_atomic_op(intr));
+      return true;
    case nir_intrinsic_global_atomic_amd:
       *offset_src = 0;
       *data_src = 1;
       *offset2_src = 2;
-      return nir_atomic_op_to_alu(nir_intrinsic_atomic_op(intr));
+      return true;
    case nir_intrinsic_image_deref_atomic:
    case nir_intrinsic_image_atomic:
    case nir_intrinsic_bindless_image_atomic:
       *offset_src = 1;
       *data_src = 3;
       *offset2_src = *offset_src;
-      return nir_atomic_op_to_alu(nir_intrinsic_atomic_op(intr));
+      return true;
 
    default:
-      return nir_num_opcodes;
+      return false;
    }
 }
 
@@ -212,14 +212,20 @@ optimize_atomic(nir_builder *b, nir_intrinsic_instr *intrin, bool return_prev)
    unsigned offset_src = 0;
    unsigned data_src = 0;
    unsigned offset2_src = 0;
-   nir_op op = parse_atomic_op(intrin, &offset_src, &data_src, &offset2_src);
+   parse_atomic(intrin, &offset_src, &data_src, &offset2_src);
+   nir_atomic_op atomic_op = nir_intrinsic_atomic_op(intrin);
+   nir_op op = nir_atomic_op_to_alu(atomic_op);
+
    nir_def *data = intrin->src[data_src].ssa;
 
    /* Separate uniform reduction and scan is faster than doing a combined scan+reduce */
    bool combined_scan_reduce = return_prev &&
                                nir_src_is_divergent(&intrin->src[data_src]);
    nir_def *reduce = NULL, *scan = NULL;
-   reduce_data(b, op, data, &reduce, combined_scan_reduce ? &scan : NULL);
+   if (atomic_op == nir_atomic_op_xchg)
+      reduce = data;
+   else
+      reduce_data(b, op, data, &reduce, combined_scan_reduce ? &scan : NULL);
 
    nir_src_rewrite(&intrin->src[data_src], reduce);
 
@@ -230,7 +236,11 @@ optimize_atomic(nir_builder *b, nir_intrinsic_instr *intrin, bool return_prev)
    nir_instr_remove(&intrin->instr);
    nir_builder_instr_insert(b, &intrin->instr);
 
-   if (return_prev) {
+   if (return_prev && atomic_op == nir_atomic_op_xchg) {
+      assert(!nir_src_is_divergent(&intrin->src[data_src]));
+      nir_pop_if(b, nif);
+      return nir_if_phi(b, &intrin->def, data);
+   } else if (return_prev) {
       nir_push_else(b, nif);
 
       nir_def *undef = nir_undef(b, 1, intrin->def.bit_size);
@@ -298,9 +308,16 @@ opt_uniform_atomics(nir_function_impl *impl, bool fs_atomics_predicated)
 
          nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
          unsigned offset_src, data_src, offset2_src;
-         if (parse_atomic_op(intrin, &offset_src, &data_src, &offset2_src) ==
-             nir_num_opcodes)
+         if (!parse_atomic(intrin, &offset_src, &data_src, &offset2_src))
             continue;
+
+         nir_atomic_op atomic_op = nir_intrinsic_atomic_op(intrin);
+         if (atomic_op == nir_atomic_op_xchg) {
+            if (nir_src_is_divergent(&intrin->src[data_src]))
+               continue;
+         } else if (nir_atomic_op_to_alu(atomic_op) == nir_num_opcodes) {
+            continue;
+         }
 
          if (nir_src_is_divergent(&intrin->src[offset_src]))
             continue;
