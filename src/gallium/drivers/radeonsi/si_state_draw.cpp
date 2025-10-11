@@ -2333,6 +2333,14 @@ static void si_draw(struct pipe_context *ctx,
       }
    }
 
+   /* Make sure that the MS is not set when vertex pipeline is used.
+    *
+    * This is ensured by mesa state tracker to always update all graphics shader
+    * stages in any pipeline's draw call, and set the other pipeline's shader stages
+    * to be NULL when internal draw operations.
+    */
+   assert(!sctx->ms_shader_state.cso);
+
    if (unlikely(sctx->dirty_shaders_mask)) {
       if (unlikely(!(si_update_shaders<GFX_VERSION, HAS_TESS, HAS_GS, NGG>(sctx)))) {
          DRAW_CLEANUP;
