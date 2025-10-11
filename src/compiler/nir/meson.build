@@ -114,6 +114,7 @@ else
   'nir_divergence_analysis.c',
   'nir_dominance.c',
   'nir_dominance_lca.c',
+  'nir_downgrade_pls_vars.c',
   'nir_fixup_is_exported.c',
   'nir_format_convert.c',
   'nir_format_convert.h',
