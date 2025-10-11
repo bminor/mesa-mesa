@@ -6077,6 +6077,36 @@ anv_image_ccs_op(struct anv_cmd_buffer *cmd_buffer,
                  uint32_t base_layer, uint32_t layer_count,
                  enum isl_aux_op ccs_op, union isl_color_value *clear_value,
                  bool predicate);
+bool
+anv_blorp_execute_on_companion(struct anv_cmd_buffer *cmd_buffer,
+                               const struct anv_image *src_image,
+                               const struct anv_image *dst_image);
+
+struct anv_companion_prev_cmd_buffer_helper {
+   struct anv_cmd_buffer *prev_cmd_buffer;
+   struct anv_state syncpoint;
+};
+
+struct anv_companion_prev_cmd_buffer_helper
+anv_begin_companion_cmd_buffer_helper(struct anv_cmd_buffer **cmd_buffer,
+                                      bool needs_companion);
+void
+anv_end_companion_cmd_buffer_helper(struct anv_cmd_buffer **cmd_buffer,
+                                    struct anv_companion_prev_cmd_buffer_helper prev_cmd_buffer);
+
+#define anv_cmd_require_rcs(cmd_buffer, required)                        \
+   for (struct anv_companion_prev_cmd_buffer_helper __rcs_done =         \
+            anv_begin_companion_cmd_buffer_helper(&cmd_buffer, required),\
+            *__rcs_done_cont = (void*) 1; __rcs_done_cont; (             \
+      anv_end_companion_cmd_buffer_helper(&cmd_buffer, __rcs_done),      \
+      __rcs_done_cont = (void*) 0                                        \
+   ))
+
+#define anv_blorp_require_rcs(cmd_buffer, src_image, dst_image)\
+   anv_cmd_require_rcs(cmd_buffer,                             \
+                anv_blorp_execute_on_companion(cmd_buffer,     \
+                                               src_image,      \
+                                               dst_image))
 
 isl_surf_usage_flags_t
 anv_image_choose_isl_surf_usage(struct anv_physical_device *device,

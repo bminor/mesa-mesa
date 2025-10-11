@@ -1769,3 +1769,58 @@ anv_cmd_buffer_bind_shaders(struct vk_command_buffer *vk_cmd_buffer,
    if (memcmp(gfx_shaders, cmd_buffer->state.gfx.shaders, sizeof(gfx_shaders)))
       bind_graphics_shaders(cmd_buffer, gfx_shaders);
 }
+
+struct anv_companion_prev_cmd_buffer_helper
+anv_begin_companion_cmd_buffer_helper(struct anv_cmd_buffer **cmd_buffer,
+                                      bool needs_companion)
+{
+   if (likely(!needs_companion))
+      return (struct anv_companion_prev_cmd_buffer_helper) { 0 };
+
+   struct anv_cmd_buffer* prev_cmd_buffer = *cmd_buffer;
+   const struct intel_device_info *info = prev_cmd_buffer->device->info;
+
+   const VkResult result = anv_cmd_buffer_ensure_rcs_companion(prev_cmd_buffer);
+   if (result != VK_SUCCESS) {
+      anv_batch_set_error(&prev_cmd_buffer->batch, result);
+      return (struct anv_companion_prev_cmd_buffer_helper) { 0 };
+   }
+
+   assert(prev_cmd_buffer->companion_rcs_cmd_buffer != NULL);
+
+   /* Re-emit the aux table register in every command buffer.  This way we're
+    * ensured that we have the table even if this command buffer doesn't
+    * initialize any images.
+    */
+   if (prev_cmd_buffer->device->info->has_aux_map) {
+      anv_add_pending_pipe_bits(prev_cmd_buffer->companion_rcs_cmd_buffer,
+                                 ANV_PIPE_AUX_TABLE_INVALIDATE_BIT,
+                                 "new cmd buffer with aux-tt");
+   }
+
+   struct anv_state syncpoint =
+      anv_genX(info, cmd_buffer_begin_companion_rcs_syncpoint)(prev_cmd_buffer);
+
+   *cmd_buffer = prev_cmd_buffer->companion_rcs_cmd_buffer;
+
+   return (struct anv_companion_prev_cmd_buffer_helper) {
+      .prev_cmd_buffer = prev_cmd_buffer,
+      .syncpoint = syncpoint,
+   };
+}
+
+void
+anv_end_companion_cmd_buffer_helper(struct anv_cmd_buffer **cmd_buffer,
+                                    struct anv_companion_prev_cmd_buffer_helper prev_cmd_buffer)
+{
+   if (likely(!prev_cmd_buffer.prev_cmd_buffer))
+      return;
+
+   if (prev_cmd_buffer.syncpoint.alloc_size) {
+      const struct intel_device_info *info = (*cmd_buffer)->device->info;
+      anv_genX(info, cmd_buffer_end_companion_rcs_syncpoint)(prev_cmd_buffer.prev_cmd_buffer,
+                                                             prev_cmd_buffer.syncpoint);
+   }
+
+   *cmd_buffer = prev_cmd_buffer.prev_cmd_buffer;
+}
