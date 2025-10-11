@@ -441,6 +441,8 @@ nouveau_ws_device_new(drmDevicePtr drm_device)
    if (version < 0x01000301)
       goto out_err;
 
+   device->nouveau_version = version;
+
    const uint64_t KERN = NOUVEAU_WS_DEVICE_KERNEL_RESERVATION_START;
    const uint64_t TOP = 1ull << 40;
    struct drm_nouveau_vm_init vminit = { KERN, TOP-KERN };
