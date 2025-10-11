@@ -61,6 +61,8 @@ specific to NVK:
       Waits for submit to complete before continuing
    ``zero_memory``
       Zeros all VkDeviceMemory objects upon creation
+   ``trash_memory``
+      Write repeating nonzero patterns to client memory allocations
    ``vm``
       Logs VM binds and unbinds
    ``no_cbuf``
