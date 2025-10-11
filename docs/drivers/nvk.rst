@@ -6,10 +6,8 @@ NVK is a Vulkan driver for NVIDIA GPUs.
 Hardware support
 ----------------
 
-NVK currently supports Maxwell (some GTX 700 and 800 series, most 900
-series) and later GPUs up to and including Ada (RTX 4000 series).  Support
-for Kepler (GeForce 600 and 700 series) and Blackwell (RTX 5000 series) is
-currently in-progress but incomplete.
+NVK currently supports Kepler (GeForce 600 and 700 series) and later GPUs up to
+and including Blackwell (RTX 5000 series).
 
 Conformance status:
 -------------------
@@ -23,7 +21,7 @@ OpenGL support through Zink:
 Starting with Mesa 25.1, all Turing (RTX 2000 series and GTX 16xx) and
 later GPUs will get NVK+Zink as their OpenGL implementation by default
 instead of the old Nouveau GL driver.  NVK+Zink is a conformant OpenGL 4.6
-implementation.
+implementation. The Nouveau GL driver is no longer supported on these cards.
 
 Kernel requirements
 -------------------
