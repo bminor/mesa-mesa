@@ -1203,7 +1203,8 @@ prepare_fb_desc(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
       .valhall.layer_offset = layer - (layer % MAX_LAYERS_PER_TILER_DESC),
    };
 
-   if (!(cmdbuf->flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
+   if (!(cmdbuf->flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) &&
+       (cmdbuf->state.gfx.render.tiler != 0)) {
       uint32_t td_idx = layer / MAX_LAYERS_PER_TILER_DESC;
 
       tiler_ctx.valhall.desc =
