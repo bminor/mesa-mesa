@@ -391,10 +391,8 @@ program@execute@builtin@builtin-long-popcount-1.2.generated@popcount long4,Fail
 program@execute@builtin@builtin-long-popcount-1.2.generated@popcount long8,Fail
 program@execute@builtin@builtin-ulong-clamp-1.1.generated,Crash
 program@execute@builtin@builtin-ulong-mad_hi-1.0.generated,Crash
-program@execute@builtin@builtin-ulong-mad_sat-1.0.generated,Crash
 program@execute@builtin@builtin-ulong-max-1.1.generated,Crash
 program@execute@builtin@builtin-ulong-min-1.1.generated,Crash
-program@execute@builtin@builtin-ulong-mul_hi-1.0.generated,Crash
 program@execute@builtin@builtin-ulong-popcount-1.2.generated,Fail
 program@execute@builtin@builtin-ulong-popcount-1.2.generated@popcount ulong1,Fail
 program@execute@builtin@builtin-ulong-popcount-1.2.generated@popcount ulong16,Fail
