@@ -1,41 +1,3 @@
-dEQP-GLES2.functional.fbo.render.repeated_clear.tex2d_rgb,Fail
-dEQP-GLES2.functional.fbo.render.repeated_clear.tex2d_rgba,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.r11f_g11f_b10f,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.r16f,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.r16i,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.r16ui,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.r32f,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.r32i,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.r32ui,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.r8,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.r8i,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.r8ui,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.rg16f,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.rg16i,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.rg16ui,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.rg32f,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.rg32i,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.rg32ui,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.rg8,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.rg8i,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.rg8ui,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.rgb10_a2,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.rgb10_a2ui,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.rgb16f,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.rgb565,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.rgb5_a1,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.rgb8,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.rgba16f,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.rgba16i,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.rgba16ui,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.rgba32f,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.rgba32i,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.rgba32ui,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.rgba4,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.rgba8,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.rgba8i,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.rgba8ui,Fail
-dEQP-GLES3.functional.fbo.color.repeated_clear.sample.tex2d.srgb8_alpha8,Fail
 dEQP-GLES31.functional.shaders.multisample_interpolation.interpolate_at_sample.non_multisample_buffer.sample_n_default_framebuffer,Fail
 dEQP-GLES31.functional.shaders.multisample_interpolation.interpolate_at_sample.non_multisample_buffer.sample_n_singlesample_rbo,Fail
 dEQP-GLES31.functional.shaders.multisample_interpolation.interpolate_at_sample.non_multisample_buffer.sample_n_singlesample_texture,Fail
@@ -522,7 +484,6 @@ spec@ext_framebuffer_multisample@interpolation 8 centroid-deriv-disabled,Fail
 spec@ext_framebuffer_multisample@interpolation 8 centroid-disabled,Fail
 spec@ext_framebuffer_multisample@interpolation 8 non-centroid-deriv-disabled,Fail
 spec@ext_framebuffer_multisample@interpolation 8 non-centroid-disabled,Fail
-spec@ext_framebuffer_object@fbo-flushing-2,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_nv12,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_nv21,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_p010,Fail
