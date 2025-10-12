@@ -1,9 +1,13 @@
 dEQP-GLES3.functional.lifetime.delete_bound.framebuffer
+dEQP-GLES3.functional.occlusion_query.conservative_scissor_depth_write_stencil_write
+dEQP-GLES3.functional.occlusion_query.conservative_stencil_write
 
+KHR-GL46.copy_image.functional_src_target_texture_2d_array_src_format_r3_g3_b2_dst_target_texture_2d_array_dst_format_r3_g3_b2
 KHR-GL46.shader_image_load_store.basic-allFormats-storeGeometryStages
 KHR-GL46.shader_image_load_store.basic-allTargets-loadStoreCS
 KHR-GL46.texture_buffer.texture_buffer_max_size
 
+spec@arb_compute_shader@local-id-explosion
 spec@arb_gpu_shader_fp64@execution@built-in-functions@fs-op-mult-dmat2x4-dvec2
 spec@arb_gpu_shader_fp64@execution@conversion@frag-conversion-explicit-bvec2-dvec2
 spec@arb_gpu_shader_int64@execution@built-in-functions@fs-op-mod-int64_t-int64_t
@@ -26,6 +30,7 @@ spec@arb_tessellation_shader@execution@tes-input@tes-input-patch-mat2_2
 spec@arb_texture_multisample@texelfetch@6-gs-isampler2dmsarray
 spec@arb_vertex_attrib_64bit@execution@unused-sub-dvec4-02
 spec@egl_ext_device_drm@conformance
+spec@ext_external_objects@vk-ping-pong-multi-sem
 spec@ext_framebuffer_multisample@clip-and-scissor-blit 2 msaa
 spec@ext_framebuffer_multisample@clip-and-scissor-blit 4 msaa
 spec@ext_framebuffer_multisample@clip-and-scissor-blit 8 msaa

@@ -68,6 +68,7 @@ dEQP-VK.wsi.display.get_display_plane_capabilities
 dEQP-VK.wsi.display.get_display_plane_capabilities2
 dEQP-VK.wsi.display.get_display_plane_properties2
 dEQP-VK.wsi.display.get_display_plane_supported_displays
+dEQP-VK.wsi.display.get_display_properties2
 dEQP-VK.wsi.display.surface_counters
 
 KHR-GL46.conditional_render_inverted.functional

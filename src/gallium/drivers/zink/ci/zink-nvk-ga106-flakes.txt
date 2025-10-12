@@ -17,6 +17,7 @@ KHR-GL46.limits.max_fragment_atomic_counter_buffers
 KHR-GL46.limits.max_tess_evaluation_image_uniforms
 KHR-GL46.limits.max_tess_gen_level
 KHR-GL46.limits.max_vertex_uniform_components
+KHR-GL46.packed_pixels.pbo_rectangle.rgba32f_format_rgb
 KHR-GL46.packed_pixels.rectangle.r8
 KHR-GL46.packed_pixels.rectangle.rgba32ui
 KHR-GL46.packed_pixels.rectangle.rgba8_snorm
@@ -93,6 +94,7 @@ dEQP-GLES3.functional.uniform_api.value.initial.render.struct_in_array.float_vec
 dEQP-GLES31.functional.compute.basic.image_barrier_multiple
 dEQP-GLES31.functional.copy_image.compressed.viewclass_astc_10x5_rgba.srgb8_alpha8_astc_10x5_khr_srgb8_alpha8_astc_10x5_khr.texture2d_array_to_texture2d
 dEQP-GLES31.functional.copy_image.compressed.viewclass_astc_8x5_rgba.srgb8_alpha8_astc_8x5_khr_rgba_astc_8x5_khr.texture2d_array_to_texture2d
+dEQP-GLES31.functional.copy_image.compressed.viewclass_astc_8x6_rgba.rgba_astc_8x6_khr_rgba_astc_8x6_khr.texture3d_to_texture3d
 dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba32f_rgba_astc_5x4_khr.texture3d_to_texture2d_array
 dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba32f_rgba_astc_6x5_khr.texture2d_array_to_texture2d_array
 dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba32f_rgba_astc_8x5_khr.texture3d_to_cubemap
