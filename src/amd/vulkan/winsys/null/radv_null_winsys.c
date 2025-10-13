@@ -132,9 +132,7 @@ radv_null_winsys_query_info(struct radeon_winsys *rws, struct radeon_info *gpu_i
    else
       gpu_info->num_physical_wave64_vgprs_per_simd = 256;
    gpu_info->num_simd_per_compute_unit = gpu_info->gfx_level >= GFX10 ? 2 : 4;
-   gpu_info->lds_size_per_workgroup = gpu_info->gfx_level >= GFX10  ? 128 * 1024
-                                      : gpu_info->gfx_level >= GFX7 ? 64 * 1024
-                                                                    : 32 * 1024;
+   gpu_info->lds_size_per_workgroup = gpu_info->gfx_level >= GFX7 ? 64 * 1024 : 32 * 1024;
    gpu_info->max_render_backends = pci_ids[gpu_info->family].num_render_backends;
 
    gpu_info->has_dedicated_vram = pci_ids[gpu_info->family].has_dedicated_vram;

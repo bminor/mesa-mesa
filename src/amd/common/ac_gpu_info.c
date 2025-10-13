@@ -863,16 +863,13 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    }
    info->r600_has_virtual_memory = true;
 
-   /* LDS is 64KB per CU (4 SIMDs on GFX6-9), which is 16KB per SIMD (usage above
-    * 16KB makes some SIMDs unoccupied).
+   /* LDS is 64KB per CU (4 SIMDs on GFX6-9, which is 16KB per SIMD).
     *
-    * GFX10+: LDS is 128KB in WGP mode and 64KB in CU mode. Assume the WGP mode is used.
-    * GFX7+: Workgroups can use up to 64KB.
-    * GFX6: There is 64KB LDS per CU, but a workgroup can only use up to 32KB.
+    * GFX10+: LDS is 128KB in WGP mode, but a workgroup can only use up to 64KB.
+    * GFX7+:  Workgroups can use up to 64KB.
+    * GFX6:   There is 64KB LDS per CU, but a workgroup can only use up to 32KB.
     */
-   info->lds_size_per_workgroup = info->gfx_level >= GFX10  ? 128 * 1024
-                                  : info->gfx_level >= GFX7 ? 64 * 1024
-                                                            : 32 * 1024;
+   info->lds_size_per_workgroup = info->gfx_level >= GFX7 ? 64 * 1024 : 32 * 1024;
 
    /* The mere presence of CLEAR_STATE in the IB causes random GPU hangs on GFX6. CLEAR_STATE
     * causes GPU hangs with the radeon kernel driver, so only enable GFX7 CLEAR_STATE on amdgpu.

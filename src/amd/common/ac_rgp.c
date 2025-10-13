@@ -462,10 +462,6 @@ static void ac_sqtt_fill_asic_info(const struct radeon_info *rad_info,
    chunk->l2_cache_size = rad_info->l2_cache_size;
    chunk->l1_cache_size = rad_info->tcp_cache_size;
    chunk->lds_size = rad_info->lds_size_per_workgroup;
-   if (rad_info->gfx_level >= GFX10) {
-      /* RGP expects the LDS size in CU mode. */
-      chunk->lds_size /= 2;
-   }
 
    strncpy(chunk->gpu_name, rad_info->name, SQTT_GPU_NAME_MAX_SIZE - 1);
 
