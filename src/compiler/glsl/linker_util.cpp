@@ -254,19 +254,20 @@ link_util_update_empty_uniform_locations(const struct gl_constants *consts,
                                          struct gl_shader_program *prog)
 {
    int prev_end = -1;
-   list_for_each_entry_safe(struct range_entry, e, &prog->UniformRemapTable->r_list, node) {
+   list_for_each_entry_safe(struct list_range_entry, e,
+                            &prog->UniformRemapTable->r_list, node) {
       unsigned next_slot = prev_end + 1;
-      if (e->start > next_slot) {
+      if (e->entry.start > next_slot) {
          /* We've found the beginning of a new continous block of empty slots */
          struct empty_uniform_block *current_block =
             rzalloc(prog, struct empty_uniform_block);
          current_block->start = next_slot;
-         current_block->slots = e->start - next_slot;
+         current_block->slots = e->entry.start - next_slot;
          ir_exec_list_push_tail(&prog->EmptyUniformLocations,
                                 &current_block->link);
       }
 
-      prev_end = e->end;
+      prev_end = e->entry.end;
    }
 
    /* Add the remaining continous block of empty slots */

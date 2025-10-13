@@ -93,19 +93,19 @@ util_range_insert_remap(unsigned start, unsigned end,
                         struct range_remap *r_remap, void *ptr)
 {
    struct list_head *r_list = &r_remap->r_list;
-   struct range_entry *entry = NULL;
+   struct list_range_entry *lre = NULL;
    if (list_is_empty(r_list)) {
-      entry = rzalloc(r_list, struct range_entry);
-      list_addtail(&entry->node, r_list);
+      lre = rzalloc(r_list, struct list_range_entry);
+      list_addtail(&lre->node, r_list);
       goto insert_end;
    }
 
    /* Shortcut for consecutive location inserts */
-   struct range_entry *last_entry =
-      list_last_entry(r_list, struct range_entry, node);
-   if (last_entry->end < start) {
-      entry = rzalloc(r_list, struct range_entry);
-      list_addtail(&entry->node, r_list);
+   struct list_range_entry *last_entry =
+      list_last_entry(r_list, struct list_range_entry, node);
+   if (last_entry->entry.end < start) {
+      lre = rzalloc(r_list, struct list_range_entry);
+      list_addtail(&lre->node, r_list);
       goto insert_end;
    }
 
@@ -113,32 +113,34 @@ util_range_insert_remap(unsigned start, unsigned end,
    unsigned high = list_length(r_list) - 1;
    unsigned mid = (low + high) / 2;
 
-   struct range_entry *mid_entry =
-      list_first_entry(r_list, struct range_entry, node);
+   struct list_range_entry *mid_entry =
+      list_first_entry(r_list, struct list_range_entry, node);
    unsigned i = 0;
    while (i < mid) {
-      mid_entry = list_entry(mid_entry->node.next, struct range_entry, node);
+      mid_entry =
+         list_entry(mid_entry->node.next, struct list_range_entry, node);
       i++;
    }
 
    while (low <= high) {
-      if (end < mid_entry->start) {
+      if (end < mid_entry->entry.start) {
          if (low == high || mid == low) {
-            entry = rzalloc(r_list, struct range_entry);
-            list_addtail(&entry->node, &mid_entry->node); /* insert before mid */
+            lre = rzalloc(r_list, struct list_range_entry);
+            list_addtail(&lre->node, &mid_entry->node); /* insert before mid */
             goto insert_end;
          }
 
          high = mid - 1;
          unsigned new_mid = (low + high) / 2;
          while (mid > new_mid) {
-            mid_entry = list_entry(mid_entry->node.prev, struct range_entry, node);
+            mid_entry =
+               list_entry(mid_entry->node.prev, struct list_range_entry, node);
             mid--;
          }
-      } else if (start > mid_entry->end) {
+      } else if (start > mid_entry->entry.end) {
          if (low == high || mid == high) {
-            entry = rzalloc(r_list, struct range_entry);
-            list_add(&entry->node, &mid_entry->node); /* insert after mid */
+            lre = rzalloc(r_list, struct list_range_entry);
+            list_add(&lre->node, &mid_entry->node); /* insert after mid */
             goto insert_end;
          }
 
@@ -146,14 +148,14 @@ util_range_insert_remap(unsigned start, unsigned end,
          unsigned new_mid = (low + high) / 2;
          while (mid < new_mid) {
             mid_entry =
-               list_entry(mid_entry->node.next, struct range_entry, node);
+               list_entry(mid_entry->node.next, struct list_range_entry, node);
             mid++;
          }
-      } else if (mid_entry->start == start && mid_entry->end == end) {
+      } else if (mid_entry->entry.start == start && mid_entry->entry.end == end) {
          if (!ptr)
-            return mid_entry;
+            return &mid_entry->entry;
 
-         entry = mid_entry;
+         lre = mid_entry;
          goto insert_end;
       } else {
          /* Attempting to insert an entry that overlaps an existing range */
@@ -162,11 +164,11 @@ util_range_insert_remap(unsigned start, unsigned end,
    }
 
 insert_end:
-   entry->start = start;
-   entry->end = end;
-   entry->ptr = ptr;
+   lre->entry.start = start;
+   lre->entry.end = end;
+   lre->entry.ptr = ptr;
 
-   return entry;
+   return &lre->entry;
 }
 
 /* Return the range entry that maps to n or NULL if no match found. */

@@ -581,8 +581,8 @@ write_uniform_remap_list(struct blob *metadata,
 {
    blob_write_uint32(metadata, list_length(uniform_remap_list));
 
-   list_for_each_entry_safe(struct range_entry, entry, uniform_remap_list, node) {
-      gl_uniform_storage *u = (gl_uniform_storage *)entry->ptr;
+   list_for_each_entry_safe(struct list_range_entry, e, uniform_remap_list, node) {
+      gl_uniform_storage *u = (gl_uniform_storage *)e->entry.ptr;
       uint32_t offset = u - uniform_storage;
 
       if (u == INACTIVE_UNIFORM_EXPLICIT_LOCATION) {
@@ -594,8 +594,8 @@ write_uniform_remap_list(struct blob *metadata,
          blob_write_uint32(metadata, offset);
       }
 
-      blob_write_uint32(metadata, entry->start);
-      blob_write_uint32(metadata, entry->end);
+      blob_write_uint32(metadata, e->entry.start);
+      blob_write_uint32(metadata, e->entry.end);
    }
 }
 

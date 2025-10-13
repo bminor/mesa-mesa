@@ -33,10 +33,13 @@ struct range_remap {
 };
 
 struct range_entry {
-    struct list_head node;
-
     unsigned start, end;
     void *ptr;
+};
+
+struct list_range_entry {
+    struct list_head node;
+    struct range_entry entry;
 };
 
 struct range_entry *
