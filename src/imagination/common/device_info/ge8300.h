@@ -81,6 +81,33 @@ static const struct pvr_device_features pvr_device_features_22_V_54_30 = {
 };
 
 static const struct pvr_device_enhancements
+   pvr_device_enhancements_22_67_54_30 = {
+      .has_ern35421 = true,
+      .has_ern38748 = true,
+      .has_ern42307 = true,
+   };
+
+static const struct pvr_device_quirks pvr_device_quirks_22_67_54_30 = {
+   .has_brn49927 = true,
+   .has_brn66011 = true,
+   .has_brn70165 = true,
+   .has_brn74056 = true,
+};
+
+static const struct pvr_device_info pvr_device_info_22_67_54_30 = {
+   .ident = {
+      PVR_DEVICE_IDENT_22_V_54_30,
+      .b = 22,
+      .v = 67,
+      .n = 54,
+      .c = 30,
+   },
+   .features = pvr_device_features_22_V_54_30,
+   .enhancements = pvr_device_enhancements_22_67_54_30,
+   .quirks = pvr_device_quirks_22_67_54_30,
+};
+
+static const struct pvr_device_enhancements
    pvr_device_enhancements_22_68_54_30 = {
       .has_ern35421 = true,
       .has_ern38748 = true,
