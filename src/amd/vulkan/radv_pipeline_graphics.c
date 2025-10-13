@@ -621,7 +621,7 @@ radv_should_import_lib_binaries(const VkPipelineCreateFlags2 create_flags)
 
 static void
 radv_graphics_pipeline_import_lib(const struct radv_device *device, struct radv_graphics_pipeline *pipeline,
-                                  struct radv_graphics_lib_pipeline *lib)
+                                  struct radv_graphics_lib_pipeline *lib, bool import_pipeline_binaries)
 {
    bool import_binaries = false;
 
@@ -634,7 +634,8 @@ radv_graphics_pipeline_import_lib(const struct radv_device *device, struct radv_
    pipeline->active_stages |= lib->base.active_stages;
 
    /* Import binaries when LTO is disabled and when the library doesn't retain any shaders. */
-   if (lib->base.has_pipeline_binaries || radv_should_import_lib_binaries(pipeline->base.create_flags)) {
+   if (!import_pipeline_binaries &&
+       (lib->base.has_pipeline_binaries || radv_should_import_lib_binaries(pipeline->base.create_flags))) {
       import_binaries = true;
    }
 
@@ -3425,6 +3426,9 @@ radv_graphics_pipeline_init(struct radv_graphics_pipeline *pipeline, struct radv
    const VkPipelineLibraryCreateInfoKHR *libs_info =
       vk_find_struct_const(pCreateInfo->pNext, PIPELINE_LIBRARY_CREATE_INFO_KHR);
 
+   const VkPipelineBinaryInfoKHR *binary_info = vk_find_struct_const(pCreateInfo->pNext, PIPELINE_BINARY_INFO_KHR);
+   const bool import_pipeline_binaries = binary_info && binary_info->binaryCount > 0;
+
    /* If we have libraries, import them first. */
    if (libs_info) {
       for (uint32_t i = 0; i < libs_info->libraryCount; i++) {
@@ -3433,7 +3437,7 @@ radv_graphics_pipeline_init(struct radv_graphics_pipeline *pipeline, struct radv
 
          assert(pipeline_lib->type == RADV_PIPELINE_GRAPHICS_LIB);
 
-         radv_graphics_pipeline_import_lib(device, pipeline, gfx_pipeline_lib);
+         radv_graphics_pipeline_import_lib(device, pipeline, gfx_pipeline_lib, import_pipeline_binaries);
       }
    }
 
@@ -3443,9 +3447,7 @@ radv_graphics_pipeline_init(struct radv_graphics_pipeline *pipeline, struct radv
    if (result != VK_SUCCESS)
       return result;
 
-   const VkPipelineBinaryInfoKHR *binary_info = vk_find_struct_const(pCreateInfo->pNext, PIPELINE_BINARY_INFO_KHR);
-
-   if (binary_info && binary_info->binaryCount > 0) {
+   if (import_pipeline_binaries) {
       result = radv_graphics_pipeline_import_binaries(device, pipeline, binary_info);
    } else {
       if (gfx_state.compilation_required) {
@@ -3556,6 +3558,9 @@ radv_graphics_lib_pipeline_init(struct radv_graphics_lib_pipeline *pipeline, str
 
    radv_pipeline_layout_init(device, &pipeline->layout, false);
 
+   const VkPipelineBinaryInfoKHR *binary_info = vk_find_struct_const(pCreateInfo->pNext, PIPELINE_BINARY_INFO_KHR);
+   const bool import_pipeline_binaries = binary_info && binary_info->binaryCount > 0;
+
    /* If we have libraries, import them first. */
    if (libs_info) {
       for (uint32_t i = 0; i < libs_info->libraryCount; i++) {
@@ -3566,7 +3571,7 @@ radv_graphics_lib_pipeline_init(struct radv_graphics_lib_pipeline *pipeline, str
 
          radv_graphics_pipeline_import_layout(&pipeline->layout, &gfx_pipeline_lib->layout);
 
-         radv_graphics_pipeline_import_lib(device, &pipeline->base, gfx_pipeline_lib);
+         radv_graphics_pipeline_import_lib(device, &pipeline->base, gfx_pipeline_lib, import_pipeline_binaries);
 
          pipeline->lib_flags |= gfx_pipeline_lib->lib_flags;
       }
@@ -3582,9 +3587,7 @@ radv_graphics_lib_pipeline_init(struct radv_graphics_lib_pipeline *pipeline, str
    if (pipeline_layout)
       radv_graphics_pipeline_import_layout(&pipeline->layout, pipeline_layout);
 
-   const VkPipelineBinaryInfoKHR *binary_info = vk_find_struct_const(pCreateInfo->pNext, PIPELINE_BINARY_INFO_KHR);
-
-   if (binary_info && binary_info->binaryCount > 0) {
+   if (import_pipeline_binaries) {
       result = radv_graphics_pipeline_import_binaries(device, &pipeline->base, binary_info);
    } else {
       struct radv_graphics_pipeline_state gfx_state;
