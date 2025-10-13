@@ -48,6 +48,7 @@ class IOStream;
 }  // namespace gfxstream
 
 namespace gfxstream {
+namespace host {
 namespace vk {
 
 class VkDecoder {
@@ -63,12 +64,14 @@ private:
 };
 
 }  // namespace vk
+}  // namespace host
 }  // namespace gfxstream
 
 """
 
 decoder_impl_preamble ="""
 namespace gfxstream {
+namespace host {
 namespace vk {
 
 class VkDecoder::Impl {
@@ -129,6 +132,7 @@ size_t VkDecoder::decode(void* buf, size_t bufsize, IOStream* stream,
 decoder_impl_postamble = """
 
 }  // namespace vk
+}  // namespace host
 }  // namespace gfxstream
 
 """
