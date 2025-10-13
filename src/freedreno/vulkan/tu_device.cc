@@ -2247,12 +2247,16 @@ tu_create_copy_timestamp_cs(struct tu_u_trace_submission_data *submission_data,
    tu_device *device = cmd_buffers[0]->device;
    uint32_t cs_size = trace_chunks_to_copy * 6 * 2 + 3;
 
+   mtx_lock(&device->copy_timestamp_cs_pool_mutex);
    if (!list_is_empty(&device->copy_timestamp_cs_pool)) {
       submission_data->timestamp_copy_data =
          list_first_entry(&device->copy_timestamp_cs_pool,
                           struct tu_copy_timestamp_data, node);
       list_del(&submission_data->timestamp_copy_data->node);
-   } else {
+   }
+   mtx_unlock(&device->copy_timestamp_cs_pool_mutex);
+
+   if (!submission_data->timestamp_copy_data) {
       submission_data->timestamp_copy_data =
          (struct tu_copy_timestamp_data *) vk_zalloc(
             &device->vk.alloc, sizeof(struct tu_copy_timestamp_data), 8,
@@ -2376,8 +2380,11 @@ tu_u_trace_submission_data_finish(
       if (u_trace_enabled(&device->trace_context)) {
          tu_cs_reset(&submission_data->timestamp_copy_data->cs);
          u_trace_fini(&submission_data->timestamp_copy_data->trace);
+
+         mtx_lock(&device->copy_timestamp_cs_pool_mutex);
          list_addtail(&submission_data->timestamp_copy_data->node,
                       &device->copy_timestamp_cs_pool);
+         mtx_unlock(&device->copy_timestamp_cs_pool_mutex);
       } else {
          tu_free_copy_timestamp_data(device,
                                      submission_data->timestamp_copy_data);
@@ -2602,6 +2609,7 @@ tu_device_destroy_mutexes(struct tu_device *device)
    mtx_destroy(&device->fiber_pvtmem_bo.mtx);
    mtx_destroy(&device->wave_pvtmem_bo.mtx);
    mtx_destroy(&device->mutex);
+   mtx_destroy(&device->copy_timestamp_cs_pool_mutex);
 #ifdef HAVE_PERFETTO
    mtx_destroy(&device->perfetto.pending_clocks_sync_mtx);
 #endif
@@ -2711,6 +2719,7 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
    mtx_init(&device->fiber_pvtmem_bo.mtx, mtx_plain);
    mtx_init(&device->wave_pvtmem_bo.mtx, mtx_plain);
    mtx_init(&device->mutex, mtx_plain);
+   mtx_init(&device->copy_timestamp_cs_pool_mutex, mtx_plain);
 #ifdef HAVE_PERFETTO
    mtx_init(&device->perfetto.pending_clocks_sync_mtx, mtx_plain);
 #endif

@@ -460,6 +460,7 @@ struct tu_device
 
    struct u_trace_context trace_context;
    struct list_head copy_timestamp_cs_pool;
+   mtx_t copy_timestamp_cs_pool_mutex;
 
    #ifdef HAVE_PERFETTO
    struct tu_perfetto_state perfetto;
