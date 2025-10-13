@@ -6234,7 +6234,7 @@
         "description": "r600: Fix comparison of strides array when emitting vertex buffers",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "659b7eb2799bccfff817961518d0ff2ab9e65bca",
         "notes": null
