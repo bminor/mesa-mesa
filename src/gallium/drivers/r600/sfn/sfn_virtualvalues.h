@@ -57,10 +57,6 @@ using InstructionSet = std::set<Instr *, std::less<Instr *>, Allocator<Instr *>>
 class VirtualValue : public Allocate {
 public:
    static const uint32_t virtual_register_base = 1024;
-   static const uint32_t clause_temp_registers = 2;
-   static const uint32_t gpr_register_end = 128 - 2 * clause_temp_registers;
-   static const uint32_t clause_temp_register_begin = gpr_register_end;
-   static const uint32_t clause_temp_register_end = 128;
 
    static const uint32_t uniforms_begin = 512;
    static const uint32_t uniforms_end = 640;
