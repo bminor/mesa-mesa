@@ -65,27 +65,12 @@
       when: manual
 
 
-.google-freedreno-rules:
-  stage: freedreno
-  rules:
-    - !reference [.test, rules]
-    - !reference [.google-freedreno-farm-rules, rules]
-    - !reference [.freedreno-rules, rules]
-
 .collabora-freedreno-rules:
   stage: freedreno
   rules:
     - !reference [.test, rules]
     - !reference [.collabora-farm-rules, rules]
     - !reference [.freedreno-rules, rules]
-
-.google-freedreno-manual-rules:
-  stage: freedreno-nightly
-  extends: .no-auto-retry
-  rules:
-    - !reference [.test, rules]
-    - !reference [.google-freedreno-farm-manual-rules, rules]
-    - !reference [.freedreno-manual-rules, rules]
 
 .collabora-freedreno-manual-rules:
   stage: freedreno-nightly
@@ -96,27 +81,12 @@
     - !reference [.freedreno-manual-rules, rules]
 
 
-.google-turnip-rules:
-  stage: freedreno
-  rules:
-    - !reference [.test, rules]
-    - !reference [.google-freedreno-farm-rules, rules]
-    - !reference [.turnip-rules, rules]
-
 .collabora-turnip-rules:
   stage: freedreno
   rules:
     - !reference [.test, rules]
     - !reference [.collabora-farm-rules, rules]
     - !reference [.turnip-rules, rules]
-
-.google-turnip-manual-rules:
-  stage: freedreno-nightly
-  extends: .no-auto-retry
-  rules:
-    - !reference [.test, rules]
-    - !reference [.google-freedreno-farm-manual-rules, rules]
-    - !reference [.turnip-manual-rules, rules]
 
 .collabora-turnip-manual-rules:
   stage: freedreno-nightly
@@ -127,21 +97,6 @@
     - !reference [.turnip-manual-rules, rules]
 
 # For piglit and skqp test jobs that run both GL and VK tests.
-.google-freedreno-turnip-rules:
-  stage: freedreno
-  rules:
-    - !reference [.test, rules]
-    - !reference [.google-freedreno-rules, rules]
-    - !reference [.google-turnip-rules, rules]
-
-.google-freedreno-turnip-manual-rules:
-  stage: freedreno-nightly
-  extends: .no-auto-retry
-  rules:
-    - !reference [.test, rules]
-    - !reference [.google-freedreno-manual-rules, rules]
-    - !reference [.google-turnip-manual-rules, rules]
-
 .collabora-freedreno-turnip-rules:
   stage: freedreno
   rules:
@@ -180,36 +135,12 @@
     - !reference [.valve-farm-manual-rules, rules]
     - !reference [.turnip-manual-rules, rules]
 
-.google-freedreno-rules-restricted:
-  stage: freedreno
-  rules:
-    - !reference [.test, rules]
-    - !reference [.restricted-rules, rules]
-    - !reference [.google-freedreno-rules, rules]
-
 .collabora-freedreno-rules-restricted:
   stage: freedreno
   rules:
     - !reference [.test, rules]
     - !reference [.restricted-rules, rules]
     - !reference [.collabora-freedreno-rules, rules]
-
-.google-freedreno-rules-performance:
-  stage: performance
-  extends: .no-auto-retry
-  rules:
-    - !reference [.test, rules]
-    - !reference [.performance-rules, rules]
-    - !reference [.google-freedreno-manual-rules, rules]
-  allow_failure: true # see comment in .performance-rules, which we don't inherit this line from.
-  variables:
-    # Ensure that we are using the release build artifact
-    S3_ARTIFACT_NAME: mesa-arm64-default-release
-  needs:
-    - job: debian/baremetal_arm64_test-gl
-      optional: true
-    - debian-arm64-release
-  dependencies: null
 
 .collabora-freedreno-rules-performance:
   stage: performance
@@ -321,69 +252,7 @@
     KERNEL_TAG: msm-fixes-for-mesa-ci-14102025
 
 
-.google-freedreno-test-gl:
-  extends:
-    - .baremetal-test-arm64-gl
-    - .google-freedreno-rules
-  variables:
-    VK_DRIVER: freedreno
-    FLAKES_CHANNEL: "#freedreno-ci"
-    PIGLIT_PLATFORM: mixed_glx_egl
-    BM_CMDLINE: "ip=dhcp console=ttyMSM0,115200n8 $BM_KERNEL_EXTRA_ARGS root=/dev/nfs rw nfsrootdebug nfsroot=,tcp,nfsvers=4.2 init=/init $BM_KERNELARGS"
-    FARM: google
-  script:
-    - ./install/bare-metal/fastboot.sh
-
-.google-freedreno-test-vk:
-  extends:
-    - .baremetal-test-arm64-vk
-    - .google-freedreno-rules
-  variables:
-    VK_DRIVER: freedreno
-    FLAKES_CHANNEL: "#freedreno-ci"
-    PIGLIT_PLATFORM: mixed_glx_egl
-    BM_CMDLINE: "ip=dhcp console=ttyMSM0,115200n8 $BM_KERNEL_EXTRA_ARGS root=/dev/nfs rw nfsrootdebug nfsroot=,tcp,nfsvers=4.2 init=/init $BM_KERNELARGS"
-    FARM: google
-  script:
-    - ./install/bare-metal/fastboot.sh
-
-.google-freedreno-test-traces:
-  extends:
-    - .piglit-traces-test
-  variables:
-    HWCI_START_XORG: 1
-    PIGLIT_TRACES_FILE: traces-freedreno.yml
-  artifacts:
-    reports:
-      junit: results/junit.xml
-
-.a306-test:
-  extends:
-    - .google-freedreno-test-gl
-  variables:
-    BM_KERNEL: Image.gz
-    BM_DTB: apq8016-sbc-usb-host
-    DEVICE_TYPE: apq8016-sbc-usb-host
-    GPU_VERSION: freedreno-a306
-  timeout: 20m
-  tags:
-    - google-freedreno-db410c
-
-# 8 devices (2023-04-15)
-.a530-test:
-  extends:
-    - .google-freedreno-test-gl
-  variables:
-    BM_KERNEL: Image.gz
-    BM_DTB: apq8096-db820c
-    DEVICE_TYPE: apq8096-db820c
-    GPU_VERSION: freedreno-a530
-  timeout: 20m
-  tags:
-    - google-freedreno-db820c
-
 # CI-tron
-
 
 .a750:
   variables:
