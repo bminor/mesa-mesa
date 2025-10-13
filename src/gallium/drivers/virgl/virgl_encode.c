@@ -785,8 +785,10 @@ int virgl_encode_shader_state(struct virgl_context *ctx,
    if (bret == false)
       return -1;
 
-   if (virgl_debug & VIRGL_DEBUG_TGSI)
-      debug_printf("TGSI:\n---8<---\n%s\n---8<---\n", str);
+   if (virgl_debug & VIRGL_DEBUG_TGSI) {
+      mesa_logi("TGSI:");
+      mesa_log_multiline(MESA_LOG_INFO, str);
+   }
 
    /* virglrenderer before addbd9c5058dcc9d561b20ab747aed58c53499da mis-counts
     * the tokens needed for a BARRIER, so ask it to allocate some more space.
