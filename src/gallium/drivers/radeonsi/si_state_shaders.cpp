@@ -3888,6 +3888,12 @@ static void si_update_tess_uses_prim_id(struct si_context *sctx)
 
 bool si_update_ngg(struct si_context *sctx)
 {
+   /* GFX11 can't disable NGG. */
+   if (sctx->gfx_level >= GFX11) {
+      assert(sctx->ngg);
+      return false;
+   }
+
    if (!sctx->screen->use_ngg) {
       assert(!sctx->ngg);
       return false;
@@ -3897,7 +3903,7 @@ bool si_update_ngg(struct si_context *sctx)
 
    if (sctx->shader.gs.cso && sctx->shader.tes.cso && sctx->shader.gs.cso->tess_turns_off_ngg) {
       new_ngg = false;
-   } else if (sctx->gfx_level < GFX11) {
+   } else {
       struct si_shader_selector *last = si_get_vs(sctx)->cso;
 
       if ((last && last->info.enabled_streamout_buffer_mask) ||
