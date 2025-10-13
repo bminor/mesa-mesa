@@ -185,7 +185,6 @@ struct blitter_context *util_blitter_create(struct pipe_context *pipe)
    ctx->base.saved_fs = INVALID_PTR;
    ctx->base.saved_vs = INVALID_PTR;
    ctx->base.saved_gs = INVALID_PTR;
-   ctx->base.saved_ts = INVALID_PTR;
    ctx->base.saved_ms = INVALID_PTR;
    ctx->base.saved_velem_state = INVALID_PTR;
    ctx->base.saved_fb_state.nr_cbufs = ~0;
@@ -609,9 +608,7 @@ void util_blitter_restore_vertex_states(struct blitter_context *blitter)
 
    /* Driver like llvmpipe may not need to save mesh shader state. */
    if (ctx->has_mesh_shader && ctx->base.saved_ms != INVALID_PTR) {
-      pipe->bind_ts_state(pipe, ctx->base.saved_ts);
       pipe->bind_ms_state(pipe, ctx->base.saved_ms);
-      ctx->base.saved_ts = INVALID_PTR;
       ctx->base.saved_ms = INVALID_PTR;
    }
 
@@ -1359,7 +1356,6 @@ static void blitter_set_common_draw_rect_state(struct blitter_context_priv *ctx,
       pipe->bind_tes_state(pipe, NULL);
    }
    if (ctx->has_mesh_shader && ctx->base.saved_ms != INVALID_PTR) {
-      pipe->bind_ts_state(pipe, NULL);
       pipe->bind_ms_state(pipe, NULL);
    }
    if (ctx->has_stream_out)

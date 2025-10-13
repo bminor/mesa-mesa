@@ -107,7 +107,7 @@ struct blitter_context
    void *saved_velem_state;   /**< vertex elements state */
    void *saved_rs_state;      /**< rasterizer state */
    void *saved_fs, *saved_vs, *saved_gs, *saved_tcs, *saved_tes; /**< shaders */
-   void *saved_ts, *saved_ms;
+   void *saved_ms;
 
    struct pipe_framebuffer_state saved_fb_state;  /**< framebuffer state */
    struct pipe_stencil_ref saved_stencil_ref;     /**< stencil ref */
@@ -484,13 +484,6 @@ util_blitter_save_tesseval_shader(struct blitter_context *blitter,
                                   void *sh)
 {
    blitter->saved_tes = sh;
-}
-
-static inline void
-util_blitter_save_task_shader(struct blitter_context *blitter,
-                              void *sh)
-{
-   blitter->saved_ts = sh;
 }
 
 static inline void
