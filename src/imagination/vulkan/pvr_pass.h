@@ -117,74 +117,10 @@ struct pvr_render_pass {
    bool multiview_enabled;
 };
 
-/* Max render targets for the clears loads state in load op.
- * To account for resolve attachments, double the color attachments.
- */
-#define PVR_LOAD_OP_CLEARS_LOADS_MAX_RTS (PVR_MAX_COLOR_ATTACHMENTS * 2)
-
-struct pvr_load_op {
-   bool is_hw_object;
-
-   struct pvr_suballoc_bo *usc_frag_prog_bo;
-   uint32_t const_shareds_count;
-   uint32_t shareds_count;
-   uint32_t num_tile_buffers;
-
-   struct pvr_pds_upload pds_frag_prog;
-
-   struct pvr_pds_upload pds_tex_state_prog;
-   uint32_t temps_count;
-
-   union {
-      const struct pvr_renderpass_hwsetup_render *hw_render;
-      const struct pvr_render_subpass *subpass;
-   };
-
-   /* TODO: We might not need to keep all of this around. Some stuff might just
-    * be for the compiler to ingest which we can then discard.
-    */
-   struct {
-      uint16_t rt_clear_mask;
-      uint16_t rt_load_mask;
-
-      uint16_t unresolved_msaa_mask;
-
-      /* The format to write to the output regs. */
-      VkFormat dest_vk_format[PVR_LOAD_OP_CLEARS_LOADS_MAX_RTS];
-
-#define PVR_NO_DEPTH_CLEAR_TO_REG (-1)
-      /* If >= 0, write a depth clear value to the specified pixel output. */
-      int32_t depth_clear_to_reg;
-
-      const struct usc_mrt_setup *mrt_setup;
-   } clears_loads_state;
-
-   uint32_t view_indices[PVR_MAX_MULTIVIEW];
-
-   uint32_t view_count;
-};
-
 VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_render_pass,
                                base,
                                VkRenderPass,
                                VK_OBJECT_TYPE_RENDER_PASS)
-
-#define CHECK_MASK_SIZE(_struct_type, _field_name, _nr_bits)               \
-   static_assert(sizeof(((struct _struct_type *)NULL)->_field_name) * 8 >= \
-                    _nr_bits,                                              \
-                 #_field_name " mask of struct " #_struct_type " too small")
-
-CHECK_MASK_SIZE(pvr_load_op,
-                clears_loads_state.rt_clear_mask,
-                PVR_LOAD_OP_CLEARS_LOADS_MAX_RTS);
-CHECK_MASK_SIZE(pvr_load_op,
-                clears_loads_state.rt_load_mask,
-                PVR_LOAD_OP_CLEARS_LOADS_MAX_RTS);
-CHECK_MASK_SIZE(pvr_load_op,
-                clears_loads_state.unresolved_msaa_mask,
-                PVR_LOAD_OP_CLEARS_LOADS_MAX_RTS);
-
-#undef CHECK_MASK_SIZE
 
 VkResult pvr_pds_unitex_state_program_create_and_upload(
    struct pvr_device *device,
