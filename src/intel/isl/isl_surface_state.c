@@ -560,12 +560,24 @@ isl_genX(surf_fill_state_s)(const struct isl_device *dev, void *state,
    s.EnableUnormPathInColorPipe = true;
 #endif
 
-   s.CubeFaceEnablePositiveZ = 1;
-   s.CubeFaceEnableNegativeZ = 1;
-   s.CubeFaceEnablePositiveY = 1;
-   s.CubeFaceEnableNegativeY = 1;
-   s.CubeFaceEnablePositiveX = 1;
-   s.CubeFaceEnableNegativeX = 1;
+   /*
+    * Bspec 57023, RENDER_SURFACE_STATE, bit fields CubeFaceEnable*
+    * states that:
+    *
+    *    This field must be programmed to 1h (enabled) whenever Surface Type is
+    *    programmed to SURFTYPE_CUBE
+    *
+    * This used to work fine for non-cube surfaces on older hardware but on
+    * Xe2+, looks like this restriction is pretty strict.
+    */
+   if (info->view->usage & ISL_SURF_USAGE_CUBE_BIT) {
+      s.CubeFaceEnablePositiveZ = 1;
+      s.CubeFaceEnableNegativeZ = 1;
+      s.CubeFaceEnablePositiveY = 1;
+      s.CubeFaceEnableNegativeY = 1;
+      s.CubeFaceEnablePositiveX = 1;
+      s.CubeFaceEnableNegativeX = 1;
+   }
 
 #if GFX_VER >= 6
    /* From the Broadwell PRM for "Number of Multisamples":
