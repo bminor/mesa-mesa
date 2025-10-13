@@ -66,7 +66,7 @@ pp_jimenezmlaa_run(struct pp_queue_t *ppq, struct pipe_resource *in,
    struct pp_program *p = ppq->p;
 
    struct pipe_depth_stencil_alpha_state mstencil;
-   struct pipe_sampler_view v_tmp, *arr[3];
+   struct pipe_sampler_view v_tmp, *tmp_a, *tmp_b, *arr[3];
 
    unsigned int w = 0;
    unsigned int h = 0;
@@ -154,8 +154,8 @@ pp_jimenezmlaa_run(struct pp_queue_t *ppq, struct pipe_resource *in,
 
    u_sampler_view_default_template(&v_tmp, ppq->inner_tmp[0],
                                    ppq->inner_tmp[0]->format);
-   arr[1] = arr[2] = p->pipe->create_sampler_view(p->pipe,
-                                                  ppq->inner_tmp[0], &v_tmp);
+   arr[1] = arr[2] = tmp_a =
+      p->pipe->create_sampler_view(p->pipe, ppq->inner_tmp[0], &v_tmp);
 
    pp_filter_set_clear_fb(p);
 
@@ -188,7 +188,7 @@ pp_jimenezmlaa_run(struct pp_queue_t *ppq, struct pipe_resource *in,
            0, 0, w, h);
 
    u_sampler_view_default_template(&v_tmp, in, in->format);
-   arr[0] = p->pipe->create_sampler_view(p->pipe, in, &v_tmp);
+   arr[0] = tmp_b = p->pipe->create_sampler_view(p->pipe, in, &v_tmp);
 
    {
       const struct pipe_sampler_state *samplers[] =
@@ -207,8 +207,8 @@ pp_jimenezmlaa_run(struct pp_queue_t *ppq, struct pipe_resource *in,
 
    pp_filter_draw(p);
    pp_filter_end_pass(p);
-   pipe->sampler_view_release(pipe, arr[0]);
-   pipe->sampler_view_release(pipe, arr[1]);
+   pipe->sampler_view_release(pipe, tmp_a);
+   pipe->sampler_view_release(pipe, tmp_b);
 
    p->blend.rt[0].blend_enable = 0;
    memset(&p->framebuffer.zsbuf, 0, sizeof(p->framebuffer.zsbuf));
