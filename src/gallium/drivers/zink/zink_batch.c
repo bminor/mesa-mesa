@@ -1167,7 +1167,7 @@ zink_batch_usage_check_completion(struct zink_context *ctx, const struct zink_ba
    return zink_check_batch_completion(ctx, u->usage);
 }
 
-ALWAYS_INLINE bool
+bool
 zink_batch_usage_unflushed_wait(struct zink_context *ctx, struct zink_batch_usage *u, unsigned submit_count, bool trywait)
 {
    MESA_TRACE_FUNC();
