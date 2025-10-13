@@ -1894,7 +1894,7 @@ static inline struct si_shader_ctx_state *si_get_vs(struct si_context *sctx)
       return &sctx->ms_shader_state;
 }
 
-static inline bool si_get_strmout_en(struct si_context *sctx)
+static inline bool si_get_streamout_enable_state(struct si_context *sctx)
 {
    return sctx->streamout.streamout_enabled || sctx->streamout.prims_gen_query_enabled;
 }

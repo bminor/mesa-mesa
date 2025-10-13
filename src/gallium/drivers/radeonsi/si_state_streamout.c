@@ -423,11 +423,11 @@ static void si_emit_streamout_enable(struct si_context *sctx, unsigned index)
 
    radeon_begin(&sctx->gfx_cs);
    radeon_set_context_reg_seq(R_028B94_VGT_STRMOUT_CONFIG, 2);
-   radeon_emit(S_028B94_STREAMOUT_0_EN(si_get_strmout_en(sctx)) |
+   radeon_emit(S_028B94_STREAMOUT_0_EN(si_get_streamout_enable_state(sctx)) |
                S_028B94_RAST_STREAM(0) |
-               S_028B94_STREAMOUT_1_EN(si_get_strmout_en(sctx)) |
-               S_028B94_STREAMOUT_2_EN(si_get_strmout_en(sctx)) |
-               S_028B94_STREAMOUT_3_EN(si_get_strmout_en(sctx)));
+               S_028B94_STREAMOUT_1_EN(si_get_streamout_enable_state(sctx)) |
+               S_028B94_STREAMOUT_2_EN(si_get_streamout_enable_state(sctx)) |
+               S_028B94_STREAMOUT_3_EN(si_get_streamout_enable_state(sctx)));
    radeon_emit(sctx->streamout.hw_enabled_mask & sctx->streamout.enabled_stream_buffers_mask);
    radeon_end();
 }
@@ -437,7 +437,7 @@ static void si_set_streamout_enable(struct si_context *sctx, bool enable)
    if (sctx->gfx_level >= GFX11)
       return;
 
-   bool old_strmout_en = si_get_strmout_en(sctx);
+   bool old_strmout_en = si_get_streamout_enable_state(sctx);
    unsigned old_hw_enabled_mask = sctx->streamout.hw_enabled_mask;
 
    sctx->streamout.streamout_enabled = enable;
@@ -446,7 +446,7 @@ static void si_set_streamout_enable(struct si_context *sctx, bool enable)
       sctx->streamout.enabled_mask | (sctx->streamout.enabled_mask << 4) |
       (sctx->streamout.enabled_mask << 8) | (sctx->streamout.enabled_mask << 12);
 
-   if ((old_strmout_en != si_get_strmout_en(sctx)) ||
+   if ((old_strmout_en != si_get_streamout_enable_state(sctx)) ||
        (old_hw_enabled_mask != sctx->streamout.hw_enabled_mask))
       si_mark_atom_dirty(sctx, &sctx->atoms.s.streamout_enable);
 }
@@ -454,14 +454,14 @@ static void si_set_streamout_enable(struct si_context *sctx, bool enable)
 void si_update_prims_generated_query_state(struct si_context *sctx, unsigned type, int diff)
 {
    if (sctx->gfx_level < GFX11 && type == PIPE_QUERY_PRIMITIVES_GENERATED) {
-      bool old_strmout_en = si_get_strmout_en(sctx);
+      bool old_strmout_en = si_get_streamout_enable_state(sctx);
 
       sctx->streamout.num_prims_gen_queries += diff;
       assert(sctx->streamout.num_prims_gen_queries >= 0);
 
       sctx->streamout.prims_gen_query_enabled = sctx->streamout.num_prims_gen_queries != 0;
 
-      if (old_strmout_en != si_get_strmout_en(sctx))
+      if (old_strmout_en != si_get_streamout_enable_state(sctx))
          si_mark_atom_dirty(sctx, &sctx->atoms.s.streamout_enable);
 
       if (si_update_ngg(sctx)) {
