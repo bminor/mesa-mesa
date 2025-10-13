@@ -564,7 +564,9 @@ static void r600_bind_vertex_elements(struct pipe_context *ctx, void *state)
 
 	r600_set_cso_state(rctx, &rctx->vertex_fetch_shader, state);
 	if (!prev || (cso && cso->buffer_mask &&
-		      (prev->buffer_mask != cso->buffer_mask || memcmp(cso->strides, prev->strides, util_last_bit(cso->buffer_mask))))) {
+		      (prev->buffer_mask != cso->buffer_mask ||
+		       memcmp(cso->strides, prev->strides,
+			      util_last_bit(cso->buffer_mask) * sizeof(cso->strides[0]))))) {
 		rctx->vertex_buffer_state.dirty_mask |= cso ? cso->buffer_mask : 0;
 		r600_vertex_buffers_dirty(rctx);
 	}
