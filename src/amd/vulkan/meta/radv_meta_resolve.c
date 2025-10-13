@@ -441,15 +441,6 @@ radv_CmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2 *
    radv_resume_conditional_rendering(cmd_buffer);
 }
 
-static void
-radv_cmd_buffer_resolve_rendering_hw(struct radv_cmd_buffer *cmd_buffer, struct radv_image_view *src_iview,
-                                     VkFormat src_format, VkImageLayout src_layout, struct radv_image_view *dst_iview,
-                                     VkFormat dst_format, VkImageLayout dst_layout, const VkImageResolve2 *region)
-{
-   radv_meta_resolve_hardware_image(cmd_buffer, src_iview->image, src_format, src_layout, dst_iview->image, dst_format,
-                                    dst_layout, region);
-}
-
 /**
  * Emit any needed resolves for the current subpass.
  */
@@ -628,20 +619,24 @@ radv_cmd_buffer_resolve_rendering(struct radv_cmd_buffer *cmd_buffer)
 
          switch (resolve_method) {
          case RESOLVE_HW:
-            radv_cmd_buffer_resolve_rendering_hw(cmd_buffer, src_iview, src_format, src_layout, dst_iview, dst_format,
-                                                 dst_layout, &region);
+            radv_meta_resolve_hardware_image(cmd_buffer, src_iview->image, src_format, src_layout, dst_iview->image,
+                                             dst_format, dst_layout, &region);
             break;
          case RESOLVE_COMPUTE:
             radv_decompress_resolve_src(cmd_buffer, src_iview->image, src_layout, &region);
 
-            radv_cmd_buffer_resolve_rendering_cs(cmd_buffer, src_iview, src_format, src_layout, dst_iview, dst_format,
-                                                 dst_layout, &region);
+            radv_meta_resolve_compute_image(cmd_buffer, src_iview->image, src_format, src_layout, dst_iview->image,
+                                            dst_format, dst_layout, &region);
+
+            cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_CS_PARTIAL_FLUSH | RADV_CMD_FLAG_INV_VCACHE |
+                                            radv_src_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                                                                  VK_ACCESS_2_SHADER_WRITE_BIT, 0, NULL, NULL);
             break;
          case RESOLVE_FRAGMENT:
             radv_decompress_resolve_src(cmd_buffer, src_iview->image, src_layout, &region);
 
-            radv_cmd_buffer_resolve_rendering_fs(cmd_buffer, src_iview, src_format, src_layout, dst_iview, dst_format,
-                                                 dst_layout, &region);
+            radv_meta_resolve_fragment_image(cmd_buffer, src_iview->image, src_format, src_layout, dst_iview->image,
+                                             dst_format, dst_layout, &region);
             break;
          default:
             UNREACHABLE("Invalid resolve method");

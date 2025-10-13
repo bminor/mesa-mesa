@@ -536,15 +536,6 @@ radv_meta_resolve_fragment_image(struct radv_cmd_buffer *cmd_buffer, struct radv
 }
 
 void
-radv_cmd_buffer_resolve_rendering_fs(struct radv_cmd_buffer *cmd_buffer, struct radv_image_view *src_iview,
-                                     VkFormat src_format, VkImageLayout src_layout, struct radv_image_view *dst_iview,
-                                     VkFormat dst_format, VkImageLayout dst_layout, const VkImageResolve2 *region)
-{
-   radv_meta_resolve_fragment_image(cmd_buffer, src_iview->image, src_format, src_layout, dst_iview->image, dst_format,
-                                    dst_layout, region);
-}
-
-void
 radv_meta_resolve_depth_stencil_fs(struct radv_cmd_buffer *cmd_buffer, struct radv_image *src_image,
                                    VkFormat src_format, VkImageLayout src_image_layout, struct radv_image *dst_image,
                                    VkFormat dst_format, VkImageLayout dst_image_layout,
