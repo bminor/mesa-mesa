@@ -272,10 +272,7 @@ u_upload_alloc(struct u_upload_mgr *upload,
    /* Emit the return values: */
    *ptr = upload->map + offset;
    *out_offset = offset;
-
-   if (*outbuf != upload->buffer) {
-      *outbuf = upload->buffer;
-   }
+   *outbuf = upload->buffer;
 
    upload->offset = offset + size;
 }
