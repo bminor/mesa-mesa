@@ -664,7 +664,7 @@ uint8_t AluInstr::allowed_src_chan_mask() const
 }
 
 bool
-AluInstr::replace_dest(PRegister new_dest, AluInstr *move_instr)
+AluInstr::replace_dest(PRegister new_dest, UNUSED AluInstr *move_instr)
 {
    if (m_dest->equal_to(*new_dest))
       return false;
