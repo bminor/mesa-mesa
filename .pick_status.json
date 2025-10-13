@@ -1544,7 +1544,7 @@
         "description": "Revert \"intel: Always set Cube Face Enables for all surfaces.\"",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
