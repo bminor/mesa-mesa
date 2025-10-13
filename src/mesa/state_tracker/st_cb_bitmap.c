@@ -209,7 +209,8 @@ setup_render_state(struct gl_context *ctx,
                         CSO_BIT_VIEWPORT |
                         CSO_BIT_STREAM_OUTPUTS |
                         CSO_BIT_VERTEX_ELEMENTS |
-                        CSO_BITS_ALL_SHADERS));
+                        CSO_BIT_MESH_SHADER |
+                        CSO_BITS_VERTEX_PIPE_SHADERS));
 
 
    /* rasterizer state: just scissor */
@@ -226,7 +227,6 @@ setup_render_state(struct gl_context *ctx,
    cso_set_tessctrl_shader_handle(cso, NULL);
    cso_set_tesseval_shader_handle(cso, NULL);
    cso_set_geometry_shader_handle(cso, NULL);
-   cso_set_task_shader_handle(cso, NULL);
    cso_set_mesh_shader_handle(cso, NULL);
 
    /* user samplers, plus our bitmap sampler */

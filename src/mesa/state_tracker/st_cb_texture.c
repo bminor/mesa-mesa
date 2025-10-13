@@ -1759,7 +1759,8 @@ try_pbo_upload_common(struct gl_context *ctx,
                         CSO_BIT_SAMPLE_MASK |
                         CSO_BIT_MIN_SAMPLES |
                         CSO_BIT_RENDER_CONDITION |
-                        CSO_BITS_ALL_SHADERS));
+                        CSO_BIT_MESH_SHADER |
+                        CSO_BITS_VERTEX_PIPE_SHADERS));
 
    cso_set_sample_mask(cso, ~0);
    cso_set_min_samples(cso, 1);
@@ -2020,7 +2021,8 @@ try_pbo_download(struct st_context *st,
                         CSO_BIT_SAMPLE_MASK |
                         CSO_BIT_MIN_SAMPLES |
                         CSO_BIT_RENDER_CONDITION |
-                        CSO_BITS_ALL_SHADERS));
+                        CSO_BIT_MESH_SHADER |
+                        CSO_BITS_VERTEX_PIPE_SHADERS));
 
    cso_set_sample_mask(cso, ~0);
    cso_set_min_samples(cso, 1);

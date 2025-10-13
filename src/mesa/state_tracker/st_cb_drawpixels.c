@@ -747,7 +747,8 @@ draw_textured_quad(struct gl_context *ctx, GLint x, GLint y, GLfloat z,
                      CSO_BIT_FRAGMENT_SAMPLERS |
                      CSO_BIT_STREAM_OUTPUTS |
                      CSO_BIT_VERTEX_ELEMENTS |
-                     CSO_BITS_ALL_SHADERS);
+                     CSO_BIT_MESH_SHADER |
+                     CSO_BITS_VERTEX_PIPE_SHADERS);
    if (write_stencil) {
       cso_state_mask |= (CSO_BIT_DEPTH_STENCIL_ALPHA |
                          CSO_BIT_BLEND);
@@ -805,7 +806,6 @@ draw_textured_quad(struct gl_context *ctx, GLint x, GLint y, GLfloat z,
    cso_set_tessctrl_shader_handle(cso, NULL);
    cso_set_tesseval_shader_handle(cso, NULL);
    cso_set_geometry_shader_handle(cso, NULL);
-   cso_set_task_shader_handle(cso, NULL);
    cso_set_mesh_shader_handle(cso, NULL);
 
    /* user samplers, plus the drawpix samplers */

@@ -225,7 +225,8 @@ clear_with_quad(struct gl_context *ctx, unsigned clear_buffers)
                         CSO_BIT_STREAM_OUTPUTS |
                         CSO_BIT_VERTEX_ELEMENTS |
                         (st->active_queries ? CSO_BIT_PAUSE_QUERIES : 0) |
-                        CSO_BITS_ALL_SHADERS));
+                        CSO_BIT_MESH_SHADER |
+                        CSO_BITS_VERTEX_PIPE_SHADERS));
 
    /* blend state: RGBA masking */
    {
@@ -296,7 +297,6 @@ clear_with_quad(struct gl_context *ctx, unsigned clear_buffers)
    set_clearcolor_fs(st, (union pipe_color_union*)&ctx->Color.ClearColor);
    cso_set_tessctrl_shader_handle(cso, NULL);
    cso_set_tesseval_shader_handle(cso, NULL);
-   cso_set_task_shader_handle(cso, NULL);
    cso_set_mesh_shader_handle(cso, NULL);
 
    if (num_layers > 1)

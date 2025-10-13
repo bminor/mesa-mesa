@@ -183,13 +183,17 @@ cso_set_render_condition(struct cso_context *cso,
 #define CSO_BIT_TASK_SHADER          0x100000
 #define CSO_BIT_MESH_SHADER          0x200000
 
-#define CSO_BITS_ALL_SHADERS (CSO_BIT_VERTEX_SHADER | \
-                              CSO_BIT_FRAGMENT_SHADER | \
-                              CSO_BIT_GEOMETRY_SHADER | \
-                              CSO_BIT_TESSCTRL_SHADER | \
-                              CSO_BIT_TESSEVAL_SHADER | \
-                              CSO_BIT_TASK_SHADER | \
-                              CSO_BIT_MESH_SHADER)
+#define CSO_BITS_VERTEX_PIPE_SHADERS \
+   (CSO_BIT_VERTEX_SHADER | \
+    CSO_BIT_FRAGMENT_SHADER | \
+    CSO_BIT_GEOMETRY_SHADER | \
+    CSO_BIT_TESSCTRL_SHADER | \
+    CSO_BIT_TESSEVAL_SHADER)
+
+#define CSO_BITS_MESH_PIPE_SHADERS \
+   (CSO_BIT_TASK_SHADER | \
+    CSO_BIT_MESH_SHADER | \
+    CSO_BIT_FRAGMENT_SHADER)
 
 #define CSO_BIT_COMPUTE_SHADER   (1<<0)
 #define CSO_BIT_COMPUTE_SAMPLERS (1<<1)

@@ -524,7 +524,8 @@ hud_draw_results(struct hud_context *hud, struct pipe_resource *tex)
                         CSO_BIT_RASTERIZER |
                         CSO_BIT_VIEWPORT |
                         CSO_BIT_STREAM_OUTPUTS |
-                        CSO_BITS_ALL_SHADERS |
+                        CSO_BIT_MESH_SHADER |
+                        CSO_BITS_VERTEX_PIPE_SHADERS |
                         CSO_BIT_VERTEX_ELEMENTS |
                         CSO_BIT_PAUSE_QUERIES |
                         CSO_BIT_RENDER_CONDITION));
@@ -572,7 +573,6 @@ hud_draw_results(struct hud_context *hud, struct pipe_resource *tex)
    cso_set_tessctrl_shader_handle(cso, NULL);
    cso_set_tesseval_shader_handle(cso, NULL);
    cso_set_geometry_shader_handle(cso, NULL);
-   cso_set_task_shader_handle(cso, NULL);
    cso_set_mesh_shader_handle(cso, NULL);
    cso_set_vertex_shader_handle(cso, hud->vs_color);
    cso_set_vertex_elements(cso, &hud->velems);
