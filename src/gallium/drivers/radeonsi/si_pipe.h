@@ -1896,7 +1896,32 @@ static inline struct si_shader_ctx_state *si_get_vs(struct si_context *sctx)
 
 static inline bool si_get_streamout_enable_state(struct si_context *sctx)
 {
-   return sctx->streamout.streamout_enabled || sctx->streamout.prims_gen_query_enabled;
+   /* For GFX11, return whether NGG streamout queries are enabled. For older gens, return whether
+    * streamout hw is enabled.
+    *
+    * Note that when both PRIMITIVES_GENERATED and SO_OVERFLOW queries are enabled and XFB is
+    * disabled, SO_OVERFLOW queries will incorrectly return true because PRIMITIVES_GENERATED
+    * is incremented and PRIMITIVES_EMITTED is not. The problem is that SO_OVERFLOW queries
+    * are implemented by comparing PRIMITIVES_GENERATED and PRIMITIVES_EMITTED, however, when
+    * XFB is disabled, SO_OVERFLOW queries should increment neither PRIMITIVES_GENERATED nor
+    * PRIMITIVES_EMITTED, but when a separate PRIMITIVES_GENERATED is active, we should increment
+    * it. So the 2 queries are in conflict when XFB is disabled.
+    *
+    * Possible solutions:
+    * - For NGG: Emulate SO_OVERFLOW queries using memory stores separately from PRIMITIVES_GENERATED.
+    * - For legacy: Emulate SO_OVERFLOW queries using memory stores, same as NGG.
+    */
+   if (sctx->gfx_level >= GFX11) {
+      /* Enable NGG streamout queries when PRIMITIVES_GENERATED queries are active or when
+       * streamout is enabled and any streamout queries except PRIMITIVES_GENERATED are active.
+       */
+      return sctx->streamout.prims_gen_query_enabled ||
+            (sctx->streamout.streamout_enabled &&
+              (sctx->streamout.num_ngg_queries -
+               sctx->streamout.prims_gen_query_enabled > 0));
+   } else {
+      return sctx->streamout.streamout_enabled || sctx->streamout.prims_gen_query_enabled;
+   }
 }
 
 static inline unsigned si_optimal_tcc_alignment(struct si_context *sctx, unsigned upload_size)

@@ -109,7 +109,6 @@ success:
    sbuf.buffer_offset = qbuf->head;
    sbuf.buffer_size = sizeof(struct gfx11_sh_query_buffer_mem);
    si_set_internal_shader_buffer(sctx, SI_GS_QUERY_BUF, &sbuf);
-   SET_FIELD(sctx->current_gs_state, GS_STATE_STREAMOUT_QUERY_ENABLED, 1);
 
    si_mark_atom_dirty(sctx, &sctx->atoms.s.shader_query);
    return true;
@@ -135,8 +134,14 @@ static bool gfx11_sh_query_begin(struct si_context *sctx, struct si_query *rquer
    query->first = list_last_entry(&sctx->shader_query_buffers, struct gfx11_sh_query_buffer, list);
    query->first_begin = query->first->head;
 
-   sctx->streamout.num_ngg_queries++;
    query->first->refcount++;
+   si_update_prims_generated_query_state(sctx, query->b.type, 1);
+
+   /* Update num_ngg_streamout_queries. */
+   bool old_streamout_query_enable_state = si_get_streamout_enable_state(sctx);
+   sctx->streamout.num_ngg_queries++;
+   if (old_streamout_query_enable_state != si_get_streamout_enable_state(sctx))
+      si_mark_atom_dirty(sctx, &sctx->atoms.s.streamout_enable);
 
    return true;
 }
@@ -161,11 +166,16 @@ static bool gfx11_sh_query_end(struct si_context *sctx, struct si_query *rquery)
                         0xffffffff, PIPE_QUERY_GPU_FINISHED);
    }
 
+   si_update_prims_generated_query_state(sctx, query->b.type, -1);
+
+   /* Update num_ngg_streamout_queries. */
+   bool old_streamout_query_enable_state = si_get_streamout_enable_state(sctx);
    sctx->streamout.num_ngg_queries--;
+   if (old_streamout_query_enable_state != si_get_streamout_enable_state(sctx))
+      si_mark_atom_dirty(sctx, &sctx->atoms.s.streamout_enable);
 
    if (sctx->streamout.num_ngg_queries <= 0 || !si_is_atom_dirty(sctx, &sctx->atoms.s.shader_query)) {
       si_set_internal_shader_buffer(sctx, SI_GS_QUERY_BUF, NULL);
-      SET_FIELD(sctx->current_gs_state, GS_STATE_STREAMOUT_QUERY_ENABLED, 0);
 
       /* If a query_begin is followed by a query_end without a draw
        * in-between, we need to clear the atom to ensure that the

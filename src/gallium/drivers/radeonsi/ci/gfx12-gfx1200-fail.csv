@@ -30,10 +30,6 @@ spec@glsl-es-1.00@linker@glsl-mismatched-uniform-precision-unused,Fail
 ## Fail because GFX10+ removed MS texture support (see si_get_sparse_texture_virtual_page_size)
 KHR-GL46.sparse_texture2_tests.SparseTexture2Allocation,Fail
 KHR-GL46.sparse_texture2_tests.SparseTexture2Commitment,Fail
-## https://gitlab.freedesktop.org/mesa/mesa/-/issues/636
-KHR-GL46.transform_feedback_overflow_query_ARB.advanced-single-stream-interleaved-attribs,Fail
-KHR-GL46.transform_feedback_overflow_query_ARB.advanced-single-stream-separate-attribs,Fail
-KHR-GL46.transform_feedback_overflow_query_ARB.multiple-streams-multiple-buffers-per-stream,Fail
 KHR-GL46.transform_feedback_overflow_query_ARB.multiple-streams-one-buffer-per-stream,Fail
 
 # See Khronos issue 5587: the test expects one-dimensional (array) texture to work while
