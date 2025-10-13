@@ -2207,25 +2207,30 @@ emit_alu_op2_64bit(const nir_alu_instr& alu, EAluOp opcode, Shader& shader)
    for (unsigned k = 0; k < alu.def.num_components; ++k) {
       int i = 0;
       for (; i < num_emit0; ++i) {
-         auto dest = i < 2 ? value_factory.dest(alu.def, i, pin_chan)
-                           : value_factory.dummy_dest(i);
-
-         ir = new AluInstr(opcode,
-                           dest,
-                           tmp[2 * k + 1][0],
-                           tmp[2 * k + 1][1],
-                           i < 2 ? AluInstr::write : AluInstr::empty);
+         if (i < 2) {
+            ir = new AluInstr(opcode,
+                              value_factory.dest(alu.def, i, pin_chan),
+                              tmp[2 * k + 1][0],
+                              tmp[2 * k + 1][1],
+                              AluInstr::write);
+         } else {
+            ir = new AluInstr(opcode,
+                              i,
+                              {tmp[2 * k + 1][0], tmp[2 * k + 1][1]},
+                              AluInstr::empty);
+         }
          group->add_instruction(ir);
       }
 
-      auto dest =
-         i == 1 ? value_factory.dest(alu.def, i, pin_chan) : value_factory.dummy_dest(i);
+      if (i == 1)
+         ir = new AluInstr(opcode,
+                           value_factory.dest(alu.def, i, pin_chan),
+                           tmp[2 * k][0],
+                           tmp[2 * k][1],
+                           AluInstr::write);
+      else
+         ir = new AluInstr(opcode, i, {tmp[2 * k][0], tmp[2 * k][1]}, AluInstr::empty);
 
-      ir = new AluInstr(opcode,
-                        dest,
-                        tmp[2 * k][0],
-                        tmp[2 * k][1],
-                        i == 1 ? AluInstr::write : AluInstr::empty);
       group->add_instruction(ir);
    }
 
@@ -2275,18 +2280,26 @@ emit_alu_op1_64bit_trans(const nir_alu_instr& alu, EAluOp opcode, Shader& shader
    auto& value_factory = shader.value_factory();
    auto group = new AluGroup();
    AluInstr *ir = nullptr;
-   for (unsigned i = 0; i < 3; ++i) {
+   for (unsigned i = 0; i < 2; ++i) {
       ir = new AluInstr(opcode,
-                        i < 2 ? value_factory.dest(alu.def, i, pin_chan)
-                              : value_factory.dummy_dest(i),
+                        value_factory.dest(alu.def, i, pin_chan),
                         value_factory.src64(alu.src[0], 0, 1),
                         value_factory.src64(alu.src[0], 0, 0),
-                        i < 2 ? AluInstr::write : AluInstr::empty);
-
+                        AluInstr::write);
       if (opcode == op1_sqrt_64)
          ir->set_source_mod(0, AluInstr::mod_abs);
       group->add_instruction(ir);
    }
+
+   ir = new AluInstr(opcode,
+                     2,
+                     {value_factory.src64(alu.src[0], 0, 1),
+                      value_factory.src64(alu.src[0], 0, 0)},
+                     AluInstr::empty);
+   if (opcode == op1_sqrt_64)
+      ir->set_source_mod(0, AluInstr::mod_abs);
+   group->add_instruction(ir);
+
    shader.emit_instruction(group);
    return true;
 }
