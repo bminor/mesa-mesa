@@ -6114,7 +6114,7 @@
         "description": "tu: Synchronize access to copy_timestamp_cs_pool",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6e5944ec4b5e1872b3fc5c03c362f42728d41ea3",
         "notes": null
@@ -15384,7 +15384,7 @@
         "description": "tu: Destroy all mutexes used for device",
         "nominated": false,
         "nomination_type": 0,
-        "resolution": 1,
+        "resolution": 4,
         "main_sha": null,
         "because_sha": null,
         "notes": null
