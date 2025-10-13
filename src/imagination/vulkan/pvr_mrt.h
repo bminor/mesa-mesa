@@ -168,4 +168,13 @@ CHECK_MASK_SIZE(pvr_load_op,
 
 #undef CHECK_MASK_SIZE
 
+struct pvr_load_op_state {
+   uint32_t load_op_count;
+
+   /* Load op array indexed by HW render view (not by the index in the view
+    * mask).
+    */
+   struct pvr_load_op *load_ops;
+};
+
 #endif
