@@ -486,10 +486,10 @@ panfrost_batch_to_fb_info(const struct panfrost_batch *batch,
    fb->z_tile_buf_budget = dev->optimal_z_tib_size;
    fb->width = batch->key.width;
    fb->height = batch->key.height;
-   fb->extent.minx = batch->minx;
-   fb->extent.miny = batch->miny;
-   fb->extent.maxx = batch->maxx - 1;
-   fb->extent.maxy = batch->maxy - 1;
+   fb->draw_extent.minx = batch->minx;
+   fb->draw_extent.miny = batch->miny;
+   fb->draw_extent.maxx = batch->maxx - 1;
+   fb->draw_extent.maxy = batch->maxy - 1;
    fb->nr_samples = util_framebuffer_get_num_samples(&batch->key);
    fb->force_samples = (batch->line_smoothing == U_TRISTATE_YES) ? 16 : 0;
    fb->rt_count = batch->key.nr_cbufs;
@@ -526,12 +526,16 @@ panfrost_batch_to_fb_info(const struct panfrost_batch *batch,
        * the damage region is "undefined behavior", so we should be safe.
        */
       if (!fb->rts[i].discard) {
-         fb->extent.minx = MAX2(fb->extent.minx, prsrc->damage.extent.minx);
-         fb->extent.miny = MAX2(fb->extent.miny, prsrc->damage.extent.miny);
-         fb->extent.maxx = MIN2(fb->extent.maxx, prsrc->damage.extent.maxx - 1);
-         fb->extent.maxy = MIN2(fb->extent.maxy, prsrc->damage.extent.maxy - 1);
-         assert(fb->extent.minx <= fb->extent.maxx);
-         assert(fb->extent.miny <= fb->extent.maxy);
+         fb->draw_extent.minx =
+            MAX2(fb->draw_extent.minx, prsrc->damage.extent.minx);
+         fb->draw_extent.miny =
+            MAX2(fb->draw_extent.miny, prsrc->damage.extent.miny);
+         fb->draw_extent.maxx =
+            MIN2(fb->draw_extent.maxx, prsrc->damage.extent.maxx - 1);
+         fb->draw_extent.maxy =
+            MIN2(fb->draw_extent.maxy, prsrc->damage.extent.maxy - 1);
+         assert(fb->draw_extent.minx <= fb->draw_extent.maxx);
+         assert(fb->draw_extent.miny <= fb->draw_extent.maxy);
       }
 
       rts[i].format = surf->format;

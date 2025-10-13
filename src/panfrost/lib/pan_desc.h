@@ -131,10 +131,11 @@ struct pan_fb_bifrost_info {
 
 struct pan_fb_info {
    unsigned width, height;
+   /* Draw-extent controlled by viewports/scissors. */
    struct {
-      /* Max values are inclusive */
+      /* Max values are exclusive */
       unsigned minx, miny, maxx, maxy;
-   } extent;
+   } draw_extent;
    unsigned nr_samples;
    unsigned force_samples; /* samples used for rasterization */
    unsigned rt_count;

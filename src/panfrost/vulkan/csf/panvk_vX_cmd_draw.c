@@ -3075,9 +3075,9 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
    /* Now initialize the fragment bits. */
    cs_update_frag_ctx(b) {
       cs_move32_to(b, cs_sr_reg32(b, FRAGMENT, BBOX_MIN),
-                   (fbinfo->extent.miny << 16) | fbinfo->extent.minx);
+                   (fbinfo->draw_extent.miny << 16) | fbinfo->draw_extent.minx);
       cs_move32_to(b, cs_sr_reg32(b, FRAGMENT, BBOX_MAX),
-                   (fbinfo->extent.maxy << 16) | fbinfo->extent.maxx);
+                   (fbinfo->draw_extent.maxy << 16) | fbinfo->draw_extent.maxx);
    }
 
    bool simul_use =

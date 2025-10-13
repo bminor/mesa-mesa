@@ -382,10 +382,10 @@ cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
    uint16_t minx = 0, miny = 0, maxx, maxy;
  
    /* Align on 32x32 tiles */
-   minx = fbinfo->extent.minx & ~31;
-   miny = fbinfo->extent.miny & ~31;
-   maxx = MIN2(ALIGN_POT(fbinfo->extent.maxx + 1, 32), fbinfo->width) - 1;
-   maxy = MIN2(ALIGN_POT(fbinfo->extent.maxy + 1, 32), fbinfo->height) - 1;
+   minx = fbinfo->draw_extent.minx & ~31;
+   miny = fbinfo->draw_extent.miny & ~31;
+   maxx = MIN2(ALIGN_POT(fbinfo->draw_extent.maxx + 1, 32), fbinfo->width) - 1;
+   maxy = MIN2(ALIGN_POT(fbinfo->draw_extent.maxy + 1, 32), fbinfo->height) - 1;
 
    struct pan_ptr vpd = panvk_cmd_alloc_desc(cmdbuf, VIEWPORT);
    if (!vpd.cpu)
@@ -486,9 +486,9 @@ cmd_emit_dcd(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
        * screen rectangle will always intersect, this won't affect
        * performance.
        */
-      bool always = !fbinfo->extent.minx && !fbinfo->extent.miny &&
-                    fbinfo->extent.maxx == (fbinfo->width - 1) &&
-                    fbinfo->extent.maxy == (fbinfo->height - 1);
+      bool always = !fbinfo->draw_extent.minx && !fbinfo->draw_extent.miny &&
+                    fbinfo->draw_extent.maxx == (fbinfo->width - 1) &&
+                    fbinfo->draw_extent.maxy == (fbinfo->height - 1);
 
       /* If we're dealing with a combined ZS resource and only one
        * component is cleared, we need to reload the whole surface

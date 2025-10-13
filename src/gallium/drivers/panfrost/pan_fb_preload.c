@@ -1073,10 +1073,10 @@ pan_preload_emit_dcd(struct pan_fb_preload_cache *cache, struct pan_pool *pool,
          maxy = fb->height - 1;
       } else {
          /* Align on 32x32 tiles */
-         minx = fb->extent.minx & ~31;
-         miny = fb->extent.miny & ~31;
-         maxx = MIN2(ALIGN_POT(fb->extent.maxx + 1, 32), fb->width) - 1;
-         maxy = MIN2(ALIGN_POT(fb->extent.maxy + 1, 32), fb->height) - 1;
+         minx = fb->draw_extent.minx & ~31;
+         miny = fb->draw_extent.miny & ~31;
+         maxx = MIN2(ALIGN_POT(fb->draw_extent.maxx + 1, 32), fb->width) - 1;
+         maxy = MIN2(ALIGN_POT(fb->draw_extent.maxy + 1, 32), fb->height) - 1;
       }
 
       cfg.thread_storage = tsd;
@@ -1221,9 +1221,9 @@ pan_preload_emit_pre_frame_dcd(struct pan_fb_preload_cache *cache,
     * write even clean tiles to make sure CRC data is updated. */
    if (crc_rt >= 0) {
       bool *valid = fb->rts[crc_rt].crc_valid;
-      bool full = !fb->extent.minx && !fb->extent.miny &&
-                  fb->extent.maxx == (fb->width - 1) &&
-                  fb->extent.maxy == (fb->height - 1);
+      bool full = !fb->draw_extent.minx && !fb->draw_extent.miny &&
+                  fb->draw_extent.maxx == (fb->width - 1) &&
+                  fb->draw_extent.maxy == (fb->height - 1);
 
       if (full && !(*valid))
          always_write = true;
@@ -1241,9 +1241,9 @@ pan_preload_emit_pre_frame_dcd(struct pan_fb_preload_cache *cache,
        * performance. The UNUSED tag is because some PAN_ARCH variants do not
        * need this test.
        */
-      UNUSED bool always = !fb->extent.minx && !fb->extent.miny &&
-                           fb->extent.maxx == (fb->width - 1) &&
-                           fb->extent.maxy == (fb->height - 1);
+      UNUSED bool always = !fb->draw_extent.minx && !fb->draw_extent.miny &&
+                           fb->draw_extent.maxx == (fb->width - 1) &&
+                           fb->draw_extent.maxy == (fb->height - 1);
 
       /* If we're dealing with a combined ZS resource and only one
        * component is cleared, we need to reload the whole surface

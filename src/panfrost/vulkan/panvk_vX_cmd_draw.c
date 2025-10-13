@@ -336,19 +336,19 @@ panvk_per_arch(cmd_init_render_state)(struct panvk_cmd_buffer *cmdbuf,
       }
    }
 
-   fbinfo->extent.minx = pRenderingInfo->renderArea.offset.x;
-   fbinfo->extent.maxx = pRenderingInfo->renderArea.offset.x +
-                         pRenderingInfo->renderArea.extent.width - 1;
-   fbinfo->extent.miny = pRenderingInfo->renderArea.offset.y;
-   fbinfo->extent.maxy = pRenderingInfo->renderArea.offset.y +
-                         pRenderingInfo->renderArea.extent.height - 1;
+   fbinfo->draw_extent.minx = pRenderingInfo->renderArea.offset.x;
+   fbinfo->draw_extent.maxx = pRenderingInfo->renderArea.offset.x +
+                              pRenderingInfo->renderArea.extent.width - 1;
+   fbinfo->draw_extent.miny = pRenderingInfo->renderArea.offset.y;
+   fbinfo->draw_extent.maxy = pRenderingInfo->renderArea.offset.y +
+                              pRenderingInfo->renderArea.extent.height - 1;
 
    if (state->render.bound_attachments) {
       fbinfo->width = att_width;
       fbinfo->height = att_height;
    } else {
-      fbinfo->width = fbinfo->extent.maxx + 1;
-      fbinfo->height = fbinfo->extent.maxy + 1;
+      fbinfo->width = fbinfo->draw_extent.maxx + 1;
+      fbinfo->height = fbinfo->draw_extent.maxy + 1;
    }
 
    assert(fbinfo->width && fbinfo->height);
@@ -467,10 +467,12 @@ panvk_per_arch(cmd_resolve_attachments)(struct panvk_cmd_buffer *cmdbuf)
       .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
       .renderArea =
          {
-            .offset.x = fbinfo->extent.minx,
-            .offset.y = fbinfo->extent.miny,
-            .extent.width = fbinfo->extent.maxx - fbinfo->extent.minx + 1,
-            .extent.height = fbinfo->extent.maxy - fbinfo->extent.miny + 1,
+            .offset.x = fbinfo->draw_extent.minx,
+            .offset.y = fbinfo->draw_extent.miny,
+            .extent.width =
+               fbinfo->draw_extent.maxx - fbinfo->draw_extent.minx + 1,
+            .extent.height =
+               fbinfo->draw_extent.maxy - fbinfo->draw_extent.miny + 1,
          },
       .layerCount = cmdbuf->state.gfx.render.layer_count,
       .viewMask = cmdbuf->state.gfx.render.view_mask,
@@ -610,11 +612,12 @@ panvk_per_arch(cmd_preload_render_area_border)(
    struct pan_fb_info *fbinfo = &state->render.fb.info;
 
    bool render_area_is_aligned =
-      ((fbinfo->extent.minx | fbinfo->extent.miny) % meta_tile_size) == 0 &&
-      (fbinfo->extent.maxx + 1 == fbinfo->width ||
-       (fbinfo->extent.maxx % meta_tile_size) == (meta_tile_size - 1)) &&
-      (fbinfo->extent.maxy + 1 == fbinfo->height ||
-       (fbinfo->extent.maxy % meta_tile_size) == (meta_tile_size - 1));
+      ((fbinfo->draw_extent.minx | fbinfo->draw_extent.miny) %
+       meta_tile_size) == 0 &&
+      (fbinfo->draw_extent.maxx + 1 == fbinfo->width ||
+       (fbinfo->draw_extent.maxx % meta_tile_size) == (meta_tile_size - 1)) &&
+      (fbinfo->draw_extent.maxy + 1 == fbinfo->height ||
+       (fbinfo->draw_extent.maxy % meta_tile_size) == (meta_tile_size - 1));
 
    /* If the render area is aligned on the meta tile size, we're good. */
    if (!render_area_is_aligned)
