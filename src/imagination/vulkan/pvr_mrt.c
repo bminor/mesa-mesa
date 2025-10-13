@@ -8,6 +8,7 @@
 
 #include "vk_log.h"
 
+#include "pvr_csb.h"
 #include "pvr_device.h"
 #include "pvr_formats.h"
 #include "pvr_physical_device.h"
@@ -234,4 +235,181 @@ pvr_destroy_mrt_setup(const struct pvr_device *device,
       return;
 
    vk_free(&device->vk.alloc, setup->mrt_resources);
+}
+
+VkResult pvr_pds_unitex_state_program_create_and_upload(
+   struct pvr_device *device,
+   const VkAllocationCallbacks *allocator,
+   uint32_t texture_kicks,
+   uint32_t uniform_kicks,
+   struct pvr_pds_upload *const pds_upload_out)
+{
+   struct pvr_pds_pixel_shader_sa_program program = {
+      .num_texture_dma_kicks = texture_kicks,
+      .num_uniform_dma_kicks = uniform_kicks,
+   };
+   uint32_t staging_buffer_size;
+   uint32_t *staging_buffer;
+   VkResult result;
+
+   pvr_pds_set_sizes_pixel_shader_uniform_texture_code(&program);
+
+   staging_buffer_size = PVR_DW_TO_BYTES(program.code_size);
+
+   staging_buffer = vk_alloc2(&device->vk.alloc,
+                              allocator,
+                              staging_buffer_size,
+                              8U,
+                              VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+   if (!staging_buffer)
+      return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+
+   pvr_pds_generate_pixel_shader_sa_code_segment(&program, staging_buffer);
+
+   /* FIXME: Figure out the define for alignment of 16. */
+   result = pvr_gpu_upload_pds(device,
+                               NULL,
+                               0U,
+                               0U,
+                               staging_buffer,
+                               program.code_size,
+                               16U,
+                               16U,
+                               pds_upload_out);
+   if (result != VK_SUCCESS) {
+      vk_free2(&device->vk.alloc, allocator, staging_buffer);
+      return result;
+   }
+
+   vk_free2(&device->vk.alloc, allocator, staging_buffer);
+
+   return VK_SUCCESS;
+}
+
+static VkResult pvr_pds_fragment_program_create_and_upload(
+   struct pvr_device *device,
+   const VkAllocationCallbacks *allocator,
+   pco_shader *fs,
+   struct pvr_suballoc_bo *shader_bo,
+   struct pvr_pds_upload *pds_frag_prog,
+   bool msaa)
+{
+   struct pvr_pds_kickusc_program program = { 0 };
+   pco_data *fs_data = pco_shader_data(fs);
+   uint32_t staging_buffer_size;
+   uint32_t *staging_buffer;
+   VkResult result;
+
+   const pvr_dev_addr_t exec_addr =
+      PVR_DEV_ADDR_OFFSET(shader_bo->dev_addr, fs_data->common.entry_offset);
+
+   /* Note this is not strictly required to be done before calculating the
+    * staging_buffer_size in this particular case. It can also be done after
+    * allocating the buffer. The size from pvr_pds_kick_usc() is constant.
+    */
+   pvr_pds_setup_doutu(&program.usc_task_control,
+                       exec_addr.addr,
+                       fs_data->common.temps,
+                       msaa ? ROGUE_PDSINST_DOUTU_SAMPLE_RATE_FULL
+                            : ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE,
+                       fs_data->fs.uses.phase_change);
+
+   pvr_pds_kick_usc(&program, NULL, 0, false, PDS_GENERATE_SIZES);
+
+   staging_buffer_size = PVR_DW_TO_BYTES(program.code_size + program.data_size);
+
+   staging_buffer = vk_alloc2(&device->vk.alloc,
+                              allocator,
+                              staging_buffer_size,
+                              8,
+                              VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+   if (!staging_buffer)
+      return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+
+   pvr_pds_kick_usc(&program,
+                    staging_buffer,
+                    0,
+                    false,
+                    PDS_GENERATE_CODEDATA_SEGMENTS);
+
+   /* FIXME: Figure out the define for alignment of 16. */
+   result = pvr_gpu_upload_pds(device,
+                               &staging_buffer[0],
+                               program.data_size,
+                               16,
+                               &staging_buffer[program.data_size],
+                               program.code_size,
+                               16,
+                               16,
+                               pds_frag_prog);
+   if (result != VK_SUCCESS) {
+      vk_free2(&device->vk.alloc, allocator, staging_buffer);
+      return result;
+   }
+
+   vk_free2(&device->vk.alloc, allocator, staging_buffer);
+
+   return VK_SUCCESS;
+}
+
+VkResult
+pvr_load_op_shader_generate(struct pvr_device *device,
+                            const VkAllocationCallbacks *allocator,
+                            struct pvr_load_op *load_op)
+{
+   const struct pvr_device_info *dev_info = &device->pdevice->dev_info;
+   const uint32_t cache_line_size = pvr_get_slc_cache_line_size(dev_info);
+
+   pco_shader *loadop = pvr_uscgen_loadop(device->pdevice->pco_ctx, load_op);
+
+   VkResult result = pvr_gpu_upload_usc(device,
+                                        pco_shader_binary_data(loadop),
+                                        pco_shader_binary_size(loadop),
+                                        cache_line_size,
+                                        &load_op->usc_frag_prog_bo);
+
+   if (result != VK_SUCCESS) {
+      ralloc_free(loadop);
+      return result;
+   }
+
+   const bool msaa = load_op->clears_loads_state.unresolved_msaa_mask &
+                     load_op->clears_loads_state.rt_load_mask;
+
+   result =
+      pvr_pds_fragment_program_create_and_upload(device,
+                                                 allocator,
+                                                 loadop,
+                                                 load_op->usc_frag_prog_bo,
+                                                 &load_op->pds_frag_prog,
+                                                 msaa);
+
+   load_op->temps_count = pco_shader_data(loadop)->common.temps;
+   ralloc_free(loadop);
+
+   if (result != VK_SUCCESS)
+      goto err_free_usc_frag_prog_bo;
+
+   /* Manually hard coding `texture_kicks` to 1 since we'll pack everything into
+    * one buffer to be DMAed. See `pvr_load_op_data_create_and_upload()`, where
+    * we upload the buffer and upload the code section.
+    */
+   result = pvr_pds_unitex_state_program_create_and_upload(
+      device,
+      allocator,
+      1U,
+      0U,
+      &load_op->pds_tex_state_prog);
+   if (result != VK_SUCCESS)
+      goto err_free_pds_frag_prog;
+
+   return VK_SUCCESS;
+
+err_free_pds_frag_prog:
+   pvr_bo_suballoc_free(load_op->pds_frag_prog.pvr_bo);
+
+err_free_usc_frag_prog_bo:
+   pvr_bo_suballoc_free(load_op->usc_frag_prog_bo);
+
+   return result;
 }

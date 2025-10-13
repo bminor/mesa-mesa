@@ -122,11 +122,4 @@ VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_render_pass,
                                VkRenderPass,
                                VK_OBJECT_TYPE_RENDER_PASS)
 
-VkResult pvr_pds_unitex_state_program_create_and_upload(
-   struct pvr_device *device,
-   const VkAllocationCallbacks *allocator,
-   uint32_t texture_kicks,
-   uint32_t uniform_kicks,
-   struct pvr_pds_upload *const pds_upload_out);
-
 #endif /* PVR_PASS */

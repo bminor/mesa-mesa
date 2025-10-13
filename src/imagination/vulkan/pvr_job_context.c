@@ -36,6 +36,7 @@
 #include "pvr_device.h"
 #include "pvr_job_context.h"
 #include "pvr_macros.h"
+#include "pvr_mrt.h"
 #include "pvr_pass.h"
 #include "pvr_pds.h"
 #include "pvr_physical_device.h"

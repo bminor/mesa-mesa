@@ -168,6 +168,18 @@ CHECK_MASK_SIZE(pvr_load_op,
 
 #undef CHECK_MASK_SIZE
 
+VkResult pvr_pds_unitex_state_program_create_and_upload(
+   struct pvr_device *device,
+   const VkAllocationCallbacks *allocator,
+   uint32_t texture_kicks,
+   uint32_t uniform_kicks,
+   struct pvr_pds_upload *const pds_upload_out);
+
+VkResult pvr_load_op_shader_generate(
+   struct pvr_device *device,
+   const VkAllocationCallbacks *allocator,
+   struct pvr_load_op *load_op);
+
 struct pvr_load_op_state {
    uint32_t load_op_count;
 
