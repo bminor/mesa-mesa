@@ -115,7 +115,7 @@ static const struct pvr_device_info pvr_device_info_4_46_6_62 = {
       .n = 6,
       .c = 62,
    },
-   .features = pvr_device_features_4_V_2_58,
+   .features = pvr_device_features_4_V_6_62,
    .enhancements = pvr_device_enhancements_4_46_6_62,
    .quirks = pvr_device_quirks_4_46_6_62,
 };
