@@ -961,6 +961,13 @@ panvk_compile_nir(struct panvk_device *dev, nir_shader *nir,
    const bool dump_asm =
       shader_flags & VK_SHADER_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_MESA;
 
+   /* Allow the remaining FAU space to be filled with constants. */
+   compile_input->fau_consts.max_amount =
+      2 * (FAU_WORD_COUNT - shader->fau.total_count);
+   compile_input->fau_consts.offset = shader->fau.total_count * 2;
+   compile_input->fau_consts.values = &shader->info.fau_consts[0];
+   assert(compile_input->fau_consts.max_amount <= ARRAY_SIZE(shader->info.fau_consts));
+
    struct util_dynarray binary = UTIL_DYNARRAY_INIT;
    pan_shader_compile(nir, compile_input, &binary, &shader->info);
 
@@ -1010,6 +1017,11 @@ panvk_compile_nir(struct panvk_device *dev, nir_shader *nir,
 
       shader->asm_str = asm_str;
    }
+
+   /* We need to update info.push.count because it's used to initialize the
+    * RSD in pan_shader_prepare_rsd().
+    */
+   shader->info.push.count = shader->fau.total_count * 2;
 
 #if PAN_ARCH < 9
    /* Patch the descriptor count */
@@ -1350,22 +1362,10 @@ panvk_compile_shader(struct panvk_device *dev,
                          noperspective_varyings, state, &input_variants[v],
                          variant);
 
-         /* Allow the remaining FAU space to be filled with constants. */
-         input_variants[v].fau_consts.max_amount =
-            2 * (FAU_WORD_COUNT - variant->fau.total_count);
-         input_variants[v].fau_consts.offset = variant->fau.total_count * 2;
-         input_variants[v].fau_consts.values = &variant->info.fau_consts[0];
-         assert(input_variants[v].fau_consts.max_amount <= ARRAY_SIZE(variant->info.fau_consts));
-
          variant->own_bin = true;
 
          result = panvk_compile_nir(dev, nir_variants[v], info->flags,
                                     &input_variants[v], variant);
-
-         /* We need to update info.push.count because it's used to initialize the
-         * RSD in pan_shader_prepare_rsd(). */
-         variant->info.push.count = variant->fau.total_count * 2;
-
          if (result != VK_SUCCESS) {
             panvk_shader_destroy(&dev->vk, &shader->vk, pAllocator);
             return result;
@@ -1393,18 +1393,7 @@ panvk_compile_shader(struct panvk_device *dev,
          inputs.valhall.use_ld_var_buf = panvk_use_ld_var_buf(variant);
 #endif
 
-      /* Allow the remaining FAU space to be filled with constants. */
-      inputs.fau_consts.max_amount = 2 * (FAU_WORD_COUNT - variant->fau.total_count);
-      inputs.fau_consts.offset = variant->fau.total_count * 2;
-      inputs.fau_consts.values = &variant->info.fau_consts[0];
-      assert(inputs.fau_consts.max_amount <= ARRAY_SIZE(variant->info.fau_consts));
-
       result = panvk_compile_nir(dev, nir, info->flags, &inputs, variant);
-
-      /* We need to update info.push.count because it's used to initialize the
-      * RSD in pan_shader_prepare_rsd(). */
-      variant->info.push.count = variant->fau.total_count * 2;
-
       if (result != VK_SUCCESS) {
          panvk_shader_destroy(&dev->vk, &shader->vk, pAllocator);
          return result;
