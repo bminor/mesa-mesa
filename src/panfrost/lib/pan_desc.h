@@ -129,13 +129,20 @@ struct pan_fb_bifrost_info {
    } pre_post;
 };
 
+struct pan_bbox {
+   unsigned minx, miny, maxx, maxy;
+};
+
 struct pan_fb_info {
    unsigned width, height;
-   /* Draw-extent controlled by viewports/scissors. */
-   struct {
-      /* Max values are exclusive */
-      unsigned minx, miny, maxx, maxy;
-   } draw_extent;
+   /* Draw-extent controlled by viewports/scissors.
+    * Max values are exclusive */
+   struct pan_bbox draw_extent;
+   /* frame_bounding_box controls the bounding box in the framebuffer
+    * descriptor for the entire pass. This is being controlled by the
+    * renderArea of a renderpass in Vulkan. On GL, this covers the
+    * entire frame. Max values are exclusive. */
+   struct pan_bbox frame_bounding_box;
    unsigned nr_samples;
    unsigned force_samples; /* samples used for rasterization */
    unsigned rt_count;

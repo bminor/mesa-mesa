@@ -1089,9 +1089,10 @@ GENX(pan_emit_fbd)(const struct pan_fb_info *fb, unsigned layer_idx,
 #endif
       cfg.width = fb->width;
       cfg.height = fb->height;
-      cfg.bound_max_x = fb->width - 1;
-      cfg.bound_max_y = fb->height - 1;
-
+      cfg.bound_min_x = fb->frame_bounding_box.minx;
+      cfg.bound_min_y = fb->frame_bounding_box.miny;
+      cfg.bound_max_x = fb->frame_bounding_box.maxx;
+      cfg.bound_max_y = fb->frame_bounding_box.maxy;
       cfg.effective_tile_size = fb->tile_size;
       /* Ensure we cover the samples on the edge for 16x MSAA */
       cfg.tie_break_rule = fb->nr_samples == 16 ?

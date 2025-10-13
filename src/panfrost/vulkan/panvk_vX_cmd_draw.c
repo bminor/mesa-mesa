@@ -343,6 +343,8 @@ panvk_per_arch(cmd_init_render_state)(struct panvk_cmd_buffer *cmdbuf,
    fbinfo->draw_extent.maxy = pRenderingInfo->renderArea.offset.y +
                               pRenderingInfo->renderArea.extent.height - 1;
 
+   fbinfo->frame_bounding_box = fbinfo->draw_extent;
+
    if (state->render.bound_attachments) {
       fbinfo->width = att_width;
       fbinfo->height = att_height;
