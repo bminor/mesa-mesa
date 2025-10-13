@@ -560,42 +560,50 @@ panvk_get_subqueue_stages(enum panvk_subqueue_id subqueue)
    }
 }
 
-static uint32_t
-vk_stage_to_subqueue_mask(VkPipelineStageFlagBits2 vk_stage)
-{
-   assert(util_bitcount64(vk_stage) == 1);
-   /* Handle special stages. */
-   if (vk_stage == VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT)
-      return BITFIELD_BIT(PANVK_SUBQUEUE_VERTEX_TILER) |
-             BITFIELD_BIT(PANVK_SUBQUEUE_COMPUTE);
-   if (vk_stage == VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT)
-      return BITFIELD_BIT(PANVK_SUBQUEUE_FRAGMENT) |
-             BITFIELD_BIT(PANVK_SUBQUEUE_COMPUTE);
-   if (vk_stage == VK_PIPELINE_STAGE_2_HOST_BIT)
-      /* We need to map host to something, so map it to compute to not interfer
-       * with drawing. */
-      return BITFIELD_BIT(PANVK_SUBQUEUE_COMPUTE);
+/* Hint for vk_stages_to_subqueue_mask if stages refer to first or second
+ * synchronization scope
+ */
+enum sync_scope {
+   /* First scope (sometimes called 'source' in Vulkan)
+    * is the first stage(s) of an execution dependency chain.
+    */
+   SYNC_SCOPE_FIRST,
+   /* Second scope (sometimes called 'destination' in Vulkan)
+    * is the second stage(s) of an execution dependency chain.
+    */
+   SYNC_SCOPE_SECOND,
+};
 
+static uint32_t
+vk_stages_to_subqueue_mask(VkPipelineStageFlags2 vk_stages,
+                           enum sync_scope scope)
+{
    /* Handle other compound stages by expanding. */
-   vk_stage = vk_expand_pipeline_stage_flags2(vk_stage);
+   switch (scope) {
+   case SYNC_SCOPE_FIRST:
+      vk_stages = vk_expand_src_stage_flags2(vk_stages);
+      break;
+   case SYNC_SCOPE_SECOND:
+      vk_stages = vk_expand_dst_stage_flags2(vk_stages);
+      break;
+   default:
+      UNREACHABLE("Invalid sync_scope");
+   }
 
    VkPipelineStageFlags2 flags[PANVK_SUBQUEUE_COUNT];
    for (uint32_t sq = 0; sq < PANVK_SUBQUEUE_COUNT; ++sq)
       flags[sq] = panvk_get_subqueue_stages(sq);
 
    uint32_t result = 0;
-
-   if (flags[PANVK_SUBQUEUE_VERTEX_TILER] & vk_stage)
+   if (flags[PANVK_SUBQUEUE_VERTEX_TILER] & vk_stages)
       result |= BITFIELD_BIT(PANVK_SUBQUEUE_VERTEX_TILER);
 
-   if (flags[PANVK_SUBQUEUE_FRAGMENT] & vk_stage)
+   if (flags[PANVK_SUBQUEUE_FRAGMENT] & vk_stages)
       result |= BITFIELD_BIT(PANVK_SUBQUEUE_FRAGMENT);
 
-   if (flags[PANVK_SUBQUEUE_COMPUTE] & vk_stage)
+   if (flags[PANVK_SUBQUEUE_COMPUTE] & vk_stages)
       result |= BITFIELD_BIT(PANVK_SUBQUEUE_COMPUTE);
 
-   /* All stages should map to at least one subqueue. */
-   assert(util_bitcount(result) > 0);
    return result;
 }
 
