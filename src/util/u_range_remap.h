@@ -30,6 +30,8 @@ extern "C" {
 struct range_remap {
    /* Linked list of range remap entries */
    struct list_head r_list;
+
+   void *list_mem_ctx;
 };
 
 struct range_entry {

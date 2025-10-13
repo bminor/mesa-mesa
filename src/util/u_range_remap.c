@@ -95,7 +95,7 @@ util_range_insert_remap(unsigned start, unsigned end,
    struct list_head *r_list = &r_remap->r_list;
    struct list_range_entry *lre = NULL;
    if (list_is_empty(r_list)) {
-      lre = rzalloc(r_list, struct list_range_entry);
+      lre = rzalloc(r_remap->list_mem_ctx, struct list_range_entry);
       list_addtail(&lre->node, r_list);
       goto insert_end;
    }
@@ -104,7 +104,7 @@ util_range_insert_remap(unsigned start, unsigned end,
    struct list_range_entry *last_entry =
       list_last_entry(r_list, struct list_range_entry, node);
    if (last_entry->entry.end < start) {
-      lre = rzalloc(r_list, struct list_range_entry);
+      lre = rzalloc(r_remap->list_mem_ctx, struct list_range_entry);
       list_addtail(&lre->node, r_list);
       goto insert_end;
    }
@@ -125,7 +125,7 @@ util_range_insert_remap(unsigned start, unsigned end,
    while (low <= high) {
       if (end < mid_entry->entry.start) {
          if (low == high || mid == low) {
-            lre = rzalloc(r_list, struct list_range_entry);
+            lre = rzalloc(r_remap->list_mem_ctx, struct list_range_entry);
             list_addtail(&lre->node, &mid_entry->node); /* insert before mid */
             goto insert_end;
          }
@@ -139,7 +139,7 @@ util_range_insert_remap(unsigned start, unsigned end,
          }
       } else if (start > mid_entry->entry.end) {
          if (low == high || mid == high) {
-            lre = rzalloc(r_list, struct list_range_entry);
+            lre = rzalloc(r_remap->list_mem_ctx, struct list_range_entry);
             list_add(&lre->node, &mid_entry->node); /* insert after mid */
             goto insert_end;
          }
@@ -183,6 +183,7 @@ util_create_range_remap()
 {
    struct range_remap *r = rzalloc(NULL, struct range_remap);
    list_inithead(&r->r_list);
+   r->list_mem_ctx = ralloc_context(r);
    return r;
 }
 
