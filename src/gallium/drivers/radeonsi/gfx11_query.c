@@ -101,7 +101,7 @@ static bool gfx11_alloc_query_buffer(struct si_context *sctx)
 
    list_addtail(&qbuf->list, &sctx->shader_query_buffers);
    qbuf->head = 0;
-   qbuf->refcount = sctx->num_active_shader_queries;
+   qbuf->refcount = sctx->streamout.num_ngg_queries;
 
 success:;
    struct pipe_shader_buffer sbuf;
@@ -135,7 +135,7 @@ static bool gfx11_sh_query_begin(struct si_context *sctx, struct si_query *rquer
    query->first = list_last_entry(&sctx->shader_query_buffers, struct gfx11_sh_query_buffer, list);
    query->first_begin = query->first->head;
 
-   sctx->num_active_shader_queries++;
+   sctx->streamout.num_ngg_queries++;
    query->first->refcount++;
 
    return true;
@@ -161,9 +161,9 @@ static bool gfx11_sh_query_end(struct si_context *sctx, struct si_query *rquery)
                         0xffffffff, PIPE_QUERY_GPU_FINISHED);
    }
 
-   sctx->num_active_shader_queries--;
+   sctx->streamout.num_ngg_queries--;
 
-   if (sctx->num_active_shader_queries <= 0 || !si_is_atom_dirty(sctx, &sctx->atoms.s.shader_query)) {
+   if (sctx->streamout.num_ngg_queries <= 0 || !si_is_atom_dirty(sctx, &sctx->atoms.s.shader_query)) {
       si_set_internal_shader_buffer(sctx, SI_GS_QUERY_BUF, NULL);
       SET_FIELD(sctx->current_gs_state, GS_STATE_STREAMOUT_QUERY_ENABLED, 0);
 

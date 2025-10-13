@@ -838,6 +838,7 @@ struct si_streamout {
    bool streamout_enabled;
    bool prims_gen_query_enabled;
    int num_prims_gen_queries;
+   int num_ngg_queries;
 };
 
 /* A shader state consists of the shader selector, which is a constant state
@@ -1346,7 +1347,6 @@ struct si_context {
 
    /* Shader-based queries. */
    struct list_head shader_query_buffers;
-   unsigned num_active_shader_queries;
 
    struct {
       bool with_cb;
