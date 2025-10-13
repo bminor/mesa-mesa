@@ -309,16 +309,23 @@ st_glsl_to_nir_post_opts(struct st_context *st, struct gl_program *prog,
          subgroup_opts.lower_vote_feq = true;
          subgroup_opts.lower_reduce = true;
 
-         if (nir->options->lower_doubles_options & nir_lower_fp64_full_software)
-            NIR_PASS(lowered_64bit_ops, nir, nir_lower_subgroups, &subgroup_opts);
-
          /* nir_lower_doubles is not prepared for vector ops, so if the backend doesn't
           * request lower_alu_to_scalar until now, lower all 64 bit ops, and try to
           * vectorize them afterwards again */
-         if (!nir->options->lower_to_scalar) {
+         bool scalarize = !nir->options->lower_to_scalar;
+
+         if (nir->options->lower_doubles_options & nir_lower_fp64_full_software) {
+            NIR_PASS(lowered_64bit_ops, nir, nir_lower_subgroups, &subgroup_opts);
+            /* Subgroup lowering may generate 64-bit vector ALU operations. */
+            if (lowered_64bit_ops)
+               scalarize = true;
+         }
+
+         if (scalarize) {
             NIR_PASS(revectorize, nir, nir_lower_alu_to_scalar, filter_64_bit_instr, nullptr);
             NIR_PASS(revectorize, nir, nir_lower_phis_to_scalar, NULL, NULL);
          }
+
          /* doubles lowering requires frexp to be lowered first if it will be,
           * since the pass generates other 64-bit ops.  Most backends lower
           * frexp, and using doubles is rare, and using frexp is even more rare
