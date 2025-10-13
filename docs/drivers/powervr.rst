@@ -43,6 +43,7 @@ Product   Series      B.V.N.C
 GX6250    Series 6XT  4.45.2.58
 GX6650    Series 6XT  4.46.6.62
 G6110     Series 6XE  5.9.1.46
+GE7800    Series 7XE  15.5.1.64
 GE8300    Series 8XE  22.68.54.30
 GE8300    Series 8XE  22.102.54.38
 BXE-2-32  B-Series    36.29.52.182
