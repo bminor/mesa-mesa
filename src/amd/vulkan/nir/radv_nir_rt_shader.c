@@ -1914,6 +1914,8 @@ lower_rt_instructions_monolithic(nir_shader *shader, struct radv_device *device,
       hit_attribs[i] = nir_local_variable_create(impl, glsl_uint_type(), "ahit_attrib");
 
    lower_hit_attribs(shader, hit_attribs, 0);
+
+   STACK_ARRAY_FINISH(hit_attribs);
 }
 
 /** Select the next shader based on priorities:
