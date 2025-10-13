@@ -1325,7 +1325,7 @@ static void si_get_hw_query_result_shader_params(struct si_context *sctx,
    }
 }
 
-static unsigned si_query_read_result(void *map, unsigned start_index, unsigned end_index,
+static uint64_t si_query_read_result(void *map, unsigned start_index, unsigned end_index,
                                      bool test_status_bit)
 {
    uint32_t *current_result = (uint32_t *)map;
