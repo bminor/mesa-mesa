@@ -1334,7 +1334,7 @@ static uint64_t si_query_read_result(void *map, unsigned start_index, unsigned e
    start = (uint64_t)current_result[start_index] | (uint64_t)current_result[start_index + 1] << 32;
    end = (uint64_t)current_result[end_index] | (uint64_t)current_result[end_index + 1] << 32;
 
-   if (!test_status_bit || ((start & 0x8000000000000000UL) && (end & 0x8000000000000000UL))) {
+   if (!test_status_bit || ((start & BITFIELD64_BIT(63)) && (end & BITFIELD64_BIT(63)))) {
       return end - start;
    }
    return 0;

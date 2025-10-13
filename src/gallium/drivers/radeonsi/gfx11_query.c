@@ -53,6 +53,7 @@ static bool gfx11_alloc_query_buffer(struct si_context *sctx)
       return true;
 
    struct gfx11_sh_query_buffer *qbuf = NULL;
+   struct pipe_shader_buffer sbuf;
 
    if (!list_is_empty(&sctx->shader_query_buffers)) {
       qbuf = list_last_entry(&sctx->shader_query_buffers, struct gfx11_sh_query_buffer, list);
@@ -95,7 +96,7 @@ static bool gfx11_alloc_query_buffer(struct si_context *sctx)
    for (unsigned i = 0, e = qbuf->buf->b.b.width0 / sizeof(struct gfx11_sh_query_buffer_mem); i < e;
         ++i) {
       for (unsigned j = 0; j < 16; ++j)
-         results[32 * i + j] = (uint64_t)1 << 63;
+         results[32 * i + j] = BITFIELD64_BIT(63);
       results[32 * i + 16] = 0;
    }
 
@@ -103,8 +104,7 @@ static bool gfx11_alloc_query_buffer(struct si_context *sctx)
    qbuf->head = 0;
    qbuf->refcount = sctx->streamout.num_ngg_queries;
 
-success:;
-   struct pipe_shader_buffer sbuf;
+success:
    sbuf.buffer = &qbuf->buf->b.b;
    sbuf.buffer_offset = qbuf->head;
    sbuf.buffer_size = sizeof(struct gfx11_sh_query_buffer_mem);
@@ -180,20 +180,18 @@ static void gfx11_sh_query_add_result(struct gfx11_sh_query *query,
                                       struct gfx11_sh_query_buffer_mem *qmem,
                                       union pipe_query_result *result)
 {
-   static const uint64_t mask = ((uint64_t)1 << 63) - 1;
-
    switch (query->b.type) {
    case PIPE_QUERY_PRIMITIVES_EMITTED:
-      result->u64 += qmem->stream[query->stream].emitted_primitives & mask;
+      result->u64 += qmem->stream[query->stream].emitted_primitives & ~BITFIELD64_BIT(63);
       break;
    case PIPE_QUERY_PRIMITIVES_GENERATED:
-      result->u64 += qmem->stream[query->stream].generated_primitives & mask;
+      result->u64 += qmem->stream[query->stream].generated_primitives & ~BITFIELD64_BIT(63);
       break;
    case PIPE_QUERY_SO_STATISTICS:
       result->so_statistics.num_primitives_written +=
-         qmem->stream[query->stream].emitted_primitives & mask;
+         qmem->stream[query->stream].emitted_primitives & ~BITFIELD64_BIT(63);
       result->so_statistics.primitives_storage_needed +=
-         qmem->stream[query->stream].generated_primitives & mask;
+         qmem->stream[query->stream].generated_primitives & ~BITFIELD64_BIT(63);
       break;
    case PIPE_QUERY_SO_OVERFLOW_PREDICATE:
       result->b |= qmem->stream[query->stream].emitted_primitives !=
