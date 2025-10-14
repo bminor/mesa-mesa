@@ -757,6 +757,7 @@ wsi_create_native_image_mem(const struct wsi_swapchain *chain,
        * handling implict sync ourselves.
        */
       .implicit_sync = !info->explicit_sync && !chain->dma_buf_semaphore,
+      .dma_buf_sync_file = chain->dma_buf_semaphore,
    };
    const VkExportMemoryAllocateInfo memory_export_info = {
       .sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO,
