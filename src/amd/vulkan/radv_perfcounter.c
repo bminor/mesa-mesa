@@ -625,13 +625,7 @@ radv_pc_stop_and_sample(struct radv_cmd_buffer *cmd_buffer, struct radv_pc_query
       uint64_t pred_va = radv_buffer_get_va(device->perf_counter_bo) + PERF_CTR_BO_PASS_OFFSET + 8 * pass;
       uint64_t reg_va = va + (end ? 8 : 0);
 
-      radeon_begin(cs);
-      radeon_emit(PKT3(PKT3_COND_EXEC, 3, 0));
-      radeon_emit(pred_va);
-      radeon_emit(pred_va >> 32);
-      radeon_emit(0); /* Cache policy */
-      radeon_emit(0);
-      radeon_end();
+      ac_emit_cond_exec(cs->b, pdev->info.gfx_level, pred_va, 0);
 
       uint32_t *skip_dwords = cs->b->buf + (cs->b->cdw - 1);
 
@@ -697,13 +691,7 @@ radv_pc_begin_query(struct radv_cmd_buffer *cmd_buffer, struct radv_pc_query_poo
    for (unsigned pass = 0; pass < pool->num_passes; ++pass) {
       uint64_t pred_va = radv_buffer_get_va(device->perf_counter_bo) + PERF_CTR_BO_PASS_OFFSET + 8 * pass;
 
-      radeon_begin(cs);
-      radeon_emit(PKT3(PKT3_COND_EXEC, 3, 0));
-      radeon_emit(pred_va);
-      radeon_emit(pred_va >> 32);
-      radeon_emit(0); /* Cache policy */
-      radeon_emit(0);
-      radeon_end();
+      ac_emit_cond_exec(cs->b, pdev->info.gfx_level, pred_va, 0);
 
       uint32_t *skip_dwords = cs->b->buf + (cs->b->cdw - 1);
 
