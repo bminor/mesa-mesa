@@ -36,8 +36,8 @@ struct constant_fold_state {
    bool has_indirect_load_const;
 };
 
-static nir_def *
-try_fold_alu(nir_builder *b, nir_alu_instr *alu)
+nir_def *
+nir_try_constant_fold_alu(nir_builder *b, nir_alu_instr *alu)
 {
    nir_const_value src[NIR_ALU_MAX_INPUTS][NIR_MAX_VEC_COMPONENTS];
 
@@ -437,7 +437,7 @@ try_fold_instr(nir_builder *b, nir_instr *instr, void *_state)
 {
    switch (instr->type) {
    case nir_instr_type_alu:
-      return try_fold_alu(b, nir_instr_as_alu(instr));
+      return nir_try_constant_fold_alu(b, nir_instr_as_alu(instr));
    case nir_instr_type_intrinsic:
       return try_fold_intrinsic(b, nir_instr_as_intrinsic(instr), _state);
    case nir_instr_type_tex:

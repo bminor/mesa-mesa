@@ -123,6 +123,14 @@ nir_builder_alu_instr_finish_and_insert(nir_builder *build, nir_alu_instr *instr
    nir_def_init(&instr->instr, &instr->def, num_components,
                 bit_size);
 
+   if (build->constant_fold_alu) {
+      nir_def *new_def = nir_try_constant_fold_alu(build, instr);
+      if (new_def) {
+         nir_instr_free(&instr->instr);
+         return new_def;
+      }
+   }
+
    nir_builder_instr_insert(build, &instr->instr);
 
    return &instr->def;

@@ -40,6 +40,9 @@ typedef struct nir_builder {
    /* Whether new ALU instructions will be marked "exact" */
    bool exact;
 
+   /* Whether new ALU instruction will be constanst-folded if possible. */
+   bool constant_fold_alu;
+
    /* Float_controls2 bits. See nir_alu_instr for details. */
    uint32_t fp_fast_math;
 
