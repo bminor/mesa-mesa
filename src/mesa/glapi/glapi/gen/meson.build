@@ -24,6 +24,7 @@ main_enums_c = custom_target(
   input : ['gl_enums.py', files('../registry/gl.xml')],
   output : 'enums.c',
   command : [prog_python, '@INPUT0@', '-f', '@INPUT1@'],
+  depend_files : glapi_xml_py_deps,
   capture : true,
 )
 
