@@ -1685,14 +1685,9 @@ brw_from_nir_emit_alu(nir_to_brw_state &ntb, nir_alu_instr *instr,
    case nir_op_bitfield_insert:
       UNREACHABLE("not reached: should have been lowered");
 
-   case nir_op_bitfield_select: {
-      /* The sources are rearranged because, due to the way opt_algebraic
-       * generates bitfield_select, op[0] will never be a constant. The only
-       * source of BFN that can't be immediate is src1.
-       */
-      bld.BFN(result, op[1], op[0], op[2], UTIL_LUT3((b & a) | (~b & c)));
+   case nir_op_bitfield_select:
+      bld.BFN(result, op[0], op[1], op[2], UTIL_LUT3((a & b) | (~a & c)));
       break;
-   }
 
    /* With regards to implicit masking of the shift counts for 8- and 16-bit
     * types, the PRMs are **incorrect**. They falsely state that on Gen9+ only
