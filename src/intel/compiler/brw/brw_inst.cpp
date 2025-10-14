@@ -284,6 +284,10 @@ brw_inst::is_control_source(unsigned arg) const
    case SHADER_OPCODE_REDUCE:
       return arg != 0;
 
+   case BRW_OPCODE_BFN:
+      /* src[3] holds the Boolean function selector. */
+      return arg == 3;
+
    default:
       return false;
    }
