@@ -1680,9 +1680,10 @@ for name in all_functions:
 function_count = i
 
 # Exported from libGL.so
-libgl_public_functions = set()
-with open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                       '..', '..', '..', '..', 'glx', 'libgl-symbols.txt'), 'r') as f:
-    for line in f:
-        if len(line) > 3 and line[0:2] == 'gl' and line[2] != 'X':
-            libgl_public_functions.add(line[2:].rstrip())
+def get_libgl_public_functions(libgl_symbols_filename):
+    libgl_public_functions = set()
+    with open(libgl_symbols_filename, 'r') as f:
+        for line in f:
+            if len(line) > 3 and line[0:2] == 'gl' and line[2] != 'X':
+                libgl_public_functions.add(line[2:].rstrip())
+    return libgl_public_functions

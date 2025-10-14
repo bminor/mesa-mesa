@@ -150,7 +150,7 @@ class glx_pixel_function_stub(glX_XML.glx_function):
 
 
 class PrintGlxProtoStubs(glX_proto_common.glx_print_proto):
-    def __init__(self):
+    def __init__(self, gl_symbols_filename):
         glX_proto_common.glx_print_proto.__init__(self)
         self.name = "glX_proto_send.py (from Mesa)"
         self.license = license.bsd_license_template % ( "(C) Copyright IBM Corporation 2004, 2005", "IBM")
@@ -159,6 +159,7 @@ class PrintGlxProtoStubs(glX_proto_common.glx_print_proto):
         self.generic_sizes = [3, 4, 6, 8, 12, 16, 24, 32]
         self.pixel_stubs = {}
         self.debug = 0
+        self.gl_symbols = static_data.get_libgl_public_functions(gl_symbols_filename)
         return
 
     def printRealHeader(self):
@@ -384,7 +385,7 @@ const GLuint __glXDefaultPixelStore[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 1 };
                 else:
                     ret_string = "return "
 
-                func_name = func.static_glx_name(name)
+                func_name = func.static_glx_name(name, self.gl_symbols)
                 print('#define %s %d' % (func.opcode_vendor_name(name), func.glx_vendorpriv))
                 print('%s gl%s(%s)' % (func.return_type, func_name, func.get_parameter_string()))
                 print('{')
@@ -987,7 +988,7 @@ struct _glapi_table * __glXNewIndirectAPI( void )
 
 
 class PrintGlxProtoInit_h(gl_XML.gl_print_base):
-    def __init__(self):
+    def __init__(self, gl_symbols_filename):
         gl_XML.gl_print_base.__init__(self)
 
         self.name = "glX_proto_send.py (from Mesa)"
@@ -995,6 +996,7 @@ class PrintGlxProtoInit_h(gl_XML.gl_print_base):
 """Copyright 1998-1999 Precision Insight, Inc., Cedar Park, Texas.
 (C) Copyright IBM Corporation 2004""", "PRECISION INSIGHT, IBM")
         self.header_tag = "_INDIRECT_H_"
+        self.gl_symbols = static_data.get_libgl_public_functions(gl_symbols_filename)
         return
 
 
@@ -1037,8 +1039,8 @@ extern NOINLINE GLubyte * __glXSetupVendorRequest(
 
             for n in func.entry_points:
                 if func.has_different_protocol(n):
-                    asdf = func.static_glx_name(n)
-                    if asdf not in static_data.libgl_public_functions:
+                    asdf = func.static_glx_name(n, self.gl_symbols)
+                    if asdf not in gl_symbols:
                         print('extern %s gl%s(%s);' % (func.return_type, asdf, params))
                         # give it a easy-to-remember name
                         if func.client_handcode:
@@ -1070,6 +1072,9 @@ def _parser():
                         action='store_true',
                         dest='debug',
                         help='turn debug mode on.')
+    parser.add_argument('-s',
+                        dest='gl_symbols_filename',
+                        help='Path to libgl-functions.txt')
     return parser.parse_args()
 
 
@@ -1078,11 +1083,11 @@ def main():
     args = _parser()
 
     if args.mode == "proto":
-        printer = PrintGlxProtoStubs()
+        printer = PrintGlxProtoStubs(args.gl_symbols_filename)
     elif args.mode == "init_c":
         printer = PrintGlxProtoInit_c()
     elif args.mode == "init_h":
-        printer = PrintGlxProtoInit_h()
+        printer = PrintGlxProtoInit_h(args.gl_symbols_filename)
 
     printer.debug = args.debug
     api = gl_XML.parse_GL_API(args.filename, glX_XML.glx_item_factory())

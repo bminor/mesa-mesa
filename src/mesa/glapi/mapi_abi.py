@@ -131,9 +131,10 @@ class ABIEntry(object):
         return self.slot < other.slot
 
 
-def abi_parse_xml(xml):
+def abi_parse_xml(xml, gl_symbols_filename):
     """Parse a GLAPI XML file for ABI entries."""
     api = gl_XML.parse_GL_API(xml, glX_XML.glx_item_factory())
+    gl_symbols = static_data.get_libgl_public_functions(gl_symbols_filename)
 
     entry_dict = {}
     for func in api.functionIterateByOffset():
@@ -145,7 +146,7 @@ def abi_parse_xml(xml):
         for name in entry_points:
             attrs = {
                     'slot': func.offset,
-                    'hidden': name not in static_data.libgl_public_functions,
+                    'hidden': name not in gl_symbols,
                     'alias': None if name == func.name else func.name,
                     'handcode': bool(func.has_different_protocol(name)),
             }
@@ -160,7 +161,7 @@ def abi_parse_xml(xml):
                     raise Exception('recursive alias %s' % ent.name)
                 attrs['alias'] = alias
             if attrs['handcode']:
-                attrs['handcode'] = func.static_glx_name(name)
+                attrs['handcode'] = func.static_glx_name(name, gl_symbols)
             else:
                 attrs['handcode'] = None
 
@@ -522,9 +523,11 @@ def parse_args():
     parser = OptionParser(usage='usage: %prog [options] <xml_file>')
     parser.add_option('-p', '--printer', dest='printer',
             help='printer to use: %s' % (", ".join(printers)))
+    parser.add_option('-s', '--gl_symbols', dest='gl_symbols_filename',
+                      help='Path to libgl-symbols.txt')
 
     options, args = parser.parse_args()
-    if not args or options.printer not in printers:
+    if not args or options.printer not in printers or not os.path.exists(options.gl_symbols_filename):
         parser.print_help()
         sys.exit(1)
 
@@ -542,7 +545,7 @@ def main():
 
     filename, options = parse_args()
 
-    entries = abi_parse_xml(filename)
+    entries = abi_parse_xml(filename, options.gl_symbols_filename)
     abi_sanity_check(entries)
 
     printer = printers[options.printer](entries)

@@ -721,8 +721,8 @@ class gl_function( gl_item ):
 
         return p_string
 
-    def static_name(self, name):
-        if name in static_data.libgl_public_functions:
+    def static_name(self, name, gl_symbols):
+        if name in gl_symbols:
             return name
         else:
             return "_dispatch_stub_%u" % (self.offset)

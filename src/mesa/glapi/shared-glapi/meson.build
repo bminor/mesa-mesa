@@ -3,9 +3,9 @@
 
 shared_glapi_mapi_tmp_h = custom_target(
   'shared_glapi_mapi_tmp.h',
-  input : ['../mapi_abi.py', '../glapi/gen/gl_and_es_API.xml'],
+  input : ['../mapi_abi.py', '../glapi/gen/gl_and_es_API.xml', '../../../glx/libgl-symbols.txt'],
   output : 'shared_glapi_mapi_tmp.h',
-  command : [prog_python, '@INPUT0@', '--printer', 'shared-glapi', '@INPUT1@'],
+  command : [prog_python, '@INPUT0@', '--printer', 'shared-glapi', '--gl_symbols', '@INPUT2@', '@INPUT1@'],
   depend_files : glapi_xml_py_deps,
   capture : true,
 )

@@ -3,9 +3,9 @@
 
 glapi_mapi_tmp_h = custom_target(
   'glapi_mapi_tmp.h',
-  input : ['../../mapi_abi.py', 'gl_and_es_API.xml'],
+  input : ['../../mapi_abi.py', 'gl_and_es_API.xml', '../../../../glx/libgl-symbols.txt'],
   output : 'glapi_mapi_tmp.h',
-  command : [prog_python, '@INPUT0@', '--printer', 'glapi', '@INPUT1@'],
+  command : [prog_python, '@INPUT0@', '--printer', 'glapi', '--gl_symbols', '@INPUT2@', '@INPUT1@'],
   depend_files : glapi_xml_py_deps,
   capture : true,
 )
@@ -128,9 +128,9 @@ glx_generated = []
 foreach x : [['indirect.c', 'proto'], ['indirect.h', 'init_h'], ['indirect_init.c', 'init_c']]
   glx_generated += custom_target(
     x[0],
-    input : ['glX_proto_send.py', 'gl_API.xml'],
+    input : ['glX_proto_send.py', 'gl_API.xml', '../../../../glx/libgl-symbols.txt'],
     output : x[0],
-    command : [prog_python, '@INPUT0@', '-f', '@INPUT1@', '-m', x[1]],
+    command : [prog_python, '@INPUT0@', '-f', '@INPUT1@', '-m', x[1], '-s', '@INPUT2@'],
     depend_files : glapi_xml_py_deps,
     capture : true,
   )
