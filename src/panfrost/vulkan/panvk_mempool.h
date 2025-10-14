@@ -213,12 +213,6 @@ panvk_pool_upload_aligned(struct panvk_pool *pool, const void *data, size_t sz,
    return mem;
 }
 
-static inline struct panvk_priv_mem
-panvk_pool_upload(struct panvk_pool *pool, const void *data, size_t sz)
-{
-   return panvk_pool_upload_aligned(pool, data, sz, sz);
-}
-
 #define panvk_pool_alloc_desc(pool, name)                                      \
    panvk_pool_alloc_mem(pool, panvk_pool_descs_to_alloc_info(                  \
                                  PAN_DESC_AGGREGATE(PAN_DESC(name))))
