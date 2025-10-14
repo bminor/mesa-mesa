@@ -448,6 +448,7 @@ nvk_GetDescriptorSetLayoutSupport(VkDevice device,
    uint64_t non_variable_size = 0;
    uint32_t variable_stride = 0;
    uint32_t variable_count = 0;
+   bool variable_is_inline_uniform_block = false;
    uint8_t dynamic_buffer_count = 0;
 
    for (uint32_t i = 0; i < pCreateInfo->bindingCount; i++) {
@@ -472,6 +473,9 @@ nvk_GetDescriptorSetLayoutSupport(VkDevice device,
       if (stride > 0) {
          assert(stride <= UINT8_MAX);
          assert(util_is_power_of_two_nonzero(alignment));
+
+         variable_is_inline_uniform_block =
+            binding->descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
 
          if (flags & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT) {
             /* From the Vulkan 1.3.256 spec:
@@ -503,6 +507,8 @@ nvk_GetDescriptorSetLayoutSupport(VkDevice device,
    if (pCreateInfo->flags &
        VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR)
       max_buffer_size = NVK_MAX_PUSH_DESCRIPTORS * nvk_max_descriptor_size(&pdev->info);
+   else if (variable_is_inline_uniform_block)
+      max_buffer_size = NVK_MAX_INLINE_UNIFORM_BLOCK_SIZE;
    else
       max_buffer_size = NVK_MAX_DESCRIPTOR_SET_SIZE;
 
