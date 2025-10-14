@@ -132,7 +132,7 @@ panvk_pool_alloc_mem(struct panvk_pool *pool, struct panvk_pool_alloc_info info)
    unsigned offset = ALIGN_POT(pool->transient_offset, info.alignment);
 
    /* If we don't fit, allocate a new backing */
-   if (unlikely(bo == NULL || (offset + info.size) >= pool->base.slab_size)) {
+   if (unlikely(bo == NULL || (offset + info.size) > pool->base.slab_size)) {
       bo = panvk_pool_alloc_backing(pool, info.size);
       offset = 0;
    }
