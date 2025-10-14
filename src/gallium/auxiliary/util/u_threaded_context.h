@@ -732,7 +732,8 @@ tc_add_set_vertex_buffers_call(struct pipe_context *_pipe, unsigned count);
 
 struct pipe_vertex_buffer *
 tc_add_set_vertex_elements_and_buffers_call(struct pipe_context *_pipe,
-                                            unsigned count);
+                                            unsigned count,
+                                            bool account_for_unmaps);
 
 void
 tc_draw_vbo(struct pipe_context *_pipe, const struct pipe_draw_info *info,

@@ -77,6 +77,15 @@ enum tc_call_id {
    TC_END_BATCH = TC_NUM_CALLS,
 };
 
+struct tc_buffer_unmap {
+   struct tc_call_base base;
+   bool was_staging_transfer;
+   union {
+      struct pipe_transfer *transfer;
+      struct pipe_resource *resource;
+   };
+};
+
 static void
 tc_batch_execute(void *job, UNUSED void *gdata, int thread_index);
 
@@ -587,14 +596,14 @@ tc_batch_flush(struct threaded_context *tc, bool full_copy)
  */
 static void *
 tc_add_sized_call(struct threaded_context *tc, enum tc_call_id id,
-                  unsigned num_slots, bool full_copy)
+                  unsigned num_slots, unsigned resv_slots, bool full_copy)
 {
    TC_TRACE_SCOPE(id);
    struct tc_batch *next = &tc->batch_slots[tc->next];
    assert(num_slots <= TC_SLOTS_PER_BATCH - 1);
    tc_debug_check(tc);
 
-   if (unlikely(next->num_total_slots + num_slots > TC_SLOTS_PER_BATCH - 1)) {
+   if (unlikely(next->num_total_slots + num_slots + resv_slots > TC_SLOTS_PER_BATCH - 1)) {
       /* copy existing renderpass info during flush */
       tc_batch_flush(tc, full_copy);
       tc->seen_fb_state = false;
@@ -626,14 +635,19 @@ tc_add_sized_call(struct threaded_context *tc, enum tc_call_id id,
 }
 
 #define tc_add_call(tc, execute, type) \
-   ((struct type*)tc_add_sized_call(tc, execute, call_size(type), true))
+   ((struct type*)tc_add_sized_call(tc, execute, call_size(type), 0, true))
 
 #define tc_add_call_no_copy(tc, execute, type) \
-   ((struct type*)tc_add_sized_call(tc, execute, call_size(type), false))
+   ((struct type*)tc_add_sized_call(tc, execute, call_size(type), 0, false))
 
 #define tc_add_slot_based_call(tc, execute, type, num_slots) \
    ((struct type*)tc_add_sized_call(tc, execute, \
-                                    call_size_with_slots(type, num_slots), true))
+                                    call_size_with_slots(type, num_slots), 0, true))
+
+#define tc_add_slot_based_call_and_reserve(tc, execute, type, num_slots, num_slot_resv) \
+   ((struct type*)tc_add_sized_call(tc, execute, \
+                                    call_size_with_slots(type, num_slots), num_slot_resv, \
+                                    true))
 
 /* Returns the last mergeable call that was added to the unflushed
  * batch, or NULL if the address of that call is not currently known
@@ -2220,18 +2234,32 @@ tc_call_set_vertex_elements_and_buffers(struct pipe_context *pipe, void *call)
  */
 struct pipe_vertex_buffer *
 tc_add_set_vertex_elements_and_buffers_call(struct pipe_context *_pipe,
-                                            unsigned count)
+                                            unsigned count,
+                                            bool account_for_unmaps)
 {
    struct threaded_context *tc = threaded_context(_pipe);
+   unsigned extra_slots = 0;
 
    /* We don't need to unbind trailing buffers because we never touch bindings
     * after num_vertex_buffers.
     */
    tc->num_vertex_buffers = count;
 
+   if (account_for_unmaps) {
+      /* st_update_array_templ is the only user of this function and since it's
+       * calling st_setup_current in between the call to __func__ and the call
+       * to tc_set_vertex_elements_for_call we need to make sure that no batch
+       * flush occurs in between.
+       * The tc_buffer_unmap calls can come from u_upload_unmap and u_upload_alloc
+       * (calling u_upload_release_buffer).
+       */
+      extra_slots = call_size(tc_buffer_unmap) * 2;
+   }
+
    struct tc_vertex_elements_and_buffers *p =
-      tc_add_slot_based_call(tc, TC_CALL_set_vertex_elements_and_buffers,
-                             tc_vertex_elements_and_buffers, count);
+      tc_add_slot_based_call_and_reserve(tc, TC_CALL_set_vertex_elements_and_buffers,
+                                         tc_vertex_elements_and_buffers, count,
+                                         extra_slots);
    p->count = count;
    return p->slot;
 }
@@ -2914,15 +2942,6 @@ tc_transfer_flush_region(struct pipe_context *_pipe,
    p->transfer = transfer;
    p->box = *rel_box;
 }
-
-struct tc_buffer_unmap {
-   struct tc_call_base base;
-   bool was_staging_transfer;
-   union {
-      struct pipe_transfer *transfer;
-      struct pipe_resource *resource;
-   };
-};
 
 static uint16_t ALWAYS_INLINE
 tc_call_buffer_unmap(struct pipe_context *pipe, void *call)

@@ -434,7 +434,8 @@ st_update_array_templ(struct st_context *st,
                          inputs_read & ~enabled_arrays;
       vbuffer = UPDATE_VELEMS ?
          tc_add_set_vertex_elements_and_buffers_call(st->pipe,
-                                                     num_vbuffers_tc) :
+                                                     num_vbuffers_tc,
+                                                     ALLOW_ZERO_STRIDE_ATTRIBS) :
          tc_add_set_vertex_buffers_call(st->pipe, num_vbuffers_tc);
    } else {
       vbuffer = vbuffer_local;
