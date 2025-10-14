@@ -115,9 +115,6 @@ gfx10_cs_emit_cache_flush(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_lev
       *sqtt_flush_bits |= RGP_FLUSH_INVAL_ICACHE;
    }
    if (flush_bits & RADV_CMD_FLAG_INV_SCACHE) {
-      /* TODO: When writing to the SMEM L1 cache, we need to set SEQ
-       * to FORWARD when both L1 and L2 are written out (WB or INV).
-       */
       gcr_cntl |= S_586_GL1_INV(1) | S_586_GLK_INV(1);
 
       *sqtt_flush_bits |= RGP_FLUSH_INVAL_SMEM_L0;
