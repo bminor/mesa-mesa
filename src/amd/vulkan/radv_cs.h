@@ -206,18 +206,9 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
       radeon_emit(0); /* unused */                                                                                     \
    } while (0)
 
-#define radeon_event_write_predicate(event_type, predicate)                                                            \
-   do {                                                                                                                \
-      unsigned __event_type = (event_type);                                                                            \
-      radeon_emit(PKT3(PKT3_EVENT_WRITE, 0, predicate));                                                               \
-      radeon_emit(EVENT_TYPE(__event_type) | EVENT_INDEX(__event_type == V_028A90_VS_PARTIAL_FLUSH ||                  \
-                                                               __event_type == V_028A90_PS_PARTIAL_FLUSH ||            \
-                                                               __event_type == V_028A90_CS_PARTIAL_FLUSH               \
-                                                            ? 4                                                        \
-                                                            : 0));                                                     \
-   } while (0)
+#define radeon_event_write_predicate(event_type, predicate) ac_cmdbuf_event_write_predicate(event_type, predicate)
 
-#define radeon_event_write(event_type) radeon_event_write_predicate(event_type, false)
+#define radeon_event_write(event_type) ac_cmdbuf_event_write(event_type)
 
 #define radeon_emit_32bit_pointer(sh_offset, va, info)                                                                 \
    do {                                                                                                                \

@@ -1243,3 +1243,42 @@ ac_emit_cp_acquire_mem(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
 
    ac_cmdbuf_end();
 }
+
+void
+ac_cmdbuf_flush_vgt_streamout(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level)
+{
+   uint32_t reg_strmout_cntl;
+
+   ac_cmdbuf_begin(cs);
+
+   /* The register is at different places on different ASICs. */
+   if (gfx_level >= GFX9) {
+      reg_strmout_cntl = R_0300FC_CP_STRMOUT_CNTL;
+
+      ac_cmdbuf_emit(PKT3(PKT3_WRITE_DATA, 3, 0));
+      ac_cmdbuf_emit(S_370_DST_SEL(V_370_MEM_MAPPED_REGISTER) | S_370_ENGINE_SEL(V_370_ME));
+      ac_cmdbuf_emit(R_0300FC_CP_STRMOUT_CNTL >> 2);
+      ac_cmdbuf_emit(0);
+      ac_cmdbuf_emit(0);
+   } else if (gfx_level >= GFX7) {
+      reg_strmout_cntl = R_0300FC_CP_STRMOUT_CNTL;
+
+      ac_cmdbuf_set_uconfig_reg(reg_strmout_cntl, 0);
+   } else {
+      reg_strmout_cntl = R_0084FC_CP_STRMOUT_CNTL;
+
+      ac_cmdbuf_set_config_reg(reg_strmout_cntl, 0);
+   }
+
+   ac_cmdbuf_event_write(V_028A90_SO_VGTSTREAMOUT_FLUSH);
+
+   ac_cmdbuf_emit(PKT3(PKT3_WAIT_REG_MEM, 5, 0));
+   ac_cmdbuf_emit(WAIT_REG_MEM_EQUAL);             /* wait until the register is equal to the reference value */
+   ac_cmdbuf_emit(reg_strmout_cntl >> 2);          /* register */
+   ac_cmdbuf_emit(0);
+   ac_cmdbuf_emit(S_0084FC_OFFSET_UPDATE_DONE(1)); /* reference value */
+   ac_cmdbuf_emit(S_0084FC_OFFSET_UPDATE_DONE(1)); /* mask */
+   ac_cmdbuf_emit(4);                              /* poll interval */
+
+   ac_cmdbuf_end();
+}

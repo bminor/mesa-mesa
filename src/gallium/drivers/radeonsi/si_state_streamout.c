@@ -259,36 +259,8 @@ static void si_set_streamout_targets(struct pipe_context *ctx, unsigned num_targ
 static void si_flush_vgt_streamout(struct si_context *sctx)
 {
    struct radeon_cmdbuf *cs = &sctx->gfx_cs;
-   unsigned reg_strmout_cntl;
 
-   radeon_begin(cs);
-
-   /* The register is at different places on different ASICs. */
-   if (sctx->gfx_level >= GFX9) {
-      reg_strmout_cntl = R_0300FC_CP_STRMOUT_CNTL;
-      radeon_emit(PKT3(PKT3_WRITE_DATA, 3, 0));
-      radeon_emit(S_370_DST_SEL(V_370_MEM_MAPPED_REGISTER) | S_370_ENGINE_SEL(V_370_ME));
-      radeon_emit(R_0300FC_CP_STRMOUT_CNTL >> 2);
-      radeon_emit(0);
-      radeon_emit(0);
-   } else if (sctx->gfx_level >= GFX7) {
-      reg_strmout_cntl = R_0300FC_CP_STRMOUT_CNTL;
-      radeon_set_uconfig_reg(reg_strmout_cntl, 0);
-   } else {
-      reg_strmout_cntl = R_0084FC_CP_STRMOUT_CNTL;
-      radeon_set_config_reg(reg_strmout_cntl, 0);
-   }
-
-   radeon_event_write(V_028A90_SO_VGTSTREAMOUT_FLUSH);
-
-   radeon_emit(PKT3(PKT3_WAIT_REG_MEM, 5, 0));
-   radeon_emit(WAIT_REG_MEM_EQUAL); /* wait until the register is equal to the reference value */
-   radeon_emit(reg_strmout_cntl >> 2); /* register */
-   radeon_emit(0);
-   radeon_emit(S_0084FC_OFFSET_UPDATE_DONE(1)); /* reference value */
-   radeon_emit(S_0084FC_OFFSET_UPDATE_DONE(1)); /* mask */
-   radeon_emit(4);                              /* poll interval */
-   radeon_end();
+   ac_cmdbuf_flush_vgt_streamout(&cs->current, sctx->gfx_level);
 }
 
 static void si_emit_streamout_begin(struct si_context *sctx, unsigned index)

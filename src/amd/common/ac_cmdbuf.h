@@ -86,6 +86,19 @@ struct ac_cmdbuf {
 
 #define ac_cmdbuf_set_context_reg(reg, value) __ac_cmdbuf_set_reg(reg, 0, value, SI_CONTEXT, PKT3_SET_CONTEXT_REG)
 
+#define ac_cmdbuf_event_write_predicate(event_type, predicate)                               \
+   do {                                                                                      \
+      unsigned __event_type = (event_type);                                                  \
+      ac_cmdbuf_emit(PKT3(PKT3_EVENT_WRITE, 0, predicate));                                  \
+      ac_cmdbuf_emit(EVENT_TYPE(__event_type) |                                              \
+                     EVENT_INDEX(__event_type == V_028A90_VS_PARTIAL_FLUSH ||                \
+                                 __event_type == V_028A90_PS_PARTIAL_FLUSH ||                \
+                                 __event_type == V_028A90_CS_PARTIAL_FLUSH ? 4 :             \
+                                 __event_type == V_028A90_PIXEL_PIPE_STAT_CONTROL ? 1 : 0)); \
+   } while (0)
+
+#define ac_cmdbuf_event_write(event_type) ac_cmdbuf_event_write_predicate(event_type, false)
+
 struct ac_preamble_state {
    uint64_t border_color_va;
 
@@ -164,6 +177,9 @@ void
 ac_emit_cp_acquire_mem(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
                        enum amd_ip_type ip_type, uint32_t engine,
                        uint32_t gcr_cntl);
+
+void
+ac_cmdbuf_flush_vgt_streamout(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level);
 
 #ifdef __cplusplus
 }

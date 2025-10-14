@@ -506,15 +506,8 @@
 } while (0)
 
 /* Other packet helpers. */
-#define radeon_event_write(event_type) do { \
-   unsigned __event_type = (event_type); \
-   radeon_emit(PKT3(PKT3_EVENT_WRITE, 0, 0)); \
-   radeon_emit(EVENT_TYPE(__event_type) | \
-               EVENT_INDEX(__event_type == V_028A90_VS_PARTIAL_FLUSH || \
-                           __event_type == V_028A90_PS_PARTIAL_FLUSH || \
-                           __event_type == V_028A90_CS_PARTIAL_FLUSH ? 4 : \
-                           __event_type == V_028A90_PIXEL_PIPE_STAT_CONTROL ? 1 : 0)); \
-} while (0)
+#define radeon_event_write(event_type) \
+   ac_cmdbuf_event_write(event_type)
 
 #define radeon_emit_alt_hiz_logic() do { \
    static_assert(GFX_VERSION == GFX12 || !ALT_HIZ_LOGIC, ""); \
