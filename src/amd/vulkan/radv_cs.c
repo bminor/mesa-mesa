@@ -129,18 +129,20 @@ gfx10_cs_emit_cache_flush(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_lev
    }
    if (flush_bits & RADV_CMD_FLAG_INV_L2) {
       /* Writeback and invalidate everything in L2. */
-      gcr_cntl |= S_586_GL2_INV(1) | S_586_GL2_WB(1) | (gfx_level < GFX12 ? S_586_GLM_INV(1) | S_586_GLM_WB(1) : 0);
+      gcr_cntl |= S_586_GL2_INV(1) | S_586_GL2_WB(1);
 
       *sqtt_flush_bits |= RGP_FLUSH_INVAL_L2;
    } else if (flush_bits & RADV_CMD_FLAG_WB_L2) {
       /* Writeback but do not invalidate.
        * GLM doesn't support WB alone. If WB is set, INV must be set too.
        */
-      gcr_cntl |= S_586_GL2_WB(1) | (gfx_level < GFX12 ? S_586_GLM_WB(1) | S_586_GLM_INV(1) : 0);
+      gcr_cntl |= S_586_GL2_WB(1);
 
       *sqtt_flush_bits |= RGP_FLUSH_FLUSH_L2;
-   } else if (flush_bits & RADV_CMD_FLAG_INV_L2_METADATA) {
-      assert(gfx_level < GFX12);
+   }
+
+   if (gfx_level < GFX12 &&
+       (flush_bits & (RADV_CMD_FLAG_INV_L2 | RADV_CMD_FLAG_WB_L2 | RADV_CMD_FLAG_INV_L2_METADATA))) {
       gcr_cntl |= S_586_GLM_INV(1) | S_586_GLM_WB(1);
    }
 
