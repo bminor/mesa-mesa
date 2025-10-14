@@ -2928,7 +2928,7 @@ struct pipe_video_codec *radeon_create_decoder(struct pipe_context *context,
       for (i = 0; i < dec->njctx; i++) {
       /* Initialize the context handle and the command stream. */
          dec->jctx[i] = dec->ws->ctx_create(dec->ws, sctx->context_flags);
-         if (!sctx->ctx)
+         if (!dec->jctx[i])
             goto error;
          if (!dec->ws->cs_create(&dec->jcs[i], dec->jctx[i], ring, NULL, NULL)) {
             RADEON_DEC_ERR("Can't get additional command submission context for mJPEG.\n");
