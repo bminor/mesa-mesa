@@ -1404,7 +1404,7 @@ radv_create_gang_wait_preambles_postambles(struct radv_queue *queue)
    radv_cp_wait_mem(leader_post_cs, WAIT_REG_MEM_GREATER_OR_EQUAL, leader_wait_va, 1, 0xffffffff);
    radv_cs_write_data(device, leader_post_cs, V_370_ME, leader_wait_va, 1, &zero, false);
    radv_cs_emit_write_event_eop(ace_post_cs, pdev->info.gfx_level, V_028A90_BOTTOM_OF_PIPE_TS, 0, EOP_DST_SEL_MEM,
-                                EOP_DATA_SEL_VALUE_32BIT, leader_wait_va, 1, 0);
+                                EOP_INT_SEL_SEND_DATA_AFTER_WR_CONFIRM, EOP_DATA_SEL_VALUE_32BIT, leader_wait_va, 1, 0);
 
    r = radv_finalize_cmd_stream(device, leader_pre_cs);
    if (r != VK_SUCCESS)

@@ -1527,8 +1527,8 @@ radv_flush_gang_semaphore(struct radv_cmd_buffer *cmd_buffer, struct radv_cmd_st
    ASSERTED unsigned cdw_max = radeon_check_space(device->ws, cs->b, 12);
 
    radv_cs_emit_write_event_eop(cs, pdev->info.gfx_level, V_028A90_BOTTOM_OF_PIPE_TS, 0, EOP_DST_SEL_MEM,
-                                EOP_DATA_SEL_VALUE_32BIT, cmd_buffer->gang.sem.va + va_off, value,
-                                cmd_buffer->gfx9_eop_bug_va);
+                                EOP_INT_SEL_SEND_DATA_AFTER_WR_CONFIRM, EOP_DATA_SEL_VALUE_32BIT,
+                                cmd_buffer->gang.sem.va + va_off, value, cmd_buffer->gfx9_eop_bug_va);
 
    assert(cs->b->cdw <= cdw_max);
    return true;
@@ -14527,8 +14527,9 @@ write_event(struct radv_cmd_buffer *cmd_buffer, struct radv_event *event, VkPipe
          event_type = V_028A90_BOTTOM_OF_PIPE_TS;
       }
 
-      radv_cs_emit_write_event_eop(cs, pdev->info.gfx_level, event_type, 0, EOP_DST_SEL_MEM, EOP_DATA_SEL_VALUE_32BIT,
-                                   va, value, cmd_buffer->gfx9_eop_bug_va);
+      radv_cs_emit_write_event_eop(cs, pdev->info.gfx_level, event_type, 0, EOP_DST_SEL_MEM,
+                                   EOP_INT_SEL_SEND_DATA_AFTER_WR_CONFIRM, EOP_DATA_SEL_VALUE_32BIT, va, value,
+                                   cmd_buffer->gfx9_eop_bug_va);
    }
 
    assert(cs->b->cdw <= cdw_max);
@@ -15154,7 +15155,8 @@ radv_CmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlag
       ac_emit_cp_copy_data(cs->b, COPY_DATA_IMM, COPY_DATA_DST_MEM, marker, va, AC_CP_COPY_DATA_WR_CONFIRM);
    } else {
       radv_cs_emit_write_event_eop(cs, pdev->info.gfx_level, V_028A90_BOTTOM_OF_PIPE_TS, 0, EOP_DST_SEL_MEM,
-                                   EOP_DATA_SEL_VALUE_32BIT, va, marker, cmd_buffer->gfx9_eop_bug_va);
+                                   EOP_INT_SEL_SEND_DATA_AFTER_WR_CONFIRM, EOP_DATA_SEL_VALUE_32BIT, va, marker,
+                                   cmd_buffer->gfx9_eop_bug_va);
    }
 
    assert(cs->b->cdw <= cdw_max);

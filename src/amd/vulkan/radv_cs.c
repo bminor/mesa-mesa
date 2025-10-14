@@ -18,8 +18,8 @@
 
 void
 radv_cs_emit_write_event_eop(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_level, unsigned event,
-                             unsigned event_flags, unsigned dst_sel, unsigned data_sel, uint64_t va, uint32_t new_fence,
-                             uint64_t gfx9_eop_bug_va)
+                             unsigned event_flags, unsigned dst_sel, unsigned int_sel, unsigned data_sel, uint64_t va,
+                             uint32_t new_fence, uint64_t gfx9_eop_bug_va)
 {
    if (cs->hw_ip == AMD_IP_SDMA) {
       radv_sdma_emit_fence(cs, va, new_fence);
@@ -33,12 +33,7 @@ radv_cs_emit_write_event_eop(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_
    const bool is_mec = cs->hw_ip == AMD_IP_COMPUTE && gfx_level >= GFX7;
    unsigned op =
       EVENT_TYPE(event) | EVENT_INDEX(event == V_028A90_CS_DONE || event == V_028A90_PS_DONE ? 6 : 5) | event_flags;
-   unsigned sel = EOP_DST_SEL(dst_sel) | EOP_DATA_SEL(data_sel);
-
-   /* Wait for write confirmation before writing data, but don't send
-    * an interrupt. */
-   if (data_sel != EOP_DATA_SEL_DISCARD)
-      sel |= EOP_INT_SEL(EOP_INT_SEL_SEND_DATA_AFTER_WR_CONFIRM);
+   unsigned sel = EOP_DST_SEL(dst_sel) | EOP_INT_SEL(int_sel) | EOP_DATA_SEL(data_sel);
 
    radeon_begin(cs);
 
@@ -257,7 +252,8 @@ gfx10_cs_emit_cache_flush(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_lev
                                       S_490_GLM_WB(glm_wb) | S_490_GLM_INV(glm_inv) | S_490_GLV_INV(glv_inv) |
                                          S_490_GL1_INV(gl1_inv) | S_490_GL2_INV(gl2_inv) | S_490_GL2_WB(gl2_wb) |
                                          S_490_SEQ(gcr_seq),
-                                      EOP_DST_SEL_MEM, EOP_DATA_SEL_VALUE_32BIT, flush_va, *flush_cnt, gfx9_eop_bug_va);
+                                      EOP_DST_SEL_MEM, EOP_INT_SEL_SEND_DATA_AFTER_WR_CONFIRM, EOP_DATA_SEL_VALUE_32BIT,
+                                      flush_va, *flush_cnt, gfx9_eop_bug_va);
 
          radv_cp_wait_mem(cs, WAIT_REG_MEM_EQUAL, flush_va, *flush_cnt, 0xffffffff);
       }
@@ -338,7 +334,7 @@ radv_cs_emit_cache_flush(struct radeon_winsys *ws, struct radv_cmd_stream *cs, e
          /* Necessary for DCC */
          if (gfx_level >= GFX8) {
             radv_cs_emit_write_event_eop(cs, gfx_level, V_028A90_FLUSH_AND_INV_CB_DATA_TS, 0, EOP_DST_SEL_MEM,
-                                         EOP_DATA_SEL_DISCARD, 0, 0, gfx9_eop_bug_va);
+                                         EOP_INT_SEL_NONE, EOP_DATA_SEL_DISCARD, 0, 0, gfx9_eop_bug_va);
          }
 
          *sqtt_flush_bits |= RGP_FLUSH_FLUSH_CB | RGP_FLUSH_INVAL_CB;
@@ -424,8 +420,9 @@ radv_cs_emit_cache_flush(struct radeon_winsys *ws, struct radv_cmd_stream *cs, e
       assert(flush_cnt);
       (*flush_cnt)++;
 
-      radv_cs_emit_write_event_eop(cs, gfx_level, cb_db_event, tc_flags, EOP_DST_SEL_MEM, EOP_DATA_SEL_VALUE_32BIT,
-                                   flush_va, *flush_cnt, gfx9_eop_bug_va);
+      radv_cs_emit_write_event_eop(cs, gfx_level, cb_db_event, tc_flags, EOP_DST_SEL_MEM,
+                                   EOP_INT_SEL_SEND_DATA_AFTER_WR_CONFIRM, EOP_DATA_SEL_VALUE_32BIT, flush_va,
+                                   *flush_cnt, gfx9_eop_bug_va);
       radv_cp_wait_mem(cs, WAIT_REG_MEM_EQUAL, flush_va, *flush_cnt, 0xffffffff);
    }
 
