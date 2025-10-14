@@ -2482,9 +2482,11 @@ lower_lsc_memory_fence_and_interlock(const brw_builder &bld, struct brw_send_ins
    assert(inst->size_written == reg_unit(devinfo) * REG_SIZE);
 
    const uint32_t intrinsic_desc = inst->desc;
+   const uint8_t sfid = inst->sfid;
    brw_send_inst *send = brw_transform_inst_to_send(bld, inst);
    inst = NULL;
 
+   send->sfid = sfid;
    send->check_tdr = interlock;
    send->has_side_effects = true;
 
@@ -2560,9 +2562,11 @@ lower_hdc_memory_fence_and_interlock(const brw_builder &bld, brw_send_inst *inst
 
    assert(inst->size_written == (commit_enable ? REG_SIZE : 0));
 
+   const uint8_t sfid = inst->sfid;
    brw_send_inst *send = brw_transform_inst_to_send(bld, inst);
    inst = NULL;
 
+   send->sfid = sfid;
    send->check_tdr = interlock;
    send->has_side_effects = true;
 
