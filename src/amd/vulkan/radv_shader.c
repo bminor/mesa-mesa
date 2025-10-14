@@ -1494,18 +1494,25 @@ radv_should_use_wgp_mode(const struct radv_device *device, mesa_shader_stage sta
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    enum amd_gfx_level chip = pdev->info.gfx_level;
-   switch (stage) {
-   case MESA_SHADER_COMPUTE:
-   case MESA_SHADER_TESS_CTRL:
-      return chip >= GFX10;
-   case MESA_SHADER_GEOMETRY:
-      return chip == GFX10 || (chip >= GFX10_3 && !info->is_ngg);
-   case MESA_SHADER_VERTEX:
-   case MESA_SHADER_TESS_EVAL:
-      return chip == GFX10 && info->is_ngg;
-   default:
+   if (chip < GFX10)
       return false;
-   }
+
+   /* Disable the WGP mode on gfx10.3 because it can hang. (it
+    * happened on VanGogh) Let's disable it on all chips that
+    * disable exactly 1 CU per SA for GS.
+    */
+   if (chip > GFX10 && info->is_ngg)
+      return false;
+
+   if (stage == MESA_SHADER_MESH || stage == MESA_SHADER_TASK || stage == MESA_SHADER_FRAGMENT)
+      return false;
+
+   /* VS+TCS programs might have an unknown LDS size if the input patch size is dynamic. */
+   bool uses_lds = radv_calculate_lds_size(info, chip) > 0 ||
+                   (stage == MESA_SHADER_TESS_CTRL && !info->num_tess_patches);
+
+   /* LDS is faster with CU mode. */
+   return !uses_lds;
 }
 
 #if defined(USE_LIBELF)
@@ -2344,10 +2351,6 @@ radv_postprocess_binary_config(struct radv_device *device, struct radv_shader_bi
          }
       }
 
-      /* Disable the WGP mode on gfx10.3 because it can hang. (it
-       * happened on VanGogh) Let's disable it on all chips that
-       * disable exactly 1 CU per SA for GS.
-       */
       config->rsrc1 |= S_00B228_GS_VGPR_COMP_CNT(gs_vgpr_comp_cnt) | S_00B228_WGP_MODE(config->wgp_mode);
       config->rsrc2 |= S_00B22C_ES_VGPR_COMP_CNT(es_vgpr_comp_cnt) | S_00B22C_LDS_SIZE(lds_alloc) |
                        S_00B22C_OC_LDS_EN(es_stage == MESA_SHADER_TESS_EVAL);

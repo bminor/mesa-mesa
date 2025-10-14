@@ -57,7 +57,7 @@ create_llvm_function(struct ac_llvm_context *ctx, LLVMModuleRef module, LLVMBuil
    }
 
    ac_llvm_set_workgroup_size(main_function.value, max_workgroup_size);
-   ac_llvm_set_target_features(main_function.value, ctx, true);
+   ac_llvm_set_target_features(main_function.value, ctx, options->wgp_mode);
 
    return main_function;
 }
