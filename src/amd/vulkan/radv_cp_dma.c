@@ -118,10 +118,7 @@ radv_emit_cp_dma(struct radv_cmd_buffer *cmd_buffer, uint64_t dst_va, uint64_t s
     */
    if (flags & CP_DMA_SYNC) {
       if (cmd_buffer->qf == RADV_QUEUE_GENERAL) {
-         radeon_begin(cs);
-         radeon_emit(PKT3(PKT3_PFP_SYNC_ME, 0, cmd_buffer->state.predicating));
-         radeon_emit(0);
-         radeon_end();
+         ac_emit_cp_pfp_sync_me(cs->b, cmd_buffer->state.predicating);
       }
 
       /* CP will see the sync flag and wait for all DMAs to complete. */

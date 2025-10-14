@@ -5254,27 +5254,26 @@ radv_load_color_clear_metadata(struct radv_cmd_buffer *cmd_buffer, struct radv_i
    uint64_t va = radv_image_get_fast_clear_va(image, iview->vk.base_mip_level);
    uint32_t reg = R_028C8C_CB_COLOR0_CLEAR_WORD0 + cb_idx * 0x3c;
 
-   radeon_begin(cs);
-
    if (pdev->info.has_load_ctx_reg_pkt) {
+      radeon_begin(cs);
       radeon_emit(PKT3(PKT3_LOAD_CONTEXT_REG_INDEX, 3, cmd_buffer->state.predicating));
       radeon_emit(va);
       radeon_emit(va >> 32);
       radeon_emit((reg - SI_CONTEXT_REG_OFFSET) >> 2);
       radeon_emit(2);
+      radeon_end();
    } else {
+      radeon_begin(cs);
       radeon_emit(PKT3(PKT3_COPY_DATA, 4, cmd_buffer->state.predicating));
       radeon_emit(COPY_DATA_SRC_SEL(COPY_DATA_SRC_MEM) | COPY_DATA_DST_SEL(COPY_DATA_REG) | COPY_DATA_COUNT_SEL);
       radeon_emit(va);
       radeon_emit(va >> 32);
       radeon_emit(reg >> 2);
       radeon_emit(0);
+      radeon_end();
 
-      radeon_emit(PKT3(PKT3_PFP_SYNC_ME, 0, cmd_buffer->state.predicating));
-      radeon_emit(0);
+      ac_emit_cp_pfp_sync_me(cs->b, cmd_buffer->state.predicating);
    }
-
-   radeon_end();
 }
 
 /* GFX9+ metadata cache flushing workaround. metadata cache coherency is
@@ -13075,10 +13074,7 @@ radv_CmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPr
    if (!radv_cmd_buffer_uses_mec(cmd_buffer)) {
       radeon_check_space(device->ws, cs->b, 2);
 
-      radeon_begin(cs);
-      radeon_emit(PKT3(PKT3_PFP_SYNC_ME, 0, cmd_buffer->state.predicating));
-      radeon_emit(0);
-      radeon_end();
+      ac_emit_cp_pfp_sync_me(cs->b, cmd_buffer->state.predicating);
    }
 
    radv_dgc_execute_ib(cmd_buffer, pGeneratedCommandsInfo);
