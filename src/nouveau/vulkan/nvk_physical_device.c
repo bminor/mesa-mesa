@@ -1481,20 +1481,42 @@ nvk_create_drm_physical_device(struct vk_instance *_instance,
    uint32_t sysmem_heap_idx = pdev->mem_heap_count++;
    pdev->mem_heaps[sysmem_heap_idx] = (struct nvk_memory_heap) {
       .size = sysmem_size_B,
-      /* If we don't have any VRAM (iGPU), claim sysmem as DEVICE_LOCAL */
-      .flags = pdev->info.vram_size_B == 0
-               ? VK_MEMORY_HEAP_DEVICE_LOCAL_BIT
-               : 0,
+      .flags = 0,
       .available = nvk_get_sysmem_heap_available,
    };
 
-   pdev->mem_types[pdev->mem_type_count++] = (VkMemoryType) {
-      /* TODO: What's the right thing to do here on Tegra? */
-      .propertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT |
-                       VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
-      .heapIndex = sysmem_heap_idx,
-   };
+   if (pdev->info.type == NV_DEVICE_TYPE_SOC) {
+      /* On Tegra, we only have sysmem so we claim it's DEVICE_LOCAL.  The
+       * only difference in memory types is between cached and uncached (but
+       * coherent) maps.
+       */
+      assert(pdev->info.vram_size_B == 0);
+      assert(pdev->mem_heap_count == 1);
+      pdev->mem_heaps[sysmem_heap_idx].flags |= VK_MEMORY_HEAP_DEVICE_LOCAL_BIT;
+
+      pdev->mem_types[pdev->mem_type_count++] = (VkMemoryType) {
+         .propertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
+                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                          VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+         .heapIndex = sysmem_heap_idx,
+      };
+      pdev->mem_types[pdev->mem_type_count++] = (VkMemoryType) {
+         .propertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
+                          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                          VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+         .heapIndex = sysmem_heap_idx,
+      };
+   } else {
+      /* On discrete GPUs, all sysmem maps are cached+coherent and the GPU
+       * snoops the CPU caches when it accesses memory across the PCI bus.
+       */
+      pdev->mem_types[pdev->mem_type_count++] = (VkMemoryType) {
+         .propertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                          VK_MEMORY_PROPERTY_HOST_COHERENT_BIT |
+                          VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+         .heapIndex = sysmem_heap_idx,
+      };
+   }
 
    assert(pdev->mem_heap_count <= ARRAY_SIZE(pdev->mem_heaps));
    assert(pdev->mem_type_count <= ARRAY_SIZE(pdev->mem_types));

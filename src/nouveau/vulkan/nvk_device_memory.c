@@ -52,6 +52,9 @@ nvk_memory_type_flags(const VkMemoryType *type,
    if (type->propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
       flags |= NVKMD_MEM_CAN_MAP;
 
+   if (type->propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
+      flags |= NVKMD_MEM_COHERENT;
+
    if (handle_types != 0)
       flags |= NVKMD_MEM_SHARED;
 

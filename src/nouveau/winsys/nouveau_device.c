@@ -550,6 +550,10 @@ nouveau_ws_device_destroy(struct nouveau_ws_device *device)
 uint64_t
 nouveau_ws_device_vram_used(struct nouveau_ws_device *device)
 {
+   /* On Tegra, we don't have VRAM */
+   if (device->info.type == NV_DEVICE_TYPE_SOC)
+      return 0;
+
    uint64_t used = 0;
    if (nouveau_ws_param(device->fd, NOUVEAU_GETPARAM_VRAM_USED, &used))
       return 0;
