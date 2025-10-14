@@ -277,35 +277,25 @@ wsi_display_parse_edid(struct wsi_display_connector *connector, drmModePropertyB
  * property associated with the object.
  */
 static bool
-find_properties(struct wsi_display_connector *connector, int fd, uint32_t type)
+find_properties(struct wsi_display_connector *connector, uint32_t count_props, uint32_t *props, uint64_t *prop_values, int fd, uint32_t type)
 {
-   uint32_t *prop_id, prop_count, obj_id;
-   drmModeObjectProperties *props;
+   uint32_t *prop_id, prop_count;
 
    switch (type) {
    case DRM_MODE_OBJECT_CONNECTOR:
-      obj_id = connector->id;
       prop_id = connector->property;
       prop_count = ARRAY_SIZE(connector->property);
       break;
    case DRM_MODE_OBJECT_CRTC:
-      obj_id = connector->crtc_id;
       prop_id = connector->crtc_property;
       prop_count = ARRAY_SIZE(connector->crtc_property);
       break;
    case DRM_MODE_OBJECT_PLANE:
-      obj_id = connector->plane_id;
       prop_id = connector->plane_property;
       prop_count = ARRAY_SIZE(connector->plane_property);
       break;
    default:
       UNREACHABLE("unexpected drm object type");
-   }
-
-   props = drmModeObjectGetProperties(fd, obj_id, type);
-   if (!props) {
-      mesa_loge("Failed to drmModeObjectGetProperties(obj=%d, type=0x%08x)", obj_id, type);
-      return false;
    }
 
    memset(prop_id, 0, prop_count * sizeof(*prop_id));
@@ -325,12 +315,12 @@ find_properties(struct wsi_display_connector *connector, int fd, uint32_t type)
    /* Walk the list of properties seeing if their names match one of the
     * properties we care about controlling.
     */
-   for (int p = 0; p < props->count_props; p++) {
-      drmModePropertyPtr prop = drmModeGetProperty(fd, props->props[p]);
+   for (int p = 0; p < count_props; p++) {
+      drmModePropertyPtr prop = drmModeGetProperty(fd, props[p]);
       if (!prop)
          continue;
 
-#define PROPERTY(x) if (!strcmp(prop->name, #x)) prop_id[x] = props->props[p]
+#define PROPERTY(x) if (!strcmp(prop->name, #x)) prop_id[x] = props[p]
       switch (type) {
       case DRM_MODE_OBJECT_CONNECTOR:
          STATIC_ASSERT(CRTC_ID == (enum plane_property) CONN_CRTC_ID);
@@ -373,7 +363,7 @@ find_properties(struct wsi_display_connector *connector, int fd, uint32_t type)
       }
 
       if (!strcmp(prop->name, "EDID")) {
-         drmModePropertyBlobRes *blob = drmModeGetPropertyBlob(fd, props->prop_values[p]);
+         drmModePropertyBlobRes *blob = drmModeGetPropertyBlob(fd, prop_values[p]);
          if (blob) {
             wsi_display_parse_edid(connector, blob);
             drmModeFreePropertyBlob(blob);
@@ -383,8 +373,6 @@ find_properties(struct wsi_display_connector *connector, int fd, uint32_t type)
       drmModeFreeProperty(prop);
    }
 
-   drmModeFreeObjectProperties(props);
-
    /* verify that all required properties were found */
    for (int i = 0; i < prop_count; i++) {
       if (!prop_id[i]) {
@@ -393,6 +381,37 @@ find_properties(struct wsi_display_connector *connector, int fd, uint32_t type)
       }
    }
    return true;
+}
+
+static bool
+find_object_properties(struct wsi_display_connector *connector, int fd, uint32_t type)
+{
+   drmModeObjectProperties *props;
+   uint32_t obj_id;
+   bool ret;
+
+   switch (type) {
+   case DRM_MODE_OBJECT_CONNECTOR:
+      obj_id = connector->id;
+      break;
+   case DRM_MODE_OBJECT_CRTC:
+      obj_id = connector->crtc_id;
+      break;
+   case DRM_MODE_OBJECT_PLANE:
+      obj_id = connector->plane_id;
+      break;
+   default:
+      UNREACHABLE("unexpected drm object type");
+   }
+
+   props = drmModeObjectGetProperties(fd, obj_id, type);
+   if (!props) {
+      mesa_loge("Failed to drmModeObjectGetProperties(obj=%d, type=0x%08x)", obj_id, type);
+      return false;
+   }
+   ret = find_properties(connector, props->count_props, props->props, props->prop_values, fd, type);
+   drmModeFreeObjectProperties(props);
+   return ret;
 }
 
 #define wsi_for_each_display_mode(_mode, _conn)                 \
@@ -619,7 +638,7 @@ wsi_display_alloc_connector(struct wsi_display *wsi,
    /* note: drmModeConnector has props pointer, the extra
     * drmModeObjectGetProperties here could be avoided
     */
-   if (!find_properties(connector, fd, DRM_MODE_OBJECT_CONNECTOR)) {
+   if (!find_object_properties(connector, fd, DRM_MODE_OBJECT_CONNECTOR)) {
       mesa_logd("Failed to find properties for connector");
       vk_free(wsi->alloc, connector);
       return NULL;
@@ -2210,14 +2229,14 @@ wsi_display_setup_crtc(wsi_display_connector *connector)
 
    connector->crtc_id = wsi_display_select_crtc(connector, mode_res, drm_connector);
    if (!connector->crtc_id ||
-       !find_properties(connector, wsi->fd, DRM_MODE_OBJECT_CRTC))
+       !find_object_properties(connector, wsi->fd, DRM_MODE_OBJECT_CRTC))
       goto bail;
 
    /* Select the primary plane of that CRTC, and populate the
     * format/modifier lists for that plane */
    connector->plane_id = wsi_display_select_plane(connector, mode_res);
    if (!connector->plane_id ||
-       !find_properties(connector, wsi->fd, DRM_MODE_OBJECT_PLANE))
+       !find_object_properties(connector, wsi->fd, DRM_MODE_OBJECT_PLANE))
       goto bail;
 
    drmModePlanePtr plane = drmModeGetPlane(wsi->fd, connector->plane_id);
