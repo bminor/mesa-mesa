@@ -100,8 +100,7 @@ radv_cs_emit_write_event_eop(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_
 
 static void
 gfx10_cs_emit_cache_flush(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_level, uint32_t *flush_cnt,
-                          uint64_t flush_va, enum radv_cmd_flush_bits flush_bits, enum rgp_flush_bits *sqtt_flush_bits,
-                          uint64_t gfx9_eop_bug_va)
+                          uint64_t flush_va, enum radv_cmd_flush_bits flush_bits, enum rgp_flush_bits *sqtt_flush_bits)
 {
    const bool is_mec = cs->hw_ip == AMD_IP_COMPUTE;
    uint32_t gcr_cntl = 0;
@@ -248,12 +247,11 @@ gfx10_cs_emit_cache_flush(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_lev
          assert(flush_cnt);
          (*flush_cnt)++;
 
-         radv_cs_emit_write_event_eop(cs, gfx_level, cb_db_event,
-                                      S_490_GLM_WB(glm_wb) | S_490_GLM_INV(glm_inv) | S_490_GLV_INV(glv_inv) |
-                                         S_490_GL1_INV(gl1_inv) | S_490_GL2_INV(gl2_inv) | S_490_GL2_WB(gl2_wb) |
-                                         S_490_SEQ(gcr_seq),
-                                      EOP_DST_SEL_MEM, EOP_INT_SEL_SEND_DATA_AFTER_WR_CONFIRM, EOP_DATA_SEL_VALUE_32BIT,
-                                      flush_va, *flush_cnt, gfx9_eop_bug_va);
+         radv_cs_emit_write_event_eop(
+            cs, gfx_level, cb_db_event,
+            S_490_GLM_WB(glm_wb) | S_490_GLM_INV(glm_inv) | S_490_GLV_INV(glv_inv) | S_490_GL1_INV(gl1_inv) |
+               S_490_GL2_INV(gl2_inv) | S_490_GL2_WB(gl2_wb) | S_490_SEQ(gcr_seq),
+            EOP_DST_SEL_MEM, EOP_INT_SEL_SEND_DATA_AFTER_WR_CONFIRM, EOP_DATA_SEL_VALUE_32BIT, flush_va, *flush_cnt, 0);
 
          radv_cp_wait_mem(cs, WAIT_REG_MEM_EQUAL, flush_va, *flush_cnt, 0xffffffff);
       }
@@ -309,7 +307,7 @@ radv_cs_emit_cache_flush(struct radeon_winsys *ws, struct radv_cmd_stream *cs, e
 
    if (gfx_level >= GFX10) {
       /* GFX10 cache flush handling is quite different. */
-      gfx10_cs_emit_cache_flush(cs, gfx_level, flush_cnt, flush_va, flush_bits, sqtt_flush_bits, gfx9_eop_bug_va);
+      gfx10_cs_emit_cache_flush(cs, gfx_level, flush_cnt, flush_va, flush_bits, sqtt_flush_bits);
       return;
    }
 
