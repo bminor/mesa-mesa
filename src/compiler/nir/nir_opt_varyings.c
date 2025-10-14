@@ -5134,7 +5134,7 @@ default_varying_estimate_instr_cost(nir_instr *instr)
 
       /* 16-bit multiplication should be cheap. Greater sizes not so much. */
       case nir_op_imul:
-      case nir_op_umul_low:
+      case nir_op_umul_16x16:
       case nir_op_imul_2x32_64:
       case nir_op_umul_2x32_64:
          return dst_bit_size <= 16 ? 1 : 4 * num_dst_dwords;

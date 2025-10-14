@@ -848,7 +848,7 @@ emit_alu(struct ir3_context *ctx, nir_alu_instr *alu)
    case nir_op_umin:
       dst = ir3_MIN_U_rpt(b, dst_sz, src[0], 0, src[1], 0);
       break;
-   case nir_op_umul_low:
+   case nir_op_umul_16x16:
       dst = ir3_MULL_U_rpt(b, dst_sz, src[0], 0, src[1], 0);
       break;
    case nir_op_imadsh_mix16:

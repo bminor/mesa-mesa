@@ -3212,7 +3212,7 @@ static pco_instr *trans_alu(trans_ctx *tctx, nir_alu_instr *alu)
                           pco_ref_null());
       break;
 
-   case nir_op_umul_low:
+   case nir_op_umul_16x16:
       instr = pco_imadd64(&tctx->b,
                           dest,
                           pco_ref_null(),
