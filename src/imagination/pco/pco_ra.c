@@ -28,6 +28,8 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 /** Live range of an SSA variable. */
 struct live_range {
@@ -811,7 +813,10 @@ static bool pco_ra_func(pco_func *func, pco_ra_ctx *ctx)
          ra_set_node_spill_cost(ra_graph, u, (float)uses[u]);
 
       unsigned spill_index = ra_get_best_spill_node(ra_graph);
-      assert(spill_index != ~0 && "Failed to get best spill node.");
+      if (spill_index == ~0) {
+         fprintf(stderr, "FATAL: Failed to get best spill node.\n");
+         abort();
+      }
 
       spill(spill_index, func, ctx);
 
