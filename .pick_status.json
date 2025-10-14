@@ -224,7 +224,7 @@
         "description": "wsi/display: Accept 0 nits for HDR light level properties for \"undefined\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b4176393a0aa5af547aa3f0ddfd03817e99a2588",
         "notes": null

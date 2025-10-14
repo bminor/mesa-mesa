@@ -2582,7 +2582,7 @@ color_xy_to_u16(float v)
 static inline uint16_t
 nits_to_u16(float nits)
 {
-   assert(nits >= 1.0f);
+   assert(nits >= 0.0f);
    assert(nits <= 65535.0f);
    /*
     * CTA-861-G
@@ -2596,7 +2596,7 @@ nits_to_u16(float nits)
 static inline uint16_t
 nits_to_u16_dark(float nits)
 {
-   assert(nits >= 0.0001f);
+   assert(nits >= 0.0000f);
    assert(nits <= 6.5535f);
    /*
     * CTA-861-G
