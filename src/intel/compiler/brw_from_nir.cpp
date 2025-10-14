@@ -7847,7 +7847,7 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
       /* The residency bits are only in the first component. */
       if (instr->is_sparse) {
          nir_dest[dest_size - 1] =
-            component(offset(dst, bld, dest_size - 1), 0);
+            component(offset(dst, bld, dest_comp), 0);
       }
 
       bld.LOAD_PAYLOAD(nir_def_reg, nir_dest, dest_size, 0);
