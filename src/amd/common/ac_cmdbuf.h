@@ -147,6 +147,10 @@ void
 ac_emit_cp_gfx11_ge_rings(struct ac_cmdbuf *cs, const struct radeon_info *info,
                           uint64_t attr_ring_va, bool enable_gfx12_partial_hiz_wa);
 
+void
+ac_emit_cp_tess_rings(struct ac_cmdbuf *cs, const struct radeon_info *info,
+                      uint64_t va);
+
 #ifdef __cplusplus
 }
 #endif

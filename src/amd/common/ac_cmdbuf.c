@@ -1136,3 +1136,41 @@ ac_emit_cp_gfx11_ge_rings(struct ac_cmdbuf *cs, const struct radeon_info *info,
 
    ac_cmdbuf_end();
 }
+
+void
+ac_emit_cp_tess_rings(struct ac_cmdbuf *cs, const struct radeon_info *info,
+                      uint64_t attr_ring_va)
+{
+   const uint64_t va = attr_ring_va + info->tess_offchip_ring_size;
+   uint32_t tf_ring_size = info->tess_factor_ring_size / 4;
+
+   if (info->gfx_level >= GFX11) {
+      /* TF_RING_SIZE is per SE on GFX11. */
+      tf_ring_size /= info->max_se;
+   }
+
+   assert((tf_ring_size & C_030938_SIZE) == 0);
+
+   ac_cmdbuf_begin(cs);
+
+   if (info->gfx_level >= GFX7) {
+      ac_cmdbuf_set_uconfig_reg_seq(R_030938_VGT_TF_RING_SIZE, 3);
+      ac_cmdbuf_emit(S_030938_SIZE(tf_ring_size));
+      ac_cmdbuf_emit(info->hs_offchip_param);
+      ac_cmdbuf_emit(va >> 8);
+
+      if (info->gfx_level >= GFX12) {
+         ac_cmdbuf_set_uconfig_reg(R_03099C_VGT_TF_MEMORY_BASE_HI, S_03099C_BASE_HI(va >> 40));
+      } else if (info->gfx_level >= GFX10) {
+         ac_cmdbuf_set_uconfig_reg(R_030984_VGT_TF_MEMORY_BASE_HI, S_030984_BASE_HI(va >> 40));
+      } else if (info->gfx_level == GFX9) {
+         ac_cmdbuf_set_uconfig_reg(R_030944_VGT_TF_MEMORY_BASE_HI, S_030944_BASE_HI(va >> 40));
+      }
+   } else {
+      ac_cmdbuf_set_config_reg(R_008988_VGT_TF_RING_SIZE, S_008988_SIZE(tf_ring_size));
+      ac_cmdbuf_set_config_reg(R_0089B8_VGT_TF_MEMORY_BASE, va >> 8);
+      ac_cmdbuf_set_config_reg(R_0089B0_VGT_HS_OFFCHIP_PARAM, info->hs_offchip_param);
+   }
+
+   ac_cmdbuf_end();
+}

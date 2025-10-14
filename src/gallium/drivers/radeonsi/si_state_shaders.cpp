@@ -4988,14 +4988,7 @@ static void si_emit_spi_ge_ring_state(struct si_context *sctx, unsigned index)
    if (sctx->has_tessellation) {
       struct pipe_resource *tf_ring =
          sctx->ws->cs_is_secure(&sctx->gfx_cs) ? sscreen->tess_rings_tmz : sscreen->tess_rings;
-      uint64_t factor_va = si_resource(tf_ring)->gpu_address +
-                           sscreen->info.tess_offchip_ring_size;
-
-      unsigned tf_ring_size_field = sscreen->info.tess_factor_ring_size / 4;
-      if (sctx->gfx_level >= GFX11)
-         tf_ring_size_field /= sscreen->info.max_se;
-
-      assert((tf_ring_size_field & C_030938_SIZE) == 0);
+      uint64_t va = si_resource(tf_ring)->gpu_address;
 
       radeon_add_to_buffer_list(sctx, &sctx->gfx_cs, si_resource(tf_ring),
                                 RADEON_USAGE_READWRITE | RADEON_PRIO_SHADER_RINGS);
@@ -5004,25 +4997,9 @@ static void si_emit_spi_ge_ring_state(struct si_context *sctx, unsigned index)
       /* Required before writing tessellation config registers. */
       radeon_event_write(V_028A90_VS_PARTIAL_FLUSH);
       radeon_event_write(V_028A90_VGT_FLUSH);
-
-      if (sctx->gfx_level >= GFX7) {
-         radeon_set_uconfig_reg_seq(R_030938_VGT_TF_RING_SIZE, 3);
-         radeon_emit(S_030938_SIZE(tf_ring_size_field)); /* R_030938_VGT_TF_RING_SIZE */
-         radeon_emit(sscreen->info.hs_offchip_param);      /* R_03093C_VGT_HS_OFFCHIP_PARAM */
-         radeon_emit(factor_va >> 8);                    /* R_030940_VGT_TF_MEMORY_BASE */
-
-         if (sctx->gfx_level >= GFX12)
-            radeon_set_uconfig_reg(R_03099C_VGT_TF_MEMORY_BASE_HI, S_03099C_BASE_HI(factor_va >> 40));
-         else if (sctx->gfx_level >= GFX10)
-            radeon_set_uconfig_reg(R_030984_VGT_TF_MEMORY_BASE_HI, S_030984_BASE_HI(factor_va >> 40));
-         else if (sctx->gfx_level == GFX9)
-            radeon_set_uconfig_reg(R_030944_VGT_TF_MEMORY_BASE_HI, S_030944_BASE_HI(factor_va >> 40));
-      } else {
-         radeon_set_config_reg(R_008988_VGT_TF_RING_SIZE, S_008988_SIZE(tf_ring_size_field));
-         radeon_set_config_reg(R_0089B8_VGT_TF_MEMORY_BASE, factor_va >> 8);
-         radeon_set_config_reg(R_0089B0_VGT_HS_OFFCHIP_PARAM, sscreen->info.hs_offchip_param);
-      }
       radeon_end();
+
+      ac_emit_cp_tess_rings(&sctx->gfx_cs.current, &sscreen->info, va);
    }
 
    if (sctx->gfx_level >= GFX11) {

@@ -382,43 +382,16 @@ radv_emit_tess_factor_ring(struct radv_device *device, struct radv_cmd_stream *c
                            struct radeon_winsys_bo *tess_rings_bo)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   uint64_t tf_va;
-   uint32_t tf_ring_size;
+   uint64_t va;
+
    if (!tess_rings_bo)
       return;
 
-   tf_ring_size = pdev->info.tess_factor_ring_size / 4;
-   tf_va = radv_buffer_get_va(tess_rings_bo) + pdev->info.tess_offchip_ring_size;
+   va = radv_buffer_get_va(tess_rings_bo);
 
    radv_cs_add_buffer(device->ws, cs->b, tess_rings_bo);
 
-   radeon_begin(cs);
-
-   if (pdev->info.gfx_level >= GFX7) {
-      if (pdev->info.gfx_level >= GFX11) {
-         /* TF_RING_SIZE is per SE on GFX11. */
-         tf_ring_size /= pdev->info.max_se;
-      }
-
-      radeon_set_uconfig_reg(R_030938_VGT_TF_RING_SIZE, S_030938_SIZE(tf_ring_size));
-      radeon_set_uconfig_reg(R_030940_VGT_TF_MEMORY_BASE, tf_va >> 8);
-
-      if (pdev->info.gfx_level >= GFX12) {
-         radeon_set_uconfig_reg(R_03099C_VGT_TF_MEMORY_BASE_HI, S_03099C_BASE_HI(tf_va >> 40));
-      } else if (pdev->info.gfx_level >= GFX10) {
-         radeon_set_uconfig_reg(R_030984_VGT_TF_MEMORY_BASE_HI, S_030984_BASE_HI(tf_va >> 40));
-      } else if (pdev->info.gfx_level == GFX9) {
-         radeon_set_uconfig_reg(R_030944_VGT_TF_MEMORY_BASE_HI, S_030944_BASE_HI(tf_va >> 40));
-      }
-
-      radeon_set_uconfig_reg(R_03093C_VGT_HS_OFFCHIP_PARAM, pdev->info.hs_offchip_param);
-   } else {
-      radeon_set_config_reg(R_008988_VGT_TF_RING_SIZE, S_008988_SIZE(tf_ring_size));
-      radeon_set_config_reg(R_0089B8_VGT_TF_MEMORY_BASE, tf_va >> 8);
-      radeon_set_config_reg(R_0089B0_VGT_HS_OFFCHIP_PARAM, pdev->info.hs_offchip_param);
-   }
-
-   radeon_end();
+   ac_emit_cp_tess_rings(cs->b, &pdev->info, va);
 }
 
 static VkResult
