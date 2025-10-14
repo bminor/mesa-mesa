@@ -1033,19 +1033,7 @@ static void emit_set_predicate(struct si_context *ctx, struct si_resource *buf, 
 {
    struct radeon_cmdbuf *cs = &ctx->gfx_cs;
 
-   radeon_begin(cs);
-
-   if (ctx->gfx_level >= GFX9) {
-      radeon_emit(PKT3(PKT3_SET_PREDICATION, 2, 0));
-      radeon_emit(op);
-      radeon_emit(va);
-      radeon_emit(va >> 32);
-   } else {
-      radeon_emit(PKT3(PKT3_SET_PREDICATION, 1, 0));
-      radeon_emit(va);
-      radeon_emit(op | ((va >> 32) & 0xFF));
-   }
-   radeon_end();
+   ac_emit_cp_set_predication(&cs->current, ctx->gfx_level, va, op);
 
    radeon_add_to_buffer_list(ctx, &ctx->gfx_cs, buf, RADEON_USAGE_READ | RADEON_PRIO_QUERY);
 }

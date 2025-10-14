@@ -134,6 +134,10 @@ ac_emit_cp_copy_data(struct ac_cmdbuf *cs, uint32_t src_sel, uint32_t dst_sel,
 void
 ac_emit_cp_pfp_sync_me(struct ac_cmdbuf *cs);
 
+void
+ac_emit_cp_set_predication(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
+                           uint64_t va, uint32_t op);
+
 #ifdef __cplusplus
 }
 #endif

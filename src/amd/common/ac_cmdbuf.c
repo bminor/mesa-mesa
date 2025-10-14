@@ -1069,3 +1069,21 @@ ac_emit_cp_pfp_sync_me(struct ac_cmdbuf *cs)
    ac_cmdbuf_emit(0);
    ac_cmdbuf_end();
 }
+
+void
+ac_emit_cp_set_predication(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
+                           uint64_t va, uint32_t op)
+{
+   ac_cmdbuf_begin(cs);
+   if (gfx_level >= GFX9) {
+      ac_cmdbuf_emit(PKT3(PKT3_SET_PREDICATION, 2, 0));
+      ac_cmdbuf_emit(op);
+      ac_cmdbuf_emit(va);
+      ac_cmdbuf_emit(va >> 32);
+   } else {
+      ac_cmdbuf_emit(PKT3(PKT3_SET_PREDICATION, 1, 0));
+      ac_cmdbuf_emit(va);
+      ac_cmdbuf_emit(op | ((va >> 32) & 0xFF));
+   }
+   ac_cmdbuf_end();
+}

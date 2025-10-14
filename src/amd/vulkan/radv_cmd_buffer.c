@@ -14605,25 +14605,14 @@ radv_emit_set_predication_state(struct radv_cmd_buffer *cmd_buffer, bool draw_vi
 
       op = PRED_OP(pred_op);
 
-      /* PREDICATION_DRAW_VISIBLE means that if the 32-bit value is
-       * zero, all rendering commands are discarded. Otherwise, they
-       * are discarded if the value is non zero.
+      /* PREDICATION_DRAW_VISIBLE means that if the 32-bit value is zero, all
+       * rendering commands are discarded. Otherwise, they are discarded if
+       * the value is non zero.
        */
       op |= draw_visible ? PREDICATION_DRAW_VISIBLE : PREDICATION_DRAW_NOT_VISIBLE;
    }
 
-   radeon_begin(cs);
-   if (pdev->info.gfx_level >= GFX9) {
-      radeon_emit(PKT3(PKT3_SET_PREDICATION, 2, 0));
-      radeon_emit(op);
-      radeon_emit(va);
-      radeon_emit(va >> 32);
-   } else {
-      radeon_emit(PKT3(PKT3_SET_PREDICATION, 1, 0));
-      radeon_emit(va);
-      radeon_emit(op | ((va >> 32) & 0xFF));
-   }
-   radeon_end();
+   ac_emit_cp_set_predication(cs->b, pdev->info.gfx_level, va, op);
 }
 
 void
