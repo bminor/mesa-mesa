@@ -841,16 +841,10 @@ static void si_query_hw_do_emit_start(struct si_context *sctx, struct si_query_h
          si_set_internal_shader_buffer(sctx, SI_GS_QUERY_EMULATED_COUNTERS_BUF, &sbuf);
          SET_FIELD(sctx->current_gs_state, GS_STATE_PIPELINE_STATS_EMU, 1);
 
-         const uint32_t zero = 0;
-         radeon_begin(cs);
          /* Clear the emulated counter end value. We don't clear start because it's unused. */
          va += si_query_pipestat_end_dw_offset(sctx->screen, query->index) * 4;
-         radeon_emit(PKT3(PKT3_WRITE_DATA, 2 + 1, 0));
-         radeon_emit(S_370_DST_SEL(V_370_MEM) | S_370_WR_CONFIRM(1) | S_370_ENGINE_SEL(V_370_PFP));
-         radeon_emit(va);
-         radeon_emit(va >> 32);
-         radeon_emit(zero);
-         radeon_end();
+
+         ac_emit_write_data_imm(&cs->current, V_370_PFP, va, 0);
 
          sctx->num_pipeline_stat_emulated_queries++;
       } else {
