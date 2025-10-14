@@ -5036,46 +5036,9 @@ static void si_emit_spi_ge_ring_state(struct si_context *sctx, unsigned index)
       uint64_t attr_address = sctx->ws->cs_is_secure(&sctx->gfx_cs) ?
          sscreen->attribute_pos_prim_ring_tmz->gpu_address :
          sscreen->attribute_pos_prim_ring->gpu_address;
-      assert((attr_address >> 32) == sscreen->info.address32_hi);
 
-      radeon_begin(&sctx->gfx_cs);
-      radeon_set_uconfig_reg_seq(R_031110_SPI_GS_THROTTLE_CNTL1, 4);
-      radeon_emit(0x12355123);      /* SPI_GS_THROTTLE_CNTL1 */
-      radeon_emit(0x1544D);         /* SPI_GS_THROTTLE_CNTL2 */
-      radeon_emit(attr_address >> 16); /* SPI_ATTRIBUTE_RING_BASE */
-      radeon_emit(S_03111C_MEM_SIZE((sscreen->info.attribute_ring_size_per_se >> 16) - 1) |
-                  S_03111C_BIG_PAGE(sscreen->info.discardable_allows_big_page) |
-                  S_03111C_L1_POLICY(1)); /* SPI_ATTRIBUTE_RING_SIZE */
-
-      if (sctx->gfx_level >= GFX12) {
-         uint64_t pos_address = attr_address + sscreen->info.pos_ring_offset;
-         uint64_t prim_address = attr_address + sscreen->info.prim_ring_offset;
-
-         /* When one of these 4 registers is updated, all 4 must be updated. */
-         radeon_set_uconfig_reg_seq(R_0309A0_GE_POS_RING_BASE, 4);
-         radeon_emit(pos_address >> 16);              /* R_0309A0_GE_POS_RING_BASE */
-         radeon_emit(S_0309A4_MEM_SIZE(sscreen->info.pos_ring_size_per_se >> 5)); /* R_0309A4_GE_POS_RING_SIZE */
-         radeon_emit(prim_address >> 16);             /* R_0309A8_GE_PRIM_RING_BASE */
-         radeon_emit(S_0309AC_MEM_SIZE(sscreen->info.prim_ring_size_per_se >> 5) |
-                     S_0309AC_SCOPE(gfx12_scope_device) |
-                     S_0309AC_PAF_TEMPORAL(gfx12_store_high_temporal_stay_dirty) |
-                     S_0309AC_PAB_TEMPORAL(gfx12_load_last_use_discard) |
-                     S_0309AC_SPEC_DATA_READ(gfx12_spec_read_auto) |
-                     S_0309AC_FORCE_SE_SCOPE(1) |
-                     S_0309AC_PAB_NOFILL(1));         /* R_0309AC_GE_PRIM_RING_SIZE */
-
-         if (sctx->gfx_level == GFX12 && sscreen->info.pfp_fw_version >= 2680) {
-            /* Mitigate the HiZ GPU hang by increasing a timeout when
-             * BOTTOM_OF_PIPE_TS is used as the workaround. This must be
-             * emitted when the gfx queue is idle.
-             */
-            const uint32_t timeout = sscreen->options.alt_hiz_logic ? 0xfff : 0;
-
-            radeon_emit(PKT3(PKT3_UPDATE_DB_SUMMARIZER_TIMEOUT, 0, 0));
-            radeon_emit(S_EF1_SUMM_CNTL_EVICT_TIMEOUT(timeout));
-         }
-      }
-      radeon_end();
+      ac_emit_cp_gfx11_ge_rings(&sctx->gfx_cs.current, &sscreen->info,
+                                attr_address, sscreen->options.alt_hiz_logic);
    }
 }
 

@@ -76,6 +76,11 @@ struct ac_cmdbuf {
 
 #define ac_cmdbuf_set_config_reg(reg, value) __ac_cmdbuf_set_reg(reg, 0, value, SI_CONFIG, PKT3_SET_CONFIG_REG)
 
+/* Packet building helpers for UCONFIG registers. */
+#define ac_cmdbuf_set_uconfig_reg_seq(reg, num) __ac_cmdbuf_set_reg_seq(reg, num, 0, CIK_UCONFIG, PKT3_SET_UCONFIG_REG, 0)
+
+#define ac_cmdbuf_set_uconfig_reg(reg, value) __ac_cmdbuf_set_reg(reg, 0, value, CIK_UCONFIG, PKT3_SET_UCONFIG_REG)
+
 struct ac_preamble_state {
    uint64_t border_color_va;
 
@@ -137,6 +142,10 @@ ac_emit_cp_pfp_sync_me(struct ac_cmdbuf *cs, bool predicate);
 void
 ac_emit_cp_set_predication(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
                            uint64_t va, uint32_t op);
+
+void
+ac_emit_cp_gfx11_ge_rings(struct ac_cmdbuf *cs, const struct radeon_info *info,
+                          uint64_t attr_ring_va, bool enable_gfx12_partial_hiz_wa);
 
 #ifdef __cplusplus
 }

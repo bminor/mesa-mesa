@@ -1087,3 +1087,52 @@ ac_emit_cp_set_predication(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
    }
    ac_cmdbuf_end();
 }
+
+void
+ac_emit_cp_gfx11_ge_rings(struct ac_cmdbuf *cs, const struct radeon_info *info,
+                         uint64_t attr_ring_va, bool enable_gfx12_partial_hiz_wa)
+{
+   assert(info->gfx_level >= GFX11);
+   assert((attr_ring_va >> 32) == info->address32_hi);
+
+   ac_cmdbuf_begin(cs);
+
+   ac_cmdbuf_set_uconfig_reg_seq(R_031110_SPI_GS_THROTTLE_CNTL1, 4);
+   ac_cmdbuf_emit(0x12355123);
+   ac_cmdbuf_emit(0x1544D);
+   ac_cmdbuf_emit(attr_ring_va >> 16);
+   ac_cmdbuf_emit(S_03111C_MEM_SIZE((info->attribute_ring_size_per_se >> 16) - 1) |
+                  S_03111C_BIG_PAGE(info->discardable_allows_big_page) |
+                  S_03111C_L1_POLICY(1));
+
+   if (info->gfx_level >= GFX12) {
+      const uint64_t pos_va = attr_ring_va + info->pos_ring_offset;
+      const uint64_t prim_va = attr_ring_va + info->prim_ring_offset;
+
+      /* When one of these 4 registers is updated, all 4 must be updated. */
+      ac_cmdbuf_set_uconfig_reg_seq(R_0309A0_GE_POS_RING_BASE, 4);
+      ac_cmdbuf_emit(pos_va >> 16);
+      ac_cmdbuf_emit(S_0309A4_MEM_SIZE(info->pos_ring_size_per_se >> 5));
+      ac_cmdbuf_emit(prim_va >> 16);
+      ac_cmdbuf_emit(S_0309AC_MEM_SIZE(info->prim_ring_size_per_se >> 5) |
+                     S_0309AC_SCOPE(gfx12_scope_device) |
+                     S_0309AC_PAF_TEMPORAL(gfx12_store_high_temporal_stay_dirty) |
+                     S_0309AC_PAB_TEMPORAL(gfx12_load_last_use_discard) |
+                     S_0309AC_SPEC_DATA_READ(gfx12_spec_read_auto) |
+                     S_0309AC_FORCE_SE_SCOPE(1) |
+                     S_0309AC_PAB_NOFILL(1));
+
+      if (info->gfx_level == GFX12 && info->pfp_fw_version >= 2680) {
+         /* Mitigate the HiZ GPU hang by increasing a timeout when
+          * BOTTOM_OF_PIPE_TS is used as the workaround. This must be emitted
+          * when the gfx queue is idle.
+          */
+         const uint32_t timeout = enable_gfx12_partial_hiz_wa ? 0xfff : 0;
+
+         ac_cmdbuf_emit(PKT3(PKT3_UPDATE_DB_SUMMARIZER_TIMEOUT, 0, 0));
+         ac_cmdbuf_emit(S_EF1_SUMM_CNTL_EVICT_TIMEOUT(timeout));
+      }
+   }
+
+   ac_cmdbuf_end();
+}

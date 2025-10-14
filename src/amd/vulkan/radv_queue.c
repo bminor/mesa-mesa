@@ -636,7 +636,6 @@ radv_emit_ge_rings(struct radv_device *device, struct radv_cmd_stream *cs, struc
       return;
 
    va = radv_buffer_get_va(ge_rings_bo);
-   assert((va >> 32) == pdev->info.address32_hi);
 
    radv_cs_add_buffer(device->ws, cs->b, ge_rings_bo);
 
@@ -648,43 +647,7 @@ radv_emit_ge_rings(struct radv_device *device, struct radv_cmd_stream *cs, struc
    /* Wait for the PWS counter. */
    ac_emit_cp_acquire_mem_pws(cs->b, pdev->info.gfx_level, AMD_IP_GFX, V_028A90_BOTTOM_OF_PIPE_TS, V_580_CP_ME, 0, 0);
 
-   radeon_begin(cs);
-
-   /* The PS will read inputs from this address. */
-   radeon_set_uconfig_reg_seq(R_031110_SPI_GS_THROTTLE_CNTL1, 4);
-   radeon_emit(0x12355123); /* SPI_GS_THROTTLE_CNTL1 */
-   radeon_emit(0x1544D);    /* SPI_GS_THROTTLE_CNTL2 */
-   radeon_emit(va >> 16);   /* SPI_ATTRIBUTE_RING_BASE */
-   radeon_emit(S_03111C_MEM_SIZE((pdev->info.attribute_ring_size_per_se >> 16) - 1) |
-               S_03111C_BIG_PAGE(pdev->info.discardable_allows_big_page) |
-               S_03111C_L1_POLICY(1)); /* SPI_ATTRIBUTE_RING_SIZE */
-
-   if (pdev->info.gfx_level >= GFX12) {
-      const uint64_t pos_address = va + pdev->info.pos_ring_offset;
-      const uint64_t prim_address = va + pdev->info.prim_ring_offset;
-
-      /* When one of these 4 registers is updated, all 4 must be updated. */
-      radeon_set_uconfig_reg_seq(R_0309A0_GE_POS_RING_BASE, 4);
-      radeon_emit(pos_address >> 16);                                       /* R_0309A0_GE_POS_RING_BASE */
-      radeon_emit(S_0309A4_MEM_SIZE(pdev->info.pos_ring_size_per_se >> 5)); /* R_0309A4_GE_POS_RING_SIZE */
-      radeon_emit(prim_address >> 16);                                      /* R_0309A8_GE_PRIM_RING_BASE */
-      radeon_emit(S_0309AC_MEM_SIZE(pdev->info.prim_ring_size_per_se >> 5) | S_0309AC_SCOPE(gfx12_scope_device) |
-                  S_0309AC_PAF_TEMPORAL(gfx12_store_high_temporal_stay_dirty) |
-                  S_0309AC_PAB_TEMPORAL(gfx12_load_last_use_discard) | S_0309AC_SPEC_DATA_READ(gfx12_spec_read_auto) |
-                  S_0309AC_FORCE_SE_SCOPE(1) | S_0309AC_PAB_NOFILL(1)); /* R_0309AC_GE_PRIM_RING_SIZE */
-
-      if (pdev->info.gfx_level == GFX12 && pdev->info.pfp_fw_version >= 2680) {
-         /* Mitigate the HiZ GPU hang by increasing a timeout when BOTTOM_OF_PIPE_TS is used as the
-          * workaround. This must be emitted when the gfx queue is idle.
-          */
-         const uint32_t timeout = pdev->gfx12_hiz_wa == RADV_GFX12_HIZ_WA_PARTIAL ? 0xfff : 0;
-
-         radeon_emit(PKT3(PKT3_UPDATE_DB_SUMMARIZER_TIMEOUT, 0, 0));
-         radeon_emit(S_EF1_SUMM_CNTL_EVICT_TIMEOUT(timeout));
-      }
-   }
-
-   radeon_end();
+   ac_emit_cp_gfx11_ge_rings(cs->b, &pdev->info, va, pdev->gfx12_hiz_wa == RADV_GFX12_HIZ_WA_PARTIAL);
 }
 
 static void
