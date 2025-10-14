@@ -248,7 +248,7 @@
     DRIVER_NAME: freedreno-a6xx
     VK_DRIVER: freedreno
     LAVA_FIRMWARE: qcom-lava
-    KERNEL_TAG: msm-fixes-for-mesa-ci-21082025
+    KERNEL_TAG: msm-fixes-for-mesa-ci-14102025
 
 # Status: https://lava.collabora.dev/scheduler/device_type/sc7180-trogdor-lazor-limozeen
 .lava-sc7180-trogdor-lazor-limozeen:arm64:
@@ -267,7 +267,7 @@
     DRIVER_NAME: freedreno-a6xx
     VK_DRIVER: freedreno
     LAVA_FIRMWARE: qcom-lava
-    KERNEL_TAG: msm-fixes-for-mesa-ci-21082025
+    KERNEL_TAG: msm-fixes-for-mesa-ci-14102025
 
 # Status: https://lava.collabora.dev/scheduler/device_type/sm8350-hdk
 .lava-sm8350-hdk:arm64:
@@ -289,7 +289,7 @@
     DRIVER_NAME: freedreno-a6xx
     VK_DRIVER: freedreno
     LAVA_FIRMWARE: qcom-lava
-    KERNEL_TAG: msm-fixes-for-mesa-ci-21082025
+    KERNEL_TAG: msm-fixes-for-mesa-ci-14102025
 
 
 .google-freedreno-test-gl:
