@@ -98,8 +98,10 @@ panvk_pool_alloc_backing(struct panvk_pool *pool, size_t sz)
           * VK_ERROR_OUT_OF_HOST_MEMORY.
           * We expect the caller to check the returned pointer and catch the
           * host allocation failure with a call to panvk_error(). */
-         if (result == VK_ERROR_OUT_OF_HOST_MEMORY)
+         if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
+            assert(bo == NULL);
             errno = -ENOMEM;
+         }
       }
    }
 
