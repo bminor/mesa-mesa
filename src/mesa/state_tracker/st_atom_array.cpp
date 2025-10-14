@@ -429,6 +429,14 @@ st_update_array_templ(struct st_context *st,
       num_vbuffers_tc = util_bitcount_fast<POPCNT>(inputs_read &
                                                    enabled_arrays);
 
+      /* Call this before tc_add_set_vertex_elements_and_buffers_call to not
+       * insert tc_resource_release calls before tc_set_vertex_elements_for_call
+       * is used.
+       */
+      if (UPDATE_VELEMS && ALLOW_ZERO_STRIDE_ATTRIBS &&
+          st->release_counter != st->work_counter)
+         st_prune_releasebufs(st);
+
       /* Add up to 1 vertex buffer for zero-stride vertex attribs. */
       num_vbuffers_tc += ALLOW_ZERO_STRIDE_ATTRIBS &&
                          inputs_read & ~enabled_arrays;
