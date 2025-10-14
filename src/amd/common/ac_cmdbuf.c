@@ -1192,3 +1192,54 @@ ac_emit_cp_gfx_scratch(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
 
    ac_cmdbuf_end();
 }
+
+/* Execute plain ACQUIRE_MEM that just flushes caches. This optionally waits
+ * for idle on older chips. "engine" determines whether to sync in PFP or ME.
+ */
+void
+ac_emit_cp_acquire_mem(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
+                       enum amd_ip_type ip_type, uint32_t engine,
+                       uint32_t gcr_cntl)
+{
+   assert(engine == V_580_CP_PFP || engine == V_580_CP_ME);
+   assert(gcr_cntl);
+
+   ac_cmdbuf_begin(cs);
+
+   if (gfx_level >= GFX10) {
+      /* ACQUIRE_MEM in PFP is implemented as ACQUIRE_MEM in ME + PFP_SYNC_ME. */
+      const uint32_t engine_flag = engine == V_580_CP_ME ? BITFIELD_BIT(31) : 0;
+
+      /* Flush caches. This doesn't wait for idle. */
+      ac_cmdbuf_emit(PKT3(PKT3_ACQUIRE_MEM, 6, 0));
+      ac_cmdbuf_emit(engine_flag);   /* which engine to use */
+      ac_cmdbuf_emit(0xffffffff);    /* CP_COHER_SIZE */
+      ac_cmdbuf_emit(0x01ffffff);    /* CP_COHER_SIZE_HI */
+      ac_cmdbuf_emit(0);             /* CP_COHER_BASE */
+      ac_cmdbuf_emit(0);             /* CP_COHER_BASE_HI */
+      ac_cmdbuf_emit(0x0000000A);    /* POLL_INTERVAL */
+      ac_cmdbuf_emit(gcr_cntl);      /* GCR_CNTL */
+   } else {
+      const bool is_mec = gfx_level >= GFX7 && ip_type == AMD_IP_COMPUTE;
+
+      if (gfx_level == GFX9 || is_mec) {
+         /* Flush caches and wait for the caches to assert idle. */
+         ac_cmdbuf_emit(PKT3(PKT3_ACQUIRE_MEM, 5, 0) | PKT3_SHADER_TYPE_S(is_mec));
+         ac_cmdbuf_emit(gcr_cntl);      /* CP_COHER_CNTL */
+         ac_cmdbuf_emit(0xffffffff);    /* CP_COHER_SIZE */
+         ac_cmdbuf_emit(0xffffff);      /* CP_COHER_SIZE_HI */
+         ac_cmdbuf_emit(0);             /* CP_COHER_BASE */
+         ac_cmdbuf_emit(0);             /* CP_COHER_BASE_HI */
+         ac_cmdbuf_emit(0x0000000A);    /* POLL_INTERVAL */
+      } else {
+         /* ACQUIRE_MEM is only required on the compute ring. */
+         ac_cmdbuf_emit(PKT3(PKT3_SURFACE_SYNC, 3, 0));
+         ac_cmdbuf_emit(gcr_cntl);      /* CP_COHER_CNTL */
+         ac_cmdbuf_emit(0xffffffff);    /* CP_COHER_SIZE */
+         ac_cmdbuf_emit(0);             /* CP_COHER_BASE */
+         ac_cmdbuf_emit(0x0000000A);    /* POLL_INTERVAL */
+      }
+   }
+
+   ac_cmdbuf_end();
+}

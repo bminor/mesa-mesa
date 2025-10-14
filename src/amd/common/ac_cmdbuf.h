@@ -160,6 +160,11 @@ void
 ac_emit_cp_gfx_scratch(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
                        uint64_t va, uint32_t size);
 
+void
+ac_emit_cp_acquire_mem(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
+                       enum amd_ip_type ip_type, uint32_t engine,
+                       uint32_t gcr_cntl);
+
 #ifdef __cplusplus
 }
 #endif

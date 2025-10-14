@@ -104,32 +104,6 @@ radv_cs_emit_write_event_eop(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_
 }
 
 static void
-radv_emit_acquire_mem(struct radv_cmd_stream *cs, bool is_mec, bool is_gfx9, unsigned cp_coher_cntl)
-{
-   radeon_begin(cs);
-
-   if (is_mec || is_gfx9) {
-      uint32_t hi_val = is_gfx9 ? 0xffffff : 0xff;
-      radeon_emit(PKT3(PKT3_ACQUIRE_MEM, 5, false) | PKT3_SHADER_TYPE_S(is_mec));
-      radeon_emit(cp_coher_cntl); /* CP_COHER_CNTL */
-      radeon_emit(0xffffffff);    /* CP_COHER_SIZE */
-      radeon_emit(hi_val);        /* CP_COHER_SIZE_HI */
-      radeon_emit(0);             /* CP_COHER_BASE */
-      radeon_emit(0);             /* CP_COHER_BASE_HI */
-      radeon_emit(0x0000000A);    /* POLL_INTERVAL */
-   } else {
-      /* ACQUIRE_MEM is only required on a compute ring. */
-      radeon_emit(PKT3(PKT3_SURFACE_SYNC, 3, false));
-      radeon_emit(cp_coher_cntl); /* CP_COHER_CNTL */
-      radeon_emit(0xffffffff);    /* CP_COHER_SIZE */
-      radeon_emit(0);             /* CP_COHER_BASE */
-      radeon_emit(0x0000000A);    /* POLL_INTERVAL */
-   }
-
-   radeon_end();
-}
-
-static void
 gfx10_cs_emit_cache_flush(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_level, uint32_t *flush_cnt,
                           uint64_t flush_va, enum radv_cmd_flush_bits flush_bits, enum rgp_flush_bits *sqtt_flush_bits,
                           uint64_t gfx9_eop_bug_va)
@@ -298,20 +272,7 @@ gfx10_cs_emit_cache_flush(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_lev
 
    /* Ignore fields that only modify the behavior of other fields. */
    if (gcr_cntl & C_586_GL1_RANGE & C_586_GL2_RANGE & C_586_SEQ) {
-      /* Flush caches and wait for the caches to assert idle.
-       * The cache flush is executed in the ME, but the PFP waits
-       * for completion.
-       */
-      radeon_begin(cs);
-      radeon_emit(PKT3(PKT3_ACQUIRE_MEM, 6, 0));
-      radeon_emit(0);          /* CP_COHER_CNTL */
-      radeon_emit(0xffffffff); /* CP_COHER_SIZE */
-      radeon_emit(0xffffff);   /* CP_COHER_SIZE_HI */
-      radeon_emit(0);          /* CP_COHER_BASE */
-      radeon_emit(0);          /* CP_COHER_BASE_HI */
-      radeon_emit(0x0000000A); /* POLL_INTERVAL */
-      radeon_emit(gcr_cntl);   /* GCR_CNTL */
-      radeon_end();
+      ac_emit_cp_acquire_mem(cs->b, gfx_level, cs->hw_ip, V_580_CP_PFP, gcr_cntl);
    } else if ((cb_db_event || (flush_bits & (RADV_CMD_FLAG_VS_PARTIAL_FLUSH | RADV_CMD_FLAG_PS_PARTIAL_FLUSH |
                                              RADV_CMD_FLAG_CS_PARTIAL_FLUSH))) &&
               !is_mec) {
@@ -494,9 +455,9 @@ radv_cs_emit_cache_flush(struct radeon_winsys *ws, struct radv_cmd_stream *cs, e
    }
 
    if ((flush_bits & RADV_CMD_FLAG_INV_L2) || (gfx_level <= GFX7 && (flush_bits & RADV_CMD_FLAG_WB_L2))) {
-      radv_emit_acquire_mem(cs, is_mec, gfx_level == GFX9,
-                            cp_coher_cntl | S_0085F0_TC_ACTION_ENA(1) | S_0085F0_TCL1_ACTION_ENA(1) |
-                               S_0301F0_TC_WB_ACTION_ENA(gfx_level >= GFX8));
+      ac_emit_cp_acquire_mem(cs->b, gfx_level, cs->hw_ip, V_580_CP_PFP,
+                             cp_coher_cntl | S_0085F0_TC_ACTION_ENA(1) | S_0085F0_TCL1_ACTION_ENA(1) |
+                                S_0301F0_TC_WB_ACTION_ENA(gfx_level >= GFX8));
       cp_coher_cntl = 0;
 
       *sqtt_flush_bits |= RGP_FLUSH_INVAL_L2 | RGP_FLUSH_INVAL_VMEM_L0;
@@ -508,14 +469,14 @@ radv_cs_emit_cache_flush(struct radeon_winsys *ws, struct radv_cmd_stream *cs, e
           *
           * WB doesn't work without NC.
           */
-         radv_emit_acquire_mem(cs, is_mec, gfx_level == GFX9,
-                               cp_coher_cntl | S_0301F0_TC_WB_ACTION_ENA(1) | S_0301F0_TC_NC_ACTION_ENA(1));
+         ac_emit_cp_acquire_mem(cs->b, gfx_level, cs->hw_ip, V_580_CP_PFP,
+                                cp_coher_cntl | S_0301F0_TC_WB_ACTION_ENA(1) | S_0301F0_TC_NC_ACTION_ENA(1));
          cp_coher_cntl = 0;
 
          *sqtt_flush_bits |= RGP_FLUSH_FLUSH_L2 | RGP_FLUSH_INVAL_VMEM_L0;
       }
       if (flush_bits & RADV_CMD_FLAG_INV_VCACHE) {
-         radv_emit_acquire_mem(cs, is_mec, gfx_level == GFX9, cp_coher_cntl | S_0085F0_TCL1_ACTION_ENA(1));
+         ac_emit_cp_acquire_mem(cs->b, gfx_level, cs->hw_ip, V_580_CP_PFP, cp_coher_cntl | S_0085F0_TCL1_ACTION_ENA(1));
          cp_coher_cntl = 0;
 
          *sqtt_flush_bits |= RGP_FLUSH_INVAL_VMEM_L0;
@@ -526,7 +487,7 @@ radv_cs_emit_cache_flush(struct radeon_winsys *ws, struct radv_cmd_stream *cs, e
     * Therefore, it should be last. Done in PFP.
     */
    if (cp_coher_cntl)
-      radv_emit_acquire_mem(cs, is_mec, gfx_level == GFX9, cp_coher_cntl);
+      ac_emit_cp_acquire_mem(cs->b, gfx_level, cs->hw_ip, V_580_CP_PFP, cp_coher_cntl);
 
    radeon_begin(cs);
 
