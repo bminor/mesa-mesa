@@ -4518,16 +4518,9 @@ static void si_emit_scratch_state(struct si_context *sctx, unsigned index)
 {
    struct radeon_cmdbuf *cs = &sctx->gfx_cs;
 
-   radeon_begin(cs);
-   if (sctx->gfx_level >= GFX11) {
-      radeon_set_context_reg_seq(R_0286E8_SPI_TMPRING_SIZE, 3);
-      radeon_emit(sctx->spi_tmpring_size);                  /* SPI_TMPRING_SIZE */
-      radeon_emit(sctx->scratch_buffer->gpu_address >> 8);  /* SPI_GFX_SCRATCH_BASE_LO */
-      radeon_emit(sctx->scratch_buffer->gpu_address >> 40); /* SPI_GFX_SCRATCH_BASE_HI */
-   } else {
-      radeon_set_context_reg(R_0286E8_SPI_TMPRING_SIZE, sctx->spi_tmpring_size);
-   }
-   radeon_end();
+   ac_emit_cp_gfx_scratch(&cs->current, sctx->gfx_level,
+                          sctx->scratch_buffer->gpu_address,
+                          sctx->spi_tmpring_size);
 
    if (sctx->scratch_buffer) {
       radeon_add_to_buffer_list(sctx, &sctx->gfx_cs, sctx->scratch_buffer,

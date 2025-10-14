@@ -460,24 +460,13 @@ radv_emit_graphics_scratch(struct radv_device *device, struct radv_cmd_stream *c
    if (!scratch_bo)
       return;
 
+   const uint64_t va = radv_buffer_get_va(scratch_bo);
+
    ac_get_scratch_tmpring_size(gpu_info, waves, size_per_wave, &tmpring_size);
 
    radv_cs_add_buffer(device->ws, cs->b, scratch_bo);
 
-   radeon_begin(cs);
-
-   if (gpu_info->gfx_level >= GFX11) {
-      uint64_t va = radv_buffer_get_va(scratch_bo);
-
-      radeon_set_context_reg_seq(R_0286E8_SPI_TMPRING_SIZE, 3);
-      radeon_emit(tmpring_size);
-      radeon_emit(va >> 8);  /* SPI_GFX_SCRATCH_BASE_LO */
-      radeon_emit(va >> 40); /* SPI_GFX_SCRATCH_BASE_HI */
-   } else {
-      radeon_set_context_reg(R_0286E8_SPI_TMPRING_SIZE, tmpring_size);
-   }
-
-   radeon_end();
+   ac_emit_cp_gfx_scratch(cs->b, pdev->info.gfx_level, va, tmpring_size);
 }
 
 static void

@@ -1174,3 +1174,21 @@ ac_emit_cp_tess_rings(struct ac_cmdbuf *cs, const struct radeon_info *info,
 
    ac_cmdbuf_end();
 }
+
+void
+ac_emit_cp_gfx_scratch(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
+                       uint64_t va, uint32_t size)
+{
+   ac_cmdbuf_begin(cs);
+
+   if (gfx_level >= GFX11) {
+      ac_cmdbuf_set_context_reg_seq(R_0286E8_SPI_TMPRING_SIZE, 3);
+      ac_cmdbuf_emit(size);
+      ac_cmdbuf_emit(va >> 8);
+      ac_cmdbuf_emit(va >> 40);
+   } else {
+      ac_cmdbuf_set_context_reg(R_0286E8_SPI_TMPRING_SIZE, size);
+   }
+
+   ac_cmdbuf_end();
+}
