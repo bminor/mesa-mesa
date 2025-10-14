@@ -358,6 +358,7 @@ angle-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_16_bits.r16f_r1
 angle-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_16_bits.r16f_rg8.cubemap_to_cubemap
 angle-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_16_bits.r16i_rg8.cubemap_to_texture3d
 angle-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_16_bits.r16f_rg8_snorm.cubemap_to_cubemap
+angle-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_16_bits.r16f_rg8_snorm.cubemap_to_texture2d_array
 angle-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_16_bits.r16i_rg8i.cubemap_to_renderbuffer
 angle-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_16_bits.r16f_rg8ui.cubemap_to_cubemap
 angle-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_16_bits.r16i_r16f.texture3d_to_cubemap

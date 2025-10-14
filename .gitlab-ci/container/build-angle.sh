@@ -13,7 +13,7 @@ section_start angle "Building ANGLE"
 # setting up the environment variables locally
 ci_tag_build_time_check "ANGLE_TAG"
 
-ANGLE_REV="8ed16003f27125f27cbb87578368e447043420d3"
+ANGLE_REV="e9626fbced6841d804e7eaf48bb078770822032b"
 DEPOT_REV="5982a1aeb33dc36382ed8c62eddf52a6135e7dd3"
 
 # Set ANGLE_ARCH based on DEBIAN_ARCH if it hasn't been explicitly defined

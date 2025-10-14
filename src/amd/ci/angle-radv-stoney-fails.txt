@@ -50,5 +50,4 @@ KHR-GLES31.core.texture_buffer.texture_buffer_max_size,Fail
 KHR-GLES3.framebuffer_blit.framebuffer_blit_functionality_multisampled_to_singlesampled_blit,Crash
 
 # New failures with ES CTS 3.2.12.0
-KHR-GLES3.framebuffer_blit.scissor_blit,Crash
 KHR-GLES3.framebuffer_blit.multisampled_to_singlesampled_blit_depth_config_test,Crash
