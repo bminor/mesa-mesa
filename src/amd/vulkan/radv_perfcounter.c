@@ -605,7 +605,7 @@ radv_pc_wait_idle(struct radv_cmd_buffer *cmd_buffer)
    radeon_emit(0);          /* GCR_CNTL */
    radeon_end();
 
-   ac_emit_cp_pfp_sync_me(cs->b);
+   ac_emit_cp_pfp_sync_me(cs->b, false);
 }
 
 static void

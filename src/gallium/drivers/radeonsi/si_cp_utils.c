@@ -101,5 +101,5 @@ void si_cp_acquire_mem(struct si_context *sctx, struct radeon_cmdbuf *cs, unsign
 
 void si_cp_pfp_sync_me(struct radeon_cmdbuf *cs)
 {
-   ac_emit_cp_pfp_sync_me(&cs->current);
+   ac_emit_cp_pfp_sync_me(&cs->current, false);
 }

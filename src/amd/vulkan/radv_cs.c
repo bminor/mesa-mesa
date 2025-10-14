@@ -316,7 +316,7 @@ gfx10_cs_emit_cache_flush(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_lev
                                              RADV_CMD_FLAG_CS_PARTIAL_FLUSH))) &&
               !is_mec) {
       /* We need to ensure that PFP waits as well. */
-      ac_emit_cp_pfp_sync_me(cs->b);
+      ac_emit_cp_pfp_sync_me(cs->b, false);
 
       *sqtt_flush_bits |= RGP_FLUSH_PFP_SYNC_ME;
    }
@@ -488,7 +488,7 @@ radv_cs_emit_cache_flush(struct radeon_winsys *ws, struct radv_cmd_stream *cs, e
    if ((cp_coher_cntl || (flush_bits & (RADV_CMD_FLAG_CS_PARTIAL_FLUSH | RADV_CMD_FLAG_INV_VCACHE |
                                         RADV_CMD_FLAG_INV_L2 | RADV_CMD_FLAG_WB_L2))) &&
        !is_mec) {
-      ac_emit_cp_pfp_sync_me(cs->b);
+      ac_emit_cp_pfp_sync_me(cs->b, false);
 
       *sqtt_flush_bits |= RGP_FLUSH_PFP_SYNC_ME;
    }
