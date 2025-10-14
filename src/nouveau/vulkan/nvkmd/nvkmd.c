@@ -286,6 +286,8 @@ nvkmd_ctx_exec_dump(struct nvkmd_dev *dev, struct vk_object_base *log_obj,
    assert(mem_offset_B < mem->size_B);
    uint32_t dump_size_B = MIN2(exec->size_B, mem->size_B - mem_offset_B);
 
+   nvkmd_mem_sync_map_from_gpu(mem, mem_offset_B, dump_size_B);
+
    struct nv_push push = {
       .start = mem->map + mem_offset_B,
       .end = mem->map + mem_offset_B + dump_size_B,
