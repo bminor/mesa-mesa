@@ -40,6 +40,7 @@ struct nouveau_ws_bo {
    uint32_t handle;
    enum nouveau_ws_bo_flags flags;
    atomic_uint_fast32_t refcnt;
+   uint8_t pte_kind;
 };
 
 void nouveau_ws_bo_bind_vma(struct nouveau_ws_device *dev,

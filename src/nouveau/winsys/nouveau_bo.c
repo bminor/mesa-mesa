@@ -134,6 +134,7 @@ nouveau_ws_bo_new_tiled_locked(struct nouveau_ws_device *dev,
    bo->dev = dev;
    bo->flags = flags;
    bo->refcnt = 1;
+   bo->pte_kind = pte_kind;
 
    _mesa_hash_table_insert(dev->bos, (void *)(uintptr_t)bo->handle, bo);
 
@@ -210,6 +211,7 @@ nouveau_ws_bo_from_dma_buf_locked(struct nouveau_ws_device *dev, int fd)
    bo->dev = dev;
    bo->flags = flags;
    bo->refcnt = 1;
+   bo->pte_kind = (info.tile_flags & 0x0000ff00) >> 8;
 
    _mesa_hash_table_insert(dev->bos, (void *)(uintptr_t)handle, bo);
 

@@ -28,10 +28,11 @@ create_mem_or_close_bo(struct nvkmd_nouveau_dev *dev,
                        enum nvkmd_mem_flags mem_flags,
                        struct nouveau_ws_bo *bo,
                        enum nvkmd_va_flags va_flags,
-                       uint8_t pte_kind, uint64_t va_align_B,
+                       uint64_t va_align_B,
                        struct nvkmd_mem **mem_out)
 {
    const uint64_t size_B = bo->size;
+   const uint8_t pte_kind = bo->pte_kind;
    VkResult result;
 
    struct nvkmd_nouveau_mem *mem = CALLOC_STRUCT(nvkmd_nouveau_mem);
@@ -162,8 +163,7 @@ nvkmd_nouveau_alloc_tiled_mem(struct nvkmd_dev *_dev,
       va_flags |= NVKMD_VA_GART;
 
    return create_mem_or_close_bo(dev, log_obj, flags, bo,
-                                 va_flags, pte_kind, va_align_B,
-                                 mem_out);
+                                 va_flags, va_align_B, mem_out);
 }
 
 VkResult
@@ -197,7 +197,6 @@ nvkmd_nouveau_import_dma_buf(struct nvkmd_dev *_dev,
 
    return create_mem_or_close_bo(dev, log_obj, flags, bo,
                                  0 /* va_flags */,
-                                 0 /* pte_kind */,
                                  0 /* va_align_B */,
                                  mem_out);
 }
