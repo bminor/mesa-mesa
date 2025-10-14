@@ -1842,7 +1842,8 @@ static bool radeon_vcn_enc_efc_supported(struct radeon_encoder *enc,
 
    if (vpp->in_color_primaries != vpp->out_color_primaries ||
        vpp->in_transfer_characteristics != vpp->out_transfer_characteristics ||
-       vpp->out_matrix_coefficients != PIPE_VIDEO_VPP_MCF_BT709)
+       (vpp->out_matrix_coefficients != PIPE_VIDEO_VPP_MCF_BT709 &&
+        vpp->out_matrix_coefficients != PIPE_VIDEO_VPP_MCF_BT2020_NCL))
       return false;
 
    if (vpp->out_chroma_siting & (PIPE_VIDEO_VPP_CHROMA_SITING_VERTICAL_BOTTOM |
@@ -1883,6 +1884,8 @@ static uint32_t radeon_vcn_enc_color_volume(enum pipe_video_vpp_matrix_coefficie
    switch (coeffs) {
    case PIPE_VIDEO_VPP_MCF_BT709:
       return RENCODE_COLOR_VOLUME_G22_BT709;
+   case PIPE_VIDEO_VPP_MCF_BT2020_NCL:
+      return RENCODE_COLOR_VOLUME_G2084_BT2020;
    default:
       assert(0);
       return 0;

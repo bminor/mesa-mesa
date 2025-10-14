@@ -216,6 +216,7 @@
 #define PIPE_H264_MB_SIZE                                                           16
 
 #define RENCODE_COLOR_VOLUME_G22_BT709                                              0
+#define RENCODE_COLOR_VOLUME_G2084_BT2020                                           514
 
 #define RENCODE_COLOR_RANGE_FULL                                                    0
 #define RENCODE_COLOR_RANGE_STUDIO                                                  1
