@@ -1584,7 +1584,7 @@
         "description": "wsi: Fix the flagging of dma_buf_sync_file for the amdgpu workaround.",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f7cbc7b1c56c6af147d3d2f57957081b0c220184",
         "notes": null
