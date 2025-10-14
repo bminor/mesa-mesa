@@ -27,6 +27,11 @@
 extern "C" {
 #endif
 
+struct range_remap {
+   /* Linked list of range remap entries */
+   struct list_head r_list;
+};
+
 struct range_entry {
     struct list_head node;
 
@@ -36,16 +41,16 @@ struct range_entry {
 
 struct range_entry *
 util_range_insert_remap(unsigned start, unsigned end,
-                        struct list_head *r_list, void *ptr);
+                        struct range_remap *r_remap, void *ptr);
 
 struct range_entry *
-util_range_remap(unsigned n, const struct list_head *r_list);
+util_range_remap(unsigned n, const struct range_remap *r_remap);
 
-struct list_head *
+struct range_remap *
 util_create_range_remap(void);
 
-struct list_head *
-util_reset_range_remap(struct list_head *r_list);
+struct range_remap *
+util_reset_range_remap(struct range_remap *r_remap);
 
 #ifdef __cplusplus
 }

@@ -281,7 +281,7 @@ setup_uniform_remap_tables(const struct gl_constants *consts,
     * that we can keep track of unused uniforms with explicit locations.
     */
    assert(!prog->data->spirv ||
-          (prog->data->spirv && list_is_empty(prog->UniformRemapTable)));
+          (prog->data->spirv && list_is_empty(&prog->UniformRemapTable->r_list)));
 
    union gl_constant_value *data =
       rzalloc_array(prog->data,

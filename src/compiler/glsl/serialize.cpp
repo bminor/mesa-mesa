@@ -645,7 +645,7 @@ write_uniform_remap_tables(struct blob *metadata,
                            struct gl_shader_program *prog)
 {
    write_uniform_remap_list(metadata, prog->data->UniformStorage,
-                            prog->UniformRemapTable);
+                            &prog->UniformRemapTable->r_list);
 
    for (unsigned i = 0; i < MESA_SHADER_MESH_STAGES; i++) {
       struct gl_linked_shader *sh = prog->_LinkedShaders[i];
@@ -661,7 +661,7 @@ write_uniform_remap_tables(struct blob *metadata,
 static void
 read_uniform_remap_list(struct blob_reader *metadata,
                         struct gl_shader_program *prog,
-                        struct list_head *remap_list,
+                        struct range_remap *range_remap,
                         gl_uniform_storage *uniform_storage)
 {
    unsigned num_list_entries = blob_read_uint32(metadata);
@@ -682,7 +682,7 @@ read_uniform_remap_list(struct blob_reader *metadata,
 
       unsigned start = blob_read_uint32(metadata);
       unsigned end = blob_read_uint32(metadata);
-      util_range_insert_remap(start, end, remap_list, uniform);
+      util_range_insert_remap(start, end, range_remap, uniform);
    }
 }
 

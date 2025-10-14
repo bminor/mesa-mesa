@@ -254,7 +254,7 @@ link_util_update_empty_uniform_locations(const struct gl_constants *consts,
                                          struct gl_shader_program *prog)
 {
    int prev_end = -1;
-   list_for_each_entry_safe(struct range_entry, e, prog->UniformRemapTable, node) {
+   list_for_each_entry_safe(struct range_entry, e, &prog->UniformRemapTable->r_list, node) {
       unsigned next_slot = prev_end + 1;
       if (e->start > next_slot) {
          /* We've found the beginning of a new continous block of empty slots */
