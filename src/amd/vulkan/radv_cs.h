@@ -17,6 +17,7 @@
 #include "radv_sdma.h"
 #include "sid.h"
 
+#include "ac_cmdbuf_cp.h"
 #include "ac_cmdbuf_sdma.h"
 
 static inline unsigned

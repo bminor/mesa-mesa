@@ -11,6 +11,8 @@
 #ifndef SI_BUILD_PM4_H
 #define SI_BUILD_PM4_H
 
+#include "ac_cmdbuf_cp.h"
+
 #include "si_pipe.h"
 #include "sid.h"
 
