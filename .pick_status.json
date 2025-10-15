@@ -204,7 +204,7 @@
         "description": "wsi/display: Allow atomic modeset for change of Colorspace or HDR poperties",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1ed78dd7ec4add7c62e26e6200910d0d3b3e300f",
         "notes": null

@@ -2733,6 +2733,11 @@ drm_atomic_commit(wsi_display_connector *connector, struct wsi_display_image *im
                                   connector->colorspace_enum[drm_colorspace]);
       }
 
+      /* At least some drivers need a modeset for HDR or Colorspace change, e.g., amdgpu
+       * at least for Colorspace change or HDR en-/disable.
+       */
+      flags |= DRM_MODE_ATOMIC_ALLOW_MODESET;
+
       connector->color_outcome_serial = image->chain->color_outcome_serial;
    }
 
