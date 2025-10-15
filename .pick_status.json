@@ -134,7 +134,7 @@
         "description": "panfrost: remove stale code",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "49183bfb7918009b4ac269bde6ecb8389500e8a4",
         "notes": null
