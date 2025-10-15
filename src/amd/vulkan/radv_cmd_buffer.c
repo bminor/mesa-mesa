@@ -6196,8 +6196,19 @@ radv_get_ia_multi_vgt_param(struct radv_cmd_buffer *cmd_buffer, bool instanced_d
       /* Hawaii hangs if instancing is enabled and WD_SWITCH_ON_EOP is 0.
        * We don't know that for indirect drawing, so treat it as
        * always problematic. */
-      if (gpu_info->family == CHIP_HAWAII && (instanced_draw || indirect_draw))
-         wd_switch_on_eop = true;
+      if (gpu_info->family == CHIP_HAWAII) {
+         if (instanced_draw || indirect_draw)
+            wd_switch_on_eop = true;
+
+         /* Mitigate a GPU hang in Dota 2 and Rise of the Tomb Raider.
+          * This workaround is not documented by AMD and may not be correct.
+          * Further investigation is necessary to understand it better.
+          */
+         if (topology == V_008958_DI_PT_TRILIST) {
+            ia_switch_on_eop = true;
+            wd_switch_on_eop = true;
+         }
+      }
 
       /* Performance recommendation for 4 SE Gfx7-8 parts if
        * instances are smaller than a primgroup.
