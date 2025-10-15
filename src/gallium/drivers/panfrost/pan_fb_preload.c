@@ -407,7 +407,6 @@ pan_preload_get_shader(struct pan_fb_preload_cache *cache,
    unsigned sig_offset = 0;
    char sig[256];
    sig[0] = '\0';
-   bool first = true;
    for (unsigned i = 0; i < ARRAY_SIZE(key->surfaces); i++) {
       const char *type_str, *dim_str;
       if (key->surfaces[i].type == nir_type_invalid)
@@ -447,19 +446,16 @@ pan_preload_get_shader(struct pan_fb_preload_cache *cache,
       coord_comps = MAX2(coord_comps, (key->surfaces[i].dim ?: 3) +
                                          (key->surfaces[i].array ? 1 : 0));
 
-      if (sig_offset >= sizeof(sig)) {
-         first = false;
+      if (sig_offset >= sizeof(sig))
          continue;
-      }
 
       sig_offset +=
          snprintf(sig + sig_offset, sizeof(sig) - sig_offset,
                   "%s[%s;%s;%s%s;samples=%d]",
-                  first ? "" : ",", gl_frag_result_name(key->surfaces[i].loc),
+                  sig_offset == 0 ? "" : ",",
+                  gl_frag_result_name(key->surfaces[i].loc),
                   type_str, dim_str, key->surfaces[i].array ? "[]" : "",
                   key->surfaces[i].samples);
-
-      first = false;
    }
 
    nir_builder b = nir_builder_init_simple_shader(
