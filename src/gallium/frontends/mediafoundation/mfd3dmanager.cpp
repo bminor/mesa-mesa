@@ -72,16 +72,19 @@ CMFD3DManager::Shutdown( bool bReleaseDeviceManager )
       m_spVideoSampleAllocator = nullptr;
    }
 
-   if( m_spSATDMapAllocator )
+   if( m_spSatdStatsBufferPool )
    {
-      m_spSATDMapAllocator->UninitializeSampleAllocator();
-      m_spSATDMapAllocator = nullptr;
+      m_spSatdStatsBufferPool.Reset();
    }
 
-   if( m_spBitsusedMapAllocator )
+   if( m_spBitsUsedStatsBufferPool )
    {
-      m_spBitsusedMapAllocator->UninitializeSampleAllocator();
-      m_spBitsusedMapAllocator = nullptr;
+      m_spBitsUsedStatsBufferPool.Reset();
+   }
+
+   if( m_spQPMapStatsBufferPool )
+   {
+      m_spQPMapStatsBufferPool.Reset();
    }
 
    if( m_spDeviceManager != nullptr )
@@ -367,9 +370,6 @@ CMFD3DManager::xOnSetD3DManager( ULONG_PTR ulParam )
       CHECKNULL_GOTO( m_ContextPriorityMgr.base.set_queue_priority, MF_E_DXGI_DEVICE_NOT_INITIALIZED, done );
       CHECKNULL_GOTO( m_ContextPriorityMgr.base.get_queue_priority, MF_E_DXGI_DEVICE_NOT_INITIALIZED, done );
    }
-
-   CHECKHR_GOTO( MFCreateVideoSampleAllocatorEx( IID_PPV_ARGS( &m_spSATDMapAllocator ) ), done );
-   CHECKHR_GOTO( MFCreateVideoSampleAllocatorEx( IID_PPV_ARGS( &m_spBitsusedMapAllocator ) ), done );
 
    CHECKHR_GOTO( GetDeviceInfo(), done );
 

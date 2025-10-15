@@ -373,61 +373,75 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
       templ.depth0 = 1;
       templ.array_size = 1;
 
-      if( m_EncoderCapabilities.m_HWSupportStatsQPMapOutput.bits.supported && m_uiVideoOutputQPMapBlockSize > 0 )
-      {
-         uint32_t block_size = ( 1 << m_EncoderCapabilities.m_HWSupportStatsQPMapOutput.bits.log2_values_block_size );
-         templ.format = (enum pipe_format) m_EncoderCapabilities.m_HWSupportStatsQPMapOutput.bits.pipe_pixel_format;
-         templ.width0 = static_cast<uint32_t>( std::ceil( m_uiOutputWidth / static_cast<float>( block_size ) ) );
-         templ.height0 = static_cast<uint16_t>( std::ceil( m_uiOutputHeight / static_cast<float>( block_size ) ) );
-         CHECKNULL_GOTO(
-            pDX12EncodeContext->pPipeResourceQPMapStats = m_pVlScreen->pscreen->resource_create( m_pVlScreen->pscreen, &templ ),
-            E_OUTOFMEMORY,
-            done );
-      }
-
       if( m_EncoderCapabilities.m_HWSupportStatsSATDMapOutput.bits.supported && m_uiVideoSatdMapBlockSize > 0 )
       {
-         uint32_t block_size = ( 1 << m_EncoderCapabilities.m_HWSupportStatsSATDMapOutput.bits.log2_values_block_size );
-         templ.format = (enum pipe_format) m_EncoderCapabilities.m_HWSupportStatsSATDMapOutput.bits.pipe_pixel_format;
-         templ.width0 = static_cast<uint32_t>( std::ceil( m_uiOutputWidth / static_cast<float>( block_size ) ) );
-         templ.height0 = static_cast<uint16_t>( std::ceil( m_uiOutputHeight / static_cast<float>( block_size ) ) );
-         pDX12EncodeContext->bUseSATDMapAllocator = m_bUseSATDMapAllocator;
-         if( m_bUseSATDMapAllocator )
+         if( !m_spSatdStatsBufferPool )
          {
-            pDX12EncodeContext->pPipeResourceSATDMapStats =
-               AllocatePipeResourceFromAllocator( m_spSATDMapAllocator.Get(), m_pVlScreen->pscreen, &templ );
-            CHECKNULL_GOTO( pDX12EncodeContext->pPipeResourceSATDMapStats, E_OUTOFMEMORY, done );
+            uint32_t block_size = ( 1 << m_EncoderCapabilities.m_HWSupportStatsSATDMapOutput.bits.log2_values_block_size );
+            pipe_format format = (enum pipe_format) m_EncoderCapabilities.m_HWSupportStatsSATDMapOutput.bits.pipe_pixel_format;
+            uint32_t width0 = static_cast<uint32_t>( std::ceil( m_uiOutputWidth / static_cast<float>( block_size ) ) );
+            uint16_t height0 = static_cast<uint16_t>( std::ceil( m_uiOutputHeight / static_cast<float>( block_size ) ) );
+
+            CHECKHR_GOTO( stats_buffer_manager::Create( m_pVlScreen,
+                                                        m_pPipeContext,
+                                                        MFSampleExtension_VideoEncodeSatdMap,
+                                                        width0,
+                                                        height0,
+                                                        format,
+                                                        ( m_bLowLatency ? 1 : MFT_INPUT_QUEUE_DEPTH ),
+                                                        m_spSatdStatsBufferPool.GetAddressOf() ),
+                          done );
          }
-         else
-         {
-            CHECKNULL_GOTO( pDX12EncodeContext->pPipeResourceSATDMapStats =
-                               m_pVlScreen->pscreen->resource_create( m_pVlScreen->pscreen, &templ ),
-                            E_OUTOFMEMORY,
-                            done );
-         }
+         pDX12EncodeContext->pPipeResourceSATDMapStats = m_spSatdStatsBufferPool->get_new_tracked_buffer();
+         CHECKNULL_GOTO( pDX12EncodeContext->pPipeResourceSATDMapStats, E_OUTOFMEMORY, done );
       }
 
       if( m_EncoderCapabilities.m_HWSupportStatsRCBitAllocationMapOutput.bits.supported && m_uiVideoOutputBitsUsedMapBlockSize > 0 )
       {
-         uint32_t block_size = ( 1 << m_EncoderCapabilities.m_HWSupportStatsRCBitAllocationMapOutput.bits.log2_values_block_size );
-         templ.format = (enum pipe_format) m_EncoderCapabilities.m_HWSupportStatsRCBitAllocationMapOutput.bits.pipe_pixel_format;
-         templ.width0 = static_cast<uint32_t>( std::ceil( m_uiOutputWidth / static_cast<float>( block_size ) ) );
-         templ.height0 = static_cast<uint16_t>( std::ceil( m_uiOutputHeight / static_cast<float>( block_size ) ) );
+         if( !m_spBitsUsedStatsBufferPool )
+         {
+            uint32_t block_size =
+               ( 1 << m_EncoderCapabilities.m_HWSupportStatsRCBitAllocationMapOutput.bits.log2_values_block_size );
+            pipe_format format =
+               (enum pipe_format) m_EncoderCapabilities.m_HWSupportStatsRCBitAllocationMapOutput.bits.pipe_pixel_format;
+            uint32_t width0 = static_cast<uint32_t>( std::ceil( m_uiOutputWidth / static_cast<float>( block_size ) ) );
+            uint16_t height0 = static_cast<uint16_t>( std::ceil( m_uiOutputHeight / static_cast<float>( block_size ) ) );
 
-         pDX12EncodeContext->bUseBitsusedMapAllocator = m_bUseBitsusedMapAllocator;
-         if( m_bUseBitsusedMapAllocator )
-         {
-            pDX12EncodeContext->pPipeResourceRCBitAllocMapStats =
-               AllocatePipeResourceFromAllocator( m_spBitsusedMapAllocator.Get(), m_pVlScreen->pscreen, &templ );
-            CHECKNULL_GOTO( pDX12EncodeContext->pPipeResourceRCBitAllocMapStats, E_OUTOFMEMORY, done );
+            CHECKHR_GOTO( stats_buffer_manager::Create( m_pVlScreen,
+                                                        m_pPipeContext,
+                                                        MFSampleExtension_VideoEncodeBitsUsedMap,
+                                                        width0,
+                                                        height0,
+                                                        format,
+                                                        ( m_bLowLatency ? 1 : MFT_INPUT_QUEUE_DEPTH ),
+                                                        m_spBitsUsedStatsBufferPool.GetAddressOf() ),
+                          done );
          }
-         else
+         pDX12EncodeContext->pPipeResourceRCBitAllocMapStats = m_spBitsUsedStatsBufferPool->get_new_tracked_buffer();
+         CHECKNULL_GOTO( pDX12EncodeContext->pPipeResourceRCBitAllocMapStats, E_OUTOFMEMORY, done );
+      }
+
+      if( m_EncoderCapabilities.m_HWSupportStatsQPMapOutput.bits.supported && m_uiVideoOutputQPMapBlockSize > 0 )
+      {
+         if( !m_spQPMapStatsBufferPool )
          {
-            CHECKNULL_GOTO( pDX12EncodeContext->pPipeResourceRCBitAllocMapStats =
-                               m_pVlScreen->pscreen->resource_create( m_pVlScreen->pscreen, &templ ),
-                            E_OUTOFMEMORY,
-                            done );
+            uint32_t block_size = ( 1 << m_EncoderCapabilities.m_HWSupportStatsQPMapOutput.bits.log2_values_block_size );
+            pipe_format format = (enum pipe_format) m_EncoderCapabilities.m_HWSupportStatsQPMapOutput.bits.pipe_pixel_format;
+            uint32_t width0 = static_cast<uint32_t>( std::ceil( m_uiOutputWidth / static_cast<float>( block_size ) ) );
+            uint16_t height0 = static_cast<uint16_t>( std::ceil( m_uiOutputHeight / static_cast<float>( block_size ) ) );
+
+            CHECKHR_GOTO( stats_buffer_manager::Create( m_pVlScreen,
+                                                        m_pPipeContext,
+                                                        MFSampleExtension_VideoEncodeQPMap,
+                                                        width0,
+                                                        height0,
+                                                        format,
+                                                        ( m_bLowLatency ? 1 : MFT_INPUT_QUEUE_DEPTH ),
+                                                        m_spQPMapStatsBufferPool.GetAddressOf() ),
+                          done );
          }
+         pDX12EncodeContext->pPipeResourceQPMapStats = m_spQPMapStatsBufferPool->get_new_tracked_buffer();
+         CHECKNULL_GOTO( pDX12EncodeContext->pPipeResourceQPMapStats, E_OUTOFMEMORY, done );
       }
 
       if( m_EncoderCapabilities.m_PSNRStatsSupport.bits.supports_y_channel && m_bVideoEnableFramePsnrYuv )

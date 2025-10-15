@@ -565,15 +565,9 @@ CDX12EncHMFT::OnOutputTypeChanged()
 
    if( bResolutionChange )
    {
-      ConfigureMapSampleAllocatorHelper( m_spSATDMapAllocator,
-                                         m_EncoderCapabilities.m_HWSupportStatsSATDMapOutput,
-                                         m_uiVideoSatdMapBlockSize,
-                                         m_bUseSATDMapAllocator );
-
-      ConfigureMapSampleAllocatorHelper( m_spBitsusedMapAllocator,
-                                         m_EncoderCapabilities.m_HWSupportStatsRCBitAllocationMapOutput,
-                                         m_uiVideoOutputBitsUsedMapBlockSize,
-                                         m_bUseBitsusedMapAllocator );
+      m_spSatdStatsBufferPool.Reset();
+      m_spBitsUsedStatsBufferPool.Reset();
+      m_spQPMapStatsBufferPool.Reset();
    }
 
    // Indicate that we'll be adding MF_NALU_LENGTH_INFORMATION on each output sample that comes
@@ -1469,48 +1463,48 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                   }
                }
 
-               // Conditionally attach output QP map
-               if( pThis->m_uiVideoOutputQPMapBlockSize && pDX12EncodeContext->pPipeResourceQPMapStats != nullptr )
+               // Conditionally attach output QP map (d3d12resource), tracking will be added to the d3d12resource and when the app
+               // releases the MF sample, the d3d12resource will be returned back to the pool
+               if( pThis->m_uiVideoOutputQPMapBlockSize && pDX12EncodeContext->pPipeResourceQPMapStats != nullptr &&
+                   pThis->m_spQPMapStatsBufferPool )
                {
-                  HRESULT hr = MFAttachPipeResourceAsSampleExtension( pThis->m_pPipeContext,
-                                                                      pDX12EncodeContext->pPipeResourceQPMapStats,
-                                                                      pDX12EncodeContext->pSyncObjectQueue,
-                                                                      MFSampleExtension_VideoEncodeQPMap,
-                                                                      spOutputSample.Get() );
-
+                  HRESULT hr = pThis->m_spQPMapStatsBufferPool->AttachPipeResourceAsSampleExtension(
+                     pDX12EncodeContext->pPipeResourceQPMapStats,
+                     pDX12EncodeContext->pSyncObjectQueue,
+                     spOutputSample.Get() );
                   if( FAILED( hr ) )
                   {
-                     MFE_INFO( "[dx12 hmft 0x%p] QPMap: MFAttachPipeResourceAsSampleExtension failed - hr=0x%08x", pThis, hr );
+                     MFE_INFO( "[dx12 hmft 0x%p] QPMap: AttachPipeResourceAsSampleExtension failed - hr=0x%08x", pThis, hr );
                   }
                }
 
-               // Conditionally attach output bits used map
-               if( pThis->m_uiVideoOutputBitsUsedMapBlockSize && pDX12EncodeContext->pPipeResourceRCBitAllocMapStats != nullptr )
+               // Conditionally attach output bits used map (d3d12resource), tracking will be added to the d3d12resource and when
+               // the app releases the MF sample, the d3d12resource will be returned back to the pool
+               if( pThis->m_uiVideoOutputBitsUsedMapBlockSize && pDX12EncodeContext->pPipeResourceRCBitAllocMapStats != nullptr &&
+                   pThis->m_spBitsUsedStatsBufferPool )
                {
-                  HRESULT hr = MFAttachPipeResourceAsSampleExtension( pThis->m_pPipeContext,
-                                                                      pDX12EncodeContext->pPipeResourceRCBitAllocMapStats,
-                                                                      pDX12EncodeContext->pSyncObjectQueue,
-                                                                      MFSampleExtension_VideoEncodeBitsUsedMap,
-                                                                      spOutputSample.Get() );
-
+                  HRESULT hr = pThis->m_spBitsUsedStatsBufferPool->AttachPipeResourceAsSampleExtension(
+                     pDX12EncodeContext->pPipeResourceRCBitAllocMapStats,
+                     pDX12EncodeContext->pSyncObjectQueue,
+                     spOutputSample.Get() );
                   if( FAILED( hr ) )
                   {
-                     MFE_INFO( "[dx12 hmft 0x%p] BitsUsed: MFAttachPipeResourceAsSampleExtension failed - hr=0x%08x", pThis, hr );
+                     MFE_INFO( "[dx12 hmft 0x%p] BitsUsed: AttachPipeResourceAsSampleExtension failed - hr=0x%08x", pThis, hr );
                   }
                }
 
-               // Conditionally attach SATD map
-               if( pThis->m_uiVideoSatdMapBlockSize && pDX12EncodeContext->pPipeResourceSATDMapStats != nullptr )
+               // Conditionally attach SATD map (d3d12resource), tracking will be added to the d3d12resource and when the app
+               // releases the MF sample, the d3d12resource will be returned back to the pool
+               if( pThis->m_uiVideoSatdMapBlockSize && pDX12EncodeContext->pPipeResourceSATDMapStats != nullptr &&
+                   pThis->m_spSatdStatsBufferPool )
                {
-                  HRESULT hr = MFAttachPipeResourceAsSampleExtension( pThis->m_pPipeContext,
-                                                                      pDX12EncodeContext->pPipeResourceSATDMapStats,
-                                                                      pDX12EncodeContext->pSyncObjectQueue,
-                                                                      MFSampleExtension_VideoEncodeSatdMap,
-                                                                      spOutputSample.Get() );
-
+                  HRESULT hr = pThis->m_spSatdStatsBufferPool->AttachPipeResourceAsSampleExtension(
+                     pDX12EncodeContext->pPipeResourceSATDMapStats,
+                     pDX12EncodeContext->pSyncObjectQueue,
+                     spOutputSample.Get() );
                   if( FAILED( hr ) )
                   {
-                     MFE_INFO( "[dx12 hmft 0x%p] SATDMap: MFAttachPipeResourceAsSampleExtension failed - hr=0x%08x", pThis, hr );
+                     MFE_INFO( "[dx12 hmft 0x%p] SATDMap: AttachPipeResourceAsSampleExtension failed - hr=0x%08x", pThis, hr );
                   }
                }
 
@@ -2085,16 +2079,6 @@ CDX12EncHMFT::ProcessMessage( MFT_MESSAGE_TYPE eMessage, ULONG_PTR ulParam )
          {
             m_EncoderCapabilities.initialize( m_pPipeContext->screen, m_outputPipeProfile );
          }
-
-         ConfigureMapSampleAllocatorHelper( m_spSATDMapAllocator,
-                                            m_EncoderCapabilities.m_HWSupportStatsSATDMapOutput,
-                                            m_uiVideoSatdMapBlockSize,
-                                            m_bUseSATDMapAllocator );
-
-         ConfigureMapSampleAllocatorHelper( m_spBitsusedMapAllocator,
-                                            m_EncoderCapabilities.m_HWSupportStatsRCBitAllocationMapOutput,
-                                            m_uiVideoOutputBitsUsedMapBlockSize,
-                                            m_bUseBitsusedMapAllocator );
          break;
       }
    }
