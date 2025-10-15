@@ -170,21 +170,7 @@ panvk_utrace_capture_data(struct u_trace *ut, void *cs, void *dst_buffer,
 static uint32_t
 get_utrace_clone_mem_size()
 {
-   const char *v = os_get_option("PANVK_UTRACE_CLONE_MEM_SIZE");
-   if (v) {
-      uint32_t size = 0;
-      sscanf(v, "%u", &size);
-      if (size > 0) {
-         return size;
-      }
-      sscanf(v, "0x%x", &size);
-      if (size > 0) {
-         mesa_logi("selected utrace mem size = 0x%x (%u) hex", size, size);
-         return size;
-      }
-   }
-   /* 10 MB default */
-   return 0xa00000;
+   return debug_get_num_option("PANVK_UTRACE_CLONE_MEM_SIZE", 0xa00000);
 }
 
 VkResult
