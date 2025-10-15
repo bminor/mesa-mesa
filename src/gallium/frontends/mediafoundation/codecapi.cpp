@@ -274,6 +274,10 @@ StringFromCodecAPI( const GUID *Api )
    {
       return "CODECAPI_AVEncVideoRateControlFramePreAnalysisExternalReconDownscale";
    }
+   else if (*Api == CODECAPI_AVEncSliceGenerationMode)
+   {
+      return "CODECAPI_AVEncSliceGenerationMode";
+   }
    else if( *Api == CODECAPI_AVEncVideoInputDeltaQPBlockSettings )
    {
       return "CODECAPI_AVEncVideoInputDeltaQPBlockSettings";
@@ -344,7 +348,7 @@ CDX12EncHMFT::IsSupported( const GUID *Api )
        *Api == CODECAPI_AVEncVideoMaxNumRefFrame || *Api == CODECAPI_AVEncVideoMeanAbsoluteDifference ||
        *Api == CODECAPI_AVEncVideoMaxQP || *Api == CODECAPI_AVScenarioInfo || *Api == CODECAPI_AVEncVideoROIEnabled ||
        *Api == CODECAPI_AVEncVideoLTRBufferControl || *Api == CODECAPI_AVEncVideoMarkLTRFrame ||
-       *Api == CODECAPI_AVEncVideoUseLTRFrame )
+       *Api == CODECAPI_AVEncVideoUseLTRFrame  || *Api == CODECAPI_AVEncSliceGenerationMode)
    {
       hr = S_OK;
       return hr;
@@ -938,6 +942,11 @@ CDX12EncHMFT::GetValue( const GUID *Api, VARIANT *Value )
    {
       Value->vt = VT_BOOL;
       Value->boolVal = m_bRateControlFramePreAnalysisExternalReconDownscale ? VARIANT_TRUE : VARIANT_FALSE;
+   }
+   else if (*Api == CODECAPI_AVEncSliceGenerationMode)
+   {
+      Value->vt = VT_UI4;
+      Value->ulVal = m_uiSliceGenerationMode;
    }
    else if( *Api == CODECAPI_AVEncWorkGlobalPriority )
    {
@@ -1808,6 +1817,16 @@ CDX12EncHMFT::SetValue( const GUID *Api, VARIANT *Value )
          CHECKHR_GOTO( E_INVALIDARG, done );
       }
       m_bRateControlFramePreAnalysisExternalReconDownscale = Value->boolVal == VARIANT_TRUE ? TRUE : FALSE;
+   }
+   else if (*Api == CODECAPI_AVEncSliceGenerationMode)
+   {
+      if (Value->vt != VT_UI4)
+      {
+         CHECKHR_GOTO(E_INVALIDARG, done);
+      }
+      debug_printf("[dx12 hmft 0x%p] SET CODECAPI_AVEncSliceGenerationMode - %u\n", this, Value->ulVal);
+      m_uiSliceGenerationMode = Value->ulVal;
+      m_bSliceGenerationModeSet = TRUE;
    }
    else
    {

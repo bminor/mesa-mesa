@@ -757,6 +757,9 @@ class __declspec( uuid( HMFT_GUID ) ) CDX12EncHMFT : CMFD3DManager,
    UINT32 m_uiVideoOutputBitsUsedMapBlockSize = 0;
    UINT32 m_uiVideoSatdMapBlockSize = 0;
 
+   UINT32 m_uiSliceGenerationMode = 0;
+   BOOL m_bSliceGenerationModeSet = FALSE;
+
    BOOL m_bRateControlFramePreAnalysis = FALSE;
    BOOL m_bRateControlFramePreAnalysisExternalReconDownscale = FALSE;
 
