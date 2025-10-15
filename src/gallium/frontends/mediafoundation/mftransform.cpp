@@ -1300,8 +1300,24 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
       {
          pipe_enc_feedback_metadata metadata = {};
          unsigned int encoded_bitstream_bytes = 0u;
-         ComPtr<IMFSample> spOutputSample;
-         MFCreateSample( &spOutputSample );
+         std::vector<ComPtr<IMFSample>> spOutputSamples;
+         std::vector<ComPtr<IMFMediaBuffer>> spMemoryBuffers;
+
+         unsigned int num_output_samples_emitted = 1u; // Assume D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM_NOTIFICATION_MODE_FULL_FRAME
+         if (pDX12EncodeContext->sliceNotificationMode == D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM_NOTIFICATION_MODE_SUBREGIONS)
+         {
+            num_output_samples_emitted = (pThis->m_bSliceGenerationModeSet && (pThis->m_uiSliceGenerationMode == 1)) ?
+               static_cast<uint32_t>( pDX12EncodeContext->pSliceFences.size() ) :
+               1u;
+         }
+         spOutputSamples.resize( num_output_samples_emitted );
+         spMemoryBuffers.resize( num_output_samples_emitted );
+         for ( unsigned int sample_idx = 0; sample_idx < num_output_samples_emitted; sample_idx++ )
+         {
+            MFCreateSample( &spOutputSamples[sample_idx] );
+            MFCreateMemoryBuffer( pThis->m_uiMaxOutputBitstreamSize, &spMemoryBuffers[sample_idx] );
+         }
+
          {
             std::lock_guard<std::mutex> lock( pThis->m_encoderLock );
             dwReceivedInput++;
@@ -1320,7 +1336,10 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
 
                // Set stats metadata buffers to the sample here. As we are returning the dxgi buffers gated by the completion fence
                // for the resolved stats we do not need to wait for the pAsyncFence completion on the CPU.
-               if( FAILED( pThis->ConfigureAsyncStatsMetadataOutputSampleAttributes( spOutputSample.Get(),
+               // When num_output_samples_emitted == 1, we have only one output sample to attach the stats to
+               // otherwise we attach the stats to the last sample emitted (the last slice)
+               auto sample_idx_with_stats = (num_output_samples_emitted == 1u) ? 0 : (num_output_samples_emitted - 1);
+               if( FAILED( pThis->ConfigureAsyncStatsMetadataOutputSampleAttributes(spOutputSamples[sample_idx_with_stats].Get(),
                                                                                     pDX12EncodeContext->pPipeResourcePSNRStats,
                                                                                     pDX12EncodeContext->pPipeResourceQPMapStats,
                                                                                     pDX12EncodeContext->pPipeResourceRCBitAllocMapStats,
@@ -1340,15 +1359,9 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                //
                // Wait for each slice fence and resolve offset/size as each slice is ready
                //
-               ComPtr<IMFMediaBuffer> spMemoryBuffer;
-               // Create a single large buffer to hold all slices using the max output bitstream size for the whole frame
-               // it can be possible that slices have padding between them so more size may be needed.
-               // TODO: or even better allow multiple buffers (one per slice) in the MFSample or multiple MFSamples (one per slice)
-               // with tight allocations
-               MFCreateMemoryBuffer( pThis->m_uiMaxOutputBitstreamSize, &spMemoryBuffer );
                uint64_t output_buffer_offset = 0u;
-               LPBYTE lpBuffer;
-               spMemoryBuffer->Lock( &lpBuffer, NULL, NULL );
+               LPBYTE lpBuffer = NULL;
+               spMemoryBuffers[0]->Lock( &lpBuffer, NULL, NULL );
 
                uint32_t num_slice_buffers = static_cast<uint32_t>( pDX12EncodeContext->pSliceFences.size() );
                std::vector<struct codec_unit_location_t> codec_unit_metadata;
@@ -1434,11 +1447,11 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                        0,
                        pDX12EncodeContext->pSliceFences.size() * sizeof( pipe_fence_handle * ) );
 
-               spMemoryBuffer->Unlock();
-               spMemoryBuffer->SetCurrentLength( static_cast<DWORD>( output_buffer_offset ) );
-               spOutputSample->AddBuffer( spMemoryBuffer.Get() );
+               spMemoryBuffers[0]->Unlock();
+               spMemoryBuffers[0]->SetCurrentLength( static_cast<DWORD>( output_buffer_offset ) );
+               spOutputSamples[0]->AddBuffer( spMemoryBuffers[0].Get() );
 
-               HRESULT hr = pThis->ConfigureBitstreamOutputSampleAttributes( spOutputSample.Get(),
+               HRESULT hr = pThis->ConfigureBitstreamOutputSampleAttributes( spOutputSamples[0].Get(),
                                                             pDX12EncodeContext,
                                                             dwReceivedInput,
                                                             TRUE /* bIsLastSlice */,
@@ -1459,7 +1472,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                   HMFT_ETW_EVENT_INFO( "METransformHaveOutput", pThis );
                   if( SUCCEEDED( pThis->QueueEvent( METransformHaveOutput, GUID_NULL, S_OK, nullptr ) ) )
                   {
-                     pThis->m_OutputQueue.push( spOutputSample.Detach() );
+                     pThis->m_OutputQueue.push( spOutputSamples[0].Detach() );
                      pThis->m_dwHaveOutputCount++;
                   }
                }
@@ -1590,80 +1603,72 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
 
          assert( encoded_bitstream_bytes );
          if( !pThis->m_bFlushing && ( ( metadata.encode_result & PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED ) == 0 ) &&
-             encoded_bitstream_bytes )
+             encoded_bitstream_bytes && ( pDX12EncodeContext->sliceNotificationMode ==
+                  D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM_NOTIFICATION_MODE_FULL_FRAME ))
          {
-            // If sliced fences supported, we asynchronously copied every slice as it was ready (see above)
-            // into spMemoryBuffer. Otherwise, let's copy all the sliced together here after full frame completion
-            // as we need the metadata to detect the bitstream size and NAL positions
-            if( pDX12EncodeContext->sliceNotificationMode ==
-                  D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM_NOTIFICATION_MODE_FULL_FRAME )
+            HRESULT hr = pThis->ConfigureBitstreamOutputSampleAttributes( spOutputSamples[0].Get(),
+                                                                        pDX12EncodeContext,
+                                                                        dwReceivedInput,
+                                                                        TRUE /* bIsLastSlice */,
+                                                                        &metadata.codec_unit_metadata[0],
+                                                                        metadata.codec_unit_metadata_count );
+            if( FAILED( hr ) )
             {
-               HRESULT hr = pThis->ConfigureBitstreamOutputSampleAttributes( spOutputSample.Get(),
-                                                                           pDX12EncodeContext,
-                                                                           dwReceivedInput,
-                                                                           TRUE /* bIsLastSlice */,
-                                                                           &metadata.codec_unit_metadata[0],
-                                                                           metadata.codec_unit_metadata_count );
-               if( FAILED( hr ) )
+               MFE_ERROR( "[dx12 hmft 0x%p] ConfigureBitstreamOutputSampleAttributes failed - hr=0x%08x", pThis, hr );
+            }
+
+            if( metadata.encode_result & PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_MAX_FRAME_SIZE_OVERFLOW )
+               debug_printf( "[dx12 hmft 0x%p] PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_MAX_FRAME_SIZE_OVERFLOW set\n", pThis );
+
+            // Set encoding quality metrics (only available after get_feedback on full frame encode)
+            debug_printf( "[dx12 hmft 0x%p] Frame AverageQP: %d\n", pThis, metadata.average_frame_qp );
+            if( FAILED( spOutputSamples[0]->SetUINT64( MFSampleExtension_VideoEncodeQP, (UINT64) metadata.average_frame_qp ) ) )
+            {
+               debug_printf( "[dx12 hmft 0x%p] WARNING: could not set MFSampleExtension_VideoEncodeQP\n", pThis );
+            }
+
+            // Readback full encoded frame bitstream from GPU memory onto CPU buffer
+            struct pipe_box box = { 0 };
+            box.width = encoded_bitstream_bytes;
+            box.height = pDX12EncodeContext->pOutputBitRes[0]->height0;
+            box.depth = pDX12EncodeContext->pOutputBitRes[0]->depth0;
+            struct pipe_transfer *transfer_data;
+            uint8_t *pMappedBuffer = (uint8_t *) pThis->m_pPipeContext->buffer_map( pThis->m_pPipeContext,
+                                                                                    pDX12EncodeContext->pOutputBitRes[0],
+                                                                                    0,
+                                                                                    PIPE_MAP_READ,
+                                                                                    &box,
+                                                                                    &transfer_data );
+            assert( pMappedBuffer );
+            if( pMappedBuffer )
+            {
+               LPBYTE lpBuffer;
+               spMemoryBuffers[0]->Lock( &lpBuffer, NULL, NULL );
+               size_t copied_bytes = 0;
+               for( unsigned i = 0; i < metadata.codec_unit_metadata_count; i++ )
                {
-                  MFE_ERROR( "[dx12 hmft 0x%p] ConfigureBitstreamOutputSampleAttributes failed - hr=0x%08x", pThis, hr );
+                  memcpy( lpBuffer + copied_bytes,
+                           pMappedBuffer + metadata.codec_unit_metadata[i].offset,
+                           static_cast<size_t>( metadata.codec_unit_metadata[i].size ) );
+                  copied_bytes += static_cast<size_t>( metadata.codec_unit_metadata[i].size );
                }
+               spMemoryBuffers[0]->Unlock();
+               spMemoryBuffers[0]->SetCurrentLength( static_cast<DWORD>( copied_bytes ) );
+               pipe_buffer_unmap( pThis->m_pPipeContext, transfer_data );
+               spOutputSamples[0]->AddBuffer( spMemoryBuffers[0].Get() );
+            }
 
-               if( metadata.encode_result & PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_MAX_FRAME_SIZE_OVERFLOW )
-                  debug_printf( "[dx12 hmft 0x%p] PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_MAX_FRAME_SIZE_OVERFLOW set\n", pThis );
-
-               // Set encoding quality metrics (only available after get_feedback on full frame encode)
-               debug_printf( "[dx12 hmft 0x%p] Frame AverageQP: %d\n", pThis, metadata.average_frame_qp );
-               if( FAILED( spOutputSample->SetUINT64( MFSampleExtension_VideoEncodeQP, (UINT64) metadata.average_frame_qp ) ) )
+            // Issue a new METransformHaveOutput event for the full frame
+            // as we only output one MFSample per frame
+            // This is done after pAsyncFence was waited on above
+            // and get_feedback was called to get the post resolve metadata
+            {
+               std::lock_guard<std::mutex> lock( pThis->m_OutputQueueLock );
+               HMFT_ETW_EVENT_INFO( "METransformHaveOutput", pThis );
+               if( SUCCEEDED( pThis->QueueEvent( METransformHaveOutput, GUID_NULL, S_OK, nullptr ) ) )
                {
-                  debug_printf( "[dx12 hmft 0x%p] WARNING: could not set MFSampleExtension_VideoEncodeQP\n", pThis );
-               }
-
-               // Readback full encoded frame bitstream from GPU memory onto CPU buffer
-               struct pipe_box box = { 0 };
-               box.width = encoded_bitstream_bytes;
-               box.height = pDX12EncodeContext->pOutputBitRes[0]->height0;
-               box.depth = pDX12EncodeContext->pOutputBitRes[0]->depth0;
-               struct pipe_transfer *transfer_data;
-               uint8_t *pMappedBuffer = (uint8_t *) pThis->m_pPipeContext->buffer_map( pThis->m_pPipeContext,
-                                                                                       pDX12EncodeContext->pOutputBitRes[0],
-                                                                                       0,
-                                                                                       PIPE_MAP_READ,
-                                                                                       &box,
-                                                                                       &transfer_data );
-               assert( pMappedBuffer );
-               if( pMappedBuffer )
-               {
-                  ComPtr<IMFMediaBuffer> spMemoryBuffer;
-                  LPBYTE lpBuffer;
-                  MFCreateMemoryBuffer( box.width, &spMemoryBuffer );
-                  spMemoryBuffer->Lock( &lpBuffer, NULL, NULL );
-                  size_t copied_bytes = 0;
-                  for( unsigned i = 0; i < metadata.codec_unit_metadata_count; i++ )
-                  {
-                     memcpy( lpBuffer + copied_bytes,
-                              pMappedBuffer + metadata.codec_unit_metadata[i].offset,
-                              static_cast<size_t>( metadata.codec_unit_metadata[i].size ) );
-                     copied_bytes += static_cast<size_t>( metadata.codec_unit_metadata[i].size );
-                  }
-                  spMemoryBuffer->Unlock();
-                  spMemoryBuffer->SetCurrentLength( static_cast<DWORD>( copied_bytes ) );
-                  pipe_buffer_unmap( pThis->m_pPipeContext, transfer_data );
-                  spOutputSample->AddBuffer( spMemoryBuffer.Get() );
-               }
-
-               // Issue a new METransformHaveOutput event for the full frame
-               // as we only output one MFSample per frame
-               // This is done after pAsyncFence was waited on above
-               // and get_feedback was called to get the post resolve metadata
-               {
-                  std::lock_guard<std::mutex> lock( pThis->m_OutputQueueLock );
-                  HMFT_ETW_EVENT_INFO( "METransformHaveOutput", pThis );
-                  if( SUCCEEDED( pThis->QueueEvent( METransformHaveOutput, GUID_NULL, S_OK, nullptr ) ) )
-                  {
-                     pThis->m_OutputQueue.push( spOutputSample.Detach() );
-                     pThis->m_dwHaveOutputCount++;
-                  }
+                  pThis->m_OutputQueue.push( spOutputSamples[0].Detach() );
+                  pThis->m_dwHaveOutputCount++;
                }
             }
          }
