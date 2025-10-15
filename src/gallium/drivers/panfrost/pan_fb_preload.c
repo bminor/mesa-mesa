@@ -406,6 +406,7 @@ pan_preload_get_shader(struct pan_fb_preload_cache *cache,
    unsigned coord_comps = 0;
    unsigned sig_offset = 0;
    char sig[256];
+   sig[0] = '\0';
    bool first = true;
    for (unsigned i = 0; i < ARRAY_SIZE(key->surfaces); i++) {
       const char *type_str, *dim_str;
