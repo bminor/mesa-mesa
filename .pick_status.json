@@ -204,7 +204,7 @@
         "description": "amd/lower_mem_access_bit_sizes: fix shared access when bytes<bit_size/8",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "52cd5f7e69fde6b5eef4a88103e7571d8342577f",
         "notes": null
