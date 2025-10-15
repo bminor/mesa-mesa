@@ -1325,7 +1325,6 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
          MFCreateSample( &spOutputSample );
          {
             std::lock_guard<std::mutex> lock( pThis->m_encoderLock );
-            // ... wait until resource is finished writing by the GPU encoder...
             dwReceivedInput++;
 
             metadata.encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;   // default to failure
@@ -1349,8 +1348,10 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
 
                uint32_t num_slice_buffers = static_cast<uint32_t>( pDX12EncodeContext->pSliceFences.size() );
                std::vector<struct codec_unit_location_t> codec_unit_metadata;
+               std::vector<struct codec_unit_location_t> mfsample_codec_unit_metadata;
                const size_t max_default_init_alloc_count_nals = 64u;
                codec_unit_metadata.reserve( max_default_init_alloc_count_nals );
+               mfsample_codec_unit_metadata.reserve( MAX_NALU_LENGTH_INFO_ENTRIES );
                for( uint32_t slice_idx = 0; slice_idx < num_slice_buffers; slice_idx++ )
                {
                   assert( pDX12EncodeContext->pSliceFences[slice_idx] );
@@ -1398,6 +1399,11 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                      {
                         for( auto &nal : codec_unit_metadata )
                         {
+                           // Add NAL with adjusted offset for accumulated buffer position
+                           struct codec_unit_location_t accumulated_nal = nal;
+                           accumulated_nal.offset = output_buffer_offset;
+                           mfsample_codec_unit_metadata.push_back( accumulated_nal );
+
                            memcpy( lpBuffer + static_cast<size_t>( output_buffer_offset ),
                                    pMappedBuffer + static_cast<size_t>( nal.offset ),
                                    static_cast<size_t>( nal.size ) );
@@ -1427,10 +1433,20 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                spMemoryBuffer->Unlock();
                spMemoryBuffer->SetCurrentLength( static_cast<DWORD>( output_buffer_offset ) );
                spOutputSample->AddBuffer( spMemoryBuffer.Get() );
+
+               HRESULT hr = pThis->ConfigureBitstreamOutputSampleAttributes( spOutputSample.Get(),
+                                                            pDX12EncodeContext,
+                                                            dwReceivedInput,
+                                                            TRUE /* bIsLastSlice */,
+                                                            mfsample_codec_unit_metadata.data(),
+                                                            static_cast<unsigned>( mfsample_codec_unit_metadata.size() ) );
+               if( FAILED( hr ) )
+               {
+                  MFE_ERROR( "[dx12 hmft 0x%p] ConfigureBitstreamOutputSampleAttributes failed - hr=0x%08x", pThis, hr );
+               }
             }
 
-            // Still wait for pAsyncFence (full frame fence) before calling get_feedback for full frame stats
-            // First wait on the D3D12 encoder_fence
+            // Wait for pAsyncFence (full frame fence) before calling get_feedback for full frame stats
             assert( pDX12EncodeContext->pAsyncFence );   // NULL returned pDX12EncodeContext->pAsyncFence indicates encode error
             if( pDX12EncodeContext->pAsyncFence )
             {
@@ -1564,18 +1580,6 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
             debug_printf( "[dx12 hmft 0x%p] Frame AverageQP: %d\n", pThis, metadata.average_frame_qp );
 
             {
-               HRESULT hr = pThis->ConfigureBitstreamOutputSampleAttributes( spOutputSample.Get(),
-                                                                             pDX12EncodeContext,
-                                                                             dwReceivedInput,
-                                                                             TRUE /* bIsLastSlice */,
-                                                                             &metadata.codec_unit_metadata[0],
-                                                                             metadata.codec_unit_metadata_count );
-               if( FAILED( hr ) )
-               {
-                  MFE_ERROR( "[dx12 hmft 0x%p] ConfigureBitstreamOutputSampleAttributes failed - hr=0x%08x", pThis, hr );
-               }
-
-
                // Obtain ID3D12Fence from pipe_fence_handle for the frame completion fence
                uint64_t ResolveStatsCompletionFenceValue = 0;
                {
@@ -1611,9 +1615,21 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
 
                // If sliced fences supported, we asynchronously copied every slice as it was ready (see above)
                // into spMemoryBuffer. Otherwise, let's copy all the sliced together here after full frame completion
+               // as we need the metadata to detect the bitstream size and NAL positions
                if( pDX12EncodeContext->sliceNotificationMode ==
                    D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM_NOTIFICATION_MODE_FULL_FRAME )
                {
+                  HRESULT hr = pThis->ConfigureBitstreamOutputSampleAttributes( spOutputSample.Get(),
+                                                                              pDX12EncodeContext,
+                                                                              dwReceivedInput,
+                                                                              TRUE /* bIsLastSlice */,
+                                                                              &metadata.codec_unit_metadata[0],
+                                                                              metadata.codec_unit_metadata_count );
+                  if( FAILED( hr ) )
+                  {
+                     MFE_ERROR( "[dx12 hmft 0x%p] ConfigureBitstreamOutputSampleAttributes failed - hr=0x%08x", pThis, hr );
+                  }
+
                   // Readback full encoded frame bitstream from GPU memory onto CPU buffer
                   struct pipe_box box = { 0 };
                   box.width = encoded_bitstream_bytes;
