@@ -916,7 +916,7 @@ is_astc_format(unsigned format)
  */
 #define LINEAR_PITCH_ALIGNMENT 256
 
-static int gfx6_compute_level(ADDR_HANDLE addrlib, const struct ac_surf_config *config,
+static int gfx6_compute_level(struct ac_addrlib *addrlib, const struct ac_surf_config *config,
                               struct radeon_surf *surf, bool is_stencil, unsigned level,
                               bool compressed, ADDR_COMPUTE_SURFACE_INFO_INPUT *AddrSurfInfoIn,
                               ADDR_COMPUTE_SURFACE_INFO_OUTPUT *AddrSurfInfoOut,
@@ -973,7 +973,7 @@ static int gfx6_compute_level(ADDR_HANDLE addrlib, const struct ac_surf_config *
          AddrSurfInfoIn->basePitch *= surf->blk_w;
    }
 
-   ret = AddrComputeSurfaceInfo(addrlib, AddrSurfInfoIn, AddrSurfInfoOut);
+   ret = AddrComputeSurfaceInfo(addrlib->handle, AddrSurfInfoIn, AddrSurfInfoOut);
    if (ret != ADDR_OK) {
       return ret;
    }
@@ -1033,7 +1033,7 @@ static int gfx6_compute_level(ADDR_HANDLE addrlib, const struct ac_surf_config *
       AddrDccIn->tileIndex = AddrSurfInfoOut->tileIndex;
       AddrDccIn->macroModeIndex = AddrSurfInfoOut->macroModeIndex;
 
-      ret = AddrComputeDccInfo(addrlib, AddrDccIn, AddrDccOut);
+      ret = AddrComputeDccInfo(addrlib->handle, AddrDccIn, AddrDccOut);
 
       if (ret == ADDR_OK) {
          dcc_level->dcc_offset = surf->meta_size;
@@ -1075,7 +1075,7 @@ static int gfx6_compute_level(ADDR_HANDLE addrlib, const struct ac_surf_config *
             AddrDccIn->tileIndex = AddrSurfInfoOut->tileIndex;
             AddrDccIn->macroModeIndex = AddrSurfInfoOut->macroModeIndex;
 
-            ret = AddrComputeDccInfo(addrlib, AddrDccIn, AddrDccOut);
+            ret = AddrComputeDccInfo(addrlib->handle, AddrDccIn, AddrDccOut);
             if (ret == ADDR_OK) {
                /* If the DCC memory isn't properly
                 * aligned, the data are interleaved
@@ -1118,7 +1118,7 @@ static int gfx6_compute_level(ADDR_HANDLE addrlib, const struct ac_surf_config *
       AddrHtileIn->tileIndex = AddrSurfInfoOut->tileIndex;
       AddrHtileIn->macroModeIndex = AddrSurfInfoOut->macroModeIndex;
 
-      ret = AddrComputeHtileInfo(addrlib, AddrHtileIn, AddrHtileOut);
+      ret = AddrComputeHtileInfo(addrlib->handle, AddrHtileIn, AddrHtileOut);
 
       if (ret == ADDR_OK) {
          surf->meta_size = AddrHtileOut->htileBytes;
@@ -1224,7 +1224,7 @@ static bool use_tile_swizzle(const struct ac_surf_config *config, const struct r
  * Copy surface-global settings like pipe/bank config from level 0 surface
  * computation, and compute tile swizzle.
  */
-static int gfx6_surface_settings(ADDR_HANDLE addrlib, const struct radeon_info *info,
+static int gfx6_surface_settings(struct ac_addrlib *addrlib, const struct radeon_info *info,
                                  const struct ac_surf_config *config,
                                  ADDR_COMPUTE_SURFACE_INFO_OUTPUT *csio, struct radeon_surf *surf)
 {
@@ -1261,7 +1261,7 @@ static int gfx6_surface_settings(ADDR_HANDLE addrlib, const struct radeon_info *
       AddrBaseSwizzleIn.pTileInfo = csio->pTileInfo;
       AddrBaseSwizzleIn.tileMode = csio->tileMode;
 
-      int r = AddrComputeBaseSwizzle(addrlib, &AddrBaseSwizzleIn, &AddrBaseSwizzleOut);
+      int r = AddrComputeBaseSwizzle(addrlib->handle, &AddrBaseSwizzleIn, &AddrBaseSwizzleOut);
       if (r != ADDR_OK)
          return r;
 
@@ -1392,7 +1392,7 @@ static uint64_t ac_estimate_size(const struct ac_surf_config *config,
  * The following fields of \p surf must be initialized by the caller:
  * blk_w, blk_h, bpe, flags.
  */
-static int gfx6_compute_surface(ADDR_HANDLE addrlib, const struct radeon_info *info,
+static int gfx6_compute_surface(struct ac_addrlib *addrlib, const struct radeon_info *info,
                                 const struct ac_surf_config *config, enum radeon_surf_mode mode,
                                 struct radeon_surf *surf)
 {
@@ -1498,7 +1498,7 @@ static int gfx6_compute_surface(ADDR_HANDLE addrlib, const struct radeon_info *i
                   in.bpp = surf->bpe * 8;
                   in.numFrags = 1;
 
-                  if (AddrGetMacroModeIndex(addrlib, &in, &out) != ADDR_OK) {
+                  if (AddrGetMacroModeIndex(addrlib->handle, &in, &out) != ADDR_OK) {
                      fprintf(stderr, "amdgpu: AddrGetMacroModeIndex failed.\n");
                      return -1;
                   }
@@ -1792,7 +1792,7 @@ static int gfx6_compute_surface(ADDR_HANDLE addrlib, const struct radeon_info *i
       fin.tileIndex = -1;
       fout.pTileInfo = &fmask_tile_info;
 
-      r = AddrComputeFmaskInfo(addrlib, &fin, &fout);
+      r = AddrComputeFmaskInfo(addrlib->handle, &fin, &fout);
       if (r)
          return r;
 
@@ -1824,7 +1824,7 @@ static int gfx6_compute_surface(ADDR_HANDLE addrlib, const struct radeon_info *i
          xin.pTileInfo = fout.pTileInfo;
          xin.tileMode = fin.tileMode;
 
-         int r = AddrComputeBaseSwizzle(addrlib, &xin, &xout);
+         int r = AddrComputeBaseSwizzle(addrlib->handle, &xin, &xout);
          if (r != ADDR_OK)
             return r;
 
@@ -1903,7 +1903,7 @@ static int gfx6_compute_surface(ADDR_HANDLE addrlib, const struct radeon_info *i
 }
 
 /* This is only called when expecting a tiled layout. */
-static int gfx9_get_preferred_swizzle_mode(ADDR_HANDLE addrlib, const struct radeon_info *info,
+static int gfx9_get_preferred_swizzle_mode(struct ac_addrlib *addrlib, const struct radeon_info *info,
                                            struct radeon_surf *surf,
                                            ADDR2_COMPUTE_SURFACE_INFO_INPUT *in, bool is_fmask,
                                            AddrSwizzleMode *swizzle_mode)
@@ -2009,7 +2009,7 @@ static int gfx9_get_preferred_swizzle_mode(ADDR_HANDLE addrlib, const struct rad
       sin.forbiddenBlock.gfx11.thick256KB = 1;
    }
 
-   ret = Addr2GetPreferredSurfaceSetting(addrlib, &sin, &sout);
+   ret = Addr2GetPreferredSurfaceSetting(addrlib->handle, &sin, &sout);
    if (ret != ADDR_OK)
       return ret;
 
@@ -2566,7 +2566,7 @@ static int gfx9_compute_miptree(struct ac_addrlib *addrlib, const struct radeon_
          fin.size = sizeof(ADDR2_COMPUTE_FMASK_INFO_INPUT);
          fout.size = sizeof(ADDR2_COMPUTE_FMASK_INFO_OUTPUT);
 
-         ret = gfx9_get_preferred_swizzle_mode(addrlib->handle, info, surf, in, true, &fin.swizzleMode);
+         ret = gfx9_get_preferred_swizzle_mode(addrlib, info, surf, in, true, &fin.swizzleMode);
          if (ret != ADDR_OK)
             return ret;
 
@@ -2819,7 +2819,7 @@ static int gfx9_compute_surface(struct ac_addrlib *addrlib, const struct radeon_
             break;
          }
 
-         r = gfx9_get_preferred_swizzle_mode(addrlib->handle, info, surf, &AddrSurfInfoIn, false,
+         r = gfx9_get_preferred_swizzle_mode(addrlib, info, surf, &AddrSurfInfoIn, false,
                                              &AddrSurfInfoIn.swizzleMode);
          if (r)
             return r;
@@ -2868,7 +2868,7 @@ static int gfx9_compute_surface(struct ac_addrlib *addrlib, const struct radeon_
       AddrSurfInfoIn.format = ADDR_FMT_8;
 
       if (!AddrSurfInfoIn.flags.depth) {
-         r = gfx9_get_preferred_swizzle_mode(addrlib->handle, info, surf, &AddrSurfInfoIn, false,
+         r = gfx9_get_preferred_swizzle_mode(addrlib, info, surf, &AddrSurfInfoIn, false,
                                              &AddrSurfInfoIn.swizzleMode);
          if (r)
             return r;
@@ -3798,7 +3798,7 @@ int ac_compute_surface(struct ac_addrlib *addrlib, const struct radeon_info *inf
    if (info->family_id >= FAMILY_AI)
       r = gfx9_compute_surface(addrlib, info, config, mode, surf);
    else
-      r = gfx6_compute_surface(addrlib->handle, info, config, mode, surf);
+      r = gfx6_compute_surface(addrlib, info, config, mode, surf);
 
    if (r)
       return r;
