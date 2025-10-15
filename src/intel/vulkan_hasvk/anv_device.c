@@ -1214,7 +1214,7 @@ get_properties(const struct anv_physical_device *pdevice,
    /* VK_EXT_sample_locations */
    {
       props->sampleLocationSampleCounts =
-         isl_device_get_sample_counts(&pdevice->isl_dev);
+         ~VK_SAMPLE_COUNT_1_BIT & isl_device_get_sample_counts(&pdevice->isl_dev);
 
       /* See also anv_GetPhysicalDeviceMultisamplePropertiesEXT */
       props->maxSampleLocationGridSize.width = 1;
@@ -3814,8 +3814,11 @@ void anv_GetPhysicalDeviceMultisamplePropertiesEXT(
    assert(pMultisampleProperties->sType ==
           VK_STRUCTURE_TYPE_MULTISAMPLE_PROPERTIES_EXT);
 
+   VkSampleCountFlags sample_counts =
+      ~VK_SAMPLE_COUNT_1_BIT & isl_device_get_sample_counts(&physical_device->isl_dev);
+
    VkExtent2D grid_size;
-   if (samples & isl_device_get_sample_counts(&physical_device->isl_dev)) {
+   if (samples & sample_counts) {
       grid_size.width = 1;
       grid_size.height = 1;
    } else {
