@@ -1245,6 +1245,25 @@ ac_emit_cp_acquire_mem(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
 }
 
 void
+ac_emit_cp_atomic_mem(struct ac_cmdbuf *cs, uint32_t atomic_op,
+                      uint32_t atomic_cmd, uint64_t va, uint64_t data,
+                      uint64_t compare_data)
+{
+   ac_cmdbuf_begin(cs);
+   ac_cmdbuf_emit(PKT3(PKT3_ATOMIC_MEM, 7, 0));
+   ac_cmdbuf_emit(ATOMIC_OP(atomic_op) |
+                  ATOMIC_COMMAND(atomic_cmd));
+   ac_cmdbuf_emit(va);                    /* addr lo */
+   ac_cmdbuf_emit(va >> 32);              /* addr hi */
+   ac_cmdbuf_emit(data);                  /* data lo */
+   ac_cmdbuf_emit(data >> 32);            /* data hi */
+   ac_cmdbuf_emit(compare_data);          /* compare data lo */
+   ac_cmdbuf_emit(compare_data >> 32);    /* compare data hi */
+   ac_cmdbuf_emit(10);                    /* loop interval */
+   ac_cmdbuf_end();
+}
+
+void
 ac_cmdbuf_flush_vgt_streamout(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level)
 {
    uint32_t reg_strmout_cntl;

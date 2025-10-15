@@ -1514,17 +1514,7 @@ radv_create_perf_counter_lock_cs(struct radv_device *device, unsigned pass, bool
    if (!unlock) {
       uint64_t mutex_va = radv_buffer_get_va(device->perf_counter_bo) + PERF_CTR_BO_LOCK_OFFSET;
 
-      radeon_begin(cs);
-      radeon_emit(PKT3(PKT3_ATOMIC_MEM, 7, 0));
-      radeon_emit(ATOMIC_OP(TC_OP_ATOMIC_CMPSWAP_32) | ATOMIC_COMMAND(ATOMIC_COMMAND_LOOP));
-      radeon_emit(mutex_va);       /* addr lo */
-      radeon_emit(mutex_va >> 32); /* addr hi */
-      radeon_emit(1);              /* data lo */
-      radeon_emit(0);              /* data hi */
-      radeon_emit(0);              /* compare data lo */
-      radeon_emit(0);              /* compare data hi */
-      radeon_emit(10);             /* loop interval */
-      radeon_end();
+      ac_emit_cp_atomic_mem(cs->b, TC_OP_ATOMIC_CMPSWAP_32, ATOMIC_COMMAND_LOOP, mutex_va, 1, 0);
    }
 
    uint64_t va = radv_buffer_get_va(device->perf_counter_bo) + PERF_CTR_BO_PASS_OFFSET;
