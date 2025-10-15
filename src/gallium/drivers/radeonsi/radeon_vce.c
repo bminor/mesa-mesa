@@ -368,7 +368,7 @@ static void encode(struct rvce_encoder *enc)
    task_info(enc, 0x00000003, 0);
 
    RVCE_BEGIN(0x05000001);                                      // context buffer
-   RVCE_READWRITE(enc->dpb.res->buf, enc->dpb.res->domains, 0); // encodeContextAddressHi/Lo
+   RVCE_READWRITE(enc->dpb->buf, enc->dpb->domains, 0); // encodeContextAddressHi/Lo
    RVCE_END();
 
    RVCE_BEGIN(0x05000004);                                   // video bitstream buffer
@@ -836,15 +836,16 @@ static void rvce_destroy(struct pipe_video_codec *encoder)
 {
    struct rvce_encoder *enc = (struct rvce_encoder *)encoder;
    if (enc->stream_handle) {
-      struct rvid_buffer fb;
-      si_vid_create_buffer(enc->screen, &fb, 512, PIPE_USAGE_STAGING);
+      struct rvce_fb_buffer fb = {
+         .res = si_resource(pipe_buffer_create(enc->screen, 0, PIPE_USAGE_STAGING, 512)),
+      };
       enc->fb = &fb;
       session(enc);
       destroy(enc);
       flush(enc, PIPE_FLUSH_ASYNC, NULL);
-      si_vid_destroy_buffer(&fb);
+      si_resource_reference(&fb.res, NULL);
    }
-   si_vid_destroy_buffer(&enc->dpb);
+   si_resource_reference(&enc->dpb, NULL);
    enc->ws->cs_destroy(&enc->cs);
    FREE(enc);
 }
@@ -900,28 +901,30 @@ static void rvce_begin_frame(struct pipe_video_codec *encoder, struct pipe_video
       unsigned dpb_size;
 
       dpb_size = get_dpb_size(enc, dpb_slots);
-      if (!enc->dpb.res) {
-         if (!si_vid_create_buffer(enc->screen, &enc->dpb, dpb_size, PIPE_USAGE_DEFAULT)) {
+      if (!enc->dpb) {
+         enc->dpb = si_resource(pipe_buffer_create(enc->screen, PIPE_BIND_CUSTOM, PIPE_USAGE_DEFAULT, dpb_size));
+         if (!enc->dpb) {
             RVID_ERR("Can't create DPB buffer.\n");
             return;
          }
-      } else if (!si_vid_resize_buffer(enc->base.context, &enc->dpb.res, dpb_size, NULL)) {
+      } else if (!si_vid_resize_buffer(enc->base.context, &enc->dpb, dpb_size, NULL)) {
          RVID_ERR("Can't resize DPB buffer.\n");
          return;
       }
    }
 
    if (!enc->stream_handle) {
-      struct rvid_buffer fb;
       enc->stream_handle = si_vid_alloc_stream_handle();
-      si_vid_create_buffer(enc->screen, &fb, 512, PIPE_USAGE_STAGING);
+      struct rvce_fb_buffer fb = {
+         .res = si_resource(pipe_buffer_create(enc->screen, 0, PIPE_USAGE_STAGING, 512)),
+      };
       enc->fb = &fb;
       session(enc);
       create(enc);
       config(enc);
       feedback(enc);
       flush(enc, PIPE_FLUSH_ASYNC, NULL);
-      si_vid_destroy_buffer(&fb);
+      si_resource_reference(&fb.res, NULL);
       need_rate_control = false;
    }
 
@@ -1015,13 +1018,14 @@ static void rvce_encode_bitstream(struct pipe_video_codec *encoder,
    enc->bs_size = destination->width0;
    enc->bs_offset = 0;
 
-   *fb = enc->fb = CALLOC_STRUCT(rvid_buffer);
-   if (!si_vid_create_buffer(enc->screen, enc->fb, 512, PIPE_USAGE_STAGING)) {
+   *fb = enc->fb = CALLOC_STRUCT(rvce_fb_buffer);
+   enc->fb->res = si_resource(pipe_buffer_create(enc->screen, 0, PIPE_USAGE_STAGING, 512));
+   if (!enc->fb->res) {
       RVID_ERR("Can't create feedback buffer.\n");
       return;
    }
 
-   enc->fb->user_data = si_vce_encode_headers(enc);
+   enc->fb->data = si_vce_encode_headers(enc);
 
    session(enc);
    encode(enc);
@@ -1042,7 +1046,7 @@ static void rvce_get_feedback(struct pipe_video_codec *encoder, void *feedback, 
                               struct pipe_enc_feedback_metadata* metadata)
 {
    struct rvce_encoder *enc = (struct rvce_encoder *)encoder;
-   struct rvid_buffer *fb = feedback;
+   struct rvce_fb_buffer *fb = feedback;
 
    uint32_t *ptr = enc->ws->buffer_map(enc->ws, fb->res->buf, NULL,
                                        PIPE_MAP_READ_WRITE | RADEON_MAP_TEMPORARY);
@@ -1057,8 +1061,8 @@ static void rvce_get_feedback(struct pipe_video_codec *encoder, void *feedback, 
 
    metadata->present_metadata = PIPE_VIDEO_FEEDBACK_METADATA_TYPE_CODEC_UNIT_LOCATION;
 
-   if (fb->user_data) {
-      struct rvce_feedback_data *data = fb->user_data;
+   if (fb->data) {
+      struct rvce_feedback_data *data = fb->data;
       metadata->codec_unit_metadata_count = data->num_segments;
       for (unsigned i = 0; i < data->num_segments; i++) {
          metadata->codec_unit_metadata[i].offset = data->segments[i].offset;
@@ -1070,8 +1074,8 @@ static void rvce_get_feedback(struct pipe_video_codec *encoder, void *feedback, 
             metadata->codec_unit_metadata[i].flags = PIPE_VIDEO_CODEC_UNIT_LOCATION_FLAG_SINGLE_NALU;
          }
       }
-      FREE(fb->user_data);
-      fb->user_data = NULL;
+      FREE(fb->data);
+      fb->data = NULL;
    } else {
       metadata->codec_unit_metadata_count = 1;
       metadata->codec_unit_metadata[0].offset = 0;
@@ -1079,7 +1083,7 @@ static void rvce_get_feedback(struct pipe_video_codec *encoder, void *feedback, 
       metadata->codec_unit_metadata[0].flags = 0;
    }
 
-   si_vid_destroy_buffer(fb);
+   si_resource_reference(&fb->res, NULL);
    FREE(fb);
 }
 
