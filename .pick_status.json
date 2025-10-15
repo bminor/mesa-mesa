@@ -214,7 +214,7 @@
         "description": "wsi/display: Initially set default HDR metadata from EDID for HDR modes",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "13137393f67b3da41d97a18b7a1961a40ef469f1",
         "notes": null
