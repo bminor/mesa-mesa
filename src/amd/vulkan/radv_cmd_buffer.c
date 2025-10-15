@@ -5062,13 +5062,7 @@ radv_load_ds_clear_metadata(struct radv_cmd_buffer *cmd_buffer, const struct rad
    uint32_t reg = R_028028_DB_STENCIL_CLEAR + 4 * reg_offset;
 
    if (pdev->info.has_load_ctx_reg_pkt) {
-      radeon_begin(cs);
-      radeon_emit(PKT3(PKT3_LOAD_CONTEXT_REG_INDEX, 3, 0));
-      radeon_emit(va);
-      radeon_emit(va >> 32);
-      radeon_emit((reg - SI_CONTEXT_REG_OFFSET) >> 2);
-      radeon_emit(reg_count);
-      radeon_end();
+      ac_emit_cp_load_context_reg_index(cs->b, reg, reg_count, va, false);
    } else {
       ac_emit_cp_copy_data(cs->b, COPY_DATA_SRC_MEM, COPY_DATA_REG, va, reg >> 2,
                            (reg_count == 2 ? AC_CP_COPY_DATA_COUNT_SEL : 0));
@@ -5252,13 +5246,7 @@ radv_load_color_clear_metadata(struct radv_cmd_buffer *cmd_buffer, struct radv_i
    uint32_t reg = R_028C8C_CB_COLOR0_CLEAR_WORD0 + cb_idx * 0x3c;
 
    if (pdev->info.has_load_ctx_reg_pkt) {
-      radeon_begin(cs);
-      radeon_emit(PKT3(PKT3_LOAD_CONTEXT_REG_INDEX, 3, cmd_buffer->state.predicating));
-      radeon_emit(va);
-      radeon_emit(va >> 32);
-      radeon_emit((reg - SI_CONTEXT_REG_OFFSET) >> 2);
-      radeon_emit(2);
-      radeon_end();
+      ac_emit_cp_load_context_reg_index(cs->b, reg, 2, va, cmd_buffer->state.predicating);
    } else {
       radeon_begin(cs);
       radeon_emit(PKT3(PKT3_COPY_DATA, 4, cmd_buffer->state.predicating));
@@ -15071,13 +15059,8 @@ radv_emit_strmout_buffer(struct radv_cmd_buffer *cmd_buffer, const struct radv_d
        */
       ac_emit_cp_pfp_sync_me(cs->b, false);
 
-      radeon_begin(cs);
-      radeon_emit(PKT3(PKT3_LOAD_CONTEXT_REG_INDEX, 3, 0));
-      radeon_emit(draw_info->strmout_va);
-      radeon_emit(draw_info->strmout_va >> 32);
-      radeon_emit((R_028B2C_VGT_STRMOUT_DRAW_OPAQUE_BUFFER_FILLED_SIZE - SI_CONTEXT_REG_OFFSET) >> 2);
-      radeon_emit(1); /* 1 DWORD */
-      radeon_end();
+      ac_emit_cp_load_context_reg_index(cs->b, R_028B2C_VGT_STRMOUT_DRAW_OPAQUE_BUFFER_FILLED_SIZE, 1,
+                                        draw_info->strmout_va, false);
    } else {
       ac_emit_cp_copy_data(cs->b, COPY_DATA_SRC_MEM, COPY_DATA_REG, draw_info->strmout_va,
                            R_028B2C_VGT_STRMOUT_DRAW_OPAQUE_BUFFER_FILLED_SIZE >> 2, AC_CP_COPY_DATA_WR_CONFIRM);

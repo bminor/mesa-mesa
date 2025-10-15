@@ -1274,6 +1274,22 @@ ac_emit_cp_nop(struct ac_cmdbuf *cs, uint32_t value)
 }
 
 void
+ac_emit_cp_load_context_reg_index(struct ac_cmdbuf *cs, uint32_t reg,
+                                  uint32_t reg_count, uint64_t va,
+                                  bool predicate)
+{
+   assert(reg_count);
+
+   ac_cmdbuf_begin(cs);
+   ac_cmdbuf_emit(PKT3(PKT3_LOAD_CONTEXT_REG_INDEX, 3, predicate));
+   ac_cmdbuf_emit(va);
+   ac_cmdbuf_emit(va >> 32);
+   ac_cmdbuf_emit((reg - SI_CONTEXT_REG_OFFSET) >> 2);
+   ac_cmdbuf_emit(reg_count); /* in DWORDS */
+   ac_cmdbuf_end();
+}
+
+void
 ac_cmdbuf_flush_vgt_streamout(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level)
 {
    uint32_t reg_strmout_cntl;
