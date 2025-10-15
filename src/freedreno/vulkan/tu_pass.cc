@@ -417,7 +417,8 @@ tu_render_pass_patch_input_gmem(struct tu_render_pass *pass)
          uint32_t a = subpass->input_attachments[j].attachment;
          if (a == VK_ATTACHMENT_UNUSED)
             continue;
-         subpass->input_attachments[j].patch_input_gmem = written[a];
+         subpass->input_attachments[j].patch_input_gmem =
+            written[a] && pass->attachments[a].gmem;
       }
 
       for (unsigned j = 0; j < subpass->color_count; j++) {
