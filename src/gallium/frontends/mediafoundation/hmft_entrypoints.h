@@ -612,15 +612,14 @@ class __declspec( uuid( HMFT_GUID ) ) CDX12EncHMFT : CMFD3DManager,
                                                      BOOL bIsLastSlice,
                                                      struct codec_unit_location_t *pCodecUnitMetadata,
                                                      unsigned CodecUnitMetadataCount );
-   HRESULT ConfigureStatsMetadataOutputSampleAttributes( IMFSample *pSample,
-                                                         const pipe_enc_feedback_metadata &metadata,
-                                                         pipe_resource *pPipeResourcePSNRStats,
-                                                         pipe_resource *pPipeResourceQPMapStats,
-                                                         pipe_resource *pPipeResourceRCBitAllocMapStats,
-                                                         pipe_resource *pPipeResourceSATDMapStats,
-                                                         ComPtr<ID3D12Fence> &pResolveStatsCompletionFence,
-                                                         UINT64 ResolveStatsCompletionFenceValue,
-                                                         ID3D12CommandQueue *pSyncObjectQueue );
+   HRESULT ConfigureAsyncStatsMetadataOutputSampleAttributes( IMFSample *pSample,
+                                                              pipe_resource *pPipeResourcePSNRStats,
+                                                              pipe_resource *pPipeResourceQPMapStats,
+                                                              pipe_resource *pPipeResourceRCBitAllocMapStats,
+                                                              pipe_resource *pPipeResourceSATDMapStats,
+                                                              ComPtr<ID3D12Fence> &pResolveStatsCompletionFence,
+                                                              UINT64 ResolveStatsCompletionFenceValue,
+                                                              ID3D12CommandQueue *pSyncObjectQueue );
    HRESULT UpdateAvailableInputType();
    HRESULT InternalCheckInputType( IMFMediaType *pType );
    HRESULT InternalCheckOutputType( IMFMediaType *pType );

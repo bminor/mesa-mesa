@@ -1201,20 +1201,16 @@ done:
 }
 
 HRESULT
-CDX12EncHMFT::ConfigureStatsMetadataOutputSampleAttributes( IMFSample *pSample,
-                                                            const pipe_enc_feedback_metadata &metadata,
-                                                            pipe_resource *pPipeResourcePSNRStats,
-                                                            pipe_resource *pPipeResourceQPMapStats,
-                                                            pipe_resource *pPipeResourceRCBitAllocMapStats,
-                                                            pipe_resource *pPipeResourceSATDMapStats,
-                                                            ComPtr<ID3D12Fence> &pResolveStatsCompletionFence,
-                                                            UINT64 ResolveStatsCompletionFenceValue,
-                                                            ID3D12CommandQueue *pSyncObjectQueue )
+CDX12EncHMFT::ConfigureAsyncStatsMetadataOutputSampleAttributes( IMFSample *pSample,
+                                                                 pipe_resource *pPipeResourcePSNRStats,
+                                                                 pipe_resource *pPipeResourceQPMapStats,
+                                                                 pipe_resource *pPipeResourceRCBitAllocMapStats,
+                                                                 pipe_resource *pPipeResourceSATDMapStats,
+                                                                 ComPtr<ID3D12Fence> &pResolveStatsCompletionFence,
+                                                                 UINT64 ResolveStatsCompletionFenceValue,
+                                                                 ID3D12CommandQueue *pSyncObjectQueue )
 {
    HRESULT hr = S_OK;
-
-   // Set encoding quality metrics
-   CHECKHR_GOTO( pSample->SetUINT64( MFSampleExtension_VideoEncodeQP, (UINT64) metadata.average_frame_qp ), done );
 
    // Enqueue completion of Resolve step for readiness of the DXGIBuffers attached below
    pSyncObjectQueue->Wait( pResolveStatsCompletionFence.Get(), ResolveStatsCompletionFenceValue );
@@ -1222,58 +1218,41 @@ CDX12EncHMFT::ConfigureStatsMetadataOutputSampleAttributes( IMFSample *pSample,
    // Conditionally attach frame PSNR
    if( m_bVideoEnableFramePsnrYuv && pPipeResourcePSNRStats != nullptr )
    {
-      hr = MFAttachPipeResourceAsSampleExtension( m_pPipeContext,
-                                                  pPipeResourcePSNRStats,
-                                                  pSyncObjectQueue,
-                                                  MFSampleExtension_FramePsnrYuv,
-                                                  pSample );
-
-      if( FAILED( hr ) )
-      {
-         MFE_INFO( "[dx12 hmft 0x%p] PSNR: MFAttachPipeResourceAsSampleExtension failed - hr=0x%08x", this, hr );
-      }
+      CHECKHR_GOTO( MFAttachPipeResourceAsSampleExtension( m_pPipeContext,
+                                                           pPipeResourcePSNRStats,
+                                                           pSyncObjectQueue,
+                                                           MFSampleExtension_FramePsnrYuv,
+                                                           pSample ), done );
    }
 
    // Conditionally attach output QP map (d3d12resource), tracking will be added to the d3d12resource and when the app
    // releases the MF sample, the d3d12resource will be returned back to the pool
    if( m_uiVideoOutputQPMapBlockSize && pPipeResourceQPMapStats != nullptr )
    {
-      hr = m_spQPMapStatsBufferPool->AttachPipeResourceAsSampleExtension(
+      CHECKHR_GOTO( m_spQPMapStatsBufferPool->AttachPipeResourceAsSampleExtension(
          pPipeResourceQPMapStats,
          pSyncObjectQueue,
-         pSample );
-      if( FAILED( hr ) )
-      {
-         MFE_INFO( "[dx12 hmft 0x%p] QPMap: AttachPipeResourceAsSampleExtension failed - hr=0x%08x", this, hr );
-      }
+         pSample ), done );
    }
 
    // Conditionally attach output bits used map (d3d12resource), tracking will be added to the d3d12resource and when
    // the app releases the MF sample, the d3d12resource will be returned back to the pool
    if( m_uiVideoOutputBitsUsedMapBlockSize && pPipeResourceRCBitAllocMapStats != nullptr )
    {
-      hr = m_spBitsUsedStatsBufferPool->AttachPipeResourceAsSampleExtension(
+      CHECKHR_GOTO( m_spBitsUsedStatsBufferPool->AttachPipeResourceAsSampleExtension(
          pPipeResourceRCBitAllocMapStats,
          pSyncObjectQueue,
-         pSample );
-      if( FAILED( hr ) )
-      {
-         MFE_INFO( "[dx12 hmft 0x%p] BitsUsed: AttachPipeResourceAsSampleExtension failed - hr=0x%08x", this, hr );
-      }
+         pSample ), done );
    }
 
    // Conditionally attach SATD map (d3d12resource), tracking will be added to the d3d12resource and when the app
    // releases the MF sample, the d3d12resource will be returned back to the pool
    if( m_uiVideoSatdMapBlockSize && pPipeResourceSATDMapStats != nullptr )
    {
-      hr = m_spSatdStatsBufferPool->AttachPipeResourceAsSampleExtension(
+      CHECKHR_GOTO( m_spSatdStatsBufferPool->AttachPipeResourceAsSampleExtension(
          pPipeResourceSATDMapStats,
          pSyncObjectQueue,
-         pSample );
-      if( FAILED( hr ) )
-      {
-         MFE_INFO( "[dx12 hmft 0x%p] SATDMap: AttachPipeResourceAsSampleExtension failed - hr=0x%08x", this, hr );
-      }
+         pSample ), done );
    }
 
 done:
@@ -1446,6 +1425,28 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                }
             }
 
+            // Obtain fence value from pipe_fence_handle
+            uint64_t ResolveStatsCompletionFenceValue = 0;
+            HANDLE fence_handle = (HANDLE) pThis->m_pPipeContext->screen->fence_get_win32_handle( pThis->m_pPipeContext->screen,
+                                                                                                   pDX12EncodeContext->pAsyncFence,
+                                                                                                   &ResolveStatsCompletionFenceValue );
+            if( fence_handle )
+               CloseHandle( fence_handle );
+
+            // Set stats metadata buffers to the sample here. As we are returning the dxgi buffers gated by the completion fence
+            // for the resolved stats we do not need to wait for the pAsyncFence completion on the CPU.
+            if( FAILED( pThis->ConfigureAsyncStatsMetadataOutputSampleAttributes( spOutputSample.Get(),
+                                                                                  pDX12EncodeContext->pPipeResourcePSNRStats,
+                                                                                  pDX12EncodeContext->pPipeResourceQPMapStats,
+                                                                                  pDX12EncodeContext->pPipeResourceRCBitAllocMapStats,
+                                                                                  pDX12EncodeContext->pPipeResourceSATDMapStats,
+                                                                                  pDX12EncodeContext->spAsyncFence,
+                                                                                  ResolveStatsCompletionFenceValue,
+                                                                                  pDX12EncodeContext->pSyncObjectQueue )))
+            {
+               MFE_ERROR( "[dx12 hmft 0x%p] ConfigureAsyncStatsMetadataOutputSampleAttributes failed", pThis );
+            }
+
             // Wait for pAsyncFence (full frame fence) before calling get_feedback for full frame stats
             assert( pDX12EncodeContext->pAsyncFence );   // NULL returned pDX12EncodeContext->pAsyncFence indicates encode error
             if( pDX12EncodeContext->pAsyncFence )
@@ -1573,46 +1574,18 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
          if( !pThis->m_bFlushing && ( ( metadata.encode_result & PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED ) == 0 ) &&
              encoded_bitstream_bytes )
          {
-
             if( metadata.encode_result & PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_MAX_FRAME_SIZE_OVERFLOW )
                debug_printf( "[dx12 hmft 0x%p] PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_MAX_FRAME_SIZE_OVERFLOW set\n", pThis );
 
             debug_printf( "[dx12 hmft 0x%p] Frame AverageQP: %d\n", pThis, metadata.average_frame_qp );
 
+            // Set encoding quality metrics
+            if( FAILED( spOutputSample->SetUINT64( MFSampleExtension_VideoEncodeQP, (UINT64) metadata.average_frame_qp ) ) )
             {
-               // Obtain ID3D12Fence from pipe_fence_handle for the frame completion fence
-               uint64_t ResolveStatsCompletionFenceValue = 0;
-               {
-                  // Get the updated value every time
-                  HANDLE fence_handle = (HANDLE) pThis->m_pPipeContext->screen->fence_get_win32_handle( pThis->m_pPipeContext->screen,
-                                                                                                         pDX12EncodeContext->pAsyncFence,
-                                                                                                         &ResolveStatsCompletionFenceValue );
-                  assert(fence_handle);
+               debug_printf( "[dx12 hmft 0x%p] WARNING: could not set MFSampleExtension_VideoEncodeQP\n", pThis );
+            }
 
-                  // Lazy member initialization
-                  if (!pDX12EncodeContext->spAsyncFence)
-                  {
-                     [[maybe_unused]] HRESULT hr = pThis->m_spDevice->OpenSharedHandle( fence_handle, IID_PPV_ARGS( pDX12EncodeContext->spAsyncFence.ReleaseAndGetAddressOf() ) );
-                     assert(SUCCEEDED(hr));
-                  }
-
-                  CloseHandle( fence_handle );
-               }
-
-               // Set resolved frame metadata
-               if( FAILED( pThis->ConfigureStatsMetadataOutputSampleAttributes( spOutputSample.Get(),
-                                                                                          metadata,
-                                                                                          pDX12EncodeContext->pPipeResourcePSNRStats,
-                                                                                          pDX12EncodeContext->pPipeResourceQPMapStats,
-                                                                                          pDX12EncodeContext->pPipeResourceRCBitAllocMapStats,
-                                                                                          pDX12EncodeContext->pPipeResourceSATDMapStats,
-                                                                                          pDX12EncodeContext->spAsyncFence,
-                                                                                          ResolveStatsCompletionFenceValue,
-                                                                                          pDX12EncodeContext->pSyncObjectQueue )))
-               {
-                  MFE_ERROR( "[dx12 hmft 0x%p] ConfigureStatsMetadataOutputSampleAttributes failed", pThis );
-               }
-
+            {
                // If sliced fences supported, we asynchronously copied every slice as it was ready (see above)
                // into spMemoryBuffer. Otherwise, let's copy all the sliced together here after full frame completion
                // as we need the metadata to detect the bitstream size and NAL positions
@@ -2332,6 +2305,14 @@ CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD 
                                                  pDX12EncodeContext->pPipeVideoBuffer,
                                                  &pDX12EncodeContext->encoderPicInfo.base );
       HMFT_ETW_EVENT_STOP( "PipeEndFrame", this );
+
+      uint64_t fence_value = 0;
+      HANDLE fence_handle = (HANDLE) m_pPipeContext->screen->fence_get_win32_handle( m_pPipeContext->screen,
+                                                                                      pDX12EncodeContext->pAsyncFence,
+                                                                                      &fence_value );
+      CHECKNULL_GOTO( fence_handle, E_FAIL, done );
+      CHECKHR_GOTO( m_spDevice->OpenSharedHandle( fence_handle, IID_PPV_ARGS( pDX12EncodeContext->spAsyncFence.ReleaseAndGetAddressOf() ) ), done );
+      CloseHandle( fence_handle );
 
       CHECKBOOL_GOTO( ( m_spDevice->GetDeviceRemovedReason() == S_OK ), DXGI_ERROR_DEVICE_REMOVED, done );
       // NULL returned fence indicates encode error
