@@ -1039,7 +1039,7 @@ static void ruvd_decode_bitstream(struct pipe_video_codec *decoder,
             return;
          }
          si_vid_destroy_buffer(&old_buf);
-      } else if (!si_vid_resize_buffer(dec->base.context, buf, total_bs_size, NULL)) {
+      } else if (!si_vid_resize_buffer(dec->base.context, &buf->res, total_bs_size, NULL)) {
          RVID_ERR("Can't resize bitstream buffer!");
          return;
       }

@@ -905,7 +905,7 @@ static void rvce_begin_frame(struct pipe_video_codec *encoder, struct pipe_video
             RVID_ERR("Can't create DPB buffer.\n");
             return;
          }
-      } else if (!si_vid_resize_buffer(enc->base.context, &enc->dpb, dpb_size, NULL)) {
+      } else if (!si_vid_resize_buffer(enc->base.context, &enc->dpb.res, dpb_size, NULL)) {
          RVID_ERR("Can't resize DPB buffer.\n");
          return;
       }
