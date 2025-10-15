@@ -54,7 +54,7 @@
         "description": "radv: Fix crash in sqtt due to uninitalized value",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "772b9ce4118bd8b0604e5bd1d3cac5b197126555",
         "notes": null

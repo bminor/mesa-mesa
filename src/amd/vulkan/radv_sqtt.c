@@ -508,7 +508,9 @@ radv_begin_sqtt(struct radv_queue *queue)
       device->sqtt.start_cs[family] = NULL;
    }
 
-   cs.b = ws->cs_create(ws, radv_queue_ring(queue), false);
+   radv_init_cmd_stream(&cs, radv_queue_ring(queue));
+
+   cs.b = ws->cs_create(ws, cs.hw_ip, false);
    if (!cs.b)
       return false;
 
@@ -585,7 +587,9 @@ radv_end_sqtt(struct radv_queue *queue)
       device->sqtt.stop_cs[family] = NULL;
    }
 
-   cs.b = ws->cs_create(ws, radv_queue_ring(queue), false);
+   radv_init_cmd_stream(&cs, radv_queue_ring(queue));
+
+   cs.b = ws->cs_create(ws, cs.hw_ip, false);
    if (!cs.b)
       return false;
 
