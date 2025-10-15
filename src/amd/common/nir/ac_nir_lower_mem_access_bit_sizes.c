@@ -109,13 +109,14 @@ lower_mem_access_cb(nir_intrinsic_op intrin, uint8_t bytes, uint8_t bit_size, ui
    nir_mem_access_size_align res;
 
    if (intrin == nir_intrinsic_load_shared || intrin == nir_intrinsic_store_shared) {
-      /* Split unsupported shared access. */
-      res.bit_size = MIN2(bit_size, combined_align * 8ull);
-      res.align = res.bit_size / 8;
       /* Don't use >64-bit LDS loads for performance reasons. */
       unsigned max_bytes = intrin == nir_intrinsic_store_shared && cb_data->gfx_level >= GFX7 ? 16 : 8;
       bytes = MIN3(bytes, combined_align, max_bytes);
       bytes = bytes == 12 ? bytes : round_down_to_power_of_2(bytes);
+
+      /* Split unsupported shared access. */
+      res.bit_size = MIN2(bit_size, bytes * 8ull);
+      res.align = res.bit_size / 8;
       res.num_components = bytes / res.align;
       res.shift = nir_mem_access_shift_method_bytealign_amd;
       return res;
