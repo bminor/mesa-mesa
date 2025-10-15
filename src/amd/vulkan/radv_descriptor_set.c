@@ -499,7 +499,7 @@ radv_descriptor_set_destroy(struct radv_device *device, struct radv_descriptor_p
 
    vk_descriptor_set_layout_unref(&device->vk, &set->header.layout->vk);
 
-   if (free_bo && !pool->host_memory_base) {
+   if (free_bo) {
       for (int i = 0; i < pool->entry_count; ++i) {
          if (pool->entries[i].set == set) {
             memmove(&pool->entries[i], &pool->entries[i + 1], sizeof(pool->entries[i]) * (pool->entry_count - i - 1));
