@@ -727,6 +727,9 @@ radv_get_surface_flags(struct radv_device *device, struct radv_image *image, uns
    if (pCreateInfo->flags & VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)
       flags |= RADEON_SURF_REPLAYABLE;
 
+   if (image->vk.external_handle_types)
+      flags |= RADEON_SURF_SHAREABLE;
+
    if (alignment && alignment->maximumRequestedAlignment && !(instance->debug_flags & RADV_DEBUG_FORCE_COMPRESS)) {
       bool is_4k_capable;
 
@@ -1084,10 +1087,8 @@ radv_get_ac_surf_info(struct radv_device *device, const struct radv_image *image
    info.levels = image->vk.mip_levels;
    info.num_channels = vk_format_get_nr_components(image->vk.format);
 
-   if (!image->vk.external_handle_types) {
-      info.surf_index = &device->image_mrt_offset_counter;
-      info.fmask_surf_index = &device->fmask_mrt_offset_counter;
-   }
+   info.surf_index = &device->image_mrt_offset_counter;
+   info.fmask_surf_index = &device->fmask_mrt_offset_counter;
 
    return info;
 }
