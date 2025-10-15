@@ -84,9 +84,6 @@ static int amdgpu_surface_init(struct radeon_winsys *rws,
    config.info.surf_index = &aws->surf_index_color;
    config.info.fmask_surf_index = &aws->surf_index_fmask;
 
-   if (flags & RADEON_SURF_Z_OR_SBUFFER)
-      config.info.surf_index = NULL;
-
    /* Use radeon_info from the driver, not the winsys. The driver is allowed to change it. */
    return ac_compute_surface(aws->addrlib, info, &config, mode, surf);
 }
