@@ -1105,6 +1105,7 @@ panvk_per_arch(CmdExecuteCommands)(VkCommandBuffer commandBuffer,
             cs_move64_to(prim_b, addr, cs_root_chunk_gpu_addr(sec_b));
             cs_move32_to(prim_b, size, cs_root_chunk_size(sec_b));
             cs_call(prim_b, addr, size);
+            prim_b->req_resource_mask |= sec_b->req_resource_mask;
 
             struct u_trace *prim_ut = &primary->utrace.uts[j];
             struct u_trace *sec_ut = &secondary->utrace.uts[j];

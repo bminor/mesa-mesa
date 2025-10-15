@@ -302,6 +302,7 @@ static void
 finish_subqueue(struct panvk_gpu_queue *queue, enum panvk_subqueue_id subqueue)
 {
    panvk_pool_free_mem(&queue->subqueues[subqueue].context);
+   panvk_pool_free_mem(&queue->subqueues[subqueue].req_resource.buf);
    panvk_pool_free_mem(&queue->subqueues[subqueue].regs_save);
    finish_subqueue_tracing(queue, subqueue);
 }
@@ -326,6 +327,21 @@ init_utrace(struct panvk_gpu_queue *queue)
    queue->utrace.next_value = 1;
 
    return VK_SUCCESS;
+}
+
+static uint32_t
+get_resource_mask(enum panvk_subqueue_id subqueue)
+{
+   switch (subqueue) {
+   case PANVK_SUBQUEUE_VERTEX_TILER:
+      return CS_IDVS_RES | CS_TILER_RES;
+   case PANVK_SUBQUEUE_FRAGMENT:
+      return CS_FRAG_RES;
+   case PANVK_SUBQUEUE_COMPUTE:
+      return CS_COMPUTE_RES;
+   default:
+      UNREACHABLE("Unknown subqueue");
+   }
 }
 
 static VkResult
@@ -353,13 +369,42 @@ init_subqueue(struct panvk_gpu_queue *queue, enum panvk_subqueue_id subqueue)
       }
    }
 
-   alloc_info.size = sizeof(struct panvk_cs_subqueue_context);
-   alloc_info.alignment = 64;
-
    /* When tracing is enabled, we want to use a non-cached pool, so can get
     * up-to-date context even if the CS crashed in the middle. */
    struct panvk_pool *mempool =
       PANVK_DEBUG(TRACE) ? &dev->mempools.rw_nc : &dev->mempools.rw;
+
+   alloc_info.size = sizeof(uint64_t);
+   alloc_info.alignment = 64;
+   subq->req_resource.buf = panvk_pool_alloc_mem(mempool, alloc_info);
+   if (!panvk_priv_mem_host_addr(subq->req_resource.buf))
+      return panvk_errorf(dev, VK_ERROR_OUT_OF_DEVICE_MEMORY,
+                          "Failed to create a req_resource buffer");
+
+   struct cs_builder b;
+   const struct drm_panthor_csif_info *csif_info =
+      panthor_kmod_get_csif_props(dev->kmod.dev);
+
+   struct cs_buffer root_cs = {
+      .cpu = panvk_priv_mem_host_addr(subq->req_resource.buf),
+      .gpu = panvk_priv_mem_dev_addr(subq->req_resource.buf),
+      .capacity = 1,
+   };
+   struct cs_builder_conf conf = {
+      .nr_registers = csif_info->cs_reg_count,
+      .nr_kernel_registers = MAX2(csif_info->unpreserved_cs_reg_count, 4),
+      .ls_sb_slot = SB_ID(LS),
+   };
+
+   cs_builder_init(&b, &conf, root_cs);
+   cs_req_res(&b, get_resource_mask(subqueue));
+   cs_finish(&b);
+   assert(cs_is_valid(&b));
+   subq->req_resource.cs_buffer_size = cs_root_chunk_size(&b);
+   subq->req_resource.cs_buffer_addr = cs_root_chunk_gpu_addr(&b);
+
+   alloc_info.size = sizeof(struct panvk_cs_subqueue_context);
+   alloc_info.alignment = 64;
 
    subq->context = panvk_pool_alloc_mem(mempool, alloc_info);
    if (!panvk_priv_mem_host_addr(subq->context))
@@ -382,19 +427,16 @@ init_subqueue(struct panvk_gpu_queue *queue, enum panvk_subqueue_id subqueue)
    };
 
    /* We use the geometry buffer for our temporary CS buffer. */
-   struct cs_buffer root_cs = {
+   root_cs = (struct cs_buffer){
       .cpu = panvk_priv_mem_host_addr(queue->tiler_heap.desc) + 4096,
       .gpu = panvk_priv_mem_dev_addr(queue->tiler_heap.desc) + 4096,
       .capacity = 64 * 1024 / sizeof(uint64_t),
    };
-   const struct drm_panthor_csif_info *csif_info =
-      panthor_kmod_get_csif_props(dev->kmod.dev);
-   const struct cs_builder_conf conf = {
+   conf = (struct cs_builder_conf){
       .nr_registers = csif_info->cs_reg_count,
       .nr_kernel_registers = MAX2(csif_info->unpreserved_cs_reg_count, 4),
       .ls_sb_slot = SB_ID(LS),
    };
-   struct cs_builder b;
 
    assert(panvk_priv_mem_dev_addr(queue->tiler_heap.desc) != 0);
 
@@ -440,24 +482,6 @@ init_subqueue(struct panvk_gpu_queue *queue, enum panvk_subqueue_id subqueue)
       cs_move64_to(&b, heap_ctx_addr, queue->tiler_heap.context.dev_addr);
       cs_heap_set(&b, heap_ctx_addr);
    }
-
-   /* Request resources for each subqueue during initialization, as the req_res
-    * is an expensive operation which should be called sparingly. */
-   switch (subqueue) {
-   case PANVK_SUBQUEUE_VERTEX_TILER:
-      cs_req_res(&b, CS_IDVS_RES | CS_TILER_RES);
-      break;
-   case PANVK_SUBQUEUE_FRAGMENT:
-      cs_req_res(&b, CS_FRAG_RES);
-      break;
-   case PANVK_SUBQUEUE_COMPUTE:
-      cs_req_res(&b, CS_COMPUTE_RES);
-      break;
-   default:
-      UNREACHABLE("Unknown subqueue");
-      break;
-   }
-
    cs_finish(&b);
 
    assert(cs_is_valid(&b));
@@ -708,6 +732,7 @@ struct panvk_queue_submit {
    uint32_t qsubmit_count;
    uint32_t wait_queue_mask;
    uint32_t signal_queue_mask;
+   uint32_t req_resource_subqueue_mask;
 
    struct drm_panthor_queue_submit *qsubmits;
    struct drm_panthor_sync_op *wait_ops;
@@ -768,6 +793,16 @@ panvk_queue_submit_init_storage(
             continue;
 
          submit->qsubmit_count++;
+
+         struct panvk_subqueue *subq = &submit->queue->subqueues[j];
+         /* If we need a resource the subqueue has not requested yet. */
+         if (b->req_resource_mask & (~subq->req_resource.mask)) {
+            /* Ensure we do not need a resource not expected for this subqueue. */
+            assert(!(b->req_resource_mask & (~get_resource_mask(j))));
+            submit->qsubmit_count++;
+            submit->req_resource_subqueue_mask |= BITFIELD_BIT(j);
+            subq->req_resource.mask = get_resource_mask(j);
+         }
 
          struct u_trace *ut = &cmdbuf->utrace.uts[j];
          if (submit->process_utrace && u_trace_has_points(ut)) {
@@ -890,6 +925,27 @@ panvk_queue_submit_init_utrace(struct panvk_queue_submit *submit,
          .wait_value = wait ? submit->queue->utrace.next_value : 0,
          .free_self = false,
       };
+   }
+}
+
+static void
+panvk_queue_submit_init_req_resource(struct panvk_queue_submit *submit)
+{
+   if (!submit->req_resource_subqueue_mask)
+      return;
+
+   struct panvk_device *dev = submit->dev;
+   uint32_t flush_id = panthor_kmod_get_flush_id(dev->kmod.dev);
+
+   u_foreach_bit(i, submit->req_resource_subqueue_mask) {
+      struct panvk_subqueue *subq = &submit->queue->subqueues[i];
+      submit->qsubmits[submit->qsubmit_count++] =
+         (struct drm_panthor_queue_submit){
+            .queue_index = i,
+            .stream_size = subq->req_resource.cs_buffer_size,
+            .stream_addr = subq->req_resource.cs_buffer_addr,
+            .latest_flush = flush_id,
+         };
    }
 }
 
@@ -1190,6 +1246,7 @@ panvk_per_arch(gpu_queue_submit)(struct vk_queue *vk_queue, struct vk_queue_subm
    panvk_queue_submit_init(&submit, vk_queue);
    panvk_queue_submit_init_storage(&submit, vk_submit, &stack_storage);
    panvk_queue_submit_init_utrace(&submit, vk_submit);
+   panvk_queue_submit_init_req_resource(&submit);
    panvk_queue_submit_init_waits(&submit, vk_submit);
    panvk_queue_submit_init_cmdbufs(&submit, vk_submit);
    panvk_queue_submit_init_signals(&submit, vk_submit);

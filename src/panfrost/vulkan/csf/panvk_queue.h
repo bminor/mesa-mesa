@@ -44,6 +44,17 @@ struct panvk_subqueue {
     */
    struct panvk_priv_mem regs_save;
 
+
+   struct {
+      /* Mask of resources requested by this subqueue. */
+      uint32_t mask;
+      /* Address and size of the linear buffer containing REQ_RESOURCE. */
+      uint32_t cs_buffer_size;
+      uint64_t cs_buffer_addr;
+      /* Allocation */
+      struct panvk_priv_mem buf;
+   } req_resource;
+
    struct {
       struct pan_kmod_bo *bo;
       uint64_t size;

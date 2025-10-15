@@ -218,6 +218,9 @@ struct cs_builder {
    /* ralloc context used for cs_maybe allocations */
    void *maybe_ctx;
 
+   /* Mask of resources required by this CS. */
+   uint32_t req_resource_mask;
+
    /* Temporary storage for inner blocks that need to be built
     * and copied in one monolithic sequence of instructions with no
     * jump in the middle.
@@ -1511,12 +1514,21 @@ cs_shader_res_sel(uint8_t srt, uint8_t fau, uint8_t spd, uint8_t tsd)
    };
 }
 
+enum cs_res_id {
+   CS_COMPUTE_RES = BITFIELD_BIT(0),
+   CS_FRAG_RES = BITFIELD_BIT(1),
+   CS_TILER_RES = BITFIELD_BIT(2),
+   CS_IDVS_RES = BITFIELD_BIT(3),
+};
+
 static inline void
 cs_run_compute(struct cs_builder *b, unsigned task_increment,
                enum mali_task_axis task_axis, struct cs_shader_res_sel res_sel)
 {
    /* Staging regs */
    cs_flush_loads(b);
+
+   b->req_resource_mask |= CS_COMPUTE_RES;
 
    cs_emit(b, RUN_COMPUTE, I) {
       I.task_increment = task_increment;
@@ -1536,6 +1548,8 @@ cs_run_tiling(struct cs_builder *b, uint32_t flags_override,
    /* Staging regs */
    cs_flush_loads(b);
 
+   b->req_resource_mask |= CS_TILER_RES;
+
    cs_emit(b, RUN_TILING, I) {
       I.flags_override = flags_override;
       I.srt_select = res_sel.srt;
@@ -1554,6 +1568,8 @@ cs_run_idvs2(struct cs_builder *b, uint32_t flags_override, bool malloc_enable,
 {
    /* Staging regs */
    cs_flush_loads(b);
+
+   b->req_resource_mask |= CS_IDVS_RES;
 
    cs_emit(b, RUN_IDVS2, I) {
       I.flags_override = flags_override;
@@ -1576,6 +1592,8 @@ cs_run_idvs(struct cs_builder *b, uint32_t flags_override, bool malloc_enable,
 {
    /* Staging regs */
    cs_flush_loads(b);
+
+   b->req_resource_mask |= CS_IDVS_RES;
 
    cs_emit(b, RUN_IDVS, I) {
       I.flags_override = flags_override;
@@ -1613,6 +1631,8 @@ cs_run_fragment(struct cs_builder *b, bool enable_tem,
    /* Staging regs */
    cs_flush_loads(b);
 
+   b->req_resource_mask |= CS_FRAG_RES;
+
    cs_emit(b, RUN_FRAGMENT, I) {
       I.enable_tem = enable_tem;
       I.tile_order = tile_order;
@@ -1626,6 +1646,8 @@ cs_run_fullscreen(struct cs_builder *b, uint32_t flags_override,
    /* Staging regs */
    cs_flush_loads(b);
 
+   b->req_resource_mask |= CS_TILER_RES;
+
    cs_emit(b, RUN_FULLSCREEN, I) {
       I.flags_override = flags_override;
       I.dcd = cs_src64(b, dcd);
@@ -1635,6 +1657,8 @@ cs_run_fullscreen(struct cs_builder *b, uint32_t flags_override,
 static inline void
 cs_finish_tiling(struct cs_builder *b)
 {
+   b->req_resource_mask |= CS_TILER_RES;
+
    cs_emit(b, FINISH_TILING, I)
       ;
 }
@@ -1947,13 +1971,6 @@ cs_jump(struct cs_builder *b, struct cs_index address, struct cs_index length)
    }
 }
 
-enum cs_res_id {
-   CS_COMPUTE_RES = BITFIELD_BIT(0),
-   CS_FRAG_RES = BITFIELD_BIT(1),
-   CS_TILER_RES = BITFIELD_BIT(2),
-   CS_IDVS_RES = BITFIELD_BIT(3),
-};
-
 static inline void
 cs_req_res(struct cs_builder *b, uint32_t res_mask)
 {
@@ -2052,6 +2069,8 @@ cs_run_compute_indirect(struct cs_builder *b, unsigned wg_per_task,
 {
    /* Staging regs */
    cs_flush_loads(b);
+
+   b->req_resource_mask |= CS_COMPUTE_RES;
 
    cs_emit(b, RUN_COMPUTE_INDIRECT, I) {
       I.workgroups_per_task = wg_per_task;
