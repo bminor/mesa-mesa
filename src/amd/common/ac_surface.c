@@ -1187,6 +1187,34 @@ static bool get_display_flag(const struct ac_surf_config *config, const struct r
    return false;
 }
 
+/* Return whether to use a randomized image layout. The way it works is that
+ * radeon_surf::tile_swizzle reorders tiles, so that images with the same bpp but different
+ * tile_swizzle end up mapping the same (x,y) coordinates to different memory channels. This
+ * results in better load distributions among memory channels for MRT writes. It's recommended
+ * that different MRTs that are used together and have the same bpp have different
+ * tile_swizzle for optimal performance.
+ *
+ * It's worth verifying whether this happens in practice, and if it doesn't, we may need to
+ * make surf_index more random instead of monotonically increasing.
+ */
+static bool use_tile_swizzle(const struct ac_surf_config *config, const struct radeon_surf *surf,
+                             bool fmask)
+{
+   if (fmask) {
+      if (!config->info.fmask_surf_index)
+         return false;
+
+      return !(surf->flags & RADEON_SURF_SHAREABLE);
+   } else {
+      if (!config->info.surf_index)
+         return false;
+
+      return surf->modifier == DRM_FORMAT_MOD_INVALID &&
+             !(surf->flags & (RADEON_SURF_Z_OR_SBUFFER | RADEON_SURF_SHAREABLE)) &&
+             !get_display_flag(config, surf);
+   }
+}
+
 /**
  * This must be called after the first level is computed.
  *
@@ -1215,10 +1243,9 @@ static int gfx6_surface_settings(ADDR_HANDLE addrlib, const struct radeon_info *
 
    /* Compute tile swizzle. */
    /* TODO: fix tile swizzle with mipmapping for GFX6 */
-   if ((info->gfx_level >= GFX7 || config->info.levels == 1) && config->info.surf_index &&
+   if ((info->gfx_level >= GFX7 || config->info.levels == 1) &&
        surf->u.legacy.level[0].mode == RADEON_SURF_MODE_2D &&
-       !(surf->flags & (RADEON_SURF_Z_OR_SBUFFER | RADEON_SURF_SHAREABLE)) &&
-       !get_display_flag(config, surf)) {
+       use_tile_swizzle(config, surf, false)) {
       ADDR_COMPUTE_BASE_SWIZZLE_INPUT AddrBaseSwizzleIn = {0};
       ADDR_COMPUTE_BASE_SWIZZLE_OUTPUT AddrBaseSwizzleOut = {0};
 
@@ -1780,7 +1807,7 @@ static int gfx6_compute_surface(ADDR_HANDLE addrlib, const struct radeon_info *i
       surf->u.legacy.color.fmask.pitch_in_pixels = fout.pitch;
 
       /* Compute tile swizzle for FMASK. */
-      if (config->info.fmask_surf_index && !(surf->flags & RADEON_SURF_SHAREABLE)) {
+      if (use_tile_swizzle(config, surf, true)) {
          ADDR_COMPUTE_BASE_SWIZZLE_INPUT xin = {0};
          ADDR_COMPUTE_BASE_SWIZZLE_OUTPUT xout = {0};
 
@@ -2356,8 +2383,8 @@ static int gfx9_compute_miptree(struct ac_addrlib *addrlib, const struct radeon_
       /* Compute tile swizzle for the color surface.
        * All *_X and *_T modes can use the swizzle.
        */
-      if (config->info.surf_index && in->swizzleMode >= ADDR_SW_64KB_Z_T && !out.mipChainInTail &&
-          !(surf->flags & RADEON_SURF_SHAREABLE) && !in->flags.display) {
+      if (in->swizzleMode >= ADDR_SW_64KB_Z_T && !out.mipChainInTail &&
+          use_tile_swizzle(config, surf, false)) {
          ADDR2_COMPUTE_PIPEBANKXOR_INPUT xin = {0};
          ADDR2_COMPUTE_PIPEBANKXOR_OUTPUT xout = {0};
 
@@ -2557,8 +2584,7 @@ static int gfx9_compute_miptree(struct ac_addrlib *addrlib, const struct radeon_
          surf->fmask_slice_size = fout.sliceSize;
 
          /* Compute tile swizzle for the FMASK surface. */
-         if (config->info.fmask_surf_index && fin.swizzleMode >= ADDR_SW_64KB_Z_T &&
-             !(surf->flags & RADEON_SURF_SHAREABLE)) {
+         if (fin.swizzleMode >= ADDR_SW_64KB_Z_T && use_tile_swizzle(config, surf, true)) {
             ADDR2_COMPUTE_PIPEBANKXOR_INPUT xin = {0};
             ADDR2_COMPUTE_PIPEBANKXOR_OUTPUT xout = {0};
 
@@ -3408,9 +3434,8 @@ static bool gfx12_compute_miptree(struct ac_addrlib *addrlib, const struct radeo
    }
 
    /* Compute tile swizzle for the color surface. All swizzle modes >= 4K support it. */
-   if (surf->modifier == DRM_FORMAT_MOD_INVALID && config->info.surf_index &&
-       in->swizzleMode >= ADDR3_4KB_2D && !out.mipChainInTail &&
-       !(surf->flags & RADEON_SURF_SHAREABLE) && !get_display_flag(config, surf)) {
+   if (in->swizzleMode >= ADDR3_4KB_2D && !out.mipChainInTail &&
+       use_tile_swizzle(config, surf, false)) {
       ADDR3_COMPUTE_PIPEBANKXOR_INPUT xin = {0};
       ADDR3_COMPUTE_PIPEBANKXOR_OUTPUT xout = {0};
 
