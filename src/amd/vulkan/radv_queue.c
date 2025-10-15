@@ -1511,10 +1511,10 @@ radv_create_perf_counter_lock_cs(struct radv_device *device, unsigned pass, bool
 
    radv_cs_add_buffer(device->ws, cs->b, device->perf_counter_bo);
 
-   radeon_begin(cs);
-
    if (!unlock) {
       uint64_t mutex_va = radv_buffer_get_va(device->perf_counter_bo) + PERF_CTR_BO_LOCK_OFFSET;
+
+      radeon_begin(cs);
       radeon_emit(PKT3(PKT3_ATOMIC_MEM, 7, 0));
       radeon_emit(ATOMIC_OP(TC_OP_ATOMIC_CMPSWAP_32) | ATOMIC_COMMAND(ATOMIC_COMMAND_LOOP));
       radeon_emit(mutex_va);       /* addr lo */
@@ -1524,41 +1524,26 @@ radv_create_perf_counter_lock_cs(struct radv_device *device, unsigned pass, bool
       radeon_emit(0);              /* compare data lo */
       radeon_emit(0);              /* compare data hi */
       radeon_emit(10);             /* loop interval */
+      radeon_end();
    }
 
    uint64_t va = radv_buffer_get_va(device->perf_counter_bo) + PERF_CTR_BO_PASS_OFFSET;
    uint64_t unset_va = va + (unlock ? 8 * pass : 0);
    uint64_t set_va = va + (unlock ? 0 : 8 * pass);
 
-   radeon_emit(PKT3(PKT3_COPY_DATA, 4, 0));
-   radeon_emit(COPY_DATA_SRC_SEL(COPY_DATA_IMM) | COPY_DATA_DST_SEL(COPY_DATA_DST_MEM) | COPY_DATA_COUNT_SEL |
-               COPY_DATA_WR_CONFIRM);
-   radeon_emit(0); /* immediate */
-   radeon_emit(0);
-   radeon_emit(unset_va);
-   radeon_emit(unset_va >> 32);
+   ac_emit_cp_copy_data(cs->b, COPY_DATA_IMM, COPY_DATA_DST_MEM, 0, unset_va,
+                        AC_CP_COPY_DATA_COUNT_SEL | AC_CP_COPY_DATA_WR_CONFIRM);
 
-   radeon_emit(PKT3(PKT3_COPY_DATA, 4, 0));
-   radeon_emit(COPY_DATA_SRC_SEL(COPY_DATA_IMM) | COPY_DATA_DST_SEL(COPY_DATA_DST_MEM) | COPY_DATA_COUNT_SEL |
-               COPY_DATA_WR_CONFIRM);
-   radeon_emit(1); /* immediate */
-   radeon_emit(0);
-   radeon_emit(set_va);
-   radeon_emit(set_va >> 32);
+   ac_emit_cp_copy_data(cs->b, COPY_DATA_IMM, COPY_DATA_DST_MEM, 1, set_va,
+                        AC_CP_COPY_DATA_COUNT_SEL | AC_CP_COPY_DATA_WR_CONFIRM);
 
    if (unlock) {
       uint64_t mutex_va = radv_buffer_get_va(device->perf_counter_bo) + PERF_CTR_BO_LOCK_OFFSET;
 
-      radeon_emit(PKT3(PKT3_COPY_DATA, 4, 0));
-      radeon_emit(COPY_DATA_SRC_SEL(COPY_DATA_IMM) | COPY_DATA_DST_SEL(COPY_DATA_DST_MEM) | COPY_DATA_COUNT_SEL |
-                  COPY_DATA_WR_CONFIRM);
-      radeon_emit(0); /* immediate */
-      radeon_emit(0);
-      radeon_emit(mutex_va);
-      radeon_emit(mutex_va >> 32);
+      ac_emit_cp_copy_data(cs->b, COPY_DATA_IMM, COPY_DATA_DST_MEM, 0, mutex_va,
+                           AC_CP_COPY_DATA_COUNT_SEL | AC_CP_COPY_DATA_WR_CONFIRM);
    }
 
-   radeon_end();
    assert(cs->b->cdw <= cdw);
 
    result = radv_finalize_cmd_stream(device, cs);
