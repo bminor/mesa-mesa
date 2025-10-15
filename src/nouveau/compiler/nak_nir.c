@@ -188,8 +188,7 @@ optimize_nir(nir_shader *nir, const struct nak_compiler *nak, bool allow_copies)
       OPT(nir, nir_opt_constant_folding);
 
       if (lower_flrp != 0) {
-         if (OPT(nir, nir_lower_flrp, lower_flrp, false /* always_precise */))
-            OPT(nir, nir_opt_constant_folding);
+         OPT(nir, nir_lower_flrp, lower_flrp, false /* always_precise */);
          /* Nothing should rematerialize any flrps */
          lower_flrp = 0;
       }

@@ -1101,11 +1101,7 @@ brw_nir_optimize(nir_shader *nir,
       LOOP_OPT(nir_opt_constant_folding);
 
       if (lower_flrp != 0) {
-         if (LOOP_OPT(nir_lower_flrp,
-                 lower_flrp,
-                 false /* always_precise */)) {
-            LOOP_OPT(nir_opt_constant_folding);
-         }
+         LOOP_OPT(nir_lower_flrp, lower_flrp, false /* always_precise */);
 
          /* Nothing should rematerialize any flrps, so we only need to do this
           * lowering once.

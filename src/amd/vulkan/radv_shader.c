@@ -733,12 +733,8 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
 
    unsigned lower_flrp = (nir->options->lower_flrp16 ? 16 : 0) | (nir->options->lower_flrp32 ? 32 : 0) |
                          (nir->options->lower_flrp64 ? 64 : 0);
-   if (lower_flrp != 0) {
-      progress = false;
+   if (lower_flrp != 0)
       NIR_PASS(progress, nir, nir_lower_flrp, lower_flrp, false /* always precise */);
-      if (progress)
-         NIR_PASS(_, nir, nir_opt_constant_folding);
-   }
 
    NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_push_const, nir_address_format_32bit_offset);
 

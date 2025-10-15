@@ -2236,15 +2236,8 @@ v3d_optimize_nir(struct v3d_compile *c, struct nir_shader *s)
                 }
 
                 if (lower_flrp != 0) {
-                        bool lower_flrp_progress = false;
-
-                        NIR_PASS(lower_flrp_progress, s, nir_lower_flrp,
-                                 lower_flrp,
-                                 false /* always_precise */);
-                        if (lower_flrp_progress) {
-                                NIR_PASS(progress, s, nir_opt_constant_folding);
-                                progress = true;
-                        }
+                        NIR_PASS(progress, s, nir_lower_flrp,
+                                 lower_flrp, false /* always_precise */);
 
                         /* Nothing should rematerialize any flrps, so we only
                          * need to do this lowering once.

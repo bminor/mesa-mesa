@@ -756,11 +756,7 @@ elk_nir_optimize(nir_shader *nir, bool is_scalar,
       OPT(nir_opt_constant_folding);
 
       if (lower_flrp != 0) {
-         if (OPT(nir_lower_flrp,
-                 lower_flrp,
-                 false /* always_precise */)) {
-            OPT(nir_opt_constant_folding);
-         }
+         OPT(nir_lower_flrp, lower_flrp, false /* always_precise */);
 
          /* Nothing should rematerialize any flrps, so we only need to do this
           * lowering once.

@@ -99,13 +99,7 @@ void si_nir_opts(struct si_screen *sscreen, struct nir_shader *nir, bool has_arr
                                (nir->options->lower_flrp32 ? 32 : 0) |
                                (nir->options->lower_flrp64 ? 64 : 0);
          assert(lower_flrp);
-         bool lower_flrp_progress = false;
-
-         NIR_PASS(lower_flrp_progress, nir, nir_lower_flrp, lower_flrp, false /* always_precise */);
-         if (lower_flrp_progress) {
-            NIR_PASS(progress, nir, nir_opt_constant_folding);
-            progress = true;
-         }
+         NIR_PASS(progress, nir, nir_lower_flrp, lower_flrp, false /* always_precise */);
 
          /* Nothing should rematerialize any flrps, so we only
           * need to do this lowering once.

@@ -397,10 +397,7 @@ ir3_optimize_loop(struct ir3_compiler *compiler,
       progress |= OPT(s, nir_opt_offsets, &offset_options);
 
       if (lower_flrp != 0) {
-         if (OPT(s, nir_lower_flrp, lower_flrp, false /* always_precise */)) {
-            OPT(s, nir_opt_constant_folding);
-            progress = true;
-         }
+         OPT(s, nir_lower_flrp, lower_flrp, false /* always_precise */);
 
          /* Nothing should rematerialize any flrps, so we only
           * need to do this lowering once.

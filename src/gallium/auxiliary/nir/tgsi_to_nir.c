@@ -2440,16 +2440,8 @@ ttn_optimize_nir(nir_shader *nir)
             (nir->options->lower_flrp64 ? 64 : 0);
 
          if (lower_flrp) {
-            bool lower_flrp_progress = false;
-
-            NIR_PASS(lower_flrp_progress, nir, nir_lower_flrp,
-                     lower_flrp,
-                     false /* always_precise */);
-            if (lower_flrp_progress) {
-               NIR_PASS(progress, nir,
-                        nir_opt_constant_folding);
-               progress = true;
-            }
+            NIR_PASS(progress, nir, nir_lower_flrp,
+                     lower_flrp, false /* always_precise */);
          }
 
          /* Nothing should rematerialize any flrps, so we only need to do this
