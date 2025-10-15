@@ -947,8 +947,7 @@ static void pvr_physical_device_destroy(struct vk_physical_device *vk_pdevice)
     * before freeing or that the freeing functions accept NULL pointers.
     */
 
-   if (pdevice->pco_ctx)
-      ralloc_free(pdevice->pco_ctx);
+   ralloc_free(pdevice->pco_ctx);
 
    pvr_wsi_finish(pdevice);
 

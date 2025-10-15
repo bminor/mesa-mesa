@@ -878,10 +878,8 @@ cleanup:
       png_destroy_write_struct(&png, &info);
    if (file)
       fclose(file);
-   if (filename)
-      free(filename);
-   if (tmpFilename)
-      free(tmpFilename);
+   free(filename);
+   free(tmpFilename);
    return nullptr;
 }
 

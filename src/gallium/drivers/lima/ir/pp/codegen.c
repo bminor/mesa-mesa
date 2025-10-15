@@ -888,8 +888,7 @@ bool ppir_codegen_prog(ppir_compiler *comp)
       }
    }
 
-   if (comp->prog->shader)
-      ralloc_free(comp->prog->shader);
+   ralloc_free(comp->prog->shader);
 
    comp->prog->shader = prog;
    comp->prog->state.shader_size = size * sizeof(uint32_t);

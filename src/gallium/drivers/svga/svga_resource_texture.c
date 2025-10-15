@@ -1113,10 +1113,8 @@ svga_texture_create(struct pipe_screen *screen,
    return &tex->b;
 
 fail:
-   if (tex->dirty)
-      FREE(tex->dirty);
-   if (tex->defined)
-      FREE(tex->defined);
+   FREE(tex->dirty);
+   FREE(tex->defined);
    FREE(tex);
 fail_notex:
    SVGA_STATS_TIME_POP(svgascreen->sws);

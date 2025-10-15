@@ -117,11 +117,9 @@ mir_free_liveness(compiler_context *ctx)
 {
    mir_foreach_block(ctx, _block) {
       midgard_block *block = (midgard_block *)_block;
-      if (block->live_in)
-         ralloc_free(block->live_in);
 
-      if (block->live_out)
-         ralloc_free(block->live_out);
+      ralloc_free(block->live_in);
+      ralloc_free(block->live_out);
 
       block->live_in = NULL;
       block->live_out = NULL;

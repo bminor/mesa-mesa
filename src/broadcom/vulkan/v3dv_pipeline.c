@@ -123,8 +123,7 @@ v3dv_destroy_pipeline(struct v3dv_pipeline *pipeline,
       pipeline->default_attribute_values = NULL;
    }
 
-   if (pipeline->executables.mem_ctx)
-      ralloc_free(pipeline->executables.mem_ctx);
+   ralloc_free(pipeline->executables.mem_ctx);
 
    if (pipeline->layout)
       v3dv_pipeline_layout_unref(device, pipeline->layout, pAllocator);

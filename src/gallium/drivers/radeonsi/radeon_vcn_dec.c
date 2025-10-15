@@ -3186,10 +3186,8 @@ error:
    si_vid_destroy_buffer(&dec->sessionctx);
 
 err:
-   if (dec->jcs)
-      FREE(dec->jcs);
-   if (dec->jctx)
-      FREE(dec->jctx);
+   FREE(dec->jcs);
+   FREE(dec->jctx);
    FREE(dec);
 
    return NULL;

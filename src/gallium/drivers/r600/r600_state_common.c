@@ -1157,13 +1157,11 @@ void r600_delete_shader_selector(struct pipe_context *ctx,
 	if (sel->ir_type == PIPE_SHADER_IR_TGSI) {
 		free(sel->tokens);
 		/* We might have converted the TGSI shader to a NIR shader */
-		if (sel->nir)
-			ralloc_free(sel->nir);
+		ralloc_free(sel->nir);
 	}
 	else if (sel->ir_type == PIPE_SHADER_IR_NIR)
 		ralloc_free(sel->nir);
-	if (sel->nir_blob)
-		free(sel->nir_blob);
+	free(sel->nir_blob);
 	free(sel);
 }
 

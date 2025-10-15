@@ -580,8 +580,7 @@ vk_common_CreateShadersEXT(VkDevice _device,
          }
       } else {
          for (uint32_t l = 0; l < linked_count; l++) {
-            if (infos[l].nir != NULL)
-               ralloc_free(infos[l].nir);
+            ralloc_free(infos[l].nir);
          }
       }
 

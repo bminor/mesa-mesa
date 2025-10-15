@@ -2530,9 +2530,7 @@ yyerror(YYLTYPE *locp, struct asm_parser_state *state, const char *s)
                                locp->first_line, locp->first_column, s);
    _mesa_set_program_error(state->ctx, locp->position, err_str);
 
-   if (err_str) {
-      free(err_str);
-   }
+   free(err_str);
 }
 
 

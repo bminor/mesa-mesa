@@ -158,8 +158,7 @@ int r600_pipe_shader_create(struct pipe_context *ctx,
 	{
 		glsl_type_singleton_init_or_ref();
 		if (sel->ir_type == PIPE_SHADER_IR_TGSI) {
-			if (sel->nir)
-				ralloc_free(sel->nir);
+			ralloc_free(sel->nir);
 			if (sel->nir_blob) {
 				free(sel->nir_blob);
 				sel->nir_blob = NULL;
@@ -311,8 +310,7 @@ void r600_pipe_shader_destroy(struct pipe_context *ctx UNUSED, struct r600_pipe_
 		r600_bytecode_clear(&shader->shader.bc);
 	r600_release_command_buffer(&shader->command_buffer);
 
-	if (shader->shader.arrays)
-		free(shader->shader.arrays);
+	free(shader->shader.arrays);
 }
 
 struct r600_shader_ctx {

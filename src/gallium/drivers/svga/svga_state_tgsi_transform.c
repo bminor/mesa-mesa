@@ -192,8 +192,7 @@ transform_dynamic_indexing(struct svga_context *svga,
    }
    transform_shader->token_key = key;
    bind_shader(svga, info->processor, transform_shader);
-   if (new_tokens)
-      FREE(new_tokens);
+   FREE(new_tokens);
 }
 
 

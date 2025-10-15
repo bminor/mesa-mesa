@@ -46,11 +46,8 @@ agx_compute_liveness(agx_context *ctx)
    unsigned words = BITSET_WORDS(ctx->alloc);
 
    agx_foreach_block(ctx, block) {
-      if (block->live_in)
-         ralloc_free(block->live_in);
-
-      if (block->live_out)
-         ralloc_free(block->live_out);
+      ralloc_free(block->live_in);
+      ralloc_free(block->live_out);
 
       block->live_in = rzalloc_array(block, BITSET_WORD, words);
       block->live_out = rzalloc_array(block, BITSET_WORD, words);

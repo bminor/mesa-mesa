@@ -255,11 +255,8 @@ bi_compute_liveness_ra(bi_context *ctx)
    bi_worklist_init(ctx, &worklist);
 
    bi_foreach_block(ctx, block) {
-      if (block->live_in)
-         ralloc_free(block->live_in);
-
-      if (block->live_out)
-         ralloc_free(block->live_out);
+      ralloc_free(block->live_in);
+      ralloc_free(block->live_out);
 
       block->live_in = rzalloc_array(block, uint8_t, ctx->ssa_alloc);
       block->live_out = rzalloc_array(block, uint8_t, ctx->ssa_alloc);

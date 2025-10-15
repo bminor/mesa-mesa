@@ -464,8 +464,7 @@ panfrost_set_resource_label(UNUSED struct pipe_screen *pscreen,
       return;
 
    char *old_label = (char *)panfrost_bo_set_label(rsrc->bo, new_label);
-   if (old_label)
-      free(old_label);
+   free(old_label);
 }
 
 static bool

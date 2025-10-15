@@ -2997,8 +2997,7 @@ radv_graphics_pipeline_state_finish(struct radv_device *device, struct radv_grap
       for (uint32_t i = 0; i < MESA_VULKAN_SHADER_STAGES; i++)
          ralloc_free(gfx_state->stages[i].nir);
 
-      if (gfx_state->stages[MESA_SHADER_GEOMETRY].gs_copy_shader)
-         ralloc_free(gfx_state->stages[MESA_SHADER_GEOMETRY].gs_copy_shader);
+      ralloc_free(gfx_state->stages[MESA_SHADER_GEOMETRY].gs_copy_shader);
 
       free(gfx_state->stages);
    }

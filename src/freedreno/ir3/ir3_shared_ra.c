@@ -1498,8 +1498,7 @@ ir3_ra_shared(struct ir3_shader_variant *v, struct ir3_liveness **live_ptr)
    lower_pcopy(v->ir, &ctx);
 
    for (unsigned i = 0; i < live->block_count; i++) {
-      if (ctx.blocks[i].live_out)
-         ralloc_free(ctx.blocks[i].live_out);
+      ralloc_free(ctx.blocks[i].live_out);
    }
 
    ralloc_free(ctx.intervals);

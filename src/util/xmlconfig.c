@@ -1284,9 +1284,7 @@ driDestroyOptionInfo(driOptionCache *info)
    if (info->info) {
       uint32_t i, size = 1 << info->tableSize;
       for (i = 0; i < size; ++i) {
-         if (info->info[i].name) {
-            free(info->info[i].name);
-         }
+         free(info->info[i].name);
       }
       free(info->info);
    }

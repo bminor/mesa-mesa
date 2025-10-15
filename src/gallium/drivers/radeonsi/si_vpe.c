@@ -891,8 +891,7 @@ si_vpe_processor_destroy(struct pipe_video_codec *codec)
       vpe_destroy(&vpeproc->vpe_handle);
 
    if (vpeproc->vpe_build_param) {
-      if (vpeproc->vpe_build_param->streams)
-         FREE(vpeproc->vpe_build_param->streams);
+      FREE(vpeproc->vpe_build_param->streams);
       FREE(vpeproc->vpe_build_param);
    }
 
@@ -906,14 +905,11 @@ si_vpe_processor_destroy(struct pipe_video_codec *codec)
    if (vpeproc->gm_handle)
       tm_destroy(&vpeproc->gm_handle);
    
-   if (vpeproc->lut_data)
-      FREE(vpeproc->lut_data);
+   FREE(vpeproc->lut_data);
 
-   if (vpeproc->geometric_scaling_ratios)
-      FREE(vpeproc->geometric_scaling_ratios);
+   FREE(vpeproc->geometric_scaling_ratios);
 
-   if (vpeproc->lanczos_info)
-      FREE(vpeproc->lanczos_info);
+   FREE(vpeproc->lanczos_info);
 
    if (vpeproc->geometric_buf[0])
       vpeproc->geometric_buf[0]->destroy(vpeproc->geometric_buf[0]);

@@ -259,22 +259,10 @@ _mesa_delete_program(struct gl_context *ctx, struct gl_program *prog)
       _mesa_free_parameter_list(prog->Parameters);
    }
 
-   if (prog->nir) {
-      ralloc_free(prog->nir);
-   }
-
-   if (prog->sh.BindlessSamplers) {
-      ralloc_free(prog->sh.BindlessSamplers);
-   }
-
-   if (prog->sh.BindlessImages) {
-      ralloc_free(prog->sh.BindlessImages);
-   }
-
-   if (prog->driver_cache_blob) {
-      ralloc_free(prog->driver_cache_blob);
-   }
-
+   ralloc_free(prog->nir);
+   ralloc_free(prog->sh.BindlessSamplers);
+   ralloc_free(prog->sh.BindlessImages);
+   ralloc_free(prog->driver_cache_blob);
    ralloc_free(prog);
 }
 

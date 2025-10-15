@@ -167,8 +167,7 @@ radv_shader_object_init_graphics(struct radv_shader_object *shader_obj, struct r
       binary = binaries[stage];
 
       ralloc_free(stages[stage].nir);
-      if (stages[MESA_SHADER_GEOMETRY].gs_copy_shader)
-         ralloc_free(stages[MESA_SHADER_GEOMETRY].gs_copy_shader);
+      ralloc_free(stages[MESA_SHADER_GEOMETRY].gs_copy_shader);
 
       shader_obj->shader = shader;
       shader_obj->binary = binary;
@@ -196,8 +195,7 @@ radv_shader_object_init_graphics(struct radv_shader_object *shader_obj, struct r
          binary = binaries[stage];
 
          ralloc_free(stages[stage].nir);
-         if (stages[MESA_SHADER_GEOMETRY].gs_copy_shader)
-            ralloc_free(stages[MESA_SHADER_GEOMETRY].gs_copy_shader);
+         ralloc_free(stages[MESA_SHADER_GEOMETRY].gs_copy_shader);
 
          if (stage == MESA_SHADER_VERTEX) {
             if (next_stage == MESA_SHADER_TESS_CTRL) {
@@ -549,8 +547,7 @@ radv_shader_object_create_linked(VkDevice _device, uint32_t createInfoCount, con
       pShaders[i] = radv_shader_object_to_handle(shader_obj);
    }
 
-   if (stages[MESA_SHADER_GEOMETRY].gs_copy_shader)
-      ralloc_free(stages[MESA_SHADER_GEOMETRY].gs_copy_shader);
+   ralloc_free(stages[MESA_SHADER_GEOMETRY].gs_copy_shader);
 
    return VK_SUCCESS;
 }

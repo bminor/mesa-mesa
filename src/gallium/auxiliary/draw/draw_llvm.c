@@ -2252,8 +2252,7 @@ draw_llvm_destroy_variant(struct draw_llvm_variant *variant)
    variant->shader->variants_cached--;
    list_del(&variant->list_item_global.list);
    llvm->nr_variants--;
-   if(variant->function_name)
-      FREE(variant->function_name);
+   FREE(variant->function_name);
    FREE(variant);
 }
 
@@ -2582,8 +2581,7 @@ draw_gs_llvm_destroy_variant(struct draw_gs_llvm_variant *variant)
    variant->shader->variants_cached--;
    list_del(&variant->list_item_global.list);
    llvm->nr_gs_variants--;
-   if(variant->function_name)
-      FREE(variant->function_name);
+   FREE(variant->function_name);
    FREE(variant);
 }
 
@@ -3257,8 +3255,7 @@ draw_tcs_llvm_destroy_variant(struct draw_tcs_llvm_variant *variant)
    variant->shader->variants_cached--;
    list_del(&variant->list_item_global.list);
    llvm->nr_tcs_variants--;
-   if(variant->function_name)
-      FREE(variant->function_name);
+   FREE(variant->function_name);
    FREE(variant);
 }
 
@@ -3797,8 +3794,7 @@ draw_tes_llvm_destroy_variant(struct draw_tes_llvm_variant *variant)
    variant->shader->variants_cached--;
    list_del(&variant->list_item_global.list);
    llvm->nr_tes_variants--;
-   if(variant->function_name)
-      FREE(variant->function_name);
+   FREE(variant->function_name);
    FREE(variant);
 }
 

@@ -1069,8 +1069,7 @@ llvmpipe_remove_cs_shader_variant(struct llvmpipe_context *lp,
    lp->nr_cs_variants--;
    lp->nr_cs_instrs -= variant->nr_instrs;
 
-   if(variant->function_name)
-      FREE(variant->function_name);
+   FREE(variant->function_name);
    FREE(variant);
 }
 

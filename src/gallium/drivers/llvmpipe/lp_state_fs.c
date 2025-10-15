@@ -4215,12 +4215,9 @@ llvmpipe_destroy_shader_variant(struct llvmpipe_context *lp,
 {
    gallivm_destroy(variant->gallivm);
    lp_fs_reference(lp, &variant->shader, NULL);
-   if (variant->function_name[RAST_EDGE_TEST])
-      FREE(variant->function_name[RAST_EDGE_TEST]);
-   if (variant->function_name[RAST_WHOLE])
-      FREE(variant->function_name[RAST_WHOLE]);
-   if (variant->linear_function_name)
-      FREE(variant->linear_function_name);
+   FREE(variant->function_name[RAST_EDGE_TEST]);
+   FREE(variant->function_name[RAST_WHOLE]);
+   FREE(variant->linear_function_name);
    FREE(variant);
 }
 

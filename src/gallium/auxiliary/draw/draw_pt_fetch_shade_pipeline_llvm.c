@@ -730,9 +730,7 @@ llvm_pipeline_generic(struct draw_pt_middle_end *middle,
        FREE(gs_vert_info[i].verts);
    }
 
-   if (patch_lengths) {
-      FREE(patch_lengths);
-   }
+   FREE(patch_lengths);
 
    if (free_prim_info) {
       FREE(tes_elts_out);

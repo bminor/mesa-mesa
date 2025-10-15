@@ -190,8 +190,7 @@ fd_rd_output_init(struct fd_rd_output *output, const char* output_name)
 void
 fd_rd_output_fini(struct fd_rd_output *output)
 {
-   if (output->name != NULL)
-      free(output->name);
+   free(output->name);
 
    if (output->file != NULL) {
       assert(output->combine);

@@ -338,8 +338,7 @@ nir_free_output_dependencies(nir_output_deps *deps)
 {
    for (unsigned i = 0; i < ARRAY_SIZE(deps->output); i++) {
       assert(!!deps->output[i].instr_list == !!deps->output[i].num_instr);
-      if (deps->output[i].instr_list)
-         free(deps->output[i].instr_list);
+      free(deps->output[i].instr_list);
    }
 }
 

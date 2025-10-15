@@ -267,8 +267,7 @@ end:
 
    ralloc_free(mem_ctx);
 
-   if (devinfo)
-      free(devinfo);
+   free(devinfo);
 
    exit(result);
 }

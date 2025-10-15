@@ -3121,9 +3121,7 @@ tu_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
 
    tu_cs_finish(&device->sub_cs);
 
-   if (device->perfcntrs_pass_cs_entries) {
-      free(device->perfcntrs_pass_cs_entries);
-   }
+   free(device->perfcntrs_pass_cs_entries);
 
    if (device->dbg_cmdbuf_stomp_cs) {
       tu_cs_finish(device->dbg_cmdbuf_stomp_cs);

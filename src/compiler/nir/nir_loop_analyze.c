@@ -1382,8 +1382,7 @@ get_loop_info(loop_info_state *state, nir_function_impl *impl)
 static void
 initialize_loop_info(nir_loop *loop)
 {
-   if (loop->info)
-      ralloc_free(loop->info);
+   ralloc_free(loop->info);
 
    loop->info = rzalloc(loop, nir_loop_info);
    loop->info->induction_vars = _mesa_pointer_hash_table_create(loop->info);

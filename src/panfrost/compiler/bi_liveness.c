@@ -51,11 +51,8 @@ bi_compute_liveness_ssa(bi_context *ctx)
    unsigned words = BITSET_WORDS(ctx->ssa_alloc);
 
    bi_foreach_block(ctx, block) {
-      if (block->ssa_live_in)
-         ralloc_free(block->ssa_live_in);
-
-      if (block->ssa_live_out)
-         ralloc_free(block->ssa_live_out);
+      ralloc_free(block->ssa_live_in);
+      ralloc_free(block->ssa_live_out);
 
       block->ssa_live_in = rzalloc_array(block, BITSET_WORD, words);
       block->ssa_live_out = rzalloc_array(block, BITSET_WORD, words);

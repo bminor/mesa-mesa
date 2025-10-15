@@ -208,8 +208,7 @@ disk_cache_type_create(const char *gpu_name,
    return cache;
 
  fail:
-   if (cache)
-      ralloc_free(cache);
+   ralloc_free(cache);
    ralloc_free(local);
 
    return NULL;

@@ -624,8 +624,7 @@ parse_and_validate_cache_item(struct disk_cache *cache, void *cache_item,
    return uncompressed_data;
 
  fail:
-   if (uncompressed_data)
-      free(uncompressed_data);
+   free(uncompressed_data);
 
    return NULL;
 }
@@ -664,10 +663,8 @@ disk_cache_load_item(struct disk_cache *cache, char *filename, size_t *size)
    return uncompressed_data;
 
  fail:
-   if (data)
-      free(data);
-   if (filename)
-      free(filename);
+   free(data);
+   free(filename);
    if (fd != -1)
       close(fd);
 

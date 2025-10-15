@@ -207,8 +207,7 @@ util_create_range_remap()
 struct range_remap *
 util_reset_range_remap(struct range_remap *r_remap)
 {
-   if (r_remap)
-      ralloc_free(r_remap);
+   ralloc_free(r_remap);
 
    return util_create_range_remap();
 }

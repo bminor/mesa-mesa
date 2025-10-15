@@ -1614,9 +1614,7 @@ validate_program(struct gl_context *ctx, GLuint program)
    shProg->data->Validated = validate_shader_program(shProg, errMsg);
    if (!shProg->data->Validated) {
       /* update info log */
-      if (shProg->data->InfoLog) {
-         ralloc_free(shProg->data->InfoLog);
-      }
+      ralloc_free(shProg->data->InfoLog);
       shProg->data->InfoLog = ralloc_strdup(shProg->data, errMsg);
    }
 }

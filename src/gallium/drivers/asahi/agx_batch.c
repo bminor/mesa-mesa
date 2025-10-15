@@ -976,8 +976,7 @@ agx_batch_submit(struct agx_context *ctx, struct agx_batch *batch,
    util_dynarray_fini(&cmdbuf);
    agx_batch_mark_submitted(batch);
 
-   if (virt.extres)
-      free(virt.extres);
+   free(virt.extres);
 
    /* Record the last syncobj for fence creation */
    ctx->syncobj = batch->syncobj;

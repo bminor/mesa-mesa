@@ -928,8 +928,7 @@ fail_fatal:
 fail:
    mesa_db_unlock(db);
 
-   if (hash_entry)
-      ralloc_free(hash_entry);
+   ralloc_free(hash_entry);
 
    return false;
 }

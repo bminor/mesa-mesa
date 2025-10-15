@@ -866,8 +866,7 @@ _mesa_validate_program_pipeline(struct gl_context* ctx,
 
    /* Release and reset the info log.
     */
-   if (pipe->InfoLog != NULL)
-      ralloc_free(pipe->InfoLog);
+   ralloc_free(pipe->InfoLog);
 
    pipe->InfoLog = NULL;
 

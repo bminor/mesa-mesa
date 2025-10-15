@@ -370,8 +370,7 @@ void si_destroy_sqtt(struct si_context *sctx)
    struct pb_buffer_lean *bo = sctx->sqtt->bo;
    radeon_bo_reference(sctx->screen->ws, &bo, NULL);
 
-   if (sctx->sqtt->trigger_file)
-      free(sctx->sqtt->trigger_file);
+   free(sctx->sqtt->trigger_file);
 
    for (int i = 0; i < ARRAY_SIZE(sctx->sqtt->start_cs); i++) {
       sscreen->ws->cs_destroy(sctx->sqtt->start_cs[i]);

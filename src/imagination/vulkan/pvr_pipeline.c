@@ -1204,9 +1204,9 @@ pvr_CreateComputePipelines(VkDevice _device,
 
 static void pvr_pipeline_destroy_shader_data(pco_data *data)
 {
-   for (unsigned u = 0; u < ARRAY_SIZE(data->common.desc_sets); ++u)
-      if (data->common.desc_sets[u].bindings)
-         ralloc_free(data->common.desc_sets[u].bindings);
+   for (unsigned u = 0; u < ARRAY_SIZE(data->common.desc_sets); ++u) {
+      ralloc_free(data->common.desc_sets[u].bindings);
+   }
 }
 
 static void
