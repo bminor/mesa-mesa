@@ -606,6 +606,19 @@ class __declspec( uuid( HMFT_GUID ) ) CDX12EncHMFT : CMFD3DManager,
                                            const union pipe_enc_cap_gpu_stats_map &outputStatsMap,
                                            uint32_t blockSize,
                                            BOOL &useAllocatorFlag );
+   HRESULT ConfigureBitstreamOutputSampleAttributes( IMFSample *pSample,
+                                                     const LPDX12EncodeContext pDX12EncodeContext,
+                                                     DWORD dwReceivedInput,
+                                                     BOOL bIsLastSlice,
+                                                     struct codec_unit_location_t *pCodecUnitMetadata,
+                                                     unsigned CodecUnitMetadataCount );
+   HRESULT ConfigureStatsMetadataOutputSampleAttributes( IMFSample *pSample,
+                                                         const pipe_enc_feedback_metadata &metadata,
+                                                         pipe_resource *pPipeResourcePSNRStats,
+                                                         pipe_resource *pPipeResourceQPMapStats,
+                                                         pipe_resource *pPipeResourceRCBitAllocMapStats,
+                                                         pipe_resource *pPipeResourceSATDMapStats,
+                                                         ID3D12CommandQueue *pSyncObjectQueue );
    HRESULT UpdateAvailableInputType();
    HRESULT InternalCheckInputType( IMFMediaType *pType );
    HRESULT InternalCheckOutputType( IMFMediaType *pType );

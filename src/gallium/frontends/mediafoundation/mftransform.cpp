@@ -1126,6 +1126,155 @@ CDX12EncHMFT::ConfigureMapSampleAllocatorHelper( ComPtr<IMFVideoSampleAllocatorE
    }
 }
 
+HRESULT
+CDX12EncHMFT::ConfigureBitstreamOutputSampleAttributes( IMFSample *pSample,
+                                                        const LPDX12EncodeContext pDX12EncodeContext,
+                                                        DWORD dwReceivedInput,
+                                                        BOOL bIsLastSlice,
+                                                        struct codec_unit_location_t *pCodecUnitMetadata,
+                                                        unsigned CodecUnitMetadataCount)
+{
+   HRESULT hr = S_OK;
+   UINT32 uiFrameRateNumerator = pDX12EncodeContext->GetFrameRateNumerator();
+   UINT32 uiFrameRateDenominator = pDX12EncodeContext->GetFrameRateDenominator();
+   UINT64 frameDuration = 0;
+   GUID guidMajorType = { 0 };
+   GUID guidSubType = { 0 };
+   DWORD naluInfo[MAX_NALU_LENGTH_INFO_ENTRIES] = {};
+
+   // Set media type GUIDs
+   CHECKHR_GOTO( m_spOutputType->GetMajorType( &guidMajorType ), done );
+   CHECKHR_GOTO( pSample->SetGUID( MF_MT_MAJOR_TYPE, guidMajorType ), done );
+   CHECKHR_GOTO( m_spOutputType->GetGUID( MF_MT_SUBTYPE, &guidSubType ), done );
+   CHECKHR_GOTO( pSample->SetGUID( MF_MT_SUBTYPE, guidSubType ), done );
+
+   // Set frame size
+   CHECKHR_GOTO( MFSetAttributeSize( pSample,
+                                    MF_MT_FRAME_SIZE,
+                                    pDX12EncodeContext->pPipeVideoBuffer->width,
+                                    pDX12EncodeContext->pPipeVideoBuffer->height ), done );
+
+   // Set frame rate and timing
+   CHECKHR_GOTO( MFSetAttributeRatio( pSample, MF_MT_FRAME_RATE, uiFrameRateNumerator, uiFrameRateDenominator ), done );
+   CHECKHR_GOTO( MFFrameRateToAverageTimePerFrame( uiFrameRateNumerator, uiFrameRateDenominator, &frameDuration ), done );
+   CHECKHR_GOTO( pSample->SetSampleTime( dwReceivedInput * frameDuration ), done );
+   CHECKHR_GOTO( pSample->SetSampleDuration( frameDuration ), done );
+   CHECKHR_GOTO( pSample->SetUINT64( MFSampleExtension_DecodeTimestamp, dwReceivedInput * frameDuration ), done );
+
+   // Set picture type and clean point
+   CHECKHR_GOTO( pSample->SetUINT32( MFSampleExtension_VideoEncodePictureType, pDX12EncodeContext->GetPictureType() ), done );
+   CHECKHR_GOTO( pSample->SetUINT32( MFSampleExtension_CleanPoint,
+                                     pDX12EncodeContext->IsPicTypeCleanPoint() || ( dwReceivedInput == 1 ) ), done );
+
+   // Set video format attributes
+   CHECKHR_GOTO( pSample->SetUINT32( MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive ), done );
+   CHECKHR_GOTO( pSample->SetUINT32( MF_MT_VIDEO_PROFILE,
+                                     ConvertPipeProfileToSpecProfile( pDX12EncodeContext->encoderPicInfo.base.profile ) ), done );
+   CHECKHR_GOTO( pSample->SetUINT32( MF_MT_VIDEO_LEVEL, m_pPipeVideoCodec->level ), done );
+
+   // Set last slice flag
+   CHECKHR_GOTO( pSample->SetUINT32( MFSampleExtension_LastSlice, bIsLastSlice ? 1 : 0 ), done );
+
+   // Set long-term reference frame info if applicable
+   if( m_uiMaxLongTermReferences > 0 )
+   {
+      CHECKHR_GOTO( pSample->SetUINT32( MFSampleExtension_LongTermReferenceFrameInfo,
+                                        pDX12EncodeContext->longTermReferenceFrameInfo ), done );
+   }
+
+   // Set NALU length information
+   for( unsigned i = 0; i < CodecUnitMetadataCount; i++ )
+   {
+      if( i < MAX_NALU_LENGTH_INFO_ENTRIES )
+         naluInfo[i] = static_cast<DWORD>( pCodecUnitMetadata[i].size );
+   }
+   
+   CHECKHR_GOTO( pSample->SetBlob(
+      MFSampleExtension_NALULengthInfo,   // same as MF_NALU_LENGTH_INFORMATION
+      (LPBYTE) &naluInfo,
+      std::min( MAX_NALU_LENGTH_INFO_ENTRIES, CodecUnitMetadataCount ) * sizeof( DWORD ) ), done );
+   
+   CHECKHR_GOTO( pSample->SetUINT32( MF_NALU_LENGTH_SET, 1 ), done );
+
+done:
+   return hr;
+}
+
+HRESULT
+CDX12EncHMFT::ConfigureStatsMetadataOutputSampleAttributes( IMFSample *pSample,
+                                                            const pipe_enc_feedback_metadata &metadata,
+                                                            pipe_resource *pPipeResourcePSNRStats,
+                                                            pipe_resource *pPipeResourceQPMapStats,
+                                                            pipe_resource *pPipeResourceRCBitAllocMapStats,
+                                                            pipe_resource *pPipeResourceSATDMapStats,
+                                                            ID3D12CommandQueue *pSyncObjectQueue )
+{
+   HRESULT hr = S_OK;
+
+   // Set encoding quality metrics
+   CHECKHR_GOTO( pSample->SetUINT64( MFSampleExtension_VideoEncodeQP, (UINT64) metadata.average_frame_qp ), done );
+
+   // Conditionally attach frame PSNR
+   if( m_bVideoEnableFramePsnrYuv && pPipeResourcePSNRStats != nullptr )
+   {
+      hr = MFAttachPipeResourceAsSampleExtension( m_pPipeContext,
+                                                  pPipeResourcePSNRStats,
+                                                  pSyncObjectQueue,
+                                                  MFSampleExtension_FramePsnrYuv,
+                                                  pSample );
+
+      if( FAILED( hr ) )
+      {
+         MFE_INFO( "[dx12 hmft 0x%p] PSNR: MFAttachPipeResourceAsSampleExtension failed - hr=0x%08x", this, hr );
+      }
+   }
+
+   // Conditionally attach output QP map (d3d12resource), tracking will be added to the d3d12resource and when the app
+   // releases the MF sample, the d3d12resource will be returned back to the pool
+   if( m_uiVideoOutputQPMapBlockSize && pPipeResourceQPMapStats != nullptr )
+   {
+      hr = m_spQPMapStatsBufferPool->AttachPipeResourceAsSampleExtension(
+         pPipeResourceQPMapStats,
+         pSyncObjectQueue,
+         pSample );
+      if( FAILED( hr ) )
+      {
+         MFE_INFO( "[dx12 hmft 0x%p] QPMap: AttachPipeResourceAsSampleExtension failed - hr=0x%08x", this, hr );
+      }
+   }
+
+   // Conditionally attach output bits used map (d3d12resource), tracking will be added to the d3d12resource and when
+   // the app releases the MF sample, the d3d12resource will be returned back to the pool
+   if( m_uiVideoOutputBitsUsedMapBlockSize && pPipeResourceRCBitAllocMapStats != nullptr )
+   {
+      hr = m_spBitsUsedStatsBufferPool->AttachPipeResourceAsSampleExtension(
+         pPipeResourceRCBitAllocMapStats,
+         pSyncObjectQueue,
+         pSample );
+      if( FAILED( hr ) )
+      {
+         MFE_INFO( "[dx12 hmft 0x%p] BitsUsed: AttachPipeResourceAsSampleExtension failed - hr=0x%08x", this, hr );
+      }
+   }
+
+   // Conditionally attach SATD map (d3d12resource), tracking will be added to the d3d12resource and when the app
+   // releases the MF sample, the d3d12resource will be returned back to the pool
+   if( m_uiVideoSatdMapBlockSize && pPipeResourceSATDMapStats != nullptr )
+   {
+      hr = m_spSatdStatsBufferPool->AttachPipeResourceAsSampleExtension(
+         pPipeResourceSATDMapStats,
+         pSyncObjectQueue,
+         pSample );
+      if( FAILED( hr ) )
+      {
+         MFE_INFO( "[dx12 hmft 0x%p] SATDMap: AttachPipeResourceAsSampleExtension failed - hr=0x%08x", this, hr );
+      }
+   }
+
+done:
+   return hr;
+}
+
 // internal thread function to handle encoding and output
 void WINAPI
 CDX12EncHMFT::xThreadProc( void *pCtx )
@@ -1412,100 +1561,28 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
             debug_printf( "[dx12 hmft 0x%p] Frame AverageQP: %d\n", pThis, metadata.average_frame_qp );
 
             {
-               UINT32 uiFrameRateNumerator = pDX12EncodeContext->GetFrameRateNumerator();
-               UINT32 uiFrameRateDenominator = pDX12EncodeContext->GetFrameRateDenominator();
-               DWORD naluInfo[MAX_NALU_LENGTH_INFO_ENTRIES] = {};
-               UINT64 frameDuration = 0;
-               GUID guidMajorType = { 0 };
-               GUID guidSubType = { 0 };
-
-               pThis->m_spOutputType->GetMajorType( &guidMajorType );
-               spOutputSample->SetGUID( MF_MT_MAJOR_TYPE, guidMajorType );
-               pThis->m_spOutputType->GetGUID( MF_MT_SUBTYPE, &guidSubType );
-               spOutputSample->SetGUID( MF_MT_SUBTYPE, guidSubType );
-               MFSetAttributeSize( spOutputSample.Get(),
-                                   MF_MT_FRAME_SIZE,
-                                   pDX12EncodeContext->pPipeVideoBuffer->width,
-                                   pDX12EncodeContext->pPipeVideoBuffer->width );
-               MFSetAttributeRatio( spOutputSample.Get(), MF_MT_FRAME_RATE, uiFrameRateNumerator, uiFrameRateDenominator );
-               MFFrameRateToAverageTimePerFrame( uiFrameRateNumerator, uiFrameRateDenominator, &frameDuration );
-               spOutputSample->SetSampleTime( dwReceivedInput * frameDuration );
-               spOutputSample->SetSampleDuration( frameDuration );
-               spOutputSample->SetUINT64( MFSampleExtension_DecodeTimestamp, dwReceivedInput * frameDuration );
-               spOutputSample->SetUINT32( MFSampleExtension_VideoEncodePictureType, pDX12EncodeContext->GetPictureType() );
-               spOutputSample->SetUINT32( MFSampleExtension_CleanPoint,
-                                          pDX12EncodeContext->IsPicTypeCleanPoint() || ( dwReceivedInput == 1 ) );
-               spOutputSample->SetUINT32( MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive );
-               spOutputSample->SetUINT32( MF_MT_VIDEO_PROFILE,
-                                          ConvertPipeProfileToSpecProfile( pDX12EncodeContext->encoderPicInfo.base.profile ) );
-               spOutputSample->SetUINT32( MF_MT_VIDEO_LEVEL, pThis->m_pPipeVideoCodec->level );
-               spOutputSample->SetUINT64( MFSampleExtension_VideoEncodeQP, (UINT64) metadata.average_frame_qp );
-               spOutputSample->SetUINT32( MFSampleExtension_LastSlice, 1 );
-
-               if( pThis->m_uiMaxLongTermReferences > 0 )
+               HRESULT hr = pThis->ConfigureBitstreamOutputSampleAttributes( spOutputSample.Get(),
+                                                                             pDX12EncodeContext,
+                                                                             dwReceivedInput,
+                                                                             TRUE /* bIsLastSlice */,
+                                                                             &metadata.codec_unit_metadata[0],
+                                                                             metadata.codec_unit_metadata_count );
+               if( FAILED( hr ) )
                {
-                  spOutputSample->SetUINT32( MFSampleExtension_LongTermReferenceFrameInfo,
-                                             pDX12EncodeContext->longTermReferenceFrameInfo );
+                  MFE_ERROR( "[dx12 hmft 0x%p] ConfigureBitstreamOutputSampleAttributes failed - hr=0x%08x", pThis, hr );
                }
 
-               // Conditionally attach frame PSNR
-               if( pThis->m_bVideoEnableFramePsnrYuv && pDX12EncodeContext->pPipeResourcePSNRStats != nullptr )
+               // Set resolved frame metadata (quality metrics and NALU info)
+               HRESULT hrMetadata = pThis->ConfigureStatsMetadataOutputSampleAttributes( spOutputSample.Get(),
+                                                                                          metadata,
+                                                                                          pDX12EncodeContext->pPipeResourcePSNRStats,
+                                                                                          pDX12EncodeContext->pPipeResourceQPMapStats,
+                                                                                          pDX12EncodeContext->pPipeResourceRCBitAllocMapStats,
+                                                                                          pDX12EncodeContext->pPipeResourceSATDMapStats,
+                                                                                          pDX12EncodeContext->pSyncObjectQueue );
+               if( FAILED( hrMetadata ) )
                {
-                  HRESULT hr = MFAttachPipeResourceAsSampleExtension( pThis->m_pPipeContext,
-                                                                      pDX12EncodeContext->pPipeResourcePSNRStats,
-                                                                      pDX12EncodeContext->pSyncObjectQueue,
-                                                                      MFSampleExtension_FramePsnrYuv,
-                                                                      spOutputSample.Get() );
-
-                  if( FAILED( hr ) )
-                  {
-                     MFE_INFO( "[dx12 hmft 0x%p] PSNR: MFAttachPipeResourceAsSampleExtension failed - hr=0x%08x", pThis, hr );
-                  }
-               }
-
-               // Conditionally attach output QP map (d3d12resource), tracking will be added to the d3d12resource and when the app
-               // releases the MF sample, the d3d12resource will be returned back to the pool
-               if( pThis->m_uiVideoOutputQPMapBlockSize && pDX12EncodeContext->pPipeResourceQPMapStats != nullptr &&
-                   pThis->m_spQPMapStatsBufferPool )
-               {
-                  HRESULT hr = pThis->m_spQPMapStatsBufferPool->AttachPipeResourceAsSampleExtension(
-                     pDX12EncodeContext->pPipeResourceQPMapStats,
-                     pDX12EncodeContext->pSyncObjectQueue,
-                     spOutputSample.Get() );
-                  if( FAILED( hr ) )
-                  {
-                     MFE_INFO( "[dx12 hmft 0x%p] QPMap: AttachPipeResourceAsSampleExtension failed - hr=0x%08x", pThis, hr );
-                  }
-               }
-
-               // Conditionally attach output bits used map (d3d12resource), tracking will be added to the d3d12resource and when
-               // the app releases the MF sample, the d3d12resource will be returned back to the pool
-               if( pThis->m_uiVideoOutputBitsUsedMapBlockSize && pDX12EncodeContext->pPipeResourceRCBitAllocMapStats != nullptr &&
-                   pThis->m_spBitsUsedStatsBufferPool )
-               {
-                  HRESULT hr = pThis->m_spBitsUsedStatsBufferPool->AttachPipeResourceAsSampleExtension(
-                     pDX12EncodeContext->pPipeResourceRCBitAllocMapStats,
-                     pDX12EncodeContext->pSyncObjectQueue,
-                     spOutputSample.Get() );
-                  if( FAILED( hr ) )
-                  {
-                     MFE_INFO( "[dx12 hmft 0x%p] BitsUsed: AttachPipeResourceAsSampleExtension failed - hr=0x%08x", pThis, hr );
-                  }
-               }
-
-               // Conditionally attach SATD map (d3d12resource), tracking will be added to the d3d12resource and when the app
-               // releases the MF sample, the d3d12resource will be returned back to the pool
-               if( pThis->m_uiVideoSatdMapBlockSize && pDX12EncodeContext->pPipeResourceSATDMapStats != nullptr &&
-                   pThis->m_spSatdStatsBufferPool )
-               {
-                  HRESULT hr = pThis->m_spSatdStatsBufferPool->AttachPipeResourceAsSampleExtension(
-                     pDX12EncodeContext->pPipeResourceSATDMapStats,
-                     pDX12EncodeContext->pSyncObjectQueue,
-                     spOutputSample.Get() );
-                  if( FAILED( hr ) )
-                  {
-                     MFE_INFO( "[dx12 hmft 0x%p] SATDMap: AttachPipeResourceAsSampleExtension failed - hr=0x%08x", pThis, hr );
-                  }
+                  MFE_ERROR( "[dx12 hmft 0x%p] ConfigureStatsMetadataOutputSampleAttributes failed - hr=0x%08x", pThis, hrMetadata );
                }
 
                // If sliced fences supported, we asynchronously copied every slice as it was ready (see above)
@@ -1547,16 +1624,6 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                   }
                }
 
-               for( unsigned i = 0; i < metadata.codec_unit_metadata_count; i++ )
-               {
-                  if( i < MAX_NALU_LENGTH_INFO_ENTRIES )
-                     naluInfo[i] = static_cast<DWORD>( metadata.codec_unit_metadata[i].size );
-               }
-               spOutputSample->SetBlob(
-                  MFSampleExtension_NALULengthInfo,   // same as MF_NALU_LENGTH_INFORMATION
-                  (LPBYTE) &naluInfo,
-                  std::min( MAX_NALU_LENGTH_INFO_ENTRIES, metadata.codec_unit_metadata_count ) * sizeof( DWORD ) );
-               spOutputSample->SetUINT32( MF_NALU_LENGTH_SET, 1 );
                {
                   std::lock_guard<std::mutex> lock( pThis->m_OutputQueueLock );
                   HMFT_ETW_EVENT_INFO( "METransformHaveOutput", pThis );
