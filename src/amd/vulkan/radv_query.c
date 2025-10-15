@@ -37,7 +37,7 @@ static void radv_query_shader(struct radv_cmd_buffer *cmd_buffer, VkQueryType qu
 static void
 gfx10_copy_shader_query(struct radv_cmd_stream *cs, uint32_t src_sel, uint64_t src_va, uint64_t dst_va)
 {
-   ac_emit_cp_copy_data(cs->b, src_sel, COPY_DATA_DST_MEM, src_va, dst_va, AC_CP_COPY_DATA_WR_CONFIRM);
+   ac_emit_cp_copy_data(cs->b, src_sel, COPY_DATA_DST_MEM, src_va, dst_va, AC_CP_COPY_DATA_WR_CONFIRM, false);
 }
 
 static void
@@ -2714,7 +2714,7 @@ radv_write_timestamp(struct radv_cmd_buffer *cmd_buffer, uint64_t va, VkPipeline
 
    if (stage == VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT) {
       ac_emit_cp_copy_data(cs->b, COPY_DATA_TIMESTAMP, COPY_DATA_DST_MEM, 0, va,
-                           AC_CP_COPY_DATA_WR_CONFIRM | AC_CP_COPY_DATA_COUNT_SEL);
+                           AC_CP_COPY_DATA_WR_CONFIRM | AC_CP_COPY_DATA_COUNT_SEL, false);
    } else {
       radv_cs_emit_write_event_eop(cs, pdev->info.gfx_level, V_028A90_BOTTOM_OF_PIPE_TS, 0, EOP_DST_SEL_MEM,
                                    EOP_INT_SEL_SEND_DATA_AFTER_WR_CONFIRM, EOP_DATA_SEL_TIMESTAMP, va, 0,
@@ -2815,7 +2815,7 @@ radv_CmdWriteAccelerationStructuresPropertiesKHR(VkCommandBuffer commandBuffer, 
       }
 
       ac_emit_cp_copy_data(cs->b, COPY_DATA_SRC_MEM, COPY_DATA_DST_MEM, va, query_va,
-                           AC_CP_COPY_DATA_WR_CONFIRM | AC_CP_COPY_DATA_COUNT_SEL);
+                           AC_CP_COPY_DATA_WR_CONFIRM | AC_CP_COPY_DATA_COUNT_SEL, false);
 
       query_va += pool->stride;
    }

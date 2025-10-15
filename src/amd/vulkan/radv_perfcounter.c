@@ -561,7 +561,7 @@ radv_pc_emit_block_instance_read(struct radv_cmd_buffer *cmd_buffer, struct ac_p
          reg = regs->counters[idx];
 
       ac_emit_cp_copy_data(cs->b, COPY_DATA_PERF, COPY_DATA_TC_L2, reg >> 2, va,
-                           AC_CP_COPY_DATA_WR_CONFIRM | AC_CP_COPY_DATA_COUNT_SEL);
+                           AC_CP_COPY_DATA_WR_CONFIRM | AC_CP_COPY_DATA_COUNT_SEL, false);
 
       va += sizeof(uint64_t) * 2 * radv_pc_get_num_instances(pdev, block);
       reg += reg_delta;

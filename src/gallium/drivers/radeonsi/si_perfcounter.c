@@ -235,7 +235,7 @@ static void si_pc_emit_read(struct si_context *sctx, struct ac_pc_block *block, 
             reg = regs->counters[idx];
 
          ac_emit_cp_copy_data(&cs->current, COPY_DATA_PERF, COPY_DATA_DST_MEM,
-               reg >> 2, va, AC_CP_COPY_DATA_COUNT_SEL);
+                              reg >> 2, va, AC_CP_COPY_DATA_COUNT_SEL, false);
          va += sizeof(uint64_t);
          reg += reg_delta;
       }
@@ -243,7 +243,7 @@ static void si_pc_emit_read(struct si_context *sctx, struct ac_pc_block *block, 
       /* Fake counters. */
       for (idx = 0; idx < count; ++idx) {
          ac_emit_cp_copy_data(&cs->current, COPY_DATA_IMM, COPY_DATA_DST_MEM,
-               0, va, AC_CP_COPY_DATA_COUNT_SEL);
+                              0, va, AC_CP_COPY_DATA_COUNT_SEL, false);
          va += sizeof(uint64_t);
       }
    }

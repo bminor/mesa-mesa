@@ -1522,16 +1522,16 @@ radv_create_perf_counter_lock_cs(struct radv_device *device, unsigned pass, bool
    uint64_t set_va = va + (unlock ? 0 : 8 * pass);
 
    ac_emit_cp_copy_data(cs->b, COPY_DATA_IMM, COPY_DATA_DST_MEM, 0, unset_va,
-                        AC_CP_COPY_DATA_COUNT_SEL | AC_CP_COPY_DATA_WR_CONFIRM);
+                        AC_CP_COPY_DATA_COUNT_SEL | AC_CP_COPY_DATA_WR_CONFIRM, false);
 
    ac_emit_cp_copy_data(cs->b, COPY_DATA_IMM, COPY_DATA_DST_MEM, 1, set_va,
-                        AC_CP_COPY_DATA_COUNT_SEL | AC_CP_COPY_DATA_WR_CONFIRM);
+                        AC_CP_COPY_DATA_COUNT_SEL | AC_CP_COPY_DATA_WR_CONFIRM, false);
 
    if (unlock) {
       uint64_t mutex_va = radv_buffer_get_va(device->perf_counter_bo) + PERF_CTR_BO_LOCK_OFFSET;
 
       ac_emit_cp_copy_data(cs->b, COPY_DATA_IMM, COPY_DATA_DST_MEM, 0, mutex_va,
-                           AC_CP_COPY_DATA_COUNT_SEL | AC_CP_COPY_DATA_WR_CONFIRM);
+                           AC_CP_COPY_DATA_COUNT_SEL | AC_CP_COPY_DATA_WR_CONFIRM, false);
    }
 
    assert(cs->b->cdw <= cdw);

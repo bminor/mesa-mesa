@@ -5065,7 +5065,7 @@ radv_load_ds_clear_metadata(struct radv_cmd_buffer *cmd_buffer, const struct rad
       ac_emit_cp_load_context_reg_index(cs->b, reg, reg_count, va, false);
    } else {
       ac_emit_cp_copy_data(cs->b, COPY_DATA_SRC_MEM, COPY_DATA_REG, va, reg >> 2,
-                           (reg_count == 2 ? AC_CP_COPY_DATA_COUNT_SEL : 0));
+                           (reg_count == 2 ? AC_CP_COPY_DATA_COUNT_SEL : 0), false);
 
       ac_emit_cp_pfp_sync_me(cs->b, false);
    }
@@ -10063,7 +10063,8 @@ radv_emit_copy_data_imm(const struct radv_physical_device *pdev, struct radv_cmd
                         uint64_t dst_va)
 {
    ac_emit_cp_copy_data(cs->b, COPY_DATA_IMM, COPY_DATA_DST_MEM, src_imm, dst_va,
-                        AC_CP_COPY_DATA_WR_CONFIRM | (pdev->info.gfx_level == GFX6 ? AC_CP_COPY_DATA_ENGINE_PFP : 0));
+                        AC_CP_COPY_DATA_WR_CONFIRM | (pdev->info.gfx_level == GFX6 ? AC_CP_COPY_DATA_ENGINE_PFP : 0),
+                        false);
 }
 
 /**
@@ -10778,7 +10779,7 @@ radv_emit_indirect_taskmesh_draw_packets(const struct radv_device *device, struc
        * - When workaround BO != 0 (count was 0), execute an empty direct dispatch
        */
       ac_emit_cp_copy_data(ace_cs->b, COPY_DATA_IMM, COPY_DATA_DST_MEM, 1, workaround_cond_va,
-                           AC_CP_COPY_DATA_WR_CONFIRM);
+                           AC_CP_COPY_DATA_WR_CONFIRM, false);
 
       /* 2x COND_EXEC + 1x COPY_DATA + Nx DISPATCH_TASKMESH_DIRECT_ACE */
       ace_predication_size += 2 * 5 + 6 + 6 * num_views;
@@ -10792,7 +10793,7 @@ radv_emit_indirect_taskmesh_draw_packets(const struct radv_device *device, struc
                            6 + 11 * num_views /* 1x COPY_DATA + Nx DISPATCH_TASKMESH_INDIRECT_MULTI_ACE */);
 
       ac_emit_cp_copy_data(ace_cs->b, COPY_DATA_IMM, COPY_DATA_DST_MEM, 0, workaround_cond_va,
-                           AC_CP_COPY_DATA_WR_CONFIRM);
+                           AC_CP_COPY_DATA_WR_CONFIRM, false);
    }
 
    if (!view_mask) {
@@ -13130,7 +13131,8 @@ radv_save_dispatch_size(struct radv_cmd_buffer *cmd_buffer, uint64_t indirect_va
    uint64_t va = radv_buffer_get_va(device->trace_bo) + offsetof(struct radv_trace_data, indirect_dispatch);
 
    for (uint32_t i = 0; i < 3; i++) {
-      ac_emit_cp_copy_data(cs->b, COPY_DATA_SRC_MEM, COPY_DATA_DST_MEM, indirect_va, va, AC_CP_COPY_DATA_WR_CONFIRM);
+      ac_emit_cp_copy_data(cs->b, COPY_DATA_SRC_MEM, COPY_DATA_DST_MEM, indirect_va, va, AC_CP_COPY_DATA_WR_CONFIRM,
+                           false);
 
       indirect_va += 4;
       va += 4;
@@ -13229,7 +13231,7 @@ radv_emit_dispatch_packets(struct radv_cmd_buffer *cmd_buffer, const struct radv
                const uint64_t dst_va = indirect_va + i * 4;
 
                ac_emit_cp_copy_data(cs->b, COPY_DATA_SRC_MEM, COPY_DATA_DST_MEM, src_va, dst_va,
-                                    AC_CP_COPY_DATA_WR_CONFIRM);
+                                    AC_CP_COPY_DATA_WR_CONFIRM, false);
             }
          }
 
@@ -14650,7 +14652,8 @@ radv_begin_conditional_rendering(struct radv_cmd_buffer *cmd_buffer, uint64_t va
 
          radeon_check_space(device->ws, cs->b, 8);
 
-         ac_emit_cp_copy_data(cs->b, COPY_DATA_SRC_MEM, COPY_DATA_DST_MEM, va, emulated_va, AC_CP_COPY_DATA_WR_CONFIRM);
+         ac_emit_cp_copy_data(cs->b, COPY_DATA_SRC_MEM, COPY_DATA_DST_MEM, va, emulated_va, AC_CP_COPY_DATA_WR_CONFIRM,
+                              false);
 
          ac_emit_cp_pfp_sync_me(cs->b, false);
 
@@ -14887,12 +14890,12 @@ radv_CmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstC
       if (pdev->info.gfx_level >= GFX12) {
          if (append) {
             ac_emit_cp_copy_data(cs->b, COPY_DATA_SRC_MEM, COPY_DATA_DST_MEM, va, so->state_va + i * 8 + 4,
-                                 AC_CP_COPY_DATA_WR_CONFIRM);
+                                 AC_CP_COPY_DATA_WR_CONFIRM, false);
          }
       } else if (pdev->use_ngg_streamout) {
          if (append) {
             ac_emit_cp_copy_data(cs->b, COPY_DATA_SRC_MEM, COPY_DATA_REG, va,
-                                 (R_031088_GDS_STRMOUT_DWORDS_WRITTEN_0 >> 2) + i, AC_CP_COPY_DATA_WR_CONFIRM);
+                                 (R_031088_GDS_STRMOUT_DWORDS_WRITTEN_0 >> 2) + i, AC_CP_COPY_DATA_WR_CONFIRM, false);
          } else {
             /* The PKT3 CAM bit workaround seems needed for initializing this GDS register to zero. */
             radeon_begin(cs);
@@ -14992,12 +14995,13 @@ radv_CmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCou
       if (pdev->info.gfx_level >= GFX12) {
          if (append) {
             ac_emit_cp_copy_data(cs->b, COPY_DATA_SRC_MEM, COPY_DATA_DST_MEM, so->state_va + i * 8 + 4, va,
-                                 AC_CP_COPY_DATA_WR_CONFIRM);
+                                 AC_CP_COPY_DATA_WR_CONFIRM, false);
          }
       } else if (pdev->use_ngg_streamout) {
          if (append) {
             ac_emit_cp_copy_data(cs->b, COPY_DATA_REG, COPY_DATA_DST_MEM,
-                                 (R_031088_GDS_STRMOUT_DWORDS_WRITTEN_0 >> 2) + i, va, AC_CP_COPY_DATA_WR_CONFIRM);
+                                 (R_031088_GDS_STRMOUT_DWORDS_WRITTEN_0 >> 2) + i, va, AC_CP_COPY_DATA_WR_CONFIRM,
+                                 false);
          }
       } else {
          radeon_begin(cs);
@@ -15063,7 +15067,7 @@ radv_emit_strmout_buffer(struct radv_cmd_buffer *cmd_buffer, const struct radv_d
                                         draw_info->strmout_va, false);
    } else {
       ac_emit_cp_copy_data(cs->b, COPY_DATA_SRC_MEM, COPY_DATA_REG, draw_info->strmout_va,
-                           R_028B2C_VGT_STRMOUT_DRAW_OPAQUE_BUFFER_FILLED_SIZE >> 2, AC_CP_COPY_DATA_WR_CONFIRM);
+                           R_028B2C_VGT_STRMOUT_DRAW_OPAQUE_BUFFER_FILLED_SIZE >> 2, AC_CP_COPY_DATA_WR_CONFIRM, false);
    }
 }
 
@@ -15132,7 +15136,7 @@ radv_CmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer, VkPipelineStageFlag
    ASSERTED unsigned cdw_max = radeon_check_space(device->ws, cs->b, 12);
 
    if (!(stage & ~VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT)) {
-      ac_emit_cp_copy_data(cs->b, COPY_DATA_IMM, COPY_DATA_DST_MEM, marker, va, AC_CP_COPY_DATA_WR_CONFIRM);
+      ac_emit_cp_copy_data(cs->b, COPY_DATA_IMM, COPY_DATA_DST_MEM, marker, va, AC_CP_COPY_DATA_WR_CONFIRM, false);
    } else {
       radv_cs_emit_write_event_eop(cs, pdev->info.gfx_level, V_028A90_BOTTOM_OF_PIPE_TS, 0, EOP_DST_SEL_MEM,
                                    EOP_INT_SEL_SEND_DATA_AFTER_WR_CONFIRM, EOP_DATA_SEL_VALUE_32BIT, va, marker,

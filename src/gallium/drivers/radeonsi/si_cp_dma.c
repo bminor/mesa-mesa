@@ -380,5 +380,5 @@ void si_cp_copy_data(struct si_context *sctx, struct radeon_cmdbuf *cs, unsigned
    uint64_t src_va = (src ? src->gpu_address : 0ull) + src_offset;
 
    ac_emit_cp_copy_data(&cs->current, src_sel, dst_sel, src_va, dst_va,
-                        AC_CP_COPY_DATA_WR_CONFIRM);
+                        AC_CP_COPY_DATA_WR_CONFIRM, false);
 }
