@@ -181,9 +181,9 @@ lower_mem_load(nir_builder *b, nir_intrinsic_instr *intrin,
       return false;
 
    /* Otherwise, we have to break it into chunks.  We could end up with as
-    * many as 32 chunks if we're loading a u64vec16 as individual dwords.
+    * many as 128 chunks if we're loading a u64vec16 as individual bytes.
     */
-   nir_def *chunks[32];
+   nir_def *chunks[128];
    unsigned num_chunks = 0;
    unsigned chunk_start = 0;
    while (chunk_start < bytes_read) {
