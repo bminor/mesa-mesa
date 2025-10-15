@@ -457,6 +457,7 @@ panvk_preprocess_nir(struct vk_physical_device *vk_pdev,
    NIR_PASS(_, nir, nir_split_var_copies);
    NIR_PASS(_, nir, nir_lower_var_copies);
 
+   assert(pdev->kmod.props.shader_present != 0);
    uint64_t core_max_id = util_last_bit(pdev->kmod.props.shader_present) - 1;
    NIR_PASS(_, nir, nir_inline_sysval, nir_intrinsic_load_core_max_id_arm,
             core_max_id);
