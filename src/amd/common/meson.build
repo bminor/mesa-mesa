@@ -221,3 +221,24 @@ if with_tests and not with_platform_windows
     )
   endif
 endif
+
+if with_tests
+  test(
+    'ac_nir_tests',
+    executable(
+      'ac_nir_tests',
+      files(
+        'nir/tests/ac_nir_lower_mem_access_test.cpp',
+      ),
+      cpp_args : [cpp_msvc_compat_args],
+      gnu_symbol_visibility : 'hidden',
+      link_with: [libamd_common],
+      include_directories : [
+        inc_amd, inc_include, inc_src, inc_amd_common
+      ],
+      dependencies : [dep_thread, idep_gtest, idep_nir, idep_mesautil],
+    ),
+    suite : ['amd'],
+    protocol : 'gtest',
+  )
+endif
