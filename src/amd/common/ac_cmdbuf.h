@@ -125,6 +125,16 @@ ac_emit_cp_cond_exec(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
                      uint64_t va, uint32_t count);
 
 void
+ac_emit_cp_write_data_head(struct ac_cmdbuf *cs, uint32_t engine_sel,
+                           uint32_t dst_sel, uint64_t va, uint32_t size,
+                           bool predicate);
+
+void
+ac_emit_cp_write_data(struct ac_cmdbuf *cs, uint32_t engine_sel,
+                      uint32_t dst_sel, uint64_t va, uint32_t size,
+                      const uint32_t *data, bool predicate);
+
+void
 ac_emit_cp_write_data_imm(struct ac_cmdbuf *cs, unsigned engine_sel,
                           uint64_t va, uint32_t value);
 

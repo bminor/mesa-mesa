@@ -879,16 +879,36 @@ ac_emit_cp_cond_exec(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
 }
 
 void
+ac_emit_cp_write_data_head(struct ac_cmdbuf *cs, uint32_t engine_sel,
+                           uint32_t dst_sel, uint64_t va, uint32_t size,
+                           bool predicate)
+{
+   ac_cmdbuf_begin(cs);
+   ac_cmdbuf_emit(PKT3(PKT3_WRITE_DATA, 2 + size, predicate));
+   ac_cmdbuf_emit(S_370_DST_SEL(dst_sel) |
+                  S_370_WR_CONFIRM(1) |
+                  S_370_ENGINE_SEL(engine_sel));
+   ac_cmdbuf_emit(va);
+   ac_cmdbuf_emit(va >> 32);
+   ac_cmdbuf_end();
+}
+
+void
+ac_emit_cp_write_data(struct ac_cmdbuf *cs, uint32_t engine_sel,
+                      uint32_t dst_sel, uint64_t va, uint32_t size,
+                      const uint32_t *data, bool predicate)
+{
+   ac_emit_cp_write_data_head(cs, engine_sel, dst_sel, va, size, predicate);
+   ac_cmdbuf_begin(cs);
+   ac_cmdbuf_emit_array(data, size);
+   ac_cmdbuf_end();
+}
+
+void
 ac_emit_cp_write_data_imm(struct ac_cmdbuf *cs, unsigned engine_sel,
                           uint64_t va, uint32_t value)
 {
-   ac_cmdbuf_begin(cs);
-   ac_cmdbuf_emit(PKT3(PKT3_WRITE_DATA, 3, 0));
-   ac_cmdbuf_emit(S_370_DST_SEL(V_370_MEM) | S_370_WR_CONFIRM(1) | S_370_ENGINE_SEL(engine_sel));
-   ac_cmdbuf_emit(va);
-   ac_cmdbuf_emit(va >> 32);
-   ac_cmdbuf_emit(value);
-   ac_cmdbuf_end();
+   ac_emit_cp_write_data(cs, engine_sel, V_370_MEM, va, 1, &value, false);
 }
 
 void

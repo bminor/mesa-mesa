@@ -355,13 +355,8 @@ void si_cp_write_data(struct si_context *sctx, struct si_resource *buf, unsigned
    radeon_add_to_buffer_list(sctx, cs, buf, RADEON_USAGE_WRITE | RADEON_PRIO_CP_DMA);
    uint64_t va = buf->gpu_address + offset;
 
-   radeon_begin(cs);
-   radeon_emit(PKT3(PKT3_WRITE_DATA, 2 + size / 4, 0));
-   radeon_emit(S_370_DST_SEL(dst_sel) | S_370_WR_CONFIRM(1) | S_370_ENGINE_SEL(engine));
-   radeon_emit(va);
-   radeon_emit(va >> 32);
-   radeon_emit_array((const uint32_t *)data, size / 4);
-   radeon_end();
+   ac_emit_cp_write_data(&cs->current, engine, dst_sel, va, size / 4,
+                         (const uint32_t *)data, false);
 }
 
 void si_cp_copy_data(struct si_context *sctx, struct radeon_cmdbuf *cs, unsigned dst_sel,
