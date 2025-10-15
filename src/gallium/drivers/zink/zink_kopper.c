@@ -931,6 +931,12 @@ zink_kopper_present_queue(struct zink_screen *screen, struct zink_resource *res,
    memset(&res->damage, 0, sizeof(res->damage));
    cdt->swapchain->images[res->obj->dt_idx].acquired = NULL;
    res->obj->dt_idx = UINT32_MAX;
+   /* pick up pending present mode updates here */
+   if (cdt->present_mode != cdt->swapchain->scci.presentMode) {
+      VkResult ret = update_swapchain(screen, cdt, cdt->caps.currentExtent.width, cdt->caps.currentExtent.height);
+      if (ret != VK_SUCCESS)
+         mesa_loge("zink: failed to set swap interval!");
+   }
 }
 
 void
@@ -1202,11 +1208,13 @@ zink_kopper_set_swap_interval(struct pipe_screen *pscreen, struct pipe_resource 
 
    if (old_present_mode == cdt->present_mode)
       return;
-   VkResult ret = update_swapchain(screen, cdt, cdt->caps.currentExtent.width, cdt->caps.currentExtent.height);
-   if (ret == VK_SUCCESS)
-      return;
    cdt->present_mode = old_present_mode;
-   mesa_loge("zink: failed to set swap interval!");
+   if (res->obj->dt_idx == UINT32_MAX) {
+      /* only update swapchain when there is no current acquire to avoid flickering */
+      VkResult ret = update_swapchain(screen, cdt, cdt->caps.currentExtent.width, cdt->caps.currentExtent.height);
+      if (ret != VK_SUCCESS)
+         mesa_loge("zink: failed to set swap interval!");
+   }
 }
 
 int
