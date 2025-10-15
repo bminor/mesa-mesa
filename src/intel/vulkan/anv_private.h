@@ -4221,6 +4221,8 @@ struct anv_attachment {
    VkResolveModeFlagBits resolve_mode;
    const struct anv_image_view *resolve_iview;
    VkImageLayout resolve_layout;
+
+   bool skip_srgb_decode;
 };
 
 /** State tracking for vertex buffer flushes

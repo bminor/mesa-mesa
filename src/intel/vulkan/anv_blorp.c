@@ -2425,6 +2425,11 @@ anv_attachment_msaa_resolve(struct anv_cmd_buffer *cmd_buffer,
       dst_format = dst_iview->planes[0].isl.format;
    }
 
+   if (att->skip_srgb_decode) {
+      src_format = isl_format_srgb_to_linear(src_format);
+      dst_format = isl_format_srgb_to_linear(dst_format);
+   }
+
    const VkRect2D render_area = gfx->render_area;
    if (gfx->view_mask == 0) {
       anv_image_msaa_resolve(cmd_buffer,
@@ -2468,7 +2473,8 @@ resolve_image(struct anv_cmd_buffer *cmd_buffer,
               VkImageLayout src_image_layout,
               struct anv_image *dst_image,
               VkImageLayout dst_image_layout,
-              const VkImageResolve2 *region)
+              const VkImageResolve2 *region,
+              const VkResolveImageModeInfoKHR *res_info)
 {
    assert(region->srcSubresource.aspectMask == region->dstSubresource.aspectMask);
    assert(vk_image_subresource_layer_count(&src_image->vk, &region->srcSubresource) ==
@@ -2476,37 +2482,57 @@ resolve_image(struct anv_cmd_buffer *cmd_buffer,
 
    const uint32_t layer_count =
       vk_image_subresource_layer_count(&dst_image->vk, &region->dstSubresource);
+   const bool skip_srgb_decode =
+      res_info ?
+      (res_info->flags & VK_RESOLVE_IMAGE_SKIP_TRANSFER_FUNCTION_BIT_KHR) :
+      false;
 
    anv_foreach_image_aspect_bit(aspect_bit, src_image,
                                 region->srcSubresource.aspectMask) {
+      const VkImageAspectFlags aspect = (1 << aspect_bit);
+      const uint32_t plane = anv_image_aspect_to_plane(src_image, aspect);
+
       enum isl_aux_usage src_aux_usage =
          anv_layout_to_aux_usage(cmd_buffer->device->info, src_image,
-                                 (1 << aspect_bit),
+                                 aspect,
                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
                                  src_image_layout,
                                  cmd_buffer->queue_family->queueFlags);
       enum isl_aux_usage dst_aux_usage =
          anv_layout_to_aux_usage(cmd_buffer->device->info, dst_image,
-                                 (1 << aspect_bit),
+                                 aspect,
                                  VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                                  dst_image_layout,
                                  cmd_buffer->queue_family->queueFlags);
 
+      const enum blorp_filter filter = res_info ?
+         (aspect & VK_IMAGE_ASPECT_STENCIL_BIT) ?
+         vk_to_blorp_resolve_mode(res_info->stencilResolveMode) :
+         vk_to_blorp_resolve_mode(res_info->resolveMode) :
+         BLORP_FILTER_NONE;
+
+      enum isl_format src_format = src_image->planes[plane].primary_surface.isl.format;
+      enum isl_format dst_format = dst_image->planes[plane].primary_surface.isl.format;
+      if (skip_srgb_decode) {
+         src_format = isl_format_srgb_to_linear(src_format);
+         dst_format = isl_format_srgb_to_linear(dst_format);
+      }
+
       anv_image_msaa_resolve(cmd_buffer,
-                             src_image, ISL_FORMAT_UNSUPPORTED, src_aux_usage,
+                             src_image, src_format, src_aux_usage,
                              region->srcSubresource.mipLevel,
                              region->srcSubresource.baseArrayLayer,
-                             dst_image, ISL_FORMAT_UNSUPPORTED, dst_aux_usage,
+                             dst_image, dst_format, dst_aux_usage,
                              region->dstSubresource.mipLevel,
                              region->dstSubresource.baseArrayLayer,
-                             (1 << aspect_bit),
+                             aspect,
                              region->srcOffset.x,
                              region->srcOffset.y,
                              region->dstOffset.x,
                              region->dstOffset.y,
                              region->extent.width,
                              region->extent.height,
-                             layer_count, BLORP_FILTER_NONE);
+                             layer_count, filter);
    }
 }
 
@@ -2518,11 +2544,16 @@ void anv_CmdResolveImage2(
    ANV_FROM_HANDLE(anv_image, src_image, pResolveImageInfo->srcImage);
    ANV_FROM_HANDLE(anv_image, dst_image, pResolveImageInfo->dstImage);
 
+   const VkResolveImageModeInfoKHR *res_info =
+      vk_find_struct_const(pResolveImageInfo->pNext,
+                           RESOLVE_IMAGE_MODE_INFO_KHR);
+
    for (uint32_t r = 0; r < pResolveImageInfo->regionCount; r++) {
       resolve_image(cmd_buffer,
                     src_image, pResolveImageInfo->srcImageLayout,
                     dst_image, pResolveImageInfo->dstImageLayout,
-                    &pResolveImageInfo->pRegions[r]);
+                    &pResolveImageInfo->pRegions[r],
+                    res_info);
    }
 }
 

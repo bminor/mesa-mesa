@@ -5417,6 +5417,7 @@ void genX(CmdBeginRendering)(
          gfx->color_att[i].iview = NULL;
          gfx->color_att[i].layout = VK_IMAGE_LAYOUT_UNDEFINED;
          gfx->color_att[i].aux_usage = ISL_AUX_USAGE_NONE;
+         gfx->color_att[i].skip_srgb_decode = false;
          continue;
       }
 
@@ -5424,6 +5425,9 @@ void genX(CmdBeginRendering)(
          &pRenderingInfo->pColorAttachments[i];
       ANV_FROM_HANDLE(anv_image_view, iview, att->imageView);
       const VkImageLayout initial_layout = attachment_initial_layout(att);
+
+      const VkRenderingAttachmentFlagsInfoKHR *att_flags_info =
+         vk_find_struct_const(att->pNext, RENDERING_ATTACHMENT_FLAGS_INFO_KHR);
 
       assert(render_area.offset.x + render_area.extent.width <=
              iview->vk.extent.width);
@@ -5451,6 +5455,9 @@ void genX(CmdBeginRendering)(
       gfx->color_att[i].iview = iview;
       gfx->color_att[i].layout = att->imageLayout;
       gfx->color_att[i].aux_usage = aux_usage;
+      gfx->color_att[i].skip_srgb_decode = att_flags_info &&
+         (att_flags_info->flags &
+          VK_RENDERING_ATTACHMENT_RESOLVE_SKIP_TRANSFER_FUNCTION_BIT_KHR);
 
       union isl_color_value fast_clear_color = { .u32 = { 0, } };
 
@@ -5908,8 +5915,9 @@ cmd_buffer_mark_attachment_written(struct anv_cmd_buffer *cmd_buffer,
 #endif
 }
 
-void genX(CmdEndRendering)(
-    VkCommandBuffer                             commandBuffer)
+void genX(CmdEndRendering2KHR)(
+   VkCommandBuffer                             commandBuffer,
+   const VkRenderingEndInfoKHR*                pRenderingEndInfo)
 {
    ANV_FROM_HANDLE(anv_cmd_buffer, cmd_buffer, commandBuffer);
    struct anv_cmd_graphics_state *gfx = &cmd_buffer->state.gfx;

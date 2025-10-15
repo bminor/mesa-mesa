@@ -199,6 +199,7 @@ get_device_extensions(const struct anv_physical_device *device,
       .KHR_maintenance7                      = true,
       .KHR_maintenance8                      = true,
       .KHR_maintenance9                      = true,
+      .KHR_maintenance10                     = true,
       .KHR_map_memory2                       = true,
       .KHR_multiview                         = true,
       .KHR_performance_query =
@@ -992,6 +993,9 @@ get_features(const struct anv_physical_device *pdevice,
 
       /* VK_EXT_shader_uniform_buffer_unsized_array */
       .shaderUniformBufferUnsizedArray = true,
+
+      /* VK_KHR_maintenance10 */
+      .maintenance10 = true,
    };
 
    /* The new DOOM and Wolfenstein games require depthBounds without
@@ -1545,6 +1549,13 @@ get_properties(const struct anv_physical_device *pdevice,
       props->image2DViewOf3DSparse = false;
       props->defaultVertexAttributeValue =
          VK_DEFAULT_VERTEX_ATTRIBUTE_VALUE_ZERO_ZERO_ZERO_ZERO_KHR;
+   }
+
+   /* VK_KHR_maintenance10 */
+   {
+      props->rgba4OpaqueBlackSwizzled = true;
+      props->resolveSrgbFormatAppliesTransferFunction = true;
+      props->resolveSrgbFormatSupportsTransferFunctionControl = true;
    }
 
    /* VK_KHR_performance_query */

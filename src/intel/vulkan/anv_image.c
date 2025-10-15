@@ -1949,6 +1949,10 @@ anv_image_init(struct anv_device *device, struct anv_image *image,
                            image->vk.tiling).isl_format;
    add_image_view_format(image, image_format);
 
+   if (isl_format_is_srgb(image_format) &&
+       device->vk.enabled_features.maintenance10)
+      add_image_view_format(image, isl_format_srgb_to_linear(image_format));
+
    if (image->vk.usage & (VK_IMAGE_USAGE_TRANSFER_DST_BIT |
                           VK_IMAGE_USAGE_TRANSFER_SRC_BIT)) {
       if (vk_format_is_color(image->vk.format)) {

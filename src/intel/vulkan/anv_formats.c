@@ -699,6 +699,20 @@ anv_get_image_format_features2(const struct anv_physical_device *physical_device
                   VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT;
       }
 
+      /* Notes on VK_KHR_maintenance10:
+       *
+       * Intel HW can only write depth HiZ surfaces from the 3D pipeline depth
+       * output. So Depth on compute or transfer queues is not possible. Here
+       * we choose to not support stencil either, although it could be
+       * possible on Gfx20+ but would probably be confusing to application. So
+       * no support for:
+       *    - VK_FORMAT_FEATURE_2_DEPTH_COPY_ON_COMPUTE_QUEUE_BIT_KHR
+       *    - VK_FORMAT_FEATURE_2_DEPTH_COPY_ON_TRANSFER_QUEUE_BIT_KHR
+       *    - VK_FORMAT_FEATURE_2_STENCIL_COPY_ON_COMPUTE_QUEUE_BIT_KHR
+       *    - VK_FORMAT_FEATURE_2_STENCIL_COPY_ON_TRANSFER_QUEUE_BIT_KHR
+       */
+
+
       return flags;
    }
 
