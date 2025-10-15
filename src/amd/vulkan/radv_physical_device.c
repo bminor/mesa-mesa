@@ -100,6 +100,15 @@ radv_video_encode_queue_enabled(const struct radv_physical_device *pdev)
 bool
 radv_compute_queue_enabled(const struct radv_physical_device *pdev)
 {
+   /* Compute queues may run compute dispatches in parallel with
+    * the graphics queue, even from other processes/apps.
+    * At the moment we can't make sure that all compute shaders
+    * use a workgroup size of 256 to mitigate the regalloc hang,
+    * so disable compute queues on affected chips.
+    */
+   if (pdev->info.has_cs_regalloc_hang_bug)
+      return false;
+
    const struct radv_instance *instance = radv_physical_device_instance(pdev);
 
    return pdev->info.ip[AMD_IP_COMPUTE].num_queues > 0 &&
