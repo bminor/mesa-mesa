@@ -1360,8 +1360,6 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                // Wait for each slice fence and resolve offset/size as each slice is ready
                //
                uint64_t output_buffer_offset = 0u;
-               LPBYTE lpBuffer = NULL;
-               spMemoryBuffers[0]->Lock( &lpBuffer, NULL, NULL );
 
                uint32_t num_slice_buffers = static_cast<uint32_t>( pDX12EncodeContext->pSliceFences.size() );
                std::vector<struct codec_unit_location_t> codec_unit_metadata;
@@ -1369,8 +1367,25 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                const size_t max_default_init_alloc_count_nals = 64u;
                codec_unit_metadata.reserve( max_default_init_alloc_count_nals );
                mfsample_codec_unit_metadata.reserve( MAX_NALU_LENGTH_INFO_ENTRIES );
+               LPBYTE lpBuffer = NULL;
                for( uint32_t slice_idx = 0; slice_idx < num_slice_buffers; slice_idx++ )
                {
+                  auto cur_output_sample_emitted_idx = ( num_output_samples_emitted == 1 ) ? 0 : slice_idx;
+                  
+                  // Reset offset and clear accumulated NALs for per-slice mode (each slice goes to separate buffer)
+                  if( num_output_samples_emitted > 1 )
+                  {
+                     output_buffer_offset = 0u;
+                     mfsample_codec_unit_metadata.clear();
+                  }
+
+                  if ((num_output_samples_emitted > 1) || // If multiple output samples, we do this for every slice
+                     // Or if single output sample, we do this only for the first slice
+                     (num_output_samples_emitted == 1) && (slice_idx == 0))
+                  {
+                     spMemoryBuffers[cur_output_sample_emitted_idx]->Lock( &lpBuffer, NULL, NULL );
+                  }
+                  
                   assert( pDX12EncodeContext->pSliceFences[slice_idx] );
 
                   bool fenceWaitResult = pThis->m_pPipeVideoCodec->fence_wait( pThis->m_pPipeVideoCodec,
@@ -1427,6 +1442,47 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                            output_buffer_offset += nal.size;
                         }
                         pipe_buffer_unmap( pThis->m_pPipeContext, transfer_data );
+                        
+                     }
+                  }
+                  else
+                  {
+                     MFE_ERROR( "[dx12 hmft 0x%p] Slice fence wait failed", pThis );
+                  }
+
+                  if ((num_output_samples_emitted > 1) || // If multiple output samples, we do this for every slice
+                      // Or if single output sample, we do this only for the last slice
+                      (num_output_samples_emitted == 1) && (slice_idx == (num_slice_buffers - 1)))
+                  {
+
+                     spMemoryBuffers[cur_output_sample_emitted_idx]->Unlock();
+                     spMemoryBuffers[cur_output_sample_emitted_idx]->SetCurrentLength( static_cast<DWORD>( output_buffer_offset ) );
+                     spOutputSamples[cur_output_sample_emitted_idx]->AddBuffer( spMemoryBuffers[cur_output_sample_emitted_idx].Get() );
+
+                     HRESULT hr = pThis->ConfigureBitstreamOutputSampleAttributes( spOutputSamples[cur_output_sample_emitted_idx].Get(),
+                                                            pDX12EncodeContext,
+                                                            dwReceivedInput,
+                                                            (slice_idx == (num_slice_buffers - 1)) /* bIsLastSlice */,
+                                                            mfsample_codec_unit_metadata.data(),
+                                                            static_cast<unsigned>( mfsample_codec_unit_metadata.size() ) );
+                     if( FAILED( hr ) )
+                     {
+                        MFE_ERROR( "[dx12 hmft 0x%p] ConfigureBitstreamOutputSampleAttributes failed - hr=0x%08x", pThis, hr );
+                     }
+
+                     // Issue a new METransformHaveOutput event for the async slices mode
+                     // with the combined MFSample with all slices
+                     // This is done before pAsyncFence is waited on below
+                     // as we already have all the slice info and the async stats
+                     // are attached gated by the pAsyncFence completion
+                     {
+                        std::lock_guard<std::mutex> lock( pThis->m_OutputQueueLock );
+                        HMFT_ETW_EVENT_INFO( "METransformHaveOutput", pThis );
+                        if( SUCCEEDED( pThis->QueueEvent( METransformHaveOutput, GUID_NULL, S_OK, nullptr ) ) )
+                        {
+                           pThis->m_OutputQueue.push( spOutputSamples[cur_output_sample_emitted_idx].Detach() );
+                           pThis->m_dwHaveOutputCount++;
+                        }
                      }
                   }
                }
@@ -1446,36 +1502,6 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                memset( pDX12EncodeContext->pSliceFences.data(),
                        0,
                        pDX12EncodeContext->pSliceFences.size() * sizeof( pipe_fence_handle * ) );
-
-               spMemoryBuffers[0]->Unlock();
-               spMemoryBuffers[0]->SetCurrentLength( static_cast<DWORD>( output_buffer_offset ) );
-               spOutputSamples[0]->AddBuffer( spMemoryBuffers[0].Get() );
-
-               HRESULT hr = pThis->ConfigureBitstreamOutputSampleAttributes( spOutputSamples[0].Get(),
-                                                            pDX12EncodeContext,
-                                                            dwReceivedInput,
-                                                            TRUE /* bIsLastSlice */,
-                                                            mfsample_codec_unit_metadata.data(),
-                                                            static_cast<unsigned>( mfsample_codec_unit_metadata.size() ) );
-               if( FAILED( hr ) )
-               {
-                  MFE_ERROR( "[dx12 hmft 0x%p] ConfigureBitstreamOutputSampleAttributes failed - hr=0x%08x", pThis, hr );
-               }
-
-               // Issue a new METransformHaveOutput event for the async slices mode
-               // with the combined MFSample with all slices
-               // This is done before pAsyncFence is waited on below
-               // as we already have all the slice info and the async stats
-               // are attached gated by the pAsyncFence completion
-               {
-                  std::lock_guard<std::mutex> lock( pThis->m_OutputQueueLock );
-                  HMFT_ETW_EVENT_INFO( "METransformHaveOutput", pThis );
-                  if( SUCCEEDED( pThis->QueueEvent( METransformHaveOutput, GUID_NULL, S_OK, nullptr ) ) )
-                  {
-                     pThis->m_OutputQueue.push( spOutputSamples[0].Detach() );
-                     pThis->m_dwHaveOutputCount++;
-                  }
-               }
             }
 
             // Wait for pAsyncFence (full frame fence) before calling get_feedback for full frame stats
