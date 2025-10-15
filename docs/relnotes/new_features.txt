@@ -86,3 +86,4 @@ VK_KHR_device_group on pvr
 VK_KHR_buffer_device_address on pvr
 GL_EXT_mesh_shader on zink
 VK_KHR_wayland_surface on pvr
+VK_NVX_image_view_handle on NVK

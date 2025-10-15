@@ -119,6 +119,12 @@ nvk_image_base_address(const struct nvk_image *image, uint8_t plane)
    return nvk_image_plane_base_address(&image->planes[plane]);
 }
 
+static inline uint64_t
+nvk_image_size_B(const struct nvk_image *image, uint8_t plane)
+{
+   return image->planes[plane].nil.size_B;
+}
+
 static inline uint8_t
 nvk_image_aspects_to_plane(const struct nvk_image *image,
                            VkImageAspectFlags aspectMask)

@@ -290,6 +290,7 @@ nvk_get_device_extensions(const struct nvk_instance *instance,
       .MESA_image_alignment_control = true,
       .NV_compute_shader_derivatives = info->cls_eng3d >= TURING_A,
       .NV_shader_sm_builtins = true,
+      .NVX_image_view_handle = info->cls_eng3d >= MAXWELL_A, /* needs true bindless descriptors */
       .VALVE_mutable_descriptor_type = true,
    };
 }

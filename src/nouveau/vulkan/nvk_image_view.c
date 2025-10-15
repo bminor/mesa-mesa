@@ -8,6 +8,7 @@
 #include "nvk_entrypoints.h"
 #include "nvk_format.h"
 #include "nvk_image.h"
+#include "nvk_sampler.h"
 #include "nvk_physical_device.h"
 
 #include "vk_format.h"
@@ -356,6 +357,61 @@ nvk_GetImageViewOpaqueCaptureDescriptorDataEXT(
    }
 
    memcpy(pData, &cap, sizeof(cap));
+
+   return VK_SUCCESS;
+}
+
+
+VKAPI_ATTR uint32_t VKAPI_CALL
+nvk_GetImageViewHandleNVX(VkDevice _device,
+                          const VkImageViewHandleInfoNVX *pInfo)
+{
+   VK_FROM_HANDLE(nvk_image_view, view, pInfo->imageView);
+   VK_FROM_HANDLE(nvk_sampler, sampler, pInfo->sampler);
+   assert(view->plane_count == 1);
+
+   uint32_t handle = 0;
+   if (pInfo->descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
+      struct nvk_storage_image_descriptor desc;
+      STATIC_ASSERT(sizeof(desc) == sizeof(handle));
+
+      desc.image_index = view->planes[0].storage_desc_index;
+      memcpy(&handle, &desc, sizeof(uint32_t));
+   } else {
+      struct nvk_sampled_image_descriptor desc;
+      STATIC_ASSERT(sizeof(desc) == sizeof(handle));
+
+      desc.image_index = view->planes[0].sampled_desc_index;
+      if (pInfo->descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+         assert(sampler->plane_count == 1);
+         desc.sampler_index = sampler->planes[0].desc_index;
+      }
+      memcpy(&handle, &desc, sizeof(uint32_t));
+   }
+
+   return handle;
+}
+
+VKAPI_ATTR uint64_t VKAPI_CALL
+nvk_GetImageViewHandle64NVX(VkDevice _device,
+                            const VkImageViewHandleInfoNVX *pInfo)
+{
+   /* NVK does not currently support 64-bit texture addressing,
+    * so this is the same as vkGetImageViewHandleNVX. */
+
+   return nvk_GetImageViewHandleNVX(_device, pInfo);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL
+nvk_GetImageViewAddressNVX(VkDevice _device, VkImageView _imageView,
+                           VkImageViewAddressPropertiesNVX *pProperties)
+{
+   VK_FROM_HANDLE(nvk_image_view, image_view, _imageView);
+   const struct nvk_image *image = (struct nvk_image *)image_view->vk.image;
+
+   const uint8_t plane = image_view->planes[0].image_plane;
+   pProperties->deviceAddress = nvk_image_base_address(image, plane);
+   pProperties->size = nvk_image_size_B(image, plane);
 
    return VK_SUCCESS;
 }
