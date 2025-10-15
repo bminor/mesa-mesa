@@ -7,13 +7,6 @@
  **************************************************************************/
 
 #include "radeon_video.h"
-
-#include "radeon_vce.h"
-#include "radeonsi/si_pipe.h"
-#include "util/u_memory.h"
-#include "util/u_video.h"
-#include "vl/vl_defines.h"
-#include "vl/vl_video_buffer.h"
 #include "ac_uvd_dec.h"
 
 #include <unistd.h>
@@ -25,40 +18,6 @@ unsigned si_vid_alloc_stream_handle()
    if (!stream_handle.base)
       ac_uvd_init_stream_handle(&stream_handle);
    return ac_uvd_alloc_stream_handle(&stream_handle);
-}
-
-/* create a buffer in the winsys */
-bool si_vid_create_buffer(struct pipe_screen *screen, struct rvid_buffer *buffer, unsigned size,
-                          unsigned usage)
-{
-   memset(buffer, 0, sizeof(*buffer));
-   buffer->usage = usage;
-
-   /* Hardware buffer placement restrictions require the kernel to be
-    * able to move buffers around individually, so request a
-    * non-sub-allocated buffer.
-    */
-   buffer->res = si_resource(pipe_buffer_create(screen, PIPE_BIND_CUSTOM, usage, size));
-
-   return buffer->res != NULL;
-}
-
-/* create a tmz buffer in the winsys */
-bool si_vid_create_tmz_buffer(struct pipe_screen *screen, struct rvid_buffer *buffer, unsigned size,
-                              unsigned usage)
-{
-   memset(buffer, 0, sizeof(*buffer));
-   buffer->usage = usage;
-   buffer->res = si_resource(pipe_buffer_create(screen, PIPE_BIND_CUSTOM | PIPE_BIND_PROTECTED,
-                                                usage, size));
-   return buffer->res != NULL;
-}
-
-
-/* destroy a buffer */
-void si_vid_destroy_buffer(struct rvid_buffer *buffer)
-{
-   si_resource_reference(&buffer->res, NULL);
 }
 
 /* reallocate a buffer, preserving its content */
@@ -130,14 +89,4 @@ error:
       ws->buffer_unmap(ws, old_buf->buf);
    si_resource_reference(&new_buf, NULL);
    return false;
-}
-
-/* clear the buffer with zeros */
-void si_vid_clear_buffer(struct pipe_context *context, struct rvid_buffer *buffer)
-{
-   struct si_context *sctx = (struct si_context *)context;
-   uint32_t zero = 0;
-
-   sctx->b.clear_buffer(&sctx->b, &buffer->res->b.b, 0, buffer->res->b.b.width0, &zero, 4);
-   context->flush(context, NULL, 0);
 }
