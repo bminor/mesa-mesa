@@ -897,14 +897,13 @@ si_vpe_processor_destroy(struct pipe_video_codec *codec)
 
    if (vpeproc->emb_buffers) {
       for (i = 0; i < vpeproc->bufs_num; i++)
-         if (vpeproc->emb_buffers[i].res)
-            si_vid_destroy_buffer(&vpeproc->emb_buffers[i]);
+         si_resource_reference(&vpeproc->emb_buffers[i], NULL);
       FREE(vpeproc->emb_buffers);
    }
 
    if (vpeproc->gm_handle)
       tm_destroy(&vpeproc->gm_handle);
-   
+
    FREE(vpeproc->lut_data);
 
    FREE(vpeproc->geometric_scaling_ratios);
@@ -1132,7 +1131,7 @@ si_vpe_construct_blt(struct vpe_video_processor *vpeproc,
    struct vpe *vpe_handle = vpeproc->vpe_handle;
    struct vpe_build_param *build_param = vpeproc->vpe_build_param;
    struct vpe_build_bufs *build_bufs = vpeproc->vpe_build_bufs;
-   struct rvid_buffer *emb_buf;
+   struct si_resource *emb_buf;
    uint64_t *vpe_ptr;
 
    assert(process_properties);
@@ -1156,10 +1155,10 @@ si_vpe_construct_blt(struct vpe_video_processor *vpeproc,
    build_bufs->cmd_buf.tmz = false;
 
    /* Init EmbBuf address and size information */
-   emb_buf = &vpeproc->emb_buffers[vpeproc->cur_buf];
+   emb_buf = vpeproc->emb_buffers[vpeproc->cur_buf];
    /* Map EmbBuf for CPU access */
    vpe_ptr = (uint64_t *)vpeproc->ws->buffer_map(vpeproc->ws,
-                                                 emb_buf->res->buf,
+                                                 emb_buf->buf,
                                                  NULL,
                                                  PIPE_MAP_WRITE | RADEON_MAP_TEMPORARY);
    if (!vpe_ptr) {
@@ -1167,14 +1166,14 @@ si_vpe_construct_blt(struct vpe_video_processor *vpeproc,
       return 1;
    }
    build_bufs->emb_buf.cpu_va = (uintptr_t)vpe_ptr;
-   build_bufs->emb_buf.gpu_va = vpeproc->ws->buffer_get_virtual_address(emb_buf->res->buf);
+   build_bufs->emb_buf.gpu_va = vpeproc->ws->buffer_get_virtual_address(emb_buf->buf);
    build_bufs->emb_buf.size = VPE_EMBBUF_SIZE;
    build_bufs->emb_buf.tmz = false;
 
    result = vpe_build_commands(vpe_handle, build_param, build_bufs);
 
    /* Un-map Emb_buf */
-   vpeproc->ws->buffer_unmap(vpeproc->ws, emb_buf->res->buf);
+   vpeproc->ws->buffer_unmap(vpeproc->ws, emb_buf->buf);
 
    if (VPE_STATUS_OK != result) {
       SIVPE_ERR("Build commands failed with result: %d\n", result);
@@ -1198,7 +1197,7 @@ si_vpe_construct_blt(struct vpe_video_processor *vpeproc,
    vpeproc->cs.current.cdw += (vpeproc->vpe_build_bufs->cmd_buf.size / 4);
 
    /* Add embbuf into bo_handle list */
-   vpeproc->ws->cs_add_buffer(&vpeproc->cs, emb_buf->res->buf, RADEON_USAGE_READ | RADEON_USAGE_SYNCHRONIZED, RADEON_DOMAIN_GTT);
+   vpeproc->ws->cs_add_buffer(&vpeproc->cs, emb_buf->buf, RADEON_USAGE_READ | RADEON_USAGE_SYNCHRONIZED, RADEON_DOMAIN_GTT);
 
    /* Add surface buffers into bo_handle list */
    si_vpe_cs_add_surface_buffer(vpeproc, src_surfaces, RADEON_USAGE_READ);
@@ -1610,7 +1609,7 @@ si_vpe_create_processor(struct pipe_context *context, const struct pipe_video_co
     */
    vpeproc->bufs_num = (uint8_t)debug_get_num_option("AMDGPU_SIVPE_BUF_NUM", VPE_BUFFERS_NUM);
    vpeproc->cur_buf = 0;
-   vpeproc->emb_buffers = (struct rvid_buffer *)CALLOC(vpeproc->bufs_num, sizeof(struct rvid_buffer));
+   vpeproc->emb_buffers = CALLOC(vpeproc->bufs_num, sizeof(struct si_resource *));
    if (!vpeproc->emb_buffers) {
       SIVPE_ERR("Allocate command buffer list failed\n");
       goto fail;
@@ -1618,7 +1617,8 @@ si_vpe_create_processor(struct pipe_context *context, const struct pipe_video_co
       SIVPE_INFO(vpeproc->log_level, "Number of emb_buf is %d\n", vpeproc->bufs_num);
 
    for (i = 0; i < vpeproc->bufs_num; i++) {
-      if (!si_vid_create_buffer(vpeproc->screen, &vpeproc->emb_buffers[i], VPE_EMBBUF_SIZE, PIPE_USAGE_DEFAULT)) {
+      vpeproc->emb_buffers[i] = si_resource(pipe_buffer_create(vpeproc->screen, 0, PIPE_USAGE_DEFAULT, VPE_EMBBUF_SIZE));
+      if (!vpeproc->emb_buffers[i]) {
           SIVPE_ERR("Can't allocated emb_buf buffers.\n");
           goto fail;
       }
