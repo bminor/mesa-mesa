@@ -604,7 +604,7 @@
         "description": "st: add early to st_prune_releasebufs",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "1638d486ff9fd02716dab468eece29c589cf270a",
         "notes": null
