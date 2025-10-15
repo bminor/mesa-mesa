@@ -1087,9 +1087,6 @@ radv_get_ac_surf_info(struct radv_device *device, const struct radv_image *image
    info.levels = image->vk.mip_levels;
    info.num_channels = vk_format_get_nr_components(image->vk.format);
 
-   info.surf_index = &device->image_mrt_offset_counter;
-   info.fmask_surf_index = &device->fmask_mrt_offset_counter;
-
    return info;
 }
 

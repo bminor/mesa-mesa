@@ -77,13 +77,6 @@ static int amdgpu_surface_init(struct radeon_winsys *rws,
                      tex->target == PIPE_TEXTURE_2D_ARRAY ||
                      tex->target == PIPE_TEXTURE_CUBE_ARRAY;
 
-   /* Use different surface counters for color and FMASK, so that MSAA MRTs
-    * always use consecutive surface indices when FMASK is allocated between
-    * them.
-    */
-   config.info.surf_index = &aws->surf_index_color;
-   config.info.fmask_surf_index = &aws->surf_index_fmask;
-
    /* Use radeon_info from the driver, not the winsys. The driver is allowed to change it. */
    return ac_compute_surface(aws->addrlib, info, &config, mode, surf);
 }

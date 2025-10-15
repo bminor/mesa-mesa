@@ -216,8 +216,6 @@ struct amdgpu_winsys {
    simple_mtx_t bo_fence_lock;
 
    int num_cs; /* The number of command streams created. */
-   uint32_t surf_index_color;
-   uint32_t surf_index_fmask;
    uint32_t next_bo_unique_id;
    uint64_t allocated_vram;
    uint64_t allocated_gtt;

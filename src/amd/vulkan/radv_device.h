@@ -186,13 +186,6 @@ struct radv_device {
    /* Backup in-memory cache to be used if the app doesn't provide one */
    struct vk_pipeline_cache *mem_cache;
 
-   /*
-    * use different counters so MSAA MRTs get consecutive surface indices,
-    * even if MASK is allocated in between.
-    */
-   uint32_t image_mrt_offset_counter;
-   uint32_t fmask_mrt_offset_counter;
-
    struct list_head shader_arenas;
    struct hash_table_u64 *capture_replay_arena_vas;
    unsigned shader_arena_shift;

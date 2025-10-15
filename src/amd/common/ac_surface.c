@@ -87,6 +87,12 @@
 struct ac_addrlib {
    ADDR_HANDLE handle;
    simple_mtx_t lock;
+
+   /* Monotonic counters to randomize radeon_surf::tile_swizzle for each allocated image layout.
+    * radeon_surf::tile_swizzle shuffles image tiles to get random tile order.
+    */
+   uint32_t surf_index;
+   uint32_t fmask_surf_index;
 };
 
 unsigned ac_pipe_config_to_num_pipes(unsigned pipe_config)
@@ -1201,14 +1207,8 @@ static bool use_tile_swizzle(const struct ac_surf_config *config, const struct r
                              bool fmask)
 {
    if (fmask) {
-      if (!config->info.fmask_surf_index)
-         return false;
-
       return !(surf->flags & RADEON_SURF_SHAREABLE);
    } else {
-      if (!config->info.surf_index)
-         return false;
-
       return surf->modifier == DRM_FORMAT_MOD_INVALID &&
              !(surf->flags & (RADEON_SURF_Z_OR_SBUFFER | RADEON_SURF_SHAREABLE |
                               RADEON_SURF_HOST_TRANSFER | RADEON_SURF_DECODE_DST |
@@ -1255,7 +1255,7 @@ static int gfx6_surface_settings(struct ac_addrlib *addrlib, const struct radeon
       AddrBaseSwizzleIn.size = sizeof(ADDR_COMPUTE_BASE_SWIZZLE_INPUT);
       AddrBaseSwizzleOut.size = sizeof(ADDR_COMPUTE_BASE_SWIZZLE_OUTPUT);
 
-      AddrBaseSwizzleIn.surfIndex = p_atomic_inc_return(config->info.surf_index) - 1;
+      AddrBaseSwizzleIn.surfIndex = p_atomic_inc_return(&addrlib->surf_index) - 1;
       AddrBaseSwizzleIn.tileIndex = csio->tileIndex;
       AddrBaseSwizzleIn.macroModeIndex = csio->macroModeIndex;
       AddrBaseSwizzleIn.pTileInfo = csio->pTileInfo;
@@ -1818,7 +1818,7 @@ static int gfx6_compute_surface(struct ac_addrlib *addrlib, const struct radeon_
          xout.size = sizeof(ADDR_COMPUTE_BASE_SWIZZLE_OUTPUT);
 
          /* This counter starts from 1 instead of 0. */
-         xin.surfIndex = p_atomic_inc_return(config->info.fmask_surf_index);
+         xin.surfIndex = p_atomic_inc_return(&addrlib->fmask_surf_index);
          xin.tileIndex = fout.tileIndex;
          xin.macroModeIndex = fout.macroModeIndex;
          xin.pTileInfo = fout.pTileInfo;
@@ -2394,7 +2394,7 @@ static int gfx9_compute_miptree(struct ac_addrlib *addrlib, const struct radeon_
          xin.size = sizeof(ADDR2_COMPUTE_PIPEBANKXOR_INPUT);
          xout.size = sizeof(ADDR2_COMPUTE_PIPEBANKXOR_OUTPUT);
 
-         xin.surfIndex = p_atomic_inc_return(config->info.surf_index) - 1;
+         xin.surfIndex = p_atomic_inc_return(&addrlib->surf_index) - 1;
          xin.flags = in->flags;
          xin.swizzleMode = in->swizzleMode;
          xin.resourceType = in->resourceType;
@@ -2595,7 +2595,7 @@ static int gfx9_compute_miptree(struct ac_addrlib *addrlib, const struct radeon_
             xout.size = sizeof(ADDR2_COMPUTE_PIPEBANKXOR_OUTPUT);
 
             /* This counter starts from 1 instead of 0. */
-            xin.surfIndex = p_atomic_inc_return(config->info.fmask_surf_index);
+            xin.surfIndex = p_atomic_inc_return(&addrlib->fmask_surf_index);
             xin.flags = in->flags;
             xin.swizzleMode = fin.swizzleMode;
             xin.resourceType = in->resourceType;
@@ -3445,7 +3445,7 @@ static bool gfx12_compute_miptree(struct ac_addrlib *addrlib, const struct radeo
       xin.size = sizeof(ADDR3_COMPUTE_PIPEBANKXOR_INPUT);
       xout.size = sizeof(ADDR3_COMPUTE_PIPEBANKXOR_OUTPUT);
 
-      xin.surfIndex = p_atomic_inc_return(config->info.surf_index) - 1;
+      xin.surfIndex = p_atomic_inc_return(&addrlib->surf_index) - 1;
       xin.swizzleMode = in->swizzleMode;
 
       ret = Addr3ComputePipeBankXor(addrlib->handle, &xin, &xout);
