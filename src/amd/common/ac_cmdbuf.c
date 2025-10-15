@@ -859,8 +859,8 @@ ac_init_graphics_preamble_state(const struct ac_preamble_state *state,
 }
 
 void
-ac_emit_cond_exec(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
-                  uint64_t va, uint32_t count)
+ac_emit_cp_cond_exec(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
+                     uint64_t va, uint32_t count)
 {
    ac_cmdbuf_begin(cs);
    if (gfx_level >= GFX7) {
@@ -879,7 +879,8 @@ ac_emit_cond_exec(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
 }
 
 void
-ac_emit_write_data_imm(struct ac_cmdbuf *cs, unsigned engine_sel, uint64_t va, uint32_t value)
+ac_emit_cp_write_data_imm(struct ac_cmdbuf *cs, unsigned engine_sel,
+                          uint64_t va, uint32_t value)
 {
    ac_cmdbuf_begin(cs);
    ac_cmdbuf_emit(PKT3(PKT3_WRITE_DATA, 3, 0));

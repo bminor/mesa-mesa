@@ -844,7 +844,7 @@ static void si_query_hw_do_emit_start(struct si_context *sctx, struct si_query_h
          /* Clear the emulated counter end value. We don't clear start because it's unused. */
          va += si_query_pipestat_end_dw_offset(sctx->screen, query->index) * 4;
 
-         ac_emit_write_data_imm(&cs->current, V_370_PFP, va, 0);
+         ac_emit_cp_write_data_imm(&cs->current, V_370_PFP, va, 0);
 
          sctx->num_pipeline_stat_emulated_queries++;
       } else {
