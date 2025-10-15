@@ -5248,14 +5248,8 @@ radv_load_color_clear_metadata(struct radv_cmd_buffer *cmd_buffer, struct radv_i
    if (pdev->info.has_load_ctx_reg_pkt) {
       ac_emit_cp_load_context_reg_index(cs->b, reg, 2, va, cmd_buffer->state.predicating);
    } else {
-      radeon_begin(cs);
-      radeon_emit(PKT3(PKT3_COPY_DATA, 4, cmd_buffer->state.predicating));
-      radeon_emit(COPY_DATA_SRC_SEL(COPY_DATA_SRC_MEM) | COPY_DATA_DST_SEL(COPY_DATA_REG) | COPY_DATA_COUNT_SEL);
-      radeon_emit(va);
-      radeon_emit(va >> 32);
-      radeon_emit(reg >> 2);
-      radeon_emit(0);
-      radeon_end();
+      ac_emit_cp_copy_data(cs->b, COPY_DATA_SRC_MEM, COPY_DATA_REG, va, reg >> 2, AC_CP_COPY_DATA_COUNT_SEL,
+                           cmd_buffer->state.predicating);
 
       ac_emit_cp_pfp_sync_me(cs->b, cmd_buffer->state.predicating);
    }
