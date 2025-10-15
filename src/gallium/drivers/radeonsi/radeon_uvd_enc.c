@@ -1089,14 +1089,10 @@ static void radeon_uvd_enc_begin_frame(struct pipe_video_codec *encoder,
    }
 
    if (!enc->si) {
-      struct rvid_buffer fb;
       enc->si = CALLOC_STRUCT(rvid_buffer);
       si_vid_create_buffer(enc->screen, enc->si, 128 * 1024, PIPE_USAGE_DEFAULT);
-      si_vid_create_buffer(enc->screen, &fb, 4096, PIPE_USAGE_STAGING);
-      enc->fb = &fb;
       begin(enc, picture);
       flush(enc, PIPE_FLUSH_ASYNC, NULL);
-      si_vid_destroy_buffer(&fb);
    }
 }
 
@@ -1208,15 +1204,11 @@ static void radeon_uvd_enc_destroy(struct pipe_video_codec *encoder)
    struct radeon_uvd_encoder *enc = (struct radeon_uvd_encoder *)encoder;
 
    if (enc->si) {
-      struct rvid_buffer fb;
       enc->need_feedback = false;
-      si_vid_create_buffer(enc->screen, &fb, 512, PIPE_USAGE_STAGING);
-      enc->fb = &fb;
       destroy(enc);
       flush(enc, PIPE_FLUSH_ASYNC, NULL);
       si_vid_destroy_buffer(enc->si);
       FREE(enc->si);
-      si_vid_destroy_buffer(&fb);
    }
 
    if (enc->dpb.res)
