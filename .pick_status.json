@@ -4144,7 +4144,7 @@
         "description": "anv/blorp: add missing cs stall on compute pipe control",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": null,
         "notes": null
@@ -14704,7 +14704,7 @@
         "description": "brw: improve eot_reg computation in register allocate",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "c4c7ff3f8fa809de7ed07afe2c2c0169a28937ef",
         "notes": null
@@ -14714,7 +14714,7 @@
         "description": "brw: remove unused RT write code",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": "fe38fb858c7ed31be89ea60decd049c9919b3fbd",
         "notes": null
@@ -29744,7 +29744,7 @@
         "description": "brw: workaround broken indirect RT messages on Gfx11",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": null,
         "notes": null
@@ -29754,7 +29754,7 @@
         "description": "brw: enable opt_register_coalesce to work with multiple EOT blocks",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": null,
         "notes": null
@@ -29764,7 +29764,7 @@
         "description": "brw: enable register allocation to deal with multiple EOTs",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": null,
         "notes": null
