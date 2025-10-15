@@ -718,6 +718,15 @@ radv_get_surface_flags(struct radv_device *device, struct radv_image *image, uns
        !(pCreateInfo->usage & (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR)))
       flags |= RADEON_SURF_VIDEO_REFERENCE;
 
+   if (pCreateInfo->usage & VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR)
+      flags |= RADEON_SURF_DECODE_DST;
+   if (pCreateInfo->usage & VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR)
+      flags |= RADEON_SURF_ENCODE_SRC;
+   if (pCreateInfo->flags & (VK_IMAGE_CREATE_ALIAS_BIT | VK_IMAGE_CREATE_SPARSE_ALIASED_BIT))
+      flags |= RADEON_SURF_ALIASED;
+   if (pCreateInfo->flags & VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)
+      flags |= RADEON_SURF_REPLAYABLE;
+
    if (alignment && alignment->maximumRequestedAlignment && !(instance->debug_flags & RADV_DEBUG_FORCE_COMPRESS)) {
       bool is_4k_capable;
 
@@ -1075,10 +1084,7 @@ radv_get_ac_surf_info(struct radv_device *device, const struct radv_image *image
    info.levels = image->vk.mip_levels;
    info.num_channels = vk_format_get_nr_components(image->vk.format);
 
-   if (!image->vk.external_handle_types &&
-       !(image->vk.create_flags & (VK_IMAGE_CREATE_SPARSE_ALIASED_BIT | VK_IMAGE_CREATE_ALIAS_BIT |
-                                   VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) &&
-       !(image->vk.usage & (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR))) {
+   if (!image->vk.external_handle_types) {
       info.surf_index = &device->image_mrt_offset_counter;
       info.fmask_surf_index = &device->fmask_mrt_offset_counter;
    }
