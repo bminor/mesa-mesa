@@ -6110,12 +6110,6 @@ tu_CmdNextSubpass2(VkCommandBuffer commandBuffer,
 
       struct tu_resolve_group resolve_group = {};
 
-      if (subpass->resolve_attachments) {
-         tu6_emit_blit_scissor(cmd, cs, true, false);
-
-         tu6_emit_gmem_resolves<CHIP>(cmd, subpass, &resolve_group, cs);
-      }
-
       tu6_emit_gmem_stores<CHIP>(cmd, &cmd->draw_cs, &resolve_group, subpass);
 
       tu_emit_resolve_group<CHIP>(cmd, cs, &resolve_group);
