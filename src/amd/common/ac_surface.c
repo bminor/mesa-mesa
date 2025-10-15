@@ -1210,7 +1210,8 @@ static bool use_tile_swizzle(const struct ac_surf_config *config, const struct r
          return false;
 
       return surf->modifier == DRM_FORMAT_MOD_INVALID &&
-             !(surf->flags & (RADEON_SURF_Z_OR_SBUFFER | RADEON_SURF_SHAREABLE)) &&
+             !(surf->flags & (RADEON_SURF_Z_OR_SBUFFER | RADEON_SURF_SHAREABLE |
+                              RADEON_SURF_HOST_TRANSFER)) &&
              !get_display_flag(config, surf);
    }
 }
