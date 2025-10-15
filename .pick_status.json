@@ -4734,7 +4734,7 @@
         "description": "winsys/radeon: fix completely broken tessellation for gfx6-7",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d82eda72a1fe3932615b3fb16391e84de0431e6c",
         "notes": null
