@@ -21,7 +21,7 @@ static void radeon_enc_session_info(struct radeon_encoder *enc)
 {
    RADEON_ENC_BEGIN(enc->cmd.session_info);
    RADEON_ENC_CS(enc->enc_pic.session_info.interface_version);
-   RADEON_ENC_READWRITE(enc->si->res->buf, enc->si->res->domains, 0x0);
+   RADEON_ENC_READWRITE(enc->si->buf, enc->si->domains, 0x0);
    RADEON_ENC_CS(RENCODE_ENGINE_TYPE_ENCODE);
    RADEON_ENC_END();
 }
@@ -942,7 +942,7 @@ static void radeon_enc_ctx(struct radeon_encoder *enc)
    enc->enc_pic.ctx_buf.two_pass_search_center_map_offset = 0;
 
    RADEON_ENC_BEGIN(enc->cmd.ctx);
-   RADEON_ENC_READWRITE(enc->dpb->res->buf, enc->dpb->res->domains, 0);
+   RADEON_ENC_READWRITE(enc->dpb->buf, enc->dpb->domains, 0);
    RADEON_ENC_CS(enc->enc_pic.ctx_buf.swizzle_mode);
    RADEON_ENC_CS(enc->enc_pic.ctx_buf.rec_luma_pitch);
    RADEON_ENC_CS(enc->enc_pic.ctx_buf.rec_chroma_pitch);
@@ -1102,7 +1102,7 @@ static void radeon_enc_qp_map(struct radeon_encoder *enc)
    RADEON_ENC_BEGIN(enc->cmd.enc_qp_map);
    RADEON_ENC_CS(enc->enc_pic.enc_qp_map.qp_map_type);
    if (enc->enc_pic.enc_qp_map.qp_map_type != RENCODE_QP_MAP_TYPE_NONE)
-      RADEON_ENC_READWRITE(enc->roi->res->buf, enc->roi->res->domains, 0);
+      RADEON_ENC_READWRITE(enc->roi->buf, enc->roi->domains, 0);
    else {
       RADEON_ENC_CS(0); /* use null for roi buffer */
       RADEON_ENC_CS(0); /* use null for roi buffer */

@@ -28,7 +28,7 @@ static void radeon_enc_cdf_default_table(struct radeon_encoder *enc)
 
    RADEON_ENC_BEGIN(enc->cmd.cdf_default_table_av1);
    RADEON_ENC_CS(enc->enc_pic.av1_cdf_default_table.use_cdf_default);
-   RADEON_ENC_READWRITE(enc->cdf->res->buf, enc->cdf->res->domains, 0);
+   RADEON_ENC_READWRITE(enc->cdf->buf, enc->cdf->domains, 0);
    RADEON_ENC_END();
 }
 
@@ -181,20 +181,20 @@ static void radeon_enc_ctx(struct radeon_encoder *enc)
                              == PIPE_VIDEO_FORMAT_AV1;
 
    RADEON_ENC_BEGIN(enc->cmd.ctx);
-   RADEON_ENC_READWRITE(enc->dpb->res->buf, enc->dpb->res->domains, 0);
+   RADEON_ENC_READWRITE(enc->dpb->buf, enc->dpb->domains, 0);
    RADEON_ENC_CS(enc->enc_pic.ctx_buf.num_reconstructed_pictures);
 
    for (i = 0; i < RENCODE_MAX_NUM_RECONSTRUCTED_PICTURES; i++) {
       rvcn_enc_reconstructed_picture_t *pic =
                             &enc->enc_pic.ctx_buf.reconstructed_pictures[i];
-      RADEON_ENC_READWRITE(enc->dpb->res->buf, enc->dpb->res->domains, 0);
+      RADEON_ENC_READWRITE(enc->dpb->buf, enc->dpb->domains, 0);
       RADEON_ENC_CS(enc->enc_pic.ctx_buf.rec_luma_pitch);
-      RADEON_ENC_READWRITE(enc->dpb->res->buf, enc->dpb->res->domains, 0);
+      RADEON_ENC_READWRITE(enc->dpb->buf, enc->dpb->domains, 0);
       RADEON_ENC_CS(enc->enc_pic.ctx_buf.rec_chroma_pitch);
-      RADEON_ENC_READWRITE(enc->dpb->res->buf, enc->dpb->res->domains, 0);
+      RADEON_ENC_READWRITE(enc->dpb->buf, enc->dpb->domains, 0);
       RADEON_ENC_CS(0);
       RADEON_ENC_CS(swizzle_mode);
-      RADEON_ENC_READWRITE(enc->meta->res->buf, enc->meta->res->domains,
+      RADEON_ENC_READWRITE(enc->meta->buf, enc->meta->domains,
                            pic->frame_context_buffer_offset);
       if (is_h264) {
          RADEON_ENC_CS(pic->h264.colloc_buffer_offset);
@@ -212,14 +212,14 @@ static void radeon_enc_ctx(struct radeon_encoder *enc)
    for (int i = 0; i < RENCODE_MAX_NUM_RECONSTRUCTED_PICTURES; i++) {
       rvcn_enc_reconstructed_picture_t *pic =
                             &enc->enc_pic.ctx_buf.pre_encode_reconstructed_pictures[i];
-      RADEON_ENC_READWRITE(enc->dpb->res->buf, enc->dpb->res->domains, 0);
+      RADEON_ENC_READWRITE(enc->dpb->buf, enc->dpb->domains, 0);
       RADEON_ENC_CS(enc->enc_pic.ctx_buf.rec_luma_pitch);
-      RADEON_ENC_READWRITE(enc->dpb->res->buf, enc->dpb->res->domains, 0);
+      RADEON_ENC_READWRITE(enc->dpb->buf, enc->dpb->domains, 0);
       RADEON_ENC_CS(enc->enc_pic.ctx_buf.rec_chroma_pitch);
-      RADEON_ENC_READWRITE(enc->dpb->res->buf, enc->dpb->res->domains, 0);
+      RADEON_ENC_READWRITE(enc->dpb->buf, enc->dpb->domains, 0);
       RADEON_ENC_CS(0);
       RADEON_ENC_CS(swizzle_mode);
-      RADEON_ENC_READWRITE(enc->meta->res->buf, enc->meta->res->domains,
+      RADEON_ENC_READWRITE(enc->meta->buf, enc->meta->domains,
                            pic->frame_context_buffer_offset);
       if (is_h264) {
          RADEON_ENC_CS(pic->h264.colloc_buffer_offset);
@@ -259,8 +259,8 @@ static void radeon_enc_ctx_tier2(struct radeon_encoder *enc)
    }
 
    RADEON_ENC_BEGIN(enc->cmd.ctx);
-   if (enc->dpb->res) {
-      RADEON_ENC_READWRITE(enc->dpb->res->buf, enc->dpb->res->domains, 0);
+   if (enc->dpb) {
+      RADEON_ENC_READWRITE(enc->dpb->buf, enc->dpb->domains, 0);
    } else {
       RADEON_ENC_CS(0);
       RADEON_ENC_CS(0);
@@ -275,7 +275,7 @@ static void radeon_enc_ctx_tier2(struct radeon_encoder *enc)
       }
       struct si_texture *luma = enc->enc_pic.dpb_bufs[i]->luma;
       struct si_texture *chroma = enc->enc_pic.dpb_bufs[i]->chroma;
-      struct rvid_buffer *fcb = enc->enc_pic.dpb_bufs[i]->fcb;
+      struct si_resource *fcb = enc->enc_pic.dpb_bufs[i]->fcb;
       RADEON_ENC_READWRITE(luma->buffer.buf, luma->buffer.domains, luma->surface.u.gfx9.surf_offset);
       RADEON_ENC_CS(luma->surface.u.gfx9.surf_pitch);
       RADEON_ENC_READWRITE(chroma->buffer.buf, chroma->buffer.domains, chroma->surface.u.gfx9.surf_offset);
@@ -284,7 +284,7 @@ static void radeon_enc_ctx_tier2(struct radeon_encoder *enc)
       RADEON_ENC_CS(0);
       RADEON_ENC_CS(0);
       RADEON_ENC_CS(luma->surface.u.gfx9.swizzle_mode);
-      RADEON_ENC_READWRITE(fcb->res->buf, fcb->res->domains, 0);
+      RADEON_ENC_READWRITE(fcb->buf, fcb->domains, 0);
       if (is_h264) {
          RADEON_ENC_CS(enc->enc_pic.fcb_offset.h264.colloc_buffer_offset);
          RADEON_ENC_CS(0);
@@ -307,7 +307,7 @@ static void radeon_enc_ctx_tier2(struct radeon_encoder *enc)
       }
       struct si_texture *luma = enc->enc_pic.dpb_bufs[i]->pre_luma;
       struct si_texture *chroma = enc->enc_pic.dpb_bufs[i]->pre_chroma;
-      struct rvid_buffer *fcb = enc->enc_pic.dpb_bufs[i]->pre_fcb;
+      struct si_resource *fcb = enc->enc_pic.dpb_bufs[i]->pre_fcb;
       RADEON_ENC_READWRITE(luma->buffer.buf, luma->buffer.domains, luma->surface.u.gfx9.surf_offset);
       RADEON_ENC_CS(luma->surface.u.gfx9.surf_pitch);
       RADEON_ENC_READWRITE(chroma->buffer.buf, chroma->buffer.domains, chroma->surface.u.gfx9.surf_offset);
@@ -316,7 +316,7 @@ static void radeon_enc_ctx_tier2(struct radeon_encoder *enc)
       RADEON_ENC_CS(0);
       RADEON_ENC_CS(0);
       RADEON_ENC_CS(luma->surface.u.gfx9.swizzle_mode);
-      RADEON_ENC_READWRITE(fcb->res->buf, fcb->res->domains, 0);
+      RADEON_ENC_READWRITE(fcb->buf, fcb->domains, 0);
       if (is_h264) {
          RADEON_ENC_CS(enc->enc_pic.fcb_offset.h264.colloc_buffer_offset);
          RADEON_ENC_CS(0);
@@ -367,7 +367,7 @@ static void radeon_enc_metadata(struct radeon_encoder *enc)
    enc->enc_pic.metadata.two_pass_search_center_map_offset =
                enc->enc_pic.ctx_buf.two_pass_search_center_map_offset;
    RADEON_ENC_BEGIN(enc->cmd.metadata);
-   RADEON_ENC_READWRITE(enc->meta->res->buf, enc->meta->res->domains, 0);
+   RADEON_ENC_READWRITE(enc->meta->buf, enc->meta->domains, 0);
    RADEON_ENC_CS(enc->enc_pic.metadata.two_pass_search_center_map_offset);
    RADEON_ENC_END();
 }

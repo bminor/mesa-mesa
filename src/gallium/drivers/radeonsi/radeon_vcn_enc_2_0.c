@@ -98,7 +98,7 @@ static void radeon_enc_ctx(struct radeon_encoder *enc)
    enc->enc_pic.ctx_buf.two_pass_search_center_map_offset = 0;
 
    RADEON_ENC_BEGIN(enc->cmd.ctx);
-   RADEON_ENC_READWRITE(enc->dpb->res->buf, enc->dpb->res->domains, 0);
+   RADEON_ENC_READWRITE(enc->dpb->buf, enc->dpb->domains, 0);
    RADEON_ENC_CS(enc->enc_pic.ctx_buf.swizzle_mode);
    RADEON_ENC_CS(enc->enc_pic.ctx_buf.rec_luma_pitch);
    RADEON_ENC_CS(enc->enc_pic.ctx_buf.rec_chroma_pitch);

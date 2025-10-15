@@ -39,15 +39,6 @@
       *high = temp;                                                                              \
    } while(0)
 
-#define RADEON_ENC_DESTROY_VIDEO_BUFFER(buf)                                                     \
-   do {                                                                                          \
-      if (buf) {                                                                                 \
-         si_vid_destroy_buffer(buf);                                                             \
-         FREE(buf);                                                                              \
-         (buf) = NULL;                                                                           \
-      }                                                                                          \
-   } while(0)
-
 #define RADEON_ENC_ERR(fmt, args...)                                                             \
    do {                                                                                          \
       enc->error = true;                                                                         \
@@ -67,10 +58,15 @@ struct radeon_enc_dpb_buffer {
 
    struct si_texture *luma;      /* recon luma */
    struct si_texture *chroma;    /* recon chroma */
-   struct rvid_buffer *fcb;      /* frame context buffer*/
+   struct si_resource *fcb;      /* frame context buffer*/
    struct si_texture *pre_luma;  /* preenc recon luma */
    struct si_texture *pre_chroma;/* preenc recon chroma */
-   struct rvid_buffer *pre_fcb;  /* preenc frame context buffer */
+   struct si_resource *pre_fcb;  /* preenc frame context buffer */
+};
+
+struct radeon_enc_fb_buffer {
+   struct si_resource *res;
+   void *data;
 };
 
 struct radeon_enc_pic {
@@ -240,12 +236,12 @@ struct radeon_encoder {
    unsigned bs_size;
    unsigned bs_offset;
 
-   struct rvid_buffer *si;
-   struct rvid_buffer *fb;
-   struct rvid_buffer *dpb;
-   struct rvid_buffer *cdf;
-   struct rvid_buffer *roi;
-   struct rvid_buffer *meta;
+   struct si_resource *si;
+   struct radeon_enc_fb_buffer *fb;
+   struct si_resource *dpb;
+   struct si_resource *cdf;
+   struct si_resource *roi;
+   struct si_resource *meta;
    struct radeon_enc_pic enc_pic;
    struct pb_buffer_lean *stats;
    rvcn_enc_cmd_t cmd;
