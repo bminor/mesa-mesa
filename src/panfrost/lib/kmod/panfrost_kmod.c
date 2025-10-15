@@ -215,14 +215,14 @@ panfrost_dev_query_props(const struct pan_kmod_dev *dev,
     * priority as medium if the param doesn't exist. */
    uint64_t prios =
       panfrost_query_raw(fd, DRM_PANFROST_PARAM_ALLOWED_JM_CTX_PRIORITIES,
-                         false, PANFROST_JM_CTX_PRIORITY_MEDIUM);
+                         false, BITFIELD_BIT(PANFROST_JM_CTX_PRIORITY_MEDIUM));
 
-   if (prios & PANFROST_JM_CTX_PRIORITY_LOW)
+   if (prios & BITFIELD_BIT(PANFROST_JM_CTX_PRIORITY_LOW))
       props->allowed_group_priorities_mask |= PAN_KMOD_GROUP_ALLOW_PRIORITY_LOW;
-   if (prios & PANFROST_JM_CTX_PRIORITY_MEDIUM)
+   if (prios & BITFIELD_BIT(PANFROST_JM_CTX_PRIORITY_MEDIUM))
       props->allowed_group_priorities_mask |=
          PAN_KMOD_GROUP_ALLOW_PRIORITY_MEDIUM;
-   if (prios & PANFROST_JM_CTX_PRIORITY_HIGH)
+   if (prios & BITFIELD_BIT(PANFROST_JM_CTX_PRIORITY_HIGH))
       props->allowed_group_priorities_mask |=
          PAN_KMOD_GROUP_ALLOW_PRIORITY_HIGH;
 }

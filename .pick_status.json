@@ -164,7 +164,7 @@
         "description": "pan/kmod: fix priority query logic",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f04dbf0bc0bf34818c7cdb1852154b396c81de99",
         "notes": null
