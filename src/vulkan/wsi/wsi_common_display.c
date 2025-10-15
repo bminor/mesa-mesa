@@ -3077,6 +3077,15 @@ wsi_display_surface_create_swapchain(
       }
    }
 
+   /* For a non-default colorspace, make sure that proper setup also works if
+    * a client app does not explicitly call vkSetHdrMetadataEXT(), but only
+    * selects a HDR colorspace. We assign the EDID provided metadata here, so
+    * the 1st atomic commit will assign colorspace and HDR metadata props to
+    * the connector to enable HDR or Wide color gamut modes.
+    */
+   if (create_info->imageColorSpace != VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+      wsi_display_set_hdr_metadata(&chain->base, &chain->hdr_metadata);
+
    *swapchain_out = &chain->base;
 
    return VK_SUCCESS;
