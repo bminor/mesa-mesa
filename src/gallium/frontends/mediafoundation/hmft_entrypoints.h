@@ -618,6 +618,8 @@ class __declspec( uuid( HMFT_GUID ) ) CDX12EncHMFT : CMFD3DManager,
                                                          pipe_resource *pPipeResourceQPMapStats,
                                                          pipe_resource *pPipeResourceRCBitAllocMapStats,
                                                          pipe_resource *pPipeResourceSATDMapStats,
+                                                         ComPtr<ID3D12Fence> &pResolveStatsCompletionFence,
+                                                         UINT64 ResolveStatsCompletionFenceValue,
                                                          ID3D12CommandQueue *pSyncObjectQueue );
    HRESULT UpdateAvailableInputType();
    HRESULT InternalCheckInputType( IMFMediaType *pType );

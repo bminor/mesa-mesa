@@ -36,6 +36,7 @@ typedef class DX12EncodeContext
    void *pAsyncCookie = nullptr;
    reference_frames_tracker_dpb_async_token *pAsyncDPBToken = nullptr;
    struct pipe_fence_handle *pAsyncFence = NULL;
+   ComPtr<ID3D12Fence> spAsyncFence;
    std::vector<struct pipe_resource *> pOutputBitRes;
    std::vector<struct pipe_fence_handle *> pSliceFences;
    struct pipe_fence_handle * pLastSliceFence;
