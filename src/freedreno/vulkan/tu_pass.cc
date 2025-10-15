@@ -425,7 +425,8 @@ tu_render_pass_patch_input_gmem(struct tu_render_pass *pass)
             written[a] = true;
             subpass->feedback_invalidate = true;
          }
-         subpass->input_attachments[j].patch_input_gmem = written[a];
+         subpass->input_attachments[j].patch_input_gmem =
+            written[a] && pass->attachments[a].gmem;
       }
 
       for (unsigned j = 0; j < subpass->color_count; j++) {
