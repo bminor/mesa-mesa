@@ -43,9 +43,6 @@ int verbose = 0;
 static void
 disassemble(const char *filename)
 {
-   FILE *fp = fopen(filename, "rb");
-   assert(fp);
-
    size_t filesize = 0;
    uint32_t *code = (uint32_t *)os_read_file(filename, &filesize);
    if (!code) {
