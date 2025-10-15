@@ -6813,9 +6813,21 @@ radv_get_ia_multi_vgt_param(struct radv_cmd_buffer *cmd_buffer, bool instanced_d
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radeon_info *gpu_info = &pdev->info;
    const unsigned max_primgroup_in_wave = 2;
-   /* SWITCH_ON_EOP(0) is always preferable. */
+
+   /* WD (work distributor) can launch work on IA0 and IA1 (input assemblers).
+    * By default, it distributes each primitive group to a different IA.
+    * When set, it only switches IA at the end of a draw packet,
+    * reducing primitive throughput by 50%. WD_SWITCH_ON_EOP(0) is always preferred.
+    */
    bool wd_switch_on_eop = false;
+
+   /* Each IA (input assembler) can launch work two SE (shader engine).
+    * By default, they distribute each primitive group to a different SE.
+    * When set, they only switch SE at the end of a draw packet,
+    * reducing primitive throughput by another 50%. SWITCH_ON_EOP(0) is always preferred.
+    */
    bool ia_switch_on_eop = false;
+
    bool ia_switch_on_eoi = false;
    bool partial_vs_wave = false;
    bool partial_es_wave = cmd_buffer->state.ia_multi_vgt_param.partial_es_wave;
