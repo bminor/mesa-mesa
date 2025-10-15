@@ -595,8 +595,6 @@ radv_patch_image_from_extra_info(struct radv_device *device, struct radv_image *
          image->planes[plane].surface.flags |= RADEON_SURF_SCANOUT;
          if (instance->debug_flags & RADV_DEBUG_NO_DISPLAY_DCC)
             image->planes[plane].surface.flags |= RADEON_SURF_DISABLE_DCC;
-
-         image_info->surf_index = NULL;
       }
 
       if (create_info->prime_blit_src && !pdev->info.sdma_supports_compression) {
