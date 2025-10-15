@@ -2259,20 +2259,16 @@ static void si_draw(struct pipe_context *ctx,
          sctx->force_trivial_vs_inputs = true;
 
          /* Update shaders to disable VS input lowering. */
-         if (sctx->uses_nontrivial_vs_inputs) {
+         if (sctx->uses_nontrivial_vs_inputs)
             si_vs_key_update_inputs(sctx);
-            sctx->dirty_shaders_mask |= BITFIELD_BIT(MESA_SHADER_VERTEX);
-         }
       }
    } else {
       if (sctx->force_trivial_vs_inputs) {
          sctx->force_trivial_vs_inputs = false;
 
          /* Update shaders to possibly enable VS input lowering. */
-         if (sctx->uses_nontrivial_vs_inputs) {
+         if (sctx->uses_nontrivial_vs_inputs)
             si_vs_key_update_inputs(sctx);
-            sctx->dirty_shaders_mask |= BITFIELD_BIT(MESA_SHADER_VERTEX);
-         }
       }
    }
 

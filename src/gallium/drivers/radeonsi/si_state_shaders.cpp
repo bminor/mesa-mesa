@@ -2426,6 +2426,8 @@ void si_vs_key_update_inputs(struct si_context *sctx)
     */
    if (uses_nontrivial_vs_inputs && sctx->force_trivial_vs_inputs)
       si_clear_vs_key_inputs(key);
+
+   sctx->dirty_shaders_mask |= BITFIELD_BIT(MESA_SHADER_VERTEX);
 }
 
 static void si_get_vs_key_inputs(struct si_context *sctx, union si_shader_key *key)
