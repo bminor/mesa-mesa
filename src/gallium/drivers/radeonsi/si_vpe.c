@@ -1622,7 +1622,6 @@ si_vpe_create_processor(struct pipe_context *context, const struct pipe_video_co
           SIVPE_ERR("Can't allocated emb_buf buffers.\n");
           goto fail;
       }
-      si_vid_clear_buffer(context, &vpeproc->emb_buffers[i]);
    }
 
    /* Create VPE parameters structure */
