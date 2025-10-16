@@ -2065,3 +2065,104 @@ ir3_is_subreg_move(struct ir3_instruction *instr)
 
    return IR3_SUBREG_MOVE_NONE;
 }
+
+inline unsigned
+ir3_cat2_absneg(opc_t opc)
+{
+   switch (opc) {
+   case OPC_ADD_F:
+   case OPC_MIN_F:
+   case OPC_MAX_F:
+   case OPC_MUL_F:
+   case OPC_SIGN_F:
+   case OPC_CMPS_F:
+   case OPC_ABSNEG_F:
+   case OPC_CMPV_F:
+   case OPC_FLOOR_F:
+   case OPC_CEIL_F:
+   case OPC_RNDNE_F:
+   case OPC_RNDAZ_F:
+   case OPC_TRUNC_F:
+   case OPC_BARY_F:
+      return IR3_REG_FABS | IR3_REG_FNEG;
+
+   case OPC_ADD_U:
+   case OPC_ADD_S:
+   case OPC_SUB_U:
+   case OPC_SUB_S:
+   case OPC_CMPS_U:
+   case OPC_CMPS_S:
+   case OPC_MIN_U:
+   case OPC_MIN_S:
+   case OPC_MAX_U:
+   case OPC_MAX_S:
+   case OPC_CMPV_U:
+   case OPC_CMPV_S:
+   case OPC_MUL_U24:
+   case OPC_MUL_S24:
+   case OPC_MULL_U:
+   case OPC_CLZ_S:
+      return 0;
+
+   case OPC_ABSNEG_S:
+      return IR3_REG_SABS | IR3_REG_SNEG;
+
+   case OPC_AND_B:
+   case OPC_OR_B:
+   case OPC_NOT_B:
+   case OPC_XOR_B:
+   case OPC_BFREV_B:
+   case OPC_CLZ_B:
+   case OPC_SHL_B:
+   case OPC_SHR_B:
+   case OPC_ASHR_B:
+   case OPC_MGEN_B:
+   case OPC_GETBIT_B:
+   case OPC_CBITS_B:
+      return IR3_REG_BNOT;
+
+   default:
+      return 0;
+   }
+}
+
+/* map cat3 instructions to valid abs/neg flags: */
+inline unsigned
+ir3_cat3_absneg(opc_t opc, unsigned src_n)
+{
+   switch (opc) {
+   case OPC_MAD_F16:
+   case OPC_MAD_F32:
+   case OPC_SEL_F16:
+   case OPC_SEL_F32:
+      return IR3_REG_FNEG;
+
+   case OPC_SAD_S16:
+   case OPC_SAD_S32:
+      return src_n == 1 ? IR3_REG_SNEG : 0;
+
+   case OPC_MAD_U16:
+   case OPC_MADSH_U16:
+   case OPC_MAD_S16:
+   case OPC_MADSH_M16:
+   case OPC_MAD_U24:
+   case OPC_MAD_S24:
+   case OPC_SEL_S16:
+   case OPC_SEL_S32:
+      /* neg *may* work on 3rd src.. */
+
+   case OPC_SEL_B16:
+   case OPC_SEL_B32:
+
+   case OPC_SHRM:
+   case OPC_SHLM:
+   case OPC_SHRG:
+   case OPC_SHLG:
+   case OPC_ANDG:
+   case OPC_WMM:
+   case OPC_WMM_ACCU:
+
+   default:
+      return 0;
+   }
+}
