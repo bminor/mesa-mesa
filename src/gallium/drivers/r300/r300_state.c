@@ -947,6 +947,32 @@ r300_set_framebuffer_state(struct pipe_context* pipe,
     util_framebuffer_init(pipe, state, r300->fb_cbufs, &r300->fb_zsbuf);
     util_copy_framebuffer_state(r300->fb_state.state, state);
 
+    /* DXTC blits require that blocks are 2x1 or 4x1 pixels, but
+     * pipe_surface_width sets the framebuffer width as if blocks were 1x1
+     * pixels. Override the width to correct that.
+     */
+    if (state->nr_cbufs == 1 && state->cbufs[0].texture &&
+        state->cbufs[0].format == PIPE_FORMAT_R8G8B8A8_UNORM &&
+        util_format_is_compressed(state->cbufs[0].texture->format)) {
+        struct pipe_framebuffer_state *fb =
+            (struct pipe_framebuffer_state*)r300->fb_state.state;
+        const struct util_format_description *desc =
+            util_format_description(state->cbufs[0].texture->format);
+        unsigned width = u_minify(state->cbufs[0].texture->width0,
+                                  state->cbufs[0].level);
+
+        assert(desc->block.width == 4 && desc->block.height == 4);
+
+        /* Each 64-bit DXT block is 2x1 pixels, and each 128-bit DXT
+         * block is 4x1 pixels when blitting.
+         */
+        width = align(width, 4); /* align to the DXT block width. */
+        if (desc->block.bits == 64)
+           width = DIV_ROUND_UP(width, 2);
+
+        fb->width = width;
+    }
+
     /* Remove trailing NULL colorbuffers. */
     while (current_state->nr_cbufs && !current_state->cbufs[current_state->nr_cbufs-1].texture)
         current_state->nr_cbufs--;
