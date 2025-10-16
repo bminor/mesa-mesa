@@ -1284,10 +1284,12 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
 
             if( !bHasEncodingError )
             {
+               HMFT_ETW_EVENT_START( "GPUGetFrameFeedback", pThis );
                pThis->m_pPipeVideoCodec->get_feedback( pThis->m_pPipeVideoCodec,
                                                        pDX12EncodeContext->pAsyncCookie,
                                                        &encoded_bitstream_bytes,
                                                        NULL );
+               HMFT_ETW_EVENT_STOP( "GPUGetFrameFeedback", pThis );
             }
             delete pDX12EncodeContext;
             dwReceivedInput++;
@@ -1298,6 +1300,8 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
       std::lock_guard<std::mutex> lock( pThis->m_lock );
       while( !bHasEncodingError && pThis->m_EncodingQueue.try_pop( pDX12EncodeContext ) )
       {
+         HMFT_ETW_EVENT_START( "TimeToProcessOutput", pThis );
+         HMFT_ETW_EVENT_START( "TimeToEmitMFSampleOutput", pThis );
          pipe_enc_feedback_metadata metadata = {};
          unsigned int encoded_bitstream_bytes = 0u;
          std::vector<ComPtr<IMFSample>> spOutputSamples;
@@ -1312,11 +1316,13 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
          }
          spOutputSamples.resize( num_output_samples_emitted );
          spMemoryBuffers.resize( num_output_samples_emitted );
+         HMFT_ETW_EVENT_START( "CreateOutputSamples", pThis );
          for ( unsigned int sample_idx = 0; sample_idx < num_output_samples_emitted; sample_idx++ )
          {
             MFCreateSample( &spOutputSamples[sample_idx] );
             MFCreateMemoryBuffer( pThis->m_uiMaxOutputBitstreamSize, &spMemoryBuffers[sample_idx] );
          }
+         HMFT_ETW_EVENT_STOP( "CreateOutputSamples", pThis );
 
          {
             std::lock_guard<std::mutex> lock( pThis->m_encoderLock );
@@ -1388,12 +1394,15 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                   
                   assert( pDX12EncodeContext->pSliceFences[slice_idx] );
 
+                  HMFT_ETW_EVENT_START( "GPUIndividualSliceCompletionWait", pThis );
                   bool fenceWaitResult = pThis->m_pPipeVideoCodec->fence_wait( pThis->m_pPipeVideoCodec,
                                                                                pDX12EncodeContext->pSliceFences[slice_idx],
                                                                                OS_TIMEOUT_INFINITE ) != 0;
+                  HMFT_ETW_EVENT_STOP( "GPUIndividualSliceCompletionWait", pThis );
                   assert( fenceWaitResult );
                   if( fenceWaitResult )
                   {
+                     HMFT_ETW_EVENT_START( "GPUIndividualSliceStatsRead", pThis );
                      unsigned codec_unit_metadata_count = 0u;
                      pThis->m_pPipeVideoCodec->get_slice_bitstream_data( pThis->m_pPipeVideoCodec,
                                                                          pDX12EncodeContext->pAsyncCookie,
@@ -1408,10 +1417,13 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                                                                          slice_idx,
                                                                          codec_unit_metadata.data(),
                                                                          &codec_unit_metadata_count );
+
+                     HMFT_ETW_EVENT_STOP( "GPUIndividualSliceStatsRead", pThis );
+
                      //
                      // Copy all the NALs produced in this slice and add a new buffer to the MFSample
                      //
-
+                     HMFT_ETW_EVENT_START( "GPUIndividualSliceBitstreamRead", pThis );
                      struct pipe_box box = { 0 };
                      box.width = 0;
                      for( auto &nal : codec_unit_metadata )
@@ -1419,6 +1431,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                      box.height = pDX12EncodeContext->pOutputBitRes[slice_idx]->height0;
                      box.depth = pDX12EncodeContext->pOutputBitRes[slice_idx]->depth0;
                      struct pipe_transfer *transfer_data = NULL;
+                     HMFT_ETW_EVENT_START( "GPUIndividualSliceBufferMap", pThis );
                      uint8_t *pMappedBuffer =
                         (uint8_t *) pThis->m_pPipeContext->buffer_map( pThis->m_pPipeContext,
                                                                        pDX12EncodeContext->pOutputBitRes[slice_idx],
@@ -1426,6 +1439,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                                                                        PIPE_MAP_READ,
                                                                        &box,
                                                                        &transfer_data );
+                     HMFT_ETW_EVENT_STOP( "GPUIndividualSliceBufferMap", pThis );
                      assert( pMappedBuffer );
                      if( pMappedBuffer )
                      {
@@ -1441,9 +1455,11 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                                    static_cast<size_t>( nal.size ) );
                            output_buffer_offset += nal.size;
                         }
+                        HMFT_ETW_EVENT_START( "GPUIndividualSliceBufferUnmap", pThis );
                         pipe_buffer_unmap( pThis->m_pPipeContext, transfer_data );
-                        
+                        HMFT_ETW_EVENT_STOP( "GPUIndividualSliceBufferUnmap", pThis );
                      }
+                     HMFT_ETW_EVENT_STOP( "GPUIndividualSliceBitstreamRead", pThis );
                   }
                   else
                   {
@@ -1483,6 +1499,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                            pThis->m_OutputQueue.push( spOutputSamples[cur_output_sample_emitted_idx].Detach() );
                            pThis->m_dwHaveOutputCount++;
                         }
+                        HMFT_ETW_EVENT_STOP( "TimeToEmitMFSampleOutput", pThis );
                      }
                   }
                }
@@ -1508,20 +1525,26 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
             assert( pDX12EncodeContext->pAsyncFence );   // NULL returned pDX12EncodeContext->pAsyncFence indicates encode error
             if( pDX12EncodeContext->pAsyncFence )
             {
+               HMFT_ETW_EVENT_START( "GPUFrameResolveCompletionWait", pThis );
                int wait_res = pThis->m_pPipeVideoCodec->fence_wait( pThis->m_pPipeVideoCodec,
                                                                     pDX12EncodeContext->pAsyncFence,
                                                                     OS_TIMEOUT_INFINITE );
-               HRESULT hr = wait_res > 0 ? S_OK : E_FAIL;   // Based on p_video_codec interface
+               // pAsyncFence signals both encode completion and resolve completion
+               // as the resolve is queued right after the encode in the same command queue
+               HMFT_ETW_EVENT_STOP( "GPUFrameResolveCompletionWait", pThis );
 
+               HRESULT hr = wait_res > 0 ? S_OK : E_FAIL;   // Based on p_video_codec interface
                assert( SUCCEEDED( hr ) );
                if( SUCCEEDED( hr ) )
                {
                   // Now do get_feedback, fence is already signaled so the call won't block on the CPU
                   // and the output metadata will be readable
+                  HMFT_ETW_EVENT_START( "GPUGetFrameFeedback", pThis );
                   pThis->m_pPipeVideoCodec->get_feedback( pThis->m_pPipeVideoCodec,
                                                           pDX12EncodeContext->pAsyncCookie,
                                                           &encoded_bitstream_bytes,
                                                           &metadata );
+                  HMFT_ETW_EVENT_STOP( "GPUGetFrameFeedback", pThis );
 
 #if ( MFT_CODEC_H264ENC || MFT_CODEC_H265ENC )
                   if( pThis->m_pPipeVideoCodec->two_pass.enable &&
@@ -1561,13 +1584,19 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                      vpblit_params.dst_region.x1 = cur_pic_dpb_entry.downscaled_buffer->width;
                      vpblit_params.dst_region.y1 = cur_pic_dpb_entry.downscaled_buffer->height;
 
+                     HMFT_ETW_EVENT_START( "TwoPassReconPicDownscaleBeginFrame", pThis );
                      pThis->m_pPipeVideoBlitter->begin_frame( pThis->m_pPipeVideoBlitter,
                                                               cur_pic_dpb_entry.downscaled_buffer,
                                                               &vpblit_params.base );
+                     HMFT_ETW_EVENT_STOP( "TwoPassReconPicDownscaleBeginFrame", pThis );
 
-                     if( pThis->m_pPipeVideoBlitter->process_frame( pThis->m_pPipeVideoBlitter,
+                     HMFT_ETW_EVENT_START( "TwoPassReconPicDownscaleProcessFrame", pThis );
+                     auto proc_frame_result = pThis->m_pPipeVideoBlitter->process_frame( pThis->m_pPipeVideoBlitter,
                                                                     cur_pic_dpb_entry.buffer,
-                                                                    &vpblit_params ) != 0 )
+                                                                    &vpblit_params );
+                     
+                     HMFT_ETW_EVENT_STOP( "TwoPassReconPicDownscaleProcessFrame", pThis );
+                     if( proc_frame_result != 0 )
                      {
                         assert( false );
                         pThis->QueueEvent( MEError, GUID_NULL, E_FAIL, nullptr );
@@ -1576,9 +1605,12 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                         break;   // break out of while try_pop
                      }
 
-                     if( pThis->m_pPipeVideoBlitter->end_frame( pThis->m_pPipeVideoBlitter,
+                     HMFT_ETW_EVENT_START( "TwoPassReconPicDownscaleEndFrame", pThis );
+                     auto end_frame_result = pThis->m_pPipeVideoBlitter->end_frame( pThis->m_pPipeVideoBlitter,
                                                                 cur_pic_dpb_entry.downscaled_buffer,
-                                                                &vpblit_params.base ) != 0 )
+                                                                &vpblit_params.base );
+                     HMFT_ETW_EVENT_STOP( "TwoPassReconPicDownscaleEndFrame", pThis );
+                     if( end_frame_result != 0 )
                      {
                         assert( false );
                         pThis->QueueEvent( MEError, GUID_NULL, E_FAIL, nullptr );
@@ -1587,7 +1619,9 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                         break;   // break out of while try_pop
                      }
 
+                     HMFT_ETW_EVENT_START( "TwoPassReconPicDownscaleFlush", pThis );
                      pThis->m_pPipeVideoBlitter->flush( pThis->m_pPipeVideoBlitter );
+                     HMFT_ETW_EVENT_STOP( "TwoPassReconPicDownscaleFlush", pThis );
 
                      assert( dst_surface_fence );   // Driver must have returned the completion fence
                      // Wait for downscaling completion before encode can proceed
@@ -1597,9 +1631,11 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                      // Instead of waiting on the CPU here for the fence, can probably
                      // queue the fence wait into the next frame's encode GPU fence wait
 
+                     HMFT_ETW_EVENT_START( "TwoPassReconPicDownscaleFenceWait", pThis );
                      ASSERTED bool finished =
                         pThis->m_pPipeVideoCodec->fence_wait( pThis->m_pPipeVideoCodec, dst_surface_fence, OS_TIMEOUT_INFINITE ) !=
                         0;
+                     HMFT_ETW_EVENT_STOP( "TwoPassReconPicDownscaleFenceWait", pThis );
                      assert( finished );
                      pThis->m_pPipeVideoCodec->destroy_fence( pThis->m_pPipeVideoCodec, dst_surface_fence );
                   }
@@ -1654,17 +1690,20 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
             }
 
             // Readback full encoded frame bitstream from GPU memory onto CPU buffer
+            HMFT_ETW_EVENT_START( "GPUFrameEncodeBitstreamRead", pThis );
             struct pipe_box box = { 0 };
             box.width = encoded_bitstream_bytes;
             box.height = pDX12EncodeContext->pOutputBitRes[0]->height0;
             box.depth = pDX12EncodeContext->pOutputBitRes[0]->depth0;
             struct pipe_transfer *transfer_data;
+            HMFT_ETW_EVENT_START( "GPUFrameEncodeGPUBufferMap", pThis );
             uint8_t *pMappedBuffer = (uint8_t *) pThis->m_pPipeContext->buffer_map( pThis->m_pPipeContext,
                                                                                     pDX12EncodeContext->pOutputBitRes[0],
                                                                                     0,
                                                                                     PIPE_MAP_READ,
                                                                                     &box,
                                                                                     &transfer_data );
+            HMFT_ETW_EVENT_STOP( "GPUFrameEncodeGPUBufferMap", pThis );
             assert( pMappedBuffer );
             if( pMappedBuffer )
             {
@@ -1680,9 +1719,12 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                }
                spMemoryBuffers[0]->Unlock();
                spMemoryBuffers[0]->SetCurrentLength( static_cast<DWORD>( copied_bytes ) );
+               HMFT_ETW_EVENT_START( "GPUFrameEncodeGPUBufferUnmap", pThis );
                pipe_buffer_unmap( pThis->m_pPipeContext, transfer_data );
+               HMFT_ETW_EVENT_STOP( "GPUFrameEncodeGPUBufferUnmap", pThis );
                spOutputSamples[0]->AddBuffer( spMemoryBuffers[0].Get() );
             }
+            HMFT_ETW_EVENT_STOP( "GPUFrameEncodeBitstreamRead", pThis );
 
             // Issue a new METransformHaveOutput event for the full frame
             // as we only output one MFSample per frame
@@ -1697,6 +1739,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                   pThis->m_dwHaveOutputCount++;
                }
             }
+            HMFT_ETW_EVENT_STOP( "TimeToEmitMFSampleOutput", pThis );
          }
 
          // Destroy fence
@@ -1704,6 +1747,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
          pDX12EncodeContext->pAsyncFence = nullptr;
          pDX12EncodeContext->spAsyncFence.Reset();
 
+         HMFT_ETW_EVENT_STOP( "TimeToProcessOutput", pThis );
          delete pDX12EncodeContext;
       }   // while try_pop
       if( pThis->m_bDraining )
@@ -2329,6 +2373,7 @@ CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD 
 
       if( pDX12EncodeContext->sliceNotificationMode == D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM_NOTIFICATION_MODE_SUBREGIONS )
       {
+         HMFT_ETW_EVENT_START( "PipeSubmitFrameSliced", this );
          m_pPipeVideoCodec->encode_bitstream_sliced( m_pPipeVideoCodec,
                                                      pDX12EncodeContext->pPipeVideoBuffer,
                                                      static_cast<unsigned>( pDX12EncodeContext->pOutputBitRes.size() ),
@@ -2336,13 +2381,16 @@ CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD 
                                                      pDX12EncodeContext->pSliceFences.data(),   // driver outputs the fences
                                                      &pDX12EncodeContext->pLastSliceFence, // driver outputs the last slice fence
                                                      &pDX12EncodeContext->pAsyncCookie );
+         HMFT_ETW_EVENT_STOP( "PipeSubmitFrameSliced", this );
       }
       else
       {
+         HMFT_ETW_EVENT_START( "PipeSubmitFullFrame", this );
          m_pPipeVideoCodec->encode_bitstream( m_pPipeVideoCodec,
                                               pDX12EncodeContext->pPipeVideoBuffer,
                                               pDX12EncodeContext->pOutputBitRes[0],
                                               &pDX12EncodeContext->pAsyncCookie );
+         HMFT_ETW_EVENT_STOP( "PipeSubmitFullFrame", this );
       }
 
       HMFT_ETW_EVENT_STOP( "PipeSubmitFrame", this );
