@@ -1036,6 +1036,7 @@ static void radeon_vcn_enc_av1_get_param(struct radeon_encoder *enc,
    enc_pic->force_integer_mv = pic->force_integer_mv;
    enc_pic->disable_screen_content_tools = !pic->allow_screen_content_tools;
    enc_pic->is_obu_frame = pic->enable_frame_obu;
+   enc_pic->av1_enc_params.cur_order_hint = pic->order_hint;
 
    enc_pic->enc_params.reference_picture_index =
       pic->ref_list0[0] == PIPE_H2645_LIST_REF_INVALID_ENTRY ?

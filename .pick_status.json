@@ -2734,7 +2734,7 @@
         "description": "radeonsi/vcn: Fix AV1 bidir compound encode with order_hint disabled",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
