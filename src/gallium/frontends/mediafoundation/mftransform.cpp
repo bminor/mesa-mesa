@@ -1456,10 +1456,17 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                   HMFT_ETW_EVENT_START( "GPUIndividualSliceCompletionWait", pThis );
                   bool result = pThis->m_pPipeVideoCodec->fence_wait( pThis->m_pPipeVideoCodec, pFence, timeout ) != 0;
                   HMFT_ETW_EVENT_STOP( "GPUIndividualSliceCompletionWait", pThis );
-                  assert( result );
                   if( !result )
                   {
-                     MFE_ERROR( "[dx12 hmft 0x%p] Fence wait failed", pThis );
+                     if( timeout == OS_TIMEOUT_INFINITE )
+                     {
+                        assert(false);
+                        MFE_ERROR( "[dx12 hmft 0x%p] Fence wait failed", pThis );
+                     }
+                     else
+                     {
+                        MFE_INFO( "[dx12 hmft 0x%p] Fence wait timed out (timeout=%llu)", pThis, timeout );
+                     }
                   }
                   return result;
                };
@@ -1504,12 +1511,52 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                   MFCreateMemoryBuffer( pThis->m_uiMaxOutputBitstreamSize, &spMemoryBuffer );
                   
                   spMemoryBuffer->Lock( &lpBuffer, NULL, NULL );
+
                   for( uint32_t slice_idx = 0; slice_idx < num_slice_buffers; slice_idx++ )
                   {
-                     if( WaitForFence( pDX12EncodeContext->pSliceFences[slice_idx], OS_TIMEOUT_INFINITE ) )
+                     // Wait for the current slice fence to complete, using pLastSliceFence as a short-circuit.
+                     // pLastSliceFence signals when ALL slices are complete, so once it's signaled, we can
+                     // stop polling individual slice fences and assume those are all done.
+                     // Note: In auto slice mode, some slice fences may never signal if fewer slices were
+                     // actually generated than the max allocated buffers (num_slice_buffers is max number of supported slices in auto slice mode).
+                     // pLastSliceFence acts as a "cancel token" to exit the wait loop when all actual slices are ready to process.
+                     uint32_t slice_fence_wait_iteration = 0u;
+                     constexpr uint32_t slice_fence_wait_max_iterations = 1000u; // 1 second max wait (1ms timeout per iteration below)
+                     while(slice_fence_wait_iteration++ < slice_fence_wait_max_iterations &&
+                           !WaitForFence( pDX12EncodeContext->pSliceFences[slice_idx], 1000000ULL /* 1ms timeout */ ) &&   
+                           !WaitForFence( pDX12EncodeContext->pLastSliceFence, 0 /* No wait, just poll */ ))
+                     {
+                        // Keep polling with 1ms timeout until either:
+                        // 1. slice_fence_wait_iteration reaches max iterations (timeout), OR
+                        // 2. The current slice fence signals, OR
+                        // 3. pLastSliceFence signals (all actual slices are ready to process - short-circuit)
+                     }
+
+                     if (slice_fence_wait_iteration >= slice_fence_wait_max_iterations) {
+                        assert(false);
+                        MFE_ERROR( "[dx12 hmft 0x%p] Timeout waiting for slice %u fence OR pLastSliceFence to complete", pThis, slice_idx );
+                        break;
+                     }
+
+                     // Process this slice ONLY if its individual fence is signaled.
+                     // If pLastSliceFence signaled but this slice fence didn't, it means this pSliceFences slot
+                     // was never used (e.g., in auto mode with fewer slices than max buffers), so break.
+                     if( WaitForFence( pDX12EncodeContext->pSliceFences[slice_idx], 0 /* No wait, just check */ ) )
                      {
                         pThis->ProcessSliceBitstreamData( pDX12EncodeContext, slice_idx, lpBuffer,
                                                           mfsample_codec_unit_metadata, output_buffer_offset );
+                     }
+                     else if( WaitForFence( pDX12EncodeContext->pLastSliceFence, 0 /* No wait, just check */ ) )
+                     {
+                        // pLastSliceFence signaled but this slice fence didn't - all actual slices already processed
+                        break;
+                     }
+                     else
+                     {
+                        // Unexpected: neither fence signaled after exiting wait loop - this should not happen
+                        assert( false );
+                        MFE_ERROR( "[dx12 hmft 0x%p] Slice fence wait loop exited but neither fence signaled for slice %u", pThis, slice_idx );
+                        break;
                      }
                   }
                   
