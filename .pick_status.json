@@ -1,0 +1,412 @@
+[
+    {
+        "sha": "3b2f7ed918a5ad78c1d3756e9823a1616c1f21d7",
+        "description": "ci,marge_queue: read token from file by default",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "77fb8fb062457dad73bd763e97bf757b6cd04080",
+        "description": "anv: fix image-to-image copies of TileW images",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "75604ff945a8ee60267bc974350ab6b1638f2ceb",
+        "description": "ir3: allow (neg) on sel.b on a6xx gen4+",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "eaef6d048b4ef3f3ed0e0b2e0e32315f18162856",
+        "description": "ir3: add has_sel_b_fneg compiler flag",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c44f8fe7f7fec1929a0e3620f58c70d9f5828f74",
+        "description": "ir3: move ir3_catN_absneg to ir3.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "09ff0fa0058031e0088396b5d039b6aab8a146c5",
+        "description": "frontends/va: Move remainig processing functions to postproc.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7a5270d4df2b7223b928739b6cedbe6635a40b85",
+        "description": "frontends/va: Move decode functions to separate file",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ba0a0591293a8330ac626c6eae52bf3925a039e1",
+        "description": "frontends/va: Move encode functions to separate file",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d9d0001b7d63d8c0ccb9b3b1ac7c8f8affc7db67",
+        "description": "panvk: fix for clearing render targets with 8+ layers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a2e4280dbe3ffe9d1128c22bbc2c2bde5af82fb1",
+        "description": "r600/sfn: drop unused code",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0f7dd6636cc6935bd196b1d12e85df382b5c6cf6",
+        "description": "r600/sfn: rework 64 bit to vec2 32 bit lowering",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8c281aabcdd2e15e31fa6c789b474ed99e6a4dd6",
+        "description": "hasvk: don't report custom sample locations for sample count 1",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "52c6f404ed02ff62b89965566753ee28307443a9",
+        "description": "panvk: advertise support for AFBC WSI behind a debug flag",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "db2f02dcc2c2a78aafee08cec9d6fd6e68d255f0",
+        "description": "panvk: allow TILING_DRM_MODIFIER_EXT with AFBC",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e21c2a8316973cbee2c2b5823ab54d2ca3d614a8",
+        "description": "pan/mod: allow non-tiled modifiers to be optimal",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "11fe21d6591f7a56fd656debb4432c5a7d8ad295",
+        "description": "panvk: change AFBC subresource layout pitches to byte sizes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d6eb5b40393205bebeb6ebc78022434bd08dd57d",
+        "description": "panvk: explicit fallback to linear for legacy scanout images",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0551a40c361c0593d9feb7a081a11417486e8d29",
+        "description": "panvk: only add storage usage without AFBC",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8c332b1cadd93c2c4c3d3be0c7978dcc1b18e4e4",
+        "description": "panvk: prevent aliased images from using AFBC",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "39ac7df612b6a5b9d0477d600ce5134502bd00b9",
+        "description": "panfrost,panvk: distinguish fbd bounding box from framebuffer size",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bde9156dcf47151a4977117193da5a99cf8edfb4",
+        "description": "panfrost,panvk: rename pan_fb_info::extent to draw_extent",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b722e17203f837cefe0333af89cf9d54e16a99e9",
+        "description": "brw: get rid of GET_BUFFER_SIZE opcode",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b101d100fb891801a96c6258204d0112292144dc",
+        "description": "anv: reenable KHR_maintenance8 on Xe2+",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bcffd839aae6b95f1e04543563976359b0be327f",
+        "description": "brw: new Xe2 sampler opcodes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "efcba73b49aa94134e26b6072e20cae668015d23",
+        "description": "brw: switch to new sampler payload description scheme",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "232697a0a3b319f6526f9420110c5ab3d3fa301c",
+        "description": "brw: port some NIR lowering to the sampler payload description",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7c77c4768ac9382676c7b785fe59f68cc1197bd9",
+        "description": "brw: add a new sampler payload parameter description",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "28e73a62399f5010d4c4d67f2cae2e313c05dbfb",
+        "description": "docs: Update LAVA caching setup",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "fa74e939bfdc6a9edebac1e76bd88aef5700edf7",
+        "notes": null
+    },
+    {
+        "sha": "2baa3b8c06ab067ae78d4a924856d2d811975fec",
+        "description": "Revert \"wsi: Implements scaling controls for DRI3 presentation.\"",
+        "nominated": true,
+        "nomination_type": 3,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "a219308867e7cee0f3bef3f0ebc14d99c665882f",
+        "notes": null
+    },
+    {
+        "sha": "abcaa46f6c112b98158da60b330c0ebf009e53f4",
+        "description": "amd,radv,radeonsi: add ac_cmdbuf_flush_vgt_streamout()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "679332f9a98f0443b23ad3781b6a0ea948324424",
+        "description": "amd,radv,radeonsi: add ac_emit_cp_acquire_mem()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9ad7fb8569971214da55410ace8821e7d09963bc",
+        "description": "amd,radv,radeonsi: add ac_emit_cp_gfx_scratch()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9ff8e71b4ebcc087177bd2504d008f05b608ec1b",
+        "description": "amd,radv,radeonsi: add ac_emit_cp_tess_rings()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "47a64f5b6f650dc98e1f2cae11b956e5e8c6e555",
+        "description": "amd,radv,radeonsi: add ac_emit_cp_gfx11_ge_rings()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8f80a8502d75e6cdbea051b63e10da040054c916",
+        "description": "radv: use ac_emit_cp_pfp_sync_me() more",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "044bafb6aca7ebcec8c976f089058e147fd3a23b",
+        "description": "amd: add a predicate parameter to ac_emit_cp_pfp_sync_me()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "48b4a43e8f8c8af9265da815ee2224281cc967e8",
+        "description": "amd,radv,radeonsi: add ac_emit_cp_set_predication()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ad907efae281872b9d5d7566e9a79fee1be74e1d",
+        "description": "radv: use ac_emit_cond_exec() more",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "426d48d41e3abdc91dce2cdfb81abcf1e9146d1b",
+        "description": "radeonsi: use ac_emit_write_data_imm() more",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2341395f37ba3e87559ad097c8e4cc3fac496e31",
+        "description": "docs: reset new_features.txt",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e766ffccc6ad038e6db694a7e6c60a5f99f5092f",
+        "description": "Version: Bump to 26.0",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    }
+]
