@@ -30,7 +30,7 @@ radv_calculate_lds_size(const struct radv_shader_info *radv, const enum amd_gfx_
    if (radv->is_ngg)
       lds_size = radv->nir_shared_size;
    else if (gfx_level >= GFX9 && radv->stage == MESA_SHADER_GEOMETRY)
-      lds_size = radv->gs_ring_info.lds_size;
+      lds_size = radv->legacy_gs_info.lds_size;
    else if (radv->stage == MESA_SHADER_TESS_CTRL)
       lds_size = radv->tcs.lds_size; /* only used by stats */
    else

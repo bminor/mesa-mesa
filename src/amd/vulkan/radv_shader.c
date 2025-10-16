@@ -1627,14 +1627,14 @@ radv_precompute_registers_hw_gs(struct radv_device *device, struct radv_shader_b
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radv_shader_info *info = &binary->info;
 
-   info->regs.gs.vgt_esgs_ring_itemsize = info->gs_ring_info.esgs_itemsize;
+   info->regs.gs.vgt_esgs_ring_itemsize = info->legacy_gs_info.esgs_itemsize;
 
    info->regs.gs.vgt_gs_max_prims_per_subgroup =
-      S_028A94_MAX_PRIMS_PER_SUBGROUP(info->gs_ring_info.gs_inst_prims_in_subgroup);
+      S_028A94_MAX_PRIMS_PER_SUBGROUP(info->legacy_gs_info.gs_inst_prims_in_subgroup);
 
-   info->regs.vgt_gs_onchip_cntl = S_028A44_ES_VERTS_PER_SUBGRP(info->gs_ring_info.es_verts_per_subgroup) |
-                                   S_028A44_GS_PRIMS_PER_SUBGRP(info->gs_ring_info.gs_prims_per_subgroup) |
-                                   S_028A44_GS_INST_PRIMS_IN_SUBGRP(info->gs_ring_info.gs_inst_prims_in_subgroup);
+   info->regs.vgt_gs_onchip_cntl = S_028A44_ES_VERTS_PER_SUBGRP(info->legacy_gs_info.es_verts_per_subgroup) |
+                                   S_028A44_GS_PRIMS_PER_SUBGRP(info->legacy_gs_info.gs_prims_per_subgroup) |
+                                   S_028A44_GS_INST_PRIMS_IN_SUBGRP(info->legacy_gs_info.gs_inst_prims_in_subgroup);
 
    const uint32_t gs_max_out_vertices = info->gs.vertices_out;
    const uint8_t max_stream = info->gs.num_components_per_stream[3]   ? 3
@@ -2454,7 +2454,7 @@ radv_shader_combine_cfg_vs_gs(const struct radv_device *device, const struct rad
       if (gs->info.is_ngg) {
          lds_size = gs->info.ngg_info.lds_size;
       } else {
-         lds_size = gs->info.gs_ring_info.lds_size;
+         lds_size = gs->info.legacy_gs_info.lds_size;
       }
 
       rsrc2 |= S_00B22C_LDS_SIZE(ac_shader_encode_lds_size(lds_size, pdev->info.gfx_level, MESA_SHADER_VERTEX));
