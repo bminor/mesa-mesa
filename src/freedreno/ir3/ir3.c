@@ -1773,8 +1773,8 @@ ir3_valid_flags(struct ir3_instruction *instr, unsigned n, unsigned flags)
       }
       break;
    case 3:
-      valid_flags =
-         ir3_cat3_absneg(instr->opc, n) | IR3_REG_RELATIV | IR3_REG_SHARED;
+      valid_flags = ir3_cat3_absneg(compiler, instr->opc, n) | IR3_REG_RELATIV |
+                    IR3_REG_SHARED;
 
       switch (instr->opc) {
       case OPC_SHRM:
@@ -2128,7 +2128,7 @@ ir3_cat2_absneg(opc_t opc)
 
 /* map cat3 instructions to valid abs/neg flags: */
 inline unsigned
-ir3_cat3_absneg(opc_t opc, unsigned src_n)
+ir3_cat3_absneg(struct ir3_compiler *compiler, opc_t opc, unsigned src_n)
 {
    switch (opc) {
    case OPC_MAD_F16:
@@ -2136,6 +2136,10 @@ ir3_cat3_absneg(opc_t opc, unsigned src_n)
    case OPC_SEL_F16:
    case OPC_SEL_F32:
       return IR3_REG_FNEG;
+
+   case OPC_SEL_B16:
+   case OPC_SEL_B32:
+      return compiler->has_sel_b_fneg ? IR3_REG_FNEG : 0;
 
    case OPC_SAD_S16:
    case OPC_SAD_S32:
@@ -2150,9 +2154,6 @@ ir3_cat3_absneg(opc_t opc, unsigned src_n)
    case OPC_SEL_S16:
    case OPC_SEL_S32:
       /* neg *may* work on 3rd src.. */
-
-   case OPC_SEL_B16:
-   case OPC_SEL_B32:
 
    case OPC_SHRM:
    case OPC_SHLM:

@@ -1753,7 +1753,8 @@ ir3_cat2_int(opc_t opc)
 unsigned ir3_cat2_absneg(opc_t opc);
 
 /* map cat3 instructions to valid abs/neg flags: */
-unsigned ir3_cat3_absneg(opc_t opc, unsigned src_n);
+unsigned ir3_cat3_absneg(struct ir3_compiler *compiler, opc_t opc,
+                         unsigned src_n);
 
 /* Return the type (float, int, or uint) the op uses when converting from the
  * internal result of the op (which is assumed to be the same size as the
