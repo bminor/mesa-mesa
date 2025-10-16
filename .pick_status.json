@@ -1004,7 +1004,7 @@
         "description": "nvk: Really fix maxVariableDescriptorCount w/ iub",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ff7f785f09ce72bbc56a8fd1f879d09ab814c08e",
         "notes": null
