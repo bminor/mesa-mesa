@@ -244,6 +244,7 @@ else
   'nir_lower_bit_size.c',
   'nir_lower_ubo_vec4.c',
   'nir_lower_uniforms_to_ubo.c',
+  'nir_lower_workgroup_size.c',
   'nir_lower_sysvals_to_varyings.c',
   'nir_metadata.c',
   'nir_mod_analysis.c',

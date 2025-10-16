@@ -5117,6 +5117,8 @@ bool nir_split_struct_vars(nir_shader *shader, nir_variable_mode modes);
 bool nir_lower_returns_impl(nir_function_impl *impl);
 bool nir_lower_returns(nir_shader *shader);
 
+bool nir_lower_workgroup_size(nir_shader *shader, const uint32_t target_wg_size);
+
 nir_def *nir_inline_function_impl(nir_builder *b,
                                   const nir_function_impl *impl,
                                   nir_def **params,
