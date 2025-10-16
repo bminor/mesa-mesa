@@ -17,10 +17,8 @@
 #include "vk_log.h"
 
 static void
-radv_destroy_descriptor_pool(struct radv_device *device, const VkAllocationCallbacks *pAllocator,
-                             struct radv_descriptor_pool *pool)
+radv_destroy_descriptor_pool_entries(struct radv_device *device, struct radv_descriptor_pool *pool)
 {
-
    if (!pool->host_memory_base) {
       for (uint32_t i = 0; i < pool->entry_count; ++i) {
          radv_descriptor_set_destroy(device, pool, pool->entries[i].set, false);
@@ -31,6 +29,13 @@ radv_destroy_descriptor_pool(struct radv_device *device, const VkAllocationCallb
          vk_object_base_finish(&pool->sets[i]->header.base);
       }
    }
+}
+
+static void
+radv_destroy_descriptor_pool(struct radv_device *device, const VkAllocationCallbacks *pAllocator,
+                             struct radv_descriptor_pool *pool)
+{
+   radv_destroy_descriptor_pool_entries(device, pool);
 
    if (pool->bo)
       radv_bo_destroy(device, &pool->base, pool->bo);
@@ -223,19 +228,9 @@ radv_ResetDescriptorPool(VkDevice _device, VkDescriptorPool descriptorPool, VkDe
    VK_FROM_HANDLE(radv_device, device, _device);
    VK_FROM_HANDLE(radv_descriptor_pool, pool, descriptorPool);
 
-   if (!pool->host_memory_base) {
-      for (uint32_t i = 0; i < pool->entry_count; ++i) {
-         radv_descriptor_set_destroy(device, pool, pool->entries[i].set, false);
-      }
-   } else {
-      for (uint32_t i = 0; i < pool->entry_count; ++i) {
-         vk_descriptor_set_layout_unref(&device->vk, &pool->sets[i]->header.layout->vk);
-         vk_object_base_finish(&pool->sets[i]->header.base);
-      }
-   }
+   radv_destroy_descriptor_pool_entries(device, pool);
 
    pool->entry_count = 0;
-
    pool->current_offset = 0;
    pool->host_memory_ptr = pool->host_memory_base;
 
