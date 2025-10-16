@@ -115,7 +115,6 @@ struct radv_shader_info {
    unsigned nir_shared_size;
 
    struct {
-      uint8_t output_usage_mask[VARYING_SLOT_VAR31 + 1];
       bool needs_draw_id;
       bool needs_instance_id;
       bool as_es;
@@ -146,7 +145,6 @@ struct radv_shader_info {
       bool has_pipeline_stat_query;
    } gs;
    struct {
-      uint8_t output_usage_mask[VARYING_SLOT_VAR31 + 1];
       bool as_es;
       enum tess_primitive_mode _primitive_mode;
       enum gl_tess_spacing spacing;

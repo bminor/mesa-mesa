@@ -136,18 +136,10 @@ gather_intrinsic_store_output_info(const nir_shader *nir, const nir_intrinsic_in
 {
    const nir_io_semantics io_sem = nir_intrinsic_io_semantics(instr);
    const unsigned location = io_sem.location;
-   const unsigned num_slots = io_sem.num_slots;
    const unsigned component = nir_intrinsic_component(instr);
    const unsigned write_mask = nir_intrinsic_write_mask(instr);
-   uint8_t *output_usage_mask = NULL;
 
    switch (nir->info.stage) {
-   case MESA_SHADER_VERTEX:
-      output_usage_mask = info->vs.output_usage_mask;
-      break;
-   case MESA_SHADER_TESS_EVAL:
-      output_usage_mask = info->tes.output_usage_mask;
-      break;
    case MESA_SHADER_FRAGMENT:
       if (location >= FRAG_RESULT_DATA0) {
          const unsigned fs_semantic = location + io_sem.dual_source_blend_index;
@@ -159,12 +151,6 @@ gather_intrinsic_store_output_info(const nir_shader *nir, const nir_intrinsic_in
       break;
    default:
       break;
-   }
-
-   if (output_usage_mask) {
-      for (unsigned i = 0; i < num_slots; i++) {
-         output_usage_mask[location + i] |= ((write_mask >> (i * 4)) & 0xf) << component;
-      }
    }
 
    if (consider_force_vrs && location == VARYING_SLOT_POS) {
