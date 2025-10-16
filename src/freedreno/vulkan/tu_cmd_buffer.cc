@@ -1550,6 +1550,8 @@ tu6_emit_gmem_resolves(struct tu_cmd_buffer *cmd,
              */
             perf_debug(cmd->device,
                        "TODO: missing GMEM->GMEM resolve path\n");
+            if (CHIP >= A7XX)
+               tu_emit_event_write<CHIP>(cmd, cs, FD_CCU_CLEAN_BLIT_CACHE);
             tu_load_gmem_attachment<CHIP>(cmd, cs, resolve_group, a, false, true);
          }
       }
@@ -5582,6 +5584,19 @@ tu_emit_subpass_begin_gmem(struct tu_cmd_buffer *cmd, struct tu_resolve_group *r
       tu_cs_set_writeable(cs, true);
 
    tu_cond_exec_start(cs, CP_COND_EXEC_0_RENDER_MODE_GMEM);
+
+   /* This appears to be necessary when stores are followed by loads to the
+    * same memory in GMEM, to prevent the loads from starting before the
+    * stores have completed. See 
+    * dEQP-VK.pipeline.monolithic.multisample.multisampled_render_to_single_sampled.input_attachments.initialize.r8g8b8a8_unorm_r16g16b16a16_sfloat_r16g16b16a16_sint_d16_unorm.2x.ds_resolve_sample_zero.whole_framebuffer
+    * for a testcase.
+    *
+    * TODO: why is this not necessary between the end of one tile and the
+    * start of another?
+    */
+   if (subpass_idx != 0) {
+      tu_emit_event_write<CHIP>(cmd, cs, FD_CCU_CLEAN_BLIT_CACHE);
+   }
 
    /* Emit gmem loads that are first used in this subpass. */
    bool emitted_scissor = false;
