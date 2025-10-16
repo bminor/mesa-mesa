@@ -22,7 +22,7 @@ import gitlab
 from gitlab.base import RESTObjectList
 from gitlab.exceptions import GitlabAuthenticationError
 from gitlab.v4.objects import Project, ProjectMergeRequest
-from gitlab_common import read_token, pretty_duration
+from gitlab_common import get_token_from_default_dir, read_token, pretty_duration
 from rich.console import Console
 
 REFRESH_WAIT = 30
@@ -47,6 +47,7 @@ def parse_args() -> argparse.Namespace:
     parse.add_argument(
         "--token",
         metavar="token",
+        default=get_token_from_default_dir(),
         help="force GitLab token, otherwise it's read from ~/.config/gitlab-token",
     )
     return parse.parse_args()
