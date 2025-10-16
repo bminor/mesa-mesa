@@ -1127,6 +1127,7 @@ tu_CreateRenderPass2(VkDevice _device,
       if (!att->gmem) {
          att->clear_mask = 0;
          att->load = false;
+         att->load_stencil = false;
       }
    }
 
