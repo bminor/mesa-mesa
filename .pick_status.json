@@ -2954,7 +2954,7 @@
         "description": "radeonsi: propagate shader updates for merged shaders",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b1a34ac95dfb02ef5d309099627373486a50191e",
         "notes": null
