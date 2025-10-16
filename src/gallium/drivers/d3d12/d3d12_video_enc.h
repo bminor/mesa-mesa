@@ -546,6 +546,7 @@ struct EncodedBitstreamResolvedMetadata
 
    /* Pending fence data for this frame */
    d3d12_unique_fence m_fence;
+   d3d12_unique_fence m_LastSliceFence;
 };
 
 enum d3d12_video_encoder_driver_workarounds
@@ -580,7 +581,9 @@ struct d3d12_video_encoder
    size_t m_MaxMetadataBuffersCount = 0;
 
    ComPtr<ID3D12Fence> m_spFence;
+   ComPtr<ID3D12Fence> m_spLastSliceFence;
    uint64_t            m_fenceValue = 1u;
+   uint64_t            m_LastSliceFenceValue = 1u;
    bool                m_bPendingWorkNotFlushed = false;
 
    ComPtr<ID3D12VideoDevice3>            m_spD3D12VideoDevice;
@@ -588,6 +591,7 @@ struct d3d12_video_encoder
    ComPtr<ID3D12VideoEncoderHeap>        m_spVideoEncoderHeap;
    ComPtr<ID3D12CommandQueue>            m_spEncodeCommandQueue;
    ComPtr<ID3D12VideoEncodeCommandList2> m_spEncodeCommandList;
+   ComPtr<ID3D12VideoEncodeCommandList2> m_spResolveCommandList;
    std::vector<D3D12_RESOURCE_BARRIER>   m_transitionsBeforeCloseCmdList;
 
    std::unique_ptr<d3d12_video_encoder_references_manager_interface> m_upDPBManager;
@@ -614,6 +618,7 @@ struct d3d12_video_encoder
       std::shared_ptr<d3d12_video_dpb_storage_manager_interface> m_References;
 
       ComPtr<ID3D12CommandAllocator> m_spCommandAllocator;
+      ComPtr<ID3D12CommandAllocator> m_spResolveCommandAllocator;
 
       struct d3d12_fence* m_InputSurfaceFence = NULL;
       uint64_t m_InputSurfaceFenceValue = 0;

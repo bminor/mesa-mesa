@@ -155,10 +155,19 @@ d3d12_video_encoder_flush(struct pipe_video_codec *codec)
          goto flush_fail;
       }
 
+      hr = pD3D12Enc->m_spResolveCommandList->Close();
+      if (FAILED(hr)) {
+         debug_printf("[d3d12_video_encoder] d3d12_video_encoder_flush - Can't close command list with HR %x\n", (unsigned)hr);
+         goto flush_fail;
+      }
+
       ID3D12CommandList *ppCommandLists[1] = { pD3D12Enc->m_spEncodeCommandList.Get() };
       pD3D12Enc->m_spEncodeCommandQueue->ExecuteCommandLists(1, ppCommandLists);
+      pD3D12Enc->m_spEncodeCommandQueue->Signal(pD3D12Enc->m_spLastSliceFence.Get(), pD3D12Enc->m_LastSliceFenceValue);
+      ID3D12CommandList *ppCommandLists2[1] = { pD3D12Enc->m_spResolveCommandList.Get() };
+      pD3D12Enc->m_spEncodeCommandQueue->ExecuteCommandLists(1, ppCommandLists2);
       pD3D12Enc->m_spEncodeCommandQueue->Signal(pD3D12Enc->m_spFence.Get(), pD3D12Enc->m_fenceValue);
-
+      
       // Validate device was not removed
       hr = pD3D12Enc->m_pD3D12Screen->dev->GetDeviceRemovedReason();
       if (hr != S_OK) {
@@ -170,6 +179,7 @@ d3d12_video_encoder_flush(struct pipe_video_codec *codec)
       }
 
       pD3D12Enc->m_fenceValue++;
+      pD3D12Enc->m_LastSliceFenceValue++;
       pD3D12Enc->m_bPendingWorkNotFlushed = false;
    }
    return;
@@ -199,6 +209,14 @@ d3d12_video_encoder_sync_completion(struct pipe_video_codec *codec,
       debug_printf("[d3d12_video_encoder] d3d12_video_encoder_sync_completion - resetting ID3D12CommandAllocator %p...\n",
          pool_entry.m_spCommandAllocator.Get());
       hr = pool_entry.m_spCommandAllocator->Reset();
+      if(FAILED(hr)) {
+         debug_printf("failed with %x.\n", (unsigned)hr);
+         goto sync_with_token_fail;
+      }
+
+      debug_printf("[d3d12_video_encoder] d3d12_video_encoder_sync_completion - resetting ID3D12CommandAllocator %p...\n",
+      pool_entry.m_spResolveCommandAllocator.Get());
+      hr = pool_entry.m_spResolveCommandAllocator->Reset();
       if(FAILED(hr)) {
          debug_printf("failed with %x.\n", (unsigned)hr);
          goto sync_with_token_fail;
@@ -2343,6 +2361,14 @@ d3d12_video_encoder_create_command_objects(struct d3d12_video_encoder *pD3D12Enc
       return false;
    }
 
+   hr = pD3D12Enc->m_pD3D12Screen->dev->CreateFence(0, D3D12_FENCE_FLAG_SHARED, IID_PPV_ARGS(&pD3D12Enc->m_spLastSliceFence));
+   if (FAILED(hr)) {
+      debug_printf(
+         "[d3d12_video_encoder] d3d12_video_encoder_create_command_objects - Call to CreateFence failed with HR %x\n",
+         (unsigned)hr);
+      return false;
+   }
+
    uint64_t CompletionFenceValue = pD3D12Enc->m_fenceValue;
    for (auto& inputResource : pD3D12Enc->m_inflightResourcesPool)
    {
@@ -2357,8 +2383,21 @@ d3d12_video_encoder_create_command_objects(struct d3d12_video_encoder *pD3D12Enc
          return false;
       }
 
+      // Create associated command allocator for Resolve operations
+      hr = pD3D12Enc->m_pD3D12Screen->dev->CreateCommandAllocator(
+         D3D12_COMMAND_LIST_TYPE_VIDEO_ENCODE,
+         IID_PPV_ARGS(inputResource.m_spResolveCommandAllocator.GetAddressOf()));
+      if (FAILED(hr)) {
+         debug_printf("[d3d12_video_encoder] d3d12_video_encoder_create_command_objects - Call to "
+                        "CreateCommandAllocator failed with HR %x\n",
+                        (unsigned)hr);
+         return false;
+      }
+
       // Initialize fence for the in flight resource pool slot
-      inputResource.m_CompletionFence.reset(d3d12_create_fence_raw(pD3D12Enc->m_spFence.Get(), CompletionFenceValue++));
+      inputResource.m_CompletionFence.reset(d3d12_create_fence_raw(pD3D12Enc->m_spFence.Get(), CompletionFenceValue));
+      inputResource.m_CompletionFence.reset(d3d12_create_fence_raw(pD3D12Enc->m_spLastSliceFence.Get(), CompletionFenceValue));
+      CompletionFenceValue++;
    }
 
    ComPtr<ID3D12Device4> spD3D12Device4;
@@ -2373,6 +2412,18 @@ d3d12_video_encoder_create_command_objects(struct d3d12_video_encoder *pD3D12Enc
                         D3D12_COMMAND_LIST_TYPE_VIDEO_ENCODE,
                         D3D12_COMMAND_LIST_FLAG_NONE,
                         IID_PPV_ARGS(pD3D12Enc->m_spEncodeCommandList.GetAddressOf()));
+
+   if (FAILED(hr)) {
+      debug_printf("[d3d12_video_encoder] d3d12_video_encoder_create_command_objects - Call to CreateCommandList "
+                      "failed with HR %x\n",
+                      (unsigned)hr);
+      return false;
+   }
+
+   hr = spD3D12Device4->CreateCommandList1(0,
+                        D3D12_COMMAND_LIST_TYPE_VIDEO_ENCODE,
+                        D3D12_COMMAND_LIST_FLAG_NONE,
+                        IID_PPV_ARGS(pD3D12Enc->m_spResolveCommandList.GetAddressOf()));
 
    if (FAILED(hr)) {
       debug_printf("[d3d12_video_encoder] d3d12_video_encoder_create_command_objects - Call to CreateCommandList "
@@ -2818,6 +2869,14 @@ d3d12_video_encoder_begin_frame(struct pipe_video_codec * codec,
    }
 
    hr = pD3D12Enc->m_spEncodeCommandList->Reset(pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spCommandAllocator.Get());
+   if (FAILED(hr)) {
+      debug_printf(
+         "[d3d12_video_encoder] d3d12_video_encoder_flush - resetting ID3D12GraphicsCommandList failed with HR %x\n",
+         (unsigned)hr);
+      goto fail;
+   }
+
+   hr = pD3D12Enc->m_spResolveCommandList->Reset(pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spResolveCommandAllocator.Get());
    if (FAILED(hr)) {
       debug_printf(
          "[d3d12_video_encoder] d3d12_video_encoder_flush - resetting ID3D12GraphicsCommandList failed with HR %x\n",
@@ -3319,6 +3378,9 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
 
    *feedback = (void*)pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_fence.get();
 
+   pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_LastSliceFence.reset(d3d12_create_fence_raw(pD3D12Enc->m_spLastSliceFence.Get(), pD3D12Enc->m_LastSliceFenceValue));
+   d3d12_fence_reference((struct d3d12_fence **)last_slice_completion_fence, pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_LastSliceFence.get());
+
    std::vector<D3D12_RESOURCE_BARRIER> rgCurrentFrameStateTransitions = {
       CD3DX12_RESOURCE_BARRIER::Transition(pInputVideoD3D12Res,
                                            D3D12_RESOURCE_STATE_COMMON,
@@ -3489,8 +3551,11 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
 #endif
 
    ComPtr<ID3D12VideoEncodeCommandList4> spEncodeCommandList4;
-   if (SUCCEEDED(pD3D12Enc->m_spEncodeCommandList->QueryInterface(
-      IID_PPV_ARGS(spEncodeCommandList4.GetAddressOf())))) {
+   ComPtr<ID3D12VideoEncodeCommandList4> spResolveCommandList4;
+   if ((SUCCEEDED(pD3D12Enc->m_spEncodeCommandList->QueryInterface(
+         IID_PPV_ARGS(spEncodeCommandList4.GetAddressOf())))) &&
+      (SUCCEEDED(pD3D12Enc->m_spResolveCommandList->QueryInterface(
+         IID_PPV_ARGS(spResolveCommandList4.GetAddressOf()))))) {
 
       // Update current frame pic params state after reconfiguring above.
       D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA1 currentPicParams =
@@ -4049,7 +4114,7 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                                                       D3D12_RESOURCE_STATE_COMMON));
       }
 
-      spEncodeCommandList4->ResourceBarrier(static_cast<uint32_t>(rgResolveMetadataStateTransitions.size()),
+      spResolveCommandList4->ResourceBarrier(static_cast<uint32_t>(rgResolveMetadataStateTransitions.size()),
                                                       rgResolveMetadataStateTransitions.data());
 
       std::vector<D3D12_RESOURCE_BARRIER> output_stats_barriers;
@@ -4077,7 +4142,7 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                                                                               D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE));
       }
 
-      spEncodeCommandList4->ResourceBarrier(static_cast<uint32_t>(output_stats_barriers.size()),
+      spResolveCommandList4->ResourceBarrier(static_cast<uint32_t>(output_stats_barriers.size()),
                                                       output_stats_barriers.data());
       const D3D12_VIDEO_ENCODER_RESOLVE_METADATA_INPUT_ARGUMENTS1 inputMetadataCmd = {
          pD3D12Enc->m_currentEncodeConfig.m_encoderCodecDesc,
@@ -4112,7 +4177,7 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
          {},
       };
 
-      spEncodeCommandList4->ResolveEncoderOutputMetadata1(&inputMetadataCmd, &outputMetadataCmd);
+      spResolveCommandList4->ResolveEncoderOutputMetadata1(&inputMetadataCmd, &outputMetadataCmd);
 
       debug_printf("[d3d12_video_encoder_encode_bitstream] EncodeFrame slot %" PRIu64 " encoder %p encoderheap %p input tex %p output bitstream %p raw metadata buf %p resolved metadata buf %p Command allocator %p\n",
                   static_cast<uint64_t>(d3d12_video_encoder_pool_current_index(pD3D12Enc)),
@@ -4146,14 +4211,14 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                                              D3D12_RESOURCE_STATE_COMMON),
       };
 
-      spEncodeCommandList4->ResourceBarrier(_countof(rgRevertResolveMetadataStateTransitions),
+      spResolveCommandList4->ResourceBarrier(_countof(rgRevertResolveMetadataStateTransitions),
                                                       rgRevertResolveMetadataStateTransitions);
 
       // Revert output_stats_barriers
       for (auto &BarrierDesc : output_stats_barriers) {
          std::swap(BarrierDesc.Transition.StateBefore, BarrierDesc.Transition.StateAfter);
       }
-      spEncodeCommandList4->ResourceBarrier(static_cast<uint32_t>(output_stats_barriers.size()),
+      spResolveCommandList4->ResourceBarrier(static_cast<uint32_t>(output_stats_barriers.size()),
                                                       output_stats_barriers.data());
 
       for (auto &BarrierDesc : pSlicedEncodingExtraBarriers) {
@@ -4218,6 +4283,24 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                                                     &inputStreamArguments,
                                                     &outputStreamArguments);
 
+      std::vector<D3D12_RESOURCE_BARRIER> rgResolveMetadataStateTransitions = {
+         CD3DX12_RESOURCE_BARRIER::Transition(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spBuffer.Get(),
+                                             D3D12_RESOURCE_STATE_COMMON,
+                                             D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE),
+         CD3DX12_RESOURCE_BARRIER::Transition(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_spMetadataOutputBuffer.Get(),
+                                             D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE,
+                                             D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ),
+         CD3DX12_RESOURCE_BARRIER::Transition(pInputVideoD3D12Res,
+                                             D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ,
+                                             D3D12_RESOURCE_STATE_COMMON),
+         CD3DX12_RESOURCE_BARRIER::Transition(pOutputBufferD3D12Resources[0],
+                                             D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE,
+                                             D3D12_RESOURCE_STATE_COMMON),
+      };
+
+      pD3D12Enc->m_spResolveCommandList->ResourceBarrier(static_cast<uint32_t>(rgResolveMetadataStateTransitions.size()),
+                                                         rgResolveMetadataStateTransitions.data());
+
       const D3D12_VIDEO_ENCODER_RESOLVE_METADATA_INPUT_ARGUMENTS inputMetadataCmd = {
          pD3D12Enc->m_currentEncodeConfig.m_encoderCodecDesc,
          d3d12_video_encoder_get_current_profile_desc(pD3D12Enc),
@@ -4232,7 +4315,7 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
          { pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spBuffer.Get(), 0 }
       };
          
-      pD3D12Enc->m_spEncodeCommandList->ResolveEncoderOutputMetadata(&inputMetadataCmd, &outputMetadataCmd);
+      pD3D12Enc->m_spResolveCommandList->ResolveEncoderOutputMetadata(&inputMetadataCmd, &outputMetadataCmd);
       
       debug_printf("[d3d12_video_encoder_encode_bitstream] EncodeFrame slot %" PRIu64 " encoder %p encoderheap %p input tex %p output bitstream %p raw metadata buf %p resolved metadata buf %p Command allocator %p\n",
                   static_cast<uint64_t>(d3d12_video_encoder_pool_current_index(pD3D12Enc)),
@@ -4266,7 +4349,7 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                                              D3D12_RESOURCE_STATE_COMMON),
       };
 
-      pD3D12Enc->m_spEncodeCommandList->ResourceBarrier(_countof(rgRevertResolveMetadataStateTransitions),
+      pD3D12Enc->m_spResolveCommandList->ResourceBarrier(_countof(rgRevertResolveMetadataStateTransitions),
                                                    rgRevertResolveMetadataStateTransitions);
    }
    debug_printf("[d3d12_video_encoder] d3d12_video_encoder_encode_bitstream finalized for fenceValue: %" PRIu64 "\n",
