@@ -535,9 +535,10 @@ r2d_setup(struct tu_cmd_buffer *cmd,
           unsigned blit_param,
           bool clear,
           bool ubwc,
-          VkSampleCountFlagBits samples)
+          VkSampleCountFlagBits src_samples,
+          VkSampleCountFlagBits dst_samples)
 {
-   assert(samples == VK_SAMPLE_COUNT_1_BIT);
+   assert(dst_samples == VK_SAMPLE_COUNT_1_BIT);
 
    if (!cmd->state.pass) {
       tu_emit_cache_flush_ccu<CHIP>(cmd, cs, TU_CMD_CCU_SYSMEM);
@@ -836,7 +837,8 @@ enum r3d_type {
 template <chip CHIP>
 static void
 r3d_common(struct tu_cmd_buffer *cmd, struct tu_cs *cs, enum r3d_type type,
-           uint32_t rts_mask, bool z_scale, VkSampleCountFlagBits samples)
+           uint32_t rts_mask, bool z_scale, VkSampleCountFlagBits src_samples,
+           VkSampleCountFlagBits dst_samples)
 {
    enum global_shader vs_id =
       type == R3D_CLEAR ? GLOBAL_SH_VS_CLEAR : GLOBAL_SH_VS_BLIT;
@@ -848,7 +850,7 @@ r3d_common(struct tu_cmd_buffer *cmd, struct tu_cs *cs, enum r3d_type type,
 
    if (z_scale)
       fs_id = GLOBAL_SH_FS_BLIT_ZSCALE;
-   else if (samples != VK_SAMPLE_COUNT_1_BIT)
+   else if (src_samples != VK_SAMPLE_COUNT_1_BIT)
       fs_id = GLOBAL_SH_FS_COPY_MS;
 
    unsigned num_rts = util_bitcount(rts_mask);
@@ -947,7 +949,7 @@ r3d_common(struct tu_cmd_buffer *cmd, struct tu_cs *cs, enum r3d_type type,
       }
    }
 
-   tu6_emit_msaa(cs, samples, false);
+   tu6_emit_msaa(cs, dst_samples, false);
 }
 
 static void
@@ -1543,7 +1545,8 @@ r3d_setup(struct tu_cmd_buffer *cmd,
           unsigned blit_param,
           bool clear,
           bool ubwc,
-          VkSampleCountFlagBits samples)
+          VkSampleCountFlagBits src_samples,
+          VkSampleCountFlagBits dst_samples)
 {
    if (!cmd->state.pass && cmd->device->dbg_renderpass_stomp_cs) {
       tu_cs_emit_call(cs, cmd->device->dbg_renderpass_stomp_cs);
@@ -1590,7 +1593,8 @@ r3d_setup(struct tu_cmd_buffer *cmd,
    }
 
    const enum r3d_type type = (clear) ? R3D_CLEAR : R3D_BLIT;
-   r3d_common<CHIP>(cmd, cs, type, 1, blit_param & R3D_Z_SCALE, samples);
+   r3d_common<CHIP>(cmd, cs, type, 1, blit_param & R3D_Z_SCALE, src_samples,
+                    dst_samples);
 
    tu_cs_emit_regs(cs, A6XX_SP_PS_MRT_CNTL(.mrt = 1));
    tu_cs_emit_regs(cs, A6XX_RB_PS_MRT_CNTL(.mrt = 1));
@@ -1727,7 +1731,8 @@ struct blit_ops {
                  unsigned blit_param, /* CmdBlitImage: rotation in 2D path and z scaling in 3D path */
                  bool clear,
                  bool ubwc,
-                 VkSampleCountFlagBits samples);
+                 VkSampleCountFlagBits src_samples,
+                 VkSampleCountFlagBits dst_samples);
    void (*run)(struct tu_cmd_buffer *cmd, struct tu_cs *cs);
    void (*teardown)(struct tu_cmd_buffer *cmd,
                     struct tu_cs *cs);
@@ -2098,7 +2103,7 @@ tu6_clear_lrz(struct tu_cmd_buffer *cmd,
 
    ops->setup(cmd, cs, PIPE_FORMAT_Z16_UNORM, PIPE_FORMAT_Z16_UNORM,
               VK_IMAGE_ASPECT_DEPTH_BIT, 0, true, false,
-              VK_SAMPLE_COUNT_1_BIT);
+              VK_SAMPLE_COUNT_1_BIT, VK_SAMPLE_COUNT_1_BIT);
    ops->clear_value(cmd, cs, PIPE_FORMAT_Z16_UNORM, value);
    ops->dst_buffer(cs, PIPE_FORMAT_Z16_UNORM,
                    image->iova + image->lrz_layout.lrz_offset,
@@ -2132,7 +2137,7 @@ tu6_dirty_lrz_fc(struct tu_cmd_buffer *cmd,
    uint64_t lrz_fc_iova = image->iova + image->lrz_layout.lrz_fc_offset;
    ops->setup(cmd, cs, PIPE_FORMAT_R32_UINT, PIPE_FORMAT_R32_UINT,
               VK_IMAGE_ASPECT_COLOR_BIT, 0, true, false,
-              VK_SAMPLE_COUNT_1_BIT);
+              VK_SAMPLE_COUNT_1_BIT, VK_SAMPLE_COUNT_1_BIT);
    ops->clear_value(cmd, cs, PIPE_FORMAT_R32_UINT, &clear);
    ops->dst_buffer(cs, PIPE_FORMAT_R32_UINT,
                    lrz_fc_iova + offsetof(LRZFC, fc1),
@@ -2289,6 +2294,7 @@ tu6_blit_image(struct tu_cmd_buffer *cmd,
 
    ops->setup(cmd, cs, src_format, dst_format, info->dstSubresource.aspectMask,
               blit_param, false, dst_image->layout[0].ubwc,
+              (VkSampleCountFlagBits) src_image->layout[0].nr_samples,
               (VkSampleCountFlagBits) dst_image->layout[0].nr_samples);
 
    if (ops == &r3d_ops<CHIP>) {
@@ -2444,6 +2450,7 @@ tu_copy_buffer_to_image(struct tu_cmd_buffer *cmd,
 
    ops->setup(cmd, cs, src_format, dst_format,
               info->imageSubresource.aspectMask, blit_param, false, dst_image->layout[0].ubwc,
+              (VkSampleCountFlagBits) dst_image->layout[0].nr_samples,
               (VkSampleCountFlagBits) dst_image->layout[0].nr_samples);
 
    struct fdl6_view dst;
@@ -2666,7 +2673,7 @@ tu_copy_image_to_buffer(struct tu_cmd_buffer *cmd,
                                        layer_size * layers, unaligned_store);
 
    ops->setup(cmd, cs, src_format, dst_format, VK_IMAGE_ASPECT_COLOR_BIT, blit_param, false, false,
-              VK_SAMPLE_COUNT_1_BIT);
+              VK_SAMPLE_COUNT_1_BIT, VK_SAMPLE_COUNT_1_BIT);
 
    struct fdl6_view src;
    tu_image_view_copy<CHIP>(&src, src_image, src_format,
@@ -3005,6 +3012,7 @@ tu_copy_image_to_image(struct tu_cmd_buffer *cmd,
       fdl6_view_init<CHIP>(&staging, &staging_layout_ptr, &copy_to_args, false);
 
       ops->setup(cmd, cs, src_format, src_format, VK_IMAGE_ASPECT_COLOR_BIT, blit_param, false, false,
+                 (VkSampleCountFlagBits) dst_image->layout[0].nr_samples,
                  (VkSampleCountFlagBits) dst_image->layout[0].nr_samples);
       coords(ops, cmd, cs, staging_offset, src_offset, extent);
 
@@ -3043,6 +3051,7 @@ tu_copy_image_to_image(struct tu_cmd_buffer *cmd,
 
       ops->setup(cmd, cs, dst_format, dst_format, info->dstSubresource.aspectMask,
                  blit_param, false, dst_image->layout[0].ubwc,
+                 (VkSampleCountFlagBits) dst_image->layout[0].nr_samples,
                  (VkSampleCountFlagBits) dst_image->layout[0].nr_samples);
       coords(ops, cmd, cs, dst_offset, staging_offset, extent);
 
@@ -3057,6 +3066,7 @@ tu_copy_image_to_image(struct tu_cmd_buffer *cmd,
 
       ops->setup(cmd, cs, src_format, dst_format, info->dstSubresource.aspectMask,
                  blit_param, false, dst_image->layout[0].ubwc,
+                 (VkSampleCountFlagBits) dst_image->layout[0].nr_samples,
                  (VkSampleCountFlagBits) dst_image->layout[0].nr_samples);
       coords(ops, cmd, cs, dst_offset, src_offset, extent);
 
@@ -3320,7 +3330,7 @@ copy_buffer(struct tu_cmd_buffer *cmd,
    handle_buffer_unaligned_store<CHIP>(cmd, dst_va, size, unaligned_store);
 
    ops->setup(cmd, cs, format, format, VK_IMAGE_ASPECT_COLOR_BIT, 0, false, false,
-              VK_SAMPLE_COUNT_1_BIT);
+              VK_SAMPLE_COUNT_1_BIT, VK_SAMPLE_COUNT_1_BIT);
 
    while (blocks) {
       uint32_t src_x = (src_va & 63) / block_size;
@@ -3435,7 +3445,7 @@ tu_cmd_fill_buffer(VkCommandBuffer commandBuffer,
 
    ops->setup(cmd, cs, PIPE_FORMAT_R32_UINT, PIPE_FORMAT_R32_UINT,
               VK_IMAGE_ASPECT_COLOR_BIT, 0, true, false,
-              VK_SAMPLE_COUNT_1_BIT);
+              VK_SAMPLE_COUNT_1_BIT, VK_SAMPLE_COUNT_1_BIT);
 
    VkClearValue clear_val = {};
    clear_val.color.uint32[0] = data;
@@ -3505,7 +3515,7 @@ tu_CmdResolveImage2(VkCommandBuffer commandBuffer,
       vk_format_to_pipe_format(dst_image->vk.format);
    ops->setup(cmd, cs, src_format, dst_format,
               VK_IMAGE_ASPECT_COLOR_BIT, 0, false, dst_image->layout[0].ubwc, 
-              VK_SAMPLE_COUNT_1_BIT);
+              VK_SAMPLE_COUNT_1_BIT, VK_SAMPLE_COUNT_1_BIT);
 
    for (uint32_t i = 0; i < pResolveImageInfo->regionCount; ++i) {
       const VkImageResolve2 *info = &pResolveImageInfo->pRegions[i];
@@ -3561,7 +3571,8 @@ resolve_sysmem(struct tu_cmd_buffer *cmd,
 
    ops->setup(cmd, cs, src_format, dst_format,
               VK_IMAGE_ASPECT_COLOR_BIT, 0, false, dst->view.ubwc_enabled,
-              VK_SAMPLE_COUNT_1_BIT);
+              (VkSampleCountFlagBits)src->image->layout[0].nr_samples,
+              (VkSampleCountFlagBits)dst->image->layout[0].nr_samples);
    ops->coords(cmd, cs, rect->offset, rect->offset, rect->extent);
 
    for_each_layer(i, layer_mask, layers) {
@@ -3697,6 +3708,7 @@ clear_image_cp_blit(struct tu_cmd_buffer *cmd,
    const struct blit_ops *ops = image->layout[0].nr_samples > 1 ? &r3d_ops<CHIP> : &r2d_ops<CHIP>;
 
    ops->setup(cmd, cs, format, format, aspect_mask, 0, true, image->layout[0].ubwc,
+              (VkSampleCountFlagBits) image->layout[0].nr_samples,
               (VkSampleCountFlagBits) image->layout[0].nr_samples);
    if (image->vk.format == VK_FORMAT_E5B9G9R9_UFLOAT_PACK32)
       ops->clear_value(cmd, cs, PIPE_FORMAT_R9G9B9E5_FLOAT, clear_value);
@@ -4107,7 +4119,9 @@ tu_clear_sysmem_attachments(struct tu_cmd_buffer *cmd,
                   0xfc000000);
    tu_cs_emit(cs, A6XX_SP_PS_MRT_CNTL_MRT(mrt_count));
 
-   r3d_common<CHIP>(cmd, cs, R3D_CLEAR, clear_rts, false, cmd->state.subpass->samples);
+   r3d_common<CHIP>(cmd, cs, R3D_CLEAR, clear_rts, false,
+                    cmd->state.subpass->samples,
+                    cmd->state.subpass->samples);
 
    /* Disable sample counting in order to not affect occlusion query. */
    tu_cs_emit_regs(cs, A6XX_RB_SAMPLE_COUNTER_CNTL(.disable = true));
@@ -4665,6 +4679,7 @@ clear_sysmem_attachment(struct tu_cmd_buffer *cmd,
                             cmd->state.pass->attachments[a].samples);
 
    ops->setup(cmd, cs, format, format, clear_mask, 0, true, iview->view.ubwc_enabled,
+              cmd->state.pass->attachments[a].samples,
               cmd->state.pass->attachments[a].samples);
    ops->coords(cmd, cs, cmd->state.render_area.offset, (VkOffset2D) {},
                cmd->state.render_area.extent);
@@ -4953,7 +4968,8 @@ load_3d_blit(struct tu_cmd_buffer *cmd,
    }
    r3d_setup<CHIP>(cmd, cs, format, format, VK_IMAGE_ASPECT_COLOR_BIT,
                    R3D_DST_GMEM, false, iview->view.ubwc_enabled,
-                   iview->image->vk.samples);
+                   (VkSampleCountFlagBits)iview->image->layout[0].nr_samples,
+                   att->samples);
 
    if (!cmd->state.pass->has_fdm) {
       r3d_coords(cmd, cs, (VkOffset2D) { 0, 0 }, (VkOffset2D) { 0, 0 },
@@ -5230,7 +5246,7 @@ store_3d_blit(struct tu_cmd_buffer *cmd,
    }
 
    r3d_setup<CHIP>(cmd, cs, src_format, dst_format, VK_IMAGE_ASPECT_COLOR_BIT,
-                   0, false, dst_iview->view.ubwc_enabled, dst_samples);
+                   0, false, dst_iview->view.ubwc_enabled, dst_samples, dst_samples);
 
    r3d_coords(cmd, cs, render_area->offset, render_area->offset, render_area->extent);
 
