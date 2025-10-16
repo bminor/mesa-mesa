@@ -284,7 +284,7 @@
         "description": "r300: fix DXTC blits",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9d359c6d10adb1cd2978a0e13714a3f98544aae8",
         "notes": null
