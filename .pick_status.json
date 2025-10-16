@@ -1194,7 +1194,7 @@
         "description": "panfrost,panvk: Enable shader_realtime_clock on panthor 1.6",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e9c2c3240949196a5584ed1c54df4b9bb75dcbf3",
         "notes": null
