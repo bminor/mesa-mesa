@@ -66,10 +66,207 @@ is_output(nir_intrinsic_instr *intrin)
           intrin->intrinsic == nir_intrinsic_store_per_view_output;
 }
 
+static unsigned
+io_component(nir_intrinsic_instr *instr)
+{
+   if (nir_intrinsic_has_component(instr))
+      return nir_intrinsic_component(instr);
+   else
+      return 0;
+}
+
+static nir_def *
+load_urb(nir_builder *b,
+         const struct intel_device_info *devinfo,
+         nir_intrinsic_instr *intrin,
+         nir_def *handle,
+         enum gl_access_qualifier access)
+{
+   nir_def *offset = nir_get_io_offset_src(intrin)->ssa;
+
+   const unsigned base = nir_intrinsic_base(intrin);
+   const unsigned bits = intrin->def.bit_size;
+
+   if (devinfo->ver >= 20) {
+      nir_def *addr = nir_iadd(b, handle, nir_ishl_imm(b, offset, 4));
+      return nir_load_urb_lsc_intel(b, intrin->def.num_components, bits, addr,
+                                    16 * base + 4 * io_component(intrin));
+   }
+
+   /* Load a whole vec4 and return the desired portion */
+   const unsigned first_component = io_component(intrin);
+   const unsigned components = intrin->def.num_components + first_component;
+   assert(components <= 4);
+
+   nir_def *load =
+      nir_load_urb_vec4_intel(b, components, bits, handle, offset,
+                              .base = base, .access = access);
+   nir_component_mask_t mask =
+      nir_component_mask(intrin->def.num_components) << first_component;
+
+   return nir_channels(b, load, mask);
+}
+
+static void
+store_urb(nir_builder *b,
+          const struct intel_device_info *devinfo,
+          nir_intrinsic_instr *intrin,
+          nir_def *urb_handle)
+{
+   nir_def *src = intrin->src[0].ssa;
+   nir_def *offset = nir_get_io_offset_src(intrin)->ssa;
+
+   unsigned mask = nir_intrinsic_write_mask(intrin);
+
+   if (devinfo->ver >= 20) {
+      nir_def *addr = nir_iadd(b, urb_handle, nir_ishl_imm(b, offset, 4));
+      while (mask) {
+         int start, count;
+         u_bit_scan_consecutive_range(&mask, &start, &count);
+
+         const unsigned cur_mask = BITFIELD_MASK(count) << start;
+         const unsigned base = 16 * nir_intrinsic_base(intrin) +
+                               4 * (start + io_component(intrin));
+
+         nir_store_urb_lsc_intel(b, nir_channels(b, src, cur_mask), addr,
+                                 .base = base);
+      }
+   } else {
+      const unsigned first_component = io_component(intrin);
+      if (first_component) {
+         const unsigned components = src->num_components + first_component;
+         assert(components <= 4);
+
+         mask <<= first_component;
+         src = nir_shift_channels(b, src, first_component, components);
+      }
+      nir_store_urb_vec4_intel(b, src, urb_handle, offset,
+                               nir_imm_int(b, mask),
+                               .base = nir_intrinsic_base(intrin));
+   }
+}
+
+static nir_def *
+input_handle(nir_builder *b, nir_intrinsic_instr *intrin)
+{
+   const enum mesa_shader_stage stage = b->shader->info.stage;
+   nir_src *vertex = nir_get_io_arrayed_index_src(intrin);
+
+   return stage == MESA_SHADER_TESS_CTRL || stage == MESA_SHADER_GEOMETRY ?
+          nir_load_urb_input_handle_indexed_intel(b, 1, 32, vertex->ssa) :
+          nir_load_urb_input_handle_intel(b);
+}
+
 static nir_def *
 output_handle(nir_builder *b)
 {
    return nir_load_urb_output_handle_intel(b);
+}
+
+static nir_def *
+load_push_input(nir_builder *b, nir_intrinsic_instr *io, unsigned byte_offset)
+{
+   return nir_load_attribute_payload_intel(b, io->def.num_components,
+                                           io->def.bit_size,
+                                           nir_imm_int(b, byte_offset));
+}
+
+static nir_def *
+try_load_push_input(nir_builder *b,
+                    const struct intel_device_info *devinfo,
+                    nir_intrinsic_instr *io)
+{
+   nir_src *offset = nir_get_io_offset_src(io);
+   if (!nir_src_is_const(*offset))
+      return NULL;
+
+   /* nir_io_add_const_offset_to_base guarantees this */
+   assert(nir_src_as_uint(*offset) == 0);
+
+   const uint32_t base = nir_intrinsic_base(io);
+   const uint32_t byte_offset = 16 * base + 4 * io_component(io);
+   assert((byte_offset % 4) == 0);
+
+   const enum mesa_shader_stage stage = b->shader->info.stage;
+   static const unsigned max_push_bytes[MESA_SHADER_MESH + 1] = {
+      [MESA_SHADER_TESS_EVAL] = 32 * 16 /* 32 vec4s */
+   };
+
+   if (byte_offset >= max_push_bytes[stage])
+      return NULL;
+
+   return load_push_input(b, io, byte_offset);
+}
+
+static bool
+lower_urb_inputs(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
+{
+   const struct intel_device_info *devinfo = data;
+
+   if (intrin->intrinsic == nir_intrinsic_load_input ||
+       intrin->intrinsic == nir_intrinsic_load_per_vertex_input) {
+      b->cursor = nir_before_instr(&intrin->instr);
+
+      nir_def *load = try_load_push_input(b, devinfo, intrin);
+      if (!load) {
+         load = load_urb(b, devinfo, intrin, input_handle(b, intrin),
+                         ACCESS_CAN_REORDER | ACCESS_NON_WRITEABLE);
+      }
+      nir_def_replace(&intrin->def, load);
+      return true;
+   }
+   return false;
+}
+
+static bool
+lower_urb_outputs(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
+{
+   const struct intel_device_info *devinfo = data;
+
+   b->cursor = nir_before_instr(&intrin->instr);
+
+   nir_def *load = NULL;
+
+   switch (intrin->intrinsic) {
+   case nir_intrinsic_load_output:
+   case nir_intrinsic_load_per_vertex_output:
+      load = load_urb(b, devinfo, intrin, output_handle(b), 0);
+      break;
+   case nir_intrinsic_store_output:
+   case nir_intrinsic_store_per_vertex_output:
+      store_urb(b, devinfo, intrin, output_handle(b));
+      break;
+   case nir_intrinsic_load_per_view_output:
+   case nir_intrinsic_store_per_view_output:
+      UNREACHABLE("should have been lowered");
+   default:
+      return false;
+   }
+
+   if (load)
+      nir_def_replace(&intrin->def, load);
+   else
+      nir_instr_remove(&intrin->instr);
+
+   return true;
+}
+
+static bool
+lower_inputs_to_urb_intrinsics(nir_shader *nir,
+                               const struct intel_device_info *devinfo)
+{
+   return nir_shader_intrinsics_pass(nir, lower_urb_inputs,
+                                     nir_metadata_control_flow,
+                                     (void *) devinfo);
+}
+
+static bool
+lower_outputs_to_urb_intrinsics(nir_shader *nir,
+                                const struct intel_device_info *devinfo)
+{
+   return nir_shader_intrinsics_pass(nir, lower_urb_outputs,
+                                     nir_metadata_control_flow,
+                                     (void *) devinfo);
 }
 
 static bool
