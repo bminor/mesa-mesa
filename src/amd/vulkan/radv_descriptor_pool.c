@@ -55,6 +55,7 @@ radv_create_descriptor_pool(struct radv_device *device, const VkDescriptorPoolCr
    struct radv_descriptor_pool *pool;
    uint64_t size = sizeof(struct radv_descriptor_pool);
    uint64_t bo_size = 0, bo_count = 0, range_count = 0;
+   VkResult result = VK_SUCCESS;
 
    const VkMutableDescriptorTypeCreateInfoEXT *mutable_info =
       vk_find_struct_const(pCreateInfo->pNext, MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_EXT);
@@ -172,22 +173,21 @@ radv_create_descriptor_pool(struct radv_device *device, const VkDescriptorPoolCr
          if (radv_device_should_clear_vram(device))
             flags |= RADEON_FLAG_ZERO_VRAM;
 
-         VkResult result = radv_bo_create(device, &pool->base, bo_size, 32, RADEON_DOMAIN_VRAM, flags,
-                                          RADV_BO_PRIORITY_DESCRIPTOR, 0, false, &pool->bo);
-         if (result != VK_SUCCESS) {
-            radv_destroy_descriptor_pool(device, pAllocator, pool);
-            return vk_error(device, result);
-         }
+         result = radv_bo_create(device, &pool->base, bo_size, 32, RADEON_DOMAIN_VRAM, flags,
+                                 RADV_BO_PRIORITY_DESCRIPTOR, 0, false, &pool->bo);
+         if (result != VK_SUCCESS)
+            goto fail;
+
          pool->mapped_ptr = (uint8_t *)radv_buffer_map(device->ws, pool->bo);
          if (!pool->mapped_ptr) {
-            radv_destroy_descriptor_pool(device, pAllocator, pool);
-            return vk_error(device, VK_ERROR_OUT_OF_DEVICE_MEMORY);
+            result = VK_ERROR_OUT_OF_DEVICE_MEMORY;
+            goto fail;
          }
       } else {
          pool->host_bo = vk_alloc2(&device->vk.alloc, pAllocator, bo_size, 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
          if (!pool->host_bo) {
-            radv_destroy_descriptor_pool(device, pAllocator, pool);
-            return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+            result = VK_ERROR_OUT_OF_HOST_MEMORY;
+            goto fail;
          }
          pool->mapped_ptr = pool->host_bo;
       }
@@ -197,7 +197,12 @@ radv_create_descriptor_pool(struct radv_device *device, const VkDescriptorPoolCr
 
    *pDescriptorPool = radv_descriptor_pool_to_handle(pool);
    radv_rmv_log_descriptor_pool_create(device, pCreateInfo, *pDescriptorPool);
-   return VK_SUCCESS;
+
+   return result;
+
+fail:
+   radv_destroy_descriptor_pool(device, pAllocator, pool);
+   return vk_error(device, result);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
