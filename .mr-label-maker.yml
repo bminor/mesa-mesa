@@ -62,6 +62,7 @@ issues:
         'panfrost': 'panfrost'
         'panvk': 'panvk'
         'pan/midgard': 'panfrost'
+        'poly': 'poly'
         'pvr': 'powervr'
         'r100': 'r100'
         'r200': 'r200'
@@ -295,6 +296,7 @@ merge_requests:
         '^src/nouveau/winsys/': ['NVK']
         '^src/panfrost/': ['panfrost']
         '^src/panfrost/vulkan/': ['panvk']
+        '^src/poly/': ['poly']
         '^src/virtio/vulkan/': ['venus']
         '^src/virtio/venus-protocol/': ['venus']
         '^src/virtio/ci/': ['venus']
