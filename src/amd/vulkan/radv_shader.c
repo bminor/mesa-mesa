@@ -1805,18 +1805,18 @@ radv_precompute_registers_hw_ms(struct radv_device *device, struct radv_shader_b
 
    info->regs.vgt_gs_max_vert_out = pdev->info.mesh_fast_launch_2 ? info->ngg_info.max_out_verts : info->workgroup_size;
 
-   info->regs.ms.spi_shader_gs_meshlet_dim = S_00B2B0_MESHLET_NUM_THREAD_X(info->cs.block_size[0] - 1) |
-                                             S_00B2B0_MESHLET_NUM_THREAD_Y(info->cs.block_size[1] - 1) |
-                                             S_00B2B0_MESHLET_NUM_THREAD_Z(info->cs.block_size[2] - 1) |
-                                             S_00B2B0_MESHLET_THREADGROUP_SIZE(info->workgroup_size - 1);
+   info->regs.ngg.ms.spi_shader_gs_meshlet_dim = S_00B2B0_MESHLET_NUM_THREAD_X(info->cs.block_size[0] - 1) |
+                                                 S_00B2B0_MESHLET_NUM_THREAD_Y(info->cs.block_size[1] - 1) |
+                                                 S_00B2B0_MESHLET_NUM_THREAD_Z(info->cs.block_size[2] - 1) |
+                                                 S_00B2B0_MESHLET_THREADGROUP_SIZE(info->workgroup_size - 1);
 
-   info->regs.ms.spi_shader_gs_meshlet_exp_alloc =
+   info->regs.ngg.ms.spi_shader_gs_meshlet_exp_alloc =
       S_00B2B4_MAX_EXP_VERTS(info->ngg_info.max_out_verts) | S_00B2B4_MAX_EXP_PRIMS(info->ngg_info.prim_amp_factor);
 
    if (pdev->info.gfx_level >= GFX12) {
       const bool derivative_group_quads = info->cs.derivative_group == DERIVATIVE_GROUP_QUADS;
 
-      info->regs.ms.spi_shader_gs_meshlet_ctrl =
+      info->regs.ngg.ms.spi_shader_gs_meshlet_ctrl =
          S_00B2B8_INTERLEAVE_BITS_X(derivative_group_quads) | S_00B2B8_INTERLEAVE_BITS_Y(derivative_group_quads);
    }
 }

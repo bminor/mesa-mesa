@@ -3434,13 +3434,13 @@ radv_gfx11_emit_meshlet(struct radv_cmd_buffer *cmd_buffer, const struct radv_sh
 
    radeon_begin(cs);
    if (pdev->info.gfx_level >= GFX12) {
-      gfx12_push_sh_reg(R_00B2B0_SPI_SHADER_GS_MESHLET_DIM, ms->info.regs.ms.spi_shader_gs_meshlet_dim);
-      gfx12_push_sh_reg(R_00B2B4_SPI_SHADER_GS_MESHLET_EXP_ALLOC, ms->info.regs.ms.spi_shader_gs_meshlet_exp_alloc);
-      gfx12_push_sh_reg(R_00B2B8_SPI_SHADER_GS_MESHLET_CTRL, ms->info.regs.ms.spi_shader_gs_meshlet_ctrl);
+      gfx12_push_sh_reg(R_00B2B0_SPI_SHADER_GS_MESHLET_DIM, ms->info.regs.ngg.ms.spi_shader_gs_meshlet_dim);
+      gfx12_push_sh_reg(R_00B2B4_SPI_SHADER_GS_MESHLET_EXP_ALLOC, ms->info.regs.ngg.ms.spi_shader_gs_meshlet_exp_alloc);
+      gfx12_push_sh_reg(R_00B2B8_SPI_SHADER_GS_MESHLET_CTRL, ms->info.regs.ngg.ms.spi_shader_gs_meshlet_ctrl);
    } else {
       radeon_set_sh_reg_seq(R_00B2B0_SPI_SHADER_GS_MESHLET_DIM, 2);
-      radeon_emit(ms->info.regs.ms.spi_shader_gs_meshlet_dim);
-      radeon_emit(ms->info.regs.ms.spi_shader_gs_meshlet_exp_alloc);
+      radeon_emit(ms->info.regs.ngg.ms.spi_shader_gs_meshlet_dim);
+      radeon_emit(ms->info.regs.ngg.ms.spi_shader_gs_meshlet_exp_alloc);
    }
    radeon_end();
 }
