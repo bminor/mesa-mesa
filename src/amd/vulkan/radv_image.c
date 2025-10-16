@@ -1103,6 +1103,29 @@ radv_surface_init(struct radv_physical_device *pdev, const struct ac_surf_info *
    config.is_3d = type == RADEON_SURF_TYPE_3D;
    config.is_cube = type == RADEON_SURF_TYPE_CUBEMAP;
    config.is_array = type == RADEON_SURF_TYPE_1D_ARRAY || type == RADEON_SURF_TYPE_2D_ARRAY;
+   config.blk_w = surf->blk_w;
+   config.blk_h = surf->blk_h;
+   config.bpe = surf->bpe;
+   config.surf_flags = surf->flags;
+   config.modifier = surf->modifier;
+
+   if (pdev->info.gfx_level >= GFX9) {
+      config.gfx9.swizzle_mode = surf->u.gfx9.swizzle_mode;
+      config.gfx9.dcc_number_type = surf->u.gfx9.dcc_number_type;
+      config.gfx9.dcc_data_format = surf->u.gfx9.dcc_data_format;
+      config.gfx9.dcc_max_compressed_block_size = surf->u.gfx9.color.dcc.max_compressed_block_size;
+      config.gfx9.dcc_independent_64B_blocks = surf->u.gfx9.color.dcc.independent_64B_blocks;
+      config.gfx9.dcc_independent_128B_blocks = surf->u.gfx9.color.dcc.independent_128B_blocks;
+      config.gfx9.dcc_write_compress_disable = surf->u.gfx9.dcc_write_compress_disable;
+      config.gfx9.display_dcc_pitch_max = surf->u.gfx9.color.display_dcc_pitch_max;
+   } else {
+      config.gfx6.pipe_config = surf->u.legacy.pipe_config;
+      config.gfx6.bankw = surf->u.legacy.bankw;
+      config.gfx6.bankh = surf->u.legacy.bankh;
+      config.gfx6.tile_split = surf->u.legacy.tile_split;
+      config.gfx6.mtilea = surf->u.legacy.mtilea;
+      config.gfx6.num_banks = surf->u.legacy.num_banks;
+   }
 
    ac_compute_surface(pdev->addrlib, &pdev->info, &config, mode, surf);
 }

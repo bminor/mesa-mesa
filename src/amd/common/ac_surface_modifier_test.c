@@ -276,6 +276,10 @@ static void test_modifier(const struct radeon_info *info,
             .num_channels = 3,
             .array_size = 1
          },
+         .blk_w = 1,
+         .blk_h = 1,
+         .bpe = util_format_get_blocksize(format),
+         .modifier = modifier,
       };
 
       struct test_entry entry = {
@@ -292,12 +296,7 @@ static void test_modifier(const struct radeon_info *info,
             G_0098F8_NUM_PKRS(info->gb_addr_config) : G_0098F8_NUM_BANKS(info->gb_addr_config)
       };
 
-      struct radeon_surf surf = (struct radeon_surf) {
-         .blk_w = 1,
-         .blk_h = 1,
-         .bpe = util_format_get_blocksize(format),
-         .modifier = modifier,
-      };
+      struct radeon_surf surf;
 
       int r = ac_compute_surface(addrlib, info, &config, RADEON_SURF_MODE_2D, &surf);
       assert(!r);

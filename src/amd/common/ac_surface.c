@@ -3752,9 +3752,33 @@ int ac_compute_surface(struct ac_addrlib *addrlib, const struct radeon_info *inf
                        const struct ac_surf_config *config, enum radeon_surf_mode mode,
                        struct radeon_surf *surf)
 {
-   int r;
+   memset(surf, 0, sizeof(*surf));
 
-   r = surf_config_sanity(config, surf->flags);
+   surf->blk_w = config->blk_w;
+   surf->blk_h = config->blk_h;
+   surf->bpe = config->bpe;
+   surf->flags = config->surf_flags;
+   surf->modifier = config->modifier;
+
+   if (info->gfx_level >= GFX9) {
+      surf->u.gfx9.swizzle_mode = config->gfx9.swizzle_mode;
+      surf->u.gfx9.dcc_number_type = config->gfx9.dcc_number_type;
+      surf->u.gfx9.dcc_data_format = config->gfx9.dcc_data_format;
+      surf->u.gfx9.color.dcc.max_compressed_block_size = config->gfx9.dcc_max_compressed_block_size;
+      surf->u.gfx9.color.dcc.independent_64B_blocks = config->gfx9.dcc_independent_64B_blocks;
+      surf->u.gfx9.color.dcc.independent_128B_blocks = config->gfx9.dcc_independent_128B_blocks;
+      surf->u.gfx9.dcc_write_compress_disable = config->gfx9.dcc_write_compress_disable;
+      surf->u.gfx9.color.display_dcc_pitch_max = config->gfx9.display_dcc_pitch_max;
+   } else {
+      surf->u.legacy.pipe_config = config->gfx6.pipe_config;
+      surf->u.legacy.bankw = config->gfx6.bankw;
+      surf->u.legacy.bankh = config->gfx6.bankh;
+      surf->u.legacy.tile_split = config->gfx6.tile_split;
+      surf->u.legacy.mtilea = config->gfx6.mtilea;
+      surf->u.legacy.num_banks = config->gfx6.num_banks;
+   }
+
+   int r = surf_config_sanity(config, surf->flags);
    if (r)
       return r;
 

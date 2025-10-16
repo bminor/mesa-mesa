@@ -420,10 +420,38 @@ struct ac_surf_info {
 
 struct ac_surf_config {
    struct ac_surf_info info;
-   unsigned is_1d : 1;
-   unsigned is_3d : 1;
-   unsigned is_cube : 1;
-   unsigned is_array : 1;
+   bool is_1d : 1;
+   bool is_3d : 1;
+   bool is_cube : 1;
+   bool is_array : 1;
+   uint8_t blk_w : 4;   /* block width for block-compressed formats */
+   uint8_t blk_h : 4;   /* block height for block-compressed formats */
+   uint8_t bpe : 5;     /* bytes per element, max 16 */
+   uint64_t surf_flags; /* bitmask of RADEON_SURF_* */
+   uint64_t modifier;   /* DRM format modifier */
+
+   /* For imported images (ac_surface_apply_bo_metadata) and RADEON_SURF_FORCE_SWIZZLE_MODE. */
+   union {
+      struct {
+         unsigned pipe_config : 5;         /* max 17 */
+         unsigned bankw : 4;               /* max 8 */
+         unsigned bankh : 4;               /* max 8 */
+         unsigned tile_split : 13;         /* max 4K */
+         unsigned mtilea : 4;              /* max 8 */
+         unsigned num_banks : 5;           /* max 16 */
+      } gfx6;
+
+      struct {
+         uint8_t swizzle_mode;
+         uint8_t dcc_number_type;                  /* GFX12+: CB_COLOR0_INFO.NUMBER_TYPE */
+         uint8_t dcc_data_format;                  /* GFX12+: [0:4]:CB_COLOR0_INFO.FORMAT, [5]:MM */
+         uint8_t dcc_max_compressed_block_size : 2; /* GFX9+ */
+         bool dcc_independent_64B_blocks : 1;      /* GFX9-11 */
+         bool dcc_independent_128B_blocks : 1;     /* GFX9-11 */
+         bool dcc_write_compress_disable : 1;      /* GFX12+ */
+         uint16_t display_dcc_pitch_max;           /* GFX9-11 */
+      } gfx9;
+   };
 };
 
 /* Output parameters for ac_surface_compute_nbc_view */
