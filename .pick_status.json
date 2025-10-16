@@ -284,7 +284,7 @@
         "description": "Revert \"wsi: Implements scaling controls for DRI3 presentation.\"",
         "nominated": true,
         "nomination_type": 3,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a219308867e7cee0f3bef3f0ebc14d99c665882f",
         "notes": null
