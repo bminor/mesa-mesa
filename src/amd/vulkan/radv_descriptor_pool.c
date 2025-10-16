@@ -153,11 +153,9 @@ radv_create_descriptor_pool(struct radv_device *device, const VkDescriptorPoolCr
       size += sizeof(struct radv_descriptor_pool_entry) * pCreateInfo->maxSets;
    }
 
-   pool = vk_alloc2(&device->vk.alloc, pAllocator, size, 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+   pool = vk_zalloc2(&device->vk.alloc, pAllocator, size, 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
    if (!pool)
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
-
-   memset(pool, 0, sizeof(*pool));
 
    vk_object_base_init(&device->vk, &pool->base, VK_OBJECT_TYPE_DESCRIPTOR_POOL);
 
