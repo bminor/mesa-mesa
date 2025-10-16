@@ -1363,7 +1363,7 @@ error:
 }
 
 /* calculate top/bottom offset */
-static unsigned texture_offset(struct radeon_surf *surface, unsigned layer,
+static unsigned texture_offset(const struct radeon_surf *surface, unsigned layer,
                                enum ruvd_surface_type type)
 {
    switch (type) {
@@ -1371,10 +1371,8 @@ static unsigned texture_offset(struct radeon_surf *surface, unsigned layer,
    case RUVD_SURFACE_TYPE_LEGACY:
       return (uint64_t)surface->u.legacy.level[0].offset_256B * 256 +
              layer * (uint64_t)surface->u.legacy.level[0].slice_size_dw * 4;
-      break;
    case RUVD_SURFACE_TYPE_GFX9:
       return surface->u.gfx9.surf_offset + layer * surface->u.gfx9.surf_slice_size;
-      break;
    }
 }
 
@@ -1423,8 +1421,8 @@ static unsigned bank_wh(unsigned bankwh)
 /**
  * fill decoding target field from the luma and chroma surfaces
  */
-void si_uvd_set_dt_surfaces(struct ruvd_msg *msg, struct radeon_surf *luma,
-                            struct radeon_surf *chroma, enum ruvd_surface_type type)
+void si_uvd_set_dt_surfaces(struct ruvd_msg *msg, const struct radeon_surf *luma,
+                            const struct radeon_surf *chroma, enum ruvd_surface_type type)
 {
    switch (type) {
    default:

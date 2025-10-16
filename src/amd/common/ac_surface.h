@@ -451,13 +451,13 @@ unsigned ac_pipe_config_to_num_pipes(unsigned pipe_config);
 #define AC_SURF_METADATA_FLAG_FAMILY_OVERRIDEN_BIT 1
 void ac_surface_apply_bo_metadata(enum amd_gfx_level gfx_level, struct radeon_surf *surf,
                                   uint64_t tiling_flags, enum radeon_surf_mode *mode);
-void ac_surface_compute_bo_metadata(const struct radeon_info *info, struct radeon_surf *surf,
+void ac_surface_compute_bo_metadata(const struct radeon_info *info, const struct radeon_surf *surf,
                                     uint64_t *tiling_flags);
 
 bool ac_surface_apply_umd_metadata(const struct radeon_info *info, struct radeon_surf *surf,
                                    unsigned num_storage_samples, unsigned num_mipmap_levels,
                                    unsigned size_metadata, const uint32_t metadata[64]);
-void ac_surface_compute_umd_metadata(const struct radeon_info *info, struct radeon_surf *surf,
+void ac_surface_compute_umd_metadata(const struct radeon_info *info, const struct radeon_surf *surf,
                                      unsigned num_mipmap_levels, uint32_t desc[8],
                                      unsigned *size_metadata, uint32_t metadata[64],
                                      bool include_tool_md);

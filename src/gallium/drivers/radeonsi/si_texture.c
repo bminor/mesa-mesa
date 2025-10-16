@@ -1540,7 +1540,7 @@ bool si_texture_commit(struct si_context *ctx, struct si_resource *res, unsigned
                        struct pipe_box *box, bool commit)
 {
    struct si_texture *tex = (struct si_texture *)res;
-   struct radeon_surf *surface = &tex->surface;
+   const struct radeon_surf *surface = &tex->surface;
    enum pipe_format format = res->b.b.format;
    unsigned blks = util_format_get_blocksize(format);
    unsigned samples = MAX2(1, res->b.b.nr_samples);

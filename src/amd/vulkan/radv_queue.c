@@ -108,7 +108,7 @@ radv_sparse_image_bind_memory(struct radv_device *device, const VkSparseImageMem
 {
    VK_FROM_HANDLE(radv_image, image, bind->image);
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   struct radeon_surf *surface = &image->planes[0].surface;
+   const struct radeon_surf *surface = &image->planes[0].surface;
    uint32_t bs = vk_format_get_blocksize(image->vk.format);
    VkResult result;
 

@@ -72,9 +72,9 @@ void radv_meta_nir_build_clear_depthstencil_shaders(struct radv_device *dev, str
 nir_shader *radv_meta_nir_build_clear_htile_mask_shader(struct radv_device *dev);
 nir_shader *radv_meta_nir_build_clear_dcc_comp_to_single_shader(struct radv_device *dev, bool is_msaa);
 
-nir_shader *radv_meta_nir_build_copy_vrs_htile_shader(struct radv_device *device, struct radeon_surf *surf);
+nir_shader *radv_meta_nir_build_copy_vrs_htile_shader(struct radv_device *device, const struct radeon_surf *surf);
 
-nir_shader *radv_meta_nir_build_dcc_retile_compute_shader(struct radv_device *dev, struct radeon_surf *surf);
+nir_shader *radv_meta_nir_build_dcc_retile_compute_shader(struct radv_device *dev, const struct radeon_surf *surf);
 
 nir_shader *radv_meta_nir_build_expand_depth_stencil_compute_shader(struct radv_device *dev);
 

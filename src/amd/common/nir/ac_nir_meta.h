@@ -98,7 +98,7 @@ struct ac_cs_blit_options {
 struct ac_cs_blit_description
 {
    struct {
-      struct radeon_surf *surf;
+      const struct radeon_surf *surf;
       uint8_t dim;            /* 1 = 1D texture, 2 = 2D texture, 3 = 3D texture */
       bool is_array;          /* array or cube texture */
       unsigned width0;        /* level 0 width */

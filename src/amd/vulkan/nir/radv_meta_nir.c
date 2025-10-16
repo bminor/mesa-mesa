@@ -942,7 +942,7 @@ radv_meta_nir_build_clear_dcc_comp_to_single_shader(struct radv_device *dev, boo
 }
 
 nir_shader *
-radv_meta_nir_build_copy_vrs_htile_shader(struct radv_device *device, struct radeon_surf *surf)
+radv_meta_nir_build_copy_vrs_htile_shader(struct radv_device *device, const struct radeon_surf *surf)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    nir_builder b = radv_meta_nir_init_shader(device, MESA_SHADER_COMPUTE, "meta_copy_vrs_htile");
@@ -1024,7 +1024,7 @@ radv_meta_nir_build_copy_vrs_htile_shader(struct radv_device *device, struct rad
 }
 
 nir_shader *
-radv_meta_nir_build_dcc_retile_compute_shader(struct radv_device *dev, struct radeon_surf *surf)
+radv_meta_nir_build_dcc_retile_compute_shader(struct radv_device *dev, const struct radeon_surf *surf)
 {
    const struct radv_physical_device *pdev = radv_device_physical(dev);
    enum glsl_sampler_dim dim = GLSL_SAMPLER_DIM_BUF;

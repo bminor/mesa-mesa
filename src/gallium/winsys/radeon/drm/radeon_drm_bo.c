@@ -901,7 +901,7 @@ static void radeon_bo_get_metadata(struct radeon_winsys *rws,
 static void radeon_bo_set_metadata(struct radeon_winsys *rws,
                                    struct pb_buffer_lean *_buf,
                                    struct radeon_bo_metadata *md,
-                                   struct radeon_surf *surf)
+                                   const struct radeon_surf *surf)
 {
    struct radeon_bo *bo = radeon_bo(_buf);
    struct drm_radeon_gem_set_tiling args;

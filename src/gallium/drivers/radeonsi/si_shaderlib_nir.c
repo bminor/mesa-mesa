@@ -38,7 +38,7 @@ static void unpack_2x16(nir_builder *b, nir_def *src, nir_def **x, nir_def **y)
    *y = nir_ushr_imm(b, src, 16);
 }
 
-void *si_create_dcc_retile_cs(struct si_context *sctx, struct radeon_surf *surf)
+void *si_create_dcc_retile_cs(struct si_context *sctx, const struct radeon_surf *surf)
 {
    nir_builder b = nir_builder_init_simple_shader(MESA_SHADER_COMPUTE, sctx->screen->nir_options,
                                                   "dcc_retile");

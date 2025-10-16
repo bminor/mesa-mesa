@@ -67,7 +67,7 @@ ac_build_fmask_descriptor(const enum amd_gfx_level gfx_level,
                           uint32_t desc[8]);
 
 struct ac_texture_state {
-   struct radeon_surf *surf;
+   const struct radeon_surf *surf;
    enum pipe_format format;
    enum pipe_format img_format;
    uint32_t width : 17;
@@ -305,7 +305,7 @@ ac_set_mutable_cb_surface_fields(const struct radeon_info *info, const struct ac
                                  struct ac_cb_surface *cb);
 
 struct ac_gfx12_hiz_state {
-   struct radeon_surf *surf;
+   const struct radeon_surf *surf;
    uint64_t va;
    uint32_t type : 4;
    uint32_t num_samples : 5;

@@ -398,7 +398,7 @@ struct radeon_winsys {
     * \param md        Metadata
     */
    void (*buffer_set_metadata)(struct radeon_winsys *ws, struct pb_buffer_lean *buf,
-                               struct radeon_bo_metadata *md, struct radeon_surf *surf);
+                               struct radeon_bo_metadata *md, const struct radeon_surf *surf);
 
    /**
     * Get a winsys buffer from a winsys handle. The internal structure

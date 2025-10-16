@@ -3025,7 +3025,7 @@ get_uvd_h265_msg(struct radv_device *device, struct radv_video_session *vid, str
 }
 
 static unsigned
-texture_offset_legacy(struct radeon_surf *surface, unsigned layer)
+texture_offset_legacy(const struct radeon_surf *surface, unsigned layer)
 {
    return (uint64_t)surface->u.legacy.level[0].offset_256B * 256 +
           layer * (uint64_t)surface->u.legacy.level[0].slice_size_dw * 4;

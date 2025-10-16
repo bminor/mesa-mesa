@@ -1653,7 +1653,7 @@ void si_resume_queries(struct si_context *sctx);
 /* si_shaderlib_nir.c */
 
 void *si_create_shader_state(struct si_context *sctx, struct nir_shader *nir);
-void *si_create_dcc_retile_cs(struct si_context *sctx, struct radeon_surf *surf);
+void *si_create_dcc_retile_cs(struct si_context *sctx, const struct radeon_surf *surf);
 void *gfx9_create_clear_dcc_msaa_cs(struct si_context *sctx, struct si_texture *tex);
 void *si_create_passthrough_tcs(struct si_context *sctx);
 void *si_clear_image_dcc_single_shader(struct si_context *sctx, bool is_msaa, unsigned wg_dim);

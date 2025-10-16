@@ -792,7 +792,7 @@ radv_image_bo_set_metadata(struct radv_device *device, struct radv_image *image,
    const VkFormat plane_format = radv_image_get_plane_format(pdev, image, plane_id);
    const unsigned plane_width = vk_format_get_plane_width(image->vk.format, plane_id, image->vk.extent.width);
    const unsigned plane_height = vk_format_get_plane_height(image->vk.format, plane_id, image->vk.extent.height);
-   struct radeon_surf *surface = &image->planes[plane_id].surface;
+   const struct radeon_surf *surface = &image->planes[plane_id].surface;
    const struct legacy_surf_level *base_level_info = pdev->info.gfx_level <= GFX8 ? &surface->u.legacy.level[0] : NULL;
    struct radeon_bo_metadata md;
    uint32_t desc[8];
@@ -1895,7 +1895,7 @@ radv_GetImageSubresourceLayout2(VkDevice _device, VkImage _image, const VkImageS
       plane_id = radv_plane_from_aspect(pSubresource->imageSubresource.aspectMask);
 
    struct radv_image_plane *plane = &image->planes[plane_id];
-   struct radeon_surf *surface = &plane->surface;
+   const struct radeon_surf *surface = &plane->surface;
 
    if (image->vk.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT && plane_count == 1) {
       unsigned mem_plane_id = radv_plane_from_aspect(pSubresource->imageSubresource.aspectMask);
