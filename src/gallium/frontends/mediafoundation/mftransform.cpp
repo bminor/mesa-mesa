@@ -1330,7 +1330,9 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
 
             metadata.encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;   // default to failure
 
-            // Attach the async stats DXGIBuffers to the MFSample output gated by pAsyncFence completion
+            // If sliced fences supported, we asynchronously copy here every slice as it is ready
+            // Otherwise, let's copy all the sliced together here after full frame completion (see below)
+            if ( !pThis->m_bFlushing && ( pDX12EncodeContext->sliceNotificationMode == D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM_NOTIFICATION_MODE_SUBREGIONS ))
             {
                // Obtain fence value from pipe_fence_handle
                uint64_t ResolveStatsCompletionFenceValue = 0;
@@ -1340,28 +1342,6 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                if( fence_handle )
                   CloseHandle( fence_handle );
 
-               // Set stats metadata buffers to the sample here. As we are returning the dxgi buffers gated by the completion fence
-               // for the resolved stats we do not need to wait for the pAsyncFence completion on the CPU.
-               // When num_output_samples_emitted == 1, we have only one output sample to attach the stats to
-               // otherwise we attach the stats to the last sample emitted (the last slice)
-               auto sample_idx_with_stats = (num_output_samples_emitted == 1u) ? 0 : (num_output_samples_emitted - 1);
-               if( FAILED( pThis->ConfigureAsyncStatsMetadataOutputSampleAttributes(spOutputSamples[sample_idx_with_stats].Get(),
-                                                                                    pDX12EncodeContext->pPipeResourcePSNRStats,
-                                                                                    pDX12EncodeContext->pPipeResourceQPMapStats,
-                                                                                    pDX12EncodeContext->pPipeResourceRCBitAllocMapStats,
-                                                                                    pDX12EncodeContext->pPipeResourceSATDMapStats,
-                                                                                    pDX12EncodeContext->spAsyncFence,
-                                                                                    ResolveStatsCompletionFenceValue,
-                                                                                    pDX12EncodeContext->pSyncObjectQueue )))
-               {
-                  MFE_ERROR( "[dx12 hmft 0x%p] ConfigureAsyncStatsMetadataOutputSampleAttributes failed", pThis );
-               }
-            }
-
-            // If sliced fences supported, we asynchronously copy here every slice as it is ready
-            // Otherwise, let's copy all the sliced together here after full frame completion (see below)
-            if ( !pThis->m_bFlushing && ( pDX12EncodeContext->sliceNotificationMode == D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM_NOTIFICATION_MODE_SUBREGIONS ))
-            {
                //
                // Wait for each slice fence and resolve offset/size as each slice is ready
                //
@@ -1484,6 +1464,23 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                      if( FAILED( hr ) )
                      {
                         MFE_ERROR( "[dx12 hmft 0x%p] ConfigureBitstreamOutputSampleAttributes failed - hr=0x%08x", pThis, hr );
+                     }
+
+                     // Attach the async stats DXGIBuffers to the MFSample output gated by pAsyncFence completion
+                     {
+                        // Set stats metadata buffers to the sample here. As we are returning the dxgi buffers gated by the completion fence
+                        // for the resolved stats we do not need to wait for the pAsyncFence completion on the CPU.
+                        if( FAILED( pThis->ConfigureAsyncStatsMetadataOutputSampleAttributes(spOutputSamples[cur_output_sample_emitted_idx].Get(),
+                                                                                             pDX12EncodeContext->pPipeResourcePSNRStats,
+                                                                                             pDX12EncodeContext->pPipeResourceQPMapStats,
+                                                                                             pDX12EncodeContext->pPipeResourceRCBitAllocMapStats,
+                                                                                             pDX12EncodeContext->pPipeResourceSATDMapStats,
+                                                                                             pDX12EncodeContext->spAsyncFence,
+                                                                                             ResolveStatsCompletionFenceValue,
+                                                                                             pDX12EncodeContext->pSyncObjectQueue )))
+                        {
+                           MFE_ERROR( "[dx12 hmft 0x%p] ConfigureAsyncStatsMetadataOutputSampleAttributes failed", pThis );
+                        }
                      }
 
                      // Issue a new METransformHaveOutput event for the async slices mode
@@ -1677,6 +1674,29 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
             if( FAILED( hr ) )
             {
                MFE_ERROR( "[dx12 hmft 0x%p] ConfigureBitstreamOutputSampleAttributes failed - hr=0x%08x", pThis, hr );
+            }
+
+            // Attach the async stats DXGIBuffers to the MFSample output gated by pAsyncFence completion
+            {
+               // Obtain fence value from pipe_fence_handle
+               uint64_t ResolveStatsCompletionFenceValue = 0;
+               HANDLE fence_handle = (HANDLE) pThis->m_pPipeContext->screen->fence_get_win32_handle( pThis->m_pPipeContext->screen,
+                                                                                                     pDX12EncodeContext->pAsyncFence,
+                                                                                                     &ResolveStatsCompletionFenceValue );
+               if( fence_handle )
+                  CloseHandle( fence_handle );
+
+               if( FAILED( pThis->ConfigureAsyncStatsMetadataOutputSampleAttributes(spOutputSamples[0].Get(),
+                                                                                    pDX12EncodeContext->pPipeResourcePSNRStats,
+                                                                                    pDX12EncodeContext->pPipeResourceQPMapStats,
+                                                                                    pDX12EncodeContext->pPipeResourceRCBitAllocMapStats,
+                                                                                    pDX12EncodeContext->pPipeResourceSATDMapStats,
+                                                                                    pDX12EncodeContext->spAsyncFence,
+                                                                                    ResolveStatsCompletionFenceValue,
+                                                                                    pDX12EncodeContext->pSyncObjectQueue )))
+               {
+                  MFE_ERROR( "[dx12 hmft 0x%p] ConfigureAsyncStatsMetadataOutputSampleAttributes failed", pThis );
+               }
             }
 
             if( metadata.encode_result & PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_MAX_FRAME_SIZE_OVERFLOW )
