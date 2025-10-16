@@ -40,7 +40,7 @@ radv_aco_convert_shader_info(struct aco_shader_info *aco_info, const struct radv
    aco_info->ps.spi_ps_input_ena = radv->ps.spi_ps_input_ena;
    aco_info->ps.spi_ps_input_addr = radv->ps.spi_ps_input_addr;
    aco_info->ps.has_prolog = false;
-   aco_info->gfx9_gs_ring_lds_size = radv->gs_ring_info.lds_size;
+   aco_info->gfx9_gs_ring_lds_size = radv->legacy_gs_info.lds_size;
    aco_info->image_2d_view_of_3d = radv_key->image_2d_view_of_3d;
    aco_info->epilog_pc = radv_args->epilog_pc;
    aco_info->hw_stage = radv_select_hw_stage(radv, gfx_level);
