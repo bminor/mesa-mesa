@@ -1401,12 +1401,19 @@ r3d_dst_depth(struct tu_cs *cs, const struct tu_image_view *iview, uint32_t laye
    tu_cs_emit_regs(cs, A7XX_GRAS_SU_RENDER_CNTL());
 }
 
+static uint32_t
+tu_rb_mrt_buf_info_stencil(const struct tu_image_view *iview)
+{
+   return tu_image_view_stencil(iview, RB_MRT_BUF_INFO) &
+      ~A7XX_RB_MRT_BUF_INFO_LOSSLESSCOMPEN;
+}
+
 template <chip CHIP>
 static void
 r3d_dst_stencil(struct tu_cs *cs, const struct tu_image_view *iview, uint32_t layer)
 {
    tu_cs_emit_regs(cs,
-      RB_MRT_BUF_INFO(CHIP, 0, .dword = tu_image_view_stencil(iview, RB_MRT_BUF_INFO)),
+      RB_MRT_BUF_INFO(CHIP, 0, .dword = tu_rb_mrt_buf_info_stencil(iview)),
       A6XX_RB_MRT_PITCH(0, iview->stencil_pitch),
       A6XX_RB_MRT_ARRAY_PITCH(0, iview->stencil_layer_size),
       A6XX_RB_MRT_BASE(0, .qword = iview->stencil_base_addr + iview->stencil_layer_size * layer),
@@ -1453,7 +1460,7 @@ r3d_dst_gmem(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
          RB_MRT_BUF_INFO = tu_image_view_depth(iview, RB_MRT_BUF_INFO);
          gmem_offset = tu_attachment_gmem_offset(cmd, att, layer);
       } else {
-         RB_MRT_BUF_INFO = tu_image_view_stencil(iview, RB_MRT_BUF_INFO);
+         RB_MRT_BUF_INFO = tu_rb_mrt_buf_info_stencil(iview);
          gmem_offset = tu_attachment_gmem_offset_stencil(cmd, att, layer);
       }
    } else {
