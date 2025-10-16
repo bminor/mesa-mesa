@@ -164,11 +164,11 @@ static const struct vk_instance_extension_table pvr_instance_extensions = {
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
    .KHR_wayland_surface = true,
 #endif
+   .EXT_debug_report = true,
+   .EXT_debug_utils = true,
 #ifndef VK_USE_PLATFORM_WIN32_KHR
    .EXT_headless_surface = PVR_USE_WSI_PLATFORM && false,
 #endif
-   .EXT_debug_report = true,
-   .EXT_debug_utils = true,
 };
 
 static void pvr_physical_device_get_supported_extensions(
@@ -188,9 +188,9 @@ static void pvr_physical_device_get_supported_extensions(
       .KHR_external_fence_fd = true,
       .KHR_external_memory = true,
       .KHR_external_memory_fd = true,
-      .KHR_format_feature_flags2 = false,
       .KHR_external_semaphore = PVR_USE_WSI_PLATFORM,
       .KHR_external_semaphore_fd = PVR_USE_WSI_PLATFORM,
+      .KHR_format_feature_flags2 = false,
       .KHR_get_memory_requirements2 = true,
       .KHR_image_format_list = true,
       .KHR_imageless_framebuffer = true,
@@ -212,8 +212,8 @@ static void pvr_physical_device_get_supported_extensions(
       .KHR_shader_non_semantic_info = true,
       .KHR_shader_relaxed_extended_instruction = true,
       .KHR_shader_subgroup_extended_types = true,
-      .KHR_spirv_1_4 = true,
       .KHR_shader_terminate_invocation = true,
+      .KHR_spirv_1_4 = true,
       .KHR_swapchain = PVR_USE_WSI_PLATFORM,
       .KHR_swapchain_mutable_format = PVR_USE_WSI_PLATFORM,
       .KHR_timeline_semaphore = true,
@@ -237,10 +237,10 @@ static void pvr_physical_device_get_supported_extensions(
       .EXT_physical_device_drm = true,
       .EXT_private_data = true,
       .EXT_provoking_vertex = true,
-      .EXT_robustness2 = true,
       .EXT_queue_family_foreign = true,
-      .EXT_separate_stencil_usage = true,
+      .EXT_robustness2 = true,
       .EXT_scalar_block_layout = true,
+      .EXT_separate_stencil_usage = true,
       .EXT_shader_demote_to_helper_invocation = true,
       .EXT_shader_replicated_composites = true,
       .EXT_texel_buffer_alignment = false,
