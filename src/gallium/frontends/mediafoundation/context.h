@@ -74,6 +74,13 @@ typedef class DX12EncodeContext
       struct pipe_h265_enc_picture_desc h265enc;
       struct pipe_av1_enc_picture_desc av1enc;
    } encoderPicInfo = {};
+
+   bool IsSliceAutoModeEnabled()
+   {
+      return ((m_Codec == D3D12_VIDEO_ENCODER_CODEC_H264) && (encoderPicInfo.h264enc.slice_mode == PIPE_VIDEO_SLICE_MODE_AUTO)) ||
+             ((m_Codec == D3D12_VIDEO_ENCODER_CODEC_HEVC) && (encoderPicInfo.h265enc.slice_mode == PIPE_VIDEO_SLICE_MODE_AUTO));
+   }
+
    const D3D12_VIDEO_ENCODER_CODEC m_Codec = D3D12_VIDEO_ENCODER_CODEC_H264;
    UINT32 GetPictureType()
    {

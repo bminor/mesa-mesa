@@ -620,6 +620,19 @@ class __declspec( uuid( HMFT_GUID ) ) CDX12EncHMFT : CMFD3DManager,
                                                               ComPtr<ID3D12Fence> &pResolveStatsCompletionFence,
                                                               UINT64 ResolveStatsCompletionFenceValue,
                                                               ID3D12CommandQueue *pSyncObjectQueue );
+   void ProcessSliceBitstreamData( LPDX12EncodeContext pDX12EncodeContext,
+                                   uint32_t slice_idx,
+                                   LPBYTE lpBuffer,
+                                   std::vector<struct codec_unit_location_t> &mfsample_codec_unit_metadata,
+                                   uint64_t &output_buffer_offset );
+   void FinalizeAndEmitOutputSample( LPDX12EncodeContext pDX12EncodeContext,
+                                     ComPtr<IMFMediaBuffer> &spMemoryBuffer,
+                                     ComPtr<IMFSample> &spOutputSample,
+                                     struct codec_unit_location_t *pCodecUnitMetadata,
+                                     unsigned CodecUnitMetadataCount,
+                                     DWORD dwReceivedInput,
+                                     BOOL bIsLastSlice,
+                                     uint64_t ResolveStatsCompletionFenceValue );
    HRESULT UpdateAvailableInputType();
    HRESULT InternalCheckInputType( IMFMediaType *pType );
    HRESULT InternalCheckOutputType( IMFMediaType *pType );
