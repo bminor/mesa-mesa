@@ -11504,7 +11504,7 @@
         "description": "radv/shader_info: rename gs_ring_info -> legacy_gs_info and use union with ngg_info",
         "nominated": false,
         "nomination_type": 0,
-        "resolution": 4,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
