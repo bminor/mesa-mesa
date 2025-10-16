@@ -270,7 +270,6 @@ merge_requests:
         '^src/intel/vulkan/': ['ANV']
         '^src/intel/vulkan_hasvk/': ['hasvk']
         '^src/loader/': ['loader']
-        '^src/mapi/': ['mapi']
         '^src/mesa/drivers/dri/i915/': ['i915']
         '^src/mesa/drivers/dri/i965/': ['i965']
         '^src/mesa/drivers/dri/nouveau/': ['vieux']
