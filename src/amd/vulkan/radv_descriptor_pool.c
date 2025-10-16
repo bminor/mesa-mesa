@@ -20,8 +20,8 @@ static void
 radv_destroy_descriptor_pool_entries(struct radv_device *device, struct radv_descriptor_pool *pool)
 {
    if (!pool->host_memory_base) {
-      for (uint32_t i = 0; i < pool->entry_count; ++i) {
-         radv_descriptor_set_destroy(device, pool, pool->entries[i].set, false);
+      list_for_each_entry_safe (struct radv_descriptor_set, set, &pool->sets, link) {
+         radv_descriptor_set_destroy(device, pool, set);
       }
    } else {
       list_for_each_entry_safe (struct radv_descriptor_set, set, &pool->sets, link) {
@@ -38,6 +38,8 @@ radv_destroy_descriptor_pool(struct radv_device *device, const VkAllocationCallb
 {
    radv_destroy_descriptor_pool_entries(device, pool);
 
+   if (!pool->host_memory_base && pool->size)
+      util_vma_heap_finish(&pool->bo_heap);
    if (pool->bo)
       radv_bo_destroy(device, &pool->base, pool->bo);
    if (pool->host_bo)
@@ -146,8 +148,6 @@ radv_create_descriptor_pool(struct radv_device *device, const VkDescriptorPoolCr
       size += pCreateInfo->maxSets * sizeof(struct radv_descriptor_set);
       size += sizeof(struct radeon_winsys_bo *) * bo_count;
       size += sizeof(struct radv_descriptor_range) * range_count;
-   } else {
-      size += sizeof(struct radv_descriptor_pool_entry) * pCreateInfo->maxSets;
    }
 
    pool = vk_zalloc2(&device->vk.alloc, pAllocator, size, 8, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
@@ -162,6 +162,11 @@ radv_create_descriptor_pool(struct radv_device *device, const VkDescriptorPoolCr
       pool->host_memory_base = (uint8_t *)pool + sizeof(struct radv_descriptor_pool);
       pool->host_memory_ptr = pool->host_memory_base;
       pool->host_memory_end = (uint8_t *)pool + size;
+   } else {
+      if (bo_size) {
+         util_vma_heap_init(&pool->bo_heap, RADV_POOL_HEAP_OFFSET, bo_size + RADV_POOL_HEAP_OFFSET);
+         pool->bo_heap.alloc_high = false;
+      }
    }
 
    if (bo_size) {
@@ -230,6 +235,11 @@ radv_ResetDescriptorPool(VkDevice _device, VkDescriptorPool descriptorPool, VkDe
    VK_FROM_HANDLE(radv_descriptor_pool, pool, descriptorPool);
 
    radv_destroy_descriptor_pool_entries(device, pool);
+
+   if (!pool->host_memory_base && pool->size) {
+      util_vma_heap_finish(&pool->bo_heap);
+      util_vma_heap_init(&pool->bo_heap, RADV_POOL_HEAP_OFFSET, pool->size + RADV_POOL_HEAP_OFFSET);
+   }
 
    pool->entry_count = 0;
    pool->current_offset = 0;
