@@ -474,9 +474,6 @@ nvk_GetDescriptorSetLayoutSupport(VkDevice device,
          assert(stride <= UINT8_MAX);
          assert(util_is_power_of_two_nonzero(alignment));
 
-         variable_is_inline_uniform_block =
-            binding->descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
-
          if (flags & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT) {
             /* From the Vulkan 1.3.256 spec:
              *
@@ -486,6 +483,9 @@ nvk_GetDescriptorSetLayoutSupport(VkDevice device,
              */
             variable_count = MAX2(1, binding->descriptorCount);
             variable_stride = stride;
+
+            variable_is_inline_uniform_block =
+               binding->descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
          } else {
             /* Since we're aligning to the maximum and since this is just a
              * check for whether or not the max buffer size is big enough, we
@@ -507,8 +507,6 @@ nvk_GetDescriptorSetLayoutSupport(VkDevice device,
    if (pCreateInfo->flags &
        VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR)
       max_buffer_size = NVK_MAX_PUSH_DESCRIPTORS * nvk_max_descriptor_size(&pdev->info);
-   else if (variable_is_inline_uniform_block)
-      max_buffer_size = NVK_MAX_INLINE_UNIFORM_BLOCK_SIZE;
    else
       max_buffer_size = NVK_MAX_DESCRIPTOR_SET_SIZE;
 
@@ -519,12 +517,21 @@ nvk_GetDescriptorSetLayoutSupport(VkDevice device,
       switch (ext->sType) {
       case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_LAYOUT_SUPPORT: {
          VkDescriptorSetVariableDescriptorCountLayoutSupport *vs = (void *)ext;
+         uint32_t max_var_count;
+
          if (variable_stride > 0) {
-            vs->maxVariableDescriptorCount =
+            max_var_count =
                (max_buffer_size - non_variable_size) / variable_stride;
          } else {
-            vs->maxVariableDescriptorCount = 0;
+            max_var_count = 0;
          }
+
+         if (variable_is_inline_uniform_block) {
+            max_var_count =
+               MIN2(max_var_count, NVK_MAX_INLINE_UNIFORM_BLOCK_SIZE);
+         }
+
+         vs->maxVariableDescriptorCount = max_var_count;
          break;
       }
 
