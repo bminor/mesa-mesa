@@ -2080,10 +2080,15 @@ flag_fused_eu_disable_instr(nir_builder *b, nir_instr *instr, void *data)
       for (unsigned i = 0; i < tex->num_srcs; ++i) {
          nir_tex_src_type src_type = tex->src[i].src_type;
 
+         /* backend2 is the packed dynamically programmable offset, goes into
+          * the sampler message header, so it needs to be considered for EU
+          * fusion.
+          */
          if (src_type != nir_tex_src_texture_handle &&
              src_type != nir_tex_src_sampler_handle &&
              src_type != nir_tex_src_texture_offset &&
-             src_type != nir_tex_src_sampler_offset)
+             src_type != nir_tex_src_sampler_offset &&
+             src_type != nir_tex_src_backend2)
             continue;
 
          if (nir_src_is_divergent(&tex->src[i].src)) {

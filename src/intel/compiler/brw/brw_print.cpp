@@ -466,6 +466,9 @@ brw_print_instruction(const brw_shader &s, const brw_inst *inst, FILE *file, con
          case TEX_LOGICAL_SRC_SAMPLER:
             fprintf(file, "smpl: ");
             break;
+         case TEX_LOGICAL_SRC_PACKED_OFFSETS:
+            fprintf(file, "pk_offs: ");
+            break;
          default:
             fprintf(file, "%s: ",
                     brw_sampler_payload_param_name(

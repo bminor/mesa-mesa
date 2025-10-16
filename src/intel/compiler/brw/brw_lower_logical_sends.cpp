@@ -755,6 +755,11 @@ lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
    const bool sampler_bindless = tex->sampler_bindless;
    const brw_reg surface = tex->src[TEX_LOGICAL_SRC_SURFACE];
    const brw_reg sampler = tex->src[TEX_LOGICAL_SRC_SAMPLER];
+   /* Xe2+ should never used packed offsets since it has enough opcodes to
+    * handle any programmable offset.
+    */
+   const brw_reg packed_offsets = tex->src[TEX_LOGICAL_SRC_PACKED_OFFSETS];
+   assert(packed_offsets.file == BAD_FILE || devinfo->ver < 20);
 
    const unsigned payload_type_bit_size =
       get_sampler_msg_payload_type_bit_size(devinfo, tex);
@@ -771,6 +776,7 @@ lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
    const bool needs_header =
       sampler_op_needs_header(op, devinfo) ||
       tex->has_const_offsets ||
+      packed_offsets.file != BAD_FILE ||
       sampler_bindless || is_high_sampler(devinfo, sampler) ||
       tex->residency;
 
@@ -829,7 +835,11 @@ lower_sampler_logical_send(const brw_builder &bld, brw_tex_inst *tex)
       else
          ubld.MOV(header, retype(brw_vec8_grf(0, 0), BRW_TYPE_UD));
 
-      if (g0_2) {
+      if (packed_offsets.file != BAD_FILE) {
+         ubld1.OR(retype(component(header, 2), BRW_TYPE_UD),
+                  retype(component(packed_offsets, 0), BRW_TYPE_UD),
+                  brw_imm_ud(g0_2));
+      } else if (g0_2) {
          ubld1.MOV(component(header, 2), brw_imm_ud(g0_2));
       } else if (devinfo->ver < 11 &&
                  bld.shader->stage != MESA_SHADER_VERTEX &&

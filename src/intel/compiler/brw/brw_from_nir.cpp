@@ -5922,7 +5922,8 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
 
       brw_reg tmp = ubld.vgrf(BRW_TYPE_UD, 4);
       brw_tex_inst *inst = ubld.emit(SHADER_OPCODE_SAMPLER,
-                                     tmp, srcs, 3)->as_tex();
+                                     tmp, srcs,
+                                     TEX_LOGICAL_SRC_PAYLOAD0 + 1)->as_tex();
       inst->required_params = 0x1 /* LOD */;
       inst->sampler_opcode = BRW_SAMPLER_OPCODE_RESINFO;
       inst->surface_bindless = instr->intrinsic == nir_intrinsic_bindless_image_size;
@@ -6447,7 +6448,8 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
 
       brw_reg tmp = ubld.vgrf(BRW_TYPE_UD, 4);
       brw_tex_inst *inst = ubld.emit(SHADER_OPCODE_SAMPLER,
-                                     tmp, srcs, 3)->as_tex();
+                                     tmp, srcs,
+                                     TEX_LOGICAL_SRC_PAYLOAD0 + 1)->as_tex();
       inst->required_params = 0x1 /* LOD */;
       inst->sampler_opcode = BRW_SAMPLER_OPCODE_RESINFO;
       inst->surface_bindless = get_nir_src_bindless(ntb, instr->src[0]);
@@ -7509,6 +7511,12 @@ brw_from_nir_emit_texture(nir_to_brw_state &ntb,
 
       if (!sampler_src.optional)
          required_params |= BITFIELD_BIT(i);
+   }
+
+   int packed_offset_idx = nir_tex_instr_src_index(instr, nir_tex_src_backend2);
+   if (packed_offset_idx >= 0) {
+      srcs[TEX_LOGICAL_SRC_PACKED_OFFSETS] = bld.emit_uniformize(
+         get_nir_src(ntb, instr->src[packed_offset_idx].src, 0));
    }
 
    brw_reg nir_def_reg = get_nir_def(ntb, instr->def);

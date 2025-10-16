@@ -585,6 +585,8 @@ enum tex_logical_srcs {
    TEX_LOGICAL_SRC_SURFACE,
    /** Texture sampler index */
    TEX_LOGICAL_SRC_SAMPLER,
+   /** Packed offsets */
+   TEX_LOGICAL_SRC_PACKED_OFFSETS,
    /** Sampler payloads */
    TEX_LOGICAL_SRC_PAYLOAD0,
    TEX_LOGICAL_SRC_PAYLOAD1,

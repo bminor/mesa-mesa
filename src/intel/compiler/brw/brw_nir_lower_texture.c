@@ -23,6 +23,7 @@
 
 #include "compiler/nir/nir_builder.h"
 #include "compiler/nir/nir_builtin_builder.h"
+#include "compiler/nir/nir_format_convert.h"
 #include "brw_nir.h"
 #include "brw_sampler.h"
 
@@ -314,58 +315,105 @@ pack_offset(nir_builder *b, nir_tex_instr *tex,
    return true;
 }
 
+/* Sampler header offset format described in SKL PRMs Volume 7:
+ * 3D-Media-GPGPU, Sampler, Message Header.
+ */
+static bool
+pack_header_offset(nir_builder *b, nir_tex_instr *tex)
+{
+   nir_def *_offset = nir_steal_tex_src(tex, nir_tex_src_offset);
+   if (!_offset)
+      return false;
+
+   b->cursor = nir_before_instr(&tex->instr);
+
+   static const unsigned bits4[] = { 4, 4, 4, };
+   nir_def *offset = nir_iand_imm(b, nir_format_clamp_sint(b, _offset, bits4), 0xf);
+
+   nir_def *offuvr = nir_ishl_imm(b, nir_channel(b, offset, 0), 8);
+   for (unsigned i = 1; i < MIN2(offset->num_components, 3); i++) {
+      nir_def *chan = nir_channel(b, offset, i);
+      offuvr = nir_ior(b, offuvr, nir_ishl_imm(b, chan, 8 - (4 * i)));
+   }
+
+   nir_tex_instr_add_src(tex, nir_tex_src_backend2, offuvr);
+
+   return true;
+}
+
 static bool
 brw_nir_lower_texture_instr(nir_builder *b, nir_tex_instr *tex, void *cb_data)
 {
    enum brw_sampler_opcode sampler_opcode = tex->backend_flags;
+   bool progress = false;
 
-   if (brw_sampler_opcode_param_index(sampler_opcode,
-                                      BRW_SAMPLER_PAYLOAD_PARAM_LOD_AI) != -1 ||
-       brw_sampler_opcode_param_index(sampler_opcode,
-                                      BRW_SAMPLER_PAYLOAD_PARAM_BIAS_AI) != -1)
-      return pack_lod_and_array_index(b, tex);
+   const struct brw_sampler_payload_desc *payload_desc =
+      brw_get_sampler_payload_desc(sampler_opcode);
+   bool has_offset_param = false;
 
-   if (brw_sampler_opcode_param_index(sampler_opcode,
-                                      BRW_SAMPLER_PAYLOAD_PARAM_BIAS_OFFUV6) != -1 ||
-       brw_sampler_opcode_param_index(sampler_opcode,
-                                      BRW_SAMPLER_PAYLOAD_PARAM_LOD_OFFUV6) != -1)
-      return pack_lod_or_bias_and_offset(b, tex, 6, 2);
+   for (uint32_t i = 0; payload_desc->sources[i].param != BRW_SAMPLER_PAYLOAD_PARAM_INVALID; i++) {
+#define PARAM_CASE(name) case BRW_SAMPLER_PAYLOAD_PARAM_##name
+      switch (payload_desc->sources[i].param) {
+      PARAM_CASE(LOD_AI):
+      PARAM_CASE(BIAS_AI):
+         progress |= pack_lod_and_array_index(b, tex);
+         break;
+      PARAM_CASE(BIAS_OFFUV6):
+      PARAM_CASE(LOD_OFFUV6):
+         progress |= pack_lod_or_bias_and_offset(b, tex, 6, 2);
+         has_offset_param = true;
+         break;
+      PARAM_CASE(BIAS_OFFUVR4):
+      PARAM_CASE(LOD_OFFUVR4):
+         progress |= pack_lod_or_bias_and_offset(b, tex, 4, 3);
+         has_offset_param = true;
+         break;
+      PARAM_CASE(OFFUV4_R):
+         progress |= pack_offset_r(b, tex, 4, 2);
+         has_offset_param = true;
+         break;
+      PARAM_CASE(OFFUVR4_R):
+         progress |= pack_offset_r(b, tex, 4, 3);
+         has_offset_param = true;
+         break;
+      PARAM_CASE(OFFUV6_R):
+         progress |= pack_offset_r(b, tex, 6, 2);
+         has_offset_param = true;
+         break;
+      PARAM_CASE(OFFUV4):
+         progress |= pack_offset(b, tex, 4, 2);
+         has_offset_param = true;
+         break;
+      PARAM_CASE(OFFUVR4):
+         progress |= pack_offset(b, tex, 4, 3);
+         has_offset_param = true;
+         break;
+      PARAM_CASE(OFFUV6):
+         progress |= pack_offset(b, tex, 6, 2);
+         has_offset_param = true;
+         break;
+      PARAM_CASE(OFFUVR6):
+         progress |= pack_offset(b, tex, 6, 3);
+         has_offset_param = true;
+         break;
+      PARAM_CASE(OFFU):
+      PARAM_CASE(OFFV):
+         has_offset_param = true;
+         break;
+      default:
+         break;
+      }
+#undef PARAM_CASE
+   }
 
-   if (brw_sampler_opcode_param_index(sampler_opcode,
-                                      BRW_SAMPLER_PAYLOAD_PARAM_BIAS_OFFUVR4) != -1 ||
-       brw_sampler_opcode_param_index(sampler_opcode,
-                                      BRW_SAMPLER_PAYLOAD_PARAM_LOD_OFFUVR4) != -1)
-      return pack_lod_or_bias_and_offset(b, tex, 4, 3);
+   /* Handle pre-Xe2 dynamic programmable offsets */
+   int offset_idx;
+   if (!has_offset_param &&
+       (offset_idx = nir_tex_instr_src_index(tex, nir_tex_src_offset)) >= 0 &&
+       !brw_nir_tex_offset_in_constant_range(tex, offset_idx))
+      progress |= pack_header_offset(b, tex);
 
-   if (brw_sampler_opcode_param_index(sampler_opcode,
-                                      BRW_SAMPLER_PAYLOAD_PARAM_OFFUV4_R) != -1)
-      return pack_offset_r(b, tex, 4, 2);
-
-   if (brw_sampler_opcode_param_index(sampler_opcode,
-                                      BRW_SAMPLER_PAYLOAD_PARAM_OFFUVR4_R) != -1)
-      return pack_offset_r(b, tex, 4, 3);
-
-   if (brw_sampler_opcode_param_index(sampler_opcode,
-                                      BRW_SAMPLER_PAYLOAD_PARAM_OFFUV6_R) != -1)
-      return pack_offset_r(b, tex, 6, 2);
-
-   if (brw_sampler_opcode_param_index(sampler_opcode,
-                                      BRW_SAMPLER_PAYLOAD_PARAM_OFFUV4) != -1)
-      return pack_offset(b, tex, 4, 2);
-
-   if (brw_sampler_opcode_param_index(sampler_opcode,
-                                      BRW_SAMPLER_PAYLOAD_PARAM_OFFUVR4) != -1)
-      return pack_offset(b, tex, 4, 3);
-
-   if (brw_sampler_opcode_param_index(sampler_opcode,
-                                      BRW_SAMPLER_PAYLOAD_PARAM_OFFUV6) != -1)
-      return pack_offset(b, tex, 6, 2);
-
-   if (brw_sampler_opcode_param_index(sampler_opcode,
-                                      BRW_SAMPLER_PAYLOAD_PARAM_OFFUVR6) != -1)
-      return pack_offset(b, tex, 6, 3);
-
-   return false;
+   return progress;
 }
 
 bool

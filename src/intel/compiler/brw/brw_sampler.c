@@ -850,39 +850,76 @@ brw_get_sampler_opcode_from_tex(const struct intel_device_info *devinfo,
 #define SKIP_IF(name, cond) { if (cond) { continue; } }
 #endif
 
-   enum brw_sampler_opcode opcode_index = BRW_SAMPLER_OPCODE_MAX;
-   for (uint32_t i = 0; i < ARRAY_SIZE(sampler_opcode_descs); i++) {
-      SKIP_IF("generation requirement not met",
-              opcode_filters[i] != NULL && !opcode_filters[i](tex, devinfo));
+   /* The sampler payloads described in this file are contiguous sets of
+    * vector registers in the register file (Xe3+ can avoiding making this
+    * contiguous) handed over to the sampler as input for a texture operation.
+    * The format of the payloads are described above in sampler_opcode_descs[]
+    * for each of the sampler opcode. Each payload element lives in a vector
+    * register (or pair of vector register if the message is SIMD16/SIMD32,
+    * depending on pre/post Xe2). And each lane of the shader subgroup
+    * occupies a slot in each of the vector registers.
+    *
+    * Preceding the payload we can optionally add a header (a single vector
+    * register) which does not hold per lane data, but instead data that is
+    * common to all the lanes. This includes the sampler handle to use,
+    * potential texture offsets (again the same for all the lanes), component
+    * masking, sparse residency request, etc...
+    *
+    * Some opcodes allow for a per lane offsets, others don't. When we can't
+    * use a per lane offset, we have to nir_lower_non_uniform_access texture
+    * offsets like we do for sampler/texture handles and iterate through each
+    * lane with the offset put into the sampler message header.
+    *
+    * We also have to consider that register space usage of per lane offsets.
+    * In SIMD8 that's a single GRF per component, but on SIMD16 this is 2 GRFs
+    * per component. So when the offset is constant or uniform across all
+    * lanes, we want to put it in the header, since that will be combined with
+    * other fields, reducing register usage.
+    *
+    * On Xe2+ platforms we can always find a sampler opcode that will
+    * accomodate non constant offsets (Xe2 gained enough HW support). With the
+    * opcodes ordered with per lane offsets at the bottom of the list we can
+    * find the best matching opcode with one traversal.
+    *
+    * On pre-Xe2 platforms, we iterate through the opcodes twice, the first
+    * iteration only considering the non constant offsets and the opcodes that
+    * would accomodate them. The second iteration considering all the opcodes,
+    * assuming the texture instructions were properly lowered with
+    * nir_lower_non_uniform_access.
+    */
+   const uint32_t n_iterations = devinfo->ver < 20 ? 2 : 1;
+   for (uint32_t iteration = 0; iteration < n_iterations; iteration++) {
+      for (uint32_t i = 0; i < ARRAY_SIZE(sampler_opcode_descs); i++) {
+         SKIP_IF("generation requirement not met",
+                 opcode_filters[i] != NULL && !opcode_filters[i](tex, devinfo));
 
-      SKIP_IF("non constant offsets",
-              offset_non_constant_or_non_header_range &&
-              !sampler_opcode_descs[i].has_offset_payload);
+         SKIP_IF("non constant offsets",
+                 iteration == 0 &&
+                 offset_non_constant_or_non_header_range &&
+                 !sampler_opcode_descs[i].has_offset_payload);
 
-      SKIP_IF("not fetch instruction",
-              is_fetch != sampler_opcode_descs[i].is_fetch);
+         SKIP_IF("not fetch instruction",
+                 is_fetch != sampler_opcode_descs[i].is_fetch);
 
-      SKIP_IF("not gather instruction",
-              is_gather != sampler_opcode_descs[i].is_gather);
+         SKIP_IF("not gather instruction",
+                 is_gather != sampler_opcode_descs[i].is_gather);
 
-      SKIP_IF("not gather implicit lod",
-              tex->is_gather_implicit_lod !=
-              sampler_opcode_descs[i].is_gather_implicit_lod);
+         SKIP_IF("not gather implicit lod",
+                 tex->is_gather_implicit_lod !=
+                 sampler_opcode_descs[i].is_gather_implicit_lod);
 
-      SKIP_IF("non lod zero",
-              !lod_zero && sampler_opcode_descs[i].lod_zero);
+         SKIP_IF("non lod zero",
+                 !lod_zero && sampler_opcode_descs[i].lod_zero);
 
-      SKIP_IF("non matching sources",
-              (sampler_opcode_descs[i].nir_src_mask & src_mask) != src_mask);
+         SKIP_IF("non matching sources",
+                 (sampler_opcode_descs[i].nir_src_mask & src_mask) != src_mask);
 
-      opcode_index = i;
 #if DEBUG_SAMPLER_SELECTION
-      fprintf(stderr, "selected %s\n", brw_sampler_opcode_name(opcode_index));
+         fprintf(stderr, "selected %s\n", brw_sampler_opcode_name(i));
 #endif
-      break;
+         return (enum brw_sampler_opcode) i;
+      }
    }
 
-   assert(opcode_index < BRW_SAMPLER_OPCODE_MAX);
-
-   return opcode_index;
+   UNREACHABLE("Cannot match tex instruction to HW opcode");
 }
