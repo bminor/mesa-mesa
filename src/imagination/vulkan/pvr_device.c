@@ -215,6 +215,7 @@ static void pvr_physical_device_get_supported_extensions(
       .KHR_shader_subgroup_extended_types = true,
       .KHR_shader_terminate_invocation = true,
       .KHR_spirv_1_4 = true,
+      .KHR_storage_buffer_storage_class = true,
       .KHR_swapchain = PVR_USE_WSI_PLATFORM,
       .KHR_swapchain_mutable_format = PVR_USE_WSI_PLATFORM,
       .KHR_timeline_semaphore = true,

@@ -1,1 +1,2 @@
 VK_KHR_relaxed_block_layout on pvr
+VK_KHR_storage_buffer_storage_class on pvr
