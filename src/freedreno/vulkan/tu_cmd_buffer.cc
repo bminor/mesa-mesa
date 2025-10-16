@@ -5807,7 +5807,7 @@ tu_CmdBeginRenderPass2(VkCommandBuffer commandBuffer,
    for (unsigned i = 0; i < pass->attachment_count; i++) {
       cmd->state.attachments[i] = pAttachmentInfo ?
          tu_image_view_from_handle(pAttachmentInfo->pAttachments[i]) :
-         cmd->state.framebuffer->attachments[i].attachment;
+         cmd->state.framebuffer->attachments[i];
    }
    if (pass->attachment_count) {
       for (unsigned i = 0; i < pRenderPassBegin->clearValueCount; i++)

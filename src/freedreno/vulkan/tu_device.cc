@@ -3608,7 +3608,7 @@ tu_CreateFramebuffer(VkDevice _device,
 
    size_t size = sizeof(*framebuffer);
    if (!imageless)
-      size += sizeof(struct tu_attachment_info) * pCreateInfo->attachmentCount;
+      size += sizeof(struct tu_image_view *) * pCreateInfo->attachmentCount;
    framebuffer = (struct tu_framebuffer *) vk_object_alloc(
       &device->vk, pAllocator, size, VK_OBJECT_TYPE_FRAMEBUFFER);
    if (framebuffer == NULL)
@@ -3623,7 +3623,7 @@ tu_CreateFramebuffer(VkDevice _device,
       for (uint32_t i = 0; i < pCreateInfo->attachmentCount; i++) {
          VkImageView _iview = pCreateInfo->pAttachments[i];
          struct tu_image_view *iview = tu_image_view_from_handle(_iview);
-         framebuffer->attachments[i].attachment = iview;
+         framebuffer->attachments[i] = iview;
       }
    }
 
