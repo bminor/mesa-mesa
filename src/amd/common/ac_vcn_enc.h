@@ -498,6 +498,7 @@ typedef struct rvcn_enc_hevc_encode_params_s {
 typedef struct rvcn_enc_av1_encode_params_s {
    uint32_t ref_frames[RENCODE_AV1_REFS_PER_FRAME];
    uint32_t lsm_reference_frame_index[2];
+   uint32_t cur_order_hint;
 } rvcn_enc_av1_encode_params_t;
 
 typedef struct rvcn_enc_h264_deblocking_filter_s {

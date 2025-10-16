@@ -13,7 +13,7 @@
 #include "radeon_vcn_enc.h"
 
 #define RENCODE_FW_INTERFACE_MAJOR_VERSION   1
-#define RENCODE_FW_INTERFACE_MINOR_VERSION   3
+#define RENCODE_FW_INTERFACE_MINOR_VERSION   10
 
 #define RENCODE_AV1_MIN_TILE_WIDTH                         256
 
@@ -431,6 +431,7 @@ static void radeon_enc_encode_params_av1(struct radeon_encoder *enc)
       RADEON_ENC_CS(enc->enc_pic.av1_enc_params.ref_frames[i]);
    RADEON_ENC_CS(enc->enc_pic.av1_enc_params.lsm_reference_frame_index[0]);
    RADEON_ENC_CS(enc->enc_pic.av1_enc_params.lsm_reference_frame_index[1]);
+   RADEON_ENC_CS(enc->enc_pic.av1_enc_params.cur_order_hint);
    RADEON_ENC_END();
 }
 
@@ -942,6 +943,7 @@ static void radeon_enc_session_init(struct radeon_encoder *enc)
    RADEON_ENC_CS(enc->enc_pic.session_init.pre_encode_chroma_enabled);
    RADEON_ENC_CS(enc->enc_pic.session_init.slice_output_enabled);
    RADEON_ENC_CS(enc->enc_pic.session_init.display_remote);
+   RADEON_ENC_CS(0);
    RADEON_ENC_END();
 }
 
