@@ -264,6 +264,9 @@ struct fd_dev_info {
        * with sysmem.
        */
       bool blit_wfi_quirk;
+
+      /* True if sel.b supports (neg) that behaves as fneg. */
+      bool has_sel_b_fneg;
    } a6xx;
 
    struct {
