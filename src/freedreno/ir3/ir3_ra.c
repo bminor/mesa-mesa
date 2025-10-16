@@ -2300,6 +2300,17 @@ insert_live_out_moves(struct ra_ctx *ctx)
    insert_file_live_out_moves(ctx, &ctx->shared);
 }
 
+static bool
+has_merge_set_preferred_reg(struct ir3_register *reg)
+{
+   assert(reg->merge_set);
+   assert(reg->num != INVALID_REG);
+
+   return reg->merge_set->preferred_reg != (physreg_t)~0 &&
+          ra_reg_get_physreg(reg) ==
+             reg->merge_set->preferred_reg + reg->merge_set_offset;
+}
+
 static void
 handle_block(struct ra_ctx *ctx, struct ir3_block *block)
 {
@@ -2338,17 +2349,15 @@ handle_block(struct ra_ctx *ctx, struct ir3_block *block)
          struct ir3_register *dst = input->dsts[0];
          assert(dst->num != INVALID_REG);
 
-         physreg_t dst_start = ra_reg_get_physreg(dst);
          physreg_t dst_end;
 
-         if (dst->merge_set) {
+         if (dst->merge_set && has_merge_set_preferred_reg(dst)) {
             /* Take the whole merge set into account to prevent its range being
              * allocated for defs not part of the merge set.
              */
-            assert(dst_start >= dst->merge_set_offset);
-            dst_end = dst_start - dst->merge_set_offset + dst->merge_set->size;
+            dst_end = dst->merge_set->preferred_reg + dst->merge_set->size;
          } else {
-            dst_end = dst_start + reg_size(dst);
+            dst_end = ra_reg_get_physreg(dst) + reg_size(dst);
          }
 
          struct ra_file *file = ra_get_file(ctx, dst);

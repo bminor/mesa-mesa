@@ -84,7 +84,7 @@
         "description": "ir3/ra: fix assert during file start reset",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9d4ba885bb81a7e9341d177b2efb293eb962fb41",
         "notes": null
