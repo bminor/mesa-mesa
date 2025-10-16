@@ -1253,10 +1253,11 @@ r3d_src_stencil(struct tu_cmd_buffer *cmd,
 }
 
 static void
-r3d_src_gmem_load(struct tu_cmd_buffer *cmd,
-                  struct tu_cs *cs,
-                  const struct tu_image_view *iview,
-                  uint32_t layer)
+r3d_src_load(struct tu_cmd_buffer *cmd,
+             struct tu_cs *cs,
+             const struct tu_image_view *iview,
+             uint32_t layer,
+             bool override_swap)
 {
    uint32_t desc[A6XX_TEX_CONST_DWORDS];
 
@@ -1281,8 +1282,9 @@ r3d_src_gmem_load(struct tu_cmd_buffer *cmd,
     * GMEM, so we need to fixup the swizzle and swap.
     */
    desc[0] &= ~(A6XX_TEX_CONST_0_SWIZ_X__MASK | A6XX_TEX_CONST_0_SWIZ_Y__MASK |
-                A6XX_TEX_CONST_0_SWIZ_Z__MASK | A6XX_TEX_CONST_0_SWIZ_W__MASK |
-                A6XX_TEX_CONST_0_SWAP__MASK);
+                A6XX_TEX_CONST_0_SWIZ_Z__MASK | A6XX_TEX_CONST_0_SWIZ_W__MASK);
+   if (override_swap)
+      desc[0] &= ~A6XX_TEX_CONST_0_SWAP__MASK;
    desc[0] |= A6XX_TEX_CONST_0_SWIZ_X(A6XX_TEX_X) |
               A6XX_TEX_CONST_0_SWIZ_Y(A6XX_TEX_Y) |
               A6XX_TEX_CONST_0_SWIZ_Z(A6XX_TEX_Z) |
@@ -1292,6 +1294,24 @@ r3d_src_gmem_load(struct tu_cmd_buffer *cmd,
                   iview->view.layer_size * layer,
                   iview->view.ubwc_layer_size * layer,
                   VK_FILTER_NEAREST);
+}
+
+static void
+r3d_src_gmem_load(struct tu_cmd_buffer *cmd,
+                  struct tu_cs *cs,
+                  const struct tu_image_view *iview,
+                  uint32_t layer)
+{
+   r3d_src_load(cmd, cs, iview, layer, true);
+}
+
+static void
+r3d_src_sysmem_load(struct tu_cmd_buffer *cmd,
+                    struct tu_cs *cs,
+                    const struct tu_image_view *iview,
+                    uint32_t layer)
+{
+   r3d_src_load(cmd, cs, iview, layer, false);
 }
 
 template <chip CHIP>
@@ -3576,6 +3596,11 @@ resolve_sysmem(struct tu_cmd_buffer *cmd,
 {
    const struct blit_ops *ops = &r2d_ops<CHIP>;
 
+   /* A2D does not support "unresolve". */
+   if (dst->image->layout[0].nr_samples > 1) {
+      ops = &r3d_ops<CHIP>;
+   }
+
    trace_start_sysmem_resolve(&cmd->rp_trace, cs, cmd, vk_dst_format);
 
    enum pipe_format src_format = vk_format_to_pipe_format(vk_src_format);
@@ -3595,7 +3620,11 @@ resolve_sysmem(struct tu_cmd_buffer *cmd,
             ops->src_stencil(cmd, cs, src, i, VK_FILTER_NEAREST);
          }
       } else {
-         ops->src(cmd, cs, &src->view, i, VK_FILTER_NEAREST, dst_format);
+         if (ops == &r3d_ops<CHIP>) {
+            r3d_src_sysmem_load(cmd, cs, src, i);
+         } else {
+            ops->src(cmd, cs, &src->view, i, VK_FILTER_NEAREST, dst_format);
+         }
       }
 
       if (dst_separate_ds) {
@@ -5081,12 +5110,13 @@ tu_load_gmem_attachment(struct tu_cmd_buffer *cmd,
                         struct tu_cs *cs,
                         struct tu_resolve_group *resolve_group,
                         uint32_t a,
+                        uint32_t gmem_a,
                         bool cond_exec_allowed,
                         bool force_load)
 {
    const struct tu_image_view *iview = cmd->state.attachments[a];
    const struct tu_render_pass_attachment *attachment =
-      &cmd->state.pass->attachments[a];
+      &cmd->state.pass->attachments[gmem_a];
 
    bool load_common = attachment->load || force_load;
    bool load_stencil =
@@ -5110,7 +5140,10 @@ tu_load_gmem_attachment(struct tu_cmd_buffer *cmd,
       tu_begin_load_store_cond_exec(cmd, cs, true);
 
    if (TU_DEBUG(3D_LOAD) ||
-       cmd->state.pass->has_fdm) {
+       cmd->state.pass->has_fdm ||
+       /* Replicating unresolve seems to not work and the blob never uses it.
+        */
+       (a != gmem_a)) {
       if (load_common || load_stencil)
          tu_disable_draw_states(cmd, cs);
 

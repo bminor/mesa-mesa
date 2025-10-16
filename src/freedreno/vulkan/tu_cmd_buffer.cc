@@ -1523,6 +1523,62 @@ tu6_emit_sysmem_resolves(struct tu_cmd_buffer *cmd,
 
 template <chip CHIP>
 static void
+tu6_emit_sysmem_unresolve(struct tu_cmd_buffer *cmd,
+                          struct tu_cs *cs,
+                          uint32_t layer_mask,
+                          uint32_t a,
+                          uint32_t gmem_a)
+{
+   const struct tu_framebuffer *fb = cmd->state.framebuffer;
+   const struct tu_image_view *src = cmd->state.attachments[a];
+   const struct tu_image_view *dst = cmd->state.attachments[gmem_a];
+
+   tu_resolve_sysmem<CHIP>(cmd, cs, src, dst, layer_mask, fb->layers, &cmd->state.render_area);
+}
+
+template <chip CHIP>
+static void
+tu6_emit_sysmem_unresolves(struct tu_cmd_buffer *cmd,
+                           struct tu_cs *cs,
+                           const struct tu_subpass *subpass)
+{
+   if (subpass->unresolve_count) {
+      /* Similar to above, we need to explicitly flush afterwards to keep this
+       * in sync with draw commands. However we also don't currently insert
+       * dependencies when a resolve is followed by an unresolve so we also
+       * need to manually flush for that case.
+       */
+      tu_emit_event_write<CHIP>(cmd, cs, FD_CCU_CLEAN_COLOR);
+      tu_emit_event_write<CHIP>(cmd, cs, FD_CACHE_INVALIDATE);
+
+      /* Wait for the flushes to land before using the 2D engine */
+      tu_cs_emit_wfi(cs);
+
+      bool unresolve_ds = false;
+      for (unsigned i = 0; i < subpass->unresolve_count; i++) {
+         uint32_t a = subpass->unresolve_attachments[i].attachment;
+         if (a == VK_ATTACHMENT_UNUSED)
+            continue;
+
+         if (vk_format_is_depth_or_stencil(cmd->state.pass->attachments[a].format))
+            unresolve_ds = true;
+
+         uint32_t gmem_a = tu_subpass_get_attachment_to_unresolve(subpass, i);
+
+         tu6_emit_sysmem_unresolve<CHIP>(cmd, cs, subpass->multiview_mask, a, gmem_a);
+      }
+
+      tu_emit_event_write<CHIP>(cmd, cs, FD_CCU_CLEAN_COLOR);
+      tu_emit_event_write<CHIP>(cmd, cs, FD_CCU_INVALIDATE_COLOR);
+      if (unresolve_ds) {
+         tu_emit_event_write<CHIP>(cmd, cs, FD_CCU_CLEAN_DEPTH);
+         tu_emit_event_write<CHIP>(cmd, cs, FD_CCU_INVALIDATE_DEPTH);
+      }
+      tu_cs_emit_wfi(cs);
+   }
+}
+template <chip CHIP>
+static void
 tu6_emit_gmem_resolves(struct tu_cmd_buffer *cmd,
                        const struct tu_subpass *subpass,
                        struct tu_resolve_group *resolve_group,
@@ -1552,7 +1608,7 @@ tu6_emit_gmem_resolves(struct tu_cmd_buffer *cmd,
                        "TODO: missing GMEM->GMEM resolve path\n");
             if (CHIP >= A7XX)
                tu_emit_event_write<CHIP>(cmd, cs, FD_CCU_CLEAN_BLIT_CACHE);
-            tu_load_gmem_attachment<CHIP>(cmd, cs, resolve_group, a, false, true);
+            tu_load_gmem_attachment<CHIP>(cmd, cs, resolve_group, a, a, false, true);
          }
       }
    }
@@ -5607,9 +5663,25 @@ tu_emit_subpass_begin_gmem(struct tu_cmd_buffer *cmd, struct tu_resolve_group *r
             tu6_emit_blit_scissor(cmd, cs, true, false);
             emitted_scissor = true;
          }
-         tu_load_gmem_attachment<CHIP>(cmd, cs, resolve_group, i,
+         tu_load_gmem_attachment<CHIP>(cmd, cs, resolve_group, i, i,
                                        cond_load_allowed, false);
       }
+   }
+
+
+   /* Emit unresolves that replicate single-sampled attachments into
+    * multisampled GMEM attachments.
+    */
+   for (uint32_t i = 0; i < cmd->state.subpass->unresolve_count; ++i) {
+      uint32_t a = cmd->state.subpass->unresolve_attachments[i].attachment;
+      if (a == VK_ATTACHMENT_UNUSED)
+         continue;
+
+      uint32_t gmem_a =
+         tu_subpass_get_attachment_to_unresolve(cmd->state.subpass, i);
+
+      tu_load_gmem_attachment<CHIP>(cmd, cs, resolve_group, a, gmem_a,
+                                    cond_load_allowed, true);
    }
 
    if (!cmd->device->physical_device->info->a7xx.has_generic_clear) {
@@ -5640,18 +5712,23 @@ template <chip CHIP>
 static void
 tu_emit_subpass_begin_sysmem(struct tu_cmd_buffer *cmd)
 {
-   if (cmd->device->physical_device->info->a7xx.has_generic_clear)
+   if (cmd->device->physical_device->info->a7xx.has_generic_clear &&
+       !cmd->state.subpass->unresolve_count)
       return;
 
    struct tu_cs *cs = &cmd->draw_cs;
    uint32_t subpass_idx = cmd->state.subpass - cmd->state.pass->subpasses;
 
    tu_cond_exec_start(cs, CP_COND_EXEC_0_RENDER_MODE_SYSMEM);
+
+   tu6_emit_sysmem_unresolves<CHIP>(cmd, cs, cmd->state.subpass);
+
    for (uint32_t i = 0; i < cmd->state.pass->attachment_count; ++i) {
       struct tu_render_pass_attachment *att = &cmd->state.pass->attachments[i];
       if (att->clear_mask && att->first_subpass_idx == subpass_idx)
          tu_clear_sysmem_attachment<CHIP>(cmd, cs, i);
    }
+
    tu_cond_exec_end(cs); /* sysmem */
 }
 

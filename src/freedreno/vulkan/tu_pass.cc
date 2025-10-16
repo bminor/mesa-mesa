@@ -1491,3 +1491,13 @@ tu_subpass_get_attachment_to_resolve(const struct tu_subpass *subpass, uint32_t 
 
    return subpass->color_attachments[index].attachment;
 }
+
+uint32_t
+tu_subpass_get_attachment_to_unresolve(const struct tu_subpass *subpass, uint32_t index)
+{
+   if (index == subpass->color_count &&
+       index == (subpass->unresolve_count - 1))
+      return subpass->depth_stencil_attachment.attachment;
+
+   return subpass->color_attachments[index].attachment;
+}

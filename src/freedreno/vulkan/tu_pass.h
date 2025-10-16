@@ -48,6 +48,7 @@ struct tu_subpass
    uint32_t input_count;
    uint32_t color_count;
    uint32_t resolve_count;
+   uint32_t unresolve_count;
    bool resolve_depth_stencil;
 
    bool legacy_dithering_enabled;
@@ -64,6 +65,7 @@ struct tu_subpass
    struct tu_subpass_attachment *input_attachments;
    struct tu_subpass_attachment *color_attachments;
    struct tu_subpass_attachment *resolve_attachments;
+   struct tu_subpass_attachment *unresolve_attachments;
    struct tu_subpass_attachment depth_stencil_attachment;
 
    uint32_t fsr_attachment;
@@ -156,5 +158,8 @@ void tu_setup_dynamic_inheritance(struct tu_cmd_buffer *cmd_buffer,
 
 uint32_t
 tu_subpass_get_attachment_to_resolve(const struct tu_subpass *subpass, uint32_t index);
+
+uint32_t
+tu_subpass_get_attachment_to_unresolve(const struct tu_subpass *subpass, uint32_t index);
 
 #endif /* TU_PASS_H */
