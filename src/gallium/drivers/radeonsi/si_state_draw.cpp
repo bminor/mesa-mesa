@@ -56,6 +56,19 @@ static bool si_update_shaders(struct si_context *sctx)
    struct si_shader *old_ps = sctx->shader.ps.current;
    int r;
 
+   if (GFX_VERSION >= GFX9) {
+      /* For merged shaders, mark the next shader as dirty so its previous_stage is updated. */
+      if (is_vs_state_changed) {
+         if (HAS_TESS) {
+            is_tess_state_changed = true;
+         } else if (HAS_GS) {
+            is_gs_state_changed = true;
+         }
+      }
+      if ((sctx->dirty_shaders_mask & BITFIELD_BIT(MESA_SHADER_TESS_EVAL)) && HAS_GS && HAS_TESS)
+         is_gs_state_changed = true;
+   }
+
    /* Update TCS and TES. */
    if (HAS_TESS && is_tess_state_changed) {
       if (!sctx->has_tessellation) {
