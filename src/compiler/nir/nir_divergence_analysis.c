@@ -319,14 +319,10 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_load_base_global_invocation_id:
    case nir_intrinsic_load_base_workgroup_id:
    case nir_intrinsic_load_alpha_reference_amd:
-   case nir_intrinsic_load_ubo_uniform_block_intel:
-   case nir_intrinsic_load_ssbo_uniform_block_intel:
-   case nir_intrinsic_load_shared_uniform_block_intel:
    case nir_intrinsic_load_barycentric_optimize_amd:
    case nir_intrinsic_load_poly_line_smooth_enabled:
    case nir_intrinsic_load_rasterization_primitive_amd:
    case nir_intrinsic_unit_test_uniform_amd:
-   case nir_intrinsic_load_global_constant_uniform_block_intel:
    case nir_intrinsic_load_debug_log_desc_amd:
    case nir_intrinsic_load_xfb_state_address_gfx12_amd:
    case nir_intrinsic_cmat_length:
@@ -362,6 +358,24 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_load_warp_max_id_arm:
    case nir_intrinsic_load_tess_config_intel:
       is_divergent = false;
+      break;
+
+   case nir_intrinsic_load_ubo_uniform_block_intel:
+   case nir_intrinsic_load_ssbo_uniform_block_intel:
+   case nir_intrinsic_load_shared_uniform_block_intel:
+   case nir_intrinsic_load_global_constant_uniform_block_intel:
+      if (options & (nir_divergence_across_subgroups |
+                     nir_divergence_multiple_workgroup_per_compute_subgroup)) {
+         unsigned num_srcs = nir_intrinsic_infos[instr->intrinsic].num_srcs;
+         for (unsigned i = 0; i < num_srcs; i++) {
+            if (src_divergent(instr->src[i], state)) {
+               is_divergent = true;
+               break;
+            }
+         }
+      } else {
+         is_divergent = false;
+      }
       break;
 
    /* This is divergent because it specifically loads sequential values into
