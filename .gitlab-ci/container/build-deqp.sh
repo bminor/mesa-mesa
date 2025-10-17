@@ -79,6 +79,15 @@ gles_cts_patch_files=(
   build-deqp-gl_Revert-Fix-spurious-failures-when-using-a-config-wit.patch
 )
 
+if [ "${DEQP_TARGET}" = 'android' ]; then
+  gles_cts_patch_files+=(
+    build-deqp-Print-to-logcat-in-Android-executable-builds.patch
+  )
+  vk_cts_patch_files+=(
+    build-deqp-Print-to-logcat-in-Android-executable-builds.patch
+  )
+fi
+
 
 ### Careful editing anything below this line
 
