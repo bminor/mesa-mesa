@@ -1614,7 +1614,7 @@
         "description": "radv/video: Fill maxCodedExtent caps first",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ae6ea69c851546258dd4fe7062104ad23da75da8",
         "notes": null

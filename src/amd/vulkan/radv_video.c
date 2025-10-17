@@ -819,6 +819,32 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
    if (cap && !cap->valid)
       cap = NULL;
 
+   if (cap) {
+      pCapabilities->maxCodedExtent.width = cap->max_width;
+      pCapabilities->maxCodedExtent.height = cap->max_height;
+   } else {
+      switch (pVideoProfile->videoCodecOperation) {
+      case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR:
+         pCapabilities->maxCodedExtent.width = (pdev->info.family < CHIP_TONGA) ? 2048 : 4096;
+         pCapabilities->maxCodedExtent.height = (pdev->info.family < CHIP_TONGA) ? 1152 : 4096;
+         break;
+      case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR:
+         pCapabilities->maxCodedExtent.width =
+            (pdev->info.family < CHIP_RENOIR) ? ((pdev->info.family < CHIP_TONGA) ? 2048 : 4096) : 8192;
+         pCapabilities->maxCodedExtent.height =
+            (pdev->info.family < CHIP_RENOIR) ? ((pdev->info.family < CHIP_TONGA) ? 1152 : 4096) : 4352;
+         break;
+      case VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR:
+         pCapabilities->maxCodedExtent.width =
+            (pdev->info.family < CHIP_RENOIR) ? ((pdev->info.family < CHIP_TONGA) ? 2048 : 4096) : 8192;
+         pCapabilities->maxCodedExtent.height =
+            (pdev->info.family < CHIP_RENOIR) ? ((pdev->info.family < CHIP_TONGA) ? 1152 : 4096) : 4352;
+         break;
+      default:
+         break;
+      }
+   }
+
    pCapabilities->flags = 0;
    pCapabilities->pictureAccessGranularity.width = VK_VIDEO_H264_MACROBLOCK_WIDTH;
    pCapabilities->pictureAccessGranularity.height = VK_VIDEO_H264_MACROBLOCK_HEIGHT;
@@ -1124,32 +1150,6 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
    }
    default:
       break;
-   }
-
-   if (cap) {
-      pCapabilities->maxCodedExtent.width = cap->max_width;
-      pCapabilities->maxCodedExtent.height = cap->max_height;
-   } else {
-      switch (pVideoProfile->videoCodecOperation) {
-      case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR:
-         pCapabilities->maxCodedExtent.width = (pdev->info.family < CHIP_TONGA) ? 2048 : 4096;
-         pCapabilities->maxCodedExtent.height = (pdev->info.family < CHIP_TONGA) ? 1152 : 4096;
-         break;
-      case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR:
-         pCapabilities->maxCodedExtent.width =
-            (pdev->info.family < CHIP_RENOIR) ? ((pdev->info.family < CHIP_TONGA) ? 2048 : 4096) : 8192;
-         pCapabilities->maxCodedExtent.height =
-            (pdev->info.family < CHIP_RENOIR) ? ((pdev->info.family < CHIP_TONGA) ? 1152 : 4096) : 4352;
-         break;
-      case VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR:
-         pCapabilities->maxCodedExtent.width =
-            (pdev->info.family < CHIP_RENOIR) ? ((pdev->info.family < CHIP_TONGA) ? 2048 : 4096) : 8192;
-         pCapabilities->maxCodedExtent.height =
-            (pdev->info.family < CHIP_RENOIR) ? ((pdev->info.family < CHIP_TONGA) ? 1152 : 4096) : 4352;
-         break;
-      default:
-         break;
-      }
    }
 
    return VK_SUCCESS;
