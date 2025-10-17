@@ -2134,6 +2134,8 @@ optimizations.extend([
    (('ior', ('ishl', ('u2u32', 'a@8'), 24), ('ior', ('ishl', ('u2u32', 'b@8'), 16), ('ior', ('ishl', ('u2u32', 'c@8'), 8), ('u2u32', 'd@8')))),
     ('pack_32_4x8', ('vec4', d, c, b, a)), 'options->has_pack_32_4x8'),
 
+   (('ior', ('ishl', a, 16), ('u2u32', 'b@16')), ('pack_32_2x16_split', b, ('u2u16', a)), '!options->lower_pack_32_2x16_split && !options->lower_pack_split'),
+
    # Mixed 16-bit/8-bit loads vectorized to 8-bit vector load and then lowered to 32-bit
    (('ior', ('u2u16', ('unpack_32_4x8', a)), ('ishl', ('u2u16', ('unpack_32_4x8.y', a)), 8)),
     ('unpack_32_2x16_split_x', a), '!options->lower_unpack_32_2x16_split'),
