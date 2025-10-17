@@ -512,4 +512,4 @@
     CI_TRON_DUT_SETUP_TAGS: amdgpu:codename:NAVI48
     INTEGRATED_OR_DISCRETE: discrete
     GPU_VERSION: radv-gfx1201
-    FDO_CI_CONCURRENT: 16  # FIXME: Replace with 32 when the zerovram regression is addressed
+    FDO_CI_CONCURRENT: 32
