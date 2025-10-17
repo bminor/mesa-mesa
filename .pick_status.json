@@ -4754,7 +4754,7 @@
         "description": "nir: mark fneg distribution through fadd/ffma as nsz",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "62795475e8f45f92bb8f467d9e2318fdfdba6297",
         "notes": null
