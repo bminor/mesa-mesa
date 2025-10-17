@@ -6905,6 +6905,34 @@ emit_wa_18020335297_dummy_draw(struct iris_batch *batch)
 }
 
 static void
+setup_autostrip_state(struct iris_context *ice,
+                      struct iris_batch *batch,
+                      bool enable)
+{
+#if GFX_VERx10 >= 200
+   if (ice->state.autostrip_state != enable) {
+      iris_emit_pipe_control_flush(batch,
+                                   "Wa_14024997852",
+                                   PIPE_CONTROL_CS_STALL);
+      /* VF */
+      iris_emit_reg(batch, GENX(VFL_SCRATCH_PAD), vfl) {
+         vfl.AutostripDisable = !enable;
+         vfl.PartialAutostripDisable = !enable;
+         vfl.AutostripDisableMask = true;
+         vfl.PartialAutostripDisableMask = true;
+      }
+      /* TE and Mesh. */
+      iris_emit_reg(batch, GENX(FF_MODE), ff) {
+         ff.TEAutostripDisable = !enable;
+         ff.MeshShaderAutostripDisable = !enable;
+         ff.MeshShaderPartialAutostripDisable = !enable;
+      }
+      ice->state.autostrip_state = enable;
+   }
+#endif
+}
+
+static void
 iris_upload_dirty_render_state(struct iris_context *ice,
                                struct iris_batch *batch,
                                const struct pipe_draw_info *draw,
@@ -6938,6 +6966,28 @@ iris_upload_dirty_render_state(struct iris_context *ice,
    struct iris_binder *binder = &ice->state.binder;
    struct iris_fs_data *fs_data =
       iris_fs_data(ice->shaders.prog[MESA_SHADER_FRAGMENT]);
+
+   /* Wa_14024997852: When Draw Cut Index or primitive id is enabled
+    * and topology is tri list, we need to toggle autostrip.
+    *
+    * Note that we do not take primitive id in to account because it
+    * is mentioned only in xe2 clone of this wa and autostrip has been
+    * disabled globally on xe2 (+xe3 a0) by kernel due to 14021490052
+    * workaround.
+    */
+   if (intel_needs_workaround(batch->screen->devinfo, 14024997852) &&
+       dirty & (IRIS_DIRTY_VF | IRIS_DIRTY_VF_TOPOLOGY)) {
+      bool tri_list_topology =
+         translate_prim_type(draw->mode, ice->state.vertices_per_patch) ==
+         _3DPRIM_TRILIST;
+
+      /* Enable autostrip unless having triangle list topology and
+       * IndexedDrawCutIndexEnable (only used on primitive_restart).
+       */
+      setup_autostrip_state(ice, batch,
+                            tri_list_topology &&
+                            draw->primitive_restart);
+   }
 
    /* When MSAA is enabled, instead of using BLENDFACTOR_ZERO use
     * CONST_COLOR, CONST_ALPHA and supply zero by using blend constants.

@@ -1068,6 +1068,9 @@ struct iris_context {
       /** State for Wa_14015055625, Wa_14019166699 */
       bool uses_primitive_id;
 
+      /** State for Wa_14024997852. */
+      bool autostrip_state;
+
       /** Do we have integer RT in current framebuffer state? */
       bool has_integer_rt;
 
