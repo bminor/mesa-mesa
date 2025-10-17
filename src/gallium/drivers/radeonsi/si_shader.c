@@ -205,8 +205,10 @@ unsigned si_calculate_needed_lds_size(enum amd_gfx_level gfx_level, struct si_sh
       lds_size = size_in_dw * 4;
    }
 
-   if (stage == MESA_SHADER_COMPUTE) {
-      lds_size = shader->selector->info.base.shared_size;
+   if (stage == MESA_SHADER_COMPUTE ||
+       stage == MESA_SHADER_TASK ||
+       stage == MESA_SHADER_MESH) {
+      lds_size = shader->info.shared_size;
    }
 
    /* Check that the LDS size is within hw limits. */

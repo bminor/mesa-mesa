@@ -428,7 +428,6 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
    info->base.image_buffers = nir->info.image_buffers[0];
    info->base.msaa_images = nir->info.msaa_images[0];
 
-   info->base.shared_size = nir->info.shared_size;
    info->base.task_payload_size = nir->info.task_payload_size;
    memcpy(info->base.workgroup_size, nir->info.workgroup_size, sizeof(nir->info.workgroup_size));
    info->base.workgroup_size_variable = nir->info.workgroup_size_variable;

@@ -176,7 +176,6 @@ static void *si_create_compute_state(struct pipe_context *ctx, const struct pipe
       si_const_and_shader_buffer_descriptors_idx(MESA_SHADER_COMPUTE);
    sel->sampler_and_images_descriptors_index =
       si_sampler_and_image_descriptors_idx(MESA_SHADER_COMPUTE);
-   sel->info.base.shared_size = cso->static_shared_mem;
    program->shader.selector = &program->sel;
 
    if (cso->ir_type == PIPE_SHADER_IR_TGSI) {
@@ -352,7 +351,7 @@ static bool si_switch_compute_shader(struct si_context *sctx, struct si_compute 
 
    /* only do this for OpenCL */
    if (variable_shared_size) {
-      unsigned shared_size = program->sel.info.base.shared_size + variable_shared_size;
+      unsigned shared_size = shader->info.shared_size + variable_shared_size;
       unsigned lds_blocks = 0;
 
       if (sctx->gfx_level <= GFX6) {

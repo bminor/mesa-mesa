@@ -32,7 +32,6 @@ struct si_shader_info {
       uint32_t image_buffers;
       uint32_t msaa_images;
 
-      unsigned shared_size;
       unsigned task_payload_size;
       uint16_t workgroup_size[3];
       bool workgroup_size_variable:1;
@@ -233,6 +232,7 @@ struct si_shader_variant_info {
    uint8_t ngg_lds_scratch_size;
    uint16_t private_mem_vgprs;
    uint32_t ngg_lds_vertex_size; /* VS,TES: Cull+XFB, GS: GSVS size */
+   uint32_t shared_size;
    ac_nir_legacy_gs_info legacy_gs;
 };
 

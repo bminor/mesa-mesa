@@ -300,6 +300,9 @@ void si_get_shader_variant_info(struct si_shader *shader,
 void si_get_late_shader_variant_info(struct si_shader *shader, struct si_shader_args *args,
                                      nir_shader *nir)
 {
+   /* mesh shader know this after ac_nir_lower_ngg_mesh() */
+   shader->info.shared_size = nir->info.shared_size;
+
    nir_foreach_block(block, nir_shader_get_entrypoint(nir)) {
       nir_foreach_instr(instr, block) {
          if (instr->type != nir_instr_type_intrinsic)
