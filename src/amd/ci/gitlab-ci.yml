@@ -312,8 +312,7 @@ radv-navi31-vkcts:
     - .radv-valve-rules
   variables:
     RADV_DEBUG: nomeshshader # Disable mesh shaders until task shaders stop hanging
-    # TODO: Remove video_encode,video_decode with next kernel.
-    RADV_PERFTEST: transfer_queue,video_decode,video_encode,hic
+    RADV_PERFTEST: transfer_queue,hic
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 20
 
 
