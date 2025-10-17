@@ -303,7 +303,7 @@ merge_requests:
         '^src/util/00-mesa-defaults.conf': ['drirc']
         '^src/vulkan/': ['vulkan']
         '^src/vulkan/wsi/': ['wsi']
-        '^VERSION$': ['maintainer-scripts']
+        '^VERSION$': ['mesa-release']
 
         'Android': ['android']
         'EGL': ['EGL']
