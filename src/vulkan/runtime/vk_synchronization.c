@@ -89,6 +89,19 @@ vk_filter_dst_access_flags2(VkPipelineStageFlags2 stages,
           (all_read_access | VK_ACCESS_2_HOST_WRITE_BIT);
 }
 
+VkPipelineStageFlags2
+vk_collect_dependency_info_src_stages(const VkDependencyInfo* pDependencyInfo)
+{
+   VkPipelineStageFlags2 stages = 0;
+   for (uint32_t i = 0; i < pDependencyInfo->memoryBarrierCount; i++)
+      stages |= pDependencyInfo->pMemoryBarriers[i].srcStageMask;
+   for (uint32_t i = 0; i < pDependencyInfo->bufferMemoryBarrierCount; i++)
+      stages |= pDependencyInfo->pBufferMemoryBarriers[i].srcStageMask;
+   for (uint32_t i = 0; i < pDependencyInfo->imageMemoryBarrierCount; i++)
+      stages |= pDependencyInfo->pImageMemoryBarriers[i].srcStageMask;
+   return stages;
+}
+
 VKAPI_ATTR void VKAPI_CALL
 vk_common_CmdWriteTimestamp(
    VkCommandBuffer                             commandBuffer,
