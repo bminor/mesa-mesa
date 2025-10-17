@@ -1211,7 +1211,6 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                                                                                pDX12EncodeContext->pSliceFences[slice_idx],
                                                                                OS_TIMEOUT_INFINITE ) != 0;
                   assert( fenceWaitResult );
-                  pThis->m_pPipeVideoCodec->destroy_fence( pThis->m_pPipeVideoCodec, pDX12EncodeContext->pSliceFences[slice_idx] );
                   if( fenceWaitResult )
                   {
                      unsigned codec_unit_metadata_count = 0u;
@@ -1259,6 +1258,18 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                         pipe_buffer_unmap( pThis->m_pPipeContext, transfer_data );
                      }
                   }
+               }
+
+               // Cleanup fences
+               for (unsigned slice_idx = 0; slice_idx < pDX12EncodeContext->pSliceFences.size(); slice_idx++)
+               {
+                  if (pDX12EncodeContext->pSliceFences[slice_idx])
+                     pThis->m_pPipeVideoCodec->destroy_fence( pThis->m_pPipeVideoCodec, pDX12EncodeContext->pSliceFences[slice_idx] );
+               }
+               if (pDX12EncodeContext->pLastSliceFence)
+               {
+                  pThis->m_pPipeVideoCodec->destroy_fence( pThis->m_pPipeVideoCodec, pDX12EncodeContext->pLastSliceFence );
+                  pDX12EncodeContext->pLastSliceFence = nullptr;
                }
 
                memset( pDX12EncodeContext->pSliceFences.data(),
@@ -2203,6 +2214,7 @@ CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD 
                                                      static_cast<unsigned>( pDX12EncodeContext->pOutputBitRes.size() ),
                                                      pDX12EncodeContext->pOutputBitRes.data(),
                                                      pDX12EncodeContext->pSliceFences.data(),   // driver outputs the fences
+                                                     &pDX12EncodeContext->pLastSliceFence, // driver outputs the last slice fence
                                                      &pDX12EncodeContext->pAsyncCookie );
       }
       else

@@ -574,6 +574,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
 
       pDX12EncodeContext->pOutputBitRes.resize( num_output_buffers, NULL );
       pDX12EncodeContext->pSliceFences.resize( num_output_buffers, NULL );
+      pDX12EncodeContext->pLastSliceFence = NULL;
       for( uint32_t slice_idx = 0; slice_idx < num_output_buffers; slice_idx++ )
       {
          if( ( slice_idx > 0 ) && !m_EncoderCapabilities.m_HWSupportSlicedFences.bits.multiple_buffers_required )

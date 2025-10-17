@@ -120,6 +120,7 @@ d3d12_video_encoder_encode_bitstream_sliced(struct pipe_video_codec *codec,
                                             unsigned num_slice_objects,
                                             struct pipe_resource **slice_destinations,
                                             struct pipe_fence_handle **slice_fences,
+                                            struct pipe_fence_handle **last_slice_completion_fence,
                                             void **feedback);
 
 void
@@ -128,6 +129,7 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                                           unsigned num_slice_objects,
                                           struct pipe_resource **slice_destinations,
                                           struct pipe_fence_handle **slice_fences,
+                                          struct pipe_fence_handle **last_slice_completion_fence,
                                           void **feedback);
 
 void

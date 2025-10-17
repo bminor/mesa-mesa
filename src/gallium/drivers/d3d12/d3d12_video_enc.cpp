@@ -3095,6 +3095,7 @@ d3d12_video_encoder_encode_bitstream_sliced(struct pipe_video_codec *codec,
                                             unsigned num_slice_objects,
                                             struct pipe_resource **slice_destinations,
                                             struct pipe_fence_handle **slice_fences,
+                                            struct pipe_fence_handle **last_slice_completion_fence,
                                             void **feedback)
 {
    struct d3d12_video_encoder *pD3D12Enc = (struct d3d12_video_encoder *) codec;
@@ -3109,6 +3110,7 @@ d3d12_video_encoder_encode_bitstream_sliced(struct pipe_video_codec *codec,
                                              num_slice_objects,
                                              slice_destinations,
                                              slice_fences,
+                                             last_slice_completion_fence,
                                              feedback);
 }
 
@@ -3119,11 +3121,13 @@ d3d12_video_encoder_encode_bitstream(struct pipe_video_codec * codec,
                                      void **                   feedback)
 {
    struct pipe_fence_handle *slice_fences = NULL;
+   struct pipe_fence_handle *last_slice_completion_fence = NULL;
    d3d12_video_encoder_encode_bitstream_impl(codec,
                                              source,
                                              1 /*num_slice_objects*/,
                                              &destination /*slice_destinations*/,
                                              &slice_fences,
+                                             &last_slice_completion_fence,
                                              feedback);
 }
 
@@ -3133,6 +3137,7 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                                           unsigned num_slice_objects,
                                           struct pipe_resource **slice_destinations,
                                           struct pipe_fence_handle **slice_fences,
+                                          [[maybe_unused]] struct pipe_fence_handle **last_slice_completion_fence,
                                           void **feedback)
 {
    struct d3d12_video_encoder *pD3D12Enc = (struct d3d12_video_encoder *) codec;
