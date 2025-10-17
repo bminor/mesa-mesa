@@ -1,5 +1,485 @@
 [
     {
+        "sha": "ad421cdf2e68a1ccef80cb810c012c8469579cb6",
+        "description": "nir: mark fneg distribution through fadd/ffma as nsz",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "62795475e8f45f92bb8f467d9e2318fdfdba6297",
+        "notes": null
+    },
+    {
+        "sha": "b9baf2c2606311699172f25fce3394b5b0cb9b70",
+        "description": "pvr: Advertise VK_KHR_storage_buffer_storage_class",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c6c069072336f304ad9cb49b43aacb2d9854b57f",
+        "description": "pvr: Advertise VK_KHR_relaxed_block_layout",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "28cc04b4000785db32bf98440f9e07dbac894c42",
+        "description": "pvr: sort extensions alphabetically",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "412432d371126c16eab661b424f8020f6b2a42dd",
+        "description": "mr-label-maker: fix label for mesa release MRs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b10c1a195266b0df668b3b5490223f648075bed1",
+        "description": "radv: Fix crash in sqtt due to uninitalized value",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "772b9ce4118bd8b0604e5bd1d3cac5b197126555",
+        "notes": null
+    },
+    {
+        "sha": "11f2babddc70b5fd02fb749b70fe280895c62e96",
+        "description": "mesa,gallium: not touch TS when internal draws",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4711fb711cbf0dab3f34def05ab9a6566acf877f",
+        "description": "gallium/blitter: no need to save TS state",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "71e089571568bd6f6ced249e332dd621833086ca",
+        "description": "mesa,radeonsi: add comments about vertex and mesh pipeline shader states",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dcf2399e6fcb27678446ea03d3f3ee0d0f80a97e",
+        "description": "radeonsi: save mesh shader when blit",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ffc3d430db200232171ee882fcc64015f5e08564",
+        "description": "radeonsi: simplify si_update_rasterized_prim while handle mesh shader",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "56a437183ac9a6c3436503fabcde82201e70bbb7",
+        "description": "radeonsi: si_get_vs support mesh shader",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7e83962e8534b5e72eda35027081d03deb32e728",
+        "description": "radeonsi: update scratch va for mesh shader",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "de4fb088d3e39ef79b9818e4e5bfce425985f20d",
+        "description": "radeonsi: share some vertex pipe function with mesh pipe",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e6e21dfbf23b863079c6d63e1b39497867a5f5ca",
+        "description": "radeonsi: kill outputs for mesh shader",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4c315bdbfaf6d226b3ad2bca771e5e1e9a7bbd48",
+        "description": "radeonsi: lower task/mesh shader io to mem",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5931dbf7ace511cf24772538a4634b1920adb8ec",
+        "description": "radeonsi: add task info to screen",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "73aebeec42d2b7bd490d0a7f6b55a2360779d4dd",
+        "description": "radeonsi: no ngg culling for mesh shader",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "74894150f180d2617a8003ddcc59fb487bac2561",
+        "description": "radeonsi: init pm4 state for mesh shader",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ce6a1e756379bd1bddb838584e162d957c72d855",
+        "description": "radeonsi: init mesh shader args",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2038134efc279f7ded143cf9c48b7d7a496eb2a7",
+        "description": "radeonsi: calc workgroup size for mesh shader",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "977a3f45bfb43424ee95a19b13e1989cfe9e36e6",
+        "description": "radeonsi: add task/mesh shader info to si_shader_info",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8659666089c1eea363c6619f6767cefd8e45fa13",
+        "description": "radeonsi: add si_mesh_resources_add_all_to_bo_list",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b533d39b95439404bf5619e5458a087b7d774813",
+        "description": "radeonsi: inline uniform support mesh shader",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8a3ef188c2ece6c9523a60103ffd5327086952fe",
+        "description": "radeonsi: add context shader state for mesh shader",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "24d7c9a2a8232dfb2df81a374f6fe11c1cbab253",
+        "description": "radeonsi: handle mesh shader when si_create_shader",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f06a1b0d07885e477dd4bb0f3e45f95a76c7ad41",
+        "description": "radeonsi: enlarge SI_NUM_SHADERS for mesh shader",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f74cf450782509d9e386a83a3f8221a3d1bdb701",
+        "description": "zink: consistently set/unset msrtss in begin_rendering",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "5080f2b6f552875818229c4810e0221e9264e9b4",
+        "notes": null
+    },
+    {
+        "sha": "733ba77bfe7fc200257eae6eac098b6577c705e3",
+        "description": "r300: fix DXTC blits",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "9d359c6d10adb1cd2978a0e13714a3f98544aae8",
+        "notes": null
+    },
+    {
+        "sha": "ba35ac29b6deee5f828a4fb7878476d9f15df674",
+        "description": "r600/sfn: drop range pinning for registers after RA",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5962add398a125df879867fcc76dfb5d66ddcf1d",
+        "description": "r600/sfn: correct register interference range",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a1b6dbcd67b51185e28dcbf27898a1e392063c4c",
+        "description": "docs: update calendar for 25.3.0-rc1",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ad86a666ae4a32fba38c724a91e61ab5fa5d5ae8",
+        "description": "anv: Add support for low latency hint on Xe KMD",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0ba6a0a23b66dd1c555eb6d8d4a1842f4ec362ee",
+        "description": "intel/dev: Add supports_low_latency_hint to intel_device_info",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "892cf427a0f62538a6943fd7500a9b23f0dd91ea",
+        "description": "vulkan/wsi: require extended target volume support for scRGB",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "4b663d561b877c24fe1f500e14cf7efc62fd5373",
+        "notes": null
+    },
+    {
+        "sha": "e3d9c5da2aef2ccdd1807399f2b717ab4e65e75f",
+        "description": "mr-label-maker: Remove mapi label",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f65756a31b0b3ba3c73ce98e157b728a0a56a394",
+        "description": "mr-label-maker: Add poly",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b2accf86d15ce820192979532ff10c9fd32a56da",
+        "description": "poly: Migrate AGX's GS/TESS emulation to common code",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "80480042388b6f1f86d554085277de1170b8712f",
+        "description": "asahi/gs: Reuse GS shader compiler options",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6f73533094188d7b5ebb8a7149f902969ba4d673",
+        "description": "asahi,nir: Stop relying on zero and scratch page in GS/TESS code",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "60e5abdbaa6c6da7f2f3888f4308581da36d9b54",
+        "description": "asahi: Move compiler preprocess out of agx_nir_lower_gs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a427581c4d1012f6f365bacf9da09ca3814d3030",
+        "description": "asahi/gs: Remove agx_nir_* prefix around static functions",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "71c4943c3752e6865b4e887dc9e4c14897e211ba",
+        "description": "compiler: rename vs.tes_agx bit to vs.tes_poly",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1e0c18d6cf83f527cdfa7c0cea89367b6f10415a",
+        "description": "nir: Rename stat_query_address_agx to stat_query_address_poly",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8a25b88d6965b3a481c7ec01852ba1b914ad6b15",
+        "description": "asahi/libagx: Do not expose anything not use externaly",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "29f348941dc11f5115d8f3d90d9a12cf1d48bafc",
+        "description": "asahi/libagx: Stop exposing fake entrypoint _libagx_prefix_sum",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c20e2733bf8f9bb595f1bcc68ebb3d0686ef28e4",
+        "description": "Revert \"brw: add serialize send stats\"",
+        "nominated": true,
+        "nomination_type": 3,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "b8ae4ede60f2aa65aabd1d3d5339f8f98ff2a111",
+        "notes": null
+    },
+    {
+        "sha": "14683a045b1eb8486e69011c193abf6d1ea91fd3",
+        "description": "brw: account for disabled SEND fused message in cycle computation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "3b2f7ed918a5ad78c1d3756e9823a1616c1f21d7",
         "description": "ci,marge_queue: read token from file by default",
         "nominated": false,
