@@ -32,7 +32,7 @@ variables:
 
   FEDORA_X86_64_BUILD_TAG: "20250917-rust"
 
-  KERNEL_TAG: "v6.16-mesa-9d85"
+  KERNEL_TAG: "v6.17-mesa-ceea"
   KERNEL_REPO: "gfx-ci/linux"
   PKG_REPO_REV: "0d2527f6"
   FIRMWARE_TAG: "36f9bbfa"
