@@ -274,7 +274,7 @@
         "description": "zink: consistently set/unset msrtss in begin_rendering",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5080f2b6f552875818229c4810e0221e9264e9b4",
         "notes": null
