@@ -104,6 +104,7 @@ static void r300_destroy_context(struct pipe_context* context)
         FREE(r300->invariant_state.state);
         FREE(r300->rs_block_state.state);
         FREE(r300->sample_mask.state);
+        FREE(r300->guardband_state.state);
         FREE(r300->scissor_state.state);
         FREE(r300->textures_state.state);
         FREE(r300->vap_invariant_state.state);
@@ -184,6 +185,7 @@ static bool r300_setup_atoms(struct r300_context* r300)
     /* VAP. */
     R300_INIT_ATOM(viewport_state, 9);
     R300_INIT_ATOM(pvs_flush, 2);
+    R300_INIT_ATOM(guardband_state, 5);
     R300_INIT_ATOM(vap_invariant_state, is_r500 || !has_tcl ? 11 : 9);
     R300_INIT_ATOM(vertex_stream_state, 0);
     R300_INIT_ATOM(vs_state, 0);
@@ -228,6 +230,7 @@ static bool r300_setup_atoms(struct r300_context* r300)
     R300_ALLOC_ATOM(fb_state, pipe_framebuffer_state);
     R300_ALLOC_ATOM(gpu_flush, pipe_framebuffer_state);
     r300->sample_mask.state = malloc(4);
+    R300_ALLOC_ATOM(guardband_state, r300_guardband_state);
     R300_ALLOC_ATOM(scissor_state, pipe_scissor_state);
     R300_ALLOC_ATOM(rs_block_state, r300_rs_block);
     R300_ALLOC_ATOM(fs_constants, r300_constant_buffer);
@@ -407,6 +410,18 @@ struct pipe_context* r300_create_context(struct pipe_screen* screen,
 
     if (!r300_setup_atoms(r300))
         goto fail;
+
+    r300->current_clip_discard_distance = 0.0f;
+    r300->min_clip_discard_distance_watermark = 0.0f;
+    r300->current_rast_prim = ~0u;
+    struct r300_guardband_state *guard =
+        (struct r300_guardband_state *)r300->guardband_state.state;
+    if (guard) {
+        guard->vert_clip = 1.0f;
+        guard->vert_disc = 1.0f;
+        guard->horz_clip = 1.0f;
+        guard->horz_disc = 1.0f;
+    }
 
     r300_init_blit_functions(r300);
     r300_init_flush_functions(r300);

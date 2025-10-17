@@ -859,6 +859,24 @@ void r300_emit_sample_mask(struct r300_context *r300,
     END_CS;
 }
 
+void r300_emit_guardband_state(struct r300_context *r300,
+                               unsigned size, void *state)
+{
+    struct r300_guardband_state *guard = (struct r300_guardband_state *)state;
+    CS_LOCALS(r300);
+
+    if (!guard)
+        return;
+
+    BEGIN_CS(size);
+    OUT_CS_REG_SEQ(R300_VAP_GB_VERT_CLIP_ADJ, 4);
+    OUT_CS_32F(guard->vert_clip);
+    OUT_CS_32F(guard->vert_disc);
+    OUT_CS_32F(guard->horz_clip);
+    OUT_CS_32F(guard->horz_disc);
+    END_CS;
+}
+
 void r300_emit_scissor_state(struct r300_context* r300,
                              unsigned size, void* state)
 {

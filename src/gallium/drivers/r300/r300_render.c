@@ -778,6 +778,27 @@ static unsigned r300_max_vertex_count(struct r300_context *r300)
    return result;
 }
 
+static void
+r300_update_clip_discard_distance(struct r300_context *r300, unsigned prim)
+{
+    struct r300_rs_state *rs = (struct r300_rs_state*)r300->rs_state.state;
+    float target_distance = 0.0f;
+
+    if (rs) {
+        if (prim == MESA_PRIM_POINTS)
+            target_distance = rs->max_point_size;
+        else if (r300_prim_is_lines(prim))
+            target_distance = rs->line_width;
+    }
+
+    if (r300->current_rast_prim != prim) {
+        r300->current_rast_prim = prim;
+        r300_set_clip_discard_distance(r300, target_distance);
+    } else if (prim == MESA_PRIM_POINTS || r300_prim_is_lines(prim)) {
+        r300_set_clip_discard_distance(r300, target_distance);
+    }
+}
+
 
 static void r300_draw_vbo(struct pipe_context* pipe,
                           const struct pipe_draw_info *dinfo,
@@ -799,6 +820,8 @@ static void r300_draw_vbo(struct pipe_context* pipe,
         !u_trim_pipe_prim(info.mode, &draw.count)) {
         return;
     }
+
+    r300_update_clip_discard_distance(r300, info.mode);
 
     if (r300->sprite_coord_enable != 0)
         if ((info.mode == MESA_PRIM_POINTS) != r300->is_point) {

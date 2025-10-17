@@ -55,6 +55,107 @@ r300_get_scissor_from_viewport(const struct pipe_viewport_state *vp,
     scissor->maxy = CLAMP(half_h + vp->translate[1], 0, max_scissor);
 }
 
+#define R300_MAX_VIEWPORT_RANGE 16384.0f
+
+void r300_update_guardband_state(struct r300_context *r300)
+{
+    struct r300_guardband_state *guard =
+        (struct r300_guardband_state *)r300->guardband_state.state;
+
+    if (!guard)
+        return;
+
+    const float distance = r300->current_clip_discard_distance;
+
+    if (distance == 0.0f) {
+        if (guard->vert_clip != 1.0f || guard->vert_disc != 1.0f ||
+            guard->horz_clip != 1.0f || guard->horz_disc != 1.0f) {
+            DBG(r300, DBG_RS, "r300: guardband reset for zero distance\n");
+            guard->vert_clip = 1.0f;
+            guard->vert_disc = 1.0f;
+            guard->horz_clip = 1.0f;
+            guard->horz_disc = 1.0f;
+            r300_mark_atom_dirty(r300, &r300->pvs_flush);
+            r300_mark_atom_dirty(r300, &r300->guardband_state);
+        }
+        return;
+    }
+
+    const struct pipe_viewport_state *vp = &r300->viewport;
+    float scale_x = fabs(vp->scale[0]);
+    float scale_y = fabs(vp->scale[1]);
+    float translate_x = vp->translate[0];
+    float translate_y = vp->translate[1];
+
+    /* Treat a 0x0 viewport as 1x1 to prevent a division by zero. */
+    if (scale_x == 0.0f)
+        scale_x = 0.5f;
+    if (scale_y == 0.0f)
+        scale_y = 0.5f;
+
+    /* Find the biggest guard band that is inside the supported viewport
+     * range. The guard band is specified as a horizontal and vertical
+     * distance from (0,0) in clip space.
+     *
+     * This is done by applying the inverse viewport transformation
+     * on the viewport limits to get those limits in clip space.
+     *
+     * Use a limit one pixel smaller to allow for some precision error.
+     */
+    const float max_range = R300_MAX_VIEWPORT_RANGE - 1.0f;
+    float left = (-max_range - translate_x) / scale_x;
+    float right = (max_range - translate_x) / scale_x;
+    float top = (-max_range - translate_y) / scale_y;
+    float bottom = (max_range - translate_y) / scale_y;
+    assert(left <= -1 && top <= -1 && right >= 1 && bottom >= 1);
+
+    float guardband_x = MIN2(-left, right);
+    float guardband_y = MIN2(-top, bottom);
+
+    float discard_x = 1.0f + distance / (2.0f * scale_x);
+    float discard_y = 1.0f + distance / (2.0f * scale_y);
+
+    discard_x = MIN2(discard_x, guardband_x);
+    discard_y = MIN2(discard_y, guardband_y);
+
+    if (guard->vert_clip == guardband_y &&
+        guard->vert_disc == discard_y &&
+        guard->horz_clip == guardband_x &&
+        guard->horz_disc == discard_x) {
+        return;
+    }
+
+    guard->vert_clip = guardband_y;
+    guard->vert_disc = discard_y;
+    guard->horz_clip = guardband_x;
+    guard->horz_disc = discard_x;
+
+    r300_mark_atom_dirty(r300, &r300->pvs_flush);
+    r300_mark_atom_dirty(r300, &r300->guardband_state);
+}
+
+void r300_set_clip_discard_distance(struct r300_context *r300, float distance)
+{
+    /* Determine whether the guardband registers change.
+     *
+     * When we see a value greater than min_clip_discard_distance_watermark, we increase it
+     * up to a certain number to eliminate those state changes next time they happen.
+     * See the comment at min_clip_discard_distance_watermark.
+     */
+    if (distance > r300->min_clip_discard_distance_watermark) {
+        /* This is based on r600, which is based on Viewperf. The number is in half-pixels. */
+        r300->min_clip_discard_distance_watermark = MIN2(distance, 6.0f);
+    }
+
+    float new_distance = MAX2(distance, r300->min_clip_discard_distance_watermark);
+
+    if (r300->current_clip_discard_distance != new_distance) {
+        r300->current_clip_discard_distance = new_distance;
+    }
+
+    r300_update_guardband_state(r300);
+}
+
 static void r300_delete_vs_state(struct pipe_context* pipe, void* shader);
 static void r300_delete_fs_state(struct pipe_context* pipe, void* shader);
 
@@ -1265,6 +1366,7 @@ static void* r300_create_rs_state(struct pipe_context* pipe,
         (pack_float_16_6x(state->point_size) << R300_POINTSIZE_X_SHIFT);
 
     /* Point size clamping. */
+    float max_point_size;
     if (state->point_size_per_vertex) {
         /* Per-vertex point size.
          * Clamp to [0, max FB size] */
@@ -1273,6 +1375,7 @@ static void* r300_create_rs_state(struct pipe_context* pipe,
         point_minmax =
             (pack_float_16_6x(min_psiz) << R300_GA_POINT_MINMAX_MIN_SHIFT) |
             (pack_float_16_6x(max_psiz) << R300_GA_POINT_MINMAX_MAX_SHIFT);
+        max_point_size = max_psiz;
     } else {
         /* We cannot disable the point-size vertex output,
          * so clamp it. */
@@ -1280,6 +1383,7 @@ static void* r300_create_rs_state(struct pipe_context* pipe,
         point_minmax =
             (pack_float_16_6x(psiz) << R300_GA_POINT_MINMAX_MIN_SHIFT) |
             (pack_float_16_6x(psiz) << R300_GA_POINT_MINMAX_MAX_SHIFT);
+        max_point_size = psiz;
     }
 
     /* Line control. */
@@ -1421,6 +1525,9 @@ static void* r300_create_rs_state(struct pipe_context* pipe,
         END_CB;
     }
 
+    rs->max_point_size = max_point_size;
+    rs->line_width = state->line_width;
+
     return (void*)rs;
 }
 
@@ -1484,6 +1591,16 @@ static void r300_bind_rs_state(struct pipe_context* pipe, void* state)
 
     if (last_scissor_enabled != r300->scissor_enabled) {
         r300_mark_atom_dirty(r300, &r300->scissor_state);
+    }
+
+    if (rs) {
+        if (r300->current_rast_prim == MESA_PRIM_POINTS) {
+            r300_set_clip_discard_distance(r300, rs->max_point_size);
+        } else if (r300_prim_is_lines(r300->current_rast_prim)) {
+            r300_set_clip_discard_distance(r300, rs->line_width);
+        }
+    } else {
+        r300_set_clip_discard_distance(r300, 0.0f);
     }
 }
 
