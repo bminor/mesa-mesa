@@ -2383,6 +2383,7 @@ brw_postprocess_nir_opts(nir_shader *nir, const struct brw_compiler *compiler,
 
       nir_foreach_function_impl(impl, nir) {
          nir_divergence_analysis_impl(impl, options);
+         impl->valid_metadata |= nir_metadata_divergence;
       }
 
       nir_shader_instructions_pass(nir,
