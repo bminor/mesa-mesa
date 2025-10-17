@@ -1148,7 +1148,7 @@
     <src>Index and table</src>
   </ins>
 
-  <ins name="LD_BUFFER.i8" title="Global memory load" message="load" opcode="0x6a" opcode2="0" unit="LS">
+  <ins name="LD_PKA.i8" title="Global memory load" message="load" opcode="0x6a" opcode2="0" unit="LS">
     <desc>
       Loads a buffer descriptor. If bits 25...31 of the mode descriptor are
       all-ones, load from the buffer descriptors in the table indexed by the
@@ -1165,7 +1165,7 @@
     <src size="32">Mode descriptor</src>
   </ins>
 
-  <ins name="LD_BUFFER.i16" title="Global memory load" message="load" opcode="0x6a" opcode2="1" unit="LS">
+  <ins name="LD_PKA.i16" title="Global memory load" message="load" opcode="0x6a" opcode2="1" unit="LS">
     <desc>
       Loads a buffer descriptor. If bits 25...31 of the mode descriptor are
       all-ones, load from the buffer descriptors in the table indexed by the
@@ -1182,7 +1182,7 @@
     <src size="32">Mode descriptor</src>
   </ins>
 
-  <ins name="LD_BUFFER.i24" title="Global memory load" message="load" opcode="0x6a" opcode2="2" unit="LS">
+  <ins name="LD_PKA.i24" title="Global memory load" message="load" opcode="0x6a" opcode2="2" unit="LS">
     <desc>
       Loads a buffer descriptor. If bits 25...31 of the mode descriptor are
       all-ones, load from the buffer descriptors in the table indexed by the
@@ -1199,7 +1199,7 @@
     <src size="32">Mode descriptor</src>
   </ins>
 
-  <ins name="LD_BUFFER.i32" title="Global memory load" message="load" opcode="0x6a" opcode2="3" unit="LS">
+  <ins name="LD_PKA.i32" title="Global memory load" message="load" opcode="0x6a" opcode2="3" unit="LS">
     <desc>
       Loads a buffer descriptor. If bits 25...31 of the mode descriptor are
       all-ones, load from the buffer descriptors in the table indexed by the
@@ -1216,7 +1216,7 @@
     <src size="32">Mode descriptor</src>
   </ins>
 
-  <ins name="LD_BUFFER.i48" title="Global memory load" message="load" opcode="0x6a" opcode2="4" unit="LS">
+  <ins name="LD_PKA.i48" title="Global memory load" message="load" opcode="0x6a" opcode2="4" unit="LS">
     <desc>
       Loads a buffer descriptor. If bits 25...31 of the mode descriptor are
       all-ones, load from the buffer descriptors in the table indexed by the
@@ -1233,7 +1233,7 @@
     <src size="32">Mode descriptor</src>
   </ins>
 
-  <ins name="LD_BUFFER.i64" title="Global memory load" message="load" opcode="0x6a" opcode2="5" unit="LS">
+  <ins name="LD_PKA.i64" title="Global memory load" message="load" opcode="0x6a" opcode2="5" unit="LS">
     <desc>
       Loads a buffer descriptor. If bits 25...31 of the mode descriptor are
       all-ones, load from the buffer descriptors in the table indexed by the
@@ -1250,7 +1250,7 @@
     <src size="32">Mode descriptor</src>
   </ins>
 
-  <ins name="LD_BUFFER.i96" title="Global memory load" message="load" opcode="0x6a" opcode2="6" unit="LS">
+  <ins name="LD_PKA.i96" title="Global memory load" message="load" opcode="0x6a" opcode2="6" unit="LS">
     <desc>
       Loads a buffer descriptor. If bits 25...31 of the mode descriptor are
       all-ones, load from the buffer descriptors in the table indexed by the
@@ -1267,7 +1267,7 @@
     <src size="32">Mode descriptor</src>
   </ins>
 
-  <ins name="LD_BUFFER.i128" title="Global memory load" message="load" opcode="0x6a" opcode2="7" unit="LS">
+  <ins name="LD_PKA.i128" title="Global memory load" message="load" opcode="0x6a" opcode2="7" unit="LS">
     <desc>
       Loads a buffer descriptor. If bits 25...31 of the mode descriptor are
       all-ones, load from the buffer descriptors in the table indexed by the
@@ -1410,7 +1410,7 @@
     <imm name="offset" start="8" size="16" signed="true"/>
   </group>
 
-  <ins name="LEA_BUFFER" title="Load buffer effective address" message="attribute" opcode="0x6B" unit="LS">
+  <ins name="LEA_PKA" title="Load buffer effective address" message="attribute" opcode="0x6B" unit="LS">
     <desc>
       Load effective address of a simple buffer with an offset added.
     </desc>

@@ -117,14 +117,12 @@ TEST_F(ValidateFau, SmokeTests)
    VALID(bi_mov_i32_to(b, bi_register(1), unif));
    VALID(bi_fma_f32_to(b, bi_register(1), bi_discard(bi_register(1)), unif,
                        bi_neg(zero)));
-   VALID(
-      bi_ld_buffer_to(b, 32, bi_register(1), bi_register(2), bi_register(3)));
+   VALID(bi_ld_pka_to(b, 32, bi_register(1), bi_register(2), bi_register(3)));
 }
 
 TEST_F(ValidateFau, MessageInstructionConstraints)
 {
-   VALID(
-      bi_ld_buffer_to(b, 32, bi_register(1), bi_register(2), fb_extend_max_x));
-   INVALID(bi_ld_buffer_to(b, 32, bi_register(1), bi_register(2), warp_id));
-   INVALID(bi_ld_buffer_to(b, 32, bi_register(1), bi_register(2), core_id));
+   VALID(bi_ld_pka_to(b, 32, bi_register(1), bi_register(2), fb_extend_max_x));
+   INVALID(bi_ld_pka_to(b, 32, bi_register(1), bi_register(2), warp_id));
+   INVALID(bi_ld_pka_to(b, 32, bi_register(1), bi_register(2), core_id));
 }

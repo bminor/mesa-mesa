@@ -891,14 +891,14 @@ va_pack_instr(const bi_instr *I, unsigned arch)
       hex |= va_pack_load(I, false);
       break;
 
-   case BI_OPCODE_LD_BUFFER_I8:
-   case BI_OPCODE_LD_BUFFER_I16:
-   case BI_OPCODE_LD_BUFFER_I24:
-   case BI_OPCODE_LD_BUFFER_I32:
-   case BI_OPCODE_LD_BUFFER_I48:
-   case BI_OPCODE_LD_BUFFER_I64:
-   case BI_OPCODE_LD_BUFFER_I96:
-   case BI_OPCODE_LD_BUFFER_I128:
+   case BI_OPCODE_LD_PKA_I8:
+   case BI_OPCODE_LD_PKA_I16:
+   case BI_OPCODE_LD_PKA_I24:
+   case BI_OPCODE_LD_PKA_I32:
+   case BI_OPCODE_LD_PKA_I48:
+   case BI_OPCODE_LD_PKA_I64:
+   case BI_OPCODE_LD_PKA_I96:
+   case BI_OPCODE_LD_PKA_I128:
       hex |= va_pack_load(I, true);
       break;
 

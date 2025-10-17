@@ -845,7 +845,7 @@ bi_load_ubo_to(bi_builder *b, unsigned bitsize, bi_index dest0, bi_index src0,
    bi_instr *I;
 
    if (b->shader->arch >= 9) {
-      I = bi_ld_buffer_to(b, bitsize, dest0, src0, src1);
+      I = bi_ld_pka_to(b, bitsize, dest0, src0, src1);
       I->seg = BI_SEG_UBO;
    } else {
       I = bi_load_to(b, bitsize, dest0, src0, src1, BI_SEG_UBO, 0);
@@ -2380,16 +2380,16 @@ bi_emit_intrinsic(bi_builder *b, nir_intrinsic_instr *instr)
 
    case nir_intrinsic_load_ssbo_address:
       assert(b->shader->arch >= 9);
-      bi_lea_buffer_to(b, dst, bi_src_index(&instr->src[1]),
-                       bi_src_index(&instr->src[0]));
+      bi_lea_pka_to(b, dst, bi_src_index(&instr->src[1]),
+                    bi_src_index(&instr->src[0]));
       bi_emit_cached_split(b, dst, 64);
       break;
 
    case nir_intrinsic_load_ssbo: {
       assert(b->shader->arch >= 9);
       unsigned dst_bits = instr->num_components * instr->def.bit_size;
-      bi_ld_buffer_to(b, dst_bits, dst, bi_src_index(&instr->src[1]),
-                      bi_src_index(&instr->src[0]));
+      bi_ld_pka_to(b, dst_bits, dst, bi_src_index(&instr->src[1]),
+                   bi_src_index(&instr->src[0]));
       bi_emit_cached_split(b, dst, dst_bits);
       break;
    }

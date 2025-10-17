@@ -328,10 +328,10 @@ can_remat(bi_instr *I)
    case BI_OPCODE_IADD_IMM_I32:
    case BI_OPCODE_IADD_IMM_V2I16:
       return only_const_sources(I);
-   case BI_OPCODE_LD_BUFFER_I8:
-   case BI_OPCODE_LD_BUFFER_I16:
-   case BI_OPCODE_LD_BUFFER_I24:
-   case BI_OPCODE_LD_BUFFER_I32:
+   case BI_OPCODE_LD_PKA_I8:
+   case BI_OPCODE_LD_PKA_I16:
+   case BI_OPCODE_LD_PKA_I24:
+   case BI_OPCODE_LD_PKA_I32:
       /* TODO: Allow loads that write >1 reg. */
       return only_const_sources(I);
    case BI_OPCODE_MOV_I32:
@@ -358,14 +358,14 @@ remat_to(bi_builder *b, bi_index dst, struct spill_ctx *ctx, unsigned node)
       return bi_iadd_imm_i32_to(b, dst, I->src[0], I->index);
    case BI_OPCODE_IADD_IMM_V2I16:
       return bi_iadd_imm_v2i16_to(b, dst, I->src[0], I->index);
-   case BI_OPCODE_LD_BUFFER_I8:
-      return bi_ld_buffer_i8_to(b, dst, I->src[0], I->src[1]);
-   case BI_OPCODE_LD_BUFFER_I16:
-      return bi_ld_buffer_i16_to(b, dst, I->src[0], I->src[1]);
-   case BI_OPCODE_LD_BUFFER_I24:
-      return bi_ld_buffer_i24_to(b, dst, I->src[0], I->src[1]);
-   case BI_OPCODE_LD_BUFFER_I32:
-      return bi_ld_buffer_i32_to(b, dst, I->src[0], I->src[1]);
+   case BI_OPCODE_LD_PKA_I8:
+      return bi_ld_pka_i8_to(b, dst, I->src[0], I->src[1]);
+   case BI_OPCODE_LD_PKA_I16:
+      return bi_ld_pka_i16_to(b, dst, I->src[0], I->src[1]);
+   case BI_OPCODE_LD_PKA_I24:
+      return bi_ld_pka_i24_to(b, dst, I->src[0], I->src[1]);
+   case BI_OPCODE_LD_PKA_I32:
+      return bi_ld_pka_i32_to(b, dst, I->src[0], I->src[1]);
    case BI_OPCODE_MOV_I32:
       assert(I->src[0].type == BI_INDEX_CONSTANT ||
              I->src[0].type == BI_INDEX_FAU);

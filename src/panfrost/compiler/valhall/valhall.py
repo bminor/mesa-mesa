@@ -200,7 +200,7 @@ class Instruction:
         if opcode == 0x90:
             # XXX: XMLify this, but disambiguates sign of conversions
             self.secondary_mask |= 0x10
-        if name.startswith("LOAD.i") or name.startswith("STORE.i") or name.startswith("LD_BUFFER.i"):
+        if name.startswith("LOAD.i") or name.startswith("STORE.i") or name.startswith("LD_PKA.i"):
             self.secondary_shift = 27 # Alias with memory_size
             self.secondary_mask = 0x7
         if "descriptor_type" in [x.name for x in self.modifiers]:
