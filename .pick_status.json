@@ -894,7 +894,7 @@
         "description": "nir/divergence: fix handling of intel uniform block load",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ca1533cd03308a73fbe91ce9c4365c059c64aff3",
         "notes": null
