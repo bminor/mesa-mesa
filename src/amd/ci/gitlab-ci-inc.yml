@@ -490,11 +490,6 @@
     INTEGRATED_OR_DISCRETE: discrete
     GPU_VERSION: radv-navi21
     FDO_CI_CONCURRENT: 32
-    # FIXME: drop everything below to use the same kernel as the rest of the amdgpu jobs
-    CI_TRON_KERNEL__URL: https://fs.mupuf.org/linux-6.6-b2c-radv-ci
-    CI_TRON_INITRAMFS__DEPMOD__URL: null
-    CI_TRON_INITRAMFS__GPU__URL: null
-    CI_TRON_INITRAMFS__GPU__FORMAT__0__ARCHIVE__KEEP__0__PATH: null
 
 .vangogh-test-valve:
   variables:
@@ -524,12 +519,6 @@
     INTEGRATED_OR_DISCRETE: discrete
     GPU_VERSION: radv-navi31
     FDO_CI_CONCURRENT: 32
-    # FIXME: drop everything below to use the same kernel as the rest of the amdgpu jobs
-    CI_TRON_KERNEL__URL: https://fs.mupuf.org/linux-6.6-b2c-radv-ci
-    CI_TRON_INITRAMFS__DEPMOD__URL: null
-    CI_TRON_INITRAMFS__GPU__URL: null
-    CI_TRON_INITRAMFS__GPU__FORMAT__0__ARCHIVE__KEEP__0__PATH: null
-
 
 .gfx1201-test-valve:
   variables:
