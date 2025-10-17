@@ -3368,9 +3368,8 @@ begin_rendering(struct zink_context *ctx, bool check_msaa_expand)
       VK_TRUE,
       ctx->gfx_pipeline_state.rast_samples + 1,
    };
+   ctx->dynamic_fb.info.pNext = ctx->transient_attachments && !ctx->blitting && has_msrtss ? &msrtss : NULL;
 
-   if (has_msrtss && !ctx->blitting)
-      ctx->dynamic_fb.info.pNext = ctx->transient_attachments ? &msrtss : NULL;
    VKCTX(CmdBeginRendering)(ctx->bs->cmdbuf, &ctx->dynamic_fb.info);
    ctx->in_rp = true;
    return clear_buffers;
