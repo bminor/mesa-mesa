@@ -1853,8 +1853,8 @@ validate_dominance(nir_function_impl *impl, validate_state *state)
 }
 
 typedef struct {
-   BITSET_WORD *live_in;
-   BITSET_WORD *live_out;
+   struct u_sparse_bitset live_in;
+   struct u_sparse_bitset live_out;
 } block_liveness_metadata;
 
 static void
@@ -1871,8 +1871,8 @@ validate_live_defs(nir_function_impl *impl, validate_state *state)
       md->live_in = block->live_in;
       md->live_out = block->live_out;
 
-      block->live_in = NULL;
-      block->live_out = NULL;
+      u_sparse_bitset_init(&block->live_in, impl->ssa_alloc, NULL);
+      u_sparse_bitset_init(&block->live_out, impl->ssa_alloc, NULL);
    }
 
    /* Call metadata passes and compare it against the preserved metadata */
@@ -1890,10 +1890,8 @@ validate_live_defs(nir_function_impl *impl, validate_state *state)
 
       size_t bitset_words = BITSET_WORDS(impl->ssa_alloc);
       if (bitset_words) {
-         validate_assert(state, !memcmp(md->live_in, block->live_in,
-                                        sizeof(BITSET_WORD) * bitset_words));
-         validate_assert(state, !memcmp(md->live_out, block->live_out,
-                                        sizeof(BITSET_WORD) * bitset_words));
+         validate_assert(state, !u_sparse_bitset_cmp(&md->live_in, &block->live_in));
+         validate_assert(state, !u_sparse_bitset_cmp(&md->live_out, &block->live_out));
       }
    }
    state->block = NULL;
@@ -1903,8 +1901,8 @@ validate_live_defs(nir_function_impl *impl, validate_state *state)
       nir_block *block = (nir_block *)entry->key;
       block_liveness_metadata *md = &blocks[entry - state->blocks->table];
 
-      ralloc_free(block->live_in);
-      ralloc_free(block->live_out);
+      u_sparse_bitset_free(&block->live_in);
+      u_sparse_bitset_free(&block->live_out);
 
       block->live_in = md->live_in;
       block->live_out = md->live_out;

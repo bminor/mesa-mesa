@@ -85,9 +85,8 @@ nir_progress(bool progress, nir_function_impl *impl, nir_metadata preserved)
     */
    if ((impl->valid_metadata & ~preserved) & nir_metadata_live_defs) {
       nir_foreach_block(block, impl) {
-         ralloc_free(block->live_in);
-         ralloc_free(block->live_out);
-         block->live_in = block->live_out = NULL;
+         u_sparse_bitset_free(&block->live_in);
+         u_sparse_bitset_free(&block->live_out);
       }
    }
 
@@ -115,10 +114,11 @@ nir_metadata_invalidate(nir_shader *shader)
          block->index = (block_idx-- & 0xf) + 0xfffffff0;
 
          if (impl->valid_metadata & nir_metadata_live_defs) {
-            ralloc_free(block->live_in);
-            ralloc_free(block->live_out);
+            u_sparse_bitset_free(&block->live_in);
+            u_sparse_bitset_free(&block->live_out);
          }
-         block->live_in = block->live_out = NULL;
+         u_sparse_bitset_init(&block->live_in, impl->ssa_alloc, NULL);
+         u_sparse_bitset_init(&block->live_out, impl->ssa_alloc, NULL);
 
          if (impl->valid_metadata & nir_metadata_dominance &&
              block->dom_children != block->_dom_children_storage)
