@@ -1349,7 +1349,8 @@ CDX12EncHMFT::FinalizeAndEmitOutputSample( LPDX12EncodeContext pDX12EncodeContex
    }
 
    // Attach the async stats DXGIBuffers to the MFSample output gated by pAsyncFence completion
-   {
+   // Only to the last slice (or full frame) sample.
+   if (bIsLastSlice) {
       // Set stats metadata buffers to the sample here. As we are returning the dxgi buffers gated by the completion fence
       // for the resolved stats we do not need to wait for the pAsyncFence completion on the CPU.
       if( FAILED( ConfigureAsyncStatsMetadataOutputSampleAttributes( spOutputSample.Get(),
