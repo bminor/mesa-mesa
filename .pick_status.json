@@ -2484,7 +2484,7 @@
         "description": "tu: Fix 3d load path with D24S8 on a7xx",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
