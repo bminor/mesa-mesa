@@ -444,3 +444,101 @@ the following line where the other BoardConfig files are included
 
 Then we are set to continue following the official instructions to
 build the cuttlefish target and run it in the cuttlefish emulator.
+
+.. _android-android-system-properties:
+
+Android System Properties
+-------------------------
+
+Android (generally) uses system properties rather than
+:doc:`environment variables <envvars>`  to control Mesa/Gallium behavior,
+although there are some exceptions to this for
+:ref:`Android app developers <envvars-android-app-developers>`.
+
+With the ``os_get_option()`` helper, the environment variable names are
+automatically translated to the corresponding system property name by:
+
+- converting UPPER case to lower case
+- replacing ``_`` with ``.``
+- adding the ``mesa.`` prefix to ``<property_name>`` if it's not present already
+- and then querying the system property name with the following prefixes, in
+  order:
+
+   #. ``debug.<property_name>``
+   #. ``vendor.<property_name>``
+   #. ``<property_name>``
+
+For example, ``LIBGL_DEBUG`` will be queried as:
+
+#. ``debug.mesa.libgl.debug``
+#. ``vendor.mesa.libgl.debug``
+#. ``mesa.libgl.debug``
+
+This allows for default ``vendor.`` / ``mesa.`` properties to be overridden by
+users at run-time with ``debug.`` values.
+
+System properties can be queried with:
+
+.. code-block:: sh
+
+   $ adb shell getprop <property_name>
+
+System properties can be set with:
+
+.. code-block:: sh
+
+   $ adb shell setprop <property_name> <value>
+
+For example:
+
+.. code-block:: sh
+
+   $ adb shell setprop debug.mesa.libgl.debug verbose
+   $ adb shell getprop debug.mesa.libgl.debug
+   verbose
+
+NOTE: Any driver that wishes to support Android system properties should replace
+any calls to ``getenv()`` with ``os_get_option()``, which automatically handles
+both environment variables and Android system properties.
+
+.. _envvars-android-app-developers:
+
+Android App Developers
+^^^^^^^^^^^^^^^^^^^^^^
+
+Android app developers have two options to control Mesa behavior on un-rooted
+devices:
+
+- Environment variables, using the wrap shell script
+
+  - https://developer.android.com/ndk/guides/wrap-script.html
+
+- ``debug.<property_name>`` system properties
+
+App developers with access to rooted devices can also use ``vendor.`` and
+``mesa.`` values, although ``debug.`` prefixes are recommended.
+
+While the system properties values are used for each app invocation once set,
+they do not persist across device reboots.
+
+
+Android Driver Developers
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Android driver developers have three options to control Mesa behavior on
+devices with ``root`` access:
+
+#. ``debug.<property_name>``
+#. ``vendor.<property_name>``
+#. ``<property_name>``
+
+The ``debug.`` prefix can be used without ``root``, while ``vendor.`` and
+``mesa.`` prefixes require ``root``.
+
+Any of the values can be set in the device's makefile to control Mesa
+behavior, although ``vendor.`` and ``mesa.`` are typically used for this
+purpose.
+
+While the system properties values are used for each app invocation once set
+at runtime, they do not persist across device reboots if configured with
+``setprop``.

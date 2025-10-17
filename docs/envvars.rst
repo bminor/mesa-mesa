@@ -5,6 +5,14 @@ Normally, no environment variables need to be set. Most of the
 environment variables used by Mesa/Gallium are for debugging purposes,
 but they can sometimes be useful for debugging end-user issues.
 
+Android System Properties
+-------------------------
+
+Android (generally) uses system properties rather than environment variables to
+control Mesa/Gallium behavior, although there are some exceptions to this. See
+:ref:`Android System Properties <android-android-system-properties>` for
+details on naming and how to set and get system property values.
+
 LibGL environment variables
 ---------------------------
 
