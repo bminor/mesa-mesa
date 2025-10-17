@@ -1134,6 +1134,20 @@ has_cross_lane_access(const brw_inst *inst)
           */
          if (!inst->src[s].is_scalar && inst->src[s].stride == 0)
             return true;
+      } else if (inst->src[s].file == ARF &&
+                 inst->src[s].nr >= BRW_ARF_FLAG &&
+                 inst->src[s].nr < BRW_ARF_MASK) {
+         /* The instruction reads the flag register which represents states
+          * from all the lanes.
+          *
+          * Note that although this prevents moving instructions reading the
+          * flag registers past a HALT kind of instruction, this doesn't
+          * prevent the instructions that generated the flag value from moving
+          * on either side of the HALT instruction. So it's possible for
+          * ballot instructions to produce incorrect values when used in a
+          * shader with HALT.
+          */
+         return true;
       }
    }
 
