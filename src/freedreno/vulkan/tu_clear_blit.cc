@@ -1461,6 +1461,15 @@ r3d_dst_gmem(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
       gmem_offset = tu_attachment_gmem_offset(cmd, att, layer);
    }
 
+   /* On a7xx we must always use FMT6_Z24_UNORM_S8_UINT_AS_R8G8B8A8. See
+    * blit_base_format().
+    */
+   if (CHIP >= A7XX && att->format == VK_FORMAT_D24_UNORM_S8_UINT) {
+      RB_MRT_BUF_INFO = pkt_field_set(A6XX_RB_MRT_BUF_INFO_COLOR_FORMAT,
+                                      RB_MRT_BUF_INFO,
+                                      FMT6_Z24_UNORM_S8_UINT_AS_R8G8B8A8);
+   }
+
    tu_cs_emit_regs(cs,
                    RB_MRT_BUF_INFO(CHIP, 0, .dword = RB_MRT_BUF_INFO),
                    A6XX_RB_MRT_PITCH(0, 0),
@@ -1533,7 +1542,8 @@ r3d_setup(struct tu_cmd_buffer *cmd,
       tu_cs_emit_call(cs, cmd->device->dbg_renderpass_stomp_cs);
    }
 
-   enum a6xx_format fmt = blit_base_format<CHIP>(dst_format, ubwc, false);
+   enum a6xx_format fmt = blit_base_format<CHIP>(dst_format, ubwc, 
+                                                 blit_param & R3D_DST_GMEM);
    fixup_dst_format(src_format, &dst_format, &fmt);
 
    if (!cmd->state.pass) {
