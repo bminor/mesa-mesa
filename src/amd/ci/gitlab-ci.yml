@@ -258,6 +258,8 @@ radv-navi21-vkcts:
   variables:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 30
     RADV_PERFTEST: transfer_queue,hic
+    # FIXME: GPU hangs
+    RADV_DEBUG: novideo
 
 radv-vangogh-vkcts:
   parallel: 2
