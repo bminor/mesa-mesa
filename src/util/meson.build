@@ -447,6 +447,7 @@ if with_tests
     'tests/register_allocate_test.cpp',
     'tests/roundeven_test.cpp',
     'tests/set_test.cpp',
+    'tests/sparse_bitset_test.cpp',
     'tests/string_buffer_test.cpp',
     'tests/timespec_test.cpp',
     'tests/u_atomic_test.cpp',

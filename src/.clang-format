@@ -103,6 +103,8 @@ ForEachMacros:
   - foreach_list_typed_safe
   - foreach_two_lists
 
+  - U_SPARSE_BITSET_FOREACH_SET
+
 # nir
   - nir_foreach_function_temp_variable
   - nir_foreach_function_temp_variable_safe
