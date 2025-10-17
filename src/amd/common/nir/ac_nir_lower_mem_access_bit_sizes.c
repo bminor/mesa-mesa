@@ -121,10 +121,11 @@ lower_mem_access_cb(nir_intrinsic_op intrin, uint8_t bytes, uint8_t bit_size, ui
       return res;
    }
 
+   const bool is_buffer_load = intrin == nir_intrinsic_load_ubo ||
+                               intrin == nir_intrinsic_load_ssbo ||
+                               intrin == nir_intrinsic_load_constant;
+
    if (is_smem) {
-      const bool is_buffer_load = intrin == nir_intrinsic_load_ubo ||
-                                  intrin == nir_intrinsic_load_ssbo ||
-                                  intrin == nir_intrinsic_load_constant;
       const bool supported_subdword = cb_data->gfx_level >= GFX12 &&
                                       intrin != nir_intrinsic_load_push_constant &&
                                       (!cb_data->use_llvm || intrin != nir_intrinsic_load_ubo);
@@ -194,8 +195,8 @@ lower_mem_access_cb(nir_intrinsic_op intrin, uint8_t bytes, uint8_t bit_size, ui
 
    const uint32_t max_pad = 4 - MIN2(combined_align, 4);
 
-   /* Global loads don't have bounds checking, so increasing the size might not be safe. */
-   if (intrin == nir_intrinsic_load_global || intrin == nir_intrinsic_load_global_constant) {
+   /* Global/scratch loads don't have bounds checking, so increasing the size might not be safe. */
+   if (!is_buffer_load) {
       if (align_mul < 4) {
          /* If we split the load, only lower it to 32-bit if this is a SMEM load. */
          const unsigned chunk_bytes = align(bytes, 4) - max_pad;
