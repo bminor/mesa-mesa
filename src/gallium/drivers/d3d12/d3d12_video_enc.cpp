@@ -165,8 +165,9 @@ d3d12_video_encoder_flush(struct pipe_video_codec *codec)
       pD3D12Enc->m_spEncodeCommandQueue->ExecuteCommandLists(1, ppCommandLists);
       pD3D12Enc->m_spEncodeCommandQueue->Signal(pD3D12Enc->m_spLastSliceFence.Get(), pD3D12Enc->m_LastSliceFenceValue);
       ID3D12CommandList *ppCommandLists2[1] = { pD3D12Enc->m_spResolveCommandList.Get() };
-      pD3D12Enc->m_spEncodeCommandQueue->ExecuteCommandLists(1, ppCommandLists2);
-      pD3D12Enc->m_spEncodeCommandQueue->Signal(pD3D12Enc->m_spFence.Get(), pD3D12Enc->m_fenceValue);
+      pD3D12Enc->m_spResolveCommandQueue->Wait(pD3D12Enc->m_spLastSliceFence.Get(), pD3D12Enc->m_LastSliceFenceValue);
+      pD3D12Enc->m_spResolveCommandQueue->ExecuteCommandLists(1, ppCommandLists2);
+      pD3D12Enc->m_spResolveCommandQueue->Signal(pD3D12Enc->m_spFence.Get(), pD3D12Enc->m_fenceValue);
       
       // Validate device was not removed
       hr = pD3D12Enc->m_pD3D12Screen->dev->GetDeviceRemovedReason();
@@ -280,6 +281,12 @@ d3d12_video_encoder_destroy(struct pipe_video_codec *codec)
    if (ctx->priority_manager)
    {
       if (ctx->priority_manager->unregister_work_queue(ctx->priority_manager, pD3D12Enc->m_spEncodeCommandQueue.Get()) != 0)
+      {
+         debug_printf("D3D12: Failed to unregister command queue with frontend priority manager\n");
+         assert(false);
+      }
+
+      if (ctx->priority_manager->unregister_work_queue(ctx->priority_manager, pD3D12Enc->m_spResolveCommandQueue.Get()) != 0)
       {
          debug_printf("D3D12: Failed to unregister command queue with frontend priority manager\n");
          assert(false);
@@ -2353,6 +2360,15 @@ d3d12_video_encoder_create_command_objects(struct d3d12_video_encoder *pD3D12Enc
       return false;
    }
 
+   hr = pD3D12Enc->m_pD3D12Screen->dev->CreateCommandQueue(&commandQueueDesc,
+      IID_PPV_ARGS(pD3D12Enc->m_spResolveCommandQueue.GetAddressOf()));
+   if (FAILED(hr)) {
+      debug_printf("[d3d12_video_encoder] d3d12_video_encoder_create_command_objects - Call to CreateCommandQueue "
+                      "failed with HR %x\n",
+                      (unsigned)hr);
+      return false;
+   }
+
    hr = pD3D12Enc->m_pD3D12Screen->dev->CreateFence(0, D3D12_FENCE_FLAG_SHARED, IID_PPV_ARGS(&pD3D12Enc->m_spFence));
    if (FAILED(hr)) {
       debug_printf(
@@ -2581,6 +2597,15 @@ d3d12_video_encoder_create_encoder(struct pipe_context *context, const struct pi
                       "pipe_priority_manager::register_work_queue\n");
          goto failed;
       }
+
+      // Register queue with priority manager
+      if (pD3D12Ctx->priority_manager->register_work_queue(pD3D12Ctx->priority_manager, pD3D12Enc->m_spResolveCommandQueue.Get()) != 0)
+      {
+         debug_printf("[d3d12_video_encoder] d3d12_video_encoder_create_encoder - Failure on "
+                      "pipe_priority_manager::register_work_queue\n");
+         goto failed;
+      }
+
    }
 
    return &pD3D12Enc->base;

@@ -590,6 +590,7 @@ struct d3d12_video_encoder
    ComPtr<ID3D12VideoEncoder>            m_spVideoEncoder;
    ComPtr<ID3D12VideoEncoderHeap>        m_spVideoEncoderHeap;
    ComPtr<ID3D12CommandQueue>            m_spEncodeCommandQueue;
+   ComPtr<ID3D12CommandQueue>            m_spResolveCommandQueue;
    ComPtr<ID3D12VideoEncodeCommandList2> m_spEncodeCommandList;
    ComPtr<ID3D12VideoEncodeCommandList2> m_spResolveCommandList;
    std::vector<D3D12_RESOURCE_BARRIER>   m_transitionsBeforeCloseCmdList;
