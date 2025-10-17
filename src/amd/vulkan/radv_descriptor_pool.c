@@ -24,9 +24,10 @@ radv_destroy_descriptor_pool_entries(struct radv_device *device, struct radv_des
          radv_descriptor_set_destroy(device, pool, pool->entries[i].set, false);
       }
    } else {
-      for (uint32_t i = 0; i < pool->entry_count; ++i) {
-         vk_descriptor_set_layout_unref(&device->vk, &pool->sets[i]->header.layout->vk);
-         vk_object_base_finish(&pool->sets[i]->header.base);
+      list_for_each_entry_safe (struct radv_descriptor_set, set, &pool->sets, link) {
+         list_del(&set->link);
+         vk_descriptor_set_layout_unref(&device->vk, &set->header.layout->vk);
+         vk_object_base_finish(&set->header.base);
       }
    }
 }
@@ -141,15 +142,10 @@ radv_create_descriptor_pool(struct radv_device *device, const VkDescriptorPoolCr
       bo_size += 16 * MIN2(num_16byte_descriptors, pCreateInfo->maxSets);
    }
 
-   uint64_t sets_size = 0;
-
    if (!(pCreateInfo->flags & VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT)) {
       size += pCreateInfo->maxSets * sizeof(struct radv_descriptor_set);
       size += sizeof(struct radeon_winsys_bo *) * bo_count;
       size += sizeof(struct radv_descriptor_range) * range_count;
-
-      sets_size = sizeof(struct radv_descriptor_set *) * pCreateInfo->maxSets;
-      size += sets_size;
    } else {
       size += sizeof(struct radv_descriptor_pool_entry) * pCreateInfo->maxSets;
    }
@@ -160,8 +156,10 @@ radv_create_descriptor_pool(struct radv_device *device, const VkDescriptorPoolCr
 
    vk_object_base_init(&device->vk, &pool->base, VK_OBJECT_TYPE_DESCRIPTOR_POOL);
 
+   list_inithead(&pool->sets);
+
    if (!(pCreateInfo->flags & VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT)) {
-      pool->host_memory_base = (uint8_t *)pool + sizeof(struct radv_descriptor_pool) + sets_size;
+      pool->host_memory_base = (uint8_t *)pool + sizeof(struct radv_descriptor_pool);
       pool->host_memory_ptr = pool->host_memory_base;
       pool->host_memory_end = (uint8_t *)pool + size;
    }

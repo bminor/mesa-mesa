@@ -7,6 +7,7 @@
 #ifndef RADV_DESCRIPTOR_SET_H
 #define RADV_DESCRIPTOR_SET_H
 
+#include "util/list.h"
 #include "util/mesa-blake3.h"
 
 #include "radv_constants.h"
@@ -100,6 +101,9 @@ struct radv_descriptor_set_header {
 
 struct radv_descriptor_set {
    struct radv_descriptor_set_header header;
+
+   /* Link in radv_descriptor_pool::sets */
+   struct list_head link;
 
    struct radeon_winsys_bo *descriptors[];
 };

@@ -409,8 +409,9 @@ radv_alloc_descriptor_pool_entry(struct radv_device *device, struct radv_descrip
       if (current_offset + set->header.size > pool->size)
          return VK_ERROR_OUT_OF_POOL_MEMORY;
 
-      pool->sets[entry_index] = set;
       pool->current_offset += set->header.size;
+
+      list_addtail(&set->link, &pool->sets);
    }
 
    set->header.bo = pool->bo;
@@ -438,7 +439,8 @@ radv_descriptor_set_create(struct radv_device *device, struct radv_descriptor_po
       unsigned stride = radv_descriptor_type_buffer_count(layout->binding[layout->binding_count - 1].type);
       buffer_count = layout->binding[layout->binding_count - 1].buffer_offset + variable_count * stride;
    }
-   unsigned range_offset = sizeof(struct radv_descriptor_set_header) + sizeof(struct radeon_winsys_bo *) * buffer_count;
+   unsigned range_offset = sizeof(struct radv_descriptor_set_header) + sizeof(struct list_head) +
+                           sizeof(struct radeon_winsys_bo *) * buffer_count;
    const unsigned dynamic_offset_count = layout->dynamic_offset_count;
    unsigned mem_size = range_offset + sizeof(struct radv_descriptor_range) * dynamic_offset_count;
 

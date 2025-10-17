@@ -11,6 +11,8 @@
 
 #include <vulkan/vulkan.h>
 
+#include "util/list.h"
+
 struct radv_descriptor_set;
 
 struct radv_descriptor_pool_entry {
@@ -31,13 +33,12 @@ struct radv_descriptor_pool {
    uint8_t *host_memory_ptr;
    uint8_t *host_memory_end;
 
+   struct list_head sets;
+
    uint32_t entry_count;
    uint32_t max_entry_count;
 
-   union {
-      struct radv_descriptor_set *sets[0];
-      struct radv_descriptor_pool_entry entries[0];
-   };
+   struct radv_descriptor_pool_entry entries[0];
 };
 
 VK_DEFINE_NONDISP_HANDLE_CASTS(radv_descriptor_pool, base, VkDescriptorPool, VK_OBJECT_TYPE_DESCRIPTOR_POOL)
