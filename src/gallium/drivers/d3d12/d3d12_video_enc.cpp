@@ -3074,39 +3074,48 @@ d3d12_video_encoder_get_slice_bitstream_data(struct pipe_video_codec *codec,
          return;
       }
 
-      struct d3d12_screen *pD3D12Screen = (struct d3d12_screen *) pD3D12Enc->m_pD3D12Screen;
-      pipe_resource *pSizesBuffer = d3d12_resource_from_resource(&pD3D12Screen->base, pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppSubregionSizes[slice_idx]);
-      assert(pSizesBuffer);
-      pipe_resource *pOffsetsBuffer = d3d12_resource_from_resource(&pD3D12Screen->base, pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppSubregionOffsets[slice_idx]);
-      assert(pOffsetsBuffer);
-      struct pipe_box box;
-      u_box_3d(0,                                  // x
-               0,                                  // y
-               0,                                  // z
-               static_cast<int>(sizeof(UINT64)),   // width
-               1,                                  // height
-               1,                                  // depth
-               &box);
-      struct pipe_transfer *mapTransfer;
-      void* pMappedPtr = pD3D12Enc->base.context->buffer_map(pD3D12Enc->base.context,
-                                                            pSizesBuffer,
-                                                            0,
-                                                            PIPE_MAP_READ,
-                                                            &box,
-                                                            &mapTransfer);
-      pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppResolvedSubregionSizes[slice_idx] = *reinterpret_cast<UINT64 *>(pMappedPtr);
-      pipe_buffer_unmap(pD3D12Enc->base.context, mapTransfer);
-      pipe_resource_reference(&pSizesBuffer, NULL);
-
-      pMappedPtr = pD3D12Enc->base.context->buffer_map(pD3D12Enc->base.context,
-                                                      pOffsetsBuffer,
-                                                      0,
-                                                      PIPE_MAP_READ,
-                                                      &box,
-                                                      &mapTransfer);
-      pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppResolvedSubregionOffsets[slice_idx] = *reinterpret_cast<UINT64 *>(pMappedPtr);
-      pipe_buffer_unmap(pD3D12Enc->base.context, mapTransfer);
-      pipe_resource_reference(&pOffsetsBuffer, NULL);
+      // Use native D3D12 API for direct buffer mapping - buffers are created with D3D12_HEAP_TYPE_READBACK
+      ID3D12Resource* pSizesResource = pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppSubregionSizes[slice_idx];
+      ID3D12Resource* pOffsetsResource = pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppSubregionOffsets[slice_idx];
+      
+      assert(pSizesResource && pOffsetsResource);
+      
+#if MESA_DEBUG
+      // Verify resources are CPU accessible (created with D3D12_HEAP_TYPE_READBACK)
+      D3D12_HEAP_PROPERTIES heapProps;
+      D3D12_HEAP_FLAGS heapFlags;
+      pSizesResource->GetHeapProperties(&heapProps, &heapFlags);
+      assert(heapProps.Type == D3D12_HEAP_TYPE_READBACK);
+      pOffsetsResource->GetHeapProperties(&heapProps, &heapFlags);
+      assert(heapProps.Type == D3D12_HEAP_TYPE_READBACK);
+#endif
+      
+      // Map sizes buffer
+      D3D12_RANGE readRange = { 0, sizeof(UINT64) };
+      void* pSizesMappedPtr;
+      hr = pSizesResource->Map(0, &readRange, &pSizesMappedPtr);
+      if (FAILED(hr)) {
+         debug_printf("Error: d3d12_video_encoder_get_slice_bitstream_data failed to map sizes buffer for fence %" PRIu64 " with HR %x\n",
+                        requested_metadata_fence, (unsigned)hr);
+         if (codec_unit_metadata_count)
+            *codec_unit_metadata_count = 0u;
+         return;
+      }
+      pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppResolvedSubregionSizes[slice_idx] = *reinterpret_cast<UINT64*>(pSizesMappedPtr);
+      pSizesResource->Unmap(0, nullptr);
+      
+      // Map offsets buffer
+      void* pOffsetsMappedPtr;
+      hr = pOffsetsResource->Map(0, &readRange, &pOffsetsMappedPtr);
+      if (FAILED(hr)) {
+         debug_printf("Error: d3d12_video_encoder_get_slice_bitstream_data failed to map offsets buffer for fence %" PRIu64 " with HR %x\n",
+                        requested_metadata_fence, (unsigned)hr);
+         if (codec_unit_metadata_count)
+            *codec_unit_metadata_count = 0u;
+         return;
+      }
+      pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppResolvedSubregionOffsets[slice_idx] = *reinterpret_cast<UINT64*>(pOffsetsMappedPtr);
+      pOffsetsResource->Unmap(0, nullptr);
 
       // We may have added packed nals before each slice (e.g prefix nal)
       // lets upload them into the output buffer
