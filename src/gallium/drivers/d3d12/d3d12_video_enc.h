@@ -606,6 +606,7 @@ struct d3d12_video_encoder
    pipe_resource* m_SliceHeaderRepackBuffer = NULL;
    std::vector<uint8_t> m_BitstreamHeadersBuffer;
    std::vector<uint8_t> m_StagingHeadersBuffer;
+   std::vector<int> m_TempSliceSizesBuffer;  // Temporary buffer to avoid per-frame allocations in slice configuration
    std::vector<EncodedBitstreamResolvedMetadata> m_spEncodedFrameMetadata;
 
    struct D3D12EncodeCapabilities m_currentEncodeCapabilities = {};

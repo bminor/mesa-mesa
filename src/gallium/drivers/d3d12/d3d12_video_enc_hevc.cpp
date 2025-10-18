@@ -644,11 +644,11 @@ d3d12_video_encoder_negotiate_current_hevc_slices_configuration(struct d3d12_vid
    if ((picture->slice_mode == PIPE_VIDEO_SLICE_MODE_BLOCKS) && (picture->num_slice_descriptors > 1)) {
       /* Some apps send all same size slices minus 1 slice in any position in the descriptors */
       /* Lets validate that there are at most 2 different slice sizes in all the descriptors */
-      std::vector<int> slice_sizes(picture->num_slice_descriptors);
+      pD3D12Enc->m_TempSliceSizesBuffer.resize(picture->num_slice_descriptors);
       for (uint32_t i = 0; i < picture->num_slice_descriptors; i++)
-         slice_sizes[i] = picture->slices_descriptors[i].num_ctu_in_slice;
-      std::sort(slice_sizes.begin(), slice_sizes.end());
-      bool bUniformSizeSlices = (std::unique(slice_sizes.begin(), slice_sizes.end()) - slice_sizes.begin()) <= 2;
+         pD3D12Enc->m_TempSliceSizesBuffer[i] = picture->slices_descriptors[i].num_ctu_in_slice;
+      std::sort(pD3D12Enc->m_TempSliceSizesBuffer.begin(), pD3D12Enc->m_TempSliceSizesBuffer.end());
+      bool bUniformSizeSlices = (std::unique(pD3D12Enc->m_TempSliceSizesBuffer.begin(), pD3D12Enc->m_TempSliceSizesBuffer.end()) - pD3D12Enc->m_TempSliceSizesBuffer.begin()) <= 2;
 
       uint32_t subregion_block_pixel_size = pD3D12Enc->m_currentEncodeCapabilities.m_currentResolutionSupportCaps.SubregionBlockPixelsSize;
       uint32_t num_subregions_per_scanline =
