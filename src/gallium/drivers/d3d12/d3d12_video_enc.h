@@ -608,6 +608,15 @@ struct d3d12_video_encoder
    std::vector<int> m_TempSliceSizesBuffer;  // Temporary buffer to avoid per-frame allocations in slice configuration
    std::vector<EncodedBitstreamResolvedMetadata> m_spEncodedFrameMetadata;
 
+   // Reusable barrier vectors to avoid per-frame allocations
+   std::vector<D3D12_RESOURCE_BARRIER> m_rgCurrentFrameStateTransitions;
+   std::vector<D3D12_RESOURCE_BARRIER> m_rgReferenceTransitions;
+   std::vector<D3D12_RESOURCE_BARRIER> m_pResolveInputDataBarriers;
+   std::vector<D3D12_RESOURCE_BARRIER> m_pTwoPassExtraBarriers;
+   std::vector<D3D12_RESOURCE_BARRIER> m_pSlicedEncodingExtraBarriers;
+   std::vector<D3D12_RESOURCE_BARRIER> m_rgResolveMetadataStateTransitions;
+   std::vector<D3D12_RESOURCE_BARRIER> m_outputStatsBarriers;
+
    struct D3D12EncodeCapabilities m_currentEncodeCapabilities = {};
    struct D3D12EncodeConfiguration m_currentEncodeConfig = {};
    struct D3D12EncodeConfiguration m_prevFrameEncodeConfig = {};
