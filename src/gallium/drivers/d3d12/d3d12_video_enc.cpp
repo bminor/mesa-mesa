@@ -147,12 +147,6 @@ d3d12_video_encoder_flush(struct pipe_video_codec *codec)
       }
 #endif
 
-      if (pD3D12Enc->m_transitionsBeforeCloseCmdList.size() > 0) {
-         pD3D12Enc->m_spEncodeCommandList->ResourceBarrier(static_cast<UINT>(pD3D12Enc->m_transitionsBeforeCloseCmdList.size()),
-                                                           pD3D12Enc->m_transitionsBeforeCloseCmdList.data());
-         pD3D12Enc->m_transitionsBeforeCloseCmdList.clear();
-      }
-
       hr = pD3D12Enc->m_spEncodeCommandList->Close();
       if (FAILED(hr)) {
          debug_printf("[d3d12_video_encoder] d3d12_video_encoder_flush - Can't close command list with HR %x\n", (unsigned)hr);

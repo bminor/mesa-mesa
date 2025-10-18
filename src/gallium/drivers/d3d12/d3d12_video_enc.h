@@ -597,7 +597,6 @@ struct d3d12_video_encoder
    ComPtr<ID3D12VideoEncodeCommandList2> m_spResolveCommandList;
    ComPtr<ID3D12VideoEncodeCommandList4> m_spEncodeCommandList4;
    ComPtr<ID3D12VideoEncodeCommandList4> m_spResolveCommandList4;
-   std::vector<D3D12_RESOURCE_BARRIER>   m_transitionsBeforeCloseCmdList;
 
    std::unique_ptr<d3d12_video_encoder_references_manager_interface> m_upDPBManager;
    std::shared_ptr<d3d12_video_dpb_storage_manager_interface>        m_upDPBStorageManager;
