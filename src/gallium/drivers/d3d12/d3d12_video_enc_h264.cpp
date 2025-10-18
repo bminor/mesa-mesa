@@ -888,7 +888,7 @@ d3d12_video_encoder_convert_h264_codec_configuration(struct d3d12_video_encoder 
 
 static bool
 d3d12_video_encoder_update_intra_refresh_h264(struct d3d12_video_encoder *pD3D12Enc,
-                                                        D3D12_VIDEO_SAMPLE srcTextureDesc,
+                                                        const D3D12_VIDEO_SAMPLE& srcTextureDesc,
                                                         struct pipe_h264_enc_picture_desc *  picture)
 {
    if (picture->intra_refresh.mode != INTRA_REFRESH_MODE_NONE)
@@ -928,7 +928,7 @@ d3d12_video_encoder_update_intra_refresh_h264(struct d3d12_video_encoder *pD3D12
 
 bool
 d3d12_video_encoder_update_current_encoder_config_state_h264(struct d3d12_video_encoder *pD3D12Enc,
-                                                             D3D12_VIDEO_SAMPLE srcTextureDesc,
+                                                             const D3D12_VIDEO_SAMPLE& srcTextureDesc,
                                                              struct pipe_picture_desc *picture)
 {
    struct pipe_h264_enc_picture_desc *h264Pic = (struct pipe_h264_enc_picture_desc *) picture;
@@ -1151,9 +1151,9 @@ d3d12_video_encoder_convert_profile_to_d3d12_enc_profile_h264(enum pipe_video_pr
 bool
 d3d12_video_encoder_compare_slice_config_h264_hevc(
    D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE targetMode,
-   D3D12_VIDEO_ENCODER_PICTURE_CONTROL_SUBREGIONS_LAYOUT_DATA_SLICES targetConfig,
+   const D3D12_VIDEO_ENCODER_PICTURE_CONTROL_SUBREGIONS_LAYOUT_DATA_SLICES& targetConfig,
    D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE otherMode,
-   D3D12_VIDEO_ENCODER_PICTURE_CONTROL_SUBREGIONS_LAYOUT_DATA_SLICES otherConfig)
+   const D3D12_VIDEO_ENCODER_PICTURE_CONTROL_SUBREGIONS_LAYOUT_DATA_SLICES& otherConfig)
 {
    return (targetMode == otherMode) &&
           (memcmp(&targetConfig,

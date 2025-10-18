@@ -77,7 +77,7 @@ d3d12_video_encoder_references_manager_av1::is_current_frame_used_as_reference()
 }
 
 void
-d3d12_video_encoder_references_manager_av1::begin_frame(D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA1 curFrameData,
+d3d12_video_encoder_references_manager_av1::begin_frame(const D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA1& curFrameData,
                                                         bool bUsedAsReference,
                                                         struct pipe_picture_desc *picture)
 {

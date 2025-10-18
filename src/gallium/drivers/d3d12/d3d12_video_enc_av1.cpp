@@ -1004,7 +1004,7 @@ d3d12_video_encoder_convert_av1_codec_configuration(struct d3d12_video_encoder *
 
 static bool
 d3d12_video_encoder_update_intra_refresh_av1(struct d3d12_video_encoder *pD3D12Enc,
-                                                        D3D12_VIDEO_SAMPLE srcTextureDesc,
+                                                        const D3D12_VIDEO_SAMPLE& srcTextureDesc,
                                                         struct pipe_av1_enc_picture_desc *  picture)
 {
    if (picture->intra_refresh.mode != INTRA_REFRESH_MODE_NONE)
@@ -1046,7 +1046,7 @@ d3d12_video_encoder_update_intra_refresh_av1(struct d3d12_video_encoder *pD3D12E
 
 bool
 d3d12_video_encoder_update_current_encoder_config_state_av1(struct d3d12_video_encoder *pD3D12Enc,
-                                                            D3D12_VIDEO_SAMPLE srcTextureDesc,
+                                                            const D3D12_VIDEO_SAMPLE& srcTextureDesc,
                                                             struct pipe_picture_desc *picture)
 {
    struct pipe_av1_enc_picture_desc *av1Pic = (struct pipe_av1_enc_picture_desc *) picture;

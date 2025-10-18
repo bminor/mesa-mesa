@@ -275,7 +275,7 @@ d3d12_video_encoder_convert_frame_type_h264(enum pipe_h2645_enc_picture_type pic
 }
 
 void
-d3d12_video_encoder_references_manager_h264::begin_frame(D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA1 curFrameData,
+d3d12_video_encoder_references_manager_h264::begin_frame(const D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA1& curFrameData,
                                                          bool bUsedAsReference,
                                                          struct pipe_picture_desc *picture)
 {

@@ -30,7 +30,7 @@
 class d3d12_video_encoder_references_manager_hevc : public d3d12_video_encoder_references_manager_interface
 {
  public:
-   void begin_frame(D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA1 curFrameData,
+   void begin_frame(const D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA1& curFrameData,
                     bool bUsedAsReference,
                     struct pipe_picture_desc *picture);
    bool get_current_frame_picture_control_data(D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA1 &codecAllocation);

@@ -674,7 +674,7 @@ d3d12_video_encoder_reconfigure_session(struct d3d12_video_encoder *pD3D12Enc,
                                         struct pipe_picture_desc *  picture);
 bool
 d3d12_video_encoder_update_current_encoder_config_state(struct d3d12_video_encoder *pD3D12Enc,
-                                                        D3D12_VIDEO_SAMPLE srcTextureDesc,
+                                                        const D3D12_VIDEO_SAMPLE& srcTextureDesc,
                                                         struct pipe_picture_desc *  picture);
 bool
 d3d12_video_encoder_reconfigure_encoder_objects(struct d3d12_video_encoder *pD3D12Enc,
@@ -711,7 +711,7 @@ d3d12_video_encoder_calculate_max_slices_count_in_output(
    D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE                          slicesMode,
    const D3D12_VIDEO_ENCODER_PICTURE_CONTROL_SUBREGIONS_LAYOUT_DATA_SLICES *slicesConfig,
    uint32_t                                                                 MaxSubregionsNumberFromCaps,
-   D3D12_VIDEO_ENCODER_PICTURE_RESOLUTION_DESC                              sequenceTargetResolution,
+   const D3D12_VIDEO_ENCODER_PICTURE_RESOLUTION_DESC&                       sequenceTargetResolution,
    uint32_t                                                                 SubregionBlockPixelsSize);
 bool
 d3d12_video_encoder_prepare_output_buffers(struct d3d12_video_encoder *pD3D12Enc,
