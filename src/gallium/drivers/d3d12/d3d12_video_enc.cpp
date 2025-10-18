@@ -3401,13 +3401,13 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
             pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spStagingBitstreams[slice_idx] =
                pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spStagingBitstreams[0/*first slice*/];
          } else if (pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spStagingBitstreams[slice_idx] == nullptr) {
-            D3D12_HEAP_PROPERTIES Properties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+            D3D12_HEAP_PROPERTIES Properties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK);
             CD3DX12_RESOURCE_DESC resolvedMetadataBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(pD3D12Enc->m_MaxOutputBitstreamSize);
             HRESULT hr = pD3D12Enc->m_pD3D12Screen->dev->CreateCommittedResource(
                &Properties,
                D3D12_HEAP_FLAG_NONE,
                &resolvedMetadataBufferDesc,
-               D3D12_RESOURCE_STATE_COMMON,
+               D3D12_RESOURCE_STATE_COPY_DEST,
                nullptr,
                IID_PPV_ARGS(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spStagingBitstreams[slice_idx].GetAddressOf()));
 
@@ -4014,9 +4014,9 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
          pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppSubregionFences.resize(num_slice_objects, NULL);
          pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppResolvedSubregionSizes.resize(num_slice_objects, 0u);
          pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppResolvedSubregionOffsets.resize(num_slice_objects, 0u);
-         D3D12_HEAP_PROPERTIES Properties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+         D3D12_HEAP_PROPERTIES Properties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK);
          [[maybe_unused]] HRESULT hr = S_OK;
-         pD3D12Enc->m_pSlicedEncodingExtraBarriers.resize(num_slice_objects);
+         // pD3D12Enc->m_pSlicedEncodingExtraBarriers.resize(num_slice_objects);
          for (uint32_t i = 0; i < num_slice_objects;i++)
          {
             if ((pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pspSubregionOffsets[i] == nullptr) ||
@@ -4027,16 +4027,12 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                hr = pD3D12Enc->m_pD3D12Screen->dev->CreateCommittedResource(&Properties,
                   D3D12_HEAP_FLAG_NONE,
                   &subregionOffsetsDesc,
-                  D3D12_RESOURCE_STATE_COMMON,
+                  D3D12_RESOURCE_STATE_COPY_DEST,
                   nullptr,
                   IID_PPV_ARGS(&pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pspSubregionOffsets[i]));
             }
 
             pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppSubregionOffsets[i] = pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pspSubregionOffsets[i].Get();
-
-            pD3D12Enc->m_pSlicedEncodingExtraBarriers[i] = CD3DX12_RESOURCE_BARRIER::Transition(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppSubregionOffsets[i],
-                                                                        D3D12_RESOURCE_STATE_COMMON,
-                                                                        D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE);
 
             if ((pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pspSubregionSizes[i] == nullptr) ||
                (GetDesc(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pspSubregionSizes[i].Get()).Width < num_slice_objects * sizeof(UINT64)))
@@ -4046,16 +4042,12 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                hr = pD3D12Enc->m_pD3D12Screen->dev->CreateCommittedResource(&Properties,
                   D3D12_HEAP_FLAG_NONE,
                   &subregionSizesDesc,
-                  D3D12_RESOURCE_STATE_COMMON,
+                  D3D12_RESOURCE_STATE_COPY_DEST,
                   nullptr,
                   IID_PPV_ARGS(&pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pspSubregionSizes[i]));
             }
 
             pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppSubregionSizes[i] = pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pspSubregionSizes[i].Get();
-
-            pD3D12Enc->m_pSlicedEncodingExtraBarriers[i] = CD3DX12_RESOURCE_BARRIER::Transition(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppSubregionSizes[i],
-                                                                        D3D12_RESOURCE_STATE_COMMON,
-                                                                        D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE);
 
             if (pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pspSubregionFences[i] == nullptr)
                hr = pD3D12Enc->m_pD3D12Screen->dev->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pspSubregionFences[i]));
@@ -4092,9 +4084,6 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
             pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppSubregionFences.data(),
             pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppSubregionFenceValues.data()
          };
-
-         pD3D12Enc->m_spEncodeCommandList4->ResourceBarrier(static_cast<uint32_t>(pD3D12Enc->m_pSlicedEncodingExtraBarriers.size()),
-                                                         pD3D12Enc->m_pSlicedEncodingExtraBarriers.data());
 
       }
       else if (num_slice_objects == 1)
