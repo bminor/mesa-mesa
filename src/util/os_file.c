@@ -288,7 +288,7 @@ os_same_file_description(int fd1, int fd2)
    if (efd < 0)
       return -1;
 
-   struct epoll_event evt = {};
+   struct epoll_event evt = {0};
    /* Get a new file descriptor number for fd1. */
    int tmp = os_dupfd_cloexec(fd1);
    /* Add it to evt. */
