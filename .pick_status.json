@@ -454,7 +454,7 @@
         "description": "util: Fix gnu-empty-initializer error",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "17e286529b978de95052ec86874f8f76417780b2",
         "notes": null
