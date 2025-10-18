@@ -2441,6 +2441,9 @@ d3d12_video_encoder_create_command_objects(struct d3d12_video_encoder *pD3D12Enc
       return false;
    }
 
+   // Cache ID3D12VideoEncodeCommandList4 interface for EncodeFrame1 optimization
+   pD3D12Enc->m_spEncodeCommandList->QueryInterface(IID_PPV_ARGS(pD3D12Enc->m_spEncodeCommandList4.GetAddressOf()));
+
    hr = spD3D12Device4->CreateCommandList1(0,
                         D3D12_COMMAND_LIST_TYPE_VIDEO_ENCODE,
                         D3D12_COMMAND_LIST_FLAG_NONE,
@@ -2452,6 +2455,9 @@ d3d12_video_encoder_create_command_objects(struct d3d12_video_encoder *pD3D12Enc
                       (unsigned)hr);
       return false;
    }
+
+   // Cache ID3D12VideoEncodeCommandList4 interface for ResolveEncoderOutputMetadata1 optimization
+   pD3D12Enc->m_spResolveCommandList->QueryInterface(IID_PPV_ARGS(pD3D12Enc->m_spResolveCommandList4.GetAddressOf()));
 
    return true;
 }
@@ -3592,12 +3598,8 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
    }
 #endif
 
-   ComPtr<ID3D12VideoEncodeCommandList4> spEncodeCommandList4;
-   ComPtr<ID3D12VideoEncodeCommandList4> spResolveCommandList4;
-   if ((SUCCEEDED(pD3D12Enc->m_spEncodeCommandList->QueryInterface(
-         IID_PPV_ARGS(spEncodeCommandList4.GetAddressOf())))) &&
-      (SUCCEEDED(pD3D12Enc->m_spResolveCommandList->QueryInterface(
-         IID_PPV_ARGS(spResolveCommandList4.GetAddressOf()))))) {
+   // Use cached ID3D12VideoEncodeCommandList4 interfaces if available
+   if (pD3D12Enc->m_spEncodeCommandList4 && pD3D12Enc->m_spResolveCommandList4) {
 
       // Update current frame pic params state after reconfiguring above.
       D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA1 currentPicParams =
@@ -3645,7 +3647,7 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
             }
 
             // see below std::warp for reversal to common after ResolveInputParamLayout is done
-            spEncodeCommandList4->ResourceBarrier(static_cast<uint32_t>(pResolveInputDataBarriers.size()),
+            pD3D12Enc->m_spEncodeCommandList4->ResourceBarrier(static_cast<uint32_t>(pResolveInputDataBarriers.size()),
                                                                                     pResolveInputDataBarriers.data());
             D3D12_VIDEO_ENCODER_INPUT_MAP_DATA ResolveInputData = {};
             ResolveInputData.MapType = D3D12_VIDEO_ENCODER_INPUT_MAP_TYPE_DIRTY_REGIONS;
@@ -3663,11 +3665,11 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                dirtyRegions.pOpaqueLayoutBuffer,
             };
 
-            spEncodeCommandList4->ResolveInputParamLayout(&resolveInputParamLayoutInput, &resolveInputParamLayoutOutput);
+            pD3D12Enc->m_spEncodeCommandList4->ResolveInputParamLayout(&resolveInputParamLayoutInput, &resolveInputParamLayoutOutput);
             for (auto &BarrierDesc : pResolveInputDataBarriers) {
                std::swap(BarrierDesc.Transition.StateBefore, BarrierDesc.Transition.StateAfter);
             }
-            spEncodeCommandList4->ResourceBarrier(static_cast<uint32_t>(pResolveInputDataBarriers.size()),
+            pD3D12Enc->m_spEncodeCommandList4->ResourceBarrier(static_cast<uint32_t>(pResolveInputDataBarriers.size()),
                                                             pResolveInputDataBarriers.data());
          }
       }
@@ -3690,7 +3692,7 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                                                                                  D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ));
 
          // see below std::warp for reversal to common after ResolveInputParamLayout is done
-         spEncodeCommandList4->ResourceBarrier(static_cast<uint32_t>(pResolveInputDataBarriers.size()),
+         pD3D12Enc->m_spEncodeCommandList4->ResourceBarrier(static_cast<uint32_t>(pResolveInputDataBarriers.size()),
                                                                                  pResolveInputDataBarriers.data());
          D3D12_VIDEO_ENCODER_INPUT_MAP_DATA ResolveInputData = {};
          ResolveInputData.MapType = D3D12_VIDEO_ENCODER_INPUT_MAP_TYPE_QUANTIZATION_MATRIX;
@@ -3705,11 +3707,11 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
             QuantizationTextureMap.pOpaqueQuantizationMap,
          };
 
-         spEncodeCommandList4->ResolveInputParamLayout(&resolveInputParamLayoutInput, &resolveInputParamLayoutOutput);
+         pD3D12Enc->m_spEncodeCommandList4->ResolveInputParamLayout(&resolveInputParamLayoutInput, &resolveInputParamLayoutOutput);
          for (auto &BarrierDesc : pResolveInputDataBarriers) {
             std::swap(BarrierDesc.Transition.StateBefore, BarrierDesc.Transition.StateAfter);
          }
-         spEncodeCommandList4->ResourceBarrier(static_cast<uint32_t>(pResolveInputDataBarriers.size()),
+         pD3D12Enc->m_spEncodeCommandList4->ResourceBarrier(static_cast<uint32_t>(pResolveInputDataBarriers.size()),
                                                          pResolveInputDataBarriers.data());
       }
 
@@ -3741,7 +3743,7 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
             }
 
             // see below std::swap for reversal to common after ResolveInputParamLayout is done
-            spEncodeCommandList4->ResourceBarrier(static_cast<uint32_t>(pResolveInputDataBarriers.size()),
+            pD3D12Enc->m_spEncodeCommandList4->ResourceBarrier(static_cast<uint32_t>(pResolveInputDataBarriers.size()),
                                                                                     pResolveInputDataBarriers.data());
             D3D12_VIDEO_ENCODER_INPUT_MAP_DATA ResolveInputData = {};
             ResolveInputData.MapType = D3D12_VIDEO_ENCODER_INPUT_MAP_TYPE_MOTION_VECTORS;
@@ -3764,11 +3766,11 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                motionRegions.pOpaqueLayoutBuffer,
             };
 
-            spEncodeCommandList4->ResolveInputParamLayout(&resolveInputParamLayoutInput, &resolveInputParamLayoutOutput);
+            pD3D12Enc->m_spEncodeCommandList4->ResolveInputParamLayout(&resolveInputParamLayoutInput, &resolveInputParamLayoutOutput);
             for (auto &BarrierDesc : pResolveInputDataBarriers) {
                std::swap(BarrierDesc.Transition.StateBefore, BarrierDesc.Transition.StateAfter);
             }
-            spEncodeCommandList4->ResourceBarrier(static_cast<uint32_t>(pResolveInputDataBarriers.size()),
+            pD3D12Enc->m_spEncodeCommandList4->ResourceBarrier(static_cast<uint32_t>(pResolveInputDataBarriers.size()),
                                                             pResolveInputDataBarriers.data());
          }
       }
@@ -3904,7 +3906,7 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
             };
          }
 
-         spEncodeCommandList4->ResourceBarrier(static_cast<uint32_t>(pTwoPassExtraBarriers.size()),
+         pD3D12Enc->m_spEncodeCommandList4->ResourceBarrier(static_cast<uint32_t>(pTwoPassExtraBarriers.size()),
                                                pTwoPassExtraBarriers.data());
       }
 
@@ -4089,7 +4091,7 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
             pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppSubregionFenceValues.data()
          };
 
-         spEncodeCommandList4->ResourceBarrier(static_cast<uint32_t>(pSlicedEncodingExtraBarriers.size()),
+         pD3D12Enc->m_spEncodeCommandList4->ResourceBarrier(static_cast<uint32_t>(pSlicedEncodingExtraBarriers.size()),
                                                          pSlicedEncodingExtraBarriers.data());
 
       }
@@ -4128,8 +4130,8 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
 
 
       // Record EncodeFrame - use cached ID3D12VideoEncoderHeap1 interface
-      // If spEncodeCommandList4 QI succeeded, ID3D12VideoEncoderHeap1 should be available
-      spEncodeCommandList4->EncodeFrame1(pD3D12Enc->m_spVideoEncoder.Get(),
+      // If cached CommandList4 interfaces are available, ID3D12VideoEncoderHeap1 should be available
+      pD3D12Enc->m_spEncodeCommandList4->EncodeFrame1(pD3D12Enc->m_spVideoEncoder.Get(),
                                                    pD3D12Enc->m_spVideoEncoderHeap1.Get(),
                                                    &inputStreamArguments,
                                                    &outputStreamArguments);
@@ -4154,7 +4156,7 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                                                       D3D12_RESOURCE_STATE_COMMON));
       }
 
-      spResolveCommandList4->ResourceBarrier(static_cast<uint32_t>(rgResolveMetadataStateTransitions.size()),
+      pD3D12Enc->m_spResolveCommandList4->ResourceBarrier(static_cast<uint32_t>(rgResolveMetadataStateTransitions.size()),
                                                       rgResolveMetadataStateTransitions.data());
 
       std::vector<D3D12_RESOURCE_BARRIER> output_stats_barriers;
@@ -4182,7 +4184,7 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                                                                               D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE));
       }
 
-      spResolveCommandList4->ResourceBarrier(static_cast<uint32_t>(output_stats_barriers.size()),
+      pD3D12Enc->m_spResolveCommandList4->ResourceBarrier(static_cast<uint32_t>(output_stats_barriers.size()),
                                                       output_stats_barriers.data());
       const D3D12_VIDEO_ENCODER_RESOLVE_METADATA_INPUT_ARGUMENTS1 inputMetadataCmd = {
          pD3D12Enc->m_currentEncodeConfig.m_encoderCodecDesc,
@@ -4217,7 +4219,7 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
          {},
       };
 
-      spResolveCommandList4->ResolveEncoderOutputMetadata1(&inputMetadataCmd, &outputMetadataCmd);
+      pD3D12Enc->m_spResolveCommandList4->ResolveEncoderOutputMetadata1(&inputMetadataCmd, &outputMetadataCmd);
 
       debug_printf("[d3d12_video_encoder_encode_bitstream] EncodeFrame slot %" PRIu64 " encoder %p encoderheap %p input tex %p output bitstream %p raw metadata buf %p resolved metadata buf %p Command allocator %p\n",
                   static_cast<uint64_t>(d3d12_video_encoder_pool_current_index(pD3D12Enc)),
@@ -4237,7 +4239,7 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
          }
 
          if (rgReferenceTransitions.size() > 0) {
-            spEncodeCommandList4->ResourceBarrier(static_cast<uint32_t>(rgReferenceTransitions.size()),
+            pD3D12Enc->m_spEncodeCommandList4->ResourceBarrier(static_cast<uint32_t>(rgReferenceTransitions.size()),
                                                             rgReferenceTransitions.data());
          }
       }
@@ -4251,26 +4253,25 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                                              D3D12_RESOURCE_STATE_COMMON),
       };
 
-      spResolveCommandList4->ResourceBarrier(_countof(rgRevertResolveMetadataStateTransitions),
+      pD3D12Enc->m_spResolveCommandList4->ResourceBarrier(_countof(rgRevertResolveMetadataStateTransitions),
                                                       rgRevertResolveMetadataStateTransitions);
 
       // Revert output_stats_barriers
       for (auto &BarrierDesc : output_stats_barriers) {
          std::swap(BarrierDesc.Transition.StateBefore, BarrierDesc.Transition.StateAfter);
       }
-      spResolveCommandList4->ResourceBarrier(static_cast<uint32_t>(output_stats_barriers.size()),
-                                                      output_stats_barriers.data());
-
+      pD3D12Enc->m_spResolveCommandList4->ResourceBarrier(static_cast<uint32_t>(output_stats_barriers.size()),
+                                          output_stats_barriers.data());
       for (auto &BarrierDesc : pSlicedEncodingExtraBarriers) {
          std::swap(BarrierDesc.Transition.StateBefore, BarrierDesc.Transition.StateAfter);
       }
-      spEncodeCommandList4->ResourceBarrier(static_cast<uint32_t>(pSlicedEncodingExtraBarriers.size()),
+      pD3D12Enc->m_spEncodeCommandList4->ResourceBarrier(static_cast<uint32_t>(pSlicedEncodingExtraBarriers.size()),
                                                       pSlicedEncodingExtraBarriers.data());
 
       for (auto &BarrierDesc : pTwoPassExtraBarriers) {
          std::swap(BarrierDesc.Transition.StateBefore, BarrierDesc.Transition.StateAfter);
       }
-      spEncodeCommandList4->ResourceBarrier(static_cast<uint32_t>(pTwoPassExtraBarriers.size()),
+      pD3D12Enc->m_spEncodeCommandList4->ResourceBarrier(static_cast<uint32_t>(pTwoPassExtraBarriers.size()),
                                                       pTwoPassExtraBarriers.data());
    }
    else

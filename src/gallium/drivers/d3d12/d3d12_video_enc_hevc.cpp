@@ -554,9 +554,7 @@ d3d12_video_encoder_update_current_frame_pic_params_info_hevc(struct d3d12_video
       // differently on the newer interfaces that support it
       // Otherwise fallback to the legacy behavior using List0ReferenceFramesCount
       // equal to num_ref_idx_l0_active_minus1 + 1
-      ComPtr<ID3D12VideoEncodeCommandList4> spEncodeCommandList4;
-      if (SUCCEEDED(pD3D12Enc->m_spEncodeCommandList->QueryInterface(
-          IID_PPV_ARGS(spEncodeCommandList4.GetAddressOf()))))
+      if (pD3D12Enc->m_spEncodeCommandList4)
       {
          pHEVCPicData->num_ref_idx_l0_active_minus1 = hevcPic->num_ref_idx_l0_active_minus1;
          pHEVCPicData->List0ReferenceFramesCount = ref_list0_count;
@@ -571,9 +569,7 @@ d3d12_video_encoder_update_current_frame_pic_params_info_hevc(struct d3d12_video
       // differently on the newer interfaces that support it
       // Otherwise fallback to the legacy behavior using List1ReferenceFramesCount
       // equal to num_ref_idx_l1_active_minus1 + 1
-      ComPtr<ID3D12VideoEncodeCommandList4> spEncodeCommandList4;
-      if (SUCCEEDED(pD3D12Enc->m_spEncodeCommandList->QueryInterface(
-                  IID_PPV_ARGS(spEncodeCommandList4.GetAddressOf()))))
+      if (pD3D12Enc->m_spEncodeCommandList4)
       {
          pHEVCPicData->num_ref_idx_l1_active_minus1 = hevcPic->num_ref_idx_l1_active_minus1;
          pHEVCPicData->List1ReferenceFramesCount = ref_list1_count;
