@@ -617,6 +617,10 @@ struct d3d12_video_encoder
    std::vector<D3D12_RESOURCE_BARRIER> m_rgResolveMetadataStateTransitions;
    std::vector<D3D12_RESOURCE_BARRIER> m_outputStatsBarriers;
 
+   // Reusable resource vectors to avoid per-frame allocations
+   std::vector<struct d3d12_resource *> m_pOutputBitstreamBuffers;
+   std::vector<ID3D12Resource*> m_pOutputBufferD3D12Resources;
+
    struct D3D12EncodeCapabilities m_currentEncodeCapabilities = {};
    struct D3D12EncodeConfiguration m_currentEncodeConfig = {};
    struct D3D12EncodeConfiguration m_prevFrameEncodeConfig = {};
