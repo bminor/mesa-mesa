@@ -590,6 +590,7 @@ struct d3d12_video_encoder
    ComPtr<ID3D12VideoDevice4>            m_spD3D12VideoDevice4;
    ComPtr<ID3D12VideoEncoder>            m_spVideoEncoder;
    ComPtr<ID3D12VideoEncoderHeap>        m_spVideoEncoderHeap;
+   ComPtr<ID3D12VideoEncoderHeap1>       m_spVideoEncoderHeap1;
    ComPtr<ID3D12CommandQueue>            m_spEncodeCommandQueue;
    ComPtr<ID3D12CommandQueue>            m_spResolveCommandQueue;
    ComPtr<ID3D12VideoEncodeCommandList2> m_spEncodeCommandList;

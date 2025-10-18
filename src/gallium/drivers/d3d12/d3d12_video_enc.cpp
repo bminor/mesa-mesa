@@ -1016,12 +1016,12 @@ d3d12_video_encoder_reconfigure_encoder_objects(struct d3d12_video_encoder *pD3D
 
          // Create encoder heap
          pD3D12Enc->m_spVideoEncoderHeap.Reset();
-         ComPtr<ID3D12VideoEncoderHeap1> spVideoEncoderHeap1;
+         pD3D12Enc->m_spVideoEncoderHeap1.Reset();
          hr = pD3D12Enc->m_spD3D12VideoDevice4->CreateVideoEncoderHeap1(&heapDesc1,
-                                                              IID_PPV_ARGS(spVideoEncoderHeap1.GetAddressOf()));
+                                                              IID_PPV_ARGS(pD3D12Enc->m_spVideoEncoderHeap1.GetAddressOf()));
          if (SUCCEEDED(hr))
          {
-            hr = spVideoEncoderHeap1->QueryInterface(IID_PPV_ARGS(pD3D12Enc->m_spVideoEncoderHeap.GetAddressOf())); 
+            hr = pD3D12Enc->m_spVideoEncoderHeap1->QueryInterface(IID_PPV_ARGS(pD3D12Enc->m_spVideoEncoderHeap.GetAddressOf())); 
          }
       }
       else
@@ -4127,12 +4127,10 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                   pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_associatedEncodeConfig.m_IntraRefreshCurrentFrameIndex);
 
 
-      ComPtr<ID3D12VideoEncoderHeap1> spVideoEncoderHeap1;
-      pD3D12Enc->m_spVideoEncoderHeap->QueryInterface(IID_PPV_ARGS(spVideoEncoderHeap1.GetAddressOf()));
-
-      // Record EncodeFrame
+      // Record EncodeFrame - use cached ID3D12VideoEncoderHeap1 interface
+      // If spEncodeCommandList4 QI succeeded, ID3D12VideoEncoderHeap1 should be available
       spEncodeCommandList4->EncodeFrame1(pD3D12Enc->m_spVideoEncoder.Get(),
-                                                   spVideoEncoderHeap1.Get(),
+                                                   pD3D12Enc->m_spVideoEncoderHeap1.Get(),
                                                    &inputStreamArguments,
                                                    &outputStreamArguments);
 
