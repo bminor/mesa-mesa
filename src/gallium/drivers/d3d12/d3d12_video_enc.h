@@ -587,6 +587,7 @@ struct d3d12_video_encoder
    bool                m_bPendingWorkNotFlushed = false;
 
    ComPtr<ID3D12VideoDevice3>            m_spD3D12VideoDevice;
+   ComPtr<ID3D12VideoDevice4>            m_spD3D12VideoDevice4;
    ComPtr<ID3D12VideoEncoder>            m_spVideoEncoder;
    ComPtr<ID3D12VideoEncoderHeap>        m_spVideoEncoderHeap;
    ComPtr<ID3D12CommandQueue>            m_spEncodeCommandQueue;

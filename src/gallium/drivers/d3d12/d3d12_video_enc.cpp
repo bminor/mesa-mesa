@@ -971,9 +971,8 @@ d3d12_video_encoder_reconfigure_encoder_objects(struct d3d12_video_encoder *pD3D
       }
 
       HRESULT hr = S_OK;
-      ComPtr<ID3D12VideoDevice4> spVideoDevice4;
-      if (SUCCEEDED(pD3D12Enc->m_spD3D12VideoDevice->QueryInterface(
-          IID_PPV_ARGS(spVideoDevice4.GetAddressOf()))))
+      // Use cached ID3D12VideoDevice4 interface if available
+      if (pD3D12Enc->m_spD3D12VideoDevice4)
       {
          D3D12_VIDEO_ENCODER_HEAP_FLAGS heapFlags = D3D12_VIDEO_ENCODER_HEAP_FLAG_NONE;
          if (pD3D12Enc->m_currentEncodeCapabilities.m_currentResolutionSupportCaps.DirtyRegions.DirtyRegionsSupportFlags) {
@@ -1018,7 +1017,7 @@ d3d12_video_encoder_reconfigure_encoder_objects(struct d3d12_video_encoder *pD3D
          // Create encoder heap
          pD3D12Enc->m_spVideoEncoderHeap.Reset();
          ComPtr<ID3D12VideoEncoderHeap1> spVideoEncoderHeap1;
-         hr = spVideoDevice4->CreateVideoEncoderHeap1(&heapDesc1,
+         hr = pD3D12Enc->m_spD3D12VideoDevice4->CreateVideoEncoderHeap1(&heapDesc1,
                                                               IID_PPV_ARGS(spVideoEncoderHeap1.GetAddressOf()));
          if (SUCCEEDED(hr))
          {
@@ -2553,6 +2552,11 @@ d3d12_video_encoder_create_encoder(struct pipe_context *context, const struct pi
          "[d3d12_video_encoder] d3d12_video_encoder_create_encoder - D3D12 Device has no Video encode support\n");
       goto failed;
    }
+
+   // Cache ID3D12VideoDevice4 interface
+   pD3D12Enc->m_spD3D12VideoDevice->QueryInterface(
+      IID_PPV_ARGS(pD3D12Enc->m_spD3D12VideoDevice4.GetAddressOf()));
+   // Note: m_spD3D12VideoDevice4 may be nullptr if the interface is not supported
 
    pD3D12Enc->m_MaxOutputBitstreamSize = d3d12_video_encoder_calculate_max_output_compressed_bitstream_size(
       codec->width,
