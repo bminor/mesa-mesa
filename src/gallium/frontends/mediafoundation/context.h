@@ -28,6 +28,7 @@
 #include "macros.h"
 #include "mfpipeinterop.h"
 #include "reference_frames_tracker.h"
+#include "util/u_inlines.h"
 
 typedef class DX12EncodeContext
 {
@@ -209,8 +210,7 @@ typedef class DX12EncodeContext
       }
 
       for( uint32_t slice_idx = 0; slice_idx < static_cast<uint32_t>( pOutputBitRes.size() ); slice_idx++ )
-         if( ( ( slice_idx == 0 ) || pOutputBitRes[slice_idx] != pOutputBitRes[slice_idx - 1] ) && pOutputBitRes[slice_idx] )
-            pVlScreen->pscreen->resource_destroy( pVlScreen->pscreen, pOutputBitRes[slice_idx] );
+         pipe_resource_reference( &pOutputBitRes[slice_idx], nullptr );
 
       if( pPipeVideoBuffer )
          pPipeVideoBuffer->destroy( pPipeVideoBuffer );

@@ -594,7 +594,9 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
          if( ( slice_idx > 0 ) && !m_EncoderCapabilities.m_HWSupportSlicedFences.bits.multiple_buffers_required )
          {
             // sliced buffers + notifications with a single buffer (suballocated by driver for each slice)
-            pDX12EncodeContext->pOutputBitRes[slice_idx] = pDX12EncodeContext->pOutputBitRes[0];
+            // Increment reference count since we're sharing the same resource across multiple indices
+            // and the context destructor will release each index separately
+            pipe_resource_reference(&pDX12EncodeContext->pOutputBitRes[slice_idx], pDX12EncodeContext->pOutputBitRes[0]);
          }
          else
          {

@@ -26,6 +26,7 @@
 #include "mfbufferhelp.h"
 #include "mfpipeinterop.h"
 #include "wpptrace.h"
+#include "d3d12_suballoc_mediabuffer.h"
 
 #include "mftransform.tmh"
 
@@ -1260,75 +1261,47 @@ done:
 }
 
 void
-CDX12EncHMFT::ProcessSliceBitstreamData( LPDX12EncodeContext pDX12EncodeContext,
-                                          uint32_t slice_idx,
-                                          LPBYTE lpBuffer,
-                                          std::vector<struct codec_unit_location_t> &mfsample_codec_unit_metadata,
-                                          uint64_t &output_buffer_offset )
+CDX12EncHMFT::ProcessSliceBitstreamZeroCopy( LPDX12EncodeContext pDX12EncodeContext,
+                                             uint32_t slice_idx,
+                                             ComPtr<IMFMediaBuffer> &spMediaBuffer,
+                                             std::vector<struct codec_unit_location_t> &mfsample_codec_unit_metadata,
+                                             ID3D12CommandQueue *pSyncObjectQueue )
+{
+   std::vector<struct codec_unit_location_t> codec_unit_metadata;
+   GetSliceBitstreamMetadata( pDX12EncodeContext, slice_idx, codec_unit_metadata );
+
+   // Store codec unit metadata for NALU length information
+   mfsample_codec_unit_metadata.insert( mfsample_codec_unit_metadata.end(), codec_unit_metadata.begin(), codec_unit_metadata.end() );
+   uint64_t total_slice_size = std::accumulate( codec_unit_metadata.begin(), codec_unit_metadata.end(), 0ull, []( uint64_t sum, const auto &nal ) { return sum + nal.size; } );
+
+   // Create IMFMediaBuffer from the D3D12Resource (zero-copy)
+   spMediaBuffer.Attach( new CD3D12BitstreamMFBuffer( m_pPipeContext, pDX12EncodeContext->pOutputBitRes[slice_idx], static_cast<DWORD>( total_slice_size ), static_cast<DWORD>( codec_unit_metadata[0/*offset to first NAL*/].offset ) ));
+}
+
+// Helper function to get slice bitstream metadata
+void
+CDX12EncHMFT::GetSliceBitstreamMetadata( LPDX12EncodeContext pDX12EncodeContext, uint32_t slice_idx, std::vector<struct codec_unit_location_t> &codec_unit_metadata )
 {
    HMFT_ETW_EVENT_START( "GPUIndividualSliceStatsRead", this );
    unsigned codec_unit_metadata_count = 0u;
    m_pPipeVideoCodec->get_slice_bitstream_data( m_pPipeVideoCodec,
-                                                 pDX12EncodeContext->pAsyncCookie,
-                                                 slice_idx,
-                                                 NULL /*get size*/,
-                                                 &codec_unit_metadata_count );
+                                                pDX12EncodeContext->pAsyncCookie,
+                                                slice_idx,
+                                                NULL /*get size*/,
+                                                &codec_unit_metadata_count );
    assert( codec_unit_metadata_count > 0 );
-   std::vector<struct codec_unit_location_t> codec_unit_metadata;
    codec_unit_metadata.resize( codec_unit_metadata_count, {} );
    m_pPipeVideoCodec->get_slice_bitstream_data( m_pPipeVideoCodec,
-                                                 pDX12EncodeContext->pAsyncCookie,
-                                                 slice_idx,
-                                                 codec_unit_metadata.data(),
-                                                 &codec_unit_metadata_count );
-
+                                                pDX12EncodeContext->pAsyncCookie,
+                                                slice_idx,
+                                                codec_unit_metadata.data(),
+                                                &codec_unit_metadata_count );
    HMFT_ETW_EVENT_STOP( "GPUIndividualSliceStatsRead", this );
-
-   //
-   // Copy all the NALs produced in this slice
-   //
-   HMFT_ETW_EVENT_START( "GPUIndividualSliceBitstreamRead", this );
-   struct pipe_box box = { 0 };
-   box.width = 0;
-   for( auto &nal : codec_unit_metadata )
-      box.width += static_cast<int32_t>( nal.size );
-   box.height = pDX12EncodeContext->pOutputBitRes[slice_idx]->height0;
-   box.depth = pDX12EncodeContext->pOutputBitRes[slice_idx]->depth0;
-   struct pipe_transfer *transfer_data = NULL;
-   HMFT_ETW_EVENT_START( "GPUIndividualSliceBufferMap", this );
-   uint8_t *pMappedBuffer =
-      (uint8_t *) m_pPipeContext->buffer_map( m_pPipeContext,
-                                              pDX12EncodeContext->pOutputBitRes[slice_idx],
-                                              0,
-                                              PIPE_MAP_READ,
-                                              &box,
-                                              &transfer_data );
-   HMFT_ETW_EVENT_STOP( "GPUIndividualSliceBufferMap", this );
-   assert( pMappedBuffer );
-   if( pMappedBuffer )
-   {
-      for( auto &nal : codec_unit_metadata )
-      {
-         // Add NAL with adjusted offset for accumulated buffer position
-         struct codec_unit_location_t accumulated_nal = nal;
-         accumulated_nal.offset = output_buffer_offset;
-         mfsample_codec_unit_metadata.push_back( accumulated_nal );
-
-         memcpy( lpBuffer + static_cast<size_t>( output_buffer_offset ),
-                  pMappedBuffer + static_cast<size_t>( nal.offset ),
-                  static_cast<size_t>( nal.size ) );
-         output_buffer_offset += nal.size;
-      }
-   }
-   HMFT_ETW_EVENT_START( "GPUIndividualSliceBufferUnmap", this );
-   pipe_buffer_unmap( m_pPipeContext, transfer_data );
-   HMFT_ETW_EVENT_STOP( "GPUIndividualSliceBufferUnmap", this );
-   HMFT_ETW_EVENT_STOP( "GPUIndividualSliceBitstreamRead", this );
 }
 
 void
 CDX12EncHMFT::FinalizeAndEmitOutputSample( LPDX12EncodeContext pDX12EncodeContext,
-                                           ComPtr<IMFMediaBuffer> &spMemoryBuffer,
+                                           ComPtr<IMFMediaBuffer> &spMediaBuffer,
                                            ComPtr<IMFSample> &spOutputSample,
                                            struct codec_unit_location_t *pCodecUnitMetadata,
                                            unsigned CodecUnitMetadataCount,
@@ -1336,7 +1309,8 @@ CDX12EncHMFT::FinalizeAndEmitOutputSample( LPDX12EncodeContext pDX12EncodeContex
                                            BOOL bIsLastSlice,
                                            uint64_t ResolveStatsCompletionFenceValue )
 {
-   spOutputSample->AddBuffer( spMemoryBuffer.Get() );
+   // Add buffer to the sample
+   spOutputSample->AddBuffer( spMediaBuffer.Get() );
 
    if( FAILED( ConfigureBitstreamOutputSampleAttributes( spOutputSample.Get(),
                                                           pDX12EncodeContext,
@@ -1448,9 +1422,6 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                // Wait for each slice fence and resolve offset/size as each slice is ready
                //
                uint32_t num_slice_buffers = static_cast<uint32_t>( pDX12EncodeContext->pSliceFences.size() );
-               uint64_t output_buffer_offset = 0u;
-               std::vector<struct codec_unit_location_t> mfsample_codec_unit_metadata;
-               mfsample_codec_unit_metadata.reserve( MAX_NALU_LENGTH_INFO_ENTRIES );
                
                auto WaitForFence = [&]( pipe_fence_handle *pFence, uint64_t timeout ) -> bool {
                   assert( pFence );
@@ -1471,34 +1442,32 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                   }
                   return result;
                };
-               
-               LPBYTE lpBuffer = NULL;
+
                // If slice generation mode is explicitly set to 1 (1 slice per output sample) and auto mode is off
                // emit multiple output samples, one per slice
                if (pThis->m_bSliceGenerationModeSet &&
                   (pThis->m_uiSliceGenerationMode == 1) &&
                   (!pDX12EncodeContext->IsSliceAutoModeEnabled())) // We cannot know if the last slice is actually the last one on time to set the last MFSample properties
                {
+                  std::vector<struct codec_unit_location_t> codec_unit_metadata;
+                  codec_unit_metadata.reserve( 16 );
                   for( uint32_t slice_idx = 0; slice_idx < num_slice_buffers; slice_idx++ )
                   {
-                     output_buffer_offset = 0u;
-                     mfsample_codec_unit_metadata.clear();
-                     
+                     codec_unit_metadata.clear();
+
+                     ComPtr<IMFSample> spOutputSample;
+                     ComPtr<IMFMediaBuffer> spMediaBuffer;
+                     MFCreateSample( &spOutputSample );
+
                      if( WaitForFence( pDX12EncodeContext->pSliceFences[slice_idx], OS_TIMEOUT_INFINITE ) )
                      {
-                        ComPtr<IMFSample> spOutputSample;
-                        ComPtr<IMFMediaBuffer> spMemoryBuffer;
-                        MFCreateSample( &spOutputSample );
-                        MFCreateMemoryBuffer( pThis->m_uiMaxOutputBitstreamSize, &spMemoryBuffer );
-                        
-                        spMemoryBuffer->Lock( &lpBuffer, NULL, NULL );
-                        pThis->ProcessSliceBitstreamData( pDX12EncodeContext, slice_idx, lpBuffer,
-                                                          mfsample_codec_unit_metadata, output_buffer_offset );
-                        spMemoryBuffer->Unlock();
-                        spMemoryBuffer->SetCurrentLength( static_cast<DWORD>( output_buffer_offset ) );
-                        pThis->FinalizeAndEmitOutputSample( pDX12EncodeContext, spMemoryBuffer,
-                                                            spOutputSample, mfsample_codec_unit_metadata.data(),
-                                                            static_cast<unsigned>( mfsample_codec_unit_metadata.size() ),
+                        /* we are waiting for offset/size completion anyways so we are ok with pSyncObjectQueue gating the buffer access */
+                        pThis->ProcessSliceBitstreamZeroCopy( pDX12EncodeContext, slice_idx, spMediaBuffer,
+                                                             codec_unit_metadata, pDX12EncodeContext->pSyncObjectQueue );
+
+                        pThis->FinalizeAndEmitOutputSample( pDX12EncodeContext, spMediaBuffer,
+                                                            spOutputSample, codec_unit_metadata.data(),
+                                                            static_cast<unsigned>( codec_unit_metadata.size() ),
                                                             dwReceivedInput, (slice_idx == (num_slice_buffers - 1)), ResolveStatsCompletionFenceValue );
                         HMFT_ETW_EVENT_STOP( "TimeToEmitMFSampleOutput", pThis );
                      }
@@ -1506,15 +1475,20 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                }
                else
                {
-                  ComPtr<IMFSample> spOutputSample;
-                  ComPtr<IMFMediaBuffer> spMemoryBuffer;
-                  MFCreateSample( &spOutputSample );
-                  MFCreateMemoryBuffer( pThis->m_uiMaxOutputBitstreamSize, &spMemoryBuffer );
-                  
-                  spMemoryBuffer->Lock( &lpBuffer, NULL, NULL );
+                  std::vector<ComPtr<IMFMediaBuffer>> spMediaBuffers;
+                  spMediaBuffers.reserve( num_slice_buffers );
+                  std::vector<ComPtr<IMFSample>> spOutputSamples;
+                  spOutputSamples.reserve( num_slice_buffers );
+                  std::vector<std::vector<struct codec_unit_location_t>> codec_unit_metadatas;
+                  codec_unit_metadatas.reserve( num_slice_buffers );
+
+                  std::vector<struct codec_unit_location_t> cur_slice_codec_unit_metadata;
+                  cur_slice_codec_unit_metadata.reserve( 16 );
 
                   for( uint32_t slice_idx = 0; slice_idx < num_slice_buffers; slice_idx++ )
                   {
+                     cur_slice_codec_unit_metadata.clear();
+
                      // Wait for the current slice fence to complete, using pLastSliceFence as a short-circuit.
                      // pLastSliceFence signals when ALL slices are complete, so once it's signaled, we can
                      // stop polling individual slice fences and assume those are all done.
@@ -1538,18 +1512,32 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                         MFE_ERROR( "[dx12 hmft 0x%p] Timeout waiting for slice %u fence OR pLastSliceFence to complete", pThis, slice_idx );
                         break;
                      }
-
-                     // Process this slice ONLY if its individual fence is signaled.
-                     // If pLastSliceFence signaled but this slice fence didn't, it means this pSliceFences slot
-                     // was never used (e.g., in auto mode with fewer slices than max buffers), so break.
-                     if( WaitForFence( pDX12EncodeContext->pSliceFences[slice_idx], 0 /* No wait, just check */ ) )
+                     else if( WaitForFence( pDX12EncodeContext->pSliceFences[slice_idx], 0 /* No wait, just check */ ) )
                      {
-                        pThis->ProcessSliceBitstreamData( pDX12EncodeContext, slice_idx, lpBuffer,
-                                                          mfsample_codec_unit_metadata, output_buffer_offset );
+                        //
+                        // The current slice_idx fence is completed - process this slice
+                        //
+
+                        // we are waiting for offset/size completion with pSliceFences[slice_idx] so we are
+                        // ok with pSyncObjectQueue gating the buffer access
+                        ComPtr<IMFSample> spOutputSample;
+                        MFCreateSample( &spOutputSample );
+                        spOutputSamples.push_back( spOutputSample );
+                        ComPtr<IMFMediaBuffer> spMediaBuffer;
+
+                        // Reset codec unit metadata for this slice as it will be wrapped on its own IMFSample
+                        pThis->ProcessSliceBitstreamZeroCopy( pDX12EncodeContext, slice_idx, spMediaBuffer,
+                                                             cur_slice_codec_unit_metadata, pDX12EncodeContext->pSyncObjectQueue );
+                        spMediaBuffers.push_back( spMediaBuffer );
+                        codec_unit_metadatas.push_back( cur_slice_codec_unit_metadata );
+
                      }
                      else if( WaitForFence( pDX12EncodeContext->pLastSliceFence, 0 /* No wait, just check */ ) )
                      {
-                        // pLastSliceFence signaled but this slice fence didn't - all actual slices already processed
+                        //
+                        // If pLastSliceFence is completed but the slice_idx fence didn't, it means this pSliceFences slot
+                        // slice_idx was never used (e.g., we are in auto mode with fewer slices than max buffers), so break.
+                        //
                         break;
                      }
                      else
@@ -1560,14 +1548,20 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                         break;
                      }
                   }
-                  
-                  spMemoryBuffer->Unlock();
-                  spMemoryBuffer->SetCurrentLength( static_cast<DWORD>( output_buffer_offset ) );
-                  pThis->FinalizeAndEmitOutputSample( pDX12EncodeContext, spMemoryBuffer, spOutputSample,
-                                                      mfsample_codec_unit_metadata.data(),
-                                                      static_cast<unsigned>( mfsample_codec_unit_metadata.size() ),
-                                                      dwReceivedInput, TRUE,
-                                                      ResolveStatsCompletionFenceValue );
+
+                  // At the end of the loop, we always have in spOutputSamples.size() the actual number of slices processed
+                  // which may be less than num_slice_buffers in auto slice mode
+                  // so adjust accordingly num_slice_buffers here so we only emit the actual processed slices
+                  num_slice_buffers = static_cast<uint32_t>(spOutputSamples.size());
+
+                  for( uint32_t emission_idx = 0; emission_idx < num_slice_buffers; emission_idx++ )
+                  {
+                     pThis->FinalizeAndEmitOutputSample( pDX12EncodeContext, spMediaBuffers[emission_idx], spOutputSamples[emission_idx],
+                                                         codec_unit_metadatas[emission_idx].data(),
+                                                         static_cast<unsigned>( codec_unit_metadatas[emission_idx].size() ),
+                                                         dwReceivedInput, (emission_idx == (num_slice_buffers - 1)),
+                                                         ResolveStatsCompletionFenceValue );
+                  }
                   HMFT_ETW_EVENT_STOP( "TimeToEmitMFSampleOutput", pThis );
                }
 
@@ -1752,41 +1746,11 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                debug_printf( "[dx12 hmft 0x%p] WARNING: could not set MFSampleExtension_VideoEncodeQP\n", pThis );
             }
 
-            // Readback full encoded frame bitstream from GPU memory onto CPU buffer
-            HMFT_ETW_EVENT_START( "GPUFrameEncodeBitstreamRead", pThis );
-            struct pipe_box box = { 0 };
-            box.width = encoded_bitstream_bytes;
-            box.height = pDX12EncodeContext->pOutputBitRes[0]->height0;
-            box.depth = pDX12EncodeContext->pOutputBitRes[0]->depth0;
-            struct pipe_transfer *transfer_data;
-            HMFT_ETW_EVENT_START( "GPUFrameEncodeGPUBufferMap", pThis );
-            uint8_t *pMappedBuffer = (uint8_t *) pThis->m_pPipeContext->buffer_map( pThis->m_pPipeContext,
-                                                                                    pDX12EncodeContext->pOutputBitRes[0],
-                                                                                    0,
-                                                                                    PIPE_MAP_READ,
-                                                                                    &box,
-                                                                                    &transfer_data );
-            HMFT_ETW_EVENT_STOP( "GPUFrameEncodeGPUBufferMap", pThis );
-            assert( pMappedBuffer );
-            if( pMappedBuffer )
-            {
-               LPBYTE lpBuffer;
-               spMemoryBuffer->Lock( &lpBuffer, NULL, NULL );
-               size_t copied_bytes = 0;
-               for( unsigned i = 0; i < metadata.codec_unit_metadata_count; i++ )
-               {
-                  memcpy( lpBuffer + copied_bytes,
-                           pMappedBuffer + metadata.codec_unit_metadata[i].offset,
-                           static_cast<size_t>( metadata.codec_unit_metadata[i].size ) );
-                  copied_bytes += static_cast<size_t>( metadata.codec_unit_metadata[i].size );
-               }
-               spMemoryBuffer->Unlock();
-               spMemoryBuffer->SetCurrentLength( static_cast<DWORD>( copied_bytes ) );
-               HMFT_ETW_EVENT_START( "GPUFrameEncodeGPUBufferUnmap", pThis );
-               pipe_buffer_unmap( pThis->m_pPipeContext, transfer_data );
-               HMFT_ETW_EVENT_STOP( "GPUFrameEncodeGPUBufferUnmap", pThis );
-            }
-            HMFT_ETW_EVENT_STOP( "GPUFrameEncodeBitstreamRead", pThis );
+            // Create IMFMediaBuffer from the D3D12Resource (zero-copy)
+            spMemoryBuffer.Attach( new CD3D12BitstreamMFBuffer( pThis->m_pPipeContext,
+                                                          pDX12EncodeContext->pOutputBitRes[0],
+                                                          static_cast<DWORD>( encoded_bitstream_bytes ),
+                                                          static_cast<DWORD>( metadata.codec_unit_metadata[0].offset ) ) );
 
             // Use FinalizeAndEmitOutputSample to configure attributes and emit output
             pThis->FinalizeAndEmitOutputSample( pDX12EncodeContext, spMemoryBuffer, spOutputSample,
