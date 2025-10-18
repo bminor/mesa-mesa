@@ -2756,21 +2756,24 @@ d3d12_video_encoder_prepare_input_buffers(struct d3d12_video_encoder *pD3D12Enc)
 
    HRESULT hr = S_OK;
    D3D12_HEAP_PROPERTIES Properties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+   
+   // Cache the current pool index to avoid repeated modulo operations
+   const size_t current_pool_index = d3d12_video_encoder_pool_current_index(pD3D12Enc);
    if (d3d12_video_encoder_is_dirty_regions_feature_enabled(pD3D12Enc, D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_GPU_TEXTURE))
    {
-      bool bNeedsCreation = (pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spDirtyRectsResolvedOpaqueMap == NULL) ||
-                            (GetDesc(pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spDirtyRectsResolvedOpaqueMap.Get()).Width <
+      bool bNeedsCreation = (pD3D12Enc->m_inflightResourcesPool[current_pool_index].m_spDirtyRectsResolvedOpaqueMap == NULL) ||
+                            (GetDesc(pD3D12Enc->m_inflightResourcesPool[current_pool_index].m_spDirtyRectsResolvedOpaqueMap.Get()).Width <
                              pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.capInputLayoutDirtyRegion.MaxResolvedBufferAllocationSize);
       if (bNeedsCreation)
       {
-         pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spDirtyRectsResolvedOpaqueMap.Reset();
+         pD3D12Enc->m_inflightResourcesPool[current_pool_index].m_spDirtyRectsResolvedOpaqueMap.Reset();
          CD3DX12_RESOURCE_DESC subregionOffsetsDesc = CD3DX12_RESOURCE_DESC::Buffer(pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.capInputLayoutDirtyRegion.MaxResolvedBufferAllocationSize);
          hr = pD3D12Enc->m_pD3D12Screen->dev->CreateCommittedResource(&Properties,
             D3D12_HEAP_FLAG_NONE,
             &subregionOffsetsDesc,
             D3D12_RESOURCE_STATE_COMMON,
             nullptr,
-            IID_PPV_ARGS(&pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spDirtyRectsResolvedOpaqueMap));
+            IID_PPV_ARGS(&pD3D12Enc->m_inflightResourcesPool[current_pool_index].m_spDirtyRectsResolvedOpaqueMap));
          if (FAILED(hr))
          {
             debug_printf("CreateCommittedResource for m_spDirtyRectsResolvedOpaqueMap failed with HR %x\n", (unsigned)hr);
@@ -2783,19 +2786,19 @@ d3d12_video_encoder_prepare_input_buffers(struct d3d12_video_encoder *pD3D12Enc)
    d3d12_video_encoder_is_gpu_qmap_input_feature_enabled(pD3D12Enc, /*output param*/ QPMapEnabled, /*output param*/ QPMapSource);
    if (QPMapEnabled && (QPMapSource == D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_GPU_TEXTURE))
    {
-      bool bNeedsCreation = (pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spQPMapResolvedOpaqueMap == NULL) ||
-                            (GetDesc(pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spQPMapResolvedOpaqueMap.Get()).Width <
+      bool bNeedsCreation = (pD3D12Enc->m_inflightResourcesPool[current_pool_index].m_spQPMapResolvedOpaqueMap == NULL) ||
+                            (GetDesc(pD3D12Enc->m_inflightResourcesPool[current_pool_index].m_spQPMapResolvedOpaqueMap.Get()).Width <
                              pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.GPUInput.capInputLayoutQPMap.MaxResolvedBufferAllocationSize);
       if (bNeedsCreation)
       {
-         pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spQPMapResolvedOpaqueMap.Reset();
+         pD3D12Enc->m_inflightResourcesPool[current_pool_index].m_spQPMapResolvedOpaqueMap.Reset();
          CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Buffer(pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.GPUInput.capInputLayoutQPMap.MaxResolvedBufferAllocationSize);
          hr = pD3D12Enc->m_pD3D12Screen->dev->CreateCommittedResource(&Properties,
             D3D12_HEAP_FLAG_NONE,
             &desc,
             D3D12_RESOURCE_STATE_COMMON,
             nullptr,
-            IID_PPV_ARGS(&pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spQPMapResolvedOpaqueMap));
+            IID_PPV_ARGS(&pD3D12Enc->m_inflightResourcesPool[current_pool_index].m_spQPMapResolvedOpaqueMap));
          if (FAILED(hr))
          {
             debug_printf("CreateCommittedResource for m_spQPMapResolvedOpaqueMap failed with HR %x\n", (unsigned)hr);
@@ -2805,19 +2808,19 @@ d3d12_video_encoder_prepare_input_buffers(struct d3d12_video_encoder *pD3D12Enc)
 
    if (d3d12_video_encoder_is_move_regions_feature_enabled(pD3D12Enc, D3D12_VIDEO_ENCODER_INPUT_MAP_SOURCE_GPU_TEXTURE))
    {
-      bool bNeedsCreation = (pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spMotionVectorsResolvedOpaqueMap == NULL) ||
-                            (GetDesc(pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spMotionVectorsResolvedOpaqueMap.Get()).Width <
+      bool bNeedsCreation = (pD3D12Enc->m_inflightResourcesPool[current_pool_index].m_spMotionVectorsResolvedOpaqueMap == NULL) ||
+                            (GetDesc(pD3D12Enc->m_inflightResourcesPool[current_pool_index].m_spMotionVectorsResolvedOpaqueMap.Get()).Width <
                              pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.capInputLayoutMotionVectors.MaxResolvedBufferAllocationSize);
       if (bNeedsCreation)
       {
-         pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spMotionVectorsResolvedOpaqueMap.Reset();
+         pD3D12Enc->m_inflightResourcesPool[current_pool_index].m_spMotionVectorsResolvedOpaqueMap.Reset();
          CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Buffer(pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.capInputLayoutMotionVectors.MaxResolvedBufferAllocationSize);
          hr = pD3D12Enc->m_pD3D12Screen->dev->CreateCommittedResource(&Properties,
             D3D12_HEAP_FLAG_NONE,
             &desc,
             D3D12_RESOURCE_STATE_COMMON,
             nullptr,
-            IID_PPV_ARGS(&pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_spMotionVectorsResolvedOpaqueMap));
+            IID_PPV_ARGS(&pD3D12Enc->m_inflightResourcesPool[current_pool_index].m_spMotionVectorsResolvedOpaqueMap));
          if (FAILED(hr))
          {
             debug_printf("CreateCommittedResource for m_spMotionVectorsResolvedOpaqueMap failed with HR %x\n", (unsigned)hr);
@@ -2856,11 +2859,11 @@ d3d12_video_encoder_reconfigure_session(struct d3d12_video_encoder *pD3D12Enc,
    }
 
    // Save frame size expectation snapshot from record time to resolve at get_feedback time (after execution)
-   const size_t current_metadata_index = d3d12_video_encoder_metadata_current_index(pD3D12Enc);
-   pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_index].expected_max_frame_size =
+   size_t current_metadata_slot = d3d12_video_encoder_metadata_current_index(pD3D12Enc);
+   pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].expected_max_frame_size =
       pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[pD3D12Enc->m_currentEncodeConfig.m_activeRateControlIndex].max_frame_size;
 
-   pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_index].expected_max_slice_size =
+   pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].expected_max_slice_size =
       (pD3D12Enc->m_currentEncodeConfig.m_encoderSliceConfigMode == D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE_BYTES_PER_SUBREGION) ?
       pD3D12Enc->m_currentEncodeConfig.m_encoderSliceConfigDesc.m_SlicesPartition_H264.MaxBytesPerSlice : 0;
 
