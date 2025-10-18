@@ -105,7 +105,8 @@ d3d12_video_encoder_flush(struct pipe_video_codec *codec)
    assert(pD3D12Enc->m_spD3D12VideoDevice);
    assert(pD3D12Enc->m_spEncodeCommandQueue);
 
-   if (pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].encode_result & PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED) {
+   size_t current_pool_idx = d3d12_video_encoder_pool_current_index(pD3D12Enc);
+   if (pD3D12Enc->m_inflightResourcesPool[current_pool_idx].encode_result & PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED) {
       debug_printf("WARNING: [d3d12_video_encoder] d3d12_video_encoder_flush - Frame submission %" PRIu64 " failed. Encoder lost, please recreate pipe_video_codec object \n", pD3D12Enc->m_fenceValue);
       assert(false);
       return;
@@ -122,10 +123,10 @@ d3d12_video_encoder_flush(struct pipe_video_codec *codec)
    pD3D12Enc->m_spEncodeCommandQueue->Wait(casted_completion_fence->cmdqueue_fence, casted_completion_fence->value);
    pD3D12Enc->m_pD3D12Screen->base.fence_reference(&pD3D12Enc->m_pD3D12Screen->base, &completion_fence, NULL);
 
-   struct d3d12_fence *input_surface_fence = pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_InputSurfaceFence;
+   struct d3d12_fence *input_surface_fence = pD3D12Enc->m_inflightResourcesPool[current_pool_idx].m_InputSurfaceFence;
    if (input_surface_fence)
       d3d12_fence_wait_impl(input_surface_fence, pD3D12Enc->m_spEncodeCommandQueue.Get(),
-                            pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].m_InputSurfaceFenceValue);
+                            pD3D12Enc->m_inflightResourcesPool[current_pool_idx].m_InputSurfaceFenceValue);
 
    if (!pD3D12Enc->m_bPendingWorkNotFlushed) {
       debug_printf("[d3d12_video_encoder] d3d12_video_encoder_flush started. Nothing to flush, all up to date.\n");
@@ -134,7 +135,9 @@ d3d12_video_encoder_flush(struct pipe_video_codec *codec)
                     " on fenceValue: %" PRIu64 "\n",
                     pD3D12Enc->m_fenceValue);
 
-      HRESULT hr = pD3D12Enc->m_pD3D12Screen->dev->GetDeviceRemovedReason();
+      HRESULT hr = S_OK;
+#ifdef DEBUG
+      hr = pD3D12Enc->m_pD3D12Screen->dev->GetDeviceRemovedReason();
       if (hr != S_OK) {
          debug_printf("[d3d12_video_encoder] d3d12_video_encoder_flush"
                          " - D3D12Device was removed BEFORE commandlist "
@@ -142,6 +145,7 @@ d3d12_video_encoder_flush(struct pipe_video_codec *codec)
                          (unsigned)hr);
          goto flush_fail;
       }
+#endif
 
       if (pD3D12Enc->m_transitionsBeforeCloseCmdList.size() > 0) {
          pD3D12Enc->m_spEncodeCommandList->ResourceBarrier(static_cast<UINT>(pD3D12Enc->m_transitionsBeforeCloseCmdList.size()),
@@ -169,6 +173,7 @@ d3d12_video_encoder_flush(struct pipe_video_codec *codec)
       pD3D12Enc->m_spResolveCommandQueue->ExecuteCommandLists(1, ppCommandLists2);
       pD3D12Enc->m_spResolveCommandQueue->Signal(pD3D12Enc->m_spFence.Get(), pD3D12Enc->m_fenceValue);
       
+#ifdef DEBUG
       // Validate device was not removed
       hr = pD3D12Enc->m_pD3D12Screen->dev->GetDeviceRemovedReason();
       if (hr != S_OK) {
@@ -178,6 +183,7 @@ d3d12_video_encoder_flush(struct pipe_video_codec *codec)
                          (unsigned)hr);
          goto flush_fail;
       }
+#endif
 
       pD3D12Enc->m_fenceValue++;
       pD3D12Enc->m_LastSliceFenceValue++;
@@ -187,7 +193,7 @@ d3d12_video_encoder_flush(struct pipe_video_codec *codec)
 
 flush_fail:
    debug_printf("[d3d12_video_encoder] d3d12_video_encoder_flush failed for fenceValue: %" PRIu64 "\n", pD3D12Enc->m_fenceValue);
-   pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;
+   pD3D12Enc->m_inflightResourcesPool[current_pool_idx].encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;
    pD3D12Enc->m_spEncodedFrameMetadata[d3d12_video_encoder_metadata_current_index(pD3D12Enc)].encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;
    assert(false);
 }
