@@ -1972,27 +1972,37 @@ VkResult ResourceTracker::on_vkEnumerateDeviceExtensionProperties(
     }
 #endif
 
+    // TODO: query ExternalMemoryMode from vkEmulation directly to compansate for the host platform
+    // correctly, instead of host extension checks, or make this support mandatory for Android.
     bool win32ExtMemAvailable = getHostDeviceExtensionIndex("VK_KHR_external_memory_win32") != -1;
     bool posixExtMemAvailable = getHostDeviceExtensionIndex("VK_KHR_external_memory_fd") != -1;
-    bool metalExtMemAvailable = getHostDeviceExtensionIndex("VK_EXT_external_memory_metal") != -1 ||
-                                getHostDeviceExtensionIndex("VK_MVK_moltenvk") != -1;
+    bool metalExtMemAvailable = getHostDeviceExtensionIndex("VK_EXT_external_memory_metal") != -1;
+    bool hostAllocationExtMemAvailable =
+        getHostDeviceExtensionIndex("VK_EXT_external_memory_host") != -1;
     bool qnxExtMemAvailable =
         getHostDeviceExtensionIndex("VK_QNX_external_memory_screen_buffer") != -1;
 
-    bool hostHasExternalMemorySupport =
-        win32ExtMemAvailable || posixExtMemAvailable || metalExtMemAvailable || qnxExtMemAvailable;
+    bool hostHasExternalMemorySupport = win32ExtMemAvailable || posixExtMemAvailable ||
+                                        metalExtMemAvailable || hostAllocationExtMemAvailable ||
+                                        qnxExtMemAvailable;
 
     if (hostHasExternalMemorySupport) {
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
         filteredExts.push_back(
             VkExtensionProperties{"VK_ANDROID_external_memory_android_hardware_buffer", 7});
-        filteredExts.push_back(VkExtensionProperties{"VK_EXT_queue_family_foreign", 1});
 #endif
 #ifdef VK_USE_PLATFORM_FUCHSIA
         filteredExts.push_back(VkExtensionProperties{"VK_FUCHSIA_external_memory", 1});
         filteredExts.push_back(VkExtensionProperties{"VK_FUCHSIA_buffer_collection", 1});
 #endif
+        filteredExts.push_back(VkExtensionProperties{"VK_EXT_queue_family_foreign", 1});
     } else {
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+        mesa_loge(
+            "%s: Did not recognize any form of external memory support on the host device/driver. "
+            "Guest won't support VK_ANDROID_external_memory_android_hardware_buffer!",
+            __func__);
+#endif
 #ifdef LINUX_GUEST_BUILD
         // Note: Linux gfxstream-vulkan driver automatically assumes some form of external memory
         // support on the host, and advertises VK_KHR_external_memory_fd and
