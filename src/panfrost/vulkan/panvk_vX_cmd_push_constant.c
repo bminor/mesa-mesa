@@ -54,9 +54,9 @@ panvk_per_arch(cmd_prepare_push_uniforms)(
    uint64_t *faus = push_uniforms.cpu;
    uint32_t w, fau = 0;
 
-   for (uint32_t i = 0; i < repeat_count; i++) {
+   for (uint32_t r = 0; r < repeat_count; r++) {
       uint64_t addr =
-         push_uniforms.gpu + i * shader->fau.total_count * sizeof(uint64_t);
+         push_uniforms.gpu + r * shader->fau.total_count * sizeof(uint64_t);
       if (shader->info.stage == MESA_SHADER_COMPUTE)
          cmdbuf->state.compute.sysvals.push_uniforms = addr;
       else
@@ -75,6 +75,7 @@ panvk_per_arch(cmd_prepare_push_uniforms)(
          faus[fau++] = (uint64_t)shader->info.fau_consts[i + 1] << 32 |
                        shader->info.fau_consts[i];
       }
+      assert(fau % shader->fau.total_count == 0);
    }
 
    *push_ptr = push_uniforms.gpu;
