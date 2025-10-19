@@ -1067,16 +1067,58 @@ d3d12_video_encoder_update_current_encoder_config_state_h264(struct d3d12_video_
    /// Check for video encode support detailed capabilities
    ///
 
+   // Define flags that require re-querying driver capabilities
+   static const d3d12_video_encoder_config_dirty_flags caps_affecting_flags = 
+      (d3d12_video_encoder_config_dirty_flags)(
+         d3d12_video_encoder_config_dirty_flag_codec |
+         d3d12_video_encoder_config_dirty_flag_profile |
+         d3d12_video_encoder_config_dirty_flag_level |
+         d3d12_video_encoder_config_dirty_flag_codec_config |
+         d3d12_video_encoder_config_dirty_flag_input_format |
+         d3d12_video_encoder_config_dirty_flag_resolution |
+         d3d12_video_encoder_config_dirty_flag_slices |
+         d3d12_video_encoder_config_dirty_flag_gop |
+         d3d12_video_encoder_config_dirty_flag_motion_precision_limit |
+         d3d12_video_encoder_config_dirty_flag_intra_refresh
+      );
+
+   // Calculate effective dirty flags including configuration changes not tracked by dirty flags
+   // as there are set in d3d12_video_enc.cpp later in the encoding process
+   d3d12_video_encoder_config_dirty_flags effective_dirty_flags = pD3D12Enc->m_currentEncodeConfig.m_ConfigDirtyFlags;
+   if (!pD3D12Enc->m_prevFrameEncodeConfig.m_encoderRateControlDesc[pD3D12Enc->m_currentEncodeConfig.m_activeRateControlIndex]
+         .CompareEqual(pD3D12Enc->m_currentEncodeConfig.m_encoderRateControlDesc[pD3D12Enc->m_currentEncodeConfig.m_activeRateControlIndex])) {
+      effective_dirty_flags |= d3d12_video_encoder_config_dirty_flag_rate_control;
+   }
+   if (memcmp(&pD3D12Enc->m_prevFrameEncodeConfig.m_DirtyRectsDesc,
+              &pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc,
+              sizeof(pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc)) != 0) {
+      effective_dirty_flags |= d3d12_video_encoder_config_dirty_flag_dirty_regions;
+   }
+
    // Will call for d3d12 driver support based on the initial requested features, then
    // try to fallback if any of them is not supported and return the negotiated d3d12 settings
    D3D12_FEATURE_DATA_VIDEO_ENCODER_SUPPORT2 capEncoderSupportData2 = {};
-   if (!d3d12_video_encoder_negotiate_requested_features_and_d3d12_driver_caps(pD3D12Enc, capEncoderSupportData2)) {
-      debug_printf("[d3d12_video_encoder_h264] After negotiating caps, D3D12_FEATURE_VIDEO_ENCODER_SUPPORT1 "
-                      "arguments are not supported - "
-                      "ValidationFlags: 0x%x - SupportFlags: 0x%x\n",
-                      capEncoderSupportData2.ValidationFlags,
-                      capEncoderSupportData2.SupportFlags);
-      return false;
+
+   // Only query driver caps if configuration parameters that affect capabilities have changed
+   if ((effective_dirty_flags & (caps_affecting_flags | d3d12_video_encoder_config_dirty_flag_rate_control | d3d12_video_encoder_config_dirty_flag_dirty_regions)) != 0) {
+      
+      debug_printf("[d3d12_video_encoder_h264] Configuration changed - performing CheckFeatureSupport driver capability query (fenceValue: %" PRIu64 ", effectiveDirtyFlags: 0x%x)\n", 
+                   pD3D12Enc->m_fenceValue, 
+                   effective_dirty_flags);
+      if (!d3d12_video_encoder_negotiate_requested_features_and_d3d12_driver_caps(pD3D12Enc, capEncoderSupportData2)) {
+         debug_printf("[d3d12_video_encoder_h264] After negotiating caps, D3D12_FEATURE_VIDEO_ENCODER_SUPPORT2 "
+                         "arguments are not supported - "
+                         "ValidationFlags: 0x%x - SupportFlags: 0x%x\n",
+                         capEncoderSupportData2.ValidationFlags,
+                         capEncoderSupportData2.SupportFlags);
+         return false;
+      }
+   } else {
+      debug_printf("[d3d12_video_encoder_h264] No configuration changes detected - skipping expensive driver query and reusing cached capabilities (fenceValue: %" PRIu64 ")\n", pD3D12Enc->m_fenceValue);
+      // Copy capabilities from previous frame to avoid expensive driver query
+      capEncoderSupportData2.SupportFlags = pD3D12Enc->m_currentEncodeCapabilities.m_SupportFlags;
+      capEncoderSupportData2.ValidationFlags = pD3D12Enc->m_currentEncodeCapabilities.m_ValidationFlags;
+      // Note: m_currentResolutionSupportCaps and other capability data remain valid from previous query
    }
 
    ///
