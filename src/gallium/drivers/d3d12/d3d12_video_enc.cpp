@@ -136,7 +136,7 @@ d3d12_video_encoder_flush(struct pipe_video_codec *codec)
                     pD3D12Enc->m_fenceValue);
 
       HRESULT hr = S_OK;
-#ifdef DEBUG
+#ifdef MESA_DEBUG
       hr = pD3D12Enc->m_pD3D12Screen->dev->GetDeviceRemovedReason();
       if (hr != S_OK) {
          debug_printf("[d3d12_video_encoder] d3d12_video_encoder_flush"
@@ -167,7 +167,7 @@ d3d12_video_encoder_flush(struct pipe_video_codec *codec)
       pD3D12Enc->m_spResolveCommandQueue->ExecuteCommandLists(1, ppCommandLists2);
       pD3D12Enc->m_spResolveCommandQueue->Signal(pD3D12Enc->m_spFence.Get(), pD3D12Enc->m_fenceValue);
       
-#ifdef DEBUG
+#ifdef MESA_DEBUG
       // Validate device was not removed
       hr = pD3D12Enc->m_pD3D12Screen->dev->GetDeviceRemovedReason();
       if (hr != S_OK) {
@@ -229,6 +229,7 @@ d3d12_video_encoder_sync_completion(struct pipe_video_codec *codec,
       pool_entry.m_References.reset();
       pool_entry.m_InputSurfaceFence = NULL;
 
+#ifdef MESA_DEBUG
       // Validate device was not removed
       hr = pD3D12Enc->m_pD3D12Screen->dev->GetDeviceRemovedReason();
       if (hr != S_OK) {
@@ -238,6 +239,7 @@ d3d12_video_encoder_sync_completion(struct pipe_video_codec *codec,
                          (unsigned)hr);
          goto sync_with_token_fail;
       }
+#endif
 
       debug_printf(
          "[d3d12_video_encoder] d3d12_video_encoder_sync_completion - GPU execution finalized for pool index: %" PRIu64 "\n",
@@ -3040,6 +3042,7 @@ d3d12_video_encoder_get_slice_bitstream_data(struct pipe_video_codec *codec,
 
    if (pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppResolvedSubregionSizes[slice_idx] == 0)
    {
+#ifdef MESA_DEBUG
       HRESULT hr = pD3D12Enc->m_pD3D12Screen->dev->GetDeviceRemovedReason();
       if (hr != S_OK) {
          debug_printf("Error: d3d12_video_encoder_get_slice_bitstream_data for Encode GPU command for fence %" PRIu64 " failed with GetDeviceRemovedReason: %x\n",
@@ -3050,6 +3053,7 @@ d3d12_video_encoder_get_slice_bitstream_data(struct pipe_video_codec *codec,
             *codec_unit_metadata_count = 0u;
          return;
       }
+#endif
 
       bool wait_res = d3d12_fence_finish(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pSubregionPipeFences[slice_idx].get(), OS_TIMEOUT_INFINITE);
       if (!wait_res) {
@@ -4403,6 +4407,7 @@ d3d12_video_encoder_get_feedback(struct pipe_video_codec *codec,
    struct pipe_enc_feedback_metadata opt_metadata;
    memset(&opt_metadata, 0, sizeof(opt_metadata));
 
+#ifdef MESA_DEBUG
    HRESULT hr = pD3D12Enc->m_pD3D12Screen->dev->GetDeviceRemovedReason();
    if (hr != S_OK) {
       opt_metadata.encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;
@@ -4414,6 +4419,7 @@ d3d12_video_encoder_get_feedback(struct pipe_video_codec *codec,
          *pMetadata = opt_metadata;
       return;
    }
+#endif
 
    size_t current_metadata_slot = static_cast<size_t>(requested_metadata_fence % pD3D12Enc->m_MaxMetadataBuffersCount);
    opt_metadata.encode_result = pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].encode_result;
