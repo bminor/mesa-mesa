@@ -2707,10 +2707,10 @@ d3d12_video_encoder_prepare_output_buffers(struct d3d12_video_encoder *pD3D12Enc
       pD3D12Enc->m_currentEncodeCapabilities.m_MaxSlicesInOutput,
       pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].bufferSize);
 
-   D3D12_HEAP_PROPERTIES Properties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
    if ((pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spBuffer == nullptr) ||
        (GetDesc(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spBuffer.Get()).Width <
         pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].bufferSize)) {
+      D3D12_HEAP_PROPERTIES Properties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK);
       CD3DX12_RESOURCE_DESC resolvedMetadataBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(
          pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].bufferSize);
 
@@ -2719,7 +2719,7 @@ d3d12_video_encoder_prepare_output_buffers(struct d3d12_video_encoder *pD3D12Enc
          &Properties,
          D3D12_HEAP_FLAG_NONE,
          &resolvedMetadataBufferDesc,
-         D3D12_RESOURCE_STATE_COMMON,
+         D3D12_RESOURCE_STATE_COPY_DEST,
          nullptr,
          IID_PPV_ARGS(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spBuffer.GetAddressOf()));
 
@@ -2732,6 +2732,7 @@ d3d12_video_encoder_prepare_output_buffers(struct d3d12_video_encoder *pD3D12Enc
    if ((pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_spMetadataOutputBuffer == nullptr) ||
        (GetDesc(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_spMetadataOutputBuffer.Get()).Width <
         pD3D12Enc->m_currentEncodeCapabilities.m_ResourceRequirementsCaps.MaxEncoderOutputMetadataBufferSize)) {
+      D3D12_HEAP_PROPERTIES Properties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
       CD3DX12_RESOURCE_DESC metadataBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(
          pD3D12Enc->m_currentEncodeCapabilities.m_ResourceRequirementsCaps.MaxEncoderOutputMetadataBufferSize);
 
@@ -4137,9 +4138,6 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                                                    &outputStreamArguments);
 
       pD3D12Enc->m_rgResolveMetadataStateTransitions = {
-         CD3DX12_RESOURCE_BARRIER::Transition(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spBuffer.Get(),
-                                             D3D12_RESOURCE_STATE_COMMON,
-                                             D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE),
          CD3DX12_RESOURCE_BARRIER::Transition(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_spMetadataOutputBuffer.Get(),
                                              D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE,
                                              D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ),
@@ -4244,9 +4242,6 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
       }
 
       D3D12_RESOURCE_BARRIER rgRevertResolveMetadataStateTransitions[] = {
-         CD3DX12_RESOURCE_BARRIER::Transition(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spBuffer.Get(),
-                                             D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE,
-                                             D3D12_RESOURCE_STATE_COMMON),
          CD3DX12_RESOURCE_BARRIER::Transition(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_spMetadataOutputBuffer.Get(),
                                              D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ,
                                              D3D12_RESOURCE_STATE_COMMON),
@@ -4324,9 +4319,6 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                                                     &outputStreamArguments);
 
       pD3D12Enc->m_rgResolveMetadataStateTransitions = {
-         CD3DX12_RESOURCE_BARRIER::Transition(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spBuffer.Get(),
-                                             D3D12_RESOURCE_STATE_COMMON,
-                                             D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE),
          CD3DX12_RESOURCE_BARRIER::Transition(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_spMetadataOutputBuffer.Get(),
                                              D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE,
                                              D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ),
@@ -4381,9 +4373,6 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
       }
 
       D3D12_RESOURCE_BARRIER rgRevertResolveMetadataStateTransitions[] = {
-         CD3DX12_RESOURCE_BARRIER::Transition(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].spBuffer.Get(),
-                                             D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE,
-                                             D3D12_RESOURCE_STATE_COMMON),
          CD3DX12_RESOURCE_BARRIER::Transition(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_spMetadataOutputBuffer.Get(),
                                              D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ,
                                              D3D12_RESOURCE_STATE_COMMON),
@@ -4784,34 +4773,22 @@ d3d12_video_encoder_extract_encode_metadata(
    ID3D12Resource *pResolvedMetadataBuffer = raw_metadata.spBuffer.Get();
    uint64_t resourceMetadataSize = raw_metadata.bufferSize;
 
-   struct d3d12_screen *pD3D12Screen = (struct d3d12_screen *) pD3D12Enc->m_pD3D12Screen;
-   assert(pD3D12Screen);
-   pipe_resource *pPipeResolvedMetadataBuffer =
-      d3d12_resource_from_resource(&pD3D12Screen->base, pResolvedMetadataBuffer);
-   assert(pPipeResolvedMetadataBuffer);
-   assert(resourceMetadataSize < INT_MAX);
-   struct pipe_box box;
-   u_box_3d(0,                                        // x
-            0,                                        // y
-            0,                                        // z
-            static_cast<int>(resourceMetadataSize),   // width
-            1,                                        // height
-            1,                                        // depth
-            &box);
-   struct pipe_transfer *mapTransfer;
-   unsigned mapUsage = PIPE_MAP_READ;
-   void *                pMetadataBufferSrc = pD3D12Enc->base.context->buffer_map(pD3D12Enc->base.context,
-                                                                  pPipeResolvedMetadataBuffer,
-                                                                  0,
-                                                                  mapUsage,
-                                                                  &box,
-                                                                  &mapTransfer);
+#if MESA_DEBUG
+   // Verify resource is CPU accessible (created with D3D12_HEAP_TYPE_READBACK)
+   D3D12_HEAP_PROPERTIES heapProps;
+   D3D12_HEAP_FLAGS heapFlags;
+   pResolvedMetadataBuffer->GetHeapProperties(&heapProps, &heapFlags);
+   assert(heapProps.Type == D3D12_HEAP_TYPE_READBACK);
+#endif
 
-   assert(mapUsage & PIPE_MAP_READ);
-   assert(pPipeResolvedMetadataBuffer->usage == PIPE_USAGE_DEFAULT);
-   // Note: As we're calling buffer_map with PIPE_MAP_READ on a pPipeResolvedMetadataBuffer which has pipe_usage_default
-   // buffer_map itself will do all the synchronization and waits so once the function returns control here
-   // the contents of mapTransfer are ready to be accessed.
+   // Map metadata buffer using native D3D12 API
+   D3D12_RANGE readRange = { 0, resourceMetadataSize };
+   void *pMetadataBufferSrc;
+   HRESULT hr = pResolvedMetadataBuffer->Map(0, &readRange, &pMetadataBufferSrc);
+   if (FAILED(hr)) {
+      debug_printf("Error: d3d12_video_encoder_extract_encode_metadata failed to map metadata buffer with HR %x\n", (unsigned)hr);
+      return;
+   }
 
    // Clear output
    memset(&parsedMetadata, 0, sizeof(D3D12_VIDEO_ENCODER_OUTPUT_METADATA));
@@ -4871,9 +4848,8 @@ d3d12_video_encoder_extract_encode_metadata(
       }
    }
 
-   // Unmap the buffer tmp storage
-   pipe_buffer_unmap(pD3D12Enc->base.context, mapTransfer);
-   pipe_resource_reference(&pPipeResolvedMetadataBuffer, NULL);
+   // Unmap the buffer using native D3D12 API
+   pResolvedMetadataBuffer->Unmap(0, nullptr);
 }
 
 /**
