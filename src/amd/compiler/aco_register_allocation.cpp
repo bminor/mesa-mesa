@@ -2367,8 +2367,11 @@ handle_fixed_operands(ra_ctx& ctx, RegisterFile& register_file,
       assert(std::none_of(parallelcopy.begin(), parallelcopy.end(),
                           [&](auto copy) { return copy.def.physReg() == op.physReg(); }));
 
-      /* clear from register_file so fixed operands are not collected by collect_vars() */
-      tmp_file.clear(src, op.regClass());
+      /* clear from register_file so fixed operands are not collected by collect_vars(), but if src
+       * has been blocked by a previous operand, don't undo the blocking
+       */
+      if (!tmp_file.is_blocked(src))
+         tmp_file.clear(src, op.regClass());
 
       BITSET_SET(mask, i);
 
