@@ -1574,7 +1574,7 @@
         "description": "v3d: mark FRAG_RESULT_COLOR as output_written on SAND blits FS",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ee48e81b26e4293e9dae9834b892839dd2f236fa",
         "notes": null
