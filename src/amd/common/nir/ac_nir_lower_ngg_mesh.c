@@ -508,6 +508,8 @@ lower_ms_intrinsic(nir_builder *b, nir_instr *instr, void *state)
       return update_ms_barrier(b, intrin, s);
    case nir_intrinsic_load_workgroup_index:
       return lower_ms_load_workgroup_index(b, intrin, s);
+   case nir_intrinsic_load_num_subgroups:
+      return nir_imm_int(b, DIV_ROUND_UP(s->api_workgroup_size, s->wave_size));
    case nir_intrinsic_set_vertex_and_primitive_count:
       return lower_ms_set_vertex_and_primitive_count(b, intrin, s);
    default:
@@ -529,6 +531,7 @@ filter_ms_intrinsic(const nir_instr *instr,
           intrin->intrinsic == nir_intrinsic_store_per_primitive_output ||
           intrin->intrinsic == nir_intrinsic_barrier ||
           intrin->intrinsic == nir_intrinsic_load_workgroup_index ||
+          intrin->intrinsic == nir_intrinsic_load_num_subgroups ||
           intrin->intrinsic == nir_intrinsic_set_vertex_and_primitive_count;
 }
 
