@@ -690,6 +690,7 @@ v3d_get_sand8_fs(struct pipe_context *pctx, int cpp)
                 nir_variable_create(b.shader, nir_var_shader_out,
                                     vec4, "f_color");
         color_out->data.location = FRAG_RESULT_COLOR;
+        b.shader->info.outputs_written |= BITFIELD_BIT(FRAG_RESULT_COLOR);
 
         nir_variable *pos_in =
                 nir_variable_create(b.shader, nir_var_shader_in, vec4, "pos");
@@ -998,6 +999,7 @@ v3d_get_sand30_fs(struct pipe_context *pctx)
                                                       nir_var_shader_out,
                                                       glsl_uvec4, "f_color");
         color_out->data.location = FRAG_RESULT_COLOR;
+        b.shader->info.outputs_written |= BITFIELD_BIT(FRAG_RESULT_COLOR);
 
         nir_variable *pos_in =
                 nir_variable_create(b.shader, nir_var_shader_in, vec4, "pos");
