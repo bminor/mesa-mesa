@@ -3286,8 +3286,11 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
    pD3D12Enc->m_pOutputBitstreamBuffers.resize(num_slice_objects, NULL);
    for (uint32_t slice_idx = 0; slice_idx < num_slice_objects;slice_idx++) {
       pD3D12Enc->m_pOutputBitstreamBuffers[slice_idx] = (struct d3d12_resource *) slice_destinations[slice_idx];
-      // Make permanently resident for video use
-      d3d12_promote_to_permanent_residency(pD3D12Enc->m_pD3D12Screen, pD3D12Enc->m_pOutputBitstreamBuffers[slice_idx]);
+   }
+
+   // Make permanently resident for video use - batch promote all slice buffers
+   if (num_slice_objects > 0) {
+      d3d12_promote_to_permanent_residency(pD3D12Enc->m_pD3D12Screen, pD3D12Enc->m_pOutputBitstreamBuffers.data(), num_slice_objects);
    }
 
    // Make permanently resident for video use

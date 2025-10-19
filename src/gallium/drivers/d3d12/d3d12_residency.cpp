@@ -281,25 +281,60 @@ d3d12_deinit_residency(struct d3d12_screen *screen)
 }
 
 void
-d3d12_promote_to_permanent_residency(struct d3d12_screen *screen, struct d3d12_resource* resource)
+d3d12_promote_to_permanent_residency(struct d3d12_screen *screen, struct d3d12_resource** resources, unsigned count)
 {
+   if (count == 0)
+      return;
+
    mtx_lock(&screen->submit_mutex);
-   uint64_t offset;
-   struct d3d12_bo *base_bo = d3d12_bo_get_base(resource->bo, &offset);
-
-   /* Promote non-permanent resident resources to permanent residency*/
-   if(base_bo->residency_status != d3d12_permanently_resident) {
-
-      /* Mark as permanently resident*/
-      base_bo->residency_status = d3d12_permanently_resident;
-
-      /* If it wasn't made resident before, make it*/
-      bool was_made_resident = (base_bo->residency_status == d3d12_resident);
-      if(!was_made_resident) {
-         ID3D12Pageable *pageable = base_bo->res;
-         ASSERTED HRESULT hr = screen->dev->MakeResident(1, &pageable);
+   
+   ID3D12Pageable *pageables_to_make_resident[residency_batch_size];
+   unsigned num_to_make_resident = 0;
+   
+   auto flush_batch = [](struct d3d12_screen *screen, ID3D12Pageable **pageables, unsigned count) {
+      if (count > 0) {
+         ASSERTED HRESULT hr = screen->dev->MakeResident(count, pageables);
          assert(SUCCEEDED(hr));
+         debug_printf("D3D12: Promoted %u resources to permanent residency\n", count);
+      }
+   };
+   
+   for (unsigned i = 0; i < count; ++i) {
+      uint64_t offset;
+      struct d3d12_bo *base_bo = d3d12_bo_get_base(resources[i]->bo, &offset);
+
+      if (base_bo->residency_status != d3d12_permanently_resident) {
+         bool needs_make_resident = (base_bo->residency_status != d3d12_resident);
+         base_bo->residency_status = d3d12_permanently_resident;
+
+         if (needs_make_resident) {
+            assert(num_to_make_resident < residency_batch_size);
+            pageables_to_make_resident[num_to_make_resident++] = base_bo->res;
+            if (num_to_make_resident == residency_batch_size) {
+               flush_batch(screen, pageables_to_make_resident, num_to_make_resident);
+               num_to_make_resident = 0;
+            }
+         }
       }
    }
+   
+   flush_batch(screen, pageables_to_make_resident, num_to_make_resident);
    mtx_unlock(&screen->submit_mutex);
+}
+
+void
+d3d12_promote_to_permanent_residency(struct d3d12_screen *screen, struct d3d12_resource* resource)
+{
+   // Early out for null resource or if the bo is already permanently resident
+   if (!resource)
+      return;
+
+   if (resource->bo) {
+      uint64_t offset;
+      struct d3d12_bo *base_bo = d3d12_bo_get_base(resource->bo, &offset);
+      if (base_bo->residency_status == d3d12_permanently_resident)
+          return;
+   }
+
+   d3d12_promote_to_permanent_residency(screen, &resource, 1);
 }
