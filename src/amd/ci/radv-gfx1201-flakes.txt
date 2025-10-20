@@ -1,7 +1,9 @@
 dEQP-VK.pipeline.*.depth.*
 dEQP-VK.pipeline.shader_object_linked_spirv.vertex_input.single_attribute.dmat4.as_r64g64b64a64_sfloat_rate_instance
+dEQP-VK.sparse_resources.image_sparse_binding.multiple_bind_sparse_info.3d.r16i.1024_128_8
 dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_image_opaque_memory_bind_info.3d.r32ui.512_256_6
 dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_memory_bind.3d.rgba16_snorm.1024_128_8
 dEQP-VK.sparse_resources.image_sparse_residency.3d.rg32ui.512_256_16
+dEQP-VK.sparse_resources.mipmap_sparse_residency.3d.rgba16ui.1024_128_8
 dEQP-VK.video.encode.av1.720x480_10le_420.i_15.tiling_1x2_rc_vbr_lf_layered_dpb
 dEQP-VK.video.encode.av1.720x480_10le_420.i_p_15.rc_disabled_lr_cdef_intra_refresh_row_based
