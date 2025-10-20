@@ -1254,7 +1254,7 @@
         "description": "panvk: fix to advance vs driver_set properly",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a5a0dd3ccc08a0df318663d0c0912b1c99f17d5b",
         "notes": null

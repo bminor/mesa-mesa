@@ -2583,6 +2583,9 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
    if (patch_faus)
       cs_move64_to(b, vs_fau_addr, cmdbuf->state.gfx.vs.push_uniforms);
 
+   if (patch_attribs != 0)
+      cs_move64_to(b, vs_drv_set, vs_desc_state->driver_set.dev_addr);
+
    cs_move64_to(b, draw_params_addr, draw->indirect.buffer_dev_addr);
    cs_move32_to(b, draw_id, 0);
 
@@ -2610,8 +2613,6 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
       }
 
       if (patch_attribs != 0) {
-         cs_move64_to(b, vs_drv_set, vs_desc_state->driver_set.dev_addr);
-
          /* If firstInstance=0, skip the offset adjustment. */
          cs_if(b, MALI_CS_CONDITION_NEQUAL,
                cs_sr_reg32(b, IDVS, INSTANCE_OFFSET)) {
