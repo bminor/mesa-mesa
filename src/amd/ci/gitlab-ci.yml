@@ -313,7 +313,8 @@ radv-navi31-vkcts:
     - .navi31-test-valve
     - .radv-valve-rules
   variables:
-    RADV_DEBUG: nomeshshader # Disable mesh shaders until task shaders stop hanging
+    # FIXME: Random GPU hangs on VCN
+    RADV_DEBUG: nomeshshader,novideo # Disable mesh shaders until task shaders stop hanging
     RADV_PERFTEST: transfer_queue,hic
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 20
 
