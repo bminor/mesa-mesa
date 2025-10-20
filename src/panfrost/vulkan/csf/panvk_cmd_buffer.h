@@ -677,13 +677,19 @@ panvk_per_arch(calculate_task_axis_and_increment)(
 {
    /* Pick the task_axis and task_increment to maximize thread
     * utilization. */
-   unsigned threads_per_wg = shader->cs.local_size.x * shader->cs.local_size.y *
-                             shader->cs.local_size.z;
-   unsigned max_thread_cnt = pan_compute_max_thread_count(
-      &phys_dev->kmod.props, shader->info.work_reg_count);
-   unsigned threads_per_task = threads_per_wg;
+   const struct pan_kmod_dev_props *props = &phys_dev->kmod.props;
+   const unsigned max_thread_cnt =
+      pan_compute_max_thread_count(props, shader->info.work_reg_count);
+   const unsigned threads_per_wg = shader->cs.local_size.x *
+                                   shader->cs.local_size.y *
+                                   shader->cs.local_size.z;
    const unsigned wg_count[3] = {wg_dim->x, wg_dim->y, wg_dim->z};
    const unsigned total_wgs = wg_dim->x * wg_dim->y * wg_dim->z;
+   const unsigned total_cores = util_bitcount64(phys_dev->compute_core_mask);
+   /* Split workgroups among cores evenly. */
+   const unsigned wgs_per_core = DIV_ROUND_UP(total_wgs, total_cores);
+   unsigned threads_per_task;
+   unsigned wgs_per_task;
 
    if (!total_wgs) {
       *task_axis = MALI_TASK_AXIS_X;
@@ -691,25 +697,24 @@ panvk_per_arch(calculate_task_axis_and_increment)(
       return;
    }
 
-   for (unsigned i = 0; i < 3; i++) {
-      if (threads_per_task * wg_count[i] >= max_thread_cnt) {
-         /* We reached out thread limit, stop at the current axis and
-          * calculate the increment so it doesn't exceed the per-core
-          * thread capacity.
-          */
-         *task_increment = max_thread_cnt / threads_per_task;
-         break;
-      } else if (*task_axis == MALI_TASK_AXIS_Z) {
-         /* We reached the Z axis, and there's still room to stuff more
-          * threads. Pick the current axis grid size as our increment
-          * as there's no point using something bigger.
-          */
-         *task_increment = wg_count[i];
-         break;
-      }
+   /* We used to maximize threads_per_task, but that is ideal when the system
+    * has a single gpu client. When there are multiple gpu clients, we want
+    * smaller threads_per_task such that cores can be more fairly shared among
+    * the clients.
+    */
+   threads_per_task = DIV_ROUND_UP(max_thread_cnt, props->max_tasks_per_core);
 
-      threads_per_task *= wg_count[i];
+   wgs_per_task = threads_per_task / threads_per_wg;
+   wgs_per_task = CLAMP(wgs_per_task, 1, wgs_per_core);
+
+   *task_axis = MALI_TASK_AXIS_X;
+   *task_increment = wgs_per_task;
+   for (unsigned i = 0; i < 2; i++) {
+      if (*task_increment <= wg_count[i])
+         break;
+
       (*task_axis)++;
+      *task_increment /= wg_count[i];
    }
 
    assert(*task_axis <= MALI_TASK_AXIS_Z);
