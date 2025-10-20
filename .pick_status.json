@@ -924,7 +924,7 @@
         "description": "brw: only consider cross lane access on non scalar VGRFs",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1bff4f93ca98847a637bbf836e290b70fe4db590",
         "notes": null
