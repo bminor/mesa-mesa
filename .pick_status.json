@@ -1244,7 +1244,7 @@
         "description": "panvk: fix to advance vs res_table properly",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "48e8d6d207a3771d856007e5bb9deedb492cb27a",
         "notes": null
