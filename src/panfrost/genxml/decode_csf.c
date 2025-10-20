@@ -147,10 +147,17 @@ print_cs_instr(FILE *fp, const uint64_t *instr)
       /* Print the instruction. Ignore the selects and the flags override
        * since we'll print them implicitly later.
        */
+#if PAN_ARCH >= 12
+      fprintf(fp, "RUN_COMPUTE%s.%s.srt%d.spd%d.tsd%d.fau%d #%u, #%u",
+              I.progress_increment ? ".progress_inc" : "", axes[I.task_axis],
+              I.srt_select, I.spd_select, I.tsd_select, I.fau_select,
+              I.task_increment, I.ep_limit);
+#else
       fprintf(fp, "RUN_COMPUTE%s.%s.srt%d.spd%d.tsd%d.fau%d #%u",
               I.progress_increment ? ".progress_inc" : "", axes[I.task_axis],
               I.srt_select, I.spd_select, I.tsd_select, I.fau_select,
               I.task_increment);
+#endif
       break;
    }
 
@@ -572,9 +579,16 @@ print_cs_instr(FILE *fp, const uint64_t *instr)
 
    case MALI_CS_OPCODE_RUN_COMPUTE_INDIRECT: {
       cs_unpack(instr, CS_RUN_COMPUTE_INDIRECT, I);
+#if PAN_ARCH >= 12
+      fprintf(fp, "RUN_COMPUTE_INDIRECT%s.srt%d.spd%d.tsd%d.fau%d #%u, #%u",
+              I.progress_increment ? ".progress_inc" : "", I.srt_select,
+              I.spd_select, I.tsd_select, I.fau_select, I.workgroups_per_task,
+              I.ep_limit);
+#else
       fprintf(fp, "RUN_COMPUTE_INDIRECT%s.srt%d.spd%d.tsd%d.fau%d #%u",
               I.progress_increment ? ".progress_inc" : "", I.srt_select,
               I.spd_select, I.tsd_select, I.fau_select, I.workgroups_per_task);
+#endif
 
       break;
    }

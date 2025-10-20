@@ -831,7 +831,7 @@
 
   <struct name="CS RUN_COMPUTE_INDIRECT" size="2">
     <field name="Workgroups Per Task" size="16" start="0" type="uint"/>
-    <field name="Endpoint Limit" size="8" start="16" type="uint"/>
+    <field name="Ep Limit" size="8" start="16" type="uint"/>
     <field name="Progress Increment" size="1" start="32" type="CS Progress Increment" default="No Increment"/>
     <field name="SRT Select" size="2" start="40" type="uint"/>
     <field name="SPD Select" size="2" start="42" type="uint"/>

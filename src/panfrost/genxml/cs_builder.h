@@ -116,6 +116,9 @@ struct cs_builder_conf {
    /* Number of 32-bit registers used by the kernel at submission time */
    uint8_t nr_kernel_registers;
 
+   /* RUN_COMPUTE.ep_limit. Must be 0 before v12. */
+   uint8_t compute_ep_limit;
+
    /* CS buffer allocator */
    struct cs_buffer (*alloc_buffer)(void *cookie);
 
@@ -1528,6 +1531,11 @@ cs_run_compute(struct cs_builder *b, unsigned task_increment,
    cs_emit(b, RUN_COMPUTE, I) {
       I.task_increment = task_increment;
       I.task_axis = task_axis;
+#if PAN_ARCH >= 12
+      I.ep_limit = b->conf.compute_ep_limit;
+#else
+      assert(b->conf.compute_ep_limit == 0);
+#endif
       I.srt_select = res_sel.srt;
       I.spd_select = res_sel.spd;
       I.tsd_select = res_sel.tsd;
@@ -2070,6 +2078,11 @@ cs_run_compute_indirect(struct cs_builder *b, unsigned wg_per_task,
 
    cs_emit(b, RUN_COMPUTE_INDIRECT, I) {
       I.workgroups_per_task = wg_per_task;
+#if PAN_ARCH >= 12
+      I.ep_limit = b->conf.compute_ep_limit;
+#else
+      assert(b->conf.compute_ep_limit == 0);
+#endif
       I.srt_select = res_sel.srt;
       I.spd_select = res_sel.spd;
       I.tsd_select = res_sel.tsd;
