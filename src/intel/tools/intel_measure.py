@@ -2,14 +2,11 @@
 
 from __future__ import annotations
 from typing import Optional
+from pathlib import Path
 
 import argparse
 import re
 import sys
-
-def error(msg, err_code=1):
-    print('ERROR: ' + msg)
-    sys.exit(err_code)
 
 class Line:
     def __init__(self, line_str: str):
@@ -27,6 +24,72 @@ class Line:
         self.is_begin: bool = begin_or_end == 'begin'
         self.valid: bool = True
 
+
+class Annotations:
+    class List:
+        def __init__(self):
+            self.list: list = []
+            self.idx: int = 0
+            self.call_depth: int = 0
+
+    def __init__(self, file: Path):
+        self.cmdbuf: Annotations.List = Annotations.List()
+        self.queue: Annotations.List = Annotations.List()
+
+        with open(file, 'r') as f:
+            for line_str in f.readlines():
+                if '_annotation' not in line_str or '_end_' not in line_str:
+                    continue
+                line = Line(line_str)
+                if line.valid:
+                    self._add_annotation(line)
+
+    def __str__(self) -> str:
+        annotation_list = []
+        if self.queue.call_depth > 0 and self.queue.idx < len(self.queue.list):
+            annotation_list.append(self.queue.list[self.queue.idx])
+        if self.cmdbuf.call_depth > 0 and self.cmdbuf.idx < len(self.cmdbuf.list):
+            annotation_list.append(self.cmdbuf.list[self.cmdbuf.idx])
+        if annotation_list:
+            return f'; annotations={" / ".join(annotation_list)}'
+        return ''
+
+    def _add_annotation(self, line: Line) -> None:
+        # TODO: handle nested annotations properly.
+        # Currently, nested annotation will be out of order
+        arg_dict = dict(re.findall(r'(\w+)=([^,]+)', line.args))
+        if line.func == 'cmd_buffer_annotation':
+            # expect: command_buffer_handle=<num>, str=<str>
+            self.cmdbuf.list.append(arg_dict['str'])
+        if line.func == 'queue_annotation':
+            # expect: str=<str>
+            self.queue.list.append(arg_dict['str'])
+
+    def begin_cmdbuf(self) -> None:
+        self.cmdbuf.call_depth += 1
+
+    def end_cmdbuf(self) -> None:
+        self.cmdbuf.idx += 1
+        self.cmdbuf.call_depth -= 1
+
+    def begin_queue(self) -> None:
+        self.queue.call_depth += 1
+
+    def end_queue(self) -> None:
+        self.queue.idx += 1
+        self.queue.call_depth -= 1
+
+    def is_trace_internal(self) -> bool:
+        trace_internal_msg = (
+            'ApplyInitialContents',
+            'FetchShaderFeedback for',
+            'Initial state for ResourceId::',
+            'Clear depth state for ResourceId::',
+            'FillWithDiscardPattern ResourceId::',
+        )
+        active_annotations = str(self)
+        return any(m in active_annotations for m in trace_internal_msg)
+
 class Utrace_Parser:
     def __init__(self, cl_args: argparse.Namespace):
         self.cl_args = cl_args
@@ -36,6 +99,7 @@ class Utrace_Parser:
         self.idx: int = 0
         self.prev_end_ts_ns: float = 0
         self.last_eop: float = 0
+        self.annotations: Optional[Annotations] = None
 
         self.func: str
         self.args: str
@@ -102,16 +166,35 @@ class Utrace_Parser:
             if line.is_begin:
                 self.renderpass = self.next_renderpass
                 self.last_eop = line.timestamp
-                return
+                return None
             self.next_renderpass = self.renderpass + 1
             self.renderpass = 0
-            return
+            return None
 
-        ignore_funcs = {'frame': True, 'cmd_buffer': True}
-        if ignore_funcs.get(self.func, None):
+        if self.func == 'cmd_buffer':
             if self.prev_end_ts_ns == 0:
                 self.prev_end_ts_ns = line.timestamp
             self.last_eop = line.timestamp
+            return None
+
+        if self.annotations:
+            if self.func == 'cmd_buffer_annotation':
+                if line.is_begin:
+                    self.annotations.begin_cmdbuf()
+                else:
+                    self.annotations.end_cmdbuf()
+                return None
+            if self.func == 'queue_annotation':
+                if line.is_begin:
+                    self.annotations.begin_queue()
+                else:
+                    self.annotations.end_queue()
+                return None
+            if self.cl_args.trace and self.annotations.is_trace_internal():
+                return None
+
+        ignore_funcs = {'frame': True}
+        if ignore_funcs.get(self.func, None):
             return None
 
         self.count = 0
@@ -152,7 +235,8 @@ class Utrace_Parser:
             out = [f'{begin_ts_ns:.0f}', f'{end_ts_ns:.0f}', line.frame,
                    line.cmd_buf, self.renderpass, self.idx, self.func,
                    self.count, self.vs, self.fs, self.cs,
-                   f'{gap_ts_us:.3f}', f'{delta_ts_us:.3f}', self.args]
+                   f'{gap_ts_us:.3f}', f'{delta_ts_us:.3f}',
+                   str(self.args + str(self.annotations)).strip(' ;')]
         else:
             out = [line.frame, line.cmd_buf, self.renderpass, self.idx,
                    self.func, self.count, self.vs, self.fs, self.cs,
@@ -183,8 +267,8 @@ class Utrace_Parser:
         if self.cl_args.verbose:
             out = [f'{end_ts_ns:.0f}', line.frame,
                    line.cmd_buf, self.renderpass, self.idx, self.func,
-                   self.count, self.vs, self.fs, self.cs,
-                   f'{delta_ts_us:.3f}', self.args]
+                   self.count, self.vs, self.fs, self.cs, f'{delta_ts_us:.3f}',
+                   str(self.args + str(self.annotations)).strip(' ;')]
         else:
             out = [line.frame, line.cmd_buf, self.renderpass, self.idx,
                    self.func, self.count, self.vs, self.fs, self.cs,
@@ -210,21 +294,33 @@ Examples
     MESA_GPU_TRACES=print_csv MESA_GPU_TRACEFILE=/tmp/ut.csv INTEL_DEBUG=stall <cmd>
     intel_measure.py --top /tmp/ut.csv > im.csv
 
+> Generate csv from gpu events of trace replay, filtering out events that are marked
+> as trace internal with annotations. These events did not appear in original game.
+
+    MESA_GPU_TRACES=print_csv MESA_GPU_TRACEFILE=/tmp/ut.csv <cmd>
+    intel_measure.py -t /tmp/ut.csv > im.csv
 """
     def format_help(self):
         return super().format_help() + self.examples
 
 def main():
     cl_parser = CustomArgumentParser()
-    cl_parser.add_argument('utrace_log', type=str, help='path to utrace log to parse')
+    cl_parser.add_argument('utrace_log', type=Path, help='path to utrace log to parse')
     cl_parser.add_argument('-v', '--verbose', default=False, action='store_true', help='dump all fields to output')
-    cl_parser.add_argument('-f', '--file', type=str, default=None, help='save results to file')
+    cl_parser.add_argument('-f', '--file', type=Path, default=None, help='save results to file')
     cl_parser.add_argument(      '--eop', action='store_const', const='eop', dest='mode', help='use end-to-end-of-pipe gpu measurements (default)')
     cl_parser.add_argument(      '--top', action='store_const', const='top', dest='mode', help='use top-to-end-of-pipe gpu measurements')
+    cl_parser.add_argument('-t', '--trace', default=False, action='store_true', help='remove trace internal events')
     cl_parser.set_defaults(mode='eop')
 
     cl_args = cl_parser.parse_args()
+    if not cl_args.utrace_log.exists():
+        print(f'utrace log not found: "{cl_args.utrace_log}"', sys.stderr)
+        sys.exit(1)
+
     parser = Utrace_Parser(cl_args)
+    if cl_args.verbose or cl_args.trace:
+        parser.annotations = Annotations(cl_args.utrace_log)
 
     if cl_args.file:
         file = open(cl_args.file, 'w')
