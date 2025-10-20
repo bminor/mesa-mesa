@@ -14521,14 +14521,7 @@ radv_CmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent _event, const VkDepende
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(radv_event, event, _event);
-   VkPipelineStageFlags2 src_stage_mask = 0;
-
-   for (uint32_t i = 0; i < pDependencyInfo->memoryBarrierCount; i++)
-      src_stage_mask |= pDependencyInfo->pMemoryBarriers[i].srcStageMask;
-   for (uint32_t i = 0; i < pDependencyInfo->bufferMemoryBarrierCount; i++)
-      src_stage_mask |= pDependencyInfo->pBufferMemoryBarriers[i].srcStageMask;
-   for (uint32_t i = 0; i < pDependencyInfo->imageMemoryBarrierCount; i++)
-      src_stage_mask |= pDependencyInfo->pImageMemoryBarriers[i].srcStageMask;
+   VkPipelineStageFlags2 src_stage_mask = vk_collect_dependency_info_src_stages(pDependencyInfo);
 
    write_event(cmd_buffer, event, src_stage_mask, 1);
 }

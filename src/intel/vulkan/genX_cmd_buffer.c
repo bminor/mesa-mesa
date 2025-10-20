@@ -6160,14 +6160,8 @@ void genX(CmdSetEvent2)(
 
    case INTEL_ENGINE_CLASS_RENDER:
    case INTEL_ENGINE_CLASS_COMPUTE: {
-      VkPipelineStageFlags2 src_stages = 0;
-
-      for (uint32_t i = 0; i < pDependencyInfo->memoryBarrierCount; i++)
-         src_stages |= pDependencyInfo->pMemoryBarriers[i].srcStageMask;
-      for (uint32_t i = 0; i < pDependencyInfo->bufferMemoryBarrierCount; i++)
-         src_stages |= pDependencyInfo->pBufferMemoryBarriers[i].srcStageMask;
-      for (uint32_t i = 0; i < pDependencyInfo->imageMemoryBarrierCount; i++)
-         src_stages |= pDependencyInfo->pImageMemoryBarriers[i].srcStageMask;
+      VkPipelineStageFlags2 src_stages =
+         vk_collect_dependency_info_src_stages(pDependencyInfo);
 
       cmd_buffer->state.pending_pipe_bits |= ANV_PIPE_POST_SYNC_BIT;
       genX(cmd_buffer_apply_pipe_flushes)(cmd_buffer);

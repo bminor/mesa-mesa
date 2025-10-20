@@ -9,6 +9,8 @@
 #include "nvk_entrypoints.h"
 #include "nvk_mme.h"
 
+#include "vk_synchronization.h"
+
 #include "nv_push_cl906f.h"
 #include "nv_push_cl9097.h"
 #include "nv_push_cl90b5.h"
@@ -214,13 +216,8 @@ nvk_CmdSetEvent2(VkCommandBuffer commandBuffer,
 
    nvk_cmd_flush_wait_dep(cmd, pDependencyInfo, false);
 
-   VkPipelineStageFlags2 stages = 0;
-   for (uint32_t i = 0; i < pDependencyInfo->memoryBarrierCount; i++)
-      stages |= pDependencyInfo->pMemoryBarriers[i].srcStageMask;
-   for (uint32_t i = 0; i < pDependencyInfo->bufferMemoryBarrierCount; i++)
-      stages |= pDependencyInfo->pBufferMemoryBarriers[i].srcStageMask;
-   for (uint32_t i = 0; i < pDependencyInfo->imageMemoryBarrierCount; i++)
-      stages |= pDependencyInfo->pImageMemoryBarriers[i].srcStageMask;
+   VkPipelineStageFlags2 stages =
+      vk_collect_dependency_info_src_stages(pDependencyInfo);
 
    nvk_event_report_semaphore(cmd, stages, event->addr, VK_EVENT_SET);
 }

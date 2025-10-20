@@ -48,6 +48,7 @@
 #include "vk_blend.h"
 #include "vk_cmd_enqueue_entrypoints.h"
 #include "vk_descriptor_update_template.h"
+#include "vk_synchronization.h"
 #include "vk_util.h"
 #include "vk_enum_to_str.h"
 
@@ -2792,14 +2793,8 @@ static void handle_event_set2(struct vk_cmd_queue_entry *cmd,
 {
    LVP_FROM_HANDLE(lvp_event, event, cmd->u.set_event2.event);
 
-   VkPipelineStageFlags2 src_stage_mask = 0;
-
-   for (uint32_t i = 0; i < cmd->u.set_event2.dependency_info->memoryBarrierCount; i++)
-      src_stage_mask |= cmd->u.set_event2.dependency_info->pMemoryBarriers[i].srcStageMask;
-   for (uint32_t i = 0; i < cmd->u.set_event2.dependency_info->bufferMemoryBarrierCount; i++)
-      src_stage_mask |= cmd->u.set_event2.dependency_info->pBufferMemoryBarriers[i].srcStageMask;
-   for (uint32_t i = 0; i < cmd->u.set_event2.dependency_info->imageMemoryBarrierCount; i++)
-      src_stage_mask |= cmd->u.set_event2.dependency_info->pImageMemoryBarriers[i].srcStageMask;
+   VkPipelineStageFlags2 src_stage_mask =
+      vk_collect_dependency_info_src_stages(cmd->u.set_event2.dependency_info);
 
    if (src_stage_mask & VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT)
       state->pctx->flush(state->pctx, NULL, 0);

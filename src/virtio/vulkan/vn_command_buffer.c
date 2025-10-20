@@ -12,6 +12,7 @@
 
 #include "venus-protocol/vn_protocol_driver_command_buffer.h"
 #include "venus-protocol/vn_protocol_driver_command_pool.h"
+#include "vk_synchronization.h"
 
 #include "vn_descriptor_set.h"
 #include "vn_device.h"
@@ -1580,23 +1581,6 @@ vn_CmdSetEvent(VkCommandBuffer commandBuffer,
                                 false);
 }
 
-static VkPipelineStageFlags2
-vn_dependency_info_collect_src_stage_mask(const VkDependencyInfo *dep_info)
-{
-   VkPipelineStageFlags2 mask = 0;
-
-   for (uint32_t i = 0; i < dep_info->memoryBarrierCount; i++)
-      mask |= dep_info->pMemoryBarriers[i].srcStageMask;
-
-   for (uint32_t i = 0; i < dep_info->bufferMemoryBarrierCount; i++)
-      mask |= dep_info->pBufferMemoryBarriers[i].srcStageMask;
-
-   for (uint32_t i = 0; i < dep_info->imageMemoryBarrierCount; i++)
-      mask |= dep_info->pImageMemoryBarriers[i].srcStageMask;
-
-   return mask;
-}
-
 void
 vn_CmdSetEvent2(VkCommandBuffer commandBuffer,
                 VkEvent event,
@@ -1611,7 +1595,7 @@ vn_CmdSetEvent2(VkCommandBuffer commandBuffer,
    VN_CMD_ENQUEUE(vkCmdSetEvent2, commandBuffer, event, pDependencyInfo);
 
    const VkPipelineStageFlags2 src_stage_mask =
-      vn_dependency_info_collect_src_stage_mask(pDependencyInfo);
+      vk_collect_dependency_info_src_stages(pDependencyInfo);
    vn_event_feedback_cmd_record(commandBuffer, event, src_stage_mask,
                                 VK_EVENT_SET, true);
 }
