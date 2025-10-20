@@ -154,7 +154,7 @@
         "description": "util: Don't advertise cache ops on x86 without SSE2",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "555881e57499bc38f098dd5859edecdf6bdad2a2",
         "notes": null
