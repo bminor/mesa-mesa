@@ -2430,10 +2430,12 @@ KHR-GLES31.core.texture_buffer.texture_buffer_operations_transform_feedback,Fail
 
 # Regressions while the device was offline
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_argb8888,Fail
+spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_ayuv,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_nv12,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_nv21,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_xrgb8888,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_xyuv,Fail
+spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_y410,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_yuv420,Fail
 spec@glsl-es-3.10@execution@cs-image-atomic-if-else-2,Fail
 spec@glsl-es-3.10@execution@cs-image-atomic-if-else,Fail
