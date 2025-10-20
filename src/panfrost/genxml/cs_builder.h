@@ -1686,6 +1686,19 @@ cs_umin32(struct cs_builder *b, struct cs_index dest, struct cs_index src1,
    }
 }
 
+static inline void
+cs_move_reg32(struct cs_builder *b, struct cs_index dest, struct cs_index src)
+{
+#if PAN_ARCH >= 11
+   cs_emit(b, MOVE_REG32, I) {
+      I.destination = cs_dst32(b, dest);
+      I.source = cs_src32(b, src);
+   }
+#else
+   cs_add32(b, dest, src, 0);
+#endif
+}
+
 #if PAN_ARCH >= 11
 static inline void
 cs_and32(struct cs_builder *b, struct cs_index dest, struct cs_index src1,
@@ -1748,15 +1761,6 @@ cs_bit_clear32(struct cs_builder *b, struct cs_index dest, struct cs_index src1,
       I.destination = cs_dst32(b, dest);
       I.source_1 = cs_src32(b, src1);
       I.source_0 = cs_src32(b, src2);
-   }
-}
-
-static inline void
-cs_move_reg32(struct cs_builder *b, struct cs_index dest, struct cs_index src)
-{
-   cs_emit(b, MOVE_REG32, I) {
-      I.destination = cs_dst32(b, dest);
-      I.source = cs_src32(b, src);
    }
 }
 

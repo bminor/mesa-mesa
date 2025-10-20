@@ -2630,8 +2630,8 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
                /* Emulated immediate multiply: we walk the bits in
                 * base_instance, and accumulate (stride << bit_pos) if the bit
                 * is present. This is sub-optimal, but it's simple :-). */
-               cs_add32(b, multiplicand,
-                        cs_sr_reg32(b, IDVS, INSTANCE_OFFSET), 0);
+               cs_move_reg32(b, multiplicand,
+                             cs_sr_reg32(b, IDVS, INSTANCE_OFFSET));
 
                /* Flush the loads here so that we don't get automatic flushes
                 * over and over again due to the divergent nature of the if/else
