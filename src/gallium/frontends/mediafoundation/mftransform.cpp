@@ -1214,7 +1214,14 @@ CDX12EncHMFT::ConfigureAsyncStatsMetadataOutputSampleAttributes( IMFSample *pSam
    HRESULT hr = S_OK;
 
    // Enqueue completion of Resolve step for readiness of the DXGIBuffers attached below
-   pSyncObjectQueue->Wait( pResolveStatsCompletionFence.Get(), ResolveStatsCompletionFenceValue );
+   // if any of the stats outputs are enabled
+   if( (m_bVideoEnableFramePsnrYuv && pPipeResourcePSNRStats != nullptr ) ||
+       (m_uiVideoOutputQPMapBlockSize && pPipeResourceQPMapStats != nullptr ) ||
+       (m_uiVideoOutputBitsUsedMapBlockSize && pPipeResourceRCBitAllocMapStats != nullptr ) ||
+       (m_uiVideoSatdMapBlockSize && pPipeResourceSATDMapStats != nullptr ))
+   {
+      pSyncObjectQueue->Wait( pResolveStatsCompletionFence.Get(), ResolveStatsCompletionFenceValue );
+   }
 
    // Conditionally attach frame PSNR
    if( m_bVideoEnableFramePsnrYuv && pPipeResourcePSNRStats != nullptr )
@@ -1264,8 +1271,7 @@ void
 CDX12EncHMFT::ProcessSliceBitstreamZeroCopy( LPDX12EncodeContext pDX12EncodeContext,
                                              uint32_t slice_idx,
                                              ComPtr<IMFMediaBuffer> &spMediaBuffer,
-                                             std::vector<struct codec_unit_location_t> &mfsample_codec_unit_metadata,
-                                             ID3D12CommandQueue *pSyncObjectQueue )
+                                             std::vector<struct codec_unit_location_t> &mfsample_codec_unit_metadata )
 {
    std::vector<struct codec_unit_location_t> codec_unit_metadata;
    GetSliceBitstreamMetadata( pDX12EncodeContext, slice_idx, codec_unit_metadata );
@@ -1469,9 +1475,8 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
 
                      if( WaitForFence( pDX12EncodeContext->pSliceFences[slice_idx], OS_TIMEOUT_INFINITE ) )
                      {
-                        /* we are waiting for offset/size completion anyways so we are ok with pSyncObjectQueue gating the buffer access */
                         pThis->ProcessSliceBitstreamZeroCopy( pDX12EncodeContext, slice_idx, spMediaBuffer,
-                                                             codec_unit_metadata, pDX12EncodeContext->pSyncObjectQueue );
+                                                             codec_unit_metadata );
 
                         pThis->FinalizeAndEmitOutputSample( pDX12EncodeContext, spMediaBuffer,
                                                             spOutputSample, codec_unit_metadata.data(),
@@ -1526,8 +1531,6 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                         // The current slice_idx fence is completed - process this slice
                         //
 
-                        // we are waiting for offset/size completion with pSliceFences[slice_idx] so we are
-                        // ok with pSyncObjectQueue gating the buffer access
                         ComPtr<IMFSample> spOutputSample;
                         MFCreateSample( &spOutputSample );
                         spOutputSamples.push_back( spOutputSample );
@@ -1535,7 +1538,7 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
 
                         // Reset codec unit metadata for this slice as it will be wrapped on its own IMFSample
                         pThis->ProcessSliceBitstreamZeroCopy( pDX12EncodeContext, slice_idx, spMediaBuffer,
-                                                             cur_slice_codec_unit_metadata, pDX12EncodeContext->pSyncObjectQueue );
+                                                             cur_slice_codec_unit_metadata );
                         spMediaBuffers.push_back( spMediaBuffer );
                         codec_unit_metadatas.push_back( cur_slice_codec_unit_metadata );
 

@@ -624,8 +624,7 @@ class __declspec( uuid( HMFT_GUID ) ) CDX12EncHMFT : CMFD3DManager,
    void ProcessSliceBitstreamZeroCopy( LPDX12EncodeContext pDX12EncodeContext,
                                        uint32_t slice_idx,
                                        ComPtr<IMFMediaBuffer> &spMediaBuffer,
-                                       std::vector<struct codec_unit_location_t> &mfsample_codec_unit_metadata,
-                                       ID3D12CommandQueue *pSyncObjectQueue );
+                                       std::vector<struct codec_unit_location_t> &mfsample_codec_unit_metadata );
       void FinalizeAndEmitOutputSample( LPDX12EncodeContext pDX12EncodeContext,
                                      ComPtr<IMFMediaBuffer> &spMediaBuffer,
                                      ComPtr<IMFSample> &spOutputSample,
