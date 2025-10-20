@@ -137,6 +137,10 @@ gitlab-ci*.yml @eric
 /src/gallium/drivers/iris/ @kwg @llandwerlin @idr
 /src/gallium/drivers/i915/ @anholt
 
+# KosmicKrisp
+/src/kosmickrisp @aitor
+/src/kosmickrisp/compiler @agoldmints
+
 # Microsoft
 /src/microsoft/ @jenatali
 /src/gallium/drivers/d3d12/ @jenatali
