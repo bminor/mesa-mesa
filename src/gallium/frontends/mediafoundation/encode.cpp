@@ -560,7 +560,11 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
          if( m_EncoderCapabilities.m_HWSupportSlicedFences.bits.multiple_buffers_required )
          {
             // Buffer byte size for sliced buffers + notifications with multiple individual buffers per slice
-            templ.width0 = m_uiMaxOutputBitstreamSize;
+            // Try a rough estimation of per slice bitstream size as: frame_size / num slices
+            // Be careful with the allocation size of slice buffers, when the number of slices is high
+            // and we run in LowLatency = 0, we can start thrashing when trying to MakeResident lots
+            // of big allocations in short amounts of time (num slices x num in flight frames)
+            templ.width0 = (m_uiMaxOutputBitstreamSize / num_output_buffers);
          }
          else
          {
