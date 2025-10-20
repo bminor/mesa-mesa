@@ -531,6 +531,21 @@ nvk_cmd_flush_wait_dep(struct nvk_cmd_buffer *cmd,
 {
    enum nvk_barrier barriers = 0;
 
+   /* For asymmetric, we don't know what the access flags will be yet.
+    * Handle this by setting access to everything.
+    */
+   if (dep->dependencyFlags & VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR) {
+      /* VUID-vkCmdSetEvent2-dependencyFlags-10785, 10786, 10787 */
+      assert(dep->memoryBarrierCount == 1 &&
+             dep->bufferMemoryBarrierCount == 0 &&
+             dep->imageMemoryBarrierCount == 0);
+
+      const VkMemoryBarrier2 *bar = &dep->pMemoryBarriers[0];
+      barriers |= nvk_barrier_flushes_waits(bar->srcStageMask,
+                                            VK_ACCESS_2_MEMORY_READ_BIT |
+                                            VK_ACCESS_2_MEMORY_WRITE_BIT);
+   }
+
    for (uint32_t i = 0; i < dep->memoryBarrierCount; i++) {
       const VkMemoryBarrier2 *bar = &dep->pMemoryBarriers[i];
       barriers |= nvk_barrier_flushes_waits(bar->srcStageMask,
