@@ -14,6 +14,7 @@
 #include "util/detect_os.h"
 #include "util/os_time.h"
 #include "util/u_memory.h"
+#include "ac_cmdbuf_cp.h"
 #include "ac_debug.h"
 #include "ac_linux_drm.h"
 #include "radv_amdgpu_bo.h"
@@ -872,11 +873,7 @@ radv_amdgpu_cs_chain_dgc_ib(struct ac_cmdbuf *_cs, uint64_t va, uint32_t cdw, ui
          S_3F2_CHAIN(1) | S_3F2_VALID(1),
       };
 
-      radeon_emit(&cs->base, PKT3(PKT3_WRITE_DATA, 2 + ARRAY_SIZE(chain_data), false));
-      radeon_emit(&cs->base, S_370_DST_SEL(V_370_MEM) | S_370_WR_CONFIRM(1) | S_370_ENGINE_SEL(V_370_ME));
-      radeon_emit(&cs->base, trailer_va);
-      radeon_emit(&cs->base, trailer_va >> 32);
-      radeon_emit_array(&cs->base, chain_data, ARRAY_SIZE(chain_data));
+      ac_emit_cp_write_data(&cs->base, V_370_ME, V_370_MEM, trailer_va, ARRAY_SIZE(chain_data), chain_data, false);
 
       /* Keep pointers for patching later. */
       uint64_t *ib_va_ptr = (uint64_t *)(cs->base.buf + cs->base.cdw - 3);
@@ -884,13 +881,8 @@ radv_amdgpu_cs_chain_dgc_ib(struct ac_cmdbuf *_cs, uint64_t va, uint32_t cdw, ui
 
       /* Writeback L2 because CP isn't coherent with L2 on GFX6-8. */
       if (cs->ws->info.gfx_level == GFX8) {
-         radeon_emit(&cs->base, PKT3(PKT3_ACQUIRE_MEM, 5, false) | PKT3_SHADER_TYPE_S(1));
-         radeon_emit(&cs->base, S_0301F0_TC_WB_ACTION_ENA(1) | S_0301F0_TC_NC_ACTION_ENA(1));
-         radeon_emit(&cs->base, 0xffffffff);
-         radeon_emit(&cs->base, 0xff);
-         radeon_emit(&cs->base, 0);
-         radeon_emit(&cs->base, 0);
-         radeon_emit(&cs->base, 0x0000000A);
+         ac_emit_cp_acquire_mem(&cs->base, GFX8, AMD_IP_COMPUTE, V_580_CP_ME,
+                                S_0301F0_TC_WB_ACTION_ENA(1) | S_0301F0_TC_NC_ACTION_ENA(1));
       }
 
       /* Finalize the current CS. */
