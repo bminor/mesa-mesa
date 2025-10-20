@@ -43,6 +43,7 @@ issues:
         'intel/executor': 'intel-executor'
         'iris': 'iris'
         'isl': 'ISL'
+        'kk': 'KosmicKrisp'
         'lima': 'lima'
         'lima/ppir': 'lima'
         'llvmpipe': 'llvmpipe'
@@ -269,6 +270,7 @@ merge_requests:
         '^src/intel/tools/': ['intel-tools']
         '^src/intel/vulkan/': ['ANV']
         '^src/intel/vulkan_hasvk/': ['hasvk']
+        '^src/kosmickrisp/': ['KosmicKrisp']
         '^src/loader/': ['loader']
         '^src/mesa/drivers/dri/i915/': ['i915']
         '^src/mesa/drivers/dri/i965/': ['i965']
