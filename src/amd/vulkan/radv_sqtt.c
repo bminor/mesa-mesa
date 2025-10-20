@@ -159,25 +159,6 @@ radv_emit_spi_config_cntl(const struct radv_device *device, struct radv_cmd_stre
    radeon_end();
 }
 
-void
-radv_emit_inhibit_clockgating(const struct radv_device *device, struct radv_cmd_stream *cs, bool inhibit)
-{
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-
-   if (pdev->info.gfx_level >= GFX11)
-      return; /* not needed */
-
-   radeon_begin(cs);
-
-   if (pdev->info.gfx_level >= GFX10) {
-      radeon_set_uconfig_reg(R_037390_RLC_PERFMON_CLK_CNTL, S_037390_PERFMON_CLOCK_STATE(inhibit));
-   } else if (pdev->info.gfx_level >= GFX8) {
-      radeon_set_uconfig_reg(R_0372FC_RLC_PERFMON_CLK_CNTL, S_0372FC_PERFMON_CLOCK_STATE(inhibit));
-   }
-
-   radeon_end();
-}
-
 VkResult
 radv_sqtt_acquire_gpu_timestamp(struct radv_device *device, struct radeon_winsys_bo **gpu_timestamp_bo,
                                 uint32_t *gpu_timestamp_offset, void **gpu_timestamp_ptr)
@@ -539,7 +520,7 @@ radv_begin_sqtt(struct radv_queue *queue)
    radv_emit_wait_for_idle(device, &cs);
 
    /* Disable clock gating before starting SQTT. */
-   radv_emit_inhibit_clockgating(device, &cs, true);
+   ac_emit_cp_inhibit_clockgating(cs.b, pdev->info.gfx_level, true);
 
    /* Enable SQG events that collects thread trace data. */
    radv_emit_spi_config_cntl(device, &cs, true);
@@ -576,6 +557,7 @@ static bool
 radv_end_sqtt(struct radv_queue *queue)
 {
    struct radv_device *device = radv_queue_device(queue);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
    enum radv_queue_family family = queue->state.qf;
    struct radeon_winsys *ws = device->ws;
    struct radv_cmd_stream cs;
@@ -631,7 +613,7 @@ radv_end_sqtt(struct radv_queue *queue)
    radv_emit_spi_config_cntl(device, &cs, false);
 
    /* Restore previous state by re-enabling clock gating. */
-   radv_emit_inhibit_clockgating(device, &cs, false);
+   ac_emit_cp_inhibit_clockgating(cs.b, pdev->info.gfx_level, false);
 
    result = ws->cs_finalize(cs.b);
    if (result != VK_SUCCESS) {

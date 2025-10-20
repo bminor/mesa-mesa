@@ -483,3 +483,21 @@ ac_emit_cp_load_context_reg_index(struct ac_cmdbuf *cs, uint32_t reg,
    ac_cmdbuf_emit(reg_count); /* in DWORDS */
    ac_cmdbuf_end();
 }
+
+void
+ac_emit_cp_inhibit_clockgating(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
+                               bool inhibit)
+{
+   if (gfx_level >= GFX11)
+      return; /* not needed */
+
+   ac_cmdbuf_begin(cs);
+   if (gfx_level >= GFX10) {
+      ac_cmdbuf_set_uconfig_reg(R_037390_RLC_PERFMON_CLK_CNTL,
+                                S_037390_PERFMON_CLOCK_STATE(inhibit));
+   } else if (gfx_level >= GFX8) {
+      ac_cmdbuf_set_uconfig_reg(R_0372FC_RLC_PERFMON_CLK_CNTL,
+                                S_0372FC_PERFMON_CLOCK_STATE(inhibit));
+   }
+   ac_cmdbuf_end();
+}

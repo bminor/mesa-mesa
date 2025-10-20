@@ -67,8 +67,6 @@ void radv_emit_sqtt_userdata(const struct radv_cmd_buffer *cmd_buffer, const voi
 
 void radv_emit_spi_config_cntl(const struct radv_device *device, struct radv_cmd_stream *cs, bool enable);
 
-void radv_emit_inhibit_clockgating(const struct radv_device *device, struct radv_cmd_stream *cs, bool inhibit);
-
 VkResult radv_sqtt_acquire_gpu_timestamp(struct radv_device *device, struct radeon_winsys_bo **gpu_timestamp_bo,
                                          uint32_t *gpu_timestamp_offset, void **gpu_timestamp_ptr);
 

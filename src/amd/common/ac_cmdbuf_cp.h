@@ -112,6 +112,10 @@ ac_emit_cp_load_context_reg_index(struct ac_cmdbuf *cs, uint32_t reg,
                                   uint32_t reg_count, uint64_t va,
                                   bool predicate);
 
+void
+ac_emit_cp_inhibit_clockgating(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
+                               bool inhibit);
+
 #ifdef __cplusplus
 }
 #endif
