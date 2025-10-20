@@ -758,6 +758,7 @@ nir_function_clone(nir_shader *ns, const nir_function *fxn)
       }
    }
    nfxn->is_entrypoint = fxn->is_entrypoint;
+   nfxn->cmat_call = fxn->cmat_call;
    nfxn->is_preamble = fxn->is_preamble;
    nfxn->should_inline = fxn->should_inline;
    nfxn->dont_inline = fxn->dont_inline;

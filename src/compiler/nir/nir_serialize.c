@@ -2026,6 +2026,8 @@ write_function(write_ctx *ctx, const nir_function *fxn)
       flags |= 0x80;
    if (fxn->workgroup_size[0] || fxn->workgroup_size[1] || fxn->workgroup_size[2])
       flags |= 0x100;
+   if (fxn->cmat_call)
+      flags |= 0x200;
    blob_write_uint32(ctx->blob, flags);
    if (fxn->name && !ctx->strip)
       blob_write_string(ctx->blob, fxn->name);
@@ -2128,6 +2130,7 @@ read_function(read_ctx *ctx)
    fxn->dont_inline = flags & 0x20;
    fxn->is_subroutine = flags & 0x40;
    fxn->is_tmp_globals_wrapper = flags & 0x80;
+   fxn->cmat_call = flags & 0x200;
    return fxn;
 }
 
