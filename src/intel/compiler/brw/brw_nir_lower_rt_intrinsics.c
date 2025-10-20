@@ -130,7 +130,7 @@ lower_rt_intrinsics_impl(nir_function_impl *impl,
             if (stack_size > 0) {
                nir_def *child_stack_offset =
                   nir_iadd_imm(b, stack_base_offset, stack_size);
-               nir_store_global(b, hotzone_addr, 16, child_stack_offset, 0x1);
+               nir_store_global(b, child_stack_offset, hotzone_addr, .align_mul = 16);
             }
             nir_instr_remove(instr);
             break;
@@ -146,7 +146,7 @@ lower_rt_intrinsics_impl(nir_function_impl *impl,
             if (stack_size > 0) {
                stack_base_offset =
                   nir_iadd_imm(b, stack_base_offset, -stack_size);
-               nir_store_global(b, hotzone_addr, 16, stack_base_offset, 0x1);
+               nir_store_global(b, stack_base_offset, hotzone_addr, .align_mul = 16);
                stack_base_addr = nir_iadd(b, thread_stack_base_addr,
                                           nir_u2u64(b, stack_base_offset));
             }

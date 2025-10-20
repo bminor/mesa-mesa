@@ -142,14 +142,16 @@ lower_tcs_impl(nir_builder *b, nir_intrinsic_instr *intr)
              nir_intrinsic_io_semantics(intr).location !=
                 VARYING_SLOT_TESS_LEVEL_INNER);
 
-      nir_store_global(b, tcs_out_addr(b, intr, nir_undef(b, 1, 32)), 4,
-                       intr->src[0].ssa, nir_intrinsic_write_mask(intr));
+      nir_store_global(b, intr->src[0].ssa,
+                       tcs_out_addr(b, intr, nir_undef(b, 1, 32)),
+                       .write_mask = nir_intrinsic_write_mask(intr));
       return NIR_LOWER_INSTR_PROGRESS_REPLACE;
    }
 
    case nir_intrinsic_store_per_vertex_output: {
-      nir_store_global(b, tcs_out_addr(b, intr, intr->src[1].ssa), 4,
-                       intr->src[0].ssa, nir_intrinsic_write_mask(intr));
+      nir_store_global(b, intr->src[0].ssa,
+                       tcs_out_addr(b, intr, intr->src[1].ssa),
+                       .write_mask = nir_intrinsic_write_mask(intr));
       return NIR_LOWER_INSTR_PROGRESS_REPLACE;
    }
 

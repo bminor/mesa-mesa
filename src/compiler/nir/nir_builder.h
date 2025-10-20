@@ -2062,22 +2062,6 @@ nir_store_array_var_imm(nir_builder *build, nir_variable *var, int64_t index,
    nir_store_deref(build, deref, value, writemask);
 }
 
-#undef nir_store_global
-static inline void
-nir_store_global(nir_builder *build, nir_def *addr, unsigned align,
-                 nir_def *value, nir_component_mask_t write_mask)
-{
-   nir_intrinsic_instr *store =
-      nir_intrinsic_instr_create(build->shader, nir_intrinsic_store_global);
-   store->num_components = value->num_components;
-   store->src[0] = nir_src_for_ssa(value);
-   store->src[1] = nir_src_for_ssa(addr);
-   nir_intrinsic_set_write_mask(store,
-                                write_mask & BITFIELD_MASK(value->num_components));
-   nir_intrinsic_set_align(store, align, 0);
-   nir_builder_instr_insert(build, &store->instr);
-}
-
 #undef nir_load_global_constant
 static inline nir_def *
 nir_load_global_constant(nir_builder *build, nir_def *addr, unsigned align,

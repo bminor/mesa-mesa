@@ -73,7 +73,8 @@ static void
 write_afbc_header(nir_builder *b, nir_def *buf, nir_def *idx, nir_def *hdr)
 {
    nir_def *offset = nir_imul_imm(b, idx, AFBC_HEADER_BYTES_PER_TILE);
-   nir_store_global(b, nir_iadd(b, buf, nir_u2u64(b, offset)), 16, hdr, 0xF);
+   nir_store_global(b, hdr, nir_iadd(b, buf, nir_u2u64(b, offset)),
+                    .align_mul = 16);
 }
 
 static nir_def *
@@ -179,9 +180,9 @@ copy_superblock(nir_builder *b, nir_def *dst, nir_def *hdr_sz, nir_def *src,
          nir_def *src_line = nir_iadd(b, src_bodyptr, nir_u2u64(b, offset));
          nir_def *dst_line = nir_iadd(b, dst_bodyptr, nir_u2u64(b, offset));
          nir_store_global(
-            b, dst_line, line_sz,
+            b,
             nir_load_global(b, line_sz / 4, 32, src_line, .align_mul = line_sz),
-            ~0);
+            dst_line, .align_mul = line_sz);
          offset = nir_iadd_imm(b, offset, line_sz);
       }
       nir_store_var(b, offset_var, offset, 0x1);
@@ -223,7 +224,7 @@ panfrost_create_afbc_size_shader(struct panfrost_screen *screen,
       nir_iadd(&b,
                nir_imul_imm(&b, block_idx, sizeof(struct pan_afbc_payload_extent)),
                nir_imm_int(&b, offsetof(struct pan_afbc_payload_extent, size))));
-   nir_store_global(&b, nir_iadd(&b, layout, offset), 4, size, 0x1);
+   nir_store_global(&b, size, nir_iadd(&b, layout, offset));
 
    return b.shader;
 }

@@ -51,8 +51,7 @@ lower_printf_intrin(nir_builder *b, nir_intrinsic_instr *prntf, void *_options)
     *    uint32_t data[];
     */
    if (prntf->intrinsic == nir_intrinsic_printf_abort) {
-      nir_store_global(b, nir_iadd_imm(b, buffer_addr, 4), 4, nir_imm_int(b, 1),
-                       nir_component_mask(1));
+      nir_store_global(b, nir_imm_int(b, 1), nir_iadd_imm(b, buffer_addr, 4));
 
       /* Halt is a jump instruction so can only appear at the end of a block.
        * The abort might be in the middle of a block. So, wrap the halt and let
@@ -259,7 +258,7 @@ nir_vprintf_fmt(nir_builder *b, unsigned ptr_bit_size, const char *fmt, va_list 
       nir_def *identifier = nir_imm_int(b, u_printf_hash(&info));
       nir_def *store_addr =
          nir_iadd(b, buffer_addr, nir_u2uN(b, buffer_offset, buffer_addr->bit_size));
-      nir_store_global(b, store_addr, 4, identifier, 0x1);
+      nir_store_global(b, identifier, store_addr);
 
       /* Arguments */
       va_copy(ap, aq);
@@ -267,8 +266,8 @@ nir_vprintf_fmt(nir_builder *b, unsigned ptr_bit_size, const char *fmt, va_list 
       for (unsigned a = 0; a < info.num_args; a++) {
          nir_def *def = va_arg(ap, nir_def *);
 
-         nir_store_global(b, nir_iadd_imm(b, store_addr, store_offset),
-                          4, def, nir_component_mask(def->num_components));
+         nir_store_global(b, def, nir_iadd_imm(b, store_addr, store_offset),
+                          .align_mul = 4);
 
          store_offset += info.arg_sizes[a];
       }

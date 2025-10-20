@@ -383,7 +383,7 @@ write_xfb_counts(nir_builder *b, nir_intrinsic_instr *intr,
                                   nir_imm_int(b, state->info->count_words), id);
 
    if (state->info->prefix_sum) {
-      nir_store_global(b, addr, 4, intr->src[2].ssa, nir_component_mask(1));
+      nir_store_global(b, intr->src[2].ssa, addr);
    } else {
       nir_global_atomic(b, 32, addr, intr->src[2].ssa,
                         .atomic_op = nir_atomic_op_iadd);
@@ -762,7 +762,6 @@ create_gs_rast_shader(const nir_shader *gs, const struct lower_gs_state *state)
             {
                unsigned buffer = output.buffer;
                unsigned stride = xfb->buffers[buffer].stride;
-               unsigned count = util_bitcount(output.component_mask);
 
                nir_variable *var = rs.selected.outputs[output.location];
                nir_def *value =
@@ -781,9 +780,8 @@ create_gs_rast_shader(const nir_shader *gs, const struct lower_gs_state *state)
                   nir_imm_int(b, buffer), nir_imm_int(b, stride),
                   nir_imm_int(b, output.offset));
 
-               nir_store_global(b, addr, 4,
-                                nir_channels(b, value, output.component_mask),
-                                nir_component_mask(count));
+               nir_store_global(
+                  b, nir_channels(b, value, output.component_mask), addr);
             }
             nir_pop_if(b, NULL);
             nir_pop_if(b, NULL);
@@ -1442,8 +1440,8 @@ lower_vs_before_gs(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    assert(nir_src_bit_size(intr->src[0]) == 32);
    addr = nir_iadd_imm(b, addr, nir_intrinsic_component(intr) * 4);
 
-   nir_store_global(b, addr, 4, intr->src[0].ssa,
-                    nir_intrinsic_write_mask(intr));
+   nir_store_global(b, intr->src[0].ssa, addr,
+                    .write_mask = nir_intrinsic_write_mask(intr));
    return true;
 }
 

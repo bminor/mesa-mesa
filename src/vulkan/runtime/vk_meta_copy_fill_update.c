@@ -994,8 +994,8 @@ build_image_to_buffer_shader(const struct vk_meta_device *meta,
     * that's fine because we pass a write_mask to store_global.
     */
    assert(texel->num_components >= comp_count);
-   nir_store_global(b, copy_img_buf_addr(b, buf_pfmt, copy_id),
-                    comp_sz / 8, texel, nir_component_mask(comp_count));
+   nir_store_global(b, texel, copy_img_buf_addr(b, buf_pfmt, copy_id),
+                    .write_mask = nir_component_mask(comp_count));
 
    nir_pop_if(b, NULL);
 

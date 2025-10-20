@@ -138,9 +138,9 @@ build_accept_ray(nir_builder *b)
    /* Set the "valid" bit in mem_hit */
    nir_def *ray_addr = brw_nir_rt_mem_hit_addr(b, false /* committed */);
    nir_def *flags_dw_addr = nir_iadd_imm(b, ray_addr, 12);
-   nir_store_global(b, flags_dw_addr, 4,
-                    nir_ior(b, nir_load_global(b, 1, 32, flags_dw_addr),
-                            nir_imm_int(b, 1 << 16)), 0x1 /* write_mask */);
+   nir_store_global(b, nir_ior(b, nir_load_global(b, 1, 32, flags_dw_addr),
+                               nir_imm_int(b, 1 << 16)),
+                    flags_dw_addr);
 
    nir_accept_ray_intersection(b);
 }
@@ -241,7 +241,7 @@ brw_nir_lower_intersection_shader(nir_shader *intersection,
                      nir_def *ray_addr =
                         brw_nir_rt_mem_ray_addr(b, brw_nir_rt_stack_addr(b), BRW_RT_BVH_LEVEL_WORLD);
 
-                     nir_store_global(b, nir_iadd_imm(b, ray_addr, 16 + 12), 4,  hit_t, 0x1);
+                     nir_store_global(b, hit_t, nir_iadd_imm(b, ray_addr, 16 + 12));
                      if (devinfo->ver >= 30) {
                         /* For Xe3+, the most significant 8 bits of the second
                          * DW in the potential hit are used to store
@@ -262,16 +262,13 @@ brw_nir_lower_intersection_shader(nir_shader *intersection,
                          * gl_HitKindEXT that uses more than 24bits.
                          */
                         nir_def *hit_kind_24b = nir_iand_imm(b, hit_kind, 0xffffff);
-                        nir_store_global(b, t_addr, 4,
-                                         nir_vec2(b,
-                                                  nir_fmin(b, hit_t, hit_in.t),
-                                                  nir_ior(b, hit_group_index_0, hit_kind_24b)),
-                                         0x3);
+                        nir_store_global(b, nir_vec2(b, nir_fmin(b, hit_t, hit_in.t),
+                                                     nir_ior(b, hit_group_index_0, hit_kind_24b)),
+                                         t_addr);
 
                      } else {
-                        nir_store_global(b, t_addr, 4,
-                                         nir_vec2(b, nir_fmin(b, hit_t, hit_in.t), hit_kind),
-                                         0x3);
+                        nir_store_global(b, nir_vec2(b, nir_fmin(b, hit_t, hit_in.t), hit_kind),
+                                         t_addr);
                      }
 
                      /* There may be multiple reportIntersection() calls in

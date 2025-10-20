@@ -109,7 +109,7 @@ lower_rt_io_derefs(nir_shader *shader, const struct intel_device_info *devinfo)
                                                brw_nir_rt_stack_addr(&b),
                                                stage == MESA_SHADER_CLOSEST_HIT,
                                                devinfo);
-         nir_store_global(&b, hit_attrib_addr, 4, tri_bary, 0x3);
+         nir_store_global(&b, tri_bary, hit_attrib_addr);
       }
       nir_pop_if(&b, NULL);
 
@@ -470,12 +470,12 @@ brw_nir_create_raygen_trampoline(const struct brw_compiler *compiler,
    nir_def *launch_size = nir_load_ray_launch_size(&b);
    nir_push_if(&b, nir_ball(&b, nir_ult(&b, launch_id, launch_size)));
    {
-      nir_store_global(&b, brw_nir_rt_sw_hotzone_addr(&b, devinfo), 16,
-                       nir_vec4(&b, nir_imm_int(&b, 0), /* Stack ptr */
+      nir_store_global(&b, nir_vec4(&b, nir_imm_int(&b, 0), /* Stack ptr */
                                     nir_channel(&b, launch_id, 0),
                                     nir_channel(&b, launch_id, 1),
                                     nir_channel(&b, launch_id, 2)),
-                       0xf /* write mask */);
+                       brw_nir_rt_sw_hotzone_addr(&b, devinfo),
+                       .align_mul = 16);
 
       brw_nir_btd_spawn(&b, raygen_bsr_addr);
    }

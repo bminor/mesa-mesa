@@ -122,7 +122,7 @@ store_global_dw(nir_builder *b, nir_def *addr, uint32_t offset_dw,
                 nir_def *data)
 {
    assert(data->bit_size == 32 && data->num_components == 1);
-   nir_store_global(b, nir_iadd_imm(b, addr, offset_dw * 4), 4, data, 0x1);
+   nir_store_global(b, data, nir_iadd_imm(b, addr, offset_dw * 4));
 }
 
 static void

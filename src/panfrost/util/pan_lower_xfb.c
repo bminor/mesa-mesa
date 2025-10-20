@@ -54,7 +54,7 @@ lower_xfb_output(nir_builder *b, nir_intrinsic_instr *intr,
    nir_def *src = intr->src[0].ssa;
    nir_component_mask_t mask = nir_component_mask(num_components);
    nir_def *value = nir_channels(b, src, mask << start_component);
-   nir_store_global(b, addr, 4, value, mask);
+   nir_store_global(b, value, addr);
 }
 
 static bool

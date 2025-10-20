@@ -181,7 +181,7 @@ radv_build_printf_args(nir_builder *b, nir_def *cond, const char *format_string,
       nir_def *addr = nir_iadd_imm(b, nir_u2u64(b, offset), device->printf.buffer_addr);
 
       /* header */
-      nir_store_global(b, addr, 4, nir_ior_imm(b, active_invocation_count, format_index << 16), 1);
+      nir_store_global(b, nir_ior_imm(b, active_invocation_count, format_index << 16), addr);
       addr = nir_iadd_imm(b, addr, 4);
 
       for (uint32_t i = 0; i < argc; i++) {
@@ -190,10 +190,9 @@ radv_build_printf_args(nir_builder *b, nir_def *cond, const char *format_string,
          if (arg->divergent) {
             nir_def *invocation_index = nir_mbcnt_amd(b, ballot, nir_imm_int(b, 0));
             nir_store_global(
-               b, nir_iadd(b, addr, nir_u2u64(b, nir_imul_imm(b, invocation_index, format.element_sizes[i]))), 4, arg,
-               1);
+               b, arg, nir_iadd(b, addr, nir_u2u64(b, nir_imul_imm(b, invocation_index, format.element_sizes[i]))));
          } else {
-            nir_store_global(b, addr, 4, arg, 1);
+            nir_store_global(b, arg, addr, );
          }
 
          addr = nir_iadd(b, addr, nir_u2u64(b, strides[i]));
