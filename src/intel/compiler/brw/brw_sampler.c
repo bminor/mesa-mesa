@@ -619,7 +619,7 @@ static const struct sampler_opcode_desc {
    [BRW_SAMPLER_OPCODE_LD2DMS_W] = {
       .name = "ld2dms_w",
       .hw_opcode = GFX9_SAMPLER_MESSAGE_SAMPLE_LD2DMS_W,
-      .nir_src_mask = N(ms_index) | N(ms_mcs_intel) | N(coord) | N(lod),
+      .nir_src_mask = N(ms_index) | N(ms_mcs_intel) | N(coord) | N(lod) | N(offset),
       .is_fetch = true,
       .payload = {
          .sources = {
@@ -630,7 +630,7 @@ static const struct sampler_opcode_desc {
    [BRW_SAMPLER_OPCODE_LD2DMS_W_GFX125] = {
       .name = "ld2dms_w (gfx125)",
       .hw_opcode = GFX9_SAMPLER_MESSAGE_SAMPLE_LD2DMS_W,
-      .nir_src_mask = N(ms_index) | N(ms_mcs_intel) | N(coord) | N(lod),
+      .nir_src_mask = N(ms_index) | N(ms_mcs_intel) | N(coord) | N(lod) | N(offset),
       .is_fetch = true,
       .payload = {
          .sources = {
