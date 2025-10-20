@@ -583,9 +583,8 @@ brw_nir_frag_convert_attrs_prim_to_vert_indirect(struct nir_shader *nir,
           * space in the instruction heap.
           */
          nir_def *data =
-            nir_load_global_constant(
-               b, nir_iadd_imm(b, remap_table_addr, ROUND_DOWN_TO(location, 4)),
-               4, 1, 32);
+            nir_load_global_constant(b, 1, 32,
+               nir_iadd_imm(b, remap_table_addr, ROUND_DOWN_TO(location, 4)));
          const unsigned bit_offset = (8 * location) % 32;
          nir_def *absolute_attr_idx =
             nir_ubitfield_extract_imm(b, data, bit_offset, 4);

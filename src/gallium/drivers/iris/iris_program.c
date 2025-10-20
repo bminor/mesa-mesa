@@ -990,7 +990,6 @@ iris_setup_uniforms(ASSERTED const struct intel_device_info *devinfo,
          case nir_intrinsic_load_constant: {
             unsigned load_size = intrin->def.num_components *
                                  intrin->def.bit_size / 8;
-            unsigned load_align = intrin->def.bit_size / 8;
 
             /* This one is special because it reads from the shader constant
              * data and not cbuf0 which gallium uploads for us.
@@ -1016,10 +1015,9 @@ iris_setup_uniforms(ASSERTED const struct intel_device_info *devinfo,
                nir_iadd(&b, nir_load_reloc_const_intel(&b, INTEL_SHADER_RELOC_CONST_DATA_ADDR_LOW), offset);
 
             nir_def *data =
-               nir_load_global_constant(&b, nir_u2u64(&b, const_data_addr),
-                                        load_align,
-                                        intrin->def.num_components,
-                                        intrin->def.bit_size);
+               nir_load_global_constant(&b, intrin->def.num_components,
+                                        intrin->def.bit_size,
+                                        nir_u2u64(&b, const_data_addr));
 
             nir_def_rewrite_uses(&intrin->def,
                                      data);

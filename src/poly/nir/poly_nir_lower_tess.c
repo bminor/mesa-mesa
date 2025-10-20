@@ -75,8 +75,8 @@ lower_tes_load(nir_builder *b, nir_intrinsic_instr *intr)
    if (nir_intrinsic_has_component(intr))
       addr = nir_iadd_imm(b, addr, nir_intrinsic_component(intr) * 4);
 
-   return nir_load_global_constant(b, addr, 4, intr->def.num_components,
-                                   intr->def.bit_size);
+   return nir_load_global_constant(b, intr->def.num_components,
+                                   intr->def.bit_size, addr, .align_mul = 4);
 }
 
 static nir_def *

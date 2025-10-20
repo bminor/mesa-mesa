@@ -2804,7 +2804,6 @@ brw_nir_load_global_const(nir_builder *b, nir_intrinsic_instr *load,
 
    unsigned bit_size = load->def.bit_size;
    assert(bit_size >= 8 && bit_size % 8 == 0);
-   unsigned byte_size = bit_size / 8;
    nir_def *sysval;
 
    if (nir_src_is_const(load->src[0])) {
@@ -2813,7 +2812,7 @@ brw_nir_load_global_const(nir_builder *b, nir_intrinsic_instr *load,
                         nir_src_as_uint(load->src[0]);
 
       /* Things should be component-aligned. */
-      assert(offset % byte_size == 0);
+      assert(offset % (bit_size / 8) == 0);
 
       unsigned suboffset = offset % 64;
       uint64_t aligned_offset = offset - suboffset;
@@ -2836,8 +2835,7 @@ brw_nir_load_global_const(nir_builder *b, nir_intrinsic_instr *load,
          nir_iadd_imm(b, load->src[0].ssa,
                          off + nir_intrinsic_base(load));
       nir_def *addr = nir_iadd(b, base_addr, nir_u2u64(b, offset32));
-      sysval = nir_load_global_constant(b, addr, byte_size,
-                                        load->num_components, bit_size);
+      sysval = nir_load_global_constant(b, load->num_components, bit_size, addr);
    }
 
    return sysval;

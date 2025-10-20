@@ -440,10 +440,7 @@ brw_nir_create_raygen_trampoline(const struct brw_compiler *compiler,
    nir_push_if(&b, is_indirect);
    {
       raygen_indirect_bsr_addr =
-         nir_load_global_constant(&b, raygen_param_bsr_addr,
-                                  8 /* align */,
-                                  1 /* components */,
-                                  64 /* bit_size */);
+         nir_load_global_constant(&b, 1, 64, raygen_param_bsr_addr);
    }
    nir_pop_if(&b, NULL);
 

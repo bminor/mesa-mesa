@@ -88,7 +88,7 @@ load_sysval_indirect(nir_builder *b, unsigned dim, unsigned bitsize,
       /* Index into the table and load */
       nir_def *address = nir_iadd(
          b, array_base, nir_u2u64(b, nir_imul_imm(b, offset_el, stride)));
-      return nir_load_global_constant(b, address, bitsize / 8, dim, bitsize);
+      return nir_load_global_constant(b, dim, bitsize, address);
    }
 }
 
@@ -111,8 +111,9 @@ load_ubo(nir_builder *b, nir_intrinsic_instr *intr, void *bases)
 
    nir_def *address = nir_iadd(b, base, nir_u2u64(b, intr->src[1].ssa));
 
-   return nir_load_global_constant(b, address, nir_intrinsic_align(intr),
-                                   intr->num_components, intr->def.bit_size);
+   return nir_load_global_constant(b, intr->num_components, intr->def.bit_size,
+                                   address,
+                                   .align_mul = nir_intrinsic_align(intr));
 }
 
 static nir_def *
@@ -185,7 +186,7 @@ lower_intrinsic(nir_builder *b, nir_intrinsic_instr *intr,
       return load_sysval_root(b, 1, 64, &u->geometry_params);
    case nir_intrinsic_load_vs_output_buffer_poly:
       return nir_load_global_constant(
-         b, load_sysval_root(b, 1, 64, &u->vertex_output_buffer_ptr), 8, 1, 64);
+         b, 1, 64, load_sysval_root(b, 1, 64, &u->vertex_output_buffer_ptr));
    case nir_intrinsic_load_vs_outputs_poly:
       return load_sysval_root(b, 1, 64, &u->vertex_outputs);
    case nir_intrinsic_load_tess_param_buffer_poly:

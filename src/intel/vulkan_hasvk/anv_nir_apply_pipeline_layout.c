@@ -902,7 +902,6 @@ lower_load_constant(nir_builder *b, nir_intrinsic_instr *intrin,
    if (!anv_use_relocations(state->pdevice)) {
       unsigned load_size = intrin->def.num_components *
                            intrin->def.bit_size / 8;
-      unsigned load_align = intrin->def.bit_size / 8;
 
       assert(load_size < b->shader->constant_data_size);
       unsigned max_offset = b->shader->constant_data_size - load_size;
@@ -912,11 +911,10 @@ lower_load_constant(nir_builder *b, nir_intrinsic_instr *intrin,
          nir_load_reloc_const_intel(b, INTEL_SHADER_RELOC_CONST_DATA_ADDR_LOW),
          nir_load_reloc_const_intel(b, INTEL_SHADER_RELOC_CONST_DATA_ADDR_HIGH));
 
-      data = nir_load_global_constant(b, nir_iadd(b, const_data_base_addr,
-                                                     nir_u2u64(b, offset)),
-                                      load_align,
-                                      intrin->def.num_components,
-                                      intrin->def.bit_size);
+      data = nir_load_global_constant(b, intrin->def.num_components,
+                                      intrin->def.bit_size,
+                                      nir_iadd(b, const_data_base_addr,
+                                               nir_u2u64(b, offset)));
    } else {
       nir_def *index = nir_imm_int(b, state->constants_offset);
 

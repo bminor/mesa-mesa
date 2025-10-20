@@ -187,12 +187,12 @@ pass(struct nir_builder *b, nir_intrinsic_instr *intr, void *data)
    uint64_t attrib_base_offset =
       offsetof(struct kk_root_descriptor_table, draw.attrib_base[index]);
    nir_def *base = nir_load_global_constant(
-      b, nir_iadd_imm(b, argbuf, attrib_base_offset), 8, 1, 64);
+      b, 1, 64, nir_iadd_imm(b, argbuf, attrib_base_offset));
 
    uint64_t buffer_stride_offset = offsetof(
       struct kk_root_descriptor_table, draw.buffer_strides[attrib.binding]);
    nir_def *stride = nir_load_global_constant(
-      b, nir_iadd_imm(b, argbuf, buffer_stride_offset), 4, 1, 32);
+      b, 1, 32, nir_iadd_imm(b, argbuf, buffer_stride_offset));
    nir_def *stride_offset_el =
       nir_imul(b, el, nir_udiv_imm(b, stride, interchange_align));
 

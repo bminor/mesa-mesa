@@ -179,7 +179,7 @@ load_geometry_param_offset(nir_builder *b, uint32_t offset, uint8_t bytes)
 
    assert((offset % bytes) == 0 && "must be naturally aligned");
 
-   return nir_load_global_constant(b, addr, bytes, 1, bytes * 8);
+   return nir_load_global_constant(b, 1, bytes * 8, addr);
 }
 
 #define load_geometry_param(b, field)                                          \
@@ -299,8 +299,8 @@ poly_load_per_vertex_input(nir_builder *b, nir_intrinsic_instr *intr,
    }
 
    addr = nir_iadd_imm(b, addr, 4 * nir_intrinsic_component(intr));
-   return nir_load_global_constant(b, addr, 4, intr->def.num_components,
-                                   intr->def.bit_size);
+   return nir_load_global_constant(b, intr->def.num_components,
+                                   intr->def.bit_size, addr, .align_mul = 4);
 }
 
 static bool

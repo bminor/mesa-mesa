@@ -2086,16 +2086,18 @@ lower_fs_prolog_abi(nir_builder *b, nir_intrinsic_instr *intr, UNUSED void *_)
    if (intr->intrinsic == nir_intrinsic_load_polygon_stipple_agx) {
       off_t stipple_offs = offsetof(struct agx_draw_uniforms, polygon_stipple);
       nir_def *stipple_ptr_ptr = nir_iadd_imm(b, root, stipple_offs);
-      nir_def *base = nir_load_global_constant(b, stipple_ptr_ptr, 4, 1, 64);
+      nir_def *base =
+         nir_load_global_constant(b, 1, 64, stipple_ptr_ptr, .align_mul = 4);
 
       nir_def *row = intr->src[0].ssa;
       nir_def *addr = nir_iadd(b, base, nir_u2u64(b, nir_imul_imm(b, row, 4)));
 
-      repl = nir_load_global_constant(b, addr, 4, 1, 32);
+      repl = nir_load_global_constant(b, 1, 32, addr);
    } else {
       off_t offs = offsetof(struct agx_draw_uniforms,
                             pipeline_statistics[nir_intrinsic_base(intr)]);
-      repl = nir_load_global_constant(b, nir_iadd_imm(b, root, offs), 4, 1, 64);
+      repl = nir_load_global_constant(b, 1, 64, nir_iadd_imm(b, root, offs),
+                                      .align_mul = 4);
    }
 
    nir_def_replace(&intr->def, repl);

@@ -1948,7 +1948,6 @@ elk_nir_load_global_const(nir_builder *b, nir_intrinsic_instr *load_uniform,
 
    unsigned bit_size = load_uniform->def.bit_size;
    assert(bit_size >= 8 && bit_size % 8 == 0);
-   unsigned byte_size = bit_size / 8;
    nir_def *sysval;
 
    if (nir_src_is_const(load_uniform->src[0])) {
@@ -1957,7 +1956,7 @@ elk_nir_load_global_const(nir_builder *b, nir_intrinsic_instr *load_uniform,
                         nir_src_as_uint(load_uniform->src[0]);
 
       /* Things should be component-aligned. */
-      assert(offset % byte_size == 0);
+      assert(offset % (bit_size / 8) == 0);
 
       unsigned suboffset = offset % 64;
       uint64_t aligned_offset = offset - suboffset;
@@ -1976,8 +1975,7 @@ elk_nir_load_global_const(nir_builder *b, nir_intrinsic_instr *load_uniform,
          nir_iadd_imm(b, load_uniform->src[0].ssa,
                          off + nir_intrinsic_base(load_uniform));
       nir_def *addr = nir_iadd(b, base_addr, nir_u2u64(b, offset32));
-      sysval = nir_load_global_constant(b, addr, byte_size,
-                                        load_uniform->num_components, bit_size);
+      sysval = nir_load_global_constant(b, load_uniform->num_components, bit_size, addr);
    }
 
    return sysval;
