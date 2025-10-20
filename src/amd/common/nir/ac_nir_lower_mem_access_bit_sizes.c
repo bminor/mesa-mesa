@@ -122,8 +122,11 @@ lower_mem_access_cb(nir_intrinsic_op intrin, uint8_t bytes, uint8_t bit_size, ui
    }
 
    if (is_smem) {
+      const bool supported_subdword = cb_data->gfx_level >= GFX12 &&
+                                      intrin != nir_intrinsic_load_push_constant &&
+                                      (!cb_data->use_llvm || intrin != nir_intrinsic_load_ubo);
+
       /* Round up subdword loads if unsupported. */
-      const bool supported_subdword = cb_data->gfx_level >= GFX12 && intrin != nir_intrinsic_load_push_constant;
       if (bit_size < 32 && (bytes >= 3 || !supported_subdword))
          bytes = align(bytes, 4);
 
