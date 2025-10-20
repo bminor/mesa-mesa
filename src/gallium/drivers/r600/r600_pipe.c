@@ -161,7 +161,7 @@ static struct pipe_context *r600_create_context(struct pipe_screen *screen,
 		rctx->b.b.create_video_buffer = r600_video_buffer_create;
 	}
 
-	if (getenv("R600_TRACE"))
+	if (os_get_option("R600_TRACE"))
 		rctx->is_debug = true;
 	r600_init_common_state_functions(rctx);
 

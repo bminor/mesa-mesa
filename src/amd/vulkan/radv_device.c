@@ -79,7 +79,7 @@ radv_spm_trace_enabled(const struct radv_instance *instance)
 static bool
 radv_trap_handler_enabled()
 {
-   return !!getenv("RADV_TRAP_HANDLER");
+   return !!os_get_option("RADV_TRAP_HANDLER");
 }
 
 bool
@@ -405,7 +405,7 @@ radv_parse_vrs_rates(const char *str)
 static const char *
 radv_get_force_vrs_config_file(void)
 {
-   return getenv("RADV_FORCE_VRS_CONFIG_FILE");
+   return os_get_option("RADV_FORCE_VRS_CONFIG_FILE");
 }
 
 static enum radv_force_vrs
@@ -1329,7 +1329,7 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
    device->dispatch_initiator_task = device->dispatch_initiator | S_00B800_DISABLE_DISP_PREMPT_EN(1);
 
    if (pdev->info.gfx_level == GFX10_3) {
-      if (getenv("RADV_FORCE_VRS_CONFIG_FILE")) {
+      if (os_get_option("RADV_FORCE_VRS_CONFIG_FILE")) {
          const char *file = radv_get_force_vrs_config_file();
 
          device->force_vrs = radv_parse_force_vrs_config_file(file);
@@ -1339,8 +1339,8 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
          } else {
             fprintf(stderr, "radv: Failed to initialize the notifier for RADV_FORCE_VRS_CONFIG_FILE!\n");
          }
-      } else if (getenv("RADV_FORCE_VRS")) {
-         const char *vrs_rates = getenv("RADV_FORCE_VRS");
+      } else if (os_get_option("RADV_FORCE_VRS")) {
+         const char *vrs_rates = os_get_option("RADV_FORCE_VRS");
 
          device->force_vrs = radv_parse_vrs_rates(vrs_rates);
          device->force_vrs_enabled = device->force_vrs != RADV_FORCE_VRS_1x1;

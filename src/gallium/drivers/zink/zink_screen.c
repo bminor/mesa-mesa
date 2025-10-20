@@ -3318,7 +3318,7 @@ zink_cl_cts_version(struct pipe_screen *pscreen)
 static struct zink_screen *
 zink_internal_create_screen(const struct pipe_screen_config *config, int64_t dev_major, int64_t dev_minor, uint64_t adapter_luid)
 {
-   if (getenv("ZINK_USE_LAVAPIPE")) {
+   if (os_get_option("ZINK_USE_LAVAPIPE")) {
       mesa_loge("ZINK_USE_LAVAPIPE is obsolete. Use LIBGL_ALWAYS_SOFTWARE\n");
       return NULL;
    }

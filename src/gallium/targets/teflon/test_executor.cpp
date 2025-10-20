@@ -18,6 +18,8 @@
 #include "test_executor.h"
 #include "tflite-schema-v2.15.0_generated.h"
 
+#include "util/os_misc.h"
+
 static float
 randf(float min, float max)
 {
@@ -50,8 +52,8 @@ static void
 read_model(const char *file_name, tflite::ModelT &model)
 {
    std::ostringstream file_path;
-   assert(getenv("TEFLON_TEST_DATA"));
-   file_path << getenv("TEFLON_TEST_DATA") << "/" << file_name;
+   assert(os_get_option("TEFLON_TEST_DATA"));
+   file_path << os_get_option("TEFLON_TEST_DATA") << "/" << file_name;
 
    FILE *f = fopen(file_path.str().c_str(), "rb");
    assert(f);
@@ -372,7 +374,7 @@ void (*tflite_plugin_destroy_delegate)(TfLiteDelegate *delegate);
 static void
 load_delegate()
 {
-   const char *delegate_path = getenv("TEFLON_TEST_DELEGATE");
+   const char *delegate_path = os_get_option("TEFLON_TEST_DELEGATE");
    assert(delegate_path);
 
    void *delegate_lib = dlopen(delegate_path, RTLD_LAZY | RTLD_LOCAL);
@@ -393,7 +395,7 @@ load_delegate()
 bool
 cache_is_enabled(void)
 {
-   return getenv("TEFLON_ENABLE_CACHE");
+   return os_get_option("TEFLON_ENABLE_CACHE");
 }
 
 void *

@@ -257,7 +257,7 @@ vtn_default_log_level(void)
       [NIR_SPIRV_DEBUG_LEVEL_INFO]  = "info",
       [NIR_SPIRV_DEBUG_LEVEL_ERROR] = "error",
    };
-   const char *str = getenv("MESA_SPIRV_LOG_LEVEL");
+   const char *str = os_get_option("MESA_SPIRV_LOG_LEVEL");
 
    if (str == NULL)
       return level;

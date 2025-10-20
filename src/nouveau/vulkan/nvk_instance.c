@@ -93,7 +93,7 @@ nvk_init_debug_flags(struct nvk_instance *instance)
       { NULL, 0 },
    };
 
-   instance->debug_flags = parse_debug_string(getenv("NVK_DEBUG"), flags);
+   instance->debug_flags = parse_debug_string(os_get_option("NVK_DEBUG"), flags);
 }
 
 static const driOptionDescription nvk_dri_options[] = {

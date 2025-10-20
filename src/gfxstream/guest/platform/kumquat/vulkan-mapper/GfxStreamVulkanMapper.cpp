@@ -205,7 +205,7 @@ GfxStreamVulkanMapper* GfxStreamVulkanMapper::getInstance(std::optional<DeviceId
         // testing, VK_ICD_FILENAMES shouldn't be defined.  For deqp-vk, this is
         // useful, but not safe for multi-threaded tests.  For now, since this is only
         // used for end2end tests, we should be good.
-        const char* driver = getenv(VK_ICD_FILENAMES);
+        const char* driver = os_get_option(VK_ICD_FILENAMES);
         unsetenv(VK_ICD_FILENAMES);
         sVkMapper = std::make_unique<GfxStreamVulkanMapper>();
         if (!sVkMapper->initialize(*deviceIdOpt)) {

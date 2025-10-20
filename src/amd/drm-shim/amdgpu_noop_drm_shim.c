@@ -11,6 +11,7 @@
 #include "drm-shim/drm_shim.h"
 #include "drm-uapi/amdgpu_drm.h"
 #include "util/log.h"
+#include "util/os_misc.h"
 
 static const struct amdgpu_device *amdgpu_dev;
 
@@ -201,7 +202,7 @@ static ioctl_fn_t amdgpu_ioctls[] = {
 static void
 amdgpu_select_device()
 {
-   const char *gpu_id = getenv("AMDGPU_GPU_ID");
+   const char *gpu_id = os_get_option("AMDGPU_GPU_ID");
    if (gpu_id) {
       for (uint32_t i = 0; i < num_amdgpu_devices; i++) {
          const struct amdgpu_device *dev = &amdgpu_devices[i];

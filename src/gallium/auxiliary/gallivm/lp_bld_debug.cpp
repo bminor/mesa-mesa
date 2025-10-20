@@ -252,14 +252,14 @@ lp_profile(LLVMValueRef func, const void *code)
        * this except when running inside linux perf, which can be inferred
        * by the PERF_BUILDID_DIR environment variable.
        */
-      if (getenv("PERF_BUILDID_DIR")) {
+      if (os_get_option("PERF_BUILDID_DIR")) {
          snprintf(filename, sizeof(filename), "/tmp/perf-%llu.map", pid);
          perf_map_file = fopen(filename, "wt");
          snprintf(filename, sizeof(filename), "/tmp/perf-%llu.map.asm", pid);
          perf_asm_file.open(filename);
       }
 #else
-      if (const char* output_dir = getenv("JIT_SYMBOL_MAP_DIR")) {
+      if (const char* output_dir = os_get_option("JIT_SYMBOL_MAP_DIR")) {
          snprintf(filename, sizeof(filename), "%s/jit-symbols-%llu.map", output_dir, pid);
          perf_map_file = fopen(filename, "wt");
          snprintf(filename, sizeof(filename), "%s/jit-symbols-%llu.map.asm", output_dir, pid);

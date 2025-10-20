@@ -296,7 +296,7 @@ void r600_context_gfx_flush(void *context, unsigned flags,
 
 	if (ctx->is_debug) {
 		if (!ws->fence_wait(ws, ctx->b.last_gfx_fence, 10000000)) {
-			const char *fname = getenv("R600_TRACE");
+			const char *fname = os_get_option("R600_TRACE");
 			if (!fname)
 				exit(-1);
 			FILE *fl = fopen(fname, "w+");

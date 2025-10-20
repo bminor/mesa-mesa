@@ -69,7 +69,7 @@ apple_cgl_init(void)
    if (initialized)
       return;
 
-   opengl_framework_path = getenv("OPENGL_FRAMEWORK_PATH");
+   opengl_framework_path = os_get_option("OPENGL_FRAMEWORK_PATH");
    if (!opengl_framework_path) {
       opengl_framework_path = OPENGL_FRAMEWORK_PATH;
    }

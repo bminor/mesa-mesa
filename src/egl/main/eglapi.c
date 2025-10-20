@@ -699,7 +699,7 @@ eglInitialize(EGLDisplay dpy, EGLint *major, EGLint *minor)
             RETURN_EGL_ERROR(disp, EGL_NOT_INITIALIZED, EGL_FALSE);
          else {
             bool success = false;
-            if (!disp->Options.Zink && !getenv("GALLIUM_DRIVER")) {
+            if (!disp->Options.Zink && !os_get_option("GALLIUM_DRIVER")) {
                disp->Options.Zink = EGL_TRUE;
                success = _eglDriver.Initialize(disp);
             }

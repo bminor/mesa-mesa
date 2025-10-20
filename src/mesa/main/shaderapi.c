@@ -126,7 +126,7 @@ GLbitfield
 _mesa_get_shader_flags(void)
 {
    GLbitfield flags = 0x0;
-   const char *env = getenv("MESA_GLSL");
+   const char *env = os_get_option("MESA_GLSL");
 
    if (env) {
       if (strstr(env, "dump_on_error"))
@@ -167,7 +167,7 @@ _mesa_get_shader_flags(void)
 #endif
 
 /**
- * Memoized version of getenv("MESA_SHADER_CAPTURE_PATH").
+ * Memoized version of os_get_option_secure("MESA_SHADER_CAPTURE_PATH").
  */
 const char *
 _mesa_get_shader_capture_path(void)
@@ -2026,7 +2026,7 @@ GLcharARB *
 _mesa_read_shader_source(const mesa_shader_stage stage, const char *source,
                          const blake3_hash blake3)
 {
-   char *read_path;
+   const char *read_path;
    static bool path_exists = true;
    int len, shader_size = 0;
    GLcharARB *buffer;
@@ -2061,7 +2061,7 @@ _mesa_read_shader_source(const mesa_shader_stage stage, const char *source,
    if (!path_exists)
       return NULL;
 
-   read_path = getenv("MESA_SHADER_READ_PATH");
+   read_path = os_get_option("MESA_SHADER_READ_PATH");
    if (!read_path) {
       path_exists = false;
       return NULL;

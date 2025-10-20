@@ -1021,9 +1021,9 @@ disk_cache_enabled()
 #endif
    char *envvar_name = "MESA_SHADER_CACHE_DISABLE";
 #if !DETECT_OS_ANDROID
-   if (!getenv(envvar_name)) {
+   if (!os_get_option(envvar_name)) {
       envvar_name = "MESA_GLSL_CACHE_DISABLE";
-      if (getenv(envvar_name))
+      if (os_get_option(envvar_name))
          fprintf(stderr,
                  "*** MESA_GLSL_CACHE_DISABLE is deprecated; "
                  "use MESA_SHADER_CACHE_DISABLE instead ***\n");

@@ -1849,7 +1849,7 @@ struct pipe_context *virgl_context_create(struct pipe_screen *pscreen,
    virgl_encoder_set_sub_ctx(vctx, vctx->hw_sub_ctx_id);
 
    if (rs->caps.caps.v2.capability_bits & VIRGL_CAP_GUEST_MAY_INIT_LOG) {
-      host_debug_flagstring = getenv("VIRGL_HOST_DEBUG");
+      host_debug_flagstring = os_get_option("VIRGL_HOST_DEBUG");
       if (host_debug_flagstring)
          virgl_encode_host_debug_flagstring(vctx, host_debug_flagstring);
    }

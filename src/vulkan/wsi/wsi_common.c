@@ -75,7 +75,7 @@ wsi_device_init(struct wsi_device *wsi,
    const char *present_mode;
    UNUSED VkResult result;
 
-   WSI_DEBUG = parse_debug_string(getenv("MESA_VK_WSI_DEBUG"), debug_control);
+   WSI_DEBUG = parse_debug_string(os_get_option("MESA_VK_WSI_DEBUG"), debug_control);
 
    util_cpu_trace_init();
 
@@ -249,7 +249,7 @@ wsi_device_init(struct wsi_device *wsi,
       goto fail;
 #endif
 
-   present_mode = getenv("MESA_VK_WSI_PRESENT_MODE");
+   present_mode = os_get_option("MESA_VK_WSI_PRESENT_MODE");
    if (present_mode) {
       if (!strcmp(present_mode, "fifo")) {
          wsi->override_present_mode = VK_PRESENT_MODE_FIFO_KHR;

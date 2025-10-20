@@ -1244,7 +1244,7 @@ hk_create_drm_physical_device(struct vk_instance *_instance,
 
    hk_physical_device_init_pipeline_cache(pdev);
 
-   const char *hk_sysmem = getenv("HK_SYSMEM");
+   const char *hk_sysmem = os_get_option("HK_SYSMEM");
    if (hk_sysmem) {
       uint64_t sysmem = strtoll(hk_sysmem, NULL, 10);
       if (sysmem != LLONG_MIN && sysmem != LLONG_MAX) {

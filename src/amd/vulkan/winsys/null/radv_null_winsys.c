@@ -61,7 +61,7 @@ static const struct {
 static void
 radv_null_winsys_query_info(struct radeon_winsys *rws, struct radeon_info *gpu_info)
 {
-   const char *family = getenv("RADV_FORCE_FAMILY");
+   const char *family = os_get_option("RADV_FORCE_FAMILY");
    unsigned i;
 
    gpu_info->gfx_level = CLASS_UNKNOWN;

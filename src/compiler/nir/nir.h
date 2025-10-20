@@ -4708,7 +4708,7 @@ should_skip_nir(const char *name)
    static const char *list = NULL;
    if (!list) {
       /* Comma separated list of names to skip. */
-      list = getenv("NIR_SKIP");
+      list = os_get_option("NIR_SKIP");
       if (!list)
          list = "";
    }

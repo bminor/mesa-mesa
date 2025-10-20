@@ -559,7 +559,7 @@ crocus_screen_create(int fd, const struct pipe_screen_config *config)
    if (screen->devinfo.ver == 8) {
       /* bind to cherryview or bdw if forced */
       if (screen->devinfo.platform != INTEL_PLATFORM_CHV &&
-          !getenv("CROCUS_GEN8"))
+          !os_get_option("CROCUS_GEN8"))
          return NULL;
    }
 

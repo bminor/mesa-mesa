@@ -55,7 +55,7 @@ uint32_t vk_get_driver_version(void)
 
 uint32_t vk_get_version_override(void)
 {
-   const char *str = getenv("MESA_VK_VERSION_OVERRIDE");
+   const char *str = os_get_option("MESA_VK_VERSION_OVERRIDE");
    if (str == NULL)
       return 0;
 

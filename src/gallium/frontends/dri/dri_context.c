@@ -220,7 +220,7 @@ dri_create_context(struct dri_screen *screen,
       /* if set (not -1), apply the app setting */
       enable_glthread = app_enable_glthread == 1;
    }
-   if (getenv("mesa_glthread")) {
+   if (os_get_option("mesa_glthread")) {
       /* only apply the env var if set */
       bool user_enable_glthread = debug_get_bool_option("mesa_glthread", false);
       if (user_enable_glthread != enable_glthread) {

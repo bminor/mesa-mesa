@@ -69,7 +69,7 @@ static inline void regfree(regex_t* r) {}
 static bool
 be_verbose(void)
 {
-   const char *s = getenv("MESA_DEBUG");
+   const char *s = os_get_option("MESA_DEBUG");
    if (!s)
       return true;
 
@@ -599,7 +599,7 @@ __driUtilMessage(const char *f, ...)
    va_list args;
    const char *libgl_debug;
 
-   libgl_debug=getenv("LIBGL_DEBUG");
+   libgl_debug=os_get_option("LIBGL_DEBUG");
    if (libgl_debug && !strstr(libgl_debug, "quiet")) {
       fprintf(stderr, "libGL: ");
       va_start(args, f);
@@ -873,7 +873,7 @@ parseOptConfAttr(struct OptConfData *data, const char **attr)
          /* don't use XML_WARNING, drirc defines options for all drivers,
           * but not all drivers support them */
          return;
-      else if (getenv(cache->info[opt].name)) {
+      else if (os_get_option(cache->info[opt].name)) {
          /* don't use XML_WARNING, we want the user to see this! */
          if (be_verbose()) {
             fprintf(stderr,
@@ -1256,10 +1256,11 @@ driParseConfigFiles(driOptionCache *cache, const driOptionCache *info,
    userData.execName = execname;
 
 #if WITH_XMLCONFIG
-   char *home, *configdir;
+   const char *configdir;
+   char *home;
 
    /* parse from either $DRIRC_CONFIGDIR or $datadir/drirc.d */
-   if ((configdir = getenv("DRIRC_CONFIGDIR")))
+   if ((configdir = os_get_option("DRIRC_CONFIGDIR")))
       parseConfigDir(&userData, configdir);
    else {
       parseConfigDir(&userData, DATADIR "/drirc.d");

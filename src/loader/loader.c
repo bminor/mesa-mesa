@@ -446,7 +446,7 @@ static char *drm_get_id_path_tag_for_fd(int fd)
 
 bool loader_get_user_preferred_fd(int *fd_render_gpu, int *original_fd)
 {
-   const char *dri_prime = getenv("DRI_PRIME");
+   const char *dri_prime = os_get_option("DRI_PRIME");
    bool debug = debug_get_bool_option("DRI_PRIME_DEBUG", false);
    char *default_tag = NULL;
    drmDevicePtr devices[MAX_DRM_DEVICES];

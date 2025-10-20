@@ -5,6 +5,7 @@
 
 #include "util/os_drm.h"
 #include "ac_linux_drm.h"
+#include "util/os_misc.h"
 #include "util/u_math.h"
 #include "util/u_sync_provider.h"
 #include "ac_gpu_info.h"
@@ -295,9 +296,9 @@ int ac_drm_cs_ctx_create2(ac_drm_device *dev, uint32_t priority, uint32_t *ctx_i
 {
    int r;
    union drm_amdgpu_ctx args;
-   char *override_priority;
+   const char *override_priority;
 
-   override_priority = getenv("AMD_PRIORITY");
+   override_priority = os_get_option("AMD_PRIORITY");
    if (override_priority) {
       /* The priority is a signed integer. The variable type is
        * wrong. If parsing fails, priority is unchanged.

@@ -389,9 +389,9 @@ radv_CreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationC
 
    simple_mtx_init(&instance->shader_dump_mtx, mtx_plain);
 
-   instance->debug_flags = parse_debug_string(getenv("RADV_DEBUG"), radv_debug_options);
-   instance->perftest_flags = parse_debug_string(getenv("RADV_PERFTEST"), radv_perftest_options);
-   instance->trap_excp_flags = parse_debug_string(getenv("RADV_TRAP_HANDLER_EXCP"), radv_trap_excp_options);
+   instance->debug_flags = parse_debug_string(os_get_option("RADV_DEBUG"), radv_debug_options);
+   instance->perftest_flags = parse_debug_string(os_get_option("RADV_PERFTEST"), radv_perftest_options);
+   instance->trap_excp_flags = parse_debug_string(os_get_option("RADV_TRAP_HANDLER_EXCP"), radv_trap_excp_options);
    instance->profile_pstate = radv_parse_pstate(debug_get_option("RADV_PROFILE_PSTATE", "peak"));
 
    const uint64_t shader_stage_flags = RADV_DEBUG_DUMP_VS | RADV_DEBUG_DUMP_TCS | RADV_DEBUG_DUMP_TES |
@@ -425,7 +425,7 @@ radv_CreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationC
     * device that allows to test the compiler without having an
     * AMDGPU instance.
     */
-   if (getenv("RADV_FORCE_FAMILY"))
+   if (os_get_option("RADV_FORCE_FAMILY"))
       instance->vk.physical_devices.enumerate = create_null_physical_device;
    else
       instance->vk.physical_devices.try_create_for_drm = create_drm_physical_device;

@@ -172,7 +172,7 @@ mesa_log_if_debug(enum mesa_log_level level, const char *outputString)
 
    /* Init the local 'debug' var once. */
    if (debug == -1) {
-      const char *env = getenv("MESA_DEBUG");
+      const char *env = os_get_option("MESA_DEBUG");
       bool silent = env && strstr(env, "silent") != NULL;
 #ifndef NDEBUG
       /* in debug builds, print messages unless MESA_DEBUG="silent" */

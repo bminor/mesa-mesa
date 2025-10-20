@@ -1801,7 +1801,7 @@ dzn_instance_create(const VkInstanceCreateInfo *pCreateInfo,
    instance->vk.physical_devices.enumerate = dzn_enumerate_physical_devices;
    instance->vk.physical_devices.destroy = dzn_physical_device_destroy;
    instance->debug_flags =
-      parse_debug_string(getenv("DZN_DEBUG"), dzn_debug_options);
+      parse_debug_string(os_get_option("DZN_DEBUG"), dzn_debug_options);
 
 #ifdef _WIN32
    if (instance->debug_flags & DZN_DEBUG_DEBUGGER) {

@@ -18,7 +18,7 @@ pps_deps += pps_datasources
 lib_pps = static_library(
   'pps',
   sources: pps_sources,
-  include_directories: [include_pps, inc_src, pps_includes],
+  include_directories: [include_pps, inc_src, inc_util, pps_includes],
   dependencies: pps_deps,
 )
 

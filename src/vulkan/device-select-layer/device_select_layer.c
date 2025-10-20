@@ -128,7 +128,7 @@ device_select_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
    info->xserver = !strcmp(applicationName, "Xorg") || !strcmp(applicationName, "Xephyr");
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
-   bool has_wayland = getenv("WAYLAND_DISPLAY") || getenv("WAYLAND_SOCKET");
+   bool has_wayland = os_get_option("WAYLAND_DISPLAY") || os_get_option("WAYLAND_SOCKET");
 #endif
 #ifdef VK_USE_PLATFORM_XCB_KHR
    bool has_xcb = !!getenv("DISPLAY");

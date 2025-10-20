@@ -203,7 +203,7 @@ vk_instance_init(struct vk_instance *instance,
       return vk_error(instance, VK_ERROR_INITIALIZATION_FAILED);
    }
 
-   instance->trace_mode = parse_debug_string(getenv("MESA_VK_TRACE"), trace_options);
+   instance->trace_mode = parse_debug_string(os_get_option("MESA_VK_TRACE"), trace_options);
    instance->trace_per_submit = debug_get_bool_option("MESA_VK_TRACE_PER_SUBMIT", false);
    if (!instance->trace_per_submit) {
       instance->trace_frame = (uint32_t)debug_get_num_option("MESA_VK_TRACE_FRAME", 0xFFFFFFFF);
@@ -403,7 +403,7 @@ void
 vk_instance_add_driver_trace_modes(struct vk_instance *instance,
                                    const struct debug_control *modes)
 {
-   instance->trace_mode |= parse_debug_string(getenv("MESA_VK_TRACE"), modes);
+   instance->trace_mode |= parse_debug_string(os_get_option("MESA_VK_TRACE"), modes);
 }
 
 static VkResult

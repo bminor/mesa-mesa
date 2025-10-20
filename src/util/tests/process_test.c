@@ -59,7 +59,7 @@ test_util_get_process_name (void)
    const char *expected = "process_test";
 #endif
 
-   const char *name_override = getenv("MESA_PROCESS_NAME");
+   const char *name_override = os_get_option("MESA_PROCESS_NAME");
    if (name_override)
       expected = name_override;
 

@@ -154,7 +154,7 @@ read_file(const char *filename)
 
 static void addenv(const char *name, const char *value)
 {
-    const char *orig = getenv(name);
+    const char *orig = os_get_option(name);
     if (orig) {
         char *newval;
         (void)!asprintf(&newval, "%s,%s", orig, value);

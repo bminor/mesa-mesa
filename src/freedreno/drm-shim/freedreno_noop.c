@@ -10,6 +10,7 @@
 #include "drm-uapi/msm_drm.h"
 #include <sys/ioctl.h>
 
+#include "util/os_misc.h"
 #include "util/u_math.h"
 
 bool drm_shim_driver_prefers_first_render_node = true;
@@ -280,7 +281,7 @@ static const struct msm_device_info device_infos[] = {
 static void
 msm_driver_get_device_info(void)
 {
-   const char *env = getenv("FD_GPU_ID");
+   const char *env = os_get_option("FD_GPU_ID");
 
    if (!env) {
       device_info = &device_infos[0];

@@ -331,7 +331,7 @@ bool si_init_sqtt(struct si_context *sctx)
       debug_get_bool_option("AMD_THREAD_TRACE_INSTRUCTION_TIMING", true);
    sctx->sqtt->start_frame = 10;
 
-   const char *trigger = getenv("AMD_THREAD_TRACE_TRIGGER");
+   const char *trigger = os_get_option("AMD_THREAD_TRACE_TRIGGER");
    if (trigger) {
       sctx->sqtt->start_frame = atoi(trigger);
       if (sctx->sqtt->start_frame <= 0) {

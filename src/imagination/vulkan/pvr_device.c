@@ -1148,7 +1148,7 @@ static VkResult pvr_physical_device_init(struct pvr_physical_device *pdevice,
       goto err_pvr_winsys_destroy;
 
    if (!pvr_device_is_conformant(&pdevice->dev_info)) {
-      if (!getenv("PVR_I_WANT_A_BROKEN_VULKAN_DRIVER")) {
+      if (!os_get_option("PVR_I_WANT_A_BROKEN_VULKAN_DRIVER")) {
          result = vk_errorf(instance,
                             VK_ERROR_INCOMPATIBLE_DRIVER,
                             "WARNING: powervr is not a conformant Vulkan "

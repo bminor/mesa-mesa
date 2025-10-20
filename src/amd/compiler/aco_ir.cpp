@@ -43,7 +43,7 @@ static once_flag init_once_flag = ONCE_FLAG_INIT;
 static void
 init_once()
 {
-   debug_flags = parse_debug_string(getenv("ACO_DEBUG"), aco_debug_options);
+   debug_flags = parse_debug_string(os_get_option("ACO_DEBUG"), aco_debug_options);
 
 #ifndef NDEBUG
    /* enable some flags by default on debug builds */

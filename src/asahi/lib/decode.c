@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "util/os_misc.h"
 #include "util/u_dynarray.h"
 #include "util/u_math.h"
 #include <sys/mman.h>
@@ -1024,7 +1025,7 @@ agxdecode_dump_file_open(void)
     * setenv to change the base at runtime.
     */
    const char *dump_file_base =
-      getenv("AGXDECODE_DUMP_FILE") ?: "agxdecode.dump";
+      os_get_option("AGXDECODE_DUMP_FILE") ?: "agxdecode.dump";
    if (!strcmp(dump_file_base, "stderr"))
       agxdecode_dump_stream = stderr;
    else {

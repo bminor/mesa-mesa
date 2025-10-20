@@ -838,7 +838,7 @@ static int trytop (struct rnndb *db, char *file, xmlNode *node) {
 
 static char * find_file(const char *file_orig)
 {
-	const char *rnn_path = getenv("RNN_PATH");
+	const char *rnn_path = os_get_option("RNN_PATH");
 	char *fname;
 
 	if (!rnn_path)

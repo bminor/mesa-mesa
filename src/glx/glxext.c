@@ -67,7 +67,7 @@ glx_message(int level, const char *f, ...)
    int threshold = _LOADER_WARNING;
    const char *libgl_debug;
 
-   libgl_debug = getenv("LIBGL_DEBUG");
+   libgl_debug = os_get_option("LIBGL_DEBUG");
    if (libgl_debug) {
       if (strstr(libgl_debug, "quiet"))
          threshold = _LOADER_FATAL;
@@ -986,7 +986,7 @@ __glXInitialize(Display * dpy)
    dpyPriv->glXDrawHash = __glxHashCreate();
 
    enum glx_driver glx_driver = 0;
-   const char *env = getenv("MESA_LOADER_DRIVER_OVERRIDE");
+   const char *env = os_get_option("MESA_LOADER_DRIVER_OVERRIDE");
 
 #if defined(GLX_DIRECT_RENDERING) && (!defined(GLX_USE_APPLEGL) || defined(GLX_USE_APPLE))
    Bool glx_direct = !debug_get_bool_option("LIBGL_ALWAYS_INDIRECT", false);
@@ -1020,7 +1020,7 @@ __glXInitialize(Display * dpy)
          glx_driver |= GLX_DRIVER_ZINK_INFER;
 #if defined(HAVE_ZINK)
       if (!(glx_driver & GLX_DRIVER_DRI3))
-         if (kopper && !getenv("GALLIUM_DRIVER"))
+         if (kopper && !os_get_option("GALLIUM_DRIVER"))
             glx_driver |= GLX_DRIVER_ZINK_INFER;
 #endif /* HAVE_ZINK */
    }
