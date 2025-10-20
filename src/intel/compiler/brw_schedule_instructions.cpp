@@ -1123,7 +1123,11 @@ has_cross_lane_access(const brw_inst *inst)
 
    for (unsigned s = 0; s < inst->sources; s++) {
       if (inst->src[s].file == VGRF) {
-         if (inst->src[s].stride == 0)
+         /* The instruction reads a particular lane (only relevant with non
+          * scalar values, otherwise this is just the way we read uniform
+          * values produced in reduced SIMD size).
+          */
+         if (!inst->src[s].is_scalar && inst->src[s].stride == 0)
             return true;
       }
    }
