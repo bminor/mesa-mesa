@@ -859,7 +859,7 @@ dgc_load_shader_metadata(struct dgc_cmdbuf *cs, uint32_t bitsize, uint32_t field
       va = load_param64(b, params_addr);
    }
 
-   return nir_load_global(b, nir_iadd_imm(b, va, field_offset), 4, 1, bitsize);
+   return nir_load_global(b, 1, bitsize, nir_iadd_imm(b, va, field_offset), .align_mul = 4);
 }
 
 #define load_shader_metadata32(cs, field)                                                                              \
@@ -875,7 +875,7 @@ dgc_load_vbo_metadata(struct dgc_cmdbuf *cs, uint32_t bitsize, nir_def *idx, uin
    nir_def *va = load_param64(b, params_addr);
    nir_def *offset = nir_iadd_imm(b, nir_imul_imm(b, idx, DGC_VBO_INFO_SIZE), field_offset);
 
-   return nir_load_global(b, nir_iadd(b, va, nir_u2u64(b, offset)), 4, 1, bitsize);
+   return nir_load_global(b, 1, bitsize, nir_iadd(b, va, nir_u2u64(b, offset)), .align_mul = 4);
 }
 
 #define load_vbo_metadata32(cs, idx, field) dgc_load_vbo_metadata(cs, 32, idx, offsetof(struct radv_vbo_info, field))
@@ -2615,7 +2615,7 @@ dgc_is_cond_render_enabled(nir_builder *b)
 
    nir_push_if(b, nir_ieq_imm(b, load_param8(b, predicating), 1));
    {
-      nir_def *val = nir_load_global(b, load_param64(b, predication_va), 4, 1, 32);
+      nir_def *val = nir_load_global(b, 1, 32, load_param64(b, predication_va));
       /* By default, all rendering commands are discarded if the 32-bit value is zero. If the
        * inverted flag is set, they are discarded if the value is non-zero.
        */

@@ -1144,17 +1144,15 @@ brw_nir_rt_load_primitive_id_from_hit(nir_builder *b,
       /* For procedural leafs, the index is in dw[3]. */
       nir_def *offset =
          nir_iadd_imm(b, nir_ishl_imm(b, defs->prim_leaf_index, 2), 12);
-      prim_id_proc = nir_load_global(b, nir_iadd(b, defs->prim_leaf_ptr,
-                                                 nir_u2u64(b, offset)),
-                                     4, /* align */ 1, 32);
+      prim_id_proc = nir_load_global(b, 1, 32, nir_iadd(b, defs->prim_leaf_ptr,
+                                                        nir_u2u64(b, offset)));
    }
    nir_push_else(b, NULL);
    {
       /* For quad leafs, the index is dw[2] and there is a 16bit additional
        * offset in dw[3].
        */
-      prim_id_quad = nir_load_global(b, nir_iadd_imm(b, defs->prim_leaf_ptr, 8),
-                                     4, /* align */ 1, 32);
+      prim_id_quad = nir_load_global(b, 1, 32, nir_iadd_imm(b, defs->prim_leaf_ptr, 8));
       prim_id_quad = nir_iadd(b,
                               prim_id_quad,
                               defs->prim_index_delta);

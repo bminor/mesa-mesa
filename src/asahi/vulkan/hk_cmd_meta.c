@@ -419,9 +419,9 @@ load_store_formatted(nir_builder *b, nir_def *base, nir_def *index,
          nir_store_global(b, addr, blocksize_B, raw,
                           nir_component_mask(raw->num_components));
       } else {
-         nir_def *raw =
-            nir_load_global(b, addr, blocksize_B, DIV_ROUND_UP(blocksize_B, 4),
-                            MIN2(32, blocksize_B * 8));
+         nir_def *raw = nir_load_global(b, DIV_ROUND_UP(blocksize_B, 4),
+                                        MIN2(32, blocksize_B * 8), addr,
+                                        .align_mul = blocksize_B);
 
          return nir_format_unpack_rgba(b, raw, format);
       }

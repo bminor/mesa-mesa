@@ -174,7 +174,7 @@ radv_build_printf_args(nir_builder *b, nir_def *cond, const char *format_string,
    offset = nir_read_first_invocation(b, nir_if_phi(b, offset, undef));
 
    nir_def *buffer_size = nir_load_global(
-      b, nir_imm_int64(b, device->printf.buffer_addr + offsetof(struct radv_printf_buffer_header, size)), 4, 1, 32);
+      b, 1, 32, nir_imm_int64(b, device->printf.buffer_addr + offsetof(struct radv_printf_buffer_header, size)));
 
    nir_push_if(b, nir_ige(b, buffer_size, nir_iadd(b, offset, size)));
    {

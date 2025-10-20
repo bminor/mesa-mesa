@@ -73,7 +73,7 @@ pan_lower_sample_pos_impl(struct nir_builder *b, nir_intrinsic_instr *intr,
                nir_u2u64(b, nir_imul_imm(b, nir_load_sample_id(b), 4)));
 
    /* Decode 8:8 fixed-point */
-   nir_def *raw = nir_load_global(b, addr, 2, 2, 16);
+   nir_def *raw = nir_load_global(b, 2, 16, addr);
    nir_def *decoded = nir_fmul_imm(b, nir_i2f16(b, raw), 1.0 / 256.0);
 
    /* Make NIR validator happy */

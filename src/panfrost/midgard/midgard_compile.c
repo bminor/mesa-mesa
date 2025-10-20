@@ -237,7 +237,7 @@ midgard_nir_lower_global_load_instr(nir_builder *b, nir_intrinsic_instr *intr,
 
       nir_def *load;
       if (intr->intrinsic == nir_intrinsic_load_global) {
-         load = nir_load_global(b, addr, compsz / 8, loadncomps, compsz);
+         load = nir_load_global(b, loadncomps, compsz, addr);
       } else {
          assert(intr->intrinsic == nir_intrinsic_load_shared);
          nir_intrinsic_instr *shared_load =

@@ -76,7 +76,7 @@ lower_rt_intrinsics_impl(nir_function_impl *impl,
    brw_nir_rt_load_globals(b, &globals, devinfo);
 
    nir_def *hotzone_addr = brw_nir_rt_sw_hotzone_addr(b, devinfo);
-   nir_def *hotzone = nir_load_global(b, hotzone_addr, 16, 4, 32);
+   nir_def *hotzone = nir_load_global(b, 4, 32, hotzone_addr, .align_mul = 16);
 
    mesa_shader_stage stage = b->shader->info.stage;
    struct brw_nir_rt_mem_ray_defs world_ray_in = {};
@@ -280,8 +280,7 @@ lower_rt_intrinsics_impl(nir_function_impl *impl,
 
          case nir_intrinsic_load_ray_geometry_index: {
             nir_def *geometry_index_dw =
-               nir_load_global(b, nir_iadd_imm(b, hit_in.prim_leaf_ptr, 4), 4,
-                               1, 32);
+               nir_load_global(b, 1, 32, nir_iadd_imm(b, hit_in.prim_leaf_ptr, 4));
             sysval = nir_iand_imm(b, geometry_index_dw, BITFIELD_MASK(24));
             break;
          }
@@ -369,8 +368,7 @@ lower_rt_intrinsics_impl(nir_function_impl *impl,
                sysval = hit_in.front_face;
             } else {
                nir_def *flags_dw =
-                  nir_load_global(b, nir_iadd_imm(b, hit_in.prim_leaf_ptr, 4), 4,
-                                  1, 32);
+                  nir_load_global(b, 1, 32, nir_iadd_imm(b, hit_in.prim_leaf_ptr, 4));
                sysval = nir_i2b(b, nir_iand_imm(b, flags_dw, 1u << 30));
             }
             break;

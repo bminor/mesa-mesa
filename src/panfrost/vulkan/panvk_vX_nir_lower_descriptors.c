@@ -412,8 +412,8 @@ build_buffer_addr_for_res_index(nir_builder *b, nir_def *res_index,
             : load_sysval_entry(b, graphics, 64, desc.sets, desc_table_index);
 
       nir_def *desc_addr = nir_iadd(b, base_addr, nir_u2u64(b, desc_offset));
-      nir_def *desc =
-         nir_load_global(b, desc_addr, PANVK_DESCRIPTOR_SIZE, 4, 32);
+      nir_def *desc = nir_load_global(b, 4, 32, desc_addr,
+                                      .align_mul = PANVK_DESCRIPTOR_SIZE);
 
       /* The offset in the descriptor is guaranteed to be zero when it's
        * written into the descriptor set.  This lets us avoid some unnecessary
@@ -554,9 +554,9 @@ load_resource_deref_desc(nir_builder *b, nir_deref_instr *deref,
 
    unsigned desc_align = 1 << (ffs(PANVK_DESCRIPTOR_SIZE + desc_offset) - 1);
 
-   return nir_load_global(b,
+   return nir_load_global(b, num_components, bit_size,
                           nir_iadd(b, set_base_addr, nir_u2u64(b, set_offset)),
-                          desc_align, num_components, bit_size);
+                          .align_mul = desc_align);
 #else
    /* note that user sets start from index 1 */
    return nir_load_ubo(

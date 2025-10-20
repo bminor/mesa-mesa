@@ -2062,21 +2062,6 @@ nir_store_array_var_imm(nir_builder *build, nir_variable *var, int64_t index,
    nir_store_deref(build, deref, value, writemask);
 }
 
-#undef nir_load_global
-static inline nir_def *
-nir_load_global(nir_builder *build, nir_def *addr, unsigned align,
-                unsigned num_components, unsigned bit_size)
-{
-   nir_intrinsic_instr *load =
-      nir_intrinsic_instr_create(build->shader, nir_intrinsic_load_global);
-   load->num_components = (uint8_t)num_components;
-   load->src[0] = nir_src_for_ssa(addr);
-   nir_intrinsic_set_align(load, align, 0);
-   nir_def_init(&load->instr, &load->def, num_components, bit_size);
-   nir_builder_instr_insert(build, &load->instr);
-   return &load->def;
-}
-
 #undef nir_store_global
 static inline void
 nir_store_global(nir_builder *build, nir_def *addr, unsigned align,

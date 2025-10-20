@@ -300,8 +300,8 @@ TEST_F(unsigned_upper_bound_test, loop_phi_bcsel)
 
 TEST_F(ssa_def_bits_used_test, ubfe_ibfe)
 {
-   nir_def *load1 = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 32);
-   nir_def *load2 = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 32);
+   nir_def *load1 = nir_load_global(b, 1, 32, nir_undef(b, 1, 64));
+   nir_def *load2 = nir_load_global(b, 1, 32, nir_undef(b, 1, 64));
 
    nir_def *alu1 = nir_ubfe_imm(b, load1, 14, 3);
    nir_def *alu2 = nir_ibfe_imm(b, load2, 12, 7);
@@ -315,7 +315,7 @@ TEST_F(ssa_def_bits_used_test, ubfe_ibfe)
 
 TEST_F(ssa_def_bits_used_test, ibfe_iand)
 {
-   nir_def *load = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 32);
+   nir_def *load = nir_load_global(b, 1, 32, nir_undef(b, 1, 64));
    nir_def *alu = nir_iand_imm(b, nir_ibfe_imm(b, load, 14, 3), 0x80000000);
    nir_store_global(b, nir_undef(b, 1, 64), 4, alu, 0x1);
 
@@ -324,7 +324,7 @@ TEST_F(ssa_def_bits_used_test, ibfe_iand)
 
 TEST_F(ssa_def_bits_used_test, ubfe_iand)
 {
-   nir_def *load = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 32);
+   nir_def *load = nir_load_global(b, 1, 32, nir_undef(b, 1, 64));
    nir_def *alu = nir_iand_imm(b, nir_ubfe_imm(b, load, 14, 3), 0x2);
    nir_store_global(b, nir_undef(b, 1, 64), 4, alu, 0x1);
 
@@ -333,8 +333,8 @@ TEST_F(ssa_def_bits_used_test, ubfe_iand)
 
 TEST_F(ssa_def_bits_used_test, ishr_signed)
 {
-   nir_def *load1 = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 32);
-   nir_def *load2 = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 32);
+   nir_def *load1 = nir_load_global(b, 1, 32, nir_undef(b, 1, 64));
+   nir_def *load2 = nir_load_global(b, 1, 32, nir_undef(b, 1, 64));
    nir_def *alu1 = nir_iand_imm(b, nir_ishr_imm(b, load1, 13), 0x80000000);
    nir_def *alu2 = nir_iand_imm(b, nir_ishr_imm(b, load2, 13), 0x8000);
    nir_store_global(b, nir_undef(b, 1, 64), 4, alu1, 0x1);
@@ -346,9 +346,9 @@ TEST_F(ssa_def_bits_used_test, ishr_signed)
 
 TEST_F(ssa_def_bits_used_test, ushr_ishr_ishl)
 {
-   nir_def *load1 = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 32);
-   nir_def *load2 = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 32);
-   nir_def *load3 = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 32);
+   nir_def *load1 = nir_load_global(b, 1, 32, nir_undef(b, 1, 64));
+   nir_def *load2 = nir_load_global(b, 1, 32, nir_undef(b, 1, 64));
+   nir_def *load3 = nir_load_global(b, 1, 32, nir_undef(b, 1, 64));
 
    nir_def *alu1 = nir_ushr_imm(b, load1, 7);
    nir_def *alu2 = nir_ishr_imm(b, load2, 11);
@@ -378,7 +378,7 @@ TEST_F(ssa_def_bits_used_test, u2u_i2i_iand)
    nir_def *load[ARRAY_SIZE(ops)];
 
    for (unsigned i = 0; i < ARRAY_SIZE(ops); i++) {
-      load[i] = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 64);
+      load[i] = nir_load_global(b, 1, 64, nir_undef(b, 1, 64));
       nir_def *alu = nir_iand_imm(b, ops[i](b, load[i]), 0x1020304050607080ull);
       nir_store_global(b, nir_undef(b, 1, 64), 4, alu, 0x1);
    }
@@ -404,7 +404,7 @@ TEST_F(ssa_def_bits_used_test, u2u_i2i_upcast_bits)
    nir_def *load[ARRAY_SIZE(ops)];
 
    for (unsigned i = 0; i < ARRAY_SIZE(ops); i++) {
-      load[i] = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 8);
+      load[i] = nir_load_global(b, 1, 8, nir_undef(b, 1, 64));
       nir_def *upcast = ops[i](b, load[i]);
       /* Using one of the sing-extended bits implies using the last bit. */
       nir_def *alu = nir_iand_imm(b, upcast, BITFIELD64_BIT(upcast->bit_size - 1));
@@ -430,7 +430,7 @@ TEST_F(ssa_def_bits_used_test, iand_ior_ishl)
    nir_def *load[ARRAY_SIZE(ops)];
 
    for (unsigned i = 0; i < ARRAY_SIZE(ops); i++) {
-      load[i] = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 32);
+      load[i] = nir_load_global(b, 1, 32, nir_undef(b, 1, 64));
       nir_def *alu = nir_ishl_imm(b, ops[i](b, load[i], 0x12345678), 8);
       nir_store_global(b, nir_undef(b, 1, 64), 4, alu, 0x1);
    }
@@ -441,7 +441,7 @@ TEST_F(ssa_def_bits_used_test, iand_ior_ishl)
 
 TEST_F(ssa_def_bits_used_test, mov_iand)
 {
-   nir_def *load = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 32);
+   nir_def *load = nir_load_global(b, 1, 32, nir_undef(b, 1, 64));
    nir_def *alu = nir_iand_imm(b, nir_mov(b, load), 0x8);
    nir_store_global(b, nir_undef(b, 1, 64), 4, alu, 0x1);
 
@@ -450,9 +450,9 @@ TEST_F(ssa_def_bits_used_test, mov_iand)
 
 TEST_F(ssa_def_bits_used_test, bcsel_iand)
 {
-   nir_def *load1 = nir_i2b(b, nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 32));
-   nir_def *load2 = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 32);
-   nir_def *load3 = nir_load_global(b, nir_undef(b, 1, 64), 4, 1, 32);
+   nir_def *load1 = nir_i2b(b, nir_load_global(b, 1, 32, nir_undef(b, 1, 64)));
+   nir_def *load2 = nir_load_global(b, 1, 32, nir_undef(b, 1, 64));
+   nir_def *load3 = nir_load_global(b, 1, 32, nir_undef(b, 1, 64));
    nir_def *alu = nir_iand_imm(b, nir_bcsel(b, load1, load2, load3), 0x8);
    nir_store_global(b, nir_undef(b, 1, 64), 4, alu, 0x1);
 

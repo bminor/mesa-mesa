@@ -62,7 +62,7 @@ TEST_F(nir_minimize_call_live_states_test, life_intrinsics)
    nir_def *callee = nir_load_push_constant(b, 1, 32, nir_imm_int(b, 0));
 
    nir_def *v1 = nir_load_push_constant(b, 1, 64, nir_imm_int(b, 8));
-   nir_def *v2 = nir_load_global(b, v1, 4, 3, 32);
+   nir_def *v2 = nir_load_global(b, 3, 32, v1);
    nir_def *v3 = nir_load_global_constant(b, v1, 4, 1, 32);
 
    nir_build_indirect_call(b, indirect_decl, callee, 0, NULL);

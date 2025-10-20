@@ -139,7 +139,7 @@ build_accept_ray(nir_builder *b)
    nir_def *ray_addr = brw_nir_rt_mem_hit_addr(b, false /* committed */);
    nir_def *flags_dw_addr = nir_iadd_imm(b, ray_addr, 12);
    nir_store_global(b, flags_dw_addr, 4,
-                    nir_ior(b, nir_load_global(b, flags_dw_addr, 4, 1, 32),
+                    nir_ior(b, nir_load_global(b, 1, 32, flags_dw_addr),
                             nir_imm_int(b, 1 << 16)), 0x1 /* write_mask */);
 
    nir_accept_ray_intersection(b);

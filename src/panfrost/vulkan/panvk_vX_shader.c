@@ -651,9 +651,9 @@ move_push_constant(struct nir_builder *b, nir_intrinsic_instr *intr, void *data)
 
       /* We assume an alignment of 64-bit max for packed push-constants. */
       align = MIN2(align, FAU_WORD_SIZE);
-      nir_def *value =
-         nir_load_global(b, nir_iadd(b, push_const_buf, nir_u2u64(b, offset)),
-                         align, intr->def.num_components, intr->def.bit_size);
+      nir_def *value = nir_load_global(
+         b, intr->def.num_components, intr->def.bit_size,
+         nir_iadd(b, push_const_buf, nir_u2u64(b, offset)), .align_mul = align);
 
       nir_def_replace(&intr->def, value);
    }

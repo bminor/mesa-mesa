@@ -126,14 +126,14 @@ lower_tcs_impl(nir_builder *b, nir_intrinsic_instr *intr)
 
    case nir_intrinsic_load_output: {
       nir_def *addr = tcs_out_addr(b, intr, nir_undef(b, 1, 32));
-      return nir_load_global(b, addr, 4, intr->def.num_components,
-                             intr->def.bit_size);
+      return nir_load_global(b, intr->def.num_components, intr->def.bit_size,
+                             addr, .align_mul = 4);
    }
 
    case nir_intrinsic_load_per_vertex_output: {
       nir_def *addr = tcs_out_addr(b, intr, intr->src[0].ssa);
-      return nir_load_global(b, addr, 4, intr->def.num_components,
-                             intr->def.bit_size);
+      return nir_load_global(b, intr->def.num_components, intr->def.bit_size,
+                             addr, .align_mul = 4);
    }
 
    case nir_intrinsic_store_output: {

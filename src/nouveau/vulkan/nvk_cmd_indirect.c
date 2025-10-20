@@ -114,7 +114,7 @@ build_exec_set_addr(nir_builder *b, struct process_cmd_in *in, nir_def *idx)
 static nir_def *
 load_global_dw(nir_builder *b, nir_def *addr, uint32_t offset_dw)
 {
-   return nir_load_global(b, nir_iadd_imm(b, addr, offset_dw * 4), 4, 1, 32);
+   return nir_load_global(b, 1, 32, nir_iadd_imm(b, addr, offset_dw * 4));
 }
 
 static void
