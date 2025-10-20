@@ -132,33 +132,6 @@ radv_emit_sqtt_userdata(const struct radv_cmd_buffer *cmd_buffer, const void *da
    }
 }
 
-void
-radv_emit_spi_config_cntl(const struct radv_device *device, struct radv_cmd_stream *cs, bool enable)
-{
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-
-   radeon_begin(cs);
-
-   if (pdev->info.gfx_level >= GFX12) {
-      radeon_set_uconfig_reg(R_031120_SPI_SQG_EVENT_CTL,
-                             S_031120_ENABLE_SQG_TOP_EVENTS(enable) | S_031120_ENABLE_SQG_BOP_EVENTS(enable));
-   } else if (pdev->info.gfx_level >= GFX9) {
-      uint32_t spi_config_cntl = S_031100_GPR_WRITE_PRIORITY(0x2c688) | S_031100_EXP_PRIORITY_ORDER(3) |
-                                 S_031100_ENABLE_SQG_TOP_EVENTS(enable) | S_031100_ENABLE_SQG_BOP_EVENTS(enable);
-
-      if (pdev->info.gfx_level >= GFX10)
-         spi_config_cntl |= S_031100_PS_PKR_PRIORITY_CNTL(3);
-
-      radeon_set_uconfig_reg(R_031100_SPI_CONFIG_CNTL, spi_config_cntl);
-   } else {
-      /* SPI_CONFIG_CNTL is a protected register on GFX6-GFX8. */
-      radeon_set_privileged_config_reg(R_009100_SPI_CONFIG_CNTL,
-                                       S_009100_ENABLE_SQG_TOP_EVENTS(enable) | S_009100_ENABLE_SQG_BOP_EVENTS(enable));
-   }
-
-   radeon_end();
-}
-
 VkResult
 radv_sqtt_acquire_gpu_timestamp(struct radv_device *device, struct radeon_winsys_bo **gpu_timestamp_bo,
                                 uint32_t *gpu_timestamp_offset, void **gpu_timestamp_ptr)
@@ -523,7 +496,7 @@ radv_begin_sqtt(struct radv_queue *queue)
    ac_emit_cp_inhibit_clockgating(cs.b, pdev->info.gfx_level, true);
 
    /* Enable SQG events that collects thread trace data. */
-   radv_emit_spi_config_cntl(device, &cs, true);
+   ac_emit_cp_spi_config_cntl(cs.b, pdev->info.gfx_level, true);
 
    radv_perfcounter_emit_reset(&cs, true);
 
@@ -610,7 +583,7 @@ radv_end_sqtt(struct radv_queue *queue)
    radv_perfcounter_emit_reset(&cs, true);
 
    /* Restore previous state by disabling SQG events. */
-   radv_emit_spi_config_cntl(device, &cs, false);
+   ac_emit_cp_spi_config_cntl(cs.b, pdev->info.gfx_level, false);
 
    /* Restore previous state by re-enabling clock gating. */
    ac_emit_cp_inhibit_clockgating(cs.b, pdev->info.gfx_level, false);

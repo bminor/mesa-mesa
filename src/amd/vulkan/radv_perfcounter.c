@@ -685,7 +685,7 @@ radv_pc_begin_query(struct radv_cmd_buffer *cmd_buffer, struct radv_pc_query_poo
    radv_pc_wait_idle(cmd_buffer);
    radv_perfcounter_emit_reset(cs, false);
    ac_emit_cp_inhibit_clockgating(cs->b, pdev->info.gfx_level, true);
-   radv_emit_spi_config_cntl(device, cs, true);
+   ac_emit_cp_spi_config_cntl(cs->b, pdev->info.gfx_level, true);
    radv_perfcounter_emit_shaders(device, cs, 0x7f);
 
    for (unsigned pass = 0; pass < pool->num_passes; ++pass) {
@@ -751,7 +751,7 @@ radv_pc_end_query(struct radv_cmd_buffer *cmd_buffer, struct radv_pc_query_pool 
    radv_pc_wait_idle(cmd_buffer);
    radv_pc_stop_and_sample(cmd_buffer, pool, va, true);
    radv_perfcounter_emit_reset(cs, false);
-   radv_emit_spi_config_cntl(device, cs, false);
+   ac_emit_cp_spi_config_cntl(cs->b, pdev->info.gfx_level, false);
    ac_emit_cp_inhibit_clockgating(cs->b, pdev->info.gfx_level, false);
 
    assert(cs->b->cdw <= cdw_max);

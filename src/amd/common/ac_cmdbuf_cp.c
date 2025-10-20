@@ -501,3 +501,31 @@ ac_emit_cp_inhibit_clockgating(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_leve
    }
    ac_cmdbuf_end();
 }
+
+void
+ac_emit_cp_spi_config_cntl(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
+                           bool enable)
+{
+   ac_cmdbuf_begin(cs);
+   if (gfx_level >= GFX12) {
+      ac_cmdbuf_set_uconfig_reg(R_031120_SPI_SQG_EVENT_CTL,
+                                S_031120_ENABLE_SQG_TOP_EVENTS(enable) |
+                                S_031120_ENABLE_SQG_BOP_EVENTS(enable));
+   } else if (gfx_level >= GFX9) {
+      uint32_t spi_config_cntl = S_031100_GPR_WRITE_PRIORITY(0x2c688) |
+                                 S_031100_EXP_PRIORITY_ORDER(3) |
+                                 S_031100_ENABLE_SQG_TOP_EVENTS(enable) |
+                                 S_031100_ENABLE_SQG_BOP_EVENTS(enable);
+
+      if (gfx_level >= GFX10)
+         spi_config_cntl |= S_031100_PS_PKR_PRIORITY_CNTL(3);
+
+      ac_cmdbuf_set_uconfig_reg(R_031100_SPI_CONFIG_CNTL, spi_config_cntl);
+   } else {
+      /* SPI_CONFIG_CNTL is a protected register on GFX6-GFX8. */
+      ac_cmdbuf_set_privileged_config_reg(R_009100_SPI_CONFIG_CNTL,
+                                          S_009100_ENABLE_SQG_TOP_EVENTS(enable) |
+                                          S_009100_ENABLE_SQG_BOP_EVENTS(enable));
+   }
+   ac_cmdbuf_end();
+}

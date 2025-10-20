@@ -116,6 +116,10 @@ void
 ac_emit_cp_inhibit_clockgating(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
                                bool inhibit);
 
+void
+ac_emit_cp_spi_config_cntl(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
+                           bool enable);
+
 #ifdef __cplusplus
 }
 #endif

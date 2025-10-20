@@ -529,28 +529,7 @@ static void
 si_emit_spi_config_cntl(struct si_context *sctx,
                         struct radeon_cmdbuf *cs, bool enable)
 {
-   radeon_begin(cs);
-
-   if (sctx->gfx_level >= GFX12) {
-      radeon_set_uconfig_reg(R_031120_SPI_SQG_EVENT_CTL,
-                             S_031120_ENABLE_SQG_TOP_EVENTS(enable) | S_031120_ENABLE_SQG_BOP_EVENTS(enable));
-   } else if (sctx->gfx_level >= GFX9) {
-      uint32_t spi_config_cntl = S_031100_GPR_WRITE_PRIORITY(0x2c688) |
-                                 S_031100_EXP_PRIORITY_ORDER(3) |
-                                 S_031100_ENABLE_SQG_TOP_EVENTS(enable) |
-                                 S_031100_ENABLE_SQG_BOP_EVENTS(enable);
-
-      if (sctx->gfx_level >= GFX10)
-         spi_config_cntl |= S_031100_PS_PKR_PRIORITY_CNTL(3);
-
-      radeon_set_uconfig_reg(R_031100_SPI_CONFIG_CNTL, spi_config_cntl);
-   } else {
-      /* SPI_CONFIG_CNTL is a protected register on GFX6-GFX8. */
-      radeon_set_privileged_config_reg(R_009100_SPI_CONFIG_CNTL,
-                                       S_009100_ENABLE_SQG_TOP_EVENTS(enable) |
-                                       S_009100_ENABLE_SQG_BOP_EVENTS(enable));
-   }
-   radeon_end();
+   ac_emit_cp_spi_config_cntl(&cs->current, sctx->gfx_level, enable);
 }
 
 static uint32_t num_events = 0;
