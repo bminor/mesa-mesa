@@ -41,6 +41,20 @@
         r300_mark_atom_dirty(r300, &(atom));   \
     }
 
+static void
+r300_get_scissor_from_viewport(const struct pipe_viewport_state *vp,
+                               struct pipe_scissor_state *scissor)
+{
+    /* SC_CLIP_*_A/B fields are 13 bits. */
+    unsigned max_scissor = 16384;
+    float half_w = fabsf(vp->scale[0]);
+    float half_h = fabsf(vp->scale[1]);
+    scissor->minx = CLAMP(-half_w + vp->translate[0], 0, max_scissor);
+    scissor->maxx = CLAMP(half_w + vp->translate[0], 0, max_scissor);
+    scissor->miny = CLAMP(-half_h + vp->translate[1], 0, max_scissor);
+    scissor->maxy = CLAMP(half_h + vp->translate[1], 0, max_scissor);
+}
+
 static void r300_delete_vs_state(struct pipe_context* pipe, void* shader);
 static void r300_delete_fs_state(struct pipe_context* pipe, void* shader);
 
@@ -1329,7 +1343,8 @@ static void* r300_create_rs_state(struct pipe_context* pipe,
         rs->color_control = R300_SHADE_MODEL_SMOOTH;
     }
 
-    clip_rule = state->scissor ? 0xAAAA : 0xFFFF;
+    /* We always clip, either to the user specified settings or the viewport. */
+    clip_rule = 0xAAAA;
 
     /* Point sprites coord mode */
     if (rs->rs.sprite_coord_enable) {
@@ -1419,6 +1434,7 @@ static void r300_bind_rs_state(struct pipe_context* pipe, void* state)
     bool last_msaa_enable = r300->msaa_enable;
     bool last_flatshade = r300->flatshade;
     bool last_clip_halfz = r300->clip_halfz;
+    bool last_scissor_enabled = r300->scissor_enabled;
 
     if (r300->draw && rs) {
         draw_set_rasterizer_state(r300->draw, &rs->rs_draw, state);
@@ -1431,6 +1447,7 @@ static void r300_bind_rs_state(struct pipe_context* pipe, void* state)
         r300->msaa_enable = rs->rs.multisample;
         r300->flatshade = rs->rs.flatshade;
         r300->clip_halfz = rs->rs.clip_halfz;
+        r300->scissor_enabled = rs->rs.scissor;
     } else {
         r300->polygon_offset_enabled = false;
         r300->sprite_coord_enable = 0;
@@ -1438,6 +1455,7 @@ static void r300_bind_rs_state(struct pipe_context* pipe, void* state)
         r300->msaa_enable = false;
         r300->flatshade = false;
         r300->clip_halfz = false;
+        r300->scissor_enabled = false;
     }
 
     UPDATE_STATE(state, r300->rs_state);
@@ -1462,6 +1480,10 @@ static void r300_bind_rs_state(struct pipe_context* pipe, void* state)
 
     if (r300->screen->caps.has_tcl && last_clip_halfz != r300->clip_halfz) {
         r300_mark_atom_dirty(r300, &r300->vs_state);
+    }
+
+    if (last_scissor_enabled != r300->scissor_enabled) {
+        r300_mark_atom_dirty(r300, &r300->scissor_state);
     }
 }
 
@@ -1768,6 +1790,13 @@ static void r300_set_viewport_states(struct pipe_context* pipe,
         (struct r300_viewport_state*)r300->viewport_state.state;
 
     r300->viewport = *state;
+
+    struct pipe_scissor_state vp_scissor;
+    r300_get_scissor_from_viewport(state, &vp_scissor);
+    if (memcmp(&vp_scissor, &r300->viewport_scissor, sizeof(vp_scissor)) != 0) {
+        r300->viewport_scissor = vp_scissor;
+        r300_mark_atom_dirty(r300, &r300->scissor_state);
+    }
 
     if (r300->draw) {
         draw_set_viewport_states(r300->draw, start_slot, num_viewports, state);

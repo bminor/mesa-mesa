@@ -863,20 +863,28 @@ void r300_emit_scissor_state(struct r300_context* r300,
                              unsigned size, void* state)
 {
     struct pipe_scissor_state* scissor = (struct pipe_scissor_state*)state;
+    struct pipe_scissor_state final = r300->viewport_scissor;
     CS_LOCALS(r300);
+
+    if (r300->scissor_enabled && scissor) {
+        final.minx = MAX2(final.minx, scissor->minx);
+        final.miny = MAX2(final.miny, scissor->miny);
+        final.maxx = MIN2(final.maxx, scissor->maxx);
+        final.maxy = MIN2(final.maxy, scissor->maxy);
+    }
 
     BEGIN_CS(size);
     OUT_CS_REG_SEQ(R300_SC_CLIPRECT_TL_0, 2);
     if (r300->screen->caps.is_r500) {
-        OUT_CS((scissor->minx << R300_CLIPRECT_X_SHIFT) |
-               (scissor->miny << R300_CLIPRECT_Y_SHIFT));
-        OUT_CS(((scissor->maxx - 1) << R300_CLIPRECT_X_SHIFT) |
-               ((scissor->maxy - 1) << R300_CLIPRECT_Y_SHIFT));
+        OUT_CS((final.minx << R300_CLIPRECT_X_SHIFT) |
+               (final.miny << R300_CLIPRECT_Y_SHIFT));
+        OUT_CS(((final.maxx - 1) << R300_CLIPRECT_X_SHIFT) |
+               ((final.maxy - 1) << R300_CLIPRECT_Y_SHIFT));
     } else {
-        OUT_CS(((scissor->minx + 1440) << R300_CLIPRECT_X_SHIFT) |
-               ((scissor->miny + 1440) << R300_CLIPRECT_Y_SHIFT));
-        OUT_CS(((scissor->maxx + 1440-1) << R300_CLIPRECT_X_SHIFT) |
-               ((scissor->maxy + 1440-1) << R300_CLIPRECT_Y_SHIFT));
+        OUT_CS(((final.minx + 1440) << R300_CLIPRECT_X_SHIFT) |
+               ((final.miny + 1440) << R300_CLIPRECT_Y_SHIFT));
+        OUT_CS(((final.maxx + 1440-1) << R300_CLIPRECT_X_SHIFT) |
+               ((final.maxy + 1440-1) << R300_CLIPRECT_Y_SHIFT));
     }
     END_CS;
 }

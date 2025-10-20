@@ -545,6 +545,7 @@ struct r300_context {
 
     struct pipe_stencil_ref stencil_ref;
     struct pipe_viewport_state viewport;
+    struct pipe_scissor_state viewport_scissor;
 
     /* Stream locations for SWTCL. */
     int stream_loc_notcl[16];
@@ -563,6 +564,7 @@ struct r300_context {
     int sprite_coord_enable;
     /* Whether we are drawing points, to disable sprite coord if not */
     bool is_point;
+    bool scissor_enabled;
     /* Whether two-sided color selection is enabled (AKA light_twoside). */
     bool two_sided_color;
     bool flatshade;

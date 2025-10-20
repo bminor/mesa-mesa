@@ -416,6 +416,9 @@ struct pipe_context* r300_create_context(struct pipe_screen* screen,
     r300_init_render_functions(r300);
     r300_init_states(&r300->context);
 
+    r300->viewport_scissor.maxx = 16384;
+    r300->viewport_scissor.maxy = 16384;
+
     r300->uploader = u_upload_create(&r300->context, 128 * 1024,
                                      PIPE_BIND_CUSTOM, PIPE_USAGE_STREAM, 0);
     r300->context.stream_uploader = u_upload_create(&r300->context, 1024 * 1024,

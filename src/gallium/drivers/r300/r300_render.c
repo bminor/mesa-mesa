@@ -1160,10 +1160,13 @@ void r300_blitter_draw_rectangle(struct blitter_context *blitter,
     struct r300_context *r300 = r300_context(util_blitter_get_pipe(blitter));
     unsigned last_sprite_coord_enable = r300->sprite_coord_enable;
     unsigned last_is_point = r300->is_point;
+    /* We othewise always scissor to the viewport, but blits ignore it. */
+    struct pipe_scissor_state last_vp_scissor = r300->viewport_scissor;
+    r300->viewport_scissor = (struct pipe_scissor_state){0, 0, 16384, 16384};
     unsigned width = x2 - x1;
     unsigned height = y2 - y1;
     unsigned vertex_size = !r300->draw ? 8 : 4;
-    unsigned dwords = 13 + vertex_size +
+    unsigned dwords = 15 + vertex_size +
                       (type == UTIL_BLITTER_ATTRIB_TEXCOORD_XY ? 7 : 0);
     CS_LOCALS(r300);
 
@@ -1202,6 +1205,7 @@ void r300_blitter_draw_rectangle(struct blitter_context *blitter,
     BEGIN_CS(dwords);
     /* Set up GA. */
     OUT_CS_REG(R300_GA_POINT_SIZE, (height * 6) | ((width * 6) << 16));
+    OUT_CS_REG(R300_SC_CLIP_RULE, r300->scissor_enabled ? 0xAAAA : 0xFFFF);
 
     if (type == UTIL_BLITTER_ATTRIB_TEXCOORD_XY) {
         /* Set up the GA to generate texcoords. */
@@ -1242,9 +1246,11 @@ done:
     /* Restore the state. */
     r300_mark_atom_dirty(r300, &r300->rs_state);
     r300_mark_atom_dirty(r300, &r300->viewport_state);
+    r300_mark_atom_dirty(r300, &r300->scissor_state);
 
     r300->sprite_coord_enable = last_sprite_coord_enable;
     r300->is_point = last_is_point;
+    r300->viewport_scissor = last_vp_scissor;
 }
 
 void r300_init_render_functions(struct r300_context *r300)
