@@ -2373,7 +2373,7 @@ build_copy_buffer_shader(const struct vk_meta_device *meta,
                                          nir_iadd(b, src_addr, offset),
                                          .align_mul = chunk_bit_size / 8);
 
-   nir_build_store_global(b, data, nir_iadd(b, dst_addr, offset),
+   nir_store_global(b, data, nir_iadd(b, dst_addr, offset),
                           .align_mul = key->chunk_size);
 
    nir_pop_if(b, NULL);
@@ -2552,7 +2552,7 @@ build_fill_buffer_shader(const struct vk_meta_device *meta,
    nir_def *buf_addr =
       load_info(b, struct vk_meta_fill_buffer_info, buf_addr);
 
-   nir_build_store_global(b, data, nir_iadd(b, buf_addr, offset),
+   nir_store_global(b, data, nir_iadd(b, buf_addr, offset),
                           .align_mul = 4);
 
    nir_pop_if(b, NULL);

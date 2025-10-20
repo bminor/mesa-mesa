@@ -52,7 +52,7 @@ static inline void
 brw_nir_rt_store(nir_builder *b, nir_def *addr, unsigned align,
                  nir_def *value, unsigned write_mask)
 {
-   nir_build_store_global(b, value, addr,
+   nir_store_global(b, value, addr,
                           .align_mul = align,
                           .write_mask = (write_mask) &
                                         BITFIELD_MASK(value->num_components),

@@ -418,8 +418,8 @@ try_opt_atomic_exchange_to_store(nir_builder *b, nir_intrinsic_instr *intrin)
                        .base = nir_intrinsic_base(intrin));
       break;
    case nir_intrinsic_global_atomic:
-      nir_build_store_global(b, intrin->src[1].ssa, intrin->src[0].ssa,
-                             .access = ACCESS_ATOMIC | ACCESS_COHERENT);
+      nir_store_global(b, intrin->src[1].ssa, intrin->src[0].ssa,
+                       .access = ACCESS_ATOMIC | ACCESS_COHERENT);
       break;
    case nir_intrinsic_global_atomic_amd:
       nir_store_global_amd(b, intrin->src[1].ssa, intrin->src[0].ssa, intrin->src[2].ssa,

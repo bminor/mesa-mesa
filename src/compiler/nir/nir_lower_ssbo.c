@@ -50,11 +50,11 @@ pass(nir_builder *b, nir_intrinsic_instr *intr, void *data)
       break;
 
    case nir_intrinsic_store_ssbo:
-      nir_build_store_global(b, intr->src[0].ssa,
-                             calc_address(b, intr, opts),
-                             .align_mul = nir_intrinsic_align_mul(intr),
-                             .align_offset = nir_intrinsic_align_offset(intr),
-                             .write_mask = nir_intrinsic_write_mask(intr));
+      nir_store_global(b, intr->src[0].ssa,
+                       calc_address(b, intr, opts),
+                       .align_mul = nir_intrinsic_align_mul(intr),
+                       .align_offset = nir_intrinsic_align_offset(intr),
+                       .write_mask = nir_intrinsic_write_mask(intr));
       break;
 
    case nir_intrinsic_ssbo_atomic:

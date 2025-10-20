@@ -132,12 +132,12 @@ radv_store_availability(nir_builder *b, nir_def *flags, nir_def *dst_va, nir_def
 
    nir_push_if(b, nir_test_mask(b, flags, VK_QUERY_RESULT_64_BIT));
 
-   nir_build_store_global(b, nir_vec2(b, value32, nir_imm_int(b, 0)), nir_iadd(b, dst_va, nir_u2u64(b, offset)),
-                          .align_mul = 8);
+   nir_store_global(b, nir_vec2(b, value32, nir_imm_int(b, 0)), nir_iadd(b, dst_va, nir_u2u64(b, offset)),
+                    .align_mul = 8);
 
    nir_push_else(b, NULL);
 
-   nir_build_store_global(b, value32, nir_iadd(b, dst_va, nir_u2u64(b, offset)));
+   nir_store_global(b, value32, nir_iadd(b, dst_va, nir_u2u64(b, offset)));
 
    nir_pop_if(b, NULL);
 
@@ -293,13 +293,12 @@ build_occlusion_query_shader(struct radv_device *device)
 
    nir_push_if(&b, result_is_64bit);
 
-   nir_build_store_global(&b, nir_load_var(&b, result), nir_iadd(&b, dst_va, nir_u2u64(&b, output_base)),
-                          .align_mul = 8);
+   nir_store_global(&b, nir_load_var(&b, result), nir_iadd(&b, dst_va, nir_u2u64(&b, output_base)), .align_mul = 8);
 
    nir_push_else(&b, NULL);
 
-   nir_build_store_global(&b, nir_u2u32(&b, nir_load_var(&b, result)), nir_iadd(&b, dst_va, nir_u2u64(&b, output_base)),
-                          .align_mul = 8);
+   nir_store_global(&b, nir_u2u32(&b, nir_load_var(&b, result)), nir_iadd(&b, dst_va, nir_u2u64(&b, output_base)),
+                    .align_mul = 8);
 
    nir_pop_if(&b, NULL);
    nir_pop_if(&b, NULL);
@@ -558,13 +557,13 @@ build_pipeline_statistics_query_shader(struct radv_device *device)
       /* Store result */
       nir_push_if(&b, result_is_64bit);
 
-      nir_build_store_global(&b, nir_load_var(&b, result),
-                             nir_iadd(&b, dst_va, nir_u2u64(&b, nir_load_var(&b, output_offset))));
+      nir_store_global(&b, nir_load_var(&b, result),
+                       nir_iadd(&b, dst_va, nir_u2u64(&b, nir_load_var(&b, output_offset))));
 
       nir_push_else(&b, NULL);
 
-      nir_build_store_global(&b, nir_u2u32(&b, nir_load_var(&b, result)),
-                             nir_iadd(&b, dst_va, nir_u2u64(&b, nir_load_var(&b, output_offset))));
+      nir_store_global(&b, nir_u2u32(&b, nir_load_var(&b, result)),
+                       nir_iadd(&b, dst_va, nir_u2u64(&b, nir_load_var(&b, output_offset))));
 
       nir_pop_if(&b, NULL);
 
@@ -590,11 +589,11 @@ build_pipeline_statistics_query_shader(struct radv_device *device)
    nir_def *output_elem = nir_iadd(&b, output_base, nir_imul(&b, elem_size, current_counter));
    nir_push_if(&b, result_is_64bit);
 
-   nir_build_store_global(&b, nir_imm_int64(&b, 0), nir_iadd(&b, dst_va, nir_u2u64(&b, output_elem)));
+   nir_store_global(&b, nir_imm_int64(&b, 0), nir_iadd(&b, dst_va, nir_u2u64(&b, output_elem)));
 
    nir_push_else(&b, NULL);
 
-   nir_build_store_global(&b, nir_imm_int(&b, 0), nir_iadd(&b, dst_va, nir_u2u64(&b, output_elem)));
+   nir_store_global(&b, nir_imm_int(&b, 0), nir_iadd(&b, dst_va, nir_u2u64(&b, output_elem)));
 
    nir_pop_if(&b, NULL);
 
@@ -916,12 +915,11 @@ build_tfb_query_shader(struct radv_device *device)
    /* Store result. */
    nir_push_if(&b, result_is_64bit);
 
-   nir_build_store_global(&b, nir_load_var(&b, result), nir_iadd(&b, dst_va, nir_u2u64(&b, output_base)));
+   nir_store_global(&b, nir_load_var(&b, result), nir_iadd(&b, dst_va, nir_u2u64(&b, output_base)));
 
    nir_push_else(&b, NULL);
 
-   nir_build_store_global(&b, nir_u2u32(&b, nir_load_var(&b, result)),
-                          nir_iadd(&b, dst_va, nir_u2u64(&b, output_base)));
+   nir_store_global(&b, nir_u2u32(&b, nir_load_var(&b, result)), nir_iadd(&b, dst_va, nir_u2u64(&b, output_base)));
 
    nir_pop_if(&b, NULL);
    nir_pop_if(&b, NULL);
@@ -1142,12 +1140,11 @@ build_timestamp_query_shader(struct radv_device *device)
    /* Store result. */
    nir_push_if(&b, result_is_64bit);
 
-   nir_build_store_global(&b, nir_load_var(&b, result), nir_iadd(&b, dst_va, nir_u2u64(&b, output_base)));
+   nir_store_global(&b, nir_load_var(&b, result), nir_iadd(&b, dst_va, nir_u2u64(&b, output_base)));
 
    nir_push_else(&b, NULL);
 
-   nir_build_store_global(&b, nir_u2u32(&b, nir_load_var(&b, result)),
-                          nir_iadd(&b, dst_va, nir_u2u64(&b, output_base)));
+   nir_store_global(&b, nir_u2u32(&b, nir_load_var(&b, result)), nir_iadd(&b, dst_va, nir_u2u64(&b, output_base)));
 
    nir_pop_if(&b, NULL);
 
@@ -1323,12 +1320,11 @@ build_pg_query_shader(struct radv_device *device)
    /* Store result. */
    nir_push_if(&b, result_is_64bit);
 
-   nir_build_store_global(&b, nir_load_var(&b, result), nir_iadd(&b, dst_va, nir_u2u64(&b, output_base)));
+   nir_store_global(&b, nir_load_var(&b, result), nir_iadd(&b, dst_va, nir_u2u64(&b, output_base)));
 
    nir_push_else(&b, NULL);
 
-   nir_build_store_global(&b, nir_u2u32(&b, nir_load_var(&b, result)),
-                          nir_iadd(&b, dst_va, nir_u2u64(&b, output_base)));
+   nir_store_global(&b, nir_u2u32(&b, nir_load_var(&b, result)), nir_iadd(&b, dst_va, nir_u2u64(&b, output_base)));
 
    nir_pop_if(&b, NULL);
    nir_pop_if(&b, NULL);
@@ -1568,12 +1564,11 @@ build_ms_prim_gen_query_shader(struct radv_device *device)
    /* Store result. */
    nir_push_if(&b, result_is_64bit);
 
-   nir_build_store_global(&b, nir_load_var(&b, result), nir_iadd(&b, dst_va, nir_u2u64(&b, output_base)));
+   nir_store_global(&b, nir_load_var(&b, result), nir_iadd(&b, dst_va, nir_u2u64(&b, output_base)));
 
    nir_push_else(&b, NULL);
 
-   nir_build_store_global(&b, nir_u2u32(&b, nir_load_var(&b, result)),
-                          nir_iadd(&b, dst_va, nir_u2u64(&b, output_base)));
+   nir_store_global(&b, nir_u2u32(&b, nir_load_var(&b, result)), nir_iadd(&b, dst_va, nir_u2u64(&b, output_base)));
 
    nir_pop_if(&b, NULL);
    nir_pop_if(&b, NULL);

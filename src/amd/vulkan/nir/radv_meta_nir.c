@@ -140,7 +140,7 @@ radv_meta_nir_build_fill_memory_shader(struct radv_device *dev, uint32_t bytes_p
 
    nir_def *offset = nir_umin(&b, nir_imul_imm(&b, global_id, bytes_per_invocation), max_offset);
    nir_def *dst_addr = nir_iadd(&b, buffer_addr, nir_u2u64(&b, offset));
-   nir_build_store_global(&b, data, dst_addr, .align_mul = 4);
+   nir_store_global(&b, data, dst_addr, .align_mul = 4);
 
    return b.shader;
 }
@@ -169,7 +169,7 @@ radv_meta_nir_build_copy_memory_shader(struct radv_device *dev, uint32_t bytes_p
 
    nir_def *data =
       nir_load_global(&b, num_components, bit_size, nir_iadd(&b, src_addr, offset), .align_mul = bit_size / 8);
-   nir_build_store_global(&b, data, nir_iadd(&b, dst_addr, offset), .align_mul = bit_size / 8);
+   nir_store_global(&b, data, nir_iadd(&b, dst_addr, offset), .align_mul = bit_size / 8);
 
    return b.shader;
 }
@@ -892,7 +892,7 @@ radv_meta_nir_build_clear_htile_mask_shader(struct radv_device *dev)
    nir_def *data = nir_iand(&b, load, nir_channel(&b, constants, 3));
    data = nir_ior(&b, data, nir_channel(&b, constants, 2));
 
-   nir_build_store_global(&b, data, va, .access = ACCESS_NON_READABLE, .align_mul = 16);
+   nir_store_global(&b, data, va, .access = ACCESS_NON_READABLE, .align_mul = 16);
 
    return b.shader;
 }
@@ -1017,8 +1017,8 @@ radv_meta_nir_build_copy_vrs_htile_shader(struct radv_device *device, struct rad
    nir_def *output_value = nir_ior(&b, nir_load_var(&b, htile_value), vrs_rates);
 
    /* Store the updated HTILE 32-bit which contains the VRS rates. */
-   nir_build_store_global(&b, output_value, nir_iadd(&b, htile_va, nir_u2u64(&b, htile_offset)),
-                          .access = ACCESS_NON_READABLE);
+   nir_store_global(&b, output_value, nir_iadd(&b, htile_va, nir_u2u64(&b, htile_offset)),
+                    .access = ACCESS_NON_READABLE);
 
    return b.shader;
 }

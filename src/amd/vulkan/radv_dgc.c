@@ -797,7 +797,7 @@ dgc_emit(struct dgc_cmdbuf *cs, unsigned count, nir_def **values)
       nir_def *offset = nir_load_var(b, cs->offset);
       nir_def *store_val = nir_vec(b, values + i, MIN2(count - i, 4));
       assert(store_val->bit_size >= 32);
-      nir_build_store_global(b, store_val, nir_iadd(b, cs->va, nir_u2u64(b, offset)), .access = ACCESS_NON_READABLE);
+      nir_store_global(b, store_val, nir_iadd(b, cs->va, nir_u2u64(b, offset)), .access = ACCESS_NON_READABLE);
       nir_store_var(b, cs->offset, nir_iadd_imm(b, offset, store_val->num_components * store_val->bit_size / 8), 0x1);
    }
 }
@@ -808,7 +808,7 @@ dgc_upload(struct dgc_cmdbuf *cs, nir_def *data)
    nir_builder *b = cs->b;
 
    nir_def *upload_offset = nir_load_var(b, cs->upload_offset);
-   nir_build_store_global(b, data, nir_iadd(b, cs->va, nir_u2u64(b, upload_offset)), .access = ACCESS_NON_READABLE);
+   nir_store_global(b, data, nir_iadd(b, cs->va, nir_u2u64(b, upload_offset)), .access = ACCESS_NON_READABLE);
    nir_store_var(b, cs->upload_offset, nir_iadd_imm(b, upload_offset, data->num_components * data->bit_size / 8), 0x1);
 }
 
@@ -1019,7 +1019,7 @@ dgc_emit_indirect_buffer(struct dgc_cmdbuf *cs, nir_def *va, nir_def *ib_offset,
       nir_ior_imm(b, ib_cdw, S_3F2_CHAIN(1) | S_3F2_VALID(1) | S_3F2_PRE_ENA(false)),
    };
 
-   nir_build_store_global(b, nir_vec(b, packet, 4), va, .access = ACCESS_NON_READABLE);
+   nir_store_global(b, nir_vec(b, packet, 4), va, .access = ACCESS_NON_READABLE);
 }
 
 static void
@@ -1046,7 +1046,7 @@ dgc_emit_padding(struct dgc_cmdbuf *cs, nir_def *cmd_buf_offset, nir_def *size)
       len = nir_iadd_imm(b, len, -2);
       nir_def *packet = nir_pkt3(b, PKT3_NOP, len);
 
-      nir_build_store_global(b, packet, nir_iadd(b, va, nir_u2u64(b, curr_offset)), .access = ACCESS_NON_READABLE);
+      nir_store_global(b, packet, nir_iadd(b, va, nir_u2u64(b, curr_offset)), .access = ACCESS_NON_READABLE);
 
       nir_store_var(b, offset, nir_iadd(b, curr_offset, packet_size), 0x1);
    }
@@ -1159,8 +1159,7 @@ build_dgc_buffer_trailer(struct dgc_cmdbuf *cs, nir_def *cmd_buf_offset, unsigne
          nir_imm_int(b, PKT3_NOP_PAD),
       };
 
-      nir_build_store_global(b, nir_vec(b, nop_packets, 4), nir_iadd_imm(b, va, pad_size),
-                             .access = ACCESS_NON_READABLE);
+      nir_store_global(b, nir_vec(b, nop_packets, 4), nir_iadd_imm(b, va, pad_size), .access = ACCESS_NON_READABLE);
    }
    nir_pop_if(b, NULL);
 }
@@ -1758,7 +1757,7 @@ dgc_alloc_push_constant(struct dgc_cmdbuf *cs, nir_def *stream_addr, nir_def *se
       nir_def *data = nir_load_global(b, 1, 32, nir_iadd(b, va, nir_u2u64(b, pc_offset)));
 
       nir_def *offset = nir_iadd(b, upload_offset_pc, nir_imul_imm(b, cur_idx, 4));
-      nir_build_store_global(b, data, nir_iadd(b, cs->va, nir_u2u64(b, offset)), .access = ACCESS_NON_READABLE);
+      nir_store_global(b, data, nir_iadd(b, cs->va, nir_u2u64(b, offset)), .access = ACCESS_NON_READABLE);
 
       nir_store_var(b, idx, nir_iadd_imm(b, cur_idx, 1), 0x1);
    }
@@ -1776,7 +1775,7 @@ dgc_alloc_push_constant(struct dgc_cmdbuf *cs, nir_def *stream_addr, nir_def *se
       }
 
       nir_def *offset = nir_iadd_imm(b, upload_offset_pc, i * 4);
-      nir_build_store_global(b, data, nir_iadd(b, cs->va, nir_u2u64(b, offset)), .access = ACCESS_NON_READABLE);
+      nir_store_global(b, data, nir_iadd(b, cs->va, nir_u2u64(b, offset)), .access = ACCESS_NON_READABLE);
    }
 
    nir_def *pc_size = nir_imul_imm(b, load_param8(b, push_constant_size), 4);
