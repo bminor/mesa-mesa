@@ -284,7 +284,7 @@ lower_load_intrinsic(nir_builder *b, nir_intrinsic_instr *load,
       }
 
       nir_def *val =
-         nir_build_load_global_constant(b, load->def.num_components,
+         nir_load_global_constant(b, load->def.num_components,
                                         load->def.bit_size,
                                         nir_iadd(b, base_addr, nir_u2u64(b, offset)),
                                         .align_mul = nir_intrinsic_align_mul(load),

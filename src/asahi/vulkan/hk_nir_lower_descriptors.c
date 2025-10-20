@@ -46,9 +46,9 @@ static nir_def *
 load_speculatable(nir_builder *b, unsigned num_components, unsigned bit_size,
                   nir_def *addr, unsigned align)
 {
-   return nir_build_load_global_constant(b, num_components, bit_size, addr,
-                                         .align_mul = align,
-                                         .access = ACCESS_CAN_SPECULATE);
+   return nir_load_global_constant(b, num_components, bit_size, addr,
+                                   .align_mul = align,
+                                   .access = ACCESS_CAN_SPECULATE);
 }
 
 static nir_def *
