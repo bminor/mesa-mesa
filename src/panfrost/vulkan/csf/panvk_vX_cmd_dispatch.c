@@ -296,7 +296,7 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
       unsigned task_axis = MALI_TASK_AXIS_X;
       unsigned task_increment = 0;
       panvk_per_arch(calculate_task_axis_and_increment)(
-         cs, phys_dev, &task_axis, &task_increment);
+         cs, phys_dev, &dim, &task_axis, &task_increment);
       cs_trace_run_compute(b, tracing_ctx, cs_scratch_reg_tuple(b, 0, 4),
                            task_increment, task_axis,
                            cs_shader_res_sel(0, 0, 0, 0));
