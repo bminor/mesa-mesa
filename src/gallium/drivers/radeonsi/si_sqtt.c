@@ -63,11 +63,7 @@ static void si_emit_sqtt_start(struct si_context *sctx,
 
    ac_sqtt_emit_start(&sscreen->info, pm4, sctx->sqtt, is_compute_queue);
    ac_pm4_finalize(pm4);
-
-   radeon_begin(cs);
-   radeon_emit_array(pm4->pm4, pm4->ndw);
-   radeon_end();
-
+   ac_pm4_emit_commands(&cs->current, pm4);
    ac_pm4_free_state(pm4);
 }
 
@@ -84,11 +80,7 @@ static void si_emit_sqtt_stop(struct si_context *sctx, struct radeon_cmdbuf *cs,
 
    ac_sqtt_emit_stop(&sscreen->info, pm4, is_compute_queue);
    ac_pm4_finalize(pm4);
-
-   radeon_begin(cs);
-   radeon_emit_array(pm4->pm4, pm4->ndw);
-   radeon_end();
-
+   ac_pm4_emit_commands(&cs->current, pm4);
    ac_pm4_clear_state(pm4, &sscreen->info, false, is_compute_queue);
 
    if (sctx->screen->info.has_sqtt_rb_harvest_bug) {
@@ -101,11 +93,7 @@ static void si_emit_sqtt_stop(struct si_context *sctx, struct radeon_cmdbuf *cs,
 
    ac_sqtt_emit_wait(&sscreen->info, pm4, sctx->sqtt, is_compute_queue);
    ac_pm4_finalize(pm4);
-
-   radeon_begin_again(cs);
-   radeon_emit_array(pm4->pm4, pm4->ndw);
-   radeon_end();
-
+   ac_pm4_emit_commands(&cs->current, pm4);
    ac_pm4_free_state(pm4);
 }
 

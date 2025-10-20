@@ -384,14 +384,6 @@ void radv_cs_emit_cache_flush(struct radeon_winsys *ws, struct radv_cmd_stream *
                               uint32_t *flush_cnt, uint64_t flush_va, enum radv_cmd_flush_bits flush_bits,
                               enum rgp_flush_bits *sqtt_flush_bits, uint64_t gfx9_eop_bug_va);
 
-static inline void
-radv_emit_pm4_commands(struct radv_cmd_stream *cs, const struct ac_pm4_state *pm4)
-{
-   radeon_begin(cs);
-   radeon_emit_array(pm4->pm4, pm4->ndw);
-   radeon_end();
-}
-
 VkResult radv_create_cmd_stream(const struct radv_device *device, const enum amd_ip_type ip_type,
                                 const bool is_secondary, struct radv_cmd_stream **cs_out);
 

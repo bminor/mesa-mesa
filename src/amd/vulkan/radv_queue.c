@@ -653,7 +653,7 @@ radv_emit_compute(struct radv_device *device, struct radv_cmd_stream *cs, bool i
                      S_00B8BC_INTERLEAVE_1D(preamble_state.gfx11.compute_dispatch_interleave));
 
    ac_pm4_finalize(pm4);
-   radv_emit_pm4_commands(cs, pm4);
+   ac_pm4_emit_commands(cs->b, pm4);
    ac_pm4_free_state(pm4);
 }
 
@@ -831,7 +831,7 @@ radv_emit_graphics(struct radv_device *device, struct radv_cmd_stream *cs)
    }
 
    ac_pm4_finalize(pm4);
-   radv_emit_pm4_commands(cs, pm4);
+   ac_pm4_emit_commands(cs->b, pm4);
    ac_pm4_free_state(pm4);
 
    radv_emit_compute(device, cs, false);
