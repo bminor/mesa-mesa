@@ -44,7 +44,7 @@ endif
 
 mtl_bridge_dependencies = [
   idep_vulkan_lite_runtime_headers,
-  idep_vulkan_util_headers
+  idep_vulkan_util
 ]
 
 libmtl_bridge = static_library(
