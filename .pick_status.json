@@ -44,7 +44,7 @@
         "description": "nak: ensure deref has a ptr_stride in cmat load/store lowering",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "05dca16143765e34e447edf0d4727ce4cb5d1175",
         "notes": null
