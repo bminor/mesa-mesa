@@ -265,6 +265,7 @@ kk_get_device_features(
       .samplerYcbcrConversion = true,
       .textureCompressionETC2 = true,
       .textureCompressionASTC_LDR = true,
+      .textureCompressionBC = true,
 
       /* VK_EXT_mutable_descriptor_type */
       .mutableDescriptorType = true,
