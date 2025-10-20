@@ -4,7 +4,7 @@
         "description": "nvk: VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7692d3c0e1a2b54c82c945335d23fc174252fda1",
         "notes": null
