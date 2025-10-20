@@ -5,7 +5,9 @@
 test_uav_counter_null_behavior_dxbc,Crash
 test_uav_counter_null_behavior_dxil,Crash
 
-test_sampler_feedback_implicit_lod_aniso,Fail
-
-test_derivative_hoisting_dxbc,Fail
 test_derivative_hoisting_dxil,Fail
+
+test_undefined_structured_raw_alias_dxbc,Fail
+test_undefined_structured_raw_alias_dxil,Fail
+test_undefined_structured_raw_read_typed_dxbc,Fail
+test_undefined_structured_raw_read_typed_dxil,Fail
