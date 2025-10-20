@@ -50,13 +50,8 @@ void si_cp_release_mem(struct si_context *ctx, struct radeon_cmdbuf *cs, unsigne
                        struct si_resource *buf, uint64_t va, uint32_t new_fence,
                        unsigned query_type)
 {
-   unsigned op = EVENT_TYPE(event) |
-                 EVENT_INDEX(event == V_028A90_CS_DONE || event == V_028A90_PS_DONE ? 6 : 5) |
-                 event_flags;
-   unsigned sel = EOP_DST_SEL(dst_sel) | EOP_INT_SEL(int_sel) | EOP_DATA_SEL(data_sel);
    bool compute_ib = !ctx->is_gfx_queue;
-
-   radeon_begin(cs);
+   uint64_t eop_bug_va = 0;
 
    if (ctx->gfx_level >= GFX9 || (compute_ib && ctx->gfx_level >= GFX7)) {
       /* A ZPASS_DONE or PIXEL_STAT_DUMP_EVENT (of the DB occlusion
@@ -89,57 +84,28 @@ void si_cp_release_mem(struct si_context *ctx, struct radeon_cmdbuf *cs, unsigne
          }
 
          assert(16 * ctx->screen->info.max_render_backends <= scratch->b.b.width0);
-         radeon_emit(PKT3(PKT3_EVENT_WRITE, 2, 0));
-         radeon_emit(EVENT_TYPE(V_028A90_ZPASS_DONE) | EVENT_INDEX(1));
-         radeon_emit(scratch->gpu_address);
-         radeon_emit(scratch->gpu_address >> 32);
+         eop_bug_va = scratch->gpu_address;
 
          radeon_add_to_buffer_list(ctx, &ctx->gfx_cs, scratch,
                                    RADEON_USAGE_WRITE | RADEON_PRIO_QUERY);
       }
+   } else if (ctx->gfx_level == GFX7 || ctx->gfx_level == GFX8) {
+      struct si_resource *scratch = ctx->eop_bug_scratch;
 
-      radeon_emit(PKT3(PKT3_RELEASE_MEM, ctx->gfx_level >= GFX9 ? 6 : 5, 0));
-      radeon_emit(op);
-      radeon_emit(sel);
-      radeon_emit(va);        /* address lo */
-      radeon_emit(va >> 32);  /* address hi */
-      radeon_emit(new_fence); /* immediate data lo */
-      radeon_emit(0);         /* immediate data hi */
-      if (ctx->gfx_level >= GFX9)
-         radeon_emit(0); /* unused */
-   } else {
-      if (ctx->gfx_level == GFX7 || ctx->gfx_level == GFX8) {
-         struct si_resource *scratch = ctx->eop_bug_scratch;
-         uint64_t va = scratch->gpu_address;
+      eop_bug_va = scratch->gpu_address;
 
-         /* Two EOP events are required to make all engines go idle
-          * (and optional cache flushes executed) before the timestamp
-          * is written.
-          */
-         radeon_emit(PKT3(PKT3_EVENT_WRITE_EOP, 4, 0));
-         radeon_emit(op);
-         radeon_emit(va);
-         radeon_emit(((va >> 32) & 0xffff) | sel);
-         radeon_emit(0); /* immediate data */
-         radeon_emit(0); /* unused */
-
-         radeon_add_to_buffer_list(ctx, &ctx->gfx_cs, scratch,
-                                   RADEON_USAGE_WRITE | RADEON_PRIO_QUERY);
-      }
-
-      radeon_emit(PKT3(PKT3_EVENT_WRITE_EOP, 4, 0));
-      radeon_emit(op);
-      radeon_emit(va);
-      radeon_emit(((va >> 32) & 0xffff) | sel);
-      radeon_emit(new_fence); /* immediate data */
-      radeon_emit(0);         /* unused */
+      radeon_add_to_buffer_list(ctx, &ctx->gfx_cs, scratch,
+                               RADEON_USAGE_WRITE | RADEON_PRIO_QUERY);
    }
-
-   radeon_end();
 
    if (buf) {
       radeon_add_to_buffer_list(ctx, &ctx->gfx_cs, buf, RADEON_USAGE_WRITE | RADEON_PRIO_QUERY);
    }
+
+   ac_emit_cp_release_mem(&cs->current, ctx->gfx_level,
+                          compute_ib ? AMD_IP_COMPUTE : AMD_IP_GFX, event,
+                          event_flags, dst_sel, int_sel, data_sel, va,
+                          new_fence, eop_bug_va);
 }
 
 unsigned si_cp_write_fence_dwords(struct si_screen *screen)

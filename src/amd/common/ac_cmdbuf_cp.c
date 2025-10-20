@@ -441,6 +441,89 @@ ac_emit_cp_acquire_mem(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
 }
 
 void
+ac_emit_cp_release_mem(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
+                       enum amd_ip_type ip_type, uint32_t event,
+                       uint32_t event_flags, uint32_t dst_sel,
+                       uint32_t int_sel, uint32_t data_sel, uint64_t va,
+                       uint32_t new_fence, uint64_t eop_bug_va)
+{
+   const bool is_mec = gfx_level >= GFX7 && ip_type == AMD_IP_COMPUTE;
+
+   /* EOS events may be buggy on GFX7, prefer not to use them. */
+   if (gfx_level == GFX7 && (event == V_028A90_CS_DONE || event == V_028A90_PS_DONE))
+      event = V_028A90_BOTTOM_OF_PIPE_TS;
+
+   const uint32_t op = EVENT_TYPE(event) |
+                       EVENT_INDEX(event == V_028A90_CS_DONE || event == V_028A90_PS_DONE ? 6 : 5) |
+                       event_flags;
+   const uint32_t sel = EOP_DST_SEL(dst_sel) |
+                        EOP_INT_SEL(int_sel) |
+                        EOP_DATA_SEL(data_sel);
+
+   ac_cmdbuf_begin(cs);
+
+   if (gfx_level >= GFX9 || is_mec) {
+      /* A ZPASS_DONE or PIXEL_STAT_DUMP_EVENT (of the DB occlusion counters)
+       * must immediately precede every timestamp event to prevent a GPU hang
+       * on GFX9.
+       */
+      if (gfx_level == GFX9 && !is_mec && eop_bug_va) {
+         ac_cmdbuf_emit(PKT3(PKT3_EVENT_WRITE, 2, 0));
+         ac_cmdbuf_emit(EVENT_TYPE(V_028A90_ZPASS_DONE) | EVENT_INDEX(1));
+         ac_cmdbuf_emit(eop_bug_va);
+         ac_cmdbuf_emit(eop_bug_va >> 32);
+      }
+
+      ac_cmdbuf_emit(PKT3(PKT3_RELEASE_MEM, gfx_level >= GFX9 ? 6 : 5, false));
+      ac_cmdbuf_emit(op);
+      ac_cmdbuf_emit(sel);
+      ac_cmdbuf_emit(va);        /* address lo */
+      ac_cmdbuf_emit(va >> 32);  /* address hi */
+      ac_cmdbuf_emit(new_fence); /* immediate data lo */
+      ac_cmdbuf_emit(0);         /* immediate data hi */
+      if (gfx_level >= GFX9)
+         ac_cmdbuf_emit(0); /* unused */
+   } else {
+      /* On GFX6, EOS events are always emitted with EVENT_WRITE_EOS.
+       * On GFX7+, EOS events are emitted with EVENT_WRITE_EOS on the graphics
+       * queue, and with RELEASE_MEM on the compute queue.
+       */
+      if (event == V_028B9C_CS_DONE || event == V_028B9C_PS_DONE) {
+         assert(event_flags == 0 && dst_sel == EOP_DST_SEL_MEM && data_sel == EOP_DATA_SEL_VALUE_32BIT);
+
+         ac_cmdbuf_emit(PKT3(PKT3_EVENT_WRITE_EOS, 3, false));
+         ac_cmdbuf_emit(op);
+         ac_cmdbuf_emit(va);
+         ac_cmdbuf_emit(((va >> 32) & 0xffff) |
+                        EOS_DATA_SEL(EOS_DATA_SEL_VALUE_32BIT));
+         ac_cmdbuf_emit(new_fence);
+      } else {
+         if (gfx_level == GFX7 || gfx_level == GFX8) {
+            /* Two EOP events are required to make all engines go idle (and
+             * optional cache flushes executed) before the timestamp is
+             * written.
+             */
+            ac_cmdbuf_emit(PKT3(PKT3_EVENT_WRITE_EOP, 4, false));
+            ac_cmdbuf_emit(op);
+            ac_cmdbuf_emit(eop_bug_va);
+            ac_cmdbuf_emit(((eop_bug_va >> 32) & 0xffff) | sel);
+            ac_cmdbuf_emit(0); /* immediate data */
+            ac_cmdbuf_emit(0); /* unused */
+         }
+
+         ac_cmdbuf_emit(PKT3(PKT3_EVENT_WRITE_EOP, 4, false));
+         ac_cmdbuf_emit(op);
+         ac_cmdbuf_emit(va);
+         ac_cmdbuf_emit(((va >> 32) & 0xffff) | sel);
+         ac_cmdbuf_emit(new_fence); /* immediate data */
+         ac_cmdbuf_emit(0);         /* unused */
+      }
+   }
+
+   ac_cmdbuf_end();
+}
+
+void
 ac_emit_cp_atomic_mem(struct ac_cmdbuf *cs, uint32_t atomic_op,
                       uint32_t atomic_cmd, uint64_t va, uint64_t data,
                       uint64_t compare_data)

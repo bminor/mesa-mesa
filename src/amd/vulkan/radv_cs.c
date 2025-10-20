@@ -26,76 +26,14 @@ radv_cs_emit_write_event_eop(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_
       return;
    }
 
-   /* EOS events may be buggy on GFX7, prefer not to use them. */
-   if (gfx_level == GFX7 && (event == V_028A90_CS_DONE || event == V_028A90_PS_DONE))
-      event = V_028A90_BOTTOM_OF_PIPE_TS;
+   /* The EOP bug is specific to GFX9. Though, RadeonSI also implements it for GFX6-8 but it
+    * shouldn't be necessary because it's using SURFACE_SYNC to flush L2. See
+    * waEventWriteEopPrematureL2Inv in PAL.
+    */
+   const uint64_t eop_bug_va = gfx_level >= GFX9 ? gfx9_eop_bug_va : va;
 
-   const bool is_mec = cs->hw_ip == AMD_IP_COMPUTE && gfx_level >= GFX7;
-   unsigned op =
-      EVENT_TYPE(event) | EVENT_INDEX(event == V_028A90_CS_DONE || event == V_028A90_PS_DONE ? 6 : 5) | event_flags;
-   unsigned sel = EOP_DST_SEL(dst_sel) | EOP_INT_SEL(int_sel) | EOP_DATA_SEL(data_sel);
-
-   radeon_begin(cs);
-
-   if (gfx_level >= GFX9 || is_mec) {
-      /* A ZPASS_DONE or PIXEL_STAT_DUMP_EVENT (of the DB occlusion
-       * counters) must immediately precede every timestamp event to
-       * prevent a GPU hang on GFX9.
-       */
-      if (gfx_level == GFX9 && !is_mec) {
-         radeon_emit(PKT3(PKT3_EVENT_WRITE, 2, 0));
-         radeon_emit(EVENT_TYPE(V_028A90_ZPASS_DONE) | EVENT_INDEX(1));
-         radeon_emit(gfx9_eop_bug_va);
-         radeon_emit(gfx9_eop_bug_va >> 32);
-      }
-
-      radeon_emit(PKT3(PKT3_RELEASE_MEM, gfx_level >= GFX9 ? 6 : 5, false));
-      radeon_emit(op);
-      radeon_emit(sel);
-      radeon_emit(va);        /* address lo */
-      radeon_emit(va >> 32);  /* address hi */
-      radeon_emit(new_fence); /* immediate data lo */
-      radeon_emit(0);         /* immediate data hi */
-      if (gfx_level >= GFX9)
-         radeon_emit(0); /* unused */
-   } else {
-      /* On GFX6, EOS events are always emitted with EVENT_WRITE_EOS.
-       * On GFX7+, EOS events are emitted with EVENT_WRITE_EOS on
-       * the graphics queue, and with RELEASE_MEM on the compute
-       * queue.
-       */
-      if (event == V_028B9C_CS_DONE || event == V_028B9C_PS_DONE) {
-         assert(event_flags == 0 && dst_sel == EOP_DST_SEL_MEM && data_sel == EOP_DATA_SEL_VALUE_32BIT);
-
-         radeon_emit(PKT3(PKT3_EVENT_WRITE_EOS, 3, false));
-         radeon_emit(op);
-         radeon_emit(va);
-         radeon_emit(((va >> 32) & 0xffff) | EOS_DATA_SEL(EOS_DATA_SEL_VALUE_32BIT));
-         radeon_emit(new_fence);
-      } else {
-         if (gfx_level == GFX7 || gfx_level == GFX8) {
-            /* Two EOP events are required to make all
-             * engines go idle (and optional cache flushes
-             * executed) before the timestamp is written.
-             */
-            radeon_emit(PKT3(PKT3_EVENT_WRITE_EOP, 4, false));
-            radeon_emit(op);
-            radeon_emit(va);
-            radeon_emit(((va >> 32) & 0xffff) | sel);
-            radeon_emit(0); /* immediate data */
-            radeon_emit(0); /* unused */
-         }
-
-         radeon_emit(PKT3(PKT3_EVENT_WRITE_EOP, 4, false));
-         radeon_emit(op);
-         radeon_emit(va);
-         radeon_emit(((va >> 32) & 0xffff) | sel);
-         radeon_emit(new_fence); /* immediate data */
-         radeon_emit(0);         /* unused */
-      }
-   }
-
-   radeon_end();
+   ac_emit_cp_release_mem(cs->b, gfx_level, cs->hw_ip, event, event_flags, dst_sel, int_sel, data_sel, va, new_fence,
+                          eop_bug_va);
 }
 
 static void

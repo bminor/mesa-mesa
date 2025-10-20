@@ -100,6 +100,13 @@ ac_emit_cp_acquire_mem(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
                        uint32_t gcr_cntl);
 
 void
+ac_emit_cp_release_mem(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
+                       enum amd_ip_type ip_type, uint32_t event,
+                       uint32_t event_flags, uint32_t dst_sel,
+                       uint32_t int_sel, uint32_t data_sel, uint64_t va,
+                       uint32_t new_fence, uint64_t eop_bug_va);
+
+void
 ac_emit_cp_atomic_mem(struct ac_cmdbuf *cs, uint32_t atomic_op,
                       uint32_t atomic_cmd, uint64_t va, uint64_t data,
                       uint64_t compare_data);
