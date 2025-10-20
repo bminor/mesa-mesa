@@ -1145,8 +1145,10 @@ brw_nir_optimize(nir_shader *nir,
 }
 
 static unsigned
-lower_bit_size_callback(const nir_instr *instr, UNUSED void *data)
+lower_bit_size_callback(const nir_instr *instr, void *data)
 {
+   const struct brw_compiler *compiler = data;
+
    switch (instr->type) {
    case nir_instr_type_alu: {
       nir_alu_instr *alu = nir_instr_as_alu(instr);
@@ -1180,6 +1182,12 @@ lower_bit_size_callback(const nir_instr *instr, UNUSED void *data)
       case nir_op_irem:
       case nir_op_udiv:
       case nir_op_umod:
+         /* Gfx12.5+ lacks integer division instructions. As nir_lower_idiv is
+          * far more efficient for int8/int16 divisions, we do not lower here.
+          *
+          * Older platforms have idiv instructions only for int32, so lower.
+          */
+         return compiler->devinfo->verx10 >= 125 ? 0 : 32;
       case nir_op_fceil:
       case nir_op_ffloor:
       case nir_op_ffract:
@@ -2222,7 +2230,12 @@ brw_postprocess_nir_opts(nir_shader *nir, const struct brw_compiler *compiler,
       const nir_lower_idiv_options options = {
          .allow_fp16 = false
       };
-      OPT(nir_lower_idiv, &options);
+
+      /* Given an 8-bit integer remainder, nir_lower_idiv will produce new
+       * 8-bit integer math which needs to be lowered.
+       */
+      if (OPT(nir_lower_idiv, &options))
+         OPT(nir_lower_bit_size, lower_bit_size_callback, (void *)compiler);
    }
 
    if (devinfo->ver >= 30)
