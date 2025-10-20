@@ -174,7 +174,6 @@
     KERNEL_IMAGE_TYPE: ""
     RUNNER_TAG: mesa-ci-x86-64-lava-dragonboard-410c
     LAVA_FIRMWARE: qcom-lava
-    KERNEL_TAG: msm-fixes-for-mesa-ci-14102025
 
 # Status: https://lava.collabora.dev/scheduler/device_type/dragonboard-820c
 .lava-dragonboard-820c:arm64:
@@ -189,7 +188,6 @@
     KERNEL_IMAGE_TYPE: ""
     RUNNER_TAG: mesa-ci-x86-64-lava-dragonboard-820c
     LAVA_FIRMWARE: qcom-lava
-    KERNEL_TAG: msm-fixes-for-mesa-ci-14102025
 
 # Status: https://lava.collabora.dev/scheduler/device_type/sc7180-trogdor-kingoftown
 .lava-sc7180-trogdor-kingoftown:arm64:
@@ -208,7 +206,6 @@
     DRIVER_NAME: freedreno-a6xx
     VK_DRIVER: freedreno
     LAVA_FIRMWARE: qcom-lava
-    KERNEL_TAG: msm-fixes-for-mesa-ci-14102025
 
 # Status: https://lava.collabora.dev/scheduler/device_type/sc7180-trogdor-lazor-limozeen
 .lava-sc7180-trogdor-lazor-limozeen:arm64:
@@ -227,7 +224,6 @@
     DRIVER_NAME: freedreno-a6xx
     VK_DRIVER: freedreno
     LAVA_FIRMWARE: qcom-lava
-    KERNEL_TAG: msm-fixes-for-mesa-ci-14102025
 
 # Status: https://lava.collabora.dev/scheduler/device_type/sm8350-hdk
 .lava-sm8350-hdk:arm64:
@@ -249,7 +245,6 @@
     DRIVER_NAME: freedreno-a6xx
     VK_DRIVER: freedreno
     LAVA_FIRMWARE: qcom-lava
-    KERNEL_TAG: msm-fixes-for-mesa-ci-14102025
 
 
 # CI-tron
