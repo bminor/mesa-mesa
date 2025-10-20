@@ -122,13 +122,22 @@ lower_mem_access_cb(nir_intrinsic_op intrin, uint8_t bytes, uint8_t bit_size, ui
    }
 
    if (is_smem) {
+      const bool is_buffer_load = intrin == nir_intrinsic_load_ubo ||
+                                  intrin == nir_intrinsic_load_ssbo ||
+                                  intrin == nir_intrinsic_load_constant;
       const bool supported_subdword = cb_data->gfx_level >= GFX12 &&
                                       intrin != nir_intrinsic_load_push_constant &&
                                       (!cb_data->use_llvm || intrin != nir_intrinsic_load_ubo);
 
       /* Round up subdword loads if unsupported. */
-      if (bit_size < 32 && (bytes >= 3 || !supported_subdword))
+      if (bytes <= 2 && combined_align % bytes == 0 && supported_subdword) {
+         bit_size = bytes * 8;
+      } else if (bytes % 4 || combined_align % 4) {
+         if (is_buffer_load)
+            bytes += 4 - MIN2(combined_align, 4);
          bytes = align(bytes, 4);
+         bit_size = 32;
+      }
 
       /* Generally, require an alignment of 4. */
       res.align = MIN2(4, bytes);
@@ -141,9 +150,6 @@ lower_mem_access_cb(nir_intrinsic_op intrin, uint8_t bytes, uint8_t bit_size, ui
       if (!util_is_power_of_two_nonzero(bytes) && (cb_data->gfx_level < GFX12 || bytes != 12)) {
          const uint8_t larger = util_next_power_of_two(bytes);
          const uint8_t smaller = larger / 2;
-         const bool is_buffer_load = intrin == nir_intrinsic_load_ubo ||
-                                     intrin == nir_intrinsic_load_ssbo ||
-                                     intrin == nir_intrinsic_load_constant;
          const bool is_aligned = align_mul % smaller == 0;
 
          /* Overfetch up to 1 dword if this is a bounds-checked buffer load or the access is aligned. */
