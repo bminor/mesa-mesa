@@ -1228,8 +1228,16 @@ wrap_instr(nir_builder *b, nir_instr *instr, void *data)
 static bool
 wrap_instrs(nir_shader *shader, wrap_instr_callback callback)
 {
-   return nir_shader_instructions_pass(shader, wrap_instr,
-                                       nir_metadata_none, callback);
+   bool progress = nir_shader_instructions_pass(shader, wrap_instr,
+                                                nir_metadata_none, callback);
+   /* Wrapping jump instructions that are located inside ifs can break SSA
+    * invariants because the else block no longer dominates the merge block.
+    * Repair the SSA to make the validator happy again.
+    */
+   if (progress)
+      nir_repair_ssa(shader);
+
+   return progress;
 }
 
 static bool
