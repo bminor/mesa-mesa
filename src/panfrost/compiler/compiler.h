@@ -1666,7 +1666,7 @@ bi_init_builder(bi_context *ctx, bi_cursor cursor)
 }
 
 /* insert load/store for spills */
-bi_instr *bi_load_tl(bi_builder *b, unsigned bits, bi_index src, unsigned offset);
+bi_instr *bi_load_tl(bi_builder *b, unsigned bits, bi_index dst, unsigned offset);
 void bi_store_tl(bi_builder *b, unsigned bits, bi_index src, unsigned offset);
 
 /* Insert an instruction at the cursor and move the cursor */

@@ -686,14 +686,14 @@ bi_tls_ptr(bool hi)
 }
 
 bi_instr *
-bi_load_tl(bi_builder *b, unsigned bits, bi_index src, unsigned offset)
+bi_load_tl(bi_builder *b, unsigned bits, bi_index dst, unsigned offset)
 {
    if (b->shader->arch >= 9) {
       assert(offset < 0x8000);  /* valhall has 16 bit signed offset */
-      return bi_load_to(b, bits, src, bi_tls_ptr(false), bi_tls_ptr(true),
+      return bi_load_to(b, bits, dst, bi_tls_ptr(false), bi_tls_ptr(true),
                         BI_SEG_TL, offset);
    } else {
-      return bi_load_to(b, bits, src, bi_imm_u32(offset), bi_zero(), BI_SEG_TL,
+      return bi_load_to(b, bits, dst, bi_imm_u32(offset), bi_zero(), BI_SEG_TL,
                         0);
    }
 }
