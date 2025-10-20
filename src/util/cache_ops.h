@@ -28,6 +28,7 @@
 #include <stddef.h>
 
 #include "detect_arch.h"
+#include "u_cpu_detect.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,7 +45,13 @@ util_has_cache_ops(void)
    return false;
 #endif
 
-   return DETECT_ARCH_X86 || DETECT_ARCH_X86_64 || DETECT_ARCH_AARCH64;
+#if DETECT_ARCH_X86
+   return util_get_cpu_caps()->has_sse2;
+#elif DETECT_ARCH_X86_64 || DETECT_ARCH_AARCH64
+   return true;
+#else
+   return false;
+#endif
 }
 
 /** Returns the cache granularity
