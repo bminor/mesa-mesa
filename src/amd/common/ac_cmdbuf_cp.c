@@ -14,6 +14,26 @@
 #include "sid.h"
 
 void
+ac_emit_cp_indirect_buffer(struct ac_cmdbuf *cs, uint64_t va, uint32_t cdw,
+                           enum ac_cp_indirect_buffer_flags flags,
+                           bool predicate)
+{
+   uint32_t dword2_flags = 0;
+
+   if (flags & AC_CP_INDIRECT_BUFFER_CHAIN)
+      dword2_flags |= S_3F2_CHAIN(1);
+   if (flags & AC_CP_INDIRECT_BUFFER_VALID)
+      dword2_flags |= S_3F2_VALID(1);
+
+   ac_cmdbuf_begin(cs);
+   ac_cmdbuf_emit(PKT3(PKT3_INDIRECT_BUFFER, 2, predicate));
+   ac_cmdbuf_emit(va);
+   ac_cmdbuf_emit(va >> 32);
+   ac_cmdbuf_emit(cdw | dword2_flags);
+   ac_cmdbuf_end();
+}
+
+void
 ac_emit_cp_cond_exec(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
                      uint64_t va, uint32_t count)
 {

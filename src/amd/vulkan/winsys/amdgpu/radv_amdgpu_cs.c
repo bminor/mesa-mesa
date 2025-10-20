@@ -769,10 +769,7 @@ radv_amdgpu_cs_emit_secondary_ib2(struct radv_amdgpu_cs *parent, struct radv_amd
       const uint32_t size = child->ib_buffers[i].cdw;
 
       /* Not setting the CHAIN bit will launch an IB2. */
-      radeon_emit(&parent->base, PKT3(PKT3_INDIRECT_BUFFER, 2, 0));
-      radeon_emit(&parent->base, va);
-      radeon_emit(&parent->base, va >> 32);
-      radeon_emit(&parent->base, size);
+      ac_emit_cp_indirect_buffer(&parent->base, va, size, 0, false);
 
       assert(parent->base.cdw <= parent->base.max_dw);
    }
@@ -842,10 +839,7 @@ radv_amdgpu_cs_execute_ib(struct ac_cmdbuf *_cs, struct radeon_winsys_bo *bo, ui
    assert(ib_va && ib_va % cs->ws->info.ip[cs->hw_ip].ib_alignment == 0);
    assert(cs->hw_ip == AMD_IP_GFX && cdw <= ~C_3F2_IB_SIZE);
 
-   radeon_emit(&cs->base, PKT3(PKT3_INDIRECT_BUFFER, 2, predicate));
-   radeon_emit(&cs->base, ib_va);
-   radeon_emit(&cs->base, ib_va >> 32);
-   radeon_emit(&cs->base, cdw);
+   ac_emit_cp_indirect_buffer(&cs->base, ib_va, cdw, 0, predicate);
 }
 
 static void

@@ -21,6 +21,16 @@ extern "C" {
 struct ac_cmdbuf;
 struct radeon_info;
 
+enum ac_cp_indirect_buffer_flags {
+   AC_CP_INDIRECT_BUFFER_CHAIN = 1u << 0,
+   AC_CP_INDIRECT_BUFFER_VALID = 1u << 1,
+};
+
+void
+ac_emit_cp_indirect_buffer(struct ac_cmdbuf *cs, uint64_t va, uint32_t cdw,
+                           enum ac_cp_indirect_buffer_flags flags,
+                           bool predicate);
+
 void
 ac_emit_cp_cond_exec(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
                      uint64_t va, uint32_t count);
