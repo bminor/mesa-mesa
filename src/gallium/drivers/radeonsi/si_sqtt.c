@@ -506,6 +506,7 @@ static void si_emit_sqtt_userdata(struct si_context *sctx,
                                   struct radeon_cmdbuf *cs, const void *data,
                                   uint32_t num_dwords)
 {
+   const enum amd_ip_type ip_type = sctx->ws->cs_get_ip_type(cs);
    const uint32_t *dwords = (uint32_t *)data;
 
    radeon_begin(cs);
@@ -513,7 +514,9 @@ static void si_emit_sqtt_userdata(struct si_context *sctx,
    while (num_dwords > 0) {
       uint32_t count = MIN2(num_dwords, 2);
 
-      radeon_set_uconfig_perfctr_reg_seq(R_030D08_SQ_THREAD_TRACE_USERDATA_2, count);
+      radeon_set_uconfig_perfctr_reg_seq(sctx->gfx_level, ip_type,
+                                         R_030D08_SQ_THREAD_TRACE_USERDATA_2,
+                                         count);
       radeon_emit_array(dwords, count);
 
       dwords += count;

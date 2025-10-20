@@ -32,11 +32,8 @@
       sctx->context_roll = true; \
 } while (0)
 
-#define radeon_emit_array(values, num) do { \
-   unsigned __n = (num); \
-   memcpy(__cs_buf + __cs_num, (values), __n * 4); \
-   __cs_num += __n; \
-} while (0)
+#define radeon_emit_array(values, num) \
+   ac_cmdbuf_emit_array(values, num)
 
 /* Instead of writing into the command buffer, return the pointer to the command buffer and
  * assume that the caller will fill the specified number of elements.
@@ -203,10 +200,10 @@
 
 /* Packet building helpers for CONTEXT registers. */
 #define radeon_set_context_reg_seq(reg, num) \
-   radeon_set_reg_seq(reg, num, 0, SI_CONTEXT, PKT3_SET_CONTEXT_REG, 0)
+   ac_cmdbuf_set_context_reg_seq(reg, num)
 
 #define radeon_set_context_reg(reg, value) \
-   radeon_set_reg(reg, 0, value, SI_CONTEXT, PKT3_SET_CONTEXT_REG)
+   ac_cmdbuf_set_context_reg(reg, value)
 
 #define radeon_opt_set_context_reg(reg, reg_enum, value) \
    radeon_opt_set_reg(reg, reg_enum, 0, value, SI_CONTEXT, PKT3_SET_CONTEXT_REG)
@@ -234,10 +231,10 @@
 
 /* Packet building helpers for SH registers. */
 #define radeon_set_sh_reg_seq(reg, num) \
-   radeon_set_reg_seq(reg, num, 0, SI_SH, PKT3_SET_SH_REG, 0)
+   ac_cmdbuf_set_sh_reg_seq(reg, num)
 
 #define radeon_set_sh_reg(reg, value) \
-   radeon_set_reg(reg, 0, value, SI_SH, PKT3_SET_SH_REG)
+   ac_cmdbuf_set_sh_reg(reg, value)
 
 #define radeon_opt_set_sh_reg(reg, reg_enum, value) \
    radeon_opt_set_reg(reg, reg_enum, 0, value, SI_SH, PKT3_SET_SH_REG)
@@ -265,15 +262,13 @@
 
 /* Packet building helpers for UCONFIG registers. */
 #define radeon_set_uconfig_reg_seq(reg, num) \
-   radeon_set_reg_seq(reg, num, 0, CIK_UCONFIG, PKT3_SET_UCONFIG_REG, 0)
+   ac_cmdbuf_set_uconfig_reg_seq(reg, num)
 
-#define radeon_set_uconfig_perfctr_reg_seq(reg, num) \
-   radeon_set_reg_seq(reg, num, 0, CIK_UCONFIG, PKT3_SET_UCONFIG_REG, \
-                      sctx->gfx_level >= GFX10 && \
-                      sctx->ws->cs_get_ip_type(__rcs) == AMD_IP_GFX)
+#define radeon_set_uconfig_perfctr_reg_seq(gfx_level, ip_type, reg, num) \
+   ac_cmdbuf_set_uconfig_perfctr_reg_seq(gfx_level, ip_type, reg, num)
 
 #define radeon_set_uconfig_reg(reg, value) \
-   radeon_set_reg(reg, 0, value, CIK_UCONFIG, PKT3_SET_UCONFIG_REG)
+   ac_cmdbuf_set_uconfig_reg(reg, value)
 
 #define radeon_opt_set_uconfig_reg(reg, reg_enum, value) \
    radeon_opt_set_reg(reg, reg_enum, 0, value, CIK_UCONFIG, PKT3_SET_UCONFIG_REG)
@@ -288,16 +283,8 @@
 #define radeon_opt_set_uconfig_reg_idx(reg, reg_enum, idx, value) \
    radeon_opt_set_reg(reg, reg_enum, idx, value, CIK_UCONFIG, RESOLVE_PKT3_SET_UCONFIG_REG_INDEX)
 
-#define radeon_set_privileged_config_reg(reg, value) do { \
-   assert((reg) < CIK_UCONFIG_REG_OFFSET); \
-   radeon_emit(PKT3(PKT3_COPY_DATA, 4, 0)); \
-   radeon_emit(COPY_DATA_SRC_SEL(COPY_DATA_IMM) | \
-               COPY_DATA_DST_SEL(COPY_DATA_PERF)); \
-   radeon_emit(value); \
-   radeon_emit(0); /* unused */ \
-   radeon_emit((reg) >> 2); \
-   radeon_emit(0); /* unused */ \
-} while (0)
+#define radeon_set_privileged_config_reg(reg, value) \
+   ac_cmdbuf_set_privileged_config_reg(reg, value)
 
 /* GFX11 generic packet building helpers for buffered SH registers. Don't use these directly. */
 #define gfx11_push_reg(reg, value, prefix_name, buffer, reg_count) do { \

@@ -68,11 +68,11 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
 #define radeon_set_config_reg(reg, value) ac_cmdbuf_set_config_reg(reg, value)
 
 /* Packet building helpers for CONTEXT registers. */
-#define radeon_set_context_reg_seq(reg, num) __radeon_set_reg_seq(reg, num, 0, SI_CONTEXT, PKT3_SET_CONTEXT_REG, 0)
+#define radeon_set_context_reg_seq(reg, num) ac_cmdbuf_set_context_reg_seq(reg, num)
 
-#define radeon_set_context_reg(reg, value) __radeon_set_reg(reg, 0, value, SI_CONTEXT, PKT3_SET_CONTEXT_REG)
+#define radeon_set_context_reg(reg, value) ac_cmdbuf_set_context_reg(reg, value)
 
-#define radeon_set_context_reg_idx(reg, idx, value) __radeon_set_reg(reg, idx, value, SI_CONTEXT, PKT3_SET_CONTEXT_REG)
+#define radeon_set_context_reg_idx(reg, idx, value) ac_cmdbuf_set_context_reg_idx(reg, idx, value)
 
 #define radeon_opt_set_context_reg(reg, reg_enum, value)                                                               \
    do {                                                                                                                \
@@ -154,9 +154,9 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
    } while (0)
 
 /* Packet building helpers for SH registers. */
-#define radeon_set_sh_reg_seq(reg, num) __radeon_set_reg_seq(reg, num, 0, SI_SH, PKT3_SET_SH_REG, 0)
+#define radeon_set_sh_reg_seq(reg, num) ac_cmdbuf_set_sh_reg_seq(reg, num)
 
-#define radeon_set_sh_reg(reg, value) __radeon_set_reg(reg, 0, value, SI_SH, PKT3_SET_SH_REG)
+#define radeon_set_sh_reg(reg, value) ac_cmdbuf_set_sh_reg(reg, value)
 
 #define radeon_set_sh_reg_idx(info, reg, idx, value)                                                                   \
    do {                                                                                                                \
@@ -168,9 +168,9 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
    } while (0)
 
 /* Packet building helpers for UCONFIG registers. */
-#define radeon_set_uconfig_reg_seq(reg, num) __radeon_set_reg_seq(reg, num, 0, CIK_UCONFIG, PKT3_SET_UCONFIG_REG, 0)
+#define radeon_set_uconfig_reg_seq(reg, num) ac_cmdbuf_set_uconfig_reg_seq(reg, num)
 
-#define radeon_set_uconfig_reg(reg, value) __radeon_set_reg(reg, 0, value, CIK_UCONFIG, PKT3_SET_UCONFIG_REG)
+#define radeon_set_uconfig_reg(reg, value) ac_cmdbuf_set_uconfig_reg(reg, value)
 
 #define radeon_set_uconfig_reg_idx(info, reg, idx, value)                                                              \
    do {                                                                                                                \
@@ -181,33 +181,13 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
       __radeon_set_reg(reg, idx, value, CIK_UCONFIG, __opcode);                                                        \
    } while (0)
 
-/*
- * On GFX10, there is a bug with the ME implementation of its content addressable memory (CAM),
- * that means that it can skip register writes due to not taking correctly into account the
- * fields from the GRBM_GFX_INDEX. With this bit we can force the write.
- */
-#define radeon_set_uconfig_perfctr_reg_seq(gfx_level, ring, reg, num)                                                  \
-   do {                                                                                                                \
-      const bool __filter_cam_workaround = (gfx_level) >= GFX10 && (ring) == AMD_IP_GFX;                               \
-      __radeon_set_reg_seq(reg, num, 0, CIK_UCONFIG, PKT3_SET_UCONFIG_REG, __filter_cam_workaround);                   \
-   } while (0)
+#define radeon_set_uconfig_perfctr_reg_seq(gfx_level, ip_type, reg, num)                                               \
+   ac_cmdbuf_set_uconfig_perfctr_reg_seq(gfx_level, ip_type, reg, num)
 
-#define radeon_set_uconfig_perfctr_reg(gfx_level, ring, reg, value)                                                    \
-   do {                                                                                                                \
-      radeon_set_uconfig_perfctr_reg_seq(gfx_level, ring, reg, 1);                                                     \
-      radeon_emit(value);                                                                                              \
-   } while (0)
+#define radeon_set_uconfig_perfctr_reg(gfx_level, ip_type, reg, value)                                                 \
+   ac_cmdbuf_set_uconfig_perfctr_reg(gfx_level, ip_type, reg, value)
 
-#define radeon_set_privileged_config_reg(reg, value)                                                                   \
-   do {                                                                                                                \
-      assert((reg) < CIK_UCONFIG_REG_OFFSET);                                                                          \
-      radeon_emit(PKT3(PKT3_COPY_DATA, 4, 0));                                                                         \
-      radeon_emit(COPY_DATA_SRC_SEL(COPY_DATA_IMM) | COPY_DATA_DST_SEL(COPY_DATA_PERF));                               \
-      radeon_emit(value);                                                                                              \
-      radeon_emit(0); /* unused */                                                                                     \
-      radeon_emit((reg) >> 2);                                                                                         \
-      radeon_emit(0); /* unused */                                                                                     \
-   } while (0)
+#define radeon_set_privileged_config_reg(reg, value) ac_cmdbuf_set_privileged_config_reg(reg, value)
 
 #define radeon_event_write_predicate(event_type, predicate) ac_cmdbuf_event_write_predicate(event_type, predicate)
 
