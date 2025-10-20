@@ -1293,7 +1293,7 @@
     <slot/>
     <imm name="table" ir_name="" start="8" size="4"/>
     <imm name="index" ir_name="" start="12" size="8"/>
-    <src>Linear ID</src>
+    <src size="32">Structure index</src>
   </ins>
 
   <ins name="LOAD.i8" title="Global memory load" opcode="0x60" opcode2="0" unused="true" unit="LS">
