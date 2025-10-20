@@ -690,17 +690,22 @@ get_cmat_component_deref(nir_builder *b, nir_intrinsic_instr *intr,
                               &col_offset, &row_offset);
 
    row_offset = nir_imul(b, row_offset, stride);
-
    col_offset = nir_u2uN(b, col_offset, deref->def.bit_size);
    row_offset = nir_u2uN(b, row_offset, deref->def.bit_size);
 
-   nir_deref_instr *iter_deref =
-      nir_build_deref_ptr_as_array(b, deref, row_offset);
-   iter_deref = nir_build_deref_cast(
-      b, &iter_deref->def, deref->modes,
+   /* We have to ignore the incoming stride, but have to choose the type of
+    * the pointer as the declared stride is in multiple of the pointer type */
+   deref = nir_build_deref_cast(
+      b, &deref->def, deref->modes,
+      deref->type,
+      glsl_get_vector_elements(deref->type) * glsl_get_bit_size(deref->type) / 8
+   );
+   deref = nir_build_deref_ptr_as_array(b, deref, row_offset);
+   deref = nir_build_deref_cast(
+      b, &deref->def, deref->modes,
       glsl_scalar_type(desc.element_type),
       glsl_base_type_bit_size(desc.element_type) / 8);
-   return nir_build_deref_ptr_as_array(b, iter_deref, col_offset);
+   return nir_build_deref_ptr_as_array(b, deref, col_offset);
 }
 
 static void
