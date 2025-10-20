@@ -1,4 +1,6 @@
+KHR-GL46.buffer_storage.map_persistent_dispatch
 KHR-GL46.direct_state_access.framebuffers_texture_layer_attachment
+KHR-GL46.direct_state_access.renderbuffers_storage_multisample
 KHR-GL46.es_31_compatibility.shader_storage_buffer_object.basic-operations-case2-vs
 KHR-GL46.explicit_uniform_location.subroutine-index-all-stages
 KHR-GL46.explicit_uniform_location.subroutine-index-loc
@@ -24,8 +26,10 @@ KHR-GL46.framebuffer_blit.multisampled_to_singlesampled_blit_color_config_test
 KHR-GL46.gl_spirv.spirv_glsl_to_spirv_builtin_functions_test
 KHR-GL46.gl_spirv.spirv_modules_positive_test
 KHR-GL46.gpu_shader5_gl.function_overloading
+KHR-GL46.gpu_shader_fp64.builtin.abs_double
 KHR-GL46.gpu_shader_fp64.builtin.equal_dvec3
 KHR-GL46.gpu_shader_fp64.builtin.fma_dvec2
+KHR-GL46.gpu_shader_fp64.builtin.greaterthan_dvec2
 KHR-GL46.gpu_shader_fp64.builtin.greaterthan_dvec3
 KHR-GL46.gpu_shader_fp64.builtin.inversesqrt_dvec4
 KHR-GL46.gpu_shader_fp64.builtin.ldexp_double
@@ -62,6 +66,7 @@ KHR-GL46.packed_pixels.rectangle.r8_format_rgb
 KHR-GL46.packed_pixels.rectangle.r8i_format_rg_integer
 KHR-GL46.packed_pixels.rectangle.rg16ui_format_rgba_integer
 KHR-GL46.packed_pixels.varied_rectangle.compressed_rg_rgtc2_format_blue
+KHR-GL46.packed_pixels.varied_rectangle.compressed_rgba_format_rgba
 KHR-GL46.packed_pixels.varied_rectangle.compressed_signed_red_rgtc1_format_red
 KHR-GL46.packed_pixels.varied_rectangle.compressed_srgb_alpha_format_rgba
 KHR-GL46.packed_pixels.varied_rectangle.r16_snorm_format_red
@@ -72,13 +77,16 @@ KHR-GL46.packed_pixels.varied_rectangle.r8_format_green
 KHR-GL46.packed_pixels.varied_rectangle.r8_snorm_format_red
 KHR-GL46.packed_pixels.varied_rectangle.red_format_red
 KHR-GL46.packed_pixels.varied_rectangle.rg16_format_bgra
+KHR-GL46.packed_pixels.varied_rectangle.rg16_format_rg
 KHR-GL46.packed_pixels.varied_rectangle.rg16f_format_bgra
 KHR-GL46.packed_pixels.varied_rectangle.rg8_snorm_format_rg
 KHR-GL46.packed_pixels.varied_rectangle.rg8_snorm_format_rgba
 KHR-GL46.packed_pixels.varied_rectangle.rgb10_a2_format_rgb
 KHR-GL46.packed_pixels.varied_rectangle.rgb16_snorm
+KHR-GL46.packed_pixels.varied_rectangle.rgb16f_format_rgb
 KHR-GL46.packed_pixels.varied_rectangle.rgb32f_format_bgr
 KHR-GL46.packed_pixels.varied_rectangle.rgb4_format_blue
+KHR-GL46.packed_pixels.varied_rectangle.rgb5_a1_format_bgra
 KHR-GL46.packed_pixels.varied_rectangle.rgb5_format_rgb
 KHR-GL46.packed_pixels.varied_rectangle.rgb8_format_rgb
 KHR-GL46.packed_pixels.varied_rectangle.rgb8_snorm_format_rgba
@@ -86,6 +94,7 @@ KHR-GL46.packed_pixels.varied_rectangle.rgb9_e5_format_rgb
 KHR-GL46.packed_pixels.varied_rectangle.rgba12_format_blue
 KHR-GL46.packed_pixels.varied_rectangle.rgba16_format_blue
 KHR-GL46.packed_pixels.varied_rectangle.rgba16_snorm_format_rgba
+KHR-GL46.packed_pixels.varied_rectangle.rgba32ui_format_green_integer
 KHR-GL46.packed_pixels.varied_rectangle.rgba4_format_green
 KHR-GL46.packed_pixels.varied_rectangle.rgba8_snorm_format_rgb
 KHR-GL46.packed_pixels.varied_rectangle.rgba8i_format_rgba_integer
@@ -167,11 +176,13 @@ dEQP-GLES3.functional.texture.filtering.cube.combinations.linear_mipmap_nearest_
 dEQP-GLES3.functional.texture.shadow.cube.linear_mipmap_nearest.greater_depth_component32f
 dEQP-GLES3.functional.texture.specification.teximage2d_pbo.srgb8_alpha8_2d
 dEQP-GLES3.functional.texture.specification.texsubimage2d_pbo.r16f_2d
+dEQP-GLES3.functional.occlusion_query.stencil_clear
 dEQP-GLES31.functional.copy_image.compressed.viewclass_astc_10x10_rgba.srgb8_alpha8_astc_10x10_khr_rgba_astc_10x10_khr.cubemap_to_texture3d
 dEQP-GLES31.functional.copy_image.compressed.viewclass_astc_10x8_rgba.rgba_astc_10x8_khr_srgb8_alpha8_astc_10x8_khr.cubemap_to_texture3d
 dEQP-GLES31.functional.copy_image.compressed.viewclass_astc_12x10_rgba.srgb8_alpha8_astc_12x10_khr_rgba_astc_12x10_khr.texture3d_to_texture3d
 dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba32f_rgba_astc_10x5_khr.cubemap_to_cubemap
 dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba32f_srgb8_alpha8_astc_10x5_khr.cubemap_to_texture2d
+dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba32f_srgb8_alpha8_astc_5x5_khr.cubemap_to_texture3d
 dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba32i_rgba_astc_10x5_khr.texture3d_to_cubemap
 dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba32i_srgb8_alpha8_astc_10x6_khr.cubemap_to_texture2d
 dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.rgba32i_srgb8_alpha8_astc_8x5_khr.cubemap_to_cubemap
@@ -190,6 +201,7 @@ dEQP-GLES31.functional.copy_image.mixed.viewclass_128_bits_mixed.srgb8_alpha8_as
 dEQP-GLES31.functional.copy_image.mixed.viewclass_64_bits_mixed.rg32f_r11_eac.texture3d_to_cubemap
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_16_bits.rg8ui_rg8.cubemap_to_texture2d_array
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.r32i_r32ui.texture2d_array_to_texture3d
+dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.r32i_srgb8_alpha8.texture2d_to_cubemap
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.rg16i_srgb8_alpha8.texture2d_array_to_renderbuffer
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.rgb9_e5_srgb8_alpha8.cubemap_to_renderbuffer
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.rgba8_rgba8_snorm.cubemap_to_texture3d
@@ -367,6 +379,10 @@ spec@glsl-4.00@execution@built-in-functions@gs-op-sub-dmat3-double
 spec@glsl-4.30@execution@built-in-functions@cs-op-bitor-neg-abs-int-ivec4
 spec@glsl-es-3.00@execution@built-in-functions@vs-packhalf2x16
 spec@ovr_multiview@triangle_compare_max_basemax_layersmax
+spec@arb_texture_compression_bptc@fbo-generatemipmap-formats float
+spec@ext_framebuffer_object@getteximage-formats init-by-rendering
+spec@ext_texture_array@fbo-depth-array fs-writes-depth
+spec@ext_texture_array@fbo-depth-array stencil-draw
 
 # Marked as flake because it passes with ESO but crashes with pipelines.
 spec@arb_tessellation_shader@arb_tessellation_shader-tes-gs-max-output -small -scan 1 50

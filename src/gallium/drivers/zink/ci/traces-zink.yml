@@ -40,7 +40,9 @@ traces:
       checksum: 5bfd510c1298c71ccd3c24c0662b857e
       text: "Very flaky trace"
     zink-radv-vangogh:
+      label: [skip, flakes]
       checksum: 58e2d6ea105ca2735b05ce06709691fb
+      text: "Clear color for the background can be black or grey"
     zink-radv-gfx1201:
       checksum: ef6775705fb8c9f2d0c8a29ae6ab0efd
 
