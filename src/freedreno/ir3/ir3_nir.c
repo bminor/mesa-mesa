@@ -137,10 +137,9 @@ ir3_load_driver_ubo_indirect(nir_builder *b, unsigned components,
 }
 
 static bool
-ir3_nir_should_scalarize_mem(const nir_instr *instr, const void *data)
+ir3_nir_should_scalarize_mem(const nir_intrinsic_instr *intrin, const void *data)
 {
    const struct ir3_compiler *compiler = data;
-   const nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
 
    /* Scalarize load_ssbo's that we could otherwise lower to isam,
     * as the tex cache benefit outweighs the benefit of vectorizing

@@ -5596,7 +5596,7 @@ bool nir_lower_all_phis_to_scalar(nir_shader *shader);
 void nir_lower_io_array_vars_to_elements(nir_shader *producer, nir_shader *consumer);
 bool nir_lower_io_array_vars_to_elements_no_indirects(nir_shader *shader,
                                                       bool outputs_only);
-bool nir_lower_io_to_scalar(nir_shader *shader, nir_variable_mode mask, nir_instr_filter_cb filter, void *filter_data);
+bool nir_lower_io_to_scalar(nir_shader *shader, nir_variable_mode mask, nir_intrin_filter_cb filter, void *filter_data);
 bool nir_lower_io_vars_to_scalar(nir_shader *shader, nir_variable_mode mask);
 bool nir_opt_vectorize_io_vars(nir_shader *shader, nir_variable_mode mask);
 bool nir_lower_tess_level_array_vars_to_vec(nir_shader *shader);
