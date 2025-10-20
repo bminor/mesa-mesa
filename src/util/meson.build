@@ -188,7 +188,14 @@ libmesa_util_links = []
 if host_machine.cpu_family() == 'aarch64' and cc.get_id() != 'msvc'
   files_mesa_util += files('cache_ops_aarch64.c')
 elif host_machine.cpu_family() in ['x86', 'x86_64'] and cc.get_id() != 'msvc'
-  files_mesa_util += files('cache_ops_x86.c')
+  libmesa_util_clflush = static_library(
+    'mesa_util_clflush',
+    ['cache_ops_x86.c'],
+    include_directories : [inc_util],
+    c_args : [no_override_init_args, sse2_args],
+    gnu_symbol_visibility : 'hidden',
+  )
+  libmesa_util_links += [libmesa_util_clflush]
   if with_clflushopt
     libmesa_util_clflushopt = static_library(
       'mesa_util_clflushopt',
@@ -197,7 +204,7 @@ elif host_machine.cpu_family() in ['x86', 'x86_64'] and cc.get_id() != 'msvc'
       c_args : [no_override_init_args] + clflushopt_args,
       gnu_symbol_visibility : 'hidden',
     )
-    libmesa_util_links += libmesa_util_clflushopt
+    libmesa_util_links += [libmesa_util_clflushopt]
   endif
 else
   files_mesa_util += files('cache_ops_null.c')
