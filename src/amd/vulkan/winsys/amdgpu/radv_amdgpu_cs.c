@@ -102,21 +102,6 @@ struct radv_winsys_sem_info {
 };
 
 static void
-radeon_emit(struct ac_cmdbuf *cs, uint32_t value)
-{
-   assert(cs->cdw < cs->reserved_dw);
-   cs->buf[cs->cdw++] = value;
-}
-
-static void
-radeon_emit_array(struct ac_cmdbuf *cs, const uint32_t *values, unsigned count)
-{
-   assert(cs->cdw + count <= cs->reserved_dw);
-   memcpy(cs->buf + cs->cdw, values, count * 4);
-   cs->cdw += count;
-}
-
-static void
 radeon_emit_unchecked(struct ac_cmdbuf *cs, uint32_t value)
 {
    cs->buf[cs->cdw++] = value;
