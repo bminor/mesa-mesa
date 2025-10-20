@@ -2181,7 +2181,11 @@ brw_postprocess_nir_opts(nir_shader *nir, const struct brw_compiler *compiler,
    if (OPT(nir_lower_tex, &tex_options))
       OPT(nir_lower_tex, &tex_options);
 
-   OPT(brw_nir_lower_mcs_fetch, devinfo);
+   /* MCS lowering can introduce u2u16 conversions. We need to lower those to
+    * make constant offsets detectable by brw_nir_texture_backend_opcode().
+    */
+   if (OPT(brw_nir_lower_mcs_fetch, devinfo))
+      OPT(nir_opt_constant_folding);
 
    const struct brw_nir_lower_texture_opts brw_tex_options = {
       .combined_lod_and_array_index = compiler->devinfo->ver >= 20,

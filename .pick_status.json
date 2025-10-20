@@ -934,7 +934,7 @@
         "description": "brw: constant fold u2u16 conversion on MCS messages",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "bddfbe7fb1e3d8fe947beefdf6d260d13ddefe2a",
         "notes": null
