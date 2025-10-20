@@ -117,12 +117,12 @@ class Utrace_Parser:
         self.args = self.args.strip().lstrip('+')
 
         if self.cl_args.verbose:
-            out = [f'{begin_ts_ns:.0f}', f'{end_ts_ns:.0f}', int(frame) + 1,
-                   int(cmd_buf) + 1, self.renderpass, self.idx, self.func,
+            out = [f'{begin_ts_ns:.0f}', f'{end_ts_ns:.0f}', int(frame),
+                   int(cmd_buf), self.renderpass, self.idx, self.func,
                    self.count, self.vs, self.fs, self.cs,
                    f'{gap_ts_us:.3f}', f'{delta_ts_us:.3f}', self.args]
         else:
-            out = [int(frame) + 1, int(cmd_buf) + 1, self.renderpass, self.idx,
+            out = [int(frame), int(cmd_buf), self.renderpass, self.idx,
                    self.func, self.count, self.vs, self.fs, self.cs,
                    f'{gap_ts_us:.3f}', f'{delta_ts_us:.3f}']
 
