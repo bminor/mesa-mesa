@@ -193,6 +193,7 @@ kk_get_device_features(
       .descriptorIndexing = true,
       .hostQueryReset = true,
       .imagelessFramebuffer = true,
+      .multiDrawIndirect = true,
       .runtimeDescriptorArray = true,
       .scalarBlockLayout = true,
       .separateDepthStencilLayouts = true,
