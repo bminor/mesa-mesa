@@ -1824,6 +1824,14 @@ CDX12EncHMFT::SetValue( const GUID *Api, VARIANT *Value )
       {
          CHECKHR_GOTO(E_INVALIDARG, done);
       }
+
+      if ((Value->ulVal > 0) && (!m_EncoderCapabilities.m_HWSupportSlicedFences.bits.supported))
+      {
+         MFE_ERROR("[dx12 hmft 0x%p] User tried to set CODECAPI_AVEncSliceGenerationMode: %d, but this encoder does NOT support sliced fence generation.",
+                   this, Value->ulVal);
+         CHECKHR_GOTO(E_INVALIDARG, done);
+      }
+
       debug_printf("[dx12 hmft 0x%p] SET CODECAPI_AVEncSliceGenerationMode - %u\n", this, Value->ulVal);
       m_uiSliceGenerationMode = Value->ulVal;
       m_bSliceGenerationModeSet = TRUE;

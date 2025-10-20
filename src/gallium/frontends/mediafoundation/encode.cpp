@@ -554,7 +554,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
 #endif
 
       pDX12EncodeContext->sliceNotificationMode = D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM_NOTIFICATION_MODE_FULL_FRAME;
-      if( m_EncoderCapabilities.m_HWSupportSlicedFences.bits.supported && ( num_output_buffers > 1 ) )
+      if( m_bSliceGenerationModeSet && (m_uiSliceGenerationMode > 0) && ( num_output_buffers > 1 ) /* IHV driver requires > 1 slices */ )
       {
          pDX12EncodeContext->sliceNotificationMode = D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM_NOTIFICATION_MODE_SUBREGIONS;
          if( m_EncoderCapabilities.m_HWSupportSlicedFences.bits.multiple_buffers_required )

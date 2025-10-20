@@ -1443,11 +1443,19 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                   return result;
                };
 
-               // If slice generation mode is explicitly set to 1 (1 slice per output sample) and auto mode is off
-               // emit multiple output samples, one per slice
-               if (pThis->m_bSliceGenerationModeSet &&
-                  (pThis->m_uiSliceGenerationMode == 1) &&
-                  (!pDX12EncodeContext->IsSliceAutoModeEnabled())) // We cannot know if the last slice is actually the last one on time to set the last MFSample properties
+               //
+               // We can assume pLastSliceFence is signaled after the last pSliceFences[slice_idx] is signaled
+               // but there may still be a race condition there in between these last two signals
+               //
+               // If we are using PIPE_SLICE_AUTO_MODE, we need to wait on pLastSliceFence to know when all actual slices are done
+               // and what pSliceFences[] after that point are unused and must not be waited on.
+               //
+               // When emitting the MFSamples asynchronously for each slice, we need to mark MFSample_LastSlice
+               // on the last actual slice. In auto mode, we only know which one is the last actual slice after pLastSliceFence is signaled
+               // and by that time, it is too late to mark MFSample_LastSlice on the last slice only (as it may have been already emitted),
+               // so in PIPE_SLICE_AUTO_MODE, we gather all completed slices here and emit them together after pLastSliceFence is signaled.
+               //
+               if (!pDX12EncodeContext->IsSliceAutoModeEnabled())
                {
                   std::vector<struct codec_unit_location_t> codec_unit_metadata;
                   codec_unit_metadata.reserve( 16 );
