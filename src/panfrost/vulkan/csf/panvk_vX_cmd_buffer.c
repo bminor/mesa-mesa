@@ -802,6 +802,8 @@ cs_reg_perm(struct cs_builder *b, unsigned reg)
 static void
 init_cs_builders(struct panvk_cmd_buffer *cmdbuf)
 {
+   struct panvk_physical_device *phys_dev =
+      to_panvk_physical_device(cmdbuf->vk.base.device->physical);
    struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
    const reg_perm_cb_t base_reg_perms[PANVK_SUBQUEUE_COUNT] = {
       [PANVK_SUBQUEUE_VERTEX_TILER] = panvk_cs_vt_reg_perm,
@@ -820,6 +822,8 @@ init_cs_builders(struct panvk_cmd_buffer *cmdbuf)
       struct cs_builder_conf conf = {
          .nr_registers = csif_info->cs_reg_count,
          .nr_kernel_registers = MAX2(csif_info->unpreserved_cs_reg_count, 4),
+         .compute_ep_limit =
+            PAN_ARCH >= 12 ? phys_dev->kmod.props.max_tasks_per_core : 0,
          .alloc_buffer = alloc_cs_buffer,
          .cookie = cmdbuf,
          .ls_sb_slot = SB_ID(LS),
