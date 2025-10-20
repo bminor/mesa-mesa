@@ -545,8 +545,9 @@ fetch_parent_node(nir_builder *b, nir_def *bvh, nir_def *node)
 {
    nir_def *offset = nir_iadd_imm(b, nir_imul_imm(b, node, 4), 4);
 
-   return nir_build_load_global(b, 1, 32, nir_isub(b, nir_pack_64_2x32(b, bvh),
-                                                   nir_u2u64(b, offset)), .align_mul = 4);
+   return nir_load_global(
+      b, 1, 32, nir_isub(b, nir_pack_64_2x32(b, bvh), nir_u2u64(b, offset)),
+      .align_mul = 4);
 }
 
 static nir_def *
@@ -789,12 +790,10 @@ build_ray_traversal(nir_builder *b, nir_deref_instr *rq,
                            offsetof(struct tu_leaf_node, geometry_id));
             nir_def *geometry_id_ptr = nir_iadd(b, nir_pack_64_2x32(b, bvh_base),
                                                 offset);
-            nir_def *geometry_id =
-               nir_build_load_global(b, 1, 32, geometry_id_ptr,
-                                     .access = ACCESS_NON_WRITEABLE,
-                                     .align_mul = sizeof(struct tu_leaf_node),
-                                     .align_offset = offsetof(struct tu_leaf_node,
-                                                              geometry_id));
+            nir_def *geometry_id = nir_load_global(
+               b, 1, 32, geometry_id_ptr, .access = ACCESS_NON_WRITEABLE,
+               .align_mul = sizeof(struct tu_leaf_node),
+               .align_offset = offsetof(struct tu_leaf_node, geometry_id));
             rqi_store(b, candidate, geometry_id, geometry_id, 1);
 
             nir_push_if(b, nir_test_mask(b, intersection_flags,

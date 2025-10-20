@@ -534,8 +534,8 @@ try_opt_atomic_to_load(nir_builder *b, nir_intrinsic_instr *intrin,
                             .base = nir_intrinsic_base(intrin));
       break;
    case nir_intrinsic_global_atomic:
-      def = nir_build_load_global(b, 1, bit_size, intrin->src[0].ssa,
-                                  .access = ACCESS_ATOMIC | ACCESS_COHERENT);
+      def = nir_load_global(b, 1, bit_size, intrin->src[0].ssa,
+                            .access = ACCESS_ATOMIC | ACCESS_COHERENT);
       break;
    case nir_intrinsic_global_atomic_amd:
       def = nir_load_global_amd(b, 1, bit_size, intrin->src[0].ssa, intrin->src[2].ssa,

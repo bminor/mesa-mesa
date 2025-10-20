@@ -43,7 +43,7 @@ static inline nir_def *
 brw_nir_rt_load(nir_builder *b, nir_def *addr, unsigned align,
                 unsigned components, unsigned bit_size)
 {
-   return nir_build_load_global(b, components, bit_size, addr,
+   return nir_load_global(b, components, bit_size, addr,
                                 .align_mul = align,
                                 .access = is_access_for_builder(b));
 }

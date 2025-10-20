@@ -1063,7 +1063,7 @@ build_buffer_to_image_fs(const struct vk_meta_device *meta,
 
    coords = nir_isub(b, coords, img_offs);
 
-   nir_def *texel = nir_build_load_global(b,
+   nir_def *texel = nir_load_global(b,
       comp_count, comp_sz, copy_img_buf_addr(b, buf_pfmt, coords),
       .align_mul = 1 << (ffs(blk_sz) - 1));
 
@@ -1161,7 +1161,7 @@ build_buffer_to_image_cs(const struct vk_meta_device *meta,
    unsigned bit_sz = blk_sz & 1 ? 8 : blk_sz & 2 ? 16 : 32;
    unsigned comp_count = blk_sz * 8 / bit_sz;
 
-   nir_def *texel = nir_build_load_global(b,
+   nir_def *texel = nir_load_global(b,
          comp_count, bit_sz, copy_img_buf_addr(b, buf_pfmt, copy_id),
          .align_mul = 1 << (ffs(blk_sz) - 1));
 
@@ -2369,7 +2369,7 @@ build_copy_buffer_shader(const struct vk_meta_device *meta,
 
    nir_def *src_addr = load_info(b, struct vk_meta_copy_buffer_info, src_addr);
    nir_def *dst_addr = nir_load_push_constant(b, 1, 64, nir_imm_int(b, 8));
-   nir_def *data = nir_build_load_global(b, chunk_comp_count, chunk_bit_size,
+   nir_def *data = nir_load_global(b, chunk_comp_count, chunk_bit_size,
                                          nir_iadd(b, src_addr, offset),
                                          .align_mul = chunk_bit_size / 8);
 

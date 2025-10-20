@@ -241,8 +241,8 @@ build_occlusion_query_shader(struct radv_device *device)
             nir_scoped_memory_barrier(&b, SCOPE_INVOCATION, NIR_MEMORY_ACQUIRE, nir_var_mem_ssbo);
 
             nir_def *load_offset = nir_iadd_imm(&b, input_base, rb_avail_offset);
-            nir_def *load = nir_build_load_global(&b, 1, 32, nir_iadd(&b, src_va, nir_u2u64(&b, load_offset)),
-                                                  .align_mul = 4, .access = ACCESS_COHERENT);
+            nir_def *load = nir_load_global(&b, 1, 32, nir_iadd(&b, src_va, nir_u2u64(&b, load_offset)), .align_mul = 4,
+                                            .access = ACCESS_COHERENT);
 
             nir_break_if(&b, nir_ige_imm(&b, load, 0x80000000));
          }
@@ -263,7 +263,7 @@ build_occlusion_query_shader(struct radv_device *device)
    nir_def *load_offset = nir_imul_imm(&b, current_outer_count, 16);
    load_offset = nir_iadd(&b, input_base, load_offset);
 
-   nir_def *load = nir_build_load_global(&b, 2, 64, nir_iadd(&b, src_va, nir_u2u64(&b, load_offset)), .align_mul = 16);
+   nir_def *load = nir_load_global(&b, 2, 64, nir_iadd(&b, src_va, nir_u2u64(&b, load_offset)), .align_mul = 16);
 
    nir_store_var(&b, start, nir_channel(&b, load, 0), 0x1);
    nir_store_var(&b, end, nir_channel(&b, load, 1), 0x1);
@@ -494,7 +494,7 @@ build_pipeline_statistics_query_shader(struct radv_device *device)
 
    avail_offset = nir_iadd(&b, avail_offset, nir_imul_imm(&b, global_id, 4));
 
-   nir_def *available32 = nir_build_load_global(&b, 1, 32, nir_iadd(&b, src_va, nir_u2u64(&b, avail_offset)));
+   nir_def *available32 = nir_load_global(&b, 1, 32, nir_iadd(&b, src_va, nir_u2u64(&b, avail_offset)));
    nir_store_var(&b, available, nir_i2b(&b, available32), 0x1);
 
    if (pdev->emulate_mesh_shader_queries) {
@@ -503,12 +503,11 @@ build_pipeline_statistics_query_shader(struct radv_device *device)
          const uint32_t idx = ffs(VK_QUERY_PIPELINE_STATISTIC_TASK_SHADER_INVOCATIONS_BIT_EXT) - 1;
 
          nir_def *avail_start_offset = nir_iadd_imm(&b, input_base, pipeline_statistics_indices[idx] * 8 + 4);
-         nir_def *avail_start =
-            nir_build_load_global(&b, 1, 32, nir_iadd(&b, src_va, nir_u2u64(&b, avail_start_offset)));
+         nir_def *avail_start = nir_load_global(&b, 1, 32, nir_iadd(&b, src_va, nir_u2u64(&b, avail_start_offset)));
 
          nir_def *avail_end_offset =
             nir_iadd_imm(&b, input_base, pipeline_statistics_indices[idx] * 8 + pipelinestat_block_size + 4);
-         nir_def *avail_end = nir_build_load_global(&b, 1, 32, nir_iadd(&b, src_va, nir_u2u64(&b, avail_end_offset)));
+         nir_def *avail_end = nir_load_global(&b, 1, 32, nir_iadd(&b, src_va, nir_u2u64(&b, avail_end_offset)));
 
          nir_def *task_invoc_result_available =
             nir_i2b(&b, nir_iand_imm(&b, nir_iand(&b, avail_start, avail_end), 0x80000000));
@@ -532,10 +531,10 @@ build_pipeline_statistics_query_shader(struct radv_device *device)
       nir_push_if(&b, nir_test_mask(&b, stats_mask, BITFIELD64_BIT(i)));
 
       nir_def *start_offset = nir_iadd_imm(&b, input_base, pipeline_statistics_indices[i] * 8);
-      nir_def *start = nir_build_load_global(&b, 1, 64, nir_iadd(&b, src_va, nir_u2u64(&b, start_offset)));
+      nir_def *start = nir_load_global(&b, 1, 64, nir_iadd(&b, src_va, nir_u2u64(&b, start_offset)));
 
       nir_def *end_offset = nir_iadd_imm(&b, input_base, pipeline_statistics_indices[i] * 8 + pipelinestat_block_size);
-      nir_def *end = nir_build_load_global(&b, 1, 64, nir_iadd(&b, src_va, nir_u2u64(&b, end_offset)));
+      nir_def *end = nir_load_global(&b, 1, 64, nir_iadd(&b, src_va, nir_u2u64(&b, end_offset)));
 
       nir_store_var(&b, result, nir_isub(&b, end, start), 0x1);
 
@@ -545,10 +544,10 @@ build_pipeline_statistics_query_shader(struct radv_device *device)
       {
          /* Compute the emulated result if needed. */
          nir_def *emu_start_offset = nir_iadd_imm(&b, input_base, pipelinestat_block_size * 2);
-         nir_def *emu_start = nir_build_load_global(&b, 1, 64, nir_iadd(&b, src_va, nir_u2u64(&b, emu_start_offset)));
+         nir_def *emu_start = nir_load_global(&b, 1, 64, nir_iadd(&b, src_va, nir_u2u64(&b, emu_start_offset)));
 
          nir_def *emu_end_offset = nir_iadd_imm(&b, input_base, pipelinestat_block_size * 2 + 8);
-         nir_def *emu_end = nir_build_load_global(&b, 1, 64, nir_iadd(&b, src_va, nir_u2u64(&b, emu_end_offset)));
+         nir_def *emu_end = nir_load_global(&b, 1, 64, nir_iadd(&b, src_va, nir_u2u64(&b, emu_end_offset)));
 
          nir_def *ngg_emu_result = nir_isub(&b, emu_end, emu_start);
 
@@ -878,9 +877,9 @@ build_tfb_query_shader(struct radv_device *device)
    nir_def *output_base = nir_imul(&b, output_stride, global_id);
 
    /* Load data from the query pool. */
-   nir_def *load1 = nir_build_load_global(&b, 4, 32, nir_iadd(&b, src_va, nir_u2u64(&b, input_base)), .align_mul = 32);
-   nir_def *load2 = nir_build_load_global(
-      &b, 4, 32, nir_iadd(&b, src_va, nir_u2u64(&b, nir_iadd_imm(&b, input_base, 16))), .align_mul = 16);
+   nir_def *load1 = nir_load_global(&b, 4, 32, nir_iadd(&b, src_va, nir_u2u64(&b, input_base)), .align_mul = 32);
+   nir_def *load2 = nir_load_global(&b, 4, 32, nir_iadd(&b, src_va, nir_u2u64(&b, nir_iadd_imm(&b, input_base, 16))),
+                                    .align_mul = 16);
 
    /* Check if result is available. */
    nir_def *avails[2];
@@ -1116,7 +1115,7 @@ build_timestamp_query_shader(struct radv_device *device)
    nir_def *output_base = nir_imul(&b, output_stride, global_id);
 
    /* Load data from the query pool. */
-   nir_def *load = nir_build_load_global(&b, 2, 32, nir_iadd(&b, src_va, nir_u2u64(&b, input_base)), .align_mul = 8);
+   nir_def *load = nir_load_global(&b, 2, 32, nir_iadd(&b, src_va, nir_u2u64(&b, input_base)), .align_mul = 8);
 
    /* Pack the timestamp. */
    nir_def *timestamp;
@@ -1263,8 +1262,8 @@ build_pg_query_shader(struct radv_device *device)
    nir_def *output_base = nir_imul(&b, output_stride, global_id);
 
    /* Load data from the query pool. */
-   nir_def *load1 = nir_build_load_global(&b, 2, 32, nir_iadd(&b, src_va, nir_u2u64(&b, input_base)), .align_mul = 32);
-   nir_def *load2 = nir_build_load_global(
+   nir_def *load1 = nir_load_global(&b, 2, 32, nir_iadd(&b, src_va, nir_u2u64(&b, input_base)), .align_mul = 32);
+   nir_def *load2 = nir_load_global(
       &b, 2, 32, nir_iadd(&b, src_va, nir_u2u64(&b, nir_iadd(&b, input_base, nir_imm_int(&b, 16)))), .align_mul = 16);
 
    /* Check if result is available. */
@@ -1275,9 +1274,9 @@ build_pg_query_shader(struct radv_device *device)
 
    nir_push_if(&b, uses_emulated_queries);
    {
-      nir_def *emu_avail_start = nir_build_load_global(
+      nir_def *emu_avail_start = nir_load_global(
          &b, 1, 32, nir_iadd(&b, src_va, nir_u2u64(&b, nir_iadd_imm(&b, input_base, 36))), .align_mul = 4);
-      nir_def *emu_avail_end = nir_build_load_global(
+      nir_def *emu_avail_end = nir_load_global(
          &b, 1, 32, nir_iadd(&b, src_va, nir_u2u64(&b, nir_iadd_imm(&b, input_base, 44))), .align_mul = 4);
       nir_def *emu_result_available =
          nir_i2b(&b, nir_iand_imm(&b, nir_iand(&b, emu_avail_start, emu_avail_end), 0x80000000));
@@ -1301,9 +1300,9 @@ build_pg_query_shader(struct radv_device *device)
 
    nir_push_if(&b, uses_emulated_queries);
    {
-      nir_def *emu_start = nir_build_load_global(
+      nir_def *emu_start = nir_load_global(
          &b, 1, 32, nir_iadd(&b, src_va, nir_u2u64(&b, nir_iadd(&b, input_base, nir_imm_int(&b, 32)))), .align_mul = 4);
-      nir_def *emu_end = nir_build_load_global(
+      nir_def *emu_end = nir_load_global(
          &b, 1, 32, nir_iadd(&b, src_va, nir_u2u64(&b, nir_iadd(&b, input_base, nir_imm_int(&b, 40)))), .align_mul = 4);
 
       nir_def *ngg_emu_result = nir_isub(&b, emu_end, emu_start);
@@ -1532,9 +1531,9 @@ build_ms_prim_gen_query_shader(struct radv_device *device)
    nir_def *output_base = nir_imul(&b, output_stride, global_id);
 
    /* Load data from the query pool. */
-   nir_def *load1 = nir_build_load_global(&b, 2, 32, nir_iadd(&b, src_va, nir_u2u64(&b, input_base)), .align_mul = 32);
-   nir_def *load2 = nir_build_load_global(
-      &b, 2, 32, nir_iadd(&b, src_va, nir_u2u64(&b, nir_iadd_imm(&b, input_base, 8))), .align_mul = 16);
+   nir_def *load1 = nir_load_global(&b, 2, 32, nir_iadd(&b, src_va, nir_u2u64(&b, input_base)), .align_mul = 32);
+   nir_def *load2 =
+      nir_load_global(&b, 2, 32, nir_iadd(&b, src_va, nir_u2u64(&b, nir_iadd_imm(&b, input_base, 8))), .align_mul = 16);
 
    /* Check if result is available. */
    nir_def *avails[2];

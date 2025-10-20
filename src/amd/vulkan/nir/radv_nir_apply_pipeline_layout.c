@@ -129,7 +129,7 @@ visit_load_vulkan_descriptor(nir_builder *b, apply_layout_state *state, nir_intr
       nir_def *addr = convert_pointer_to_64_bit(b, state,
                                                 nir_iadd(b, nir_unpack_64_2x32_split_x(b, intrin->src[0].ssa),
                                                          nir_unpack_64_2x32_split_y(b, intrin->src[0].ssa)));
-      nir_def *desc = nir_build_load_global(b, 1, 64, addr, .access = ACCESS_NON_WRITEABLE);
+      nir_def *desc = nir_load_global(b, 1, 64, addr, .access = ACCESS_NON_WRITEABLE);
 
       nir_def_rewrite_uses(&intrin->def, desc);
    } else {
@@ -181,8 +181,8 @@ visit_get_ssbo_size(nir_builder *b, apply_layout_state *state, nir_intrinsic_ins
       nir_def *ptr = nir_iadd(b, nir_channel(b, rsrc, 0), nir_channel(b, rsrc, 1));
       ptr = nir_iadd_imm(b, ptr, 8);
       ptr = convert_pointer_to_64_bit(b, state, ptr);
-      size = nir_build_load_global(b, 4, 32, ptr, .access = ACCESS_NON_WRITEABLE | ACCESS_CAN_REORDER, .align_mul = 16,
-                                   .align_offset = 4);
+      size = nir_load_global(b, 4, 32, ptr, .access = ACCESS_NON_WRITEABLE | ACCESS_CAN_REORDER, .align_mul = 16,
+                             .align_offset = 4);
    } else {
       /* load the entire descriptor so it can be CSE'd */
       nir_def *ptr = convert_pointer_to_64_bit(b, state, nir_channel(b, rsrc, 0));

@@ -168,7 +168,7 @@ radv_meta_nir_build_copy_memory_shader(struct radv_device *dev, uint32_t bytes_p
    nir_def *offset = nir_u2u64(&b, nir_umin(&b, nir_imul_imm(&b, global_id, bytes_per_invocation), max_offset));
 
    nir_def *data =
-      nir_build_load_global(&b, num_components, bit_size, nir_iadd(&b, src_addr, offset), .align_mul = bit_size / 8);
+      nir_load_global(&b, num_components, bit_size, nir_iadd(&b, src_addr, offset), .align_mul = bit_size / 8);
    nir_build_store_global(&b, data, nir_iadd(&b, dst_addr, offset), .align_mul = bit_size / 8);
 
    return b.shader;
@@ -886,7 +886,7 @@ radv_meta_nir_build_clear_htile_mask_shader(struct radv_device *dev)
    nir_def *va = nir_pack_64_2x32(&b, nir_channels(&b, constants, 0x3));
    va = nir_iadd(&b, va, nir_u2u64(&b, offset));
 
-   nir_def *load = nir_build_load_global(&b, 4, 32, va, .align_mul = 16);
+   nir_def *load = nir_load_global(&b, 4, 32, va, .align_mul = 16);
 
    /* data = (data & ~htile_mask) | (htile_value & htile_mask) */
    nir_def *data = nir_iand(&b, load, nir_channel(&b, constants, 3));
@@ -1002,7 +1002,7 @@ radv_meta_nir_build_copy_vrs_htile_shader(struct radv_device *device, struct rad
    nir_push_if(&b, nir_ieq_imm(&b, read_htile_value, 1));
    {
       /* Load the existing HTILE 32-bit value for this 8x8 pixels area. */
-      nir_def *input_value = nir_build_load_global(&b, 1, 32, nir_iadd(&b, htile_va, nir_u2u64(&b, htile_offset)));
+      nir_def *input_value = nir_load_global(&b, 1, 32, nir_iadd(&b, htile_va, nir_u2u64(&b, htile_offset)));
 
       /* Clear the 4-bit VRS rates. */
       nir_store_var(&b, htile_value, nir_iand_imm(&b, input_value, 0xfffff33f), 0x1);

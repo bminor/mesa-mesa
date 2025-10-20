@@ -288,9 +288,9 @@ lower_rq_initialize(nir_builder *b, nir_intrinsic_instr *instr, struct ray_query
    nir_def *bvh_offset = NULL;
    nir_push_if(b, accel_struct_non_null);
    {
-      bvh_offset = nir_build_load_global(
-         b, 1, 32, nir_iadd_imm(b, accel_struct, offsetof(struct radv_accel_struct_header, bvh_offset)),
-         .access = ACCESS_NON_WRITEABLE);
+      bvh_offset =
+         nir_load_global(b, 1, 32, nir_iadd_imm(b, accel_struct, offsetof(struct radv_accel_struct_header, bvh_offset)),
+                         .access = ACCESS_NON_WRITEABLE);
    }
    nir_pop_if(b, NULL);
    bvh_offset = nir_if_phi(b, bvh_offset, zero);

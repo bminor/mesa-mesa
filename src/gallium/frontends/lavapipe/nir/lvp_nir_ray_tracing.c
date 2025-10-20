@@ -37,7 +37,7 @@ lvp_load_node_data(nir_builder *b, nir_def *addr, nir_def **node_data, uint32_t 
    if (offset < LVP_BVH_NODE_PREFETCH_SIZE && node_data)
       return node_data[offset / 4];
 
-   return nir_build_load_global(b, 1, 32, nir_iadd_imm(b, addr, offset));
+   return nir_load_global(b, 1, 32, nir_iadd_imm(b, addr, offset));
 }
 
 void
@@ -45,7 +45,7 @@ lvp_load_wto_matrix(nir_builder *b, nir_def *instance_addr, nir_def **node_data,
 {
    unsigned offset = offsetof(struct lvp_bvh_instance_node, wto_matrix);
    for (unsigned i = 0; i < 3; ++i) {
-      out[i] = nir_build_load_global(b, 4, 32, nir_iadd_imm(b, instance_addr, offset + i * 16));
+      out[i] = nir_load_global(b, 4, 32, nir_iadd_imm(b, instance_addr, offset + i * 16));
       out[i] = nir_vec4(b,
          lvp_load_node_data(b, instance_addr, node_data, offset + i * 16 + 0),
          lvp_load_node_data(b, instance_addr, node_data, offset + i * 16 + 4),
@@ -58,7 +58,7 @@ lvp_load_wto_matrix(nir_builder *b, nir_def *instance_addr, nir_def **node_data,
 nir_def *
 lvp_load_vertex_position(nir_builder *b, nir_def *primitive_addr, uint32_t index)
 {
-   return nir_build_load_global(b, 3, 32, nir_iadd_imm(b, primitive_addr, index * 3 * sizeof(float)));
+   return nir_load_global(b, 3, 32, nir_iadd_imm(b, primitive_addr, index * 3 * sizeof(float)));
 }
 
 static nir_def *
@@ -530,7 +530,7 @@ lvp_build_ray_traversal(nir_builder *b, const struct lvp_ray_traversal_args *arg
 
       nir_def *node_data[LVP_BVH_NODE_PREFETCH_SIZE / 4];
       for (uint32_t i = 0; i < ARRAY_SIZE(node_data); i++)
-         node_data[i] = nir_build_load_global(b, 1, 32, nir_iadd_imm(b, node_addr, i * 4));
+         node_data[i] = nir_load_global(b, 1, 32, nir_iadd_imm(b, node_addr, i * 4));
 
       nir_def *tmax = nir_load_deref(b, args->vars.tmax);
 

@@ -294,8 +294,8 @@ lower_abi_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
 
       offset = nir_iadd_imm_nuw(b, offset, sample_pos_offset);
       addr = nir_iadd(b, addr, nir_u2u64(b, offset));
-      replacement = nir_build_load_global(b, 2, 32, addr,
-                                          .access = ACCESS_NON_WRITEABLE | ACCESS_CAN_SPECULATE | ACCESS_CAN_REORDER);
+      replacement =
+         nir_load_global(b, 2, 32, addr, .access = ACCESS_NON_WRITEABLE | ACCESS_CAN_SPECULATE | ACCESS_CAN_REORDER);
       break;
    }
    case nir_intrinsic_load_rasterization_samples_amd:

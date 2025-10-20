@@ -399,7 +399,7 @@ lower_load_global_bounded(nir_builder *b, nir_intrinsic_instr *intr)
       access |= ACCESS_NON_WRITEABLE | ACCESS_CAN_REORDER;
    }
 
-   nir_def *val = nir_build_load_global(
+   nir_def *val = nir_load_global(
       b, intr->def.num_components, intr->def.bit_size,
       nir_iadd(b, base, nir_u2u64(b, offset)),
       .align_mul = nir_intrinsic_align_mul(intr),

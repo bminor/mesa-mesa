@@ -64,8 +64,8 @@ build_atomic(nir_builder *b, nir_intrinsic_instr *intr)
                              .access = ACCESS_ATOMIC);
       break;
    case nir_intrinsic_global_atomic:
-      load = nir_build_load_global(b, 1, intr->def.bit_size, intr->src[0].ssa,
-                                   .access = ACCESS_ATOMIC | ACCESS_COHERENT);
+      load = nir_load_global(b, 1, intr->def.bit_size, intr->src[0].ssa,
+                             .access = ACCESS_ATOMIC | ACCESS_COHERENT);
       break;
    default:
       UNREACHABLE("unsupported atomic type");

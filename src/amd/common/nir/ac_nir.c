@@ -328,7 +328,7 @@ ac_nir_load_smem(nir_builder *b, unsigned num_components, nir_def *addr, nir_def
    else
       addr = nir_iadd(b, addr, nir_u2u64(b, offset));
 
-   return nir_build_load_global(b, num_components, 32, addr,
+   return nir_load_global(b, num_components, 32, addr,
                             .align_mul = align_mul,
                             .access = access | ACCESS_CAN_REORDER | ACCESS_NON_WRITEABLE | ACCESS_SMEM_AMD);
 }

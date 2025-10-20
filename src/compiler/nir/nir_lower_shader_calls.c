@@ -1347,12 +1347,12 @@ lower_stack_instr_to_scratch(struct nir_builder *b, nir_instr *instr, void *data
          nir_def *addr = nir_iadd_imm(b,
                                       nir_load_scratch_base_ptr(b, 1, 64, 1),
                                       nir_intrinsic_base(stack));
-         data = nir_build_load_global(b,
-                                      stack->def.num_components,
-                                      stack->def.bit_size,
-                                      addr,
-                                      .align_mul = nir_intrinsic_align_mul(stack),
-                                      .align_offset = nir_intrinsic_align_offset(stack));
+         data = nir_load_global(b,
+                                stack->def.num_components,
+                                stack->def.bit_size,
+                                addr,
+                                .align_mul = nir_intrinsic_align_mul(stack),
+                                .align_offset = nir_intrinsic_align_offset(stack));
       } else {
          assert(state->address_format == nir_address_format_32bit_offset);
          data = nir_load_scratch(b,

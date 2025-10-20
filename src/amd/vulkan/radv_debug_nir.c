@@ -470,7 +470,7 @@ radv_build_is_valid_va(nir_builder *b, nir_def *addr)
       nir_def *index = nir_u2u32(b, nir_udiv_imm(b, masked_addr, RADV_VA_VALIDATION_GRANULARITY_BYTES));
       nir_def *offset = nir_imul_imm(b, nir_udiv_imm(b, index, 32), 4);
       nir_def *dword =
-         nir_build_load_global(b, 1, 32, nir_iadd_imm(b, nir_u2u64(b, offset), device->valid_vas_addr), .align_mul = 4);
+         nir_load_global(b, 1, 32, nir_iadd_imm(b, nir_u2u64(b, offset), device->valid_vas_addr), .align_mul = 4);
       index = nir_umod_imm(b, index, 32);
       then_valid = nir_bitnz(b, dword, index);
    }

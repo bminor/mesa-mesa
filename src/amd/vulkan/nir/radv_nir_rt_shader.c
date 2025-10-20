@@ -381,10 +381,10 @@ load_sbt_entry(nir_builder *b, const struct rt_variables *vars, nir_def *idx, en
 
    if (offset == SBT_RECURSIVE_PTR) {
       nir_store_var(b, vars->shader_addr,
-                    nir_build_load_global(b, 1, 64, addr, .access = ACCESS_CAN_REORDER | ACCESS_NON_WRITEABLE), 1);
+                    nir_load_global(b, 1, 64, addr, .access = ACCESS_CAN_REORDER | ACCESS_NON_WRITEABLE), 1);
    } else {
-      nir_store_var(b, vars->idx,
-                    nir_build_load_global(b, 1, 32, addr, .access = ACCESS_CAN_REORDER | ACCESS_NON_WRITEABLE), 1);
+      nir_store_var(b, vars->idx, nir_load_global(b, 1, 32, addr, .access = ACCESS_CAN_REORDER | ACCESS_NON_WRITEABLE),
+                    1);
    }
 
    nir_def *record_addr = nir_iadd_imm(b, addr, RADV_RT_HANDLE_SIZE - offset);
@@ -978,9 +978,9 @@ radv_build_end_trace_token(nir_builder *b, struct rt_variables *vars, nir_def *t
          dst_addr = nir_iadd_imm(b, dst_addr, 4);
 
          nir_def *instance_id_and_hit_kind =
-            nir_build_load_global(b, 1, 32,
-                                  nir_iadd_imm(b, nir_load_var(b, vars->instance_addr),
-                                               offsetof(struct radv_bvh_instance_node, instance_id)));
+            nir_load_global(b, 1, 32,
+                            nir_iadd_imm(b, nir_load_var(b, vars->instance_addr),
+                                         offsetof(struct radv_bvh_instance_node, instance_id)));
          instance_id_and_hit_kind =
             nir_ior(b, instance_id_and_hit_kind, nir_ishl_imm(b, nir_load_var(b, vars->hit_kind), 24));
          nir_build_store_global(b, instance_id_and_hit_kind, dst_addr, .align_mul = 4);
@@ -1545,9 +1545,9 @@ radv_build_traversal(struct radv_device *device, struct radv_ray_tracing_pipelin
    nir_def *bvh_offset;
    nir_push_if(b, nir_ine_imm(b, accel_struct, 0));
    {
-      bvh_offset = nir_build_load_global(
-         b, 1, 32, nir_iadd_imm(b, accel_struct, offsetof(struct radv_accel_struct_header, bvh_offset)),
-         .access = ACCESS_NON_WRITEABLE);
+      bvh_offset =
+         nir_load_global(b, 1, 32, nir_iadd_imm(b, accel_struct, offsetof(struct radv_accel_struct_header, bvh_offset)),
+                         .access = ACCESS_NON_WRITEABLE);
       nir_store_var(b, trav_vars.current_node, nir_imm_int(b, RADV_BVH_ROOT_NODE), 0x1);
    }
    nir_push_else(b, NULL);

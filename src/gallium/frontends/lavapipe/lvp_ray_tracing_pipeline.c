@@ -233,7 +233,7 @@ lvp_load_sbt_entry(nir_builder *b, nir_def *index,
    }
 
    return (struct lvp_sbt_entry) {
-      .value = nir_build_load_global(b, 1, 32, nir_iadd_imm(b, addr, index_offset)),
+      .value = nir_load_global(b, 1, 32, nir_iadd_imm(b, addr, index_offset)),
       .shader_record_ptr = nir_iadd_imm(b, addr, LVP_RAY_TRACING_GROUP_HANDLE_SIZE),
    };
 }
@@ -930,7 +930,7 @@ lvp_lower_ray_tracing_instr(nir_builder *b, nir_instr *instr, void *data)
       break;
    case nir_intrinsic_load_ray_instance_custom_index: {
       nir_def *instance_node_addr = nir_load_var(b, state->instance_addr);
-      nir_def *custom_instance_and_mask = nir_build_load_global(
+      nir_def *custom_instance_and_mask = nir_load_global(
          b, 1, 32,
          nir_iadd_imm(b, instance_node_addr, offsetof(struct lvp_bvh_instance_node, custom_instance_and_mask)));
       def = nir_iand_imm(b, custom_instance_and_mask, 0xFFFFFF);
@@ -945,7 +945,7 @@ lvp_lower_ray_tracing_instr(nir_builder *b, nir_instr *instr, void *data)
       break;
    case nir_intrinsic_load_instance_id: {
       nir_def *instance_node_addr = nir_load_var(b, state->instance_addr);
-      def = nir_build_load_global(
+      def = nir_load_global(
          b, 1, 32, nir_iadd_imm(b, instance_node_addr, offsetof(struct lvp_bvh_instance_node, instance_id)));
       break;
    }
@@ -973,7 +973,7 @@ lvp_lower_ray_tracing_instr(nir_builder *b, nir_instr *instr, void *data)
       nir_def *instance_node_addr = nir_load_var(b, state->instance_addr);
       nir_def *rows[3];
       for (unsigned r = 0; r < 3; ++r)
-         rows[r] = nir_build_load_global(
+         rows[r] = nir_load_global(
             b, 4, 32,
             nir_iadd_imm(b, instance_node_addr, offsetof(struct lvp_bvh_instance_node, otw_matrix) + r * 16));
       def = nir_vec3(b, nir_channel(b, rows[0], c), nir_channel(b, rows[1], c), nir_channel(b, rows[2], c));
