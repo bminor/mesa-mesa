@@ -234,7 +234,7 @@
         "description": "amd/lower_mem_access_bit_sizes: improve subdword/unaligned SMEM lowering",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "fbf0399517aefea0485df5f8fd43ac065e01443c",
         "notes": null
