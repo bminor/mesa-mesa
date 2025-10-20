@@ -1284,6 +1284,18 @@
     <src size="32">Mode descriptor</src>
   </ins>
 
+
+  <ins name="LEA_BUF" title="Load buffer effective address" message="attribute" opcode="0x6E" unit="LS">
+    <desc>
+      Load effective address of a buffer with an offset added.
+    </desc>
+    <sr write="true"/>
+    <sr_count count="2"/>
+    <slot/>
+    <src size="32">Structure index</src>
+    <src size="32">Mode descriptor</src>
+  </ins>
+
   <ins name="LEA_BUF_IMM" title="Load buffer effective address" message="attribute" opcode="0x5E" unit="LS">
     <desc>
       Load effective address of a buffer with an immediate offset added.
