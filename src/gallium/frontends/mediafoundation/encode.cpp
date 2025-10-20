@@ -192,7 +192,6 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
          spDXGIBuffer->GetUnknown( MF_D3D12_SYNCHRONIZATION_OBJECT, IID_PPV_ARGS( &pDX12EncodeContext->spSyncObjectCommands ) ),
          done );
       CHECKHR_GOTO( pDX12EncodeContext->spSyncObjectCommands->EnqueueResourceReadyWait( m_spStagingQueue.Get() ), done );
-      pDX12EncodeContext->pSyncObjectQueue = m_spStagingQueue.Get();
 
       // This will signal the staging fence the d3d12 mesa backend is consuming
       // Since we have a Wait() on spStagingQueue added by EnqueueResourceReadyWait, this will only happen after MF
@@ -211,6 +210,11 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
       debug_printf( "[dx12 hmft 0x%p] DX12 input sample\n", this );
    }
 
+   // Assign the staging queue to the encode context for use during buffer attachment
+   // even when the input is not DX12; we use it to queue the output buffer readiness
+   // from DX12 encoder output (completion) fences
+   pDX12EncodeContext->pSyncObjectQueue = m_spStagingQueue.Get();
+   assert(pDX12EncodeContext->pSyncObjectQueue);
 
    //
    // If two pass is disabled, we just need to set the input fence and input fence value
