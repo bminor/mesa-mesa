@@ -406,6 +406,11 @@ struct pipe_context* r300_create_context(struct pipe_screen* screen,
         draw_wide_point_sprites(r300->draw, false);
         draw_enable_line_stipple(r300->draw, true);
         draw_enable_point_sprites(r300->draw, false);
+        draw_set_driver_clipping(r300->draw,
+                                 false,  /* bypass_clip_xy */
+                                 false,  /* bypass_clip_z */
+                                 true,   /* guard_band_xy */
+                                 false); /* bypass_clip_points_lines */
     }
 
     if (!r300_setup_atoms(r300))
