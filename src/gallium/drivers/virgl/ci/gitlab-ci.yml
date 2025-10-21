@@ -43,6 +43,7 @@ virgl-traces:
     PIGLIT_REPLAY_DEVICE_NAME: "gl-virgl"
     PIGLIT_RESULTS: "virgl-replay"
     LD_LIBRARY_PATH: "${CI_PROJECT_DIR}/install/lib/"     # For Crosvm
+    KERNEL_TAG: "v6.16-mesa-9d85"
   tags:
     - $FDO_RUNNER_JOB_PRIORITY_TAG_X86_64_KVM
   script:
