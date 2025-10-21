@@ -145,18 +145,14 @@ impl RegLatencySM80 {
             Op::HSet2(_) | Op::HSetP2(_) | Op::HMnMx2(_) => FP16_Alu,
             // let in for documentation purposes
             Op::Hmma(h) => match (h.mat_size, h.dst_type, h.src_type) {
-                (HmmaSize::M16N8K16, FloatType::F32, FloatType::F16) => {
-                    MMA_2x_collect
-                }
-                // (HmmaSize::M16N8K16, FloatType::F32, FloatType::BF16) => MMA_2x_collect,
                 // (HmmaSize::M16N8K8, FloatType::F32, FloatType::TF32) => MMA_2x_collect,
                 (HmmaSize::M16N8K8, FloatType::F32, FloatType::F16) => {
                     MMA_1x_collect
                 }
                 // (HmmaSize::M16N8K8, FloatType::F32, FloatType::BF16) => MMA_1x_collect,
                 // (HmmaSize::M16N8K4, FloatType::F32, FloatType::TF32) => MMA_1x_collect,
-                (HmmaSize::M16N8K16, FloatType::F16, _) => MMA_2x_collect,
                 (HmmaSize::M16N8K8, FloatType::F16, _) => MMA_1x_collect,
+                (HmmaSize::M16N8K16, _, _) => MMA_2x_collect,
                 _ => panic!("Illegal HMMA in reg category {}", h),
             },
             Op::Ipa(_) => DecoupledAgu,
