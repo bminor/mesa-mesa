@@ -598,8 +598,6 @@ get_query_pool_results(struct tu_device *device,
                        VkDeviceSize stride,
                        VkQueryResultFlags flags)
 {
-   assert(dataSize >= stride * queryCount);
-
    char *result_base = (char *) pData;
    VkResult result = VK_SUCCESS;
    for (uint32_t i = 0; i < queryCount; i++) {
