@@ -1480,7 +1480,14 @@ radv_init_image_properties(struct radv_physical_device *pdev)
 {
    uint32_t width, height, depth;
 
-   if (pdev->info.gfx_level >= GFX10) {
+   if (pdev->info.gfx_level >= GFX12) {
+      /* GFX12 supports 64K but it's not reported because this would prevent 16-bit texture compiler
+       * optimizations.
+       */
+      width = 32768;
+      height = 32768;
+      depth = 16384;
+   } else if (pdev->info.gfx_level >= GFX10) {
       width = 16384;
       height = 16384;
       depth = 8192;
