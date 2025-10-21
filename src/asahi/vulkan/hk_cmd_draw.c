@@ -992,28 +992,34 @@ hk_CmdEndRendering(VkCommandBuffer commandBuffer)
    }
 }
 
+static void
+hk_init_heap(const void *data) {
+   struct hk_cmd_buffer *cmd = (struct hk_cmd_buffer *) data;
+   struct hk_device *dev = hk_cmd_buffer_device(cmd);
+
+   perf_debug(cmd, "Allocating heap");
+
+   size_t size = 128 * 1024 * 1024;
+   dev->heap = agx_bo_create(&dev->dev, size, 0, 0, "Geometry heap");
+
+   /* The geometry state buffer is initialized here and then is treated by
+    * the CPU as rodata, even though the GPU uses it for scratch internally.
+    */
+   off_t off = dev->rodata.heap - dev->rodata.bo->va->addr;
+   struct agx_heap *map = agx_bo_map(dev->rodata.bo) + off;
+
+   *map = (struct agx_heap){
+      .base = dev->heap->va->addr,
+      .size = size,
+   };
+}
+
 static uint64_t
 hk_heap(struct hk_cmd_buffer *cmd)
 {
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
 
-   if (unlikely(!dev->heap)) {
-      perf_debug(cmd, "Allocating heap");
-
-      size_t size = 128 * 1024 * 1024;
-      dev->heap = agx_bo_create(&dev->dev, size, 0, 0, "Geometry heap");
-
-      /* The geometry state buffer is initialized here and then is treated by
-       * the CPU as rodata, even though the GPU uses it for scratch internally.
-       */
-      off_t off = dev->rodata.heap - dev->rodata.bo->va->addr;
-      struct agx_heap *map = agx_bo_map(dev->rodata.bo) + off;
-
-      *map = (struct agx_heap){
-         .base = dev->heap->va->addr,
-         .size = size,
-      };
-   }
+   util_call_once_data(&dev->heap_init_once, hk_init_heap, cmd);
 
    /* We need to free all allocations after each command buffer execution */
    if (!cmd->uses_heap) {
