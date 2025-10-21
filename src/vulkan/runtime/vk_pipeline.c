@@ -964,6 +964,25 @@ vk_pipeline_stage_clone(const struct vk_pipeline_stage *in)
    return out;
 }
 
+static const VkPushConstantRange *
+get_push_range_for_stage(struct vk_pipeline_layout *pipeline_layout,
+                         mesa_shader_stage stage)
+{
+   const VkShaderStageFlags vk_stage = mesa_to_vk_shader_stage(stage);
+
+   const VkPushConstantRange *push_range = NULL;
+   if (pipeline_layout != NULL) {
+      for (uint32_t r = 0; r < pipeline_layout->push_range_count; r++) {
+         if (pipeline_layout->push_ranges[r].stageFlags & vk_stage) {
+            assert(push_range == NULL);
+            push_range = &pipeline_layout->push_ranges[r];
+         }
+      }
+   }
+
+   return push_range;
+}
+
 struct vk_graphics_pipeline {
    struct vk_pipeline base;
 
@@ -1421,16 +1440,8 @@ vk_graphics_pipeline_compile_shaders(struct vk_device *device,
              stage->stage == MESA_SHADER_TESS_EVAL)
             vk_pipeline_replace_nir_tess_info(nir, &tess_info);
 
-         const VkPushConstantRange *push_range = NULL;
-         if (pipeline_layout != NULL) {
-            for (uint32_t r = 0; r < pipeline_layout->push_range_count; r++) {
-               if (pipeline_layout->push_ranges[r].stageFlags &
-                   mesa_to_vk_shader_stage(stage->stage)) {
-                  assert(push_range == NULL);
-                  push_range = &pipeline_layout->push_ranges[r];
-               }
-            }
-         }
+         const VkPushConstantRange *push_range =
+            get_push_range_for_stage(pipeline_layout, stage->stage);
 
          infos[i] = (struct vk_shader_compile_info) {
             .stage = stage->stage,
@@ -2055,16 +2066,8 @@ vk_pipeline_compile_compute_stage(struct vk_device *device,
    const struct vk_device_shader_ops *ops = device->shader_ops;
    VkResult result;
 
-   const VkPushConstantRange *push_range = NULL;
-   if (pipeline_layout != NULL) {
-      for (uint32_t r = 0; r < pipeline_layout->push_range_count; r++) {
-         if (pipeline_layout->push_ranges[r].stageFlags &
-             VK_SHADER_STAGE_COMPUTE_BIT) {
-            assert(push_range == NULL);
-            push_range = &pipeline_layout->push_ranges[r];
-         }
-      }
-   }
+   const VkPushConstantRange *push_range =
+      get_push_range_for_stage(pipeline_layout, MESA_SHADER_COMPUTE);
 
    VkShaderCreateFlagsEXT shader_flags =
       vk_pipeline_to_shader_flags(pipeline->base.flags, MESA_SHADER_COMPUTE);
@@ -2523,16 +2526,8 @@ vk_pipeline_compile_rt_shader(struct vk_device *device,
 
    int64_t stage_start = os_time_get_nano();
 
-   const VkPushConstantRange *push_range = NULL;
-   if (pipeline_layout != NULL) {
-      for (uint32_t r = 0; r < pipeline_layout->push_range_count; r++) {
-         if (pipeline_layout->push_ranges[r].stageFlags &
-             mesa_to_vk_shader_stage(stage->stage)) {
-            assert(push_range == NULL);
-            push_range = &pipeline_layout->push_ranges[r];
-         }
-      }
-   }
+   const VkPushConstantRange *push_range =
+      get_push_range_for_stage(pipeline_layout, stage->stage);
 
    struct mesa_blake3 blake3_ctx;
    _mesa_blake3_init(&blake3_ctx);
@@ -2650,16 +2645,8 @@ vk_pipeline_compile_rt_shader_group(struct vk_device *device,
       struct mesa_blake3 blake3_ctx;
       _mesa_blake3_init(&blake3_ctx);
 
-      const VkPushConstantRange *push_range = NULL;
-      if (pipeline_layout != NULL) {
-         for (uint32_t r = 0; r < pipeline_layout->push_range_count; r++) {
-            if (pipeline_layout->push_ranges[r].stageFlags &
-             mesa_to_vk_shader_stage(stages[i].stage)) {
-               assert(push_range == NULL);
-               push_range = &pipeline_layout->push_ranges[r];
-            }
-         }
-      }
+      const VkPushConstantRange *push_range =
+         get_push_range_for_stage(pipeline_layout, stages[i].stage);
 
       VkShaderCreateFlagsEXT shader_flags =
          vk_pipeline_to_shader_flags(pipeline_flags, stages[i].stage);
@@ -2707,16 +2694,8 @@ vk_pipeline_compile_rt_shader_group(struct vk_device *device,
          stages[i].shader = NULL;
       }
 
-      const VkPushConstantRange *push_range = NULL;
-      if (pipeline_layout != NULL) {
-         for (uint32_t r = 0; r < pipeline_layout->push_range_count; r++) {
-            if (pipeline_layout->push_ranges[r].stageFlags &
-                mesa_to_vk_shader_stage(stages[i].stage)) {
-               assert(push_range == NULL);
-               push_range = &pipeline_layout->push_ranges[r];
-            }
-         }
-      }
+      const VkPushConstantRange *push_range =
+         get_push_range_for_stage(pipeline_layout, stages[i].stage);
 
       const struct nir_shader_compiler_options *nir_options =
          ops->get_nir_options(device->physical, stages[i].stage,
