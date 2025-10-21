@@ -164,6 +164,7 @@ KHR-GLES31.core.compute_shader.simple-compute-shared_context
 
 # uprev Piglit in Mesa
 KHR-GLES31.core.compute_shader.simple-compute-shared_context-persistent-buffer
+spec@arb_point_parameters@arb_point_parameters-point-attenuation
 
 # With linux kernel 6.13-rc4 uprev
 dEQP-GLES2.functional.shaders.operator.unary_operator.pre_decrement_effect.highp_float_fragment
