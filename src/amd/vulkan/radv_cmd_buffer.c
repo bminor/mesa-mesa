@@ -9734,7 +9734,7 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   VkExtent2D screen_scissor = {MAX_FRAMEBUFFER_WIDTH, MAX_FRAMEBUFFER_HEIGHT};
+   VkExtent2D screen_scissor = {pdev->image_props.max_dims.width, pdev->image_props.max_dims.height};
    struct radv_cmd_stream *cs = cmd_buffer->cs;
    bool disable_constant_encode_ac01 = false;
 
@@ -9984,7 +9984,7 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
       gfx12_set_context_reg(R_028208_PA_SC_WINDOW_SCISSOR_BR,
                             S_028208_BR_X(maxx - 1) | S_028208_BR_Y(maxy - 1)); /* inclusive */
       gfx12_set_context_reg(R_028184_PA_SC_SCREEN_SCISSOR_BR,
-                            S_028034_BR_X(screen_scissor.width) | S_028034_BR_Y(screen_scissor.height));
+                            S_028184_BR_X(screen_scissor.width) | S_028184_BR_Y(screen_scissor.height));
       gfx12_end_context_regs();
       radeon_end();
    } else {
