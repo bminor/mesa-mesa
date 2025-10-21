@@ -368,6 +368,7 @@ get_device_extensions(const struct anv_physical_device *device,
       .EXT_shader_subgroup_ballot            = true,
       .EXT_shader_subgroup_vote              = true,
       .EXT_shader_viewport_index_layer       = true,
+      .EXT_shader_uniform_buffer_unsized_array = true,
       .EXT_subgroup_size_control             = true,
 #ifdef ANV_USE_WSI_PLATFORM
       .EXT_swapchain_maintenance1            = true,
@@ -988,6 +989,9 @@ get_features(const struct anv_physical_device *pdevice,
 
       /* VK_EXT_shader_object */
       .shaderObject = true,
+
+      /* VK_EXT_shader_uniform_buffer_unsized_array */
+      .shaderUniformBufferUnsizedArray = true,
    };
 
    /* The new DOOM and Wolfenstein games require depthBounds without
