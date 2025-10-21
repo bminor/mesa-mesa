@@ -1476,6 +1476,27 @@ radv_get_compiler_string(struct radv_physical_device *pdev)
 }
 
 static void
+radv_init_image_properties(struct radv_physical_device *pdev)
+{
+   uint32_t width, height, depth;
+
+   if (pdev->info.gfx_level >= GFX10) {
+      width = 16384;
+      height = 16384;
+      depth = 8192;
+   } else {
+      width = 16384;
+      height = 16384;
+      depth = 2048;
+   }
+
+   pdev->image_props.max_dims.width = width;
+   pdev->image_props.max_dims.height = height;
+   pdev->image_props.max_dims.depth = depth;
+   pdev->image_props.max_array_layers = pdev->info.gfx_level >= GFX10 ? 8192 : 2048;
+}
+
+static void
 radv_get_physical_device_properties(struct radv_physical_device *pdev)
 {
    VkSampleCountFlags sample_counts = 0xf;
@@ -1504,6 +1525,8 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
    uint64_t os_page_size = 4096;
    os_get_page_size(&os_page_size);
 
+   radv_init_image_properties(pdev);
+
    pdev->vk.properties = (struct vk_properties){
 #ifdef ANDROID_STRICT
       .apiVersion = RADV_API_VERSION,
@@ -1514,11 +1537,12 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
       .vendorID = ATI_VENDOR_ID,
       .deviceID = pdev->info.pci_id,
       .deviceType = device_type,
-      .maxImageDimension1D = (1 << 14),
-      .maxImageDimension2D = (1 << 14),
-      .maxImageDimension3D = pdev->info.gfx_level >= GFX10 ? (1 << 13) : (1 << 11),
-      .maxImageDimensionCube = (1 << 14),
-      .maxImageArrayLayers = pdev->info.gfx_level >= GFX10 ? (1 << 13) : (1 << 11),
+      .maxImageDimension1D = pdev->image_props.max_dims.width,
+      .maxImageDimension2D = MIN2(pdev->image_props.max_dims.width, pdev->image_props.max_dims.height),
+      .maxImageDimension3D =
+         MIN3(pdev->image_props.max_dims.width, pdev->image_props.max_dims.height, pdev->image_props.max_dims.depth),
+      .maxImageDimensionCube = MIN2(pdev->image_props.max_dims.width, pdev->image_props.max_dims.height),
+      .maxImageArrayLayers = pdev->image_props.max_array_layers,
       .maxTexelBufferElements = UINT32_MAX,
       .maxUniformBufferRange = UINT32_MAX,
       .maxStorageBufferRange = UINT32_MAX,

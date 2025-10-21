@@ -214,6 +214,16 @@ struct radv_physical_device {
    struct radv_physical_device_cache_key cache_key;
 
    uint32_t tess_distribution_mode;
+
+   struct {
+      struct {
+         uint32_t width;
+         uint32_t height;
+         uint32_t depth;
+      } max_dims;
+
+      uint32_t max_array_layers;
+   } image_props;
 };
 
 VK_DEFINE_HANDLE_CASTS(radv_physical_device, vk.base, VkPhysicalDevice, VK_OBJECT_TYPE_PHYSICAL_DEVICE)

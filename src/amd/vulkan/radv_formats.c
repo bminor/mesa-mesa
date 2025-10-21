@@ -893,7 +893,6 @@ radv_get_image_format_properties(struct radv_physical_device *pdev, const VkPhys
    uint32_t maxArraySize;
    VkSampleCountFlags sampleCounts = VK_SAMPLE_COUNT_1_BIT;
    const struct util_format_description *desc = radv_format_description(format);
-   enum amd_gfx_level gfx_level = pdev->info.gfx_level;
    VkImageTiling tiling = info->tiling;
    const VkPhysicalDeviceImageDrmFormatModifierInfoEXT *mod_info =
       vk_find_struct_const(info->pNext, PHYSICAL_DEVICE_IMAGE_DRM_FORMAT_MODIFIER_INFO_EXT);
@@ -922,33 +921,28 @@ radv_get_image_format_properties(struct radv_physical_device *pdev, const VkPhys
    default:
       UNREACHABLE("bad vkimage type\n");
    case VK_IMAGE_TYPE_1D:
-      maxExtent.width = 16384;
+      maxExtent.width = pdev->image_props.max_dims.width;
       maxExtent.height = 1;
       maxExtent.depth = 1;
-      maxMipLevels = 15; /* log2(maxWidth) + 1 */
-      maxArraySize = gfx_level >= GFX10 ? 8192 : 2048;
+      maxArraySize = pdev->image_props.max_array_layers;
       break;
    case VK_IMAGE_TYPE_2D:
-      maxExtent.width = 16384;
-      maxExtent.height = 16384;
+      maxExtent.width = pdev->image_props.max_dims.width;
+      maxExtent.height = pdev->image_props.max_dims.height;
       maxExtent.depth = 1;
-      maxMipLevels = 15; /* log2(maxWidth) + 1 */
-      maxArraySize = gfx_level >= GFX10 ? 8192 : 2048;
+      maxArraySize = pdev->image_props.max_array_layers;
       break;
-   case VK_IMAGE_TYPE_3D:
-      if (gfx_level >= GFX10) {
-         maxExtent.width = 8192;
-         maxExtent.height = 8192;
-         maxExtent.depth = 8192;
-      } else {
-         maxExtent.width = 2048;
-         maxExtent.height = 2048;
-         maxExtent.depth = 2048;
-      }
-      maxMipLevels = util_logbase2(maxExtent.width) + 1;
+   case VK_IMAGE_TYPE_3D: {
+      const uint32_t extent = pdev->image_props.max_dims.depth;
+      maxExtent.width = extent;
+      maxExtent.height = extent;
+      maxExtent.depth = extent;
       maxArraySize = 1;
       break;
    }
+   }
+
+   maxMipLevels = util_logbase2(maxExtent.width) + 1;
 
    if (desc->layout == UTIL_FORMAT_LAYOUT_SUBSAMPLED) {
       /* Might be able to support but the entire format support is
