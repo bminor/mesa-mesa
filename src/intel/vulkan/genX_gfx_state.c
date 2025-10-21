@@ -490,7 +490,12 @@ anv_raster_polygon_mode(const struct anv_cmd_graphics_state *gfx,
       }
       UNREACHABLE("Unsupported GS output topology");
    } else if (gfx->shaders[MESA_SHADER_TESS_EVAL] != NULL) {
-      switch (get_gfx_tes_prog_data(gfx)->output_topology) {
+      struct brw_tess_info tess_info =
+         brw_merge_tess_info(
+            get_gfx_tcs_prog_data(gfx)->tess_info,
+            get_gfx_tes_prog_data(gfx)->tess_info);
+
+      switch (brw_tess_info_output_topology(tess_info)) {
       case INTEL_TESS_OUTPUT_TOPOLOGY_POINT:
          return VK_POLYGON_MODE_POINT;
 
@@ -500,8 +505,10 @@ anv_raster_polygon_mode(const struct anv_cmd_graphics_state *gfx,
       case INTEL_TESS_OUTPUT_TOPOLOGY_TRI_CW:
       case INTEL_TESS_OUTPUT_TOPOLOGY_TRI_CCW:
          return polygon_mode;
+
+      default:
+         UNREACHABLE("Unsupported TCS output topology");
       }
-      UNREACHABLE("Unsupported TCS output topology");
    } else {
       switch (primitive_topology) {
       case VK_PRIMITIVE_TOPOLOGY_POINT_LIST:
@@ -1318,6 +1325,22 @@ update_cps(struct anv_gfx_dynamic_state *hw_state,
 #endif
 
 ALWAYS_INLINE static void
+update_ds(struct anv_gfx_dynamic_state *hw_state,
+          const struct anv_cmd_graphics_state *gfx)
+{
+   const struct brw_tes_prog_data *tes_prog_data = get_gfx_tes_prog_data(gfx);
+
+   if (tes_prog_data) {
+      struct brw_tess_info tess_info =
+         brw_merge_tess_info(get_gfx_tcs_prog_data(gfx)->tess_info,
+                             tes_prog_data->tess_info);
+
+      SET(DS, ds.ComputeWCoordinateEnable,
+              brw_tess_info_domain(tess_info) == INTEL_TESS_DOMAIN_TRI);
+   }
+}
+
+ALWAYS_INLINE static void
 update_te(struct anv_gfx_dynamic_state *hw_state,
           const struct anv_device *device,
           const struct vk_dynamic_graphics_state *dyn,
@@ -1326,16 +1349,28 @@ update_te(struct anv_gfx_dynamic_state *hw_state,
    const struct brw_tes_prog_data *tes_prog_data = get_gfx_tes_prog_data(gfx);
 
    if (tes_prog_data) {
+      struct brw_tess_info tess_info =
+         brw_merge_tess_info(get_gfx_tcs_prog_data(gfx)->tess_info,
+                             tes_prog_data->tess_info);
+
+      SET(TE, te.TEDomain, brw_tess_info_domain(tess_info));
+      SET(TE, te.Partitioning, brw_tess_info_partitioning(tess_info));
       if (dyn->ts.domain_origin == VK_TESSELLATION_DOMAIN_ORIGIN_LOWER_LEFT) {
-         SET(TE, te.OutputTopology, tes_prog_data->output_topology);
+         SET(TE, te.OutputTopology, brw_tess_info_output_topology(tess_info));
       } else {
-            /* When the origin is upper-left, we have to flip the winding order */
-         if (tes_prog_data->output_topology == OUTPUT_TRI_CCW) {
+         /* When the origin is upper-left, we have to flip the winding order */
+         enum intel_tess_output_topology output_topology =
+            brw_tess_info_output_topology(tess_info);
+         switch (output_topology) {
+         case  OUTPUT_TRI_CCW:
             SET(TE, te.OutputTopology, OUTPUT_TRI_CW);
-         } else if (tes_prog_data->output_topology == OUTPUT_TRI_CW) {
+            break;
+         case OUTPUT_TRI_CW:
             SET(TE, te.OutputTopology, OUTPUT_TRI_CCW);
-         } else {
-            SET(TE, te.OutputTopology, tes_prog_data->output_topology);
+            break;
+         default:
+            SET(TE, te.OutputTopology, output_topology);
+            break;
          }
       }
 
@@ -2335,11 +2370,14 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
       update_cps(hw_state, device, dyn);
 #endif /* GFX_VER >= 11 */
 
+   if (gfx->dirty & (ANV_CMD_DIRTY_HS | ANV_CMD_DIRTY_DS))
+      update_ds(hw_state, gfx);
+
    if (
 #if GFX_VERx10 >= 125
       (gfx->dirty & ANV_CMD_DIRTY_PRERASTER_SHADERS) ||
 #else
-      (gfx->dirty & ANV_CMD_DIRTY_DS) ||
+      (gfx->dirty & (ANV_CMD_DIRTY_HS | ANV_CMD_DIRTY_DS)) ||
 #endif
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_TS_DOMAIN_ORIGIN))
       update_te(hw_state, device, dyn, gfx);
@@ -2506,10 +2544,14 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
        ((gfx->dirty & (ANV_CMD_DIRTY_HS | ANV_CMD_DIRTY_DS)) ||
         BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_TS_PATCH_CONTROL_POINTS))) {
       assert(tcs_prog_data != NULL && tes_prog_data != NULL);
+      struct brw_tess_info tess_info =
+         brw_merge_tess_info(tcs_prog_data->tess_info,
+                             tes_prog_data->tess_info);
+
       SET(TESS_CONFIG, tess_config,
           intel_tess_config(dyn->ts.patch_control_points,
                             tcs_prog_data->instances,
-                            tes_prog_data->domain,
+                            brw_tess_info_domain(tess_info),
                             tcs_prog_data->base.vue_map.num_per_patch_slots,
                             tcs_prog_data->base.vue_map.num_per_vertex_slots,
                             tcs_prog_data->base.vue_map.builtins_slot_offset));
@@ -2975,6 +3017,8 @@ cmd_buffer_repack_gfx_state(struct anv_gfx_dynamic_state *hw_state,
       if (anv_gfx_has_stage(gfx, MESA_SHADER_TESS_EVAL)) {
          anv_gfx_pack_merge(te, GENX(3DSTATE_TE),
                             MESA_SHADER_TESS_EVAL, ds.te, te) {
+            SET(te, te, TEDomain);
+            SET(te, te, Partitioning);
             SET(te, te, OutputTopology);
 #if GFX_VERx10 >= 125
             SET(te, te, TessellationDistributionMode);
@@ -3230,8 +3274,12 @@ cmd_buffer_repack_gfx_state(struct anv_gfx_dynamic_state *hw_state,
    if (IS_DIRTY(HS))
       anv_gfx_copy_protected(hs, GENX(3DSTATE_HS), MESA_SHADER_TESS_CTRL, hs.hs);
 
-   if (IS_DIRTY(DS))
-      anv_gfx_copy_protected(ds, GENX(3DSTATE_DS), MESA_SHADER_TESS_EVAL, ds.ds);
+   if (IS_DIRTY(DS)) {
+      anv_gfx_pack_merge_protected(ds, GENX(3DSTATE_DS),
+                                   MESA_SHADER_TESS_EVAL, ds.ds, ds) {
+         SET(ds, ds, ComputeWCoordinateEnable);
+      }
+   }
 
    if (IS_DIRTY(GS)) {
       anv_gfx_pack_merge_protected(gs, GENX(3DSTATE_GS),

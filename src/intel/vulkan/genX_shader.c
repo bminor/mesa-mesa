@@ -695,8 +695,6 @@ emit_ds_shader(struct anv_batch *batch,
 
    anv_shader_emit(batch, shader, ds.te, GENX(3DSTATE_TE), te) {
       te.TEEnable = true;
-      te.Partitioning = tes_prog_data->partitioning;
-      te.TEDomain = tes_prog_data->domain;
       te.MaximumTessellationFactorOdd = 63.0;
       te.MaximumTessellationFactorNotOdd = 64.0;
 #if GFX_VERx10 >= 125
@@ -730,9 +728,6 @@ emit_ds_shader(struct anv_batch *batch,
       ds.SamplerCount = GFX_VER == 11 ? 0 : get_sampler_count(shader);
       ds.BindingTableEntryCount = shader->bind_map.surface_count;
       ds.MaximumNumberofThreads = devinfo->max_tes_threads - 1;
-
-      ds.ComputeWCoordinateEnable =
-         tes_prog_data->domain == INTEL_TESS_DOMAIN_TRI;
 
       ds.PatchURBEntryReadLength = tes_prog_data->base.urb_read_length;
       ds.PatchURBEntryReadOffset = 0;

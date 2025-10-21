@@ -36,6 +36,10 @@ extern "C" {
 
 extern const struct nir_shader_compiler_options brw_scalar_nir_options;
 
+void
+brw_fill_tess_info_from_shader_info(struct brw_tess_info *brw_info,
+                                    const shader_info *shader_info);
+
 int type_size_vec4(const struct glsl_type *type, bool bindless);
 int type_size_dvec4(const struct glsl_type *type, bool bindless);
 

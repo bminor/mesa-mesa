@@ -196,6 +196,9 @@ brw_compile_tcs(const struct brw_compiler *compiler,
 
    brw_prog_data_init(&prog_data->base.base, &params->base);
 
+   brw_fill_tess_info_from_shader_info(&prog_data->tess_info,
+                                       &nir->info);
+
    nir->info.outputs_written = key->outputs_written;
    nir->info.patch_outputs_written = key->patch_outputs_written;
 

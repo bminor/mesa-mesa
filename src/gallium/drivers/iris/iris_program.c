@@ -223,9 +223,9 @@ iris_apply_brw_tes_prog_data(struct iris_compiled_shader *shader,
 
    iris_apply_brw_vue_prog_data(&brw->base, &iris->base);
 
-   iris->partitioning         = brw->partitioning;
-   iris->output_topology      = brw->output_topology;
-   iris->domain               = brw->domain;
+   iris->partitioning         = brw_tess_info_partitioning(brw->tess_info);
+   iris->output_topology      = brw_tess_info_output_topology(brw->tess_info);
+   iris->domain               = brw_tess_info_domain(brw->tess_info);
    iris->include_primitive_id = brw->include_primitive_id;
 }
 
