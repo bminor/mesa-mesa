@@ -59,6 +59,22 @@ run_tes(brw_shader &s)
    return !s.failed;
 }
 
+extern "C" void
+brw_fill_tess_info_from_shader_info(struct brw_tess_info *brw_info,
+                                    const shader_info *shader_info)
+{
+   STATIC_ASSERT(INTEL_TESS_PARTITIONING_INTEGER == TESS_SPACING_EQUAL - 1);
+   STATIC_ASSERT(INTEL_TESS_PARTITIONING_ODD_FRACTIONAL ==
+                 TESS_SPACING_FRACTIONAL_ODD - 1);
+   STATIC_ASSERT(INTEL_TESS_PARTITIONING_EVEN_FRACTIONAL ==
+                 TESS_SPACING_FRACTIONAL_EVEN - 1);
+
+   brw_info->primitive_mode = shader_info->tess._primitive_mode;
+   brw_info->spacing = shader_info->tess.spacing;
+   brw_info->ccw = shader_info->tess.ccw;
+   brw_info->point_mode = shader_info->tess.point_mode;
+}
+
 const unsigned *
 brw_compile_tes(const struct brw_compiler *compiler,
                 brw_compile_tes_params *params)
@@ -121,39 +137,8 @@ brw_compile_tes(const struct brw_compiler *compiler,
 
    prog_data->base.urb_read_length = 0;
 
-   STATIC_ASSERT(INTEL_TESS_PARTITIONING_INTEGER == TESS_SPACING_EQUAL - 1);
-   STATIC_ASSERT(INTEL_TESS_PARTITIONING_ODD_FRACTIONAL ==
-                 TESS_SPACING_FRACTIONAL_ODD - 1);
-   STATIC_ASSERT(INTEL_TESS_PARTITIONING_EVEN_FRACTIONAL ==
-                 TESS_SPACING_FRACTIONAL_EVEN - 1);
-
-   prog_data->partitioning =
-      (enum intel_tess_partitioning) (nir->info.tess.spacing - 1);
-
-   switch (nir->info.tess._primitive_mode) {
-   case TESS_PRIMITIVE_QUADS:
-      prog_data->domain = INTEL_TESS_DOMAIN_QUAD;
-      break;
-   case TESS_PRIMITIVE_TRIANGLES:
-      prog_data->domain = INTEL_TESS_DOMAIN_TRI;
-      break;
-   case TESS_PRIMITIVE_ISOLINES:
-      prog_data->domain = INTEL_TESS_DOMAIN_ISOLINE;
-      break;
-   default:
-      UNREACHABLE("invalid domain shader primitive mode");
-   }
-
-   if (nir->info.tess.point_mode) {
-      prog_data->output_topology = INTEL_TESS_OUTPUT_TOPOLOGY_POINT;
-   } else if (nir->info.tess._primitive_mode == TESS_PRIMITIVE_ISOLINES) {
-      prog_data->output_topology = INTEL_TESS_OUTPUT_TOPOLOGY_LINE;
-   } else {
-      /* Hardware winding order is backwards from OpenGL */
-      prog_data->output_topology =
-         nir->info.tess.ccw ? INTEL_TESS_OUTPUT_TOPOLOGY_TRI_CW
-                             : INTEL_TESS_OUTPUT_TOPOLOGY_TRI_CCW;
-   }
+   brw_fill_tess_info_from_shader_info(&prog_data->tess_info,
+                                       &nir->info);
 
    if (unlikely(debug_enabled)) {
       fprintf(stderr, "TES Input ");

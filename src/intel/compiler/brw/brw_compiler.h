@@ -1158,9 +1158,19 @@ struct brw_vs_prog_data {
    uint32_t vf_component_packing[4];
 };
 
+struct brw_tess_info {
+   enum tess_primitive_mode primitive_mode:8;
+   uint8_t                         spacing:2;
+   bool                                ccw:1;
+   bool                         point_mode:1;
+   uint32_t                            pad:20;
+};
+
 struct brw_tcs_prog_data
 {
    struct brw_vue_prog_data base;
+
+   struct brw_tess_info tess_info;
 
    /** Number of input vertices, 0 means dynamic */
    unsigned input_vertices;
@@ -1187,14 +1197,12 @@ struct brw_tcs_prog_data
    unsigned tess_config_param;
 };
 
-
 struct brw_tes_prog_data
 {
    struct brw_vue_prog_data base;
 
-   enum intel_tess_partitioning partitioning;
-   enum intel_tess_output_topology output_topology;
-   enum intel_tess_domain domain;
+   struct brw_tess_info tess_info;
+
    bool include_primitive_id;
 
    /**
@@ -1366,6 +1374,64 @@ DEFINE_PROG_DATA_DOWNCAST(task, prog_data->stage == MESA_SHADER_TASK)
 DEFINE_PROG_DATA_DOWNCAST(mesh, prog_data->stage == MESA_SHADER_MESH)
 
 #undef DEFINE_PROG_DATA_DOWNCAST
+
+static inline struct brw_tess_info
+brw_merge_tess_info(struct brw_tess_info tcs_info,
+                    struct brw_tess_info tes_info)
+{
+   /* Just merge by OR'ing the raw bits */
+   uint32_t x, y;
+
+   assert(sizeof(x) == sizeof(tcs_info));
+
+   memcpy(&x, &tcs_info, sizeof(x));
+   memcpy(&y, &tes_info, sizeof(y));
+
+   x |= y;
+
+   struct brw_tess_info out;
+   memcpy(&out, &x, sizeof(out));
+   return out;
+}
+
+static inline enum intel_tess_partitioning
+brw_tess_info_partitioning(struct brw_tess_info info)
+{
+   return (enum intel_tess_partitioning)(info.spacing - 1);
+}
+
+static inline enum intel_tess_domain
+brw_tess_info_domain(struct brw_tess_info info)
+{
+   switch (info.primitive_mode) {
+   case TESS_PRIMITIVE_QUADS:
+      return INTEL_TESS_DOMAIN_QUAD;
+      break;
+   case TESS_PRIMITIVE_TRIANGLES:
+      return INTEL_TESS_DOMAIN_TRI;
+      break;
+   case TESS_PRIMITIVE_ISOLINES:
+      return INTEL_TESS_DOMAIN_ISOLINE;
+      break;
+   default:
+      UNREACHABLE("invalid primitive mode");
+   }
+}
+
+static inline enum intel_tess_output_topology
+brw_tess_info_output_topology(struct brw_tess_info info)
+{
+   if (info.point_mode) {
+      return INTEL_TESS_OUTPUT_TOPOLOGY_POINT;
+   } else if (info.primitive_mode == TESS_PRIMITIVE_ISOLINES) {
+      return INTEL_TESS_OUTPUT_TOPOLOGY_LINE;
+   } else {
+      /* Hardware winding order is backwards from OpenGL */
+      return info.ccw ?
+         INTEL_TESS_OUTPUT_TOPOLOGY_TRI_CW :
+         INTEL_TESS_OUTPUT_TOPOLOGY_TRI_CCW;
+   }
+}
 
 /** @} */
 
