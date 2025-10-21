@@ -160,6 +160,7 @@ nvk_get_device_extensions(const struct nvk_instance *instance,
       .KHR_maintenance10 = true,
       .KHR_map_memory2 = true,
       .KHR_multiview = true,
+      .KHR_pipeline_binary = true,
       .KHR_pipeline_executable_properties = true,
       .KHR_pipeline_library = true,
 #ifdef NVK_USE_WSI_PLATFORM
@@ -498,6 +499,9 @@ nvk_get_device_features(const struct nv_device_info *info,
 
       /* VK_KHR_maintenance10 */
       .maintenance10 = true,
+
+      /* VK_KHR_pipeline_binary */
+      .pipelineBinaries = true,
 
       /* VK_KHR_pipeline_executable_properties */
       .pipelineExecutableInfo = true,
@@ -1041,6 +1045,13 @@ nvk_get_device_properties(const struct nvk_instance *instance,
       /* VK_KHR_compute_shader_derivatives */
       .meshAndTaskShaderDerivatives = false,
 
+      /* VK_KHR_pipeline_binary
+       *
+       * InternalCache properties are set by
+       * nvk_physical_device_init_pipeline_cache()
+       */
+      .pipelineBinaryCompressedData = false,
+
       /* VK_EXT_conservative_rasterization */
       .primitiveOverestimationSize = info->cls_eng3d >= VOLTA_A ? 1.0f / 512.0f : 0.0,
       .maxExtraPrimitiveOverestimationSize = 0.75,
@@ -1235,7 +1246,7 @@ nvk_get_device_properties(const struct nvk_instance *instance,
 
    /* VK_EXT_host_image_copy */
 
-   /* Not sure if there are layout specific things, so for now just reporting 
+   /* Not sure if there are layout specific things, so for now just reporting
     * all layouts from extensions.
     */
    static const VkImageLayout supported_layouts[] = {
@@ -1321,6 +1332,12 @@ nvk_physical_device_init_pipeline_cache(struct nvk_physical_device *pdev)
 
    const uint64_t driver_flags = nvk_physical_device_compiler_flags(pdev);
    pdev->vk.disk_cache = disk_cache_create(renderer, timestamp, driver_flags);
+   if (pdev->vk.disk_cache != NULL) {
+      pdev->vk.properties.pipelineBinaryInternalCache = true;
+      pdev->vk.properties.pipelineBinaryInternalCacheControl = true;
+      pdev->vk.properties.pipelineBinaryPrefersInternalCache = true;
+      pdev->vk.properties.pipelineBinaryPrecompiledInternalCache = true;
+   }
 #endif
 }
 
