@@ -1518,7 +1518,7 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
       .maxImageDimension2D = (1 << 14),
       .maxImageDimension3D = (1 << 11),
       .maxImageDimensionCube = (1 << 14),
-      .maxImageArrayLayers = (1 << 11),
+      .maxImageArrayLayers = pdev->info.gfx_level >= GFX10 ? (1 << 13) : (1 << 11),
       .maxTexelBufferElements = UINT32_MAX,
       .maxUniformBufferRange = UINT32_MAX,
       .maxStorageBufferRange = UINT32_MAX,
