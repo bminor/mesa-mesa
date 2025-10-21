@@ -14,7 +14,42 @@
 
 #include "pan_props.h"
 
+#include "vk_debug_utils.h"
 #include "vk_log.h"
+
+static void
+panvk_memory_emit_report(struct panvk_device *device,
+                         const struct panvk_device_memory *mem,
+                         const VkMemoryAllocateInfo *alloc_info,
+                         VkResult result)
+{
+   if (likely(!device->vk.memory_reports))
+      return;
+
+   if (result != VK_SUCCESS) {
+      vk_emit_device_memory_report(
+         &device->vk, VK_DEVICE_MEMORY_REPORT_EVENT_TYPE_ALLOCATION_FAILED_EXT,
+         /* mem_obj_id */ 0, alloc_info->allocationSize,
+         VK_OBJECT_TYPE_DEVICE_MEMORY,
+         /* obj_handle */ 0, alloc_info->memoryTypeIndex);
+      return;
+   }
+
+   VkDeviceMemoryReportEventTypeEXT type;
+   if (alloc_info) {
+      type = mem->vk.import_handle_type
+                ? VK_DEVICE_MEMORY_REPORT_EVENT_TYPE_IMPORT_EXT
+                : VK_DEVICE_MEMORY_REPORT_EVENT_TYPE_ALLOCATE_EXT;
+   } else {
+      type = mem->vk.import_handle_type
+                ? VK_DEVICE_MEMORY_REPORT_EVENT_TYPE_UNIMPORT_EXT
+                : VK_DEVICE_MEMORY_REPORT_EVENT_TYPE_FREE_EXT;
+   }
+
+   vk_emit_device_memory_report(&device->vk, type, mem->bo->handle,
+                                mem->bo->size, VK_OBJECT_TYPE_DEVICE_MEMORY,
+                                (uintptr_t)(mem), mem->vk.memory_type_index);
+}
 
 static void *
 panvk_memory_mmap(struct panvk_device_memory *mem)
@@ -164,6 +199,8 @@ panvk_AllocateMemory(VkDevice _device,
                             NULL);
    }
 
+   panvk_memory_emit_report(device, mem, pAllocateInfo, VK_SUCCESS);
+
    *pMem = panvk_device_memory_to_handle(mem);
 
    return VK_SUCCESS;
@@ -178,6 +215,8 @@ err_put_bo:
 
 err_destroy_mem:
    vk_device_memory_destroy(&device->vk, pAllocator, &mem->vk);
+   panvk_memory_emit_report(device, /* mem */ NULL, pAllocateInfo, result);
+
    return result;
 }
 
@@ -216,6 +255,8 @@ panvk_FreeMemory(VkDevice _device, VkDeviceMemory _mem,
    if (!(device->kmod.vm->flags & PAN_KMOD_VM_FLAG_AUTO_VA)) {
       panvk_as_free(device, op.va.start, op.va.size);
    }
+
+   panvk_memory_emit_report(device, mem, /* alloc_info */ NULL, VK_SUCCESS);
 
    pan_kmod_bo_put(mem->bo);
    vk_device_memory_destroy(&device->vk, pAllocator, &mem->vk);
