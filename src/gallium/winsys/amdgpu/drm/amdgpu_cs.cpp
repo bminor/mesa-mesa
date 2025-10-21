@@ -1476,6 +1476,13 @@ static void amdgpu_cs_add_userq_packets(struct amdgpu_winsys *aws,
       amdgpu_pkt_add_dw(PKT3(PKT3_HDP_FLUSH, 0, 0));
       amdgpu_pkt_add_dw(0x0);
 
+      if (userq->f32_shadowing_ib_bo) {
+         amdgpu_pkt_add_dw(PKT3(PKT3_INDIRECT_BUFFER, 2, 0));
+         amdgpu_pkt_add_dw(amdgpu_bo_get_va(userq->f32_shadowing_ib_bo));
+         amdgpu_pkt_add_dw(amdgpu_bo_get_va(userq->f32_shadowing_ib_bo) >> 32);
+         amdgpu_pkt_add_dw(userq->f32_shadowing_ib_pm4_dw | S_3F3_INHERIT_VMID_MQD_GFX(1));
+      }
+
       amdgpu_pkt_add_dw(PKT3(PKT3_INDIRECT_BUFFER, 2, 0));
       amdgpu_pkt_add_dw(csc->chunk_ib[IB_MAIN].va_start);
       amdgpu_pkt_add_dw(csc->chunk_ib[IB_MAIN].va_start >> 32);

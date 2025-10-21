@@ -806,6 +806,21 @@ struct radeon_winsys {
     * be combined as a gang submission to GPU.
     */
    bool (*cs_create_compute_gang)(struct radeon_cmdbuf *rcs);
+
+   /**
+    * In case of gfx11.5, register shadowing enabling and shadow regs addresses has to be done
+    * using CONTEXT_CONTROL and LOAD_* packets. Also these packets have to be sumitted for every
+    * job.
+    */
+   bool (*userq_f32_init_reg_shadowing)(struct radeon_cmdbuf *rcs, struct ac_pm4_state *pm4);
+
+   /**
+    * Gets the shadow regs va address from the given radeon_cmdbuf. The radeon_cmdbuf will be gfx_cs
+    * and it is per context. In case of userqueue, The shadow regs va address is per userqueue. The
+    * gfx_cs will be for tied to a userqueue and the shadow regs va address returned will be for
+    * that userqueue.
+    */
+   uint64_t (*userq_f32_get_shadow_regs_va)(struct radeon_cmdbuf *rcs);
 };
 
 static inline bool radeon_emitted(struct radeon_cmdbuf *rcs, unsigned num_dw)

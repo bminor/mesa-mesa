@@ -2929,10 +2929,8 @@ void ac_print_nonshadowed_regs(enum amd_gfx_level gfx_level, enum radeon_family 
    }
 }
 
-static void ac_build_load_reg(const struct radeon_info *info,
-                              struct ac_pm4_state *pm4,
-                              enum ac_reg_range_type type,
-                              uint64_t gpu_address)
+void ac_build_load_reg(const struct radeon_info *info, struct ac_pm4_state *pm4,
+                       enum ac_reg_range_type type, uint64_t gpu_address)
 {
    unsigned packet, num_ranges, offset;
    const struct ac_reg_range *ranges;
