@@ -18,7 +18,7 @@
 #include <inttypes.h>
 
 // Minimum supported sampling period in nanoseconds
-#define MIN_SAMPLING_PERIOD_NS 50000
+#define MIN_SAMPLING_PERIOD_NS 5000
 
 #define CORRELATION_TIMESTAMP_PERIOD (1000000000ull)
 

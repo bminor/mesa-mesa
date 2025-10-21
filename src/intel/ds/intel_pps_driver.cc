@@ -180,7 +180,7 @@ void IntelDriver::disable_perfcnt()
 /// @return True if the duration is at least close to the sampling period
 static bool close_enough(uint64_t duration, uint64_t sampling_period)
 {
-   return duration > sampling_period - 100000;
+   return duration > sampling_period - 1000;
 }
 
 /// @brief Transforms the raw data received in from the driver into records
