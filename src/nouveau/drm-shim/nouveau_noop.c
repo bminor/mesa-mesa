@@ -31,7 +31,7 @@
 #include "nouveau/nvif/cl0080.h"
 #include "drm-shim/drm_shim.h"
 #include "util/os_misc.h"
-#include "util//u_math.h"
+#include "util/u_math.h"
 
 #include "../../gallium/drivers/nouveau/nv_object.xml.h"
 bool drm_shim_driver_prefers_first_render_node = true;
