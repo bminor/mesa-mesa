@@ -170,6 +170,7 @@ kk_get_device_features(
       .multiViewport = true,
       .robustBufferAccess = true,
       .samplerAnisotropy = true,
+      .shaderClipDistance = true,
       .shaderImageGatherExtended = true,
       .shaderInt16 = true,
       .shaderInt64 = true,

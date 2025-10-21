@@ -655,6 +655,7 @@ kk_compile_shader(struct kk_device *dev, struct vk_shader_compile_info *info,
    if (info->stage == MESA_SHADER_VERTEX) {
       kk_lower_vs_vbo(nir, state);
    }
+   msl_lower_nir_late(nir);
    msl_optimize_nir(nir);
    modify_nir_info(nir);
    shader->msl_code = nir_to_msl(nir, NULL, dev->disabled_workarounds);

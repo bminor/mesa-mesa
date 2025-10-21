@@ -856,18 +856,6 @@ memory_modes_to_msl(struct nir_to_msl_ctx *ctx, nir_variable_mode modes)
       P(ctx, "mem_flags::mem_none");
 }
 
-static uint32_t
-get_input_num_components(struct nir_to_msl_ctx *ctx, uint32_t location)
-{
-   return ctx->inputs_info[location].num_components;
-}
-
-static uint32_t
-get_output_num_components(struct nir_to_msl_ctx *ctx, uint32_t location)
-{
-   return ctx->outputs_info[location].num_components;
-}
-
 static void
 intrinsic_to_msl(struct nir_to_msl_ctx *ctx, nir_intrinsic_instr *instr)
 {
@@ -1001,8 +989,9 @@ intrinsic_to_msl(struct nir_to_msl_ctx *ctx, nir_intrinsic_instr *instr)
       nir_io_semantics io = nir_intrinsic_io_semantics(instr);
       uint32_t component = nir_intrinsic_component(instr);
       uint32_t location = io.location + idx;
-      P(ctx, "in.%s", msl_input_name(ctx, location));
-      if (instr->num_components < get_input_num_components(ctx, location)) {
+
+      msl_input_name(ctx, location, component);
+      if (instr->num_components < msl_input_num_components(ctx, location)) {
          P(ctx, ".");
          for (unsigned i = 0; i < instr->num_components; i++)
             P(ctx, "%c", "xyzw"[component + i]);
@@ -1015,8 +1004,9 @@ intrinsic_to_msl(struct nir_to_msl_ctx *ctx, nir_intrinsic_instr *instr)
       nir_io_semantics io = nir_intrinsic_io_semantics(instr);
       uint32_t component = nir_intrinsic_component(instr);
       uint32_t location = io.location + idx;
-      P(ctx, "in.%s", msl_input_name(ctx, location));
-      if (instr->num_components < get_input_num_components(ctx, location)) {
+
+      msl_input_name(ctx, location, component);
+      if (instr->num_components < msl_input_num_components(ctx, location)) {
          P(ctx, ".");
          for (unsigned i = 0; i < instr->num_components; i++)
             P(ctx, "%c", "xyzw"[component + i]);
@@ -1027,7 +1017,8 @@ intrinsic_to_msl(struct nir_to_msl_ctx *ctx, nir_intrinsic_instr *instr)
    case nir_intrinsic_load_output: {
       unsigned idx = nir_src_as_uint(instr->src[0]);
       nir_io_semantics io = nir_intrinsic_io_semantics(instr);
-      P(ctx, "out.%s;\n", msl_output_name(ctx, io.location + idx));
+      msl_output_name(ctx, io.location + idx, 0);
+      P(ctx, ";\n");
       break;
    }
    case nir_intrinsic_store_output: {
@@ -1036,10 +1027,11 @@ intrinsic_to_msl(struct nir_to_msl_ctx *ctx, nir_intrinsic_instr *instr)
       uint32_t location = io.location + idx;
       uint32_t write_mask = nir_intrinsic_write_mask(instr);
       uint32_t component = nir_intrinsic_component(instr);
-      uint32_t dst_num_components = get_output_num_components(ctx, location);
+      uint32_t dst_num_components = msl_output_num_components(ctx, location);
       uint32_t num_components = instr->num_components;
 
-      P_IND(ctx, "out.%s", msl_output_name(ctx, location));
+      P_IND(ctx, "%s", "");
+      msl_output_name(ctx, location, component);
       if (dst_num_components > 1u) {
          P(ctx, ".");
          for (unsigned i = 0; i < num_components; i++)
@@ -1518,6 +1510,11 @@ intrinsic_to_msl(struct nir_to_msl_ctx *ctx, nir_intrinsic_instr *instr)
       src_to_msl(ctx, &instr->src[0]);
       P(ctx, ");\n");
       break;
+   case nir_intrinsic_store_clip_distance_kk:
+      P_IND(ctx, "out.gl_ClipDistance[%d] = ", nir_intrinsic_base(instr));
+      src_to_msl(ctx, &instr->src[0]);
+      P(ctx, ";\n");
+      break;
    default:
       P_IND(ctx, "Unknown intrinsic %s\n", info->name);
    }
@@ -1980,6 +1977,26 @@ msl_optimize_nir(struct nir_shader *nir)
    NIR_PASS(_, nir, nir_opt_copy_prop);
 
    return progress;
+}
+
+/* Scalarize stores to CLIP_DIST* varyings */
+static bool
+scalarize_clip_distance_filter(const nir_intrinsic_instr *intrin,
+                               UNUSED const void *_data)
+{
+   if (intrin->intrinsic != nir_intrinsic_store_output)
+      return false;
+   nir_io_semantics semantics = nir_intrinsic_io_semantics(intrin);
+   return semantics.location == VARYING_SLOT_CLIP_DIST0 ||
+          semantics.location == VARYING_SLOT_CLIP_DIST1;
+}
+
+void
+msl_lower_nir_late(nir_shader *nir)
+{
+   NIR_PASS(_, nir, nir_lower_io_to_scalar, nir_var_shader_out,
+            scalarize_clip_distance_filter, NULL);
+   NIR_PASS(_, nir, msl_nir_lower_clip_distance);
 }
 
 static void

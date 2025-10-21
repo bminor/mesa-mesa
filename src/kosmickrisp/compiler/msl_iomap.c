@@ -56,86 +56,77 @@ static const char *VERTEX_OUTPUT_TYPE = "VertexOut";
 static const char *FRAGMENT_OUTPUT_TYPE = "FragmentOut";
 
 /* Mapping from NIR's varying slots to the generated struct member name */
-static const char *VARYING_SLOT_NAME[NUM_TOTAL_VARYING_SLOTS] = {
-   [VARYING_SLOT_POS] = "position",
-   [VARYING_SLOT_PSIZ] = "point_size",
-   [VARYING_SLOT_PRIMITIVE_ID] = "primitive_id",
-   [VARYING_SLOT_LAYER] = "layer",
-   [VARYING_SLOT_VIEWPORT] = "viewport_index",
-   [VARYING_SLOT_VAR0] = "vary_00",
-   [VARYING_SLOT_VAR1] = "vary_01",
-   [VARYING_SLOT_VAR2] = "vary_02",
-   [VARYING_SLOT_VAR3] = "vary_03",
-   [VARYING_SLOT_VAR4] = "vary_04",
-   [VARYING_SLOT_VAR5] = "vary_05",
-   [VARYING_SLOT_VAR6] = "vary_06",
-   [VARYING_SLOT_VAR7] = "vary_07",
-   [VARYING_SLOT_VAR8] = "vary_08",
-   [VARYING_SLOT_VAR9] = "vary_09",
-   [VARYING_SLOT_VAR10] = "vary_10",
-   [VARYING_SLOT_VAR11] = "vary_11",
-   [VARYING_SLOT_VAR12] = "vary_12",
-   [VARYING_SLOT_VAR13] = "vary_13",
-   [VARYING_SLOT_VAR14] = "vary_14",
-   [VARYING_SLOT_VAR15] = "vary_15",
-   [VARYING_SLOT_VAR16] = "vary_16",
-   [VARYING_SLOT_VAR17] = "vary_17",
-   [VARYING_SLOT_VAR18] = "vary_18",
-   [VARYING_SLOT_VAR19] = "vary_19",
-   [VARYING_SLOT_VAR20] = "vary_20",
-   [VARYING_SLOT_VAR21] = "vary_21",
-   [VARYING_SLOT_VAR22] = "vary_22",
-   [VARYING_SLOT_VAR23] = "vary_23",
-   [VARYING_SLOT_VAR24] = "vary_24",
-   [VARYING_SLOT_VAR25] = "vary_25",
-   [VARYING_SLOT_VAR26] = "vary_26",
-   [VARYING_SLOT_VAR27] = "vary_27",
-   [VARYING_SLOT_VAR28] = "vary_28",
-   [VARYING_SLOT_VAR29] = "vary_29",
-   [VARYING_SLOT_VAR30] = "vary_30",
-   [VARYING_SLOT_VAR31] = "vary_31",
+static const struct {
+   const char *name;
+   bool user;
+   bool scalarized;
+} VARYING_SLOT_INFO[NUM_TOTAL_VARYING_SLOTS] = {
+   [VARYING_SLOT_POS] = {"position"},
+   [VARYING_SLOT_PSIZ] = {"point_size"},
+   [VARYING_SLOT_PRIMITIVE_ID] = {"primitive_id"},
+   [VARYING_SLOT_LAYER] = {"render_target_array_index"},
+   [VARYING_SLOT_VIEWPORT] = {"viewport_array_index"},
+   [VARYING_SLOT_CLIP_DIST0] = {"clip_0", .user = true, .scalarized = true},
+   [VARYING_SLOT_CLIP_DIST1] = {"clip_1", .user = true, .scalarized = true},
+   [VARYING_SLOT_VAR0] = {"vary_00", .user = true},
+   [VARYING_SLOT_VAR1] = {"vary_01", .user = true},
+   [VARYING_SLOT_VAR2] = {"vary_02", .user = true},
+   [VARYING_SLOT_VAR3] = {"vary_03", .user = true},
+   [VARYING_SLOT_VAR4] = {"vary_04", .user = true},
+   [VARYING_SLOT_VAR5] = {"vary_05", .user = true},
+   [VARYING_SLOT_VAR6] = {"vary_06", .user = true},
+   [VARYING_SLOT_VAR7] = {"vary_07", .user = true},
+   [VARYING_SLOT_VAR8] = {"vary_08", .user = true},
+   [VARYING_SLOT_VAR9] = {"vary_09", .user = true},
+   [VARYING_SLOT_VAR10] = {"vary_10", .user = true},
+   [VARYING_SLOT_VAR11] = {"vary_11", .user = true},
+   [VARYING_SLOT_VAR12] = {"vary_12", .user = true},
+   [VARYING_SLOT_VAR13] = {"vary_13", .user = true},
+   [VARYING_SLOT_VAR14] = {"vary_14", .user = true},
+   [VARYING_SLOT_VAR15] = {"vary_15", .user = true},
+   [VARYING_SLOT_VAR16] = {"vary_16", .user = true},
+   [VARYING_SLOT_VAR17] = {"vary_17", .user = true},
+   [VARYING_SLOT_VAR18] = {"vary_18", .user = true},
+   [VARYING_SLOT_VAR19] = {"vary_19", .user = true},
+   [VARYING_SLOT_VAR20] = {"vary_20", .user = true},
+   [VARYING_SLOT_VAR21] = {"vary_21", .user = true},
+   [VARYING_SLOT_VAR22] = {"vary_22", .user = true},
+   [VARYING_SLOT_VAR23] = {"vary_23", .user = true},
+   [VARYING_SLOT_VAR24] = {"vary_24", .user = true},
+   [VARYING_SLOT_VAR25] = {"vary_25", .user = true},
+   [VARYING_SLOT_VAR26] = {"vary_26", .user = true},
+   [VARYING_SLOT_VAR27] = {"vary_27", .user = true},
+   [VARYING_SLOT_VAR28] = {"vary_28", .user = true},
+   [VARYING_SLOT_VAR29] = {"vary_29", .user = true},
+   [VARYING_SLOT_VAR30] = {"vary_30", .user = true},
+   [VARYING_SLOT_VAR31] = {"vary_31", .user = true},
 };
 
-/* Mapping from NIR varying slot to the MSL struct member attribute. */
-static const char *VARYING_SLOT_SEMANTIC[NUM_TOTAL_VARYING_SLOTS] = {
-   [VARYING_SLOT_POS] = "[[position]]",
-   [VARYING_SLOT_PSIZ] = "[[point_size]]",
-   [VARYING_SLOT_PRIMITIVE_ID] = "[[primitive_id]]",
-   [VARYING_SLOT_LAYER] = "[[render_target_array_index]]",
-   [VARYING_SLOT_VIEWPORT] = "[[viewport_array_index]]",
-   [VARYING_SLOT_VAR0] = "[[user(vary_00)]]",
-   [VARYING_SLOT_VAR1] = "[[user(vary_01)]]",
-   [VARYING_SLOT_VAR2] = "[[user(vary_02)]]",
-   [VARYING_SLOT_VAR3] = "[[user(vary_03)]]",
-   [VARYING_SLOT_VAR4] = "[[user(vary_04)]]",
-   [VARYING_SLOT_VAR5] = "[[user(vary_05)]]",
-   [VARYING_SLOT_VAR6] = "[[user(vary_06)]]",
-   [VARYING_SLOT_VAR7] = "[[user(vary_07)]]",
-   [VARYING_SLOT_VAR8] = "[[user(vary_08)]]",
-   [VARYING_SLOT_VAR9] = "[[user(vary_09)]]",
-   [VARYING_SLOT_VAR10] = "[[user(vary_10)]]",
-   [VARYING_SLOT_VAR11] = "[[user(vary_11)]]",
-   [VARYING_SLOT_VAR12] = "[[user(vary_12)]]",
-   [VARYING_SLOT_VAR13] = "[[user(vary_13)]]",
-   [VARYING_SLOT_VAR14] = "[[user(vary_14)]]",
-   [VARYING_SLOT_VAR15] = "[[user(vary_15)]]",
-   [VARYING_SLOT_VAR16] = "[[user(vary_16)]]",
-   [VARYING_SLOT_VAR17] = "[[user(vary_17)]]",
-   [VARYING_SLOT_VAR18] = "[[user(vary_18)]]",
-   [VARYING_SLOT_VAR19] = "[[user(vary_19)]]",
-   [VARYING_SLOT_VAR20] = "[[user(vary_20)]]",
-   [VARYING_SLOT_VAR21] = "[[user(vary_21)]]",
-   [VARYING_SLOT_VAR22] = "[[user(vary_22)]]",
-   [VARYING_SLOT_VAR23] = "[[user(vary_23)]]",
-   [VARYING_SLOT_VAR24] = "[[user(vary_24)]]",
-   [VARYING_SLOT_VAR25] = "[[user(vary_25)]]",
-   [VARYING_SLOT_VAR26] = "[[user(vary_26)]]",
-   [VARYING_SLOT_VAR27] = "[[user(vary_27)]]",
-   [VARYING_SLOT_VAR28] = "[[user(vary_28)]]",
-   [VARYING_SLOT_VAR29] = "[[user(vary_29)]]",
-   [VARYING_SLOT_VAR30] = "[[user(vary_30)]]",
-   [VARYING_SLOT_VAR31] = "[[user(vary_31)]]",
-};
+static void
+varying_slot_name(struct nir_to_msl_ctx *ctx, unsigned location,
+                  unsigned component)
+{
+   if (VARYING_SLOT_INFO[location].scalarized) {
+      P(ctx, "%s_%c", VARYING_SLOT_INFO[location].name, "xyzw"[component]);
+   } else {
+      P(ctx, "%s", VARYING_SLOT_INFO[location].name);
+   }
+}
+
+static void
+varying_slot_semantic(struct nir_to_msl_ctx *ctx, unsigned location,
+                      unsigned component)
+{
+   if (VARYING_SLOT_INFO[location].user) {
+      P(ctx, "[[user(");
+      varying_slot_name(ctx, location, component);
+      P(ctx, ")]]");
+   } else {
+      P(ctx, "[[");
+      varying_slot_name(ctx, location, component);
+      P(ctx, "]]");
+   }
+}
 
 /* Mapping from NIR fragment output slot to MSL struct member name */
 static const char *FS_OUTPUT_NAME[] = {
@@ -177,12 +168,23 @@ vs_output_block(nir_shader *shader, struct nir_to_msl_ctx *ctx)
    ctx->indentlevel++;
    u_foreach_bit64(location, shader->info.outputs_written) {
       struct io_slot_info info = ctx->outputs_info[location];
+      bool scalarized = VARYING_SLOT_INFO[location].scalarized;
       const char *type = alu_type_to_string(info.type);
-      const char *vector_suffix = vector_suffixes[info.num_components];
-      P_IND(ctx, "%s%s %s %s;\n", type, vector_suffix,
-            VARYING_SLOT_NAME[location], VARYING_SLOT_SEMANTIC[location]);
+      const char *vector_suffix =
+         scalarized ? "" : vector_suffixes[info.num_components];
+      unsigned components = scalarized ? info.num_components : 1;
+      for (int c = 0; c < components; c++) {
+         P_IND(ctx, "%s%s ", type, vector_suffix);
+         varying_slot_name(ctx, location, c);
+         P(ctx, " ");
+         varying_slot_semantic(ctx, location, c);
+         P(ctx, ";\n");
+      }
    }
 
+   if (shader->info.clip_distance_array_size)
+      P_IND(ctx, "float gl_ClipDistance [[clip_distance]] [%d];",
+        shader->info.clip_distance_array_size);
    ctx->indentlevel--;
    P(ctx, "};\n");
 }
@@ -195,8 +197,10 @@ fs_input_block(nir_shader *shader, struct nir_to_msl_ctx *ctx)
    ctx->indentlevel++;
    u_foreach_bit64(location, shader->info.inputs_read) {
       struct io_slot_info info = ctx->inputs_info[location];
+      bool scalarized = VARYING_SLOT_INFO[location].scalarized;
       const char *type = alu_type_to_string(info.type);
-      const char *vector_suffix = vector_suffixes[info.num_components];
+      const char *vector_suffix =
+         scalarized ? "" : vector_suffixes[info.num_components];
       const char *interp = "";
       switch (info.interpolation) {
       case INTERP_MODE_NOPERSPECTIVE:
@@ -217,9 +221,14 @@ fs_input_block(nir_shader *shader, struct nir_to_msl_ctx *ctx)
             interp = "[[sample_perspective]]";
          break;
       }
-      P_IND(ctx, "%s%s %s %s %s;\n", type, vector_suffix,
-            VARYING_SLOT_NAME[location], VARYING_SLOT_SEMANTIC[location],
-            interp);
+      unsigned components = scalarized ? info.num_components : 1;
+      for (int c = 0; c < components; c++) {
+         P_IND(ctx, "%s%s ", type, vector_suffix);
+         varying_slot_name(ctx, location, c);
+         P(ctx, " ");
+         varying_slot_semantic(ctx, location, c);
+         P(ctx, " %s;\n", interp);
+      }
    }
 
    /* Enable reading from framebuffer */
@@ -253,6 +262,7 @@ fs_output_block(nir_shader *shader, struct nir_to_msl_ctx *ctx)
          P(ctx, "%s [[depth(%s)]];\n", FS_OUTPUT_NAME[location],
            depth_layout_arg[depth_layout]);
       } else {
+         // TODO: scalarized fs outputs
          P(ctx, "%s [[%s]];\n", FS_OUTPUT_NAME[location],
            FS_OUTPUT_SEMANTIC[location]);
       }
@@ -422,28 +432,53 @@ msl_emit_output_var(struct nir_to_msl_ctx *ctx, nir_shader *shader)
    }
 }
 
-const char *
-msl_output_name(struct nir_to_msl_ctx *ctx, unsigned location)
+void
+msl_output_name(struct nir_to_msl_ctx *ctx, unsigned location,
+                unsigned component)
 {
+   P(ctx, "out.")
    switch (ctx->shader->info.stage) {
    case MESA_SHADER_VERTEX:
-      return VARYING_SLOT_NAME[location];
+      varying_slot_name(ctx, location, component);
+      break;
    case MESA_SHADER_FRAGMENT:
-      return FS_OUTPUT_NAME[location];
+      P(ctx, "%s", FS_OUTPUT_NAME[location]);
+      break;
    default:
-      assert(0);
-      return "";
+      UNREACHABLE("Invalid shader stage");
    }
 }
 
-const char *
-msl_input_name(struct nir_to_msl_ctx *ctx, unsigned location)
+void
+msl_input_name(struct nir_to_msl_ctx *ctx, unsigned location,
+               unsigned component)
 {
+   P(ctx, "in.");
    switch (ctx->shader->info.stage) {
    case MESA_SHADER_FRAGMENT:
-      return VARYING_SLOT_NAME[location];
+      varying_slot_name(ctx, location, component);
+      break;
    default:
-      assert(0);
-      return "";
+      UNREACHABLE("Invalid shader stage");
    }
+}
+
+uint32_t
+msl_input_num_components(struct nir_to_msl_ctx *ctx, uint32_t location)
+{
+   if (ctx->shader->info.stage == MESA_SHADER_FRAGMENT &&
+       VARYING_SLOT_INFO[location].scalarized)
+      return 1;
+   else
+      return ctx->inputs_info[location].num_components;
+}
+
+uint32_t
+msl_output_num_components(struct nir_to_msl_ctx *ctx, uint32_t location)
+{
+   if (ctx->shader->info.stage == MESA_SHADER_VERTEX &&
+       VARYING_SLOT_INFO[location].scalarized)
+      return 1;
+   else
+      return ctx->outputs_info[location].num_components;
 }

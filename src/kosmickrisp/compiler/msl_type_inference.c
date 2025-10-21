@@ -371,6 +371,9 @@ infer_types_from_intrinsic(struct hash_table *types, nir_intrinsic_instr *instr)
    case nir_intrinsic_load_sampler_handle_kk:
       set_type(types, &instr->def, TYPE_SAMPLER);
       break;
+   case nir_intrinsic_store_clip_distance_kk:
+      set_type(types, &instr->src[0], TYPE_FLOAT);
+      break;
    case nir_intrinsic_ddx:
    case nir_intrinsic_ddy:
    case nir_intrinsic_ddx_coarse:

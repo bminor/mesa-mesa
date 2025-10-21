@@ -66,9 +66,17 @@ void msl_gather_io_info(struct nir_to_msl_ctx *ctx,
                         struct io_slot_info *info_array_input,
                         struct io_slot_info *info_array_output);
 
-const char *msl_input_name(struct nir_to_msl_ctx *ctx, unsigned location);
+void msl_input_name(struct nir_to_msl_ctx *ctx, unsigned location,
+                    unsigned component);
 
-const char *msl_output_name(struct nir_to_msl_ctx *ctx, unsigned location);
+void msl_output_name(struct nir_to_msl_ctx *ctx, unsigned location,
+                     unsigned component);
+
+uint32_t msl_input_num_components(struct nir_to_msl_ctx *ctx,
+                                  uint32_t location);
+
+uint32_t msl_output_num_components(struct nir_to_msl_ctx *ctx,
+                                   uint32_t location);
 
 bool msl_src_is_float(struct nir_to_msl_ctx *ctx, nir_src *src);
 bool msl_def_is_sampler(struct nir_to_msl_ctx *ctx, nir_def *def);
@@ -76,3 +84,5 @@ bool msl_def_is_sampler(struct nir_to_msl_ctx *ctx, nir_def *def);
 void msl_nir_lower_subgroups(nir_shader *nir);
 
 bool msl_nir_lower_algebraic_late(nir_shader *shader);
+
+bool msl_nir_lower_clip_distance(nir_shader *nir);
