@@ -423,7 +423,7 @@ __bitset_next_set(unsigned i, BITSET_WORD *tmp,
 #define BITSET_FOREACH_SET(__i, __set, __size) \
    for (BITSET_WORD __tmp = (__size) == 0 ? 0 : *(__set), *__foo = &__tmp; __foo != NULL; __foo = NULL) \
       for (__i = 0; \
-           (__i = __bitset_next_set(__i, &__tmp, __set, __size)) < __size;)
+           (__i = __bitset_next_set(__i, &__tmp, __set, __size)) < (__size);)
 
 static inline void
 __bitset_next_range(unsigned *start, unsigned *end, const BITSET_WORD *set,
