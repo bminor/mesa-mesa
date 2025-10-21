@@ -841,7 +841,7 @@ radv_amdgpu_winsys_bo_from_ptr(struct radeon_winsys *_ws, void *pointer, uint64_
    ASSERTED int r = ac_drm_bo_export(ws->dev, buf_handle, amdgpu_bo_handle_type_kms, &kms_handle);
    assert(!r);
 
-   if (ac_drm_bo_va_op(ws->dev, kms_handle, 0, size, va, 0, AMDGPU_VA_OP_MAP)) {
+   if (radv_amdgpu_bo_va_op(ws, kms_handle, 0, size, va, 0, 0, AMDGPU_VA_OP_MAP)) {
       result = VK_ERROR_UNKNOWN;
       goto error_va_map;
    }
