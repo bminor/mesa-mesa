@@ -2161,8 +2161,15 @@ struct anv_gfx_dynamic_state {
       uint32_t SampleMask;
    } sm;
 
+   /* 3DSTATE_DS */
+   struct {
+      bool ComputeWCoordinateEnable;
+   } ds;
+
    /* 3DSTATE_TE */
    struct {
+      uint32_t TEDomain;
+      uint32_t Partitioning;
       uint32_t OutputTopology;
       uint32_t TessellationDistributionMode;
    } te;
