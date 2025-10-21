@@ -1265,6 +1265,15 @@ ac_emit_cp_atomic_mem(struct ac_cmdbuf *cs, uint32_t atomic_op,
 }
 
 void
+ac_emit_cp_nop(struct ac_cmdbuf *cs, uint32_t value)
+{
+   ac_cmdbuf_begin(cs);
+   ac_cmdbuf_emit(PKT3(PKT3_NOP, 0, 0));
+   ac_cmdbuf_emit(value);
+   ac_cmdbuf_end();
+}
+
+void
 ac_cmdbuf_flush_vgt_streamout(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level)
 {
    uint32_t reg_strmout_cntl;

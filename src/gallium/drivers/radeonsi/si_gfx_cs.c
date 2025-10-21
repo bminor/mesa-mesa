@@ -687,10 +687,7 @@ void si_trace_emit(struct si_context *sctx)
 
    si_cp_write_data(sctx, sctx->current_saved_cs->trace_buf, 0, 4, V_370_MEM, V_370_ME, &trace_id);
 
-   radeon_begin(cs);
-   radeon_emit(PKT3(PKT3_NOP, 0, 0));
-   radeon_emit(AC_ENCODE_TRACE_POINT(trace_id));
-   radeon_end();
+   ac_emit_cp_nop(&cs->current, AC_ENCODE_TRACE_POINT(trace_id));
 
    if (sctx->log)
       u_log_flush(sctx->log);

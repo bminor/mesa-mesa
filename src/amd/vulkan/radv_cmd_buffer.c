@@ -1423,10 +1423,7 @@ radv_cmd_buffer_trace_emit(struct radv_cmd_buffer *cmd_buffer)
 
    radeon_check_space(device->ws, cs->b, 2);
 
-   radeon_begin(cs);
-   radeon_emit(PKT3(PKT3_NOP, 0, 0));
-   radeon_emit(AC_ENCODE_TRACE_POINT(cmd_buffer->state.trace_id));
-   radeon_end();
+   ac_emit_cp_nop(cs->b, AC_ENCODE_TRACE_POINT(cmd_buffer->state.trace_id));
 }
 
 void

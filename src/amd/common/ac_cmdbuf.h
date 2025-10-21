@@ -184,6 +184,9 @@ ac_emit_cp_atomic_mem(struct ac_cmdbuf *cs, uint32_t atomic_op,
                       uint64_t compare_data);
 
 void
+ac_emit_cp_nop(struct ac_cmdbuf *cs, uint32_t value);
+
+void
 ac_cmdbuf_flush_vgt_streamout(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level);
 
 #ifdef __cplusplus
