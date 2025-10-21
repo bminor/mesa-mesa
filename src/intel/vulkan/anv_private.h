@@ -2251,7 +2251,7 @@ struct anv_gfx_dynamic_state {
       uint32_t BackfaceStencilPassDepthPassOp;
       uint32_t BackfaceStencilPassDepthFailOp;
       uint32_t BackfaceStencilTestFunction;
-   } ds;
+   } wm_ds;
 
    /* 3DSTATE_TBIMR_TILE_PASS_INFO */
    struct {

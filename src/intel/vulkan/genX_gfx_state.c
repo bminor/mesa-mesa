@@ -1595,48 +1595,48 @@ update_wm_depth_stencil(struct anv_gfx_dynamic_state *hw_state,
    struct vk_depth_stencil_state opt_ds = dyn->ds;
    vk_optimize_depth_stencil_state(&opt_ds, ds_aspects, true);
 
-   SET(WM_DEPTH_STENCIL, ds.DoubleSidedStencilEnable, true);
+   SET(WM_DEPTH_STENCIL, wm_ds.DoubleSidedStencilEnable, true);
 
-   SET(WM_DEPTH_STENCIL, ds.StencilTestMask,
+   SET(WM_DEPTH_STENCIL, wm_ds.StencilTestMask,
        opt_ds.stencil.front.compare_mask & 0xff);
-   SET(WM_DEPTH_STENCIL, ds.StencilWriteMask,
+   SET(WM_DEPTH_STENCIL, wm_ds.StencilWriteMask,
        opt_ds.stencil.front.write_mask & 0xff);
 
-   SET(WM_DEPTH_STENCIL, ds.BackfaceStencilTestMask, opt_ds.stencil.back.compare_mask & 0xff);
-   SET(WM_DEPTH_STENCIL, ds.BackfaceStencilWriteMask, opt_ds.stencil.back.write_mask & 0xff);
+   SET(WM_DEPTH_STENCIL, wm_ds.BackfaceStencilTestMask, opt_ds.stencil.back.compare_mask & 0xff);
+   SET(WM_DEPTH_STENCIL, wm_ds.BackfaceStencilWriteMask, opt_ds.stencil.back.write_mask & 0xff);
 
-   SET(WM_DEPTH_STENCIL, ds.StencilReferenceValue,
+   SET(WM_DEPTH_STENCIL, wm_ds.StencilReferenceValue,
        opt_ds.stencil.front.reference & 0xff);
-   SET(WM_DEPTH_STENCIL, ds.BackfaceStencilReferenceValue,
+   SET(WM_DEPTH_STENCIL, wm_ds.BackfaceStencilReferenceValue,
        opt_ds.stencil.back.reference & 0xff);
 
-   SET(WM_DEPTH_STENCIL, ds.DepthTestEnable, opt_ds.depth.test_enable);
-   SET(WM_DEPTH_STENCIL, ds.DepthBufferWriteEnable, opt_ds.depth.write_enable);
-   SET(WM_DEPTH_STENCIL, ds.DepthTestFunction,
+   SET(WM_DEPTH_STENCIL, wm_ds.DepthTestEnable, opt_ds.depth.test_enable);
+   SET(WM_DEPTH_STENCIL, wm_ds.DepthBufferWriteEnable, opt_ds.depth.write_enable);
+   SET(WM_DEPTH_STENCIL, wm_ds.DepthTestFunction,
                          vk_to_intel_compare_op[opt_ds.depth.compare_op]);
-   SET(WM_DEPTH_STENCIL, ds.StencilTestEnable, opt_ds.stencil.test_enable);
-   SET(WM_DEPTH_STENCIL, ds.StencilBufferWriteEnable,
+   SET(WM_DEPTH_STENCIL, wm_ds.StencilTestEnable, opt_ds.stencil.test_enable);
+   SET(WM_DEPTH_STENCIL, wm_ds.StencilBufferWriteEnable,
                          opt_ds.stencil.write_enable);
-   SET(WM_DEPTH_STENCIL, ds.StencilFailOp,
+   SET(WM_DEPTH_STENCIL, wm_ds.StencilFailOp,
                          vk_to_intel_stencil_op[opt_ds.stencil.front.op.fail]);
-   SET(WM_DEPTH_STENCIL, ds.StencilPassDepthPassOp,
+   SET(WM_DEPTH_STENCIL, wm_ds.StencilPassDepthPassOp,
                          vk_to_intel_stencil_op[opt_ds.stencil.front.op.pass]);
-   SET(WM_DEPTH_STENCIL, ds.StencilPassDepthFailOp,
+   SET(WM_DEPTH_STENCIL, wm_ds.StencilPassDepthFailOp,
                          vk_to_intel_stencil_op[
                             opt_ds.stencil.front.op.depth_fail]);
-   SET(WM_DEPTH_STENCIL, ds.StencilTestFunction,
+   SET(WM_DEPTH_STENCIL, wm_ds.StencilTestFunction,
                          vk_to_intel_compare_op[
                             opt_ds.stencil.front.op.compare]);
-   SET(WM_DEPTH_STENCIL, ds.BackfaceStencilFailOp,
+   SET(WM_DEPTH_STENCIL, wm_ds.BackfaceStencilFailOp,
                          vk_to_intel_stencil_op[
                             opt_ds.stencil.back.op.fail]);
-   SET(WM_DEPTH_STENCIL, ds.BackfaceStencilPassDepthPassOp,
+   SET(WM_DEPTH_STENCIL, wm_ds.BackfaceStencilPassDepthPassOp,
                          vk_to_intel_stencil_op[
                             opt_ds.stencil.back.op.pass]);
-   SET(WM_DEPTH_STENCIL, ds.BackfaceStencilPassDepthFailOp,
+   SET(WM_DEPTH_STENCIL, wm_ds.BackfaceStencilPassDepthFailOp,
                          vk_to_intel_stencil_op[
                             opt_ds.stencil.back.op.depth_fail]);
-   SET(WM_DEPTH_STENCIL, ds.BackfaceStencilTestFunction,
+   SET(WM_DEPTH_STENCIL, wm_ds.BackfaceStencilTestFunction,
                          vk_to_intel_compare_op[
                             opt_ds.stencil.back.op.compare]);
 
@@ -2986,27 +2986,27 @@ cmd_buffer_repack_gfx_state(struct anv_gfx_dynamic_state *hw_state,
    }
 
    if (IS_DIRTY(WM_DEPTH_STENCIL)) {
-      anv_gfx_pack(wm_ds, GENX(3DSTATE_WM_DEPTH_STENCIL), ds) {
-         SET(ds, ds, DoubleSidedStencilEnable);
-         SET(ds, ds, StencilTestMask);
-         SET(ds, ds, StencilWriteMask);
-         SET(ds, ds, BackfaceStencilTestMask);
-         SET(ds, ds, BackfaceStencilWriteMask);
-         SET(ds, ds, StencilReferenceValue);
-         SET(ds, ds, BackfaceStencilReferenceValue);
-         SET(ds, ds, DepthTestEnable);
-         SET(ds, ds, DepthBufferWriteEnable);
-         SET(ds, ds, DepthTestFunction);
-         SET(ds, ds, StencilTestEnable);
-         SET(ds, ds, StencilBufferWriteEnable);
-         SET(ds, ds, StencilFailOp);
-         SET(ds, ds, StencilPassDepthPassOp);
-         SET(ds, ds, StencilPassDepthFailOp);
-         SET(ds, ds, StencilTestFunction);
-         SET(ds, ds, BackfaceStencilFailOp);
-         SET(ds, ds, BackfaceStencilPassDepthPassOp);
-         SET(ds, ds, BackfaceStencilPassDepthFailOp);
-         SET(ds, ds, BackfaceStencilTestFunction);
+      anv_gfx_pack(wm_ds, GENX(3DSTATE_WM_DEPTH_STENCIL), wm_ds) {
+         SET(wm_ds, wm_ds, DoubleSidedStencilEnable);
+         SET(wm_ds, wm_ds, StencilTestMask);
+         SET(wm_ds, wm_ds, StencilWriteMask);
+         SET(wm_ds, wm_ds, BackfaceStencilTestMask);
+         SET(wm_ds, wm_ds, BackfaceStencilWriteMask);
+         SET(wm_ds, wm_ds, StencilReferenceValue);
+         SET(wm_ds, wm_ds, BackfaceStencilReferenceValue);
+         SET(wm_ds, wm_ds, DepthTestEnable);
+         SET(wm_ds, wm_ds, DepthBufferWriteEnable);
+         SET(wm_ds, wm_ds, DepthTestFunction);
+         SET(wm_ds, wm_ds, StencilTestEnable);
+         SET(wm_ds, wm_ds, StencilBufferWriteEnable);
+         SET(wm_ds, wm_ds, StencilFailOp);
+         SET(wm_ds, wm_ds, StencilPassDepthPassOp);
+         SET(wm_ds, wm_ds, StencilPassDepthFailOp);
+         SET(wm_ds, wm_ds, StencilTestFunction);
+         SET(wm_ds, wm_ds, BackfaceStencilFailOp);
+         SET(wm_ds, wm_ds, BackfaceStencilPassDepthPassOp);
+         SET(wm_ds, wm_ds, BackfaceStencilPassDepthFailOp);
+         SET(wm_ds, wm_ds, BackfaceStencilTestFunction);
       }
    }
 
