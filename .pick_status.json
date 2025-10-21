@@ -3314,7 +3314,7 @@
         "description": "panvk: Fix integer dot product properties",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f7f9b3d170f5213d4f20df8ef92827dd97899432",
         "notes": null

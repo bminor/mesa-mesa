@@ -899,10 +899,10 @@ panvk_per_arch(get_physical_device_properties)(
          MAX_INLINE_UNIFORM_BLOCK_DESCRIPTORS * MAX_INLINE_UNIFORM_BLOCK_SIZE,
 
       /* VK_KHR_shader_integer_dot_product */
-      .integerDotProduct8BitUnsignedAccelerated = true,
-      .integerDotProduct8BitSignedAccelerated = true,
-      .integerDotProduct4x8BitPackedUnsignedAccelerated = true,
-      .integerDotProduct4x8BitPackedSignedAccelerated = true,
+      .integerDotProduct8BitUnsignedAccelerated = false,
+      .integerDotProduct8BitSignedAccelerated = false,
+      .integerDotProduct4x8BitPackedUnsignedAccelerated = PAN_ARCH >= 9,
+      .integerDotProduct4x8BitPackedSignedAccelerated = PAN_ARCH >= 9,
 
       /* XXX: VK_EXT_texel_buffer_alignment */
       .storageTexelBufferOffsetAlignmentBytes = 64,
