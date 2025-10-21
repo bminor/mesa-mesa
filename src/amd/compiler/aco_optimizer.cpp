@@ -40,35 +40,38 @@ struct mad_info {
 };
 
 enum Label {
-   label_constant = 1 << 1,
-   /* label_{abs,neg,mul,omod2,omod4,omod5,clamp} are used for both 16 and
-    * 32-bit operations but this shouldn't cause any issues because we don't
-    * look through any conversions */
-   label_abs = 1 << 2,
-   label_neg = 1 << 3,
-   label_temp = 1 << 5,
-   label_mad = 1 << 7,
-   label_omod2 = 1 << 8,
-   label_omod4 = 1 << 9,
-   label_omod5 = 1 << 10,
-   label_clamp = 1 << 12,
-   label_b2f = 1 << 16,
+   label_constant = 1ull << 0,
+   label_temp = 1ull << 1,
+   label_mad = 1ull << 2,
    /* This label means that it's either 0 or -1, and the ssa_info::temp is an s1 which is 0 or 1. */
-   label_uniform_bool = 1 << 21,
+   label_uniform_bool = 1ull << 3,
    /* This label is added to the first definition of s_not/s_or/s_xor/s_and when all operands are
     * uniform_bool or uniform_bitwise. The first definition of ssa_info::instr would be 0 or -1 and
     * the second is SCC.
     */
-   label_uniform_bitwise = 1 << 23,
+   label_uniform_bitwise = 1ull << 4,
    /* This label means that it's either 0 or 1 and ssa_info::temp is the inverse. */
-   label_scc_invert = 1 << 24,
-   label_scc_needed = 1 << 26,
-   label_b2i = 1 << 27,
-   label_fcanonicalize = 1 << 28,
-   label_canonicalized = 1ull << 32, /* 1ull to prevent sign extension */
-   label_extract = 1ull << 33,
-   label_insert = 1ull << 34,
-   label_f2f16 = 1ull << 38,
+   label_scc_invert = 1ull << 5,
+   label_scc_needed = 1ull << 6,
+   label_extract = 1ull << 7,
+
+   label_abs = 1ull << 16,
+   label_neg = 1ull << 17,
+   label_fcanonicalize = 1ull << 18,
+   label_canonicalized = 1ull << 22,
+
+   /* label_{omod2,omod4,omod5,clamp} are used for both 16 and
+    * 32-bit operations but this doesn't cause any issues because
+    * we check the definition register class.
+    */
+   label_omod2 = 1ull << 33,
+   label_omod4 = 1ull << 34,
+   label_omod5 = 1ull << 35,
+   label_clamp = 1ull << 36,
+   label_insert = 1ull << 38,
+   label_f2f16 = 1ull << 39,
+   label_b2f = 1ull << 40,
+   label_b2i = 1ull << 41,
 };
 
 static constexpr uint64_t instr_mod_labels =
@@ -78,7 +81,7 @@ static constexpr uint64_t temp_labels = label_abs | label_neg | label_temp | lab
                                         label_uniform_bool | label_scc_invert | label_b2i |
                                         label_fcanonicalize;
 
-static constexpr uint32_t val_labels = label_constant | label_mad;
+static constexpr uint64_t val_labels = label_constant | label_mad;
 
 static_assert((instr_mod_labels & temp_labels) == 0, "labels cannot intersect");
 static_assert((instr_mod_labels & val_labels) == 0, "labels cannot intersect");
