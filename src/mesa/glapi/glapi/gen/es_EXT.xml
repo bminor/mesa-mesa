@@ -1597,6 +1597,7 @@
   <enum name="TEXTURE_PROTECTED_EXT" value="0x8BFA" />
 </category>
 
+<xi:include href="EXT_shader_pixel_local_storage.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
 <xi:include href="EXT_texture_storage_compression.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
 
 </OpenGLAPI>

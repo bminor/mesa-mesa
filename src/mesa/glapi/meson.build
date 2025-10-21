@@ -100,6 +100,7 @@ glapi_xml_py_deps = files(
   'glapi/gen/EXT_provoking_vertex.xml',
   'glapi/gen/EXT_separate_shader_objects.xml',
   'glapi/gen/EXT_shader_image_load_store.xml',
+  'glapi/gen/EXT_shader_pixel_local_storage.xml',
   'glapi/gen/EXT_texture_array.xml',
   'glapi/gen/EXT_texture_integer.xml',
   'glapi/gen/EXT_texture_storage_compression.xml',
