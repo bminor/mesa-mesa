@@ -107,6 +107,7 @@ kk_preprocess_nir(UNUSED struct vk_physical_device *vk_pdev, nir_shader *nir,
 
 struct kk_vs_key {
    bool is_points;
+   struct vk_vertex_input_state vi;
 };
 
 static void
@@ -116,6 +117,7 @@ kk_populate_vs_key(struct kk_vs_key *key,
    memset(key, 0, sizeof(*key));
    key->is_points =
       (state->ia->primitive_topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
+   key->vi = *state->vi;
 }
 
 struct kk_fs_key {
