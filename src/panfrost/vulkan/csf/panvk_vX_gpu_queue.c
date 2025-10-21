@@ -705,11 +705,9 @@ struct panvk_queue_submit {
    bool process_utrace;
    bool force_sync;
 
-   uint32_t used_queue_mask;
-
    uint32_t qsubmit_count;
-   bool needs_waits;
-   bool needs_signals;
+   uint32_t wait_queue_mask;
+   uint32_t signal_queue_mask;
 
    struct drm_panthor_queue_submit *qsubmits;
    struct drm_panthor_sync_op *wait_ops;
@@ -769,7 +767,6 @@ panvk_queue_submit_init_storage(
          if (cs_is_empty(b))
             continue;
 
-         submit->used_queue_mask |= BITFIELD_BIT(j);
          submit->qsubmit_count++;
 
          struct u_trace *ut = &cmdbuf->utrace.uts[j];
@@ -790,25 +787,46 @@ panvk_queue_submit_init_storage(
       }
    }
 
+   /* wait_stages_mask is pipeline stages which limit
+    * the second synchronization scope of a semaphore wait operation */
+   VkPipelineStageFlags2 wait_stages_mask = VK_PIPELINE_STAGE_2_NONE;
+   for (uint32_t i = 0; i < vk_submit->wait_count; i++) {
+      wait_stages_mask |= vk_submit->waits[i].stage_mask;
+   }
+   submit->wait_queue_mask =
+      vk_stages_to_subqueue_mask(wait_stages_mask, SYNC_SCOPE_SECOND);
+
+   /* signal_stages_mask is pipeline stages which limit
+    * the first synchronization scope of a semaphore signal operation */
+   VkPipelineStageFlags2 signal_stages_mask = VK_PIPELINE_STAGE_2_NONE;
+   for (uint32_t i = 0; i < vk_submit->signal_count; i++) {
+      signal_stages_mask |= vk_submit->signals[i].stage_mask;
+   }
+   submit->signal_queue_mask =
+      vk_stages_to_subqueue_mask(signal_stages_mask, SYNC_SCOPE_FIRST) |
+      submit->utrace.queue_mask;
+
+   /* Signal all subqueues if force_sync */
+   if (submit->force_sync) {
+      submit->signal_queue_mask |= BITFIELD_MASK(PANVK_SUBQUEUE_COUNT);
+   }
+
    /* Synchronize all subqueues if we have no command buffer submitted. */
-   if (!submit->qsubmit_count)
-      submit->used_queue_mask = BITFIELD_MASK(PANVK_SUBQUEUE_COUNT);
+   if (!submit->qsubmit_count) {
+      submit->wait_queue_mask =
+         submit->wait_queue_mask ? BITFIELD_MASK(PANVK_SUBQUEUE_COUNT) : 0;
+      submit->signal_queue_mask =
+         submit->signal_queue_mask ? BITFIELD_MASK(PANVK_SUBQUEUE_COUNT) : 0;
+   }
 
    uint32_t syncop_count = 0;
 
-   submit->needs_waits = vk_submit->wait_count > 0;
-   submit->needs_signals = vk_submit->signal_count > 0 || submit->force_sync ||
-                           submit->utrace.queue_mask;
-
    /* We add sync-only queue submits to place our wait/signal operations. */
-   if (submit->needs_waits) {
-      submit->qsubmit_count += util_bitcount(submit->used_queue_mask);
-      syncop_count += vk_submit->wait_count;
-   }
-   if (submit->needs_signals) {
-      submit->qsubmit_count += util_bitcount(submit->used_queue_mask);
-      syncop_count += util_bitcount(submit->used_queue_mask);
-   }
+   submit->qsubmit_count += util_bitcount(submit->wait_queue_mask);
+   syncop_count += vk_submit->wait_count;
+
+   submit->qsubmit_count += util_bitcount(submit->signal_queue_mask);
+   syncop_count += util_bitcount(submit->signal_queue_mask);
 
    submit->qsubmits =
       submit->qsubmit_count <= ARRAY_SIZE(stack_storage->qsubmits)
@@ -880,7 +898,7 @@ panvk_queue_submit_init_waits(struct panvk_queue_submit *submit,
                               const struct vk_queue_submit *vk_submit)
 {
    MESA_TRACE_FUNC();
-   if (!submit->needs_waits)
+   if (!submit->wait_queue_mask)
       return;
 
    for (uint32_t i = 0; i < vk_submit->wait_count; i++) {
@@ -898,7 +916,7 @@ panvk_queue_submit_init_waits(struct panvk_queue_submit *submit,
       };
    }
 
-   u_foreach_bit(i, submit->used_queue_mask) {
+   u_foreach_bit(i, submit->wait_queue_mask) {
       submit->qsubmits[submit->qsubmit_count++] =
          (struct drm_panthor_queue_submit){
             .queue_index = i,
@@ -1002,11 +1020,8 @@ panvk_queue_submit_init_signals(struct panvk_queue_submit *submit,
    MESA_TRACE_FUNC();
    struct panvk_gpu_queue *queue = submit->queue;
 
-   if (!submit->needs_signals)
-      return;
-
    uint32_t signal_op = 0;
-   u_foreach_bit(i, submit->used_queue_mask) {
+   u_foreach_bit(i, submit->signal_queue_mask) {
       submit->signal_ops[signal_op] = (struct drm_panthor_sync_op){
          .flags = DRM_PANTHOR_SYNC_OP_HANDLE_TYPE_TIMELINE_SYNCOBJ |
                   DRM_PANTHOR_SYNC_OP_SIGNAL,
@@ -1067,11 +1082,11 @@ panvk_queue_submit_process_signals(struct panvk_queue_submit *submit,
    struct panvk_gpu_queue *queue = submit->queue;
    int ret;
 
-   if (!submit->needs_signals)
+   if (!submit->signal_queue_mask)
       return;
 
    if (submit->force_sync) {
-      uint64_t point = util_bitcount(submit->used_queue_mask);
+      uint64_t point = util_bitcount(submit->signal_queue_mask);
       ret = drmSyncobjTimelineWait(dev->drm_fd, &queue->syncobj_handle,
                                    &point, 1, INT64_MAX,
                                    DRM_SYNCOBJ_WAIT_FLAGS_WAIT_ALL, NULL);
