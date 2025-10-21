@@ -347,34 +347,52 @@ impl RegLatencySM80 {
                     panic!("Illegal writer in sm80 raw");
                 }
             },
-            FP16 | FP16_Alu => {
-                match writer {
-                    CoupledAlu => 5,
-                    CoupledDisp64 => 6,
-                    CoupledFMA => 5,
-                    IMADWideWriteDL => 3,
-                    IMADWideWriteDH => 5,
-                    // these next two are 4 in the spreadsheet, 5 passes test
-                    // dEQP-VK.spirv_assembly.instruction.graphics.float16.arithmetic_1.fsign_vert
-                    // dEQP-VK.glsl.builtin.precision_fp16_storage16b.faceforward.compute.vec3
-                    FP16 => 5,
-                    FP16_Alu => 5,
-                    FP16_F32 => 5,
-                    HFMA2_MMA => 10,
-                    RedirectedFP64 => 10,
-                    Clmad => 12,
-                    IMMA_88 => 13,
-                    MMA_1x_collect => 16,
-                    MMA_2x_collect => 24,
-                    DMMA => 25,
-                    Cbu => 1,
-                    Decoupled => 1,
-                    DecoupledAgu => 1,
-                    _ => {
-                        panic!("Illegal writer in sm80 raw");
-                    }
+            FP16 => match writer {
+                CoupledAlu => 5,
+                CoupledDisp64 => 6,
+                CoupledFMA => 5,
+                IMADWideWriteDL => 3,
+                IMADWideWriteDH => 5,
+                FP16 => 4,
+                FP16_Alu => 5,
+                FP16_F32 => 5,
+                HFMA2_MMA => 10,
+                RedirectedFP64 => 10,
+                Clmad => 12,
+                IMMA_88 => 13,
+                MMA_1x_collect => 16,
+                MMA_2x_collect => 24,
+                DMMA => 25,
+                Cbu => 1,
+                Decoupled => 1,
+                DecoupledAgu => 1,
+                _ => {
+                    panic!("Illegal writer in sm80 raw");
                 }
-            }
+            },
+            FP16_Alu => match writer {
+                CoupledAlu => 5,
+                CoupledDisp64 => 6,
+                CoupledFMA => 5,
+                IMADWideWriteDL => 3,
+                IMADWideWriteDH => 5,
+                FP16 => 5,
+                FP16_Alu => 4,
+                FP16_F32 => 5,
+                HFMA2_MMA => 10,
+                RedirectedFP64 => 10,
+                Clmad => 12,
+                IMMA_88 => 13,
+                MMA_1x_collect => 16,
+                MMA_2x_collect => 24,
+                DMMA => 25,
+                Cbu => 1,
+                Decoupled => 1,
+                DecoupledAgu => 1,
+                _ => {
+                    panic!("Illegal writer in sm80 raw");
+                }
+            },
             FP16_F32 => match writer {
                 CoupledAlu => 5,
                 CoupledDisp64 => 6,
