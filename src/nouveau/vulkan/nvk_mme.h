@@ -16,6 +16,7 @@ enum nvk_mme {
    NVK_MME_SELECT_CB0,
    NVK_MME_BIND_CBUF_DESC,
    NVK_MME_CLEAR,
+   NVK_MME_UPDATE_WINDOW_CLIP,
    NVK_MME_BIND_IB,
    NVK_MME_BIND_VB,
    NVK_MME_SET_VB_ENABLES,
@@ -67,6 +68,9 @@ enum nvk_mme_scratch {
    NVK_MME_SCRATCH_WRITE_MASK_DYN,
    NVK_MME_SCRATCH_WRITE_MASK_PIPELINE,
    NVK_MME_SCRATCH_CONSERVATIVE_RASTER_STATE,
+
+   /* Copy of SET_WINDOW_CLIP_ENABLE */
+   NVK_MME_SCRATCH_WINDOW_CLIP_ENABLED, /* TODO: can we use shadow-ram? */
 
    /* Bitfield of enabled vertex buffer bindings */
    NVK_MME_SCRATCH_VB_ENABLES,
@@ -218,6 +222,7 @@ uint32_t *nvk_build_mme(const struct nv_device_info *devinfo,
 void nvk_mme_select_cb0(struct mme_builder *b);
 void nvk_mme_bind_cbuf_desc(struct mme_builder *b);
 void nvk_mme_clear(struct mme_builder *b);
+void nvk_mme_update_window_clip(struct mme_builder *b);
 void nvk_mme_bind_ib(struct mme_builder *b);
 void nvk_mme_bind_vb(struct mme_builder *b);
 void nvk_mme_set_vb_enables(struct mme_builder *b);

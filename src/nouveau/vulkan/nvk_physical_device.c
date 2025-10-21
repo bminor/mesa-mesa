@@ -214,6 +214,7 @@ nvk_get_device_extensions(const struct nvk_instance *instance,
       .EXT_descriptor_buffer = info->cls_eng3d >= MAXWELL_A,
       .EXT_descriptor_indexing = true,
       .EXT_device_generated_commands = info->cls_eng3d >= MAXWELL_B,
+      .EXT_discard_rectangles = true,
 #ifdef VK_USE_PLATFORM_DISPLAY_KHR
       .EXT_display_control = true,
 #endif
@@ -1017,6 +1018,9 @@ nvk_get_device_properties(const struct nvk_instance *instance,
 
       /* VK_KHR_cooperative_matrix */
       .cooperativeMatrixSupportedStages = VK_SHADER_STAGE_COMPUTE_BIT,
+
+      /* VK_KHR_discard_rectangles */
+      .maxDiscardRectangles = NVK_MAX_DISCARD_RECTANGLES,
 
       /* VK_KHR_compute_shader_derivatives */
       .meshAndTaskShaderDerivatives = false,
