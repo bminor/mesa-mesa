@@ -3143,8 +3143,6 @@ tu6_emit_blend(struct tu_cs *cs,
 
    bool dual_src_blend = tu_blend_state_is_dual_src(cb);
 
-   tu_cs_emit_regs(cs, A6XX_SP_PS_MRT_CNTL(.mrt = num_rts));
-   tu_cs_emit_regs(cs, A6XX_RB_PS_MRT_CNTL(.mrt = num_rts));
    tu_cs_emit_regs(cs, A6XX_SP_BLEND_CNTL(.enable_blend = blend_enable_mask,
                                           .unk8 = true,
                                           .dual_color_in_enable =
@@ -3166,10 +3164,12 @@ tu6_emit_blend(struct tu_cs *cs,
                                           .alpha_to_one = alpha_to_one_enable,
                                           .sample_mask = sample_mask));
 
+   unsigned num_remapped_rts = 0;
    for (unsigned i = 0; i < num_rts; i++) {
       if (cal->color_map[i] == MESA_VK_ATTACHMENT_UNUSED)
          continue;
       unsigned remapped_idx = cal->color_map[i];
+      num_remapped_rts = MAX2(num_remapped_rts, remapped_idx + 1);
       const struct vk_color_blend_attachment_state *att = &cb->attachments[i];
       if ((cb->color_write_enables & (1u << i)) && i < cb->attachment_count) {
          const enum a3xx_rb_blend_opcode color_op = tu6_blend_op(att->color_blend_op);
@@ -3213,6 +3213,8 @@ tu6_emit_blend(struct tu_cs *cs,
                             A6XX_RB_MRT_BLEND_CONTROL(remapped_idx,));
       }
    }
+   tu_cs_emit_regs(cs, A6XX_SP_PS_MRT_CNTL(.mrt = num_remapped_rts));
+   tu_cs_emit_regs(cs, A6XX_RB_PS_MRT_CNTL(.mrt = num_remapped_rts));
 }
 
 static const enum mesa_vk_dynamic_graphics_state tu_blend_constants_state[] = {
