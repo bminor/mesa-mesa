@@ -4791,7 +4791,7 @@ d3d12_video_encoder_extract_encode_metadata(
 #endif
 
    // Map metadata buffer using native D3D12 API
-   D3D12_RANGE readRange = { 0, resourceMetadataSize };
+   D3D12_RANGE readRange = { 0, static_cast<SIZE_T>(resourceMetadataSize) };
    void *pMetadataBufferSrc;
    HRESULT hr = pResolvedMetadataBuffer->Map(0, &readRange, &pMetadataBufferSrc);
    if (FAILED(hr)) {
