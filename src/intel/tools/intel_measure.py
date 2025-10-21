@@ -221,7 +221,7 @@ def main():
     cl_parser.add_argument('-f', '--file', type=str, default=None, help='save results to file')
     cl_parser.add_argument(      '--eop', action='store_const', const='eop', dest='mode', help='use end-to-end-of-pipe gpu measurements (default)')
     cl_parser.add_argument(      '--top', action='store_const', const='top', dest='mode', help='use top-to-end-of-pipe gpu measurements')
-    cl_parser.set_defaults(mode='top')
+    cl_parser.set_defaults(mode='eop')
 
     cl_args = cl_parser.parse_args()
     parser = Utrace_Parser(cl_args)
