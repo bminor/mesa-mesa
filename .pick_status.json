@@ -3144,7 +3144,7 @@
         "description": "nak: fix MMA latencies on Ampere",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7a01953a396e8b4968f4c8a9f1771af8837bda39",
         "notes": null
