@@ -1132,8 +1132,9 @@ lp_build_div(struct lp_build_context *bld,
 /**
  * Linear interpolation helper.
  *
- * @param normalized whether we are interpolating normalized values,
- *        encoded in normalized integers, twice as wide.
+ * @param flags
+ *        LP_BLD_LERP_WIDE_NORMALIZED: whether we are interpolating normalized
+ *        values, encoded in normalized integers, twice as wide.
  *
  * @sa http://www.stereopsis.com/doubleblend.html
  */
@@ -1191,9 +1192,9 @@ lp_build_lerp_simple(struct lp_build_context *bld,
          }
       } else {
          /*
-          * The rescaling trick above doesn't work for signed numbers, so
-          * use the 2**n - 1 divison approximation in lp_build_mul_norm
-          * instead.
+          * Scale x from [0, 2**n - 1] to [0, 2**n] by adding the
+          * most-significant-bit to the lowest-significant-bit, so that
+          * later we can just divide by 2**n instead of 2**n - 1.
           */
          assert(!(flags & LP_BLD_LERP_PRESCALED_WEIGHTS));
          res = lp_build_mul_norm(bld->gallivm, bld->type, x, delta);
@@ -1228,8 +1229,8 @@ lp_build_lerp_simple(struct lp_build_context *bld,
          /*
           * We need to mask out the high order bits when lerping 8bit
           * normalized colors stored on 16bits
-          */
-         /* XXX: This step is necessary for lerping 8bit colors stored on
+          *
+          * XXX: This step is necessary for lerping 8bit colors stored on
           * 16bits, but it will be wrong for true fixed point use cases.
           * Basically we need a more powerful lp_type, capable of further
           * distinguishing the values interpretation from the value storage.
