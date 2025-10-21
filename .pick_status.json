@@ -464,7 +464,7 @@
         "description": "tu: Fix RT count with remapped color attachments",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d50eef5b06ff6f3c4eb13fdf080e37e6c8656bc2",
         "notes": null
