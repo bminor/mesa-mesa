@@ -86,6 +86,7 @@ panvk_per_arch(get_physical_device_extensions)(
       .KHR_maintenance9 = true,
       .KHR_map_memory2 = true,
       .KHR_multiview = true,
+      .KHR_pipeline_binary = true,
       .KHR_pipeline_executable_properties = true,
       .KHR_pipeline_library = true,
       .KHR_push_descriptor = true,
@@ -478,6 +479,9 @@ panvk_per_arch(get_physical_device_features)(
        */
       .customBorderColorWithoutFormat = PAN_ARCH != 7,
 
+      /* VK_KHR_pipeline_binary */
+      .pipelineBinaries = true,
+
       /* VK_KHR_pipeline_executable_properties */
       .pipelineExecutableInfo = true,
 
@@ -581,6 +585,8 @@ panvk_per_arch(get_physical_device_properties)(
 
    uint64_t os_page_size = 4096;
    os_get_page_size(&os_page_size);
+
+   const bool has_disk_cache = device->vk.disk_cache != NULL;
 
    /* Ensure that the max threads count per workgroup is valid for Bifrost */
    assert(PAN_ARCH > 8 || device->kmod.props.max_threads_per_wg <= 1024);
@@ -989,6 +995,13 @@ panvk_per_arch(get_physical_device_properties)(
       .defaultRobustnessImages =
          VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_EXT,
       .identicalMemoryTypeRequirements = true,
+
+      /* VK_KHR_pipeline_binary */
+      .pipelineBinaryInternalCache = has_disk_cache,
+      .pipelineBinaryInternalCacheControl = has_disk_cache,
+      .pipelineBinaryPrefersInternalCache = has_disk_cache,
+      .pipelineBinaryPrecompiledInternalCache = has_disk_cache,
+      .pipelineBinaryCompressedData = false,
 
       /* VK_EXT_robustness2 */
       .robustStorageBufferAccessSizeAlignment = 1,
