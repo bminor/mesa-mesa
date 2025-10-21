@@ -588,8 +588,9 @@ impl RegLatencySM80 {
                 | FP16 | FP16_Alu | FP16_F32 => 1,
                 HFMA2_MMA | RedirectedFP64 => pred(has_pred, 3, 3),
                 Clmad => pred(has_pred, 5, 3),
-                IMMA_88 | MMA_1x_collect => pred(has_pred, 8, 1),
-                MMA_2x_collect => pred(has_pred, 12, 1),
+                IMMA_88 => pred(has_pred, 8, 1),
+                MMA_1x_collect => pred(has_pred, 11, 1),
+                MMA_2x_collect => pred(has_pred, 19, 1),
                 DMMA => pred(has_pred, 20, 1),
                 Cbu => 1,
                 Decoupled => 1,
@@ -603,8 +604,9 @@ impl RegLatencySM80 {
                 | IMADWideWriteDH | FP16 | FP16_Alu | FP16_F32 => 1,
                 HFMA2_MMA | RedirectedFP64 => pred(has_pred, 3, 1),
                 Clmad => pred(has_pred, 5, 1),
-                IMMA_88 | MMA_1x_collect => 8,
-                MMA_2x_collect => 12,
+                IMMA_88 => 8,
+                MMA_1x_collect => 11,
+                MMA_2x_collect => 19,
                 DMMA => 20,
                 Cbu => 1,
                 Decoupled => 1,
@@ -620,8 +622,9 @@ impl RegLatencySM80 {
                 IMADWideWriteDH => pred(has_pred, 1, 1),
                 HFMA2_MMA | RedirectedFP64 => pred(has_pred, 3, 3),
                 Clmad => pred(has_pred, 5, 3),
-                IMMA_88 | MMA_1x_collect => pred(has_pred, 8, 1),
-                MMA_2x_collect => pred(has_pred, 12, 1),
+                IMMA_88 => pred(has_pred, 8, 1),
+                MMA_1x_collect => pred(has_pred, 11, 1),
+                MMA_2x_collect => pred(has_pred, 19, 1),
                 DMMA => pred(has_pred, 20, 1),
                 Cbu => 1,
                 Decoupled => 1,
@@ -639,8 +642,9 @@ impl RegLatencySM80 {
                 FP16 | FP16_Alu | FP16_F32 => pred(has_pred, 1, 2),
                 HFMA2_MMA | RedirectedFP64 => pred(has_pred, 5, 3),
                 Clmad => pred(has_pred, 5, 5),
-                IMMA_88 | MMA_1x_collect => pred(has_pred, 8, 3),
-                MMA_2x_collect => pred(has_pred, 12, 3),
+                IMMA_88 => pred(has_pred, 8, 3),
+                MMA_1x_collect => pred(has_pred, 11, 3),
+                MMA_2x_collect => pred(has_pred, 19, 3),
                 DMMA => pred(has_pred, 20, 3),
                 Cbu => 1,
                 Decoupled => 1,
@@ -657,8 +661,9 @@ impl RegLatencySM80 {
                 | FP16_F32 => 1,
                 HFMA2_MMA | RedirectedFP64 => pred(has_pred, 5, 1),
                 Clmad => pred(has_pred, 5, 3),
-                IMMA_88 | MMA_1x_collect => pred(has_pred, 8, 1),
-                MMA_2x_collect => pred(has_pred, 12, 1),
+                IMMA_88 => pred(has_pred, 8, 1),
+                MMA_1x_collect => pred(has_pred, 11, 1),
+                MMA_2x_collect => pred(has_pred, 19, 1),
                 DMMA => pred(has_pred, 20, 1),
                 Cbu => 1,
                 Decoupled => 1,
@@ -675,8 +680,9 @@ impl RegLatencySM80 {
                 | FP16_F32 => 1,
                 HFMA2_MMA | RedirectedFP64 => pred(has_pred, 3, 3),
                 Clmad => pred(has_pred, 5, 3),
-                IMMA_88 | MMA_1x_collect => pred(has_pred, 8, 1),
-                MMA_2x_collect => pred(has_pred, 12, 1),
+                IMMA_88 => pred(has_pred, 8, 1),
+                MMA_1x_collect => pred(has_pred, 11, 1),
+                MMA_2x_collect => pred(has_pred, 19, 1),
                 DMMA => pred(has_pred, 20, 1),
                 Cbu => 1,
                 Decoupled => 1,
@@ -690,8 +696,9 @@ impl RegLatencySM80 {
                 | IMADWideWriteDH | FP16 | FP16_Alu | FP16_F32 => 1,
                 HFMA2_MMA | RedirectedFP64 => pred(has_pred, 3, 2),
                 Clmad => pred(has_pred, 5, 2),
-                IMMA_88 | MMA_1x_collect => 8,
-                MMA_2x_collect => 12,
+                IMMA_88 => 8,
+                MMA_1x_collect => 11,
+                MMA_2x_collect => 19,
                 DMMA => 20,
                 Cbu => 1,
                 Decoupled => 1,
@@ -706,8 +713,9 @@ impl RegLatencySM80 {
                 HFMA2_MMA => 2,
                 RedirectedFP64 => 3,
                 Clmad => pred(has_pred, 5, 1),
-                IMMA_88 | MMA_1x_collect => 8,
-                MMA_2x_collect => 12,
+                IMMA_88 => 8,
+                MMA_1x_collect => 11,
+                MMA_2x_collect => 19,
                 DMMA => 20,
                 Cbu => 1,
                 Decoupled => 1,
@@ -722,8 +730,9 @@ impl RegLatencySM80 {
                 HFMA2_MMA => 2,
                 RedirectedFP64 => 2,
                 Clmad => pred(has_pred, 4, 2),
-                IMMA_88 | MMA_1x_collect => 7,
-                MMA_2x_collect => 11,
+                IMMA_88 => 7,
+                MMA_1x_collect => 10,
+                MMA_2x_collect => 18,
                 DMMA => 19,
                 Cbu => 1,
                 Decoupled => 1,
@@ -736,8 +745,9 @@ impl RegLatencySM80 {
                 CoupledAlu | CoupledDisp64 | CoupledFMA | IMADWideWriteDL
                 | IMADWideWriteDH | FP16 | FP16_Alu | FP16_F32 | HFMA2_MMA
                 | RedirectedFP64 | Clmad => 2,
-                IMMA_88 | MMA_1x_collect => 7,
-                MMA_2x_collect => 11,
+                IMMA_88 => 7,
+                MMA_1x_collect => 10,
+                MMA_2x_collect => 18,
                 DMMA => 19,
                 Cbu => 1,
                 Decoupled => 1,
@@ -750,8 +760,9 @@ impl RegLatencySM80 {
                 CoupledAlu | CoupledDisp64 | CoupledFMA | IMADWideWriteDL
                 | IMADWideWriteDH | FP16 | FP16_Alu | FP16_F32 | HFMA2_MMA
                 | RedirectedFP64 | Clmad => 2,
-                IMMA_88 | MMA_1x_collect => 4,
-                MMA_2x_collect => 8,
+                IMMA_88 => 4,
+                MMA_1x_collect => 8,
+                MMA_2x_collect => 16,
                 DMMA => 17,
                 Cbu => 1,
                 Decoupled => 1,
@@ -764,8 +775,9 @@ impl RegLatencySM80 {
                 CoupledAlu | CoupledDisp64 | CoupledFMA | IMADWideWriteDL
                 | IMADWideWriteDH | FP16 | FP16_Alu | FP16_F32 | HFMA2_MMA
                 | RedirectedFP64 | Clmad => 2,
-                IMMA_88 | MMA_1x_collect => 4,
-                MMA_2x_collect => 8,
+                IMMA_88 => 4,
+                MMA_1x_collect => 8,
+                MMA_2x_collect => 16,
                 DMMA => 16,
                 Cbu => 1,
                 Decoupled => 1,
@@ -781,8 +793,9 @@ impl RegLatencySM80 {
                 }
                 HFMA2_MMA | RedirectedFP64 => pred(has_pred, 1, 9),
                 Clmad => pred(has_pred, 1, 11),
-                IMMA_88 | MMA_1x_collect => pred(has_pred, 7, 6),
-                MMA_2x_collect => pred(has_pred, 11, 6),
+                IMMA_88 => pred(has_pred, 7, 6),
+                MMA_1x_collect => pred(has_pred, 10, 5),
+                MMA_2x_collect => pred(has_pred, 18, 5),
                 DMMA => pred(has_pred, 19, 6),
                 Cbu => 1,
                 Decoupled => 1,
@@ -801,15 +814,25 @@ impl RegLatencySM80 {
         use RegLatencySM80::*;
         match writer {
             CoupledAlu | CoupledDisp64 | CoupledFMA | IMADWideWriteDL
-            | IMADWideWriteDH | FP16 | FP16_Alu | FP16_F32 | HFMA2_MMA
-            | RedirectedFP64 => match reader {
-                MMA_2x_collect => 7,
-                _ => 1,
-            },
-            Clmad | IMMA_88 | MMA_1x_collect | MMA_2x_collect | DMMA | Cbu
+            | IMADWideWriteDH | FP16 | FP16_Alu | FP16_F32 | HFMA2_MMA => {
+                match reader {
+                    MMA_2x_collect => 7,
+                    _ => 1,
+                }
+            }
+            RedirectedFP64 => 1,
+            Clmad | IMMA_88 | MMA_1x_collect | MMA_2x_collect | DMMA
             | Decoupled | DecoupledAgu => match reader {
                 CoupledAlu | CoupledDisp64 | CoupledFMA | IMADWideReadAB
-                | IMADWideReadCL | IMADWideReadCH => 2,
+                | IMADWideReadCL | IMADWideReadCH | FP16 | FP16_Alu
+                | FP16_F32 | HFMA2_MMA => 2,
+                _ => 1,
+            },
+            Cbu => match reader {
+                CoupledAlu | CoupledDisp64 | CoupledFMA | IMADWideReadAB
+                | IMADWideReadCL | IMADWideReadCH | FP16 | FP16_Alu
+                | FP16_F32 | HFMA2_MMA => 2,
+                MMA_2x_collect => 7,
                 _ => 1,
             },
             _ => {
