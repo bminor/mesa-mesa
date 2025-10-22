@@ -2183,9 +2183,9 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
           * operands */
          // TODO: confirm that this holds under any circumstances
       } else if (dst.regClass() == v2) {
-         Instruction* add =
-            bld.vop3(aco_opcode::v_add_f64_e64, Definition(dst), src, Operand::zero());
-         add->valu().clamp = true;
+         Instruction* mul = bld.vop3(aco_opcode::v_mul_f64_e64, Definition(dst), src,
+                                     Operand::c64(0x3FF0000000000000));
+         mul->valu().clamp = true;
       } else if (dst.regClass() == s1 && instr->def.bit_size == 16) {
          Temp low = bld.sop2(aco_opcode::s_max_f16, bld.def(s1), src, Operand::c16(0));
          bld.sop2(aco_opcode::s_min_f16, Definition(dst), low, Operand::c16(0x3C00));
