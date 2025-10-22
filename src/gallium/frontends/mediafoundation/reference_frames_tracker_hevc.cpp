@@ -65,6 +65,10 @@ reference_frames_tracker_hevc::reference_frames_tracker_hevc( struct pipe_video_
    m_gop_state.log2_max_pic_order_cnt_lsb_minus4 = 4;   // legal range is 0 to 12, we will fix to 4 which corresponds to [0..255]
    ResetGopStateToIDR();
    m_frame_state_descriptor.gop_info = &m_gop_state;
+
+   m_frame_state_descriptor.l0_reference_list.resize(1);
+   m_frame_state_descriptor.dpb_snapshot.reserve(m_MaxDPBCapacity + 1);
+   m_frame_state_descriptor.dirty_rect_frame_num.reserve(m_MaxDPBCapacity + 1);
 }
 
 // release reference frame buffers
@@ -73,13 +77,13 @@ reference_frames_tracker_hevc::release_reconpic( reference_frames_tracker_dpb_as
 {
    if( pAsyncDPBToken )
    {
-      for( unsigned i = 0; i < pAsyncDPBToken->dpb_buffers_to_release.size(); i++ )
-         m_DPBManager.release_dpb_buffer( pAsyncDPBToken->dpb_buffers_to_release[i] );
+      for( const auto& buffer : pAsyncDPBToken->dpb_buffers_to_release )
+         m_DPBManager.release_dpb_buffer( buffer );
 
       if( m_upTwoPassDPBManager )
       {
-         for( unsigned i = 0; i < pAsyncDPBToken->dpb_downscaled_buffers_to_release.size(); i++ )
-            m_upTwoPassDPBManager->release_dpb_buffer( pAsyncDPBToken->dpb_downscaled_buffers_to_release[i] );
+         for( const auto& buffer : pAsyncDPBToken->dpb_downscaled_buffers_to_release )
+            m_upTwoPassDPBManager->release_dpb_buffer( buffer );
       }
 
       delete pAsyncDPBToken;
@@ -117,8 +121,6 @@ reference_frames_tracker_hevc::begin_frame( reference_frames_tracker_dpb_async_t
    }
 
    GOPStateBeginFrame( forceKey );
-
-   m_frame_state_descriptor.l0_reference_list.clear();
 
    if( m_frame_state_descriptor.gop_info->frame_type == PIPE_H2645_ENC_PICTURE_TYPE_IDR )
    {
@@ -184,19 +186,17 @@ reference_frames_tracker_hevc::begin_frame( reference_frames_tracker_dpb_async_t
    m_frame_state_descriptor.dpb_snapshot.clear();
    m_frame_state_descriptor.dirty_rect_frame_num.clear();
 
-   // Add prev frames DPB info
-   for( unsigned i = 0; i < m_PrevFramesInfos.size(); i++ )
+   for( const auto& frame : m_PrevFramesInfos )
    {
-      m_frame_state_descriptor.dpb_snapshot.push_back( {
+      m_frame_state_descriptor.dpb_snapshot.emplace_back(
          /*id*/ 0u,
          /*frame_idx ignored*/ 0u,
-         m_PrevFramesInfos[i].picture_order_count,
-         m_PrevFramesInfos[i].temporal_id,
-         m_PrevFramesInfos[i].is_ltr,
-         m_PrevFramesInfos[i].buffer,
-         m_PrevFramesInfos[i].downscaled_buffer,
-      } );
-      m_frame_state_descriptor.dirty_rect_frame_num.push_back( m_PrevFramesInfos[i].dirty_rect_frame_num );
+         frame.picture_order_count,
+         frame.temporal_id,
+         frame.is_ltr,
+         frame.buffer,
+         frame.downscaled_buffer );
+      m_frame_state_descriptor.dirty_rect_frame_num.push_back( frame.dirty_rect_frame_num );
    }
 
    if( m_frame_state_descriptor.gop_info->reference_type != frame_descriptor_reference_type_none )
@@ -275,36 +275,15 @@ reference_frames_tracker_hevc::begin_frame( reference_frames_tracker_dpb_async_t
 uint32_t
 reference_frames_tracker_hevc::PrepareFrameRefLists()
 {
-   std::vector<RefSortList> refIndices;
-
    assert( m_PrevFramesInfos.size() >= 1 );
-   for( size_t i = 0; i < m_PrevFramesInfos.size(); ++i )
-   {
-      RefSortList item = { static_cast<uint8_t>( i ),
-                           m_PrevFramesInfos[i].picture_order_count,
-                           m_PrevFramesInfos[i].is_ltr,
-                           m_PrevFramesInfos[i].ltr_index,
-                           m_PrevFramesInfos[i].temporal_id };
 
-      refIndices.push_back( item );
-   }
+   const auto max_poc_iter = std::max_element(m_PrevFramesInfos.cbegin(), m_PrevFramesInfos.cend(),
+      [](const auto& a, const auto& b) noexcept { return a.picture_order_count < b.picture_order_count; });
 
-   std::sort( refIndices.begin(), refIndices.end(), []( const RefSortList &a, const RefSortList &b ) {
-      return a.picture_order_count > b.picture_order_count;
-   } );   // sort descending
+   m_frame_state_descriptor.l0_reference_list[0] =
+      static_cast<uint8_t>(std::distance(m_PrevFramesInfos.cbegin(), max_poc_iter));
 
-   m_frame_state_descriptor.l0_reference_list.push_back( refIndices[0].pos );
-   assert( m_frame_state_descriptor.l0_reference_list.size() == 1 );
-
-   uint32_t ltrUsedBitmask = 0;
-   for( size_t i = 0; i < m_frame_state_descriptor.l0_reference_list.size(); ++i )
-   {
-      int idx = m_frame_state_descriptor.l0_reference_list[i];
-      if( m_PrevFramesInfos[idx].is_ltr )
-      {
-         ltrUsedBitmask |= ( 1 << m_PrevFramesInfos[idx].ltr_index );
-      }
-   }
+   const uint32_t ltrUsedBitmask = max_poc_iter->is_ltr ? (1u << max_poc_iter->ltr_index) : 0u;
 
    return ltrUsedBitmask;
 }
