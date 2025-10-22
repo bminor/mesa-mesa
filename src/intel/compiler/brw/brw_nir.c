@@ -2164,6 +2164,21 @@ flag_fused_eu_disable_instr(nir_builder *b, nir_instr *instr, void *data)
    }
 }
 
+static void
+brw_nir_lower_int64(nir_shader *nir, const struct intel_device_info *devinfo)
+{
+   UNUSED bool progress; /* Written by OPT */
+
+   /* Potentially perform this optimization pass twice because it can create
+    * additional opportunities for itself.
+    */
+   if (OPT(nir_opt_algebraic_before_lower_int64))
+      OPT(nir_opt_algebraic_before_lower_int64);
+
+   if (OPT(nir_lower_int64))
+      brw_nir_optimize(nir, devinfo);
+}
+
 /* Prepare the given shader for codegen
  *
  * This function is intended to be called right before going into the actual
@@ -2264,14 +2279,7 @@ brw_postprocess_nir_opts(nir_shader *nir, const struct brw_compiler *compiler,
     */
    OPT(intel_nir_lower_printf);
 
-   /* Potentially perform this optimization pass twice because it can create
-    * additional opportunities for itself.
-    */
-   if (OPT(nir_opt_algebraic_before_lower_int64))
-      OPT(nir_opt_algebraic_before_lower_int64);
-
-   if (OPT(nir_lower_int64))
-      brw_nir_optimize(nir, devinfo);
+   brw_nir_lower_int64(nir, devinfo);
 
    /* This pass specifically looks for sequences of fmul and fadd that
     * intel_nir_opt_peephole_ffma will try to eliminate. Call this
@@ -2331,11 +2339,7 @@ brw_postprocess_nir_opts(nir_shader *nir, const struct brw_compiler *compiler,
    } while (progress);
 
 
-   if (OPT(nir_lower_fp16_casts, nir_lower_fp16_split_fp64)) {
-      if (OPT(nir_lower_int64)) {
-         brw_nir_optimize(nir, devinfo);
-      }
-   }
+   OPT(nir_lower_fp16_casts, nir_lower_fp16_split_fp64);
 
    OPT(nir_lower_alu_to_scalar, NULL, NULL);
 
@@ -2365,26 +2369,14 @@ brw_postprocess_nir_opts(nir_shader *nir, const struct brw_compiler *compiler,
       .lower_subgroup_masks = true,
    };
 
-   if (OPT(nir_opt_uniform_atomics, false)) {
+   if (OPT(nir_opt_uniform_atomics, false))
       OPT(nir_lower_subgroups, &subgroups_options);
-
-      OPT(nir_opt_algebraic_before_lower_int64);
-
-      if (OPT(nir_lower_int64))
-         brw_nir_optimize(nir, devinfo);
-   }
 
    /* nir_opt_uniform_subgroup can create some operations (e.g.,
     * load_subgroup_lt_mask) that need to be lowered again.
     */
    if (OPT(nir_opt_uniform_subgroup, &subgroups_options)) {
-      /* Some of the optimizations can generate 64-bit integer multiplication
-       * that must be lowered.
-       */
-      OPT(nir_lower_int64);
-
-      /* Even if nir_lower_int64 did not make progress, re-run the main
-       * optimization loop. nir_opt_uniform_subgroup may have made some things
+      /* nir_opt_uniform_subgroup may have made some things
        * that previously appeared divergent be marked as convergent. This
        * allows the elimination of some loops over, say, a TXF instruction
        * with a non-uniform texture handle.
@@ -2393,6 +2385,13 @@ brw_postprocess_nir_opts(nir_shader *nir, const struct brw_compiler *compiler,
 
       OPT(nir_lower_subgroups, &subgroups_options);
    }
+
+   /* A few passes that run after the initial int64 lowering may produce
+    * new int64 operations.  E.g. uniform subgroup may generate a 64-bit mul
+    * and peephole_select may generate a 64-bit select.  So do another
+    * round at the tail end.
+    */
+   brw_nir_lower_int64(nir, devinfo);
 
    /* Deal with EU fusion */
    if (devinfo->ver == 12) {
