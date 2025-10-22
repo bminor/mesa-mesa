@@ -348,8 +348,8 @@ brw_compute_tess_vue_map(struct intel_vue_map *vue_map,
     * described here, but pretending they're separate allows us to uniquely
     * identify them by distinct slot locations.
     */
-   assign_vue_slot(vue_map, VARYING_SLOT_TESS_LEVEL_INNER, slot++);
    assign_vue_slot(vue_map, VARYING_SLOT_TESS_LEVEL_OUTER, slot++);
+   assign_vue_slot(vue_map, VARYING_SLOT_TESS_LEVEL_INNER, slot++);
 
    /* first assign per-patch varyings */
    const int first_patch_slot = slot;
