@@ -236,15 +236,6 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
       }                                                                                                                \
    } while (0)
 
-/* GFX12 generic packet building helpers for buffered registers. Don't use these directly. */
-#define __gfx12_push_reg(reg, value, base_offset)                                                                      \
-   do {                                                                                                                \
-      unsigned __i = __rcs->buffered_sh_regs.num++;                                                                    \
-      assert(__i < ARRAY_SIZE(__rcs->buffered_sh_regs.gfx12.regs));                                                    \
-      __rcs->buffered_sh_regs.gfx12.regs[__i].reg_offset = ((reg) - (base_offset)) >> 2;                               \
-      __rcs->buffered_sh_regs.gfx12.regs[__i].reg_value = value;                                                       \
-   } while (0)
-
 /* GFX12 packet building helpers for PAIRS packets. */
 #define gfx12_begin_context_regs() ac_gfx12_begin_context_regs()
 
@@ -258,19 +249,12 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
 #define gfx12_end_context_regs() ac_gfx12_end_context_regs()
 
 /* GFX12 packet building helpers for buffered registers. */
-#define gfx12_push_sh_reg(reg, value) __gfx12_push_reg(reg, value, SI_SH_REG_OFFSET)
+#define gfx12_push_sh_reg(reg, value) ac_gfx12_push_sh_reg(__rcs->buffered_sh_regs, reg, value)
 
 #define gfx12_push_32bit_pointer(sh_offset, va, info)                                                                  \
-   do {                                                                                                                \
-      assert((va) == 0 || ((va) >> 32) == (info)->address32_hi);                                                       \
-      gfx12_push_sh_reg(sh_offset, va);                                                                                \
-   } while (0)
+   ac_gfx12_push_32bit_pointer(__rcs->buffered_sh_regs, sh_offset, va, info)
 
-#define gfx12_push_64bit_pointer(sh_offset, va)                                                                        \
-   do {                                                                                                                \
-      gfx12_push_sh_reg(sh_offset, va);                                                                                \
-      gfx12_push_sh_reg(sh_offset + 4, va >> 32);                                                                      \
-   } while (0)
+#define gfx12_push_64bit_pointer(sh_offset, va) ac_gfx12_push_64bit_pointer(__rcs->buffered_sh_regs, sh_offset, va)
 
 ALWAYS_INLINE static void
 radv_gfx12_emit_buffered_regs(struct radv_device *device, struct radv_cmd_stream *cs)

@@ -420,14 +420,6 @@
    } \
 } while (0)
 
-/* GFX12 generic packet building helpers for buffered registers. Don't use these directly. */
-#define gfx12_push_reg(reg, value, base_offset, type) do { \
-   unsigned __i = sctx->buffered_##type##_regs.num++; \
-   assert(__i < ARRAY_SIZE(sctx->buffered_##type##_regs.gfx12.regs)); \
-   sctx->buffered_##type##_regs.gfx12.regs[__i].reg_offset = ((reg) - (base_offset)) >> 2; \
-   sctx->buffered_##type##_regs.gfx12.regs[__i].reg_value = value; \
-} while (0)
-
 #define gfx12_opt_push_reg(reg, reg_enum, value, type) do { \
    unsigned __value = value; \
    unsigned __reg_enum = reg_enum; \
@@ -457,10 +449,10 @@
 
 /* GFX12 packet building helpers for buffered registers. */
 #define gfx12_push_gfx_sh_reg(reg, value) \
-   gfx12_push_reg(reg, value, SI_SH_REG_OFFSET, gfx_sh)
+   ac_gfx12_push_sh_reg(sctx->buffered_gfx_sh_regs, reg, value)
 
 #define gfx12_push_compute_sh_reg(reg, value) \
-   gfx12_push_reg(reg, value, SI_SH_REG_OFFSET, compute_sh)
+   ac_gfx12_push_sh_reg(sctx->buffered_compute_sh_regs, reg, value)
 
 #define gfx12_opt_push_gfx_sh_reg(reg, reg_enum, value) \
    gfx12_opt_push_reg(reg, reg_enum, value, gfx_sh)

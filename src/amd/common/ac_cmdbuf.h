@@ -199,6 +199,30 @@ struct ac_buffered_sh_regs {
 
 #define ac_gfx12_end_context_regs() __ac_gfx12_end_regs(__cs_context_reg_header, PKT3_SET_CONTEXT_REG_PAIRS)
 
+/* GFX12 generic packet building helpers for buffered registers. */
+#define __ac_gfx12_push_reg(buf_regs, reg, value, base_offset)             \
+   do {                                                                    \
+      unsigned __i = buf_regs.num++;                                       \
+      assert(__i < ARRAY_SIZE(buf_regs.gfx12.regs));                       \
+      buf_regs.gfx12.regs[__i].reg_offset = ((reg) - (base_offset)) >> 2;  \
+      buf_regs.gfx12.regs[__i].reg_value = value;                          \
+   } while (0)
+
+#define ac_gfx12_push_sh_reg(buf_regs, reg, value) \
+   __ac_gfx12_push_reg(buf_regs, reg, value, SI_SH_REG_OFFSET)
+
+#define ac_gfx12_push_32bit_pointer(buf_regs, sh_offset, va, info)   \
+   do {                                                              \
+      assert((va) == 0 || ((va) >> 32) == (info)->address32_hi);     \
+      ac_gfx12_push_sh_reg(buf_regs, sh_offset, va);                 \
+   } while (0)
+
+#define ac_gfx12_push_64bit_pointer(buf_regs, sh_offset, va)         \
+   do {                                                              \
+      ac_gfx12_push_sh_reg(buf_regs, sh_offset, va);                 \
+      ac_gfx12_push_sh_reg(buf_regs, sh_offset + 4, va >> 32);       \
+   } while (0)
+
 struct ac_preamble_state {
    uint64_t border_color_va;
 
