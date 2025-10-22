@@ -5558,6 +5558,74 @@ opt_fma_mix_acc(opt_ctx& ctx, aco_ptr<Instruction>& instr)
 }
 
 void
+opt_neg_abs_fp64(opt_ctx& ctx, aco_ptr<Instruction>& instr)
+{
+   if (instr->valu().omod || instr->valu().clamp)
+      return;
+
+   /* Lower fp64 neg/abs to bitwise instructions if possible. */
+   for (unsigned i = 0; i < 2; i++) {
+      if (!instr->operands[i].isConstant() ||
+          fabs(uid(instr->operands[i].constantValue64())) != 1.0 || !instr->operands[!i].isTemp() ||
+          (!ctx.info[instr->operands[!i].tempId()].is_canonicalized(64) &&
+           ctx.fp_mode.denorm16_64 != fp_denorm_keep))
+         continue;
+      bool neg = uid(instr->operands[i].constantValue64()) == -1.0 && !instr->valu().abs[i];
+      neg ^= instr->valu().neg[0] != instr->valu().neg[1];
+      bool abs = instr->valu().abs[!i];
+
+      static_assert(sizeof(Pseudo_instruction) <= sizeof(VALU_instruction));
+      instr->format = Format::PSEUDO;
+
+      if (!neg && !abs) {
+         instr->opcode = aco_opcode::p_parallelcopy;
+         instr->operands[0] = instr->operands[!i];
+         instr->operands.pop_back();
+         return;
+      }
+
+      Builder bld(ctx.program, &ctx.instructions);
+
+      RegClass rc = RegClass::get(instr->operands[!i].regClass().type(), 4);
+
+      Instruction* split = bld.pseudo(aco_opcode::p_split_vector, bld.def(rc), bld.def(rc),
+                                      instr->operands[!i].getTemp());
+
+      Instruction* bit_instr;
+      uint32_t constant = neg ? 0x80000000 : 0x7fffffff;
+      if (rc == s1) {
+         aco_opcode opcode =
+            neg ? (abs ? aco_opcode::s_or_b32 : aco_opcode::s_xor_b32) : aco_opcode::s_and_b32;
+         bit_instr = bld.sop2(opcode, bld.def(s1), bld.def(s1, scc), Operand::c32(constant),
+                              split->definitions[1].getTemp());
+      } else {
+         assert(rc == v1);
+         aco_opcode opcode =
+            neg ? (abs ? aco_opcode::v_or_b32 : aco_opcode::v_xor_b32) : aco_opcode::v_and_b32;
+         bit_instr =
+            bld.vop2(opcode, bld.def(v1), Operand::c32(constant), split->definitions[1].getTemp());
+      }
+
+      instr->opcode = aco_opcode::p_create_vector;
+      instr->operands[0] = Operand(split->definitions[0].getTemp());
+      instr->operands[1] = Operand(bit_instr->definitions[0].getTemp());
+
+      ctx.uses.resize(ctx.program->peekAllocationId());
+      ctx.info.resize(ctx.program->peekAllocationId());
+      for (Definition def : split->definitions) {
+         ctx.uses[def.tempId()] = 1;
+         ctx.info[def.tempId()].parent_instr = split;
+      }
+      for (unsigned j = 0; j < bit_instr->definitions.size(); j++) {
+         Definition def = bit_instr->definitions[j];
+         ctx.uses[def.tempId()] = j == 0;
+         ctx.info[def.tempId()].parent_instr = bit_instr;
+      }
+      return;
+   }
+}
+
+void
 apply_literals(opt_ctx& ctx, aco_ptr<Instruction>& instr)
 {
    /* Cleanup Dead Instructions */
@@ -5590,6 +5658,9 @@ apply_literals(opt_ctx& ctx, aco_ptr<Instruction>& instr)
 
    if (instr->opcode == aco_opcode::v_fma_mixlo_f16 || instr->opcode == aco_opcode::v_fma_mix_f32)
       opt_fma_mix_acc(ctx, instr);
+
+   if (instr->opcode == aco_opcode::v_mul_f64 || instr->opcode == aco_opcode::v_mul_f64_e64)
+      opt_neg_abs_fp64(ctx, instr);
 
    ctx.instructions.emplace_back(std::move(instr));
 }
