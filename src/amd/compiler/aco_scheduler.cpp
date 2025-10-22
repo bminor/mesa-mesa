@@ -87,14 +87,10 @@ struct MoveState {
    bool improved_rar;
 
    std::vector<bool> depends_on;
-   /* Two are needed because, for downwards VMEM scheduling, one needs to
-    * exclude the instructions in the clause, since new instructions in the
-    * clause are not moved past any other instructions in the clause. */
    std::vector<bool> RAR_dependencies;
-   std::vector<bool> RAR_dependencies_clause;
 
    /* for moving instructions before the current instruction to after it */
-   DownwardsCursor downwards_init(int current_idx, bool improved_rar, bool may_form_clauses);
+   DownwardsCursor downwards_init(int current_idx, bool improved_rar);
    MoveResult downwards_move(DownwardsCursor&);
    MoveResult downwards_move_clause(DownwardsCursor&);
    void downwards_skip(DownwardsCursor&);
@@ -160,16 +156,13 @@ DownwardsCursor::verify_invariants(const Block* block)
 }
 
 DownwardsCursor
-MoveState::downwards_init(int current_idx, bool improved_rar_, bool may_form_clauses)
+MoveState::downwards_init(int current_idx, bool improved_rar_)
 {
    improved_rar = improved_rar_;
 
    std::fill(depends_on.begin(), depends_on.end(), false);
-   if (improved_rar) {
+   if (improved_rar)
       std::fill(RAR_dependencies.begin(), RAR_dependencies.end(), false);
-      if (may_form_clauses)
-         std::fill(RAR_dependencies_clause.begin(), RAR_dependencies_clause.end(), false);
-   }
 
    for (const Operand& op : current->operands) {
       if (op.isTemp()) {
@@ -270,14 +263,20 @@ MoveState::downwards_move_clause(DownwardsCursor& cursor)
    int clause_begin_idx = cursor.source_idx; /* exclusive */
    int clause_end_idx = cursor.source_idx;   /* inclusive */
    int insert_idx = cursor.insert_idx_clause - 1;
+   Instruction* instr = block->instructions[cursor.insert_idx_clause].get();
+
+   /* Remove instruction operands from RAR_dependencies as the clause won't be moved further. */
+   for (const Operand& op : current->operands) {
+      if (op.isTemp() && op.isFirstKill())
+         RAR_dependencies[op.tempId()] = false;
+   }
 
    /* Check if one of candidates' operands is killed by depending instruction. */
-   Instruction* instr = block->instructions[cursor.insert_idx_clause].get();
    RegisterDemand max_clause_demand;
    while (should_form_clause(block->instructions[clause_begin_idx].get(), instr)) {
       Instruction* candidate = block->instructions[clause_begin_idx--].get();
 
-      if (check_dependencies(candidate, depends_on, RAR_dependencies_clause))
+      if (check_dependencies(candidate, depends_on, RAR_dependencies))
          return move_fail_ssa;
 
       max_clause_demand.update(candidate->register_demand);
@@ -330,10 +329,8 @@ MoveState::downwards_skip(DownwardsCursor& cursor)
    for (const Operand& op : instr->operands) {
       if (op.isTemp()) {
          depends_on[op.tempId()] = true;
-         if (improved_rar && op.isFirstKill()) {
+         if (improved_rar && op.isFirstKill())
             RAR_dependencies[op.tempId()] = true;
-            RAR_dependencies_clause[op.tempId()] = true;
-         }
       }
    }
    cursor.total_demand.update(instr->register_demand);
@@ -757,7 +754,7 @@ schedule_SMEM(sched_ctx& ctx, Block* block, Instruction* current, int idx)
    init_hazard_query(ctx, &hq);
    add_to_hazard_query(&hq, current);
 
-   DownwardsCursor cursor = ctx.mv.downwards_init(idx, false, false);
+   DownwardsCursor cursor = ctx.mv.downwards_init(idx, false);
 
    for (int candidate_idx = idx - 1; k < max_moves && candidate_idx > (int)idx - window_size;
         candidate_idx--) {
@@ -899,7 +896,7 @@ schedule_VMEM(sched_ctx& ctx, Block* block, Instruction* current, int idx)
    init_hazard_query(ctx, &clause_hq);
    add_to_hazard_query(&indep_hq, current);
 
-   DownwardsCursor cursor = ctx.mv.downwards_init(idx, true, true);
+   DownwardsCursor cursor = ctx.mv.downwards_init(idx, true);
 
    for (int candidate_idx = idx - 1; k < max_moves && candidate_idx > (int)idx - window_size;
         candidate_idx--) {
@@ -1047,7 +1044,7 @@ schedule_LDS(sched_ctx& ctx, Block* block, Instruction* current, int idx)
    init_hazard_query(ctx, &hq);
    add_to_hazard_query(&hq, current);
 
-   DownwardsCursor cursor = ctx.mv.downwards_init(idx, true, false);
+   DownwardsCursor cursor = ctx.mv.downwards_init(idx, true);
 
    for (int i = 0; k < max_moves && i < window_size; i++) {
       aco_ptr<Instruction>& candidate = block->instructions[cursor.source_idx];
@@ -1120,7 +1117,7 @@ schedule_position_export(sched_ctx& ctx, Block* block, Instruction* current, int
    int max_moves = POS_EXP_MAX_MOVES / ctx.schedule_pos_export_div;
    int16_t k = 0;
 
-   DownwardsCursor cursor = ctx.mv.downwards_init(idx, true, false);
+   DownwardsCursor cursor = ctx.mv.downwards_init(idx, true);
 
    hazard_query hq;
    init_hazard_query(ctx, &hq);
@@ -1170,7 +1167,7 @@ schedule_VMEM_store(sched_ctx& ctx, Block* block, Instruction* current, int idx)
    hazard_query hq;
    init_hazard_query(ctx, &hq);
 
-   DownwardsCursor cursor = ctx.mv.downwards_init(idx, true, true);
+   DownwardsCursor cursor = ctx.mv.downwards_init(idx, true);
 
    for (int16_t k = 0; k < VMEM_STORE_CLAUSE_MAX_GRAB_DIST;) {
       aco_ptr<Instruction>& candidate = block->instructions[cursor.source_idx];
@@ -1261,7 +1258,6 @@ schedule_program(Program* program)
    ctx.program = program;
    ctx.mv.depends_on.resize(program->peekAllocationId());
    ctx.mv.RAR_dependencies.resize(program->peekAllocationId());
-   ctx.mv.RAR_dependencies_clause.resize(program->peekAllocationId());
 
    const int wave_factor = program->gfx_level >= GFX10 ? 2 : 1;
    const int wave_minimum = std::max<int>(program->min_waves, 4 * wave_factor);
