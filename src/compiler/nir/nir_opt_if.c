@@ -1000,7 +1000,9 @@ evaluate_condition_use(nir_builder *b, nir_if *nif, nir_src *use_src,
       progress = true;
    }
 
-   if (!nir_src_is_if(use_src) && can_propagate_through_alu(use_src), false) {
+   const bool ignore_bcsel = branch != either_branch;
+   if (!nir_src_is_if(use_src) && can_propagate_through_alu(use_src,
+                                                            ignore_bcsel)) {
       nir_alu_instr *alu = nir_instr_as_alu(nir_src_parent_instr(use_src));
 
       nir_foreach_use_including_if_safe(alu_use, &alu->def) {
@@ -1023,6 +1025,7 @@ opt_if_evaluate_condition_use(nir_builder *b, nir_if *nif)
          progress |= evaluate_condition_use(b, nif, use_src, false, either_branch);
    }
 
+   bool invert = false;
    nir_alu_instr *alu = nir_src_as_alu_instr(nif->condition);
    if (alu != NULL && alu->op == nir_op_inot &&
        nir_src_num_components(alu->src[0].src) == 1) {
@@ -1041,6 +1044,47 @@ opt_if_evaluate_condition_use(nir_builder *b, nir_if *nif)
       nir_foreach_use_including_if_safe(use_src, alu->src[0].src.ssa) {
          if (nir_src_is_if(use_src) || nir_src_parent_instr(use_src) != &alu->instr)
             progress |= evaluate_condition_use(b, nif, use_src, true, either_branch);
+      }
+
+      invert = true;
+      alu = nir_src_as_alu_instr(alu->src[0].src);
+   }
+
+   if (alu != NULL) {
+      /* For cases like 'if (X && Y)', both X and Y must be true in the then
+       * branch. Their values are unknown in the else branch. Similarly, 'if
+       * (X || Y)' must have both X and Y false in the else branch.
+       */
+      if (alu->op == nir_op_iand || alu->op == nir_op_ior) {
+         enum branch_to_eval branch =
+            invert != (alu->op == nir_op_ior) ? else_branch : then_branch;
+
+         for (unsigned i = 0; i < 2; i++) {
+            nir_def *def = alu->src[i].src.ssa;
+
+            if (def->num_components != 1)
+               continue;
+
+            nir_foreach_use_including_if_safe(use_src, def) {
+               progress |= evaluate_condition_use(b, nif, use_src,
+                                                  invert, branch);
+            }
+
+            /* Just like above, if the op is inot, peel the inot off and try
+             * some more.
+             */
+            nir_alu_instr *alu_src = nir_src_as_alu_instr(alu->src[i].src);
+            if (alu_src != NULL && alu_src->op == nir_op_inot &&
+                nir_src_num_components(alu_src->src[0].src) == 1) {
+               nir_foreach_use_including_if_safe(use_src, alu_src->src[0].src.ssa) {
+                  if (nir_src_is_if(use_src) ||
+                      nir_src_parent_instr(use_src) != &alu_src->instr) {
+                     progress |= evaluate_condition_use(b, nif, use_src,
+                                                        !invert, branch);
+                  }
+               }
+            }
+         }
       }
    }
 
