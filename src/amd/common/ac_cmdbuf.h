@@ -42,6 +42,20 @@ struct ac_gfx12_reg {
    uint32_t reg_value;
 };
 
+/* GFX11+: Buffered SH registers for SET_SH_REG_PAIRS_*. */
+struct ac_buffered_sh_regs {
+   uint32_t num;
+   union {
+      struct {
+         struct ac_gfx11_reg_pair regs[32];
+      } gfx11;
+
+      struct {
+         struct ac_gfx12_reg regs[256];
+      } gfx12;
+   };
+};
+
 #define ac_cmdbuf_begin(cs) struct ac_cmdbuf *__cs = (cs);                        \
                             uint32_t __cs_num = __cs->cdw;                        \
                             UNUSED uint32_t __cs_num_initial = __cs_num;          \

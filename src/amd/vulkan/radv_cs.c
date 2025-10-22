@@ -459,7 +459,7 @@ void
 radv_init_cmd_stream(struct radv_cmd_stream *cs, const enum amd_ip_type ip_type)
 {
    cs->context_roll_without_scissor_emitted = false;
-   cs->num_buffered_sh_regs = 0;
+   cs->buffered_sh_regs.num = 0;
    cs->hw_ip = ip_type;
 
    radv_init_tracked_regs(cs);

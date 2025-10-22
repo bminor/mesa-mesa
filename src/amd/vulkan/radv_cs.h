@@ -239,10 +239,10 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
 /* GFX12 generic packet building helpers for buffered registers. Don't use these directly. */
 #define __gfx12_push_reg(reg, value, base_offset)                                                                      \
    do {                                                                                                                \
-      unsigned __i = __rcs->num_buffered_sh_regs++;                                                                    \
-      assert(__i < ARRAY_SIZE(__rcs->gfx12.buffered_sh_regs));                                                         \
-      __rcs->gfx12.buffered_sh_regs[__i].reg_offset = ((reg) - (base_offset)) >> 2;                                    \
-      __rcs->gfx12.buffered_sh_regs[__i].reg_value = value;                                                            \
+      unsigned __i = __rcs->buffered_sh_regs.num++;                                                                    \
+      assert(__i < ARRAY_SIZE(__rcs->buffered_sh_regs.gfx12.regs));                                                    \
+      __rcs->buffered_sh_regs.gfx12.regs[__i].reg_offset = ((reg) - (base_offset)) >> 2;                               \
+      __rcs->buffered_sh_regs.gfx12.regs[__i].reg_value = value;                                                       \
    } while (0)
 
 /* GFX12 packet building helpers for PAIRS packets. */
@@ -275,7 +275,7 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
 ALWAYS_INLINE static void
 radv_gfx12_emit_buffered_regs(struct radv_device *device, struct radv_cmd_stream *cs)
 {
-   const uint32_t reg_count = cs->num_buffered_sh_regs;
+   const uint32_t reg_count = cs->buffered_sh_regs.num;
 
    if (!reg_count)
       return;
@@ -284,10 +284,10 @@ radv_gfx12_emit_buffered_regs(struct radv_device *device, struct radv_cmd_stream
 
    radeon_begin(cs);
    radeon_emit(PKT3(PKT3_SET_SH_REG_PAIRS, reg_count * 2 - 1, 0) | PKT3_RESET_FILTER_CAM_S(1));
-   radeon_emit_array(cs->gfx12.buffered_sh_regs, reg_count * 2);
+   radeon_emit_array(cs->buffered_sh_regs.gfx12.regs, reg_count * 2);
    radeon_end();
 
-   cs->num_buffered_sh_regs = 0;
+   cs->buffered_sh_regs.num = 0;
 }
 
 ALWAYS_INLINE static void

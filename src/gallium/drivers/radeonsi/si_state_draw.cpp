@@ -1265,12 +1265,12 @@ void si_emit_buffered_compute_sh_regs(struct si_context *sctx)
 {
    if (sctx->gfx_level >= GFX12) {
       radeon_begin(&sctx->gfx_cs);
-      gfx12_emit_buffered_sh_regs_inline(&sctx->num_buffered_compute_sh_regs,
-                                         sctx->gfx12.buffered_compute_sh_regs);
+      gfx12_emit_buffered_sh_regs_inline(&sctx->buffered_compute_sh_regs.num,
+                                         sctx->buffered_compute_sh_regs.gfx12.regs);
       radeon_end();
    } else {
-      gfx11_emit_buffered_sh_regs_inline(sctx, &sctx->num_buffered_compute_sh_regs,
-                                         sctx->gfx11.buffered_compute_sh_regs);
+      gfx11_emit_buffered_sh_regs_inline(sctx, &sctx->buffered_compute_sh_regs.num,
+                                         sctx->buffered_compute_sh_regs.gfx11.regs);
    }
 }
 
@@ -1279,12 +1279,12 @@ void si_emit_buffered_gfx_sh_regs_for_mesh(struct si_context *sctx)
 {
    if (sctx->gfx_level >= GFX12) {
       radeon_begin(&sctx->gfx_cs);
-      gfx12_emit_buffered_sh_regs_inline(&sctx->num_buffered_gfx_sh_regs,
-                                         sctx->gfx12.buffered_gfx_sh_regs);
+      gfx12_emit_buffered_sh_regs_inline(&sctx->buffered_gfx_sh_regs.num,
+                                         sctx->buffered_gfx_sh_regs.gfx12.regs);
       radeon_end();
    } else {
-      gfx11_emit_buffered_sh_regs_inline(sctx, &sctx->num_buffered_gfx_sh_regs,
-                                         sctx->gfx11.buffered_gfx_sh_regs);
+      gfx11_emit_buffered_sh_regs_inline(sctx, &sctx->buffered_gfx_sh_regs.num,
+                                         sctx->buffered_gfx_sh_regs.gfx11.regs);
    }
 }
 
@@ -1437,12 +1437,12 @@ static void si_emit_draw_packets(struct si_context *sctx, const struct pipe_draw
       assert(indirect_va % 8 == 0);
 
       if (GFX_VERSION >= GFX12) {
-         gfx12_emit_buffered_sh_regs_inline(&sctx->num_buffered_gfx_sh_regs,
-                                            sctx->gfx12.buffered_gfx_sh_regs);
+         gfx12_emit_buffered_sh_regs_inline(&sctx->buffered_gfx_sh_regs.num,
+                                            sctx->buffered_gfx_sh_regs.gfx12.regs);
       } else if (HAS_SH_PAIRS_PACKED) {
          radeon_end();
-         gfx11_emit_buffered_sh_regs_inline(sctx, &sctx->num_buffered_gfx_sh_regs,
-                                            sctx->gfx11.buffered_gfx_sh_regs);
+         gfx11_emit_buffered_sh_regs_inline(sctx, &sctx->buffered_gfx_sh_regs.num,
+                                            sctx->buffered_gfx_sh_regs.gfx11.regs);
          radeon_begin_again(cs);
       }
 
@@ -1565,12 +1565,12 @@ static void si_emit_draw_packets(struct si_context *sctx, const struct pipe_draw
       }
 
       if (GFX_VERSION >= GFX12) {
-         gfx12_emit_buffered_sh_regs_inline(&sctx->num_buffered_gfx_sh_regs,
-                                            sctx->gfx12.buffered_gfx_sh_regs);
+         gfx12_emit_buffered_sh_regs_inline(&sctx->buffered_gfx_sh_regs.num,
+                                            sctx->buffered_gfx_sh_regs.gfx12.regs);
       } else if (HAS_SH_PAIRS_PACKED) {
          radeon_end();
-         gfx11_emit_buffered_sh_regs_inline(sctx, &sctx->num_buffered_gfx_sh_regs,
-                                            sctx->gfx11.buffered_gfx_sh_regs);
+         gfx11_emit_buffered_sh_regs_inline(sctx, &sctx->buffered_gfx_sh_regs.num,
+                                            sctx->buffered_gfx_sh_regs.gfx11.regs);
          radeon_begin_again(cs);
       }
 

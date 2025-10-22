@@ -1030,20 +1030,9 @@ struct si_context {
    union si_state queued;
    union si_state emitted;
 
-   /* Gfx11+: Buffered SH registers for SET_SH_REG_PAIRS_*. */
-   unsigned num_buffered_gfx_sh_regs;
-   unsigned num_buffered_compute_sh_regs;
-   union {
-      struct {
-         struct ac_gfx11_reg_pair buffered_gfx_sh_regs[32];
-         struct ac_gfx11_reg_pair buffered_compute_sh_regs[32];
-      } gfx11;
-
-      struct {
-         struct ac_gfx12_reg buffered_gfx_sh_regs[64];
-         struct ac_gfx12_reg buffered_compute_sh_regs[64];
-      } gfx12;
-   };
+   /* Buffered registers (GFX11+). */
+   struct ac_buffered_sh_regs buffered_gfx_sh_regs;
+   struct ac_buffered_sh_regs buffered_compute_sh_regs;
 
    /* Atom declarations. */
    struct si_framebuffer framebuffer;
