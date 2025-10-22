@@ -1145,8 +1145,13 @@ nvk_get_device_properties(const struct nvk_instance *instance,
       .robustStorageBufferAccessSizeAlignment = NVK_SSBO_BOUNDS_CHECK_ALIGNMENT,
       .robustUniformBufferAccessSizeAlignment = nvk_min_cbuf_alignment(info),
 
-      /* VK_EXT_sample_locations */
-      .sampleLocationSampleCounts = sample_counts,
+      /* VK_EXT_sample_locations
+       *
+       * There's a weird HW issue with per-sample interpolation for 1x.  It
+       * always interpolates at (0.5, 0.5) so we just disable custom sample
+       * locations for 1x.
+       */
+      .sampleLocationSampleCounts = sample_counts & ~VK_SAMPLE_COUNT_1_BIT,
       .maxSampleLocationGridSize = (VkExtent2D){ 1, 1 },
       .sampleLocationCoordinateRange[0] = 0.0f,
       .sampleLocationCoordinateRange[1] = 0.9375f,
