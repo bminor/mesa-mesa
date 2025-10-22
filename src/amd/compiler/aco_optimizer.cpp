@@ -2817,72 +2817,77 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       break;
    case aco_opcode::v_mul_f16:
    case aco_opcode::v_mul_f32:
-   case aco_opcode::v_mul_legacy_f32: { /* omod */
+   case aco_opcode::v_mul_legacy_f32:
+   case aco_opcode::v_mul_f64:
+   case aco_opcode::v_mul_f64_e64: { /* omod */
       /* TODO: try to move the negate/abs modifier to the consumer instead */
       bool uses_mods = instr->usesModifiers();
       bool fp16 = instr->opcode == aco_opcode::v_mul_f16;
-      unsigned bit_size = fp16 ? 16 : 32;
-      unsigned denorm_mode = fp16 ? ctx.fp_mode.denorm16_64 : ctx.fp_mode.denorm32;
+      bool fp64 =
+         instr->opcode == aco_opcode::v_mul_f64 || instr->opcode == aco_opcode::v_mul_f64_e64;
+      unsigned bit_size = fp16 ? 16 : (fp64 ? 64 : 32);
+      unsigned denorm_mode = fp16 || fp64 ? ctx.fp_mode.denorm16_64 : ctx.fp_mode.denorm32;
 
       for (unsigned i = 0; i < 2; i++) {
-         if (instr->operands[!i].isConstant() && instr->operands[i].isTemp()) {
-            if (!instr->isDPP() && !instr->isSDWA() && !instr->valu().opsel &&
-                (instr->operands[!i].constantEquals(fp16 ? 0x3c00 : 0x3f800000) ||   /* 1.0 */
-                 instr->operands[!i].constantEquals(fp16 ? 0xbc00 : 0xbf800000u))) { /* -1.0 */
-               bool neg1 = instr->operands[!i].constantEquals(fp16 ? 0xbc00 : 0xbf800000u);
+         if (!instr->operands[!i].isConstant() || !instr->operands[i].isTemp())
+            continue;
 
-               VALU_instruction* valu = &instr->valu();
-               if (valu->abs[!i] || valu->neg[!i] || valu->omod)
-                  continue;
+         double constant = uif(instr->operands[!i].constantValue());
+         if (fp16)
+            constant = _mesa_half_to_float(instr->operands[!i].constantValue());
+         else if (fp64)
+            constant = uid(instr->operands[!i].constantValue64());
 
-               bool abs = valu->abs[i];
-               bool neg = neg1 ^ valu->neg[i];
-               Temp other = instr->operands[i].getTemp();
+         if (!instr->isDPP() && !instr->isSDWA() && !instr->valu().opsel && fabs(constant) == 1.0) {
+            bool neg1 = constant == -1.0;
 
-               if (valu->clamp) {
-                  if (!abs && !neg && other.type() == RegType::vgpr)
-                     ctx.info[other.id()].set_clamp(instr.get());
-                  continue;
-               }
-
-               if (abs && neg && other.type() == RegType::vgpr)
-                  ctx.info[instr->definitions[0].tempId()].set_neg_abs(other, bit_size);
-               else if (abs && !neg && other.type() == RegType::vgpr)
-                  ctx.info[instr->definitions[0].tempId()].set_abs(other, bit_size);
-               else if (!abs && neg && other.type() == RegType::vgpr)
-                  ctx.info[instr->definitions[0].tempId()].set_neg(other, bit_size);
-               else if (!abs && !neg) {
-                  if (denorm_mode == fp_denorm_keep ||
-                      ctx.info[other.id()].is_canonicalized(bit_size))
-                     ctx.info[instr->definitions[0].tempId()].set_temp(other);
-                  else
-                     ctx.info[instr->definitions[0].tempId()].set_fcanonicalize(other, bit_size);
-               }
-            } else if (uses_mods || (instr->definitions[0].isSZPreserve() &&
-                                     instr->opcode != aco_opcode::v_mul_legacy_f32)) {
-               continue; /* omod uses a legacy multiplication. */
-            } else if (instr->operands[!i].constantValue() == 0u &&
-                       ((!instr->definitions[0].isNaNPreserve() &&
-                         !instr->definitions[0].isInfPreserve()) ||
-                        instr->opcode == aco_opcode::v_mul_legacy_f32)) { /* 0.0 */
-               ctx.info[instr->definitions[0].tempId()].set_constant(0u);
-            } else if (denorm_mode != fp_denorm_flush) {
-               /* omod has no effect if denormals are enabled. */
+            VALU_instruction* valu = &instr->valu();
+            if (valu->abs[!i] || valu->neg[!i] || valu->omod)
                continue;
-            } else if (instr->operands[!i].constantValue() ==
-                       (fp16 ? 0x4000 : 0x40000000)) { /* 2.0 */
-               ctx.info[instr->operands[i].tempId()].set_omod2(instr.get());
-            } else if (instr->operands[!i].constantValue() ==
-                       (fp16 ? 0x4400 : 0x40800000)) { /* 4.0 */
-               ctx.info[instr->operands[i].tempId()].set_omod4(instr.get());
-            } else if (instr->operands[!i].constantValue() ==
-                       (fp16 ? 0x3800 : 0x3f000000)) { /* 0.5 */
-               ctx.info[instr->operands[i].tempId()].set_omod5(instr.get());
-            } else {
+
+            bool abs = valu->abs[i];
+            bool neg = neg1 ^ valu->neg[i];
+            Temp other = instr->operands[i].getTemp();
+
+            if (valu->clamp) {
+               if (!abs && !neg && other.type() == RegType::vgpr)
+                  ctx.info[other.id()].set_clamp(instr.get());
                continue;
             }
-            break;
+
+            if (abs && neg && other.type() == RegType::vgpr)
+               ctx.info[instr->definitions[0].tempId()].set_neg_abs(other, bit_size);
+            else if (abs && !neg && other.type() == RegType::vgpr)
+               ctx.info[instr->definitions[0].tempId()].set_abs(other, bit_size);
+            else if (!abs && neg && other.type() == RegType::vgpr)
+               ctx.info[instr->definitions[0].tempId()].set_neg(other, bit_size);
+            else if (!abs && !neg) {
+               if (denorm_mode == fp_denorm_keep || ctx.info[other.id()].is_canonicalized(bit_size))
+                  ctx.info[instr->definitions[0].tempId()].set_temp(other);
+               else
+                  ctx.info[instr->definitions[0].tempId()].set_fcanonicalize(other, bit_size);
+            }
+         } else if (uses_mods || (instr->definitions[0].isSZPreserve() &&
+                                  instr->opcode != aco_opcode::v_mul_legacy_f32)) {
+            continue; /* omod uses a legacy multiplication. */
+         } else if (instr->operands[!i].constantValue64() == 0u &&
+                    ((!instr->definitions[0].isNaNPreserve() &&
+                      !instr->definitions[0].isInfPreserve()) ||
+                     instr->opcode == aco_opcode::v_mul_legacy_f32)) {
+            ctx.info[instr->definitions[0].tempId()].set_constant(0u);
+         } else if (denorm_mode != fp_denorm_flush) {
+            /* omod has no effect if denormals are enabled. */
+            continue;
+         } else if (constant == 2.0) {
+            ctx.info[instr->operands[i].tempId()].set_omod2(instr.get());
+         } else if (constant == 4.0) {
+            ctx.info[instr->operands[i].tempId()].set_omod4(instr.get());
+         } else if (constant == 0.5) {
+            ctx.info[instr->operands[i].tempId()].set_omod5(instr.get());
+         } else {
+            continue;
          }
+         break;
       }
       break;
    }
