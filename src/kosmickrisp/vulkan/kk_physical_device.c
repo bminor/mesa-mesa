@@ -146,6 +146,7 @@ kk_get_device_features(
       .robustBufferAccess = true,
       .depthClamp = true,
       .drawIndirectFirstInstance = true,
+      .dualSrcBlend = true,
       /* TODO_KOSMICKRISP
        * Enabling fragmentStoresAndAtomics fails the following CTS tests, need
        * to investigate:
