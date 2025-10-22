@@ -135,20 +135,24 @@ get_drm_device_ids(struct panvk_physical_device *device,
    return VK_SUCCESS;
 }
 
-static int
-get_cache_uuid(uint16_t family, void *uuid)
+static void
+get_cache_sha1(struct panvk_physical_device *device,
+               const struct panvk_instance *instance)
 {
-   uint32_t mesa_timestamp;
-   uint16_t f = family;
+   struct mesa_sha1 sha_ctx;
+   _mesa_sha1_init(&sha_ctx);
 
-   if (!disk_cache_get_function_timestamp(get_cache_uuid, &mesa_timestamp))
-      return -1;
+   _mesa_sha1_update(&sha_ctx, instance->driver_build_sha,
+                     sizeof(instance->driver_build_sha));
 
-   memset(uuid, 0, VK_UUID_SIZE);
-   memcpy(uuid, &mesa_timestamp, 4);
-   memcpy((char *)uuid + 4, &f, 2);
-   snprintf((char *)uuid + 6, VK_UUID_SIZE - 10, "pan");
-   return 0;
+   _mesa_sha1_update(&sha_ctx, &device->kmod.props.gpu_id,
+                     sizeof(device->kmod.props.gpu_id));
+
+   unsigned char sha[SHA1_DIGEST_LENGTH];
+   _mesa_sha1_final(&sha_ctx, sha);
+
+   STATIC_ASSERT(VK_UUID_SIZE <= SHA1_DIGEST_LENGTH);
+   memcpy(device->cache_uuid, sha, VK_UUID_SIZE);
 }
 
 static VkResult
@@ -299,11 +303,7 @@ panvk_physical_device_init(struct panvk_physical_device *device,
    memset(device->name, 0, sizeof(device->name));
    sprintf(device->name, "%s", device->model->name);
 
-   if (get_cache_uuid(device->kmod.props.gpu_id, device->cache_uuid)) {
-      result = panvk_errorf(instance, VK_ERROR_INITIALIZATION_FAILED,
-                            "cannot generate UUID");
-      goto fail;
-   }
+   get_cache_sha1(device, instance);
 
    result = get_core_masks(device, instance);
    if (result != VK_SUCCESS)
