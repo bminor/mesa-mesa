@@ -7,5 +7,7 @@ dEQP-VK.api.external.memory.android_hardware_buffer.*
 dEQP-VK.image.swapchain_mutable.*
 dEQP-VK.wsi.*
 
-# These tests cause hangs and need to be skipped for now.
+# Skip for now. The test is creating video queues without enabling video
+# extensions. To be clarified at spec level.
 dEQP-VK.synchronization*
+dEQP-VK.sparse_resources.queue_bind.multi_queue_wait_one_signal_one_other

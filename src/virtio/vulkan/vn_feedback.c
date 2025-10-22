@@ -690,6 +690,8 @@ vn_query_feedback_cmd_alloc(VkDevice dev_handle,
    struct vn_query_feedback_cmd *qfb_cmd;
    VkResult result;
 
+   assert(fb_cmd_pool->pool_handle != VK_NULL_HANDLE);
+
    simple_mtx_lock(&fb_cmd_pool->mutex);
 
    if (list_is_empty(&fb_cmd_pool->free_qfb_cmds)) {
@@ -754,6 +756,11 @@ vn_feedback_cmd_alloc(VkDevice dev_handle,
                       struct vn_feedback_slot *src_slot,
                       VkCommandBuffer *out_cmd_handle)
 {
+   if (fb_cmd_pool->pool_handle == VK_NULL_HANDLE) {
+      *out_cmd_handle = VK_NULL_HANDLE;
+      return VK_SUCCESS;
+   }
+
    VkCommandPool cmd_pool_handle = fb_cmd_pool->pool_handle;
    const VkCommandBufferAllocateInfo info = {
       .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
@@ -789,6 +796,9 @@ vn_feedback_cmd_free(VkDevice dev_handle,
                      struct vn_feedback_cmd_pool *fb_cmd_pool,
                      VkCommandBuffer cmd_handle)
 {
+   if (fb_cmd_pool->pool_handle == VK_NULL_HANDLE)
+      return;
+
    simple_mtx_lock(&fb_cmd_pool->mutex);
    vn_FreeCommandBuffers(dev_handle, fb_cmd_pool->pool_handle, 1,
                          &cmd_handle);
@@ -800,6 +810,7 @@ vn_feedback_cmd_pools_init(struct vn_device *dev)
 {
    const VkAllocationCallbacks *alloc = &dev->base.vk.alloc;
    VkDevice dev_handle = vn_device_to_handle(dev);
+   struct vn_physical_device *physical_dev = dev->physical_device;
    struct vn_feedback_cmd_pool *fb_cmd_pools;
    VkCommandPoolCreateInfo info = {
       .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
@@ -822,11 +833,28 @@ vn_feedback_cmd_pools_init(struct vn_device *dev)
    for (uint32_t i = 0; i < dev->queue_family_count; i++) {
       VkResult result;
 
+      /* Feedback requires transfer capability, so we must skip feedback cmd
+       * pool initialization on incompatible queue families. Meanwhile, use
+       * pool_handle for all validity check needed.
+       */
+      assert(dev->queue_families[i] < physical_dev->queue_family_count);
+      const struct VkQueueFamilyProperties2 *props =
+         &physical_dev->queue_family_properties[dev->queue_families[i]];
+      const VkQueueFlags fb_req_flags =
+         VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
+      if (!(props->queueFamilyProperties.queueFlags & fb_req_flags)) {
+         fb_cmd_pools[i].pool_handle = VK_NULL_HANDLE;
+         continue;
+      }
+
       info.queueFamilyIndex = dev->queue_families[i];
       result = vn_CreateCommandPool(dev_handle, &info, alloc,
                                     &fb_cmd_pools[i].pool_handle);
       if (result != VK_SUCCESS) {
          for (uint32_t j = 0; j < i; j++) {
+            if (fb_cmd_pools[j].pool_handle == VK_NULL_HANDLE)
+               continue;
+
             vn_DestroyCommandPool(dev_handle, fb_cmd_pools[j].pool_handle,
                                   alloc);
             simple_mtx_destroy(&fb_cmd_pools[j].mutex);
@@ -855,6 +883,9 @@ vn_feedback_cmd_pools_fini(struct vn_device *dev)
       return;
 
    for (uint32_t i = 0; i < dev->queue_family_count; i++) {
+      if (dev->fb_cmd_pools[i].pool_handle == VK_NULL_HANDLE)
+         continue;
+
       list_for_each_entry_safe(struct vn_query_feedback_cmd, feedback_cmd,
                                &dev->fb_cmd_pools[i].free_qfb_cmds, head)
          vk_free(alloc, feedback_cmd);
