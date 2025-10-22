@@ -2099,13 +2099,8 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
          bld.vop2(aco_opcode::v_mul_f32, Definition(dst), Operand::c32(0xbf800000u),
                   as_vgpr(ctx, src));
       } else if (dst.regClass() == v2) {
-         if (ctx->block->fp_mode.must_flush_denorms16_64)
-            src = bld.vop3(aco_opcode::v_mul_f64_e64, bld.def(v2), Operand::c64(0x3FF0000000000000),
-                           as_vgpr(ctx, src));
-         Temp upper = bld.tmp(v1), lower = bld.tmp(v1);
-         bld.pseudo(aco_opcode::p_split_vector, Definition(lower), Definition(upper), src);
-         upper = bld.vop2(aco_opcode::v_xor_b32, bld.def(v1), Operand::c32(0x80000000u), upper);
-         bld.pseudo(aco_opcode::p_create_vector, Definition(dst), lower, upper);
+         bld.vop3(aco_opcode::v_mul_f64_e64, Definition(dst), Operand::c64(0xBFF0000000000000),
+                  as_vgpr(ctx, src));
       } else if (dst.regClass() == s1 && instr->def.bit_size == 16) {
          bld.sop2(aco_opcode::s_mul_f16, Definition(dst), Operand::c16(0xbc00u), src);
       } else if (dst.regClass() == s1 && instr->def.bit_size == 32) {
@@ -2139,13 +2134,9 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
                                .instr;
          mul->valu().abs[1] = true;
       } else if (dst.regClass() == v2) {
-         if (ctx->block->fp_mode.must_flush_denorms16_64)
-            src = bld.vop3(aco_opcode::v_mul_f64_e64, bld.def(v2), Operand::c64(0x3FF0000000000000),
-                           as_vgpr(ctx, src));
-         Temp upper = bld.tmp(v1), lower = bld.tmp(v1);
-         bld.pseudo(aco_opcode::p_split_vector, Definition(lower), Definition(upper), src);
-         upper = bld.vop2(aco_opcode::v_and_b32, bld.def(v1), Operand::c32(0x7FFFFFFFu), upper);
-         bld.pseudo(aco_opcode::p_create_vector, Definition(dst), lower, upper);
+         Instruction* mul = bld.vop3(aco_opcode::v_mul_f64_e64, Definition(dst),
+                                     Operand::c64(0x3FF0000000000000), as_vgpr(ctx, src));
+         mul->valu().abs[1] = true;
       } else if (dst.regClass() == s1 && instr->def.bit_size == 16) {
          Temp mask = bld.copy(bld.def(s1), Operand::c32(0x7fff));
          if (ctx->block->fp_mode.denorm16_64 == fp_denorm_keep) {
