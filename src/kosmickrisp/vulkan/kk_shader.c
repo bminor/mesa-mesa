@@ -328,7 +328,7 @@ kk_lower_fs_blend(nir_shader *nir,
    nir_lower_blend_options opts = {
       .scalar_blend_const = false,
       .logicop_enable = state->cb->logic_op_enable,
-      .logicop_func = state->cb->logic_op,
+      .logicop_func = vk_logic_op_to_pipe(state->cb->logic_op),
    };
 
    static_assert(ARRAY_SIZE(opts.format) == 8, "max RTs out of sync");

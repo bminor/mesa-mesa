@@ -155,6 +155,7 @@ kk_get_device_features(
        */
       .fragmentStoresAndAtomics = false,
       .imageCubeArray = true,
+      .logicOp = true,
       .shaderInt16 = true,
       .shaderInt64 = true,
       .shaderResourceMinLod = true,
