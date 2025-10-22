@@ -154,7 +154,7 @@
         "description": "radv: dirty dynamic descriptors when required",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a47952d495ed6f1f6044f7e2bb1639daa6dcf1b9",
         "notes": null
