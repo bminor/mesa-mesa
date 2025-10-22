@@ -208,6 +208,8 @@ select_rt_prolog(Program* program, ac_shader_config* config,
    bld.sop2(Builder::s_cselect, Definition(vcc, bld.lm),
             Operand::c32_or_c64(-1u, program->wave_size == 64),
             Operand::c32_or_c64(0, program->wave_size == 64), Operand(scc, s1));
+   bld.sop2(aco_opcode::s_cselect_b32, Definition(out_launch_size_y, s1),
+            Operand(out_launch_size_y, s1), Operand::c32(1), Operand(scc, s1));
    bld.vop2(aco_opcode::v_cndmask_b32, Definition(out_launch_ids[0], v1),
             Operand(tmp_invocation_idx, v1), Operand(out_launch_ids[0], v1), Operand(vcc, bld.lm));
    bld.vop2(aco_opcode::v_cndmask_b32, Definition(out_launch_ids[1], v1), Operand::zero(),
