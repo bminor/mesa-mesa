@@ -510,10 +510,19 @@ panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
    if (result != VK_SUCCESS)
       goto err_free_priv_bos;
 
+   struct vk_pipeline_cache_create_info cache_info = {
+      .weak_ref = true,
+   };
+   device->vk.mem_cache = vk_pipeline_cache_create(&device->vk, &cache_info, NULL);
+   if (device->vk.mem_cache == NULL) {
+      result = VK_ERROR_OUT_OF_HOST_MEMORY;
+      goto err_free_precomp;
+   }
+
 #if PAN_ARCH >= 10
    result = panvk_per_arch(device_draw_context_init)(device);
    if (result != VK_SUCCESS)
-      goto err_free_precomp;
+      goto err_free_mem_cache;
 #endif
 
    result = panvk_meta_init(device);
@@ -578,8 +587,10 @@ err_finish_queues:
 err_free_draw_ctx:
 #if PAN_ARCH >= 10
    panvk_per_arch(device_draw_context_cleanup)(device);
-err_free_precomp:
+err_free_mem_cache:
 #endif
+   vk_pipeline_cache_destroy(device->vk.mem_cache, NULL);
+err_free_precomp:
    panvk_precomp_cleanup(device);
 err_free_priv_bos:
    if (device->printf.bo)
@@ -630,6 +641,7 @@ panvk_per_arch(destroy_device)(struct panvk_device *device,
    panvk_per_arch(device_draw_context_cleanup)(device);
 #endif
    panvk_meta_cleanup(device);
+   vk_pipeline_cache_destroy(device->vk.mem_cache, NULL);
    pan_kmod_bo_put(device->sparse_mem.blackhole);
    u_printf_destroy(&device->printf.ctx);
    panvk_priv_bo_unref(device->printf.bo);
