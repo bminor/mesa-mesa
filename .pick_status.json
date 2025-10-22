@@ -2754,7 +2754,7 @@
         "description": "nvk: Disable sampleLocationsSampleCounts for 1x MSAA",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a34edc7500c84bfd52cf71cb78db46c34d436ae2",
         "notes": null
