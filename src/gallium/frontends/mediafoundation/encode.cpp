@@ -366,7 +366,6 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
       // Create resources for output GPU frame stats
       //
       struct pipe_resource templ = {};
-      memset( &templ, 0, sizeof( templ ) );
       templ.target = PIPE_TEXTURE_2D;
       // PIPE_USAGE_STAGING allocates resource in L0 (System Memory) heap
       // and avoid a bunch of roundtrips for uploading/reading back the bitstream headers
@@ -470,7 +469,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
       }
    }
 
-   memset( &pDX12EncodeContext->encoderPicInfo, 0, sizeof( pDX12EncodeContext->encoderPicInfo ) );
+   pDX12EncodeContext->encoderPicInfo = {};
    pDX12EncodeContext->encoderPicInfo.base.profile = m_outputPipeProfile;
 
    // Encode region of interest
@@ -516,17 +515,17 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
 
    if( m_bWorkProcessPrioritySet || m_bWorkGlobalPrioritySet )
    {
+      mtx_lock( &m_ContextPriorityMgr.m_lock );
+      int result = 0;
       for( ID3D12CommandQueue *queue : m_ContextPriorityMgr.m_registeredQueues )
       {
-         mtx_lock( &m_ContextPriorityMgr.m_lock );
-         int result = m_ContextPriorityMgr.base.set_queue_priority( &m_ContextPriorityMgr.base,
-                                                                    queue,
-                                                                    reinterpret_cast<uint32_t *>( &m_WorkGlobalPriority ),
-                                                                    reinterpret_cast<uint32_t *>( &m_WorkProcessPriority ) );
-         mtx_unlock( &m_ContextPriorityMgr.m_lock );
-
-         CHECKBOOL_GOTO( result == 0, MF_E_UNEXPECTED, done );
+         result = m_ContextPriorityMgr.base.set_queue_priority( &m_ContextPriorityMgr.base,
+                                                                 queue,
+                                                                 reinterpret_cast<uint32_t *>( &m_WorkGlobalPriority ),
+                                                                 reinterpret_cast<uint32_t *>( &m_WorkProcessPriority ) );
       }
+      mtx_unlock( &m_ContextPriorityMgr.m_lock );
+      CHECKBOOL_GOTO( result == 0, MF_E_UNEXPECTED, done );
 
       // Once set in the underlying pipe context, don't set them again
       // until they're modified by the CodecAPI SetValue function.
@@ -541,7 +540,6 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
 
    {
       struct pipe_resource templ = {};
-      memset( &templ, 0, sizeof( templ ) );
 
       // Prefer using sliced buffers + fence notifications when supported to reduce latency if
       // user requested multiple slices
