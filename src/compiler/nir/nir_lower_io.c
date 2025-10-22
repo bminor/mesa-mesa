@@ -1069,6 +1069,7 @@ nir_get_io_index_src_number(const nir_intrinsic_instr *instr)
    IMG_CASE(atomic):
    IMG_CASE(atomic_swap):
    IMG_CASE(size):
+   IMG_CASE(levels):
    IMG_CASE(samples):
    IMG_CASE(texel_address):
    IMG_CASE(samples_identical):
