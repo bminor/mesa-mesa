@@ -1,5 +1,745 @@
 [
     {
+        "sha": "efbecd93baa35b4bbeb5f370893865568a577e6e",
+        "description": "util: Build util/cache_ops_x86.c with -msse2",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "555881e57499bc38f098dd5859edecdf6bdad2a2",
+        "notes": null
+    },
+    {
+        "sha": "3739d7a90c3d2406a3297a973c3de4c3dbe83050",
+        "description": "util: Don't advertise cache ops on x86 without SSE2",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "555881e57499bc38f098dd5859edecdf6bdad2a2",
+        "notes": null
+    },
+    {
+        "sha": "a410d90fd254dd4930e72547de430a8cf5daf13b",
+        "description": "panfrost: fix cl_local_size for precompiled shaders",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "20970bcd9652ea8727a307ced9b372fad4b89991",
+        "notes": null
+    },
+    {
+        "sha": "02a1ec102144084fa60ccc9a60b16d7faafa349a",
+        "description": "kk: Hash vertex input state",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dc0dcc993be94d128b1a070ebfd1419c2bb6395b",
+        "description": "nvk: implement VK_EXT_discard_rectangles",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4c62e09505c2eb232c135b400299a6e86d2111ee",
+        "description": "vulkan: increase MESA_VK_MAX_DISCARD_RECTANGLES",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b18421ae3d20645aea615ff4b2ae2e6c544a7b1f",
+        "description": "amd/lower_mem_access_bit_sizes: fix shared access when bytes<bit_size/8",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "52cd5f7e69fde6b5eef4a88103e7571d8342577f",
+        "notes": null
+    },
+    {
+        "sha": "64ec757688c53fc1d850822657a3bcfa4202c86f",
+        "description": "nir/lower_mem_access_bit_sizes: increase chunk limit",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e89b22280fe5f65dfdd749af0f5da892d0bb9dda",
+        "description": "amd/lower_mem_access_bit_sizes: be more careful with 8/16-bit scratch load",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8829fc3bd64b9f2ac62f2339fa9cf6fc0a149cba",
+        "description": "amd/lower_mem_access_bit_sizes: improve subdword/unaligned SMEM lowering",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "fbf0399517aefea0485df5f8fd43ac065e01443c",
+        "notes": null
+    },
+    {
+        "sha": "79b2fa785d51d21e56d3647ee5abb6cb78edab7a",
+        "description": "amd/lower_mem_access_bit_sizes: don't create subdword UBO loads with LLVM",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "fbf0399517aefea0485df5f8fd43ac065e01443c",
+        "notes": null
+    },
+    {
+        "sha": "38e1a43f53d62260dcff1c6c5973eaf4514eb792",
+        "description": "intel/mda: Fix potential underflow in printing code",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f25e59b951f62306fee8a596b916684644bbb216",
+        "description": "intel/mda/tests: use an ASSERT on fread()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "28fbc6addbda2ce3e264b41b6ad91a7a0d8eb788",
+        "description": "nvk: VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "7692d3c0e1a2b54c82c945335d23fc174252fda1",
+        "notes": null
+    },
+    {
+        "sha": "e7dca5a6ca3ab4f2215d48292bfa3bbb3aab6d2c",
+        "description": "nak: fix MMA latencies on Ampere",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "7a01953a396e8b4968f4c8a9f1771af8837bda39",
+        "notes": null
+    },
+    {
+        "sha": "cf4df97093f3b5ebcda8beb53f1773a21e6e10e9",
+        "description": "nak: improve fp16 latencies on Ampere",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "85480200f80617da320ce0aadd1d0e3850a9c3b4",
+        "description": "nak: simplify SM80 HMMA latency categorization",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3bbf3f782674a25bbca01ca8dee8f58a2c33300c",
+        "description": "nak: ensure deref has a ptr_stride in cmat load/store lowering",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "05dca16143765e34e447edf0d4727ce4cb5d1175",
+        "notes": null
+    },
+    {
+        "sha": "f632bfc71559b6f60d9f1f4657d21b66a102bc6a",
+        "description": "nak: extract cmat load/store element offset calculation",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "05dca16143765e34e447edf0d4727ce4cb5d1175",
+        "notes": null
+    },
+    {
+        "sha": "d423554e9e6d3c2609ab5f3f7d4f955954018d29",
+        "description": "radv/bvh: Pair compress triangles in more cases",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c0f332f1cba73940416477f0842e9892ba454362",
+        "description": "vulkan/bvh: Add leaf.h to vk_bvh_includes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "020bd86d30e533b243195edc42f3ebdbd6c174e8",
+        "description": "vulkan: Remove the vk_ir_triangle_node::id field",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c18a7d0e2b639659f97c29d54268e3d800ac5d5f",
+        "description": "radv: Emit compressed primitive nodes on GFX12",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c5f9fe5e3ba184f28fa3faad0373e428adb819fb",
+        "description": "radv/rra/gfx12: Properly validate geometry indices",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "82728380a2af86ea8edf32d0c4b3a4629faa2e24",
+        "description": "vulkan/bvh: Add some debug helpers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "639cc4d937b0f42b2476104269df02d878cb502a",
+        "description": "vulkan: Bump MAX_ENCODE_PASSES to 4",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6a53aae6b203d43342156f080e115d41154b2279",
+        "description": "vulkan: Add vk_ir_header::driver_internal",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2ee8bfefe66dde755c0c0af12992af978666e3a0",
+        "description": "radv/bvh: Add radv_first_active_invocation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bd53bbbc5744c047af77187576b148dd20b76068",
+        "description": "panvk: support VK_EXT_external_memory_acquire_unmodified",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "990f1868ec0b201afac8833aa17fe8fe841aaa96",
+        "description": "vulkan/cmd_queue: Free all elements of struct arrays",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a3e77fe5d22cd77689046b1ec3cceef61fee6ac0",
+        "description": "vulkan/cmd_queue: Fix indentation for struct array copies",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "38950083ae9fe5650150614687c7c46342d71d02",
+        "description": "panvk: Fix integer dot product properties",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "f7f9b3d170f5213d4f20df8ef92827dd97899432",
+        "notes": null
+    },
+    {
+        "sha": "d380e54422b034587fd596d9c2802a9814160103",
+        "description": "d3d12: Fix d3d12_video_enc.cpp(4794,33): Error C4244: initializing: conversion from uint64_t to SIZE_T, possible loss of data",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "44d8e999e2837a0e38311db037fad90055f8b879",
+        "description": "mediafoundation: Also set pSyncObjectQueue = m_spStagingQueue when DX11 input sample",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d2cbbccaaae43e27aa7cfa8f9fd048cb0023a840",
+        "description": "mediafoundation: Only wait on pSyncObjectQueue for stats completion if any stat was enabled",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4f7aa402227baf9489eee8f3e84c05719a7a2744",
+        "description": "mediafoundation: Allocate pro-rated buffer sizes for multi-slice encoding",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b454c35318c7ffefe13c21736ac062cf8435c16f",
+        "description": "mediafoundation: Only use sliced mode when CODECAPI_AVEncSliceGenerationMode is set, disregarding num slices configured",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "71aecf4a93811b2c9b7b83fea335367a29b59d34",
+        "description": "mediafoundation: SliceGeneration=1: Zero copy IMFSample output with wrapped ID3D12Resource frame/slice buffers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "45e56e4c9652771e5d5252cb5c0c7844a0290205",
+        "description": "d3d12: Only check for GetDeviceRemovedReason in debug builds",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4e1bb2111f90e6c35d8d7728cc6f33e970333a13",
+        "description": "d3d12: d3d12_promote_to_permanent_residency to accept res array batch",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "07224f6d1586545f3e90f15757f350bae06cbfb9",
+        "description": "d3d12: Make output metadata frame buffer READBACK and use direct Map() in get_feedback",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e4d8a49fcdb885bd69b0f1b6b5b7949e18a20b56",
+        "description": "d3d12: Only check H264 video caps if configuration changed between frames",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8fd82cb339f1047e98acf940157030fe3fd9284b",
+        "description": "d3d12: d3d12_video_encoder_get_slice_bitstream_data use regular Map/Unmap",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1dc76fcaa83bce17c5f89ea7727cff9b32e4fbf8",
+        "description": "d3d12: Use readback heaps for staging bitstream allocations",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9b131f1407a64a880b5aa05bbca9ff0c755e54a8",
+        "description": "d3d12: Video Encode - Make some parameters const & instead of by value",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1ffefc3e32e362f3219a5fd6b489f9f9c17e8116",
+        "description": "d3d12: Use cached heap allocations for output bitstreams instead of allocating per frame",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "adbb07e9271c2ed8d2bb9f248c2c3339b4b05798",
+        "description": "d3d12: Use cached heap allocations for barriers instead of allocating per frame",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b076cfdf22f1e20625e085352e28a45d0c44c383",
+        "description": "d3d12: Remove unused d3d12_video_encoder::m_transitionsBeforeCloseCmdList",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6f9c49f6f5904e3f5b6b73995be1cc6db4c14d6b",
+        "description": "d3d12: Only check HEVC video caps if configuration changed between frames",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e3ab866fea0fe648a22ff7bd1d713c7b59b18924",
+        "description": "d3d12: Only call CheckFeatureSupport(D3D12_FEATURE_FORMAT_INFO when video format changes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ca2a1e470ae95b50c1182270fb160327c4aad386",
+        "description": "d3d12: Remove per frame allocation slice_sizes(picture->num_slice_descriptors)",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "53e07e78c7cbc0c12e3773eb29ac053713e61e83",
+        "description": "d3d12: Cache ID3D12VideoEncodeCommandList4 instance if supported",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b1ea2b06eb88ac584a73bca54b7c1648424900e4",
+        "description": "d3d12: Cache ID3D12VideoEncoderHeap1 instance if supported",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a51c3b5bd00b83282cdeaf672af6ca0791fda0c8",
+        "description": "d3d12: Cache ID3D12VideoDevice4 instance if supported",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "702e299f332703b14c7dd95e849c7ab21b0efd88",
+        "description": "d3d12: Remove multiple index calc in d3d12_video_encoder_prepare_input_buffers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2ffaa9a9f48a84ed8b7f782c5dca0232b2abfa22",
+        "description": "d3d12: Remove multiple index calc in d3d12_video_encoder_begin_frame",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "712607bbec919f966f19542091da31d5392d3089",
+        "description": "d3d12: Optimize d3d12_video_encoder_flush",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "63db1254ff0c6dcc75219466d4dea2f7201e0e2c",
+        "description": "d3d12: Use a separate queue for encode resolve operations",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "416398aecb9fe9a007f0755471a7dbea0b5a791e",
+        "description": "mediafoundation: Only attach stats to last slice mfsample",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "80c89944551c2e8ff1c7b6d9c1dfe01c506949b2",
+        "description": "mediafoundation: Add pLastSliceFence shortcircuit wait for auto slice mode async slices mode",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fd546c1cde5c613cedda2ac34cac065c233d4aab",
+        "description": "mediafoundation: Refactor frame, multi slice and combine slice IMFSample emission to make it simpler",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f4f619e26e3f0413d9e6f87e75e857abd8be1d5f",
+        "description": "d3d12: Implement last slice signal by splitting Encode/Resolve in two ECL",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "134274488db0ea8c142f855acfc1ba73006002da",
+        "description": "mediafoundation: Attach stats deferred buffers to all samples for simplicity",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b4592bbb772b592d52b4e0c99a467e0397e1e0ab",
+        "description": "mediafoundation: Add some more trace logging",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "43112ce1a491da41ffe11c63a49fb6b26cb55ffa",
+        "description": "mediafoundation: Emit multiple MFSamples per slice when CODECAPI_AVEncSliceGenerationMode = 1i",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3de675eef5a6f23bf3a306f00cd41931a680b1a8",
+        "description": "mediafoundation: Prepare for multi sample multi slice",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e612709141b63766bacf86f3d24092393cff59b9",
+        "description": "mediafoundation: Add support for setting CODECAPI_AVEncSliceGenerationMode",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a6f84de5b06e40168c2773638a2e897ba9691f5a",
+        "description": "mediafoundation: emit subregions samples before pAsyncFence wait to reduce latency",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4bc6ace7a1e5e1e62cf1acfb99f8f833ed3eba49",
+        "description": "mediafoundation: Attach async stats DXGI buffers without CPU fence wait",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d7384e9f65fdfafbf30b41d7fbadcd015a3467cf",
+        "description": "mediafoundation: Set ConfigureBitstreamOutputSampleAttributes earlier for async subregion notifications do not need resolved metadata for it",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "791a966510242f1e183d4b22030c243b20fb05c8",
+        "description": "mediafoundation: Add Resolve completion fence to stats IDXGIBuffers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "88492ee80b39b8ae4c58cb0bae48101e64415b09",
+        "description": "mediafoundation: Helpers ConfigureBitstreamOutputSampleAttributes/ConfigureStatsMetadataOutputSampleAttributes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "932401ddf036f0dd42c3c41fd6ce6e588af8eb1d",
+        "description": "mediafoundation: add stats resource pool so we can use pool for QP map as well",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "daa3ed7fea501c46e5540cb87e0e85fcf891840b",
+        "description": "ci/deqp: Also print logs to logcat on Android",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "7cd12e5c6aae67119ca83e6524e0b32f62738415",
         "description": "amd: move CP emit helpers to ac_cmdbuf_cp.c/h",
         "nominated": false,
