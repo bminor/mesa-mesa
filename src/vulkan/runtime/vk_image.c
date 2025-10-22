@@ -407,7 +407,7 @@ vk_image_can_be_aliased_to_yuv_plane(const struct vk_image *image)
    VkFormat format = image->format;
 
    /* Only the 8-bit, 16-bit, and 32-bit classes listed in
-    * https://registry.khronos.org/vulkan/specs/latest/html/vkspec.html#formats-compatibility-classes
+    * https://docs.vulkan.org/spec/latest/chapters/formats.html#formats-compatibility-classes
     * are compatible with yuv planes. We must exclude other classes with the
     * same block size as these.
     */
@@ -421,7 +421,7 @@ vk_image_can_be_aliased_to_yuv_plane(const struct vk_image *image)
 
    /* The planes of all the multiplane formats have a block size of 1, 2, or 4.
     * See:
-    * https://registry.khronos.org/vulkan/specs/latest/html/vkspec.html#formats-compatible-planes
+    * https://docs.vulkan.org/spec/latest/chapters/formats.html#formats-compatible-planes
     */
    return block_size == 1 || block_size == 2 || block_size == 4;
 }

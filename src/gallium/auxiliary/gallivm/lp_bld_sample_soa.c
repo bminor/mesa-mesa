@@ -2256,7 +2256,7 @@ lp_build_sample_aniso(struct lp_build_sample_context *bld,
 
    /*
     * We use the suggested anisotropic filtering algorithm from the Vulkan spec:
-    * https://registry.khronos.org/vulkan/specs/latest/html/vkspec.html#textures-texel-anisotropic-filtering
+    * https://docs.vulkan.org/spec/latest/chapters/textures.html#textures-texel-anisotropic-filtering
     * The coordinate offset expression is the same in all cases: -1/2 + i / (N + 1)
     * We can rewrite this expression as: (-N - 1) / (2N + 2) + 2i / (2N + 2) =
     *     (-N - 1 + 2i) / (2N + 2) = (-0.5N - 0.5 + i) / (N + 1)

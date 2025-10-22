@@ -511,7 +511,7 @@ dzn_physical_device_init_memory(struct dzn_physical_device *pdev)
     *   (as determined in an implementation-specific manner) ; or
     * - the propertyFlags members of Y includes VK_MEMORY_PROPERTY_DEVICE_COHERENT_BIT_AMD or
     *   VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD and X does not
-    * See: https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkPhysicalDeviceMemoryProperties.html
+    * See: https://docs.vulkan.org/refpages/latest/refpages/source/VkPhysicalDeviceMemoryProperties.html
    */
 
    mem->memoryHeapCount = 0;

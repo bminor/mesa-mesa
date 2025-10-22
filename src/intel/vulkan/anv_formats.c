@@ -794,7 +794,7 @@ anv_get_image_format_features2(const struct anv_physical_device *physical_device
     * it for the list of shader storage extended formats [1]. Before that,
     * this applies to all VkFormats.
     *
-    * [1] : https://registry.khronos.org/vulkan/specs/latest/html/vkspec.html#features-shaderStorageImageExtendedFormats
+    * [1] : https://docs.vulkan.org/spec/latest/chapters/features.html#features-shaderStorageImageExtendedFormats
     */
    if ((flags & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT) ||
        (anv_format->flags & ANV_FORMAT_FLAG_STORAGE_FORMAT_EMULATED))

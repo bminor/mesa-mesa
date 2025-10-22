@@ -26,7 +26,7 @@ wsi_metal_layer_size(const CAMetalLayer *metal_layer,
        * 1. The one implemented.
        * 2. Return the special value allowed by the spec to state that we will
        *    actually give it a value once the swapchain is created
-       *    https://registry.khronos.org/vulkan/specs/latest/man/html/VkSurfaceCapabilitiesKHR.html
+       *    https://docs.vulkan.org/refpages/latest/refpages/source/VkSurfaceCapabilitiesKHR.html
        */
       CGSize size = metal_layer.bounds.size;
       CGFloat scaleFactor = metal_layer.contentsScale;
