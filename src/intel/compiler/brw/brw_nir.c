@@ -2144,6 +2144,7 @@ flag_fused_eu_disable_instr(nir_builder *b, nir_instr *instr, void *data)
       case nir_intrinsic_bindless_image_atomic:
       case nir_intrinsic_bindless_image_atomic_swap: {
          int src_idx = nir_get_io_index_src_number(intrin);
+         assert(src_idx >= 0);
          if (nir_src_is_divergent(&intrin->src[src_idx])) {
             nir_intrinsic_set_access(intrin,
                                      nir_intrinsic_access(intrin) |
