@@ -835,14 +835,14 @@ opt_if_phi_is_condition(nir_builder *b, nir_if *nif)
 }
 
 static bool
-evaluate_if_condition(nir_if *nif, nir_cursor cursor, bool *value)
+evaluate_if_condition(nir_if *nif, nir_cursor cursor, bool *value, bool invert)
 {
    nir_block *use_block = nir_cursor_current_block(cursor);
    if (nir_block_dominates(nir_if_first_then_block(nif), use_block)) {
-      *value = true;
+      *value = !invert;
       return true;
    } else if (nir_block_dominates(nir_if_first_else_block(nif), use_block)) {
-      *value = false;
+      *value = invert;
       return true;
    } else {
       return false;
@@ -922,11 +922,11 @@ clone_alu_and_replace_src_defs(nir_builder *b, const nir_alu_instr *alu,
  */
 static bool
 propagate_condition_eval(nir_builder *b, nir_if *nif, nir_src *use_src,
-                         nir_src *alu_use, nir_alu_instr *alu)
+                         nir_src *alu_use, nir_alu_instr *alu, bool invert)
 {
    bool bool_value;
    b->cursor = nir_before_src(alu_use);
-   if (!evaluate_if_condition(nif, b->cursor, &bool_value))
+   if (!evaluate_if_condition(nif, b->cursor, &bool_value, invert))
       return false;
 
    nir_def *def[NIR_MAX_VEC_COMPONENTS] = { 0 };
@@ -965,14 +965,15 @@ can_propagate_through_alu(nir_src *src)
 }
 
 static bool
-evaluate_condition_use(nir_builder *b, nir_if *nif, nir_src *use_src)
+evaluate_condition_use(nir_builder *b, nir_if *nif, nir_src *use_src,
+                       bool invert)
 {
    bool progress = false;
 
    b->cursor = nir_before_src(use_src);
 
    bool bool_value;
-   if (evaluate_if_condition(nif, b->cursor, &bool_value)) {
+   if (evaluate_if_condition(nif, b->cursor, &bool_value, invert)) {
       /* Rewrite use to use const */
       nir_src_rewrite(use_src, nir_imm_bool(b, bool_value));
       progress = true;
@@ -981,8 +982,10 @@ evaluate_condition_use(nir_builder *b, nir_if *nif, nir_src *use_src)
    if (!nir_src_is_if(use_src) && can_propagate_through_alu(use_src)) {
       nir_alu_instr *alu = nir_instr_as_alu(nir_src_parent_instr(use_src));
 
-      nir_foreach_use_including_if_safe(alu_use, &alu->def)
-         progress |= propagate_condition_eval(b, nif, use_src, alu_use, alu);
+      nir_foreach_use_including_if_safe(alu_use, &alu->def) {
+         progress |= propagate_condition_eval(b, nif, use_src, alu_use, alu,
+                                              invert);
+      }
    }
 
    return progress;
@@ -996,7 +999,28 @@ opt_if_evaluate_condition_use(nir_builder *b, nir_if *nif)
    /* Evaluate any uses of the if condition inside the if branches */
    nir_foreach_use_including_if_safe(use_src, nif->condition.ssa) {
       if (!(nir_src_is_if(use_src) && nir_src_parent_if(use_src) == nif))
-         progress |= evaluate_condition_use(b, nif, use_src);
+         progress |= evaluate_condition_use(b, nif, use_src, false);
+   }
+
+   nir_alu_instr *alu = nir_src_as_alu_instr(nif->condition);
+   if (alu != NULL && alu->op == nir_op_inot &&
+       nir_src_num_components(alu->src[0].src) == 1) {
+      /* Consider
+       *
+       *    if (!x) {
+       *       if (x) {
+       *          ...
+       *       }
+       *    }
+       *
+       * The inner use of x must be false, but so far only instances of !x
+       * would have been replaced with a constant. See through the inot to
+       * replace instances of x as well.
+       */
+      nir_foreach_use_including_if_safe(use_src, alu->src[0].src.ssa) {
+         if (nir_src_is_if(use_src) || nir_src_parent_instr(use_src) != &alu->instr)
+            progress |= evaluate_condition_use(b, nif, use_src, true);
+      }
    }
 
    return progress;
