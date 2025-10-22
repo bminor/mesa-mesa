@@ -899,7 +899,6 @@ vn_physical_device_init_queue_family_properties(
    const char *engine_name = instance->base.vk.app_info.engine_name;
    const bool require_second_queue =
       engine_name && strcmp(engine_name, "android framework") == 0;
-   ;
 #else
    static const bool require_second_queue = false;
 #endif
@@ -916,30 +915,12 @@ vn_physical_device_init_queue_family_properties(
       }
    }
 
-   /* Filter out queue families that exclusively support sparse binding as
-    * we need additional support for submitting feedback commands
-    */
-   uint32_t sparse_count = 0;
-   uint32_t non_sparse_only_count = 0;
-   for (uint32_t i = 0; i < count; i++) {
-      if (props[i].queueFamilyProperties.queueFlags &
-          ~VK_QUEUE_SPARSE_BINDING_BIT) {
-         props[non_sparse_only_count++].queueFamilyProperties =
-            props[i].queueFamilyProperties;
-      }
-      if (props[i].queueFamilyProperties.queueFlags &
-          VK_QUEUE_SPARSE_BINDING_BIT) {
-         sparse_count++;
-      }
-   }
-
-   if (VN_DEBUG(NO_SPARSE) ||
-       (sparse_count && non_sparse_only_count + sparse_count == count))
+   if (VN_DEBUG(NO_SPARSE))
       physical_dev->sparse_binding_disabled = true;
 
    physical_dev->queue_family_properties = props;
    physical_dev->global_priority_properties = prio_props;
-   physical_dev->queue_family_count = non_sparse_only_count;
+   physical_dev->queue_family_count = count;
 
    return VK_SUCCESS;
 }
