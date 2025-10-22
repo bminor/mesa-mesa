@@ -1267,6 +1267,9 @@ nvk_physical_device_init_pipeline_cache(struct nvk_physical_device *pdev)
    _mesa_sha1_update(&sha_ctx, instance->driver_build_sha,
                      sizeof(instance->driver_build_sha));
 
+   _mesa_sha1_update(&sha_ctx, &pdev->info.chipset,
+                     sizeof(pdev->info.chipset));
+
    const uint64_t compiler_flags = nvk_physical_device_compiler_flags(pdev);
    _mesa_sha1_update(&sha_ctx, &compiler_flags, sizeof(compiler_flags));
 
