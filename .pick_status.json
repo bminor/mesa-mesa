@@ -974,7 +974,7 @@
         "description": "nir/lower_io: add missing levels intrinsics to get_io_index_src_number",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c7ac46a1d8afea6f12e36fe489ef9485b443a638",
         "notes": null
