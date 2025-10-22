@@ -52,7 +52,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
    UINT32 uiROIBlobOutSize = 0;
    // Get HW Support Surface Alignment to check against input sample
    const uint32_t surfaceWidthAlignment = 1 << m_EncoderCapabilities.m_HWSupportSurfaceAlignment.bits.log2_width_alignment;
-   const uint32_t surfaceHeightAlignment = 1 << m_EncoderCapabilities.m_HWSupportSurfaceAlignment.bits.log2_width_alignment;
+   const uint32_t surfaceHeightAlignment = 1 << m_EncoderCapabilities.m_HWSupportSurfaceAlignment.bits.log2_height_alignment;
 
    // Check for Discontinuity
    (void) pSample->GetUINT32( MFSampleExtension_Discontinuity, &unDiscontinuity );
