@@ -8606,108 +8606,123 @@ radv_reset_shader_object_state(struct radv_cmd_buffer *cmd_buffer, VkPipelineBin
    cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_GRAPHICS_SHADERS;
 }
 
+static ALWAYS_INLINE void
+radv_bind_compute_pipeline(struct radv_cmd_buffer *cmd_buffer, struct radv_compute_pipeline *compute_pipeline)
+{
+   if (cmd_buffer->state.compute_pipeline == compute_pipeline)
+      return;
+
+   radv_bind_shader(cmd_buffer, compute_pipeline->base.shaders[MESA_SHADER_COMPUTE], MESA_SHADER_COMPUTE);
+
+   cmd_buffer->state.compute_pipeline = compute_pipeline;
+   cmd_buffer->push_constant_stages |= VK_SHADER_STAGE_COMPUTE_BIT;
+   cmd_buffer->state.prefetch_L2_mask |= RADV_PREFETCH_CS;
+}
+
+static ALWAYS_INLINE void
+radv_bind_rt_pipeline(struct radv_cmd_buffer *cmd_buffer, struct radv_ray_tracing_pipeline *rt_pipeline)
+{
+   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   struct radv_cmd_stream *cs = cmd_buffer->cs;
+
+   if (cmd_buffer->state.rt_pipeline == rt_pipeline)
+      return;
+
+   radv_bind_shader(cmd_buffer, rt_pipeline->base.base.shaders[MESA_SHADER_INTERSECTION], MESA_SHADER_INTERSECTION);
+   radv_bind_rt_prolog(cmd_buffer, rt_pipeline->prolog);
+
+   for (unsigned i = 0; i < rt_pipeline->stage_count; ++i) {
+      struct radv_shader *shader = rt_pipeline->stages[i].shader;
+      if (!shader)
+         continue;
+
+      cmd_buffer->shader_upload_seq = MAX2(cmd_buffer->shader_upload_seq, shader->upload_seq);
+      radv_cs_add_buffer(device->ws, cs->b, shader->bo);
+   }
+
+   cmd_buffer->state.rt_pipeline = rt_pipeline;
+   cmd_buffer->push_constant_stages |= RADV_RT_STAGE_BITS;
+   cmd_buffer->state.prefetch_L2_mask |= RADV_PREFETCH_RT;
+
+   /* Bind the stack size when it's not dynamic. */
+   if (rt_pipeline->stack_size != -1u)
+      cmd_buffer->state.rt_stack_size = rt_pipeline->stack_size;
+}
+
+static ALWAYS_INLINE void
+radv_bind_graphics_pipeline(struct radv_cmd_buffer *cmd_buffer, struct radv_graphics_pipeline *graphics_pipeline)
+{
+   /* Bind the non-dynamic graphics state from the pipeline unconditionally because some PSO might
+    * have been overwritten between two binds of the same pipeline.
+    */
+   radv_bind_dynamic_state(cmd_buffer, &graphics_pipeline->dynamic_state);
+
+   if (cmd_buffer->state.graphics_pipeline == graphics_pipeline)
+      return;
+
+   radv_foreach_stage (
+      stage, (cmd_buffer->state.active_stages | graphics_pipeline->active_stages) & RADV_GRAPHICS_STAGE_BITS) {
+      radv_bind_shader(cmd_buffer, graphics_pipeline->base.shaders[stage], stage);
+   }
+
+   radv_bind_gs_copy_shader(cmd_buffer, graphics_pipeline->base.gs_copy_shader);
+
+   cmd_buffer->state.graphics_pipeline = graphics_pipeline;
+
+   cmd_buffer->state.dirty |= RADV_CMD_DIRTY_PIPELINE;
+   cmd_buffer->push_constant_stages |= graphics_pipeline->active_stages;
+
+   /* Prefetch all pipeline shaders at first draw time. */
+   cmd_buffer->state.prefetch_L2_mask |= RADV_PREFETCH_GFX_SHADERS;
+
+   const struct radv_shader *ps = radv_get_shader(graphics_pipeline->base.shaders, MESA_SHADER_FRAGMENT);
+
+   radv_bind_fragment_output_state(cmd_buffer, ps, NULL, graphics_pipeline->custom_blend_mode);
+
+   radv_bind_multisample_state(cmd_buffer, &graphics_pipeline->ms);
+
+   radv_bind_custom_blend_mode(cmd_buffer, graphics_pipeline->custom_blend_mode);
+
+   if (cmd_buffer->state.db_render_control != graphics_pipeline->db_render_control) {
+      cmd_buffer->state.db_render_control = graphics_pipeline->db_render_control;
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FRAMEBUFFER;
+   }
+
+   if (cmd_buffer->state.uses_out_of_order_rast != graphics_pipeline->uses_out_of_order_rast ||
+       cmd_buffer->state.uses_vrs_attachment != graphics_pipeline->uses_vrs_attachment) {
+      cmd_buffer->state.uses_out_of_order_rast = graphics_pipeline->uses_out_of_order_rast;
+      cmd_buffer->state.uses_vrs_attachment = graphics_pipeline->uses_vrs_attachment;
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_RAST_SAMPLES_STATE;
+   }
+
+   cmd_buffer->state.ia_multi_vgt_param = graphics_pipeline->ia_multi_vgt_param;
+
+   cmd_buffer->state.uses_vrs = graphics_pipeline->uses_vrs;
+   cmd_buffer->state.uses_vrs_coarse_shading = graphics_pipeline->uses_vrs_coarse_shading;
+}
+
 VKAPI_ATTR void VKAPI_CALL
 radv_CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline _pipeline)
 {
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(radv_pipeline, pipeline, _pipeline);
-   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   struct radv_cmd_stream *cs = cmd_buffer->cs;
 
    radv_reset_shader_object_state(cmd_buffer, pipelineBindPoint);
 
    switch (pipelineBindPoint) {
    case VK_PIPELINE_BIND_POINT_COMPUTE: {
       struct radv_compute_pipeline *compute_pipeline = radv_pipeline_to_compute(pipeline);
-
-      if (cmd_buffer->state.compute_pipeline == compute_pipeline)
-         return;
-
-      radv_bind_shader(cmd_buffer, compute_pipeline->base.shaders[MESA_SHADER_COMPUTE], MESA_SHADER_COMPUTE);
-
-      cmd_buffer->state.compute_pipeline = compute_pipeline;
-      cmd_buffer->push_constant_stages |= VK_SHADER_STAGE_COMPUTE_BIT;
-      cmd_buffer->state.prefetch_L2_mask |= RADV_PREFETCH_CS;
+      radv_bind_compute_pipeline(cmd_buffer, compute_pipeline);
       break;
    }
    case VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR: {
       struct radv_ray_tracing_pipeline *rt_pipeline = radv_pipeline_to_ray_tracing(pipeline);
-
-      if (cmd_buffer->state.rt_pipeline == rt_pipeline)
-         return;
-
-      radv_bind_shader(cmd_buffer, rt_pipeline->base.base.shaders[MESA_SHADER_INTERSECTION], MESA_SHADER_INTERSECTION);
-      radv_bind_rt_prolog(cmd_buffer, rt_pipeline->prolog);
-
-      for (unsigned i = 0; i < rt_pipeline->stage_count; ++i) {
-         struct radv_shader *shader = rt_pipeline->stages[i].shader;
-         if (!shader)
-            continue;
-
-         cmd_buffer->shader_upload_seq = MAX2(cmd_buffer->shader_upload_seq, shader->upload_seq);
-         radv_cs_add_buffer(device->ws, cs->b, shader->bo);
-      }
-
-      cmd_buffer->state.rt_pipeline = rt_pipeline;
-      cmd_buffer->push_constant_stages |= RADV_RT_STAGE_BITS;
-      cmd_buffer->state.prefetch_L2_mask |= RADV_PREFETCH_RT;
-
-      /* Bind the stack size when it's not dynamic. */
-      if (rt_pipeline->stack_size != -1u)
-         cmd_buffer->state.rt_stack_size = rt_pipeline->stack_size;
-
+      radv_bind_rt_pipeline(cmd_buffer, rt_pipeline);
       break;
    }
    case VK_PIPELINE_BIND_POINT_GRAPHICS: {
       struct radv_graphics_pipeline *graphics_pipeline = radv_pipeline_to_graphics(pipeline);
-
-      /* Bind the non-dynamic graphics state from the pipeline unconditionally because some PSO
-       * might have been overwritten between two binds of the same pipeline.
-       */
-      radv_bind_dynamic_state(cmd_buffer, &graphics_pipeline->dynamic_state);
-
-      if (cmd_buffer->state.graphics_pipeline == graphics_pipeline)
-         return;
-
-      radv_foreach_stage (
-         stage, (cmd_buffer->state.active_stages | graphics_pipeline->active_stages) & RADV_GRAPHICS_STAGE_BITS) {
-         radv_bind_shader(cmd_buffer, graphics_pipeline->base.shaders[stage], stage);
-      }
-
-      radv_bind_gs_copy_shader(cmd_buffer, graphics_pipeline->base.gs_copy_shader);
-
-      cmd_buffer->state.graphics_pipeline = graphics_pipeline;
-
-      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_PIPELINE;
-      cmd_buffer->push_constant_stages |= graphics_pipeline->active_stages;
-
-      /* Prefetch all pipeline shaders at first draw time. */
-      cmd_buffer->state.prefetch_L2_mask |= RADV_PREFETCH_GFX_SHADERS;
-
-      const struct radv_shader *ps = radv_get_shader(graphics_pipeline->base.shaders, MESA_SHADER_FRAGMENT);
-
-      radv_bind_fragment_output_state(cmd_buffer, ps, NULL, graphics_pipeline->custom_blend_mode);
-
-      radv_bind_multisample_state(cmd_buffer, &graphics_pipeline->ms);
-
-      radv_bind_custom_blend_mode(cmd_buffer, graphics_pipeline->custom_blend_mode);
-
-      if (cmd_buffer->state.db_render_control != graphics_pipeline->db_render_control) {
-         cmd_buffer->state.db_render_control = graphics_pipeline->db_render_control;
-         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FRAMEBUFFER;
-      }
-
-      if (cmd_buffer->state.uses_out_of_order_rast != graphics_pipeline->uses_out_of_order_rast ||
-          cmd_buffer->state.uses_vrs_attachment != graphics_pipeline->uses_vrs_attachment) {
-         cmd_buffer->state.uses_out_of_order_rast = graphics_pipeline->uses_out_of_order_rast;
-         cmd_buffer->state.uses_vrs_attachment = graphics_pipeline->uses_vrs_attachment;
-         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_RAST_SAMPLES_STATE;
-      }
-
-      cmd_buffer->state.ia_multi_vgt_param = graphics_pipeline->ia_multi_vgt_param;
-
-      cmd_buffer->state.uses_vrs = graphics_pipeline->uses_vrs;
-      cmd_buffer->state.uses_vrs_coarse_shading = graphics_pipeline->uses_vrs_coarse_shading;
+      radv_bind_graphics_pipeline(cmd_buffer, graphics_pipeline);
       break;
    }
    default:
