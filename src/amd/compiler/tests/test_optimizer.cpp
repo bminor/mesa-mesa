@@ -2081,3 +2081,101 @@ BEGIN_TEST(optimizer.pk_clamp_fma_mix)
 
    finish_opt_test();
 END_TEST
+
+BEGIN_TEST(optimizer.fp64_input_modifiers)
+   //>> v2: %a:v[0-1],  v2: %b:v[2-3],  s2: %c:s[0-1] = p_startpgm
+   if (!setup_cs("v2 v2 s2", GFX12))
+      return;
+
+   //! v2: %add = v_fma_f64 -%a, |%b|, -|%c|
+   //! p_unit_test 0, %add
+   Temp neg_a =
+      bld.vop3(aco_opcode::v_mul_f64_e64, bld.def(v2), Operand::c64(dui(-1.0)), inputs[0]);
+   Builder::Result abs_b =
+      bld.vop3(aco_opcode::v_mul_f64_e64, bld.def(v2), Operand::c64(dui(1.0)), inputs[1]);
+   abs_b->valu().abs[1] = true;
+   Builder::Result abs_c = bld.vop3(aco_opcode::v_mul_f64_e64, bld.def(v2), Operand::c64(dui(1.0)),
+                                    bld.copy(bld.def(v2), inputs[2]));
+   abs_c->valu().abs[1] = true;
+   Temp neg_abs_c =
+      bld.vop3(aco_opcode::v_mul_f64_e64, bld.def(v2), Operand::c64(dui(-1.0)), abs_c);
+   Temp mul = bld.vop3(aco_opcode::v_mul_f64_e64, bld.def(v2), neg_a, abs_b);
+   Temp add = bld.vop3(aco_opcode::v_add_f64_e64, bld.def(v2), mul, neg_abs_c);
+   writeout(0, add);
+
+   finish_opt_test();
+END_TEST
+
+BEGIN_TEST(optimizer.fp64_input_modifiers_not_applied)
+   //>> v2: %a:v[0-1],  v2: %b:v[2-3],  s2: %c:s[0-1] = p_startpgm
+   if (!setup_cs("v2 v2 s2", GFX12))
+      return;
+
+   //! v1: %lo_a,  v1: %hi_a = p_split_vector %a
+   //! v1: %neg_hi_a = v_xor_b32 0x80000000, %hi_a
+   //! v2: %neg_a = p_create_vector %lo_a, %neg_hi_a
+   //! p_unit_test 0, %neg_a
+   Temp neg_a =
+      bld.vop3(aco_opcode::v_mul_f64_e64, bld.def(v2), Operand::c64(dui(-1.0)), inputs[0]);
+   writeout(0, neg_a);
+
+   //! v1: %lo_b,  v1: %hi_b = p_split_vector %b
+   //! v1: %abs_hi_b = v_and_b32 0x7fffffff, %hi_b
+   //! v2: %abs_b = p_create_vector %lo_b, %abs_hi_b
+   //! p_unit_test 1, %abs_b
+   Builder::Result abs_b =
+      bld.vop3(aco_opcode::v_mul_f64_e64, bld.def(v2), Operand::c64(dui(1.0)), inputs[1]);
+   abs_b->valu().abs[1] = true;
+   writeout(1, abs_b);
+
+   //! s1: %lo_c,  s1: %hi_c = p_split_vector %c
+   //! s1: %neg_abs_hi_c,  s1: %_:scc = s_or_b32 0x80000000, %hi_c
+   //! v2: %neg_abs_c = p_create_vector %lo_c, %neg_abs_hi_c
+   //! p_unit_test 2, %neg_abs_c
+   Builder::Result abs_c = bld.vop3(aco_opcode::v_mul_f64_e64, bld.def(v2), Operand::c64(dui(1.0)),
+                                    bld.copy(bld.def(v2), inputs[2]));
+   abs_c->valu().abs[1] = true;
+   Temp neg_abs_c =
+      bld.vop3(aco_opcode::v_mul_f64_e64, bld.def(v2), Operand::c64(dui(-1.0)), abs_c);
+   writeout(2, neg_abs_c);
+
+   finish_opt_test();
+END_TEST
+
+BEGIN_TEST(optimizer.fp64_omod)
+   //>> v2: %a:v[0-1] = p_startpgm
+   if (!setup_cs("v2", GFX12))
+      return;
+
+   program->blocks[0].fp_mode.denorm16_64 = fp_denorm_flush;
+
+   //! v2: %res0 = v_rcp_f64 %a *2
+   //! p_unit_test 0, %res0
+   Temp res0 = bld.vop1(aco_opcode::v_rcp_f64, bld.def(v2), inputs[0]);
+   res0 = bld.vop3(aco_opcode::v_mul_f64_e64, bld.def(v2), Operand::c64(dui(2.0)), res0);
+   writeout(0, res0);
+
+   //! v2: %res1 = v_sqrt_f64 %a *0.5
+   //! p_unit_test 1, %res1
+   Temp res1 = bld.vop1(aco_opcode::v_sqrt_f64, bld.def(v2), inputs[0]);
+   res1 = bld.vop3(aco_opcode::v_mul_f64_e64, bld.def(v2), Operand::c64(dui(0.5)), res1);
+   writeout(1, res1);
+
+   finish_opt_test();
+END_TEST
+
+BEGIN_TEST(optimizer.fp64_clamp)
+   //>> v2: %a:v[0-1] = p_startpgm
+   if (!setup_cs("v2", GFX12))
+      return;
+
+   //! v2: %clamp = v_rcp_f64 %a clamp
+   //! p_unit_test 0, %clamp
+   Temp tmp = bld.vop1(aco_opcode::v_rcp_f64, bld.def(v2), inputs[0]);
+   Instruction* clamp =
+      bld.vop3(aco_opcode::v_mul_f64_e64, bld.def(v2), Operand::c64(dui(1.0)), tmp);
+   clamp->valu().clamp = true;
+   writeout(0, clamp->definitions[0].getTemp());
+
+   finish_opt_test();
+END_TEST
