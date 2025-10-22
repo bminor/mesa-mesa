@@ -1209,7 +1209,7 @@ static void si_emit_draw_registers(struct si_context *sctx,
 
 static ALWAYS_INLINE void
 gfx11_emit_buffered_sh_regs_inline(struct si_context *sctx, unsigned *num_regs,
-                                   struct gfx11_reg_pair *reg_pairs)
+                                   struct ac_gfx11_reg_pair *reg_pairs)
 {
    unsigned reg_count = *num_regs;
 

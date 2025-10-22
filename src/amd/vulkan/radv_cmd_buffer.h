@@ -11,6 +11,7 @@
 #ifndef RADV_CMD_BUFFER_H
 #define RADV_CMD_BUFFER_H
 
+#include "ac_cmdbuf.h"
 #include "ac_vcn.h"
 
 #include "vk_command_buffer.h"
@@ -572,12 +573,6 @@ struct radv_cmd_buffer_upload {
    struct list_head list;
 };
 
-/* A pair of values for SET_*_REG_PAIRS. */
-struct gfx12_reg {
-   uint32_t reg_offset;
-   uint32_t reg_value;
-};
-
 struct radv_cmd_stream {
    struct ac_cmdbuf *b;
 
@@ -588,7 +583,7 @@ struct radv_cmd_stream {
 
    uint32_t num_buffered_sh_regs;
    struct {
-      struct gfx12_reg buffered_sh_regs[256];
+      struct ac_gfx12_reg buffered_sh_regs[256];
    } gfx12;
 };
 

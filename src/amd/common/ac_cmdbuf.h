@@ -22,6 +22,26 @@ struct ac_cmdbuf {
    uint32_t *buf;        /* The base pointer of the chunk. */
 };
 
+/* The structure layout is identical to a pair of registers in SET_*_REG_PAIRS_PACKED. */
+struct ac_gfx11_reg_pair {
+   union {
+      /* A pair of register offsets. */
+      struct {
+         uint16_t reg_offset[2];
+      };
+      /* The same pair of register offsets as a dword. */
+      uint32_t reg_offsets;
+   };
+   /* A pair of register values for the register offsets above. */
+   uint32_t reg_value[2];
+};
+
+/* A pair of values for SET_*_REG_PAIRS. */
+struct ac_gfx12_reg {
+   uint32_t reg_offset;
+   uint32_t reg_value;
+};
+
 #define ac_cmdbuf_begin(cs) struct ac_cmdbuf *__cs = (cs);                        \
                             uint32_t __cs_num = __cs->cdw;                        \
                             UNUSED uint32_t __cs_num_initial = __cs_num;          \

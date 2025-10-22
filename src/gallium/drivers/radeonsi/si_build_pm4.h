@@ -352,7 +352,7 @@
  * Registers are buffered on the stack and then copied to the command buffer at the end.
  */
 #define gfx11_begin_packed_context_regs() \
-   struct gfx11_reg_pair __cs_context_regs[50]; \
+   struct ac_gfx11_reg_pair __cs_context_regs[50]; \
    unsigned __cs_context_reg_count = 0;
 
 #define gfx11_set_context_reg(reg, value) \

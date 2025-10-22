@@ -18,6 +18,7 @@
 #include "util/u_vertex_state_cache.h"
 #include "util/perf/u_trace.h"
 #include "util/log.h"
+#include "ac_cmdbuf.h"
 #include "ac_descriptors.h"
 #include "ac_sqtt.h"
 #include "ac_spm.h"
@@ -931,26 +932,6 @@ struct si_vertex_state {
    uint32_t descriptors[4 * SI_MAX_ATTRIBS];
 };
 
-/* The structure layout is identical to a pair of registers in SET_*_REG_PAIRS_PACKED. */
-struct gfx11_reg_pair {
-   union {
-      /* A pair of register offsets. */
-      struct {
-         uint16_t reg_offset[2];
-      };
-      /* The same pair of register offsets as a dword. */
-      uint32_t reg_offsets;
-   };
-   /* A pair of register values for the register offsets above. */
-   uint32_t reg_value[2];
-};
-
-/* A pair of values for SET_*_REG_PAIRS. */
-struct gfx12_reg {
-   uint32_t reg_offset;
-   uint32_t reg_value;
-};
-
 typedef void (*pipe_draw_vertex_state_func)(struct pipe_context *ctx,
                                             struct pipe_vertex_state *vstate,
                                             uint32_t partial_velem_mask,
@@ -1054,13 +1035,13 @@ struct si_context {
    unsigned num_buffered_compute_sh_regs;
    union {
       struct {
-         struct gfx11_reg_pair buffered_gfx_sh_regs[32];
-         struct gfx11_reg_pair buffered_compute_sh_regs[32];
+         struct ac_gfx11_reg_pair buffered_gfx_sh_regs[32];
+         struct ac_gfx11_reg_pair buffered_compute_sh_regs[32];
       } gfx11;
 
       struct {
-         struct gfx12_reg buffered_gfx_sh_regs[64];
-         struct gfx12_reg buffered_compute_sh_regs[64];
+         struct ac_gfx12_reg buffered_gfx_sh_regs[64];
+         struct ac_gfx12_reg buffered_compute_sh_regs[64];
       } gfx12;
    };
 
