@@ -2194,29 +2194,35 @@ combine_operand(opt_ctx& ctx, alu_opt_op& inner, const aco_type& inner_type,
       inner.f16_to_f32 = true;
    }
 
+   assert(inner.op.size() == outer.op.size());
+   assert(inner.op.size() == 1 || inner_type.num_components == 1);
    for (unsigned i = 0; i < inner_type.num_components; i++) {
-      unsigned offset = inner.extract[i].offset() * 8;
-      unsigned size = MIN2(inner.extract[i].size() * 8, inner_type.bit_size);
-      unsigned out_comp = offset / outer_type.bit_size;
-      unsigned rem_off = offset % outer_type.bit_size;
-      if (rem_off && has_imod)
-         return false;
-      if (out_comp > outer_type.num_components)
-         return false;
-      if (size > outer_type.bit_size && (out_comp + 1) != outer_type.num_components)
-         return false;
-      if (rem_off >= outer.extract[out_comp].size() * 8)
-         return false;
-      if (size < inner_type.bit_size && size > outer.extract[out_comp].size() * 8 &&
-          outer.extract[out_comp].sign_extend() && !inner.extract[i].sign_extend())
-         return false;
+      unsigned size = inner_type.bit_size;
+      unsigned out_comp = 0;
+      if (inner.op.size() == 1) {
+         size = MIN2(inner.extract[i].size() * 8, size);
+         unsigned offset = inner.extract[i].offset() * 8;
+         out_comp = offset / outer_type.bit_size;
+         unsigned rem_off = offset % outer_type.bit_size;
+         if (rem_off && has_imod)
+            return false;
+         if (out_comp > outer_type.num_components)
+            return false;
+         if (size > outer_type.bit_size && (out_comp + 1) != outer_type.num_components)
+            return false;
+         if (rem_off >= outer.extract[out_comp].size() * 8)
+            return false;
+         if (size < inner_type.bit_size && size > outer.extract[out_comp].size() * 8 &&
+             outer.extract[out_comp].sign_extend() && !inner.extract[i].sign_extend())
+            return false;
 
-      bool sign_extend = size <= outer.extract[out_comp].size() * 8
-                            ? inner.extract[i].sign_extend()
-                            : outer.extract[out_comp].sign_extend();
-      unsigned new_off = (rem_off / 8) + outer.extract[out_comp].offset();
-      unsigned new_size = MIN2(size / 8, outer.extract[i].size());
-      inner.extract[i] = SubdwordSel(new_size, new_off, sign_extend);
+         bool sign_extend = size <= outer.extract[out_comp].size() * 8
+                               ? inner.extract[i].sign_extend()
+                               : outer.extract[out_comp].sign_extend();
+         unsigned new_off = (rem_off / 8) + outer.extract[out_comp].offset();
+         unsigned new_size = MIN2(size / 8, outer.extract[i].size());
+         inner.extract[i] = SubdwordSel(new_size, new_off, sign_extend);
+      }
 
       if (size == outer_type.bit_size) {
          inner.neg[i] ^= !inner.abs[i] && outer.neg[out_comp];
