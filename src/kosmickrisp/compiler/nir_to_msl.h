@@ -54,3 +54,4 @@ bool msl_ensure_depth_write(nir_shader *nir);
 bool msl_ensure_vertex_position_output(nir_shader *nir);
 bool msl_nir_sample_mask_type(nir_shader *nir);
 bool msl_nir_layer_id_type(nir_shader *nir);
+bool msl_nir_fix_stencil_type(nir_shader *nir);

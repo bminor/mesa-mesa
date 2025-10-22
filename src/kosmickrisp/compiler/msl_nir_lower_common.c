@@ -253,3 +253,31 @@ msl_nir_layer_id_type(nir_shader *nir)
    return nir_shader_intrinsics_pass(nir, msl_layer_id_uint, nir_metadata_all,
                                      NULL);
 }
+
+static bool
+stencil_type(nir_builder *b, nir_intrinsic_instr *intr, void *data)
+{
+   if (intr->intrinsic == nir_intrinsic_store_output &&
+       nir_intrinsic_io_semantics(intr).location == FRAG_RESULT_STENCIL) {
+      nir_alu_type type = nir_intrinsic_src_type(intr);
+      nir_intrinsic_set_src_type(
+         intr, nir_type_uint | nir_alu_type_get_type_size(type));
+      return true;
+   }
+   if (intr->intrinsic == nir_intrinsic_load_output &&
+       nir_intrinsic_io_semantics(intr).location == FRAG_RESULT_STENCIL) {
+      nir_alu_type type = nir_intrinsic_dest_type(intr);
+      nir_intrinsic_set_dest_type(
+         intr, nir_type_uint | nir_alu_type_get_type_size(type));
+      return true;
+   }
+   return false;
+}
+
+bool
+msl_nir_fix_stencil_type(nir_shader *nir)
+{
+   assert(nir->info.stage == MESA_SHADER_FRAGMENT);
+
+   return nir_shader_intrinsics_pass(nir, stencil_type, nir_metadata_all, NULL);
+}
