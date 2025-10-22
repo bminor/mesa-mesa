@@ -35,6 +35,7 @@ struct kk_root_descriptor_table {
          uint64_t attrib_base[KK_MAX_ATTRIBS];
          uint32_t attrib_clamps[KK_MAX_ATTRIBS];
          float blend_constant[4];
+         uint32_t draw_id;
       } draw;
       struct {
          uint32_t base_group[3];

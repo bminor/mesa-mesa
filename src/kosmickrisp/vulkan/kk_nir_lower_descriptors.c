@@ -409,6 +409,9 @@ try_lower_intrin(nir_builder *b, nir_intrinsic_instr *intrin,
    case nir_intrinsic_load_push_constant:
       return lower_load_push_constant(b, intrin, ctx);
 
+   case nir_intrinsic_load_draw_id:
+      return lower_sysval_to_root_table(b, intrin, draw.draw_id);
+
    case nir_intrinsic_image_deref_load:
    case nir_intrinsic_image_deref_sparse_load:
    case nir_intrinsic_image_deref_store:

@@ -60,6 +60,7 @@ static const char *sysval_table[SYSTEM_VALUE_MAX] = {
    [SYSTEM_VALUE_SAMPLE_MASK_IN] = "uint gl_SampleMask [[sample_mask]]",
    [SYSTEM_VALUE_AMPLIFICATION_ID_KK] =
       "uint mtl_AmplificationID [[amplification_id]]",
+   [SYSTEM_VALUE_FIRST_VERTEX] = "uint gl_FirstVertex [[base_vertex]]",
    /* These are functions and not shader input variables */
    [SYSTEM_VALUE_HELPER_INVOCATION] = "",
 };
@@ -949,6 +950,9 @@ intrinsic_to_msl(struct nir_to_msl_ctx *ctx, nir_intrinsic_instr *instr)
       break;
    case nir_intrinsic_load_point_coord:
       P(ctx, "gl_PointCoord;\n");
+      break;
+   case nir_intrinsic_load_first_vertex:
+      P(ctx, "gl_FirstVertex;\n");
       break;
    case nir_intrinsic_load_vertex_id:
       P(ctx, "gl_VertexID;\n");

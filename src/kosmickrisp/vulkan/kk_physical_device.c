@@ -57,7 +57,7 @@ kk_get_device_extensions(const struct kk_instance *instance,
       .KHR_multiview = true,
       .KHR_relaxed_block_layout = true,
       .KHR_sampler_ycbcr_conversion = true,
-      .KHR_shader_draw_parameters = false,
+      .KHR_shader_draw_parameters = true,
       .KHR_storage_buffer_storage_class = true,
       .KHR_variable_pointers = true,
 
@@ -174,6 +174,7 @@ kk_get_device_features(
 
       /* Vulkan 1.1 */
       .multiview = true,
+      .shaderDrawParameters = true,
       .storageBuffer16BitAccess = true,
       .storageInputOutput16 = false,
       .storagePushConstant16 = true,
