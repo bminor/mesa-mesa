@@ -128,6 +128,14 @@
       .alpha = PIPE_SWIZZLE_W,                                                 \
    }
 
+#define MTL_SWIZZLE_RGB1                                                       \
+   .swizzle = {                                                                \
+      .red = PIPE_SWIZZLE_X,                                                   \
+      .green = PIPE_SWIZZLE_Y,                                                 \
+      .blue = PIPE_SWIZZLE_Z,                                                  \
+      .alpha = PIPE_SWIZZLE_1,                                                 \
+   }
+
 #define MTL_FMT(pipe_format, mtl_format, swizzle, capabilities,                \
                 texel_buffer_capabilities, native)                             \
    [PIPE_FORMAT_##                                                             \
@@ -264,6 +272,8 @@ static const struct kk_va_format kk_vf_formats[] = {
    MTL_FMT_NATIVE(ETC2_SRGB8A1, MTL_FMT_FS(64), MTL_FMT_TB_NONE),
 
    // BC/DXT formats
+   MTL_FMT(DXT1_RGB, DXT1_RGBA, MTL_SWIZZLE_RGB1, MTL_FMT_FS(64), MTL_FMT_TB_NONE, true),
+   MTL_FMT(DXT1_SRGB, DXT1_SRGBA, MTL_SWIZZLE_RGB1, MTL_FMT_FS(64), MTL_FMT_TB_NONE, true),
    MTL_FMT_NATIVE(DXT1_RGBA, MTL_FMT_FS(64), MTL_FMT_TB_NONE),
    MTL_FMT_NATIVE(DXT1_SRGBA, MTL_FMT_FS(64), MTL_FMT_TB_NONE),
    MTL_FMT_NATIVE(DXT3_RGBA, MTL_FMT_FS(128), MTL_FMT_TB_NONE),
