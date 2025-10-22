@@ -94,6 +94,7 @@ d3d12_video_encoder_friendly_frame_type_hevc(D3D12_VIDEO_ENCODER_FRAME_TYPE_HEVC
    }
 }
 
+#ifdef MESA_DEBUG
 void
 d3d12_video_encoder_references_manager_hevc::print_l0_l1_lists()
 {
@@ -169,7 +170,9 @@ d3d12_video_encoder_references_manager_hevc::print_l0_l1_lists()
                    modificationOrderList1ContentsString.c_str());
    }
 }
+#endif // MESA_DEBUG
 
+#ifdef MESA_DEBUG
 void
 d3d12_video_encoder_references_manager_hevc::print_dpb()
 {
@@ -218,6 +221,7 @@ d3d12_video_encoder_references_manager_hevc::print_dpb()
                    dpbContents.c_str());
    }
 }
+#endif // MESA_DEBUG
 
 static D3D12_VIDEO_ENCODER_FRAME_TYPE_HEVC
 d3d12_video_encoder_convert_frame_type_hevc(enum pipe_h2645_enc_picture_type picType)
@@ -271,7 +275,6 @@ d3d12_video_encoder_references_manager_hevc::begin_frame(const D3D12_VIDEO_ENCOD
    m_CurrentFrameReferencesData.pReferenceFramesReconPictureDescriptors.resize(hevcPic->dpb_size);
    m_CurrentFrameReferencesData.ReferenceTextures.pResources.resize(hevcPic->dpb_size);
    m_CurrentFrameReferencesData.ReferenceTextures.pSubresources.resize(hevcPic->dpb_size);
-   m_CurrentFrameReferencesData.pReferenceFramesReconPictureDescriptors.resize(hevcPic->dpb_size);
    m_CurrentFrameReferencesData.ReconstructedPicTexture = { NULL, 0u };
    for (uint8_t i = 0; i < hevcPic->dpb_size; i++) {
       //
@@ -384,6 +387,8 @@ d3d12_video_encoder_references_manager_hevc::begin_frame(const D3D12_VIDEO_ENCOD
       }
    }
 
+#ifdef MESA_DEBUG
    print_dpb();
    print_l0_l1_lists();
+#endif
 }
