@@ -1083,14 +1083,12 @@ CDX12EncHMFT::CreateGOPTracker( uint32_t textureWidth, uint32_t textureHeight )
 {
    HRESULT hr = S_OK;
    uint32_t MaxHWL0Ref = m_EncoderCapabilities.m_uiMaxHWSupportedL0References;
-   uint32_t MaxHWL1Ref = m_EncoderCapabilities.m_uiMaxHWSupportedL1References;
    MaxHWL0Ref = std::min( 1u, MaxHWL0Ref );   // we only support 1
-   MaxHWL1Ref = 0;
    std::unique_ptr<dpb_buffer_manager> upTwoPassDPBManager;
 
    SAFE_DELETE( m_pGOPTracker );
-   // B Frame not supported by HW
-   CHECKBOOL_GOTO( ( m_uiBFrameCount == 0 ) || ( MaxHWL1Ref > 0 ), E_INVALIDARG, done );
+   // B Frame not supported
+   CHECKBOOL_GOTO( ( m_uiBFrameCount == 0 ), E_INVALIDARG, done );
    // Requested number of temporal layers higher than max supported by HW
    CHECKBOOL_GOTO( m_uiLayerCount <= m_EncoderCapabilities.m_uiMaxTemporalLayers, MF_E_OUT_OF_RANGE, done );
    // Validate logic expression (m_uiLayerCount > 1) => (m_uiBFrameCount == 0)
@@ -1112,7 +1110,6 @@ CDX12EncHMFT::CreateGOPTracker( uint32_t textureWidth, uint32_t textureHeight )
    assert( m_uiMaxNumRefFrame == m_pPipeVideoCodec->max_references );
    assert( 1 + m_uiMaxLongTermReferences <= m_uiMaxNumRefFrame );
    assert( MaxHWL0Ref <= m_uiMaxNumRefFrame );
-   assert( MaxHWL1Ref <= m_uiMaxNumRefFrame );
 
    if( m_pPipeVideoCodec->two_pass.enable && ( m_pPipeVideoCodec->two_pass.pow2_downscale_factor > 0 ) )
    {
@@ -1135,7 +1132,6 @@ CDX12EncHMFT::CreateGOPTracker( uint32_t textureWidth, uint32_t textureHeight )
                                                       m_uiLayerCount,
                                                       m_bLowLatency,
                                                       MaxHWL0Ref,
-                                                      MaxHWL1Ref,
                                                       m_pPipeVideoCodec->max_references,
                                                       m_uiMaxLongTermReferences,
                                                       m_gpuFeatureFlags.m_bH264SendUnwrappedPOC,

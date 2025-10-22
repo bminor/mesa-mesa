@@ -39,13 +39,11 @@ reference_frames_tracker_hevc::reference_frames_tracker_hevc( struct pipe_video_
                                                               uint32_t layerCount,
                                                               bool bLowLatency,
                                                               uint32_t MaxL0References,
-                                                              uint32_t MaxL1References,
                                                               uint32_t MaxDPBCapacity,
                                                               uint32_t MaxLongTermReferences,
                                                               std::unique_ptr<dpb_buffer_manager> upTwoPassDPBManager )
    : m_codec( codec ),
      m_MaxL0References( MaxL0References ),
-     m_MaxL1References( MaxL1References ),
      m_MaxDPBCapacity( MaxDPBCapacity ),
      m_MaxLongTermReferences( MaxLongTermReferences ),
      m_DPBManager(

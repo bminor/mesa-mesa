@@ -114,7 +114,6 @@ class reference_frames_tracker_h264 : public reference_frames_tracker
                                   uint32_t layerCount,
                                   bool bLowLatency,
                                   uint32_t MaxL0References,
-                                  uint32_t MaxL1References,
                                   uint32_t MaxDPBCapacity,
                                   uint32_t MaxLongTermReferences,
                                   bool bSendUnwrappedPOC,
@@ -136,7 +135,6 @@ class reference_frames_tracker_h264 : public reference_frames_tracker
    reference_frames_tracker_frame_descriptor_h264 m_frame_state_descriptor = {};
 
    uint32_t m_MaxL0References = 0;
-   uint32_t m_MaxL1References = 0;
    uint32_t m_MaxDPBCapacity = 0;
    uint32_t m_MaxLongTermReferences = 0;
 
