@@ -724,7 +724,7 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    info->has_syncobj = true;
    info->has_timeline_syncobj = ac_drm_device_get_sync_provider(dev)->timeline_wait != NULL;
    info->has_fence_to_handle = true;
-   info->has_vm_always_valid = !info->is_virtio;
+   ac_drm_query_has_vm_always_valid(dev, info);
    info->has_bo_metadata = true;
    info->has_eqaa_surface_allocator = info->gfx_level < GFX11;
    /* Disable sparse mappings on GFX6 due to VM faults in CP DMA. Enable them once

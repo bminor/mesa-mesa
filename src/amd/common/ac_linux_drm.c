@@ -1111,3 +1111,14 @@ int ac_drm_query_pci_bus_info(ac_drm_device *dev, struct radeon_info *info)
 
    return 0;
 }
+
+void ac_drm_query_has_vm_always_valid(ac_drm_device *dev, struct radeon_info *info)
+{
+#ifdef HAVE_AMDGPU_VIRTIO
+   if (dev->is_virtio) {
+      info->has_vm_always_valid = amdvgpu_has_vm_always_valid(dev->vdev);
+      return;
+   }
+#endif
+   info->has_vm_always_valid = true;
+}

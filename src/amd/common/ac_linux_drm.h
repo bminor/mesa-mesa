@@ -446,6 +446,7 @@ PROC int ac_drm_userq_signal(ac_drm_device *dev, struct drm_amdgpu_userq_signal 
 PROC int ac_drm_userq_wait(ac_drm_device *dev, struct drm_amdgpu_userq_wait *wait_data) TAIL;
 
 PROC int ac_drm_query_pci_bus_info(ac_drm_device *dev, struct radeon_info *info) TAIL;
+PROC void ac_drm_query_has_vm_always_valid(ac_drm_device *dev, struct radeon_info *info) TAILV;
 
 #ifdef __cplusplus
 }

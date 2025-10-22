@@ -522,3 +522,8 @@ amdvgpu_va_range_alloc(amdvgpu_device_handle dev,
                                  va_base_allocated, va_range_handle,
                                  flags);
 }
+
+bool amdvgpu_has_vm_always_valid(amdvgpu_device_handle dev)
+{
+   return dev->vdev->caps.u.amdgpu.has_vm_always_valid;
+}
