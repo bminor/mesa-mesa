@@ -135,6 +135,36 @@ struct ac_cmdbuf {
       ac_cmdbuf_emit(0); /* unused */                                                        \
    } while (0)
 
+/* GFX12 generic packet building helpers for PAIRS packets. Don't use these directly. */
+
+/* Reserved 1 DWORD to emit the packet header when the sequence ends. */
+#define __ac_gfx12_begin_regs(header) uint32_t header = __cs_num++
+
+/* Set a register unconditionally. */
+#define ac_gfx12_set_reg(reg, value, base_offset)   \
+   do {                                             \
+      ac_cmdbuf_emit(((reg) - (base_offset)) >> 2); \
+      ac_cmdbuf_emit(value);                        \
+   } while (0)
+
+/* End the sequence and emit the packet header. */
+#define __ac_gfx12_end_regs(header, packet)                                               \
+   do {                                                                                   \
+      if ((header) + 1 == __cs_num) {                                                     \
+         __cs_num--; /* no registers have been set, back off */                           \
+      } else {                                                                            \
+         unsigned __dw_count = __cs_num - (header) - 2;                                   \
+         __cs_buf[(header)] = PKT3((packet), __dw_count, 0) | PKT3_RESET_FILTER_CAM_S(1); \
+      }                                                                                   \
+   } while (0)
+
+/* GFX12 packet building helpers for PAIRS packets. */
+#define ac_gfx12_begin_context_regs() __ac_gfx12_begin_regs(__cs_context_reg_header)
+
+#define ac_gfx12_set_context_reg(reg, value) ac_gfx12_set_reg(reg, value, SI_CONTEXT_REG_OFFSET)
+
+#define ac_gfx12_end_context_regs() __ac_gfx12_end_regs(__cs_context_reg_header, PKT3_SET_CONTEXT_REG_PAIRS)
+
 struct ac_preamble_state {
    uint64_t border_color_va;
 

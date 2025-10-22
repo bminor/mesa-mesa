@@ -208,16 +208,6 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
 
 /* GFX12 generic packet building helpers for PAIRS packets. Don't use these directly. */
 
-/* Reserved 1 DWORD to emit the packet header when the sequence ends. */
-#define __gfx12_begin_regs(header) uint32_t header = __cs_num++
-
-/* Set a register unconditionally. */
-#define __gfx12_set_reg(reg, value, base_offset)                                                                       \
-   do {                                                                                                                \
-      radeon_emit(((reg) - (base_offset)) >> 2);                                                                       \
-      radeon_emit(value);                                                                                              \
-   } while (0)
-
 /* Set 1 context register optimally. */
 #define __gfx12_opt_set_reg(reg, reg_enum, value, base_offset)                                                         \
    do {                                                                                                                \
@@ -225,7 +215,7 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
       const uint32_t __value = (value);                                                                                \
       if (!BITSET_TEST(__tracked_regs->reg_saved_mask, (reg_enum)) ||                                                  \
           __tracked_regs->reg_value[(reg_enum)] != __value) {                                                          \
-         __gfx12_set_reg((reg), __value, base_offset);                                                                 \
+         ac_gfx12_set_reg((reg), __value, base_offset);                                                                \
          BITSET_SET(__tracked_regs->reg_saved_mask, (reg_enum));                                                       \
          __tracked_regs->reg_value[(reg_enum)] = __value;                                                              \
       }                                                                                                                \
@@ -238,22 +228,11 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
       const uint32_t __v1 = (v1), __v2 = (v2);                                                                         \
       if (!BITSET_TEST_RANGE_INSIDE_WORD(__tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 1, 0x3) ||           \
           __tracked_regs->reg_value[(reg_enum)] != __v1 || __tracked_regs->reg_value[(reg_enum) + 1] != __v2) {        \
-         __gfx12_set_reg((reg), __v1, base_offset);                                                                    \
-         __gfx12_set_reg((reg) + 4, __v2, base_offset);                                                                \
+         ac_gfx12_set_reg((reg), __v1, base_offset);                                                                   \
+         ac_gfx12_set_reg((reg) + 4, __v2, base_offset);                                                               \
          BITSET_SET_RANGE_INSIDE_WORD(__tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 1);                     \
          __tracked_regs->reg_value[(reg_enum)] = __v1;                                                                 \
          __tracked_regs->reg_value[(reg_enum) + 1] = __v2;                                                             \
-      }                                                                                                                \
-   } while (0)
-
-/* End the sequence and emit the packet header. */
-#define __gfx12_end_regs(header, packet)                                                                               \
-   do {                                                                                                                \
-      if ((header) + 1 == __cs_num) {                                                                                  \
-         __cs_num--; /* no registers have been set, back off */                                                        \
-      } else {                                                                                                         \
-         unsigned __dw_count = __cs_num - (header) - 2;                                                                \
-         __rcs->b->buf[(header)] = PKT3((packet), __dw_count, 0) | PKT3_RESET_FILTER_CAM_S(1);                         \
       }                                                                                                                \
    } while (0)
 
@@ -267,16 +246,16 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
    } while (0)
 
 /* GFX12 packet building helpers for PAIRS packets. */
-#define gfx12_begin_context_regs() __gfx12_begin_regs(__cs_context_reg_header)
+#define gfx12_begin_context_regs() ac_gfx12_begin_context_regs()
 
-#define gfx12_set_context_reg(reg, value) __gfx12_set_reg(reg, value, SI_CONTEXT_REG_OFFSET)
+#define gfx12_set_context_reg(reg, value) ac_gfx12_set_context_reg(reg, value)
 
 #define gfx12_opt_set_context_reg(reg, reg_enum, value) __gfx12_opt_set_reg(reg, reg_enum, value, SI_CONTEXT_REG_OFFSET)
 
 #define gfx12_opt_set_context_reg2(reg, reg_enum, v1, v2)                                                              \
    __gfx12_opt_set_reg2(reg, reg_enum, v1, v2, SI_CONTEXT_REG_OFFSET)
 
-#define gfx12_end_context_regs() __gfx12_end_regs(__cs_context_reg_header, PKT3_SET_CONTEXT_REG_PAIRS)
+#define gfx12_end_context_regs() ac_gfx12_end_context_regs()
 
 /* GFX12 packet building helpers for buffered registers. */
 #define gfx12_push_sh_reg(reg, value) __gfx12_push_reg(reg, value, SI_SH_REG_OFFSET)

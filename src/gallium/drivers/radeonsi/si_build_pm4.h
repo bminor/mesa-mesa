@@ -386,18 +386,12 @@
 } while (0)
 
 /* GFX12 generic packet building helpers for PAIRS packets. Don't use these directly. */
-#define gfx12_begin_regs(header) unsigned header = __cs_num++
-
-#define gfx12_set_reg(reg, value, base_offset) do { \
-   radeon_emit(((reg) - (base_offset)) >> 2); \
-   radeon_emit(value); \
-} while (0)
 
 #define gfx12_opt_set_reg(reg, reg_enum, value, base_offset) do { \
    unsigned __value = value; \
    if (!BITSET_TEST(sctx->tracked_regs.reg_saved_mask, (reg_enum)) || \
        sctx->tracked_regs.reg_value[reg_enum] != __value) { \
-      gfx12_set_reg(reg, __value, base_offset); \
+      ac_gfx12_set_reg(reg, __value, base_offset); \
       BITSET_SET(sctx->tracked_regs.reg_saved_mask, (reg_enum)); \
       sctx->tracked_regs.reg_value[reg_enum] = __value; \
    } \
@@ -413,25 +407,16 @@
        sctx->tracked_regs.reg_value[(reg_enum) + 1] != __v2 || \
        sctx->tracked_regs.reg_value[(reg_enum) + 2] != __v3 || \
        sctx->tracked_regs.reg_value[(reg_enum) + 3] != __v4) { \
-      gfx12_set_reg((reg), __v1, (base_offset)); \
-      gfx12_set_reg((reg) + 4, __v2, (base_offset)); \
-      gfx12_set_reg((reg) + 8, __v3, (base_offset)); \
-      gfx12_set_reg((reg) + 12, __v4, (base_offset)); \
+      ac_gfx12_set_reg((reg), __v1, (base_offset)); \
+      ac_gfx12_set_reg((reg) + 4, __v2, (base_offset)); \
+      ac_gfx12_set_reg((reg) + 8, __v3, (base_offset)); \
+      ac_gfx12_set_reg((reg) + 12, __v4, (base_offset)); \
       BITSET_SET_RANGE_INSIDE_WORD(sctx->tracked_regs.reg_saved_mask, \
                                    (reg_enum), (reg_enum) + 3); \
       sctx->tracked_regs.reg_value[(reg_enum)] = __v1; \
       sctx->tracked_regs.reg_value[(reg_enum) + 1] = __v2; \
       sctx->tracked_regs.reg_value[(reg_enum) + 2] = __v3; \
       sctx->tracked_regs.reg_value[(reg_enum) + 3] = __v4; \
-   } \
-} while (0)
-
-#define gfx12_end_regs(header, packet) do { \
-   if ((header) + 1 == __cs_num) { \
-      __cs_num--; /* no registers have been set, back off */ \
-   } else { \
-      unsigned __dw_count = __cs_num - (header) - 2; \
-      __cs_buf[(header)] = PKT3((packet), __dw_count, 0) | PKT3_RESET_FILTER_CAM_S(1); \
    } \
 } while (0)
 
@@ -456,10 +441,10 @@
 
 /* GFX12 packet building helpers for PAIRS packets. */
 #define gfx12_begin_context_regs() \
-   gfx12_begin_regs(__cs_context_reg_header)
+   ac_gfx12_begin_context_regs()
 
 #define gfx12_set_context_reg(reg, value) \
-   gfx12_set_reg(reg, value, SI_CONTEXT_REG_OFFSET)
+   ac_gfx12_set_context_reg(reg, value)
 
 #define gfx12_opt_set_context_reg(reg, reg_enum, value) \
    gfx12_opt_set_reg(reg, reg_enum, value, SI_CONTEXT_REG_OFFSET)
@@ -468,7 +453,7 @@
    gfx12_opt_set_reg4(reg, reg_enum, v1, v2, v3, v4, SI_CONTEXT_REG_OFFSET)
 
 #define gfx12_end_context_regs() \
-   gfx12_end_regs(__cs_context_reg_header, PKT3_SET_CONTEXT_REG_PAIRS)
+   ac_gfx12_end_context_regs()
 
 /* GFX12 packet building helpers for buffered registers. */
 #define gfx12_push_gfx_sh_reg(reg, value) \
