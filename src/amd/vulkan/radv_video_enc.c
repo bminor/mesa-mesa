@@ -894,7 +894,6 @@ radv_enc_slice_header(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInf
    uint32_t num_bits[RENCODE_SLICE_HEADER_TEMPLATE_MAX_NUM_INSTRUCTIONS] = {0};
    const struct VkVideoEncodeH264PictureInfoKHR *h264_picture_info =
       vk_find_struct_const(enc_info->pNext, VIDEO_ENCODE_H264_PICTURE_INFO_KHR);
-   int slice_count = h264_picture_info->naluSliceEntryCount;
    const StdVideoEncodeH264PictureInfo *pic = h264_picture_info->pStdPictureInfo;
    const StdVideoH264SequenceParameterSet *sps =
       vk_video_find_h264_enc_std_sps(&cmd_buffer->video.params->vk, pic->seq_parameter_set_id);
@@ -906,8 +905,6 @@ radv_enc_slice_header(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInf
    unsigned int cdw_start = 0;
    unsigned int cdw_filled = 0;
    unsigned int bits_copied = 0;
-
-   assert(slice_count <= 1);
 
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);

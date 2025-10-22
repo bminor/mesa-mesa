@@ -2904,7 +2904,7 @@
         "description": "radv/video_enc: Cleanup slice count assert",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "63e952ff2cccc666ee1c77823eeab36fa6a9bea2",
         "notes": null
