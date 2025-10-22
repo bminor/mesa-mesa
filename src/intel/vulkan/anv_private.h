@@ -2173,6 +2173,7 @@ struct anv_gfx_dynamic_state {
    /* 3DSTATE_TE */
    struct {
       uint32_t TEDomain;
+      uint32_t PatchHeaderLayout;
       uint32_t Partitioning;
       uint32_t OutputTopology;
       uint32_t TessellationDistributionMode;

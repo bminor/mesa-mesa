@@ -99,18 +99,37 @@ brw_emit_tcs_thread_end(brw_shader &s)
 
    const brw_builder bld = brw_builder(&s);
 
-   /* Emit a URB write to end the thread.  On Broadwell, we use this to write
-    * zero to the "TR DS Cache Disable" bit (we haven't implemented a fancy
-    * algorithm to set it optimally).  On other platforms, we simply write
-    * zero to a reserved/MBZ patch header DWord which has no consequence.
+   /* Otherwise, we emit a URB write which writes zero to a reserved/MBZ
+    * patch header DWord to end the thread.  We use DWord 0 for legacy
+    * layouts, and DWord 6 for reversed layouts.
     */
+   const bool reversed = s.devinfo->ver >= 12;
+   unsigned components = 1;
+   unsigned offset = 0;
+
    brw_reg srcs[URB_LOGICAL_NUM_SRCS];
    srcs[URB_LOGICAL_SRC_HANDLE] = s.tcs_payload().patch_urb_output;
-   srcs[URB_LOGICAL_SRC_CHANNEL_MASK] = brw_imm_ud(WRITEMASK_X);
    srcs[URB_LOGICAL_SRC_DATA] = brw_imm_ud(0);
+
+   if (s.devinfo->ver >= 20) {
+      offset = 28; /* .z of slot 1 */
+   } else if (reversed) {
+      srcs[URB_LOGICAL_SRC_CHANNEL_MASK] = brw_imm_ud(WRITEMASK_Z);
+
+      brw_reg zeroes[3] = { brw_imm_ud(0), brw_imm_ud(0), brw_imm_ud(0) };
+      srcs[URB_LOGICAL_SRC_DATA] = bld.vgrf(BRW_TYPE_UD, 3);
+      bld.VEC(srcs[URB_LOGICAL_SRC_DATA], zeroes, 3);
+
+      components = 3;
+      offset = 1;
+   } else {
+      srcs[URB_LOGICAL_SRC_CHANNEL_MASK] = brw_imm_ud(WRITEMASK_X);
+   }
+
    brw_urb_inst *urb = bld.URB_WRITE(srcs, ARRAY_SIZE(srcs));
    urb->eot = true;
-   urb->components = 1;
+   urb->offset = offset;
+   urb->components = components;
 }
 
 static void

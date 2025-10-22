@@ -1354,6 +1354,11 @@ update_te(struct anv_gfx_dynamic_state *hw_state,
                              tes_prog_data->tess_info);
 
       SET(TE, te.TEDomain, brw_tess_info_domain(tess_info));
+#if GFX_VER >= 12
+      SET(TE, te.PatchHeaderLayout,
+          tess_info.primitive_mode == TESS_PRIMITIVE_TRIANGLES ?
+          REVERSED_TRI_INSIDE_SEPARATE : REVERSED);
+#endif
       SET(TE, te.Partitioning, brw_tess_info_partitioning(tess_info));
       if (dyn->ts.domain_origin == VK_TESSELLATION_DOMAIN_ORIGIN_LOWER_LEFT) {
          SET(TE, te.OutputTopology, brw_tess_info_output_topology(tess_info));
@@ -3058,6 +3063,9 @@ cmd_buffer_repack_gfx_state(struct anv_gfx_dynamic_state *hw_state,
          anv_gfx_pack_merge(te, GENX(3DSTATE_TE),
                             MESA_SHADER_TESS_EVAL, ds.te, te) {
             SET(te, te, TEDomain);
+#if GFX_VER >= 12
+            SET(te, te, PatchHeaderLayout);
+#endif
             SET(te, te, Partitioning);
             SET(te, te, OutputTopology);
 #if GFX_VERx10 >= 125

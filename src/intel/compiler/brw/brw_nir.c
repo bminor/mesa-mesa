@@ -66,6 +66,12 @@ is_output(nir_intrinsic_instr *intrin)
           intrin->intrinsic == nir_intrinsic_store_per_view_output;
 }
 
+static nir_def *
+output_handle(nir_builder *b)
+{
+   return nir_load_urb_output_handle_intel(b);
+}
+
 static bool
 remap_tess_levels_legacy_static(nir_builder *b,
                                 nir_intrinsic_instr *intr,
@@ -307,16 +313,108 @@ remap_tess_levels_legacy_dynamic(nir_shader *nir,
    return true;
 }
 
+struct remap_tesslevel_cb_data {
+   const struct intel_device_info *devinfo;
+   enum tess_primitive_mode prim_mode;
+};
+
+static bool
+remap_tess_levels_reversed(nir_builder *b,
+                           nir_intrinsic_instr *io,
+                           void *data)
+{
+   const struct remap_tesslevel_cb_data *cb_data = data;
+   const struct intel_device_info *devinfo = cb_data->devinfo;
+
+   /* The Gfx12+ reversed patch header layouts are:
+    *
+    *    [ 7  6  5  4  |  3  2  1  0]
+    *    [__ __ iy ix  |  w  z  y  x] quad reversed
+    *    [__ __ __ __  | ix  z  y  x] tri reversed
+    *    [__ __ __ ix  | __  z  y  x] tri reversed inside separate
+    *    [__ __ __ __  | __ __  x  y] isoline reversed
+    *
+    * By using the separate layout for triangles, no remapping is required
+    * except that isolines is backwards for some reason.  We flip it here.
+    */
+
+   if (!nir_intrinsic_has_io_semantics(io) ||
+       nir_intrinsic_io_semantics(io).location !=
+       VARYING_SLOT_TESS_LEVEL_OUTER)
+      return false;
+
+   b->cursor = nir_after_instr(&io->instr);
+
+   nir_def *is_isoline;
+   if (cb_data->prim_mode == TESS_PRIMITIVE_UNSPECIFIED) {
+      nir_def *tess_config = nir_load_tess_config_intel(b);
+      is_isoline = nir_test_mask(b, tess_config, INTEL_TESS_CONFIG_ISOLINES);
+   } else {
+      is_isoline = nir_imm_true(b);
+   }
+
+   const unsigned yx[2] = { 1, 0 };
+
+   if (io->intrinsic == nir_intrinsic_store_output) {
+      /* Flip isolines source: xy__ -> yx__ */
+      const unsigned mask = nir_intrinsic_write_mask(io);
+      const unsigned revmask = (mask & ~WRITEMASK_XY) |
+         (mask & WRITEMASK_X) << 1 | (mask & WRITEMASK_Y) >> 1;
+
+      nir_def *new_val =
+         nir_bcsel(b, is_isoline,
+                   nir_pad_vector(b, nir_swizzle(b, io->src[0].ssa, yx, 2),
+                                  nir_src_num_components(io->src[0])),
+                   io->src[0].ssa);
+
+      if (devinfo->ver >= 20) {
+         nir_store_urb_lsc_intel(b, new_val, output_handle(b),
+                                 .base = mask == WRITEMASK_X ? 4 : 0);
+      } else {
+         nir_store_urb_vec4_intel(b, new_val, output_handle(b),
+                                  nir_imm_int(b, 0),
+                                  nir_bcsel(b, is_isoline,
+                                            nir_imm_int(b, revmask),
+                                            nir_imm_int(b, mask)));
+      }
+      nir_instr_remove(&io->instr);
+   } else {
+      /* Just leave these as load intrinsics and let the generic remapper
+       * take care of that part.
+       */
+      nir_def *new_val =
+         nir_bcsel(b, is_isoline, nir_swizzle(b, &io->def, yx, 2), &io->def);
+      nir_def_rewrite_uses_after(&io->def, new_val);
+   }
+
+   return true;
+}
+
 static bool
 remap_tess_levels(nir_shader *nir,
                   const struct intel_device_info *devinfo,
                   enum tess_primitive_mode prim)
 {
-   return prim == TESS_PRIMITIVE_UNSPECIFIED ?
-          remap_tess_levels_legacy_dynamic(nir, devinfo) :
-          nir_shader_intrinsics_pass(nir, remap_tess_levels_legacy_static,
-                                     nir_metadata_control_flow,
-                                     (void *)(uintptr_t) prim);
+   /* Pre-Gfx12 use legacy patch header layouts */
+   if (devinfo->ver < 12) {
+      return prim == TESS_PRIMITIVE_UNSPECIFIED ?
+             remap_tess_levels_legacy_dynamic(nir, devinfo) :
+             nir_shader_intrinsics_pass(nir, remap_tess_levels_legacy_static,
+                                        nir_metadata_control_flow,
+                                        (void *)(uintptr_t) prim);
+   }
+
+   /* With the reversed layouts, remapping is only required for
+    * isolines (or unspecified, which might be isolines).
+    */
+   if (prim != TESS_PRIMITIVE_ISOLINES && prim != TESS_PRIMITIVE_UNSPECIFIED)
+      return false;
+
+   struct remap_tesslevel_cb_data cb = {
+      .devinfo = devinfo, .prim_mode = prim
+   };
+   return nir_shader_intrinsics_pass(nir, remap_tess_levels_reversed,
+                                     nir_metadata_control_flow, &cb);
 }
 
 struct remap_patch_cb_data {
@@ -328,16 +426,18 @@ static bool
 remap_patch_urb_offsets_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
 {
    struct remap_patch_cb_data *cb_data = data;
+   const struct intel_device_info *devinfo = cb_data->devinfo;
    const struct intel_vue_map *vue_map = cb_data->vue_map;
 
    if (!(b->shader->info.stage == MESA_SHADER_TESS_CTRL && is_output(intrin)) &&
        !(b->shader->info.stage == MESA_SHADER_TESS_EVAL && is_input(intrin)))
       return false;
 
-   /* Handled in a different pass */
+   /* Legacy tess levels are handled in a different pass */
    nir_io_semantics io_sem = nir_intrinsic_io_semantics(intrin);
-   if (io_sem.location == VARYING_SLOT_TESS_LEVEL_INNER ||
-       io_sem.location == VARYING_SLOT_TESS_LEVEL_OUTER)
+   if (devinfo->ver < 12 &&
+       (io_sem.location == VARYING_SLOT_TESS_LEVEL_INNER ||
+        io_sem.location == VARYING_SLOT_TESS_LEVEL_OUTER))
       return false;
 
    gl_varying_slot varying = nir_intrinsic_base(intrin);

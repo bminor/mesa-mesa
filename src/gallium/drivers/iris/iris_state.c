@@ -5258,6 +5258,10 @@ iris_store_tes_state(const struct intel_device_info *devinfo,
 #endif
       te.OutputTopology = tes_data->output_topology;
       te.TEDomain = tes_data->domain;
+#if GFX_VER >= 12
+      te.PatchHeaderLayout = tes_data->domain == INTEL_TESS_DOMAIN_TRI ?
+                             REVERSED_TRI_INSIDE_SEPARATE : REVERSED;
+#endif
       te.TEEnable = true;
       te.MaximumTessellationFactorOdd = 63.0;
       te.MaximumTessellationFactorNotOdd = 64.0;
