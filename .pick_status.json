@@ -1,5 +1,275 @@
 [
     {
+        "sha": "e38491eb1850ab8b0082716b00f514f75e2a0e1a",
+        "description": "mesa/st: Lower to ALU scalar after fp64 subgroup lowering",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fa6fa8c19e39a90e7331f0959d41501e65c3b0b5",
+        "description": "kk: BCn Formats",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a62f2856077e4e418db88a408b566a966493aad0",
+        "description": "kk: advertise multiDrawIndirect",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bca29b1c92320dea0004341a08cc76a18e3edaf3",
+        "description": "hk: fix data race when initializing poly_heap",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "5bc828481630147575348b66677edaade9e891e6",
+        "notes": null
+    },
+    {
+        "sha": "b6d6c1af73b1e1cad5f84b59eaedad4faacd8dda",
+        "description": "radv/video_enc: Cleanup slice count assert",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "63e952ff2cccc666ee1c77823eeab36fa6a9bea2",
+        "notes": null
+    },
+    {
+        "sha": "05481f56a06b93b72cf3a166ec1698925dcb4018",
+        "description": "brw: use the right int8/int16 division lowering",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c2a6fb64193f485fde3dea7a6db6eb60d83dc94a",
+        "description": "panvk: cull semaphores in unrelated subqueues",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1381228329c414a0ebd1073ebd28767298d5b759",
+        "description": "panvk: refactor vk_stage_to_subqueue_mask",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9fde7553571cf184820d213649bd7a61d9205eca",
+        "description": "kopper: disable color management for wayland surfaces",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "90103fe61862b8cd3703dea5d906244f1bc61e4f",
+        "description": "radeonsi: propagate shader updates for merged shaders",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "b1a34ac95dfb02ef5d309099627373486a50191e",
+        "notes": null
+    },
+    {
+        "sha": "091f18ea57099d88461aff01070d448b6d448bdd",
+        "description": "radeonsi: set VS dirty bit from si_vs_key_update_inputs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d3f8571e84f07b008a6d4be8ffc5e5825b3c3324",
+        "description": "radeonsi: limit the sqtt buffer size",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a7bf37e3bd7d79ad41c94cb5222513c3dbd77216",
+        "description": "panvk/v9+: Reduce maxBoundDescriptorSets to 7",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4ab65cdaa4c9ea5c06a0583405a839e6583c48a8",
+        "description": "docs: update/fix vk spec urls",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "efbecd93baa35b4bbeb5f370893865568a577e6e",
+        "description": "util: Build util/cache_ops_x86.c with -msse2",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "555881e57499bc38f098dd5859edecdf6bdad2a2",
+        "notes": null
+    },
+    {
+        "sha": "3739d7a90c3d2406a3297a973c3de4c3dbe83050",
+        "description": "util: Don't advertise cache ops on x86 without SSE2",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "555881e57499bc38f098dd5859edecdf6bdad2a2",
+        "notes": null
+    },
+    {
+        "sha": "a410d90fd254dd4930e72547de430a8cf5daf13b",
+        "description": "panfrost: fix cl_local_size for precompiled shaders",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "20970bcd9652ea8727a307ced9b372fad4b89991",
+        "notes": null
+    },
+    {
+        "sha": "02a1ec102144084fa60ccc9a60b16d7faafa349a",
+        "description": "kk: Hash vertex input state",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dc0dcc993be94d128b1a070ebfd1419c2bb6395b",
+        "description": "nvk: implement VK_EXT_discard_rectangles",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4c62e09505c2eb232c135b400299a6e86d2111ee",
+        "description": "vulkan: increase MESA_VK_MAX_DISCARD_RECTANGLES",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b18421ae3d20645aea615ff4b2ae2e6c544a7b1f",
+        "description": "amd/lower_mem_access_bit_sizes: fix shared access when bytes<bit_size/8",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "52cd5f7e69fde6b5eef4a88103e7571d8342577f",
+        "notes": null
+    },
+    {
+        "sha": "64ec757688c53fc1d850822657a3bcfa4202c86f",
+        "description": "nir/lower_mem_access_bit_sizes: increase chunk limit",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e89b22280fe5f65dfdd749af0f5da892d0bb9dda",
+        "description": "amd/lower_mem_access_bit_sizes: be more careful with 8/16-bit scratch load",
+        "nominated": true,
+        "nomination_type": 4,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8829fc3bd64b9f2ac62f2339fa9cf6fc0a149cba",
+        "description": "amd/lower_mem_access_bit_sizes: improve subdword/unaligned SMEM lowering",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "fbf0399517aefea0485df5f8fd43ac065e01443c",
+        "notes": null
+    },
+    {
+        "sha": "79b2fa785d51d21e56d3647ee5abb6cb78edab7a",
+        "description": "amd/lower_mem_access_bit_sizes: don't create subdword UBO loads with LLVM",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "fbf0399517aefea0485df5f8fd43ac065e01443c",
+        "notes": null
+    },
+    {
+        "sha": "38e1a43f53d62260dcff1c6c5973eaf4514eb792",
+        "description": "intel/mda: Fix potential underflow in printing code",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f25e59b951f62306fee8a596b916684644bbb216",
+        "description": "intel/mda/tests: use an ASSERT on fread()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "28fbc6addbda2ce3e264b41b6ad91a7a0d8eb788",
         "description": "nvk: VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR",
         "nominated": true,
