@@ -8114,6 +8114,8 @@ radv_mark_descriptors_dirty(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPo
    struct radv_descriptor_state *descriptors_state = radv_get_descriptors_state(cmd_buffer, bind_point);
 
    descriptors_state->dirty |= descriptors_state->valid;
+   if (descriptors_state->dynamic_offset_count)
+      descriptors_state->dirty_dynamic = true;
 }
 
 static void
@@ -8642,7 +8644,6 @@ radv_CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipeline
 
       if (cmd_buffer->state.compute_pipeline == compute_pipeline)
          return;
-      radv_mark_descriptors_dirty(cmd_buffer, pipelineBindPoint);
 
       radv_bind_shader(cmd_buffer, compute_pipeline->base.shaders[MESA_SHADER_COMPUTE], MESA_SHADER_COMPUTE);
 
@@ -8656,7 +8657,6 @@ radv_CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipeline
 
       if (cmd_buffer->state.rt_pipeline == rt_pipeline)
          return;
-      radv_mark_descriptors_dirty(cmd_buffer, pipelineBindPoint);
 
       radv_bind_shader(cmd_buffer, rt_pipeline->base.base.shaders[MESA_SHADER_INTERSECTION], MESA_SHADER_INTERSECTION);
       radv_bind_rt_prolog(cmd_buffer, rt_pipeline->prolog);
@@ -8690,7 +8690,6 @@ radv_CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipeline
 
       if (cmd_buffer->state.graphics_pipeline == graphics_pipeline)
          return;
-      radv_mark_descriptors_dirty(cmd_buffer, pipelineBindPoint);
 
       radv_foreach_stage (
          stage, (cmd_buffer->state.active_stages | graphics_pipeline->active_stages) & RADV_GRAPHICS_STAGE_BITS) {
@@ -8744,6 +8743,8 @@ radv_CmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipeline
    cmd_buffer->descriptors[vk_to_bind_point(pipelineBindPoint)].dynamic_offset_count = pipeline->dynamic_offset_count;
    cmd_buffer->descriptors[vk_to_bind_point(pipelineBindPoint)].need_indirect_descriptors =
       pipeline->need_indirect_descriptors;
+
+   radv_mark_descriptors_dirty(cmd_buffer, pipelineBindPoint);
 }
 
 VKAPI_ATTR void VKAPI_CALL
