@@ -262,7 +262,7 @@ brw_opt_zero_samples(brw_shader &s)
 
    foreach_block_and_inst(block, brw_inst, inst, s.cfg) {
       brw_tex_inst *tex = inst->as_tex();
-      if (tex == NULL)
+      if (tex == NULL || tex->required_params == 0)
          continue;
 
       int last_req_param = util_last_bit(tex->required_params) - 1;
