@@ -734,7 +734,7 @@
         "description": "intel/compiler/brw: Add assert that we don't have a negative value",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "37a9c5411f4d281cf8670336bee18477a1170b72",
         "notes": null
