@@ -304,7 +304,7 @@ d3d12_promote_to_permanent_residency(struct d3d12_screen *screen, struct d3d12_r
       struct d3d12_bo *base_bo = d3d12_bo_get_base(resources[i]->bo, &offset);
 
       if (base_bo->residency_status != d3d12_permanently_resident) {
-         bool needs_make_resident = (base_bo->residency_status != d3d12_resident);
+         bool needs_make_resident = (base_bo->residency_status == d3d12_evicted);
          base_bo->residency_status = d3d12_permanently_resident;
 
          if (needs_make_resident) {
