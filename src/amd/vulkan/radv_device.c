@@ -1243,7 +1243,7 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
 
    /* Enable the global BO list by default. */
    /* TODO: Remove the per cmdbuf BO list tracking after few Mesa releases if no blockers. */
-   device->use_global_bo_list = !pdev->info.is_virtio;
+   device->use_global_bo_list = pdev->info.has_vm_always_valid;
 
    /* Disable it for debugging purposes if no features require it. */
    if (instance->debug_flags & RADV_DEBUG_NO_BO_LIST) {
