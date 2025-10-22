@@ -113,8 +113,8 @@ pan_shader_compile(nir_shader *s, struct pan_compile_inputs *inputs,
       if (s->info.outputs_written & BITFIELD64_BIT(FRAG_RESULT_SAMPLE_MASK))
          info->fs.writes_coverage = true;
 
-      info->fs.outputs_read = s->info.outputs_read >> FRAG_RESULT_DATA0;
-      info->fs.outputs_written = s->info.outputs_written >> FRAG_RESULT_DATA0;
+      info->fs.outputs_read = s->info.outputs_read;
+
       info->fs.sample_shading = s->info.fs.uses_sample_shading;
       info->fs.untyped_color_outputs = s->info.fs.untyped_color_outputs;
 
