@@ -377,7 +377,7 @@ tu_GetDescriptorSetLayoutSupport(
       uint64_t max_count = MAX_SET_SIZE;
       unsigned descriptor_count = binding->descriptorCount;
       if (binding->descriptorType == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
-         max_count = MAX_SET_SIZE - size;
+         max_count = MAX_INLINE_UBO_RANGE - size;
          descriptor_count = descriptor_sz;
          descriptor_sz = 1;
       } else if (descriptor_sz) {
