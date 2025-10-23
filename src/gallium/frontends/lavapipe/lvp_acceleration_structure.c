@@ -278,7 +278,7 @@ lvp_select_subtrees_to_flatten(const struct vk_ir_header *header, const struct v
    }
 
    if (flatten && has_internal_child) {
-      util_dynarray_append(subtrees, uint32_t, index);
+      util_dynarray_append(subtrees, index);
       *max_subtree_size = MAX2(*max_subtree_size, child_count);
       return;
    }

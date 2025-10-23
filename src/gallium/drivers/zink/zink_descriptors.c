@@ -962,7 +962,8 @@ check_pool_alloc(struct zink_context *ctx, struct zink_descriptor_pool_multi *mp
       if (!sets_to_alloc) {
          /* overflowed pool: store for reuse */
          pool->set_idx = 0;
-         util_dynarray_append(&mpool->overflowed_pools[mpool->overflow_idx], struct zink_descriptor_pool*, pool);
+         util_dynarray_append(&mpool->overflowed_pools[mpool->overflow_idx],
+                              pool);
          mpool->pool = NULL;
          /* call recursively to get recycle/oom handling */
          return get_descriptor_pool(ctx, pg, type, bs, is_compute);
@@ -1003,7 +1004,8 @@ check_push_pool_alloc(struct zink_context *ctx, struct zink_descriptor_pool_mult
       if (!sets_to_alloc || unlikely(ctx->dd.has_fbfetch != bs->dd.has_fbfetch)) {
          /* overflowed pool: store for reuse */
          pool->set_idx = 0;
-         util_dynarray_append(&mpool->overflowed_pools[mpool->overflow_idx], struct zink_descriptor_pool*, pool);
+         util_dynarray_append(&mpool->overflowed_pools[mpool->overflow_idx],
+                              pool);
          if (util_dynarray_contains(&mpool->overflowed_pools[!mpool->overflow_idx], struct zink_descriptor_pool*))
             bs->dd.push_pool[is_compute].pool = util_dynarray_pop(&mpool->overflowed_pools[!mpool->overflow_idx], struct zink_descriptor_pool*);
          else

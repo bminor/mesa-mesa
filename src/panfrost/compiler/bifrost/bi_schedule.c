@@ -204,7 +204,7 @@ static void
 mark_access(struct util_dynarray *table, unsigned index, unsigned parent)
 {
    assert(index < 64);
-   util_dynarray_append(&table[index], unsigned, parent);
+   util_dynarray_append(&table[index], parent);
 }
 
 static bool

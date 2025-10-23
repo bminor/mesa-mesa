@@ -417,13 +417,10 @@ kk_CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
       .query_count = queryCount,
    };
 
-   util_dynarray_append(&cmd->encoder->copy_query_pool_result_infos,
-                        struct kk_copy_query_pool_results_info, info);
-   util_dynarray_append(&cmd->encoder->resident_buffers, mtl_buffer *,
-                        dst_buf->mtl_handle);
-   util_dynarray_append(&cmd->encoder->resident_buffers, mtl_buffer *,
-                        pool->bo->map);
-   util_dynarray_append(&cmd->encoder->resident_buffers, mtl_buffer *,
+   util_dynarray_append(&cmd->encoder->copy_query_pool_result_infos, info);
+   util_dynarray_append(&cmd->encoder->resident_buffers, dst_buf->mtl_handle);
+   util_dynarray_append(&cmd->encoder->resident_buffers, pool->bo->map);
+   util_dynarray_append(&cmd->encoder->resident_buffers,
                         dev->occlusion_queries.bo->map);
    /* If we are not mid encoder, just upload the writes */
    if (cmd->encoder->main.last_used == KK_ENC_NONE)

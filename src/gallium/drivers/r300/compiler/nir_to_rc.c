@@ -120,7 +120,7 @@ ntr_insn(struct ntr_compile *c, enum tgsi_opcode opcode, struct ureg_dst dst, st
       .src = {src0, src1, src2, src3},
       .precise = c->precise,
    };
-   util_dynarray_append(&c->cur_block->insns, struct ntr_insn, insn);
+   util_dynarray_append(&c->cur_block->insns, insn);
    return util_dynarray_top_ptr(&c->cur_block->insns, struct ntr_insn);
 }
 

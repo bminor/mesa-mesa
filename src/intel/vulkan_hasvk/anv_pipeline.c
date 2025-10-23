@@ -989,8 +989,7 @@ anv_pipeline_add_executable(struct anv_pipeline *pipeline,
       .nir = nir,
       .disasm = disasm,
    };
-   util_dynarray_append(&pipeline->executables,
-                        struct anv_pipeline_executable, exe);
+   util_dynarray_append(&pipeline->executables, exe);
 }
 
 static void

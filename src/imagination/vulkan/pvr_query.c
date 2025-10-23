@@ -471,8 +471,9 @@ void pvr_CmdBeginQuery(VkCommandBuffer commandBuffer,
    state->dirty.vis_test = true;
 
    /* Add the index to the list for this render. */
-   for (uint32_t i = 0; i < view_count; i++)
-      util_dynarray_append(&state->query_indices, __typeof__(query), query);
+   for (uint32_t i = 0; i < view_count; i++) {
+      util_dynarray_append(&state->query_indices, query);
+   }
 }
 
 void pvr_CmdEndQuery(VkCommandBuffer commandBuffer,

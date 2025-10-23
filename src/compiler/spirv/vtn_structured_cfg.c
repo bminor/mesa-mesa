@@ -504,7 +504,7 @@ pop_construct(struct vtn_construct_stack *stack)
 static inline void
 push_construct(struct vtn_construct_stack *stack, struct vtn_construct *c)
 {
-   util_dynarray_append(&stack->data, struct vtn_construct *, c);
+   util_dynarray_append(&stack->data, c);
 }
 
 static int

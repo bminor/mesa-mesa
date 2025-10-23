@@ -488,7 +488,7 @@ hk_flush_bind(struct hk_bind_builder *b)
       };
    }
 
-   util_dynarray_append(&b->binds, struct drm_asahi_gem_bind_op, op);
+   util_dynarray_append(&b->binds, op);
 
    /* Shadow a read-only mapping to the upper half */
    op.flags &= ~DRM_ASAHI_BIND_WRITE;
@@ -498,7 +498,7 @@ hk_flush_bind(struct hk_bind_builder *b)
       op.handle = b->dev->dev.zero_bo->uapi_handle;
    }
 
-   util_dynarray_append(&b->binds, struct drm_asahi_gem_bind_op, op);
+   util_dynarray_append(&b->binds, op);
 
    return VK_SUCCESS;
 }
@@ -824,7 +824,7 @@ queue_submit(struct hk_device *dev, struct hk_queue *queue,
          struct drm_asahi_cmd_header header =
             agx_cmd_header(cs->type == HK_CS_CDM, nr_vdm, nr_cdm);
 
-         util_dynarray_append(&payload, struct drm_asahi_cmd_header, header);
+         util_dynarray_append(&payload, header);
 
          if (cs->type == HK_CS_CDM) {
             perf_debug(
@@ -838,7 +838,7 @@ queue_submit(struct hk_device *dev, struct hk_queue *queue,
 
             struct drm_asahi_cmd_compute cmd;
             asahi_fill_cdm_command(dev, cs, &cmd);
-            util_dynarray_append(&payload, struct drm_asahi_cmd_compute, cmd);
+            util_dynarray_append(&payload, cmd);
             nr_cdm++;
          } else {
             assert(cs->type == HK_CS_VDM);
@@ -849,7 +849,7 @@ queue_submit(struct hk_device *dev, struct hk_queue *queue,
 
             struct drm_asahi_cmd_render cmd;
             asahi_fill_vdm_command(dev, cs, &cmd);
-            util_dynarray_append(&payload, struct drm_asahi_cmd_render, cmd);
+            util_dynarray_append(&payload, cmd);
             nr_vdm++;
          }
       }

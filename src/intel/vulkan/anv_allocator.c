@@ -1072,8 +1072,7 @@ anv_state_stream_alloc(struct anv_state_stream *stream,
       if (stream->block.alloc_size == 0)
          return ANV_STATE_NULL;
 
-      util_dynarray_append(&stream->all_blocks,
-                           struct anv_state, stream->block);
+      util_dynarray_append(&stream->all_blocks, stream->block);
       VG(VALGRIND_MAKE_MEM_NOACCESS(stream->block.map, block_size));
 
       /* Reset back to the start */

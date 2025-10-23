@@ -32,7 +32,7 @@ static inline unsigned pco_encode_align(struct util_dynarray *buf,
    unsigned bytes_encoded = 0;
 
    if (igrp->enc.len.word_padding) {
-      util_dynarray_append(buf, uint8_t, 0xff);
+      util_dynarray_append_typed(buf, uint8_t, 0xff);
       bytes_encoded += 1;
    }
 
@@ -40,11 +40,11 @@ static inline unsigned pco_encode_align(struct util_dynarray *buf,
       assert(!(igrp->enc.len.align_padding % 2));
 
       unsigned align_words = igrp->enc.len.align_padding / 2;
-      util_dynarray_append(buf, uint8_t, 0xf0 | align_words);
+      util_dynarray_append_typed(buf, uint8_t, 0xf0 | align_words);
       bytes_encoded += 1;
 
       for (unsigned u = 0; u < igrp->enc.len.align_padding - 1; ++u) {
-         util_dynarray_append(buf, uint8_t, 0xff);
+         util_dynarray_append_typed(buf, uint8_t, 0xff);
          bytes_encoded += 1;
       }
    }

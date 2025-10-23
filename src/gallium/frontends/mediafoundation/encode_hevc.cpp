@@ -277,16 +277,16 @@ CDX12EncHMFT::PrepareForEncodeHelper( LPDX12EncodeContext pDX12EncodeContext, bo
    if( pPicInfo->picture_type == PIPE_H2645_ENC_PICTURE_TYPE_IDR )
    {
       struct pipe_enc_raw_header header_vps = { /* type */ PIPE_H265_NAL_VPS };
-      util_dynarray_append( &pPicInfo->raw_headers, struct pipe_enc_raw_header, header_vps );
+      util_dynarray_append( &pPicInfo->raw_headers, header_vps );
       struct pipe_enc_raw_header header_sps = { /* type */ PIPE_H265_NAL_SPS };
-      util_dynarray_append( &pPicInfo->raw_headers, struct pipe_enc_raw_header, header_sps );
+      util_dynarray_append( &pPicInfo->raw_headers, header_sps );
       struct pipe_enc_raw_header header_pps = { /* type */ PIPE_H265_NAL_PPS };
-      util_dynarray_append( &pPicInfo->raw_headers, struct pipe_enc_raw_header, header_pps );
+      util_dynarray_append( &pPicInfo->raw_headers, header_pps );
    }
 
    // Always insert AUD
    struct pipe_enc_raw_header header_aud = { /* type */ PIPE_H265_NAL_AUD };
-   util_dynarray_append( &pPicInfo->raw_headers, struct pipe_enc_raw_header, header_aud );
+   util_dynarray_append( &pPicInfo->raw_headers, header_aud );
 
    pPicInfo->not_referenced = !cur_frame_desc->gop_info->is_used_as_future_reference;
    assert( ( cur_frame_desc->gop_info->frame_type == PIPE_H2645_ENC_PICTURE_TYPE_B ) == pPicInfo->not_referenced );

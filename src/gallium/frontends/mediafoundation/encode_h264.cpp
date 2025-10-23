@@ -268,24 +268,24 @@ CDX12EncHMFT::PrepareForEncodeHelper( LPDX12EncodeContext pDX12EncodeContext, bo
       if( pPicInfo->seq.num_temporal_layers > 1 )
       {
          struct pipe_enc_raw_header header_sei = { /* type */ 6 /*NAL_TYPE_SEI*/ };
-         util_dynarray_append( &pPicInfo->raw_headers, struct pipe_enc_raw_header, header_sei );
+         util_dynarray_append( &pPicInfo->raw_headers, header_sei );
       }
 
       struct pipe_enc_raw_header header_sps = { /* type */ PIPE_H264_NAL_SPS };
-      util_dynarray_append( &pPicInfo->raw_headers, struct pipe_enc_raw_header, header_sps );
+      util_dynarray_append( &pPicInfo->raw_headers, header_sps );
       struct pipe_enc_raw_header header_pps = { /* type */ PIPE_H264_NAL_PPS };
-      util_dynarray_append( &pPicInfo->raw_headers, struct pipe_enc_raw_header, header_pps );
+      util_dynarray_append( &pPicInfo->raw_headers, header_pps );
    }
 
    // Always insert AUD
    struct pipe_enc_raw_header header_aud = { /* type */ PIPE_H264_NAL_AUD };
-   util_dynarray_append( &pPicInfo->raw_headers, struct pipe_enc_raw_header, header_aud );
+   util_dynarray_append( &pPicInfo->raw_headers, header_aud );
 
    // Always insert svc prefix slice header nal if num_temporal_layers > 1
    if( pPicInfo->seq.num_temporal_layers > 1 )
    {
       struct pipe_enc_raw_header header_svc_prefix = { /* type */ 14 /*NAL_TYPE_PREFIX*/ };
-      util_dynarray_append( &pPicInfo->raw_headers, struct pipe_enc_raw_header, header_svc_prefix );
+      util_dynarray_append( &pPicInfo->raw_headers, header_svc_prefix );
    }
 
    pPicInfo->seq.log2_max_frame_num_minus4 = cur_frame_desc->gop_info->log2_max_frame_num_minus4;

@@ -1666,7 +1666,7 @@ anv_async_submit_extend_batch(struct anv_batch *batch, uint32_t size,
    if (result != VK_SUCCESS)
       return result;
 
-   util_dynarray_append(&submit->batch_bos, struct anv_bo *, bo);
+   util_dynarray_append(&submit->batch_bos, bo);
 
    batch->end += 4 * GFX9_MI_BATCH_BUFFER_START_length;
 

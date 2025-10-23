@@ -1312,7 +1312,7 @@ emit_srv(struct ntd_context *ctx, nir_variable *var, unsigned count)
    if (!srv_meta)
       return false;
 
-   util_dynarray_append(&ctx->srv_metadata_nodes, const struct dxil_mdnode *, srv_meta);
+   util_dynarray_append(&ctx->srv_metadata_nodes, srv_meta);
    add_resource(ctx, res_type, res_kind, &layout);
    if (res_type == DXIL_RES_SRV_RAW)
       ctx->mod.raw_and_structured_buffers = true;
@@ -1336,7 +1336,7 @@ emit_uav(struct ntd_context *ctx, unsigned binding, unsigned space, unsigned cou
    if (!uav_meta)
       return false;
 
-   util_dynarray_append(&ctx->uav_metadata_nodes, const struct dxil_mdnode *, uav_meta);
+   util_dynarray_append(&ctx->uav_metadata_nodes, uav_meta);
    if (ctx->mod.minor_validator < 6 &&
        util_dynarray_num_elements(&ctx->uav_metadata_nodes, const struct dxil_mdnode *) > 8)
       ctx->mod.feats.use_64uavs = 1;
@@ -1560,7 +1560,7 @@ emit_cbv(struct ntd_context *ctx, unsigned binding, unsigned space,
    if (!cbv_meta)
       return false;
 
-   util_dynarray_append(&ctx->cbv_metadata_nodes, const struct dxil_mdnode *, cbv_meta);
+   util_dynarray_append(&ctx->cbv_metadata_nodes, cbv_meta);
    add_resource(ctx, DXIL_RES_CBV, DXIL_RESOURCE_KIND_CBUFFER, &layout);
 
    return true;
@@ -1606,7 +1606,7 @@ emit_sampler(struct ntd_context *ctx, nir_variable *var, unsigned count)
    if (!sampler_meta)
       return false;
 
-   util_dynarray_append(&ctx->sampler_metadata_nodes, const struct dxil_mdnode *, sampler_meta);
+   util_dynarray_append(&ctx->sampler_metadata_nodes, sampler_meta);
    add_resource(ctx, DXIL_RES_SAMPLER, DXIL_RESOURCE_KIND_SAMPLER, &layout);
 
    return true;

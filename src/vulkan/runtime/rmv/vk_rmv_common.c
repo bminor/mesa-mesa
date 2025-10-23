@@ -73,7 +73,7 @@ vk_rmv_emit_token(struct vk_memory_trace_data *data, enum vk_rmv_token_type type
    token.type = type;
    token.timestamp = (uint64_t)os_time_get_nano();
    memcpy(&token.data, token_data, vk_rmv_token_size_from_type(type));
-   util_dynarray_append(&data->tokens, struct vk_rmv_token, token);
+   util_dynarray_append(&data->tokens, token);
 }
 
 uint32_t

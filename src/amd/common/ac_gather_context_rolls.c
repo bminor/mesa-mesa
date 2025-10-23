@@ -65,7 +65,7 @@ static void ac_roll_context(struct ac_context_roll_ctx *ctx)
 
    /* Ignore the first context at the beginning or after waiting for idle. */
    if (ctx->num_busy_contexts > 1) {
-      util_dynarray_append(&ctx->rolls, struct ac_context_reg_state *, last);
+      util_dynarray_append(&ctx->rolls, last);
    } else {
       FREE(last);
    }

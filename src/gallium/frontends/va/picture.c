@@ -489,5 +489,5 @@ vlVaAddRawHeader(struct util_dynarray *headers, uint8_t type, uint32_t size,
       header.buffer = MALLOC(header.size);
       memcpy(header.buffer, buf, size);
    }
-   util_dynarray_append(headers, struct pipe_enc_raw_header, header);
+   util_dynarray_append(headers, header);
 }

@@ -937,11 +937,9 @@ zink_delete_sampler_state(struct pipe_context *pctx,
    struct zink_batch_state *bs = zink_context(pctx)->bs;
    /* may be called if context_create fails */
    if (bs) {
-      util_dynarray_append(&bs->zombie_samplers, VkSampler,
-                           sampler->sampler);
+      util_dynarray_append(&bs->zombie_samplers, sampler->sampler);
       if (sampler->sampler_clamped)
-         util_dynarray_append(&bs->zombie_samplers, VkSampler,
-                              sampler->sampler_clamped);
+         util_dynarray_append(&bs->zombie_samplers, sampler->sampler_clamped);
    }
    if (sampler->custom_border_color)
       p_atomic_dec(&zink_screen(pctx->screen)->cur_custom_border_color_samplers);
@@ -2503,7 +2501,7 @@ zink_delete_texture_handle(struct pipe_context *pctx, uint64_t handle)
    struct zink_descriptor_surface *ds = &bd->ds;
    _mesa_hash_table_remove(&ctx->di.bindless[is_buffer].tex_handles, he);
    uint32_t h = handle;
-   util_dynarray_append(&ctx->bs->bindless_releases[0], uint32_t, h);
+   util_dynarray_append(&ctx->bs->bindless_releases[0], h);
 
    pipe_resource_reference(&bd->pres, NULL);
    if (!ds->is_buffer) {
@@ -2612,9 +2610,9 @@ zink_make_texture_handle_resident(struct pipe_context *pctx, uint64_t handle, bo
       res->gfx_barrier |= VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
       res->barrier_access[0] |= VK_ACCESS_SHADER_READ_BIT;
       res->barrier_access[1] |= VK_ACCESS_SHADER_READ_BIT;
-      util_dynarray_append(&ctx->di.bindless[0].resident, struct zink_bindless_descriptor *, bd);
+      util_dynarray_append(&ctx->di.bindless[0].resident, bd);
       uint32_t h = is_buffer ? handle + ZINK_MAX_BINDLESS_HANDLES : handle;
-      util_dynarray_append(&ctx->di.bindless[0].updates, uint32_t, h);
+      util_dynarray_append(&ctx->di.bindless[0].updates, h);
    } else {
       zero_bindless_descriptor(ctx, handle, is_buffer, false);
       util_dynarray_delete_unordered(&ctx->di.bindless[0].resident, struct zink_bindless_descriptor *, bd);
@@ -2675,7 +2673,7 @@ zink_delete_image_handle(struct pipe_context *pctx, uint64_t handle)
    struct zink_descriptor_surface *ds = &bd->ds;
    _mesa_hash_table_remove(&ctx->di.bindless[is_buffer].img_handles, he);
    uint32_t h = handle;
-   util_dynarray_append(&ctx->bs->bindless_releases[1], uint32_t, h);
+   util_dynarray_append(&ctx->bs->bindless_releases[1], h);
 
    pipe_resource_reference(&bd->pres, NULL);
    free(ds);
@@ -2741,9 +2739,9 @@ zink_make_image_handle_resident(struct pipe_context *pctx, uint64_t handle, unsi
       res->gfx_barrier |= VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
       res->barrier_access[0] |= access;
       res->barrier_access[1] |= access;
-      util_dynarray_append(&ctx->di.bindless[1].resident, struct zink_bindless_descriptor *, bd);
+      util_dynarray_append(&ctx->di.bindless[1].resident, bd);
       uint32_t h = is_buffer ? handle + ZINK_MAX_BINDLESS_HANDLES : handle;
-      util_dynarray_append(&ctx->di.bindless[1].updates, uint32_t, h);
+      util_dynarray_append(&ctx->di.bindless[1].updates, h);
    } else {
       zero_bindless_descriptor(ctx, handle, is_buffer, true);
       util_dynarray_delete_unordered(&ctx->di.bindless[1].resident, struct zink_bindless_descriptor *, bd);
@@ -4293,11 +4291,11 @@ zink_flush(struct pipe_context *pctx,
       mfence->sem = export_sem;
       if (bs) {
          mfence->submit_count = bs->usage.submit_count;
-         util_dynarray_append(&bs->fence.mfences, struct zink_tc_fence *, mfence);
+         util_dynarray_append(&bs->fence.mfences, mfence);
       }
       if (export_sem) {
          pipe_reference(NULL, &mfence->reference);
-         util_dynarray_append(&ctx->bs->fences, struct zink_tc_fence*, mfence);
+         util_dynarray_append(&ctx->bs->fences, mfence);
       }
 
       if (deferred_fence) {

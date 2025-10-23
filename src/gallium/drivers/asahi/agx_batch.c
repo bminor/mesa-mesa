@@ -822,8 +822,8 @@ agx_batch_submit(struct agx_context *ctx, struct agx_batch *batch,
       /* Barrier on previous submission */
       struct drm_asahi_cmd_header header = agx_cmd_header(true, 0, 0);
 
-      util_dynarray_append(&cmdbuf, struct drm_asahi_cmd_header, header);
-      util_dynarray_append(&cmdbuf, struct drm_asahi_cmd_compute, *compute);
+      util_dynarray_append(&cmdbuf, header);
+      util_dynarray_append(&cmdbuf, *compute);
    }
 
    if (render) {
@@ -851,7 +851,7 @@ agx_batch_submit(struct agx_context *ctx, struct agx_batch *batch,
             .vdm_barrier = DRM_ASAHI_BARRIER_NONE,
          };
 
-         util_dynarray_append(&cmdbuf, struct drm_asahi_cmd_header, header);
+         util_dynarray_append(&cmdbuf, header);
          util_dynarray_append_array(&cmdbuf, struct drm_asahi_attachment,
                                     att.list, att.count);
       }
@@ -860,8 +860,8 @@ agx_batch_submit(struct agx_context *ctx, struct agx_batch *batch,
       struct drm_asahi_cmd_header header = agx_cmd_header(
          false, compute ? DRM_ASAHI_BARRIER_NONE : 0, compute ? 1 : 0);
 
-      util_dynarray_append(&cmdbuf, struct drm_asahi_cmd_header, header);
-      util_dynarray_append(&cmdbuf, struct drm_asahi_cmd_render, *render);
+      util_dynarray_append(&cmdbuf, header);
+      util_dynarray_append(&cmdbuf, *render);
    }
 
    struct drm_asahi_submit submit = {

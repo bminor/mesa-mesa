@@ -1494,7 +1494,7 @@ write_phi(write_ctx *ctx, const nir_phi_instr *phi)
          .src = src->src.ssa,
          .block = src->pred,
       };
-      util_dynarray_append(&ctx->phi_fixups, write_phi_fixup, fixup);
+      util_dynarray_append(&ctx->phi_fixups, fixup);
    }
 }
 

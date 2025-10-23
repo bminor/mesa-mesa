@@ -431,7 +431,7 @@ bi_pack_constants(unsigned tuple_count, uint64_t *constants, unsigned word_idx,
       .imm_2 = constants[index + 1] >> 4,
    };
 
-   util_dynarray_append(emission, struct bifrost_fmt_constant, quad);
+   util_dynarray_append(emission, quad);
 }
 
 uint8_t
@@ -608,8 +608,8 @@ bi_pack_format(struct util_dynarray *emission, unsigned index,
    uint64_t hi = (s0_s3 >> 56) | ((uint64_t)s4 << 4) | ((uint64_t)s5_s6 << 19) |
                  ((uint64_t)s7 << 49);
 
-   util_dynarray_append(emission, uint64_t, lo);
-   util_dynarray_append(emission, uint64_t, hi);
+   util_dynarray_append(emission, lo);
+   util_dynarray_append(emission, hi);
 }
 
 static void

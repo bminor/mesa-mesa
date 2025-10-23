@@ -588,7 +588,7 @@ add_var_use_deref(nir_deref_instr *deref, struct hash_table *live,
       mark_array_elements_referenced(*derefs, num_derefs, array_depth,
                                      ainfo->indices);
 
-      util_dynarray_append(ainfo->deref_list, nir_deref_instr *, deref);
+      util_dynarray_append(ainfo->deref_list, deref);
    }
 
    assert(deref->modes == deref->var->data.mode);

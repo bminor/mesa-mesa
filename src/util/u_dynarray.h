@@ -211,7 +211,7 @@ util_dynarray_append_dynarray(struct util_dynarray *buf,
    }
 }
 
-#define util_dynarray_append(buf, type, v) do {type __v = (v); memcpy(util_dynarray_grow_bytes((buf), 1, sizeof(type)), &__v, sizeof(type));} while(0)
+#define util_dynarray_append_typed(buf, type, v) do {type __v = (v); memcpy(util_dynarray_grow_bytes((buf), 1, sizeof(type)), &__v, sizeof(type));} while(0)
 #define util_dynarray_append_array(buf, type, v, count) do {memcpy(util_dynarray_grow_bytes((buf), count, sizeof(type)), v, sizeof(type) * count);} while(0)
 /* Returns a pointer to the space of the first new element (in case of growth) or NULL on failure. */
 #define util_dynarray_resize(buf, type, nelts) util_dynarray_resize_bytes(buf, (nelts), sizeof(type))
@@ -227,6 +227,17 @@ util_dynarray_append_dynarray(struct util_dynarray *buf,
 #define util_dynarray_begin(buf) ((buf)->data)
 #define util_dynarray_end(buf) ((void*)util_dynarray_element((buf), char, (buf)->size))
 #define util_dynarray_num_elements(buf, type) ((buf)->size / sizeof(type))
+
+/* typeof is standard in C23 but not in C++, and MSVC lacks support when
+ * compiling as C++. Conversely, decltype is standard in C++11 but missing in C.
+ * For our purposes, they are equivalent - just use the right one depending
+ * whether we compile as C or C++ so the macro works everywhere with MSVC.
+ */
+#ifdef __cplusplus
+#define util_dynarray_append(buf, v) util_dynarray_append_typed(buf, decltype(v), v)
+#else
+#define util_dynarray_append(buf, v) util_dynarray_append_typed(buf, __typeof__(v), v)
+#endif
 
 #define util_dynarray_foreach(buf, type, elem) \
    for (type *elem = (type *)(buf)->data; \

@@ -3995,11 +3995,11 @@ tu_setup_dynamic_msrtss(struct tu_cmd_buffer *cmd_buffer)
 
       if (color_mem) {
          util_dynarray_append(&cmd_buffer->msrtss_color_temporaries,
-                              struct tu_device_memory *, color_mem);
+                              color_mem);
       }
       if (depth_mem) {
          util_dynarray_append(&cmd_buffer->msrtss_depth_temporaries,
-                              struct tu_device_memory *, depth_mem);
+                              depth_mem);
       }
    }
 
@@ -4193,7 +4193,7 @@ tu_debug_bos_print_stats(struct tu_device *dev)
    {
       struct tu_debug_bos_entry *debug_bos =
          (struct tu_debug_bos_entry *) entry->data;
-      util_dynarray_append(&dyn, struct tu_debug_bos_entry *, debug_bos);
+      util_dynarray_append(&dyn, debug_bos);
       size += debug_bos->size / 1024;
       count += debug_bos->count;
    }
@@ -4228,7 +4228,7 @@ tu_dump_bo_init(struct tu_device *dev, struct tu_bo *bo)
    uint32_t idx =
       util_dynarray_num_elements(&dev->dump_bo_list, struct tu_bo *);
    bo->dump_bo_list_idx = idx;
-   util_dynarray_append(&dev->dump_bo_list, struct tu_bo *, bo);
+   util_dynarray_append(&dev->dump_bo_list, bo);
    mtx_unlock(&dev->bo_mutex);
 }
 

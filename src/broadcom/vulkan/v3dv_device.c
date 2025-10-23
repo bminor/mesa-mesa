@@ -2136,9 +2136,7 @@ static void
 device_add_device_address_bo(struct v3dv_device *device,
                                   struct v3dv_bo *bo)
 {
-   util_dynarray_append(&device->device_address_bo_list,
-                        struct v3dv_bo *,
-                        bo);
+   util_dynarray_append(&device->device_address_bo_list, bo);
 }
 
 static void

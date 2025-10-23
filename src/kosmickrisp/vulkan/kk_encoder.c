@@ -266,7 +266,7 @@ kk_encoder_signal_fence_and_end(struct kk_cmd_buffer *cmd)
    enc->encoder = NULL;
    enc->last_used = KK_ENC_NONE;
    enc->wait_fence = true;
-   util_dynarray_append(&enc->fences, mtl_fence *, fence);
+   util_dynarray_append(&enc->fences, fence);
 
    if (cmd->drawable) {
       mtl_present_drawable(enc->cmd_buffer, cmd->drawable);

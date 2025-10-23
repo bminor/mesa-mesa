@@ -522,7 +522,7 @@ vtn_parse_switch(struct vtn_builder *b,
       if (is_default) {
          cse->is_default = true;
       } else {
-         util_dynarray_append(&cse->values, uint64_t, literal);
+         util_dynarray_append(&cse->values, literal);
       }
 
       is_default = false;

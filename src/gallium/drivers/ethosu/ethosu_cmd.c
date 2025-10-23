@@ -628,7 +628,7 @@ get_wait_dependency(struct ethosu_subgraph *subgraph, struct ethosu_operation *o
    if (operation->type == ETHOSU_OPERATION_TYPE_DMA) {
       outstanding_ops = outstanding_npu_ops;
 
-      util_dynarray_append(outstanding_dma_ops, struct ethosu_operation *, operation);
+      util_dynarray_append(outstanding_dma_ops, operation);
 
       unsigned dmap_ops = util_dynarray_num_elements(outstanding_dma_ops, struct ethosu_operation *);
       if (dmap_ops > MAX_OUTSTANDING_DMA_OPS)
@@ -636,7 +636,7 @@ get_wait_dependency(struct ethosu_subgraph *subgraph, struct ethosu_operation *o
    } else {
       outstanding_ops = outstanding_dma_ops;
 
-      util_dynarray_append(outstanding_npu_ops, struct ethosu_operation *, operation);
+      util_dynarray_append(outstanding_npu_ops, operation);
 
       unsigned npu_ops = util_dynarray_num_elements(outstanding_npu_ops, struct ethosu_operation *);
       if (npu_ops > MAX_OUTSTANDING_NPU_OPS)

@@ -332,8 +332,7 @@ v3d_simulator_get_spill(uint32_t spill_size)
         struct v3d_simulator_bo *sim_bo =
                 v3d_create_simulator_bo(bin_fd, spill_size);
 
-        util_dynarray_append(&sim_state.bin_oom, struct v3d_simulator_bo *,
-                             sim_bo);
+        util_dynarray_append(&sim_state.bin_oom, sim_bo);
 
         return sim_bo->block->ofs;
 }

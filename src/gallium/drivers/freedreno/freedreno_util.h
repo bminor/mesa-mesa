@@ -324,11 +324,10 @@ OUT_RINGP(struct fd_ringbuffer *ring, uint32_t data, struct util_dynarray *buf)
       DBG("ring[%p]: OUT_RINGP  %04x:  %08x", ring,
           (uint32_t)(ring->cur - ring->start), data);
    }
-   util_dynarray_append(buf, struct fd_cs_patch,
-                        ((struct fd_cs_patch){
-                           .cs = ring->cur++,
-                           .val = data,
-                        }));
+   util_dynarray_append(buf, ((struct fd_cs_patch){
+            .cs = ring->cur++,
+            .val = data,
+         }));
 }
 
 static inline void

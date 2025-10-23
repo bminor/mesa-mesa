@@ -184,8 +184,7 @@ anv_rmv_log_bo_gtt_unmap_locked(struct anv_device *device,
          },
       },
    };
-   util_dynarray_append(&device->vk.memory_trace_data.tokens,
-                        struct vk_rmv_token, token);
+   util_dynarray_append(&device->vk.memory_trace_data.tokens, token);
 
    bo->gtt_mapped = false;
 }
@@ -220,8 +219,7 @@ anv_rmv_log_bo_gtt_map(struct anv_device *device,
             },
       },
    };
-   util_dynarray_append(&device->vk.memory_trace_data.tokens,
-                        struct vk_rmv_token, token);
+   util_dynarray_append(&device->vk.memory_trace_data.tokens, token);
 
    bo->gtt_mapped = true;
 
@@ -256,8 +254,7 @@ anv_rmv_log_bos_gtt_map(struct anv_device *device,
             },
          },
       };
-      util_dynarray_append(&device->vk.memory_trace_data.tokens,
-                           struct vk_rmv_token, token);
+      util_dynarray_append(&device->vk.memory_trace_data.tokens, token);
 
       bo->gtt_mapped = true;
    }
@@ -288,8 +285,7 @@ anv_rmv_log_vm_binds(struct anv_device *device,
             },
          },
       };
-      util_dynarray_append(&device->vk.memory_trace_data.tokens,
-                           struct vk_rmv_token, token);
+      util_dynarray_append(&device->vk.memory_trace_data.tokens, token);
    }
    simple_mtx_unlock(&device->vk.memory_trace_data.token_mtx);
 }

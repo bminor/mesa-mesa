@@ -758,7 +758,7 @@ static void
 track_freed_sparse_bo(struct zink_context *ctx, struct zink_sparse_backing *backing)
 {
    pipe_reference(NULL, &backing->bo->base.base.reference);
-   util_dynarray_append(&ctx->bs->freed_sparse_backing_bos, struct zink_bo*, backing->bo);
+   util_dynarray_append(&ctx->bs->freed_sparse_backing_bos, backing->bo);
 }
 
 static VkTimelineSemaphoreSubmitInfo
@@ -879,7 +879,7 @@ buffer_bo_commit(struct zink_context *ctx, struct zink_resource *res, uint32_t o
                                            (uint64_t)span_va_page * ZINK_SPARSE_BUFFER_PAGE_SIZE,
                                            (uint64_t)backing_size * ZINK_SPARSE_BUFFER_PAGE_SIZE, true, cur_sem);
             if (cur_sem) {
-               util_dynarray_append(&ctx->bs->tracked_semaphores, VkSemaphore, cur_sem);
+               util_dynarray_append(&ctx->bs->tracked_semaphores, cur_sem);
             } else {
                ok = sparse_backing_free(screen, bo, backing, backing_start, backing_size);
                assert(ok && "sufficient memory should already be allocated");
@@ -916,7 +916,7 @@ buffer_bo_commit(struct zink_context *ctx, struct zink_resource *res, uint32_t o
                                            (uint64_t)base_page * ZINK_SPARSE_BUFFER_PAGE_SIZE,
                                            (uint64_t)(end_va_page - base_page) * ZINK_SPARSE_BUFFER_PAGE_SIZE, false, cur_sem);
             if (cur_sem) {
-               util_dynarray_append(&ctx->bs->tracked_semaphores, VkSemaphore, cur_sem);
+               util_dynarray_append(&ctx->bs->tracked_semaphores, cur_sem);
             } else {
                ok = false;
                goto out;
@@ -1128,7 +1128,8 @@ zink_bo_commit(struct zink_context *ctx, struct zink_resource *res, unsigned lev
                         uint32_t offset = res->sparse.imageMipTailOffset;
                         cur_sem = texture_commit_miptail(ctx, res, backing[i]->bo, backing_start[i], offset, commit, cur_sem);
                         if (cur_sem) {
-                           util_dynarray_append(&ctx->bs->tracked_semaphores, VkSemaphore, cur_sem);
+                           util_dynarray_append(&ctx->bs->tracked_semaphores,
+                                                cur_sem);
                            res->obj->miptail_commits++;
                         } else {
                            ok = false;
@@ -1183,8 +1184,10 @@ zink_bo_commit(struct zink_context *ctx, struct zink_resource *res, unsigned lev
                      res->obj->miptail_commits--;
                      if (!res->obj->miptail_commits) {
                         cur_sem = texture_commit_miptail(ctx, res, NULL, 0, offset, commit, cur_sem);
-                        if (cur_sem)
-                           util_dynarray_append(&ctx->bs->tracked_semaphores, VkSemaphore, cur_sem);
+                        if (cur_sem) {
+                           util_dynarray_append(&ctx->bs->tracked_semaphores,
+                                                cur_sem);
+                        }
                         else
                            ok = false;
                         if (!sparse_backing_free(screen, backing[i]->bo, backing[i], backing_start[i], backing_size[i])) {
@@ -1203,7 +1206,7 @@ zink_bo_commit(struct zink_context *ctx, struct zink_resource *res, unsigned lev
             if (i == ARRAY_SIZE(ibind)) {
                cur_sem = texture_commit_single(ctx, res, ibind, ARRAY_SIZE(ibind), commit, cur_sem);
                if (cur_sem) {
-                  util_dynarray_append(&ctx->bs->tracked_semaphores, VkSemaphore, cur_sem);
+                  util_dynarray_append(&ctx->bs->tracked_semaphores, cur_sem);
                } else {
                   for (unsigned s = 0; s < i; s++) {
                      ok = sparse_backing_free(screen, backing[s]->bo, backing[s], backing_start[s], backing_size[s]);
@@ -1224,7 +1227,7 @@ zink_bo_commit(struct zink_context *ctx, struct zink_resource *res, unsigned lev
    if (commits_pending) {
       cur_sem = texture_commit_single(ctx, res, ibind, i, commit, cur_sem);
       if (cur_sem) {
-         util_dynarray_append(&ctx->bs->tracked_semaphores, VkSemaphore, cur_sem);
+         util_dynarray_append(&ctx->bs->tracked_semaphores, cur_sem);
       } else {
          for (unsigned s = 0; s < i; s++) {
             ok = sparse_backing_free(screen, backing[s]->bo, backing[s], backing_start[s], backing_size[s]);

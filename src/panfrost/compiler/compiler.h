@@ -995,7 +995,7 @@ bi_block_add_successor(bi_block *block, bi_block *successor)
       }
 
       block->successors[i] = successor;
-      util_dynarray_append(&successor->predecessors, bi_block *, block);
+      util_dynarray_append(&successor->predecessors, block);
       return;
    }
 

@@ -33,8 +33,7 @@ kk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
 
    /* Chain with previous sumbission */
    if (queue->wait_fence) {
-      util_dynarray_append(&encoder->main.fences, mtl_fence *,
-                           queue->wait_fence);
+      util_dynarray_append(&encoder->main.fences, queue->wait_fence);
       encoder->main.wait_fence = true;
    }
 

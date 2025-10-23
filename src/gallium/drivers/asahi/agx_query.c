@@ -550,7 +550,7 @@ agx_batch_add_timestamp_query(struct agx_batch *batch, struct agx_query *q)
 {
    if (q) {
       agx_add_query_to_batch(batch, q);
-      util_dynarray_append(&batch->timestamps, struct agx_ptr, q->ptr);
+      util_dynarray_append(&batch->timestamps, q->ptr);
    }
 }
 

@@ -454,7 +454,7 @@ insert_copy(struct ra_ctx *rctx, struct util_dynarray *copies, unsigned new_reg,
 
       assert((copy.dest % align) == 0 && "new dest must be aligned");
       assert((copy.src.value % align) == 0 && "src must be aligned");
-      util_dynarray_append(copies, struct agx_copy, copy);
+      util_dynarray_append(copies, copy);
    }
 }
 

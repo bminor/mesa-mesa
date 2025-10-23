@@ -280,7 +280,7 @@ create_new_io_vars(nir_shader *shader, nir_variable_mode mode,
          for (unsigned i = first; i < frac; i++) {
             new_vars[loc][i] = var;
             if (old_vars[loc][i]) {
-               util_dynarray_append(demote_vars, nir_variable *, old_vars[loc][i]);
+               util_dynarray_append(demote_vars, old_vars[loc][i]);
                old_vars[loc][i] = NULL;
             }
          }

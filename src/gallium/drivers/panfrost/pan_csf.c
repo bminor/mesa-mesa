@@ -423,7 +423,7 @@ csf_submit_collect_wait_ops(struct panfrost_batch *batch,
          .timeline_value = bo_sync_point,
       };
 
-      util_dynarray_append(syncops, struct drm_panthor_sync_op, waitop);
+      util_dynarray_append(syncops, waitop);
    }
 
    if (vm_sync_wait_point > 0) {
@@ -434,7 +434,7 @@ csf_submit_collect_wait_ops(struct panfrost_batch *batch,
          .timeline_value = vm_sync_wait_point,
       };
 
-      util_dynarray_append(syncops, struct drm_panthor_sync_op, waitop);
+      util_dynarray_append(syncops, waitop);
    }
 
    if (ctx->in_sync_fd >= 0) {
@@ -449,7 +449,7 @@ csf_submit_collect_wait_ops(struct panfrost_batch *batch,
          .handle = ctx->in_sync_obj,
       };
 
-      util_dynarray_append(syncops, struct drm_panthor_sync_op, waitop);
+      util_dynarray_append(syncops, waitop);
 
       close(ctx->in_sync_fd);
       ctx->in_sync_fd = -1;
@@ -674,7 +674,7 @@ GENX(csf_submit_batch)(struct panfrost_batch *batch)
       .timeline_value = vm_sync_signal_point,
    };
 
-   util_dynarray_append(&syncops, struct drm_panthor_sync_op, signalop);
+   util_dynarray_append(&syncops, signalop);
 
    struct drm_panthor_queue_submit qsubmit;
    struct drm_panthor_group_submit gsubmit;

@@ -321,7 +321,7 @@ static nir_def *lower_pfo_store(nir_builder *b,
 {
    /* Skip stores we've already processed. */
    if (is_processed(intr)) {
-      util_dynarray_append(&state->stores, nir_intrinsic_instr *, intr);
+      util_dynarray_append(&state->stores, intr);
       return NULL;
    }
 
@@ -362,7 +362,7 @@ static nir_def *lower_pfo_store(nir_builder *b,
                        .io_xfb = nir_intrinsic_io_xfb(intr),
                        .io_xfb2 = nir_intrinsic_io_xfb2(intr));
 
-   util_dynarray_append(&state->stores, nir_intrinsic_instr *, store);
+   util_dynarray_append(&state->stores, store);
 
    /* Update the type of the stored variable. */
    nir_variable *var =
@@ -379,7 +379,7 @@ static nir_def *lower_pfo_load(nir_builder *b,
 {
    /* Skip loads we've already processed. */
    if (is_processed(intr)) {
-      util_dynarray_append(&state->loads, nir_intrinsic_instr *, intr);
+      util_dynarray_append(&state->loads, intr);
       return NULL;
    }
 
@@ -420,7 +420,7 @@ static nir_def *lower_pfo_load(nir_builder *b,
       nir_intrinsic_instr *load =
          nir_instr_as_intrinsic(packed_comps[c]->parent_instr);
 
-      util_dynarray_append(&state->loads, nir_intrinsic_instr *, load);
+      util_dynarray_append(&state->loads, load);
    }
 
    nir_alu_type dest_type = nir_intrinsic_dest_type(intr);

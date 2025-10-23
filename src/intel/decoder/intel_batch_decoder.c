@@ -1592,7 +1592,7 @@ intel_print_accumulated_instrs(struct intel_batch_decode_ctx *ctx)
          .inst = (struct intel_group *)entry->key,
          .ptr  = entry->data,
       };
-      util_dynarray_append(&arr, struct inst_ptr, inst);
+      util_dynarray_append(&arr, inst);
    }
    qsort(util_dynarray_begin(&arr),
          util_dynarray_num_elements(&arr, struct inst_ptr),
@@ -1894,7 +1894,7 @@ intel_batch_print_stats(struct intel_batch_decode_ctx *ctx)
          .name = (const char *)entry->key,
          .count = (uintptr_t)entry->data,
       };
-      util_dynarray_append(&arr, struct inst_stat, inst);
+      util_dynarray_append(&arr, inst);
    }
    qsort(util_dynarray_begin(&arr),
          util_dynarray_num_elements(&arr, struct inst_stat),

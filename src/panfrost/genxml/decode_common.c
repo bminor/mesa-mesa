@@ -96,8 +96,7 @@ pandecode_find_mapped_gpu_mem_containing(struct pandecode_context *ctx,
    if (mem && mem->addr && !mem->ro) {
       mprotect(mem->addr, mem->length, PROT_READ);
       mem->ro = true;
-      util_dynarray_append(&ctx->ro_mappings, struct pandecode_mapped_memory *,
-                           mem);
+      util_dynarray_append(&ctx->ro_mappings, mem);
    }
 
    return mem;

@@ -1200,7 +1200,7 @@ bi_pack_valhall(bi_context *ctx, struct util_dynarray *emission)
             va_lower_branch_target(ctx, block, I);
 
          uint64_t hex = va_pack_instr(I, ctx->arch);
-         util_dynarray_append(emission, uint64_t, hex);
+         util_dynarray_append(emission, hex);
       }
    }
 

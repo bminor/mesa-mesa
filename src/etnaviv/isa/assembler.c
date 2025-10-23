@@ -102,7 +102,7 @@ main(int argc, char *argv[])
       struct encoded_instr encoded;
 
       isa_assemble_instruction(encoded.word, &result->instr[i]);
-      util_dynarray_append(&bin, struct encoded_instr, encoded);
+      util_dynarray_append(&bin, encoded);
    }
 
    unsigned int num = util_dynarray_num_elements(&bin, struct encoded_instr);

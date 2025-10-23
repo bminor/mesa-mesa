@@ -223,7 +223,7 @@ rkt_split_tasks(struct rkt_ml_subgraph *subgraph,
 
       task.atomic_count = task.output_width * task.output_height;
 
-      util_dynarray_append(&operation->tasks, struct split_task, task);
+      util_dynarray_append(&operation->tasks, task);
 
       return;
    }
@@ -244,7 +244,7 @@ rkt_split_tasks(struct rkt_ml_subgraph *subgraph,
    task.pad_left = pad_left;
    task.pad_right = pad_right;
 
-   util_dynarray_append(&operation->tasks, struct split_task, task);
+   util_dynarray_append(&operation->tasks, task);
 
    for (unsigned slice = operation->weights_height - pad_top - 1;
         slice < operation->input_height;) {
@@ -273,12 +273,12 @@ rkt_split_tasks(struct rkt_ml_subgraph *subgraph,
       if (task.bottom_slice >= operation->input_height - 1) {
          task.bottom_slice = operation->input_height - 1;
          task.pad_bottom = pad_bottom;
-         util_dynarray_append(&operation->tasks, struct split_task, task);
+         util_dynarray_append(&operation->tasks, task);
          break;
       }
 
       slice = task.top_slice + operation->weights_height - 1;
-      util_dynarray_append(&operation->tasks, struct split_task, task);
+      util_dynarray_append(&operation->tasks, task);
    }
 
    struct split_task *last_task = util_dynarray_element(

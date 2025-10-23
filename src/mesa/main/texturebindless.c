@@ -287,13 +287,11 @@ get_texture_handle(struct gl_context *ctx, struct gl_texture_object *texObj,
    texHandleObj->texObj = texObj;
    texHandleObj->sampObj = separate_sampler ? sampObj : NULL;
    texHandleObj->handle = handle;
-   util_dynarray_append(&texObj->SamplerHandles,
-                        struct gl_texture_handle_object *, texHandleObj);
+   util_dynarray_append(&texObj->SamplerHandles, texHandleObj);
 
    if (separate_sampler) {
       /* Store the handle into the separate sampler if needed. */
-      util_dynarray_append(&sampObj->Handles,
-                           struct gl_texture_handle_object *, texHandleObj);
+      util_dynarray_append(&sampObj->Handles, texHandleObj);
    }
 
    /* When referenced by one or more handles, texture objects are immutable. */
@@ -383,8 +381,7 @@ get_image_handle(struct gl_context *ctx, struct gl_texture_object *texObj,
    /* Store the handle into the texture object. */
    memcpy(&imgHandleObj->imgObj, &imgObj, sizeof(struct gl_image_unit));
    imgHandleObj->handle = handle;
-   util_dynarray_append(&texObj->ImageHandles,
-                        struct gl_image_handle_object *, imgHandleObj);
+   util_dynarray_append(&texObj->ImageHandles, imgHandleObj);
 
    /* When referenced by one or more handles, texture objects are immutable. */
    texObj->HandleAllocated = true;

@@ -472,7 +472,7 @@ agx_block_add_successor(agx_block *block, agx_block *successor)
       }
 
       block->successors[i] = successor;
-      util_dynarray_append(&successor->predecessors, agx_block *, block);
+      util_dynarray_append(&successor->predecessors, block);
       return;
    }
 

@@ -742,10 +742,9 @@ d3d12_delete_sampler_state(struct pipe_context *pctx,
 {
    struct d3d12_batch *batch = d3d12_current_batch(d3d12_context(pctx));
    struct d3d12_sampler_state *state = (struct d3d12_sampler_state*) ss;
-   util_dynarray_append(&batch->zombie_samplers, d3d12_descriptor_handle,
-                        state->handle);
+   util_dynarray_append(&batch->zombie_samplers, state->handle);
    if (state->is_shadow_sampler)
-      util_dynarray_append(&batch->zombie_samplers, d3d12_descriptor_handle,
+      util_dynarray_append(&batch->zombie_samplers,
                            state->handle_without_shadow);
    FREE(ss);
 }

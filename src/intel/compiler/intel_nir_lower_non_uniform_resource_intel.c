@@ -42,7 +42,7 @@ add_src_instr(nir_src *src, void *state)
          return true;
    }
 
-   util_dynarray_append(inst_array, nir_instr *, src->ssa->parent_instr);
+   util_dynarray_append(inst_array, src->ssa->parent_instr);
 
    return true;
 }
@@ -57,7 +57,7 @@ find_resource_intel(struct util_dynarray *inst_array,
    if (nir_instr_is_resource_intel(def->parent_instr))
       return NULL;
 
-   util_dynarray_append(inst_array, nir_instr *, def->parent_instr);
+   util_dynarray_append(inst_array, def->parent_instr);
 
    unsigned idx = 0, scan_index = 0;
    while (idx < util_dynarray_num_elements(inst_array, nir_instr *)) {

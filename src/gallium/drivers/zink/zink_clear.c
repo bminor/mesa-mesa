@@ -128,7 +128,7 @@ static struct zink_framebuffer_clear_data *
 add_new_clear(struct zink_framebuffer_clear *fb_clear)
 {
    struct zink_framebuffer_clear_data cd = {0};
-   util_dynarray_append(&fb_clear->clears, struct zink_framebuffer_clear_data, cd);
+   util_dynarray_append(&fb_clear->clears, cd);
    return zink_fb_clear_element(fb_clear, zink_fb_clear_count(fb_clear) - 1);
 }
 

@@ -187,7 +187,7 @@ create_shader_module_for_stage(struct zink_context *ctx, struct zink_screen *scr
    zm->default_variant = !shadow_needs_shader_swizzle && !inline_size && !util_dynarray_contains(&prog->shader_cache[stage][0][0], void*);
    if (inline_size)
       prog->inlined_variant_count[stage]++;
-   util_dynarray_append(&prog->shader_cache[stage][has_nonseamless ? 0 : !!nonseamless_size][!!inline_size], void*, zm);
+   util_dynarray_append(&prog->shader_cache[stage][has_nonseamless ? 0 : !!nonseamless_size][!!inline_size], zm);
    return zm;
 }
 
@@ -290,7 +290,7 @@ create_shader_module_for_stage_optimal(struct zink_context *ctx, struct zink_scr
          memcpy(&data[1], &ctx->di.zs_swizzle[stage], sizeof(struct zink_zs_swizzle_key));
    }
    zm->default_variant = !util_dynarray_contains(&prog->shader_cache[stage][0][0], void*);
-   util_dynarray_append(&prog->shader_cache[stage][0][0], void*, zm);
+   util_dynarray_append(&prog->shader_cache[stage][0][0], zm);
    return zm;
 }
 
@@ -1074,8 +1074,9 @@ update_cs_shader_module(struct zink_context *ctx, struct zink_compute_program *c
          comp->inlined_variant_count++;
 
       /* this is otherwise the default variant, which is stored as comp->module */
-      if (zm->num_uniforms || nonseamless_size || zink_cs_key(key)->robust_access || zs_swizzle_size)
-         util_dynarray_append(&comp->shader_cache[!!nonseamless_size], void*, zm);
+      if (zm->num_uniforms || nonseamless_size || zink_cs_key(key)->robust_access || zs_swizzle_size) {
+         util_dynarray_append(&comp->shader_cache[!!nonseamless_size], zm);
+      }
    }
    if (comp->curr == zm)
       return;
@@ -1225,7 +1226,7 @@ find_or_create_lib_cache(struct zink_screen *screen, struct zink_gfx_program *pr
       for (unsigned i = 0; i < MESA_SHADER_COMPUTE; i++) {
          if (prog->shaders[i] && (!generated_tcs || i != MESA_SHADER_TESS_CTRL)) {
             simple_mtx_lock(&prog->shaders[i]->lock);
-            util_dynarray_append(&prog->shaders[i]->pipeline_libs, struct zink_gfx_lib_cache*, libs);
+            util_dynarray_append(&prog->shaders[i]->pipeline_libs, libs);
             simple_mtx_unlock(&prog->shaders[i]->lock);
             refs++;
          }
@@ -1267,7 +1268,7 @@ find_or_create_lib_cache_mesh(struct zink_screen *screen, struct zink_gfx_progra
       for (unsigned i = MESA_SHADER_FRAGMENT; i < MESA_SHADER_MESH_STAGES; i++) {
          if (prog->shaders[i]) {
             simple_mtx_lock(&prog->shaders[i]->lock);
-            util_dynarray_append(&prog->shaders[i]->pipeline_libs, struct zink_gfx_lib_cache*, libs);
+            util_dynarray_append(&prog->shaders[i]->pipeline_libs, libs);
             simple_mtx_unlock(&prog->shaders[i]->lock);
             refs++;
          }

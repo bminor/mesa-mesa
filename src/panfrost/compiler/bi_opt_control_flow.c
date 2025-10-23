@@ -78,7 +78,7 @@ remove_simple_block(bi_block *block)
          append = pred;
       else if (*succ_pred == pred)
          continue;
-      util_dynarray_append(&new_preds, bi_block *, append);
+      util_dynarray_append(&new_preds, append);
    }
    succ->predecessors = new_preds;
    block->link.prev->next = block->link.next;

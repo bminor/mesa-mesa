@@ -59,7 +59,7 @@ push_analysis_query(struct analysis_state *state, size_t size)
    q->pushed_queries = 0;
    q->result_index = util_dynarray_num_elements(&state->result_stack, uint32_t);
 
-   util_dynarray_append(&state->result_stack, uint32_t, 0);
+   util_dynarray_append_typed(&state->result_stack, uint32_t, 0);
 
    return q;
 }

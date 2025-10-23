@@ -122,14 +122,14 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
          return;
 
       if (copy_desc_job.cpu)
-         util_dynarray_append(&batch->jobs, void *, copy_desc_job.cpu);
+         util_dynarray_append(&batch->jobs, copy_desc_job.cpu);
    }
 
    struct pan_ptr job = panvk_cmd_alloc_desc(cmdbuf, COMPUTE_JOB);
    if (!job.gpu)
       return;
 
-   util_dynarray_append(&batch->jobs, void *, job.cpu);
+   util_dynarray_append(&batch->jobs, job.cpu);
 
    if (!indirect) {
       pan_pack_work_groups_compute(
@@ -198,7 +198,7 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
       indirect_dep = batch->vtc_jc.job_index;
    }
 
-   util_dynarray_append(&batch->jobs, void *, job.cpu);
+   util_dynarray_append(&batch->jobs, job.cpu);
 
    unsigned copy_desc_dep =
       copy_desc_job.gpu

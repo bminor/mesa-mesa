@@ -170,7 +170,7 @@ hk_queue_write(struct hk_cmd_buffer *cmd, uint64_t address, uint32_t value,
          util_dynarray_init(&cs->imm_writes, NULL);
       }
 
-      util_dynarray_append(&cs->imm_writes, struct libagx_imm_write, imm);
+      util_dynarray_append(&cs->imm_writes, imm);
       return;
    }
 

@@ -103,7 +103,7 @@ update_unused_writes(struct util_dynarray *unused_writes,
       .dst = dst,
    };
 
-   util_dynarray_append(unused_writes, struct write_entry, new_entry);
+   util_dynarray_append(unused_writes, new_entry);
 
    return progress;
 }

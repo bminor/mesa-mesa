@@ -418,49 +418,42 @@ ethosu_lower_graph(struct ethosu_subgraph *subgraph,
             struct ethosu_operation dma_operation = {0};
             ethosu_lower_dma(subgraph, &poperations[i], &operation, &dma_operation);
 
-            util_dynarray_append(&subgraph->operations, struct ethosu_operation,
-                                 dma_operation);
+            util_dynarray_append(&subgraph->operations, dma_operation);
          }
 
-         util_dynarray_append(&subgraph->operations, struct ethosu_operation,
-                              operation);
+         util_dynarray_append(&subgraph->operations, operation);
          break;
       }
 
       case PIPE_ML_OPERATION_TYPE_ADD: {
          ethosu_lower_add(subgraph, &poperations[i], &operation);
-         util_dynarray_append(&subgraph->operations, struct ethosu_operation,
-                              operation);
+         util_dynarray_append(&subgraph->operations, operation);
          break;
       }
 
       case PIPE_ML_OPERATION_TYPE_POOLING: {
          ethosu_lower_pooling(subgraph, &poperations[i], &operation);
-         util_dynarray_append(&subgraph->operations, struct ethosu_operation,
-                              operation);
+         util_dynarray_append(&subgraph->operations, operation);
          break;
       }
 
       case PIPE_ML_OPERATION_TYPE_STRIDED_SLICE: {
          ethosu_lower_strided_slice(subgraph, &poperations[i], &operation);
-         util_dynarray_append(&subgraph->operations, struct ethosu_operation,
-                              operation);
+         util_dynarray_append(&subgraph->operations, operation);
          break;
       }
 
       case PIPE_ML_OPERATION_TYPE_CONCATENATION: {
          for (int j = 0; j < poperations[i].input_count; j++) {
             ethosu_lower_concatenation(subgraph, &poperations[i], j, &operation);
-            util_dynarray_append(&subgraph->operations, struct ethosu_operation,
-                                 operation);
+            util_dynarray_append(&subgraph->operations, operation);
          }
          break;
       }
 
       case PIPE_ML_OPERATION_TYPE_RESIZE: {
          ethosu_lower_resize(subgraph, &poperations[i], &operation);
-         util_dynarray_append(&subgraph->operations, struct ethosu_operation,
-                              operation);
+         util_dynarray_append(&subgraph->operations, operation);
          break;
       }
 

@@ -333,7 +333,7 @@ void
 kk_device_add_user_heap(struct kk_device *dev, mtl_heap *heap)
 {
    simple_mtx_lock(&dev->user_heap_cache.mutex);
-   util_dynarray_append(&dev->user_heap_cache.handles, mtl_heap *, heap);
+   util_dynarray_append(&dev->user_heap_cache.handles, heap);
    dev->user_heap_cache.hash += 1u;
    simple_mtx_unlock(&dev->user_heap_cache.mutex);
 }

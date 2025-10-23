@@ -397,8 +397,9 @@ find_chains(nir_function_impl *impl, struct hash_table *pair_freq,
          sort_by_rank &= nr_highest != (c.length - 1);
 
          /* Reassociate the chain if one of our heuristics can improve it */
-         if (sort_by_rank || c.do_global_cse)
-            util_dynarray_append(chains, struct chain, c);
+         if (sort_by_rank || c.do_global_cse) {
+            util_dynarray_append(chains, c);
+         }
       }
    }
 }

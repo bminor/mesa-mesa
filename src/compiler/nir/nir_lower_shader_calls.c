@@ -229,7 +229,7 @@ add_src_instr(nir_src *src, void *state)
    if (data->buf->size >= data->buf->capacity)
       return false;
 
-   util_dynarray_append(data->buf, nir_instr *, src->ssa->parent_instr);
+   util_dynarray_append(data->buf, src->ssa->parent_instr);
    return true;
 }
 
@@ -250,7 +250,7 @@ can_remat_chain_ssa_def(nir_def *def, struct sized_bitset *remat, struct util_dy
    void *mem_ctx = ralloc_context(NULL);
 
    /* Add all the instructions involved in build this ssa_def */
-   util_dynarray_append(buf, nir_instr *, def->parent_instr);
+   util_dynarray_append(buf, def->parent_instr);
 
    unsigned idx = 0;
    struct add_instr_data data = {
@@ -1655,7 +1655,7 @@ nir_opt_sort_and_pack_stack(nir_shader *shader,
                .value = value_id,
             };
 
-            util_dynarray_append(&ops, struct scratch_item, item);
+            util_dynarray_append(&ops, item);
             _mesa_hash_table_u64_insert(value_id_to_item, value_id, (void *)(uintptr_t) true);
          }
       }

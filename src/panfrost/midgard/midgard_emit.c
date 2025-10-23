@@ -819,7 +819,7 @@ emit_alu_bundle(compiler_context *ctx, midgard_block *block,
                 unsigned lookahead)
 {
    /* Emit the control word */
-   util_dynarray_append(emission, uint32_t, bundle->control | lookahead);
+   util_dynarray_append_typed(emission, uint32_t, bundle->control | lookahead);
 
    /* Next up, emit register words */
    for (unsigned i = 0; i < bundle->instruction_count; ++i) {
@@ -846,7 +846,7 @@ emit_alu_bundle(compiler_context *ctx, midgard_block *block,
             (ins->dest == ~0 ? REGISTER_UNUSED : SSA_REG_FROM_FIXED(ins->dest)),
       };
       memcpy(&reg_word, &registers, sizeof(uint16_t));
-      util_dynarray_append(emission, uint16_t, reg_word);
+      util_dynarray_append(emission, reg_word);
    }
 
    /* Now, we emit the body itself */
@@ -883,7 +883,7 @@ emit_alu_bundle(compiler_context *ctx, midgard_block *block,
    /* Tack on constants */
 
    if (bundle->has_embedded_constants)
-      util_dynarray_append(emission, midgard_constants, bundle->constants);
+      util_dynarray_append_typed(emission, midgard_constants, bundle->constants);
 }
 
 /* Shift applied to the immediate used as an offset. Probably this is papering
@@ -981,7 +981,7 @@ emit_binary_bundle(compiler_context *ctx, midgard_block *block,
          .word2 = next64,
       };
 
-      util_dynarray_append(emission, midgard_load_store, instruction);
+      util_dynarray_append(emission, instruction);
 
       break;
    }
@@ -1002,7 +1002,7 @@ emit_binary_bundle(compiler_context *ctx, midgard_block *block,
       /* Nothing else to pack for barriers */
       if (ins->op == midgard_tex_op_barrier) {
          ins->texture.op = ins->op;
-         util_dynarray_append(emission, midgard_texture_word, ins->texture);
+         util_dynarray_append(emission, ins->texture);
          return;
       }
 
@@ -1035,7 +1035,7 @@ emit_binary_bundle(compiler_context *ctx, midgard_block *block,
       }
 
       midgard_texture_word texture = texture_word_from_instr(ins);
-      util_dynarray_append(emission, midgard_texture_word, texture);
+      util_dynarray_append(emission, texture);
       break;
    }
 

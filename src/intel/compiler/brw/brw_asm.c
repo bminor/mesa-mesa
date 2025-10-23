@@ -62,7 +62,7 @@ brw_asm_label_use_jip(const char *name)
 {
    brw_asm_label *label = brw_asm_label_lookup(name);
    int offset = p->next_insn_offset - sizeof(brw_eu_inst);
-   util_dynarray_append(&label->jip_uses, int, offset);
+   util_dynarray_append(&label->jip_uses, offset);
 }
 
 void
@@ -70,7 +70,7 @@ brw_asm_label_use_uip(const char *name)
 {
    brw_asm_label *label = brw_asm_label_lookup(name);
    int offset = p->next_insn_offset - sizeof(brw_eu_inst);
-   util_dynarray_append(&label->uip_uses, int, offset);
+   util_dynarray_append(&label->uip_uses, offset);
 }
 
 static bool

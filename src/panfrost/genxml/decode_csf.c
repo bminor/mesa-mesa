@@ -2058,8 +2058,7 @@ record_indirect_branch_target(struct cs_code_cfg *cfg,
       .length = reg_file.u32[I.length],
    };
 
-   util_dynarray_append(&ibranch->targets, struct cs_indirect_branch_target,
-                        target);
+   util_dynarray_append(&ibranch->targets, target);
 }
 
 static void
@@ -2287,7 +2286,7 @@ get_cs_cfg(struct pandecode_context *ctx, struct hash_table_u64 *symbols,
             block->successors[0] = i;
 
          block = cfg->blk_map[i];
-         util_dynarray_append(&block->predecessors, unsigned, i - 1);
+         util_dynarray_append(&block->predecessors, i - 1);
       }
 
       cs_unpack(instr, CS_BASE, base);
@@ -2298,8 +2297,7 @@ get_cs_cfg(struct pandecode_context *ctx, struct hash_table_u64 *symbols,
             .instr_idx = i,
          };
 
-         util_dynarray_append(&cfg->indirect_branches,
-                              struct cs_indirect_branch, ibranch);
+         util_dynarray_append(&cfg->indirect_branches, ibranch);
       }
 
       if (base.opcode != MALI_CS_OPCODE_BRANCH)
@@ -2319,7 +2317,7 @@ get_cs_cfg(struct pandecode_context *ctx, struct hash_table_u64 *symbols,
          struct cs_code_block *new =
             cs_code_block_alloc(cfg, target, old->start + old->size - target);
 
-         util_dynarray_append(&new->predecessors, unsigned, target - 1);
+         util_dynarray_append(&new->predecessors, target - 1);
          memcpy(&new->successors, &old->successors, sizeof(new->successors));
 
          old->successors[0] = target;
@@ -2334,7 +2332,7 @@ get_cs_cfg(struct pandecode_context *ctx, struct hash_table_u64 *symbols,
          struct cs_code_block *new = cs_code_block_alloc(cfg, target, 1);
 
          cfg->blk_map[target] = new;
-         util_dynarray_append(&new->predecessors, unsigned, i);
+         util_dynarray_append(&new->predecessors, i);
       }
 
       block->successors[0] = target;
@@ -2343,8 +2341,9 @@ get_cs_cfg(struct pandecode_context *ctx, struct hash_table_u64 *symbols,
 
       block = cs_code_block_alloc(cfg, i + 1, 0);
 
-      if (target == i + 1 || I.condition != MALI_CS_CONDITION_ALWAYS)
-         util_dynarray_append(&block->predecessors, unsigned, i);
+      if (target == i + 1 || I.condition != MALI_CS_CONDITION_ALWAYS) {
+         util_dynarray_append(&block->predecessors, i);
+      }
    }
 
    util_dynarray_foreach(&cfg->indirect_branches, struct cs_indirect_branch,

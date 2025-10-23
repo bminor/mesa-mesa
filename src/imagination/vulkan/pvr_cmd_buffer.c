@@ -5428,9 +5428,7 @@ pvr_setup_isp_depth_bias_scissor_state(struct pvr_cmd_buffer *const cmd_buffer)
          util_dynarray_num_elements(&cmd_buffer->depth_bias_array,
                                     __typeof__(depth_bias));
 
-      util_dynarray_append(&cmd_buffer->depth_bias_array,
-                           __typeof__(depth_bias),
-                           depth_bias);
+      util_dynarray_append(&cmd_buffer->depth_bias_array, depth_bias);
 
       header->pres_ispctl_dbsc = true;
    }
@@ -5519,7 +5517,6 @@ pvr_setup_isp_depth_bias_scissor_state(struct pvr_cmd_buffer *const cmd_buffer)
                                     struct pvr_scissor_words);
 
       util_dynarray_append(&cmd_buffer->scissor_array,
-                           struct pvr_scissor_words,
                            cmd_buffer->scissor_words);
 
       header->pres_ispctl_dbsc = true;
@@ -6240,9 +6237,7 @@ static VkResult pvr_emit_ppp_state(struct pvr_cmd_buffer *const cmd_buffer,
          };
       }
 
-      util_dynarray_append(&cmd_buffer->deferred_csb_commands,
-                           struct pvr_deferred_cs_command,
-                           cmd);
+      util_dynarray_append(&cmd_buffer->deferred_csb_commands, cmd);
    }
 
    state->emit_header = (struct ROGUE_TA_STATE_HEADER){ 0 };

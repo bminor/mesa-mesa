@@ -110,7 +110,7 @@ bi_iterator_schedule(bi_context *ctx)
                                  .block = bi_index_to_block[value]};
          if (!phi_src_is_simple_iterator(phi, iterator.instr, iterator.block))
             continue;
-         util_dynarray_append(&iterators, struct iterator, iterator);
+         util_dynarray_append(&iterators, iterator);
       }
    }
 

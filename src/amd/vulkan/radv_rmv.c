@@ -158,7 +158,7 @@ emit_page_table_update_event(struct vk_memory_trace_data *data, bool is_apu, uin
    token.data.page_table_update.physical_address = event->flags & AMDGPU_PTE_SYSTEM || is_apu ? 0 : addrs[pte_index];
 
    token.data.page_table_update.is_unmap = !(event->flags & (AMDGPU_PTE_VALID | AMDGPU_PTE_PRT));
-   util_dynarray_append(&data->tokens, struct vk_rmv_token, token);
+   util_dynarray_append(&data->tokens, token);
 }
 
 static void

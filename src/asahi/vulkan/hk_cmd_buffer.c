@@ -191,7 +191,7 @@ hk_pool_alloc_internal(struct hk_cmd_buffer *cmd, uint32_t size,
       struct agx_bo *bo =
          agx_bo_create(&dev->dev, size, flags, 0, "Large pool allocation");
 
-      util_dynarray_append(&cmd->large_bos, struct agx_bo *, bo);
+      util_dynarray_append(&cmd->large_bos, bo);
       return (struct agx_ptr){
          .gpu = bo->va->addr,
          .cpu = agx_bo_map(bo),

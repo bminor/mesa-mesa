@@ -616,8 +616,7 @@ surface_dmabuf_feedback_tranche_done(
    struct dmabuf_feedback *feedback = &dri2_surf->pending_dmabuf_feedback;
 
    /* Add tranche to array of tranches. */
-   util_dynarray_append(&feedback->tranches, struct dmabuf_feedback_tranche,
-                        feedback->pending_tranche);
+   util_dynarray_append(&feedback->tranches, feedback->pending_tranche);
 
    dmabuf_feedback_tranche_init(&feedback->pending_tranche);
 }

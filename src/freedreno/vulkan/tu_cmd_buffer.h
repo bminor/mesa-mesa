@@ -882,9 +882,7 @@ _tu_create_fdm_bin_patchpoint(struct tu_cmd_buffer *cmd,
    apply(cmd, cs, state, (VkOffset2D) {0, 0}, hw_viewport_offsets, num_views, unscaled_frag_areas, bins);
    assert(tu_cs_get_cur_iova(cs) == patch.iova + patch.size * sizeof(uint32_t));
 
-   util_dynarray_append(&cmd->fdm_bin_patchpoints,
-                        struct tu_fdm_bin_patchpoint,
-                        patch);
+   util_dynarray_append(&cmd->fdm_bin_patchpoints, patch);
 }
 
 #define tu_create_fdm_bin_patchpoint(cmd, cs, size, flags, apply, state) \

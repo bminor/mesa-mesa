@@ -141,7 +141,7 @@ zink_debug_mem_print_stats(struct zink_screen *screen)
    hash_table_foreach(screen->debug_mem_sizes, entry)
    {
       struct zink_debug_mem_entry *debug_bos = entry->data;
-      util_dynarray_append(&dyn, struct zink_debug_mem_entry *, debug_bos);
+      util_dynarray_append(&dyn, debug_bos);
       size += debug_bos->size / 1024;
       count += debug_bos->count;
    }
@@ -3004,7 +3004,7 @@ zink_resource_copy_box_add(struct zink_context *ctx, struct zink_resource *res, 
          }
       }
    }
-   util_dynarray_append(&res->obj->copies[level], struct pipe_box, *box);
+   util_dynarray_append(&res->obj->copies[level], *box);
    if (!res->copies_warned && util_dynarray_num_elements(&res->obj->copies[level], struct pipe_box) > 100) {
       perf_debug(ctx, "zink: PERF WARNING! > 100 copy boxes detected for %p\n", res);
       mesa_logw("zink: PERF WARNING! > 100 copy boxes detected for %p\n", res);

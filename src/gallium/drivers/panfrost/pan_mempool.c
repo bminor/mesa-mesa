@@ -57,8 +57,9 @@ panfrost_pool_alloc_backing(struct panfrost_pool *pool, size_t bo_sz)
    if (!bo)
       return NULL;
 
-   if (pool->owned)
-      util_dynarray_append(&pool->bos, struct panfrost_bo *, bo);
+   if (pool->owned) {
+      util_dynarray_append(&pool->bos, bo);
+   }
    else
       panfrost_bo_unreference(pool->transient_bo);
 

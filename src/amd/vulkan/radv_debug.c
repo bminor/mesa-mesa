@@ -129,7 +129,7 @@ radv_address_binding_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_sev
          .object_type = callback_data->pObjects[i].objectType,
       };
 
-      util_dynarray_append(&tracker->reports, struct radv_address_binding_report, report);
+      util_dynarray_append(&tracker->reports, report);
    }
 
    simple_mtx_unlock(&tracker->mtx);

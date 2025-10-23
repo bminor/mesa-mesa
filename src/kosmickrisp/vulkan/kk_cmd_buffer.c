@@ -378,7 +378,7 @@ kk_cmd_allocate_buffer(struct kk_cmd_buffer *cmd, size_t size_B,
       vk_command_buffer_set_error(&cmd->vk, result);
       return NULL;
    }
-   util_dynarray_append(&cmd->large_bos, struct kk_bo *, buffer);
+   util_dynarray_append(&cmd->large_bos, buffer);
 
    return buffer;
 }
@@ -502,9 +502,9 @@ void
 kk_cmd_write(struct kk_cmd_buffer *cmd, mtl_buffer *buffer, uint64_t addr,
              uint64_t value)
 {
-   util_dynarray_append(&cmd->encoder->imm_writes, uint64_t, addr);
-   util_dynarray_append(&cmd->encoder->imm_writes, uint64_t, value);
-   util_dynarray_append(&cmd->encoder->resident_buffers, mtl_buffer *, buffer);
+   util_dynarray_append(&cmd->encoder->imm_writes, addr);
+   util_dynarray_append(&cmd->encoder->imm_writes, value);
+   util_dynarray_append(&cmd->encoder->resident_buffers, buffer);
 }
 
 VKAPI_ATTR void VKAPI_CALL

@@ -874,7 +874,7 @@ panvk_draw_prepare_vertex_job(struct panvk_cmd_buffer *cmdbuf,
    if (!ptr.gpu)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
-   util_dynarray_append(&batch->jobs, void *, ptr.cpu);
+   util_dynarray_append(&batch->jobs, ptr.cpu);
    draw->jobs.vertex = ptr;
 
    memcpy(pan_section_ptr(ptr.cpu, COMPUTE_JOB, INVOCATION), &draw->invocation,
@@ -1119,12 +1119,12 @@ panvk_draw_prepare_tiler_job(struct panvk_cmd_buffer *cmdbuf,
       return result;
 
    if (ptr.cpu)
-      util_dynarray_append(&batch->jobs, void *, ptr.cpu);
+      util_dynarray_append(&batch->jobs, ptr.cpu);
 
    draw->jobs.frag_copy_desc = ptr;
 
    ptr = panvk_cmd_alloc_desc(cmdbuf, TILER_JOB);
-   util_dynarray_append(&batch->jobs, void *, ptr.cpu);
+   util_dynarray_append(&batch->jobs, ptr.cpu);
    draw->jobs.tiler = ptr;
 
    memcpy(pan_section_ptr(ptr.cpu, TILER_JOB, INVOCATION), &draw->invocation,
@@ -1159,7 +1159,7 @@ panvk_draw_prepare_idvs_job(struct panvk_cmd_buffer *cmdbuf,
    if (!ptr.gpu)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
-   util_dynarray_append(&batch->jobs, void *, ptr.cpu);
+   util_dynarray_append(&batch->jobs, ptr.cpu);
    draw->jobs.idvs = ptr;
 
    memcpy(pan_section_ptr(ptr.cpu, INDEXED_VERTEX_JOB, INVOCATION),
@@ -1208,8 +1208,9 @@ panvk_draw_prepare_vs_copy_desc_job(struct panvk_cmd_buffer *cmdbuf,
    if (result != VK_SUCCESS)
       return result;
 
-   if (ptr.cpu)
-      util_dynarray_append(&batch->jobs, void *, ptr.cpu);
+   if (ptr.cpu) {
+      util_dynarray_append(&batch->jobs, ptr.cpu);
+   }
 
    draw->jobs.vertex_copy_desc = ptr;
    return VK_SUCCESS;
@@ -1230,8 +1231,9 @@ panvk_draw_prepare_fs_copy_desc_job(struct panvk_cmd_buffer *cmdbuf,
    if (result != VK_SUCCESS)
       return result;
 
-   if (ptr.cpu)
-      util_dynarray_append(&batch->jobs, void *, ptr.cpu);
+   if (ptr.cpu) {
+      util_dynarray_append(&batch->jobs, ptr.cpu);
+   }
 
    draw->jobs.frag_copy_desc = ptr;
    return VK_SUCCESS;
@@ -1628,7 +1630,7 @@ panvk_cmd_draw_indirect(struct panvk_cmd_buffer *cmdbuf,
       unsigned write_job_id =
          pan_jc_add_job(&batch->vtc_jc, MALI_JOB_TYPE_WRITE_VALUE, false, false,
                         0, copy_desc_job_id, &write_job, false);
-      util_dynarray_append(&batch->jobs, void *, write_job.cpu);
+      util_dynarray_append(&batch->jobs, write_job.cpu);
 
       uint32_t index_count = cmdbuf->state.gfx.ib.size / draw->info.index.size;
       uint32_t wg_count = DIV_ROUND_UP(index_count, 65536);

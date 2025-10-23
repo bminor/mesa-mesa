@@ -1071,7 +1071,7 @@ agx_pack_instr(struct util_dynarray *emission, struct util_dynarray *fixups,
          .skip_to_end = I->op == AGX_OPCODE_JMP_EXEC_NONE_AFTER,
       };
 
-      util_dynarray_append(fixups, struct agx_branch_fixup, fixup);
+      util_dynarray_append(fixups, fixup);
 
       /* The rest of the instruction is fixed */
       struct agx_opcode_info info = agx_opcodes_info[I->op];
@@ -1230,7 +1230,7 @@ agx_pack_binary(agx_context *ctx, struct util_dynarray *emission)
    if (!ctx->key->no_stop || ctx->is_preamble) {
       for (unsigned i = 0; i < 8; ++i) {
          uint16_t trap = agx_opcodes_info[AGX_OPCODE_TRAP].encoding.exact;
-         util_dynarray_append(emission, uint16_t, trap);
+         util_dynarray_append(emission, trap);
       }
    }
 }

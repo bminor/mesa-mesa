@@ -908,7 +908,7 @@ st_add_releasebuf(struct st_context *st, struct pipe_resource *releasebuf)
       return;
    if (st->release_counter != st->work_counter)
       st_prune_releasebufs(st);
-   util_dynarray_append(&st->release_resources, struct pipe_resource*, releasebuf);
+   util_dynarray_append(&st->release_resources, releasebuf);
    st->release_counter = st->work_counter;
 }
 

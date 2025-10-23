@@ -682,13 +682,13 @@ calculate_local_next_use(struct spill_ctx *ctx, struct util_dynarray *out)
          bi_foreach_ssa_dest_rev(I, d) {
             unsigned v = I->dest[d].value;
             dist_t next_dist = search_next_uses(&nu, v);
-            util_dynarray_append(out, dist_t, next_dist);
+            util_dynarray_append(out, next_dist);
          }
 
          bi_foreach_ssa_src(I, s) {
             unsigned v = I->src[s].value;
             dist_t next_dist = search_next_uses(&nu, v);
-            util_dynarray_append(out, dist_t, next_dist);
+            util_dynarray_append(out, next_dist);
             assert((next_dist == DIST_INFINITY) == I->src[s].kill_ssa);
             set_next_use(&nu, v, ip);
          }

@@ -356,7 +356,7 @@ d3d12_batch_acquire_reference(struct d3d12_batch *batch,
    if (batch->ctx_id != D3D12_CONTEXT_NO_ID) {
       if ((bo->local_reference_mask[batch->ctx_id] & (1 << batch->ctx_index)) == 0) {
          d3d12_bo_reference(bo);
-         util_dynarray_append(&batch->local_bos, d3d12_bo*, bo);
+         util_dynarray_append(&batch->local_bos, bo);
          bo->local_reference_mask[batch->ctx_id] |= (1 << batch->ctx_index);
          bo->local_reference_state[batch->ctx_id][batch->ctx_index] = batch_bo_reference_none;
       }

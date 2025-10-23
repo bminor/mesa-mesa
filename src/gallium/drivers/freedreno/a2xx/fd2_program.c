@@ -47,9 +47,9 @@ emit(struct fd_ringbuffer *ring, mesa_shader_stage type,
    OUT_RING(ring, type == MESA_SHADER_FRAGMENT);
    OUT_RING(ring, info->sizedwords);
 
-   if (patches)
-      util_dynarray_append(patches, uint32_t *,
-                           &ring->cur[info->mem_export_ptr]);
+   if (patches) {
+      util_dynarray_append(patches, &ring->cur[info->mem_export_ptr]);
+   }
 
    for (i = 0; i < info->sizedwords; i++)
       OUT_RING(ring, info->dwords[i]);

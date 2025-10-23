@@ -211,7 +211,7 @@ replace_function_cache_locked(struct lp_function_cache *cache, struct hash_table
    uint64_t old_value = p_atomic_xchg(&cache->latest_cache.value, (uint64_t)(uintptr_t)new_cache);
    /* Like RCU pointers, defer cleanup of old values until we know no readers are left. */
    struct hash_table *old_cache = (struct hash_table *)(uintptr_t)old_value;
-   util_dynarray_append(&cache->trash_caches, struct hash_table *, old_cache);
+   util_dynarray_append(&cache->trash_caches, old_cache);
 }
 
 static void
@@ -322,7 +322,7 @@ compile_function(struct llvmpipe_context *ctx, struct gallivm_state *gallivm, LL
 
    gallivm_free_ir(gallivm);
 
-   util_dynarray_append(&ctx->sampler_matrix.gallivms, struct gallivm_state *, gallivm);
+   util_dynarray_append(&ctx->sampler_matrix.gallivms, gallivm);
 
    return function_ptr;
 }

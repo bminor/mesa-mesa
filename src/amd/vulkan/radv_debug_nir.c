@@ -209,7 +209,7 @@ radv_build_printf_args(nir_builder *b, nir_def *cond, const char *format_string,
    free(args);
    free(strides);
 
-   util_dynarray_append(&device->printf.formats, struct radv_printf_format, format);
+   util_dynarray_append(&device->printf.formats, format);
 }
 
 void

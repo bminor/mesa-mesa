@@ -466,7 +466,7 @@ zink_resource_image_barrier(struct zink_context *ctx, struct zink_resource *res,
       for (struct zink_resource *r = res; r; r = zink_resource(r->base.b.next)) {
          VkSemaphore sem = zink_screen_export_dmabuf_semaphore(zink_screen(ctx->base.screen), r);
          if (sem)
-            util_dynarray_append(&ctx->bs->fd_wait_semaphores, VkSemaphore, sem);
+            util_dynarray_append(&ctx->bs->fd_wait_semaphores, sem);
       }
       simple_mtx_unlock(&ctx->bs->exportable_lock);
    }

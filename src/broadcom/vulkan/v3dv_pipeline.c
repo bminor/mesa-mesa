@@ -3519,8 +3519,7 @@ pipeline_collect_executable_data(struct v3dv_pipeline *pipeline)
          .nir_str = nir_str,
          .qpu_str = qpu_str,
       };
-      util_dynarray_append(&pipeline->executables.data,
-                           struct v3dv_pipeline_executable_data, data);
+      util_dynarray_append(&pipeline->executables.data, data);
    }
 }
 

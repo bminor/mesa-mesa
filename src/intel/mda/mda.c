@@ -742,7 +742,7 @@ get_spirv_disassembly(void *mem_ctx, object *obj)
    if (WEXITSTATUS(status) != 0 || output.size == 0)
       goto fail;
 
-   util_dynarray_append(&output, char, '\0');
+   util_dynarray_append_typed(&output, char, '\0');
 
    return slice_from_cstr(output.data);
 

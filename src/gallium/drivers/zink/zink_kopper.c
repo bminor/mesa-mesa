@@ -835,7 +835,7 @@ kopper_present(void *data, void *gdata, int thread_idx)
       util_dynarray_init(arr, NULL);
       _mesa_hash_table_insert(swapchain->presents, (void*)(uintptr_t)next, arr);
    }
-   util_dynarray_append(arr, VkSemaphore, cpi->sem);
+   util_dynarray_append(arr, cpi->sem);
 out:
    if (thread_idx != -1) {
       p_atomic_dec(&swapchain->async_presents);
@@ -1082,7 +1082,7 @@ zink_kopper_present_readback(struct zink_context *ctx, struct zink_resource *res
    simple_mtx_unlock(&screen->queue_lock);
 
    simple_mtx_lock(&screen->semaphores_lock);
-   util_dynarray_append(&screen->semaphores, VkSemaphore, acquire);
+   util_dynarray_append(&screen->semaphores, acquire);
    simple_mtx_unlock(&screen->semaphores_lock);
 
    cdt->age_locked = false;

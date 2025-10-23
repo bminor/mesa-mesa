@@ -650,14 +650,14 @@ calculate_local_next_use(struct spill_ctx *ctx, struct util_dynarray *out)
          agx_foreach_ssa_src(I, s) {
             unsigned v = I->src[s].value;
 
-            util_dynarray_append(out, dist_t, search_next_uses(&nu, v));
+            util_dynarray_append(out, search_next_uses(&nu, v));
             set_next_use(&nu, v, ip);
          }
 
          agx_foreach_ssa_dest_rev(I, d) {
             unsigned v = I->dest[d].value;
 
-            util_dynarray_append(out, dist_t, search_next_uses(&nu, v));
+            util_dynarray_append(out, search_next_uses(&nu, v));
          }
       }
    }

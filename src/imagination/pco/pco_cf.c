@@ -423,7 +423,7 @@ static inline bool pco_lower_cf(pco_func *func)
       case PCO_CF_NODE_TYPE_IF: {
          pco_if *pif = pco_cf_node_as_if(cf_node);
          pif->pred_exec = can_pred_exec(pif);
-         util_dynarray_append(&pif_stack, pco_if *, pif);
+         util_dynarray_append(&pif_stack, pif);
 
          if (!pif->pred_exec)
             ++loop_nestings;
@@ -435,11 +435,11 @@ static inline bool pco_lower_cf(pco_func *func)
       }
 
       case PCO_CF_NODE_TYPE_LOOP: {
-         util_dynarray_append(&loop_nestings_stack, unsigned, loop_nestings);
+         util_dynarray_append(&loop_nestings_stack, loop_nestings);
          loop_nestings = 0;
 
          pco_loop *loop = pco_cf_node_as_loop(cf_node);
-         util_dynarray_append(&loop_stack, pco_loop *, loop);
+         util_dynarray_append(&loop_stack, loop);
 
          lower_loop(loop, func);
          progress = true;

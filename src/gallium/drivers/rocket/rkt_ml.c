@@ -322,8 +322,7 @@ rkt_ml_subgraph_create(struct pipe_context *pcontext,
       switch (poperations[i].type) {
       case PIPE_ML_OPERATION_TYPE_CONVOLUTION:
          lower_convolution(subgraph, &poperations[i], &operation);
-         util_dynarray_append(&subgraph->operations, struct rkt_operation,
-                              operation);
+         util_dynarray_append(&subgraph->operations, operation);
          break;
       case PIPE_ML_OPERATION_TYPE_ADD: {
          /* Fuse tensor addition into convolution*/
@@ -511,7 +510,7 @@ rkt_ml_subgraph_invoke(struct pipe_context *pcontext,
          job.out_bo_handle_count = 1;
          job.tasks = (uint64_t)tasks;
          job.task_count = task_count;
-         util_dynarray_append(&jobs, struct drm_rocket_job, job);
+         util_dynarray_append(&jobs, job);
       } else {
          /* Spread tasks among cores, for parallelism */
          util_dynarray_foreach (&operation->tasks, struct split_task, task) {
@@ -527,7 +526,7 @@ rkt_ml_subgraph_invoke(struct pipe_context *pcontext,
             job.out_bo_handle_count = 1;
             job.tasks = (uint64_t)ktask;
             job.task_count = 1;
-            util_dynarray_append(&jobs, struct drm_rocket_job, job);
+            util_dynarray_append(&jobs, job);
          }
       }
    }

@@ -128,12 +128,12 @@ nir_gather_output_dependencies(nir_shader *nir, nir_output_deps *deps)
             .start_block = block,
             .exit_block = nir_cf_node_cf_tree_next(parent_cf),
          };
-         util_dynarray_append(&loop_stack, loop_entry, loop);
+         util_dynarray_append(&loop_stack, loop);
       }
 
       if (parent_cf->type == nir_cf_node_if &&
           block == nir_if_first_then_block(nir_cf_node_as_if(parent_cf))) {
-         util_dynarray_append(&if_cond_stack, nir_def *,
+         util_dynarray_append(&if_cond_stack,
                               nir_cf_node_as_if(parent_cf)->condition.ssa);
       }
 

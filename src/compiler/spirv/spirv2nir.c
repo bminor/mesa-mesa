@@ -142,7 +142,7 @@ select_entry_point(void *mem_ctx, const uint32_t *words, size_t word_count,
          mesa_shader_stage stage = vtn_stage_for_execution_model(w[1]);
 
          struct entry_point e = { name, stage };
-         util_dynarray_append(&candidates, struct entry_point, e);
+         util_dynarray_append(&candidates, e);
       } else if (seen_entry_point) {
          /* List of entry_points is over, we can break now. */
          break;

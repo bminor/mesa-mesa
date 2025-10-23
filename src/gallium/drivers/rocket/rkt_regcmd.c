@@ -16,7 +16,7 @@ emit_raw(struct util_dynarray *regs, uint32_t target, uint32_t reg,
    packed_value |= ((uint64_t)value) << 16;
    packed_value |= (uint64_t)reg;
 
-   util_dynarray_append(regs, uint64_t, packed_value);
+   util_dynarray_append(regs, packed_value);
 }
 
 static void
@@ -516,14 +516,14 @@ fill_first_regcmd(struct rkt_ml_subgraph *subgraph,
    }
 
    if (num_tasks == 1)
-      util_dynarray_append(regs, uint64_t, 0x0);
+      util_dynarray_append_typed(regs, uint64_t, 0x0);
    else
       EMIT(REG_PC_BASE_ADDRESS, 0);
 
    EMIT(REG_PC_REGISTER_AMOUNTS, 0);
 
    /* TRM: before op_en, 64'h0041_xxxx_xxxx_xxxx must be set. */
-   util_dynarray_append(regs, uint64_t, 0x0041000000000000);
+   util_dynarray_append_typed(regs, uint64_t, 0x0041000000000000);
 
    /* TRM: 64'h0081_0000_007f_0008 will set each block's op_en(CNA, CORE, ...,
     * PPU_RDMA). */

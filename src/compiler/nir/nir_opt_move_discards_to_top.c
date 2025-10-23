@@ -88,7 +88,7 @@ add_src_to_worklist(nir_src *src, void *state_)
     * cleanup.
     */
    instr->pass_flags = MOVE_INSTR_FLAG(state->discard_id);
-   util_dynarray_append(&state->worklist, nir_instr *, instr);
+   util_dynarray_append(&state->worklist, instr);
 
    return true;
 }
@@ -124,7 +124,7 @@ try_move_discard(nir_intrinsic_instr *discard, unsigned *next_discard_id)
    struct move_discard_state state;
    state.discard_id = *next_discard_id;
    util_dynarray_init_from_stack(&state.worklist, work_, sizeof(work_));
-   util_dynarray_append(&state.worklist, nir_instr *, &discard->instr);
+   util_dynarray_append(&state.worklist, &discard->instr);
 
    unsigned next = 0;
    bool can_move_discard = true;

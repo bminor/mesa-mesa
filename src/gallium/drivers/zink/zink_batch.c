@@ -659,12 +659,12 @@ submit_queue(void *data, void *gdata, int thread_index)
    for (unsigned i = 0; i < ARRAY_SIZE(si); i++)
       si[i].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
    if (bs->sparse_semaphore)
-      util_dynarray_append(&bs->acquires, VkSemaphore, bs->sparse_semaphore);
+      util_dynarray_append(&bs->acquires, bs->sparse_semaphore);
    si[ZINK_SUBMIT_WAIT_ACQUIRE].waitSemaphoreCount = util_dynarray_num_elements(&bs->acquires, VkSemaphore);
    si[ZINK_SUBMIT_WAIT_ACQUIRE].pWaitSemaphores = bs->acquires.data;
    while (util_dynarray_num_elements(&bs->acquire_flags, VkPipelineStageFlags) < si[ZINK_SUBMIT_WAIT_ACQUIRE].waitSemaphoreCount) {
       VkPipelineStageFlags mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-      util_dynarray_append(&bs->acquire_flags, VkPipelineStageFlags, mask);
+      util_dynarray_append(&bs->acquire_flags, mask);
    }
    assert(util_dynarray_num_elements(&bs->acquires, VkSemaphore) <= util_dynarray_num_elements(&bs->acquire_flags, VkPipelineStageFlags));
    si[ZINK_SUBMIT_WAIT_ACQUIRE].pWaitDstStageMask = bs->acquire_flags.data;
@@ -673,7 +673,7 @@ submit_queue(void *data, void *gdata, int thread_index)
    si[ZINK_SUBMIT_WAIT_FD].pWaitSemaphores = bs->fd_wait_semaphores.data;
    while (util_dynarray_num_elements(&bs->fd_wait_semaphore_stages, VkPipelineStageFlags) < si[ZINK_SUBMIT_WAIT_FD].waitSemaphoreCount) {
       VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-      util_dynarray_append(&bs->fd_wait_semaphore_stages, VkPipelineStageFlags, mask);
+      util_dynarray_append(&bs->fd_wait_semaphore_stages, mask);
    }
    assert(util_dynarray_num_elements(&bs->fd_wait_semaphores, VkSemaphore) <= util_dynarray_num_elements(&bs->fd_wait_semaphore_stages, VkPipelineStageFlags));
    si[ZINK_SUBMIT_WAIT_FD].pWaitDstStageMask = bs->fd_wait_semaphore_stages.data;
@@ -923,8 +923,9 @@ zink_end_batch(struct zink_context *ctx)
 
       for (; res; res = zink_resource(res->base.b.next)) {
          VkSemaphore sem = zink_create_exportable_semaphore(screen);
-         if (sem)
-            util_dynarray_append(&ctx->bs->signal_semaphores, VkSemaphore, sem);
+         if (sem) {
+            util_dynarray_append(&ctx->bs->signal_semaphores, sem);
+         }
       }
       bs->has_work = true;
    }
@@ -1072,7 +1073,7 @@ zink_batch_reference_resource_move(struct zink_context *ctx, struct zink_resourc
             return true;
          }
       }
-      util_dynarray_append(&bs->swapchain_obj, struct zink_resource_object*, res->obj);
+      util_dynarray_append(&bs->swapchain_obj, res->obj);
       return false;
    }
    /* Fast exit for no-op calls.
@@ -1111,7 +1112,7 @@ zink_batch_reference_resource_move_unsync(struct zink_context *ctx, struct zink_
             return true;
          }
       }
-      util_dynarray_append(&bs->swapchain_obj_unsync, struct zink_resource_object*, res->obj);
+      util_dynarray_append(&bs->swapchain_obj_unsync, res->obj);
       return false;
    }
 

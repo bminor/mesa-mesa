@@ -70,7 +70,7 @@ panvk_cmd_prepare_fragment_job(struct panvk_cmd_buffer *cmdbuf, uint64_t fbd)
 
    pan_jc_add_job(&batch->frag_jc, MALI_JOB_TYPE_FRAGMENT, false, false, 0, 0,
                   &job_ptr, false);
-   util_dynarray_append(&batch->jobs, void *, job_ptr.cpu);
+   util_dynarray_append(&batch->jobs, job_ptr.cpu);
    return VK_SUCCESS;
 }
 
@@ -98,7 +98,7 @@ panvk_per_arch(cmd_close_batch)(struct panvk_cmd_buffer *cmdbuf)
          struct pan_ptr ptr = panvk_cmd_alloc_desc(cmdbuf, JOB_HEADER);
 
          if (ptr.gpu) {
-            util_dynarray_append(&batch->jobs, void *, ptr.cpu);
+            util_dynarray_append(&batch->jobs, ptr.cpu);
             pan_jc_add_job(&batch->vtc_jc, MALI_JOB_TYPE_NULL, false, false, 0,
                            0, &ptr, false);
          }

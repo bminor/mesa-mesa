@@ -305,7 +305,7 @@ record_loads(nir_builder *b, nir_intrinsic_instr *intr, void *data)
          table->element_size[(offset / 2) + i] = element_size;
    }
 
-   util_dynarray_append(&state->loads, nir_intrinsic_instr *, intr);
+   util_dynarray_append(&state->loads, intr);
    return false;
 }
 

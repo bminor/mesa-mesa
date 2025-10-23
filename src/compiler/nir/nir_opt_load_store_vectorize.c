@@ -1814,7 +1814,7 @@ process_block(nir_function_impl *impl, struct vectorize_ctx *ctx, nir_block *blo
          util_dynarray_init(arr, arr);
          _mesa_hash_table_insert_pre_hashed(adj_ht, key_hash, entry->key, arr);
       }
-      util_dynarray_append(arr, struct entry *, entry);
+      util_dynarray_append(arr, entry);
    }
 
    /* sort and combine entries */

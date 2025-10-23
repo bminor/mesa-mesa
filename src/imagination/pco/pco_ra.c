@@ -148,7 +148,7 @@ static void preproc_vecs(pco_func *func)
             .instr = instr,
             .ref = psrc,
          };
-         util_dynarray_append(uses, pco_use, use);
+         util_dynarray_append(uses, use);
       }
    }
 
@@ -945,7 +945,7 @@ static bool pco_ra_func(pco_func *func, pco_ra_ctx *ctx)
                      }
                      */
 
-                     util_dynarray_append(&copies, pco_copy, copy);
+                     util_dynarray_append(&copies, copy);
                   }
                }
 

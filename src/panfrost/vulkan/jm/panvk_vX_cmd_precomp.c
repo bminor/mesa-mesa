@@ -76,7 +76,7 @@ panvk_per_arch(dispatch_precomp)(struct panvk_precomp_ctx *ctx,
       cfg.thread_storage = tld;
    }
 
-   util_dynarray_append(&batch->jobs, void *, job.cpu);
+   util_dynarray_append(&batch->jobs, job.cpu);
 
    bool job_barrier = (barrier & PANLIB_BARRIER_JM_BARRIER) != 0;
    bool suppress_prefetch =

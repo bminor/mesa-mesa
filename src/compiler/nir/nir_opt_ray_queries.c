@@ -333,7 +333,7 @@ nir_opt_ray_query_ranges(nir_shader *shader)
             range->last = MAX2(range->last, instr->index);
          }
 
-         util_dynarray_append(&range->instrs, nir_instr *, instr);
+         util_dynarray_append(&range->instrs, instr);
 
          if (parent_loop)
             _mesa_set_add(range->loops, parent_loop);

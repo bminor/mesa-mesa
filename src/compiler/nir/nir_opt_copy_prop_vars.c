@@ -406,7 +406,7 @@ copy_entry_create(struct copy_prop_var_state *state,
    struct copy_entry new_entry = {
       .dst = *deref,
    };
-   util_dynarray_append(copies_array, struct copy_entry, new_entry);
+   util_dynarray_append(copies_array, new_entry);
    return util_dynarray_top_ptr(copies_array, struct copy_entry);
 }
 

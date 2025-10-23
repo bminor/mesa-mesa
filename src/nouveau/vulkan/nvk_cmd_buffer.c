@@ -192,7 +192,7 @@ nvk_cmd_buffer_flush_push(struct nvk_cmd_buffer *cmd, bool incomplete)
          .range = nv_push_dw_count(&cmd->push) * 4,
          .incomplete = incomplete,
       };
-      util_dynarray_append(&cmd->pushes, struct nvk_cmd_push, push);
+      util_dynarray_append(&cmd->pushes, push);
 
       cmd->prev_subc = NVC0_FIFO_SUBC_FROM_PKHDR(cmd->push.last_hdr_dw);
    }
@@ -237,7 +237,7 @@ nvk_cmd_buffer_push_indirect(struct nvk_cmd_buffer *cmd,
       .no_prefetch = true,
    };
 
-   util_dynarray_append(&cmd->pushes, struct nvk_cmd_push, push);
+   util_dynarray_append(&cmd->pushes, push);
 }
 
 VkResult

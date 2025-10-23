@@ -421,7 +421,7 @@ anv_trtt_bind_list_add_entry(struct util_dynarray *binds, uint64_t pte_addr,
       .pte_addr = pte_addr,
       .entry_addr = entry_addr,
    };
-   util_dynarray_append(binds, struct anv_trtt_bind, b);
+   util_dynarray_append(binds, b);
 }
 
 /* Adds elements to the anv_trtt_bind structs passed. This doesn't write the

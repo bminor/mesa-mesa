@@ -498,7 +498,7 @@ construct_value(nir_builder *build,
 
       assert(alu->def.index ==
              util_dynarray_num_elements(state->states, uint16_t));
-      util_dynarray_append(state->states, uint16_t, 0);
+      util_dynarray_append_typed(state->states, uint16_t, 0);
       nir_algebraic_automaton(&alu->instr, state->states, state->pass_op_table);
 
       nir_alu_src val;
@@ -550,7 +550,7 @@ construct_value(nir_builder *build,
 
       assert(cval->index ==
              util_dynarray_num_elements(state->states, uint16_t));
-      util_dynarray_append(state->states, uint16_t, 0);
+      util_dynarray_append_typed(state->states, uint16_t, 0);
       nir_algebraic_automaton(cval->parent_instr, state->states,
                               state->pass_op_table);
 
@@ -781,7 +781,7 @@ nir_replace_instr(nir_builder *build, nir_alu_instr *instr,
    nir_def *ssa_val =
       nir_mov_alu(build, val, instr->def.num_components);
    if (ssa_val->index == util_dynarray_num_elements(states, uint16_t)) {
-      util_dynarray_append(states, uint16_t, 0);
+      util_dynarray_append_typed(states, uint16_t, 0);
       nir_algebraic_automaton(ssa_val->parent_instr, states, table->pass_op_table);
    }
 

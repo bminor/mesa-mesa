@@ -149,7 +149,7 @@ lower_store(nir_intrinsic_instr *instr, nir_builder *b, struct lower_state *stat
                .deref = nir_src_as_deref(instr->src[0]),
                .write_mask = nir_intrinsic_write_mask(instr),
             };
-            util_dynarray_append(&state->output_writes, struct output_writes, data);
+            util_dynarray_append(&state->output_writes, data);
             break;
          }
       }

@@ -352,7 +352,7 @@ vk_common_append_debug_label(struct vk_device *device,
                              struct util_dynarray *labels,
                              const VkDebugUtilsLabelEXT *pLabelInfo)
 {
-   util_dynarray_append(labels, VkDebugUtilsLabelEXT, *pLabelInfo);
+   util_dynarray_append(labels, *pLabelInfo);
    VkDebugUtilsLabelEXT *current_label =
       util_dynarray_top_ptr(labels, VkDebugUtilsLabelEXT);
    current_label->pLabelName =

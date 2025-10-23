@@ -3639,7 +3639,7 @@ dzn_device_descriptor_heap_free_slot(struct dzn_device *device,
       return;
 
    mtx_lock(&heap->lock);
-   util_dynarray_append(&heap->slot_freelist, int, slot);
+   util_dynarray_append(&heap->slot_freelist, slot);
    mtx_unlock(&heap->lock);
 }
 

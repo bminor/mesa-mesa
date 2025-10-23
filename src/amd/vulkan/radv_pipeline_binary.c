@@ -153,7 +153,7 @@ radv_create_pipeline_binary_from_data(struct radv_device *device, const VkAlloca
       return result;
    }
 
-   util_dynarray_append(pipeline_binaries, struct radv_pipeline_binary *, pipeline_binary);
+   util_dynarray_append(pipeline_binaries, pipeline_binary);
    return result;
 }
 
@@ -183,7 +183,7 @@ radv_create_pipeline_binary_from_shader(struct radv_device *device, const VkAllo
       return result;
    }
 
-   util_dynarray_append(pipeline_binaries, struct radv_pipeline_binary *, pipeline_binary);
+   util_dynarray_append(pipeline_binaries, pipeline_binary);
    return result;
 }
 
@@ -239,7 +239,7 @@ radv_create_pipeline_binary_from_rt_shader(struct radv_device *device, const VkA
       return result;
    }
 
-   util_dynarray_append(pipeline_binaries, struct radv_pipeline_binary *, pipeline_binary);
+   util_dynarray_append(pipeline_binaries, pipeline_binary);
    return result;
 }
 

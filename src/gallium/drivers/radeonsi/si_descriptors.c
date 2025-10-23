@@ -1535,7 +1535,7 @@ static void si_resident_handles_update_needs_color_decompress(struct si_context 
       if (!color_needs_decompression(tex))
          continue;
 
-      util_dynarray_append(&sctx->resident_tex_needs_color_decompress, struct si_texture_handle *,
+      util_dynarray_append(&sctx->resident_tex_needs_color_decompress,
                            *tex_handle);
    }
 
@@ -1551,7 +1551,7 @@ static void si_resident_handles_update_needs_color_decompress(struct si_context 
       if (!color_needs_decompression(tex))
          continue;
 
-      util_dynarray_append(&sctx->resident_img_needs_color_decompress, struct si_image_handle *,
+      util_dynarray_append(&sctx->resident_img_needs_color_decompress,
                            *img_handle);
    }
 }
@@ -2666,12 +2666,12 @@ static void si_make_texture_handle_resident(struct pipe_context *ctx, uint64_t h
          if (sctx->gfx_level < GFX12) {
             if (depth_needs_decompression(tex, sview->is_stencil_sampler)) {
                util_dynarray_append(&sctx->resident_tex_needs_depth_decompress,
-                                    struct si_texture_handle *, tex_handle);
+                                    tex_handle);
             }
 
             if (color_needs_decompression(tex)) {
                util_dynarray_append(&sctx->resident_tex_needs_color_decompress,
-                                    struct si_texture_handle *, tex_handle);
+                                    tex_handle);
             }
 
             if (vi_dcc_enabled(tex, sview->base.u.tex.first_level) &&
@@ -2692,7 +2692,7 @@ static void si_make_texture_handle_resident(struct pipe_context *ctx, uint64_t h
          si_mark_bindless_descriptors_dirty(sctx);
 
       /* Add the texture handle to the per-context list. */
-      util_dynarray_append(&sctx->resident_tex_handles, struct si_texture_handle *, tex_handle);
+      util_dynarray_append(&sctx->resident_tex_handles, tex_handle);
 
       /* Add the buffers to the current CS in case si_begin_new_cs()
        * is not going to be called.
@@ -2798,7 +2798,7 @@ static void si_make_image_handle_resident(struct pipe_context *ctx, uint64_t han
          if (sctx->gfx_level < GFX12) {
             if (color_needs_decompression(tex)) {
                util_dynarray_append(&sctx->resident_img_needs_color_decompress,
-                                    struct si_image_handle *, img_handle);
+                                    img_handle);
             }
 
             if (vi_dcc_enabled(tex, level) && p_atomic_read(&tex->framebuffers_bound))
@@ -2818,7 +2818,7 @@ static void si_make_image_handle_resident(struct pipe_context *ctx, uint64_t han
          si_mark_bindless_descriptors_dirty(sctx);
 
       /* Add the image handle to the per-context list. */
-      util_dynarray_append(&sctx->resident_img_handles, struct si_image_handle *, img_handle);
+      util_dynarray_append(&sctx->resident_img_handles, img_handle);
 
       /* Add the buffers to the current CS in case si_begin_new_cs()
        * is not going to be called.

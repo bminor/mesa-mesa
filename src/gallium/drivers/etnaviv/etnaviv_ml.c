@@ -785,7 +785,7 @@ etna_ml_subgraph_create(struct pipe_context *pcontext,
             continue;
       }
 
-      util_dynarray_append(&subgraph->operations, struct etna_vip_instruction, instruction);
+      util_dynarray_append(&subgraph->operations, instruction);
    }
 
    list_for_each_entry_safe(struct etna_operation, operation, &operations, link) {

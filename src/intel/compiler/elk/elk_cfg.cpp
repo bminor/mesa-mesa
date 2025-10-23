@@ -606,7 +606,7 @@ sort_links(util_dynarray *scratch, brw_exec_list *list)
       link_desc l;
       l.kind = link->kind == bblock_link_logical ? '-' : '~';
       l.num = link->block->num;
-      util_dynarray_append(scratch, link_desc, l);
+      util_dynarray_append(scratch, l);
    }
    qsort(scratch->data, util_dynarray_num_elements(scratch, link_desc),
          sizeof(link_desc), compare_link_desc);

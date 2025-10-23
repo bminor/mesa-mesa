@@ -13630,7 +13630,7 @@ radv_trace_trace_rays(struct radv_cmd_buffer *cmd_buffer, const VkTraceRaysIndir
    uint32_t dispatch_index = util_dynarray_num_elements(&cmd_buffer->ray_history, struct radv_rra_ray_history_data *)
                              << 16;
 
-   util_dynarray_append(&cmd_buffer->ray_history, struct radv_rra_ray_history_data *, data);
+   util_dynarray_append(&cmd_buffer->ray_history, data);
 
    cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_INV_SCACHE | RADV_CMD_FLAG_CS_PARTIAL_FLUSH |
                                    radv_src_access_flush(cmd_buffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,

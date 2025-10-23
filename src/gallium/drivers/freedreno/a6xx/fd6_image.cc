@@ -249,8 +249,7 @@ fd6_build_bindless_state(struct fd_context *ctx, mesa_shader_stage shader,
                .cs = &desc_buf[(idx + i) * FDL6_TEX_CONST_DWORDS],
                .val = i,
             };
-            util_dynarray_append(&ctx->batch->fb_read_patches,
-                                 __typeof__(patch), patch);
+            util_dynarray_append(&ctx->batch->fb_read_patches, patch);
          }
       }
    }

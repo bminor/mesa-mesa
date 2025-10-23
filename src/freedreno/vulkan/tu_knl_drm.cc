@@ -168,7 +168,6 @@ msm_submit_add_bind(struct tu_device *device,
       .range = size,
    };
 
-   util_dynarray_append(&submit->binds, struct drm_msm_vm_bind_op,
-                        bind);
+   util_dynarray_append(&submit->binds, bind);
 }
 

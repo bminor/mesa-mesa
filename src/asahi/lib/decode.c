@@ -992,7 +992,7 @@ agxdecode_track_alloc(struct agxdecode_ctx *ctx, struct agx_bo *alloc)
       assert(!match && "tried to alloc already allocated BO");
    }
 
-   util_dynarray_append(&ctx->mmap_array, struct agx_bo, *alloc);
+   util_dynarray_append(&ctx->mmap_array, *alloc);
 }
 
 void

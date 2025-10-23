@@ -1274,8 +1274,7 @@ kgsl_submit_add_bind(struct tu_device *device,
       };
 
 
-      util_dynarray_append(&submit->bind_cmds,
-                           struct kgsl_gpu_aux_command_bind, bind);
+      util_dynarray_append(&submit->bind_cmds, bind);
 
       submit->cur_vma = vma;
       submit->cur_vma_range_start = range_count;
@@ -1289,8 +1288,7 @@ kgsl_submit_add_bind(struct tu_device *device,
       .op = bo ? KGSL_GPUMEM_RANGE_OP_BIND : KGSL_GPUMEM_RANGE_OP_UNBIND,
    };
 
-   util_dynarray_append(&submit->ranges, struct kgsl_gpumem_bind_range,
-                        range);
+   util_dynarray_append(&submit->ranges, range);
 }
 
 /* We don't know the actual CPU pointers until we've finished adding all the

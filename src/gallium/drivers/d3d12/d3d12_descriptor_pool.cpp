@@ -161,7 +161,7 @@ d3d12_descriptor_handle_free(struct d3d12_descriptor_handle *handle)
    if (index + handle->heap->desc_size == handle->heap->next) {
       handle->heap->next = index;
    } else {
-      util_dynarray_append(&handle->heap->free_list, uint32_t, index);
+      util_dynarray_append(&handle->heap->free_list, index);
    }
 
    handle->heap = NULL;

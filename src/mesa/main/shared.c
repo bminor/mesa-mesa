@@ -510,9 +510,10 @@ _mesa_release_pending_resource(struct gl_context *ctx, struct pipe_resource *res
          if (only_user) {
             if (only_user == ctx)
                pipe_resource_release(ctx->pipe, resource);
-            else
+            else {
                /* this is an array of resources that the user context can immediately release next time it prunes */
-               util_dynarray_append(&only_user->ReleaseResources, struct pipe_resource*, resource);
+               util_dynarray_append(&only_user->ReleaseResources, resource);
+            }
          } else if (frontend_released) {
             /* this is reached when the frontend object is destroyed and the pipe_resource is released */
             _mesa_set_add(&ctx->Shared->ReleaseResources, resource);

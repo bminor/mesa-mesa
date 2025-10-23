@@ -102,7 +102,7 @@ fd_rd_parse_dump_range(const char *option_name, struct util_dynarray *range_arra
          p = ep;
       }
 
-      util_dynarray_append(range_array, struct fd_rd_dump_range, range);
+      util_dynarray_append(range_array, range);
 
       if (*p == ',')
          ++p;
@@ -125,7 +125,7 @@ fd_rd_parse_dump_range(const char *option_name, struct util_dynarray *range_arra
          .range_begin = UINT_MAX,
          .range_end = UINT_MAX,
       };
-      util_dynarray_append(range_array, struct fd_rd_dump_range, invalid_range);
+      util_dynarray_append(range_array, invalid_range);
    }
 }
 

@@ -31,15 +31,13 @@ panvk_add_set_event_operation(struct panvk_cmd_buffer *cmdbuf,
        * the right order.
        */
       panvk_per_arch(cmd_open_batch)(cmdbuf);
-      util_dynarray_append(&cmdbuf->cur_batch->event_ops,
-                           struct panvk_cmd_event_op, op);
+      util_dynarray_append(&cmdbuf->cur_batch->event_ops, op);
       panvk_per_arch(cmd_close_batch)(cmdbuf);
    } else {
       /* Let's close the current batch so the operation executes before any
        * future commands.
        */
-      util_dynarray_append(&cmdbuf->cur_batch->event_ops,
-                           struct panvk_cmd_event_op, op);
+      util_dynarray_append(&cmdbuf->cur_batch->event_ops, op);
       panvk_per_arch(cmd_close_batch)(cmdbuf);
       panvk_per_arch(cmd_preload_fb_after_batch_split)(cmdbuf);
       panvk_per_arch(cmd_open_batch)(cmdbuf);
@@ -58,8 +56,7 @@ panvk_add_wait_event_operation(struct panvk_cmd_buffer *cmdbuf,
    if (cmdbuf->cur_batch == NULL) {
       /* No open batch, let's create a new one and have it wait for this event. */
       panvk_per_arch(cmd_open_batch)(cmdbuf);
-      util_dynarray_append(&cmdbuf->cur_batch->event_ops,
-                           struct panvk_cmd_event_op, op);
+      util_dynarray_append(&cmdbuf->cur_batch->event_ops, op);
    } else {
       /* Let's close the current batch so any future commands wait on the
        * event signal operation.
@@ -70,8 +67,7 @@ panvk_add_wait_event_operation(struct panvk_cmd_buffer *cmdbuf,
          panvk_per_arch(cmd_preload_fb_after_batch_split)(cmdbuf);
          panvk_per_arch(cmd_open_batch)(cmdbuf);
       }
-      util_dynarray_append(&cmdbuf->cur_batch->event_ops,
-                           struct panvk_cmd_event_op, op);
+      util_dynarray_append(&cmdbuf->cur_batch->event_ops, op);
    }
 }
 

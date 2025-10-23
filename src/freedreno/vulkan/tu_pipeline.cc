@@ -1451,7 +1451,7 @@ tu_append_executable(struct tu_pipeline *pipeline,
       .disasm = ralloc_strdup(pipeline->executables_mem_ctx, variant->disasm_info.disasm),
    };
 
-   util_dynarray_append(&pipeline->executables, struct tu_pipeline_executable, exe);
+   util_dynarray_append(&pipeline->executables, exe);
 }
 
 static void
