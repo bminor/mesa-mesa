@@ -1,2 +1,0 @@
-# CTS bug, leaky tests - https://github.com/KhronosGroup/VK-GL-CTS/issues/531
-dEQP-VK.descriptor_indexing.*
