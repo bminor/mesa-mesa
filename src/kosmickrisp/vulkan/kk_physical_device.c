@@ -124,6 +124,7 @@ kk_get_device_extensions(const struct kk_instance *instance,
 #endif
       .EXT_external_memory_metal = true,
       .EXT_mutable_descriptor_type = true,
+      .EXT_shader_atomic_float = true,
       .EXT_shader_replicated_composites = true,
 
       .KHR_shader_expect_assume = true,
@@ -288,6 +289,11 @@ kk_get_device_features(
 
       /* VK_KHR_shader_subgroup_uniform_control_flow */
       .shaderSubgroupUniformControlFlow = true,
+
+      /* VK_EXT_shader_atomic_float */
+      .shaderBufferFloat32Atomics = true,
+      .shaderBufferFloat32AtomicAdd = true,
+      .shaderSharedFloat32Atomics =    true,
    };
 }
 
