@@ -1665,6 +1665,22 @@ load("converted_output_pan", [1, 1, 1], indices=[ACCESS, DEST_TYPE, IO_SEMANTICS
 # and is ignored otherwise
 load("readonly_output_pan", [1, 1, 1], indices=[ACCESS, DEST_TYPE, IO_SEMANTICS], flags=[CAN_ELIMINATE])
 
+# Load converted memory given an address and a conversion descriptor
+# src[] = { address, conversion }
+load("converted_mem_pan", [1, 1], indices=[DEST_TYPE, IO_SEMANTICS], flags=[CAN_ELIMINATE])
+
+# Store a value to memory with conversion given an address and a conversion descriptor
+# src[] = { value, address, conversion }
+store("converted_mem_pan", [1, 1], indices=[IO_SEMANTICS])
+
+# Load the address of a texel buffer index
+# src[] = { resource_handle, index }
+intrinsic("load_texel_buf_index_address_pan", [1, 1], dest_comp=1, flags=[CAN_ELIMINATE, CAN_REORDER], bit_sizes=[64])
+
+# Load conversion descriptor for a texel buffer
+# src[] = { resource_handle }
+intrinsic("load_texel_buf_conv_pan", [1], dest_comp=1, flags=[CAN_ELIMINATE, CAN_REORDER], bit_sizes=[32])
+
 # Load input attachment target
 # src[] = { input_attachment_index }
 # valid targets are:
