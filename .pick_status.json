@@ -44,7 +44,7 @@
         "description": "panvk/shader: [de]serialize desc_info.max_varying_loads",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "de86641d3f4f0141c77f3391a64fa61283816855",
         "notes": null
