@@ -1637,8 +1637,25 @@ panvk_deserialize_shader_variant(struct vk_device *vk_dev,
    if (result != VK_SUCCESS)
       return panvk_error(device, result);
 
+   uint32_t nir_str_size = blob_read_uint32(blob);
+   uint32_t asm_str_size = blob_read_uint32(blob);
+   const char *nir_str = blob_read_bytes(blob, nir_str_size);
+   const char *asm_str = blob_read_bytes(blob, asm_str_size);
+
    if (blob->overrun)
       return panvk_error(device, VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT);
+
+   if (nir_str_size > 0) {
+      shader->nir_str = ralloc_strndup(NULL, nir_str, nir_str_size);
+      if (shader->nir_str == NULL)
+         return panvk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+   }
+
+   if (asm_str_size > 0) {
+      shader->asm_str = strndup(asm_str, asm_str_size);
+      if (shader->asm_str == NULL)
+         return panvk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+   }
 
    result = panvk_shader_upload(device, shader, pAllocator);
 
@@ -1722,13 +1739,6 @@ panvk_shader_serialize_variant(struct vk_device *vk_dev,
                                const struct panvk_shader_variant *shader,
                                struct blob *blob)
 {
-   /**
-    * We can't currently cache assembly
-    * TODO: Implement seriaization with assembly
-    **/
-   if (shader->nir_str != NULL || shader->asm_str != NULL)
-      return false;
-
    blob_write_bytes(blob, &shader->info, sizeof(shader->info));
    blob_write_bytes(blob, &shader->fau, sizeof(shader->fau));
 
@@ -1751,6 +1761,14 @@ panvk_shader_serialize_variant(struct vk_device *vk_dev,
    blob_write_uint32(blob, shader->bin_size);
    blob_write_bytes(blob, shader->bin_ptr, shader->bin_size);
    shader_desc_info_serialize(blob, shader);
+
+   /* Include the terminating NULL in the serialization */
+   uint32_t nir_str_size = shader->nir_str ? strlen(shader->nir_str) + 1 : 0;
+   uint32_t asm_str_size = shader->asm_str ? strlen(shader->asm_str) + 1 : 0;
+   blob_write_uint32(blob, nir_str_size);
+   blob_write_uint32(blob, asm_str_size);
+   blob_write_bytes(blob, shader->nir_str, nir_str_size);
+   blob_write_bytes(blob, shader->asm_str, asm_str_size);
 
    return !blob->out_of_memory;
 }
