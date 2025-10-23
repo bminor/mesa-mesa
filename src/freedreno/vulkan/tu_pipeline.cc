@@ -2113,7 +2113,8 @@ tu_pipeline_builder_parse_libraries(struct tu_pipeline_builder *builder,
       if (library->state &
           VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT) {
          pipeline->output = library->base.output;
-         pipeline->lrz_blend.reads_dest |= library->base.lrz_blend.reads_dest;
+         pipeline->lrz_blend.lrz_blend_status =
+            library->base.lrz_blend.lrz_blend_status;
          pipeline->lrz_blend.valid |= library->base.lrz_blend.valid;
       }
 
@@ -3028,28 +3029,34 @@ tu_emit_disable_fs(struct tu_disable_fs *disable_fs,
 }
 
 /* Return true if the blend state reads the color attachments. */
-static bool
+static tu_lrz_blend_status
 tu6_calc_blend_lrz(const struct vk_color_blend_state *cb,
                    const struct vk_render_pass_state *rp)
 {
    if (cb->logic_op_enable && tu_logic_op_reads_dst((VkLogicOp)cb->logic_op))
-      return true;
+      return TU_LRZ_BLEND_READS_DEST_OR_PARTIAL_WRITE;
 
-   bool has_enabled_attachments = false;
+   uint32_t written_color_attachments = 0;
+   uint32_t total_color_attachments = 0;
    for (unsigned i = 0; i < cb->attachment_count; i++) {
       if (rp->color_attachment_formats[i] == VK_FORMAT_UNDEFINED)
          continue;
 
+      total_color_attachments++;
       const struct vk_color_blend_attachment_state *att = &cb->attachments[i];
       if ((cb->color_write_enables & (1u << i)) && att->write_mask != 0) {
-         has_enabled_attachments = true;
-         break;
+         written_color_attachments++;
       }
    }
 
-   /* There is no partial write if there is no writes at all. */
-   if (!has_enabled_attachments)
-      return false;
+   if (total_color_attachments == 0)
+      return TU_LRZ_BLEND_SAFE_FOR_LRZ;
+
+   if (written_color_attachments == 0)
+      return TU_LRZ_BLEND_ALL_COLOR_WRITES_SKIPPED;
+
+   if (written_color_attachments < cb->attachment_count)
+      return TU_LRZ_BLEND_READS_DEST_OR_PARTIAL_WRITE;
 
    for (unsigned i = 0; i < cb->attachment_count; i++) {
       if (rp->color_attachment_formats[i] == VK_FORMAT_UNDEFINED)
@@ -3057,16 +3064,16 @@ tu6_calc_blend_lrz(const struct vk_color_blend_state *cb,
 
       const struct vk_color_blend_attachment_state *att = &cb->attachments[i];
       if (att->blend_enable)
-         return true;
+         return TU_LRZ_BLEND_READS_DEST_OR_PARTIAL_WRITE;
       if (!(cb->color_write_enables & (1u << i)))
-         return true;
+         return TU_LRZ_BLEND_READS_DEST_OR_PARTIAL_WRITE;
       unsigned mask =
          MASK(vk_format_get_nr_components(rp->color_attachment_formats[i]));
       if ((att->write_mask & mask) != mask)
-         return true;
+         return TU_LRZ_BLEND_READS_DEST_OR_PARTIAL_WRITE;
    }
 
-   return false;
+   return TU_LRZ_BLEND_SAFE_FOR_LRZ;
 }
 
 static const enum mesa_vk_dynamic_graphics_state tu_blend_lrz_state[] = {
@@ -3083,7 +3090,7 @@ tu_emit_blend_lrz(struct tu_lrz_blend *lrz,
                   const struct vk_color_blend_state *cb,
                   const struct vk_render_pass_state *rp)
 {
-   lrz->reads_dest = tu6_calc_blend_lrz(cb, rp);
+   lrz->lrz_blend_status = tu6_calc_blend_lrz(cb, rp);
    lrz->valid = true;
 }
 
@@ -4021,10 +4028,10 @@ tu_emit_draw_state(struct tu_cmd_buffer *cmd)
                    cmd->vk.dynamic_graphics_state.ms.sample_mask);
    if (!cmd->state.pipeline_blend_lrz &&
        (EMIT_STATE(blend_lrz) || (cmd->state.dirty & TU_CMD_DIRTY_SUBPASS))) {
-      bool blend_reads_dest = tu6_calc_blend_lrz(&cmd->vk.dynamic_graphics_state.cb,
-                                                 &cmd->state.vk_rp);
-      if (blend_reads_dest != cmd->state.blend_reads_dest) {
-         cmd->state.blend_reads_dest = blend_reads_dest;
+      tu_lrz_blend_status blend_status = tu6_calc_blend_lrz(
+         &cmd->vk.dynamic_graphics_state.cb, &cmd->state.vk_rp);
+      if (blend_status != cmd->state.lrz_blend_status) {
+         cmd->state.lrz_blend_status = blend_status;
          cmd->state.dirty |= TU_CMD_DIRTY_LRZ;
       }
    }

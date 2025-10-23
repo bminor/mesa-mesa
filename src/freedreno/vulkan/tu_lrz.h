@@ -47,6 +47,10 @@ struct tu_lrz_state
    /* Continue using old LRZ state (LOAD_OP_LOAD of depth) */
    bool reuse_previous_state : 1;
    bool gpu_dir_set : 1;
+
+   bool color_written_with_z_test : 1;
+   bool has_lrz_write_with_skipped_color_writes : 1;
+
    enum tu_lrz_direction prev_direction;
 };
 

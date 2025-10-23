@@ -237,6 +237,8 @@ tu_lrz_init_state(struct tu_cmd_buffer *cmd,
    cmd->state.lrz.valid = true;
    cmd->state.lrz.valid_at_start = true;
    cmd->state.lrz.disable_write_for_rp = false;
+   cmd->state.lrz.color_written_with_z_test = false;
+   cmd->state.lrz.has_lrz_write_with_skipped_color_writes = false;
    cmd->state.lrz.prev_direction = TU_LRZ_UNKNOWN;
    /* Be optimistic and unconditionally enable fast-clear in
     * secondary cmdbufs and when reusing previous LRZ state.
@@ -272,6 +274,8 @@ tu_lrz_init_secondary(struct tu_cmd_buffer *cmd,
    cmd->state.lrz.valid = true;
    cmd->state.lrz.valid_at_start = true;
    cmd->state.lrz.disable_write_for_rp = false;
+   cmd->state.lrz.color_written_with_z_test = false;
+   cmd->state.lrz.has_lrz_write_with_skipped_color_writes = false;
    cmd->state.lrz.prev_direction = TU_LRZ_UNKNOWN;
    cmd->state.lrz.gpu_dir_tracking = has_gpu_tracking;
 
@@ -737,7 +741,8 @@ tu_lrz_flush_valid_during_renderpass(struct tu_cmd_buffer *cmd,
    /* Even if state is valid, we cannot be sure that secondary
     * command buffer has the same sticky disable_write_for_rp.
     */
-   if (cmd->state.lrz.valid && !cmd->state.lrz.disable_write_for_rp)
+   if (cmd->state.lrz.valid && !cmd->state.lrz.disable_write_for_rp &&
+       !cmd->state.lrz.has_lrz_write_with_skipped_color_writes)
       return;
 
    tu6_write_lrz_reg(cmd, cs, A6XX_GRAS_LRZ_VIEW_INFO(
@@ -783,7 +788,7 @@ tu6_calculate_lrz_state(struct tu_cmd_buffer *cmd,
    }
 
    /* See comment in tu_pipeline about disabling LRZ write for blending. */
-   bool reads_dest = cmd->state.blend_reads_dest;
+   enum tu_lrz_blend_status blend_status = cmd->state.lrz_blend_status;
 
    gras_lrz_cntl.enable = true;
    gras_lrz_cntl.lrz_write =
@@ -983,8 +988,26 @@ tu6_calculate_lrz_state(struct tu_cmd_buffer *cmd,
     * enable LRZ write.  But this would cause early-z/lrz to discard
     * fragments from draw A which should be visible due to draw B.
     */
-   if (reads_dest && z_write_enable && cmd->device->instance->conservative_lrz) {
+   if (blend_status == TU_LRZ_BLEND_READS_DEST_OR_PARTIAL_WRITE &&
+       z_write_enable && cmd->device->instance->conservative_lrz) {
       tu_lrz_disable_write_for_rp(cmd, "Depth write + blending");
+   }
+
+   /* This is a special case because we want to avoid disabling LRZ when a
+    * renderpass starts with depth-only draw calls, or consists entirely
+    * of them, but also has color attachments.
+    */
+   if (blend_status == TU_LRZ_BLEND_ALL_COLOR_WRITES_SKIPPED &&
+       z_write_enable && cmd->device->instance->conservative_lrz) {
+      if (cmd->state.lrz.color_written_with_z_test) {
+         tu_lrz_disable_write_for_rp(cmd, "Depth write + no color writes");
+      }
+      cmd->state.lrz.has_lrz_write_with_skipped_color_writes = true;
+   }
+
+   if (z_test_enable &&
+       blend_status != TU_LRZ_BLEND_ALL_COLOR_WRITES_SKIPPED) {
+      cmd->state.lrz.color_written_with_z_test = true;
    }
 
    /* If the stencil test behavior depends on the result of the depth test, we

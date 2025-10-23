@@ -4692,8 +4692,9 @@ tu_CmdBindPipeline(VkCommandBuffer commandBuffer,
    tu_pipeline_update_rp_state(&cmd->state);
 
    if (pipeline->lrz_blend.valid) {
-      if (cmd->state.blend_reads_dest != pipeline->lrz_blend.reads_dest) {
-         cmd->state.blend_reads_dest = pipeline->lrz_blend.reads_dest;
+      if (cmd->state.lrz_blend_status !=
+          pipeline->lrz_blend.lrz_blend_status) {
+         cmd->state.lrz_blend_status = pipeline->lrz_blend.lrz_blend_status;
          cmd->state.dirty |= TU_CMD_DIRTY_LRZ;
       }
    }

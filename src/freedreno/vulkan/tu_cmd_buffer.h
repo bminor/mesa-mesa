@@ -551,7 +551,7 @@ struct tu_cmd_state
    bool tessfactor_addr_set;
    bool predication_active;
    bool msaa_disable;
-   bool blend_reads_dest;
+   tu_lrz_blend_status lrz_blend_status;
    bool disable_fs;
    bool stencil_front_write;
    bool stencil_back_write;
