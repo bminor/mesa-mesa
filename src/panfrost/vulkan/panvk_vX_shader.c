@@ -1321,6 +1321,7 @@ panvk_compile_shader(struct panvk_device *dev,
       .gpu_variant = phys_dev->kmod.props.gpu_variant,
       .view_mask = (state && state->rp) ? state->rp->view_mask : 0,
       .robust2_modes = robust2_modes,
+      .robust_descriptors = dev->vk.enabled_features.nullDescriptor,
    };
 
    if (info->stage == MESA_SHADER_FRAGMENT && state != NULL &&

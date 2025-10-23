@@ -107,6 +107,9 @@ struct pan_compile_inputs {
    uint32_t view_mask;
 
    nir_variable_mode robust2_modes;
+   /* Whether or not descriptor accesses should add additional robustness
+    * checks. */
+   bool robust_descriptors;
 
    /* Mask of UBOs that may be moved to push constants */
    uint32_t pushable_ubos;

@@ -1814,6 +1814,84 @@ bi_emit_image_store(bi_builder *b, nir_intrinsic_instr *instr)
 }
 
 static void
+va_emit_load_texel_buf_conversion_desc(bi_builder *b, bi_index dst,
+                                       nir_intrinsic_instr *instr)
+{
+   assert(b->shader->arch >= 9);
+   bi_index table_address, icd_offset;
+   if (nir_src_is_const(instr->src[0])) {
+      unsigned res_handle = nir_src_as_uint(instr->src[0]);
+      unsigned buf_res_table = pan_res_handle_get_table(res_handle);
+      unsigned buf_res_index = pan_res_handle_get_index(res_handle);
+      table_address = bi_imm_u32(pan_res_handle(62, buf_res_table));
+      icd_offset = bi_imm_u32(32 * buf_res_index + 4 * 7);
+   } else {
+      bi_index res_handle = bi_src_index(&instr->src[0]);
+      bi_index buf_res_table = bi_rshift_and_i32(
+         b, res_handle, bi_imm_u32(BITFIELD_MASK(8)), bi_imm_u8(24), false);
+      bi_index buf_res_index = bi_lshift_and_i32(
+         b, res_handle, bi_imm_u32(BITFIELD_MASK(24)), bi_imm_u8(0));
+      table_address = bi_iadd_imm_i32(b, buf_res_table, pan_res_handle(62, 0));
+      bi_index buf_desc_offset = bi_imul_i32(b, buf_res_index, bi_imm_u32(32));
+      icd_offset = bi_iadd_imm_i32(b, buf_desc_offset, 4 * 7);
+   }
+
+   /* Check for zeroed ICD in case robustness is enabled. */
+   if (b->shader->inputs->robust_descriptors) {
+      bi_index loaded_icd = bi_temp(b->shader);
+      bi_ld_pka_i32_to(b, loaded_icd, icd_offset, table_address);
+      /* CONSTANT 0000 L */
+      bi_index predefined_icd = bi_imm_u32(95 << 12 | 231);
+      bi_mux_i32_to(b, dst, predefined_icd, loaded_icd, loaded_icd,
+                    BI_MUX_INT_ZERO);
+   } else
+      bi_ld_pka_i32_to(b, dst, icd_offset, table_address);
+}
+
+static void
+va_emit_load_texel_buf_index_address(bi_builder *b, bi_index dst,
+                                     nir_intrinsic_instr *instr)
+{
+   assert(b->shader->arch >= 9);
+   if (nir_src_is_const(instr->src[0])) {
+      unsigned res_handle = nir_src_as_uint(instr->src[0]);
+      bi_instr *I = bi_lea_buf_imm_to(b, dst, bi_src_index(&instr->src[1]));
+      I->table = pan_res_handle_get_table(res_handle);
+      I->index = pan_res_handle_get_index(res_handle);
+   } else {
+      bi_lea_buf_to(b, dst, bi_src_index(&instr->src[1]),
+                    bi_src_index(&instr->src[0]));
+   }
+   bi_emit_cached_split(b, dst, 64);
+}
+
+static void
+va_emit_load_converted_mem(bi_builder *b, bi_index dst,
+                           nir_intrinsic_instr *instr)
+{
+   assert(b->shader->arch >= 9);
+   bi_index addr = bi_src_index(&instr->src[0]);
+   bi_index icd = bi_src_index(&instr->src[1]);
+
+   bi_ld_cvt_to(b, dst, bi_extract(b, addr, 0), bi_extract(b, addr, 1), icd,
+                bi_reg_fmt_for_nir(nir_intrinsic_dest_type(instr)),
+                instr->def.num_components - 1);
+   bi_emit_cached_split_i32(b, dst, instr->def.num_components);
+}
+
+static void
+va_emit_store_converted_mem(bi_builder *b, nir_intrinsic_instr *instr)
+{
+   assert(b->shader->arch >= 9);
+   bi_index value = bi_src_index(&instr->src[0]);
+   bi_index addr = bi_src_index(&instr->src[1]);
+   bi_index icd = bi_src_index(&instr->src[2]);
+
+   bi_st_cvt(b, value, bi_extract(b, addr, 0), bi_extract(b, addr, 1), icd,
+             BI_REGISTER_FORMAT_AUTO, instr->num_components - 1);
+}
+
+static void
 bi_emit_atomic_i64_to(bi_builder *b, bi_index dst, bi_index addr, bi_index arg,
                       nir_atomic_op op)
 {
@@ -2228,6 +2306,22 @@ bi_emit_intrinsic(bi_builder *b, nir_intrinsic_instr *instr)
 
    case nir_intrinsic_load_frag_coord_zw_pan:
       bi_emit_load_frag_coord_zw_pan(b, instr);
+      break;
+
+   case nir_intrinsic_load_texel_buf_conv_pan:
+      va_emit_load_texel_buf_conversion_desc(b, dst, instr);
+      break;
+
+   case nir_intrinsic_load_texel_buf_index_address_pan:
+      va_emit_load_texel_buf_index_address(b, dst, instr);
+      break;
+
+   case nir_intrinsic_load_converted_mem_pan:
+      va_emit_load_converted_mem(b, dst, instr);
+      break;
+
+   case nir_intrinsic_store_converted_mem_pan:
+      va_emit_store_converted_mem(b, instr);
       break;
 
    case nir_intrinsic_load_converted_output_pan:
@@ -6115,6 +6209,130 @@ void bifrost_lower_texture_nir(nir_shader *nir, unsigned gpu_id)
       NIR_PASS(_, nir, nir_lower_is_helper_invocation);
       NIR_PASS(_, nir, pan_lower_helper_invocation);
       NIR_PASS(_, nir, pan_lower_sample_pos);
+   }
+}
+
+static bool
+lower_texel_buffer_fetch(nir_builder *b, nir_tex_instr *tex, void *data)
+{
+   switch (tex->op) {
+   case nir_texop_txf:
+   case nir_texop_txf_ms:
+      break;
+   default:
+      return false;
+   }
+   if (tex->sampler_dim != GLSL_SAMPLER_DIM_BUF)
+      return false;
+
+   b->cursor = nir_before_instr(&tex->instr);
+
+   nir_def *res_handle = nir_imm_int(b, tex->texture_index);
+   nir_def *buf_index;
+   for (unsigned i = 0; i < tex->num_srcs; ++i) {
+      switch (tex->src[i].src_type) {
+      case nir_tex_src_coord:
+         buf_index = tex->src[i].src.ssa;
+         break;
+      case nir_tex_src_texture_offset:
+         /* This should always be 0 as lower_index_to_offset is expected to be
+          * set */
+         assert(tex->texture_index == 0);
+         res_handle = tex->src[i].src.ssa;
+         break;
+      default:
+         continue;
+      }
+   }
+
+   nir_def *icd = nir_load_texel_buf_conv_pan(b, res_handle);
+   nir_def *texel_addr =
+      nir_load_texel_buf_index_address_pan(b, res_handle, buf_index);
+   nir_def *new =
+      nir_load_converted_mem_pan(b, tex->def.num_components, tex->def.bit_size,
+                                 texel_addr, icd, tex->dest_type);
+   nir_def_replace(&tex->def, new);
+
+   return true;
+}
+
+static bool
+pan_nir_lower_texel_buffer_fetch(nir_shader *shader)
+{
+   return nir_shader_tex_pass(shader, lower_texel_buffer_fetch,
+                              nir_metadata_control_flow, NULL);
+}
+
+static bool
+lower_buf_image_access(nir_builder *b, nir_intrinsic_instr *intr, void *data)
+{
+   switch (intr->intrinsic) {
+   case nir_intrinsic_image_texel_address:
+   case nir_intrinsic_image_load:
+   case nir_intrinsic_image_store:
+      break;
+   default:
+      return false;
+   }
+   enum glsl_sampler_dim dim = nir_intrinsic_image_dim(intr);
+   if (dim != GLSL_SAMPLER_DIM_BUF)
+      return false;
+
+   b->cursor = nir_before_instr(&intr->instr);
+
+   nir_def *res_handle = intr->src[0].ssa;
+   nir_def *buf_index = nir_channel(b, intr->src[1].ssa, 0);
+   nir_def *texel_addr =
+      nir_load_texel_buf_index_address_pan(b, res_handle, buf_index);
+
+   switch (intr->intrinsic) {
+   case nir_intrinsic_image_texel_address:
+      nir_def_replace(&intr->def, texel_addr);
+      break;
+   case nir_intrinsic_image_load: {
+      nir_def *icd = nir_load_texel_buf_conv_pan(b, res_handle);
+      nir_def *loaded_mem = nir_load_converted_mem_pan(
+         b, intr->def.num_components, intr->def.bit_size, texel_addr, icd,
+         nir_intrinsic_dest_type(intr));
+      nir_def_replace(&intr->def, loaded_mem);
+      break;
+   }
+   case nir_intrinsic_image_store: {
+      /* Due to SPIR-V limitations, the source type is not fully reliable: it
+       * reports uint32 even for write_imagei. This causes an incorrect
+       * u32->s32->u32 roundtrip which incurs an unwanted clamping. Use auto32
+       * instead, which will match per the OpenCL spec. Of course this does
+       * not work for 16-bit stores, but those are not available in OpenCL.
+       */
+      nir_alu_type T = nir_intrinsic_src_type(intr);
+      assert(nir_alu_type_get_type_size(T) == 32);
+
+      nir_def *value = intr->src[3].ssa;
+      nir_def *icd = nir_load_texel_buf_conv_pan(b, res_handle);
+      nir_store_converted_mem_pan(b, value, texel_addr, icd);
+      nir_instr_remove(&intr->instr);
+      break;
+   }
+   default:
+      UNREACHABLE("Unexpected intrinsic");
+   }
+
+   return true;
+}
+
+static bool
+pan_nir_lower_buf_image_access(nir_shader *shader)
+{
+   return nir_shader_intrinsics_pass(shader, lower_buf_image_access,
+                                     nir_metadata_control_flow, NULL);
+}
+
+void
+bifrost_lower_texture_late_nir(nir_shader *nir, unsigned gpu_id)
+{
+   if (pan_arch(gpu_id) >= 9) {
+      NIR_PASS(_, nir, pan_nir_lower_texel_buffer_fetch);
+      NIR_PASS(_, nir, pan_nir_lower_buf_image_access);
    }
 }
 
