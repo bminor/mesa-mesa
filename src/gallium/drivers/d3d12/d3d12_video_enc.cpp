@@ -3325,40 +3325,6 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
    ///
 
    ///
-   /// pInputVideoBuffer and pOutputBitstreamBuffers are passed externally
-   /// and could be tracked by pipe_context and have pending ops. Flush any work on them and transition to
-   /// D3D12_RESOURCE_STATE_COMMON before issuing work in Video command queue below. After the video work is done in the
-   /// GPU, transition back to D3D12_RESOURCE_STATE_COMMON
-   ///
-   /// Note that unlike the D3D12TranslationLayer codebase, the state tracker here doesn't (yet) have any kind of
-   /// multi-queue support, so it wouldn't implicitly synchronize when trying to transition between a graphics op and a
-   /// video op.
-   ///
-
-   d3d12_transition_resource_state(
-      d3d12_context(pD3D12Enc->base.context),
-      pInputVideoBuffer->texture,
-      D3D12_RESOURCE_STATE_COMMON,
-      D3D12_TRANSITION_FLAG_INVALIDATE_BINDINGS);
-
-   for (uint32_t slice_idx = 0; slice_idx < num_slice_objects;slice_idx++) {
-      d3d12_transition_resource_state(d3d12_context(pD3D12Enc->base.context),
-                                   pD3D12Enc->m_pOutputBitstreamBuffers[slice_idx],
-                                   D3D12_RESOURCE_STATE_COMMON,
-                                   D3D12_TRANSITION_FLAG_INVALIDATE_BINDINGS);
-   }
-
-   d3d12_apply_resource_states(d3d12_context(pD3D12Enc->base.context), false);
-
-   d3d12_resource_wait_idle(d3d12_context(pD3D12Enc->base.context),
-                            pInputVideoBuffer->texture,
-                            false /*wantToWrite*/);
-
-   for (uint32_t slice_idx = 0; slice_idx < num_slice_objects;slice_idx++) {
-      d3d12_resource_wait_idle(d3d12_context(pD3D12Enc->base.context), pD3D12Enc->m_pOutputBitstreamBuffers[slice_idx], true /*wantToWrite*/);
-   }
-
-   ///
    /// Process pre-encode bitstream headers
    ///
 
@@ -3816,7 +3782,6 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                                        pD3D12Enc->m_currentEncodeConfig.m_GPUQPStatsResource,
                                        D3D12_RESOURCE_STATE_COMMON,
                                        D3D12_TRANSITION_FLAG_INVALIDATE_BINDINGS);
-         d3d12_resource_wait_idle(d3d12_context(pD3D12Enc->base.context), pD3D12Enc->m_currentEncodeConfig.m_GPUQPStatsResource, true /*wantToWrite*/);
          d12_gpu_stats_qp_map = d3d12_resource_resource(pD3D12Enc->m_currentEncodeConfig.m_GPUQPStatsResource);
       }
 
@@ -3829,7 +3794,6 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                                        pD3D12Enc->m_currentEncodeConfig.m_GPUSATDStatsResource,
                                        D3D12_RESOURCE_STATE_COMMON,
                                        D3D12_TRANSITION_FLAG_INVALIDATE_BINDINGS);
-         d3d12_resource_wait_idle(d3d12_context(pD3D12Enc->base.context), pD3D12Enc->m_currentEncodeConfig.m_GPUSATDStatsResource, true /*wantToWrite*/);
          d12_gpu_stats_satd_map = d3d12_resource_resource(pD3D12Enc->m_currentEncodeConfig.m_GPUSATDStatsResource);
       }
 
@@ -3842,7 +3806,6 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                                        pD3D12Enc->m_currentEncodeConfig.m_GPURCBitAllocationStatsResource,
                                        D3D12_RESOURCE_STATE_COMMON,
                                        D3D12_TRANSITION_FLAG_INVALIDATE_BINDINGS);
-         d3d12_resource_wait_idle(d3d12_context(pD3D12Enc->base.context), pD3D12Enc->m_currentEncodeConfig.m_GPURCBitAllocationStatsResource, true /*wantToWrite*/);
          d12_gpu_stats_rc_bitallocation_map = d3d12_resource_resource(pD3D12Enc->m_currentEncodeConfig.m_GPURCBitAllocationStatsResource);
       }
 
@@ -3855,7 +3818,6 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                                        pD3D12Enc->m_currentEncodeConfig.m_GPUPSNRAllocationStatsResource,
                                        D3D12_RESOURCE_STATE_COMMON,
                                        D3D12_TRANSITION_FLAG_INVALIDATE_BINDINGS);
-         d3d12_resource_wait_idle(d3d12_context(pD3D12Enc->base.context), pD3D12Enc->m_currentEncodeConfig.m_GPUPSNRAllocationStatsResource, true /*wantToWrite*/);
          d12_gpu_stats_psnr = d3d12_resource_resource(pD3D12Enc->m_currentEncodeConfig.m_GPUPSNRAllocationStatsResource);
       }
 
