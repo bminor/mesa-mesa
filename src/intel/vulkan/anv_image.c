@@ -39,6 +39,7 @@
 #include "av1_tables.h"
 
 #define ANV_OFFSET_IMPLICIT UINT64_MAX
+#define ANV_MAX_PLANES 4
 
 static const enum isl_surf_dim
 vk_to_isl_surf_dim[] = {
@@ -1813,6 +1814,8 @@ anv_image_init(struct anv_device *device, struct anv_image *image,
       };
    }
 
+   image->n_planes = anv_get_format_planes(device->physical, image->vk.format);
+
    /* In case of AHardwareBuffer import, we don't know the layout yet */
    if (image->vk.external_handle_types &
        VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID) {
@@ -1821,8 +1824,6 @@ anv_image_init(struct anv_device *device, struct anv_image *image,
       image->from_ahb = true;
       return VK_SUCCESS;
    }
-
-   image->n_planes = anv_get_format_planes(device->physical, image->vk.format);
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
    /* In the case of gralloc-backed swap chain image, we don't know the
@@ -2363,31 +2364,45 @@ resolve_ahb_image(struct anv_device *device,
 {
 #if DETECT_OS_ANDROID && ANDROID_API_LEVEL >= 26
    assert(mem->vk.ahardware_buffer);
-   AHardwareBuffer_Desc desc;
-   AHardwareBuffer_describe(mem->vk.ahardware_buffer, &desc);
    VkResult result;
 
-   /* Check tiling. */
-   enum isl_tiling tiling;
-   const native_handle_t *handle =
-      AHardwareBuffer_getNativeHandle(mem->vk.ahardware_buffer);
-   struct u_gralloc_buffer_handle gr_handle = {
-      .handle = handle,
-      .hal_format = desc.format,
-      .pixel_stride = desc.stride,
-   };
-   result = anv_android_get_tiling(device, &gr_handle, &tiling);
-   assert(result == VK_SUCCESS);
-   isl_tiling_flags_t isl_tiling_flags = (1u << tiling);
+   VkImageDrmFormatModifierExplicitCreateInfoEXT mod_explicit_info;
+   VkSubresourceLayout layouts[ANV_MAX_PLANES];
+   result = vk_android_get_ahb_layout(mem->vk.ahardware_buffer,
+                                      &mod_explicit_info,
+                                      layouts,
+                                      ANV_MAX_PLANES);
+   if (result == VK_SUCCESS &&
+       mod_explicit_info.drmFormatModifier != DRM_FORMAT_MOD_INVALID) {
+      const struct isl_drm_modifier_info *isl_mod_info =
+         isl_drm_modifier_get_info(mod_explicit_info.drmFormatModifier);
+      assert(isl_mod_info);
+      isl_tiling_flags_t isl_tiling_flags = (1u << isl_mod_info->tiling);
 
-   /* Now we are able to fill anv_image fields properly and create
-    * isl_surface for it.
-    */
-   image->n_planes = anv_get_format_planes(device->physical, image->vk.format);
+      result = add_all_surfaces_explicit_layout(device, image, NULL, &mod_explicit_info,
+                                                isl_tiling_flags,
+                                                ISL_SURF_USAGE_DISABLE_AUX_BIT);
+   } else {
+      /* Fall back to implicit layout with tiling query. */
+      AHardwareBuffer_Desc desc;
+      AHardwareBuffer_describe(mem->vk.ahardware_buffer, &desc);
+      enum isl_tiling tiling;
+      const native_handle_t *handle =
+         AHardwareBuffer_getNativeHandle(mem->vk.ahardware_buffer);
 
-   result = add_all_surfaces_implicit_layout(device, image, NULL, desc.stride,
-                                             isl_tiling_flags,
-                                             ISL_SURF_USAGE_DISABLE_AUX_BIT);
+      struct u_gralloc_buffer_handle gr_handle = {
+         .handle = handle,
+         .hal_format = desc.format,
+         .pixel_stride = desc.stride,
+      };
+      result = anv_android_get_tiling(device, &gr_handle, &tiling);
+      assert(result == VK_SUCCESS);
+      isl_tiling_flags_t isl_tiling_flags = (1u << tiling);
+
+      result = add_all_surfaces_implicit_layout(device, image, NULL, desc.stride,
+                                                isl_tiling_flags,
+                                                ISL_SURF_USAGE_DISABLE_AUX_BIT);
+   }
    assert(result == VK_SUCCESS);
 #endif
 }
