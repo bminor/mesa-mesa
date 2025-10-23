@@ -23,6 +23,7 @@
 #define HK_MAX_DESCRIPTOR_SIZE        32
 #define HK_MAX_PUSH_DESCRIPTORS       32
 #define HK_MAX_DESCRIPTOR_SET_SIZE    (1u << 30)
+#define HK_MAX_INLINE_UNIFORM_BLOCK_SIZE (1u << 16)
 #define HK_MAX_DESCRIPTORS            (1 << 20)
 #define HK_PUSH_DESCRIPTOR_SET_SIZE                                            \
    (HK_MAX_PUSH_DESCRIPTORS * HK_MAX_DESCRIPTOR_SIZE)
