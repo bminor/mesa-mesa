@@ -94,14 +94,24 @@ public:
       /* We can have memory_write_only set on both images and buffer variables,
        * but in the former there is a distinction between reads from
        * the variable itself (write_only) and from the memory they point to
-       * (memory_write_only), while in the case of buffer variables there is
-       * no such distinction, that is why this check here is limited to
-       * buffer variables alone.
+       * (memory_write_only), while in the case of buffer and pixel local
+       * storage variables there is no such distinction, that is why this check
+       * here is limited to buffer and pixel local storage variables.
        */
-      if (!var || var->data.mode != ir_var_shader_storage)
+      if (!var)
          return visit_continue;
 
-      if (var->data.memory_write_only) {
+      if (var->data.mode == ir_var_shader_storage &&
+          var->data.memory_write_only)
+      {
+         found = var;
+         return visit_stop;
+      }
+
+      /* Variables declared with the__pixel_local_outEXT qualifier are
+       * write-only.
+       */
+      if (var->data.pixel_local_storage == GLSL_PIXEL_LOCAL_STORAGE_OUT) {
          found = var;
          return visit_stop;
       }
@@ -994,6 +1004,28 @@ do_assignment(ir_exec_list *instructions, struct _mesa_glsl_parse_state *state,
       } else if (!lhs->is_lvalue(state)) {
          _mesa_glsl_error(& lhs_loc, state, "non-lvalue in assignment");
          error_emitted = true;
+      } else if (lhs_var != NULL) {
+         switch(lhs_var->data.mode) {
+         case ir_var_shader_pixel_local_storage:
+            state->fs_writes_pixel_local_storage = true;
+            break;
+         case ir_var_shader_out:
+            state->fs_writes_output = true;
+            break;
+         }
+
+         /* From the GL_EXT_shader_pixel_local_storage spec:
+          *
+          *    "It is a compile-time error for a shader to statically write to
+          *     both regular user-defined fragment outputs and to pixel local
+          *     storage variables."
+          */
+         if (state->fs_writes_pixel_local_storage && state->fs_writes_output) {
+            _mesa_glsl_error(&lhs_loc, state,
+                             "shader writes to both output and pixel local "
+                             "storage");
+            error_emitted = true;
+         }
       }
    }
 
@@ -3602,7 +3634,10 @@ validate_image_format_qualifier_for_type(struct _mesa_glsl_parse_state *state,
     * "Format layout qualifiers can be used on image variable declarations
     *  (those declared with a basic type  having “image ” in its keyword)."
     */
-   if (!glsl_type_is_image(type) && qual->flags.q.explicit_image_format) {
+   if (!glsl_type_is_image(type) &&
+       (qual->flags.q.explicit_image_format &&
+        !qual->flags.q.pixel_local_storage))
+   {
       _mesa_glsl_error(loc, state, "format layout qualifiers may only be "
                        "applied to images");
       return false;
@@ -5321,6 +5356,17 @@ ast_declarator_list::hir(ir_exec_list *instructions,
       _mesa_glsl_error(&loc, state,
                        "buffer variables cannot be declared outside "
                        "interface blocks");
+   }
+
+   /* Similarly, the EXT_shader_pixel_local_storage spec says:
+    *    "Pixel local storage variables may only be declared inside
+    *     interface blocks..."
+    */
+   if (type->qualifier.flags.q.pixel_local_storage &&
+       !glsl_type_is_interface(decl_type)) {
+      _mesa_glsl_error(&loc, state,
+                       "pixel local storage variables cannot be declared "
+                       "outside interface blocks");
    }
 
    /* An offset-qualified atomic counter declaration sets the default
@@ -7815,8 +7861,13 @@ ast_process_struct_or_iface_block_members(ir_exec_list *instructions,
          fields[i].explicit_xfb_buffer = explicit_xfb_buffer;
          fields[i].xfb_buffer = xfb_buffer;
          fields[i].xfb_stride = xfb_stride;
+         fields[i].pixel_local_storage = qual->flags.q.pixel_local_storage;
 
-         if (qual->flags.q.explicit_location) {
+         /* for pixel local storage, all locations are effectively "explicit" */
+         if (var_mode == ir_var_shader_pixel_local_storage) {
+            fields[i].location = FRAG_RESULT_DATA0 + expl_location;
+            expl_location += glsl_count_attribute_slots(fields[i].type, false);
+         } else if (qual->flags.q.explicit_location) {
             unsigned qual_location;
             if (process_qualifier_constant(state, &loc, "location",
                                            qual->location, &qual_location)) {
@@ -7975,6 +8026,7 @@ ast_process_struct_or_iface_block_members(ir_exec_list *instructions,
           * the format qualifier is only accepted for images.
           */
          if (var_mode == ir_var_shader_storage ||
+             var_mode == ir_var_shader_pixel_local_storage ||
              glsl_type_is_image(glsl_without_array(field_type))) {
             /* For readonly and writeonly qualifiers the field definition,
              * if set, overwrites the layout qualifier.
@@ -7999,6 +8051,22 @@ ast_process_struct_or_iface_block_members(ir_exec_list *instructions,
             fields[i].memory_restrict = qual->flags.q.restrict_flag ||
                                         (layout && layout->flags.q.restrict_flag);
 
+            if (qual->flags.q.pixel_local_storage) {
+               pipe_format this_image_format = layout->image_format;
+               glsl_base_type this_image_type = layout->image_base_type;
+               if (qual->flags.q.explicit_image_format) {
+                  this_image_format = qual->image_format;
+                  this_image_type = qual->image_base_type;
+               }
+               if (this_image_type != field_type->base_type ||
+                   util_format_get_nr_components(this_image_format) !=
+                   field_type->vector_elements) {
+                  _mesa_glsl_error(&loc, state, "format qualifier doesn't "
+                                   "match the base data type of the image");
+               }
+
+               fields[i].image_format = this_image_format;
+            }
             if (glsl_type_is_image(glsl_without_array(field_type))) {
                if (qual->flags.q.explicit_image_format) {
                   if (qual->image_base_type !=
@@ -8220,6 +8288,11 @@ ast_interface_block::hir(ir_exec_list *instructions,
       } else {
          allowed_blk_qualifiers.flags.q.uniform = 1;
       }
+   } else if (this->layout.flags.q.pixel_local_storage) {
+      allowed_blk_qualifiers.flags.q.pixel_local_storage = 3;
+      allowed_blk_qualifiers.flags.q.read_only = 1;
+      allowed_blk_qualifiers.flags.q.write_only = 1;
+      allowed_blk_qualifiers.flags.q.explicit_image_format = 1;
    } else {
       /* Interface block */
       assert(this->layout.flags.q.in || this->layout.flags.q.out);
@@ -8286,6 +8359,9 @@ ast_interface_block::hir(ir_exec_list *instructions,
    } else if (this->layout.flags.q.buffer) {
       var_mode = ir_var_shader_storage;
       iface_type_name = "buffer";
+   } else if (this->layout.flags.q.pixel_local_storage) {
+      var_mode = ir_var_shader_pixel_local_storage;
+      iface_type_name = "pixel local storage";
    } else {
       var_mode = ir_var_auto;
       iface_type_name = "UNKNOWN";
@@ -8628,6 +8704,41 @@ ast_interface_block::hir(ir_exec_list *instructions,
    }
 
 
+   /*
+    * Check various features for EXT_shader_pixel_local_storage
+    */
+   if (var_mode == ir_var_shader_pixel_local_storage) {
+      /* ensure we do not exceed the available space */
+      unsigned bytes_used = 4 * num_variables;
+      if (bytes_used > state->caps->shader_pixel_local_storage_size) {
+         _mesa_glsl_error(&loc, state,
+                          "bytes needed for pixel local storage (%u) exceeds "
+                          "maximum (%u)", bytes_used,
+                          state->caps->shader_pixel_local_storage_size);
+      }
+      /* The GL_EXT_shader_pixel_local_storage spec says:
+       *
+       *    "A shader may only declare a single input and a single output pixel
+       *     local storage block."
+       */
+      unsigned flags = this->layout.flags.q.pixel_local_storage;
+      if (flags & GLSL_PIXEL_LOCAL_STORAGE_IN) {
+         if (state->pixel_local_input_specified) {
+            _mesa_glsl_error(&loc, state,
+                             "multiple pixel local storage input interfaces "
+                             "specified");
+         }
+         state->pixel_local_input_specified = true;
+      }
+      if (flags & GLSL_PIXEL_LOCAL_STORAGE_OUT) {
+         if (state->pixel_local_output_specified) {
+            _mesa_glsl_error(&loc, state,
+                             "multiple pixel local storage output interfaces "
+                             "specified");
+         }
+         state->pixel_local_output_specified = true;
+      }
+   }
    /* Page 39 (page 45 of the PDF) of section 4.3.7 in the GLSL ES 3.00 spec
     * says:
     *
@@ -8794,9 +8905,14 @@ ast_interface_block::hir(ir_exec_list *instructions,
 
       if (var_mode == ir_var_shader_in || var_mode == ir_var_uniform)
          var->data.read_only = true;
+      else if (var_mode == ir_var_shader_pixel_local_storage)
+         var->data.read_only =
+            this->layout.flags.q.pixel_local_storage ==
+               GLSL_PIXEL_LOCAL_STORAGE_IN;
 
       var->data.patch = this->layout.flags.q.patch;
       var->data.per_primitive = this->layout.flags.q.per_primitive;
+      var->data.pixel_local_storage = this->layout.flags.q.pixel_local_storage;
 
       if (state->stage == MESA_SHADER_GEOMETRY && var_mode == ir_var_shader_in)
          handle_geometry_shader_input_decl(state, loc, var);
@@ -8831,6 +8947,9 @@ ast_interface_block::hir(ir_exec_list *instructions,
          var->data.stream = qual_stream;
          if (layout.flags.q.explicit_location) {
             var->data.location = expl_location;
+            var->data.explicit_location = true;
+         } else if (layout.flags.q.pixel_local_storage) {
+            var->data.location = FRAG_RESULT_DATA0;
             var->data.explicit_location = true;
          }
 
@@ -8870,6 +8989,14 @@ ast_interface_block::hir(ir_exec_list *instructions,
 
          if (var_mode == ir_var_shader_in || var_mode == ir_var_uniform)
             var->data.read_only = true;
+
+         if (var_mode == ir_var_shader_pixel_local_storage) {
+            var->data.pixel_local_storage =
+               this->layout.flags.q.pixel_local_storage;
+            var->data.read_only =
+               var->data.pixel_local_storage == GLSL_PIXEL_LOCAL_STORAGE_IN;
+            var->data.image_format = fields[i].image_format;
+         }
 
          /* Precision qualifiers do not have any meaning in Desktop GLSL */
          if (state->es_shader) {

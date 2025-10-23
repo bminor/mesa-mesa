@@ -602,6 +602,7 @@ EXTRA_EXT(KHR_shader_subgroup);
 EXTRA_EXT(OVR_multiview);
 EXTRA_EXT(NV_timeline_semaphore);
 EXTRA_EXT(EXT_mesh_shader);
+EXTRA_EXT(EXT_shader_pixel_local_storage);
 
 static const int extra_ARB_gl_spirv_or_es2_compat[] = {
    EXT(ARB_gl_spirv),

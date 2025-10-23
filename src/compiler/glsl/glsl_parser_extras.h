@@ -494,6 +494,13 @@ struct _mesa_glsl_parse_state {
    bool ms_output_max_primitives_specified;
 
    /**
+    * True if a shader declares input/output pixel local storage interfaces;
+    * at most one input and one output may be declared.
+    */
+   bool pixel_local_input_specified;
+   bool pixel_local_output_specified;
+
+   /**
     * Output layout qualifiers from GLSL 1.50 (geometry shader controls),
     * and GLSL 4.00 (tessellation control shader).
     */
@@ -908,6 +915,8 @@ struct _mesa_glsl_parse_state {
    bool EXT_shader_integer_mix_warn;
    bool EXT_shader_io_blocks_enable;
    bool EXT_shader_io_blocks_warn;
+   bool EXT_shader_pixel_local_storage_enable;
+   bool EXT_shader_pixel_local_storage_warn;
    bool EXT_shader_realtime_clock_enable;
    bool EXT_shader_realtime_clock_warn;
    bool EXT_shader_samples_identical_enable;
@@ -1041,6 +1050,10 @@ struct _mesa_glsl_parse_state {
     * so we can check totals aren't too large.
     */
    unsigned clip_dist_size, cull_dist_size;
+
+   /* for EXT_shader_pixel_local_storage */
+   bool fs_writes_output;
+   bool fs_writes_pixel_local_storage;
 
    /* for OVR_multiview */
    uint32_t view_mask;

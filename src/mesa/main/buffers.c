@@ -465,6 +465,16 @@ draw_buffers(struct gl_context *ctx, struct gl_framebuffer *fb, GLsizei n,
          _mesa_error(ctx, GL_INVALID_OPERATION, "%s(invalid buffers)", caller);
          return;
       }
+
+      /* From the GL_EXT_shader_pixel_local_storage spec:
+       * "INVALID_OPERATION is generated if pixel local storage is enabled and
+       *  the application attempts to [...] change color buffer selection via
+       *  DrawBuffers, [...]"
+       */
+      if (ctx->PixelLocalStorage) {
+         _mesa_error(ctx, GL_INVALID_OPERATION,
+                     "%s(): pixel local storage enabled", caller);
+      }
    }
 
    supportedMask = supported_buffer_bitmask(ctx, fb);

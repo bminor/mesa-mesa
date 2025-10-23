@@ -46,6 +46,9 @@ public:
       case ir_var_shader_out:
          dest = &ibo;
          break;
+      case ir_var_shader_pixel_local_storage:
+         dest = &ipl;
+         break;
       default:
          assert(!"Unsupported interface variable mode!");
          return false;
@@ -60,19 +63,19 @@ public:
    }
 
    symbol_table_entry(ir_variable *v)               :
-      v(v), f(0), t(0), ibu(0), iss(0), ibi(0), ibo(0), a(0) {}
+      v(v), f(0), t(0), ibu(0), iss(0), ibi(0), ibo(0), ipl(0), a(0) {}
    symbol_table_entry(ir_function *f)               :
-      v(0), f(f), t(0), ibu(0), iss(0), ibi(0), ibo(0), a(0) {}
+      v(0), f(f), t(0), ibu(0), iss(0), ibi(0), ibo(0), ipl(0), a(0) {}
    symbol_table_entry(const glsl_type *t)           :
-      v(0), f(0), t(t), ibu(0), iss(0), ibi(0), ibo(0), a(0) {}
+      v(0), f(0), t(t), ibu(0), iss(0), ibi(0), ibo(0), ipl(0), a(0) {}
    symbol_table_entry(const glsl_type *t, enum ir_variable_mode mode) :
-      v(0), f(0), t(0), ibu(0), iss(0), ibi(0), ibo(0), a(0)
+      v(0), f(0), t(0), ibu(0), iss(0), ibi(0), ibo(0), ipl(0), a(0)
    {
       assert(glsl_type_is_interface(t));
       add_interface(t, mode);
    }
    symbol_table_entry(const class ast_type_specifier *a):
-      v(0), f(0), t(0), ibu(0), iss(0), ibi(0), ibo(0), a(a) {}
+      v(0), f(0), t(0), ibu(0), iss(0), ibi(0), ibo(0), ipl(0), a(a) {}
 
    ir_variable *v;
    ir_function *f;
@@ -81,6 +84,7 @@ public:
    const glsl_type *iss;
    const glsl_type *ibi;
    const glsl_type *ibo;
+   const glsl_type *ipl;
    const class ast_type_specifier *a;
 };
 

@@ -840,6 +840,7 @@ static const _mesa_glsl_extension _mesa_glsl_supported_extensions[] = {
    EXT(EXT_shader_implicit_conversions),
    EXT(EXT_shader_integer_mix),
    EXT_AEP(EXT_shader_io_blocks),
+   EXT(EXT_shader_pixel_local_storage),
    EXT(EXT_shader_realtime_clock),
    EXT(EXT_shader_samples_identical),
    EXT(EXT_shadow_samplers),
@@ -1175,6 +1176,17 @@ _mesa_ast_process_interface_block(YYLTYPE *locp,
                             "#version 140 / GL_ARB_uniform_buffer_object "
                             "required for defining uniform blocks");
       }
+   } else if (q.flags.q.pixel_local_storage) {
+      if (!state->EXT_shader_pixel_local_storage_enable) {
+         _mesa_glsl_error(locp, state,
+                          "GL_EXT_shader_pixel_local_storage "
+                          "required for defining pixel local storage blocks");
+
+      } else if (state->EXT_shader_pixel_local_storage_warn) {
+         _mesa_glsl_warning(locp, state,
+                            "GL_EXT_shader_pixel_local_storage "
+                            "required for defining pixel local storage blocks");
+      }
    } else {
       if (!state->has_shader_io_blocks()) {
          if (state->es_shader) {
@@ -1215,7 +1227,7 @@ _mesa_ast_process_interface_block(YYLTYPE *locp,
    ast_type_qualifier::bitset_t interface_type_mask;
    struct ast_type_qualifier temp_type_qualifier;
 
-   /* Get a bitmask containing only the in/out/uniform/buffer
+   /* Get a bitmask containing only the in/out/uniform/buffer/pls
     * flags, allowing us to ignore other irrelevant flags like
     * interpolation qualifiers.
     */
@@ -1226,11 +1238,13 @@ _mesa_ast_process_interface_block(YYLTYPE *locp,
    temp_type_qualifier.flags.q.buffer = true;
    temp_type_qualifier.flags.q.patch = true;
    temp_type_qualifier.flags.q.per_primitive = true;
+   temp_type_qualifier.flags.q.pixel_local_storage =
+      GLSL_PIXEL_LOCAL_STORAGE_INOUT;
    interface_type_mask = temp_type_qualifier.flags.i;
 
    /* Get the block's interface qualifier.  The interface_qualifier
     * production rule guarantees that only one bit will be set (and
-    * it will be in/out/uniform).
+    * it will be in/out/uniform/pls).
     */
    ast_type_qualifier::bitset_t block_interface_qualifier = q.flags.i;
 
@@ -1274,7 +1288,7 @@ _mesa_ast_process_interface_block(YYLTYPE *locp,
           *  the block."
           */
          _mesa_glsl_error(locp, state,
-                          "uniform/in/out qualifier on "
+                          "optional qualifier on "
                           "interface block member does not match "
                           "the interface block");
       }

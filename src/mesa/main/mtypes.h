@@ -3593,6 +3593,7 @@ struct gl_context
    GLboolean RepresentativeFragmentTest; /**< GL_REPRESENTATIVE_FRAGMENT_TEST_NV */
 
    GLboolean IntelBlackholeRender; /**< GL_INTEL_blackhole_render */
+   GLboolean PixelLocalStorage;    /**< GL_EXT_shader_pixel_local_storage */
 
    /** Does glVertexAttrib(0) alias glVertex()? */
    bool _AttribZeroAliasesVertex;

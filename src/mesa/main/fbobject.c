@@ -3362,6 +3362,17 @@ bind_framebuffer(GLenum target, GLuint framebuffer)
       return;
    }
 
+   /* The GL_EXT_shader_pixel_local_storage spec says:
+    *
+    *    "INVALID_OPERATION is generated if pixel local storage is enabled and
+    *     the application attempts to bind a new draw framebuffer, [...]"
+    */
+   if (bindDrawBuf && ctx->PixelLocalStorage) {
+      _mesa_error(ctx, GL_INVALID_OPERATION,
+                  "glBindFrameBuffer(draw fb): pixel local storage enabled");
+      return;
+   }
+
    if (framebuffer) {
       _mesa_HashLockMutex(&ctx->Shared->FrameBuffers);
 
@@ -3478,8 +3489,9 @@ _mesa_DeleteFramebuffers(GLsizei n, const GLuint *framebuffers)
    GLint i;
    GET_CURRENT_CONTEXT(ctx);
 
+   const char *func = "glDeleteFramebuffers";
    if (n < 0) {
-      _mesa_error(ctx, GL_INVALID_VALUE, "glDeleteFramebuffers(n < 0)");
+      _mesa_error(ctx, GL_INVALID_VALUE, "%s(n < 0)", func);
       return;
    }
 
@@ -3496,6 +3508,19 @@ _mesa_DeleteFramebuffers(GLsizei n, const GLuint *framebuffers)
             if (fb == ctx->DrawBuffer) {
                /* bind default */
                assert(fb->RefCount >= 2);
+
+               /* The GL_EXT_shader_pixel_local_storage spec says:
+                *
+                *    "INVALID_OPERATION is generated if pixel local storage is
+                *     enabled and the application attempts to [...] delete the
+                *     currently bound draw framebuffer, [...]"
+                */
+               if (ctx->PixelLocalStorage) {
+                  _mesa_error(ctx, GL_INVALID_OPERATION,
+                              "%s(draw fb): pixel local storage enabled", func);
+                  return;
+               }
+
                _mesa_BindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
             }
             if (fb == ctx->ReadBuffer) {
@@ -4248,6 +4273,18 @@ framebuffer_texture_with_dims(int dims, GLenum target, GLuint framebuffer,
    struct gl_framebuffer *fb;
    struct gl_texture_object *texObj;
 
+   /* The GL_EXT_shader_pixel_local_storage spec says:
+    *
+    *    "INVALID_OPERATION is generated if pixel local storage is enabled and
+    *     the application attempts to [...] modify any attachment of the
+    *     currently bound draw framebuffer including their underlying storage."
+    */
+   if (ctx->PixelLocalStorage) {
+       _mesa_error(ctx, GL_INVALID_OPERATION,
+                   "%s(): pixel local storage enabled", caller);
+      return;
+   }
+
    /* Get the framebuffer object */
    if (dsa) {
       fb = _mesa_lookup_framebuffer_dsa(ctx, framebuffer, caller);
@@ -4374,6 +4411,18 @@ frame_buffer_texture(GLuint framebuffer, GLenum target,
                      "unsupported function (%s) called", func);
          return;
       }
+   }
+
+   /* The GL_EXT_shader_pixel_local_storage spec says:
+    *
+    *    "INVALID_OPERATION is generated if pixel local storage is enabled and
+    *     the application attempts to [...] modify any attachment of the
+    *     currently bound draw framebuffer including their underlying storage."
+    */
+   if (!no_error && ctx->PixelLocalStorage) {
+       _mesa_error(ctx, GL_INVALID_OPERATION,
+                   "%s(): pixel local storage enabled", func);
+      return;
    }
 
    /* Get the framebuffer object */

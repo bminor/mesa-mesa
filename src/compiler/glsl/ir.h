@@ -322,6 +322,7 @@ enum ir_variable_mode {
    ir_var_shader_task_payload,
    ir_var_shader_in,
    ir_var_shader_out,
+   ir_var_shader_pixel_local_storage, /**< Variable declared as pixel local storage */
    ir_var_function_in,
    ir_var_function_out,
    ir_var_function_inout,
@@ -862,6 +863,12 @@ public:
        * Non-zero if the variable is per-primitive as defined by EXT_mesh_shader
        */
       unsigned per_primitive:1;
+
+      /**
+       * Non-zero if the variable is pixel local storage; in this
+       * case bit 0 indicates read access, bit 1 write access
+       */
+      unsigned pixel_local_storage:2;
 
       /**
        * Emit a warning if this variable is accessed.

@@ -1125,6 +1125,8 @@ struct pipe_caps {
    unsigned shader_subgroup_size;
    unsigned shader_subgroup_supported_stages;
    unsigned shader_subgroup_supported_features;
+   unsigned shader_pixel_local_storage_size;
+   unsigned shader_pixel_local_storage_fast_size;
    unsigned multiview;
    unsigned max_label_length;
    uint64_t max_timeline_semaphore_difference;

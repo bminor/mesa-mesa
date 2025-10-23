@@ -667,6 +667,11 @@ struct ast_type_qualifier {
          unsigned non_coherent:1;
          /** \} */
 
+         /** \name Qualifiers for GL_EXT_shader_pixel_local_storage */
+         /** \{ */
+         unsigned pixel_local_storage:2;
+         /** \} */
+
          /** \name Layout qualifiers for NV_compute_shader_derivatives */
          /** \{ */
          unsigned derivative_group:1;

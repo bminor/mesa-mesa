@@ -703,6 +703,10 @@ descriptor=[
   [ "VIEWPORT_SWIZZLE_Z_NV", "LOC_CUSTOM, TYPE_ENUM, 0, extra_NV_viewport_swizzle" ],
   [ "VIEWPORT_SWIZZLE_W_NV", "LOC_CUSTOM, TYPE_ENUM, 0, extra_NV_viewport_swizzle" ],
 
+# GL_EXT_shader_pixel_local_storage
+  [ "MAX_SHADER_PIXEL_LOCAL_STORAGE_SIZE_EXT", "CAPS_UINT(shader_pixel_local_storage_size), extra_EXT_shader_pixel_local_storage" ],
+  [ "MAX_SHADER_PIXEL_LOCAL_STORAGE_FAST_SIZE_EXT", "CAPS_UINT(shader_pixel_local_storage_fast_size), extra_EXT_shader_pixel_local_storage" ],
+
 # GL_KHR_shader_subgroup
   [ "SUBGROUP_SIZE_KHR", "CONTEXT_INT(Const.ShaderSubgroupSize), extra_KHR_shader_subgroup" ],
   [ "SUBGROUP_SUPPORTED_STAGES_KHR", "CONTEXT_INT(Const.ShaderSubgroupSupportedStages), extra_KHR_shader_subgroup" ],

@@ -942,6 +942,7 @@ ast_type_qualifier::validate_flags(YYLTYPE *loc,
    Q(noperspective);
    Q(origin_upper_left);
    Q(pixel_center_integer);
+   Q(pixel_local_storage);
    Q2(explicit_align, align);
    Q2(explicit_component, component);
    Q2(explicit_location, location);

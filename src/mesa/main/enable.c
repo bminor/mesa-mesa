@@ -37,6 +37,7 @@
 #include "draw_validate.h"
 #include "enable.h"
 #include "errors.h"
+#include "framebuffer.h"
 #include "light.h"
 #include "mtypes.h"
 #include "enums.h"
@@ -361,6 +362,93 @@ _mesa_set_multisample(struct gl_context *ctx, GLboolean state)
 
    ST_SET_STATES(ctx->NewDriverState, ctx->DriverFlags.NewMultisampleEnable);
    ctx->Multisample.Enabled = state;
+}
+
+/**
+ * Helper function to enable or disable GL_EXT_shader_pixel_local_storage
+ */
+static GLboolean
+_mesa_set_pixel_local_storage(struct gl_context *ctx, GLboolean state)
+{
+   if (!state) {
+      /* turning the feature off is always safe */
+      ctx->PixelLocalStorage = state;
+      return state;
+   }
+   /* check that turning the feature on is legal */
+   struct gl_framebuffer *fb = ctx->DrawBuffer;
+   const char *func = "glEnable(SHADER_PIXEL_LOCAL_STORAGE)";
+
+   /* The GL_EXT_shader_pixel_local_storage spec says:
+    *    "INVALID_OPERATION is generated if the application attempts enable
+    *     pixel local storage while the value of SAMPLE_BUFFERS is one."
+    *
+    * calling _mesa_GetIntegerv(SAMPLE_BUFFERS,...) has the side effect of
+    * updating the frame buffer state with any pending attachment changes
+    */
+   GLint sample_buffers = 0;
+   _mesa_GetIntegerv(GL_SAMPLE_BUFFERS, &sample_buffers);
+   if (sample_buffers != 0) {
+      _mesa_error(ctx, GL_INVALID_OPERATION, "%s: SAMPLE_BUFFERS==1", func);
+      return GL_FALSE;
+   }
+
+   if (_mesa_is_user_fbo(fb)) {
+      /* The GL_EXT_shader_pixel_local_storage spec says:
+       *    "INVALID_FRAMEBUFFER_OPERATION is generated if the application
+       *     attempts to enable pixel local storage while the current draw
+       *     framebuffer is incomplete."
+       */
+      if (fb->_Status == 0)
+         _mesa_test_framebuffer_completeness(ctx, fb);
+      if (fb->_Status != GL_FRAMEBUFFER_COMPLETE_EXT) {
+         _mesa_error(ctx, GL_INVALID_FRAMEBUFFER_OPERATION_EXT,
+                     "%s: incomplete framebuffer", func);
+         return GL_FALSE;
+      }
+
+      int nz_color_attachments = 0;
+      for (int i = 0; i < BUFFER_COUNT && nz_color_attachments < 1; i++) {
+         switch(i) {
+         case BUFFER_COLOR0:
+         case BUFFER_DEPTH:
+         case BUFFER_STENCIL:
+         case BUFFER_NONE:
+            break;
+         default:
+            if (fb->Attachment[i].Type != GL_NONE)
+               nz_color_attachments++;
+         }
+      }
+
+      /* The GL_EXT_shader_pixel_local_storage spec says:
+       *    "INVALID_OPERATION is generated if the application attempts to
+       *     enable pixel local storage while the current draw framebuffer is
+       *     a user-defined framebuffer object and has an image attached to
+       *     any color attachment other than color attachment zero."
+       */
+      if (nz_color_attachments > 0) {
+         _mesa_error(ctx, GL_INVALID_OPERATION,
+                     "%s: too many color attachments", func);
+         return GL_FALSE;
+      }
+
+      /* The GL_EXT_shader_pixel_local_storage spec says:
+       *    "INVALID_OPERATION is generated if the application attempts to
+       *     enable pixel local storage while the current draw framebuffer is
+       *     a user-defined framebuffer and the draw buffer for any color
+       *     output other than color output zero is not NONE."
+       */
+      for (int i = 1; i < fb->_NumColorDrawBuffers; i++) {
+         if (fb->_ColorDrawBufferIndexes[i] != BUFFER_NONE) {
+            _mesa_error(ctx, GL_INVALID_OPERATION,
+                        "%s: too many draw buffers", func);
+            return GL_FALSE;
+         }
+      }
+   }
+
+   return state;
 }
 
 /**
@@ -1332,6 +1420,18 @@ _mesa_set_enable(struct gl_context *ctx, GLenum cap, GLboolean state)
          ctx->pipe->set_frontend_noop(ctx->pipe, state);
          break;
 
+      case GL_SHADER_PIXEL_LOCAL_STORAGE_EXT:
+         if (!_mesa_has_EXT_shader_pixel_local_storage(ctx))
+            goto invalid_enum_error;
+         if (ctx->PixelLocalStorage == state)
+            return;
+         FLUSH_VERTICES(ctx, 0, 0);
+         ST_SET_STATE(ctx->NewDriverState, ST_NEW_FB_STATE);
+         /* need to validate that pixel local storage is legal */
+         ctx->PixelLocalStorage = _mesa_set_pixel_local_storage(ctx, state);
+         _mesa_update_valid_to_render_state(ctx);
+         break;
+
       default:
          goto invalid_enum_error;
    }
@@ -2016,6 +2116,11 @@ _mesa_IsEnabled( GLenum cap )
          if (!_mesa_has_INTEL_blackhole_render(ctx))
             goto invalid_enum_error;
          return ctx->IntelBlackholeRender;
+
+      case GL_SHADER_PIXEL_LOCAL_STORAGE_EXT:
+         if (!_mesa_has_EXT_shader_pixel_local_storage(ctx))
+            goto invalid_enum_error;
+         return ctx->PixelLocalStorage;
 
       default:
          goto invalid_enum_error;
