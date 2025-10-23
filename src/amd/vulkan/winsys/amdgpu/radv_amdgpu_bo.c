@@ -35,6 +35,8 @@ radv_amdgpu_bo_va_op(struct radv_amdgpu_winsys *ws, uint32_t bo_handle, uint64_t
                      uint32_t bo_flags, uint64_t internal_flags, uint32_t ops)
 {
    uint64_t flags = internal_flags;
+   int r;
+
    if (bo_handle) {
       flags = AMDGPU_VM_PAGE_READABLE | AMDGPU_VM_PAGE_EXECUTABLE;
 
@@ -47,7 +49,35 @@ radv_amdgpu_bo_va_op(struct radv_amdgpu_winsys *ws, uint32_t bo_handle, uint64_t
 
    size = align64(size, getpagesize());
 
-   return ac_drm_bo_va_op_raw(ws->dev, bo_handle, offset, size, addr, flags, ops);
+   if (bo_flags & RADEON_FLAG_VM_UPDATE_WAIT) {
+      /* Wait for VM MAP updates when requested instead of delaying the updates at submit time.
+       * This is a workaround to mitigate application bugs like use-before-alloc. Note that there is
+       * still a very short period of time where the submit could start before the VM MAP updates
+       * are actually done but this is deep UB territory. Also the BO VA will be only visible to the
+       * application after VM updates are done, so it should be safe in most scenarios.
+       */
+      assert(ops == AMDGPU_VA_OP_MAP);
+
+      simple_mtx_lock(&ws->vm_ioctl_lock);
+
+      uint64_t vm_timeline_point = ++ws->vm_timeline_seq_num;
+
+      r = ac_drm_bo_va_op_raw2(ws->dev, bo_handle, offset, size, addr, flags, ops, ws->vm_timeline_syncobj,
+                               vm_timeline_point, 0, 0);
+
+      simple_mtx_unlock(&ws->vm_ioctl_lock);
+
+      if (r)
+         return r;
+
+      r = ac_drm_cs_syncobj_timeline_wait(ws->dev, &ws->vm_timeline_syncobj, &vm_timeline_point, 1, INT64_MAX,
+                                          DRM_SYNCOBJ_WAIT_FLAGS_WAIT_ALL | DRM_SYNCOBJ_WAIT_FLAGS_WAIT_FOR_SUBMIT,
+                                          NULL);
+   } else {
+      r = ac_drm_bo_va_op_raw(ws->dev, bo_handle, offset, size, addr, flags, ops);
+   }
+
+   return r;
 }
 
 static int

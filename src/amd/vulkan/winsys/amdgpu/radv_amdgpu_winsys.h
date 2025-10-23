@@ -14,6 +14,7 @@
 #include <pthread.h>
 #include "util/list.h"
 #include "util/rwlock.h"
+#include "util/simple_mtx.h"
 #include "ac_gpu_info.h"
 #include "ac_linux_drm.h"
 #include "radv_radeon_winsys.h"
@@ -55,6 +56,10 @@ struct radv_amdgpu_winsys {
    const struct vk_sync_type *sync_types[3];
    struct vk_sync_type syncobj_sync_type;
    struct vk_sync_timeline_type emulated_timeline_sync_type;
+
+   simple_mtx_t vm_ioctl_lock;
+   uint32_t vm_timeline_syncobj;
+   uint64_t vm_timeline_seq_num;
 
    uint32_t refcount;
 };

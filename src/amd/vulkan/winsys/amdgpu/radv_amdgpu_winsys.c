@@ -148,6 +148,9 @@ radv_amdgpu_winsys_destroy(struct radeon_winsys *rws)
    u_rwlock_destroy(&ws->global_bo_list.lock);
    free(ws->global_bo_list.bos);
 
+   ac_drm_cs_destroy_syncobj(ws->dev, ws->vm_timeline_syncobj);
+   simple_mtx_destroy(&ws->vm_ioctl_lock);
+
    if (ws->reserve_vmid)
       ac_drm_vm_unreserve_vmid(ws->dev, 0);
 
@@ -322,6 +325,11 @@ radv_amdgpu_winsys_create(int fd, uint64_t debug_flags, uint64_t perftest_flags,
 
    ws->sync_types[num_sync_types++] = NULL;
    assert(num_sync_types <= ARRAY_SIZE(ws->sync_types));
+
+   if (ac_drm_cs_create_syncobj2(ws->dev, 0, &ws->vm_timeline_syncobj))
+      goto winsys_fail;
+
+   simple_mtx_init(&ws->vm_ioctl_lock, mtx_plain);
 
    ws->perftest = perftest_flags;
    ws->zero_all_vram_allocs = debug_flags & RADV_DEBUG_ZERO_VRAM;
