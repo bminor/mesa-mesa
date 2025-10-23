@@ -224,6 +224,7 @@ brw_compile_tcs(const struct brw_compiler *compiler,
       BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_PRIMITIVE_ID);
 
    prog_data->input_vertices = key->input_vertices;
+   prog_data->output_vertices = nir->info.tess.tcs_vertices_out;
    prog_data->patch_count_threshold = get_patch_count_threshold(key->input_vertices);
 
    if (compiler->use_tcs_multi_patch) {

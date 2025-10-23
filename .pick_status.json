@@ -494,7 +494,7 @@
         "description": "anv/brw: fix output tcs vertices",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a91e0e0d616f857144c8cadfaed734ac5be8e729",
         "notes": null

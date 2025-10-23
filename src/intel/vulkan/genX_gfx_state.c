@@ -2550,7 +2550,7 @@ cmd_buffer_flush_gfx_runtime_state(struct anv_gfx_dynamic_state *hw_state,
 
       SET(TESS_CONFIG, tess_config,
           intel_tess_config(dyn->ts.patch_control_points,
-                            tcs_prog_data->instances,
+                            tcs_prog_data->output_vertices,
                             brw_tess_info_domain(tess_info),
                             tcs_prog_data->base.vue_map.num_per_patch_slots,
                             tcs_prog_data->base.vue_map.num_per_vertex_slots,
