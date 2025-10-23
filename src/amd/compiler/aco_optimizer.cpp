@@ -442,10 +442,10 @@ struct alu_opt_info {
    uint32_t pass_flags; /* exec id */
 
    /* defs[0] modifiers */
-   uint8_t omod;
-   bool clamp;
-   bool f32_to_f16;
-   SubdwordSel insert;
+   uint8_t omod = 0;
+   bool clamp = false;
+   bool f32_to_f16 = false;
+   SubdwordSel insert = SubdwordSel::dword;
 
    bool try_swap_operands(unsigned idx0, unsigned idx1)
    {
@@ -456,6 +456,11 @@ struct alu_opt_info {
          return true;
       }
       return false;
+   }
+
+   bool uses_insert() const
+   {
+      return defs[0].size() == 1 && (insert.offset() != 0 || insert.size() < defs[0].bytes());
    }
 };
 
@@ -947,7 +952,7 @@ alu_opt_info_is_valid(opt_ctx& ctx, alu_opt_info& info)
 
    /* dst SDWA */
    if (info.insert != SubdwordSel::dword) {
-      if (info.insert.offset() == 0 && info.insert.size() >= info.defs[0].bytes()) {
+      if (!info.uses_insert()) {
          info.insert = SubdwordSel::dword;
       } else if (info.defs[0].bytes() != 4 ||
                  (!format_is(info.format, Format::VOP1) && !format_is(info.format, Format::VOP2))) {
@@ -1241,8 +1246,6 @@ alu_opt_gather_info(opt_ctx& ctx, Instruction* instr, alu_opt_info& info)
 
    if (instr->isSDWA())
       info.insert = instr->sdwa().dst_sel;
-   else
-      info.insert = SubdwordSel::dword;
 
    for (Definition& def : instr->definitions)
       info.defs.push_back(def);
