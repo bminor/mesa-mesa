@@ -143,6 +143,7 @@ static void radeon_enc_cdf_default_table(struct radeon_encoder *enc)
    bool use_cdf_default = enc->enc_pic.frame_type == PIPE_AV1_ENC_FRAME_TYPE_KEY ||
                           enc->enc_pic.frame_type == PIPE_AV1_ENC_FRAME_TYPE_INTRA_ONLY ||
                           enc->enc_pic.frame_type == PIPE_AV1_ENC_FRAME_TYPE_SWITCH ||
+                          enc->enc_pic.av1.primary_ref_frame == 7 /* PRIMARY_REF_NONE */ ||
                           (enc->enc_pic.enable_error_resilient_mode);
 
    enc->enc_pic.av1_cdf_default_table.use_cdf_default = use_cdf_default ? 1 : 0;
@@ -447,7 +448,7 @@ void radeon_enc_av1_frame_header_common(struct radeon_encoder *enc, struct radeo
 
    if (!frame_is_intra && !error_resilient_mode)
       /*  primary_ref_frame  */
-      radeon_bs_code_fixed_bits(bs, av1->primary_ref_frame, 3);
+      radeon_bs_code_fixed_bits(bs, enc->enc_pic.av1.primary_ref_frame, 3);
 
    if ((enc->enc_pic.frame_type != PIPE_AV1_ENC_FRAME_TYPE_SWITCH) &&
        (enc->enc_pic.frame_type != PIPE_AV1_ENC_FRAME_TYPE_KEY || !av1->show_frame))
