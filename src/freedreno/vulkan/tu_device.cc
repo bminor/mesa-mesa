@@ -867,6 +867,8 @@ tu_get_physical_device_properties_1_1(struct tu_physical_device *pdevice,
 static const size_t max_descriptor_set_size = MAX_SET_SIZE / (4 * A6XX_TEX_CONST_DWORDS);
 static const VkSampleCountFlags sample_counts =
    VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_2_BIT | VK_SAMPLE_COUNT_4_BIT;
+static const VkSampleCountFlags sample_location_counts =
+   VK_SAMPLE_COUNT_2_BIT | VK_SAMPLE_COUNT_4_BIT;
 
 static void
 tu_get_physical_device_properties_1_2(struct tu_physical_device *pdevice,
@@ -1241,7 +1243,7 @@ tu_get_properties(struct tu_physical_device *pdevice,
 
    /* VK_EXT_sample_locations */
    props->sampleLocationSampleCounts =
-      pdevice->vk.supported_extensions.EXT_sample_locations ? sample_counts : 0;
+      pdevice->vk.supported_extensions.EXT_sample_locations ? sample_location_counts : 0;
    props->maxSampleLocationGridSize = (VkExtent2D) { 1 , 1 };
    props->sampleLocationCoordinateRange[0] = SAMPLE_LOCATION_MIN;
    props->sampleLocationCoordinateRange[1] = SAMPLE_LOCATION_MAX;
@@ -4094,7 +4096,7 @@ tu_GetPhysicalDeviceMultisamplePropertiesEXT(
 {
    VK_FROM_HANDLE(tu_physical_device, pdevice, physicalDevice);
 
-   if (samples <= VK_SAMPLE_COUNT_4_BIT && pdevice->vk.supported_extensions.EXT_sample_locations)
+   if (pdevice->vk.supported_extensions.EXT_sample_locations && (samples & sample_location_counts))
       pMultisampleProperties->maxSampleLocationGridSize = (VkExtent2D){ 1, 1 };
    else
       pMultisampleProperties->maxSampleLocationGridSize = (VkExtent2D){ 0, 0 };
