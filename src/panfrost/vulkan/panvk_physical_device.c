@@ -155,6 +155,37 @@ get_cache_sha1(struct panvk_physical_device *device,
    memcpy(device->cache_uuid, sha, VK_UUID_SIZE);
 }
 
+static void
+init_disk_cache(struct panvk_physical_device *device,
+                const struct panvk_instance *instance)
+{
+#ifdef ENABLE_SHADER_CACHE
+   char renderer[17];
+   ASSERTED int len = snprintf(renderer, sizeof(renderer), "panvk_0x%08x",
+                               device->kmod.props.gpu_id);
+   assert(len == sizeof(renderer) - 1);
+
+   char timestamp[SHA1_DIGEST_STRING_LENGTH];
+   _mesa_sha1_format(timestamp, instance->driver_build_sha);
+
+   const uint64_t driver_flags = 0;
+   device->vk.disk_cache = disk_cache_create(renderer, timestamp, driver_flags);
+#endif
+}
+
+static void
+free_disk_cache(struct panvk_physical_device *device)
+{
+#ifdef ENABLE_SHADER_CACHE
+   if (device->vk.disk_cache) {
+      disk_cache_destroy(device->vk.disk_cache);
+      device->vk.disk_cache = NULL;
+   }
+#else
+   assert(device->vk.disk_cache == NULL);
+#endif
+}
+
 static VkResult
 get_core_mask(struct panvk_physical_device *device,
               const struct panvk_instance *instance, const char *option_name,
@@ -238,6 +269,8 @@ void
 panvk_physical_device_finish(struct panvk_physical_device *device)
 {
    panvk_wsi_finish(device);
+
+   free_disk_cache(device);
 
    pan_kmod_dev_destroy(device->kmod.dev);
 
@@ -350,6 +383,8 @@ panvk_physical_device_init(struct panvk_physical_device *device,
 
    device->vk.supported_sync_types = device->sync_types;
 
+   init_disk_cache(device, instance);
+
    result = panvk_wsi_init(device);
    if (result != VK_SUCCESS)
       goto fail;
@@ -357,6 +392,8 @@ panvk_physical_device_init(struct panvk_physical_device *device,
    return VK_SUCCESS;
 
 fail:
+   free_disk_cache(device);
+
    if (device->vk.instance)
       vk_physical_device_finish(&device->vk);
 
