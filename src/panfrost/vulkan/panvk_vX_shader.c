@@ -1461,6 +1461,7 @@ shader_desc_info_deserialize(struct blob_reader *blob,
    blob_copy_bytes(blob, shader->desc_info.dyn_bufs.map,
                    sizeof(*shader->desc_info.dyn_bufs.map) *
                    shader->desc_info.dyn_bufs.count);
+   shader->desc_info.max_varying_loads = blob_read_uint32(blob);
 #endif
 
    return VK_SUCCESS;
@@ -1574,6 +1575,7 @@ shader_desc_info_serialize(struct blob *blob, const struct panvk_shader *shader)
    blob_write_bytes(blob, shader->desc_info.dyn_bufs.map,
                     sizeof(*shader->desc_info.dyn_bufs.map) *
                     shader->desc_info.dyn_bufs.count);
+   blob_write_uint32(blob, shader->desc_info.max_varying_loads);
 #endif
 }
 
