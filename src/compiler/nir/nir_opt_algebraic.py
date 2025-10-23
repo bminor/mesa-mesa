@@ -1092,23 +1092,6 @@ optimizations.extend([
    (('iand', ('fge', a, '#b(is_a_number)'), ('fge', a, '#c(is_a_number)')), ('fge', a, ('fmax', b, c))),
    (('iand', ('fge', '#a(is_a_number)', c), ('fge', '#b(is_a_number)', c)), ('fge', ('fmin', a, b), c)),
 
-   (('ior', ('ilt(is_used_once)', a, b), ('ilt', a, c)), ('ilt', a, ('imax', b, c))),
-   (('ior', ('ilt(is_used_once)', a, c), ('ilt', b, c)), ('ilt', ('imin', a, b), c)),
-   (('ior', ('ige(is_used_once)', a, b), ('ige', a, c)), ('ige', a, ('imin', b, c))),
-   (('ior', ('ige(is_used_once)', a, c), ('ige', b, c)), ('ige', ('imax', a, b), c)),
-   (('ior', ('ult(is_used_once)', a, b), ('ult', a, c)), ('ult', a, ('umax', b, c))),
-   (('ior', ('ult(is_used_once)', a, c), ('ult', b, c)), ('ult', ('umin', a, b), c)),
-   (('ior', ('uge(is_used_once)', a, b), ('uge', a, c)), ('uge', a, ('umin', b, c))),
-   (('ior', ('uge(is_used_once)', a, c), ('uge', b, c)), ('uge', ('umax', a, b), c)),
-   (('iand', ('ilt(is_used_once)', a, b), ('ilt', a, c)), ('ilt', a, ('imin', b, c))),
-   (('iand', ('ilt(is_used_once)', a, c), ('ilt', b, c)), ('ilt', ('imax', a, b), c)),
-   (('iand', ('ige(is_used_once)', a, b), ('ige', a, c)), ('ige', a, ('imax', b, c))),
-   (('iand', ('ige(is_used_once)', a, c), ('ige', b, c)), ('ige', ('imin', a, b), c)),
-   (('iand', ('ult(is_used_once)', a, b), ('ult', a, c)), ('ult', a, ('umin', b, c))),
-   (('iand', ('ult(is_used_once)', a, c), ('ult', b, c)), ('ult', ('umax', a, b), c)),
-   (('iand', ('uge(is_used_once)', a, b), ('uge', a, c)), ('uge', a, ('umax', b, c))),
-   (('iand', ('uge(is_used_once)', a, c), ('uge', b, c)), ('uge', ('umin', a, b), c)),
-
    # Law of trichotomy. This pattern is load-bearing on AGX for optimizing
    # emulated transform feedback.
    (('iand', ('uge', a, b), ('ult', a, b)), False),
@@ -1351,6 +1334,23 @@ for s in [8, 16, 32, 64]:
        (('ushr', 'a@{}'.format(s), ('iand', s - 1, b)), ('ushr', a, b)),
        (('ushr', 'a@{}'.format(s), ('ishl(is_used_once)', ('iand', b, 1), amount_bits - 1)), ('ushr', a, ('ishl', b, amount_bits - 1))),
        (('ushr', 'a@{}'.format(s), ('ishl(is_used_once)', ('iand', b, 3), amount_bits - 2)), ('ushr', a, ('ishl', b, amount_bits - 2))),
+
+       (('ior', ('ilt(is_used_once)', f'a@{s}', b), ('ilt', a, c)), ('ilt', a, ('imax', b, c)), '!'+lower_imax),
+       (('ior', ('ilt(is_used_once)', f'a@{s}', c), ('ilt', b, c)), ('ilt', ('imin', a, b), c), '!'+lower_imin),
+       (('ior', ('ige(is_used_once)', f'a@{s}', b), ('ige', a, c)), ('ige', a, ('imin', b, c)), '!'+lower_imin),
+       (('ior', ('ige(is_used_once)', f'a@{s}', c), ('ige', b, c)), ('ige', ('imax', a, b), c), '!'+lower_imax),
+       (('ior', ('ult(is_used_once)', f'a@{s}', b), ('ult', a, c)), ('ult', a, ('umax', b, c)), '!'+lower_umax),
+       (('ior', ('ult(is_used_once)', f'a@{s}', c), ('ult', b, c)), ('ult', ('umin', a, b), c), '!'+lower_umin),
+       (('ior', ('uge(is_used_once)', f'a@{s}', b), ('uge', a, c)), ('uge', a, ('umin', b, c)), '!'+lower_umin),
+       (('ior', ('uge(is_used_once)', f'a@{s}', c), ('uge', b, c)), ('uge', ('umax', a, b), c), '!'+lower_umax),
+       (('iand', ('ilt(is_used_once)', f'a@{s}', b), ('ilt', a, c)), ('ilt', a, ('imin', b, c)), '!'+lower_imin),
+       (('iand', ('ilt(is_used_once)', f'a@{s}', c), ('ilt', b, c)), ('ilt', ('imax', a, b), c), '!'+lower_imax),
+       (('iand', ('ige(is_used_once)', f'a@{s}', b), ('ige', a, c)), ('ige', a, ('imax', b, c)), '!'+lower_imax),
+       (('iand', ('ige(is_used_once)', f'a@{s}', c), ('ige', b, c)), ('ige', ('imin', a, b), c), '!'+lower_imin),
+       (('iand', ('ult(is_used_once)', f'a@{s}', b), ('ult', a, c)), ('ult', a, ('umin', b, c)), '!'+lower_umin),
+       (('iand', ('ult(is_used_once)', f'a@{s}', c), ('ult', b, c)), ('ult', ('umax', a, b), c), '!'+lower_umax),
+       (('iand', ('uge(is_used_once)', f'a@{s}', b), ('uge', a, c)), ('uge', a, ('umax', b, c)), '!'+lower_umax),
+       (('iand', ('uge(is_used_once)', f'a@{s}', c), ('uge', b, c)), ('uge', ('umin', a, b), c), '!'+lower_umin),
     ])
 
 optimizations.extend([
