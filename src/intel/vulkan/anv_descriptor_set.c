@@ -1576,6 +1576,10 @@ VkResult anv_CreateDescriptorPool(
    return VK_SUCCESS;
 }
 
+static void anv_descriptor_set_destroy(struct anv_device *device,
+                                       struct anv_descriptor_pool *pool,
+                                       struct anv_descriptor_set *set);
+
 void anv_DestroyDescriptorPool(
     VkDevice                                    _device,
     VkDescriptorPool                            _pool,
@@ -1589,9 +1593,16 @@ void anv_DestroyDescriptorPool(
 
    ANV_RMV(resource_destroy, device, pool);
 
+   /* From the Vulkan spec, vkDestroyDescriptorPool:
+    *
+    *    "When a pool is destroyed, all descriptor sets allocated from the
+    *     pool are implicitly freed and become invalid. Descriptor sets
+    *     allocated from a given pool do not need to be freed before destroying
+    *     that descriptor pool."
+    */
    list_for_each_entry_safe(struct anv_descriptor_set, set,
                             &pool->desc_sets, pool_link) {
-      anv_descriptor_set_layout_unref(device, set->layout);
+      anv_descriptor_set_destroy(device, pool, set);
    }
 
    util_vma_heap_finish(&pool->host_heap);
