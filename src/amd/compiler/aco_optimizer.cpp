@@ -1504,6 +1504,20 @@ alu_opt_info_to_instr(opt_ctx& ctx, alu_opt_info& info, Instruction* old_instr)
    return instr;
 }
 
+double
+extract_float(uint64_t raw, unsigned bits, unsigned idx = 0)
+{
+   raw >>= bits * idx;
+   if (bits == 16)
+      return _mesa_half_to_float(raw);
+   else if (bits == 32)
+      return uif(raw);
+   else if (bits == 64)
+      return uid(raw);
+   else
+      UNREACHABLE("unsupported float size");
+}
+
 uint64_t
 operand_canonicalized_labels(opt_ctx& ctx, Operand op)
 {
@@ -2834,11 +2848,7 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          if (!instr->operands[!i].isConstant() || !instr->operands[i].isTemp())
             continue;
 
-         double constant = uif(instr->operands[!i].constantValue());
-         if (fp16)
-            constant = _mesa_half_to_float(instr->operands[!i].constantValue());
-         else if (fp64)
-            constant = uid(instr->operands[!i].constantValue64());
+         double constant = extract_float(instr->operands[!i].constantValue64(), bit_size);
 
          if (!instr->isDPP() && !instr->isSDWA() && !instr->valu().opsel && fabs(constant) == 1.0) {
             bool neg1 = constant == -1.0;
