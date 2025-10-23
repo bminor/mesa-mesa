@@ -1778,12 +1778,12 @@ vk_graphics_pipeline_compile_shaders(struct vk_device *device,
        * returns, we own the shaders but not the NIR in infos.
        */
       struct vk_shader *shaders[MESA_VK_MAX_GRAPHICS_PIPELINE_STAGES];
-      result = ops->compile(device,
-                            compile_info->partition[p + 1] - compile_info->partition[p],
-                            &infos[compile_info->partition[p]],
-                            compile_info->state, &device->enabled_features,
-                            &device->alloc,
-                            &shaders[compile_info->partition[p]]);
+      result = vk_compile_shaders(device,
+                                  compile_info->partition[p + 1] - compile_info->partition[p],
+                                  &infos[compile_info->partition[p]],
+                                  compile_info->state, &device->enabled_features,
+                                  &device->alloc,
+                                  &shaders[compile_info->partition[p]]);
       if (result != VK_SUCCESS)
          return result;
 
@@ -2406,8 +2406,9 @@ vk_pipeline_compile_compute_stage(struct vk_device *device,
    };
 
    struct vk_shader *shader;
-   result = ops->compile(device, 1, &compile_info, NULL,
-                         &device->enabled_features, &device->alloc, &shader);
+   result = vk_compile_shaders(device, 1, &compile_info,
+                               NULL, &device->enabled_features,
+                               &device->alloc, &shader);
    if (result != VK_SUCCESS)
       return result;
 
@@ -3188,9 +3189,9 @@ vk_pipeline_compile_rt_shader(struct vk_device *device,
    };
 
    struct vk_shader *shader;
-   VkResult result = ops->compile(device, 1, &compile_info,
-                                  NULL, &device->enabled_features,
-                                  &device->alloc, &shader);
+   VkResult result = vk_compile_shaders(device, 1, &compile_info,
+                                        NULL, &device->enabled_features,
+                                        &device->alloc, &shader);
    if (result != VK_SUCCESS)
       return result;
 
@@ -3305,9 +3306,9 @@ vk_pipeline_compile_rt_shader_group(struct vk_device *device,
    }
 
    struct vk_shader *shaders[3];
-   VkResult result = ops->compile(device, stage_count, compile_info,
-                                  NULL, &device->enabled_features,
-                                  &device->alloc, shaders);
+   VkResult result = vk_compile_shaders(device, stage_count, compile_info,
+                                        NULL, &device->enabled_features,
+                                        &device->alloc, shaders);
    if (result != VK_SUCCESS)
       return result;
 

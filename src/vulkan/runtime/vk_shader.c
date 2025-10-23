@@ -139,6 +139,26 @@ vk_shader_cmp_rt_stages(mesa_shader_stage a, mesa_shader_stage b)
    return stage_order[a] - stage_order[b];
 }
 
+VkResult
+vk_compile_shaders(struct vk_device *device,
+                   uint32_t shader_count,
+                   struct vk_shader_compile_info *infos,
+                   const struct vk_graphics_pipeline_state *state,
+                   const struct vk_features *enabled_features,
+                   const VkAllocationCallbacks* pAllocator,
+                   struct vk_shader **shaders_out)
+{
+   const struct vk_device_shader_ops *ops = device->shader_ops;
+   VkResult result;
+
+   result = ops->compile(device, shader_count, infos, state,
+                         enabled_features, pAllocator, shaders_out);
+   if (result != VK_SUCCESS)
+      return result;
+
+   return VK_SUCCESS;
+}
+
 struct stage_idx {
    mesa_shader_stage stage;
    uint32_t idx;
@@ -451,7 +471,6 @@ vk_common_CreateShadersEXT(VkDevice _device,
                            VkShaderEXT *pShaders)
 {
    VK_FROM_HANDLE(vk_device, device, _device);
-   const struct vk_device_shader_ops *ops = device->shader_ops;
    VkResult first_fail_or_success = VK_SUCCESS;
 
    /* From the Vulkan 1.3.274 spec:
@@ -525,8 +544,9 @@ vk_common_CreateShadersEXT(VkDevice _device,
                                         vk_info, &vk_robustness_disabled, nir);
 
             struct vk_shader *shader;
-            result = ops->compile(device, 1, &info, NULL /* state */,
-                                  NULL /* features */, pAllocator, &shader);
+            result = vk_compile_shaders(device, 1, &info,
+                                        NULL /* state */, NULL /* features */,
+                                        pAllocator, &shader);
             if (result != VK_SUCCESS)
                break;
 
@@ -572,8 +592,9 @@ vk_common_CreateShadersEXT(VkDevice _device,
       if (result == VK_SUCCESS) {
          struct vk_shader *shaders[VK_MAX_LINKED_SHADER_STAGES];
 
-         result = ops->compile(device, linked_count, infos, NULL /* state */,
-                               NULL /* features */, pAllocator, shaders);
+         result = vk_compile_shaders(device, linked_count, infos,
+                                     NULL /* state */, NULL /* features */,
+                                     pAllocator, shaders);
          if (result == VK_SUCCESS) {
             for (uint32_t l = 0; l < linked_count; l++)
                pShaders[linked[l].idx] = vk_shader_to_handle(shaders[l]);

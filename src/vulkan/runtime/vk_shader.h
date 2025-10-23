@@ -192,6 +192,14 @@ void vk_shader_free(struct vk_device *device,
                     const VkAllocationCallbacks *alloc,
                     struct vk_shader *shader);
 
+VkResult vk_compile_shaders(struct vk_device *device,
+                            uint32_t shader_count,
+                            struct vk_shader_compile_info *infos,
+                            const struct vk_graphics_pipeline_state *state,
+                            const struct vk_features *enabled_features,
+                            const VkAllocationCallbacks* pAllocator,
+                            struct vk_shader **shaders_out);
+
 static inline void
 vk_shader_destroy(struct vk_device *device,
                   struct vk_shader *shader,
