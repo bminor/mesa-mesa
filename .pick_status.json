@@ -34,7 +34,7 @@
         "description": "panvk/shader: Use the right copy size for deserializing dynamic UBOs/SSBOs",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "563823c9ca9e1472c885c734d35e642eed646ccb",
         "notes": null

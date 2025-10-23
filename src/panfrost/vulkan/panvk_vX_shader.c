@@ -1551,10 +1551,12 @@ shader_desc_info_deserialize(struct panvk_device *dev,
 #if PAN_ARCH < 9
    shader->desc_info.dyn_ubos.count = blob_read_uint32(blob);
    blob_copy_bytes(blob, shader->desc_info.dyn_ubos.map,
-                   shader->desc_info.dyn_ubos.count);
+                   sizeof(*shader->desc_info.dyn_ubos.map) *
+                      shader->desc_info.dyn_ubos.count);
    shader->desc_info.dyn_ssbos.count = blob_read_uint32(blob);
    blob_copy_bytes(blob, shader->desc_info.dyn_ssbos.map,
-                   shader->desc_info.dyn_ssbos.count);
+                   sizeof(*shader->desc_info.dyn_ssbos.map) *
+                      shader->desc_info.dyn_ssbos.count);
 
    uint32_t others_count = 0;
    for (unsigned i = 0; i < ARRAY_SIZE(shader->desc_info.others.count); i++) {
