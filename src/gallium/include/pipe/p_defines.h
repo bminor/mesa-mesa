@@ -1126,6 +1126,7 @@ struct pipe_caps {
    unsigned shader_subgroup_supported_stages;
    unsigned shader_subgroup_supported_features;
    unsigned multiview;
+   unsigned max_label_length;
    uint64_t max_timeline_semaphore_difference;
 
    /** for CL SVM */
