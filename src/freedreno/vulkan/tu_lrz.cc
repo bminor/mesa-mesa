@@ -92,7 +92,12 @@ tu_lrz_disable_reason(struct tu_cmd_buffer *cmd, const char *reason) {
 }
 
 static inline void
-tu_lrz_write_disable_reason(struct tu_cmd_buffer *cmd, const char *reason) {
+tu_lrz_disable_write_for_rp(struct tu_cmd_buffer *cmd, const char *reason)
+{
+   if (cmd->state.lrz.disable_write_for_rp)
+      return;
+
+   cmd->state.lrz.disable_write_for_rp = true;
    cmd->state.rp.lrz_write_disabled_at_draw = cmd->state.rp.drawcall_count;
    perf_debug(
       cmd->device,
@@ -943,10 +948,8 @@ tu6_calculate_lrz_state(struct tu_cmd_buffer *cmd,
       /* Stencil test happens after LRZ is written, so if stencil could kill
        * the fragment - we cannot write LRZ.
        */
-      if (!cmd->state.lrz.disable_write_for_rp &&
-          frag_may_be_killed_by_stencil) {
-         tu_lrz_write_disable_reason(cmd, "Stencil may kill fragments");
-         cmd->state.lrz.disable_write_for_rp = true;
+      if (frag_may_be_killed_by_stencil) {
+         tu_lrz_disable_write_for_rp(cmd, "Stencil may kill fragments");
       }
 
       /* Because the LRZ test runs first, failing the LRZ test may result in
@@ -981,10 +984,7 @@ tu6_calculate_lrz_state(struct tu_cmd_buffer *cmd,
     * fragments from draw A which should be visible due to draw B.
     */
    if (reads_dest && z_write_enable && cmd->device->instance->conservative_lrz) {
-      if (!cmd->state.lrz.disable_write_for_rp) {
-         tu_lrz_write_disable_reason(cmd, "Depth write + blending");
-         cmd->state.lrz.disable_write_for_rp = true;
-      }
+      tu_lrz_disable_write_for_rp(cmd, "Depth write + blending");
    }
 
    /* If the stencil test behavior depends on the result of the depth test, we
@@ -1000,8 +1000,7 @@ tu6_calculate_lrz_state(struct tu_cmd_buffer *cmd,
     * test fails then we need to disable the LRZ test for the draw as well.
     */
    if (cmd->state.stencil_written_based_on_depth_test) {
-      tu_lrz_write_disable_reason(cmd, "stencil write based on depth test");
-      cmd->state.lrz.disable_write_for_rp = true;
+      tu_lrz_disable_write_for_rp(cmd, "stencil write based on depth test");
    }
 
    if (disable_lrz)
