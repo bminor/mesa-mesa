@@ -1832,17 +1832,28 @@ nvk_flush_vi_state(struct nvk_cmd_buffer *cmd)
 
    if (BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_VI) ||
        BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_VI_BINDINGS_VALID)) {
-      u_foreach_bit(a, dyn->vi->attributes_valid) {
-         const struct nvk_va_format *fmt =
-            nvk_get_va_format(pdev, dyn->vi->attributes[a].format);
+      P_MTHD(p, NV9097, SET_VERTEX_ATTRIBUTE_A(0));
+      for (uint32_t a = 0; a < 32; a++) {
+         if (dyn->vi->attributes_valid & BITFIELD_BIT(a)) {
+            const struct nvk_va_format *fmt =
+               nvk_get_va_format(pdev, dyn->vi->attributes[a].format);
 
-         P_IMMD(p, NV9097, SET_VERTEX_ATTRIBUTE_A(a), {
-            .stream                 = dyn->vi->attributes[a].binding,
-            .offset                 = dyn->vi->attributes[a].offset,
-            .component_bit_widths   = fmt->bit_widths,
-            .numerical_type         = fmt->type,
-            .swap_r_and_b           = fmt->swap_rb,
-         });
+            P_NV9097_SET_VERTEX_ATTRIBUTE_A(p, a, {
+               .stream                 = dyn->vi->attributes[a].binding,
+               .source                 = SOURCE_ACTIVE,
+               .offset                 = dyn->vi->attributes[a].offset,
+               .component_bit_widths   = fmt->bit_widths,
+               .numerical_type         = fmt->type,
+               .swap_r_and_b           = fmt->swap_rb,
+            });
+         } else {
+            P_NV9097_SET_VERTEX_ATTRIBUTE_A(p, a, {
+               .source                 = SOURCE_INACTIVE,
+               /* Using RGBA32 gives us (0, 0, 0, 0) for inactive attributes. */
+               .component_bit_widths   = COMPONENT_BIT_WIDTHS_R32_G32_B32_A32,
+               .numerical_type         = NUMERICAL_TYPE_NUM_FLOAT,
+            });
+         }
       }
 
       u_foreach_bit(b, dyn->vi->bindings_valid) {
