@@ -123,6 +123,9 @@ d3d12_video_encoder_flush(struct pipe_video_codec *codec)
    pD3D12Enc->m_spEncodeCommandQueue->Wait(casted_completion_fence->cmdqueue_fence, casted_completion_fence->value);
    pD3D12Enc->m_pD3D12Screen->base.fence_reference(&pD3D12Enc->m_pD3D12Screen->base, &completion_fence, NULL);
 
+   // Wait on residency fence for this frame to ensure all resources used in encoding are resident
+   pD3D12Enc->m_spEncodeCommandQueue->Wait(pD3D12Enc->m_spResidencyFence.Get(), pD3D12Enc->m_ResidencyFenceValue);
+
    struct d3d12_fence *input_surface_fence = pD3D12Enc->m_inflightResourcesPool[current_pool_idx].m_InputSurfaceFence;
    if (input_surface_fence)
       d3d12_fence_wait_impl(input_surface_fence, pD3D12Enc->m_spEncodeCommandQueue.Get(),
@@ -2378,6 +2381,14 @@ d3d12_video_encoder_create_command_objects(struct d3d12_video_encoder *pD3D12Enc
       return false;
    }
 
+   hr = pD3D12Enc->m_pD3D12Screen->dev->CreateFence(0, D3D12_FENCE_FLAG_SHARED, IID_PPV_ARGS(&pD3D12Enc->m_spResidencyFence));
+   if (FAILED(hr)) {
+      debug_printf(
+         "[d3d12_video_encoder] d3d12_video_encoder_create_command_objects - Call to CreateFence failed with HR %x\n",
+         (unsigned)hr);
+      return false;
+   }
+
    hr = pD3D12Enc->m_pD3D12Screen->dev->CreateFence(0, D3D12_FENCE_FLAG_SHARED, IID_PPV_ARGS(&pD3D12Enc->m_spLastSliceFence));
    if (FAILED(hr)) {
       debug_printf(
@@ -3293,12 +3304,10 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
    }
 
    // Make permanently resident for video use - batch promote all slice buffers
-   if (num_slice_objects > 0) {
-      d3d12_promote_to_permanent_residency(pD3D12Enc->m_pD3D12Screen, pD3D12Enc->m_pOutputBitstreamBuffers.data(), num_slice_objects);
-   }
+   d3d12_promote_to_permanent_residency(pD3D12Enc->m_pD3D12Screen, pD3D12Enc->m_pOutputBitstreamBuffers.data(), num_slice_objects, pD3D12Enc->m_spResidencyFence.Get(), &pD3D12Enc->m_ResidencyFenceValue);
 
    // Make permanently resident for video use
-   d3d12_promote_to_permanent_residency(pD3D12Enc->m_pD3D12Screen, pInputVideoBuffer->texture);
+   d3d12_promote_to_permanent_residency(pD3D12Enc->m_pD3D12Screen, &pInputVideoBuffer->texture, 1, pD3D12Enc->m_spResidencyFence.Get(), &pD3D12Enc->m_ResidencyFenceValue);
 
    size_t current_metadata_slot = d3d12_video_encoder_metadata_current_index(pD3D12Enc);
 
@@ -3801,7 +3810,8 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
       D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAGS optionalMetadataFlags = D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_NONE;
       if (pD3D12Enc->m_currentEncodeConfig.m_GPUQPStatsResource) {
          optionalMetadataFlags |= D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_QP_MAP;
-         d3d12_promote_to_permanent_residency(pD3D12Enc->m_pD3D12Screen, pD3D12Enc->m_currentEncodeConfig.m_GPUQPStatsResource);
+         d3d12_promote_to_permanent_residency(pD3D12Enc->m_pD3D12Screen, &pD3D12Enc->m_currentEncodeConfig.m_GPUQPStatsResource,
+                                              1, pD3D12Enc->m_spResidencyFence.Get(), &pD3D12Enc->m_ResidencyFenceValue);
          d3d12_transition_resource_state(d3d12_context(pD3D12Enc->base.context),
                                        pD3D12Enc->m_currentEncodeConfig.m_GPUQPStatsResource,
                                        D3D12_RESOURCE_STATE_COMMON,
@@ -3813,7 +3823,8 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
       ID3D12Resource* d12_gpu_stats_satd_map = NULL;
       if (pD3D12Enc->m_currentEncodeConfig.m_GPUSATDStatsResource) {
          optionalMetadataFlags |= D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_SATD_MAP;
-         d3d12_promote_to_permanent_residency(pD3D12Enc->m_pD3D12Screen, pD3D12Enc->m_currentEncodeConfig.m_GPUSATDStatsResource);
+         d3d12_promote_to_permanent_residency(pD3D12Enc->m_pD3D12Screen, &pD3D12Enc->m_currentEncodeConfig.m_GPUSATDStatsResource,
+                                              1, pD3D12Enc->m_spResidencyFence.Get(), &pD3D12Enc->m_ResidencyFenceValue);
          d3d12_transition_resource_state(d3d12_context(pD3D12Enc->base.context),
                                        pD3D12Enc->m_currentEncodeConfig.m_GPUSATDStatsResource,
                                        D3D12_RESOURCE_STATE_COMMON,
@@ -3825,7 +3836,8 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
       ID3D12Resource* d12_gpu_stats_rc_bitallocation_map = NULL;
       if (pD3D12Enc->m_currentEncodeConfig.m_GPURCBitAllocationStatsResource) {
          optionalMetadataFlags |= D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_RC_BIT_ALLOCATION_MAP;
-         d3d12_promote_to_permanent_residency(pD3D12Enc->m_pD3D12Screen, pD3D12Enc->m_currentEncodeConfig.m_GPURCBitAllocationStatsResource);
+         d3d12_promote_to_permanent_residency(pD3D12Enc->m_pD3D12Screen, &pD3D12Enc->m_currentEncodeConfig.m_GPURCBitAllocationStatsResource,
+                                              1, pD3D12Enc->m_spResidencyFence.Get(), &pD3D12Enc->m_ResidencyFenceValue);
          d3d12_transition_resource_state(d3d12_context(pD3D12Enc->base.context),
                                        pD3D12Enc->m_currentEncodeConfig.m_GPURCBitAllocationStatsResource,
                                        D3D12_RESOURCE_STATE_COMMON,
@@ -3837,7 +3849,8 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
       ID3D12Resource* d12_gpu_stats_psnr = NULL;
       if (pD3D12Enc->m_currentEncodeConfig.m_GPUPSNRAllocationStatsResource) {
          optionalMetadataFlags |= D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_FRAME_PSNR;
-         d3d12_promote_to_permanent_residency(pD3D12Enc->m_pD3D12Screen, pD3D12Enc->m_currentEncodeConfig.m_GPUPSNRAllocationStatsResource);
+         d3d12_promote_to_permanent_residency(pD3D12Enc->m_pD3D12Screen, &pD3D12Enc->m_currentEncodeConfig.m_GPUPSNRAllocationStatsResource,
+                                              1, pD3D12Enc->m_spResidencyFence.Get(), &pD3D12Enc->m_ResidencyFenceValue);
          d3d12_transition_resource_state(d3d12_context(pD3D12Enc->base.context),
                                        pD3D12Enc->m_currentEncodeConfig.m_GPUPSNRAllocationStatsResource,
                                        D3D12_RESOURCE_STATE_COMMON,

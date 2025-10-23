@@ -581,9 +581,11 @@ struct d3d12_video_encoder
    size_t m_MaxMetadataBuffersCount = 0;
 
    ComPtr<ID3D12Fence> m_spFence;
+   ComPtr<ID3D12Fence> m_spResidencyFence;
    ComPtr<ID3D12Fence> m_spLastSliceFence;
    uint64_t            m_fenceValue = 1u;
    uint64_t            m_LastSliceFenceValue = 1u;
+   uint64_t            m_ResidencyFenceValue = 0u;
    bool                m_bPendingWorkNotFlushed = false;
 
    ComPtr<ID3D12VideoDevice3>            m_spD3D12VideoDevice;

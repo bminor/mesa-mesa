@@ -36,7 +36,18 @@ void
 d3d12_deinit_residency(struct d3d12_screen *screen);
 
 void
-d3d12_promote_to_permanent_residency(struct d3d12_screen *screen, struct d3d12_resource** resources, unsigned count);
+d3d12_promote_to_permanent_residency(
+    struct d3d12_screen *screen,
+    struct d3d12_resource** resources,
+    unsigned count,
+    ID3D12Fence* pResidencyFence = NULL,
+    uint64_t *pResidencyFenceValue = NULL
+);
 
 void
-d3d12_promote_to_permanent_residency(struct d3d12_screen *screen, struct d3d12_resource* resource);
+d3d12_promote_to_permanent_residency(
+    struct d3d12_screen *screen,
+    struct d3d12_resource* resource,
+    ID3D12Fence* pResidencyFence = NULL,
+    uint64_t *pResidencyFenceValue = NULL
+);
