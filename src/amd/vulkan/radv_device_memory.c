@@ -53,7 +53,7 @@ radv_free_memory(struct radv_device *device, const VkAllocationCallbacks *pAlloc
 #endif
 
    if (mem->bo) {
-      radv_va_validation_update_page(device, mem->bo->va, mem->alloc_size, false);
+      radv_va_validation_update_page(device, radv_buffer_get_va(mem->bo), mem->alloc_size, false);
 
       if (device->overallocation_disallowed) {
          mtx_lock(&device->overallocation_mutex);
@@ -302,7 +302,7 @@ radv_alloc_memory(struct radv_device *device, const VkMemoryAllocateInfo *pAlloc
       mem->heap_index = heap_index;
       mem->alloc_size = alloc_size;
 
-      radv_va_validation_update_page(device, mem->bo->va, alloc_size, true);
+      radv_va_validation_update_page(device, radv_buffer_get_va(mem->bo), alloc_size, true);
    }
 
    if (!wsi_info) {
@@ -370,7 +370,7 @@ radv_MapMemory2(VkDevice _device, const VkMemoryMapInfo *pMemoryMapInfo, void **
       *ppData = device->ws->buffer_map(device->ws, mem->bo, use_fixed_address, fixed_address);
 
    if (*ppData) {
-      vk_rmv_log_cpu_map(&device->vk, mem->bo->va, false);
+      vk_rmv_log_cpu_map(&device->vk, radv_buffer_get_va(mem->bo), false);
       *ppData = (uint8_t *)*ppData + pMemoryMapInfo->offset;
       return VK_SUCCESS;
    }
@@ -384,7 +384,7 @@ radv_UnmapMemory2(VkDevice _device, const VkMemoryUnmapInfo *pMemoryUnmapInfo)
    VK_FROM_HANDLE(radv_device, device, _device);
    VK_FROM_HANDLE(radv_device_memory, mem, pMemoryUnmapInfo->memory);
 
-   vk_rmv_log_cpu_map(&device->vk, mem->bo->va, true);
+   vk_rmv_log_cpu_map(&device->vk, radv_buffer_get_va(mem->bo), true);
    if (mem->user_ptr == NULL)
       device->ws->buffer_unmap(device->ws, mem->bo, (pMemoryUnmapInfo->flags & VK_MEMORY_UNMAP_RESERVE_BIT_EXT));
 

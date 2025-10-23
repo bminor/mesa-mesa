@@ -1311,7 +1311,7 @@ radv_GetRayTracingCaptureReplayShaderGroupHandlesKHR(VkDevice device, VkPipeline
          if (shader) {
             data[i].recursive_shader_alloc.offset = shader->alloc->offset;
             data[i].recursive_shader_alloc.size = shader->alloc->size;
-            data[i].recursive_shader_alloc.arena_va = shader->alloc->arena->bo->va;
+            data[i].recursive_shader_alloc.arena_va = radv_buffer_get_va(shader->alloc->arena->bo);
             data[i].recursive_shader_alloc.arena_size = shader->alloc->arena->size;
          }
       }

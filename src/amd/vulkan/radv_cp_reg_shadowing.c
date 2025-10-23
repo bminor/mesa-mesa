@@ -36,7 +36,7 @@ radv_create_shadow_regs_preamble(struct radv_device *device, struct radv_queue_s
       goto fail;
 
    /* fill the cs for shadow regs preamble ib that starts the register shadowing */
-   pm4 = ac_create_shadowing_ib_preamble(gpu_info, queue_state->shadowed_regs->va, device->pbb_allowed);
+   pm4 = ac_create_shadowing_ib_preamble(gpu_info, radv_buffer_get_va(queue_state->shadowed_regs), device->pbb_allowed);
    if (!pm4)
       goto fail_create;
 

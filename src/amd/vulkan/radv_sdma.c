@@ -675,7 +675,7 @@ radv_sdma_copy_buffer_image_unaligned(const struct radv_device *device, struct r
    const struct radv_sdma_chunked_copy_info info = radv_sdma_get_chunked_copy_info(device, img_in, base_extent);
    struct radv_sdma_surf img = *img_in;
    struct radv_sdma_surf tmp = {
-      .va = temp_bo->va,
+      .va = radv_buffer_get_va(temp_bo),
       .bpp = img.bpp,
       .blk_w = img.blk_w,
       .blk_h = img.blk_h,
@@ -824,7 +824,7 @@ radv_sdma_copy_image_t2t_scanline(const struct radv_device *device, struct radv_
    const struct radv_sdma_chunked_copy_info info = radv_sdma_get_chunked_copy_info(device, src, extent);
    struct radv_sdma_surf t2l_src = *src;
    struct radv_sdma_surf t2l_dst = {
-      .va = temp_bo->va,
+      .va = radv_buffer_get_va(temp_bo),
       .bpp = src->bpp,
       .blk_w = src->blk_w,
       .blk_h = src->blk_h,
@@ -832,7 +832,7 @@ radv_sdma_copy_image_t2t_scanline(const struct radv_device *device, struct radv_
    };
    struct radv_sdma_surf l2t_dst = *dst;
    struct radv_sdma_surf l2t_src = {
-      .va = temp_bo->va,
+      .va = radv_buffer_get_va(temp_bo),
       .bpp = dst->bpp,
       .blk_w = dst->blk_w,
       .blk_h = dst->blk_h,
