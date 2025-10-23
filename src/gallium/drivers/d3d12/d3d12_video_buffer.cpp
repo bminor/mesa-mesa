@@ -140,7 +140,7 @@ d3d12_video_buffer_create_impl(struct pipe_context *pipe,
       goto failed;
    }
 
-   d3d12_promote_to_permanent_residency((struct d3d12_screen*) pipe->screen, pD3D12VideoBuffer->texture);
+   d3d12_promote_to_permanent_residency((struct d3d12_screen*) pipe->screen, &pD3D12VideoBuffer->texture, 1);
 
    pD3D12VideoBuffer->num_planes = util_format_get_num_planes(pD3D12VideoBuffer->texture->overall_format);
    return &pD3D12VideoBuffer->base;

@@ -1054,7 +1054,7 @@ d3d12_video_decoder_prepare_for_decode_frame(struct d3d12_video_decoder *pD3D12D
    if (pD3D12Dec->m_spDPBManager->is_pipe_buffer_underlying_output_decode_allocation()) {
       assert(d3d12_resource_resource(vidBuffer->texture) == *ppOutTexture2D);
       // Make it permanently resident for video use
-      d3d12_promote_to_permanent_residency(pD3D12Dec->m_pD3D12Screen, vidBuffer->texture);
+      d3d12_promote_to_permanent_residency(pD3D12Dec->m_pD3D12Screen, &vidBuffer->texture, 1);
    }
 
    // Get the reference only texture for the current frame to be decoded (if applicable)

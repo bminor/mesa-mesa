@@ -339,14 +339,14 @@ d3d12_video_processor_flush(struct pipe_video_codec * codec)
                      pD3D12Proc->m_OutputArguments.buffer->texture);
 
         // Make the resources permanently resident for video use
-        d3d12_promote_to_permanent_residency(pD3D12Proc->m_pD3D12Screen, pD3D12Proc->m_OutputArguments.buffer->texture);
+        d3d12_promote_to_permanent_residency(pD3D12Proc->m_pD3D12Screen, &pD3D12Proc->m_OutputArguments.buffer->texture, 1);
 
         for(auto curInput : pD3D12Proc->m_InputBuffers)
         {
             debug_printf("[d3d12_video_processor] d3d12_video_processor_flush - Promoting the input texture %p to d3d12_permanently_resident.\n", 
                          curInput->texture);
             // Make the resources permanently resident for video use
-            d3d12_promote_to_permanent_residency(pD3D12Proc->m_pD3D12Screen, curInput->texture);
+            d3d12_promote_to_permanent_residency(pD3D12Proc->m_pD3D12Screen, &curInput->texture, 1);
         }
 
         HRESULT hr = pD3D12Proc->m_pD3D12Screen->dev->GetDeviceRemovedReason();

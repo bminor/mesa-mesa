@@ -357,25 +357,3 @@ d3d12_promote_to_permanent_residency(
    flush_batch(screen, pageables_to_make_resident, num_to_make_resident, pResidencyFence, pResidencyFenceValue);
    mtx_unlock(&screen->submit_mutex);
 }
-
-void
-d3d12_promote_to_permanent_residency(
-   struct d3d12_screen *screen,
-   struct d3d12_resource* resource,
-   ID3D12Fence* pResidencyFence, /* NULL implies usage of synchronous MakeResident */
-   uint64_t *pResidencyFenceValue /* Out: value to wait on for residency for this call */
-)
-{
-   // Early out for null resource or if the bo is already permanently resident
-   if (!resource)
-      return;
-
-   if (resource->bo) {
-      uint64_t offset;
-      struct d3d12_bo *base_bo = d3d12_bo_get_base(resource->bo, &offset);
-      if (base_bo->residency_status == d3d12_permanently_resident)
-          return;
-   }
-
-   d3d12_promote_to_permanent_residency(screen, &resource, 1, pResidencyFence, pResidencyFenceValue);
-}

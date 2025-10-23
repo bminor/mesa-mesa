@@ -43,11 +43,3 @@ d3d12_promote_to_permanent_residency(
     ID3D12Fence* pResidencyFence = NULL,
     uint64_t *pResidencyFenceValue = NULL
 );
-
-void
-d3d12_promote_to_permanent_residency(
-    struct d3d12_screen *screen,
-    struct d3d12_resource* resource,
-    ID3D12Fence* pResidencyFence = NULL,
-    uint64_t *pResidencyFenceValue = NULL
-);
