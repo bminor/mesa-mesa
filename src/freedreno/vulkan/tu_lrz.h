@@ -112,4 +112,7 @@ void
 tu_lrz_flush_valid_during_renderpass(struct tu_cmd_buffer *cmd,
                                      struct tu_cs *cs);
 
+void
+tu_lrz_disable_write_for_rp(struct tu_cmd_buffer *cmd, const char *reason);
+
 #endif /* TU_LRZ_H */

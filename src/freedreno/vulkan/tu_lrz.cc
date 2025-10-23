@@ -91,7 +91,7 @@ tu_lrz_disable_reason(struct tu_cmd_buffer *cmd, const char *reason) {
               cmd->state.rp.lrz_disabled_at_draw);
 }
 
-static inline void
+void
 tu_lrz_disable_write_for_rp(struct tu_cmd_buffer *cmd, const char *reason)
 {
    if (cmd->state.lrz.disable_write_for_rp)

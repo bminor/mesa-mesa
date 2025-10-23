@@ -6148,6 +6148,12 @@ tu_CmdSetRenderingAttachmentLocationsKHR(
    tu6_emit_mrt<CHIP>(cmd, cmd->state.subpass, &cmd->draw_cs);
    tu6_emit_render_cntl<CHIP>(cmd, cmd->state.subpass, &cmd->draw_cs, false);
 
+   /* Same case as a drawcall not writing to some color attachments, but not
+    * trying to make LRZ work in cases where we can prove that LRZ can work.
+    */
+   if (cmd->state.lrz.valid)
+      tu_lrz_disable_write_for_rp(cmd, "CmdSetRenderingAttachmentLocations");
+
    /* Because this is just a remapping and not a different "reference", there
     * doesn't need to be a barrier between accesses to the same attachment
     * with a different index. This is different from "classic" renderpasses.
