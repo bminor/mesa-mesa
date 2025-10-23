@@ -945,7 +945,7 @@ hk_get_device_properties(const struct agx_device *dev,
       .robustUniformBufferAccessSizeAlignment = HK_MIN_UBO_ALIGNMENT,
 
       /* VK_EXT_sample_locations */
-      .sampleLocationSampleCounts = sample_counts,
+      .sampleLocationSampleCounts = sample_counts & ~VK_SAMPLE_COUNT_1_BIT,
       .maxSampleLocationGridSize = (VkExtent2D){1, 1},
       .sampleLocationCoordinateRange[0] = 0.0f,
       .sampleLocationCoordinateRange[1] = 0.9375f,
