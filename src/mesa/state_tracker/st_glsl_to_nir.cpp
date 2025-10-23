@@ -491,6 +491,8 @@ st_link_glsl_to_nir(struct gl_context *ctx,
           */
          if (_mesa_is_desktop_gl(st->ctx) && st->ctx->Const.GLSLVersion >= 400)
             st->ctx->SoftFP64 = glsl_float64_funcs_to_nir(st->ctx, options);
+         else
+            _mesa_warning(NULL, "Mesa full software implementation of FP64 requires OpenGL >= 4.0\n");
       }
    }
 
