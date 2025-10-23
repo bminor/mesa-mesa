@@ -10,7 +10,7 @@ dEQP-VK.api.copy_and_blit.dedicated_allocation.resolve_image.whole_copy_before_r
 dEQP-VK.api.copy_and_blit.dedicated_allocation.resolve_image.whole_copy_before_resolving_transfer.4_bit,Fail
 dEQP-VK.api.copy_and_blit.dedicated_allocation.resolve_image.whole_copy_before_resolving_transfer.8_bit,Fail
 
-# Video failures (needs firmware updates).
+# RADV_PERFTEST=video_decode,video_encode expected failures.
 dEQP-VK.video.synchronization.decode_h264.basic.event.device_set_reset,Fail
 dEQP-VK.video.synchronization.decode_h265.basic.event.device_set_reset,Fail
 dEQP-VK.video.synchronization2.decode_h264.basic.event.device_set_reset,Fail
