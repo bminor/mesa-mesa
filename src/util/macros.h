@@ -542,24 +542,12 @@ typedef int lock_cap_t;
 /*
  * SWAP - swap value of @a and @b
  */
-#if !defined(_MSC_VER) || _MSC_VER >= 1939 /* MSVC 17.9 or later for __typeof__ */
 #define SWAP(a, b)                                                             \
    do {                                                                        \
       __typeof__(a) __tmp = (a);                                               \
       (a) = (b);                                                               \
       (b) = __tmp;                                                             \
    } while (0)
-#else
-#define SWAP(a, b)                                                             \
-   do {                                                                        \
-      /* NOLINTBEGIN(bugprone-sizeof-expression) */                            \
-      char __tmp[sizeof(a) == sizeof(b) ? (ptrdiff_t)sizeof(a) : -1];          \
-      memcpy(__tmp, &(b), sizeof(a));                                          \
-      memcpy(&(b), &(a), sizeof(a));                                           \
-      memcpy(&(a), __tmp, sizeof(a));                                          \
-      /* NOLINTEND(bugprone-sizeof-expression) */                              \
-   } while (0)
-#endif
 
 #define typed_memcpy(dest, src, count) do { \
    STATIC_ASSERT(sizeof(*(src)) == sizeof(*(dest))); \
