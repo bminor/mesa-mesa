@@ -3429,6 +3429,9 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
    d3d12_fence_reference((struct d3d12_fence **)last_slice_completion_fence, pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_LastSliceFence.get());
 
    pD3D12Enc->m_rgCurrentFrameStateTransitions = {
+      // We take advantage of the promotion/decay rules for buffers like the output bitstream buffers
+      // but for clarity we still specify the transitions of buffers (e.g metadata opaque) used between
+      // ResolveInputData and EncodeFrame or EncodeFrame and ResolveOutputMetadata as read/write dependencies
       CD3DX12_RESOURCE_BARRIER::Transition(pInputVideoD3D12Res,
                                            D3D12_RESOURCE_STATE_COMMON,
                                            D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ),
@@ -3436,13 +3439,6 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                                            D3D12_RESOURCE_STATE_COMMON,
                                            D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE)
    };
-
-   for (uint32_t slice_idx = 0; slice_idx < num_slice_objects;slice_idx++) {
-      if ((slice_idx == 0) || pD3D12Enc->supports_sliced_fences.bits.multiple_buffers_required)
-         pD3D12Enc->m_rgCurrentFrameStateTransitions.push_back(CD3DX12_RESOURCE_BARRIER::Transition(pD3D12Enc->m_pOutputBufferD3D12Resources[slice_idx],
-                                                                                       D3D12_RESOURCE_STATE_COMMON,
-                                                                                       D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE));
-   }
 
    pD3D12Enc->m_spEncodeCommandList->ResourceBarrier(static_cast<UINT>(pD3D12Enc->m_rgCurrentFrameStateTransitions.size()),
                                                      pD3D12Enc->m_rgCurrentFrameStateTransitions.data());
@@ -3778,10 +3774,6 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
          optionalMetadataFlags |= D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_QP_MAP;
          d3d12_promote_to_permanent_residency(pD3D12Enc->m_pD3D12Screen, &pD3D12Enc->m_currentEncodeConfig.m_GPUQPStatsResource,
                                               1, pD3D12Enc->m_spResidencyFence.Get(), &pD3D12Enc->m_ResidencyFenceValue);
-         d3d12_transition_resource_state(d3d12_context(pD3D12Enc->base.context),
-                                       pD3D12Enc->m_currentEncodeConfig.m_GPUQPStatsResource,
-                                       D3D12_RESOURCE_STATE_COMMON,
-                                       D3D12_TRANSITION_FLAG_INVALIDATE_BINDINGS);
          d12_gpu_stats_qp_map = d3d12_resource_resource(pD3D12Enc->m_currentEncodeConfig.m_GPUQPStatsResource);
       }
 
@@ -3790,10 +3782,6 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
          optionalMetadataFlags |= D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_SATD_MAP;
          d3d12_promote_to_permanent_residency(pD3D12Enc->m_pD3D12Screen, &pD3D12Enc->m_currentEncodeConfig.m_GPUSATDStatsResource,
                                               1, pD3D12Enc->m_spResidencyFence.Get(), &pD3D12Enc->m_ResidencyFenceValue);
-         d3d12_transition_resource_state(d3d12_context(pD3D12Enc->base.context),
-                                       pD3D12Enc->m_currentEncodeConfig.m_GPUSATDStatsResource,
-                                       D3D12_RESOURCE_STATE_COMMON,
-                                       D3D12_TRANSITION_FLAG_INVALIDATE_BINDINGS);
          d12_gpu_stats_satd_map = d3d12_resource_resource(pD3D12Enc->m_currentEncodeConfig.m_GPUSATDStatsResource);
       }
 
@@ -3802,10 +3790,6 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
          optionalMetadataFlags |= D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_RC_BIT_ALLOCATION_MAP;
          d3d12_promote_to_permanent_residency(pD3D12Enc->m_pD3D12Screen, &pD3D12Enc->m_currentEncodeConfig.m_GPURCBitAllocationStatsResource,
                                               1, pD3D12Enc->m_spResidencyFence.Get(), &pD3D12Enc->m_ResidencyFenceValue);
-         d3d12_transition_resource_state(d3d12_context(pD3D12Enc->base.context),
-                                       pD3D12Enc->m_currentEncodeConfig.m_GPURCBitAllocationStatsResource,
-                                       D3D12_RESOURCE_STATE_COMMON,
-                                       D3D12_TRANSITION_FLAG_INVALIDATE_BINDINGS);
          d12_gpu_stats_rc_bitallocation_map = d3d12_resource_resource(pD3D12Enc->m_currentEncodeConfig.m_GPURCBitAllocationStatsResource);
       }
 
@@ -3814,10 +3798,6 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
          optionalMetadataFlags |= D3D12_VIDEO_ENCODER_OPTIONAL_METADATA_ENABLE_FLAG_FRAME_PSNR;
          d3d12_promote_to_permanent_residency(pD3D12Enc->m_pD3D12Screen, &pD3D12Enc->m_currentEncodeConfig.m_GPUPSNRAllocationStatsResource,
                                               1, pD3D12Enc->m_spResidencyFence.Get(), &pD3D12Enc->m_ResidencyFenceValue);
-         d3d12_transition_resource_state(d3d12_context(pD3D12Enc->base.context),
-                                       pD3D12Enc->m_currentEncodeConfig.m_GPUPSNRAllocationStatsResource,
-                                       D3D12_RESOURCE_STATE_COMMON,
-                                       D3D12_TRANSITION_FLAG_INVALIDATE_BINDINGS);
          d12_gpu_stats_psnr = d3d12_resource_resource(pD3D12Enc->m_currentEncodeConfig.m_GPUPSNRAllocationStatsResource);
       }
 
@@ -4129,13 +4109,6 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
 
       };
 
-      for (uint32_t slice_idx = 0; slice_idx < num_slice_objects;slice_idx++) {
-         if ((slice_idx == 0) || pD3D12Enc->supports_sliced_fences.bits.multiple_buffers_required)
-            pD3D12Enc->m_rgResolveMetadataStateTransitions.push_back(CD3DX12_RESOURCE_BARRIER::Transition(pD3D12Enc->m_pOutputBufferD3D12Resources[slice_idx],
-                                                      D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE,
-                                                      D3D12_RESOURCE_STATE_COMMON));
-      }
-
       pD3D12Enc->m_spResolveCommandList4->ResourceBarrier(static_cast<uint32_t>(pD3D12Enc->m_rgResolveMetadataStateTransitions.size()),
                                                       pD3D12Enc->m_rgResolveMetadataStateTransitions.data());
 
@@ -4306,9 +4279,6 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
                                              D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ),
          CD3DX12_RESOURCE_BARRIER::Transition(pInputVideoD3D12Res,
                                              D3D12_RESOURCE_STATE_VIDEO_ENCODE_READ,
-                                             D3D12_RESOURCE_STATE_COMMON),
-         CD3DX12_RESOURCE_BARRIER::Transition(pD3D12Enc->m_pOutputBufferD3D12Resources[0],
-                                             D3D12_RESOURCE_STATE_VIDEO_ENCODE_WRITE,
                                              D3D12_RESOURCE_STATE_COMMON),
       };
 
