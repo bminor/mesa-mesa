@@ -2265,7 +2265,7 @@ VkResult anv_CreateImage(
               __LINE__, pCreateInfo->flags);
 
 #ifndef VK_USE_PLATFORM_ANDROID_KHR
-   /* Skip the WSI common swapchain creation here on Android. Similar to ahw,
+   /* Skip the WSI common swapchain creation here on Android. Similar to ahb,
     * this case is handled by a partial image init and then resolved when the
     * image is bound and gralloc info is passed.
     */
@@ -2357,7 +2357,7 @@ anv_GetImageOpaqueCaptureDescriptorDataEXT(VkDevice device,
  * format and prepare anv_image properly.
  */
 static void
-resolve_ahw_image(struct anv_device *device,
+resolve_ahb_image(struct anv_device *device,
                   struct anv_image *image,
                   struct anv_device_memory *mem)
 {
@@ -2984,7 +2984,7 @@ anv_bind_image_memory(struct anv_device *device,
 
    /* Resolve will alter the image's aspects, do this first. */
    if (mem && mem->vk.ahardware_buffer)
-      resolve_ahw_image(device, image, mem);
+      resolve_ahb_image(device, image, mem);
 
    vk_foreach_struct_const(s, bind_info->pNext) {
       switch (s->sType) {

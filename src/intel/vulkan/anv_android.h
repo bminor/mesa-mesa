@@ -49,7 +49,7 @@ VkResult anv_image_init_from_gralloc(struct anv_device *device,
                                      const VkImageCreateInfo *base_info,
                                      const VkNativeBufferANDROID *gralloc_info);
 
-VkResult anv_import_ahw_memory(VkDevice device_h,
+VkResult anv_import_ahb_memory(VkDevice device_h,
                                struct anv_device_memory *mem);
 
 #endif /* ANV_ANDROID_H */

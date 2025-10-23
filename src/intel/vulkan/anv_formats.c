@@ -2257,7 +2257,7 @@ void anv_GetPhysicalDeviceExternalBufferProperties(
          pExternalBufferProperties->externalMemoryProperties = android_buffer_props;
          return;
       }
-      FALLTHROUGH; /* If ahw not supported */
+      FALLTHROUGH; /* If ahb not supported */
    default:
       goto unsupported;
    }

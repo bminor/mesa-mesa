@@ -27,7 +27,7 @@
  * Called from anv_AllocateMemory when import AHardwareBuffer.
  */
 VkResult
-anv_import_ahw_memory(VkDevice device_h,
+anv_import_ahb_memory(VkDevice device_h,
                       struct anv_device_memory *mem)
 {
 #if ANDROID_API_LEVEL >= 26

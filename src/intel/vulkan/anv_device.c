@@ -1576,7 +1576,7 @@ VkResult anv_AllocateMemory(
       alloc_flags |= ANV_BO_ALLOC_DYNAMIC_VISIBLE_POOL;
 
    if (mem->vk.ahardware_buffer) {
-      result = anv_import_ahw_memory(_device, mem);
+      result = anv_import_ahb_memory(_device, mem);
       if (result != VK_SUCCESS)
          goto fail;
 
