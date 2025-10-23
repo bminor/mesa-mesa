@@ -405,7 +405,7 @@ void _mesa_glthread_unbind_uploaded_vbos(struct gl_context *ctx);
 void _mesa_glthread_PixelStorei(struct gl_context *ctx, GLenum pname,
                                 GLint param);
 
-void _mesa_InternalReleaseBufferMESA(void *buffer);
+void GLAPIENTRY _mesa_InternalReleaseBufferMESA(GLvoid *buffer);
 
 #ifdef __cplusplus
 }
