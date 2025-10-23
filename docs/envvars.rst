@@ -353,6 +353,11 @@ Core Mesa environment variables
    lost device.  This is extremely useful when testing as it prevents the
    test suite from continuing on with a lost device.
 
+.. envvar:: MESA_VK_VALIDATE_SHADER_BINARIES
+
+   enables extra validation of shader and pipeline binaries to ensure
+   consistency of driver binaries.
+
 .. envvar:: MESA_VK_ENABLE_SUBMIT_THREAD
 
    for Vulkan drivers which support real timeline semaphores, this forces

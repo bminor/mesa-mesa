@@ -47,6 +47,8 @@ struct vk_physical_device;
 struct vk_pipeline;
 struct vk_pipeline_robustness_state;
 
+bool vk_validate_shader_binaries(void);
+
 int vk_shader_cmp_graphics_stages(mesa_shader_stage a, mesa_shader_stage b);
 int vk_shader_cmp_rt_stages(mesa_shader_stage a, mesa_shader_stage b);
 
