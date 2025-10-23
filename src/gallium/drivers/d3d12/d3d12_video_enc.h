@@ -646,7 +646,8 @@ struct d3d12_video_encoder
 
       /* Stores encode result for submission error control in the m_MaxQueueAsyncDepth slots */
       enum pipe_video_feedback_encode_result_flags encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_OK;
-
+      pipe_fence_handle *context_completion_fence = NULL;
+      pipe_fence_handle *headers_upload_completion_fence = NULL;
       ComPtr<ID3D12Resource> m_spDirtyRectsResolvedOpaqueMap; // output of ID3D12VideoEncodeCommandList::ResolveInputParamLayout
       ComPtr<ID3D12Resource> m_spQPMapResolvedOpaqueMap; // output of ID3D12VideoEncodeCommandList::ResolveInputParamLayout
       ComPtr<ID3D12Resource> m_spMotionVectorsResolvedOpaqueMap; // output of ID3D12VideoEncodeCommandList::ResolveInputParamLayout

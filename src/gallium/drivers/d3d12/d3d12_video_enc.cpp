@@ -112,16 +112,18 @@ d3d12_video_encoder_flush(struct pipe_video_codec *codec)
       return;
    }
 
-   // Flush any work batched (ie. shaders blit on input texture, etc or bitstream headers buffer_subdata batched upload)
-   // and Wait the m_spEncodeCommandQueue for GPU upload completion
-   // before recording EncodeFrame below.
-   struct pipe_fence_handle *completion_fence = NULL;
-   debug_printf("[d3d12_video_encoder] d3d12_video_encoder_flush - Flushing pD3D12Enc->base.context and GPU sync between Video/Context queues before flushing Video Encode Queue.\n");
-   pD3D12Enc->base.context->flush(pD3D12Enc->base.context, &completion_fence, PIPE_FLUSH_ASYNC | PIPE_FLUSH_HINT_FINISH);
-   assert(completion_fence);
-   struct d3d12_fence *casted_completion_fence = d3d12_fence(completion_fence);
-   pD3D12Enc->m_spEncodeCommandQueue->Wait(casted_completion_fence->cmdqueue_fence, casted_completion_fence->value);
-   pD3D12Enc->m_pD3D12Screen->base.fence_reference(&pD3D12Enc->m_pD3D12Screen->base, &completion_fence, NULL);
+   // Wait for the Encode on context completion fence for this frame to ensure all context operations prior to encoding are completed
+   struct d3d12_fence *casted_context_completion_fence = d3d12_fence(pD3D12Enc->m_inflightResourcesPool[current_pool_idx].context_completion_fence);
+   pD3D12Enc->m_spEncodeCommandQueue->Wait(casted_context_completion_fence->cmdqueue_fence, casted_context_completion_fence->value);
+   pD3D12Enc->m_pD3D12Screen->base.fence_reference(&pD3D12Enc->m_pD3D12Screen->base, &pD3D12Enc->m_inflightResourcesPool[current_pool_idx].context_completion_fence, NULL);
+
+   // Wait for the Encode on context completion fence for this frame to ensure all context operations prior to encoding are completed
+   struct d3d12_fence *casted_headers_upload_completion_fence = d3d12_fence(pD3D12Enc->m_inflightResourcesPool[current_pool_idx].headers_upload_completion_fence);
+   if (casted_headers_upload_completion_fence)
+   {
+      pD3D12Enc->m_spEncodeCommandQueue->Wait(casted_headers_upload_completion_fence->cmdqueue_fence, casted_headers_upload_completion_fence->value);
+      pD3D12Enc->m_pD3D12Screen->base.fence_reference(&pD3D12Enc->m_pD3D12Screen->base, &pD3D12Enc->m_inflightResourcesPool[current_pool_idx].headers_upload_completion_fence, NULL);
+   }
 
    // Wait on residency fence for this frame to ensure all resources used in encoding are resident
    pD3D12Enc->m_spEncodeCommandQueue->Wait(pD3D12Enc->m_spResidencyFence.Get(), pD3D12Enc->m_ResidencyFenceValue);
@@ -3274,6 +3276,15 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
    assert(pD3D12Enc->m_spEncodeCommandQueue);
    assert(pD3D12Enc->m_pD3D12Screen);
 
+   // Early flush the context for any operations that may be pending on input/output resources to the encoder
+   // but do not block on completion until encoder flush
+   debug_printf("[d3d12_video_encoder] d3d12_video_encoder_encode_bitstream_impl - Flushing pD3D12Enc->base.context.\n");
+   pD3D12Enc->base.context->flush(
+      pD3D12Enc->base.context,
+      &pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].context_completion_fence,
+      PIPE_FLUSH_ASYNC | PIPE_FLUSH_HINT_FINISH);
+   assert(pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].context_completion_fence);
+
    // Clear reusable barrier vectors
    pD3D12Enc->m_rgCurrentFrameStateTransitions.clear();
    pD3D12Enc->m_rgReferenceTransitions.clear();
@@ -3370,7 +3381,9 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
          // Upload the CPU buffers with the bitstream headers to the compressed bitstream resource in the interval
          // [0..pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].preEncodeGeneratedHeadersByteSize)
          // Note: The buffer_subdata is queued in pD3D12Enc->base.context but doesn't execute immediately
-         // Will flush and sync this batch in d3d12_video_encoder_flush with the rest of the Video Encode Queue GPU work
+         // But we early flush the context below to ensure the data upload starts as soon as possible in parallel
+         // to this function. Then in d3d12_video_encoder_flush we Wait() GPU Wait the encoder execution
+         // behind it
 
          pD3D12Enc->base.context->buffer_subdata(
             pD3D12Enc->base.context,         // context
@@ -3379,6 +3392,13 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
             0,                               // offset
             static_cast<unsigned int>(pD3D12Enc->m_BitstreamHeadersBuffer.size()),
             pD3D12Enc->m_BitstreamHeadersBuffer.data());
+
+            debug_printf("[d3d12_video_encoder] d3d12_video_encoder_encode_bitstream_impl - Flushing pD3D12Enc->m_BitstreamHeadersBuffer data upload.\n");
+            pD3D12Enc->base.context->flush(
+               pD3D12Enc->base.context,
+               &pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].headers_upload_completion_fence,
+               PIPE_FLUSH_ASYNC | PIPE_FLUSH_HINT_FINISH);
+            assert(pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].headers_upload_completion_fence);
       }
    }
    else
