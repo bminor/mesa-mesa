@@ -3767,7 +3767,17 @@ tu_init_msrtss_attachments(struct tu_device *device,
              VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT),
       };
 
+      /* In case we're using dynamic rendering, reset the image struct from
+       * the last use.
+       */
+      memset(&images[i], 0, sizeof(images[i]));
+
+      /* Note: we don't need a corresponding vk_image_finish() when destroying
+       * the framebuffer or finishing the render pass because the object is
+       * internal and we never attach private data or a name to it.
+       */
       vk_image_init(&device->vk, &images[i].vk, &image_info);
+
       tu_image_init(device, &images[i], &image_info);
       TU_CALLX(device, tu_image_update_layout)(device, &images[i], DRM_FORMAT_MOD_INVALID, NULL);
 
