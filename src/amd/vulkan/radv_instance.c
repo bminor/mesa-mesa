@@ -200,6 +200,7 @@ static const driOptionDescription radv_dri_options[] = {
       DRI_CONF_RADV_EMULATE_RT(false)
       DRI_CONF_RADV_ENABLE_FLOAT16_GFX8(false)
       DRI_CONF_RADV_COOPERATIVE_MATRIX2_NV(false)
+      DRI_CONF_RADV_WAIT_FOR_VM_MAP_UPDATES(false)
    DRI_CONF_SECTION_END
 };
 // clang-format on
@@ -235,6 +236,7 @@ radv_init_dri_debug_options(struct radv_instance *instance)
    drirc->debug.split_fma = driQueryOptionb(&drirc->options, "radv_split_fma");
    drirc->debug.ssbo_non_uniform = driQueryOptionb(&drirc->options, "radv_ssbo_non_uniform");
    drirc->debug.tex_non_uniform = driQueryOptionb(&drirc->options, "radv_tex_non_uniform");
+   drirc->debug.wait_for_vm_map_updates = driQueryOptionb(&drirc->options, "radv_wait_for_vm_map_updates");
    drirc->debug.zero_vram = driQueryOptionb(&drirc->options, "radv_zero_vram");
    drirc->debug.app_layer = driQueryOptionstr(&drirc->options, "radv_app_layer");
 

@@ -759,6 +759,10 @@
    DRI_CONF_OPT_B(radv_rt_wave64, def, \
                   "Force wave64 in RT shaders")
 
+#define DRI_CONF_RADV_WAIT_FOR_VM_MAP_UPDATES(def) \
+   DRI_CONF_OPT_B(radv_wait_for_vm_map_updates, def, \
+                  "Wait for VM MAP updates at allocation time to mitigate use-before-alloc")
+
 /**
  * Overrides for forcing re-compilation of pipelines when RADV_BUILD_ID_OVERRIDE is enabled.
  * These need to be bumped every time a compiler bugfix is backported (up to 8 shader

@@ -240,6 +240,10 @@ radv_alloc_memory(struct radv_device *device, const VkMemoryAllocateInfo *pAlloc
           radv_device_should_clear_vram(device))
          flags |= RADEON_FLAG_ZERO_VRAM;
 
+      /* Only apply the workaround for BOs created by the application, not by the driver. */
+      if (instance->drirc.debug.wait_for_vm_map_updates)
+         flags |= RADEON_FLAG_VM_UPDATE_WAIT;
+
       /* On GFX12, DCC is transparent to the userspace driver and PTE.DCC is
        * set per buffer allocation. Only VRAM can have DCC. When the kernel
        * moves a buffer from VRAM->GTT it decompresses. When the kernel moves
