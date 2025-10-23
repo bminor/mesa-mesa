@@ -1184,7 +1184,7 @@
         "description": "mesa: fix function prototype",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ae75b59cb526eff5de906726b105e33258a283cf",
         "notes": null

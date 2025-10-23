@@ -64,7 +64,7 @@ new_upload_buffer(struct gl_context *ctx, GLsizeiptr size, uint8_t **ptr)
    return obj;
 }
 
-void _mesa_InternalReleaseBufferMESA(void *buffer)
+void GLAPIENTRY _mesa_InternalReleaseBufferMESA(GLvoid *buffer)
 {
    GET_CURRENT_CONTEXT(ctx);
    struct gl_buffer_object *buf = buffer;
