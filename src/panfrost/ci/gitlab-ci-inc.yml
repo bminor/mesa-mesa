@@ -252,7 +252,6 @@
     FDO_CI_CONCURRENT: 6
     HWCI_KERNEL_MODULES: panthor
     BOOT_METHOD: u-boot
-    KERNEL_IMAGE_NAME: Image
     KERNEL_IMAGE_TYPE: "image"
     RUNNER_TAG: mesa-ci-x86-64-lava-rk3588-rock-5b
     VK_DRIVER: panfrost
