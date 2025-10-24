@@ -1045,7 +1045,7 @@ nvk_get_device_properties(const struct nvk_instance *instance,
       .maxSamplerDescriptorBufferBindings = 32,
       .maxEmbeddedImmutableSamplerBindings = 32,
       .maxEmbeddedImmutableSamplers = 4000,
-      .bufferCaptureReplayDescriptorDataSize = 0,
+      .bufferCaptureReplayDescriptorDataSize = sizeof(uint64_t),
       .imageCaptureReplayDescriptorDataSize = 0,
       .imageViewCaptureReplayDescriptorDataSize =
          sizeof(struct nvk_image_view_capture),
