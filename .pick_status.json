@@ -614,7 +614,7 @@
         "description": "anv: Call brw_nir_lower_rt_intrinsics_pre_trace lowering pass",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d39e443ef888ffd9c3385ed4c40e727868626b6b",
         "notes": null

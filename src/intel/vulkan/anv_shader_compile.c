@@ -1054,6 +1054,7 @@ anv_shader_compile_bs(struct anv_device *device,
          .should_remat_callback = should_remat_cb,
       };
 
+      NIR_PASS(_, nir, brw_nir_lower_rt_intrinsics_pre_trace);
       NIR_PASS(_, nir, nir_lower_shader_calls, &opts,
                &resume_shaders, &num_resume_shaders, mem_ctx);
       NIR_PASS(_, nir, brw_nir_lower_shader_calls, &lowering_state);
