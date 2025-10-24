@@ -2397,11 +2397,14 @@ resolve_anb_image(struct anv_device *device,
 #if DETECT_OS_ANDROID && ANDROID_API_LEVEL >= 29
    VkResult result;
 
-   /* Do not close the gralloc handle's dma_buf. The lifetime of the dma_buf
-    * must exceed that of the gralloc handle, and we do not own the gralloc
-    * handle.
-    */
-   int dma_buf = gralloc_info->handle->data[0];
+   /* Query DRM modifier. */
+   VkImageDrmFormatModifierExplicitCreateInfoEXT mod_info;
+   VkSubresourceLayout layouts[ISL_MODIFIER_MAX_PLANES];
+   result = vk_android_get_ahb_layout(gralloc_info->ahb,
+                                      &mod_info, layouts,
+                                      ISL_MODIFIER_MAX_PLANES);
+   if (result != VK_SUCCESS)
+      return result;
 
    /* If this function fails and if the imported bo was resident in the cache,
     * we should avoid updating the bo's flags. Therefore, we defer updating
@@ -2409,24 +2412,16 @@ resolve_anb_image(struct anv_device *device,
     *
     */
    struct anv_bo *bo = NULL;
-   result = anv_device_import_bo(device, dma_buf,
-                                 ANV_BO_ALLOC_EXTERNAL,
-                                 0 /* client_address */,
-                                 &bo);
+   result = anv_android_import_from_handle(device,
+                                           gralloc_info->handle,
+                                           mod_info.drmFormatModifier,
+                                           &bo);
    if (result != VK_SUCCESS) {
       return vk_errorf(device, result,
                        "failed to import dma-buf from VkNativeBufferANDROID");
    }
 
    /* Check tiling. */
-   VkImageDrmFormatModifierExplicitCreateInfoEXT mod_info;
-   VkSubresourceLayout layouts[ISL_MODIFIER_MAX_PLANES];
-   result = vk_android_get_ahb_layout(gralloc_info->ahb,
-                                      &mod_info,
-                                      layouts,
-                                      ISL_MODIFIER_MAX_PLANES);
-   if (result != VK_SUCCESS)
-      return result;
    const struct isl_drm_modifier_info *isl_mod_info =
       isl_drm_modifier_get_info(mod_info.drmFormatModifier);
    assert(isl_mod_info);

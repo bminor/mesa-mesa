@@ -66,6 +66,15 @@ anv_import_ahb_memory(VkDevice device_h,
 {
 #if ANDROID_API_LEVEL >= 26
    ANV_FROM_HANDLE(anv_device, device, device_h);
+   VkResult result;
+   VkImageDrmFormatModifierExplicitCreateInfoEXT mod_info;
+   VkSubresourceLayout layouts[ISL_MODIFIER_MAX_PLANES];
+
+   result = vk_android_get_ahb_layout(mem->vk.ahardware_buffer,
+                                      &mod_info, layouts,
+                                      ISL_MODIFIER_MAX_PLANES);
+   if (result != VK_SUCCESS)
+      return result;
 
    /* Import from AHardwareBuffer to anv_device_memory. */
    const native_handle_t *handle =
@@ -76,17 +85,9 @@ anv_import_ahb_memory(VkDevice device_h,
     * where we have many logical planes but they all point to the same
     * buffer, like is the case with VK_FORMAT_G8_B8R8_2PLANE_420_UNORM.
     */
-   int dma_buf = (handle && handle->numFds) ? handle->data[0] : -1;
-   if (dma_buf < 0)
-      return VK_ERROR_INVALID_EXTERNAL_HANDLE;
-
-   VkResult result = anv_device_import_bo(device, dma_buf,
-                                          ANV_BO_ALLOC_EXTERNAL,
-                                          0 /* client_address */,
-                                          &mem->bo);
-   assert(result == VK_SUCCESS);
-
-   return VK_SUCCESS;
+   return anv_android_import_from_handle(device, handle,
+                                         mod_info.drmFormatModifier,
+                                         &mem->bo);
 #else
    return VK_ERROR_EXTENSION_NOT_PRESENT;
 #endif
@@ -123,7 +124,6 @@ anv_image_init_from_gralloc(struct anv_device *device,
                             const VkImageCreateInfo *base_info,
                             const VkNativeBufferANDROID *gralloc_info)
 {
-   struct anv_bo *bo = NULL;
    VkResult result;
 
    struct anv_image_create_info anv_info = {
@@ -131,27 +131,10 @@ anv_image_init_from_gralloc(struct anv_device *device,
       .isl_extra_usage_flags = ISL_SURF_USAGE_DISABLE_AUX_BIT,
    };
 
-   /* Do not close the gralloc handle's dma_buf. The lifetime of the dma_buf
-    * must exceed that of the gralloc handle, and we do not own the gralloc
-    * handle.
-    */
-   int dma_buf = gralloc_info->handle->data[0];
+   VkImageDrmFormatModifierExplicitCreateInfoEXT mod_info = {
+      .drmFormatModifier = DRM_FORMAT_MOD_INVALID,
+   };
 
-   /* If this function fails and if the imported bo was resident in the cache,
-    * we should avoid updating the bo's flags. Therefore, we defer updating
-    * the flags until success is certain.
-    *
-    */
-   result = anv_device_import_bo(device, dma_buf,
-                                 ANV_BO_ALLOC_EXTERNAL,
-                                 0 /* client_address */,
-                                 &bo);
-   if (result != VK_SUCCESS) {
-      return vk_errorf(device, result,
-                       "failed to import dma-buf from VkNativeBufferANDROID");
-   }
-
-   VkImageDrmFormatModifierExplicitCreateInfoEXT mod_info;
    enum isl_tiling tiling;
    if (vk_android_get_ugralloc()) {
       VkSubresourceLayout layouts[ISL_MODIFIER_MAX_PLANES];
@@ -169,7 +152,27 @@ anv_image_init_from_gralloc(struct anv_device *device,
                           mod_info.drmFormatModifier);
       }
       tiling = isl_mod_info->tiling;
-   } else {
+   }
+
+   struct anv_bo *bo = NULL;
+   /* If this function fails and if the imported bo was resident in the cache,
+    * we should avoid updating the bo's flags. Therefore, we defer updating
+    * the flags until success is certain.
+    *
+    */
+   result = anv_android_import_from_handle(device,
+                                           gralloc_info->handle,
+                                           mod_info.drmFormatModifier,
+                                           &bo);
+   if (result != VK_SUCCESS) {
+      return vk_errorf(device, result,
+                       "failed to import dma-buf from VkNativeBufferANDROID");
+   }
+
+   /* The bo has to be imported first to do this when the tiling hasn't been
+    * obtained.
+    */
+   if (mod_info.drmFormatModifier == DRM_FORMAT_MOD_INVALID) {
       /* Fallback to get_tiling API. */
       result = anv_device_get_bo_tiling(device, bo, &tiling);
       if (result != VK_SUCCESS) {
