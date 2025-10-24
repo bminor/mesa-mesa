@@ -1193,11 +1193,11 @@ nvk_GetDescriptorEXT(VkDevice _device,
 
    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER: {
       struct nvk_addr_range addr_range = { };
-      if (pDescriptorInfo->data.pUniformBuffer != NULL &&
-          pDescriptorInfo->data.pUniformBuffer->address != 0) {
+      if (pDescriptorInfo->data.pStorageBuffer != NULL &&
+          pDescriptorInfo->data.pStorageBuffer->address != 0) {
          addr_range = (const struct nvk_addr_range) {
-            .addr = pDescriptorInfo->data.pUniformBuffer->address,
-            .range = pDescriptorInfo->data.pUniformBuffer->range,
+            .addr = pDescriptorInfo->data.pStorageBuffer->address,
+            .range = pDescriptorInfo->data.pStorageBuffer->range,
          };
       }
       union nvk_buffer_descriptor desc = ssbo_desc(addr_range);
