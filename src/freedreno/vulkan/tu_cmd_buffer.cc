@@ -1510,7 +1510,7 @@ tu6_emit_gmem_stores(struct tu_cmd_buffer *cmd,
             scissor_emitted = true;
          }
          tu_store_gmem_attachment<CHIP>(cmd, cs, resolve_group, a, a,
-                                  fb->layers, subpass->multiview_mask,
+                                  fb->layers, att->used_views,
                                   cond_exec_allowed);
       }
    }
