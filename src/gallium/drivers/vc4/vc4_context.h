@@ -461,6 +461,7 @@ struct vc4_simulator_file *vc4_simulator_init(struct vc4_screen *screen);
 void vc4_simulator_destroy(struct vc4_simulator_file *sim_file);
 int vc4_simulator_ioctl(int fd, unsigned long request, void *arg);
 void vc4_simulator_open_from_handle(int fd, int handle, uint32_t size);
+uint32_t vc4_simulator_get_raster_stride_align(int fd);
 
 static inline int
 vc4_ioctl(int fd, unsigned long request, void *arg)
