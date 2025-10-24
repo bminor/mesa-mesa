@@ -1964,7 +1964,7 @@
         "description": "nvk: Capture/replay buffer addresses for EDB capture/replay",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3f1c3f04be93a3efaaac794cd48a825907ad07fe",
         "notes": null
