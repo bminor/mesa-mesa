@@ -3164,6 +3164,27 @@ radv_video_patch_encode_session_parameters(struct radv_device *device, struct vk
       break;
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
       for (unsigned i = 0; i < params->h265_enc.h265_sps_count; i++) {
+         uint32_t pic_width_in_luma_samples =
+             params->h265_enc.h265_sps[i].base.pic_width_in_luma_samples;
+         uint32_t pic_height_in_luma_samples =
+             params->h265_enc.h265_sps[i].base.pic_height_in_luma_samples;
+         uint32_t aligned_pic_width = align(pic_width_in_luma_samples, 64);
+         uint32_t aligned_pic_height = align(pic_height_in_luma_samples, 16);
+
+         /* Override the unaligned pic_{width,height} and make up for it with conformance window
+          * cropping */
+         params->h265_enc.h265_sps[i].base.pic_width_in_luma_samples = aligned_pic_width;
+         params->h265_enc.h265_sps[i].base.pic_height_in_luma_samples = aligned_pic_height;
+
+         if (aligned_pic_width != pic_width_in_luma_samples ||
+             aligned_pic_height != pic_height_in_luma_samples) {
+            params->h265_enc.h265_sps[i].base.flags.conformance_window_flag = 1;
+            params->h265_enc.h265_sps[i].base.conf_win_right_offset +=
+               (aligned_pic_width - pic_width_in_luma_samples) / 2;
+            params->h265_enc.h265_sps[i].base.conf_win_bottom_offset +=
+               (aligned_pic_height - pic_height_in_luma_samples) / 2;
+         }
+
          /* VCN supports only the following block sizes (resulting in 64x64 CTBs with any coding
           * block size) */
          params->h265_enc.h265_sps[i].base.log2_min_luma_coding_block_size_minus3 = 0;
@@ -3274,6 +3295,14 @@ radv_GetEncodedVideoSessionParametersKHR(VkDevice device,
          assert(sps);
          char *data_ptr = pData ? (char *)pData + vps_size : NULL;
          vk_video_encode_h265_sps(sps, size_limit, &sps_size, data_ptr);
+
+         if (pFeedbackInfo) {
+            struct VkVideoEncodeH265SessionParametersFeedbackInfoKHR *h265_feedback_info =
+               vk_find_struct(pFeedbackInfo->pNext, VIDEO_ENCODE_H265_SESSION_PARAMETERS_FEEDBACK_INFO_KHR);
+            pFeedbackInfo->hasOverrides = VK_TRUE;
+            if (h265_feedback_info)
+               h265_feedback_info->hasStdSPSOverrides = VK_TRUE;
+         }
       }
       if (h265_get_info->writeStdPPS) {
          const StdVideoH265PictureParameterSet *pps = vk_video_find_h265_enc_std_pps(templ, h265_get_info->stdPPSId);
