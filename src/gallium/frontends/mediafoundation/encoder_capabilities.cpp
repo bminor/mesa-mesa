@@ -165,4 +165,9 @@ encoder_capabilities::initialize( pipe_screen *pScreen, pipe_video_profile video
                                                                             videoProfile,
                                                                             PIPE_VIDEO_ENTRYPOINT_ENCODE,
                                                                             PIPE_VIDEO_CAP_ENC_SPATIAL_ADAPTIVE_QUANTIZATION );
+
+   m_bHWSupportReadableReconstructedPicture = pScreen->get_video_param( pScreen,
+                                                                        videoProfile,
+                                                                        PIPE_VIDEO_ENTRYPOINT_ENCODE,
+                                                                        PIPE_VIDEO_CAP_ENC_READABLE_RECONSTRUCTED_PICTURE ) != 0;
 }
