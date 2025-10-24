@@ -9,8 +9,24 @@
 #include "ac_linux_drm.h"
 #include "sid.h"
 
+static void
+update_vm_timeline_point_to_wait(uint64_t *vm_timeline_point_to_wait, struct pb_buffer_lean *_buf)
+{
+   struct amdgpu_winsys_bo *bo = amdgpu_winsys_bo(_buf);
+   struct amdgpu_bo_real *bo_real;
+
+   if (bo->type == AMDGPU_BO_SLAB_ENTRY)
+      bo_real = get_slab_entry_real_bo(bo);
+   else
+      bo_real = get_real_bo(bo);
+
+   if (bo_real->vm_timeline_point > *vm_timeline_point_to_wait)
+      *vm_timeline_point_to_wait = bo_real->vm_timeline_point;
+}
+
 static bool
-amdgpu_userq_ring_init(struct amdgpu_winsys *aws, struct amdgpu_userq *userq)
+amdgpu_userq_ring_init(struct amdgpu_winsys *aws, struct amdgpu_userq *userq,
+                       uint64_t *vm_timeline_point_to_wait)
 {
    /* Allocate ring and user fence in one buffer. */
    uint32_t gtt_bo_size = AMDGPU_USERQ_RING_SIZE + aws->info.gart_page_size;
@@ -49,6 +65,7 @@ amdgpu_userq_ring_init(struct amdgpu_winsys *aws, struct amdgpu_userq *userq)
    if (!userq->rptr_bo)
       return false;
 
+   update_vm_timeline_point_to_wait(vm_timeline_point_to_wait, userq->rptr_bo);
    return true;
 }
 
@@ -86,6 +103,10 @@ amdgpu_userq_init(struct amdgpu_winsys *aws, struct amdgpu_userq *userq, enum am
 {
    int r = -1;
    uint32_t hw_ip_type;
+   /* The VA page table for ring, rtr, wptr buffer should be ready before job submission so that
+    * the packets submitted can be read by gpu.
+    */
+   uint64_t vm_timeline_point_to_wait = 0;
    struct drm_amdgpu_userq_mqd_gfx11 gfx_mqd;
    struct drm_amdgpu_userq_mqd_compute_gfx11 compute_mqd;
    struct drm_amdgpu_userq_mqd_sdma_gfx11 sdma_mqd;
@@ -99,7 +120,7 @@ amdgpu_userq_init(struct amdgpu_winsys *aws, struct amdgpu_userq *userq, enum am
    }
 
    userq->ip_type = ip_type;
-   if (!amdgpu_userq_ring_init(aws, userq))
+   if (!amdgpu_userq_ring_init(aws, userq, &vm_timeline_point_to_wait))
       goto fail;
 
    switch (userq->ip_type) {
@@ -123,6 +144,8 @@ amdgpu_userq_init(struct amdgpu_winsys *aws, struct amdgpu_userq *userq, enum am
       gfx_mqd.shadow_va = amdgpu_bo_get_va(userq->gfx_data.shadow_bo);
       gfx_mqd.csa_va = amdgpu_bo_get_va(userq->gfx_data.csa_bo);
       mqd = &gfx_mqd;
+      update_vm_timeline_point_to_wait(&vm_timeline_point_to_wait, userq->gfx_data.csa_bo);
+      update_vm_timeline_point_to_wait(&vm_timeline_point_to_wait, userq->gfx_data.shadow_bo);
       break;
    case AMD_IP_COMPUTE:
       hw_ip_type = AMDGPU_HW_IP_COMPUTE;
@@ -134,6 +157,7 @@ amdgpu_userq_init(struct amdgpu_winsys *aws, struct amdgpu_userq *userq, enum am
 
       compute_mqd.eop_va = amdgpu_bo_get_va(userq->compute_data.eop_bo);
       mqd = &compute_mqd;
+      update_vm_timeline_point_to_wait(&vm_timeline_point_to_wait, userq->compute_data.eop_bo);
       break;
    case AMD_IP_SDMA:
       hw_ip_type = AMDGPU_HW_IP_DMA;
@@ -146,6 +170,7 @@ amdgpu_userq_init(struct amdgpu_winsys *aws, struct amdgpu_userq *userq, enum am
 
       sdma_mqd.csa_va = amdgpu_bo_get_va(userq->sdma_data.csa_bo);
       mqd = &sdma_mqd;
+      update_vm_timeline_point_to_wait(&vm_timeline_point_to_wait, userq->sdma_data.csa_bo);
       break;
    default:
       fprintf(stderr, "amdgpu: userq unsupported for ip = %d\n", userq->ip_type);
@@ -158,21 +183,14 @@ amdgpu_userq_init(struct amdgpu_winsys *aws, struct amdgpu_userq *userq, enum am
    if (!userq->doorbell_bo)
       goto fail;
 
-   /* doorbell map should be the last map call, it is used to wait for all mappings before
-    * calling amdgpu_create_userqueue().
-    */
    userq->doorbell_bo_map = amdgpu_bo_map(&aws->dummy_sws.base, userq->doorbell_bo, NULL,
                                           PIPE_MAP_WRITE | PIPE_MAP_UNSYNCHRONIZED);
    if (!userq->doorbell_bo_map)
       goto fail;
 
-   /* The VA page table for ring buffer should be ready before job submission so that the packets
-    * submitted can be read by gpu. The same applies to rptr, wptr buffers also.
-    */
    r = ac_drm_cs_syncobj_timeline_wait(aws->dev, &aws->vm_timeline_syncobj,
-                                       &get_real_bo(amdgpu_winsys_bo(userq->doorbell_bo))
-                                          ->vm_timeline_point,
-                                       1, INT64_MAX, DRM_SYNCOBJ_WAIT_FLAGS_WAIT_ALL |
+                                       &vm_timeline_point_to_wait, 1,
+                                       INT64_MAX, DRM_SYNCOBJ_WAIT_FLAGS_WAIT_ALL |
                                           DRM_SYNCOBJ_WAIT_FLAGS_WAIT_FOR_SUBMIT, NULL);
    if (r) {
       fprintf(stderr, "amdgpu: waiting for vm fences failed\n");
