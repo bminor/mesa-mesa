@@ -724,14 +724,17 @@ vn_queue_submission_add_semaphore_feedback(struct vn_queue_submission *submit,
       vn_get_signal_semaphore_counter(submit, batch_index, signal_index);
    vn_feedback_set_counter(sfb_cmd->src_slot, counter);
 
+   VkCommandBuffer sfb_cmd_handle = VK_NULL_HANDLE;
    for (uint32_t i = 0; i < dev->queue_family_count; i++) {
       if (dev->queue_families[i] == queue_vk->queue_family_index) {
-         vn_set_temp_cmd(submit, (*new_cmd_count)++, sfb_cmd->cmd_handles[i]);
-         return VK_SUCCESS;
+         sfb_cmd_handle = sfb_cmd->cmd_handles[i];
+         break;
       }
    }
+   assert(sfb_cmd_handle != VK_NULL_HANDLE);
 
-   UNREACHABLE("bad feedback sem");
+   vn_set_temp_cmd(submit, (*new_cmd_count)++, sfb_cmd_handle);
+   return VK_SUCCESS;
 }
 
 static void
