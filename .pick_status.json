@@ -1974,7 +1974,7 @@
         "description": "nvk: Look at the right pointer in GetDescriptorInfo for SSBOs",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "77db71db7dfc0693c79d665e0ed83993a82725cf",
         "notes": null
