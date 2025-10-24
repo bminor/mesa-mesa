@@ -93,8 +93,8 @@ v3d_get_dimension_mpad(uint32_t dimension, uint32_t level, uint32_t block_dimens
 }
 
 static bool
-v3d_setup_plane_slices(struct v3dv_image *image, uint8_t plane,
-                       uint32_t plane_offset,
+v3d_setup_plane_slices(struct v3dv_device *device, struct v3dv_image *image,
+                       uint8_t plane, uint32_t plane_offset,
                        const VkSubresourceLayout *plane_layouts)
 {
    assert(image->planes[plane].cpp > 0);
@@ -242,6 +242,18 @@ v3d_setup_plane_slices(struct v3dv_image *image, uint8_t plane,
                (2 * v3d_utile_height(image->planes[plane].cpp));
       }
 
+#if USE_V3D_SIMULATOR
+      /* Ensure stride alignment matches the one required by the GPU that
+       * drives the display.
+       */
+      if (!image->tiled &&
+          image->vk.image_type == VK_IMAGE_TYPE_2D) {
+         slice->stride =
+            align(slice->stride,
+                  v3d_simulator_get_raster_stride_align(device->pdevice->render_fd));
+      }
+#endif
+
       slice->size = level_height * slice->stride;
       uint32_t slice_total_size = slice->size * level_depth;
 
@@ -327,8 +339,8 @@ v3d_setup_plane_slices(struct v3dv_image *image, uint8_t plane,
 }
 
 static VkResult
-v3d_setup_slices(struct v3dv_image *image, bool disjoint,
-                 const VkSubresourceLayout *plane_layouts)
+v3d_setup_slices(struct v3dv_device *device, struct v3dv_image *image,
+                 bool disjoint, const VkSubresourceLayout *plane_layouts)
 {
    if (disjoint && image->plane_count == 1)
       disjoint = false;
@@ -336,7 +348,7 @@ v3d_setup_slices(struct v3dv_image *image, bool disjoint,
    uint64_t offset = 0;
    for (uint8_t plane = 0; plane < image->plane_count; plane++) {
       offset = disjoint ? 0 : offset;
-      if (!v3d_setup_plane_slices(image, plane, offset, plane_layouts)) {
+      if (!v3d_setup_plane_slices(device, image, plane, offset, plane_layouts)) {
          assert(plane_layouts);
          return VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT;
       }
@@ -387,7 +399,7 @@ v3dv_update_image_layout(struct v3dv_device *device,
 
    image->vk.drm_format_mod = modifier;
 
-   return v3d_setup_slices(image, disjoint,
+   return v3d_setup_slices(device, image, disjoint,
                            explicit_mod_info ? explicit_mod_info->pPlaneLayouts :
                                                NULL);
 }
