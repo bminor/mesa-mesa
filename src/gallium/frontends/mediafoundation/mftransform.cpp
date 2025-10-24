@@ -27,6 +27,7 @@
 #include "mfpipeinterop.h"
 #include "wpptrace.h"
 #include "d3d12_suballoc_mediabuffer.h"
+#include "dpb_buffer_manager.h"
 
 #include "mftransform.tmh"
 
@@ -569,6 +570,7 @@ CDX12EncHMFT::OnOutputTypeChanged()
       m_spSatdStatsBufferPool.Reset();
       m_spBitsUsedStatsBufferPool.Reset();
       m_spQPMapStatsBufferPool.Reset();
+      m_spReconstructedPictureBufferPool.Reset();
    }
 
    // Indicate that we'll be adding MF_NALU_LENGTH_INFORMATION on each output sample that comes
@@ -926,28 +928,23 @@ CDX12EncHMFT::InitializeEncoder( pipe_video_profile videoProfile, UINT32 Width, 
 #endif   // ENCODE_WITH_TWO_PASS_LOWEST_RES
 
          encoderSettings.two_pass.skip_1st_dpb_texture = m_bRateControlFramePreAnalysisExternalReconDownscale ? true : false;
-
-         if( encoderSettings.two_pass.enable && ( encoderSettings.two_pass.pow2_downscale_factor > 0 ) )
-         {
-            struct pipe_video_codec blitterSettings = {};
-            blitterSettings.entrypoint = PIPE_VIDEO_ENTRYPOINT_PROCESSING;
-            blitterSettings.width = Width;
-            blitterSettings.height = Height;
-            CHECKNULL_GOTO( m_pPipeVideoBlitter = m_pPipeContext->create_video_codec( m_pPipeContext, &blitterSettings ),
-                            MF_E_UNEXPECTED,
-                            done );
-         }
       }
 
-      struct d3d12_interop_device_info1 screen_interop_info = {};
-      if( ( m_pPipeContext->screen->interop_query_device_info( m_pPipeContext->screen,
-                                                               sizeof( d3d12_interop_device_info1 ),
-                                                               &screen_interop_info ) != 0 ) &&
-          ( screen_interop_info.set_video_encoder_max_async_queue_depth != nullptr ) )
+      if( (encoderSettings.two_pass.enable && ( encoderSettings.two_pass.pow2_downscale_factor > 0 )) ||
+           (m_VideoReconstructedPictureMode == RECON_PIC_OUTPUT_MODE_BLIT_COPY) )
       {
-         screen_interop_info.set_video_encoder_max_async_queue_depth( m_pPipeContext,
-                                                                      ( m_bLowLatency ? 1 : MFT_INPUT_QUEUE_DEPTH ) );
+         struct pipe_video_codec blitterSettings = {};
+         blitterSettings.entrypoint = PIPE_VIDEO_ENTRYPOINT_PROCESSING;
+         blitterSettings.width = Width;
+         blitterSettings.height = Height;
+         CHECKNULL_GOTO( m_pPipeVideoBlitter = m_pPipeContext->create_video_codec( m_pPipeContext, &blitterSettings ),
+                           MF_E_UNEXPECTED,
+                           done );
       }
+
+      assert( m_ScreenInteropInfo.set_video_encoder_max_async_queue_depth != nullptr );
+      m_ScreenInteropInfo.set_video_encoder_max_async_queue_depth( m_pPipeContext,
+                                                                   ( m_bLowLatency ? 1 : MFT_INPUT_QUEUE_DEPTH ) );
 
       CHECKNULL_GOTO( m_pPipeVideoCodec = m_pPipeContext->create_video_codec( m_pPipeContext, &encoderSettings ),
                       MF_E_UNEXPECTED,
@@ -1209,6 +1206,10 @@ CDX12EncHMFT::ConfigureAsyncStatsMetadataOutputSampleAttributes( IMFSample *pSam
                                                                  pipe_resource *pPipeResourceSATDMapStats,
                                                                  ComPtr<ID3D12Fence> &pResolveStatsCompletionFence,
                                                                  UINT64 ResolveStatsCompletionFenceValue,
+                                                                 pipe_resource *pPipeResourceReconstructedPicture,
+                                                                 UINT PipeResourceReconstructedPictureSubresource,
+                                                                 ComPtr<ID3D12Fence>& spReconstructedPictureCompletionFence,
+                                                                 UINT64 ReconstructedPictureCompletionFenceValue,
                                                                  ID3D12CommandQueue *pSyncObjectQueue )
 {
    HRESULT hr = S_OK;
@@ -1228,6 +1229,7 @@ CDX12EncHMFT::ConfigureAsyncStatsMetadataOutputSampleAttributes( IMFSample *pSam
    {
       CHECKHR_GOTO( MFAttachPipeResourceAsSampleExtension( m_pPipeContext,
                                                            pPipeResourcePSNRStats,
+                                                           0 /*subresource*/,
                                                            pSyncObjectQueue,
                                                            MFSampleExtension_FramePsnrYuv,
                                                            pSample ), done );
@@ -1261,6 +1263,35 @@ CDX12EncHMFT::ConfigureAsyncStatsMetadataOutputSampleAttributes( IMFSample *pSam
          pPipeResourceSATDMapStats,
          pSyncObjectQueue,
          pSample ), done );
+   }
+
+   // Conditionally attach reconstructed picture copy (d3d12resource), gated by the completion fence
+   // of the recon picture copy operation if any
+   if (pPipeResourceReconstructedPicture)
+   {
+      if (m_VideoReconstructedPictureMode == RECON_PIC_OUTPUT_MODE_READ_ONLY_SHARED_RESOURCE)
+      {
+         assert(pPipeResourceReconstructedPicture);
+         assert(!spReconstructedPictureCompletionFence); // No fence in this mode
+
+         CHECKHR_GOTO( MFAttachPipeResourceAsSampleExtension( m_pPipeContext,
+                                                              pPipeResourceReconstructedPicture,
+                                                              PipeResourceReconstructedPictureSubresource,
+                                                              pSyncObjectQueue,
+                                                              MFSampleExtension_VideoEncodeReconstructedPicture,
+                                                              pSample ), done );
+      }
+      else if (m_VideoReconstructedPictureMode == RECON_PIC_OUTPUT_MODE_BLIT_COPY)
+      {
+         assert(PipeResourceReconstructedPictureSubresource == 0); // Only single subresource in the copy output texture
+         assert(pPipeResourceReconstructedPicture);
+         assert(spReconstructedPictureCompletionFence); // Copy completion fence must be valid in this mode
+         pSyncObjectQueue->Wait( spReconstructedPictureCompletionFence.Get(), ReconstructedPictureCompletionFenceValue );
+         CHECKHR_GOTO( m_spReconstructedPictureBufferPool->AttachPipeResourceAsSampleExtension(
+            pPipeResourceReconstructedPicture,
+            pSyncObjectQueue,
+            pSample ), done );
+      }
    }
 
 done:
@@ -1340,6 +1371,10 @@ CDX12EncHMFT::FinalizeAndEmitOutputSample( LPDX12EncodeContext pDX12EncodeContex
                                                                      pDX12EncodeContext->pPipeResourceSATDMapStats,
                                                                      pDX12EncodeContext->spAsyncFence,
                                                                      ResolveStatsCompletionFenceValue,
+                                                                     pDX12EncodeContext->pPipeResourceReconstructedPicture,
+                                                                     pDX12EncodeContext->PipeResourceReconstructedPictureSubresource,
+                                                                     pDX12EncodeContext->spReconstructedPictureCompletionFence,
+                                                                     pDX12EncodeContext->ReconstructedPictureCompletionFenceValue,
                                                                      pDX12EncodeContext->pSyncObjectQueue ) ) )
       {
          MFE_ERROR( "[dx12 hmft 0x%p] ConfigureAsyncStatsMetadataOutputSampleAttributes failed", this );
@@ -1776,6 +1811,17 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
          pThis->m_pPipeVideoCodec->destroy_fence( pThis->m_pPipeVideoCodec, pDX12EncodeContext->pAsyncFence );
          pDX12EncodeContext->pAsyncFence = nullptr;
          pDX12EncodeContext->spAsyncFence.Reset();
+
+         // CPU wait and destroy reconstructed picture copy fence if not null
+         if( pDX12EncodeContext->pPipeFenceReconstructedPictureCompletionFence )
+         {
+            HMFT_ETW_EVENT_START( "ReconstructedPictureFenceWait", pThis );
+            ASSERTED int wait_res = pThis->m_pPipeVideoCodec->fence_wait( pThis->m_pPipeVideoCodec,
+                                                                  pDX12EncodeContext->pPipeFenceReconstructedPictureCompletionFence,
+                                                                  OS_TIMEOUT_INFINITE );
+            HMFT_ETW_EVENT_STOP( "ReconstructedPictureFenceWait", pThis );
+            assert( wait_res );
+         }
 
          HMFT_ETW_EVENT_STOP( "TimeToProcessOutput", pThis );
          delete pDX12EncodeContext;
@@ -2434,10 +2480,10 @@ CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD 
                                                  &pDX12EncodeContext->encoderPicInfo.base );
       HMFT_ETW_EVENT_STOP( "PipeEndFrame", this );
 
-      uint64_t fence_value = 0;
+      uint64_t AsyncFenceValue = 0;
       HANDLE fence_handle = (HANDLE) m_pPipeContext->screen->fence_get_win32_handle( m_pPipeContext->screen,
                                                                                       pDX12EncodeContext->pAsyncFence,
-                                                                                      &fence_value );
+                                                                                      &AsyncFenceValue );
       CHECKNULL_GOTO( fence_handle, E_FAIL, done );
       CHECKHR_GOTO( m_spDevice->OpenSharedHandle( fence_handle, IID_PPV_ARGS( pDX12EncodeContext->spAsyncFence.ReleaseAndGetAddressOf() ) ), done );
       CloseHandle( fence_handle );
@@ -2451,6 +2497,127 @@ CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD 
       HMFT_ETW_EVENT_START( "PipeFlush", this );
       m_pPipeVideoCodec->flush( m_pPipeVideoCodec );
       HMFT_ETW_EVENT_STOP( "PipeFlush", this );
+
+      // Handle reconstructed picture copy if enabled
+      if( m_VideoReconstructedPictureMode != RECON_PIC_OUTPUT_MODE_DISABLED )
+      {
+         HMFT_ETW_EVENT_START( "ReconstructedPictureSubmit", this );
+
+         // Get last slice completion fence
+         pipe_fence_handle *fence_to_wait = nullptr;
+         uint64_t fence_value = 0;
+         assert( m_ScreenInteropInfo.get_video_enc_last_slice_completion_fence );
+
+         m_ScreenInteropInfo.get_video_enc_last_slice_completion_fence( 
+            m_pPipeVideoCodec,
+            pDX12EncodeContext->pAsyncCookie,
+            &fence_to_wait );
+
+         if( fence_to_wait )
+         {
+            HANDLE fence_handle = (HANDLE) m_pPipeContext->screen->fence_get_win32_handle( m_pPipeContext->screen,
+                                                                                             fence_to_wait,
+                                                                                             &fence_value );
+            if( fence_handle )
+               CloseHandle( fence_handle );
+         }
+
+         struct pipe_video_buffer *src_buffer = pDX12EncodeContext->get_current_dpb_pic_buffer();
+         assert( src_buffer );
+
+         // TODO: Readonly flags for get handle
+
+         // We only support zero copy read only reconstructed picture in low latency mode
+         // and guarantee the src_buffer won't be modified until the next ProcessInput.
+         // While technically we could guarantee the recon pic buffer will not be reused/
+         // or rewritten by longer, it gets complicated to track and manage with all possible
+         // LTR/SVC/NumRef combinations, so we limit it to the next ProcessInput in LowLatency mode. 
+         if (m_VideoReconstructedPictureMode == RECON_PIC_OUTPUT_MODE_READ_ONLY_SHARED_RESOURCE)
+         {
+            // We only support this mode in low latency mode for lifetime management reasons
+            if (!m_bLowLatency)
+            {
+               debug_printf("[dx12 hmft 0x%p] Zero copy read only reconstructed picture is ONLY supported in low latency mode\n", this);
+               assert(m_bLowLatency);
+               CHECKHR_GOTO(E_FAIL, done);
+            }
+
+            // Get read-only handle directly from the video buffer
+            HANDLE readOnlyHandle = nullptr;
+            HRESULT hr = dpb_buffer_manager::get_read_only_handle(src_buffer, 
+                                                                  m_pPipeContext,
+                                                                  m_spDevice, 
+                                                                  &readOnlyHandle,
+                                                                  &pDX12EncodeContext->PipeResourceReconstructedPictureSubresource);
+            CHECKHR_GOTO( hr, done );
+            CHECKNULL_GOTO( readOnlyHandle, E_FAIL, done );
+            if( !readOnlyHandle )
+               debug_printf("[dx12 hmft 0x%p] Failed to get read-only handle from video buffer\n", this);
+
+            struct winsys_handle src_wshandle = {};
+            src_wshandle.type = WINSYS_HANDLE_TYPE_FD;
+            src_wshandle.handle = readOnlyHandle;
+
+            assert(src_wshandle.handle);
+            if (!src_wshandle.handle) {
+                debug_printf("[dx12 hmft 0x%p] Invalid handle for reconstructed picture resource\n", this);
+                CHECKHR_GOTO(E_FAIL, done);
+            }
+            // Import the reconstructed picture resource from handle
+            pDX12EncodeContext->pPipeResourceReconstructedPicture =
+               m_pPipeContext->screen->resource_from_handle( m_pPipeContext->screen,
+                                                               NULL,
+                                                               &src_wshandle,
+                                                               0 /*usage*/ );
+            assert( pDX12EncodeContext->pPipeResourceReconstructedPicture );
+            if (!pDX12EncodeContext->pPipeResourceReconstructedPicture) {
+                debug_printf("[dx12 hmft 0x%p] Failed to import reconstructed picture resource\n", this);
+                CHECKHR_GOTO(E_FAIL, done);
+            }
+            CloseHandle( readOnlyHandle );
+         }
+         else
+         {
+            assert(m_pPipeVideoBlitter);
+
+            struct winsys_handle whandle = {};
+            whandle.type = WINSYS_HANDLE_TYPE_D3D12_RES;
+            whandle.modifier = 2; // Expected by video_buffer_from_handle to place a pipe_resource in the pipe_video_buffer
+            whandle.com_obj = (void *) pDX12EncodeContext->pPipeResourceReconstructedPicture;
+            struct pipe_video_buffer *dst_buffer =
+               m_pPipeContext->video_buffer_from_handle( m_pPipeContext, src_buffer, &whandle, 0 );
+            assert( dst_buffer );
+            pDX12EncodeContext->PipeResourceReconstructedPictureSubresource = 0;
+
+            struct pipe_vpp_desc vpblit_params = {};
+            vpblit_params.base.in_fence = fence_to_wait;
+            vpblit_params.base.in_fence_value = fence_value;
+            vpblit_params.base.out_fence = &pDX12EncodeContext->pPipeFenceReconstructedPictureCompletionFence;
+            vpblit_params.base.input_format = src_buffer->buffer_format;
+            vpblit_params.base.output_format = dst_buffer->buffer_format;
+            vpblit_params.src_region.x1 = src_buffer->width;
+            vpblit_params.src_region.y1 = src_buffer->height;
+            vpblit_params.dst_region.x1 = dst_buffer->width;
+            vpblit_params.dst_region.y1 = dst_buffer->height;
+
+            m_pPipeVideoBlitter->begin_frame( m_pPipeVideoBlitter, dst_buffer, &vpblit_params.base );
+            m_pPipeVideoBlitter->process_frame( m_pPipeVideoBlitter, src_buffer, &vpblit_params );
+            m_pPipeVideoBlitter->end_frame( m_pPipeVideoBlitter, dst_buffer, &vpblit_params.base );
+            m_pPipeVideoBlitter->flush( m_pPipeVideoBlitter );
+
+            // Get D3D12 fence handle for synchronization
+            HANDLE fence_handle = (HANDLE) m_pPipeContext->screen->fence_get_win32_handle( m_pPipeContext->screen,
+                                                                                          pDX12EncodeContext->pPipeFenceReconstructedPictureCompletionFence,
+                                                                                          &pDX12EncodeContext->ReconstructedPictureCompletionFenceValue );
+            if( fence_handle )
+            {
+               CHECKHR_GOTO( m_spDevice->OpenSharedHandle( fence_handle, IID_PPV_ARGS( pDX12EncodeContext->spReconstructedPictureCompletionFence.ReleaseAndGetAddressOf() ) ), done );
+               CloseHandle( fence_handle );
+            }
+         }
+
+         HMFT_ETW_EVENT_STOP( "ReconstructedPictureSubmit", this );
+      }
    }
    // Release the QP map buffer after encode_bitstream call returns.
    if( qpMapBuffer && qpSize != 0 && qpData != nullptr )

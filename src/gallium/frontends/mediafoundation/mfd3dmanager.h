@@ -104,12 +104,14 @@ class CMFD3DManager
    ComPtr<stats_buffer_manager> m_spSatdStatsBufferPool;
    ComPtr<stats_buffer_manager> m_spBitsUsedStatsBufferPool;
    ComPtr<stats_buffer_manager> m_spQPMapStatsBufferPool;
+   ComPtr<stats_buffer_manager> m_spReconstructedPictureBufferPool;
 
    UINT32 m_uiResetToken = 0;
    HANDLE m_hDevice = NULL;
    struct vl_screen *m_pVlScreen = nullptr;
    struct sw_winsys *m_pWinsys = nullptr;
    struct pipe_context *m_pPipeContext = nullptr;
+   struct d3d12_interop_device_info1 m_ScreenInteropInfo = {};
 
    struct mft_context_queue_priority_manager m_ContextPriorityMgr = {};
 

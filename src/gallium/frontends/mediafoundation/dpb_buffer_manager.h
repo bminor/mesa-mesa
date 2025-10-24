@@ -24,7 +24,7 @@
 #pragma once
 
 #include <vector>
-#include "pipe_headers.h"
+#include "hmft_entrypoints.h"
 
 class dpb_buffer_manager
 {
@@ -38,6 +38,15 @@ class dpb_buffer_manager
 
    // release a buffer back to the pool
    void release_dpb_buffer( struct pipe_video_buffer *target );
+
+   /**
+    * get a read-only shared handle from the video buffer's internal D3D12 resource
+    */
+   static HRESULT get_read_only_handle(struct pipe_video_buffer *buffer, 
+                                      struct pipe_context *pipe,
+                                      ComPtr<ID3D12Device>& device,
+                                      HANDLE *pReadOnlyHandle,
+                                      UINT* pSubresourceIndex);
 
  private:
    struct pipe_video_codec *m_codec = NULL;

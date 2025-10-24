@@ -538,6 +538,33 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
    pDX12EncodeContext->encoderPicInfo.base.in_fence_value = pipeEncoderInputFenceHandleValue;
    CHECKHR_GOTO( PrepareForEncodeHelper( pDX12EncodeContext, bReceivedDirtyRectBlob, dirtyRectFrameNum ), done );
 
+   // Needs to be run after PrepareForEncodeHelper to know if current frame is used as reference
+   // Only allocate reconstructed picture copy buffer if feature is enabled and supported
+   if( (m_VideoReconstructedPictureMode == RECON_PIC_OUTPUT_MODE_BLIT_COPY) &&
+      m_EncoderCapabilities.m_bHWSupportReadableReconstructedPicture)
+   {
+      if( !m_spReconstructedPictureBufferPool )
+      {
+         CHECKHR_GOTO( stats_buffer_manager::Create( m_pVlScreen,
+                                                      m_pPipeContext,
+                                                      MFSampleExtension_VideoEncodeReconstructedPicture,
+                                                      pDX12EncodeContext->pPipeVideoBuffer->width,
+                                                      static_cast<uint16_t>( pDX12EncodeContext->pPipeVideoBuffer->height ),
+                                                      pDX12EncodeContext->pPipeVideoBuffer->buffer_format,
+                                                      ( m_bLowLatency ? MFT_STAT_POOL_MIN_SIZE : MFT_INPUT_QUEUE_DEPTH ),
+                                                      m_spReconstructedPictureBufferPool.GetAddressOf() ),
+                        done );
+      }
+
+      // Only allocate the reconstructed picture copy buffer if the current frame is used as reference
+      if (pDX12EncodeContext->get_current_dpb_pic_resource() != nullptr)
+      {
+         pDX12EncodeContext->pPipeResourceReconstructedPicture = m_spReconstructedPictureBufferPool->get_new_tracked_buffer();
+         pDX12EncodeContext->PipeResourceReconstructedPictureSubresource = 0;
+         CHECKNULL_GOTO( pDX12EncodeContext->pPipeResourceReconstructedPicture, E_OUTOFMEMORY, done );
+      }
+   }
+
    {
       struct pipe_resource templ = {};
 

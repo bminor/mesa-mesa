@@ -388,6 +388,32 @@ DEFINE_GUID( MFSampleExtension_VideoEncodeSatdMap, 0xadf61d96, 0xc2d3, 0x4b57, 0
 
 #endif
 
+// MFSampleExtension_VideoEncodeReconstructedPicture {3E8A1B7F-5C92-4D6E-B834-F0A729E65C48}
+// Type: IMFMediaBuffer
+// The reconstructed picture data of an encoded video frame (Experimental).
+DEFINE_GUID( MFSampleExtension_VideoEncodeReconstructedPicture, 0x3e8a1b7f, 0x5c92, 0x4d6e, 0xb8, 0x34, 0xf0, 0xa7, 0x29, 0xe6, 0x5c, 0x48 );
+
+#ifndef CODECAPI_AVEncVideoReconstructedPictureOutputMode
+// AVEncVideoReconstructedPictureOutputMode (VT_UI4) (Experimental, Testing only)
+// Specifies the reconstructed picture output mode for video encoding.
+// 0: disable; 1: blit copy; 2: read-only shared resource
+DEFINE_CODECAPI_GUID( AVEncVideoReconstructedPictureOutputMode,
+                      "4A7B2E8F-1D93-4C6A-B548-91E2F8C5A7D3",
+                      0x4a7b2e8f,
+                      0x1d93,
+                      0x4c6a,
+                      0xb5,
+                      0x48,
+                      0x91,
+                      0xe2,
+                      0xf8,
+                      0xc5,
+                      0xa7,
+                      0xd3 )
+#define CODECAPI_AVEncVideoReconstructedPictureOutputMode DEFINE_CODECAPI_GUIDNAMED( AVEncVideoReconstructedPictureOutputMode )
+
+#endif
+
 #ifndef CODECAPI_AVEncVideoInputDeltaQPBlockSettings
 // AVEncVideoInputDeltaQPSettings (VT_BLOB)
 // Read-only parameter that specifies the settings that the encoder MFT supports with respect to delta QP values as input.
@@ -619,6 +645,10 @@ class __declspec( uuid( HMFT_GUID ) ) CDX12EncHMFT : CMFD3DManager,
                                                               pipe_resource *pPipeResourceSATDMapStats,
                                                               ComPtr<ID3D12Fence> &pResolveStatsCompletionFence,
                                                               UINT64 ResolveStatsCompletionFenceValue,
+                                                              pipe_resource *pPipeResourceReconstructedPicture,
+                                                              UINT PipeResourceReconstructedPictureSubresource,
+                                                              ComPtr<ID3D12Fence>& spReconstructedPictureCompletionFence,
+                                                              UINT64 ReconstructedPictureCompletionFenceValue,
                                                               ID3D12CommandQueue *pSyncObjectQueue );
    void GetSliceBitstreamMetadata( LPDX12EncodeContext pDX12EncodeContext, uint32_t slice_idx, std::vector<struct codec_unit_location_t> &codec_unit_metadata );
    void ProcessSliceBitstreamZeroCopy( LPDX12EncodeContext pDX12EncodeContext,
@@ -633,6 +663,7 @@ class __declspec( uuid( HMFT_GUID ) ) CDX12EncHMFT : CMFD3DManager,
                                      DWORD dwReceivedInput,
                                      BOOL bIsLastSlice,
                                      uint64_t ResolveStatsCompletionFenceValue );
+
    HRESULT UpdateAvailableInputType();
    HRESULT InternalCheckInputType( IMFMediaType *pType );
    HRESULT InternalCheckOutputType( IMFMediaType *pType );
@@ -769,6 +800,15 @@ class __declspec( uuid( HMFT_GUID ) ) CDX12EncHMFT : CMFD3DManager,
    UINT32 m_uiVideoOutputQPMapBlockSize = 0;
    UINT32 m_uiVideoOutputBitsUsedMapBlockSize = 0;
    UINT32 m_uiVideoSatdMapBlockSize = 0;
+
+   typedef enum RECON_PIC_OUTPUT_MODE
+   {
+      RECON_PIC_OUTPUT_MODE_DISABLED = 0,
+      RECON_PIC_OUTPUT_MODE_BLIT_COPY = 1,
+      RECON_PIC_OUTPUT_MODE_READ_ONLY_SHARED_RESOURCE = 2,
+   } RECON_PIC_OUTPUT_MODE;
+
+   RECON_PIC_OUTPUT_MODE m_VideoReconstructedPictureMode = RECON_PIC_OUTPUT_MODE_DISABLED;
 
    UINT32 m_uiSliceGenerationMode = 0;
    BOOL m_bSliceGenerationModeSet = FALSE;

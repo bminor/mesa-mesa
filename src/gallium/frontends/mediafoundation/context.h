@@ -47,6 +47,11 @@ typedef class DX12EncodeContext
    pipe_resource *pPipeResourceSATDMapStats = nullptr;
    pipe_resource *pPipeResourceRCBitAllocMapStats = nullptr;
    pipe_resource *pPipeResourcePSNRStats = nullptr;
+   pipe_resource *pPipeResourceReconstructedPicture = nullptr;
+   UINT PipeResourceReconstructedPictureSubresource = 0;
+   pipe_fence_handle *pPipeFenceReconstructedPictureCompletionFence = NULL;
+   ComPtr<ID3D12Fence> spReconstructedPictureCompletionFence;
+   UINT64 ReconstructedPictureCompletionFenceValue = 0;
 
    // Keep all the media and sync objects until encode is done
    // and then signal EnqueueResourceRelease so the media
@@ -80,6 +85,43 @@ typedef class DX12EncodeContext
    {
       return ((m_Codec == D3D12_VIDEO_ENCODER_CODEC_H264) && (encoderPicInfo.h264enc.slice_mode == PIPE_VIDEO_SLICE_MODE_AUTO)) ||
              ((m_Codec == D3D12_VIDEO_ENCODER_CODEC_HEVC) && (encoderPicInfo.h265enc.slice_mode == PIPE_VIDEO_SLICE_MODE_AUTO));
+   }
+
+   pipe_video_buffer *get_current_dpb_pic_buffer()
+   {
+      pipe_video_buffer* vid_buf = nullptr;
+      
+      switch( m_Codec )
+      {
+         case D3D12_VIDEO_ENCODER_CODEC_H264:
+            if (encoderPicInfo.h264enc.not_referenced) return nullptr;
+            vid_buf = encoderPicInfo.h264enc.dpb[encoderPicInfo.h264enc.dpb_curr_pic].buffer;
+            break;
+         case D3D12_VIDEO_ENCODER_CODEC_HEVC:
+            if (encoderPicInfo.h265enc.not_referenced) return nullptr;
+            vid_buf = encoderPicInfo.h265enc.dpb[encoderPicInfo.h265enc.dpb_curr_pic].buffer;
+            break;
+         case D3D12_VIDEO_ENCODER_CODEC_AV1:
+            if (encoderPicInfo.av1enc.refresh_frame_flags == 0) return nullptr;
+            vid_buf = encoderPicInfo.av1enc.dpb[encoderPicInfo.av1enc.dpb_curr_pic].buffer;
+            break;
+      }
+
+      return vid_buf;
+   }
+
+   pipe_resource *get_current_dpb_pic_resource()
+   {
+      pipe_video_buffer* vid_buf = get_current_dpb_pic_buffer();
+      if (vid_buf)
+      {
+         struct pipe_resource *buf_resources[VL_NUM_COMPONENTS];
+         memset(buf_resources, 0, sizeof(buf_resources));
+         vid_buf->get_resources( vid_buf, &buf_resources[0] );
+         assert(buf_resources[0]);
+         return buf_resources[0];
+      }
+      return nullptr;
    }
 
    const D3D12_VIDEO_ENCODER_CODEC m_Codec = D3D12_VIDEO_ENCODER_CODEC_H264;
@@ -220,5 +262,7 @@ typedef class DX12EncodeContext
          pVlScreen->pscreen->resource_destroy( pVlScreen->pscreen, pPipeResourcePSNRStats );
       if( pDownscaledTwoPassPipeVideoBufferCompletionFence )
          pVlScreen->pscreen->fence_reference( pVlScreen->pscreen, &pDownscaledTwoPassPipeVideoBufferCompletionFence, NULL );
+      if ( pPipeFenceReconstructedPictureCompletionFence )
+         pVlScreen->pscreen->fence_reference( pVlScreen->pscreen, &pPipeFenceReconstructedPictureCompletionFence, NULL );
    }
 } *LPDX12EncodeContext;
