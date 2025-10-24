@@ -853,6 +853,8 @@ memory_modes_to_msl(struct nir_to_msl_ctx *ctx, nir_variable_mode modes)
       }
       requires_or = true;
    }
+   if (!requires_or)
+      P(ctx, "mem_flags::mem_none");
 }
 
 static uint32_t

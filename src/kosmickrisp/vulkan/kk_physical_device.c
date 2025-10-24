@@ -126,6 +126,7 @@ kk_get_device_extensions(const struct kk_instance *instance,
       .KHR_swapchain = true,
       .KHR_swapchain_mutable_format = true,
 #endif
+      .KHR_workgroup_memory_explicit_layout = true,
 
       .EXT_external_memory_metal = true,
       .EXT_mutable_descriptor_type = true,
@@ -270,6 +271,12 @@ kk_get_device_features(
 
       /* VK_KHR_shader_relaxed_extended_instruction */
       .shaderRelaxedExtendedInstruction = true,
+
+      /* VK_KHR_workgroup_memory_explicit_layout */
+      .workgroupMemoryExplicitLayout = true,
+      .workgroupMemoryExplicitLayoutScalarBlockLayout = true,
+      .workgroupMemoryExplicitLayout8BitAccess = true,
+      .workgroupMemoryExplicitLayout16BitAccess = true,
 
       /* VK_EXT_shader_replicated_composites */
       .shaderReplicatedComposites = true,

@@ -483,10 +483,9 @@ kk_lower_nir(struct kk_device *dev, nir_shader *nir,
             nir_lower_io_lower_64bit_to_32 |
                nir_lower_io_use_interpolated_input_intrinsics);
 
-   if (!nir->info.shared_memory_explicit_layout) {
-      NIR_PASS(_, nir, nir_lower_vars_to_explicit_types, nir_var_mem_shared,
-               shared_var_info);
-   }
+   NIR_PASS(_, nir, nir_lower_vars_to_explicit_types, nir_var_mem_shared,
+            shared_var_info);
+
    NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_shared,
             nir_address_format_32bit_offset);
 
