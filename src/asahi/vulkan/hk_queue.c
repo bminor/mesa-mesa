@@ -817,11 +817,6 @@ queue_submit(struct hk_device *dev, struct hk_queue *queue,
    /* Now setup the command structs */
    struct util_dynarray payload;
    util_dynarray_init(&payload, NULL);
-   union drm_asahi_cmd *cmds = malloc(sizeof(*cmds) * command_count);
-   if (cmds == NULL) {
-      free(cmds);
-      return vk_error(dev, VK_ERROR_OUT_OF_HOST_MEMORY);
-   }
 
    unsigned nr_vdm = 0, nr_cdm = 0;
 

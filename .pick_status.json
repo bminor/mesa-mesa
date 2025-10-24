@@ -1754,7 +1754,7 @@
         "description": "hk: Remove unused allocation in queue_submit",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c64a2bbff5a3370bca7f40d6c9f41fb3cd6cf4ba",
         "notes": null
