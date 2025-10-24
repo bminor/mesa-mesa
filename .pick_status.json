@@ -164,7 +164,7 @@
         "description": "r600/sfn: AR loads are not dependend on the future and other code blocks",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d21054b4bc92a1a9240841dca719f81a142fd5cc",
         "notes": null

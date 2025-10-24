@@ -88,8 +88,10 @@ class CollectDeps : public ConstRegisterVisitor {
 public:
    void visit(const Register& r) override
    {
-      for (auto p : r.parents())
-         add_dep(p);
+      for (auto p : r.parents()) {
+         if (instr->block_id() == p->block_id() && instr->index() < p->index())
+            add_dep(p);
+      }
    }
    void visit(const LocalArray& value) override {(void)value; UNREACHABLE("Array is not a value");}
    void visit(const LocalArrayValue& r) override
