@@ -3050,11 +3050,15 @@ radv_video_patch_encode_session_parameters(struct radv_device *device, struct vk
       }
       break;
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
-      /*
-       * AMD firmware requires these flags to be set in h265 with RC modes,
-       * VCN 3 need 1.27 and VCN 4 needs 1.7 or newer to pass the CTS tests,
-       * dEQP-VK.video.encode.h265_rc_*.
-       */
+      for (unsigned i = 0; i < params->h265_enc.h265_sps_count; i++) {
+         /* VCN supports only the following block sizes (resulting in 64x64 CTBs with any coding
+          * block size) */
+         params->h265_enc.h265_sps[i].base.log2_min_luma_coding_block_size_minus3 = 0;
+         params->h265_enc.h265_sps[i].base.log2_diff_max_min_luma_coding_block_size = 3;
+         params->h265_enc.h265_sps[i].base.log2_min_luma_transform_block_size_minus2 = 0;
+         params->h265_enc.h265_sps[i].base.log2_diff_max_min_luma_transform_block_size = 3;
+      }
+
       for (unsigned i = 0; i < params->h265_enc.h265_pps_count; i++) {
          params->h265_enc.h265_pps[i].base.flags.cu_qp_delta_enabled_flag = 1;
          params->h265_enc.h265_pps[i].base.diff_cu_qp_delta_depth = 0;
