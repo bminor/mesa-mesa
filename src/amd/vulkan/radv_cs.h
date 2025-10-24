@@ -36,17 +36,9 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
 
 #define radeon_end() ac_cmdbuf_end()
 
-#define radeon_emit(value)                                                                                             \
-   do {                                                                                                                \
-      assert(__cs_num < __cs_reserved_dw);                                                                             \
-      ac_cmdbuf_emit(value);                                                                                           \
-   } while (0)
+#define radeon_emit(value) ac_cmdbuf_emit(value)
 
-#define radeon_emit_array(values, num)                                                                                 \
-   do {                                                                                                                \
-      assert(__cs_num + (num) <= __cs_reserved_dw);                                                                    \
-      ac_cmdbuf_emit_array(values, num);                                                                               \
-   } while (0)
+#define radeon_emit_array(values, num) ac_cmdbuf_emit_array(values, num)
 
 /* Packet building helpers. Don't use directly. */
 #define __radeon_set_reg_seq(reg, num, idx, prefix_name, packet, reset_filter_cam)                                     \
