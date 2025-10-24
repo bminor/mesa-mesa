@@ -5920,6 +5920,84 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
       brw_from_nir_emit_memory_access(ntb, bld, xbld, instr);
       break;
 
+   case nir_intrinsic_load_urb_vec4_intel: {
+      assert(devinfo->ver < 20);
+      brw_reg srcs[URB_LOGICAL_NUM_SRCS];
+      unsigned urb_global_offset = nir_intrinsic_base(instr);
+
+      if (nir_src_is_const(instr->src[1])) {
+         urb_global_offset += nir_src_as_uint(instr->src[1]);
+      } else {
+         srcs[URB_LOGICAL_SRC_PER_SLOT_OFFSETS] =
+            get_nir_src(ntb, instr->src[1], -1);
+      }
+      brw_reg urb_handle = get_nir_src(ntb, instr->src[0], -1);
+      adjust_handle_and_offset(bld, urb_handle, urb_global_offset);
+      srcs[URB_LOGICAL_SRC_HANDLE] = urb_handle;
+
+      brw_urb_inst *urb = bld.URB_READ(dest, srcs, ARRAY_SIZE(srcs));
+      urb->offset = urb_global_offset;
+      urb->size_written = instr->num_components *
+                          urb->dst.component_size(urb->exec_size);
+      break;
+   }
+
+   case nir_intrinsic_store_urb_vec4_intel: {
+      assert(devinfo->ver < 20);
+      brw_reg srcs[URB_LOGICAL_NUM_SRCS];
+      unsigned urb_global_offset = nir_intrinsic_base(instr);
+
+      if (nir_src_is_const(instr->src[2])) {
+         urb_global_offset += nir_src_as_uint(instr->src[2]);
+      } else {
+         srcs[URB_LOGICAL_SRC_PER_SLOT_OFFSETS] =
+            get_nir_src(ntb, instr->src[2], -1);
+      }
+
+      brw_reg urb_handle = get_nir_src(ntb, instr->src[1], -1);
+      adjust_handle_and_offset(bld, urb_handle, urb_global_offset);
+
+      srcs[URB_LOGICAL_SRC_HANDLE] = urb_handle;
+      srcs[URB_LOGICAL_SRC_DATA] = get_nir_src(ntb, instr->src[0], -1);
+
+      if (!nir_src_is_const(instr->src[3]) ||
+          nir_src_as_uint(instr->src[3]) != 0xf) {
+         srcs[URB_LOGICAL_SRC_CHANNEL_MASK] =
+            retype(get_nir_src_imm(ntb, instr->src[3]), BRW_TYPE_UD);
+      }
+
+      brw_urb_inst *urb = bld.URB_WRITE(srcs, ARRAY_SIZE(srcs));
+      urb->components = instr->src[0].ssa->num_components;
+      urb->offset = urb_global_offset;
+      break;
+   }
+
+   case nir_intrinsic_load_urb_lsc_intel: {
+      assert(devinfo->ver >= 20);
+
+      brw_reg srcs[URB_LOGICAL_NUM_SRCS];
+      srcs[URB_LOGICAL_SRC_HANDLE] = get_nir_src(ntb, instr->src[0], -1);
+
+      brw_urb_inst *urb = bld.URB_READ(dest, srcs, ARRAY_SIZE(srcs));
+      urb->offset = nir_intrinsic_base(instr);
+      urb->size_written = instr->num_components *
+                          urb->dst.component_size(urb->exec_size);
+      break;
+   }
+
+   case nir_intrinsic_store_urb_lsc_intel: {
+      assert(devinfo->ver >= 20);
+
+      brw_reg srcs[URB_LOGICAL_NUM_SRCS];
+      srcs[URB_LOGICAL_SRC_HANDLE] = get_nir_src(ntb, instr->src[1], -1);
+      srcs[URB_LOGICAL_SRC_DATA] = get_nir_src(ntb, instr->src[0], -1);
+
+      brw_urb_inst *urb = bld.URB_WRITE(srcs, ARRAY_SIZE(srcs));
+      urb->components = instr->src[0].ssa->num_components;
+      urb->offset = nir_intrinsic_base(instr);
+      break;
+   }
+
    case nir_intrinsic_image_size:
    case nir_intrinsic_bindless_image_size: {
       /* Cube image sizes should have previously been lowered to a 2D array */
