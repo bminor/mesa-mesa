@@ -256,7 +256,7 @@
     KERNEL_IMAGE_TYPE: "image"
     RUNNER_TAG: mesa-ci-x86-64-lava-rk3588-rock-5b
     VK_DRIVER: panfrost
-    LAVA_FIRMWARE: arm-lava
+    LAVA_FIRMWARE: arm
 
 # Status: https://lava.collabora.dev/scheduler/device_type/sun50i-h6-pine-h64
 .lava-sun50i-h6-pine-h64:arm64:
