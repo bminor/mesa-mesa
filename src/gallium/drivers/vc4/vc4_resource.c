@@ -378,8 +378,8 @@ vc4_resource_get_param(struct pipe_screen *pscreen,
 }
 
 static void
-vc4_setup_slices(struct vc4_resource *rsc, const char *caller,
-                 bool force_format_t)
+vc4_setup_slices(struct vc4_screen *screen, struct vc4_resource *rsc,
+                 const char *caller, bool force_format_t)
 {
         struct pipe_resource *prsc = &rsc->base;
         uint32_t width = prsc->width0;
@@ -435,6 +435,19 @@ vc4_setup_slices(struct vc4_resource *rsc, const char *caller,
                 slice->offset = offset;
                 slice->stride = (level_width * rsc->cpp *
                                  MAX2(prsc->nr_samples, 1));
+
+#ifdef USE_VC4_SIMULATOR
+                /* Ensure stride alignment matches the one required by the GPU
+                 * that drives the display.
+                 */
+                if (slice->tiling == VC4_TILING_FORMAT_LINEAR &&
+                    prsc->target == PIPE_TEXTURE_2D) {
+                       slice->stride =
+                              align(slice->stride,
+                                    vc4_simulator_get_raster_stride_align(screen->fd));
+                }
+#endif
+
                 slice->size = level_height * slice->stride;
 
                 offset += slice->size;
@@ -583,7 +596,7 @@ vc4_resource_create_with_modifiers(struct pipe_screen *pscreen,
         if (tmpl->target != PIPE_BUFFER)
                 rsc->vc4_format = get_resource_texture_format(prsc);
 
-        vc4_setup_slices(rsc, "create", tmpl->bind & PIPE_BIND_SHARED);
+        vc4_setup_slices(screen, rsc, "create", tmpl->bind & PIPE_BIND_SHARED);
         if (!vc4_resource_bo_alloc(rsc))
                 goto fail;
 
@@ -698,7 +711,7 @@ vc4_resource_from_handle(struct pipe_screen *pscreen,
         }
 
         rsc->vc4_format = get_resource_texture_format(prsc);
-        vc4_setup_slices(rsc, "import", true);
+        vc4_setup_slices(screen, rsc, "import", true);
 
         if (whandle->offset != 0) {
                 if (rsc->tiled) {
