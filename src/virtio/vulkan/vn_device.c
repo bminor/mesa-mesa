@@ -57,9 +57,13 @@ vn_queue_init(struct vn_device *dev,
       assert(queue_index > 0);
       queue->emulated = true;
       queue->base.id = shared_queue->base.id;
+      queue->can_feedback = shared_queue->can_feedback;
       queue->ring_idx = shared_queue->ring_idx;
       return VK_SUCCESS;
    }
+
+   queue->can_feedback = vn_queue_family_can_feedback(
+      dev->physical_device, queue_info->queueFamilyIndex);
 
    const int ring_idx = vn_instance_acquire_ring_idx(dev->instance);
    if (ring_idx < 0) {

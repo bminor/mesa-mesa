@@ -498,8 +498,12 @@ vn_queue_submission_prepare(struct vn_queue_submission *submit)
    struct vn_fence *fence = vn_fence_from_handle(submit->fence_handle);
 
    assert(!fence || !fence->is_external || !fence->feedback.slot);
-   if (fence && fence->feedback.slot)
-      submit->feedback_types |= VN_FEEDBACK_TYPE_FENCE;
+   if (fence && fence->feedback.slot) {
+      if (queue->can_feedback)
+         submit->feedback_types |= VN_FEEDBACK_TYPE_FENCE;
+      else
+         fence->feedback.pollable = false;
+   }
 
    if (submit->batch_type != VK_STRUCTURE_TYPE_BIND_SPARSE_INFO)
       submit->has_zink_sync_batch = vn_has_zink_sync_batch(submit);
@@ -743,6 +747,7 @@ vn_queue_submission_add_fence_feedback(struct vn_queue_submission *submit,
    for (uint32_t i = 0; i < dev->queue_family_count; i++) {
       if (dev->queue_families[i] == queue_vk->queue_family_index) {
          ffb_cmd_handle = fence->feedback.commands[i];
+         break;
       }
    }
    assert(ffb_cmd_handle != VK_NULL_HANDLE);
@@ -1560,6 +1565,7 @@ vn_fence_feedback_init(struct vn_device *dev,
 
    fence->feedback.slot = slot;
    fence->feedback.commands = cmd_handles;
+   fence->feedback.pollable = true;
 
    return VK_SUCCESS;
 }
@@ -1674,8 +1680,10 @@ vn_ResetFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences)
       assert(perm->type == VN_SYNC_TYPE_DEVICE_ONLY);
       fence->payload = perm;
 
-      if (fence->feedback.slot)
+      if (fence->feedback.slot) {
          vn_feedback_reset_status(fence->feedback.slot);
+         fence->feedback.pollable = true;
+      }
    }
 
    return VK_SUCCESS;
@@ -1691,7 +1699,9 @@ vn_GetFenceStatus(VkDevice device, VkFence _fence)
    VkResult result;
    switch (payload->type) {
    case VN_SYNC_TYPE_DEVICE_ONLY:
-      if (fence->feedback.slot) {
+      if (fence->feedback.pollable) {
+         assert(fence->feedback.slot);
+
          result = vn_feedback_get_status(fence->feedback.slot);
          if (result == VK_SUCCESS) {
             /* When fence feedback slot gets signaled, the real fence

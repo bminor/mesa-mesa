@@ -19,6 +19,9 @@ struct vn_queue {
    /* emulated queue shares base queue id and ring_idx with another queue */
    bool emulated;
 
+   /* whether this queue supports venus feedback */
+   bool can_feedback;
+
    /* only used if renderer supports multiple timelines */
    uint32_t ring_idx;
 
@@ -80,6 +83,14 @@ struct vn_fence {
       /* non-NULL if VN_PERF_NO_FENCE_FEEDBACK is disabled */
       struct vn_feedback_slot *slot;
       VkCommandBuffer *commands;
+
+      /* Indicate whether the fence status in the feedback slot is pollable.
+       * When pollable is false, the fence feedback has been suspended and the
+       * slot won't be signaled to VK_SUCCESS.
+       * - suspend: submit on queues not supporting feedback
+       * - resume: vn_ResetFences will reset pollable to true
+       */
+      bool pollable;
    } feedback;
 
    bool is_external;
