@@ -932,6 +932,9 @@ panfrost_init_screen_caps(struct panfrost_screen *screen)
    caps->max_texture_lod_bias = 16.0; /* arbitrary */
 
    caps->shader_atomic_int64 = dev->arch >= 9;
+
+   /* We hard-code this value as it is dictated by driver uAPI */
+   caps->max_label_length = 4096;
 }
 
 static void
