@@ -568,6 +568,9 @@ v3d_simulator_create_bo_ioctl(int fd, struct drm_v3d_create_bo *args)
         {
                 union drm_amdgpu_gem_create create = { 0 };
                 create.in.bo_size = args->size;
+                create.in.domains = AMDGPU_GEM_DOMAIN_GTT;
+                create.in.domain_flags =
+                        AMDGPU_GEM_CREATE_CPU_ACCESS_REQUIRED;
 
                 ret = drmIoctl(fd, DRM_IOCTL_AMDGPU_GEM_CREATE, &create);
 
