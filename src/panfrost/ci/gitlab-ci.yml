@@ -195,3 +195,17 @@ panfrost-g610-vk-full:arm64:
   timeout: 1h 35m
   variables:
     DEQP_FRACTION: 1
+
+panfrost-g925-vk:arm64:
+  parallel: 4
+  extends:
+    - .lava-arm64-test-vk
+    - .panfrost-test
+    - .lava-mt8196-rauru-navi-sku0:arm64
+    - .panfrost-vk-rules
+  variables:
+    DRIVER_NAME: panvk
+    MESA_VK_IGNORE_CONFORMANCE_WARNING: 1
+    PANVK_DEBUG: "no_known_warn,sync,cs"
+    DEQP_SUITE: panfrost-g925-vk
+    HWCI_START_WESTON: 1

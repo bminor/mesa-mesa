@@ -1,0 +1,6 @@
+dEQP-VK.api.command_buffers.record_many_draws_primary_2
+dEQP-VK.api.command_buffers.record_many_draws_secondary_1
+dEQP-VK.api.command_buffers.record_many_draws_secondary_2
+dEQP-VK.memory.pipeline_barrier.host_write_uniform_buffer.1048576
+dEQP-VK.memory.pipeline_barrier.transfer_dst_uniform_buffer.1048576
+dEQP-VK.sparse_resources.buffer.ssbo.sparse_residency.buffer_size_2_24

@@ -1,0 +1,10 @@
+# CTS bug, see https://github.com/KhronosGroup/VK-GL-CTS/issues/523
+dEQP-VK.image.load_store.without_any_format.buffer.b8g8r8_srgb_minalign_uniform,Fail
+dEQP-VK.image.load_store.without_any_format.buffer.b8g8r8_srgb_minalign_uniform_linear,Fail
+dEQP-VK.image.load_store.without_any_format.buffer.r8g8b8_srgb_minalign_uniform,Fail
+dEQP-VK.image.load_store.without_any_format.buffer.r8g8b8_srgb_minalign_uniform_linear,Fail
+
+# deqp-vk: ../src/panfrost/vulkan/panvk_image.c:346: panvk_image_get_mod_from_list: Assertion `!"Invalid modifier"' failed.
+dEQP-VK.wsi.wayland.swapchain.create.image_extent,Crash
+
+dEQP-VK.wsi.wayland.swapchain.simulate_oom.image_extent,Crash

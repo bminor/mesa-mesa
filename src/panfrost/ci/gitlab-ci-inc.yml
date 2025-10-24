@@ -257,6 +257,23 @@
     VK_DRIVER: panfrost
     LAVA_FIRMWARE: arm
 
+# Status: https://lava.collabora.dev/scheduler/device_type/mt8196-rauru-navi-sku0
+.lava-mt8196-rauru-navi-sku0:arm64:
+  variables:
+    DEVICE_TYPE: mt8196-rauru-navi-sku0
+    DTB: $DEVICE_TYPE
+    FARM: collabora
+    GPU_VERSION: panfrost-g925
+    FDO_CI_CONCURRENT: 9
+    HWCI_KERNEL_MODULES: panthor
+    BOOT_METHOD: depthcharge
+    KERNEL_IMAGE_TYPE: ""
+    RUNNER_TAG: mesa-ci-x86-64-lava-mt8196-rauru-navi-sku0
+    VK_DRIVER: panfrost
+    LAVA_FIRMWARE: arm
+    # Mainline kernel support for MT8196 is still incomplete
+    KERNEL_TAG: rauru-for-mesa-ci-0dda
+
 # Status: https://lava.collabora.dev/scheduler/device_type/sun50i-h6-pine-h64
 .lava-sun50i-h6-pine-h64:arm64:
   variables:
