@@ -1425,6 +1425,13 @@ hk_copy_memory_to_image(struct hk_device *device, struct hk_image *dst_image,
    uint32_t src_height = info->memoryImageHeight ?: extent.height;
 
    uint32_t blocksize_B = util_format_get_blocksize(layout->format);
+
+   /* Align width and height to block */
+   src_width =
+      DIV_ROUND_UP(src_width, util_format_get_blockwidth(layout->format));
+   src_height =
+      DIV_ROUND_UP(src_height, util_format_get_blockheight(layout->format));
+
    uint32_t src_pitch = src_width * blocksize_B;
 
    unsigned start_layer = (dst_image->vk.image_type == VK_IMAGE_TYPE_3D)
@@ -1497,6 +1504,13 @@ hk_copy_image_to_memory(struct hk_device *device, struct hk_image *src_image,
 #endif
 
    uint32_t blocksize_B = util_format_get_blocksize(layout->format);
+
+   /* Align width and height to block */
+   dst_width =
+      DIV_ROUND_UP(dst_width, util_format_get_blockwidth(layout->format));
+   dst_height =
+      DIV_ROUND_UP(dst_height, util_format_get_blockheight(layout->format));
+
    uint32_t dst_pitch = dst_width * blocksize_B;
 
    unsigned start_layer = (src_image->vk.image_type == VK_IMAGE_TYPE_3D)
