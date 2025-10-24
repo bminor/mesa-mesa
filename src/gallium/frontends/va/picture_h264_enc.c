@@ -470,11 +470,13 @@ static void parseEncSliceParamsH264(vlVaContext *context,
       }
    }
 
+   slice->num_ref_list0_mod_operations = 0;
+   slice->ref_pic_list_modification_flag_l0 = 0;
+
    if (slice->slice_type != PIPE_H264_SLICE_TYPE_I &&
        slice->slice_type != PIPE_H264_SLICE_TYPE_SI) {
       slice->ref_pic_list_modification_flag_l0 = vl_rbsp_u(rbsp, 1);
       if (slice->ref_pic_list_modification_flag_l0) {
-         slice->num_ref_list0_mod_operations = 0;
          while (true) {
             modification_of_pic_nums_idc = vl_rbsp_ue(rbsp);
             if (modification_of_pic_nums_idc == 3)
@@ -491,10 +493,12 @@ static void parseEncSliceParamsH264(vlVaContext *context,
       }
    }
 
+   slice->num_ref_list1_mod_operations = 0;
+   slice->ref_pic_list_modification_flag_l1 = 0;
+
    if (slice->slice_type == PIPE_H264_SLICE_TYPE_B) {
       slice->ref_pic_list_modification_flag_l1 = vl_rbsp_u(rbsp, 1);
       if (slice->ref_pic_list_modification_flag_l1) {
-         slice->num_ref_list1_mod_operations = 0;
          while (true) {
             modification_of_pic_nums_idc = vl_rbsp_ue(rbsp);
             if (modification_of_pic_nums_idc == 3)
@@ -511,6 +515,9 @@ static void parseEncSliceParamsH264(vlVaContext *context,
       }
    }
 
+   slice->num_ref_pic_marking_operations = 0;
+   slice->adaptive_ref_pic_marking_mode_flag = 0;
+
    if (nal_ref_idc != 0) {
       if (nal_unit_type == PIPE_H264_NAL_IDR_SLICE) {
          slice->no_output_of_prior_pics_flag = vl_rbsp_u(rbsp, 1);
@@ -518,7 +525,6 @@ static void parseEncSliceParamsH264(vlVaContext *context,
       } else {
          slice->adaptive_ref_pic_marking_mode_flag = vl_rbsp_u(rbsp, 1);
          if (slice->adaptive_ref_pic_marking_mode_flag) {
-            slice->num_ref_pic_marking_operations = 0;
             while (true) {
                memory_management_control_operation = vl_rbsp_ue(rbsp);
                if (memory_management_control_operation == 0)
