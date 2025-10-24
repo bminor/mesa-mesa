@@ -2653,15 +2653,18 @@ cp_mem_write(uint32_t *dwords, uint32_t sizedwords, int level)
 static void
 cp_rmw(uint32_t *dwords, uint32_t sizedwords, int level)
 {
-   uint32_t val = dwords[0] & 0xffff;
-   uint32_t and = dwords[1];
-   uint32_t or = dwords[2];
-   printl(3, "%srmw (%s & 0x%08x) | 0x%08x)\n", levels[level], regname(val, 1),
-          and, or);
+   struct rnndomain *domain;
+   const char *str;
+
+   domain = rnn_finddomain(rnn->db, "CP_REG_RMW");
+   str = internal_packet(dwords, sizedwords, rnn, domain);
+
+   
+   printl(3, "%srmw %s", levels[level], str);
    if (needs_wfi)
-      printl(2, "NEEDS WFI: rmw (%s & 0x%08x) | 0x%08x)\n", regname(val, 1),
-             and, or);
-   reg_set(val, (reg_val(val) & and) | or);
+      printl(2, "NEEDS WFI: rmw %s", str);
+
+   free((void *)str);
 }
 
 static void
