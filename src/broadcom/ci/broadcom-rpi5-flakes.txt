@@ -203,3 +203,6 @@ spec@!opengl 1.0@gl-1.0-drawbuffer-modes
 x11-dEQP-EGL.functional.preserve_swap.no_preserve.read_before_swap.pre_clear_post_render
 x11-dEQP-EGL.functional.preserve_swap.no_preserve.no_read_before_swap.post_render
 x11-dEQP-EGL.functional.sharing.gles2.multithread.simple_egl_sync.images.texture_source.create_texture_render
+
+spec@egl_chromium_sync_control@conformance
+spec@egl_chromium_sync_control@conformance@eglGetSyncValuesCHROMIUM_msc_and_sbc_test
