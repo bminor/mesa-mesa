@@ -255,6 +255,16 @@ enum pipe_video_cap
     * The returned value is pipe_enc_cap_spatial_adaptive_quantization
     */
    PIPE_VIDEO_CAP_ENC_SPATIAL_ADAPTIVE_QUANTIZATION = 68,
+   /*
+    * Support for readable reconstructed picture from DPB current picture
+    *
+    * Indicates whether dpb_curr_pic (index in dpb array from
+    * pipe_h264_enc_picture_desc, pipe_h265_enc_picture_desc, or
+    * pipe_av1_enc_picture_desc) is readable or uses an opaque
+    * non-readable memory layout. When true, the reconstructed
+    * picture can be read directly.
+    */
+   PIPE_VIDEO_CAP_ENC_READABLE_RECONSTRUCTED_PICTURE = 69,
 };
 
 enum pipe_video_h264_enc_dbk_filter_mode_flags
