@@ -232,61 +232,57 @@ static void get_param(struct rvce_encoder *enc, struct pipe_h264_enc_picture_des
    enc->enc_pic.eo.num_ref_idx_l0_active_minus1 = pic->slice.num_ref_idx_l0_active_minus1;
    enc->enc_pic.eo.num_ref_idx_l1_active_minus1 = pic->slice.num_ref_idx_l1_active_minus1;
 
-   i = 0;
-   if (pic->slice.ref_pic_list_modification_flag_l0) {
-      for (; i < MIN2(4, pic->slice.num_ref_list0_mod_operations); i++) {
-         struct pipe_h264_ref_list_mod_entry *entry = &pic->slice.ref_list0_mod_operations[i];
-         switch (entry->modification_of_pic_nums_idc) {
-         case 0:
-            enc->enc_pic.eo.enc_ref_list_modification_op[i] = REF_LIST_MODIFICATION_OP_SHORT_TERM_SUBTRACT;
-            enc->enc_pic.eo.enc_ref_list_modification_num[i] = entry->abs_diff_pic_num_minus1;
-            break;
-         case 2:
-            enc->enc_pic.eo.enc_ref_list_modification_op[i] = REF_LIST_MODIFICATION_OP_LONG_TERM;
-            enc->enc_pic.eo.enc_ref_list_modification_num[i] = entry->long_term_pic_num;
-            break;
-         case 5:
-            enc->enc_pic.eo.enc_ref_list_modification_op[i] = REF_LIST_MODIFICATION_OP_VIEW_ADD;
-            enc->enc_pic.eo.enc_ref_list_modification_num[i] = entry->abs_diff_pic_num_minus1;
-            break;
-         default:
-         case 3:
-            enc->enc_pic.eo.enc_ref_list_modification_op[i] = REF_LIST_MODIFICATION_OP_END;
-            break;
-         }
+   for (i = 0; i < MIN2(4, pic->slice.num_ref_list0_mod_operations); i++) {
+      struct pipe_h264_ref_list_mod_entry *entry = &pic->slice.ref_list0_mod_operations[i];
+      switch (entry->modification_of_pic_nums_idc) {
+      case 0:
+         enc->enc_pic.eo.enc_ref_list_modification_op[i] = REF_LIST_MODIFICATION_OP_SHORT_TERM_SUBTRACT;
+         enc->enc_pic.eo.enc_ref_list_modification_num[i] = entry->abs_diff_pic_num_minus1;
+         break;
+      case 2:
+         enc->enc_pic.eo.enc_ref_list_modification_op[i] = REF_LIST_MODIFICATION_OP_LONG_TERM;
+         enc->enc_pic.eo.enc_ref_list_modification_num[i] = entry->long_term_pic_num;
+         break;
+      case 5:
+         enc->enc_pic.eo.enc_ref_list_modification_op[i] = REF_LIST_MODIFICATION_OP_VIEW_ADD;
+         enc->enc_pic.eo.enc_ref_list_modification_num[i] = entry->abs_diff_pic_num_minus1;
+         break;
+      default:
+      case 3:
+         enc->enc_pic.eo.enc_ref_list_modification_op[i] = REF_LIST_MODIFICATION_OP_END;
+         break;
       }
    }
    if (i < 4)
       enc->enc_pic.eo.enc_ref_list_modification_op[i] = REF_LIST_MODIFICATION_OP_END;
 
-   i = 0;
-   if (pic->pic_ctrl.nal_unit_type == PIPE_H264_NAL_IDR_SLICE) {
-      enc->enc_pic.eo.enc_decoded_picture_marking_op[i++] = pic->slice.long_term_reference_flag ? 6 : 0;
-   } else if (pic->slice.adaptive_ref_pic_marking_mode_flag) {
-      for (; i < MIN2(4, pic->slice.num_ref_pic_marking_operations); i++) {
-         struct pipe_h264_ref_pic_marking_entry *entry = &pic->slice.ref_pic_marking_operations[i];
-         enc->enc_pic.eo.enc_decoded_picture_marking_op[i] = entry->memory_management_control_operation;
-         switch (entry->memory_management_control_operation) {
-         case 1:
-            enc->enc_pic.eo.enc_decoded_picture_marking_num[i] = entry->difference_of_pic_nums_minus1;
-            break;
-         case 2:
-            enc->enc_pic.eo.enc_decoded_picture_marking_num[i] = entry->long_term_pic_num;
-            break;
-         case 3:
-            enc->enc_pic.eo.enc_decoded_picture_marking_num[i] = entry->difference_of_pic_nums_minus1;
-            enc->enc_pic.eo.enc_decoded_picture_marking_idx[i] = entry->long_term_frame_idx;
-            break;
-         case 4:
-            enc->enc_pic.eo.enc_decoded_picture_marking_idx[i] = entry->max_long_term_frame_idx_plus1;
-            break;
-         case 6:
-            enc->enc_pic.eo.enc_decoded_picture_marking_idx[i] = entry->long_term_frame_idx;
-            break;
-         default:
-            break;
-         }
+   for (i = 0; i < MIN2(4, pic->slice.num_ref_pic_marking_operations); i++) {
+      struct pipe_h264_ref_pic_marking_entry *entry = &pic->slice.ref_pic_marking_operations[i];
+      enc->enc_pic.eo.enc_decoded_picture_marking_op[i] = entry->memory_management_control_operation;
+      switch (entry->memory_management_control_operation) {
+      case 1:
+         enc->enc_pic.eo.enc_decoded_picture_marking_num[i] = entry->difference_of_pic_nums_minus1;
+         break;
+      case 2:
+         enc->enc_pic.eo.enc_decoded_picture_marking_num[i] = entry->long_term_pic_num;
+         break;
+      case 3:
+         enc->enc_pic.eo.enc_decoded_picture_marking_num[i] = entry->difference_of_pic_nums_minus1;
+         enc->enc_pic.eo.enc_decoded_picture_marking_idx[i] = entry->long_term_frame_idx;
+         break;
+      case 4:
+         enc->enc_pic.eo.enc_decoded_picture_marking_idx[i] = entry->max_long_term_frame_idx_plus1;
+         break;
+      case 6:
+         enc->enc_pic.eo.enc_decoded_picture_marking_idx[i] = entry->long_term_frame_idx;
+         break;
+      default:
+         break;
       }
+   }
+   if (pic->pic_ctrl.nal_unit_type == PIPE_H264_NAL_IDR_SLICE) {
+      assert(pic->slice.num_ref_pic_marking_operations == 0);
+      enc->enc_pic.eo.enc_decoded_picture_marking_op[i++] = pic->slice.long_term_reference_flag ? 6 : 0;
    }
    if (i < 4)
       enc->enc_pic.eo.enc_decoded_picture_marking_op[i] = 0;
