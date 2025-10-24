@@ -668,6 +668,7 @@ Khronos extensions that are not part of any Vulkan version:
   VK_EXT_shader_subgroup_ballot                         DONE (anv, dzn, hasvk, hk, lvp, nvk, panvk, radv, vn)
   VK_EXT_shader_subgroup_vote                           DONE (anv, dzn, hasvk, hk, lvp, nvk, panvk, radv, vn)
   VK_EXT_shader_module_identifier                       DONE (anv, hasvk, hk, nvk, panvk, radv, tu, v3dv)
+  VK_EXT_shader_uniform_buffer_unsized_array            DONE (radv)
   VK_EXT_surface_maintenance1                           DONE (anv, hk, lvp, nvk, radv, tu, v3dv, vn)
   VK_EXT_swapchain_maintenance1                         DONE (anv, hk, lvp, nvk, radv, tu, v3dv, vn)
   VK_EXT_transform_feedback                             DONE (anv, hasvk, hk, lvp, nvk, radv, tu, vn)

@@ -7,3 +7,4 @@ VK_KHR_present_id2 on HoneyKrisp
 VK_KHR_present_wait on HoneyKrisp
 VK_KHR_present_wait2 on HoneyKrisp
 VK_KHR_maintenance10 on ANV, NVK
+VK_EXT_shader_uniform_buffer_unsized_array on RADV
