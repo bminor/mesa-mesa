@@ -117,6 +117,8 @@ kk_get_device_extensions(const struct kk_instance *instance,
       /* Vulkan 1.4 */
       .KHR_push_descriptor = true,
       .KHR_shader_expect_assume = true,
+      .KHR_vertex_attribute_divisor = true,
+      .EXT_vertex_attribute_divisor = true,
 
       /* Optional extensions */
       .KHR_shader_maximal_reconvergence = true,
@@ -259,6 +261,10 @@ kk_get_device_features(
       .synchronization2 = true,
       .vulkanMemoryModel = true,
       .vulkanMemoryModelDeviceScope = true,
+
+      /* Vulkan 1.4 */
+      .vertexAttributeInstanceRateDivisor = true,
+      .vertexAttributeInstanceRateZeroDivisor = true,
 
       /* VK_EXT_mutable_descriptor_type */
       .mutableDescriptorType = true,
