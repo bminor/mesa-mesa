@@ -1260,6 +1260,7 @@ typedef enum SpvCapability_ {
     SpvCapabilityBitInstructions = 6025,
     SpvCapabilityGroupNonUniformRotateKHR = 6026,
     SpvCapabilityFloatControls2 = 6029,
+    SpvCapabilityFMAKHR = 6030,
     SpvCapabilityAtomicFloat32AddEXT = 6033,
     SpvCapabilityAtomicFloat64AddEXT = 6034,
     SpvCapabilityLongCompositesINTEL = 6089,
@@ -1284,6 +1285,7 @@ typedef enum SpvCapability_ {
     SpvCapabilitySubgroup2DBlockTransposeINTEL = 6230,
     SpvCapabilitySubgroupMatrixMultiplyAccumulateINTEL = 6236,
     SpvCapabilityTernaryBitwiseFunctionINTEL = 6241,
+    SpvCapabilityUntypedVariableLengthArrayINTEL = 6243,
     SpvCapabilitySpecConditionalINTEL = 6245,
     SpvCapabilityFunctionVariantsINTEL = 6246,
     SpvCapabilityGroupUniformArithmeticKHR = 6400,
@@ -1974,6 +1976,7 @@ typedef enum SpvOp_ {
     SpvOpUntypedInBoundsPtrAccessChainKHR = 4424,
     SpvOpUntypedArrayLengthKHR = 4425,
     SpvOpUntypedPrefetchKHR = 4426,
+    SpvOpFmaKHR = 4427,
     SpvOpSubgroupAllKHR = 4428,
     SpvOpSubgroupAnyKHR = 4429,
     SpvOpSubgroupAllEqualKHR = 4430,
@@ -2106,6 +2109,7 @@ typedef enum SpvOp_ {
     SpvOpTypeAccelerationStructureNV = 5341,
     SpvOpExecuteCallableNV = 5344,
     SpvOpRayQueryGetClusterIdNV = 5345,
+    SpvOpRayQueryGetIntersectionClusterIdNV = 5345,
     SpvOpHitObjectGetClusterIdNV = 5346,
     SpvOpTypeCooperativeMatrixNV = 5358,
     SpvOpCooperativeMatrixLoadNV = 5359,
@@ -2415,6 +2419,7 @@ typedef enum SpvOp_ {
     SpvOpSubgroup2DBlockStoreINTEL = 6235,
     SpvOpSubgroupMatrixMultiplyAccumulateINTEL = 6237,
     SpvOpBitwiseFunctionINTEL = 6242,
+    SpvOpUntypedVariableLengthArrayINTEL = 6244,
     SpvOpConditionalExtensionINTEL = 6248,
     SpvOpConditionalEntryPointINTEL = 6249,
     SpvOpConditionalCapabilityINTEL = 6250,
@@ -2816,6 +2821,7 @@ inline void SpvHasResultAndType(SpvOp opcode, bool *hasResult, bool *hasResultTy
     case SpvOpUntypedInBoundsPtrAccessChainKHR: *hasResult = true; *hasResultType = true; break;
     case SpvOpUntypedArrayLengthKHR: *hasResult = true; *hasResultType = true; break;
     case SpvOpUntypedPrefetchKHR: *hasResult = false; *hasResultType = false; break;
+    case SpvOpFmaKHR: *hasResult = true; *hasResultType = true; break;
     case SpvOpSubgroupAllKHR: *hasResult = true; *hasResultType = true; break;
     case SpvOpSubgroupAnyKHR: *hasResult = true; *hasResultType = true; break;
     case SpvOpSubgroupAllEqualKHR: *hasResult = true; *hasResultType = true; break;
@@ -2939,7 +2945,7 @@ inline void SpvHasResultAndType(SpvOp opcode, bool *hasResult, bool *hasResultTy
     case SpvOpRayQueryGetIntersectionTriangleVertexPositionsKHR: *hasResult = true; *hasResultType = true; break;
     case SpvOpTypeAccelerationStructureKHR: *hasResult = true; *hasResultType = false; break;
     case SpvOpExecuteCallableNV: *hasResult = false; *hasResultType = false; break;
-    case SpvOpRayQueryGetClusterIdNV: *hasResult = true; *hasResultType = true; break;
+    case SpvOpRayQueryGetIntersectionClusterIdNV: *hasResult = true; *hasResultType = true; break;
     case SpvOpHitObjectGetClusterIdNV: *hasResult = true; *hasResultType = true; break;
     case SpvOpTypeCooperativeMatrixNV: *hasResult = true; *hasResultType = false; break;
     case SpvOpCooperativeMatrixLoadNV: *hasResult = true; *hasResultType = true; break;
@@ -3246,6 +3252,7 @@ inline void SpvHasResultAndType(SpvOp opcode, bool *hasResult, bool *hasResultTy
     case SpvOpSubgroup2DBlockStoreINTEL: *hasResult = false; *hasResultType = false; break;
     case SpvOpSubgroupMatrixMultiplyAccumulateINTEL: *hasResult = true; *hasResultType = true; break;
     case SpvOpBitwiseFunctionINTEL: *hasResult = true; *hasResultType = true; break;
+    case SpvOpUntypedVariableLengthArrayINTEL: *hasResult = true; *hasResultType = true; break;
     case SpvOpConditionalExtensionINTEL: *hasResult = false; *hasResultType = false; break;
     case SpvOpConditionalEntryPointINTEL: *hasResult = false; *hasResultType = false; break;
     case SpvOpConditionalCapabilityINTEL: *hasResult = false; *hasResultType = false; break;
@@ -4211,6 +4218,7 @@ inline const char* SpvCapabilityToString(SpvCapability value) {
     case SpvCapabilityBitInstructions: return "BitInstructions";
     case SpvCapabilityGroupNonUniformRotateKHR: return "GroupNonUniformRotateKHR";
     case SpvCapabilityFloatControls2: return "FloatControls2";
+    case SpvCapabilityFMAKHR: return "FMAKHR";
     case SpvCapabilityAtomicFloat32AddEXT: return "AtomicFloat32AddEXT";
     case SpvCapabilityAtomicFloat64AddEXT: return "AtomicFloat64AddEXT";
     case SpvCapabilityLongCompositesINTEL: return "LongCompositesINTEL";
@@ -4234,6 +4242,7 @@ inline const char* SpvCapabilityToString(SpvCapability value) {
     case SpvCapabilitySubgroup2DBlockTransposeINTEL: return "Subgroup2DBlockTransposeINTEL";
     case SpvCapabilitySubgroupMatrixMultiplyAccumulateINTEL: return "SubgroupMatrixMultiplyAccumulateINTEL";
     case SpvCapabilityTernaryBitwiseFunctionINTEL: return "TernaryBitwiseFunctionINTEL";
+    case SpvCapabilityUntypedVariableLengthArrayINTEL: return "UntypedVariableLengthArrayINTEL";
     case SpvCapabilitySpecConditionalINTEL: return "SpecConditionalINTEL";
     case SpvCapabilityFunctionVariantsINTEL: return "FunctionVariantsINTEL";
     case SpvCapabilityGroupUniformArithmeticKHR: return "GroupUniformArithmeticKHR";
@@ -4805,6 +4814,7 @@ inline const char* SpvOpToString(SpvOp value) {
     case SpvOpUntypedInBoundsPtrAccessChainKHR: return "OpUntypedInBoundsPtrAccessChainKHR";
     case SpvOpUntypedArrayLengthKHR: return "OpUntypedArrayLengthKHR";
     case SpvOpUntypedPrefetchKHR: return "OpUntypedPrefetchKHR";
+    case SpvOpFmaKHR: return "OpFmaKHR";
     case SpvOpSubgroupAllKHR: return "OpSubgroupAllKHR";
     case SpvOpSubgroupAnyKHR: return "OpSubgroupAnyKHR";
     case SpvOpSubgroupAllEqualKHR: return "OpSubgroupAllEqualKHR";
@@ -5235,6 +5245,7 @@ inline const char* SpvOpToString(SpvOp value) {
     case SpvOpSubgroup2DBlockStoreINTEL: return "OpSubgroup2DBlockStoreINTEL";
     case SpvOpSubgroupMatrixMultiplyAccumulateINTEL: return "OpSubgroupMatrixMultiplyAccumulateINTEL";
     case SpvOpBitwiseFunctionINTEL: return "OpBitwiseFunctionINTEL";
+    case SpvOpUntypedVariableLengthArrayINTEL: return "OpUntypedVariableLengthArrayINTEL";
     case SpvOpConditionalExtensionINTEL: return "OpConditionalExtensionINTEL";
     case SpvOpConditionalEntryPointINTEL: return "OpConditionalEntryPointINTEL";
     case SpvOpConditionalCapabilityINTEL: return "OpConditionalCapabilityINTEL";
