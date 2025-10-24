@@ -9,9 +9,6 @@ shaders@point-vertex-id gl_vertexid divisor,Fail
 shaders@point-vertex-id gl_vertexid gl_instanceid divisor,Fail
 shaders@point-vertex-id gl_vertexid gl_instanceid,Fail
 shaders@point-vertex-id gl_vertexid,Fail
-spec@!opengl 1.0@gl-1.0-edgeflag,Fail
-spec@!opengl 1.0@gl-1.0-edgeflag-quads,Fail
-spec@!opengl 1.0@gl-1.0-no-op-paths,Fail
 spec@!opengl 1.0@gl-1.0-user-clip-all-planes,Fail
 spec@!opengl 1.1@point-line-no-cull,Fail
 spec@!opengl 1.1@texwrap formats bordercolor,Fail
@@ -39,8 +36,6 @@ spec@!opengl 1.1@texwrap formats bordercolor@GL_RGB16- border color only,Fail
 spec@!opengl 1.1@texwrap formats bordercolor@GL_RGBA12- border color only,Fail
 spec@!opengl 1.1@texwrap formats bordercolor@GL_RGBA16- border color only,Fail
 spec@!opengl 1.4@gl-1.4-polygon-offset,Fail
-spec@!opengl 2.0@gl-2.0-edgeflag,Fail
-spec@!opengl 2.0@gl-2.0-edgeflag-immediate,Fail
 spec@arb_depth_buffer_float@fbo-generatemipmap-formats,Fail
 spec@arb_depth_buffer_float@fbo-generatemipmap-formats@GL_DEPTH_COMPONENT32F NPOT,Fail
 spec@arb_depth_buffer_float@fbo-generatemipmap-formats@GL_DEPTH_COMPONENT32F,Fail
@@ -304,6 +299,16 @@ spec@nv_image_formats@compiler@declaration-disallow-rgba16-unorm-cube.vert,Fail
 spec@nv_read_depth@read_depth_gles3,Fail
 spec@oes_point_sprite@arb_point_sprite-checkerboard_gles1,Fail
 spec@oes_shader_io_blocks@compiler@layout-location-aliasing.vert,Fail
+
+# A sub-case involving polygon stipple fails because driver doesn't implement
+# stipple
+spec@!opengl 1.0@gl-1.0-no-op-paths,Fail
+
+# Driver is not handling VERT_{ATTRIB,BIT}_EDGEFLAG at all
+spec@!opengl 1.0@gl-1.0-edgeflag,Fail
+spec@!opengl 1.0@gl-1.0-edgeflag-quads,Fail
+spec@!opengl 2.0@gl-2.0-edgeflag,Fail
+spec@!opengl 2.0@gl-2.0-edgeflag-immediate,Fail
 
 # There are two problems here. On one side, hardware do not support
 # different polygon mode for front and back faces. By default we
