@@ -138,7 +138,7 @@ struct vn_semaphore {
        * the current counter value and signaled_counter to ensure async
        * wait order across threads.
        */
-      simple_mtx_t async_wait_mtx;
+      simple_mtx_t counter_mtx;
    } feedback;
 
    bool is_external;

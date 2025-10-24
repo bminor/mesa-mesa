@@ -2044,7 +2044,7 @@ vn_semaphore_feedback_init(struct vn_device *dev,
    vn_feedback_set_counter(slot, initial_value);
 
    simple_mtx_init(&sem->feedback.cmd_mtx, mtx_plain);
-   simple_mtx_init(&sem->feedback.async_wait_mtx, mtx_plain);
+   simple_mtx_init(&sem->feedback.counter_mtx, mtx_plain);
 
    sem->feedback.signaled_counter = initial_value;
    sem->feedback.slot = slot;
@@ -2067,7 +2067,7 @@ vn_semaphore_feedback_fini(struct vn_device *dev, struct vn_semaphore *sem)
       vn_semaphore_feedback_cmd_free(dev, sfb_cmd);
 
    simple_mtx_destroy(&sem->feedback.cmd_mtx);
-   simple_mtx_destroy(&sem->feedback.async_wait_mtx);
+   simple_mtx_destroy(&sem->feedback.counter_mtx);
 
    vn_feedback_pool_free(&dev->feedback_pool, sem->feedback.slot);
 }
@@ -2170,7 +2170,7 @@ vn_GetSemaphoreCounterValue(VkDevice device,
    assert(payload->type == VN_SYNC_TYPE_DEVICE_ONLY);
 
    if (sem->feedback.slot) {
-      simple_mtx_lock(&sem->feedback.async_wait_mtx);
+      simple_mtx_lock(&sem->feedback.counter_mtx);
       const uint64_t counter = vn_feedback_get_counter(sem->feedback.slot);
       if (sem->feedback.signaled_counter < counter) {
          /* When the timeline semaphore feedback slot gets signaled, the real
@@ -2219,7 +2219,7 @@ vn_GetSemaphoreCounterValue(VkDevice device,
 
          sem->feedback.signaled_counter = counter;
       }
-      simple_mtx_unlock(&sem->feedback.async_wait_mtx);
+      simple_mtx_unlock(&sem->feedback.counter_mtx);
 
       *pValue = counter;
       return VK_SUCCESS;
@@ -2240,7 +2240,7 @@ vn_SignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo)
    vn_async_vkSignalSemaphore(dev->primary_ring, device, pSignalInfo);
 
    if (sem->feedback.slot) {
-      simple_mtx_lock(&sem->feedback.async_wait_mtx);
+      simple_mtx_lock(&sem->feedback.counter_mtx);
 
       vn_feedback_set_counter(sem->feedback.slot, pSignalInfo->value);
       /* Update async counters. Since we're signaling, we're aligned with
@@ -2248,7 +2248,7 @@ vn_SignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo)
        */
       sem->feedback.signaled_counter = pSignalInfo->value;
 
-      simple_mtx_unlock(&sem->feedback.async_wait_mtx);
+      simple_mtx_unlock(&sem->feedback.counter_mtx);
    }
 
    return VK_SUCCESS;
