@@ -414,7 +414,7 @@
         "description": "hk: Allocate the temp tile buffer in copy_image_to_image_cpu",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5bc828481630147575348b66677edaade9e891e6",
         "notes": null
