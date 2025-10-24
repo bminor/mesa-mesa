@@ -1664,11 +1664,6 @@ hk_copy_image_to_image_cpu(struct hk_device *device, struct hk_image *src_image,
             &device->physical_device->ubwc_config);
 #endif
       } else {
-         /* Work tile-by-tile, holding the unswizzled tile in a temporary
-          * buffer.
-          */
-         char temp_tile[16384];
-
          unsigned src_level = info->srcSubresource.mipLevel;
          unsigned dst_level = info->dstSubresource.mipLevel;
          uint32_t block_width = src_layout->tilesize_el[src_level].width_el;
@@ -1682,6 +1677,12 @@ hk_copy_image_to_image_cpu(struct hk_device *device, struct hk_image *src_image,
          }
 
          uint32_t temp_pitch = block_width * src_block_B;
+         size_t temp_tile_size = temp_pitch * (src_offset.y + extent.height);
+
+         /* Work tile-by-tile, holding the unswizzled tile in a temporary
+          * buffer.
+          */
+         char *temp_tile = malloc(temp_tile_size);
 
          for (unsigned by = src_offset.y / block_height;
               by * block_height < src_offset.y + extent.height; by++) {
@@ -1698,14 +1699,14 @@ hk_copy_image_to_image_cpu(struct hk_device *device, struct hk_image *src_image,
                   MIN2((bx + 1) * block_width, src_offset.x + extent.width) -
                   src_x_start;
 
-               assert(height * temp_pitch <= ARRAY_SIZE(temp_tile));
-
                ail_detile((void *)src, temp_tile, src_layout, src_level,
                           temp_pitch, src_x_start, src_y_start, width, height);
                ail_tile(dst, temp_tile, dst_layout, dst_level, temp_pitch,
                         dst_x_start, dst_y_start, width, height);
             }
          }
+
+         free(temp_tile);
       }
    }
 }
