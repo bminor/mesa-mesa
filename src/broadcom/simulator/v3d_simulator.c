@@ -123,6 +123,9 @@ struct v3d_simulator_file {
 
         /** For specific gpus, use their create ioctl. Otherwise use dumb bo. */
         enum gem_type gem_type;
+
+        /** The stride alignment required for raster textures. */
+        uint32_t raster_stride_align;
 };
 
 /** Wrapper for drm_v3d_bo tracking the simulator-specific state. */
@@ -1161,6 +1164,13 @@ v3d_simulator_get_mem_free(void)
    return total_free;
 }
 
+uint32_t
+v3d_simulator_get_raster_stride_align(int fd)
+{
+        struct v3d_simulator_file *file = v3d_get_simulator_file_for_fd(fd);
+        return file->raster_stride_align;
+}
+
 static void
 v3d_simulator_init_global()
 {
@@ -1218,6 +1228,12 @@ v3d_simulator_init(int fd)
                 sim_file->gem_type = GEM_ASAHI;
         else
                 sim_file->gem_type = GEM_DUMB;
+
+        if (sim_file->gem_type == GEM_AMDGPU)
+                sim_file->raster_stride_align = 256;
+        else
+                sim_file->raster_stride_align = 1;
+
         drmFreeVersion(version);
 
         sim_file->bo_map =
