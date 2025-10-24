@@ -603,7 +603,7 @@ brw_nir_frag_convert_attrs_prim_to_vert_indirect(struct nir_shader *nir,
                   brw_nir_vertex_attribute_offset(b, attr_idx, devinfo),
                   per_primitive_stride);
             nir_def *value =
-               nir_load_attribute_payload_intel(b, per_vertex_offset);
+               nir_load_attribute_payload_intel(b, 1, 32, per_vertex_offset);
             /* Write back the values into the per-primitive location */
             nir_store_per_primitive_payload_intel(
                b, value, .base = location, .component = c);

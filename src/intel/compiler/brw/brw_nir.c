@@ -983,7 +983,7 @@ brw_nir_lower_fs_inputs(nir_shader *nir,
          nir_ieq_imm(b, index, INTEL_MSAA_FLAG_PRIMITIVE_ID_INDEX_MESH),
          nir_imm_int(b, 0), per_vertex_offset);
       indirect_primitive_id =
-         nir_load_attribute_payload_intel(b, attribute_offset);
+         nir_load_attribute_payload_intel(b, 1, 32, attribute_offset);
    }
 
    nir_foreach_shader_in_variable(var, nir) {

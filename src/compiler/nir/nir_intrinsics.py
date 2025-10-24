@@ -2423,11 +2423,9 @@ image("store_raw_intel", src_comp=[1, 0])
 # Maximum number of polygons processed in the fragment shader
 system_value("max_polygon_intel", 1, bit_sizes=[32])
 
-# Read the attribute thread payload at a given offset
+# Read the attribute thread payload at a given byte offset
 # src[] = { offset }
-intrinsic("load_attribute_payload_intel", dest_comp=1, bit_sizes=[32],
-          src_comp=[1],
-          flags=[CAN_ELIMINATE, CAN_REORDER])
+load("attribute_payload_intel", [1], flags=[CAN_ELIMINATE, CAN_REORDER])
 
 # Populate the per-primitive payload at an offset
 # src[] = { value, offset }

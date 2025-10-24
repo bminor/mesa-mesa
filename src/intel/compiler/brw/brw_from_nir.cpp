@@ -4528,14 +4528,6 @@ brw_from_nir_emit_fs_intrinsic(nir_to_brw_state &ntb,
               brw_dynamic_per_primitive_remap(brw_wm_prog_data(s.prog_data)));
       break;
 
-   case nir_intrinsic_load_attribute_payload_intel: {
-      const brw_reg offset = retype(
-         bld.emit_uniformize(get_nir_src(ntb, instr->src[0], 0)),
-         BRW_TYPE_UD);
-      bld.emit(SHADER_OPCODE_LOAD_ATTRIBUTE_PAYLOAD, retype(dest, BRW_TYPE_UD), offset);
-      break;
-   }
-
    default:
       brw_from_nir_emit_intrinsic(ntb, bld, instr);
       break;
@@ -5942,6 +5934,29 @@ brw_from_nir_emit_intrinsic(nir_to_brw_state &ntb,
    case nir_intrinsic_store_scratch:
       brw_from_nir_emit_memory_access(ntb, bld, xbld, instr);
       break;
+
+   case nir_intrinsic_load_attribute_payload_intel: {
+      assert(instr->def.bit_size == 32);
+
+      if (nir_src_is_const(instr->src[0])) {
+         const brw_reg src = byte_offset(brw_attr_reg(0, dest.type),
+                                         nir_src_as_uint(instr->src[0]));
+         brw_reg comps[NIR_MAX_VEC_COMPONENTS];
+         for (unsigned i = 0; i < instr->num_components; i++) {
+            comps[i] = component(src, i);
+         }
+         bld.VEC(dest, comps, instr->num_components);
+      } else {
+         assert(instr->def.num_components == 1);
+
+         const brw_reg offset = retype(
+            bld.emit_uniformize(get_nir_src(ntb, instr->src[0], 0)),
+            BRW_TYPE_UD);
+         bld.emit(SHADER_OPCODE_LOAD_ATTRIBUTE_PAYLOAD,
+                  retype(dest, BRW_TYPE_UD), offset);
+      }
+      break;
+   }
 
    case nir_intrinsic_load_urb_vec4_intel: {
       assert(devinfo->ver < 20);
