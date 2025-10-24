@@ -810,7 +810,6 @@ vn_feedback_cmd_pools_init(struct vn_device *dev)
 {
    const VkAllocationCallbacks *alloc = &dev->base.vk.alloc;
    VkDevice dev_handle = vn_device_to_handle(dev);
-   struct vn_physical_device *physical_dev = dev->physical_device;
    struct vn_feedback_cmd_pool *fb_cmd_pools;
    VkCommandPoolCreateInfo info = {
       .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
@@ -833,16 +832,8 @@ vn_feedback_cmd_pools_init(struct vn_device *dev)
    for (uint32_t i = 0; i < dev->queue_family_count; i++) {
       VkResult result;
 
-      /* Feedback requires transfer capability, so we must skip feedback cmd
-       * pool initialization on incompatible queue families. Meanwhile, use
-       * pool_handle for all validity check needed.
-       */
-      assert(dev->queue_families[i] < physical_dev->queue_family_count);
-      const struct VkQueueFamilyProperties2 *props =
-         &physical_dev->queue_family_properties[dev->queue_families[i]];
-      const VkQueueFlags fb_req_flags =
-         VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
-      if (!(props->queueFamilyProperties.queueFlags & fb_req_flags)) {
+      if (!vn_queue_family_can_feedback(dev->physical_device,
+                                        dev->queue_families[i])) {
          fb_cmd_pools[i].pool_handle = VK_NULL_HANDLE;
          continue;
       }
