@@ -151,16 +151,24 @@ anv_image_init_from_gralloc(struct anv_device *device,
                        "failed to import dma-buf from VkNativeBufferANDROID");
    }
 
+   VkImageDrmFormatModifierExplicitCreateInfoEXT mod_info;
    enum isl_tiling tiling;
    if (vk_android_get_ugralloc()) {
-      struct u_gralloc_buffer_handle gr_handle = {
-         .handle = gralloc_info->handle,
-         .hal_format = gralloc_info->format,
-         .pixel_stride = gralloc_info->stride,
-      };
-      result = anv_android_get_tiling(device, &gr_handle, &tiling);
+      VkSubresourceLayout layouts[ISL_MODIFIER_MAX_PLANES];
+      result = vk_android_get_ahb_layout(gralloc_info->ahb,
+                                         &mod_info,
+                                         layouts,
+                                         ISL_MODIFIER_MAX_PLANES);
       if (result != VK_SUCCESS)
          return result;
+      const struct isl_drm_modifier_info *isl_mod_info =
+         isl_drm_modifier_get_info(mod_info.drmFormatModifier);
+      if (!isl_mod_info) {
+         return vk_errorf(device, VK_ERROR_INVALID_EXTERNAL_HANDLE,
+                          "invalid modifier from gralloc info 0x%"PRIx64"",
+                          mod_info.drmFormatModifier);
+      }
+      tiling = isl_mod_info->tiling;
    } else {
       /* Fallback to get_tiling API. */
       result = anv_device_get_bo_tiling(device, bo, &tiling);

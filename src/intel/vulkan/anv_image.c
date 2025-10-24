@@ -2419,22 +2419,23 @@ resolve_anb_image(struct anv_device *device,
    }
 
    /* Check tiling. */
-   enum isl_tiling tiling;
-   struct u_gralloc_buffer_handle gr_handle = {
-      .handle = gralloc_info->handle,
-      .hal_format = gralloc_info->format,
-      .pixel_stride = gralloc_info->stride,
-   };
-   result = anv_android_get_tiling(device, &gr_handle, &tiling);
-   assert(result == VK_SUCCESS);
-
-   isl_tiling_flags_t isl_tiling_flags = (1u << tiling);
+   VkImageDrmFormatModifierExplicitCreateInfoEXT mod_info;
+   VkSubresourceLayout layouts[ISL_MODIFIER_MAX_PLANES];
+   result = vk_android_get_ahb_layout(gralloc_info->ahb,
+                                      &mod_info,
+                                      layouts,
+                                      ISL_MODIFIER_MAX_PLANES);
+   if (result != VK_SUCCESS)
+      return result;
+   const struct isl_drm_modifier_info *isl_mod_info =
+      isl_drm_modifier_get_info(mod_info.drmFormatModifier);
+   assert(isl_mod_info);
 
    /* Now we are able to fill anv_image fields properly and create
     * isl_surface for it.
     */
    result = add_all_surfaces_implicit_layout(device, image, NULL, gralloc_info->stride,
-                                             isl_tiling_flags,
+                                             1u << isl_mod_info->tiling,
                                              ISL_SURF_USAGE_DISABLE_AUX_BIT);
    if (result != VK_SUCCESS) {
       anv_device_release_bo(device, bo);
