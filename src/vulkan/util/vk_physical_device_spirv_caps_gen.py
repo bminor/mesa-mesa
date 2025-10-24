@@ -60,6 +60,9 @@ NON_EXISTANT_CAPS = [
 
     # Exclude the one beta cap.
     'ShaderEnqueueAMDX',
+
+    # Doesn't exist.
+    'Shader64BitIndexingEXT',
 ]
 
 def process_enable(enab):
