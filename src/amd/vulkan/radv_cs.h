@@ -40,20 +40,6 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
 
 #define radeon_emit_array(values, num) ac_cmdbuf_emit_array(values, num)
 
-/* Packet building helpers. Don't use directly. */
-#define __radeon_set_reg_seq(reg, num, idx, prefix_name, packet, reset_filter_cam)                                     \
-   do {                                                                                                                \
-      assert((reg) >= prefix_name##_REG_OFFSET && (reg) < prefix_name##_REG_END);                                      \
-      radeon_emit(PKT3(packet, num, 0) | PKT3_RESET_FILTER_CAM_S(reset_filter_cam));                                   \
-      radeon_emit((((reg) - prefix_name##_REG_OFFSET) >> 2) | ((idx) << 28));                                          \
-   } while (0)
-
-#define __radeon_set_reg(reg, idx, value, prefix_name, packet)                                                         \
-   do {                                                                                                                \
-      __radeon_set_reg_seq(reg, 1, idx, prefix_name, packet, 0);                                                       \
-      radeon_emit(value);                                                                                              \
-   } while (0)
-
 /* Packet building helpers for CONFIG registers. */
 #define radeon_set_config_reg_seq(reg, num) ac_cmdbuf_set_config_reg_seq(reg, num)
 
@@ -150,28 +136,14 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
 
 #define radeon_set_sh_reg(reg, value) ac_cmdbuf_set_sh_reg(reg, value)
 
-#define radeon_set_sh_reg_idx(info, reg, idx, value)                                                                   \
-   do {                                                                                                                \
-      assert((idx));                                                                                                   \
-      unsigned __opcode = PKT3_SET_SH_REG_INDEX;                                                                       \
-      if ((info)->gfx_level < GFX10)                                                                                   \
-         __opcode = PKT3_SET_SH_REG;                                                                                   \
-      __radeon_set_reg(reg, idx, value, SI_SH, __opcode);                                                              \
-   } while (0)
+#define radeon_set_sh_reg_idx(info, reg, idx, value) ac_cmdbuf_set_sh_reg_idx(info, reg, idx, value)
 
 /* Packet building helpers for UCONFIG registers. */
 #define radeon_set_uconfig_reg_seq(reg, num) ac_cmdbuf_set_uconfig_reg_seq(reg, num)
 
 #define radeon_set_uconfig_reg(reg, value) ac_cmdbuf_set_uconfig_reg(reg, value)
 
-#define radeon_set_uconfig_reg_idx(info, reg, idx, value)                                                              \
-   do {                                                                                                                \
-      assert((idx));                                                                                                   \
-      unsigned __opcode = PKT3_SET_UCONFIG_REG_INDEX;                                                                  \
-      if ((info)->gfx_level < GFX9 || ((info)->gfx_level == GFX9 && (info)->me_fw_version < 26))                       \
-         __opcode = PKT3_SET_UCONFIG_REG;                                                                              \
-      __radeon_set_reg(reg, idx, value, CIK_UCONFIG, __opcode);                                                        \
-   } while (0)
+#define radeon_set_uconfig_reg_idx(info, reg, idx, value) ac_cmdbuf_set_uconfig_reg_idx(info, reg, idx, value)
 
 #define radeon_set_uconfig_perfctr_reg_seq(gfx_level, ip_type, reg, num)                                               \
    ac_cmdbuf_set_uconfig_perfctr_reg_seq(gfx_level, ip_type, reg, num)
@@ -185,18 +157,9 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
 
 #define radeon_event_write(event_type) ac_cmdbuf_event_write(event_type)
 
-#define radeon_emit_32bit_pointer(sh_offset, va, info)                                                                 \
-   do {                                                                                                                \
-      assert((va) == 0 || ((va) >> 32) == (info)->address32_hi);                                                       \
-      radeon_set_sh_reg(sh_offset, va);                                                                                \
-   } while (0)
+#define radeon_emit_32bit_pointer(sh_offset, va, info) ac_cmdbuf_emit_32bit_pointer(sh_offset, va, info)
 
-#define radeon_emit_64bit_pointer(sh_offset, va)                                                                       \
-   do {                                                                                                                \
-      radeon_set_sh_reg_seq(sh_offset, 2);                                                                             \
-      radeon_emit(va);                                                                                                 \
-      radeon_emit(va >> 32);                                                                                           \
-   } while (0)
+#define radeon_emit_64bit_pointer(sh_offset, va) ac_cmdbuf_emit_64bit_pointer(sh_offset, va)
 
 /* GFX12 generic packet building helpers for PAIRS packets. Don't use these directly. */
 

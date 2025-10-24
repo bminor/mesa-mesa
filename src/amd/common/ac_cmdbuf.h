@@ -320,6 +320,14 @@ struct ac_tracked_regs {
 
 #define ac_cmdbuf_set_uconfig_reg(reg, value) __ac_cmdbuf_set_reg(reg, 0, value, CIK_UCONFIG, PKT3_SET_UCONFIG_REG)
 
+#define ac_cmdbuf_set_uconfig_reg_idx(info, reg, idx, value)                                       \
+   do {                                                                                            \
+      assert((idx));                                                                               \
+      unsigned __opcode = PKT3_SET_UCONFIG_REG_INDEX;                                              \
+      if ((info)->gfx_level < GFX9 || ((info)->gfx_level == GFX9 && (info)->me_fw_version < 26))   \
+         __opcode = PKT3_SET_UCONFIG_REG;                                                          \
+      __ac_cmdbuf_set_reg(reg, idx, value, CIK_UCONFIG, __opcode);                                 \
+   } while (0)
 /*
  * On GFX10, there is a bug with the ME implementation of its content
  * addressable memory (CAM), that means that it can skip register writes due
@@ -349,6 +357,28 @@ struct ac_tracked_regs {
 #define ac_cmdbuf_set_sh_reg_seq(reg, num) __ac_cmdbuf_set_reg_seq(reg, num, 0, SI_SH, PKT3_SET_SH_REG, 0)
 
 #define ac_cmdbuf_set_sh_reg(reg, value) __ac_cmdbuf_set_reg(reg, 0, value, SI_SH, PKT3_SET_SH_REG)
+
+#define ac_cmdbuf_set_sh_reg_idx(info, reg, idx, value)        \
+   do {                                                        \
+      assert((idx));                                           \
+      unsigned __opcode = PKT3_SET_SH_REG_INDEX;               \
+      if ((info)->gfx_level < GFX10)                           \
+         __opcode = PKT3_SET_SH_REG;                           \
+      __ac_cmdbuf_set_reg(reg, idx, value, SI_SH, __opcode);   \
+   } while (0)
+
+#define ac_cmdbuf_emit_32bit_pointer(sh_offset, va, info)         \
+   do {                                                           \
+      assert((va) == 0 || ((va) >> 32) == (info)->address32_hi);  \
+      ac_cmdbuf_set_sh_reg(sh_offset, va);                        \
+   } while (0)
+
+#define ac_cmdbuf_emit_64bit_pointer(sh_offset, va)   \
+   do {                                               \
+      ac_cmdbuf_set_sh_reg_seq(sh_offset, 2);         \
+      ac_cmdbuf_emit(va);                             \
+      ac_cmdbuf_emit(va >> 32);                       \
+   } while (0)
 
 #define ac_cmdbuf_event_write_predicate(event_type, predicate)                               \
    do {                                                                                      \
