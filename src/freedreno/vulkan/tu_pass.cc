@@ -885,7 +885,7 @@ tu_subpass_use_attachment(struct tu_render_pass *pass, int i, uint32_t a, const 
 
    att->gmem = true;
    update_samples(subpass, pCreateInfo->pAttachments[a].samples);
-   att->clear_views |= subpass->multiview_mask;
+   att->used_views |= subpass->multiview_mask;
 
    /* Loads and clears are emitted at the start of the subpass that needs them. */
    att->first_subpass_idx = MIN2(i, att->first_subpass_idx);
@@ -1237,7 +1237,7 @@ tu_setup_dynamic_render_pass(struct tu_cmd_buffer *cmd_buffer,
       VK_FROM_HANDLE(tu_image_view, view, att_info->imageView);
       tu_setup_dynamic_attachment(att, view);
       att->gmem = true;
-      att->clear_views = info->viewMask;
+      att->used_views = info->viewMask;
       attachment_set_ops(device, att, att_info->loadOp,
                          VK_ATTACHMENT_LOAD_OP_DONT_CARE, att_info->storeOp,
                          VK_ATTACHMENT_STORE_OP_DONT_CARE);
@@ -1281,7 +1281,7 @@ tu_setup_dynamic_render_pass(struct tu_cmd_buffer *cmd_buffer,
          struct tu_render_pass_attachment *att = &pass->attachments[a];
          tu_setup_dynamic_attachment(att, view);
          att->gmem = true;
-         att->clear_views = info->viewMask;
+         att->used_views = info->viewMask;
          subpass->depth_stencil_attachment.attachment = a++;
          subpass->input_attachments[0].attachment =
             subpass->depth_stencil_attachment.attachment;
