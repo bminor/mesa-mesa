@@ -46,7 +46,7 @@ ci-tron-vc4-rpi3-gl-piglit-full:arm64:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 20
     DEQP_SUITE: broadcom-rpi3-piglit-full
 
-vc4-rpi3-gl:arm32:
+.vc4-rpi3-gl:arm32:
   extends:
     - .igalia-bcm2837-rpi-3-b
     - .broadcom-test:arm32-gl
@@ -204,7 +204,7 @@ v3d-rpi4-traces:arm64:
   variables:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 5
 
-v3d-rpi4-gl:arm32:
+.v3d-rpi4-gl:arm32:
   extends:
     - .igalia-bcm2711-rpi-4
     - .broadcom-test:arm32-gl
