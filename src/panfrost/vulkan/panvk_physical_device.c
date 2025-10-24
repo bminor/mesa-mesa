@@ -136,8 +136,8 @@ get_drm_device_ids(struct panvk_physical_device *device,
 }
 
 static void
-get_cache_sha1(struct panvk_physical_device *device,
-               const struct panvk_instance *instance)
+init_shader_caches(struct panvk_physical_device *device,
+                   const struct panvk_instance *instance)
 {
    struct mesa_sha1 sha_ctx;
    _mesa_sha1_init(&sha_ctx);
@@ -153,12 +153,7 @@ get_cache_sha1(struct panvk_physical_device *device,
 
    STATIC_ASSERT(VK_UUID_SIZE <= SHA1_DIGEST_LENGTH);
    memcpy(device->cache_uuid, sha, VK_UUID_SIZE);
-}
 
-static void
-init_disk_cache(struct panvk_physical_device *device,
-                const struct panvk_instance *instance)
-{
 #ifdef ENABLE_SHADER_CACHE
    char renderer[17];
    ASSERTED int len = snprintf(renderer, sizeof(renderer), "panvk_0x%08x",
@@ -336,7 +331,7 @@ panvk_physical_device_init(struct panvk_physical_device *device,
    memset(device->name, 0, sizeof(device->name));
    sprintf(device->name, "%s", device->model->name);
 
-   get_cache_sha1(device, instance);
+   init_shader_caches(device, instance);
 
    result = get_core_masks(device, instance);
    if (result != VK_SUCCESS)
@@ -382,8 +377,6 @@ panvk_physical_device_init(struct panvk_physical_device *device,
       goto fail;
 
    device->vk.supported_sync_types = device->sync_types;
-
-   init_disk_cache(device, instance);
 
    result = panvk_wsi_init(device);
    if (result != VK_SUCCESS)
