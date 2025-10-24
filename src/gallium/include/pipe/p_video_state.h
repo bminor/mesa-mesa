@@ -825,6 +825,7 @@ struct pipe_h264_enc_seq_param
       uint32_t video_full_range_flag : 1;
       uint32_t direct_8x8_inference_flag : 1;
       uint32_t gaps_in_frame_num_value_allowed_flag : 1;
+      uint32_t delta_pic_order_always_zero_flag : 1;
    };
    unsigned profile_idc;
    unsigned enc_constraint_set_flags;
@@ -877,6 +878,10 @@ struct pipe_h264_enc_seq_param
    uint32_t max_num_ref_frames;
    uint32_t pic_width_in_mbs_minus1;
    uint32_t pic_height_in_map_units_minus1;
+   int32_t offset_for_non_ref_pic;
+   int32_t offset_for_top_to_bottom_field;
+   uint32_t num_ref_frames_in_pic_order_cnt_cycle;
+   int32_t offset_for_ref_frame[256];
 };
 
 struct pipe_h264_ref_list_mod_entry
@@ -925,6 +930,7 @@ struct pipe_h264_enc_slice_param
    uint8_t disable_deblocking_filter_idc;
    int32_t slice_alpha_c0_offset_div2;
    int32_t slice_beta_offset_div2;
+   int32_t delta_pic_order_cnt0;
 };
 
 struct pipe_h264_enc_dpb_entry

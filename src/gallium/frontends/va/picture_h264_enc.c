@@ -450,6 +450,9 @@ static void parseEncSliceParamsH264(vlVaContext *context,
    if (seq->pic_order_cnt_type == 0)
       slice->pic_order_cnt_lsb = vl_rbsp_u(rbsp, seq->log2_max_pic_order_cnt_lsb_minus4 + 4);
 
+   if (seq->pic_order_cnt_type == 1 && !seq->delta_pic_order_always_zero_flag)
+      slice->delta_pic_order_cnt0 = vl_rbsp_se(rbsp);
+
    if (pic->redundant_pic_cnt_present_flag)
       slice->redundant_pic_cnt = vl_rbsp_ue(rbsp);
 
@@ -581,7 +584,7 @@ static void parseEncHrdParamsH264(struct vl_rbsp *rbsp, pipe_h264_enc_hrd_params
 
 static void parseEncSpsParamsH264(vlVaContext *context, struct vl_rbsp *rbsp)
 {
-   unsigned i, profile_idc, num_ref_frames_in_pic_order_cnt_cycle;
+   unsigned i, profile_idc;
 
    context->desc.h264enc.seq.profile_idc = vl_rbsp_u(rbsp, 8);
    context->desc.h264enc.seq.enc_constraint_set_flags = vl_rbsp_u(rbsp, 6);
@@ -616,12 +619,12 @@ static void parseEncSpsParamsH264(vlVaContext *context, struct vl_rbsp *rbsp)
    if (context->desc.h264enc.seq.pic_order_cnt_type == 0)
       context->desc.h264enc.seq.log2_max_pic_order_cnt_lsb_minus4 = vl_rbsp_ue(rbsp);
    else if (context->desc.h264enc.seq.pic_order_cnt_type == 1) {
-      vl_rbsp_u(rbsp, 1); /* delta_pic_order_always_zero_flag */
-      vl_rbsp_se(rbsp); /* offset_for_non_ref_pic */
-      vl_rbsp_se(rbsp); /* offset_for_top_to_bottom_field */
-      num_ref_frames_in_pic_order_cnt_cycle = vl_rbsp_ue(rbsp);
-      for (i = 0; i < num_ref_frames_in_pic_order_cnt_cycle; ++i)
-         vl_rbsp_se(rbsp); /* offset_for_ref_frame[i] */
+      context->desc.h264enc.seq.delta_pic_order_always_zero_flag = vl_rbsp_u(rbsp, 1);
+      context->desc.h264enc.seq.offset_for_non_ref_pic = vl_rbsp_se(rbsp);
+      context->desc.h264enc.seq.offset_for_top_to_bottom_field = vl_rbsp_se(rbsp);
+      context->desc.h264enc.seq.num_ref_frames_in_pic_order_cnt_cycle = vl_rbsp_ue(rbsp);
+      for (i = 0; i < context->desc.h264enc.seq.num_ref_frames_in_pic_order_cnt_cycle; ++i)
+         context->desc.h264enc.seq.offset_for_ref_frame[i] = vl_rbsp_se(rbsp);
    }
 
    context->desc.h264enc.seq.max_num_ref_frames = vl_rbsp_ue(rbsp);
