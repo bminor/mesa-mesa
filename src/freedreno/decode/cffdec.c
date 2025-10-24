@@ -875,6 +875,15 @@ cffdec_init(const struct cffdec_options *_options)
    default:
       errx(-1, "unsupported generation: %u", options->info->chip);
    }
+
+   internal_lua_pkt_handler_load();
+   internal_lua_pkt_handler_init_rnn(rnn);
+}
+
+void
+cffdec_finish(void)
+{
+   internal_lua_pkt_handler_finish();
 }
 
 const char *

@@ -112,6 +112,7 @@ uint32_t * parse_cp_indirect(uint32_t *dwords, uint32_t sizedwords,
                              uint64_t *ibaddr, uint32_t *ibsize);
 void reset_regs(void);
 void cffdec_init(const struct cffdec_options *options);
+void cffdec_finish(void);
 void dump_register_val(struct regacc *r, int level);
 void dump_commands(uint32_t *dwords, uint32_t sizedwords, int level);
 

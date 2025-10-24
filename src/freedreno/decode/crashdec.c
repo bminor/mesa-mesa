@@ -20,6 +20,7 @@
 
 
 #include "crashdec.h"
+#include "cffdec.h"
 
 static FILE *in;
 bool verbose;
@@ -1187,6 +1188,8 @@ cleanup(void)
    if (interactive) {
       pager_close();
    }
+
+   cffdec_finish();
 }
 
 int

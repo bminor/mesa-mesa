@@ -5,6 +5,13 @@ if with_tests
   diff = find_program('diff')
 endif
 
+cffdump_pkt_handler_h = custom_target(
+  'cffdump-pkt-handler.h',
+  input : [files_xxd, 'cffdump-pkt-handler.lua'],
+  output : 'cffdump-pkt-handler.h',
+  command : [prog_python, '@INPUT@', '@OUTPUT@', '-n', 'cffdump_pkt_handler_lua_src'],
+)
+
 # Shared cmdstream decoding:
 libfreedreno_cffdec = static_library(
   'freedreno_cffdec',
@@ -17,7 +24,10 @@ libfreedreno_cffdec = static_library(
     'pager.h',
     'rnnutil.c',
     'rnnutil.h',
+    'script.c',
+    'script.h',
     'util.h',
+    cffdump_pkt_handler_h,
   ],
   include_directories: [
     inc_freedreno,
@@ -27,7 +37,9 @@ libfreedreno_cffdec = static_library(
   ],
   c_args : [ no_override_init_args ],
   gnu_symbol_visibility: 'hidden',
-  dependencies: [],
+  dependencies: [
+    dep_lua,
+  ],
   link_with: [
     libfreedreno_rnn,
     libfreedreno_ir2,  # for disasm_a2xx
@@ -152,8 +164,6 @@ if dep_lua.found() and dep_libarchive.found()
     'cffdump',
     [
       'cffdump.c',
-      'script.c',
-      'script.h'
     ],
     include_directories: [
       inc_freedreno,
@@ -169,6 +179,32 @@ if dep_lua.found() and dep_libarchive.found()
     link_with: [
       libfreedreno_cffdec,
       libfreedreno_io,
+    ],
+    build_by_default: with_tools.contains('freedreno'),
+    install: install_fd_decode_tools,
+  )
+
+  crashdec = executable(
+    'crashdec',
+    [
+      'crashdec.c',
+      'crashdec.h',
+      'crashdec-hfi.c',
+      'crashdec-mempool.c',
+      'crashdec-prefetch.c',
+    ],
+    include_directories: [
+      inc_freedreno,
+      inc_freedreno_rnn,
+      inc_include,
+      inc_src,
+    ],
+    gnu_symbol_visibility: 'hidden',
+    dependencies: [
+      dep_lua,
+    ],
+    link_with: [
+      libfreedreno_cffdec,
     ],
     build_by_default: with_tools.contains('freedreno'),
     install: install_fd_decode_tools,
@@ -208,30 +244,6 @@ if dep_lua.found() and dep_libarchive.found()
 else
   warning('lua or libarchive not found, not building cffdump')
 endif
-
-crashdec = executable(
-  'crashdec',
-  [
-    'crashdec.c',
-    'crashdec.h',
-    'crashdec-hfi.c',
-    'crashdec-mempool.c',
-    'crashdec-prefetch.c',
-  ],
-  include_directories: [
-    inc_freedreno,
-    inc_freedreno_rnn,
-    inc_include,
-    inc_src,
-  ],
-  gnu_symbol_visibility: 'hidden',
-  dependencies: [],
-  link_with: [
-    libfreedreno_cffdec,
-  ],
-  build_by_default: with_tools.contains('freedreno'),
-  install: install_fd_decode_tools,
-)
 
 dumpregs = executable(
   'dumpregs',
