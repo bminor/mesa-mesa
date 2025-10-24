@@ -69,6 +69,7 @@ ci-tron-vc4-rpi3-gl:arm32:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 20
     DEQP_SUITE: broadcom-rpi3-gl-arm32
 
+# ASan fails when running on rpi3
 .vc4-rpi3-gl-asan:arm64:
   extends:
     - .igalia-bcm2837-rpi-3-b
@@ -80,6 +81,7 @@ ci-tron-vc4-rpi3-gl:arm32:
     DEQP_SUITE: broadcom-rpi3-gl-asan
     DEQP_FRACTION: 5
 
+# ASan fails when running on rpi3
 .ci-tron-vc4-rpi3-gl-asan:arm64:
   extends:
     - .ci-tron-arm64-test-asan-gl
@@ -104,7 +106,7 @@ vc4-rpi3-gl-ubsan:arm64:
     DEQP_SUITE: broadcom-rpi3-gl-ubsan
     DEQP_FRACTION: 2
 
-.ci-tron-vc4-rpi3-gl-ubsan:arm64:
+ci-tron-vc4-rpi3-gl-ubsan:arm64:
   extends:
     - .ci-tron-arm64-test-ubsan-gl
     - .ci-tron-broadcom-rpi3:arm64
@@ -226,6 +228,7 @@ ci-tron-v3d-rpi4-gl:arm32:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 30
     DEQP_SUITE: broadcom-rpi4-gl-arm32
 
+# ASan fails when running on rpi4
 .v3d-rpi4-gl-asan:arm64:
   extends:
     - .igalia-bcm2711-rpi-4
@@ -238,6 +241,7 @@ ci-tron-v3d-rpi4-gl:arm32:
     # FIXME: set to 9 once the new failures are investigated
     DEQP_FRACTION: 30
 
+# ASan fails when running on rpi4
 .ci-tron-v3d-rpi4-gl-asan:arm64:
   extends:
     - .ci-tron-arm64-test-asan-gl
@@ -263,7 +267,7 @@ v3d-rpi4-gl-ubsan:arm64:
     DEQP_SUITE: broadcom-rpi4-gl-ubsan
     DEQP_FRACTION: 6
 
-.ci-tron-v3d-rpi4-gl-ubsan:arm64:
+ci-tron-v3d-rpi4-gl-ubsan:arm64:
   extends:
     - .ci-tron-arm64-test-ubsan-gl
     - .ci-tron-broadcom-rpi4:arm64
@@ -329,6 +333,7 @@ v3dv-rpi4-vk-full:arm64:
     DEQP_SUITE: broadcom-rpi4-vk
     DEQP_FRACTION: 1
 
+# ASan fails when running on rpi4
 .v3dv-rpi4-vk-asan:arm64:
   extends:
     - .igalia-bcm2711-rpi-4
@@ -340,6 +345,7 @@ v3dv-rpi4-vk-full:arm64:
     DEQP_SUITE: broadcom-rpi4-vk-asan
     DEQP_FRACTION: 200
 
+# ASan fails when running on rpi4
 .ci-tron-v3dv-rpi4-vk-asan:arm64:
   extends:
     - .ci-tron-arm64-test-asan-vk
@@ -364,7 +370,7 @@ v3dv-rpi4-vk-ubsan:arm64:
     DEQP_SUITE: broadcom-rpi4-vk-ubsan
     DEQP_FRACTION: 200
 
-.ci-tron-v3d-rpi4-vk-ubsan:arm64:
+ci-tron-v3d-rpi4-vk-ubsan:arm64:
   extends:
     - .ci-tron-arm64-test-ubsan-vk
     - .ci-tron-broadcom-rpi4:arm64
