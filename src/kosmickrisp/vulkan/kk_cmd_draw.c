@@ -937,12 +937,17 @@ kk_CmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer _buffer,
    VK_FROM_HANDLE(kk_cmd_buffer, cmd, commandBuffer);
    VK_FROM_HANDLE(kk_buffer, buffer, _buffer);
 
-   kk_flush_draw_state(cmd);
    mtl_render_encoder *enc = kk_render_encoder(cmd);
 
-   /* Metal does not support triangle fans */
-   bool requires_unroll = cmd->state.gfx.prim == MESA_PRIM_TRIANGLE_FAN;
    for (uint32_t i = 0u; i < drawCount; ++i, offset += stride) {
+      cmd->state.gfx.descriptors.root_dirty = true;
+      cmd->state.gfx.descriptors.root.draw.draw_id = i;
+
+      kk_flush_draw_state(cmd);
+
+      /* Metal does not support triangle fans */
+      bool requires_unroll = cmd->state.gfx.prim == MESA_PRIM_TRIANGLE_FAN;
+
       if (requires_unroll) {
          kk_encoder_render_triangle_fan_indirect(cmd, buffer->mtl_handle,
                                                  offset);
@@ -951,6 +956,8 @@ kk_CmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer _buffer,
                                       buffer->mtl_handle, offset);
       }
    }
+   cmd->state.gfx.descriptors.root_dirty = true;
+   cmd->state.gfx.descriptors.root.draw.draw_id = 0;
 }
 
 VKAPI_ATTR void VKAPI_CALL
@@ -970,19 +977,21 @@ kk_CmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer _buffer,
    VK_FROM_HANDLE(kk_cmd_buffer, cmd, commandBuffer);
    VK_FROM_HANDLE(kk_buffer, buffer, _buffer);
 
-   kk_flush_draw_state(cmd);
-
-   /* Metal does not support triangle fans */
-   bool requires_triangle_fan_unroll =
-      cmd->state.gfx.prim == MESA_PRIM_TRIANGLE_FAN;
-
    /* Metal does not support disabling primitive restart. We need to create a
     * new index buffer for primitives that allow restart (line strip, triangle
     * strip and triangle fan). Never ever support
     * VK_EXT_primitive_topology_list_restart since it'll just add overhead */
    bool increase_index_el_size = requires_increasing_index_el_size(cmd);
    for (uint32_t i = 0u; i < drawCount; ++i, offset += stride) {
-      if (requires_triangle_fan_unroll || increase_index_el_size) {
+      cmd->state.gfx.descriptors.root_dirty = true;
+      cmd->state.gfx.descriptors.root.draw.draw_id = i;
+
+      kk_flush_draw_state(cmd);
+
+      /* Metal does not support triangle fans */
+      bool requires_unroll = cmd->state.gfx.prim == MESA_PRIM_TRIANGLE_FAN;
+
+      if (requires_unroll || increase_index_el_size) {
          kk_encoder_render_triangle_fan_indexed_indirect(
             cmd, buffer->mtl_handle, offset, increase_index_el_size);
       } else {
@@ -998,6 +1007,8 @@ kk_CmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer _buffer,
             buffer->mtl_handle, offset);
       }
    }
+   cmd->state.gfx.descriptors.root_dirty = true;
+   cmd->state.gfx.descriptors.root.draw.draw_id = 0;
 }
 
 VKAPI_ATTR void VKAPI_CALL
