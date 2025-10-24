@@ -626,10 +626,10 @@ tu_render_pass_opt_resolve_unresolve(struct tu_render_pass *pass)
                 */
                if (src_att->clear_mask) {
                   dst_att->clear_mask = src_att->clear_mask;
-                  dst_att->clear_views = src_att->clear_views;
+                  dst_att->used_views = src_att->used_views;
                   src_att->remapped_clear_att = dst_att_idx;
                   src_att->clear_mask = 0;
-                  src_att->clear_views = 0;
+                  src_att->used_views = 0;
                }
 
                /* Delete the unresolve. */
@@ -971,7 +971,7 @@ tu_subpass_use_attachment(struct tu_render_pass *pass, int i, uint32_t a, const 
 
    att->gmem = true;
    update_samples(subpass, att->samples);
-   att->clear_views |= subpass->multiview_mask;
+   att->used_views |= subpass->multiview_mask;
 
    /* Loads and clears are emitted at the start of the subpass that needs them. */
    att->first_subpass_idx = MIN2(i, att->first_subpass_idx);
@@ -1471,7 +1471,7 @@ tu_setup_dynamic_render_pass(struct tu_cmd_buffer *cmd_buffer,
          subpass->samples = msrtss->rasterizationSamples;
       } else {
          att->gmem = true;
-         att->clear_views = info->viewMask;
+         att->used_views = info->viewMask;
          attachment_set_ops(device, att, att_info->loadOp,
                             VK_ATTACHMENT_LOAD_OP_DONT_CARE, att_info->storeOp,
                             VK_ATTACHMENT_STORE_OP_DONT_CARE);
@@ -1571,7 +1571,7 @@ tu_setup_dynamic_render_pass(struct tu_cmd_buffer *cmd_buffer,
             subpass->samples = msrtss->rasterizationSamples;
          } else {
             att->gmem = true;
-            att->clear_views = info->viewMask;
+            att->used_views = info->viewMask;
             attachment_set_ops(
                device, att, load_op, stencil_load_op, store_op,
                stencil_store_op);
@@ -1680,7 +1680,7 @@ tu_setup_dynamic_render_pass(struct tu_cmd_buffer *cmd_buffer,
             uint32_t att_idx = a++;
 
             att->gmem = true;
-            att->clear_views = info->viewMask;
+            att->used_views = info->viewMask;
             att->user_att = subpass->color_attachments[i].attachment;
             VkAttachmentLoadOp load_op =
                att_info->loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR ? VK_ATTACHMENT_LOAD_OP_CLEAR :
@@ -1720,7 +1720,7 @@ tu_setup_dynamic_render_pass(struct tu_cmd_buffer *cmd_buffer,
                                   VK_ATTACHMENT_STORE_OP_DONT_CARE,
                                   VK_ATTACHMENT_STORE_OP_DONT_CARE);
                att->gmem = true;
-               att->clear_views = info->viewMask;
+               att->used_views = info->viewMask;
                att->user_att = subpass->depth_stencil_attachment.attachment;
                subpass->depth_stencil_attachment.attachment = att_idx;
             }

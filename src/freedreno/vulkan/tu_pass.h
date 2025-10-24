@@ -96,7 +96,11 @@ struct tu_render_pass_attachment
    VkSampleCountFlagBits samples;
    uint32_t cpp;
    VkImageAspectFlags clear_mask;
-   uint32_t clear_views;
+
+   /* All views that are used with the attachment in all subpasses. Used to
+    * determine which views to apply loadOp/storeOp to.
+    */
+   uint32_t used_views;
    /* The internal MSRTSS attachment to clear when the user says to clear
     * this attachment. Clear values must be remapped to this attachment.
     */
