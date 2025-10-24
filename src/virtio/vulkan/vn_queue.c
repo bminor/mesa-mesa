@@ -422,6 +422,7 @@ static void
 vn_queue_submission_count_batch_feedback(struct vn_queue_submission *submit,
                                          uint32_t batch_index)
 {
+   struct vn_queue *queue = vn_queue_from_handle(submit->queue_handle);
    const uint32_t signal_count =
       vn_get_signal_semaphore_count(submit, batch_index);
    uint32_t extra_cmd_count = 0;
@@ -431,8 +432,17 @@ vn_queue_submission_count_batch_feedback(struct vn_queue_submission *submit,
       struct vn_semaphore *sem = vn_semaphore_from_handle(
          vn_get_signal_semaphore(submit, batch_index, i));
       if (sem->feedback.slot) {
-         feedback_types |= VN_FEEDBACK_TYPE_SEMAPHORE;
-         extra_cmd_count++;
+         if (queue->can_feedback) {
+            feedback_types |= VN_FEEDBACK_TYPE_SEMAPHORE;
+            extra_cmd_count++;
+         } else {
+            const uint64_t counter =
+               vn_get_signal_semaphore_counter(submit, batch_index, i);
+            simple_mtx_lock(&sem->feedback.counter_mtx);
+            sem->feedback.suspended_counter = counter;
+            sem->feedback.pollable = false;
+            simple_mtx_unlock(&sem->feedback.counter_mtx);
+         }
       }
    }
 
@@ -814,6 +824,7 @@ static VkResult
 vn_queue_submission_setup_batch(struct vn_queue_submission *submit,
                                 uint32_t batch_index)
 {
+   struct vn_queue *queue = vn_queue_from_handle(submit->queue_handle);
    uint32_t feedback_types = 0;
    uint32_t extra_cmd_count = 0;
 
@@ -822,7 +833,7 @@ vn_queue_submission_setup_batch(struct vn_queue_submission *submit,
    for (uint32_t i = 0; i < signal_count; i++) {
       struct vn_semaphore *sem = vn_semaphore_from_handle(
          vn_get_signal_semaphore(submit, batch_index, i));
-      if (sem->feedback.slot) {
+      if (sem->feedback.slot && queue->can_feedback) {
          feedback_types |= VN_FEEDBACK_TYPE_SEMAPHORE;
          extra_cmd_count++;
       }
@@ -2048,6 +2059,7 @@ vn_semaphore_feedback_init(struct vn_device *dev,
 
    sem->feedback.signaled_counter = initial_value;
    sem->feedback.slot = slot;
+   sem->feedback.pollable = true;
 
    return VK_SUCCESS;
 }
@@ -2169,7 +2181,13 @@ vn_GetSemaphoreCounterValue(VkDevice device,
 
    assert(payload->type == VN_SYNC_TYPE_DEVICE_ONLY);
 
-   if (sem->feedback.slot) {
+   if (sem->feedback.pollable) {
+      assert(sem->feedback.slot);
+
+      /* If we are here when feedback is suspended, signaled_counter has been
+       * updated to the suspended counter value which must be greater than the
+       * feedback counter read from the feedback slot.
+       */
       simple_mtx_lock(&sem->feedback.counter_mtx);
       const uint64_t counter = vn_feedback_get_counter(sem->feedback.slot);
       if (sem->feedback.signaled_counter < counter) {
@@ -2222,11 +2240,30 @@ vn_GetSemaphoreCounterValue(VkDevice device,
       simple_mtx_unlock(&sem->feedback.counter_mtx);
 
       *pValue = counter;
-      return VK_SUCCESS;
    } else {
-      return vn_call_vkGetSemaphoreCounterValue(dev->primary_ring, device,
-                                                semaphore, pValue);
+      VkResult result = vn_call_vkGetSemaphoreCounterValue(
+         dev->primary_ring, device, semaphore, pValue);
+      if (result != VK_SUCCESS)
+         return result;
+
+      if (sem->feedback.slot) {
+         /* Keep suspended feedback slot counter up to date so that counter
+          * query won't go backwards when feedback gets resumed.
+          *
+          * Keep suspended_counter up to date so that the feedback slot counter
+          * won't go backwards. e.g. multiple threads querying when suspended
+          */
+         simple_mtx_lock(&sem->feedback.counter_mtx);
+         if (*pValue >= sem->feedback.suspended_counter) {
+            vn_feedback_set_counter(sem->feedback.slot, *pValue);
+            sem->feedback.suspended_counter = *pValue;
+            sem->feedback.pollable = true;
+         }
+         simple_mtx_unlock(&sem->feedback.counter_mtx);
+      }
    }
+
+   return VK_SUCCESS;
 }
 
 VkResult
@@ -2247,6 +2284,7 @@ vn_SignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo)
        * the renderer.
        */
       sem->feedback.signaled_counter = pSignalInfo->value;
+      sem->feedback.pollable = true;
 
       simple_mtx_unlock(&sem->feedback.counter_mtx);
    }

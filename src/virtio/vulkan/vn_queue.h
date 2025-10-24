@@ -131,12 +131,35 @@ struct vn_semaphore {
       /* Lock for accessing free/pending sfb cmds */
       simple_mtx_t cmd_mtx;
 
-      /* Cached counter value to track if an async sem wait call is needed */
-      uint64_t signaled_counter;
+      /* Indicate whether the timeline semaphore counter value in the feedback
+       * slot is pollable. When pollable is false, the semaphore feedback has
+       * been suspended and the slot won't be signaled to the pending counter.
+       * - suspend: submit on queues not supporting feedback
+       * - resume if any of below occurs:
+       *   - vn_SignalSemaphore
+       *   - when the queried counter value is no smaller than the suspended
+       *     counter value
+       */
+      bool pollable;
+
+      /* When feedback is active, signaled_counter is the cached counter value
+       * to track if an async sem wait call is needed.
+       *
+       * When feedback is suspended, suspended_counter tracks the greatest
+       * signal counter value submitted on queues not supporting feedback.
+       *
+       * They share the same storage and the value is monotonic.
+       */
+      union {
+         uint64_t signaled_counter;
+         uint64_t suspended_counter;
+      };
 
       /* Lock for checking if an async sem wait call is needed based on
        * the current counter value and signaled_counter to ensure async
        * wait order across threads.
+       *
+       * Also lock to protect suspended_counter and pollable updates.
        */
       simple_mtx_t counter_mtx;
    } feedback;

@@ -6,7 +6,3 @@ dEQP-VK.api.external.memory.android_hardware_buffer.*
 # only APKs support window creation on Android.
 dEQP-VK.image.swapchain_mutable.*
 dEQP-VK.wsi.*
-
-# Skip for now. The test is creating video queues without enabling video
-# extensions. To be clarified at spec level.
-dEQP-VK.synchronization*
