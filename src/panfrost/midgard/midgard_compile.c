@@ -2997,7 +2997,7 @@ midgard_compile_shader_nir(nir_shader *nir,
    skip_internal &= !(midgard_debug & MIDGARD_DBG_INTERNAL);
 
    if (midgard_debug & MIDGARD_DBG_SHADERS && !skip_internal)
-      nir_print_shader(nir, stdout);
+      nir_log_shaderi(nir);
 
    info->tls_size = nir->scratch_size;
 

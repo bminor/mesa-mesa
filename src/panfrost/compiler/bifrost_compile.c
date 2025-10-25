@@ -6178,9 +6178,8 @@ bi_compile_variant_nir(nir_shader *nir,
    bool skip_internal = nir->info.internal;
    skip_internal &= !(bifrost_debug & BIFROST_DBG_INTERNAL);
 
-   if (bifrost_debug & BIFROST_DBG_SHADERS && !skip_internal) {
-      nir_print_shader(nir, stdout);
-   }
+   if (bifrost_debug & BIFROST_DBG_SHADERS && !skip_internal)
+      nir_log_shaderi(nir);
 
    ctx->allocated_vec = _mesa_hash_table_u64_create(ctx);
 

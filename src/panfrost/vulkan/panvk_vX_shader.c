@@ -913,8 +913,8 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
 
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
    if (PANVK_DEBUG(NIR)) {
-      fprintf(stderr, "translated nir:\n");
-      nir_print_shader(nir, stderr);
+      mesa_logi("translated nir:");
+      nir_log_shaderi(nir);
    }
 
    pan_shader_preprocess(nir, compile_input->gpu_id);
