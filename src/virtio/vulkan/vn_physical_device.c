@@ -849,10 +849,6 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
    if (vk_android_get_front_buffer_usage())
       props->sharedImage = true;
 
-   /* TODO: Fix sparse binding on lavapipe. */
-   if (props->driverID == VK_DRIVER_ID_MESA_LLVMPIPE)
-      physical_dev->sparse_binding_disabled = true;
-
    vn_physical_device_sanitize_properties(physical_dev);
 }
 
@@ -1584,13 +1580,6 @@ static void
 vn_physical_device_disable_sparse_binding(
    struct vn_physical_device *physical_dev)
 {
-   /* To support sparse binding with feedback, we require sparse binding queue
-    * families to  also support submiting feedback commands. Any queue
-    * families that exclusively support sparse binding are filtered out. If a
-    * device only supports sparse binding with exclusive queue families that
-    * get filtered out then disable the feature.
-    */
-
    struct vk_features *feats = &physical_dev->base.vk.supported_features;
    feats->sparseBinding = false;
    feats->sparseResidencyBuffer = false;

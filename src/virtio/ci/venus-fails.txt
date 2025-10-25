@@ -147,3 +147,9 @@ dEQP-VK.spirv_assembly.instruction.graphics.float16.arithmetic_3.acosh_vert,Cras
 dEQP-VK.spirv_assembly.instruction.graphics.float16.arithmetic_4.sin_frag,Crash
 dEQP-VK.spirv_assembly.instruction.graphics.float_controls2.fp16.input_args.sin_testedWithout_NotNaN_arg1_nan_arg2_one_res_nan_exec_vert,Crash
 dEQP-VK.spirv_assembly.instruction.graphics.float_controls2.fp16.input_args.sinh_testedWithout_NotInf_arg1_minusInf_arg2_unused_res_minusInf_deco_frag,Crash
+
+# Failed with native lavapipe as well with "Non-standard block shape used"
+dEQP-VK.sparse_resources.image_block_shapes.2d.g8b8g8r8_422_unorm.samples_1,Fail
+dEQP-VK.sparse_resources.image_block_shapes.2d.b8g8r8g8_422_unorm.samples_1,Fail
+dEQP-VK.sparse_resources.image_block_shapes.2d_array.g8b8g8r8_422_unorm.samples_1,Fail
+dEQP-VK.sparse_resources.image_block_shapes.2d_array.b8g8r8g8_422_unorm.samples_1,Fail
