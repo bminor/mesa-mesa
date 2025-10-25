@@ -339,14 +339,14 @@ d3d12_video_processor_flush(struct pipe_video_codec * codec)
                      pD3D12Proc->m_OutputArguments.buffer->texture);
 
         // Make the resources permanently resident for video use
-        d3d12_promote_to_permanent_residency(pD3D12Proc->m_pD3D12Screen, &pD3D12Proc->m_OutputArguments.buffer->texture, 1);
+        d3d12_promote_to_permanent_residency(pD3D12Proc->m_pD3D12Screen, &pD3D12Proc->m_OutputArguments.buffer->texture, 1, pD3D12Proc->m_spResidencyFence.Get(), &pD3D12Proc->m_ResidencyFenceValue);
 
         for(auto curInput : pD3D12Proc->m_InputBuffers)
         {
             debug_printf("[d3d12_video_processor] d3d12_video_processor_flush - Promoting the input texture %p to d3d12_permanently_resident.\n", 
                          curInput->texture);
             // Make the resources permanently resident for video use
-            d3d12_promote_to_permanent_residency(pD3D12Proc->m_pD3D12Screen, &curInput->texture, 1);
+            d3d12_promote_to_permanent_residency(pD3D12Proc->m_pD3D12Screen, &curInput->texture, 1, pD3D12Proc->m_spResidencyFence.Get(), &pD3D12Proc->m_ResidencyFenceValue);
         }
 
         HRESULT hr = pD3D12Proc->m_pD3D12Screen->dev->GetDeviceRemovedReason();
@@ -383,6 +383,9 @@ d3d12_video_processor_flush(struct pipe_video_codec * codec)
         struct d3d12_fence *input_surface_fence = pD3D12Proc->input_surface_fence;
         if (input_surface_fence)
            d3d12_fence_wait_impl(input_surface_fence, pD3D12Proc->m_spCommandQueue.Get(), pD3D12Proc->input_surface_fence_value);
+
+        // Wait on residency fence for this frame to ensure all resources used in video processing are resident
+        pD3D12Proc->m_spCommandQueue->Wait(pD3D12Proc->m_spResidencyFence.Get(), pD3D12Proc->m_ResidencyFenceValue);
 
         ID3D12CommandList *ppCommandLists[1] = { pD3D12Proc->m_spCommandList.Get() };
         pD3D12Proc->m_spCommandQueue->ExecuteCommandLists(1, ppCommandLists);
@@ -694,6 +697,17 @@ d3d12_video_processor_create_command_objects(struct d3d12_video_processor *pD3D1
     if (FAILED(hr)) {
         debug_printf(
             "[d3d12_video_processor] d3d12_video_processor_create_command_objects - Call to CreateFence failed with HR %x\n",
+            (unsigned)hr);
+        return false;
+    }
+
+    hr = pD3D12Proc->m_pD3D12Screen->dev->CreateFence(0,
+         D3D12_FENCE_FLAG_SHARED,
+         IID_PPV_ARGS(&pD3D12Proc->m_spResidencyFence));
+
+    if (FAILED(hr)) {
+        debug_printf(
+            "[d3d12_video_processor] d3d12_video_processor_create_command_objects - Call to CreateResidencyFence failed with HR %x\n",
             (unsigned)hr);
         return false;
     }

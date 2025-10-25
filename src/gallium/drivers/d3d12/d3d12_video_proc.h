@@ -100,7 +100,9 @@ struct d3d12_video_processor
    const uint m_NodeIndex = 0u;
 
    ComPtr<ID3D12Fence> m_spFence;
+   ComPtr<ID3D12Fence> m_spResidencyFence;
    uint                m_fenceValue = 1u;
+   uint64_t            m_ResidencyFenceValue = 0u;
 
    ComPtr<ID3D12VideoDevice>             m_spD3D12VideoDevice;
    
