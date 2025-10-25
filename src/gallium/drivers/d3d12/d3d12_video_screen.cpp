@@ -1484,7 +1484,8 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                                union pipe_enc_cap_motion_vector_map &gpu_motion_input_support,
                                union pipe_enc_cap_two_pass &two_pass_support,
                                union pipe_enc_cap_gpu_stats_psnr& psnr_support,
-                               union pipe_enc_cap_spatial_adaptive_quantization &saqSupport)
+                               union pipe_enc_cap_spatial_adaptive_quantization &saqSupport,
+                               uint32_t &readableReconstructedPictureSupport)
 {
    ComPtr<ID3D12VideoDevice3> spD3D12VideoDevice;
    struct d3d12_screen *pD3D12Screen = (struct d3d12_screen *) pscreen;
@@ -1572,6 +1573,7 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
 
             maxIRDuration = resolutionDepCaps.MaxIntraRefreshFrameDuration;
             isRCMaxFrameSizeSupported = ((capEncoderSupportData.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RATE_CONTROL_MAX_FRAME_SIZE_AVAILABLE) != 0) ? 1 : 0;
+            readableReconstructedPictureSupport = ((capEncoderSupportData.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_READABLE_RECONSTRUCTED_PICTURE_LAYOUT_AVAILABLE) != 0) ? 1 : 0;
             maxReferencesPerFrame =
                d3d12_video_encode_supported_references_per_frame_structures(codecDesc,
                                                                             profile,
@@ -1902,6 +1904,7 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
 
                maxIRDuration = resolutionDepCaps.MaxIntraRefreshFrameDuration;
                isRCMaxFrameSizeSupported = ((capEncoderSupportData.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RATE_CONTROL_MAX_FRAME_SIZE_AVAILABLE) != 0) ? 1 : 0;
+               readableReconstructedPictureSupport = ((capEncoderSupportData.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_READABLE_RECONSTRUCTED_PICTURE_LAYOUT_AVAILABLE) != 0) ? 1 : 0;
 
                memset(&roi_support, 0, sizeof(roi_support));
                roi_support.bits.roi_rc_qp_delta_support = ((capEncoderSupportData.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RATE_CONTROL_DELTA_QP_AVAILABLE) != 0) ? 1 : 0;
@@ -2201,6 +2204,7 @@ d3d12_has_video_encode_support(struct pipe_screen *pscreen,
                codecSupport.av1_support.features_ext2.bits.max_tile_num_minus1 = maxSlices - 1;
 
                isRCMaxFrameSizeSupported = ((capEncoderSupportData.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RATE_CONTROL_MAX_FRAME_SIZE_AVAILABLE) != 0) ? 1 : 0;
+               readableReconstructedPictureSupport = ((capEncoderSupportData.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_READABLE_RECONSTRUCTED_PICTURE_LAYOUT_AVAILABLE) != 0) ? 1 : 0;
                memset(&roi_support, 0, sizeof(roi_support));
                roi_support.bits.roi_rc_qp_delta_support = ((capEncoderSupportData.SupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_RATE_CONTROL_DELTA_QP_AVAILABLE) != 0) ? 1 : 0;
                roi_support.bits.num_roi_regions = roi_support.bits.roi_rc_qp_delta_support ? PIPE_ENC_ROI_REGION_NUM_MAX : 0;
@@ -2446,6 +2450,7 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
    union pipe_enc_cap_gpu_stats_psnr psnr_support = {};
    memset(&codec_specific_support, 0, sizeof(codec_specific_support));
    union pipe_enc_cap_spatial_adaptive_quantization saqSupport = {};
+   uint32_t readableReconstructedPictureSupport = 0u;
    switch (param) {
       case PIPE_VIDEO_CAP_REQUIRES_FLUSH_ON_END_FRAME:
          return 1;
@@ -2519,6 +2524,7 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
       case PIPE_VIDEO_CAP_ENC_TWO_PASS:
       case PIPE_VIDEO_CAP_ENC_GPU_STATS_PSNR:
       case PIPE_VIDEO_CAP_ENC_SPATIAL_ADAPTIVE_QUANTIZATION:
+      case PIPE_VIDEO_CAP_ENC_READABLE_RECONSTRUCTED_PICTURE:
       {
          if (d3d12_has_video_encode_support(pscreen,
                                             profile,
@@ -2550,7 +2556,8 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
                                             gpu_motion_input,
                                             two_pass_support,
                                             psnr_support,
-                                            saqSupport)) {
+                                            saqSupport,
+                                            readableReconstructedPictureSupport)) {
 
             DXGI_FORMAT format = d3d12_convert_pipe_video_profile_to_dxgi_format(profile);
             auto pipeFmt = d3d12_get_pipe_format(format);
@@ -2661,6 +2668,8 @@ d3d12_screen_get_video_param_encode(struct pipe_screen *pscreen,
                   return psnr_support.value;
                } else if (param == PIPE_VIDEO_CAP_ENC_SPATIAL_ADAPTIVE_QUANTIZATION ) {
                   return saqSupport.value;
+               } else if (param == PIPE_VIDEO_CAP_ENC_READABLE_RECONSTRUCTED_PICTURE ) {
+                  return readableReconstructedPictureSupport;
                }
             }
          } else if (param == PIPE_VIDEO_CAP_ENC_QUALITY_LEVEL) {
@@ -2737,6 +2746,7 @@ d3d12_video_encode_requires_texture_array_dpb(struct d3d12_screen* pScreen, enum
    union pipe_enc_cap_two_pass two_pass_support = {};
    union pipe_enc_cap_gpu_stats_psnr psnr_support = {};
    union pipe_enc_cap_spatial_adaptive_quantization saqSupport = {};
+   uint32_t readableReconstructedPictureSupport = 0u;
    if (d3d12_has_video_encode_support(&pScreen->base,
                                       profile,
                                       maxLvlEncode,
@@ -2767,7 +2777,8 @@ d3d12_video_encode_requires_texture_array_dpb(struct d3d12_screen* pScreen, enum
                                       gpu_motion_input,
                                       two_pass_support,
                                       psnr_support,
-                                      saqSupport))
+                                      saqSupport,
+                                      readableReconstructedPictureSupport))
    {
       return bVideoEncodeRequiresTextureArray;
    }
