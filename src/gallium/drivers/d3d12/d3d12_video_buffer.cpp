@@ -160,6 +160,12 @@ d3d12_video_buffer_from_handle(struct pipe_context *pipe,
                                struct winsys_handle *handle,
                                unsigned usage)
 {
+   if (handle && handle->type == WINSYS_HANDLE_TYPE_D3D12_RES && handle->modifier == 2) // modifier==2 means "place on resource"
+   {
+      struct pipe_resource* resource = (struct pipe_resource*) handle->com_obj;
+      return d3d12_video_buffer_create_impl(pipe, tmpl, resource, d3d12_video_buffer_creation_mode::place_on_resource, NULL, 0);
+   }
+
    struct pipe_video_buffer updated_template = {};
    if ((handle->format == PIPE_FORMAT_NONE) || (tmpl == nullptr) || (tmpl->buffer_format == PIPE_FORMAT_NONE) ||
        (tmpl->width == 0) || (tmpl->height == 0)) {
