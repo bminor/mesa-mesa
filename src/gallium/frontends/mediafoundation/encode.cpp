@@ -391,7 +391,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
                                                         width0,
                                                         height0,
                                                         format,
-                                                        ( m_bLowLatency ? 1 : MFT_INPUT_QUEUE_DEPTH ),
+                                                        ( m_bLowLatency ? MFT_STAT_POOL_MIN_SIZE : MFT_INPUT_QUEUE_DEPTH ),
                                                         m_spSatdStatsBufferPool.GetAddressOf() ),
                           done );
          }
@@ -416,7 +416,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
                                                         width0,
                                                         height0,
                                                         format,
-                                                        ( m_bLowLatency ? 1 : MFT_INPUT_QUEUE_DEPTH ),
+                                                        ( m_bLowLatency ? MFT_STAT_POOL_MIN_SIZE : MFT_INPUT_QUEUE_DEPTH ),
                                                         m_spBitsUsedStatsBufferPool.GetAddressOf() ),
                           done );
          }
@@ -439,7 +439,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
                                                         width0,
                                                         height0,
                                                         format,
-                                                        ( m_bLowLatency ? 1 : MFT_INPUT_QUEUE_DEPTH ),
+                                                        ( m_bLowLatency ? MFT_STAT_POOL_MIN_SIZE : MFT_INPUT_QUEUE_DEPTH ),
                                                         m_spQPMapStatsBufferPool.GetAddressOf() ),
                           done );
          }

@@ -199,6 +199,7 @@ stats_buffer_manager::OnSampleAvailable( IMFAsyncResult *pResult )
    ComPtr<IMFD3D12SynchronizationObject> spSyncObj;
    ComPtr<ID3D12Resource> spDXGISurface;
    HANDLE hFree = NULL;
+   HMFT_ETW_EVENT_START( "OnSampleAvailable", this );
 
    CHECKHR_GOTO( pResult->GetState( &spUnk ), done );
    CHECKHR_GOTO( spUnk.As( &spSample ), done );
@@ -224,6 +225,7 @@ done:
    {
       CloseHandle( hFree );
    }
+   HMFT_ETW_EVENT_STOP( "OnSampleAvailable", this );
    return hr;
 }
 

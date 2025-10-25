@@ -585,6 +585,7 @@ DEFINE_CODECAPI_GUID( AVEncWorkProcessPriority,
 #endif
 
 #define MFT_INPUT_QUEUE_DEPTH 8
+#define MFT_STAT_POOL_MIN_SIZE 2 // when MFSample is destroyed, the stat texture is returned via some other threads and it could be after ProcessInput.
 
 class __declspec( uuid( HMFT_GUID ) ) CDX12EncHMFT : CMFD3DManager,
                                                      public RuntimeClass<RuntimeClassFlags<RuntimeClassType::WinRtClassicComMix>,
