@@ -336,6 +336,11 @@ d3d12_context_set_queue_priority_manager(struct pipe_context *ctx, struct d3d12_
 int
 d3d12_video_encoder_set_max_async_queue_depth(struct pipe_context *ctx, uint32_t max_async_depth);
 
+int
+d3d12_video_encoder_get_last_slice_completion_fence(struct pipe_video_codec *codec,
+                                                    void *feedback,
+                                                    pipe_fence_handle **last_slice_completion_fence);
+
 bool
 d3d12_enable_fake_so_buffers(struct d3d12_context *ctx, unsigned factor);
 

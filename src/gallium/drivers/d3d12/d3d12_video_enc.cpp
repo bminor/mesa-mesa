@@ -5018,3 +5018,39 @@ d3d12_video_encoder_fence_wait(struct pipe_video_codec *codec,
    // ret != 0 -> Encode completed
    return wait_res ? 1 : 0;
 }
+
+int
+d3d12_video_encoder_get_last_slice_completion_fence(struct pipe_video_codec *codec,
+                                                    void *feedback,
+                                                    pipe_fence_handle **last_slice_completion_fence)
+{
+   struct d3d12_video_encoder *pD3D12Enc = (struct d3d12_video_encoder *) codec;
+   assert(pD3D12Enc);
+
+   if (!pD3D12Enc || !feedback || !last_slice_completion_fence) {
+      return -1;
+   }
+
+   struct d3d12_fence *feedback_fence = (struct d3d12_fence *) feedback;
+   uint64_t requested_metadata_fence = feedback_fence->value;
+   size_t current_metadata_slot = static_cast<size_t>(requested_metadata_fence % pD3D12Enc->m_MaxMetadataBuffersCount);
+
+   // Check if the requested metadata is valid
+   if ((pD3D12Enc->m_fenceValue - requested_metadata_fence) > pD3D12Enc->m_MaxMetadataBuffersCount) {
+      debug_printf("[d3d12_video_encoder_get_last_slice_completion_fence] Requested metadata for fence %" PRIu64 " at current fence %" PRIu64
+         " is too far back in time for the ring buffer of size %" PRIu64 "\n",
+         requested_metadata_fence,
+         pD3D12Enc->m_fenceValue,
+         static_cast<uint64_t>(pD3D12Enc->m_MaxMetadataBuffersCount));
+      return -1;
+   }
+
+   // Get the last slice completion fence for this frame
+   if (pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_LastSliceFence) {
+      d3d12_fence_reference((struct d3d12_fence **)last_slice_completion_fence, 
+                     pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].m_LastSliceFence.get());
+      return 0;
+   }
+
+   return -1;
+}
