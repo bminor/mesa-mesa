@@ -354,6 +354,9 @@ init_texture(struct d3d12_screen *screen,
             D3D12_HEAP_FLAG_CREATE_NOT_RESIDENT : D3D12_HEAP_FLAG_NONE;
          init_residency = screen->support_create_not_resident ? d3d12_evicted : d3d12_resident;
 
+         if (templ->bind & PIPE_BIND_SHARED)
+            heap_flags |= D3D12_HEAP_FLAG_SHARED;
+
          hres = screen->dev10->CreateCommittedResource3(&heap_pris,
                                                         heap_flags,
                                                         &desc1,
@@ -381,6 +384,9 @@ init_texture(struct d3d12_screen *screen,
          D3D12_HEAP_FLAGS heap_flags = screen->support_create_not_resident ?
             D3D12_HEAP_FLAG_CREATE_NOT_RESIDENT : D3D12_HEAP_FLAG_NONE;
          init_residency = screen->support_create_not_resident ? d3d12_evicted : d3d12_resident;
+
+         if (templ->bind & PIPE_BIND_SHARED)
+            heap_flags |= D3D12_HEAP_FLAG_SHARED;
 
          hres = screen->dev->CreateCommittedResource(&heap_pris,
                                                      heap_flags,
