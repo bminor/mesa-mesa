@@ -71,7 +71,7 @@ d3d12_video_processor_begin_frame(struct pipe_video_codec * codec,
             {
                 {
                         pDstD3D12Res, // ID3D12Resource *pTexture2D;
-                        0, // UINT Subresource;
+                        pOutputVideoBuffer->idx_texarray_slots, // UINT Subresource;
                 },
                 {
                         NULL, // ID3D12Resource *pTexture2D;
@@ -220,7 +220,7 @@ d3d12_video_processor_process_frame(struct pipe_video_codec *codec,
         {
         { // D3D12_VIDEO_PROCESS_INPUT_STREAM InputStream[0];
                 pSrcD3D12Res, // ID3D12Resource *pTexture2D;
-                0, // UINT Subresource
+                pInputVideoBuffer->idx_texarray_slots, // UINT Subresource
                 {//D3D12_VIDEO_PROCESS_REFERENCE_SET ReferenceSet;
                     0, //UINT NumPastFrames;
                     NULL, //ID3D12Resource **ppPastFrames;
