@@ -644,7 +644,7 @@
         "description": "aco/insert_nops: Consider s_setpc target susceptible to VALUReadSGPRHazard",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
