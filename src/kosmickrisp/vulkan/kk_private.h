@@ -55,41 +55,4 @@ struct kk_addr_range {
    uint64_t range;
 };
 
-typedef enum kk_env_option_t {
-   KK_ENABLE_GPU_CAPTURE = 0,
-   KK_MAX_ENV_OPTIONS,
-} kk_env_option_t;
-
-struct kk_env_option {
-   const char *name;
-   bool value;
-};
-
-static struct kk_env_option KK_ENV_OPTIONS[KK_MAX_ENV_OPTIONS] = {
-   [KK_ENABLE_GPU_CAPTURE] =
-      {
-         .name = "MESA_KOSMICKRISP_ENABLE_GPU_CAPTURE",
-         .value = false,
-      },
-};
-
-static inline bool
-kk_get_environment_boolean(kk_env_option_t option)
-{
-   assert(option >= 0 && option < KK_MAX_ENV_OPTIONS);
-   struct kk_env_option *opt = &KK_ENV_OPTIONS[option];
-   const char *env_str = getenv(opt->name);
-   if (env_str) {
-      if (strncmp(env_str, "0", 1) != 0) {
-         opt->value = true;
-      } else {
-         opt->value = false;
-      }
-   }
-   return opt->value;
-}
-
-#define kk_debug_ignored_stype(sType)                                          \
-   mesa_logd("%s: ignored VkStructureType %u\n", __func__, (sType))
-
 #endif

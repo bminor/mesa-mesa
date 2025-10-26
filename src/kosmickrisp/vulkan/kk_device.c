@@ -213,8 +213,13 @@ kk_CreateDevice(VkPhysicalDevice physicalDevice,
 
    *pDevice = kk_device_to_handle(dev);
 
-   dev->gpu_capture_enabled = kk_get_environment_boolean(KK_ENABLE_GPU_CAPTURE);
-   mtl_start_gpu_capture(dev->mtl_handle);
+   dev->gpu_capture_enabled =
+      debug_get_bool_option("MESA_KK_GPU_CAPTURE", false);
+   if (dev->gpu_capture_enabled) {
+      const char *capture_directory =
+         debug_get_option("MESA_KK_GPU_CAPTURE_DIRECTORY", NULL);
+      mtl_start_gpu_capture(dev->mtl_handle, capture_directory);
+   }
 
    return VK_SUCCESS;
 

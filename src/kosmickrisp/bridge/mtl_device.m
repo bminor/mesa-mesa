@@ -38,41 +38,29 @@ mtl_device_create()
 
 /* Device operations */
 void
-mtl_start_gpu_capture(mtl_device *mtl_dev_handle)
+mtl_start_gpu_capture(mtl_device *mtl_dev_handle, const char *directory)
 {
    @autoreleasepool {
       id<MTLDevice> mtl_dev = (id<MTLDevice>)mtl_dev_handle;
       MTLCaptureManager *captureMgr = [MTLCaptureManager sharedCaptureManager];
 
-      // Before macOS 10.15 and iOS 13.0, captureDesc will just be nil
       MTLCaptureDescriptor *captureDesc = [[MTLCaptureDescriptor new] autorelease];
       captureDesc.captureObject = mtl_dev;
       captureDesc.destination = MTLCaptureDestinationDeveloperTools;
 
-      // TODO_KOSMICKRISP Support dumping a trace to a file?
-      // NSString *tmp_dir = NSTemporaryDirectory();
-      // NSString *pname = [[NSProcessInfo processInfo] processName];
-      // NSString *capture_path = [NSString stringWithFormat:@"%@/%@.gputrace", tmp_dir, pname];
-      // if ([captureMgr supportsDestination: MTLCaptureDestinationGPUTraceDocument] ) {
-      //   captureDesc.destination = MTLCaptureDestinationGPUTraceDocument;
-      //   captureDesc.outputURL = [NSURL fileURLWithPath: capture_path];
-      //}
+      if (directory && [captureMgr supportsDestination: MTLCaptureDestinationGPUTraceDocument]) {
+         NSString *dir = [NSString stringWithUTF8String:directory];
+         NSString *pname = [[NSProcessInfo processInfo] processName];
+         NSString *capture_path = [NSString stringWithFormat:@"%@/%@.gputrace", dir, pname];
+         captureDesc.destination = MTLCaptureDestinationGPUTraceDocument;
+         captureDesc.outputURL = [NSURL fileURLWithPath: capture_path];
+      }
 
       NSError *err = nil;
       if (![captureMgr startCaptureWithDescriptor:captureDesc error:&err]) {
-         // fprintf(stderr, "Failed to automatically start GPU capture session (Error code %li) using startCaptureWithDescriptor: %s\n",
-         //         (long)err.code, err.localizedDescription.UTF8String);
-         // fprintf(stderr, "Using startCaptureWithDevice\n");
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-         [captureMgr startCaptureWithDevice:mtl_dev];
-#pragma clang diagnostic pop
+         fprintf(stderr, "Failed to automatically start GPU capture session (Error code %li) using startCaptureWithDescriptor: %s\n",
+                 (long)err.code, err.localizedDescription.UTF8String);
       }
-
-      //[tmp_dir release];
-      //[pname release];
-      //[capture_path release];
    }
 }
 
