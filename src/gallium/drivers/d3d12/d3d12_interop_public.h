@@ -34,6 +34,18 @@ struct ID3D12Device;
 struct ID3D12CommandQueue;
 struct ID3D12Resource;
 
+struct d3d12_interop_video_buffer_associated_data
+{
+   /*
+    * Subresource index within the underlying ID3D12Resource
+    * representing this video buffer.
+    *
+    * This is useful when the underlying resource is a texture array
+    * and each video buffer maps to a different subresource within it.
+    */
+   uint32_t subresource_index;
+};
+
 struct d3d12_interop_device_info {
    uint64_t adapter_luid;
    ID3D12Device *device;

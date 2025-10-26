@@ -65,7 +65,7 @@ d3d12_video_buffer_create_impl(struct pipe_context *pipe,
    pD3D12VideoBuffer->base.height        = tmpl->height;
    pD3D12VideoBuffer->base.interlaced    = tmpl->interlaced;
    pD3D12VideoBuffer->base.contiguous_planes = true;
-   pD3D12VideoBuffer->base.associated_data = nullptr;
+   pD3D12VideoBuffer->base.associated_data = &pD3D12VideoBuffer->d3d12_video_buffer_associated_data;
    pD3D12VideoBuffer->idx_texarray_slots = 0;
    pD3D12VideoBuffer->m_spVideoTexArrayDPBPoolInUse.reset();
 
@@ -535,6 +535,7 @@ d3d12_video_create_dpb_buffer_texarray(struct pipe_video_codec *codec,
       if (((*pD3D12Enc->m_spVideoTexArrayDPBPoolInUse) & (1 << i)) == 0)
       {
          buf->idx_texarray_slots = i;
+         buf->d3d12_video_buffer_associated_data.subresource_index = i;
          (*pD3D12Enc->m_spVideoTexArrayDPBPoolInUse) |= (1 << buf->idx_texarray_slots); // Mark i-th bit as used
          bFoundEmptySlot = true;
          break;
