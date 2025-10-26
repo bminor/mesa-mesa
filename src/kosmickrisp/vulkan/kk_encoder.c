@@ -359,8 +359,9 @@ kk_encoder_get_internal(struct kk_encoder *encoder, enum kk_encoder_type type)
 }
 
 static mtl_compute_encoder *
-kk_encoder_pre_gfx_encoder(struct kk_encoder *encoder)
+kk_encoder_pre_gfx_encoder(struct kk_cmd_buffer *cmd)
 {
+   struct kk_encoder *encoder = cmd->encoder;
    if (!encoder->pre_gfx.encoder) {
       /* Fast-forward all previous render encoders and wait for the last one */
       mtl_encode_signal_event(encoder->pre_gfx.cmd_buffer, encoder->event,
@@ -369,6 +370,11 @@ kk_encoder_pre_gfx_encoder(struct kk_encoder *encoder)
                                 encoder->wait_value_pre_gfx);
       encoder->pre_gfx.encoder =
          mtl_new_compute_command_encoder(encoder->pre_gfx.cmd_buffer);
+      struct kk_device *dev = kk_cmd_buffer_device(cmd);
+      /* Xcode GPU capture doesn't like it when we declare an input buffer but
+       * none is bound. Even if we never use it... */
+      mtl_compute_set_buffer(encoder->pre_gfx.encoder,
+                             dev->samplers.table.bo->map, 0u, 1u);
    }
 
    return encoder->pre_gfx.encoder;
@@ -409,7 +415,7 @@ kk_encoder_render_triangle_fan_common(struct kk_cmd_buffer *cmd,
    info->in_el_size_B = in_el_size_B;
    info->out_el_size_B = out_el_size_B;
    info->flatshade_first = true;
-   mtl_compute_encoder *encoder = kk_encoder_pre_gfx_encoder(cmd->encoder);
+   mtl_compute_encoder *encoder = kk_encoder_pre_gfx_encoder(cmd);
    if (index)
       mtl_compute_use_resource(encoder, index, MTL_RESOURCE_USAGE_READ);
    mtl_compute_use_resource(encoder, indirect, MTL_RESOURCE_USAGE_READ);
