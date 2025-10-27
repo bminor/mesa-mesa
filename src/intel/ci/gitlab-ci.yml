@@ -18,7 +18,7 @@ anv-jsl-vk-full:
     DEQP_SUITE: anv-jsl-full
     FDO_CI_CONCURRENT: 2
   parallel: 4
-  timeout: 2h
+  timeout: 2h 30m
 
 anv-adl-vk:
   extends:
