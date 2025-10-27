@@ -117,6 +117,6 @@ if with_tests
   )
 endif
 
-if with_tools.contains('zink') and false
+if with_tools.contains('zink')
   subdir('check_requirements')
 endif
