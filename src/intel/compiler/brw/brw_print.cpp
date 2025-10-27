@@ -206,8 +206,9 @@ brw_instruction_name(const struct brw_isa_info *isa, const brw_inst *inst)
       return "interp_shared_offset";
    case FS_OPCODE_INTERPOLATE_AT_PER_SLOT_OFFSET:
       return "interp_per_slot_offset";
-   case FS_OPCODE_READ_ATTRIBUTE_PAYLOAD:
-      return "fs_read_attribute_payload";
+
+   case SHADER_OPCODE_LOAD_ATTRIBUTE_PAYLOAD:
+      return "load_attribute_payload";
 
    case SHADER_OPCODE_BARRIER:
       return "barrier";

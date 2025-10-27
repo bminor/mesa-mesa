@@ -2425,7 +2425,7 @@ system_value("max_polygon_intel", 1, bit_sizes=[32])
 
 # Read the attribute thread payload at a given offset
 # src[] = { offset }
-intrinsic("read_attribute_payload_intel", dest_comp=1, bit_sizes=[32],
+intrinsic("load_attribute_payload_intel", dest_comp=1, bit_sizes=[32],
           src_comp=[1],
           flags=[CAN_ELIMINATE, CAN_REORDER])
 

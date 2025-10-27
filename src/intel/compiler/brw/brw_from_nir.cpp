@@ -4528,11 +4528,11 @@ brw_from_nir_emit_fs_intrinsic(nir_to_brw_state &ntb,
               brw_dynamic_per_primitive_remap(brw_wm_prog_data(s.prog_data)));
       break;
 
-   case nir_intrinsic_read_attribute_payload_intel: {
+   case nir_intrinsic_load_attribute_payload_intel: {
       const brw_reg offset = retype(
          bld.emit_uniformize(get_nir_src(ntb, instr->src[0], 0)),
          BRW_TYPE_UD);
-      bld.emit(FS_OPCODE_READ_ATTRIBUTE_PAYLOAD, retype(dest, BRW_TYPE_UD), offset);
+      bld.emit(SHADER_OPCODE_LOAD_ATTRIBUTE_PAYLOAD, retype(dest, BRW_TYPE_UD), offset);
       break;
    }
 

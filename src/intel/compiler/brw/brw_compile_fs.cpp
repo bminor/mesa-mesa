@@ -1299,7 +1299,7 @@ brw_assign_urb_setup(brw_shader &s)
     * setup regs, now that the location of the constants has been chosen.
     */
    foreach_block_and_inst_safe(block, brw_inst, inst, s.cfg) {
-      if (inst->opcode == FS_OPCODE_READ_ATTRIBUTE_PAYLOAD) {
+      if (inst->opcode == SHADER_OPCODE_LOAD_ATTRIBUTE_PAYLOAD) {
          brw_reg offset = inst->src[0];
          inst = brw_transform_inst(s, inst, SHADER_OPCODE_MOV_INDIRECT, 3);
          inst->src[0] = retype(brw_vec8_grf(urb_start, 0), BRW_TYPE_UD);

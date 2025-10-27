@@ -765,7 +765,7 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_load_frag_offset_ir3:
    case nir_intrinsic_bindless_resource_ir3:
    case nir_intrinsic_ray_intersection_ir3:
-   case nir_intrinsic_read_attribute_payload_intel:
+   case nir_intrinsic_load_attribute_payload_intel:
    case nir_intrinsic_load_urb_vec4_intel:
    case nir_intrinsic_load_urb_lsc_intel:
    case nir_intrinsic_load_buffer_ptr_kk:
