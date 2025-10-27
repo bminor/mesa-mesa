@@ -42,11 +42,11 @@ class dpb_buffer_manager
    /**
     * get a read-only shared handle from the video buffer's internal D3D12 resource
     */
-   static HRESULT get_read_only_handle(struct pipe_video_buffer *buffer, 
-                                      struct pipe_context *pipe,
-                                      ComPtr<ID3D12Device>& device,
-                                      HANDLE *pReadOnlyHandle,
-                                      UINT* pSubresourceIndex);
+   static HRESULT get_read_only_handle( struct pipe_video_buffer *buffer,
+                                        struct pipe_context *pipe,
+                                        ComPtr<ID3D12Device> &device,
+                                        HANDLE *pReadOnlyHandle,
+                                        UINT *pSubresourceIndex );
 
  private:
    struct pipe_video_codec *m_codec = NULL;

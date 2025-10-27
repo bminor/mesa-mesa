@@ -23,90 +23,85 @@
 
 #include "dpb_buffer_manager.h"
 #include "frontend/winsys_handle.h"
-#include "vl/vl_video_buffer.h"
 #include "gallium/drivers/d3d12/d3d12_interop_public.h"
+#include "vl/vl_video_buffer.h"
 
 HRESULT
-dpb_buffer_manager::get_read_only_handle(struct pipe_video_buffer *buffer, 
-                                        struct pipe_context *pipe,
-                                        ComPtr<ID3D12Device>& device,
-                                        HANDLE *pReadOnlyHandle,
-                                        UINT* pSubresourceIndex)
+dpb_buffer_manager::get_read_only_handle( struct pipe_video_buffer *buffer,
+                                          struct pipe_context *pipe,
+                                          ComPtr<ID3D12Device> &device,
+                                          HANDLE *pReadOnlyHandle,
+                                          UINT *pSubresourceIndex )
 {
-   if (!buffer || !pipe || !device || !pReadOnlyHandle || !pSubresourceIndex)
+   if( !buffer || !pipe || !device || !pReadOnlyHandle || !pSubresourceIndex )
       return E_POINTER;
 
    *pReadOnlyHandle = nullptr;
 
    // Get pipe resources from the video buffer
    struct pipe_resource *buf_resources[VL_NUM_COMPONENTS];
-   memset(buf_resources, 0, sizeof(buf_resources));
-   buffer->get_resources(buffer, &buf_resources[0]);
-   
-   if (!buf_resources[0])
+   memset( buf_resources, 0, sizeof( buf_resources ) );
+   buffer->get_resources( buffer, &buf_resources[0] );
+
+   if( !buf_resources[0] )
       return E_INVALIDARG;
 
    // Get the winsys handle for the resource
    struct winsys_handle src_wshandle = {};
    src_wshandle.type = WINSYS_HANDLE_TYPE_D3D12_RES;
-   
-   if (!pipe->screen->resource_get_handle(pipe->screen,
-                                         pipe,
-                                         buf_resources[0],
-                                         &src_wshandle,
-                                         0 /*usage*/))
+
+   if( !pipe->screen->resource_get_handle( pipe->screen, pipe, buf_resources[0], &src_wshandle, 0 /*usage*/ ) )
    {
       return E_FAIL;
    }
 
-   if (!src_wshandle.com_obj)
+   if( !src_wshandle.com_obj )
       return E_FAIL;
 
    // Create a read-only shared handle from the D3D12 resource
    HRESULT hr = S_OK;
    HANDLE originalHandle = nullptr;
-   
+
    // First, create a shared handle with full access from the original resource
-   hr = device->CreateSharedHandle(static_cast<ID3D12Resource*>(src_wshandle.com_obj),
-                                       nullptr,           // Security attributes (default)
-                                       GENERIC_ALL,       // Full access for the original handle
-                                       nullptr,           // Name
-                                       &originalHandle);
-   if (FAILED(hr) || !originalHandle)
+   hr = device->CreateSharedHandle( static_cast<ID3D12Resource *>( src_wshandle.com_obj ),
+                                    nullptr,       // Security attributes (default)
+                                    GENERIC_ALL,   // Full access for the original handle
+                                    nullptr,       // Name
+                                    &originalHandle );
+   if( FAILED( hr ) || !originalHandle )
       return hr;
 
    // Duplicate the handle with restricted (read-only) access rights
    // This creates a new handle that can only be used for reading
-   BOOL duplicateResult = DuplicateHandle(
-      GetCurrentProcess(),    // Source process handle
-      originalHandle,         // Source handle
-      GetCurrentProcess(),    // Target process handle  
-      pReadOnlyHandle,        // Target handle
-      GENERIC_READ,           // Desired access (read-only)
-      FALSE,                  // Inherit handle
-      0);                     // Options
+   BOOL duplicateResult = DuplicateHandle( GetCurrentProcess(),   // Source process handle
+                                           originalHandle,        // Source handle
+                                           GetCurrentProcess(),   // Target process handle
+                                           pReadOnlyHandle,       // Target handle
+                                           GENERIC_READ,          // Desired access (read-only)
+                                           FALSE,                 // Inherit handle
+                                           0 );                   // Options
 
    // Clean up the original handle since we only need the read-only version
-   CloseHandle(originalHandle);
+   CloseHandle( originalHandle );
 
-   if (!duplicateResult || !*pReadOnlyHandle)
+   if( !duplicateResult || !*pReadOnlyHandle )
    {
-      return HRESULT_FROM_WIN32(GetLastError());
+      return HRESULT_FROM_WIN32( GetLastError() );
    }
 
    // Retrieve subresource index if available
    // from the associated data of the video buffer
    // which will contain the subresource index
    // if the underlying resource uses texture arrays
-   if (buffer->associated_data)
+   if( buffer->associated_data )
    {
-      struct d3d12_interop_video_buffer_associated_data* associated_data =
-         static_cast<struct d3d12_interop_video_buffer_associated_data*>(buffer->associated_data);
+      struct d3d12_interop_video_buffer_associated_data *associated_data =
+         static_cast<struct d3d12_interop_video_buffer_associated_data *>( buffer->associated_data );
       *pSubresourceIndex = associated_data->subresource_index;
    }
    else
    {
-      *pSubresourceIndex = 0; // Default to 0 if no associated data
+      *pSubresourceIndex = 0;   // Default to 0 if no associated data
    }
 
    return S_OK;
@@ -151,12 +146,12 @@ dpb_buffer_manager::dpb_buffer_manager(
    m_template.height = height;
    m_template.buffer_format = buffer_format;
 
-   if (codec->context->screen->get_video_param( codec->context->screen,
-                                             codec->profile,
-                                             PIPE_VIDEO_ENTRYPOINT_ENCODE,
-                                             PIPE_VIDEO_CAP_ENC_READABLE_RECONSTRUCTED_PICTURE ) != 0)
+   if( codec->context->screen->get_video_param( codec->context->screen,
+                                                codec->profile,
+                                                PIPE_VIDEO_ENTRYPOINT_ENCODE,
+                                                PIPE_VIDEO_CAP_ENC_READABLE_RECONSTRUCTED_PICTURE ) != 0 )
    {
-      m_template.bind = PIPE_BIND_SHARED; // Indicate we want shared resource capabilities
+      m_template.bind = PIPE_BIND_SHARED;   // Indicate we want shared resource capabilities
    }
 
    for( auto &entry : m_pool )

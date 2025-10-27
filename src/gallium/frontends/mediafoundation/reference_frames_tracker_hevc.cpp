@@ -64,9 +64,9 @@ reference_frames_tracker_hevc::reference_frames_tracker_hevc( struct pipe_video_
    ResetGopStateToIDR();
    m_frame_state_descriptor.gop_info = &m_gop_state;
 
-   m_frame_state_descriptor.l0_reference_list.resize(1);
-   m_frame_state_descriptor.dpb_snapshot.reserve(m_MaxDPBCapacity + 1);
-   m_frame_state_descriptor.dirty_rect_frame_num.reserve(m_MaxDPBCapacity + 1);
+   m_frame_state_descriptor.l0_reference_list.resize( 1 );
+   m_frame_state_descriptor.dpb_snapshot.reserve( m_MaxDPBCapacity + 1 );
+   m_frame_state_descriptor.dirty_rect_frame_num.reserve( m_MaxDPBCapacity + 1 );
 }
 
 // release reference frame buffers
@@ -75,12 +75,12 @@ reference_frames_tracker_hevc::release_reconpic( reference_frames_tracker_dpb_as
 {
    if( pAsyncDPBToken )
    {
-      for( const auto& buffer : pAsyncDPBToken->dpb_buffers_to_release )
+      for( const auto &buffer : pAsyncDPBToken->dpb_buffers_to_release )
          m_DPBManager.release_dpb_buffer( buffer );
 
       if( m_upTwoPassDPBManager )
       {
-         for( const auto& buffer : pAsyncDPBToken->dpb_downscaled_buffers_to_release )
+         for( const auto &buffer : pAsyncDPBToken->dpb_downscaled_buffers_to_release )
             m_upTwoPassDPBManager->release_dpb_buffer( buffer );
       }
 
@@ -184,7 +184,7 @@ reference_frames_tracker_hevc::begin_frame( reference_frames_tracker_dpb_async_t
    m_frame_state_descriptor.dpb_snapshot.clear();
    m_frame_state_descriptor.dirty_rect_frame_num.clear();
 
-   for( const auto& frame : m_PrevFramesInfos )
+   for( const auto &frame : m_PrevFramesInfos )
    {
       m_frame_state_descriptor.dpb_snapshot.emplace_back(
          /*id*/ 0u,
@@ -275,13 +275,15 @@ reference_frames_tracker_hevc::PrepareFrameRefLists()
 {
    assert( m_PrevFramesInfos.size() >= 1 );
 
-   const auto max_poc_iter = std::max_element(m_PrevFramesInfos.cbegin(), m_PrevFramesInfos.cend(),
-      [](const auto& a, const auto& b) noexcept { return a.picture_order_count < b.picture_order_count; });
+   const auto max_poc_iter =
+      std::max_element( m_PrevFramesInfos.cbegin(), m_PrevFramesInfos.cend(), []( const auto &a, const auto &b ) noexcept {
+         return a.picture_order_count < b.picture_order_count;
+      } );
 
    m_frame_state_descriptor.l0_reference_list[0] =
-      static_cast<uint8_t>(std::distance(m_PrevFramesInfos.cbegin(), max_poc_iter));
+      static_cast<uint8_t>( std::distance( m_PrevFramesInfos.cbegin(), max_poc_iter ) );
 
-   const uint32_t ltrUsedBitmask = max_poc_iter->is_ltr ? (1u << max_poc_iter->ltr_index) : 0u;
+   const uint32_t ltrUsedBitmask = max_poc_iter->is_ltr ? ( 1u << max_poc_iter->ltr_index ) : 0u;
 
    return ltrUsedBitmask;
 }

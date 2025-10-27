@@ -391,7 +391,8 @@ DEFINE_GUID( MFSampleExtension_VideoEncodeSatdMap, 0xadf61d96, 0xc2d3, 0x4b57, 0
 // MFSampleExtension_VideoEncodeReconstructedPicture {3E8A1B7F-5C92-4D6E-B834-F0A729E65C48}
 // Type: IMFMediaBuffer
 // The reconstructed picture data of an encoded video frame (Experimental).
-DEFINE_GUID( MFSampleExtension_VideoEncodeReconstructedPicture, 0x3e8a1b7f, 0x5c92, 0x4d6e, 0xb8, 0x34, 0xf0, 0xa7, 0x29, 0xe6, 0x5c, 0x48 );
+DEFINE_GUID(
+   MFSampleExtension_VideoEncodeReconstructedPicture, 0x3e8a1b7f, 0x5c92, 0x4d6e, 0xb8, 0x34, 0xf0, 0xa7, 0x29, 0xe6, 0x5c, 0x48 );
 
 #ifndef CODECAPI_AVEncVideoReconstructedPictureOutputMode
 // AVEncVideoReconstructedPictureOutputMode (VT_UI4) (Experimental, Testing only)
@@ -585,7 +586,8 @@ DEFINE_CODECAPI_GUID( AVEncWorkProcessPriority,
 #endif
 
 #define MFT_INPUT_QUEUE_DEPTH 8
-#define MFT_STAT_POOL_MIN_SIZE 2 // when MFSample is destroyed, the stat texture is returned via some other threads and it could be after ProcessInput.
+#define MFT_STAT_POOL_MIN_SIZE                                                                                                     \
+   2   // when MFSample is destroyed, the stat texture is returned via some other threads and it could be after ProcessInput.
 
 class __declspec( uuid( HMFT_GUID ) ) CDX12EncHMFT : CMFD3DManager,
                                                      public RuntimeClass<RuntimeClassFlags<RuntimeClassType::WinRtClassicComMix>,
@@ -648,15 +650,17 @@ class __declspec( uuid( HMFT_GUID ) ) CDX12EncHMFT : CMFD3DManager,
                                                               UINT64 ResolveStatsCompletionFenceValue,
                                                               pipe_resource *pPipeResourceReconstructedPicture,
                                                               UINT PipeResourceReconstructedPictureSubresource,
-                                                              ComPtr<ID3D12Fence>& spReconstructedPictureCompletionFence,
+                                                              ComPtr<ID3D12Fence> &spReconstructedPictureCompletionFence,
                                                               UINT64 ReconstructedPictureCompletionFenceValue,
                                                               ID3D12CommandQueue *pSyncObjectQueue );
-   void GetSliceBitstreamMetadata( LPDX12EncodeContext pDX12EncodeContext, uint32_t slice_idx, std::vector<struct codec_unit_location_t> &codec_unit_metadata );
+   void GetSliceBitstreamMetadata( LPDX12EncodeContext pDX12EncodeContext,
+                                   uint32_t slice_idx,
+                                   std::vector<struct codec_unit_location_t> &codec_unit_metadata );
    void ProcessSliceBitstreamZeroCopy( LPDX12EncodeContext pDX12EncodeContext,
                                        uint32_t slice_idx,
                                        ComPtr<IMFMediaBuffer> &spMediaBuffer,
                                        std::vector<struct codec_unit_location_t> &mfsample_codec_unit_metadata );
-      void FinalizeAndEmitOutputSample( LPDX12EncodeContext pDX12EncodeContext,
+   void FinalizeAndEmitOutputSample( LPDX12EncodeContext pDX12EncodeContext,
                                      ComPtr<IMFMediaBuffer> &spMediaBuffer,
                                      ComPtr<IMFSample> &spOutputSample,
                                      struct codec_unit_location_t *pCodecUnitMetadata,

@@ -353,8 +353,8 @@ CMFD3DManager::xOnSetD3DManager( ULONG_PTR ulParam )
                    done );
 
    m_pVlScreen->pscreen->interop_query_device_info( m_pVlScreen->pscreen,
-                                       sizeof( d3d12_interop_device_info1 ),
-                                       &m_ScreenInteropInfo );
+                                                    sizeof( d3d12_interop_device_info1 ),
+                                                    &m_ScreenInteropInfo );
    assert( m_ScreenInteropInfo.set_context_queue_priority_manager != NULL );
 
    {

@@ -25,8 +25,8 @@
 
 #include <Unknwn.h>
 #include <mfobjects.h>
-#include <wrl/client.h>
 #include <directx/d3d12.h>
+#include <wrl/client.h>
 #include "pipe_headers.h"
 
 using Microsoft::WRL::ComPtr;
@@ -34,28 +34,28 @@ using Microsoft::WRL::ComPtr;
 // Custom IMFMediaBuffer implementation for zero-copy D3D12 buffer access
 class CD3D12BitstreamMFBuffer : public IMFMediaBuffer
 {
-private:
+ private:
    ULONG m_cRef;
    ComPtr<ID3D12Resource> m_spResource;
    DWORD m_dwLength;
    DWORD m_dwOffset;
-   BYTE* m_pMappedData;
-   pipe_screen* m_pScreen;
-   pipe_resource* m_pOutputBitRes;
+   BYTE *m_pMappedData;
+   pipe_screen *m_pScreen;
+   pipe_resource *m_pOutputBitRes;
 
-public:
-   CD3D12BitstreamMFBuffer( pipe_context* pPipeContext, pipe_resource* pOutputBitRes, DWORD length, DWORD offset );
+ public:
+   CD3D12BitstreamMFBuffer( pipe_context *pPipeContext, pipe_resource *pOutputBitRes, DWORD length, DWORD offset );
    ~CD3D12BitstreamMFBuffer();
-   
+
    // IUnknown
-   STDMETHODIMP QueryInterface( REFIID riid, void** ppv );
-   STDMETHODIMP_(ULONG) AddRef();
-   STDMETHODIMP_(ULONG) Release();
-   
+   STDMETHODIMP QueryInterface( REFIID riid, void **ppv );
+   STDMETHODIMP_( ULONG ) AddRef();
+   STDMETHODIMP_( ULONG ) Release();
+
    // IMFMediaBuffer
-   STDMETHODIMP Lock( BYTE** ppbBuffer, DWORD* pcbMaxLength, DWORD* pcbCurrentLength );
+   STDMETHODIMP Lock( BYTE **ppbBuffer, DWORD *pcbMaxLength, DWORD *pcbCurrentLength );
    STDMETHODIMP Unlock();
-   STDMETHODIMP GetCurrentLength( DWORD* pcbCurrentLength );
+   STDMETHODIMP GetCurrentLength( DWORD *pcbCurrentLength );
    STDMETHODIMP SetCurrentLength( DWORD cbCurrentLength );
-   STDMETHODIMP GetMaxLength( DWORD* pcbMaxLength );
+   STDMETHODIMP GetMaxLength( DWORD *pcbMaxLength );
 };
