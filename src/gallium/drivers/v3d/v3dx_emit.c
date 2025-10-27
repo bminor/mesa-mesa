@@ -292,12 +292,21 @@ v3dX(emit_state)(struct pipe_context *pctx)
 
         if (v3d->dirty & (V3D_DIRTY_RASTERIZER |
                           V3D_DIRTY_ZSA |
+                          V3D_DIRTY_PRIM_MODE |
                           V3D_DIRTY_BLEND)) {
+                const enum mesa_prim reduced_prim =
+                        u_reduced_prim(v3d->prim_mode);
                 cl_emit(&job->bcl, CFG_BITS, config) {
+                        /* When drawing points and lines, they will be
+                         * discarded if forward facing primitive is not
+                         * enabled.
+                         */
                         config.enable_forward_facing_primitive =
                                 !rasterizer_discard &&
-                                !(v3d->rasterizer->base.cull_face &
-                                  PIPE_FACE_FRONT);
+                                (reduced_prim == MESA_PRIM_LINES ||
+                                 reduced_prim == MESA_PRIM_POINTS ||
+                                 !(v3d->rasterizer->base.cull_face &
+                                   PIPE_FACE_FRONT));
                         config.enable_reverse_facing_primitive =
                                 !rasterizer_discard &&
                                 !(v3d->rasterizer->base.cull_face &

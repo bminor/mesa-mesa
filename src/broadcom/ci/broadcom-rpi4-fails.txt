@@ -10,7 +10,6 @@ shaders@point-vertex-id gl_vertexid gl_instanceid divisor,Fail
 shaders@point-vertex-id gl_vertexid gl_instanceid,Fail
 shaders@point-vertex-id gl_vertexid,Fail
 spec@!opengl 1.0@gl-1.0-user-clip-all-planes,Fail
-spec@!opengl 1.1@point-line-no-cull,Fail
 spec@!opengl 1.1@texwrap formats bordercolor,Fail
 spec@!opengl 1.1@texwrap formats bordercolor-swizzled,Fail
 spec@!opengl 1.1@texwrap formats bordercolor-swizzled@GL_INTENSITY12- swizzled- border color only,Fail
