@@ -334,12 +334,12 @@ remap_patch_urb_offsets_instr(nir_builder *b, nir_intrinsic_instr *intrin, void 
        io_sem.location == VARYING_SLOT_TESS_LEVEL_OUTER)
       return false;
 
-   gl_varying_slot varying = intrin->const_index[0];
+   gl_varying_slot varying = nir_intrinsic_base(intrin);
 
    const struct intel_vue_map *vue_map = data;
    int vue_slot = vue_map->varying_to_slot[varying];
    assert(vue_slot != -1);
-   intrin->const_index[0] = vue_slot;
+   nir_intrinsic_set_base(intrin, vue_slot);
 
    nir_src *vertex = nir_get_io_arrayed_index_src(intrin);
    if (vertex) {
