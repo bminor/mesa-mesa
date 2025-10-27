@@ -3142,6 +3142,21 @@ brw_from_nir_emit_tcs_intrinsic(nir_to_brw_state &ntb,
       UNREACHABLE("nir_lower_io should never give us these.");
       break;
 
+   case nir_intrinsic_load_urb_input_handle_indexed_intel: {
+      const bool multi_patch =
+         vue_prog_data->dispatch_mode == INTEL_DISPATCH_MODE_TCS_MULTI_PATCH;
+
+      brw_reg icp_handle = multi_patch ?
+         get_tcs_multi_patch_icp_handle(ntb, bld, instr) :
+         get_tcs_single_patch_icp_handle(ntb, bld, instr);
+      bld.MOV(retype(dst, BRW_TYPE_UD), icp_handle);
+      break;
+   }
+
+   case nir_intrinsic_load_urb_output_handle_intel:
+      bld.MOV(retype(dst, BRW_TYPE_UD), s.tcs_payload().patch_urb_output);
+      break;
+
    case nir_intrinsic_load_per_vertex_input: {
       assert(instr->def.bit_size == 32);
       brw_reg indirect_offset = get_indirect_offset(ntb, instr);
@@ -3347,6 +3362,14 @@ brw_from_nir_emit_tes_intrinsic(nir_to_brw_state &ntb,
    case nir_intrinsic_load_tess_coord:
       for (unsigned i = 0; i < 3; i++)
          bld.MOV(offset(dest, bld, i), s.tes_payload().coords[i]);
+      break;
+
+   case nir_intrinsic_load_urb_input_handle_intel:
+      bld.MOV(retype(dest, BRW_TYPE_UD), s.tes_payload().patch_urb_input);
+      break;
+
+   case nir_intrinsic_load_urb_output_handle_intel:
+      bld.MOV(retype(dest, BRW_TYPE_UD), s.tes_payload().urb_output);
       break;
 
    case nir_intrinsic_load_input:
