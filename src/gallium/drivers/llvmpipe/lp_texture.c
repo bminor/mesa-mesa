@@ -1357,7 +1357,7 @@ llvmpipe_free_memory(struct pipe_screen *pscreen,
 #if DETECT_OS_LINUX
    struct llvmpipe_screen *screen = llvmpipe_screen(pscreen);
 
-   if (mem->fd) {
+   if (mem->fd >= 0) {
       mtx_lock(&screen->mem_mutex);
       util_vma_heap_free(&screen->mem_heap, mem->offset, mem->size);
       mtx_unlock(&screen->mem_mutex);
