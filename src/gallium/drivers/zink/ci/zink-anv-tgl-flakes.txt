@@ -96,3 +96,6 @@ glx@glx-multithread-buffer-busy-tracking-bug
 glx@glx-query-drawable-glx_width
 glx@glx-query-drawable-glxpixmap-glx_width
 glx@glx-swap-pixmap
+
+# New flakes with GL CTS 4.6.7.0
+KHR-GL46.transform_feedback2.transform_feedback2_states

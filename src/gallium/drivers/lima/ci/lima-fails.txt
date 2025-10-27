@@ -626,7 +626,6 @@ dEQP-GLES2.functional.texture.mipmap.2d.basic.linear_linear_mirror,Fail
 dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_ops.keep_decr_wrap_invert,Fail
 dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_ops.decr_wrap_keep_keep,Fail
 dEQP-GLES2.functional.texture.mipmap.2d.projected.nearest_nearest_repeat,Fail
-dEQP-GLES2.functional.texture.mipmap.cube.projected.nearest_linear,Fail
 dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_ops.decr_incr_decr_wrap,Fail
 dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_ops.invert_zero_incr_wrap,Fail
 dEQP-GLES2.functional.fragment_ops.depth_stencil.stencil_ops.replace_zero_decr,Fail

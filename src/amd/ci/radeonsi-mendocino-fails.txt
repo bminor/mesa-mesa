@@ -1,4 +1,4 @@
-KHR-GL46.es_31_compatibility.shader_image_load_store.basic-allFormats-store-fs,Fail
+KHR-GL46.shader_image_load_store.basic-allTargets-atomic,Fail
 KHR-GL46.sparse_texture2_tests.StandardPageSizesTestCase_texture_1d_array_r11f_g11f_b10f,Fail
 KHR-GL46.sparse_texture2_tests.StandardPageSizesTestCase_texture_1d_array_r16,Fail
 KHR-GL46.sparse_texture2_tests.StandardPageSizesTestCase_texture_1d_array_r16f,Fail

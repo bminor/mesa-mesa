@@ -566,17 +566,6 @@ spec@!opengl 1.1@depthstencil-default_fb-blit samples=2,Fail
 spec@arb_sample_shading@samplemask 6,Fail
 spec@ext_framebuffer_multisample@interpolation 2 centroid-deriv-disabled,Fail
 
-# glcts doesn't check for unsupported formats. See discussion in !35524
-KHR-GL46.sparse_texture2_tests.SparseTexture2Lookup_texture_2d_array_depth_component16,Fail
-KHR-GL46.sparse_texture2_tests.SparseTexture2Lookup_texture_2d_depth_component16,Fail
-KHR-GL46.sparse_texture2_tests.SparseTexture2Lookup_texture_cube_map_array_depth_component16,Fail
-KHR-GL46.sparse_texture2_tests.SparseTexture2Lookup_texture_cube_map_depth_component16,Fail
-KHR-GL46.sparse_texture2_tests.SparseTexture2Lookup_texture_rectangle_depth_component16,Fail
-KHR-GL46.sparse_texture_clamp_tests.SparseTextureClampLookupResidency_texture_2d_array_depth_component16,Fail
-KHR-GL46.sparse_texture_clamp_tests.SparseTextureClampLookupResidency_texture_2d_depth_component16,Fail
-KHR-GL46.sparse_texture_clamp_tests.SparseTextureClampLookupResidency_texture_cube_map_array_depth_component16,Fail
-KHR-GL46.sparse_texture_clamp_tests.SparseTextureClampLookupResidency_texture_cube_map_depth_component16,Fail
-
 # glcts: ../src/intel/compiler/brw_eu_emit.c:64: brw_set_dest: Assertion `dest.subnr == 0' failed.
 KHR-GLES31.core.texture_stencil8.multisample,Crash
 

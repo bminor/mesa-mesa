@@ -80,3 +80,6 @@ KHR-Single-GL46.arrays_of_arrays_gl.SubroutineArgumentAliasing1_var_type_index_1
 spec@arb_fragment_program@fog-modes
 
 glx@glx_arb_create_context@null attribute list
+
+# New flakes with GL CTS 4.6.7.0
+KHR-GL46.transform_feedback2.transform_feedback2_states

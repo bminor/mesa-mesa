@@ -411,7 +411,3 @@ KHR-GL46.sparse_texture2_tests.UncommittedRegionsAccess_texture_cube_map_r32i,Fa
 KHR-GL46.sparse_texture2_tests.UncommittedRegionsAccess_texture_2d_multisample_r32ui,Fail
 KHR-GL46.sparse_texture2_tests.StandardPageSizesTestCase_texture_1d_array_r32ui,Fail
 KHR-GL46.sparse_texture2_tests.UncommittedRegionsAccess_texture_2d_array_rg16f,Fail
-
-# New failures with GL CTS 4.6.6.0
-KHR-GL46.es_31_compatibility.shader_image_load_store.basic-allFormats-store-fs,Fail
-KHR-GL46.direct_state_access.vertex_arrays_vertex_buffers_errors,Fail

@@ -20,7 +20,6 @@ dEQP-GLES3.functional.clipping.point.wide_point_clip,Fail
 dEQP-GLES3.functional.clipping.point.wide_point_clip_viewport_center,Fail
 dEQP-GLES3.functional.clipping.point.wide_point_clip_viewport_corner,Fail
 dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_mag,Fail
-dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_mag_reverse_src_dst_y,Fail
 dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_min,Fail
 dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_min_reverse_dst_x,Fail
 dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_min_reverse_src_dst_x,Fail
@@ -570,3 +569,11 @@ glx@glx-multithread-buffer-busy-tracking-bug,Fail
 spec@arb_es2_compatibility@texwrap formats bordercolor,Fail
 spec@arb_es2_compatibility@texwrap formats bordercolor@GL_RGB565- border color only,Fail
 spec@arb_spirv_extensions@execution@storage_buffer_storage_class@unsized-array,Fail
+
+# New failures with GL CTS 4.6.7.0
+KHR-GL43.cull_distance.functional_test_item_5_primitive_mode_triangles_max_culldist_0,Fail
+KHR-Single-GL43.arrays_of_arrays_gl.InteractionArgumentAliasing6_var_type_index_4,Fail
+KHR-Single-GL43.arrays_of_arrays_gl.InteractionFunctionCalls2_var_type_index_14,Fail
+KHR-Single-GL43.arrays_of_arrays_gl.SubroutineArgumentAliasing4_var_type_index_14,Fail
+KHR-Single-GL43.arrays_of_arrays_gl.SubroutineFunctionCalls1_var_type_index_14,Fail
+KHR-Single-GL43.arrays_of_arrays_gl.SubroutineFunctionCalls2_var_type_index_14,Fail

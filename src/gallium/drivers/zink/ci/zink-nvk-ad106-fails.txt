@@ -2,7 +2,6 @@ dEQP-GLES31.functional.shaders.multisample_interpolation.interpolate_at_sample.n
 dEQP-GLES31.functional.shaders.multisample_interpolation.interpolate_at_sample.non_multisample_buffer.sample_n_singlesample_rbo,Fail
 dEQP-GLES31.functional.shaders.multisample_interpolation.interpolate_at_sample.non_multisample_buffer.sample_n_singlesample_texture,Fail
 
-KHR-GL46.direct_state_access.framebuffers_blit,Crash
 KHR-GL46.direct_state_access.renderbuffers_storage_multisample,Crash
 KHR-GL46.framebuffer_blit.multisampled_to_singlesampled_blit_depth_config_test,Crash
 KHR-GL46.framebuffer_blit.scissor_blit,Crash

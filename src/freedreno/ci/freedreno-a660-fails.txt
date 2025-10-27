@@ -2,9 +2,7 @@ KHR-GL46.shader_image_load_store.basic-allTargets-store,Fail
 KHR-GL46.shader_subroutine.control_flow_and_returned_subroutine_values_used_as_subroutine_input,Fail
 
 #glcts update
-dEQP-GLES2.functional.texture.mipmap.cube.projected.nearest_linear,Fail
 KHR-GLES3.framebuffer_blit.framebuffer_blit_functionality_multisampled_to_singlesampled_blit,Fail
-KHR-GL46.texture_lod_basic.lod_selection,Fail
 KHR-GL46.texture_lod_bias.texture_lod_bias_all,Fail
 
 # New failures with ES CTS 3.2.12.0
@@ -136,4 +134,3 @@ program@execute@vector-conversion,Fail
 
 # Initial ANGLE failures
 angle-dEQP-GLES2.functional.shaders.algorithm.rgb_to_hsl_vertex,Fail
-angle-dEQP-GLES2.functional.texture.mipmap.cube.projected.nearest_linear,Fail

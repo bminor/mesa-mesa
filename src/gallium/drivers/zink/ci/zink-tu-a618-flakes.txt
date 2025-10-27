@@ -85,3 +85,6 @@ wayland-dEQP-EGL.functional.sharing.gles2.multithread.simple.images.texture_sour
 wayland-dEQP-EGL.functional.sharing.gles2.multithread.simple.images.texture_source.texsubimage2d_render
 .*dEQP-EGL.functional.*.multithread.*
 dEQP-EGL.functional.*.multi_thread.*
+
+dEQP-GLES3.functional.occlusion_query.conservative_scissor_depth_write_depth_clear
+dEQP-GLES3.functional.texture.specification.texstorage2d.format.r16ui_2d

@@ -25,8 +25,8 @@ set -x
 
 DEQP_MAIN_COMMIT=211e452358f5cafd14bdd76d78342b62741e94aa
 DEQP_VK_VERSION=1.4.4.2
-DEQP_GL_VERSION=4.6.6.0
-DEQP_GLES_VERSION=3.2.12.0
+DEQP_GL_VERSION=4.6.7.0
+DEQP_GLES_VERSION=3.2.13.0
 
 # Patches to VulkanCTS may come from commits in their repo (listed in
 # cts_commits_to_backport) or patch files stored in our repo (in the patch
@@ -54,29 +54,23 @@ vk_cts_patch_files=(
 
 # shellcheck disable=SC2034
 gl_cts_commits_to_backport=(
-  # Add testing for GL_PRIMITIVES_SUBMITTED_ARB query.
-  e075ce73ddc5973aa46a5236c715bb281c9501fa
 )
 
 # shellcheck disable=SC2034
 gl_cts_patch_files=(
   build-deqp-gl_Build-Don-t-build-Vulkan-utilities-for-GL-builds.patch
-  build-deqp-gl_Revert-Add-missing-context-deletion.patch
-  build-deqp-gl_Revert-Fix-issues-with-GLX-reset-notification-strate.patch
-  build-deqp-gl_Revert-Fix-spurious-failures-when-using-a-config-wit.patch
 )
 
 # shellcheck disable=SC2034
 # GLES builds also EGL
 gles_cts_commits_to_backport=(
+  # CMake: Include FindPkgConfig before using pkg_check_modules()
+  e09e0a210b041d0bf7b525620d0068eab3ffa66a
 )
 
 # shellcheck disable=SC2034
 gles_cts_patch_files=(
   build-deqp-gl_Build-Don-t-build-Vulkan-utilities-for-GL-builds.patch
-  build-deqp-gl_Revert-Add-missing-context-deletion.patch
-  build-deqp-gl_Revert-Fix-issues-with-GLX-reset-notification-strate.patch
-  build-deqp-gl_Revert-Fix-spurious-failures-when-using-a-config-wit.patch
 )
 
 if [ "${DEQP_TARGET}" = 'android' ]; then
