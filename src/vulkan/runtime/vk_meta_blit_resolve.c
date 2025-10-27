@@ -884,16 +884,35 @@ vk_meta_resolve_image2(struct vk_command_buffer *cmd,
    VK_FROM_HANDLE(vk_image, src_image, resolve->srcImage);
    VK_FROM_HANDLE(vk_image, dst_image, resolve->dstImage);
 
+   /* Color resolve default to be based on the format */
    VkResolveModeFlagBits resolve_mode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
    if (vk_format_is_color(src_image->format) &&
        !vk_format_is_int(src_image->format))
       resolve_mode = VK_RESOLVE_MODE_AVERAGE_BIT;
 
+   VkResolveImageFlagBitsKHR resolve_flags = 0;
+   VkResolveModeFlagBits stencil_resolve_mode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
+
+   const VkResolveImageModeInfoKHR *mode_info =
+      vk_find_struct_const(resolve->pNext, RESOLVE_IMAGE_MODE_INFO_KHR);
+   if (mode_info != NULL) {
+      resolve_flags = mode_info->flags;
+      resolve_mode = mode_info->resolveMode;
+      stencil_resolve_mode = mode_info->stencilResolveMode;
+   }
+
+   VkFormat src_format = src_image->format;
+   VkFormat dst_format = dst_image->format;
+   if (resolve_flags & VK_RESOLVE_IMAGE_SKIP_TRANSFER_FUNCTION_BIT_KHR) {
+      src_format = vk_format_srgb_to_linear(src_format);
+      dst_format = vk_format_srgb_to_linear(dst_format);
+   }
+
    vk_meta_resolve_image(cmd, meta,
-                         src_image, src_image->format, resolve->srcImageLayout,
-                         dst_image, dst_image->format, resolve->dstImageLayout,
+                         src_image, src_format, resolve->srcImageLayout,
+                         dst_image, dst_format, resolve->dstImageLayout,
                          resolve->regionCount, resolve->pRegions,
-                         resolve_mode, VK_RESOLVE_MODE_SAMPLE_ZERO_BIT);
+                         resolve_mode, stencil_resolve_mode);
 }
 
 static void
