@@ -2,3 +2,7 @@ VK_KHR_relaxed_block_layout on pvr
 VK_KHR_storage_buffer_storage_class on pvr
 VK_EXT_external_memory_acquire_unmodified on panvk
 VK_EXT_discard_rectangles on NVK
+VK_KHR_present_id on HoneyKrisp
+VK_KHR_present_id2 on HoneyKrisp
+VK_KHR_present_wait on HoneyKrisp
+VK_KHR_present_wait2 on HoneyKrisp

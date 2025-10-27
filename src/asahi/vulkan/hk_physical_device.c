@@ -94,6 +94,12 @@ hk_get_device_extensions(const struct hk_instance *instance,
       .KHR_multiview = true,
       .KHR_pipeline_executable_properties = true,
       .KHR_pipeline_library = true,
+#ifdef HK_USE_WSI_PLATFORM
+      .KHR_present_id = true,
+      .KHR_present_id2 = true,
+      .KHR_present_wait = true,
+      .KHR_present_wait2 = true,
+#endif
       .KHR_push_descriptor = true,
       .KHR_relaxed_block_layout = true,
       .KHR_sampler_mirror_clamp_to_edge = true,
@@ -401,10 +407,16 @@ hk_get_device_features(
       .pipelineExecutableInfo = true,
 
       /* VK_KHR_present_id */
-      .presentId = false,
+      .presentId = true,
+
+      /* VK_KHR_present_id2 */
+      .presentId2 = true,
 
       /* VK_KHR_present_wait */
-      .presentWait = false,
+      .presentWait = true,
+
+      /* VK_KHR_present_wait2 */
+      .presentWait2 = true,
 
       /* VK_KHR_shader_clock */
       .shaderSubgroupClock = false,
