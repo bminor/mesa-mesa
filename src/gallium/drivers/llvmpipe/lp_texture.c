@@ -1520,7 +1520,12 @@ llvmpipe_allocate_memory_fd(struct pipe_screen *pscreen,
       if (!alloc->cpu_addr)
          goto fail;
 
-      alloc->fd = -1;
+      alloc->fd = os_dupfd_cloexec(fd);
+      if (alloc->fd < 0) {
+         os_free_fd(alloc->cpu_addr);
+         goto fail;
+      }
+
       alloc->type = LLVMPIPE_MEMORY_FD_TYPE_OPAQUE;
    }
 
@@ -1544,25 +1549,21 @@ llvmpipe_import_memory_fd(struct pipe_screen *screen,
    if (!alloc)
       return false;
 
-   alloc->mem_fd = -1;
-   alloc->fd = -1;
+   int dup_fd = os_dupfd_cloexec(fd);
+   if (dup_fd < 0)
+      goto fail;
+
 #if defined(HAVE_LIBDRM) && defined(HAVE_LINUX_UDMABUF_H)
    if (dmabuf) {
-      int dup_fd = os_dupfd_cloexec(fd);
-      if (dup_fd < 0)
+      if (!llvmpipe_dmabuf_import(dup_fd, alloc))
          goto fail;
-
-      if (!llvmpipe_dmabuf_import(dup_fd, alloc)) {
-         close(dup_fd);
-         goto fail;
-      }
    } else
 #endif
    {
-      if (!os_import_memory_fd(fd, &alloc->cpu_addr, &alloc->size, driver_id))
+      if (!os_import_memory_fd(dup_fd, &alloc->cpu_addr, &alloc->size, driver_id))
          goto fail;
 
-      alloc->fd = -1;
+      alloc->fd = dup_fd;
       alloc->type = LLVMPIPE_MEMORY_FD_TYPE_OPAQUE;
    }
 
@@ -1571,6 +1572,8 @@ llvmpipe_import_memory_fd(struct pipe_screen *screen,
    return true;
 
 fail:
+   if (dup_fd >= 0)
+      close(dup_fd);
    FREE(alloc);
    return false;
 }
@@ -1583,6 +1586,7 @@ llvmpipe_free_memory_fd(struct pipe_screen *screen,
    struct llvmpipe_memory_allocation *alloc = (struct llvmpipe_memory_allocation*)pmem;
    if (alloc->type == LLVMPIPE_MEMORY_FD_TYPE_OPAQUE) {
       os_free_fd(alloc->cpu_addr);
+      close(alloc->fd);
    }
 #if defined(HAVE_LIBDRM) && defined(HAVE_LINUX_UDMABUF_H)
    else {
@@ -1632,6 +1636,8 @@ llvmpipe_resource_bind_sparse(struct llvmpipe_resource *lpr,
    struct llvmpipe_memory_allocation *mem = (struct llvmpipe_memory_allocation *)pmem;
    bool ok;
 
+   assert(!mem || mem->fd >= 0);
+
    if (offset >= lpr->size_required)
       return false;
 
@@ -1639,8 +1645,15 @@ llvmpipe_resource_bind_sparse(struct llvmpipe_resource *lpr,
                            : (char *)lpr->data + offset;
 
    if (mem) {
-      ok = mmap(addr, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED,
-                mem->fd, mem->offset + fd_offset) != MAP_FAILED;
+      fd_offset += mem->offset;
+
+      if (mem->type == LLVMPIPE_MEMORY_FD_TYPE_OPAQUE) {
+         ok = os_map_memory_fd_placed(mem->fd, addr, size, fd_offset,
+                                      driver_id);
+      } else {
+         ok = mmap(addr, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED,
+                   mem->fd, fd_offset) != MAP_FAILED;
+      }
    } else {
       ok = mmap(addr, size, PROT_READ | PROT_WRITE,
                 MAP_SHARED | MAP_FIXED | MAP_ANONYMOUS, -1, 0) != MAP_FAILED;
