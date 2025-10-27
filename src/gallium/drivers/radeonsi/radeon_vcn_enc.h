@@ -262,6 +262,7 @@ struct radeon_encoder {
    unsigned metadata_size;
 
    bool error;
+   bool first_frame;
 
    enum {
       DPB_LEGACY = 0,
