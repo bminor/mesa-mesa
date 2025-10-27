@@ -414,7 +414,7 @@
         "description": "zink: fix mesh and task shader pipeline statistics",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9d0e73335af17ed243fab652351e3224e3a2f91e",
         "notes": null
