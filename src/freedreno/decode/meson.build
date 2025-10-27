@@ -141,7 +141,8 @@ if dep_libarchive.found()
   generate_rd = executable(
     'generate_rd',
     [
-      'generate-rd.cc'
+      'generate-rd.cc',
+      freedreno_xml_header_files,
     ],
     include_directories: [
       inc_freedreno,
