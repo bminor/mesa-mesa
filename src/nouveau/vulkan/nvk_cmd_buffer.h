@@ -138,6 +138,8 @@ struct nvk_descriptor_state {
 } while (0)
 
 struct nvk_attachment {
+   VkRenderingAttachmentFlagBitsKHR flags;
+
    VkFormat vk_format;
    struct nvk_image_view *iview;
 
