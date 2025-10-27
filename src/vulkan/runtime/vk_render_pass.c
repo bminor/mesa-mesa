@@ -1038,6 +1038,7 @@ vk_get_command_buffer_inheritance_as_rendering_resume(
          &subpass->color_attachments[i];
       if (sp_att->attachment == VK_ATTACHMENT_UNUSED) {
          attachments[i] = (VkRenderingAttachmentInfo) {
+            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
             .imageView = VK_NULL_HANDLE,
          };
          continue;
