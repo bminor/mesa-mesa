@@ -1271,6 +1271,8 @@ brw_nir_lower_tcs_outputs(nir_shader *nir,
     */
    NIR_PASS(_, nir, nir_opt_constant_folding);
    NIR_PASS(_, nir, nir_io_add_const_offset_to_base, nir_var_shader_out);
+
+   NIR_PASS(_, nir, lower_outputs_to_urb_intrinsics, devinfo);
 }
 
 void
