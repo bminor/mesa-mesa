@@ -72,7 +72,7 @@ radv_emit_spm_setup(struct radv_device *device, struct radv_cmd_stream *cs)
    struct ac_spm *spm = &device->spm;
    uint64_t va = radv_buffer_get_va(spm->bo);
 
-   radeon_check_space(device->ws, cs->b, 2048);
+   radeon_check_space(device->ws, cs->b, 4096);
    ac_emit_spm_setup(cs->b, pdev->info.gfx_level, cs->hw_ip, spm, va);
 }
 
