@@ -3134,6 +3134,12 @@ init_driver_workarounds(struct zink_screen *screen)
 }
 
 static void
+disable_features(struct zink_screen *screen)
+{
+   screen->info.mesh_feats.primitiveFragmentShadingRateMeshShader = false;
+}
+
+static void
 check_hic_shader_read(struct zink_screen *screen)
 {
    if (screen->info.have_EXT_host_image_copy) {
@@ -3513,6 +3519,7 @@ zink_internal_create_screen(const struct pipe_screen_config *config, int64_t dev
    check_hic_shader_read(screen);
 
    init_driver_workarounds(screen);
+   disable_features(screen);
 
    screen->dev = zink_create_logical_device(screen);
    if (!screen->dev)

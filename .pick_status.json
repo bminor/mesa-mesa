@@ -24,7 +24,7 @@
         "description": "zink: disable primitiveFragmentShadingRateMeshShader feature",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "90f3c5733749a820d70e9599ec93783b628aa342",
         "notes": null
