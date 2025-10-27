@@ -28,6 +28,7 @@ libfreedreno_cffdec = static_library(
     'script.h',
     'util.h',
     cffdump_pkt_handler_h,
+    freedreno_pm4_xml_header_file,
   ],
   include_directories: [
     inc_freedreno,
@@ -92,7 +93,8 @@ if dep_libarchive.found()
     replay = executable(
       replay_name,
       [
-        'replay.c'
+        'replay.c',
+        freedreno_pm4_xml_header_file,
       ],
       include_directories: [
         inc_freedreno,
@@ -164,6 +166,7 @@ if dep_lua.found() and dep_libarchive.found()
     'cffdump',
     [
       'cffdump.c',
+      freedreno_pm4_xml_header_file,
     ],
     include_directories: [
       inc_freedreno,
@@ -192,6 +195,7 @@ if dep_lua.found() and dep_libarchive.found()
       'crashdec-hfi.c',
       'crashdec-mempool.c',
       'crashdec-prefetch.c',
+      freedreno_pm4_xml_header_file,
     ],
     include_directories: [
       inc_freedreno,

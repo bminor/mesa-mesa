@@ -1372,17 +1372,6 @@ enum state_t {
    UNKNOWN_4DWORDS,
 };
 
-enum adreno_state_block {
-   SB_VERT_TEX = 0,
-   SB_VERT_MIPADDR = 1,
-   SB_FRAG_TEX = 2,
-   SB_FRAG_MIPADDR = 3,
-   SB_VERT_SHADER = 4,
-   SB_GEOM_SHADER = 5,
-   SB_FRAG_SHADER = 6,
-   SB_COMPUTE_SHADER = 7,
-};
-
 /* TODO there is probably a clever way to let rnndec parse things so
  * we don't have to care about packet format differences across gens
  */
@@ -2177,14 +2166,6 @@ draw_indx_common(uint32_t *dwords, int level)
 
    return num_indices;
 }
-
-enum pc_di_index_size {
-   INDEX_SIZE_IGN = 0,
-   INDEX_SIZE_16_BIT = 0,
-   INDEX_SIZE_32_BIT = 1,
-   INDEX_SIZE_8_BIT = 2,
-   INDEX_SIZE_INVALID = 0,
-};
 
 static void
 cp_draw_indx(uint32_t *dwords, uint32_t sizedwords, int level)
