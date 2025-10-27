@@ -2596,6 +2596,9 @@ uint32_t
 isl_drm_modifier_get_score(const struct intel_device_info *devinfo,
                            uint64_t modifier);
 
+/* The maximum number of planes of an Intel modifier in drm_fourcc.h. */
+#define ISL_MODIFIER_MAX_PLANES 4
+
 /* Return the number of planes used by an image with the given parameters. */
 uint32_t
 isl_drm_modifier_get_plane_count(const struct intel_device_info *devinfo,
