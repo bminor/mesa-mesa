@@ -194,7 +194,7 @@ ac_emit_cp_release_mem_pws(struct ac_cmdbuf *cs, ASSERTED enum amd_gfx_level gfx
 
    /* Extract GCR_CNTL fields because the encoding is different in RELEASE_MEM. */
    assert(G_586_GLI_INV(gcr_cntl) == 0);
-   assert(G_586_GL1_RANGE(gcr_cntl) == 0);
+   assert(gfx_level >= GFX12 || G_586_GL1_RANGE(gcr_cntl) == 0);
    const uint32_t glm_wb = G_586_GLM_WB(gcr_cntl);
    const uint32_t glm_inv = G_586_GLM_INV(gcr_cntl);
    const uint32_t glk_wb = G_586_GLK_WB(gcr_cntl);
@@ -213,9 +213,8 @@ ac_emit_cp_release_mem_pws(struct ac_cmdbuf *cs, ASSERTED enum amd_gfx_level gfx
    ac_cmdbuf_emit(PKT3(PKT3_RELEASE_MEM, 6, 0));
    ac_cmdbuf_emit(S_490_EVENT_TYPE(event_type) |
                    S_490_EVENT_INDEX(ts ? 5 : 6) |
-                   (gfx_level >= GFX12 ? 0 : S_490_GLM_WB(glm_wb) | S_490_GLM_INV(glm_inv)) |
+                   (gfx_level >= GFX12 ? 0 : S_490_GLM_WB(glm_wb) | S_490_GLM_INV(glm_inv) | S_490_GL1_INV(gl1_inv)) |
                    S_490_GLV_INV(glv_inv) |
-                   S_490_GL1_INV(gl1_inv) |
                    S_490_GL2_INV(gl2_inv) |
                    S_490_GL2_WB(gl2_wb) |
                    S_490_SEQ(gcr_seq) |

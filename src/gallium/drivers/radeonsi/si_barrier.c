@@ -150,9 +150,11 @@ static void gfx10_emit_barrier(struct si_context *ctx, struct radeon_cmdbuf *cs)
    if (flags & SI_BARRIER_INV_ICACHE)
       gcr_cntl |= S_586_GLI_INV(V_586_GLI_ALL);
    if (flags & SI_BARRIER_INV_SMEM)
-      gcr_cntl |= S_586_GL1_INV(1) | S_586_GLK_INV(1);
+      gcr_cntl |= S_586_GLK_INV(1);
    if (flags & SI_BARRIER_INV_VMEM)
-      gcr_cntl |= S_586_GL1_INV(1) | S_586_GLV_INV(1);
+      gcr_cntl |= S_586_GLV_INV(1);
+   if (ctx->gfx_level < GFX12 && flags & (SI_BARRIER_INV_SMEM | SI_BARRIER_INV_VMEM))
+      gcr_cntl |= S_586_GL1_INV(1);
 
    /* The L2 cache ops are:
     * - INV: - invalidate lines that reflect memory (were loaded from memory)
@@ -239,15 +241,16 @@ static void gfx10_emit_barrier(struct si_context *ctx, struct radeon_cmdbuf *cs)
          unsigned gl2_wb = G_586_GL2_WB(gcr_cntl);
          unsigned gcr_seq = G_586_SEQ(gcr_cntl);
 
-         gcr_cntl &= C_586_GLV_INV & C_586_GL1_INV & C_586_GL2_INV & C_586_GL2_WB; /* keep SEQ */
+         gcr_cntl &= C_586_GLV_INV & C_586_GL2_INV & C_586_GL2_WB; /* keep SEQ */
 
          if (ctx->gfx_level < GFX12)
-            gcr_cntl &= C_586_GLM_WB & C_586_GLM_INV;
+            gcr_cntl &= C_586_GLM_WB & C_586_GLM_INV & C_586_GL1_INV;
 
          si_cp_release_mem(ctx, cs, cb_db_event,
-                           (ctx->gfx_level >= GFX12 ? 0 : S_490_GLM_WB(glm_wb) | S_490_GLM_INV(glm_inv)) |
+                           (ctx->gfx_level >= GFX12 ? 0 : S_490_GLM_WB(glm_wb) | S_490_GLM_INV(glm_inv) |
+                                                          S_490_GL1_INV(gl1_inv)) |
                            S_490_GLV_INV(glv_inv) |
-                           S_490_GL1_INV(gl1_inv) | S_490_GL2_INV(gl2_inv) | S_490_GL2_WB(gl2_wb) |
+                           S_490_GL2_INV(gl2_inv) | S_490_GL2_WB(gl2_wb) |
                            S_490_SEQ(gcr_seq),
                            EOP_DST_SEL_MEM, EOP_INT_SEL_SEND_DATA_AFTER_WR_CONFIRM,
                            EOP_DATA_SEL_VALUE_32BIT, wait_mem_scratch, va, ctx->wait_mem_number,
@@ -280,7 +283,7 @@ static void gfx10_emit_barrier(struct si_context *ctx, struct radeon_cmdbuf *cs)
    }
 
    /* Ignore fields that only modify the behavior of other fields. */
-   if (gcr_cntl & C_586_GL1_RANGE & C_586_GL2_RANGE & C_586_SEQ) {
+   if (gcr_cntl & C_586_GL2_RANGE & C_586_SEQ & (ctx->gfx_level >= GFX12 ? ~0 : C_586_GL1_RANGE)) {
       si_cp_acquire_mem(ctx, cs, gcr_cntl,
                         flags & SI_BARRIER_PFP_SYNC_ME ? V_580_CP_PFP : V_580_CP_ME);
    } else if (flags & SI_BARRIER_PFP_SYNC_ME) {
