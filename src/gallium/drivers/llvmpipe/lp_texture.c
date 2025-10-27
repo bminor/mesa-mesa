@@ -852,7 +852,10 @@ llvmpipe_resource_get_handle(struct pipe_screen *_screen,
          /* reuse lavapipe codepath to handle destruction */
          lpr->backable = true;
       } else {
+         assert(lpr->dmabuf_alloc->fd >= 0);
          whandle->handle = os_dupfd_cloexec(lpr->dmabuf_alloc->fd);
+         if (whandle->handle < 0)
+            return false;
       }
       whandle->modifier = DRM_FORMAT_MOD_LINEAR;
       whandle->stride = lpr->row_stride[0];
@@ -1460,8 +1463,15 @@ llvmpipe_allocate_memory_fd(struct pipe_screen *pscreen,
       alloc->type = LLVMPIPE_MEMORY_FD_TYPE_DMA_BUF;
       alloc->cpu_addr = llvmpipe_resource_alloc_udmabuf(screen, alloc, size);
 
-      if (alloc->cpu_addr)
+      if (alloc->cpu_addr) {
          *fd = os_dupfd_cloexec(alloc->fd);
+         if (*fd < 0) {
+            close(alloc->mem_fd);
+            close(alloc->fd);
+            FREE(alloc);
+            goto fail;
+         }
+      }
    } else
 #endif
    {
@@ -1517,6 +1527,13 @@ llvmpipe_import_memory_fd(struct pipe_screen *screen,
       alloc->cpu_addr = cpu_addr;
       alloc->size = mmap_size;
       alloc->fd = os_dupfd_cloexec(fd);
+      if (alloc->fd < 0) {
+         munmap(alloc->cpu_addr, alloc->size);
+         free(alloc);
+         *ptr = NULL;
+         return false;
+      }
+
       *ptr = (struct pipe_memory_allocation*)alloc;
       *size = mmap_size;
 

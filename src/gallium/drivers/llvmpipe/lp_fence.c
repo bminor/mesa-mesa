@@ -294,10 +294,15 @@ lp_create_fence_fd(struct pipe_context *pipe,
    if (!f)
       goto fail;
 
+   f->sync_fd = os_dupfd_cloexec(fd);
+   if (f->sync_fd < 0) {
+      free(f);
+      goto fail;
+   }
+
    pipe_reference_init(&f->reference, 1);
    f->type = LP_FENCE_TYPE_SYNC_FD;
    f->id = p_atomic_inc_return(&fence_id) - 1;
-   f->sync_fd = os_dupfd_cloexec(fd);
    f->issued = true;
 
    *fence = (struct pipe_fence_handle*)f;
