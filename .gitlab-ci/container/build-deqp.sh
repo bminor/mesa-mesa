@@ -46,6 +46,8 @@ main_cts_patch_files=(
 
 # shellcheck disable=SC2034
 vk_cts_commits_to_backport=(
+  # Add an option to print to logcat in Android executable builds
+  fc51668efdfd0dffa30b3eddee34aa26172969fb
 )
 
 # shellcheck disable=SC2034
@@ -66,21 +68,14 @@ gl_cts_patch_files=(
 gles_cts_commits_to_backport=(
   # CMake: Include FindPkgConfig before using pkg_check_modules()
   e09e0a210b041d0bf7b525620d0068eab3ffa66a
+  # Add an option to print to logcat in Android executable builds
+  fc51668efdfd0dffa30b3eddee34aa26172969fb
 )
 
 # shellcheck disable=SC2034
 gles_cts_patch_files=(
   build-deqp-gl_Build-Don-t-build-Vulkan-utilities-for-GL-builds.patch
 )
-
-if [ "${DEQP_TARGET}" = 'android' ]; then
-  gles_cts_patch_files+=(
-    build-deqp-Print-to-logcat-in-Android-executable-builds.patch
-  )
-  vk_cts_patch_files+=(
-    build-deqp-Print-to-logcat-in-Android-executable-builds.patch
-  )
-fi
 
 
 ### Careful editing anything below this line
