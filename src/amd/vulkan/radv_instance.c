@@ -40,7 +40,6 @@ static const struct debug_control radv_debug_options[] = {{"nofastclears", RADV_
                                                           {"zerovram", RADV_DEBUG_ZERO_VRAM},
                                                           {"syncshaders", RADV_DEBUG_SYNC_SHADERS},
                                                           {"preoptir", RADV_DEBUG_DUMP_PREOPT_IR},
-                                                          {"nodynamicbounds", RADV_DEBUG_NO_DYNAMIC_BOUNDS},
                                                           {"info", RADV_DEBUG_INFO},
                                                           {"startup", RADV_DEBUG_STARTUP},
                                                           {"checkir", RADV_DEBUG_CHECKIR},
@@ -52,8 +51,6 @@ static const struct debug_control radv_debug_options[] = {{"nofastclears", RADV_
                                                           {"hang", RADV_DEBUG_HANG},
                                                           {"img", RADV_DEBUG_IMG},
                                                           {"noumr", RADV_DEBUG_NO_UMR},
-                                                          {"invariantgeom", RADV_DEBUG_INVARIANT_GEOM},
-                                                          {"splitfma", RADV_DEBUG_SPLIT_FMA},
                                                           {"nodisplaydcc", RADV_DEBUG_NO_DISPLAY_DCC},
                                                           {"notccompatcmask", RADV_DEBUG_NO_TC_COMPAT_CMASK},
                                                           {"novrsflatshading", RADV_DEBUG_NO_VRS_FLAT_SHADING},
@@ -69,7 +66,6 @@ static const struct debug_control radv_debug_options[] = {{"nofastclears", RADV_
                                                           {"videoarraypath", RADV_DEBUG_VIDEO_ARRAY_PATH},
                                                           {"nort", RADV_DEBUG_NO_RT},
                                                           {"nomeshshader", RADV_DEBUG_NO_MESH_SHADER},
-                                                          {"nongg_gs", RADV_DEBUG_NO_NGG_GS},
                                                           {"noeso", RADV_DEBUG_NO_ESO},
                                                           {"psocachestats", RADV_DEBUG_PSO_CACHE_STATS},
                                                           {"nirdebuginfo", RADV_DEBUG_NIR_DEBUG_INFO},
@@ -439,31 +435,6 @@ radv_CreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationC
    VG(VALGRIND_CREATE_MEMPOOL(instance, 0, false));
 
    radv_init_dri_options(instance);
-
-   /* Handle deprecated RADV_DEBUG options. */
-   if (instance->debug_flags & RADV_DEBUG_NO_DYNAMIC_BOUNDS) {
-      fprintf(stderr, "radv: RADV_DEBUG=nodynamicbounds is deprecated and will it be removed in future Mesa releases. "
-                      "Please use radv_no_dynamic_bounds=true instead.\n");
-      instance->drirc.debug.no_dynamic_bounds = true;
-   }
-
-   if (instance->debug_flags & RADV_DEBUG_INVARIANT_GEOM) {
-      fprintf(stderr, "radv: RADV_DEBUG=invariantgeom is deprecated and will it be removed in future Mesa releases. "
-                      "Please use radv_invariant_geom=true instead.\n");
-      instance->drirc.debug.invariant_geom = true;
-   }
-
-   if (instance->debug_flags & RADV_DEBUG_SPLIT_FMA) {
-      fprintf(stderr, "radv: RADV_DEBUG=splitfma is deprecated and will it be removed in future Mesa releases. "
-                      "Please use radv_split_fma=true instead.\n");
-      instance->drirc.debug.split_fma = true;
-   }
-
-   if (instance->debug_flags & RADV_DEBUG_NO_NGG_GS) {
-      fprintf(stderr, "radv: RADV_DEBUG=nongg_gs is deprecated and will it be removed in future Mesa releases. "
-                      "Please use radv_disable_ngg_gs=true instead.\n");
-      instance->drirc.performance.disable_ngg_gs = true;
-   }
 
    *pInstance = radv_instance_to_handle(instance);
 

@@ -1395,9 +1395,6 @@ RADV driver environment variables
       Print image info
    ``info``
       show GPU-related information
-   ``invariantgeom``
-      Mark geometry-affecting outputs as invariant. This works around a common
-      class of application bugs appearing as flickering. (deprecated)
    ``metashaders``
       dump internal meta shaders
    ``noatocdithering``
@@ -1414,8 +1411,6 @@ RADV driver environment variables
       disable Delta Color Compression (DCC) on images
    ``nodisplaydcc``
       disable Delta Color Compression (DCC) on displayable images
-   ``nodynamicbounds``
-      do not check OOB access for dynamic descriptors (deprecated)
    ``noeso``
       disable VK_EXT_shader_object
    ``nofastclears``
@@ -1434,8 +1429,6 @@ RADV driver environment variables
       disable NGG for GFX10 and GFX10.3
    ``nonggc``
       disable NGG culling for GFX10 and GFX10.3
-   ``nongg_gs``
-      disable NGG GS for GFX10 and GFX10.3 (deprecated)
    ``nort``
       skip executing vkCmdTraceRays and ray queries (RT extensions will still be
       advertised)
@@ -1465,9 +1458,6 @@ RADV driver environment variables
       enable register shadowing
    ``spirv``
       dump SPIR-V
-   ``splitfma``
-      split application-provided fused multiply-add in geometry stages
-      (deprecated)
    ``startup``
       display info at startup
    ``syncshaders``
