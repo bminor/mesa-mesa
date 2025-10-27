@@ -121,7 +121,6 @@ static const struct debug_named_value radeonsi_shader_debug_options[] = {
    {"checkir", DBG(CHECK_IR), "Enable additional sanity checks on shader IR"},
    {"mono", DBG(MONOLITHIC_SHADERS), "Use old-style monolithic shaders compiled on demand"},
    {"nooptvariant", DBG(NO_OPT_VARIANT), "Disable compiling optimized shader variants."},
-   {"useaco", DBG(USE_ACO), "Use ACO as shader compiler when possible"},
    {"usellvm", DBG(USE_LLVM), "Use LLVM as shader compiler when possible"},
 
    DEBUG_NAMED_VALUE_END /* must be last */
@@ -1327,17 +1326,8 @@ static struct pipe_screen *radeonsi_screen_create_impl(struct radeon_winsys *ws,
    bool support_aco = aco_is_gpu_supported(&sscreen->info);
 
 #if AMD_LLVM_AVAILABLE
-   /* For GFX11.5, LLVM < 19 is missing a workaround that can cause GPU hangs. ACO is the only
-    * alternative that has the workaround and is always available. Same for GFX12.
-    */
-   if ((sscreen->info.gfx_level == GFX12 && LLVM_VERSION_MAJOR < 20) ||
-       (sscreen->info.gfx_level == GFX11_5 && LLVM_VERSION_MAJOR < 19))
-      sscreen->use_aco = true;
-   else if (sscreen->info.gfx_level >= GFX10)
-      sscreen->use_aco = (sscreen->shader_debug_flags & DBG(USE_ACO));
-   else
-      sscreen->use_aco = support_aco && sscreen->info.has_image_opcodes &&
-                         !(sscreen->shader_debug_flags & DBG(USE_LLVM));
+   sscreen->use_aco = support_aco && sscreen->info.has_image_opcodes &&
+                      !(sscreen->shader_debug_flags & DBG(USE_LLVM));
 #else
    sscreen->use_aco = true;
 #endif

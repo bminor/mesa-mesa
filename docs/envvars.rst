@@ -1784,8 +1784,8 @@ RadeonSI driver environment variables
       Use old-style monolithic shaders compiled on demand
    ``nooptvariant``
       Disable compiling optimized shader variants.
-   ``useaco``
-      Use ACO as shader compiler when possible
+   ``usellvm``
+      Use LLVM as shader compiler when possible
    ``nowc``
       Disable GTT write combining
    ``check_vm``
