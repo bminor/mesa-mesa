@@ -846,7 +846,7 @@ llvmpipe_resource_get_handle(struct pipe_screen *_screen,
          /* reuse lavapipe codepath to handle destruction */
          lpr->backable = true;
       } else {
-         whandle->handle = os_dupfd_cloexec(lpr->dmabuf_alloc->dmabuf_fd);
+         whandle->handle = os_dupfd_cloexec(lpr->dmabuf_alloc->fd);
       }
       whandle->modifier = DRM_FORMAT_MOD_LINEAR;
       whandle->stride = lpr->row_stride[0];
@@ -1419,7 +1419,7 @@ llvmpipe_resource_alloc_udmabuf(struct llvmpipe_screen *screen,
          goto fail;
 
       alloc->mem_fd = mem_fd;
-      alloc->dmabuf_fd = dmabuf_fd;
+      alloc->fd = dmabuf_fd;
       alloc->size = size;
       return data;
    }
@@ -1447,7 +1447,7 @@ llvmpipe_allocate_memory_fd(struct pipe_screen *pscreen,
       goto fail;
 
    alloc->mem_fd = -1;
-   alloc->dmabuf_fd = -1;
+   alloc->fd = -1;
 #if defined(HAVE_LIBDRM) && defined(HAVE_LINUX_UDMABUF_H)
    if (dmabuf) {
       struct llvmpipe_screen *screen = llvmpipe_screen(pscreen);
@@ -1455,7 +1455,7 @@ llvmpipe_allocate_memory_fd(struct pipe_screen *pscreen,
       alloc->cpu_addr = llvmpipe_resource_alloc_udmabuf(screen, alloc, size);
 
       if (alloc->cpu_addr)
-         *fd = os_dupfd_cloexec(alloc->dmabuf_fd);
+         *fd = os_dupfd_cloexec(alloc->fd);
    } else
 #endif
    {
@@ -1489,7 +1489,7 @@ llvmpipe_import_memory_fd(struct pipe_screen *screen,
       return false;
 
    alloc->mem_fd = -1;
-   alloc->dmabuf_fd = -1;
+   alloc->fd = -1;
 #if defined(HAVE_LIBDRM) && defined(HAVE_LINUX_UDMABUF_H)
    if (dmabuf) {
       off_t mmap_size = lseek(fd, 0, SEEK_END);
@@ -1510,7 +1510,7 @@ llvmpipe_import_memory_fd(struct pipe_screen *screen,
       alloc->type = LLVMPIPE_MEMORY_FD_TYPE_DMA_BUF;
       alloc->cpu_addr = cpu_addr;
       alloc->size = mmap_size;
-      alloc->dmabuf_fd = os_dupfd_cloexec(fd);
+      alloc->fd = os_dupfd_cloexec(fd);
       *ptr = (struct pipe_memory_allocation*)alloc;
       *size = mmap_size;
 
@@ -1545,8 +1545,8 @@ llvmpipe_free_memory_fd(struct pipe_screen *screen,
 #if defined(HAVE_LIBDRM) && defined(HAVE_LINUX_UDMABUF_H)
    else {
       munmap(alloc->cpu_addr, alloc->size);
-      if (alloc->dmabuf_fd >= 0)
-         close(alloc->dmabuf_fd);
+      if (alloc->fd >= 0)
+         close(alloc->fd);
       if (alloc->mem_fd >= 0)
          close(alloc->mem_fd);
    }

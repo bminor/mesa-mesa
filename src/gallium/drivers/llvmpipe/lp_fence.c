@@ -329,7 +329,7 @@ llvmpipe_init_screen_fence_funcs(struct pipe_screen *pscreen)
          .fd = -1,
       };
 
-      if (drmIoctl(screen->dummy_dmabuf->dmabuf_fd,
+      if (drmIoctl(screen->dummy_dmabuf->fd,
                    DMA_BUF_IOCTL_EXPORT_SYNC_FILE,
                    &export))
          goto fail;

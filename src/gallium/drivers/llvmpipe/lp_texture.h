@@ -137,7 +137,6 @@ struct llvmpipe_memory_allocation
    uint64_t size;
    enum llvmpipe_memory_fd_type type;
    int mem_fd;
-   int dmabuf_fd;
 };
 
 struct llvmpipe_memory_object
