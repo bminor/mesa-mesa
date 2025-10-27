@@ -12,7 +12,9 @@
 
 #include "pvr_instance.h"
 
+#include <fcntl.h>
 #include <xf86drm.h>
+#include <xf86drmMode.h>
 
 #include "vk_alloc.h"
 #include "vk_log.h"
@@ -38,22 +40,20 @@ struct pvr_drm_device_config {
    struct pvr_drm_device_info {
       const char *name;
       size_t len;
-   } render, display;
+   } render;
 };
 
-#define DEF_CONFIG(render_, display_)                               \
-   {                                                                \
-      .render = { .name = render_, .len = sizeof(render_) - 1 },    \
-      .display = { .name = display_, .len = sizeof(display_) - 1 }, \
+#define DEF_CONFIG(render_)                                      \
+   {                                                             \
+      .render = { .name = render_, .len = sizeof(render_) - 1 }, \
    }
 
-/* This is the list of supported DRM render/display driver configs. */
+/* This is the list of supported DRM render driver configs. */
 static const struct pvr_drm_device_config pvr_drm_configs[] = {
-   DEF_CONFIG("mediatek,mt8173-gpu", "mediatek-drm"),
-   DEF_CONFIG("ti,am62-gpu", "ti,am625-dss"),
-   DEF_CONFIG("ti,j721s2-gpu", "ti,j721e-dss"),
+   DEF_CONFIG("mediatek,mt8173-gpu"),
+   DEF_CONFIG("ti,am62-gpu"),
+   DEF_CONFIG("ti,j721s2-gpu"),
 };
-
 #undef DEF_CONFIG
 
 static const struct vk_instance_extension_table pvr_instance_extensions = {
@@ -121,6 +121,56 @@ pvr_drm_device_get_config(drmDevice *const drm_dev)
    return NULL;
 }
 
+static bool pvr_drm_device_is_compatible_display(drmDevicePtr drm_dev)
+{
+   uint64_t has_dumb_buffer = 0;
+   uint64_t prime_caps = 0;
+   bool ret = false;
+   int32_t fd;
+
+   mesa_logd("Checking DRM primary node for compatibility: %s",
+             drm_dev->nodes[DRM_NODE_PRIMARY]);
+   fd = open(drm_dev->nodes[DRM_NODE_PRIMARY], O_RDWR | O_CLOEXEC);
+   if (fd < 0) {
+      mesa_logd("Failed to open display node: %s\n",
+                drm_dev->nodes[DRM_NODE_PRIMARY]);
+      return ret;
+   }
+
+   /* Must support KMS */
+   if (!drmIsKMS(fd)) {
+      mesa_logd("DRM device does not support KMS");
+      goto out;
+   }
+
+   /* Must support dumb buffers, as these are used by the PVR winsys to
+    * allocate device memory for PVR_WINSYS_BO_TYPE_DISPLAY buffer objects.
+    */
+   if (drmGetCap(fd, DRM_CAP_DUMB_BUFFER, &has_dumb_buffer) ||
+       !has_dumb_buffer) {
+      mesa_logd("DRM device does not support dumb buffers");
+      goto out;
+   }
+
+   /* Must support PRIME export (so GPU can import dumb buffers) */
+   if (drmGetCap(fd, DRM_CAP_PRIME, &prime_caps)) {
+      mesa_loge("Failed to query DRM_CAP_PRIME: %s", strerror(errno));
+      goto out;
+   }
+
+   if (!(prime_caps & DRM_PRIME_CAP_EXPORT)) {
+      mesa_logd("DRM device lacks PRIME export support (caps: 0x%" PRIx64 ")",
+                prime_caps);
+      goto out;
+   }
+
+   ret = true;
+
+out:
+   close(fd);
+   return ret;
+}
+
 static VkResult
 pvr_physical_device_enumerate(struct vk_instance *const vk_instance)
 {
@@ -183,28 +233,24 @@ pvr_physical_device_enumerate(struct vk_instance *const vk_instance)
    mesa_logd("Found compatible render device '%s'.",
              drm_render_device->nodes[DRM_NODE_RENDER]);
 
-   /* ...then find the compatible display node. */
+   /* ...then find a compatible display node, if available. */
    for (int i = 0; i < num_drm_devices; i++) {
       drmDevice *const drm_dev = drm_devices[i];
+
+      if (drm_dev->bustype != DRM_BUS_PLATFORM)
+         continue;
 
       if (!(drm_dev->available_nodes & BITFIELD_BIT(DRM_NODE_PRIMARY)))
          continue;
 
-      if (pvr_drm_device_compatible(&config->display, drm_dev)) {
-         drm_display_device = drm_dev;
-         break;
-      }
-   }
+      if (!pvr_drm_device_is_compatible_display(drm_devices[i]))
+         continue;
 
-   if (!drm_display_device) {
-      mesa_loge("Render device '%s' has no compatible display device.",
-                drm_render_device->nodes[DRM_NODE_RENDER]);
-      result = VK_SUCCESS;
-      goto out_free_drm_devices;
+      drm_display_device = drm_dev;
+      mesa_logd("Found a compatible display device: '%s'.",
+                drm_display_device->nodes[DRM_NODE_PRIMARY]);
+      break;
    }
-
-   mesa_logd("Found compatible display device '%s'.",
-             drm_display_device->nodes[DRM_NODE_PRIMARY]);
 
    pdevice = vk_alloc(&vk_instance->alloc,
                       sizeof(*pdevice),
@@ -229,7 +275,9 @@ pvr_physical_device_enumerate(struct vk_instance *const vk_instance)
    if (PVR_IS_DEBUG_SET(INFO)) {
       pvr_physical_device_dump_info(
          pdevice,
-         drm_display_device->deviceinfo.platform->compatible,
+         drm_display_device
+            ? drm_display_device->deviceinfo.platform->compatible
+            : NULL,
          drm_render_device->deviceinfo.platform->compatible);
    }
 

@@ -41,10 +41,12 @@ pvr_physical_device_dump_info(const struct pvr_physical_device *pdevice,
                               char *const *comp_display,
                               char *const *comp_render)
 {
-   drmVersionPtr version_display, version_render;
-   struct pvr_device_dump_info info;
+   drmVersionPtr version_display = NULL, version_render;
+   struct pvr_device_dump_info info = { 0 };
 
-   version_display = drmGetVersion(pdevice->ws->display_fd);
+   if (pdevice->ws->display_fd >= 0)
+      version_display = drmGetVersion(pdevice->ws->display_fd);
+
    if (!version_display)
       return;
 
@@ -56,12 +58,14 @@ pvr_physical_device_dump_info(const struct pvr_physical_device *pdevice,
 
    info.device_info = &pdevice->dev_info;
    info.device_runtime_info = &pdevice->dev_runtime_info;
-   info.drm_display.patchlevel = version_display->version_patchlevel;
-   info.drm_display.major = version_display->version_major;
-   info.drm_display.minor = version_display->version_minor;
-   info.drm_display.name = version_display->name;
-   info.drm_display.date = version_display->date;
-   info.drm_display.comp = comp_display;
+   if (version_display) {
+      info.drm_display.patchlevel = version_display->version_patchlevel;
+      info.drm_display.major = version_display->version_major;
+      info.drm_display.minor = version_display->version_minor;
+      info.drm_display.name = version_display->name;
+      info.drm_display.date = version_display->date;
+      info.drm_display.comp = comp_display;
+   }
    info.drm_render.patchlevel = version_render->version_patchlevel;
    info.drm_render.major = version_render->version_major;
    info.drm_render.minor = version_render->version_minor;
@@ -975,7 +979,7 @@ VkResult pvr_physical_device_init(struct pvr_physical_device *pdevice,
       goto err_out;
    }
 
-   if (instance->vk.enabled_extensions.KHR_display) {
+   if (instance->vk.enabled_extensions.KHR_display && drm_display_device) {
       display_path = vk_strdup(&instance->vk.alloc,
                                drm_display_device->nodes[DRM_NODE_PRIMARY],
                                VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
