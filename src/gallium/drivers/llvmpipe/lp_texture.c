@@ -310,6 +310,8 @@ llvmpipe_resource_create_all(struct pipe_screen *_screen,
 
    /* assert(lpr->base.bind); */
 
+   assert(!(templat->flags & PIPE_RESOURCE_FLAG_SPARSE) || !alloc_backing);
+
    if (llvmpipe_resource_is_texture(&lpr->base)) {
       if (lpr->base.bind & (PIPE_BIND_DISPLAY_TARGET |
                             PIPE_BIND_SCANOUT |
@@ -326,6 +328,9 @@ llvmpipe_resource_create_all(struct pipe_screen *_screen,
 #if DETECT_OS_LINUX
             lpr->tex_data = os_mmap(NULL, lpr->size_required, PROT_READ|PROT_WRITE, MAP_ANONYMOUS|MAP_SHARED,
                                     -1, 0);
+            if (lpr->tex_data == MAP_FAILED)
+               goto fail;
+
             madvise(lpr->tex_data, lpr->size_required, MADV_DONTNEED);
 #endif
 
@@ -365,14 +370,15 @@ llvmpipe_resource_create_all(struct pipe_screen *_screen,
          if (!lpr->data)
             goto fail;
          memset(lpr->data, 0, bytes);
-      }
-
-      if (templat->flags & PIPE_RESOURCE_FLAG_SPARSE) {
+      } else if (templat->flags & PIPE_RESOURCE_FLAG_SPARSE) {
          os_get_page_size(&alignment);
          lpr->size_required = align64(lpr->size_required, alignment);
 #if DETECT_OS_LINUX
          lpr->data = os_mmap(NULL, lpr->size_required, PROT_READ|PROT_WRITE, MAP_ANONYMOUS|MAP_SHARED,
                              -1, 0);
+         if (lpr->data == MAP_FAILED)
+            goto fail;
+
          madvise(lpr->data, lpr->size_required, MADV_DONTNEED);
 #endif
       }
@@ -1601,31 +1607,34 @@ llvmpipe_resource_bind_backing(struct pipe_screen *pscreen,
    if (lpr->base.flags & PIPE_RESOURCE_FLAG_SPARSE) {
 #if DETECT_OS_LINUX
       struct llvmpipe_memory_allocation *mem = (struct llvmpipe_memory_allocation *)pmem;
+      void *ret;
 
       if (offset >= lpr->size_required)
          return false;
 
       if (mem) {
          if (llvmpipe_resource_is_texture(&lpr->base)) {
-            mmap((char *)lpr->tex_data + offset, size, PROT_READ|PROT_WRITE,
-                 MAP_SHARED|MAP_FIXED, mem->fd, mem->offset + fd_offset);
-            BITSET_SET(lpr->residency, offset / (64 * 1024));
+            ret = mmap((char *)lpr->tex_data + offset, size, PROT_READ|PROT_WRITE,
+                       MAP_SHARED|MAP_FIXED, mem->fd, mem->offset + fd_offset);
+            if (ret != MAP_FAILED)
+               BITSET_SET(lpr->residency, offset / (64 * 1024));
          } else {
-            mmap((char *)lpr->data + offset, size, PROT_READ|PROT_WRITE,
-                 MAP_SHARED|MAP_FIXED, mem->fd, mem->offset + fd_offset);
+            ret = mmap((char *)lpr->data + offset, size, PROT_READ|PROT_WRITE,
+                       MAP_SHARED|MAP_FIXED, mem->fd, mem->offset + fd_offset);
          }
       } else {
          if (llvmpipe_resource_is_texture(&lpr->base)) {
-            mmap((char *)lpr->tex_data + offset, size, PROT_READ|PROT_WRITE,
-                 MAP_SHARED|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
-            BITSET_CLEAR(lpr->residency, offset / (64 * 1024));
+            ret = mmap((char *)lpr->tex_data + offset, size, PROT_READ|PROT_WRITE,
+                       MAP_SHARED|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
+            if (ret != MAP_FAILED)
+               BITSET_CLEAR(lpr->residency, offset / (64 * 1024));
          } else {
-            mmap((char *)lpr->data + offset, size, PROT_READ|PROT_WRITE,
-                 MAP_SHARED|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
+            ret = mmap((char *)lpr->data + offset, size, PROT_READ|PROT_WRITE,
+                       MAP_SHARED|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
          }
       }
 
-      return true;
+      return ret != MAP_FAILED;
 #else
       return false;
 #endif
