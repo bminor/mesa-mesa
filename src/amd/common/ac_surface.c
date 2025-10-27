@@ -1533,6 +1533,9 @@ static int gfx6_compute_surface(struct ac_addrlib *addrlib, const struct radeon_
                if (!modes[i].supported)
                   continue;
 
+               if (modes[i].align_depth > 1 && surf->flags & RADEON_SURF_VIEW_3D_AS_2D_ARRAY)
+                  continue;
+
                uint64_t size = ac_estimate_size(config, surf->blk_w, surf->blk_h, surf->bpe * 8,
                                                 config->info.width, config->info.height,
                                                 modes[i].align_width, modes[i].align_height,
@@ -2700,6 +2703,9 @@ static int gfx9_compute_surface(struct ac_addrlib *addrlib, const struct radeon_
    AddrSurfInfoIn.flags.prt = (surf->flags & RADEON_SURF_PRT) != 0 &&
                               (config->info.samples <= 1 || info->gfx_level < GFX10) &&
                               is_color_surface;
+   /* Only compatible with non-sparse because 3D sparse requires 3D tiling. */
+   AddrSurfInfoIn.flags.view3dAs2dArray = !AddrSurfInfoIn.flags.prt &&
+                                          (surf->flags & RADEON_SURF_VIEW_3D_AS_2D_ARRAY) != 0;
 
    AddrSurfInfoIn.numMipLevels = config->info.levels;
    AddrSurfInfoIn.numSamples = MAX2(1, config->info.samples);
@@ -3491,6 +3497,9 @@ static bool gfx12_compute_surface(struct ac_addrlib *addrlib, const struct radeo
    AddrSurfInfoIn.flags.blockCompressed = compressed;
    AddrSurfInfoIn.flags.isVrsImage = !!(surf->flags & RADEON_SURF_VRS_RATE);
    AddrSurfInfoIn.flags.standardPrt = !!(surf->flags & RADEON_SURF_PRT);
+   /* Only compatible with non-sparse because 3D sparse requires 3D tiling. */
+   AddrSurfInfoIn.flags.view3dAs2dArray = !AddrSurfInfoIn.flags.standardPrt &&
+                                          (surf->flags & RADEON_SURF_VIEW_3D_AS_2D_ARRAY) != 0;
 
    if (config->is_3d)
       AddrSurfInfoIn.resourceType = ADDR_RSRC_TEX_3D;

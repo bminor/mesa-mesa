@@ -79,6 +79,7 @@ enum radeon_micro_mode
 #define RADEON_SURF_ENCODE_SRC            (1ull << 41)
 #define RADEON_SURF_ALIASED               (1ull << 42)
 #define RADEON_SURF_REPLAYABLE            (1ull << 43)
+#define RADEON_SURF_VIEW_3D_AS_2D_ARRAY   (1ull << 44)
 
 struct legacy_surf_level {
    uint32_t offset_256B;   /* divided by 256, the hw can only do 40-bit addresses */
