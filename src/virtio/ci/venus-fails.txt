@@ -14,7 +14,6 @@ dEQP-VK.pipeline.monolithic.multisample.sample_rate_a2c.static_a2c,Fail
 
 # From venus-lavapipe-full
 dEQP-VK.draw.renderpass.multiple_interpolation.structured.with_sample_decoration.4_samples,Fail
-dEQP-VK.memory.mapping.suballocation.sub.4087.offset_129.size_255.subflush_map2,Crash
 
 # Failed with native lavapipe as well with "Non-standard block shape used"
 dEQP-VK.sparse_resources.image_block_shapes.2d.g8b8g8r8_422_unorm.samples_1,Fail

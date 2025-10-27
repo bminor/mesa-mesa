@@ -685,6 +685,18 @@ asan-KHR-GL31.transform_feedback3.skip_multiple_buffers,Fail
 asan-dEQP-VK.image.mutable.2d_array.r16g16b16a16_sfloat_r16g16b16a16_sint_draw_copy_resolve_mutable_resolve_att,Fail
 asan-dEQP-VK.pipeline.monolithic.logic_op_na_formats.r8g8b8a8_srgb.or_inverted_blend,Fail
 
+# New failures with VK CTS 1.4.4.0
+dEQP-VK.binding_model.unused_invalid_descriptor.copy.combined_image_sampler,Crash
+dEQP-VK.binding_model.unused_invalid_descriptor.copy.sampled_image,Crash
+dEQP-VK.binding_model.unused_invalid_descriptor.copy.storage_buffer,Crash
+dEQP-VK.binding_model.unused_invalid_descriptor.copy.uniform_buffer,Crash
+dEQP-VK.binding_model.unused_invalid_descriptor.write.invalid.combined_image_sampler,Crash
+dEQP-VK.binding_model.unused_invalid_descriptor.write.invalid.sampled_image,Crash
+dEQP-VK.binding_model.unused_invalid_descriptor.write.unused.combined_image_sampler,Crash
+dEQP-VK.binding_model.unused_invalid_descriptor.write.unused.sampled_image,Crash
+dEQP-VK.binding_model.unused_invalid_descriptor.write.unused.storage_buffer,Crash
+dEQP-VK.binding_model.unused_invalid_descriptor.write.unused.uniform_buffer,Crash
+
 # SKQP failing tests
 ES2BlendWithNoTexture,Fail
 SRGBReadWritePixels,Fail

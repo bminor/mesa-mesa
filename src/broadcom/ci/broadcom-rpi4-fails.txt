@@ -834,6 +834,30 @@ ubsan-dEQP-VK.pipeline.monolithic.logic_op_na_formats.b8g8r8a8_srgb.and_reverse_
 ubsan-dEQP-VK.pipeline.monolithic.logic_op_na_formats.r16g16_sfloat.or_reverse_blend,Fail
 ubsan-dEQP-VK.pipeline.monolithic.logic_op_na_formats.r8g8b8a8_srgb.or_inverted_blend,Fail
 
+# New failures with VK CTS 1.4.4.0
+dEQP-VK.binding_model.unused_invalid_descriptor.copy.combined_image_sampler,Crash
+dEQP-VK.binding_model.unused_invalid_descriptor.copy.uniform_buffer,Crash
+dEQP-VK.binding_model.unused_invalid_descriptor.copy.sampled_image,Crash
+dEQP-VK.binding_model.unused_invalid_descriptor.copy.storage_buffer,Crash
+dEQP-VK.binding_model.unused_invalid_descriptor.write.invalid.combined_image_sampler,Crash
+dEQP-VK.binding_model.unused_invalid_descriptor.write.invalid.sampled_image,Crash
+dEQP-VK.binding_model.unused_invalid_descriptor.write.unused.combined_image_sampler,Crash
+dEQP-VK.binding_model.unused_invalid_descriptor.write.unused.sampled_image,Crash
+dEQP-VK.binding_model.unused_invalid_descriptor.write.unused.storage_buffer,Crash
+dEQP-VK.binding_model.unused_invalid_descriptor.write.unused.uniform_buffer,Crash
+dEQP-VK.pipeline.monolithic.input_assembly.primitive_restart.restart_mix.restart_mix_dynamic_topo,Fail
+dEQP-VK.pipeline.monolithic.input_assembly.primitive_restart.restart_mix.restart_mix_extra_draw_dynamic_topo,Fail
+dEQP-VK.pipeline.monolithic.input_assembly.primitive_restart.restart_mix.restart_mix_extra_draw,Fail
+dEQP-VK.pipeline.monolithic.input_assembly.primitive_restart.restart_mix.restart_mix_extra_draw_triangle_list_dynamic_topo,Fail
+dEQP-VK.pipeline.monolithic.input_assembly.primitive_restart.restart_mix.restart_mix_extra_draw_triangle_list_dynamic_topo_large_non_indexed_draw,Fail
+dEQP-VK.pipeline.monolithic.input_assembly.primitive_restart.restart_mix.restart_mix_extra_draw_triangle_list,Fail
+dEQP-VK.pipeline.monolithic.input_assembly.primitive_restart.restart_mix.restart_mix_extra_draw_triangle_list_large_non_indexed_draw,Fail
+dEQP-VK.pipeline.monolithic.input_assembly.primitive_restart.restart_mix.restart_mix,Fail
+dEQP-VK.pipeline.monolithic.input_assembly.primitive_restart.restart_mix.restart_mix_triangle_list,Fail
+dEQP-VK.pipeline.monolithic.input_assembly.primitive_restart.restart_mix.restart_mix_triangle_list_dynamic_topo,Fail
+dEQP-VK.pipeline.monolithic.input_assembly.primitive_restart.restart_mix.restart_mix_triangle_list_dynamic_topo_large_non_indexed_draw,Fail
+dEQP-VK.pipeline.monolithic.input_assembly.primitive_restart.restart_mix.restart_mix_triangle_list_large_non_indexed_draw,Fail
+
 # SKQP failing tests
 ES2BlendWithNoTexture,Fail
 SRGBReadWritePixels,Fail

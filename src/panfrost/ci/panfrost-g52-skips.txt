@@ -129,3 +129,10 @@ dEQP-VK.api.copy_and_blit.copy_commands2.resolve_image.whole_copy_before_resolvi
 dEQP-VK.api.copy_and_blit.copy_commands2.resolve_image.copy_with_regions_before_resolving.8_bit
 dEQP-VK.rasterization.rasterization_order_attachment_access.depth.samples_8.multi_draw_barriers
 dEQP-VK.rasterization.rasterization_order_attachment_access.stencil.samples_8.multi_draw_barriers
+
+# New timeouts with VKCTS 1.4.4.0
+dEQP-VK.draw.renderpass.instanced.dynamic_state_draw_indirect_vk_primitive_topology_triangle_list_attrib_divisor_2_multiview
+dEQP-VK.glsl.conversions.vector_combine.vec2_ivec2_to_vec4_vertex
+dEQP-VK.image.store.without_format.3d.e5b9g9r9_ufloat_pack32_linear
+dEQP-VK.texture.shadow.cube_array.nearest.less_d16_unorm
+dEQP-VK.synchronization.op.single_queue.timeline_semaphore.write_image_compute_indirect_read_image_tess_control.image_128x128_r16_uint

@@ -18,3 +18,6 @@ dEQP-VK.video.encode.h264.resolution_change_dpb
 dEQP-VK.video.encode.h265.query_with_status
 dEQP-VK.video.encode.h265.rc_disable
 dEQP-VK.video.encode.h265.resources_without_profiles
+
+# New flakes with VKCTS 1.4.4.0
+dEQP-VK.sparse_resources.buffer.ssbo.sparse_residency.non_resident_buffer_strict_copy_src_alloc_partial_16777216

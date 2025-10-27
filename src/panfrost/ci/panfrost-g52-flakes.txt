@@ -56,3 +56,8 @@ dEQP-VK.texture.explicit_lod.2d.sizes.128x128_*
 dEQP-VK.dynamic_rendering.graphics_pipeline_library.suballocation.attachment.8.615
 dEQP-VK.renderpass.dedicated_allocation.attachment.8.753
 dEQP-VK.renderpass2.dedicated_allocation.attachment.8.603
+
+# New flakes with VKCTS 1.4.4.0
+dEQP-VK.binding_model.descriptor_buffer.sparse_residency_buffer.push_descriptor.graphics_geom_sets1_push_set0_single_buffer_commands_2
+dEQP-VK.glsl.conversions.matrix_to_matrix.mat2x4_to_mat3x2_vertex
+dEQP-VK.glsl.operator.binary_operator.div.mediump_float_vec3_vertex

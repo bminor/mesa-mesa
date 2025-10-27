@@ -2,8 +2,10 @@ dEQP-VK.api.command_buffers.record_many_draws_primary_2
 dEQP-VK.api.command_buffers.record_many_draws_secondary_1
 dEQP-VK.api.command_buffers.record_many_draws_secondary_2
 dEQP-VK.memory.pipeline_barrier.host_write_uniform_buffer.1048576
+dEQP-VK.memory.pipeline_barrier.host_write_uniform_texel_buffer.1048576
 dEQP-VK.memory.pipeline_barrier.transfer_dst_uniform_buffer.1048576
 dEQP-VK.sparse_resources.buffer.ssbo.sparse_residency.buffer_size_2_24
+dEQP-VK.sparse_resources.buffer.ssbo.sparse_residency.non_resident_buffer_copy_src_alloc_none_16777216
 
 angle-dEQP-GLES3.functional.multisample.fbo_4_samples.proportionality_sample_coverage
 angle-dEQP-GLES3.functional.multisample.fbo_max_samples.constancy_alpha_to_coverage

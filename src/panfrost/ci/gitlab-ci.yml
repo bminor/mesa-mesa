@@ -91,8 +91,7 @@ panfrost-g52-vk:arm64:
     - .panfrost-vk-rules
   variables:
     DRIVER_NAME: panvk
-    # Oversubscribing by one thread speeds up deqp
-    FDO_CI_CONCURRENT: 9
+    FDO_CI_CONCURRENT: 6  # We get OOMkills if we go too wide since VKCTS 1.4.4.0
     MESA_VK_IGNORE_CONFORMANCE_WARNING: 1
     PAN_I_WANT_A_BROKEN_VULKAN_DRIVER: 1
     PANVK_DEBUG: "no_known_warn,sync"
