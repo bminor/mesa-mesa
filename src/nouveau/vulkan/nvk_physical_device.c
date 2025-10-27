@@ -149,6 +149,7 @@ nvk_get_device_extensions(const struct nvk_instance *instance,
       .KHR_maintenance7 = true,
       .KHR_maintenance8 = true,
       .KHR_maintenance9 = true,
+      .KHR_maintenance10 = true,
       .KHR_map_memory2 = true,
       .KHR_multiview = true,
       .KHR_pipeline_executable_properties = true,
@@ -485,6 +486,9 @@ nvk_get_device_features(const struct nv_device_info *info,
 
       /* VK_KHR_maintenance9 */
       .maintenance9 = true,
+
+      /* VK_KHR_maintenance10 */
+      .maintenance10 = true,
 
       /* VK_KHR_pipeline_executable_properties */
       .pipelineExecutableInfo = true,
@@ -1116,6 +1120,11 @@ nvk_get_device_properties(const struct nvk_instance *instance,
       .image2DViewOf3DSparse = false,
       .defaultVertexAttributeValue =
          VK_DEFAULT_VERTEX_ATTRIBUTE_VALUE_ZERO_ZERO_ZERO_ZERO_KHR,
+
+      /* VK_KHR_maintenance10 */
+      .rgba4OpaqueBlackSwizzled = true,
+      .resolveSrgbFormatAppliesTransferFunction = true,
+      .resolveSrgbFormatSupportsTransferFunctionControl = true,
 
       /* VK_EXT_legacy_vertex_attributes */
       .nativeUnalignedPerformance = true,
