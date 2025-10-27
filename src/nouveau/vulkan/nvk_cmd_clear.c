@@ -323,7 +323,11 @@ clear_image(struct nvk_cmd_buffer *cmd,
             render.pStencilAttachment = &vk_att;
 
          nvk_CmdBeginRendering(nvk_cmd_buffer_to_handle(cmd), &render);
-         nvk_CmdEndRendering(nvk_cmd_buffer_to_handle(cmd));
+
+         const VkRenderingEndInfoKHR end = {
+            .sType = VK_STRUCTURE_TYPE_RENDERING_END_INFO_KHR,
+         };
+         nvk_CmdEndRendering2KHR(nvk_cmd_buffer_to_handle(cmd), &end);
 
          nvk_image_view_finish(dev, &view);
       }

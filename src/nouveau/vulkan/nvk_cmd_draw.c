@@ -1481,7 +1481,8 @@ nvk_CmdBeginRendering(VkCommandBuffer commandBuffer,
 }
 
 VKAPI_ATTR void VKAPI_CALL
-nvk_CmdEndRendering(VkCommandBuffer commandBuffer)
+nvk_CmdEndRendering2KHR(VkCommandBuffer commandBuffer,
+                        const VkRenderingEndInfoKHR *pRenderingEndInfo)
 {
    VK_FROM_HANDLE(nvk_cmd_buffer, cmd, commandBuffer);
    struct nvk_rendering_state *render = &cmd->state.gfx.render;
