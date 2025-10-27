@@ -681,9 +681,21 @@ anv_get_image_format_features2(const struct anv_physical_device *physical_device
    const VkImageAspectFlags aspects = vk_format_aspects(vk_format);
 
    if (aspects & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
-      if (vk_tiling == VK_IMAGE_TILING_LINEAR ||
-          vk_tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT)
+      if (vk_tiling == VK_IMAGE_TILING_LINEAR)
          return 0;
+
+      if (vk_tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+         if (aspects != VK_IMAGE_ASPECT_DEPTH_BIT)
+            return 0;
+
+         if (isl_mod_info->tiling != ISL_TILING_Y0 &&
+             isl_mod_info->tiling != ISL_TILING_4)
+            return 0;
+
+         if (devinfo->ver <= 12 &&
+             isl_drm_modifier_has_aux(isl_mod_info->modifier))
+            return 0;
+      }
 
       flags |= VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT |
                VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT |
