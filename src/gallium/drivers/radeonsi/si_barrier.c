@@ -239,11 +239,14 @@ static void gfx10_emit_barrier(struct si_context *ctx, struct radeon_cmdbuf *cs)
          unsigned gl2_wb = G_586_GL2_WB(gcr_cntl);
          unsigned gcr_seq = G_586_SEQ(gcr_cntl);
 
-         gcr_cntl &= C_586_GLM_WB & C_586_GLM_INV & C_586_GLV_INV & C_586_GL1_INV & C_586_GL2_INV &
-                     C_586_GL2_WB; /* keep SEQ */
+         gcr_cntl &= C_586_GLV_INV & C_586_GL1_INV & C_586_GL2_INV & C_586_GL2_WB; /* keep SEQ */
+
+         if (ctx->gfx_level < GFX12)
+            gcr_cntl &= C_586_GLM_WB & C_586_GLM_INV;
 
          si_cp_release_mem(ctx, cs, cb_db_event,
-                           S_490_GLM_WB(glm_wb) | S_490_GLM_INV(glm_inv) | S_490_GLV_INV(glv_inv) |
+                           (ctx->gfx_level >= GFX12 ? 0 : S_490_GLM_WB(glm_wb) | S_490_GLM_INV(glm_inv)) |
+                           S_490_GLV_INV(glv_inv) |
                            S_490_GL1_INV(gl1_inv) | S_490_GL2_INV(gl2_inv) | S_490_GL2_WB(gl2_wb) |
                            S_490_SEQ(gcr_seq),
                            EOP_DST_SEL_MEM, EOP_INT_SEL_SEND_DATA_AFTER_WR_CONFIRM,

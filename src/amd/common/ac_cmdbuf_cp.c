@@ -213,8 +213,7 @@ ac_emit_cp_release_mem_pws(struct ac_cmdbuf *cs, ASSERTED enum amd_gfx_level gfx
    ac_cmdbuf_emit(PKT3(PKT3_RELEASE_MEM, 6, 0));
    ac_cmdbuf_emit(S_490_EVENT_TYPE(event_type) |
                    S_490_EVENT_INDEX(ts ? 5 : 6) |
-                   S_490_GLM_WB(glm_wb) |
-                   S_490_GLM_INV(glm_inv) |
+                   (gfx_level >= GFX12 ? 0 : S_490_GLM_WB(glm_wb) | S_490_GLM_INV(glm_inv)) |
                    S_490_GLV_INV(glv_inv) |
                    S_490_GL1_INV(gl1_inv) |
                    S_490_GL2_INV(gl2_inv) |

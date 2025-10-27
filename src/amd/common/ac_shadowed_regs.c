@@ -3015,7 +3015,7 @@ struct ac_pm4_state *ac_create_shadowing_ib_preamble(const struct radeon_info *i
       ac_pm4_cmd_add(pm4, 0); /* INT_CTXID */
 
       unsigned gcr_cntl = S_586_GL2_INV(1) | S_586_GL2_WB(1) |
-                          S_586_GLM_INV(1) | S_586_GLM_WB(1) |
+                          (info->gfx_level >= GFX12 ? 0 : S_586_GLM_INV(1) | S_586_GLM_WB(1)) |
                           S_586_GL1_INV(1) | S_586_GLV_INV(1) |
                           S_586_GLK_INV(1) | S_586_GLI_INV(V_586_GLI_ALL);
 

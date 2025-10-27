@@ -1395,7 +1395,8 @@ static int amdgpu_cs_submit_ib_kernelq(struct amdgpu_cs *acs,
    return r;
 }
 
-static void amdgpu_cs_add_userq_packets(struct amdgpu_userq *userq,
+static void amdgpu_cs_add_userq_packets(struct amdgpu_winsys *aws,
+                                        struct amdgpu_userq *userq,
                                         struct amdgpu_cs_context *csc,
                                         uint64_t num_fences,
                                         struct drm_amdgpu_userq_fence_info *fence_info)
@@ -1445,7 +1446,8 @@ static void amdgpu_cs_add_userq_packets(struct amdgpu_userq *userq,
       /* add release mem for user fence */
       amdgpu_pkt_add_dw(PKT3(PKT3_RELEASE_MEM, 6, 0));
       amdgpu_pkt_add_dw(S_490_EVENT_TYPE(V_028A90_CACHE_FLUSH_AND_INV_TS_EVENT) |
-                           S_490_EVENT_INDEX(5) | S_490_GLM_WB(1) | S_490_GLM_INV(1) |
+                           S_490_EVENT_INDEX(5) |
+                           (aws->info.gfx_level >= GFX12 ? 0 : S_490_GLM_WB(1) | S_490_GLM_INV(1)) |
                            S_490_GL2_WB(1) | S_490_SEQ(1) | S_490_CACHE_POLICY(3));
       amdgpu_pkt_add_dw(S_030358_DATA_SEL(2));
       amdgpu_pkt_add_dw(userq->user_fence_va);
@@ -1552,7 +1554,7 @@ static int amdgpu_cs_submit_ib_userq(struct amdgpu_userq *userq,
       mesa_loge("amdgpu: getting wait fences failed\n");
 
    simple_mtx_lock(&userq->lock);
-   amdgpu_cs_add_userq_packets(userq, csc, userq_wait_data.num_fences, fence_info);
+   amdgpu_cs_add_userq_packets(aws, userq, csc, userq_wait_data.num_fences, fence_info);
    struct drm_amdgpu_userq_signal userq_signal_data = {
       .queue_id = userq->userq_handle,
       .syncobj_handles = (uintptr_t)syncobj_signal_list,
