@@ -1415,8 +1415,7 @@ llvmpipe_resource_alloc_udmabuf(struct llvmpipe_screen *screen,
 
       struct pipe_memory_allocation *data =
          mmap(NULL, size, PROT_WRITE | PROT_READ, MAP_SHARED, mem_fd, 0);
-
-      if (!data)
+      if (data == MAP_FAILED)
          goto fail;
 
       alloc->mem_fd = mem_fd;
