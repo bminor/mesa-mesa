@@ -1033,6 +1033,15 @@ vk_get_command_buffer_inheritance_rendering_info(
                                COMMAND_BUFFER_INHERITANCE_RENDERING_INFO);
 }
 
+VkRenderingAttachmentFlagsKHR
+vk_get_rendering_attachment_flags(const VkRenderingAttachmentInfo *att)
+{
+   const VkRenderingAttachmentFlagsInfoKHR *flags_info =
+      vk_find_struct_const(att->pNext, RENDERING_ATTACHMENT_FLAGS_INFO_KHR);
+
+   return flags_info != NULL ? flags_info->flags : 0;
+}
+
 static VkRenderingAttachmentFlagBitsKHR
 vk_attachment_description_flags_to_rendering_flags(VkAttachmentDescriptionFlags flags)
 {

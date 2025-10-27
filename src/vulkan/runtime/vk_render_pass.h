@@ -382,6 +382,9 @@ vk_get_command_buffer_inheritance_rendering_info(
    VkCommandBufferLevel level,
    const VkCommandBufferBeginInfo *pBeginInfo);
 
+VkRenderingAttachmentFlagsKHR
+vk_get_rendering_attachment_flags(const VkRenderingAttachmentInfo *att);
+
 struct vk_gcbiarr_data {
    VkRenderingInfo rendering;
    VkRenderingFragmentShadingRateAttachmentInfoKHR fsr_att;
