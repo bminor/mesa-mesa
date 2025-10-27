@@ -3,9 +3,12 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include <gtest/gtest.h>
-#include <cstring>
 #include "tar.h"
+
+#include <gtest/gtest.h>
+
+#include <cstring>
+#include <vector>
 
 class TarTest : public testing::Test {
   protected:
@@ -35,14 +38,14 @@ TEST_F(TarTest, RoundtripSmallFile)
    long size = ftell(f);
    ASSERT_TRUE(size > 0);
    ASSERT_TRUE(size % 512 == 0);
-   char *contents = new char[size];
+   std::vector<char> contents(size);
 
    fseek(f, 0, SEEK_SET);
-   ASSERT_EQ(fread(contents, size, 1, f), 1);
+   ASSERT_EQ(fread(contents.data(), size, 1, f), 1);
 
    {
       tar_reader ar;
-      tar_reader_init_from_bytes(&ar, contents, size);
+      tar_reader_init_from_bytes(&ar, contents.data(), size);
 
       tar_reader_entry entry;
 
@@ -58,8 +61,6 @@ TEST_F(TarTest, RoundtripSmallFile)
       bool second_read = tar_reader_next(&ar, &entry);
       ASSERT_FALSE(second_read);
    }
-
-   delete[] contents;
 }
 
 TEST_F(TarTest, RoundtripContentsWithRecordSize)
@@ -81,14 +82,14 @@ TEST_F(TarTest, RoundtripContentsWithRecordSize)
    long size = ftell(f);
    ASSERT_TRUE(size > 0);
    ASSERT_TRUE(size % 512 == 0);
-   char *contents = new char[size];
+   std::vector<char> contents(size);
 
    fseek(f, 0, SEEK_SET);
-   ASSERT_EQ(fread(contents, size, 1, f), 1);
+   ASSERT_EQ(fread(contents.data(), size, 1, f), 1);
 
    {
       tar_reader ar;
-      tar_reader_init_from_bytes(&ar, contents, size);
+      tar_reader_init_from_bytes(&ar, contents.data(), size);
       ASSERT_FALSE(ar.error);
 
       tar_reader_entry entry;
@@ -105,8 +106,6 @@ TEST_F(TarTest, RoundtripContentsWithRecordSize)
       bool second_read = tar_reader_next(&ar, &entry);
       ASSERT_FALSE(second_read);
    }
-
-   delete[] contents;
 }
 
 TEST_F(TarTest, TimestampRoundtrip)
@@ -127,14 +126,14 @@ TEST_F(TarTest, TimestampRoundtrip)
    long size = ftell(f);
    ASSERT_TRUE(size > 0);
    ASSERT_TRUE(size % 512 == 0);
-   char *contents = new char[size];
+   std::vector<char> contents(size);
 
    fseek(f, 0, SEEK_SET);
-   ASSERT_EQ(fread(contents, size, 1, f), 1);
+   ASSERT_EQ(fread(contents.data(), size, 1, f), 1);
 
    {
       tar_reader ar;
-      tar_reader_init_from_bytes(&ar, contents, size);
+      tar_reader_init_from_bytes(&ar, contents.data(), size);
       ASSERT_FALSE(ar.error);
 
       tar_reader_entry entry;
@@ -154,6 +153,4 @@ TEST_F(TarTest, TimestampRoundtrip)
       bool second_read = tar_reader_next(&ar, &entry);
       ASSERT_FALSE(second_read);
    }
-
-   delete[] contents;
 }
