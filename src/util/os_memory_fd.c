@@ -106,6 +106,25 @@ os_import_memory_fd(int fd, void **ptr, uint64_t *size, char const *driver_id)
 }
 
 /**
+ * Map memory from a file descriptor at placed address
+ */
+bool
+os_map_memory_fd_placed(int fd, void *addr, uint64_t size, uint64_t offset,
+                        char const *driver_id)
+{
+   struct memory_header header;
+
+   if (!get_fd_header(fd, &header, driver_id))
+      return false;
+
+   if (header.size - header.offset < size + offset)
+      return false;
+
+   return mmap(addr, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd,
+               offset + header.offset) != MAP_FAILED;
+}
+
+/**
  * Return memory on given byte alignment
  */
 void *
