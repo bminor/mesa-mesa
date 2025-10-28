@@ -2036,7 +2036,15 @@ v3dX(cmd_buffer_emit_configuration_bits)(struct v3dv_cmd_buffer *cmd_buffer)
       if (!dyn->rs.rasterizer_discard_enable) {
          assert(BITSET_TEST(dyn->set, MESA_VK_DYNAMIC_RS_CULL_MODE));
          assert(BITSET_TEST(dyn->set, MESA_VK_DYNAMIC_RS_FRONT_FACE));
-         config.enable_forward_facing_primitive = !(dyn->rs.cull_mode & VK_CULL_MODE_FRONT_BIT);
+         const enum mesa_prim reduced_prim =
+            u_reduced_prim(vk_topology_to_mesa(dyn->ia.primitive_topology));
+         /* When drawing points and lines, they will be discarded if forward
+          * facing primitive is not enabled.
+          */
+         config.enable_forward_facing_primitive =
+            reduced_prim == MESA_PRIM_LINES ||
+            reduced_prim == MESA_PRIM_POINTS ||
+            !(dyn->rs.cull_mode & VK_CULL_MODE_FRONT_BIT);
          config.enable_reverse_facing_primitive = !(dyn->rs.cull_mode & VK_CULL_MODE_BACK_BIT);
          /* Seems like the hardware is backwards regarding this setting... */
          config.clockwise_primitives = dyn->rs.front_face == VK_FRONT_FACE_COUNTER_CLOCKWISE;
