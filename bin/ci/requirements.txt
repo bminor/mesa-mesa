@@ -6,7 +6,7 @@ kaleido==0.2.*
 pandas==2.*
 plotly==5.*
 python-dateutil==2.*
-python-gitlab==4.*
+python-gitlab==5.*
 rich==14.1.*
 ruamel.yaml.clib==0.2.*
 ruamel.yaml==0.17.*
