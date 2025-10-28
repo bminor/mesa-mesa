@@ -318,6 +318,17 @@ get_interp_mode(const nir_variable *var)
 }
 
 static nir_def *
+simplify_offset_src(nir_builder *b, nir_def *offset, unsigned num_slots)
+{
+   /* Force index=0 for any indirect access to array[1]. */
+   if (num_slots == 1 &&
+       offset->parent_instr->type != nir_instr_type_load_const)
+      return nir_imm_int(b, 0);
+
+   return offset;
+}
+
+static nir_def *
 emit_load(struct lower_io_state *state,
           nir_def *array_index, nir_variable *var, nir_def *offset,
           unsigned component, unsigned num_components, unsigned bit_size,
@@ -430,6 +441,8 @@ emit_load(struct lower_io_state *state,
        */
       semantics.interp_explicit_strict = var->data.per_vertex;
       nir_intrinsic_set_io_semantics(load, semantics);
+
+      offset = simplify_offset_src(b, offset, num_slots);
    }
 
    if (array_index) {
@@ -558,6 +571,9 @@ emit_store(struct lower_io_state *state, nir_def *data,
    if (array_index)
       store->src[1] = nir_src_for_ssa(array_index);
 
+   unsigned num_slots = get_number_of_slots(state, var);
+
+   offset = simplify_offset_src(b, offset, num_slots);
    store->src[array_index ? 2 : 1] = nir_src_for_ssa(offset);
 
    unsigned gs_streams = 0;
@@ -573,7 +589,6 @@ emit_store(struct lower_io_state *state, nir_def *data,
    }
 
    int location = var->data.location;
-   unsigned num_slots = get_number_of_slots(state, var);
 
    /* Maximum values in nir_io_semantics. */
    assert(num_slots <= 63);
@@ -710,6 +725,8 @@ lower_interpolate_at(nir_intrinsic_instr *intrin, struct lower_io_state *state,
    semantics.location = var->data.location;
    semantics.num_slots = get_number_of_slots(state, var);
    semantics.medium_precision = is_medium_precision(b->shader, var);
+
+   offset = simplify_offset_src(b, offset, semantics.num_slots);
 
    nir_def *load =
       nir_load_interpolated_input(&state->builder,
