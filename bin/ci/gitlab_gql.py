@@ -106,7 +106,6 @@ class GitlabGQL:
             logging.error(traceback_str)
             self.invalidate_query_cache()
             logging.error("Cache invalidated, retrying without cache")
-        finally:
             return run_uncached()
 
     def _query(
