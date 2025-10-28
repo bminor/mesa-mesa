@@ -614,7 +614,7 @@
         "description": "spirv: don't set in_bounds for structs",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f19cbe98e325f6549e6d1f13fc06537b23a29622",
         "notes": null

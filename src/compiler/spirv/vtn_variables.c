@@ -501,8 +501,8 @@ vtn_pointer_dereference(struct vtn_builder *b,
             type = type->array_element;
          }
          tail = nir_build_deref_array(&b->nb, tail, arr_index);
+         tail->arr.in_bounds = deref_chain->in_bounds;
       }
-      tail->arr.in_bounds = deref_chain->in_bounds;
 
       access |= type->access;
    }
