@@ -374,6 +374,7 @@ ir3_optimize_loop(struct ir3_compiler *compiler,
       progress |= OPT(s, nir_lower_pack);
       progress |= OPT(s, nir_lower_bit_size, ir3_lower_bit_size, NULL);
       progress |= OPT(s, nir_opt_constant_folding);
+      progress |= OPT(s, nir_opt_uub, &options->opt_uub_options);
 
       /* Remove unused components from IO loads. */
       progress |= OPT(s, nir_opt_shrink_vectors, true);
@@ -1249,7 +1250,18 @@ ir3_nir_lower_variant(struct ir3_shader_variant *so,
       ir3_setup_const_state(s, so, ir3_const_state_mut(so));
    }
 
-   struct ir3_optimize_options optimize_options = {};
+   /* At this point nir_opt_load_store_vectorize has run so it's safe to
+    * optimize imul to umul_16x16. Also call nir_opt_uub manually once to give
+    * it a chance to optimize imul, even if the previous passes didn't make any
+    * progress.
+    */
+   struct ir3_optimize_options optimize_options = {
+      .opt_uub_options = {
+         .opt_imul = true,
+      },
+   };
+
+   progress |= OPT(s, nir_opt_uub, &optimize_options.opt_uub_options);
 
    /* Cleanup code leftover from lowering passes before opt_preamble */
    if (progress) {
