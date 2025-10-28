@@ -791,6 +791,9 @@ struct gl_opaque_uniform_index {
 struct gl_uniform_storage {
    struct gl_resource_name name;
 
+   /* The context that first set any uniform values */
+   struct gl_context *first_set_by;
+
    /** Type of this uniform data stored.
     *
     * In the case of an array, it's the type of a single array element.
@@ -876,6 +879,11 @@ struct gl_uniform_storage {
     * This is a shader storage buffer variable, not an uniform.
     */
    bool is_shader_storage;
+
+   /* Set to true if the uniform storage has been updated by more than one
+    * context.
+    */
+   bool unknown_src_ctx;
 
    /**
     * Index within gl_shader_program::AtomicBuffers[] of the atomic
