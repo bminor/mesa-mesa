@@ -81,10 +81,12 @@ va_op_swizzles(enum bi_opcode op, unsigned src)
 
    if (info.widen) {
       if (info.size == VA_SIZE_8)
-         swizzles |= (1 << BI_SWIZZLE_B0123) | (1 << BI_SWIZZLE_B0101) |
-                     (1 << BI_SWIZZLE_B2323) | (1 << BI_SWIZZLE_B0000) |
-                     (1 << BI_SWIZZLE_B1111) | (1 << BI_SWIZZLE_B2222) |
-                     (1 << BI_SWIZZLE_B3333);
+         swizzles |= (1 << BI_SWIZZLE_B0123) | (1 << BI_SWIZZLE_B3210) |
+                     (1 << BI_SWIZZLE_B0101) | (1 << BI_SWIZZLE_B2323) |
+                     (1 << BI_SWIZZLE_B0000) | (1 << BI_SWIZZLE_B1111) |
+                     (1 << BI_SWIZZLE_B2222) | (1 << BI_SWIZZLE_B3333) |
+                     (1 << BI_SWIZZLE_B2301) | (1 << BI_SWIZZLE_B1032) |
+                     (1 << BI_SWIZZLE_B0011) | (1 << BI_SWIZZLE_B2233);
       else if (info.size == VA_SIZE_16)
          swizzles |= (1 << BI_SWIZZLE_H00) | (1 << BI_SWIZZLE_H10) |
                      (1 << BI_SWIZZLE_H01) | (1 << BI_SWIZZLE_H11) |
