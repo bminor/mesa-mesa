@@ -1094,7 +1094,7 @@
         "description": "mesa: skip redundant uniform update optimisation if unsafe",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b32e20e6301f2c1bfb25a939bddfeaa41d43c8c9",
         "notes": null
