@@ -26,6 +26,8 @@ AluGroup::apply_add_instr(AluInstr *instr)
    instr->set_parent_group(this);
    instr->pin_dest_to_chan();
    m_has_kill_op |= instr->is_kill();
+   m_has_pred_update |= instr->has_alu_flag(alu_update_exec);
+   assert(!(m_has_kill_op && m_has_pred_update));
 }
 
 bool
@@ -130,6 +132,8 @@ AluGroup::add_trans_instructions(AluInstr *instr)
           * make sure the corresponding vector channel is used */
          assert(instr->has_alu_flag(alu_is_trans) || m_slots[instr->dest_chan()]);
          m_has_kill_op |= instr->is_kill();
+         m_has_pred_update |= instr->has_alu_flag(alu_update_exec);
+
          m_slot_assignemnt_order[m_next_slot_assignemnt++] = 4;
          return true;
       }
@@ -310,6 +314,7 @@ AluGroup::try_readport(AluInstr *instr, AluBankSwizzle cycle)
             dest->set_pin(pin_chgr);
       }
       m_has_kill_op |= instr->is_kill();
+      m_has_pred_update |= instr->has_alu_flag(alu_update_exec);
       m_slot_assignemnt_order[m_next_slot_assignemnt++] = preferred_chan;
       return true;
    }
