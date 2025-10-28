@@ -1257,7 +1257,7 @@ validate_uniform(GLint location, GLsizei count, const GLvoid *values,
 
 void
 _mesa_flush_vertices_for_uniforms(struct gl_context *ctx,
-                                  const struct gl_uniform_storage *uni)
+                                  struct gl_uniform_storage *uni)
 {
    /* Opaque uniforms have no storage unless they are bindless */
    if (!uni->is_bindless && glsl_contains_opaque(uni->type)) {
@@ -1279,6 +1279,16 @@ _mesa_flush_vertices_for_uniforms(struct gl_context *ctx,
 
    FLUSH_VERTICES(ctx, new_driver_state ? 0 : _NEW_PROGRAM_CONSTANTS, 0);
    ctx->NewDriverState |= new_driver_state;
+
+   /* If we are updating the uniform from multiple contexts we cant be sure
+    * if a context needs to be flushed so set the unknown_src_ctx flag which
+    * will cause the "redundant uniform update" optimisation to be skipped.
+    */
+   if (uni->first_set_by) {
+      if (uni->first_set_by != ctx)
+         uni->unknown_src_ctx = true;
+   } else
+      uni->first_set_by = ctx;
 }
 
 static bool
@@ -1293,6 +1303,11 @@ copy_uniforms_to_storage(gl_constant_value *storage,
    bool copy_as_uint64 = uni->is_bindless &&
                          (glsl_type_is_sampler(uni->type) || glsl_type_is_image(uni->type));
    bool copy_to_float16 = uni->type->base_type == GLSL_TYPE_FLOAT16;
+
+   if (flush && uni->unknown_src_ctx) {
+      _mesa_flush_vertices_for_uniforms(ctx, uni);
+      flush = false;
+   }
 
    if (!glsl_type_is_boolean(uni->type) && !copy_as_uint64 && !copy_to_float16) {
       unsigned size = sizeof(storage[0]) * components * count * size_mul;
@@ -1633,6 +1648,11 @@ copy_uniform_matrix_to_storage(struct gl_context *ctx,
 {
    const unsigned elements = components * vectors;
    const unsigned size = sizeof(storage[0]) * elements * count * size_mul;
+
+   if (flush && uni->unknown_src_ctx) {
+      _mesa_flush_vertices_for_uniforms(ctx, uni);
+      flush = false;
+   }
 
    if (uni->type->base_type == GLSL_TYPE_FLOAT16) {
       assert(ctx->Const.PackedDriverUniformStorage);
@@ -2087,7 +2107,7 @@ _mesa_uniform_handle(GLint location, GLsizei count, const GLvoid *values,
             uni->driver_storage[s].data + (size_mul * offset * components);
          unsigned size = sizeof(uni->storage[0]) * components * count * size_mul;
 
-         if (!memcmp(storage, values, size))
+         if (!uni->unknown_src_ctx && !memcmp(storage, values, size))
             continue;
 
          if (!flushed) {
@@ -2102,7 +2122,7 @@ _mesa_uniform_handle(GLint location, GLsizei count, const GLvoid *values,
       void *storage = &uni->storage[size_mul * components * offset];
       unsigned size = sizeof(uni->storage[0]) * components * count * size_mul;
 
-      if (!memcmp(storage, values, size))
+      if (!uni->unknown_src_ctx && !memcmp(storage, values, size))
          return;
 
       _mesa_flush_vertices_for_uniforms(ctx, uni);
