@@ -712,8 +712,11 @@ struct brw_wm_prog_data {
    bool has_side_effects;
    bool pulls_bary;
 
-   bool contains_flat_varying;
-   bool contains_noperspective_varying;
+   /**
+    * Whether nonperspective interpolation modes are used by the
+    * barycentric_interp_modes or fragment shader through interpolator messages.
+    */
+   bool uses_nonperspective_interp_modes;
 
    /** Fragment shader barycentrics
     *
@@ -787,12 +790,6 @@ struct brw_wm_prog_data {
     * in hardware setup on gfx6+.
     */
    uint32_t barycentric_interp_modes;
-
-   /**
-    * Whether nonperspective interpolation modes are used by the
-    * barycentric_interp_modes or fragment shader through interpolator messages.
-    */
-   bool uses_nonperspective_interp_modes;
 
    /**
     * Mask of which FS inputs are marked flat by the shader source.  This is
