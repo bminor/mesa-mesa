@@ -672,9 +672,9 @@ brw_nir_lower_tes_inputs(nir_shader *nir,
    NIR_PASS(_, nir, nir_opt_constant_folding);
    NIR_PASS(_, nir, nir_io_add_const_offset_to_base, nir_var_shader_in);
 
-   NIR_PASS(_, nir, remap_non_header_patch_urb_offsets, vue_map);
    NIR_PASS(_, nir, remap_tess_levels, devinfo,
             nir->info.tess._primitive_mode);
+   NIR_PASS(_, nir, remap_non_header_patch_urb_offsets, vue_map);
 
    /* remap_non_header_patch_urb_offsets can add constant math into the
     * shader, just fold it for the backend.
@@ -957,9 +957,8 @@ brw_nir_lower_tcs_outputs(nir_shader *nir,
    NIR_PASS(_, nir, nir_opt_constant_folding);
    NIR_PASS(_, nir, nir_io_add_const_offset_to_base, nir_var_shader_out);
 
-   NIR_PASS(_, nir, remap_non_header_patch_urb_offsets, vue_map);
-
    NIR_PASS(_, nir, remap_tess_levels, devinfo, tes_primitive_mode);
+   NIR_PASS(_, nir, remap_non_header_patch_urb_offsets, vue_map);
 
    /* remap_non_header_patch_urb_offsets can add constant math into the
     * shader, just fold it for the backend.
