@@ -1,5 +1,465 @@
 [
     {
+        "sha": "32b646c5976f64152a004d4c83962ca14c46154f",
+        "description": "nir: print in_bounds info for deref_type(_ptr_as)_array",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0a6d698482fdc40a7d7a2dfe78debc2a81327627",
+        "description": "spirv: set in_bounds for ptr_as_array",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0ac55b786ac357a468ca918fc848c7fe68edfc6c",
+        "description": "spirv: don't set in_bounds for structs",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "f19cbe98e325f6549e6d1f13fc06537b23a29622",
+        "notes": null
+    },
+    {
+        "sha": "62f0ef3445460f1610530aefe3537dba6f5ef934",
+        "description": "tu: Faster descriptor set allocator",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "562bb8b62b3ec1dbb8b390864ce7c17027161bfe",
+        "description": "v3dv: align width to 256 when using simulator",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "08e2da2379469d7423c4a9e27e1b042c229c4f9a",
+        "description": "v3d: set stride alignment when using simulator",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d48b276acd8a87baa93033de40d014ae053ae481",
+        "description": "broadcom/simulator: add helper to get stride alignment",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5947eae0af26b3d067533584c662ba42de18eb1e",
+        "description": "v3d/simulator: create GEM BOs in GTT memory for AMD GPUs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "977d4f34dd0f11b50d37904352d69fbd8da65767",
+        "description": "vc4: set stride alignment when using simulator",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "aec701d0944881a211f8e56046ad7d18571ac182",
+        "description": "vc4/simulator: add helper to get stride alignment",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "66d715bac33c1bc60606ea2d8b5f3af696269c94",
+        "description": "vc4/simulator: create GEM BOs in GTT memory for AMD GPUs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "84fa5ecff6b3f868c3e84c93fd9acd59dd97a855",
+        "description": "panvk/ci: Add an ANGLE job on G925",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3e14c64b282eab7dae4198738aa2856758618be3",
+        "description": "panvk/ci: Add a VKCTS job on G925",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c4778f1d2790590798a97e3bb1b38ab3d5ae4d9c",
+        "description": "panfrost/ci: Drop redundant KERNEL_IMAGE_NAME for rock-5b",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2bec7fb8c704b3b7c082c3b9804c3760d6340eec",
+        "description": "ci: Update linux-firmware version to pick up more ARM firmware",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0977ca2854bd1e5c1e1ae1a88795e51568570edc",
+        "description": "radeonsi/vce: Don't check ref modification and marking flags",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1232a7a75430d9523b241d8c9d6af54317806fe8",
+        "description": "frontends/va: Always reset H264 slice ref modification and marking count",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b6a00adb41f53016ccbe104908fd327faa78a718",
+        "description": "radeonsi/vcn: Support H264 encode pic_order_cnt_type 1",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8c2de2109020e321b29254ea1199d2cfb1b23813",
+        "description": "frontends/va: Support H264 encode pic_order_cnt_type 1",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cef8eff74d3f05a2cf5208f42c20c46c09678785",
+        "description": "radv/video: Override H265 SPS unaligned resolutions",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "84b6d8e0d7789ea18867aa36fe4fa9f4eeed9475",
+        "description": "radv/video: Override H265 SPS block size parameters",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "53b93895630835ee0ecce89ed1dc48b8ff78b948",
+        "description": "winsys/amdgpu: use correct vm_timeline_point for userq creation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "45affb0e53538db3ee97051692aabcdaeb0b02c9",
+        "description": "radv: advertise VK_EXT_shader_uniform_buffer_unsized_array",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "66bc12a7476564d71fd0a84299c9ed006320c494",
+        "description": "kk: Set drawID in root descriptor table",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9be352df12ebe93cf34f5c6984f8ba5a7955e968",
+        "description": "kk: Enable VK_EXT_shader_atomic_float",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "53de36895c8c01c67d4773e378bf2d420b4d9bb1",
+        "description": "kk: enable shaderStencilExport",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d3424de88973d0b02e7d5a5b9fa2effc3e6dece6",
+        "description": "kk: enable shaderDrawParameters",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8c9e9555e80568b807aaedc679957a84536eda33",
+        "description": "kk: enable logicOp",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "938390c075fd1cfe5bdb2cb4cba632758822c525",
+        "description": "kk: enable dualSrcBlend",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a9e0adc6790365930cc7d71c2d849df1d406b459",
+        "description": "nvk: Advertise VK_KHR_maintenance10",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "268a1db7ccfd6dfd424cc81a13a8b08798df98cd",
+        "description": "nvk: Advertise the new maintenance10 format features",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0a5a4562596adc53fd842964463afe169955ab15",
+        "description": "nvk: Switch to CmdEndRendering2KHR()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6e3eeb6118ec6e5dc428cdd4e44cc0c1586af0ed",
+        "description": "nvk: Plumb attachment flags through to MSAA resolve",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bbbf037303a543fd2bb926f94213c01569341519",
+        "description": "vulkan/meta: Handle VkResolveImageModeInfoKHR",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b5d5836fd1b8a868bae97e6d73e512ef88992ce8",
+        "description": "vulkan/meta: Handle VK_RENDERING_ATTACHMENT_RESOLVE_SKIP_TRANSFER_FUNCTION_BIT",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "127de27015756ce1dff063689186eb3024c5510a",
+        "description": "vulkan/util: Add a vk_format_srgb_to_linear() helper",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3955787ab2a41ef52810cc3e7ee36a23b9b48ae5",
+        "description": "anv: implement VK_KHR_maintenance10",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cf81feb660b79b0b56beed5467625c61074169b2",
+        "description": "vulkan/render_pass: handle maintenance10 resolve flags",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c5740c2548a023f4e03eae6ff53b598536ed2704",
+        "description": "vulkan/render_pass: Add a missing sType",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "3a204d5cf370116a427361410a449dde002bc143",
+        "notes": null
+    },
+    {
+        "sha": "2899cd84e4209109f8fd16d4d053c562d2c9eb7f",
+        "description": "vulkan/runtime: enable null pointer to vkCmdSetSampleMaskEXT()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2bb7c1e4593e73732642e0aa089a46766b6301f8",
+        "description": "docs/envvars: Add section: Android System Properties",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "41a8c4d37ca15a17f9480d682ab444161fd67065",
+        "description": "zink: fix mesh and task shader pipeline statistics",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "9d0e73335af17ed243fab652351e3224e3a2f91e",
+        "notes": null
+    },
+    {
+        "sha": "c544f42a795679efbebf62600a413a857922ae77",
+        "description": "ir3/ra: reset merge set preferred reg when unavailable",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f58b24467ab0e454af6f5d3260ffcd2b643247e7",
+        "description": "tu: Zero MSRTSS temporary image before creating it",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "f6c7f16322de7088fef812890e30a697c4f2eaf2",
+        "notes": null
+    },
+    {
+        "sha": "c0b5c04b844b3772f1347703c9f95a1ae82ec68b",
+        "description": "tu: Fix attachment stores with subpasses with partial views",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6c3ed74ed27c8fb42c00c0c5c657d9197bc8a71d",
+        "description": "tu: Rename tu_render_pass_attachment::clear_views to used_views",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "45a762727cf8708392b6de38616909543c799923",
         "description": "venus/ci: Skip slow test on ANV with Cuttlefish",
         "nominated": false,
