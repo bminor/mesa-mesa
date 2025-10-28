@@ -21,6 +21,7 @@ public:
    using iterator = Slots::iterator;
    using const_iterator = Slots::const_iterator;
 
+   void extracted(AluInstr *& instr);
    bool add_instruction(AluInstr *instr);
    bool add_trans_instructions(AluInstr *instr);
    bool add_vec_instructions(AluInstr *instr);
@@ -99,6 +100,8 @@ private:
 
    bool update_indirect_access(AluInstr *instr);
    bool try_readport(AluInstr *instr, AluBankSwizzle cycle);
+
+   void apply_add_instr(AluInstr * instr);
 
    Slots m_slots;
    uint8_t m_next_slot_assignemnt{0};
