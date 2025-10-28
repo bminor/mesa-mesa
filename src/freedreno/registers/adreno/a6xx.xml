@@ -476,15 +476,15 @@ by a particular renderpass/blit.
 	<reg32 offset="0x0a87" name="CP_BV_SQE_STAT_ADDR" variants="A7XX"/>
 	<reg32 offset="0x0a88" name="CP_BV_SQE_STAT_DATA" variants="A7XX"/>
 
-	<reg32 offset="0x0a8f" name="CP_BV_ROQ_AVAIL_RB" variants="A7XX-">
+	<reg32 offset="0x0a8f" name="CP_BV_ROQ_AVAIL_RB" variants="A7XX">
 		<doc>number of remaining dwords incl current dword being consumed?</doc>
 		<bitfield name="REM" low="16" high="31"/>
 	</reg32>
-	<reg32 offset="0x0a90" name="CP_BV_ROQ_AVAIL_IB1" variants="A7XX-">
+	<reg32 offset="0x0a90" name="CP_BV_ROQ_AVAIL_IB1" variants="A7XX">
 		<doc>number of remaining dwords incl current dword being consumed?</doc>
 		<bitfield name="REM" low="16" high="31"/>
 	</reg32>
-	<reg32 offset="0x0a91" name="CP_BV_ROQ_AVAIL_IB2" variants="A7XX-">
+	<reg32 offset="0x0a91" name="CP_BV_ROQ_AVAIL_IB2" variants="A7XX">
 		<doc>number of remaining dwords incl current dword being consumed?</doc>
 		<bitfield name="REM" low="16" high="31"/>
 	</reg32>
