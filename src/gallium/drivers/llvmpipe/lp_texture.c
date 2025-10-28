@@ -1332,6 +1332,7 @@ llvmpipe_allocate_memory(struct pipe_screen *_screen, uint64_t size)
 
    mem->cpu_addr = MAP_FAILED;
    mem->fd = screen->fd_mem_alloc;
+   mem->type = LLVMPIPE_MEMORY_FD_TYPE_ANONYMOUS;
 
    mtx_lock(&screen->mem_mutex);
 
@@ -1351,6 +1352,8 @@ llvmpipe_allocate_memory(struct pipe_screen *_screen, uint64_t size)
    mtx_unlock(&screen->mem_mutex);
 #else
    mem->cpu_addr = malloc(mem->size);
+   mem->fd = -1;
+   mem->type = LLVMPIPE_MEMORY_FD_TYPE_INVALID;
 #endif
 
    return (struct pipe_memory_allocation *)mem;

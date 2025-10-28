@@ -47,6 +47,8 @@ enum lp_texture_usage
 
 enum llvmpipe_memory_fd_type
 {
+   LLVMPIPE_MEMORY_FD_TYPE_INVALID,
+   LLVMPIPE_MEMORY_FD_TYPE_ANONYMOUS,
    LLVMPIPE_MEMORY_FD_TYPE_OPAQUE,
    LLVMPIPE_MEMORY_FD_TYPE_DMA_BUF,
 };
