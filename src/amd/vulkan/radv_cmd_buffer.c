@@ -6089,6 +6089,13 @@ radv_emit_tess_domain_origin_state(struct radv_cmd_buffer *cmd_buffer)
    radeon_end();
 }
 
+static bool
+radv_is_dual_src_enabled(const struct radv_dynamic_state *dynamic_state)
+{
+   /* Dual-source blending must be ignored if blending isn't enabled for MRT0. */
+   return dynamic_state->blend_eq.mrt0_is_dual_src && !!(dynamic_state->color_blend_enable & 1u);
+}
+
 static struct radv_shader_part *
 lookup_ps_epilog(struct radv_cmd_buffer *cmd_buffer)
 {
@@ -6122,7 +6129,7 @@ lookup_ps_epilog(struct radv_cmd_buffer *cmd_buffer)
 
    state.color_write_mask = d->color_write_mask;
    state.color_blend_enable = d->color_blend_enable;
-   state.mrt0_is_dual_src = d->blend_eq.mrt0_is_dual_src;
+   state.mrt0_is_dual_src = radv_is_dual_src_enabled(&cmd_buffer->state.dynamic);
 
    if (d->vk.ms.alpha_to_coverage_enable) {
       /* Select a color export format with alpha when alpha to coverage is enabled. */
@@ -11683,7 +11690,7 @@ radv_emit_cb_render_state(struct radv_cmd_buffer *cmd_buffer)
    const struct radv_rendering_state *render = &cmd_buffer->state.render;
    const struct radv_dynamic_state *d = &cmd_buffer->state.dynamic;
    unsigned cb_blend_control[MAX_RTS], sx_mrt_blend_opt[MAX_RTS];
-   const bool mrt0_is_dual_src = d->blend_eq.mrt0_is_dual_src;
+   const bool mrt0_is_dual_src = radv_is_dual_src_enabled(&cmd_buffer->state.dynamic);
    uint32_t cb_color_control = 0;
 
    const uint32_t cb_target_mask = d->color_write_enable & d->color_write_mask;
