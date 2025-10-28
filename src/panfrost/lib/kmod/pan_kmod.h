@@ -648,6 +648,10 @@ pan_kmod_bo_mmap(struct pan_kmod_bo *bo, off_t bo_offset, size_t size, int prot,
 {
    off_t mmap_offset;
 
+   /* Don't bother trying an mmap() if it's not allowed. */
+   if (bo->flags & PAN_KMOD_BO_FLAG_NO_MMAP)
+      return MAP_FAILED;
+
    if ((uint64_t)bo_offset + (uint64_t)size > bo->size)
       return MAP_FAILED;
 
