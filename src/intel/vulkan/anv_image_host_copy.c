@@ -207,6 +207,10 @@ needs_temp_copy(struct anv_image *image, VkHostImageCopyFlags flags)
        flags & VK_HOST_IMAGE_COPY_MEMCPY_BIT)
       return false;
 
+   /* Skip depth/stencil formats */
+   if (vk_format_is_depth_or_stencil(image->vk.format))
+      return false;
+
    return util_format_get_nr_components(vk_format_to_pipe_format(image->vk.format)) == 3;
 }
 

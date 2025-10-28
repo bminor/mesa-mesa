@@ -114,7 +114,7 @@
         "description": "anv: Fix needs_temp_copy() incorrectly matching depth/stencil formats",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f97b51186fb5144bf6577abfeef3ea3406c5a7bb",
         "notes": null
