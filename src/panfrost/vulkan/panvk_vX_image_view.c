@@ -225,18 +225,7 @@ prepare_attr_buf_descs(struct panvk_image_view *view)
 {
    struct panvk_image *image =
       container_of(view->vk.image, struct panvk_image, vk);
-   unsigned plane_idx = 0;
-
-   /* Stencil is on plane 1 in a D32_S8 image. The special color case is for
-    * vk_meta copies which create color views of depth/stencil images. In
-    * that case, we base the stencil vs depth detection on the format block
-    * size.
-    */
-   if (image->vk.format == VK_FORMAT_D32_SFLOAT_S8_UINT &&
-       (view->vk.aspects == VK_IMAGE_ASPECT_STENCIL_BIT ||
-        (view->vk.aspects == VK_IMAGE_ASPECT_COLOR_BIT &&
-         vk_format_get_blocksize(view->vk.view_format) == 1)))
-      plane_idx = 1;
+   unsigned plane_idx = panvk_image_view_plane_index(view);
 
    const struct pan_image_props *plane_props =
       &image->planes[plane_idx].image.props;
