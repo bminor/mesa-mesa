@@ -1608,7 +1608,9 @@ VkResult anv_AllocateMemory(
           * heap and then PAT entry in the later vm_bind stage.
           */
          assert(device->info->ver >= 20);
-         alloc_flags |= ANV_BO_ALLOC_SCANOUT;
+         assert(image);
+         if (vk_format_is_color(image->vk.format))
+            alloc_flags |= ANV_BO_ALLOC_SCANOUT;
       }
 
       result = anv_device_import_bo(device, fd_info->fd, alloc_flags,
