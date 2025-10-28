@@ -172,17 +172,12 @@ AluGroup::add_vec_instructions(AluInstr *instr)
    if (!m_slots[preferred_chan]) {
       if (instr->bank_swizzle() != alu_vec_unknown) {
          if (try_readport(instr, instr->bank_swizzle())) {
-            m_has_kill_op |= instr->is_kill();
-            m_slot_assignemnt_order[m_next_slot_assignemnt++] = preferred_chan;
             return true;
          }
       } else {
          for (AluBankSwizzle i = alu_vec_012; i != alu_vec_unknown; ++i) {
-            if (try_readport(instr, i)) {
-               m_has_kill_op |= instr->is_kill();
-               m_slot_assignemnt_order[m_next_slot_assignemnt++] = preferred_chan;
+            if (try_readport(instr, i))
                return true;
-            }
          }
       }
    } else {
@@ -211,18 +206,12 @@ AluGroup::add_vec_instructions(AluInstr *instr)
             sfn_log << SfnLog::schedule << "V: Try force channel " << free_chan << "\n";
             dest->set_chan(free_chan);
             if (instr->bank_swizzle() != alu_vec_unknown) {
-               if (try_readport(instr, instr->bank_swizzle())) {
-                  m_has_kill_op |= instr->is_kill();
-                  m_slot_assignemnt_order[m_next_slot_assignemnt++] = free_chan;
+               if (try_readport(instr, instr->bank_swizzle()))
                   return true;
-               }
             } else {
                for (AluBankSwizzle i = alu_vec_012; i != alu_vec_unknown; ++i) {
-                  if (try_readport(instr, i)) {
-                     m_has_kill_op |= instr->is_kill();
-                     m_slot_assignemnt_order[m_next_slot_assignemnt++] = free_chan;
+                  if (try_readport(instr, i))
                      return true;
-                  }
                }
             }
          }
@@ -320,6 +309,8 @@ AluGroup::try_readport(AluInstr *instr, AluBankSwizzle cycle)
          else if (dest->pin() == pin_group)
             dest->set_pin(pin_chgr);
       }
+      m_has_kill_op |= instr->is_kill();
+      m_slot_assignemnt_order[m_next_slot_assignemnt++] = preferred_chan;
       return true;
    }
    return false;
