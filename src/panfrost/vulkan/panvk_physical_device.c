@@ -648,11 +648,6 @@ get_image_format_features(struct panvk_physical_device *physical_device,
 {
    const struct vk_format_ycbcr_info *ycbcr_info =
          vk_format_get_ycbcr_info(format);
-   const unsigned arch = pan_arch(physical_device->kmod.props.gpu_id);
-
-   /* TODO: Bifrost YCbCr support */
-   if (ycbcr_info && arch <= 7)
-      return 0;
 
    if (ycbcr_info == NULL)
       return get_image_plane_format_features(physical_device, format);

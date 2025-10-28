@@ -804,14 +804,12 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
 #endif
    }
 
-#if PAN_ARCH >= 10
    const struct lower_ycbcr_state ycbcr_state = {
       .set_layout_count = set_layout_count,
       .set_layouts = set_layouts,
    };
    NIR_PASS(_, nir, nir_vk_lower_ycbcr_tex, lookup_ycbcr_conversion,
             &ycbcr_state);
-#endif
 
    panvk_per_arch(nir_lower_descriptors)(nir, dev, rs, set_layout_count,
                                          set_layouts, state, shader);

@@ -92,7 +92,7 @@ panvk_per_arch(get_physical_device_extensions)(
       .KHR_push_descriptor = true,
       .KHR_relaxed_block_layout = true,
       .KHR_sampler_mirror_clamp_to_edge = true,
-      .KHR_sampler_ycbcr_conversion = PAN_ARCH >= 10,
+      .KHR_sampler_ycbcr_conversion = true,
       .KHR_separate_depth_stencil_layouts = true,
       .KHR_shader_clock = true,
       .KHR_shader_draw_parameters = true,
@@ -150,7 +150,7 @@ panvk_per_arch(get_physical_device_extensions)(
       .EXT_host_query_reset = true,
       .EXT_image_2d_view_of_3d = true,
       /* EXT_image_drm_format_modifier depends on KHR_sampler_ycbcr_conversion */
-      .EXT_image_drm_format_modifier = PAN_ARCH >= 10,
+      .EXT_image_drm_format_modifier = true,
       .EXT_image_robustness = true,
       .EXT_index_type_uint8 = true,
       .EXT_line_rasterization = true,
@@ -318,7 +318,7 @@ panvk_per_arch(get_physical_device_features)(
       .variablePointersStorageBuffer = true,
       .variablePointers = true,
       .protectedMemory = false,
-      .samplerYcbcrConversion = PAN_ARCH >= 10,
+      .samplerYcbcrConversion = true,
       .shaderDrawParameters = true,
 
       /* Vulkan 1.2 */
