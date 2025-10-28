@@ -6414,6 +6414,16 @@ bool nir_opt_ray_queries(nir_shader *shader);
 
 bool nir_opt_ray_query_ranges(nir_shader *shader);
 
+typedef struct {
+   /* Optimize imul to muls with smaller bit sizes if possible. Only set this
+    * after optimizations (e.g., nir_opt_load_store_vectorize) that want to
+    * analyze imuls have run.
+    */
+   bool opt_imul;
+} nir_opt_uub_options;
+
+bool nir_opt_uub(nir_shader *shader, const nir_opt_uub_options *options);
+
 typedef bool (*nir_skip_helpers_instrinsic_cb)(
    nir_intrinsic_instr *intr, void *data);
 

@@ -299,6 +299,7 @@ else
   'nir_opt_undef.c',
   'nir_opt_uniform_atomics.c',
   'nir_opt_uniform_subgroup.c',
+  'nir_opt_uub.c',
   'nir_opt_varyings.c',
   'nir_opt_vectorize.c',
   'nir_opt_vectorize_io.c',
