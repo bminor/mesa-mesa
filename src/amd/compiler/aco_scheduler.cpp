@@ -30,7 +30,7 @@ namespace aco {
 namespace {
 
 enum MoveResult {
-   move_success,
+   move_success = 0,
    move_fail_ssa,
    move_fail_rar,
    move_fail_pressure,
@@ -94,6 +94,7 @@ struct MoveState {
 
    /* for moving instructions before the current instruction to after it */
    DownwardsCursor downwards_init(int current_idx, bool improved_rar);
+   MoveResult downwards_check_deps(Instruction* instr);
    MoveResult downwards_move(DownwardsCursor&);
    MoveResult downwards_move_clause(DownwardsCursor&);
    void downwards_skip(DownwardsCursor&);
@@ -183,23 +184,27 @@ MoveState::downwards_init(int current_idx, bool improved_rar_)
    return cursor;
 }
 
-bool
-check_dependencies(Instruction* instr, std::vector<bool>& def_dep,
-                   aco::unordered_map<unsigned, unsigned>& rar_deps, bool improved_rar)
+MoveResult
+MoveState::downwards_check_deps(Instruction* instr)
 {
    for (const Definition& def : instr->definitions) {
-      if (def.isTemp() && def_dep[def.tempId()])
-         return true;
+      if (def.isTemp() && depends_on[def.tempId()])
+         return move_fail_ssa;
    }
+
    for (const Operand& op : instr->operands) {
-      if (op.isTemp()) {
-         if ((improved_rar && rar_deps.count(op.tempId())) ||
-             (!improved_rar && def_dep[op.tempId()]))
-            // FIXME: account for difference in register pressure
-            return true;
-      }
+      if (!op.isTemp() || op.isKill())
+         continue;
+
+      if (!improved_rar && depends_on[op.tempId()])
+         return move_fail_rar;
+
+      if (improved_rar && rar_dependencies.count(op.tempId()))
+         // FIXME: account for difference in register pressure
+         return move_fail_rar;
    }
-   return false;
+
+   return move_success;
 }
 
 /* The instruction at source_idx is moved below the instruction at insert_idx. */
@@ -209,8 +214,9 @@ MoveState::downwards_move(DownwardsCursor& cursor)
    aco_ptr<Instruction>& candidate = block->instructions[cursor.source_idx];
 
    /* check if one of candidate's operands is killed by depending instruction */
-   if (check_dependencies(candidate.get(), depends_on, rar_dependencies, improved_rar))
-      return move_fail_ssa;
+   MoveResult res = downwards_check_deps(candidate.get());
+   if (res != move_success)
+      return res;
 
    /* Check the new demand of the instructions being moved over:
     * total_demand doesn't include the current clause which consists of exactly 1 instruction.
@@ -281,8 +287,9 @@ MoveState::downwards_move_clause(DownwardsCursor& cursor)
    while (should_form_clause(block->instructions[clause_begin_idx].get(), instr)) {
       Instruction* candidate = block->instructions[clause_begin_idx--].get();
 
-      if (check_dependencies(candidate, depends_on, rar_dependencies, true))
-         return move_fail_ssa;
+      MoveResult res = downwards_check_deps(candidate);
+      if (res != move_success)
+         return res;
 
       max_clause_demand.update(candidate->register_demand);
    }
