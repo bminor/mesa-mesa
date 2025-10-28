@@ -158,6 +158,12 @@ brw_nir_pack_vs_input(nir_shader *nir, struct brw_vs_prog_data *prog_data)
 
             nir_intrinsic_set_base(intrin, slot);
             nir_intrinsic_set_component(intrin, slot_component);
+
+            /* The code above generates load_input with
+             * "component + num_component > 4", which is theoretically illegal.
+             */
+            io.no_validate = 1;
+            nir_intrinsic_set_io_semantics(intrin, io);
          }
       }
    }
@@ -192,6 +198,7 @@ brw_nir_pack_vs_input(nir_shader *nir, struct brw_vs_prog_data *prog_data)
       vf_element_count++;
    }
 
+   nir_validate_shader(nir, __func__);
    return reg_offset;
 }
 

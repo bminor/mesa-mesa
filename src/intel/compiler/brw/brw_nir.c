@@ -381,6 +381,12 @@ remap_patch_urb_offsets_instr(nir_builder *b, nir_intrinsic_instr *intrin, void 
       }
 
       nir_src_rewrite(offset, total_offset);
+
+      /* Putting an address into offset_src requires that NIR validation of
+       * IO intrinsics is disabled.
+       */
+      io_sem.no_validate = 1;
+      nir_intrinsic_set_io_semantics(intrin, io_sem);
    }
 
    return true;
@@ -426,7 +432,11 @@ lower_per_view_outputs(nir_builder *b,
    nir_intrinsic_set_write_mask(new, nir_intrinsic_write_mask(intrin));
    nir_intrinsic_set_component(new, nir_intrinsic_component(intrin));
    nir_intrinsic_set_src_type(new, nir_intrinsic_src_type(intrin));
-   nir_intrinsic_set_io_semantics(new, nir_intrinsic_io_semantics(intrin));
+
+   nir_io_semantics sem = nir_intrinsic_io_semantics(intrin);
+   /* the meaning of the offset src is different for brw */
+   sem.no_validate = 1;
+   nir_intrinsic_set_io_semantics(new, sem);
 
    if (intrin->intrinsic == nir_intrinsic_load_per_view_output)
       nir_def_rewrite_uses(&intrin->def, &new->def);

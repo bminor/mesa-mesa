@@ -1530,6 +1530,9 @@ print_intrinsic_instr(nir_intrinsic_instr *instr, print_state *state)
             fprintf(fp, ")");
          }
 
+         if (io.no_validate)
+            fprintf(fp, " no_validate");
+
          break;
       }
 
