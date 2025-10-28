@@ -1628,35 +1628,35 @@ llvmpipe_resource_bind_sparse(struct llvmpipe_resource *lpr,
                               uint64_t offset)
 {
 #if DETECT_OS_LINUX
+   const bool is_texture = llvmpipe_resource_is_texture(&lpr->base);
    struct llvmpipe_memory_allocation *mem = (struct llvmpipe_memory_allocation *)pmem;
-   void *ret;
+   bool ok;
 
    if (offset >= lpr->size_required)
       return false;
 
+   void *addr = is_texture ? (char *)lpr->tex_data + offset
+                           : (char *)lpr->data + offset;
+
    if (mem) {
-      if (llvmpipe_resource_is_texture(&lpr->base)) {
-         ret = mmap((char *)lpr->tex_data + offset, size, PROT_READ|PROT_WRITE,
-                    MAP_SHARED|MAP_FIXED, mem->fd, mem->offset + fd_offset);
-         if (ret != MAP_FAILED)
-            BITSET_SET(lpr->residency, offset / (64 * 1024));
-      } else {
-         ret = mmap((char *)lpr->data + offset, size, PROT_READ|PROT_WRITE,
-                    MAP_SHARED|MAP_FIXED, mem->fd, mem->offset + fd_offset);
-      }
+      ok = mmap(addr, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED,
+                mem->fd, mem->offset + fd_offset) != MAP_FAILED;
    } else {
-      if (llvmpipe_resource_is_texture(&lpr->base)) {
-         ret = mmap((char *)lpr->tex_data + offset, size, PROT_READ|PROT_WRITE,
-                    MAP_SHARED|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
-         if (ret != MAP_FAILED)
-            BITSET_CLEAR(lpr->residency, offset / (64 * 1024));
-      } else {
-         ret = mmap((char *)lpr->data + offset, size, PROT_READ|PROT_WRITE,
-                    MAP_SHARED|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
-      }
+      ok = mmap(addr, size, PROT_READ | PROT_WRITE,
+                MAP_SHARED | MAP_FIXED | MAP_ANONYMOUS, -1, 0) != MAP_FAILED;
    }
 
-   return ret != MAP_FAILED;
+   if (!ok)
+      return false;
+
+   if (is_texture) {
+      if (mem)
+         BITSET_SET(lpr->residency, offset / (64 * 1024));
+      else
+         BITSET_CLEAR(lpr->residency, offset / (64 * 1024));
+   }
+
+   return true;
 #else
    return false;
 #endif
