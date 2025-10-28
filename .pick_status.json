@@ -3744,7 +3744,7 @@
         "description": "brw: Apply Gfx9 vgrf127 workaround in more cases",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e7b7d572b3bf801fa2a1a8cdff181fdf75780a96",
         "notes": null
