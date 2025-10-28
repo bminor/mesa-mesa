@@ -738,6 +738,9 @@ dEQP-VK.pipeline.monolithic.logic_op_na_formats.r8g8b8a8_srgb.set_blend,Fail
 dEQP-VK.pipeline.monolithic.logic_op_na_formats.r8g8b8a8_srgb.xor_blend,Fail
 
 # ASAN failures
+asan-KHR-GL31.frag_coord_conventions.multisample,Fail
+asan-KHR-GL31.transform_feedback3.skip_multiple_buffers,Fail
+asan-dEQP-VK.image.mutable.2d_array.r16g16b16a16_sfloat_r16g16b16a16_sint_draw_copy_resolve_mutable_resolve_att,Fail
 asan-dEQP-VK.pipeline.monolithic.logic_op_na_formats.r8g8b8a8_srgb.or_inverted_blend,Fail
 
 # SKQP failing tests

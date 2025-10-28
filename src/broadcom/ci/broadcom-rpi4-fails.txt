@@ -880,6 +880,14 @@ dEQP-VK.pipeline.monolithic.logic_op_na_formats.r8g8b8a8_srgb.or_reverse_blend,F
 dEQP-VK.pipeline.monolithic.logic_op_na_formats.r8g8b8a8_srgb.set_blend,Fail
 dEQP-VK.pipeline.monolithic.logic_op_na_formats.r8g8b8a8_srgb.xor_blend,Fail
 
+ubsan-KHR-GL31.frag_coord_conventions.multisample,Fail
+ubsan-KHR-GL31.framebuffer_blit.multisampled_to_singlesampled_blit_color_config_test,Fail
+ubsan-KHR-GL31.transform_feedback3.skip_multiple_buffers,Fail
+ubsan-dEQP-VK.image.mutable.2d_array.r16g16_sint_r8g8b8a8_uint_draw_copy_resolve_mutable_resolve_att,Fail
+ubsan-dEQP-VK.image.mutable.2d_array.r32_uint_r8g8b8a8_uint_draw_copy_resolve_mutable_resolve_att,Fail
+ubsan-dEQP-VK.image.mutable.2d_array.r32g32_sint_r16g16b16a16_uint_draw_copy_resolve_mutable_color_att,Fail
+ubsan-dEQP-VK.pipeline.monolithic.logic_op_na_formats.b8g8r8a8_srgb.and_reverse_blend,Fail
+ubsan-dEQP-VK.pipeline.monolithic.logic_op_na_formats.r16g16_sfloat.or_reverse_blend,Fail
 ubsan-dEQP-VK.pipeline.monolithic.logic_op_na_formats.r8g8b8a8_srgb.or_inverted_blend,Fail
 
 # SKQP failing tests
