@@ -2691,160 +2691,6 @@ brw_combine_with_vec(const brw_builder &bld, const brw_reg &dst,
 }
 
 static void
-emit_gs_input_load(nir_to_brw_state &ntb, const brw_reg &dst,
-                   const nir_src &vertex_src,
-                   unsigned base_offset,
-                   const nir_src &offset_src,
-                   unsigned num_components,
-                   unsigned first_component)
-{
-   const brw_builder &bld = ntb.bld;
-   const struct intel_device_info *devinfo = ntb.devinfo;
-
-   brw_shader &s = ntb.s;
-
-   assert(brw_type_size_bytes(dst.type) == 4);
-   struct brw_gs_prog_data *gs_prog_data = brw_gs_prog_data(s.prog_data);
-   const unsigned push_reg_count = gs_prog_data->base.urb_read_length * 8;
-
-   /* TODO: figure out push input layout for invocations == 1 */
-   if (gs_prog_data->invocations == 1 &&
-       nir_src_is_const(offset_src) && nir_src_is_const(vertex_src) &&
-       4 * (base_offset + nir_src_as_uint(offset_src)) < push_reg_count) {
-      int imm_offset = (base_offset + nir_src_as_uint(offset_src)) * 4 +
-                       nir_src_as_uint(vertex_src) * push_reg_count;
-
-      const brw_reg attr = offset(brw_attr_reg(0, dst.type), bld,
-                                  first_component + imm_offset);
-      brw_combine_with_vec(bld, dst, attr, num_components);
-      return;
-   }
-
-   /* Resort to the pull model.  Ensure the VUE handles are provided. */
-   assert(gs_prog_data->base.include_vue_handles);
-
-   brw_reg start = s.gs_payload().icp_handle_start;
-   brw_reg icp_handle = ntb.bld.vgrf(BRW_TYPE_UD);
-   const unsigned grf_size_bytes = REG_SIZE * reg_unit(devinfo);
-
-   if (gs_prog_data->invocations == 1) {
-      if (nir_src_is_const(vertex_src)) {
-         /* The vertex index is constant; just select the proper URB handle. */
-         icp_handle =
-            byte_offset(start, nir_src_as_uint(vertex_src) * grf_size_bytes);
-      } else {
-         /* The vertex index is non-constant.  We need to use indirect
-          * addressing to fetch the proper URB handle.
-          *
-          * First, we start with the sequence <7, 6, 5, 4, 3, 2, 1, 0>
-          * indicating that channel <n> should read the handle from
-          * DWord <n>.  We convert that to bytes by multiplying by 4.
-          *
-          * Next, we convert the vertex index to bytes by multiplying
-          * by 32/64 (shifting by 5/6), and add the two together.  This is
-          * the final indirect byte offset.
-          */
-         brw_reg sequence = bld.LOAD_SUBGROUP_INVOCATION();
-
-         /* channel_offsets = 4 * sequence = <28, 24, 20, 16, 12, 8, 4, 0> */
-         brw_reg channel_offsets = bld.SHL(sequence, brw_imm_ud(2u));
-         /* Convert vertex_index to bytes (multiply by 32/64) */
-         assert(util_is_power_of_two_nonzero(grf_size_bytes)); /* for ffs() */
-         brw_reg vertex_offset_bytes =
-            bld.SHL(retype(get_nir_src(ntb, vertex_src, 0), BRW_TYPE_UD),
-                    brw_imm_ud(ffs(grf_size_bytes) - 1));
-         brw_reg icp_offset_bytes =
-            bld.ADD(vertex_offset_bytes, channel_offsets);
-
-         /* Use first_icp_handle as the base offset.  There is one register
-          * of URB handles per vertex, so inform the register allocator that
-          * we might read up to nir->info.gs.vertices_in registers.
-          */
-         bld.emit(SHADER_OPCODE_MOV_INDIRECT, icp_handle, start,
-                  brw_reg(icp_offset_bytes),
-                  brw_imm_ud(s.nir->info.gs.vertices_in * grf_size_bytes));
-      }
-   } else {
-      assert(gs_prog_data->invocations > 1);
-
-      if (nir_src_is_const(vertex_src)) {
-         unsigned vertex = nir_src_as_uint(vertex_src);
-         bld.MOV(icp_handle, component(start, vertex));
-      } else {
-         /* The vertex index is non-constant.  We need to use indirect
-          * addressing to fetch the proper URB handle.
-          *
-          * Convert vertex_index to bytes (multiply by 4)
-          */
-         brw_reg icp_offset_bytes =
-            bld.SHL(retype(get_nir_src(ntb, vertex_src, 0), BRW_TYPE_UD),
-                    brw_imm_ud(2u));
-
-         /* Use first_icp_handle as the base offset.  There is one DWord
-          * of URB handles per vertex, so inform the register allocator that
-          * we might read up to ceil(nir->info.gs.vertices_in / 8) registers.
-          */
-         bld.emit(SHADER_OPCODE_MOV_INDIRECT, icp_handle, start,
-                  brw_reg(icp_offset_bytes),
-                  brw_imm_ud(DIV_ROUND_UP(s.nir->info.gs.vertices_in, 8) *
-                             grf_size_bytes));
-      }
-   }
-
-   brw_urb_inst *urb;
-   brw_reg indirect_offset = get_nir_src(ntb, offset_src, 0);
-
-   if (nir_src_is_const(offset_src)) {
-      brw_reg srcs[URB_LOGICAL_NUM_SRCS];
-      srcs[URB_LOGICAL_SRC_HANDLE] = icp_handle;
-
-      /* Constant indexing - use global offset. */
-      if (first_component != 0) {
-         unsigned read_components = num_components + first_component;
-         brw_reg tmp = bld.vgrf(dst.type, read_components);
-         urb = bld.URB_READ(tmp, srcs, ARRAY_SIZE(srcs));
-         urb->size_written = read_components *
-                              tmp.component_size(urb->exec_size);
-         brw_combine_with_vec(bld, dst, offset(tmp, bld, first_component),
-                              num_components);
-      } else {
-         urb = bld.URB_READ(dst, srcs, ARRAY_SIZE(srcs));
-         urb->size_written = num_components *
-                              dst.component_size(urb->exec_size);
-      }
-      urb->offset = base_offset + nir_src_as_uint(offset_src);
-   } else {
-      /* Indirect indexing - use per-slot offsets as well. */
-      unsigned read_components = num_components + first_component;
-      brw_reg tmp = bld.vgrf(dst.type, read_components);
-
-      /* Convert oword offset to bytes on Xe2+ */
-      if (devinfo->ver >= 20)
-         indirect_offset = bld.SHL(indirect_offset, brw_imm_ud(4u));
-
-      brw_reg srcs[URB_LOGICAL_NUM_SRCS];
-      srcs[URB_LOGICAL_SRC_HANDLE] = icp_handle;
-      srcs[URB_LOGICAL_SRC_PER_SLOT_OFFSETS] = indirect_offset;
-
-      if (first_component != 0) {
-         urb = bld.URB_READ(tmp, srcs, ARRAY_SIZE(srcs));
-         urb->size_written = read_components *
-                              tmp.component_size(urb->exec_size);
-         brw_combine_with_vec(bld, dst, offset(tmp, bld, first_component),
-                              num_components);
-      } else {
-         urb = bld.URB_READ(dst, srcs, ARRAY_SIZE(srcs));
-         urb->size_written = num_components *
-                              dst.component_size(urb->exec_size);
-      }
-      urb->offset = base_offset;
-   }
-
-   if (devinfo->ver >= 20)
-      urb->offset *= 16;
-}
-
-static void
 brw_from_nir_emit_vs_intrinsic(nir_to_brw_state &ntb,
                          nir_intrinsic_instr *instr)
 {
@@ -3198,6 +3044,8 @@ brw_from_nir_emit_gs_intrinsic(nir_to_brw_state &ntb,
 
    assert(s.stage == MESA_SHADER_GEOMETRY);
 
+   struct brw_gs_prog_data *gs_prog_data = brw_gs_prog_data(s.prog_data);
+
    brw_reg dest;
    if (nir_intrinsic_infos[instr->intrinsic].has_dest)
       dest = get_nir_def(ntb, instr->def);
@@ -3212,11 +3060,91 @@ brw_from_nir_emit_gs_intrinsic(nir_to_brw_state &ntb,
    case nir_intrinsic_load_input:
       UNREACHABLE("load_input intrinsics are invalid for the GS stage");
 
-   case nir_intrinsic_load_per_vertex_input:
-      emit_gs_input_load(ntb, dest, instr->src[0], nir_intrinsic_base(instr),
-                         instr->src[1], instr->num_components,
-                         nir_intrinsic_component(instr));
+   case nir_intrinsic_load_per_vertex_input: {
+      /* Load a push input (assuming single invocation layout) */
+      assert(s.nir->info.gs.invocations == 1);
+      assert(nir_src_as_uint(instr->src[1]) == 0);
+      const unsigned vertex = nir_src_as_uint(instr->src[0]);
+      const unsigned stride = gs_prog_data->base.urb_read_length * 8;
+      const unsigned imm_offset = vertex * stride +
+                                  4 * nir_intrinsic_base(instr) +
+                                  nir_intrinsic_component(instr);
+
+      const brw_reg attr = offset(brw_attr_reg(0, dest.type), bld, imm_offset);
+      brw_combine_with_vec(bld, dest, attr, instr->num_components);
       break;
+   }
+
+   case nir_intrinsic_load_urb_input_handle_indexed_intel: {
+      const unsigned grf_size_bytes = REG_SIZE * reg_unit(ntb.devinfo);
+      brw_reg start = s.gs_payload().icp_handle_start;
+      dest.type = start.type;
+
+      if (gs_prog_data->invocations == 1) {
+         if (nir_src_is_const(instr->src[0])) {
+            /* Vertex index is constant; just select the proper URB handle. */
+            bld.MOV(dest, byte_offset(start, grf_size_bytes *
+                                      nir_src_as_uint(instr->src[0])));
+         } else {
+            /* The vertex index is non-constant.  We need to use indirect
+             * addressing to fetch the proper URB handle.
+             *
+             * First, we start with the sequence <7, 6, 5, 4, 3, 2, 1, 0>
+             * indicating that channel <n> should read the handle from
+             * DWord <n>.  We convert that to bytes by multiplying by 4.
+             *
+             * Next, we convert the vertex index to bytes by multiplying
+             * by 32/64 (shifting by 5/6), and add the two together.  This is
+             * the final indirect byte offset.
+             */
+            brw_reg sequence = bld.LOAD_SUBGROUP_INVOCATION();
+
+            /* channel_offsets = 4 * sequence = <28, 24, 20, 16, 12, 8, 4, 0> */
+            brw_reg channel_offsets = bld.SHL(sequence, brw_imm_ud(2u));
+            /* Convert vertex_index to bytes (multiply by 32/64) */
+            assert(util_is_power_of_two_nonzero(grf_size_bytes)); /* ffs() */
+            brw_reg vertex_offset_bytes =
+               bld.SHL(retype(get_nir_src(ntb, instr->src[0], 0), BRW_TYPE_UD),
+                       brw_imm_ud(ffs(grf_size_bytes) - 1));
+            brw_reg icp_offset_bytes =
+               bld.ADD(vertex_offset_bytes, channel_offsets);
+
+            /* Use first_icp_handle as the base offset.  There is one register
+             * of URB handles per vertex, so inform the register allocator that
+             * we might read up to nir->info.gs.vertices_in registers.
+             */
+            bld.emit(SHADER_OPCODE_MOV_INDIRECT, dest, start,
+                     brw_reg(icp_offset_bytes),
+                     brw_imm_ud(s.nir->info.gs.vertices_in * grf_size_bytes));
+         }
+      } else {
+         assert(gs_prog_data->invocations > 1);
+
+         if (nir_src_is_const(instr->src[0])) {
+            unsigned vertex = nir_src_as_uint(instr->src[0]);
+            bld.MOV(dest, component(start, vertex));
+         } else {
+            /* The vertex index is non-constant.  We need to use indirect
+             * addressing to fetch the proper URB handle.
+             *
+             * Convert vertex_index to bytes (multiply by 4)
+             */
+            brw_reg icp_offset_bytes =
+               bld.SHL(retype(get_nir_src(ntb, instr->src[0], 0), BRW_TYPE_UD),
+                       brw_imm_ud(2u));
+
+            /* Use first_icp_handle as the base offset.  There is one DWord
+             * of URB handles per vertex, so inform the register allocator that
+             * we might read up to ceil(nir->info.gs.vertices_in / 8) registers.
+             */
+            bld.emit(SHADER_OPCODE_MOV_INDIRECT, dest, start,
+                     brw_reg(icp_offset_bytes),
+                     brw_imm_ud(DIV_ROUND_UP(s.nir->info.gs.vertices_in, 8) *
+                                grf_size_bytes));
+         }
+      }
+      break;
+   }
 
    case nir_intrinsic_emit_vertex_with_counter:
       emit_gs_vertex(ntb, instr->src[0], nir_intrinsic_stream_id(instr));

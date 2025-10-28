@@ -345,17 +345,29 @@ try_load_push_input(nir_builder *b,
                     nir_intrinsic_instr *io,
                     nir_def *offset)
 {
+   const enum mesa_shader_stage stage = b->shader->info.stage;
+
    if (!nir_def_is_const(offset))
       return NULL;
 
    const unsigned offset_unit = cb_data->vec4_access ? 16 : 4;
-   const uint32_t byte_offset =
+   uint32_t byte_offset =
       16 * io_base_slot(io, cb_data) + 4 * io_component(io, cb_data) +
       offset_unit * nir_src_as_uint(nir_src_for_ssa(offset));
    assert((byte_offset % 4) == 0);
 
    if (byte_offset >= cb_data->max_push_bytes)
       return NULL;
+
+   if (stage == MESA_SHADER_GEOMETRY) {
+      /* GS push inputs still use load_per_vertex_input */
+      const nir_io_semantics io_sem = nir_intrinsic_io_semantics(io);
+      const int slot = cb_data->varying_to_slot[io_sem.location];
+      assert(slot != -1);
+      nir_intrinsic_set_base(io, slot);
+      nir_intrinsic_set_component(io, io_component(io, cb_data));
+      return &io->def;
+   }
 
    return load_push_input(b, io, byte_offset);
 }
@@ -377,7 +389,8 @@ lower_urb_inputs(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
          load = load_urb(b, cb_data, intrin, input_handle(b, intrin), offset,
                          ACCESS_CAN_REORDER | ACCESS_NON_WRITEABLE);
       }
-      nir_def_replace(&intrin->def, load);
+      if (load != &intrin->def)
+         nir_def_replace(&intrin->def, load);
       return true;
    }
    return false;
@@ -909,49 +922,12 @@ brw_nir_lower_gs_inputs(nir_shader *nir,
                         const struct intel_vue_map *vue_map,
                         unsigned *out_urb_read_length)
 {
-   nir_foreach_shader_in_variable(var, nir)
-      var->data.driver_location = var->data.location;
-
    /* Inputs are stored in vec4 slots, so use type_size_vec4(). */
    NIR_PASS(_, nir, nir_lower_io, nir_var_shader_in, type_size_vec4,
             nir_lower_io_lower_64bit_to_32);
 
    /* Fold constant offset srcs for IO. */
    NIR_PASS(_, nir, nir_opt_constant_folding);
-
-   nir_foreach_function_impl(impl, nir) {
-      nir_foreach_block(block, impl) {
-         nir_foreach_instr(instr, block) {
-            if (instr->type != nir_instr_type_intrinsic)
-               continue;
-
-            nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
-
-            if (intrin->intrinsic == nir_intrinsic_load_input ||
-                intrin->intrinsic == nir_intrinsic_load_per_vertex_input) {
-               /* Offset 0 is the VUE header, which contains
-                * VARYING_SLOT_LAYER [.y], VARYING_SLOT_VIEWPORT [.z], and
-                * VARYING_SLOT_PSIZ [.w].
-                */
-               nir_io_semantics io_sem = nir_intrinsic_io_semantics(intrin);
-               gl_varying_slot varying = io_sem.location;
-               int vue_slot;
-               switch (varying) {
-               case VARYING_SLOT_PSIZ:
-                  nir_intrinsic_set_base(intrin, 0);
-                  nir_intrinsic_set_component(intrin, 3);
-                  break;
-
-               default:
-                  vue_slot = vue_map->varying_to_slot[varying];
-                  assert(vue_slot != -1);
-                  nir_intrinsic_set_base(intrin, vue_slot);
-                  break;
-               }
-            }
-         }
-      }
-   }
 
    unsigned urb_read_length = 0;
 
@@ -974,6 +950,15 @@ brw_nir_lower_gs_inputs(nir_shader *nir,
    }
 
    *out_urb_read_length = urb_read_length;
+
+   const struct brw_lower_urb_cb_data cb_data = {
+      .devinfo = devinfo,
+      .vec4_access = true,
+      /* pushed bytes per vertex */
+      .max_push_bytes = urb_read_length * 8 * sizeof(uint32_t),
+      .varying_to_slot = vue_map->varying_to_slot,
+   };
+   NIR_PASS(_, nir, brw_nir_lower_inputs_to_urb_intrinsics, &cb_data);
 }
 
 void
