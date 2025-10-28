@@ -745,25 +745,16 @@ compute_w_entry_loop_header(struct spill_ctx *ctx)
 }
 
 /*
- * Compute W_entry for a block. Section 4.2 in the paper.
+ * The W_entry will contain variables that are W_exit in
+ * - all predecessors
+ * - some predecessors, sorted by next-use distance
  */
 static ATTRIBUTE_NOINLINE void
-compute_w_entry(struct spill_ctx *ctx)
+compute_w_entry_usual(struct spill_ctx *ctx)
 {
    bi_block *block = ctx->block;
    struct spill_block *sb = spill_block(ctx, block);
 
-   /* Nothing to do for start blocks */
-   if (bi_num_predecessors(block) == 0)
-      return;
-
-   /* Loop headers have a different heuristic */
-   if (block->loop_header) {
-      compute_w_entry_loop_header(ctx);
-      return;
-   }
-
-   /* Usual blocks follow */
    unsigned *freq = calloc(ctx->n_alloc, sizeof(unsigned));
 
    /* Record what's written at the end of each predecessor */
@@ -843,6 +834,26 @@ compute_w_entry(struct spill_ctx *ctx)
 
    free(freq);
    free(candidates);
+}
+
+/*
+ * Compute W_entry for a block. Section 4.2 in the paper.
+ */
+static ATTRIBUTE_NOINLINE void
+compute_w_entry(struct spill_ctx *ctx)
+{
+   bi_block *block = ctx->block;
+
+   /* Nothing to do for start blocks */
+   if (bi_num_predecessors(block) == 0)
+      return;
+
+   /* Loop headers have a different heuristic */
+   if (block->loop_header) {
+      compute_w_entry_loop_header(ctx);
+   } else {
+      compute_w_entry_usual(ctx);
+   }
 }
 
 /*
