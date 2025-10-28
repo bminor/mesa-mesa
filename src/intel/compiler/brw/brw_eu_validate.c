@@ -1755,7 +1755,7 @@ special_requirements_for_handling_double_precision_data_types(
       if (devinfo->verx10 >= 125 &&
           (brw_type_is_float_or_bfloat(type) || brw_type_size_bytes(type) == 8)) {
          ERROR_IF(address_mode == BRW_ADDRESS_REGISTER_INDIRECT_REGISTER &&
-                  vstride == BRW_VERTICAL_STRIDE_ONE_DIMENSIONAL,
+                  vstride == STRIDE(BRW_VERTICAL_STRIDE_ONE_DIMENSIONAL),
                   "Vx1 and VxH indirect addressing for Float, Half-Float, "
                   "Double-Float, Quad-Word, and Bfloat16 data must not be used");
       }
