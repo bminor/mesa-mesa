@@ -1598,9 +1598,13 @@ llvmpipe_resource_bind_backing(struct pipe_screen *pscreen,
    if (!lpr->backable)
       return false;
 
-   if ((lpr->base.flags & PIPE_RESOURCE_FLAG_SPARSE) && offset < lpr->size_required) {
+   if (lpr->base.flags & PIPE_RESOURCE_FLAG_SPARSE) {
 #if DETECT_OS_LINUX
       struct llvmpipe_memory_allocation *mem = (struct llvmpipe_memory_allocation *)pmem;
+
+      if (offset >= lpr->size_required)
+         return false;
+
       if (mem) {
          if (llvmpipe_resource_is_texture(&lpr->base)) {
             mmap((char *)lpr->tex_data + offset, size, PROT_READ|PROT_WRITE,
@@ -1620,9 +1624,11 @@ llvmpipe_resource_bind_backing(struct pipe_screen *pscreen,
                  MAP_SHARED|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
          }
       }
-#endif
 
       return true;
+#else
+      return false;
+#endif
    }
 
    addr = llvmpipe_map_memory(pscreen, pmem);
