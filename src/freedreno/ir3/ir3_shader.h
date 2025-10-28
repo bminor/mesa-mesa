@@ -1322,7 +1322,7 @@ ir3_link_add(struct ir3_shader_linkage *l, uint8_t slot, uint8_t regid_,
    l->max_loc = MAX2(l->max_loc, loc + util_last_bit(compmask));
 
    if (regid_ != regid(63, 0)) {
-      int i = l->cnt++;
+      const unsigned i = l->cnt++;
       assert(i < ARRAY_SIZE(l->var));
 
       l->var[i].slot = slot;
