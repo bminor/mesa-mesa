@@ -43,9 +43,6 @@ multisample-dEQP-GLES31.functional.blend_equation_advanced.basic.multiply,Fail
 multisample-dEQP-GLES31.functional.blend_equation_advanced.basic.overlay,Fail
 multisample-dEQP-GLES31.functional.blend_equation_advanced.basic.screen,Fail
 
-# new with ANGLE 2024-10-17
-KHR-GLES31.core.texture_buffer.texture_buffer_max_size,Fail
-
 # New failure with ANGLE 2025-02-12
 KHR-GLES3.framebuffer_blit.framebuffer_blit_functionality_multisampled_to_singlesampled_blit,Crash
 
