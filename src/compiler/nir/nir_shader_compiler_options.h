@@ -565,6 +565,9 @@ typedef struct nir_shader_compiler_options {
     */
    bool has_mul24_relaxed;
 
+   /** Backend supports umul_16x16. */
+   bool has_umul_16x16;
+
    /** Backend supports 32-bit imad */
    bool has_imad32;
 
