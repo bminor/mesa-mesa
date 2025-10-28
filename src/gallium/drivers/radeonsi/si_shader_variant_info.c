@@ -135,6 +135,7 @@ void si_get_shader_variant_info(struct si_shader *shader,
                   shader->info.uses_vmem_load_other = true;
                break;
             case nir_intrinsic_store_output:
+            case nir_intrinsic_store_per_vertex_output:
                if (nir->info.stage == MESA_SHADER_FRAGMENT) {
                   nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
 
@@ -144,8 +145,9 @@ void si_get_shader_variant_info(struct si_shader *shader,
                      shader->info.writes_stencil = true;
                   else if (sem.location == FRAG_RESULT_SAMPLE_MASK)
                      shader->info.writes_sample_mask = true;
-               } else if (nir->info.stage <= MESA_SHADER_GEOMETRY &&
-                          !shader->key.ge.as_ls && !shader->key.ge.as_es) {
+               } else if ((nir->info.stage <= MESA_SHADER_GEOMETRY &&
+                           !shader->key.ge.as_ls && !shader->key.ge.as_es) ||
+                          nir->info.stage == MESA_SHADER_MESH) {
                   nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
 
                   /* Clip/cull distances must be gathered manually because nir_opt_clip_cull_const
@@ -277,22 +279,22 @@ void si_get_shader_variant_info(struct si_shader *shader,
       }
    }
 
-   if (nir->info.stage <= MESA_SHADER_GEOMETRY) {
-      if (!shader->key.ge.as_ls && !shader->key.ge.as_es) {
-         if (nir->xfb_info) {
-            unsigned num_streamout_dwords = 0;
+   if ((nir->info.stage <= MESA_SHADER_GEOMETRY &&
+        !shader->key.ge.as_ls && !shader->key.ge.as_es) ||
+       nir->info.stage == MESA_SHADER_MESH) {
+      if (nir->xfb_info) {
+         unsigned num_streamout_dwords = 0;
 
-            for (unsigned i = 0; i < 4; i++)
-               num_streamout_dwords += nir->info.xfb_stride[i];
-            shader->info.num_streamout_vec4s = DIV_ROUND_UP(num_streamout_dwords, 4);
-         }
-
-         if (shader->key.ge.mono.write_pos_to_clipvertex ||
-             nir->info.outputs_written & VARYING_BIT_CLIP_VERTEX)
-            shader->info.clipdist_mask = SI_USER_CLIP_PLANE_MASK;
-
-         shader->info.clipdist_mask &= ~shader->key.ge.opt.kill_clip_distances;
+         for (unsigned i = 0; i < 4; i++)
+            num_streamout_dwords += nir->info.xfb_stride[i];
+         shader->info.num_streamout_vec4s = DIV_ROUND_UP(num_streamout_dwords, 4);
       }
+
+      if (shader->key.ge.mono.write_pos_to_clipvertex ||
+          nir->info.outputs_written & VARYING_BIT_CLIP_VERTEX)
+         shader->info.clipdist_mask = SI_USER_CLIP_PLANE_MASK;
+
+      shader->info.clipdist_mask &= ~shader->key.ge.opt.kill_clip_distances;
    }
 }
 
