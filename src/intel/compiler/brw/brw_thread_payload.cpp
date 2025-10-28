@@ -100,7 +100,6 @@ brw_tes_thread_payload::brw_tes_thread_payload(const brw_shader &v)
 
 brw_gs_thread_payload::brw_gs_thread_payload(brw_shader &v)
 {
-   struct brw_vue_prog_data *vue_prog_data = brw_vue_prog_data(v.prog_data);
    struct brw_gs_prog_data *gs_prog_data = brw_gs_prog_data(v.prog_data);
    const brw_builder bld = brw_builder(&v);
 
@@ -136,21 +135,6 @@ brw_gs_thread_payload::brw_gs_thread_payload(brw_shader &v)
    r += v.nir->info.gs.vertices_in * reg_unit(v.devinfo);
 
    num_regs = r;
-
-   /* Use a maximum of 24 registers for push-model inputs. */
-   const unsigned max_push_components = 24;
-
-   /* If pushing our inputs would take too many registers, reduce the URB read
-    * length (which is in HWords, or 8 registers), and resort to pulling.
-    *
-    * Note that the GS reads <URB Read Length> HWords for every vertex - so we
-    * have to multiply by VerticesIn to obtain the total storage requirement.
-    */
-   if (8 * vue_prog_data->urb_read_length * v.nir->info.gs.vertices_in >
-       max_push_components) {
-      vue_prog_data->urb_read_length =
-         ROUND_DOWN_TO(max_push_components / v.nir->info.gs.vertices_in, 8) / 8;
-   }
 }
 
 static inline void

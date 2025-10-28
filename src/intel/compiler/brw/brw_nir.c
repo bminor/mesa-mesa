@@ -905,7 +905,9 @@ brw_nir_lower_vs_inputs(nir_shader *nir)
 
 void
 brw_nir_lower_gs_inputs(nir_shader *nir,
-                        const struct intel_vue_map *vue_map)
+                        const struct intel_device_info *devinfo,
+                        const struct intel_vue_map *vue_map,
+                        unsigned *out_urb_read_length)
 {
    nir_foreach_shader_in_variable(var, nir)
       var->data.driver_location = var->data.location;
@@ -950,6 +952,28 @@ brw_nir_lower_gs_inputs(nir_shader *nir,
          }
       }
    }
+
+   unsigned urb_read_length = 0;
+
+   if (nir->info.gs.invocations == 1) {
+      /* URB read length is in 256-bit units, which is two vec4s. */
+      urb_read_length = DIV_ROUND_UP(vue_map->num_slots, 2);
+
+      /* Because we're operating in scalar mode, the two vec4s take
+       * up 8 registers.  Additionally, the GS reads URB Read Length
+       * for each vertex being processed, each unit of read length
+       * takes up 8 * VerticesIn registers.
+       */
+      const unsigned regs_per_read = 8 * nir->info.gs.vertices_in;
+
+      /* Limit to 24 registers worth of pushed inputs */
+      const unsigned max_push_regs = 24;
+
+      if (urb_read_length * regs_per_read > max_push_regs)
+         urb_read_length = max_push_regs / regs_per_read;
+   }
+
+   *out_urb_read_length = urb_read_length;
 }
 
 void

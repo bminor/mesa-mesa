@@ -235,7 +235,9 @@ bool brw_nir_lower_outputs_to_urb_intrinsics(nir_shader *, const struct brw_lowe
 
 void brw_nir_lower_vs_inputs(nir_shader *nir);
 void brw_nir_lower_gs_inputs(nir_shader *nir,
-                             const struct intel_vue_map *vue_map);
+                             const struct intel_device_info *devinfo,
+                             const struct intel_vue_map *vue_map,
+                             unsigned *out_urb_read_length);
 void brw_nir_lower_tes_inputs(nir_shader *nir,
                               const struct intel_device_info *devinfo,
                               const struct intel_vue_map *vue);
