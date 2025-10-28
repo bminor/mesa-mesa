@@ -869,7 +869,7 @@ BlockScheduler::schedule_alu_to_group_vec(AluGroup *group)
    bool success = false;
    auto i = alu_vec_ready.begin();
    auto e = alu_vec_ready.end();
-   bool group_has_kill = false;
+   bool group_has_kill = group->has_kill_op();
    bool group_has_update_pred = false;
    while (i != e) {
       sfn_log << SfnLog::schedule << "Try schedule to vec " << **i;

@@ -20,6 +20,14 @@ AluGroup::AluGroup()
    m_free_slots = has_t() ? 0x1f : 0xf;
 }
 
+void
+AluGroup::apply_add_instr(AluInstr *instr)
+{
+   instr->set_parent_group(this);
+   instr->pin_dest_to_chan();
+   m_has_kill_op |= instr->is_kill();
+}
+
 bool
 AluGroup::add_instruction(AluInstr *instr)
 {
@@ -32,17 +40,13 @@ AluGroup::add_instruction(AluInstr *instr)
       ASSERTED auto opinfo = alu_ops.find(instr->opcode());
       assert(opinfo->second.can_channel(AluOp::t, s_chip_class));
       if (add_trans_instructions(instr)) {
-         instr->set_parent_group(this);
-         instr->pin_dest_to_chan();
-         m_has_kill_op |= instr->is_kill();
+         apply_add_instr(instr);
          return true;
       }
    }
 
    if (add_vec_instructions(instr) && !instr->has_alu_flag(alu_is_trans)) {
-      instr->set_parent_group(this);
-      instr->pin_dest_to_chan();
-      m_has_kill_op |= instr->is_kill();
+      apply_add_instr(instr);
       return true;
    }
 
@@ -51,9 +55,7 @@ AluGroup::add_instruction(AluInstr *instr)
 
    if (s_max_slots > 4 && opinfo->second.can_channel(AluOp::t, s_chip_class) &&
        add_trans_instructions(instr)) {
-      instr->set_parent_group(this);
-      instr->pin_dest_to_chan();
-      m_has_kill_op |= instr->is_kill();
+      apply_add_instr(instr);
       return true;
    }
 

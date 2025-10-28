@@ -684,7 +684,7 @@
         "description": "r600/sfn: extract function to update group after instr insert",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "359bfc3138eea36a32a41d93e37687ed7d413ca3",
         "notes": null
