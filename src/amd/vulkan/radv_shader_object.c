@@ -534,69 +534,105 @@ radv_shader_object_create_linked(VkDevice _device, uint32_t createInfoCount, con
    return VK_SUCCESS;
 }
 
-static bool
-radv_shader_object_linking_enabled(uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos)
-{
-   const bool has_linked_spirv = createInfoCount > 1 &&
-                                 !!(pCreateInfos[0].flags & VK_SHADER_CREATE_LINK_STAGE_BIT_EXT) &&
-                                 pCreateInfos[0].codeType == VK_SHADER_CODE_TYPE_SPIRV_EXT;
-
-   if (!has_linked_spirv)
-      return false;
-
-   /* Gather the available shader stages. */
-   VkShaderStageFlagBits stages = 0;
-   for (unsigned i = 0; i < createInfoCount; i++) {
-      const VkShaderCreateInfoEXT *pCreateInfo = &pCreateInfos[i];
-      stages |= pCreateInfo->stage;
-   }
-
-   for (unsigned i = 0; i < createInfoCount; i++) {
-      const VkShaderCreateInfoEXT *pCreateInfo = &pCreateInfos[i];
-
-      /* Force disable shaders linking when the next stage of VS/TES isn't present because the
-       * driver would need to compile all shaders twice due to shader variants. This is probably
-       * less optimal than compiling unlinked shaders.
-       */
-      if ((pCreateInfo->stage & VK_SHADER_STAGE_VERTEX_BIT) &&
-          (pCreateInfo->nextStage & (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) &&
-          !(stages & (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)))
-         return false;
-
-      if ((pCreateInfo->stage & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) &&
-          (pCreateInfo->nextStage & VK_SHADER_STAGE_GEOMETRY_BIT) && !(stages & VK_SHADER_STAGE_GEOMETRY_BIT))
-         return false;
-
-      assert(pCreateInfo->flags & VK_SHADER_CREATE_LINK_STAGE_BIT_EXT);
-   }
-
-   return true;
-}
+struct stage_idx {
+   mesa_shader_stage stage;
+   uint32_t idx;
+};
 
 VKAPI_ATTR VkResult VKAPI_CALL
 radv_CreateShadersEXT(VkDevice _device, uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
                       const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders)
 {
-   VkResult result = VK_SUCCESS;
-   unsigned i = 0;
+   VkResult final_result = VK_SUCCESS;
 
-   if (radv_shader_object_linking_enabled(createInfoCount, pCreateInfos))
-      return radv_shader_object_create_linked(_device, createInfoCount, pCreateInfos, pAllocator, pShaders);
+   /* From the Vulkan 1.3.274 spec:
+    *
+    *    "When this function returns, whether or not it succeeds, it is
+    *    guaranteed that every element of pShaders will have been overwritten
+    *    by either VK_NULL_HANDLE or a valid VkShaderEXT handle."
+    *
+    * Zeroing up-front makes the error path easier.
+    */
+   memset(pShaders, 0, createInfoCount * sizeof(*pShaders));
 
-   for (; i < createInfoCount; i++) {
-      VkResult r;
+   VkShaderStageFlagBits linked_stages = 0;
 
-      r = radv_shader_object_create(_device, &pCreateInfos[i], pAllocator, &pShaders[i]);
-      if (r != VK_SUCCESS) {
-         result = r;
-         pShaders[i] = VK_NULL_HANDLE;
+   for (uint32_t i = 0; i < createInfoCount; i++) {
+      const VkShaderCreateInfoEXT *pCreateInfo = &pCreateInfos[i];
+
+      if (pCreateInfo->codeType == VK_SHADER_CODE_TYPE_SPIRV_EXT &&
+          (pCreateInfo->flags & VK_SHADER_CREATE_LINK_STAGE_BIT_EXT)) {
+         linked_stages |= pCreateInfo->stage;
       }
    }
 
-   for (; i < createInfoCount; ++i)
-      pShaders[i] = VK_NULL_HANDLE;
+   uint32_t linked_count = 0;
+   struct stage_idx linked[MESA_VK_MAX_GRAPHICS_PIPELINE_STAGES];
 
-   return result;
+   for (uint32_t i = 0; i < createInfoCount; i++) {
+      const VkShaderCreateInfoEXT *pCreateInfo = &pCreateInfos[i];
+      VkResult result = VK_SUCCESS;
+
+      switch (pCreateInfo->codeType) {
+      case VK_SHADER_CODE_TYPE_BINARY_EXT: {
+         result = radv_shader_object_create(_device, &pCreateInfos[i], pAllocator, &pShaders[i]);
+         break;
+      }
+      case VK_SHADER_CODE_TYPE_SPIRV_EXT: {
+         bool is_linking_enabled = !!(pCreateInfo->flags & VK_SHADER_CREATE_LINK_STAGE_BIT_EXT);
+
+         /* Force disable shaders linking when the next stage of VS/TES isn't present because the
+          * driver would need to compile all shaders twice due to shader variants. This is probably
+          * less optimal than compiling unlinked shaders.
+          */
+         if ((pCreateInfo->stage & VK_SHADER_STAGE_VERTEX_BIT) &&
+             (pCreateInfo->nextStage & (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) &&
+             !(linked_stages & (VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)))
+            is_linking_enabled = false;
+
+         if ((pCreateInfo->stage & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) &&
+             (pCreateInfo->nextStage & VK_SHADER_STAGE_GEOMETRY_BIT) && !(linked_stages & VK_SHADER_STAGE_GEOMETRY_BIT))
+            is_linking_enabled = false;
+
+         if (is_linking_enabled) {
+            /* Stash it and compile later */
+            assert(linked_count < ARRAY_SIZE(linked));
+            linked[linked_count++] = (struct stage_idx){
+               .stage = vk_to_mesa_shader_stage(pCreateInfo->stage),
+               .idx = i,
+            };
+         } else {
+            result = radv_shader_object_create(_device, &pCreateInfos[i], pAllocator, &pShaders[i]);
+         }
+         break;
+      }
+      default:
+         UNREACHABLE("Unknown shader code type");
+      }
+
+      if (final_result == VK_SUCCESS)
+         final_result = result;
+   }
+
+   if (linked_count > 0) {
+      VkShaderCreateInfoEXT linked_infos[MESA_VK_MAX_GRAPHICS_PIPELINE_STAGES];
+      VkShaderEXT linked_shaders[MESA_VK_MAX_GRAPHICS_PIPELINE_STAGES];
+      VkResult result = VK_SUCCESS;
+
+      for (uint32_t l = 0; l < linked_count; l++)
+         linked_infos[l] = pCreateInfos[linked[l].idx];
+
+      result = radv_shader_object_create_linked(_device, linked_count, linked_infos, pAllocator, linked_shaders);
+      if (result == VK_SUCCESS) {
+         for (uint32_t l = 0; l < linked_count; l++)
+            pShaders[linked[l].idx] = linked_shaders[l];
+      }
+
+      if (final_result == VK_SUCCESS)
+         final_result = result;
+   }
+
+   return final_result;
 }
 
 static size_t
