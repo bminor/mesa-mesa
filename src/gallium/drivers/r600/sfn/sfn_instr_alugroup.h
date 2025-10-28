@@ -83,6 +83,7 @@ public:
 
    bool addr_for_src() const { return m_addr_for_src; }
    bool has_kill_op() const { return m_has_kill_op; }
+   bool has_update_exec() const { return m_has_pred_update; }
 
    void set_origin(AluInstr *o) { m_origin = o;}
 
@@ -101,7 +102,7 @@ private:
    bool update_indirect_access(AluInstr *instr);
    bool try_readport(AluInstr *instr, AluBankSwizzle cycle);
 
-   void apply_add_instr(AluInstr * instr);
+   void apply_add_instr(AluInstr *instr);
 
    Slots m_slots;
    uint8_t m_next_slot_assignemnt{0};
@@ -122,6 +123,7 @@ private:
    bool m_addr_is_index{false};
    bool m_addr_for_src{false};
    bool m_has_kill_op{false};
+   bool m_has_pred_update{false};
    AluInstr *m_origin{nullptr};
 
    uint8_t m_free_slots;
