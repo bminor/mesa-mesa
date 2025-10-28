@@ -1664,7 +1664,7 @@
         "description": "llvmpipe: misc fixes for sparse binding",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d747c4a8746834d3c9a6fbd7b455b7ce9441fb38",
         "notes": null
