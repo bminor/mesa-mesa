@@ -576,10 +576,13 @@ elk_fs_reg_alloc::setup_inst_interference(const elk_fs_inst *inst)
        * This node has a fixed assignment to grf127.
        *
        * We don't apply it to SIMD16 instructions because previous code avoids
-       * any register overlap between sources and destination.
+       * any register overlap between sources and destination. Some care is
+       * taken to detect when interference may not have been added between
+       * source and destination. This can occur in SIMD16 with UW
+       * destination. See also gitlab issue #14171.
        */
-      if (inst->exec_size < 16 && inst->is_send_from_grf() &&
-          inst->dst.file == VGRF)
+      if (inst->is_send_from_grf() && inst->dst.file == VGRF &&
+          (inst->exec_size < 16 || type_sz(inst->dst.type) < 4))
          ra_add_node_interference(g, first_vgrf_node + inst->dst.nr,
                                      grf127_send_hack_node);
 
