@@ -1245,6 +1245,16 @@ brw_nir_lower_vue_outputs(nir_shader *nir)
 }
 
 void
+brw_nir_lower_tcs_inputs(nir_shader *nir,
+                         const struct intel_device_info *devinfo,
+                         const struct intel_vue_map *input_vue_map)
+{
+   brw_nir_lower_vue_inputs(nir, input_vue_map);
+
+   NIR_PASS(_, nir, lower_inputs_to_urb_intrinsics, devinfo);
+}
+
+void
 brw_nir_lower_tcs_outputs(nir_shader *nir,
                           const struct intel_device_info *devinfo,
                           const struct intel_vue_map *vue_map,
