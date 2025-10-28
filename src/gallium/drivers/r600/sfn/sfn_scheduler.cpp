@@ -870,7 +870,7 @@ BlockScheduler::schedule_alu_to_group_vec(AluGroup *group)
    auto i = alu_vec_ready.begin();
    auto e = alu_vec_ready.end();
    bool group_has_kill = group->has_kill_op();
-   bool group_has_update_pred = false;
+   bool group_has_update_pred = group->has_update_exec();
    while (i != e) {
       sfn_log << SfnLog::schedule << "Try schedule to vec " << **i;
 
@@ -945,6 +945,7 @@ BlockScheduler::schedule_alu_to_group_vec(AluGroup *group)
          success = true;
 
          group_has_kill |= is_kill;
+         group_has_update_pred |= does_update_pred;
 
          sfn_log << SfnLog::schedule << " success\n";
       } else {
@@ -965,7 +966,19 @@ BlockScheduler::schedule_alu_multislot_to_group_vec(AluGroup *group, ValueFactor
    auto i = alu_multi_slot_ready.begin();
    auto e = alu_multi_slot_ready.end();
 
+   bool group_has_kill = group->has_kill_op();
+
    while (i != e && util_bitcount(group->free_slot_mask()) > 1) {
+
+      /* A kill instruction and a predicate update in the same
+       * group don't mix well, so skip adding a predicate changing
+       * multi-slot op if we already have a kill. (There are no
+       * multi-slot kill ops).
+       */
+      if (group_has_kill && (*i)->has_alu_flag(alu_update_exec)) {
+         ++i;
+         continue;
+      }
 
       auto dest = (*i)->dest();
 
@@ -1038,6 +1051,10 @@ BlockScheduler::schedule_alu_to_group_trans(AluGroup *group,
    bool success = false;
    auto i = readylist.begin();
    auto e = readylist.end();
+
+   bool group_has_kill = group->has_kill_op();
+   bool group_has_update_pred = group->has_update_exec();
+
    while (i != e) {
 
       if (check_array_reads(**i)) {
@@ -1048,6 +1065,12 @@ BlockScheduler::schedule_alu_to_group_trans(AluGroup *group,
       sfn_log << SfnLog::schedule << "Try schedule to trans " << **i;
       if (!m_current_block->try_reserve_kcache(**i)) {
          sfn_log << SfnLog::schedule << " failed (kcache)\n";
+         ++i;
+         continue;
+      }
+
+      if ((group_has_kill && (*i)->has_alu_flag(alu_update_exec)) ||
+          (group_has_update_pred && (*i)->is_kill())) {
          ++i;
          continue;
       }
