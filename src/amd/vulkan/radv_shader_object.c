@@ -55,10 +55,35 @@ radv_DestroyShaderEXT(VkDevice _device, VkShaderEXT shader, const VkAllocationCa
 }
 
 static void
-radv_shader_stage_init(const VkShaderCreateInfoEXT *sinfo, struct radv_shader_stage *out_stage)
+radv_get_shader_layout(const VkShaderCreateInfoEXT *pCreateInfo, struct radv_shader_layout *layout)
 {
    uint16_t dynamic_shader_stages = 0;
 
+   layout->dynamic_offset_count = 0;
+
+   for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; i++) {
+      VK_FROM_HANDLE(radv_descriptor_set_layout, set_layout, pCreateInfo->pSetLayouts[i]);
+
+      if (set_layout == NULL)
+         continue;
+
+      layout->num_sets = MAX2(i + 1, layout->num_sets);
+
+      layout->set[i].layout = set_layout;
+      layout->set[i].dynamic_offset_start = layout->dynamic_offset_count;
+
+      layout->dynamic_offset_count += set_layout->dynamic_offset_count;
+      dynamic_shader_stages |= set_layout->dynamic_shader_stages;
+   }
+
+   if (layout->dynamic_offset_count && (dynamic_shader_stages & pCreateInfo->stage)) {
+      layout->use_dynamic_descriptors = true;
+   }
+}
+
+static void
+radv_shader_stage_init(const VkShaderCreateInfoEXT *sinfo, struct radv_shader_stage *out_stage)
+{
    memset(out_stage, 0, sizeof(*out_stage));
 
    out_stage->stage = vk_to_mesa_shader_stage(sinfo->stage);
@@ -69,24 +94,7 @@ radv_shader_stage_init(const VkShaderCreateInfoEXT *sinfo, struct radv_shader_st
    out_stage->spirv.data = (const char *)sinfo->pCode;
    out_stage->spirv.size = sinfo->codeSize;
 
-   for (uint32_t i = 0; i < sinfo->setLayoutCount; i++) {
-      VK_FROM_HANDLE(radv_descriptor_set_layout, set_layout, sinfo->pSetLayouts[i]);
-
-      if (set_layout == NULL)
-         continue;
-
-      out_stage->layout.num_sets = MAX2(i + 1, out_stage->layout.num_sets);
-      out_stage->layout.set[i].layout = set_layout;
-
-      out_stage->layout.set[i].dynamic_offset_start = out_stage->layout.dynamic_offset_count;
-      out_stage->layout.dynamic_offset_count += set_layout->dynamic_offset_count;
-
-      dynamic_shader_stages |= set_layout->dynamic_shader_stages;
-   }
-
-   if (out_stage->layout.dynamic_offset_count && (dynamic_shader_stages & sinfo->stage)) {
-      out_stage->layout.use_dynamic_descriptors = true;
-   }
+   radv_get_shader_layout(sinfo, &out_stage->layout);
 
    const VkShaderRequiredSubgroupSizeCreateInfoEXT *const subgroup_size =
       vk_find_struct_const(sinfo->pNext, SHADER_REQUIRED_SUBGROUP_SIZE_CREATE_INFO_EXT);
@@ -238,35 +246,6 @@ radv_shader_object_init_compute(struct radv_shader_object *shader_obj, struct ra
    return VK_SUCCESS;
 }
 
-static void
-radv_get_shader_layout(const VkShaderCreateInfoEXT *pCreateInfo, struct radv_shader_layout *layout)
-{
-   uint16_t dynamic_shader_stages = 0;
-
-   memset(layout, 0, sizeof(*layout));
-
-   layout->dynamic_offset_count = 0;
-
-   for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; i++) {
-      VK_FROM_HANDLE(radv_descriptor_set_layout, set_layout, pCreateInfo->pSetLayouts[i]);
-
-      if (set_layout == NULL)
-         continue;
-
-      layout->num_sets = MAX2(i + 1, layout->num_sets);
-
-      layout->set[i].layout = set_layout;
-      layout->set[i].dynamic_offset_start = layout->dynamic_offset_count;
-
-      layout->dynamic_offset_count += set_layout->dynamic_offset_count;
-      dynamic_shader_stages |= set_layout->dynamic_shader_stages;
-   }
-
-   if (layout->dynamic_offset_count && (dynamic_shader_stages & pCreateInfo->stage)) {
-      layout->use_dynamic_descriptors = true;
-   }
-}
-
 static VkResult
 radv_shader_object_init_binary(struct radv_device *device, struct blob_reader *blob, struct radv_shader **shader_out,
                                struct radv_shader_binary **binary_out)
@@ -291,7 +270,7 @@ radv_shader_object_init(struct radv_shader_object *shader_obj, struct radv_devic
                         const VkShaderCreateInfoEXT *pCreateInfo)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   struct radv_shader_layout layout;
+   struct radv_shader_layout layout = {0};
    VkResult result;
 
    radv_get_shader_layout(pCreateInfo, &layout);
