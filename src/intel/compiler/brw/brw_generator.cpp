@@ -298,13 +298,20 @@ brw_generator::generate_mov_indirect(brw_inst *inst,
          brw_eu_inst_set_no_dd_check(devinfo, insn, use_dep_ctrl);
 
       if (brw_type_size_bytes(reg.type) > 4 &&
-          (intel_device_info_is_9lp(devinfo) || !devinfo->has_64bit_int)) {
+          (devinfo->ver != 9 || intel_device_info_is_9lp(devinfo))) {
          /* From the Cherryview PRM Vol 7. "Register Region Restrictions":
           *
           *   "When source or destination datatype is 64b or operation is
           *    integer DWord multiply, indirect addressing must not be used."
           *
-          * We may also not support Q/UQ types.
+          * Later platforms either don't support Q/UQ types or have a
+          * restriction in "Register Region Restrictions" similar to
+          *
+          *   "Vx1 and VxH indirect addressing for Float, Half-Float, Double-Float and
+          *    Quad-Word data must not be used."
+          *
+          * Which means effectively all platforms except non-LP Gfx9 will
+          * need to lower this MOV.
           *
           * To work around both of these, we do two integer MOVs instead
           * of one 64-bit MOV.  Because no double value should ever cross
