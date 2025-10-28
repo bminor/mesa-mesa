@@ -310,9 +310,7 @@ ir3_get_variable_size_align_bytes(const glsl_type *type, unsigned *size, unsigne
    })
 
 bool
-ir3_optimize_loop(struct ir3_compiler *compiler,
-                  const struct ir3_shader_nir_options *options,
-                  nir_shader *s)
+ir3_optimize_loop(struct ir3_compiler *compiler, nir_shader *s)
 {
    MESA_TRACE_FUNC();
 
@@ -717,7 +715,7 @@ ir3_finalize_nir(struct ir3_compiler *compiler,
    OPT(s, nir_lower_is_helper_invocation);
    OPT(s, nir_opt_combine_barriers, NULL, NULL);
 
-   ir3_optimize_loop(compiler, options, s);
+   ir3_optimize_loop(compiler, s);
 
    /* do idiv lowering after first opt loop to get a chance to propagate
     * constants for divide by immed power-of-two:
@@ -742,7 +740,7 @@ ir3_finalize_nir(struct ir3_compiler *compiler,
    bool vectorize_progress = OPT(s, nir_opt_load_store_vectorize, &vectorize_opts);
 
    if (idiv_progress || vectorize_progress)
-      ir3_optimize_loop(compiler, options, s);
+      ir3_optimize_loop(compiler, s);
 
    OPT(s, nir_remove_dead_variables, nir_var_function_temp, NULL);
 
@@ -1032,7 +1030,7 @@ ir3_nir_post_finalize(struct ir3_shader *shader)
    if (compiler->gen >= 6)
       OPT(s, ir3_nir_lower_ssbo_size, compiler->options.storage_16bit ? 1 : 2);
 
-   ir3_optimize_loop(compiler, &shader->options.nir_options, s);
+   ir3_optimize_loop(compiler, s);
 }
 
 static bool
@@ -1250,7 +1248,7 @@ ir3_nir_lower_variant(struct ir3_shader_variant *so,
 
    /* Cleanup code leftover from lowering passes before opt_preamble */
    if (progress) {
-      ir3_optimize_loop(so->compiler, options, s);
+      ir3_optimize_loop(so->compiler, s);
 
       /* No need to run the optimize loop again if there's no progress after
        * this point.
@@ -1310,17 +1308,17 @@ ir3_nir_lower_variant(struct ir3_shader_variant *so,
    }
 
    if (progress)
-      ir3_optimize_loop(so->compiler, options, s);
+      ir3_optimize_loop(so->compiler, s);
 
    /* verify that progress is always set */
-   assert(!ir3_optimize_loop(so->compiler, options, s));
+   assert(!ir3_optimize_loop(so->compiler, s));
 
    /* Fixup indirect load_const_ir3's which end up with a const base offset
     * which is too large to encode.  Do this late(ish) so we actually
     * can differentiate indirect vs non-indirect.
     */
    if (OPT(s, ir3_nir_fixup_load_const_ir3))
-      ir3_optimize_loop(so->compiler, options, s);
+      ir3_optimize_loop(so->compiler, s);
 
    /* Do late algebraic optimization to turn add(a, neg(b)) back into
     * subs, then the mandatory cleanup after algebraic.  Note that it may

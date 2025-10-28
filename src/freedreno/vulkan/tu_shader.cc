@@ -135,9 +135,7 @@ tu_spirv_to_nir(struct tu_device *dev,
    if (key->lower_view_index_to_device_index)
       NIR_PASS(_, nir, nir_lower_view_index_to_device_index);
 
-   struct ir3_shader_nir_options options;
-   init_ir3_nir_options(&options, key);
-   ir3_optimize_loop(dev->compiler, &options, nir);
+   ir3_optimize_loop(dev->compiler, nir);
 
    nir_opt_peephole_select_options peephole_select_options = {
       .limit = 0,
