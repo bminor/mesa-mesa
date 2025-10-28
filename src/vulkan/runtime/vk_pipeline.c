@@ -3152,9 +3152,9 @@ vk_create_rt_pipeline(struct vk_device *device,
          pipeline->stack_size,
          stack_max[MESA_SHADER_RAYGEN] +
          MIN2(1, pCreateInfo->maxPipelineRayRecursionDepth) *
-         MAX4(stack_max[MESA_SHADER_CLOSEST_HIT],
+         MAX3(stack_max[MESA_SHADER_CLOSEST_HIT],
               stack_max[MESA_SHADER_MISS],
-              stack_max[MESA_SHADER_INTERSECTION],
+              stack_max[MESA_SHADER_INTERSECTION] +
               stack_max[MESA_SHADER_ANY_HIT]) +
          MAX2(0, (int)pCreateInfo->maxPipelineRayRecursionDepth - 1) *
          MAX2(stack_max[MESA_SHADER_CLOSEST_HIT],
