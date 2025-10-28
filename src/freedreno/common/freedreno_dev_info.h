@@ -272,6 +272,9 @@ struct fd_dev_info {
        * that can be written by CP_REG_TEST instead of just 1.
        */
       bool has_pred_bit;
+
+      /* True if PC_DGEN_SO_CNTL is present. */
+      bool has_pc_dgen_so_cntl;
    } a6xx;
 
    struct {

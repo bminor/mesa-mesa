@@ -494,13 +494,14 @@ tu6_setup_streamout(struct tu_cs *cs,
 #define A6XX_SO_PROG_DWORDS 64
    uint32_t prog[A6XX_SO_PROG_DWORDS * IR3_MAX_SO_STREAMS] = {};
    BITSET_DECLARE(valid_dwords, A6XX_SO_PROG_DWORDS * IR3_MAX_SO_STREAMS) = {0};
+   bool has_pc_dgen_so_cntl = cs->device->physical_device->info->a6xx.has_pc_dgen_so_cntl;
 
    /* TODO: streamout state should be in a non-GMEM draw state */
 
    /* no streamout: */
    if (info->num_outputs == 0) {
       unsigned sizedw = 4;
-      if (cs->device->physical_device->info->a6xx.tess_use_shared)
+      if (has_pc_dgen_so_cntl)
          sizedw += 2;
 
       tu_cs_emit_pkt7(cs, CP_CONTEXT_REG_BUNCH, sizedw);
@@ -509,7 +510,7 @@ tu6_setup_streamout(struct tu_cs *cs,
       tu_cs_emit(cs, REG_A6XX_VPC_SO_CNTL);
       tu_cs_emit(cs, 0);
 
-      if (cs->device->physical_device->info->a6xx.tess_use_shared) {
+      if (has_pc_dgen_so_cntl) {
          tu_cs_emit(cs, REG_A6XX_PC_DGEN_SO_CNTL);
          tu_cs_emit(cs, 0);
       }
@@ -562,11 +563,7 @@ tu6_setup_streamout(struct tu_cs *cs,
       prog_count += end - start + 1;
    }
 
-   const bool emit_pc_so_stream_cntl =
-      cs->device->physical_device->info->a6xx.tess_use_shared &&
-      v->type == MESA_SHADER_TESS_EVAL;
-
-   if (emit_pc_so_stream_cntl)
+   if (has_pc_dgen_so_cntl)
       prog_count += 1;
 
    tu_cs_emit_pkt7(cs, CP_CONTEXT_REG_BUNCH, 10 + 2 * prog_count);
@@ -597,9 +594,9 @@ tu6_setup_streamout(struct tu_cs *cs,
       first = false;
    }
 
-   if (emit_pc_so_stream_cntl) {
-      /* Possibly not tess_use_shared related, but the combination of
-       * tess + xfb fails some tests if we don't emit this.
+   if (has_pc_dgen_so_cntl) {
+      /* When present, setting this register makes sure that degenerate primitives
+       * are included in the stream output and not discarded.
        */
       tu_cs_emit(cs, REG_A6XX_PC_DGEN_SO_CNTL);
       tu_cs_emit(cs, A6XX_PC_DGEN_SO_CNTL_STREAM_ENABLE(info->streams_written));

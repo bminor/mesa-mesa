@@ -35,10 +35,6 @@ dynamic-dEQP-VK.renderpass2.depth_stencil_resolve.image_2d_32_32.samples_2.d32_s
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_yvu420,Fail
 
 # New fails in 1.4.3.3
-dEQP-VK.transform_feedback.primitive_restart.dynamic_primitive_restart_dynamic_primitive_topology,Fail
-dEQP-VK.transform_feedback.primitive_restart.dynamic_primitive_restart_static_primitive_topology,Fail
-dEQP-VK.transform_feedback.primitive_restart.static_primitive_restart_dynamic_primitive_topology,Fail
-dEQP-VK.transform_feedback.primitive_restart.static_primitive_restart_static_primitive_topology,Fail
 dEQP-VK.transform_feedback.simple.draw_indirect_counter_offset_16,Fail
 dEQP-VK.transform_feedback.simple.draw_indirect_counter_offset_244,Fail
 dEQP-VK.transform_feedback.simple.draw_indirect_counter_offset_508,Fail
