@@ -221,6 +221,18 @@ anv_init_dri_options(struct anv_instance *instance)
     instance->lower_terminate_to_discard =
        driQueryOptionb(&instance->dri_options, "vk_lower_terminate_to_discard");
 
+    if (instance->vk.app_info.engine_name &&
+        !strcmp(instance->vk.app_info.engine_name, "DXVK")) {
+        /* Since 2.3.1+, DXVK uses the application version to signal D3D9. */
+        const bool is_d3d9 = instance->vk.app_info.app_version & 0x1;
+
+        /* This driconf bit enables D3D10+ behaviour for texture coordinate
+         * rounding. As D3D9 wants the Vulkan behaviour instead, apply the
+         * workaround only to D3D10+.
+         */
+        instance->force_filter_addr_rounding &= !is_d3d9;
+    }
+
     instance->stack_ids = driQueryOptioni(&instance->dri_options, "intel_stack_id");
     switch (instance->stack_ids) {
     case 256:
