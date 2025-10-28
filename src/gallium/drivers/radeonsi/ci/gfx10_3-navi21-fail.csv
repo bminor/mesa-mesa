@@ -5,7 +5,6 @@ glx@glx-visuals-stencil -pixmap,Fail
 glx@glx-make-current,Fail
 glx@glx-multi-window-single-context,Fail
 glx@glx-swap-event_interval,Fail
-glx@glx_arb_create_context_no_error@no error,Fail
 glx@glx_ext_no_config_context@no fbconfig,Fail
 spec@!opengl 1.1@line-smooth-stipple,Fail
 spec@arb_program_interface_query@arb_program_interface_query-getprogramresourceindex,Fail
@@ -415,5 +414,6 @@ KHR-GL46.sparse_texture_clamp_tests.SparseTextureClampLookupColor_texture_1d_rgb
 KHR-GL46.sparse_texture_clamp_tests.SparseTextureClampLookupColor_texture_1d_rgba8i,Fail
 KHR-GL46.sparse_texture_clamp_tests.SparseTextureClampLookupColor_texture_1d_rgba8ui,Fail
 
-# escts failures
-KHR-GLES31.core.shader_image_load_store.basic-allFormats-store-fs,Fail
+KHR-GL46.texture_query_lod.sampler1D_test,Fail
+KHR-GL46.texture_query_lod.sampler2D_test,Fail
+KHR-GL46.texture_query_lod.sampler3D_test,Fail
