@@ -725,7 +725,7 @@ d3d12_video_encoder_build_pre_encode_codec_headers(struct d3d12_video_encoder *p
                                                    bool &postEncodeHeadersNeeded,
                                                    uint64_t &preEncodeGeneratedHeadersByteSize,
                                                    std::vector<uint64_t> &pWrittenCodecUnitsSizes);
-void
+bool
 d3d12_video_encoder_extract_encode_metadata(
    struct d3d12_video_encoder *                               pD3D12Dec,
    void                                                       *feedback,

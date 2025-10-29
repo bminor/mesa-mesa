@@ -4445,12 +4445,22 @@ d3d12_video_encoder_get_feedback(struct pipe_video_codec *codec,
    // Extract encode metadata
    D3D12_VIDEO_ENCODER_OUTPUT_METADATA                       encoderMetadata;
    std::vector<D3D12_VIDEO_ENCODER_FRAME_SUBREGION_METADATA> pSubregionsMetadata;
-   d3d12_video_encoder_extract_encode_metadata(
-      pD3D12Enc,
-      feedback,
-      pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot],
-      encoderMetadata,
-      pSubregionsMetadata);
+   bool bSuccess = d3d12_video_encoder_extract_encode_metadata(
+                     pD3D12Enc,
+                     feedback,
+                     pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot],
+                     encoderMetadata,
+                     pSubregionsMetadata);
+
+   if (!bSuccess) {
+      opt_metadata.encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;
+      debug_printf("[d3d12_video_encoder] Encode GPU command for fence %" PRIu64 " failed - could not extract encode metadata\n",
+                     requested_metadata_fence);
+      assert(false);
+      if(pMetadata)
+         *pMetadata = opt_metadata;
+      return;
+   }
 
    // Validate encoder output metadata
    if ((encoderMetadata.EncodeErrorFlags != D3D12_VIDEO_ENCODER_ENCODE_ERROR_FLAG_NO_ERROR) || (encoderMetadata.EncodedBitstreamWrittenBytesCount == 0)) {
@@ -4735,7 +4745,7 @@ d3d12_video_encoder_build_post_encode_codec_bitstream(struct d3d12_video_encoder
    }
 }
 
-void
+bool
 d3d12_video_encoder_extract_encode_metadata(
    struct d3d12_video_encoder *                               pD3D12Enc,
    void                                                       *feedback,                 // input
@@ -4761,7 +4771,7 @@ d3d12_video_encoder_extract_encode_metadata(
    HRESULT hr = pResolvedMetadataBuffer->Map(0, &readRange, &pMetadataBufferSrc);
    if (FAILED(hr)) {
       debug_printf("Error: d3d12_video_encoder_extract_encode_metadata failed to map metadata buffer with HR %x\n", (unsigned)hr);
-      return;
+      return false;
    }
 
    // Clear output
@@ -4794,7 +4804,54 @@ d3d12_video_encoder_extract_encode_metadata(
    else if (raw_metadata.SubregionNotificationMode == D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM_NOTIFICATION_MODE_SUBREGIONS) {
       // Driver metadata doesn't have the subregions nor EncodedBitstreamWrittenBytesCount info on this case, let's get them from d3d12_video_encoder_get_slice_bitstream_data instead
       parsedMetadata.EncodedBitstreamWrittenBytesCount = 0u;
-      parsedMetadata.WrittenSubregionsCount = static_cast<UINT64>(raw_metadata.pspSubregionFences.size());
+
+      // We need to be careful when dealing with AUTO slice layout mode
+      // as the number of subregions may not match the number of slices raw_metadata.pspSubregionFences.size()
+      if (raw_metadata.m_associatedEncodeConfig.m_encoderSliceConfigMode == D3D12_VIDEO_ENCODER_FRAME_SUBREGION_LAYOUT_MODE_AUTO)
+      {
+         // Wait on the last slice fence to ensure all slices are completed
+         bool bLastSliceWaitResult = d3d12_fence_finish(raw_metadata.m_LastSliceFence.get(), OS_TIMEOUT_INFINITE);
+         assert(bLastSliceWaitResult);
+         if (!bLastSliceWaitResult)
+         {
+            debug_printf("Error: d3d12_video_encoder_extract_encode_metadata failed to wait on last slice fence\n");
+            pResolvedMetadataBuffer->Unmap(0, nullptr);
+            return false;
+         }
+
+         // Count how many pSliceFences are actually signaled -> this is the actual number of slices actually produced
+         // and save that into parsedMetadata.WrittenSubregionsCount
+         uint32_t max_potential_slice_count = static_cast<uint32_t>(raw_metadata.pspSubregionFences.size());
+         parsedMetadata.WrittenSubregionsCount = 0;
+         bool bSliceSignaled = false;
+         uint32_t slice_idx = 0;
+         do
+         {
+            bSliceSignaled = d3d12_fence_finish(raw_metadata.pSubregionPipeFences[slice_idx].get(),  0 /* No wait, just see if signaled */ );
+
+            if(bSliceSignaled)
+            {
+               parsedMetadata.WrittenSubregionsCount++;
+            }
+
+            slice_idx++;
+         } while ((slice_idx < max_potential_slice_count) &&
+                  bSliceSignaled);
+
+         if( parsedMetadata.WrittenSubregionsCount != max_potential_slice_count)
+         {
+            debug_printf("Info: d3d12_video_encoder_extract_encode_metadata AUTO slice layout mode detected %"
+                         PRIu32 " signaled slices out of max potential %"
+                         PRIu32 " slices.\n",
+                         static_cast<UINT32>(parsedMetadata.WrittenSubregionsCount),
+                         max_potential_slice_count);
+         }
+      }
+      else
+      {
+         parsedMetadata.WrittenSubregionsCount = static_cast<UINT64>(raw_metadata.pspSubregionFences.size());
+      }
+
       pSubregionsMetadata.resize(static_cast<size_t>(parsedMetadata.WrittenSubregionsCount));
       std::vector<struct codec_unit_location_t> slice_codec_units(4u);
       for (uint32_t sliceIdx = 0; sliceIdx < parsedMetadata.WrittenSubregionsCount; sliceIdx++) {
@@ -4824,6 +4881,7 @@ d3d12_video_encoder_extract_encode_metadata(
 
    // Unmap the buffer using native D3D12 API
    pResolvedMetadataBuffer->Unmap(0, nullptr);
+   return true;
 }
 
 /**
