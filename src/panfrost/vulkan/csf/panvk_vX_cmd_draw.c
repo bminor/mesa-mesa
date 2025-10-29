@@ -2044,8 +2044,16 @@ prepare_dcd(struct panvk_cmd_buffer *cmdbuf,
 
             cfg.pixel_kill_operation = (enum mali_pixel_kill)earlyzs->kill;
             cfg.zs_update_operation = (enum mali_pixel_kill)earlyzs->update;
-            cfg.evaluate_per_sample = fs->info.fs.sample_shading &&
-                                      (dyns->ms.rasterization_samples > 1);
+
+            /* Use per-sample shading if required by API. Also use it when a
+             * blend shader is used with multisampling, as this is handled by a
+             * single ST_TILE in the blend shader with the current sample ID,
+             * requiring per-sample shading.
+             */
+            cfg.evaluate_per_sample =
+               (fs->info.fs.sample_shading ||
+                cmdbuf->state.gfx.cb.info.needs_shader) &&
+               (dyns->ms.rasterization_samples > 1);
 
             cfg.shader_modifies_coverage = fs->info.fs.writes_coverage ||
                                            fs->info.fs.can_discard ||
