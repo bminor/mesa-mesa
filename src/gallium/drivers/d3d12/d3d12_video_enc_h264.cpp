@@ -1121,6 +1121,10 @@ d3d12_video_encoder_update_current_encoder_config_state_h264(struct d3d12_video_
       // Note: m_currentResolutionSupportCaps and other capability data remain valid from previous query
    }
 
+   // Use the max worst case of the reported max slices per frame in caps in general and for this frame's configuration
+   pD3D12Enc->m_currentEncodeCapabilities.m_currentResolutionSupportCaps.MaxSubregionsNumber =
+      std::max (pD3D12Enc->m_currentEncodeCapabilities.m_currentResolutionSupportCaps.MaxSubregionsNumber, pD3D12Enc->screen_max_slices_per_frame);
+
    ///
    // Calculate current settings based on the returned values from the caps query
    //

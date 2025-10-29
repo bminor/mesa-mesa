@@ -2633,6 +2633,10 @@ d3d12_video_encoder_create_encoder(struct pipe_context *context, const struct pi
 
    }
 
+   // Cache max slices cap
+   pD3D12Enc->screen_max_slices_per_frame = context->screen->get_video_param(context->screen, codec->profile,
+                                                                             codec->entrypoint,
+                                                                             PIPE_VIDEO_CAP_ENC_MAX_SLICES_PER_FRAME);
    return &pD3D12Enc->base;
 
 failed:
