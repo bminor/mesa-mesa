@@ -383,13 +383,6 @@ encode_internal_node(uint32_t child, uint32_t child_block_offset_from_internal_n
       DEREF(dst_node).node_type = node_type;
    }
 
-   uint32_t type = ir_id_to_type(child);
-   /* blockIncr and child_block_offset are how HW used to find children during traversal.
-    * If not set properly, gpu could hang.
-    */
-   DEREF(dst_node).data[cluster.idx].block_incr_and_start_prim =
-      type == vk_ir_node_instance ? uint8_t(2) : uint8_t(1);
-
    child_aabb = conservative_aabb(child_aabb);
    vk_aabb quantize_aabb = quantize_bounds(child_aabb, conservative_child_aabb.min, exp_i8);
    bool valid_leaf = cluster.idx < child_count;
@@ -401,24 +394,19 @@ encode_internal_node(uint32_t child, uint32_t child_block_offset_from_internal_n
    DEREF(dst_node).upper_y[cluster.idx] = valid_leaf ? uint8_t(quantize_aabb.max.y) : uint8_t(0);
    DEREF(dst_node).upper_z[cluster.idx] = valid_leaf ? uint8_t(quantize_aabb.max.z) : uint8_t(0);
 
+   /* blockIncr and child_block_offset are how HW used to find children during traversal.
+    * If not set properly, gpu could hang.
+    */
+   uint32_t type = ir_id_to_type(child);
+   uint8_t block_incr_and_start_prim = type == vk_ir_node_instance ? uint8_t(2) : uint8_t(1);
    /* for a mixed node, encode type of each children in startPrim in childdata */
-   if (node_type == uint8_t(ANV_NODE_TYPE_MIXED)){
-      uint32_t type = ir_id_to_type(child);
-      switch (type){
-      case vk_ir_node_triangle:
-         DEREF(dst_node).data[cluster.idx].block_incr_and_start_prim |= (uint8_t(ANV_NODE_TYPE_QUAD) << 2);
-         break;
-      case vk_ir_node_aabb:
-         DEREF(dst_node).data[cluster.idx].block_incr_and_start_prim |= (uint8_t(ANV_NODE_TYPE_PROCEDURAL) << 2);
-         break;
-      case vk_ir_node_instance:
-         DEREF(dst_node).data[cluster.idx].block_incr_and_start_prim |= (uint8_t(ANV_NODE_TYPE_INSTANCE) << 2);
-         break;
-      case vk_ir_node_internal:
-         DEREF(dst_node).data[cluster.idx].block_incr_and_start_prim |= (uint8_t(ANV_NODE_TYPE_MIXED) << 2);
-         break;
-      }
-   }
+   if (node_type == uint8_t(ANV_NODE_TYPE_MIXED))
+      block_incr_and_start_prim |=
+         (type == vk_ir_node_triangle) ? (uint8_t(ANV_NODE_TYPE_QUAD) << 2) :
+         (type == vk_ir_node_aabb) ? (uint8_t(ANV_NODE_TYPE_PROCEDURAL) << 2) :
+         (type == vk_ir_node_instance) ? (uint8_t(ANV_NODE_TYPE_INSTANCE) << 2) :
+         (type == vk_ir_node_internal) ? (uint8_t(ANV_NODE_TYPE_MIXED) << 2) : uint8_t(0);
+   DEREF(dst_node).data[cluster.idx].block_incr_and_start_prim = block_incr_and_start_prim;
 }
 
 /* Collapse nodes until reaching 6 children, which typically can be
