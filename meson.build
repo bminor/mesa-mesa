@@ -1470,7 +1470,10 @@ endif
 if cc.has_header_symbol('errno.h', 'program_invocation_name',
                         args : '-D_GNU_SOURCE')
    pre_args += '-DHAVE_PROGRAM_INVOCATION_NAME'
-elif with_tools.contains('intel')
+elif with_tools.contains('intel') and not with_platform_android
+  # Intel tools is supported on Android where the program name is from
+  # `getprogname()` without `program_invocation_name` in glibc.
+  # See `src/util/u_process.c` for more details.
   error('Intel tools require the program_invocation_name variable')
 endif
 
@@ -1617,7 +1620,7 @@ if dep_thread.found()
 endif
 
 with_expat = get_option('expat') \
-  .disable_auto_if(with_platform_android or with_platform_windows) \
+  .disable_auto_if(with_platform_windows) \
   .enable_if(with_intel_tools, error_message : 'Intel tools require expat')
 
 if host_machine.system() == 'darwin'
