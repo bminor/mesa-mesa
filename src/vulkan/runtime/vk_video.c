@@ -796,23 +796,30 @@ vk_video_session_parameters_update(struct vk_video_session_parameters *params,
    case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR: {
       const struct VkVideoDecodeH264SessionParametersAddInfoKHR *h264_add =
          vk_find_struct_const(update->pNext, VIDEO_DECODE_H264_SESSION_PARAMETERS_ADD_INFO_KHR);
-      return update_h264_dec_session_parameters(params, h264_add);
+      if (h264_add)
+         return update_h264_dec_session_parameters(params, h264_add);
+      break;
    }
    case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR: {
       const struct VkVideoDecodeH265SessionParametersAddInfoKHR *h265_add =
          vk_find_struct_const(update->pNext, VIDEO_DECODE_H265_SESSION_PARAMETERS_ADD_INFO_KHR);
-
-      return update_h265_session_parameters(params, h265_add);
+      if (h265_add)
+         return update_h265_session_parameters(params, h265_add);
+      break;
    }
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {
       const struct VkVideoEncodeH264SessionParametersAddInfoKHR *h264_add =
         vk_find_struct_const(update->pNext, VIDEO_ENCODE_H264_SESSION_PARAMETERS_ADD_INFO_KHR);
-      return update_h264_enc_session_parameters(params, h264_add);
+      if (h264_add)
+         return update_h264_enc_session_parameters(params, h264_add);
+      break;
    }
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
       const struct VkVideoEncodeH265SessionParametersAddInfoKHR *h265_add =
         vk_find_struct_const(update->pNext, VIDEO_ENCODE_H265_SESSION_PARAMETERS_ADD_INFO_KHR);
-      return update_h265_enc_session_parameters(params, h265_add);
+      if (h265_add)
+         return update_h265_enc_session_parameters(params, h265_add);
+      break;
    }
    default:
       UNREACHABLE("Unknown codec\n");
