@@ -60,7 +60,7 @@ create_iview(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_surf *s
 
 void
 radv_gfx_copy_memory_to_image(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_buffer *src,
-                              struct radv_meta_blit2d_surf *dst, struct radv_meta_blit2d_rect *rect)
+                              struct radv_meta_blit2d_surf *dst, const VkOffset3D *offset, const VkExtent3D *extent)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const enum blit2d_src_type src_type = BLIT2D_SRC_TYPE_BUFFER;
@@ -69,17 +69,17 @@ radv_gfx_copy_memory_to_image(struct radv_cmd_buffer *cmd_buffer, struct radv_me
    VkResult result;
 
    radv_CmdSetViewport(radv_cmd_buffer_to_handle(cmd_buffer), 0, 1,
-                       &(VkViewport){.x = rect->dst_x,
-                                     .y = rect->dst_y,
-                                     .width = rect->width,
-                                     .height = rect->height,
+                       &(VkViewport){.x = offset->x,
+                                     .y = offset->y,
+                                     .width = extent->width,
+                                     .height = extent->height,
                                      .minDepth = 0.0f,
                                      .maxDepth = 1.0f});
 
    radv_CmdSetScissor(radv_cmd_buffer_to_handle(cmd_buffer), 0, 1,
                       &(VkRect2D){
-                         .offset = (VkOffset2D){rect->dst_x, rect->dst_y},
-                         .extent = (VkExtent2D){rect->width, rect->height},
+                         .offset = (VkOffset2D){offset->x, offset->y},
+                         .extent = (VkExtent2D){extent->width, extent->height},
                       });
 
    u_foreach_bit (i, dst->aspect_mask) {
@@ -108,8 +108,8 @@ radv_gfx_copy_memory_to_image(struct radv_cmd_buffer *cmd_buffer, struct radv_me
          .flags = VK_RENDERING_LOCAL_READ_CONCURRENT_ACCESS_CONTROL_BIT_KHR,
          .renderArea =
             {
-               .offset = {rect->dst_x, rect->dst_y},
-               .extent = {rect->width, rect->height},
+               .offset = {offset->x, offset->y},
+               .extent = {extent->width, extent->height},
             },
          .layerCount = 1,
       };
@@ -153,10 +153,10 @@ radv_gfx_copy_memory_to_image(struct radv_cmd_buffer *cmd_buffer, struct radv_me
          UNREACHABLE("Processing blit2d with multiple aspects.");
 
       float vertex_push_constants[4] = {
-         rect->src_x,
-         rect->src_y,
-         rect->src_x + rect->width,
-         rect->src_y + rect->height,
+         0,
+         0,
+         extent->width,
+         extent->height,
       };
 
       const VkPushConstantsInfoKHR pc_info_vs = {
@@ -211,7 +211,8 @@ radv_gfx_copy_memory_to_image(struct radv_cmd_buffer *cmd_buffer, struct radv_me
 
 void
 radv_gfx_copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_surf *src,
-                    struct radv_meta_blit2d_surf *dst, struct radv_meta_blit2d_rect *rect)
+                    struct radv_meta_blit2d_surf *dst, const VkOffset3D *src_offset, const VkOffset3D *dst_offset,
+                    const VkExtent3D *extent)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const bool use_3d = src->image->vk.image_type == VK_IMAGE_TYPE_3D;
@@ -223,18 +224,18 @@ radv_gfx_copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_
 
    radv_CmdSetViewport(radv_cmd_buffer_to_handle(cmd_buffer), 0, 1,
                        &(VkViewport){
-                          .x = rect->dst_x,
-                          .y = rect->dst_y,
-                          .width = rect->width,
-                          .height = rect->height,
+                          .x = dst_offset->x,
+                          .y = dst_offset->y,
+                          .width = extent->width,
+                          .height = extent->height,
                           .minDepth = 0.0f,
                           .maxDepth = 1.0f,
                        });
 
    radv_CmdSetScissor(radv_cmd_buffer_to_handle(cmd_buffer), 0, 1,
                       &(VkRect2D){
-                         .offset = (VkOffset2D){rect->dst_x, rect->dst_y},
-                         .extent = (VkExtent2D){rect->width, rect->height},
+                         .offset = (VkOffset2D){dst_offset->x, dst_offset->y},
+                         .extent = (VkExtent2D){extent->width, extent->height},
                       });
 
    u_foreach_bit (i, dst->aspect_mask) {
@@ -280,8 +281,8 @@ radv_gfx_copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_
          .flags = VK_RENDERING_LOCAL_READ_CONCURRENT_ACCESS_CONTROL_BIT_KHR,
          .renderArea =
             {
-               .offset = {rect->dst_x, rect->dst_y},
-               .extent = {rect->width, rect->height},
+               .offset = {dst_offset->x, dst_offset->y},
+               .extent = {extent->width, extent->height},
             },
          .layerCount = 1,
       };
@@ -325,10 +326,10 @@ radv_gfx_copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_
          UNREACHABLE("Processing blit2d with multiple aspects.");
 
       float vertex_push_constants[4] = {
-         rect->src_x,
-         rect->src_y,
-         rect->src_x + rect->width,
-         rect->src_y + rect->height,
+         src_offset->x,
+         src_offset->y,
+         src_offset->x + extent->width,
+         src_offset->y + extent->height,
       };
 
       const VkPushConstantsInfoKHR pc_info_vs = {

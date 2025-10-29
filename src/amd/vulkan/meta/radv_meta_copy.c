@@ -127,10 +127,6 @@ gfx_or_compute_copy_memory_to_image(struct radv_cmd_buffer *cmd_buffer, uint64_t
 
    /* Start creating blit rect */
    const VkExtent3D img_extent_el = vk_image_extent_to_elements(&image->vk, region->imageExtent);
-   struct radv_meta_blit2d_rect rect = {
-      .width = img_extent_el.width,
-      .height = img_extent_el.height,
-   };
 
    /* Create blit surfaces */
    struct radv_meta_blit2d_surf img_bsurf = blit_surf_for_image_level_layer(image, layout, &region->imageSubresource);
@@ -175,15 +171,11 @@ gfx_or_compute_copy_memory_to_image(struct radv_cmd_buffer *cmd_buffer, uint64_t
    unsigned slice_3d = 0;
    unsigned slice_array = 0;
    while (slice_3d < num_slices_3d && slice_array < num_slices_array) {
-
-      rect.dst_x = img_offset_el.x;
-      rect.dst_y = img_offset_el.y;
-
       /* Perform Blit */
       if (use_compute) {
-         radv_meta_buffer_to_image_cs(cmd_buffer, &buf_bsurf, &img_bsurf, &rect);
+         radv_meta_buffer_to_image_cs(cmd_buffer, &buf_bsurf, &img_bsurf, &img_offset_el, &img_extent_el);
       } else {
-         radv_gfx_copy_memory_to_image(cmd_buffer, &buf_bsurf, &img_bsurf, &rect);
+         radv_gfx_copy_memory_to_image(cmd_buffer, &buf_bsurf, &img_bsurf, &img_offset_el, &img_extent_el);
       }
 
       /* Once we've done the blit, all of the actual information about
@@ -291,10 +283,6 @@ compute_copy_image_to_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer
 
    /* Start creating blit rect */
    const VkExtent3D img_extent_el = vk_image_extent_to_elements(&image->vk, region->imageExtent);
-   struct radv_meta_blit2d_rect rect = {
-      .width = img_extent_el.width,
-      .height = img_extent_el.height,
-   };
 
    /* Create blit surfaces */
    struct radv_meta_blit2d_surf img_info = blit_surf_for_image_level_layer(image, layout, &region->imageSubresource);
@@ -338,12 +326,8 @@ compute_copy_image_to_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t buffer
    unsigned slice_3d = 0;
    unsigned slice_array = 0;
    while (slice_3d < num_slices_3d && slice_array < num_slices_array) {
-
-      rect.src_x = img_offset_el.x;
-      rect.src_y = img_offset_el.y;
-
       /* Perform Blit */
-      radv_meta_image_to_buffer(cmd_buffer, &img_info, &buf_info, &rect);
+      radv_meta_image_to_buffer(cmd_buffer, &img_info, &buf_info, &img_offset_el, &img_extent_el);
 
       buf_info.offset += buf_extent_el.width * buf_extent_el.height * img_info.bs;
       img_info.layer++;
@@ -571,12 +555,6 @@ gfx_or_compute_copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image 
     */
    const VkExtent3D img_extent_el = vk_image_extent_to_elements(&src_image->vk, region->extent);
 
-   /* Start creating blit rect */
-   struct radv_meta_blit2d_rect rect = {
-      .width = img_extent_el.width,
-      .height = img_extent_el.height,
-   };
-
    unsigned num_slices = vk_image_subresource_layer_count(&src_image->vk, &region->srcSubresource);
 
    if (src_image->vk.image_type == VK_IMAGE_TYPE_3D) {
@@ -588,20 +566,15 @@ gfx_or_compute_copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image 
       b_dst.layer = dst_offset_el.z;
 
    for (unsigned slice = 0; slice < num_slices; slice++) {
-      /* Finish creating blit rect */
-      rect.dst_x = dst_offset_el.x;
-      rect.dst_y = dst_offset_el.y;
-      rect.src_x = src_offset_el.x;
-      rect.src_y = src_offset_el.y;
-
       /* Perform Blit */
       if (use_compute) {
-         radv_meta_image_to_image_cs(cmd_buffer, &b_src, &b_dst, &rect);
+         radv_meta_image_to_image_cs(cmd_buffer, &b_src, &b_dst, &src_offset_el, &dst_offset_el, &img_extent_el);
       } else {
-         if (radv_can_use_fmask_copy(cmd_buffer, b_src.image, b_dst.image, &rect)) {
+         if (radv_can_use_fmask_copy(cmd_buffer, b_src.image, b_dst.image, &src_offset_el, &dst_offset_el,
+                                     &img_extent_el)) {
             radv_fmask_copy(cmd_buffer, &b_src, &b_dst);
          } else {
-            radv_gfx_copy_image(cmd_buffer, &b_src, &b_dst, &rect);
+            radv_gfx_copy_image(cmd_buffer, &b_src, &b_dst, &src_offset_el, &dst_offset_el, &img_extent_el);
          }
       }
 
