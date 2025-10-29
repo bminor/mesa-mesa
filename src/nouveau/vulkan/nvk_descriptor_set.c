@@ -94,7 +94,14 @@ nvk_descriptor_writer_next_set(struct nvk_descriptor_writer *w,
 {
    const struct nvk_physical_device *pdev = w->pdev;
 
-   if (w->set != NULL && w->set != set)
+   /* If we're writing to the same set, keep using the original writer as-is
+    * so we don't do unnecessary extra flushing in the case where the client
+    * has a lot of writes to the same set back-to-back.
+    */
+   if (w->set == set)
+      return;
+
+   if (w->set != NULL)
       nvk_descriptor_writer_finish(w);
 
    nvk_descriptor_writer_init_set(pdev, w, set);
