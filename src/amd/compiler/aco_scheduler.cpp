@@ -94,7 +94,7 @@ struct MoveState {
 
    /* for moving instructions before the current instruction to after it */
    DownwardsCursor downwards_init(int current_idx, bool improved_rar);
-   MoveResult downwards_check_deps(Instruction* instr);
+   MoveResult downwards_check_deps(Instruction* instr, Temp* rar_dep = NULL);
    MoveResult downwards_move(DownwardsCursor&);
    MoveResult downwards_move_clause(DownwardsCursor&);
    void downwards_skip(DownwardsCursor&);
@@ -185,7 +185,7 @@ MoveState::downwards_init(int current_idx, bool improved_rar_)
 }
 
 MoveResult
-MoveState::downwards_check_deps(Instruction* instr)
+MoveState::downwards_check_deps(Instruction* instr, Temp* rar_dep)
 {
    for (const Definition& def : instr->definitions) {
       if (def.isTemp() && depends_on[def.tempId()])
@@ -199,9 +199,13 @@ MoveState::downwards_check_deps(Instruction* instr)
       if (!improved_rar && depends_on[op.tempId()])
          return move_fail_rar;
 
-      if (improved_rar && rar_dependencies.count(op.tempId()))
-         // FIXME: account for difference in register pressure
-         return move_fail_rar;
+      if (improved_rar && rar_dependencies.count(op.tempId())) {
+         /* We allow for exactly one read-after-read dependency. */
+         if (rar_dep && (*rar_dep == Temp() || *rar_dep == op.getTemp()))
+            *rar_dep = op.getTemp();
+         else
+            return move_fail_rar;
+      }
    }
 
    return move_success;
@@ -284,10 +288,11 @@ MoveState::downwards_move_clause(DownwardsCursor& cursor)
 
    /* Check if one of candidates' operands is killed by depending instruction. */
    RegisterDemand max_clause_demand;
+   Temp rar_dep = Temp();
    while (should_form_clause(block->instructions[clause_begin_idx].get(), instr)) {
       Instruction* candidate = block->instructions[clause_begin_idx--].get();
 
-      MoveResult res = downwards_check_deps(candidate);
+      MoveResult res = downwards_check_deps(candidate, &rar_dep);
       if (res != move_success)
          return res;
 
@@ -306,7 +311,7 @@ MoveState::downwards_move_clause(DownwardsCursor& cursor)
    /* RegisterDemand changes caused by the clause. */
    RegisterDemand clause_diff = clause_end_demand - clause_begin_demand;
    /* RegisterDemand changes caused by the instructions being moved over. */
-   RegisterDemand insert_diff = insert_demand - clause_end_demand;
+   RegisterDemand insert_diff = insert_demand - clause_end_demand + rar_dep;
 
    /* Check the new demand of the instructions being moved over. */
    if (RegisterDemand(cursor.total_demand - clause_diff).exceeds(max_registers))
@@ -316,11 +321,53 @@ MoveState::downwards_move_clause(DownwardsCursor& cursor)
    if (RegisterDemand(max_clause_demand + insert_diff).exceeds(max_registers))
       return move_fail_pressure;
 
+   /* Update kill flags if we move over a RAR dependency:
+    * The changed kill flags also affect the temp register demand, so re-calculate
+    * that as well.
+    */
+   int rar_index = insert_idx;
+   if (rar_dep != Temp()) {
+      for (int i = clause_end_idx; i > clause_begin_idx; i--) {
+         /* Subtract the RAR temp from any clause instruction after the kill. */
+         instr = block->instructions[i].get();
+         instr->register_demand -= rar_dep;
+
+         bool first = true;
+         for (Operand& op : instr->operands) {
+            if (op.isTemp() && op.getTemp() == rar_dep) {
+               if (first)
+                  instr->register_demand -= get_temp_registers(instr);
+               op.setKill(true);
+               op.setFirstKill(first);
+               first = false;
+            }
+         }
+         if (first == false) {
+            instr->register_demand += get_temp_registers(instr);
+            break;
+         }
+      }
+
+      rar_index = cursor.insert_idx + rar_dependencies[rar_dep.id()];
+      Instruction* rar_instr = block->instructions[rar_index].get();
+      rar_instr->register_demand -= get_temp_registers(rar_instr);
+      for (Operand& op : rar_instr->operands) {
+         if (op.isTemp() && op.getTemp() == rar_dep && !op.isCopyKill())
+            op.setKill(false);
+      }
+      rar_instr->register_demand += get_temp_registers(rar_instr) + rar_dep;
+   }
+
    /* Update register demand. */
    for (int i = clause_begin_idx + 1; i <= clause_end_idx; i++)
       block->instructions[i]->register_demand += insert_diff;
-   for (int i = clause_end_idx + 1; i <= insert_idx; i++)
+   for (int i = clause_end_idx + 1; i <= rar_index; i++)
       block->instructions[i]->register_demand -= clause_diff;
+   for (int i = rar_index + 1; i <= insert_idx; i++) {
+      /* Add the RAR temp to instructions after the original kill. */
+      block->instructions[i]->register_demand -= clause_diff;
+      block->instructions[i]->register_demand += rar_dep;
+   }
 
    /* Move the clause before the memory instruction. */
    move_element(block->instructions.begin(), clause_begin_idx + 1, cursor.insert_idx_clause,
