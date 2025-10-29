@@ -14,7 +14,7 @@
         "description": "zink: collapse mesh pipeline fetching and binding conditionals",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 2,
         "main_sha": null,
         "because_sha": null,
         "notes": null
