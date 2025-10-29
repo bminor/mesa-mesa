@@ -285,7 +285,10 @@ zink_get_gfx_pipeline(struct zink_context *ctx,
    }
 
    struct zink_gfx_pipeline_cache_entry *cache_entry = (struct zink_gfx_pipeline_cache_entry *)entry->data;
-   state->pipeline = cache_entry->pipeline;
+   if (IS_MESH)
+      state->mesh_pipeline = cache_entry->pipeline;
+   else
+      state->pipeline = cache_entry->pipeline;
    /* update states for fastpath */
    if (DYNAMIC_STATE >= ZINK_DYNAMIC_VERTEX_INPUT) {
       prog->last_finalized_hash[idx] = final_hash;
