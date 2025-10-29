@@ -82,17 +82,17 @@ radv_gfx_copy_memory_to_image(struct radv_cmd_buffer *cmd_buffer, struct radv_me
                          .extent = (VkExtent2D){extent->width, extent->height},
                       });
 
-   VkFormat depth_format = 0;
+   assert(src->format == dst->format);
+   VkFormat format = src->format;
 
-   if (dst->aspect_mask == VK_IMAGE_ASPECT_STENCIL_BIT)
-      depth_format = vk_format_stencil_only(dst->image->vk.format);
-   else if (dst->aspect_mask == VK_IMAGE_ASPECT_DEPTH_BIT)
-      depth_format = vk_format_depth_only(dst->image->vk.format);
+   if (dst->aspect_mask == VK_IMAGE_ASPECT_STENCIL_BIT) {
+      format = vk_format_stencil_only(dst->image->vk.format);
+   } else if (dst->aspect_mask == VK_IMAGE_ASPECT_DEPTH_BIT) {
+      format = vk_format_depth_only(dst->image->vk.format);
+   }
 
    struct radv_image_view dst_iview;
-   create_iview(cmd_buffer, dst, &dst_iview,
-                dst->aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) ? depth_format : 0,
-                dst->aspect_mask);
+   create_iview(cmd_buffer, dst, &dst_iview, format, dst->aspect_mask);
 
    const VkRenderingAttachmentInfo att_info = {
       .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
@@ -115,7 +115,7 @@ radv_gfx_copy_memory_to_image(struct radv_cmd_buffer *cmd_buffer, struct radv_me
 
    if (dst->aspect_mask == VK_IMAGE_ASPECT_COLOR_BIT || dst->aspect_mask == VK_IMAGE_ASPECT_PLANE_0_BIT ||
        dst->aspect_mask == VK_IMAGE_ASPECT_PLANE_1_BIT || dst->aspect_mask == VK_IMAGE_ASPECT_PLANE_2_BIT) {
-      result = get_color_pipeline(device, src_type, dst_iview.vk.format, 0, &pipeline, &layout);
+      result = get_color_pipeline(device, src_type, format, 0, &pipeline, &layout);
       if (result != VK_SUCCESS) {
          vk_command_buffer_set_error(&cmd_buffer->vk, result);
          goto fail;
@@ -190,7 +190,7 @@ radv_gfx_copy_memory_to_image(struct radv_cmd_buffer *cmd_buffer, struct radv_me
                &(VkDescriptorAddressInfoEXT){.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT,
                                              .address = src->addr + src->offset,
                                              .range = src->size - src->offset,
-                                             .format = depth_format ? depth_format : src->format},
+                                             .format = format},
          },
       });
 
