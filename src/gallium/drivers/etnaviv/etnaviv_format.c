@@ -216,8 +216,8 @@ static struct etna_format formats[PIPE_FORMAT_COUNT] = {
    /* 128-bit */
    V_(R32G32B32A32_UNORM,   UNSIGNED_INT, NONE),
    V_(R32G32B32A32_SNORM,   INT,          NONE),
-   VT(R32G32B32A32_UINT,    INT,          EXT_G32R32I | EXT_FORMAT, G32R32F), /* emulated format */
-   VT(R32G32B32A32_SINT,    INT,          EXT_G32R32I | EXT_FORMAT, G32R32F), /* emulated format */
+   VT(R32G32B32A32_UINT,    FLOAT,        EXT_G32R32I | EXT_FORMAT, G32R32F), /* emulated format */
+   VT(R32G32B32A32_SINT,    FLOAT,        EXT_G32R32I | EXT_FORMAT, G32R32F), /* emulated format */
    V_(R32G32B32A32_USCALED, UNSIGNED_INT, NONE),
    V_(R32G32B32A32_SSCALED, INT,          NONE),
    VT(R32G32B32A32_FLOAT,   FLOAT,        EXT_G32R32F | EXT_FORMAT, G32R32F), /* emulated format */
