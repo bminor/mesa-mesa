@@ -238,34 +238,37 @@ radv_gfx_copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_
                       });
 
    u_foreach_bit (i, dst->aspect_mask) {
-      unsigned aspect_mask = 1u << i;
-      unsigned src_aspect_mask = aspect_mask;
-      VkFormat depth_format = 0;
+      unsigned dst_aspect_mask = 1u << i;
+      unsigned src_aspect_mask = dst_aspect_mask;
+      VkFormat src_format = src->format;
+      VkFormat dst_format = dst->format;
 
-      if (aspect_mask == VK_IMAGE_ASPECT_STENCIL_BIT)
-         depth_format = vk_format_stencil_only(dst->image->vk.format);
-      else if (aspect_mask == VK_IMAGE_ASPECT_DEPTH_BIT)
-         depth_format = vk_format_depth_only(dst->image->vk.format);
-      else
+      if (dst_aspect_mask == VK_IMAGE_ASPECT_STENCIL_BIT) {
+         dst_format = vk_format_stencil_only(dst->image->vk.format);
+         src_format = dst_format;
+      } else if (dst_aspect_mask == VK_IMAGE_ASPECT_DEPTH_BIT) {
+         dst_format = vk_format_depth_only(dst->image->vk.format);
+         src_format = dst_format;
+      } else {
          src_aspect_mask = src->aspect_mask;
+      }
 
       /* Adjust the aspect for color to depth/stencil image copies. */
       if (vk_format_is_color(src->image->vk.format) && vk_format_is_depth_or_stencil(dst->image->vk.format)) {
          assert(src->aspect_mask == VK_IMAGE_ASPECT_COLOR_BIT);
          src_aspect_mask = src->aspect_mask;
+         src_format = src->format;
       } else if (vk_format_is_depth_or_stencil(src->image->vk.format) && vk_format_is_color(dst->image->vk.format)) {
          if (src->aspect_mask == VK_IMAGE_ASPECT_STENCIL_BIT) {
-            depth_format = vk_format_stencil_only(src->image->vk.format);
+            src_format = vk_format_stencil_only(src->image->vk.format);
          } else {
             assert(src->aspect_mask == VK_IMAGE_ASPECT_DEPTH_BIT);
-            depth_format = vk_format_depth_only(src->image->vk.format);
+            src_format = vk_format_depth_only(src->image->vk.format);
          }
       }
 
       struct radv_image_view dst_iview;
-      create_iview(cmd_buffer, dst, &dst_iview,
-                   aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) ? depth_format : 0,
-                   aspect_mask);
+      create_iview(cmd_buffer, dst, &dst_iview, dst_format, dst_aspect_mask);
 
       const VkRenderingAttachmentInfo att_info = {
          .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
@@ -286,9 +289,9 @@ radv_gfx_copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_
          .layerCount = 1,
       };
 
-      if (aspect_mask == VK_IMAGE_ASPECT_COLOR_BIT || aspect_mask == VK_IMAGE_ASPECT_PLANE_0_BIT ||
-          aspect_mask == VK_IMAGE_ASPECT_PLANE_1_BIT || aspect_mask == VK_IMAGE_ASPECT_PLANE_2_BIT) {
-         result = get_color_pipeline(device, src_type, dst_iview.vk.format, log2_samples, &pipeline, &layout);
+      if (dst_aspect_mask == VK_IMAGE_ASPECT_COLOR_BIT || dst_aspect_mask == VK_IMAGE_ASPECT_PLANE_0_BIT ||
+          dst_aspect_mask == VK_IMAGE_ASPECT_PLANE_1_BIT || dst_aspect_mask == VK_IMAGE_ASPECT_PLANE_2_BIT) {
+         result = get_color_pipeline(device, src_type, dst_format, log2_samples, &pipeline, &layout);
          if (result != VK_SUCCESS) {
             vk_command_buffer_set_error(&cmd_buffer->vk, result);
             goto fail;
@@ -298,7 +301,7 @@ radv_gfx_copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_
          rendering_info.pColorAttachments = &att_info;
 
          radv_CmdBindPipeline(radv_cmd_buffer_to_handle(cmd_buffer), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-      } else if (aspect_mask == VK_IMAGE_ASPECT_DEPTH_BIT) {
+      } else if (dst_aspect_mask == VK_IMAGE_ASPECT_DEPTH_BIT) {
          result = get_depth_only_pipeline(device, src_type, log2_samples, &pipeline, &layout);
          if (result != VK_SUCCESS) {
             vk_command_buffer_set_error(&cmd_buffer->vk, result);
@@ -310,7 +313,7 @@ radv_gfx_copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_
 
          radv_CmdBindPipeline(radv_cmd_buffer_to_handle(cmd_buffer), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
-      } else if (aspect_mask == VK_IMAGE_ASPECT_STENCIL_BIT) {
+      } else if (dst_aspect_mask == VK_IMAGE_ASPECT_STENCIL_BIT) {
          result = get_stencil_only_pipeline(device, src_type, log2_samples, &pipeline, &layout);
          if (result != VK_SUCCESS) {
             vk_command_buffer_set_error(&cmd_buffer->vk, result);
@@ -356,9 +359,7 @@ radv_gfx_copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_
       }
 
       struct radv_image_view src_iview;
-      create_iview(cmd_buffer, src, &src_iview,
-                   (src_aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) ? depth_format : 0,
-                   src_aspect_mask);
+      create_iview(cmd_buffer, src, &src_iview, src_format, src_aspect_mask);
 
       radv_meta_bind_descriptors(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 1,
                                  (VkDescriptorGetInfoEXT[]){{.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT,
