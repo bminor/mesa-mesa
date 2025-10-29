@@ -31,18 +31,10 @@ namespace {
  *     instructions are removed from the sequence.
  */
 
-struct mad_info {
-   aco_ptr<Instruction> add_instr;
-   uint32_t mul_temp_id;
-
-   mad_info(aco_ptr<Instruction> instr, uint32_t id) : add_instr(std::move(instr)), mul_temp_id(id)
-   {}
-};
-
 enum Label {
    label_constant = 1ull << 0,
    label_temp = 1ull << 1,
-   label_mad = 1ull << 2,
+   label_combined_instr = 1ull << 2,
    /* This label means that it's either 0 or -1, and the ssa_info::temp is an s1 which is 0 or 1. */
    label_uniform_bool = 1ull << 3,
    /* This label is added to the first definition of s_not/s_or/s_xor/s_and when all operands are
@@ -94,7 +86,7 @@ static constexpr uint64_t temp_labels = label_temp | label_uniform_bool | label_
                                         label_b2f | label_b2i | input_mod_labels |
                                         label_fcanonicalize_fp32_64 | label_fcanonicalize_fp16;
 
-static constexpr uint64_t val_labels = label_constant | label_mad;
+static constexpr uint64_t val_labels = label_constant | label_combined_instr;
 
 static constexpr uint64_t canonicalized_labels =
    label_canonicalized_fp16 | label_canonicalized_fp32 | label_canonicalized_fp64;
@@ -199,13 +191,13 @@ struct ssa_info {
 
    bool is_temp() { return label & label_temp; }
 
-   void set_mad(uint32_t mad_info_idx)
+   void set_combined(uint32_t pre_combine_idx)
    {
-      add_label(label_mad);
-      val = mad_info_idx;
+      add_label(label_combined_instr);
+      val = pre_combine_idx;
    }
 
-   bool is_mad() { return label & label_mad; }
+   bool is_combined() { return label & label_combined_instr; }
 
    void set_omod2(Instruction* mul)
    {
@@ -335,8 +327,7 @@ struct opt_ctx {
    float_mode fp_mode;
    std::vector<aco_ptr<Instruction>> instructions;
    std::vector<ssa_info> info;
-   std::pair<uint32_t, Temp> last_literal;
-   std::vector<mad_info> mad_infos;
+   std::vector<aco_ptr<Instruction>> pre_combine_instrs;
    std::vector<uint16_t> uses;
 };
 
@@ -3896,7 +3887,7 @@ apply_omod_clamp(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       return false;
 
    /* MADs/FMAs are created later, so we don't have to update the original add */
-   assert(!ctx.info[instr->definitions[0].tempId()].is_mad());
+   assert(!ctx.info[instr->definitions[0].tempId()].is_combined());
 
    if (!def_info.is_clamp() && (instr->valu().clamp || instr->valu().omod))
       return false;
@@ -3943,7 +3934,7 @@ apply_insert(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       return false;
 
    /* MADs/FMAs are created later, so we don't have to update the original add */
-   assert(!ctx.info[instr->definitions[0].tempId()].is_mad());
+   assert(!ctx.info[instr->definitions[0].tempId()].is_combined());
 
    SubdwordSel sel = parse_insert(def_info.mod_instr);
    assert(sel);
@@ -4795,9 +4786,9 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
 
          instr = std::move(mad);
 
-         /* mark this ssa_def to be re-checked for profitability and literals */
-         ctx.mad_infos.emplace_back(std::move(add_instr), mul_instr->definitions[0].tempId());
-         ctx.info[instr->definitions[0].tempId()].set_mad(ctx.mad_infos.size() - 1);
+         /* mark this ssa_def to be re-checked for profitability */
+         ctx.pre_combine_instrs.emplace_back(std::move(add_instr));
+         ctx.info[instr->definitions[0].tempId()].set_combined(ctx.pre_combine_instrs.size() - 1);
          ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
          return;
       }
@@ -4913,13 +4904,6 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       combine_sabsdiff(ctx, instr);
    } else if (instr->opcode == aco_opcode::v_and_b32) {
       combine_v_andor_not(ctx, instr);
-   } else if (instr->opcode == aco_opcode::v_fma_f32 || instr->opcode == aco_opcode::v_fma_f16) {
-      /* set existing v_fma_f32 with label_mad so we can create v_fmamk_f32/v_fmaak_f32.
-       * since ctx.uses[mad_info::mul_temp_id] is always 0, we don't have to worry about
-       * select_instruction() using mad_info::add_instr.
-       */
-      ctx.mad_infos.emplace_back(nullptr, 0);
-      ctx.info[instr->definitions[0].tempId()].set_mad(ctx.mad_infos.size() - 1);
    } else if (instr->opcode == aco_opcode::v_med3_f32 || instr->opcode == aco_opcode::v_med3_f16) {
       /* Optimize v_med3 to v_add so that it can be dual issued on GFX11. We start with v_med3 in
        * case omod can be applied.
@@ -5179,19 +5163,29 @@ select_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       }
    }
 
-   mad_info* mad_info = NULL;
-   if (!instr->definitions.empty() && ctx.info[instr->definitions[0].tempId()].is_mad()) {
-      mad_info = &ctx.mad_infos[ctx.info[instr->definitions[0].tempId()].val];
-      /* re-check mad instructions */
-      if (ctx.uses[mad_info->mul_temp_id] && mad_info->add_instr) {
-         ctx.uses[mad_info->mul_temp_id]++;
-         if (instr->operands[0].isTemp())
-            ctx.uses[instr->operands[0].tempId()]--;
-         if (instr->operands[1].isTemp())
-            ctx.uses[instr->operands[1].tempId()]--;
-         instr.swap(mad_info->add_instr);
-         ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
-         mad_info = NULL;
+   if (!instr->definitions.empty() && ctx.info[instr->definitions[0].tempId()].is_combined()) {
+      aco_ptr<Instruction>& prev_instr =
+         ctx.pre_combine_instrs[ctx.info[instr->definitions[0].tempId()].val];
+      /* Re-check combined instructions, revert to using pre combine instruction if
+       * no operand instruction was eliminated.
+       */
+      bool use_prev = std::all_of(
+         prev_instr->operands.begin(), prev_instr->operands.end(), [&](Operand op)
+         { return !op.isTemp() || !is_dead(ctx.uses, ctx.info[op.tempId()].parent_instr); });
+
+      if (use_prev) {
+         for (const Operand& op : prev_instr->operands) {
+            if (op.isTemp())
+               ctx.uses[op.tempId()]++;
+         }
+         for (const Operand& op : instr->operands) {
+            if (op.isTemp())
+               decrease_and_dce(ctx, op.getTemp());
+         }
+
+         instr = std::move(prev_instr);
+         for (Definition& def : instr->definitions)
+            ctx.info[def.tempId()].parent_instr = instr.get();
       }
    }
 
