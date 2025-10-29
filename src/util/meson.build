@@ -203,6 +203,7 @@ elif host_machine.cpu_family() in ['x86', 'x86_64'] and cc.get_id() != 'msvc'
       include_directories : [inc_util],
       c_args : [no_override_init_args] + clflushopt_args,
       gnu_symbol_visibility : 'hidden',
+      build_by_default : false,
     )
     libmesa_util_links += [libmesa_util_clflushopt]
   endif
