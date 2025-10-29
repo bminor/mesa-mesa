@@ -72,6 +72,9 @@ specific to NVK:
       views.
    ``gart``
       Forces all memory to be allocated from system RAM (GART)
+   ``coherent``
+      Forces all memory maps to be coherent with the CPU caches.  This only
+      applies to Tegra devices.
 
 .. envvar:: NVK_I_WANT_A_BROKEN_VULKAN_DRIVER
 

@@ -135,6 +135,9 @@ nvkmd_nouveau_alloc_tiled_mem(struct nvkmd_dev *_dev,
       nouveau_flags |= NOUVEAU_WS_BO_NO_SHARE;
 
    if (dev->base.pdev->dev_info.type == NV_DEVICE_TYPE_SOC) {
+      if (dev->base.pdev->debug_flags & NVK_DEBUG_FORCE_COHERENT)
+         flags |= NVKMD_MEM_COHERENT;
+
       /* On Tegra, we have to explicitly request coherent maps by putting the
        * BO in NOUVEAU_GEM_DOMAIN_COHERENT.
        */
