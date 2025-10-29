@@ -67,6 +67,11 @@ specific to NVK:
       Logs VM binds and unbinds
    ``no_cbuf``
       Disables automatic promotion of UBOs to constant buffers
+   ``edb_bview``
+      Forces the driver to use the VK_EXT_descriptor_buffer path for buffer
+      views.
+   ``gart``
+      Forces all memory to be allocated from system RAM (GART)
 
 .. envvar:: NVK_I_WANT_A_BROKEN_VULKAN_DRIVER
 
