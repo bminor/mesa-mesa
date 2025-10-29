@@ -1582,9 +1582,7 @@ enumerate_devices(struct vk_instance *vk_instance)
          break;
    }
 
-   assert(primary_fd >= 0);
-
-   if (render_fd < 0)
+   if (render_fd < 0 || primary_fd < 0)
       result = VK_ERROR_INCOMPATIBLE_DRIVER;
    else
       result = create_physical_device(instance, primary_fd, render_fd, display_fd);
