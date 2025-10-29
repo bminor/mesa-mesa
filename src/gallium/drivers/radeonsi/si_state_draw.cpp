@@ -895,6 +895,14 @@ static void si_init_ia_multi_vgt_param_table(struct si_context *sctx)
                            }
 }
 
+static bool si_is_line_stipple_enabled(struct si_context *sctx)
+{
+   struct si_state_rasterizer *rs = sctx->queued.named.rasterizer;
+
+   return rs->line_stipple_enable && sctx->current_rast_prim != MESA_PRIM_POINTS &&
+          (rs->polygon_mode_is_lines || util_prim_is_lines(sctx->current_rast_prim));
+}
+
 enum si_is_draw_vertex_state {
    DRAW_VERTEX_STATE_OFF,
    DRAW_VERTEX_STATE_ON,
@@ -1037,6 +1045,30 @@ static void si_emit_rasterizer_prim_state(struct si_context *sctx)
    else
       radeon_end();
 }
+
+#if GFX_VER == 6 /* declare this function only once because it handles all chips. */
+
+void si_emit_rasterizer_prim_state_for_mesh(struct si_context *sctx)
+{
+   switch (sctx->screen->info.gfx_level) {
+   case GFX10_3:
+      si_emit_rasterizer_prim_state<GFX10_3, GS_OFF, NGG_ON>(sctx);
+      break;
+   case GFX11:
+      si_emit_rasterizer_prim_state<GFX11, GS_OFF, NGG_ON>(sctx);
+      break;
+   case GFX11_5:
+      si_emit_rasterizer_prim_state<GFX11_5, GS_OFF, NGG_ON>(sctx);
+      break;
+   case GFX12:
+      si_emit_rasterizer_prim_state<GFX12, GS_OFF, NGG_ON>(sctx);
+      break;
+   default:
+      UNREACHABLE("invalid GFX version for mesh shaders");
+   }
+}
+
+#endif
 
 template <amd_gfx_level GFX_VERSION, si_has_tess HAS_TESS, si_has_gs HAS_GS, si_has_ngg NGG,
           si_is_draw_vertex_state IS_DRAW_VERTEX_STATE, si_has_sh_pairs_packed HAS_SH_PAIRS_PACKED> ALWAYS_INLINE

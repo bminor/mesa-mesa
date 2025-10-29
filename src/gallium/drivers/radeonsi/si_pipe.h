@@ -2298,14 +2298,6 @@ static inline bool si_vs_uses_vbos(struct si_shader_selector *sel)
    return !sel || !sel->info.base.vs.blit_sgprs_amd;
 }
 
-static inline bool si_is_line_stipple_enabled(struct si_context *sctx)
-{
-   struct si_state_rasterizer *rs = sctx->queued.named.rasterizer;
-
-   return rs->line_stipple_enable && sctx->current_rast_prim != MESA_PRIM_POINTS &&
-          (rs->polygon_mode_is_lines || util_prim_is_lines(sctx->current_rast_prim));
-}
-
 static ALWAYS_INLINE void
 si_emit_all_states(struct si_context *sctx, uint64_t skip_atom_mask)
 {
