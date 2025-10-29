@@ -183,7 +183,7 @@ gfx_or_compute_copy_memory_to_image(struct radv_cmd_buffer *cmd_buffer, uint64_t
       if (use_compute) {
          radv_meta_buffer_to_image_cs(cmd_buffer, &buf_bsurf, &img_bsurf, &rect);
       } else {
-         radv_meta_blit2d(cmd_buffer, NULL, &buf_bsurf, &img_bsurf, &rect);
+         radv_gfx_copy_memory_to_image(cmd_buffer, &buf_bsurf, &img_bsurf, &rect);
       }
 
       /* Once we've done the blit, all of the actual information about
@@ -601,7 +601,7 @@ gfx_or_compute_copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image 
          if (radv_can_use_fmask_copy(cmd_buffer, b_src.image, b_dst.image, &rect)) {
             radv_fmask_copy(cmd_buffer, &b_src, &b_dst);
          } else {
-            radv_meta_blit2d(cmd_buffer, &b_src, NULL, &b_dst, &rect);
+            radv_gfx_copy_image(cmd_buffer, &b_src, &b_dst, &rect);
          }
       }
 
