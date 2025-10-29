@@ -782,6 +782,7 @@ panvk_queue_submit_init_storage(
 {
    MESA_TRACE_FUNC();
    submit->utrace.first_subqueue = PANVK_SUBQUEUE_COUNT;
+   VkPipelineStageFlags2 cmd_stage_mask = VK_PIPELINE_STAGE_2_NONE;
    for (uint32_t i = 0; i < vk_submit->command_buffer_count; i++) {
       struct panvk_cmd_buffer *cmdbuf = container_of(
          vk_submit->command_buffers[i], struct panvk_cmd_buffer, vk);
@@ -792,6 +793,7 @@ panvk_queue_submit_init_storage(
          if (cs_is_empty(b))
             continue;
 
+         cmd_stage_mask |= panvk_get_subqueue_stages(j);
          submit->qsubmit_count++;
 
          struct panvk_subqueue *subq = &submit->queue->subqueues[j];
@@ -824,19 +826,37 @@ panvk_queue_submit_init_storage(
 
    /* wait_stages_mask is pipeline stages which limit
     * the second synchronization scope of a semaphore wait operation */
-   VkPipelineStageFlags2 wait_stages_mask = VK_PIPELINE_STAGE_2_NONE;
+   VkPipelineStageFlags2 wait_stages_mask = cmd_stage_mask;
    for (uint32_t i = 0; i < vk_submit->wait_count; i++) {
       wait_stages_mask |= vk_submit->waits[i].stage_mask;
    }
-   submit->wait_queue_mask =
-      vk_stages_to_subqueue_mask(wait_stages_mask, SYNC_SCOPE_SECOND);
 
    /* signal_stages_mask is pipeline stages which limit
     * the first synchronization scope of a semaphore signal operation */
-   VkPipelineStageFlags2 signal_stages_mask = VK_PIPELINE_STAGE_2_NONE;
+   VkPipelineStageFlags2 signal_stages_mask = cmd_stage_mask;
    for (uint32_t i = 0; i < vk_submit->signal_count; i++) {
       signal_stages_mask |= vk_submit->signals[i].stage_mask;
    }
+
+   /* if there is no cs in any subqueue */
+   if (cmd_stage_mask == VK_PIPELINE_STAGE_2_NONE) {
+      /* signal stage mask is TOP_OF_PIPE/NONE, signal immediately */
+      if (signal_stages_mask == VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT ||
+          signal_stages_mask == VK_PIPELINE_STAGE_2_NONE) {
+         signal_stages_mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+      }
+
+      /* wait stage mask is BOTTOM_OF_PIPE/NONE, wait deferred */
+      if (wait_stages_mask == VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT ||
+          wait_stages_mask == VK_PIPELINE_STAGE_2_NONE) {
+         wait_stages_mask = panvk_get_subqueue_stages(PANVK_SUBQUEUE_FRAGMENT) |
+                            panvk_get_subqueue_stages(PANVK_SUBQUEUE_COMPUTE);
+      }
+   }
+
+   submit->wait_queue_mask =
+      vk_stages_to_subqueue_mask(wait_stages_mask, SYNC_SCOPE_SECOND);
+
    submit->signal_queue_mask =
       vk_stages_to_subqueue_mask(signal_stages_mask, SYNC_SCOPE_FIRST) |
       submit->utrace.queue_mask;
@@ -844,14 +864,6 @@ panvk_queue_submit_init_storage(
    /* Signal all subqueues if force_sync */
    if (submit->force_sync) {
       submit->signal_queue_mask |= BITFIELD_MASK(PANVK_SUBQUEUE_COUNT);
-   }
-
-   /* Synchronize all subqueues if we have no command buffer submitted. */
-   if (!submit->qsubmit_count) {
-      submit->wait_queue_mask =
-         submit->wait_queue_mask ? BITFIELD_MASK(PANVK_SUBQUEUE_COUNT) : 0;
-      submit->signal_queue_mask =
-         submit->signal_queue_mask ? BITFIELD_MASK(PANVK_SUBQUEUE_COUNT) : 0;
    }
 
    uint32_t syncop_count = 0;
