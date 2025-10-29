@@ -200,20 +200,29 @@ os_get_android_option(const char *name)
  * that have been made during the process lifetime, if either the
  * setter uses a different CRT (e.g. due to static linking) or the
  * setter used the Win32 API directly. */
-const char *
-os_get_option(const char *name)
+static const char *
+os_get_option_internal(const char *name, UNUSED bool use_secure_getenv)
 {
    static thread_local char value[_MAX_ENV];
    DWORD size = GetEnvironmentVariableA(name, value, _MAX_ENV);
    return (size > 0 && size < _MAX_ENV) ? value : NULL;
 }
 
-#else
+#else /* !DETECT_OS_WINDOWS */
 
-const char *
-os_get_option(const char *name)
+static const char *
+os_get_option_internal(const char *name, bool use_secure_getenv)
 {
-   const char *opt = getenv(name);
+   const char *opt;
+   if (use_secure_getenv) {
+#ifdef HAVE_SECURE_GETENV
+      opt = secure_getenv(name);
+#else
+      opt = getenv(name);
+#endif
+   } else {
+      opt = getenv(name);
+   }
 #if DETECT_OS_ANDROID
    if (!opt) {
       opt = os_get_android_option(name);
@@ -222,18 +231,18 @@ os_get_option(const char *name)
    return opt;
 }
 
-#endif
+#endif /* DETECT_OS_WINDOWS */
+
+const char *
+os_get_option(const char *name)
+{
+   return os_get_option_internal(name, false);
+}
 
 const char *
 os_get_option_secure(const char *name)
 {
-   const char *opt = secure_getenv(name);
-#if DETECT_OS_ANDROID
-   if (!opt) {
-      opt = os_get_android_option(name);
-   }
-#endif
-   return opt;
+   return os_get_option_internal(name, true);
 }
 
 static struct hash_table *options_tbl;

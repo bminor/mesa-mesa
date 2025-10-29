@@ -409,13 +409,6 @@ __normal_user(void)
 #endif
 }
 
-#ifndef HAVE_SECURE_GETENV
-static inline char *secure_getenv(const char *name)
-{
-   return getenv(name);
-}
-#endif
-
 #define DEBUG_GET_ONCE_BOOL_OPTION(sufix, name, dfault) \
 static bool \
 debug_get_option_ ## sufix (void) \
