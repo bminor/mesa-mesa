@@ -133,6 +133,7 @@ agx_virtio_bo_bind(struct agx_device *dev, struct drm_asahi_gem_bind_op *ops,
    memcpy(req->payload, ops, payload_size);
 
    int ret = vdrm_send_req(dev->vdrm, &req->hdr, false);
+   free(req);
    if (ret) {
       fprintf(stderr, "ASAHI_CCMD_GEM_BIND failed: %d\n", ret);
    }
