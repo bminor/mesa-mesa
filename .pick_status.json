@@ -214,7 +214,7 @@
         "description": "util/meson: don't build libmesa_util_clflush unless needed",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "efbecd93baa35b4bbeb5f370893865568a577e6e",
         "notes": null
