@@ -58,14 +58,11 @@ create_iview(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_surf *s
                         &(struct radv_image_view_extra_create_info){.disable_dcc_mrt = surf->disable_compression});
 }
 
-struct blit2d_src_temps {
-   struct radv_image_view iview;
-};
-
 static void
 blit2d_bind_src(struct radv_cmd_buffer *cmd_buffer, VkPipelineLayout layout, struct radv_meta_blit2d_surf *src_img,
-                struct radv_meta_blit2d_buffer *src_buf, struct blit2d_src_temps *tmp, enum blit2d_src_type src_type,
-                VkFormat depth_format, VkImageAspectFlagBits aspects, uint32_t log2_samples)
+                struct radv_meta_blit2d_buffer *src_buf, struct radv_image_view *src_iview,
+                enum blit2d_src_type src_type, VkFormat depth_format, VkImageAspectFlagBits aspects,
+                uint32_t log2_samples)
 {
    if (src_type == BLIT2D_SRC_TYPE_BUFFER) {
       radv_meta_bind_descriptors(
@@ -91,7 +88,7 @@ blit2d_bind_src(struct radv_cmd_buffer *cmd_buffer, VkPipelineLayout layout, str
 
       radv_CmdPushConstants2(radv_cmd_buffer_to_handle(cmd_buffer), &pc_info);
    } else {
-      create_iview(cmd_buffer, src_img, &tmp->iview, depth_format, aspects);
+      create_iview(cmd_buffer, src_img, src_iview, depth_format, aspects);
 
       if (src_type == BLIT2D_SRC_TYPE_IMAGE_3D) {
          const VkPushConstantsInfoKHR pc_info = {
@@ -112,7 +109,7 @@ blit2d_bind_src(struct radv_cmd_buffer *cmd_buffer, VkPipelineLayout layout, str
                                                              .data.pSampledImage = (VkDescriptorImageInfo[]){
                                                                 {
                                                                    .sampler = VK_NULL_HANDLE,
-                                                                   .imageView = radv_image_view_to_handle(&tmp->iview),
+                                                                   .imageView = radv_image_view_to_handle(src_iview),
                                                                    .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
                                                                 },
                                                              }}});
@@ -250,8 +247,8 @@ radv_meta_blit2d_normal_dst(struct radv_cmd_buffer *cmd_buffer, struct radv_meta
 
       radv_CmdPushConstants2(radv_cmd_buffer_to_handle(cmd_buffer), &pc_info);
 
-      struct blit2d_src_temps src_temps;
-      blit2d_bind_src(cmd_buffer, layout, src_img, src_buf, &src_temps, src_type,
+      struct radv_image_view src_iview;
+      blit2d_bind_src(cmd_buffer, layout, src_img, src_buf, &src_iview, src_type,
                       (src_aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) ? depth_format : 0,
                       src_aspect_mask, log2_samples);
 
@@ -268,7 +265,7 @@ radv_meta_blit2d_normal_dst(struct radv_cmd_buffer *cmd_buffer, struct radv_meta
    fail_pipeline:
 
       if (src_type != BLIT2D_SRC_TYPE_BUFFER)
-         radv_image_view_finish(&src_temps.iview);
+         radv_image_view_finish(&src_iview);
 
       radv_image_view_finish(&dst_iview);
    }
