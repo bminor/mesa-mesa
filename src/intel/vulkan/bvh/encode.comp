@@ -391,18 +391,18 @@ encode_internal_node(uint32_t child, uint32_t child_block_offset_from_internal_n
       type == vk_ir_node_instance ? uint8_t(2) : uint8_t(1);
 
    child_aabb = conservative_aabb(child_aabb);
-
    vk_aabb quantize_aabb = quantize_bounds(child_aabb, conservative_child_aabb.min, exp_i8);
+   bool valid_leaf = cluster.idx < child_count;
 
-   DEREF(dst_node).lower_x[cluster.idx] = uint8_t(quantize_aabb.min.x);
-   DEREF(dst_node).lower_y[cluster.idx] = uint8_t(quantize_aabb.min.y);
-   DEREF(dst_node).lower_z[cluster.idx] = uint8_t(quantize_aabb.min.z);
-   DEREF(dst_node).upper_x[cluster.idx] = uint8_t(quantize_aabb.max.x);
-   DEREF(dst_node).upper_y[cluster.idx] = uint8_t(quantize_aabb.max.y);
-   DEREF(dst_node).upper_z[cluster.idx] = uint8_t(quantize_aabb.max.z);
+   DEREF(dst_node).lower_x[cluster.idx] = valid_leaf ? uint8_t(quantize_aabb.min.x) : uint8_t(0x80);
+   DEREF(dst_node).lower_y[cluster.idx] = valid_leaf ? uint8_t(quantize_aabb.min.y) : uint8_t(0);
+   DEREF(dst_node).lower_z[cluster.idx] = valid_leaf ? uint8_t(quantize_aabb.min.z) : uint8_t(0);
+   DEREF(dst_node).upper_x[cluster.idx] = valid_leaf ? uint8_t(quantize_aabb.max.x) : uint8_t(0);
+   DEREF(dst_node).upper_y[cluster.idx] = valid_leaf ? uint8_t(quantize_aabb.max.y) : uint8_t(0);
+   DEREF(dst_node).upper_z[cluster.idx] = valid_leaf ? uint8_t(quantize_aabb.max.z) : uint8_t(0);
 
    /* for a mixed node, encode type of each children in startPrim in childdata */
-   if (DEREF(dst_node).node_type == uint8_t(ANV_NODE_TYPE_MIXED)){
+   if (node_type == uint8_t(ANV_NODE_TYPE_MIXED)){
       uint32_t type = ir_id_to_type(child);
       switch (type){
       case vk_ir_node_triangle:
@@ -417,27 +417,6 @@ encode_internal_node(uint32_t child, uint32_t child_block_offset_from_internal_n
       case vk_ir_node_internal:
          DEREF(dst_node).data[cluster.idx].block_incr_and_start_prim |= (uint8_t(ANV_NODE_TYPE_MIXED) << 2);
          break;
-      }
-   }
-
-   if (cluster.idx == 0) {
-      for (uint32_t i = child_count; i < 6; i++) {
-         /* Invalid Child Nodes: For invalid child nodes, the MSBs of lower and upper
-          * x planes are flipped. In other words:
-          * bool valid(int i) const {
-          *   return !(lower_x[i] & 0x80) || (upper_x[i] & 0x80);
-          * }
-          */
-         DEREF(dst_node).lower_x[i] = uint8_t(0x80);
-         DEREF(dst_node).lower_y[i] = uint8_t(0);
-         DEREF(dst_node).lower_z[i] = uint8_t(0);
-         DEREF(dst_node).upper_x[i] = uint8_t(0);
-         DEREF(dst_node).upper_y[i] = uint8_t(0);
-         DEREF(dst_node).upper_z[i] = uint8_t(0);
-
-         /* in case HW also references blockIncr to do something, we zero out the data. */
-         DEREF(dst_node).data[i].block_incr_and_start_prim = uint8_t(0);
-         DEREF(dst_node).data[i].block_incr_and_start_prim |= (uint8_t(ANV_NODE_TYPE_INVALID) << 2);
       }
    }
 }
@@ -702,31 +681,32 @@ main()
          uint32_t idx = (READY_TO_WRITE(bvh_block_offset)) ? cluster.idx : -1;
          idx = subgroupClusteredMin(idx, 8);
 
-
          /* Propagate src child and dest blocks of next simd lane to other lanes */
          IR_NODE child = VK_BVH_INVALID_NODE;
          BLOCK child_block = anv_shuffle(cluster, idx, first_child_block);
          BLOCK internal_node_block = anv_shuffle(cluster, idx, bvh_block_offset);
+         vk_aabb child_aabb = {vec3(INFINITY), vec3(-INFINITY)};
          bvh_block_offset = (cluster.idx == idx) ? VK_NULL_BVH_OFFSET
                                                  : bvh_block_offset;
-         if (cluster.idx >= anv_shuffle(cluster, idx, found_child_count))
+         if (cluster.idx >= 6)
             continue;
-         for (uint32_t i = 0; ; i++) {
-            child = anv_shuffle(cluster, idx, children[i]);
-            if (i == cluster.idx)
-               break;
+         if (cluster.idx < anv_shuffle(cluster, idx, found_child_count)) {
+            for (uint32_t i = 0; ; i++) {
+               child = anv_shuffle(cluster, idx, children[i]);
+               if (i == cluster.idx)
+                  break;
+               uint32_t type = ir_id_to_type(child);
+               child_block += (type == vk_ir_node_instance) ? 2 : 1;
+            }
+
+            if (child != VK_BVH_INVALID_NODE)
+               child_aabb = DEREF(REF(vk_ir_node)NODE_OFFSET(child)).aabb;
+
             uint32_t type = ir_id_to_type(child);
-            child_block += (type == vk_ir_node_instance) ? 2 : 1;
+            if (child != VK_BVH_INVALID_NODE && type != vk_ir_node_internal)
+               encode_leaf_node(type, NODE_OFFSET(child),
+                              BLOCK_OFFSET(child_block), header);
          }
-
-         vk_aabb child_aabb = {vec3(INFINITY), vec3(-INFINITY)};
-         if (child != VK_BVH_INVALID_NODE)
-            child_aabb = DEREF(REF(vk_ir_node)NODE_OFFSET(child)).aabb;
-
-         uint32_t type = ir_id_to_type(child);
-         if (child != VK_BVH_INVALID_NODE && type != vk_ir_node_internal)
-            encode_leaf_node(type, NODE_OFFSET(child),
-                           BLOCK_OFFSET(child_block), header);
 
          BLOCK child_block_offset =
             anv_shuffle(cluster, 0, child_block) - internal_node_block;
