@@ -3288,6 +3288,11 @@ struct combine_instr_pattern {
    unsigned operand_mask;
    const char* swizzle;
    combine_instr_callback callback;
+
+   /* Limit to pattern matching to avoid unlike combining for instructions
+    * that might be used as src_opcode for other patterns.
+    */
+   bool less_aggressive;
 };
 
 bool
@@ -3370,6 +3375,9 @@ match_and_apply_patterns(opt_ctx& ctx, alu_opt_info& info,
       for (const combine_instr_pattern& pattern : patterns) {
          if (!(pattern.operand_mask & BITFIELD_BIT(op_idx)) ||
              op_instr.opcode != pattern.src_opcode)
+            continue;
+
+         if (pattern.less_aggressive && ctx.uses[tmp.id()] > ctx.uses[info.defs[0].tempId()])
             continue;
 
          alu_opt_info new_info = info;
