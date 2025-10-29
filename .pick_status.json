@@ -1174,7 +1174,7 @@
         "description": "v3dv: Fix assertion failure for not-found primary_fd during enumeration.",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "451a0bd49002713d64c4a70a292ceadcad29f943",
         "notes": null
