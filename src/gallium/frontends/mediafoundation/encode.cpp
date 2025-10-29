@@ -587,6 +587,11 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
          std::max( 1u, pDX12EncodeContext->encoderPicInfo.av1enc.tile_rows * pDX12EncodeContext->encoderPicInfo.av1enc.tile_cols );
 #endif
 
+      if (m_bSliceGenerationModeSet && pDX12EncodeContext->IsSliceAutoModeEnabled())
+      {
+         num_output_buffers = m_EncoderCapabilities.m_uiMaxHWSupportedMaxSlices;
+      }
+
       pDX12EncodeContext->sliceNotificationMode = D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM_NOTIFICATION_MODE_FULL_FRAME;
       if( m_bSliceGenerationModeSet && ( m_uiSliceGenerationMode > 0 ) &&
           ( num_output_buffers > 1 ) /* IHV driver requires > 1 slices */ )
