@@ -42,7 +42,7 @@
 #define SI_VERTEX_PIPELINE_STATE_DIRTY_MASK \
    (BITFIELD_MASK(MESA_SHADER_FRAGMENT + 1) | SI_SQTT_STATE_DIRTY_BIT)
 
-template <amd_gfx_level GFX_VERSION, si_has_tess HAS_TESS, si_has_gs HAS_GS, si_has_ngg NGG>
+template <amd_gfx_level GFX_VERSION, si_has_tess HAS_TESS, si_has_gs HAS_GS, si_has_ms HAS_MS, si_has_ngg NGG>
 static bool si_update_shaders_shared_by_vertex_and_mesh_pipe(struct si_context *sctx,
                                                              struct si_shader *old_vs,
                                                              struct si_shader *new_vs)
@@ -137,7 +137,7 @@ static bool si_update_shaders_shared_by_vertex_and_mesh_pipe(struct si_context *
    }
 
    bool fixed_func_face_culling_needed = !NGG || !si_shader_culling_enabled(new_vs);
-   bool fixed_func_face_culling_has_effect = (!HAS_TESS && !HAS_GS) ||
+   bool fixed_func_face_culling_has_effect = (!HAS_TESS && !HAS_GS && !HAS_MS) ||
                                              new_vs->selector->rast_prim == MESA_PRIM_TRIANGLES;
 
    if (sctx->fixed_func_face_culling_needed != fixed_func_face_culling_needed ||
@@ -218,7 +218,9 @@ static bool si_update_shaders_shared_by_vertex_and_mesh_pipe(struct si_context *
        (!NGG && si_pm4_state_enabled_and_changed(sctx, vs)) || si_pm4_state_enabled_and_changed(sctx, ps)) {
       unsigned scratch_size = 0;
 
-      if (HAS_TESS) {
+      if (HAS_MS) {
+         scratch_size = MAX2(scratch_size, sctx->ms_shader_state.current->config.scratch_bytes_per_wave);
+      } else if (HAS_TESS) {
          if (GFX_VERSION <= GFX8) /* LS */
             scratch_size = MAX2(scratch_size, sctx->shader.vs.current->config.scratch_bytes_per_wave);
 
@@ -269,6 +271,26 @@ static bool si_update_shaders_shared_by_vertex_and_mesh_pipe(struct si_context *
 
    return true;
 }
+
+#if GFX_VER == 6 /* declare this function only once because it handles all chips. */
+
+bool si_update_shaders_for_mesh(struct si_context *sctx, struct si_shader *old_vs, struct si_shader *new_vs)
+{
+   switch (sctx->screen->info.gfx_level) {
+   case GFX10_3:
+      return si_update_shaders_shared_by_vertex_and_mesh_pipe<GFX10_3, TESS_OFF, GS_OFF, MS_ON, NGG_ON>(sctx, old_vs, new_vs);
+   case GFX11:
+      return si_update_shaders_shared_by_vertex_and_mesh_pipe<GFX11, TESS_OFF, GS_OFF, MS_ON, NGG_ON>(sctx, old_vs, new_vs);
+   case GFX11_5:
+      return si_update_shaders_shared_by_vertex_and_mesh_pipe<GFX11_5, TESS_OFF, GS_OFF, MS_ON, NGG_ON>(sctx, old_vs, new_vs);
+   case GFX12:
+      return si_update_shaders_shared_by_vertex_and_mesh_pipe<GFX12, TESS_OFF, GS_OFF, MS_ON, NGG_ON>(sctx, old_vs, new_vs);
+   default:
+      UNREACHABLE("invalid GFX version for mesh shaders");
+   }
+}
+
+#endif
 
 template <amd_gfx_level GFX_VERSION, si_has_tess HAS_TESS, si_has_gs HAS_GS, si_has_ngg NGG>
 static bool si_update_shaders(struct si_context *sctx)
@@ -419,7 +441,7 @@ static bool si_update_shaders(struct si_context *sctx)
    if (HAS_TESS && (is_vs_state_changed || is_tess_state_changed))
       si_update_tess_io_layout_state(sctx);
 
-   if (!si_update_shaders_shared_by_vertex_and_mesh_pipe<GFX_VERSION, HAS_TESS, HAS_GS, NGG>(sctx, old_vs, hw_vs))
+   if (!si_update_shaders_shared_by_vertex_and_mesh_pipe<GFX_VERSION, HAS_TESS, HAS_GS, MS_OFF, NGG>(sctx, old_vs, hw_vs))
       return false;
 
    if (GFX_VERSION >= GFX9 && unlikely(sctx->sqtt)) {

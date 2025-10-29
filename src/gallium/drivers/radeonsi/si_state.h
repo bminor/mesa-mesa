@@ -701,6 +701,7 @@ void si_set_vertex_buffer_descriptor(struct si_screen *sscreen, struct si_vertex
                                      uint32_t *out);
 void si_emit_buffered_compute_sh_regs(struct si_context *sctx, struct radeon_cmdbuf *cs);
 void si_emit_buffered_gfx_sh_regs_for_mesh(struct si_context *sctx);
+bool si_update_shaders_for_mesh(struct si_context *sctx, struct si_shader *old_vs, struct si_shader *new_vs);
 void si_init_draw_functions_GFX6(struct si_context *sctx);
 void si_init_draw_functions_GFX7(struct si_context *sctx);
 void si_init_draw_functions_GFX8(struct si_context *sctx);
