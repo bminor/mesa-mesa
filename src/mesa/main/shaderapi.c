@@ -176,7 +176,7 @@ _mesa_get_shader_capture_path(void)
    static const char *path = NULL;
 
    if (!read_env_var) {
-      path = secure_getenv("MESA_SHADER_CAPTURE_PATH");
+      path = os_get_option_secure("MESA_SHADER_CAPTURE_PATH");
       read_env_var = true;
 
 #if ANDROID_SHADER_CAPTURE
@@ -1989,14 +1989,14 @@ _mesa_dump_shader_source(const mesa_shader_stage stage, const char *source,
 {
 #ifndef CUSTOM_SHADER_REPLACEMENT
    static bool path_exists = true;
-   char *dump_path;
+   const char *dump_path;
    FILE *f;
    char blake3_str[BLAKE3_OUT_LEN * 2 + 1];
 
    if (!path_exists)
       return;
 
-   dump_path = secure_getenv("MESA_SHADER_DUMP_PATH");
+   dump_path = os_get_option_secure("MESA_SHADER_DUMP_PATH");
    if (!dump_path) {
       path_exists = false;
       return;
