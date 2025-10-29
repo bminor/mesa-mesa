@@ -19,10 +19,25 @@ VK_CEREAL_FLAG_ALL = VK_CEREAL_FLAG_GUEST | VK_CEREAL_FLAG_HOST
 
 SUPPORTED_FEATURES = [
     "VK_VERSION_1_0",
+    "VK_BASE_VERSION_1_0",
+    "VK_COMPUTE_VERSION_1_0",
+    "VK_GRAPHICS_VERSION_1_0",
     "VK_VERSION_1_1",
+    "VK_BASE_VERSION_1_1",
+    "VK_COMPUTE_VERSION_1_1",
+    "VK_GRAPHICS_VERSION_1_1",
     "VK_VERSION_1_2",
+    "VK_BASE_VERSION_1_2",
+    "VK_COMPUTE_VERSION_1_2",
+    "VK_GRAPHICS_VERSION_1_2",
     "VK_VERSION_1_3",
+    "VK_BASE_VERSION_1_3",
+    "VK_COMPUTE_VERSION_1_3",
+    "VK_GRAPHICS_VERSION_1_3",
     "VK_VERSION_1_4",
+    "VK_BASE_VERSION_1_4",
+    "VK_COMPUTE_VERSION_1_4",
+    "VK_GRAPHICS_VERSION_1_4",
     # Instance extensions
     "VK_KHR_get_physical_device_properties2",
     "VK_KHR_external_semaphore_capabilities",
@@ -189,6 +204,8 @@ REQUIRED_TYPES = {
     "double",
     "VkPresentScalingFlagsEXT",
     "VkPresentGravityFlagsEXT",
+    "VkRenderingAreaInfo",
+    "VkRenderingAreaInfoKHR",
 }
 
 copyrightHeader = """// Copyright (C) 2018 The Android Open Source Project
