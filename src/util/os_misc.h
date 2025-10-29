@@ -91,11 +91,31 @@ const char *
 os_get_option(const char *name);
 
 /*
+ * Equivalent to os_get_option except the return value need to be `free()`
+ * os_get_option is not safe when the returned value is not immediately used.
+ * E.g.
+ *  1. when multiple consecutive calls to os_get_option are performed before using the returned values
+ *  2. when the value returned by os_get_option is assigned to a struct member
+ */
+char *
+os_get_option_dup(const char *name);
+
+/*
  * Get an option. Should return NULL if specified option is not set.
  * Same as `os_get_option()` but uses `secure_getenv()` instead of `getenv()`
  */
 const char *
 os_get_option_secure(const char *name);
+
+/*
+ * Equivalent to os_get_option_secure except the return value need to be `free()`
+ * os_get_option_secure is not safe when the returned value is not immediately used.
+ * E.g.
+ *  1. when multiple consecutive calls to os_get_option_secure are performed before using the returned values
+ *  2. when the value returned by os_get_option_secure is assigned to a struct member
+ */
+char *
+os_get_option_secure_dup(const char *name);
 
 /*
  * Get an option. Should return NULL if specified option is not set.

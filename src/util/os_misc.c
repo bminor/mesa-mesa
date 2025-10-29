@@ -239,10 +239,30 @@ os_get_option(const char *name)
    return os_get_option_internal(name, false);
 }
 
+char *
+os_get_option_dup(const char *name)
+{
+   const char *opt = os_get_option_internal(name, false);
+   if (opt) {
+      return strdup(opt);
+   }
+   return NULL;
+}
+
 const char *
 os_get_option_secure(const char *name)
 {
    return os_get_option_internal(name, true);
+}
+
+char *
+os_get_option_secure_dup(const char *name)
+{
+   const char *opt = os_get_option_internal(name, true);
+   if (opt) {
+      return strdup(opt);
+   }
+   return NULL;
 }
 
 static struct hash_table *options_tbl;
