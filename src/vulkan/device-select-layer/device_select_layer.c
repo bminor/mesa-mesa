@@ -157,12 +157,10 @@ device_select_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
 
    info->debug = debug_get_bool_option("MESA_VK_DEVICE_SELECT_DEBUG", false) ||
                  debug_get_bool_option("DRI_PRIME_DEBUG", false);
-   info->selection = getenv("MESA_VK_DEVICE_SELECT");
-   info->dri_prime = getenv("DRI_PRIME");
+   info->selection = os_get_option_dup("MESA_VK_DEVICE_SELECT");
+   info->dri_prime = os_get_option_dup("DRI_PRIME");
    info->force_default_device =
       debug_get_bool_option("MESA_VK_DEVICE_SELECT_FORCE_DEFAULT_DEVICE", false);
-   info->selection = info->selection ? strdup(info->selection) : NULL;
-   info->dri_prime = info->dri_prime ? strdup(info->dri_prime) : NULL;
 
 #define DEVSEL_GET_CB(func)                                                                        \
    info->func = (PFN_vk##func)info->GetInstanceProcAddr(*pInstance, "vk" #func)
