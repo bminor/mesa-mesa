@@ -35,6 +35,7 @@ using Microsoft::WRL::ComPtr;
 class CD3D12BitstreamMFBuffer : public IMFMediaBuffer
 {
  private:
+   const void *m_logId = {};
    ULONG m_cRef;
    ComPtr<ID3D12Resource> m_spResource;
    DWORD m_dwLength;
@@ -44,7 +45,7 @@ class CD3D12BitstreamMFBuffer : public IMFMediaBuffer
    pipe_resource *m_pOutputBitRes;
 
  public:
-   CD3D12BitstreamMFBuffer( pipe_context *pPipeContext, pipe_resource *pOutputBitRes, DWORD length, DWORD offset );
+   CD3D12BitstreamMFBuffer( void *logId, pipe_context *pPipeContext, pipe_resource *pOutputBitRes, DWORD length, DWORD offset );
    ~CD3D12BitstreamMFBuffer();
 
    // IUnknown

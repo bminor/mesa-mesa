@@ -1114,16 +1114,19 @@ CDX12EncHMFT::CreateGOPTracker( uint32_t textureWidth, uint32_t textureHeight )
    if( m_pPipeVideoCodec->two_pass.enable && ( m_pPipeVideoCodec->two_pass.pow2_downscale_factor > 0 ) )
    {
       upTwoPassDPBManager = std::make_unique<dpb_buffer_manager>(
+         this,
          m_pPipeVideoCodec,
          static_cast<unsigned>( std::ceil( textureWidth / ( 1 << m_pPipeVideoCodec->two_pass.pow2_downscale_factor ) ) ),
          static_cast<unsigned>( std::ceil( textureHeight / ( 1 << m_pPipeVideoCodec->two_pass.pow2_downscale_factor ) ) ),
          ConvertProfileToFormat( m_pPipeVideoCodec->profile ),
          m_pPipeVideoCodec->max_references + 1 /*curr pic*/ +
-            ( m_bLowLatency ? 0 :
-                              MFT_INPUT_QUEUE_DEPTH ) /*MFT process input queue depth for delayed in flight recon pic release*/ );
+            ( m_bLowLatency ? 0 : MFT_INPUT_QUEUE_DEPTH ), /*MFT process input queue depth for delayed in flight recon pic release*/
+         hr );
+      CHECKHR_GOTO( hr, done );
    }
 
-   m_pGOPTracker = new reference_frames_tracker_h264( m_pPipeVideoCodec,
+   m_pGOPTracker = new reference_frames_tracker_h264( this,
+                                                      m_pPipeVideoCodec,
                                                       textureWidth,
                                                       textureHeight,
                                                       m_uiGopSize,
@@ -1135,9 +1138,9 @@ CDX12EncHMFT::CreateGOPTracker( uint32_t textureWidth, uint32_t textureHeight )
                                                       m_pPipeVideoCodec->max_references,
                                                       m_uiMaxLongTermReferences,
                                                       m_gpuFeatureFlags.m_bH264SendUnwrappedPOC,
-                                                      std::move( upTwoPassDPBManager ) );
-
-   CHECKNULL_GOTO( m_pGOPTracker, MF_E_INVALIDMEDIATYPE, done );
+                                                      std::move( upTwoPassDPBManager ),
+                                                      hr );
+   CHECKHR_GOTO( hr, done );
 
 done:
    return hr;

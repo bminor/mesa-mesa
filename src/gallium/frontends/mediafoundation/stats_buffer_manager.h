@@ -56,7 +56,8 @@ class stats_buffer_manager : public IUnknown
    HRESULT
    AttachPipeResourceAsSampleExtension( struct pipe_resource *pPipeRes, ID3D12CommandQueue *pSyncObjectQueue, IMFSample *pSample );
 
-   static HRESULT Create( struct vl_screen *pVlScreen,
+   static HRESULT Create( void *logId,
+                          struct vl_screen *pVlScreen,
                           struct pipe_context *pPipeContext,
                           REFGUID guidExtension,
                           uint32_t width,
@@ -66,7 +67,8 @@ class stats_buffer_manager : public IUnknown
                           stats_buffer_manager **ppInstance );
 
  private:
-   stats_buffer_manager( struct vl_screen *m_pVlScreen,
+   stats_buffer_manager( void *logId,
+                         struct vl_screen *m_pVlScreen,
                          pipe_context *pPipeContext,
                          REFGUID guidExtension,
                          uint32_t width,
@@ -80,6 +82,7 @@ class stats_buffer_manager : public IUnknown
    STDMETHOD( OnSampleAvailable )( __in IMFAsyncResult *pAsyncResult );
    METHODASYNCCALLBACKEX( OnSampleAvailable, stats_buffer_manager, 0, MFASYNC_CALLBACK_QUEUE_MULTITHREADED );
 
+   const void *m_logId = {};
    std::mutex m_lock;
    GUID m_resourceGUID {};
    ULONG m_refCount = 0;

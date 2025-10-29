@@ -28,18 +28,21 @@
 #include "pipe/p_screen.h"
 #include "util/u_inlines.h"
 
-CD3D12BitstreamMFBuffer::CD3D12BitstreamMFBuffer( pipe_context *pPipeContext,
-                                                  pipe_resource *pOutputBitRes,
-                                                  DWORD length,
-                                                  DWORD offset )
-   : m_cRef( 1 ),
+#include "wpptrace.h"
+
+#include "d3d12_suballoc_mediabuffer.tmh"
+
+CD3D12BitstreamMFBuffer::CD3D12BitstreamMFBuffer(
+   void *logId, pipe_context *pPipeContext, pipe_resource *pOutputBitRes, DWORD length, DWORD offset )
+   : m_logId( logId ),
+     m_cRef( 1 ),
      m_dwLength( length ),
      m_dwOffset( offset ),
      m_pMappedData( nullptr ),
      m_pScreen( pPipeContext->screen ),
      m_pOutputBitRes( nullptr )
 {
-   debug_printf( "[dx12 hmft 0x%p] CD3D12BitstreamMFBuffer created for length %u, offset %u\n", this, length, offset );
+   debug_printf( "[dx12 hmft 0x%p] CD3D12BitstreamMFBuffer created for length %u, offset %u\n", m_logId, length, offset );
    pipe_resource_reference( &m_pOutputBitRes, pOutputBitRes );
 
    struct winsys_handle whandle = { .type = WINSYS_HANDLE_TYPE_D3D12_RES };

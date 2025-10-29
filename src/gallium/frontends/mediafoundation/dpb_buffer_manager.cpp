@@ -26,6 +26,11 @@
 #include "gallium/drivers/d3d12/d3d12_interop_public.h"
 #include "vl/vl_video_buffer.h"
 
+#include "wpptrace.h"
+
+#include "dpb_buffer_manager.tmh"
+
+
 HRESULT
 dpb_buffer_manager::get_read_only_handle( struct pipe_video_buffer *buffer,
                                           struct pipe_context *pipe,
@@ -120,6 +125,7 @@ dpb_buffer_manager::get_fresh_dpb_buffer()
       }
    }
 
+   MFE_ERROR( "[dx12 hmft 0x%p] failed to find a free buffer", m_logId );
    assert( false );   // Did not find an unused buffer
    return NULL;
 }
@@ -138,9 +144,14 @@ dpb_buffer_manager::release_dpb_buffer( struct pipe_video_buffer *target )
    }
 }
 
-dpb_buffer_manager::dpb_buffer_manager(
-   struct pipe_video_codec *codec, unsigned width, unsigned height, enum pipe_format buffer_format, unsigned pool_size )
-   : m_codec( codec ), m_pool( pool_size, { NULL, false } )
+dpb_buffer_manager::dpb_buffer_manager( void *logId,
+                                        struct pipe_video_codec *codec,
+                                        unsigned width,
+                                        unsigned height,
+                                        enum pipe_format buffer_format,
+                                        unsigned pool_size,
+                                        HRESULT &hr )
+   : m_logId( logId ), m_codec( codec ), m_pool( pool_size, { NULL, false } )
 {
    m_template.width = width;
    m_template.height = height;
@@ -155,11 +166,36 @@ dpb_buffer_manager::dpb_buffer_manager(
    }
 
    for( auto &entry : m_pool )
+   {
       entry.buffer = m_codec->create_dpb_buffer( m_codec, NULL, &m_template );
+      if( !entry.buffer )
+      {
+         MFE_ERROR( "[dx12 hmft 0x%p] create_dpb_buffer failed", m_logId );
+         assert( false );
+         hr = E_FAIL;
+         break;
+      }
+   }
+
+   if( FAILED( hr ) )
+   {
+      for( auto &entry : m_pool )
+      {
+         if( entry.buffer )
+         {
+            entry.buffer->destroy( entry.buffer );
+         }
+      }
+   }
 }
 
 dpb_buffer_manager::~dpb_buffer_manager()
 {
    for( auto &entry : m_pool )
-      entry.buffer->destroy( entry.buffer );
+   {
+      if( entry.buffer )
+      {
+         entry.buffer->destroy( entry.buffer );
+      }
+   }
 }

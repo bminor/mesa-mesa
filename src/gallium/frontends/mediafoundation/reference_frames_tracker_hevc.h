@@ -83,16 +83,16 @@ class reference_frames_tracker_hevc : public reference_frames_tracker
    } RefSortList;
 
    // Declare reference_frames_tracker interface methods
-   void begin_frame( reference_frames_tracker_dpb_async_token *pAsyncDPBToken,
-                     bool forceKey,
-                     bool markLTR,
-                     uint32_t markLTRIndex,
-                     bool useLTR,
-                     uint32_t useLTRBitmap,
-                     bool layerCountSet,
-                     uint32_t layerCount,
-                     bool dirtyRectFrameNumSet,
-                     uint32_t dirtyRectFrameNum );
+   HRESULT begin_frame( reference_frames_tracker_dpb_async_token *pAsyncDPBToken,
+                        bool forceKey,
+                        bool markLTR,
+                        uint32_t markLTRIndex,
+                        bool useLTR,
+                        uint32_t useLTRBitmap,
+                        bool layerCountSet,
+                        uint32_t layerCount,
+                        bool dirtyRectFrameNumSet,
+                        uint32_t dirtyRectFrameNum );
 
    void advance_frame();   // GOPTracker
 
@@ -100,7 +100,8 @@ class reference_frames_tracker_hevc : public reference_frames_tracker
    void release_reconpic( reference_frames_tracker_dpb_async_token *pAsyncDPBToken );
 
    // Declare other methods
-   reference_frames_tracker_hevc( struct pipe_video_codec *codec,
+   reference_frames_tracker_hevc( void *logId,
+                                  struct pipe_video_codec *codec,
                                   uint32_t textureWidth,
                                   uint32_t textureHeight,
                                   uint32_t gopLength,
@@ -111,7 +112,8 @@ class reference_frames_tracker_hevc : public reference_frames_tracker
                                   uint32_t MaxL0References,
                                   uint32_t MaxDPBCapacity,
                                   uint32_t MaxLongTermReferences,
-                                  std::unique_ptr<dpb_buffer_manager> upTwoPassDPBManager = nullptr );
+                                  std::unique_ptr<dpb_buffer_manager> upTwoPassDPBManager,
+                                  HRESULT &hr );
 
  private:
    uint32_t PrepareFrameRefLists();
@@ -128,6 +130,8 @@ class reference_frames_tracker_hevc : public reference_frames_tracker
    uint32_t m_ActiveLTRBitmap = 0;
 
    std::deque<struct PrevFrameInfo> m_PrevFramesInfos;
+
+   const void *m_logId = {};
    struct pipe_video_codec *m_codec;
    dpb_buffer_manager m_DPBManager;
    std::unique_ptr<dpb_buffer_manager> m_upTwoPassDPBManager;
@@ -163,16 +167,16 @@ class intra_refresh_tracker_row_hevc : public reference_frames_tracker, public i
 {
    // reference_frames_tracker
  public:
-   void begin_frame( reference_frames_tracker_dpb_async_token *pAsyncDPBToken,
-                     bool forceKey,
-                     bool markLTR,
-                     uint32_t mark_ltr_index,
-                     bool useLTR,
-                     uint32_t use_ltr_bitmap,
-                     bool layerCountSet,
-                     uint32_t layerCount,
-                     bool dirtyRectFrameNumSet,
-                     uint32_t dirtyRectFrameNum );
+   HRESULT begin_frame( reference_frames_tracker_dpb_async_token *pAsyncDPBToken,
+                        bool forceKey,
+                        bool markLTR,
+                        uint32_t mark_ltr_index,
+                        bool useLTR,
+                        uint32_t use_ltr_bitmap,
+                        bool layerCountSet,
+                        uint32_t layerCount,
+                        bool dirtyRectFrameNumSet,
+                        uint32_t dirtyRectFrameNum );
    void advance_frame();
    const reference_frames_tracker_frame_descriptor *get_frame_descriptor();
    void release_reconpic( reference_frames_tracker_dpb_async_token *pAsyncDPBToken );

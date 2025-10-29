@@ -345,16 +345,17 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
          }
       }
 
-      m_pGOPTracker->begin_frame( pDX12EncodeContext->pAsyncDPBToken,
-                                  m_bForceKeyFrame,
-                                  markLTR,
-                                  markLTRindex,
-                                  useLTR,
-                                  useLTRbitmap,
-                                  m_bLayerCountSet,
-                                  m_uiLayerCount,
-                                  bReceivedDirtyRectBlob,
-                                  dirtyRectFrameNum );
+      CHECKHR_GOTO( m_pGOPTracker->begin_frame( pDX12EncodeContext->pAsyncDPBToken,
+                                                m_bForceKeyFrame,
+                                                markLTR,
+                                                markLTRindex,
+                                                useLTR,
+                                                useLTRbitmap,
+                                                m_bLayerCountSet,
+                                                m_uiLayerCount,
+                                                bReceivedDirtyRectBlob,
+                                                dirtyRectFrameNum ),
+                    done );
       if( m_bForceKeyFrame )
       {
          m_bForceKeyFrame = FALSE;
@@ -385,7 +386,8 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
             uint32_t width0 = static_cast<uint32_t>( std::ceil( m_uiOutputWidth / static_cast<float>( block_size ) ) );
             uint16_t height0 = static_cast<uint16_t>( std::ceil( m_uiOutputHeight / static_cast<float>( block_size ) ) );
 
-            CHECKHR_GOTO( stats_buffer_manager::Create( m_pVlScreen,
+            CHECKHR_GOTO( stats_buffer_manager::Create( this,
+                                                        m_pVlScreen,
                                                         m_pPipeContext,
                                                         MFSampleExtension_VideoEncodeSatdMap,
                                                         width0,
@@ -410,7 +412,8 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
             uint32_t width0 = static_cast<uint32_t>( std::ceil( m_uiOutputWidth / static_cast<float>( block_size ) ) );
             uint16_t height0 = static_cast<uint16_t>( std::ceil( m_uiOutputHeight / static_cast<float>( block_size ) ) );
 
-            CHECKHR_GOTO( stats_buffer_manager::Create( m_pVlScreen,
+            CHECKHR_GOTO( stats_buffer_manager::Create( this,
+                                                        m_pVlScreen,
                                                         m_pPipeContext,
                                                         MFSampleExtension_VideoEncodeBitsUsedMap,
                                                         width0,
@@ -433,7 +436,8 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
             uint32_t width0 = static_cast<uint32_t>( std::ceil( m_uiOutputWidth / static_cast<float>( block_size ) ) );
             uint16_t height0 = static_cast<uint16_t>( std::ceil( m_uiOutputHeight / static_cast<float>( block_size ) ) );
 
-            CHECKHR_GOTO( stats_buffer_manager::Create( m_pVlScreen,
+            CHECKHR_GOTO( stats_buffer_manager::Create( this,
+                                                        m_pVlScreen,
                                                         m_pPipeContext,
                                                         MFSampleExtension_VideoEncodeQPMap,
                                                         width0,
@@ -545,7 +549,8 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
    {
       if( !m_spReconstructedPictureBufferPool )
       {
-         CHECKHR_GOTO( stats_buffer_manager::Create( m_pVlScreen,
+         CHECKHR_GOTO( stats_buffer_manager::Create( this,
+                                                     m_pVlScreen,
                                                      m_pPipeContext,
                                                      MFSampleExtension_VideoEncodeReconstructedPicture,
                                                      pDX12EncodeContext->pPipeVideoBuffer->width,

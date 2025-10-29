@@ -30,7 +30,8 @@
 
 #include "reference_frames_tracker_hevc.tmh"
 
-reference_frames_tracker_hevc::reference_frames_tracker_hevc( struct pipe_video_codec *codec,
+reference_frames_tracker_hevc::reference_frames_tracker_hevc( void *logId,
+                                                              struct pipe_video_codec *codec,
                                                               uint32_t textureWidth,
                                                               uint32_t textureHeight,
                                                               uint32_t gopLength,
@@ -41,32 +42,39 @@ reference_frames_tracker_hevc::reference_frames_tracker_hevc( struct pipe_video_
                                                               uint32_t MaxL0References,
                                                               uint32_t MaxDPBCapacity,
                                                               uint32_t MaxLongTermReferences,
-                                                              std::unique_ptr<dpb_buffer_manager> upTwoPassDPBManager )
-   : m_codec( codec ),
+                                                              std::unique_ptr<dpb_buffer_manager> upTwoPassDPBManager,
+                                                              HRESULT &hr )
+   : m_logId( logId ),
+     m_codec( codec ),
      m_MaxL0References( MaxL0References ),
      m_MaxDPBCapacity( MaxDPBCapacity ),
      m_MaxLongTermReferences( MaxLongTermReferences ),
      m_DPBManager(
+        logId,
         m_codec,
         textureWidth,
         textureHeight,
         ConvertProfileToFormat( m_codec->profile ),
         m_codec->max_references + 1 /*curr pic*/ +
-           ( bLowLatency ? 0 : MFT_INPUT_QUEUE_DEPTH ) /*MFT process input queue depth for delayed in flight recon pic release*/ ),
+           ( bLowLatency ? 0 : MFT_INPUT_QUEUE_DEPTH ) /*MFT process input queue depth for delayed in flight recon pic release*/,
+        hr ),
      m_upTwoPassDPBManager( std::move( upTwoPassDPBManager ) )
 {
-   assert( m_MaxL0References == 1 );
+   if( SUCCEEDED( hr ) )
+   {
+      assert( m_MaxL0References == 1 );
 
-   m_gopLength = gopLength;
-   m_force_idr_on_gop_start = true;
-   m_p_picture_period = uiBPictureCount + 1;
-   m_gop_state.log2_max_pic_order_cnt_lsb_minus4 = 4;   // legal range is 0 to 12, we will fix to 4 which corresponds to [0..255]
-   ResetGopStateToIDR();
-   m_frame_state_descriptor.gop_info = &m_gop_state;
+      m_gopLength = gopLength;
+      m_force_idr_on_gop_start = true;
+      m_p_picture_period = uiBPictureCount + 1;
+      m_gop_state.log2_max_pic_order_cnt_lsb_minus4 = 4;   // legal range is 0 to 12, we will fix to 4 which corresponds to [0..255]
+      ResetGopStateToIDR();
+      m_frame_state_descriptor.gop_info = &m_gop_state;
 
-   m_frame_state_descriptor.l0_reference_list.resize( 1 );
-   m_frame_state_descriptor.dpb_snapshot.reserve( m_MaxDPBCapacity + 1 );
-   m_frame_state_descriptor.dirty_rect_frame_num.reserve( m_MaxDPBCapacity + 1 );
+      m_frame_state_descriptor.l0_reference_list.resize( 1 );
+      m_frame_state_descriptor.dpb_snapshot.reserve( m_MaxDPBCapacity + 1 );
+      m_frame_state_descriptor.dirty_rect_frame_num.reserve( m_MaxDPBCapacity + 1 );
+   }
 }
 
 // release reference frame buffers
@@ -89,7 +97,7 @@ reference_frames_tracker_hevc::release_reconpic( reference_frames_tracker_dpb_as
 }
 
 // pass control variables for current frame to reference tracker and compute reference frame states
-void
+HRESULT
 reference_frames_tracker_hevc::begin_frame( reference_frames_tracker_dpb_async_token *pAsyncDPBToken,
                                             bool forceKey,
                                             bool markLTR,
@@ -101,9 +109,21 @@ reference_frames_tracker_hevc::begin_frame( reference_frames_tracker_dpb_async_t
                                             bool dirtyRectFrameNumSet,
                                             uint32_t dirtyRectFrameNum )
 {
-   struct pipe_video_buffer *curframe_dpb_buffer = m_DPBManager.get_fresh_dpb_buffer();
-   struct pipe_video_buffer *curframe_dpb_downscaled_buffer =
-      m_upTwoPassDPBManager ? m_upTwoPassDPBManager->get_fresh_dpb_buffer() : NULL;
+   HRESULT hr = S_OK;
+
+   struct pipe_video_buffer *curframe_dpb_buffer = nullptr;
+   struct pipe_video_buffer *curframe_dpb_downscaled_buffer = nullptr;
+   uint32_t ltrUsedBitMask = 0;
+   uint32_t longTermReferenceFrameInfo;
+   bool isLTR;
+
+   curframe_dpb_buffer = m_DPBManager.get_fresh_dpb_buffer();
+   CHECKNULL_GOTO( curframe_dpb_buffer, E_OUTOFMEMORY, done );
+   if( m_upTwoPassDPBManager )
+   {
+      curframe_dpb_downscaled_buffer = m_upTwoPassDPBManager->get_fresh_dpb_buffer();
+      CHECKNULL_GOTO( curframe_dpb_downscaled_buffer, E_OUTOFMEMORY, done );
+   }
 
    if( markLTR )
    {
@@ -144,9 +164,8 @@ reference_frames_tracker_hevc::begin_frame( reference_frames_tracker_dpb_async_t
       }
    }
 
-   const bool isLTR = ( m_frame_state_descriptor.gop_info->reference_type == frame_descriptor_reference_type_long_term );
+   isLTR = ( m_frame_state_descriptor.gop_info->reference_type == frame_descriptor_reference_type_long_term );
 
-   uint32_t ltrUsedBitMask = 0;
    if( m_frame_state_descriptor.gop_info->frame_type == PIPE_H2645_ENC_PICTURE_TYPE_P )
    {
       if( useLTR )
@@ -176,8 +195,7 @@ reference_frames_tracker_hevc::begin_frame( reference_frames_tracker_dpb_async_t
       ltrUsedBitMask = PrepareFrameRefLists();
    }
 
-   uint32_t longTermReferenceFrameInfo =
-      ( ltrUsedBitMask << 16 ) | ( isLTR ? m_frame_state_descriptor.gop_info->ltr_index : 0xFFFF );
+   longTermReferenceFrameInfo = ( ltrUsedBitMask << 16 ) | ( isLTR ? m_frame_state_descriptor.gop_info->ltr_index : 0xFFFF );
    m_gop_state.long_term_reference_frame_info = longTermReferenceFrameInfo;   // Update GOP State
 
    // fill dpb descriptor
@@ -267,6 +285,9 @@ reference_frames_tracker_hevc::begin_frame( reference_frames_tracker_dpb_async_t
       if( m_upTwoPassDPBManager )
          ( pAsyncDPBToken )->dpb_downscaled_buffers_to_release.push_back( curframe_dpb_downscaled_buffer );
    }
+
+done:
+   return hr;
 }
 
 // prepare the reference list for the current frame
@@ -412,7 +433,7 @@ intra_refresh_tracker_row_hevc::release_reconpic( reference_frames_tracker_dpb_a
 }
 
 // start intra refresh wave and then forward to underlying reference tracker
-void
+HRESULT
 intra_refresh_tracker_row_hevc::begin_frame( reference_frames_tracker_dpb_async_token *pAsyncDPBToken,
                                              bool forceKey,
                                              bool markLTR,
@@ -424,6 +445,7 @@ intra_refresh_tracker_row_hevc::begin_frame( reference_frames_tracker_dpb_async_
                                              bool dirtyRectFrameNumSet,
                                              uint32_t dirtyRectFrameNum )
 {
+   HRESULT hr = S_OK;
    if( m_ir_state_desc.intra_refresh_params.mode == INTRA_REFRESH_MODE_UNIT_ROWS )
    {
       if( ( ++m_ir_state_desc.current_ir_wave_frame_index ) < m_ir_wave_duration )
@@ -437,31 +459,36 @@ intra_refresh_tracker_row_hevc::begin_frame( reference_frames_tracker_dpb_async_
       }
    }
 
-   m_ref_pics_tracker->begin_frame( pAsyncDPBToken,
-                                    forceKey,
-                                    markLTR,
-                                    mark_ltr_index,
-                                    useLTR,
-                                    use_ltr_bitmap,
-                                    layerCountSet,
-                                    layerCount,
-                                    dirtyRectFrameNumSet,
-                                    dirtyRectFrameNum );
+   CHECKHR_GOTO( m_ref_pics_tracker->begin_frame( pAsyncDPBToken,
+                                                  forceKey,
+                                                  markLTR,
+                                                  mark_ltr_index,
+                                                  useLTR,
+                                                  use_ltr_bitmap,
+                                                  layerCountSet,
+                                                  layerCount,
+                                                  dirtyRectFrameNumSet,
+                                                  dirtyRectFrameNum ),
+                 done );
 
-   // If the underlying GOP tracker signaled an IDR (e.g a new GOP started) let's end any active IR wave
-   reference_frames_tracker_frame_descriptor_hevc *underlying_frame_desc =
-      (reference_frames_tracker_frame_descriptor_hevc *) m_ref_pics_tracker->get_frame_descriptor();
-   if( underlying_frame_desc->gop_info->frame_type == PIPE_H2645_ENC_PICTURE_TYPE_IDR )
    {
-      reset_ir_state_desc();
+      // If the underlying GOP tracker signaled an IDR (e.g a new GOP started) let's end any active IR wave
+      reference_frames_tracker_frame_descriptor_hevc *underlying_frame_desc =
+         (reference_frames_tracker_frame_descriptor_hevc *) m_ref_pics_tracker->get_frame_descriptor();
+      if( underlying_frame_desc->gop_info->frame_type == PIPE_H2645_ENC_PICTURE_TYPE_IDR )
+      {
+         reset_ir_state_desc();
+      }
+      else if(   // For P, B frames, restart the continuous IR wave if not already active
+         ( ( underlying_frame_desc->gop_info->frame_type == PIPE_H2645_ENC_PICTURE_TYPE_P ) ||
+           ( underlying_frame_desc->gop_info->frame_type == PIPE_H2645_ENC_PICTURE_TYPE_B ) ) &&
+         ( m_continuous_refresh && ( m_ir_state_desc.intra_refresh_params.mode == INTRA_REFRESH_MODE_NONE ) ) )
+      {
+         start_ir_wave();
+      }
    }
-   else if(   // For P, B frames, restart the continuous IR wave if not already active
-      ( ( underlying_frame_desc->gop_info->frame_type == PIPE_H2645_ENC_PICTURE_TYPE_P ) ||
-        ( underlying_frame_desc->gop_info->frame_type == PIPE_H2645_ENC_PICTURE_TYPE_B ) ) &&
-      ( m_continuous_refresh && ( m_ir_state_desc.intra_refresh_params.mode == INTRA_REFRESH_MODE_NONE ) ) )
-   {
-      start_ir_wave();
-   }
+done:
+   return hr;
 }
 
 // forward to underlying reference tracker

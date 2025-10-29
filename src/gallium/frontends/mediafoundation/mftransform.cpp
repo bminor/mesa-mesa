@@ -1319,7 +1319,8 @@ CDX12EncHMFT::ProcessSliceBitstreamZeroCopy( LPDX12EncodeContext pDX12EncodeCont
 
    // Create IMFMediaBuffer from the D3D12Resource (zero-copy)
    spMediaBuffer.Attach(
-      new CD3D12BitstreamMFBuffer( m_pPipeContext,
+      new CD3D12BitstreamMFBuffer( this,
+                                   m_pPipeContext,
                                    pDX12EncodeContext->pOutputBitRes[slice_idx],
                                    static_cast<DWORD>( total_slice_size ),
                                    static_cast<DWORD>( codec_unit_metadata[0 /*offset to first NAL*/].offset ) ) );
@@ -1823,7 +1824,8 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
             }
 
             // Create IMFMediaBuffer from the D3D12Resource (zero-copy)
-            spMemoryBuffer.Attach( new CD3D12BitstreamMFBuffer( pThis->m_pPipeContext,
+            spMemoryBuffer.Attach( new CD3D12BitstreamMFBuffer( pThis,
+                                                                pThis->m_pPipeContext,
                                                                 pDX12EncodeContext->pOutputBitRes[0],
                                                                 static_cast<DWORD>( encoded_bitstream_bytes ),
                                                                 static_cast<DWORD>( metadata.codec_unit_metadata[0].offset ) ) );
