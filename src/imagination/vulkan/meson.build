@@ -111,15 +111,43 @@ if with_imagination_srv
   pvr_flags += '-DPVR_SUPPORT_SERVICES_DRIVER'
 endif
 
+per_arch_files = [
+  pvr_entrypoints[0],
+  sha1_h,
+]
+
+powervr_per_arch_libs = []
+
+foreach arch : ['rogue']
+  powervr_per_arch_libs += static_library(
+    'powervr_@0@'.format(arch),
+    per_arch_files,
+    include_directories : [
+      pvr_includes,
+      inc_imagination,
+      inc_include,
+      inc_src,
+    ],
+    dependencies : [
+      idep_nir_headers,
+      idep_vulkan_util_headers,
+    ],
+    c_args : pvr_flags,
+    gnu_symbol_visibility : 'hidden',
+  )
+endforeach
+
+
 libvulkan_powervr_mesa = shared_library(
   'vulkan_powervr_mesa',
-  [pvr_files, pvr_entrypoints, sha1_h, u_format_pack_h],
+  [pvr_files, pvr_entrypoints, u_format_pack_h],
   include_directories : [
     pvr_includes,
     inc_imagination,
     inc_include,
     inc_src,
   ],
+  link_whole : [powervr_per_arch_libs],
   link_with : [
     libpowervr_common,
     libpowervr_compiler,
