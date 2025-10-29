@@ -1727,6 +1727,7 @@ zink_descriptors_deinit(struct zink_context *ctx)
       VKSCR(DestroyDescriptorSetLayout)(screen->dev, ctx->dd.push_dsl[0]->layout, NULL);
    if (ctx->dd.push_dsl[1])
       VKSCR(DestroyDescriptorSetLayout)(screen->dev, ctx->dd.push_dsl[1]->layout, NULL);
+   VKSCR(DestroyDescriptorSetLayout)(screen->dev, ctx->dd.old_push_dsl, NULL);
 }
 
 /* called on screen creation */
@@ -1768,7 +1769,8 @@ zink_descriptor_util_init_fbfetch(struct zink_context *ctx)
       return;
 
    struct zink_screen *screen = zink_screen(ctx->base.screen);
-   VKSCR(DestroyDescriptorSetLayout)(screen->dev, ctx->dd.push_dsl[0]->layout, NULL);
+   /* save this layout; it may be used by programs, and tracking that is extra complexity */
+   ctx->dd.old_push_dsl = ctx->dd.push_dsl[0]->layout;
    //don't free these now, let ralloc free on teardown to avoid invalid access
    //ralloc_free(ctx->dd.push_dsl[0]);
    //ralloc_free(ctx->dd.push_layout_keys[0]);
