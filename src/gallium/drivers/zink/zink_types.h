@@ -437,6 +437,7 @@ struct zink_descriptor_data {
    uint8_t state_changed[ZINK_PIPELINE_MAX]; //gfx, compute, mesh
    struct zink_descriptor_layout_key *push_layout_keys[2]; //gfx, compute
    struct zink_descriptor_layout *push_dsl[2]; //gfx, compute
+   VkDescriptorSetLayout old_push_dsl; //the non-fbfetch layout; this can't be destroyed because it may be in use
    VkDescriptorUpdateTemplate push_template[2]; //gfx, compute
 
    struct zink_descriptor_layout *dummy_dsl;
