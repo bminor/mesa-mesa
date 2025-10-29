@@ -1298,6 +1298,8 @@ schedule_program(Program* program)
    for (Block& block : program->blocks) {
       new_demand.update(block.register_demand);
    }
+   assert(!new_demand.exceeds(ctx.mv.max_registers) ||
+          !new_demand.exceeds(program->max_reg_demand));
    update_vgpr_sgpr_demand(program, new_demand);
 
    /* Validate live variable information */
