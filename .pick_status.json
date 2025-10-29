@@ -14,7 +14,7 @@
         "description": "radv: reduce maxTexelBufferElements to 1<<29",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null

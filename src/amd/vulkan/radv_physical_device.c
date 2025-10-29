@@ -1496,7 +1496,7 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
       .maxImageDimension3D = (1 << 11),
       .maxImageDimensionCube = (1 << 14),
       .maxImageArrayLayers = (1 << 11),
-      .maxTexelBufferElements = UINT32_MAX,
+      .maxTexelBufferElements = 512 * 1024 * 1024,
       .maxUniformBufferRange = UINT32_MAX,
       .maxStorageBufferRange = UINT32_MAX,
       .maxPushConstantsSize = MAX_PUSH_CONSTANTS_SIZE,
