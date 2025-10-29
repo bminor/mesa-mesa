@@ -150,13 +150,14 @@ pan_preload_emit_blend(unsigned rt,
          cfg.equation.color_mask = 0xf;
 
 #if PAN_ARCH >= 6
-         nir_alu_type type = preload_shader->key.surfaces[rt].type;
-
          cfg.internal.fixed_function.num_comps = 4;
          cfg.internal.fixed_function.conversion.memory_format =
             GENX(pan_dithered_format_from_pipe_format)(iview->format, false);
+#if PAN_ARCH < 9
+         nir_alu_type type = preload_shader->key.surfaces[rt].type;
          cfg.internal.fixed_function.conversion.register_format =
             nir_type_to_reg_fmt(type);
+#endif
 
          cfg.internal.fixed_function.rt = rt;
 #endif

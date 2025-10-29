@@ -575,7 +575,6 @@
   <struct name="Internal Conversion" size="1" align="4">
     <field name="Memory Format" size="22" start="0" type="Pixel Format"/>
     <field name="Raw" size="1" start="22" type="bool"/>
-    <field name="Register Format" size="3" start="24" type="Register File Format"/>
   </struct>
 
   <struct name="Blend Fixed-Function" size="2">

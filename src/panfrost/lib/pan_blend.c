@@ -703,6 +703,32 @@ GENX(pan_blend_create_shader)(const struct pan_blend_state *state,
 }
 
 #if PAN_ARCH >= 6
+
+#if PAN_ARCH < 9
+static enum mali_register_file_format
+get_register_format(nir_alu_type T)
+{
+   switch (T) {
+   case nir_type_float16:
+      return MALI_REGISTER_FILE_FORMAT_F16;
+   case nir_type_float32:
+      return MALI_REGISTER_FILE_FORMAT_F32;
+   case nir_type_int8:
+   case nir_type_int16:
+      return MALI_REGISTER_FILE_FORMAT_I16;
+   case nir_type_int32:
+      return MALI_REGISTER_FILE_FORMAT_I32;
+   case nir_type_uint8:
+   case nir_type_uint16:
+      return MALI_REGISTER_FILE_FORMAT_U16;
+   case nir_type_uint32:
+      return MALI_REGISTER_FILE_FORMAT_U32;
+   default:
+      UNREACHABLE("Invalid format");
+   }
+}
+#endif
+
 uint64_t
 GENX(pan_blend_get_internal_desc)(enum pipe_format fmt, unsigned rt,
                                   unsigned force_size, bool dithered)
@@ -715,41 +741,14 @@ GENX(pan_blend_get_internal_desc)(enum pipe_format fmt, unsigned rt,
       cfg.fixed_function.num_comps = desc->nr_channels;
       cfg.fixed_function.rt = rt;
 
+#if PAN_ARCH < 9
       nir_alu_type T = pan_unpacked_type_for_format(desc);
 
       if (force_size)
          T = nir_alu_type_get_base_type(T) | force_size;
 
-      switch (T) {
-      case nir_type_float16:
-         cfg.fixed_function.conversion.register_format =
-            MALI_REGISTER_FILE_FORMAT_F16;
-         break;
-      case nir_type_float32:
-         cfg.fixed_function.conversion.register_format =
-            MALI_REGISTER_FILE_FORMAT_F32;
-         break;
-      case nir_type_int8:
-      case nir_type_int16:
-         cfg.fixed_function.conversion.register_format =
-            MALI_REGISTER_FILE_FORMAT_I16;
-         break;
-      case nir_type_int32:
-         cfg.fixed_function.conversion.register_format =
-            MALI_REGISTER_FILE_FORMAT_I32;
-         break;
-      case nir_type_uint8:
-      case nir_type_uint16:
-         cfg.fixed_function.conversion.register_format =
-            MALI_REGISTER_FILE_FORMAT_U16;
-         break;
-      case nir_type_uint32:
-         cfg.fixed_function.conversion.register_format =
-            MALI_REGISTER_FILE_FORMAT_U32;
-         break;
-      default:
-         UNREACHABLE("Invalid format");
-      }
+      cfg.fixed_function.conversion.register_format = get_register_format(T);
+#endif
 
       cfg.fixed_function.conversion.memory_format =
          GENX(pan_dithered_format_from_pipe_format)(fmt, dithered);
