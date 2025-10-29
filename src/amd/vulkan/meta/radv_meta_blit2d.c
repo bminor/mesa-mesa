@@ -82,131 +82,130 @@ radv_gfx_copy_memory_to_image(struct radv_cmd_buffer *cmd_buffer, struct radv_me
                          .extent = (VkExtent2D){extent->width, extent->height},
                       });
 
-   u_foreach_bit (i, dst->aspect_mask) {
-      unsigned aspect_mask = 1u << i;
-      VkFormat depth_format = 0;
-      if (aspect_mask == VK_IMAGE_ASPECT_STENCIL_BIT)
-         depth_format = vk_format_stencil_only(dst->image->vk.format);
-      else if (aspect_mask == VK_IMAGE_ASPECT_DEPTH_BIT)
-         depth_format = vk_format_depth_only(dst->image->vk.format);
+   VkFormat depth_format = 0;
 
-      struct radv_image_view dst_iview;
-      create_iview(cmd_buffer, dst, &dst_iview,
-                   aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) ? depth_format : 0,
-                   aspect_mask);
+   if (dst->aspect_mask == VK_IMAGE_ASPECT_STENCIL_BIT)
+      depth_format = vk_format_stencil_only(dst->image->vk.format);
+   else if (dst->aspect_mask == VK_IMAGE_ASPECT_DEPTH_BIT)
+      depth_format = vk_format_depth_only(dst->image->vk.format);
 
-      const VkRenderingAttachmentInfo att_info = {
-         .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-         .imageView = radv_image_view_to_handle(&dst_iview),
-         .imageLayout = dst->current_layout,
-         .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
-         .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-      };
+   struct radv_image_view dst_iview;
+   create_iview(cmd_buffer, dst, &dst_iview,
+                dst->aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) ? depth_format : 0,
+                dst->aspect_mask);
 
-      VkRenderingInfo rendering_info = {
-         .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
-         .flags = VK_RENDERING_LOCAL_READ_CONCURRENT_ACCESS_CONTROL_BIT_KHR,
-         .renderArea =
-            {
-               .offset = {offset->x, offset->y},
-               .extent = {extent->width, extent->height},
-            },
-         .layerCount = 1,
-      };
+   const VkRenderingAttachmentInfo att_info = {
+      .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+      .imageView = radv_image_view_to_handle(&dst_iview),
+      .imageLayout = dst->current_layout,
+      .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
+      .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+   };
 
-      if (aspect_mask == VK_IMAGE_ASPECT_COLOR_BIT || aspect_mask == VK_IMAGE_ASPECT_PLANE_0_BIT ||
-          aspect_mask == VK_IMAGE_ASPECT_PLANE_1_BIT || aspect_mask == VK_IMAGE_ASPECT_PLANE_2_BIT) {
-         result = get_color_pipeline(device, src_type, dst_iview.vk.format, 0, &pipeline, &layout);
-         if (result != VK_SUCCESS) {
-            vk_command_buffer_set_error(&cmd_buffer->vk, result);
-            goto fail;
-         }
+   VkRenderingInfo rendering_info = {
+      .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
+      .flags = VK_RENDERING_LOCAL_READ_CONCURRENT_ACCESS_CONTROL_BIT_KHR,
+      .renderArea =
+         {
+            .offset = {offset->x, offset->y},
+            .extent = {extent->width, extent->height},
+         },
+      .layerCount = 1,
+   };
 
-         rendering_info.colorAttachmentCount = 1;
-         rendering_info.pColorAttachments = &att_info;
+   if (dst->aspect_mask == VK_IMAGE_ASPECT_COLOR_BIT || dst->aspect_mask == VK_IMAGE_ASPECT_PLANE_0_BIT ||
+       dst->aspect_mask == VK_IMAGE_ASPECT_PLANE_1_BIT || dst->aspect_mask == VK_IMAGE_ASPECT_PLANE_2_BIT) {
+      result = get_color_pipeline(device, src_type, dst_iview.vk.format, 0, &pipeline, &layout);
+      if (result != VK_SUCCESS) {
+         vk_command_buffer_set_error(&cmd_buffer->vk, result);
+         goto fail;
+      }
 
-         radv_CmdBindPipeline(radv_cmd_buffer_to_handle(cmd_buffer), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-      } else if (aspect_mask == VK_IMAGE_ASPECT_DEPTH_BIT) {
-         result = get_depth_only_pipeline(device, src_type, 0, &pipeline, &layout);
-         if (result != VK_SUCCESS) {
-            vk_command_buffer_set_error(&cmd_buffer->vk, result);
-            goto fail;
-         }
+      rendering_info.colorAttachmentCount = 1;
+      rendering_info.pColorAttachments = &att_info;
 
-         rendering_info.pDepthAttachment = &att_info,
-         rendering_info.pStencilAttachment = (dst->image->vk.aspects & VK_IMAGE_ASPECT_STENCIL_BIT) ? &att_info : NULL,
+      radv_CmdBindPipeline(radv_cmd_buffer_to_handle(cmd_buffer), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+   } else if (dst->aspect_mask == VK_IMAGE_ASPECT_DEPTH_BIT) {
+      result = get_depth_only_pipeline(device, src_type, 0, &pipeline, &layout);
+      if (result != VK_SUCCESS) {
+         vk_command_buffer_set_error(&cmd_buffer->vk, result);
+         goto fail;
+      }
 
-         radv_CmdBindPipeline(radv_cmd_buffer_to_handle(cmd_buffer), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+      rendering_info.pDepthAttachment = &att_info,
+      rendering_info.pStencilAttachment = (dst->image->vk.aspects & VK_IMAGE_ASPECT_STENCIL_BIT) ? &att_info : NULL,
 
-      } else if (aspect_mask == VK_IMAGE_ASPECT_STENCIL_BIT) {
-         result = get_stencil_only_pipeline(device, src_type, 0, &pipeline, &layout);
-         if (result != VK_SUCCESS) {
-            vk_command_buffer_set_error(&cmd_buffer->vk, result);
-            goto fail;
-         }
+      radv_CmdBindPipeline(radv_cmd_buffer_to_handle(cmd_buffer), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+   } else {
+      assert(dst->aspect_mask == VK_IMAGE_ASPECT_STENCIL_BIT);
 
-         rendering_info.pDepthAttachment = (dst->image->vk.aspects & VK_IMAGE_ASPECT_DEPTH_BIT) ? &att_info : NULL,
-         rendering_info.pStencilAttachment = &att_info,
+      result = get_stencil_only_pipeline(device, src_type, 0, &pipeline, &layout);
+      if (result != VK_SUCCESS) {
+         vk_command_buffer_set_error(&cmd_buffer->vk, result);
+         goto fail;
+      }
 
-         radv_CmdBindPipeline(radv_cmd_buffer_to_handle(cmd_buffer), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-      } else
-         UNREACHABLE("Processing blit2d with multiple aspects.");
+      rendering_info.pDepthAttachment = (dst->image->vk.aspects & VK_IMAGE_ASPECT_DEPTH_BIT) ? &att_info : NULL,
+      rendering_info.pStencilAttachment = &att_info,
 
-      float vertex_push_constants[4] = {
-         0,
-         0,
-         extent->width,
-         extent->height,
-      };
-
-      const VkPushConstantsInfoKHR pc_info_vs = {
-         .sType = VK_STRUCTURE_TYPE_PUSH_CONSTANTS_INFO_KHR,
-         .layout = layout,
-         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-         .offset = 0,
-         .size = sizeof(vertex_push_constants),
-         .pValues = vertex_push_constants,
-      };
-
-      radv_CmdPushConstants2(radv_cmd_buffer_to_handle(cmd_buffer), &pc_info_vs);
-
-      const VkPushConstantsInfoKHR pc_info_fs = {
-         .sType = VK_STRUCTURE_TYPE_PUSH_CONSTANTS_INFO_KHR,
-         .layout = layout,
-         .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-         .offset = 16,
-         .size = 4,
-         .pValues = &src->pitch,
-      };
-
-      radv_CmdPushConstants2(radv_cmd_buffer_to_handle(cmd_buffer), &pc_info_fs);
-
-      radv_meta_bind_descriptors(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 1,
-                                 (VkDescriptorGetInfoEXT[]){{
-                                    .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT,
-                                    .type = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
-                                    .data.pUniformTexelBuffer =
-                                       &(VkDescriptorAddressInfoEXT){
-                                          .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT,
-                                          .address = src->addr + src->offset,
-                                          .range = src->size - src->offset,
-                                          .format = depth_format ? depth_format : src->format,
-                                       },
-                                 }});
-
-      radv_CmdBeginRendering(radv_cmd_buffer_to_handle(cmd_buffer), &rendering_info);
-
-      radv_CmdDraw(radv_cmd_buffer_to_handle(cmd_buffer), 3, 1, 0, 0);
-
-      const VkRenderingEndInfoKHR end_info = {
-         .sType = VK_STRUCTURE_TYPE_RENDERING_END_INFO_KHR,
-      };
-
-      radv_CmdEndRendering2KHR(radv_cmd_buffer_to_handle(cmd_buffer), &end_info);
-
-   fail:
-      radv_image_view_finish(&dst_iview);
+      radv_CmdBindPipeline(radv_cmd_buffer_to_handle(cmd_buffer), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
    }
+
+   float vertex_push_constants[4] = {
+      0,
+      0,
+      extent->width,
+      extent->height,
+   };
+
+   const VkPushConstantsInfoKHR pc_info_vs = {
+      .sType = VK_STRUCTURE_TYPE_PUSH_CONSTANTS_INFO_KHR,
+      .layout = layout,
+      .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+      .offset = 0,
+      .size = sizeof(vertex_push_constants),
+      .pValues = vertex_push_constants,
+   };
+
+   radv_CmdPushConstants2(radv_cmd_buffer_to_handle(cmd_buffer), &pc_info_vs);
+
+   const VkPushConstantsInfoKHR pc_info_fs = {
+      .sType = VK_STRUCTURE_TYPE_PUSH_CONSTANTS_INFO_KHR,
+      .layout = layout,
+      .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+      .offset = 16,
+      .size = 4,
+      .pValues = &src->pitch,
+   };
+
+   radv_CmdPushConstants2(radv_cmd_buffer_to_handle(cmd_buffer), &pc_info_fs);
+
+   radv_meta_bind_descriptors(
+      cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 1,
+      (VkDescriptorGetInfoEXT[]){
+         {
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT,
+            .type = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
+            .data.pUniformTexelBuffer =
+               &(VkDescriptorAddressInfoEXT){.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT,
+                                             .address = src->addr + src->offset,
+                                             .range = src->size - src->offset,
+                                             .format = depth_format ? depth_format : src->format},
+         },
+      });
+
+   radv_CmdBeginRendering(radv_cmd_buffer_to_handle(cmd_buffer), &rendering_info);
+
+   radv_CmdDraw(radv_cmd_buffer_to_handle(cmd_buffer), 3, 1, 0, 0);
+
+   const VkRenderingEndInfoKHR end_info = {
+      .sType = VK_STRUCTURE_TYPE_RENDERING_END_INFO_KHR,
+   };
+
+   radv_CmdEndRendering2KHR(radv_cmd_buffer_to_handle(cmd_buffer), &end_info);
+
+fail:
+   radv_image_view_finish(&dst_iview);
 }
 
 void
