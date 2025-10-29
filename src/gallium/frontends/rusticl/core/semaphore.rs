@@ -273,7 +273,7 @@ impl Semaphore {
         Ok(())
     }
 
-    fn state(&self) -> MutexGuard<SemaphoreState> {
+    fn state(&self) -> MutexGuard<'_, SemaphoreState> {
         self.state.lock().unwrap()
     }
 }
