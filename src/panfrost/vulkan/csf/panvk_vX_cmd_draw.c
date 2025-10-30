@@ -929,7 +929,7 @@ cs_render_desc_ringbuf_reserve(struct cs_builder *b, uint32_t size)
    assert(size <= RENDER_DESC_RINGBUF_SIZE);
 
    /* Make sure the allocation is 64-byte aligned. */
-   assert(ALIGN_POT(size, 64) == size);
+   assert(util_is_aligned(size, 64));
 
    struct cs_index ringbuf_sync = cs_scratch_reg64(b, 0);
    struct cs_index sz_reg = cs_scratch_reg32(b, 2);

@@ -274,7 +274,7 @@ tu_tiling_config_update_tile_layout(struct tu_framebuffer *fb,
 
       /* Check that we did the math right. */
       min_layer_stride = tile_align_h * tile_align_w * pass->min_cpp;
-      assert(align(min_layer_stride, gmem_align) == min_layer_stride);
+      assert(util_is_aligned(min_layer_stride, gmem_align));
    }
 
    /* will force to sysmem, don't bother trying to have a valid tile config
