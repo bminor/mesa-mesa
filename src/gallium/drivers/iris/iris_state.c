@@ -5970,7 +5970,7 @@ pin_scratch_space(struct iris_context *ice,
       scratch_addr = ref->offset +
                      iris_resource_bo(ref->res)->address -
                      IRIS_MEMZONE_SCRATCH_START;
-      assert((scratch_addr & 0x3f) == 0 && scratch_addr < (1 << 26));
+      assert(util_is_aligned(scratch_addr, 64) && scratch_addr < (1 << 26));
 #else
       scratch_addr = scratch_bo->address;
 #endif

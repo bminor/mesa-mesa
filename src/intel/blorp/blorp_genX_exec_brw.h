@@ -1265,7 +1265,7 @@ blorp_emit_surface_state(struct blorp_batch *batch,
 
    if (aux_usage != ISL_AUX_USAGE_NONE && surface->clear_color_addr.buffer) {
 #if GFX_VER >= 10
-      assert((surface->clear_color_addr.offset & 0x3f) == 0);
+      assert(util_is_aligned(surface->clear_color_addr.offset, 64));
       uint32_t *clear_addr = state + isl_dev->ss.clear_color_state_offset;
       blorp_surface_reloc(batch, state_offset +
                           isl_dev->ss.clear_color_state_offset,

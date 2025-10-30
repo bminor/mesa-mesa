@@ -1528,7 +1528,7 @@ brw_send_indirect_split_message(struct brw_codegen *p,
       brw_eu_inst_set_sends_ex_desc(devinfo, send, ex_desc.ud, gather);
    } else {
       assert(ex_desc.file == ADDRESS);
-      assert((ex_desc.subnr & 0x3) == 0);
+      assert(util_is_aligned(ex_desc.subnr, 4));
       brw_eu_inst_set_send_sel_reg32_ex_desc(devinfo, send, 1);
       brw_eu_inst_set_send_ex_desc_ia_subreg_nr(devinfo, send, phys_subnr(devinfo, ex_desc) >> 2);
 

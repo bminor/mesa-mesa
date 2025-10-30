@@ -1080,7 +1080,7 @@ brw_uniform_reg(unsigned nr, enum brw_reg_type type)
 static inline bool
 brw_reg_is_arf(struct brw_reg reg, unsigned arf)
 {
-   assert((arf & 0x0f) == 0 && arf <= BRW_ARF_TIMESTAMP);
+   assert(util_is_aligned(arf, 16) && arf <= BRW_ARF_TIMESTAMP);
 
    return reg.file == ARF && (reg.nr & 0xF0) == arf;
 }

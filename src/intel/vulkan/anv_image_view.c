@@ -150,7 +150,7 @@ anv_image_fill_surface_state(struct anv_device *device,
    if (device->info->ver >= 10 && clear_address.bo) {
       uint32_t *clear_addr_dw = surface_state_map +
          device->isl_dev.ss.clear_color_state_offset;
-      assert((clear_address.offset & 0x3f) == 0);
+      assert(util_is_aligned(clear_address.offset, 64));
       state_inout->clear_address.offset |= *clear_addr_dw & 0x3f;
    }
 

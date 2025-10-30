@@ -1953,10 +1953,10 @@ anv_surface_state_to_handle(struct anv_physical_device *device,
    assert(state.offset >= 0);
    uint32_t offset = state.offset;
    if (device->uses_ex_bso) {
-      assert((offset & 0x3f) == 0);
+      assert(util_is_aligned(offset, 64));
       return offset;
    } else {
-      assert((offset & 0x3f) == 0 && offset < (1 << 26));
+      assert(util_is_aligned(offset, 64) && offset < (1 << 26));
       return offset << 6;
    }
 }

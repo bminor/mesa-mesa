@@ -357,7 +357,7 @@ rgba8_copy_16_aligned_src(void *dst, const void *src)
 static inline void *
 rgba8_copy_aligned_dst(void *dst, const void *src, size_t bytes)
 {
-   assert(bytes == 0 || !(((uintptr_t)dst) & 0xf));
+   assert(bytes == 0 || util_ptr_is_aligned(dst, 16));
 
 #if defined(__SSSE3__) || defined(__SSE2__)
    if (bytes == 64) {
@@ -387,7 +387,7 @@ rgba8_copy_aligned_dst(void *dst, const void *src, size_t bytes)
 static inline void *
 rgba8_copy_aligned_src(void *dst, const void *src, size_t bytes)
 {
-   assert(bytes == 0 || !(((uintptr_t)src) & 0xf));
+   assert(bytes == 0 || util_ptr_is_aligned(src, 16));
 
 #if defined(__SSSE3__) || defined(__SSE2__)
    if (bytes == 64) {
