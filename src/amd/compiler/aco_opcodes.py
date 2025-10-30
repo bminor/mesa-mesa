@@ -1327,10 +1327,10 @@ VOP3 = {
    ("v_lshl_b64",              dst(U64), src(U64, U32), op(0x161, gfx8=-1), InstrClass.Valu64),
    ("v_lshr_b64",              dst(U64), src(U64, U32), op(0x162, gfx8=-1), InstrClass.Valu64),
    ("v_ashr_i64",              dst(I64), src(I64, U32), op(0x163, gfx8=-1), InstrClass.Valu64),
-   ("v_add_f64_e64",           dst(F64), src(F64, F64), op(0x164, gfx8=0x280, gfx10=0x164, gfx11=0x327, gfx12=0x102), InstrClass.ValuDoubleAdd), # GFX12 is VOP2 opcode + 0x100
-   ("v_mul_f64_e64",           dst(F64), src(F64, F64), op(0x165, gfx8=0x281, gfx10=0x165, gfx11=0x328, gfx12=0x106), InstrClass.ValuDouble), # GFX12 is VOP2 opcode + 0x100
-   ("v_min_f64_e64",           dst(F64), src(F64, F64), op(0x166, gfx8=0x282, gfx10=0x166, gfx11=0x329, gfx12=0x10d), InstrClass.ValuDouble), # GFX12 is VOP2 opcode + 0x100
-   ("v_max_f64_e64",           dst(F64), src(F64, F64), op(0x167, gfx8=0x283, gfx10=0x167, gfx11=0x32a, gfx12=0x10e), InstrClass.ValuDouble), # GFX12 is VOP2 opcode + 0x100
+   ("v_add_f64_e64",           dst(F64), src(F64, F64), op(0x164, gfx8=0x280, gfx10=0x164, gfx11=0x327, gfx12=-1), InstrClass.ValuDoubleAdd), # GFX12 is VOP2
+   ("v_mul_f64_e64",           dst(F64), src(F64, F64), op(0x165, gfx8=0x281, gfx10=0x165, gfx11=0x328, gfx12=-1), InstrClass.ValuDouble), # GFX12 is VOP2
+   ("v_min_f64_e64",           dst(F64), src(F64, F64), op(0x166, gfx8=0x282, gfx10=0x166, gfx11=0x329, gfx12=-1), InstrClass.ValuDouble), # GFX12 is VOP2
+   ("v_max_f64_e64",           dst(F64), src(F64, F64), op(0x167, gfx8=0x283, gfx10=0x167, gfx11=0x32a, gfx12=-1), InstrClass.ValuDouble), # GFX12 is VOP2
    ("v_ldexp_f64",             dst(F64), src(F64, U32), op(0x168, gfx8=0x284, gfx10=0x168, gfx11=0x32b), InstrClass.ValuDouble),
    ("v_mul_lo_u32",            dst(U32), src(U32, U32), op(0x169, gfx8=0x285, gfx10=0x169, gfx11=0x32c), InstrClass.ValuQuarterRate32),
    ("v_mul_hi_u32",            dst(U32), src(U32, U32), op(0x16a, gfx8=0x286, gfx10=0x16a, gfx11=0x32d), InstrClass.ValuQuarterRate32),
@@ -1388,7 +1388,7 @@ VOP3 = {
    ("v_bcnt_u32_b32",          dst(U32), src(U32, U32), op(0x122, gfx8=0x28b, gfx10=0x364, gfx11=0x31e)),
    ("v_mbcnt_lo_u32_b32",      dst(U32), src(U32, U32), op(0x123, gfx8=0x28c, gfx10=0x365, gfx11=0x31f)),
    ("v_mbcnt_hi_u32_b32_e64",  dst(U32), src(U32, U32), op(gfx8=0x28d, gfx10=0x366, gfx11=0x320)),
-   ("v_lshlrev_b64_e64",       dst(U64), src(U32, U64), op(gfx8=0x28f, gfx10=0x2ff, gfx11=0x33c, gfx12=0x11f), InstrClass.Valu64), # GFX12 is VOP2 opcode + 0x100
+   ("v_lshlrev_b64_e64",       dst(U64), src(U32, U64), op(gfx8=0x28f, gfx10=0x2ff, gfx11=0x33c, gfx12=-1), InstrClass.Valu64), # GFX12 is VOP2
    ("v_lshrrev_b64",           dst(U64), src(U32, U64), op(gfx8=0x290, gfx10=0x300, gfx11=0x33d), InstrClass.Valu64),
    ("v_ashrrev_i64",           dst(I64), src(U32, I64), op(gfx8=0x291, gfx10=0x301, gfx11=0x33e), InstrClass.Valu64),
    ("v_bfm_b32",               dst(U32), src(U32, U32), op(0x11e, gfx8=0x293, gfx10=0x363, gfx11=0x31d)),
