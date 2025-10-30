@@ -48,7 +48,7 @@ vk_to_isl_surf_dim[] = {
 static uint64_t MUST_CHECK UNUSED
 memory_range_end(struct anv_image_memory_range memory_range)
 {
-   assert(anv_is_aligned(memory_range.offset, memory_range.alignment));
+   assert(util_is_aligned(memory_range.offset, memory_range.alignment));
    return memory_range.offset + memory_range.size;
 }
 
@@ -131,7 +131,7 @@ image_binding_grow(const struct anv_device *device,
       /* Offset must be validated because it comes from
        * VkImageDrmFormatModifierExplicitCreateInfoEXT.
        */
-      if (unlikely(!anv_is_aligned(offset, alignment))) {
+      if (unlikely(!util_is_aligned(offset, alignment))) {
          return vk_errorf(device,
                           VK_ERROR_INVALID_DRM_FORMAT_MODIFIER_PLANE_LAYOUT_EXT,
                           "VkImageDrmFormatModifierExplicitCreateInfoEXT::"
@@ -192,8 +192,8 @@ memory_range_merge(struct anv_image_memory_range *a,
       return;
 
    assert(a->offset == 0);
-   assert(anv_is_aligned(a->offset, a->alignment));
-   assert(anv_is_aligned(b.offset, b.alignment));
+   assert(util_is_aligned(a->offset, a->alignment));
+   assert(util_is_aligned(b.offset, b.alignment));
 
    a->alignment = MAX2(a->alignment, b.alignment);
    a->size = MAX2(a->size, b.offset + b.size);
@@ -741,7 +741,7 @@ add_primary_surface(struct anv_device *device,
 static bool MUST_CHECK
 memory_range_is_aligned(struct anv_image_memory_range memory_range)
 {
-   return anv_is_aligned(memory_range.offset, memory_range.alignment);
+   return util_is_aligned(memory_range.offset, memory_range.alignment);
 }
 
 static bool MUST_CHECK

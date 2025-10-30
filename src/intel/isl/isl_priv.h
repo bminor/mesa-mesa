@@ -112,16 +112,6 @@ isl_is_pow2(uintmax_t n)
 /**
  * Alignment must be a power of 2.
  */
-static inline bool
-isl_is_aligned(uintmax_t n, uintmax_t a)
-{
-   assert(isl_is_pow2(a));
-   return (n & (a - 1)) == 0;
-}
-
-/**
- * Alignment must be a power of 2.
- */
 static inline uintmax_t
 isl_align(uintmax_t n, uintmax_t a)
 {
