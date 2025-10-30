@@ -503,7 +503,7 @@ agx_get_query_result_resource_gpu(struct agx_context *ctx,
                                                          : 0;
 
    libagx_copy_query_gl(batch, agx_1d(1), AGX_BARRIER_ALL, query->ptr.gpu,
-                        rsrc->bo->va->addr + offset, result_type, bool_size);
+                        agx_map_gpu(rsrc) + offset, result_type, bool_size);
    return true;
 }
 

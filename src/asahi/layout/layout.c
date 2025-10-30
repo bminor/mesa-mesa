@@ -24,7 +24,8 @@ ail_initialize_linear(struct ail_layout *layout)
    layout->layer_stride_B = align64(
       (uint64_t)layout->linear_stride_B * layout->height_px, AIL_CACHELINE);
 
-   layout->size_B = layout->layer_stride_B * layout->depth_px;
+   layout->size_B =
+      layout->level_offsets_B[0] + (layout->layer_stride_B * layout->depth_px);
 }
 
 /*
@@ -341,6 +342,7 @@ ail_make_miptree(struct ail_layout *layout)
       assert(layout->linear_stride_B == 0 && "Invalid nonlinear layout");
       assert(layout->levels >= 1 && "Invalid dimensions");
       assert(layout->sample_count_sa >= 1 && "Invalid sample count");
+      assert(layout->level_offsets_B[0] == 0 && "Invalid offset");
    }
 
    assert(!(layout->writeable_image && layout->compressed) &&

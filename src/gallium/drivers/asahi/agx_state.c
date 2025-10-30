@@ -728,7 +728,7 @@ agx_pack_texture(void *out, struct agx_resource *rsrc,
 
       if (rsrc->layout.compressed) {
          cfg.acceleration_buffer =
-            agx_map_texture_gpu(rsrc, 0) + rsrc->layout.metadata_offset_B +
+            agx_map_gpu(rsrc) + rsrc->layout.metadata_offset_B +
             (first_layer * rsrc->layout.compression_layer_stride_B);
       }
 
@@ -1263,7 +1263,7 @@ agx_batch_upload_pbe(struct agx_batch *batch, struct agx_pbe_packed *out,
          cfg.extended = true;
 
          cfg.acceleration_buffer =
-            agx_map_texture_gpu(tex, 0) + tex->layout.metadata_offset_B +
+            agx_map_gpu(tex) + tex->layout.metadata_offset_B +
             (layer * tex->layout.compression_layer_stride_B);
       }
 
@@ -3755,8 +3755,9 @@ agx_index_buffer_rsrc_ptr(struct agx_batch *batch,
    struct agx_resource *rsrc = agx_resource(info->index.resource);
    agx_batch_reads(batch, rsrc);
 
-   *extent = ALIGN_POT(rsrc->layout.size_B, 4);
-   return rsrc->bo->va->addr;
+   *extent =
+      ALIGN_POT(rsrc->layout.size_B - rsrc->layout.level_offsets_B[0], 4);
+   return agx_map_gpu(rsrc);
 }
 
 static uint64_t
@@ -3947,7 +3948,7 @@ agx_batch_geometry_params(struct agx_batch *batch, uint64_t input_index_buffer,
       params.xfb_size[i] = size;
 
       if (rsrc) {
-         params.xfb_offs_ptrs[i] = rsrc->bo->va->addr;
+         params.xfb_offs_ptrs[i] = agx_map_gpu(rsrc);
          agx_batch_writes(batch, rsrc, 0);
          batch->incoherent_writes = true;
       }
@@ -4053,7 +4054,7 @@ agx_indirect_buffer_ptr(struct agx_batch *batch,
 
    struct agx_resource *rsrc = agx_resource(indirect->buffer);
    agx_batch_reads(batch, rsrc);
-   return rsrc->bo->va->addr + indirect->offset;
+   return agx_map_gpu(rsrc) + indirect->offset;
 }
 
 static void
@@ -5387,7 +5388,7 @@ agx_launch_grid(struct pipe_context *pipe, const struct pipe_grid_info *info)
    if (info->indirect) {
       struct agx_resource *rsrc = agx_resource(info->indirect);
       agx_batch_reads(batch, rsrc);
-      indirect = rsrc->bo->va->addr + info->indirect_offset;
+      indirect = agx_map_gpu(rsrc) + info->indirect_offset;
    }
 
    /* Increment the pipeline stats query.
@@ -5492,7 +5493,7 @@ agx_set_global_binding(struct pipe_context *pipe, unsigned first,
          struct agx_resource *rsrc = agx_resource(resources[i]);
 
          memcpy(&addr, handles[i], sizeof(addr));
-         addr += rsrc->bo->va->addr;
+         addr += agx_map_gpu(rsrc);
          memcpy(handles[i], &addr, sizeof(addr));
       } else {
          pipe_resource_reference(res, NULL);
@@ -5533,7 +5534,7 @@ agx_decompress_inplace(struct agx_batch *batch, struct pipe_surface *surf,
                                  surf->last_layer - surf->first_layer + 1);
 
    libagx_decompress(batch, grid, AGX_BARRIER_ALL, layout, surf->first_layer,
-                     level, agx_map_texture_gpu(rsrc, 0), images.gpu);
+                     level, agx_map_gpu(rsrc), images.gpu);
 }
 
 void

@@ -116,7 +116,7 @@ agx_batch_get_so_address(struct agx_batch *batch, unsigned buffer,
                           target->buffer_size);
 
    *size = target->buffer_size;
-   return rsrc->bo->va->addr + target->buffer_offset;
+   return agx_map_gpu(rsrc) + target->buffer_offset;
 }
 
 void
