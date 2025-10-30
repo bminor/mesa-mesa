@@ -159,6 +159,7 @@ kk_get_device_features(
        */
       .fragmentStoresAndAtomics = false,
       .imageCubeArray = true,
+      .independentBlend = true,
       .logicOp = true,
       .robustBufferAccess = true,
       .samplerAnisotropy = true,
