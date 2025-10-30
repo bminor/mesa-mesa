@@ -155,12 +155,30 @@ lower_indirect_derefs_block(nir_block *block, nir_builder *b,
       if (glsl_type_is_cmat(base->type))
          continue;
 
-      /* Only lower variables whose mode is in the mask, or compact
-       * array variables.  (We can't handle indirects on tightly packed
-       * scalar arrays, so we need to lower them regardless.)
-       */
-      if (!(modes & base->var->data.mode) && !base->var->data.compact)
-         continue;
+      if (base->var->data.compact) {
+         /* Originally, this pass ignored "modes" if the array was compact,
+          * which reduced mesh shader performance for RADV by double digits
+          * due to lowering indirect gl_ClipDistance[64][4] into a gigantic
+          * if-else ladder with 256 output stores. This adds minimum checking
+          * to fix that.
+          *
+          * Skip lowering compact arrays for inputs and outputs according
+          * to NIR options.
+          */
+         mesa_shader_stage stage_bit = BITFIELD_BIT(b->shader->info.stage);
+         nir_variable_mode supported_modes = 0;
+
+         if (b->shader->options->support_indirect_inputs & stage_bit)
+            supported_modes |= nir_var_shader_in;
+         if (b->shader->options->support_indirect_outputs & stage_bit)
+            supported_modes |= nir_var_shader_out;
+
+         if (supported_modes & base->var->data.mode)
+            continue;
+      } else {
+         if (!(modes & base->var->data.mode))
+            continue;
+      }
 
       if (vars && !_mesa_set_search(vars, base->var))
          continue;
