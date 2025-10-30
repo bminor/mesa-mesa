@@ -60,6 +60,10 @@ VKAPI_ATTR void VKAPI_CALL
 kk_CmdDispatch(VkCommandBuffer commandBuffer, uint32_t groupCountX,
                uint32_t groupCountY, uint32_t groupCountZ)
 {
+   /* Metal validation dislikes empty disptaches */
+   if (groupCountX * groupCountY * groupCountZ == 0)
+      return;
+
    kk_CmdDispatchBase(commandBuffer, 0, 0, 0, groupCountX, groupCountY,
                       groupCountZ);
 }
