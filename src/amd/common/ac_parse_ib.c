@@ -1180,12 +1180,14 @@ static void print_vcn_preencode_input_picture(FILE *f, struct ac_ib_parser *ib, 
    fprintf(f, "%s blue offset = %u\n", prefix, b_offset);
 }
 
-static void parse_vcn_enc_ib(FILE *f, struct ac_ib_parser *ib)
+static void parse_vcn_enc_ib(FILE *f, struct ac_ib_parser *ib, uint32_t num_dw)
 {
    rvcn_enc_cmd_t cmd = { 0 };
    ac_vcn_enc_init_cmds(&cmd, ib->vcn_version);
 
-   while (ib->cur_dw < ib->num_dw) {
+   uint32_t last_dw = num_dw ? ib->cur_dw + num_dw : ib->num_dw;
+
+   while (ib->cur_dw < last_dw) {
       const uint32_t start_dw = ib->cur_dw;
       const uint32_t size = ac_ib_get(ib);
       const uint32_t op = ac_ib_get(ib);
@@ -1933,6 +1935,7 @@ static void parse_vcn_enc_ib(FILE *f, struct ac_ib_parser *ib)
 static void parse_vcn_ib(FILE *f, struct ac_ib_parser *ib)
 {
    uint32_t engine = 0;
+   uint32_t total_size = 0;
 
    if (ib->vcn_version >= VCN_4_0_0) {
       while (ib->cur_dw < ib->num_dw) {
@@ -1949,7 +1952,7 @@ static void parse_vcn_ib(FILE *f, struct ac_ib_parser *ib)
                     engine == RADEON_VCN_ENGINE_TYPE_ENCODE ? "ENCODE" :
                     engine == RADEON_VCN_ENGINE_TYPE_DECODE ? "DECODE" :
                     "???");
-            uint32_t total_size = ac_ib_get(ib);
+            total_size = ac_ib_get(ib);
             fprintf(f, "    size of all packages = %u\n", total_size);
             break;
          }
@@ -2104,16 +2107,17 @@ static void parse_vcn_ib(FILE *f, struct ac_ib_parser *ib)
             fprintf(f, "%sUNRECOGNIZED%s\n", O_COLOR_RED, O_COLOR_RESET);
             break;
          }
-         print_vcn_unrecognized_params(f, ib, start_dw, size);
-
          if (engine == RADEON_VCN_ENGINE_TYPE_ENCODE) {
-            parse_vcn_enc_ib(f, ib);
-            return;
+            engine = 0;
+            /* total_size also includes signature size (4 dwords) */
+            parse_vcn_enc_ib(f, ib, (total_size / 4) - 4);
+         } else {
+            print_vcn_unrecognized_params(f, ib, start_dw, size);
          }
       }
    } else {
       if (ib->ip_type == AMD_IP_VCN_ENC) {
-         parse_vcn_enc_ib(f, ib);
+         parse_vcn_enc_ib(f, ib, 0);
          return;
       }
    }
