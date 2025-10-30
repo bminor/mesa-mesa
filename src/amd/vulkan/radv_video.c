@@ -1752,8 +1752,10 @@ get_h265_msg(struct radv_device *device, struct radv_video_session *vid, struct 
    result.bit_depth_luma_minus8 = sps->bit_depth_luma_minus8;
    result.bit_depth_chroma_minus8 = sps->bit_depth_chroma_minus8;
    result.log2_max_pic_order_cnt_lsb_minus4 = sps->log2_max_pic_order_cnt_lsb_minus4;
-   result.sps_max_dec_pic_buffering_minus1 =
-      sps->pDecPicBufMgr->max_dec_pic_buffering_minus1[sps->sps_max_sub_layers_minus1];
+   if (sps->pDecPicBufMgr) {
+      result.sps_max_dec_pic_buffering_minus1 =
+         sps->pDecPicBufMgr->max_dec_pic_buffering_minus1[sps->sps_max_sub_layers_minus1];
+   }
    result.log2_min_luma_coding_block_size_minus3 = sps->log2_min_luma_coding_block_size_minus3;
    result.log2_diff_max_min_luma_coding_block_size = sps->log2_diff_max_min_luma_coding_block_size;
    result.log2_min_transform_block_size_minus2 = sps->log2_min_luma_transform_block_size_minus2;
@@ -1876,8 +1878,7 @@ get_vp9_msg(struct radv_device *device, struct radv_video_session *vid, struct v
    memset(&result, 0, sizeof(result));
 
    rvcn_dec_vp9_probs_segment_t *prbs = (rvcn_dec_vp9_probs_segment_t *)(probs_ptr);
-   if (std_pic_info->flags.segmentation_enabled) {
-
+   if (std_pic_info->flags.segmentation_enabled && std_pic_info->pSegmentation) {
       for (unsigned i = 0; i < 8; ++i) {
          prbs->seg.feature_data[i] = (uint16_t)std_pic_info->pSegmentation->FeatureData[i][0] |
                                      ((uint32_t)(std_pic_info->pSegmentation->FeatureData[i][1] & 0xff) << 16) |
@@ -1918,12 +1919,12 @@ get_vp9_msg(struct radv_device *device, struct radv_video_session *vid, struct v
    result.frame_header_flags |=
       (std_pic_info->flags.refresh_frame_context << RDECODE_FRAME_HDR_INFO_VP9_REFRESH_FRAME_CONTEXT_SHIFT) &
       RDECODE_FRAME_HDR_INFO_VP9_REFRESH_FRAME_CONTEXT_MASK;
-   if (std_pic_info->flags.segmentation_enabled) {
-      assert(std_pic_info->pSegmentation);
-      result.frame_header_flags |=
-         (std_pic_info->flags.segmentation_enabled << RDECODE_FRAME_HDR_INFO_VP9_SEGMENTATION_ENABLED_SHIFT) &
-         RDECODE_FRAME_HDR_INFO_VP9_SEGMENTATION_ENABLED_MASK;
 
+   result.frame_header_flags |=
+      (std_pic_info->flags.segmentation_enabled << RDECODE_FRAME_HDR_INFO_VP9_SEGMENTATION_ENABLED_SHIFT) &
+      RDECODE_FRAME_HDR_INFO_VP9_SEGMENTATION_ENABLED_MASK;
+
+   if (std_pic_info->flags.segmentation_enabled && std_pic_info->pSegmentation) {
       result.frame_header_flags |= (std_pic_info->pSegmentation->flags.segmentation_update_map
                                     << RDECODE_FRAME_HDR_INFO_VP9_SEGMENTATION_UPDATE_MAP_SHIFT) &
                                    RDECODE_FRAME_HDR_INFO_VP9_SEGMENTATION_UPDATE_MAP_MASK;
@@ -1936,13 +1937,16 @@ get_vp9_msg(struct radv_device *device, struct radv_video_session *vid, struct v
                                     << RDECODE_FRAME_HDR_INFO_VP9_SEGMENTATION_UPDATE_DATA_SHIFT) &
                                    RDECODE_FRAME_HDR_INFO_VP9_SEGMENTATION_UPDATE_DATA_MASK;
    }
-   result.frame_header_flags |= (std_pic_info->pLoopFilter->flags.loop_filter_delta_enabled
-                                 << RDECODE_FRAME_HDR_INFO_VP9_MODE_REF_DELTA_ENABLED_SHIFT) &
-                                RDECODE_FRAME_HDR_INFO_VP9_MODE_REF_DELTA_ENABLED_MASK;
 
-   result.frame_header_flags |= (std_pic_info->pLoopFilter->flags.loop_filter_delta_update
-                                 << RDECODE_FRAME_HDR_INFO_VP9_MODE_REF_DELTA_UPDATE_SHIFT) &
-                                RDECODE_FRAME_HDR_INFO_VP9_MODE_REF_DELTA_UPDATE_MASK;
+   if (std_pic_info->pLoopFilter) {
+      result.frame_header_flags |= (std_pic_info->pLoopFilter->flags.loop_filter_delta_enabled
+                                    << RDECODE_FRAME_HDR_INFO_VP9_MODE_REF_DELTA_ENABLED_SHIFT) &
+                                   RDECODE_FRAME_HDR_INFO_VP9_MODE_REF_DELTA_ENABLED_MASK;
+
+      result.frame_header_flags |= (std_pic_info->pLoopFilter->flags.loop_filter_delta_update
+                                    << RDECODE_FRAME_HDR_INFO_VP9_MODE_REF_DELTA_UPDATE_SHIFT) &
+                                   RDECODE_FRAME_HDR_INFO_VP9_MODE_REF_DELTA_UPDATE_MASK;
+   }
 
    result.frame_header_flags |=
       (std_pic_info->flags.UsePrevFrameMvs << RDECODE_FRAME_HDR_INFO_VP9_USE_PREV_IN_FIND_MV_REFS_SHIFT) &
@@ -1955,26 +1959,31 @@ get_vp9_msg(struct radv_device *device, struct radv_video_session *vid, struct v
    result.frame_context_idx = std_pic_info->frame_context_idx;
    result.reset_frame_context = std_pic_info->reset_frame_context;
 
-   result.filter_level = std_pic_info->pLoopFilter->loop_filter_level;
-   result.sharpness_level = std_pic_info->pLoopFilter->loop_filter_sharpness;
+   uint8_t loop_filter_level = 0;
 
-   int shifted = std_pic_info->pLoopFilter->loop_filter_level >= 32;
+   if (std_pic_info->pLoopFilter) {
+      loop_filter_level = std_pic_info->pLoopFilter->loop_filter_level;
+      result.filter_level = std_pic_info->pLoopFilter->loop_filter_level;
+      result.sharpness_level = std_pic_info->pLoopFilter->loop_filter_sharpness;
+   }
+
+   int shifted = loop_filter_level >= 32;
 
    for (int i = 0; i < (std_pic_info->flags.segmentation_enabled ? 8 : 1); i++) {
       const uint8_t seg_lvl_alt_l = 1;
       uint8_t lvl;
 
-      if (std_pic_info->flags.segmentation_enabled &&
+      if (std_pic_info->flags.segmentation_enabled && std_pic_info->pSegmentation &&
           std_pic_info->pSegmentation->FeatureEnabled[i] & (1 << seg_lvl_alt_l)) {
          lvl = std_pic_info->pSegmentation->FeatureData[i][seg_lvl_alt_l];
          if (!std_pic_info->pSegmentation->flags.segmentation_abs_or_delta_update)
-            lvl += std_pic_info->pLoopFilter->loop_filter_level;
+            lvl += loop_filter_level;
          lvl = CLAMP(lvl, 0, 63);
       } else {
-         lvl = std_pic_info->pLoopFilter->loop_filter_level;
+         lvl = loop_filter_level;
       }
 
-      if (std_pic_info->pLoopFilter->flags.loop_filter_delta_enabled) {
+      if (std_pic_info->pLoopFilter && std_pic_info->pLoopFilter->flags.loop_filter_delta_enabled) {
          result.lf_adj_level[i][0][0] = result.lf_adj_level[i][0][1] =
             CLAMP(lvl + (std_pic_info->pLoopFilter->loop_filter_ref_deltas[0] * (1 << shifted)), 0, 63);
          for (int j = 1; j < 4; j++) {
@@ -2001,7 +2010,8 @@ get_vp9_msg(struct radv_device *device, struct radv_video_session *vid, struct v
    result.log2_tile_rows = std_pic_info->tile_rows_log2;
    result.chroma_format = 1;
 
-   result.bit_depth_luma_minus8 = result.bit_depth_chroma_minus8 = (std_pic_info->pColorConfig->BitDepth - 8);
+   if (std_pic_info->pColorConfig)
+      result.bit_depth_luma_minus8 = result.bit_depth_chroma_minus8 = (std_pic_info->pColorConfig->BitDepth - 8);
    result.vp9_frame_size = vp9_pic_info->uncompressedHeaderOffset;
 
    result.compressed_header_size = vp9_pic_info->tilesOffset - vp9_pic_info->compressedHeaderOffset;
@@ -2088,16 +2098,20 @@ get_av1_msg(struct radv_device *device, struct radv_video_session *vid, struct v
       (pi->flags.allow_high_precision_mv << RDECODE_FRAME_HDR_INFO_AV1_ALLOW_HIGH_PRECISION_MV_SHIFT) &
       RDECODE_FRAME_HDR_INFO_AV1_ALLOW_HIGH_PRECISION_MV_MASK;
 
-   result.frame_header_flags |=
-      (seq_hdr->pColorConfig->flags.mono_chrome << RDECODE_FRAME_HDR_INFO_AV1_MONOCHROME_SHIFT) &
-      RDECODE_FRAME_HDR_INFO_AV1_MONOCHROME_MASK;
+   if (seq_hdr->pColorConfig) {
+      result.frame_header_flags |=
+         (seq_hdr->pColorConfig->flags.mono_chrome << RDECODE_FRAME_HDR_INFO_AV1_MONOCHROME_SHIFT) &
+         RDECODE_FRAME_HDR_INFO_AV1_MONOCHROME_MASK;
+   }
 
    result.frame_header_flags |= (pi->flags.skip_mode_present << RDECODE_FRAME_HDR_INFO_AV1_SKIP_MODE_FLAG_SHIFT) &
                                 RDECODE_FRAME_HDR_INFO_AV1_SKIP_MODE_FLAG_MASK;
 
-   result.frame_header_flags |=
-      (pi->pQuantization->flags.using_qmatrix << RDECODE_FRAME_HDR_INFO_AV1_USING_QMATRIX_SHIFT) &
-      RDECODE_FRAME_HDR_INFO_AV1_USING_QMATRIX_MASK;
+   if (pi->pQuantization) {
+      result.frame_header_flags |=
+         (pi->pQuantization->flags.using_qmatrix << RDECODE_FRAME_HDR_INFO_AV1_USING_QMATRIX_SHIFT) &
+         RDECODE_FRAME_HDR_INFO_AV1_USING_QMATRIX_MASK;
+   }
 
    result.frame_header_flags |=
       (seq_hdr->flags.enable_filter_intra << RDECODE_FRAME_HDR_INFO_AV1_ENABLE_FILTER_INTRA_SHIFT) &
@@ -2141,13 +2155,15 @@ get_av1_msg(struct radv_device *device, struct radv_video_session *vid, struct v
       (pi->flags.force_integer_mv << RDECODE_FRAME_HDR_INFO_AV1_CUR_FRAME_FORCE_INTEGER_MV_SHIFT) &
       RDECODE_FRAME_HDR_INFO_AV1_CUR_FRAME_FORCE_INTEGER_MV_MASK;
 
-   result.frame_header_flags |=
-      (pi->pLoopFilter->flags.loop_filter_delta_enabled << RDECODE_FRAME_HDR_INFO_AV1_MODE_REF_DELTA_ENABLED_SHIFT) &
-      RDECODE_FRAME_HDR_INFO_AV1_MODE_REF_DELTA_ENABLED_MASK;
+   if (pi->pLoopFilter) {
+      result.frame_header_flags |=
+         (pi->pLoopFilter->flags.loop_filter_delta_enabled << RDECODE_FRAME_HDR_INFO_AV1_MODE_REF_DELTA_ENABLED_SHIFT) &
+         RDECODE_FRAME_HDR_INFO_AV1_MODE_REF_DELTA_ENABLED_MASK;
 
-   result.frame_header_flags |=
-      (pi->pLoopFilter->flags.loop_filter_delta_update << RDECODE_FRAME_HDR_INFO_AV1_MODE_REF_DELTA_UPDATE_SHIFT) &
-      RDECODE_FRAME_HDR_INFO_AV1_MODE_REF_DELTA_UPDATE_MASK;
+      result.frame_header_flags |=
+         (pi->pLoopFilter->flags.loop_filter_delta_update << RDECODE_FRAME_HDR_INFO_AV1_MODE_REF_DELTA_UPDATE_SHIFT) &
+         RDECODE_FRAME_HDR_INFO_AV1_MODE_REF_DELTA_UPDATE_MASK;
+   }
 
    result.frame_header_flags |= (pi->flags.delta_q_present << RDECODE_FRAME_HDR_INFO_AV1_DELTA_Q_PRESENT_FLAG_SHIFT) &
                                 RDECODE_FRAME_HDR_INFO_AV1_DELTA_Q_PRESENT_FLAG_MASK;
@@ -2207,50 +2223,59 @@ get_av1_msg(struct radv_device *device, struct radv_video_session *vid, struct v
 
    result.sb_size = seq_hdr->flags.use_128x128_superblock;
    result.interp_filter = pi->interpolation_filter;
-   for (i = 0; i < 2; ++i)
-      result.filter_level[i] = pi->pLoopFilter->loop_filter_level[i];
-   result.filter_level_u = pi->pLoopFilter->loop_filter_level[2];
-   result.filter_level_v = pi->pLoopFilter->loop_filter_level[3];
-   result.sharpness_level = pi->pLoopFilter->loop_filter_sharpness;
-   for (i = 0; i < 8; ++i)
-      result.ref_deltas[i] = pi->pLoopFilter->loop_filter_ref_deltas[i];
-   for (i = 0; i < 2; ++i)
-      result.mode_deltas[i] = pi->pLoopFilter->loop_filter_mode_deltas[i];
-   result.base_qindex = pi->pQuantization->base_q_idx;
-   result.y_dc_delta_q = pi->pQuantization->DeltaQYDc;
-   result.u_dc_delta_q = pi->pQuantization->DeltaQUDc;
-   result.v_dc_delta_q = pi->pQuantization->DeltaQVDc;
-   result.u_ac_delta_q = pi->pQuantization->DeltaQUAc;
-   result.v_ac_delta_q = pi->pQuantization->DeltaQVAc;
 
-   if (pi->pQuantization->flags.using_qmatrix) {
-      result.qm_y = pi->pQuantization->qm_y | 0xf0;
-      result.qm_u = pi->pQuantization->qm_u | 0xf0;
-      result.qm_v = pi->pQuantization->qm_v | 0xf0;
-   } else {
-      result.qm_y = 0xff;
-      result.qm_u = 0xff;
-      result.qm_v = 0xff;
+   if (pi->pLoopFilter) {
+      for (i = 0; i < 2; ++i)
+         result.filter_level[i] = pi->pLoopFilter->loop_filter_level[i];
+      result.filter_level_u = pi->pLoopFilter->loop_filter_level[2];
+      result.filter_level_v = pi->pLoopFilter->loop_filter_level[3];
+      result.sharpness_level = pi->pLoopFilter->loop_filter_sharpness;
+      for (i = 0; i < 8; ++i)
+         result.ref_deltas[i] = pi->pLoopFilter->loop_filter_ref_deltas[i];
+      for (i = 0; i < 2; ++i)
+         result.mode_deltas[i] = pi->pLoopFilter->loop_filter_mode_deltas[i];
    }
+
+   result.qm_y = 0xff;
+   result.qm_u = 0xff;
+   result.qm_v = 0xff;
+
+   if (pi->pQuantization) {
+      result.base_qindex = pi->pQuantization->base_q_idx;
+      result.y_dc_delta_q = pi->pQuantization->DeltaQYDc;
+      result.u_dc_delta_q = pi->pQuantization->DeltaQUDc;
+      result.v_dc_delta_q = pi->pQuantization->DeltaQVDc;
+      result.u_ac_delta_q = pi->pQuantization->DeltaQUAc;
+      result.v_ac_delta_q = pi->pQuantization->DeltaQVAc;
+
+      if (pi->pQuantization->flags.using_qmatrix) {
+         result.qm_y = pi->pQuantization->qm_y | 0xf0;
+         result.qm_u = pi->pQuantization->qm_u | 0xf0;
+         result.qm_v = pi->pQuantization->qm_v | 0xf0;
+      }
+   }
+
    result.delta_q_res = (1 << pi->delta_q_res);
    result.delta_lf_res = (1 << pi->delta_lf_res);
-   result.tile_cols = pi->pTileInfo->TileCols;
-   result.tile_rows = pi->pTileInfo->TileRows;
 
    result.tx_mode = pi->TxMode;
    result.reference_mode = (pi->flags.reference_select == 1) ? 2 : 0;
-   result.chroma_format = seq_hdr->pColorConfig->flags.mono_chrome ? 0 : 1;
-   result.tile_size_bytes = pi->pTileInfo->tile_size_bytes_minus_1;
-   result.context_update_tile_id = pi->pTileInfo->context_update_tile_id;
 
-   for (i = 0; i < result.tile_cols; i++)
-      result.tile_col_start_sb[i] = pi->pTileInfo->pMiColStarts[i];
-   result.tile_col_start_sb[result.tile_cols] =
-      result.tile_col_start_sb[result.tile_cols - 1] + pi->pTileInfo->pWidthInSbsMinus1[result.tile_cols - 1] + 1;
-   for (i = 0; i < pi->pTileInfo->TileRows; i++)
-      result.tile_row_start_sb[i] = pi->pTileInfo->pMiRowStarts[i];
-   result.tile_row_start_sb[result.tile_rows] =
-      result.tile_row_start_sb[result.tile_rows - 1] + pi->pTileInfo->pHeightInSbsMinus1[result.tile_rows - 1] + 1;
+   if (pi->pTileInfo) {
+      result.tile_cols = pi->pTileInfo->TileCols;
+      result.tile_rows = pi->pTileInfo->TileRows;
+      result.tile_size_bytes = pi->pTileInfo->tile_size_bytes_minus_1;
+      result.context_update_tile_id = pi->pTileInfo->context_update_tile_id;
+
+      for (i = 0; i < result.tile_cols; i++)
+         result.tile_col_start_sb[i] = pi->pTileInfo->pMiColStarts[i];
+      result.tile_col_start_sb[result.tile_cols] =
+         result.tile_col_start_sb[result.tile_cols - 1] + pi->pTileInfo->pWidthInSbsMinus1[result.tile_cols - 1] + 1;
+      for (i = 0; i < pi->pTileInfo->TileRows; i++)
+         result.tile_row_start_sb[i] = pi->pTileInfo->pMiRowStarts[i];
+      result.tile_row_start_sb[result.tile_rows] =
+         result.tile_row_start_sb[result.tile_rows - 1] + pi->pTileInfo->pHeightInSbsMinus1[result.tile_rows - 1] + 1;
+   }
 
    result.max_width = seq_hdr->max_frame_width_minus_1 + 1;
    result.max_height = seq_hdr->max_frame_height_minus_1 + 1;
@@ -2300,24 +2325,26 @@ get_av1_msg(struct radv_device *device, struct radv_video_session *vid, struct v
          av1_pic_info->referenceNameSlotIndices[i] == -1 ? 0x7f : av1_pic_info->referenceNameSlotIndices[i];
    }
 
-   result.bit_depth_luma_minus8 = result.bit_depth_chroma_minus8 = seq_hdr->pColorConfig->BitDepth - 8;
-
-   int16_t *feature_data = (int16_t *)probs_ptr;
-   int fd_idx = 0;
-   for (i = 0; i < 8; ++i) {
-      result.feature_mask[i] = pi->pSegmentation->FeatureEnabled[i];
-      for (j = 0; j < 8; ++j) {
-         result.feature_data[i][j] = pi->pSegmentation->FeatureData[i][j];
-         feature_data[fd_idx++] = result.feature_data[i][j];
+   if (pi->pSegmentation) {
+      int16_t *feature_data = (int16_t *)probs_ptr;
+      int fd_idx = 0;
+      for (i = 0; i < 8; ++i) {
+         result.feature_mask[i] = pi->pSegmentation->FeatureEnabled[i];
+         for (j = 0; j < 8; ++j) {
+            result.feature_data[i][j] = pi->pSegmentation->FeatureData[i][j];
+            feature_data[fd_idx++] = result.feature_data[i][j];
+         }
       }
+      memcpy(((char *)probs_ptr + 128), result.feature_mask, 8);
    }
 
-   memcpy(((char *)probs_ptr + 128), result.feature_mask, 8);
-   result.cdef_damping = pi->pCDEF->cdef_damping_minus_3 + 3;
-   result.cdef_bits = pi->pCDEF->cdef_bits;
-   for (i = 0; i < 8; ++i) {
-      result.cdef_strengths[i] = (pi->pCDEF->cdef_y_pri_strength[i] << 2) + pi->pCDEF->cdef_y_sec_strength[i];
-      result.cdef_uv_strengths[i] = (pi->pCDEF->cdef_uv_pri_strength[i] << 2) + pi->pCDEF->cdef_uv_sec_strength[i];
+   if (pi->pCDEF) {
+      result.cdef_damping = pi->pCDEF->cdef_damping_minus_3 + 3;
+      result.cdef_bits = pi->pCDEF->cdef_bits;
+      for (i = 0; i < 8; ++i) {
+         result.cdef_strengths[i] = (pi->pCDEF->cdef_y_pri_strength[i] << 2) + pi->pCDEF->cdef_y_sec_strength[i];
+         result.cdef_uv_strengths[i] = (pi->pCDEF->cdef_uv_pri_strength[i] << 2) + pi->pCDEF->cdef_uv_sec_strength[i];
+      }
    }
 
    if (pi->flags.UsesLr) {
@@ -2327,9 +2354,13 @@ get_av1_msg(struct radv_device *device, struct radv_video_session *vid, struct v
       }
    }
 
-   if (seq_hdr->pColorConfig->BitDepth > 8) {
-      result.p010_mode = 1;
-      result.msb_mode = 1;
+   if (seq_hdr->pColorConfig) {
+      result.chroma_format = seq_hdr->pColorConfig->flags.mono_chrome ? 0 : 1;
+      result.bit_depth_luma_minus8 = result.bit_depth_chroma_minus8 = seq_hdr->pColorConfig->BitDepth - 8;
+      if (seq_hdr->pColorConfig->BitDepth > 8) {
+         result.p010_mode = 1;
+         result.msb_mode = 1;
+      }
    }
 
    result.preskip_segid = 0;
@@ -2361,7 +2392,7 @@ get_av1_msg(struct radv_device *device, struct radv_video_session *vid, struct v
 
    rvcn_dec_film_grain_params_t *fg_params = &result.film_grain;
    fg_params->apply_grain = pi->flags.apply_grain;
-   if (fg_params->apply_grain) {
+   if (fg_params->apply_grain && pi->pFilmGrain) {
       rvcn_dec_av1_fg_init_buf_t *fg_buf = (rvcn_dec_av1_fg_init_buf_t *)((char *)probs_ptr + 256);
       fg_params->random_seed = pi->pFilmGrain->grain_seed;
       fg_params->grain_scale_shift = pi->pFilmGrain->grain_scale_shift;
@@ -2407,10 +2438,12 @@ get_av1_msg(struct radv_device *device, struct radv_video_session *vid, struct v
    }
 
    result.uncompressed_header_size = 0;
-   for (i = 0; i < STD_VIDEO_AV1_NUM_REF_FRAMES; ++i) {
-      result.global_motion[i].wmtype = pi->pGlobalMotion->GmType[i];
-      for (j = 0; j < STD_VIDEO_AV1_GLOBAL_MOTION_PARAMS; ++j)
-         result.global_motion[i].wmmat[j] = pi->pGlobalMotion->gm_params[i][j];
+   if (pi->pGlobalMotion) {
+      for (i = 0; i < STD_VIDEO_AV1_NUM_REF_FRAMES; ++i) {
+         result.global_motion[i].wmtype = pi->pGlobalMotion->GmType[i];
+         for (j = 0; j < STD_VIDEO_AV1_GLOBAL_MOTION_PARAMS; ++j)
+            result.global_motion[i].wmmat[j] = pi->pGlobalMotion->gm_params[i][j];
+      }
    }
    for (i = 0; i < av1_pic_info->tileCount && i < 256; ++i) {
       result.tile_info[i].offset = av1_pic_info->pTileOffsets[i];
@@ -2924,8 +2957,10 @@ get_uvd_h265_msg(struct radv_device *device, struct radv_video_session *vid, str
    result.bit_depth_luma_minus8 = sps->bit_depth_luma_minus8;
    result.bit_depth_chroma_minus8 = sps->bit_depth_chroma_minus8;
    result.log2_max_pic_order_cnt_lsb_minus4 = sps->log2_max_pic_order_cnt_lsb_minus4;
-   result.sps_max_dec_pic_buffering_minus1 =
-      sps->pDecPicBufMgr->max_dec_pic_buffering_minus1[sps->sps_max_sub_layers_minus1];
+   if (sps->pDecPicBufMgr) {
+      result.sps_max_dec_pic_buffering_minus1 =
+         sps->pDecPicBufMgr->max_dec_pic_buffering_minus1[sps->sps_max_sub_layers_minus1];
+   }
    result.log2_min_luma_coding_block_size_minus3 = sps->log2_min_luma_coding_block_size_minus3;
    result.log2_diff_max_min_luma_coding_block_size = sps->log2_diff_max_min_luma_coding_block_size;
    result.log2_min_transform_block_size_minus2 = sps->log2_min_luma_transform_block_size_minus2;

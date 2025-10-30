@@ -1052,6 +1052,9 @@ radv_enc_hevc_st_ref_pic_set(struct radv_cmd_buffer *cmd_buffer, const StdVideoH
    unsigned int num_short_term_ref_pic_sets = sps->num_short_term_ref_pic_sets;
    unsigned int index = num_short_term_ref_pic_sets;
 
+   if (!rps)
+      return 0;
+
    if (index != 0)
       radv_enc_code_fixed_bits(cmd_buffer, rps->flags.inter_ref_pic_set_prediction_flag, 0x1);
 
