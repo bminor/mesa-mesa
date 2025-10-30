@@ -653,10 +653,10 @@ class __declspec( uuid( HMFT_GUID ) ) CDX12EncHMFT : CMFD3DManager,
                                                               ComPtr<ID3D12Fence> &spReconstructedPictureCompletionFence,
                                                               UINT64 ReconstructedPictureCompletionFenceValue,
                                                               ID3D12CommandQueue *pSyncObjectQueue );
-   void GetSliceBitstreamMetadata( LPDX12EncodeContext pDX12EncodeContext,
+   bool GetSliceBitstreamMetadata( LPDX12EncodeContext pDX12EncodeContext,
                                    uint32_t slice_idx,
                                    std::vector<struct codec_unit_location_t> &codec_unit_metadata );
-   void ProcessSliceBitstreamZeroCopy( LPDX12EncodeContext pDX12EncodeContext,
+   bool ProcessSliceBitstreamZeroCopy( LPDX12EncodeContext pDX12EncodeContext,
                                        uint32_t slice_idx,
                                        ComPtr<IMFMediaBuffer> &spMediaBuffer,
                                        std::vector<struct codec_unit_location_t> &mfsample_codec_unit_metadata );

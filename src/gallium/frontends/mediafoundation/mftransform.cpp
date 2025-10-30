@@ -1301,14 +1301,18 @@ done:
    return hr;
 }
 
-void
+bool
 CDX12EncHMFT::ProcessSliceBitstreamZeroCopy( LPDX12EncodeContext pDX12EncodeContext,
                                              uint32_t slice_idx,
                                              ComPtr<IMFMediaBuffer> &spMediaBuffer,
                                              std::vector<struct codec_unit_location_t> &mfsample_codec_unit_metadata )
 {
    std::vector<struct codec_unit_location_t> codec_unit_metadata;
-   GetSliceBitstreamMetadata( pDX12EncodeContext, slice_idx, codec_unit_metadata );
+   if (!GetSliceBitstreamMetadata( pDX12EncodeContext, slice_idx, codec_unit_metadata ))
+   {
+      debug_printf( "[dx12 hmft 0x%p] Failed to get slice %u bitstream metadata\n", this, slice_idx );
+      return false;
+   }
 
    // Store codec unit metadata for NALU length information
    mfsample_codec_unit_metadata.insert( mfsample_codec_unit_metadata.end(), codec_unit_metadata.begin(), codec_unit_metadata.end() );
@@ -1324,10 +1328,11 @@ CDX12EncHMFT::ProcessSliceBitstreamZeroCopy( LPDX12EncodeContext pDX12EncodeCont
                                    pDX12EncodeContext->pOutputBitRes[slice_idx],
                                    static_cast<DWORD>( total_slice_size ),
                                    static_cast<DWORD>( codec_unit_metadata[0 /*offset to first NAL*/].offset ) ) );
+   return true;
 }
 
 // Helper function to get slice bitstream metadata
-void
+bool
 CDX12EncHMFT::GetSliceBitstreamMetadata( LPDX12EncodeContext pDX12EncodeContext,
                                          uint32_t slice_idx,
                                          std::vector<struct codec_unit_location_t> &codec_unit_metadata )
@@ -1339,14 +1344,40 @@ CDX12EncHMFT::GetSliceBitstreamMetadata( LPDX12EncodeContext pDX12EncodeContext,
                                                 slice_idx,
                                                 NULL /*get size*/,
                                                 &codec_unit_metadata_count );
-   assert( codec_unit_metadata_count > 0 );
+
+   if( codec_unit_metadata_count == 0 )
+   {
+      assert( false );
+      debug_printf( "[dx12 hmft 0x%p] Slice %u has zero codec units", this, slice_idx );
+      MFE_ERROR( "[dx12 hmft 0x%p] Slice %u has zero codec units", this, slice_idx );
+      HMFT_ETW_EVENT_STOP( "GPUIndividualSliceStatsRead", this );
+      return false;
+   }
+
    codec_unit_metadata.resize( codec_unit_metadata_count, {} );
    m_pPipeVideoCodec->get_slice_bitstream_data( m_pPipeVideoCodec,
                                                 pDX12EncodeContext->pAsyncCookie,
                                                 slice_idx,
                                                 codec_unit_metadata.data(),
                                                 &codec_unit_metadata_count );
+
+   // Check for slice size overflow flag
+   for( unsigned unit_idx = 0; unit_idx < codec_unit_metadata_count; unit_idx++ )
+   {
+      if( codec_unit_metadata[unit_idx].flags & PIPE_VIDEO_CODEC_UNIT_LOCATION_FLAG_MAX_SLICE_SIZE_OVERFLOW )
+      {
+         debug_printf( "[dx12 hmft 0x%p] Slice %u unit %u has size overflow flag set - check the output bitstream buffer size\n",
+                       this,
+                       slice_idx,
+                       unit_idx );
+         MFE_ERROR( "[dx12 hmft 0x%p] Slice %u unit %u has size overflow flag set - check the output bitstream buffer size", this, slice_idx, unit_idx );
+         HMFT_ETW_EVENT_STOP( "GPUIndividualSliceStatsRead", this );
+         return false;
+      }
+   }
+
    HMFT_ETW_EVENT_STOP( "GPUIndividualSliceStatsRead", this );
+   return true;
 }
 
 void
@@ -1526,7 +1557,16 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
 
                      if( WaitForFence( pDX12EncodeContext->pSliceFences[slice_idx], OS_TIMEOUT_INFINITE ) )
                      {
-                        pThis->ProcessSliceBitstreamZeroCopy( pDX12EncodeContext, slice_idx, spMediaBuffer, codec_unit_metadata );
+                        if (!pThis->ProcessSliceBitstreamZeroCopy( pDX12EncodeContext, slice_idx, spMediaBuffer, codec_unit_metadata ))
+                        {
+                           debug_printf( "[dx12 hmft 0x%p] Failed to process slice %u bitstream\n", pThis, slice_idx );
+                           MFE_ERROR( "[dx12 hmft 0x%p] Failed to process slice %u bitstream", pThis, slice_idx );
+                           assert( false );
+                           pThis->QueueEvent( MEError, GUID_NULL, E_FAIL, nullptr );
+                           bHasEncodingError = TRUE;
+                           delete pDX12EncodeContext;
+                           break;
+                        }
 
                         pThis->FinalizeAndEmitOutputSample( pDX12EncodeContext,
                                                             spMediaBuffer,
@@ -1596,10 +1636,20 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                         ComPtr<IMFMediaBuffer> spMediaBuffer;
 
                         // Reset codec unit metadata for this slice as it will be wrapped on its own IMFSample
-                        pThis->ProcessSliceBitstreamZeroCopy( pDX12EncodeContext,
+                        if (!pThis->ProcessSliceBitstreamZeroCopy( pDX12EncodeContext,
                                                               slice_idx,
                                                               spMediaBuffer,
-                                                              cur_slice_codec_unit_metadata );
+                                                              cur_slice_codec_unit_metadata ))
+                        {
+                           debug_printf( "[dx12 hmft 0x%p] Failed to process slice %u bitstream\n", pThis, slice_idx );
+                           MFE_ERROR( "[dx12 hmft 0x%p] Failed to process slice %u bitstream", pThis, slice_idx );
+                           assert( false );
+                           pThis->QueueEvent( MEError, GUID_NULL, E_FAIL, nullptr );
+                           bHasEncodingError = TRUE;
+                           delete pDX12EncodeContext;
+                           break;
+                        }
+
                         spMediaBuffers.push_back( spMediaBuffer );
                         codec_unit_metadatas.push_back( cur_slice_codec_unit_metadata );
                      }
