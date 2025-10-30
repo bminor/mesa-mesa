@@ -314,14 +314,14 @@ get_reduce_opcode(amd_gfx_level gfx_level, ReduceOp op)
    case ior32: return aco_opcode::v_or_b32;
    case iadd64: return aco_opcode::num_opcodes;
    case imul64: return aco_opcode::num_opcodes;
-   case fadd64: return aco_opcode::v_add_f64_e64;
-   case fmul64: return aco_opcode::v_mul_f64_e64;
+   case fadd64: return gfx_level >= GFX12 ? aco_opcode::v_add_f64 : aco_opcode::v_add_f64_e64;
+   case fmul64: return gfx_level >= GFX12 ? aco_opcode::v_mul_f64 : aco_opcode::v_mul_f64_e64;
    case imin64: return aco_opcode::num_opcodes;
    case imax64: return aco_opcode::num_opcodes;
    case umin64: return aco_opcode::num_opcodes;
    case umax64: return aco_opcode::num_opcodes;
-   case fmin64: return aco_opcode::v_min_f64_e64;
-   case fmax64: return aco_opcode::v_max_f64_e64;
+   case fmin64: return gfx_level >= GFX12 ? aco_opcode::v_min_f64 : aco_opcode::v_min_f64_e64;
+   case fmax64: return gfx_level >= GFX12 ? aco_opcode::v_max_f64 : aco_opcode::v_max_f64_e64;
    case iand64: return aco_opcode::num_opcodes;
    case ior64: return aco_opcode::num_opcodes;
    case ixor64: return aco_opcode::num_opcodes;
@@ -332,10 +332,6 @@ get_reduce_opcode(amd_gfx_level gfx_level, ReduceOp op)
 bool
 is_vop3_reduce_opcode(aco_opcode opcode)
 {
-   /* 64-bit reductions are VOP3. */
-   if (opcode == aco_opcode::num_opcodes)
-      return true;
-
    return instr_info.format[(int)opcode] == Format::VOP3;
 }
 
@@ -549,20 +545,21 @@ emit_dpp_op(lower_context* ctx, PhysReg dst_reg, PhysReg src0_reg, PhysReg src1_
    Operand src1(src1_reg, rc);
 
    aco_opcode opcode = get_reduce_opcode(ctx->program->gfx_level, op);
+
+   if (opcode == aco_opcode::num_opcodes) {
+      emit_int64_dpp_op(ctx, dst_reg, src0_reg, src1_reg, vtmp, op, dpp_ctrl, row_mask, bank_mask,
+                        bound_ctrl, identity);
+      return;
+   }
+
    bool vop3 = is_vop3_reduce_opcode(opcode);
 
-   if (!vop3) {
+   if (!vop3 && size == 1) {
       if (opcode == aco_opcode::v_add_co_u32)
          bld.vop2_dpp(opcode, dst, Definition(vcc, bld.lm), src0, src1, dpp_ctrl, row_mask,
                       bank_mask, bound_ctrl);
       else
          bld.vop2_dpp(opcode, dst, src0, src1, dpp_ctrl, row_mask, bank_mask, bound_ctrl);
-      return;
-   }
-
-   if (opcode == aco_opcode::num_opcodes) {
-      emit_int64_dpp_op(ctx, dst_reg, src0_reg, src1_reg, vtmp, op, dpp_ctrl, row_mask, bank_mask,
-                        bound_ctrl, identity);
       return;
    }
 
@@ -575,7 +572,10 @@ emit_dpp_op(lower_context* ctx, PhysReg dst_reg, PhysReg src0_reg, PhysReg src1_
       bld.vop1_dpp(aco_opcode::v_mov_b32, Definition(PhysReg{vtmp + i}, v1),
                    Operand(PhysReg{src0_reg + i}, v1), dpp_ctrl, row_mask, bank_mask, bound_ctrl);
 
-   bld.vop3(opcode, dst, Operand(vtmp, rc), src1);
+   if (vop3)
+      bld.vop3(opcode, dst, Operand(vtmp, rc), src1);
+   else
+      bld.vop2(opcode, dst, Operand(vtmp, rc), src1);
 }
 
 void
@@ -589,14 +589,13 @@ emit_op(lower_context* ctx, PhysReg dst_reg, PhysReg src0_reg, PhysReg src1_reg,
    Operand src1(src1_reg, rc);
 
    aco_opcode opcode = get_reduce_opcode(ctx->program->gfx_level, op);
-   bool vop3 = is_vop3_reduce_opcode(opcode);
 
    if (opcode == aco_opcode::num_opcodes) {
       emit_int64_op(ctx, dst_reg, src0_reg, src1_reg, vtmp, op);
       return;
    }
 
-   if (vop3) {
+   if (is_vop3_reduce_opcode(opcode)) {
       bld.vop3(opcode, dst, src0, src1);
    } else if (opcode == aco_opcode::v_add_co_u32) {
       bld.vop2(opcode, dst, Definition(vcc, bld.lm), src0, src1);
