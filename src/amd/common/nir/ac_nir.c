@@ -96,6 +96,10 @@ void ac_nir_set_options(struct radeon_info *info, bool use_llvm,
                                   nir_lower_minmax64 | nir_lower_iabs64 | nir_lower_iadd_sat64 | nir_lower_conv64 |
                                   nir_lower_bitfield_extract64;
    options->divergence_analysis_options = nir_divergence_view_index_uniform;
+   options->support_indirect_inputs = BITFIELD_BIT(MESA_SHADER_TESS_CTRL) |
+                                      BITFIELD_BIT(MESA_SHADER_TESS_EVAL);
+   options->support_indirect_outputs = BITFIELD_BIT(MESA_SHADER_TESS_CTRL) |
+                                       BITFIELD_BIT(MESA_SHADER_MESH);
    options->optimize_quad_vote_to_reduce = !use_llvm;
    options->lower_fisnormal = true;
    options->support_16bit_alu = info->gfx_level >= GFX8;

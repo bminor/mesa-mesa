@@ -837,9 +837,6 @@ void si_init_screen_get_functions(struct si_screen *sscreen)
     * TCS outputs                        | Yes
     * VS/TES outputs before GS           | No
     */
-   options->support_indirect_inputs = BITFIELD_BIT(MESA_SHADER_TESS_CTRL) |
-                                      BITFIELD_BIT(MESA_SHADER_TESS_EVAL);
-   options->support_indirect_outputs = BITFIELD_BIT(MESA_SHADER_TESS_CTRL);
    options->varying_expression_max_cost = si_varying_expression_max_cost;
 
    for (unsigned i = 0; i < MESA_SHADER_STAGES; i++)
