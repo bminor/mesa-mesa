@@ -465,13 +465,6 @@ hk_build_bg_eot(struct hk_cmd_buffer *cmd, const VkRenderingInfo *info,
    return ret;
 }
 
-static bool
-is_aligned(unsigned x, unsigned pot_alignment)
-{
-   assert(util_is_power_of_two_nonzero(pot_alignment));
-   return (x & (pot_alignment - 1)) == 0;
-}
-
 static void
 hk_merge_render_iview(struct hk_rendering_state *render,
                       struct hk_image_view *iview, bool zls)
@@ -669,7 +662,7 @@ hk_CmdBeginRendering(VkCommandBuffer commandBuffer,
 
       /* Main stride in pages */
       assert((z_layout->depth_px == 1 ||
-              is_aligned(z_layout->layer_stride_B, AIL_PAGESIZE)) &&
+              util_is_aligned(z_layout->layer_stride_B, AIL_PAGESIZE)) &&
              "Page aligned Z layers");
 
       unsigned stride_pages = z_layout->layer_stride_B / AIL_PAGESIZE;
@@ -684,9 +677,9 @@ hk_CmdBeginRendering(VkCommandBuffer commandBuffer,
             z_layout->level_offsets_compressed_B[level];
 
          /* Meta stride in cache lines */
-         assert(
-            is_aligned(z_layout->compression_layer_stride_B, AIL_CACHELINE) &&
-            "Cacheline aligned Z meta layers");
+         assert(util_is_aligned(z_layout->compression_layer_stride_B,
+                                AIL_CACHELINE) &&
+                "Cacheline aligned Z meta layers");
 
          unsigned stride_lines =
             z_layout->compression_layer_stride_B / AIL_CACHELINE;
@@ -721,7 +714,7 @@ hk_CmdBeginRendering(VkCommandBuffer commandBuffer,
 
       /* Main stride in pages */
       assert((s_layout->depth_px == 1 ||
-              is_aligned(s_layout->layer_stride_B, AIL_PAGESIZE)) &&
+              util_is_aligned(s_layout->layer_stride_B, AIL_PAGESIZE)) &&
              "Page aligned S layers");
       unsigned stride_pages = s_layout->layer_stride_B / AIL_PAGESIZE;
       render->cr.stencil.stride = ((stride_pages - 1) << 14) | 1;
@@ -733,9 +726,9 @@ hk_CmdBeginRendering(VkCommandBuffer commandBuffer,
             s_layout->level_offsets_compressed_B[level];
 
          /* Meta stride in cache lines */
-         assert(
-            is_aligned(s_layout->compression_layer_stride_B, AIL_CACHELINE) &&
-            "Cacheline aligned S meta layers");
+         assert(util_is_aligned(s_layout->compression_layer_stride_B,
+                                AIL_CACHELINE) &&
+                "Cacheline aligned S meta layers");
 
          unsigned stride_lines =
             s_layout->compression_layer_stride_B / AIL_CACHELINE;

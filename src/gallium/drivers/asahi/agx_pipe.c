@@ -1206,13 +1206,6 @@ agx_flush_resource(struct pipe_context *pctx, struct pipe_resource *pres)
    }
 }
 
-static bool
-is_aligned(unsigned x, unsigned pot_alignment)
-{
-   assert(util_is_power_of_two_nonzero(pot_alignment));
-   return (x & (pot_alignment - 1)) == 0;
-}
-
 static unsigned
 build_timestamp_offset(struct agx_batch *batch, unsigned offset)
 {
@@ -1284,7 +1277,7 @@ agx_cmdbuf(struct agx_device *dev, struct drm_asahi_cmd_render *c,
 
          /* Main stride in pages */
          assert((zres->layout.depth_px == 1 ||
-                 is_aligned(zres->layout.layer_stride_B, AIL_PAGESIZE)) &&
+                 util_is_aligned(zres->layout.layer_stride_B, AIL_PAGESIZE)) &&
                 "Page aligned Z layers");
 
          unsigned stride_pages = zres->layout.layer_stride_B / AIL_PAGESIZE;
@@ -1297,8 +1290,8 @@ agx_cmdbuf(struct agx_device *dev, struct drm_asahi_cmd_render *c,
                zres->layout.level_offsets_compressed_B[level];
 
             /* Meta stride in cache lines */
-            assert(is_aligned(zres->layout.compression_layer_stride_B,
-                              AIL_CACHELINE) &&
+            assert(util_is_aligned(zres->layout.compression_layer_stride_B,
+                                   AIL_CACHELINE) &&
                    "Cacheline aligned Z meta layers");
             unsigned stride_lines =
                zres->layout.compression_layer_stride_B / AIL_CACHELINE;
@@ -1322,7 +1315,7 @@ agx_cmdbuf(struct agx_device *dev, struct drm_asahi_cmd_render *c,
 
          /* Main stride in pages */
          assert((sres->layout.depth_px == 1 ||
-                 is_aligned(sres->layout.layer_stride_B, AIL_PAGESIZE)) &&
+                 util_is_aligned(sres->layout.layer_stride_B, AIL_PAGESIZE)) &&
                 "Page aligned S layers");
          unsigned stride_pages = sres->layout.layer_stride_B / AIL_PAGESIZE;
          c->stencil.stride = ((stride_pages - 1) << 14) | 1;
@@ -1334,8 +1327,8 @@ agx_cmdbuf(struct agx_device *dev, struct drm_asahi_cmd_render *c,
                sres->layout.level_offsets_compressed_B[level];
 
             /* Meta stride in cache lines */
-            assert(is_aligned(sres->layout.compression_layer_stride_B,
-                              AIL_CACHELINE) &&
+            assert(util_is_aligned(sres->layout.compression_layer_stride_B,
+                                   AIL_CACHELINE) &&
                    "Cacheline aligned S meta layers");
             unsigned stride_lines =
                sres->layout.compression_layer_stride_B / AIL_CACHELINE;
