@@ -906,23 +906,10 @@ bool si_create_shader_variant(struct si_screen *sscreen, struct ac_llvm_compiler
                               struct si_shader *shader, struct util_debug_callback *debug);
 void si_shader_destroy(struct si_shader *shader);
 unsigned si_shader_io_get_unique_index(unsigned semantic);
-int si_shader_binary_upload(struct si_screen *sscreen, struct si_shader *shader,
-                            uint64_t scratch_va);
-int si_shader_binary_upload_at(struct si_screen *sscreen, struct si_shader *shader,
-                               uint64_t scratch_va, int64_t bo_offset);
-bool si_can_dump_shader(struct si_screen *sscreen, mesa_shader_stage stage,
-                        enum si_shader_dump_type dump_type);
-void si_shader_dump(struct si_screen *sscreen, struct si_shader *shader,
-                    struct util_debug_callback *debug, FILE *f, bool check_debug_option);
-void si_shader_dump_stats_for_shader_db(struct si_screen *screen, struct si_shader *shader,
-                                        struct util_debug_callback *debug);
 void si_multiwave_lds_size_workaround(struct si_screen *sscreen, unsigned *lds_size);
-const char *si_get_shader_name(const struct si_shader *shader);
-void si_shader_binary_clean(struct si_shader_binary *binary);
 struct nir_shader *si_deserialize_shader(struct si_shader_selector *sel);
 unsigned si_get_ps_num_interp(struct si_shader *ps);
 unsigned si_get_shader_prefetch_size(struct si_shader *shader);
-unsigned si_get_shader_binary_size(struct si_screen *screen, struct si_shader *shader);
 unsigned si_get_max_workgroup_size(const struct si_shader *shader);
 
 /* si_shader_info.c */
@@ -946,6 +933,21 @@ unsigned si_shader_lshs_vertex_stride(struct si_shader *ls);
 bool si_should_clear_lds(struct si_screen *sscreen, const struct nir_shader *shader);
 unsigned si_get_output_prim_simplified(const struct si_shader_selector *sel,
                                        const union si_shader_key *key);
+
+/* si_shader_binary.c */
+unsigned si_get_shader_binary_size(struct si_screen *screen, struct si_shader *shader);
+int si_shader_binary_upload(struct si_screen *sscreen, struct si_shader *shader,
+                            uint64_t scratch_va);
+int si_shader_binary_upload_at(struct si_screen *sscreen, struct si_shader *shader,
+                               uint64_t scratch_va, int64_t bo_offset);
+void si_shader_dump_stats_for_shader_db(struct si_screen *screen, struct si_shader *shader,
+                                        struct util_debug_callback *debug);
+void si_shader_binary_clean(struct si_shader_binary *binary);
+const char *si_get_shader_name(const struct si_shader *shader);
+bool si_can_dump_shader(struct si_screen *sscreen, mesa_shader_stage stage,
+                        enum si_shader_dump_type dump_type);
+void si_shader_dump(struct si_screen *sscreen, struct si_shader *shader,
+                    struct util_debug_callback *debug, FILE *f, bool check_debug_option);
 
 /* Inline helpers. */
 

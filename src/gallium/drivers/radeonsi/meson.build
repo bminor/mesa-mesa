@@ -61,6 +61,7 @@ files_libradeonsi = files(
   'si_shader.h',
   'si_shader_aco.c',
   'si_shader_args.c',
+  'si_shader_binary.c',
   'si_shader_info.c',
   'si_shader_info.h',
   'si_shader_internal.h',
