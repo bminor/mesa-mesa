@@ -210,12 +210,12 @@ agx_resource_from_handle(struct pipe_screen *pscreen,
 
    if (rsc->layout.tiling == AIL_TILING_LINEAR) {
       rsc->layout.linear_stride_B = whandle->stride;
-   } else if (whandle->stride != ail_get_wsi_stride_B(&rsc->layout, 0)) {
+      rsc->layout.level_offsets_B[0] = whandle->offset;
+   } else if (whandle->stride != ail_get_wsi_stride_B(&rsc->layout, 0) ||
+              whandle->offset != 0) {
       FREE(rsc);
       return NULL;
    }
-
-   assert(whandle->offset == 0);
 
    ail_make_miptree(&rsc->layout);
 
@@ -301,7 +301,8 @@ agx_resource_get_param(struct pipe_screen *pscreen, struct pipe_context *pctx,
                        enum pipe_resource_param param, unsigned usage,
                        uint64_t *value)
 {
-   struct agx_resource *rsrc = (struct agx_resource *)prsc;
+   struct agx_resource *rsrc =
+      (struct agx_resource *)util_resource_at_index(prsc, plane);
 
    switch (param) {
    case PIPE_RESOURCE_PARAM_STRIDE:
@@ -1285,7 +1286,7 @@ agx_cmdbuf(struct agx_device *dev, struct drm_asahi_cmd_render *c,
 
          if (zres->layout.compressed) {
             c->depth.comp_base =
-               agx_map_texture_gpu(zres, 0) + zres->layout.metadata_offset_B +
+               agx_map_gpu(zres) + zres->layout.metadata_offset_B +
                (first_layer * zres->layout.compression_layer_stride_B) +
                zres->layout.level_offsets_compressed_B[level];
 
@@ -1322,7 +1323,7 @@ agx_cmdbuf(struct agx_device *dev, struct drm_asahi_cmd_render *c,
 
          if (sres->layout.compressed) {
             c->stencil.comp_base =
-               agx_map_texture_gpu(sres, 0) + sres->layout.metadata_offset_B +
+               agx_map_gpu(sres) + sres->layout.metadata_offset_B +
                (first_layer * sres->layout.compression_layer_stride_B) +
                sres->layout.level_offsets_compressed_B[level];
 

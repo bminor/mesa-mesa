@@ -971,9 +971,15 @@ agx_map_texture_cpu(struct agx_resource *rsrc, unsigned level, unsigned z)
 }
 
 static inline uint64_t
+agx_map_gpu(struct agx_resource *rsrc)
+{
+   return rsrc->bo->va->addr + rsrc->layout.level_offsets_B[0];
+}
+
+static inline uint64_t
 agx_map_texture_gpu(struct agx_resource *rsrc, unsigned z)
 {
-   return rsrc->bo->va->addr +
+   return agx_map_gpu(rsrc) +
           (uint64_t)ail_get_layer_offset_B(&rsrc->layout, z);
 }
 
