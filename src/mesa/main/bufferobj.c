@@ -728,9 +728,7 @@ get_buffer_target(struct gl_context *ctx, GLenum target, bool no_error)
       }
       break;
    case GL_TEXTURE_BUFFER:
-      if (no_error ||
-          _mesa_has_ARB_texture_buffer_object(ctx) ||
-          _mesa_has_OES_texture_buffer(ctx)) {
+      if (no_error || _mesa_has_texture_buffer_object(ctx)) {
          return &ctx->Texture.BufferObject;
       }
       break;

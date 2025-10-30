@@ -525,8 +525,7 @@ _mesa_max_texture_levels(const struct gl_context *ctx, GLenum target)
       return _mesa_has_texture_cube_map_array(ctx)
          ? ctx->Const.MaxCubeTextureLevels : 0;
    case GL_TEXTURE_BUFFER:
-      return (_mesa_has_ARB_texture_buffer_object(ctx) ||
-              _mesa_has_OES_texture_buffer(ctx)) ? 1 : 0;
+      return _mesa_has_texture_buffer_object(ctx) ? 1 : 0;
    case GL_TEXTURE_2D_MULTISAMPLE:
    case GL_PROXY_TEXTURE_2D_MULTISAMPLE:
    case GL_TEXTURE_2D_MULTISAMPLE_ARRAY:
@@ -6499,8 +6498,7 @@ _mesa_get_texbuffer_format(const struct gl_context *ctx, GLenum internalFormat)
       }
    }
 
-   if (_mesa_has_ARB_texture_buffer_object_rgb32(ctx) ||
-       _mesa_has_OES_texture_buffer(ctx)) {
+   if (_mesa_has_texture_buffer_object(ctx)) {
       switch (internalFormat) {
       case GL_RGB32F:
          return MESA_FORMAT_RGB_FLOAT32;
@@ -6649,8 +6647,7 @@ texture_buffer_range(struct gl_context *ctx,
    /* NOTE: ARB_texture_buffer_object might not be supported in
     * the compatibility profile.
     */
-   if (!_mesa_has_ARB_texture_buffer_object(ctx) &&
-       !_mesa_has_OES_texture_buffer(ctx)) {
+   if (!_mesa_has_texture_buffer_object(ctx)) {
       _mesa_error(ctx, GL_INVALID_OPERATION,
                   "%s(ARB_texture_buffer_object is not"
                   " implemented for the compatibility profile)", caller);

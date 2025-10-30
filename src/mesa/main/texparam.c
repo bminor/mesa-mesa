@@ -1931,8 +1931,7 @@ get_tex_level_parameter_image(struct gl_context *ctx,
 
       /* GL_ARB_texture_buffer_object */
       case GL_TEXTURE_BUFFER_DATA_STORE_BINDING:
-         if (!_mesa_has_ARB_texture_buffer_object(ctx) &&
-             !_mesa_has_OES_texture_buffer(ctx))
+         if (!_mesa_has_texture_buffer_object(ctx))
             goto invalid_pname;
          *params = 0;
          break;
