@@ -2638,7 +2638,7 @@ radv_vcn_encode_video(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInf
    cmd_buffer->video.enc.total_task_size = 0;
 
    // task info
-   radv_enc_task_info(cmd_buffer, true);
+   radv_enc_task_info(cmd_buffer, feedback_query_va);
 
    if (vid->enc_need_begin) {
       begin(cmd_buffer, enc_info);
