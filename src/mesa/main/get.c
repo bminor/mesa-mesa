@@ -214,6 +214,7 @@ enum value_extra {
    EXTRA_EXT_FB_NO_ATTACH_GS,
    EXTRA_EXT_ES_GS,
    EXTRA_EXT_PROVOKING_VERTEX_32,
+   EXTRA_EXT_TBO,
 };
 
 #define NO_EXTRA NULL
@@ -379,7 +380,7 @@ static const int extra_GLSL_130_es3_gpushader4[] = {
 };
 
 static const int extra_texture_buffer_object[] = {
-   EXT(ARB_texture_buffer_object),
+   EXTRA_EXT_TBO,
    EXTRA_END
 };
 
@@ -1581,6 +1582,11 @@ check_extra(struct gl_context *ctx, const char *func, const struct value_desc *d
          api_check = GL_TRUE;
          if (_mesa_is_desktop_gl_compat(ctx) || version == 32)
             api_found = ctx->Extensions.EXT_provoking_vertex;
+         break;
+      case EXTRA_EXT_TBO:
+         api_check = GL_TRUE;
+         if (_mesa_has_texture_buffer_object(ctx))
+            api_found = GL_TRUE;
          break;
       case EXTRA_END:
          break;

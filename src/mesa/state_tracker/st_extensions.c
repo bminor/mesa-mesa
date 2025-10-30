@@ -1567,7 +1567,7 @@ void st_init_extensions(struct pipe_screen *screen,
        screen->caps.buffer_sampler_view_rgba_only)
       extensions->ARB_texture_buffer_object = GL_FALSE;
 
-   if (extensions->ARB_texture_buffer_object) {
+   if (screen->caps.texture_buffer_objects) {
       consts->MaxTextureBufferSize =
          screen->caps.max_texel_buffer_elements;
       consts->TextureBufferOffsetAlignment =
@@ -1583,7 +1583,7 @@ void st_init_extensions(struct pipe_screen *screen,
 
    extensions->OES_texture_buffer =
       consts->Program[MESA_SHADER_COMPUTE].MaxImageUniforms &&
-      extensions->ARB_texture_buffer_object &&
+      screen->caps.texture_buffer_objects &&
       extensions->ARB_texture_buffer_range &&
       extensions->ARB_texture_buffer_object_rgb32;
 
