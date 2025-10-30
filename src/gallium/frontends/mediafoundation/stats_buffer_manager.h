@@ -63,7 +63,8 @@ class stats_buffer_manager : public IUnknown
                           uint32_t width,
                           uint16_t height,
                           enum pipe_format buffer_format,
-                          unsigned pool_size,
+                          unsigned initial_pool_size,
+                          unsigned max_pool_size,
                           stats_buffer_manager **ppInstance );
 
  private:
@@ -74,7 +75,8 @@ class stats_buffer_manager : public IUnknown
                          uint32_t width,
                          uint16_t height,
                          enum pipe_format buffer_format,
-                         unsigned pool_size,
+                         unsigned initial_pool_size,
+                         unsigned max_pool_size,
                          HRESULT &hr );
 
    ~stats_buffer_manager();
@@ -93,8 +95,8 @@ class stats_buffer_manager : public IUnknown
 
    struct stats_buffer_manager_pool_entry
    {
-      struct pipe_resource *buffer;
-      bool used;
+      struct pipe_resource *buffer {};
+      bool used {};
    };
 
    std::vector<struct stats_buffer_manager_pool_entry> m_pool;

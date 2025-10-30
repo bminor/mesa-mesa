@@ -393,6 +393,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
                                                         width0,
                                                         height0,
                                                         format,
+                                                        1,
                                                         ( m_bLowLatency ? MFT_STAT_POOL_MIN_SIZE : MFT_INPUT_QUEUE_DEPTH ),
                                                         m_spSatdStatsBufferPool.GetAddressOf() ),
                           done );
@@ -419,6 +420,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
                                                         width0,
                                                         height0,
                                                         format,
+                                                        1,
                                                         ( m_bLowLatency ? MFT_STAT_POOL_MIN_SIZE : MFT_INPUT_QUEUE_DEPTH ),
                                                         m_spBitsUsedStatsBufferPool.GetAddressOf() ),
                           done );
@@ -443,6 +445,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
                                                         width0,
                                                         height0,
                                                         format,
+                                                        1,
                                                         ( m_bLowLatency ? MFT_STAT_POOL_MIN_SIZE : MFT_INPUT_QUEUE_DEPTH ),
                                                         m_spQPMapStatsBufferPool.GetAddressOf() ),
                           done );
@@ -556,6 +559,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
                                                      pDX12EncodeContext->pPipeVideoBuffer->width,
                                                      static_cast<uint16_t>( pDX12EncodeContext->pPipeVideoBuffer->height ),
                                                      pDX12EncodeContext->pPipeVideoBuffer->buffer_format,
+                                                     1,
                                                      ( m_bLowLatency ? MFT_STAT_POOL_MIN_SIZE : MFT_INPUT_QUEUE_DEPTH ),
                                                      m_spReconstructedPictureBufferPool.GetAddressOf() ),
                        done );
