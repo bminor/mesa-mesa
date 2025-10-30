@@ -94,7 +94,7 @@ ci-tron-vc4-rpi3-gl:arm32:
     DEQP_SUITE: broadcom-rpi3-gl-asan
     DEQP_FRACTION: 5
 
-vc4-rpi3-gl-ubsan:arm64:
+.vc4-rpi3-gl-ubsan:arm64:
   extends:
     - .igalia-bcm2837-rpi-3-b
     - .broadcom-ubsan-test:arm64-gl
@@ -255,7 +255,7 @@ ci-tron-v3d-rpi4-gl:arm32:
     # FIXME: set to 9 once the new failures are investigated
     DEQP_FRACTION: 30
 
-v3d-rpi4-gl-ubsan:arm64:
+.v3d-rpi4-gl-ubsan:arm64:
   extends:
     - .igalia-bcm2711-rpi-4
     - .broadcom-ubsan-test:arm64-gl
@@ -358,7 +358,7 @@ v3dv-rpi4-vk-full:arm64:
     DEQP_SUITE: broadcom-rpi4-vk-asan
     DEQP_FRACTION: 200
 
-v3dv-rpi4-vk-ubsan:arm64:
+.v3dv-rpi4-vk-ubsan:arm64:
   extends:
     - .igalia-bcm2711-rpi-4
     - .broadcom-ubsan-test:arm64-vk
@@ -474,7 +474,18 @@ v3d-rpi5-gl-asan:arm64:
   variables:
     FDO_CI_CONCURRENT: 1
     DEQP_SUITE: broadcom-rpi5-gl-asan
-    # FIXME: set to 9 once the new failures are investigated
+    DEQP_FRACTION: 4
+
+ci-tron-v3d-rpi5-gl-asan:arm64:
+  extends:
+    - .ci-tron-arm64-test-asan-gl
+    - .ci-tron-broadcom-rpi5:arm64
+    - .v3d-manual-rules
+  timeout: 25m
+  variables:
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 20
+    FDO_CI_CONCURRENT: 1
+    DEQP_SUITE: broadcom-rpi5-gl-asan
     DEQP_FRACTION: 4
 
 .ci-tron-v3d-rpi5-traces:arm64:
@@ -542,6 +553,18 @@ v3dv-rpi5-vk-asan:arm64:
     - .v3dv-manual-rules
   timeout: 25m
   variables:
+    FDO_CI_CONCURRENT: 1
+    DEQP_SUITE: broadcom-rpi5-vk-asan
+    DEQP_FRACTION: 80
+
+ci-tron-v3dv-rpi5-vk-asan:arm64:
+  extends:
+    - .ci-tron-arm64-test-asan-vk
+    - .ci-tron-broadcom-rpi5:arm64
+    - .v3dv-manual-rules
+  timeout: 25m
+  variables:
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 20
     FDO_CI_CONCURRENT: 1
     DEQP_SUITE: broadcom-rpi5-vk-asan
     DEQP_FRACTION: 80
