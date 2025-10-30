@@ -2765,7 +2765,7 @@ radv_vcn_encode_video(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInf
    cmd_buffer->video.enc.total_task_size = 0;
 
    // task info
-   radv_enc_task_info(cmd_buffer, true);
+   radv_enc_task_info(cmd_buffer, feedback_query_va);
 
    if (vid->enc_need_begin) {
       begin(cmd_buffer, enc_info);
@@ -2834,7 +2834,7 @@ radv_vcn_encode_video(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInf
 
    if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_2) {
       radv_vcn_sq_tail(cs, &cmd_buffer->video.sq);
-      if (radv_video_write_memory_supported(pdev) == RADV_VIDEO_WRITE_MEMORY_SUPPORT_FULL)
+      if (feedback_query_va && radv_video_write_memory_supported(pdev) == RADV_VIDEO_WRITE_MEMORY_SUPPORT_FULL)
          radv_vcn_write_memory(cmd_buffer, feedback_query_va + RADV_ENC_FEEDBACK_STATUS_IDX * sizeof(uint32_t), 1);
    }
 }
