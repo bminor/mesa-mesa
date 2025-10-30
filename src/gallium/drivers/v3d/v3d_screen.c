@@ -362,6 +362,7 @@ v3d_init_screen_caps(struct v3d_screen *screen)
         caps->supported_prim_modes_with_restart = screen->prim_types;
 
         caps->texture_buffer_objects = true;
+        caps->buffer_sampler_view_rgba_only = true;
 
         caps->texture_buffer_offset_alignment = V3D_TMU_TEXEL_ALIGN;
 

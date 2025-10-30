@@ -67,12 +67,6 @@ spec@amd_performance_monitor@vc4@test_counter_string_single_character_buffer
 spec@amd_performance_monitor@vc4@test_counter_string_small_buffer
 spec@arb_occlusion_query@occlusion_query_order
 spec@arb_shader_texture_lod@execution@tex-miplevel-selection \*gradarb cube
-spec@arb_texture_buffer_object@formats \(fs- arb\)
-spec@arb_texture_buffer_object@formats \(fs- arb\)@GL_ALPHA16F_ARB
-spec@arb_texture_buffer_object@formats \(fs- arb\)@GL_ALPHA32F_ARB
-spec@arb_texture_buffer_object@formats \(vs- arb\)
-spec@arb_texture_buffer_object@formats \(vs- arb\)@GL_ALPHA16F_ARB
-spec@arb_texture_buffer_object@formats \(vs- arb\)@GL_ALPHA32F_ARB
 spec@arb_texture_multisample@large-float-texture
 spec@arb_timer_query@timestamp-get
 spec@egl 1.4@largest possible eglcreatepbuffersurface and then glclear
