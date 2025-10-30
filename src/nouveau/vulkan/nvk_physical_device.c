@@ -37,6 +37,7 @@
 #include "cla0c0.h"
 #include "cla197.h"
 #include "cla1c0.h"
+#include "cla297.h"
 #include "clb097.h"
 #include "clb0c0.h"
 #include "clb197.h"
@@ -95,6 +96,13 @@ nvk_is_conformant(const struct nv_device_info *info)
       return true;
 
    return false;
+}
+
+static bool
+nvk_has_astc(const struct nv_device_info *info)
+{
+   /* ASTC only exists on Tegra TK1 and later */
+   return info->type == NV_DEVICE_TYPE_SOC && info->cls_eng3d >= KEPLER_C;
 }
 
 static void
@@ -329,7 +337,7 @@ nvk_get_device_features(const struct nv_device_info *info,
       .samplerAnisotropy = true,
       .textureCompressionETC2 = false,
       .textureCompressionBC = true,
-      .textureCompressionASTC_LDR = false,
+      .textureCompressionASTC_LDR = nvk_has_astc(info),
       .occlusionQueryPrecise = true,
       .pipelineStatisticsQuery = true,
       .vertexPipelineStoresAndAtomics = true,
