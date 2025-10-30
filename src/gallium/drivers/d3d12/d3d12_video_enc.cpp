@@ -2484,7 +2484,7 @@ UINT d3d12_video_encoder_calculate_max_output_compressed_bitstream_size(
          (uiWidth > 16) &&
          (format != DXGI_FORMAT_UNKNOWN));
 
-   const UINT MIN_BUFFER_SIZE = 128 * 128 * 2; // Minimum buffer size for very small frames: 128x128 pixels at 2 bytes/pixel
+   const UINT MIN_BUFFER_SIZE = 256 * 1024; // 256KB minimum buffer size
    const UINT MAX_BUFFER_SIZE = 20 * 1024 * 1024; // Maximum buffer size of 20MB
    const float EXPECTED_COMPRESSION_FACTOR = 2.0f; // Assume 50% of calculated size after compression of raw pixel sizes
 
@@ -4534,6 +4534,17 @@ d3d12_video_encoder_get_feedback(struct pipe_video_codec *codec,
                   uint64_t slice_nal_size = static_cast<uint64_t>(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pSliceHeaders[cur_slice_idx][slice_nal_idx].buffer.size());
                   void* slice_nal_buffer = pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pSliceHeaders[cur_slice_idx][slice_nal_idx].buffer.data();
 
+                  // Ensure we have enough space
+                  assert((dst_tmp_buffer_written_bytes + slice_nal_size) <= pD3D12Enc->m_SliceHeaderRepackBuffer->width0);
+                  if ((dst_tmp_buffer_written_bytes + slice_nal_size) > pD3D12Enc->m_SliceHeaderRepackBuffer->width0) {
+                     opt_metadata.encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;
+                     debug_printf("[d3d12_video_encoder] Insufficient compressed buffer size passed from frontend while repacking slice headers.\n");
+                     assert(false);
+                     if(pMetadata)
+                        *pMetadata = opt_metadata;
+                     return;
+                  }
+
                   // Upload slice header to m_SliceHeaderRepackBuffer
                   pD3D12Enc->base.context->buffer_subdata(pD3D12Enc->base.context,               // context
                                                           pD3D12Enc->m_SliceHeaderRepackBuffer,  // dst buffer
@@ -4553,6 +4564,17 @@ d3d12_video_encoder_get_feedback(struct pipe_video_codec *codec,
                            1,                                              // depth
                            &src_box
                   );
+
+                  // Ensure we have enough space
+                  assert((dst_tmp_buffer_written_bytes + src_box.width) <= pD3D12Enc->m_SliceHeaderRepackBuffer->width0);
+                  if ((dst_tmp_buffer_written_bytes + src_box.width) > pD3D12Enc->m_SliceHeaderRepackBuffer->width0) {
+                     opt_metadata.encode_result = PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_FAILED;
+                     debug_printf("[d3d12_video_encoder] Insufficient compressed buffer size passed from frontend while repacking slice headers.\n");
+                     assert(false);
+                     if(pMetadata)
+                        *pMetadata = opt_metadata;
+                     return;
+                  }
 
                   pD3D12Enc->base.context->resource_copy_region(pD3D12Enc->base.context,                                                                              //  ctx
                                                                 pD3D12Enc->m_SliceHeaderRepackBuffer,                                                                 //  dst
