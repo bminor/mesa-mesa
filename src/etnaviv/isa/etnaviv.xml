@@ -7,7 +7,7 @@ SPDX-License-Identifier: MIT
 <isa>
 
 <template name="INSTR_ALU">
-	{NAME}{DST_FULL}{SAT}{COND}{SKPHP}{TYPE}{PMODE}{THREAD}{RMODE}
+	{NAME}{DST_FULL}{SAT}{COND}{SKPHP}{UNK}{TYPE}{PMODE}{THREAD}{RMODE}
 </template>
 
 <template name="INSTR_TEX">
@@ -153,6 +153,7 @@ SPDX-License-Identifier: MIT
 		<map name="SKPHP">src->skphp</map>
 		<map name="DENORM">src->denorm</map>
 		<map name="LOCAL">src->local</map>
+		<map name="UNK">src->unk</map>
 		<map name="LEFT_SHIFT">src->left_shift</map>
 		<map name="DST_USE">src->dst.use</map>
 		<map name="DST">&amp;src->dst</map>
@@ -212,7 +213,8 @@ SPDX-License-Identifier: MIT
 		<param name="DST_USE"/>
 		<param name="COMPS"/>
 	</field>
-	<pattern low="27" high="31">00000</pattern> <!-- TEX_ID -->
+	<field name="UNK" pos="27" type="bool" display=".unk"/>
+	<pattern low="28" high="31">0000</pattern>
 	<field name="RMODE" low="32" high="33" type="#rounding"/>
 	<field name="PMODE" pos="34" type="bool_inv" display=".pack"/>
 
@@ -1557,6 +1559,11 @@ SPDX-License-Identifier: MIT
 
 <bitset name="norm_dp4" extends="#instruction-alu-src0">
 	<pattern low="0" high="5">110110</pattern> <!-- OPC -->
+	<pattern pos="80">1</pattern> <!-- OPCODE_BIT6 -->
+</bitset>
+
+<bitset name="norm_mul" extends="#instruction-alu-src0-src1">
+	<pattern low="0" high="5">110111</pattern> <!-- OPC -->
 	<pattern pos="80">1</pattern> <!-- OPCODE_BIT6 -->
 </bitset>
 
