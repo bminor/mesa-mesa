@@ -125,7 +125,7 @@ where
     /// Returns true if block_out has changed, false otherwise
     pub transfer: Transfer,
 
-    /// Update the block output based on a predecessor's input
+    /// Update the block input based on a predecessor's output
     pub join: Join,
 }
 

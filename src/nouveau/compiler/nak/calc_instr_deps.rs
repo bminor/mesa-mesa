@@ -550,8 +550,8 @@ fn insert_texture_barriers(f: &mut Function, sm: &dyn ShaderModel) {
                 true
             }
         },
-        join: |sim_out, pred_sim_in| {
-            sim_out.merge(pred_sim_in);
+        join: |sim_in, pred_sim_out| {
+            sim_in.merge(pred_sim_out);
         },
     }
     .solve();
