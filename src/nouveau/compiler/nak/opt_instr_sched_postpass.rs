@@ -3,6 +3,7 @@
 
 use crate::ir::*;
 use crate::opt_instr_sched_common::*;
+use crate::reg_tracker::RegRefIterable;
 use crate::reg_tracker::RegTracker;
 use std::cmp::max;
 use std::cmp::Reverse;
