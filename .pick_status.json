@@ -5364,7 +5364,7 @@
         "description": "mesa/main: correct formatquery error-handling",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b4c0c514b10ed85b50e4fc3bbd9c740db21e5720",
         "notes": null
