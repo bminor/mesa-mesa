@@ -83,6 +83,7 @@ struct vk_video_session {
    VkVideoCodecOperationFlagsKHR op;
    VkVideoComponentBitDepthFlagsKHR luma_bit_depth;
    VkVideoComponentBitDepthFlagsKHR chroma_bit_depth;
+   VkVideoChromaSubsamplingFlagsKHR chroma_subsampling;
    VkExtent2D max_coded;
    VkFormat picture_format;
    VkFormat ref_format;

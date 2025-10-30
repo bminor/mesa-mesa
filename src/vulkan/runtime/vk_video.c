@@ -46,6 +46,7 @@ vk_video_session_init(struct vk_device *device,
    vid->max_active_ref_pics = create_info->maxActiveReferencePictures;
    vid->luma_bit_depth = create_info->pVideoProfile->lumaBitDepth;
    vid->chroma_bit_depth = create_info->pVideoProfile->chromaBitDepth;
+   vid->chroma_subsampling = create_info->pVideoProfile->chromaSubsampling;
 
    switch (vid->op) {
    case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR: {
