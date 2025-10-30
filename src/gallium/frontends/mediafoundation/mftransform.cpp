@@ -1811,7 +1811,6 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
             ComPtr<IMFSample> spOutputSample;
             ComPtr<IMFMediaBuffer> spMemoryBuffer;
             MFCreateSample( &spOutputSample );
-            MFCreateMemoryBuffer( pThis->m_uiMaxOutputBitstreamSize, &spMemoryBuffer );
 
             if( metadata.encode_result & PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_MAX_FRAME_SIZE_OVERFLOW )
                debug_printf( "[dx12 hmft 0x%p] PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_MAX_FRAME_SIZE_OVERFLOW set\n", pThis );
