@@ -473,7 +473,7 @@ _is_target_supported(struct gl_context *ctx, GLenum target)
       break;
 
    case GL_TEXTURE_BUFFER:
-      if (!_mesa_has_ARB_texture_buffer_object(ctx))
+      if (!_mesa_has_texture_buffer_object(ctx))
          return false;
       break;
 
