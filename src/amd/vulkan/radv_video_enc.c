@@ -1377,15 +1377,13 @@ radv_enc_ctx(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *inf
       }
    }
 
+   dpb = dpb_iv ? dpb_iv->image : vid->intra_only_dpb;
+   assert(dpb);
+
    uint32_t luma_size = 0, chroma_size = 0, colloc_bytes = 0;
-   if (dpb_iv) {
-      dpb = dpb_iv->image;
-
-      dpb_image_sizes(dpb, &luma_pitch, &luma_size, &chroma_size, &colloc_bytes);
-
-      radv_cs_add_buffer(device->ws, cs->b, dpb->bindings[0].bo);
-      va = dpb->bindings[0].addr;
-   }
+   dpb_image_sizes(dpb, &luma_pitch, &luma_size, &chroma_size, &colloc_bytes);
+   radv_cs_add_buffer(device->ws, cs->b, dpb->bindings[0].bo);
+   va = dpb->bindings[0].addr;
 
    uint32_t swizzle_mode = 0;
 
@@ -1497,11 +1495,20 @@ radv_enc_ctx2(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *in
    int max_ref_slot_idx = 0;
    const VkVideoPictureResourceInfoKHR *slots[RENCODE_MAX_NUM_RECONSTRUCTED_PICTURES] = {NULL};
    struct radv_cmd_stream *cs = cmd_buffer->cs;
+   bool intra_only_dpb = false;
 
    if (info->pSetupReferenceSlot) {
       max_ref_slot_idx = info->pSetupReferenceSlot->slotIndex;
       slots[info->pSetupReferenceSlot->slotIndex] = info->pSetupReferenceSlot->pPictureResource;
+   } else if (vid->vk.max_dpb_slots == 0) {
+      intra_only_dpb = true;
+      slots[0] = &info->srcPictureResource;
    } else {
+      /* Workaround for CTS bug dEQP-VK.video.encode.h264.i_p_b_13_layered_src_general_layout:
+       *   VUID-vkCmdEncodeVideoKHR-pEncodeInfo-08377
+       *    pEncodeInfo->pSetupReferenceSlot must not be NULL unless the bound video session
+       *    was created with VkVideoSessionCreateInfoKHR::maxDpbSlots equal to zero
+       */
       slots[0] = info->pReferenceSlots[0].pPictureResource;
    }
 
@@ -1532,9 +1539,9 @@ radv_enc_ctx2(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *in
 
       struct radv_image_view *dpb_iv = radv_image_view_from_handle(res->imageViewBinding);
       assert(dpb_iv != NULL);
-      struct radv_image *dpb_img = dpb_iv->image;
+      struct radv_image *dpb_img = intra_only_dpb ? vid->intra_only_dpb : dpb_iv->image;
       radv_cs_add_buffer(device->ws, cs->b, dpb_img->bindings[0].bo);
-      dpb_image_sizes(dpb_iv->image, &luma_pitch, &luma_size, &chroma_size, &colloc_bytes);
+      dpb_image_sizes(dpb_img, &luma_pitch, &luma_size, &chroma_size, &colloc_bytes);
 
       uint32_t metadata_size = RENCODE_MAX_METADATA_BUFFER_SIZE_PER_FRAME;
       if (vid->vk.op == VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR) {
@@ -1544,7 +1551,7 @@ radv_enc_ctx2(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *in
          metadata_size += RENCODE_AV1_CDEF_ALGORITHM_FRAME_CONTEXT_SIZE;
       }
 
-      uint32_t dpb_array_idx = res->baseArrayLayer + dpb_iv->vk.base_array_layer;
+      uint32_t dpb_array_idx = !intra_only_dpb ? res->baseArrayLayer + dpb_iv->vk.base_array_layer : 0;
       uint64_t luma_va = dpb_img->bindings[0].addr + dpb_array_idx * (luma_size + chroma_size + metadata_size);
       uint64_t chroma_va = luma_va + luma_size;
       uint64_t fcb_va = chroma_va + chroma_size;
@@ -3362,6 +3369,16 @@ radv_video_get_encode_session_memory_requirements(struct radv_device *device, st
          m->memoryBindIndex = RADV_BIND_ENCODE_QP_MAP;
          m->memoryRequirements.size = map_width * map_height * sizeof(int16_t);
          m->memoryRequirements.alignment = 0;
+         m->memoryRequirements.memoryTypeBits = memory_type_bits;
+      }
+   }
+
+   if (vid->intra_only_dpb) {
+      vk_outarray_append_typed(VkVideoSessionMemoryRequirementsKHR, &out, m)
+      {
+         m->memoryBindIndex = RADV_BIND_INTRA_ONLY;
+         m->memoryRequirements.size = vid->intra_only_dpb->size;
+         m->memoryRequirements.alignment = vid->intra_only_dpb->alignment;
          m->memoryRequirements.memoryTypeBits = memory_type_bits;
       }
    }

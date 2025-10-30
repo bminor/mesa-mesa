@@ -52,9 +52,8 @@ struct radv_video_session {
 
    struct radv_vid_mem sessionctx;
    struct radv_vid_mem ctx;
-
-   struct radv_vid_mem intra_only_dpb;
    struct radv_vid_mem qp_map;
+   struct radv_image *intra_only_dpb;
 
    unsigned dbg_frame_cnt;
    rvcn_enc_session_init_t enc_session;
