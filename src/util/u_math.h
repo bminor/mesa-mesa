@@ -855,6 +855,12 @@ util_is_aligned(uintmax_t n, uintmax_t a)
 }
 
 static inline bool
+util_ptr_is_aligned(const void *ptr, uintmax_t a)
+{
+   return util_is_aligned((uintptr_t) ptr, a);
+}
+
+static inline bool
 util_is_sint16(int x)
 {
    return x >= INT16_MIN && x <= INT16_MAX;
