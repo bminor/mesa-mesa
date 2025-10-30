@@ -7,8 +7,6 @@ use crate::liveness::{BlockLiveness, Liveness, SimpleLiveness};
 
 use rustc_hash::{FxHashMap, FxHashSet};
 
-pub type LegalizeBuilder<'a> = SSAInstrBuilder<'a>;
-
 pub fn src_is_upred_reg(src: &Src) -> bool {
     match &src.src_ref {
         SrcRef::True | SrcRef::False => false,
@@ -377,6 +375,47 @@ pub trait LegalizeBuildHelpers: SSABuilder {
     }
 }
 
+pub struct LegalizeBuilder<'a> {
+    b: SSAInstrBuilder<'a>,
+}
+
+impl<'a> LegalizeBuilder<'a> {
+    fn new(sm: &'a dyn ShaderModel, alloc: &'a mut SSAValueAllocator) -> Self {
+        LegalizeBuilder {
+            b: SSAInstrBuilder::new(sm, alloc),
+        }
+    }
+
+    pub fn into_vec(self) -> Vec<Instr> {
+        self.b.into_vec()
+    }
+
+    #[allow(dead_code)]
+    pub fn into_mapped_instrs(self) -> MappedInstrs {
+        self.b.into_mapped_instrs()
+    }
+}
+
+impl<'a> Builder for LegalizeBuilder<'a> {
+    fn push_instr(&mut self, instr: Instr) -> &mut Instr {
+        self.b.push_instr(instr)
+    }
+
+    fn sm(&self) -> u8 {
+        self.b.sm()
+    }
+}
+
+impl<'a> SSABuilder for LegalizeBuilder<'a> {
+    fn alloc_ssa(&mut self, file: RegFile) -> SSAValue {
+        self.b.alloc_ssa(file)
+    }
+
+    fn alloc_ssa_vec(&mut self, file: RegFile, comps: u8) -> SSARef {
+        self.b.alloc_ssa_vec(file, comps)
+    }
+}
+
 impl LegalizeBuildHelpers for LegalizeBuilder<'_> {}
 
 fn legalize_instr(
@@ -532,7 +571,7 @@ impl Shader<'_> {
                         }
                     }
 
-                    let mut b = SSAInstrBuilder::new(sm, &mut f.ssa_alloc);
+                    let mut b = LegalizeBuilder::new(sm, &mut f.ssa_alloc);
                     legalize_instr(sm, &mut b, bl, bu, &pinned, ip, &mut instr);
                     b.push_instr(instr);
                     instrs.append(&mut b.into_vec());
