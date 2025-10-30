@@ -72,13 +72,15 @@ enum RegReadWrite {
 /// Maps each register read/write to a value
 /// a register can have multiple reads AND multiple writes at the same
 /// point in time if it comes from a merge.
-/// For edits inside a CFG block, a RegUseMap will always be either
-/// empty, with a single write or with one or multiple reads.
+/// For edits inside a CFG block, a RegUseMap will never contain multiple
+/// writes.
 ///
 /// We need to track multiple reads as we don't know which one can cause
 /// the highest latency for the interfering instruction (in RaW).  For the
 /// same reason we might need to track both reads and writes in the case of
 /// a CFG block with multiple successors.
+/// We cannot flush writes after a read operation since we can still
+/// encounter other, slower reads that could interfere with the write.
 #[derive(Clone, PartialEq, Eq, Default)]
 struct RegUseMap<K: Hash + Eq, V> {
     map: FxHashMap<(RegReadWrite, K), V>,
@@ -90,8 +92,6 @@ where
     V: Clone,
 {
     pub fn add_read(&mut self, k: K, v: V) {
-        // Reads wait on previous writes (RaR don't exist)
-        self.map.retain(|k, _v| k.0 != RegReadWrite::Write);
         self.map.insert((RegReadWrite::Read, k), v);
     }
 
