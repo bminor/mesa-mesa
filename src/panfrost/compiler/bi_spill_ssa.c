@@ -702,12 +702,11 @@ calculate_local_next_use(struct spill_ctx *ctx, struct util_dynarray *out)
    destroy_next_uses(&nu);
 }
 
-
 /*
- * TODO: Implement section 4.2 of the paper.
- *
- * For now, we implement the simpler heuristic in Hack's thesis: sort
- * the live-in set (+ destinations of phis) by next-use distance.
+ * Let I_B be the set of live-in variables plus the set of variables defined
+ * by phis. Then W_entry will contain variables
+ * - I_B & <variables used in the loop>
+ * - I_B & <variables live-through the loop> (if there is space left)
  */
 static ATTRIBUTE_NOINLINE void
 compute_w_entry_loop_header(struct spill_ctx *ctx)
@@ -715,22 +714,82 @@ compute_w_entry_loop_header(struct spill_ctx *ctx)
    bi_block *block = ctx->block;
    struct spill_block *sb = spill_block(ctx, block);
 
-   unsigned nP = __bitset_count(block->ssa_live_in, BITSET_WORDS(ctx->n_alloc));
-   struct candidate *candidates = calloc(nP, sizeof(struct candidate));
-   unsigned j = 0;
+   const uint32_t flags_len = ctx->n_alloc;
+   bool *flag_mem = calloc(2 * flags_len, sizeof(bool));
+   bool *alive = flag_mem;
+   bool *used_in_loop = flag_mem + flags_len;
 
-   foreach_next_use(&sb->next_use_in, i, dist) {
-      assert(j < nP);
-      candidates[j++] = (struct candidate){.node = i, .dist = dist};
+   /* alive := live-in + defined by phis */
+   uint32_t i = 0;
+   BITSET_FOREACH_SET(i, ctx->block->ssa_live_in, ctx->n_alloc) {
+      alive[i] = true;
+   }
+   bi_foreach_phi_in_block(ctx->block, phi)
+   {
+      alive[phi->dest[0].value] = true;
    }
 
-   assert(j == nP);
+   /* Start with candidates := { v : v ∈ alive and used_in_loop(v) }. */
+   struct candidate *candidates =
+      calloc(ctx->n_alloc, sizeof(struct candidate));
+   uint32_t n_ca = 0;
 
-   /* Sort by next-use distance */
-   util_qsort_r(candidates, j, sizeof(struct candidate), cmp_dist, ctx);
+   uint32_t max_loop_pressure = 0;
+   const bool *loop_block = bi_find_loop_blocks(ctx->shader, ctx->block);
 
-   /* Take as much as we can */
-   for (unsigned i = 0; i < j; ++i) {
+   bi_foreach_block(ctx->shader, block) {
+      if (loop_block[block->index]) {
+         bi_foreach_instr_in_block(block, I) {
+            max_loop_pressure = MAX2(max_loop_pressure, block->ssa_max_live);
+
+            bi_foreach_src(I, s) {
+               const uint32_t v = I->src[s].value;
+               const bool is_reg = I->src[s].type == BI_INDEX_NORMAL;
+
+               /* Only add live register values, and only add them once. */
+               if (!is_reg || !alive[v] || used_in_loop[v])
+                  continue;
+
+               const dist_t d = search_next_uses(&sb->next_use_in, v);
+               candidates[n_ca++] = (struct candidate){.node = v, .dist = d};
+               used_in_loop[v] = true;
+            }
+         }
+      }
+   }
+
+   /* Sort by next-use distance. */
+   util_qsort_r(candidates, n_ca, sizeof(struct candidate), cmp_dist, ctx);
+
+   const uint32_t n_ca_loop = n_ca;
+
+   /* Find live-through values in case we want to add any. */
+   if (n_ca < ctx->k) {
+      for (i = 0; i < ctx->n_alloc; ++i) {
+         const bool live_through = alive[i] && !used_in_loop[i];
+         if (live_through) {
+            const dist_t d = search_next_uses(&sb->next_use_in, i);
+            candidates[n_ca++] = (struct candidate){.node = i, .dist = d};
+         }
+      }
+   }
+   const uint32_t n_lt = n_ca - n_ca_loop;
+
+   /* Sort live-through variables by next-use distance. */
+   util_qsort_r(candidates + n_ca_loop, n_lt, sizeof(struct candidate),
+                cmp_dist, ctx);
+
+   assert(max_loop_pressure >= n_lt);
+   /* If the pressure caused by vars inside the loop t is < k, we have space
+    * for more variables to put in W_entry. */
+   const uint32_t t = max_loop_pressure - n_lt;
+   if (t < ctx->k)
+      n_ca = CLAMP(n_ca_loop + (ctx->k - t), 0, n_ca);
+   else
+      n_ca = n_ca_loop;
+
+   /* Take as much as we can. */
+   for (unsigned i = 0; i < n_ca; ++i) {
       unsigned node = candidates[i].node;
       unsigned comps = node_size(ctx, node);
 
@@ -740,8 +799,11 @@ compute_w_entry_loop_header(struct spill_ctx *ctx)
       }
    }
 
-   assert(ctx->nW <= ctx->k);
+   assert(ctx->nW <= ctx->k && "invariant");
+
+   free((void *)loop_block);
    free(candidates);
+   free(flag_mem);
 }
 
 /*

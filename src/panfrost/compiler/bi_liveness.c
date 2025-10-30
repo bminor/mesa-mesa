@@ -76,6 +76,8 @@ bi_compute_liveness_ssa(bi_context *ctx)
          if (I->op == BI_OPCODE_PHI)
             break;
 
+         blk->ssa_max_live =
+            MAX2(__bitset_count(blk->ssa_live_in, words), blk->ssa_max_live);
          bi_liveness_ins_update_ssa(blk->ssa_live_in, I);
       }
 

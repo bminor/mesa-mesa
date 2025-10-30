@@ -921,6 +921,7 @@ typedef struct bi_block {
    /* Scalar liveness indexed by SSA index */
    BITSET_WORD *ssa_live_in;
    BITSET_WORD *ssa_live_out;
+   uint32_t ssa_max_live;
 
    /* If true, uses clauses; if false, uses instructions */
    bool scheduled;
