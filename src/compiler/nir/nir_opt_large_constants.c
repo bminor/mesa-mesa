@@ -36,7 +36,7 @@ read_const_values(nir_const_value *dst, const void *src,
    switch (bit_size) {
    case 1:
       /* Booleans are special-cased to be 32-bit */
-      assert(((uintptr_t)src & 0x3) == 0);
+      assert(util_ptr_is_aligned(src, 4));
       for (unsigned i = 0; i < num_components; i++)
          dst[i].b = ((int32_t *)src)[i] != 0;
       break;
@@ -47,19 +47,19 @@ read_const_values(nir_const_value *dst, const void *src,
       break;
 
    case 16:
-      assert(((uintptr_t)src & 0x1) == 0);
+      assert(util_ptr_is_aligned(src, 2));
       for (unsigned i = 0; i < num_components; i++)
          dst[i].u16 = ((int16_t *)src)[i];
       break;
 
    case 32:
-      assert(((uintptr_t)src & 0x3) == 0);
+      assert(util_ptr_is_aligned(src, 4));
       for (unsigned i = 0; i < num_components; i++)
          dst[i].u32 = ((int32_t *)src)[i];
       break;
 
    case 64:
-      assert(((uintptr_t)src & 0x7) == 0);
+      assert(util_ptr_is_aligned(src, 8));
       for (unsigned i = 0; i < num_components; i++)
          dst[i].u64 = ((int64_t *)src)[i];
       break;
@@ -77,7 +77,7 @@ write_const_values(void *dst, const nir_const_value *src,
    switch (bit_size) {
    case 1:
       /* Booleans are special-cased to be 32-bit */
-      assert(((uintptr_t)dst & 0x3) == 0);
+      assert(util_ptr_is_aligned(dst, 4));
       u_foreach_bit(i, write_mask)
          ((int32_t *)dst)[i] = -(int)src[i].b;
       break;
@@ -88,19 +88,19 @@ write_const_values(void *dst, const nir_const_value *src,
       break;
 
    case 16:
-      assert(((uintptr_t)dst & 0x1) == 0);
+      assert(util_ptr_is_aligned(dst, 2));
       u_foreach_bit(i, write_mask)
          ((int16_t *)dst)[i] = src[i].u16;
       break;
 
    case 32:
-      assert(((uintptr_t)dst & 0x3) == 0);
+      assert(util_ptr_is_aligned(dst, 4));
       u_foreach_bit(i, write_mask)
          ((int32_t *)dst)[i] = src[i].u32;
       break;
 
    case 64:
-      assert(((uintptr_t)dst & 0x7) == 0);
+      assert(util_ptr_is_aligned(dst, 8));
       u_foreach_bit(i, write_mask)
          ((int64_t *)dst)[i] = src[i].u64;
       break;
