@@ -294,7 +294,7 @@ zink_get_gfx_pipeline(struct zink_context *ctx,
       prog->last_finalized_hash[idx] = final_hash;
       prog->last_pipeline[idx] = cache_entry;
    }
-   return state->pipeline;
+   return IS_MESH ? state->mesh_pipeline : state->pipeline;
 }
 
 /* runtime-optimized pipeline state comparisons */
