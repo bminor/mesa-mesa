@@ -972,6 +972,7 @@ zink_init_screen_caps(struct zink_screen *screen)
    caps->cube_map_array = screen->info.feats.features.imageCubeArray;
 
    caps->texture_buffer_objects = true;
+   caps->buffer_sampler_view_rgba_only = true;
    caps->primitive_restart = true;
 
    caps->bindless_texture =

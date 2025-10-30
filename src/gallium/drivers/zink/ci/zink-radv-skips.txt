@@ -18,9 +18,6 @@ KHR-GL46.texture_swizzle.smoke
 KHR-GL46.texture_swizzle.functional
 KHR-GL46.tessellation_shader.tessellation_control_to_tessellation_evaluation.gl_MaxPatchVertices_Position_PointSize
 
-#these need format conversions that gallium doesn't implement yet
-spec@arb_texture_buffer_object@formats.*arb.*
-
 # These randomly hang.
 spec@ext_external_objects@.*
 
