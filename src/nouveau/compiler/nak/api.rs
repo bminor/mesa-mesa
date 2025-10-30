@@ -461,6 +461,7 @@ fn nak_compile_shader_internal(
     pass!(s, opt_dce);
     pass!(s, opt_out);
     pass!(s, legalize);
+    pass!(s, opt_dce);
     pass!(s, assign_regs);
     pass!(s, lower_par_copies);
     pass!(s, lower_copy_swap);
