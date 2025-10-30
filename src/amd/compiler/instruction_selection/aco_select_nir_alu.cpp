@@ -1836,6 +1836,8 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
          emit_vop3p_instruction(ctx, instr, aco_opcode::v_pk_mul_f16, dst);
       } else if (dst.regClass() == v1) {
          emit_vop2_instruction(ctx, instr, aco_opcode::v_mul_f32, dst, true);
+      } else if (dst.regClass() == v2 && ctx->options->gfx_level >= GFX12) {
+         emit_vop2_instruction(ctx, instr, aco_opcode::v_mul_f64, dst, true);
       } else if (dst.regClass() == v2) {
          emit_vop3a_instruction(ctx, instr, aco_opcode::v_mul_f64_e64, dst);
       } else if (dst.regClass() == s1 && instr->def.bit_size == 16) {
@@ -2104,6 +2106,9 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
       } else if (dst.regClass() == v1) {
          bld.vop2(aco_opcode::v_mul_f32, Definition(dst), Operand::c32(0xbf800000u),
                   as_vgpr(ctx, src));
+      } else if (dst.regClass() == v2 && ctx->program->gfx_level >= GFX12) {
+         bld.vop2(aco_opcode::v_mul_f64, Definition(dst), Operand::c64(0xBFF0000000000000),
+                  as_vgpr(ctx, src));
       } else if (dst.regClass() == v2) {
          bld.vop3(aco_opcode::v_mul_f64_e64, Definition(dst), Operand::c64(0xBFF0000000000000),
                   as_vgpr(ctx, src));
@@ -2138,6 +2143,10 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
          Instruction* mul = bld.vop2_e64(aco_opcode::v_mul_f32, Definition(dst),
                                          Operand::c32(0x3f800000u), as_vgpr(ctx, src))
                                .instr;
+         mul->valu().abs[1] = true;
+      } else if (dst.regClass() == v2 && ctx->program->gfx_level >= GFX12) {
+         Instruction* mul = bld.vop2_e64(aco_opcode::v_mul_f64, Definition(dst),
+                                         Operand::c64(0x3FF0000000000000), as_vgpr(ctx, src));
          mul->valu().abs[1] = true;
       } else if (dst.regClass() == v2) {
          Instruction* mul = bld.vop3(aco_opcode::v_mul_f64_e64, Definition(dst),
@@ -2188,6 +2197,10 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
          /* apparently, it is not necessary to flush denorms if this instruction is used with these
           * operands */
          // TODO: confirm that this holds under any circumstances
+      } else if (dst.regClass() == v2 && ctx->program->gfx_level >= GFX12) {
+         Instruction* mul = bld.vop2_e64(aco_opcode::v_mul_f64, Definition(dst), src,
+                                         Operand::c64(0x3FF0000000000000));
+         mul->valu().clamp = true;
       } else if (dst.regClass() == v2) {
          Instruction* mul = bld.vop3(aco_opcode::v_mul_f64_e64, Definition(dst), src,
                                      Operand::c64(0x3FF0000000000000));
