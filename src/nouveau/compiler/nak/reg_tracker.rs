@@ -34,18 +34,6 @@ impl<T> RegTracker<T> {
             carry: new_array_with(f),
         }
     }
-
-    pub fn for_each_pred(&mut self, mut f: impl FnMut(&mut T)) {
-        for p in &mut self.pred[..] {
-            f(p);
-        }
-    }
-
-    pub fn for_each_carry(&mut self, mut f: impl FnMut(&mut T)) {
-        for c in &mut self.carry {
-            f(c);
-        }
-    }
 }
 
 impl<T> Index<RegRef> for RegTracker<T> {

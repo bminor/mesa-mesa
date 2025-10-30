@@ -8756,6 +8756,24 @@ impl BasicBlock {
     }
 }
 
+/// Stores the index of an instruction in a given Function
+///
+/// The block and instruction indices are stored in a memory-efficient way.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct InstrIdx {
+    pub block_idx: u32,
+    pub instr_idx: u32,
+}
+
+impl InstrIdx {
+    pub fn new(bi: usize, ii: usize) -> Self {
+        Self {
+            block_idx: bi.try_into().expect("Block index overflow"),
+            instr_idx: ii.try_into().expect("Instruction index overflow"),
+        }
+    }
+}
+
 pub struct Function {
     pub ssa_alloc: SSAValueAllocator,
     pub phi_alloc: PhiAllocator,
@@ -8844,6 +8862,17 @@ impl fmt::Display for Function {
             write!(f, "]\n")?;
         }
         Ok(())
+    }
+}
+
+impl Index<InstrIdx> for Function {
+    type Output = Instr;
+
+    fn index(&self, index: InstrIdx) -> &Self::Output {
+        // Removed at compile time (except for 16-bit targets)
+        let block_idx: usize = index.block_idx.try_into().unwrap();
+        let instr_idx: usize = index.instr_idx.try_into().unwrap();
+        &self.blocks[block_idx].instrs[instr_idx]
     }
 }
 
