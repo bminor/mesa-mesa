@@ -35,32 +35,19 @@
  *   to which buffers).
  */
 
-__attribute__((format(printf, 1, 2)))
-static void
-sparse_debug(const char *format, ...)
-{
-   if (!INTEL_DEBUG(DEBUG_SPARSE))
-      return;
-
-   va_list args;
-   va_start(args, format);
-   vfprintf(stderr, format, args);
-   va_end(args);
-}
-
 static void
 dump_anv_vm_bind(struct anv_device *device,
                  const struct anv_vm_bind *bind)
 {
-  sparse_debug("[%s] ", bind->op == ANV_VM_BIND ? " bind " : "unbind");
+  mesa_logi("[%s] ", bind->op == ANV_VM_BIND ? " bind " : "unbind");
 
    if (bind->bo)
-      sparse_debug("bo:%04u ", bind->bo->gem_handle);
+      mesa_logi("bo:%04u ", bind->bo->gem_handle);
    else
-      sparse_debug("bo:---- ");
-   sparse_debug("address:%016"PRIx64" size:%08"PRIx64" "
-                "mem_offset:%08"PRIx64"\n",
-                bind->address, bind->size, bind->bo_offset);
+      mesa_logi("bo:---- ");
+   mesa_logi("address:%016"PRIx64" size:%08"PRIx64" "
+             "mem_offset:%08"PRIx64"\n",
+             bind->address, bind->size, bind->bo_offset);
 }
 
 static void
@@ -69,14 +56,14 @@ dump_anv_image(struct anv_image *i)
    if (!INTEL_DEBUG(DEBUG_SPARSE))
       return;
 
-   sparse_debug("anv_image:\n");
-   sparse_debug("- format: %d\n", i->vk.format);
-   sparse_debug("- extent: [%d, %d, %d]\n",
-                i->vk.extent.width, i->vk.extent.height, i->vk.extent.depth);
-   sparse_debug("- mip_levels: %d array_layers: %d samples: %d\n",
-                i->vk.mip_levels, i->vk.array_layers, i->vk.samples);
-   sparse_debug("- n_planes: %d\n", i->n_planes);
-   sparse_debug("- disjoint: %d\n", i->disjoint);
+   mesa_logi("anv_image:\n");
+   mesa_logi("- format: %d\n", i->vk.format);
+   mesa_logi("- extent: [%d, %d, %d]\n",
+             i->vk.extent.width, i->vk.extent.height, i->vk.extent.depth);
+   mesa_logi("- mip_levels: %d array_layers: %d samples: %d\n",
+             i->vk.mip_levels, i->vk.array_layers, i->vk.samples);
+   mesa_logi("- n_planes: %d\n", i->n_planes);
+   mesa_logi("- disjoint: %d\n", i->disjoint);
 }
 
 static void
@@ -85,54 +72,54 @@ dump_isl_surf(struct isl_surf *s)
    if (!INTEL_DEBUG(DEBUG_SPARSE))
       return;
 
-   sparse_debug("isl_surf:\n");
+   mesa_logi("isl_surf:\n");
 
    const char *dim_s = s->dim == ISL_SURF_DIM_1D ? "1D" :
                        s->dim == ISL_SURF_DIM_2D ? "2D" :
                        s->dim == ISL_SURF_DIM_3D ? "3D" :
                        "(ERROR)";
-   sparse_debug("- dim: %s\n", dim_s);
-   sparse_debug("- tiling: %d (%s)\n", s->tiling,
-                isl_tiling_to_name(s->tiling));
-   sparse_debug("- format: %s\n", isl_format_get_short_name(s->format));
-   sparse_debug("- image_alignment_el: [%d, %d, %d]\n",
-                s->image_alignment_el.w, s->image_alignment_el.h,
-                s->image_alignment_el.d);
-   sparse_debug("- logical_level0_px: [%d, %d, %d, %d]\n",
-                s->logical_level0_px.w,
-                s->logical_level0_px.h,
-                s->logical_level0_px.d,
-                s->logical_level0_px.a);
-   sparse_debug("- phys_level0_sa: [%d, %d, %d, %d]\n",
-                s->phys_level0_sa.w,
-                s->phys_level0_sa.h,
-                s->phys_level0_sa.d,
-                s->phys_level0_sa.a);
-   sparse_debug("- levels: %d samples: %d\n", s->levels, s->samples);
-   sparse_debug("- size_B: %"PRIu64" alignment_B: %u\n",
-                s->size_B, s->alignment_B);
-   sparse_debug("- row_pitch_B: %u\n", s->row_pitch_B);
-   sparse_debug("- array_pitch_el_rows: %u\n", s->array_pitch_el_rows);
+   mesa_logi("- dim: %s\n", dim_s);
+   mesa_logi("- tiling: %d (%s)\n", s->tiling,
+             isl_tiling_to_name(s->tiling));
+   mesa_logi("- format: %s\n", isl_format_get_short_name(s->format));
+   mesa_logi("- image_alignment_el: [%d, %d, %d]\n",
+             s->image_alignment_el.w, s->image_alignment_el.h,
+             s->image_alignment_el.d);
+   mesa_logi("- logical_level0_px: [%d, %d, %d, %d]\n",
+             s->logical_level0_px.w,
+             s->logical_level0_px.h,
+             s->logical_level0_px.d,
+             s->logical_level0_px.a);
+   mesa_logi("- phys_level0_sa: [%d, %d, %d, %d]\n",
+             s->phys_level0_sa.w,
+             s->phys_level0_sa.h,
+             s->phys_level0_sa.d,
+             s->phys_level0_sa.a);
+   mesa_logi("- levels: %d samples: %d\n", s->levels, s->samples);
+   mesa_logi("- size_B: %"PRIu64" alignment_B: %u\n",
+             s->size_B, s->alignment_B);
+   mesa_logi("- row_pitch_B: %u\n", s->row_pitch_B);
+   mesa_logi("- array_pitch_el_rows: %u\n", s->array_pitch_el_rows);
 
    const struct isl_format_layout *layout = isl_format_get_layout(s->format);
-   sparse_debug("- format layout:\n");
-   sparse_debug("  - format:%d bpb:%d bw:%d bh:%d bd:%d\n",
-                layout->format, layout->bpb, layout->bw, layout->bh,
-                layout->bd);
+   mesa_logi("- format layout:\n");
+   mesa_logi("  - format:%d bpb:%d bw:%d bh:%d bd:%d\n",
+             layout->format, layout->bpb, layout->bw, layout->bh,
+             layout->bd);
 
    struct isl_tile_info tile_info;
    isl_surf_get_tile_info(s, &tile_info);
 
-   sparse_debug("- tile info:\n");
-   sparse_debug("  - format_bpb: %d\n", tile_info.format_bpb);
-   sparse_debug("  - logical_extent_el: [%d, %d, %d, %d]\n",
-                tile_info.logical_extent_el.w,
-                tile_info.logical_extent_el.h,
-                tile_info.logical_extent_el.d,
-                tile_info.logical_extent_el.a);
-   sparse_debug("  - phys_extent_B: [%d, %d]\n",
-                tile_info.phys_extent_B.w,
-                tile_info.phys_extent_B.h);
+   mesa_logi("- tile info:\n");
+   mesa_logi("  - format_bpb: %d\n", tile_info.format_bpb);
+   mesa_logi("  - logical_extent_el: [%d, %d, %d, %d]\n",
+             tile_info.logical_extent_el.w,
+             tile_info.logical_extent_el.h,
+             tile_info.logical_extent_el.d,
+             tile_info.logical_extent_el.a);
+   mesa_logi("  - phys_extent_B: [%d, %d]\n",
+             tile_info.phys_extent_B.w,
+             tile_info.phys_extent_B.h);
 }
 
 static VkOffset3D
@@ -376,8 +363,8 @@ trtt_make_page_table_bo(struct anv_device *device, struct anv_bo **bo)
    trtt->cur_page_table_bo = *bo;
    trtt->next_page_table_bo_offset = 0;
 
-   sparse_debug("new number of page table BOs: %d\n",
-                trtt->num_page_table_bos);
+   mesa_logi("new number of page table BOs: %d\n",
+             trtt->num_page_table_bos);
 
    return VK_SUCCESS;
 }
@@ -831,8 +818,8 @@ anv_sparse_bind_trtt(struct anv_device *device,
       util_dynarray_num_elements(&l3l2_binds, struct anv_trtt_bind);
    uint32_t n_l1_binds =
       util_dynarray_num_elements(&l1_binds, struct anv_trtt_bind);
-   sparse_debug("trtt_binds: num_vm_binds:%02d l3l2:%04d l1:%04d\n",
-                sparse_submit->binds_len, n_l3l2_binds, n_l1_binds);
+   mesa_logi("trtt_binds: num_vm_binds:%02d l3l2:%04d l1:%04d\n",
+             sparse_submit->binds_len, n_l3l2_binds, n_l1_binds);
 
    /* This is not an error, the application is simply trying to reset state
     * that was already there. */
@@ -1064,8 +1051,8 @@ anv_free_sparse_bindings(struct anv_device *device,
    if (!sparse->address)
       return;
 
-   sparse_debug("%s: address:0x%016"PRIx64" size:0x%08"PRIx64"\n",
-                __func__, sparse->address, sparse->size);
+   mesa_logi("%s: address:0x%016"PRIx64" size:0x%08"PRIx64"\n",
+             __func__, sparse->address, sparse->size);
 
    p_atomic_dec(&device->num_sparse_resources);
 
@@ -1341,10 +1328,10 @@ out_everything_is_miptail:
    *imageMipTailStride = 0;
 
 out_debug:
-   sparse_debug("miptail first_lod:%d size:%"PRIu64" offset:%"PRIu64" "
-                "stride:%"PRIu64"\n",
-                *imageMipTailFirstLod, *imageMipTailSize,
-                *imageMipTailOffset, *imageMipTailStride);
+   mesa_logi("miptail first_lod:%d size:%"PRIu64" offset:%"PRIu64" "
+             "stride:%"PRIu64"\n",
+             *imageMipTailFirstLod, *imageMipTailSize,
+             *imageMipTailOffset, *imageMipTailStride);
 }
 
 static struct anv_vm_bind
@@ -1413,16 +1400,16 @@ anv_sparse_bind_image_opaque(struct anv_device *device,
    assert(!image->disjoint);
 
    if (INTEL_DEBUG(DEBUG_SPARSE)) {
-      sparse_debug("%s:\n", __func__);
+      mesa_logi("%s:\n", __func__);
       dump_anv_image(image);
       u_foreach_bit(b, image->vk.aspects) {
          VkImageAspectFlagBits aspect = 1 << b;
          const uint32_t plane = anv_image_aspect_to_plane(image, aspect);
          struct isl_surf *surf = &image->planes[plane].primary_surface.isl;
-         sparse_debug("aspect 0x%x (plane %d):\n", aspect, plane);
+         mesa_logi("aspect 0x%x (plane %d):\n", aspect, plane);
          dump_isl_surf(surf);
       }
-      sparse_debug("\n");
+      mesa_logi("\n");
    }
 
    return anv_sparse_bind_resource_memory(device, &b->sparse_data,
@@ -1458,16 +1445,16 @@ anv_sparse_bind_image_memory(struct anv_queue *queue,
    isl_surf_get_tile_info(surf, &tile_info);
 
    if (INTEL_DEBUG(DEBUG_SPARSE)) {
-      sparse_debug("%s:\n", __func__);
-      sparse_debug("mip_level:%d array_layer:%d\n", mip_level, array_layer);
-      sparse_debug("aspect:0x%x plane:%d\n", aspect, plane);
-      sparse_debug("binding offset: [%d, %d, %d] extent: [%d, %d, %d]\n",
-                   bind->offset.x, bind->offset.y, bind->offset.z,
-                   bind->extent.width, bind->extent.height,
-                   bind->extent.depth);
+      mesa_logi("%s:\n", __func__);
+      mesa_logi("mip_level:%d array_layer:%d\n", mip_level, array_layer);
+      mesa_logi("aspect:0x%x plane:%d\n", aspect, plane);
+      mesa_logi("binding offset: [%d, %d, %d] extent: [%d, %d, %d]\n",
+                bind->offset.x, bind->offset.y, bind->offset.z,
+                bind->extent.width, bind->extent.height,
+                bind->extent.depth);
       dump_anv_image(image);
       dump_isl_surf(surf);
-      sparse_debug("\n");
+      mesa_logi("\n");
    }
 
    VkExtent3D block_shape_px =

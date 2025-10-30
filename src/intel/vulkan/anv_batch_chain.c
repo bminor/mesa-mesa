@@ -1399,22 +1399,22 @@ anv_queue_submit_sparse_bind(struct anv_queue *queue,
     */
    if (device->physical->sparse_type == ANV_SPARSE_TYPE_NOT_SUPPORTED) {
       if (INTEL_DEBUG(DEBUG_SPARSE))
-         fprintf(stderr, "=== application submitting sparse operations: "
-               "buffer_bind:%d image_opaque_bind:%d image_bind:%d\n",
-               submit->buffer_bind_count, submit->image_opaque_bind_count,
-               submit->image_bind_count);
+         mesa_logi("=== application submitting sparse operations: "
+                   "buffer_bind:%d image_opaque_bind:%d image_bind:%d\n",
+                   submit->buffer_bind_count, submit->image_opaque_bind_count,
+                   submit->image_bind_count);
       return vk_queue_set_lost(&queue->vk, "Sparse binding not supported");
    }
 
    assert(submit->command_buffer_count == 0);
 
    if (INTEL_DEBUG(DEBUG_SPARSE)) {
-      fprintf(stderr, "[sparse submission, buffers:%u opaque_images:%u "
-              "images:%u waits:%u signals:%u]\n",
-              submit->buffer_bind_count,
-              submit->image_opaque_bind_count,
-              submit->image_bind_count,
-              submit->wait_count, submit->signal_count);
+      mesa_logi("[sparse submission, buffers:%u opaque_images:%u "
+                "images:%u waits:%u signals:%u]\n",
+                submit->buffer_bind_count,
+                submit->image_opaque_bind_count,
+                submit->image_bind_count,
+                submit->wait_count, submit->signal_count);
    }
 
    struct anv_sparse_submission sparse_submit = {

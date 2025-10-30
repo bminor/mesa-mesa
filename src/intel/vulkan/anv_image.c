@@ -2262,8 +2262,8 @@ VkResult anv_CreateImage(
        pCreateInfo->flags & (VK_IMAGE_CREATE_SPARSE_BINDING_BIT |
                              VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT |
                              VK_IMAGE_CREATE_SPARSE_ALIASED_BIT))
-      fprintf(stderr, "=== %s %s:%d flags:0x%08x\n", __func__, __FILE__,
-              __LINE__, pCreateInfo->flags);
+      mesa_logi("=== %s %s:%d flags:0x%08x\n", __func__, __FILE__,
+                __LINE__, pCreateInfo->flags);
 
 #ifndef VK_USE_PLATFORM_ANDROID_KHR
    /* Skip the WSI common swapchain creation here on Android. Similar to ahw,
@@ -2679,8 +2679,8 @@ void anv_GetDeviceImageMemoryRequirements(
        pInfo->pCreateInfo->flags & (VK_IMAGE_CREATE_SPARSE_BINDING_BIT |
                                     VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT |
                                     VK_IMAGE_CREATE_SPARSE_ALIASED_BIT))
-      fprintf(stderr, "=== %s %s:%d flags:0x%08x\n", __func__, __FILE__,
-              __LINE__, pInfo->pCreateInfo->flags);
+      mesa_logi("=== %s %s:%d flags:0x%08x\n", __func__, __FILE__,
+                __LINE__, pInfo->pCreateInfo->flags);
 
    ASSERTED VkResult result =
       anv_image_init_from_create_info(device, &image, pInfo->pCreateInfo, true);
@@ -2787,7 +2787,7 @@ void anv_GetImageSparseMemoryRequirements2(
    if (!anv_sparse_residency_is_enabled(device)) {
       if ((device->physical->sparse_type == ANV_SPARSE_TYPE_NOT_SUPPORTED) &&
           INTEL_DEBUG(DEBUG_SPARSE))
-         fprintf(stderr, "=== [%s:%d] [%s]\n", __FILE__, __LINE__, __func__);
+         mesa_logi("=== [%s:%d] [%s]\n", __FILE__, __LINE__, __func__);
 
       *pSparseMemoryRequirementCount = 0;
       return;
@@ -2810,7 +2810,7 @@ void anv_GetDeviceImageSparseMemoryRequirements(
    if (!anv_sparse_residency_is_enabled(device)) {
       if ((device->physical->sparse_type == ANV_SPARSE_TYPE_NOT_SUPPORTED) &&
           INTEL_DEBUG(DEBUG_SPARSE))
-         fprintf(stderr, "=== [%s:%d] [%s]\n", __FILE__, __LINE__, __func__);
+         mesa_logi("=== [%s:%d] [%s]\n", __FILE__, __LINE__, __func__);
 
       *pSparseMemoryRequirementCount = 0;
       return;
