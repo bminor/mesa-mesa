@@ -1862,6 +1862,8 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
          emit_vop3p_instruction(ctx, instr, aco_opcode::v_pk_add_f16, dst);
       } else if (dst.regClass() == v1) {
          emit_vop2_instruction(ctx, instr, aco_opcode::v_add_f32, dst, true);
+      } else if (dst.regClass() == v2 && ctx->options->gfx_level >= GFX12) {
+         emit_vop2_instruction(ctx, instr, aco_opcode::v_add_f64, dst, true);
       } else if (dst.regClass() == v2) {
          emit_vop3a_instruction(ctx, instr, aco_opcode::v_add_f64_e64, dst);
       } else if (dst.regClass() == s1 && instr->def.bit_size == 16) {
@@ -1894,6 +1896,10 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
             emit_vop2_instruction(ctx, instr, aco_opcode::v_sub_f32, dst, false);
          else
             emit_vop2_instruction(ctx, instr, aco_opcode::v_subrev_f32, dst, true);
+      } else if (dst.regClass() == v2 && ctx->options->gfx_level >= GFX12) {
+         Instruction* add =
+            bld.vop2_e64(aco_opcode::v_add_f64, Definition(dst), src0, as_vgpr(ctx, src1));
+         add->valu().neg[1] = true;
       } else if (dst.regClass() == v2) {
          Instruction* add = bld.vop3(aco_opcode::v_add_f64_e64, Definition(dst), as_vgpr(ctx, src0),
                                      as_vgpr(ctx, src1));
