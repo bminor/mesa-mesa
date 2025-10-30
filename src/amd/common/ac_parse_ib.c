@@ -1971,6 +1971,22 @@ static void parse_vcn_ib(FILE *f, struct ac_ib_parser *ib)
             fprintf(f, "    data = %u\n", data);
             break;
          }
+         case RADEON_VCN_IB_COMMON_OP_RESOLVEINPUTPARAMLAYOUT: {
+            fprintf(f, "%sOP_RESOLVEINPUTPARAMLAYOUT%s\n", O_COLOR_CYAN, O_COLOR_RESET);
+            uint32_t type = ac_ib_get(ib);
+            fprintf(f, "    map type = %u\n", type);
+            uint32_t width = ac_ib_get(ib);
+            fprintf(f, "    map width = %u\n", width);
+            uint32_t height = ac_ib_get(ib);
+            fprintf(f, "    map height = %u\n", height);
+            print_vcn_addr(f, ib, "    input");
+            uint32_t pitch = ac_ib_get(ib);
+            fprintf(f, "    input pitch = %u\n", pitch);
+            uint32_t swizzle = ac_ib_get(ib);
+            fprintf(f, "    input swizzle = %u\n", swizzle);
+            print_vcn_addr(f, ib, "    output");
+            break;
+         }
          case RDECODE_IB_PARAM_DECODE_BUFFER: {
             fprintf(f, "%sDECODE_BUFFER%s\n", O_COLOR_GREEN, O_COLOR_RESET);
             uint32_t valid = ac_ib_get(ib);
