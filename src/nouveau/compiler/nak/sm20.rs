@@ -7,7 +7,7 @@ use crate::legalize::{
 };
 use crate::sm30_instr_latencies::{
     encode_kepler_shader, instr_exec_latency, instr_latency,
-    KeplerInstructionEncoder,
+    latency_upper_bound, KeplerInstructionEncoder,
 };
 use bitview::*;
 
@@ -102,6 +102,10 @@ impl ShaderModel for ShaderModel20 {
 
     fn paw_latency(&self, _write: &Op, _dst_idx: usize) -> u32 {
         13
+    }
+
+    fn latency_upper_bound(&self) -> u32 {
+        latency_upper_bound()
     }
 
     fn worst_latency(&self, write: &Op, dst_idx: usize) -> u32 {

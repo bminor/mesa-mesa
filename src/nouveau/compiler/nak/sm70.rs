@@ -260,6 +260,18 @@ impl ShaderModel for ShaderModel70 {
         }
     }
 
+    fn latency_upper_bound(&self) -> u32 {
+        if self.is_blackwell() {
+            30
+        } else if self.is_ampere() || self.is_ada() {
+            30
+        } else if self.is_turing() {
+            25
+        } else {
+            15
+        }
+    }
+
     fn worst_latency(&self, write: &Op, dst_idx: usize) -> u32 {
         if self.is_blackwell() {
             SM120Latency::raw(write, dst_idx, None, 0)

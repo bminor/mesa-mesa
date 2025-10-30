@@ -151,6 +151,10 @@ impl ShaderModel for ShaderModel50 {
         13
     }
 
+    fn latency_upper_bound(&self) -> u32 {
+        14
+    }
+
     fn worst_latency(&self, write: &Op, dst_idx: usize) -> u32 {
         instr_latency(self.sm, write, dst_idx)
     }

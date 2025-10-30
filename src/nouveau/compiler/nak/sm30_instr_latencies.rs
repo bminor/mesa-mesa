@@ -26,6 +26,10 @@ pub fn instr_latency(_sm: u8, op: &Op, _dst_idx: usize) -> u32 {
     }
 }
 
+pub fn latency_upper_bound() -> u32 {
+    24
+}
+
 pub fn instr_exec_latency(sm: u8, op: &Op) -> u32 {
     let is_kepler_a = sm == 30;
     match op {
