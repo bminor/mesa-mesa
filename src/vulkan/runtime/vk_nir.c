@@ -164,6 +164,7 @@ vk_spirv_to_nir(struct vk_device *device,
    NIR_PASS(_, nir, nir_lower_returns);
    NIR_PASS(_, nir, nir_inline_functions);
    NIR_PASS(_, nir, nir_copy_prop);
+   NIR_PASS(_, nir, nir_opt_constant_folding);
    NIR_PASS(_, nir, nir_opt_deref);
 
    /* Pick off the single entrypoint that we want */
