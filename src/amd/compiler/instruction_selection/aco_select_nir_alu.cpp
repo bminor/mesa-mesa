@@ -1969,6 +1969,8 @@ visit_alu_instr(isel_context* ctx, nir_alu_instr* instr)
       } else if (dst.regClass() == v1) {
          emit_vop2_instruction(ctx, instr, aco_opcode::v_max_f32, dst, true, false,
                                ctx->block->fp_mode.must_flush_denorms32);
+      } else if (dst.regClass() == v2 && ctx->options->gfx_level >= GFX12) {
+         emit_vop2_instruction(ctx, instr, aco_opcode::v_max_f64, dst, true);
       } else if (dst.regClass() == v2) {
          emit_vop3a_instruction(ctx, instr, aco_opcode::v_max_f64_e64, dst,
                                 ctx->block->fp_mode.must_flush_denorms16_64);
