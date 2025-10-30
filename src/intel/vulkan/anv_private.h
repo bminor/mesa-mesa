@@ -6657,7 +6657,7 @@ anv_image_av1_table_address(const struct anv_image_view *iv,
 }
 
 void
-anv_dump_pipe_bits(enum anv_pipe_bits bits, FILE *f);
+anv_dump_pipe_bits(enum anv_pipe_bits bits, struct log_stream *stream);
 
 void
 anv_cmd_buffer_pending_pipe_debug(struct anv_cmd_buffer *cmd_buffer,

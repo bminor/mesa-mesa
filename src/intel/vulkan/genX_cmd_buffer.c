@@ -76,9 +76,11 @@ convert_pc_to_bits(struct GENX(PIPE_CONTROL) *pc) {
 
 #define anv_debug_dump_pc(pc, reason) \
    if (INTEL_DEBUG(DEBUG_PIPE_CONTROL)) { \
-      fputs("pc : emit PC=( ", stdout); \
-      anv_dump_pipe_bits(convert_pc_to_bits(&(pc)), stdout);   \
-      fprintf(stdout, ") reason: %s\n", reason); \
+      struct log_stream *stream = mesa_log_streami(); \
+      mesa_log_stream_printf(stream, "pc : emit PC=( "); \
+      anv_dump_pipe_bits(convert_pc_to_bits(&(pc)), stream);   \
+      mesa_log_stream_printf(stream, ") reason: %s\n", reason); \
+      mesa_log_stream_destroy(stream); \
    }
 
 static inline void
@@ -1713,9 +1715,11 @@ genX(emit_apply_pipe_flushes)(struct anv_batch *batch,
       bits &= ~ANV_PIPE_NEEDS_END_OF_PIPE_SYNC_BIT;
 
       if (INTEL_DEBUG(DEBUG_PIPE_CONTROL) && bits) {
-         fputs("acc: add ", stdout);
-         anv_dump_pipe_bits(ANV_PIPE_END_OF_PIPE_SYNC_BIT, stdout);
-         fprintf(stdout, "reason: Ensure flushes done before invalidate\n");
+         struct log_stream *stream = mesa_log_streami();
+         mesa_log_stream_printf(stream, "acc: add ");
+         anv_dump_pipe_bits(ANV_PIPE_END_OF_PIPE_SYNC_BIT, stream);
+         mesa_log_stream_printf(stream, "reason: Ensure flushes done before invalidate\n");
+         mesa_log_stream_destroy(stream);
       }
    }
 

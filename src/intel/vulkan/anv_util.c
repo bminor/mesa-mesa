@@ -81,55 +81,59 @@ anv_cmd_buffer_pending_pipe_debug(struct anv_cmd_buffer *cmd_buffer,
    if (bits == 0)
       return;
 
-   fprintf(stdout, "acc: ");
+   struct log_stream *stream = mesa_log_streami();
 
-   fprintf(stdout, "bits: ");
-   anv_dump_pipe_bits(bits, stdout);
-   fprintf(stdout, "reason: %s", reason);
+   mesa_log_stream_printf(stream, "acc: ");
+
+   mesa_log_stream_printf(stream, "bits: ");
+   anv_dump_pipe_bits(bits, stream);
+   mesa_log_stream_printf(stream, "reason: %s", reason);
 
    if (cmd_buffer->batch.pc_reasons_count < ARRAY_SIZE(cmd_buffer->batch.pc_reasons))
       cmd_buffer->batch.pc_reasons[cmd_buffer->batch.pc_reasons_count++] = reason;
-   fprintf(stdout, "\n");
+   mesa_log_stream_printf(stream, "\n");
+
+   mesa_log_stream_destroy(stream);
 }
 
 void
-anv_dump_pipe_bits(enum anv_pipe_bits bits, FILE *f)
+anv_dump_pipe_bits(enum anv_pipe_bits bits, struct log_stream *stream)
 {
    if (bits & ANV_PIPE_DEPTH_CACHE_FLUSH_BIT)
-      fputs("+depth_flush ", f);
+      mesa_log_stream_printf(stream, "+depth_flush ");
    if (bits & ANV_PIPE_DATA_CACHE_FLUSH_BIT)
-      fputs("+dc_flush ", f);
+      mesa_log_stream_printf(stream, "+dc_flush ");
    if (bits & ANV_PIPE_HDC_PIPELINE_FLUSH_BIT)
-      fputs("+hdc_flush ", f);
+      mesa_log_stream_printf(stream, "+hdc_flush ");
    if (bits & ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT)
-      fputs("+rt_flush ", f);
+      mesa_log_stream_printf(stream, "+rt_flush ");
    if (bits & ANV_PIPE_TILE_CACHE_FLUSH_BIT)
-      fputs("+tile_flush ", f);
+      mesa_log_stream_printf(stream, "+tile_flush ");
    if (bits & ANV_PIPE_L3_FABRIC_FLUSH_BIT)
-      fputs("+l3_fabric_flush ", f);
+      mesa_log_stream_printf(stream, "+l3_fabric_flush ");
    if (bits & ANV_PIPE_STATE_CACHE_INVALIDATE_BIT)
-      fputs("+state_inval ", f);
+      mesa_log_stream_printf(stream, "+state_inval ");
    if (bits & ANV_PIPE_CONSTANT_CACHE_INVALIDATE_BIT)
-      fputs("+const_inval ", f);
+      mesa_log_stream_printf(stream, "+const_inval ");
    if (bits & ANV_PIPE_VF_CACHE_INVALIDATE_BIT)
-      fputs("+vf_inval ", f);
+      mesa_log_stream_printf(stream, "+vf_inval ");
    if (bits & ANV_PIPE_TEXTURE_CACHE_INVALIDATE_BIT)
-      fputs("+tex_inval ", f);
+      mesa_log_stream_printf(stream, "+tex_inval ");
    if (bits & ANV_PIPE_INSTRUCTION_CACHE_INVALIDATE_BIT)
-      fputs("+ic_inval ", f);
+      mesa_log_stream_printf(stream, "+ic_inval ");
    if (bits & ANV_PIPE_STALL_AT_SCOREBOARD_BIT)
-      fputs("+pb_stall ", f);
+      mesa_log_stream_printf(stream, "+pb_stall ");
    if (bits & ANV_PIPE_PSS_STALL_SYNC_BIT)
-      fputs("+pss_stall ", f);
+      mesa_log_stream_printf(stream, "+pss_stall ");
    if (bits & ANV_PIPE_DEPTH_STALL_BIT)
-      fputs("+depth_stall ", f);
+      mesa_log_stream_printf(stream, "+depth_stall ");
    if (bits & ANV_PIPE_CS_STALL_BIT ||
        bits & ANV_PIPE_END_OF_PIPE_SYNC_BIT)
-      fputs("+cs_stall ", f);
+      mesa_log_stream_printf(stream, "+cs_stall ");
    if (bits & ANV_PIPE_UNTYPED_DATAPORT_CACHE_FLUSH_BIT)
-      fputs("+utdp_flush ", f);
+      mesa_log_stream_printf(stream, "+utdp_flush ");
    if (bits & ANV_PIPE_CCS_CACHE_FLUSH_BIT)
-      fputs("+ccs_flush ", f);
+      mesa_log_stream_printf(stream, "+ccs_flush ");
 }
 
 const char *
