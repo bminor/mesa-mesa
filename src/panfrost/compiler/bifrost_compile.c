@@ -5095,6 +5095,7 @@ bi_gather_stats(bi_context *ctx, unsigned size, struct bifrost_stats *out)
       .loops = ctx->loop_count,
       .spills = ctx->spills,
       .fills = ctx->fills,
+      .spill_cost = ctx->spill_cost,
    };
 
    out->cycles = MAX2(out->arith, MAX3(out->t, out->v, out->ldst));
@@ -5134,6 +5135,7 @@ va_gather_stats(bi_context *ctx, unsigned size, struct valhall_stats *out)
       .loops = ctx->loop_count,
       .spills = ctx->spills,
       .fills = ctx->fills,
+      .spill_cost = ctx->spill_cost,
    };
    struct valhall_stats stats = stats_abs;
    stats.fma /= model->rates.fma;
@@ -6614,4 +6616,46 @@ bifrost_compile_shader_nir(nir_shader *nir,
    }
 
    info->ubo_mask &= (1 << nir->info.num_ubos) - 1;
+}
+
+bool *
+bi_find_loop_blocks(const bi_context *ctx, bi_block *header)
+{
+   /* A block is in the loop if it has the header both as the predecessor and
+    * the successor. */
+
+   bool *h_as_suc = (bool *)calloc(ctx->num_blocks, sizeof(bool));
+   bool *h_as_pred = (bool *)calloc(ctx->num_blocks, sizeof(bool));
+   h_as_suc[header->index] = true;
+   h_as_pred[header->index] = true;
+
+   /* If the CFG was one long chain, we would require |blocks|-1 iters to
+    * propagate the in_loop info all the way through.
+    */
+   for (uint32_t iter = 0; iter < ctx->num_blocks - 1; ++iter) {
+      bi_foreach_block(ctx, block) {
+
+         bi_foreach_successor(block, succ) {
+            if (h_as_suc[succ->index]) {
+               h_as_suc[block->index] = true;
+               break;
+            }
+         }
+
+         bi_foreach_predecessor(block, pred) {
+            if (h_as_pred[(*pred)->index]) {
+               h_as_pred[block->index] = true;
+               break;
+            }
+         }
+      }
+   }
+
+   for (uint32_t bidx = 0; bidx < ctx->num_blocks - 1; ++bidx) {
+      h_as_suc[bidx] &= h_as_pred[bidx];
+   }
+
+   free(h_as_pred);
+
+   return h_as_suc;
 }

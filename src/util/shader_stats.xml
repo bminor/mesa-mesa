@@ -65,6 +65,7 @@
         <stat name="Loops">Number of hardware loops</stat>
         <stat name="Spills">Number of spill instructions</stat>
         <stat name="Fills">Number of fill instructions</stat>
+        <stat name="Spill cost">Cost of spill and fill instructions</stat>
      </isa>
 
      <isa name="Valhall">
@@ -81,6 +82,7 @@
         <stat name="Loops">Number of hardware loops</stat>
         <stat name="Spills">Number of spill instructions</stat>
         <stat name="Fills">Number of fill instructions</stat>
+        <stat name="Spill cost">Cost of spill and fill instructions</stat>
      </isa>
    </family>
 
