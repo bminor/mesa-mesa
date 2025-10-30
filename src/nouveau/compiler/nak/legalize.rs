@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use crate::api::{GetDebugFlags, DEBUG};
+use crate::const_tracker::ConstTracker;
 use crate::ir::*;
 use crate::liveness::{BlockLiveness, Liveness, SimpleLiveness};
 
@@ -377,12 +378,18 @@ pub trait LegalizeBuildHelpers: SSABuilder {
 
 pub struct LegalizeBuilder<'a> {
     b: SSAInstrBuilder<'a>,
+    const_tracker: &'a mut ConstTracker,
 }
 
 impl<'a> LegalizeBuilder<'a> {
-    fn new(sm: &'a dyn ShaderModel, alloc: &'a mut SSAValueAllocator) -> Self {
+    fn new(
+        sm: &'a dyn ShaderModel,
+        alloc: &'a mut SSAValueAllocator,
+        const_tracker: &'a mut ConstTracker,
+    ) -> Self {
         LegalizeBuilder {
             b: SSAInstrBuilder::new(sm, alloc),
+            const_tracker,
         }
     }
 
@@ -403,6 +410,17 @@ impl<'a> Builder for LegalizeBuilder<'a> {
 
     fn sm(&self) -> u8 {
         self.b.sm()
+    }
+
+    fn copy_to(&mut self, dst: Dst, mut src: Src) {
+        if let Some(ssa_ref) = src.as_ssa() {
+            if let &[ssa_value] = &ssa_ref[..] {
+                if let Some(new_src) = self.const_tracker.get(&ssa_value) {
+                    src = new_src.clone().into();
+                }
+            }
+        };
+        self.b.copy_to(dst, src);
     }
 }
 
@@ -558,6 +576,7 @@ impl Shader<'_> {
         for f in &mut self.functions {
             let live = SimpleLiveness::for_function(f);
             let mut pinned: FxHashSet<_> = Default::default();
+            let mut const_tracker = ConstTracker::new();
 
             for (bi, b) in f.blocks.iter_mut().enumerate() {
                 let bl = live.block_live(bi);
@@ -565,13 +584,23 @@ impl Shader<'_> {
 
                 let mut instrs = Vec::new();
                 for (ip, mut instr) in b.instrs.drain(..).enumerate() {
-                    if let Op::Pin(pin) = &instr.op {
-                        if let Dst::SSA(ssa) = &pin.dst {
-                            pinned.insert(ssa.clone());
+                    match &instr.op {
+                        Op::Pin(pin) => {
+                            if let Dst::SSA(ssa) = &pin.dst {
+                                pinned.insert(ssa.clone());
+                            }
                         }
+                        Op::Copy(copy) => {
+                            const_tracker.add_copy(copy);
+                        }
+                        _ => (),
                     }
 
-                    let mut b = LegalizeBuilder::new(sm, &mut f.ssa_alloc);
+                    let mut b = LegalizeBuilder::new(
+                        sm,
+                        &mut f.ssa_alloc,
+                        &mut const_tracker,
+                    );
                     legalize_instr(sm, &mut b, bl, bu, &pinned, ip, &mut instr);
                     b.push_instr(instr);
                     instrs.append(&mut b.into_vec());
