@@ -3154,9 +3154,28 @@ d3d12_video_encoder_get_slice_bitstream_data(struct pipe_video_codec *codec,
             pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pSubregionBitstreamsBaseOffsets[slice_idx]);
 
          uint64_t nal_placing_offset = pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppResolvedSubregionOffsets[slice_idx] - nal_byte_size;
+
+         // Buffer size check before buffer_subdata
+         struct pipe_resource *dst_buffer = pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].comp_bit_destinations[slice_idx];
+         if (dst_buffer->width0 < (nal_placing_offset + nal_byte_size)) {
+            assert (false);
+            debug_printf("Error: d3d12_video_encoder_get_slice_bitstream_data buffer_subdata would overflow destination buffer. "
+                        "Buffer size: %u, required: %" PRIu64 " (offset: %" PRIu64 " + size: %" PRIu64 ")\n",
+                        dst_buffer->width0, nal_placing_offset + nal_byte_size, nal_placing_offset, nal_byte_size);
+            if (codec_unit_metadata_count) {
+               *codec_unit_metadata_count = 1u;
+               if (codec_unit_metadata) {
+                  codec_unit_metadata[0].flags = PIPE_VIDEO_CODEC_UNIT_LOCATION_FLAG_MAX_SLICE_SIZE_OVERFLOW;
+                  codec_unit_metadata[0].size = 0;
+                  codec_unit_metadata[0].offset = 0;
+               }
+            }
+            return;
+         }
+
          // We upload it here since for single buffer case, we don't know the exact absolute ppSubregionOffsets of the slice in the buffer until slice fence is signaled
          pD3D12Enc->base.context->buffer_subdata(pD3D12Enc->base.context,                                                                                            // context
-                                                 pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].comp_bit_destinations[slice_idx],                        // dst buffer
+                                                 dst_buffer,                                                                                                         // dst buffer
                                                  PIPE_MAP_WRITE,                                                                                                     // usage PIPE_MAP_x
                                                  static_cast<unsigned int>(nal_placing_offset),                                                                      // offset
                                                  static_cast<unsigned int>(nal_byte_size),                                                                           // src size
@@ -3179,6 +3198,27 @@ d3d12_video_encoder_get_slice_bitstream_data(struct pipe_video_codec *codec,
                                                          &pUploadGPUCompletionFence,
                                                          NULL);
       }
+   }
+
+   // Buffer size check for resolved subregion
+   uint64_t subregion_end_offset = pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppResolvedSubregionOffsets[slice_idx] +
+                                   pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppResolvedSubregionSizes[slice_idx];
+   if (pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].comp_bit_destinations[slice_idx]->width0 < subregion_end_offset) {
+      debug_printf("Error: d3d12_video_encoder_get_slice_bitstream_data resolved subregion extends beyond buffer boundary. "
+                  "Buffer size: %u, subregion end offset: %" PRIu64 " (offset: %" PRIu64 " + size: %" PRIu64 ")\n",
+                  pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].comp_bit_destinations[slice_idx]->width0,
+                  subregion_end_offset,
+                  pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppResolvedSubregionOffsets[slice_idx],
+                  pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].ppResolvedSubregionSizes[slice_idx]);
+      if (codec_unit_metadata_count) {
+         *codec_unit_metadata_count = 1u;
+         if (codec_unit_metadata) {
+            codec_unit_metadata[0].flags = PIPE_VIDEO_CODEC_UNIT_LOCATION_FLAG_MAX_SLICE_SIZE_OVERFLOW;
+            codec_unit_metadata[0].size = 0;
+            codec_unit_metadata[0].offset = 0;
+         }
+      }
+      return;
    }
 
    *codec_unit_metadata_count = 1u; // one slice
@@ -4887,13 +4927,29 @@ d3d12_video_encoder_extract_encode_metadata(
                                                       sliceIdx,
                                                       NULL /*get count in first call*/,
                                                       &codec_unit_metadata_count);
-         assert(codec_unit_metadata_count > 0);
+
+         if (codec_unit_metadata_count == 0) {
+            assert(false);
+            debug_printf("Error: d3d12_video_encoder_extract_encode_metadata slice %u has zero codec units\n", sliceIdx);
+            pResolvedMetadataBuffer->Unmap(0, nullptr);
+            return false;
+         }
+
          slice_codec_units.resize(codec_unit_metadata_count);
          d3d12_video_encoder_get_slice_bitstream_data(&pD3D12Enc->base,
                                                       feedback,
                                                       sliceIdx,
                                                       slice_codec_units.data(),
                                                       &codec_unit_metadata_count);
+
+         // Check for slice size overflow flag
+         for (unsigned unit_idx = 0; unit_idx < codec_unit_metadata_count; unit_idx++) {
+            if (slice_codec_units[unit_idx].flags & PIPE_VIDEO_CODEC_UNIT_LOCATION_FLAG_MAX_SLICE_SIZE_OVERFLOW) {
+               debug_printf("Error: d3d12_video_encoder_extract_encode_metadata slice %u unit %u has size overflow flag set\n", sliceIdx, unit_idx);
+               pResolvedMetadataBuffer->Unmap(0, nullptr);
+               return false;
+            }
+         }
 
          // In some cases the slice buffer will contain packed codec units like SPS, PPS for H264, etc
          // In here we only want the slice NAL, and it's safe to assume this is always the latest NAL
