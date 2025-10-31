@@ -258,8 +258,6 @@ radv-navi21-vkcts:
   variables:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 30
     RADV_PERFTEST: transfer_queue,hic
-    # FIXME: GPU hangs
-    RADV_DEBUG: novideo
 
 radv-vangogh-vkcts:
   parallel: 2
@@ -313,8 +311,7 @@ radv-navi31-vkcts:
     - .navi31-test-valve
     - .radv-valve-rules
   variables:
-    # FIXME: Random GPU hangs on VCN
-    RADV_DEBUG: nomeshshader,novideo # Disable mesh shaders until task shaders stop hanging
+    RADV_DEBUG: nomeshshader # Disable mesh shaders until task shaders stop hanging
     RADV_PERFTEST: transfer_queue,hic
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 20
 
