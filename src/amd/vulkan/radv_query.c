@@ -2379,8 +2379,9 @@ radv_GetQueryPoolResults(VkDevice _device, VkQueryPool queryPool, uint32_t first
          break;
       }
       case VK_QUERY_TYPE_VIDEO_ENCODE_FEEDBACK_KHR: {
+         const bool write_memory = radv_video_write_memory_supported(pdev) == RADV_VIDEO_WRITE_MEMORY_SUPPORT_FULL;
          uint32_t *src32 = (uint32_t *)src;
-         uint32_t ready_idx = radv_video_write_memory_supported(pdev) ? RADV_ENC_FEEDBACK_STATUS_IDX : 1;
+         uint32_t ready_idx = write_memory ? RADV_ENC_FEEDBACK_STATUS_IDX : 1;
          uint32_t value;
          do {
             value = p_atomic_read(&src32[ready_idx]);
