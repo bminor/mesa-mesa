@@ -2113,7 +2113,7 @@ void anv_GetPhysicalDeviceSparseImageFormatProperties2(
 
    if (physical_device->sparse_type == ANV_SPARSE_TYPE_NOT_SUPPORTED) {
       if (INTEL_DEBUG(DEBUG_SPARSE))
-         mesa_logi("=== [%s:%d] [%s]\n", __FILE__, __LINE__, __func__);
+         fprintf(stderr, "=== [%s:%d] [%s]\n", __FILE__, __LINE__, __func__);
       return;
    }
 
