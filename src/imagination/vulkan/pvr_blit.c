@@ -1653,7 +1653,7 @@ static VkResult pvr_clear_color_attachment_static(
                                  USC_MRT_RESOURCE_TYPE_MEMORY;
    const struct pvr_pds_clear_attachment_program_info *clear_attachment_program;
    struct pvr_pds_pixel_shader_sa_program texture_program;
-   uint32_t pds_state[PVR_STATIC_CLEAR_PDS_STATE_COUNT];
+   uint32_t pds_state[PVR_PDS_STATE_LENGTH];
    struct pvr_suballoc_bo *pds_texture_program_bo;
    struct pvr_static_clear_ppp_template template;
    struct pvr_suballoc_bo *const_shareds_buffer;

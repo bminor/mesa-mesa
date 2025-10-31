@@ -35,14 +35,6 @@
 #define PVR_CLEAR_VERTEX_COUNT 4
 #define PVR_CLEAR_VERTEX_COORDINATES 3
 
-#define PVR_STATIC_CLEAR_PDS_STATE_COUNT          \
-   (pvr_cmd_length(TA_STATE_PDS_SHADERBASE) +     \
-    pvr_cmd_length(TA_STATE_PDS_TEXUNICODEBASE) + \
-    pvr_cmd_length(TA_STATE_PDS_SIZEINFO1) +      \
-    pvr_cmd_length(TA_STATE_PDS_SIZEINFO2) +      \
-    pvr_cmd_length(TA_STATE_PDS_VARYINGBASE) +    \
-    pvr_cmd_length(TA_STATE_PDS_TEXTUREDATABASE))
-
 /* These can be used as offsets within a PVR_STATIC_CLEAR_PDS_STATE_COUNT dwords
  * sized array to get the respective state word.
  *
@@ -61,6 +53,8 @@ enum pvr_static_clear_ppp_pds_state_type {
    /* Word enabled by pres_pds_state_ptr2. */
    PVR_STATIC_CLEAR_PPP_PDS_TYPE_TEXTUREDATABASE = 5,
 };
+
+#define PVR_PDS_STATE_LENGTH (PVR_STATIC_CLEAR_PPP_PDS_TYPE_TEXTUREDATABASE + 1)
 
 #define PVR_STATIC_CLEAR_VARIANT_COUNT (VK_IMAGE_ASPECT_STENCIL_BIT << 1U)
 
@@ -97,7 +91,7 @@ struct pvr_static_clear_ppp_template {
        * Note: this is a pointer to an array of const uint32_t and not an array
        * of pointers or a function pointer.
        */
-      const uint32_t (*pds_state)[PVR_STATIC_CLEAR_PDS_STATE_COUNT];
+      const uint32_t (*pds_state)[PVR_PDS_STATE_LENGTH];
 
       struct ROGUE_TA_REGION_CLIP0 region_clip0;
       struct ROGUE_TA_REGION_CLIP1 region_clip1;
