@@ -196,7 +196,6 @@ memory_range_merge(struct anv_image_memory_range *a,
       return;
 
    assert(a->offset == 0);
-   assert(util_is_aligned(a->offset, a->alignment));
    assert(util_is_aligned(b.offset, b.alignment));
 
    a->alignment = MAX2(a->alignment, b.alignment);
