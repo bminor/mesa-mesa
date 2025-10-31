@@ -356,7 +356,7 @@ lvp_ray_traversal_state_init(nir_function_impl *impl, struct lvp_ray_traversal_s
    state->current_node = nir_local_variable_create(impl, glsl_uint_type(), "traversal.current_node");
    state->stack_base = nir_local_variable_create(impl, glsl_uint_type(), "traversal.stack_base");
    state->stack_ptr = nir_local_variable_create(impl, glsl_uint_type(), "traversal.stack_ptr");
-   state->stack = nir_local_variable_create(impl, glsl_array_type(glsl_uint_type(), 24 * 2, 0), "traversal.stack");
+   state->stack = nir_local_variable_create(impl, glsl_array_type(glsl_uint_type(), LVP_MAX_TLAS_DEPTH + LVP_MAX_BLAS_DEPTH, 0), "traversal.stack");
    state->hit = nir_local_variable_create(impl, glsl_bool_type(), "traversal.hit");
 
    state->instance_addr = nir_local_variable_create(impl, glsl_uint64_t_type(), "traversal.instance_addr");
