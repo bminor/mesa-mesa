@@ -634,7 +634,7 @@ calculate_local_next_use(struct spill_ctx *ctx, struct util_dynarray *out)
    struct spill_block *sb = spill_block(ctx, ctx->block);
    unsigned ip = sb->cycles;
 
-   util_dynarray_init(out, NULL);
+   *out = UTIL_DYNARRAY_INIT;
 
    struct next_uses nu;
    init_next_uses(&nu, NULL);

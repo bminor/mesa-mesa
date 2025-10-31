@@ -615,8 +615,7 @@ find_regs(struct ra_ctx *rctx, agx_instr *I, unsigned dest_idx, unsigned count,
       assert(!rctx->early_killed && "no live range splits with early kill");
       assert(cls == RA_GPR && "no memory live range splits");
 
-      struct util_dynarray copies = {0};
-      util_dynarray_init(&copies, NULL);
+      struct util_dynarray copies = UTIL_DYNARRAY_INIT;
 
       reg = assign_regs_by_copying(rctx, I->dest[dest_idx], I, &copies);
 

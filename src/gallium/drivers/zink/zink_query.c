@@ -525,7 +525,7 @@ zink_create_query(struct pipe_context *pctx,
    if (query->vkqtype == -1)
       return NULL;
 
-   util_dynarray_init(&query->starts, NULL);
+   query->starts = UTIL_DYNARRAY_INIT;
 
    assert(!query->precise || query->vkqtype == VK_QUERY_TYPE_OCCLUSION);
 

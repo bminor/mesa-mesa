@@ -728,8 +728,8 @@ ethosu_emit_cmdstream(struct ethosu_subgraph *subgraph)
    struct util_dynarray outstanding_dma_ops;
    struct util_dynarray outstanding_npu_ops;
 
-   util_dynarray_init(&outstanding_dma_ops, NULL);
-   util_dynarray_init(&outstanding_npu_ops, NULL);
+   outstanding_dma_ops = UTIL_DYNARRAY_INIT;
+   outstanding_npu_ops = UTIL_DYNARRAY_INIT;
 
    subgraph->cmdstream_used = 32;
    subgraph->cmdstream = calloc(subgraph->cmdstream_used, sizeof(*subgraph->cmdstream));

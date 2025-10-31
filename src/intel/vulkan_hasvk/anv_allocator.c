@@ -1211,7 +1211,7 @@ anv_state_stream_init(struct anv_state_stream *stream,
     */
    stream->next = block_size;
 
-   util_dynarray_init(&stream->all_blocks, NULL);
+   stream->all_blocks = UTIL_DYNARRAY_INIT;
 
    VG(VALGRIND_CREATE_MEMPOOL(stream, 0, false));
 }

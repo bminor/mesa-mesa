@@ -106,7 +106,7 @@ hk_create_cmd_buffer(struct vk_command_pool *vk_pool,
       return result;
    }
 
-   util_dynarray_init(&cmd->large_bos, NULL);
+   cmd->large_bos = UTIL_DYNARRAY_INIT;
 
    cmd->vk.dynamic_graphics_state.vi = &cmd->state.gfx._dynamic_vi;
    cmd->vk.dynamic_graphics_state.ms.sample_locations =
@@ -831,8 +831,8 @@ hk_cs_init_graphics(struct hk_cmd_buffer *cmd, struct hk_cs *cs)
    agx_ppp_fini(&map, &ppp);
    cs->current = map;
 
-   util_dynarray_init(&cs->scissor, NULL);
-   util_dynarray_init(&cs->depth_bias, NULL);
+   cs->scissor = UTIL_DYNARRAY_INIT;
+   cs->depth_bias = UTIL_DYNARRAY_INIT;
 
    /* All graphics state must be reemited in each control stream */
    hk_cmd_buffer_dirty_all(cmd);

@@ -89,7 +89,7 @@ get_cmd_buffer(struct tu_device *dev, struct tu_cmd_buffer **cmd_buffer_out)
 VkResult
 tu_init_dynamic_rendering(struct tu_device *dev)
 {
-   util_dynarray_init(&dev->dynamic_rendering_pending, NULL);
+   dev->dynamic_rendering_pending = UTIL_DYNARRAY_INIT;
    dev->dynamic_rendering_fence = 0;
 
    const VkCommandPoolCreateInfo create_info = {

@@ -435,8 +435,8 @@ hk_CreateDevice(VkPhysicalDevice physicalDevice,
    agx_scratch_init(&dev->dev, &dev->scratch.cs);
 
    u_rwlock_init(&dev->external_bos.lock);
-   util_dynarray_init(&dev->external_bos.counts, NULL);
-   util_dynarray_init(&dev->external_bos.list, NULL);
+   dev->external_bos.counts = UTIL_DYNARRAY_INIT;
+   dev->external_bos.list = UTIL_DYNARRAY_INIT;
 
    return VK_SUCCESS;
 

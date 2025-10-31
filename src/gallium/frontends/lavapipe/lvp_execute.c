@@ -5395,8 +5395,8 @@ VkResult lvp_execute_cmds(struct lvp_device *device,
    state->min_samples_dirty = true;
    state->sample_mask = UINT32_MAX;
    state->poison_mem = device->poison_mem;
-   util_dynarray_init(&state->push_desc_sets, NULL);
-   util_dynarray_init(&state->releasebufs, NULL);
+   state->push_desc_sets = UTIL_DYNARRAY_INIT;
+   state->releasebufs = UTIL_DYNARRAY_INIT;
 
    /* default values */
    state->min_sample_shading = 1;

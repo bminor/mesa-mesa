@@ -100,7 +100,7 @@ compile_operation(struct rkt_ml_subgraph *subgraph,
    regcfgs = calloc(num_tasks, sizeof(struct util_dynarray));
 
    for (int i = 0; i < num_tasks; i++) {
-      util_dynarray_init(&regcfgs[i], NULL);
+      regcfgs[i] = UTIL_DYNARRAY_INIT;
       rkt_fill_regcmd(subgraph, operation, &regcfgs[i], i);
 
       unsigned size =
@@ -168,7 +168,7 @@ lower_convolution(struct rkt_ml_subgraph *subgraph,
                   const struct pipe_ml_operation *poperation,
                   struct rkt_operation *operation)
 {
-   util_dynarray_init(&operation->tasks, NULL);
+   operation->tasks = UTIL_DYNARRAY_INIT;
 
    operation->depthwise = rkt_is_depthwise(poperation);
    operation->padding_same = poperation->conv.padding_same;
@@ -307,8 +307,8 @@ rkt_ml_subgraph_create(struct pipe_context *pcontext,
    subgraph->base.context = pcontext;
 
    tensor_count = count_tensors(poperations, count);
-   util_dynarray_init(&subgraph->tensors, NULL);
-   util_dynarray_init(&subgraph->operations, NULL);
+   subgraph->tensors = UTIL_DYNARRAY_INIT;
+   subgraph->operations = UTIL_DYNARRAY_INIT;
    if (!util_dynarray_resize(&subgraph->tensors, struct pipe_resource *,
                              tensor_count))
       return NULL;
@@ -473,8 +473,7 @@ rkt_ml_subgraph_invoke(struct pipe_context *pcontext,
 
    DBG("Submitting graph\n");
 
-   struct util_dynarray jobs = {0};
-   util_dynarray_init(&jobs, NULL);
+   struct util_dynarray jobs = UTIL_DYNARRAY_INIT;
 
    util_dynarray_foreach (&subgraph->operations, struct rkt_operation,
                           operation) {

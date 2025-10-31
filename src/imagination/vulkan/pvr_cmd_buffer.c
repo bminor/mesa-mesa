@@ -237,10 +237,10 @@ static VkResult pvr_cmd_buffer_create(struct pvr_device *device,
 
    cmd_buffer->device = device;
 
-   util_dynarray_init(&cmd_buffer->depth_bias_array, NULL);
-   util_dynarray_init(&cmd_buffer->scissor_array, NULL);
-   util_dynarray_init(&cmd_buffer->deferred_csb_commands, NULL);
-   util_dynarray_init(&cmd_buffer->deferred_clears, NULL);
+   cmd_buffer->depth_bias_array = UTIL_DYNARRAY_INIT;
+   cmd_buffer->scissor_array = UTIL_DYNARRAY_INIT;
+   cmd_buffer->deferred_csb_commands = UTIL_DYNARRAY_INIT;
+   cmd_buffer->deferred_clears = UTIL_DYNARRAY_INIT;
 
    list_inithead(&cmd_buffer->sub_cmds);
    list_inithead(&cmd_buffer->bo_list);
@@ -2681,7 +2681,7 @@ VkResult pvr_cmd_buffer_start_sub_cmd(struct pvr_cmd_buffer *cmd_buffer,
                       &sub_cmd->gfx.control_stream);
       }
 
-      util_dynarray_init(&sub_cmd->gfx.sec_query_indices, NULL);
+      sub_cmd->gfx.sec_query_indices = UTIL_DYNARRAY_INIT;
       break;
 
    case PVR_SUB_CMD_TYPE_QUERY:
@@ -3664,7 +3664,7 @@ VkResult pvr_BeginCommandBuffer(VkCommandBuffer commandBuffer,
       state->dirty.isp_userpass = true;
    }
 
-   util_dynarray_init(&state->query_indices, NULL);
+   state->query_indices = UTIL_DYNARRAY_INIT;
 
    memset(state->barriers_needed,
           0xFF,

@@ -209,7 +209,7 @@ kk_CreateDevice(VkPhysicalDevice physicalDevice,
       goto fail_sampler_heap;
 
    simple_mtx_init(&dev->user_heap_cache.mutex, mtx_plain);
-   util_dynarray_init(&dev->user_heap_cache.handles, NULL);
+   dev->user_heap_cache.handles = UTIL_DYNARRAY_INIT;
 
    *pDevice = kk_device_to_handle(dev);
 

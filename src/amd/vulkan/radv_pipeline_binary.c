@@ -376,7 +376,7 @@ radv_CreatePipelineBinariesKHR(VkDevice _device, const VkPipelineBinaryCreateInf
    for (uint32_t i = 0; i < pBinaries->pipelineBinaryCount; i++)
       pBinaries->pPipelineBinaries[i] = VK_NULL_HANDLE;
 
-   util_dynarray_init(&pipeline_binaries, NULL);
+   pipeline_binaries = UTIL_DYNARRAY_INIT;
 
    /* Get all pipeline binaries from the pCreateInfo first to simplify the creation. */
    result = radv_create_pipeline_binaries(device, pCreateInfo, pAllocator, &pipeline_binaries, NULL);

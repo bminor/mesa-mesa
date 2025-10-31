@@ -31,7 +31,7 @@ class PackFormats : public testing::Test {
  protected:
    PackFormats()
    {
-      util_dynarray_init(&result, NULL);
+      result = UTIL_DYNARRAY_INIT;
    }
    ~PackFormats()
    {

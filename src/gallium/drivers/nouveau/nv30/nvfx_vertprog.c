@@ -989,7 +989,7 @@ _nvfx_vertprog_translate(uint16_t oclass, struct nv30_vertprog *vp)
       vpc->cvtx_idx = vpc->hpos_idx;
    }
 
-   util_dynarray_init(&insns, NULL);
+   insns = UTIL_DYNARRAY_INIT;
 
    tgsi_parse_init(&parse, vp->pipe.tokens);
    while (!tgsi_parse_end_of_tokens(&parse)) {

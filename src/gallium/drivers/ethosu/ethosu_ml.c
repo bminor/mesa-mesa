@@ -204,8 +204,8 @@ ethosu_ml_subgraph_create(struct pipe_context *pcontext,
    subgraph = calloc(1, sizeof(*subgraph));
    subgraph->base.context = pcontext;
 
-   util_dynarray_init(&subgraph->tensors, NULL);
-   util_dynarray_init(&subgraph->operations, NULL);
+   subgraph->tensors = UTIL_DYNARRAY_INIT;
+   subgraph->operations = UTIL_DYNARRAY_INIT;
 
    ethosu_lower_graph(subgraph, poperations, count);
 

@@ -519,7 +519,7 @@ nir_opt_reassociate(nir_shader *nir, nir_reassociate_options opts)
    /* Clear pass flags. All instructions are possible roots, a priori. Interior
     * nodes are indicated with a non-zero pass flags, set as we go.
     */
-   util_dynarray_init(&chains, NULL);
+   chains = UTIL_DYNARRAY_INIT;
    nir_shader_clear_pass_flags(nir);
 
    /* We use nir_def indices, which are function-local, so the algorithm runs on

@@ -393,7 +393,7 @@ lvp_flatten_as(const struct vk_ir_header *header, const struct vk_ir_box_node *i
    /* Select the subtrees that have to be rebuilt in order to
     * limit the BVH to a supported depth.
     */
-   util_dynarray_init(&subtrees, NULL);
+   subtrees = UTIL_DYNARRAY_INIT;
    uint32_t max_subtree_size = 0;
    lvp_select_subtrees_to_flatten(header, ir_box_nodes, node_depth, child_counts,
                                   root_offset, header->ir_internal_node_count - 1,

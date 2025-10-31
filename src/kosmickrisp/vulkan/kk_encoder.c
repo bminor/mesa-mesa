@@ -21,7 +21,7 @@ kk_encoder_start_internal(struct kk_encoder_internal *encoder,
 {
    encoder->cmd_buffer = mtl_new_command_buffer(queue);
    encoder->last_used = KK_ENC_NONE;
-   util_dynarray_init(&encoder->fences, NULL);
+   encoder->fences = UTIL_DYNARRAY_INIT;
 }
 
 VkResult
@@ -38,9 +38,9 @@ kk_encoder_init(mtl_device *device, struct kk_queue *queue,
    kk_encoder_start_internal(&enc->main, device, queue->main.mtl_handle);
    kk_encoder_start_internal(&enc->pre_gfx, device, queue->pre_gfx.mtl_handle);
    enc->event = mtl_new_event(device);
-   util_dynarray_init(&enc->imm_writes, NULL);
-   util_dynarray_init(&enc->resident_buffers, NULL);
-   util_dynarray_init(&enc->copy_query_pool_result_infos, NULL);
+   enc->imm_writes = UTIL_DYNARRAY_INIT;
+   enc->resident_buffers = UTIL_DYNARRAY_INIT;
+   enc->copy_query_pool_result_infos = UTIL_DYNARRAY_INIT;
 
    *encoder = enc;
    return VK_SUCCESS;

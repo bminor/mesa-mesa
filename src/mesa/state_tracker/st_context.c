@@ -769,7 +769,7 @@ st_create_context_priv(struct gl_context *ctx, struct pipe_context *pipe,
    list_inithead(&st->zombie_shaders.list.node);
    simple_mtx_init(&st->zombie_shaders.mutex, mtx_plain);
 
-   util_dynarray_init(&st->release_resources, NULL);
+   st->release_resources = UTIL_DYNARRAY_INIT;
 
    ctx->Const.DriverSupportedPrimMask = screen->caps.supported_prim_modes |
                                         /* patches is always supported */

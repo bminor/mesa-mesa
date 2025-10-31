@@ -306,8 +306,8 @@ panvk_per_arch(cmd_open_batch)(struct panvk_cmd_buffer *cmdbuf)
    cmdbuf->cur_batch =
       vk_zalloc(&cmdbuf->vk.pool->alloc, sizeof(*cmdbuf->cur_batch), 8,
                 VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
-   util_dynarray_init(&cmdbuf->cur_batch->jobs, NULL);
-   util_dynarray_init(&cmdbuf->cur_batch->event_ops, NULL);
+   cmdbuf->cur_batch->jobs = UTIL_DYNARRAY_INIT;
+   cmdbuf->cur_batch->event_ops = UTIL_DYNARRAY_INIT;
    assert(cmdbuf->cur_batch);
    return cmdbuf->cur_batch;
 }

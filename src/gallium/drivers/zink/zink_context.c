@@ -5765,8 +5765,8 @@ zink_context_create(struct pipe_screen *pscreen, void *priv, unsigned flags)
             mesa_loge("ZINK: failed to allocate ctx->di.bindless[%d].img_infos!",i);
             goto fail;
          }
-         util_dynarray_init(&ctx->di.bindless[i].updates, NULL);
-         util_dynarray_init(&ctx->di.bindless[i].resident, NULL);
+         ctx->di.bindless[i].updates = UTIL_DYNARRAY_INIT;
+         ctx->di.bindless[i].resident = UTIL_DYNARRAY_INIT;
       }
    }
 

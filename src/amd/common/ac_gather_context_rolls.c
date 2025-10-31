@@ -313,7 +313,7 @@ void ac_gather_context_rolls(FILE *f, uint32_t **ibs, uint32_t *ib_dw_sizes, uns
    memset(&ctx, 0, sizeof(ctx));
    ctx.info = info;
    ctx.cur = CALLOC_STRUCT(ac_context_reg_state);
-   util_dynarray_init(&ctx.rolls, NULL);
+   ctx.rolls = UTIL_DYNARRAY_INIT;
 
    /* Parse the IBs. */
    for (unsigned i = 0; i < num_ibs; i++)

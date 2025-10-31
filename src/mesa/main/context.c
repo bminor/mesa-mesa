@@ -1043,7 +1043,7 @@ _mesa_initialize_context(struct gl_context *ctx,
    simple_mtx_lock(&ctx->Shared->Mutex);
    list_addtail(&ctx->SharedLink, &ctx->Shared->Contexts);
    simple_mtx_unlock(&ctx->Shared->Mutex);
-   util_dynarray_init(&ctx->ReleaseResources, NULL);
+   ctx->ReleaseResources = UTIL_DYNARRAY_INIT;
 
    return GL_TRUE;
 

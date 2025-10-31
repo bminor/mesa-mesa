@@ -59,7 +59,7 @@ d3d12_init_batch(struct d3d12_context *ctx, struct d3d12_batch *batch)
    batch->bos = _mesa_hash_table_create(NULL, _mesa_hash_pointer,
                                         _mesa_key_pointer_equal);
 
-   util_dynarray_init(&batch->local_bos, NULL);
+   batch->local_bos = UTIL_DYNARRAY_INIT;
 
    batch->surfaces = _mesa_set_create(NULL, _mesa_hash_pointer,
                                       _mesa_key_pointer_equal);
@@ -89,7 +89,7 @@ d3d12_init_batch(struct d3d12_context *ctx, struct d3d12_batch *batch)
       if (!batch->sampler_tables || !batch->sampler_views || !batch->view_heap || !batch->queries)
          return false;
 
-      util_dynarray_init(&batch->zombie_samplers, NULL);
+      batch->zombie_samplers = UTIL_DYNARRAY_INIT;
 
       batch->sampler_heap =
          d3d12_descriptor_heap_new(screen->dev,

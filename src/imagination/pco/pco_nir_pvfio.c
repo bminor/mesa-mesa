@@ -844,8 +844,8 @@ bool pco_nir_pfo(nir_shader *shader, pco_fs_data *fs)
    state.last_discard_store =
       nir_build_store_reg(&b, nir_imm_false(&b), state.discard_cond_reg);
 
-   util_dynarray_init(&state.loads, NULL);
-   util_dynarray_init(&state.stores, NULL);
+   state.loads = UTIL_DYNARRAY_INIT;
+   state.stores = UTIL_DYNARRAY_INIT;
 
    bool progress = false;
 

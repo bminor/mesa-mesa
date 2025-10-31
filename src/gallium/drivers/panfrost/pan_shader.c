@@ -166,7 +166,7 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
       }
    }
 
-   util_dynarray_init(&out->binary, NULL);
+   out->binary = UTIL_DYNARRAY_INIT;
 
    if (s->info.stage == MESA_SHADER_FRAGMENT) {
       if (key->fs.nr_cbufs_for_fragcolor) {

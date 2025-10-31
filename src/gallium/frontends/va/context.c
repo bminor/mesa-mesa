@@ -372,7 +372,7 @@ vlVaCreateContext(VADriverContextP ctx, VAConfigID config_id, int picture_width,
             context->desc.h264enc.rate_ctrl[i].frame_rate_den = 1;
          }
          context->desc.h264enc.frame_idx = util_hash_table_create_ptr_keys();
-         util_dynarray_init(&context->desc.h264enc.raw_headers, NULL);
+         context->desc.h264enc.raw_headers = UTIL_DYNARRAY_INIT;
       }
       break;
 
@@ -402,7 +402,7 @@ vlVaCreateContext(VADriverContextP ctx, VAConfigID config_id, int picture_width,
             context->desc.h265enc.rc[i].frame_rate_den = 1;
          }
          context->desc.h265enc.frame_idx = util_hash_table_create_ptr_keys();
-         util_dynarray_init(&context->desc.h265enc.raw_headers, NULL);
+         context->desc.h265enc.raw_headers = UTIL_DYNARRAY_INIT;
       }
       break;
 

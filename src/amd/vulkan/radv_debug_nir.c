@@ -22,7 +22,7 @@ radv_printf_data_init(struct radv_device *device)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
-   util_dynarray_init(&device->printf.formats, NULL);
+   device->printf.formats = UTIL_DYNARRAY_INIT;
 
    device->printf.buffer_size = debug_get_num_option("RADV_PRINTF_BUFFER_SIZE", 0);
    if (device->printf.buffer_size < sizeof(struct radv_printf_buffer_header))

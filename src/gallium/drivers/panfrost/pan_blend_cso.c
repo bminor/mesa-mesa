@@ -124,7 +124,7 @@ GENX(pan_blend_get_shader_locked)(struct pan_blend_shader_cache *cache,
 #endif
 
    struct util_dynarray binary;
-   util_dynarray_init(&binary, NULL);
+   binary = UTIL_DYNARRAY_INIT;
    pan_shader_compile(nir, &inputs, &binary, &info);
 
    struct pan_ptr bin =

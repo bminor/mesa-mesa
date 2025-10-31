@@ -151,7 +151,7 @@ radv_init_adress_binding_report(struct radv_device *device)
       return false;
 
    simple_mtx_init(&device->addr_binding_tracker->mtx, mtx_plain);
-   util_dynarray_init(&device->addr_binding_tracker->reports, NULL);
+   device->addr_binding_tracker->reports = UTIL_DYNARRAY_INIT;
 
    VkDebugUtilsMessengerCreateInfoEXT create_info = {
       .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT,

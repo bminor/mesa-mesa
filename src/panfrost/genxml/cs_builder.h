@@ -263,7 +263,7 @@ cs_builder_init(struct cs_builder *b, const struct cs_builder_conf *conf,
     */
    b->conf.nr_kernel_registers = MAX2(b->conf.nr_kernel_registers, 3);
 
-   util_dynarray_init(&b->blocks.instrs, NULL);
+   b->blocks.instrs = UTIL_DYNARRAY_INIT;
 }
 
 static inline bool

@@ -656,7 +656,7 @@ GENX(csf_submit_batch)(struct panfrost_batch *batch)
    uint32_t vm_sync_handle = panthor_kmod_vm_sync_handle(dev->kmod.vm);
    struct util_dynarray syncops;
 
-   util_dynarray_init(&syncops, NULL);
+   syncops = UTIL_DYNARRAY_INIT;
 
    ret = csf_submit_collect_wait_ops(batch, &syncops, vm_sync_handle);
    if (ret)

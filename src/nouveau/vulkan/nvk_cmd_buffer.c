@@ -94,7 +94,7 @@ nvk_create_cmd_buffer(struct vk_command_pool *vk_pool,
    list_inithead(&cmd->owned_mem);
    list_inithead(&cmd->owned_gart_mem);
    list_inithead(&cmd->owned_qmd);
-   util_dynarray_init(&cmd->pushes, NULL);
+   cmd->pushes = UTIL_DYNARRAY_INIT;
 
    cmd->prev_subc = ffs(nvk_cmd_buffer_subchannel_mask(cmd)) - 1;
 

@@ -832,7 +832,7 @@ kopper_present(void *data, void *gdata, int thread_idx)
          return;
       }
 
-      util_dynarray_init(arr, NULL);
+      *arr = UTIL_DYNARRAY_INIT;
       _mesa_hash_table_insert(swapchain->presents, (void*)(uintptr_t)next, arr);
    }
    util_dynarray_append(arr, cpi->sem);

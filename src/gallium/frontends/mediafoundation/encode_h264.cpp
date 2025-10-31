@@ -198,7 +198,7 @@ CDX12EncHMFT::PrepareForEncodeHelper( LPDX12EncodeContext pDX12EncodeContext, bo
    const reference_frames_tracker_frame_descriptor_h264 *cur_frame_desc = nullptr;
    pipe_h264_enc_picture_desc *pPicInfo = &pDX12EncodeContext->encoderPicInfo.h264enc;
    // Initialize raw headers array
-   util_dynarray_init( &pPicInfo->raw_headers, NULL );
+   pPicInfo->raw_headers = UTIL_DYNARRAY_INIT;
 
    uint32_t height_in_blocks = 0;
    uint32_t width_in_blocks = 0;

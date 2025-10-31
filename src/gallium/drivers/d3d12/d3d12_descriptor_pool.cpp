@@ -79,7 +79,7 @@ d3d12_descriptor_heap_new(ID3D12Device *dev,
    heap->cpu_base = GetCPUDescriptorHandleForHeapStart(heap->heap).ptr;
    if (flags & D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE)
       heap->gpu_base = GetGPUDescriptorHandleForHeapStart(heap->heap).ptr;
-   util_dynarray_init(&heap->free_list, NULL);
+   heap->free_list = UTIL_DYNARRAY_INIT;
 
    return heap;
 }

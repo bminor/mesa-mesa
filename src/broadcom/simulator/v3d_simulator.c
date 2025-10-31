@@ -1206,7 +1206,7 @@ v3d_simulator_init_global()
                                         _mesa_hash_pointer,
                                         _mesa_key_pointer_equal);
 
-        util_dynarray_init(&sim_state.bin_oom, NULL);
+        sim_state.bin_oom = UTIL_DYNARRAY_INIT;
 
         v3d_X_simulator(init_regs)(sim_state.v3d);
         v3d_X_simulator(get_perfcnt_total)(&sim_state.perfcnt_total);

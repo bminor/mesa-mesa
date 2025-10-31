@@ -442,8 +442,8 @@ _mesa_free_shared_handles(struct gl_shared_state *shared)
 void
 _mesa_init_texture_handles(struct gl_texture_object *texObj)
 {
-   util_dynarray_init(&texObj->SamplerHandles, NULL);
-   util_dynarray_init(&texObj->ImageHandles, NULL);
+   texObj->SamplerHandles = UTIL_DYNARRAY_INIT;
+   texObj->ImageHandles = UTIL_DYNARRAY_INIT;
 }
 
 void
@@ -504,7 +504,7 @@ _mesa_delete_texture_handles(struct gl_context *ctx,
 void
 _mesa_init_sampler_handles(struct gl_sampler_object *sampObj)
 {
-   util_dynarray_init(&sampObj->Handles, NULL);
+   sampObj->Handles = UTIL_DYNARRAY_INIT;
 }
 
 void

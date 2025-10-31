@@ -218,7 +218,7 @@ static void
 lp_function_cache_init(struct lp_function_cache *cache, struct hash_table *initial_cache)
 {
    p_atomic_set(&cache->latest_cache.value, (uint64_t)(uintptr_t)initial_cache);
-   util_dynarray_init(&cache->trash_caches, NULL);
+   cache->trash_caches = UTIL_DYNARRAY_INIT;
 }
 
 void
@@ -231,7 +231,7 @@ llvmpipe_init_sampler_matrix(struct llvmpipe_context *ctx)
 
    struct lp_sampler_matrix *matrix = &ctx->sampler_matrix;
 
-   util_dynarray_init(&matrix->gallivms, NULL);
+   matrix->gallivms = UTIL_DYNARRAY_INIT;
 
    matrix->ctx = ctx;
 

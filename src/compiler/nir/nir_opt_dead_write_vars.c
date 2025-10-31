@@ -280,8 +280,7 @@ nir_opt_dead_write_vars(nir_shader *shader)
 {
    bool progress = false;
 
-   struct util_dynarray unused_writes;
-   util_dynarray_init(&unused_writes, NULL);
+   struct util_dynarray unused_writes = UTIL_DYNARRAY_INIT;
 
    nir_foreach_function_impl(impl, shader) {
       progress |= remove_dead_write_vars_impl(shader, impl, &unused_writes);

@@ -384,7 +384,7 @@ queue_submit(struct vk_queue *_queue, struct vk_queue_submit *vk_submit)
        vk_submit->image_opaque_bind_count)
       return queue_submit_sparse(_queue, vk_submit);
 
-   util_dynarray_init(&dump_cmds, NULL);
+   dump_cmds = UTIL_DYNARRAY_INIT;
 
    uint32_t perf_pass_index =
       device->perfcntrs_pass_cs_entries ? vk_submit->perf_pass_index : ~0;

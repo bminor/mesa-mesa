@@ -797,7 +797,7 @@ vdrm_vpipe_connect(uint32_t context_type)
    simple_mtx_init(&vtdev->lock, mtx_plain);
 
    util_idalloc_init(&vtdev->bo_idx_allocator, 512);
-   util_dynarray_init(&vtdev->bo_table, NULL);
+   vtdev->bo_table = UTIL_DYNARRAY_INIT;
 
    simple_mtx_lock(&vtdev->lock);
    send_init(vtdev);

@@ -464,8 +464,7 @@ nir_opt_group_loads(nir_shader *shader, nir_load_grouping grouping,
                     unsigned max_distance)
 {
    /* Temporary space for instruction info. */
-   struct util_dynarray infos_scratch;
-   util_dynarray_init(&infos_scratch, NULL);
+   struct util_dynarray infos_scratch = UTIL_DYNARRAY_INIT;
 
    nir_foreach_function_impl(impl, shader) {
       nir_metadata_require(impl, nir_metadata_instr_index);

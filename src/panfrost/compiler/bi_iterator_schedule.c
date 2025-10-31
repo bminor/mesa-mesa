@@ -98,8 +98,7 @@ bi_iterator_schedule(bi_context *ctx)
       }
    }
 
-   struct util_dynarray iterators;
-   util_dynarray_init(&iterators, NULL);
+   struct util_dynarray iterators = UTIL_DYNARRAY_INIT;
    bi_foreach_instr_global(ctx, phi) {
       if (phi->op != BI_OPCODE_PHI || phi->nr_dests != 1)
          continue;

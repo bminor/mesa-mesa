@@ -30,7 +30,7 @@ vk_memory_trace_init(struct vk_device *device, const struct vk_rmv_device_info *
 {
    device->memory_trace_data.device_info = *device_info;
    device->memory_trace_data.is_enabled = true;
-   util_dynarray_init(&device->memory_trace_data.tokens, NULL);
+   device->memory_trace_data.tokens = UTIL_DYNARRAY_INIT;
    simple_mtx_init(&device->memory_trace_data.token_mtx, mtx_plain);
 
    device->memory_trace_data.next_resource_id = 1;

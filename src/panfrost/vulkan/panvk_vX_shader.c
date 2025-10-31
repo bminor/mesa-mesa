@@ -975,8 +975,7 @@ panvk_compile_nir(struct panvk_device *dev, nir_shader *nir,
    const bool dump_asm =
       shader_flags & VK_SHADER_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_MESA;
 
-   struct util_dynarray binary;
-   util_dynarray_init(&binary, NULL);
+   struct util_dynarray binary = UTIL_DYNARRAY_INIT;
    pan_shader_compile(nir, compile_input, &binary, &shader->info);
 
    /* Propagate potential additional FAU values into the panvk info struct. */

@@ -487,7 +487,7 @@ radv_rra_trace_init(struct radv_device *device)
       radv_find_memory_index(pdev, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT |
                                       VK_MEMORY_PROPERTY_HOST_CACHED_BIT);
 
-   util_dynarray_init(&device->rra_trace.ray_history, NULL);
+   device->rra_trace.ray_history = UTIL_DYNARRAY_INIT;
 
    device->rra_trace.ray_history_buffer_size = debug_get_num_option("RADV_RRA_TRACE_HISTORY_SIZE", 100 * 1024 * 1024);
    if (device->rra_trace.ray_history_buffer_size <

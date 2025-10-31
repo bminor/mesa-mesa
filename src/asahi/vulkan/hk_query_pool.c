@@ -167,7 +167,7 @@ hk_queue_write(struct hk_cmd_buffer *cmd, uint64_t address, uint32_t value,
       struct libagx_imm_write imm = {.address = address, .value = value};
 
       if (!cs->imm_writes.data) {
-         util_dynarray_init(&cs->imm_writes, NULL);
+         cs->imm_writes = UTIL_DYNARRAY_INIT;
       }
 
       util_dynarray_append(&cs->imm_writes, imm);

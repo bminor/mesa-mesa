@@ -3787,8 +3787,7 @@ agx_compile_shader_nir(nir_shader *nir, struct agx_shader_key *key,
    agx_compiler_debug = agx_get_compiler_debug();
    struct agx_shader_info *info = &out->info;
 
-   struct util_dynarray binary;
-   util_dynarray_init(&binary, NULL);
+   struct util_dynarray binary = UTIL_DYNARRAY_INIT;
 
    memset(out, 0, sizeof *out);
 

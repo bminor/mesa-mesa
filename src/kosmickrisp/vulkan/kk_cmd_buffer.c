@@ -84,7 +84,7 @@ kk_create_cmd_buffer(struct vk_command_pool *vk_pool,
       return result;
    }
 
-   util_dynarray_init(&cmd->large_bos, NULL);
+   cmd->large_bos = UTIL_DYNARRAY_INIT;
 
    cmd->vk.dynamic_graphics_state.vi = &cmd->state.gfx._dynamic_vi;
    cmd->vk.dynamic_graphics_state.ms.sample_locations =

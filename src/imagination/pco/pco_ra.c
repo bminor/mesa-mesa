@@ -869,8 +869,7 @@ static bool pco_ra_func(pco_func *func, pco_ra_ctx *ctx)
             override ? ra_get_node_reg(ra_graph, override->ref.val)
                      : ra_get_node_reg(ra_graph, instr->dest[0].val);
 
-         struct util_dynarray copies;
-         util_dynarray_init(&copies, NULL);
+         struct util_dynarray copies = UTIL_DYNARRAY_INIT;
 
          unsigned highest_temp = 0;
          unsigned lowest_temp = ~0;

@@ -92,7 +92,7 @@ void pvr_csb_init(struct pvr_device *device,
    csb->status = VK_SUCCESS;
 
    if (stream_type == PVR_CMD_STREAM_TYPE_GRAPHICS_DEFERRED)
-      util_dynarray_init(&csb->deferred_cs_mem, NULL);
+      csb->deferred_cs_mem = UTIL_DYNARRAY_INIT;
    else
       list_inithead(&csb->pvr_bo_list);
 }

@@ -800,7 +800,7 @@ dmabuf_feedback_init(struct dmabuf_feedback *dmabuf_feedback)
    if (dmabuf_feedback_tranche_init(&dmabuf_feedback->pending_tranche) < 0)
       return -1;
 
-   util_dynarray_init(&dmabuf_feedback->tranches, NULL);
+   dmabuf_feedback->tranches = UTIL_DYNARRAY_INIT;
 
    dmabuf_feedback_format_table_init(&dmabuf_feedback->format_table);
 

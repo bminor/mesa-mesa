@@ -225,8 +225,8 @@ bi_create_dependency_graph(struct bi_worklist st, bool inorder, bool is_blend)
    struct util_dynarray last_read[64], last_write[64];
 
    for (unsigned i = 0; i < 64; ++i) {
-      util_dynarray_init(&last_read[i], NULL);
-      util_dynarray_init(&last_write[i], NULL);
+      last_read[i] = UTIL_DYNARRAY_INIT;
+      last_write[i] = UTIL_DYNARRAY_INIT;
    }
 
    /* Initialize dependency graph */

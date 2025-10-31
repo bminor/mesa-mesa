@@ -623,7 +623,7 @@ elk_cfg_t::dump(FILE *file)
     * output, making it possible to use it for certain tests.
     */
    util_dynarray scratch;
-   util_dynarray_init(&scratch, NULL);
+   scratch = UTIL_DYNARRAY_INIT;
 
    foreach_block (block, this) {
       if (idom && idom->parent(block))

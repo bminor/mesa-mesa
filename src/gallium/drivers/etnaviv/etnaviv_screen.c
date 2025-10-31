@@ -1075,7 +1075,7 @@ etna_screen_create(struct etna_device *dev, struct etna_gpu *gpu,
    etna_init_shader_caps(screen);
    etna_init_screen_caps(screen);
 
-   util_dynarray_init(&screen->supported_pm_queries, NULL);
+   screen->supported_pm_queries = UTIL_DYNARRAY_INIT;
    slab_create_parent(&screen->transfer_pool, sizeof(struct etna_transfer), 16);
 
    if (screen->drm_version >= ETNA_DRM_VERSION_PERFMON)

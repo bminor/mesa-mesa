@@ -78,7 +78,7 @@ fd_rd_output_sanitize_name(char *name)
 static void
 fd_rd_parse_dump_range(const char *option_name, struct util_dynarray *range_array)
 {
-   util_dynarray_init(range_array, NULL);
+   *range_array = UTIL_DYNARRAY_INIT;
    const char *range_value = os_get_option(option_name);
    if (!range_value)
       return;

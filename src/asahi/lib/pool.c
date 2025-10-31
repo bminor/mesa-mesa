@@ -36,7 +36,7 @@ agx_pool_init(struct agx_pool *pool, struct agx_device *dev, const char *label,
    pool->dev = dev;
    pool->create_flags = create_flags;
    pool->label = label;
-   util_dynarray_init(&pool->bos, NULL);
+   pool->bos = UTIL_DYNARRAY_INIT;
 
    if (prealloc)
       agx_pool_alloc_backing(pool, POOL_SLAB_SIZE);

@@ -107,8 +107,8 @@ mir_create_dependency_graph(midgard_instruction **instructions, unsigned count,
    struct util_dynarray *last_write = calloc(sizeof(struct util_dynarray), sz);
 
    for (unsigned i = 0; i < sz; ++i) {
-      util_dynarray_init(&last_read[i], NULL);
-      util_dynarray_init(&last_write[i], NULL);
+      last_read[i] = UTIL_DYNARRAY_INIT;
+      last_write[i] = UTIL_DYNARRAY_INIT;
    }
 
    /* Initialize dependency graph */
@@ -1473,8 +1473,7 @@ schedule_block(compiler_context *ctx, midgard_block *block)
          ++num_ldst;
    }
 
-   struct util_dynarray bundles;
-   util_dynarray_init(&bundles, NULL);
+   struct util_dynarray bundles = UTIL_DYNARRAY_INIT;
 
    block->quadword_count = 0;
 

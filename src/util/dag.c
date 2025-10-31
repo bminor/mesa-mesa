@@ -140,8 +140,7 @@ dag_traverse_bottom_up_node(struct dag_node *node,
    if (_mesa_set_search(state->seen, node))
       return;
 
-   struct util_dynarray stack;
-   util_dynarray_init(&stack, NULL);
+   struct util_dynarray stack = UTIL_DYNARRAY_INIT;
 
    do {
       assert(node);

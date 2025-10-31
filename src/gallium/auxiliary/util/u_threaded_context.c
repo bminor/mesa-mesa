@@ -5560,7 +5560,7 @@ threaded_context_create(struct pipe_context *pipe,
       util_queue_fence_init(&tc->batch_slots[i].fence);
       tc->batch_slots[i].renderpass_info_idx = -1;
       if (tc->options.parse_renderpass_info) {
-         util_dynarray_init(&tc->batch_slots[i].renderpass_infos, NULL);
+         tc->batch_slots[i].renderpass_infos = UTIL_DYNARRAY_INIT;
          tc_batch_renderpass_infos_resize(tc, &tc->batch_slots[i]);
       }
    }

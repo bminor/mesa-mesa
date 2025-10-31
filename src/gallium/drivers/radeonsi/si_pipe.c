@@ -788,11 +788,11 @@ static struct pipe_context *si_create_context(struct pipe_screen *screen, unsign
    sctx->tex_handles = _mesa_hash_table_create(NULL, _mesa_hash_pointer, _mesa_key_pointer_equal);
    sctx->img_handles = _mesa_hash_table_create(NULL, _mesa_hash_pointer, _mesa_key_pointer_equal);
 
-   util_dynarray_init(&sctx->resident_tex_handles, NULL);
-   util_dynarray_init(&sctx->resident_img_handles, NULL);
-   util_dynarray_init(&sctx->resident_tex_needs_color_decompress, NULL);
-   util_dynarray_init(&sctx->resident_img_needs_color_decompress, NULL);
-   util_dynarray_init(&sctx->resident_tex_needs_depth_decompress, NULL);
+   sctx->resident_tex_handles = UTIL_DYNARRAY_INIT;
+   sctx->resident_img_handles = UTIL_DYNARRAY_INIT;
+   sctx->resident_tex_needs_color_decompress = UTIL_DYNARRAY_INIT;
+   sctx->resident_img_needs_color_decompress = UTIL_DYNARRAY_INIT;
+   sctx->resident_tex_needs_depth_decompress = UTIL_DYNARRAY_INIT;
 
    sctx->dirty_implicit_resources = _mesa_pointer_hash_table_create(NULL);
    if (!sctx->dirty_implicit_resources) {

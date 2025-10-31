@@ -761,8 +761,7 @@ bool pco_opt_comp_only_vecs(pco_shader *shader)
          bool used_by_noncomps = false;
          pco_ref dest = vec->dest[0];
 
-         struct util_dynarray comps;
-         util_dynarray_init(&comps, NULL);
+         struct util_dynarray comps = UTIL_DYNARRAY_INIT;
 
          pco_foreach_instr_in_func_from (instr, vec) {
             if (instr->op == PCO_OP_COMP) {

@@ -405,7 +405,7 @@ hk_bind_builder(struct hk_device *dev, struct vk_object_base *obj_base,
       .image = image,
    };
 
-   util_dynarray_init(&b.binds, NULL);
+   b.binds = UTIL_DYNARRAY_INIT;
    return b;
 }
 
@@ -810,8 +810,7 @@ queue_submit(struct hk_device *dev, struct hk_queue *queue,
    };
 
    /* Now setup the command structs */
-   struct util_dynarray payload;
-   util_dynarray_init(&payload, NULL);
+   struct util_dynarray payload = UTIL_DYNARRAY_INIT;
 
    unsigned nr_vdm = 0, nr_cdm = 0;
 

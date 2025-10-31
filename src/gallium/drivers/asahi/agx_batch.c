@@ -815,8 +815,7 @@ agx_batch_submit(struct agx_context *ctx, struct agx_batch *batch,
    };
 
    /* Submit! */
-   struct util_dynarray cmdbuf;
-   util_dynarray_init(&cmdbuf, NULL);
+   struct util_dynarray cmdbuf = UTIL_DYNARRAY_INIT;
 
    if (compute) {
       /* Barrier on previous submission */

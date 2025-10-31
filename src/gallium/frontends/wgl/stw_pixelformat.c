@@ -317,7 +317,7 @@ stw_pixelformat_init(void)
 
    assert(!stw_dev->pixelformat_count);
 
-   util_dynarray_init(&stw_dev->pixelformats, NULL);
+   stw_dev->pixelformats = UTIL_DYNARRAY_INIT;
 
    /* normal, displayable formats */
    num_formats = add_color_format_variants(stw_pf_color,

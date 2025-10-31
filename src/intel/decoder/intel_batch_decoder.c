@@ -1584,8 +1584,7 @@ compare_inst_ptr(const void *v1, const void *v2)
 static void
 intel_print_accumulated_instrs(struct intel_batch_decode_ctx *ctx)
 {
-   struct util_dynarray arr;
-   util_dynarray_init(&arr, NULL);
+   struct util_dynarray arr = UTIL_DYNARRAY_INIT;
 
    hash_table_foreach(ctx->commands, entry) {
       struct inst_ptr inst = {
@@ -1886,8 +1885,7 @@ compare_inst_stat(const void *v1, const void *v2)
 void
 intel_batch_print_stats(struct intel_batch_decode_ctx *ctx)
 {
-   struct util_dynarray arr;
-   util_dynarray_init(&arr, NULL);
+   struct util_dynarray arr = UTIL_DYNARRAY_INIT;
 
    hash_table_foreach(ctx->stats, entry) {
       struct inst_stat inst = {

@@ -4209,8 +4209,7 @@ tu_debug_bos_print_stats(struct tu_device *dev)
    mtx_lock(&dev->bo_mutex);
 
    /* Put the HT's sizes data in an array so we can sort by number of allocations. */
-   struct util_dynarray dyn;
-   util_dynarray_init(&dyn, NULL);
+   struct util_dynarray dyn = UTIL_DYNARRAY_INIT;
 
    uint32_t size = 0;
    uint32_t count = 0;

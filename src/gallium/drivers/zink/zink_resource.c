@@ -133,8 +133,7 @@ zink_debug_mem_print_stats(struct zink_screen *screen)
    simple_mtx_lock(&screen->debug_mem_lock);
 
    /* Put the HT's sizes data in an array so we can sort by number of allocations. */
-   struct util_dynarray dyn;
-   util_dynarray_init(&dyn, NULL);
+   struct util_dynarray dyn = UTIL_DYNARRAY_INIT;
 
    uint32_t size = 0;
    uint32_t count = 0;
@@ -1548,8 +1547,9 @@ resource_object_create(struct zink_screen *screen, const struct pipe_resource *t
 
    switch (create_result) {
    case roc_success:
-      for (unsigned i = 0; i < max_level; i++)
-         util_dynarray_init(&obj->copies[i], NULL);
+      for (unsigned i = 0; i < max_level; i++) {
+         obj->copies[i] = UTIL_DYNARRAY_INIT;
+      }
       FALLTHROUGH;
    case roc_success_early_return:
       return obj;

@@ -238,7 +238,7 @@ CDX12EncHMFT::PrepareForEncodeHelper( LPDX12EncodeContext pDX12EncodeContext, bo
    HRESULT hr = S_OK;
    pipe_h265_enc_picture_desc *pPicInfo = &pDX12EncodeContext->encoderPicInfo.h265enc;
    // Initialize raw headers array
-   util_dynarray_init( &pPicInfo->raw_headers, NULL );
+   pPicInfo->raw_headers = UTIL_DYNARRAY_INIT;
 
    const reference_frames_tracker_frame_descriptor_hevc *cur_frame_desc = nullptr;
 

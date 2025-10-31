@@ -551,9 +551,7 @@ pan_preload_get_shader(struct pan_fb_preload_cache *cache,
       .is_blit = true,
       .no_idvs = true,
    };
-   struct util_dynarray binary;
-
-   util_dynarray_init(&binary, NULL);
+   struct util_dynarray binary = UTIL_DYNARRAY_INIT;
 
    shader = rzalloc(cache->shaders.preload, struct pan_preload_shader_data);
 

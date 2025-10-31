@@ -802,7 +802,7 @@ anv_sparse_bind_trtt(struct anv_device *device,
       struct anv_trtt_bind *ptr = alloca(alloc_size);
       util_dynarray_init_from_stack(&l1_binds, ptr, alloc_size);
    } else {
-      util_dynarray_init(&l1_binds, NULL);
+      l1_binds = UTIL_DYNARRAY_INIT;
       if (!util_dynarray_ensure_cap(&l1_binds,
             l1_binds_capacity * sizeof(struct anv_trtt_bind)))
          goto out_dynarrays;

@@ -398,8 +398,7 @@ nir_opt_vectorize_io_vars_impl(nir_function_impl *impl, nir_variable_mode modes)
 
    nir_metadata_require(impl, nir_metadata_dominance);
 
-   struct util_dynarray demote_vars;
-   util_dynarray_init(&demote_vars, NULL);
+   struct util_dynarray demote_vars = UTIL_DYNARRAY_INIT;
 
    nir_shader *shader = impl->function->shader;
    nir_variable *new_inputs[MAX_SLOTS][4] = { { 0 } };

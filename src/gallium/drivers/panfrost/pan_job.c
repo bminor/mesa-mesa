@@ -84,7 +84,7 @@ panfrost_batch_init(struct panfrost_context *ctx,
 
    batch->seqnum = ++ctx->batches.seqnum;
 
-   util_dynarray_init(&batch->bos, NULL);
+   batch->bos = UTIL_DYNARRAY_INIT;
 
    batch->minx = batch->miny = ~0;
    batch->maxx = batch->maxy = 0;

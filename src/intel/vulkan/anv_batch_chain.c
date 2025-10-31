@@ -1715,7 +1715,7 @@ anv_async_submit_init(struct anv_async_submit *submit,
       .engine_class = queue->family->engine_class,
    };
 
-   util_dynarray_init(&submit->batch_bos, NULL);
+   submit->batch_bos = UTIL_DYNARRAY_INIT;
 
    if (create_signal_sync) {
       result = vk_sync_create(&device->vk,

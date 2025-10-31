@@ -2404,7 +2404,7 @@ dzn_device_create(struct dzn_physical_device *pdev,
          }
 
          mtx_init(&device->device_heaps[type].lock, mtx_plain);
-         util_dynarray_init(&device->device_heaps[type].slot_freelist, NULL);
+         device->device_heaps[type].slot_freelist = UTIL_DYNARRAY_INIT;
          device->device_heaps[type].next_alloc_slot = 0;
       }
    }

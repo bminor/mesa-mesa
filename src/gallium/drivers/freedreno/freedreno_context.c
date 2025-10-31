@@ -697,7 +697,7 @@ fd_context_init(struct fd_context *ctx, struct pipe_screen *pscreen,
    slab_create_child(&ctx->transfer_pool, &screen->transfer_pool);
    slab_create_child(&ctx->transfer_pool_unsync, &screen->transfer_pool);
 
-   util_dynarray_init(&ctx->global_bindings, NULL);
+   ctx->global_bindings = UTIL_DYNARRAY_INIT;
 
    fd_draw_init(pctx);
    fd_resource_context_init(pctx);

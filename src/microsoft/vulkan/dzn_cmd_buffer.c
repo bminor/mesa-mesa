@@ -609,9 +609,9 @@ dzn_cmd_buffer_create(const VkCommandBufferAllocateInfo *info,
    cmdbuf->state.multiview.view_mask = 1;
    for (uint32_t bucket = 0; bucket < DZN_INTERNAL_BUF_BUCKET_COUNT; ++bucket)
       list_inithead(&cmdbuf->internal_bufs[bucket]);
-   util_dynarray_init(&cmdbuf->events.signal, NULL);
-   util_dynarray_init(&cmdbuf->queries.reset, NULL);
-   util_dynarray_init(&cmdbuf->queries.signal, NULL);
+   cmdbuf->events.signal = UTIL_DYNARRAY_INIT;
+   cmdbuf->queries.reset = UTIL_DYNARRAY_INIT;
+   cmdbuf->queries.signal = UTIL_DYNARRAY_INIT;
    dzn_descriptor_heap_pool_init(&cmdbuf->rtvs.pool, device,
                                  D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
                                  false, &pool->alloc);
@@ -832,10 +832,10 @@ dzn_cmd_buffer_create_query_pool_state(struct dzn_cmd_buffer *cmdbuf)
       return NULL;
    }
 
-   util_dynarray_init(&state->reset, NULL);
-   util_dynarray_init(&state->collect, NULL);
-   util_dynarray_init(&state->signal, NULL);
-   util_dynarray_init(&state->zero, NULL);
+   state->reset = UTIL_DYNARRAY_INIT;
+   state->collect = UTIL_DYNARRAY_INIT;
+   state->signal = UTIL_DYNARRAY_INIT;
+   state->zero = UTIL_DYNARRAY_INIT;
    return state;
 }
 

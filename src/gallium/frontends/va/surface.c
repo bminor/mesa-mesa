@@ -1295,7 +1295,7 @@ vlVaCreateSurfaces2(VADriverContextP ctx, unsigned int format,
          assert(0);
       }
 
-      util_dynarray_init(&surf->subpics, NULL);
+      surf->subpics = UTIL_DYNARRAY_INIT;
       surfaces[i] = handle_table_add(drv->htab, surf);
       if (!surfaces[i]) {
          vaStatus = VA_STATUS_ERROR_ALLOCATION_FAILED;

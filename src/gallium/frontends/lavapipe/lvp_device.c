@@ -1795,7 +1795,7 @@ lvp_queue_init(struct lvp_device *device, struct lvp_queue *queue,
    queue->vk.driver_submit = lvp_queue_submit;
 
    simple_mtx_init(&queue->lock, mtx_plain);
-   util_dynarray_init(&queue->pipeline_destroys, NULL);
+   queue->pipeline_destroys = UTIL_DYNARRAY_INIT;
 
    return VK_SUCCESS;
 }
@@ -1884,8 +1884,8 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_CreateDevice(
    device->null_image_handle = (void *)(uintptr_t)device->queue.ctx->create_image_handle(device->queue.ctx,
       &(struct pipe_image_view){ 0 });
 
-   util_dynarray_init(&device->bda_texture_handles, NULL);
-   util_dynarray_init(&device->bda_image_handles, NULL);
+   device->bda_texture_handles = UTIL_DYNARRAY_INIT;
+   device->bda_image_handles = UTIL_DYNARRAY_INIT;
 
    device->group_handle_alloc = 1;
 

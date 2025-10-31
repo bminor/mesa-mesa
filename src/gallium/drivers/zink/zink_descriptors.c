@@ -1038,8 +1038,8 @@ get_descriptor_pool(struct zink_context *ctx, struct zink_program *pg, enum zink
    struct zink_descriptor_pool_multi *mpool = CALLOC_STRUCT(zink_descriptor_pool_multi);
    if (!mpool)
       return NULL;
-   util_dynarray_init(&mpool->overflowed_pools[0], NULL);
-   util_dynarray_init(&mpool->overflowed_pools[1], NULL);
+   mpool->overflowed_pools[0] = UTIL_DYNARRAY_INIT;
+   mpool->overflowed_pools[1] = UTIL_DYNARRAY_INIT;
    mpool->pool_key = pool_key;
    if (!set_pool(bs, pg, mpool, type)) {
       multi_pool_destroy(screen, mpool);

@@ -1220,7 +1220,7 @@ radv_create_cmd_buffer(struct vk_command_pool *pool, VkCommandBufferLevel level,
          vk_object_base_init(&device->vk, &cmd_buffer->descriptors[i].push_set.set.base, VK_OBJECT_TYPE_DESCRIPTOR_SET);
 
       cmd_buffer->accel_struct_buffers = _mesa_pointer_set_create(NULL);
-      util_dynarray_init(&cmd_buffer->ray_history, NULL);
+      cmd_buffer->ray_history = UTIL_DYNARRAY_INIT;
    }
 
    *cmd_buffer_out = &cmd_buffer->vk;

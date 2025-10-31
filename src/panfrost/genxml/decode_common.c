@@ -310,7 +310,7 @@ pandecode_create_context(bool to_stderr)
    ctx->dump_stream = to_stderr ? stderr : NULL;
 
    rb_tree_init(&ctx->mmap_tree);
-   util_dynarray_init(&ctx->ro_mappings, NULL);
+   ctx->ro_mappings = UTIL_DYNARRAY_INIT;
 
    simple_mtx_t mtx_init = SIMPLE_MTX_INITIALIZER;
    memcpy(&ctx->lock, &mtx_init, sizeof(simple_mtx_t));

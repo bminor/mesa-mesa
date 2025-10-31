@@ -94,7 +94,7 @@ vk_queue_init(struct vk_queue *queue, struct vk_device *device,
          goto fail_thread;
    }
 
-   util_dynarray_init(&queue->labels, NULL);
+   queue->labels = UTIL_DYNARRAY_INIT;
    queue->region_begin = true;
 
    return VK_SUCCESS;
