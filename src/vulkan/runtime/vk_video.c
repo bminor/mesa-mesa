@@ -119,6 +119,15 @@ vk_video_session_init(struct vk_device *device,
 }
 
 static void
+copy_or_zero_init(void *dst, const void *src, size_t size)
+{
+   if (src)
+      memcpy(dst, src, size);
+   else
+      memset(dst, 0, size);
+}
+
+static void
 vk_video_deep_copy_h264_sps(struct vk_video_h264_sps *dst,
                             const StdVideoH264SequenceParameterSet *src)
 {
@@ -159,10 +168,10 @@ vk_video_deep_copy_h265_vps(struct vk_video_h265_vps *dst,
                             const StdVideoH265VideoParameterSet *src)
 {
    memcpy(&dst->base, src, sizeof(StdVideoH265VideoParameterSet));
-   if (src->pDecPicBufMgr) {
-      memcpy(&dst->dec_pic_buf_mgr, src->pDecPicBufMgr, sizeof(StdVideoH265DecPicBufMgr));
-      dst->base.pDecPicBufMgr = &dst->dec_pic_buf_mgr;
-   }
+
+   copy_or_zero_init(&dst->dec_pic_buf_mgr, src->pDecPicBufMgr, sizeof(StdVideoH265DecPicBufMgr));
+   dst->base.pDecPicBufMgr = &dst->dec_pic_buf_mgr;
+
    if (src->pHrdParameters) {
       memcpy(&dst->hrd_parameters, src->pHrdParameters, sizeof(StdVideoH265HrdParameters));
       dst->base.pHrdParameters = &dst->hrd_parameters;
@@ -178,10 +187,8 @@ vk_video_deep_copy_h265_vps(struct vk_video_h265_vps *dst,
       }
    }
 
-   if (src->pProfileTierLevel) {
-      memcpy(&dst->tier_level, src->pProfileTierLevel, sizeof(StdVideoH265ProfileTierLevel));
-      dst->base.pProfileTierLevel = &dst->tier_level;
-   }
+   copy_or_zero_init(&dst->tier_level, src->pProfileTierLevel, sizeof(StdVideoH265ProfileTierLevel));
+   dst->base.pProfileTierLevel = &dst->tier_level;
 }
 
 static void
@@ -189,28 +196,23 @@ vk_video_deep_copy_h265_sps(struct vk_video_h265_sps *dst,
                             const StdVideoH265SequenceParameterSet *src)
 {
    memcpy(&dst->base, src, sizeof(StdVideoH265SequenceParameterSet));
-   if (src->pProfileTierLevel) {
-      memcpy(&dst->tier_level, src->pProfileTierLevel, sizeof(StdVideoH265ProfileTierLevel));
-      dst->base.pProfileTierLevel = &dst->tier_level;
-   }
-   if (src->pDecPicBufMgr) {
-      memcpy(&dst->dec_pic_buf_mgr, src->pDecPicBufMgr, sizeof(StdVideoH265DecPicBufMgr));
-      dst->base.pDecPicBufMgr = &dst->dec_pic_buf_mgr;
-   }
+
+   copy_or_zero_init(&dst->tier_level, src->pProfileTierLevel, sizeof(StdVideoH265ProfileTierLevel));
+   dst->base.pProfileTierLevel = &dst->tier_level;
+
+   copy_or_zero_init(&dst->dec_pic_buf_mgr, src->pDecPicBufMgr, sizeof(StdVideoH265DecPicBufMgr));
+   dst->base.pDecPicBufMgr = &dst->dec_pic_buf_mgr;
+
    if (src->flags.sps_scaling_list_data_present_flag && src->pScalingLists) {
       memcpy(&dst->scaling_lists, src->pScalingLists, sizeof(StdVideoH265ScalingLists));
       dst->base.pScalingLists = &dst->scaling_lists;
    }
 
-   if (src->pShortTermRefPicSet) {
-      memcpy(&dst->short_term_ref_pic_set, src->pShortTermRefPicSet, sizeof(StdVideoH265ShortTermRefPicSet));
-      dst->base.pShortTermRefPicSet = &dst->short_term_ref_pic_set;
-   }
+   copy_or_zero_init(&dst->short_term_ref_pic_set, src->pShortTermRefPicSet, sizeof(StdVideoH265ShortTermRefPicSet));
+   dst->base.pShortTermRefPicSet = &dst->short_term_ref_pic_set;
 
-   if (src->pLongTermRefPicsSps) {
-      memcpy(&dst->long_term_ref_pics_sps, src->pLongTermRefPicsSps, sizeof(StdVideoH265LongTermRefPicsSps));
-      dst->base.pLongTermRefPicsSps = &dst->long_term_ref_pics_sps;
-   }
+   copy_or_zero_init(&dst->long_term_ref_pics_sps, src->pLongTermRefPicsSps, sizeof(StdVideoH265LongTermRefPicsSps));
+   dst->base.pLongTermRefPicsSps = &dst->long_term_ref_pics_sps;
 
    if (src->pSequenceParameterSetVui) {
       memcpy(&dst->vui, src->pSequenceParameterSetVui, sizeof(StdVideoH265SequenceParameterSetVui));
@@ -441,14 +443,12 @@ vk_video_deep_copy_av1_seq_hdr(struct vk_video_av1_seq_hdr *dst,
                                const StdVideoAV1SequenceHeader *src)
 {
    memcpy(&dst->base, src, sizeof(StdVideoAV1SequenceHeader));
-   if (src->pColorConfig) {
-      memcpy(&dst->color_config, src->pColorConfig, sizeof(StdVideoAV1ColorConfig));
-      dst->base.pColorConfig = &dst->color_config;
-   }
-   if (src->pTimingInfo) {
-      memcpy(&dst->timing_info, src->pTimingInfo, sizeof(StdVideoAV1TimingInfo));
-      dst->base.pTimingInfo = &dst->timing_info;
-   }
+
+   copy_or_zero_init(&dst->color_config, src->pColorConfig, sizeof(StdVideoAV1ColorConfig));
+   dst->base.pColorConfig = &dst->color_config;
+
+   copy_or_zero_init(&dst->timing_info, src->pTimingInfo, sizeof(StdVideoAV1TimingInfo));
+   dst->base.pTimingInfo = &dst->timing_info;
 }
 
 VkResult
