@@ -38,11 +38,8 @@ extern "C" {
 
 extern unsigned util_dynarray_is_data_stack_allocated;
 
-/* A zero-initialized version of this is guaranteed to represent an
- * empty array.
- *
- * Also, size <= capacity and data != 0 if and only if capacity != 0
- * capacity will always be the allocation size of data
+/* Size <= capacity and data != 0 if and only if capacity != 0 capacity will
+ * always be the allocation size of data.
  */
 struct util_dynarray
 {
@@ -51,6 +48,13 @@ struct util_dynarray
    unsigned size;
    unsigned capacity;
 };
+
+/* A zero-initialized util_dynarray represents an empty array. */
+#ifdef __cplusplus
+#define UTIL_DYNARRAY_INIT { 0 }
+#else
+#define UTIL_DYNARRAY_INIT (struct util_dynarray){ .capacity = 0 }
+#endif
 
 static inline void
 util_dynarray_init(struct util_dynarray *buf, void *mem_ctx)
