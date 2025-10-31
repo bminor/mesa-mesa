@@ -1,5 +1,525 @@
 [
     {
+        "sha": "e44a776f4751d665efc447d8fe8e6c01d25a60c5",
+        "description": "kk: Avoid Metal validation error due to empty calls",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cc60a7a39d11251c96dafcc4c017be502c06abf5",
+        "description": "gallivm: orcjit: remember Context in addition to ThreadSafeContext",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "cd129dbf8af2d16b1243f2ce287ff69c6a5dc557",
+        "notes": null
+    },
+    {
+        "sha": "cb4e0c414093170e5edf31591d60db3f02ac857b",
+        "description": "radv: add a workaround for illegal depth/stencil descriptors with No Man's Sky",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "82b7cdeac9e707db1d650ff1b7753a9f1a14f8fa",
+        "description": "people: add Yonggang",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "83303aa05dc2b7d2883dd54fadb4fa419dbb1858",
+        "description": "pvr: don't NIH alignment helpers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "603bfa34d982450c7113be7d0c83e691406bdf2a",
+        "description": "panfrost,tu: use util_is_aligned",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6ac9bfdd1c5e91237a8d4f7a178e89402d762228",
+        "description": "asahi: do not NIH util_is_aligned",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5f53e6edc00553ce3af16d0fe2fed126002c4420",
+        "description": "intel: use util_is_aligned more",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7be63ef956004344dd45b2fb7a45c74aaf5542cf",
+        "description": "intel: do not NIH util_is_aligned",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a014daea8f66fd2f4bdc91f14605fe559b2e7886",
+        "description": "nir: use alignment helpers more",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1ff43db7891c65a9aca12bf192227ffd6eac49f7",
+        "description": "util: add util_ptr_is_aligned helper",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "24179d96a1cc6e1b2fdbb7ae110b5015bc016a1a",
+        "description": "Revert \"anv: Convert DEBUG_SPARSE logging to use mesa_log\"",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "bee04c63ba9d2e03f932a0eda320a78cb7384a78",
+        "notes": null
+    },
+    {
+        "sha": "e152c80d18a4dbc347763dcfbbc47fa88a39f54e",
+        "description": "zink: add back atomics for internal refcounts",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f48df6f45c80e150eff13734fb1a3df9eda86c99",
+        "description": "anv: bring back some lost game drirc workarounds for subgroups",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "d39e443ef888ffd9c3385ed4c40e727868626b6b",
+        "notes": null
+    },
+    {
+        "sha": "3c7fa2e6eb768d241d4bc26562366d3d3f11c68e",
+        "description": "anv: Convert DEBUG_HEAPS logging to use mesa_log",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5e380ca7e5580a27597e127b9196ebef72025c66",
+        "description": "panfrost/panvk: Add size calculations to compiler register code",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "43d9765e35d936a54fb5a1846ce21b06edb1c3da",
+        "description": "r600/sfn: AR loads are not dependend on the future and other code blocks",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "d21054b4bc92a1a9240841dca719f81a142fd5cc",
+        "notes": null
+    },
+    {
+        "sha": "bee04c63ba9d2e03f932a0eda320a78cb7384a78",
+        "description": "anv: Convert DEBUG_SPARSE logging to use mesa_log",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cbf5c881a5d63222d1ae2728282dd1ce7c8e8ec6",
+        "description": "aco/opcodes: remove VOP3 alias for new gfx12 VOP2 opcodes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0f541367304ecb3be2de5c965525a65a9709fc38",
+        "description": "aco/isel: emit vop2 v_lshlrev_b64 for gfx12+",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7ac67e2711bb6a3f7ff9b6741afd67194fa6ecdf",
+        "description": "aco/isel: emit vop2 v_max_f64 for gfx12+",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8397b919341fac73fe17d95a97297ab14f5f9cf7",
+        "description": "aco/isel: emit vop2 v_min_f64 for gfx12+",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2e120d4e264504ba9950f66156a027abe0dfed08",
+        "description": "aco/isel: emit vop2 v_mul_f64 for gfx12+",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "86ea462f4dfbc2419a9de848e5a5c5126f23e968",
+        "description": "aco/isel: emit vop2 v_fadd_f64 for gfx12+",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7d2325b1944c8fa852be0863d622efb7c8707324",
+        "description": "aco/lower_to_hw: emit vop2 for gfx12+ fp64 reductions",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "968fb06a949a7718177c7d2d9037685bbf9e8aa1",
+        "description": "radv,vulkan: replace VK_RENDERING_INPUT_ATTACHMENT_NO_CONCURRENT_WRITES_BIT_MESA",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c8aaf3f5b5f8a832ed46e6e0f25f091dc06f03b8",
+        "description": "radv: advertise VK_KHR_maintenance10",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "14639898d05efcc287fcb16ca135e0f0e3819098",
+        "description": "radv: add support for controlling sRGB transfer function with resolves",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0034f5a9487b66467ff415a2ba3490b32443062f",
+        "description": "radv: allow ds<->color copies on compute/transfer queues",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "49128926d6acf73e0647232cc9ceb4ebd5d8194d",
+        "description": "radv: implement new input attachment information for dynamic rendering",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "18fec61c8d998e22673159dd8729f898b11c0334",
+        "description": "radv: reverse the logic for NO_CONCURRENT_WRITES_BITS_MESA",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d3924f5bd6e064098122b486f0d0aaeb0ef2d776",
+        "description": "radv: add support for depth/stencil resolves with vkCmdResolve2()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8306256e2ae33c2e2478dd737045119869bb8917",
+        "description": "radv: allow NULL pSamplesMask with vkCmdSetSampleMaskEXT()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d5d2a4ad076cdc0abc10e55e7e02c2f7828370a6",
+        "description": "radv: implement vkCmdEndRendering2KHR()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "63aec75981c9aedf1efb98c33a99e3ceb05ec0ca",
+        "description": "driconf: add a workaround for Investigation Stories : gunsound",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3f7ee1fef88b77eb6618e6d259861b2b47502735",
+        "description": "kk: Use our own driverID value",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9def0a6e5bb4b0a28985321c5e3b13f454a36c23",
+        "description": "ac/nir: set support_indirect_inputs/outputs in common code",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "86dd74aaeb21e23add577c36caa29ce1aadc5240",
+        "description": "nir/lower_indirect_derefs: don't lower compact arrays unconditionally to fix perf",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cb6cb2697e45e00632c73e9d3ea0d70146771b2d",
+        "description": "etnaviv: isa: Add norm_mul instruction",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "79f4eca2f04ea8065dc858927566d4815d9723da",
+        "description": "anv: Fix potential overflow from doing 32bit math on 64bit types",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a6102f7432216277290abe372a98624f8a645c86",
+        "description": "intel/mda: Use a vector to track the contents variable",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9509d0d8b8b0db0d94b6879c13d0ef72e4f642ea",
+        "description": "intel/mda: Use GTEST fixtures to manage File handles",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b3615e5d6ffc64b55c95ddbd4d0c4aa264c45a1d",
+        "description": "nir/algebraic: ad-hoc constant-fold ALU instructions",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "10be5388516137f9aeea8b28fdcf6e47a41b185b",
+        "description": "tree-wide: don't call nir_opt_constant_folding after nir_lower_flrp",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9039e247512daf0ad1fff523403d0e7a5406f1cd",
+        "description": "nir/lower_flrp: ad-hoc constant-fold ALU instructions",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f61cd64af88e743f5b961fe6a77fd936ebe65a83",
+        "description": "nir/builder: add option to immediately constant-fold ALU instructions upon insertion",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "280eb2d689f618864932ac22c83e59422197fab2",
+        "description": "vulkan/nir: call nir_opt_constant_folding() during vk_spirv_to_nir()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "870616af34d4d4d3ab1151be3ccdc1bbaf5acf6d",
+        "description": "nir/constant_folding: switch to nir_shader_lower_instructions()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d1f2f1222e701e8a3e8427ccbcc2d013d2c73189",
+        "description": "nir: guard nir_def_as_alu()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3180656bbc9d9494418ba2b827691559d729ee80",
+        "description": "nir: don't use nir_build_alu() with incomplete sources",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ef9ecc4058e8ac32b3f2780772a9b21f31499316",
+        "description": "nir: add nir_imul_nuw() and nir_imul_imm_nuw() helpers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "36d7cd0514b4adae424fbc84f46024660e2ab78b",
+        "description": "drirc: Add anv_assume_full_subgroups for Detroit: Become Human",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "33342848451ca06deb054fad94de3cea3a9efe63",
         "description": "brw: Don't set destination of branch instructions",
         "nominated": false,
