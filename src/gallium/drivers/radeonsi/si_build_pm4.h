@@ -287,19 +287,11 @@
    ac_cmdbuf_set_privileged_config_reg(reg, value)
 
 /* GFX11 generic packet building helpers for buffered SH registers. Don't use these directly. */
-#define gfx11_push_reg(reg, value, prefix_name, buffer, reg_count) do { \
-   unsigned __i = (reg_count)++; \
-   assert((reg) >= prefix_name##_REG_OFFSET && (reg) < prefix_name##_REG_END); \
-   assert(__i / 2 < ARRAY_SIZE(buffer)); \
-   buffer[__i / 2].reg_offset[__i % 2] = ((reg) - prefix_name##_REG_OFFSET) >> 2; \
-   buffer[__i / 2].reg_value[__i % 2] = value; \
-} while (0)
-
 #define gfx11_opt_push_reg(reg, reg_enum, value, prefix_name, buffer, reg_count) do { \
    unsigned __value = value; \
    if (!BITSET_TEST(sctx->tracked_regs.reg_saved_mask, (reg_enum)) || \
        sctx->tracked_regs.reg_value[reg_enum] != __value) { \
-      gfx11_push_reg(reg, __value, prefix_name, buffer, reg_count); \
+      ac_gfx11_push_reg(reg, __value, prefix_name, buffer, reg_count); \
       BITSET_SET(sctx->tracked_regs.reg_saved_mask, (reg_enum)); \
       sctx->tracked_regs.reg_value[reg_enum] = __value; \
    } \
@@ -318,10 +310,10 @@
        sctx->tracked_regs.reg_value[(reg_enum) + 1] != __v2 || \
        sctx->tracked_regs.reg_value[(reg_enum) + 2] != __v3 || \
        sctx->tracked_regs.reg_value[(reg_enum) + 3] != __v4) { \
-      gfx11_push_reg((reg), __v1, prefix_name, buffer, reg_count); \
-      gfx11_push_reg((reg) + 4, __v2, prefix_name, buffer, reg_count); \
-      gfx11_push_reg((reg) + 8, __v3, prefix_name, buffer, reg_count); \
-      gfx11_push_reg((reg) + 12, __v4, prefix_name, buffer, reg_count); \
+      ac_gfx11_push_reg((reg), __v1, prefix_name, buffer, reg_count); \
+      ac_gfx11_push_reg((reg) + 4, __v2, prefix_name, buffer, reg_count); \
+      ac_gfx11_push_reg((reg) + 8, __v3, prefix_name, buffer, reg_count); \
+      ac_gfx11_push_reg((reg) + 12, __v4, prefix_name, buffer, reg_count); \
       BITSET_SET_RANGE_INSIDE_WORD(sctx->tracked_regs.reg_saved_mask, \
                                    (reg_enum), (reg_enum) + 3); \
       sctx->tracked_regs.reg_value[(reg_enum)] = __v1; \
@@ -333,12 +325,12 @@
 
 /* GFX11 packet building helpers for buffered SH registers. */
 #define gfx11_push_gfx_sh_reg(reg, value) \
-   gfx11_push_reg(reg, value, SI_SH, sctx->buffered_gfx_sh_regs.gfx11.regs, \
-                  sctx->buffered_gfx_sh_regs.num)
+   ac_gfx11_push_reg(reg, value, SI_SH, sctx->buffered_gfx_sh_regs.gfx11.regs, \
+                     sctx->buffered_gfx_sh_regs.num)
 
 #define gfx11_push_compute_sh_reg(reg, value) \
-   gfx11_push_reg(reg, value, SI_SH, sctx->buffered_compute_sh_regs.gfx11.regs, \
-                  sctx->buffered_compute_sh_regs.num)
+   ac_gfx11_push_reg(reg, value, SI_SH, sctx->buffered_compute_sh_regs.gfx11.regs, \
+                     sctx->buffered_compute_sh_regs.num)
 
 #define gfx11_opt_push_gfx_sh_reg(reg, reg_enum, value) \
    gfx11_opt_push_reg(reg, reg_enum, value, SI_SH, sctx->buffered_gfx_sh_regs.gfx11.regs, \
@@ -352,11 +344,10 @@
  * Registers are buffered on the stack and then copied to the command buffer at the end.
  */
 #define gfx11_begin_packed_context_regs() \
-   struct ac_gfx11_reg_pair __cs_context_regs[50]; \
-   unsigned __cs_context_reg_count = 0;
+   ac_gfx11_begin_packed_context_regs()
 
 #define gfx11_set_context_reg(reg, value) \
-   gfx11_push_reg(reg, value, SI_CONTEXT, __cs_context_regs, __cs_context_reg_count)
+   ac_gfx11_set_context_reg(reg, value)
 
 #define gfx11_opt_set_context_reg(reg, reg_enum, value) \
    gfx11_opt_push_reg(reg, reg_enum, value, SI_CONTEXT, __cs_context_regs, \
@@ -366,24 +357,8 @@
    gfx11_opt_push_reg4(reg, reg_enum, v1, v2, v3, v4, SI_CONTEXT, __cs_context_regs, \
                        __cs_context_reg_count)
 
-#define gfx11_end_packed_context_regs() do { \
-   if (__cs_context_reg_count >= 2) { \
-      /* Align the count to 2 by duplicating the first register. */ \
-      if (__cs_context_reg_count % 2 == 1) { \
-         gfx11_set_context_reg(SI_CONTEXT_REG_OFFSET + __cs_context_regs[0].reg_offset[0] * 4, \
-                               __cs_context_regs[0].reg_value[0]); \
-      } \
-      assert(__cs_context_reg_count % 2 == 0); \
-      unsigned __num_dw = (__cs_context_reg_count / 2) * 3; \
-      radeon_emit(PKT3(PKT3_SET_CONTEXT_REG_PAIRS_PACKED, __num_dw, 0) | PKT3_RESET_FILTER_CAM_S(1)); \
-      radeon_emit(__cs_context_reg_count); \
-      radeon_emit_array(__cs_context_regs, __num_dw); \
-   } else if (__cs_context_reg_count == 1) { \
-      radeon_emit(PKT3(PKT3_SET_CONTEXT_REG, 1, 0)); \
-      radeon_emit(__cs_context_regs[0].reg_offset[0]); \
-      radeon_emit(__cs_context_regs[0].reg_value[0]); \
-   } \
-} while (0)
+#define gfx11_end_packed_context_regs() \
+   ac_gfx11_end_packed_context_regs()
 
 /* GFX12 generic packet building helpers for PAIRS packets. Don't use these directly. */
 

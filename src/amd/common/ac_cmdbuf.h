@@ -169,6 +169,46 @@ struct ac_buffered_sh_regs {
       ac_cmdbuf_emit(0); /* unused */                                                        \
    } while (0)
 
+/* GFX11 generic packet building helpers for buffered SH registers. Don't use these directly. */
+#define ac_gfx11_push_reg(reg, value, prefix_name, buffer, reg_count)                  \
+   do {                                                                                \
+      unsigned __i = (reg_count)++;                                                    \
+      assert((reg) >= prefix_name##_REG_OFFSET && (reg) < prefix_name##_REG_END);      \
+      assert(__i / 2 < ARRAY_SIZE(buffer));                                            \
+      buffer[__i / 2].reg_offset[__i % 2] = ((reg) - prefix_name##_REG_OFFSET) >> 2;   \
+      buffer[__i / 2].reg_value[__i % 2] = value;                                      \
+   } while (0)
+
+/* GFX11 packet building helpers for SET_CONTEXT_REG_PAIRS_PACKED.
+ * Registers are buffered on the stack and then copied to the command buffer at the end.
+ */
+#define ac_gfx11_begin_packed_context_regs()       \
+   struct ac_gfx11_reg_pair __cs_context_regs[50]; \
+   unsigned __cs_context_reg_count = 0;
+
+#define ac_gfx11_set_context_reg(reg, value)                                              \
+   ac_gfx11_push_reg(reg, value, SI_CONTEXT, __cs_context_regs, __cs_context_reg_count)
+
+#define ac_gfx11_end_packed_context_regs()                                                                  \
+   do {                                                                                                     \
+      if (__cs_context_reg_count >= 2) {                                                                    \
+         /* Align the count to 2 by duplicating the first register. */                                      \
+         if (__cs_context_reg_count % 2 == 1) {                                                             \
+            ac_gfx11_set_context_reg(SI_CONTEXT_REG_OFFSET + __cs_context_regs[0].reg_offset[0] * 4,        \
+                                     __cs_context_regs[0].reg_value[0]);                                    \
+         }                                                                                                  \
+         assert(__cs_context_reg_count % 2 == 0);                                                           \
+         unsigned __num_dw = (__cs_context_reg_count / 2) * 3;                                              \
+         ac_cmdbuf_emit(PKT3(PKT3_SET_CONTEXT_REG_PAIRS_PACKED, __num_dw, 0) | PKT3_RESET_FILTER_CAM_S(1)); \
+         ac_cmdbuf_emit(__cs_context_reg_count);                                                            \
+         ac_cmdbuf_emit_array(__cs_context_regs, __num_dw);                                                 \
+      } else if (__cs_context_reg_count == 1) {                                                             \
+         ac_cmdbuf_emit(PKT3(PKT3_SET_CONTEXT_REG, 1, 0));                                                  \
+         ac_cmdbuf_emit(__cs_context_regs[0].reg_offset[0]);                                                \
+         ac_cmdbuf_emit(__cs_context_regs[0].reg_value[0]);                                                 \
+      }                                                                                                     \
+   } while (0)
+
 /* GFX12 generic packet building helpers for PAIRS packets. Don't use these directly. */
 
 /* Reserved 1 DWORD to emit the packet header when the sequence ends. */
