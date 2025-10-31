@@ -1050,9 +1050,11 @@ BEGIN_TEST(optimize.mad_mix.input_conv.basic)
 
       //! v1: %res3 = v_fma_mix_f32 %a, %a, lo(%a16)
       //! p_unit_test 3, %res3
-      writeout(3, fma(a, a, f2f32(a16)));
+      writeout(3, fadd(fmul(a, a), f2f32(a16)));
 
-      //! v1: %res4 = v_fma_mix_f32 %a, %a, lo(%a16)
+      //~gfx9! v1: %tmp4 = v_cvt_f32_f16 %a16
+      //~gfx9! v1: %res4 = v_fma_f32 %a, %a, %tmp4
+      //~gfx10! v1: %res4 = v_fma_mix_f32 %a, %a, lo(%a16)
       //! p_unit_test 4, %res4
       writeout(4, fma(a, a, f2f32(a16)));
 
@@ -1239,7 +1241,9 @@ BEGIN_TEST(optimize.mad_mix.output_conv.basic)
       //! p_unit_test 1, %res1
       writeout(1, f2f16(fadd(a, b)));
 
-      //! v2b: %res2 = v_fma_mixlo_f16 %a, %b, %c
+      //~gfx9! v1: %tmp2 = v_fma_f32 %a, %b, %c
+      //~gfx9! v2b: %res2 = v_cvt_f16_f32 %tmp2
+      //~gfx10! v2b: %res2 = v_fma_mixlo_f16 %a, %b, %c
       //! p_unit_test 2, %res2
       writeout(2, f2f16(fma(a, b, c)));
 
@@ -1253,7 +1257,11 @@ BEGIN_TEST(optimize.mad_mix.output_conv.basic)
 
       //! v2b: %res5 = v_fma_mixlo_f16 %a, lo(%b16), %c
       //! p_unit_test 5, %res5
-      writeout(5, f2f16(fma(a, f2f32(b16), c)));
+      writeout(5, f2f16(fadd(fmul(a, f2f32(b16)), c)));
+
+      //! v2b: %res6 = v_fma_mixlo_f16 %a, %b, %c
+      //! p_unit_test 6, %res6
+      writeout(6, f2f16(fadd(fmul(a, b), c)));
 
       finish_opt_test();
    }
