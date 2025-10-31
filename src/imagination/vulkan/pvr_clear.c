@@ -37,6 +37,10 @@
 #include "vk_alloc.h"
 #include "vk_log.h"
 
+static_assert(PVR_STATIC_CLEAR_PPP_PDS_TYPE_TEXTUREDATABASE + 1 ==
+                 PVR_STATIC_CLEAR_PDS_STATE_COUNT,
+              "pvr_static_clear_ppp_pds_state_type might require fixing.");
+
 static void pvr_device_setup_graphics_static_clear_ppp_base(
    struct pvr_static_clear_ppp_base *const base)
 {

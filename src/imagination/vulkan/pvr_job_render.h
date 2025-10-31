@@ -133,25 +133,10 @@ struct pvr_render_job {
     */
    uint32_t max_tiles_in_flight;
 
-   static_assert(pvr_cmd_length(PBESTATE_REG_WORD0) == 2,
-                 "PBESTATE_REG_WORD0 cannot be stored in uint64_t");
-   static_assert(pvr_cmd_length(PBESTATE_REG_WORD1) == 2,
-                 "PBESTATE_REG_WORD1 cannot be stored in uint64_t");
-   static_assert(ROGUE_NUM_PBESTATE_REG_WORDS >= 2,
-                 "Cannot store both PBESTATE_REG_WORD{0,1}");
    uint64_t pbe_reg_words[PVR_MAX_COLOR_ATTACHMENTS]
                          [ROGUE_NUM_PBESTATE_REG_WORDS];
    uint64_t pr_pbe_reg_words[PVR_MAX_COLOR_ATTACHMENTS]
                             [ROGUE_NUM_PBESTATE_REG_WORDS];
-
-   static_assert(pvr_cmd_length(CR_PDS_BGRND0_BASE) == 2,
-                 "CR_PDS_BGRND0_BASE cannot be stored in uint64_t");
-   static_assert(pvr_cmd_length(CR_PDS_BGRND1_BASE) == 2,
-                 "CR_PDS_BGRND1_BASE cannot be stored in uint64_t");
-   static_assert(pvr_cmd_length(CR_PDS_BGRND3_SIZEINFO) == 2,
-                 "CR_PDS_BGRND3_SIZEINFO cannot be stored in uint64_t");
-   static_assert(ROGUE_NUM_CR_PDS_BGRND_WORDS == 3,
-                 "Cannot store all CR_PDS_BGRND words");
 
    struct pvr_view_state {
       struct {

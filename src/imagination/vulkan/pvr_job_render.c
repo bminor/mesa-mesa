@@ -53,6 +53,23 @@
 #include "vk_log.h"
 #include "vk_util.h"
 
+static_assert(pvr_cmd_length(PBESTATE_REG_WORD0) == 2,
+              "PBESTATE_REG_WORD0 cannot be stored in uint64_t");
+static_assert(pvr_cmd_length(PBESTATE_REG_WORD1) == 2,
+              "PBESTATE_REG_WORD1 cannot be stored in uint64_t");
+static_assert(ROGUE_NUM_PBESTATE_REG_WORDS >= 2,
+              "Cannot store both PBESTATE_REG_WORD{0,1}");
+
+static_assert(pvr_cmd_length(CR_PDS_BGRND0_BASE) == 2,
+              "CR_PDS_BGRND0_BASE cannot be stored in uint64_t");
+static_assert(pvr_cmd_length(CR_PDS_BGRND1_BASE) == 2,
+              "CR_PDS_BGRND1_BASE cannot be stored in uint64_t");
+static_assert(pvr_cmd_length(CR_PDS_BGRND3_SIZEINFO) == 2,
+              "CR_PDS_BGRND3_SIZEINFO cannot be stored in uint64_t");
+static_assert(ROGUE_NUM_CR_PDS_BGRND_WORDS == 3,
+              "Cannot store all CR_PDS_BGRND words");
+
+
 #define ROGUE_BIF_PM_FREELIST_BASE_ADDR_ALIGNSIZE 16U
 
 /* FIXME: Is there a hardware define we can use instead? */
