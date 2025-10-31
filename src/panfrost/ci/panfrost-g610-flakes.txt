@@ -269,3 +269,12 @@ dEQP-GLES31.functional.copy_image.compressed.viewclass_astc_8x6_rgba.rgba_astc_8
 # CTS issue: https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/5651
 dEQP-VK.renderpass2.depth_stencil_resolve.image_2d_32_32.samples_16.d32_sfloat_s8_uint_separate_layouts.depth_zero_stencil_min_testing_stencil_samplemask
 dEQP-VK.renderpass2.depth_stencil_resolve.image_2d_32_32.samples_16.d32_sfloat_s8_uint.depth_zero_stencil_min_testing_stencil_samplemask
+
+glx@glx-visuals-depth
+spec@!opengl 1.1@longprim
+spec@!opengl 1.1@teximage-colors gl_alpha12
+spec@arb_texture_float@fbo-blending-formats
+spec@arb_texture_float@fbo-blending-formats@GL_INTENSITY16F_ARB
+spec@arb_texture_float@texwrap formats bordercolor
+spec@arb_texture_float@texwrap formats bordercolor@GL_INTENSITY16F_ARB- border color only
+spec@ext_framebuffer_multisample@accuracy all_samples color small depthstencil

@@ -158,15 +158,17 @@ panfrost-g610-gl:arm64:
     DEQP_SUITE: panfrost-g610
     LAVA_TAGS: 4gb
 
-# Disable this for now until it gets more stable
-.panfrost-g610-piglit:arm64:
+panfrost-g610-piglit:arm64:
   extends:
-    - panfrost-g610-gl:arm64
+    - .lava-arm64-test-gl
+    - .panfrost-valhall-gl-rules
+    - .panfrost-test
     - .test-piglit
-    - .panfrost-valhall-gl-manual-rules
+    - .lava-rk3588-rock-5b:arm64
   variables:
     DEQP_SUITE: panfrost-g610-piglit
     HWCI_START_WESTON: 1
+    LAVA_TAGS: 4gb
 
 panfrost-g610-vk:arm64:
   parallel: 5
