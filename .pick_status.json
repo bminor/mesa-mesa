@@ -5354,7 +5354,7 @@
         "description": "mesa/st: do not enable EXT_texture_buffer_object with rgba only",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "45ca7798dc32c1cb7da8f94af9a7d7400ee9bc12",
         "notes": null
