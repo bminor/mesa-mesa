@@ -223,7 +223,6 @@ ForEachMacros: [
   'list_for_each_entry_safe_rev',
   'list_pair_for_each_entry',
   'pvr_csb_emit',
-  'pvr_csb_emit_merge',
   'pvr_csb_pack',
   'nir_foreach_block',
   'nir_foreach_block_safe',
