@@ -792,6 +792,8 @@ init_dispatch_tables(struct radv_device *device, struct radv_physical_device *pd
       add_entrypoints(&b, &rage2_device_entrypoints, RADV_APP_DISPATCH_TABLE);
    } else if (!strcmp(instance->drirc.debug.app_layer, "quanticdream")) {
       add_entrypoints(&b, &quantic_dream_device_entrypoints, RADV_APP_DISPATCH_TABLE);
+   } else if (!strcmp(instance->drirc.debug.app_layer, "no_mans_sky")) {
+      add_entrypoints(&b, &no_mans_sky_device_entrypoints, RADV_APP_DISPATCH_TABLE);
    }
 
    if (instance->vk.trace_mode & RADV_TRACE_MODE_RGP)
