@@ -4490,23 +4490,54 @@ radv_gfx12_emit_fb_color_state(struct radv_cmd_buffer *cmd_buffer, int index, st
 }
 
 static void
+radv_gfx11_emit_fb_color_state(struct radv_cmd_buffer *cmd_buffer, int index, struct radv_color_buffer_info *cb,
+                               struct radv_image_view *iview, VkImageLayout layout)
+{
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   uint32_t cb_fdcc_control = cb->ac.cb_dcc_control;
+   struct radv_cmd_stream *cs = cmd_buffer->cs;
+   struct radv_image *image = iview->image;
+
+   if (!radv_layout_dcc_compressed(device, image, iview->vk.base_mip_level, layout,
+                                   radv_image_queue_family_mask(image, cmd_buffer->qf, cmd_buffer->qf))) {
+      cb_fdcc_control &= C_028C78_FDCC_ENABLE;
+   }
+
+   radeon_begin(cs);
+   radeon_set_context_reg_seq(R_028C6C_CB_COLOR0_VIEW + index * 0x3c, 4);
+   radeon_emit(cb->ac.cb_color_view);   /* CB_COLOR0_VIEW */
+   radeon_emit(cb->ac.cb_color_info);   /* CB_COLOR0_INFO */
+   radeon_emit(cb->ac.cb_color_attrib); /* CB_COLOR0_ATTRIB */
+   radeon_emit(cb_fdcc_control);        /* CB_COLOR0_FDCC_CONTROL */
+   radeon_set_context_reg(R_028C60_CB_COLOR0_BASE + index * 0x3c, cb->ac.cb_color_base);
+   radeon_set_context_reg(R_028E40_CB_COLOR0_BASE_EXT + index * 4, S_028E40_BASE_256B(cb->ac.cb_color_base >> 32));
+   radeon_set_context_reg(R_028C94_CB_COLOR0_DCC_BASE + index * 0x3c, cb->ac.cb_dcc_base);
+   radeon_set_context_reg(R_028EA0_CB_COLOR0_DCC_BASE_EXT + index * 4, S_028EA0_BASE_256B(cb->ac.cb_dcc_base >> 32));
+   radeon_set_context_reg(R_028EC0_CB_COLOR0_ATTRIB2 + index * 4, cb->ac.cb_color_attrib2);
+   radeon_set_context_reg(R_028EE0_CB_COLOR0_ATTRIB3 + index * 4, cb->ac.cb_color_attrib3);
+   radeon_end();
+
+   if (G_028C78_FDCC_ENABLE(cb_fdcc_control)) {
+      /* Drawing with DCC enabled also compresses colorbuffers. */
+      VkImageSubresourceRange range = vk_image_view_subresource_range(&iview->vk);
+
+      radv_update_dcc_metadata(cmd_buffer, image, &range, true);
+   }
+}
+
+static void
 radv_gfx6_emit_fb_color_state(struct radv_cmd_buffer *cmd_buffer, int index, struct radv_color_buffer_info *cb,
                               struct radv_image_view *iview, VkImageLayout layout)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    bool is_vi = pdev->info.gfx_level >= GFX8;
-   uint32_t cb_fdcc_control = cb->ac.cb_dcc_control;
    uint32_t cb_color_info = cb->ac.cb_color_info;
    struct radv_image *image = iview->image;
 
    if (!radv_layout_dcc_compressed(device, image, iview->vk.base_mip_level, layout,
                                    radv_image_queue_family_mask(image, cmd_buffer->qf, cmd_buffer->qf))) {
-      if (pdev->info.gfx_level >= GFX11) {
-         cb_fdcc_control &= C_028C78_FDCC_ENABLE;
-      } else {
-         cb_color_info &= C_028C70_DCC_ENABLE;
-      }
+      cb_color_info &= C_028C70_DCC_ENABLE;
    }
 
    const enum radv_fmask_compression fmask_comp = radv_layout_fmask_compression(
@@ -4515,25 +4546,12 @@ radv_gfx6_emit_fb_color_state(struct radv_cmd_buffer *cmd_buffer, int index, str
       cb_color_info &= C_028C70_COMPRESSION;
    }
 
-   if (pdev->info.gfx_level >= GFX8 && pdev->info.gfx_level < GFX11 && iview->disable_tc_compat_cmask_mrt)
+   if (pdev->info.gfx_level >= GFX8 && iview->disable_tc_compat_cmask_mrt)
       cb_color_info &= C_028C70_FMASK_COMPRESS_1FRAG_ONLY;
 
    radeon_begin(cmd_buffer->cs);
 
-   if (pdev->info.gfx_level >= GFX11) {
-      radeon_set_context_reg_seq(R_028C6C_CB_COLOR0_VIEW + index * 0x3c, 4);
-      radeon_emit(cb->ac.cb_color_view);   /* CB_COLOR0_VIEW */
-      radeon_emit(cb->ac.cb_color_info);   /* CB_COLOR0_INFO */
-      radeon_emit(cb->ac.cb_color_attrib); /* CB_COLOR0_ATTRIB */
-      radeon_emit(cb_fdcc_control);        /* CB_COLOR0_FDCC_CONTROL */
-
-      radeon_set_context_reg(R_028C60_CB_COLOR0_BASE + index * 0x3c, cb->ac.cb_color_base);
-      radeon_set_context_reg(R_028E40_CB_COLOR0_BASE_EXT + index * 4, S_028E40_BASE_256B(cb->ac.cb_color_base >> 32));
-      radeon_set_context_reg(R_028C94_CB_COLOR0_DCC_BASE + index * 0x3c, cb->ac.cb_dcc_base);
-      radeon_set_context_reg(R_028EA0_CB_COLOR0_DCC_BASE_EXT + index * 4, S_028EA0_BASE_256B(cb->ac.cb_dcc_base >> 32));
-      radeon_set_context_reg(R_028EC0_CB_COLOR0_ATTRIB2 + index * 4, cb->ac.cb_color_attrib2);
-      radeon_set_context_reg(R_028EE0_CB_COLOR0_ATTRIB3 + index * 4, cb->ac.cb_color_attrib3);
-   } else if (pdev->info.gfx_level >= GFX10) {
+   if (pdev->info.gfx_level >= GFX10) {
       radeon_set_context_reg_seq(R_028C60_CB_COLOR0_BASE + index * 0x3c, 11);
       radeon_emit(cb->ac.cb_color_base);
       radeon_emit(0);
@@ -4601,7 +4619,7 @@ radv_gfx6_emit_fb_color_state(struct radv_cmd_buffer *cmd_buffer, int index, str
 
    radeon_end();
 
-   if (pdev->info.gfx_level >= GFX11 ? G_028C78_FDCC_ENABLE(cb_fdcc_control) : G_028C70_DCC_ENABLE(cb_color_info)) {
+   if (G_028C70_DCC_ENABLE(cb_color_info)) {
       /* Drawing with DCC enabled also compresses colorbuffers. */
       VkImageSubresourceRange range = vk_image_view_subresource_range(&iview->vk);
 
@@ -4705,6 +4723,41 @@ radv_gfx12_emit_fb_ds_state(struct radv_cmd_buffer *cmd_buffer, struct radv_ds_b
 }
 
 static void
+radv_gfx11_emit_fb_ds_state(struct radv_cmd_buffer *cmd_buffer, struct radv_ds_buffer_info *ds, bool depth_compressed,
+                            bool stencil_compressed)
+{
+   uint32_t db_render_control = ds->db_render_control | cmd_buffer->state.db_render_control;
+   struct radv_cmd_stream *cs = cmd_buffer->cs;
+
+   if (!depth_compressed)
+      db_render_control |= S_028000_DEPTH_COMPRESS_DISABLE(1);
+   if (!stencil_compressed)
+      db_render_control |= S_028000_STENCIL_COMPRESS_DISABLE(1);
+
+   radeon_begin(cs);
+   radeon_set_context_reg(R_028000_DB_RENDER_CONTROL, db_render_control);
+   radeon_set_context_reg(R_028008_DB_DEPTH_VIEW, ds->ac.db_depth_view);
+   radeon_set_context_reg(R_028ABC_DB_HTILE_SURFACE, ds->ac.u.gfx6.db_htile_surface);
+   radeon_set_context_reg(R_028010_DB_RENDER_OVERRIDE2, ds->db_render_override2);
+   radeon_set_context_reg(R_028014_DB_HTILE_DATA_BASE, ds->ac.u.gfx6.db_htile_data_base);
+   radeon_set_context_reg(R_02801C_DB_DEPTH_SIZE_XY, ds->ac.db_depth_size);
+   radeon_set_context_reg_seq(R_028040_DB_Z_INFO, 6);
+   radeon_emit(ds->ac.db_z_info);
+   radeon_emit(ds->ac.db_stencil_info);
+   radeon_emit(ds->ac.db_depth_base);
+   radeon_emit(ds->ac.db_stencil_base);
+   radeon_emit(ds->ac.db_depth_base);
+   radeon_emit(ds->ac.db_stencil_base);
+   radeon_set_context_reg_seq(R_028068_DB_Z_READ_BASE_HI, 5);
+   radeon_emit(S_028068_BASE_HI(ds->ac.db_depth_base >> 32));
+   radeon_emit(S_02806C_BASE_HI(ds->ac.db_stencil_base >> 32));
+   radeon_emit(S_028070_BASE_HI(ds->ac.db_depth_base >> 32));
+   radeon_emit(S_028074_BASE_HI(ds->ac.db_stencil_base >> 32));
+   radeon_emit(S_028078_BASE_HI(ds->ac.u.gfx6.db_htile_data_base >> 32));
+   radeon_end();
+}
+
+static void
 radv_gfx6_emit_fb_ds_state(struct radv_cmd_buffer *cmd_buffer, struct radv_ds_buffer_info *ds,
                            struct radv_image_view *iview, bool depth_compressed, bool stencil_compressed)
 {
@@ -4748,13 +4801,8 @@ radv_gfx6_emit_fb_ds_state(struct radv_cmd_buffer *cmd_buffer, struct radv_ds_bu
    if (pdev->info.gfx_level >= GFX10) {
       radeon_set_context_reg(R_028014_DB_HTILE_DATA_BASE, db_htile_data_base);
       radeon_set_context_reg(R_02801C_DB_DEPTH_SIZE_XY, ds->ac.db_depth_size);
-
-      if (pdev->info.gfx_level >= GFX11) {
-         radeon_set_context_reg_seq(R_028040_DB_Z_INFO, 6);
-      } else {
-         radeon_set_context_reg_seq(R_02803C_DB_DEPTH_INFO, 7);
-         radeon_emit(S_02803C_RESOURCE_LEVEL(1));
-      }
+      radeon_set_context_reg_seq(R_02803C_DB_DEPTH_INFO, 7);
+      radeon_emit(S_02803C_RESOURCE_LEVEL(1));
       radeon_emit(db_z_info);
       radeon_emit(ds->ac.db_stencil_info);
       radeon_emit(ds->ac.db_depth_base);
@@ -4828,6 +4876,31 @@ radv_gfx12_emit_null_ds_state(struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
+radv_gfx11_emit_null_ds_state(struct radv_cmd_buffer *cmd_buffer)
+{
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   struct radv_cmd_stream *cs = cmd_buffer->cs;
+   uint32_t db_render_control = 0;
+
+   radv_gfx11_set_db_render_control(device, 1, &db_render_control);
+
+   /* On GFX11+, the hw intentionally looks at DB_Z_INFO.NUM_SAMPLES when there is no bound
+    * depth/stencil buffer and it clamps the number of samples like MIN2(DB_Z_INFO.NUM_SAMPLES,
+    * PA_SC_AA_CONFIG.MSAA_EXPOSED_SAMPLES). Use 8x for DB_Z_INFO.NUM_SAMPLES to make sure it's not
+    * the constraining factor. This affects VRS, occlusion queries and POPS.
+    */
+   const uint32_t num_samples = 3;
+
+   radeon_begin(cs);
+   radeon_set_context_reg_seq(R_028040_DB_Z_INFO, 2);
+   radeon_emit(S_028040_FORMAT(V_028040_Z_INVALID) | S_028040_NUM_SAMPLES(num_samples));
+   radeon_emit(S_028044_FORMAT(V_028044_STENCIL_INVALID));
+   radeon_set_context_reg(R_028000_DB_RENDER_CONTROL, db_render_control);
+   radeon_set_context_reg(R_028010_DB_RENDER_OVERRIDE2, S_028010_CENTROID_COMPUTATION_MODE(1));
+   radeon_end();
+}
+
+static void
 radv_gfx6_emit_null_ds_state(struct radv_cmd_buffer *cmd_buffer)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
@@ -4842,20 +4915,10 @@ radv_gfx6_emit_null_ds_state(struct radv_cmd_buffer *cmd_buffer)
       radeon_set_context_reg_seq(R_028040_DB_Z_INFO, 2);
    }
 
-   /* On GFX11+, the hw intentionally looks at DB_Z_INFO.NUM_SAMPLES when there is no bound
-    * depth/stencil buffer and it clamps the number of samples like MIN2(DB_Z_INFO.NUM_SAMPLES,
-    * PA_SC_AA_CONFIG.MSAA_EXPOSED_SAMPLES). Use 8x for DB_Z_INFO.NUM_SAMPLES to make sure it's not
-    * the constraining factor. This affects VRS, occlusion queries and POPS.
-    */
-   radeon_emit(S_028040_FORMAT(V_028040_Z_INVALID) | S_028040_NUM_SAMPLES(pdev->info.gfx_level >= GFX11 ? 3 : 0));
+   radeon_emit(S_028040_FORMAT(V_028040_Z_INVALID));
    radeon_emit(S_028044_FORMAT(V_028044_STENCIL_INVALID));
-   uint32_t db_render_control = 0;
 
-   if (gfx_level == GFX11 || gfx_level == GFX11_5)
-      radv_gfx11_set_db_render_control(device, 1, &db_render_control);
-
-   radeon_set_context_reg(R_028000_DB_RENDER_CONTROL, db_render_control);
-
+   radeon_set_context_reg(R_028000_DB_RENDER_CONTROL, 0);
    radeon_set_context_reg(R_028010_DB_RENDER_OVERRIDE2, S_028010_CENTROID_COMPUTATION_MODE(gfx_level >= GFX10_3));
    radeon_end();
 }
@@ -5433,6 +5496,8 @@ radv_emit_framebuffer_state(struct radv_cmd_buffer *cmd_buffer)
 
       if (pdev->info.gfx_level >= GFX12) {
          radv_gfx12_emit_fb_color_state(cmd_buffer, i, &render->color_att[i].cb);
+      } else if (pdev->info.gfx_level >= GFX11) {
+         radv_gfx11_emit_fb_color_state(cmd_buffer, i, &render->color_att[i].cb, iview, layout);
       } else {
          radv_gfx6_emit_fb_color_state(cmd_buffer, i, &render->color_att[i].cb, iview, layout);
       }
@@ -5480,6 +5545,8 @@ radv_emit_framebuffer_state(struct radv_cmd_buffer *cmd_buffer)
 
       if (pdev->info.gfx_level >= GFX12) {
          radv_gfx12_emit_fb_ds_state(cmd_buffer, &render->ds_att.ds);
+      } else if (pdev->info.gfx_level >= GFX11) {
+         radv_gfx11_emit_fb_ds_state(cmd_buffer, &render->ds_att.ds, depth_compressed, stencil_compressed);
       } else {
          radv_gfx6_emit_fb_ds_state(cmd_buffer, &render->ds_att.ds, iview, depth_compressed, stencil_compressed);
       }
@@ -5529,6 +5596,8 @@ radv_emit_framebuffer_state(struct radv_cmd_buffer *cmd_buffer)
       radv_image_view_finish(&iview);
    } else if (pdev->info.gfx_level >= GFX12) {
       radv_gfx12_emit_null_ds_state(cmd_buffer);
+   } else if (pdev->info.gfx_level >= GFX11) {
+      radv_gfx11_emit_null_ds_state(cmd_buffer);
    } else {
       radv_gfx6_emit_null_ds_state(cmd_buffer);
    }
