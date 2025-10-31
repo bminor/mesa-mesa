@@ -256,6 +256,43 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
 
 #define gfx12_push_64bit_pointer(sh_offset, va) ac_gfx12_push_64bit_pointer(__rcs->buffered_sh_regs, sh_offset, va)
 
+/* GFX11 packet building helpers for PAIRS packets. */
+#define gfx11_begin_packed_context_regs() ac_gfx11_begin_packed_context_regs()
+#define gfx11_set_context_reg(reg, value) ac_gfx11_set_context_reg(reg, value)
+#define gfx11_end_packed_context_regs() ac_gfx11_end_packed_context_regs()
+
+#define gfx11_opt_push_reg(reg, reg_enum, value, prefix_name, buffer, reg_count)                                       \
+   do {                                                                                                                \
+      struct radv_tracked_regs *__tracked_regs = &__rcs->tracked_regs;                                                 \
+      const uint32_t __value = (value);                                                                                \
+      if (!BITSET_TEST(__tracked_regs->reg_saved_mask, (reg_enum)) ||                                                  \
+          __tracked_regs->reg_value[(reg_enum)] != __value) {                                                          \
+         ac_gfx11_push_reg((reg), __value, prefix_name, buffer, reg_count);                                            \
+         BITSET_SET(__tracked_regs->reg_saved_mask, (reg_enum));                                                       \
+         __tracked_regs->reg_value[(reg_enum)] = __value;                                                              \
+      }                                                                                                                \
+   } while (0)
+
+#define gfx11_opt_push_reg2(reg, reg_enum, v1, v2, prefix_name, buffer, reg_count)                                     \
+   do {                                                                                                                \
+      struct radv_tracked_regs *__tracked_regs = &__rcs->tracked_regs;                                                 \
+      const uint32_t __v1 = (v1), __v2 = (v2);                                                                         \
+      if (!BITSET_TEST_RANGE_INSIDE_WORD(__tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 1, 0x3) ||           \
+          __tracked_regs->reg_value[(reg_enum)] != __v1 || __tracked_regs->reg_value[(reg_enum) + 1] != __v2) {        \
+         ac_gfx11_push_reg((reg), __v1, prefix_name, buffer, reg_count);                                               \
+         ac_gfx11_push_reg((reg) + 4, __v2, prefix_name, buffer, reg_count);                                           \
+         BITSET_SET_RANGE_INSIDE_WORD(__tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 1);                     \
+         __tracked_regs->reg_value[(reg_enum)] = __v1;                                                                 \
+         __tracked_regs->reg_value[(reg_enum) + 1] = __v2;                                                             \
+      }                                                                                                                \
+   } while (0)
+
+#define gfx11_opt_set_context_reg(reg, reg_enum, value)                                                                \
+   gfx11_opt_push_reg(reg, reg_enum, value, SI_CONTEXT, __cs_context_regs, __cs_context_reg_count)
+
+#define gfx11_opt_set_context_reg2(reg, reg_enum, v1, v2)                                                              \
+   gfx11_opt_push_reg2(reg, reg_enum, v1, v2, SI_CONTEXT, __cs_context_regs, __cs_context_reg_count)
+
 ALWAYS_INLINE static void
 radv_gfx12_emit_buffered_regs(struct radv_device *device, struct radv_cmd_stream *cs)
 {
