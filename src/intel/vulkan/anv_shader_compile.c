@@ -699,8 +699,10 @@ lookup_ycbcr_conversion(const void *_stage, uint32_t set,
 }
 
 static void
-anv_fixup_subgroup_size(struct anv_instance *instance, struct shader_info *info)
+anv_fixup_subgroup_size(struct anv_device *device, struct shader_info *info)
 {
+   const struct anv_instance *instance = device->physical->instance;
+
    if (!mesa_shader_stage_uses_workgroup(info->stage))
       return;
 
@@ -715,6 +717,29 @@ anv_fixup_subgroup_size(struct anv_instance *instance, struct shader_info *info)
    if (instance->assume_full_subgroups &&
        info->uses_wide_subgroup_intrinsics &&
        info->api_subgroup_size == BRW_SUBGROUP_SIZE &&
+       local_size &&
+       local_size % BRW_SUBGROUP_SIZE == 0) {
+      info->max_subgroup_size = BRW_SUBGROUP_SIZE;
+      info->min_subgroup_size = BRW_SUBGROUP_SIZE;
+   }
+
+   if (instance->assume_full_subgroups_with_barrier &&
+       info->stage == MESA_SHADER_COMPUTE &&
+       device->info->verx10 <= 125 &&
+       info->uses_control_barrier &&
+       info->min_subgroup_size != info->max_subgroup_size &&
+       local_size &&
+       local_size % BRW_SUBGROUP_SIZE == 0) {
+      info->max_subgroup_size = BRW_SUBGROUP_SIZE;
+      info->min_subgroup_size = BRW_SUBGROUP_SIZE;
+   }
+
+   /* Similarly, sometimes games rely on the implicit synchronization of
+    * the shared memory accesses, and choosing smaller subgroups than the game
+    * expects will cause bugs. */
+   if (instance->assume_full_subgroups_with_shared_memory &&
+       info->shared_size > 0 &&
+       info->min_subgroup_size != info->max_subgroup_size &&
        local_size &&
        local_size % BRW_SUBGROUP_SIZE == 0) {
       info->max_subgroup_size = BRW_SUBGROUP_SIZE;
@@ -1307,7 +1332,7 @@ anv_shader_lower_nir(struct anv_device *device,
 
    if (nir->info.stage == MESA_SHADER_COMPUTE &&
        nir->info.cs.has_cooperative_matrix) {
-      anv_fixup_subgroup_size(pdevice->instance, &nir->info);
+      anv_fixup_subgroup_size(device, &nir->info);
       NIR_PASS(_, nir, brw_nir_lower_cmat, nir->info.api_subgroup_size);
       NIR_PASS(_, nir, nir_lower_indirect_derefs, nir_var_function_temp, 16);
    }
@@ -1890,7 +1915,7 @@ anv_shader_compile(struct vk_device *vk_device,
 
       anv_shader_lower_nir(device, mem_ctx, state, shader_data);
 
-      anv_fixup_subgroup_size(device->physical->instance,
+      anv_fixup_subgroup_size(device,
                               &shader_data->info->nir->info);
 
       anv_nir_apply_shader_workarounds(shader_data->info->nir);
