@@ -171,7 +171,8 @@ init_ray_query_traversal_vars(void *ctx, nir_shader *shader, unsigned array_leng
    result.stack_base =
       rq_variable_create(ctx, shader, array_length, glsl_uint_type(), VAR_NAME("_stack_base"));
    result.stack_ptr = rq_variable_create(ctx, shader, array_length, glsl_uint_type(), VAR_NAME("_stack_ptr"));
-   result.stack = rq_variable_create(ctx, shader, array_length, glsl_array_type(glsl_uint_type(), 24 * 2, 0), VAR_NAME("_stack"));
+   result.stack = rq_variable_create(ctx, shader, array_length,
+                                     glsl_array_type(glsl_uint_type(), LVP_MAX_TLAS_DEPTH + LVP_MAX_BLAS_DEPTH, 0), VAR_NAME("_stack"));
    return result;
 }
 
