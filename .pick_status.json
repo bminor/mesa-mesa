@@ -3904,7 +3904,7 @@
         "description": "radv: add a workaround for illegal depth/stencil descriptors with No Man's Sky",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
