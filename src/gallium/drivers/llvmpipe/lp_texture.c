@@ -1485,6 +1485,9 @@ llvmpipe_import_memory_fd(struct pipe_screen *screen,
                           bool dmabuf)
 {
    struct llvmpipe_memory_allocation *alloc = CALLOC_STRUCT(llvmpipe_memory_allocation);
+   if (!alloc)
+      return false;
+
    alloc->mem_fd = -1;
    alloc->dmabuf_fd = -1;
 #if defined(HAVE_LIBDRM) && defined(HAVE_LINUX_UDMABUF_H)
