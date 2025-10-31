@@ -615,10 +615,8 @@ csf_submit_wait_and_dump(struct panfrost_batch *batch,
 
    /* Jobs won't be complete if blackhole rendering, that's ok */
    if (!ctx->is_noop && (dev->debug & PAN_DBG_SYNC) &&
-       *((uint64_t *)batch->csf.cs.state.cpu) != 0) {
+       *((uint64_t *)batch->csf.cs.state.cpu) != 0)
       crash = true;
-      dump = true;
-   }
 
    if (dump) {
       const struct drm_panthor_queue_submit *qsubmits =
