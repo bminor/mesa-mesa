@@ -51,6 +51,18 @@ is_border_color_custom(VkBorderColor color, bool workaround_rgba4)
 static struct mtl_sampler_packed
 pack_sampler_info(const struct VkSamplerCreateInfo *sampler_info)
 {
+   /* Vulkan disallows unnormalized coordinates to sample 3D images in
+    * VUID-vkCmdDraw-None-08609 but does not restrict the value for W in
+    * VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01075. We can get
+    * anything in here and Metal will throw a validation error if the value is
+    * not any of MTLSamplerAddressModeClampToEdge,
+    * MTLSamplerAddressModeClampToZero or
+    * MTLSamplerAddressModeClampToBorderColor. Force clamp to edge for those
+    * cases. */
+   VkSamplerAddressMode address_mode_w =
+      sampler_info->unnormalizedCoordinates
+         ? VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
+         : sampler_info->addressModeW;
    enum mtl_compare_function compare =
       sampler_info->compareEnable
          ? vk_compare_op_to_mtl_compare_function(sampler_info->compareOp)
@@ -73,8 +85,8 @@ pack_sampler_info(const struct VkSamplerCreateInfo *sampler_info)
          sampler_info->addressModeU),
       .mode_v = vk_sampler_address_mode_to_mtl_sampler_address_mode(
          sampler_info->addressModeV),
-      .mode_w = vk_sampler_address_mode_to_mtl_sampler_address_mode(
-         sampler_info->addressModeW),
+      .mode_w =
+         vk_sampler_address_mode_to_mtl_sampler_address_mode(address_mode_w),
       .border_color = border_color,
       .min_filter =
          vk_filter_to_mtl_sampler_min_mag_filter(sampler_info->minFilter),
