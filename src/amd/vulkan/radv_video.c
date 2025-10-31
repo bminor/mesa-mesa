@@ -149,9 +149,15 @@ radv_vcn_write_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t va, unsigned 
    struct radv_physical_device *pdev = radv_device_physical(device);
    struct rvcn_sq_var sq;
    struct radv_cmd_stream *cs = cmd_buffer->cs;
+   enum radv_video_write_memory_support support = radv_video_write_memory_supported(pdev);
 
-   if (!radv_video_write_memory_supported(pdev))
+   if (support == RADV_VIDEO_WRITE_MEMORY_SUPPORT_NONE)
       return;
+
+   if (support == RADV_VIDEO_WRITE_MEMORY_SUPPORT_PCIE_ATOMICS) {
+      fprintf(stderr, "radv: VCN WRITE_MEMORY requires PCIe atomics support. Expect issues "
+                      "if PCIe atomics are not enabled on current device.\n");
+   }
 
    bool separate_queue = pdev->vid_decode_ip != AMD_IP_VCN_UNIFIED;
    if (cmd_buffer->qf == RADV_QUEUE_VIDEO_DEC && separate_queue && pdev->vid_dec_reg.data2) {

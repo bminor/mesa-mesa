@@ -3456,17 +3456,20 @@ radv_video_encode_qp_map_supported(const struct radv_physical_device *pdev)
    return true;
 }
 
-bool
+enum radv_video_write_memory_support
 radv_video_write_memory_supported(const struct radv_physical_device *pdev)
 {
-   if (pdev->info.vcn_ip_version >= VCN_5_0_0)
-      return true;
-   else if (pdev->info.vcn_ip_version >= VCN_4_0_0)
-      return pdev->info.vcn_enc_minor_version >= 22;
-   else if (pdev->info.vcn_ip_version >= VCN_3_0_0)
-      return pdev->info.vcn_enc_minor_version >= 33;
-   else if (pdev->info.vcn_ip_version >= VCN_2_0_0)
-      return pdev->info.vcn_enc_minor_version >= 24;
-   else /* VCN 1 and UVD */
-      return false;
+   if (pdev->info.vcn_ip_version >= VCN_5_0_0) {
+      return RADV_VIDEO_WRITE_MEMORY_SUPPORT_PCIE_ATOMICS;
+   } else if (pdev->info.vcn_ip_version >= VCN_4_0_0) {
+      if (pdev->info.vcn_enc_minor_version >= 22)
+         return RADV_VIDEO_WRITE_MEMORY_SUPPORT_PCIE_ATOMICS;
+   } else if (pdev->info.vcn_ip_version >= VCN_3_0_0) {
+      if (pdev->info.vcn_enc_minor_version >= 33)
+         return RADV_VIDEO_WRITE_MEMORY_SUPPORT_PCIE_ATOMICS;
+   } else if (pdev->info.vcn_ip_version >= VCN_2_0_0) {
+      if (pdev->info.vcn_enc_minor_version >= 24)
+         return RADV_VIDEO_WRITE_MEMORY_SUPPORT_PCIE_ATOMICS;
+   }
+   return RADV_VIDEO_WRITE_MEMORY_SUPPORT_NONE;
 }

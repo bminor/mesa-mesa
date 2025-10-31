@@ -73,6 +73,19 @@ struct radv_video_session {
    bool session_initialized;
 };
 
+/**
+ *  WRITE_MEMORY support in FW.
+ *
+ *  none: Not supported at all. Old VCN FW and all UVD.
+ *  pcie_atomics: Supported, relies on PCIe atomics.
+ *  full: Supported, works also without PCIe atomics.
+ */
+enum radv_video_write_memory_support {
+   RADV_VIDEO_WRITE_MEMORY_SUPPORT_NONE = 0,
+   RADV_VIDEO_WRITE_MEMORY_SUPPORT_PCIE_ATOMICS,
+   RADV_VIDEO_WRITE_MEMORY_SUPPORT_FULL,
+};
+
 VK_DEFINE_NONDISP_HANDLE_CASTS(radv_video_session, vk.base, VkVideoSessionKHR, VK_OBJECT_TYPE_VIDEO_SESSION_KHR)
 
 void radv_init_physical_device_decoder(struct radv_physical_device *pdev);
@@ -98,7 +111,7 @@ void radv_video_get_enc_dpb_image(struct radv_device *device, const struct VkVid
 bool radv_video_decode_vp9_supported(const struct radv_physical_device *pdev);
 bool radv_video_encode_av1_supported(const struct radv_physical_device *pdev);
 bool radv_video_encode_qp_map_supported(const struct radv_physical_device *pdev);
-bool radv_video_write_memory_supported(const struct radv_physical_device *pdev);
+enum radv_video_write_memory_support radv_video_write_memory_supported(const struct radv_physical_device *pdev);
 uint32_t radv_video_get_qp_map_texel_size(VkVideoCodecOperationFlagBitsKHR codec);
 bool radv_check_vcn_fw_version(const struct radv_physical_device *pdev, uint32_t dec, uint32_t enc, uint32_t rev);
 
