@@ -492,6 +492,13 @@ _mesa_has_texture_buffer_object(const struct gl_context *ctx)
 }
 
 static inline bool
+_mesa_has_texture_buffer_range(const struct gl_context *ctx)
+{
+   return _mesa_has_ARB_texture_buffer_range(ctx) ||
+          _mesa_has_OES_texture_buffer(ctx);
+}
+
+static inline bool
 _mesa_has_texture_view(const struct gl_context *ctx)
 {
    return _mesa_has_ARB_texture_view(ctx) ||

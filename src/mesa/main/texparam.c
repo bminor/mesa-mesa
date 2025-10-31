@@ -1716,8 +1716,7 @@ _mesa_legal_get_tex_level_parameter_target(struct gl_context *ctx, GLenum target
        * GetTexLevelParameter.
        */
       return (_mesa_is_desktop_gl(ctx) && ctx->Version >= 31) ||
-             _mesa_has_OES_texture_buffer(ctx) ||
-             _mesa_has_ARB_texture_buffer_range(ctx);
+             _mesa_has_texture_buffer_range(ctx);
    case GL_TEXTURE_CUBE_MAP_ARRAY:
       return _mesa_has_texture_cube_map_array(ctx);
    }
@@ -2055,14 +2054,12 @@ get_tex_level_parameter_buffer(struct gl_context *ctx,
 
       /* GL_ARB_texture_buffer_range */
       case GL_TEXTURE_BUFFER_OFFSET:
-         if (!_mesa_has_ARB_texture_buffer_range(ctx) &&
-             !_mesa_has_OES_texture_buffer(ctx))
+         if (!_mesa_has_texture_buffer_range(ctx))
             goto invalid_pname;
          *params = texObj->BufferOffset;
          break;
       case GL_TEXTURE_BUFFER_SIZE:
-         if (!_mesa_has_ARB_texture_buffer_range(ctx) &&
-             !_mesa_has_OES_texture_buffer(ctx))
+         if (!_mesa_has_texture_buffer_range(ctx))
             goto invalid_pname;
          *params = (texObj->BufferSize == -1) ? bo->Size : texObj->BufferSize;
          break;
