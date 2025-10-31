@@ -865,8 +865,8 @@ alu_opt_info_is_valid(opt_ctx& ctx, alu_opt_info& info)
       if (ctx.program->gfx_level < GFX9)
          return false;
 
-      /* GFX9 v_mad_mix* always flushes 16/32-bit denormal inputs/outputs */
-      if (ctx.program->gfx_level == GFX9 && ctx.fp_mode.denorm)
+      /* unfused v_mad_mix* always flushes 16/32-bit denormal inputs/outputs */
+      if (!ctx.program->dev.fused_mad_mix && ctx.fp_mode.denorm)
          return false;
 
       switch (info.opcode) {
@@ -4357,8 +4357,8 @@ can_use_mad_mix(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    if (ctx.program->gfx_level < GFX9)
       return false;
 
-   /* GFX9 v_mad_mix* always flushes 16/32-bit denormal inputs/outputs */
-   if (ctx.program->gfx_level == GFX9 && ctx.fp_mode.denorm)
+   /* unfused v_mad_mix* always flushes 16/32-bit denormal inputs/outputs */
+   if (!ctx.program->dev.fused_mad_mix && ctx.fp_mode.denorm)
       return false;
 
    if (instr->valu().omod)
