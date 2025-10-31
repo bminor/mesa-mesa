@@ -6644,13 +6644,8 @@ texture_buffer_range(struct gl_context *ctx,
    mesa_format format;
    mesa_format old_format;
 
-   /* NOTE: ARB_texture_buffer_object might not be supported in
-    * the compatibility profile.
-    */
    if (!_mesa_has_texture_buffer_object(ctx)) {
-      _mesa_error(ctx, GL_INVALID_OPERATION,
-                  "%s(ARB_texture_buffer_object is not"
-                  " implemented for the compatibility profile)", caller);
+      _mesa_error(ctx, GL_INVALID_OPERATION, "%s(not supported)", caller);
       return;
    }
 
