@@ -573,7 +573,7 @@ A typical work flow would be:
 
 .. code-block:: sh
 
-   nc -lvup $PORT | stdbuf -o0 xxd -pc -c 4 | awk -Wposix '{printf("%u:%u\n", "0x" $0, a[$0]++)}'
+   nc -lkvup $PORT | stdbuf -o0 xxd -pc -c 4 | awk -Wposix '{printf("%u:%u\n", "0x" $0, a[$0]++)}'
 
 - Start capturing command stream;
 - Replay the hanging trace with:
