@@ -1271,8 +1271,8 @@ lvp_get_properties(const struct lvp_physical_device *device, struct vk_propertie
 
       /* VK_KHR_acceleration_structure */
       .maxGeometryCount = (1 << 24) - 1,
-      .maxInstanceCount = (1 << 24) - 1,
-      .maxPrimitiveCount = (1 << 24) - 1,
+      .maxInstanceCount = (1 << LVP_MAX_TLAS_DEPTH) - 1,
+      .maxPrimitiveCount = (1 << LVP_MAX_BLAS_DEPTH) - 1,
       .maxPerStageDescriptorAccelerationStructures = MAX_DESCRIPTORS,
       .maxPerStageDescriptorUpdateAfterBindAccelerationStructures = MAX_DESCRIPTORS,
       .maxDescriptorSetAccelerationStructures = MAX_DESCRIPTORS,

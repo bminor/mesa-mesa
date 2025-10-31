@@ -107,6 +107,9 @@ extern "C" {
 /* Currently lavapipe does not support more than 1 image plane */
 #define LVP_MAX_PLANE_COUNT 1
 
+#define LVP_MAX_TLAS_DEPTH 24
+#define LVP_MAX_BLAS_DEPTH 29
+
 #ifdef _WIN32
 #define lvp_printflike(a, b)
 #else

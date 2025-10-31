@@ -574,7 +574,7 @@ lvp_encode_as(struct vk_acceleration_structure *dst, VkDeviceAddress intermediat
    /* The BVH exceeds the maximum depth supported by the traversal stack, 
     * flatten the offending parts of the tree.
     */
-   if (max_node_depth >= 24)
+   if (max_node_depth >= (geometry_type == VK_GEOMETRY_TYPE_INSTANCES_KHR ? LVP_MAX_TLAS_DEPTH : LVP_MAX_BLAS_DEPTH))
       lvp_flatten_as(header, ir_box_nodes, root_offset, node_depth, output);
 
    free(node_depth);
