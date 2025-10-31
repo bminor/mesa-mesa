@@ -547,6 +547,7 @@ VKAPI_ATTR void VKAPI_CALL lvp_UpdateDescriptorSets(
                   desc[didx + p].functions = iview->planes[p].image_handle->functions;
                }
             } else {
+               memset(&desc[didx], 0, sizeof(desc[didx]) * bind_layout->stride);
                for (unsigned k = 0; k < bind_layout->stride; k++)
                   desc[didx + k].functions = device->null_image_handle->functions;
             }
@@ -577,6 +578,7 @@ VKAPI_ATTR void VKAPI_CALL lvp_UpdateDescriptorSets(
                lp_jit_image_from_pipe(&desc[j].image, &bview->iv);
                desc[j].functions = bview->image_handle->functions;
             } else {
+               memset(&desc[j].image, 0, sizeof(desc[j].image));
                desc[j].functions = device->null_image_handle->functions;
             }
          }
@@ -846,6 +848,7 @@ lvp_descriptor_set_update_with_template(VkDevice _device, VkDescriptorSet descri
                   desc[idx + p].functions = iview->planes[p].image_handle->functions;
                }
             } else {
+               memset(&desc[idx], 0, sizeof(desc[idx]) * bind_layout->stride);
                for (unsigned k = 0; k < bind_layout->stride; k++)
                   desc[idx + k].functions = device->null_image_handle->functions;
             }
@@ -872,6 +875,7 @@ lvp_descriptor_set_update_with_template(VkDevice _device, VkDescriptorSet descri
                lp_jit_image_from_pipe(&desc[idx].image, &bview->iv);
                desc[idx].functions = bview->image_handle->functions;
             } else {
+               memset(&desc[idx].image, 0, sizeof(desc[idx].image));
                desc[idx].functions = device->null_image_handle->functions;
             }
             break;
@@ -1073,8 +1077,9 @@ VKAPI_ATTR void VKAPI_CALL lvp_GetDescriptorEXT(
             desc[p].functions = iview->planes[p].image_handle->functions;
          }
       } else {
-         unsigned plane_count = size / sizeof(struct lp_descriptor);
+         memset(desc, 0, size);
 
+         unsigned plane_count = size / sizeof(struct lp_descriptor);
          for (unsigned p = 0; p < plane_count; p++)
             desc[p].functions = device->null_image_handle->functions;
       }
@@ -1087,6 +1092,7 @@ VKAPI_ATTR void VKAPI_CALL lvp_GetDescriptorEXT(
          lp_jit_bindless_texture_buffer_from_bda(&desc->texture, (void*)(uintptr_t)bda->address);
          desc->functions = get_texture_handle_bda(device, bda->address, bda->range, pformat).functions;
       } else {
+         memset(desc, 0, size);
          desc->functions = device->null_texture_handle->functions;
          desc->texture.sampler_index = 0;
       }
@@ -1099,6 +1105,7 @@ VKAPI_ATTR void VKAPI_CALL lvp_GetDescriptorEXT(
          lp_jit_image_buffer_from_bda(&desc->image, (void *)(uintptr_t)bda->address, bda->range, pformat);
          desc->functions = get_image_handle_bda(device, bda->address, bda->range, pformat).functions;
       } else {
+         memset(desc, 0, size);
          desc->functions = device->null_image_handle->functions;
       }
       break;
