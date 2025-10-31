@@ -1250,7 +1250,9 @@ void st_init_extensions(struct pipe_screen *screen,
        * pipe cap.
        */
       extensions->EXT_gpu_shader4 = GL_TRUE;
-      extensions->EXT_texture_buffer_object = GL_TRUE;
+
+      if (!screen->caps.buffer_sampler_view_rgba_only)
+         extensions->EXT_texture_buffer_object = GL_TRUE;
 
       if (consts->MaxTransformFeedbackBuffers &&
           screen->caps.shader_array_components)
