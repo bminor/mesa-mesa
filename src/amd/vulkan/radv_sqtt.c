@@ -656,10 +656,14 @@ radv_get_sqtt_trace(struct radv_queue *queue, struct ac_sqtt_trace *sqtt_trace)
 {
    struct radv_device *device = radv_queue_device(queue);
    const struct radv_physical_device *pdev = radv_device_physical(device);
+   const struct radv_instance *instance = radv_physical_device_instance(pdev);
    const struct radeon_info *gpu_info = &pdev->info;
 
    if (!ac_sqtt_get_trace(&device->sqtt, gpu_info, sqtt_trace)) {
-      if (!radv_sqtt_resize_bo(device))
+      /* Do not try to automatically resize the SQTT buffer for per-submit captures because this
+       * doesn't make much sense and the buffer size can be increased by the user.
+       */
+      if (!instance->vk.trace_per_submit && !radv_sqtt_resize_bo(device))
          fprintf(stderr, "radv: Failed to resize the SQTT buffer.\n");
       return false;
    }
