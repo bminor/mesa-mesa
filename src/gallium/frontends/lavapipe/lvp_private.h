@@ -180,7 +180,6 @@ bool lvp_physical_device_extension_supported(struct lvp_physical_device *dev,
 
 struct lvp_queue {
    struct vk_queue vk;
-   struct lvp_device *device;
    struct pipe_context *ctx;
    struct cso_context *cso;
    struct u_upload_mgr *uploader;
@@ -189,6 +188,12 @@ struct lvp_queue {
    struct util_dynarray pipeline_destroys;
    simple_mtx_t lock;
 };
+
+static inline struct lvp_device *
+lvp_queue_device(const struct lvp_queue *queue)
+{
+   return (struct lvp_device *)queue->vk.base.device;
+}
 
 struct lvp_pipeline_cache {
    struct vk_object_base base;
