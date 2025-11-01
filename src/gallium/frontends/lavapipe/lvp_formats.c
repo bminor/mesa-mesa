@@ -506,7 +506,7 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_GetPhysicalDeviceImageFormatProperties2(
 }
 
 static void
-fill_sparse_image_format_properties(struct lvp_physical_device *pdev, VkImageType type,
+fill_sparse_image_format_properties(VkImageType type,
                                     VkFormat format, VkSampleCountFlagBits samples,
                                     VkSparseImageFormatProperties *prop)
 {
@@ -561,7 +561,7 @@ VKAPI_ATTR void VKAPI_CALL lvp_GetPhysicalDeviceSparseImageFormatProperties2(
 
    vk_outarray_append_typed(VkSparseImageFormatProperties2, &out, prop)
    {
-      fill_sparse_image_format_properties(physical_device, pFormatInfo->type, pFormatInfo->format,
+      fill_sparse_image_format_properties(pFormatInfo->type, pFormatInfo->format,
                                           pFormatInfo->samples, &prop->properties);
    };
 }
@@ -572,8 +572,6 @@ VKAPI_ATTR void VKAPI_CALL lvp_GetDeviceImageSparseMemoryRequirements(
     uint32_t*                                   pSparseMemoryRequirementCount,
     VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements)
 {
-   VK_FROM_HANDLE(lvp_device, device, _device);
-
    if (!(pInfo->pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT)) {
       *pSparseMemoryRequirementCount = 0;
       return;
@@ -584,7 +582,7 @@ VKAPI_ATTR void VKAPI_CALL lvp_GetDeviceImageSparseMemoryRequirements(
 
    vk_outarray_append_typed(VkSparseImageMemoryRequirements2, &out, req)
    {
-      fill_sparse_image_format_properties(device->physical_device, pInfo->pCreateInfo->imageType,
+      fill_sparse_image_format_properties(pInfo->pCreateInfo->imageType,
                                           pInfo->pCreateInfo->format, pInfo->pCreateInfo->samples,
                                           &req->memoryRequirements.formatProperties);
 
@@ -601,7 +599,6 @@ VKAPI_ATTR void VKAPI_CALL lvp_GetImageSparseMemoryRequirements2(
    uint32_t* pSparseMemoryRequirementCount,
    VkSparseImageMemoryRequirements2* pSparseMemoryRequirements)
 {
-   VK_FROM_HANDLE(lvp_device, device, _device);
    VK_FROM_HANDLE(lvp_image, image, pInfo->image);
 
    if (!(image->vk.create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT)) {
@@ -614,7 +611,7 @@ VKAPI_ATTR void VKAPI_CALL lvp_GetImageSparseMemoryRequirements2(
 
    vk_outarray_append_typed(VkSparseImageMemoryRequirements2, &out, req)
    {
-      fill_sparse_image_format_properties(device->physical_device, image->vk.image_type,
+      fill_sparse_image_format_properties(image->vk.image_type,
                                           image->vk.format, image->vk.samples,
                                           &req->memoryRequirements.formatProperties);
 
