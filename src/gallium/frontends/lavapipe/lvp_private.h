@@ -96,7 +96,7 @@ extern "C" {
 #endif
 
 #define LVP_NUM_QUEUES 1
-#define MAX_SETS         8
+#define MAX_SETS 8
 #define MAX_DESCRIPTORS 1000000 /* Required by vkd3d-proton */
 #define MAX_PUSH_CONSTANTS_SIZE 256
 #define MAX_PUSH_DESCRIPTORS 32
@@ -164,7 +164,7 @@ struct lvp_physical_device {
    struct vk_sync_timeline_type sync_timeline_type;
    const struct vk_sync_type *sync_types[3];
 
-   struct wsi_device                       wsi_device;
+   struct wsi_device wsi_device;
 };
 
 struct lvp_instance {
@@ -186,7 +186,7 @@ bool lvp_physical_device_extension_supported(struct lvp_physical_device *dev,
 
 struct lvp_queue {
    struct vk_queue vk;
-   struct lvp_device *                         device;
+   struct lvp_device *device;
    struct pipe_context *ctx;
    struct cso_context *cso;
    struct u_upload_mgr *uploader;
@@ -197,16 +197,16 @@ struct lvp_queue {
 };
 
 struct lvp_pipeline_cache {
-   struct vk_object_base                        base;
-   struct lvp_device *                          device;
-   VkAllocationCallbacks                        alloc;
+   struct vk_object_base base;
+   struct lvp_device *device;
+   VkAllocationCallbacks alloc;
 };
 
 struct lvp_device {
    struct vk_device vk;
 
    struct lvp_queue queue;
-   struct lvp_instance *                       instance;
+   struct lvp_instance *instance;
    struct lvp_physical_device *physical_device;
    struct pipe_screen *pscreen;
    void *noop_fs;
@@ -243,10 +243,10 @@ struct lvp_device_memory {
 
    struct pipe_memory_allocation *pmem;
    struct llvmpipe_memory_allocation mem_alloc;
-   VkDeviceSize                                 map_size;
-   void *                                       map;
+   VkDeviceSize map_size;
+   void *map;
    enum lvp_device_memory_type memory_type;
-   int                                          backed_fd;
+   int backed_fd;
 };
 
 struct lvp_pipe_sync {
@@ -406,8 +406,8 @@ struct lvp_pipeline_layout {
 
 struct lvp_pipeline_layout *
 lvp_pipeline_layout_create(struct lvp_device *device,
-                           const VkPipelineLayoutCreateInfo*           pCreateInfo,
-                           const VkAllocationCallbacks*                pAllocator);
+                           const VkPipelineLayoutCreateInfo *pCreateInfo,
+                           const VkAllocationCallbacks *pAllocator);
 
 struct lvp_pipeline_nir {
    int ref_cnt;
@@ -504,8 +504,8 @@ struct lvp_ray_tracing_group {
 
 struct lvp_pipeline {
    struct vk_object_base base;
-   struct lvp_device *                          device;
-   struct lvp_pipeline_layout *                 layout;
+   struct lvp_device *device;
+   struct lvp_pipeline_layout *layout;
 
    enum lvp_pipeline_type type;
    VkPipelineCreateFlags2KHR flags;
@@ -604,9 +604,7 @@ struct lvp_query_pool {
 
 struct lvp_cmd_buffer {
    struct vk_command_buffer vk;
-
-   struct lvp_device *                          device;
-
+   struct lvp_device *device;
    uint8_t push_constants[MAX_PUSH_CONSTANTS_SIZE];
 };
 
