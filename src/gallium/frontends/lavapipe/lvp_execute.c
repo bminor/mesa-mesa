@@ -1296,10 +1296,11 @@ static struct pipe_surface create_img_surface(struct rendering_state *state,
                                                VkFormat format,
                                                int base_layer, int layer_count)
 {
+   const struct lvp_image *image = (struct lvp_image *)imgv->vk.image;
    VkImageSubresourceRange imgv_subres =
       vk_image_view_subresource_range(&imgv->vk);
 
-   return create_img_surface_bo(state, &imgv_subres, imgv->image->planes[0].bo,
+   return create_img_surface_bo(state, &imgv_subres, image->planes[0].bo,
                                 lvp_vk_format_to_pipe_format(format),
                                 base_layer, layer_count, 0);
 }
@@ -1485,11 +1486,12 @@ slow_clear:
 static struct lvp_image_view *
 destroy_multisample_surface(struct rendering_state *state, struct lvp_image_view *imgv)
 {
-   assert(imgv->image->vk.samples > 1);
+   struct lvp_image *image = (struct lvp_image *)imgv->vk.image;
+   assert(image->vk.samples > 1);
    struct lvp_image_view *base = imgv->multisample;
-   pipe_resource_reference(&imgv->image->planes[0].bo, NULL);
+   pipe_resource_reference(&image->planes[0].bo, NULL);
    base->multisample = NULL;
-   free((void*)imgv->image);
+   free((void*)image);
    free(imgv);
    return base;
 }
@@ -1503,9 +1505,10 @@ resolve_ds(struct rendering_state *state, bool multi)
       return;
 
    struct lvp_image_view *src_imgv = state->ds_imgv;
+   const struct lvp_image *src_image = (struct lvp_image *)src_imgv->vk.image;
    if (multi && !src_imgv->multisample)
       return;
-   if (!multi && src_imgv->image->vk.samples == 1)
+   if (!multi && src_imgv->vk.image->samples == 1)
       return;
 
    assert(state->depth_att.resolve_imgv == NULL ||
@@ -1516,7 +1519,7 @@ resolve_ds(struct rendering_state *state, bool multi)
       multi ? src_imgv->multisample :
       state->depth_att.resolve_imgv ? state->depth_att.resolve_imgv :
                                       state->stencil_att.resolve_imgv;
-
+   const struct lvp_image *dst_image = (struct lvp_image *)dst_imgv->vk.image;
    unsigned num_blits = 1;
    if (depth_resolve_mode != stencil_resolve_mode)
       num_blits = 2;
@@ -1530,8 +1533,8 @@ resolve_ds(struct rendering_state *state, bool multi)
 
       struct pipe_blit_info info = {0};
 
-      info.src.resource = src_imgv->image->planes[0].bo;
-      info.dst.resource = dst_imgv->image->planes[0].bo;
+      info.src.resource = src_image->planes[0].bo;
+      info.dst.resource = dst_image->planes[0].bo;
       info.src.format = src_imgv->pformat;
       info.dst.format = dst_imgv->pformat;
       info.filter = PIPE_TEX_FILTER_NEAREST;
@@ -1571,15 +1574,17 @@ resolve_color(struct rendering_state *state, bool multi)
          continue;
 
       struct lvp_image_view *src_imgv = state->color_att[i].imgv;
+      const struct lvp_image *src_image = (struct lvp_image *)src_imgv->vk.image;
       /* skip non-msrtss resolves during msrtss resolve */
       if (multi && !src_imgv->multisample)
          continue;
       struct lvp_image_view *dst_imgv = multi ? src_imgv->multisample : state->color_att[i].resolve_imgv;
+      const struct lvp_image *dst_image = (struct lvp_image *)dst_imgv->vk.image;
 
       struct pipe_blit_info info = { 0 };
 
-      info.src.resource = src_imgv->image->planes[0].bo;
-      info.dst.resource = dst_imgv->image->planes[0].bo;
+      info.src.resource = src_image->planes[0].bo;
+      info.dst.resource = dst_image->planes[0].bo;
       info.src.format = src_imgv->pformat;
       info.dst.format = dst_imgv->pformat;
       info.filter = PIPE_TEX_FILTER_NEAREST;
@@ -1624,17 +1629,19 @@ replicate_attachment(struct rendering_state *state,
                      struct lvp_image_view *src,
                      struct lvp_image_view *dst)
 {
+   const struct lvp_image *src_image = (struct lvp_image *)src->vk.image;
+   const struct lvp_image *dst_image = (struct lvp_image *)dst->vk.image;
    unsigned level = dst->surface.level;
    const struct pipe_box box = {
       .x = 0,
       .y = 0,
       .z = 0,
-      .width = u_minify(dst->image->planes[0].bo->width0, level),
-      .height = u_minify(dst->image->planes[0].bo->height0, level),
-      .depth = u_minify(dst->image->planes[0].bo->depth0, level),
+      .width = u_minify(dst_image->planes[0].bo->width0, level),
+      .height = u_minify(dst_image->planes[0].bo->height0, level),
+      .depth = u_minify(dst_image->planes[0].bo->depth0, level),
    };
-   state->pctx->resource_copy_region(state->pctx, dst->image->planes[0].bo, level,
-                                     0, 0, 0, src->image->planes[0].bo, level, &box);
+   state->pctx->resource_copy_region(state->pctx, dst_image->planes[0].bo, level,
+                                     0, 0, 0, src_image->planes[0].bo, level, &box);
 }
 
 static struct lvp_image_view *
@@ -1644,13 +1651,13 @@ create_multisample_surface(struct rendering_state *state, struct lvp_image_view 
 
    struct pipe_resource templ = *imgv->surface.texture;
    templ.nr_samples = samples;
-   struct lvp_image *image = mem_dup(imgv->image, sizeof(struct lvp_image));
+   struct lvp_image *image = mem_dup(imgv->vk.image, sizeof(struct lvp_image));
    image->vk.samples = samples;
    image->planes[0].pmem = NULL;
    image->planes[0].bo = state->pctx->screen->resource_create(state->pctx->screen, &templ);
 
    struct lvp_image_view *multi = mem_dup(imgv, sizeof(struct lvp_image_view));
-   multi->image = image;
+   multi->vk.image = (struct vk_image *)image;
    multi->surface = imgv->surface;
    multi->surface.texture = image->planes[0].bo;
    imgv->multisample = multi;
@@ -1670,8 +1677,8 @@ att_needs_replicate(const struct rendering_state *state,
       return true;
    if (state->render_area.offset.x || state->render_area.offset.y)
       return true;
-   if (state->render_area.extent.width < imgv->image->vk.extent.width ||
-       state->render_area.extent.height < imgv->image->vk.extent.height)
+   if (state->render_area.extent.width < imgv->vk.image->extent.width ||
+       state->render_area.extent.height < imgv->vk.image->extent.height)
       return true;
    return false;
 }
@@ -1767,7 +1774,7 @@ handle_begin_rendering(struct vk_cmd_queue_entry *cmd,
          struct lvp_image_view *imgv = state->color_att[i].imgv;
          add_img_view_surface(state, imgv,
                               state->framebuffer.layers);
-         if (state->forced_sample_count && imgv->image->vk.samples == 1)
+         if (state->forced_sample_count && imgv->vk.image->samples == 1)
             state->color_att[i].imgv = create_multisample_surface(state, imgv, state->forced_sample_count,
                                                                   att_needs_replicate(state, imgv, state->color_att[i].load_op));
          state->framebuffer.cbufs[i] = state->color_att[i].imgv->surface;
@@ -1791,7 +1798,7 @@ handle_begin_rendering(struct vk_cmd_queue_entry *cmd,
       struct lvp_image_view *imgv = state->ds_imgv;
       add_img_view_surface(state, imgv,
                            state->framebuffer.layers);
-      if (state->forced_sample_count && imgv->image->vk.samples == 1) {
+      if (state->forced_sample_count && imgv->vk.image->samples == 1) {
          VkAttachmentLoadOp load_op;
          if (state->depth_att.load_op == VK_ATTACHMENT_LOAD_OP_CLEAR ||
              state->stencil_att.load_op == VK_ATTACHMENT_LOAD_OP_CLEAR)

@@ -274,6 +274,7 @@ lvp_create_samplerview(struct pipe_context *pctx, struct lvp_image_view *iv, VkF
    if (!iv)
       return NULL;
 
+   const struct lvp_image *image = (struct lvp_image *)iv->vk.image;
    struct pipe_sampler_view templ;
    enum pipe_format pformat;
    if (iv->vk.aspects == VK_IMAGE_ASPECT_DEPTH_BIT)
@@ -283,7 +284,7 @@ lvp_create_samplerview(struct pipe_context *pctx, struct lvp_image_view *iv, VkF
    else
       pformat = lvp_vk_format_to_pipe_format(plane_format);
    u_sampler_view_default_template(&templ,
-                                   iv->image->planes[image_plane].bo,
+                                   image->planes[image_plane].bo,
                                    pformat);
    if (iv->vk.view_type == VK_IMAGE_VIEW_TYPE_1D)
       templ.target = PIPE_TEXTURE_1D;
@@ -316,7 +317,7 @@ lvp_create_samplerview(struct pipe_context *pctx, struct lvp_image_view *iv, VkF
       templ.swizzle_a = conv_depth_swiz(templ.swizzle_a);
    }
 
-   return pctx->create_sampler_view(pctx, iv->image->planes[image_plane].bo, &templ);
+   return pctx->create_sampler_view(pctx, image->planes[image_plane].bo, &templ);
 }
 
 static struct pipe_image_view
@@ -326,7 +327,8 @@ lvp_create_imageview(const struct lvp_image_view *iv, VkFormat plane_format, uns
    if (!iv)
       return view;
 
-   view.resource = iv->image->planes[image_plane].bo;
+   const struct lvp_image *image = (struct lvp_image *)iv->vk.image;
+   view.resource = image->planes[image_plane].bo;
    if (iv->vk.aspects == VK_IMAGE_ASPECT_DEPTH_BIT)
       view.format = lvp_vk_format_to_pipe_format(plane_format);
    else if (iv->vk.aspects == VK_IMAGE_ASPECT_STENCIL_BIT)
@@ -384,7 +386,6 @@ lvp_CreateImageView(VkDevice _device,
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
    view->pformat = lvp_vk_format_to_pipe_format(view->vk.format);
-   view->image = image;
    view->surface.texture = NULL;
 
    if (image->vk.aspects & (VK_IMAGE_ASPECT_DEPTH_BIT |

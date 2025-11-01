@@ -286,14 +286,13 @@ struct lvp_image {
 
 struct lvp_image_view {
    struct vk_image_view vk;
-   struct lvp_image *image; /**< VkImageViewCreateInfo::image */
 
    enum pipe_format pformat;
+   uint8_t plane_count;
 
    struct pipe_surface surface; /* have we created a pipe surface for this? */
    struct lvp_image_view *multisample; //VK_EXT_multisampled_render_to_single_sampled
 
-   uint8_t plane_count;
    struct {
       unsigned image_plane;
       struct pipe_sampler_view *sv;
