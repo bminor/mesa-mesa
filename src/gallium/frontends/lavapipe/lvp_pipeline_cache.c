@@ -47,7 +47,6 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_CreatePipelineCache(
    else
      cache->alloc = device->vk.alloc;
 
-   cache->device = device;
    *pPipelineCache = lvp_pipeline_cache_to_handle(cache);
 
    return VK_SUCCESS;

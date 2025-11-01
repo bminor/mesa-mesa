@@ -197,7 +197,6 @@ lvp_queue_device(const struct lvp_queue *queue)
 
 struct lvp_pipeline_cache {
    struct vk_object_base base;
-   struct lvp_device *device;
    VkAllocationCallbacks alloc;
 };
 
