@@ -497,7 +497,6 @@ struct lvp_ray_tracing_group {
 
 struct lvp_pipeline {
    struct vk_object_base base;
-   struct lvp_device *device;
    struct lvp_pipeline_layout *layout;
 
    enum lvp_pipeline_type type;
@@ -534,6 +533,12 @@ struct lvp_pipeline {
    unsigned num_groups_total;
    VkPipeline groups[0];
 };
+
+static inline struct lvp_device *
+lvp_pipeline_device(const struct lvp_pipeline *pipeline)
+{
+   return (struct lvp_device *)pipeline->base.device;
+}
 
 /* Minimum requirement by the spec. */
 #define LVP_MAX_EXEC_GRAPH_PAYLOADS 256

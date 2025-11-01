@@ -19,6 +19,7 @@ static void
 lvp_init_ray_tracing_groups(struct lvp_pipeline *pipeline,
                             const VkRayTracingPipelineCreateInfoKHR *create_info)
 {
+   struct lvp_device *device = lvp_pipeline_device(pipeline);
    uint32_t i = 0;
    for (; i < create_info->groupCount; i++) {
       const VkRayTracingShaderGroupCreateInfoKHR *group_info = create_info->pGroups + i;
@@ -57,7 +58,7 @@ lvp_init_ray_tracing_groups(struct lvp_pipeline *pipeline,
          UNREACHABLE("Unimplemented VkRayTracingShaderGroupTypeKHR");
       }
 
-      dst->handle.index = p_atomic_inc_return(&pipeline->device->group_handle_alloc);
+      dst->handle.index = p_atomic_inc_return(&device->group_handle_alloc);
    }
 
    if (!create_info->pLibraryInfo)
@@ -342,7 +343,8 @@ lvp_ray_tracing_state_init(nir_shader *nir, struct lvp_ray_tracing_pipeline_comp
    state->terminate = nir_variable_create(nir, nir_var_shader_temp, glsl_bool_type(), "terminate");
    state->opaque = nir_variable_create(nir, nir_var_shader_temp, glsl_bool_type(), "opaque");
 
-   if (compiler->pipeline->device->vk.enabled_features.rayTracingPositionFetch)
+   struct lvp_device *device = lvp_pipeline_device(compiler->pipeline);
+   if (device->vk.enabled_features.rayTracingPositionFetch)
       state->primitive_addr = nir_variable_create(nir, nir_var_shader_temp, glsl_uint64_t_type(), "primitive_addr");
 }
 
@@ -1029,9 +1031,10 @@ static void
 lvp_compile_ray_tracing_pipeline(struct lvp_pipeline *pipeline,
                                  const VkRayTracingPipelineCreateInfoKHR *create_info)
 {
+   struct lvp_device *device = lvp_pipeline_device(pipeline);
    nir_builder _b = nir_builder_init_simple_shader(
       MESA_SHADER_COMPUTE,
-      pipeline->device->pscreen->nir_options[MESA_SHADER_COMPUTE],
+      device->pscreen->nir_options[MESA_SHADER_COMPUTE],
       "ray tracing pipeline");
    nir_builder *b = &_b;
 
@@ -1111,7 +1114,7 @@ lvp_compile_ray_tracing_pipeline(struct lvp_pipeline *pipeline,
    struct lvp_shader *shader = &pipeline->shaders[MESA_SHADER_RAYGEN];
    lvp_shader_init(shader, b->shader);
    shader->push_constant_size = pipeline->layout->push_constant_size;
-   shader->shader_cso = lvp_shader_compile(pipeline->device, shader, nir_shader_clone(NULL, shader->pipeline_nir->nir), false);
+   shader->shader_cso = lvp_shader_compile(device, shader, nir_shader_clone(NULL, shader->pipeline_nir->nir), false);
 
    _mesa_hash_table_destroy(compiler.functions, NULL);
 }
@@ -1136,7 +1139,6 @@ lvp_create_ray_tracing_pipeline(VkDevice _device, const VkAllocationCallbacks *a
 
    vk_pipeline_layout_ref(&layout->vk);
 
-   pipeline->device = device;
    pipeline->layout = layout;
    pipeline->type = LVP_PIPELINE_RAY_TRACING;
    pipeline->flags = vk_rt_pipeline_create_flags(create_info);
