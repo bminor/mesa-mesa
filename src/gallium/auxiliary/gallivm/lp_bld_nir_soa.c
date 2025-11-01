@@ -3163,7 +3163,7 @@ do_int_divide(struct lp_build_nir_soa_context *bld,
 
 static LLVMValueRef
 do_int_mod(struct lp_build_nir_soa_context *bld,
-           bool is_unsigned, unsigned src_bit_size,
+           bool is_unsigned, bool use_src2_sign, unsigned src_bit_size,
            LLVMValueRef src, LLVMValueRef src2)
 {
    struct gallivm_state *gallivm = bld->base.gallivm;
@@ -3180,8 +3180,18 @@ do_int_mod(struct lp_build_nir_soa_context *bld,
       divisor = get_signed_divisor(gallivm, int_bld, mask_bld,
                                    src_bit_size, src, divisor);
    }
-   LLVMValueRef result = lp_build_mod(int_bld, src, divisor);
-   return LLVMBuildOr(builder, div_mask, result, "");
+   LLVMValueRef rem = lp_build_mod(int_bld, src, divisor);
+   rem = LLVMBuildOr(builder, div_mask, rem, "");
+
+   if (use_src2_sign) {
+      LLVMValueRef add_src2 = LLVMBuildICmp(builder, LLVMIntNE, rem, int_bld->zero, "");
+      LLVMValueRef signs_different = LLVMBuildXor(builder, LLVMBuildICmp(builder, LLVMIntSLT, src, int_bld->zero, ""),
+                                                  LLVMBuildICmp(builder, LLVMIntSLT, src2, int_bld->zero, ""), "");
+      add_src2 = LLVMBuildAnd(builder, add_src2, signs_different, "");
+      rem = LLVMBuildSelect(builder, add_src2, LLVMBuildAdd(builder, rem, src2, ""), rem, "");
+   }
+
+   return rem;
 }
 
 static LLVMValueRef
@@ -3493,7 +3503,7 @@ do_alu_action(struct lp_build_nir_soa_context *bld,
       break;
    case nir_op_imod:
    case nir_op_irem:
-      result = do_int_mod(bld, false, src_bit_size[0], src[0], src[1]);
+      result = do_int_mod(bld, false, instr->op == nir_op_imod, src_bit_size[0], src[0], src[1]);
       break;
    case nir_op_ishl: {
       if (src_bit_size[0] == 64)
@@ -3592,7 +3602,7 @@ do_alu_action(struct lp_build_nir_soa_context *bld,
       result = lp_build_min(uint_bld, src[0], src[1]);
       break;
    case nir_op_umod:
-      result = do_int_mod(bld, true, src_bit_size[0], src[0], src[1]);
+      result = do_int_mod(bld, true, false, src_bit_size[0], src[0], src[1]);
       break;
    case nir_op_umul_high: {
       LLVMValueRef hi_bits;
