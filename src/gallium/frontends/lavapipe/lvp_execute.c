@@ -558,7 +558,7 @@ handle_compute_shader(struct rendering_state *state, struct lvp_shader *shader)
 static void handle_compute_pipeline(struct vk_cmd_queue_entry *cmd,
                                     struct rendering_state *state)
 {
-   LVP_FROM_HANDLE(lvp_pipeline, pipeline, cmd->u.bind_pipeline.pipeline);
+   VK_FROM_HANDLE(lvp_pipeline, pipeline, cmd->u.bind_pipeline.pipeline);
 
    handle_compute_shader(state, &pipeline->shaders[MESA_SHADER_COMPUTE]);
 }
@@ -566,7 +566,7 @@ static void handle_compute_pipeline(struct vk_cmd_queue_entry *cmd,
 static void handle_ray_tracing_pipeline(struct vk_cmd_queue_entry *cmd,
                                     struct rendering_state *state)
 {
-   LVP_FROM_HANDLE(lvp_pipeline, pipeline, cmd->u.bind_pipeline.pipeline);
+   VK_FROM_HANDLE(lvp_pipeline, pipeline, cmd->u.bind_pipeline.pipeline);
 
    struct lvp_shader *shader = &pipeline->shaders[MESA_SHADER_RAYGEN];
 
@@ -1066,7 +1066,7 @@ static void handle_graphics_pipeline(struct lvp_pipeline *pipeline,
 static void handle_pipeline(struct vk_cmd_queue_entry *cmd,
                             struct rendering_state *state)
 {
-   LVP_FROM_HANDLE(lvp_pipeline, pipeline, cmd->u.bind_pipeline.pipeline);
+   VK_FROM_HANDLE(lvp_pipeline, pipeline, cmd->u.bind_pipeline.pipeline);
    pipeline->used = true;
    if (pipeline->type == LVP_PIPELINE_COMPUTE) {
       handle_compute_pipeline(cmd, state);
@@ -1195,7 +1195,7 @@ apply_dynamic_offsets(struct lvp_descriptor_set **out_set, const uint32_t *offse
 static void
 handle_descriptor_sets(VkBindDescriptorSetsInfoKHR *bds, struct rendering_state *state)
 {
-   LVP_FROM_HANDLE(lvp_pipeline_layout, layout, bds->layout);
+   VK_FROM_HANDLE(lvp_pipeline_layout, layout, bds->layout);
 
    uint32_t dynamic_offset_index = 0;
 
@@ -2113,7 +2113,7 @@ static void handle_copy_image_to_buffer2(struct vk_cmd_queue_entry *cmd,
                                              struct rendering_state *state)
 {
    const struct VkCopyImageToBufferInfo2 *copycmd = cmd->u.copy_image_to_buffer2.copy_image_to_buffer_info;
-   LVP_FROM_HANDLE(lvp_image, src_image, copycmd->srcImage);
+   VK_FROM_HANDLE(lvp_image, src_image, copycmd->srcImage);
    struct pipe_box box, dbox;
    struct pipe_transfer *src_t, *dst_t;
    uint8_t *src_data, *dst_data;
@@ -2191,7 +2191,7 @@ handle_copy_memory_to_image_indirect(struct vk_cmd_queue_entry *cmd,
                                      struct rendering_state *state)
 {
    const VkCopyMemoryToImageIndirectInfoKHR *copycmd = cmd->u.copy_memory_to_image_indirect_khr.copy_memory_to_image_indirect_info;
-   LVP_FROM_HANDLE(lvp_image, image, copycmd->dstImage);
+   VK_FROM_HANDLE(lvp_image, image, copycmd->dstImage);
 
    for (uint32_t i = 0; i < copycmd->copyCount; i++) {
       uint8_t *ptr = (void*)(uintptr_t)copycmd->copyAddressRange.address;
@@ -2232,7 +2232,7 @@ static void handle_copy_buffer_to_image(struct vk_cmd_queue_entry *cmd,
                                         struct rendering_state *state)
 {
    const struct VkCopyBufferToImageInfo2 *copycmd = cmd->u.copy_buffer_to_image2.copy_buffer_to_image_info;
-   LVP_FROM_HANDLE(lvp_image, dst_image, copycmd->dstImage);
+   VK_FROM_HANDLE(lvp_image, dst_image, copycmd->dstImage);
 
    for (uint32_t i = 0; i < copycmd->regionCount; i++) {
       const VkBufferImageCopy2 *region = &copycmd->pRegions[i];
@@ -2342,8 +2342,8 @@ static void handle_copy_image(struct vk_cmd_queue_entry *cmd,
                               struct rendering_state *state)
 {
    const struct VkCopyImageInfo2 *copycmd = cmd->u.copy_image2.copy_image_info;
-   LVP_FROM_HANDLE(lvp_image, src_image, copycmd->srcImage);
-   LVP_FROM_HANDLE(lvp_image, dst_image, copycmd->dstImage);
+   VK_FROM_HANDLE(lvp_image, src_image, copycmd->srcImage);
+   VK_FROM_HANDLE(lvp_image, dst_image, copycmd->dstImage);
 
    for (uint32_t i = 0; i < copycmd->regionCount; i++) {
       const VkImageCopy2 *region = &copycmd->pRegions[i];
@@ -2456,8 +2456,8 @@ static void handle_blit_image(struct vk_cmd_queue_entry *cmd,
                               struct rendering_state *state)
 {
    VkBlitImageInfo2 *blitcmd = cmd->u.blit_image2.blit_image_info;
-   LVP_FROM_HANDLE(lvp_image, src_image, blitcmd->srcImage);
-   LVP_FROM_HANDLE(lvp_image, dst_image, blitcmd->dstImage);
+   VK_FROM_HANDLE(lvp_image, src_image, blitcmd->srcImage);
+   VK_FROM_HANDLE(lvp_image, dst_image, blitcmd->dstImage);
 
    struct pipe_blit_info info = {
       .src.resource = src_image->planes[0].bo,
@@ -2784,7 +2784,7 @@ static void handle_execute_commands(struct vk_cmd_queue_entry *cmd,
                                     struct rendering_state *state, bool print_cmds)
 {
    for (unsigned i = 0; i < cmd->u.execute_commands.command_buffer_count; i++) {
-      LVP_FROM_HANDLE(lvp_cmd_buffer, secondary_buf, cmd->u.execute_commands.command_buffers[i]);
+      VK_FROM_HANDLE(lvp_cmd_buffer, secondary_buf, cmd->u.execute_commands.command_buffers[i]);
       lvp_execute_cmd_buffer(&secondary_buf->vk.cmd_queue.cmds, state, print_cmds);
    }
 }
@@ -2792,7 +2792,7 @@ static void handle_execute_commands(struct vk_cmd_queue_entry *cmd,
 static void handle_event_set2(struct vk_cmd_queue_entry *cmd,
                              struct rendering_state *state)
 {
-   LVP_FROM_HANDLE(lvp_event, event, cmd->u.set_event2.event);
+   VK_FROM_HANDLE(lvp_event, event, cmd->u.set_event2.event);
 
    VkPipelineStageFlags2 src_stage_mask =
       vk_collect_dependency_info_src_stages(cmd->u.set_event2.dependency_info);
@@ -2805,7 +2805,7 @@ static void handle_event_set2(struct vk_cmd_queue_entry *cmd,
 static void handle_event_reset2(struct vk_cmd_queue_entry *cmd,
                                struct rendering_state *state)
 {
-   LVP_FROM_HANDLE(lvp_event, event, cmd->u.reset_event2.event);
+   VK_FROM_HANDLE(lvp_event, event, cmd->u.reset_event2.event);
 
    if (cmd->u.reset_event2.stage_mask == VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT)
       state->pctx->flush(state->pctx, NULL, 0);
@@ -2817,7 +2817,7 @@ static void handle_wait_events2(struct vk_cmd_queue_entry *cmd,
 {
    finish_fence(state);
    for (unsigned i = 0; i < cmd->u.wait_events2.event_count; i++) {
-      LVP_FROM_HANDLE(lvp_event, event, cmd->u.wait_events2.events[i]);
+      VK_FROM_HANDLE(lvp_event, event, cmd->u.wait_events2.events[i]);
 
       while (event->event_storage != true);
    }
@@ -2833,7 +2833,7 @@ static void handle_begin_query(struct vk_cmd_queue_entry *cmd,
                                struct rendering_state *state)
 {
    struct vk_cmd_begin_query *qcmd = &cmd->u.begin_query;
-   LVP_FROM_HANDLE(lvp_query_pool, pool, qcmd->query_pool);
+   VK_FROM_HANDLE(lvp_query_pool, pool, qcmd->query_pool);
 
    if (pool->type == VK_QUERY_TYPE_PIPELINE_STATISTICS &&
        pool->pipeline_stats & VK_QUERY_PIPELINE_STATISTIC_COMPUTE_SHADER_INVOCATIONS_BIT)
@@ -2859,7 +2859,7 @@ static void handle_end_query(struct vk_cmd_queue_entry *cmd,
                              struct rendering_state *state)
 {
    struct vk_cmd_end_query *qcmd = &cmd->u.end_query;
-   LVP_FROM_HANDLE(lvp_query_pool, pool, qcmd->query_pool);
+   VK_FROM_HANDLE(lvp_query_pool, pool, qcmd->query_pool);
    assert(pool->queries[qcmd->query]);
 
    state->pctx->end_query(state->pctx, pool->queries[qcmd->query]);
@@ -2870,7 +2870,7 @@ static void handle_begin_query_indexed_ext(struct vk_cmd_queue_entry *cmd,
                                            struct rendering_state *state)
 {
    struct vk_cmd_begin_query_indexed_ext *qcmd = &cmd->u.begin_query_indexed_ext;
-   LVP_FROM_HANDLE(lvp_query_pool, pool, qcmd->query_pool);
+   VK_FROM_HANDLE(lvp_query_pool, pool, qcmd->query_pool);
 
    if (pool->type == VK_QUERY_TYPE_PIPELINE_STATISTICS &&
        pool->pipeline_stats & VK_QUERY_PIPELINE_STATISTIC_COMPUTE_SHADER_INVOCATIONS_BIT)
@@ -2896,7 +2896,7 @@ static void handle_end_query_indexed_ext(struct vk_cmd_queue_entry *cmd,
                                          struct rendering_state *state)
 {
    struct vk_cmd_end_query_indexed_ext *qcmd = &cmd->u.end_query_indexed_ext;
-   LVP_FROM_HANDLE(lvp_query_pool, pool, qcmd->query_pool);
+   VK_FROM_HANDLE(lvp_query_pool, pool, qcmd->query_pool);
    assert(pool->queries[qcmd->query]);
 
    state->pctx->end_query(state->pctx, pool->queries[qcmd->query]);
@@ -2906,7 +2906,7 @@ static void handle_reset_query_pool(struct vk_cmd_queue_entry *cmd,
                                     struct rendering_state *state)
 {
    struct vk_cmd_reset_query_pool *qcmd = &cmd->u.reset_query_pool;
-   LVP_FROM_HANDLE(lvp_query_pool, pool, qcmd->query_pool);
+   VK_FROM_HANDLE(lvp_query_pool, pool, qcmd->query_pool);
 
    if (pool->base_type >= PIPE_QUERY_TYPES)
       return;
@@ -2923,7 +2923,7 @@ static void handle_write_timestamp2(struct vk_cmd_queue_entry *cmd,
                                     struct rendering_state *state)
 {
    struct vk_cmd_write_timestamp2 *qcmd = &cmd->u.write_timestamp2;
-   LVP_FROM_HANDLE(lvp_query_pool, pool, qcmd->query_pool);
+   VK_FROM_HANDLE(lvp_query_pool, pool, qcmd->query_pool);
 
    if (!(qcmd->stage == VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT))
       state->pctx->flush(state->pctx, NULL, 0);
@@ -2942,7 +2942,7 @@ static void handle_copy_query_pool_results(struct vk_cmd_queue_entry *cmd,
                                            struct rendering_state *state)
 {
    struct vk_cmd_copy_query_pool_results *copycmd = &cmd->u.copy_query_pool_results;
-   LVP_FROM_HANDLE(lvp_query_pool, pool, copycmd->query_pool);
+   VK_FROM_HANDLE(lvp_query_pool, pool, copycmd->query_pool);
    enum pipe_query_flags flags = (copycmd->flags & VK_QUERY_RESULT_WAIT_BIT) ? PIPE_QUERY_WAIT : 0;
 
    if (copycmd->flags & VK_QUERY_RESULT_PARTIAL_BIT)
@@ -3034,7 +3034,7 @@ static void handle_copy_query_pool_results(struct vk_cmd_queue_entry *cmd,
 static void handle_clear_color_image(struct vk_cmd_queue_entry *cmd,
                                      struct rendering_state *state)
 {
-   LVP_FROM_HANDLE(lvp_image, image, cmd->u.clear_color_image.image);
+   VK_FROM_HANDLE(lvp_image, image, cmd->u.clear_color_image.image);
 
    enum pipe_format format = image->planes[0].bo->format;
    const struct util_format_description *desc = util_format_description(format);
@@ -3076,7 +3076,7 @@ static void handle_clear_color_image(struct vk_cmd_queue_entry *cmd,
 static void handle_clear_ds_image(struct vk_cmd_queue_entry *cmd,
                                   struct rendering_state *state)
 {
-   LVP_FROM_HANDLE(lvp_image, image, cmd->u.clear_depth_stencil_image.image);
+   VK_FROM_HANDLE(lvp_image, image, cmd->u.clear_depth_stencil_image.image);
    for (unsigned i = 0; i < cmd->u.clear_depth_stencil_image.range_count; i++) {
       VkImageSubresourceRange *range = &cmd->u.clear_depth_stencil_image.ranges[i];
       uint32_t ds_clear_flags = 0;
@@ -3172,8 +3172,8 @@ static void handle_resolve_image(struct vk_cmd_queue_entry *cmd,
                                  struct rendering_state *state)
 {
    VkResolveImageInfo2 *resolvecmd = cmd->u.resolve_image2.resolve_image_info;
-   LVP_FROM_HANDLE(lvp_image, src_image, resolvecmd->srcImage);
-   LVP_FROM_HANDLE(lvp_image, dst_image, resolvecmd->dstImage);
+   VK_FROM_HANDLE(lvp_image, src_image, resolvecmd->srcImage);
+   VK_FROM_HANDLE(lvp_image, dst_image, resolvecmd->dstImage);
 
    struct pipe_blit_info info = {0};
    info.src.resource = src_image->planes[0].bo;
@@ -3251,7 +3251,7 @@ static void handle_push_descriptor_set(struct vk_cmd_queue_entry *cmd,
                                        struct rendering_state *state)
 {
    VkPushDescriptorSetInfoKHR *pds = cmd->u.push_descriptor_set2.push_descriptor_set_info;
-   LVP_FROM_HANDLE(lvp_pipeline_layout, layout, pds->layout);
+   VK_FROM_HANDLE(lvp_pipeline_layout, layout, pds->layout);
    struct lvp_descriptor_set_layout *set_layout = (struct lvp_descriptor_set_layout *)layout->vk.set_layouts[pds->set];
 
    struct lvp_descriptor_set *set;
@@ -3288,8 +3288,8 @@ static void handle_push_descriptor_set_with_template(struct vk_cmd_queue_entry *
                                                      struct rendering_state *state)
 {
    VkPushDescriptorSetWithTemplateInfoKHR *pds = cmd->u.push_descriptor_set_with_template2.push_descriptor_set_with_template_info;
-   LVP_FROM_HANDLE(vk_descriptor_update_template, templ, pds->descriptorUpdateTemplate);
-   LVP_FROM_HANDLE(lvp_pipeline_layout, layout, pds->layout);
+   VK_FROM_HANDLE(vk_descriptor_update_template, templ, pds->descriptorUpdateTemplate);
+   VK_FROM_HANDLE(lvp_pipeline_layout, layout, pds->layout);
    struct lvp_descriptor_set_layout *set_layout = (struct lvp_descriptor_set_layout *)layout->vk.set_layouts[pds->set];
 
    struct lvp_descriptor_set *set;
@@ -3816,7 +3816,7 @@ handle_shaders(struct vk_cmd_queue_entry *cmd, struct rendering_state *state)
    for (unsigned i = 0; i < bind->stage_count; i++) {
       mesa_shader_stage stage = vk_to_mesa_shader_stage(bind->stages[i]);
       assert(stage != MESA_SHADER_NONE && stage <= MESA_SHADER_MESH);
-      LVP_FROM_HANDLE(lvp_shader, shader, bind->shaders ? bind->shaders[i] : VK_NULL_HANDLE);
+      VK_FROM_HANDLE(lvp_shader, shader, bind->shaders ? bind->shaders[i] : VK_NULL_HANDLE);
       if (stage == MESA_SHADER_FRAGMENT) {
          if (shader) {
             state->force_min_sample = shader->pipeline_nir->nir->info.fs.uses_sample_shading;
@@ -4301,7 +4301,7 @@ static void
 handle_descriptor_buffer_embedded_samplers(struct vk_cmd_queue_entry *cmd, struct rendering_state *state)
 {
    const VkBindDescriptorBufferEmbeddedSamplersInfoEXT *bind = cmd->u.bind_descriptor_buffer_embedded_samplers2_ext.bind_descriptor_buffer_embedded_samplers_info;
-   LVP_FROM_HANDLE(lvp_pipeline_layout, layout, bind->layout);
+   VK_FROM_HANDLE(lvp_pipeline_layout, layout, bind->layout);
 
    if (!layout->vk.set_layouts[bind->set])
       return;
@@ -4323,7 +4323,7 @@ handle_descriptor_buffer_offsets(struct vk_cmd_queue_entry *cmd, struct renderin
    uint32_t types = lvp_pipeline_types_from_shader_stages(dbo->stageFlags);
    u_foreach_bit(pipeline_type, types) {
       for (unsigned i = 0; i < dbo->setCount; i++) {
-         LVP_FROM_HANDLE(lvp_pipeline_layout, layout, dbo->layout);
+         VK_FROM_HANDLE(lvp_pipeline_layout, layout, dbo->layout);
          unsigned idx = dbo->firstSet + i;
          state->desc_buffer_offsets[pipeline_type][idx].buffer_index = dbo->pBufferIndices[i];
          state->desc_buffer_offsets[pipeline_type][idx].offset = dbo->pOffsets[i];

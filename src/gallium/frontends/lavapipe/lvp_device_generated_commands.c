@@ -29,7 +29,7 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_CreateIndirectExecutionSetEXT(
     const VkAllocationCallbacks*               pAllocator,
     VkIndirectExecutionSetEXT*                 pIndirectExecutionSet)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_device, device, _device);
    bool is_shaders = pCreateInfo->type == VK_INDIRECT_EXECUTION_SET_INFO_TYPE_SHADER_OBJECTS_EXT;
    size_t size = 0;
    if (is_shaders) {
@@ -65,7 +65,7 @@ VKAPI_ATTR void VKAPI_CALL lvp_DestroyIndirectExecutionSetEXT(
     VkIndirectExecutionSetEXT     indirectExecutionSet,
     const VkAllocationCallbacks*  pAllocator)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_device, device, _device);
    VK_FROM_HANDLE(lvp_indirect_execution_set, iset, indirectExecutionSet);
 
    if (!iset)
@@ -138,7 +138,7 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_CreateIndirectCommandsLayoutEXT(
     const VkAllocationCallbacks*                 pAllocator,
     VkIndirectCommandsLayoutEXT*                 pIndirectCommandsLayout)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_device, device, _device);
    struct lvp_indirect_command_layout_ext *elayout;
    size_t token_size = pCreateInfo->tokenCount * sizeof(VkIndirectCommandsLayoutTokenEXT);
 
@@ -203,7 +203,7 @@ VKAPI_ATTR void VKAPI_CALL lvp_DestroyIndirectCommandsLayoutEXT(
     VkIndirectCommandsLayoutEXT                  indirectCommandsLayout,
     const VkAllocationCallbacks*                pAllocator)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_device, device, _device);
    VK_FROM_HANDLE(lvp_indirect_command_layout_ext, elayout, indirectCommandsLayout);
 
    if (!elayout)

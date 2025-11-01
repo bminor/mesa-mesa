@@ -224,7 +224,7 @@ VKAPI_ATTR void VKAPI_CALL lvp_GetPhysicalDeviceFormatProperties2(
         VkFormat                                    format,
         VkFormatProperties2*                        pFormatProperties)
 {
-   LVP_FROM_HANDLE(lvp_physical_device, physical_device, physicalDevice);
+   VK_FROM_HANDLE(lvp_physical_device, physical_device, physicalDevice);
 
    VkFormatProperties3 format_props;
    lvp_physical_device_get_format_properties(physical_device,
@@ -412,7 +412,7 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_GetPhysicalDeviceImageFormatProperties2(
         const VkPhysicalDeviceImageFormatInfo2     *base_info,
         VkImageFormatProperties2                   *base_props)
 {
-   LVP_FROM_HANDLE(lvp_physical_device, physical_device, physicalDevice);
+   VK_FROM_HANDLE(lvp_physical_device, physical_device, physicalDevice);
    const VkPhysicalDeviceExternalImageFormatInfo *external_info = NULL;
    VkExternalImageFormatProperties *external_props = NULL;
    VkSamplerYcbcrConversionImageFormatProperties *ycbcr_props = NULL;
@@ -527,7 +527,7 @@ VKAPI_ATTR void VKAPI_CALL lvp_GetPhysicalDeviceSparseImageFormatProperties2(
         uint32_t                                   *pPropertyCount,
         VkSparseImageFormatProperties2             *pProperties)
 {
-   LVP_FROM_HANDLE(lvp_physical_device, physical_device, physicalDevice);
+   VK_FROM_HANDLE(lvp_physical_device, physical_device, physicalDevice);
    VkResult result;
 
    if (pFormatInfo->samples > VK_SAMPLE_COUNT_1_BIT) {
@@ -572,7 +572,7 @@ VKAPI_ATTR void VKAPI_CALL lvp_GetDeviceImageSparseMemoryRequirements(
     uint32_t*                                   pSparseMemoryRequirementCount,
     VkSparseImageMemoryRequirements2*           pSparseMemoryRequirements)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_device, device, _device);
 
    if (!(pInfo->pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT)) {
       *pSparseMemoryRequirementCount = 0;
@@ -601,8 +601,8 @@ VKAPI_ATTR void VKAPI_CALL lvp_GetImageSparseMemoryRequirements2(
    uint32_t* pSparseMemoryRequirementCount,
    VkSparseImageMemoryRequirements2* pSparseMemoryRequirements)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
-   LVP_FROM_HANDLE(lvp_image, image, pInfo->image);
+   VK_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_image, image, pInfo->image);
 
    if (!(image->vk.create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT)) {
       *pSparseMemoryRequirementCount = 0;
@@ -644,7 +644,7 @@ VKAPI_ATTR void VKAPI_CALL lvp_GetPhysicalDeviceExternalBufferProperties(
    switch (pExternalBufferInfo->handleType) {
 #ifdef HAVE_LIBDRM
       case VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT: {
-         LVP_FROM_HANDLE(lvp_physical_device, physical_device, physicalDevice);
+         VK_FROM_HANDLE(lvp_physical_device, physical_device, physicalDevice);
          int params = physical_device->pscreen->caps.dmabuf;
          flags = VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT;
          if (params & DRM_PRIME_CAP_EXPORT)

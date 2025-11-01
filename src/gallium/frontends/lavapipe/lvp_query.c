@@ -30,7 +30,7 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_CreateQueryPool(
     const VkAllocationCallbacks*                pAllocator,
     VkQueryPool*                                pQueryPool)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_device, device, _device);
 
    uint32_t query_size = sizeof(struct pipe_query *);
    enum pipe_query_type pipeq;
@@ -98,8 +98,8 @@ VKAPI_ATTR void VKAPI_CALL lvp_DestroyQueryPool(
     VkQueryPool                                 _pool,
     const VkAllocationCallbacks*                pAllocator)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
-   LVP_FROM_HANDLE(lvp_query_pool, pool, _pool);
+   VK_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_query_pool, pool, _pool);
 
    if (!pool)
       return;
@@ -123,8 +123,8 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_GetQueryPoolResults(
    VkDeviceSize                                stride,
    VkQueryResultFlags                          flags)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
-   LVP_FROM_HANDLE(lvp_query_pool, pool, queryPool);
+   VK_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_query_pool, pool, queryPool);
    VkResult vk_result = VK_SUCCESS;
 
    device->vk.dispatch_table.DeviceWaitIdle(_device);
@@ -228,8 +228,8 @@ VKAPI_ATTR void VKAPI_CALL lvp_ResetQueryPool(
    uint32_t                                    firstQuery,
    uint32_t                                    queryCount)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
-   LVP_FROM_HANDLE(lvp_query_pool, pool, queryPool);
+   VK_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_query_pool, pool, queryPool);
 
    if (pool->base_type >= PIPE_QUERY_TYPES)
       return;

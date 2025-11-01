@@ -79,7 +79,7 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_BeginCommandBuffer(
    VkCommandBuffer                             commandBuffer,
    const VkCommandBufferBeginInfo*             pBeginInfo)
 {
-   LVP_FROM_HANDLE(lvp_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(lvp_cmd_buffer, cmd_buffer, commandBuffer);
 
    vk_command_buffer_begin(&cmd_buffer->vk, pBeginInfo);
 
@@ -89,7 +89,7 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_BeginCommandBuffer(
 VKAPI_ATTR VkResult VKAPI_CALL lvp_EndCommandBuffer(
    VkCommandBuffer                             commandBuffer)
 {
-   LVP_FROM_HANDLE(lvp_cmd_buffer, cmd_buffer, commandBuffer);
+   VK_FROM_HANDLE(lvp_cmd_buffer, cmd_buffer, commandBuffer);
 
    return vk_command_buffer_end(&cmd_buffer->vk);
 }

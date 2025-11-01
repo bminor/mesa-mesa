@@ -659,9 +659,6 @@ get_binding_layout(const struct lvp_pipeline_layout *layout,
    return &get_set_layout(layout, set)->binding[binding];
 }
 
-#define LVP_FROM_HANDLE(__lvp_type, __name, __handle) \
-   struct __lvp_type *__name = __lvp_type ## _from_handle(__handle)
-
 VK_DEFINE_HANDLE_CASTS(lvp_cmd_buffer, vk.base, VkCommandBuffer,
                        VK_OBJECT_TYPE_COMMAND_BUFFER)
 VK_DEFINE_HANDLE_CASTS(lvp_device, vk.base, VkDevice, VK_OBJECT_TYPE_DEVICE)

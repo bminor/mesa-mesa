@@ -86,7 +86,7 @@ lvp_pipeline_destroy(struct lvp_device *device, struct lvp_pipeline *pipeline, b
       vk_pipeline_layout_unref(&device->vk, &pipeline->layout->vk);
 
    for (unsigned i = 0; i < pipeline->num_groups; i++) {
-      LVP_FROM_HANDLE(lvp_pipeline, p, pipeline->groups[i]);
+      VK_FROM_HANDLE(lvp_pipeline, p, pipeline->groups[i]);
       lvp_pipeline_destroy(device, p, locked);
    }
 
@@ -108,8 +108,8 @@ VKAPI_ATTR void VKAPI_CALL lvp_DestroyPipeline(
    VkPipeline                                  _pipeline,
    const VkAllocationCallbacks*                pAllocator)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
-   LVP_FROM_HANDLE(lvp_pipeline, pipeline, _pipeline);
+   VK_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_pipeline, pipeline, _pipeline);
 
    if (!_pipeline)
       return;
@@ -787,7 +787,7 @@ lvp_graphics_pipeline_init(struct lvp_pipeline *pipeline,
 
    if (libstate) {
       for (unsigned i = 0; i < libstate->libraryCount; i++) {
-         LVP_FROM_HANDLE(lvp_pipeline, p, libstate->pLibraries[i]);
+         VK_FROM_HANDLE(lvp_pipeline, p, libstate->pLibraries[i]);
          vk_graphics_pipeline_state_merge(&pipeline->graphics_state,
                                           &p->graphics_state);
          if (p->stages & VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT) {
@@ -868,7 +868,7 @@ lvp_graphics_pipeline_init(struct lvp_pipeline *pipeline,
    }
    if (libstate) {
        for (unsigned i = 0; i < libstate->libraryCount; i++) {
-          LVP_FROM_HANDLE(lvp_pipeline, p, libstate->pLibraries[i]);
+          VK_FROM_HANDLE(lvp_pipeline, p, libstate->pLibraries[i]);
           if (p->stages & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT) {
              if (p->shaders[MESA_SHADER_FRAGMENT].pipeline_nir)
                 lvp_pipeline_nir_ref(&pipeline->shaders[MESA_SHADER_FRAGMENT].pipeline_nir, p->shaders[MESA_SHADER_FRAGMENT].pipeline_nir);
@@ -940,8 +940,8 @@ lvp_graphics_pipeline_create(
    VkPipeline *pPipeline,
    bool group)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
-   LVP_FROM_HANDLE(lvp_pipeline_cache, cache, _cache);
+   VK_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_pipeline_cache, cache, _cache);
    struct lvp_pipeline *pipeline;
    VkResult result;
 
@@ -1045,8 +1045,8 @@ lvp_compute_pipeline_create(
    VkPipelineCreateFlagBits2KHR flags,
    VkPipeline *pPipeline)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
-   LVP_FROM_HANDLE(lvp_pipeline_cache, cache, _cache);
+   VK_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_pipeline_cache, cache, _cache);
    struct lvp_pipeline *pipeline;
    VkResult result;
 
@@ -1120,8 +1120,8 @@ VKAPI_ATTR void VKAPI_CALL lvp_DestroyShaderEXT(
     VkShaderEXT                                 _shader,
     const VkAllocationCallbacks*                pAllocator)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
-   LVP_FROM_HANDLE(lvp_shader, shader, _shader);
+   VK_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_shader, shader, _shader);
 
    if (!shader)
       return;
@@ -1244,7 +1244,7 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_CreateShadersEXT(
     const VkAllocationCallbacks*                pAllocator,
     VkShaderEXT*                                pShaders)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_device, device, _device);
    unsigned i;
    for (i = 0; i < createInfoCount; i++) {
       pShaders[i] = create_shader_object(device, &pCreateInfos[i], pAllocator);
@@ -1267,7 +1267,7 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_GetShaderBinaryDataEXT(
     size_t*                                     pDataSize,
     void*                                       pData)
 {
-   LVP_FROM_HANDLE(lvp_shader, shader, _shader);
+   VK_FROM_HANDLE(lvp_shader, shader, _shader);
    VkResult ret = VK_SUCCESS;
    if (pData) {
       if (*pDataSize < shader->blob.size + SHA1_DIGEST_LENGTH + VK_UUID_SIZE) {
@@ -1296,7 +1296,7 @@ lvp_exec_graph_pipeline_create(VkDevice _device, VkPipelineCache _cache,
                                VkPipelineCreateFlagBits2KHR flags,
                                VkPipeline *out_pipeline)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_device, device, _device);
    struct lvp_pipeline *pipeline;
    VkResult result;
 

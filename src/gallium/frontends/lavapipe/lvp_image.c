@@ -36,7 +36,7 @@ lvp_image_create(VkDevice _device,
                  const VkAllocationCallbacks* alloc,
                  VkImage *pImage)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_device, device, _device);
    struct lvp_image *image;
    VkResult result = VK_SUCCESS;
 #ifdef HAVE_LIBDRM
@@ -224,7 +224,7 @@ lvp_CreateImage(VkDevice _device,
                 VkImage *pImage)
 {
 #if !DETECT_OS_ANDROID
-   LVP_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_device, device, _device);
    const VkImageSwapchainCreateInfoKHR *swapchain_info =
       vk_find_struct_const(pCreateInfo->pNext, IMAGE_SWAPCHAIN_CREATE_INFO_KHR);
    if (swapchain_info && swapchain_info->swapchain != VK_NULL_HANDLE) {
@@ -242,8 +242,8 @@ VKAPI_ATTR void VKAPI_CALL
 lvp_DestroyImage(VkDevice _device, VkImage _image,
                  const VkAllocationCallbacks *pAllocator)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
-   LVP_FROM_HANDLE(lvp_image, image, _image);
+   VK_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_image, image, _image);
 
    if (!_image)
      return;
@@ -374,8 +374,8 @@ lvp_CreateImageView(VkDevice _device,
                     const VkAllocationCallbacks *pAllocator,
                     VkImageView *pView)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
-   LVP_FROM_HANDLE(lvp_image, image, pCreateInfo->image);
+   VK_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_image, image, pCreateInfo->image);
    struct lvp_image_view *view;
 
    view = vk_image_view_create(&device->vk, pCreateInfo,
@@ -439,8 +439,8 @@ VKAPI_ATTR void VKAPI_CALL
 lvp_DestroyImageView(VkDevice _device, VkImageView _iview,
                      const VkAllocationCallbacks *pAllocator)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
-   LVP_FROM_HANDLE(lvp_image_view, iview, _iview);
+   VK_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_image_view, iview, _iview);
 
    if (!_iview)
      return;
@@ -464,8 +464,8 @@ VKAPI_ATTR void VKAPI_CALL lvp_GetImageSubresourceLayout(
     const VkImageSubresource*                   pSubresource,
     VkSubresourceLayout*                        pLayout)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
-   LVP_FROM_HANDLE(lvp_image, image, _image);
+   VK_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_image, image, _image);
    uint64_t value;
 
    const uint8_t p = lvp_image_aspects_to_plane(image, pSubresource->aspectMask);
@@ -544,7 +544,7 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_CreateBuffer(
     const VkAllocationCallbacks*                pAllocator,
     VkBuffer*                                   pBuffer)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_device, device, _device);
    struct lvp_buffer *buffer;
 
    assert(pCreateInfo->sType == VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO);
@@ -607,8 +607,8 @@ VKAPI_ATTR void VKAPI_CALL lvp_DestroyBuffer(
     VkBuffer                                    _buffer,
     const VkAllocationCallbacks*                pAllocator)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
-   LVP_FROM_HANDLE(lvp_buffer, buffer, _buffer);
+   VK_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_buffer, buffer, _buffer);
 
    if (!_buffer)
      return;
@@ -631,8 +631,8 @@ VKAPI_ATTR VkDeviceAddress VKAPI_CALL lvp_GetBufferDeviceAddress(
    VkDevice                                    _device,
    const VkBufferDeviceAddressInfo*            pInfo)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
-   LVP_FROM_HANDLE(lvp_buffer, buffer, pInfo->buffer);
+   VK_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_buffer, buffer, pInfo->buffer);
    simple_mtx_lock(&device->bda_lock);
    _mesa_hash_table_insert(&device->bda, buffer->map, buffer);
    simple_mtx_unlock(&device->bda_lock);
@@ -695,8 +695,8 @@ lvp_CreateBufferView(VkDevice _device,
                      const VkAllocationCallbacks *pAllocator,
                      VkBufferView *pView)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
-   LVP_FROM_HANDLE(lvp_buffer, buffer, pCreateInfo->buffer);
+   VK_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_buffer, buffer, pCreateInfo->buffer);
    struct lvp_buffer_view *view;
 
    view = vk_buffer_view_create(&device->vk,
@@ -731,8 +731,8 @@ VKAPI_ATTR void VKAPI_CALL
 lvp_DestroyBufferView(VkDevice _device, VkBufferView bufferView,
                       const VkAllocationCallbacks *pAllocator)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
-   LVP_FROM_HANDLE(lvp_buffer_view, view, bufferView);
+   VK_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_buffer_view, view, bufferView);
 
    if (!bufferView)
      return;
@@ -752,8 +752,8 @@ lvp_DestroyBufferView(VkDevice _device, VkBufferView bufferView,
 VKAPI_ATTR VkResult VKAPI_CALL
 lvp_CopyMemoryToImageEXT(VkDevice _device, const VkCopyMemoryToImageInfoEXT *pCopyMemoryToImageInfo)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
-   LVP_FROM_HANDLE(lvp_image, image, pCopyMemoryToImageInfo->dstImage);
+   VK_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_image, image, pCopyMemoryToImageInfo->dstImage);
    for (unsigned i = 0; i < pCopyMemoryToImageInfo->regionCount; i++) {
       const VkMemoryToImageCopyEXT *copy = &pCopyMemoryToImageInfo->pRegions[i];
       const VkImageAspectFlagBits aspects = copy->imageSubresource.aspectMask;
@@ -818,8 +818,8 @@ lvp_CopyMemoryToImageEXT(VkDevice _device, const VkCopyMemoryToImageInfoEXT *pCo
 VKAPI_ATTR VkResult VKAPI_CALL
 lvp_CopyImageToMemoryEXT(VkDevice _device, const VkCopyImageToMemoryInfoEXT *pCopyImageToMemoryInfo)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
-   LVP_FROM_HANDLE(lvp_image, image, pCopyImageToMemoryInfo->srcImage);
+   VK_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_image, image, pCopyImageToMemoryInfo->srcImage);
 
    for (unsigned i = 0; i < pCopyImageToMemoryInfo->regionCount; i++) {
       const VkImageToMemoryCopyEXT *copy = &pCopyImageToMemoryInfo->pRegions[i];
@@ -870,9 +870,9 @@ lvp_CopyImageToMemoryEXT(VkDevice _device, const VkCopyImageToMemoryInfoEXT *pCo
 VKAPI_ATTR VkResult VKAPI_CALL
 lvp_CopyImageToImageEXT(VkDevice _device, const VkCopyImageToImageInfoEXT *pCopyImageToImageInfo)
 {
-   LVP_FROM_HANDLE(lvp_device, device, _device);
-   LVP_FROM_HANDLE(lvp_image, src_image, pCopyImageToImageInfo->srcImage);
-   LVP_FROM_HANDLE(lvp_image, dst_image, pCopyImageToImageInfo->dstImage);
+   VK_FROM_HANDLE(lvp_device, device, _device);
+   VK_FROM_HANDLE(lvp_image, src_image, pCopyImageToImageInfo->srcImage);
+   VK_FROM_HANDLE(lvp_image, dst_image, pCopyImageToImageInfo->dstImage);
 
    /* basically the same as handle_copy_image() */
    for (unsigned i = 0; i < pCopyImageToImageInfo->regionCount; i++) {
@@ -922,10 +922,10 @@ lvp_buffer_bind_sparse(struct lvp_device *device,
                        struct lvp_queue *queue,
                        VkSparseBufferMemoryBindInfo *bind)
 {
-   LVP_FROM_HANDLE(lvp_buffer, buffer, bind->buffer);
+   VK_FROM_HANDLE(lvp_buffer, buffer, bind->buffer);
 
    for (uint32_t i = 0; i < bind->bindCount; i++) {
-      LVP_FROM_HANDLE(lvp_device_memory, mem, bind->pBinds[i].memory);
+      VK_FROM_HANDLE(lvp_device_memory, mem, bind->pBinds[i].memory);
       device->pscreen->resource_bind_backing(device->pscreen,
                                              buffer->bo,
                                              mem ? mem->pmem : NULL,
@@ -942,11 +942,11 @@ lvp_image_bind_opaque_sparse(struct lvp_device *device,
                              struct lvp_queue *queue,
                              VkSparseImageOpaqueMemoryBindInfo *bind_info)
 {
-   LVP_FROM_HANDLE(lvp_image, image, bind_info->image);
+   VK_FROM_HANDLE(lvp_image, image, bind_info->image);
 
    for (uint32_t i = 0; i < bind_info->bindCount; i++) {
       const VkSparseMemoryBind *bind = &bind_info->pBinds[i];
-      LVP_FROM_HANDLE(lvp_device_memory, mem, bind->memory);
+      VK_FROM_HANDLE(lvp_device_memory, mem, bind->memory);
 
       uint32_t plane_index;
       uint32_t offset;
@@ -977,13 +977,13 @@ lvp_image_bind_sparse(struct lvp_device *device,
                       struct lvp_queue *queue,
                       VkSparseImageMemoryBindInfo *bind_info)
 {
-   LVP_FROM_HANDLE(lvp_image, image, bind_info->image);
+   VK_FROM_HANDLE(lvp_image, image, bind_info->image);
 
    enum pipe_format format = vk_format_to_pipe_format(image->vk.format);
 
    for (uint32_t i = 0; i < bind_info->bindCount; i++) {
       const VkSparseImageMemoryBind *bind = &bind_info->pBinds[i];
-      LVP_FROM_HANDLE(lvp_device_memory, mem, bind->memory);
+      VK_FROM_HANDLE(lvp_device_memory, mem, bind->memory);
 
       uint8_t plane = lvp_image_aspects_to_plane(image, bind->subresource.aspectMask);
 
