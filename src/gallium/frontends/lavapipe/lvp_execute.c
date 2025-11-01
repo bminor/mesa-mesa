@@ -2842,8 +2842,8 @@ static void handle_begin_query(struct vk_cmd_queue_entry *cmd,
    struct vk_cmd_begin_query *qcmd = &cmd->u.begin_query;
    VK_FROM_HANDLE(lvp_query_pool, pool, qcmd->query_pool);
 
-   if (pool->type == VK_QUERY_TYPE_PIPELINE_STATISTICS &&
-       pool->pipeline_stats & VK_QUERY_PIPELINE_STATISTIC_COMPUTE_SHADER_INVOCATIONS_BIT)
+   if (pool->vk.query_type == VK_QUERY_TYPE_PIPELINE_STATISTICS &&
+       pool->vk.pipeline_statistics & VK_QUERY_PIPELINE_STATISTIC_COMPUTE_SHADER_INVOCATIONS_BIT)
       emit_compute_state(state);
 
    emit_state(state);
@@ -2879,8 +2879,8 @@ static void handle_begin_query_indexed_ext(struct vk_cmd_queue_entry *cmd,
    struct vk_cmd_begin_query_indexed_ext *qcmd = &cmd->u.begin_query_indexed_ext;
    VK_FROM_HANDLE(lvp_query_pool, pool, qcmd->query_pool);
 
-   if (pool->type == VK_QUERY_TYPE_PIPELINE_STATISTICS &&
-       pool->pipeline_stats & VK_QUERY_PIPELINE_STATISTIC_COMPUTE_SHADER_INVOCATIONS_BIT)
+   if (pool->vk.query_type == VK_QUERY_TYPE_PIPELINE_STATISTICS &&
+       pool->vk.pipeline_statistics & VK_QUERY_PIPELINE_STATISTIC_COMPUTE_SHADER_INVOCATIONS_BIT)
       emit_compute_state(state);
 
    emit_state(state);
@@ -2985,10 +2985,10 @@ static void handle_copy_query_pool_results(struct vk_cmd_queue_entry *cmd,
       if (pool->queries[i]) {
          unsigned num_results = 0;
          if (copycmd->flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT) {
-            if (pool->type == VK_QUERY_TYPE_PIPELINE_STATISTICS) {
-               num_results = util_bitcount(pool->pipeline_stats);
+            if (pool->vk.query_type == VK_QUERY_TYPE_PIPELINE_STATISTICS) {
+               num_results = util_bitcount(pool->vk.pipeline_statistics);
             } else
-               num_results = pool-> type == VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT ? 2 : 1;
+               num_results = pool->vk.query_type == VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT ? 2 : 1;
             state->pctx->get_query_result_resource(state->pctx,
                                                    pool->queries[i],
                                                    flags,
@@ -2997,9 +2997,9 @@ static void handle_copy_query_pool_results(struct vk_cmd_queue_entry *cmd,
                                                    lvp_buffer_from_handle(copycmd->dst_buffer)->bo,
                                                    offset + num_results * result_size);
          }
-         if (pool->type == VK_QUERY_TYPE_PIPELINE_STATISTICS) {
+         if (pool->vk.query_type == VK_QUERY_TYPE_PIPELINE_STATISTICS) {
             num_results = 0;
-            u_foreach_bit(bit, pool->pipeline_stats)
+            u_foreach_bit(bit, pool->vk.pipeline_statistics)
                state->pctx->get_query_result_resource(state->pctx,
                                                       pool->queries[i],
                                                       flags,

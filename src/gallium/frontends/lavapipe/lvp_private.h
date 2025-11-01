@@ -81,6 +81,7 @@ typedef uint32_t xcb_window_t;
 #include "vk_graphics_state.h"
 #include "vk_pipeline_layout.h"
 #include "vk_queue.h"
+#include "vk_query_pool.h"
 #include "vk_sampler.h"
 #include "vk_sync.h"
 #include "vk_sync_timeline.h"
@@ -599,10 +600,7 @@ struct lvp_buffer_view {
 #define LVP_QUERY_ACCELERATION_STRUCTURE_INSTANCE_COUNT (PIPE_QUERY_TYPES + 3)
 
 struct lvp_query_pool {
-   struct vk_object_base base;
-   VkQueryType type;
-   uint32_t count;
-   VkQueryPipelineStatisticFlags pipeline_stats;
+   struct vk_query_pool vk;
    enum pipe_query_type base_type;
    void *data; /* Used by queries that are not implemented by pipe_query */
    struct pipe_query *queries[0];
@@ -700,7 +698,7 @@ VK_DEFINE_NONDISP_HANDLE_CASTS(lvp_shader, base, VkShaderEXT,
                                VK_OBJECT_TYPE_SHADER_EXT)
 VK_DEFINE_NONDISP_HANDLE_CASTS(lvp_pipeline_layout, vk.base, VkPipelineLayout,
                                VK_OBJECT_TYPE_PIPELINE_LAYOUT)
-VK_DEFINE_NONDISP_HANDLE_CASTS(lvp_query_pool, base, VkQueryPool,
+VK_DEFINE_NONDISP_HANDLE_CASTS(lvp_query_pool, vk.base, VkQueryPool,
                                VK_OBJECT_TYPE_QUERY_POOL)
 VK_DEFINE_NONDISP_HANDLE_CASTS(lvp_sampler, vk.base, VkSampler,
                                VK_OBJECT_TYPE_SAMPLER)
