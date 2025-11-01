@@ -730,13 +730,13 @@ lvp_CmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, uint32_t in
                                       const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos)
 {
    VK_FROM_HANDLE(lvp_cmd_buffer, cmd_buffer, commandBuffer);
-
-   lvp_init_radix_sort(cmd_buffer->device);
+   struct lvp_device *device = lvp_cmd_buffer_device(cmd_buffer);
+   lvp_init_radix_sort(device);
 
    lvp_enqueue_save_state(commandBuffer);
 
-   vk_cmd_build_acceleration_structures(commandBuffer, &cmd_buffer->device->vk, &cmd_buffer->device->meta,
-                                        infoCount, pInfos, ppBuildRangeInfos, &cmd_buffer->device->accel_struct_args);
+   vk_cmd_build_acceleration_structures(commandBuffer, &device->vk, &device->meta,
+                                        infoCount, pInfos, ppBuildRangeInfos, &device->accel_struct_args);
 
    lvp_enqueue_restore_state(commandBuffer);
 }

@@ -597,9 +597,14 @@ struct lvp_query_pool {
 
 struct lvp_cmd_buffer {
    struct vk_command_buffer vk;
-   struct lvp_device *device;
    uint8_t push_constants[MAX_PUSH_CONSTANTS_SIZE];
 };
+
+static inline struct lvp_device *
+lvp_cmd_buffer_device(const struct lvp_cmd_buffer *cmd_buffer)
+{
+   return (struct lvp_device *)cmd_buffer->vk.base.device;
+}
 
 struct lvp_indirect_command_layout_nv {
    struct vk_object_base base;

@@ -55,8 +55,6 @@ lvp_create_cmd_buffer(struct vk_command_pool *pool,
       return result;
    }
 
-   cmd_buffer->device = device;
-
    *cmd_buffer_out = &cmd_buffer->vk;
 
    return VK_SUCCESS;
