@@ -303,7 +303,7 @@ compile_spirv(struct lvp_device *pdevice,
    };
 
    result = vk_pipeline_shader_stage_to_nir(&pdevice->vk, pipeline_flags, sinfo,
-                                            &spirv_options, pdevice->physical_device->drv_options[stage],
+                                            &spirv_options, lvp_device_physical(pdevice)->drv_options[stage],
                                             NULL, nir);
    return result;
 }
@@ -615,7 +615,8 @@ lvp_shader_compile_stage(struct lvp_device *device, struct lvp_shader *shader, n
 void *
 lvp_shader_compile(struct lvp_device *device, struct lvp_shader *shader, nir_shader *nir, bool locked)
 {
-   device->physical_device->pscreen->finalize_nir(device->physical_device->pscreen, nir);
+   const struct lvp_physical_device *pdev = lvp_device_physical(device);
+   pdev->pscreen->finalize_nir(pdev->pscreen, nir);
 
    if (!locked)
       simple_mtx_lock(&device->queue.lock);

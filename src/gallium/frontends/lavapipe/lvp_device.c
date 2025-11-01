@@ -1856,7 +1856,6 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_CreateDevice(
    device->vk.command_buffer_ops = &lvp_cmd_buffer_ops;
 
    device->instance = (struct lvp_instance *)physical_device->vk.instance;
-   device->physical_device = physical_device;
 
    device->pscreen = physical_device->pscreen;
 
@@ -2076,7 +2075,7 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_AllocateMemory(
       assert(import_info &&
              import_info->handleType == mem->vk.import_handle_type);
       const enum lvp_device_memory_type memory_type =
-         lvp_device_memory_type_for_handle_types(device->physical_device, mem->vk.import_handle_type);
+         lvp_device_memory_type_for_handle_types(lvp_device_physical(device), mem->vk.import_handle_type);
       const bool dmabuf = memory_type == LVP_DEVICE_MEMORY_TYPE_DMA_BUF;
       uint64_t size;
       if(!device->pscreen->import_memory_fd(device->pscreen, import_info->fd, &mem->pmem, &size, dmabuf)) {
@@ -2101,7 +2100,7 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_AllocateMemory(
    }
    else if (mem->vk.export_handle_types) {
       const enum lvp_device_memory_type memory_type =
-         lvp_device_memory_type_for_handle_types(device->physical_device, mem->vk.export_handle_types);
+         lvp_device_memory_type_for_handle_types(lvp_device_physical(device), mem->vk.export_handle_types);
       const bool dmabuf = memory_type == LVP_DEVICE_MEMORY_TYPE_DMA_BUF;
       mem->pmem = device->pscreen->allocate_memory_fd(device->pscreen, pAllocateInfo->allocationSize, &mem->backed_fd, dmabuf);
       if (!mem->pmem || mem->backed_fd < 0) {

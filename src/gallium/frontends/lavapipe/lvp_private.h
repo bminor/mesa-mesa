@@ -205,7 +205,6 @@ struct lvp_device {
 
    struct lvp_queue queue;
    struct lvp_instance *instance;
-   struct lvp_physical_device *physical_device;
    struct pipe_screen *pscreen;
    void *noop_fs;
    simple_mtx_t bda_lock;
@@ -226,6 +225,12 @@ struct lvp_device {
    simple_mtx_t radix_sort_lock;
    struct vk_acceleration_structure_build_args accel_struct_args;
 };
+
+static inline const struct lvp_physical_device *
+lvp_device_physical(const struct lvp_device *dev)
+{
+   return (struct lvp_physical_device *)dev->vk.physical;
+}
 
 void lvp_device_get_cache_uuid(void *uuid);
 

@@ -228,7 +228,7 @@ lvp_CreateImage(VkDevice _device,
    const VkImageSwapchainCreateInfoKHR *swapchain_info =
       vk_find_struct_const(pCreateInfo->pNext, IMAGE_SWAPCHAIN_CREATE_INFO_KHR);
    if (swapchain_info && swapchain_info->swapchain != VK_NULL_HANDLE) {
-      return wsi_common_create_swapchain_image(&device->physical_device->wsi_device,
+      return wsi_common_create_swapchain_image(&lvp_device_physical(device)->wsi_device,
                                                pCreateInfo,
                                                swapchain_info->swapchain,
                                                pImage);
