@@ -338,7 +338,6 @@ attribs_update_simple(struct lp_build_interp_soa_context *bld,
    LLVMBuilderRef builder = gallivm->builder;
    struct lp_build_context *coeff_bld = &bld->coeff_bld;
    struct lp_build_context *setup_bld = &bld->setup_bld;
-   LLVMValueRef oow = NULL;
    LLVMValueRef pixoffx;
    LLVMValueRef pixoffy;
    LLVMValueRef ptr;
@@ -425,25 +424,23 @@ attribs_update_simple(struct lp_build_interp_soa_context *bld,
                }
 
                if (interp == LP_INTERP_PERSPECTIVE) {
-                  if (oow == NULL) {
-                     LLVMValueRef w;
-                     assert(attrib != 0);
-                     assert(bld->mask[0] & TGSI_WRITEMASK_W);
-                     if (bld->coverage_samples > 1 &&
-                         (loc == TGSI_INTERPOLATE_LOC_SAMPLE ||
-                          loc == TGSI_INTERPOLATE_LOC_CENTROID)) {
-                        /*
-                         * We can't use the precalculated 1/w since we didn't know
-                         * the actual position yet (we were assuming center).
-                         */
-                        LLVMValueRef indexw = lp_build_const_int32(gallivm, 3);
-                        w = interp_attrib_linear(bld, 0, indexw, chan_pixoffx, chan_pixoffy);
-                     }
-                     else {
-                        w = bld->attribs[0][3];
-                     }
-                     oow = lp_build_rcp(coeff_bld, w);
+                  LLVMValueRef w;
+                  assert(attrib != 0);
+                  assert(bld->mask[0] & TGSI_WRITEMASK_W);
+                  if (bld->coverage_samples > 1 &&
+                      (loc == TGSI_INTERPOLATE_LOC_SAMPLE ||
+                       loc == TGSI_INTERPOLATE_LOC_CENTROID)) {
+                     /*
+                      * We can't use the precalculated 1/w since we didn't know
+                      * the actual position yet (we were assuming center).
+                      */
+                     LLVMValueRef indexw = lp_build_const_int32(gallivm, 3);
+                     w = interp_attrib_linear(bld, 0, indexw, chan_pixoffx, chan_pixoffy);
                   }
+                  else {
+                     w = bld->attribs[0][3];
+                  }
+                  LLVMValueRef oow = lp_build_rcp(coeff_bld, w);
                   a = lp_build_mul(coeff_bld, a, oow);
                }
 
