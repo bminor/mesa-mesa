@@ -137,12 +137,6 @@ void __lvp_finishme(const char *file, int line, const char *format, ...)
 #define LVP_STAGE_MASK BITFIELD_MASK(LVP_SHADER_STAGES)
 #define LVP_STAGE_MASK_GFX (BITFIELD_MASK(MESA_SHADER_MESH_STAGES) & ~BITFIELD_BIT(MESA_SHADER_COMPUTE))
 
-#define lvp_foreach_stage(stage, stage_bits)                         \
-   for (mesa_shader_stage stage,                                       \
-        __tmp = (mesa_shader_stage)((stage_bits) & LVP_STAGE_MASK);    \
-        stage = ffs(__tmp) - 1, __tmp;                     \
-        __tmp &= ~(1 << (stage)))
-
 #define lvp_forall_stage(stage)                                      \
    for (mesa_shader_stage stage = MESA_SHADER_VERTEX; stage < LVP_SHADER_STAGES; stage++)
 
