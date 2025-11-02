@@ -1269,7 +1269,8 @@ BlockScheduler::collect_ready_alu_vec(std::list<AluInstr *>& ready,
          ++i;
    }
 
-   if (predicate && *predicate && available.empty() && ready.size() < 16 &&
+   if (predicate && *predicate && available.empty() &&
+       ready.size() < (m_chip_class >= ISA_CC_EVERGREEN ? 16 : 3) &&
        (*predicate)->ready()) {
       assert((*predicate)->alu_slots() == 1);
       ready.push_back(*predicate);

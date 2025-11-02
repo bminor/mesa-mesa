@@ -1504,7 +1504,7 @@
         "description": "r600: limit pre-evergreen predicate ready size",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "713edb59982cb89e7a7c26eb14b5ab5b1081bb39",
         "notes": null
