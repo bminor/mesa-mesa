@@ -1329,7 +1329,6 @@ const struct amdgpu_device amdgpu_devices[] = {
          .ib_size_alignment = 32,
          .available_rings = 0x1,
          .ip_discovery_version = 0xb0000,
-         .userq_num_slots = 2,
       },
       .hw_ip_compute = {
          .hw_ip_version_major = 11,
@@ -1339,7 +1338,6 @@ const struct amdgpu_device amdgpu_devices[] = {
          .ib_size_alignment = 32,
          .available_rings = 0xf,
          .ip_discovery_version = 0xb0000,
-         .userq_num_slots = 16,
       },
       .fw_gfx_me = {
          .ver = 1486,
@@ -1460,7 +1458,6 @@ const struct amdgpu_device amdgpu_devices[] = {
          .ib_size_alignment = 32,
          .available_rings = 0x1,
          .ip_discovery_version = 0xb0002,
-         .userq_num_slots = 0x0,
       },
       .hw_ip_compute = {
          .hw_ip_version_major = 11,
@@ -1470,7 +1467,6 @@ const struct amdgpu_device amdgpu_devices[] = {
          .ib_size_alignment = 32,
          .available_rings = 0xf,
          .ip_discovery_version = 0xb0002,
-         .userq_num_slots = 0x0,
       },
       .fw_gfx_me = {
          .ver = 2390,
@@ -2070,7 +2066,6 @@ const struct amdgpu_device amdgpu_devices[] = {
          .ib_size_alignment = 32,
          .available_rings = 0x1,
          .ip_discovery_version = 0xb0500,
-         .userq_num_slots = 2,
       },
       .hw_ip_compute = {
          .hw_ip_version_major = 11,
@@ -2080,7 +2075,6 @@ const struct amdgpu_device amdgpu_devices[] = {
          .ib_size_alignment = 32,
          .available_rings = 0xf,
          .ip_discovery_version = 0xb0500,
-         .userq_num_slots = 16,
       },
       .fw_gfx_me = {
          .ver = 29,
@@ -2201,7 +2195,6 @@ const struct amdgpu_device amdgpu_devices[] = {
          .ib_size_alignment = 32,
          .available_rings = 0x1,
          .ip_discovery_version = 0xc0001,
-         .userq_num_slots = 8,
       },
       .hw_ip_compute = {
          .hw_ip_version_major = 12,
@@ -2211,7 +2204,6 @@ const struct amdgpu_device amdgpu_devices[] = {
          .ib_size_alignment = 32,
          .available_rings = 0xf,
          .ip_discovery_version = 0xc0001,
-         .userq_num_slots = 8,
       },
       .fw_gfx_me = {
          .ver = 2590,
