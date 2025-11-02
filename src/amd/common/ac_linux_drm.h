@@ -194,7 +194,6 @@ struct drm_amdgpu_info_hw_ip {
    uint32_t ib_size_alignment;
    uint32_t available_rings;
    uint32_t ip_discovery_version;
-   uint32_t userq_num_slots;
 };
 
 struct drm_amdgpu_info_uq_fw_areas_gfx {
