@@ -3524,7 +3524,7 @@
         "description": "Revert ABI breakage \"amd: Add user queue HQD count to hw_ip info\"",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "56d758d321fd87b883106585b564fac92aa0793a",
         "notes": null

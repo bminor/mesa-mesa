@@ -558,8 +558,6 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
          info->ip[ip_type].num_queues = 1;
       } else if (ip_info.available_rings) {
          info->ip[ip_type].num_queues = util_bitcount(ip_info.available_rings);
-      } else if (ip_info.userq_num_slots) {
-         info->ip[ip_type].num_queue_slots = ip_info.userq_num_slots;
       } else {
          continue;
       }
@@ -1916,11 +1914,11 @@ void ac_print_gpu_info(const struct radeon_info *info, FILE *f)
    fprintf(f, "    clock_crystal_freq = %i KHz\n", info->clock_crystal_freq);
 
    for (unsigned i = 0; i < AMD_NUM_IP_TYPES; i++) {
-      if (info->ip[i].num_queues || info->ip[i].num_queue_slots) {
-         fprintf(f, "    IP %-7s %2u.%u \tqueues:%u \tqueue_slots:%u \talign:%u \tpad_dw:0x%x\n",
+      if (info->ip[i].num_queues) {
+         fprintf(f, "    IP %-7s %2u.%u \tqueues:%u \talign:%u \tpad_dw:0x%x\n",
                  ac_get_ip_type_string(info, i),
                  info->ip[i].ver_major, info->ip[i].ver_minor, info->ip[i].num_queues,
-                 info->ip[i].num_queue_slots,info->ip[i].ib_alignment, info->ip[i].ib_pad_dw_mask);
+                 info->ip[i].ib_alignment, info->ip[i].ib_pad_dw_mask);
       }
    }
 
