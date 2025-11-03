@@ -367,6 +367,10 @@ radv_shader_choose_subgroup_size(struct radv_device *device, nir_shader *nir,
       .requiredSubgroupSize = stage_key->subgroup_required_size * 32,
    };
 
+   /* Do not allow for the SPIR-V 1.6 varying subgroup size rules. */
+   if (pdev->cache_key.no_implicit_varying_subgroup_size)
+      spirv_version = 0x10000;
+
    vk_set_subgroup_size(&device->vk, nir, spirv_version, rss_info.requiredSubgroupSize ? &rss_info : NULL,
                         stage_key->subgroup_allow_varying, stage_key->subgroup_require_full);
 

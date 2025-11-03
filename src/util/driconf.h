@@ -763,6 +763,10 @@
    DRI_CONF_OPT_B(radv_wait_for_vm_map_updates, def, \
                   "Wait for VM MAP updates at allocation time to mitigate use-before-alloc")
 
+#define DRI_CONF_RADV_NO_IMPLICIT_VARYING_SUBGROUP_SIZE(def) \
+   DRI_CONF_OPT_B(radv_no_implicit_varying_subgroup_size, def, \
+                  "Do not assume VK_PIPELINE_SHADER_STAGE_CREATE_ALLOW_VARYING_SUBGROUP_SIZE for SPIR-V 1.6.")
+
 /**
  * Overrides for forcing re-compilation of pipelines when RADV_BUILD_ID_OVERRIDE is enabled.
  * These need to be bumped every time a compiler bugfix is backported (up to 8 shader

@@ -58,6 +58,7 @@ struct radv_drirc {
       bool tex_non_uniform;
       bool zero_vram;
       bool wait_for_vm_map_updates;
+      bool no_implicit_varying_subgroup_size;
       char *app_layer;
       int override_uniform_offset_alignment;
    } debug;
