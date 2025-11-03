@@ -3254,7 +3254,7 @@
         "description": "nak/opt_lop: Don't handle modifiers in dedup_srcs",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "66c9c40f68bcf738b1b5dd9a26d141d4c71e4522",
         "notes": null
