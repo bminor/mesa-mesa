@@ -42,6 +42,7 @@
 #include "pvr_device.h"
 #include "pvr_dump.h"
 #include "pvr_macros.h"
+#include "pvr_physical_device.h"
 #include "pvr_types.h"
 #include "pvr_util.h"
 #include "pvr_winsys.h"

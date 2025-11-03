@@ -41,6 +41,7 @@
 #include "pvr_hw_pass.h"
 #include "pvr_macros.h"
 #include "pvr_pass.h"
+#include "pvr_physical_device.h"
 #include "util/macros.h"
 #include "util/os_time.h"
 #include "vk_log.h"

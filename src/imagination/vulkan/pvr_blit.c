@@ -39,6 +39,7 @@
 #include "pvr_image.h"
 #include "pvr_job_transfer.h"
 #include "pvr_pass.h"
+#include "pvr_physical_device.h"
 #include "pvr_types.h"
 #include "pvr_usc.h"
 #include "util/bitscan.h"

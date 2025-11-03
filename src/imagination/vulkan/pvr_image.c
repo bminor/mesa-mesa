@@ -34,6 +34,7 @@
 #include "pvr_entrypoints.h"
 #include "pvr_formats.h"
 #include "pvr_macros.h"
+#include "pvr_physical_device.h"
 #include "pvr_tex_state.h"
 #include "util/macros.h"
 #include "util/u_math.h"

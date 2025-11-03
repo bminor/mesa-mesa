@@ -34,6 +34,7 @@
 #include "pvr_hw_pass.h"
 #include "pvr_formats.h"
 #include "pvr_pass.h"
+#include "pvr_physical_device.h"
 #include "util/bitset.h"
 #include "util/list.h"
 #include "util/macros.h"

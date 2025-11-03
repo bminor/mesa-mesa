@@ -51,8 +51,6 @@
 #include "vk_sampler.h"
 #include "vk_sync.h"
 
-#define VK_VENDOR_ID_IMAGINATION 0x1010
-
 #define PVR_WORKGROUP_DIMENSIONS 3U
 
 #define PVR_SAMPLER_DESCRIPTOR_SIZE 4U

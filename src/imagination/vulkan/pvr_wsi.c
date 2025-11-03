@@ -33,10 +33,13 @@
 
 #include "pvr_device.h"
 #include "pvr_entrypoints.h"
+#include "pvr_instance.h"
+#include "pvr_physical_device.h"
 #include "pvr_queue.h"
 
 #include "util/u_atomic.h"
 #include "vk_object.h"
+#include "vk_instance.h"
 #include "wsi_common.h"
 
 static PFN_vkVoidFunction pvr_wsi_proc_addr(VkPhysicalDevice physicalDevice,

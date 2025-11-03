@@ -34,6 +34,7 @@
 #include "pvr_device_info.h"
 #include "pvr_dump.h"
 #include "pvr_dump_bo.h"
+#include "pvr_physical_device.h"
 #include "pvr_util.h"
 #include "util/list.h"
 #include "util/macros.h"

@@ -41,6 +41,7 @@
 #include "pvr_device.h"
 #include "pvr_device_info.h"
 #include "pvr_macros.h"
+#include "pvr_physical_device.h"
 #include "pvr_types.h"
 #include "util/list.h"
 #include "util/u_dynarray.h"

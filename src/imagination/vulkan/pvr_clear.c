@@ -31,8 +31,9 @@
 #include "pvr_cmd_buffer.h"
 #include "pvr_device.h"
 #include "pvr_pds.h"
-#include "pvr_usc.h"
+#include "pvr_physical_device.h"
 #include "pvr_types.h"
+#include "pvr_usc.h"
 #include "vk_alloc.h"
 #include "vk_log.h"
 

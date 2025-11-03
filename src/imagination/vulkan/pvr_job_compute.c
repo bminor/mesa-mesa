@@ -34,6 +34,7 @@
 #include "pvr_job_context.h"
 #include "pvr_job_compute.h"
 #include "pvr_macros.h"
+#include "pvr_physical_device.h"
 #include "pvr_types.h"
 #include "pvr_winsys.h"
 #include "util/macros.h"

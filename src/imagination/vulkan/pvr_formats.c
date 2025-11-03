@@ -32,6 +32,7 @@
 #include "pvr_device.h"
 #include "pvr_entrypoints.h"
 #include "pvr_formats.h"
+#include "pvr_physical_device.h"
 #include "util/bitpack_helpers.h"
 #include "util/compiler.h"
 #include "util/format/format_utils.h"

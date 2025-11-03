@@ -40,6 +40,7 @@
 #include "pvr_macros.h"
 #include "pvr_pass.h"
 #include "pvr_pds.h"
+#include "pvr_physical_device.h"
 #include "pvr_spm.h"
 #include "pvr_tex_state.h"
 #include "pvr_types.h"

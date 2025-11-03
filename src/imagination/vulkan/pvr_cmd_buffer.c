@@ -53,6 +53,7 @@
 #include "pvr_macros.h"
 #include "pvr_pass.h"
 #include "pvr_pds.h"
+#include "pvr_physical_device.h"
 #include "pvr_pipeline.h"
 #include "pvr_query.h"
 #include "pvr_tex_state.h"

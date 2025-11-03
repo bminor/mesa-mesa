@@ -14,9 +14,10 @@
 #ifndef PVR_DEVICE_H
 #define PVR_DEVICE_H
 
+#include <xf86drm.h>
+
 #include "vk_device.h"
 #include "vk_device_memory.h"
-#include "vk_instance.h"
 #include "vk_physical_device.h"
 
 #include "wsi_common.h"
@@ -30,59 +31,10 @@
 #include "pvr_spm.h"
 #include "pvr_usc.h"
 
-#if defined(VK_USE_PLATFORM_DISPLAY_KHR)
-#   define PVR_USE_WSI_PLATFORM_DISPLAY true
-#else
-#   define PVR_USE_WSI_PLATFORM_DISPLAY false
-#endif
-
-#if defined(VK_USE_PLATFORM_DISPLAY_KHR) || \
-    defined(VK_USE_PLATFORM_WAYLAND_KHR)
-#   define PVR_USE_WSI_PLATFORM true
-#else
-#   define PVR_USE_WSI_PLATFORM false
-#endif
-
 typedef struct _pco_ctx pco_ctx;
 
 struct pvr_instance;
 struct pvr_queue;
-
-struct pvr_physical_device {
-   struct vk_physical_device vk;
-
-   /* Back-pointer to instance */
-   struct pvr_instance *instance;
-
-   char *render_path;
-   char *display_path;
-
-   /* primary node (cardN) of the render device */
-   dev_t primary_devid;
-   /* render node (renderN) of the render device */
-   dev_t render_devid;
-
-   struct pvr_winsys *ws;
-   struct pvr_device_info dev_info;
-   struct pvr_device_runtime_info dev_runtime_info;
-
-   VkPhysicalDeviceMemoryProperties memory;
-
-   struct wsi_device wsi_device;
-
-   pco_ctx *pco_ctx;
-
-   uint8_t device_uuid[SHA1_DIGEST_LENGTH];
-   uint8_t cache_uuid[SHA1_DIGEST_LENGTH];
-};
-
-struct pvr_instance {
-   struct vk_instance vk;
-
-   uint32_t active_device_count;
-
-   uint8_t driver_build_sha[SHA1_DIGEST_LENGTH];
-};
 
 struct pvr_compute_query_shader {
    struct pvr_suballoc_bo *usc_bo;
@@ -223,16 +175,6 @@ struct pvr_device_memory {
    struct pvr_winsys_bo *bo;
 };
 
-VK_DEFINE_HANDLE_CASTS(pvr_instance,
-                       vk.base,
-                       VkInstance,
-                       VK_OBJECT_TYPE_INSTANCE)
-
-VK_DEFINE_HANDLE_CASTS(pvr_physical_device,
-                       vk.base,
-                       VkPhysicalDevice,
-                       VK_OBJECT_TYPE_PHYSICAL_DEVICE)
-
 VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_device_memory,
                                vk.base,
                                VkDeviceMemory,
@@ -244,6 +186,16 @@ static inline struct pvr_device *vk_to_pvr_device(struct vk_device *device)
 {
    return container_of(device, struct pvr_device, vk);
 }
+
+VkResult
+pvr_create_device(struct pvr_physical_device *pdevice,
+                  const VkDeviceCreateInfo *pCreateInfo,
+                  const VkAllocationCallbacks *pAllocator,
+                  VkDevice *pDevice);
+
+void
+pvr_destroy_device(struct pvr_device *device,
+                   const VkAllocationCallbacks *pAllocator);
 
 uint32_t pvr_calc_fscommon_size_and_tiles_in_flight(
    const struct pvr_device_info *dev_info,
