@@ -129,6 +129,7 @@ struct NOP_ctx_gfx10 {
    bool has_branch_after_DS = false;
    bool has_NSA_MIMG = false;
    bool has_writelane = false;
+   bool has_salu_exec_write = false;
    std::bitset<128> sgprs_read_by_VMEM;
    std::bitset<128> sgprs_read_by_VMEM_store;
    std::bitset<128> sgprs_read_by_DS;
@@ -145,6 +146,7 @@ struct NOP_ctx_gfx10 {
       has_branch_after_DS |= other.has_branch_after_DS;
       has_NSA_MIMG |= other.has_NSA_MIMG;
       has_writelane |= other.has_writelane;
+      has_salu_exec_write |= other.has_salu_exec_write;
       sgprs_read_by_VMEM |= other.sgprs_read_by_VMEM;
       sgprs_read_by_DS |= other.sgprs_read_by_DS;
       sgprs_read_by_VMEM_store |= other.sgprs_read_by_VMEM_store;
@@ -159,6 +161,7 @@ struct NOP_ctx_gfx10 {
              has_branch_after_VMEM == other.has_branch_after_VMEM && has_DS == other.has_DS &&
              has_branch_after_DS == other.has_branch_after_DS &&
              has_NSA_MIMG == other.has_NSA_MIMG && has_writelane == other.has_writelane &&
+             has_salu_exec_write == other.has_salu_exec_write &&
              sgprs_read_by_VMEM == other.sgprs_read_by_VMEM &&
              sgprs_read_by_DS == other.sgprs_read_by_DS &&
              sgprs_read_by_VMEM_store == other.sgprs_read_by_VMEM_store &&
@@ -905,6 +908,15 @@ handle_instruction_gfx10(State& state, NOP_ctx_gfx10& ctx, aco_ptr<Instruction>&
    } else {
       ctx.waits_since_fp_atomic += get_wait_states(instr);
       ctx.waits_since_fp_atomic = std::min(ctx.waits_since_fp_atomic, 3);
+   }
+
+   /* 4+ dword NSA can hang if exec becomes non-zero again directly before the instruction. */
+   if (instr->isSALU() && instr->writes_exec()) {
+      ctx.has_salu_exec_write = true;
+   } else if (ctx.has_salu_exec_write) {
+      ctx.has_salu_exec_write = false;
+      if (instr->isMIMG() && get_mimg_nsa_dwords(instr.get()) > 1)
+         bld.sopp(aco_opcode::s_nop, 0);
    }
 
    if (state.program->gfx_level != GFX10)
@@ -2019,13 +2031,15 @@ required_export_priority(Program* program)
 void
 insert_NOPs(Program* program)
 {
+   bool has_previous_part =
+      program->is_epilog || program->info.vs.has_prolog || program->info.ps.has_prolog ||
+      (program->info.merged_shader_compiled_separately && program->stage.sw != SWStage::VS &&
+       program->stage.sw != SWStage::TES) ||
+      program->stage == raytracing_cs;
+
    if (program->gfx_level >= GFX11) {
       NOP_ctx_gfx11 initial_ctx;
 
-      bool has_previous_part =
-         program->is_epilog || program->info.vs.has_prolog || program->info.ps.has_prolog ||
-         (program->info.merged_shader_compiled_separately && program->stage.sw != SWStage::VS &&
-          program->stage.sw != SWStage::TES) || program->stage == raytracing_cs;
       if (program->gfx_level >= GFX12 && has_previous_part) {
          /* resolve_all_gfx11 can't resolve VALUReadSGPRHazard entirely. We have to assume that any
           * SGPR might have been read by VALU if there was a previous shader part.
@@ -2036,7 +2050,10 @@ insert_NOPs(Program* program)
       mitigate_hazards<NOP_ctx_gfx11, handle_instruction_gfx11, resolve_all_gfx11>(program,
                                                                                    initial_ctx);
    } else if (program->gfx_level >= GFX10) {
-      mitigate_hazards<NOP_ctx_gfx10, handle_instruction_gfx10, resolve_all_gfx10>(program);
+      NOP_ctx_gfx10 initial_ctx;
+      initial_ctx.has_salu_exec_write = has_previous_part;
+      mitigate_hazards<NOP_ctx_gfx10, handle_instruction_gfx10, resolve_all_gfx10>(program,
+                                                                                   initial_ctx);
    } else {
       mitigate_hazards<NOP_ctx_gfx6, handle_instruction_gfx6, resolve_all_gfx6>(program);
    }
