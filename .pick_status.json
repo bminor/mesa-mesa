@@ -1424,7 +1424,7 @@
         "description": "brw: Force allow_spilling when spill_all is set",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8bca7e520ce01a59292c982f3b992bd4a2b3547e",
         "notes": null
