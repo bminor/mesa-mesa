@@ -14,7 +14,7 @@
         "description": "radv: do not report wave32 in gl_SubgroupSize for Doom Dark Ages",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "a2d3cbac2a1b9bae50c80a5b512e8633a65f0d57",
         "notes": null

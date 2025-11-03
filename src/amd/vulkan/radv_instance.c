@@ -200,6 +200,7 @@ static const driOptionDescription radv_dri_options[] = {
       DRI_CONF_RADV_EMULATE_RT(false)
       DRI_CONF_RADV_ENABLE_FLOAT16_GFX8(false)
       DRI_CONF_RADV_COOPERATIVE_MATRIX2_NV(false)
+      DRI_CONF_RADV_NO_IMPLICIT_VARYING_SUBGROUP_SIZE(false)
    DRI_CONF_SECTION_END
 };
 // clang-format on
@@ -236,6 +237,8 @@ radv_init_dri_debug_options(struct radv_instance *instance)
    drirc->debug.ssbo_non_uniform = driQueryOptionb(&drirc->options, "radv_ssbo_non_uniform");
    drirc->debug.tex_non_uniform = driQueryOptionb(&drirc->options, "radv_tex_non_uniform");
    drirc->debug.zero_vram = driQueryOptionb(&drirc->options, "radv_zero_vram");
+   drirc->debug.no_implicit_varying_subgroup_size =
+      driQueryOptionb(&drirc->options, "radv_no_implicit_varying_subgroup_size");
    drirc->debug.app_layer = driQueryOptionstr(&drirc->options, "radv_app_layer");
 
    drirc->debug.override_uniform_offset_alignment =
