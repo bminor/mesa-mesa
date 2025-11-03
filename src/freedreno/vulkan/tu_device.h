@@ -565,6 +565,8 @@ struct tu_framebuffer
 
    struct tu_device_memory *depth_mem, *color_mem;
 
+   uint32_t max_tile_w_constraint;
+   uint32_t max_tile_h_constraint;
    struct tu_tiling_config tiling[TU_GMEM_LAYOUT_COUNT];
 
    uint32_t attachment_count;

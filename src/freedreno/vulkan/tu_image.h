@@ -51,6 +51,10 @@ struct tu_image
 
    struct fdl_lrz_layout lrz_layout;
 
+   /* Maximum width/height of tiles for use with this image, or ~0 if no constraints. */
+   uint32_t max_tile_w_constraint_fdm;
+   uint32_t max_tile_h_constraint_fdm;
+
    bool ubwc_enabled;
    bool force_linear_tile;
    bool is_mutable;

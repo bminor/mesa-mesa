@@ -289,11 +289,12 @@ tu_tiling_config_update_tile_layout(struct tu_framebuffer *fb,
    /* There aren't that many different tile widths possible, so just walk all
     * of them finding which produces the lowest number of bins.
     */
-   const uint32_t max_tile_width = MIN2(
-      dev->physical_device->info->tile_max_w, util_align_npot(fb->width, tile_align_w));
+   const uint32_t max_tile_width =
+      MIN3(dev->physical_device->info->tile_max_w,
+           util_align_npot(fb->width, tile_align_w), fb->max_tile_w_constraint);
    const uint32_t max_tile_height =
-      MIN2(dev->physical_device->info->tile_max_h,
-           align(fb->height, tile_align_h));
+      MIN3(dev->physical_device->info->tile_max_h,
+           align(fb->height, tile_align_h), fb->max_tile_h_constraint);
    for (tile_size.width = tile_align_w; tile_size.width <= max_tile_width;
         tile_size.width += tile_align_w) {
       tile_size.height = pass->gmem_pixels[gmem_layout] / (tile_size.width * layers);

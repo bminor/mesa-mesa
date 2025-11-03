@@ -73,6 +73,44 @@ fdl6_lrz_get_fc_size(uint32_t width, uint32_t height, uint32_t nr_samples,
    return lrz_fc_size;
 }
 
+struct fdl_lrz_fdm_extra_size {
+   uint32_t extra_width;
+   uint32_t extra_height;
+};
+
+/* Get maximum size of the extra tile for VK_QCOM_fragment_density_map_offset,
+ * that keeps LRZ fast-clear enabled, if possible.
+ */
+template <chip CHIP>
+static struct fdl_lrz_fdm_extra_size
+fdl6_lrz_get_max_fdm_extra_size(const struct fd_dev_info *dev_info,
+                                uint32_t width, uint32_t height,
+                                uint32_t nr_samples, uint32_t array_layers)
+{
+   constexpr uint32_t MIN_TILE_SIZE_FOR_FDM_OFFSET = 192;
+
+   if (fdl6_lrz_get_fc_size<CHIP>(width, height, nr_samples, array_layers) == 0) {
+      return {dev_info->tile_max_w, dev_info->tile_max_h};
+   }
+
+   uint32_t max_extra_size = MIN2(dev_info->tile_max_w, dev_info->tile_max_h);
+   uint32_t step = MIN2(dev_info->gmem_align_w, dev_info->gmem_align_h);
+   uint32_t min_extra_size = MAX2(step, MIN_TILE_SIZE_FOR_FDM_OFFSET);
+
+   while (max_extra_size > min_extra_size) {
+      if (fdl6_lrz_get_fc_size<CHIP>(width + max_extra_size,
+                                     height + max_extra_size, nr_samples,
+                                     array_layers) != 0) {
+
+         return {util_round_down_npot(max_extra_size, dev_info->gmem_align_w),
+                 util_round_down_npot(max_extra_size, dev_info->gmem_align_h)};
+      }
+
+      max_extra_size -= step;
+   }
+
+   return {dev_info->tile_max_w, dev_info->tile_max_h};
+}
 
 template <chip CHIP>
 static void

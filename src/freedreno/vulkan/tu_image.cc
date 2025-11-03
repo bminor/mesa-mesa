@@ -590,23 +590,33 @@ tu_image_update_layout(struct tu_device *device, struct tu_image *image,
       image->total_size = MAX2(image->total_size, layout->size);
    }
 
+   image->max_tile_w_constraint_fdm = ~0;
+   image->max_tile_h_constraint_fdm = ~0;
+
    const struct util_format_description *desc = util_format_description(image->layout[0].format);
    if (util_format_has_depth(desc) && device->use_lrz) {
       /* If FDM offset is enabled, then the LRZ image will be shifted over. We
        * have to overallocate it, but we have no idea how large the tiles it's
-       * used with will be. Try to calculate the worst-case width and height.
+       * used with will be. Try to calculate a maximum size of tile that would
+       * still let us do LRZ fast clears that we'll use to inform tiling setup
+       * later once we know the rest of the images.  We'll fall back to
+       * allocating for the device's maximum tile size if we can't ensure
+       * LRZ fast clears.
        */
-      uint32_t extra_width = 0, extra_height = 0;
+      struct fdl_lrz_fdm_extra_size extra_size = { 0, 0 };
       if (image->vk.create_flags &
           VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT) {
-         extra_width =
-            device->physical_device->info->tile_max_w;
-         extra_height =
-            device->physical_device->info->tile_max_h;
+         extra_size = fdl6_lrz_get_max_fdm_extra_size<CHIP>(
+            device->physical_device->info, image->layout[0].width0,
+            image->layout[0].height0, image->vk.samples,
+            image->vk.array_layers);
+
+         image->max_tile_w_constraint_fdm = extra_size.extra_width;
+         image->max_tile_h_constraint_fdm = extra_size.extra_height;
       }
 
       fdl6_lrz_layout_init<CHIP>(&image->lrz_layout, &image->layout[0],
-                                 extra_width, extra_height,
+                                 extra_size.extra_width, extra_size.extra_height,
                                  device->physical_device->info,
                                  image->total_size, image->vk.array_layers);
 
