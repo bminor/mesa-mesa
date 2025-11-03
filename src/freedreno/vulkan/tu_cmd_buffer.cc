@@ -687,7 +687,7 @@ tu6_emit_mrt(struct tu_cmd_buffer *cmd,
    }
 
    u_foreach_bit (i, ~written) {
-      if (i >= subpass->color_count)
+      if (i >= MAX_RTS)
          break;
 
       /* From the VkPipelineRenderingCreateInfo definition:
@@ -701,6 +701,10 @@ tu6_emit_mrt(struct tu_cmd_buffer *cmd,
        * here should prevent them from writing to anything. This also seems
        * to also be required for alpha-to-coverage which can use the alpha
        * value for an otherwise-unused attachment.
+       *
+       * With VK_EXT_dynamic_rendering_unused_attachments, pipelines may also
+       * write to attachments beyond those that exist in the render pass, so
+       * we have all attachments not written up to MAX_RTS.
        */
        tu_cs_emit_regs(cs,
          RB_MRT_BUF_INFO(CHIP, i),
