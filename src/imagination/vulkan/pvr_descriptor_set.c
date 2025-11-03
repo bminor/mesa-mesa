@@ -38,6 +38,7 @@
 #include "pvr_entrypoints.h"
 #include "pvr_image.h"
 #include "pvr_physical_device.h"
+#include "pvr_sampler.h"
 #include "pvr_types.h"
 #include "util/compiler.h"
 #include "util/list.h"

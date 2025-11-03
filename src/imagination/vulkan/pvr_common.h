@@ -48,7 +48,6 @@
 #include "util/vma.h"
 #include "vk_descriptor_set_layout.h"
 #include "vk_object.h"
-#include "vk_sampler.h"
 #include "vk_sync.h"
 
 #define PVR_WORKGROUP_DIMENSIONS 3U
@@ -226,12 +225,6 @@ static_assert(
          (PCO_IMAGE_META_COUNT + PCO_SAMPLER_META_COUNT) * sizeof(uint32_t),
    "pvr_combined_image_sampler_descriptor size is invalid.");
 
-struct pvr_sampler {
-   struct vk_sampler vk;
-   struct pvr_sampler_descriptor descriptor;
-   uint32_t border_color_table_index;
-};
-
 struct pvr_event {
    struct vk_object_base base;
 
@@ -263,9 +256,5 @@ struct pvr_pds_upload {
 };
 
 VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_event, base, VkEvent, VK_OBJECT_TYPE_EVENT)
-VK_DEFINE_NONDISP_HANDLE_CASTS(pvr_sampler,
-                               vk.base,
-                               VkSampler,
-                               VK_OBJECT_TYPE_SAMPLER)
 
 #endif /* PVR_COMMON_H */

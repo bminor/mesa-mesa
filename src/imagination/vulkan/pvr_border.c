@@ -35,6 +35,7 @@
 #include "pvr_formats.h"
 #include "pvr_macros.h"
 #include "pvr_physical_device.h"
+#include "pvr_sampler.h"
 #include "util/bitset.h"
 #include "util/format/u_format.h"
 #include "util/format/u_formats.h"
