@@ -175,6 +175,12 @@ print_separator(int count)
    putchar('\n');
 }
 
+static slice
+get_content_data(context *ctx, mesa_archive *ma, const content *c)
+{
+   return c->data;
+}
+
 static mesa_archive *
 parse_mesa_archive(void *mem_ctx, const char *filename)
 {
@@ -592,7 +598,9 @@ cmd_diff(context *ctx)
    print_separator(MAX2(x, y));
    printf("\n");
 
-   diff(ctx, a.content->data, b.content->data);
+   slice a_data = get_content_data(ctx, a.object->ma, a.content);
+   slice b_data = get_content_data(ctx, b.object->ma, b.content);
+   diff(ctx, a_data, b_data);
    printf("\n");
 
    return 0;
@@ -654,7 +662,8 @@ cmd_log(context *ctx)
          print_separator(MAX2(x, y));
          printf("\n");
 
-         printf("%.*s\n", SLICE_FMT(c->data));
+         slice data = get_content_data(ctx, obj->ma, c);
+         printf("%.*s\n", SLICE_FMT(data));
       }
 
    } else {
@@ -666,7 +675,9 @@ cmd_log(context *ctx)
          print_separator(MAX2(x, y));
          printf("\n");
 
-         diff(ctx, c->data, next->data);
+         slice curr_data = get_content_data(ctx, obj->ma, c);
+         slice next_data = get_content_data(ctx, obj->ma, next);
+         diff(ctx, curr_data, next_data);
          printf("\n");
       }
    }
@@ -676,12 +687,14 @@ cmd_log(context *ctx)
 }
 
 static slice
-get_spirv_disassembly(void *mem_ctx, object *obj)
+get_spirv_disassembly(context *ctx, object *obj)
 {
    assert(slice_equal_cstr(obj->name, "SPV"));
    assert(obj->versions_count == 1);
 
    content *c = &obj->versions[0];
+
+   slice data = get_content_data(ctx, obj->ma, c);
 
    int stdin_pipe[2], stdout_pipe[2];
    if (pipe(stdin_pipe) < 0 || pipe(stdout_pipe) < 0)
@@ -716,13 +729,13 @@ get_spirv_disassembly(void *mem_ctx, object *obj)
    close(stdin_pipe[0]);
    close(stdout_pipe[1]);
 
-   ssize_t written = write(stdin_pipe[1], c->data.data, c->data.len);
+   ssize_t written = write(stdin_pipe[1], data.data, data.len);
    close(stdin_pipe[1]);
 
    struct util_dynarray output;
-   util_dynarray_init(&output, mem_ctx);
+   util_dynarray_init(&output, ctx);
 
-   if (written != (ssize_t)c->data.len)
+   if (written != (ssize_t)data.len)
       goto wait_and_fail;
 
    char read_buffer[1024];
@@ -756,9 +769,9 @@ fail:
 }
 
 static int
-print_disassembled_spirv(void *mem_ctx, object *obj)
+print_disassembled_spirv(context *ctx, object *obj)
 {
-   slice disassembly = get_spirv_disassembly(mem_ctx, obj);
+   slice disassembly = get_spirv_disassembly(ctx, obj);
    if (slice_is_empty(disassembly)) {
       fprintf(stderr, "mda: failed to disassemble SPIR-V\n");
       return 1;
@@ -796,7 +809,8 @@ cmd_print(context *ctx)
       printf("\n");
    }
 
-   printf("%.*s", SLICE_FMT(m.content->data));
+   slice data = get_content_data(ctx, m.object->ma, m.content);
+   printf("%.*s", SLICE_FMT(data));
 
    if (!raw)
       printf("\n");
@@ -906,17 +920,19 @@ cmd_search(context *ctx)
       const bool is_spirv = slice_equal_cstr(m->object->name, "SPV");
 
       if (search_all && !is_spirv) {
-         foreach_version(c, m->object)
-            found_count += print_search_matches(c->data, search_string, c->fullname);
+         foreach_version(c, m->object) {
+            slice data = get_content_data(ctx, m->object->ma, c);
+            found_count += print_search_matches(data, search_string, c->fullname);
+         }
 
       } else {
          content *latest = last_version(m->object);
 
          slice search_data;
          if (is_spirv)
-            search_data = get_spirv_disassembly(m->object->ma, m->object);
+            search_data = get_spirv_disassembly(ctx, m->object);
          else
-            search_data = latest->data;
+            search_data = get_content_data(ctx, m->object->ma, latest);
 
          found_count += print_search_matches(search_data, search_string, latest->fullname);
       }
