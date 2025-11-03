@@ -638,6 +638,19 @@ static void run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx)
    nir_shader *nir = ctx->nir;
    bool progress = false;
 
+   /* nir_opt_clip_cull_const, si_nir_kill_outputs, and ac_nir_optimize_outputs require outputs
+    * to be scalar.
+    */
+   if (nir->info.stage == MESA_SHADER_VERTEX ||
+       nir->info.stage == MESA_SHADER_TESS_EVAL ||
+       nir->info.stage == MESA_SHADER_GEOMETRY ||
+       nir->info.stage == MESA_SHADER_MESH)
+      NIR_PASS(progress, nir, nir_lower_io_to_scalar, nir_var_shader_out, NULL, NULL);
+
+   /* IO must be scalar when this is called. */
+   if (nir->info.stage <= MESA_SHADER_GEOMETRY && nir->info.stage != MESA_SHADER_TESS_CTRL)
+      NIR_PASS(_, nir, nir_opt_clip_cull_const);
+
    /* Kill outputs according to the shader key. */
    if (nir->info.stage <= MESA_SHADER_GEOMETRY || nir->info.stage == MESA_SHADER_MESH)
       NIR_PASS(progress, nir, si_nir_kill_outputs, key);

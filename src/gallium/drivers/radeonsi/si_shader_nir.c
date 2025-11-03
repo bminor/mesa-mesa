@@ -307,13 +307,6 @@ static void si_lower_nir(struct si_screen *sscreen, struct nir_shader *nir)
    NIR_PASS(_, nir, nir_opt_intrinsics);
    NIR_PASS(_, nir, nir_lower_system_values);
 
-   /* si_nir_kill_outputs and ac_nir_optimize_outputs require outputs to be scalar. */
-   if (nir->info.stage == MESA_SHADER_VERTEX ||
-       nir->info.stage == MESA_SHADER_TESS_EVAL ||
-       nir->info.stage == MESA_SHADER_GEOMETRY ||
-       nir->info.stage == MESA_SHADER_MESH)
-      NIR_PASS(_, nir, nir_lower_io_to_scalar, nir_var_shader_out, NULL, NULL);
-
    if (nir->info.stage == MESA_SHADER_GEOMETRY) {
       unsigned flags = nir_lower_gs_intrinsics_per_stream;
       if (sscreen->use_ngg) {
@@ -444,10 +437,6 @@ void si_finalize_nir(struct pipe_screen *screen, struct nir_shader *nir,
       si_nir_opts(sscreen, nir, false);
 
    NIR_PASS(_, nir, si_nir_mark_divergent_texture_non_uniform);
-
-   /* IO must be scalar when this is called. */
-   if (nir->info.stage <= MESA_SHADER_GEOMETRY && nir->info.stage != MESA_SHADER_TESS_CTRL)
-      NIR_PASS(_, nir, nir_opt_clip_cull_const);
 
    /* Require divergence analysis to identify divergent loops. */
    nir_metadata_require(nir_shader_get_entrypoint(nir), nir_metadata_divergence);

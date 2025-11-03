@@ -227,13 +227,16 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
                        slot_semantic == VARYING_SLOT_CLIP_DIST1) &&
                       !nir_intrinsic_io_semantics(intr).no_sysval_output) {
                      assert(!indirect);
-                     assert(intr->src[0].ssa->num_components == 1);
                      assert(num_slots == 1);
-                     unsigned index = (slot_semantic - VARYING_SLOT_CLIP_DIST0) * 4 +
-                                      nir_intrinsic_component(intr);
 
-                     if (index < nir->info.clip_distance_array_size)
-                        info->clipdist_mask |= BITFIELD_BIT(index);
+                     unsigned clipdist_slot_comp = (slot_semantic - VARYING_SLOT_CLIP_DIST0) * 4;
+
+                     u_foreach_bit(comp, mask) {
+                        unsigned index = clipdist_slot_comp + comp;
+
+                        if (index < nir->info.clip_distance_array_size)
+                           info->clipdist_mask |= BITFIELD_BIT(index);
+                     }
                   }
                }
             } else if (nir->info.stage == MESA_SHADER_MESH) {
