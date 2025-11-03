@@ -530,7 +530,7 @@ lp_setup_try_clear_zs(struct lp_setup_context *setup,
    enum pipe_format format = setup->fb.zsbuf.format;
 
    const uint32_t zmask32 = (flags & PIPE_CLEAR_DEPTH) ? ~0U : 0U;
-   const uint8_t smask8 = (flags & PIPE_CLEAR_STENCIL) ? ~0U : 0U;
+   const uint8_t smask8 = (flags & PIPE_CLEAR_STENCIL) ? 0xFF : 0x00;
 
    uint64_t zsvalue = util_pack64_z_stencil(format, depth, stencil);
    uint64_t zsmask = util_pack64_mask_z_stencil(format, zmask32, smask8);
