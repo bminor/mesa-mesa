@@ -3871,11 +3871,7 @@ TEST_P(validation_test, bfloat_restrictions)
          UNREACHABLE("unexpected opcode in tests");
       }
 
-      if (tests[i].opcode == BRW_OPCODE_MAD) {
-         brw_eu_inst_set_3src_exec_size(&devinfo, last_inst, cvt(t.exec_size) - 1);
-      } else {
-         brw_eu_inst_set_exec_size(&devinfo, last_inst, cvt(t.exec_size) - 1);
-      }
+      brw_eu_inst_set_exec_size(&devinfo, last_inst, cvt(t.exec_size) - 1);
 
       /* TODO: Expand this test logic to check validation error to other
        * tests.
