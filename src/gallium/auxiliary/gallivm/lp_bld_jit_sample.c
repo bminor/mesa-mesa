@@ -607,7 +607,7 @@ lp_bld_llvm_image_soa_emit_size_query(const struct lp_build_image_soa *base,
          .target = params->target,
          .level_zero_only = params->ms,
       };
-      
+
       lp_build_size_query_soa(gallivm, &state, &image->dynamic_state.base, params);
 
       gallivm->texture_descriptor = old_texture;

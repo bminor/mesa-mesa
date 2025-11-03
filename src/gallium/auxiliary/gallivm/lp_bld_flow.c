@@ -228,7 +228,7 @@ void
 lp_build_loop_begin(struct lp_build_loop_state *state,
                     struct gallivm_state *gallivm,
                     LLVMValueRef start)
-                    
+
 {
    LLVMBuilderRef builder = gallivm->builder;
 

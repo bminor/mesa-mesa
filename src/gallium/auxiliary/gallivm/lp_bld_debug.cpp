@@ -382,7 +382,7 @@ lp_function_add_debug_info(gallivm_state *gallivm, LLVMValueRef func, LLVMTypeRe
       asprintf(&gallivm->file_name, "%s/%u.nir", LP_NIR_SHADER_DUMP_DIR, shader_index);
 
       gallivm->file = LLVMDIBuilderCreateFile(gallivm->di_builder, gallivm->file_name, strlen(gallivm->file_name), ".", 1);
-   
+
       LLVMDIBuilderCreateCompileUnit(
          gallivm->di_builder, LLVMDWARFSourceLanguageC11, gallivm->file, gallivm->file_name, strlen(gallivm->file_name),
          0, NULL, 0, 0, NULL, 0, LLVMDWARFEmissionFull, 0, 0, 0, "/", 1, "", 0);

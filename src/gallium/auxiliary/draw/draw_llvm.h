@@ -387,7 +387,7 @@ struct draw_llvm_variant
 
    LLVMTypeRef resources_type;
    LLVMTypeRef resources_ptr_type;
-   
+
    LLVMTypeRef buffer_type;
    LLVMTypeRef buffer_ptr_type;
 

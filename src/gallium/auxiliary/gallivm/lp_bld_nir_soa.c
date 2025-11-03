@@ -361,7 +361,7 @@ group_op_mask_vec(struct lp_build_nir_soa_context *bld)
 {
    if (bld->shader->info.fs.require_full_quads)
       return mask_vec_with_helpers(bld);
-   
+
    return mask_vec(bld);
 }
 
@@ -2892,7 +2892,7 @@ get_instr_src_vec(struct lp_build_nir_soa_context *bld, nir_instr *instr, uint32
    struct gallivm_state *gallivm = bld->base.gallivm;
    LLVMBuilderRef builder = gallivm->builder;
 
-   nir_src *src = NULL; 
+   nir_src *src = NULL;
    switch (instr->type) {
    case nir_instr_type_alu: {
       nir_alu_instr *alu = nir_instr_as_alu(instr);
@@ -4259,7 +4259,7 @@ img_params_init_resource(struct lp_build_nir_soa_context *bld, struct lp_img_par
          params->image_index = nir_src_as_int(*src);
       else
          params->image_index_offset = get_src(bld, src, 0);
-   
+
       return;
    }
 
@@ -4274,7 +4274,7 @@ sampler_size_params_init_resource(struct lp_build_nir_soa_context *bld, struct l
          params->texture_unit = nir_src_as_int(*src);
       else
          params->texture_unit_offset = get_src(bld, src, 0);
-   
+
       return;
    }
 
