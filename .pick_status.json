@@ -184,7 +184,7 @@
         "description": "freedreno/fdl: Fix typo in tiled_to_linear_2cpp",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "7a5a33e0e397c912cd7eb917af505921a89abaa2",
         "notes": null
