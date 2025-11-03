@@ -251,7 +251,7 @@ brw_shader::emit_urb_writes(const brw_reg &gs_vertex_count)
          else
             urb->eot = slot == last_slot && stage != MESA_SHADER_GEOMETRY;
 
-         urb->offset = urb_offset;
+         urb->offset = urb_offset * (devinfo->ver >= 20 ? 16 : 1);
          urb_offset = starting_urb_offset + slot + 1;
          length = 0;
          flush = false;
@@ -290,7 +290,7 @@ brw_shader::emit_urb_writes(const brw_reg &gs_vertex_count)
 
       brw_urb_inst *urb = bld.URB_WRITE(srcs, ARRAY_SIZE(srcs));
       urb->eot = true;
-      urb->offset = 1;
+      urb->offset = devinfo->ver >= 20 ? 16 : 1;
       urb->components = 1;
       return;
    }

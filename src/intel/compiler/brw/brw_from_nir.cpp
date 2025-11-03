@@ -2541,7 +2541,7 @@ brw_shader::emit_gs_control_data_bits(const brw_reg &vertex_count)
     * in 128-bit units, so we must set it to 2.
     */
    if (gs_prog_data->static_vertex_count == -1)
-      urb->offset = 2;
+      urb->offset = devinfo->ver >= 20 ? 32 : 2;
 }
 
 static void
@@ -2842,6 +2842,9 @@ emit_gs_input_load(nir_to_brw_state &ntb, const brw_reg &dst,
       }
       urb->offset = base_offset;
    }
+
+   if (devinfo->ver >= 20)
+      urb->offset *= 16;
 }
 
 static brw_reg
@@ -3176,7 +3179,7 @@ brw_from_nir_emit_tcs_intrinsic(nir_to_brw_state &ntb,
          } else {
             urb = bld.URB_READ(dst, srcs, ARRAY_SIZE(srcs));
          }
-         urb->offset = imm_offset;
+         urb->offset = imm_offset * (devinfo->ver >= 20 ? 16 : 1);
       } else {
          /* Indirect indexing - use per-slot offsets as well. */
          srcs[URB_LOGICAL_SRC_PER_SLOT_OFFSETS] = indirect_offset;
@@ -3190,7 +3193,7 @@ brw_from_nir_emit_tcs_intrinsic(nir_to_brw_state &ntb,
          } else {
             urb = bld.URB_READ(dst, srcs, ARRAY_SIZE(srcs));
          }
-         urb->offset = imm_offset;
+         urb->offset = imm_offset * (devinfo->ver >= 20 ? 16 : 1);
       }
       urb->size_written = (num_components + first_component) *
                            urb->dst.component_size(urb->exec_size);
@@ -3238,7 +3241,7 @@ brw_from_nir_emit_tcs_intrinsic(nir_to_brw_state &ntb,
                urb = bld.URB_READ(dst, srcs, ARRAY_SIZE(srcs));
                urb->size_written = instr->num_components * REG_SIZE * reg_unit(devinfo);
             }
-            urb->offset = imm_offset;
+            urb->offset = imm_offset * (devinfo->ver >= 20 ? 16 : 1);
          }
       } else {
          /* Indirect indexing - use per-slot offsets as well. */
@@ -3258,7 +3261,7 @@ brw_from_nir_emit_tcs_intrinsic(nir_to_brw_state &ntb,
             urb = bld.URB_READ(dst, srcs, ARRAY_SIZE(srcs));
             urb->size_written = instr->num_components * REG_SIZE * reg_unit(devinfo);
          }
-         urb->offset = imm_offset;
+         urb->offset = imm_offset * (devinfo->ver >= 20 ? 16 : 1);
       }
       break;
    }
@@ -3308,7 +3311,7 @@ brw_from_nir_emit_tcs_intrinsic(nir_to_brw_state &ntb,
       bld.LOAD_PAYLOAD(srcs[URB_LOGICAL_SRC_DATA], sources, m, 0);
 
       brw_urb_inst *urb = bld.URB_WRITE(srcs, ARRAY_SIZE(srcs));
-      urb->offset = imm_offset;
+      urb->offset = imm_offset * (devinfo->ver >= 20 ? 16 : 1);
       urb->components = m;
       break;
    }
@@ -3391,7 +3394,7 @@ brw_from_nir_emit_tes_intrinsic(nir_to_brw_state &ntb,
                urb = bld.URB_READ(dest, srcs, ARRAY_SIZE(srcs));
                urb->size_written = instr->num_components * REG_SIZE * reg_unit(devinfo);
             }
-            urb->offset = imm_offset;
+            urb->offset = imm_offset * (devinfo->ver >= 20 ? 16 : 1);
          }
       } else {
          /* Indirect indexing - use per-slot offsets as well. */
@@ -3416,7 +3419,7 @@ brw_from_nir_emit_tes_intrinsic(nir_to_brw_state &ntb,
          } else {
             urb = bld.URB_READ(dest, srcs, ARRAY_SIZE(srcs));
          }
-         urb->offset = imm_offset;
+         urb->offset = imm_offset * (devinfo->ver >= 20 ? 16 : 1);
          urb->size_written = (num_components + first_component) *
                               urb->dst.component_size(urb->exec_size);
       }
@@ -5172,6 +5175,8 @@ emit_urb_direct_vec4_write(const brw_builder &bld,
                            unsigned comps,
                            unsigned mask)
 {
+   assert(bld.shader->devinfo->ver < 20);
+
    for (unsigned q = 0; q < bld.dispatch_width() / 8; q++) {
       brw_builder bld8 = bld.group(8, q);
 
@@ -5202,6 +5207,7 @@ static void
 emit_urb_direct_writes(const brw_builder &bld, nir_intrinsic_instr *instr,
                        const brw_reg &src, brw_reg urb_handle)
 {
+   assert(bld.shader->devinfo->ver < 20);
    assert(nir_src_bit_size(instr->src[0]) == 32);
 
    nir_src *offset_nir_src = nir_get_io_offset_src(instr);
@@ -5297,6 +5303,8 @@ emit_urb_indirect_vec4_write(const brw_builder &bld,
                              unsigned comps,
                              unsigned mask)
 {
+   assert(bld.shader->devinfo->ver < 20);
+
    for (unsigned q = 0; q < bld.dispatch_width() / 8; q++) {
       brw_builder bld8 = bld.group(8, q);
 
@@ -5332,6 +5340,7 @@ emit_urb_indirect_writes_mod(const brw_builder &bld, nir_intrinsic_instr *instr,
                              const brw_reg &src, const brw_reg &offset_src,
                              brw_reg urb_handle, unsigned mod)
 {
+   assert(bld.shader->devinfo->ver < 20);
    assert(nir_src_bit_size(instr->src[0]) == 32);
 
    const unsigned comps = nir_src_num_components(instr->src[0]);
@@ -5401,6 +5410,7 @@ emit_urb_indirect_writes(const brw_builder &bld, nir_intrinsic_instr *instr,
                          const brw_reg &src, const brw_reg &offset_src,
                          brw_reg urb_handle)
 {
+   assert(bld.shader->devinfo->ver < 20);
    assert(nir_src_bit_size(instr->src[0]) == 32);
 
    const unsigned comps = nir_src_num_components(instr->src[0]);
@@ -5459,6 +5469,7 @@ static void
 emit_urb_direct_reads(const brw_builder &bld, nir_intrinsic_instr *instr,
                       const brw_reg &dest, brw_reg urb_handle)
 {
+   assert(bld.shader->devinfo->ver < 20);
    assert(instr->def.bit_size == 32);
 
    unsigned comps = instr->def.num_components;

@@ -103,7 +103,7 @@ lower_urb_read_logical_send_xe2(const brw_builder &bld, brw_urb_inst *urb)
     * Add the (OWord) offset of the write to this value.
     */
    if (urb->offset) {
-      bld.ADD(payload, payload, brw_imm_ud(urb->offset * 16));
+      bld.ADD(payload, payload, brw_imm_ud(urb->offset));
       urb->offset = 0;
    }
 
@@ -224,7 +224,7 @@ lower_urb_write_logical_send_xe2(const brw_builder &bld, brw_urb_inst *urb)
     * Add the (OWord) offset of the write to this value.
     */
    if (urb->offset) {
-      bld.ADD(payload, payload, brw_imm_ud(urb->offset * 16));
+      bld.ADD(payload, payload, brw_imm_ud(urb->offset));
       urb->offset = 0;
    }
 

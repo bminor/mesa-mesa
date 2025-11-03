@@ -357,6 +357,7 @@ struct brw_load_payload_inst : brw_inst {
 };
 
 struct brw_urb_inst : brw_inst {
+   /** Global offset in bytes on Xe2 or OWords on older hardware */
    uint32_t offset;
    uint8_t components;
 };
