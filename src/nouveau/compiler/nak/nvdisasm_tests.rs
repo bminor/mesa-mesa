@@ -777,3 +777,52 @@ pub fn test_sgxt() {
         c.check(sm);
     }
 }
+
+#[test]
+pub fn test_plop3() {
+    let p0 = RegRef::new(RegFile::Pred, 0, 1);
+    let p1 = RegRef::new(RegFile::Pred, 1, 1);
+    let p2 = RegRef::new(RegFile::Pred, 2, 1);
+    let p3 = RegRef::new(RegFile::Pred, 3, 1);
+    let p4 = RegRef::new(RegFile::Pred, 4, 1);
+
+    let src_mods = [SrcMod::None, SrcMod::BNot];
+
+    for sm in SM_LIST {
+        let mut c = DisasmCheck::new();
+        for a_mod in src_mods {
+            for b_mod in src_mods {
+                for c_mod in src_mods {
+                    for lut_bit in 0..16 {
+                        let lut = 1 << lut_bit;
+                        let lut0 = (lut >> 0) as u8;
+                        let lut1 = (lut >> 8) as u8;
+
+                        let mut instr = OpPLop3 {
+                            dsts: [p0.into(), p1.into()],
+                            ops: [
+                                LogicOp3 { lut: lut0 },
+                                LogicOp3 { lut: lut1 },
+                            ],
+                            srcs: [p2.into(), p3.into(), p4.into()],
+                        };
+                        instr.srcs[0].src_mod = a_mod;
+                        instr.srcs[1].src_mod = b_mod;
+                        instr.srcs[2].src_mod = c_mod;
+
+                        let disasm = format!(
+                            "plop3.lut p0, p1, {}, {}, {}, {:#x}, {:#x};",
+                            instr.srcs[0],
+                            instr.srcs[1],
+                            instr.srcs[2],
+                            lut0,
+                            lut1,
+                        );
+                        c.push(instr, disasm);
+                    }
+                }
+            }
+        }
+        c.check(sm);
+    }
+}
