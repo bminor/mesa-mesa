@@ -356,6 +356,12 @@ etna_emit_new_texture_state(struct etna_context *ctx)
                struct etna_sampler_view *sv = etna_sampler_view(ctx->sampler_view[x]);
 
                val = (ss->config0 & sv->config0_mask) | sv->config0;
+
+               if (util_format_description(sv->base.format)->colorspace == UTIL_FORMAT_COLORSPACE_ZS &&
+                  ss->base.min_mip_filter == PIPE_TEX_MIPFILTER_LINEAR) {
+                  val &= ~VIVS_NTE_SAMPLER_CONFIG0_MIP__MASK;
+                  val |= VIVS_NTE_SAMPLER_CONFIG0_MIP(TEXTURE_FILTER_NEAREST);
+               }
             }
 
             /*10000*/ EMIT_STATE(NTE_SAMPLER_CONFIG0(x), val);
@@ -496,6 +502,12 @@ etna_emit_texture_state(struct etna_context *ctx)
                struct etna_sampler_view *sv = etna_sampler_view(ctx->sampler_view[x]);
 
                val = (ss->config0 & sv->config0_mask) | sv->config0;
+
+               if (util_format_description(sv->base.format)->colorspace == UTIL_FORMAT_COLORSPACE_ZS &&
+                  ss->base.min_mip_filter == PIPE_TEX_MIPFILTER_LINEAR) {
+                  val &= ~VIVS_TE_SAMPLER_CONFIG0_MIP__MASK;
+                  val |= VIVS_TE_SAMPLER_CONFIG0_MIP(TEXTURE_FILTER_NEAREST);
+               }
             }
 
             /*02000*/ EMIT_STATE(TE_SAMPLER_CONFIG0(x), val);

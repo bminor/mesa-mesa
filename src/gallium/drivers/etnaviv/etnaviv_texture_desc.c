@@ -326,6 +326,12 @@ etna_emit_texture_desc(struct etna_context *ctx)
             if (texture_use_int_filter(&sv->base, &ss->base, true))
                SAMP_CTRL0 |= VIVS_NTE_DESCRIPTOR_SAMP_CTRL0_INT_FILTER;
 
+            if (util_format_description(sv->base.format)->colorspace == UTIL_FORMAT_COLORSPACE_ZS &&
+                ss->base.min_mip_filter == PIPE_TEX_MIPFILTER_LINEAR) {
+               SAMP_CTRL0 &= ~VIVS_NTE_DESCRIPTOR_SAMP_CTRL0_MIP__MASK;
+               SAMP_CTRL0 |= VIVS_NTE_DESCRIPTOR_SAMP_CTRL0_MIP(TEXTURE_FILTER_NEAREST);
+            }
+
             etna_set_state(stream, VIVS_NTE_DESCRIPTOR_TX_CTRL(x),
                COND(sv->ts.enable, VIVS_NTE_DESCRIPTOR_TX_CTRL_TS_ENABLE) |
                VIVS_NTE_DESCRIPTOR_TX_CTRL_TS_MODE(sv->ts.mode) |
