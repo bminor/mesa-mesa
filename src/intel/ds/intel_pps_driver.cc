@@ -73,7 +73,8 @@ bool IntelDriver::init_perfcnt()
     */
    this->clock_id = intel_pps_clock_id(drm_device.gpu_num);
 
-   assert(!perf && "Intel perf should not be initialized at this point");
+   if (perf)
+      return true;
 
    perf = std::make_unique<IntelPerf>(drm_device.fd);
 
