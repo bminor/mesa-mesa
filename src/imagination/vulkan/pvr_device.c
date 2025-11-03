@@ -2961,14 +2961,6 @@ VkResult pvr_BindBufferMemory2(VkDevice _device,
    return VK_SUCCESS;
 }
 
-VkResult pvr_QueueBindSparse(VkQueue _queue,
-                             uint32_t bindInfoCount,
-                             const VkBindSparseInfo *pBindInfo,
-                             VkFence fence)
-{
-   return VK_SUCCESS;
-}
-
 /* Event functions. */
 
 VkResult pvr_CreateEvent(VkDevice _device,

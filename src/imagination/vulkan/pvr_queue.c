@@ -40,6 +40,7 @@
 
 #include "pvr_cmd_buffer.h"
 #include "pvr_device.h"
+#include "pvr_entrypoints.h"
 #include "pvr_job_compute.h"
 #include "pvr_job_context.h"
 #include "pvr_job_render.h"
@@ -1009,5 +1010,13 @@ static VkResult pvr_driver_queue_submit(struct vk_queue *queue,
    if (result != VK_SUCCESS)
       return result;
 
+   return VK_SUCCESS;
+}
+
+VkResult pvr_QueueBindSparse(VkQueue _queue,
+                             uint32_t bindInfoCount,
+                             const VkBindSparseInfo *pBindInfo,
+                             VkFence fence)
+{
    return VK_SUCCESS;
 }
