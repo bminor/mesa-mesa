@@ -273,8 +273,4 @@ dEQP-VK.renderpass2.depth_stencil_resolve.image_2d_32_32.samples_16.d32_sfloat_s
 glx@glx-visuals-depth
 spec@!opengl 1.1@longprim
 spec@!opengl 1.1@teximage-colors gl_alpha12
-spec@arb_texture_float@fbo-blending-formats
-spec@arb_texture_float@fbo-blending-formats@GL_INTENSITY16F_ARB
-spec@arb_texture_float@texwrap formats bordercolor
-spec@arb_texture_float@texwrap formats bordercolor@GL_INTENSITY16F_ARB- border color only
 spec@ext_framebuffer_multisample@accuracy all_samples color small depthstencil
