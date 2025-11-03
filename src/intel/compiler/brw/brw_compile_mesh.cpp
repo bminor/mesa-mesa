@@ -713,6 +713,9 @@ remap_io_to_dwords(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
 
    nir_src_rewrite(offset, nir_ishl_imm(b, offset->ssa, 2));
 
+   io_sem.no_validate = true;
+   nir_intrinsic_set_io_semantics(intrin, io_sem);
+
    return true;
 }
 
@@ -886,6 +889,10 @@ brw_nir_adjust_offset(nir_builder *b, nir_intrinsic_instr *intrin, uint32_t pitc
                offset_src->ssa,
                nir_imul_imm(b, index_src->ssa, pitch));
    nir_src_rewrite(offset_src, offset);
+
+   nir_io_semantics io_sem = nir_intrinsic_io_semantics(intrin);
+   io_sem.no_validate = true;
+   nir_intrinsic_set_io_semantics(intrin, io_sem);
 }
 
 static bool
