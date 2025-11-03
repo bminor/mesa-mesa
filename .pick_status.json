@@ -574,7 +574,7 @@
         "description": "intel/common: Consider 0 threads while setting TG",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0c4e1c9efcf4c1730e73d6aade2232d596ad8dcf",
         "notes": null
