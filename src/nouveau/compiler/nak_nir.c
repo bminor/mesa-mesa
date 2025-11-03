@@ -333,7 +333,7 @@ nak_preprocess_nir(nir_shader *nir, const struct nak_compiler *nak)
 
    OPT(nir, nir_lower_io_vars_to_temporaries,
        nir_shader_get_entrypoint(nir),
-       true /* outputs */, false /* inputs */);
+       nir_var_shader_out);
 
    const nir_lower_tex_options tex_options = {
       .lower_txd_3d = true,

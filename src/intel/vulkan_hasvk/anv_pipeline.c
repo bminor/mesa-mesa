@@ -90,7 +90,7 @@ anv_shader_stage_to_nir(struct anv_device *device,
    }
 
    NIR_PASS(_, nir, nir_lower_io_vars_to_temporaries,
-              nir_shader_get_entrypoint(nir), true, false);
+              nir_shader_get_entrypoint(nir), nir_var_shader_out);
 
    const struct nir_lower_sysvals_to_varyings_options sysvals_to_varyings = {
       .point_coord = true,

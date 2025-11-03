@@ -315,7 +315,7 @@ preprocess_nir(nir_shader *nir)
    }
 
    NIR_PASS(_, nir, nir_lower_io_vars_to_temporaries,
-            nir_shader_get_entrypoint(nir), true, false);
+            nir_shader_get_entrypoint(nir), nir_var_shader_out);
 
    NIR_PASS(_, nir, nir_lower_system_values);
 

@@ -332,9 +332,13 @@ move_variables_to_list(nir_shader *shader, nir_variable_mode mode,
 
 bool
 nir_lower_io_vars_to_temporaries(nir_shader *shader, nir_function_impl *entrypoint,
-                                 bool outputs, bool inputs)
+                                 nir_variable_mode modes)
 {
+   ASSERTED const nir_variable_mode supported_modes =
+      nir_var_shader_in | nir_var_shader_out;
    struct lower_io_state state;
+
+   assert(!(modes & ~supported_modes));
 
    if (shader->info.stage != MESA_SHADER_VERTEX &&
        shader->info.stage != MESA_SHADER_TESS_EVAL &&
@@ -348,11 +352,11 @@ nir_lower_io_vars_to_temporaries(nir_shader *shader, nir_function_impl *entrypoi
    state.input_map = _mesa_pointer_hash_table_create(NULL);
 
    exec_list_make_empty(&state.old_inputs);
-   if (inputs)
+   if (modes & nir_var_shader_in)
       move_variables_to_list(shader, nir_var_shader_in, &state.old_inputs);
 
    exec_list_make_empty(&state.old_outputs);
-   if (outputs)
+   if (modes & nir_var_shader_out)
       move_variables_to_list(shader, nir_var_shader_out, &state.old_outputs);
 
    exec_list_make_empty(&state.new_inputs);
@@ -374,10 +378,10 @@ nir_lower_io_vars_to_temporaries(nir_shader *shader, nir_function_impl *entrypoi
    }
 
    nir_foreach_function_impl(impl, shader) {
-      if (inputs)
+      if (modes & nir_var_shader_in)
          emit_input_copies_impl(&state, impl);
 
-      if (outputs)
+      if (modes & nir_var_shader_out)
          emit_output_copies_impl(&state, impl);
 
       nir_progress(true, impl, nir_metadata_control_flow);

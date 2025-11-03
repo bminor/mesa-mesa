@@ -567,8 +567,7 @@ void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
             nir,
             nir_lower_io_vars_to_temporaries,
             nir_shader_get_entrypoint(nir),
-            true,
-            true);
+            nir_var_shader_out | nir_var_shader_in);
 
    NIR_PASS(_, nir, nir_lower_global_vars_to_local);
    NIR_PASS(_, nir, nir_split_var_copies);

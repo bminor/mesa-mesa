@@ -192,7 +192,7 @@ anv_shader_preprocess_nir(struct vk_physical_device *device,
    const struct brw_compiler *compiler = pdevice->compiler;
 
    NIR_PASS(_, nir, nir_lower_io_vars_to_temporaries,
-            nir_shader_get_entrypoint(nir), true, false);
+            nir_shader_get_entrypoint(nir), nir_var_shader_out);
 
    const struct nir_lower_sysvals_to_varyings_options sysvals_to_varyings = {
       .point_coord = true,

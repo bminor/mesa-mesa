@@ -1248,7 +1248,7 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
 
    if (lower_indirect_outputs) {
       NIR_PASS(_, nir, nir_lower_io_vars_to_temporaries,
-               nir_shader_get_entrypoint(nir), true, false);
+               nir_shader_get_entrypoint(nir), nir_var_shader_out);
 
       /* We need to lower all the copy_deref's introduced by lower_io_to-
        * _temporaries before calling nir_lower_io.

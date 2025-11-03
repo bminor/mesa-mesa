@@ -489,13 +489,19 @@ ir3_nir_lower_io_vars_to_temporaries(nir_shader *s)
     * stop doing that once we're sure all drivers are doing their own
     * indirect i/o lowering.
     */
-   bool lower_input = s->info.stage == MESA_SHADER_VERTEX ||
-                      s->info.stage == MESA_SHADER_FRAGMENT;
-   bool lower_output = s->info.stage != MESA_SHADER_TESS_CTRL &&
-                       s->info.stage != MESA_SHADER_GEOMETRY;
-   if (lower_input || lower_output) {
+   nir_variable_mode lower_modes = 0;
+
+   if (s->info.stage == MESA_SHADER_VERTEX ||
+       s->info.stage == MESA_SHADER_FRAGMENT)
+      lower_modes |= nir_var_shader_in;
+
+   if (s->info.stage != MESA_SHADER_TESS_CTRL &&
+       s->info.stage != MESA_SHADER_GEOMETRY)
+      lower_modes |= nir_var_shader_out;
+
+   if (lower_modes) {
       NIR_PASS(_, s, nir_lower_io_vars_to_temporaries, nir_shader_get_entrypoint(s),
-               lower_output, lower_input);
+               lower_modes);
 
       /* nir_lower_io_vars_to_temporaries() creates global variables and copy
        * instructions which need to be cleaned up.

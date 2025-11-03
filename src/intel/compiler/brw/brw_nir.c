@@ -1660,7 +1660,7 @@ brw_nir_link_shaders(const struct brw_compiler *compiler,
        * those write-mask in output is handled by I/O lowering.
        */
       NIR_PASS(_, producer, nir_lower_io_vars_to_temporaries,
-                 nir_shader_get_entrypoint(producer), true, false);
+                 nir_shader_get_entrypoint(producer), nir_var_shader_out);
       NIR_PASS(_, producer, nir_lower_global_vars_to_local);
       NIR_PASS(_, producer, nir_split_var_copies);
       NIR_PASS(_, producer, nir_lower_var_copies);
