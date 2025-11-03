@@ -1966,8 +1966,12 @@ static int gfx9_get_preferred_swizzle_mode(struct ac_addrlib *addrlib, const str
       sin.forbiddenBlock.macroThick64KB = 1;
    }
 
-   if (surf->flags & (RADEON_SURF_PREFER_64K_ALIGNMENT | RADEON_SURF_PREFER_4K_ALIGNMENT)) {
-      if (info->gfx_level >= GFX11) {
+   if (info->gfx_level >= GFX11) {
+      /* Ban 256KB for non-MSAA images because it seems to hurt more than it
+       * helps. Also ban when 4K or 64K are explicitly preferred.
+       */
+      if (in->numSamples == 1 ||
+          surf->flags & (RADEON_SURF_PREFER_64K_ALIGNMENT | RADEON_SURF_PREFER_4K_ALIGNMENT)) {
          sin.forbiddenBlock.gfx11.thin256KB = 1;
          sin.forbiddenBlock.gfx11.thick256KB = 1;
       }
@@ -3029,7 +3033,10 @@ static unsigned gfx12_select_swizzle_mode(struct ac_addrlib *addrlib,
    } else if (flags & RADEON_SURF_PREFER_64K_ALIGNMENT) {
       get_in.maxAlign = 64 * 1024;
    } else {
-      get_in.maxAlign = info->has_dedicated_vram ? (256 * 1024) : (64 * 1024);
+      /* Ban 256KB for non-MSAA images because it seems to hurt more than it
+       * helps. Also ban on APUs because it's unsupported.
+       */
+      get_in.maxAlign = in->numSamples == 1 || !info->has_dedicated_vram ? (64 * 1024) : (256 * 1024);
    }
 
    if (Addr3GetPossibleSwizzleModes(addrlib->handle, &get_in, &get_out) != ADDR_OK) {
