@@ -1014,7 +1014,7 @@
         "description": "tu: Handle case where pipeline writes unused color attachments",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c2eb768eb22287a5cc0cf578f677dc0157ab008e",
         "notes": null
