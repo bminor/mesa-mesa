@@ -83,6 +83,7 @@ Linux, FreeBSD, and other operating systems.
    drivers/asahi
    drivers/d3d12
    drivers/freedreno
+   drivers/kosmickrisp
    drivers/lima
    drivers/llvmpipe
    drivers/nvk

@@ -111,6 +111,7 @@ emit_local_vars(struct nir_to_msl_ctx *ctx, nir_shader *shader)
             shader->info.shared_size);
    }
    if (shader->scratch_size) {
+      /* KK_WORKAROUND_1 */
       P_IND(ctx, "uchar scratch[%d] = {0};\n", shader->scratch_size);
    }
    if (BITSET_TEST(shader->info.system_values_read,
@@ -1355,16 +1356,7 @@ intrinsic_to_msl(struct nir_to_msl_ctx *ctx, nir_intrinsic_instr *instr)
       P(ctx, ");\n");
       break;
    case nir_intrinsic_elect:
-      /* If we don't add && "(ulong)simd_ballot(true)"" the following CTS tests
-       * fail:
-       * dEQP-VK.subgroups.ballot_other.graphics.subgroupballotfindlsb
-       * dEQP-VK.subgroups.ballot_other.compute.subgroupballotfindlsb
-       * Weird Metal bug:
-       * if (simd_is_first())
-       *    temp = 3u;
-       * else
-       *    temp = simd_ballot(true); <- This will return all active threads...
-       */
+      /* KK_WORKAROUND_3 */
       P(ctx, "simd_is_first() && (ulong)simd_ballot(true);\n");
       break;
    case nir_intrinsic_read_first_invocation:
@@ -1789,27 +1781,7 @@ cf_node_to_metal(struct nir_to_msl_ctx *ctx, nir_cf_node *node)
    case nir_cf_node_loop: {
       nir_loop *loop = nir_cf_node_as_loop(node);
       assert(!nir_loop_has_continue_construct(loop));
-      /* We need to loop to infinite since MSL compiler crashes if we have
-       something like (simplified version):
-       * // clang-format off
-       * while (true) {
-       *     if (some_conditional) {
-       *         break_loop = true;
-       *     } else {
-       *         break_loop = false;
-       *     }
-       *     if (break_loop) {
-       *         break;
-       *     }
-       * }
-       * // clang-format on
-       * The issue I believe is that some_conditional wouldn't change the value
-       * no matter in which iteration we are (something like fetching the same
-       * value from a buffer) and the MSL compiler doesn't seem to like that
-       * much to the point it crashes.
-       * With this for loop now, we trick the MSL compiler into believing we are
-       * not doing an infinite loop (wink wink)
-       */
+      /* KK_WORKAROUND_2 */
       P_IND(ctx,
             "for (uint64_t no_crash = 0u; no_crash < %" PRIu64
             "; ++no_crash) {\n",
