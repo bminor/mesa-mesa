@@ -564,7 +564,7 @@ tiled_to_linear_2cpp(char *_tiled, char *_linear, uint32_t linear_pitch)
             "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15");
    }
 #else
-   memcpy_small<2, LINEAR_TO_TILED, FDL_MACROTILE_4_CHANNEL>(
+   memcpy_small<2, TILED_TO_LINEAR, FDL_MACROTILE_4_CHANNEL>(
       0, 0, 32, 4, _tiled, _linear, linear_pitch, 0, 0, 0);
 #endif
 }
