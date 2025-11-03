@@ -1143,7 +1143,7 @@ try_update_scene_state(struct lp_setup_context *setup)
                 sizeof setup->fs.current.jit_context);
          memcpy(&stored->jit_resources,
                 &setup->fs.current.jit_resources,
-                sizeof setup->fs.current.jit_resources);         
+                sizeof setup->fs.current.jit_resources);
 
          stored->variant = setup->fs.current.variant;
 

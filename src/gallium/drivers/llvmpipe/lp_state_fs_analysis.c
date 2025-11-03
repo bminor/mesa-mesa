@@ -367,7 +367,7 @@ llvmpipe_nir_is_linear_compat(struct nir_shader *shader,
 
    if (util_bitcount64(shader->info.inputs_read) > LP_MAX_LINEAR_INPUTS)
       return false;
-   
+
    if (!shader->info.outputs_written || shader->info.fs.color_is_dual_source ||
        (shader->info.outputs_written & ~BITFIELD64_BIT(FRAG_RESULT_DATA0)))
       return false;

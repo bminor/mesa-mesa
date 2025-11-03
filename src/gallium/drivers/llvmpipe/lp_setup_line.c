@@ -505,7 +505,7 @@ try_setup_line(struct lp_setup_context *setup,
           * the comparisons against zero are not mirroring what actually happens
           * when rasterizing using the plane equations).
           */
-         
+
          bool will_draw_start;
          bool will_draw_end;
 

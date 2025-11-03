@@ -313,7 +313,7 @@ lvp_gather_subtree(const uint8_t *output, uint32_t offset, uint32_t *leaf_nodes,
 
 static uint32_t
 lvp_rebuild_subtree(const uint8_t *output, uint32_t *leaf_nodes, vk_aabb *leaf_bounds,
-                    uint32_t *internal_nodes, uint32_t leaf_node_count, 
+                    uint32_t *internal_nodes, uint32_t leaf_node_count,
                     uint32_t *internal_node_index)
 {
    uint32_t child_nodes[2];
@@ -571,7 +571,7 @@ lvp_encode_as(struct vk_acceleration_structure *dst, VkDeviceAddress intermediat
       }
    }
 
-   /* The BVH exceeds the maximum depth supported by the traversal stack, 
+   /* The BVH exceeds the maximum depth supported by the traversal stack,
     * flatten the offending parts of the tree.
     */
    if (max_node_depth >= (geometry_type == VK_GEOMETRY_TYPE_INSTANCES_KHR ? LVP_MAX_TLAS_DEPTH : LVP_MAX_BLAS_DEPTH))

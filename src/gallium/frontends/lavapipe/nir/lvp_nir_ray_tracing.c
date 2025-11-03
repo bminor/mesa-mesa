@@ -274,15 +274,15 @@ lvp_build_intersect_ray_tri(nir_builder *b, nir_def **node_data, nir_def *ray_tm
    /* When an edge is hit, we have to ensure that it is not hit twice in case it is shared.
     *
     * Vulkan 1.4.322, Section 40.1.1 Watertightness:
-    * 
+    *
     *    Any set of two triangles with two shared vertices that were specified in the same
     *    winding order in each triangle have a shared edge defined by those vertices.
-    * 
+    *
     * This means we can decide which triangle should intersect by comparing the shared edge
     * to two arbitrary directions because the shared edges are antiparallel. The triangle
     * vertices are transformed so the ray direction is (0 0 1). Therefore it makes sense to
     * choose (1 0 0) and (0 1 0) as reference directions.
-    * 
+    *
     * Hitting edges is extremely rare so an if should be worth.
     */
    nir_def *is_edge_a = nir_feq_imm(b, u, 0.0f);
@@ -302,18 +302,18 @@ lvp_build_intersect_ray_tri(nir_builder *b, nir_def **node_data, nir_def *ray_tm
        *
        *    Any set of two or more triangles where all triangles have one vertex with an
        *    identical position value, that vertex is a shared vertex.
-       * 
+       *
        * Since the no double hit/miss requirement of a shared vertex is only formulated for
        * closed fans
-       * 
+       *
        *    Implementations should not double-hit or miss when a ray intersects a shared edge,
        *    or a shared vertex of a closed fan.
-       * 
+       *
        * it is possible to choose an arbitrary direction n that defines which triangle in the
        * closed fan should intersect the shared vertex with the ray.
-       * 
+       *
        *    All edges that include the above vertex are shared edges.
-       * 
+       *
        * Implies that all triangles have the same winding order. It is therefore sufficiant
        * to choose the triangle where the other vertices are on both sides of a plane
        * perpendicular to n (relying on winding order to get one instead of two triangles

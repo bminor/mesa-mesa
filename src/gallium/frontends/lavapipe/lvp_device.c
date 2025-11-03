@@ -1093,7 +1093,7 @@ lvp_get_properties(const struct lvp_physical_device *device, struct vk_propertie
       .filterMinmaxSingleComponentFormats = true,
 
       .maxTimelineSemaphoreValueDifference = UINT64_MAX,
-      .framebufferIntegerColorSampleCounts = VK_SAMPLE_COUNT_1_BIT, /* LVP_SAMPLE_COUNTS? */ 
+      .framebufferIntegerColorSampleCounts = VK_SAMPLE_COUNT_1_BIT, /* LVP_SAMPLE_COUNTS? */
 
       /* Vulkan 1.3 */
       .minSubgroupSize = lp_native_vector_width / 32,

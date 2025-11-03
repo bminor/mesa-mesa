@@ -667,7 +667,7 @@ lvp_handle_triangle_intersection(nir_builder *b,
    if (state->primitive_addr) {
       prev_primitive_addr = nir_load_var(b, state->primitive_addr);
       nir_store_var(b, state->primitive_addr, intersection->base.node_addr, 0x1);
-   }         
+   }
 
    nir_store_scratch(b, intersection->barycentrics, barycentrics_offset);
 

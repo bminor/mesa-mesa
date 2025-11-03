@@ -1108,12 +1108,12 @@ llvmpipe_get_texel_offset(struct pipe_resource *resource,
    ) * 64 * 1024;
 
    offset += (
-      x % sparse_tile_size[0] + 
+      x % sparse_tile_size[0] +
       (y % sparse_tile_size[1]) * sparse_tile_size[0] +
       (z % sparse_tile_size[2]) * sparse_tile_size[0] * sparse_tile_size[1]
    ) * util_format_get_blocksize(resource->format);
 
-   return offset + lpr->mip_offsets[level] + lpr->img_stride[level] * layer;   
+   return offset + lpr->mip_offsets[level] + lpr->img_stride[level] * layer;
 }
 
 
