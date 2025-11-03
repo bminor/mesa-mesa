@@ -37,13 +37,11 @@
 #ifndef LP_BLD_TGSI_H
 #define LP_BLD_TGSI_H
 
-#include "gallivm/lp_bld.h"
 #include "gallivm/lp_bld_tgsi_action.h"
 #include "gallivm/lp_bld_limits.h"
 #include "gallivm/lp_bld_sample.h"
 #include "gallivm/lp_bld_ir_common.h"
 #include "lp_bld_type.h"
-#include "util/compiler.h"
 #include "pipe/p_state.h"
 #include "tgsi/tgsi_exec.h"
 #include "tgsi/tgsi_scan.h"

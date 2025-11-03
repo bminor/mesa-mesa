@@ -37,20 +37,10 @@
 
 #include "lp_bld_arit_overflow.h"
 
-#include "lp_bld_type.h"
-#include "lp_bld_const.h"
 #include "lp_bld_init.h"
 #include "lp_bld_intr.h"
-#include "lp_bld_logic.h"
-#include "lp_bld_pack.h"
-#include "lp_bld_debug.h"
-#include "lp_bld_bitarit.h"
 
-#include "util/u_memory.h"
-#include "util/u_debug.h"
-#include "util/u_math.h"
-#include "util/u_string.h"
-#include "util/u_cpu_detect.h"
+#include "util/macros.h"
 
 #include <float.h>
 

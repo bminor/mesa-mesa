@@ -33,7 +33,6 @@
  */
 
 #include <inttypes.h>  /* for PRIx64 macro */
-#include "util/compiler.h"
 #include "util/u_debug.h"
 
 #include "lp_bld_type.h"

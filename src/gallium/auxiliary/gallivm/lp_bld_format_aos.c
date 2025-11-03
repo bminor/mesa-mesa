@@ -34,11 +34,8 @@
 
 
 #include "util/format/u_format.h"
-#include "util/u_memory.h"
-#include "util/u_math.h"
+#include "util/bitscan.h"
 #include "util/u_pointer.h"
-#include "util/u_string.h"
-#include "util/u_cpu_detect.h"
 
 #include "lp_bld_arit.h"
 #include "lp_bld_init.h"

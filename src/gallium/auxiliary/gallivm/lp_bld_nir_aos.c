@@ -30,11 +30,11 @@
 #include "lp_bld_const.h"
 #include "lp_bld_flow.h"
 #include "lp_bld_quad.h"
-#include "lp_bld_struct.h"
+#include "lp_bld_sample.h"
 #include "lp_bld_swizzle.h"
+#include "lp_bld_tgsi.h"
 #include "lp_bld_debug.h"
 #include "util/u_math.h"
-#include "nir_deref.h"
 
 
 struct lp_build_nir_aos_context

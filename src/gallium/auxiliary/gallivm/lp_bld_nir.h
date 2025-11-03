@@ -26,15 +26,16 @@
 #ifndef LP_BLD_NIR_H
 #define LP_BLD_NIR_H
 
-#include "gallivm/lp_bld.h"
-#include "gallivm/lp_bld_limits.h"
-#include "gallivm/lp_bld_flow.h"
-#include "lp_bld_type.h"
+#include <llvm-c/Core.h>
 
-#include "gallivm/lp_bld_tgsi.h"
+#include "lp_bld_type.h"
 #include "nir.h"
 
+struct gallivm_state;
 struct nir_shader;
+struct lp_img_params;
+struct lp_build_tgsi_params;
+struct lp_build_sampler_aos;
 
 /*
  * 2 reserved functions args for each function call,

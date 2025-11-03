@@ -34,13 +34,9 @@
  */
 
 #include "pipe/p_defines.h"
-#include "pipe/p_state.h"
-#include "pipe/p_shader_tokens.h"
 #include "util/bitset.h"
 #include "util/compiler.h"
 #include "util/u_debug.h"
-#include "util/u_dump.h"
-#include "util/u_memory.h"
 #include "util/u_math.h"
 #include "util/format/u_format.h"
 #include "util/u_cpu_detect.h"

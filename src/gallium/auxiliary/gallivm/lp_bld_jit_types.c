@@ -21,15 +21,12 @@
  * USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "util/compiler.h"
-#include "gallivm/lp_bld.h"
 #include "gallivm/lp_bld_init.h"
 #include "gallivm/lp_bld_struct.h"
 #include "gallivm/lp_bld_sample.h"
 #include "gallivm/lp_bld_const.h"
 #include "gallivm/lp_bld_debug.h"
 #include "gallivm/lp_bld_flow.h"
-#include "gallivm/lp_bld_ir_common.h"
 #include "draw/draw_vertex_header.h"
 #include "lp_bld_jit_types.h"
 

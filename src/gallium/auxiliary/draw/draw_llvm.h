@@ -34,8 +34,8 @@
 #include "draw/draw_gs.h"
 #include "draw/draw_tess.h"
 
+#include "gallivm/lp_bld.h"
 #include "gallivm/lp_bld_sample.h"
-#include "gallivm/lp_bld_limits.h"
 #include "gallivm/lp_bld_jit_types.h"
 #include "gallivm/lp_bld_jit_sample.h"
 

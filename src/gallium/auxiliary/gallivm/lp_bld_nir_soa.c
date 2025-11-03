@@ -39,6 +39,7 @@
 #include "lp_bld_coro.h"
 #include "lp_bld_printf.h"
 #include "lp_bld_intr.h"
+#include "lp_bld_tgsi.h"
 
 #include "util/u_cpu_detect.h"
 #include "util/u_math.h"

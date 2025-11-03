@@ -26,7 +26,6 @@
  **************************************************************************/
 
 #include <stddef.h>
-#include <fstream>
 #include <sstream>
 #include <iomanip>
 
@@ -43,11 +42,12 @@
 #include <llvm/Support/Host.h>
 #endif
 
-#include "util/detect_os.h"
-#include "util/u_math.h"
+#include "util/bitscan.h"
 #include "util/u_debug.h"
 #include "util/os_file.h"
+#include "util/u_string.h" // asprintf on MSVC
 
+#include "lp_bld_init.h"
 #include "lp_bld_debug.h"
 #include "lp_bld_intr.h"
 

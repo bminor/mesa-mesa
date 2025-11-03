@@ -24,21 +24,7 @@
  **************************************************************************/
 
 #include "lp_bld_nir.h"
-#include "lp_bld_arit.h"
-#include "lp_bld_bitarit.h"
-#include "lp_bld_const.h"
-#include "lp_bld_conv.h"
-#include "lp_bld_gather.h"
-#include "lp_bld_logic.h"
-#include "lp_bld_quad.h"
-#include "lp_bld_flow.h"
-#include "lp_bld_intr.h"
-#include "lp_bld_struct.h"
-#include "lp_bld_debug.h"
-#include "lp_bld_printf.h"
 #include "nir.h"
-#include "nir_deref.h"
-#include "nir_search_helpers.h"
 
 /* do some basic opts to remove some things we don't want to see. */
 void

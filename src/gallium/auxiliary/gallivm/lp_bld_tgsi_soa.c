@@ -36,11 +36,8 @@
  * Brian Paul, and others.
  */
 
-#include "util/detect.h"
 #include "pipe/p_shader_tokens.h"
 #include "util/u_debug.h"
-#include "util/u_math.h"
-#include "util/u_memory.h"
 #include "tgsi/tgsi_dump.h"
 #include "tgsi/tgsi_exec.h"
 #include "tgsi/tgsi_info.h"
@@ -56,7 +53,6 @@
 #include "lp_bld_gather.h"
 #include "lp_bld_init.h"
 #include "lp_bld_logic.h"
-#include "lp_bld_misc.h"
 #include "lp_bld_swizzle.h"
 #include "lp_bld_flow.h"
 #include "lp_bld_coro.h"

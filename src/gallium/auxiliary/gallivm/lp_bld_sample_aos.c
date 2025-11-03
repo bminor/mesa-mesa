@@ -34,14 +34,7 @@
  */
 
 #include "pipe/p_defines.h"
-#include "pipe/p_state.h"
-#include "util/u_debug.h"
-#include "util/u_dump.h"
-#include "util/u_memory.h"
-#include "util/u_math.h"
 #include "util/format/u_format.h"
-#include "util/u_cpu_detect.h"
-#include "lp_bld_debug.h"
 #include "lp_bld_type.h"
 #include "lp_bld_const.h"
 #include "lp_bld_conv.h"

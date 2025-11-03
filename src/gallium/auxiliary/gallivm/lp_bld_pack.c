@@ -66,10 +66,8 @@
  */
 
 
-#include "util/u_debug.h"
-#include "util/u_math.h"
+#include "util/bitscan.h"
 #include "util/u_cpu_detect.h"
-#include "util/u_memory.h"
 
 #include "lp_bld_type.h"
 #include "lp_bld_const.h"

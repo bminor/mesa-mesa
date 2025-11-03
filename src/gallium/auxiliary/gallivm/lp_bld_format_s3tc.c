@@ -38,9 +38,7 @@
 
 #include "util/format/u_format.h"
 #include "util/u_math.h"
-#include "util/u_string.h"
 #include "util/u_cpu_detect.h"
-#include "util/u_debug.h"
 
 #include "lp_bld_arit.h"
 #include "lp_bld_type.h"
@@ -51,8 +49,6 @@
 #include "lp_bld_logic.h"
 #include "lp_bld_pack.h"
 #include "lp_bld_flow.h"
-#include "lp_bld_printf.h"
-#include "lp_bld_struct.h"
 #include "lp_bld_swizzle.h"
 #include "lp_bld_init.h"
 #include "lp_bld_debug.h"

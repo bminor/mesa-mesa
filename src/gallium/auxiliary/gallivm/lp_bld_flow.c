@@ -31,9 +31,6 @@
  * @author Jose Fonseca <jfonseca@vmware.com>
  */
 
-#include "util/u_debug.h"
-#include "util/u_memory.h"
-
 #include "lp_bld_init.h"
 #include "lp_bld_type.h"
 #include "lp_bld_flow.h"

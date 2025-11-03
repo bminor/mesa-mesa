@@ -38,6 +38,7 @@
 #include "draw/draw_context.h"
 #include "gallivm/lp_bld_type.h"
 #include "gallivm/lp_bld_nir.h"
+#include "gallivm/lp_bld_init.h"
 #include "util/disk_cache.h"
 #include "util/hex.h"
 #include "util/os_misc.h"

@@ -61,8 +61,6 @@
  */
 
 
-#include "util/u_debug.h"
-#include "util/u_math.h"
 #include "util/half_float.h"
 #include "util/u_cpu_detect.h"
 
