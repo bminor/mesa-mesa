@@ -628,7 +628,7 @@ ir3_validate(struct ir3 *ir)
 
    ctx->ir = ir;
    ctx->defs_count = ir->instr_count + 1; /* serialno comes from pre-incrementing this. */
-   ctx->defs = rzalloc_array(ctx, BITSET_WORD, BITSET_WORDS(ctx->defs_count));
+   ctx->defs = BITSET_RZALLOC(ctx, ctx->defs_count);
    ctx->rpt_set = _mesa_pointer_set_create(ctx);
    ctx->rpt_block = NULL;
 

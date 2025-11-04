@@ -246,8 +246,7 @@ pressure_schedule_block(bi_context *ctx, bi_block *block, struct sched_ctx *s)
    signed orig_max_pressure = 0;
    unsigned nr_ins = 0;
 
-   memcpy(s->live, block->ssa_live_out,
-          BITSET_WORDS(ctx->ssa_alloc) * sizeof(BITSET_WORD));
+   memcpy(s->live, block->ssa_live_out, BITSET_BYTES(ctx->ssa_alloc));
 
    bi_foreach_instr_in_block_rev(block, I) {
       pressure += calculate_pressure_delta(I, s->live);
@@ -256,8 +255,7 @@ pressure_schedule_block(bi_context *ctx, bi_block *block, struct sched_ctx *s)
       nr_ins++;
    }
 
-   memcpy(s->live, block->ssa_live_out,
-          BITSET_WORDS(ctx->ssa_alloc) * sizeof(BITSET_WORD));
+   memcpy(s->live, block->ssa_live_out, BITSET_BYTES(ctx->ssa_alloc));
 
    /* off by a constant, that's ok */
    signed max_pressure = 0;

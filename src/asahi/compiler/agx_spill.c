@@ -1205,8 +1205,8 @@ agx_spill(agx_context *ctx, unsigned k, bool remat_only)
    BITSET_WORD *S = ralloc_array(memctx, BITSET_WORD, BITSET_WORDS(n));
 
    agx_foreach_block(ctx, block) {
-      memset(W, 0, BITSET_WORDS(n) * sizeof(BITSET_WORD));
-      memset(S, 0, BITSET_WORDS(n) * sizeof(BITSET_WORD));
+      memset(W, 0, BITSET_BYTES(n));
+      memset(S, 0, BITSET_BYTES(n));
 
       struct spill_ctx sctx = {
          .memctx = memctx,

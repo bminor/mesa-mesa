@@ -1460,7 +1460,7 @@ schedule_block(compiler_context *ctx, midgard_block *block)
    mir_create_dependency_graph(instructions, len, node_count);
 
    /* Allocate the worklist */
-   size_t sz = BITSET_WORDS(len) * sizeof(BITSET_WORD);
+   size_t sz = BITSET_BYTES(len);
    BITSET_WORD *worklist = calloc(sz, 1);
    uint16_t *liveness = calloc(node_count, 2);
    mir_initialize_worklist(worklist, instructions, len);

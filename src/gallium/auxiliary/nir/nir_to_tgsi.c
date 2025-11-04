@@ -484,7 +484,7 @@ ntt_allocate_regs(struct ntt_compile *c, nir_function_impl *impl)
    ntt_live_regs(c, impl);
 
    unsigned *ra_map = ralloc_array(c, unsigned, c->num_temps);
-   unsigned *released = rzalloc_array(c, BITSET_WORD, BITSET_WORDS(c->num_temps));
+   unsigned *released = BITSET_RZALLOC(c, c->num_temps);
 
    /* No RA on NIR array regs */
    for (int i = 0; i < c->first_non_array_temp; i++)

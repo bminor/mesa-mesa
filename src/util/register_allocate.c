@@ -901,7 +901,7 @@ ra_compute_available_regs(struct ra_graph *g, unsigned int n, BITSET_WORD *regs)
    struct ra_class *c = g->regs->classes[g->nodes[n].class];
 
    /* Populate with the set of regs that are in the node's class. */
-   memcpy(regs, c->regs, BITSET_WORDS(g->regs->count) * sizeof(BITSET_WORD));
+   memcpy(regs, c->regs, BITSET_BYTES(g->regs->count));
 
    /* Remove any regs that conflict with nodes that we're adjacent to and have
     * already colored.
@@ -946,7 +946,7 @@ ra_select(struct ra_graph *g)
    BITSET_WORD *select_regs = NULL;
 
    if (g->select_reg_callback)
-      select_regs = malloc(BITSET_WORDS(g->regs->count) * sizeof(BITSET_WORD));
+      select_regs = malloc(BITSET_BYTES(g->regs->count));
 
    while (g->tmp.stack_count != 0) {
       unsigned int ri;

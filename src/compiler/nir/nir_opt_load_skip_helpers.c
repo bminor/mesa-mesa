@@ -98,8 +98,7 @@ nir_opt_load_skip_helpers(nir_shader *shader, nir_opt_load_skip_helpers_options 
    nir_function_impl *impl = nir_shader_get_entrypoint(shader);
 
    struct helper_state hs = {
-      .needs_helpers = rzalloc_array(NULL, BITSET_WORD,
-                                     BITSET_WORDS(impl->ssa_alloc)),
+      .needs_helpers = BITSET_RZALLOC(NULL, impl->ssa_alloc),
       .options = options,
    };
    nir_instr_worklist_init(&hs.worklist);

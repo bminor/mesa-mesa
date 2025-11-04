@@ -1422,8 +1422,8 @@ bi_spill_ssa(bi_context *ctx, unsigned k, unsigned spill_base)
    memset(mem_map, 0xff, sizeof(uint32_t) * n);
 
    bi_foreach_block(ctx, block) {
-      memset(W, 0, BITSET_WORDS(n) * sizeof(BITSET_WORD));
-      memset(S, 0, BITSET_WORDS(n) * sizeof(BITSET_WORD));
+      memset(W, 0, BITSET_BYTES(n));
+      memset(S, 0, BITSET_BYTES(n));
 
       struct spill_ctx sctx = {
          .memctx = memctx,

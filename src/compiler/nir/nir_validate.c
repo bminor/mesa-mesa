@@ -1828,7 +1828,7 @@ validate_dominance(nir_function_impl *impl, validate_state *state)
       state->block = NULL;
    }
 
-   memset(state->ssa_defs_found, 0, BITSET_WORDS(impl->ssa_alloc) * sizeof(BITSET_WORD));
+   memset(state->ssa_defs_found, 0, BITSET_BYTES(impl->ssa_alloc));
    validate_ssa_dominance(impl, state);
 
    /* Restore the old dominance metadata */
@@ -1931,10 +1931,10 @@ validate_divergence(nir_function_impl *impl, validate_state *state)
    block_divergence_metadata *blocks = ralloc_array(state->mem_ctx,
                                                     block_divergence_metadata,
                                                     state->blocks->size);
-   BITSET_WORD *ssa_divergence = rzalloc_array(state->mem_ctx, BITSET_WORD,
-                                               BITSET_WORDS(impl->ssa_alloc));
-   BITSET_WORD *loop_invariance = rzalloc_array(state->mem_ctx, BITSET_WORD,
-                                                BITSET_WORDS(impl->ssa_alloc));
+   BITSET_WORD *ssa_divergence = BITSET_RZALLOC(state->mem_ctx,
+                                                impl->ssa_alloc);
+   BITSET_WORD *loop_invariance = BITSET_RZALLOC(state->mem_ctx,
+                                                 impl->ssa_alloc);
 
    set_foreach(state->blocks, entry) {
       nir_block *block = (nir_block *)entry->key;
@@ -2158,7 +2158,7 @@ validate_function_impl(nir_function_impl *impl, validate_state *state)
 
    state->ssa_defs_found = reralloc(state->mem_ctx, state->ssa_defs_found,
                                     BITSET_WORD, BITSET_WORDS(impl->ssa_alloc));
-   memset(state->ssa_defs_found, 0, BITSET_WORDS(impl->ssa_alloc) * sizeof(BITSET_WORD));
+   memset(state->ssa_defs_found, 0, BITSET_BYTES(impl->ssa_alloc));
 
    _mesa_set_clear(state->blocks, NULL);
    _mesa_set_resize(state->blocks, impl->num_blocks);
@@ -2346,7 +2346,7 @@ nir_validate_ssa_dominance(nir_shader *shader, const char *when)
       state.ssa_defs_found = reralloc(state.mem_ctx, state.ssa_defs_found,
                                       BITSET_WORD,
                                       BITSET_WORDS(impl->ssa_alloc));
-      memset(state.ssa_defs_found, 0, BITSET_WORDS(impl->ssa_alloc) * sizeof(BITSET_WORD));
+      memset(state.ssa_defs_found, 0, BITSET_BYTES(impl->ssa_alloc));
 
       state.impl = impl;
       validate_ssa_dominance(impl, &state);

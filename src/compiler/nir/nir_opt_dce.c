@@ -215,8 +215,7 @@ nir_opt_dce_impl(nir_function_impl *impl)
 {
    assert(impl->structured);
 
-   BITSET_WORD *defs_live = rzalloc_array(NULL, BITSET_WORD,
-                                          BITSET_WORDS(impl->ssa_alloc));
+   BITSET_WORD *defs_live = BITSET_RZALLOC(NULL, impl->ssa_alloc);
 
    struct exec_list dead_instrs;
    exec_list_make_empty(&dead_instrs);

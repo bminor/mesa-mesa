@@ -1238,8 +1238,7 @@ record_pred_live_outs(struct ra_ctx *ctx, struct ir3_block *block)
       if (state->visited)
          continue;
 
-      state->live_out = rzalloc_array(NULL, BITSET_WORD,
-                                      BITSET_WORDS(ctx->live->definitions_count));
+      state->live_out = BITSET_RZALLOC(NULL, ctx->live->definitions_count);
 
 
       rb_tree_foreach (struct ra_interval, interval,

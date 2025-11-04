@@ -3796,10 +3796,8 @@ static pco_func *trans_func(trans_ctx *tctx, nir_function_impl *impl)
    assert(func->num_params == 0 && func->params == NULL);
 
    /* Gather types. */
-   tctx->float_types =
-      rzalloc_array(NULL, BITSET_WORD, BITSET_WORDS(impl->ssa_alloc));
-   tctx->int_types =
-      rzalloc_array(NULL, BITSET_WORD, BITSET_WORDS(impl->ssa_alloc));
+   tctx->float_types = BITSET_RZALLOC(NULL, impl->ssa_alloc);
+   tctx->int_types = BITSET_RZALLOC(NULL, impl->ssa_alloc);
    nir_gather_types(impl, tctx->float_types, tctx->int_types);
 
    tctx->flag = PCO_CF_NODE_FLAG_BODY;

@@ -27,10 +27,8 @@ nvk_descriptor_table_grow_locked(struct nvk_device *dev,
 
    assert((table->alloc % BITSET_WORDBITS) == 0);
    assert((new_alloc % BITSET_WORDBITS) == 0);
-   const size_t old_in_use_size =
-      BITSET_WORDS(table->alloc) * sizeof(BITSET_WORD);
-   const size_t new_in_use_size =
-      BITSET_WORDS(new_alloc) * sizeof(BITSET_WORD);
+   const size_t old_in_use_size = BITSET_BYTES(table->alloc);
+   const size_t new_in_use_size = BITSET_BYTES(new_alloc);
    new_in_use = vk_realloc(&dev->vk.alloc, table->in_use,
                            new_in_use_size, sizeof(BITSET_WORD),
                            VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);

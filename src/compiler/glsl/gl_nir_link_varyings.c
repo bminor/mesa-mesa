@@ -1976,8 +1976,7 @@ xfb_decl_store(struct xfb_decl *xfb_decl, const struct gl_constants *consts,
       assert(last_component < max_components);
 
       if (!used_components[buffer]) {
-         used_components[buffer] =
-            rzalloc_array(mem_ctx, BITSET_WORD, BITSET_WORDS(max_components));
+         used_components[buffer] = BITSET_RZALLOC(mem_ctx, max_components);
       }
       used = used_components[buffer];
 

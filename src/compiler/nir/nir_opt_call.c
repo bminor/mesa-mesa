@@ -50,7 +50,7 @@ remat_ssa_def(nir_builder *b, nir_def *def, struct hash_table *remap_table,
               struct hash_table *phi_value_table,
               struct nir_phi_builder *phi_builder, BITSET_WORD *def_blocks)
 {
-   memset(def_blocks, 0, BITSET_WORDS(b->impl->num_blocks) * sizeof(BITSET_WORD));
+   memset(def_blocks, 0, BITSET_BYTES(b->impl->num_blocks));
    BITSET_SET(def_blocks, nir_def_block(def)->index);
    BITSET_SET(def_blocks, nir_cursor_current_block(b->cursor)->index);
    struct nir_phi_builder_value *val =

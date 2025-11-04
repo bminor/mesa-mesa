@@ -366,8 +366,7 @@ va_optimize_forward(bi_context *ctx)
       unsigned count = ctx->ssa_alloc;
       bi_instr **lut = rzalloc_array(ctx, bi_instr *, count);
       bi_instr **uses = rzalloc_array(ctx, bi_instr *, count);
-      BITSET_WORD *multiple =
-         rzalloc_array(ctx, BITSET_WORD, BITSET_WORDS(count));
+      BITSET_WORD *multiple = BITSET_RZALLOC(ctx, count);
 
       if (!lut || !uses || !multiple)
          goto out;

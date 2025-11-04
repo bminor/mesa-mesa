@@ -567,7 +567,7 @@ add_var_use_deref(nir_deref_instr *deref, struct hash_table *live,
       ainfo = ralloc(live, struct uniform_array_info);
 
       unsigned num_bits = MAX2(1, glsl_get_aoa_size(deref->var->type));
-      ainfo->indices = rzalloc_array(live, BITSET_WORD, BITSET_WORDS(num_bits));
+      ainfo->indices = BITSET_RZALLOC(live, num_bits);
 
       ainfo->deref_list = ralloc(live, struct util_dynarray);
       util_dynarray_init(ainfo->deref_list, live);
