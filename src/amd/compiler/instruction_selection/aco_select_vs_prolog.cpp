@@ -643,6 +643,14 @@ select_vs_prolog(Program* program, const struct aco_vs_prolog_info* pinfo, ac_sh
       continue_pc = Operand(prolog_input, s2);
    }
 
+   /* Wait for all pending VMEM loads when the prolog loads large 64-bit
+    * attributes because the vertex shader isn't required to consume all of
+    * them and they might be overwritten. This isn't the most optimal solution
+    * but 64-bit vertex attributes are rarely used.
+    */
+   if (is_last_attr_large)
+      wait_for_vmem_loads(bld);
+
    bld.sop1(aco_opcode::s_setpc_b64, continue_pc);
 
    program->config->float_mode = program->blocks[0].fp_mode.val;
