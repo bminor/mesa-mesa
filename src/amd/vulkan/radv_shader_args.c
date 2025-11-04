@@ -191,6 +191,11 @@ declare_vs_input_vgprs(enum amd_gfx_level gfx_level, const struct radv_shader_in
       unsigned num_attributes = util_last_bit(info->vs.input_slot_usage_mask);
       for (unsigned i = 0; i < num_attributes; i++) {
          ac_add_arg(&args->ac, AC_ARG_VGPR, 4, AC_ARG_VALUE, &args->vs_inputs[i]);
+
+         /* The vertex shader isn't required to consume all components that are loaded by the prolog
+          * and it's possible that more VGPRs are written. This specific case is handled at the end
+          * of the prolog which waits for all pending VMEM loads if needed.
+          */
          args->ac.args[args->vs_inputs[i].arg_index].pending_vmem = true;
       }
    }
