@@ -714,7 +714,7 @@
         "description": "freedreno/decode: Add extra indent levels",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d7db333b0ed8b56a96ecbf18bf63dc3082f90b06",
         "notes": null
