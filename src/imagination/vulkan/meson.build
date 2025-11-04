@@ -68,7 +68,7 @@ pvr_deps = [
   dep_libdrm,
   dep_valgrind,
   idep_mesautil,
-  idep_pco_uscgen_programs_h,
+  idep_pco_uscgen_programs,
   idep_vulkan_runtime,
   idep_vulkan_util,
   idep_vulkan_wsi,

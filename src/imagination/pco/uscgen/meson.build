@@ -40,9 +40,14 @@ pco_uscgen_programs = custom_target(
   env: ['PCO_DEBUG=no_pred_cf'],
 )
 
-idep_pco_uscgen_programs_h = declare_dependency(
-  sources : [pco_uscgen_programs],
+idep_pco_uscgen_programs_headers = declare_dependency(
+  sources : [pco_uscgen_programs[0]],
   include_directories : include_directories('.'),
+)
+
+idep_pco_uscgen_programs = declare_dependency(
+  sources : [pco_uscgen_programs],
+  dependencies : idep_pco_uscgen_programs_headers,
 )
 
 ###
