@@ -304,9 +304,15 @@ kk_CmdBeginRendering(VkCommandBuffer commandBuffer,
       kk_fill_common_attachment_description(
          attachment_descriptor, render->depth_att.iview,
          pRenderingInfo->pDepthAttachment, force_attachment_load);
-      mtl_render_pass_attachment_descriptor_set_clear_depth(
-         attachment_descriptor,
-         pRenderingInfo->pDepthAttachment->clearValue.depthStencil.depth);
+
+      /* clearValue.depthStencil.depth could have invalid values such as NaN
+       * which will trigger a Metal validation error. Ensure we only use this
+       * value if the attachment is actually cleared. */
+      if (pRenderingInfo->pDepthAttachment->loadOp ==
+          VK_ATTACHMENT_LOAD_OP_CLEAR)
+         mtl_render_pass_attachment_descriptor_set_clear_depth(
+            attachment_descriptor,
+            pRenderingInfo->pDepthAttachment->clearValue.depthStencil.depth);
    }
    if (render->stencil_att.iview) {
       const struct kk_image_view *iview = render->stencil_att.iview;
