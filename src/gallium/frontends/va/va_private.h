@@ -437,10 +437,8 @@ typedef struct vlVaContext {
    mtx_t mutex;
 
    struct {
-      void **buffers;
-      unsigned *sizes;
-      unsigned num_buffers;
-      unsigned allocated_size;
+      struct util_dynarray buffers;
+      struct util_dynarray sizes;
    } bs;
 } vlVaContext;
 

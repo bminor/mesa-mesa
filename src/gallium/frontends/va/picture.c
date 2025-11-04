@@ -244,10 +244,11 @@ vlVaRenderPicture(VADriverContextP ctx, VAContextID context_id, VABufferID *buff
 
    if (context->decoder &&
        context->decoder->entrypoint == PIPE_VIDEO_ENTRYPOINT_BITSTREAM &&
-       context->bs.num_buffers) {
+       context->bs.buffers.size) {
       context->decoder->decode_bitstream(context->decoder, context->target, &context->desc.base,
-         context->bs.num_buffers, (const void * const*)context->bs.buffers, context->bs.sizes);
-      context->bs.num_buffers = 0;
+         util_dynarray_num_elements(&context->bs.buffers, void *), context->bs.buffers.data, context->bs.sizes.data);
+      util_dynarray_clear(&context->bs.buffers);
+      util_dynarray_clear(&context->bs.sizes);
    }
 
    mtx_unlock(&drv->mutex);

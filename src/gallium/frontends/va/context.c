@@ -545,8 +545,8 @@ vlVaDestroyContext(VADriverContextP ctx, VAContextID context_id)
    mtx_unlock(&context->mutex);
    mtx_destroy(&context->mutex);
    FREE(context->desc.base.decrypt_key);
-   FREE(context->bs.buffers);
-   FREE(context->bs.sizes);
+   util_dynarray_fini(&context->bs.buffers);
+   util_dynarray_fini(&context->bs.sizes);
    FREE(context);
    handle_table_remove(drv->htab, context_id);
    mtx_unlock(&drv->mutex);
