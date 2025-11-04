@@ -5077,29 +5077,44 @@ lsc_fence_descriptor_for_intrinsic(const struct intel_device_info *devinfo,
 {
    assert(devinfo->has_lsc);
 
-   enum lsc_fence_scope scope = LSC_FENCE_LOCAL;
-   enum lsc_flush_type flush_type = LSC_FLUSH_TYPE_NONE;
+   enum lsc_fence_scope scope;
+   enum lsc_flush_type flush_type;
 
-   if (nir_intrinsic_has_memory_scope(instr)) {
-      switch (nir_intrinsic_memory_scope(instr)) {
-      case SCOPE_DEVICE:
-      case SCOPE_QUEUE_FAMILY:
+   if (instr->intrinsic == nir_intrinsic_begin_invocation_interlock ||
+       instr->intrinsic == nir_intrinsic_end_invocation_interlock) {
+      /* Critical section begin/end don't need any flush, if the shader needs
+       * some barrier intrinsics will express the flushing needed.
+       *
+       * We choose scope TILE as we have to synchronize all the fragment
+       * shaders of a given draw call.
+       */
+      scope = LSC_FENCE_TILE;
+      flush_type = LSC_FLUSH_TYPE_NONE;
+   } else {
+      if (nir_intrinsic_has_memory_scope(instr)) {
+         switch (nir_intrinsic_memory_scope(instr)) {
+         case SCOPE_DEVICE:
+         case SCOPE_QUEUE_FAMILY:
+            scope = LSC_FENCE_TILE;
+            flush_type = LSC_FLUSH_TYPE_EVICT;
+            break;
+         case SCOPE_WORKGROUP:
+            scope = LSC_FENCE_THREADGROUP;
+            flush_type = LSC_FLUSH_TYPE_NONE;
+            break;
+         case SCOPE_SHADER_CALL:
+         case SCOPE_INVOCATION:
+         case SCOPE_SUBGROUP:
+         case SCOPE_NONE:
+            scope = LSC_FENCE_LOCAL;
+            flush_type = LSC_FLUSH_TYPE_NONE;
+            break;
+         }
+      } else {
+         /* No scope defined. */
          scope = LSC_FENCE_TILE;
          flush_type = LSC_FLUSH_TYPE_EVICT;
-         break;
-      case SCOPE_WORKGROUP:
-         scope = LSC_FENCE_THREADGROUP;
-         break;
-      case SCOPE_SHADER_CALL:
-      case SCOPE_INVOCATION:
-      case SCOPE_SUBGROUP:
-      case SCOPE_NONE:
-         break;
       }
-   } else {
-      /* No scope defined. */
-      scope = LSC_FENCE_TILE;
-      flush_type = LSC_FLUSH_TYPE_EVICT;
    }
    return lsc_fence_msg_desc(devinfo, scope, flush_type, true);
 }

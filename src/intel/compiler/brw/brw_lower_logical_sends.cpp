@@ -2199,11 +2199,6 @@ lower_lsc_memory_fence_and_interlock(const brw_builder &bld, struct brw_send_ins
       enum lsc_flush_type flush_type =
          lsc_fence_msg_desc_flush_type(devinfo, intrinsic_desc);
 
-      if (send->sfid == BRW_SFID_TGM) {
-         scope = LSC_FENCE_TILE;
-         flush_type = LSC_FLUSH_TYPE_EVICT;
-      }
-
       /* Wa_14012437816:
        *
        *   "For any fence greater than local scope, always set flush type to
