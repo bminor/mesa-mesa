@@ -46,6 +46,7 @@
  */
 #define BITSET_WORDS(bits) (((bits) + BITSET_WORDBITS - 1) / BITSET_WORDBITS)
 #define BITSET_DECLARE(name, bits) BITSET_WORD name[BITSET_WORDS(bits)]
+#define BITSET_BYTES(bits) (BITSET_WORDS(bits) * sizeof(BITSET_WORD))
 
 /* bitset operations
  */
