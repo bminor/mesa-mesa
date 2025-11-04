@@ -1712,7 +1712,9 @@ anv_async_submit_init(struct anv_async_submit *submit,
       .relocs = &submit->relocs,
       .user_data = submit,
       .extend_cb = anv_async_submit_extend_batch,
-      .engine_class = queue->family->engine_class,
+      .engine_class = use_companion_rcs ?
+                      INTEL_ENGINE_CLASS_RENDER :
+                      queue->family->engine_class,
    };
 
    util_dynarray_init(&submit->batch_bos, NULL);

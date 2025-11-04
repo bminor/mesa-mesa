@@ -1794,7 +1794,7 @@
         "description": "anv: Use correct engine class for companion RCS",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6f138fe723506a41519ec3956a89488893114705",
         "notes": null
