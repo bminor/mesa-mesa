@@ -6868,7 +6868,7 @@ tu6_draw_common(struct tu_cmd_buffer *cmd,
    struct tu_render_pass_state *rp = &cmd->state.rp;
 
    trace_start_draw(
-      &cmd->trace, &cmd->draw_cs, cmd, draw_count,
+      &cmd->rp_trace, &cmd->draw_cs, cmd, draw_count,
       cmd->state.program.stage_sha1[MESA_SHADER_VERTEX],
       cmd->state.program.stage_sha1[MESA_SHADER_TESS_CTRL],
       cmd->state.program.stage_sha1[MESA_SHADER_TESS_EVAL],
@@ -7316,7 +7316,7 @@ tu_CmdDraw(VkCommandBuffer commandBuffer,
    tu_cs_emit(cs, instanceCount);
    tu_cs_emit(cs, vertexCount);
 
-   trace_end_draw(&cmd->trace, cs);
+   trace_end_draw(&cmd->rp_trace, cs);
 }
 TU_GENX(tu_CmdDraw);
 
@@ -7365,7 +7365,7 @@ tu_CmdDrawMultiEXT(VkCommandBuffer commandBuffer,
    }
 
    if (i != 0)
-      trace_end_draw(&cmd->trace, cs);
+      trace_end_draw(&cmd->rp_trace, cs);
 }
 TU_GENX(tu_CmdDrawMultiEXT);
 
@@ -7393,7 +7393,7 @@ tu_CmdDrawIndexed(VkCommandBuffer commandBuffer,
    tu_cs_emit_qw(cs, cmd->state.index_va);
    tu_cs_emit(cs, cmd->state.max_index_count);
 
-   trace_end_draw(&cmd->trace, cs);
+   trace_end_draw(&cmd->rp_trace, cs);
 }
 TU_GENX(tu_CmdDrawIndexed);
 
@@ -7447,7 +7447,7 @@ tu_CmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer,
    }
 
    if (i != 0)
-      trace_end_draw(&cmd->trace, cs);
+      trace_end_draw(&cmd->rp_trace, cs);
 }
 TU_GENX(tu_CmdDrawMultiIndexedEXT);
 
@@ -7492,7 +7492,7 @@ tu_CmdDrawIndirect(VkCommandBuffer commandBuffer,
    tu_cs_emit_qw(cs, vk_buffer_address(&buf->vk, offset));
    tu_cs_emit(cs, stride);
 
-   trace_end_draw(&cmd->trace, cs);
+   trace_end_draw(&cmd->rp_trace, cs);
 }
 TU_GENX(tu_CmdDrawIndirect);
 
@@ -7525,7 +7525,7 @@ tu_CmdDrawIndexedIndirect(VkCommandBuffer commandBuffer,
    tu_cs_emit_qw(cs, vk_buffer_address(&buf->vk, offset));
    tu_cs_emit(cs, stride);
 
-   trace_end_draw(&cmd->trace, cs);
+   trace_end_draw(&cmd->rp_trace, cs);
 }
 TU_GENX(tu_CmdDrawIndexedIndirect);
 
@@ -7564,7 +7564,7 @@ tu_CmdDrawIndirectCount(VkCommandBuffer commandBuffer,
    tu_cs_emit_qw(cs, vk_buffer_address(&count_buf->vk, countBufferOffset));
    tu_cs_emit(cs, stride);
 
-   trace_end_draw(&cmd->trace, cs);
+   trace_end_draw(&cmd->rp_trace, cs);
 }
 TU_GENX(tu_CmdDrawIndirectCount);
 
@@ -7600,7 +7600,7 @@ tu_CmdDrawIndexedIndirectCount(VkCommandBuffer commandBuffer,
    tu_cs_emit_qw(cs, vk_buffer_address(&count_buf->vk, countBufferOffset));
    tu_cs_emit(cs, stride);
 
-   trace_end_draw(&cmd->trace, cs);
+   trace_end_draw(&cmd->rp_trace, cs);
 }
 TU_GENX(tu_CmdDrawIndexedIndirectCount);
 
@@ -7644,7 +7644,7 @@ tu_CmdDrawIndirectByteCountEXT(VkCommandBuffer commandBuffer,
    tu_cs_emit(cs, counterOffset);
    tu_cs_emit(cs, vertexStride);
 
-   trace_end_draw(&cmd->trace, cs);
+   trace_end_draw(&cmd->rp_trace, cs);
 }
 TU_GENX(tu_CmdDrawIndirectByteCountEXT);
 

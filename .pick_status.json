@@ -384,7 +384,7 @@
         "description": "tu: Use cmd->rp_trace u_trace for draw calls",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "707c97f6340d6e909a350ee354eef386bc2b44db",
         "notes": null
