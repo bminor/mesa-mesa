@@ -1300,8 +1300,7 @@ agx_batch_upload_pbe(struct agx_batch *batch, struct agx_pbe_packed *out,
 
 static void
 agx_set_constant_buffer(struct pipe_context *pctx, mesa_shader_stage shader,
-                        uint index,
-                        const struct pipe_constant_buffer *cb)
+                        uint index, const struct pipe_constant_buffer *cb)
 {
    struct agx_context *ctx = agx_context(pctx);
    struct agx_stage *s = &ctx->stage[shader];
@@ -1312,8 +1311,8 @@ agx_set_constant_buffer(struct pipe_context *pctx, mesa_shader_stage shader,
    /* Upload user buffer immediately */
    if (constants->user_buffer && !constants->buffer) {
       u_upload_data_ref(ctx->base.const_uploader, 0, constants->buffer_size, 64,
-                    constants->user_buffer, &constants->buffer_offset,
-                    &constants->buffer);
+                        constants->user_buffer, &constants->buffer_offset,
+                        &constants->buffer);
    }
 
    unsigned mask = (1 << index);
@@ -4217,7 +4216,8 @@ agx_draw_without_restart(struct agx_batch *batch,
                           draw->index_bias, info->start_instance};
 
       u_upload_data_ref(ctx->base.const_uploader, 0, sizeof(desc), 4, &desc,
-                    &indirect_synthesized.offset, &indirect_synthesized.buffer);
+                        &indirect_synthesized.offset,
+                        &indirect_synthesized.buffer);
 
       indirect = &indirect_synthesized;
    } else {
@@ -4434,8 +4434,8 @@ util_draw_multi_upload_indirect(struct pipe_context *pctx,
 {
    struct pipe_draw_indirect_info indirect_ = *indirect;
    u_upload_data_ref(pctx->const_uploader, 0, 4, 4, &indirect->draw_count,
-                 &indirect_.indirect_draw_count_offset,
-                 &indirect_.indirect_draw_count);
+                     &indirect_.indirect_draw_count_offset,
+                     &indirect_.indirect_draw_count);
 
    pctx->draw_vbo(pctx, info, 0, &indirect_, draws, 1);
 }

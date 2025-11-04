@@ -375,8 +375,8 @@ agx_bo_make_shared(struct agx_device *dev, struct agx_bo *bo)
    bo->flags |= AGX_BO_SHARED;
    assert(bo->prime_fd == -1);
 
-   int ret =
-      drmPrimeHandleToFD(dev->fd, bo->handle, DRM_CLOEXEC | DRM_RDWR, &bo->prime_fd);
+   int ret = drmPrimeHandleToFD(dev->fd, bo->handle, DRM_CLOEXEC | DRM_RDWR,
+                                &bo->prime_fd);
    assert(ret == 0);
    assert(bo->prime_fd >= 0);
 

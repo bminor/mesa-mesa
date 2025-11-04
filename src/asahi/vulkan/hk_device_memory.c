@@ -411,7 +411,8 @@ hk_GetMemoryFdKHR(VkDevice device, const VkMemoryGetFdInfoKHR *pGetFdInfo,
 
 VKAPI_ATTR uint64_t VKAPI_CALL
 hk_GetDeviceMemoryOpaqueCaptureAddress(
-   UNUSED VkDevice device, UNUSED const VkDeviceMemoryOpaqueCaptureAddressInfo *pInfo)
+   UNUSED VkDevice device,
+   UNUSED const VkDeviceMemoryOpaqueCaptureAddressInfo *pInfo)
 {
    /* Addresses are replayed at buffer and image creation, not memory. */
    return 0;

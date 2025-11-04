@@ -284,8 +284,7 @@ asahi_compute_restore(struct agx_context *ctx)
    }
 
    /* take_ownership=true so do not unreference */
-   pctx->set_constant_buffer(pctx, MESA_SHADER_COMPUTE, 0,
-                             &blitter->saved_cb);
+   pctx->set_constant_buffer(pctx, MESA_SHADER_COMPUTE, 0, &blitter->saved_cb);
    blitter->saved_cb.buffer = NULL;
 
    if (blitter->saved_sampler_view) {

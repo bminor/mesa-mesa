@@ -986,8 +986,9 @@ hk_CmdEndRendering(VkCommandBuffer commandBuffer)
 }
 
 static void
-hk_init_heap(const void *data) {
-   struct hk_cmd_buffer *cmd = (struct hk_cmd_buffer *) data;
+hk_init_heap(const void *data)
+{
+   struct hk_cmd_buffer *cmd = (struct hk_cmd_buffer *)data;
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
 
    perf_debug(cmd, "Allocating heap");
