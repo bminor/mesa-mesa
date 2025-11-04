@@ -64,7 +64,7 @@
         "description": "anv: avoid null pointer access in utrace copies on CCS",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3e0ad0176bb391ba260c33b2e3af5159addd1731",
         "notes": null
