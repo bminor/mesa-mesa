@@ -86,7 +86,6 @@ libintel_compiler_elk_files = files(
   'elk_shader.cpp',
   'elk_shader.h',
   'elk_simd_selection.cpp',
-  'elk_spirv.c',
   'elk_vec4_builder.h',
   'elk_vec4_cmod_propagation.cpp',
   'elk_vec4_copy_propagation.cpp',

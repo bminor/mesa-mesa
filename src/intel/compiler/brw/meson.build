@@ -101,7 +101,6 @@ libintel_compiler_brw_files = files(
   'brw_shader.cpp',
   'brw_shader.h',
   'brw_simd_selection.cpp',
-  'brw_spirv.c',
   'brw_thread_payload.cpp',
   'brw_thread_payload.h',
   'brw_validate.cpp',
