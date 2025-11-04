@@ -4791,22 +4791,30 @@ vtn_vector_construct(struct vtn_builder *b, unsigned num_components,
    return &vec->def;
 }
 
+/*
+ * Creates a copy of `src`, reinterpreting it as `dest_type`.
+ */
 static struct vtn_ssa_value *
-vtn_composite_copy(struct vtn_builder *b, struct vtn_ssa_value *src)
+vtn_composite_copy_logical(struct vtn_builder *b, struct vtn_ssa_value *src, struct vtn_type* dest_type)
 {
    assert(!src->is_variable);
 
    struct vtn_ssa_value *dest = vtn_zalloc(b, struct vtn_ssa_value);
-   dest->type = src->type;
+   dest->type = glsl_get_bare_type(dest_type->type);
 
-   if (glsl_type_is_vector_or_scalar(src->type)) {
+   if (glsl_type_is_vector_or_scalar(dest_type->type)) {
       dest->def = src->def;
    } else {
-      unsigned elems = glsl_get_length(src->type);
-
+      unsigned elems = glsl_get_length(dest_type->type);
       dest->elems = vtn_alloc_array(b, struct vtn_ssa_value *, elems);
-      for (unsigned i = 0; i < elems; i++)
-         dest->elems[i] = vtn_composite_copy(b, src->elems[i]);
+
+      if (glsl_type_is_struct(dest_type->type) || glsl_type_is_interface(dest_type->type)) {
+         for (unsigned i = 0; i < elems; i++)
+            dest->elems[i] = vtn_composite_copy_logical(b, src->elems[i], dest_type->members[i]);
+      } else {
+         for (unsigned i = 0; i < elems; i++)
+            dest->elems[i] = vtn_composite_copy_logical(b, src->elems[i], dest_type->array_element);
+      }
    }
 
    return dest;
@@ -4814,13 +4822,14 @@ vtn_composite_copy(struct vtn_builder *b, struct vtn_ssa_value *src)
 
 static struct vtn_ssa_value *
 vtn_composite_insert(struct vtn_builder *b, struct vtn_ssa_value *src,
-                     struct vtn_ssa_value *insert, const uint32_t *indices,
-                     unsigned num_indices)
+                     struct vtn_type *src_type, struct vtn_ssa_value *insert,
+                     const uint32_t *indices, unsigned num_indices)
 {
    if (glsl_type_is_cmat(src->type))
       return vtn_cooperative_matrix_insert(b, src, insert, indices, num_indices);
 
-   struct vtn_ssa_value *dest = vtn_composite_copy(b, src);
+   /* Straight copy, use the source type as the destination type. */
+   struct vtn_ssa_value *dest = vtn_composite_copy_logical(b, src, src_type);
 
    struct vtn_ssa_value *cur = dest;
    unsigned i;
@@ -4963,15 +4972,15 @@ vtn_handle_composite(struct vtn_builder *b, SpvOp opcode,
 
    case SpvOpCompositeInsert:
       ssa = vtn_composite_insert(b, vtn_ssa_value(b, w[4]),
+                                 vtn_get_value_type(b, w[4]),
                                  vtn_ssa_value(b, w[3]),
                                  w + 5, count - 5);
       break;
 
    case SpvOpCopyLogical: {
-      ssa = vtn_composite_copy(b, vtn_ssa_value(b, w[3]));
-      struct vtn_type *dst_type = vtn_get_value_type(b, w[2]);
-      vtn_assert(vtn_types_compatible(b, type, dst_type));
-      ssa->type = glsl_get_bare_type(dst_type->type);
+      struct vtn_type *dest_type = vtn_get_value_type(b, w[2]);
+      vtn_assert(vtn_types_compatible(b, vtn_get_value_type(b, w[3]), dest_type));
+      ssa = vtn_composite_copy_logical(b, vtn_ssa_value(b, w[3]), dest_type);
       break;
    }
    case SpvOpCopyObject:
