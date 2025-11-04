@@ -1394,6 +1394,7 @@ pipeline_populate_v3d_vs_key(struct v3d_vs_key *key,
          &vi_info->pVertexAttributeDescriptions[i];
       assert(desc->location < MAX_VERTEX_ATTRIBS);
       if (desc->format == VK_FORMAT_B8G8R8A8_UNORM ||
+          desc->format == VK_FORMAT_A2R10G10B10_UINT_PACK32 ||
           desc->format == VK_FORMAT_A2R10G10B10_UNORM_PACK32) {
          key->va_swap_rb_mask |= 1 << (VERT_ATTRIB_GENERIC0 + desc->location);
       }
@@ -2096,6 +2097,7 @@ pipeline_populate_graphics_key(struct v3dv_pipeline *pipeline,
          &vi_info->pVertexAttributeDescriptions[i];
       assert(desc->location < MAX_VERTEX_ATTRIBS);
       if (desc->format == VK_FORMAT_B8G8R8A8_UNORM ||
+          desc->format == VK_FORMAT_A2R10G10B10_UINT_PACK32 ||
           desc->format == VK_FORMAT_A2R10G10B10_UNORM_PACK32) {
          key->va_swap_rb_mask |= 1 << (VERT_ATTRIB_GENERIC0 + desc->location);
       }
