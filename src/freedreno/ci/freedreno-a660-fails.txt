@@ -40,7 +40,9 @@ dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_counter_offset_508
 dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_multiview_counter_offset_16,Fail
 dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_multiview_counter_offset_244,Fail
 dEQP-VK.transform_feedback.simple_optimized_gpl.draw_indirect_multiview_counter_offset_508,Fail
+gmem-dEQP-VK.pipeline.fast_linked_library.vertex_input.misc.unused_binding_dynamic,Crash
 gmem-dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_offset_16,Fail
+gmem-dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_offset_244,Fail
 nobin-dEQP-VK.transform_feedback.simple.draw_indirect_multiview_counter_offset_16,Fail
 
 # Bad assumptions in piglit about layout of multiplanar formats,

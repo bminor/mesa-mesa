@@ -13,3 +13,9 @@ dEQP-VK.subgroups.clustered.compute.subgroupclusteredmin_uint64_t_requiredsubgro
 # used in ir3 create_variant, but no single pass there dominating its time.
 # Just use the scalar cases, which are fast enough for CI.
 dEQP-VK.subgroups.clustered.compute.subgroupclustered(min|max|mul)_[iu]64vec[234].*
+
+# Speed up pre-merge testing by removing redundant coverage in force-gmem mode
+gmem-dEQP-VK.api.*
+gmem-dEQP-VK.renderpass\..*
+gmem-dEQP-VK.synchronization\..*
+gmem-dEQP-VK.wsi.*

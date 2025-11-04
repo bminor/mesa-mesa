@@ -266,11 +266,10 @@ a660-vk:
     - .lava-arm64-test-vk
     - .collabora-turnip-rules
     - .lava-sm8350-hdk:arm64
-  parallel: 3
+  parallel: 5
   variables:
     DEQP_SUITE: freedreno-a660-vk
     FLAKES_CHANNEL: "#freedreno-ci"
-    DEQP_FRACTION: 6
 
 a660-vk-full:
   extends:
