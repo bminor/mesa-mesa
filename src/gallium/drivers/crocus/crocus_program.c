@@ -1022,6 +1022,13 @@ crocus_setup_binding_table(const struct intel_device_info *devinfo,
 
          case nir_intrinsic_load_output:
             if (devinfo->ver >= 6) {
+               /* We're using a BTI as the load_output offset here which
+                * breaks newer NIR assumptions.
+                */
+               nir_io_semantics io_sem = nir_intrinsic_io_semantics(intrin);
+               io_sem.no_validate = true;
+               nir_intrinsic_set_io_semantics(intrin, io_sem);
+
                rewrite_src_with_bti(&b, bt, instr, &intrin->src[0],
                                     CROCUS_SURFACE_GROUP_RENDER_TARGET_READ);
             }
@@ -1040,6 +1047,8 @@ crocus_setup_binding_table(const struct intel_device_info *devinfo,
          }
       }
    }
+
+   nir_validate_shader(nir, "after crocus_setup_binding_table");
 }
 
 static void
