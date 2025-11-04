@@ -1418,8 +1418,32 @@ brw_generator::generate_code(const brw_shader &s,
 
          brw_eu_inst *last = &p->store[last_insn_offset / 16];
 
-         if (inst->conditional_mod)
-            brw_eu_inst_set_cond_modifier(p->devinfo, last, inst->conditional_mod);
+         if (inst->conditional_mod) {
+            if (inst->opcode != BRW_OPCODE_BFN) {
+               brw_eu_inst_set_cond_modifier(p->devinfo, last, inst->conditional_mod);
+            } else {
+               unsigned cc;
+
+               switch (inst->conditional_mod) {
+               case BRW_CONDITIONAL_NONE:
+                  cc = 0;
+                  break;
+               case BRW_CONDITIONAL_Z:
+                  cc = 1;
+                  break;
+               case BRW_CONDITIONAL_G:
+                  cc = 2;
+                  break;
+               case BRW_CONDITIONAL_L:
+                  cc = 3;
+                  break;
+               default:
+                  UNREACHABLE("Invalid cmod for BFN.");
+               }
+
+               brw_eu_inst_set_boolean_func_cond_modifier(p->devinfo, last, cc);
+            }
+         }
       }
 
       /* When enabled, insert sync NOP after every instruction and make sure
