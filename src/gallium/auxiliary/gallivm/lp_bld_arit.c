@@ -839,45 +839,54 @@ lp_build_mul_norm(struct gallivm_state *gallivm,
                   LLVMValueRef a, LLVMValueRef b)
 {
    LLVMBuilderRef builder = gallivm->builder;
-   struct lp_build_context bld;
-   unsigned n;
-   LLVMValueRef half;
-   LLVMValueRef ab;
 
    assert(!wide_type.floating);
    assert(lp_check_value(wide_type, a));
    assert(lp_check_value(wide_type, b));
 
+   struct lp_build_context bld;
    lp_build_context_init(&bld, gallivm, wide_type);
 
-   n = wide_type.width / 2;
+   unsigned n = wide_type.width / 2;
    if (wide_type.sign) {
       --n;
    }
 
    /*
-    * TODO: for 16bits normalized SSE2 vectors we could consider using PMULHUW
-    * http://ssp.impulsetrain.com/2011/07/03/multiplying-normalized-16-bit-numbers-with-sse2/
+    * Normalize the -2^n case to -2^n - 1 by doing: x += (x == -2^n - 1).
+    * This is because -2^n doesn't actually exist with signed normalized values,
+    * it maps to the same float as -2^n - 1.
     */
-
-   /*
-    * a*b / (2**n - 1) ~= (a*b + (a*b >> n) + half) >> n
-    */
-
-   ab = LLVMBuildMul(builder, a, b, "");
-   ab = LLVMBuildAdd(builder, ab, lp_build_shr_imm(&bld, ab, n), "");
-
-   /*
-    * half = sgn(ab) * 0.5 * (2 ** n) = sgn(ab) * (1 << (n - 1))
-    */
-
-   half = lp_build_const_int_vec(gallivm, wide_type, 1LL << (n - 1));
    if (wide_type.sign) {
-      LLVMValueRef minus_half = LLVMBuildNeg(builder, half, "");
-      LLVMValueRef sign = lp_build_shr_imm(&bld, ab, wide_type.width - 1);
-      half = lp_build_select(&bld, sign, minus_half, half);
+      LLVMValueRef min_value = lp_build_const_int_vec(gallivm, wide_type, 1LL << n);
+      a = LLVMBuildAdd(builder, a, LLVMBuildZExt(builder,
+         LLVMBuildICmp(builder, LLVMIntEQ, a, min_value, ""),
+         bld.int_vec_type, ""), "");
+      b = LLVMBuildAdd(builder, b, LLVMBuildZExt(builder,
+         LLVMBuildICmp(builder, LLVMIntEQ, a, min_value, ""),
+         bld.int_vec_type, ""), "");
    }
-   ab = LLVMBuildAdd(builder, ab, half, "");
+
+   LLVMValueRef ab = LLVMBuildMul(builder, a, b, "");
+
+   /*
+    * It's critical that we round correctly for accuracy against hardware.
+    * Since there is no integer x such that x / (2^n - 1) == 0.5, we don't need
+    * to worry about the even rounding case. For positive values we round with
+    * the next possible value: 2^(n - 1) / (2^n - 1), and for negative with the
+    * previous: (2^(n - 1) - 1) / (2^n - 1).
+    */
+   LLVMValueRef round_positive = lp_build_const_int_vec(gallivm, wide_type, 1LL << (n - 1));
+   LLVMValueRef rounding_term = round_positive;
+   if (wide_type.sign) {
+      LLVMValueRef round_negative = lp_build_const_int_vec(gallivm, wide_type, (1LL << (n - 1)) - 1);
+      rounding_term = lp_build_select(&bld, lp_build_cmp(&bld, PIPE_FUNC_GEQUAL, ab, bld.zero),
+         round_positive, round_negative);
+   }
+   ab = LLVMBuildAdd(builder, ab, rounding_term, "");
+
+   /* Necessary second geometric series term to refine the approximation */
+   ab = LLVMBuildAdd(builder, ab, lp_build_shr_imm(&bld, ab, n), "");
 
    /* Final division */
    ab = lp_build_shr_imm(&bld, ab, n);
@@ -930,19 +939,20 @@ lp_build_mul(struct lp_build_context *bld,
       return ab;
    }
 
-   LLVMValueRef shift = type.fixed
-      ? lp_build_const_int_vec(bld->gallivm, type, type.width/2) : NULL;
-
    LLVMValueRef res;
    if (type.floating)
       res = LLVMBuildFMul(builder, a, b, "");
    else
       res = LLVMBuildMul(builder, a, b, "");
-   if (shift) {
-      if (type.sign)
-         res = LLVMBuildAShr(builder, res, shift, "");
-      else
-         res = LLVMBuildLShr(builder, res, shift, "");
+
+   if (type.fixed) {
+      /* Round half-even */
+      const unsigned half_width = type.width / 2;
+      LLVMValueRef is_odd = lp_build_shr_imm(bld,lp_build_and(bld, res,
+         lp_build_const_int_vec(bld->gallivm, bld->type, 1ll << half_width)), half_width);
+      res = lp_build_add(bld, res, lp_build_const_int_vec(bld->gallivm, type, (1ll << (half_width - 1)) - 1));
+      res = lp_build_add(bld, res, is_odd);
+      res = lp_build_shr_imm(bld, res, half_width);
    }
 
    return res;
