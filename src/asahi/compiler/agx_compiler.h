@@ -457,8 +457,8 @@ typedef struct agx_block {
    bool divergent;
 
    /* Liveness analysis results */
-   BITSET_WORD *live_in;
-   BITSET_WORD *live_out;
+   struct u_sparse_bitset live_in;
+   struct u_sparse_bitset live_out;
 
    BITSET_DECLARE(reg_live_in, AGX_NUM_REGS);
    BITSET_DECLARE(reg_live_out, AGX_NUM_REGS);
@@ -1094,7 +1094,7 @@ void agx_emit_parallel_copies(agx_builder *b, struct agx_copy *copies,
                               unsigned n);
 
 void agx_compute_liveness(agx_context *ctx);
-void agx_liveness_ins_update(BITSET_WORD *live, agx_instr *I);
+void agx_liveness_ins_update(struct u_sparse_bitset *live, agx_instr *I);
 
 bool agx_nir_opt_preamble(nir_shader *s, unsigned *sizes);
 bool agx_nir_lower_load_mask(nir_shader *shader);
