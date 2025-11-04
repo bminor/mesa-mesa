@@ -1344,7 +1344,7 @@
         "description": "brw: Correctly generate conditional modifier for BFN",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4193895145b4b6b2e06b0d2a2fc99296c4694d28",
         "notes": null
