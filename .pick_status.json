@@ -7914,7 +7914,7 @@
         "description": "vtn: Fix OpCopyLogical destination type",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4c363acf94a04a9a885ed4025e628520354186dc",
         "notes": null
