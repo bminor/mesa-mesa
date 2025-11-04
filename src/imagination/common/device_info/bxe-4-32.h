@@ -12,7 +12,8 @@
 #include "pvr_device_info.h"
 
 #define PVR_DEVICE_IDENT_36_V_54_182 \
-   .device_id = 0x36054182, .series_name = "B-Series", .public_name = "BXE-4-32"
+   .device_id = 0x36054182, .series_name = "B-Series", \
+   .public_name = "BXE-4-32", .arch = PVR_DEVICE_ARCH_ROGUE
 
 static const struct pvr_device_features pvr_device_features_36_V_54_182 = {
    .has_astc = true,

@@ -30,7 +30,8 @@
 
 #define PVR_DEVICE_IDENT_33_V_11_3                     \
    .device_id = 0x33011003, .series_name = "A-Series", \
-   .public_name = "AXE-1-16M"
+   .public_name = "AXE-1-16M", .arch = PVR_DEVICE_ARCH_ROGUE
+
 
 static const struct pvr_device_features pvr_device_features_33_V_11_3 = {
    .has_common_store_size_in_dwords = true,

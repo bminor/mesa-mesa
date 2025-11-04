@@ -46,6 +46,10 @@
 #define PVR_BVNC_PACK_MASK_N UINT64_C(0x00000000FFFF0000)
 #define PVR_BVNC_PACK_MASK_C UINT64_C(0x000000000000FFFF)
 
+enum pvr_device_arch {
+   PVR_DEVICE_ARCH_ROGUE,
+};
+
 /**
  * Packs B, V, N and C values into a 64-bit unsigned integer.
  *
@@ -241,6 +245,7 @@
 #define PVR_HAS_QUIRK(dev_info, number) ((dev_info)->quirks.has_brn##number)
 
 struct pvr_device_ident {
+   enum pvr_device_arch arch;
    uint16_t b, v, n, c;
    uint32_t device_id;
    const char *series_name;

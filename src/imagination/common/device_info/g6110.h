@@ -12,7 +12,8 @@
 #include "pvr_device_info.h"
 
 #define PVR_DEVICE_IDENT_5_V_1_46 \
-   .device_id = 0x6110, .series_name = "Rogue", .public_name = "GX6110"
+   .device_id = 0x6110, .series_name = "Rogue", \
+   .public_name = "GX6110", .arch = PVR_DEVICE_ARCH_ROGUE
 
 static const struct pvr_device_features pvr_device_features_5_V_1_46 = {
    .has_common_store_size_in_dwords = true,

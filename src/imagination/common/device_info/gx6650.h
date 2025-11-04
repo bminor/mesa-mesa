@@ -12,7 +12,8 @@
 #include "pvr_device_info.h"
 
 #define PVR_DEVICE_IDENT_4_V_6_62 \
-   .device_id = 0x6650, .series_name = "Rogue", .public_name = "GX6650"
+   .device_id = 0x6650, .series_name = "Rogue", \
+   .public_name = "GX6650", .arch = PVR_DEVICE_ARCH_ROGUE
 
 static const struct pvr_device_features pvr_device_features_4_V_6_62 = {
    .has_astc = true,
