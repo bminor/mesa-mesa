@@ -2702,7 +2702,8 @@ tu_trace_start_render_pass(struct tu_cmd_buffer *cmd)
 
    trace_start_render_pass(&cmd->trace, &cmd->cs, cmd, cmd->state.framebuffer,
                            cmd->state.tiling, max_samples, clear_cpp,
-                           load_cpp, store_cpp, has_depth, ubwc);
+                           load_cpp, store_cpp, has_depth, ubwc,
+                           cmd->state.rp.cb_disable_reason ? cmd->state.rp.cb_disable_reason : "");
 }
 
 template <chip CHIP>
@@ -2767,16 +2768,29 @@ tu_emit_renderpass_begin(struct tu_cmd_buffer *cmd)
    cmd->state.fdm_enabled = cmd->state.pass->has_fdm;
 }
 
+static inline bool
+tu7_cb_disable_reason(bool disable_cb,
+                      struct tu_cmd_buffer *cmd,
+                      const char *reason)
+{
+   if (disable_cb && !cmd->state.rp.cb_disable_reason) {
+      cmd->state.rp.cb_disable_reason = reason;
+   }
+   return disable_cb;
+}
+
 static bool
 tu7_emit_concurrent_binning(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
                             bool disable_cb)
 {
-   if (disable_cb ||
+   if (tu7_cb_disable_reason(disable_cb, cmd, "disable_cb") ||
        /* LRZ can only be cleared via fast clear in BV. Disable CB if we can't
         * use it.
         */
-       !cmd->state.lrz.fast_clear || 
-       TU_DEBUG(NO_CONCURRENT_BINNING)) {
+       tu7_cb_disable_reason(!cmd->state.lrz.fast_clear, cmd,
+                             "LRZ fast clear disabled") ||
+       tu7_cb_disable_reason(TU_DEBUG(NO_CONCURRENT_BINNING), cmd,
+                             "TU_DEBUG(NO_CONCURRENT_BINNING)")) {
       tu_cs_emit_pkt7(cs, CP_THREAD_CONTROL, 1);
       tu_cs_emit(cs, CP_THREAD_CONTROL_0_THREAD(CP_SET_THREAD_BR) |
                      CP_THREAD_CONTROL_0_CONCURRENT_BIN_DISABLE);
@@ -2972,6 +2986,9 @@ tu7_emit_concurrent_binning_gmem(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
       cmd->state.rp.has_vtx_stats_query_in_rp ||
       cmd->state.prim_counters_running > 0;
 
+   tu7_cb_disable_reason(disable_cb, cmd,
+      "xfb/prim-gen/prim-counters/vtx-stats query is running");
+   tu7_cb_disable_reason(!use_hw_binning, cmd, "hw binning disabled");
 
    if (!tu7_emit_concurrent_binning(cmd, cs, disable_cb || !use_hw_binning))
       return false;
