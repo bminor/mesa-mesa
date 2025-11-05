@@ -914,14 +914,25 @@ lower_input_attachment_load(nir_builder *b, nir_intrinsic_instr *intr,
 
    const struct panvk_lower_input_attachment_load_ctx *ctx = data;
    struct panvk_shader_variant *shader = ctx->shader;
-   nir_variable *var = nir_deref_instr_get_variable(deref);
-   assert(var);
 
    b->cursor = nir_before_instr(&intr->instr);
 
-   uint32_t set, binding, index_imm, max_idx;
-   nir_def *index_ssa;
-   get_resource_deref_binding(deref, &set, &binding, &index_imm, &index_ssa, &max_idx);
+   uint32_t index_imm = 0, range = 1;
+   nir_def *index_ssa = NULL;
+   if (deref->deref_type == nir_deref_type_array) {
+      nir_deref_instr *parent = nir_deref_instr_parent(deref);
+      if (nir_src_is_const(deref->arr.index)) {
+         index_imm = nir_src_as_uint(deref->arr.index);
+      } else {
+         index_ssa = deref->arr.index.ssa;
+         range = glsl_array_size(parent->type);
+      }
+      deref = parent;
+   }
+
+   assert(deref->deref_type == nir_deref_type_var);
+   nir_variable *var = deref->var;
+
    const unsigned base_idx =
       var->data.index != NIR_VARIABLE_NO_INDEX ? var->data.index + 1 : 0;
    index_imm += base_idx;
@@ -930,7 +941,8 @@ lower_input_attachment_load(nir_builder *b, nir_intrinsic_instr *intr,
 
    nir_alu_type dest_type = nir_intrinsic_dest_type(intr);
 
-   unsigned range = max_idx == UINT32_MAX ? 9 - index_imm : max_idx + 1;
+   /* Zero means variable array. */
+   range = range == 0 ? 9 - index_imm : range;
    shader->fs.input_attachment_read |= BITFIELD_RANGE(index_imm, range);
 
    nir_def *target = nir_load_input_attachment_target_pan(b, index_ssa);
