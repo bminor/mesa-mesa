@@ -40,7 +40,7 @@
 #include <string.h>
 #include <vulkan/vulkan.h>
 
-#include "hwdef/rogue_hw_utils.h"
+#include "hwdef/pvr_hw_utils.h"
 #include "pco_uscgen_programs.h"
 #include "pvr_bo.h"
 #include "pvr_border.h"
