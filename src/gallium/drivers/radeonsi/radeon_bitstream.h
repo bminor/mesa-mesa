@@ -33,6 +33,13 @@ void radeon_bs_code_se(struct radeon_bitstream *bs, int32_t value);
 void radeon_bs_code_uvlc(struct radeon_bitstream *bs, uint32_t value);
 void radeon_bs_code_ns(struct radeon_bitstream *bs, uint32_t value, uint32_t max);
 
+void radeon_bs_h264_sps(struct radeon_bitstream *bs, uint8_t nal_byte, struct pipe_h264_enc_seq_param *sps);
+void radeon_bs_h264_pps(struct radeon_bitstream *bs, uint8_t nal_byte, struct pipe_h264_enc_pic_control *pps);
+void radeon_bs_hevc_vps(struct radeon_bitstream *bs, struct pipe_h265_enc_vid_param *vps);
+void radeon_bs_hevc_sps(struct radeon_bitstream *bs, struct pipe_h265_enc_seq_param *sps);
+void radeon_bs_hevc_pps(struct radeon_bitstream *bs, struct pipe_h265_enc_pic_param *pps);
+void radeon_bs_av1_seq(struct radeon_bitstream *bs, uint8_t *obu_bytes, struct pipe_av1_enc_seq_param *seq);
+
 void radeon_bs_h264_hrd_parameters(struct radeon_bitstream *bs,
                                    struct pipe_h264_enc_hrd_params *hrd);
 
