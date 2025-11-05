@@ -1211,10 +1211,6 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
        nir->info.stage == MESA_SHADER_TASK)
       return;
 
-   bool lower_indirect_inputs =
-      nir->info.stage != MESA_SHADER_MESH &&
-      !(nir->options->support_indirect_inputs & BITFIELD_BIT(nir->info.stage));
-
    /* If the driver doesn't support indirect TCS output slot access, lower
     * it to an if-else tree of direct accesses.
     */
@@ -1274,7 +1270,8 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
    NIR_PASS(_, nir, nir_io_add_const_offset_to_base, nir_var_shader_in | nir_var_shader_out);
 
    /* This must be called after nir_io_add_const_offset_to_base. */
-   if (lower_indirect_inputs)
+   if (nir->info.stage != MESA_SHADER_MESH &&
+       !(nir->options->support_indirect_inputs & BITFIELD_BIT(nir->info.stage)))
       NIR_PASS(_, nir, nir_lower_io_indirect_loads, nir_var_shader_in);
 
    /* Lower and remove dead derefs and variables to clean up the IR. */
