@@ -846,7 +846,7 @@ option(
   type : 'array',
   value : ['perfetto'],
   choices : [
-    'libdrm', 'perfetto',
+    'libdrm', 'libva', 'perfetto',
   ],
   description : 'Allows the fallback mechanism if the dependency is not available on the system, or too old.'
 )
