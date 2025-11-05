@@ -172,7 +172,6 @@ struct radeon_encoder {
    struct pipe_video_codec base;
 
    void (*begin)(struct radeon_encoder *enc);
-   void (*before_encode)(struct radeon_encoder *enc);
    void (*encode)(struct radeon_encoder *enc);
    void (*destroy)(struct radeon_encoder *enc);
    void (*session_info)(struct radeon_encoder *enc);

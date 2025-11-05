@@ -1225,7 +1225,6 @@ static void encode(struct radeon_encoder *enc)
 {
    unsigned i;
 
-   enc->before_encode(enc);
    enc->session_info(enc);
    enc->total_task_size = 0;
    enc->task_info(enc, enc->need_feedback);
@@ -1274,7 +1273,6 @@ void radeon_enc_1_2_init(struct radeon_encoder *enc)
    struct si_screen *sscreen = (struct si_screen *)enc->screen;
    uint32_t minor_version;
 
-   enc->before_encode = radeon_enc_dummy;
    enc->begin = begin;
    enc->encode = encode;
    enc->destroy = destroy;
