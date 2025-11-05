@@ -2770,6 +2770,8 @@ genX(flush_descriptor_buffers)(struct anv_cmd_buffer *cmd_buffer,
                                struct anv_cmd_pipeline_state *pipe_state,
                                VkShaderStageFlags active_stages)
 {
+   assert(cmd_buffer->state.pending_db_mode != ANV_CMD_DESCRIPTOR_BUFFER_MODE_UNKNOWN);
+
    /* On Gfx12.5+ the STATE_BASE_ADDRESS BindlessSurfaceStateBaseAddress &
     * DynamicStateBaseAddress are fixed. So as long as we stay in one
     * descriptor buffer mode, there is no need to switch.
@@ -2842,7 +2844,9 @@ genX(cmd_buffer_begin_companion)(struct anv_cmd_buffer *cmd_buffer,
    /* A companion command buffer is only used for blorp commands atm, so
     * default to the legacy mode.
     */
-   cmd_buffer->state.current_db_mode = ANV_CMD_DESCRIPTOR_BUFFER_MODE_LEGACY;
+   cmd_buffer->state.current_db_mode =
+      cmd_buffer->state.pending_db_mode =
+      ANV_CMD_DESCRIPTOR_BUFFER_MODE_LEGACY;
    genX(cmd_buffer_emit_bt_pool_base_address)(cmd_buffer);
 
    /* Invalidate the aux table in every primary command buffer. This ensures
@@ -3233,7 +3237,9 @@ genX(BeginCommandBuffer)(
    if (cmd_buffer->device->vk.enabled_extensions.EXT_descriptor_buffer) {
       genX(cmd_buffer_emit_state_base_address)(cmd_buffer);
    } else {
-      cmd_buffer->state.current_db_mode = ANV_CMD_DESCRIPTOR_BUFFER_MODE_LEGACY;
+      cmd_buffer->state.current_db_mode =
+         cmd_buffer->state.pending_db_mode =
+         ANV_CMD_DESCRIPTOR_BUFFER_MODE_LEGACY;
       genX(cmd_buffer_emit_bt_pool_base_address)(cmd_buffer);
    }
 
