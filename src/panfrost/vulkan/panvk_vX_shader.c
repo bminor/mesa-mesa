@@ -1379,6 +1379,10 @@ panvk_compile_shader(struct panvk_device *dev,
       if (state && state->ms && state->ms->sample_shading_enable)
          nir->info.fs.uses_sample_shading = true;
 
+      /* We need to lower input attachments before we lower descriptors */
+      NIR_PASS(_, nir, panvk_per_arch(nir_lower_input_attachment_loads),
+               state, &variant->fs.input_attachment_read);
+
       panvk_lower_nir(dev, nir, info->set_layout_count, info->set_layouts,
                       info->robustness, state, &inputs, variant);
 

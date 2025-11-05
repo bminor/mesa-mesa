@@ -74,7 +74,6 @@ struct lower_desc_ctx {
    bool null_descriptor_support;
    nir_address_format ubo_addr_format;
    nir_address_format ssbo_addr_format;
-   struct panvk_shader_variant *shader;
 };
 
 static nir_address_format
@@ -1310,7 +1309,6 @@ panvk_per_arch(nir_lower_descriptors)(
    const struct vk_graphics_pipeline_state *state, struct panvk_shader_variant *shader)
 {
    struct lower_desc_ctx ctx = {
-      .shader = shader,
       .add_bounds_checks =
          rs->storage_buffers !=
             VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT ||
@@ -1354,10 +1352,6 @@ panvk_per_arch(nir_lower_descriptors)(
 #endif
    create_copy_table(nir, &ctx);
    upload_shader_desc_info(dev, shader, &ctx.desc_info);
-
-   if (nir->info.stage == MESA_SHADER_FRAGMENT)
-      NIR_PASS(progress, nir, panvk_per_arch(nir_lower_input_attachment_loads),
-               state, &shader->fs.input_attachment_read);
 
    NIR_PASS(progress, nir, nir_shader_instructions_pass,
             lower_descriptors_instr, nir_metadata_control_flow, &ctx);
