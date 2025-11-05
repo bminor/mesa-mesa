@@ -5946,9 +5946,6 @@ bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
       if (pan_arch(gpu_id) <= 7)
          NIR_PASS(_, nir, pan_nir_lower_vertex_id);
 
-      NIR_PASS(_, nir, nir_lower_viewport_transform);
-      NIR_PASS(_, nir, nir_lower_point_size, 1.0, 0.0);
-
       nir_variable *psiz = nir_find_variable_with_location(
          nir, nir_var_shader_out, VARYING_SLOT_PSIZ);
       if (psiz != NULL)
@@ -6011,6 +6008,8 @@ bifrost_postprocess_nir(nir_shader *nir, unsigned gpu_id)
 
       NIR_PASS(_, nir, bifrost_nir_lower_load_output);
    } else if (nir->info.stage == MESA_SHADER_VERTEX) {
+      NIR_PASS(_, nir, nir_lower_viewport_transform);
+      NIR_PASS(_, nir, nir_lower_point_size, 1.0, 0.0);
       NIR_PASS(_, nir, pan_nir_lower_noperspective_vs);
 
       if (pan_arch(gpu_id) >= 9) {
