@@ -7,7 +7,8 @@ Hardware support
 ----------------
 
 NVK currently supports Kepler (GeForce 600 and 700 series) and later GPUs up to
-and including Blackwell (RTX 5000 series).
+and including Ada (RTX 4000 series), as well as consumer Blackwell GPUs
+(RTX 5000 series).
 
 Conformance status:
 -------------------
