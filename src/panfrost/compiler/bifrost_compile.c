@@ -5997,6 +5997,8 @@ bifrost_postprocess_nir(nir_shader *nir, unsigned gpu_id)
 {
    MESA_TRACE_FUNC();
 
+   bifrost_lower_texture_nir(nir, gpu_id);
+
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       NIR_PASS(_, nir, nir_lower_mediump_io,
                nir_var_shader_in | nir_var_shader_out,

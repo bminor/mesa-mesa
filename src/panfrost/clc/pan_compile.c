@@ -425,7 +425,6 @@ main(int argc, const char **argv)
 
          pan_shader_preprocess(s, inputs.gpu_id);
          pan_shader_lower_texture_early(s, inputs.gpu_id);
-         pan_shader_lower_texture(s, inputs.gpu_id);
          pan_shader_postprocess(s, inputs.gpu_id);
 
          NIR_PASS(_, s, nir_opt_deref);

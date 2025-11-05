@@ -84,15 +84,6 @@ pan_shader_lower_texture_early(nir_shader *nir, unsigned gpu_id)
 }
 
 static inline void
-pan_shader_lower_texture(nir_shader *nir, unsigned gpu_id)
-{
-   if (pan_arch(gpu_id) >= 6)
-      bifrost_lower_texture_nir(nir, gpu_id);
-   else
-      midgard_lower_texture_nir(nir, gpu_id);
-}
-
-static inline void
 pan_shader_disassemble(FILE *fp, const void *code, size_t size, unsigned gpu_id,
                        bool verbose)
 {

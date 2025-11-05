@@ -933,7 +933,6 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
     */
    NIR_PASS(_, nir, nir_opt_constant_folding);
 
-   pan_shader_lower_texture(nir, compile_input->gpu_id);
    pan_shader_postprocess(nir, compile_input->gpu_id);
 
    if (stage == MESA_SHADER_VERTEX)
