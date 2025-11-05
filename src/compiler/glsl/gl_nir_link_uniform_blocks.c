@@ -139,6 +139,7 @@ struct link_uniform_block_active {
    bool has_instance_name;
    bool has_binding;
    bool is_shader_storage;
+   bool block_index_assigned;
 };
 
 /*
@@ -1197,14 +1198,32 @@ link_linked_shader_uniform_blocks(void *mem_ctx,
 
 
    if (!prog->data->spirv) {
-      hash_table_foreach(block_hash, entry) {
+      /* Assign block indices in the order they appear in the shader. We could
+       * just loop over the hash table and this would be spec compiliant
+       * however some games seem to incorrectly assume they know the correct
+       * index without checking. So to avoid debugging strange issues anytime
+       * the hash table is modified and the order changes we use this
+       * predictable index allocation instead.
+       */
+      nir_foreach_variable_in_shader(var, shader->Program->nir) {
+         if (block_type == BLOCK_UBO && !nir_variable_is_in_ubo(var))
+            continue;
+
+         if (block_type == BLOCK_SSBO && !nir_variable_is_in_ssbo(var))
+            continue;
+
+         const struct hash_entry *entry =
+            _mesa_hash_table_search(block_hash,
+                                    glsl_get_type_name(var->interface_type));
+
          struct link_uniform_block_active *const b =
             (struct link_uniform_block_active *) entry->data;
+         if (b->block_index_assigned)
+            continue;
 
          const struct glsl_type *blk_type =
             glsl_without_array(b->var->type) == b->var->interface_type ?
                b->var->type : b->var->interface_type;
-
          if (glsl_type_is_array(blk_type)) {
              char *name =
                ralloc_strdup(NULL,
@@ -1221,6 +1240,7 @@ link_linked_shader_uniform_blocks(void *mem_ctx,
                        variables, &variable_index, 0, 0, prog, shader->Stage,
                        block_type);
          }
+         b->block_index_assigned = true;
       }
    } else {
       nir_foreach_variable_in_shader(var, shader->Program->nir) {
