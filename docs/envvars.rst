@@ -98,6 +98,10 @@ Core Mesa environment variables
    specifies a file name for logging all errors, warnings, etc., rather
    than stderr
 
+.. envvar:: MESA_LOG_PREFIX
+
+   specifies what to to include in the log prefix (linux only) - default is ``tag,level``
+
 .. envvar:: MESA_EXTENSION_OVERRIDE
 
    can be used to enable/disable extensions. A value such as
