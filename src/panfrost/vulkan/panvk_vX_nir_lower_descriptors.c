@@ -42,7 +42,7 @@
 #define VALHALL_RESOURCE_TABLE_IDX 62
 #endif
 
-struct panvk_shader_desc_map {
+struct lower_desc_map {
    /* The index of the map serves as the table offset, the value of the
     * entry is a COPY_DESC_HANDLE() encoding the source set, and the
     * index of the descriptor in the set. */
@@ -52,23 +52,23 @@ struct panvk_shader_desc_map {
    uint32_t count;
 };
 
-struct panvk_shader_desc_info {
+struct lower_desc_info {
    uint32_t used_set_mask;
 #if PAN_ARCH < 9
-   struct panvk_shader_desc_map dyn_ubos;
-   struct panvk_shader_desc_map dyn_ssbos;
-   struct panvk_shader_desc_map others[PANVK_BIFROST_DESC_TABLE_COUNT];
+   struct lower_desc_map dyn_ubos;
+   struct lower_desc_map dyn_ssbos;
+   struct lower_desc_map others[PANVK_BIFROST_DESC_TABLE_COUNT];
 #else
    uint32_t dummy_sampler_handle;
    uint32_t dyn_bufs_start;
-   struct panvk_shader_desc_map dyn_bufs;
+   struct lower_desc_map dyn_bufs;
    uint32_t num_varying_attr_descs;
 #endif
 };
 
 struct lower_desc_ctx {
    const struct panvk_descriptor_set_layout *set_layouts[MAX_SETS];
-   struct panvk_shader_desc_info desc_info;
+   struct lower_desc_info desc_info;
    struct hash_table_u64 *ht;
    bool add_bounds_checks;
    bool null_descriptor_support;
@@ -178,7 +178,7 @@ shader_desc_idx(uint32_t set, uint32_t binding,
 
    assert(entry);
 
-   const struct panvk_shader_desc_map *map;
+   const struct lower_desc_map *map;
 
 #if PAN_ARCH < 9
    if (bind_layout->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
@@ -1047,7 +1047,7 @@ fill_copy_descs_for_binding(struct lower_desc_ctx *ctx, unsigned set,
    for (uint32_t i = 0; i < desc_count; i++) {
       uint32_t src_idx =
          binding_layout->desc_idx + (i * desc_stride) + subdesc_offset;
-      struct panvk_shader_desc_map *map;
+      struct lower_desc_map *map;
 
 #if PAN_ARCH < 9
       if (binding_layout->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
@@ -1083,7 +1083,7 @@ fill_copy_descs_for_binding(struct lower_desc_ctx *ctx, unsigned set,
 static void
 create_copy_table(nir_shader *nir, struct lower_desc_ctx *ctx)
 {
-   struct panvk_shader_desc_info *desc_info = &ctx->desc_info;
+   struct lower_desc_info *desc_info = &ctx->desc_info;
    uint32_t copy_count;
 
 #if PAN_ARCH < 9
@@ -1264,41 +1264,41 @@ collect_instr_desc_access(nir_builder *b, nir_instr *instr, void *data)
 
 static void
 upload_shader_desc_info(struct panvk_device *dev, struct panvk_shader_variant *shader,
-                        const struct panvk_shader_desc_info *desc_info)
+                        const struct lower_desc_info *lower_info)
 {
 #if PAN_ARCH < 9
    unsigned copy_count = 0;
    for (unsigned i = 0; i < ARRAY_SIZE(shader->desc_info.others.count); i++) {
-      shader->desc_info.others.count[i] = desc_info->others[i].count;
-      copy_count += desc_info->others[i].count;
+      shader->desc_info.others.count[i] = lower_info->others[i].count;
+      copy_count += lower_info->others[i].count;
    }
 
    if (copy_count > 0) {
       shader->desc_info.others.map = panvk_pool_upload_aligned(
-         &dev->mempools.rw, desc_info->others[0].map,
+         &dev->mempools.rw, lower_info->others[0].map,
          copy_count * sizeof(uint32_t), sizeof(uint32_t));
    }
 
-   assert(desc_info->dyn_ubos.count <=
+   assert(lower_info->dyn_ubos.count <=
           ARRAY_SIZE(shader->desc_info.dyn_ubos.map));
-   shader->desc_info.dyn_ubos.count = desc_info->dyn_ubos.count;
-   memcpy(shader->desc_info.dyn_ubos.map, desc_info->dyn_ubos.map,
-          desc_info->dyn_ubos.count * sizeof(*shader->desc_info.dyn_ubos.map));
-   assert(desc_info->dyn_ssbos.count <=
+   shader->desc_info.dyn_ubos.count = lower_info->dyn_ubos.count;
+   memcpy(shader->desc_info.dyn_ubos.map, lower_info->dyn_ubos.map,
+          lower_info->dyn_ubos.count * sizeof(*shader->desc_info.dyn_ubos.map));
+   assert(lower_info->dyn_ssbos.count <=
           ARRAY_SIZE(shader->desc_info.dyn_ssbos.map));
-   shader->desc_info.dyn_ssbos.count = desc_info->dyn_ssbos.count;
+   shader->desc_info.dyn_ssbos.count = lower_info->dyn_ssbos.count;
    memcpy(
-      shader->desc_info.dyn_ssbos.map, desc_info->dyn_ssbos.map,
-      desc_info->dyn_ssbos.count * sizeof(*shader->desc_info.dyn_ssbos.map));
+      shader->desc_info.dyn_ssbos.map, lower_info->dyn_ssbos.map,
+      lower_info->dyn_ssbos.count * sizeof(*shader->desc_info.dyn_ssbos.map));
 #else
-   assert(desc_info->dyn_bufs.count <=
+   assert(lower_info->dyn_bufs.count <=
           ARRAY_SIZE(shader->desc_info.dyn_bufs.map));
-   shader->desc_info.dyn_bufs.count = desc_info->dyn_bufs.count;
-   memcpy(shader->desc_info.dyn_bufs.map, desc_info->dyn_bufs.map,
-          desc_info->dyn_bufs.count * sizeof(*shader->desc_info.dyn_bufs.map));
+   shader->desc_info.dyn_bufs.count = lower_info->dyn_bufs.count;
+   memcpy(shader->desc_info.dyn_bufs.map, lower_info->dyn_bufs.map,
+          lower_info->dyn_bufs.count * sizeof(*shader->desc_info.dyn_bufs.map));
 #endif
 
-   shader->desc_info.used_set_mask = desc_info->used_set_mask;
+   shader->desc_info.used_set_mask = lower_info->used_set_mask;
 }
 
 void
