@@ -32,11 +32,13 @@ static void radeon_vcn_enc_quality_modes(struct radeon_encoder *enc,
        p->preset_mode == RENCODE_PRESET_MODE_HIGH_QUALITY)
       p->preset_mode = RENCODE_PRESET_MODE_QUALITY;
 
-   p->pre_encode_mode = in->pre_encode_mode ? RENCODE_PREENCODE_MODE_4X
-                                            : RENCODE_PREENCODE_MODE_NONE;
+   if (enc->first_frame) {
+      p->pre_encode_mode = in->pre_encode_mode ? RENCODE_PREENCODE_MODE_4X
+                                               : RENCODE_PREENCODE_MODE_NONE;
 
-   if (enc->enc_pic.rc_session_init.rate_control_method == RENCODE_RATE_CONTROL_METHOD_QUALITY_VBR)
-      p->pre_encode_mode = RENCODE_PREENCODE_MODE_4X;
+      if (enc->enc_pic.rc_session_init.rate_control_method == RENCODE_RATE_CONTROL_METHOD_QUALITY_VBR)
+         p->pre_encode_mode = RENCODE_PREENCODE_MODE_4X;
+   }
 
    p->vbaq_mode = in->vbaq_mode ? RENCODE_VBAQ_AUTO : RENCODE_VBAQ_NONE;
 
