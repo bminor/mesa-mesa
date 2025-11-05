@@ -434,19 +434,18 @@ vlVaHandleVAEncMiscParameterTypeHRDAV1(vlVaContext *context, VAEncMiscParameterB
 
 static void av1_color_config(vlVaContext *context, struct vl_vlc *vlc)
 {
-   unsigned high_bitdepth = 0;
    unsigned bit_depth = 8;
    unsigned mono_chrome = 0;
    unsigned subsampling_x = 0, subsampling_y = 0;
 
    struct pipe_av1_enc_seq_param *seq = &context->desc.av1enc.seq;
 
-   high_bitdepth = av1_f(vlc, 1);
-   if (seq->profile == 2 && high_bitdepth) {
+   seq->seq_bits.high_bitdepth = av1_f(vlc, 1);
+   if (seq->profile == 2 && seq->seq_bits.high_bitdepth) {
       unsigned twelve_bit = av1_f(vlc, 1);
       bit_depth = twelve_bit ? 12 : 10;
    } else if (seq->profile <= 2)
-      bit_depth = high_bitdepth ? 10 : 8;
+      bit_depth = seq->seq_bits.high_bitdepth ? 10 : 8;
 
    context->desc.av1enc.seq.bit_depth_minus8 = bit_depth - 8;
 
