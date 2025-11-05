@@ -3454,7 +3454,8 @@ end_command_buffer(struct anv_cmd_buffer *cmd_buffer)
 
    genX(cmd_buffer_apply_pipe_flushes)(cmd_buffer);
 
-   emit_isp_disable(cmd_buffer);
+   if (cmd_buffer->vk.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY)
+      emit_isp_disable(cmd_buffer);
 
 #if GFX_VER >= 12
    if (cmd_buffer->vk.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY &&
