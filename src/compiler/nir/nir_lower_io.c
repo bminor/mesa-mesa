@@ -1229,8 +1229,17 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
     * which lowers indirect stores, eliminates output loads, and moves all
     * output stores to the end or GS emits.
     */
-   if (nir->info.stage != MESA_SHADER_TESS_CTRL)
-      lower_indirect_outputs = true;
+   lower_indirect_outputs = true;
+
+   /* If the driver doesn't support indirect TCS output slot access, lower
+    * it to an if-else tree of direct accesses.
+    */
+   if (nir->info.stage == MESA_SHADER_TESS_CTRL &&
+       !(nir->options->support_indirect_outputs &
+         BITFIELD_BIT(nir->info.stage))) {
+      NIR_PASS(_, nir, nir_lower_indirect_derefs_to_if_else_trees,
+               nir_var_shader_out, UINT32_MAX);
+   }
 
    /* TODO: Sorting variables by location is required due to some bug
     * in nir_lower_io_vars_to_temporaries. If variables are not sorted,
@@ -1256,14 +1265,6 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
       NIR_PASS(_, nir, nir_split_var_copies);
       NIR_PASS(_, nir, nir_lower_var_copies);
       NIR_PASS(_, nir, nir_lower_global_vars_to_local);
-
-      /* This is partially redundant with nir_lower_io_vars_to_temporaries.
-       * The problem is that nir_lower_io_vars_to_temporaries doesn't handle TCS.
-       */
-      if (nir->info.stage == MESA_SHADER_TESS_CTRL) {
-         NIR_PASS(_, nir, nir_lower_indirect_derefs_to_if_else_trees,
-                  nir_var_shader_out, UINT32_MAX);
-      }
    }
 
    /* The correct lower_64bit_to_32 flag is required by st/mesa depending
