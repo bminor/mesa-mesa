@@ -1371,13 +1371,6 @@ panvk_compile_shader(struct panvk_device *dev,
             panvk_shader_destroy(&dev->vk, &shader->vk, pAllocator);
             return result;
          }
-
-         result = panvk_shader_upload(dev, variant, pAllocator);
-
-         if (result != VK_SUCCESS) {
-            panvk_shader_destroy(&dev->vk, &shader->vk, pAllocator);
-            return result;
-         }
       }
    } else {
       struct panvk_shader_variant *variant =
@@ -1399,9 +1392,10 @@ panvk_compile_shader(struct panvk_device *dev,
          panvk_shader_destroy(&dev->vk, &shader->vk, pAllocator);
          return result;
       }
+   }
 
+   panvk_shader_foreach_variant(shader, variant) {
       result = panvk_shader_upload(dev, variant, pAllocator);
-
       if (result != VK_SUCCESS) {
          panvk_shader_destroy(&dev->vk, &shader->vk, pAllocator);
          return result;
