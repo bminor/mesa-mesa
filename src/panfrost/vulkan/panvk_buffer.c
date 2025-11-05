@@ -12,8 +12,6 @@
 
 #include "vk_log.h"
 
-#define PANVK_MAX_BUFFER_SIZE (1 << 30)
-
 VKAPI_ATTR uint64_t VKAPI_CALL
 panvk_GetBufferOpaqueCaptureAddress(VkDevice _device,
                                     const VkBufferDeviceAddressInfo *pInfo)

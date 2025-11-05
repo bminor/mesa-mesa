@@ -10,6 +10,8 @@
 
 #include "vk_buffer.h"
 
+#define PANVK_MAX_BUFFER_SIZE UINT32_MAX
+
 struct panvk_priv_bo;
 
 struct panvk_buffer {
