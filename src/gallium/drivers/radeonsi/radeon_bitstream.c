@@ -174,8 +174,8 @@ void radeon_bs_code_ns(struct radeon_bitstream *bs, uint32_t value, uint32_t max
    }
 }
 
-void radeon_bs_h264_hrd_parameters(struct radeon_bitstream *bs,
-                                   struct pipe_h264_enc_hrd_params *hrd)
+static void radeon_bs_h264_hrd_parameters(struct radeon_bitstream *bs,
+                                          struct pipe_h264_enc_hrd_params *hrd)
 {
    radeon_bs_code_ue(bs, hrd->cpb_cnt_minus1);
    radeon_bs_code_fixed_bits(bs, hrd->bit_rate_scale, 4);
@@ -351,9 +351,9 @@ static void radeon_bs_hevc_profile_tier(struct radeon_bitstream *bs,
    radeon_bs_code_fixed_bits(bs, 0x0, 12);
 }
 
-void radeon_bs_hevc_profile_tier_level(struct radeon_bitstream *bs,
-                                       uint32_t max_num_sub_layers_minus1,
-                                       struct pipe_h265_profile_tier_level *ptl)
+static void radeon_bs_hevc_profile_tier_level(struct radeon_bitstream *bs,
+                                              uint32_t max_num_sub_layers_minus1,
+                                              struct pipe_h265_profile_tier_level *ptl)
 {
    uint32_t i;
 
@@ -395,10 +395,10 @@ static void radeon_bs_hevc_sub_layer_hrd_parameters(struct radeon_bitstream *bs,
    }
 }
 
-void radeon_bs_hevc_hrd_parameters(struct radeon_bitstream *bs,
-                                   uint32_t common_inf_present_flag,
-                                   uint32_t max_sub_layers_minus1,
-                                   struct pipe_h265_enc_hrd_params *hrd)
+static void radeon_bs_hevc_hrd_parameters(struct radeon_bitstream *bs,
+                                          uint32_t common_inf_present_flag,
+                                          uint32_t max_sub_layers_minus1,
+                                          struct pipe_h265_enc_hrd_params *hrd)
 {
    if (common_inf_present_flag) {
       radeon_bs_code_fixed_bits(bs, hrd->nal_hrd_parameters_present_flag, 1);

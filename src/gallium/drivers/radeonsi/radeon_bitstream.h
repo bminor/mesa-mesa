@@ -40,18 +40,6 @@ void radeon_bs_hevc_sps(struct radeon_bitstream *bs, struct pipe_h265_enc_seq_pa
 void radeon_bs_hevc_pps(struct radeon_bitstream *bs, struct pipe_h265_enc_pic_param *pps);
 void radeon_bs_av1_seq(struct radeon_bitstream *bs, uint8_t *obu_bytes, struct pipe_av1_enc_seq_param *seq);
 
-void radeon_bs_h264_hrd_parameters(struct radeon_bitstream *bs,
-                                   struct pipe_h264_enc_hrd_params *hrd);
-
-void radeon_bs_hevc_profile_tier_level(struct radeon_bitstream *bs,
-                                       uint32_t max_num_sub_layers_minus1,
-                                       struct pipe_h265_profile_tier_level *ptl);
-
-void radeon_bs_hevc_hrd_parameters(struct radeon_bitstream *bs,
-                                   uint32_t common_inf_present_flag,
-                                   uint32_t max_sub_layers_minus1,
-                                   struct pipe_h265_enc_hrd_params *hrd);
-
 uint32_t radeon_bs_hevc_st_ref_pic_set(struct radeon_bitstream *bs,
                                        uint32_t index,
                                        uint32_t num_short_term_ref_pic_sets,
