@@ -1073,7 +1073,6 @@ static void radeon_vcn_enc_av1_get_param(struct radeon_encoder *enc,
       enc_pic->av1.skip_mode_allowed = radeon_enc_av1_skip_mode_allowed(enc, skip_frames);
 
       if (enc_pic->av1.compound) {
-         bool disallow_skip_mode = enc_pic->av1_spec_misc.disallow_skip_mode;
          enc_pic->av1_spec_misc.disallow_skip_mode = !enc_pic->av1.skip_mode_allowed;
          /* Skip mode frames must match reference frames */
          if (enc_pic->av1.skip_mode_allowed) {
@@ -1081,9 +1080,6 @@ static void radeon_vcn_enc_av1_get_param(struct radeon_encoder *enc,
                skip_frames[0] != enc_pic->av1_enc_params.lsm_reference_frame_index[0] ||
                skip_frames[1] != enc_pic->av1_enc_params.lsm_reference_frame_index[1];
          }
-         enc->need_spec_misc = disallow_skip_mode != enc_pic->av1_spec_misc.disallow_skip_mode;
-      } else {
-         enc->need_spec_misc = false;
       }
    }
 

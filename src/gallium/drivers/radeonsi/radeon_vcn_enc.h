@@ -254,7 +254,6 @@ struct radeon_encoder {
    bool need_feedback;
    bool need_rate_control;
    bool need_rc_per_pic;
-   bool need_spec_misc;
    unsigned dpb_size;
    unsigned dpb_slots;
    unsigned roi_size;

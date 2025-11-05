@@ -1184,13 +1184,9 @@ static void begin(struct radeon_encoder *enc)
    enc->op_init(enc);
 
    enc->session_init(enc);
-   enc->slice_control(enc);
-   enc->spec_misc(enc);
-   enc->deblocking_filter(enc);
 
    enc->layer_control(enc);
    enc->rc_session_init(enc);
-   enc->quality_params(enc);
    enc->encode_latency(enc);
 
    i = 0;
@@ -1229,11 +1225,9 @@ static void encode(struct radeon_encoder *enc)
    enc->total_task_size = 0;
    enc->task_info(enc, enc->need_feedback);
 
-   if (enc->need_spec_misc)
-      enc->spec_misc(enc);
-
    if (enc->need_rate_control || enc->need_rc_per_pic) {
       i = 0;
+      enc->layer_control(enc);
       do {
          enc->enc_pic.layer_sel.temporal_layer_index = i;
          if (enc->need_rate_control) {
@@ -1250,6 +1244,10 @@ static void encode(struct radeon_encoder *enc)
    enc->enc_pic.layer_sel.temporal_layer_index = enc->enc_pic.temporal_id;
    enc->layer_select(enc);
 
+   enc->quality_params(enc);
+   enc->slice_control(enc);
+   enc->spec_misc(enc);
+   enc->deblocking_filter(enc);
    enc->encode_headers(enc);
    enc->ctx(enc);
    enc->ctx_override(enc);
