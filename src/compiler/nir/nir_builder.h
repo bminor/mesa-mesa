@@ -1645,9 +1645,9 @@ nir_resize_vector(nir_builder *b, nir_def *src, unsigned num_components)
       return nir_trim_vector(b, src, num_components);
 }
 
-/* Shift channels to the left or right. Fill undefined components with .x.
+/* Shift channels to the left or right. Fill undefined components with undef.
  * Examples:
- *    channel_shift =  1, new_num_components = 4: .xyzw -> .xxyz
+ *    channel_shift =  1, new_num_components = 4: .xyzw -> ._xyz
  *    channel_shift = -1, new_num_components = 3: .xyzw -> .yzw
  */
 static inline nir_def *
@@ -1657,15 +1657,18 @@ nir_shift_channels(nir_builder *b, nir_def *def, int channel_shift,
    if (channel_shift == 0)
       return nir_resize_vector(b, def, new_num_components);
 
-   assert(abs(channel_shift) < NIR_MAX_VEC_COMPONENTS);
-   unsigned swizzle[NIR_MAX_VEC_COMPONENTS] = {0};
+   nir_def *chan[NIR_MAX_VEC_COMPONENTS];
 
-   for (int i = 1; i < def->num_components; i++) {
-      if (i + channel_shift >= 0)
-         swizzle[i + channel_shift] = i;
+   for (int i = 0; i < (int)new_num_components; i++) {
+      int src_index = i - channel_shift;
+
+      if (src_index >= 0 && src_index < def->num_components)
+         chan[i] = nir_channel(b, def, src_index);
+      else
+         chan[i] = nir_undef(b, 1, def->bit_size);
    }
 
-   return nir_swizzle(b, def, swizzle, new_num_components);
+   return nir_vec(b, chan, new_num_components);
 }
 
 nir_def *
