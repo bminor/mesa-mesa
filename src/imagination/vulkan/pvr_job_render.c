@@ -170,7 +170,7 @@ VkResult pvr_free_list_create(struct pvr_device *device,
     * of the two values) and divide this by 4. If the PM page size is 4096
     * bytes then we end up with an alignment of 65536 bytes.
     */
-   cache_line_size = rogue_get_slc_cache_line_size(&device->pdevice->dev_info);
+   cache_line_size = pvr_get_slc_cache_line_size(&device->pdevice->dev_info);
 
    addr_alignment =
       MAX2(ROGUE_BIF_PM_FREELIST_BASE_ADDR_ALIGNSIZE, cache_line_size);

@@ -168,7 +168,7 @@ VkResult pvr_emit_ppp_from_template(
 
    struct pvr_device *const device = csb->device;
    const uint32_t cache_line_size =
-      rogue_get_slc_cache_line_size(&device->pdevice->dev_info);
+      pvr_get_slc_cache_line_size(&device->pdevice->dev_info);
    const struct pvr_static_clear_ppp_base *const base =
       &device->static_clear_state.ppp_base;
    struct pvr_suballoc_bo *pvr_bo;
@@ -465,7 +465,7 @@ VkResult pvr_device_init_graphics_static_clear_state(struct pvr_device *device)
    const uint32_t vdm_state_size_in_dw =
       pvr_clear_vdm_state_get_size_in_dw(dev_info, 1);
    struct pvr_device_static_clear_state *state = &device->static_clear_state;
-   const uint32_t cache_line_size = rogue_get_slc_cache_line_size(dev_info);
+   const uint32_t cache_line_size = pvr_get_slc_cache_line_size(dev_info);
    struct pvr_pds_vertex_shader_program pds_program;
    const pco_precomp_data *precomp_data;
    uint32_t *state_buffer;

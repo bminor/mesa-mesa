@@ -560,7 +560,7 @@ VkResult pvr_bo_suballoc(struct pvr_suballocator *allocator,
 {
    const struct pvr_device_info *dev_info =
       &allocator->device->pdevice->dev_info;
-   const uint32_t cache_line_size = rogue_get_slc_cache_line_size(dev_info);
+   const uint32_t cache_line_size = pvr_get_slc_cache_line_size(dev_info);
    struct pvr_suballoc_bo *suballoc_bo;
    uint32_t alloc_size, aligned_size;
    VkResult result;

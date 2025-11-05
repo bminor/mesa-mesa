@@ -187,7 +187,7 @@ static VkResult pvr_transfer_frag_store_entry_data_compile(
       offsetof(struct pvr_combined_image_sampler_descriptor, sampler) / 4;
 
    const uint32_t cache_line_size =
-      rogue_get_slc_cache_line_size(&device->pdevice->dev_info);
+      pvr_get_slc_cache_line_size(&device->pdevice->dev_info);
 
    struct pvr_tq_frag_sh_reg_layout *sh_reg_layout = &entry_data->sh_reg_layout;
    uint32_t next_free_sh_reg = 0;

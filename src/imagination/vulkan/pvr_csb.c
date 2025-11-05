@@ -234,7 +234,7 @@ static bool pvr_csb_buffer_extend(struct pvr_csb *csb)
    const uint8_t stream_reserved_space =
       stream_link_space + ROGUE_VDMCTRL_GUARD_SIZE_DEFAULT;
    const uint32_t cache_line_size =
-      rogue_get_slc_cache_line_size(&csb->device->pdevice->dev_info);
+      pvr_get_slc_cache_line_size(&csb->device->pdevice->dev_info);
    size_t current_state_update_size = 0;
    struct pvr_bo *pvr_bo;
    VkResult result;

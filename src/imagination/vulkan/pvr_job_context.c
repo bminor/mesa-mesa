@@ -91,7 +91,7 @@ static VkResult pvr_pds_pt_store_program_create_and_upload(
 {
    struct pvr_pds_stream_out_terminate_program program = { 0 };
    const struct pvr_device_info *dev_info = &device->pdevice->dev_info;
-   const uint32_t cache_line_size = rogue_get_slc_cache_line_size(dev_info);
+   const uint32_t cache_line_size = pvr_get_slc_cache_line_size(dev_info);
    size_t staging_buffer_size;
    uint32_t *staging_buffer;
    uint32_t *data_buffer;
@@ -160,7 +160,7 @@ static VkResult pvr_pds_pt_resume_program_create_and_upload(
 {
    struct pvr_pds_stream_out_init_program program = { 0 };
    const struct pvr_device_info *dev_info = &device->pdevice->dev_info;
-   const uint32_t cache_line_size = rogue_get_slc_cache_line_size(dev_info);
+   const uint32_t cache_line_size = pvr_get_slc_cache_line_size(dev_info);
    size_t staging_buffer_size;
    uint32_t *staging_buffer;
    uint32_t *data_buffer;
@@ -322,7 +322,7 @@ static VkResult pvr_pds_render_ctx_sr_program_create_and_upload(
    struct pvr_pds_upload *const pds_upload_out)
 {
    const struct pvr_device_info *dev_info = &device->pdevice->dev_info;
-   const uint32_t cache_line_size = rogue_get_slc_cache_line_size(dev_info);
+   const uint32_t cache_line_size = pvr_get_slc_cache_line_size(dev_info);
    const uint32_t pds_data_alignment =
       ROGUE_VDMCTRL_PDS_STATE0_PDS_DATA_SIZE_UNIT_SIZE / 4U;
 
@@ -382,7 +382,7 @@ static VkResult pvr_pds_compute_ctx_sr_program_create_and_upload(
    struct pvr_pds_upload *const pds_upload_out)
 {
    const struct pvr_device_info *dev_info = &device->pdevice->dev_info;
-   const uint32_t cache_line_size = rogue_get_slc_cache_line_size(dev_info);
+   const uint32_t cache_line_size = pvr_get_slc_cache_line_size(dev_info);
    const uint32_t pds_data_alignment =
       ROGUE_VDMCTRL_PDS_STATE0_PDS_DATA_SIZE_UNIT_SIZE / 4U;
 
@@ -468,7 +468,7 @@ static VkResult pvr_ctx_sr_programs_setup(struct pvr_device *device,
       ROGUE_LLS_USC_SHARED_REGS_BUFFER_SIZE +
       ROGUE_LLS_SHARED_REGS_RESERVE_SIZE;
    const struct pvr_device_info *dev_info = &device->pdevice->dev_info;
-   const uint32_t cache_line_size = rogue_get_slc_cache_line_size(dev_info);
+   const uint32_t cache_line_size = pvr_get_slc_cache_line_size(dev_info);
    uint64_t usc_store_program_upload_offset;
    uint64_t usc_load_program_upload_offset;
    const pco_precomp_data *precomp_data;
@@ -1232,7 +1232,7 @@ static VkResult pvr_transfer_eot_shaders_init(struct pvr_device *device,
 
    for (uint32_t i = 0; i < ARRAY_SIZE(ctx->usc_eot_bos); i++) {
       const uint32_t cache_line_size =
-         rogue_get_slc_cache_line_size(&device->pdevice->dev_info);
+         pvr_get_slc_cache_line_size(&device->pdevice->dev_info);
       struct pvr_eot_props props = {
          .emit_count = i + 1,
          .shared_words = true,

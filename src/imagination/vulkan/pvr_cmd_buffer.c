@@ -325,7 +325,7 @@ pvr_cmd_buffer_upload_tables(struct pvr_device *device,
                              struct pvr_sub_cmd_gfx *const sub_cmd)
 {
    const uint32_t cache_line_size =
-      rogue_get_slc_cache_line_size(&device->pdevice->dev_info);
+      pvr_get_slc_cache_line_size(&device->pdevice->dev_info);
    VkResult result;
 
    assert(!sub_cmd->depth_bias_bo && !sub_cmd->scissor_bo);
@@ -399,7 +399,7 @@ pvr_cmd_buffer_upload_general(struct pvr_cmd_buffer *const cmd_buffer,
 {
    struct pvr_device *const device = cmd_buffer->device;
    const uint32_t cache_line_size =
-      rogue_get_slc_cache_line_size(&device->pdevice->dev_info);
+      pvr_get_slc_cache_line_size(&device->pdevice->dev_info);
    struct pvr_suballoc_bo *suballoc_bo;
    VkResult result;
 
@@ -428,7 +428,7 @@ pvr_cmd_buffer_upload_usc(struct pvr_cmd_buffer *const cmd_buffer,
 {
    struct pvr_device *const device = cmd_buffer->device;
    const uint32_t cache_line_size =
-      rogue_get_slc_cache_line_size(&device->pdevice->dev_info);
+      pvr_get_slc_cache_line_size(&device->pdevice->dev_info);
    struct pvr_suballoc_bo *suballoc_bo;
    VkResult result;
 
@@ -2716,7 +2716,7 @@ VkResult pvr_cmd_buffer_alloc_mem(struct pvr_cmd_buffer *cmd_buffer,
                                   struct pvr_suballoc_bo **const pvr_bo_out)
 {
    const uint32_t cache_line_size =
-      rogue_get_slc_cache_line_size(&cmd_buffer->device->pdevice->dev_info);
+      pvr_get_slc_cache_line_size(&cmd_buffer->device->pdevice->dev_info);
    struct pvr_suballoc_bo *suballoc_bo;
    struct pvr_suballocator *allocator;
    VkResult result;

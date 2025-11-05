@@ -258,7 +258,7 @@ VkResult pvr_CreateDescriptorPool(VkDevice _device,
 {
    VK_FROM_HANDLE(pvr_device, device, _device);
    const uint32_t cache_line_size =
-      rogue_get_slc_cache_line_size(&device->pdevice->dev_info);
+      pvr_get_slc_cache_line_size(&device->pdevice->dev_info);
    struct pvr_descriptor_pool *pool;
    uint64_t bo_size = 0;
    VkResult result;

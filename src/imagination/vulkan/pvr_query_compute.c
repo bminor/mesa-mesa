@@ -148,7 +148,7 @@ static VkResult pvr_create_compute_query_precomp_program(
    struct pvr_compute_query_shader *query_prog)
 {
    const uint32_t cache_line_size =
-      rogue_get_slc_cache_line_size(&device->pdevice->dev_info);
+      pvr_get_slc_cache_line_size(&device->pdevice->dev_info);
    struct pvr_pds_compute_shader_program pds_primary_prog = { 0 };
    const pco_precomp_data *precomp_data;
    VkResult result;

@@ -208,7 +208,7 @@ VkResult pvr_pds_compute_shader_create_and_upload(
    struct pvr_pds_upload *const pds_upload_out)
 {
    const struct pvr_device_info *dev_info = &device->pdevice->dev_info;
-   const uint32_t cache_line_size = rogue_get_slc_cache_line_size(dev_info);
+   const uint32_t cache_line_size = pvr_get_slc_cache_line_size(dev_info);
    size_t staging_buffer_size;
    uint32_t *staging_buffer;
    uint32_t *data_buffer;
@@ -576,7 +576,7 @@ static void pvr_device_get_pixel_event_pds_program_data_size(
 static VkResult pvr_device_init_nop_program(struct pvr_device *device)
 {
    const uint32_t cache_line_size =
-      rogue_get_slc_cache_line_size(&device->pdevice->dev_info);
+      pvr_get_slc_cache_line_size(&device->pdevice->dev_info);
    struct pvr_pds_kickusc_program program = { 0 };
    const pco_precomp_data *precomp_data;
    uint32_t staging_buffer_size;
@@ -738,7 +738,7 @@ VkResult pvr_device_tile_buffer_ensure_cap(struct pvr_device *device,
    struct pvr_device_tile_buffer_state *tile_buffer_state =
       &device->tile_buffer_state;
    const uint32_t cache_line_size =
-      rogue_get_slc_cache_line_size(&device->pdevice->dev_info);
+      pvr_get_slc_cache_line_size(&device->pdevice->dev_info);
    VkResult result;
 
    simple_mtx_lock(&tile_buffer_state->mtx);
@@ -1797,7 +1797,7 @@ pvr_framebuffer_create_ppp_state(struct pvr_device *device,
                                  struct pvr_framebuffer *framebuffer)
 {
    const uint32_t cache_line_size =
-      rogue_get_slc_cache_line_size(&device->pdevice->dev_info);
+      pvr_get_slc_cache_line_size(&device->pdevice->dev_info);
    uint32_t ppp_state[3];
    VkResult result;
 

@@ -259,7 +259,7 @@ rogue_get_render_size_max(const struct pvr_device_info *dev_info)
    rogue_get_render_size_max(dev_info)
 
 static inline uint32_t
-rogue_get_slc_cache_line_size(const struct pvr_device_info *dev_info)
+pvr_get_slc_cache_line_size(const struct pvr_device_info *dev_info)
 {
    return PVR_GET_FEATURE_VALUE(dev_info, slc_cache_line_size_bits, 8U) / 8U;
 }
@@ -313,7 +313,7 @@ rogue_get_cdm_context_resume_buffer_size(const struct pvr_device_info *dev_info)
 {
    if (PVR_HAS_FEATURE(dev_info, gpu_multicore_support)) {
       const uint32_t max_num_cores = rogue_get_max_num_cores(dev_info);
-      const uint32_t cache_line_size = rogue_get_slc_cache_line_size(dev_info);
+      const uint32_t cache_line_size = pvr_get_slc_cache_line_size(dev_info);
       const uint32_t cdm_context_resume_buffer_stride =
          ALIGN_POT(ROGUE_LLS_CDM_CONTEXT_RESUME_BUFFER_SIZE, cache_line_size);
 
@@ -331,7 +331,7 @@ static inline uint32_t rogue_get_cdm_context_resume_buffer_alignment(
    const struct pvr_device_info *dev_info)
 {
    if (PVR_HAS_FEATURE(dev_info, gpu_multicore_support))
-      return rogue_get_slc_cache_line_size(dev_info);
+      return pvr_get_slc_cache_line_size(dev_info);
 
    return ROGUE_LLS_CDM_CONTEXT_RESUME_BUFFER_ALIGNMENT;
 }
