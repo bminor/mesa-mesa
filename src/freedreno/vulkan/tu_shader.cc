@@ -1160,6 +1160,7 @@ lower_fdm_filter(const nir_instr *instr, const void *data)
 
    nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
    return intrin->intrinsic == nir_intrinsic_load_frag_size ||
+      intrin->intrinsic == nir_intrinsic_load_frag_coord_gmem_ir3 ||
       (intrin->intrinsic == nir_intrinsic_load_frag_coord &&
        options->adjust_fragcoord);
 }
@@ -1207,6 +1208,10 @@ lower_fdm_instr(struct nir_builder *b, nir_instr *instr, void *data)
                       nir_channel(b, xy, 1),
                       nir_channel(b, unscaled_coord, 2),
                       nir_channel(b, unscaled_coord, 3));
+   }
+
+   if (intrin->intrinsic == nir_intrinsic_load_frag_coord_gmem_ir3) {
+      return nir_load_frag_coord_unscaled_ir3(b);
    }
 
    assert(intrin->intrinsic == nir_intrinsic_load_frag_size);
@@ -2771,9 +2776,9 @@ tu_shader_create(struct tu_device *dev,
           * multiview is enabled.
           */
          .use_view_id_for_layer = key->multiview_mask != 0,
-         .unscaled_depth_stencil_ir3 =
+         .gmem_depth_stencil_ir3 =
             key->dynamic_renderpass && !(key->read_only_input_attachments & 1),
-         .unscaled_input_attachment_ir3 =
+         .gmem_input_attachment_ir3 =
             key->dynamic_renderpass ?
             ~(key->read_only_input_attachments >> 1) :
             key->unscaled_input_fragcoord,

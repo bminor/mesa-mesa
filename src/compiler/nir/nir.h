@@ -6043,8 +6043,8 @@ bool nir_lower_idiv(nir_shader *shader, const nir_lower_idiv_options *options);
 typedef struct nir_input_attachment_options {
    bool use_ia_coord_intrin;
    bool use_view_id_for_layer;
-   bool unscaled_depth_stencil_ir3;
-   uint32_t unscaled_input_attachment_ir3;
+   bool gmem_depth_stencil_ir3;
+   uint32_t gmem_input_attachment_ir3;
 } nir_input_attachment_options;
 
 bool nir_lower_input_attachments(nir_shader *shader,
