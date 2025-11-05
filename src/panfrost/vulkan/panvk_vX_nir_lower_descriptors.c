@@ -1012,22 +1012,9 @@ lower_input_attachment_load(nir_builder *b, nir_intrinsic_instr *intr,
    }
    nir_push_else(b, NULL);
    {
-      load_img =
-         intr->intrinsic == nir_intrinsic_image_deref_sparse_load
-            ? nir_image_deref_sparse_load(
-                 b, intr->num_components, intr->def.bit_size, intr->src[0].ssa,
-                 intr->src[1].ssa, intr->src[2].ssa, intr->src[3].ssa,
-                 .image_dim = nir_intrinsic_image_dim(intr),
-                 .image_array = nir_intrinsic_image_array(intr),
-                 .format = nir_intrinsic_format(intr),
-                 .access = nir_intrinsic_access(intr), .dest_type = dest_type)
-            : nir_image_deref_load(
-                 b, intr->num_components, intr->def.bit_size, intr->src[0].ssa,
-                 intr->src[1].ssa, intr->src[2].ssa, intr->src[3].ssa,
-                 .image_dim = nir_intrinsic_image_dim(intr),
-                 .image_array = nir_intrinsic_image_array(intr),
-                 .format = nir_intrinsic_format(intr),
-                 .access = nir_intrinsic_access(intr), .dest_type = dest_type);
+      nir_instr *load_clone = nir_instr_clone(b->shader, &intr->instr);
+      nir_builder_instr_insert(b, load_clone);
+      load_img = &nir_instr_as_intrinsic(load_clone)->def;
    }
    nir_pop_if(b, NULL);
 
