@@ -6014,6 +6014,11 @@ bifrost_postprocess_nir(nir_shader *nir, unsigned gpu_id)
                   VARYING_BIT_PSIZ, false);
       }
 
+      /* nir_lower[_explicit]_io is lazy and emits mul+add chains even
+       * for offsets it could figure out are constant.  Do some
+       * constant folding before pan_nir_lower_store_component below.
+       */
+      NIR_PASS(_, nir, nir_opt_constant_folding);
       NIR_PASS(_, nir, pan_nir_lower_store_component);
    }
 

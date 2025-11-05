@@ -519,12 +519,6 @@ panfrost_create_shader_state(struct pipe_context *pctx,
    if (dev->arch >= 6 && nir->info.stage == MESA_SHADER_FRAGMENT)
       NIR_PASS(_, nir, pan_nir_lower_noperspective_fs);
 
-   /* nir_lower[_explicit]_io is lazy and emits mul+add chains even for
-    * offsets it could figure out are constant.  Do some constant folding
-    * before bifrost_nir_lower_store_component below.
-    */
-   NIR_PASS(_, nir, nir_opt_constant_folding);
-
    pan_shader_postprocess(nir, panfrost_device_gpu_id(dev));
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT)
