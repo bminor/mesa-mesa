@@ -227,6 +227,13 @@ remap_patch_urb_offsets(nir_block *block, nir_builder *b,
                            offset->ssa);
 
                nir_src_rewrite(offset, total_offset);
+
+               /* Putting an address into offset_src requires that NIR
+                * validation of IO intrinsics is disabled.
+                */
+               nir_io_semantics io_sem = nir_intrinsic_io_semantics(intrin);
+               io_sem.no_validate = 1;
+               nir_intrinsic_set_io_semantics(intrin, io_sem);
             }
          }
       }
