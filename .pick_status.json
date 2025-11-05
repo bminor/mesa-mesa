@@ -1374,7 +1374,7 @@
         "description": "glsl: assign block indices in the order they appear",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "be5a15f11d77369fc6617bf7b1f01c47451bf043",
         "notes": null
