@@ -1378,8 +1378,14 @@ panvk_compile_shader(struct panvk_device *dev,
        * lowering for v9+.
        */
       nir_assign_io_var_locations(nir, nir_var_shader_in);
+
 #if PAN_ARCH >= 9
-      variant->desc_info.max_varying_loads = nir->num_inputs;
+      /* LD_VAR_BUF[_IMM] takes an 8-bit offset, limiting its use to 16 or
+       * less varyings, assuming highp vec4.
+       */
+      inputs.valhall.use_ld_var_buf = nir->num_inputs <= 16;
+      variant->desc_info.fs_varying_attr_desc_count =
+         inputs.valhall.use_ld_var_buf ? 0 : nir->num_inputs;
 #endif
 
       panvk_lower_nir(dev, nir, info->set_layout_count, info->set_layouts,
@@ -1387,11 +1393,6 @@ panvk_compile_shader(struct panvk_device *dev,
 
       nir_assign_io_var_locations(nir, nir_var_shader_out);
       panvk_lower_nir_io(nir);
-
-#if PAN_ARCH >= 9
-      /* Use LD_VAR_BUF[_IMM] for varyings if possible. */
-      inputs.valhall.use_ld_var_buf = panvk_use_ld_var_buf(variant);
-#endif
 
       variant->own_bin = true;
 
@@ -1586,7 +1587,7 @@ shader_desc_info_deserialize(struct panvk_device *dev,
    blob_copy_bytes(blob, shader->desc_info.dyn_bufs.map,
                    sizeof(*shader->desc_info.dyn_bufs.map) *
                       shader->desc_info.dyn_bufs.count);
-   shader->desc_info.max_varying_loads = blob_read_uint32(blob);
+   shader->desc_info.fs_varying_attr_desc_count = blob_read_uint32(blob);
 #endif
 
    return VK_SUCCESS;
@@ -1736,7 +1737,7 @@ shader_desc_info_serialize(struct blob *blob,
    blob_write_bytes(blob, shader->desc_info.dyn_bufs.map,
                     sizeof(*shader->desc_info.dyn_bufs.map) *
                        shader->desc_info.dyn_bufs.count);
-   blob_write_uint32(blob, shader->desc_info.max_varying_loads);
+   blob_write_uint32(blob, shader->desc_info.fs_varying_attr_desc_count);
 #endif
 }
 

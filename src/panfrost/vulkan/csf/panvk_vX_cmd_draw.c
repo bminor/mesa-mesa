@@ -418,10 +418,9 @@ prepare_fs_driver_set(struct panvk_cmd_buffer *cmdbuf)
       &cmdbuf->state.gfx.desc_state;
    /* If the shader is using LD_VAR_BUF[_IMM], we do not have to set up
     * Attribute Descriptors for varying loads. */
-   uint32_t num_varying_attr_descs =
-      panvk_use_ld_var_buf(fs) ? 0 : fs->desc_info.max_varying_loads;
-   uint32_t desc_count =
-      fs->desc_info.dyn_bufs.count + num_varying_attr_descs + 1;
+   const uint32_t desc_count =
+      fs->desc_info.fs_varying_attr_desc_count +
+      fs->desc_info.dyn_bufs.count + 1;
    struct pan_ptr driver_set = panvk_cmd_alloc_dev_mem(
       cmdbuf, desc, desc_count * PANVK_DESCRIPTOR_SIZE, PANVK_DESCRIPTOR_SIZE);
    struct panvk_opaque_desc *descs = driver_set.cpu;
@@ -429,17 +428,18 @@ prepare_fs_driver_set(struct panvk_cmd_buffer *cmdbuf)
    if (desc_count && !driver_set.gpu)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
-   if (num_varying_attr_descs > 0)
+   if (fs->desc_info.fs_varying_attr_desc_count > 0)
       emit_varying_descs(cmdbuf, (struct mali_attribute_packed *)(&descs[0]));
 
    /* Dummy sampler always comes right after the varyings. */
-   pan_cast_and_pack(&descs[num_varying_attr_descs], SAMPLER, cfg) {
+   const uint32_t sampler_idx = fs->desc_info.fs_varying_attr_desc_count;
+   pan_cast_and_pack(&descs[sampler_idx], SAMPLER, cfg) {
       cfg.clamp_integer_array_indices = false;
    }
 
    panvk_per_arch(cmd_fill_dyn_bufs)(
       desc_state, fs,
-      (struct mali_buffer_packed *)(&descs[num_varying_attr_descs + 1]));
+      (struct mali_buffer_packed *)(&descs[sampler_idx + 1]));
 
    fs_desc_state->driver_set.dev_addr = driver_set.gpu;
    fs_desc_state->driver_set.size = desc_count * PANVK_DESCRIPTOR_SIZE;

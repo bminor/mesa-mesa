@@ -386,7 +386,7 @@ struct panvk_shader_variant {
          uint32_t map[MAX_DYNAMIC_BUFFERS];
          uint32_t count;
       } dyn_bufs;
-      uint32_t max_varying_loads;
+      uint32_t fs_varying_attr_desc_count;
 #endif
    } desc_info;
 
@@ -541,18 +541,6 @@ struct panvk_internal_shader {
    struct panvk_priv_mem spd;
 #endif
 };
-
-#if PAN_ARCH >= 9
-static inline bool
-panvk_use_ld_var_buf(const struct panvk_shader_variant *shader)
-{
-   /* LD_VAR_BUF[_IMM] takes an 8-bit offset, limiting its use to 16 or less
-    * varyings, assuming highp vec4. */
-   if (shader->desc_info.max_varying_loads <= 16)
-      return true;
-   return false;
-}
-#endif
 
 VK_DEFINE_NONDISP_HANDLE_CASTS(panvk_internal_shader, vk.base, VkShaderEXT,
                                VK_OBJECT_TYPE_SHADER_EXT)

@@ -1345,10 +1345,9 @@ panvk_per_arch(nir_lower_descriptors)(
    ctx.desc_info.num_varying_attr_descs = 0;
    /* We require Attribute Descriptors if we cannot use LD_VAR_BUF[_IMM] for
     * varyings. */
-   if (nir->info.stage == MESA_SHADER_FRAGMENT &&
-       !panvk_use_ld_var_buf(shader))
+   if (nir->info.stage == MESA_SHADER_FRAGMENT)
       ctx.desc_info.num_varying_attr_descs =
-         shader->desc_info.max_varying_loads;
+         shader->desc_info.fs_varying_attr_desc_count;
 #endif
    create_copy_table(nir, &ctx);
    upload_shader_desc_info(dev, shader, &ctx.desc_info);
