@@ -436,6 +436,17 @@ panvk_android_import_ahb_memory(VkDevice device,
       buf_handle = dedicated_info->buffer;
       result = panvk_android_get_buffer_mem_reqs(device, buf_handle, dma_buf_fd,
                                                  &mem_reqs);
+      if (result == VK_SUCCESS &&
+          pAllocateInfo->allocationSize > mem_reqs.size) {
+         /* For AHB VkBuffer import, the allocationSize comes from the raw
+          * external AHB props query and it can be larger than the underlying
+          * buffer memory requirement. So we must respect the allocationSize
+          * for the actual mem import to support mapping the whole AHB size,
+          * and the dedicated buffer info has to be stripped to obey the spec.
+          */
+         mem_reqs.size = pAllocateInfo->allocationSize;
+         buf_handle = VK_NULL_HANDLE;
+      }
    } else {
       mem_reqs.size = pAllocateInfo->allocationSize;
       mem_reqs.memoryTypeBits =

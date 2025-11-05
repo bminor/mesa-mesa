@@ -394,7 +394,7 @@
         "description": "panvk: fix mem alloc size for VkBuffer backed by imported blob AHB",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "66bbd9eec8336ffcb2112bb34b78f48ee363328a",
         "notes": null
