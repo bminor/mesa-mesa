@@ -922,11 +922,6 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
    NIR_PASS(_, nir, nir_lower_io, nir_var_shader_in | nir_var_shader_out,
             glsl_type_size, nir_lower_io_use_interpolated_input_intrinsics);
 
-   if (nir->info.stage == MESA_SHADER_VERTEX)
-      NIR_PASS(_, nir, pan_nir_lower_noperspective_vs);
-   if (nir->info.stage == MESA_SHADER_FRAGMENT)
-      NIR_PASS(_, nir, pan_nir_lower_noperspective_fs);
-
    pan_shader_postprocess(nir, compile_input->gpu_id);
 
    if (stage == MESA_SHADER_VERTEX)

@@ -514,11 +514,6 @@ panfrost_create_shader_state(struct pipe_context *pctx,
    NIR_PASS(_, nir, nir_lower_io, nir_var_shader_in | nir_var_shader_out,
             glsl_type_size, nir_lower_io_use_interpolated_input_intrinsics);
 
-   if (dev->arch >= 6 && nir->info.stage == MESA_SHADER_VERTEX)
-      NIR_PASS(_, nir, pan_nir_lower_noperspective_vs);
-   if (dev->arch >= 6 && nir->info.stage == MESA_SHADER_FRAGMENT)
-      NIR_PASS(_, nir, pan_nir_lower_noperspective_fs);
-
    pan_shader_postprocess(nir, panfrost_device_gpu_id(dev));
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT)
