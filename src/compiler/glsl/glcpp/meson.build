@@ -28,10 +28,16 @@ glcpp_lex = custom_target(
   command : [prog_flex, '-o', '@OUTPUT@', '@INPUT@'],
 )
 
+glcpp_header_gen_deps = declare_dependency(
+  sources : [
+    glcpp_parse[1],
+  ],
+)
+
 libglcpp = static_library(
   'glcpp',
   [glcpp_lex, glcpp_parse, files('glcpp.h', 'pp.c')],
-  dependencies : idep_mesautil,
+  dependencies : [idep_mesautil, glcpp_header_gen_deps],
   include_directories : [inc_include, inc_src, inc_mesa, inc_gallium, inc_gallium_aux],
   c_args : [no_override_init_args, c_msvc_compat_args],
   cpp_args : [cpp_msvc_compat_args],
