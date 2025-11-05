@@ -1144,7 +1144,7 @@
         "description": "anv: avoid invalid timestamp generation due to skipped commands",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0147908a899958fe7ef1f74218ee20bf1a24175c",
         "notes": null
