@@ -138,6 +138,7 @@ begin_end_tp('binning_ib')
 begin_end_tp('concurrent_binning_ib')
 begin_end_tp('draw_ib_sysmem')
 begin_end_tp('draw_ib_gmem')
+begin_end_tp('concurrent_binning_barrier')
 
 begin_end_tp('generic_clear',
     args=[Arg(type='enum VkFormat',  var='format',  c_format='%s', to_prim_type='vk_format_description({})->short_name'),

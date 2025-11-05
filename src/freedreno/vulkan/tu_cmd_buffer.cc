@@ -365,6 +365,8 @@ tu_emit_cache_flush(struct tu_cmd_buffer *cmd_buffer)
    tu6_emit_flushes<CHIP>(cmd_buffer, cs, cache);
 
    if ((flushes & TU_CMD_FLAG_WAIT_FOR_BR) && CHIP >= A7XX) {
+      trace_start_concurrent_binning_barrier(&cmd_buffer->trace, cs, cmd_buffer);
+
       tu_cs_emit_pkt7(cs, CP_THREAD_CONTROL, 1);
       tu_cs_emit(cs, CP_THREAD_CONTROL_0_THREAD(CP_SET_THREAD_BOTH));
 
@@ -405,6 +407,8 @@ tu_emit_cache_flush(struct tu_cmd_buffer *cmd_buffer)
       tu7_wait_onchip_val(cs, TU_ONCHIP_BARRIER, 0);
 
       tu7_thread_control(cs, CP_SET_THREAD_BR);
+
+      trace_end_concurrent_binning_barrier(&cmd_buffer->trace, cs);
    }
 }
 TU_GENX(tu_emit_cache_flush);
