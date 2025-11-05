@@ -497,11 +497,12 @@ Our documentation is written as `reStructuredText`_ files in the
 .. code-block:: sh
 
    # Install dependencies (adapt for your distribution)
-   apk add coreutils graphviz py3-clang clang-dev musl-dev linux-headers
-   pip3 install sphinx===5.1.1 mako===1.2.3 hawkmoth===0.16.0
+   apk add coreutils graphviz clang-dev musl-dev linux-headers
+   python3 -m venv docs-build
+   ./docs-build/bin/pip3 install sphinx===8.2.3 mako===1.2.3 hawkmoth===0.19.0 clang===$(llvm-config --version)
 
-   # Build docs
-   sphinx-build -W -b html docs docs-html/
+   # Build docs (on Debian, set LD_LIBRARY_PATH to /usr/lib/llvm-VERSION/lib so it can find libclang.so)
+   ./docs-build/bin/sphinx-build -W -b html docs docs-html/
 
 The preferred language of the documentation is US English. This
 doesn't mean that everyone is expected to pay close attention to
