@@ -251,6 +251,15 @@ genX(cmd_buffer_emit_state_base_address)(struct anv_cmd_buffer *cmd_buffer)
    fill_state_base_addr(cmd_buffer, &sba);
 
 #if GFX_VERx10 >= 125
+   trace_intel_begin_sba(cmd_buffer->batch.trace);
+
+   /* Disable stall tracing to avoid leaving a tracepoint with random
+    * timestamp if the STATE_BASE_ADDRESS instruction sequence is skipped
+    * over.
+    */
+   struct u_trace *tmp_trace = cmd_buffer->batch.trace;
+   cmd_buffer->batch.trace = NULL;
+
    struct mi_builder b;
    mi_builder_init(&b, device->info, &cmd_buffer->batch);
    mi_builder_set_mocs(&b, isl_mocs(&device->isl_dev, 0, false));
@@ -369,6 +378,10 @@ genX(cmd_buffer_emit_state_base_address)(struct anv_cmd_buffer *cmd_buffer)
                 mi_imm(sba.BindlessSurfaceStateBaseAddress.offset));
 
    mi_goto_target(&b, &t);
+
+   cmd_buffer->batch.trace = tmp_trace;
+
+   trace_intel_end_sba(cmd_buffer->batch.trace);
 #endif
 
 #if GFX_VERx10 >= 125
