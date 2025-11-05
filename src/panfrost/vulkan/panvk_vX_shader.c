@@ -1337,11 +1337,8 @@ panvk_compile_shader(struct panvk_device *dev,
       .robust_descriptors = dev->vk.enabled_features.nullDescriptor,
    };
 
-   if (info->stage == MESA_SHADER_FRAGMENT && state != NULL &&
-       state->ms != NULL && state->ms->sample_shading_enable)
-      nir->info.fs.uses_sample_shading = true;
-
-   if (info->stage == MESA_SHADER_VERTEX) {
+   switch (info->stage) {
+   case MESA_SHADER_VERTEX: {
       struct pan_compile_inputs input_variants[PANVK_VS_VARIANTS] = {0};
       nir_shader *nir_variants[PANVK_VS_VARIANTS] = {0};
 
@@ -1372,19 +1369,25 @@ panvk_compile_shader(struct panvk_device *dev,
             return result;
          }
       }
-   } else {
+      break;
+   }
+
+   case MESA_SHADER_FRAGMENT: {
       struct panvk_shader_variant *variant =
          (struct panvk_shader_variant *)panvk_shader_only_variant(shader);
-      variant->own_bin = true;
+
+      if (state && state->ms && state->ms->sample_shading_enable)
+         nir->info.fs.uses_sample_shading = true;
 
       panvk_lower_nir(dev, nir, info->set_layout_count, info->set_layouts,
                       info->robustness, state, &inputs, variant);
 
 #if PAN_ARCH >= 9
-      if (info->stage == MESA_SHADER_FRAGMENT)
-         /* Use LD_VAR_BUF[_IMM] for varyings if possible. */
-         inputs.valhall.use_ld_var_buf = panvk_use_ld_var_buf(variant);
+      /* Use LD_VAR_BUF[_IMM] for varyings if possible. */
+      inputs.valhall.use_ld_var_buf = panvk_use_ld_var_buf(variant);
 #endif
+
+      variant->own_bin = true;
 
       result = panvk_compile_nir(dev, nir, info->flags, &inputs, state,
                                  noperspective_varyings, variant);
@@ -1392,6 +1395,29 @@ panvk_compile_shader(struct panvk_device *dev,
          panvk_shader_destroy(&dev->vk, &shader->vk, pAllocator);
          return result;
       }
+      break;
+   }
+
+   case MESA_SHADER_COMPUTE: {
+      struct panvk_shader_variant *variant =
+         (struct panvk_shader_variant *)panvk_shader_only_variant(shader);
+
+      panvk_lower_nir(dev, nir, info->set_layout_count, info->set_layouts,
+                      info->robustness, state, &inputs, variant);
+
+      variant->own_bin = true;
+
+      result = panvk_compile_nir(dev, nir, info->flags, &inputs, state,
+                                 noperspective_varyings, variant);
+      if (result != VK_SUCCESS) {
+         panvk_shader_destroy(&dev->vk, &shader->vk, pAllocator);
+         return result;
+      }
+      break;
+   }
+
+   default:
+      UNREACHABLE("Unknown shader stage");
    }
 
    panvk_shader_foreach_variant(shader, variant) {
