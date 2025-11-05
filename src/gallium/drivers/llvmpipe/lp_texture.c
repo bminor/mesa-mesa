@@ -36,6 +36,7 @@
 #include "pipe/p_defines.h"
 
 #include "util/detect_os.h"
+#include "util/os_file.h"
 #include "util/simple_mtx.h"
 #include "util/u_inlines.h"
 #include "util/u_cpu_detect.h"
