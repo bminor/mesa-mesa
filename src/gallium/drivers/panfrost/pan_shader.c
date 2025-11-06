@@ -159,8 +159,7 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
          pan_get_fixed_varying_mask(s->info.outputs_written);
 
       if (s->info.has_transform_feedback_varyings) {
-         NIR_PASS(_, s, nir_io_add_const_offset_to_base,
-                  nir_var_shader_in | nir_var_shader_out);
+         NIR_PASS(_, s, nir_opt_constant_folding);
          NIR_PASS(_, s, nir_io_add_intrinsic_xfb_info);
          NIR_PASS(_, s, pan_lower_xfb);
       }

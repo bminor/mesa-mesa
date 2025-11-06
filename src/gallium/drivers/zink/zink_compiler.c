@@ -4067,10 +4067,6 @@ zink_shader_compile(struct zink_screen *screen, bool can_shobj, struct zink_shad
    if (inlined_uniforms) {
       optimize_nir(nir, zs, true);
 
-      /* This must be done again. */
-      NIR_PASS(_, nir, nir_io_add_const_offset_to_base, nir_var_shader_in |
-                                                       nir_var_shader_out);
-
       nir_function_impl *impl = nir_shader_get_entrypoint(nir);
       if (impl->ssa_alloc > ZINK_ALWAYS_INLINE_LIMIT)
          zs->can_inline = false;

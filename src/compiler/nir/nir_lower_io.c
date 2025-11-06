@@ -1261,11 +1261,10 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
             (renumber_vs_inputs ? nir_lower_io_lower_64bit_to_32_new : nir_lower_io_lower_64bit_to_32) |
                nir_lower_io_use_interpolated_input_intrinsics);
 
-   /* nir_io_add_const_offset_to_base needs actual constants. */
+   /* Fold constant offset srcs for IO. */
    NIR_PASS(_, nir, nir_opt_constant_folding);
-   NIR_PASS(_, nir, nir_io_add_const_offset_to_base, nir_var_shader_in | nir_var_shader_out);
 
-   /* This must be called after nir_io_add_const_offset_to_base. */
+   /* This must be called after folding constant offset srcs. */
    if (nir->info.stage != MESA_SHADER_MESH &&
        !(nir->options->support_indirect_inputs & BITFIELD_BIT(nir->info.stage)))
       NIR_PASS(_, nir, nir_lower_io_indirect_loads, nir_var_shader_in);

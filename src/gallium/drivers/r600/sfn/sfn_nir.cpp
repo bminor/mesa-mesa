@@ -795,8 +795,8 @@ r600_lower_and_optimize_nir(nir_shader *sh,
       NIR_PASS(_, sh, nir_lower_indirect_derefs_to_if_else_trees,
                nir_var_function_temp, 10);
 
+   /* Fold constant offset srcs for IO. */
    NIR_PASS(_, sh, nir_opt_constant_folding);
-   NIR_PASS(_, sh, nir_io_add_const_offset_to_base, io_modes);
 
    NIR_PASS(_, sh, nir_lower_alu_to_scalar, r600_lower_to_scalar_instr_filter, NULL);
    NIR_PASS(_, sh, nir_lower_phis_to_scalar, NULL, NULL);

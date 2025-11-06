@@ -131,7 +131,6 @@ else
   'nir_inline_uniforms.c',
   'nir_instr_set.c',
   'nir_instr_set.h',
-  'nir_io_add_const_offset_to_base.c',
   'nir_io_add_xfb_info.c',
   'nir_legacy.c',
   'nir_legacy.h',

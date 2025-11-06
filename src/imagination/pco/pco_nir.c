@@ -633,10 +633,10 @@ void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
             nir_var_function_temp | nir_var_shader_temp,
             NULL);
 
+   /* Fold constant offset srcs for IO. */
    NIR_PASS(_,
             nir,
-            nir_io_add_const_offset_to_base,
-            nir_var_shader_in | nir_var_shader_out);
+            nir_opt_constant_folding);
 
    NIR_PASS(_,
             nir,
@@ -888,10 +888,6 @@ void pco_lower_nir(pco_ctx *ctx, nir_shader *nir, pco_data *data)
 
    NIR_PASS(_, nir, nir_opt_dce);
    NIR_PASS(_, nir, nir_opt_constant_folding);
-   NIR_PASS(_,
-            nir,
-            nir_io_add_const_offset_to_base,
-            nir_var_shader_in | nir_var_shader_out);
 
    /* Internal shaders will be using invalid32 types at this stage. */
    if (!nir->info.internal)

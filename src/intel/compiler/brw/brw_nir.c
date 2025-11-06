@@ -643,10 +643,8 @@ brw_nir_lower_vs_inputs(nir_shader *nir)
    NIR_PASS(_, nir, nir_lower_io, nir_var_shader_in, type_size_vec4,
             nir_lower_io_lower_64bit_to_32_new);
 
-   /* This pass needs actual constants */
+   /* Fold constant offset srcs for IO. */
    NIR_PASS(_, nir, nir_opt_constant_folding);
-
-   NIR_PASS(_, nir, nir_io_add_const_offset_to_base, nir_var_shader_in);
 
    /* Update shader_info::dual_slot_inputs */
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
@@ -784,10 +782,8 @@ brw_nir_lower_vue_inputs(nir_shader *nir,
    NIR_PASS(_, nir, nir_lower_io, nir_var_shader_in, type_size_vec4,
             nir_lower_io_lower_64bit_to_32);
 
-   /* This pass needs actual constants */
+   /* Fold constant offset srcs for IO. */
    NIR_PASS(_, nir, nir_opt_constant_folding);
-
-   NIR_PASS(_, nir, nir_io_add_const_offset_to_base, nir_var_shader_in);
 
    nir_foreach_function_impl(impl, nir) {
       nir_foreach_block(block, impl) {
@@ -837,11 +833,10 @@ brw_nir_lower_tes_inputs(nir_shader *nir,
    NIR_PASS(_, nir, nir_lower_io, nir_var_shader_in, type_size_vec4,
             nir_lower_io_lower_64bit_to_32);
 
-   /* Run add_const_offset_to_base to allow update base/io_semantic::location
+   /* Run nir_opt_constant_folding to allow update base/io_semantic::location
     * for the remapping pass to look into the VUE mapping.
     */
    NIR_PASS(_, nir, nir_opt_constant_folding);
-   NIR_PASS(_, nir, nir_io_add_const_offset_to_base, nir_var_shader_in);
 
    NIR_PASS(_, nir, remap_tess_levels, devinfo,
             nir->info.tess._primitive_mode);
@@ -852,8 +847,6 @@ brw_nir_lower_tes_inputs(nir_shader *nir,
     */
    NIR_PASS(_, nir, nir_opt_algebraic);
    NIR_PASS(_, nir, nir_opt_constant_folding);
-
-   NIR_PASS(_, nir, nir_io_add_const_offset_to_base, nir_var_shader_in);
 
    NIR_PASS(_, nir, lower_inputs_to_urb_intrinsics, devinfo);
 }
@@ -1093,10 +1086,8 @@ brw_nir_lower_fs_inputs(nir_shader *nir,
                indirect_primitive_id);
    }
 
-   /* This pass needs actual constants */
+   /* Fold constant offset srcs for IO. */
    NIR_PASS(_, nir, nir_opt_constant_folding);
-
-   NIR_PASS(_, nir, nir_io_add_const_offset_to_base, nir_var_shader_in);
 }
 
 void
@@ -1137,11 +1128,10 @@ brw_nir_lower_tcs_outputs(nir_shader *nir,
    NIR_PASS(_, nir, nir_lower_io, nir_var_shader_out, type_size_vec4,
             nir_lower_io_lower_64bit_to_32);
 
-   /* Run add_const_offset_to_base to allow update base/io_semantic::location
+   /* Run nir_opt_constant_folding to allow update base/io_semantic::location
     * for the remapping pass to look into the VUE mapping.
     */
    NIR_PASS(_, nir, nir_opt_constant_folding);
-   NIR_PASS(_, nir, nir_io_add_const_offset_to_base, nir_var_shader_out);
 
    NIR_PASS(_, nir, remap_tess_levels, devinfo, tes_primitive_mode);
    NIR_PASS(_, nir, remap_patch_urb_offsets, vue_map);
@@ -1150,7 +1140,6 @@ brw_nir_lower_tcs_outputs(nir_shader *nir,
     * just fold it for the backend.
     */
    NIR_PASS(_, nir, nir_opt_constant_folding);
-   NIR_PASS(_, nir, nir_io_add_const_offset_to_base, nir_var_shader_out);
 
    NIR_PASS(_, nir, lower_outputs_to_urb_intrinsics, devinfo);
 }

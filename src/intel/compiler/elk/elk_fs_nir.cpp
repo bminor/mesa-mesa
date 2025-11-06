@@ -2502,8 +2502,8 @@ get_indirect_offset(nir_to_elk_state &ntb, nir_intrinsic_instr *instr)
    nir_src *offset_src = nir_get_io_offset_src(instr);
 
    if (nir_src_is_const(*offset_src)) {
-      /* The only constant offset we should find is 0.  elk_nir.c's
-       * add_const_offset_to_base() will fold other constant offsets
+      /* The only constant offset we should find is 0.
+       * nir_opt_constant_folding will fold other constant offsets
        * into the "base" index.
        */
       assert(nir_src_as_uint(*offset_src) == 0);

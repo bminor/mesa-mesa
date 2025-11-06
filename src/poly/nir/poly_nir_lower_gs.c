@@ -1188,8 +1188,8 @@ poly_nir_lower_gs(nir_shader *gs, nir_shader **gs_count, nir_shader **gs_copy,
 {
    /* Lower I/O as assumed by the rest of GS lowering */
    if (gs->xfb_info != NULL) {
-      NIR_PASS(_, gs, nir_io_add_const_offset_to_base,
-               nir_var_shader_in | nir_var_shader_out);
+      /* Fold constant offset srcs for IO. */
+      NIR_PASS(_, gs, nir_opt_constant_folding);
       NIR_PASS(_, gs, nir_io_add_intrinsic_xfb_info);
    }
 

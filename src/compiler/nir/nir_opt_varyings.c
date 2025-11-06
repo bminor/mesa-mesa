@@ -1273,7 +1273,7 @@ gather_inputs(struct nir_builder *builder, nir_intrinsic_instr *intr, void *cb_d
    /* nir_lower_io_to_scalar is required before this */
    assert(intr->def.num_components == 1);
    /* Non-zero constant offsets should have been folded by
-    * nir_io_add_const_offset_to_base.
+    * nir_opt_constant_folding.
     */
    nir_src offset = *nir_get_io_offset_src(intr);
    assert(!nir_src_is_const(offset) || nir_src_as_uint(offset) == 0);
@@ -1515,7 +1515,7 @@ gather_outputs(struct nir_builder *builder, nir_intrinsic_instr *intr, void *cb_
    }
 
    /* Non-zero constant offsets should have been folded by
-    * nir_io_add_const_offset_to_base.
+    * nir_opt_constant_folding.
     */
    nir_src offset = *nir_get_io_offset_src(intr);
    assert(!nir_src_is_const(offset) || nir_src_as_uint(offset) == 0);

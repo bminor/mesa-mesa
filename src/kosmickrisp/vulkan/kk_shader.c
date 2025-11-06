@@ -286,8 +286,8 @@ kk_lower_vs_vbo(nir_shader *nir, const struct vk_graphics_pipeline_state *state)
           "Fixed-function attributes not used in Vulkan");
    NIR_PASS(_, nir, nir_recompute_io_bases, nir_var_shader_in);
    /* the shader_out portion of this is load-bearing even for tess eval */
-   NIR_PASS(_, nir, nir_io_add_const_offset_to_base,
-            nir_var_shader_in | nir_var_shader_out);
+   /* Fold constant offset srcs for IO. */
+   NIR_PASS(_, nir, nir_opt_constant_folding);
 
    struct kk_attribute attributes[KK_MAX_ATTRIBS] = {};
    uint64_t attribs_read = nir->info.inputs_read >> VERT_ATTRIB_GENERIC0;
@@ -368,7 +368,8 @@ kk_lower_fs_blend(nir_shader *nir,
          };
       }
    }
-   NIR_PASS(_, nir, nir_io_add_const_offset_to_base, nir_var_shader_out);
+   /* Fold constant offset srcs for IO. */
+   NIR_PASS(_, nir, nir_opt_constant_folding);
    NIR_PASS(_, nir, nir_lower_blend, &opts);
 }
 
@@ -730,8 +731,6 @@ nir_opts(nir_shader *nir)
       NIR_PASS(progress, nir, nir_opt_phi_precision);
       NIR_PASS(progress, nir, nir_opt_algebraic);
       NIR_PASS(progress, nir, nir_opt_constant_folding);
-      NIR_PASS(progress, nir, nir_io_add_const_offset_to_base,
-               nir_var_shader_in | nir_var_shader_out);
 
       NIR_PASS(progress, nir, nir_opt_undef);
       NIR_PASS(progress, nir, nir_opt_loop_unroll);

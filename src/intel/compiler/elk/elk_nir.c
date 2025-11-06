@@ -257,10 +257,8 @@ elk_nir_lower_vs_inputs(nir_shader *nir,
    nir_lower_io(nir, nir_var_shader_in, elk_type_size_vec4,
                 nir_lower_io_lower_64bit_to_32);
 
-   /* This pass needs actual constants */
+   /* Fold constant offset srcs for IO. */
    nir_opt_constant_folding(nir);
-
-   nir_io_add_const_offset_to_base(nir, nir_var_shader_in);
 
    elk_nir_apply_attribute_workarounds(nir, vs_attrib_wa_flags);
 
@@ -381,10 +379,8 @@ elk_nir_lower_vue_inputs(nir_shader *nir,
    nir_lower_io(nir, nir_var_shader_in, elk_type_size_vec4,
                 nir_lower_io_lower_64bit_to_32);
 
-   /* This pass needs actual constants */
+   /* Fold constant offset srcs for IO. */
    nir_opt_constant_folding(nir);
-
-   nir_io_add_const_offset_to_base(nir, nir_var_shader_in);
 
    nir_foreach_function_impl(impl, nir) {
       nir_foreach_block(block, impl) {
@@ -429,10 +425,8 @@ elk_nir_lower_tes_inputs(nir_shader *nir, const struct intel_vue_map *vue_map)
    nir_lower_io(nir, nir_var_shader_in, elk_type_size_vec4,
                 nir_lower_io_lower_64bit_to_32);
 
-   /* This pass needs actual constants */
+   /* Fold constant offset srcs for IO. */
    nir_opt_constant_folding(nir);
-
-   nir_io_add_const_offset_to_base(nir, nir_var_shader_in);
 
    nir_foreach_function_impl(impl, nir) {
       nir_builder b = nir_builder_create(impl);
@@ -611,10 +605,8 @@ elk_nir_lower_fs_inputs(nir_shader *nir,
                                 nir_metadata_control_flow,
                                 NULL);
 
-   /* This pass needs actual constants */
+   /* Fold constant offset srcs for IO. */
    nir_opt_constant_folding(nir);
-
-   nir_io_add_const_offset_to_base(nir, nir_var_shader_in);
 }
 
 void
@@ -639,10 +631,8 @@ elk_nir_lower_tcs_outputs(nir_shader *nir, const struct intel_vue_map *vue_map,
    nir_lower_io(nir, nir_var_shader_out, elk_type_size_vec4,
                 nir_lower_io_lower_64bit_to_32);
 
-   /* This pass needs actual constants */
+   /* Fold constant offset srcs for IO. */
    nir_opt_constant_folding(nir);
-
-   nir_io_add_const_offset_to_base(nir, nir_var_shader_out);
 
    nir_foreach_function_impl(impl, nir) {
       nir_builder b = nir_builder_create(impl);

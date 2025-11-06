@@ -157,10 +157,8 @@ radv_nir_lower_io(struct radv_device *device, nir_shader *nir)
                nir_lower_io_lower_64bit_to_32 | nir_lower_io_use_interpolated_input_intrinsics);
    }
 
-   /* This pass needs actual constants */
+   /* Fold constant offset srcs for IO. */
    NIR_PASS(_, nir, nir_opt_constant_folding);
-
-   NIR_PASS(_, nir, nir_io_add_const_offset_to_base, nir_var_shader_in | nir_var_shader_out);
 
    if (nir->xfb_info) {
       NIR_PASS(_, nir, nir_io_add_intrinsic_xfb_info);
