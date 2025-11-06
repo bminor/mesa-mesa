@@ -193,7 +193,6 @@ radv-tahiti-vkcts:
   timeout: 1h
   variables:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 50
-    RADV_PERFTEST: video_decode,video_encode
 
 radv-hawaii-vkcts:
   extends:
@@ -203,7 +202,6 @@ radv-hawaii-vkcts:
   timeout: 1h
   variables:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 50
-    RADV_PERFTEST: video_decode,video_encode
 
 radv-polaris10-vkcts:
   extends:
