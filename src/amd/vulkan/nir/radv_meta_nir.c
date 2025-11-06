@@ -485,6 +485,39 @@ radv_meta_nir_build_blit2d_copy_fragment_shader_stencil(struct radv_device *devi
 }
 
 nir_shader *
+radv_meta_nir_build_blit2d_copy_fragment_shader_depth_stencil(struct radv_device *device,
+                                                              radv_meta_nir_texel_fetch_build_func txf_func,
+                                                              const char *name, bool is_3d, bool is_multisampled)
+{
+   const struct glsl_type *vec4 = glsl_vec4_type();
+   const struct glsl_type *vec2 = glsl_vector_type(GLSL_TYPE_FLOAT, 2);
+   nir_builder b = radv_meta_nir_init_shader(device, MESA_SHADER_FRAGMENT, "%s", name);
+
+   nir_variable *tex_pos_in = nir_variable_create(b.shader, nir_var_shader_in, vec2, "v_tex_pos");
+   tex_pos_in->data.location = VARYING_SLOT_VAR0;
+
+   nir_def *pos_int = nir_f2i32(&b, nir_load_var(&b, tex_pos_in));
+   nir_def *tex_pos = nir_trim_vector(&b, pos_int, 2);
+
+   /* Depth */
+   nir_variable *depth_out = nir_variable_create(b.shader, nir_var_shader_out, vec4, "f_depth");
+   depth_out->data.location = FRAG_RESULT_DEPTH;
+
+   nir_def *depth = txf_func(&b, 0, tex_pos, is_3d, is_multisampled);
+   nir_store_var(&b, depth_out, depth, 0x1);
+
+   /* Stencil */
+   nir_variable *stencil_out = nir_variable_create(b.shader, nir_var_shader_out, vec4, "f_stencil");
+   stencil_out->data.location = FRAG_RESULT_STENCIL;
+
+   nir_def *stencil = txf_func(&b, 1, tex_pos, is_3d, is_multisampled);
+   nir_store_var(&b, stencil_out, stencil, 0x1);
+
+   b.shader->info.fs.uses_sample_shading = is_multisampled;
+   return b.shader;
+}
+
+nir_shader *
 radv_meta_nir_build_itob_compute_shader(struct radv_device *dev, bool is_3d)
 {
    enum glsl_sampler_dim dim = is_3d ? GLSL_SAMPLER_DIM_3D : GLSL_SAMPLER_DIM_2D;
