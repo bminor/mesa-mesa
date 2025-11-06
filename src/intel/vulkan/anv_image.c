@@ -39,7 +39,6 @@
 #include "av1_tables.h"
 
 #define ANV_OFFSET_IMPLICIT UINT64_MAX
-#define ANV_MAX_PLANES 4
 
 static const enum isl_surf_dim
 vk_to_isl_surf_dim[] = {
@@ -2350,11 +2349,11 @@ resolve_ahb_image(struct anv_device *device,
    VkResult result;
 
    VkImageDrmFormatModifierExplicitCreateInfoEXT mod_explicit_info;
-   VkSubresourceLayout layouts[ANV_MAX_PLANES];
+   VkSubresourceLayout layouts[ISL_MODIFIER_MAX_PLANES];
    result = vk_android_get_ahb_layout(mem->vk.ahardware_buffer,
                                       &mod_explicit_info,
                                       layouts,
-                                      ANV_MAX_PLANES);
+                                      ISL_MODIFIER_MAX_PLANES);
    if (result == VK_SUCCESS &&
        mod_explicit_info.drmFormatModifier != DRM_FORMAT_MOD_INVALID) {
       const struct isl_drm_modifier_info *isl_mod_info =
