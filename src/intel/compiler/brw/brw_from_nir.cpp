@@ -7003,6 +7003,14 @@ brw_from_nir_emit_memory_access(nir_to_brw_state &ntb,
    const intel_device_info *devinfo = ntb.devinfo;
    brw_shader &s = ntb.s;
 
+   /* nir_lower_mem_access_bit_sizes should be eliminating non-trivial
+    * writemasks for us, and we fully ignore them here.  Assert that if
+    * they're present, the masks are trivial (all components written).
+    */
+   assert(!nir_intrinsic_has_write_mask(instr) ||
+          nir_intrinsic_write_mask(instr) ==
+          nir_component_mask(instr->num_components));
+
    brw_reg srcs[MEMORY_LOGICAL_NUM_SRCS];
 
    /* Start with some default values for most cases */
