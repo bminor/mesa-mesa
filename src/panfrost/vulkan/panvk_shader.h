@@ -351,6 +351,31 @@ struct panvk_shader_fau_info {
    uint32_t total_count;
 };
 
+struct panvk_shader_desc_info {
+   uint32_t used_set_mask;
+
+#if PAN_ARCH < 9
+   struct {
+      uint32_t map[MAX_DYNAMIC_UNIFORM_BUFFERS];
+      uint32_t count;
+   } dyn_ubos;
+   struct {
+      uint32_t map[MAX_DYNAMIC_STORAGE_BUFFERS];
+      uint32_t count;
+   } dyn_ssbos;
+   struct {
+      struct panvk_priv_mem map;
+      uint32_t count[PANVK_BIFROST_DESC_TABLE_COUNT];
+   } others;
+#else
+   struct {
+      uint32_t map[MAX_DYNAMIC_BUFFERS];
+      uint32_t count;
+   } dyn_bufs;
+   uint32_t fs_varying_attr_desc_count;
+#endif
+};
+
 struct panvk_shader_variant {
    struct pan_shader_info info;
 
@@ -365,30 +390,7 @@ struct panvk_shader_variant {
       } fs;
    };
 
-   struct {
-      uint32_t used_set_mask;
-
-#if PAN_ARCH < 9
-      struct {
-         uint32_t map[MAX_DYNAMIC_UNIFORM_BUFFERS];
-         uint32_t count;
-      } dyn_ubos;
-      struct {
-         uint32_t map[MAX_DYNAMIC_STORAGE_BUFFERS];
-         uint32_t count;
-      } dyn_ssbos;
-      struct {
-         struct panvk_priv_mem map;
-         uint32_t count[PANVK_BIFROST_DESC_TABLE_COUNT];
-      } others;
-#else
-      struct {
-         uint32_t map[MAX_DYNAMIC_BUFFERS];
-         uint32_t count;
-      } dyn_bufs;
-      uint32_t fs_varying_attr_desc_count;
-#endif
-   } desc_info;
+   struct panvk_shader_desc_info desc_info;
 
    struct panvk_shader_fau_info fau;
 
@@ -525,7 +527,7 @@ void panvk_per_arch(nir_lower_descriptors)(
    const struct vk_pipeline_robustness_state *rs, uint32_t set_layout_count,
    struct vk_descriptor_set_layout *const *set_layouts,
    const struct vk_graphics_pipeline_state *state,
-   struct panvk_shader_variant *shader);
+   struct panvk_shader_desc_info *desc_info);
 
 /* This a stripped-down version of panvk_shader for internal shaders that
  * are managed by vk_meta (blend and preload shaders). Those don't need the

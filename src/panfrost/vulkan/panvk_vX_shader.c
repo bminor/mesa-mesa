@@ -771,7 +771,7 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
                 const struct vk_pipeline_robustness_state *rs,
                 const struct vk_graphics_pipeline_state *state,
                 const struct pan_compile_inputs *compile_input,
-                struct panvk_shader_variant *shader)
+                struct panvk_shader_desc_info *desc_info)
 {
    mesa_shader_stage stage = nir->info.stage;
 
@@ -805,7 +805,7 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
             &ycbcr_state);
 
    panvk_per_arch(nir_lower_descriptors)(nir, dev, rs, set_layout_count,
-                                         set_layouts, state, shader);
+                                         set_layouts, state, desc_info);
 
    NIR_PASS(_, nir, nir_split_var_copies);
    NIR_PASS(_, nir, nir_lower_var_copies);
@@ -1332,7 +1332,7 @@ panvk_compile_shader(struct panvk_device *dev,
 
          panvk_lower_nir(dev, nir_variants[v], info->set_layout_count,
                          info->set_layouts, info->robustness,
-                         state, &input_variants[v], variant);
+                         state, &input_variants[v], &variant->desc_info);
 
          /* We need the driver_location to match the vertex attribute
           * location, so we can use the attribute layout described by
@@ -1389,7 +1389,7 @@ panvk_compile_shader(struct panvk_device *dev,
 #endif
 
       panvk_lower_nir(dev, nir, info->set_layout_count, info->set_layouts,
-                      info->robustness, state, &inputs, variant);
+                      info->robustness, state, &inputs, &variant->desc_info);
 
       nir_assign_io_var_locations(nir, nir_var_shader_out);
       panvk_lower_nir_io(nir);
@@ -1410,7 +1410,7 @@ panvk_compile_shader(struct panvk_device *dev,
          (struct panvk_shader_variant *)panvk_shader_only_variant(shader);
 
       panvk_lower_nir(dev, nir, info->set_layout_count, info->set_layouts,
-                      info->robustness, state, &inputs, variant);
+                      info->robustness, state, &inputs, &variant->desc_info);
 
       variant->own_bin = true;
 
