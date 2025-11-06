@@ -1138,8 +1138,6 @@ radv_destroy_device(struct radv_device *device, const VkAllocationCallbacks *pAl
    if (device->capture_replay_arena_vas)
       _mesa_hash_table_u64_destroy(device->capture_replay_arena_vas);
 
-   ac_sqtt_finish(&device->sqtt);
-
    vk_device_finish(&device->vk);
    vk_free(&device->vk.alloc, device);
 }
@@ -1232,8 +1230,6 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
 
    /* PKT3_LOAD_SH_REG_INDEX is supported on GFX8+, but it hangs with compute queues until GFX10.3. */
    device->load_grid_size_from_user_sgpr = pdev->info.gfx_level >= GFX10_3;
-
-   ac_sqtt_init(&device->sqtt);
 
    /* If this is a NULL device, we are done here. */
    if (pdev->info.family_overridden) {
