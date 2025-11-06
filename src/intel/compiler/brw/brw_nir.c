@@ -499,29 +499,16 @@ remap_tess_levels(nir_shader *nir,
                                      nir_metadata_control_flow, &cb);
 }
 
-struct remap_patch_cb_data {
-   const struct intel_device_info *devinfo;
-   const struct intel_vue_map *vue_map;
-};
-
 static bool
 remap_patch_urb_offsets_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
 {
-   struct remap_patch_cb_data *cb_data = data;
-   const struct intel_device_info *devinfo = cb_data->devinfo;
-   const struct intel_vue_map *vue_map = cb_data->vue_map;
+   const struct intel_vue_map *vue_map = data;
 
    if (!(b->shader->info.stage == MESA_SHADER_TESS_CTRL && is_output(intrin)) &&
        !(b->shader->info.stage == MESA_SHADER_TESS_EVAL && is_input(intrin)))
       return false;
 
-   /* Legacy tess levels are handled in a different pass */
    nir_io_semantics io_sem = nir_intrinsic_io_semantics(intrin);
-   if (devinfo->ver < 12 &&
-       (io_sem.location == VARYING_SLOT_TESS_LEVEL_INNER ||
-        io_sem.location == VARYING_SLOT_TESS_LEVEL_OUTER))
-      return false;
-
    gl_varying_slot varying = io_sem.location;
 
    int vue_slot = vue_map->varying_to_slot[varying];
@@ -582,15 +569,10 @@ remap_patch_urb_offsets_instr(nir_builder *b, nir_intrinsic_instr *intrin, void 
 
 static bool
 remap_patch_urb_offsets(nir_shader *nir,
-                        const struct intel_device_info *devinfo,
                         const struct intel_vue_map *vue_map)
 {
-   struct remap_patch_cb_data cb_data = {
-      .devinfo = devinfo,
-      .vue_map = vue_map,
-   };
    return nir_shader_intrinsics_pass(nir, remap_patch_urb_offsets_instr,
-                                     nir_metadata_control_flow, (void *)&cb_data);
+                                     nir_metadata_control_flow, (void *)vue_map);
 }
 
 /* Replace store_per_view_output to plain store_output, mapping the view index
@@ -863,7 +845,7 @@ brw_nir_lower_tes_inputs(nir_shader *nir,
 
    NIR_PASS(_, nir, remap_tess_levels, devinfo,
             nir->info.tess._primitive_mode);
-   NIR_PASS(_, nir, remap_patch_urb_offsets, devinfo, vue_map);
+   NIR_PASS(_, nir, remap_patch_urb_offsets, vue_map);
 
    /* remap_patch_urb_offsets can add constant math into the shader,
     * just fold it for the backend.
@@ -1161,7 +1143,7 @@ brw_nir_lower_tcs_outputs(nir_shader *nir,
    NIR_PASS(_, nir, nir_io_add_const_offset_to_base, nir_var_shader_out);
 
    NIR_PASS(_, nir, remap_tess_levels, devinfo, tes_primitive_mode);
-   NIR_PASS(_, nir, remap_patch_urb_offsets, devinfo, vue_map);
+   NIR_PASS(_, nir, remap_patch_urb_offsets, vue_map);
 
    /* remap_patch_urb_offsets can add constant math into the shader,
     * just fold it for the backend.
