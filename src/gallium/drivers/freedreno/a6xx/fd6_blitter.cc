@@ -1563,12 +1563,5 @@ fd6_tile_mode_for_format(enum pipe_format pfmt)
 unsigned
 fd6_tile_mode(const struct pipe_resource *tmpl)
 {
-   /* if the mipmap level 0 is still too small to be tiled, then don't
-    * bother pretending:
-    */
-   if ((tmpl->width0 < FDL_MIN_UBWC_WIDTH) &&
-         !util_format_is_depth_or_stencil(tmpl->format))
-      return TILE6_LINEAR;
-
    return fd6_tile_mode_for_format(tmpl->format);
 }

@@ -1695,7 +1695,6 @@ fd_resource_from_memobj(struct pipe_screen *pscreen,
                         const struct pipe_resource *tmpl,
                         struct pipe_memory_object *pmemobj, uint64_t offset)
 {
-   struct fd_screen *screen = fd_screen(pscreen);
    struct fd_memory_object *memobj = fd_memory_object(pmemobj);
    struct pipe_resource *prsc;
    struct fd_resource *rsc;
@@ -1714,8 +1713,6 @@ fd_resource_from_memobj(struct pipe_screen *pscreen,
       modifiers = metadata.modifier;
    } else if (tmpl->bind & PIPE_BIND_LINEAR) {
       modifiers = DRM_FORMAT_MOD_LINEAR;
-   } else if (is_a6xx(screen) && tmpl->width0 >= FDL_MIN_UBWC_WIDTH) {
-      modifiers = DRM_FORMAT_MOD_QCOM_COMPRESSED;
    }
 
    /* Allocate new pipe resource. */
