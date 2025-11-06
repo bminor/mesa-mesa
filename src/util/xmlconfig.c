@@ -1257,7 +1257,7 @@ driParseConfigFiles(driOptionCache *cache, const driOptionCache *info,
 
 #if WITH_XMLCONFIG
    const char *configdir;
-   char *home;
+   const char *home;
 
    /* parse from either $DRIRC_CONFIGDIR or $datadir/drirc.d */
    if ((configdir = os_get_option("DRIRC_CONFIGDIR")))
@@ -1267,7 +1267,7 @@ driParseConfigFiles(driOptionCache *cache, const driOptionCache *info,
       parseOneConfigFile(&userData, SYSCONFDIR "/drirc");
    }
 
-   if ((home = getenv("HOME"))) {
+   if ((home = os_get_option("HOME"))) {
       char filename[PATH_MAX];
 
       snprintf(filename, PATH_MAX, "%s/.drirc", home);

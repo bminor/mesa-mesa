@@ -1021,7 +1021,7 @@ agxdecode_dump_file_open(void)
    if (agxdecode_dump_stream)
       return;
 
-   /* This does a getenv every frame, so it is possible to use
+   /* This does a os_get_option every frame, so it is possible to use
     * setenv to change the base at runtime.
     */
    const char *dump_file_base =

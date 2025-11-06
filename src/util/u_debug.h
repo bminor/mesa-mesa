@@ -353,7 +353,7 @@ comma_separated_list_contains(const char *list, const char *s);
 /**
  * Get option.
  *
- * It is an alias for getenv on Unix and Windows.
+ * It is an alias for os_get_option.
  *
  */
 const char *

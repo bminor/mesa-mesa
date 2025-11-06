@@ -938,7 +938,7 @@ disk_cache_generate_cache_dir(void *mem_ctx, const char *gpu_name,
    }
 
    if (!path) {
-      char *home = getenv("HOME");
+      const char *home = os_get_option("HOME");
 
       if (home) {
          path = concatenate_and_mkdir(mem_ctx, home, ".cache", mkdir);
