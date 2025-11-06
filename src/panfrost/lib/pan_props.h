@@ -38,6 +38,8 @@ struct pan_kmod_dev;
 struct pan_kmod_dev_props;
 struct pan_kmod_vm;
 
+#define ARM_VENDOR_ID 0x13B5
+
 unsigned pan_query_l2_slices(const struct pan_kmod_dev_props *props);
 
 struct pan_tiler_features

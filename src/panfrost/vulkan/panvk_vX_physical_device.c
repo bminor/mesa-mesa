@@ -29,7 +29,6 @@
 #include "pan_props.h"
 #include "util/pan_ir.h"
 
-#define ARM_VENDOR_ID        0x13b5
 /* We reserve one ubo for push constant, one for sysvals and one per-set for the
  * descriptor metadata  */
 #define RESERVED_UBO_COUNT                   6

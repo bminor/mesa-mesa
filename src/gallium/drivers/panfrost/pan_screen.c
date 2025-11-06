@@ -681,6 +681,8 @@ panfrost_init_screen_caps(struct panfrost_screen *screen)
 
    u_init_pipe_screen_caps(&screen->base, 1);
 
+   caps->vendor_id = ARM_VENDOR_ID;
+
    struct panfrost_device *dev = &screen->dev;
 
    /* Our GL 3.x implementation is WIP */
