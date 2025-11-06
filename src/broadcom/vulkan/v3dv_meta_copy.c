@@ -279,6 +279,7 @@ get_compatible_tlb_format(VkFormat format)
 {
    switch (format) {
    case VK_FORMAT_R8G8B8A8_SNORM:
+   case VK_FORMAT_B8G8R8A8_SNORM:
       return VK_FORMAT_R8G8B8A8_UINT;
 
    case VK_FORMAT_R8G8_SNORM:
