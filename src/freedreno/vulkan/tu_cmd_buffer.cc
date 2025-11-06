@@ -364,7 +364,8 @@ tu_emit_cache_flush(struct tu_cmd_buffer *cmd_buffer)
 
    tu6_emit_flushes<CHIP>(cmd_buffer, cs, cache);
 
-   if ((flushes & TU_CMD_FLAG_WAIT_FOR_BR) && CHIP >= A7XX) {
+   if ((flushes & TU_CMD_FLAG_WAIT_FOR_BR) && CHIP >= A7XX &&
+       !(cmd_buffer->state.pass && cmd_buffer->state.renderpass_cb_disabled)) {
       trace_start_concurrent_binning_barrier(&cmd_buffer->trace, cs, cmd_buffer);
 
       tu_cs_emit_pkt7(cs, CP_THREAD_CONTROL, 1);
@@ -2800,6 +2801,7 @@ tu7_emit_concurrent_binning(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
       tu_cs_emit(cs, CP_THREAD_CONTROL_0_THREAD(CP_SET_THREAD_BR) |
                      CP_THREAD_CONTROL_0_CONCURRENT_BIN_DISABLE);
       tu7_set_pred_bit(cs, TU_PREDICATE_CB_ENABLED, false);
+      cmd->state.renderpass_cb_disabled = true;
       return false;
    }
    tu7_thread_control(cs, CP_SET_THREAD_BOTH);
@@ -3900,6 +3902,7 @@ static void tu_reset_render_pass(struct tu_cmd_buffer *cmd_buffer)
    cmd_buffer->state.attachments = NULL;
    cmd_buffer->state.clear_values = NULL;
    cmd_buffer->state.gmem_layout = TU_GMEM_LAYOUT_COUNT; /* invalid value to prevent looking up gmem offsets */
+   cmd_buffer->state.renderpass_cb_disabled = false;
    memset(&cmd_buffer->state.rp, 0, sizeof(cmd_buffer->state.rp));
 
    /* LRZ is not valid next time we use it */

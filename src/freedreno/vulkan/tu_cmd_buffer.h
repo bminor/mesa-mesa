@@ -612,6 +612,7 @@ struct tu_cmd_state
    uint32_t total_dispatches;
 
    unsigned tile_render_pass_count;
+   bool renderpass_cb_disabled;
 };
 
 struct tu_vis_stream_patchpoint {
