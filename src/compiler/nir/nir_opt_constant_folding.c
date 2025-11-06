@@ -161,6 +161,21 @@ fail:
    return NULL;
 }
 
+static bool
+is_dual_slot_io(nir_intrinsic_instr *intrin)
+{
+   if (intrin->intrinsic == nir_intrinsic_store_output ||
+       intrin->intrinsic == nir_intrinsic_store_per_vertex_output ||
+       intrin->intrinsic == nir_intrinsic_store_per_view_output ||
+       intrin->intrinsic == nir_intrinsic_store_per_primitive_output) {
+      return nir_src_bit_size(intrin->src[0]) == 64 &&
+             nir_src_num_components(intrin->src[0]) >= 3;
+   }
+
+   return intrin->def.bit_size == 64 &&
+          intrin->def.num_components >= 3;
+}
+
 static nir_def *
 try_fold_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin,
                    struct constant_fold_state *state)
@@ -299,6 +314,62 @@ try_fold_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin,
          return NULL;
 
       return nir_imm_bool(b, constant_true);
+   }
+
+   case nir_intrinsic_load_input:
+   case nir_intrinsic_load_per_primitive_input:
+   case nir_intrinsic_load_input_vertex:
+   case nir_intrinsic_load_per_vertex_input:
+   case nir_intrinsic_load_interpolated_input:
+   case nir_intrinsic_load_fs_input_interp_deltas:
+   case nir_intrinsic_load_output:
+   case nir_intrinsic_load_per_vertex_output:
+   case nir_intrinsic_load_per_view_output:
+   case nir_intrinsic_load_per_primitive_output:
+   case nir_intrinsic_store_output:
+   case nir_intrinsic_store_per_vertex_output:
+   case nir_intrinsic_store_per_view_output:
+   case nir_intrinsic_store_per_primitive_output: {
+      if (nir_is_input_load(intrin) ?
+          b->shader->info.disable_input_offset_src_constant_folding :
+          b->shader->info.disable_output_offset_src_constant_folding)
+         return NULL;
+
+      nir_io_semantics sem = nir_intrinsic_io_semantics(intrin);
+
+      /* NV_mesh_shader: ignore MS primitive indices. */
+      if (b->shader->info.stage == MESA_SHADER_MESH &&
+          sem.location == VARYING_SLOT_PRIMITIVE_INDICES &&
+          !(b->shader->info.per_primitive_outputs &
+            VARYING_BIT_PRIMITIVE_INDICES))
+         return NULL;
+
+      nir_src *offset = nir_get_io_offset_src(intrin);
+
+      /* TODO: Better handling of per-view variables here */
+      if (!nir_src_is_const(*offset) ||
+          nir_intrinsic_io_semantics(intrin).per_view)
+         return NULL;
+
+      unsigned off = nir_src_as_uint(*offset);
+      bool progress = false;
+
+      if (off) {
+         nir_intrinsic_set_base(intrin, nir_intrinsic_base(intrin) + off);
+
+         sem.location += off;
+         b->cursor = nir_before_instr(&intrin->instr);
+         nir_src_rewrite(offset, nir_imm_int(b, 0));
+         progress = true;
+      }
+
+      /* non-indirect indexing should reduce num_slots */
+      sem.num_slots = is_dual_slot_io(intrin) ? 2 : 1;
+
+      nir_io_semantics original = nir_intrinsic_io_semantics(intrin);
+      progress |= memcmp(&original, &sem, sizeof(sem));
+      nir_intrinsic_set_io_semantics(intrin, sem);
+      return progress ? NIR_LOWER_INSTR_PROGRESS : NULL;
    }
 
    default:
