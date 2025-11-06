@@ -29,7 +29,8 @@
    ITEM(CreatePipelineLayout)                                                                                          \
    ITEM(DestroyPipelineLayout)                                                                                         \
    ITEM(GetPipelineExecutableStatisticsKHR)                                                                            \
-   ITEM(GetPipelineExecutablePropertiesKHR)
+   ITEM(GetPipelineExecutablePropertiesKHR)                                                                            \
+   ITEM(GetPipelineKeyKHR)
 
 class radv_test : public testing::Test {
 public:
@@ -46,6 +47,9 @@ public:
 
    void create_compute_pipeline(uint32_t code_size, const uint32_t *code, VkPipelineCreateFlags flags = 0);
    void destroy_pipeline();
+
+   void get_pipeline_key(uint32_t code_size, const uint32_t *code, VkPipelineBinaryKeyKHR *pipeline_key,
+                         VkPipelineCreateFlags flags = 0);
 
    uint64_t get_pipeline_hash(VkShaderStageFlags stage);
 
