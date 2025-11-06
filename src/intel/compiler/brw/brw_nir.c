@@ -67,7 +67,9 @@ is_output(nir_intrinsic_instr *intrin)
 }
 
 static bool
-remap_tess_levels(nir_builder *b, nir_intrinsic_instr *intr, void *data)
+remap_tess_levels_legacy_static(nir_builder *b,
+                                nir_intrinsic_instr *intr,
+                                void *data)
 {
    if (!(b->shader->info.stage == MESA_SHADER_TESS_CTRL && is_output(intr)) &&
        !(b->shader->info.stage == MESA_SHADER_TESS_EVAL && is_input(intr)))
@@ -207,14 +209,6 @@ remap_tess_levels(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    return true;
 }
 
-static bool
-remap_tess_header_values(nir_shader *nir, enum tess_primitive_mode _primitive_mode)
-{
-   return nir_shader_intrinsics_pass(nir, remap_tess_levels,
-                                     nir_metadata_control_flow,
-                                     (void*)(uintptr_t)_primitive_mode);
-}
-
 struct tess_levels_temporary_state {
    nir_variable *inner_factors_var;
    nir_variable *outer_factors_var;
@@ -256,7 +250,8 @@ remap_tess_levels_to_temporary(nir_builder *b, nir_intrinsic_instr *intrin, void
 }
 
 static bool
-remap_tess_header_values_dynamic(nir_shader *nir, const struct intel_device_info *devinfo)
+remap_tess_levels_legacy_dynamic(nir_shader *nir,
+                                 const struct intel_device_info *devinfo)
 {
    nir_function_impl *impl = nir_shader_get_entrypoint(nir);
 
@@ -319,6 +314,18 @@ remap_tess_header_values_dynamic(nir_shader *nir, const struct intel_device_info
    nir_progress(true, impl, nir_metadata_none);
 
    return true;
+}
+
+static bool
+remap_tess_levels(nir_shader *nir,
+                  const struct intel_device_info *devinfo,
+                  enum tess_primitive_mode prim)
+{
+   return prim == TESS_PRIMITIVE_UNSPECIFIED ?
+          remap_tess_levels_legacy_dynamic(nir, devinfo) :
+          nir_shader_intrinsics_pass(nir, remap_tess_levels_legacy_static,
+                                     nir_metadata_control_flow,
+                                     (void *)(uintptr_t) prim);
 }
 
 static bool
@@ -666,7 +673,8 @@ brw_nir_lower_tes_inputs(nir_shader *nir,
    NIR_PASS(_, nir, nir_io_add_const_offset_to_base, nir_var_shader_in);
 
    NIR_PASS(_, nir, remap_non_header_patch_urb_offsets, vue_map);
-   NIR_PASS(_, nir, remap_tess_header_values, nir->info.tess._primitive_mode);
+   NIR_PASS(_, nir, remap_tess_levels, devinfo,
+            nir->info.tess._primitive_mode);
 
    /* remap_non_header_patch_urb_offsets can add constant math into the
     * shader, just fold it for the backend.
@@ -950,10 +958,8 @@ brw_nir_lower_tcs_outputs(nir_shader *nir,
    NIR_PASS(_, nir, nir_io_add_const_offset_to_base, nir_var_shader_out);
 
    NIR_PASS(_, nir, remap_non_header_patch_urb_offsets, vue_map);
-   if (tes_primitive_mode != TESS_PRIMITIVE_UNSPECIFIED)
-      NIR_PASS(_, nir, remap_tess_header_values, tes_primitive_mode);
-   else
-      NIR_PASS(_, nir, remap_tess_header_values_dynamic, devinfo);
+
+   NIR_PASS(_, nir, remap_tess_levels, devinfo, tes_primitive_mode);
 
    /* remap_non_header_patch_urb_offsets can add constant math into the
     * shader, just fold it for the backend.
