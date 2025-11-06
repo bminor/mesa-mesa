@@ -1292,9 +1292,6 @@ panvk_compile_shader(struct panvk_device *dev,
    struct panvk_shader *shader;
    VkResult result;
 
-   /* We consume the NIR, regardless of success or failure */
-   nir_shader *nir = info->nir;
-
    size_t size =
       sizeof(struct panvk_shader) + sizeof(struct panvk_shader_variant) *
                                        panvk_shader_num_variants(info->stage);
@@ -1319,24 +1316,20 @@ panvk_compile_shader(struct panvk_device *dev,
 
    switch (info->stage) {
    case MESA_SHADER_VERTEX: {
-      struct pan_compile_inputs input_variants[PANVK_VS_VARIANTS] = {0};
-      nir_shader *nir_variants[PANVK_VS_VARIANTS] = {0};
-
-      /* First we apply lowering for variants */
-      for (enum panvk_vs_variant v = 0; v < PANVK_VS_VARIANTS; ++v) {
+      const enum panvk_vs_variant last_variant = PANVK_VS_VARIANT_HW;
+      for (enum panvk_vs_variant v = 0; v <= last_variant; v++) {
          struct panvk_shader_variant *variant = &shader->variants[v];
-         bool last = (v + 1) == PANVK_VS_VARIANTS;
-
-         input_variants[v] = inputs;
 
          /* Each variant gets its own NIR. To save an extra clone, we use the
           * original NIR for the last stage.
           */
-         nir_variants[v] = last ? nir : nir_shader_clone(NULL, nir);
+         const bool clone_nir = (v != last_variant);
+         nir_shader *nir =
+            clone_nir ? nir_shader_clone(NULL, info->nir) : info->nir;
 
-         panvk_lower_nir(dev, nir_variants[v], info->set_layout_count,
+         panvk_lower_nir(dev, nir, info->set_layout_count,
                          info->set_layouts, info->robustness,
-                         state, &input_variants[v], &variant->desc_info);
+                         state, &inputs, &variant->desc_info);
 
          /* We need the driver_location to match the vertex attribute
           * location, so we can use the attribute layout described by
@@ -1354,10 +1347,13 @@ panvk_compile_shader(struct panvk_device *dev,
 
          variant->own_bin = true;
 
-         result = panvk_compile_nir(dev, nir_variants[v], info->flags,
-                                    &input_variants[v], state,
-                                    noperspective_varyings,
-                                    variant);
+         result = panvk_compile_nir(dev, nir, info->flags, &inputs, state,
+                                    noperspective_varyings, variant);
+
+         /* If we cloned, it's our job to clean up */
+         if (clone_nir)
+            ralloc_free(nir);
+
          if (result != VK_SUCCESS) {
             panvk_shader_destroy(&dev->vk, &shader->vk, pAllocator);
             return result;
@@ -1369,6 +1365,8 @@ panvk_compile_shader(struct panvk_device *dev,
    case MESA_SHADER_FRAGMENT: {
       struct panvk_shader_variant *variant =
          (struct panvk_shader_variant *)panvk_shader_only_variant(shader);
+
+      nir_shader *nir = info->nir;
 
       if (state && state->ms && state->ms->sample_shading_enable)
          nir->info.fs.uses_sample_shading = true;
@@ -1412,6 +1410,8 @@ panvk_compile_shader(struct panvk_device *dev,
    case MESA_SHADER_COMPUTE: {
       struct panvk_shader_variant *variant =
          (struct panvk_shader_variant *)panvk_shader_only_variant(shader);
+
+      nir_shader *nir = info->nir;
 
       panvk_lower_nir(dev, nir, info->set_layout_count, info->set_layouts,
                       info->robustness, state, &inputs, &variant->desc_info);
