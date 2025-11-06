@@ -1878,16 +1878,7 @@ copy_query_results_with_shader(struct anv_cmd_buffer *cmd_buffer,
 
    /* Flushes for the queries to complete */
    if (flags & VK_QUERY_RESULT_WAIT_BIT) {
-      /* Some queries are done with shaders, so we need to have them flush
-       * high level caches writes. The L3 should be shared across the GPU.
-       */
-      if (pool->vk.query_type == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR ||
-          pool->vk.query_type == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR ||
-          pool->vk.query_type == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR ||
-          pool->vk.query_type == VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR) {
-         needed_flushes |= ANV_PIPE_UNTYPED_DATAPORT_CACHE_FLUSH_BIT;
-      }
-      /* And we need to stall for previous CS writes to land or the flushes to
+      /* We need to stall for previous CS writes to land or the flushes to
        * complete.
        */
       needed_flushes |= ANV_PIPE_CS_STALL_BIT;
