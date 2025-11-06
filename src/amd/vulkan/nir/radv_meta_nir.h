@@ -48,12 +48,12 @@ nir_shader *radv_meta_nir_build_itoi_r32g32b32_compute_shader(struct radv_device
 nir_shader *radv_meta_nir_build_cleari_compute_shader(struct radv_device *dev, bool is_3d, int samples);
 nir_shader *radv_meta_nir_build_cleari_r32g32b32_compute_shader(struct radv_device *dev);
 
-typedef nir_def *(*radv_meta_nir_texel_fetch_build_func)(struct nir_builder *, struct radv_device *, nir_def *, bool,
-                                                         bool);
-nir_def *radv_meta_nir_build_blit2d_texel_fetch(struct nir_builder *b, struct radv_device *device, nir_def *tex_pos,
-                                                bool is_3d, bool is_multisampled);
-nir_def *radv_meta_nir_build_blit2d_buffer_fetch(struct nir_builder *b, struct radv_device *device, nir_def *tex_pos,
-                                                 bool is_3d, bool is_multisampled);
+typedef nir_def *(*radv_meta_nir_texel_fetch_build_func)(nir_builder *, uint32_t, nir_def *, bool, bool);
+nir_def *radv_meta_nir_build_blit2d_texel_fetch(nir_builder *b, uint32_t binding, nir_def *tex_pos, bool is_3d,
+                                                bool is_multisampled);
+nir_def *radv_meta_nir_build_blit2d_buffer_fetch(nir_builder *b, uint32_t binding, nir_def *tex_pos, bool is_3d,
+                                                 bool is_multisampled);
+
 nir_shader *radv_meta_nir_build_blit2d_vertex_shader(struct radv_device *device);
 nir_shader *radv_meta_nir_build_blit2d_copy_fragment_shader(struct radv_device *device,
                                                             radv_meta_nir_texel_fetch_build_func txf_func,
