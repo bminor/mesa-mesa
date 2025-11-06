@@ -2791,8 +2791,9 @@ tu7_emit_concurrent_binning(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
        /* LRZ can only be cleared via fast clear in BV. Disable CB if we can't
         * use it.
         */
-       tu7_cb_disable_reason(!cmd->state.lrz.fast_clear, cmd,
-                             "LRZ fast clear disabled") ||
+       tu7_cb_disable_reason(
+          (!cmd->state.lrz.fast_clear && cmd->state.lrz.image_view), cmd,
+          "LRZ fast clear disabled") ||
        tu7_cb_disable_reason(TU_DEBUG(NO_CONCURRENT_BINNING), cmd,
                              "TU_DEBUG(NO_CONCURRENT_BINNING)")) {
       tu_cs_emit_pkt7(cs, CP_THREAD_CONTROL, 1);
