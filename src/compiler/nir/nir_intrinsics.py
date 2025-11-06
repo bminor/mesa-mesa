@@ -2506,6 +2506,47 @@ load("ssbo_uniform_block_intel", [-1, 1], [ACCESS, ALIGN_MUL, ALIGN_OFFSET, BASE
 # src[] = { offset }.
 load("shared_uniform_block_intel", [1], [BASE, ALIGN_MUL, ALIGN_OFFSET], [CAN_ELIMINATE])
 
+# Legacy pre-Xe2 URB read.  This takes a URB handle and a 128-bit (vec4)
+# aligned offset.  The hardware can implicitly add a constant offset ("base")
+# to the total offset (which is also in 128-bit units).  Certain stages can
+# use access flags to specify that inputs will never be written to and that
+# loads can be reordered freely.
+#
+# src[] = { urb_handle, offset }.
+load("urb_vec4_intel", [1, 1], [BASE, ACCESS], [CAN_ELIMINATE])
+
+# Newer Xe2+ URB read.  This takes a byte offset into the URB memory
+# (which is the handle plus any offset).  The hardware can implicitly
+# add a constant offset ("base") to the total offset (which is also in
+# bytes).  Certain stages can use access flags to specify that inputs
+# will never be written to and that loads can be reordered freely.
+#
+# src[] = { address }.
+load("urb_lsc_intel", [1], [BASE, ACCESS], [CAN_ELIMINATE])
+
+# Legacy pre-Xe2 URB write.  This takes a URB handle, a 128-bit (vec4)
+# aligned offset and a writemask (which can be non-constant).
+#
+# src[] = { value, urb_handle, 128-bit offset, write_mask }.
+store("urb_vec4_intel", [1, 1, 1], [BASE])
+
+# Newer Xe2+ URB write.  This takes a byte offset into the URB memory
+# (which is the handle plus any offset).  The hardware can implicitly
+# add a constant offset ("base") to the total offset.
+#
+# src[] = { value, address }.
+store("urb_lsc_intel", [1], [BASE])
+
+# Return a handle for a shader's input or output URB memory.
+system_value("urb_input_handle_intel", 1)
+system_value("urb_output_handle_intel", 1)
+
+# TCS and GS have separate handles for each Input Control Point (ICP)
+# so we also take a vertex index corresponding to which one to access.
+#
+# src[] = { vertex }
+load("urb_input_handle_indexed_intel", [1], [], [CAN_ELIMINATE, CAN_REORDER])
+
 # Inline register delivery (available on Gfx12.5+ for CS/Mesh/Task stages)
 intrinsic("load_inline_data_intel", [], dest_comp=0,
           indices=[BASE],

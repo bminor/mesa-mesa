@@ -358,6 +358,8 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_load_core_max_id_arm:
    case nir_intrinsic_load_warp_max_id_arm:
    case nir_intrinsic_load_tess_config_intel:
+   case nir_intrinsic_load_urb_input_handle_intel:
+   case nir_intrinsic_load_urb_output_handle_intel:
       is_divergent = false;
       break;
 
@@ -383,6 +385,7 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
     * successive SIMD lanes.
     */
    case nir_intrinsic_load_global_block_intel:
+   case nir_intrinsic_load_urb_input_handle_indexed_intel:
       is_divergent = true;
       break;
 
@@ -763,6 +766,8 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_bindless_resource_ir3:
    case nir_intrinsic_ray_intersection_ir3:
    case nir_intrinsic_read_attribute_payload_intel:
+   case nir_intrinsic_load_urb_vec4_intel:
+   case nir_intrinsic_load_urb_lsc_intel:
    case nir_intrinsic_load_buffer_ptr_kk:
    case nir_intrinsic_load_texture_handle_kk:
    case nir_intrinsic_load_depth_texture_kk:
