@@ -77,28 +77,6 @@ apt-get install -y --no-remove --no-install-recommends \
 
 section_end debian_setup
 
-############### Build piglit replayer
-
-if [ "$DEBIAN_ARCH" != "armhf" ]; then
-  # We don't run any _piglit_ Vulkan tests in the containers.
-  PIGLIT_OPTS="-DPIGLIT_USE_WAFFLE=ON
-              -DPIGLIT_USE_GBM=OFF
-              -DPIGLIT_USE_WAYLAND=OFF
-              -DPIGLIT_USE_X11=OFF
-              -DPIGLIT_BUILD_GLX_TESTS=OFF
-              -DPIGLIT_BUILD_EGL_TESTS=OFF
-              -DPIGLIT_BUILD_WGL_TESTS=OFF
-              -DPIGLIT_BUILD_GL_TESTS=OFF
-              -DPIGLIT_BUILD_GLES1_TESTS=OFF
-              -DPIGLIT_BUILD_GLES2_TESTS=OFF
-              -DPIGLIT_BUILD_GLES3_TESTS=OFF
-              -DPIGLIT_BUILD_CL_TESTS=OFF
-              -DPIGLIT_BUILD_VK_TESTS=OFF
-              -DPIGLIT_BUILD_DMA_BUF_TESTS=OFF" \
-  PIGLIT_BUILD_TARGETS="piglit_replayer" \
-  . .gitlab-ci/container/build-piglit.sh
-fi
-
 ############### Build dEQP VK
 
 DEQP_API=tools \
