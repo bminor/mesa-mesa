@@ -898,7 +898,7 @@ panvk_lower_nir_io(nir_shader *nir)
 static VkResult
 panvk_compile_nir(struct panvk_device *dev, nir_shader *nir,
                   VkShaderCreateFlagsEXT shader_flags,
-                  struct pan_compile_inputs *compile_input,
+                  const struct pan_compile_inputs *compile_input,
                   const struct vk_graphics_pipeline_state *state,
                   const uint32_t *noperspective_varyings,
                   struct panvk_shader_variant *shader)
@@ -906,8 +906,11 @@ panvk_compile_nir(struct panvk_device *dev, nir_shader *nir,
    const bool dump_asm =
       shader_flags & VK_SHADER_CREATE_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_MESA;
 
-   pan_postprocess_nir(nir, compile_input->gpu_id);
-   pan_nir_lower_texture_late(nir, compile_input->gpu_id);
+   /* We're going to modify this so make our own copy to be nicer to callers */
+   struct pan_compile_inputs input = *compile_input;
+
+   pan_postprocess_nir(nir, input.gpu_id);
+   pan_nir_lower_texture_late(nir, input.gpu_id);
 
    if (nir->info.stage == MESA_SHADER_VERTEX)
       NIR_PASS(_, nir, nir_shader_intrinsics_pass, panvk_lower_load_vs_input,
@@ -937,15 +940,16 @@ panvk_compile_nir(struct panvk_device *dev, nir_shader *nir,
             nir_metadata_control_flow, &lower_sysvals_ctx);
 
    lower_load_push_consts(nir, shader);
+
    /* Allow the remaining FAU space to be filled with constants. */
-   compile_input->fau_consts.max_amount =
+   input.fau_consts.max_amount =
       2 * (FAU_WORD_COUNT - shader->fau.total_count);
-   compile_input->fau_consts.offset = shader->fau.total_count * 2;
-   compile_input->fau_consts.values = &shader->info.fau_consts[0];
-   assert(compile_input->fau_consts.max_amount <= ARRAY_SIZE(shader->info.fau_consts));
+   input.fau_consts.offset = shader->fau.total_count * 2;
+   input.fau_consts.values = &shader->info.fau_consts[0];
+   assert(input.fau_consts.max_amount <= ARRAY_SIZE(shader->info.fau_consts));
 
    struct util_dynarray binary = UTIL_DYNARRAY_INIT;
-   pan_shader_compile(nir, compile_input, &binary, &shader->info);
+   pan_shader_compile(nir, &input, &binary, &shader->info);
 
    /* Propagate potential additional FAU values into the panvk info struct. */
    /* FAU consts are pushed as 32bit values, but total_count is for 64bit
