@@ -780,23 +780,6 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
    };
    NIR_PASS(_, nir, nir_opt_access, &access_options);
 
-#if PAN_ARCH >= 10
-   if (stage == MESA_SHADER_VERTEX && compile_input->view_mask) {
-      nir_lower_multiview_options options = {
-         .view_mask = compile_input->view_mask,
-         .allowed_per_view_outputs = ~0
-      };
-      /* The only case where this should fail is with memory/image writes,
-       * which we don't support in vertex shaders */
-      assert(nir_can_lower_multiview(nir, options));
-      NIR_PASS(_, nir, nir_lower_multiview, options);
-      /* Pull output writes out of the loop and give them constant offsets for
-       * pan_nir_lower_store_components */
-      NIR_PASS(_, nir, nir_lower_io_vars_to_temporaries,
-               nir_shader_get_entrypoint(nir), nir_var_shader_out);
-   }
-#endif
-
    const struct lower_ycbcr_state ycbcr_state = {
       .set_layout_count = set_layout_count,
       .set_layouts = set_layouts,
@@ -1326,6 +1309,27 @@ panvk_compile_shader(struct panvk_device *dev,
          const bool clone_nir = (v != last_variant);
          nir_shader *nir =
             clone_nir ? nir_shader_clone(NULL, info->nir) : info->nir;
+
+#if PAN_ARCH >= 10
+         if (inputs.view_mask) {
+            nir_lower_multiview_options options = {
+               .view_mask = inputs.view_mask,
+               .allowed_per_view_outputs = ~0
+            };
+
+            /* The only case where this should fail is with memory/image
+             * writes, which we don't support in vertex shaders
+             */
+            assert(nir_can_lower_multiview(nir, options));
+            NIR_PASS(_, nir, nir_lower_multiview, options);
+
+            /* Pull output writes out of the loop and give them constant
+             * offsets for pan_lower_store_components
+             */
+            NIR_PASS(_, nir, nir_lower_io_vars_to_temporaries,
+                     nir_shader_get_entrypoint(nir), nir_var_shader_out);
+         }
+#endif
 
          panvk_lower_nir(dev, nir, info->set_layout_count,
                          info->set_layouts, info->robustness,
