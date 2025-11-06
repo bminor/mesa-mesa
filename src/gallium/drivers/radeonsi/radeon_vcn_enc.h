@@ -105,6 +105,7 @@ struct radeon_enc_pic {
    bool use_rc_per_pic_ex;
    bool av1_tile_splitting_legacy_flag;
    bool has_dependent_slice_instructions;
+   bool av1_unidir_rc_available;
 
    struct {
       union {

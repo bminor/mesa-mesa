@@ -1050,7 +1050,7 @@ static void radeon_vcn_enc_av1_get_param(struct radeon_encoder *enc,
       enc_pic->av1.primary_ref_frame = pic->ref_list0[0];
 
    if (sscreen->info.vcn_ip_version >= VCN_5_0_0) {
-      bool allow_unidir =
+      bool allow_unidir = enc_pic->av1_unidir_rc_available ||
          pic->rc[0].rate_ctrl_method == PIPE_H2645_ENC_RATE_CONTROL_METHOD_DISABLE;
 
       for (uint32_t i = 0; i < RENCODE_AV1_REFS_PER_FRAME; i++)
@@ -2178,6 +2178,10 @@ struct pipe_video_codec *radeon_create_encoder(struct pipe_context *context,
       }
       if (sscreen->info.vcn_enc_minor_version >= 8)
          enc->enc_pic.has_dependent_slice_instructions = true;
+      if (sscreen->info.vcn_enc_minor_version > 8 ||
+          (sscreen->info.vcn_enc_minor_version == 8 &&
+           sscreen->info.vcn_fw_revision >= 6))
+         enc->enc_pic.av1_unidir_rc_available = true;
    }
    else if (sscreen->info.vcn_ip_version >= VCN_4_0_0) {
       if (sscreen->info.vcn_enc_minor_version >= 1)
