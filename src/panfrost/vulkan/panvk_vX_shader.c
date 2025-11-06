@@ -772,7 +772,7 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
                 uint32_t set_layout_count,
                 struct vk_descriptor_set_layout *const *set_layouts,
                 const struct vk_pipeline_robustness_state *rs,
-                uint32_t *noperspective_varyings,
+                const uint32_t *noperspective_varyings,
                 const struct vk_graphics_pipeline_state *state,
                 const struct pan_compile_inputs *compile_input,
                 struct panvk_shader_variant *shader)
@@ -1297,7 +1297,7 @@ static VkResult
 panvk_compile_shader(struct panvk_device *dev,
                      struct vk_shader_compile_info *info,
                      const struct vk_graphics_pipeline_state *state,
-                     uint32_t *noperspective_varyings,
+                     const uint32_t *noperspective_varyings,
                      const VkAllocationCallbacks *pAllocator,
                      struct vk_shader **shader_out)
 {
