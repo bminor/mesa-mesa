@@ -4916,6 +4916,30 @@ do {                                                                 \
 
 #define NIR_SKIP(name) should_skip_nir(#name)
 
+#ifndef NDEBUG
+
+void _nir_assert_no_progress(bool progress, const char *when);
+
+/* Abort if the pass has made any progress. This can be used to assert that:
+ * - our minimalist pass invocation loops in drivers are sufficient and don't
+ *   leave any unoptimized code in the shader
+ * - our lowering is sufficient and other passes don't add instructions that
+ *   would cause lowering having to be repeated
+ */
+#define NIR_PASS_ASSERT_NO_PROGRESS(nir, pass, ...) \
+   do { \
+      if (!NIR_DEBUG(NOVALIDATE)) { \
+         static const char *when = #pass " in " __FILE__ ":" NIR_STRINGIZE(__LINE__); \
+         bool _progress = false; \
+         NIR_PASS(_progress, nir, pass, ##__VA_ARGS__); \
+         _nir_assert_no_progress(_progress, when); \
+      } \
+   } while (0)
+
+#else
+#define NIR_ASSERT_PASS_NO_PROGRESS(nir, pass, ...)
+#endif
+
 /** An instruction filtering callback with writemask
  *
  * Returns true if the instruction should be processed with the associated

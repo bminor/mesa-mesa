@@ -2355,4 +2355,23 @@ nir_validate_ssa_dominance(nir_shader *shader, const char *when)
    destroy_validate_state(&state);
 }
 
+void
+_nir_assert_no_progress(bool progress, const char *when)
+{
+   if (!progress)
+      return;
+
+   /* Lock around dumping so that we get clean dumps in a multi-threaded
+    * scenario.
+    */
+   simple_mtx_lock(&fail_dump_mutex);
+
+   fprintf(stderr, "NIR assertion failed: Expected no progress from %s.\n",
+           when);
+   fflush(stderr);
+
+   simple_mtx_unlock(&fail_dump_mutex);
+   abort();
+}
+
 #endif /* NDEBUG */
