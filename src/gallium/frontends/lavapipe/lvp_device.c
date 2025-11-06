@@ -1861,8 +1861,24 @@ VKAPI_ATTR VkResult VKAPI_CALL lvp_CreateDevice(
    if (pCreateInfo->queueCreateInfoCount) {
       assert(pCreateInfo->pQueueCreateInfos[0].queueFamilyIndex == 0);
       assert(pCreateInfo->pQueueCreateInfos[0].queueCount == 1);
+      result = lvp_queue_init(device, &device->queue, pCreateInfo->pQueueCreateInfos, 0);
+   } else {
+      /* VK_KHR_maintenance9 allows zero queues devices used to compile shaders only.
+      *  Since we only ever create a single queue, and it has no hardward backing it,
+      *  we can just create a dummy queue on the behalf of the user.
+      */
+      const float fake_priority = 1.0f;
+      const VkDeviceQueueCreateInfo dummy_create_info = {
+         .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+         .pNext = NULL,
+         .flags = 0,
+         .queueFamilyIndex = 0,
+         .queueCount = 1,
+         .pQueuePriorities = &fake_priority
+      };
+      result = lvp_queue_init(device, &device->queue, &dummy_create_info, 0);
    }
-   result = lvp_queue_init(device, &device->queue, pCreateInfo->pQueueCreateInfos, 0);
+
    if (result != VK_SUCCESS) {
       vk_free(&device->vk.alloc, device);
       return result;
