@@ -588,7 +588,7 @@ get_vp9_video_mem_size(struct anv_video_session *vid, uint32_t mem_idx)
       size = 32;
       break;
    case ANV_VID_MEM_VP9_SEGMENT_ID:
-      size = width_in_ctb * height_in_ctb;
+      size = (uint64_t)width_in_ctb * height_in_ctb;
       break;
    case ANV_VID_MEM_VP9_HVD_LINE_ROW_STORE:
    case ANV_VID_MEM_VP9_HVD_TILE_ROW_STORE:
@@ -596,7 +596,7 @@ get_vp9_video_mem_size(struct anv_video_session *vid, uint32_t mem_idx)
       break;
    case ANV_VID_MEM_VP9_MV_1:
    case ANV_VID_MEM_VP9_MV_2:
-      size = (width_in_ctb * height_in_ctb * 9);
+      size = ((uint64_t)width_in_ctb * height_in_ctb * 9);
       break;
    default:
       UNREACHABLE("unknown memory");
