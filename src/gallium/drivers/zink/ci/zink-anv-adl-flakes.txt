@@ -78,3 +78,5 @@ KHR-Single-GL46.arrays_of_arrays_gl.SubroutineArgumentAliasing1_var_type_index_1
 
 # shader objects #13839
 spec@arb_fragment_program@fog-modes
+
+glx@glx_arb_create_context@null attribute list
