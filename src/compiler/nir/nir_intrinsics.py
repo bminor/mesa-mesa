@@ -2455,7 +2455,7 @@ intrinsic("resource_intel", dest_comp=1, bit_sizes=[32],
 # OpSubgroupBlockReadINTEL and OpSubgroupBlockWriteINTEL from SPV_INTEL_subgroups.
 intrinsic("load_deref_block_intel", dest_comp=0, src_comp=[-1],
           indices=[ACCESS], flags=[CAN_ELIMINATE])
-intrinsic("store_deref_block_intel", src_comp=[-1, 0], indices=[WRITE_MASK, ACCESS])
+intrinsic("store_deref_block_intel", src_comp=[-1, 0], indices=[ACCESS])
 
 # Special load_ssbo intrinsic with an additional BASE value for Xe2+ offsets
 # src[] = { buffer_index, offset }.
@@ -2463,7 +2463,7 @@ load("ssbo_intel", [-1, 1], [ACCESS, BASE, ALIGN_MUL, ALIGN_OFFSET], [CAN_ELIMIN
 
 # Special store_ssbo intrinsic with an additional BASE value for Xe2+ offsets
 # src[] = { value, buffer_index, offset }
-store("ssbo_intel", [-1, 1], [WRITE_MASK, ACCESS, BASE, ALIGN_MUL, ALIGN_OFFSET])
+store("ssbo_intel", [-1, 1], [ACCESS, BASE, ALIGN_MUL, ALIGN_OFFSET])
 
 # src[] = { address }.
 load("global_block_intel", [1], [ACCESS, ALIGN_MUL, ALIGN_OFFSET], [CAN_ELIMINATE])
@@ -2475,13 +2475,13 @@ load("ssbo_block_intel", [-1, 1], [ACCESS, ALIGN_MUL, ALIGN_OFFSET], [CAN_ELIMIN
 load("shared_block_intel", [1], [BASE, ALIGN_MUL, ALIGN_OFFSET], [CAN_ELIMINATE])
 
 # src[] = { value, address }.
-store("global_block_intel", [1], [WRITE_MASK, ACCESS, ALIGN_MUL, ALIGN_OFFSET])
+store("global_block_intel", [1], [ACCESS, ALIGN_MUL, ALIGN_OFFSET])
 
 # src[] = { value, block_index, offset }
-store("ssbo_block_intel", [-1, 1], [WRITE_MASK, ACCESS, ALIGN_MUL, ALIGN_OFFSET])
+store("ssbo_block_intel", [-1, 1], [ACCESS, ALIGN_MUL, ALIGN_OFFSET])
 
 # src[] = { value, offset }.
-store("shared_block_intel", [1], [BASE, WRITE_MASK, ALIGN_MUL, ALIGN_OFFSET])
+store("shared_block_intel", [1], [BASE, ALIGN_MUL, ALIGN_OFFSET])
 
 # src[] = { address }.
 load("global_constant_uniform_block_intel", [1],
