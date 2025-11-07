@@ -458,6 +458,8 @@ blorp_exec_on_compute(struct blorp_batch *batch,
    cmd_buffer->state.descriptors_dirty |= VK_SHADER_STAGE_COMPUTE_BIT;
    cmd_buffer->state.push_constants_dirty |= VK_SHADER_STAGE_COMPUTE_BIT;
    cmd_buffer->state.compute.pipeline_dirty = true;
+
+   genX(cmd_buffer_post_dispatch_wa)(cmd_buffer);
 }
 
 static void

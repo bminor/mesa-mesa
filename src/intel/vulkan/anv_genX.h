@@ -174,19 +174,21 @@ genX(cmd_buffer_set_coarse_pixel_active)(struct anv_cmd_buffer *cmd_buffer,
 #endif
 }
 
-/*
- * TDOD: Add INTEL_NEEDS_WA_14025112257 check once HSD is propogated for all
- * other impacted platforms.
- */
 static inline void
-genX(cmd_buffer_state_cache_inval_wa_14025112257)(
-      struct anv_cmd_buffer *cmd_buffer)
+genX(cmd_buffer_post_dispatch_wa)(struct anv_cmd_buffer *cmd_buffer)
 {
+   /* TODO: Add INTEL_NEEDS_WA_14025112257 check once HSD is propogated for all
+    * other impacted platforms.
+    */
    if (cmd_buffer->device->info->ver >= 20 &&
        anv_cmd_buffer_is_compute_queue(cmd_buffer)) {
-      anv_add_pending_pipe_bits(cmd_buffer,
-                                ANV_PIPE_STATE_CACHE_INVALIDATE_BIT,
-                                "WA_14025112257");
+      enum anv_pipe_bits emitted_bits = 0;
+      genX(emit_apply_pipe_flushes)(&cmd_buffer->batch,
+                                    cmd_buffer->device,
+                                    cmd_buffer->state.current_pipeline,
+                                    ANV_PIPE_STATE_CACHE_INVALIDATE_BIT,
+                                    &emitted_bits);
+      cmd_buffer->state.pending_pipe_bits &= ~emitted_bits;
    }
 }
 

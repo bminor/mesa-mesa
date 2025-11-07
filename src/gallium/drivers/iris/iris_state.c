@@ -9951,6 +9951,16 @@ iris_emit_raw_pipe_control(struct iris_batch *batch,
    }
 #endif
 
+#if GFX_VER >= 12
+   /* BSpec 47112 (xe), 56551 (xe2): Instruction_PIPE_CONTROL (ComputeCS):
+    * SW must follow below programming restrictions when programming
+    * PIPE_CONTROL command:
+    *   "Command Streamer Stall Enable" must be always set.
+    */
+   if (batch->name == IRIS_BATCH_COMPUTE)
+      flags |= PIPE_CONTROL_CS_STALL;
+#endif
+
    /* The "L3 Read Only Cache Invalidation Bit" docs say it "controls the
     * invalidation of the Geometry streams cached in L3 cache at the top
     * of the pipe".  In other words, index & vertex data that gets cached
