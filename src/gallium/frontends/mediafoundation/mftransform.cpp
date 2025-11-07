@@ -1064,65 +1064,6 @@ done:
    return hr;
 }
 
-// Utility function to configure the sample allocator to allocate map samples
-HRESULT
-CDX12EncHMFT::ConfigureMapSampleAllocator(
-   IMFVideoSampleAllocatorEx *spAllocator, UINT32 width, UINT32 height, GUID subtype, UINT32 poolSize )
-{
-   if( !spAllocator )
-      return E_POINTER;
-
-   spAllocator->UninitializeSampleAllocator();
-   HRESULT hr = spAllocator->SetDirectXManager( m_spDeviceManager.Get() );
-   if( FAILED( hr ) )
-      return hr;
-
-   ComPtr<IMFAttributes> spAttrs;
-   ComPtr<IMFMediaType> spMapType;
-
-   // Attributes for allocator
-   CHECKHR_GOTO( MFCreateAttributes( &spAttrs, 2 ), done );
-   CHECKHR_GOTO( spAttrs->SetUINT32( MF_SA_BUFFERS_PER_SAMPLE, 1 ), done );
-   CHECKHR_GOTO( spAttrs->SetUINT32( MF_MT_D3D_RESOURCE_VERSION, MF_D3D12_RESOURCE ), done );
-
-   // Media type for the map
-   CHECKHR_GOTO( MFCreateMediaType( &spMapType ), done );
-   CHECKHR_GOTO( spMapType->SetGUID( MF_MT_MAJOR_TYPE, MFMediaType_Video ), done );
-   CHECKHR_GOTO( spMapType->SetGUID( MF_MT_SUBTYPE, subtype ), done );
-   MFSetAttributeSize( spMapType.Get(), MF_MT_FRAME_SIZE, width, height );
-   CHECKHR_GOTO( spMapType->SetUINT32( MF_MT_D3D_RESOURCE_VERSION, MF_D3D12_RESOURCE ), done );
-
-   // Initialize the allocator
-   CHECKHR_GOTO( spAllocator->InitializeSampleAllocatorEx( 1, poolSize, spAttrs.Get(), spMapType.Get() ), done );
-
-done:
-   return hr;
-}
-
-// Helper function to configure map sample allocator.
-void
-CDX12EncHMFT::ConfigureMapSampleAllocatorHelper( ComPtr<IMFVideoSampleAllocatorEx> &allocator,
-                                                 const union pipe_enc_cap_gpu_stats_map &outputStatsMap,
-                                                 uint32_t blockSize,
-                                                 BOOL &useAllocatorFlag )
-{
-   if( allocator != nullptr && outputStatsMap.bits.supported && blockSize > 0 )
-   {
-      uint32_t actualBlockSize = ( 1u << outputStatsMap.bits.log2_values_block_size );
-      uint32_t width = static_cast<uint32_t>( std::ceil( m_uiOutputWidth / static_cast<float>( actualBlockSize ) ) );
-      uint32_t height = static_cast<uint32_t>( std::ceil( m_uiOutputHeight / static_cast<float>( actualBlockSize ) ) );
-
-      if( SUCCEEDED( ConfigureMapSampleAllocator( allocator.Get(), width, height, MFVideoFormat_L32, 10 ) ) )
-      {
-         useAllocatorFlag = TRUE;
-      }
-      else
-      {
-         useAllocatorFlag = FALSE;
-      }
-   }
-}
-
 HRESULT
 CDX12EncHMFT::ConfigureBitstreamOutputSampleAttributes( IMFSample *pSample,
                                                         const LPDX12EncodeContext pDX12EncodeContext,
