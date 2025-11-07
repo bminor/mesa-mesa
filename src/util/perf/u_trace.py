@@ -711,14 +711,14 @@ trace_payload_as_extra_${trace_name}(perfetto::protos::pbzero::GpuRenderStageEve
    % else:
    {
       auto data = event->add_extra_data();
-      data->set_name("${arg.name}");
+      data->set_name("${arg.name}", ${len(arg.name)});
 
     % if arg.is_indirect:
       const ${arg.type}* __${arg.var} = (const ${arg.type}*)((uint8_t *)indirect_data + ${arg.indirect_offset});
     % endif
-      sprintf(buf, "${arg.c_format}", ${arg.value_expr("payload")});
+      const int slen = sprintf(buf, "${arg.c_format}", ${arg.value_expr("payload")});
 
-      data->set_value(buf);
+      data->set_value(buf, slen);
    }
    % endif
   % endfor
