@@ -958,8 +958,15 @@ propagate_condition_eval(nir_builder *b, nir_if *nif, nir_src *use_src,
    return true;
 }
 
+/**
+ * In some cases propagating through a bcsel may be harmful. If the bcsel uses
+ * are unlikely to be eliminated in both branch of an if statement,
+ * propagating through it may result in extra moves for phi instructions and
+ * extended live ranges. The \c ignore_bcsel flag can be used to avoid these
+ * cases.
+ */
 static bool
-can_propagate_through_alu(nir_src *src)
+can_propagate_through_alu(nir_src *src, bool ignore_bcsel)
 {
    if (nir_src_parent_instr(src)->type != nir_instr_type_alu)
       return false;
@@ -972,7 +979,7 @@ can_propagate_through_alu(nir_src *src)
    case nir_op_b2i32:
       return true;
    case nir_op_bcsel:
-      return src == &alu->src[0].src;
+      return src == &alu->src[0].src && !ignore_bcsel;
    default:
       return false;
    }
@@ -993,7 +1000,7 @@ evaluate_condition_use(nir_builder *b, nir_if *nif, nir_src *use_src,
       progress = true;
    }
 
-   if (!nir_src_is_if(use_src) && can_propagate_through_alu(use_src)) {
+   if (!nir_src_is_if(use_src) && can_propagate_through_alu(use_src), false) {
       nir_alu_instr *alu = nir_instr_as_alu(nir_src_parent_instr(use_src));
 
       nir_foreach_use_including_if_safe(alu_use, &alu->def) {
