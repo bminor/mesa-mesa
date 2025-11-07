@@ -1644,7 +1644,7 @@
         "description": "c11/threads: fix build on c23",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
