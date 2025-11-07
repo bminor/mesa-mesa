@@ -784,6 +784,13 @@ setup_registers_and_variables(struct ptn_compile *c)
        * the shader.
        */
       c->output_regs[i] = nir_decl_reg(b, 4, 32, 0);
+
+      /* Initialize output registers with default value vec4(0, 0, 0, 1) */
+      if (c->ctx->Const.VertexProgramDefaultOut &&
+          c->prog->info.stage == MESA_SHADER_VERTEX &&
+          i != VARYING_SLOT_FOGC && i <= VARYING_SLOT_TEX7) {
+         nir_store_reg(b, nir_imm_vec4(b, 0, 0, 0, 1), c->output_regs[i]);
+      }
    }
 
    /* Create temporary registers. */

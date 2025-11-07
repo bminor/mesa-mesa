@@ -944,6 +944,9 @@ struct gl_constants
     */
    bool GLThreadNopCheckFramebufferStatus;
 
+   /** (driconf) Initialize outputs of vertex program to a default value vec4(0, 0, 0, 1) */
+   GLboolean VertexProgramDefaultOut;
+
    /** GL_ARB_sparse_texture */
    GLuint MaxSparseTextureSize;
    GLuint MaxSparse3DTextureSize;
