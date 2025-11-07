@@ -1299,7 +1299,7 @@ static int setup_dpb(struct radeon_encoder *enc, uint32_t num_reconstructed_pict
    uint32_t aligned_width = align(enc->base.width, rec_alignment);
    uint32_t aligned_height = align(enc->base.height, rec_alignment);
    uint32_t pitch = align(aligned_width, enc->alignment);
-   uint32_t luma_size, chroma_size, offset;
+   uint32_t luma_size, chroma_size, pre_luma_size, pre_chroma_size, offset;
    struct radeon_enc_pic *enc_pic = &enc->enc_pic;
    int i;
    bool has_b = enc_pic->spec_misc.b_picture_enabled; /* for h264 only */
@@ -1309,9 +1309,21 @@ static int setup_dpb(struct radeon_encoder *enc, uint32_t num_reconstructed_pict
 
    luma_size = align(pitch * aligned_dpb_height , enc->alignment);
    chroma_size = align(luma_size / 2 , enc->alignment);
+
+   if (enc_pic->quality_modes.pre_encode_mode) {
+      uint32_t scale = enc_pic->quality_modes.pre_encode_mode;
+      uint32_t pre_pitch = align(aligned_width / scale, enc->alignment);
+      uint32_t pre_aligned_height = align(aligned_height / scale, enc->alignment);
+
+      pre_luma_size = align(pre_pitch * MAX2(256, pre_aligned_height), enc->alignment);
+      pre_chroma_size = align(pre_luma_size / 2, enc->alignment);
+   }
+
    if (enc_pic->bit_depth_luma_minus8 || enc_pic->bit_depth_chroma_minus8) {
       luma_size *= 2;
       chroma_size *= 2;
+      pre_luma_size *= 2;
+      pre_chroma_size *= 2;
    }
 
    assert(num_reconstructed_pictures <= RENCODE_MAX_NUM_RECONSTRUCTED_PICTURES);
@@ -1339,11 +1351,11 @@ static int setup_dpb(struct radeon_encoder *enc, uint32_t num_reconstructed_pict
 
       if (enc_pic->quality_modes.pre_encode_mode) {
          enc_pic->ctx_buf.pre_encode_input_picture.rgb.red_offset = offset;
-         offset += luma_size;
+         offset += pre_luma_size;
          enc_pic->ctx_buf.pre_encode_input_picture.rgb.green_offset = offset;
-         offset += luma_size;
+         offset += pre_luma_size;
          enc_pic->ctx_buf.pre_encode_input_picture.rgb.blue_offset = offset;
-         offset += luma_size;
+         offset += pre_luma_size;
       }
 
       if (is_av1) {
@@ -1357,7 +1369,7 @@ static int setup_dpb(struct radeon_encoder *enc, uint32_t num_reconstructed_pict
 
          if (enc_pic->quality_modes.pre_encode_mode)
             radeon_enc_rec_offset(&enc_pic->ctx_buf.pre_encode_reconstructed_pictures[i],
-                                  &offset, luma_size, chroma_size, is_av1);
+                                  &offset, pre_luma_size, pre_chroma_size, is_av1);
       }
 
       for (; i < RENCODE_MAX_NUM_RECONSTRUCTED_PICTURES; i++) {
@@ -1381,11 +1393,11 @@ static int setup_dpb(struct radeon_encoder *enc, uint32_t num_reconstructed_pict
 
       if (enc_pic->quality_modes.pre_encode_mode) {
          enc_pic->ctx_buf.pre_encode_input_picture.rgb.red_offset = offset;
-         offset += luma_size;
+         offset += pre_luma_size;
          enc_pic->ctx_buf.pre_encode_input_picture.rgb.green_offset = offset;
-         offset += luma_size;
+         offset += pre_luma_size;
          enc_pic->ctx_buf.pre_encode_input_picture.rgb.blue_offset = offset;
-         offset += luma_size;
+         offset += pre_luma_size;
       }
 
       for (i = 0; i < num_reconstructed_pictures; i++) {
@@ -1394,7 +1406,7 @@ static int setup_dpb(struct radeon_encoder *enc, uint32_t num_reconstructed_pict
 
          if (enc_pic->quality_modes.pre_encode_mode)
             radeon_enc_rec_offset(&enc_pic->ctx_buf.pre_encode_reconstructed_pictures[i],
-                                  &offset, luma_size, chroma_size, false);
+                                  &offset, pre_luma_size, pre_chroma_size, false);
       }
 
       for (; i < RENCODE_MAX_NUM_RECONSTRUCTED_PICTURES; i++) {
@@ -2083,7 +2095,10 @@ void radeon_enc_create_dpb_aux_buffers(struct radeon_encoder *enc, struct radeon
    }
 
    if (enc->enc_pic.quality_modes.pre_encode_mode) {
-      buf->pre = enc->base.context->create_video_buffer(enc->base.context, &buf->templ);
+      struct pipe_video_buffer templ = buf->templ;
+      templ.width /= enc->enc_pic.quality_modes.pre_encode_mode;
+      templ.height /= enc->enc_pic.quality_modes.pre_encode_mode;
+      buf->pre = enc->base.context->create_video_buffer(enc->base.context, &templ);
       if (!buf->pre) {
          RADEON_ENC_ERR("Can't create preenc buffer!\n");
          return;
