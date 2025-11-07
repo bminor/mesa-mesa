@@ -253,39 +253,6 @@ typedef enum IntraRefreshMode
 DEFINE_MEDIATYPE_GUID( MFVideoFormat_L32, D3DFMT_INDEX32 );
 #endif
 
-#ifndef CODECAPI_AVEncVideoEnableFramePsnrYuv
-// AVEncVideoEnableFramePsnrYuv (BOOL)
-// Indicates whether to enable or disable reporting frame PSNR of YUV planes for video encoding.
-// VARIANT_FALSE: disable; VARIANT_TRUE: enable
-DEFINE_CODECAPI_GUID( AVEncVideoEnableFramePsnrYuv,
-                      "2BBCDD1D-BC47-430E-B2E8-64801B47F5F0",
-                      0x2bbcdd1d,
-                      0xbc47,
-                      0x430e,
-                      0xb2,
-                      0xe8,
-                      0x64,
-                      0x80,
-                      0x1b,
-                      0x47,
-                      0xf5,
-                      0xf0 )
-#define CODECAPI_AVEncVideoEnableFramePsnrYuv DEFINE_CODECAPI_GUIDNAMED( AVEncVideoEnableFramePsnrYuv )
-
-typedef struct _MFSampleExtensionPsnrYuv
-{
-   FLOAT psnrY;   // PSNR for Y plane
-   FLOAT psnrU;   // PSNR for U plane
-   FLOAT psnrV;   // PSNR for V plane
-} MFSampleExtensionPsnrYuv;
-
-// MFSampleExtension_FramePsnrYuv {1C633A3D-566F-4752-833B-2907DF5415E1}
-// Type: IMFMediaBuffer
-// A MFSampleExtensionPsnrYuv structure that specifies the PSNR data of YUV planes of an encoded video frame.
-DEFINE_GUID( MFSampleExtension_FramePsnrYuv, 0x1c633a3d, 0x566f, 0x4752, 0x83, 0x3b, 0x29, 0x07, 0xdf, 0x54, 0x15, 0xe1 );
-
-#endif
-
 #ifndef CODECAPI_AVEncVideoEnableSpatialAdaptiveQuantization
 // AVEncVideoEnableSpatialAdaptiveQuantization (BOOL)
 // Indicates whether to enable or disable spatial adaptive quantization for video encoding.
