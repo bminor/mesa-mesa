@@ -11,6 +11,7 @@ use std::process;
 use std::process::Command;
 use std::slice;
 use std::sync::atomic::AtomicUsize;
+use std::sync::OnceLock;
 
 static FILE_NUM: AtomicUsize = AtomicUsize::new(0);
 
@@ -158,8 +159,27 @@ impl DisasmCheck {
     }
 }
 
+static SM_LIST_CELL: OnceLock<&'static [u8]> = OnceLock::new();
+
 fn sm_list() -> &'static [u8] {
-    &[70, 75, 80, 86, 89, 90, 100, 120]
+    SM_LIST_CELL.get_or_init(|| {
+        let out = Command::new("nvdisasm")
+            .arg("--version")
+            .output()
+            .expect("failed to execute process");
+
+        std::io::stderr().write_all(&out.stderr).expect("IO error");
+        assert!(out.status.success());
+        let stdout = std::str::from_utf8(&out.stdout).unwrap();
+
+        if stdout.find("cuda_12").is_some() {
+            &[70, 75, 80, 86, 89, 90, 100, 120]
+        } else if stdout.find("cuda_13").is_some() {
+            &[75, 80, 86, 89, 90, 100, 120]
+        } else {
+            panic!("Unknown nvdisasm version. stdout: {stdout}");
+        }
+    })
 }
 
 #[test]
