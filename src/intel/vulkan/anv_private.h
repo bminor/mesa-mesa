@@ -202,6 +202,12 @@ get_max_vbs(const struct intel_device_info *devinfo) {
 #define MAX_EMBEDDED_SAMPLERS 2048
 #define MAX_CUSTOM_BORDER_COLORS 4096
 #define MAX_DESCRIPTOR_SET_INPUT_ATTACHMENTS 256
+/* Different SKUs have different maximum values. Make things more consistent
+ * across them, by setting a maximum of 48KiB because it's what some of the
+ * other vendors report as maximum and also above the required limit from DX
+ * (16KiB on "downlevel hardware", 32KiB otherwise).
+ */
+#define MAX_SLM_SIZE (48 * 1024)
 /* We need 16 for UBO block reads to work and 32 for push UBOs. However, we
  * use 64 here to avoid cache issues. This could most likely bring it back to
  * 32 if we had different virtual addresses for the different views on a given

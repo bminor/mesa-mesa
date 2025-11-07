@@ -1366,7 +1366,8 @@ get_properties(const struct anv_physical_device *pdevice,
       .maxFragmentDualSrcAttachments            = 1,
       .maxFragmentCombinedOutputResources       = MAX_RTS + desc_limits.max_ssbos +
                                                   desc_limits.max_images,
-      .maxComputeSharedMemorySize               = intel_device_info_get_max_slm_size(&pdevice->info),
+      .maxComputeSharedMemorySize               = MIN2(MAX_SLM_SIZE,
+                                                       intel_device_info_get_max_slm_size(&pdevice->info)),
       .maxComputeWorkGroupCount                 = { 65535, 65535, 65535 },
       .maxComputeWorkGroupInvocations           = max_workgroup_size,
       .maxComputeWorkGroupSize = {
