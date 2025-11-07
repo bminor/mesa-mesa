@@ -2464,7 +2464,8 @@ static void si_initialize_color_surface(struct si_context *sctx, struct si_surfa
 
    /* Determine pixel shader export format */
    struct ac_spi_color_formats formats = {};
-   ac_choose_spi_color_formats(format, swap, ntype, tex->is_depth, true, &formats);
+   const bool rbplus = sctx->screen->info.rbplus_allowed;
+   ac_choose_spi_color_formats(format, swap, ntype, tex->is_depth, rbplus, &formats);
 
    surf->spi_shader_col_format = formats.normal;
    surf->spi_shader_col_format_alpha = formats.alpha;
