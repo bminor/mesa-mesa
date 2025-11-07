@@ -464,6 +464,15 @@ iris_blorp_exec_blitter(struct blorp_batch *blorp_batch,
 
    iris_bo_bump_seqno(params->dst.addr.buffer, batch->next_seqno,
                       IRIS_DOMAIN_OTHER_WRITE);
+
+   /*
+    * TDOD: Add INTEL_NEEDS_WA_14025112257 check once HSD is propogated for all
+    * other impacted platforms.
+    */
+   if (batch->screen->devinfo->ver >= 20 && batch->name == IRIS_BATCH_COMPUTE) {
+      iris_emit_pipe_control_flush(batch, "WA_14025112257",
+                                   PIPE_CONTROL_STATE_CACHE_INVALIDATE);
+   }
 }
 
 static void

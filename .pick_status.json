@@ -1604,7 +1604,7 @@
         "description": "anv/blorp/iris: rework Wa_14025112257",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3e0ad0176bb391ba260c33b2e3af5159addd1731",
         "notes": null

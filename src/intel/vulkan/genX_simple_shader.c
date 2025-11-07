@@ -667,13 +667,17 @@ genX(emit_simple_shader_dispatch)(struct anv_simple_shader *state,
          cw.body = body;
       }
 
-      /* TODO: switch to use INTEL_NEEDS_WA_14025112257 */
-      if (device->info->ver >= 20 &&
-          batch->engine_class == INTEL_ENGINE_CLASS_COMPUTE) {
-         enum anv_pipe_bits emitted_bits = 0;
-         genX(emit_apply_pipe_flushes)(batch, device, GPGPU,
-                                       ANV_PIPE_STATE_CACHE_INVALIDATE_BIT,
-                                       &emitted_bits);
+      if (state->cmd_buffer) {
+         genX(cmd_buffer_post_dispatch_wa)(state->cmd_buffer);
+      } else {
+         /* TODO: switch to use INTEL_NEEDS_WA_14025112257 */
+         if (device->info->ver >= 20 &&
+             batch->engine_class == INTEL_ENGINE_CLASS_COMPUTE) {
+            enum anv_pipe_bits emitted_bits = 0;
+            genX(emit_apply_pipe_flushes)(batch, device, GPGPU,
+                                          ANV_PIPE_STATE_CACHE_INVALIDATE_BIT,
+                                          &emitted_bits);
+         }
       }
 
 #else /* GFX_VERx10 < 125 */
