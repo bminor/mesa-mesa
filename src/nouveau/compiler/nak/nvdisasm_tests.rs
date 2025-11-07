@@ -158,11 +158,13 @@ impl DisasmCheck {
     }
 }
 
-const SM_LIST: [u8; 8] = [70, 75, 80, 86, 89, 90, 100, 120];
+fn sm_list() -> &'static [u8] {
+    &[70, 75, 80, 86, 89, 90, 100, 120]
+}
 
 #[test]
 pub fn test_nop() {
-    for sm in SM_LIST {
+    for &sm in sm_list() {
         let mut c = DisasmCheck::new();
         c.push(OpNop { label: None }, "nop;");
         c.check(sm);
@@ -189,7 +191,7 @@ pub fn test_ldc() {
         (MemType::B128, ".128"),
     ];
 
-    for sm in SM_LIST {
+    for &sm in sm_list() {
         let mut c = DisasmCheck::new();
         for reg_file in reg_files {
             if reg_file == RegFile::UGPR && sm < 73 {
@@ -289,7 +291,7 @@ pub fn test_ld_st_atom() {
         MemSpace::Local,
     ];
 
-    for sm in SM_LIST {
+    for &sm in sm_list() {
         let mut c = DisasmCheck::new();
         for space in spaces {
             for (addr_offset, addr_offset_str) in [(0x12, "0x12"), (-1, "-0x1")]
@@ -430,7 +432,7 @@ pub fn test_texture() {
         TexQuery::SamplerPos,
     ];
 
-    for sm in SM_LIST {
+    for &sm in sm_list() {
         let mut c = DisasmCheck::new();
         for lod_mode in lod_modes {
             if lod_mode == TexLodMode::BiasClamp && sm >= 100 {
@@ -585,7 +587,7 @@ pub fn test_lea() {
         (SrcMod::None, SrcMod::INeg),
     ];
 
-    for sm in SM_LIST {
+    for &sm in sm_list() {
         let mut c = DisasmCheck::new();
 
         for (intermediate_mod, b_mod) in src_mods {
@@ -651,7 +653,7 @@ pub fn test_hfma2() {
 
     let src_mods = [SrcMod::None, SrcMod::FAbs, SrcMod::FNeg, SrcMod::FNegAbs];
 
-    for sm in SM_LIST {
+    for &sm in sm_list() {
         let mut c = DisasmCheck::new();
 
         for a_mod in src_mods {
@@ -692,7 +694,7 @@ pub fn test_redux() {
     let ur0 = RegRef::new(RegFile::UGPR, 0, 1);
     let r1 = RegRef::new(RegFile::GPR, 1, 1);
 
-    for sm in SM_LIST {
+    for &sm in sm_list() {
         if sm < 80 {
             continue;
         }
@@ -725,7 +727,7 @@ pub fn test_match() {
     let r3 = RegRef::new(RegFile::GPR, 3, 1);
     let p1 = RegRef::new(RegFile::Pred, 1, 1);
 
-    for sm in SM_LIST {
+    for &sm in sm_list() {
         let mut c = DisasmCheck::new();
 
         for (op, pred, pred_str) in [
@@ -757,7 +759,7 @@ pub fn test_sgxt() {
     let r1 = RegRef::new(RegFile::GPR, 1, 1);
     let r2 = RegRef::new(RegFile::GPR, 2, 1);
 
-    for sm in SM_LIST {
+    for &sm in sm_list() {
         let mut c = DisasmCheck::new();
         for signed in [false, true] {
             let instr = OpSgxt {
@@ -788,7 +790,7 @@ pub fn test_plop3() {
 
     let src_mods = [SrcMod::None, SrcMod::BNot];
 
-    for sm in SM_LIST {
+    for &sm in sm_list() {
         let mut c = DisasmCheck::new();
         for a_mod in src_mods {
             for b_mod in src_mods {
