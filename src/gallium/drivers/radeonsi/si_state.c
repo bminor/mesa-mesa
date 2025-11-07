@@ -2424,19 +2424,6 @@ static bool si_is_format_supported(struct pipe_screen *screen, enum pipe_format 
  * framebuffer handling
  */
 
-static void si_choose_spi_color_formats(struct si_surface *surf, unsigned format, unsigned swap,
-                                        unsigned ntype, bool is_depth)
-{
-   struct ac_spi_color_formats formats = {};
-
-   ac_choose_spi_color_formats(format, swap, ntype, is_depth, true, &formats);
-
-   surf->spi_shader_col_format = formats.normal;
-   surf->spi_shader_col_format_alpha = formats.alpha;
-   surf->spi_shader_col_format_blend = formats.blend;
-   surf->spi_shader_col_format_blend_alpha = formats.blend_alpha;
-}
-
 static void si_initialize_color_surface(struct si_context *sctx, struct si_surface *surf)
 {
    struct si_texture *tex = (struct si_texture *)surf->base.texture;
@@ -2476,8 +2463,13 @@ static void si_initialize_color_surface(struct si_context *sctx, struct si_surfa
    ac_init_cb_surface(&sctx->screen->info, &cb_state, &surf->cb);
 
    /* Determine pixel shader export format */
-   si_choose_spi_color_formats(surf, format, swap, ntype, tex->is_depth);
+   struct ac_spi_color_formats formats = {};
+   ac_choose_spi_color_formats(format, swap, ntype, tex->is_depth, true, &formats);
 
+   surf->spi_shader_col_format = formats.normal;
+   surf->spi_shader_col_format_alpha = formats.alpha;
+   surf->spi_shader_col_format_blend = formats.blend;
+   surf->spi_shader_col_format_blend_alpha = formats.blend_alpha;
    surf->color_initialized = true;
 }
 
