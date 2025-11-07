@@ -3064,7 +3064,8 @@ vk_get_rt_pipeline_compile_info(struct vk_rt_pipeline_compile_info *info,
                                            group->stages, group->stage_count,
                                            group_linked_stages);
 
-      assert(group->stage_count > 0 && group->stage_count <= 3);
+      /* It is possible to have a group with 0 shaders. */
+      assert(group->stage_count <= 3);
    }
 
    if (libs_info != NULL) {
