@@ -1764,7 +1764,7 @@
         "description": "radv/video: Fix dummy DPB addresses",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d103b76ad68ceb21c309ab2de62c59e4027824a5",
         "notes": null
