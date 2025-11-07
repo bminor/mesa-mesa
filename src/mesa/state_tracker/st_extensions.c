@@ -1331,6 +1331,8 @@ void st_init_extensions(struct pipe_screen *screen,
       consts->GLSLZeroInit = screen->caps.glsl_zero_init;
    }
 
+   consts->VertexProgramDefaultOut = options->vertex_program_default_out;
+
    if (extensions->EXT_semaphore) {
       consts->MaxTimelineSemaphoreValueDifference = screen->caps.max_timeline_semaphore_difference;
       extensions->NV_timeline_semaphore = consts->MaxTimelineSemaphoreValueDifference > 0;
