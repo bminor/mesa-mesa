@@ -2741,8 +2741,8 @@ tu_shader_create(struct tu_device *dev,
                &compute_sysval_options);
    }
 
-   nir_assign_io_var_locations(nir, nir_var_shader_in, &nir->num_inputs, nir->info.stage);
-   nir_assign_io_var_locations(nir, nir_var_shader_out, &nir->num_outputs, nir->info.stage);
+   nir_assign_io_var_locations(nir, nir_var_shader_in);
+   nir_assign_io_var_locations(nir, nir_var_shader_out);
 
   /* Gather information for transform feedback. This should be called after:
     * - nir_split_per_member_structs.

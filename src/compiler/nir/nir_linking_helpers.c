@@ -1493,8 +1493,7 @@ nir_sort_variables_by_location(nir_shader *shader, nir_variable_mode mode)
 }
 
 void
-nir_assign_io_var_locations(nir_shader *shader, nir_variable_mode mode,
-                            unsigned *size, mesa_shader_stage stage)
+nir_assign_io_var_locations(nir_shader *shader, nir_variable_mode mode)
 {
    unsigned location = 0;
    unsigned assigned_locations[VARYING_SLOT_TESS_MAX][2];
@@ -1508,16 +1507,17 @@ nir_assign_io_var_locations(nir_shader *shader, nir_variable_mode mode,
    bool last_partial = false;
    nir_foreach_variable_in_list(var, &io_vars) {
       const struct glsl_type *type = var->type;
-      if (nir_is_arrayed_io(var, stage)) {
+      if (nir_is_arrayed_io(var, shader->info.stage)) {
          assert(glsl_type_is_array(type));
          type = glsl_get_array_element(type);
       }
 
       int base;
-      if (var->data.mode == nir_var_shader_in && stage == MESA_SHADER_VERTEX)
+      if (var->data.mode == nir_var_shader_in &&
+          shader->info.stage == MESA_SHADER_VERTEX)
          base = VERT_ATTRIB_GENERIC0;
       else if (var->data.mode == nir_var_shader_out &&
-               stage == MESA_SHADER_FRAGMENT)
+               shader->info.stage == MESA_SHADER_FRAGMENT)
          base = FRAG_RESULT_DATA0;
       else
          base = VARYING_SLOT_VAR0;
@@ -1628,5 +1628,10 @@ nir_assign_io_var_locations(nir_shader *shader, nir_variable_mode mode,
       location++;
 
    exec_list_append(&shader->variables, &io_vars);
-   *size = location;
+   if (mode == nir_var_shader_in)
+      shader->num_inputs = location;
+   else if (mode == nir_var_shader_out)
+      shader->num_outputs = location;
+   else
+      UNREACHABLE("Unknown I/O variable mode");
 }

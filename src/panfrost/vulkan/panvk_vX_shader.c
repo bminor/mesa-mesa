@@ -802,8 +802,7 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
     * number of varying loads, as this number is required during descriptor
     * lowering for v9+. */
    if (stage == MESA_SHADER_FRAGMENT) {
-      nir_assign_io_var_locations(nir, nir_var_shader_in, &nir->num_inputs,
-                                  stage);
+      nir_assign_io_var_locations(nir, nir_var_shader_in);
 #if PAN_ARCH >= 9
       shader->desc_info.max_varying_loads = nir->num_inputs;
 #endif
@@ -899,12 +898,10 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
       }
    } else if (stage != MESA_SHADER_FRAGMENT) {
       /* Input varyings in fragment shader have been lowered early. */
-      nir_assign_io_var_locations(nir, nir_var_shader_in, &nir->num_inputs,
-                                  stage);
+      nir_assign_io_var_locations(nir, nir_var_shader_in);
    }
 
-   nir_assign_io_var_locations(nir, nir_var_shader_out, &nir->num_outputs,
-                               stage);
+   nir_assign_io_var_locations(nir, nir_var_shader_out);
 
    /* Needed to turn shader_temp into function_temp since the backend only
     * handles the latter for now.

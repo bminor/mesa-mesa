@@ -767,8 +767,8 @@ compile_shader(struct tu_device *dev, struct nir_shader *nir,
 {
    nir->options = ir3_get_compiler_options(dev->compiler);
 
-   nir_assign_io_var_locations(nir, nir_var_shader_in, &nir->num_inputs, nir->info.stage);
-   nir_assign_io_var_locations(nir, nir_var_shader_out, &nir->num_outputs, nir->info.stage);
+   nir_assign_io_var_locations(nir, nir_var_shader_in);
+   nir_assign_io_var_locations(nir, nir_var_shader_out);
 
    struct ir3_const_allocations const_allocs = {};
    if (consts > 0)

@@ -710,13 +710,8 @@ ir3_shader_passthrough_tcs(struct ir3_shader *vs, unsigned patch_vertices)
        */
       tcs->info.internal = false;
 
-      nir_assign_io_var_locations(tcs, nir_var_shader_in,
-                                  &tcs->num_inputs,
-                                  tcs->info.stage);
-
-      nir_assign_io_var_locations(tcs, nir_var_shader_out,
-                                  &tcs->num_outputs,
-                                  tcs->info.stage);
+      nir_assign_io_var_locations(tcs, nir_var_shader_in);
+      nir_assign_io_var_locations(tcs, nir_var_shader_out);
 
       NIR_PASS(_, tcs, nir_lower_system_values);
 

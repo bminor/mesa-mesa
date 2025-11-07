@@ -434,15 +434,14 @@ lvp_shader_lower(struct lvp_device *pdevice, nir_shader *nir, struct lvp_pipelin
    lvp_shader_optimize(nir);
 
    if (nir->info.stage != MESA_SHADER_VERTEX)
-      nir_assign_io_var_locations(nir, nir_var_shader_in, &nir->num_inputs, nir->info.stage);
+      nir_assign_io_var_locations(nir, nir_var_shader_in);
    else {
       nir->num_inputs = util_last_bit64(nir->info.inputs_read);
       nir_foreach_shader_in_variable(var, nir) {
          var->data.driver_location = var->data.location - VERT_ATTRIB_GENERIC0;
       }
    }
-   nir_assign_io_var_locations(nir, nir_var_shader_out, &nir->num_outputs,
-                               nir->info.stage);
+   nir_assign_io_var_locations(nir, nir_var_shader_out);
 
    if (robustness)
       NIR_PASS(_, nir, lvp_nir_opt_robustness, pdevice, robustness);

@@ -91,14 +91,13 @@ tu_nir_lower_multiview(nir_shader *nir, uint32_t mask, struct tu_device *dev)
    /* Speculatively assign output locations so that we know num_outputs. We
     * will assign output locations for real after this pass.
     */
-   unsigned num_outputs;
-   nir_assign_io_var_locations(nir, nir_var_shader_out, &num_outputs, MESA_SHADER_VERTEX);
+   nir_assign_io_var_locations(nir, nir_var_shader_out);
 
    /* In addition to the generic checks done by NIR, check that we don't
     * overflow VPC with the extra copies of gl_Position.
     */
    if (!TU_DEBUG(NOMULTIPOS) &&
-       num_views <= max_views_for_multipos && num_outputs + (num_views - 1) <= 32 &&
+       num_views <= max_views_for_multipos && nir->num_outputs + (num_views - 1) <= 32 &&
        nir_can_lower_multiview(nir, options)) {
       /* It appears that the multiview mask is ignored when multi-position
        * output is enabled, so we have to write 0 to inactive views ourselves.

@@ -5123,10 +5123,7 @@ bool nir_lower_amul(nir_shader *shader,
 bool nir_lower_ubo_vec4(nir_shader *shader);
 
 void nir_sort_variables_by_location(nir_shader *shader, nir_variable_mode mode);
-void nir_assign_io_var_locations(nir_shader *shader,
-                                 nir_variable_mode mode,
-                                 unsigned *size,
-                                 mesa_shader_stage stage);
+void nir_assign_io_var_locations(nir_shader *shader, nir_variable_mode mode);
 
 bool nir_opt_clip_cull_const(nir_shader *shader);
 

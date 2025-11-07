@@ -933,11 +933,8 @@ lower_fs_io(nir_shader *nir)
    NIR_PASS(_, nir, nir_lower_io_array_vars_to_elements_no_indirects, false);
    NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_shader_out, NULL);
 
-   nir_assign_io_var_locations(nir, nir_var_shader_in, &nir->num_inputs,
-                               MESA_SHADER_FRAGMENT);
-
-   nir_assign_io_var_locations(nir, nir_var_shader_out, &nir->num_outputs,
-                               MESA_SHADER_FRAGMENT);
+   nir_assign_io_var_locations(nir, nir_var_shader_in);
+   nir_assign_io_var_locations(nir, nir_var_shader_out);
 
    NIR_PASS(_, nir, nir_lower_io, nir_var_shader_in | nir_var_shader_out,
             type_size_vec4, 0);
@@ -948,11 +945,8 @@ lower_gs_io(struct nir_shader *nir)
 {
    NIR_PASS(_, nir, nir_lower_io_array_vars_to_elements_no_indirects, false);
 
-   nir_assign_io_var_locations(nir, nir_var_shader_in, &nir->num_inputs,
-                               MESA_SHADER_GEOMETRY);
-
-   nir_assign_io_var_locations(nir, nir_var_shader_out, &nir->num_outputs,
-                               MESA_SHADER_GEOMETRY);
+   nir_assign_io_var_locations(nir, nir_var_shader_in);
+   nir_assign_io_var_locations(nir, nir_var_shader_out);
 }
 
 static void
@@ -960,11 +954,8 @@ lower_vs_io(struct nir_shader *nir)
 {
    NIR_PASS(_, nir, nir_lower_io_array_vars_to_elements_no_indirects, false);
 
-   nir_assign_io_var_locations(nir, nir_var_shader_in, &nir->num_inputs,
-                               MESA_SHADER_VERTEX);
-
-   nir_assign_io_var_locations(nir, nir_var_shader_out, &nir->num_outputs,
-                               MESA_SHADER_VERTEX);
+   nir_assign_io_var_locations(nir, nir_var_shader_in);
+   nir_assign_io_var_locations(nir, nir_var_shader_out);
 
    /* FIXME: if we call nir_lower_io, we get a crash later. Likely because it
     * overlaps with v3d_nir_lower_io. Need further research though.
