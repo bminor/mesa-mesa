@@ -797,16 +797,6 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
    }
 #endif
 
-   /* Lower input intrinsics for fragment shaders early to get the max
-    * number of varying loads, as this number is required during descriptor
-    * lowering for v9+. */
-   if (stage == MESA_SHADER_FRAGMENT) {
-      nir_assign_io_var_locations(nir, nir_var_shader_in);
-#if PAN_ARCH >= 9
-      shader->desc_info.max_varying_loads = nir->num_inputs;
-#endif
-   }
-
    const struct lower_ycbcr_state ycbcr_state = {
       .set_layout_count = set_layout_count,
       .set_layouts = set_layouts,
@@ -883,23 +873,6 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
       NIR_PASS(_, nir, nir_lower_compute_system_values, NULL);
    }
 
-   if (stage == MESA_SHADER_VERTEX) {
-      /* We need the driver_location to match the vertex attribute location,
-       * so we can use the attribute layout described by
-       * vk_vertex_input_state where there are holes in the attribute locations.
-       */
-      nir_foreach_shader_in_variable(var, nir) {
-         assert(var->data.location >= VERT_ATTRIB_GENERIC0 &&
-                var->data.location <= VERT_ATTRIB_GENERIC15);
-         var->data.driver_location = var->data.location - VERT_ATTRIB_GENERIC0;
-      }
-   } else if (stage != MESA_SHADER_FRAGMENT) {
-      /* Input varyings in fragment shader have been lowered early. */
-      nir_assign_io_var_locations(nir, nir_var_shader_in);
-   }
-
-   nir_assign_io_var_locations(nir, nir_var_shader_out);
-
    /* Needed to turn shader_temp into function_temp since the backend only
     * handles the latter for now.
     */
@@ -910,8 +883,11 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
       mesa_logi("translated nir:");
       nir_log_shaderi(nir);
    }
+}
 
-   /* Postprocess can add copies back in and lower_io can't handle them */
+static void
+panvk_lower_nir_io(nir_shader *nir)
+{
    NIR_PASS(_, nir, nir_lower_var_copies);
    NIR_PASS(_, nir, nir_lower_indirect_derefs_to_if_else_trees,
             nir_var_shader_in | nir_var_shader_out, UINT32_MAX);
@@ -1358,6 +1334,20 @@ panvk_compile_shader(struct panvk_device *dev,
                          info->set_layouts, info->robustness,
                          state, &input_variants[v], variant);
 
+         /* We need the driver_location to match the vertex attribute
+          * location, so we can use the attribute layout described by
+          * vk_vertex_input_state where there are holes in the attribute
+          * locations.
+          */
+         nir_foreach_shader_in_variable(var, nir) {
+            assert(var->data.location >= VERT_ATTRIB_GENERIC0 &&
+                   var->data.location <= VERT_ATTRIB_GENERIC15);
+            var->data.driver_location =
+               var->data.location - VERT_ATTRIB_GENERIC0;
+         }
+         nir_assign_io_var_locations(nir, nir_var_shader_out);
+         panvk_lower_nir_io(nir);
+
          variant->own_bin = true;
 
          result = panvk_compile_nir(dev, nir_variants[v], info->flags,
@@ -1383,8 +1373,20 @@ panvk_compile_shader(struct panvk_device *dev,
       NIR_PASS(_, nir, panvk_per_arch(nir_lower_input_attachment_loads),
                state, &variant->fs.input_attachment_read);
 
+      /* Lower input intrinsics for fragment shaders early to get the max
+       * number of varying loads, as this number is required during descriptor
+       * lowering for v9+.
+       */
+      nir_assign_io_var_locations(nir, nir_var_shader_in);
+#if PAN_ARCH >= 9
+      variant->desc_info.max_varying_loads = nir->num_inputs;
+#endif
+
       panvk_lower_nir(dev, nir, info->set_layout_count, info->set_layouts,
                       info->robustness, state, &inputs, variant);
+
+      nir_assign_io_var_locations(nir, nir_var_shader_out);
+      panvk_lower_nir_io(nir);
 
 #if PAN_ARCH >= 9
       /* Use LD_VAR_BUF[_IMM] for varyings if possible. */
