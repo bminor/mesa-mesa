@@ -857,7 +857,7 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
       .shaderFloat64 = true,
       .shaderInt64 = true,
       .shaderInt16 = true,
-      .sparseBinding = true,
+      .sparseBinding = pdev->info.has_sparse_vm_mappings,
       .sparseResidencyBuffer = pdev->info.family >= CHIP_POLARIS10,
       .sparseResidencyImage2D = pdev->info.family >= CHIP_POLARIS10,
       .sparseResidencyImage3D = pdev->info.family >= CHIP_POLARIS10,
@@ -1503,7 +1503,7 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
       .maxMemoryAllocationCount = UINT32_MAX,
       .maxSamplerAllocationCount = 64 * 1024,
       .bufferImageGranularity = 1,
-      .sparseAddressSpaceSize = RADV_MAX_MEMORY_ALLOCATION_SIZE, /* buffer max size */
+      .sparseAddressSpaceSize = pdev->info.has_sparse_vm_mappings ? RADV_MAX_MEMORY_ALLOCATION_SIZE : 0, /* buffer max size */
       .maxBoundDescriptorSets = MAX_SETS,
       .maxPerStageDescriptorSamplers = max_descriptor_set_size,
       .maxPerStageDescriptorUniformBuffers = max_descriptor_set_size,
