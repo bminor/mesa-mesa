@@ -2749,8 +2749,8 @@ rvcn_dec_message_decode(struct radv_cmd_buffer *cmd_buffer, struct radv_video_se
           * It will not perform any actual writes to these dummy slots.
           */
          for (int i = 0; i < STD_VIDEO_AV1_NUM_REF_FRAMES; i++) {
-            dynamic_dpb_t2->dpbAddrHi[i] = addr;
-            dynamic_dpb_t2->dpbAddrLo[i] = addr >> 32;
+            dynamic_dpb_t2->dpbAddrLo[i] = addr;
+            dynamic_dpb_t2->dpbAddrHi[i] = addr >> 32;
          }
       }
 
