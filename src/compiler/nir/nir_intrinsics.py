@@ -1431,6 +1431,11 @@ system_value("ro_sink_address_poly", 1, bit_sizes=[64])
 # mesa_prim for the input topology (in a geometry shader)
 system_value("input_topology_poly", 1)
 
+# Size of an index in the index buffer in bytes, or zero for no indexing.
+# This is modeled as a sysval so it can be constant folded by drivers based
+# on a shader key if desired.
+system_value("index_size_poly", 1, bit_sizes=[32])
+
 # Mask of VS->TCS, VS->GS, or TES->GS outputs. This is modelled as a sysval
 # so it can be dynamic with shader objects or constant folded with monolithic.
 system_value("vs_outputs_poly", 1, bit_sizes=[64])

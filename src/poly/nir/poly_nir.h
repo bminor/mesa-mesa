@@ -15,10 +15,9 @@ struct nir_def *poly_load_per_vertex_input(struct nir_builder *b,
                                            nir_intrinsic_instr *intr,
                                            struct nir_def *vertex);
 
-nir_def *poly_nir_load_vertex_id(struct nir_builder *b, nir_def *id,
-                                 unsigned index_size_B);
+nir_def *poly_nir_load_vertex_id(struct nir_builder *b, nir_def *id);
 
-bool poly_nir_lower_sw_vs(struct nir_shader *s, unsigned index_size_B);
+bool poly_nir_lower_sw_vs(struct nir_shader *s);
 
 bool poly_nir_lower_vs_before_gs(struct nir_shader *vs);
 

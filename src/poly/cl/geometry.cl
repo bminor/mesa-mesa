@@ -379,6 +379,12 @@ poly_vertex_output_address(constant struct poly_vertex_params *p,
 }
 
 unsigned
+poly_index_size(constant struct poly_vertex_params *p)
+{
+   return p->index_size_B;
+}
+
+unsigned
 poly_input_vertices(constant struct poly_vertex_params *p)
 {
    return p->verts_per_instance;

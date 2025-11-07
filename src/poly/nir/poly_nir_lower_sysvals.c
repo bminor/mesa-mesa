@@ -11,6 +11,13 @@ static bool
 lower_sysvals_intr(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 {
    switch (intr->intrinsic) {
+   case nir_intrinsic_load_index_size_poly: {
+      b->cursor = nir_before_instr(&intr->instr);
+      nir_def *vp = nir_load_vertex_param_buffer_poly(b);
+      nir_def_replace(&intr->def, poly_index_size(b, vp));
+      return true;
+   }
+
    case nir_intrinsic_load_vs_outputs_poly: {
       b->cursor = nir_before_instr(&intr->instr);
       nir_def *vp = nir_load_vertex_param_buffer_poly(b);

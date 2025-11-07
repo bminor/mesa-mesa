@@ -182,6 +182,9 @@ struct poly_vertex_params {
    /* Index buffer if present. */
    uint64_t index_buffer;
 
+   /* Size of an index in the index buffer, in bytes */
+   uint32_t index_size_B;
+
    /* Size of the bound index buffer for bounds checking */
    uint32_t index_buffer_range_el;
 
@@ -190,13 +193,15 @@ struct poly_vertex_params {
     */
    uint32_t verts_per_instance;
 
+   uint32_t _pad;
+
    /* Output buffer for vertex data */
    uint64_t output_buffer;
 
    /* Mask of outputs present in the output buffer */
    uint64_t outputs;
 } PACKED;
-static_assert(sizeof(struct poly_vertex_params) == 8 * 4);
+static_assert(sizeof(struct poly_vertex_params) == 10 * 4);
 
 static inline uint
 poly_index_buffer_range_el(uint size_el, uint offset_el)

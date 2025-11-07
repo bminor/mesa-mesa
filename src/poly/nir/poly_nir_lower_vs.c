@@ -15,32 +15,35 @@
  * the topology, which happens in the geometry shader.
  */
 nir_def *
-poly_nir_load_vertex_id(nir_builder *b, nir_def *id, unsigned index_size_B)
+poly_nir_load_vertex_id(nir_builder *b, nir_def *id)
 {
    /* If drawing with an index buffer, pull the vertex ID. Otherwise, the
     * vertex ID is just the index as-is.
     */
-   if (index_size_B) {
+   nir_def *index_size = nir_load_index_size_poly(b);
+   nir_def *index_buffer_id;
+   nir_if *index_size_present = nir_push_if(b, nir_ine_imm(b, index_size, 0));
+   {
       nir_def *p = nir_load_vertex_param_buffer_poly(b);
-      id = poly_load_index_buffer(b, p, id, nir_imm_int(b, index_size_B));
+      index_buffer_id = poly_load_index_buffer(b, p, id, index_size);
    }
+   nir_pop_if(b, index_size_present);
+   nir_def *effective_id = nir_if_phi(b, index_buffer_id, id);
 
    /* Add the "start", either an index bias or a base vertex. This must happen
     * after indexing for proper index bias behaviour.
     */
-   return nir_iadd(b, id, nir_load_first_vertex(b));
+   return nir_iadd(b, effective_id, nir_load_first_vertex(b));
 }
 
 static bool
 lower(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 {
-   unsigned *index_size_B = data;
    b->cursor = nir_before_instr(&intr->instr);
 
    if (intr->intrinsic == nir_intrinsic_load_vertex_id) {
       nir_def *id = nir_channel(b, nir_load_global_invocation_id(b, 32), 0);
-      nir_def_replace(&intr->def,
-                      poly_nir_load_vertex_id(b, id, *index_size_B));
+      nir_def_replace(&intr->def, poly_nir_load_vertex_id(b, id));
       return true;
    } else if (intr->intrinsic == nir_intrinsic_load_instance_id) {
       nir_def_replace(&intr->def,
@@ -52,8 +55,7 @@ lower(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 }
 
 bool
-poly_nir_lower_sw_vs(nir_shader *s, unsigned index_size_B)
+poly_nir_lower_sw_vs(nir_shader *s)
 {
-   return nir_shader_intrinsics_pass(s, lower, nir_metadata_control_flow,
-                                     &index_size_B);
+   return nir_shader_intrinsics_pass(s, lower, nir_metadata_control_flow, NULL);
 }

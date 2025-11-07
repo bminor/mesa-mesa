@@ -162,7 +162,7 @@ lower_adjacency(nir_builder *b, nir_intrinsic_instr *intr, void *data)
       UNREACHABLE("unknown");
    }
 
-   id = poly_nir_load_vertex_id(b, id, key->sw_index_size_B);
+   id = poly_nir_load_vertex_id(b, id);
 
    nir_def_replace(&intr->def, id);
    return true;
@@ -216,11 +216,14 @@ agx_nir_vs_prolog(nir_builder *b, const void *key_)
    }
 
    if (!key->hw) {
-      poly_nir_lower_sw_vs(b->shader, key->sw_index_size_B);
+      b->cursor = nir_before_impl(nir_shader_get_entrypoint(b->shader));
+      poly_nir_lower_sw_vs(b->shader);
    } else if (key->adjacency) {
       nir_shader_intrinsics_pass(b->shader, lower_adjacency,
                                  nir_metadata_control_flow, (void *)key);
    }
+   nir_inline_sysval(b->shader, nir_intrinsic_load_index_size_poly,
+                     key->sw_index_size_B);
 
    /* Finally, lower uniforms according to our ABI */
    unsigned nr = DIV_ROUND_UP(BITSET_LAST_BIT(key->component_mask), 4);
