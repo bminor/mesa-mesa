@@ -1684,7 +1684,7 @@
         "description": "st/interop: fix fence leak",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "1396dc1c387a9f9a8b16ad358ee12a025159cc98",
         "notes": null
