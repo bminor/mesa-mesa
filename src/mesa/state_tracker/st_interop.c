@@ -437,6 +437,7 @@ st_interop_flush_objects(struct st_context *st,
             struct pipe_fence_handle *fence = NULL;
             ctx->pipe->flush(ctx->pipe, &fence, PIPE_FLUSH_FENCE_FD | PIPE_FLUSH_ASYNC);
             *out->fence_fd = ctx->screen->fence_get_fd(ctx->screen, fence);
+            ctx->screen->fence_reference(ctx->screen, &fence, NULL);
          }
          out->version = MIN2(out->version, 1);
       } else {
