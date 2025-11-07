@@ -1540,6 +1540,9 @@ typedef struct nir_alu_instr {
    /** Base instruction */
    nir_instr instr;
 
+   /** Destination */
+   nir_def def;
+
    /** Opcode */
    nir_op op;
 
@@ -1572,9 +1575,6 @@ typedef struct nir_alu_instr {
     * (rounding mode and denorm handling) remain in the execution mode only.
     */
    uint32_t fp_fast_math : 9;
-
-   /** Destination */
-   nir_def def;
 
    /** Sources
     *
@@ -1656,6 +1656,9 @@ typedef enum {
 typedef struct nir_deref_instr {
    nir_instr instr;
 
+   /** Destination to store the resulting "pointer" */
+   nir_def def;
+
    /** The type of this deref instruction */
    nir_deref_type deref_type;
 
@@ -1698,9 +1701,6 @@ typedef struct nir_deref_instr {
          unsigned align_offset;
       } cast;
    };
-
-   /** Destination to store the resulting "pointer" */
-   nir_def def;
 } nir_deref_instr;
 
 /**
@@ -1893,9 +1893,9 @@ typedef struct nir_call_instr {
 typedef struct nir_intrinsic_instr {
    nir_instr instr;
 
-   nir_intrinsic_op intrinsic;
-
    nir_def def;
+
+   nir_intrinsic_op intrinsic;
 
    /** number of components if this is a vectorized intrinsic
     *
@@ -2405,6 +2405,9 @@ typedef struct nir_tex_instr {
    /** Base instruction */
    nir_instr instr;
 
+   /** Destination */
+   nir_def def;
+
    /** Dimensionality of the texture operation
     *
     * This will typically match the dimensionality of the texture deref type
@@ -2428,9 +2431,6 @@ typedef struct nir_tex_instr {
 
    /** Texture opcode */
    nir_texop op;
-
-   /** Destination */
-   nir_def def;
 
    /** Array of sources
     *
@@ -2761,10 +2761,10 @@ typedef struct nir_phi_src {
 typedef struct nir_phi_instr {
    nir_instr instr;
 
+   nir_def def;
+
    /** list of nir_phi_src */
    struct exec_list srcs;
-
-   nir_def def;
 } nir_phi_instr;
 
 static inline nir_phi_src *
