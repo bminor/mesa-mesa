@@ -895,7 +895,7 @@ tu_disable_lrz(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
 
       tu7_write_onchip_timestamp(cs, TU_ONCHIP_CB_BV_TIMESTAMP);
 
-      tu7_thread_control(cs, CP_SET_THREAD_BR);
+      tu7_set_thread_br_patchpoint(cmd, cs, false);
 
       tu7_wait_onchip_timestamp(cs, TU_ONCHIP_CB_BV_TIMESTAMP);
    }

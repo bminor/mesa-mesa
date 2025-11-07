@@ -297,6 +297,46 @@ resolve_vis_stream_patchpoints(struct tu_queue *queue,
 }
 
 static VkResult
+resolve_cb_control_patchpoints(struct tu_queue *queue,
+                               void *submit,
+                               struct util_dynarray *dump_cmds,
+                               struct tu_cmd_buffer **cmd_buffers,
+                               uint32_t cmdbuf_count)
+{
+   bool enable_cb = false;
+   for (int32_t i = cmdbuf_count - 1; i >= 0; i--) {
+      struct tu_cmd_buffer *cmd = cmd_buffers[i];
+
+      /* Simultaneous cmdbufs are not expected to be used for workloads that
+       * benefit from CB, so instead of on-GPU patching, just treat them as CB
+       * barriers.
+       */
+      if (cmd_buffers[i]->usage_flags &
+          VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
+         enable_cb = false;
+         continue;
+      }
+
+      bool one_time_submit = !!(cmd_buffers[i]->usage_flags &
+                                VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+      util_dynarray_foreach_reverse (&cmd->cb_control_points,
+                                     struct tu_cb_control_point, info) {
+         if (info->type == TU_CB_CONTROL_TYPE_CB_ENABLED) {
+            enable_cb = true;
+         } else if (info->type == TU_CB_CONTROL_TYPE_BARRIER) {
+            enable_cb = false;
+         } else if (enable_cb) {
+            *info->patchpoint = info->patch_value;
+         } else if (!one_time_submit) {
+            *info->patchpoint = info->original_value;
+         }
+      }
+   }
+
+   return VK_SUCCESS;
+}
+
+static VkResult
 queue_submit_sparse(struct vk_queue *_queue, struct vk_queue_submit *vk_submit)
 {
    struct tu_queue *queue = list_entry(_queue, struct tu_queue, vk);
@@ -419,6 +459,12 @@ queue_submit(struct vk_queue *_queue, struct vk_queue_submit *vk_submit)
 
    result = resolve_vis_stream_patchpoints(queue, submit, &dump_cmds,
                                            cmd_buffers, cmdbuf_count);
+   if (result != VK_SUCCESS)
+      goto out;
+
+   result = resolve_cb_control_patchpoints(queue, submit, &dump_cmds,
+                                           cmd_buffers, cmdbuf_count);
+
    if (result != VK_SUCCESS)
       goto out;
 

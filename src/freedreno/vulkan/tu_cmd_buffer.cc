@@ -353,6 +353,52 @@ tu7_write_onchip_val(struct tu_cs *cs, enum tu_onchip_addr addr,
    tu_cs_emit(cs, val);
 }
 
+static void
+tu_add_cb_barrier_info(struct tu_cmd_buffer *cmd_buffer)
+{
+   /* Future concurrent binning cannot happen earlier than the barrier,
+    * so we won't need to patch previous patchpoints. Pop them now.
+    */
+   uint32_t size = util_dynarray_num_elements(&cmd_buffer->cb_control_points,
+                                              struct tu_cb_control_point);
+   for (int32_t idx = size - 1; idx >= 0; idx--) {
+      struct tu_cb_control_point *info = util_dynarray_element(
+         &cmd_buffer->cb_control_points, struct tu_cb_control_point, idx);
+      if (info->type == TU_CB_CONTROL_TYPE_CB_ENABLED) {
+         break;
+      }
+      (void) util_dynarray_pop(&cmd_buffer->cb_control_points,
+                               struct tu_cb_control_point);
+   }
+
+   struct tu_cb_control_point barrier_info = {
+      .type = TU_CB_CONTROL_TYPE_BARRIER,
+   };
+   util_dynarray_append(&cmd_buffer->cb_control_points, barrier_info);
+}
+
+void
+tu7_set_thread_br_patchpoint(struct tu_cmd_buffer *cmd,
+                             struct tu_cs *cs,
+                             bool force_disable_cb)
+{
+   tu_cs_emit_pkt7(cs, CP_THREAD_CONTROL, 1);
+
+   if (!force_disable_cb) {
+      struct tu_cb_control_point info = {
+         .type = TU_CB_CONTROL_TYPE_PATCHPOINT,
+         .patchpoint = cs->cur,
+         .patch_value = CP_THREAD_CONTROL_0_THREAD(CP_SET_THREAD_BR),
+         .original_value = CP_THREAD_CONTROL_0_THREAD(CP_SET_THREAD_BR) |
+                           CP_THREAD_CONTROL_0_CONCURRENT_BIN_DISABLE,
+      };
+      util_dynarray_append(&cmd->cb_control_points, info);
+   }
+
+   tu_cs_emit(cs, CP_THREAD_CONTROL_0_THREAD(CP_SET_THREAD_BR) |
+                     CP_THREAD_CONTROL_0_CONCURRENT_BIN_DISABLE);
+}
+
 /* "Normal" cache flushes outside the renderpass, that don't require any special handling */
 template <chip CHIP>
 void
@@ -407,7 +453,8 @@ tu_emit_cache_flush(struct tu_cmd_buffer *cmd_buffer)
        */
       tu7_wait_onchip_val(cs, TU_ONCHIP_BARRIER, 0);
 
-      tu7_thread_control(cs, CP_SET_THREAD_BR);
+      tu_add_cb_barrier_info(cmd_buffer);
+      tu7_set_thread_br_patchpoint(cmd_buffer, cs, false);
 
       trace_end_concurrent_binning_barrier(&cmd_buffer->trace, cs);
    }
@@ -571,7 +618,7 @@ tu_emit_cache_flush_ccu(struct tu_cmd_buffer *cmd_buffer,
          emit_vpc_attr_buf<CHIP>(cs, cmd_buffer->device,
                                  ccu_state == TU_CMD_CCU_GMEM);
 
-         tu7_thread_control(cs, CP_SET_THREAD_BR);
+         tu7_set_thread_br_patchpoint(cmd_buffer, cs, false);
       }
       cmd_buffer->state.ccu_state = ccu_state;
    }
@@ -2208,7 +2255,7 @@ tu6_init_hw(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
       if (cmd->usage_flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)
          tu_cs_set_writeable(cs, false);
 
-      tu7_thread_control(cs, CP_SET_THREAD_BR);
+      tu7_set_thread_br_patchpoint(cmd, cs, false);
    }
 
    tu_cs_emit_pkt7(cs, CP_SET_AMBLE, 3);
@@ -2244,7 +2291,7 @@ tu6_init_hw(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
    tu_cs_emit(cs, CP_SET_AMBLE_2_TYPE(POSTAMBLE_AMBLE_TYPE));
 
    if (CHIP >= A7XX) {
-      tu7_thread_control(cs, CP_SET_THREAD_BR);
+      tu7_set_thread_br_patchpoint(cmd, cs, false);
    }
 
    tu_cs_sanity_check(cs);
@@ -2785,8 +2832,9 @@ tu7_cb_disable_reason(bool disable_cb,
 }
 
 static bool
-tu7_emit_concurrent_binning(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
-                            bool disable_cb)
+tu7_emit_concurrent_binning_start(struct tu_cmd_buffer *cmd,
+                                  struct tu_cs *cs,
+                                  bool disable_cb)
 {
    if (tu7_cb_disable_reason(disable_cb, cmd, "disable_cb") ||
        /* LRZ can only be cleared via fast clear in BV. Disable CB if we can't
@@ -2797,13 +2845,25 @@ tu7_emit_concurrent_binning(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
           "LRZ fast clear disabled") ||
        tu7_cb_disable_reason(TU_DEBUG(NO_CONCURRENT_BINNING), cmd,
                              "TU_DEBUG(NO_CONCURRENT_BINNING)")) {
-      tu_cs_emit_pkt7(cs, CP_THREAD_CONTROL, 1);
-      tu_cs_emit(cs, CP_THREAD_CONTROL_0_THREAD(CP_SET_THREAD_BR) |
-                     CP_THREAD_CONTROL_0_CONCURRENT_BIN_DISABLE);
-      tu7_set_pred_bit(cs, TU_PREDICATE_CB_ENABLED, false);
-      cmd->state.renderpass_cb_disabled = true;
-      return false;
-   }
+     tu_cs_emit_pkt7(cs, CP_THREAD_CONTROL, 1);
+     tu_cs_emit(cs, CP_THREAD_CONTROL_0_THREAD(CP_SET_THREAD_BR) |
+                    CP_THREAD_CONTROL_0_CONCURRENT_BIN_DISABLE);
+     tu7_set_pred_bit(cs, TU_PREDICATE_CB_ENABLED, false);
+     cmd->state.renderpass_cb_disabled = true;
+
+     tu_add_cb_barrier_info(cmd);
+
+     return false;
+  }
+
+  return true;
+}
+
+static void
+tu7_emit_concurrent_binning(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
+{
+   assert(!cmd->state.renderpass_cb_disabled);
+
    tu7_thread_control(cs, CP_SET_THREAD_BOTH);
 
    /* Increment timestamp to make it unique in subsequent commands */
@@ -2824,16 +2884,22 @@ tu7_emit_concurrent_binning(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
    tu7_wait_onchip_val(cs, TU_ONCHIP_CB_RESLIST_OVERFLOW, 0);
 
    tu_lrz_cb_begin(cmd, cs);
-
-   return true;
 }
 
 template <chip CHIP>
 static void
-tu6_sysmem_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
-                        struct tu_renderpass_result *autotune_result)
+tu7_emit_concurrent_binning_sysmem(struct tu_cmd_buffer *cmd,
+                                   struct tu_cs *cs)
 {
-   const struct tu_framebuffer *fb = cmd->state.framebuffer;
+   /* Why all the complexity?
+    * The logic necessary to support concurrent binning running in parallel to
+    * sysmem has enough overhead to reduce performance for a workload with
+    * high number of renderpasses, so we have to patch out the CB logic if
+    * CB cannot run in parallel to this renderpass.
+    * It does everything in IB1 because from testing the CB logic hangs in IB2.
+    */
+
+   struct tu_cs_patchable_state cb_state = tu_cs_patchable_start(cs, 128);
 
    /* It seems that for sysmem render passes we have to use BV to clear LRZ
     * before the renderpass. Otherwise the clear doesn't become visible to
@@ -2844,17 +2910,14 @@ tu6_sysmem_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
     *
     * In the future, we may also support writing LRZ in BV.
     */
-   bool concurrent_binning = false;
-   if (CHIP >= A7XX) {
-      concurrent_binning = tu7_emit_concurrent_binning(cmd, cs, false);
+   {
+      tu7_emit_concurrent_binning(cmd, cs);
 
       tu_cs_emit_pkt7(cs, CP_SET_MARKER, 1);
       tu_cs_emit(cs, A6XX_CP_SET_MARKER_0_MODE(RM6_BIN_VISIBILITY));
-   }
 
-   tu_lrz_sysmem_begin<CHIP>(cmd, cs);
+      tu_lrz_sysmem_begin<CHIP>(cmd, cs);
 
-   if (concurrent_binning) {
       tu_lrz_after_bv<CHIP>(cmd, cs);
 
       tu7_write_onchip_timestamp(cs, TU_ONCHIP_CB_BV_TIMESTAMP);
@@ -2867,6 +2930,51 @@ tu6_sysmem_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
       tu7_wait_onchip_timestamp(cs, TU_ONCHIP_CB_BV_TIMESTAMP);
 
       tu_lrz_before_sysmem_br<CHIP>(cmd, cs);
+   }
+   tu_cs_patchable_end(cs, false, &cb_state);
+
+   struct tu_cs_patchable_state no_cb_state = tu_cs_patchable_start(cs, 64);
+   {
+      tu_cs_emit_pkt7(cs, CP_THREAD_CONTROL, 1);
+      tu_cs_emit(cs, CP_THREAD_CONTROL_0_THREAD(CP_SET_THREAD_BR) |
+                        CP_THREAD_CONTROL_0_CONCURRENT_BIN_DISABLE);
+      tu7_set_pred_bit(cs, TU_PREDICATE_CB_ENABLED, false);
+      tu_lrz_sysmem_begin<CHIP>(cmd, cs);
+   }
+   tu_cs_patchable_end(cs, true, &no_cb_state);
+
+   struct tu_cb_control_point enable_cb_patch = {
+      .type = TU_CB_CONTROL_TYPE_PATCHPOINT,
+      .patchpoint = cb_state.nop_header,
+      .patch_value = cb_state.enable_patch,
+      .original_value = cb_state.disable_patch,
+   };
+   util_dynarray_append(&cmd->cb_control_points, enable_cb_patch);
+
+   struct tu_cb_control_point disable_no_cb_patch = {
+      .type = TU_CB_CONTROL_TYPE_PATCHPOINT,
+      .patchpoint = no_cb_state.nop_header,
+      .patch_value = no_cb_state.disable_patch,
+      .original_value = no_cb_state.enable_patch,
+   };
+   util_dynarray_append(&cmd->cb_control_points, disable_no_cb_patch);
+}
+
+template <chip CHIP>
+static void
+tu6_sysmem_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
+                        struct tu_renderpass_result *autotune_result)
+{
+   const struct tu_framebuffer *fb = cmd->state.framebuffer;
+
+   if (CHIP == A6XX) {
+      tu_lrz_sysmem_begin<CHIP>(cmd, cs);
+   } else {
+      if (tu7_emit_concurrent_binning_start(cmd, cs, false)) {
+         tu7_emit_concurrent_binning_sysmem<CHIP>(cmd, cs);
+      } else {
+         tu_lrz_sysmem_begin<CHIP>(cmd, cs);
+      }
    }
 
    assert(fb->width > 0 && fb->height > 0);
@@ -2997,8 +3105,15 @@ tu7_emit_concurrent_binning_gmem(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
       "xfb/prim-gen/prim-counters/vtx-stats query is running");
    tu7_cb_disable_reason(!use_hw_binning, cmd, "hw binning disabled");
 
-   if (!tu7_emit_concurrent_binning(cmd, cs, disable_cb || !use_hw_binning))
+   if (!tu7_emit_concurrent_binning_start(cmd, cs, disable_cb || !use_hw_binning))
       return false;
+
+   tu7_emit_concurrent_binning(cmd, cs);
+
+   struct tu_cb_control_point cb_enabled_info = {
+      .type = TU_CB_CONTROL_TYPE_CB_ENABLED,
+   };
+   util_dynarray_append(&cmd->cb_control_points, cb_enabled_info);
 
    /* We want to disable concurrent binning if BV isn't far enough ahead of
     * BR. The core idea is to write a timestamp in BR and BV, and compare the
@@ -3293,7 +3408,7 @@ tu6_tile_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
       /* Earlier we disabled concurrent binning to make LRZ fast-clear work
        * with no HW binning, now re-enable it while staying on BR.
        */
-      tu7_thread_control(cs, CP_SET_THREAD_BR);
+      tu7_set_thread_br_patchpoint(cmd, cs, false);
    }
 
    tu_lrz_before_tiles<CHIP>(cmd, cs, use_cb);
@@ -4014,6 +4129,7 @@ tu_cmd_buffer_destroy(struct vk_command_buffer *vk_cmd_buffer)
    util_dynarray_fini(&cmd_buffer->fdm_bin_patchpoints);
    util_dynarray_fini(&cmd_buffer->pre_chain.fdm_bin_patchpoints);
    util_dynarray_fini(&cmd_buffer->vis_stream_patchpoints);
+   util_dynarray_fini(&cmd_buffer->cb_control_points);
 
    util_dynarray_foreach (&cmd_buffer->vis_stream_bos, struct tu_bo *,
                           bo) {
@@ -4110,6 +4226,7 @@ tu_reset_cmd_buffer(struct vk_command_buffer *vk_cmd_buffer,
    util_dynarray_clear(&cmd_buffer->fdm_bin_patchpoints);
    util_dynarray_clear(&cmd_buffer->pre_chain.fdm_bin_patchpoints);
    util_dynarray_clear(&cmd_buffer->vis_stream_patchpoints);
+   util_dynarray_clear(&cmd_buffer->cb_control_points);
 
    util_dynarray_foreach (&cmd_buffer->vis_stream_bos, struct tu_bo *,
                           bo) {
@@ -9484,8 +9601,7 @@ tu_CmdBeginConditionalRenderingEXT(VkCommandBuffer commandBuffer,
 
    /* Restore original BR thread after setting BOTH */
    if (CHIP >= A7XX && !cmd->state.pass) {
-      tu_cs_emit_pkt7(cs, CP_THREAD_CONTROL, 1);
-      tu_cs_emit(cs, CP_THREAD_CONTROL_0_THREAD(CP_SET_THREAD_BR));
+      tu7_set_thread_br_patchpoint(cmd, cs, false);
    }
 }
 TU_GENX(tu_CmdBeginConditionalRenderingEXT);
@@ -9509,8 +9625,7 @@ tu_CmdEndConditionalRenderingEXT(VkCommandBuffer commandBuffer)
    tu_cs_emit(cs, 0);
 
    if (CHIP >= A7XX && !cmd->state.pass) {
-      tu_cs_emit_pkt7(cs, CP_THREAD_CONTROL, 1);
-      tu_cs_emit(cs, CP_THREAD_CONTROL_0_THREAD(CP_SET_THREAD_BR));
+      tu7_set_thread_br_patchpoint(cmd, cs, false);
    }
 }
 TU_GENX(tu_CmdEndConditionalRenderingEXT);

@@ -622,6 +622,19 @@ struct tu_vis_stream_patchpoint {
    uint32_t offset;
 };
 
+enum tu_cb_control_type {
+   TU_CB_CONTROL_TYPE_PATCHPOINT,
+   TU_CB_CONTROL_TYPE_BARRIER,
+   TU_CB_CONTROL_TYPE_CB_ENABLED,
+};
+
+struct tu_cb_control_point {
+   enum tu_cb_control_type type;
+   uint32_t *patchpoint;
+   uint32_t patch_value;
+   uint32_t original_value;
+};
+
 struct tu_cmd_buffer
 {
    struct vk_command_buffer vk;
@@ -641,6 +654,8 @@ struct tu_cmd_buffer
    struct util_dynarray vis_stream_patchpoints;
    struct util_dynarray vis_stream_bos;
    struct util_dynarray vis_stream_cs_bos;
+
+   struct util_dynarray cb_control_points;
 
    VkCommandBufferUsageFlags usage_flags;
 
@@ -919,5 +934,10 @@ _tu_create_fdm_bin_patchpoint(struct tu_cmd_buffer *cmd,
    _tu_create_fdm_bin_patchpoint(cmd, cs, size, flags, apply, &state, sizeof(state))
 
 VkResult tu_init_bin_preamble(struct tu_device *device);
+
+void
+tu7_set_thread_br_patchpoint(struct tu_cmd_buffer *cmd,
+                             struct tu_cs *cs,
+                             bool force_disable_cb);
 
 #endif /* TU_CMD_BUFFER_H */

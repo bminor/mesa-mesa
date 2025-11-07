@@ -1123,8 +1123,7 @@ emit_begin_stat_query(struct tu_cmd_buffer *cmdbuf,
                                (1u << TU_PREDICATE_VTX_STATS_NOT_RUNNING),
                                (1u << TU_PREDICATE_VTX_STATS_RUNNING));
          if (!cmdbuf->state.pass) {
-            tu_cs_emit_pkt7(cs, CP_THREAD_CONTROL, 1);
-            tu_cs_emit(cs, CP_THREAD_CONTROL_0_THREAD(CP_SET_THREAD_BR));
+            tu7_set_thread_br_patchpoint(cmdbuf, cs, false);
          }
       } else {
          tu_cs_emit_pkt7(cs, CP_MEM_WRITE, 3);
