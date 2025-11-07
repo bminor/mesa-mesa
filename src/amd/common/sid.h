@@ -202,10 +202,6 @@
 #define     EOS_DATA_SEL_APPEND_COUNT                 0
 #define     EOS_DATA_SEL_GDS                          1
 #define     EOS_DATA_SEL_VALUE_32BIT                  2
-/* CP DMA bug: Any use of CP_DMA.DST_SEL=TC must be avoided when EOS packets
- * are used. Use DST_SEL=MC instead. For prefetch, use SRC_SEL=TC and
- * DST_SEL=MC. Only GFX7 chips are affected.
- */
 #define PKT3_EVENT_WRITE_EOS                       0x48 /* GFX6-8, breaks CP DMA */
 #define PKT3_RELEASE_MEM                           0x49 /* GFX9+ [any ring] or GFX8 [compute ring only] */
 /* 1. header

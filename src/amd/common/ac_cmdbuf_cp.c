@@ -447,7 +447,10 @@ ac_emit_cp_release_mem(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
 {
    const bool is_mec = gfx_level >= GFX7 && ip_type == AMD_IP_COMPUTE;
 
-   /* EOS events may be buggy on GFX7, prefer not to use them. */
+   /* GFX7 CP DMA: any use of CP_DMA.DST_SEL=TC must be avoided when EOS packets are used.
+    * Use DST_SEL=MC instead. For prefetch, use SRC_SEL=TC and DST_SEL=MC.
+    * Maybe related to waCpDmaHangMcTcAckDrop in PAL.
+    */
    if (gfx_level == GFX7 && (event == V_028A90_CS_DONE || event == V_028A90_PS_DONE))
       event = V_028A90_BOTTOM_OF_PIPE_TS;
 

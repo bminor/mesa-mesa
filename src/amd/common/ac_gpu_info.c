@@ -958,6 +958,7 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
 
    /* GFX6 hw bug when the IBO addr is 0 which causes invalid clamping (underflow).
     * Setting the IB addr to 2 or higher solves this issue.
+    * See waMiscNullIb in PAL.
     */
    info->has_null_index_buffer_clamping_bug = info->gfx_level == GFX6;
 
