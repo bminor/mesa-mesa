@@ -74,7 +74,7 @@ opt_uub_iand(nir_builder *b, nir_alu_instr *alu, opt_uub_state *state)
    if (uub(state, src) > low_mask)
       return false;
 
-   b->cursor = nir_after_instr(src.def->parent_instr);
+   b->cursor = nir_after_def(src.def);
    nir_def_replace(&alu->def, nir_mov_scalar(b, src));
    return true;
 }
@@ -283,7 +283,7 @@ opt_uub(nir_builder *b, nir_alu_instr *alu, void *data)
 
    /* If the upper bound is zero, zero is the only possible value. */
    if (uub(state, nir_get_scalar(&alu->def, 0)) == 0) {
-      b->cursor = nir_after_instr(alu->def.parent_instr);
+      b->cursor = nir_after_def(&alu->def);
       nir_def_replace(&alu->def, nir_imm_zero(b, 1, alu->def.bit_size));
       return true;
    }

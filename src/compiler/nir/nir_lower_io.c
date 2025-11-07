@@ -321,8 +321,7 @@ static nir_def *
 simplify_offset_src(nir_builder *b, nir_def *offset, unsigned num_slots)
 {
    /* Force index=0 for any indirect access to array[1]. */
-   if (num_slots == 1 &&
-       offset->parent_instr->type != nir_instr_type_load_const)
+   if (num_slots == 1 && !nir_def_is_const(offset))
       return nir_imm_int(b, 0);
 
    return offset;

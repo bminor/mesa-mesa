@@ -1030,12 +1030,6 @@ typedef struct nir_def {
    bool loop_invariant;
 } nir_def;
 
-static inline nir_block *
-nir_def_block(nir_def *def)
-{
-   return def->parent_instr->block;
-}
-
 typedef struct nir_src {
    /* Instruction or if-statement that consumes this value as a source. This
     * should only be accessed through nir_src_* helpers.
@@ -1171,24 +1165,6 @@ static inline unsigned
 nir_src_num_components(nir_src src)
 {
    return src.ssa->num_components;
-}
-
-static inline bool
-nir_src_is_const(nir_src src)
-{
-   return src.ssa->parent_instr->type == nir_instr_type_load_const;
-}
-
-static inline bool
-nir_src_is_undef(nir_src src)
-{
-   return src.ssa->parent_instr->type == nir_instr_type_undef;
-}
-
-static inline bool
-nir_src_is_deref(nir_src src)
-{
-   return src.ssa->parent_instr->type == nir_instr_type_deref;
 }
 
 bool nir_src_is_divergent(nir_src *src);
@@ -2779,6 +2755,69 @@ nir_phi_get_src_from_block(nir_phi_instr *phi, nir_block *block)
    return NULL;
 }
 
+const nir_instr *nir_def_instr_noninline(const nir_def *def);
+
+static inline nir_instr *
+nir_def_instr_nonconst(nir_def *def)
+{
+   static_assert(offsetof(nir_alu_instr, def) == offsetof(nir_undef_instr, def),
+                 "nir_alu_instr: nir_def always has to be at the same offset relative to nir_instr.");
+   static_assert(offsetof(nir_deref_instr, def) == offsetof(nir_undef_instr, def),
+                 "nir_deref_instr: nir_def always has to be at the same offset relative to nir_instr.");
+   static_assert(offsetof(nir_tex_instr, def) == offsetof(nir_undef_instr, def),
+                 "nir_tex_instr: nir_def always has to be at the same offset relative to nir_instr.");
+   static_assert(offsetof(nir_intrinsic_instr, def) == offsetof(nir_undef_instr, def),
+                 "nir_intrinsic_instr: nir_def always has to be at the same offset relative to nir_instr.");
+   static_assert(offsetof(nir_load_const_instr, def) == offsetof(nir_undef_instr, def),
+                 "nir_load_const_instr: nir_def always has to be at the same offset relative to nir_instr.");
+   static_assert(offsetof(nir_phi_instr, def) == offsetof(nir_undef_instr, def),
+                 "nir_phi_instr: nir_def always has to be at the same offset relative to nir_instr.");
+   return &container_of(def, nir_undef_instr, def)->instr;
+}
+
+static inline const nir_instr *
+nir_def_instr_const(const nir_def *def)
+{
+   return (const nir_instr *)nir_def_instr_nonconst((nir_def *)def);
+}
+
+#ifdef __cplusplus
+/* Required for function overloading */
+extern "C++" {
+
+static inline nir_instr *
+nir_def_instr(nir_def *def)
+{
+   return nir_def_instr_nonconst(def);
+}
+
+static inline const nir_instr *
+nir_def_instr(const nir_def *def)
+{
+   return nir_def_instr_const(def);
+}
+}
+#else
+/*
+ * For C we can use _Generic to overload on the constantness properly.
+ */
+#define nir_def_instr(def) _Generic((def), \
+   const nir_def *: nir_def_instr_const,   \
+   nir_def *: nir_def_instr_nonconst)(def)
+#endif
+
+static inline nir_block *
+nir_def_block(nir_def *def)
+{
+   return nir_def_instr(def)->block;
+}
+
+static inline nir_instr_type
+nir_def_instr_type(const nir_def *def)
+{
+   return nir_def_instr(def)->type;
+}
+
 /* This struct contains metadata for correlating the final nir shader
  * (after many lowering and optimization passes) with the source spir-v
  * or glsl. To avoid adding unnecessary overhead when the driver does not
@@ -2813,6 +2852,11 @@ typedef struct nir_instr_debug_info {
    nir_instr instr;
 } nir_instr_debug_info;
 
+typedef struct nir_scalar {
+   nir_def *def;
+   unsigned comp;
+} nir_scalar;
+
 NIR_DEFINE_CAST(nir_instr_as_alu, nir_instr, nir_alu_instr, instr,
                 type, nir_instr_type_alu)
 NIR_DEFINE_CAST(nir_instr_as_deref, nir_instr, nir_deref_instr, instr,
@@ -2832,18 +2876,49 @@ NIR_DEFINE_CAST(nir_instr_as_undef, nir_instr, nir_undef_instr, instr,
 NIR_DEFINE_CAST(nir_instr_as_phi, nir_instr, nir_phi_instr, instr,
                 type, nir_instr_type_phi)
 
-#define NIR_DEFINE_DEF_AS_INSTR(type, suffix)                  \
-   static inline type *nir_def_as_##suffix(const nir_def *def) \
-   {                                                           \
-      return nir_instr_as_##suffix(def->parent_instr);         \
+#define NIR_DEFINE_DEF_AS_INSTR(instr_type, suffix, cast)                    \
+   static inline instr_type *nir_def_as_##cast(const nir_def *def)           \
+   {                                                                         \
+      return nir_instr_as_##cast(nir_def_instr(def));                 \
+   }                                                                         \
+                                                                             \
+   static inline bool nir_def_is_##suffix(const nir_def *def)                \
+   {                                                                         \
+      return nir_def_instr(def)->type == nir_instr_type_##cast;       \
+   }                                                                         \
+                                                                             \
+   static inline instr_type *nir_def_as_##cast##_or_null(const nir_def *def) \
+   {                                                                         \
+      return nir_def_is_##suffix(def) ? nir_def_as_##cast(def) : NULL;       \
+   }                                                                         \
+                                                                             \
+   static inline bool nir_src_is_##suffix(nir_src src)                       \
+   {                                                                         \
+      return nir_def_is_##suffix(src.ssa);                                   \
+   }                                                                         \
+                                                                             \
+   static inline bool nir_scalar_is_##suffix(nir_scalar s)                   \
+   {                                                                         \
+      return nir_def_is_##suffix(s.def);                                     \
+   }                                                                         \
+                                                                             \
+   static inline instr_type *nir_src_as_##cast(nir_src src)                  \
+   {                                                                         \
+      return nir_src_is_##suffix(src) ? nir_def_as_##cast(src.ssa) : NULL;   \
+   }                                                                         \
+                                                                             \
+   static inline instr_type *nir_scalar_as_##cast(nir_scalar s)              \
+   {                                                                         \
+      return nir_def_is_##suffix(s.def) ? nir_def_as_##cast(s.def) : NULL;   \
    }
 
-NIR_DEFINE_DEF_AS_INSTR(nir_alu_instr, alu)
-NIR_DEFINE_DEF_AS_INSTR(nir_intrinsic_instr, intrinsic)
-NIR_DEFINE_DEF_AS_INSTR(nir_tex_instr, tex)
-NIR_DEFINE_DEF_AS_INSTR(nir_phi_instr, phi)
-NIR_DEFINE_DEF_AS_INSTR(nir_deref_instr, deref)
-NIR_DEFINE_DEF_AS_INSTR(nir_load_const_instr, load_const)
+NIR_DEFINE_DEF_AS_INSTR(nir_alu_instr, alu, alu)
+NIR_DEFINE_DEF_AS_INSTR(nir_intrinsic_instr, intrinsic, intrinsic)
+NIR_DEFINE_DEF_AS_INSTR(nir_tex_instr, tex, tex)
+NIR_DEFINE_DEF_AS_INSTR(nir_phi_instr, phi, phi)
+NIR_DEFINE_DEF_AS_INSTR(nir_deref_instr, deref, deref)
+NIR_DEFINE_DEF_AS_INSTR(nir_load_const_instr, const, load_const)
+NIR_DEFINE_DEF_AS_INSTR(nir_undef_instr, undef, undef)
 
 #undef NIR_DEFINE_DEF_AS_INSTR
 
@@ -2873,28 +2948,11 @@ NIR_DEFINE_SRC_AS_CONST(double, float)
 
 #undef NIR_DEFINE_SRC_AS_CONST
 
-typedef struct nir_scalar {
-   nir_def *def;
-   unsigned comp;
-} nir_scalar;
-
-static inline bool
-nir_scalar_is_const(nir_scalar s)
-{
-   return s.def->parent_instr->type == nir_instr_type_load_const;
-}
-
-static inline bool
-nir_scalar_is_undef(nir_scalar s)
-{
-   return s.def->parent_instr->type == nir_instr_type_undef;
-}
-
 static inline nir_const_value
 nir_scalar_as_const_value(nir_scalar s)
 {
    assert(s.comp < s.def->num_components);
-   nir_load_const_instr *load = nir_instr_as_load_const(s.def->parent_instr);
+   nir_load_const_instr *load = nir_scalar_as_load_const(s);
    return load->value[s.comp];
 }
 
@@ -2913,22 +2971,10 @@ NIR_DEFINE_SCALAR_AS_CONST(double, float)
 
 #undef NIR_DEFINE_SCALAR_AS_CONST
 
-static inline bool
-nir_scalar_is_alu(nir_scalar s)
-{
-   return s.def->parent_instr->type == nir_instr_type_alu;
-}
-
 static inline nir_op
 nir_scalar_alu_op(nir_scalar s)
 {
    return nir_def_as_alu(s.def)->op;
-}
-
-static inline bool
-nir_scalar_is_intrinsic(nir_scalar s)
-{
-   return s.def->parent_instr->type == nir_instr_type_intrinsic;
 }
 
 static inline nir_intrinsic_op
@@ -2942,7 +2988,7 @@ nir_scalar_chase_alu_src(nir_scalar s, unsigned alu_src_idx)
 {
    nir_scalar out = { NULL, 0 };
 
-   nir_alu_instr *alu = nir_instr_as_alu(s.def->parent_instr);
+   nir_alu_instr *alu = nir_scalar_as_alu(s);
    assert(alu_src_idx < nir_op_infos[alu->op].num_inputs);
 
    /* Our component must be written */
@@ -4299,6 +4345,18 @@ nir_after_impl(nir_function_impl *impl)
    return nir_after_cf_list(&impl->body);
 }
 
+static inline nir_cursor
+nir_before_def(nir_def *def)
+{
+   return nir_before_instr(nir_def_instr(def));
+}
+
+static inline nir_cursor
+nir_after_def(nir_def *def)
+{
+   return nir_after_instr(nir_def_instr(def));
+}
+
 /**
  * Insert a NIR instruction at the given cursor.
  *
@@ -4408,20 +4466,6 @@ bool nir_foreach_phi_src_leaving_block(nir_block *instr,
 
 nir_const_value *nir_src_as_const_value(nir_src src);
 
-#define NIR_SRC_AS_(name, c_type, type_enum, cast_macro) \
-   static inline c_type *                                \
-      nir_src_as_##name(nir_src src)                     \
-   {                                                     \
-      return src.ssa->parent_instr->type == type_enum    \
-                ? cast_macro(src.ssa->parent_instr)      \
-                : NULL;                                  \
-   }
-
-NIR_SRC_AS_(alu_instr, nir_alu_instr, nir_instr_type_alu, nir_instr_as_alu)
-NIR_SRC_AS_(intrinsic, nir_intrinsic_instr,
-            nir_instr_type_intrinsic, nir_instr_as_intrinsic)
-NIR_SRC_AS_(deref, nir_deref_instr, nir_instr_type_deref, nir_instr_as_deref)
-
 const char *nir_src_as_string(nir_src src);
 
 bool nir_src_is_always_uniform(nir_src src);
@@ -4495,14 +4539,14 @@ void nir_def_rewrite_uses_after_instr(nir_def *def, nir_def *new_ssa,
 static inline void
 nir_def_rewrite_uses_after(nir_def *def, nir_def *new_ssa)
 {
-   nir_def_rewrite_uses_after_instr(def, new_ssa, new_ssa->parent_instr);
+   nir_def_rewrite_uses_after_instr(def, new_ssa, nir_def_instr(new_ssa));
 }
 
 static inline void
 nir_def_replace(nir_def *def, nir_def *new_ssa)
 {
    nir_def_rewrite_uses(def, new_ssa);
-   nir_instr_remove(def->parent_instr);
+   nir_instr_remove(nir_def_instr(def));
 }
 
 nir_component_mask_t nir_src_components_read(const nir_src *src);
@@ -6561,7 +6605,7 @@ nir_static_workgroup_size(const nir_shader *s);
 static inline nir_intrinsic_instr *
 nir_reg_get_decl(nir_def *reg)
 {
-   assert(reg->parent_instr->type == nir_instr_type_intrinsic);
+   assert(nir_def_is_intrinsic(reg));
    nir_intrinsic_instr *decl = nir_def_as_intrinsic(reg);
    assert(decl->intrinsic == nir_intrinsic_decl_reg);
 
@@ -6653,7 +6697,7 @@ nir_is_store_reg(nir_intrinsic_instr *intr)
 static inline nir_intrinsic_instr *
 nir_load_reg_for_def(const nir_def *def)
 {
-   if (def->parent_instr->type != nir_instr_type_intrinsic)
+   if (!nir_def_is_intrinsic(def))
       return NULL;
 
    nir_intrinsic_instr *intr = nir_def_as_intrinsic(def);

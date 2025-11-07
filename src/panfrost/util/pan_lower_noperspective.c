@@ -264,7 +264,7 @@ pan_nir_lower_noperspective_vs(nir_shader *shader)
    nir_def *pos_w = nir_frcp(&b, pos_w_recip);
 
    /* Reorder stores to ensure pos_w def is available */
-   move_output_stores_after(pos_w->parent_instr);
+   move_output_stores_after(nir_def_instr(pos_w));
 
    nir_def *noperspective_outputs = nir_load_noperspective_varyings_pan(&b);
    struct lower_noperspective_vs_state state = {

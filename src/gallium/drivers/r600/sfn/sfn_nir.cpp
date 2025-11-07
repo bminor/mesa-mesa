@@ -246,7 +246,7 @@ private:
       auto intr = nir_instr_as_intrinsic(instr);
       assert(intr->intrinsic == nir_intrinsic_load_ubo_vec4);
 
-      auto parent = intr->src[0].ssa->parent_instr;
+      auto parent = nir_def_instr(intr->src[0].ssa);
 
       if (parent->type != nir_instr_type_alu)
          return nullptr;

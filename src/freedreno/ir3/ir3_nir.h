@@ -153,7 +153,7 @@ bool ir3_get_driver_param_info(const nir_shader *shader,
 static inline nir_intrinsic_instr *
 ir3_bindless_resource(nir_src src)
 {
-   if (src.ssa->parent_instr->type != nir_instr_type_intrinsic)
+   if (!nir_src_is_intrinsic(src))
       return NULL;
 
    nir_intrinsic_instr *intrin = nir_def_as_intrinsic(src.ssa);

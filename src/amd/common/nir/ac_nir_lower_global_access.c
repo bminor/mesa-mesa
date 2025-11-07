@@ -91,7 +91,7 @@ process_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *_)
    uint64_t off_const = 0;
    nir_def *offset = NULL;
    nir_scalar src = {addr_src->ssa, 0};
-   b->cursor = nir_after_instr(addr_src->ssa->parent_instr);
+   b->cursor = nir_after_def(addr_src->ssa);
    nir_def *addr = try_extract_additions(b, src, &off_const, &offset, false);
    addr = addr ? addr : addr_src->ssa;
 

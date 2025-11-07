@@ -29,7 +29,7 @@ lower_immediate_offsets(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
    case nir_intrinsic_store_ssbo_block_intel: {
       nir_src *binding = nir_get_io_index_src(intrin);
       const bool has_resource =
-         binding->ssa->parent_instr->type == nir_instr_type_intrinsic &&
+         nir_def_is_intrinsic(binding->ssa) &&
          nir_def_as_intrinsic(binding->ssa)->intrinsic ==
          nir_intrinsic_resource_intel;
       bool ss_binding = false;

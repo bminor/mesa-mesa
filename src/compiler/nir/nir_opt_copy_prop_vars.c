@@ -754,7 +754,7 @@ load_from_ssa_entry_value(struct copy_prop_var_state *state,
          if (load_def == NULL)
             load_def = nir_load_deref(b, entry->dst.instr);
 
-         if (load_def->parent_instr == &intrin->instr)
+         if (nir_def_instr(load_def) == &intrin->instr)
             keep_intrin = true;
 
          comps[i] = nir_get_scalar(load_def, i);

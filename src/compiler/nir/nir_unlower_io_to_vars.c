@@ -140,7 +140,7 @@ parse_intrinsic(nir_shader *nir, nir_intrinsic_instr *intr,
    }
 
    if (intr->intrinsic == nir_intrinsic_load_interpolated_input &&
-       intr->src[0].ssa->parent_instr->type == nir_instr_type_intrinsic)
+       nir_src_is_intrinsic(intr->src[0]))
       desc->baryc = nir_def_as_intrinsic(intr->src[0].ssa);
 
    /* Find the variable if it exists. */

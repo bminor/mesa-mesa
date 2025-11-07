@@ -229,9 +229,7 @@ lower_image_load_instr_without_format(nir_builder *b,
    nir_def *color = convert_color_for_load_format(
       b, state->compiler, &intrin->def, image_fmt);
 
-   nir_def_rewrite_uses(placeholder, color);
-   nir_instr_remove(placeholder->parent_instr);
-
+   nir_def_replace(placeholder, color);
    return true;
 }
 
@@ -290,9 +288,7 @@ lower_image_load_instr(nir_builder *b,
       color = nir_vec(b, sparse_color, dest_components + 1);
    }
 
-   nir_def_rewrite_uses(placeholder, color);
-   nir_instr_remove(placeholder->parent_instr);
-
+   nir_def_replace(placeholder, color);
    return true;
 }
 

@@ -325,7 +325,7 @@ shader_contains_instr(nir_builder *b, nir_instr *i)
 static inline bool
 shader_contains_def(nir_builder *b, nir_def *def)
 {
-   return shader_contains_instr(b, def->parent_instr);
+   return shader_contains_instr(b, nir_def_instr(def));
 }
 
 static inline bool

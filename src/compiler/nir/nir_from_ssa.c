@@ -67,17 +67,17 @@ struct block_parallel_copies {
 static bool
 def_after(nir_def *a, nir_def *b)
 {
-   if (a->parent_instr->type == nir_instr_type_undef)
+   if (nir_def_is_undef(a))
       return false;
 
-   if (b->parent_instr->type == nir_instr_type_undef)
+   if (nir_def_is_undef(b))
       return true;
 
    /* If they're in the same block, we can rely on whichever instruction
     * comes first in the block.
     */
    if (nir_def_block(a) == nir_def_block(b))
-      return a->parent_instr->index > b->parent_instr->index;
+      return nir_def_instr(a)->index > nir_def_instr(b)->index;
 
    /* Otherwise, if blocks are distinct, we sort them in DFS pre-order */
    return nir_def_block(a)->dom_pre_index > nir_def_block(b)->dom_pre_index;
@@ -87,7 +87,7 @@ def_after(nir_def *a, nir_def *b)
 static bool
 ssa_def_dominates(nir_def *a, nir_def *b)
 {
-   if (a->parent_instr->type == nir_instr_type_undef) {
+   if (nir_def_is_undef(a)) {
       /* SSA undefs always dominate */
       return true;
    }
@@ -349,7 +349,7 @@ isolate_phi_nodes_block(nir_shader *shader, nir_block *block, struct from_ssa_st
          pred_copy->divergent = state->consider_divergence && nir_src_is_divergent(&src->src);
 
          struct block_parallel_copies *pred_copies = &state->parallel_copies[src->pred->index];
-         util_dynarray_append(&pred_copies->end, nir_instr_as_intrinsic(pred_copy->parent_instr));
+         util_dynarray_append(&pred_copies->end, nir_def_as_intrinsic(pred_copy));
 
          nir_src_rewrite(&src->src, pred_copy);
       }
@@ -414,7 +414,7 @@ aggressive_coalesce_parallel_copy(struct util_dynarray *pcopy,
       /* Since load_const instructions are SSA only, we can't replace their
        * destinations with registers and, therefore, can't coalesce them.
        */
-      if (copy->src[0].ssa->parent_instr->type == nir_instr_type_load_const)
+      if (nir_src_is_const(copy->src[0]))
          continue;
 
       merge_node *src_node = get_merge_node(copy->src[0].ssa, state);
@@ -491,18 +491,17 @@ static bool
 def_replace_with_reg(nir_def *def, nir_function_impl *impl)
 {
    /* These are handled elsewhere */
-   assert(def->parent_instr->type != nir_instr_type_undef &&
-          def->parent_instr->type != nir_instr_type_load_const);
+   assert(!nir_def_is_undef(def) && !nir_def_is_const(def));
 
    nir_builder b = nir_builder_create(impl);
 
    nir_def *reg = decl_reg_for_ssa_def(&b, def);
    nir_rewrite_uses_to_load_reg(&b, def, reg);
 
-   if (def->parent_instr->type == nir_instr_type_phi)
+   if (nir_def_is_phi(def))
       b.cursor = nir_before_block_after_phis(nir_def_block(def));
    else
-      b.cursor = nir_after_instr(def->parent_instr);
+      b.cursor = nir_after_def(def);
 
    nir_store_reg(&b, def, reg);
    return true;
@@ -572,7 +571,7 @@ rewrite_ssa_def(nir_def *def, void *void_state)
    /* At this point we know a priori that this SSA def is part of a
     * nir_dest.  We can use exec_node_data to get the dest pointer.
     */
-   assert(def->parent_instr->type != nir_instr_type_load_const);
+   assert(!nir_def_is_const(def));
    nir_store_reg(&state->builder, def, reg);
 
    state->progress = true;

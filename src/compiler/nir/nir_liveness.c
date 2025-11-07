@@ -294,18 +294,20 @@ nir_def_is_live_at(nir_def *def, nir_instr *instr)
 bool
 nir_defs_interfere(nir_def *a, nir_def *b)
 {
-   if (a->parent_instr == b->parent_instr) {
+   nir_instr *a_instr = nir_def_instr(a);
+   nir_instr *b_instr = nir_def_instr(b);
+   if (a_instr == b_instr) {
       /* Two variables defined at the same time interfere assuming at
        * least one isn't dead.
        */
       return true;
-   } else if (a->parent_instr->type == nir_instr_type_undef ||
-              b->parent_instr->type == nir_instr_type_undef) {
+   } else if (a_instr->type == nir_instr_type_undef ||
+              b_instr->type == nir_instr_type_undef) {
       /* If either variable is an ssa_undef, then there's no interference */
       return false;
-   } else if (a->parent_instr->index < b->parent_instr->index) {
-      return nir_def_is_live_at(a, b->parent_instr);
+   } else if (a_instr->index < b_instr->index) {
+      return nir_def_is_live_at(a, b_instr);
    } else {
-      return nir_def_is_live_at(b, a->parent_instr);
+      return nir_def_is_live_at(b, a_instr);
    }
 }

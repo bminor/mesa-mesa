@@ -227,7 +227,6 @@ validate_def(nir_def *def, validate_state *state)
    validate_assert(state, !BITSET_TEST(state->ssa_defs_found, def->index));
    BITSET_SET(state->ssa_defs_found, def->index);
 
-   validate_assert(state, def->parent_instr == state->instr);
    validate_num_components(state, def->num_components);
 
    list_validate(&def->uses);
@@ -353,7 +352,7 @@ validate_deref_instr(nir_deref_instr *instr, validate_state *state)
       validate_sized_src(&instr->parent, state, instr->def.bit_size,
                          instr->def.num_components);
 
-      nir_instr *parent_instr = instr->parent.ssa->parent_instr;
+      nir_instr *parent_instr = nir_def_instr(instr->parent.ssa);
 
       /* The parent must come from another deref instruction */
       validate_assert(state, parent_instr->type == nir_instr_type_deref);
@@ -483,7 +482,7 @@ validate_register_handle(nir_src handle_src,
                          validate_state *state)
 {
    nir_def *handle = handle_src.ssa;
-   nir_instr *parent = handle->parent_instr;
+   nir_instr *parent = nir_def_instr(handle);
 
    if (!validate_assert(state, parent->type == nir_instr_type_intrinsic))
       return;
@@ -892,7 +891,7 @@ validate_intrinsic_instr(nir_intrinsic_instr *instr, validate_state *state)
             validate_assert(state,
                             (nir_src_is_const(*offset_src) &&
                              nir_src_as_uint(*offset_src) == 0) ||
-                            offset_src->ssa->parent_instr->type == nir_instr_type_phi);
+                            nir_def_is_phi(offset_src->ssa));
          }
       }
    }

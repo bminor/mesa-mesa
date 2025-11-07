@@ -492,7 +492,7 @@ get_fp_key(struct analysis_query *q)
    struct fp_query *fp_q = (struct fp_query *)q;
    const nir_src *src = &fp_q->instr->src[fp_q->src].src;
 
-   if (src->ssa->parent_instr->type != nir_instr_type_alu)
+   if (!nir_def_is_alu(src->ssa))
       return 0;
 
    uintptr_t type_encoding;
@@ -589,7 +589,7 @@ process_fp_query(struct analysis_state *state, struct analysis_query *aq, uint32
       return;
    }
 
-   if (instr->src[src].src.ssa->parent_instr->type != nir_instr_type_alu) {
+   if (!nir_src_is_alu(instr->src[src].src)) {
       *result = pack_data((struct ssa_result_range){ unknown, false, false, false });
       return;
    }
@@ -1527,7 +1527,7 @@ search_phi_bcsel(nir_scalar scalar, nir_scalar *buf, unsigned buf_size, struct s
       return 0;
    _mesa_set_add(visited, scalar.def);
 
-   if (scalar.def->parent_instr->type == nir_instr_type_phi) {
+   if (nir_def_instr_type(scalar.def) == nir_instr_type_phi) {
       nir_phi_instr *phi = nir_def_as_phi(scalar.def);
       unsigned num_sources_left = exec_list_length(&phi->srcs);
       if (buf_size >= num_sources_left) {
@@ -2158,7 +2158,7 @@ process_uub_query(struct analysis_state *state, struct analysis_query *aq, uint3
       get_intrinsic_uub(state, q, result, src);
    else if (nir_scalar_is_alu(q.scalar))
       get_alu_uub(state, q, result, src);
-   else if (q.scalar.def->parent_instr->type == nir_instr_type_phi)
+   else if (nir_def_instr_type(q.scalar.def) == nir_instr_type_phi)
       get_phi_uub(state, q, result, src);
 }
 

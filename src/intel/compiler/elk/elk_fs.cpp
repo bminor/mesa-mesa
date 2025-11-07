@@ -6511,7 +6511,7 @@ elk_nir_move_interpolation_to_top(nir_shader *nir)
 
             nir_instr *move[3] = {
                &bary_intrinsic->instr,
-               intrin->src[1].ssa->parent_instr,
+               nir_def_instr(intrin->src[1].ssa),
                instr
             };
 

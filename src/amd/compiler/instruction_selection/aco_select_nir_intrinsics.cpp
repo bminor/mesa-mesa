@@ -1314,7 +1314,8 @@ visit_store_output(isel_context* ctx, nir_intrinsic_instr* instr)
    if (ls_need_output || ps_need_output) {
       bool stored_to_temps = store_output_to_temps(ctx, instr);
       if (!stored_to_temps) {
-         isel_err(instr->src[1].ssa->parent_instr, "Unimplemented output offset instruction");
+         isel_err(nir_def_instr(instr->src[1].ssa),
+                  "Unimplemented output offset instruction");
          abort();
       }
    } else {
@@ -1459,7 +1460,8 @@ visit_load_fs_input(isel_context* ctx, nir_intrinsic_instr* instr)
    nir_src offset = *nir_get_io_offset_src(instr);
 
    if (!nir_src_is_const(offset) || nir_src_as_uint(offset))
-      isel_err(offset.ssa->parent_instr, "Unimplemented non-zero nir_intrinsic_load_input offset");
+      isel_err(nir_def_instr(offset.ssa),
+               "Unimplemented non-zero nir_intrinsic_load_input offset");
 
    Temp prim_mask = get_arg(ctx, ctx->args->prim_mask);
 

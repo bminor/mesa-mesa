@@ -82,7 +82,7 @@ src_is_type(nir_src src, nir_alu_type type)
 {
    assert(type != nir_type_invalid);
 
-   if (src.ssa->parent_instr->type == nir_instr_type_alu) {
+   if (nir_src_is_alu(src)) {
       nir_alu_instr *src_alu = nir_def_as_alu(src.ssa);
       nir_alu_type output_type = nir_op_infos[src_alu->op].output_type;
 
@@ -101,7 +101,7 @@ src_is_type(nir_src src, nir_alu_type type)
       }
 
       return nir_alu_type_get_base_type(output_type) == type;
-   } else if (src.ssa->parent_instr->type == nir_instr_type_intrinsic) {
+   } else if (nir_src_is_intrinsic(src)) {
       nir_intrinsic_instr *intr = nir_def_as_intrinsic(src.ssa);
 
       if (type == nir_type_bool) {
@@ -263,7 +263,7 @@ match_value(const nir_algebraic_table *table,
 
    switch (value->type) {
    case nir_search_value_expression:
-      if (instr->src[src].src.ssa->parent_instr->type != nir_instr_type_alu)
+      if (!nir_src_is_alu(instr->src[src].src))
          return false;
 
       return match_expression(table, nir_search_value_as_expression(value),
@@ -275,7 +275,7 @@ match_value(const nir_algebraic_table *table,
       assert(var->variable < NIR_SEARCH_MAX_VARIABLES);
 
       if (var->is_constant &&
-          instr->src[src].src.ssa->parent_instr->type != nir_instr_type_load_const)
+          !nir_src_is_const(instr->src[src].src))
          return false;
 
       if (var->cond_index != -1 && !table->variable_cond[var->cond_index](state->state, instr,
@@ -508,7 +508,7 @@ construct_value(nir_builder *build,
       assert(def->index ==
              util_dynarray_num_elements(state->states, uint16_t));
       util_dynarray_append_typed(state->states, uint16_t, 0);
-      nir_algebraic_automaton(def->parent_instr, state->states, state->pass_op_table);
+      nir_algebraic_automaton(nir_def_instr(def), state->states, state->pass_op_table);
 
       nir_alu_src val;
       val.src = nir_src_for_ssa(def);
@@ -560,7 +560,7 @@ construct_value(nir_builder *build,
       assert(cval->index ==
              util_dynarray_num_elements(state->states, uint16_t));
       util_dynarray_append_typed(state->states, uint16_t, 0);
-      nir_algebraic_automaton(cval->parent_instr, state->states,
+      nir_algebraic_automaton(nir_def_instr(cval), state->states,
                               state->pass_op_table);
 
       nir_alu_src val;
@@ -758,7 +758,7 @@ nir_replace_instr(nir_builder *build, nir_alu_instr *instr,
     * keeping algebraic optimizations and code motion optimizations separate
     * seems safest.
     */
-   nir_alu_instr *const src_instr = nir_src_as_alu_instr(instr->src[0].src);
+   nir_alu_instr *const src_instr = nir_src_as_alu(instr->src[0].src);
    if (src_instr != NULL &&
        (instr->op == nir_op_fneg || instr->op == nir_op_fabs ||
         instr->op == nir_op_ineg || instr->op == nir_op_iabs ||
@@ -791,14 +791,14 @@ nir_replace_instr(nir_builder *build, nir_alu_instr *instr,
       nir_mov_alu(build, val, instr->def.num_components);
    if (ssa_val->index == util_dynarray_num_elements(states, uint16_t)) {
       util_dynarray_append_typed(states, uint16_t, 0);
-      nir_algebraic_automaton(ssa_val->parent_instr, states, table->pass_op_table);
+      nir_algebraic_automaton(nir_def_instr(ssa_val), states, table->pass_op_table);
    }
 
    /* Rewrite the uses of the old SSA value to the new one, and recurse
     * through the uses updating the automaton's state.
     */
    nir_def_rewrite_uses(&instr->def, ssa_val);
-   nir_algebraic_update_automaton(ssa_val->parent_instr, algebraic_worklist,
+   nir_algebraic_update_automaton(nir_def_instr(ssa_val), algebraic_worklist,
                                   states, table->pass_op_table);
 
    /* Nothing uses the instr any more, so drop it out of the program.  Note

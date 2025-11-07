@@ -230,7 +230,7 @@ static bool can_move_coord(nir_scalar scalar, coord_info *info, nir_block *tople
     * optimizing nir_texop_txd. Otherwise, we only use nir_strict_wqm_coord_amd
     * for cases that D3D11 requires.
     */
-   if (txd && nir_block_dominates(scalar.def->parent_instr->block, toplevel_block)) {
+   if (txd && nir_block_dominates(nir_def_block(scalar.def), toplevel_block)) {
       info->load = NULL;
       return true;
    }

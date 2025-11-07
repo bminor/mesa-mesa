@@ -42,13 +42,13 @@ mark_query_read(struct set *queries,
    nir_def *rq_def = intrin->src[0].ssa;
 
    nir_variable *query;
-   if (rq_def->parent_instr->type == nir_instr_type_intrinsic) {
+   if (nir_def_is_intrinsic(rq_def)) {
       nir_intrinsic_instr *load_deref =
          nir_def_as_intrinsic(rq_def);
       assert(load_deref->intrinsic == nir_intrinsic_load_deref);
 
       query = nir_intrinsic_get_var(load_deref, 0);
-   } else if (rq_def->parent_instr->type == nir_instr_type_deref) {
+   } else if (nir_def_is_deref(rq_def)) {
       query = nir_deref_instr_get_variable(nir_def_as_deref(rq_def));
    } else {
       return;

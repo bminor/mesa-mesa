@@ -13,7 +13,7 @@
 static bool
 add_src_instr_to_worklist(nir_src *src, void *wl)
 {
-   nir_instr_worklist_push_tail(wl, src->ssa->parent_instr);
+   nir_instr_worklist_push_tail(wl, nir_def_instr(src->ssa));
    return true;
 }
 

@@ -116,7 +116,7 @@ trivialize_src(nir_src *src, void *state_)
 {
    struct trivialize_src_state *state = state_;
 
-   nir_instr *parent = src->ssa->parent_instr;
+   nir_instr *parent = nir_def_instr(src->ssa);
    if (parent->type != nir_instr_type_intrinsic)
       return true;
 
@@ -429,7 +429,7 @@ trivialize_stores(nir_function_impl *impl, nir_block *block)
             nontrivial |= !list_is_singular(&value->uses);
 
             /* SSA-only instruction types */
-            nir_instr *parent = value->parent_instr;
+            nir_instr *parent = nir_def_instr(value);
             nontrivial |= (parent->type == nir_instr_type_load_const) ||
                           (parent->type == nir_instr_type_undef);
 

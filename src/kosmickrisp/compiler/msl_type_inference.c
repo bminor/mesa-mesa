@@ -560,7 +560,7 @@ propagate_types(struct hash_table *types, nir_instr *instr)
          ti_type src_type = get_type(types, &alu->src[i].src);
          ti_type def_type = get_type(types, alu->src[i].src.ssa);
          ti_type unified_type = unify_types(src_type, def_type);
-         nir_instr *parent_instr = alu->src[i].src.ssa->parent_instr;
+         nir_instr *parent_instr = nir_def_instr(alu->src[i].src.ssa);
          if (unified_type > src_type) {
             progress |= update_instr_type(types, instr, unified_type);
          } else if (unified_type > def_type) {
@@ -576,7 +576,7 @@ propagate_types(struct hash_table *types, nir_instr *instr)
          ti_type src_type = get_type(types, &intr->src[i]);
          ti_type def_type = get_type(types, intr->src[i].ssa);
          ti_type unified_type = unify_types(src_type, def_type);
-         nir_instr *parent_instr = intr->src[i].ssa->parent_instr;
+         nir_instr *parent_instr = nir_def_instr(intr->src[i].ssa);
          if (unified_type > src_type) {
             progress |= update_instr_type(types, instr, unified_type);
          } else if (unified_type > def_type) {
@@ -593,7 +593,7 @@ propagate_types(struct hash_table *types, nir_instr *instr)
          ti_type unified_type = unify_types(src_type, def_type);
          if (src_type == 0)
             continue;
-         nir_instr *parent_instr = tex->src[i].src.ssa->parent_instr;
+         nir_instr *parent_instr = nir_def_instr(tex->src[i].src.ssa);
          if (unified_type > def_type) {
             progress |= update_instr_type(types, parent_instr, unified_type);
          }

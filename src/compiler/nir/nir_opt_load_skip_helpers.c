@@ -64,9 +64,9 @@ set_src_needs_helpers(nir_src *src, void *_data)
 {
    struct helper_state *hs = _data;
    if (!BITSET_TEST(hs->needs_helpers, src->ssa->index) &&
-       !instr_never_needs_helpers(src->ssa->parent_instr)) {
+       !instr_never_needs_helpers(nir_def_instr(src->ssa))) {
       BITSET_SET(hs->needs_helpers, src->ssa->index);
-      nir_instr_worklist_push_tail(&hs->worklist, src->ssa->parent_instr);
+      nir_instr_worklist_push_tail(&hs->worklist, nir_def_instr(src->ssa));
    }
    return true;
 }

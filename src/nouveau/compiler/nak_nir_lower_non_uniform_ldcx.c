@@ -132,7 +132,7 @@ can_hoist_def(nir_def *def, nir_block *target)
    if (!def_needs_hoist(def, target))
       return true;
 
-   nir_instr *instr = def->parent_instr;
+   nir_instr *instr = nir_def_instr(def);
    switch (instr->type) {
    case nir_instr_type_alu: {
       nir_alu_instr *alu = nir_instr_as_alu(instr);
@@ -171,7 +171,7 @@ hoist_def(nir_def *def, nir_block *target)
    if (!def_needs_hoist(def, target))
       return false;
 
-   nir_instr *instr = def->parent_instr;
+   nir_instr *instr = nir_def_instr(def);
    switch (instr->type) {
    case nir_instr_type_alu: {
       nir_alu_instr *alu = nir_instr_as_alu(instr);
@@ -217,7 +217,7 @@ try_hoist_ldcx_handles_block(nir_block *block, struct non_uniform_section *nus)
           */
          nir_alu_instr *alu = nir_instr_as_alu(instr);
          for (uint8_t i = 0; i < nir_op_infos[alu->op].num_inputs; i++) {
-            nir_instr *src_instr = alu->src[i].src.ssa->parent_instr;
+            nir_instr *src_instr = nir_def_instr(alu->src[i].src.ssa);
             if (src_instr->type != nir_instr_type_intrinsic)
                continue;
 
@@ -331,7 +331,7 @@ static bool
 try_remat_ldcx_alu_use(nir_builder *b, nir_alu_instr *alu, uint8_t src_idx,
                        struct non_uniform_section *nus)
 {
-   nir_instr *src_instr = alu->src[src_idx].src.ssa->parent_instr;
+   nir_instr *src_instr = nir_def_instr(alu->src[src_idx].src.ssa);
    if (src_instr->type != nir_instr_type_intrinsic)
       return false;
 

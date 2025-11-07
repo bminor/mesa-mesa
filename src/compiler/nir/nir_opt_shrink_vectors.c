@@ -94,7 +94,7 @@ shrink_dest_to_read_mask(nir_def *def, bool shrink_start)
    nir_intrinsic_instr *intr = NULL;
    nir_src *offset_src = NULL;
 
-   if (def->parent_instr->type == nir_instr_type_intrinsic) {
+   if (nir_def_is_intrinsic(def)) {
       intr = nir_def_as_intrinsic(def);
       offset_src = nir_get_io_offset_src(intr);
    }
@@ -555,7 +555,7 @@ opt_shrink_vectors_phi(nir_builder *b, nir_phi_instr *instr)
     * used only in the phi, the movs will disappear later after copy propagate.
     */
    nir_foreach_phi_src(phi_src, instr) {
-      b->cursor = nir_after_instr_and_phis(phi_src->src.ssa->parent_instr);
+      b->cursor = nir_after_instr_and_phis(nir_def_instr(phi_src->src.ssa));
 
       nir_alu_src alu_src = {
          .src = nir_src_for_ssa(phi_src->src.ssa)

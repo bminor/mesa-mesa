@@ -1231,7 +1231,7 @@ ntq_emit_comparison(struct v3d_compile *c,
 static struct nir_alu_instr *
 ntq_get_alu_parent(nir_src src)
 {
-        if (src.ssa->parent_instr->type != nir_instr_type_alu)
+        if (!nir_src_is_alu(src))
                 return NULL;
         nir_alu_instr *instr = nir_def_as_alu(src.ssa);
         if (!instr)
@@ -3103,7 +3103,7 @@ nir_src_derived_from_reg(nir_src src)
         if (nir_load_reg_for_def(def))
                 return true;
 
-        nir_instr *parent = def->parent_instr;
+        nir_instr *parent = nir_def_instr(def);
         switch (parent->type) {
         case nir_instr_type_alu: {
                 nir_alu_instr *alu = nir_instr_as_alu(parent);

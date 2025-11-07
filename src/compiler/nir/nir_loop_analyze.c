@@ -176,10 +176,10 @@ phi_instr_as_alu(nir_phi_instr *phi)
 {
    nir_alu_instr *first = NULL;
    nir_foreach_phi_src(src, phi) {
-      if (src->src.ssa->parent_instr->type != nir_instr_type_alu)
+      nir_alu_instr *alu = nir_src_as_alu(src->src);
+      if (!alu)
          return NULL;
 
-      nir_alu_instr *alu = nir_def_as_alu(src->src.ssa);
       if (first == NULL) {
          first = alu;
       } else {
@@ -206,7 +206,7 @@ alu_src_has_identity_swizzle(nir_alu_instr *alu, unsigned src_idx)
 static bool
 is_only_uniform_src(nir_src *src)
 {
-   nir_instr *instr = src->ssa->parent_instr;
+   nir_instr *instr = nir_def_instr(src->ssa);
 
    switch (instr->type) {
    case nir_instr_type_alu: {
@@ -266,7 +266,7 @@ compute_induction_information(loop_info_state *state)
          /* Detect inductions variables that are incremented in both branches
           * of an unnested if rather than in a loop block.
           */
-         if (src->parent_instr->type == nir_instr_type_phi) {
+         if (nir_def_is_phi(src)) {
             nir_phi_instr *src_phi = nir_def_as_phi(src);
             nir_alu_instr *src_phi_alu = phi_instr_as_alu(src_phi);
             if (src_phi_alu) {
@@ -274,7 +274,7 @@ compute_induction_information(loop_info_state *state)
             }
          }
 
-         if (src->parent_instr->type == nir_instr_type_alu && !var.update_src) {
+         if (nir_def_is_alu(src) && !var.update_src) {
             var.def = src;
             nir_alu_instr *alu = nir_def_as_alu(src);
 
@@ -357,7 +357,7 @@ find_loop_terminators(loop_info_state *state)
          if (!break_blk)
             continue;
 
-         if (nif->condition.ssa->parent_instr->type == nir_instr_type_phi) {
+         if (nir_src_is_phi(nif->condition)) {
             state->loop->info->complex_loop = true;
             return false;
          }
@@ -372,7 +372,7 @@ find_loop_terminators(loop_info_state *state)
          terminator->break_block = break_blk;
          terminator->continue_from_block = continue_from_blk;
          terminator->continue_from_then = continue_from_then;
-         terminator->conditional_instr = nif->condition.ssa->parent_instr;
+         terminator->conditional_instr = nir_def_instr(nif->condition.ssa);
 
          success = true;
       }
@@ -1109,7 +1109,7 @@ find_trip_count(loop_info_state *state, unsigned execution_mode,
 
          alu_op = nir_scalar_alu_op(cond);
          trip_count_known = false;
-         terminator->conditional_instr = cond.def->parent_instr;
+         terminator->conditional_instr = nir_def_instr(cond.def);
          terminator->exact_trip_count_unknown = true;
       }
 

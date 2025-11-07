@@ -17,7 +17,7 @@ static inline bool
 is_ubo_or_input(UNUSED const nir_search_state *state, const nir_alu_instr *instr, unsigned src,
                 unsigned num_components, const uint8_t *swizzle)
 {
-   nir_instr *parent = instr->src[src].src.ssa->parent_instr;
+   nir_instr *parent = nir_def_instr(instr->src[src].src.ssa);
    if (parent->type != nir_instr_type_intrinsic)
       return false;
 
@@ -103,7 +103,7 @@ check_instr_and_src_value(nir_op op, nir_instr **instr, double value)
          }
       }
    }
-   *instr = alu->src[1 - i].src.ssa->parent_instr;
+   *instr = nir_def_instr(alu->src[1 - i].src.ssa);
    return true;
 }
 
@@ -115,7 +115,7 @@ needs_vs_trig_input_fixup(UNUSED const nir_search_state *state, const nir_alu_in
     * emitted by us and also some wined3d shaders.
     * Start with check for fadd(a, -pi).
     */
-   nir_instr *parent = instr->src[src].src.ssa->parent_instr;
+   nir_instr *parent = nir_def_instr(instr->src[src].src.ssa);
    if (!check_instr_and_src_value(nir_op_fadd, &parent, -3.141592))
       return true;
    /* Now check for fmul(a, 2 * pi). */

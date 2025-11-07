@@ -29,7 +29,7 @@ static bool
 accum_src_deps(nir_src *src, void *opaque)
 {
    foreach_src_data *data = (foreach_src_data *)opaque;
-   nir_instr *src_instr = src->ssa->parent_instr;
+   nir_instr *src_instr = nir_def_instr(src->ssa);
 
    if (src_instr->type == nir_instr_type_load_const ||
        src_instr->type == nir_instr_type_undef)
@@ -154,7 +154,7 @@ nir_gather_output_dependencies(nir_shader *nir, nir_output_deps *deps)
           */
          util_dynarray_foreach(&if_cond_stack, nir_def *, cond) {
             accum_deps(this_instr_deps,
-                       instr_deps[(*cond)->parent_instr->index],
+                       instr_deps[nir_def_instr(*cond)->index],
                        num_bitset_words);
          }
 
@@ -195,7 +195,7 @@ nir_gather_output_dependencies(nir_shader *nir, nir_output_deps *deps)
                    */
                   util_dynarray_foreach(&if_cond_stack, nir_def *, cond) {
                      accum_deps(instr_deps[phi->instr.index],
-                                instr_deps[(*cond)->parent_instr->index],
+                                instr_deps[nir_def_instr(*cond)->index],
                                 num_bitset_words);
                   }
 
@@ -265,7 +265,7 @@ nir_gather_output_dependencies(nir_shader *nir, nir_output_deps *deps)
          nir_foreach_phi(phi, nir_cf_node_cf_tree_next(parent_cf)) {
             util_dynarray_foreach(&if_cond_stack, nir_def *, cond) {
                accum_deps(instr_deps[phi->instr.index],
-                          instr_deps[(*cond)->parent_instr->index],
+                          instr_deps[nir_def_instr(*cond)->index],
                           num_bitset_words);
             }
          }

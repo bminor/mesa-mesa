@@ -794,7 +794,7 @@ bool
 vec4_visitor::optimize_predicate(nir_alu_instr *instr,
                                  enum elk_predicate *predicate)
 {
-   if (instr->src[0].src.ssa->parent_instr->type != nir_instr_type_alu)
+   if (nir_def_instr(instr->src[0].src.ssa)->type != nir_instr_type_alu)
       return false;
 
    nir_alu_instr *cmp_instr = nir_def_as_alu(instr->src[0].src.ssa);

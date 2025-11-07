@@ -234,7 +234,7 @@ build_chain(struct chain *c, nir_scalar def, unsigned reserved_count)
           c->length + reserved_plus_remaining + 2 <= MAX_CHAIN_LENGTH) {
 
          /* Any interior nodes cannot be the root */
-         src.def->parent_instr->pass_flags = PASS_FLAG_INTERIOR;
+         nir_def_instr(src.def)->pass_flags = PASS_FLAG_INTERIOR;
 
          /* Recurse, reserving space for the next sources */
          build_chain(c, src, reserved_count + remaining);

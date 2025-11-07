@@ -634,7 +634,7 @@ lower_tex(nir_builder *b, nir_tex_instr *tex, struct tu_device *dev,
       tex->src[tex_src_idx].src_type = nir_tex_src_texture_handle;
 
       /* for the input attachment case: */
-      if (bindless->parent_instr->type != nir_instr_type_intrinsic)
+      if (!nir_def_is_intrinsic(bindless))
          tex->src[tex_src_idx].src_type = nir_tex_src_texture_offset;
    }
 
@@ -1118,7 +1118,7 @@ lower_ssbo_descriptor_instr(nir_builder *b, nir_intrinsic_instr *intrin,
 
       b->cursor = nir_before_instr(&intrin->instr);
       nir_def *buffer = intrin->src[buffer_src].ssa;
-      assert(buffer->parent_instr->type == nir_instr_type_intrinsic);
+      assert(nir_def_is_intrinsic(buffer));
       nir_intrinsic_instr *bindless =
          nir_def_as_intrinsic(buffer);
       assert(bindless->intrinsic == nir_intrinsic_bindless_resource_ir3);

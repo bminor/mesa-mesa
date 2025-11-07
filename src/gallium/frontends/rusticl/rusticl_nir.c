@@ -44,7 +44,7 @@ rusticl_lower_intrinsics_instr(
 
         val = intrins->src[0].ssa;
 
-        if (val->parent_instr->type == nir_instr_type_deref) {
+        if (nir_def_is_deref(val)) {
             nir_deref_instr *deref = nir_def_as_deref(val);
             nir_variable *var = nir_deref_instr_get_variable(deref);
             assert(var);

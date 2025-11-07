@@ -31,11 +31,11 @@ set_smem_access_flags(nir_builder *b, nir_intrinsic_instr *intrin, void *cb_data
          return false;
       case nir_intrinsic_load_ubo:
       case nir_intrinsic_load_ssbo:
-         if (intrin->src[0].ssa->parent_instr->block->cf_node.parent->type != nir_cf_node_function)
+         if (nir_def_block(intrin->src[0].ssa)->cf_node.parent->type != nir_cf_node_function)
             break;
          FALLTHROUGH;
       case nir_intrinsic_load_constant:
-         intrin->src[0].ssa->parent_instr->pass_flags = 1;
+         nir_def_instr(intrin->src[0].ssa)->pass_flags = 1;
          break;
       default:
          break;
@@ -72,7 +72,7 @@ set_smem_access_flags(nir_builder *b, nir_intrinsic_instr *intrin, void *cb_data
    nir_intrinsic_set_access(intrin, access | ACCESS_SMEM_AMD);
 
    /* Check if this instruction can be executed speculatively. */
-   if (intrin->src[0].ssa->parent_instr->pass_flags == 1)
+   if (nir_def_instr(intrin->src[0].ssa)->pass_flags == 1)
       nir_intrinsic_set_access(intrin, nir_intrinsic_access(intrin) | ACCESS_CAN_SPECULATE);
 
    return access != nir_intrinsic_access(intrin);

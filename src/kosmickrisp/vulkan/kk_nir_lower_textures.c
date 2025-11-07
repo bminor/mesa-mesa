@@ -84,7 +84,7 @@ txs_for_image(nir_builder *b, nir_intrinsic_instr *intr,
 static void
 lower_cube_load_handle_to_2d_array(nir_def *handle)
 {
-   nir_instr *handle_parent = handle->parent_instr;
+   nir_instr *handle_parent = nir_def_instr(handle);
    assert(handle_parent->type == nir_instr_type_intrinsic);
    nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(handle_parent);
    assert(intrin->intrinsic == nir_intrinsic_load_texture_handle_kk);

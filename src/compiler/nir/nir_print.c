@@ -148,8 +148,8 @@ print_def(nir_def *def, print_state *state)
            def->bit_size, sizes[def->num_components],
            padding, "", state->def_prefix, def->index);
 
-   if (def->parent_instr->has_debug_info) {
-      nir_instr_debug_info *debug_info = nir_instr_get_debug_info(def->parent_instr);
+   if (nir_def_instr(def)->has_debug_info) {
+      nir_instr_debug_info *debug_info = nir_instr_get_debug_info(nir_def_instr(def));
       if (debug_info->variable_name)
          fprintf(fp, ".%s", debug_info->variable_name);
    }
@@ -407,7 +407,7 @@ print_src(const nir_src *src, print_state *state, nir_alu_type src_type)
 {
    FILE *fp = state->fp;
    fprintf(fp, "%s%u", state->def_prefix, src->ssa->index);
-   nir_instr *instr = src->ssa->parent_instr;
+   nir_instr *instr = nir_def_instr(src->ssa);
 
    if (instr->has_debug_info) {
       nir_instr_debug_info *debug_info = nir_instr_get_debug_info(instr);

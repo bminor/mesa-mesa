@@ -39,7 +39,7 @@ lima_nir_split_load_input_instr(nir_builder *b,
       return false;
 
    nir_def *ssa = alu->src[0].src.ssa;
-   if (ssa->parent_instr->type != nir_instr_type_intrinsic)
+   if (!nir_def_is_intrinsic(ssa))
       return false;
 
    nir_intrinsic_instr *intrin = nir_def_as_intrinsic(ssa);

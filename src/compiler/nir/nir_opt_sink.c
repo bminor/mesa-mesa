@@ -47,7 +47,7 @@ is_constant_like(nir_src *src)
       return true;
 
    /* Otherwise, look for constant-like intrinsics */
-   nir_instr *parent = src->ssa->parent_instr;
+   nir_instr *parent = nir_def_instr(src->ssa);
    if (parent->type != nir_instr_type_intrinsic)
       return false;
 

@@ -132,7 +132,7 @@ src_is_quad_broadcast(nir_block *block, nir_src src, nir_intrinsic_instr **intri
 static bool
 src_is_alu(nir_op op, nir_src src, nir_src srcs[2])
 {
-   nir_alu_instr *alu = nir_src_as_alu_instr(src);
+   nir_alu_instr *alu = nir_src_as_alu(src);
    if (alu == NULL || alu->op != op)
       return false;
 

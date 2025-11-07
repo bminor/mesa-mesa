@@ -196,8 +196,7 @@ anv_nir_push_desc_ubo_fully_promoted(nir_shader *nir,
 
             /* Don't check the load_ubo from descriptor buffers */
             nir_intrinsic_instr *resource =
-               intrin->src[0].ssa->parent_instr->type == nir_instr_type_intrinsic ?
-               nir_def_as_intrinsic(intrin->src[0].ssa) : NULL;
+               nir_src_as_intrinsic(intrin->src[0]);
             if (resource == NULL || resource->intrinsic != nir_intrinsic_resource_intel)
                continue;
 

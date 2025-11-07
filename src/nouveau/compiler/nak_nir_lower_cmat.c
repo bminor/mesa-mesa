@@ -579,7 +579,7 @@ try_lower_cmat_load_to_ldsm(nir_builder *b, nir_intrinsic_instr *intr)
 
    const struct glsl_cmat_description desc = cmat_src_desc(intr->src[0]);
    const unsigned length = get_cmat_length(desc);
-   nir_deref_instr *deref = nir_instr_as_deref(intr->src[1].ssa->parent_instr);
+   nir_deref_instr *deref = nir_def_as_deref(intr->src[1].ssa);
    const unsigned ptr_bit_size = glsl_get_bit_size(deref->type);
    const unsigned vec = glsl_get_vector_elements(deref->type);
    nir_src stride = intr->src[2];

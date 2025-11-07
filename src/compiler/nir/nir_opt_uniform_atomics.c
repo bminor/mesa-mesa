@@ -132,7 +132,7 @@ match_invocation_comparison(nir_scalar scalar)
          return get_dim(nir_scalar_chase_alu_src(scalar, 1));
       if (!nir_scalar_chase_alu_src(scalar, 1).def->divergent)
          return get_dim(nir_scalar_chase_alu_src(scalar, 0));
-   } else if (scalar.def->parent_instr->type == nir_instr_type_intrinsic) {
+   } else if (nir_def_is_intrinsic(scalar.def)) {
       nir_intrinsic_instr *intrin = nir_def_as_intrinsic(scalar.def);
       if (intrin->intrinsic == nir_intrinsic_elect) {
          return 0x8;

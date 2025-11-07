@@ -1258,7 +1258,7 @@ get_non_self_referential_store_comps(nir_intrinsic_instr *store)
 {
    nir_component_mask_t comps = nir_intrinsic_write_mask(store);
 
-   nir_instr *src_instr = store->src[1].ssa->parent_instr;
+   nir_instr *src_instr = nir_def_instr(store->src[1].ssa);
    if (src_instr->type != nir_instr_type_alu)
       return comps;
 

@@ -474,7 +474,7 @@ nir_get_explicit_deref_range(nir_deref_instr *deref,
       }
 
       case nir_deref_type_cast: {
-         nir_instr *parent_instr = deref->parent.ssa->parent_instr;
+         nir_instr *parent_instr = nir_def_instr(deref->parent.ssa);
 
          switch (parent_instr->type) {
          case nir_instr_type_load_const: {

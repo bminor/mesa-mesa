@@ -92,7 +92,7 @@ is_use_inside_loop(nir_src *use, nir_loop *loop)
 static bool
 is_defined_before_loop(nir_def *def, nir_loop *loop)
 {
-   nir_instr *instr = def->parent_instr;
+   nir_instr *instr = nir_def_instr(def);
    nir_block *block_before_loop =
       nir_cf_node_as_block(nir_cf_node_prev(&loop->cf_node));
 
@@ -114,10 +114,12 @@ def_is_invariant(nir_def *def, nir_loop *loop)
    if (is_defined_before_loop(def, loop))
       return invariant;
 
-   if (def->parent_instr->pass_flags == undefined)
-      def->parent_instr->pass_flags = instr_is_invariant(def->parent_instr, loop);
+   nir_instr *instr = nir_def_instr(def);
 
-   return def->parent_instr->pass_flags == invariant;
+   if (instr->pass_flags == undefined)
+      instr->pass_flags = instr_is_invariant(instr, loop);
+
+   return instr->pass_flags == invariant;
 }
 
 static bool
@@ -196,8 +198,8 @@ convert_loop_exit_for_ssa(nir_def *def, void *void_state)
    /* Don't create LCSSA-Phis for loop-invariant variables */
    if (state->skip_invariants &&
        (def->bit_size != 1 || state->skip_bool_invariants)) {
-      assert(def->parent_instr->pass_flags != undefined);
-      if (def->parent_instr->pass_flags == invariant)
+      assert(nir_def_instr(def)->pass_flags != undefined);
+      if (nir_def_instr(def)->pass_flags == invariant)
          return true;
    }
 
@@ -223,7 +225,7 @@ convert_loop_exit_for_ssa(nir_def *def, void *void_state)
    if (all_uses_inside_loop)
       return true;
 
-   if (def->parent_instr->type == nir_instr_type_deref) {
+   if (nir_def_is_deref(def)) {
       nir_rematerialize_deref_in_use_blocks(nir_def_as_deref(def));
       return true;
    }

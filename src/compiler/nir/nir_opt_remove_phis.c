@@ -34,18 +34,21 @@ phi_srcs_equal(nir_def *a, nir_def *b)
    if (a == b)
       return true;
 
-   if (a->parent_instr->type != b->parent_instr->type)
+   nir_instr *a_instr = nir_def_instr(a);
+   nir_instr *b_instr = nir_def_instr(b);
+
+   if (a_instr->type != b_instr->type)
       return false;
 
-   if (a->parent_instr->type != nir_instr_type_alu &&
-       a->parent_instr->type != nir_instr_type_load_const)
+   if (a_instr->type != nir_instr_type_alu &&
+       a_instr->type != nir_instr_type_load_const)
       return false;
 
-   if (!nir_instrs_equal(a->parent_instr, b->parent_instr))
+   if (!nir_instrs_equal(a_instr, b_instr))
       return false;
 
    /* nir_instrs_equal ignores exact/fast_math */
-   if (a->parent_instr->type == nir_instr_type_alu) {
+   if (a_instr->type == nir_instr_type_alu) {
       nir_alu_instr *a_alu = nir_def_as_alu(a);
       nir_alu_instr *b_alu = nir_def_as_alu(b);
       if (a_alu->exact != b_alu->exact || a_alu->fp_fast_math != b_alu->fp_fast_math)
@@ -65,9 +68,9 @@ src_dominates_block(nir_src *src, void *state)
 static bool
 can_rematerialize_phi_src(nir_block *imm_dom, nir_def *def)
 {
-   if (def->parent_instr->type == nir_instr_type_alu) {
-      return nir_foreach_src(def->parent_instr, src_dominates_block, imm_dom);
-   } else if (def->parent_instr->type == nir_instr_type_load_const) {
+   if (nir_def_is_alu(def)) {
+      return nir_foreach_src(nir_def_instr(def), src_dominates_block, imm_dom);
+   } else if (nir_def_is_const(def)) {
       return true;
    }
    return false;
@@ -136,7 +139,7 @@ remove_phis_instr(nir_builder *b, nir_phi_instr *phi, void *unused)
       def = nir_undef(b, phi->def.num_components, phi->def.bit_size);
    } else if (needs_remat) {
       b->cursor = nir_after_block_before_jump(block->imm_dom);
-      nir_instr *remat = nir_instr_clone(b->shader, def->parent_instr);
+      nir_instr *remat = nir_instr_clone(b->shader, nir_def_instr(def));
       nir_builder_instr_insert(b, remat);
       def = nir_instr_def(remat);
    }

@@ -598,7 +598,7 @@ get_deref_tail(nir_deref_instr *deref)
       nir_def_as_deref(deref->parent.ssa);
 
    if (parent->deref_type == nir_deref_type_cast &&
-       parent->parent.ssa->parent_instr->type == nir_instr_type_deref) {
+       nir_def_is_deref(parent->parent.ssa)) {
       nir_deref_instr *grandparent =
          nir_def_as_deref(parent->parent.ssa);
 

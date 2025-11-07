@@ -358,7 +358,7 @@ nir_srcs_equal(nir_src src1, nir_src src2)
 static nir_alu_instr *
 get_neg_instr(nir_src s, nir_alu_type base_type)
 {
-   nir_alu_instr *alu = nir_src_as_alu_instr(s);
+   nir_alu_instr *alu = nir_src_as_alu(s);
 
    return alu != NULL && (alu->op == (base_type == nir_type_float ? nir_op_fneg : nir_op_ineg))
              ? alu

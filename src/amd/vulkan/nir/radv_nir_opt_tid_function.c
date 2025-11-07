@@ -25,7 +25,7 @@
 static inline unsigned
 src_get_fotid_mask(nir_src src)
 {
-   return src.ssa->parent_instr->pass_flags;
+   return nir_def_instr(src.ssa)->pass_flags;
 }
 
 static inline unsigned
@@ -437,7 +437,7 @@ opt_fotid_shuffle(nir_builder *b, nir_intrinsic_instr *instr, const radv_nir_opt
 {
    if (instr->intrinsic != nir_intrinsic_shuffle)
       return false;
-   if (!instr->src[1].ssa->parent_instr->pass_flags)
+   if (!nir_def_instr(instr->src[1].ssa)->pass_flags)
       return false;
 
    unsigned src_idx = 0;
@@ -530,7 +530,7 @@ opt_fotid_bool(nir_builder *b, nir_alu_instr *instr, const radv_nir_opt_tid_func
 
    nir_def *ballot = nir_vec(b, ballot_comp, options->hw_ballot_num_comp);
    nir_def *res = nir_inverse_ballot(b, ballot);
-   res->parent_instr->pass_flags = 1;
+   nir_def_instr(res)->pass_flags = 1;
 
    nir_def_replace(&instr->def, res);
    return true;
@@ -550,7 +550,7 @@ visit_instr(nir_builder *b, nir_instr *instr, void *params)
          /* revist shuffles that we skipped previously */
          bool progress = false;
          for (unsigned i = 1; i < 3; i++) {
-            nir_instr *src_instr = alu->src[i].src.ssa->parent_instr;
+            nir_instr *src_instr = nir_def_instr(alu->src[i].src.ssa);
             if (src_instr->type == nir_instr_type_intrinsic) {
                nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(src_instr);
                progress |= opt_fotid_shuffle(b, intrin, options, true);

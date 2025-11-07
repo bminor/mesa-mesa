@@ -94,7 +94,7 @@ nir_lower_mediump_io(nir_shader *nir, nir_variable_mode modes,
             bool is_fragdepth = (nir->info.stage == MESA_SHADER_FRAGMENT &&
                                  sem.location == FRAG_RESULT_DEPTH);
             if (!sem.medium_precision &&
-                (is_varying || is_fragdepth || val->parent_instr->type != nir_instr_type_alu ||
+                (is_varying || is_fragdepth || !nir_def_is_alu(val) ||
                  nir_def_as_alu(val)->op != upconvert_op)) {
                continue;
             }

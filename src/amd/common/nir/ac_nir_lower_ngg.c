@@ -400,7 +400,7 @@ remove_culling_shader_outputs(nir_shader *culling_shader, lower_ngg_nogs_state *
 static void
 replace_scalar_component_uses(nir_builder *b, nir_scalar old, nir_scalar rep)
 {
-   if (old.def->parent_instr->type == nir_instr_type_load_const)
+   if (nir_def_is_const(old.def))
       return;
 
    assert(old.def->bit_size == rep.def->bit_size);
@@ -437,7 +437,7 @@ apply_repacked_pos_output(nir_builder *b, nir_intrinsic_instr *intrin, void *sta
 
    for (unsigned comp = 0; comp < store_val->num_components; ++comp) {
       nir_scalar val = nir_scalar_chase_movs(nir_get_scalar(store_val, comp));
-      b->cursor = nir_after_instr_and_phis(val.def->parent_instr);
+      b->cursor = nir_after_instr_and_phis(nir_def_instr(val.def));
       nir_def *reloaded = nir_load_var(b, s->position_value_var);
 
       replace_scalar_component_uses(b, val, nir_get_scalar(reloaded, store_pos_component + comp));
@@ -604,7 +604,7 @@ analyze_shader_before_culling_walk(nir_def *ssa,
                                    uint8_t flag,
                                    lower_ngg_nogs_state *s)
 {
-   nir_instr *instr = ssa->parent_instr;
+   nir_instr *instr = nir_def_instr(ssa);
    uint8_t old_pass_flags = instr->pass_flags;
    instr->pass_flags |= flag;
 

@@ -359,7 +359,7 @@ bool
 ir3_def_is_rematerializable_for_preamble(nir_def *def,
                                          nir_def **preamble_defs)
 {
-   switch (def->parent_instr->type) {
+   switch (nir_def_instr_type(def)) {
    case nir_instr_type_load_const:
       return true;
    case nir_instr_type_intrinsic: {
@@ -469,10 +469,10 @@ _rematerialize_def(nir_builder *b, struct hash_table *remap_ht,
                    struct set *instr_set, nir_def **preamble_defs,
                    nir_def *def)
 {
-   if (_mesa_hash_table_search(remap_ht, def->parent_instr))
+   if (_mesa_hash_table_search(remap_ht, nir_def_instr(def)))
       return NULL;
 
-   switch (def->parent_instr->type) {
+   switch (nir_def_instr_type(def)) {
    case nir_instr_type_load_const:
       break;
    case nir_instr_type_intrinsic: {
@@ -500,7 +500,7 @@ _rematerialize_def(nir_builder *b, struct hash_table *remap_ht,
       UNREACHABLE("should not get here");
    }
 
-   nir_instr *instr = nir_instr_clone_deep(b->shader, def->parent_instr,
+   nir_instr *instr = nir_instr_clone_deep(b->shader, nir_def_instr(def),
                                            remap_ht);
 
    /* Find a legal place to insert the new instruction. We cannot simply put it

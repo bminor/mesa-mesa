@@ -5979,7 +5979,7 @@ trivial_revectorize_scan(struct nir_builder *b, nir_intrinsic_instr *intr, void 
                   /* detect if the merged instr loaded multiple components and use swizzle mask for rewrite */
                   unsigned use_components = merge_intr == base ? orig_components : merge_intr->def.num_components;
                   nir_def *swiz = nir_channels(b, &base->def, BITFIELD_RANGE(j, use_components));
-                  nir_def_rewrite_uses_after_instr(&merge_intr->def, swiz, merge_intr == base ? swiz->parent_instr : &merge_intr->instr);
+                  nir_def_rewrite_uses_after_instr(&merge_intr->def, swiz, merge_intr == base ? nir_def_instr(swiz) : &merge_intr->instr);
                   j += use_components - 1;
                }
             } else {

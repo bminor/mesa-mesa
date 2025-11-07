@@ -76,7 +76,7 @@ nir_collect_src_uniforms(const nir_src *src, int component,
    assert(max_num_bo > 0 && max_num_bo <= MAX_NUM_BO);
    assert(component < src->ssa->num_components);
 
-   nir_instr *instr = src->ssa->parent_instr;
+   nir_instr *instr = nir_def_instr(src->ssa);
 
    switch (instr->type) {
    case nir_instr_type_alu: {

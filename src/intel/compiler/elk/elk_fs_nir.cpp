@@ -395,7 +395,7 @@ fs_nir_emit_if(nir_to_elk_state &ntb, nir_if *if_stmt)
    /* If the condition has the form !other_condition, use other_condition as
     * the source, but invert the predicate on the if instruction.
     */
-   nir_alu_instr *cond = nir_src_as_alu_instr(if_stmt->condition);
+   nir_alu_instr *cond = nir_src_as_alu(if_stmt->condition);
    if (cond != NULL && cond->op == nir_op_inot) {
       invert = true;
       cond_reg = get_nir_src(ntb, cond->src[0].src);
@@ -481,10 +481,7 @@ optimize_extract_to_float(nir_to_elk_state &ntb, nir_alu_instr *instr,
    /* No fast path for f16 or f64. */
    assert(instr->op == nir_op_i2f32 || instr->op == nir_op_u2f32);
 
-   if (!instr->src[0].src.ssa->parent_instr)
-      return false;
-
-   if (instr->src[0].src.ssa->parent_instr->type != nir_instr_type_alu)
+   if (nir_def_instr(instr->src[0].src.ssa)->type != nir_instr_type_alu)
       return false;
 
    nir_alu_instr *src0 = nir_def_as_alu(instr->src[0].src.ssa);
@@ -716,7 +713,7 @@ resolve_inot_sources(nir_to_elk_state &ntb, const fs_builder &bld, nir_alu_instr
                      elk_fs_reg *op)
 {
    for (unsigned i = 0; i < 2; i++) {
-      nir_alu_instr *inot_instr = nir_src_as_alu_instr(instr->src[i].src);
+      nir_alu_instr *inot_instr = nir_src_as_alu(instr->src[i].src);
 
       if (inot_instr != NULL && inot_instr->op == nir_op_inot) {
          /* The source of the inot is now the source of instr. */
@@ -740,7 +737,7 @@ try_emit_b2fi_of_inot(nir_to_elk_state &ntb, const fs_builder &bld,
    if (devinfo->ver < 6)
       return false;
 
-   nir_alu_instr *inot_instr = nir_src_as_alu_instr(instr->src[0].src);
+   nir_alu_instr *inot_instr = nir_src_as_alu(instr->src[0].src);
 
    if (inot_instr == NULL || inot_instr->op != nir_op_inot)
       return false;
@@ -789,7 +786,7 @@ emit_fsign(nir_to_elk_state &ntb, const fs_builder &bld, const nir_alu_instr *in
 
    if (instr->op != nir_op_fsign) {
       const nir_alu_instr *const fsign_instr =
-         nir_src_as_alu_instr(instr->src[fsign_src].src);
+         nir_src_as_alu(instr->src[fsign_src].src);
 
       /* op[fsign_src] has the nominal result of the fsign, and op[1 -
        * fsign_src] has the other multiply source.  This must be rearranged so
@@ -882,7 +879,7 @@ can_fuse_fmul_fsign(nir_alu_instr *instr, unsigned fsign_src)
    assert(instr->op == nir_op_fmul);
 
    nir_alu_instr *const fsign_instr =
-      nir_src_as_alu_instr(instr->src[fsign_src].src);
+      nir_src_as_alu(instr->src[fsign_src].src);
 
    /* Rules:
     *
@@ -1096,7 +1093,7 @@ fs_nir_emit_alu(nir_to_elk_state &ntb, nir_alu_instr *instr,
        * that won't be propagated.  By handling both instructions here, a
        * single MOV is emitted.
        */
-      nir_alu_instr *extract_instr = nir_src_as_alu_instr(instr->src[0].src);
+      nir_alu_instr *extract_instr = nir_src_as_alu(instr->src[0].src);
       if (extract_instr != NULL) {
          if (extract_instr->op == nir_op_extract_u8 ||
              extract_instr->op == nir_op_extract_i8) {
@@ -1411,7 +1408,7 @@ fs_nir_emit_alu(nir_to_elk_state &ntb, nir_alu_instr *instr,
 
    case nir_op_inot:
       if (devinfo->ver >= 8) {
-         nir_alu_instr *inot_src_instr = nir_src_as_alu_instr(instr->src[0].src);
+         nir_alu_instr *inot_src_instr = nir_src_as_alu(instr->src[0].src);
 
          if (inot_src_instr != NULL &&
              (inot_src_instr->op == nir_op_ior ||
@@ -1879,7 +1876,7 @@ get_nir_src_bindless(nir_to_elk_state &ntb, const nir_src &src)
 static bool
 is_resource_src(nir_src src)
 {
-   return src.ssa->parent_instr->type == nir_instr_type_intrinsic &&
+   return nir_src_is_intrinsic(src) &&
           nir_def_as_intrinsic(src.ssa)->intrinsic == nir_intrinsic_resource_intel;
 }
 
@@ -3692,7 +3689,7 @@ fs_nir_emit_fs_intrinsic(nir_to_elk_state &ntb,
       elk_fs_inst *cmp = NULL;
       if (instr->intrinsic == nir_intrinsic_demote_if ||
           instr->intrinsic == nir_intrinsic_terminate_if) {
-         nir_alu_instr *alu = nir_src_as_alu_instr(instr->src[0]);
+         nir_alu_instr *alu = nir_src_as_alu(instr->src[0]);
 
          if (alu != NULL &&
              alu->op != nir_op_bcsel &&
@@ -3935,8 +3932,7 @@ fs_nir_emit_fs_intrinsic(nir_to_elk_state &ntb,
       break;
 
    case nir_intrinsic_load_interpolated_input: {
-      assert(instr->src[0].ssa &&
-             instr->src[0].ssa->parent_instr->type == nir_instr_type_intrinsic);
+      assert(nir_def_instr(instr->src[0].ssa)->type == nir_instr_type_intrinsic);
       nir_intrinsic_instr *bary_intrinsic = nir_def_as_intrinsic(instr->src[0].ssa);
       nir_intrinsic_op bary_intrin = bary_intrinsic->intrinsic;
       elk_fs_reg dst_xy;
@@ -4237,7 +4233,7 @@ add_rebuild_src(nir_src *src, void *state)
          return true;
    }
 
-   nir_foreach_src(src->ssa->parent_instr, add_rebuild_src, state);
+   nir_foreach_src(nir_def_instr(src->ssa), add_rebuild_src, state);
    res->array.push_back(src->ssa);
    return true;
 }
@@ -4251,7 +4247,7 @@ try_rebuild_resource(nir_to_elk_state &ntb, const elk::fs_builder &bld, nir_def 
    struct rebuild_resource resources = {};
    resources.idx = 0;
 
-   if (!nir_foreach_src(resource_def->parent_instr,
+   if (!nir_foreach_src(nir_def_instr(resource_def),
                         add_rebuild_src, &resources))
       return elk_fs_reg();
    resources.array.push_back(resource_def);
@@ -4259,12 +4255,12 @@ try_rebuild_resource(nir_to_elk_state &ntb, const elk::fs_builder &bld, nir_def 
    if (resources.array.size() == 1) {
       nir_def *def = resources.array[0];
 
-      if (def->parent_instr->type == nir_instr_type_load_const) {
+      if (nir_def_is_const(def)) {
          nir_load_const_instr *load_const =
             nir_def_as_load_const(def);
          return elk_imm_ud(load_const->value[0].i32);
       } else {
-         assert(def->parent_instr->type == nir_instr_type_intrinsic &&
+         assert(nir_def_is_intrinsic(def) &&
                 (nir_def_as_intrinsic(def)->intrinsic ==
                  nir_intrinsic_load_uniform));
          nir_intrinsic_instr *intrin = nir_def_as_intrinsic(def);
@@ -4279,7 +4275,7 @@ try_rebuild_resource(nir_to_elk_state &ntb, const elk::fs_builder &bld, nir_def 
    for (unsigned i = 0; i < resources.array.size(); i++) {
       nir_def *def = resources.array[i];
 
-      nir_instr *instr = def->parent_instr;
+      nir_instr *instr = nir_def_instr(def);
       switch (instr->type) {
       case nir_instr_type_load_const: {
          nir_load_const_instr *load_const =

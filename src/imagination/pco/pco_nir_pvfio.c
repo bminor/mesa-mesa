@@ -418,7 +418,7 @@ static nir_def *lower_pfo_load(nir_builder *b,
                                         .io_semantics = io_semantics);
 
       nir_intrinsic_instr *load =
-         nir_instr_as_intrinsic(packed_comps[c]->parent_instr);
+         nir_def_as_intrinsic(packed_comps[c]);
 
       util_dynarray_append(&state->loads, load);
    }

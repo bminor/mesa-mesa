@@ -2986,8 +2986,10 @@ assign_ssa_dest(struct lp_build_nir_soa_context *bld, const nir_def *ssa,
    struct gallivm_state *gallivm = bld->base.gallivm;
    LLVMBuilderRef builder = gallivm->builder;
 
-   if (gallivm->di_builder && ssa->parent_instr->has_debug_info) {
-      nir_instr_debug_info *debug_info = nir_instr_get_debug_info(ssa->parent_instr);
+   if (gallivm->di_builder && nir_def_instr(ssa)->has_debug_info) {
+      /* Cast away the constness */
+      nir_instr_debug_info *debug_info =
+         nir_instr_get_debug_info((void *) nir_def_instr(ssa));
 
       /* Use "ssa_%u" because GDB cannot handle "%%%u" */
       char name[16];

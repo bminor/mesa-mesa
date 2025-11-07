@@ -5827,7 +5827,7 @@ bi_gather_texcoords(nir_builder *b, nir_instr *instr, void *data)
    if (x.def != y.def)
       return false;
 
-   nir_instr *parent = x.def->parent_instr;
+   nir_instr *parent = nir_def_instr(x.def);
 
    if (parent->type != nir_instr_type_intrinsic)
       return false;

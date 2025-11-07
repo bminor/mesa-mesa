@@ -313,7 +313,7 @@ can_constant_fold(nir_scalar scalar, nir_block *loop_header)
       return true;
    }
 
-   if (scalar.def->parent_instr->type == nir_instr_type_phi) {
+   if (nir_def_instr_type(scalar.def) == nir_instr_type_phi) {
       /* If this is a phi from anything but the loop header, we cannot constant-fold. */
       if (nir_def_block(scalar.def) != loop_header)
          return false;

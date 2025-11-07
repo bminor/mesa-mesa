@@ -21,6 +21,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#include "nir.h"
 #include "nir_test.h"
 
 /* This is a macro so you get good line numbers */
@@ -66,8 +67,8 @@ protected:
    void create_shared_store(nir_deref_instr *deref, uint32_t id,
                             unsigned bit_size=32, unsigned components=1, unsigned wrmask=0xf);
 
-   bool test_alu(nir_instr *instr, nir_op op);
-   bool test_alu_def(nir_instr *instr, unsigned index, nir_def *def, unsigned swizzle=0);
+   bool test_alu(nir_def *def, nir_op op);
+   bool test_alu_def(nir_def *def1, unsigned index, nir_def *def2, unsigned swizzle=0);
 
    static bool mem_vectorize_callback(unsigned align_mul, unsigned align_offset,
                                       unsigned bit_size,
@@ -321,22 +322,23 @@ void nir_load_store_vectorize_test::create_shared_store(
    nir_store_deref(b, deref, value, wrmask & ((1 << components) - 1));
 }
 
-bool nir_load_store_vectorize_test::test_alu(nir_instr *instr, nir_op op)
+bool nir_load_store_vectorize_test::test_alu(nir_def *def, nir_op op)
 {
-   return instr->type == nir_instr_type_alu && nir_instr_as_alu(instr)->op == op;
+   return nir_def_instr(def)->type == nir_instr_type_alu &&
+          nir_instr_as_alu(nir_def_instr(def))->op == op;
 }
 
 bool nir_load_store_vectorize_test::test_alu_def(
-   nir_instr *instr, unsigned index, nir_def *def, unsigned swizzle)
+   nir_def *def1, unsigned index, nir_def *def2, unsigned swizzle)
 {
-   if (instr->type != nir_instr_type_alu)
+   if (nir_def_instr(def1)->type != nir_instr_type_alu)
       return false;
 
-   nir_alu_instr *alu = nir_instr_as_alu(instr);
+   nir_alu_instr *alu = nir_instr_as_alu(nir_def_instr(def1));
 
    if (index >= nir_op_infos[alu->op].num_inputs)
       return false;
-   if (alu->src[index].src.ssa != def)
+   if (alu->src[index].src.ssa != def2)
       return false;
    if (alu->src[index].swizzle[0] != swizzle)
       return false;
@@ -615,9 +617,9 @@ TEST_F(nir_load_store_vectorize_test, ssbo_load_adjacent_indirect_neg_stride)
    EXPECT_INSTR_SWIZZLES(movs[0x2], load, "y");
 
    /* nir_opt_algebraic optimizes the imul */
-   ASSERT_TRUE(test_alu(load->src[1].ssa->parent_instr, nir_op_ineg));
+   ASSERT_TRUE(test_alu(load->src[1].ssa, nir_op_ineg));
    nir_def *offset = nir_def_as_alu(load->src[1].ssa)->src[0].src.ssa;
-   ASSERT_TRUE(test_alu(offset->parent_instr, nir_op_ishl));
+   ASSERT_TRUE(test_alu(offset, nir_op_ishl));
    nir_alu_instr *shl = nir_def_as_alu(offset);
    ASSERT_EQ(shl->src[0].src.ssa, inv_plus_one);
    ASSERT_EQ(nir_src_as_uint(shl->src[1].src), 2);
@@ -957,15 +959,15 @@ TEST_F(nir_load_store_vectorize_test, ssbo_load_adjacent_8_8_16)
    nir_def *val = loads[0x3]->src.ssa;
    ASSERT_EQ(val->bit_size, 16);
    ASSERT_EQ(val->num_components, 1);
-   ASSERT_TRUE(test_alu(val->parent_instr, nir_op_ior));
+   ASSERT_TRUE(test_alu(val, nir_op_ior));
    nir_def *low = nir_def_as_alu(val)->src[0].src.ssa;
    nir_def *high = nir_def_as_alu(val)->src[1].src.ssa;
-   ASSERT_TRUE(test_alu(high->parent_instr, nir_op_ishl));
+   ASSERT_TRUE(test_alu(high, nir_op_ishl));
    high = nir_def_as_alu(high)->src[0].src.ssa;
-   ASSERT_TRUE(test_alu(low->parent_instr, nir_op_u2u16));
-   ASSERT_TRUE(test_alu(high->parent_instr, nir_op_u2u16));
-   ASSERT_TRUE(test_alu_def(low->parent_instr, 0, &load->def, 2));
-   ASSERT_TRUE(test_alu_def(high->parent_instr, 0, &load->def, 3));
+   ASSERT_TRUE(test_alu(low, nir_op_u2u16));
+   ASSERT_TRUE(test_alu(high, nir_op_u2u16));
+   ASSERT_TRUE(test_alu_def(low, 0, &load->def, 2));
+   ASSERT_TRUE(test_alu_def(high, 0, &load->def, 3));
 }
 
 TEST_F(nir_load_store_vectorize_test, ssbo_load_adjacent_32_32_64)
@@ -989,7 +991,7 @@ TEST_F(nir_load_store_vectorize_test, ssbo_load_adjacent_32_32_64)
    nir_def *val = loads[0x2]->src.ssa;
    ASSERT_EQ(val->bit_size, 64);
    ASSERT_EQ(val->num_components, 1);
-   ASSERT_TRUE(test_alu(val->parent_instr, nir_op_pack_64_2x32));
+   ASSERT_TRUE(test_alu(val, nir_op_pack_64_2x32));
    nir_alu_instr *pack = nir_def_as_alu(val);
    EXPECT_INSTR_SWIZZLES(pack, load, "zw");
 }
@@ -1016,14 +1018,14 @@ TEST_F(nir_load_store_vectorize_test, ssbo_load_adjacent_32_32_64_64)
    nir_def *val = loads[0x2]->src.ssa;
    ASSERT_EQ(val->bit_size, 64);
    ASSERT_EQ(val->num_components, 1);
-   ASSERT_TRUE(test_alu(val->parent_instr, nir_op_mov));
+   ASSERT_TRUE(test_alu(val, nir_op_mov));
    nir_alu_instr *mov = nir_def_as_alu(val);
    EXPECT_INSTR_SWIZZLES(mov, load, "y");
 
    val = loads[0x1]->src.ssa;
    ASSERT_EQ(val->bit_size, 32);
    ASSERT_EQ(val->num_components, 2);
-   ASSERT_TRUE(test_alu(val->parent_instr, nir_op_unpack_64_2x32));
+   ASSERT_TRUE(test_alu(val, nir_op_unpack_64_2x32));
    nir_alu_instr *unpack = nir_def_as_alu(val);
    EXPECT_INSTR_SWIZZLES(unpack, load, "x");
 }
@@ -1049,7 +1051,7 @@ TEST_F(nir_load_store_vectorize_test, ssbo_load_intersecting_32_32_64)
    nir_def *val = loads[0x2]->src.ssa;
    ASSERT_EQ(val->bit_size, 64);
    ASSERT_EQ(val->num_components, 1);
-   ASSERT_TRUE(test_alu(val->parent_instr, nir_op_pack_64_2x32));
+   ASSERT_TRUE(test_alu(val, nir_op_pack_64_2x32));
    nir_alu_instr *pack = nir_def_as_alu(val);
    EXPECT_INSTR_SWIZZLES(pack, load, "yz");
 }
@@ -1470,10 +1472,10 @@ TEST_F(nir_load_store_vectorize_test, shared_load_bool)
    ASSERT_EQ(deref->var, var);
 
    /* The loaded value is converted to Boolean by (loaded != 0). */
-   ASSERT_TRUE(test_alu(loads[0x1]->src.ssa->parent_instr, nir_op_ine));
-   ASSERT_TRUE(test_alu(loads[0x2]->src.ssa->parent_instr, nir_op_ine));
-   ASSERT_TRUE(test_alu_def(loads[0x1]->src.ssa->parent_instr, 0, &load->def, 0));
-   ASSERT_TRUE(test_alu_def(loads[0x2]->src.ssa->parent_instr, 0, &load->def, 1));
+   ASSERT_TRUE(test_alu(loads[0x1]->src.ssa, nir_op_ine));
+   ASSERT_TRUE(test_alu(loads[0x2]->src.ssa, nir_op_ine));
+   ASSERT_TRUE(test_alu_def(loads[0x1]->src.ssa, 0, &load->def, 0));
+   ASSERT_TRUE(test_alu_def(loads[0x2]->src.ssa, 0, &load->def, 1));
 }
 
 TEST_F(nir_load_store_vectorize_test, shared_load_bool_mixed)
@@ -1510,8 +1512,8 @@ TEST_F(nir_load_store_vectorize_test, shared_load_bool_mixed)
    ASSERT_EQ(deref->var, var);
 
    /* The loaded value is converted to Boolean by (loaded != 0). */
-   ASSERT_TRUE(test_alu(loads[0x1]->src.ssa->parent_instr, nir_op_ine));
-   ASSERT_TRUE(test_alu_def(loads[0x1]->src.ssa->parent_instr, 0, &load->def, 0));
+   ASSERT_TRUE(test_alu(loads[0x1]->src.ssa, nir_op_ine));
+   ASSERT_TRUE(test_alu_def(loads[0x1]->src.ssa, 0, &load->def, 0));
 
    EXPECT_INSTR_SWIZZLES(movs[0x2], load, "y");
 }
@@ -2363,8 +2365,8 @@ TEST_F(nir_load_store_vectorize_test, ssbo_shifted_different_bit_size_adjacent)
    ASSERT_EQ(nir_def_components_read(&load->def), 0xf);
    ASSERT_EQ(nir_src_as_uint(load->src[1]), 0);
    EXPECT_INSTR_SWIZZLES(movs[0x1], load, "xy");
-   nir_instr *mov2_src = movs[0x2]->src[0].src.ssa->parent_instr;
+   nir_def *mov2_src = movs[0x2]->src[0].src.ssa;
    ASSERT_TRUE(test_alu(mov2_src, nir_op_pack_32_2x16));
-   nir_alu_instr *pack = nir_instr_as_alu(mov2_src);
+   nir_alu_instr *pack = nir_def_as_alu(mov2_src);
    EXPECT_INSTR_SWIZZLES(pack, load, "zw");
 }

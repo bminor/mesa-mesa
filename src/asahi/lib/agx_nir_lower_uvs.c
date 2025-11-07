@@ -89,11 +89,11 @@ lower(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    if (sem.location == VARYING_SLOT_LAYER) {
       assert(ctx->layer == NULL && "only written once");
       ctx->layer = value;
-      ctx->after_layer_viewport = nir_after_instr(index->parent_instr);
+      ctx->after_layer_viewport = nir_after_def(index);
    } else if (sem.location == VARYING_SLOT_VIEWPORT) {
       assert(ctx->viewport == NULL && "only written once");
       ctx->viewport = value;
-      ctx->after_layer_viewport = nir_after_instr(index->parent_instr);
+      ctx->after_layer_viewport = nir_after_def(index);
    } else if (sem.location == VARYING_SLOT_CLIP_DIST0 ||
               sem.location == VARYING_SLOT_CLIP_DIST1) {
 

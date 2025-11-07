@@ -37,7 +37,7 @@ convert_to_bit_size(nir_builder *bld, nir_def *src,
    assert(src->bit_size < bit_size);
 
    /* create b2i32(a) instead of i2i32(b2i8(a))/i2i32(b2i16(a)) */
-   nir_alu_instr *alu = nir_src_as_alu_instr(nir_src_for_ssa(src));
+   nir_alu_instr *alu = nir_def_as_alu_or_null(src);
    if ((type & (nir_type_uint | nir_type_int)) && bit_size == 32 &&
        alu && (alu->op == nir_op_b2i8 || alu->op == nir_op_b2i16)) {
       nir_alu_instr *instr = nir_alu_instr_create(bld->shader, nir_op_b2i32);
@@ -67,7 +67,7 @@ before_conversion(nir_builder *bld, nir_alu_type type, unsigned bit_size, nir_de
    default:
       return NULL;
    }
-   if (def->parent_instr->type != nir_instr_type_alu) {
+   if (!nir_def_is_alu(def)) {
       return NULL;
    }
    nir_alu_instr *alu_instr = nir_def_as_alu(def);

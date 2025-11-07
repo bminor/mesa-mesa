@@ -24,7 +24,7 @@ has_cbuf_tex(const struct nak_compiler *nak) {
 static bool
 tex_handle_as_cbuf(nir_def *tex_h, uint32_t *cbuf_out)
 {
-   if (tex_h->parent_instr->type != nir_instr_type_intrinsic)
+   if (!nir_def_is_intrinsic(tex_h))
       return false;
 
    nir_intrinsic_instr *intrin = nir_def_as_intrinsic(tex_h);

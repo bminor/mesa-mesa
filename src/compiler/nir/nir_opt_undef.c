@@ -112,7 +112,7 @@ opt_undef_vecN(nir_builder *b, nir_alu_instr *alu)
 static uint32_t
 nir_get_undef_mask(nir_def *def)
 {
-   nir_instr *instr = def->parent_instr;
+   nir_instr *instr = nir_def_instr(def);
 
    if (instr->type == nir_instr_type_undef)
       return BITSET_MASK(def->num_components);

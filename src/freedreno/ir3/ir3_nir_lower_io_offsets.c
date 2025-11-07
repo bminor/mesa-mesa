@@ -89,7 +89,7 @@ nir_def *
 ir3_nir_try_propagate_bit_shift(nir_builder *b, nir_def *offset,
                                 int32_t shift)
 {
-   nir_instr *offset_instr = offset->parent_instr;
+   nir_instr *offset_instr = nir_def_instr(offset);
    if (offset_instr->type != nir_instr_type_alu)
       return NULL;
 

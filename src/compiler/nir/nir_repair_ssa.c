@@ -113,7 +113,7 @@ repair_ssa_def(nir_def *def, void *void_state)
        * deref information.
        */
       if (!nir_src_is_if(src) &&
-          def->parent_instr->type == nir_instr_type_deref &&
+          nir_def_is_deref(def) &&
           nir_src_parent_instr(src)->type == nir_instr_type_deref &&
           nir_instr_as_deref(nir_src_parent_instr(src))->deref_type != nir_deref_type_cast) {
          nir_deref_instr *cast =

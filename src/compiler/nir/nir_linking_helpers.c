@@ -1140,12 +1140,8 @@ is_direct_uniform_load(nir_def *def, nir_scalar *s)
     */
    *s = nir_scalar_resolved(def, 0);
 
-   nir_def *ssa = s->def;
-   if (ssa->parent_instr->type != nir_instr_type_intrinsic)
-      return false;
-
-   nir_intrinsic_instr *intr = nir_def_as_intrinsic(ssa);
-   if (intr->intrinsic != nir_intrinsic_load_deref)
+   nir_intrinsic_instr *intr = nir_scalar_as_intrinsic(*s);
+   if (!intr || intr->intrinsic != nir_intrinsic_load_deref)
       return false;
 
    nir_deref_instr *deref = nir_src_as_deref(intr->src[0]);
@@ -1406,7 +1402,7 @@ nir_link_opt_varyings(nir_shader *producer, nir_shader *consumer)
          continue;
 
       nir_def *ssa = intr->src[1].ssa;
-      if (ssa->parent_instr->type == nir_instr_type_load_const) {
+      if (nir_def_is_const(ssa)) {
          progress |= replace_varying_input_by_constant_load(consumer, intr);
          continue;
       }

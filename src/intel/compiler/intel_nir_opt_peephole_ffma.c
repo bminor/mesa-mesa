@@ -65,12 +65,7 @@ get_mul_for_src(nir_alu_src *src, unsigned num_components,
                 uint8_t *swizzle, bool *negate, bool *abs)
 {
    uint8_t swizzle_tmp[NIR_MAX_VEC_COMPONENTS];
-
-   nir_instr *instr = src->src.ssa->parent_instr;
-   if (instr->type != nir_instr_type_alu)
-      return NULL;
-
-   nir_alu_instr *alu = nir_instr_as_alu(instr);
+   nir_alu_instr *alu = nir_src_as_alu(src->src);
 
    /* We want to bail if any of the other ALU operations involved is labeled
     * exact.  One reason for this is that, while the value that is changing is
@@ -79,7 +74,7 @@ get_mul_for_src(nir_alu_src *src, unsigned num_components,
     * value and what they don't care about is the add.  Another reason is that
     * SPIR-V explicitly requires this behaviour.
     */
-   if (alu->exact)
+   if (!alu || alu->exact)
       return NULL;
 
    switch (alu->op) {
@@ -141,7 +136,7 @@ static bool
 any_alu_src_is_a_constant(nir_alu_src srcs[])
 {
    for (unsigned i = 0; i < 2; i++) {
-      if (srcs[i].src.ssa->parent_instr->type == nir_instr_type_load_const) {
+      if (nir_src_is_const(srcs[i].src)) {
          nir_load_const_instr *load_const =
             nir_def_as_load_const(srcs[i].src.ssa);
 

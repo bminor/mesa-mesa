@@ -387,7 +387,7 @@ filter_load_tcs_per_vertex_input(const nir_instr *instr,
 
    nir_src *off_src = nir_get_io_offset_src(intrin);
    nir_src *vertex_index_src = nir_get_io_arrayed_index_src(intrin);
-   nir_instr *vertex_index_instr = vertex_index_src->ssa->parent_instr;
+   nir_instr *vertex_index_instr = nir_def_instr(vertex_index_src->ssa);
    const nir_io_semantics io_sem = nir_intrinsic_io_semantics(intrin);
 
    /* If this is accessed via gl_InvocationIndex, don't use LDS if tcs_inputs_via_temp is also set,

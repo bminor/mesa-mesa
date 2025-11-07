@@ -226,7 +226,7 @@ lower_deref_base_to_constant(nir_builder *b, nir_intrinsic_instr *intr, void *co
    if (!nir_deref_mode_must_be(path.path[0], nir_var_mem_global | nir_var_mem_constant))
       goto done;
 
-   nir_instr *cast_src = path.path[0]->parent.ssa->parent_instr;
+   nir_instr *cast_src = nir_def_instr(path.path[0]->parent.ssa);
    if (cast_src->type != nir_instr_type_intrinsic)
       goto done;
 

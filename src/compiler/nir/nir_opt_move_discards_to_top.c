@@ -43,7 +43,7 @@ static bool
 add_src_to_worklist(nir_src *src, void *state_)
 {
    struct move_discard_state *state = state_;
-   nir_instr *instr = src->ssa->parent_instr;
+   nir_instr *instr = nir_def_instr(src->ssa);
    if (instr->pass_flags)
       return true;
 

@@ -214,7 +214,7 @@ gather_ubo_ranges(nir_shader *nir, nir_intrinsic_instr *instr,
 static void
 handle_partial_const(nir_builder *b, nir_def **srcp, int *offp)
 {
-   if ((*srcp)->parent_instr->type != nir_instr_type_alu)
+   if (!nir_def_is_alu(*srcp))
       return;
 
    nir_alu_instr *alu = nir_def_as_alu((*srcp));

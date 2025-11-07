@@ -65,10 +65,8 @@ Temp merged_wave_info_to_mask(isel_context* ctx, unsigned i);
 void
 get_const_vec(nir_def* vec, nir_const_value* cv[4])
 {
-   if (vec->parent_instr->type != nir_instr_type_alu)
-      return;
-   nir_alu_instr* vec_instr = nir_def_as_alu(vec);
-   if (vec_instr->op != nir_op_vec(vec->num_components))
+   nir_alu_instr* vec_instr = nir_def_as_alu_or_null(vec);
+   if (!vec_instr || vec_instr->op != nir_op_vec(vec->num_components))
       return;
 
    for (unsigned i = 0; i < vec->num_components; i++) {
@@ -729,9 +727,9 @@ Operand
 get_phi_operand(isel_context* ctx, nir_def* ssa, RegClass rc)
 {
    Temp tmp = get_ssa_temp(ctx, ssa);
-   if (ssa->parent_instr->type == nir_instr_type_undef) {
+   if (nir_def_is_undef(ssa)) {
       return Operand(rc);
-   } else if (ssa->bit_size == 1 && ssa->parent_instr->type == nir_instr_type_load_const) {
+   } else if (ssa->bit_size == 1 && nir_def_is_const(ssa)) {
       bool val = nir_def_as_load_const(ssa)->value[0].b;
       return Operand::c32_or_c64(val ? -1 : 0, ctx->program->lane_mask == s2);
    } else {

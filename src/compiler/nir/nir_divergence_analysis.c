@@ -1301,7 +1301,7 @@ visit_if_merge_phi(nir_phi_instr *phi, bool if_cond_divergent, bool ignore_undef
          phi->def.divergent = true;
          return true;
       }
-      if (src->src.ssa->parent_instr->type != nir_instr_type_undef) {
+      if (!nir_src_is_undef(src->src)) {
          defined_srcs++;
       }
    }

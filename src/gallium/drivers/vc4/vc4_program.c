@@ -828,7 +828,7 @@ ntq_emit_pack_unorm_4x8(struct vc4_compile *c, nir_alu_instr *instr)
         /* If packing from a vec4 op (as expected), identify it so that we can
          * peek back at what generated its sources.
          */
-        if (instr->src[0].src.ssa->parent_instr->type == nir_instr_type_alu &&
+        if (nir_src_is_alu(instr->src[0].src) &&
             nir_def_as_alu(instr->src[0].src.ssa)->op ==
             nir_op_vec4) {
                 vec4 = nir_def_as_alu(instr->src[0].src.ssa);
@@ -997,7 +997,7 @@ static struct qreg ntq_emit_bcsel(struct vc4_compile *c, nir_alu_instr *instr,
 {
         if (nir_load_reg_for_def(instr->src[0].src.ssa))
                 goto out;
-        if (instr->src[0].src.ssa->parent_instr->type != nir_instr_type_alu)
+        if (!nir_src_is_alu(instr->src[0].src))
                 goto out;
         nir_alu_instr *compare =
                 nir_def_as_alu(instr->src[0].src.ssa);

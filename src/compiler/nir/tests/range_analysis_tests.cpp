@@ -287,7 +287,7 @@ TEST_F(unsigned_upper_bound_test, loop_phi_bcsel)
 
    nir_phi_instr_add_src(phi, nir_def_block(zero), zero);
    nir_phi_instr_add_src(phi, nir_def_block(sel), sel);
-   b->cursor = nir_before_instr(sel->parent_instr);
+   b->cursor = nir_before_instr(nir_def_instr(sel));
    nir_builder_instr_insert(b, &phi->instr);
 
    nir_validate_shader(b->shader, NULL);

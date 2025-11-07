@@ -58,7 +58,7 @@ remat_ssa_def(nir_builder *b, nir_def *def, struct hash_table *remap_table,
                                 def->bit_size, def_blocks);
    _mesa_hash_table_insert(phi_value_table, def, val);
 
-   nir_instr *clone = nir_instr_clone_deep(b->shader, def->parent_instr,
+   nir_instr *clone = nir_instr_clone_deep(b->shader, nir_def_instr(def),
                                            remap_table);
    nir_builder_instr_insert(b, clone);
    nir_def *new_def = nir_instr_def(clone);
@@ -83,13 +83,13 @@ can_remat_chain(nir_src *src, void *data)
    if (_mesa_hash_table_search(check_data->remap_table, src->ssa))
       return true;
 
-   if (!can_remat_instr(src->ssa->parent_instr))
+   if (!can_remat_instr(nir_def_instr(src->ssa)))
       return false;
 
    if (check_data->chain_length++ >= 16)
       return false;
 
-   return nir_foreach_src(src->ssa->parent_instr, can_remat_chain, check_data);
+   return nir_foreach_src(nir_def_instr(src->ssa), can_remat_chain, check_data);
 }
 
 struct remat_chain_data {
@@ -108,7 +108,7 @@ do_remat_chain(nir_src *src, void *data)
    if (_mesa_hash_table_search(remat_data->remap_table, src->ssa))
       return true;
 
-   nir_foreach_src(src->ssa->parent_instr, do_remat_chain, remat_data);
+   nir_foreach_src(nir_def_instr(src->ssa), do_remat_chain, remat_data);
 
    remat_ssa_def(remat_data->b, src->ssa, remat_data->remap_table,
                  remat_data->phi_value_table, remat_data->phi_builder,
@@ -139,7 +139,7 @@ rewrite_instr_src_from_phi_builder(nir_src *src, void *data)
    bool can_rewrite = true;
    if (nir_def_block(new_def) == block && new_def->index != UINT32_MAX)
       can_rewrite =
-         !nir_instr_is_before(nir_src_parent_instr(src), new_def->parent_instr);
+         !nir_instr_is_before(nir_src_parent_instr(src), nir_def_instr(new_def));
 
    if (can_rewrite)
       nir_src_rewrite(src, new_def);
@@ -208,7 +208,7 @@ nir_minimize_call_live_states_impl(nir_function_impl *impl)
             .chain_length = 1,
          };
 
-         if (!nir_foreach_src(rematerializable[i]->parent_instr,
+         if (!nir_foreach_src(nir_def_instr(rematerializable[i]),
                               can_remat_chain, &check_data))
             continue;
 
@@ -220,7 +220,7 @@ nir_minimize_call_live_states_impl(nir_function_impl *impl)
             .def_blocks = def_blocks,
          };
 
-         nir_foreach_src(rematerializable[i]->parent_instr, do_remat_chain,
+         nir_foreach_src(nir_def_instr(rematerializable[i]), do_remat_chain,
                          &remat_data);
 
          remat_ssa_def(&b, rematerializable[i], remap_table, phi_value_table,

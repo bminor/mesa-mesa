@@ -75,7 +75,7 @@ lower_large_src(nir_src *src, void *s)
 {
    lower_state *state = s;
 
-   nir_instr *parent = src->ssa->parent_instr;
+   nir_instr *parent = nir_def_instr(src->ssa);
 
    /* No need to visit instructions we've already visited.. this also
     * avoids infinite recursion when phi's are involved:

@@ -3164,38 +3164,23 @@ agx_optimize_nir(nir_shader *nir, bool soft_fault, uint16_t *preamble_size,
  * conformant not to, but every app gets this wrong.
  */
 static bool
-gather_texcoords(nir_builder *b, nir_instr *instr, void *data)
+gather_texcoords(nir_builder *b, nir_tex_instr *tex, void *data)
 {
-   uint64_t *mask = data;
-
-   if (instr->type != nir_instr_type_tex)
+   nir_def *coord = nir_get_tex_src(tex, nir_tex_src_coord);
+   if (!coord)
       return false;
 
-   nir_tex_instr *tex = nir_instr_as_tex(instr);
+   nir_scalar x = nir_scalar_resolved(coord, 0);
+   nir_scalar y = nir_scalar_resolved(coord, 1);
+   nir_intrinsic_instr *intr = nir_scalar_as_intrinsic(x);
 
-   int coord_idx = nir_tex_instr_src_index(tex, nir_tex_src_coord);
-   if (coord_idx < 0)
-      return false;
+   if (x.def == y.def && intr &&
+       intr->intrinsic == nir_intrinsic_load_interpolated_input) {
 
-   nir_src src = tex->src[coord_idx].src;
-   nir_scalar x = nir_scalar_resolved(src.ssa, 0);
-   nir_scalar y = nir_scalar_resolved(src.ssa, 1);
+      uint64_t *mask = data;
+      *mask |= BITFIELD64_BIT(nir_intrinsic_io_semantics(intr).location);
+   }
 
-   if (x.def != y.def)
-      return false;
-
-   nir_instr *parent = x.def->parent_instr;
-
-   if (parent->type != nir_instr_type_intrinsic)
-      return false;
-
-   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(parent);
-
-   if (intr->intrinsic != nir_intrinsic_load_interpolated_input)
-      return false;
-
-   nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
-   *mask |= BITFIELD64_BIT(sem.location);
    return false;
 }
 
@@ -3209,7 +3194,7 @@ agx_gather_texcoords(nir_shader *nir)
    assert(nir->info.stage == MESA_SHADER_FRAGMENT);
 
    uint64_t mask = 0;
-   nir_shader_instructions_pass(nir, gather_texcoords, nir_metadata_all, &mask);
+   nir_shader_tex_pass(nir, gather_texcoords, nir_metadata_all, &mask);
    return mask;
 }
 

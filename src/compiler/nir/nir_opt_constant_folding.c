@@ -59,11 +59,9 @@ nir_try_constant_fold_alu(nir_builder *b, nir_alu_instr *alu)
           !nir_alu_type_get_type_size(nir_op_infos[alu->op].input_types[i]))
          bit_size = alu->src[i].src.ssa->bit_size;
 
-      nir_instr *src_instr = alu->src[i].src.ssa->parent_instr;
-
-      if (src_instr->type != nir_instr_type_load_const)
+      nir_load_const_instr *load_const = nir_src_as_load_const(alu->src[i].src);
+      if (!load_const)
          return NULL;
-      nir_load_const_instr *load_const = nir_instr_as_load_const(src_instr);
 
       for (unsigned j = 0; j < nir_ssa_alu_instr_src_components(alu, i);
            j++) {

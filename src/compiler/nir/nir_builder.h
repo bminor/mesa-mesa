@@ -1027,7 +1027,7 @@ static inline nir_def *
 nir_iadd_imm_nuw(nir_builder *b, nir_def *x, uint64_t y)
 {
    nir_def *d = nir_iadd_imm(b, x, y);
-   if (d != x && d->parent_instr->type == nir_instr_type_alu)
+   if (d != x && nir_def_is_alu(d))
       nir_def_as_alu(d)->no_unsigned_wrap = true;
    return d;
 }
@@ -1036,7 +1036,7 @@ static inline nir_def *
 nir_iadd_nuw(nir_builder *b, nir_def *x, nir_def *y)
 {
    nir_def *d = nir_iadd(b, x, y);
-   if (d->parent_instr->type == nir_instr_type_alu)
+   if (nir_def_is_alu(d))
       nir_def_as_alu(d)->no_unsigned_wrap = true;
    return d;
 }
@@ -1118,7 +1118,7 @@ static inline nir_def *
 nir_imul_imm_nuw(nir_builder *build, nir_def *x, uint64_t y)
 {
    nir_def *d = nir_imul_imm(build, x, y);
-   if (d != x && d->parent_instr->type == nir_instr_type_alu)
+   if (d != x && nir_def_is_alu(d))
       nir_def_as_alu(d)->no_unsigned_wrap = true;
    return d;
 }
@@ -1127,7 +1127,7 @@ static inline nir_def *
 nir_imul_nuw(nir_builder *build, nir_def *x, nir_def *y)
 {
    nir_def *d = nir_imul(build, x, y);
-   if (d->parent_instr->type == nir_instr_type_alu)
+   if (nir_def_is_alu(d))
       nir_def_as_alu(d)->no_unsigned_wrap = true;
    return d;
 }

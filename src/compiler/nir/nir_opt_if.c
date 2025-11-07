@@ -159,7 +159,7 @@ opt_peel_loop_initial_if(nir_loop *loop)
    nir_if *nif = nir_cf_node_as_if(if_node);
 
    nir_def *cond = nif->condition.ssa;
-   if (cond->parent_instr->type != nir_instr_type_phi)
+   if (!nir_def_is_phi(cond))
       return false;
 
    nir_phi_instr *cond_phi = nir_def_as_phi(cond);
@@ -288,7 +288,7 @@ is_trivial_bcsel(const nir_instr *instr, bool allow_non_phi_src)
           nir_def_block(bcsel->src[i].src.ssa) != instr->block)
          return false;
 
-      if (bcsel->src[i].src.ssa->parent_instr->type != nir_instr_type_phi) {
+      if (!nir_src_is_phi(bcsel->src[i].src)) {
          /* opt_split_alu_of_phi() is able to peel that src from the loop */
          if (i == 0 || !allow_non_phi_src)
             return false;
@@ -420,7 +420,7 @@ opt_split_alu_of_phi(nir_builder *b, nir_loop *loop, nir_opt_if_options options)
       nir_def *continue_srcs[8]; // FINISHME: Array size?
 
       for (unsigned i = 0; i < nir_op_infos[alu->op].num_inputs; i++) {
-         nir_instr *const src_instr = alu->src[i].src.ssa->parent_instr;
+         nir_instr *const src_instr = nir_def_instr(alu->src[i].src.ssa);
 
          /* If the source is a phi in the loop header block, then the
           * prev_srcs and continue_srcs will come from the different sources
@@ -440,13 +440,11 @@ opt_split_alu_of_phi(nir_builder *b, nir_loop *loop, nir_opt_if_options options)
 
             nir_foreach_phi_src(src_of_phi, phi) {
                if (src_of_phi->pred == prev_block) {
-                  if (src_of_phi->src.ssa->parent_instr->type !=
-                      nir_instr_type_undef) {
+                  if (!nir_src_is_undef(src_of_phi->src)) {
                      is_prev_result_undef = false;
                   }
 
-                  if (src_of_phi->src.ssa->parent_instr->type !=
-                      nir_instr_type_load_const) {
+                  if (!nir_src_is_const(src_of_phi->src)) {
                      is_prev_result_const = false;
                   }
 
@@ -1026,7 +1024,7 @@ opt_if_evaluate_condition_use(nir_builder *b, nir_if *nif)
    }
 
    bool invert = false;
-   nir_alu_instr *alu = nir_src_as_alu_instr(nif->condition);
+   nir_alu_instr *alu = nir_src_as_alu(nif->condition);
    if (alu != NULL && alu->op == nir_op_inot &&
        nir_src_num_components(alu->src[0].src) == 1) {
       /* Consider
@@ -1047,7 +1045,7 @@ opt_if_evaluate_condition_use(nir_builder *b, nir_if *nif)
       }
 
       invert = true;
-      alu = nir_src_as_alu_instr(alu->src[0].src);
+      alu = nir_src_as_alu(alu->src[0].src);
    }
 
    if (alu != NULL) {
@@ -1073,7 +1071,7 @@ opt_if_evaluate_condition_use(nir_builder *b, nir_if *nif)
             /* Just like above, if the op is inot, peel the inot off and try
              * some more.
              */
-            nir_alu_instr *alu_src = nir_src_as_alu_instr(alu->src[i].src);
+            nir_alu_instr *alu_src = nir_src_as_alu(alu->src[i].src);
             if (alu_src != NULL && alu_src->op == nir_op_inot &&
                 nir_src_num_components(alu_src->src[0].src) == 1) {
                nir_foreach_use_including_if_safe(use_src, alu_src->src[0].src.ssa) {
@@ -1223,7 +1221,7 @@ opt_phi_src_unused(nir_builder *b, nir_phi_instr *phi,
 {
    /* Return early, if either of the sources is already undef. */
    nir_foreach_phi_src(phi_src, phi) {
-      if (phi_src->src.ssa->parent_instr->type == nir_instr_type_undef)
+      if (nir_src_is_undef(phi_src->src))
          return false;
    }
 

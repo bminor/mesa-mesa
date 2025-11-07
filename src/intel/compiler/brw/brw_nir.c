@@ -2944,7 +2944,7 @@ brw_nir_move_interpolation_to_top(nir_shader *nir)
 
             nir_instr *move[3] = {
                &bary_intrinsic->instr,
-               intrin->src[1].ssa->parent_instr,
+               nir_def_instr(intrin->src[1].ssa),
                instr
             };
 
@@ -3050,14 +3050,14 @@ record_def_size(nir_def *def, void *v_state)
    unsigned num_components = def->num_components;
 
    /* Texturing has return length reduction */
-   if (def->parent_instr->type == nir_instr_type_tex)
+   if (nir_def_is_tex(def))
       num_components = util_last_bit(nir_def_components_read(def));
 
    /* Assume tightly packed */
    unsigned size = DIV_ROUND_UP(num_components * def->bit_size, 32);
 
    nir_op alu_op =
-      def->parent_instr->type == nir_instr_type_alu ?
+      nir_def_is_alu(def) ?
       nir_def_as_alu(def)->op : nir_num_opcodes;
 
    /* Assume these are handled via source modifiers */

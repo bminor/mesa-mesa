@@ -33,7 +33,7 @@ static bool
 can_move_src_to_top(nir_src *src, void *_state)
 {
    opt_move_to_top_state *state = (opt_move_to_top_state *)_state;
-   nir_instr *instr = src->ssa->parent_instr;
+   nir_instr *instr = nir_def_instr(src->ssa);
 
    assert(util_bitcount(instr->pass_flags & (PASS_FLAG_CANT_MOVE |
                                              PASS_FLAG_CAN_MOVE)) <= 1);
@@ -111,7 +111,7 @@ can_move_src_to_top(nir_src *src, void *_state)
 static bool
 move_src(nir_src *src, void *_state)
 {
-   nir_instr *instr = src->ssa->parent_instr;
+   nir_instr *instr = nir_def_instr(src->ssa);
    nir_builder *b = (nir_builder *)_state;
 
    if (instr->pass_flags & PASS_FLAG_MOVED)

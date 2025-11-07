@@ -412,8 +412,7 @@ lower_image_load_instr(nir_builder *b,
          color = nir_vec(b, sparse_color, dest_components + 1);
       }
 
-      nir_def_rewrite_uses(placeholder, color);
-      nir_instr_remove(placeholder->parent_instr);
+      nir_def_replace(placeholder, color);
    } else {
       /* This code part is only useful prior to Gfx9, we do not have plans to
        * enable sparse there.

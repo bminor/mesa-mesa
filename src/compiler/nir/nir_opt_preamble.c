@@ -515,7 +515,7 @@ replace_for_block(nir_builder *b, opt_preamble_ctx *ctx,
             nir_before_block_after_phis(nir_cursor_current_block(b->cursor));
 
          nir_def *repl = nir_if_phi(b, then_def, else_def);
-         clone = repl->parent_instr;
+         clone = nir_def_instr(repl);
 
          _mesa_hash_table_insert(remap_table, &phi->def, repl);
       } else {

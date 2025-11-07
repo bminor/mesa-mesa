@@ -67,7 +67,7 @@ set_src_live(nir_src *src, void *void_state)
 {
    struct live_defs_state *state = void_state;
 
-   nir_instr *instr = src->ssa->parent_instr;
+   nir_instr *instr = nir_def_instr(src->ssa);
 
    if (is_sysval(instr) || instr->type == nir_instr_type_deref)
       return true;

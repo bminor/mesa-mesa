@@ -361,7 +361,7 @@ ra_src(struct etna_compile *c, nir_src *src)
 static hw_src
 get_src(struct etna_compile *c, nir_src *src)
 {
-   nir_instr *instr = src->ssa->parent_instr;
+   nir_instr *instr = nir_def_instr(src->ssa);
 
    if (instr->pass_flags & BYPASS_SRC) {
       assert(instr->type == nir_instr_type_alu);
@@ -821,7 +821,7 @@ static nir_const_value *get_alu_cv(nir_alu_src *src)
    nir_const_value *cv = nir_src_as_const_value(src->src);
 
    if (!cv &&
-       (src->src.ssa->parent_instr->type == nir_instr_type_alu)) {
+       (nir_src_is_alu(src->src))) {
       nir_alu_instr *parent = nir_def_as_alu(src->src.ssa);
 
       if ((parent->op == nir_op_fabs) ||
@@ -971,7 +971,7 @@ lower_alu(struct etna_compile *c, nir_alu_instr *alu)
             need_mov = true;
       }
 
-      nir_instr *instr = ssa->parent_instr;
+      nir_instr *instr = nir_def_instr(ssa);
       switch (instr->type) {
       case nir_instr_type_alu:
       case nir_instr_type_tex:
@@ -1072,10 +1072,10 @@ emit_shader(struct etna_compile *c, unsigned *num_temps, unsigned *num_consts)
          case nir_intrinsic_store_deref: {
             nir_deref_instr *deref = nir_src_as_deref(intr->src[0]);
             nir_src *src = &intr->src[1];
-            if (nir_src_is_const(*src) || is_sysval(src->ssa->parent_instr) ||
+            if (nir_src_is_const(*src) || is_sysval(nir_def_instr(src->ssa)) ||
                 (shader->info.stage == MESA_SHADER_FRAGMENT &&
                  deref->var->data.location == FRAG_RESULT_DEPTH &&
-                 src->ssa->parent_instr->type != nir_instr_type_alu)) {
+                 !nir_def_is_alu(src->ssa))) {
                b.cursor = nir_before_instr(instr);
                nir_src_rewrite(src, nir_mov(&b, src->ssa));
             }

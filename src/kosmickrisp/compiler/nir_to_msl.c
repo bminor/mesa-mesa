@@ -123,8 +123,8 @@ emit_local_vars(struct nir_to_msl_ctx *ctx, nir_shader *shader)
 static bool
 is_register(nir_def *def)
 {
-   return ((def->parent_instr->type == nir_instr_type_intrinsic) &&
-           (nir_instr_as_intrinsic(def->parent_instr)->intrinsic ==
+   return ((nir_def_is_intrinsic(def)) &&
+           (nir_def_as_intrinsic(def)->intrinsic ==
             nir_intrinsic_load_reg));
 }
 
@@ -168,7 +168,7 @@ src_to_msl(struct nir_to_msl_ctx *ctx, nir_src *src)
       P(ctx, "as_type<%s>(", bitcast);
    if (is_register(src->ssa)) {
       nir_intrinsic_instr *instr =
-         nir_instr_as_intrinsic(src->ssa->parent_instr);
+         nir_def_as_intrinsic(src->ssa);
       if (src->ssa->bit_size != 1u) {
          P(ctx, "as_type<%s>(r%d)", msl_type_for_def(ctx->types, src->ssa),
            instr->src[0].ssa->index);

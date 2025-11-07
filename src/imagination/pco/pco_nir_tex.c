@@ -355,7 +355,7 @@ nir_intrinsic_instr *pco_emit_nir_smp(nir_builder *b, pco_smp_params *params)
                                         .smp_flags_pco = smp_flags._,
                                         .range = count);
 
-      return nir_instr_as_intrinsic(def->parent_instr);
+      return nir_def_as_intrinsic(def);
    }
 
    if (params->sample_raw) {
@@ -370,7 +370,7 @@ nir_intrinsic_instr *pco_emit_nir_smp(nir_builder *b, pco_smp_params *params)
                                      .smp_flags_pco = smp_flags._,
                                      .range = count);
 
-      return nir_instr_as_intrinsic(def->parent_instr);
+      return nir_def_as_intrinsic(def);
    }
 
    if (params->write_data) {
@@ -401,7 +401,7 @@ nir_intrinsic_instr *pco_emit_nir_smp(nir_builder *b, pco_smp_params *params)
                               .smp_flags_pco = smp_flags._,
                               .range = count);
 
-   return nir_instr_as_intrinsic(def->parent_instr);
+   return nir_def_as_intrinsic(def);
 }
 
 static nir_def *
@@ -1129,7 +1129,7 @@ static nir_def *lower_image(nir_builder *b, nir_instr *instr, void *cb_data)
    if (ia) {
       assert(!is_array);
       nir_load_const_instr *load =
-         nir_instr_as_load_const(intr->src[0].ssa->parent_instr);
+         nir_def_as_load_const(intr->src[0].ssa);
       bool onchip = load->def.num_components == 4;
 
       if (onchip) {

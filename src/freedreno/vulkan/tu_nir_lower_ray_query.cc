@@ -169,7 +169,7 @@ get_rq_deref(nir_builder *b, struct hash_table *ht, nir_def *def,
 static nir_def *
 get_rq_initialize_uav_index(nir_intrinsic_instr *intr, struct rq_var *var)
 {
-   if (intr->src[1].ssa->parent_instr->type == nir_instr_type_intrinsic &&
+   if (nir_src_is_intrinsic(intr->src[1]) &&
        nir_def_as_intrinsic(intr->src[1].ssa)->intrinsic ==
        nir_intrinsic_load_vulkan_descriptor) {
       return intr->src[1].ssa;

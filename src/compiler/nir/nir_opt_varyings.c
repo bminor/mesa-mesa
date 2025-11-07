@@ -1466,7 +1466,7 @@ gather_inputs(struct nir_builder *builder, nir_intrinsic_instr *intr, void *cb_d
       if (linkage->consumer_stage == MESA_SHADER_TESS_CTRL &&
           intr->intrinsic == nir_intrinsic_load_per_vertex_input) {
          nir_src *vertex_index_src = nir_get_io_arrayed_index_src(intr);
-         nir_instr *vertex_index_instr = vertex_index_src->ssa->parent_instr;
+         nir_instr *vertex_index_instr = nir_def_instr(vertex_index_src->ssa);
 
          if (!is_sysval(vertex_index_instr, SYSTEM_VALUE_INVOCATION_ID)) {
             if (intr->def.bit_size == 32)
@@ -1506,8 +1506,7 @@ gather_outputs(struct nir_builder *builder, nir_intrinsic_instr *intr, void *cb_
       /* nir_lower_io_to_scalar is required before this */
       assert(intr->src[0].ssa->num_components == 1);
       /* nit_opt_undef is required before this. */
-      assert(intr->src[0].ssa->parent_instr->type !=
-             nir_instr_type_undef);
+      assert(!nir_src_is_undef(intr->src[0]));
    } else {
       /* nir_lower_io_to_scalar is required before this */
       assert(intr->def.num_components == 1);
@@ -1648,7 +1647,7 @@ gather_outputs(struct nir_builder *builder, nir_intrinsic_instr *intr, void *cb_
       if (linkage->producer_stage == MESA_SHADER_MESH &&
           intr->intrinsic == nir_intrinsic_store_per_vertex_output) {
          nir_src *vertex_index_src = nir_get_io_arrayed_index_src(intr);
-         nir_instr *vertex_index_instr = vertex_index_src->ssa->parent_instr;
+         nir_instr *vertex_index_instr = nir_def_instr(vertex_index_src->ssa);
 
          if (!is_sysval(vertex_index_instr, SYSTEM_VALUE_INVOCATION_ID)) {
             if (value.def->bit_size == 32)
@@ -2171,7 +2170,7 @@ find_per_vertex_load_for_tes_interp(nir_instr *instr)
       unsigned num_srcs = nir_op_infos[alu->op].num_inputs;
 
       for (unsigned i = 0; i < num_srcs; i++) {
-         nir_instr *src = alu->src[i].src.ssa->parent_instr;
+         nir_instr *src = nir_def_instr(alu->src[i].src.ssa);
          nir_intrinsic_instr *intr = find_per_vertex_load_for_tes_interp(src);
 
          if (intr)
@@ -2221,13 +2220,13 @@ static nir_def *
 clone_ssa_impl(struct linkage_info *linkage, nir_builder *b, nir_def *ssa)
 {
    struct hash_entry *entry = _mesa_hash_table_search(linkage->clones_ht,
-                                                      ssa->parent_instr);
+                                                      nir_def_instr(ssa));
    if (entry)
       return entry->data;
 
    nir_def *clone = NULL;
 
-   switch (ssa->parent_instr->type) {
+   switch (nir_def_instr_type(ssa)) {
    case nir_instr_type_load_const:
       clone = nir_build_imm(b, ssa->num_components, ssa->bit_size,
                             nir_def_as_load_const(ssa)->value);
@@ -2344,7 +2343,7 @@ clone_ssa_impl(struct linkage_info *linkage, nir_builder *b, nir_def *ssa)
       UNREACHABLE("unexpected instruction type");
    }
 
-   _mesa_hash_table_insert(linkage->clones_ht, ssa->parent_instr, clone);
+   _mesa_hash_table_insert(linkage->clones_ht, nir_def_instr(ssa), clone);
    return clone;
 }
 
@@ -2388,7 +2387,7 @@ is_uniform_expression(nir_instr *instr, struct is_uniform_expr_state *state);
 static bool
 src_is_uniform_expression(nir_src *src, void *data)
 {
-   return is_uniform_expression(src->ssa->parent_instr,
+   return is_uniform_expression(nir_def_instr(src->ssa),
                                 (struct is_uniform_expr_state *)data);
 }
 
@@ -2466,7 +2465,7 @@ propagate_uniform_expressions(struct linkage_info *linkage,
        */
       nir_shader_clear_pass_flags(linkage->producer_builder.shader);
 
-      if (!is_uniform_expression(slot->producer.value.def->parent_instr, &state))
+      if (!is_uniform_expression(nir_def_instr(slot->producer.value.def), &state))
          continue;
 
       if (state.cost > linkage->max_varying_expression_cost)
@@ -2613,7 +2612,7 @@ get_input_qualifier(struct linkage_info *linkage, unsigned i)
 
    assert(load->intrinsic == nir_intrinsic_load_interpolated_input);
 
-   nir_instr *baryc_instr = load->src[0].ssa->parent_instr;
+   nir_instr *baryc_instr = nir_def_instr(load->src[0].ssa);
    nir_intrinsic_instr *baryc = baryc_instr->type == nir_instr_type_intrinsic ? nir_instr_as_intrinsic(baryc_instr) : NULL;
 
    if (linkage->has_flexible_interp) {
@@ -2872,7 +2871,7 @@ gather_fmul_tess_coord(nir_intrinsic_instr *load, nir_alu_instr *fmul,
                        unsigned *tess_coord_used, nir_def **load_tess_coord)
 {
    unsigned other_src = fmul->src[0].src.ssa == &load->def;
-   nir_instr *other_instr = fmul->src[other_src].src.ssa->parent_instr;
+   nir_instr *other_instr = nir_def_instr(fmul->src[other_src].src.ssa);
 
    assert(fmul->src[!other_src].swizzle[0] == 0);
 
@@ -3110,7 +3109,7 @@ find_open_coded_tes_input_interpolation(struct linkage_info *linkage)
    (!((instr)->pass_flags & (FLAG_MOVABLE | FLAG_UNMOVABLE)))
 
 #define GET_SRC_INTERP(alu, i) \
-   ((alu)->src[i].src.ssa->parent_instr->pass_flags & FLAG_INTERP_MASK)
+   (nir_def_instr((alu)->src[i].src.ssa)->pass_flags & FLAG_INTERP_MASK)
 
 static bool
 can_move_alu_across_interp(struct linkage_info *linkage, nir_alu_instr *alu)
@@ -3206,7 +3205,7 @@ update_movable_flags(struct linkage_info *linkage, nir_instr *instr)
       alu_interp = FLAG_INTERP_CONVERGENT;
 
       for (unsigned i = 0; i < num_srcs; i++) {
-         nir_instr *src_instr = alu->src[i].src.ssa->parent_instr;
+         nir_instr *src_instr = nir_def_instr(alu->src[i].src.ssa);
 
          if (NEED_UPDATE_MOVABLE_FLAGS(src_instr))
             update_movable_flags(linkage, src_instr);
@@ -3262,7 +3261,7 @@ update_movable_flags(struct linkage_info *linkage, nir_instr *instr)
       nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
 
       if (intr->intrinsic == nir_intrinsic_load_deref) {
-         nir_instr *deref = intr->src[0].ssa->parent_instr;
+         nir_instr *deref = nir_def_instr(intr->src[0].ssa);
 
          if (NEED_UPDATE_MOVABLE_FLAGS(deref))
             update_movable_flags(linkage, deref);
@@ -3305,7 +3304,7 @@ update_movable_flags(struct linkage_info *linkage, nir_instr *instr)
          return;
 
       case nir_deref_type_array: {
-         nir_instr *index = deref->arr.index.ssa->parent_instr;
+         nir_instr *index = nir_def_instr(deref->arr.index.ssa);
 
          if (NEED_UPDATE_MOVABLE_FLAGS(index))
             update_movable_flags(linkage, index);
@@ -3370,7 +3369,7 @@ gather_used_input_loads(nir_instr *instr,
       unsigned num_srcs = nir_op_infos[alu->op].num_inputs;
 
       for (unsigned i = 0; i < num_srcs; i++) {
-         gather_used_input_loads(alu->src[i].src.ssa->parent_instr,
+         gather_used_input_loads(nir_def_instr(alu->src[i].src.ssa),
                                  loads, num_loads);
       }
       return;
@@ -3384,7 +3383,7 @@ gather_used_input_loads(nir_instr *instr,
          return;
 
       case nir_intrinsic_load_deref:
-         gather_used_input_loads(intr->src[0].ssa->parent_instr,
+         gather_used_input_loads(nir_def_instr(intr->src[0].ssa),
                                  loads, num_loads);
          return;
 
@@ -3417,7 +3416,7 @@ gather_used_input_loads(nir_instr *instr,
          return;
 
       case nir_deref_type_array:
-         gather_used_input_loads(deref->arr.index.ssa->parent_instr,
+         gather_used_input_loads(nir_def_instr(deref->arr.index.ssa),
                                  loads, num_loads);
          return;
 
@@ -3509,7 +3508,7 @@ try_move_postdominator(struct linkage_info *linkage,
    unsigned slot_index = final_slot;
    struct scalar_slot *slot = &linkage->slot[slot_index];
    nir_builder *b = &linkage->consumer_builder;
-   b->cursor = nir_after_instr(load_def->parent_instr);
+   b->cursor = nir_after_instr(nir_def_instr(load_def));
    nir_def *postdom_def = nir_instr_def(postdom);
    unsigned alu_interp = postdom->pass_flags & FLAG_INTERP_MASK;
    nir_def *new_input, *new_tes_loads[3];
@@ -3905,18 +3904,18 @@ backward_inter_shader_code_motion(struct linkage_info *linkage,
          if (linkage->producer_stage == MESA_SHADER_VERTEX) {
             /* VS -> TES has no constraints on VS stores. */
             load_def = &slot->consumer.tes_interp_load->def;
-            load_def->parent_instr->pass_flags |= FLAG_ALU_IS_TES_INTERP_LOAD |
-                                                  slot->consumer.tes_interp_mode;
+            nir_def_instr(load_def)->pass_flags |= FLAG_ALU_IS_TES_INTERP_LOAD |
+                                                          slot->consumer.tes_interp_mode;
          } else {
             assert(linkage->producer_stage == MESA_SHADER_TESS_CTRL);
             assert(store->intrinsic == nir_intrinsic_store_per_vertex_output);
 
             /* The vertex index of the store must InvocationID. */
-            if (is_sysval(store->src[1].ssa->parent_instr,
+            if (is_sysval(nir_def_instr(store->src[1].ssa),
                           SYSTEM_VALUE_INVOCATION_ID)) {
                load_def = &slot->consumer.tes_interp_load->def;
-               load_def->parent_instr->pass_flags |= FLAG_ALU_IS_TES_INTERP_LOAD |
-                                                     slot->consumer.tes_interp_mode;
+               nir_def_instr(load_def)->pass_flags |= FLAG_ALU_IS_TES_INTERP_LOAD |
+                                                             slot->consumer.tes_interp_mode;
             } else {
                continue;
             }
@@ -3945,7 +3944,7 @@ backward_inter_shader_code_motion(struct linkage_info *linkage,
          switch (load->intrinsic) {
          case nir_intrinsic_load_interpolated_input: {
             assert(linkage->consumer_stage == MESA_SHADER_FRAGMENT);
-            nir_instr *baryc_instr = load->src[0].ssa->parent_instr;
+            nir_instr *baryc_instr = nir_def_instr(load->src[0].ssa);
 
             /* This is either lowered barycentric_at_offset/at_sample or user
              * barycentrics. Treat it like barycentric_at_offset.
@@ -4011,7 +4010,7 @@ backward_inter_shader_code_motion(struct linkage_info *linkage,
          }
       }
 
-      load_def->parent_instr->pass_flags |= FLAG_MOVABLE;
+      nir_def_instr(load_def)->pass_flags |= FLAG_MOVABLE;
 
       /* Disallow transform feedback. The load is "movable" for the purpose of
        * finding a movable post-dominator, we just can't rewrite the store
@@ -4053,7 +4052,7 @@ backward_inter_shader_code_motion(struct linkage_info *linkage,
 
    for (unsigned i = 0; i < num_movable_loads; i++) {
       nir_def *load_def = movable_loads[i].def;
-      nir_instr *iter = load_def->parent_instr;
+      nir_instr *iter = nir_def_instr(load_def);
       nir_instr *movable_postdom = NULL;
 
       /* Find the farthest post-dominator that is movable. */
@@ -4087,10 +4086,8 @@ backward_inter_shader_code_motion(struct linkage_info *linkage,
                      alu->src[0].src.ssa == load_def) ||
                     (nir_op_infos[alu->op].num_inputs == 2 &&
                      ((alu->src[0].src.ssa == load_def &&
-                       alu->src[1].src.ssa->parent_instr->type ==
-                          nir_instr_type_load_const) ||
-                      (alu->src[0].src.ssa->parent_instr->type ==
-                          nir_instr_type_load_const &&
+                       nir_src_is_const(alu->src[1].src)) ||
+                      (nir_src_is_const(alu->src[0].src) &&
                        alu->src[1].src.ssa == load_def)))))
                   continue;
 

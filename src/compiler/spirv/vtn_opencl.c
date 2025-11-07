@@ -894,7 +894,7 @@ vtn_add_printf_string(struct vtn_builder *b, uint32_t id, u_printf_info *info)
 
    while (deref->deref_type != nir_deref_type_var) {
       nir_scalar parent = nir_scalar_resolved(deref->parent.ssa, 0);
-      if (parent.def->parent_instr->type != nir_instr_type_deref) {
+      if (!nir_def_is_deref(parent.def)) {
          deref = NULL;
          break;
       }

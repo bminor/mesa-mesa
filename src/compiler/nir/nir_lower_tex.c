@@ -1560,7 +1560,7 @@ nir_tex_parse_txd_coords(nir_shader *shader, nir_tex_instr *tex, nir_instr **ddx
              op != nir_intrinsic_ddy_coarse)
             return 0;
 
-         ddxy_instrs[i * 2 + j] = ddxy_comp.def->parent_instr;
+         ddxy_instrs[i * 2 + j] = nir_def_instr(ddxy_comp.def);
 
          nir_def *def = nir_def_as_intrinsic(ddxy_comp.def)->src[0].ssa;
          ddxy_comp = nir_scalar_resolved(def, ddxy_comp.comp);

@@ -55,7 +55,7 @@ opt_bary_at_sample(nir_builder *b, nir_intrinsic_instr *intr, bool lower_sample_
 static bool
 src_is_vec2_sample_pos_minus_half(nir_src src)
 {
-   nir_alu_instr *alu = nir_src_as_alu_instr(src);
+   nir_alu_instr *alu = nir_src_as_alu(src);
    if (!alu || alu->op != nir_op_vec2)
       return false;
 

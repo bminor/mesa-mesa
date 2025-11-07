@@ -444,7 +444,7 @@ is_not_fmul(const nir_search_state *state, const nir_alu_instr *instr, unsigned 
             UNUSED unsigned num_components, UNUSED const uint8_t *swizzle)
 {
    nir_alu_instr *src_alu =
-      nir_src_as_alu_instr(instr->src[src].src);
+      nir_src_as_alu(instr->src[src].src);
 
    if (src_alu == NULL)
       return true;
@@ -460,7 +460,7 @@ is_fmul(const nir_search_state *state, const nir_alu_instr *instr, unsigned src,
         UNUSED unsigned num_components, UNUSED const uint8_t *swizzle)
 {
    nir_alu_instr *src_alu =
-      nir_src_as_alu_instr(instr->src[src].src);
+      nir_src_as_alu(instr->src[src].src);
 
    if (src_alu == NULL)
       return false;
@@ -476,13 +476,13 @@ is_fsign(const nir_alu_instr *instr, unsigned src,
          UNUSED unsigned num_components, UNUSED const uint8_t *swizzle)
 {
    nir_alu_instr *src_alu =
-      nir_src_as_alu_instr(instr->src[src].src);
+      nir_src_as_alu(instr->src[src].src);
 
    if (src_alu == NULL)
       return false;
 
    if (src_alu->op == nir_op_fneg)
-      src_alu = nir_src_as_alu_instr(src_alu->src[0].src);
+      src_alu = nir_src_as_alu(src_alu->src[0].src);
 
    return src_alu != NULL && src_alu->op == nir_op_fsign;
 }

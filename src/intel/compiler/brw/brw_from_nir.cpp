@@ -385,7 +385,7 @@ brw_from_nir_emit_if(nir_to_brw_state &ntb, nir_if *if_stmt)
    /* If the condition has the form !other_condition, use other_condition as
     * the source, but invert the predicate on the if instruction.
     */
-   nir_alu_instr *cond = nir_src_as_alu_instr(if_stmt->condition);
+   nir_alu_instr *cond = nir_src_as_alu(if_stmt->condition);
    if (cond != NULL && cond->op == nir_op_inot) {
       invert = true;
       cond_reg = get_nir_src(ntb, cond->src[0].src, cond->src[0].swizzle[0]);
@@ -481,14 +481,9 @@ optimize_extract_to_float(nir_to_brw_state &ntb, const brw_builder &bld,
    /* No fast path for f16 (yet) or f64. */
    assert(instr->op == nir_op_i2f32 || instr->op == nir_op_u2f32);
 
-   if (!instr->src[0].src.ssa->parent_instr)
+   nir_alu_instr *src0 = nir_src_as_alu(instr->src[0].src);
+   if (!src0)
       return false;
-
-   if (instr->src[0].src.ssa->parent_instr->type != nir_instr_type_alu)
-      return false;
-
-   nir_alu_instr *src0 =
-      nir_def_as_alu(instr->src[0].src.ssa);
 
    unsigned bytes;
    bool is_signed;
@@ -820,7 +815,7 @@ resolve_inot_sources(nir_to_brw_state &ntb, const brw_builder &bld, nir_alu_inst
                      brw_reg *op)
 {
    for (unsigned i = 0; i < 2; i++) {
-      nir_alu_instr *inot_instr = nir_src_as_alu_instr(instr->src[i].src);
+      nir_alu_instr *inot_instr = nir_src_as_alu(instr->src[i].src);
 
       if (inot_instr != NULL && inot_instr->op == nir_op_inot) {
          /* The source of the inot is now the source of instr. */
@@ -839,7 +834,7 @@ try_emit_b2fi_of_inot(nir_to_brw_state &ntb, const brw_builder &bld,
                       brw_reg result,
                       nir_alu_instr *instr)
 {
-   nir_alu_instr *inot_instr = nir_src_as_alu_instr(instr->src[0].src);
+   nir_alu_instr *inot_instr = nir_src_as_alu(instr->src[0].src);
 
    if (inot_instr == NULL || inot_instr->op != nir_op_inot)
       return false;
@@ -1081,7 +1076,7 @@ brw_from_nir_emit_alu(nir_to_brw_state &ntb, nir_alu_instr *instr,
        * that won't be propagated.  By handling both instructions here, a
        * single MOV is emitted.
        */
-      nir_alu_instr *extract_instr = nir_src_as_alu_instr(instr->src[0].src);
+      nir_alu_instr *extract_instr = nir_src_as_alu(instr->src[0].src);
       if (extract_instr != NULL) {
          if (extract_instr->op == nir_op_extract_u8 ||
              extract_instr->op == nir_op_extract_i8) {
@@ -1399,7 +1394,7 @@ brw_from_nir_emit_alu(nir_to_brw_state &ntb, nir_alu_instr *instr,
    }
 
    case nir_op_inot: {
-      nir_alu_instr *inot_src_instr = nir_src_as_alu_instr(instr->src[0].src);
+      nir_alu_instr *inot_src_instr = nir_src_as_alu(instr->src[0].src);
 
       if (inot_src_instr != NULL &&
           (inot_src_instr->op == nir_op_ior ||
@@ -1977,10 +1972,8 @@ get_nir_def(nir_to_brw_state &ntb, const nir_def &def, bool all_sources_uniform)
    nir_intrinsic_instr *store_reg = nir_store_reg_for_def(&def);
    bool is_scalar = false;
 
-   if (def.parent_instr->type == nir_instr_type_intrinsic &&
-       store_reg == NULL) {
-      const nir_intrinsic_instr *instr =
-         nir_instr_as_intrinsic(def.parent_instr);
+   if (nir_def_is_intrinsic(&def) && store_reg == NULL) {
+      const nir_intrinsic_instr *instr = nir_def_as_intrinsic(&def);
 
       switch (instr->intrinsic) {
       case nir_intrinsic_load_btd_global_arg_addr_intel:
@@ -2015,7 +2008,7 @@ get_nir_def(nir_to_brw_state &ntb, const nir_def &def, bool all_sources_uniform)
 
       /* This cannot be is_scalar if NIR thought it was divergent. */
       assert(!(is_scalar && def.divergent));
-   } else if (def.parent_instr->type == nir_instr_type_alu) {
+   } else if (nir_def_is_alu(&def)) {
       is_scalar = store_reg == NULL && all_sources_uniform && !def.divergent;
    }
 
@@ -2034,8 +2027,7 @@ get_nir_def(nir_to_brw_state &ntb, const nir_def &def, bool all_sources_uniform)
 
       return ntb.ssa_values[def.index];
    } else {
-      nir_intrinsic_instr *decl_reg =
-         nir_reg_get_decl(store_reg->src[1].ssa);
+      nir_intrinsic_instr *decl_reg = nir_reg_get_decl(store_reg->src[1].ssa);
       /* We don't handle indirects on locals */
       assert(nir_intrinsic_base(store_reg) == 0);
       assert(store_reg->intrinsic != nir_intrinsic_store_reg_indirect);
@@ -4186,7 +4178,7 @@ brw_from_nir_emit_fs_intrinsic(nir_to_brw_state &ntb,
       brw_inst *cmp = NULL;
       if (instr->intrinsic == nir_intrinsic_demote_if ||
           instr->intrinsic == nir_intrinsic_terminate_if) {
-         nir_alu_instr *alu = nir_src_as_alu_instr(instr->src[0]);
+         nir_alu_instr *alu = nir_src_as_alu(instr->src[0]);
 
          if (alu != NULL &&
              alu->op != nir_op_bcsel) {
@@ -4458,9 +4450,8 @@ brw_from_nir_emit_fs_intrinsic(nir_to_brw_state &ntb,
    }
 
    case nir_intrinsic_load_interpolated_input: {
-      assert(instr->src[0].ssa &&
-             instr->src[0].ssa->parent_instr->type == nir_instr_type_intrinsic);
-      nir_intrinsic_instr *bary_intrinsic = nir_def_as_intrinsic(instr->src[0].ssa);
+      assert(nir_src_is_intrinsic(instr->src[0]));
+      nir_intrinsic_instr *bary_intrinsic = nir_src_as_intrinsic(instr->src[0]);
       nir_intrinsic_op bary_intrin = bary_intrinsic->intrinsic;
       brw_reg dst_xy;
 

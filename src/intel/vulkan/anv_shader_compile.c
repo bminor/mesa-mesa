@@ -1226,13 +1226,13 @@ fixup_large_workgroup_image_coherency(nir_shader *nir)
             if (array_deref->deref_type != nir_deref_type_array)
                continue;
 
-            nir_alu_instr *alu = nir_src_as_alu_instr(intr->src[1]);
+            nir_alu_instr *alu = nir_src_as_alu(intr->src[1]);
             if (!alu || !nir_op_is_vec(alu->op))
                return;
 
             /* Check if any src is from @load_local_invocation_id. */
             for (unsigned i = 0; i < nir_op_infos[alu->op].num_inputs; i++) {
-               nir_instr *parent = alu->src[i].src.ssa->parent_instr;
+               nir_instr *parent = nir_def_instr(alu->src[i].src.ssa);
                if (parent->type != nir_instr_type_intrinsic)
                   continue;
 

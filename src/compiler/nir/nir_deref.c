@@ -963,11 +963,10 @@ opt_alu_of_cast(nir_alu_instr *alu)
    bool progress = false;
 
    for (unsigned i = 0; i < nir_op_infos[alu->op].num_inputs; i++) {
-      nir_instr *src_instr = alu->src[i].src.ssa->parent_instr;
-      if (src_instr->type != nir_instr_type_deref)
+      if (!nir_src_is_deref(alu->src[i].src))
          continue;
 
-      nir_deref_instr *src_deref = nir_instr_as_deref(src_instr);
+      nir_deref_instr *src_deref = nir_src_as_deref(alu->src[i].src);
       if (src_deref->deref_type != nir_deref_type_cast)
          continue;
 

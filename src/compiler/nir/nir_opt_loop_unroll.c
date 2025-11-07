@@ -643,8 +643,8 @@ comparison_contains_instr(nir_scalar cond_scalar, nir_instr *instr)
    if (nir_is_terminator_condition_with_two_inputs(cond_scalar)) {
       nir_alu_instr *comparison =
          nir_def_as_alu(cond_scalar.def);
-      return comparison->src[0].src.ssa->parent_instr == instr ||
-             comparison->src[1].src.ssa->parent_instr == instr;
+      return nir_def_instr(comparison->src[0].src.ssa) == instr ||
+             nir_def_instr(comparison->src[1].src.ssa) == instr;
    }
 
    return false;
@@ -692,7 +692,7 @@ remove_out_of_bounds_induction_use(nir_shader *shader, nir_loop *loop,
                if (intrin->intrinsic == nir_intrinsic_load_deref) {
                   nir_alu_instr *term_alu =
                      nir_def_as_alu(term->nif->condition.ssa);
-                  b.cursor = nir_before_instr(term->nif->condition.ssa->parent_instr);
+                  b.cursor = nir_before_def(term->nif->condition.ssa);
 
                   /* If the out of bounds load is used in the comparison of the
                    * loop terminator replace the condition with true so that the

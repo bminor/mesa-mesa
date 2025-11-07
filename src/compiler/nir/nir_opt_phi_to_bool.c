@@ -30,7 +30,7 @@ enum bool_type {
 static inline uint8_t
 src_pass_flags(nir_src *src)
 {
-   return src->ssa->parent_instr->pass_flags;
+   return nir_def_instr(src->ssa)->pass_flags;
 }
 
 static inline nir_block *
@@ -189,7 +189,7 @@ phi_to_bool(nir_builder *b, nir_phi_instr *phi, void *unused)
 
    nir_foreach_use_safe(src, &phi->def) {
       if (nir_src_parent_instr(src) == &phi->instr ||
-          nir_src_parent_instr(src) == res->parent_instr)
+          nir_src_parent_instr(src) == nir_def_instr(res))
          continue;
       nir_src_rewrite(src, res);
    }

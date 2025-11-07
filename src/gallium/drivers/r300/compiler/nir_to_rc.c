@@ -625,7 +625,7 @@ static struct ureg_src
 ntr_get_chased_src(struct ntr_compile *c, nir_legacy_src *src)
 {
    if (src->is_ssa) {
-      if (src->ssa->parent_instr->type == nir_instr_type_load_const)
+      if (nir_def_is_const(src->ssa))
          return ntr_get_load_const_src(c, nir_def_as_load_const(src->ssa));
 
       return c->ssa_temp[src->ssa->index];
@@ -691,7 +691,7 @@ ntr_get_ssa_def_decl(struct ntr_compile *c, nir_def *ssa)
 {
    uint32_t writemask;
    /* Fix writemask for nir_intrinsic_load_ubo_vec4 according to uses. */
-   if (ssa->parent_instr->type == nir_instr_type_intrinsic &&
+   if (nir_def_is_intrinsic(ssa) &&
        nir_def_as_intrinsic(ssa)->intrinsic == nir_intrinsic_load_ubo_vec4)
       writemask = nir_def_components_read(ssa);
    else

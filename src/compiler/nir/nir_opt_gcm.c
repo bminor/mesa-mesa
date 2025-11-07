@@ -166,7 +166,7 @@ static bool
 is_src_scalarizable(nir_src *src)
 {
 
-   nir_instr *src_instr = src->ssa->parent_instr;
+   nir_instr *src_instr = nir_def_instr(src->ssa);
    switch (src_instr->type) {
    case nir_instr_type_alu: {
       nir_alu_instr *src_alu = nir_instr_as_alu(src_instr);
@@ -416,7 +416,7 @@ gcm_schedule_early_src(nir_src *src, void *void_state)
    struct gcm_state *state = void_state;
    nir_instr *instr = state->instr;
 
-   gcm_schedule_early_instr(src->ssa->parent_instr, void_state);
+   gcm_schedule_early_instr(nir_def_instr(src->ssa), void_state);
 
    /* While the index isn't a proper dominance depth, it does have the
     * property that if A dominates B then A->index <= B->index.  Since we
@@ -426,7 +426,7 @@ gcm_schedule_early_src(nir_src *src, void *void_state)
     * Therefore, we can just go ahead and just compare indices.
     */
    struct gcm_instr_info *src_info =
-      &state->instr_infos[src->ssa->parent_instr->index];
+      &state->instr_infos[nir_def_instr(src->ssa)->index];
    struct gcm_instr_info *info = &state->instr_infos[instr->index];
    if (info->early_block->index < src_info->early_block->index)
       info->early_block = src_info->early_block;
@@ -657,17 +657,17 @@ gcm_schedule_late_def(nir_def *def, void *void_state)
    }
 
    nir_block *early_block =
-      state->instr_infos[def->parent_instr->index].early_block;
+      state->instr_infos[nir_def_instr(def)->index].early_block;
 
    /* Some instructions may never be used.  Flag them and the instruction
     * placement code will get rid of them for us.
     */
    if (lca == NULL) {
-      def->parent_instr->block = NULL;
+      nir_def_instr(def)->block = NULL;
       return true;
    }
 
-   if (def->parent_instr->pass_flags & GCM_INSTR_SCHEDULE_EARLIER_ONLY &&
+   if (nir_def_instr(def)->pass_flags & GCM_INSTR_SCHEDULE_EARLIER_ONLY &&
        lca != nir_def_block(def) &&
        nir_block_dominates(nir_def_block(def), lca)) {
       lca = nir_def_block(def);
@@ -679,12 +679,12 @@ gcm_schedule_late_def(nir_def *def, void *void_state)
     * as far outside loops as we can get.
     */
    nir_block *best_block =
-      gcm_choose_block_for_instr(def->parent_instr, early_block, lca, state);
+      gcm_choose_block_for_instr(nir_def_instr(def), early_block, lca, state);
 
    if (nir_def_block(def) != best_block)
       state->progress = true;
 
-   def->parent_instr->block = best_block;
+   nir_def_instr(def)->block = best_block;
 
    return true;
 }

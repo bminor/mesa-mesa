@@ -106,7 +106,7 @@ impl ALUType {
 
 impl nir_def {
     pub fn parent_instr(&self) -> &nir_instr {
-        unsafe { self.parent_instr.as_ref() }.unwrap()
+        unsafe { &*nir_def_instr_noninline(self as *const _) }
     }
 
     pub fn components_read(&self) -> nir_component_mask_t {

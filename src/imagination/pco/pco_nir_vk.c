@@ -95,7 +95,7 @@ static void lower_tex_deref_to_binding(nir_builder *b,
 {
    nir_tex_src *deref_src = &tex->src[deref_index];
    nir_deref_instr *deref =
-      nir_instr_as_deref(deref_src->src.ssa->parent_instr);
+      nir_def_as_deref(deref_src->src.ssa);
 
    b->cursor = nir_before_instr(&tex->instr);
 

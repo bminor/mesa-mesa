@@ -67,7 +67,7 @@ add_instr_and_srcs_to_set(struct set *instr_set, nir_instr *instr);
 static bool
 add_srcs_to_set(nir_src *src, void *state)
 {
-   add_instr_and_srcs_to_set(state, src->ssa->parent_instr);
+   add_instr_and_srcs_to_set(state, nir_def_instr(src->ssa));
    return true;
 }
 
@@ -93,7 +93,7 @@ prune_patch_function_to_intrinsic_and_srcs(nir_function_impl *impl)
    nir_foreach_block(block, impl) {
       nir_if *following_if = nir_block_get_following_if(block);
       if (following_if) {
-         add_instr_and_srcs_to_set(instr_set, following_if->condition.ssa->parent_instr);
+         add_instr_and_srcs_to_set(instr_set, nir_def_instr(following_if->condition.ssa));
       }
       nir_foreach_instr_safe(instr, block) {
          if (instr->type == nir_instr_type_intrinsic) {
