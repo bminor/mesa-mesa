@@ -1308,7 +1308,7 @@ CDX12EncHMFT::ProcessSliceBitstreamZeroCopy( LPDX12EncodeContext pDX12EncodeCont
                                              std::vector<struct codec_unit_location_t> &mfsample_codec_unit_metadata )
 {
    std::vector<struct codec_unit_location_t> codec_unit_metadata;
-   if (!GetSliceBitstreamMetadata( pDX12EncodeContext, slice_idx, codec_unit_metadata ))
+   if( !GetSliceBitstreamMetadata( pDX12EncodeContext, slice_idx, codec_unit_metadata ) )
    {
       debug_printf( "[dx12 hmft 0x%p] Failed to get slice %u bitstream metadata\n", this, slice_idx );
       return false;
@@ -1370,7 +1370,10 @@ CDX12EncHMFT::GetSliceBitstreamMetadata( LPDX12EncodeContext pDX12EncodeContext,
                        this,
                        slice_idx,
                        unit_idx );
-         MFE_ERROR( "[dx12 hmft 0x%p] Slice %u unit %u has size overflow flag set - check the output bitstream buffer size", this, slice_idx, unit_idx );
+         MFE_ERROR( "[dx12 hmft 0x%p] Slice %u unit %u has size overflow flag set - check the output bitstream buffer size",
+                    this,
+                    slice_idx,
+                    unit_idx );
          HMFT_ETW_EVENT_STOP( "GPUIndividualSliceStatsRead", this );
          return false;
       }
@@ -1557,7 +1560,10 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
 
                      if( WaitForFence( pDX12EncodeContext->pSliceFences[slice_idx], OS_TIMEOUT_INFINITE ) )
                      {
-                        if (!pThis->ProcessSliceBitstreamZeroCopy( pDX12EncodeContext, slice_idx, spMediaBuffer, codec_unit_metadata ))
+                        if( !pThis->ProcessSliceBitstreamZeroCopy( pDX12EncodeContext,
+                                                                   slice_idx,
+                                                                   spMediaBuffer,
+                                                                   codec_unit_metadata ) )
                         {
                            debug_printf( "[dx12 hmft 0x%p] Failed to process slice %u bitstream\n", pThis, slice_idx );
                            MFE_ERROR( "[dx12 hmft 0x%p] Failed to process slice %u bitstream", pThis, slice_idx );
@@ -1636,10 +1642,10 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
                         ComPtr<IMFMediaBuffer> spMediaBuffer;
 
                         // Reset codec unit metadata for this slice as it will be wrapped on its own IMFSample
-                        if (!pThis->ProcessSliceBitstreamZeroCopy( pDX12EncodeContext,
-                                                              slice_idx,
-                                                              spMediaBuffer,
-                                                              cur_slice_codec_unit_metadata ))
+                        if( !pThis->ProcessSliceBitstreamZeroCopy( pDX12EncodeContext,
+                                                                   slice_idx,
+                                                                   spMediaBuffer,
+                                                                   cur_slice_codec_unit_metadata ) )
                         {
                            debug_printf( "[dx12 hmft 0x%p] Failed to process slice %u bitstream\n", pThis, slice_idx );
                            MFE_ERROR( "[dx12 hmft 0x%p] Failed to process slice %u bitstream", pThis, slice_idx );

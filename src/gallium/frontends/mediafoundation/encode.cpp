@@ -591,7 +591,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
          std::max( 1u, pDX12EncodeContext->encoderPicInfo.av1enc.tile_rows * pDX12EncodeContext->encoderPicInfo.av1enc.tile_cols );
 #endif
 
-      if (m_bSliceGenerationModeSet && pDX12EncodeContext->IsSliceAutoModeEnabled())
+      if( m_bSliceGenerationModeSet && pDX12EncodeContext->IsSliceAutoModeEnabled() )
       {
          num_output_buffers = m_EncoderCapabilities.m_uiMaxHWSupportedMaxSlices;
       }
@@ -600,7 +600,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
       // This is especially important in PIPE_SLICE_MODE_AUTO where num_output_buffers
       // can be set to the maximum possible slices, leading to very small per-slice
       // buffer sizes that may be insufficient for actual bitstream data.
-      const uint32_t min_slice_buffer_size = 256 * 1024; // 256KB
+      const uint32_t min_slice_buffer_size = 256 * 1024;   // 256KB
 
       pDX12EncodeContext->sliceNotificationMode = D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM_NOTIFICATION_MODE_FULL_FRAME;
       if( m_bSliceGenerationModeSet && ( m_uiSliceGenerationMode > 0 ) &&
