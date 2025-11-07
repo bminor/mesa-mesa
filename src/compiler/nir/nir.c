@@ -1663,7 +1663,6 @@ nir_def_init(nir_instr *instr, nir_def *def,
              unsigned num_components,
              unsigned bit_size)
 {
-   def->parent_instr = instr;
    list_inithead(&def->uses);
    def->num_components = num_components;
    def->bit_size = bit_size;

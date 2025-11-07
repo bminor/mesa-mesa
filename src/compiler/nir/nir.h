@@ -1002,9 +1002,6 @@ nir_instr_is_last(const nir_instr *instr)
 }
 
 typedef struct nir_def {
-   /** Instruction which produces this SSA value. */
-   nir_instr *parent_instr;
-
    /** set of nir_instrs where this register is used (read from) */
    struct list_head uses;
 
