@@ -2728,11 +2728,8 @@ void si_ps_key_update_framebuffer_blend_dsa_rasterizer(struct si_context *sctx)
        !key->ps.part.epilog.alpha_to_coverage_via_mrtz)
       key->ps.part.epilog.spi_shader_col_format |= V_028710_SPI_SHADER_32_AR;
 
-   /* On GFX6 and GFX7 except Hawaii, the CB doesn't clamp outputs
-    * to the range supported by the type if a channel has less
-    * than 16 bits and the export format is 16_ABGR.
-    */
-   if (sctx->gfx_level <= GFX7 && sctx->family != CHIP_HAWAII) {
+   /* CB doesn't clamp outputs to less than 16 bits. */
+   if (sctx->screen->info.has_cb_lt16bit_int_clamp_bug) {
       key->ps.part.epilog.color_is_int8 = sctx->framebuffer.color_is_int8;
       key->ps.part.epilog.color_is_int10 = sctx->framebuffer.color_is_int10;
    }

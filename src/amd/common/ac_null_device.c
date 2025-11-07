@@ -84,6 +84,9 @@ ac_null_device_create(struct radeon_info *gpu_info, const char *family)
    gpu_info->has_dedicated_vram = pci_ids[gpu_info->family].has_dedicated_vram;
    gpu_info->has_packed_math_16bit = gpu_info->gfx_level >= GFX9;
 
+   gpu_info->has_cb_lt16bit_int_clamp_bug = gpu_info->gfx_level <= GFX7 &&
+                                            gpu_info->family != CHIP_HAWAII;
+
    gpu_info->has_image_load_dcc_bug = gpu_info->family == CHIP_NAVI23 || gpu_info->family == CHIP_VANGOGH;
 
    gpu_info->has_distributed_tess =

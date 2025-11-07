@@ -961,6 +961,14 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
     */
    info->has_null_index_buffer_clamping_bug = info->gfx_level == GFX6;
 
+   /* On GFX6 and GFX7 except Hawaii, the CB doesn't clamp outputs
+    * to the range supported by the type if a channel has less
+    * than 16 bits and the export format is 16_ABGR.
+    * See waCbNoLt16BitIntClamp in PAL.
+    */
+   info->has_cb_lt16bit_int_clamp_bug = info->gfx_level <= GFX7 &&
+                                        info->family != CHIP_HAWAII;
+
    /* Drawing from 0-sized index buffers causes hangs on gfx10. */
    info->has_zero_index_buffer_bug = info->gfx_level == GFX10;
 
