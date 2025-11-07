@@ -524,6 +524,10 @@
    DRI_CONF_OPT_B(allow_multisampled_copyteximage, def, \
                   "Allow CopyTexSubImage and other to copy sampled framebuffer")
 
+#define DRI_CONF_VERTEX_PROGRAM_DEFAULT_OUT(def) \
+   DRI_CONF_OPT_B(vertex_program_default_out, def, \
+                  "Initialize outputs of vertex program to a default value vec4(0, 0, 0, 1)")
+
 #define DRI_CONF_CUSTOM_BORDER_COLORS_WITHOUT_FORMAT(def) \
    DRI_CONF_OPT_B(custom_border_colors_without_format, def, \
                   "Enable custom border colors without format")

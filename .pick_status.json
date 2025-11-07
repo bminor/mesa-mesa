@@ -164,7 +164,7 @@
         "description": "mesa,driconf: Add WA to initialize vertex program outputs to vec4(0,0,0,1)",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
