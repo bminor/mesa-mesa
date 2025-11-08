@@ -704,7 +704,7 @@
         "description": "rusticl/queue: fix error code for invalid sampler kernel arg",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5795ee0e08355ea2445ec9d4b2235a3a35ceda83",
         "notes": null
