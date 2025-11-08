@@ -1544,7 +1544,7 @@
         "description": "rusticl/queue: fix error code for invalid queue properties part 2",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2c202eb7870524072863823e1a9413222021317f",
         "notes": null
