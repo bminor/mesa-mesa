@@ -12,6 +12,7 @@
 
 #include "util/detect_os.h"
 #include "util/log.h"
+#include "util/os_misc.h"
 #include "virtgpu_kumquat_ffi.h"
 
 #if DETECT_OS_WINDOWS
