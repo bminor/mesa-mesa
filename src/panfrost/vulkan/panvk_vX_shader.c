@@ -398,12 +398,13 @@ panvk_preprocess_nir(struct vk_physical_device *vk_pdev,
    if (nir->info.stage == MESA_SHADER_FRAGMENT)
       NIR_PASS(_, nir, nir_opt_vectorize_io_vars, nir_var_shader_out);
 
-   NIR_PASS(_, nir, nir_lower_io_vars_to_temporaries, nir_shader_get_entrypoint(nir),
-            true, true);
+   NIR_PASS(_, nir, nir_lower_io_vars_to_temporaries,
+            nir_shader_get_entrypoint(nir), true, false);
 
 #if PAN_ARCH < 9
    /* This needs to be done just after the io_to_temporaries pass, because we
-    * rely on in/out temporaries to collect the final layer_id value. */
+    * rely on out temporaries to collect the final layer_id value.
+    */
    NIR_PASS(_, nir, lower_layer_writes);
 #endif
 
