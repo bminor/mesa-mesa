@@ -82,6 +82,7 @@ bifrost_precompiled_kernel_prepare_push_uniforms(
 }
 
 void bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id);
+void bifrost_optimize_nir(nir_shader *nir, unsigned gpu_id);
 void bifrost_postprocess_nir(nir_shader *nir, unsigned gpu_id);
 void bifrost_lower_texture_nir(nir_shader *nir, unsigned gpu_id);
 void bifrost_lower_texture_late_nir(nir_shader *nir, unsigned gpu_id);

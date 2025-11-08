@@ -35,6 +35,7 @@
 #include "panfrost/util/pan_lower_framebuffer.h"
 
 void bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id);
+void bifrost_optimize_nir(nir_shader *nir, unsigned gpu_id);
 void bifrost_postprocess_nir(nir_shader *nir, unsigned gpu_id);
 void bifrost_lower_texture_nir(nir_shader *nir, unsigned gpu_id);
 void bifrost_lower_texture_late_nir(nir_shader *nir, unsigned gpu_id);
@@ -56,6 +57,13 @@ pan_shader_preprocess(nir_shader *nir, unsigned gpu_id)
       bifrost_preprocess_nir(nir, gpu_id);
    else
       midgard_preprocess_nir(nir, gpu_id);
+}
+
+static inline void
+pan_shader_optimize(nir_shader *nir, unsigned gpu_id)
+{
+   assert(pan_arch(gpu_id) >= 6);
+   bifrost_optimize_nir(nir, gpu_id);
 }
 
 static inline void
