@@ -234,7 +234,7 @@
         "description": "nir: Add a couple panfrost sysvals to divergence analysis",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2af6e4beeb394a3f8ac22b890a428b63826fd9a1",
         "notes": null
