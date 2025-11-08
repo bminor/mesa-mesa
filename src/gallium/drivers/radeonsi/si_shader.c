@@ -1887,11 +1887,12 @@ bool si_create_shader_variant(struct si_screen *sscreen, struct ac_llvm_compiler
       const unsigned input_prim = si_get_input_prim(gs_sel, &shader->key, false);
       unsigned gs_vertices_out = gs_sel->stage == MESA_SHADER_GEOMETRY ? gs_sel->info.base.gs.vertices_out : 0;
       unsigned gs_invocations = gs_sel->stage == MESA_SHADER_GEOMETRY ? gs_sel->info.base.gs.invocations : 0;
+      unsigned max_workgroup_size = si_get_max_workgroup_size(shader);
 
       if (!ac_ngg_compute_subgroup_info(gs_sel->screen->info.gfx_level, es_sel->stage,
                                         gs_sel->stage == MESA_SHADER_GEOMETRY,
                                         input_prim, gs_vertices_out, gs_invocations,
-                                        si_get_max_workgroup_size(shader), shader->wave_size,
+                                        max_workgroup_size, max_workgroup_size, shader->wave_size,
                                         es_sel->info.esgs_vertex_stride, shader->info.ngg_lds_vertex_size,
                                         shader->info.ngg_lds_scratch_size, gs_sel->tess_turns_off_ngg,
                                         gs_sel->stage == MESA_SHADER_GEOMETRY ? 255 : 0, &shader->ngg.info)) {

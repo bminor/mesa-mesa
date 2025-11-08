@@ -1349,9 +1349,11 @@ ac_legacy_gs_compute_subgroup_info(enum mesa_prim input_prim, unsigned gs_vertic
  */
 bool
 ac_ngg_compute_subgroup_info(enum amd_gfx_level gfx_level, mesa_shader_stage es_stage, bool is_gs,
-                             enum mesa_prim input_prim, unsigned gs_vertices_out, unsigned gs_invocations,
-                             unsigned max_workgroup_size, unsigned wave_size, unsigned esgs_vertex_stride,
-                             unsigned ngg_lds_vertex_size, unsigned ngg_lds_scratch_size, bool tess_turns_off_ngg,
+                             enum mesa_prim input_prim, unsigned gs_vertices_out,
+                             unsigned gs_invocations, unsigned target_workgroup_size,
+                             unsigned max_workgroup_size, unsigned wave_size,
+                             unsigned esgs_vertex_stride, unsigned ngg_lds_vertex_size,
+                             unsigned ngg_lds_scratch_size, bool tess_turns_off_ngg,
                              unsigned max_esgs_lds_padding, ac_ngg_subgroup_info *out)
 {
    const unsigned gs_num_invocations = MAX2(gs_invocations, 1);
@@ -1373,16 +1375,19 @@ ac_ngg_compute_subgroup_info(enum amd_gfx_level gfx_level, mesa_shader_stage es_
    bool max_vert_out_per_gs_instance = false;
    unsigned max_gsprims_base, max_esverts_base;
 
-   max_gsprims_base = max_esverts_base = max_workgroup_size;
+   /* In the worst case, we can run 1 GS invocation per workgroup. */
+   assert(!is_gs || gs_vertices_out <= max_workgroup_size);
+
+   max_gsprims_base = max_esverts_base = target_workgroup_size;
 
    if (is_gs) {
       bool force_multi_cycling = false;
       unsigned max_out_verts_per_gsprim = gs_vertices_out * gs_num_invocations;
 
 retry_select_mode:
-      if (max_out_verts_per_gsprim <= 256 && !force_multi_cycling) {
+      if (max_out_verts_per_gsprim <= max_workgroup_size && !force_multi_cycling) {
          if (max_out_verts_per_gsprim) {
-            max_gsprims_base = MIN2(max_gsprims_base, 256 / max_out_verts_per_gsprim);
+            max_gsprims_base = MIN2(max_gsprims_base, max_workgroup_size / max_out_verts_per_gsprim);
          }
       } else {
          /* Use special multi-cycling mode in which each GS
@@ -1483,7 +1488,7 @@ retry_select_mode:
          : is_gs
               ? max_gsprims * gs_num_invocations * gs_vertices_out
               : max_esverts;
-   assert(max_out_vertices <= 256);
+   assert(max_out_vertices <= max_workgroup_size);
 
    out->hw_max_esverts = max_esverts;
    out->max_gsprims = max_gsprims;
@@ -1504,6 +1509,6 @@ retry_select_mode:
 
    /* If asserts are disabled, we use the same conditions to return false */
    return max_esverts >= max_verts_per_prim && max_gsprims >= 1 &&
-          max_out_vertices <= 256 &&
+          max_out_vertices <= max_workgroup_size &&
           out->hw_max_esverts >= min_esverts;
 }
