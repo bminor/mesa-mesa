@@ -7324,7 +7324,7 @@
         "description": "wsi/wayland: Zero min_luminance, max_luminance HDR light levels are valid.",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "cb7726bb2cf7e25661c1401dbef2a6a597748ecd",
         "notes": null
