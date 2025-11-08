@@ -1501,7 +1501,8 @@ impl Kernel {
         offsets: &[usize],
     ) -> CLResult<EventSig> {
         // Clone all the data we need to execute this kernel
-        let kernel_info = Arc::clone(&self.kernel_info);
+        let work_group_size_hint = self.kernel_info.work_group_size_hint;
+        let args = self.kernel_info.args.clone();
         let arg_values = self.values.clone();
         let nir_kernel_builds = Arc::clone(&self.builds[q.device]);
         let mut bdas = self.bdas.clone();
@@ -1548,8 +1549,7 @@ impl Kernel {
                 && grid[0] <= hw_max_grid[0]
                 && grid[1] <= hw_max_grid[1]
                 && grid[2] <= hw_max_grid[2]
-                && (kernel_info.work_group_size_hint == [0; 3]
-                    || block == kernel_info.work_group_size_hint)
+                && (work_group_size_hint == [0; 3] || block == work_group_size_hint)
             {
                 NirKernelVariant::Optimized
             } else {
@@ -1603,7 +1603,7 @@ impl Kernel {
 
             for arg in &nir_kernel_build.compiled_args {
                 let is_opaque = if let CompiledKernelArgType::APIArg(idx) = arg.kind {
-                    kernel_info.args[idx].kind.is_opaque()
+                    args[idx].kind.is_opaque()
                 } else {
                     false
                 };
@@ -1614,7 +1614,7 @@ impl Kernel {
 
                 match arg.kind {
                     CompiledKernelArgType::APIArg(idx) => {
-                        let api_arg = &kernel_info.args[idx];
+                        let api_arg = &args[idx];
                         let Some(value) = &arg_values[idx] else {
                             continue;
                         };
