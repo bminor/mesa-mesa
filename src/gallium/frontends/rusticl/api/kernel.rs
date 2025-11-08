@@ -416,11 +416,16 @@ fn set_kernel_arg(
                     return Err(CL_INVALID_ARG_VALUE);
                 }
             }
-            // If the argument is of type sampler_t, the arg_value entry must be a pointer to the
-            // sampler object.
-            KernelArgType::Constant(_) | KernelArgType::Sampler => {
+            KernelArgType::Constant(_) => {
                 if arg_value.is_null() {
                     return Err(CL_INVALID_ARG_VALUE);
+                }
+            }
+            KernelArgType::Sampler => {
+                // CL_INVALID_SAMPLER for an argument declared to be of type sampler_t when the
+                // specified arg_value is not a valid sampler object.
+                if arg_value.is_null() {
+                    return Err(CL_INVALID_SAMPLER);
                 }
             }
             _ => {}
