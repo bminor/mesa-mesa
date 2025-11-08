@@ -694,7 +694,7 @@
         "description": "rusticl/kernel: take no kernel_info reference inside the launch closure",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "bb2453c6495cf5ab58aa1f4f350b83f8d8d8c5c8",
         "notes": null
