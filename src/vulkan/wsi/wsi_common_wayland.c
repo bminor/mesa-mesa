@@ -1192,18 +1192,26 @@ is_hdr_metadata_legal(struct wayland_hdr_metadata *l)
    if (l->max_cll != 0) {
       if (l->max_cll * MIN_LUM_FACTOR < l->min_luminance)
          return false;
-      if (l->max_cll > l->max_luminance)
+      if (l->max_luminance != 0 && l->max_cll > l->max_luminance)
          return false;
    }
    if (l->max_fall != 0) {
       if (l->max_fall * MIN_LUM_FACTOR < l->min_luminance)
          return false;
-      if (l->max_fall > l->max_luminance)
+      if (l->max_luminance != 0 && l->max_fall > l->max_luminance)
          return false;
       if (l->max_cll != 0 && l->max_fall > l->max_cll) {
          return false;
       }
    }
+
+   /* Be lenient here for a zero (=undefined) max_luminance and handle
+    * this in the calling code instead, by not sending min/max mastering
+    * luminance data to Wayland, thereby avoiding protocol errors.
+    */
+   if (l->max_luminance == 0)
+      return true;
+
    return l->max_luminance * MIN_LUM_FACTOR > l->min_luminance;
 }
 
@@ -1321,9 +1329,15 @@ wsi_wl_swapchain_update_colorspace(struct wsi_wl_swapchain *chain)
                                                                                 green_x, green_y,
                                                                                 blue_x, blue_y,
                                                                                 white_x, white_y);
-         wp_image_description_creator_params_v1_set_mastering_luminance(creator,
-                                                                        wayland_hdr_metadata.min_luminance,
-                                                                        wayland_hdr_metadata.max_luminance);
+
+         /* A max_luminance of 0 is legal by spec and means "undefined", but would cause a
+          * Wayland protocol error, so skip setting mastering luminance for zero value.
+          */
+         if (wayland_hdr_metadata.max_luminance != 0) {
+            wp_image_description_creator_params_v1_set_mastering_luminance(creator,
+                                                                           wayland_hdr_metadata.min_luminance,
+                                                                           wayland_hdr_metadata.max_luminance);
+         }
       }
    }
 
