@@ -407,6 +407,9 @@ panvk_preprocess_nir(struct vk_physical_device *vk_pdev,
    NIR_PASS(_, nir, lower_layer_writes);
 #endif
 
+   NIR_PASS(_, nir, nir_lower_global_vars_to_local);
+   NIR_PASS(_, nir, nir_split_var_copies);
+
    NIR_PASS(_, nir, nir_lower_indirect_derefs,
             nir_var_shader_in | nir_var_shader_out, UINT32_MAX);
 
