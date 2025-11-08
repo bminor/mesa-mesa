@@ -303,13 +303,13 @@ impl SPIRVBin {
             private_data: ptr::from_mut(log).cast(),
         });
 
+        let float_controls = float_controls::FLOAT_CONTROLS_DENORM_FLUSH_TO_ZERO_FP32 as u32
+            | float_controls::FLOAT_CONTROLS_SIGNED_ZERO_PRESERVE as u32;
         spirv_to_nir_options {
             create_library: library,
             environment: nir_spirv_execution_environment::NIR_SPIRV_OPENCL,
             clc_shader: clc_shader,
-            float_controls_execution_mode: float_controls::FLOAT_CONTROLS_DENORM_FLUSH_TO_ZERO_FP32
-                as u32,
-
+            float_controls_execution_mode: float_controls,
             printf: true,
             capabilities: caps,
             constant_addr_format: global_addr_format,
