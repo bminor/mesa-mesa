@@ -525,6 +525,7 @@ spec@khr_texture_compression_astc@miptree-gles srgb-fp@sRGB decode full precisio
 # uprev Piglit in Mesa
 spec@ext_framebuffer_multisample@interpolation 4 non-centroid-deriv-disabled,Fail
 spec@ext_framebuffer_multisample@interpolation 4 centroid-deriv-disabled,Fail
+
 #glcts update
 spec@glsl-4.00@execution@built-in-functions@fs-inverse-dmat4,Crash
 dEQP-GLES3.functional.fbo.blit.rect.nearest_consistency_out_of_bounds_mag_reverse_src_y,Fail

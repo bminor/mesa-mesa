@@ -701,7 +701,6 @@ spec@arb_texture_rectangle@copyteximage rect samples=2,Fail
 spec@arb_texture_rectangle@copyteximage rect samples=4,Fail
 spec@arb_texture_rectangle@copyteximage rect samples=6,Fail
 spec@arb_texture_rectangle@tex-miplevel-selection gl2:texture() 2drect,Fail
-spec@arb_texture_rectangle@tex-miplevel-selection gl2:texture() 2drectshadow,Fail
 spec@arb_texture_rectangle@tex-miplevel-selection gl2:textureproj 2drect,Fail
 spec@arb_texture_rectangle@tex-miplevel-selection gl2:textureproj 2drectshadow,Fail
 
@@ -1097,7 +1096,6 @@ spec@glsl-1.20@execution@tex-miplevel-selection gl2:texture() cube,Fail
 spec@glsl-1.20@execution@tex-miplevel-selection gl2:texture(bias) 1d,Fail
 spec@glsl-1.20@execution@tex-miplevel-selection gl2:texture(bias) 1dshadow,Fail
 spec@glsl-1.20@execution@tex-miplevel-selection gl2:texture(bias) cube,Fail
-spec@glsl-1.20@execution@tex-miplevel-selection gl2:textureproj 1d_projvec4,Fail
 spec@glsl-1.20@execution@tex-miplevel-selection gl2:textureproj 2d,Fail
 spec@glsl-1.20@execution@tex-miplevel-selection gl2:textureproj 2d_projvec4,Fail
 spec@glsl-1.20@execution@tex-miplevel-selection gl2:textureproj(bias) 1d,Fail

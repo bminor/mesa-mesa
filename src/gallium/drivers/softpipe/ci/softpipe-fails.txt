@@ -868,7 +868,6 @@ glx@glx_ext_import_context@free context,Fail
 glx@glx_ext_import_context@get context id,Fail
 glx@glx_ext_import_context@make current- multi process,Fail
 glx@glx_ext_import_context@make current- single process,Fail
-glx@glx_ext_import_context@query context info,Fail
 hiz@hiz-depth-read-window-stencil0,Fail
 hiz@hiz-depth-read-window-stencil1,Fail
 hiz@hiz-depth-test-window-stencil0,Fail
@@ -1238,6 +1237,9 @@ spec@arb_texture_buffer_object@texture-buffer-size-clamp@rgba8ui_texture_buffer_
 spec@arb_texture_buffer_object@texture-buffer-size-clamp@rgba8ui_texture_buffer_size_via_sampler,Fail
 
 # uprev Piglit in Mesa
+spec@!opengl 1.0@depth-clear-precision-check@depth16,Fail
+spec@!opengl 1.0@depth-clear-precision-check@depth24_stencil8,Fail
+spec@!opengl 1.0@depth-clear-precision-check@depth24,Fail
 spec@!opengl 2.0@vertex-program-two-side enabled front back front2 back2,Fail
 spec@!opengl 2.0@vertex-program-two-side enabled front back front2 back2@gs-out and fs,Fail
 spec@!opengl 2.0@vertex-program-two-side enabled front back front2,Fail

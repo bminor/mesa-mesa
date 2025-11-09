@@ -79,3 +79,17 @@ dEQP-GLES2.functional.fragment_ops.interaction.basic_shader.20
 dEQP-GLES2.functional.fragment_ops.interaction.basic_shader.63
 dEQP-GLES2.functional.fragment_ops.interaction.basic_shader.64
 dEQP-GLES2.functional.fragment_ops.interaction.basic_shader.86
+
+# uprev Piglit in Mesa
+spec@!opengl 1.1@teximage-scale-bias
+spec@!opengl 1.2@tex3d-maxsize
+spec@arb_texture_rectangle@tex-miplevel-selection gl2:texture() 2drectshadow
+spec@ext_framebuffer_object@fbo-readpixels
+spec@glsl-1.20@execution@tex-miplevel-selection gl2:texture() 1d
+spec@glsl-1.20@execution@tex-miplevel-selection gl2:texture() 1dshadow
+spec@glsl-1.20@execution@tex-miplevel-selection gl2:texture() 2dshadow
+spec@glsl-1.20@execution@tex-miplevel-selection gl2:texture(bias) 2dshadow
+spec@glsl-1.20@execution@tex-miplevel-selection gl2:textureproj 1d_projvec4
+spec@glsl-1.20@execution@tex-miplevel-selection gl2:textureproj(bias) 2d_projvec4
+spec@nv_primitive_restart@primitive-restart-draw-mode-points
+

@@ -207,8 +207,6 @@ spec@arb_depth_texture@texwrap formats bordercolor@GL_DEPTH_COMPONENT16- border 
 spec@arb_depth_texture@texwrap formats bordercolor@GL_DEPTH_COMPONENT24- border color only,Fail
 spec@arb_depth_texture@texwrap formats bordercolor@GL_DEPTH_COMPONENT32- border color only,Fail
 
-spec@arb_gpu_shader_fp64@execution@conversion@geom-conversion-explicit-dmat2x4-mat2x4,Fail
-
 spec@arb_occlusion_query@occlusion_query_conform,Fail
 spec@arb_occlusion_query@occlusion_query_meta_no_fragments,Fail
 spec@arb_occlusion_query@occlusion_query_meta_save,Fail
@@ -505,10 +503,17 @@ spec@ext_texture_srgb@texwrap formats-s3tc bordercolor-swizzled@GL_COMPRESSED_SR
 spec@glsl-1.50@execution@geometry@dynamic_input_array_index,Crash
 
 # uprev Piglit in Mesa
+spec@!opengl 1.1@depthstencil-default_fb-drawpixels-24_8 samples=8,Fail
+spec@!opengl 1.1@depthstencil-default_fb-drawpixels-32f_24_8_rev samples=6,Fail
 spec@arb_es2_compatibility@texwrap formats bordercolor-swizzled,Fail
 spec@arb_es2_compatibility@texwrap formats bordercolor-swizzled@GL_RGB565- swizzled- border color only,Fail
 spec@arb_framebuffer_object@execution@msaa-alpha-to-coverage_alpha-to-one_write-z,Fail
 spec@arb_tessellation_shader@execution@tcs-output-unmatched,Fail
+spec@arb_texture_compression_bptc@texwrap formats bordercolor-swizzled,Fail
+spec@arb_texture_compression_bptc@texwrap formats bordercolor-swizzled@GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT- swizzled- border color only,Fail
+spec@arb_texture_compression_bptc@texwrap formats bordercolor-swizzled@GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT- swizzled- border color only,Fail
+spec@arb_texture_compression_bptc@texwrap formats bordercolor-swizzled@GL_COMPRESSED_RGBA_BPTC_UNORM- swizzled- border color only,Fail
+spec@arb_texture_compression_bptc@texwrap formats bordercolor-swizzled@GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM- swizzled- border color only,Fail
 spec@arb_texture_compression_bptc@texwrap formats bordercolor,Fail
 spec@arb_texture_compression_bptc@texwrap formats bordercolor@GL_COMPRESSED_RGBA_BPTC_UNORM- border color only,Fail
 spec@arb_texture_compression_bptc@texwrap formats bordercolor@GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT- border color only,Fail
@@ -529,6 +534,9 @@ spec@arb_texture_rg@texwrap formats-float bordercolor@GL_RG16F- border color onl
 spec@arb_texture_rg@texwrap formats-float bordercolor@GL_RG32F- border color only,Fail
 spec@egl 1.4@eglcreatepbuffersurface and then glclear,Crash
 spec@egl 1.4@largest possible eglcreatepbuffersurface and then glclear,Crash
+spec@ext_framebuffer_multisample@interpolation 6 centroid-edges,Fail
+spec@ext_framebuffer_multisample@no-color 6 depth single,Fail
+spec@ext_framebuffer_multisample@no-color 8 depth-computed single,Fail
 spec@ext_packed_float@texwrap formats bordercolor,Fail
 spec@ext_packed_float@texwrap formats bordercolor-swizzled,Fail
 spec@ext_packed_float@texwrap formats bordercolor-swizzled@GL_R11F_G11F_B10F- swizzled- border color only,Fail

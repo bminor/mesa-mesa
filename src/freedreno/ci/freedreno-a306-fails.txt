@@ -796,6 +796,7 @@ spec@arb_texture_buffer_object@texture-buffer-size-clamp@rgba8ui_texture_buffer_
 # uprev Piglit in Mesa
 spec@arb_texture_rg@fbo-blending-formats,Fail
 spec@arb_texture_rg@fbo-blending-formats@GL_R8,Fail
+spec@arb_vertex_buffer_object@vbo-subdata-many drawrangeelements,Fail
 
 # new failures since 2023/02/08 (CTS uprevs, regressions etc.)
 spec@!opengl 1.1@line-smooth-stipple,Fail
@@ -1203,7 +1204,6 @@ spec@!opengl es 3.0@texture-immutable-levels,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_argb8888,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_ayuv,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_nv12,Fail
-spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_nv21,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_xrgb8888,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_xyuv,Fail
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_y410,Fail

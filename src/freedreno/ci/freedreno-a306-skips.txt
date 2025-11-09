@@ -75,3 +75,5 @@ glx@glx-visuals-stencil
 shaders@glsl-uniform-interstage-limits@subdivide 5- statechanges
 spec@arb_point_parameters@arb_point_parameters-point-attenuation
 spec@glsl-1.30@execution@texelfetch fs sampler2d 281x1-281x281
+spec@ext_texture_lod_bias@lodbias
+

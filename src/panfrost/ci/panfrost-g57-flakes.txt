@@ -33,3 +33,9 @@ afbcp-spec@egl 1.4@largest possible eglcreatepbuffersurface and then glclear
 # Initial flakes on mt8195-cherry-tomato-r2
 glx@glx-visuals-stencil
 afbcp-glx@glx-visuals-stencil
+
+# uprev Piglit in Mesa
+afbcp-spec@ext_texture_srgb@multisample-formats 2 gl_ext_texture_srgb
+spec@oes_egl_image_external_essl3@oes_egl_image_external_essl3
+spec@oes_egl_image_external_essl3@oes_egl_image_external_essl3@oes_egl_image_external_essl3_imageStore
+

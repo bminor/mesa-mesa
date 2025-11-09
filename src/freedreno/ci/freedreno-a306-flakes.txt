@@ -51,3 +51,9 @@ dEQP-GLES3.functional.occlusion_query.stencil_clear
 dEQP-GLES3.functional.occlusion_query.stencil_write
 dEQP-GLES3.functional.occlusion_query.stencil_write_stencil_clear
 dEQP-GLES3.functional.vertex_arrays.single_attribute.normalize.int2_10_10_10.components4_quads256
+
+# uprev Piglit in Mesa
+spec@!opengl 2.0@tex3d-npot
+spec@arb_vertex_buffer_object@vbo-subdata-many drawarrays
+spec@ext_image_dma_buf_import@ext_image_dma_buf_import-sample_nv21
+

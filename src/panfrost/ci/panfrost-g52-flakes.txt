@@ -33,6 +33,9 @@ afbcp-spec@egl 1.4@largest possible eglcreatepbuffersurface and then glclear
 # uprev Piglit in Mesa
 glx@glx-multithread-clearbuffer
 afbcp-glx@glx-multithread-clearbuffer
+afbcp-spec@arb_texture_gather@texturegather@fs-rgb-green-unorm-2d
+afbcp-spec@arb_texture_multisample@texelfetch@6-vs-isampler2dmsarray
+glx@glx-visuals-depth
 
 # Cause a "gpu sched timeout" (fixed by sched increase to 10s)
 dEQP-VK.memory.pipeline_barrier.host_write_vertex_buffer.1048576_vertex_buffer_stride_2

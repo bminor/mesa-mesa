@@ -641,7 +641,13 @@ spec@glsl-1.10@execution@variable-indexing@fs-input-array-float-index-rd,Fail
 spec@glsl-1.10@execution@variable-indexing@fs-input-array-vec2-index-rd,Fail
 
 # uprev Piglit in Mesa
+shaders@zero-tex-coord bias,Fail
 spec@!opengl 1.1@push-pop-color-material,Fail
+spec@!opengl 1.1@teximage-scale-bias,Fail
+spec@!opengl 1.4@stencil-wrap,Fail
+spec@arb_fragment_program_shadow@tex-shadow2drect,Fail
+spec@khr_texture_compression_astc@miptree-gl srgb-sd,Fail
+spec@khr_texture_compression_astc@miptree-gl srgb-sd@sRGB skip decode,Fail
 
 # Nightly run expectations update
 spec@!opengl 1.0@gl-1.0-scissor-many,Fail
@@ -649,7 +655,6 @@ spec@!opengl 1.4@tex-miplevel-selection-lod,Fail
 spec@!opengl 1.4@tex-miplevel-selection-lod-bias,Fail
 spec@arb_shader_texture_lod@execution@tex-miplevel-selection *gradarb 3d,Fail
 spec@arb_shader_texture_lod@execution@tex-miplevel-selection *projgradarb 3d,Fail
-spec@glsl-1.10@execution@built-in-functions@vs-op-selection-bool-bvec4-bvec4,Fail
 spec@glsl-1.20@execution@tex-miplevel-selection gl2:texture() 1d,Fail
 spec@glsl-1.20@execution@tex-miplevel-selection gl2:texture() 1dshadow,Fail
 spec@glsl-1.20@execution@tex-miplevel-selection gl2:texture() 2d,Fail
@@ -672,6 +677,4 @@ spec@glsl-1.20@execution@tex-miplevel-selection gl2:textureproj(bias) 2d,Fail
 spec@glsl-1.20@execution@tex-miplevel-selection gl2:textureproj(bias) 2d_projvec4,Fail
 spec@glsl-1.20@execution@tex-miplevel-selection gl2:textureproj(bias) 2dshadow,Fail
 spec@glsl-1.20@execution@tex-miplevel-selection gl2:textureproj(bias) 3d,Fail
-spec@khr_texture_compression_astc@miptree-gl ldr,Fail
-spec@khr_texture_compression_astc@miptree-gl ldr@LDR Profile,Fail
 
