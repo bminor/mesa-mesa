@@ -824,18 +824,6 @@ kk_flush_draw_state(struct kk_cmd_buffer *cmd)
    if (desc->root_dirty)
       kk_upload_descriptor_root(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS);
 
-   /* Make user allocated heaps resident */
-   struct kk_device *dev = kk_cmd_buffer_device(cmd);
-   simple_mtx_lock(&dev->user_heap_cache.mutex);
-   if (cmd->encoder->main.user_heap_hash != dev->user_heap_cache.hash) {
-      cmd->encoder->main.user_heap_hash = dev->user_heap_cache.hash;
-      mtl_heap **heaps = util_dynarray_begin(&dev->user_heap_cache.handles);
-      uint32_t count =
-         util_dynarray_num_elements(&dev->user_heap_cache.handles, mtl_heap *);
-      mtl_render_use_heaps(enc, heaps, count);
-   }
-   simple_mtx_unlock(&dev->user_heap_cache.mutex);
-
    struct kk_bo *root_buffer = desc->root.root_buffer;
    if (root_buffer) {
       mtl_set_vertex_buffer(enc, root_buffer->map, 0, 0);

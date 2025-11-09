@@ -87,17 +87,6 @@ kk_flush_compute_state(struct kk_cmd_buffer *cmd)
    if (desc->root_dirty)
       kk_upload_descriptor_root(cmd, VK_PIPELINE_BIND_POINT_COMPUTE);
 
-   /* Make user allocated heaps resident */
-   simple_mtx_lock(&dev->user_heap_cache.mutex);
-   if (cmd->encoder->main.user_heap_hash != dev->user_heap_cache.hash) {
-      cmd->encoder->main.user_heap_hash = dev->user_heap_cache.hash;
-      mtl_heap **heaps = util_dynarray_begin(&dev->user_heap_cache.handles);
-      uint32_t count =
-         util_dynarray_num_elements(&dev->user_heap_cache.handles, mtl_heap *);
-      mtl_compute_use_heaps(enc, heaps, count);
-   }
-   simple_mtx_unlock(&dev->user_heap_cache.mutex);
-
    struct kk_bo *root_buffer = desc->root.root_buffer;
    if (root_buffer)
       mtl_compute_set_buffer(enc, root_buffer->map, 0, 0);

@@ -233,8 +233,9 @@ kk_CreateDevice(VkPhysicalDevice physicalDevice,
    if (result != VK_SUCCESS)
       goto fail_sampler_heap;
 
-   simple_mtx_init(&dev->user_heap_cache.mutex, mtx_plain);
-   dev->user_heap_cache.handles = UTIL_DYNARRAY_INIT;
+   simple_mtx_init(&dev->user_residency_set.mutex, mtx_plain);
+   dev->user_residency_set.residency_set =
+      mtl_new_residency_set(dev->mtl_handle);
 
    kk_parse_device_environment_options(dev);
 
@@ -270,8 +271,11 @@ kk_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
    /* Meta first since it may destroy Vulkan objects */
    kk_device_finish_meta(dev);
 
-   util_dynarray_fini(&dev->user_heap_cache.handles);
-   simple_mtx_destroy(&dev->user_heap_cache.mutex);
+   /* Need to end the residency otherwise stopping a capture crashes the
+    * program... */
+   mtl_residency_set_end_residency(dev->user_residency_set.residency_set);
+   mtl_release(dev->user_residency_set.residency_set);
+   simple_mtx_destroy(&dev->user_residency_set.mutex);
    kk_device_finish_lib(dev);
    kk_query_table_finish(dev, &dev->occlusion_queries);
    kk_destroy_sampler_heap(dev, &dev->samplers);
@@ -356,17 +360,26 @@ kk_GetDeviceProcAddr(VkDevice _device, const char *pName)
 void
 kk_device_add_user_heap(struct kk_device *dev, mtl_heap *heap)
 {
-   simple_mtx_lock(&dev->user_heap_cache.mutex);
-   util_dynarray_append(&dev->user_heap_cache.handles, heap);
-   dev->user_heap_cache.hash += 1u;
-   simple_mtx_unlock(&dev->user_heap_cache.mutex);
+   simple_mtx_lock(&dev->user_residency_set.mutex);
+   mtl_residency_set_add_allocation(dev->user_residency_set.residency_set,
+                                    heap);
+   simple_mtx_unlock(&dev->user_residency_set.mutex);
 }
 
 void
 kk_device_remove_user_heap(struct kk_device *dev, mtl_heap *heap)
 {
-   simple_mtx_lock(&dev->user_heap_cache.mutex);
-   util_dynarray_delete_unordered(&dev->user_heap_cache.handles, mtl_heap *,
-                                  heap);
-   simple_mtx_unlock(&dev->user_heap_cache.mutex);
+   simple_mtx_lock(&dev->user_residency_set.mutex);
+   mtl_residency_set_remove_allocation(dev->user_residency_set.residency_set,
+                                       heap);
+   simple_mtx_unlock(&dev->user_residency_set.mutex);
+}
+
+void
+kk_device_make_resources_resident(struct kk_device *dev)
+{
+   simple_mtx_lock(&dev->user_residency_set.mutex);
+   mtl_residency_set_commit(dev->user_residency_set.residency_set);
+   mtl_residency_set_request_residency(dev->user_residency_set.residency_set);
+   simple_mtx_unlock(&dev->user_residency_set.mutex);
 }

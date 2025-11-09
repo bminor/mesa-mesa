@@ -31,6 +31,7 @@
 #include "mtl_heap.h"
 #include "mtl_library.h"
 #include "mtl_render_state.h"
+#include "mtl_residency_set.h"
 #include "mtl_sampler.h"
 #include "mtl_sync.h"
 #include "mtl_texture.h"

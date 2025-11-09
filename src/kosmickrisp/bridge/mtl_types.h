@@ -39,6 +39,8 @@ typedef void mtl_stencil_descriptor;
 typedef void mtl_depth_stencil_descriptor;
 typedef void mtl_depth_stencil_state;
 typedef void mtl_render_pass_attachment_descriptor;
+typedef void mtl_residency_set;
+typedef void mtl_allocation;
 
 /** ENUMS */
 enum mtl_cpu_cache_mode {

@@ -32,10 +32,9 @@ enum kk_device_lib_pipeline {
    KK_LIB_COUNT,
 };
 
-struct kk_user_heap_cache {
+struct kk_user_residency_set {
    simple_mtx_t mutex;
-   uint32_t hash;
-   struct util_dynarray handles;
+   mtl_residency_set *residency_set;
 };
 
 struct mtl_sampler_packed {
@@ -72,7 +71,7 @@ struct kk_sampler_heap {
 
    struct kk_query_table table;
 
-   /* Map of agx_sampler_packed to hk_rc_sampler */
+   /* Map of mtl_sampler_packed to kk_rc_sampler */
    struct hash_table *ht;
 };
 
@@ -92,7 +91,7 @@ struct kk_device {
 
    /* Track all heaps the user allocated so we can set them all as resident when
     * recording as required by Metal. */
-   struct kk_user_heap_cache user_heap_cache;
+   struct kk_user_residency_set user_residency_set;
 
    mtl_compute_pipeline_state *lib_pipelines[KK_LIB_COUNT];
 
@@ -126,6 +125,7 @@ VkResult kk_device_init_lib(struct kk_device *dev);
 void kk_device_finish_lib(struct kk_device *dev);
 void kk_device_add_user_heap(struct kk_device *dev, mtl_heap *heap);
 void kk_device_remove_user_heap(struct kk_device *dev, mtl_heap *heap);
+void kk_device_make_resources_resident(struct kk_device *dev);
 
 /* Required to create a sampler */
 mtl_sampler *kk_sampler_create(struct kk_device *dev,
