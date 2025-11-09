@@ -14,6 +14,7 @@ include_pps = include_directories('../')
 dep_drm = dependency('libdrm')
 pps_deps = [dep_drm, dep_perfetto]
 pps_deps += pps_datasources
+pps_deps += idep_mesautil
 
 lib_pps = static_library(
   'pps',
