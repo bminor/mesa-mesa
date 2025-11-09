@@ -87,7 +87,8 @@ lvp_physical_device_get_format_properties(struct lvp_physical_device *physical_d
           VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT |
           VK_FORMAT_FEATURE_2_BLIT_SRC_BIT | VK_FORMAT_FEATURE_2_BLIT_DST_BIT |
           VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT |
-          VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT);
+          VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT |
+          VK_FORMAT_FEATURE_2_COPY_IMAGE_INDIRECT_DST_BIT_KHR);
 
       if (lvp_is_filter_minmax_format_supported(format))
          out_properties->optimalTilingFeatures |=
@@ -104,7 +105,8 @@ lvp_physical_device_get_format_properties(struct lvp_physical_device *physical_d
                       VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT |
                       VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT |
                       VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_FILTER_LINEAR_BIT |
-                      VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT_EXT);
+                      VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT_EXT |
+                      VK_FORMAT_FEATURE_2_COPY_IMAGE_INDIRECT_DST_BIT_KHR);
       }
       out_properties->linearTilingFeatures = features;
       out_properties->optimalTilingFeatures = features;
@@ -189,7 +191,8 @@ lvp_physical_device_get_format_properties(struct lvp_physical_device *physical_d
 
    if (features && buffer_features != VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT) {
       features |= (VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT |
-                   VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT);
+                   VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT |
+                   VK_FORMAT_FEATURE_2_COPY_IMAGE_INDIRECT_DST_BIT_KHR);
    }
    if (pformat == PIPE_FORMAT_B5G6R5_UNORM) {
       features |= (VK_FORMAT_FEATURE_2_BLIT_SRC_BIT |
