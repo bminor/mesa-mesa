@@ -176,7 +176,6 @@ kk_CreateDescriptorSetLayout(VkDevice device,
    uint32_t buffer_size = 0;
    uint32_t max_variable_descriptor_size = 0;
    uint8_t dynamic_buffer_count = 0;
-   uint32_t total_descriptor_count = 0u;
    for (uint32_t b = 0; b < num_bindings; b++) {
       /* We stashed the pCreateInfo->pBindings[] index (plus one) in the
        * immutable_samplers pointer.  Check for NULL (empty binding) and then
@@ -195,7 +194,6 @@ kk_CreateDescriptorSetLayout(VkDevice device,
          continue;
 
       layout->binding[b].type = binding->descriptorType;
-      layout->binding[b].mtl_resources_index = total_descriptor_count;
       layout->descriptor_count += binding->descriptorCount;
 
       if (binding_flags_info && binding_flags_info->bindingCount > 0) {
@@ -250,7 +248,6 @@ kk_CreateDescriptorSetLayout(VkDevice device,
 
       stride *= max_plane_count;
       layout->binding[b].count_per_element = max_plane_count;
-      total_descriptor_count += max_plane_count * binding->descriptorCount;
 
       if (stride > 0) {
          assert(stride <= UINT8_MAX);

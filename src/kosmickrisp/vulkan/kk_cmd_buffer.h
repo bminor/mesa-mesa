@@ -61,10 +61,6 @@ struct kk_descriptor_state {
 
    uint32_t set_sizes[KK_MAX_SETS];
    struct kk_descriptor_set *sets[KK_MAX_SETS];
-   mtl_resource **resources[KK_MAX_SETS];
-   /* Non resident sets can either be sets or push. If sets[index] == NULL, then
-    * push[index] != NULL */
-   uint32_t sets_not_resident;
 
    uint32_t push_dirty;
    struct kk_push_descriptor_set *push[KK_MAX_SETS];
@@ -254,9 +250,6 @@ uint64_t kk_upload_descriptor_root(struct kk_cmd_buffer *cmd,
 
 void kk_cmd_buffer_flush_push_descriptors(struct kk_cmd_buffer *cmd,
                                           struct kk_descriptor_state *desc);
-
-void kk_make_descriptor_resources_resident(struct kk_cmd_buffer *cmd,
-                                           VkPipelineBindPoint bind_point);
 
 void kk_cmd_write(struct kk_cmd_buffer *cmd, mtl_buffer *buffer, uint64_t addr,
                   uint64_t value);

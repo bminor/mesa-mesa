@@ -579,7 +579,6 @@ kk_descriptor_set_create(struct kk_device *dev, struct kk_descriptor_pool *pool,
          vk_object_free(&dev->vk, NULL, set);
          return result;
       }
-      set->mtl_descriptor_buffer = pool->bo->map;
    }
 
    vk_descriptor_set_layout_ref(&layout->vk);

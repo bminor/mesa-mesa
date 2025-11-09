@@ -89,19 +89,6 @@ mtl_compute_set_buffer(mtl_compute_encoder *encoder, mtl_buffer *buffer,
 }
 
 void
-mtl_compute_use_resource(mtl_compute_encoder *encoder, mtl_resource *res_handle,
-                         uint32_t usage)
-{
-}
-
-void
-mtl_compute_use_resources(mtl_compute_encoder *encoder,
-                          mtl_resource **resource_handles, uint32_t count,
-                          enum mtl_resource_usage usage)
-{
-}
-
-void
 mtl_compute_use_heaps(mtl_compute_encoder *encoder, mtl_heap **heaps,
                       uint32_t count)
 {

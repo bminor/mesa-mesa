@@ -816,11 +816,6 @@ kk_flush_draw_state(struct kk_cmd_buffer *cmd)
 
    if (desc->push_dirty)
       kk_cmd_buffer_flush_push_descriptors(cmd, desc);
-   /* After push descriptors' buffers are created. Otherwise, the buffer where
-    * they live will not be created and cannot make it resident */
-   if (desc->sets_not_resident)
-      kk_make_descriptor_resources_resident(cmd,
-                                            VK_PIPELINE_BIND_POINT_GRAPHICS);
    if (desc->root_dirty)
       kk_upload_descriptor_root(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS);
 

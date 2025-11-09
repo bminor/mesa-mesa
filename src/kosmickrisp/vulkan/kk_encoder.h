@@ -70,9 +70,6 @@ struct kk_encoder {
    /* uint64_t pairs with first being the address, second being the value to
     * write */
    struct util_dynarray imm_writes;
-   /* mtl_buffers (destination buffers) so we can make them resident before the
-    * dispatch */
-   struct util_dynarray resident_buffers;
    /* Array of kk_copy_quer_pool_results_info structs */
    struct util_dynarray copy_query_pool_result_infos;
 };

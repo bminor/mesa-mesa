@@ -35,8 +35,7 @@ kk_cmd_bind_map_buffer(struct vk_command_buffer *vk_cmd,
    buffer->mtl_handle = bo->map;
    buffer->vk.device_address = bo->gpu;
    *map_out = bo->cpu;
-   mtl_compute_use_resource(cmd->encoder->main.encoder, buffer->mtl_handle,
-                            MTL_RESOURCE_USAGE_WRITE | MTL_RESOURCE_USAGE_READ);
+
    return VK_SUCCESS;
 }
 
@@ -147,11 +146,9 @@ kk_meta_end(struct kk_cmd_buffer *cmd, struct kk_meta_save *save,
       desc->sets[0] = save->desc0;
       desc->root.sets[0] = save->desc0->addr;
       desc->set_sizes[0] = save->desc0->size;
-      desc->sets_not_resident |= BITFIELD_BIT(0);
       desc->push_dirty &= ~BITFIELD_BIT(0);
    } else if (save->has_push_desc0) {
       desc->push[0] = save->push_desc0;
-      desc->sets_not_resident |= BITFIELD_BIT(0);
       desc->push_dirty |= BITFIELD_BIT(0);
    }
 
@@ -197,13 +194,10 @@ kk_CmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer,
                  VkDeviceSize dstOffset, VkDeviceSize dstRange, uint32_t data)
 {
    VK_FROM_HANDLE(kk_cmd_buffer, cmd, commandBuffer);
-   VK_FROM_HANDLE(kk_buffer, buf, dstBuffer);
    struct kk_device *dev = kk_cmd_buffer_device(cmd);
 
    struct kk_meta_save save;
    kk_meta_begin(cmd, &save, VK_PIPELINE_BIND_POINT_COMPUTE);
-   mtl_compute_use_resource(kk_compute_encoder(cmd), buf->mtl_handle,
-                            MTL_RESOURCE_USAGE_WRITE);
    vk_meta_fill_buffer(&cmd->vk, &dev->meta, dstBuffer, dstOffset, dstRange,
                        data);
    kk_meta_end(cmd, &save, VK_PIPELINE_BIND_POINT_COMPUTE);
@@ -215,13 +209,10 @@ kk_CmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer,
                    const void *pData)
 {
    VK_FROM_HANDLE(kk_cmd_buffer, cmd, commandBuffer);
-   VK_FROM_HANDLE(kk_buffer, buf, dstBuffer);
    struct kk_device *dev = kk_cmd_buffer_device(cmd);
 
    struct kk_meta_save save;
    kk_meta_begin(cmd, &save, VK_PIPELINE_BIND_POINT_COMPUTE);
-   mtl_compute_use_resource(kk_compute_encoder(cmd), buf->mtl_handle,
-                            MTL_RESOURCE_USAGE_WRITE);
    vk_meta_update_buffer(&cmd->vk, &dev->meta, dstBuffer, dstOffset, dstRange,
                          pData);
    kk_meta_end(cmd, &save, VK_PIPELINE_BIND_POINT_COMPUTE);

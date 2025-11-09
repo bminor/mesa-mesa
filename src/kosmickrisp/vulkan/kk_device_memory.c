@@ -94,6 +94,7 @@ kk_AllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
       mem->bo->gpu = mtl_buffer_get_gpu_address(mem->bo->map);
       mem->bo->cpu = mtl_get_contents(mem->bo->map);
       mem->bo->size_B = mtl_heap_get_size(mem->bo->mtl_handle);
+      kk_device_add_heap_to_residency_set(dev, mem->bo->mtl_handle);
    } else {
       result =
          kk_alloc_bo(dev, &dev->vk.base, aligned_size, alignment, &mem->bo);
@@ -103,8 +104,6 @@ kk_AllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
 
    struct kk_memory_heap *heap = &pdev->mem_heaps[type->heapIndex];
    p_atomic_add(&heap->used, mem->bo->size_B);
-
-   kk_device_add_user_heap(dev, mem->bo->mtl_handle);
 
    *pMem = kk_device_memory_to_handle(mem);
 
@@ -125,8 +124,6 @@ kk_FreeMemory(VkDevice device, VkDeviceMemory _mem,
 
    if (!mem)
       return;
-
-   kk_device_remove_user_heap(dev, mem->bo->mtl_handle);
 
    const VkMemoryType *type = &pdev->mem_types[mem->vk.memory_type_index];
    struct kk_memory_heap *heap = &pdev->mem_heaps[type->heapIndex];

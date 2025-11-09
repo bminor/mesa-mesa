@@ -41,7 +41,6 @@ struct kk_descriptor_set {
    struct list_head link;
 
    struct kk_descriptor_set_layout *layout;
-   mtl_resource *mtl_descriptor_buffer;
    void *mapped_ptr;
    uint64_t addr;
    uint32_t size;
@@ -64,9 +63,6 @@ kk_descriptor_set_addr(const struct kk_descriptor_set *set)
 struct kk_push_descriptor_set {
    uint8_t data[KK_PUSH_DESCRIPTOR_SET_SIZE];
    struct kk_descriptor_set_layout *layout;
-   mtl_resource *mtl_descriptor_buffer;
-   uint32_t resource_count;
-   mtl_resource *mtl_resources[];
 };
 
 void kk_push_descriptor_set_update(struct kk_push_descriptor_set *push_set,

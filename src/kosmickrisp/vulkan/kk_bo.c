@@ -50,6 +50,8 @@ kk_alloc_bo(struct kk_device *dev, struct vk_object_base *log_obj,
    bo->gpu = mtl_buffer_get_gpu_address(map);
    bo->cpu = mtl_get_contents(map);
 
+   kk_device_add_heap_to_residency_set(dev, handle);
+
    *bo_out = bo;
    return result;
 
@@ -64,6 +66,7 @@ fail_heap:
 void
 kk_destroy_bo(struct kk_device *dev, struct kk_bo *bo)
 {
+   kk_device_remove_heap_from_residency_set(dev, bo->mtl_handle);
    mtl_release(bo->map);
    mtl_release(bo->mtl_handle);
    FREE(bo);

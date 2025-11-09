@@ -39,7 +39,6 @@ kk_encoder_init(mtl_device *device, struct kk_queue *queue,
    kk_encoder_start_internal(&enc->pre_gfx, device, queue->pre_gfx.mtl_handle);
    enc->event = mtl_new_event(device);
    enc->imm_writes = UTIL_DYNARRAY_INIT;
-   enc->resident_buffers = UTIL_DYNARRAY_INIT;
    enc->copy_query_pool_result_infos = UTIL_DYNARRAY_INIT;
 
    *encoder = enc;
@@ -180,12 +179,6 @@ upload_queue_writes(struct kk_cmd_buffer *cmd)
       if (!bo)
          return;
       memcpy(bo->cpu, enc->imm_writes.data, enc->imm_writes.size);
-      uint32_t buffer_count =
-         util_dynarray_num_elements(&enc->resident_buffers, mtl_buffer *);
-      mtl_compute_use_resource(compute, bo->map, MTL_RESOURCE_USAGE_READ);
-      mtl_compute_use_resources(
-         compute, enc->resident_buffers.data, buffer_count,
-         MTL_RESOURCE_USAGE_READ | MTL_RESOURCE_USAGE_WRITE);
       struct kk_imm_write_push push_data = {
          .buffer_address = bo->gpu,
          .count = count,
@@ -193,7 +186,6 @@ upload_queue_writes(struct kk_cmd_buffer *cmd)
       kk_cmd_dispatch_pipeline(cmd, compute,
                                kk_device_lib_pipeline(dev, KK_LIB_IMM_WRITE),
                                &push_data, sizeof(push_data), count, 1, 1);
-      enc->resident_buffers.size = 0u;
       enc->imm_writes.size = 0u;
    }
 
@@ -201,11 +193,6 @@ upload_queue_writes(struct kk_cmd_buffer *cmd)
                                       struct kk_copy_query_pool_results_info);
    if (count != 0u) {
       mtl_compute_encoder *compute = kk_compute_encoder(cmd);
-      uint32_t buffer_count =
-         util_dynarray_num_elements(&enc->resident_buffers, mtl_buffer *);
-      mtl_compute_use_resources(
-         compute, enc->resident_buffers.data, buffer_count,
-         MTL_RESOURCE_USAGE_READ | MTL_RESOURCE_USAGE_WRITE);
 
       for (uint32_t i = 0u; i < count; ++i) {
          struct kk_copy_query_pool_results_info *push_data =
@@ -216,7 +203,6 @@ upload_queue_writes(struct kk_cmd_buffer *cmd)
             cmd, compute, kk_device_lib_pipeline(dev, KK_LIB_COPY_QUERY),
             push_data, sizeof(*push_data), push_data->query_count, 1, 1);
       }
-      enc->resident_buffers.size = 0u;
       enc->copy_query_pool_result_infos.size = 0u;
    }
 
@@ -292,7 +278,6 @@ kk_post_execution_release(void *data)
    kk_post_execution_release_internal(&encoder->pre_gfx);
    mtl_release(encoder->event);
    util_dynarray_fini(&encoder->imm_writes);
-   util_dynarray_fini(&encoder->resident_buffers);
    util_dynarray_fini(&encoder->copy_query_pool_result_infos);
    free(encoder);
 }
@@ -416,11 +401,6 @@ kk_encoder_render_triangle_fan_common(struct kk_cmd_buffer *cmd,
    info->out_el_size_B = out_el_size_B;
    info->flatshade_first = true;
    mtl_compute_encoder *encoder = kk_encoder_pre_gfx_encoder(cmd);
-   if (index)
-      mtl_compute_use_resource(encoder, index, MTL_RESOURCE_USAGE_READ);
-   mtl_compute_use_resource(encoder, indirect, MTL_RESOURCE_USAGE_READ);
-   mtl_compute_use_resource(encoder, index_buffer->map,
-                            MTL_RESOURCE_USAGE_WRITE);
 
    struct kk_device *dev = kk_cmd_buffer_device(cmd);
    kk_cmd_dispatch_pipeline(cmd, encoder,

@@ -31,11 +31,6 @@ kk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
    if (result != VK_SUCCESS)
       return result;
 
-   /* Ensure any changes to residency are propagated before we submit any work.
-    * All resources should have been allocated before submission. Otherwise,
-    * users are playing with fire. */
-   kk_device_make_resources_resident(dev);
-
    /* Chain with previous sumbission */
    if (queue->wait_fence) {
       util_dynarray_append(&encoder->main.fences, queue->wait_fence);
@@ -77,6 +72,11 @@ kk_queue_submit(struct vk_queue *vk_queue, struct vk_queue_submit *submit)
       mtl_encode_signal_event(encoder->main.cmd_buffer, sync->mtl_handle,
                               signal->signal_value);
    }
+
+   /* Ensure any changes to residency are propagated before we submit any work.
+    * All resources should have been allocated before submission. Otherwise,
+    * users are playing with fire. */
+   kk_device_make_resources_resident(dev);
 
    /* Steal the last fence to chain with the next submission */
    if (util_dynarray_num_elements(&encoder->main.fences, mtl_fence *) > 0)

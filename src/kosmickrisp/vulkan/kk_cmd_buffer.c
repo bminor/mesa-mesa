@@ -29,7 +29,6 @@ kk_descriptor_state_fini(struct kk_cmd_buffer *cmd,
       desc->push[i] = NULL;
       desc->sets[i] = NULL; /* We also need to set sets to NULL so state doesn't
                                propagate if we reset it */
-      desc->sets_not_resident = 0u;
    }
 }
 
@@ -204,8 +203,6 @@ kk_bind_descriptor_sets(struct kk_descriptor_state *desc,
          }
          desc->sets[s] = set;
 
-         desc->sets_not_resident |= BITFIELD_BIT(s);
-
          /* Binding descriptors invalidates push descriptors */
          desc->push_dirty &= ~BITFIELD_BIT(s);
       }
@@ -262,11 +259,9 @@ kk_cmd_push_descriptors(struct kk_cmd_buffer *cmd,
                         struct kk_descriptor_set_layout *set_layout,
                         uint32_t set)
 {
-   struct kk_device *dev = kk_cmd_buffer_device(cmd);
    assert(set < KK_MAX_SETS);
    if (unlikely(desc->push[set] == NULL)) {
-      size_t size = sizeof(*desc->push[set]) +
-                    (sizeof(mtl_resource *) * set_layout->descriptor_count);
+      size_t size = sizeof(*desc->push[set]);
       desc->push[set] = vk_zalloc(&cmd->vk.pool->alloc, size, 8,
                                   VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
       if (unlikely(desc->push[set] == NULL)) {
@@ -274,14 +269,11 @@ kk_cmd_push_descriptors(struct kk_cmd_buffer *cmd,
          return NULL;
       }
       desc->push[set]->layout = set_layout;
-      for (uint32_t i = 0u; i < set_layout->descriptor_count; ++i)
-         desc->push[set]->mtl_resources[i] = dev->null_descriptor->map;
    }
 
    /* Pushing descriptors replaces whatever sets are bound */
    desc->sets[set] = NULL;
    desc->push_dirty |= BITFIELD_BIT(set);
-   desc->sets_not_resident |= BITFIELD_BIT(set);
 
    return desc->push[set];
 }
@@ -425,7 +417,6 @@ kk_cmd_buffer_flush_push_descriptors(struct kk_cmd_buffer *cmd,
          return;
 
       memcpy(bo->cpu, push_set->data, sizeof(push_set->data));
-      push_set->mtl_descriptor_buffer = bo->map;
       desc->root.sets[set_idx] = bo->gpu;
       desc->set_sizes[set_idx] = sizeof(push_set->data);
    }
@@ -434,77 +425,12 @@ kk_cmd_buffer_flush_push_descriptors(struct kk_cmd_buffer *cmd,
    desc->push_dirty = 0;
 }
 
-static void
-kk_make_graphics_descriptor_resources_resident(struct kk_cmd_buffer *cmd)
-{
-   struct kk_descriptor_state *desc = &cmd->state.gfx.descriptors;
-   mtl_render_encoder *encoder = kk_render_encoder(cmd);
-   /* Make resources resident as required by Metal */
-   u_foreach_bit(set_index, desc->sets_not_resident) {
-      mtl_resource *descriptor_buffer = NULL;
-
-      /* If we have no set, it means it was a push set */
-      if (desc->sets[set_index]) {
-         struct kk_descriptor_set *set = desc->sets[set_index];
-         descriptor_buffer = set->mtl_descriptor_buffer;
-      } else {
-         struct kk_push_descriptor_set *push_set = desc->push[set_index];
-         descriptor_buffer = push_set->mtl_descriptor_buffer;
-      }
-
-      /* We could have empty descriptor sets for some reason... */
-      if (descriptor_buffer) {
-         mtl_render_use_resource(encoder, descriptor_buffer,
-                                 MTL_RESOURCE_USAGE_READ);
-      }
-   }
-
-   desc->sets_not_resident = 0u;
-}
-
-static void
-kk_make_compute_descriptor_resources_resident(struct kk_cmd_buffer *cmd)
-{
-   struct kk_descriptor_state *desc = &cmd->state.cs.descriptors;
-   mtl_compute_encoder *encoder = kk_compute_encoder(cmd);
-   u_foreach_bit(set_index, desc->sets_not_resident) {
-      /* Make resources resident as required by Metal */
-      mtl_resource *descriptor_buffer = NULL;
-      if (desc->sets[set_index]) {
-         struct kk_descriptor_set *set = desc->sets[set_index];
-         descriptor_buffer = set->mtl_descriptor_buffer;
-      } else {
-         struct kk_push_descriptor_set *push_set = desc->push[set_index];
-         descriptor_buffer = push_set->mtl_descriptor_buffer;
-      }
-
-      /* We could have empty descriptor sets for some reason... */
-      if (descriptor_buffer) {
-         mtl_compute_use_resource(encoder, descriptor_buffer,
-                                  MTL_RESOURCE_USAGE_READ);
-      }
-   }
-
-   desc->sets_not_resident = 0u;
-}
-
-void
-kk_make_descriptor_resources_resident(struct kk_cmd_buffer *cmd,
-                                      VkPipelineBindPoint bind_point)
-{
-   if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS)
-      kk_make_graphics_descriptor_resources_resident(cmd);
-   else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE)
-      kk_make_compute_descriptor_resources_resident(cmd);
-}
-
 void
 kk_cmd_write(struct kk_cmd_buffer *cmd, mtl_buffer *buffer, uint64_t addr,
              uint64_t value)
 {
    util_dynarray_append(&cmd->encoder->imm_writes, addr);
    util_dynarray_append(&cmd->encoder->imm_writes, value);
-   util_dynarray_append(&cmd->encoder->resident_buffers, buffer);
 }
 
 VKAPI_ATTR void VKAPI_CALL

@@ -72,18 +72,12 @@ static void
 kk_flush_compute_state(struct kk_cmd_buffer *cmd)
 {
    mtl_compute_encoder *enc = kk_compute_encoder(cmd);
-   struct kk_device *dev = kk_cmd_buffer_device(cmd);
 
    // Fill Metal argument buffer with descriptor set addresses
    struct kk_descriptor_state *desc = &cmd->state.cs.descriptors;
 
    if (desc->push_dirty)
       kk_cmd_buffer_flush_push_descriptors(cmd, desc);
-   /* After push descriptors' buffers are created. Otherwise, the buffer where
-    * they live will not be created and cannot make it resident */
-   if (desc->sets_not_resident)
-      kk_make_descriptor_resources_resident(cmd,
-                                            VK_PIPELINE_BIND_POINT_COMPUTE);
    if (desc->root_dirty)
       kk_upload_descriptor_root(cmd, VK_PIPELINE_BIND_POINT_COMPUTE);
 

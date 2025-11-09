@@ -38,9 +38,6 @@ struct kk_descriptor_set_binding_layout {
    /* Offset into the descriptor buffer where this descriptor lives */
    uint32_t offset;
 
-   /* Offset to the mtl_resource_ids array where this descriptor stores them */
-   uint32_t mtl_resources_index;
-
    /* Stride between array elements in the descriptor buffer */
    uint8_t stride;
 
