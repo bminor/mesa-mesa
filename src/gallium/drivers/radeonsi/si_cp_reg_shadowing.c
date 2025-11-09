@@ -19,38 +19,15 @@ bool si_init_cp_reg_shadowing(struct si_context *sctx)
       si_pm4_free_state(sctx, sctx->cs_preamble_state, ~0);
       sctx->cs_preamble_state = NULL;
    } else if (sctx->uses_kernelq_reg_shadowing) {
-      if (sctx->screen->info.has_fw_based_shadowing) {
-         sctx->shadowing.registers =
-               si_aligned_buffer_create(sctx->b.screen,
-                                        PIPE_RESOURCE_FLAG_UNMAPPABLE | SI_RESOURCE_FLAG_DRIVER_INTERNAL,
-                                        PIPE_USAGE_DEFAULT,
-                                        sctx->screen->info.fw_based_mcbp.shadow_size,
-                                        sctx->screen->info.fw_based_mcbp.shadow_alignment);
-         sctx->shadowing.csa =
-               si_aligned_buffer_create(sctx->b.screen,
-                                        PIPE_RESOURCE_FLAG_UNMAPPABLE | SI_RESOURCE_FLAG_DRIVER_INTERNAL,
-                                        PIPE_USAGE_DEFAULT,
-                                        sctx->screen->info.fw_based_mcbp.csa_size,
-                                        sctx->screen->info.fw_based_mcbp.csa_alignment);
-         if (!sctx->shadowing.registers || !sctx->shadowing.csa) {
-            mesa_loge("cannot create register shadowing buffer(s)");
-            return false;
-         } else {
-            sctx->ws->cs_set_mcbp_reg_shadowing_va(&sctx->gfx_cs,
-                                                   sctx->shadowing.registers->gpu_address,
-                                                   sctx->shadowing.csa->gpu_address);
-         }
-      } else {
-         sctx->shadowing.registers =
-               si_aligned_buffer_create(sctx->b.screen,
-                                        PIPE_RESOURCE_FLAG_UNMAPPABLE | SI_RESOURCE_FLAG_DRIVER_INTERNAL,
-                                        PIPE_USAGE_DEFAULT,
-                                        SI_SHADOWED_REG_BUFFER_SIZE,
-                                        4096);
-         if (!sctx->shadowing.registers) {
-            mesa_loge("cannot create a shadowed_regs buffer");
-            return false;
-         }
+      sctx->shadowing.registers =
+            si_aligned_buffer_create(sctx->b.screen,
+                                     PIPE_RESOURCE_FLAG_UNMAPPABLE | SI_RESOURCE_FLAG_DRIVER_INTERNAL,
+                                     PIPE_USAGE_DEFAULT,
+                                     SI_SHADOWED_REG_BUFFER_SIZE,
+                                     4096);
+      if (!sctx->shadowing.registers) {
+         mesa_loge("cannot create a shadowed_regs buffer");
+         return false;
       }
 
       /* We need to clear the shadowed reg buffer. */

@@ -3084,10 +3084,8 @@ struct ac_pm4_state *ac_create_shadowing_ib_preamble(const struct radeon_info *i
                   CC1_SHADOW_GLOBAL_UCONFIG(1) |
                   CC1_SHADOW_GLOBAL_CONFIG(1));
 
-   if (!info->has_fw_based_shadowing) {
-      for (unsigned i = 0; i < SI_NUM_REG_RANGES; i++)
-         ac_build_load_reg(info, pm4, i, gpu_address);
-   }
+   for (unsigned i = 0; i < SI_NUM_REG_RANGES; i++)
+      ac_build_load_reg(info, pm4, i, gpu_address);
 
    ac_pm4_finalize(pm4);
 

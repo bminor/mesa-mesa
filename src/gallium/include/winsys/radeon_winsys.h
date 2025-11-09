@@ -795,11 +795,6 @@ struct radeon_winsys {
    bool (*cs_set_pstate)(struct radeon_cmdbuf *rcs, enum radeon_ctx_pstate state);
 
    /**
-    * Pass the VAs to the buffers where various information is saved by the FW during mcbp.
-    */
-   void (*cs_set_mcbp_reg_shadowing_va)(struct radeon_cmdbuf *rcs, uint64_t regs_va,
-                                                                  uint64_t csa_va);
-   /**
     * Submits the preamble IB, which is the IB that initializes immutable registers and states.
     * This must be the first IB for that queue type, and it affects all current and future contexts.
     * If the IB has been submitted already, the call is ignored.

@@ -1477,12 +1477,6 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
       info->fw_based_mcbp.shadow_alignment = fw_info.gfx.shadow_alignment;
       info->fw_based_mcbp.csa_size = fw_info.gfx.csa_size;
       info->fw_based_mcbp.csa_alignment = fw_info.gfx.csa_alignment;
-   } else if (info->gfx_level >= GFX11 && device_info.shadow_size > 0) {
-      info->has_fw_based_shadowing = true;
-      info->fw_based_mcbp.shadow_size = device_info.shadow_size;
-      info->fw_based_mcbp.shadow_alignment = device_info.shadow_alignment;
-      info->fw_based_mcbp.csa_size = device_info.csa_size;
-      info->fw_based_mcbp.csa_alignment = device_info.csa_alignment;
    }
 
    /* WARNING: Register shadowing decreases performance by up to 50% on GFX11 with current FW. */
@@ -1858,16 +1852,6 @@ void ac_print_gpu_info(const struct radeon_info *info, FILE *f)
    fprintf(f, "    has_gang_submit = %u\n", info->has_gang_submit);
    fprintf(f, "    has_gpuvm_fault_query = %u\n", info->has_gpuvm_fault_query);
    fprintf(f, "    has_kernelq_reg_shadowing = %u\n", info->has_kernelq_reg_shadowing);
-   fprintf(f, "    has_fw_based_shadowing = %u\n", info->has_fw_based_shadowing);
-   if (info->has_fw_based_shadowing) {
-      fprintf(f, "        * shadow size: %u (alignment: %u)\n",
-         info->fw_based_mcbp.shadow_size,
-         info->fw_based_mcbp.shadow_alignment);
-      fprintf(f, "        * csa size: %u (alignment: %u)\n",
-         info->fw_based_mcbp.csa_size,
-         info->fw_based_mcbp.csa_alignment);
-   }
-
    fprintf(f, "    has_default_zerovram_support = %u\n", info->has_default_zerovram_support);
    fprintf(f, "    has_tmz_support = %u\n", info->has_tmz_support);
    fprintf(f, "    has_trap_handler_support = %u\n", info->has_trap_handler_support);

@@ -1346,13 +1346,6 @@ static int amdgpu_cs_submit_ib_kernelq(struct amdgpu_cs *acs,
    chunks[num_chunks].chunk_data = (uintptr_t)sem_chunk;
    num_chunks++;
 
-   if (aws->info.has_fw_based_shadowing && acs->mcbp_fw_shadow_chunk.shadow_va) {
-      chunks[num_chunks].chunk_id = AMDGPU_CHUNK_ID_CP_GFX_SHADOW;
-      chunks[num_chunks].length_dw = sizeof(struct drm_amdgpu_cs_chunk_cp_gfx_shadow) / 4;
-      chunks[num_chunks].chunk_data = (uintptr_t)&acs->mcbp_fw_shadow_chunk;
-      num_chunks++;
-   }
-
    /* Fence */
    if (amdgpu_cs_has_user_fence(acs)) {
       chunks[num_chunks].chunk_id = AMDGPU_CHUNK_ID_FENCE;
@@ -2059,9 +2052,6 @@ static void amdgpu_cs_submit_ib(void *job, void *gdata, int thread_index)
    if (r || (unlikely(acs->noop) && acs->ip_type != AMD_IP_GFX))
       amdgpu_fence_signalled(csc->fence);
 
-   if (unlikely(aws->info.has_fw_based_shadowing && acs->mcbp_fw_shadow_chunk.flags && r == 0))
-      acs->mcbp_fw_shadow_chunk.flags = 0;
-
    csc->error_code = r;
 
    /* Clear the buffer lists. */
@@ -2281,16 +2271,6 @@ static bool amdgpu_bo_is_referenced(struct radeon_cmdbuf *rcs,
    return amdgpu_bo_is_referenced_by_cs_with_usage(acs, bo, usage);
 }
 
-static void amdgpu_cs_set_mcbp_reg_shadowing_va(struct radeon_cmdbuf *rcs,uint64_t regs_va,
-                                                                   uint64_t csa_va)
-{
-   struct amdgpu_cs *acs = amdgpu_cs(rcs);
-   acs->mcbp_fw_shadow_chunk.shadow_va = regs_va;
-   acs->mcbp_fw_shadow_chunk.csa_va = csa_va;
-   acs->mcbp_fw_shadow_chunk.gds_va = 0;
-   acs->mcbp_fw_shadow_chunk.flags = AMDGPU_CS_CHUNK_CP_GFX_SHADOW_FLAGS_INIT_SHADOW;
-}
-
 static void amdgpu_winsys_fence_reference(struct radeon_winsys *rws,
                                           struct pipe_fence_handle **dst,
                                           struct pipe_fence_handle *src)
@@ -2348,7 +2328,4 @@ void amdgpu_cs_init_functions(struct amdgpu_screen_winsys *sws)
    sws->base.fence_import_sync_file = amdgpu_fence_import_sync_file;
    sws->base.fence_export_sync_file = amdgpu_fence_export_sync_file;
    sws->base.export_signalled_sync_file = amdgpu_export_signalled_sync_file;
-
-   if (sws->aws->info.has_fw_based_shadowing)
-      sws->base.cs_set_mcbp_reg_shadowing_va = amdgpu_cs_set_mcbp_reg_shadowing_va;
 }
