@@ -156,7 +156,13 @@ if gallium_drivers.contains('auto')
         'r300', 'r600', 'radeonsi', 'nouveau', 'virgl', 'svga', 'llvmpipe', 'softpipe',
         'iris', 'crocus', 'i915', 'zink'
       ]
-    elif ['arm', 'aarch64'].contains(host_machine.cpu_family())
+    elif ['aarch64'].contains(host_machine.cpu_family())
+      gallium_drivers = [
+        'v3d', 'vc4', 'freedreno', 'etnaviv', 'nouveau', 'svga',
+        'tegra', 'virgl', 'lima', 'panfrost', 'llvmpipe', 'softpipe', 'iris',
+        'zink', 'asahi'
+      ]
+    elif ['arm'].contains(host_machine.cpu_family())
       gallium_drivers = [
         'v3d', 'vc4', 'freedreno', 'etnaviv', 'nouveau', 'svga',
         'tegra', 'virgl', 'lima', 'panfrost', 'llvmpipe', 'softpipe', 'iris',
@@ -249,7 +255,9 @@ if _vulkan_drivers.contains('auto')
   if system_has_kms_drm
     if host_machine.cpu_family().startswith('x86')
       _vulkan_drivers = ['amd', 'intel', 'intel_hasvk', 'nouveau', 'swrast']
-    elif ['arm', 'aarch64'].contains(host_machine.cpu_family())
+    elif ['aarch64'].contains(host_machine.cpu_family())
+      _vulkan_drivers = ['swrast', 'intel', 'panfrost', 'freedreno', 'asahi']
+    elif ['arm'].contains(host_machine.cpu_family())
       _vulkan_drivers = ['swrast', 'intel', 'panfrost', 'freedreno']
     elif ['mips', 'mips64', 'ppc', 'ppc64', 'riscv32', 'riscv64'].contains(host_machine.cpu_family())
       _vulkan_drivers = ['amd', 'swrast']
