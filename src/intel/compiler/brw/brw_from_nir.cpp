@@ -5077,8 +5077,8 @@ lsc_fence_descriptor_for_intrinsic(const struct intel_device_info *devinfo,
 {
    assert(devinfo->has_lsc);
 
-   enum lsc_fence_scope scope;
-   enum lsc_flush_type flush_type;
+   enum lsc_fence_scope scope = LSC_FENCE_TILE;
+   enum lsc_flush_type flush_type = LSC_FLUSH_TYPE_EVICT;
 
    if (instr->intrinsic == nir_intrinsic_begin_invocation_interlock ||
        instr->intrinsic == nir_intrinsic_end_invocation_interlock) {
@@ -5110,10 +5110,6 @@ lsc_fence_descriptor_for_intrinsic(const struct intel_device_info *devinfo,
             flush_type = LSC_FLUSH_TYPE_NONE;
             break;
          }
-      } else {
-         /* No scope defined. */
-         scope = LSC_FENCE_TILE;
-         flush_type = LSC_FLUSH_TYPE_EVICT;
       }
    }
    return lsc_fence_msg_desc(devinfo, scope, flush_type, true);
