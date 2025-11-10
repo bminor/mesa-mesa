@@ -218,6 +218,7 @@ struct lp_build_nir_soa_context
    LLVMValueRef ssbo_ptr;
 
    LLVMValueRef shared_ptr;
+   LLVMValueRef shared_size;
    LLVMValueRef payload_ptr;
    LLVMValueRef scratch_ptr;
    unsigned scratch_size;
@@ -1317,11 +1318,27 @@ mem_access_base_pointer(struct lp_build_nir_soa_context *bld,
          ptr = LLVMBuildPtrToInt(gallivm->builder, ptr, bld->int64_bld.elem_type, "");
          ptr = LLVMBuildAdd(gallivm->builder, ptr, lp_build_const_int64(gallivm, 12), "");
          ptr = LLVMBuildIntToPtr(gallivm->builder, ptr, LLVMPointerType(LLVMInt32TypeInContext(gallivm->context), 0), "");
+         if (bounds)
+            *bounds = NULL;
       }
-      else
+      else {
          ptr = bld->shared_ptr;
-      if (bounds)
-         *bounds = NULL;
+         if (bounds) {
+            /*
+             * For shared mem, use essentially the same logic as for SSBOs,
+             * and clamp against the declared size.
+             * Note this is probably overkill - unsure of vulkan semantics,
+             * but d3d would allow for instance to just clamp offsets,
+             * since OOB writes cause shared mem to become undefined, and OOB
+             * reads have undefined results, unlike for SSBOs there's no
+             * need to ignore writes and return 0 for reads.
+             * Bounds is in units of bit_size (not bytes).
+             */
+            uint32_t shift_val = bit_size_to_shift_size(bit_size);
+            *bounds = LLVMBuildAShr(gallivm->builder, bld->shared_size,
+                                    lp_build_const_int32(gallivm, shift_val), "");
+         }
+      }
    }
 
    /* Cast it to the pointer type of the access this instruction is doing. */
@@ -4580,7 +4597,7 @@ visit_shared_load(struct lp_build_nir_soa_context *bld,
    bool offset_is_uniform = !lp_nir_instr_src_divergent(&instr->instr, 0);
    emit_load_mem(bld, instr->def.num_components,
                  instr->def.bit_size, true,
-                 offset_is_uniform, false, true, NULL, offset, result);
+                 offset_is_uniform, false, false, NULL, offset, result);
 }
 
 static void
@@ -4593,7 +4610,7 @@ visit_shared_store(struct lp_build_nir_soa_context *bld,
    int writemask = nir_intrinsic_write_mask(instr);
    int nc = nir_src_num_components(instr->src[0]);
    int bitsize = nir_src_bit_size(instr->src[0]);
-   emit_store_mem(bld, writemask, nc, bitsize, false, true, NULL, offset, val);
+   emit_store_mem(bld, writemask, nc, bitsize, false, false, NULL, offset, val);
 }
 
 static void
@@ -4608,7 +4625,7 @@ visit_shared_atomic(struct lp_build_nir_soa_context *bld,
    if (instr->intrinsic == nir_intrinsic_shared_atomic_swap)
       val2 = get_src(bld, &instr->src[2], 0);
 
-   emit_atomic_mem(bld, nir_intrinsic_atomic_op(instr), bitsize, false, true,
+   emit_atomic_mem(bld, nir_intrinsic_atomic_op(instr), bitsize, false, false,
                    NULL, offset, val, val2, &result[0]);
 }
 
@@ -6019,6 +6036,7 @@ void lp_build_nir_soa_func(struct gallivm_state *gallivm,
    bld.thread_data_ptr = params->thread_data_ptr;
    bld.image = params->image;
    bld.shared_ptr = params->shared_ptr;
+   bld.shared_size = params->shared_size;
    bld.payload_ptr = params->payload_ptr;
    bld.coro = params->coro;
    bld.num_inputs = params->num_inputs;

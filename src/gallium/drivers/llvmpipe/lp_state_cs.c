@@ -557,6 +557,10 @@ generate_compute(struct llvmpipe_context *lp,
                                                   params.resources_ptr);
          params.image = image;
 
+         params.shared_size = lp_jit_cs_context_shared_size(gallivm,
+                                                            variant->jit_cs_context_type,
+                                                            params.context_ptr);
+
          lp_build_nir_soa_func(gallivm, shader->base.ir.nir,
                                func->impl,
                                &params,
@@ -873,6 +877,10 @@ generate_compute(struct llvmpipe_context *lp,
       params.ssbo_ptr = ssbo_ptr;
       params.image = image;
       params.shared_ptr = shared_ptr;
+      params.shared_size = lp_jit_cs_context_shared_size(gallivm,
+                                                         variant->jit_cs_context_type,
+                                                         context_ptr);
+
       params.payload_ptr = payload_ptr;
       params.coro = &coro_info;
       params.mesh_iface = &mesh_iface.base;
@@ -1793,6 +1801,8 @@ llvmpipe_launch_grid(struct pipe_context *pipe,
    job_info.req_local_mem = llvmpipe->cs->req_local_mem + info->variable_shared_mem;
    job_info.zero_initialize_shared_memory = llvmpipe->cs->zero_initialize_shared_memory;
    job_info.current = &llvmpipe->csctx->cs.current;
+   /* Not really sure this should be done here? */
+   job_info.current->jit_context.shared_size = job_info.req_local_mem;
 
    int num_tasks = job_info.grid_size[2] * job_info.grid_size[1] * job_info.grid_size[0];
    if (num_tasks) {
@@ -2196,6 +2206,7 @@ llvmpipe_draw_mesh_tasks(struct pipe_context *pipe,
          job_info.draw_id = dr;
          job_info.req_local_mem = lp->tss->req_local_mem + info->variable_shared_mem;
          job_info.current = &lp->task_ctx->cs.current;
+         job_info.current->jit_context.shared_size = job_info.req_local_mem;
 
          if (num_tasks) {
             struct lp_cs_tpool_task *task;
@@ -2226,6 +2237,7 @@ llvmpipe_draw_mesh_tasks(struct pipe_context *pipe,
 
          job_info.req_local_mem = lp->mhs->req_local_mem + info->variable_shared_mem;
          job_info.current = &lp->mesh_ctx->cs.current;
+         job_info.current->jit_context.shared_size = job_info.req_local_mem;
          job_info.payload_stride = 0;
          job_info.draw_id = dr;
          job_info.io_stride = task_out_size;
