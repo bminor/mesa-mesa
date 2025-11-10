@@ -180,7 +180,6 @@ radv_optimize_nir(struct nir_shader *shader, bool optimize_conservatively)
       }
 
       NIR_LOOP_PASS(progress, skip, shader, nir_opt_copy_prop_vars);
-      NIR_LOOP_PASS(progress, skip, shader, nir_opt_dead_write_vars);
       NIR_LOOP_PASS(_, skip, shader, nir_lower_vars_to_ssa);
 
       NIR_LOOP_PASS(_, skip, shader, nir_lower_alu_width, vectorize_vec2_16bit, NULL);
@@ -727,6 +726,7 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
    if (!stage->key.optimisations_disabled) {
       radv_optimize_nir(nir, false);
 
+      NIR_PASS(_, nir, nir_opt_dead_write_vars);
       NIR_PASS(_, nir, nir_opt_memcpy);
    }
 
