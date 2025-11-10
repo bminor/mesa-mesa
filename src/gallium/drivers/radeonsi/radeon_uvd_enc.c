@@ -247,14 +247,39 @@ static void radeon_uvd_enc_deblocking_filter_hevc(struct radeon_uvd_encoder *enc
                                                   struct pipe_picture_desc *picture)
 {
    struct pipe_h265_enc_picture_desc *pic = (struct pipe_h265_enc_picture_desc *)picture;
-   enc->enc_pic.hevc_deblock.loop_filter_across_slices_enabled =
-      pic->pic.pps_loop_filter_across_slices_enabled_flag;
-   enc->enc_pic.hevc_deblock.deblocking_filter_disabled =
-      pic->slice.slice_deblocking_filter_disabled_flag;
-   enc->enc_pic.hevc_deblock.beta_offset_div2 = pic->slice.slice_beta_offset_div2;
-   enc->enc_pic.hevc_deblock.tc_offset_div2 = pic->slice.slice_tc_offset_div2;
-   enc->enc_pic.hevc_deblock.cb_qp_offset = pic->slice.slice_cb_qp_offset;
-   enc->enc_pic.hevc_deblock.cr_qp_offset = pic->slice.slice_cr_qp_offset;
+   enc->enc_pic.hevc_deblock.deblocking_filter_disabled = 0;
+   enc->enc_pic.hevc_deblock.beta_offset_div2 = 0;
+   enc->enc_pic.hevc_deblock.tc_offset_div2 = 0;
+
+   if (pic->pic.pps_loop_filter_across_slices_enabled_flag &&
+       !enc->enc_pic.hevc_deblock.deblocking_filter_disabled) {
+      enc->enc_pic.hevc_deblock.loop_filter_across_slices_enabled =
+         pic->slice.slice_loop_filter_across_slices_enabled_flag;
+   } else {
+      enc->enc_pic.hevc_deblock.loop_filter_across_slices_enabled =
+         pic->pic.pps_loop_filter_across_slices_enabled_flag;
+   }
+
+   if (pic->pic.deblocking_filter_override_enabled_flag &&
+       pic->slice.deblocking_filter_override_flag) {
+      enc->enc_pic.hevc_deblock.deblocking_filter_disabled =
+         pic->slice.slice_deblocking_filter_disabled_flag;
+      enc->enc_pic.hevc_deblock.beta_offset_div2 = pic->slice.slice_beta_offset_div2;
+      enc->enc_pic.hevc_deblock.tc_offset_div2 = pic->slice.slice_tc_offset_div2;
+   } else if (pic->pic.deblocking_filter_control_present_flag) {
+      enc->enc_pic.hevc_deblock.deblocking_filter_disabled =
+         pic->pic.pps_deblocking_filter_disabled_flag;
+      enc->enc_pic.hevc_deblock.beta_offset_div2 = pic->slice.slice_beta_offset_div2;
+      enc->enc_pic.hevc_deblock.tc_offset_div2 = pic->slice.slice_tc_offset_div2;
+   }
+
+   if (pic->pic.pps_slice_chroma_qp_offsets_present_flag) {
+      enc->enc_pic.hevc_deblock.cb_qp_offset = pic->slice.slice_cb_qp_offset;
+      enc->enc_pic.hevc_deblock.cr_qp_offset = pic->slice.slice_cr_qp_offset;
+   } else {
+      enc->enc_pic.hevc_deblock.cb_qp_offset = pic->pic.pps_cb_qp_offset;
+      enc->enc_pic.hevc_deblock.cr_qp_offset = pic->pic.pps_cr_qp_offset;
+   }
 
    RADEON_ENC_BEGIN(RENC_UVD_IB_PARAM_DEBLOCKING_FILTER);
    RADEON_ENC_CS(enc->enc_pic.hevc_deblock.loop_filter_across_slices_enabled);
@@ -305,8 +330,6 @@ static unsigned int radeon_uvd_enc_write_pps(struct radeon_uvd_encoder *enc, uin
    pps.transform_skip_enabled_flag = 0;
    pps.cu_qp_delta_enabled_flag =
       enc->enc_pic.rc_session_init.rate_control_method != RENC_UVD_RATE_CONTROL_METHOD_NONE;
-   pps.pps_beta_offset_div2 = enc->enc_pic.hevc_deblock.beta_offset_div2;
-   pps.pps_tc_offset_div2 = enc->enc_pic.hevc_deblock.tc_offset_div2;
 
    struct radeon_bitstream bs;
    radeon_bs_reset(&bs, out, NULL);
@@ -461,7 +484,7 @@ static void radeon_uvd_enc_slice_header_hevc(struct radeon_uvd_encoder *enc)
       }
    }
 
-   if ((enc->enc_pic.hevc_deblock.loop_filter_across_slices_enabled) &&
+   if ((pps->pps_loop_filter_across_slices_enabled_flag) &&
        (!enc->enc_pic.hevc_deblock.deblocking_filter_disabled)) {
       radeon_bs_code_fixed_bits(&bs, enc->enc_pic.hevc_deblock.loop_filter_across_slices_enabled, 1);
       radeon_bs_flush_headers(&bs);
