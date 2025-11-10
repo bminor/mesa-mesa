@@ -803,11 +803,20 @@ void radeon_bs_av1_seq(struct radeon_bitstream *bs, uint8_t *obu_bytes, struct p
          radeon_bs_code_fixed_bits(bs, 0, 1); /* enable_ref_frame_mvs */
       }
 
-      radeon_bs_code_fixed_bits(bs, !seq->seq_bits.disable_screen_content_tools, 1); /* seq_choose_screen_content_tools */
-      if (seq->seq_bits.disable_screen_content_tools)
-         radeon_bs_code_fixed_bits(bs, 0, 1); /* seq_force_screen_content_tools */
-      else
-         radeon_bs_code_fixed_bits(bs, 1, 1); /* seq_choose_integer_mv */
+      unsigned seq_choose_screen_content_tools =
+         seq->seq_bits.force_screen_content_tools == AV1_SELECT_SCREEN_CONTENT_TOOLS;
+      radeon_bs_code_fixed_bits(bs, seq_choose_screen_content_tools, 1);
+
+      if (!seq_choose_screen_content_tools)
+         radeon_bs_code_fixed_bits(bs, seq->seq_bits.force_screen_content_tools, 1);
+
+      if (seq->seq_bits.force_screen_content_tools > 0) {
+         unsigned seq_choose_integer_mv = seq->seq_bits.force_integer_mv == AV1_SELECT_INTEGER_MV;
+
+         radeon_bs_code_fixed_bits(bs, seq_choose_integer_mv, 1);
+         if (!seq_choose_integer_mv)
+            radeon_bs_code_fixed_bits(bs, seq->seq_bits.force_integer_mv, 1);
+      }
 
       if (seq->seq_bits.enable_order_hint)
          radeon_bs_code_fixed_bits(bs, seq->order_hint_bits - 1, 3); /* order_hint_bits_minus_1 */

@@ -127,8 +127,6 @@ struct radeon_enc_pic {
       struct {
          struct {
             uint32_t enable_error_resilient_mode:1;
-            uint32_t force_integer_mv:1;
-            uint32_t disable_screen_content_tools:1;
             uint32_t is_obu_frame:1;
          };
          uint32_t *copy_start;

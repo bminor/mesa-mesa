@@ -559,7 +559,10 @@ static void av1_sequence_header(vlVaContext *context, struct vl_vlc *vlc)
    seq->seq_bits.use_128x128_superblock = av1_f(vlc, 1);
    seq->seq_bits.enable_filter_intra = av1_f(vlc, 1);
    seq->seq_bits.enable_intra_edge_filter = av1_f(vlc, 1);
-   if (!seq->seq_bits.reduced_still_picture_header) {
+   if (seq->seq_bits.reduced_still_picture_header) {
+      seq->seq_bits.force_screen_content_tools = AV1_SELECT_SCREEN_CONTENT_TOOLS;
+      seq->seq_bits.force_integer_mv = AV1_SELECT_INTEGER_MV;
+   } else {
       seq->seq_bits.enable_interintra_compound = av1_f(vlc, 1);
       seq->seq_bits.enable_masked_compound = av1_f(vlc, 1);
       seq->seq_bits.enable_warped_motion = av1_f(vlc, 1);
@@ -571,16 +574,14 @@ static void av1_sequence_header(vlVaContext *context, struct vl_vlc *vlc)
       } else
          seq->seq_bits.enable_ref_frame_mvs = 0;
 
-      seq->seq_bits.disable_screen_content_tools = av1_f(vlc, 1);
-      if (seq->seq_bits.disable_screen_content_tools)
+      if (av1_f(vlc, 1)) /* seq_choose_screen_content_tools */
          seq->seq_bits.force_screen_content_tools = AV1_SELECT_SCREEN_CONTENT_TOOLS;
       else
          seq->seq_bits.force_screen_content_tools = av1_f(vlc, 1);
 
       seq->seq_bits.force_integer_mv = AV1_SELECT_INTEGER_MV;
-      if (seq->seq_bits.force_screen_content_tools) {
-         seq->seq_bits.choose_integer_mv = av1_f(vlc, 1);
-         if (!seq->seq_bits.choose_integer_mv)
+      if (seq->seq_bits.force_screen_content_tools > 0) {
+         if (!av1_f(vlc, 1)) /* seq_choose_integer_mv */
             seq->seq_bits.force_integer_mv = av1_f(vlc, 1);
       }
       if (seq->seq_bits.enable_order_hint)

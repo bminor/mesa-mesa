@@ -929,15 +929,12 @@ static void radeon_vcn_enc_av1_get_spec_misc_param(struct radeon_encoder *enc,
          (pic->quantization.u_dc_delta_q != pic->quantization.v_dc_delta_q) ||
          (pic->quantization.u_ac_delta_q != pic->quantization.v_ac_delta_q);
 
-   if (enc->enc_pic.disable_screen_content_tools) {
-       enc->enc_pic.force_integer_mv  = 0;
-       enc->enc_pic.av1_spec_misc.palette_mode_enable = 0;
-   }
-
-   if (enc->enc_pic.force_integer_mv)
+   if (pic->allow_screen_content_tools && pic->force_integer_mv)
       enc->enc_pic.av1_spec_misc.mv_precision = RENCODE_AV1_MV_PRECISION_FORCE_INTEGER_MV;
-   else
+   else if (pic->allow_high_precision_mv)
       enc->enc_pic.av1_spec_misc.mv_precision = RENCODE_AV1_MV_PRECISION_ALLOW_HIGH_PRECISION;
+   else
+      enc->enc_pic.av1_spec_misc.mv_precision = RENCODE_AV1_MV_PRECISION_DISALLOW_HIGH_PRECISION;
 }
 
 static void radeon_vcn_enc_av1_get_rc_param(struct radeon_encoder *enc,
@@ -1054,8 +1051,6 @@ static void radeon_vcn_enc_av1_get_param(struct radeon_encoder *enc,
    enc_pic->pic_width_in_luma_samples = pic->seq.pic_width_in_luma_samples;
    enc_pic->pic_height_in_luma_samples = pic->seq.pic_height_in_luma_samples;
    enc_pic->enable_error_resilient_mode = pic->error_resilient_mode;
-   enc_pic->force_integer_mv = pic->force_integer_mv;
-   enc_pic->disable_screen_content_tools = !pic->allow_screen_content_tools;
    enc_pic->is_obu_frame = pic->enable_frame_obu;
    enc_pic->av1_enc_params.cur_order_hint = pic->order_hint;
 

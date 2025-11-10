@@ -10,6 +10,9 @@
 #include "pipe/p_video_state.h"
 #include "winsys/radeon_winsys.h"
 
+#define AV1_SELECT_SCREEN_CONTENT_TOOLS  2
+#define AV1_SELECT_INTEGER_MV            2
+
 struct radeon_bitstream {
    bool emulation_prevention;
    uint32_t shifter;

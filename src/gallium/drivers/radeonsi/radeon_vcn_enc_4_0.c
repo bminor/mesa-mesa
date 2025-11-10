@@ -181,7 +181,6 @@ unsigned int radeon_enc_write_sequence_header(struct radeon_encoder *enc, uint8_
    struct pipe_av1_enc_seq_param seq = enc->enc_pic.av1.desc->seq;
    seq.pic_width_in_luma_samples = enc->enc_pic.av1.coded_width;
    seq.pic_height_in_luma_samples = enc->enc_pic.av1.coded_height;
-   seq.seq_bits.disable_screen_content_tools = enc->enc_pic.disable_screen_content_tools;
 
    struct radeon_bitstream bs;
    radeon_bs_reset(&bs, out, NULL);
@@ -231,17 +230,11 @@ void radeon_enc_av1_frame_header_common(struct radeon_encoder *enc, struct radeo
    /*  disable_cdf_update  */
    radeon_bs_code_fixed_bits(bs, enc->enc_pic.av1_spec_misc.disable_cdf_update ? 1 : 0, 1);
 
-   bool allow_screen_content_tools = false;
-   if (av1->seq.seq_bits.reduced_still_picture_header || !enc->enc_pic.disable_screen_content_tools) {
-      /*  allow_screen_content_tools  */
-      allow_screen_content_tools = enc->enc_pic.av1_spec_misc.palette_mode_enable ||
-                                   enc->enc_pic.force_integer_mv;
-      radeon_bs_code_fixed_bits(bs, allow_screen_content_tools ? 1 : 0, 1);
-   }
+   if (av1->seq.seq_bits.force_screen_content_tools == AV1_SELECT_SCREEN_CONTENT_TOOLS)
+      radeon_bs_code_fixed_bits(bs, av1->allow_screen_content_tools, 1);
 
-   if (allow_screen_content_tools)
-      /*  force_integer_mv  */
-      radeon_bs_code_fixed_bits(bs, enc->enc_pic.force_integer_mv ? 1 : 0, 1);
+   if (av1->allow_screen_content_tools && av1->seq.seq_bits.force_integer_mv == AV1_SELECT_INTEGER_MV)
+      radeon_bs_code_fixed_bits(bs, av1->force_integer_mv, 1);
 
    if (av1->seq.seq_bits.frame_id_number_present_flag)
       /*  current_frame_id  */
@@ -285,8 +278,7 @@ void radeon_enc_av1_frame_header_common(struct radeon_encoder *enc, struct radeo
          /*  render_height_minus_1  */
          radeon_bs_code_fixed_bits(bs, av1->render_height_minus_1, 16);
       }
-      if (!enc->enc_pic.disable_screen_content_tools &&
-            (enc->enc_pic.av1_spec_misc.palette_mode_enable || enc->enc_pic.force_integer_mv))
+      if (av1->allow_screen_content_tools)
          /*  allow_intrabc  */
          radeon_bs_code_fixed_bits(bs, 0, 1);
    } else {
@@ -330,7 +322,7 @@ void radeon_enc_av1_frame_header_common(struct radeon_encoder *enc, struct radeo
          }
       }
 
-      if (enc->enc_pic.disable_screen_content_tools || !enc->enc_pic.force_integer_mv)
+      if (!av1->force_integer_mv)
          /*  allow_high_precision_mv  */
          radeon_enc_av1_bs_instruction_type(enc, bs, RENCODE_AV1_BITSTREAM_INSTRUCTION_ALLOW_HIGH_PRECISION_MV, 0);
 
