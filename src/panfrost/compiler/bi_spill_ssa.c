@@ -209,6 +209,14 @@ struct spill_ctx {
    uint32_t *spill_map;
    /* and the reverse */
    uint32_t *mem_map;
+   /* used to mark if a location has been stored to already. */
+   BITSET_WORD *spill_map_store;
+
+   /* Instruction that defines an SSA value. */
+   bi_instr **ssa_defs;
+
+   /* Block that defines an SSA value. */
+   bi_block **ssa_def_blocks;
 
    /* architecture */
    unsigned arch;
@@ -375,11 +383,32 @@ remat_to(bi_builder *b, bi_index dst, struct spill_ctx *ctx, unsigned node)
    }
 }
 
+static bi_cursor
+choose_spill_position(struct spill_ctx *ctx, unsigned node, bi_cursor fallback)
+{
+   bi_instr *producer = ctx->ssa_defs[node];
+   bi_block *block = ctx->ssa_def_blocks[node];
+
+   assert(producer);
+   assert(block);
+
+   if (ctx->block == block)
+      return fallback;
+
+   /* Don't insert spills in the middle of the PHI block. This breaks the
+    * assumption that phis are together at the start of each block. */
+   if (producer->op == BI_OPCODE_PHI) {
+      return bi_after_block_logical(block);
+   } else {
+      return bi_after_instr(producer);
+   }
+}
+
 static void
 insert_spill(bi_builder *b, struct spill_ctx *ctx, unsigned node)
 {
    assert(node < ctx->spill_max);
-   if (!ctx->remat[node]) {
+   if (!ctx->remat[node] && !BITSET_TEST(ctx->spill_map_store, node)) {
       bi_index idx = reconstruct_index(ctx, node);
       bi_index mem = bi_index_as_mem(idx, ctx);
       unsigned bits = 32;
@@ -391,6 +420,8 @@ insert_spill(bi_builder *b, struct spill_ctx *ctx, unsigned node)
        * instead of just remat.
        */
       b->shader->has_spill_pcopy_reserved = true;
+
+      BITSET_SET(ctx->spill_map_store, node);
    }
 }
 
@@ -538,9 +569,9 @@ insert_coupling_code(struct spill_ctx *ctx, bi_block *pred, bi_block *succ)
       }
 
       if (!spilled) {
-         /* Spill the phi source. TODO: avoid redundant spills here */
-         bi_builder b =
-            bi_init_builder(ctx->shader, bi_after_block_logical(pred));
+         bi_cursor c = choose_spill_position(ctx, I->src[s].value,
+                                             bi_after_block_logical(pred));
+         bi_builder b = bi_init_builder(ctx->shader, c);
 
          insert_spill(&b, ctx, I->src[s].value);
       }
@@ -584,7 +615,8 @@ insert_coupling_code(struct spill_ctx *ctx, bi_block *pred, bi_block *succ)
       if (spilled)
          continue;
 
-      bi_builder b = bi_init_builder(ctx->shader, bi_along_edge(pred, succ));
+      bi_cursor c = choose_spill_position(ctx, v, bi_along_edge(pred, succ));
+      bi_builder b = bi_init_builder(ctx->shader, c);
       insert_spill(&b, ctx, v);
    }
 
@@ -1153,7 +1185,8 @@ limit(struct spill_ctx *ctx, bi_instr *I, unsigned m)
           * another use
           */
          if (!BITSET_TEST(ctx->S, v) && candidates[i].dist < DIST_INFINITY) {
-            bi_builder b = bi_init_builder(ctx->shader, bi_before_instr(I));
+            bi_cursor c = choose_spill_position(ctx, v, bi_before_instr(I));
+            bi_builder b = bi_init_builder(ctx->shader, c);
             insert_spill(&b, ctx, v);
             BITSET_SET(ctx->S, v);
          }
@@ -1344,6 +1377,30 @@ min_algorithm(struct spill_ctx *ctx)
    util_dynarray_fini(&local_next_ip);
 }
 
+static void
+record_ssa_defs(bi_context *ctx, bi_instr **defs, bi_block **blocks)
+{
+   bi_foreach_block(ctx, b) {
+      bi_foreach_instr_in_block(b, I) {
+         if (I->nr_dests > 0 && bi_is_ssa(I->dest[0])) {
+            for (uint32_t vi = 0; vi < I->nr_dests; ++vi) {
+               const uint32_t v = I->dest[vi].value;
+
+               if (defs[v] != NULL || blocks[v] != NULL) {
+                  bi_print_instr(I, stderr);
+                  fprintf(stderr, "before\n");
+                  bi_print_instr(defs[v], stderr);
+               }
+               assert(defs[v] == NULL && "violating SSA");
+               assert(blocks[v] == NULL && "violating SSA");
+               defs[v] = I;
+               blocks[v] = b;
+            }
+         }
+      }
+   }
+}
+
 /*
  * spill to keep the number of registers in use
  * below `k`
@@ -1416,6 +1473,11 @@ bi_spill_ssa(bi_context *ctx, unsigned k, unsigned spill_base)
    BITSET_WORD *S = ralloc_array(memctx, BITSET_WORD, BITSET_WORDS(n));
    uint32_t *spill_map = ralloc_array(memctx, uint32_t, n);
    uint32_t *mem_map = ralloc_array(memctx, uint32_t, n);
+   BITSET_WORD *spill_map_store = BITSET_RZALLOC(memctx, n);
+
+   bi_instr **ssa_defs = rzalloc_array(memctx, bi_instr *, n);
+   bi_block **ssa_def_blocks = rzalloc_array(memctx, bi_block *, n);
+   record_ssa_defs(ctx, ssa_defs, ssa_def_blocks);
 
    /* initialize to FFFFFFFF */
    memset(spill_map, 0xff, sizeof(uint32_t) * n);
@@ -1441,7 +1503,10 @@ bi_spill_ssa(bi_context *ctx, unsigned k, unsigned spill_base)
          .spill_base = spill_base,
          .spill_map = spill_map,
          .spill_bytes = spill_count,
+         .spill_map_store = spill_map_store,
          .mem_map = mem_map,
+         .ssa_defs = ssa_defs,
+         .ssa_def_blocks = ssa_def_blocks,
          .arch = ctx->arch,
       };
 
@@ -1468,7 +1533,10 @@ bi_spill_ssa(bi_context *ctx, unsigned k, unsigned spill_base)
          .spill_base = spill_base,
          .spill_map = spill_map,
          .spill_bytes = spill_count,
+         .spill_map_store = spill_map_store,
          .mem_map = mem_map,
+         .ssa_defs = ssa_defs,
+         .ssa_def_blocks = ssa_def_blocks,
          .arch = ctx->arch,
       };
 
