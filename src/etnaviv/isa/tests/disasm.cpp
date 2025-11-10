@@ -366,6 +366,17 @@ INSTANTIATE_TEST_SUITE_P(texldgpcf, DisasmTest,
 // clang-format on
 
 // clang-format off
+INSTANTIATE_TEST_SUITE_P(texldthreaded, DisasmTest,
+   testing::Values(
+      // taken from "glmark2 -b texture:texture-filter=linear (GC8000)
+      disasm_state{ {0x07831018, 0x15001f20, 0x00000020, 0x00002000}, "texld.t0          t3, tex0.xyzw, th1.xyyy, void, void\n"},
+      disasm_state{ {0x07831018, 0x3f801f20, 0x00000020, 0x01000000}, "texld.t1          t3, tex0.xyzw, th1.zwww, void, void\n"},
+      disasm_state{ {0x07811003, 0x39003805, 0x01c80140, 0x00000000}, "mul.rtz           t1, t3.xyzw, t2.xyzw, void\n"}
+   )
+);
+// clang-format on
+
+// clang-format off
 INSTANTIATE_TEST_SUITE_P(LoadStoreVariants, DisasmTest,
    testing::Values(
       // seen on GC7000

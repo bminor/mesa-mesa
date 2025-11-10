@@ -11,7 +11,7 @@ SPDX-License-Identifier: MIT
 </template>
 
 <template name="INSTR_TEX">
-	{NAME}
+	{NAME}{THREAD}
 </template>
 
 <template name="INSTR_CF">
@@ -700,8 +700,13 @@ SPDX-License-Identifier: MIT
 	<field name="RMODE" low="32" high="34" type="#reg_addressing_mode"/>
 	<field name="TEX_SWIZ" low="35" high="42" type="#src-swizzle"/>
 
-	<pattern pos="109">0</pattern>
-	<pattern pos="120">0</pattern>
+	<field name="LOW_HALF" pos="109" type="bool"/>
+	<field name="HIGH_HALF" pos="120" type="bool"/>
+
+	<derived name="THREAD" type="#thread">
+		<expr>{HIGH_HALF} &lt;&lt; 1 | {LOW_HALF}</expr>
+	</derived>
+
 	<pattern pos="127">0</pattern>
 </bitset>
 
