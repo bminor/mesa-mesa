@@ -11,11 +11,17 @@ set -o xtrace
 
 CROSS_FILE=/cross_file-"$CROSS".txt
 
-# Delete unused bin and includes from artifacts to save space.
-rm -rf install/bin install/include
+if [ -d install/bin ]; then
+  # Keep pps-producer binary for tests that need it.
+  # Remove all other binaries to save space.
+  find install/bin -type f -not -name 'pps-producer' -delete
+fi
+
+# Delete unused includes from artifacts to save space.
+rm -rf install/include
 rm -f install/lib/*.a
 
-# Strip the drivers in the artifacts to cut 80% of the artifacts size.
+# Strip the drivers and binaries in the artifacts to cut 80% of the artifacts size.
 if [ -n "$CROSS" ]; then
     STRIP=$(sed -n -E "s/strip\s*=\s*\[?'(.*)'\]?/\1/p" "$CROSS_FILE")
     if [ -z "$STRIP" ]; then
@@ -26,7 +32,7 @@ else
     STRIP="strip"
 fi
 if [ -z "$ARTIFACTS_DEBUG_SYMBOLS" ]; then
-    find install -name \*.so -exec $STRIP --strip-debug {} \;
+    find install -type f -executable -exec $STRIP --strip-debug {} \;
 fi
 
 git_sha=$(git rev-parse --short=10 HEAD)
