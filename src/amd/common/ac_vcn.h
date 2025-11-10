@@ -42,8 +42,6 @@
 #define RADEON_VCN_RESOLVE_INPUT_PARAM_LAYOUT_TYPE_QPMAP_INT16        2
 
 struct rvcn_sq_var {
-   unsigned int *signature_ib_checksum;
-   unsigned int *signature_ib_total_size_in_dw;
    unsigned int *engine_ib_size_of_packages;
 };
 

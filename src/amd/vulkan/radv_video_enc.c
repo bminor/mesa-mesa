@@ -1698,7 +1698,7 @@ radv_enc_qp_map_input(struct radv_cmd_buffer *cmd_buffer, const struct VkVideoEn
       radv_buffer_get_va(cmd_buffer->video.vid->qp_map.mem->bo) + cmd_buffer->video.vid->qp_map.offset;
    radv_cs_add_buffer(device->ws, cmd_buffer->cs->b, cmd_buffer->video.vid->qp_map.mem->bo);
 
-   radv_vcn_sq_header(cs, &cmd_buffer->video.sq, RADEON_VCN_ENGINE_TYPE_COMMON, false);
+   radv_vcn_sq_header(cs, &cmd_buffer->video.sq, RADEON_VCN_ENGINE_TYPE_COMMON);
 
    struct rvcn_cmn_engine_ib_package *ib_header = (struct rvcn_cmn_engine_ib_package *)&(cs->b->buf[cs->b->cdw]);
    ib_header->package_size =
@@ -2830,10 +2830,8 @@ radv_vcn_encode_video(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInf
    if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_5)
       radv_enc_qp_map_input(cmd_buffer, enc_info);
 
-   if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_2) {
-      radv_vcn_sq_header(cs, &cmd_buffer->video.sq, RADEON_VCN_ENGINE_TYPE_ENCODE,
-                         pdev->enc_hw_ver < RADV_VIDEO_ENC_HW_4);
-   }
+   if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_2)
+      radv_vcn_sq_header(cs, &cmd_buffer->video.sq, RADEON_VCN_ENGINE_TYPE_ENCODE);
 
    const struct VkVideoInlineQueryInfoKHR *inline_queries = NULL;
    if (vid->vk.flags & VK_VIDEO_SESSION_CREATE_INLINE_QUERIES_BIT_KHR) {

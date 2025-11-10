@@ -2896,8 +2896,6 @@ struct pipe_video_codec *radeon_create_decoder(struct pipe_context *context,
       ring = AMD_IP_VCN_UNIFIED;
    }
 
-   dec->sq.signature_ib_total_size_in_dw = NULL;
-   dec->sq.signature_ib_checksum = NULL;
    dec->sq.engine_ib_size_of_packages = NULL;
 
    if (!ws->cs_create(&dec->cs,

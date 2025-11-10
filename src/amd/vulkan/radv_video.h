@@ -92,7 +92,7 @@ void radv_init_physical_device_decoder(struct radv_physical_device *pdev);
 void radv_video_get_profile_alignments(struct radv_physical_device *pdev, const VkVideoProfileListInfoKHR *profile_list,
                                        uint32_t *width_align_out, uint32_t *height_align_out);
 
-void radv_vcn_sq_header(struct radv_cmd_stream *cs, struct rvcn_sq_var *sq, unsigned type, bool skip_signature);
+void radv_vcn_sq_header(struct radv_cmd_stream *cs, struct rvcn_sq_var *sq, unsigned type);
 void radv_vcn_sq_tail(struct radv_cmd_stream *cs, struct rvcn_sq_var *sq);
 void radv_vcn_write_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t va, unsigned value);
 

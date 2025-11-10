@@ -86,24 +86,8 @@ radv_vid_buffer_upload_alloc(struct radv_cmd_buffer *cmd_buffer, unsigned size, 
 
 /* vcn unified queue (sq) ib header */
 void
-radv_vcn_sq_header(struct radv_cmd_stream *cs, struct rvcn_sq_var *sq, unsigned type, bool skip_signature)
+radv_vcn_sq_header(struct radv_cmd_stream *cs, struct rvcn_sq_var *sq, unsigned type)
 {
-   if (!skip_signature) {
-      /* vcn ib signature */
-      radeon_begin(cs);
-      radeon_emit(RADEON_VCN_SIGNATURE_SIZE);
-      radeon_emit(RADEON_VCN_SIGNATURE);
-      radeon_emit(0);
-      radeon_emit(0);
-      radeon_end();
-
-      sq->signature_ib_checksum = &cs->b->buf[cs->b->cdw - 2];
-      sq->signature_ib_total_size_in_dw = &cs->b->buf[cs->b->cdw - 1];
-   } else {
-      sq->signature_ib_checksum = NULL;
-      sq->signature_ib_total_size_in_dw = NULL;
-   }
-
    /* vcn ib engine info */
    radeon_begin(cs);
    radeon_emit(RADEON_VCN_ENGINE_INFO_SIZE);
@@ -120,26 +104,14 @@ radv_vcn_sq_tail(struct radv_cmd_stream *cs, struct rvcn_sq_var *sq)
 {
    uint32_t *end;
    uint32_t size_in_dw;
-   uint32_t checksum = 0;
 
    end = &cs->b->buf[cs->b->cdw];
 
-   if (sq->signature_ib_checksum == NULL && sq->signature_ib_total_size_in_dw == NULL) {
-      if (sq->engine_ib_size_of_packages == NULL)
-         return;
+   if (sq->engine_ib_size_of_packages == NULL)
+      return;
 
-      size_in_dw = end - sq->engine_ib_size_of_packages + 3; /* package_size, package_type, engine_type */
-      *sq->engine_ib_size_of_packages = size_in_dw * sizeof(uint32_t);
-   } else {
-      size_in_dw = end - sq->signature_ib_total_size_in_dw - 1;
-      *sq->signature_ib_total_size_in_dw = size_in_dw;
-      *sq->engine_ib_size_of_packages = size_in_dw * sizeof(uint32_t);
-
-      for (int i = 0; i < size_in_dw; i++)
-         checksum += *(sq->signature_ib_checksum + 2 + i);
-
-      *sq->signature_ib_checksum = checksum;
-   }
+   size_in_dw = end - sq->engine_ib_size_of_packages + 3; /* package_size, package_type, engine_type */
+   *sq->engine_ib_size_of_packages = size_in_dw * sizeof(uint32_t);
 }
 
 void
@@ -170,7 +142,7 @@ radv_vcn_write_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t va, unsigned 
    }
 
    radeon_check_space(device->ws, cs->b, 256);
-   radv_vcn_sq_header(cs, &sq, RADEON_VCN_ENGINE_TYPE_COMMON, separate_queue);
+   radv_vcn_sq_header(cs, &sq, RADEON_VCN_ENGINE_TYPE_COMMON);
    struct rvcn_cmn_engine_ib_package *ib_header = (struct rvcn_cmn_engine_ib_package *)&(cs->b->buf[cs->b->cdw]);
    ib_header->package_size = sizeof(struct rvcn_cmn_engine_ib_package) + sizeof(struct rvcn_cmn_engine_op_writememory);
    cs->b->cdw++;
@@ -194,7 +166,7 @@ radv_vcn_sq_start(struct radv_cmd_buffer *cmd_buffer)
    struct radv_cmd_stream *cs = cmd_buffer->cs;
 
    radeon_check_space(device->ws, cs->b, 512);
-   radv_vcn_sq_header(cs, &cmd_buffer->video.sq, RADEON_VCN_ENGINE_TYPE_DECODE, false);
+   radv_vcn_sq_header(cs, &cmd_buffer->video.sq, RADEON_VCN_ENGINE_TYPE_DECODE);
    rvcn_decode_ib_package_t *ib_header = (rvcn_decode_ib_package_t *)&(cs->b->buf[cs->b->cdw]);
    ib_header->package_size = sizeof(struct rvcn_decode_buffer_s) + sizeof(struct rvcn_decode_ib_package_s);
    cs->b->cdw++;
