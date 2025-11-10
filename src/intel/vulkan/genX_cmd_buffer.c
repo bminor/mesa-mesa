@@ -3663,6 +3663,17 @@ genX(CmdExecuteCommands)(
 
       container->state.gfx.viewport_set |= secondary->state.gfx.viewport_set;
 
+      /* Copy the mode of the secondary if set, at the next draw if things
+       * don't match we will reprogram.
+       */
+      if (secondary->state.gfx.indirect_data_stride_aligned !=
+          U_TRISTATE_UNSET) {
+         container->state.gfx.indirect_data_stride_aligned =
+            secondary->state.gfx.indirect_data_stride_aligned;
+         container->state.gfx.indirect_data_stride =
+            secondary->state.gfx.indirect_data_stride;
+      }
+
       db_mode = secondary->state.current_db_mode;
    }
 
