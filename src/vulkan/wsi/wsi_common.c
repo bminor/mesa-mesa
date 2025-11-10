@@ -281,6 +281,12 @@ wsi_device_init(struct wsi_device *wsi,
          wsi->force_swapchain_to_currentExtent =
             driQueryOptionb(dri_options, "vk_wsi_force_swapchain_to_current_extent");
       }
+
+      if (driCheckOption(dri_options, "vk_wsi_disable_unordered_submits",  DRI_BOOL)) {
+         wsi->disable_unordered_submits =
+            driQueryOptionb(dri_options, "vk_wsi_disable_unordered_submits");
+      }
+
    }
 
    /* can_present_on_device is a function pointer used to determine if images
@@ -1366,7 +1372,8 @@ wsi_queue_submit2_unordered(const struct wsi_device *wsi,
                             uint32_t fence_count,
                             const VkFence *fences)
 {
-   if (info->commandBufferInfoCount == 0 &&
+   if (!wsi->disable_unordered_submits &&
+       info->commandBufferInfoCount == 0 &&
        queue->base.device->copy_sync_payloads != NULL) {
       /* This helper is unordered so if there are no command buffers, we can
        * just signal the signal semaphores and fences with the wait semaphores
