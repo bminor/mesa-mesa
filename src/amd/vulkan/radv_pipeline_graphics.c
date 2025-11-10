@@ -2841,6 +2841,7 @@ radv_graphics_shaders_compile(struct radv_device *device, struct vk_pipeline_cac
       }
 
       NIR_PASS(_, stages[MESA_SHADER_GEOMETRY].nir, nir_lower_gs_intrinsics, nir_gs_flags);
+      NIR_PASS(_, stages[MESA_SHADER_GEOMETRY].nir, nir_lower_vars_to_ssa);
    }
 
    /* Remove all varyings when the fragment shader is a noop. */

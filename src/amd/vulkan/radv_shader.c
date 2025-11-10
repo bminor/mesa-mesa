@@ -171,7 +171,6 @@ radv_optimize_nir(struct nir_shader *shader, bool optimize_conservatively)
       NIR_LOOP_PASS(progress, skip, shader, nir_split_array_vars, nir_var_function_temp);
       NIR_LOOP_PASS(progress, skip, shader, nir_shrink_vec_array_vars, nir_var_function_temp | nir_var_mem_shared);
       NIR_LOOP_PASS(progress, skip, shader, nir_opt_copy_prop_vars);
-      NIR_LOOP_PASS(_, skip, shader, nir_lower_vars_to_ssa);
 
       NIR_LOOP_PASS(_, skip, shader, nir_lower_alu_width, vectorize_vec2_16bit, NULL);
       NIR_LOOP_PASS(_, skip, shader, nir_lower_phis_to_scalar, ac_nir_lower_phis_to_scalar_cb, NULL);
@@ -666,8 +665,6 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
 
    NIR_PASS(_, nir, nir_lower_image, &image_options);
 
-   NIR_PASS(_, nir, nir_lower_vars_to_ssa);
-
    if (nir->info.stage == MESA_SHADER_VERTEX || nir->info.stage == MESA_SHADER_GEOMETRY ||
        nir->info.stage == MESA_SHADER_FRAGMENT) {
       NIR_PASS(_, nir, nir_lower_io_vars_to_temporaries, nir_shader_get_entrypoint(nir), true, true);
@@ -719,6 +716,7 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
       * so that we don't introduce any new copy_deref instructions later.
       */
       NIR_PASS(_, nir, nir_opt_find_array_copies);
+      NIR_PASS(_, nir, nir_lower_vars_to_ssa);
 
       radv_optimize_nir(nir, false);
 
@@ -784,7 +782,11 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
     * bloat the instruction count of the loop and cause it to be
     * considered too large for unrolling.
     */
-   if (ac_nir_lower_indirect_derefs(nir, pdev->info.gfx_level) && !stage->key.optimisations_disabled &&
+   bool indirect_derefs_lowered = false;
+   NIR_PASS(indirect_derefs_lowered, nir, ac_nir_lower_indirect_derefs, pdev->info.gfx_level);
+   NIR_PASS(_, nir, nir_lower_vars_to_ssa);
+
+   if (indirect_derefs_lowered && !stage->key.optimisations_disabled &&
        nir->info.stage != MESA_SHADER_COMPUTE) {
       /* Optimize the lowered code before the linking optimizations. */
       radv_optimize_nir(nir, false);
