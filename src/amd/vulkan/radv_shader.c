@@ -164,6 +164,8 @@ radv_optimize_nir(struct nir_shader *shader, bool optimize_conservatively)
 {
    bool progress;
 
+   NIR_PASS(_, shader, nir_lower_alu_width, vectorize_vec2_16bit, NULL);
+
    struct set *skip = _mesa_pointer_set_create(NULL);
    do {
       progress = false;
@@ -172,9 +174,7 @@ radv_optimize_nir(struct nir_shader *shader, bool optimize_conservatively)
       NIR_LOOP_PASS(progress, skip, shader, nir_shrink_vec_array_vars, nir_var_function_temp | nir_var_mem_shared);
       NIR_LOOP_PASS(progress, skip, shader, nir_opt_copy_prop_vars);
 
-      NIR_LOOP_PASS(_, skip, shader, nir_lower_alu_width, vectorize_vec2_16bit, NULL);
       NIR_LOOP_PASS(_, skip, shader, nir_lower_phis_to_scalar, ac_nir_lower_phis_to_scalar_cb, NULL);
-
       NIR_LOOP_PASS(progress, skip, shader, nir_copy_prop);
       NIR_LOOP_PASS(progress, skip, shader, nir_opt_remove_phis);
       NIR_LOOP_PASS(progress, skip, shader, nir_opt_dce);
