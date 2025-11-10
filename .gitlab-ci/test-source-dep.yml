@@ -60,6 +60,7 @@
         - subprojects/**/*
         - .gitattributes
         - src/*
+        - src/c11/**/*
         - src/compiler/**/*
         - src/drm-shim/**/*
         - src/gtest/**/*
