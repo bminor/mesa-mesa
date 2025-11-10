@@ -124,7 +124,7 @@
         "description": "r600: fix rv770 read scratch compatibility",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9c48a139b08f223f4ac6e218d19b356bf4a41463",
         "notes": null
