@@ -70,6 +70,7 @@
 #endif
 #include "util/u_vector.h"
 #include "util/u_math.h"
+#include "util/u_tristate.h"
 #include "util/vma.h"
 #include "util/xmlconfig.h"
 #include "vk_acceleration_structure.h"
@@ -4450,7 +4451,7 @@ struct anv_cmd_graphics_state {
    uint32_t index_size;
 
    uint32_t indirect_data_stride;
-   bool indirect_data_stride_aligned;
+   enum u_tristate indirect_data_stride_aligned;
 
    struct vk_vertex_input_state vertex_input;
    struct vk_sample_locations_state sample_locations;
