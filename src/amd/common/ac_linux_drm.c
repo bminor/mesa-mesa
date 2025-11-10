@@ -228,7 +228,7 @@ int ac_drm_bo_wait_for_idle(ac_drm_device *dev, ac_drm_bo bo, uint64_t timeout_n
 int ac_drm_bo_va_op(ac_drm_device *dev, uint32_t bo_handle, uint64_t offset, uint64_t size,
                     uint64_t addr, uint64_t flags, uint32_t ops)
 {
-   size = ALIGN(size, getpagesize());
+   size = align64(size, getpagesize());
 
    return ac_drm_bo_va_op_raw(
       dev, bo_handle, offset, size, addr,
