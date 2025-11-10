@@ -744,7 +744,7 @@
         "description": "ci: track src/android_stub/ changes",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "932f51d593418c95bf8f56ac9335d5f6c52c1285",
         "notes": null
