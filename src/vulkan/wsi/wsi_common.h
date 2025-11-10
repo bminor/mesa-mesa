@@ -100,6 +100,8 @@ struct wsi_device {
 
    bool force_swapchain_to_currentExtent;
 
+   bool disable_unordered_submits;
+
    struct {
       /* Override the minimum number of images on the swapchain.
        * 0 = no override */
