@@ -1584,7 +1584,7 @@
         "description": "ci: track src/c11/ changes",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b2ddec4e98fea9b824e7258468e5b5da9ba848b0",
         "notes": null
