@@ -795,14 +795,6 @@ create_gs_rast_shader(const nir_shader *gs, const struct lower_gs_state *state)
       assert(rs.selected.outputs[slot] != NULL);
       nir_def *value = nir_load_var(b, rs.selected.outputs[slot]);
 
-      /* We set NIR_COMPACT_ARRAYS so clip/cull distance needs to come all in
-       * DIST0. Undo the offset if we need to.
-       */
-      assert(slot != VARYING_SLOT_CULL_DIST1);
-      unsigned offset = 0;
-      if (slot == VARYING_SLOT_CLIP_DIST1)
-         offset = 1;
-
       /* We must only rasterize vertices from the rasterization stream. Since we
        * shade vertices across all streams, we do this by throwing away vertices
        * from non-rasterization streams (by setting a component to NaN).
@@ -816,8 +808,8 @@ create_gs_rast_shader(const nir_shader *gs, const struct lower_gs_state *state)
             nir_bcsel(b, nir_ieq(b, rs.stream, rast_stream), value, killed);
       }
 
-      nir_store_output(b, value, nir_imm_int(b, offset),
-                       .io_semantics.location = slot - offset);
+      nir_store_output(b, value, nir_imm_int(b, 0),
+                       .io_semantics.location = slot);
    }
 
    /* The geometry shader might not write point size - ensure it does, if we're
