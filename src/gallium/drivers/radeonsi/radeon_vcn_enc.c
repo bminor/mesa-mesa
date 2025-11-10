@@ -609,17 +609,43 @@ static void radeon_vcn_enc_hevc_get_dbk_param(struct radeon_encoder *enc,
 {
    struct si_screen *sscreen = (struct si_screen *)enc->screen;
 
-   enc->enc_pic.hevc_deblock.loop_filter_across_slices_enabled =
-      pic->pic.pps_loop_filter_across_slices_enabled_flag;
-   enc->enc_pic.hevc_deblock.deblocking_filter_disabled =
-      pic->slice.slice_deblocking_filter_disabled_flag;
-   enc->enc_pic.hevc_deblock.beta_offset_div2 = pic->slice.slice_beta_offset_div2;
-   enc->enc_pic.hevc_deblock.tc_offset_div2 = pic->slice.slice_tc_offset_div2;
-   enc->enc_pic.hevc_deblock.cb_qp_offset = pic->slice.slice_cb_qp_offset;
-   enc->enc_pic.hevc_deblock.cr_qp_offset = pic->slice.slice_cr_qp_offset;
+   enc->enc_pic.hevc_deblock.deblocking_filter_disabled = 0;
+   enc->enc_pic.hevc_deblock.beta_offset_div2 = 0;
+   enc->enc_pic.hevc_deblock.tc_offset_div2 = 0;
    enc->enc_pic.hevc_deblock.disable_sao =
       sscreen->info.vcn_ip_version < VCN_2_0_0 ||
       !pic->seq.sample_adaptive_offset_enabled_flag;
+
+   if (pic->pic.deblocking_filter_override_enabled_flag &&
+       pic->slice.deblocking_filter_override_flag) {
+      enc->enc_pic.hevc_deblock.deblocking_filter_disabled =
+         pic->slice.slice_deblocking_filter_disabled_flag;
+      enc->enc_pic.hevc_deblock.beta_offset_div2 = pic->slice.slice_beta_offset_div2;
+      enc->enc_pic.hevc_deblock.tc_offset_div2 = pic->slice.slice_tc_offset_div2;
+   } else if (pic->pic.deblocking_filter_control_present_flag) {
+      enc->enc_pic.hevc_deblock.deblocking_filter_disabled =
+         pic->pic.pps_deblocking_filter_disabled_flag;
+      enc->enc_pic.hevc_deblock.beta_offset_div2 = pic->slice.slice_beta_offset_div2;
+      enc->enc_pic.hevc_deblock.tc_offset_div2 = pic->slice.slice_tc_offset_div2;
+   }
+
+   if (pic->pic.pps_slice_chroma_qp_offsets_present_flag) {
+      enc->enc_pic.hevc_deblock.cb_qp_offset = pic->slice.slice_cb_qp_offset;
+      enc->enc_pic.hevc_deblock.cr_qp_offset = pic->slice.slice_cr_qp_offset;
+   } else {
+      enc->enc_pic.hevc_deblock.cb_qp_offset = pic->pic.pps_cb_qp_offset;
+      enc->enc_pic.hevc_deblock.cr_qp_offset = pic->pic.pps_cr_qp_offset;
+   }
+
+   if (pic->pic.pps_loop_filter_across_slices_enabled_flag &&
+       (!enc->enc_pic.hevc_deblock.disable_sao ||
+        !enc->enc_pic.hevc_deblock.deblocking_filter_disabled)) {
+      enc->enc_pic.hevc_deblock.loop_filter_across_slices_enabled =
+         pic->slice.slice_loop_filter_across_slices_enabled_flag;
+   } else {
+      enc->enc_pic.hevc_deblock.loop_filter_across_slices_enabled =
+         pic->pic.pps_loop_filter_across_slices_enabled_flag;
+   }
 }
 
 static bool cu_qp_delta_supported(struct si_screen *sscreen)

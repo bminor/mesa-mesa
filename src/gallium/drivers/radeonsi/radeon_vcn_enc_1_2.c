@@ -225,8 +225,6 @@ unsigned int radeon_enc_write_pps_hevc(struct radeon_encoder *enc, uint8_t *out)
    pps.constrained_intra_pred_flag = enc->enc_pic.hevc_spec_misc.constrained_intra_pred_flag;
    pps.transform_skip_enabled_flag = !enc->enc_pic.hevc_spec_misc.transform_skip_disabled;
    pps.cu_qp_delta_enabled_flag = enc->enc_pic.hevc_spec_misc.cu_qp_delta_enabled_flag;
-   pps.pps_beta_offset_div2 = enc->enc_pic.hevc_deblock.beta_offset_div2;
-   pps.pps_tc_offset_div2 = enc->enc_pic.hevc_deblock.tc_offset_div2;
 
    struct radeon_bitstream bs;
    radeon_bs_reset(&bs, out, NULL);
@@ -603,7 +601,7 @@ static void radeon_enc_slice_header_hevc(struct radeon_encoder *enc)
       }
    }
 
-   if ((enc->enc_pic.hevc_deblock.loop_filter_across_slices_enabled) &&
+   if (pps->pps_loop_filter_across_slices_enabled_flag &&
        (!enc->enc_pic.hevc_deblock.deblocking_filter_disabled ||
         !enc->enc_pic.hevc_deblock.disable_sao)) {
        if (!enc->enc_pic.hevc_deblock.disable_sao) {
