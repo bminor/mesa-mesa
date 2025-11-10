@@ -793,6 +793,10 @@ rename_variables(struct lower_variables_state *state)
 static bool
 nir_lower_vars_to_ssa_impl(nir_function_impl *impl)
 {
+   /* Nothing to do... */
+   if (exec_list_is_empty(&impl->locals))
+      return nir_no_progress(impl);
+
    struct lower_variables_state state;
 
    state.shader = impl->function->shader;
