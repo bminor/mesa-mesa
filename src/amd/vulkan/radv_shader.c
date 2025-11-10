@@ -170,15 +170,6 @@ radv_optimize_nir(struct nir_shader *shader, bool optimize_conservatively)
 
       NIR_LOOP_PASS(progress, skip, shader, nir_split_array_vars, nir_var_function_temp);
       NIR_LOOP_PASS(progress, skip, shader, nir_shrink_vec_array_vars, nir_var_function_temp | nir_var_mem_shared);
-
-      if (!shader->info.var_copies_lowered) {
-         /* Only run this pass if nir_lower_var_copies was not called
-          * yet. That would lower away any copy_deref instructions and we
-          * don't want to introduce any more.
-          */
-         NIR_LOOP_PASS(progress, skip, shader, nir_opt_find_array_copies);
-      }
-
       NIR_LOOP_PASS(progress, skip, shader, nir_opt_copy_prop_vars);
       NIR_LOOP_PASS(_, skip, shader, nir_lower_vars_to_ssa);
 
@@ -724,6 +715,11 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
    NIR_PASS(_, nir, nir_opt_access, &opt_access_options);
 
    if (!stage->key.optimisations_disabled) {
+      /* Only run this pass once before nir_lower_var_copies is called,
+      * so that we don't introduce any new copy_deref instructions later.
+      */
+      NIR_PASS(_, nir, nir_opt_find_array_copies);
+
       radv_optimize_nir(nir, false);
 
       NIR_PASS(_, nir, nir_opt_dead_write_vars);
