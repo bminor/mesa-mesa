@@ -135,7 +135,7 @@ get_bvh_layout(VkGeometryTypeKHR geometry_type,
    offset += (internal_count + leaf_count) * sizeof(uint32_t);
 
    /* The BVH and hence bvh_offset needs 64 byte alignment for RT nodes. */
-   offset = ALIGN(offset, 64);
+   offset = align64(offset, 64);
    layout->bvh_offset = offset;
 
    offset += internal_count * sizeof(struct tu_internal_node) +
