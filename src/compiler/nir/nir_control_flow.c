@@ -968,7 +968,7 @@ nir_sort_unstructured_blocks(nir_function_impl *impl)
 
    ralloc_free(blocks);
 
-   /* Dominance is toast but we indexed blocks as part of this pass. */
-   impl->valid_metadata &= nir_metadata_dominance;
+   /* Most metadata is toast but we indexed blocks as part of this pass. */
+   impl->valid_metadata &= nir_metadata_live_defs;
    impl->valid_metadata |= nir_metadata_block_index;
 }
