@@ -1247,9 +1247,13 @@ radv_pipeline_report_pso_history(const struct radv_device *device, struct radv_p
    case RADV_PIPELINE_RAY_TRACING: {
       struct radv_ray_tracing_pipeline *rt_pipeline = radv_pipeline_to_ray_tracing(pipeline);
 
-      radv_print_pso_history(pipeline, rt_pipeline->prolog, output);
+      if (rt_pipeline->prolog)
+         radv_print_pso_history(pipeline, rt_pipeline->prolog, output);
 
-      for (uint32_t i = 0; i < rt_pipeline->stage_count; i++) {
+      if (pipeline->shaders[MESA_SHADER_INTERSECTION])
+         radv_print_pso_history(pipeline, pipeline->shaders[MESA_SHADER_INTERSECTION], output);
+
+      for (uint32_t i = 0; i < rt_pipeline->non_imported_stage_count; i++) {
          const struct radv_shader *shader = rt_pipeline->stages[i].shader;
 
          if (shader)
