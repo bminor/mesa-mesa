@@ -969,6 +969,6 @@ nir_sort_unstructured_blocks(nir_function_impl *impl)
    ralloc_free(blocks);
 
    /* Most metadata is toast but we indexed blocks as part of this pass. */
-   impl->valid_metadata &= nir_metadata_live_defs;
+   nir_progress(true, impl, nir_metadata_live_defs);
    impl->valid_metadata |= nir_metadata_block_index;
 }
