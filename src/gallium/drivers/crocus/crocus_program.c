@@ -1189,7 +1189,7 @@ crocus_compile_vs(struct crocus_context *ice,
    }
 
    if (key->clamp_pointsize)
-      nir_lower_point_size(nir, 1.0, 255.0);
+      nir_lower_point_size(nir, 1.0, 255.0, nir_type_invalid);
 
    prog_data->use_alt_mode = nir->info.use_legacy_math_rules;
 
@@ -1548,7 +1548,7 @@ crocus_compile_tes(struct crocus_context *ice,
    }
 
    if (key->clamp_pointsize)
-      nir_lower_point_size(nir, 1.0, 255.0);
+      nir_lower_point_size(nir, 1.0, 255.0, nir_type_invalid);
 
    crocus_setup_uniforms(devinfo, mem_ctx, nir, prog_data, &system_values,
                          &num_system_values, &num_cbufs);
@@ -1691,7 +1691,7 @@ crocus_compile_gs(struct crocus_context *ice,
    }
 
    if (key->clamp_pointsize)
-      nir_lower_point_size(nir, 1.0, 255.0);
+      nir_lower_point_size(nir, 1.0, 255.0, nir_type_invalid);
 
    crocus_setup_uniforms(devinfo, mem_ctx, nir, prog_data, &system_values,
                          &num_system_values, &num_cbufs);

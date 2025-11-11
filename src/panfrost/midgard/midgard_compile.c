@@ -396,7 +396,7 @@ midgard_postprocess_nir(nir_shader *nir, UNUSED unsigned gpu_id)
 
    if (nir->info.stage == MESA_SHADER_VERTEX) {
       NIR_PASS(_, nir, nir_lower_viewport_transform);
-      NIR_PASS(_, nir, nir_lower_point_size, 1.0, 0.0);
+      NIR_PASS(_, nir, nir_lower_point_size, 1.0, 0.0, nir_type_invalid);
 
       /* nir_lower[_explicit]_io is lazy and emits mul+add chains even
        * for offsets it could figure out are constant.  Do some

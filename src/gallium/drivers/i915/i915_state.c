@@ -673,7 +673,7 @@ i915_create_vs_state(struct pipe_context *pipe,
    if (templ->type == PIPE_SHADER_IR_NIR) {
       nir_shader *s = templ->ir.nir;
 
-      NIR_PASS(_, s, nir_lower_point_size, 1.0, 255.0);
+      NIR_PASS(_, s, nir_lower_point_size, 1.0, 255.0, nir_type_invalid);
 
       /* The gallivm draw path doesn't support non-native-integers NIR shaders,
        * st/mesa does native-integers for the screen as a whole rather than

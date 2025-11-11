@@ -1046,7 +1046,7 @@ hk_lower_hw_vs(nir_shader *nir, struct hk_shader *shader, bool kill_psiz)
     *
     * Must be synced with pointSizeRange.
     */
-   NIR_PASS(_, nir, nir_lower_point_size, 1.0f, 511.95f);
+   NIR_PASS(_, nir, nir_lower_point_size, 1.0f, 511.95f, nir_type_invalid);
 
    if (kill_psiz) {
       NIR_PASS(_, nir, nir_shader_intrinsics_pass, kill_psiz_write,

@@ -6060,7 +6060,8 @@ typedef struct nir_tex_src_type_constraint {
 bool nir_legalize_16bit_sampler_srcs(nir_shader *nir,
                                      nir_tex_src_type_constraints constraints);
 
-bool nir_lower_point_size(nir_shader *shader, float min, float max);
+bool nir_lower_point_size(nir_shader *shader, float min, float max,
+                          nir_alu_type type);
 
 bool nir_lower_default_point_size(nir_shader *nir);
 

@@ -1035,7 +1035,7 @@ v3d_nir_lower_vs_early(struct v3d_compile *c)
 
         /* This must go before nir_lower_io */
         if (c->vs_key->per_vertex_point_size)
-                NIR_PASS(_, c->s, nir_lower_point_size, 1.0f, 0.0f);
+                NIR_PASS(_, c->s, nir_lower_point_size, 1.0f, 0.0f, nir_type_invalid);
 
         NIR_PASS(_, c->s, nir_lower_io, nir_var_shader_in | nir_var_shader_out,
                  type_size_vec4,
@@ -1077,7 +1077,7 @@ v3d_nir_lower_gs_early(struct v3d_compile *c)
 
         /* This must go before nir_lower_io */
         if (c->gs_key->per_vertex_point_size)
-                NIR_PASS(_, c->s, nir_lower_point_size, 1.0f, 0.0f);
+                NIR_PASS(_, c->s, nir_lower_point_size, 1.0f, 0.0f, nir_type_invalid);
 
         NIR_PASS(_, c->s, nir_lower_io, nir_var_shader_in | nir_var_shader_out,
                  type_size_vec4,
