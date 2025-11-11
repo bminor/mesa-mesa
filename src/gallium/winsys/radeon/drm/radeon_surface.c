@@ -42,7 +42,6 @@
 #define CIK_TILE_MODE_DEPTH_STENCIL_2D_TILESPLIT_512      3
 #define CIK_TILE_MODE_DEPTH_STENCIL_2D_TILESPLIT_ROW_SIZE 4
 
-#define ALIGN(value, alignment) (((value) + alignment - 1) & ~(alignment - 1))
 
 /* keep this private */
 enum radeon_family {
@@ -179,9 +178,9 @@ static void surf_minify(struct radeon_surface *surf,
             return;
         }
     }
-    surflevel->nblk_x  = ALIGN(surflevel->nblk_x, xalign);
-    surflevel->nblk_y  = ALIGN(surflevel->nblk_y, yalign);
-    surflevel->nblk_z  = ALIGN(surflevel->nblk_z, zalign);
+    surflevel->nblk_x  = align(surflevel->nblk_x, xalign);
+    surflevel->nblk_y  = align(surflevel->nblk_y, yalign);
+    surflevel->nblk_z  = align(surflevel->nblk_z, zalign);
 
     surflevel->offset = offset;
     surflevel->pitch_bytes = surflevel->nblk_x * bpe * surf->nsamples;
@@ -588,9 +587,9 @@ static void eg_surf_minify(struct radeon_surface *surf,
             return;
         }
     }
-    surflevel->nblk_x  = ALIGN(surflevel->nblk_x, mtilew);
-    surflevel->nblk_y  = ALIGN(surflevel->nblk_y, mtileh);
-    surflevel->nblk_z  = ALIGN(surflevel->nblk_z, 1);
+    surflevel->nblk_x  = align(surflevel->nblk_x, mtilew);
+    surflevel->nblk_y  = align(surflevel->nblk_y, mtileh);
+    surflevel->nblk_z  = align(surflevel->nblk_z, 1);
 
     /* macro tile per row */
     mtile_pr = surflevel->nblk_x / mtilew;
@@ -1470,7 +1469,7 @@ static void si_surf_minify(struct radeon_surface *surf,
         surflevel->nblk_z = (surflevel->npix_z + surf->blk_d - 1) / surf->blk_d;
     }
 
-    surflevel->nblk_y  = ALIGN(surflevel->nblk_y, yalign);
+    surflevel->nblk_y  = align(surflevel->nblk_y, yalign);
 
     /* XXX: Texture sampling uses unexpectedly large pitches in some cases,
      * these are just guesses for the rules behind those
@@ -1483,8 +1482,8 @@ static void si_surf_minify(struct radeon_surface *surf,
         /* Small rows evenly distributed across slice */
         xalign = MAX2(xalign, slice_align / bpe / surflevel->nblk_y);
 
-    surflevel->nblk_x  = ALIGN(surflevel->nblk_x, xalign);
-    surflevel->nblk_z  = ALIGN(surflevel->nblk_z, zalign);
+    surflevel->nblk_x  = align(surflevel->nblk_x, xalign);
+    surflevel->nblk_z  = align(surflevel->nblk_z, zalign);
 
     surflevel->offset = offset;
     surflevel->pitch_bytes = surflevel->nblk_x * bpe * surf->nsamples;
@@ -1527,9 +1526,9 @@ static void si_surf_minify_2d(struct radeon_surface *surf,
             return;
         }
     }
-    surflevel->nblk_x  = ALIGN(surflevel->nblk_x, xalign);
-    surflevel->nblk_y  = ALIGN(surflevel->nblk_y, yalign);
-    surflevel->nblk_z  = ALIGN(surflevel->nblk_z, zalign);
+    surflevel->nblk_x  = align(surflevel->nblk_x, xalign);
+    surflevel->nblk_y  = align(surflevel->nblk_y, yalign);
+    surflevel->nblk_z  = align(surflevel->nblk_z, zalign);
 
     /* macro tile per row */
     mtile_pr = surflevel->nblk_x / xalign;
