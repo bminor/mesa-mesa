@@ -1149,6 +1149,9 @@ op_is_load_store(enum bi_opcode op)
 static uint64_t
 compute_spill_cost(bi_context *ctx)
 {
+   /* Required for finding blocks belonging to loops. */
+   bi_calc_dominance(ctx);
+
    /* The cost of a spill/fill is just 10*block_depth for now. */
 
    uint32_t *block_depth = calloc(ctx->num_blocks, sizeof(uint32_t));

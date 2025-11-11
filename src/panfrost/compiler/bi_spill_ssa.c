@@ -1483,6 +1483,9 @@ bi_spill_ssa(bi_context *ctx, unsigned k, unsigned spill_base)
    memset(spill_map, 0xff, sizeof(uint32_t) * n);
    memset(mem_map, 0xff, sizeof(uint32_t) * n);
 
+   /* Required for finding blocks belonging to loops. */
+   bi_calc_dominance(ctx);
+
    bi_foreach_block(ctx, block) {
       memset(W, 0, BITSET_BYTES(n));
       memset(S, 0, BITSET_BYTES(n));

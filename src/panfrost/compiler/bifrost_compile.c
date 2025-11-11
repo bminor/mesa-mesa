@@ -6913,44 +6913,38 @@ bifrost_compile_shader_nir(nir_shader *nir,
    info->ubo_mask &= (1 << nir->info.num_ubos) - 1;
 }
 
-bool *
-bi_find_loop_blocks(const bi_context *ctx, bi_block *header)
+static void
+find_all_predecessors(const bi_context *ctx, bi_block *b, bool *out)
 {
-   /* A block is in the loop if it has the header both as the predecessor and
-    * the successor. */
-
-   bool *h_as_suc = (bool *)calloc(ctx->num_blocks, sizeof(bool));
-   bool *h_as_pred = (bool *)calloc(ctx->num_blocks, sizeof(bool));
-   h_as_suc[header->index] = true;
-   h_as_pred[header->index] = true;
+   assert(out);
+   assert(b);
 
    /* If the CFG was one long chain, we would require |blocks|-1 iters to
     * propagate the in_loop info all the way through.
     */
    for (uint32_t iter = 0; iter < ctx->num_blocks - 1; ++iter) {
       bi_foreach_block(ctx, block) {
-
          bi_foreach_successor(block, succ) {
-            if (h_as_suc[succ->index]) {
-               h_as_suc[block->index] = true;
-               break;
-            }
-         }
-
-         bi_foreach_predecessor(block, pred) {
-            if (h_as_pred[(*pred)->index]) {
-               h_as_pred[block->index] = true;
-               break;
-            }
+            out[block->index] |= out[succ->index] || succ->index == b->index;
          }
       }
    }
+}
 
-   for (uint32_t bidx = 0; bidx < ctx->num_blocks - 1; ++bidx) {
-      h_as_suc[bidx] &= h_as_pred[bidx];
+bool *
+bi_find_loop_blocks(const bi_context *ctx, bi_block *header)
+{
+   bool *h_as_suc = (bool *)calloc(ctx->num_blocks, sizeof(bool));
+   assert(h_as_suc);
+
+   find_all_predecessors(ctx, header, h_as_suc);
+
+   /* If the header dominates b and is also the successor of b, then b
+    * is in the loop of that header.
+    */
+   bi_foreach_block(ctx, b) {
+      h_as_suc[b->index] &= bi_block_dominates(header, b);
    }
-
-   free(h_as_pred);
 
    return h_as_suc;
 }
