@@ -16,6 +16,7 @@ extern "C" {
 #endif
 
 struct radv_sdma_surf {
+   VkFormat format;         /* Image format. */
    VkExtent3D extent;       /* Image extent. */
    VkOffset3D offset;       /* Image offset. */
    uint64_t va;             /* Virtual address of image data. */
