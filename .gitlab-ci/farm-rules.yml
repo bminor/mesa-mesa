@@ -34,7 +34,6 @@
 #   anholt           | (decommissioned)                 | @anholt
 #   austriancoder    | ci-tron                          | @austriancoder
 #   collabora        | lava                             | @daniels, @sergi
-#   google-freedreno | none (moving to LAVA)            | @daniels, @sergi
 #   igalia           | baremetal/poe-powered, ci-tron   | @jasuarez, @chema
 #   lima             | lava                             | @enunes
 #   microsoft        | custom                           | @jenatali, @alatiera
@@ -292,15 +291,6 @@
       when: never
     - !reference [.pengutronix-farm-rules, rules]
 
-
-# Temporary placeholder as the devices move across to LAVA.
-.google-freedreno-farm-rules:
-  rules:
-    - when: never
-
-.google-freedreno-farm-manual-rules:
-  rules:
-    - when: never
 
 # Skip container & build jobs when disabling any farm, and run them if any
 # farm gets re-enabled.
