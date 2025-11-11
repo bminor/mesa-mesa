@@ -794,7 +794,7 @@
         "description": "ci: drop google-freedreno remnants",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6541b911bd7a6efa27bcda7021bd0b2763699e41",
         "notes": null
