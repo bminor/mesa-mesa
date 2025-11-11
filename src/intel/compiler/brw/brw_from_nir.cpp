@@ -7029,7 +7029,7 @@ brw_from_nir_emit_memory_access(nir_to_brw_state &ntb,
       (nir_intrinsic_access(instr) & ACCESS_COHERENT);
    const bool fused_eu_disable = nir_intrinsic_has_access(instr) &&
       (nir_intrinsic_access(instr) & ACCESS_FUSED_EU_DISABLE_INTEL);
-   const unsigned align =
+   const unsigned alignment =
       nir_intrinsic_has_align(instr) ? nir_intrinsic_align(instr) : 0;
    uint8_t flags =
       (include_helpers ? MEMORY_FLAG_INCLUDE_HELPERS : 0) |
@@ -7148,7 +7148,7 @@ brw_from_nir_emit_memory_access(nir_to_brw_state &ntb,
       } else {
          unsigned bit_size =
             is_store ? nir_src_bit_size(instr->src[0]) : instr->def.bit_size;
-         bool dword_aligned = align >= 4 && bit_size == 32;
+         bool dword_aligned = alignment >= 4 && bit_size == 32;
 
          /* load_scratch / store_scratch cannot be is_scalar yet. */
          assert(xbld.dispatch_width() == bld.dispatch_width());
@@ -7257,7 +7257,7 @@ brw_from_nir_emit_memory_access(nir_to_brw_state &ntb,
       mem->coord_components = coord_components;
       mem->data_size = data_size;
       mem->components = components;
-      mem->alignment = align;
+      mem->alignment = alignment;
       mem->flags = flags;
 
       if (dest.file != BAD_FILE && data_bit_size > nir_bit_size) {
@@ -7286,7 +7286,7 @@ brw_from_nir_emit_memory_access(nir_to_brw_state &ntb,
           * Note that SLM block loads on HDC platforms need to be 16B aligned.
           */
          if (srcs[MEMORY_LOGICAL_ADDRESS].file == IMM &&
-             align >= data_bit_size / 8 &&
+             alignment >= data_bit_size / 8 &&
              (devinfo->has_lsc || mode != MEMORY_MODE_SHARED_LOCAL)) {
             first_read_component = nir_def_first_component_read(&instr->def);
             unsigned last_component = nir_def_last_component_read(&instr->def);
@@ -7328,7 +7328,7 @@ brw_from_nir_emit_memory_access(nir_to_brw_state &ntb,
          mem->coord_components = coord_components;
          mem->data_size = data_size;
          mem->components = block_comps;
-         mem->alignment = align;
+         mem->alignment = alignment;
          mem->flags = flags;
 
          if (brw_type_size_bits(srcs[MEMORY_LOGICAL_ADDRESS].type) == 64) {
