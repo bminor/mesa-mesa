@@ -1246,7 +1246,7 @@ anv_h264_encode_video(struct anv_cmd_buffer *cmd, const VkVideoEncodeInfoKHR *en
 
       slice_header_data_len_in_bits -= 8;
 
-      length_in_dw = ALIGN(slice_header_data_len_in_bits, 32) >> 5;
+      length_in_dw = align((uint32_t)slice_header_data_len_in_bits, 32) >> 5;
       data_bits_in_last_dw = slice_header_data_len_in_bits & 0x1f;
 
       dw = anv_batch_emitn(&cmd->batch, length_in_dw + 2, GENX(MFX_PAK_INSERT_OBJECT),
@@ -2355,7 +2355,7 @@ anv_h265_encode_video(struct anv_cmd_buffer *cmd, const VkVideoEncodeInfoKHR *en
       uint32_t length_in_dw;
       uint32_t data_bits_in_last_dw;
 
-      length_in_dw = ALIGN(slice_header_data_len_in_bits, 32) >> 5;
+      length_in_dw = align((uint32_t)slice_header_data_len_in_bits, 32) >> 5;
       data_bits_in_last_dw = slice_header_data_len_in_bits & 0x1f;
 
       dw = anv_batch_emitn(&cmd->batch, length_in_dw + 2, GENX(HCP_PAK_INSERT_OBJECT),
