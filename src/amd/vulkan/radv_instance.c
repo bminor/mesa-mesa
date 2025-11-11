@@ -87,6 +87,7 @@ static const struct debug_control radv_debug_options[] = {{"nofastclears", RADV_
                                                           {"validatevas", RADV_DEBUG_VALIDATE_VAS},
                                                           {"bo_history", RADV_DEBUG_DUMP_BO_HISTORY},
                                                           {"nobolist", RADV_DEBUG_NO_BO_LIST},
+                                                          {"dumpibs", RADV_DEBUG_DUMP_IBS},
                                                           {NULL, 0}};
 
 const char *

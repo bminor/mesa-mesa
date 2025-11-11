@@ -1388,6 +1388,8 @@ RADV driver environment variables
       dump the BO history to /tmp/radv_bo_history.log after each BO operations
    ``checkir``
       validate the LLVM IR before LLVM compiles the shader
+   ``dumpibs``
+     dump IBs (command streams)
    ``dump_trap_handler``
       dump the trap handler shader
    ``epilogs``

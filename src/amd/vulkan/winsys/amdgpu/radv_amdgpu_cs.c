@@ -1142,6 +1142,9 @@ radv_amdgpu_winsys_cs_submit_internal(struct radv_amdgpu_ctx *ctx, int queue_idx
          struct radv_amdgpu_cs *cs = radv_amdgpu_cs(preambles[i]);
          struct radv_amdgpu_cs_ib_info ib;
 
+         if (ws->dump_ibs)
+            ws->base.cs_dump(&cs->base, stderr, NULL, 0, RADV_CS_DUMP_TYPE_PREAMBLE_IBS);
+
          assert(cs->num_ib_buffers == 1);
          ib = radv_amdgpu_cs_ib_to_info(cs, cs->ib_buffers[0]);
 
@@ -1152,6 +1155,9 @@ radv_amdgpu_winsys_cs_submit_internal(struct radv_amdgpu_ctx *ctx, int queue_idx
       for (unsigned i = 0; i < ib_per_submit && cs_idx < cs_count; ++i) {
          struct radv_amdgpu_cs *cs = radv_amdgpu_cs(cs_array[cs_idx]);
          struct radv_amdgpu_cs_ib_info ib;
+
+         if (ws->dump_ibs)
+            ws->base.cs_dump(&cs->base, stderr, NULL, 0, RADV_CS_DUMP_TYPE_MAIN_IBS);
 
          if (cs_ib_idx == 0) {
             /* Make sure the whole CS fits into the same submission. */
@@ -1206,6 +1212,9 @@ radv_amdgpu_winsys_cs_submit_internal(struct radv_amdgpu_ctx *ctx, int queue_idx
          /* Assume that the full postamble fits into 1 IB. */
          struct radv_amdgpu_cs *cs = radv_amdgpu_cs(postamble_cs[i]);
          struct radv_amdgpu_cs_ib_info ib;
+
+         if (ws->dump_ibs)
+            ws->base.cs_dump(&cs->base, stderr, NULL, 0, RADV_CS_DUMP_TYPE_POSTAMBLE_IBS);
 
          assert(cs->num_ib_buffers == 1);
          ib = radv_amdgpu_cs_ib_to_info(cs, cs->ib_buffers[0]);
