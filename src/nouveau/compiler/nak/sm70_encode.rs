@@ -4031,6 +4031,22 @@ impl SM70Op for OpLdsm {
     }
 }
 
+impl SM70Op for OpMovm {
+    fn legalize(&mut self, b: &mut LegalizeBuilder) {
+        legalize_ext_instr(self, b);
+    }
+
+    fn encode(&self, e: &mut SM70Encoder<'_>) {
+        assert!(e.sm >= 75);
+
+        e.set_opcode(0x23a);
+        e.set_dst(&self.dst);
+        e.set_reg_src(24..32, &self.src);
+        // TODO: 1: M832, 2: M864
+        e.set_field(78..80, 0); // MT88
+    }
+}
+
 macro_rules! sm70_op_match {
     ($op: expr, |$x: ident| $y: expr) => {
         match $op {
@@ -4074,6 +4090,7 @@ macro_rules! sm70_op_match {
             Op::I2F($x) => $y,
             Op::FRnd($x) => $y,
             Op::Mov($x) => $y,
+            Op::Movm($x) => $y,
             Op::Prmt($x) => $y,
             Op::Sel($x) => $y,
             Op::Sgxt($x) => $y,

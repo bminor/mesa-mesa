@@ -166,6 +166,7 @@ impl RegLatencySM80 {
             Op::AL2P(_) => Decoupled,
 
             Op::Mov(_) => CoupledAlu,
+            Op::Movm(_) => DecoupledAgu,
             Op::Sel(_) => CoupledAlu,
             Op::BRev(_) => Decoupled,
             // P2R => CoupledAlu,

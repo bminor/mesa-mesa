@@ -92,6 +92,7 @@ fn op_reg_latency(op: &Op, reader: bool, op_reg_idx: usize) -> RegLatencySM100 {
         Op::AL2P(_) => Decoupled,
 
         Op::Mov(_) => Dualalu,
+        Op::Movm(_) => DecoupledAgu,
         Op::Sel(_) => Dualalu,
         Op::BRev(_) => Decoupled,
         // P2R => Alu,

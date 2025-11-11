@@ -185,7 +185,7 @@ pub fn side_effect_type(op: &Op) -> SideEffect {
         | Op::MemBar(_) => SideEffect::Memory,
 
         // Matrix ops
-        Op::Imma(_) | Op::Hmma(_) => SideEffect::None,
+        Op::Imma(_) | Op::Hmma(_) | Op::Movm(_) => SideEffect::None,
 
         // Control-flow ops
         Op::BClear(_)
@@ -298,6 +298,7 @@ pub fn estimate_variable_latency(sm: u8, op: &Op) -> u32 {
 
         Op::Ld(_)
         | Op::Ldsm(_)
+        | Op::Movm(_)
         | Op::LdSharedLock(_)
         | Op::St(_)
         | Op::StSCheckUnlock(_)
