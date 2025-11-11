@@ -70,6 +70,7 @@ enum tu_stage_id {
    CMD_BUFFER_ANNOTATION_RENDER_PASS_STAGE_ID,
    BINNING_STAGE_ID,
    CONCURRENT_BINNING_STAGE_ID,
+   CONCURRENT_BINNING_BARRIER_STAGE_ID,
    GMEM_STAGE_ID,
    BYPASS_STAGE_ID,
    BLIT_STAGE_ID,
@@ -104,6 +105,7 @@ static const struct {
    [CMD_BUFFER_ANNOTATION_RENDER_PASS_STAGE_ID]    = { "Annotation", "Render Pass Command Buffer Annotation" },
    [BINNING_STAGE_ID]        = { "Binning", "Perform Visibility pass and determine target bins" },
    [CONCURRENT_BINNING_STAGE_ID] = { "Concurrent Binning", "Perform concurrent Visibility pass and determine target bins" },
+   [CONCURRENT_BINNING_BARRIER_STAGE_ID] = {"Concurrent Binning Barrier", "Concurrent binning cannot happen earlier than this point"},
    [GMEM_STAGE_ID]           = { "GMEM", "Rendering to GMEM" },
    [BYPASS_STAGE_ID]         = { "Bypass", "Rendering to system memory" },
    [BLIT_STAGE_ID]           = { "Blit", "Performing a Blit operation" },
@@ -338,6 +340,7 @@ stage_end(struct tu_device *dev, uint64_t ts_ns, enum tu_stage_id stage_id,
        * assume it is and always make binning appear on the BV timeline.
        */
       case CONCURRENT_BINNING_STAGE_ID:
+      case CONCURRENT_BINNING_BARRIER_STAGE_ID:
          queue_id = BV_HW_QUEUE_ID;
       default:
          break;
@@ -588,7 +591,7 @@ CREATE_EVENT_CALLBACK(secondary_cmd_buffer, SECONDARY_CMD_BUFFER_STAGE_ID)
 CREATE_EVENT_CALLBACK(render_pass, RENDER_PASS_STAGE_ID)
 CREATE_EVENT_CALLBACK(binning_ib, BINNING_STAGE_ID)
 CREATE_EVENT_CALLBACK(concurrent_binning_ib, CONCURRENT_BINNING_STAGE_ID)
-CREATE_EVENT_CALLBACK(concurrent_binning_barrier, CONCURRENT_BINNING_STAGE_ID)
+CREATE_EVENT_CALLBACK(concurrent_binning_barrier, CONCURRENT_BINNING_BARRIER_STAGE_ID)
 CREATE_EVENT_CALLBACK(draw_ib_gmem, GMEM_STAGE_ID)
 CREATE_EVENT_CALLBACK(draw_ib_sysmem, BYPASS_STAGE_ID)
 CREATE_EVENT_CALLBACK(blit, BLIT_STAGE_ID)
