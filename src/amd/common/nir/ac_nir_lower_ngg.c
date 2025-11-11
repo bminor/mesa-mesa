@@ -1817,10 +1817,25 @@ ac_ngg_get_scratch_lds_size(gl_shader_stage stage,
    } else {
       assert(stage == MESA_SHADER_GEOMETRY);
 
+      /* Repacking output vertices at the end in ngg_gs_finale() uses 1 dword per 4 waves */
       scratch_lds_size = ALIGN(max_num_waves, 4u);
-      /* streamout take 8 dwords for buffer offset and emit vertex per stream */
-      if (streamout_enabled)
-         scratch_lds_size = MAX2(scratch_lds_size, 32);
+
+      /* For streamout:
+       * - Repacking streamout vertices takes 1 dword per 4 waves per stream
+       *   (max 16 bytes for Wave64, 32 bytes for Wave32)
+       * - 1 dword per stream for buffer info
+       *   (16 bytes)
+       * - 1 dword per buffer for buffer info
+       *   (16 bytes)
+       */
+      if (streamout_enabled) {
+         const unsigned num_streams = 4;
+         const unsigned num_so_buffers = 4;
+         const unsigned streamout_scratch_size =
+            num_streams * ALIGN(max_num_waves, 4u) + num_streams * 4 + num_so_buffers * 4;
+
+         scratch_lds_size += streamout_scratch_size;
+      }
    }
 
    return scratch_lds_size;
