@@ -67,6 +67,7 @@ enum intel_debug_flag {
    DEBUG_L3,
    DEBUG_NO_CCS,
    DEBUG_NO_HIZ,
+   DEBUG_NO_CCS_MODIFIER,
    DEBUG_COLOR,
    DEBUG_REEMIT,
    DEBUG_SOFT64,

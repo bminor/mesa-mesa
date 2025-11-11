@@ -88,6 +88,7 @@ static const struct debug_control_bitset debug_control[] = {
    OPT1("do32",              DEBUG_DO32),
    OPT1("norbc",             DEBUG_NO_CCS),
    OPT1("noccs",             DEBUG_NO_CCS),
+   OPT1("noccs-modifier",    DEBUG_NO_CCS_MODIFIER),
    OPT1("nohiz",             DEBUG_NO_HIZ),
    OPT1("color",             DEBUG_COLOR),
    OPT1("reemit",            DEBUG_REEMIT),
