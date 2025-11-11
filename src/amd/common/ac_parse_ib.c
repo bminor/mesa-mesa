@@ -881,6 +881,25 @@ static void parse_sdma_ib(FILE *f, struct ac_ib_parser *ib)
 
          break;
       }
+      case SDMA_OPCODE_POLL_REGMEM:{
+         fprintf(f, "POLL_REGMEM\n");
+
+         /* VA */
+         uint32_t va_lo = ac_ib_get(ib);
+         fprintf(f, "    va lo = %08x\n", va_lo);
+         uint32_t va_hi = ac_ib_get(ib);
+         fprintf(f, "    va hi = %08x\n", va_hi);
+
+         uint32_t ref = ac_ib_get(ib);
+         fprintf(f, "    ref = %08x\n", ref);
+         uint32_t mask = ac_ib_get(ib);
+         fprintf(f, "    mask = %08x\n", mask);
+
+         uint32_t flags = ac_ib_get(ib);
+         fprintf(f, "    interval = %08x, retry_count = %08x\n",
+                 (flags & 0xffff), (flags >> 16) & 0xfff);
+         break;
+      }
       case SDMA_OPCODE_COPY: {
          switch (sub_op) {
          case SDMA_COPY_SUB_OPCODE_LINEAR: {
