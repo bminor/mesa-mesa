@@ -3180,7 +3180,7 @@ vk_video_encode_av1_seq_hdr(const struct vk_video_session_parameters *params,
 
       if (seq_hdr->seq_force_screen_content_tools > 0) {
          if (seq_hdr->seq_force_integer_mv == 2 /* SELECT_INTEGER_MV */)
-            vl_bitstream_put_bits(&enc, 1, seq_hdr->seq_force_integer_mv); /* seq_choose_integer_mv = 1 */
+            vl_bitstream_put_bits(&enc, 1, 1); /* seq_choose_integer_mv = 1 */
          else {
             vl_bitstream_put_bits(&enc, 1, 0); /* seq_choose_integer_mv = 0 */
             vl_bitstream_put_bits(&enc, 1, seq_hdr->seq_force_integer_mv);
