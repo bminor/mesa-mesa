@@ -1851,7 +1851,8 @@ radv_get_vgt_outprim_type(const struct radv_cmd_buffer *cmd_buffer)
       if (cmd_buffer->state.shaders[MESA_SHADER_GEOMETRY]) {
          return radv_conv_gl_prim_to_gs_out(cmd_buffer->state.shaders[MESA_SHADER_GEOMETRY]->info.gs.output_prim);
       } else if (cmd_buffer->state.shaders[MESA_SHADER_TESS_EVAL]) {
-         if (cmd_buffer->state.shaders[MESA_SHADER_TESS_EVAL]->info.tes.point_mode) {
+         if (cmd_buffer->state.shaders[MESA_SHADER_TESS_EVAL]->info.tes.point_mode ||
+             cmd_buffer->state.shaders[MESA_SHADER_TESS_CTRL]->info.tcs.point_mode) {
             return V_028A6C_POINTLIST;
          } else {
             return radv_conv_tess_prim_to_gs_out(
