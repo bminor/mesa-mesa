@@ -1,0 +1,22 @@
+# RADV bug
+dEQP-VK.pipeline.fast_linked_library.multisample.3d.64x64x8_1.r8g8b8a8_unorm.samples_2,Fail
+dEQP-VK.pipeline.fast_linked_library.multisample.3d.64x64x8_1.r8g8b8a8_unorm.samples_4,Fail
+dEQP-VK.pipeline.fast_linked_library.multisample.3d.64x64x8_1.r8g8b8a8_unorm.samples_8,Fail
+dEQP-VK.pipeline.monolithic.multisample.3d.64x64x8_1.r8g8b8a8_unorm.samples_2,Fail
+dEQP-VK.pipeline.monolithic.multisample.3d.64x64x8_1.r8g8b8a8_unorm.samples_4,Fail
+dEQP-VK.pipeline.monolithic.multisample.3d.64x64x8_1.r8g8b8a8_unorm.samples_8,Fail
+dEQP-VK.pipeline.pipeline_library.multisample.3d.64x64x8_1.r8g8b8a8_unorm.samples_2,Fail
+dEQP-VK.pipeline.pipeline_library.multisample.3d.64x64x8_1.r8g8b8a8_unorm.samples_4,Fail
+dEQP-VK.pipeline.pipeline_library.multisample.3d.64x64x8_1.r8g8b8a8_unorm.samples_8,Fail
+dEQP-VK.pipeline.shader_object_linked_binary.multisample.3d.64x64x8_1.r8g8b8a8_unorm.samples_2,Fail
+dEQP-VK.pipeline.shader_object_linked_binary.multisample.3d.64x64x8_1.r8g8b8a8_unorm.samples_4,Fail
+dEQP-VK.pipeline.shader_object_linked_binary.multisample.3d.64x64x8_1.r8g8b8a8_unorm.samples_8,Fail
+dEQP-VK.pipeline.shader_object_linked_spirv.multisample.3d.64x64x8_1.r8g8b8a8_unorm.samples_2,Fail
+dEQP-VK.pipeline.shader_object_linked_spirv.multisample.3d.64x64x8_1.r8g8b8a8_unorm.samples_4,Fail
+dEQP-VK.pipeline.shader_object_linked_spirv.multisample.3d.64x64x8_1.r8g8b8a8_unorm.samples_8,Fail
+dEQP-VK.pipeline.shader_object_unlinked_binary.multisample.3d.64x64x8_1.r8g8b8a8_unorm.samples_2,Fail
+dEQP-VK.pipeline.shader_object_unlinked_binary.multisample.3d.64x64x8_1.r8g8b8a8_unorm.samples_4,Fail
+dEQP-VK.pipeline.shader_object_unlinked_binary.multisample.3d.64x64x8_1.r8g8b8a8_unorm.samples_8,Fail
+dEQP-VK.pipeline.shader_object_unlinked_spirv.multisample.3d.64x64x8_1.r8g8b8a8_unorm.samples_2,Fail
+dEQP-VK.pipeline.shader_object_unlinked_spirv.multisample.3d.64x64x8_1.r8g8b8a8_unorm.samples_4,Fail
+dEQP-VK.pipeline.shader_object_unlinked_spirv.multisample.3d.64x64x8_1.r8g8b8a8_unorm.samples_8,Fail

@@ -15,3 +15,7 @@ dEQP-VK.video.synchronization.decode_h264.basic.event.device_set_reset,Fail
 dEQP-VK.video.synchronization.decode_h265.basic.event.device_set_reset,Fail
 dEQP-VK.video.synchronization2.decode_h264.basic.event.device_set_reset,Fail
 dEQP-VK.video.synchronization2.decode_h265.basic.event.device_set_reset,Fail
+
+# CTS bug https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/6155
+dEQP-VK.api.copy_and_blit.core.image_to_image_transfer_queue.array.array_to_array_whole_mipmap_s8_uint,Fail
+dEQP-VK.api.copy_and_blit.dedicated_allocation.image_to_image_transfer_queue.array.array_to_array_whole_mipmap_s8_uint,Fail

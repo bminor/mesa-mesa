@@ -40,3 +40,6 @@ dEQP-VK.transform_feedback.primitives_generated_query.concurrent.pipeline_statis
 dEQP-VK.transform_feedback.primitives_generated_query.concurrent.pipeline_statistics_2.pgq_64bit_xfb_32bit.triangle_list_with_adjacency.draw
 dEQP-VK.transform_feedback.primitives_generated_query.concurrent.pipeline_statistics_2.pgq_64bit_xfb_32bit.triangle_list_with_adjacency.indirect
 dEQP-VK.transform_feedback.primitives_generated_query.concurrent.pipeline_statistics_2.pgq_64bit_xfb_32bit.triangle_strip.draw
+
+# CTS bug https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/6166
+dEQP-VK.video.encode.av1.352x288_*
