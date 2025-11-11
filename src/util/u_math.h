@@ -53,7 +53,6 @@
 
 #ifdef __HAIKU__
 #include <sys/param.h>
-#undef ALIGN
 #endif
 
 #ifdef __cplusplus
@@ -648,29 +647,7 @@ util_memcpy_cpu_to_le32(void * restrict dest, const void * restrict src, size_t 
 }
 
 /**
- * Align a value up to an alignment value
- *
- * If \c value is not already aligned to the requested alignment value, it
- * will be rounded up.
- *
- * \param value  Value to be rounded
- * \param alignment  Alignment value to be used.  This must be a power of two.
- *
- * \sa ROUND_DOWN_TO()
- */
-
-#if defined(ALIGN)
-#undef ALIGN
-#endif
-static inline uint32_t
-ALIGN(uint32_t value, uint32_t alignment)
-{
-   assert(util_is_power_of_two_nonzero(alignment));
-   return ALIGN_POT(value, alignment);
-}
-
-/**
- * Like ALIGN(), but works with a non-power-of-two alignment.
+ * Like align(), but works with a non-power-of-two alignment.
  */
 static inline uintptr_t
 ALIGN_NPOT(uintptr_t value, int32_t alignment)
@@ -688,7 +665,7 @@ ALIGN_NPOT(uintptr_t value, int32_t alignment)
  * \param value  Value to be rounded
  * \param alignment  Alignment value to be used.  This must be a power of two.
  *
- * \sa ALIGN()
+ * \sa align()
  */
 static inline uint64_t
 ROUND_DOWN_TO(uint64_t value, uint32_t alignment)
