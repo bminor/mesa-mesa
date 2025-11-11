@@ -217,7 +217,9 @@ struct radv_winsys_gpuvm_fault_info {
 };
 
 enum radv_cs_dump_type {
-   RADV_CS_DUMP_TYPE_IBS,
+   RADV_CS_DUMP_TYPE_PREAMBLE_IBS,
+   RADV_CS_DUMP_TYPE_MAIN_IBS,
+   RADV_CS_DUMP_TYPE_POSTAMBLE_IBS,
    RADV_CS_DUMP_TYPE_CTX_ROLLS,
 };
 
