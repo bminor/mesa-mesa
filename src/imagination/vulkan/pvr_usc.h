@@ -201,8 +201,6 @@ pvr_uscgen_clear_attach_index(struct pvr_clear_attach_props *props)
 }
 #undef INDEX
 
-#define PVR_NUM_CLEAR_ATTACH_SHADERS 20U
-
 pco_shader *
 pvr_usc_zero_init_wg_mem(pco_ctx *ctx, unsigned start, unsigned count);
 

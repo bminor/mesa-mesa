@@ -1648,7 +1648,7 @@ static VkResult pvr_clear_color_attachment_static(
    ASSERTED const bool has_eight_output_registers =
       PVR_HAS_FEATURE(dev_info, eight_output_registers);
    const struct pvr_device_static_clear_state *dev_clear_state =
-      &device->static_clear_state;
+      device->static_clear_state;
    const bool uses_tile_buffer = mrt_resource->type ==
                                  USC_MRT_RESOURCE_TYPE_MEMORY;
    const struct pvr_pds_clear_attachment_program_info *clear_attachment_program;
@@ -1780,7 +1780,7 @@ static VkResult pvr_clear_color_attachment_static(
 
    assert(template_idx < PVR_STATIC_CLEAR_VARIANT_COUNT);
    template =
-      cmd_buffer->device->static_clear_state.ppp_templates[template_idx];
+      cmd_buffer->device->static_clear_state->ppp_templates[template_idx];
 
    template.config.pds_state = &pds_state;
 
@@ -2068,7 +2068,7 @@ static void pvr_clear_attachments(struct pvr_cmd_buffer *cmd_buffer,
 
          assert(template_idx < PVR_STATIC_CLEAR_VARIANT_COUNT);
          template =
-            cmd_buffer->device->static_clear_state.ppp_templates[template_idx];
+            cmd_buffer->device->static_clear_state->ppp_templates[template_idx];
 
          if (attachment->aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) {
             /* clang-format off */
@@ -2102,7 +2102,7 @@ static void pvr_clear_attachments(struct pvr_cmd_buffer *cmd_buffer,
 
       if (vs_has_rt_id_output) {
          const struct pvr_device_static_clear_state *dev_clear_state =
-            &cmd_buffer->device->static_clear_state;
+            cmd_buffer->device->static_clear_state;
          const struct pvr_suballoc_bo *multi_layer_vert_bo =
             dev_clear_state->usc_multi_layer_vertex_shader_bo;
 
@@ -2128,15 +2128,15 @@ static void pvr_clear_attachments(struct pvr_cmd_buffer *cmd_buffer,
           */
          pvr_pds_clear_vertex_shader_program_init_base(
             &pds_program,
-            cmd_buffer->device->static_clear_state.usc_vertex_shader_bo);
+            cmd_buffer->device->static_clear_state->usc_vertex_shader_bo);
 
          pds_program_upload.code_offset =
-            cmd_buffer->device->static_clear_state.pds.code_offset;
+            cmd_buffer->device->static_clear_state->pds.code_offset;
          /* TODO: The code size doesn't get used by pvr_clear_vdm_state() maybe
           * let's change its interface to make that clear and not set this?
           */
          pds_program_upload.code_size =
-            cmd_buffer->device->static_clear_state.pds.code_size;
+            cmd_buffer->device->static_clear_state->pds.code_size;
       }
 
       for (uint32_t j = 0; j < rect_count; j++) {

@@ -181,7 +181,7 @@ VkResult pvr_emit_ppp_from_template(
    const uint32_t cache_line_size =
       pvr_get_slc_cache_line_size(&device->pdevice->dev_info);
    const struct pvr_static_clear_ppp_base *const base =
-      &device->static_clear_state.ppp_base;
+      &device->static_clear_state->ppp_base;
    struct pvr_suballoc_bo *pvr_bo;
    uint32_t *stream;
    VkResult result;
@@ -254,7 +254,7 @@ pvr_device_init_clear_attachment_programs(struct pvr_device *device)
       MAX2(ROGUE_TA_STATE_PDS_TEXUNICODEBASE_ADDR_ALIGNMENT,
            ROGUE_TA_STATE_PDS_SHADERBASE_ADDR_ALIGNMENT);
    struct pvr_device_static_clear_state *clear_state =
-      &device->static_clear_state;
+      device->static_clear_state;
    const struct pvr_device_info *dev_info = &device->pdevice->dev_info;
    uint32_t pds_texture_program_offsets[PVR_NUM_CLEAR_ATTACH_SHADERS];
    uint32_t pds_pixel_program_offsets[PVR_NUM_CLEAR_ATTACH_SHADERS];
@@ -420,7 +420,7 @@ static void
 pvr_device_finish_clear_attachment_programs(struct pvr_device *device)
 {
    struct pvr_device_static_clear_state *clear_state =
-      &device->static_clear_state;
+      device->static_clear_state;
 
    pvr_bo_suballoc_free(clear_state->usc_clear_attachment_programs);
    pvr_bo_suballoc_free(clear_state->pds_clear_attachment_programs);
@@ -475,7 +475,14 @@ VkResult pvr_device_init_graphics_static_clear_state(struct pvr_device *device)
 
    const uint32_t vdm_state_size_in_dw =
       pvr_clear_vdm_state_get_size_in_dw(dev_info, 1);
-   struct pvr_device_static_clear_state *state = &device->static_clear_state;
+
+   struct pvr_device_static_clear_state *state = device->static_clear_state =
+      vk_zalloc(&device->vk.alloc,
+                sizeof(struct pvr_device_static_clear_state), 8,
+                VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+   if (!state)
+      return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+
    const uint32_t cache_line_size = pvr_get_slc_cache_line_size(dev_info);
    struct pvr_pds_vertex_shader_program pds_program;
    const pco_precomp_data *precomp_data;
@@ -596,7 +603,7 @@ err_free_usc_multi_layer_shader:
 
 void pvr_device_finish_graphics_static_clear_state(struct pvr_device *device)
 {
-   struct pvr_device_static_clear_state *state = &device->static_clear_state;
+   struct pvr_device_static_clear_state *state = device->static_clear_state;
 
    pvr_device_finish_clear_attachment_programs(device);
 
@@ -610,6 +617,8 @@ void pvr_device_finish_graphics_static_clear_state(struct pvr_device *device)
    pvr_bo_suballoc_free(state->vertices_bo);
    pvr_bo_suballoc_free(state->usc_vertex_shader_bo);
    pvr_bo_suballoc_free(state->usc_multi_layer_vertex_shader_bo);
+
+   vk_free(&device->vk.alloc, state);
 }
 
 void pvr_pds_clear_vertex_shader_program_init_base(

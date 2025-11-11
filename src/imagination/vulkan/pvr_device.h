@@ -24,16 +24,18 @@
 
 #include "util/mesa-sha1.h"
 
-#include "pvr_clear.h"
+#include "pvr_bo.h"
 #include "pvr_common.h"
 #include "pvr_macros.h"
 #include "pvr_pds.h"
 #include "pvr_spm.h"
 #include "pvr_usc.h"
+#include "pvr_winsys.h"
 
 typedef struct _pco_ctx pco_ctx;
 
 struct pvr_border_color_table;
+struct pvr_device_static_clear_state;
 struct pvr_instance;
 struct pvr_queue;
 
@@ -108,36 +110,7 @@ struct pvr_device {
       struct pvr_pds_upload sw_compute_barrier_pds;
    } idfwdf_state;
 
-   struct pvr_device_static_clear_state {
-      struct pvr_suballoc_bo *usc_vertex_shader_bo;
-      struct pvr_suballoc_bo *vertices_bo;
-      struct pvr_pds_upload pds;
-
-      /* Only valid if PVR_HAS_FEATURE(dev_info, gs_rta_support). */
-      struct pvr_suballoc_bo *usc_multi_layer_vertex_shader_bo;
-
-      struct pvr_static_clear_ppp_base ppp_base;
-      /* Indexable using VkImageAspectFlags. */
-      struct pvr_static_clear_ppp_template
-         ppp_templates[PVR_STATIC_CLEAR_VARIANT_COUNT];
-
-      const uint32_t *vdm_words;
-      const uint32_t *large_clear_vdm_words;
-
-      struct pvr_suballoc_bo *usc_clear_attachment_programs;
-      struct pvr_suballoc_bo *pds_clear_attachment_programs;
-      /* TODO: See if we can use PVR_CLEAR_ATTACHMENT_PROGRAM_COUNT to save some
-       * memory.
-       */
-      struct pvr_pds_clear_attachment_program_info {
-         pvr_dev_addr_t texture_program_offset;
-         pvr_dev_addr_t pixel_program_offset;
-
-         uint32_t texture_program_pds_temps_count;
-         /* Size in dwords. */
-         uint32_t texture_program_data_size;
-      } pds_clear_attachment_program_info[PVR_NUM_CLEAR_ATTACH_SHADERS];
-   } static_clear_state;
+   struct pvr_device_static_clear_state *static_clear_state;
 
    struct {
       struct pvr_suballoc_bo *usc_programs;

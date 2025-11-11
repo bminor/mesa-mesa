@@ -3425,9 +3425,9 @@ static void pvr_emit_clear_words(struct pvr_cmd_buffer *const cmd_buffer,
    }
 
    if (pvr_is_large_clear_required(cmd_buffer))
-      vdm_state = device->static_clear_state.large_clear_vdm_words;
+      vdm_state = device->static_clear_state->large_clear_vdm_words;
    else
-      vdm_state = device->static_clear_state.vdm_words;
+      vdm_state = device->static_clear_state->vdm_words;
 
    memcpy(stream, vdm_state, PVR_DW_TO_BYTES(vdm_state_size_in_dw));
 
@@ -3442,7 +3442,7 @@ static VkResult pvr_cs_write_load_op_for_view(struct pvr_cmd_buffer *cmd_buffer,
 {
    const struct pvr_device *device = cmd_buffer->device;
    struct pvr_static_clear_ppp_template template =
-      device->static_clear_state.ppp_templates[VK_IMAGE_ASPECT_COLOR_BIT];
+      device->static_clear_state->ppp_templates[VK_IMAGE_ASPECT_COLOR_BIT];
    uint32_t pds_state[PVR_PDS_STATE_LENGTH];
    struct pvr_pds_upload shareds_update_program;
    struct pvr_suballoc_bo *pvr_bo;
@@ -7851,7 +7851,7 @@ static void pvr_insert_transparent_obj(struct pvr_cmd_buffer *const cmd_buffer,
     * in parallel so writing the template in place could cause problems.
     */
    struct pvr_static_clear_ppp_template clear =
-      device->static_clear_state.ppp_templates[VK_IMAGE_ASPECT_COLOR_BIT];
+      device->static_clear_state->ppp_templates[VK_IMAGE_ASPECT_COLOR_BIT];
    uint32_t pds_state[PVR_PDS_STATE_LENGTH] = { 0 };
    struct pvr_csb *csb = &sub_cmd->control_stream;
    struct pvr_suballoc_bo *ppp_bo;
