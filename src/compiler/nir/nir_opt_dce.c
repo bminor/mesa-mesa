@@ -1,28 +1,40 @@
 /*
  * Copyright © 2014 Intel Corporation
- *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice (including the next
- * paragraph) shall be included in all copies or substantial portions of the
- * Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
- * IN THE SOFTWARE.
+ * SPDX-License-Identifier: MIT
  *
  * Authors:
  *    Connor Abbott (cwabbott0@gmail.com)
  *
+ */
+
+/* Dead Code Elimination
+ *
+ * It eliminates those instructions whose results are unused and those that
+ * have no effect on instructions with side effects (like stores).
+ * To be precise, instructions are not dead if their result is needed by
+ * non-removable instructions.
+ *
+ * The algorithm walks the shader backwards and:
+ * - marks sources of non-removable instructions as live
+ * - if an instruction is live, mark all its sources as live as well
+ * - if a loop header phi source is marked as live and the source is not in
+ *   the block preceding the loop, the loop is walked backwards again
+ *   (beucase the phi source is likely after the phi)
+ *
+ * Why looking only at the number of uses of each instruction doesn't work:
+ * There could be a loop in the def-use graph where every instructions has
+ * non-zero uses, yet all of them are dead. Example:
+ *
+ * loop {
+ *    %1 = phi %0, %2
+ *
+ *    loop {
+ *       %2 = phi %1, %0
+ *    }
+ * }
+ *
+ * In this case, both phis have non-zero uses because they use each other,
+ * but they have no effect on the shader and can be removed.
  */
 
 #include "nir.h"
