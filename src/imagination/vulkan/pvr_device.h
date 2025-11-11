@@ -24,15 +24,16 @@
 
 #include "util/mesa-sha1.h"
 
-#include "pvr_border.h"
 #include "pvr_clear.h"
 #include "pvr_common.h"
+#include "pvr_macros.h"
 #include "pvr_pds.h"
 #include "pvr_spm.h"
 #include "pvr_usc.h"
 
 typedef struct _pco_ctx pco_ctx;
 
+struct pvr_border_color_table;
 struct pvr_instance;
 struct pvr_queue;
 
@@ -167,7 +168,7 @@ struct pvr_device {
 
    struct vk_sync *presignaled_sync;
 
-   struct pvr_border_color_table border_color_table;
+   struct pvr_border_color_table *border_color_table;
 };
 
 struct pvr_device_memory {

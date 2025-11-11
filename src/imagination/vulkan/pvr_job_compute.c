@@ -26,6 +26,7 @@
 #include <stdint.h>
 #include <vulkan/vulkan.h>
 
+#include "pvr_border.h"
 #include "pvr_cmd_buffer.h"
 #include "pvr_csb.h"
 #include "pvr_debug.h"
@@ -61,7 +62,7 @@ pvr_submit_info_stream_init(struct pvr_compute_ctx *ctx,
                  CR_TPU_BORDER_COLOUR_TABLE_CDM,
                  value) {
       value.border_colour_table_address =
-         device->border_color_table.table->vma->dev_addr;
+         device->border_color_table->table->vma->dev_addr;
    }
    stream_ptr += pvr_cmd_length(CR_TPU_BORDER_COLOUR_TABLE_CDM);
 

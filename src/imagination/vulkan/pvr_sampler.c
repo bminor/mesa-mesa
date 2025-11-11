@@ -15,6 +15,7 @@
 
 #include "vk_log.h"
 
+#include "pvr_border.h"
 #include "pvr_device.h"
 #include "pvr_entrypoints.h"
 #include "pvr_physical_device.h"
@@ -79,7 +80,7 @@ VkResult pvr_CreateSampler(VkDevice _device,
    result = pvr_border_color_table_get_or_create_entry(
       device,
       sampler,
-      &device->border_color_table,
+      device->border_color_table,
       &sampler->border_color_table_index);
    if (result != VK_SUCCESS)
       goto err_free_sampler;
@@ -227,7 +228,7 @@ void pvr_DestroySampler(VkDevice _device,
    if (!sampler)
       return;
 
-   pvr_border_color_table_release_entry(&device->border_color_table,
+   pvr_border_color_table_release_entry(device->border_color_table,
                                         sampler->border_color_table_index);
 
    vk_sampler_destroy(&device->vk, pAllocator, &sampler->vk);

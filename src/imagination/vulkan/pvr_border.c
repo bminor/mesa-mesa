@@ -283,9 +283,15 @@ static inline void pvr_border_color_swizzle_to_tex_format(
    *color = swizzled_color;
 }
 
-VkResult pvr_border_color_table_init(struct pvr_border_color_table *const table,
-                                     struct pvr_device *const device)
+VkResult
+pvr_border_color_table_init(struct pvr_device *const device)
 {
+   struct pvr_border_color_table *table = device->border_color_table =
+      vk_zalloc(&device->vk.alloc, sizeof(struct pvr_border_color_table), 8,
+                VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+   if (!table)
+      return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+
    const struct pvr_device_info *const dev_info = &device->pdevice->dev_info;
    const uint32_t cache_line_size = pvr_get_slc_cache_line_size(dev_info);
    const uint32_t table_size = sizeof(struct pvr_border_color_table_entry) *
@@ -329,18 +335,19 @@ err_out:
    return result;
 }
 
-void pvr_border_color_table_finish(struct pvr_border_color_table *const table,
-                                   struct pvr_device *const device)
+void
+pvr_border_color_table_finish(struct pvr_device *const device)
 {
 #if MESA_DEBUG
-   BITSET_SET_RANGE_INSIDE_WORD(table->unused_entries,
+   BITSET_SET_RANGE_INSIDE_WORD(device->border_color_table->unused_entries,
                                 0,
                                 PVR_BORDER_COLOR_TABLE_NR_BUILTIN_ENTRIES - 1);
-   BITSET_NOT(table->unused_entries);
-   assert(BITSET_IS_EMPTY(table->unused_entries));
+   BITSET_NOT(device->border_color_table->unused_entries);
+   assert(BITSET_IS_EMPTY(device->border_color_table->unused_entries));
 #endif
 
-   pvr_bo_free(device, table->table);
+   pvr_bo_free(device, device->border_color_table->table);
+   vk_free(&device->vk.alloc, device->border_color_table);
 }
 
 static inline void pvr_border_color_table_set_custom_entry(

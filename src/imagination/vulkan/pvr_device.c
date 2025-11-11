@@ -944,7 +944,7 @@ pvr_create_device(struct pvr_physical_device *pdevice,
    if (result != VK_SUCCESS)
       goto err_pvr_spm_finish_scratch_buffer_store;
 
-   result = pvr_border_color_table_init(&device->border_color_table, device);
+   result = pvr_border_color_table_init(device);
    if (result != VK_SUCCESS)
       goto err_pvr_robustness_buffer_finish;
 
@@ -1032,7 +1032,7 @@ pvr_destroy_device(struct pvr_device *device,
    if (!device)
       return;
 
-   pvr_border_color_table_finish(&device->border_color_table, device);
+   pvr_border_color_table_finish(device);
    pvr_robustness_buffer_finish(device);
    pvr_spm_finish_scratch_buffer_store(device);
    pvr_queues_destroy(device);

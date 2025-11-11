@@ -29,6 +29,7 @@
 #include "hwdef/rogue_hw_defs.h"
 #include "hwdef/rogue_hw_utils.h"
 #include "pvr_bo.h"
+#include "pvr_border.h"
 #include "pvr_cmd_buffer.h"
 #include "pvr_csb.h"
 #include "pvr_debug.h"
@@ -1002,7 +1003,7 @@ static void pvr_geom_state_stream_init(struct pvr_render_ctx *ctx,
                  CR_TPU_BORDER_COLOUR_TABLE_VDM,
                  value) {
       value.border_colour_table_address =
-         device->border_color_table.table->vma->dev_addr;
+         device->border_color_table->table->vma->dev_addr;
    }
    stream_ptr += pvr_cmd_length(CR_TPU_BORDER_COLOUR_TABLE_VDM);
 
@@ -1318,7 +1319,7 @@ static void pvr_frag_state_stream_init(struct pvr_render_ctx *ctx,
                  CR_TPU_BORDER_COLOUR_TABLE_PDM,
                  value) {
       value.border_colour_table_address =
-         device->border_color_table.table->vma->dev_addr;
+         device->border_color_table->table->vma->dev_addr;
    }
    stream_ptr += pvr_cmd_length(CR_TPU_BORDER_COLOUR_TABLE_PDM);
 
