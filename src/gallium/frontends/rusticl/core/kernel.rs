@@ -1263,6 +1263,15 @@ impl Kernel {
         grid: &mut [usize],
         block: &mut [usize],
     ) {
+        // We have to use the required workgroup size if specified.
+        if self.work_group_size() != [0; 3] {
+            for i in 0..work_dim {
+                block[i] = self.work_group_size()[i];
+                grid[i] /= block[i];
+            }
+            return;
+        }
+
         let mut threads = self.max_threads_per_block(d);
         let dim_threads = d.max_block_sizes();
         let subgroups = self.preferred_simd_size(d);
