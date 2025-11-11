@@ -2343,15 +2343,10 @@ radv_enc_av1_obu_instruction(struct radv_cmd_buffer *cmd_buffer, const VkVideoEn
    /*  disable_cdf_update  */
    radv_enc_code_fixed_bits(cmd_buffer, av1_pic->flags.disable_cdf_update, 1);
 
-   bool allow_screen_content_tools = false;
-   if (seq->flags.reduced_still_picture_header || av1_pic->flags.allow_screen_content_tools) {
-      /*  allow_screen_content_tools  */
-      allow_screen_content_tools = /*av1_pic->av1_spec_misc.palette_mode_enable ||*/
-         av1_pic->flags.force_integer_mv;
-      radv_enc_code_fixed_bits(cmd_buffer, allow_screen_content_tools ? 1 : 0, 1);
-   }
+   if (seq->seq_force_screen_content_tools == STD_VIDEO_AV1_SELECT_SCREEN_CONTENT_TOOLS)
+      radv_enc_code_fixed_bits(cmd_buffer, av1_pic->flags.allow_screen_content_tools, 1);
 
-   if (allow_screen_content_tools)
+   if (av1_pic->flags.allow_screen_content_tools && seq->seq_force_integer_mv == STD_VIDEO_AV1_SELECT_INTEGER_MV)
       /*  force_integer_mv  */
       radv_enc_code_fixed_bits(cmd_buffer, av1_pic->flags.force_integer_mv, 1);
 
@@ -2398,7 +2393,7 @@ radv_enc_av1_obu_instruction(struct radv_cmd_buffer *cmd_buffer, const VkVideoEn
          /*  render_height_minus_1  */
          radv_enc_code_fixed_bits(cmd_buffer, av1_pic->render_height_minus_1, 16);
       }
-      if (av1_pic->flags.allow_screen_content_tools && av1_pic->flags.force_integer_mv)
+      if (av1_pic->flags.allow_screen_content_tools)
          /*  allow_intrabc  */
          radv_enc_code_fixed_bits(cmd_buffer, 0, 1);
    } else {
