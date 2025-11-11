@@ -352,7 +352,7 @@ reg_file_size(struct ir3_register *reg)
 
 static physreg_t
 find_best_gap(struct ra_ctx *ctx, struct ir3_register *dst, unsigned size,
-              unsigned align)
+              unsigned alignment)
 {
    unsigned file_size = reg_file_size(dst);
 
@@ -362,7 +362,7 @@ find_best_gap(struct ra_ctx *ctx, struct ir3_register *dst, unsigned size,
    if (size > file_size)
       return (physreg_t) ~0;
 
-   unsigned start = ALIGN(ctx->start, align);
+   unsigned start = ALIGN(ctx->start, alignment);
    if (start + size > file_size)
       start = 0;
    unsigned candidate = start;
@@ -380,7 +380,7 @@ find_best_gap(struct ra_ctx *ctx, struct ir3_register *dst, unsigned size,
          return candidate;
       }
 
-      candidate += align;
+      candidate += alignment;
       if (candidate + size > file_size)
          candidate = 0;
    } while (candidate != start);
@@ -390,12 +390,12 @@ find_best_gap(struct ra_ctx *ctx, struct ir3_register *dst, unsigned size,
 
 static physreg_t
 find_best_spill_reg(struct ra_ctx *ctx, struct ir3_register *reg,
-                    unsigned size, unsigned align)
+                    unsigned size, unsigned alignment)
 {
    unsigned file_size = reg_file_size(reg);
    unsigned min_cost = UINT_MAX;
 
-   unsigned start = ALIGN(ctx->start, align);
+   unsigned start = ALIGN(ctx->start, alignment);
    if (start + size > file_size)
       start = 0;
    physreg_t candidate = start;
@@ -427,7 +427,7 @@ find_best_spill_reg(struct ra_ctx *ctx, struct ir3_register *reg,
          best_reg = candidate;
       }
 
-      candidate += align;
+      candidate += alignment;
       if (candidate + size > file_size)
          candidate = 0;
    } while (candidate != start);
