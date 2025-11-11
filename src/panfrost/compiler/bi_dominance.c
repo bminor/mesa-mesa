@@ -25,7 +25,7 @@
  *
  */
 
-#include "nir.h"
+#include "compiler.h"
 
 /*
  * Implements the algorithms for computing the dominance tree and the
@@ -34,15 +34,15 @@
  */
 
 static bool
-init_block(nir_block *block, nir_function_impl *impl)
+init_block(bi_block *block, bi_context *ctx)
 {
-   if (block == nir_start_block(impl))
+   if (block == bi_entry_block(ctx))
       block->imm_dom = block;
    else
       block->imm_dom = NULL;
    block->num_dom_children = 0;
 
-   /* See nir_block_dominates */
+   /* See bi_block_dominates */
    block->dom_pre_index = UINT32_MAX;
    block->dom_post_index = 0;
 
@@ -51,8 +51,8 @@ init_block(nir_block *block, nir_function_impl *impl)
    return true;
 }
 
-static nir_block *
-intersect(nir_block *b1, nir_block *b2)
+static bi_block *
+intersect(bi_block *b1, bi_block *b2)
 {
    while (b1 != b2) {
       /*
@@ -70,11 +70,11 @@ intersect(nir_block *b1, nir_block *b2)
 }
 
 static bool
-calc_dominance(nir_block *block)
+calc_dominance(bi_block *block)
 {
-   nir_block *new_idom = NULL;
-   set_foreach(&block->predecessors, entry) {
-      nir_block *pred = (nir_block *)entry->key;
+   bi_block *new_idom = NULL;
+   bi_foreach_predecessor(block, p) {
+      bi_block *pred = (*p);
 
       if (pred->imm_dom) {
          if (new_idom)
@@ -93,11 +93,11 @@ calc_dominance(nir_block *block)
 }
 
 static bool
-calc_dom_frontier(nir_block *block)
+calc_dom_frontier(bi_block *block)
 {
-   if (block->predecessors.entries > 1) {
-      set_foreach(&block->predecessors, entry) {
-         nir_block *runner = (nir_block *)entry->key;
+   if (block->predecessors.size > 1) {
+      bi_foreach_predecessor(block, p) {
+         bi_block *runner = (*p);
 
          /* Skip unreachable predecessors */
          if (runner->imm_dom == NULL)
@@ -125,16 +125,16 @@ calc_dom_frontier(nir_block *block)
  */
 
 static void
-calc_dom_children(nir_function_impl *impl)
+calc_dom_children(bi_context *ctx)
 {
-   void *mem_ctx = ralloc_parent(impl);
+   void *mem_ctx = ctx;
 
-   nir_foreach_block_unstructured(block, impl) {
+   bi_foreach_block(ctx, block) {
       if (block->imm_dom)
          block->imm_dom->num_dom_children++;
    }
 
-   nir_foreach_block_unstructured(block, impl) {
+   bi_foreach_block(ctx, block) {
       if (!block->num_dom_children) {
          block->dom_children = NULL;
          continue;
@@ -143,23 +143,24 @@ calc_dom_children(nir_function_impl *impl)
       if (block->num_dom_children <= 3) {
          block->dom_children = block->_dom_children_storage;
       } else {
-         block->dom_children = ralloc_array(mem_ctx, nir_block *,
-                                            block->num_dom_children);
+         block->dom_children =
+            ralloc_array(mem_ctx, bi_block *, block->num_dom_children);
       }
       block->num_dom_children = 0;
    }
 
-   nir_foreach_block_unstructured(block, impl) {
+   bi_foreach_block(ctx, block) {
       if (block->imm_dom) {
-         block->imm_dom->dom_children[block->imm_dom->num_dom_children++] = block;
+         block->imm_dom->dom_children[block->imm_dom->num_dom_children++] =
+            block;
       }
    }
 }
 
 static void
-calc_dfs_indices(nir_block *block, uint32_t *index)
+calc_dfs_indices(bi_block *block, uint32_t *index)
 {
-   /* UINT32_MAX has special meaning. See nir_block_dominates. */
+   /* UINT32_MAX has special meaning. See bi_block_dominates. */
    assert(*index < UINT32_MAX - 2);
 
    block->dom_pre_index = (*index)++;
@@ -171,45 +172,32 @@ calc_dfs_indices(nir_block *block, uint32_t *index)
 }
 
 void
-nir_calc_dominance_impl(nir_function_impl *impl)
+bi_calc_dominance(bi_context *ctx)
 {
-   if (impl->valid_metadata & nir_metadata_dominance)
-      return;
-
-   nir_metadata_require(impl, nir_metadata_block_index);
-
-   nir_foreach_block_unstructured(block, impl) {
-      init_block(block, impl);
+   bi_foreach_block(ctx, block) {
+      init_block(block, ctx);
    }
 
    bool progress = true;
    while (progress) {
       progress = false;
-      nir_foreach_block_unstructured(block, impl) {
-         if (block != nir_start_block(impl))
+      bi_foreach_block(ctx, block) {
+         if (block != bi_entry_block(ctx))
             progress |= calc_dominance(block);
       }
    }
 
-   nir_foreach_block_unstructured(block, impl) {
+   bi_foreach_block(ctx, block) {
       calc_dom_frontier(block);
    }
 
-   nir_block *start_block = nir_start_block(impl);
+   bi_block *start_block = bi_entry_block(ctx);
    start_block->imm_dom = NULL;
 
-   calc_dom_children(impl);
+   calc_dom_children(ctx);
 
    uint32_t dfs_index = 1;
    calc_dfs_indices(start_block, &dfs_index);
-}
-
-void
-nir_calc_dominance(nir_shader *shader)
-{
-   nir_foreach_function_impl(impl, shader) {
-      nir_calc_dominance_impl(impl);
-   }
 }
 
 /**
@@ -224,14 +212,8 @@ nir_calc_dominance(nir_shader *shader)
  * another unreachable block.
  */
 bool
-nir_block_dominates(nir_block *parent, nir_block *child)
+bi_block_dominates(bi_block *parent, bi_block *child)
 {
-   assert(nir_cf_node_get_function(&parent->cf_node) ==
-          nir_cf_node_get_function(&child->cf_node));
-
-   assert(nir_cf_node_get_function(&parent->cf_node)->valid_metadata &
-          nir_metadata_dominance);
-
    /* If a block is unreachable, then nir_block::dom_pre_index == UINT32_MAX
     * and nir_block::dom_post_index == 0.  This allows us to trivially handle
     * unreachable blocks here with zero extra work.

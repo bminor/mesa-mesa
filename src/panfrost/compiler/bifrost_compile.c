@@ -4986,6 +4986,8 @@ create_empty_block(bi_context *ctx)
 
    util_dynarray_init(&blk->predecessors, blk);
 
+   _mesa_pointer_set_init(&blk->dom_frontier, ctx);
+
    return blk;
 }
 
