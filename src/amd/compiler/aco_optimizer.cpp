@@ -417,7 +417,7 @@ struct alu_opt_op {
 
 struct alu_opt_info {
    aco::small_vec<Definition, 2> defs;
-   aco::small_vec<alu_opt_op, 5> operands;
+   aco::small_vec<alu_opt_op, 4> operands;
    aco_opcode opcode;
    Format format;
    uint32_t imm;
