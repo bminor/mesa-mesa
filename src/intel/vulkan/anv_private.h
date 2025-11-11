@@ -361,6 +361,7 @@ void __anv_perf_warn(struct anv_device *device,
 /**
  * Print a FINISHME message, including its source location.
  */
+#if MESA_DEBUG
 #define anv_finishme(format, ...) \
    do { \
       static bool reported = false; \
@@ -370,6 +371,9 @@ void __anv_perf_warn(struct anv_device *device,
          reported = true; \
       } \
    } while (0)
+#else
+#define anv_finishme(x, ...)
+#endif
 
 /**
  * Print a perf warning message.  Set INTEL_DEBUG=perf to see these.
