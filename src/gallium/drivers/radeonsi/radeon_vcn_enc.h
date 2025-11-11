@@ -124,13 +124,7 @@ struct radeon_enc_pic {
    struct radeon_enc_dpb_buffer *dpb_bufs[RENCODE_MAX_NUM_RECONSTRUCTED_PICTURES];
 
    struct {
-      struct {
-         struct {
-            uint32_t enable_error_resilient_mode:1;
-            uint32_t is_obu_frame:1;
-         };
-         uint32_t *copy_start;
-      };
+      uint32_t *copy_start;
       rvcn_enc_av1_spec_misc_t av1_spec_misc;
       rvcn_enc_av1_cdf_default_table_t av1_cdf_default_table;
    };

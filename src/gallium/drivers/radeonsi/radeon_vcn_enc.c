@@ -1050,8 +1050,6 @@ static void radeon_vcn_enc_av1_get_param(struct radeon_encoder *enc,
       pic->seq.bit_depth_minus8;
    enc_pic->pic_width_in_luma_samples = pic->seq.pic_width_in_luma_samples;
    enc_pic->pic_height_in_luma_samples = pic->seq.pic_height_in_luma_samples;
-   enc_pic->enable_error_resilient_mode = pic->error_resilient_mode;
-   enc_pic->is_obu_frame = pic->enable_frame_obu;
    enc_pic->av1_enc_params.cur_order_hint = pic->order_hint;
 
    enc_pic->enc_params.reference_picture_index =

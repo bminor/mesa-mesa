@@ -144,7 +144,7 @@ static void radeon_enc_cdf_default_table(struct radeon_encoder *enc)
                           enc->enc_pic.frame_type == PIPE_AV1_ENC_FRAME_TYPE_INTRA_ONLY ||
                           enc->enc_pic.frame_type == PIPE_AV1_ENC_FRAME_TYPE_SWITCH ||
                           enc->enc_pic.av1.primary_ref_frame == 7 /* PRIMARY_REF_NONE */ ||
-                          (enc->enc_pic.enable_error_resilient_mode);
+                          (enc->enc_pic.av1.desc->error_resilient_mode);
 
    enc->enc_pic.av1_cdf_default_table.use_cdf_default = use_cdf_default ? 1 : 0;
 
@@ -195,7 +195,6 @@ void radeon_enc_av1_frame_header_common(struct radeon_encoder *enc, struct radeo
                          enc->enc_pic.frame_type == PIPE_AV1_ENC_FRAME_TYPE_INTRA_ONLY;
    uint32_t obu_type = frame_header ? RENCODE_OBU_TYPE_FRAME_HEADER
                                     : RENCODE_OBU_TYPE_FRAME;
-   bool error_resilient_mode = false;
    struct pipe_av1_enc_picture_desc *av1 = enc->enc_pic.av1.desc;
 
    radeon_enc_av1_bs_instruction_type(enc, bs, RENCODE_AV1_BITSTREAM_INSTRUCTION_COPY, 0);
@@ -217,14 +216,9 @@ void radeon_enc_av1_frame_header_common(struct radeon_encoder *enc, struct radeo
          /*  showable_frame  */
          radeon_bs_code_fixed_bits(bs, av1->showable_frame, 1);
 
-      if ((enc->enc_pic.frame_type == PIPE_AV1_ENC_FRAME_TYPE_SWITCH) ||
-            (enc->enc_pic.frame_type == PIPE_AV1_ENC_FRAME_TYPE_KEY && av1->show_frame))
-         error_resilient_mode = true;
-      else {
+      if (enc->enc_pic.frame_type != PIPE_AV1_ENC_FRAME_TYPE_KEY || !av1->show_frame)
          /*  error_resilient_mode  */
-         radeon_bs_code_fixed_bits(bs, enc->enc_pic.enable_error_resilient_mode ? 1 : 0, 1);
-         error_resilient_mode = enc->enc_pic.enable_error_resilient_mode;
-      }
+         radeon_bs_code_fixed_bits(bs, av1->error_resilient_mode, 1);
    }
 
    /*  disable_cdf_update  */
@@ -254,7 +248,7 @@ void radeon_enc_av1_frame_header_common(struct radeon_encoder *enc, struct radeo
       /*  order_hint  */
       radeon_bs_code_fixed_bits(bs, av1->order_hint, av1->seq.order_hint_bits);
 
-   if (!frame_is_intra && !error_resilient_mode)
+   if (!frame_is_intra && !av1->error_resilient_mode)
       /*  primary_ref_frame  */
       radeon_bs_code_fixed_bits(bs, enc->enc_pic.av1.primary_ref_frame, 3);
 
@@ -264,7 +258,7 @@ void radeon_enc_av1_frame_header_common(struct radeon_encoder *enc, struct radeo
       radeon_bs_code_fixed_bits(bs, av1->refresh_frame_flags, 8);
 
    if ((!frame_is_intra || av1->refresh_frame_flags != 0xff) &&
-                  error_resilient_mode && av1->seq.seq_bits.enable_order_hint)
+       av1->error_resilient_mode && av1->seq.seq_bits.enable_order_hint)
       for (i = 0; i < RENCODE_AV1_NUM_REF_FRAMES; i++)
          /*  ref_order_hint  */
          radeon_bs_code_fixed_bits(bs, av1->ref_order_hint[i], av1->seq.order_hint_bits);
@@ -297,7 +291,7 @@ void radeon_enc_av1_frame_header_common(struct radeon_encoder *enc, struct radeo
             radeon_bs_code_fixed_bits(bs, av1->delta_frame_id_minus_1[i], av1->seq.delta_frame_id_length);
       }
 
-      if (frame_size_override && !error_resilient_mode)
+      if (frame_size_override && !av1->error_resilient_mode)
          /*  found_ref  */
          radeon_bs_code_fixed_bits(bs, 1, 1);
       else {
@@ -397,7 +391,7 @@ void radeon_enc_av1_tile_group(struct radeon_encoder *enc, struct radeon_bitstre
 static void radeon_enc_obu_instruction(struct radeon_encoder *enc)
 {
    struct radeon_bitstream bs;
-   bool frame_header = !enc->enc_pic.is_obu_frame;
+   bool frame_header = !enc->enc_pic.av1.desc->enable_frame_obu;
 
    radeon_bs_reset(&bs, NULL, &enc->cs);
 

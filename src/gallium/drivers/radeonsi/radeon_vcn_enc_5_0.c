@@ -22,7 +22,7 @@ static void radeon_enc_cdf_default_table(struct radeon_encoder *enc)
    bool use_cdf_default = enc->enc_pic.frame_type == PIPE_AV1_ENC_FRAME_TYPE_KEY ||
                           enc->enc_pic.frame_type == PIPE_AV1_ENC_FRAME_TYPE_INTRA_ONLY ||
                           enc->enc_pic.frame_type == PIPE_AV1_ENC_FRAME_TYPE_SWITCH ||
-                          (enc->enc_pic.enable_error_resilient_mode);
+                          (enc->enc_pic.av1.desc->error_resilient_mode);
 
    enc->enc_pic.av1_cdf_default_table.use_cdf_default = use_cdf_default ? 1 : 0;
 
@@ -597,7 +597,7 @@ static void radeon_enc_av1_tile_default(struct radeon_encoder *enc,
 
    p_config->uniform_tile_spacing = !!(uniform_col && uniform_row);
 
-   if (enc->enc_pic.is_obu_frame) {
+   if (enc->enc_pic.av1.desc->enable_frame_obu) {
       p_config->num_tile_groups = 1;
       p_config->tile_groups[0].start = 0;
       p_config->tile_groups[0].end = (*num_tile_rows) * (*num_tile_cols) - 1;
@@ -900,7 +900,7 @@ static void radeon_enc_av1_frame_header(struct radeon_encoder *enc, struct radeo
 
 static void radeon_enc_obu_instruction(struct radeon_encoder *enc)
 {
-   bool frame_header = !enc->enc_pic.is_obu_frame;
+   bool frame_header = !enc->enc_pic.av1.desc->enable_frame_obu;
    struct radeon_bitstream bs;
 
    radeon_bs_reset(&bs, NULL, &enc->cs);
