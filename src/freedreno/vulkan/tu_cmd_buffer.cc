@@ -411,8 +411,14 @@ tu_emit_cache_flush(struct tu_cmd_buffer *cmd_buffer)
    tu6_emit_flushes<CHIP>(cmd_buffer, cs, cache);
 
    if ((flushes & TU_CMD_FLAG_WAIT_FOR_BR) && CHIP >= A7XX &&
-       !(cmd_buffer->state.pass && cmd_buffer->state.renderpass_cb_disabled)) {
+       !(cmd_buffer->state.pass && cmd_buffer->state.renderpass_cb_disabled) &&
+       !TU_DEBUG(NO_CONCURRENT_BINNING)) {
       trace_start_concurrent_binning_barrier(&cmd_buffer->trace, cs, cmd_buffer);
+
+      /* Wait-for-BR when repeated a lot of times per frame can add up
+       * and tank performance.
+       */
+      struct tu_cs_patchable_state cb_state = tu_cs_patchable_start(cs, 64);
 
       tu_cs_emit_pkt7(cs, CP_THREAD_CONTROL, 1);
       tu_cs_emit(cs, CP_THREAD_CONTROL_0_THREAD(CP_SET_THREAD_BOTH));
@@ -453,8 +459,19 @@ tu_emit_cache_flush(struct tu_cmd_buffer *cmd_buffer)
        */
       tu7_wait_onchip_val(cs, TU_ONCHIP_BARRIER, 0);
 
+      tu7_thread_control(cs, CP_SET_THREAD_BR);
+
+      tu_cs_patchable_end(cs, false, &cb_state);
+
       tu_add_cb_barrier_info(cmd_buffer);
-      tu7_set_thread_br_patchpoint(cmd_buffer, cs, false);
+
+      struct tu_cb_control_point cb_patch = {
+         .type = TU_CB_CONTROL_TYPE_PATCHPOINT,
+         .patchpoint = cb_state.nop_header,
+         .patch_value = cb_state.enable_patch,
+         .original_value = cb_state.disable_patch,
+      };
+      util_dynarray_append(&cmd_buffer->cb_control_points, cb_patch);
 
       trace_end_concurrent_binning_barrier(&cmd_buffer->trace, cs);
    }
