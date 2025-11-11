@@ -1769,7 +1769,8 @@ bi_record_use(bi_instr **uses, BITSET_WORD *multiple, bi_instr *I, unsigned s)
 
 bool bi_lower_divergent_indirects(nir_shader *shader, unsigned lanes);
 
-bool *bi_find_loop_blocks(const bi_context *ctx, bi_block *header);
+void bi_find_loop_blocks(const bi_context *ctx, bi_block *header,
+                         BITSET_WORD *out);
 
 #ifdef __cplusplus
 } /* extern C */

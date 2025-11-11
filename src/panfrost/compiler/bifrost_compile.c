@@ -6914,10 +6914,12 @@ bifrost_compile_shader_nir(nir_shader *nir,
 }
 
 static void
-find_all_predecessors(const bi_context *ctx, bi_block *b, bool *out)
+find_all_predecessors(const bi_context *ctx, bi_block *b, BITSET_WORD *out)
 {
    assert(out);
    assert(b);
+
+   BITSET_CLEAR_RANGE(out, 0, ctx->num_blocks);
 
    /* If the CFG was one long chain, we would require |blocks|-1 iters to
     * propagate the in_loop info all the way through.
@@ -6925,26 +6927,31 @@ find_all_predecessors(const bi_context *ctx, bi_block *b, bool *out)
    for (uint32_t iter = 0; iter < ctx->num_blocks - 1; ++iter) {
       bi_foreach_block(ctx, block) {
          bi_foreach_successor(block, succ) {
-            out[block->index] |= out[succ->index] || succ->index == b->index;
+            if (succ == b || BITSET_TEST(out, succ->index)) {
+               BITSET_SET(out, block->index);
+               break;
+            }
          }
       }
    }
 }
 
-bool *
-bi_find_loop_blocks(const bi_context *ctx, bi_block *header)
+void
+bi_find_loop_blocks(const bi_context *ctx, bi_block *header, BITSET_WORD *out)
 {
-   bool *h_as_suc = (bool *)calloc(ctx->num_blocks, sizeof(bool));
-   assert(h_as_suc);
+   find_all_predecessors(ctx, header, out);
 
-   find_all_predecessors(ctx, header, h_as_suc);
+   BITSET_WORD *dominators = BITSET_RZALLOC(NULL, ctx->num_blocks);
+   bi_foreach_block(ctx, b) {
+      if (bi_block_dominates(header, b)) {
+         BITSET_SET(dominators, b->index);
+      }
+   }
 
    /* If the header dominates b and is also the successor of b, then b
     * is in the loop of that header.
     */
-   bi_foreach_block(ctx, b) {
-      h_as_suc[b->index] &= bi_block_dominates(header, b);
-   }
+   __bitset_and(out, out, dominators, BITSET_WORDS(ctx->num_blocks));
 
-   return h_as_suc;
+   ralloc_free(dominators);
 }

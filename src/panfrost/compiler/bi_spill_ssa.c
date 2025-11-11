@@ -767,10 +767,11 @@ compute_w_entry_loop_header(struct spill_ctx *ctx)
    uint32_t n_ca = 0;
 
    uint32_t max_loop_pressure = 0;
-   const bool *loop_block = bi_find_loop_blocks(ctx->shader, ctx->block);
+   BITSET_WORD *loop_block = BITSET_RZALLOC(NULL, ctx->shader->num_blocks);
+   bi_find_loop_blocks(ctx->shader, ctx->block, loop_block);
 
    bi_foreach_block(ctx->shader, block) {
-      if (loop_block[block->index]) {
+      if (BITSET_TEST(loop_block, block->index)) {
          bi_foreach_instr_in_block(block, I) {
             max_loop_pressure = MAX2(max_loop_pressure, block->ssa_max_live);
 
@@ -789,6 +790,8 @@ compute_w_entry_loop_header(struct spill_ctx *ctx)
          }
       }
    }
+
+   ralloc_free(loop_block);
 
    /* Sort by next-use distance. */
    util_qsort_r(candidates, n_ca, sizeof(struct candidate), cmp_dist, ctx);
@@ -833,7 +836,6 @@ compute_w_entry_loop_header(struct spill_ctx *ctx)
 
    assert(ctx->nW <= ctx->k && "invariant");
 
-   free((void *)loop_block);
    free(candidates);
    free(flag_mem);
 }

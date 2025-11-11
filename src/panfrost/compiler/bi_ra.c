@@ -1149,25 +1149,26 @@ op_is_load_store(enum bi_opcode op)
 static uint64_t
 compute_spill_cost(bi_context *ctx)
 {
+   void *mctx = ralloc_context(NULL);
+
    /* Required for finding blocks belonging to loops. */
    bi_calc_dominance(ctx);
 
    /* The cost of a spill/fill is just 10*block_depth for now. */
 
-   uint32_t *block_depth = calloc(ctx->num_blocks, sizeof(uint32_t));
+   uint32_t *block_depth = rzalloc_array(mctx, uint32_t, ctx->num_blocks);
+   BITSET_WORD *loop_block = BITSET_RZALLOC(mctx, ctx->num_blocks);
 
    bi_foreach_block(ctx, block) {
       if (!block->loop_header)
          continue;
 
-      bool *loop_block = bi_find_loop_blocks(ctx, block);
+      bi_find_loop_blocks(ctx, block, loop_block);
 
       for (uint32_t b = 0; b < ctx->num_blocks; ++b) {
-         if (loop_block[b])
+         if (BITSET_SET(loop_block, b))
             block_depth[b] += 1;
       }
-
-      free(loop_block);
    }
 
    uint64_t cost = 0;
@@ -1178,7 +1179,7 @@ compute_spill_cost(bi_context *ctx)
       }
    }
 
-   free(block_depth);
+   ralloc_free(mctx);
 
    return cost;
 }
