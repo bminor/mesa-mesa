@@ -441,6 +441,42 @@ tu_cs_trace_start(struct u_trace_context *utctx,
 __attribute__((format(printf, 3, 4))) void
 tu_cs_trace_end(struct u_trace_context *utctx, void *cs, const char *fmt, ...);
 
+struct tu_cs_patchable_state {
+   uint32_t *nop_header;
+   uint32_t dwords;
+   uint32_t enable_patch;
+   uint32_t disable_patch;
+   uint32_t *_end;
+};
+
+/* Create a region that can be enabled/disabled by updating CP_NOP header. */
+static struct tu_cs_patchable_state
+tu_cs_patchable_start(struct tu_cs *cs, uint32_t reserved_size)
+{
+   tu_cs_reserve(cs, reserved_size);
+   uint32_t *nop_header = cs->cur;
+   tu_cs_emit_pkt7(cs, CP_NOP, 0);
+   return (struct tu_cs_patchable_state) {
+      .nop_header = nop_header,
+      .dwords = 0,
+      .enable_patch = pm4_pkt7_hdr(CP_NOP, 0),
+      .disable_patch = 0,
+      ._end = cs->end,
+   };
+}
+
+static void
+tu_cs_patchable_end(struct tu_cs *cs,
+                    bool enabled_by_default,
+                    struct tu_cs_patchable_state *state)
+{
+   assert(cs->end == state->_end);
+   state->dwords = cs->cur - state->nop_header - 1;
+   state->disable_patch = pm4_pkt7_hdr(CP_NOP, state->dwords);
+   if (!enabled_by_default)
+      *state->nop_header = state->disable_patch;
+}
+
 /* Helpers for bracketing a large sequence of commands of unknown size inside
  * a CP_COND_REG_EXEC packet.
  */
