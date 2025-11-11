@@ -6634,7 +6634,7 @@
         "description": "vulkan/video: Fix coding AV1 seq_choose_screen_content_tools = 1",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "724655bfc6b70deec343a963d8728d1bd641db44",
         "notes": null
