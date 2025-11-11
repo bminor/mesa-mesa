@@ -746,6 +746,10 @@ struct v3dv_image {
     * This holds a tiled copy of the image we can use for that purpose.
     */
    struct v3dv_image *shadow;
+
+   /* Image is a WSI image.
+    */
+   bool from_wsi;
 };
 
 VkResult

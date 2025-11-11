@@ -246,8 +246,7 @@ v3d_setup_plane_slices(struct v3dv_device *device, struct v3dv_image *image,
       /* Ensure stride alignment matches the one required by the GPU that
        * drives the display.
        */
-      if (!image->tiled &&
-          image->vk.image_type == VK_IMAGE_TYPE_2D) {
+      if (image->from_wsi) {
          slice->stride =
             align(slice->stride,
                   v3d_simulator_get_raster_stride_align(device->pdevice->render_fd));
@@ -436,6 +435,10 @@ v3dv_image_init(struct v3dv_device *device,
       explicit_mod_info = &eci;
       modifier = eci.drmFormatModifier;
    }
+
+   const struct wsi_image_create_info *wsi_info =
+      vk_find_struct_const(pCreateInfo->pNext, WSI_IMAGE_CREATE_INFO_MESA);
+   image->from_wsi = wsi_info != NULL;
 
    if (tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
       mod_info =
