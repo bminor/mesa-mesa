@@ -9,19 +9,6 @@ glx@glx_ext_import_context@*
 # Random: ../src/util/hash_table.c:311: hash_table_search: Assertion `!key_pointer_is_reserved(ht, key)' failed.
 spec@ext_image_dma_buf_import@ext_image_dma_buf_import-refcount-multithread
 
-# Random
-# Mostly reported by "Some new flakes found:" and most of them never appear in the failures
-KHR-GL46.geometry_shader.primitive_counter.triangles_to_line_strip_rp
-
-KHR-GLES31.core.geometry_shader.primitive_counter.lines_to_line_strip
-KHR-GLES31.core.geometry_shader.primitive_counter.lines_to_line_strip_rp
-KHR-GLES31.core.geometry_shader.primitive_counter.points_to_line_strip
-KHR-GLES31.core.geometry_shader.primitive_counter.triangles_to_line_strip
-KHR-GLES32.core.geometry_shader.primitive_counter.lines_to_line_strip
-KHR-GLES32.core.geometry_shader.primitive_counter.lines_to_line_strip_rp
-KHR-GLES32.core.geometry_shader.primitive_counter.points_to_line_strip
-KHR-GLES32.core.geometry_shader.primitive_counter.triangles_to_line_strip
-
 dEQP-GLES3.functional.flush_finish.wait
 
 dEQP-GLES2.functional.fragment_ops.random.0
