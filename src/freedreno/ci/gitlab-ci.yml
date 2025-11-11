@@ -1,6 +1,17 @@
 include:
   - local: 'src/freedreno/ci/gitlab-ci-inc.yml'
 
+a200-gl:
+  extends:
+    - .ci-tron-arm32-test-gl
+    - .a200
+    - .lumag-freedreno-manual-rules
+  timeout: 180m
+  parallel: 2
+  variables:
+    CI_TRON_TIMEOUT__OVERALL__MINUTES: 180
+    DEQP_SUITE: freedreno-a200
+
 a306-gl:
   extends:
     - .lava-arm64-test-gl

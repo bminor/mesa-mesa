@@ -135,6 +135,21 @@
     - !reference [.valve-farm-manual-rules, rules]
     - !reference [.turnip-manual-rules, rules]
 
+.lumag-freedreno-rules:
+  stage: freedreno
+  rules:
+    - !reference [.test, rules]
+    - !reference [.lumag-farm-rules, rules]
+    - !reference [.freedreno-rules, rules]
+
+.lumag-freedreno-manual-rules:
+  stage: freedreno-nightly
+  extends: .no-auto-retry
+  rules:
+    - !reference [.test, rules]
+    - !reference [.lumag-farm-manual-rules, rules]
+    - !reference [.freedreno-manual-rules, rules]
+
 .collabora-freedreno-rules-restricted:
   stage: freedreno
   rules:
@@ -248,6 +263,26 @@
 
 
 # CI-tron
+
+.a200:
+  variables:
+    FDO_CI_CONCURRENT: 2
+    CI_TRON_DUT_SETUP_TAGS: dt_gpu:codename:a200
+    CI_TRON_INITRAMFS_CATEGORY__50_PLATFORM__0__URL: 'https://${S3_BASE_PATH}/${FIRMWARE_REPO}/qcom-${FIRMWARE_TAG}.tar'
+    CI_TRON_INITRAMFS_CATEGORY__50_PLATFORM__0__FORMAT__0__ARCHIVE__EXTENSION: 'cpio'
+    CI_TRON_INITRAMFS_CATEGORY__50_PLATFORM__0__FORMAT__0__ARCHIVE__KEEP__0__PATH: '(./lib/firmware/qcom/yamato.*)'
+    # as good as anything else, works for now
+    CI_TRON_DTB__0__URL: '$KERNEL_IMAGE_BASE/armhf/imx53-qsrb.dtb'
+    CI_TRON__B2C_SWAP_SIZE: '4g'
+    CI_TRON_TIMEOUT__FIRST_CONSOLE_ACTIVITY__MINUTES: 0.5
+    CI_TRON_TIMEOUT__FIRST_CONSOLE_ACTIVITY__RETRIES: 3
+    CI_TRON_WATCHDOG__FIRMWARE_TO_LINUX__MINUTES: 1.0
+    CI_TRON_WATCHDOG__FIRMWARE_TO_LINUX__RETRIES: 5
+    CI_TRON_WATCHDOG__FIRMWARE_TO_LINUX__START_REGEX: 'Model: Freescale i.MX53 Quick Start Board'  # A line repeated during firmware boot
+    CI_TRON_WATCHDOG__FIRMWARE_TO_LINUX__STOP_REGEX: 'CPU identified as i.MX53'                    # A line repeated during Linux boot
+    GPU_VERSION: freedreno-a200
+    RUNNER_FARM_LOCATION: lumag
+
 
 .a750:
   variables:
