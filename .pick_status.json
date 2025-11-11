@@ -5704,7 +5704,7 @@
         "description": "rusticl/kernel: Do not run kernels with a workgroup size beyond work_dim",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "376d1e6667a80e1811d4c25115633817f16666a7",
         "notes": null
