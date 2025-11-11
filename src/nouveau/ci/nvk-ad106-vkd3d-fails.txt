@@ -5,6 +5,7 @@
 test_uav_counter_null_behavior_dxbc,Crash
 test_uav_counter_null_behavior_dxil,Crash
 
+test_custom_border_color_limits,Fail
 test_derivative_hoisting_dxil,Fail
 
 test_undefined_structured_raw_alias_dxbc,Fail

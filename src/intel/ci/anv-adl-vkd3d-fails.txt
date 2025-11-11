@@ -1,4 +1,5 @@
 test_buffers_oob_behavior_vectorized_structured_16bit,Fail
+test_custom_border_color_limits,Fail
 test_fence_wait_robustness,Crash
 test_line_rasterization,Fail
 test_sampler_feedback_min_mip_level_array,Fail
@@ -13,3 +14,6 @@ test_undefined_structured_raw_read_typed_dxbc,Fail
 test_undefined_structured_raw_read_typed_dxil,Fail
 test_undefined_typed_read_structured_raw_dxbc,Fail
 test_undefined_typed_read_structured_raw_dxil,Fail
+
+# xe 0000:00:02.0: [drm] GT0: Timedout job: seqno=4294967172, lrc_seqno=4294967172, guc_id=2, flags=0x0 in d3d12 [871]
+test_fence_pending_signal_cpu_rewind_plain,Crash
