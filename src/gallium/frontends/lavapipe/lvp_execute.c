@@ -2440,7 +2440,11 @@ static void handle_copy_memory_indirect(struct vk_cmd_queue_entry *cmd,
       VkCopyMemoryIndirectCommandKHR *copy = (void*)(ptr + i * copycmd->copyAddressRange.stride);
       void *src = (void*)(uintptr_t)copy->srcAddress;
       void *dst = (void*)(uintptr_t)copy->dstAddress;
-      memcpy(dst, src, copycmd->copyAddressRange.size);
+      /* Techincally apps passing in size of zero still need valid pointers,
+       * but in case they don't (which is easy to do) we don't want undefined behavior (or crash) in memcpy.
+       */
+      if (copy->size != 0)
+         memcpy(dst, src, copycmd->copyAddressRange.size);
    }
 }
 
