@@ -479,8 +479,8 @@ d3d12_video_bitstream_builder_hevc::build_sps(const HevcVideoParameterSet& paren
    viewport.Width = crop_window_upper_layer.front /* passes width */ - ((crop_window_upper_layer.left + crop_window_upper_layer.right) * SubWidthC);
    viewport.Height = crop_window_upper_layer.back /* passes height */- ((crop_window_upper_layer.top + crop_window_upper_layer.bottom) * SubHeightC);
 
-   m_latest_sps.pic_width_in_luma_samples = ALIGN(encodeResolution.Width, picDimensionMultipleRequirement);
-   m_latest_sps.pic_height_in_luma_samples = ALIGN(encodeResolution.Height, picDimensionMultipleRequirement);
+   m_latest_sps.pic_width_in_luma_samples = align(encodeResolution.Width, picDimensionMultipleRequirement);
+   m_latest_sps.pic_height_in_luma_samples = align(encodeResolution.Height, picDimensionMultipleRequirement);
    m_latest_sps.conf_win_right_offset = (m_latest_sps.pic_width_in_luma_samples - viewport.Width) / SubWidthC;
    m_latest_sps.conf_win_bottom_offset = (m_latest_sps.pic_height_in_luma_samples - viewport.Height) / SubHeightC;
 

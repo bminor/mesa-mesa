@@ -2305,7 +2305,7 @@ intel_aux_map_buffer_alloc(void *driver_ctx, uint32_t size)
    struct iris_bufmgr *bufmgr = (struct iris_bufmgr *)driver_ctx;
 
    unsigned int page_size = getpagesize();
-   size = MAX2(ALIGN(size, page_size), page_size);
+   size = MAX2(align(size, page_size), page_size);
 
    struct iris_bo *bo = alloc_fresh_bo(bufmgr, size, BO_ALLOC_CAPTURE);
    if (!bo) {

@@ -201,8 +201,8 @@ virgl_drm_winsys_resource_create_blob(struct virgl_winsys *qws,
       return NULL;
 
    /* Make sure blob is page aligned. */
-   width = ALIGN(width, getpagesize());
-   size = ALIGN(size, getpagesize());
+   width = align(width, getpagesize());
+   size = align(size, getpagesize());
 
    blob_id = p_atomic_inc_return(&qdws->blob_id);
    cmd[0] = VIRGL_CMD0(VIRGL_CCMD_PIPE_RESOURCE_CREATE, 0, VIRGL_PIPE_RES_CREATE_SIZE);

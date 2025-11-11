@@ -1461,7 +1461,7 @@ elk_fs_visitor::opt_combine_constants()
           * instructions seem to have additional alignment requirements, so
           * account for that too.
           */
-         reg.offset = ALIGN(reg.offset, get_alignment_for_imm(imm));
+         reg.offset = align(reg.offset, get_alignment_for_imm(imm));
 
          /* Ensure we have enough space in the register to copy the immediate */
          if (reg.offset + imm->size > REG_SIZE) {
@@ -1555,7 +1555,7 @@ elk_fs_visitor::opt_combine_constants()
        * seem to have additional alignment requirements, so account for that
        * too.
        */
-      assert(reg.offset == ALIGN(reg.offset, get_alignment_for_imm(imm)));
+      assert(reg.offset == align(reg.offset, get_alignment_for_imm(imm)));
 
       struct elk_reg imm_reg = build_imm_reg_for_copy(imm);
 

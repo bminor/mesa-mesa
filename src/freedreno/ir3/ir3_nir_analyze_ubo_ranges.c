@@ -36,7 +36,7 @@ get_ubo_load_range(nir_shader *nir, nir_intrinsic_instr *instr,
       return false;
 
    r->start = ROUND_DOWN_TO(offset, alignment * 16);
-   r->end = ALIGN(offset + size, alignment * 16);
+   r->end = align(offset + size, alignment * 16);
 
    return true;
 }

@@ -1731,9 +1731,9 @@ blorp_surf_retile_w_to_y(const struct isl_device *isl_dev,
    const unsigned x_align = 8, y_align = info->surf.samples != 0 ? 8 : 4;
    info->surf.tiling = ISL_TILING_Y0;
    info->surf.logical_level0_px.width =
-      ALIGN(info->surf.logical_level0_px.width, x_align) * 2;
+      align(info->surf.logical_level0_px.width, x_align) * 2;
    info->surf.logical_level0_px.height =
-      ALIGN(info->surf.logical_level0_px.height, y_align) / 2;
+      align(info->surf.logical_level0_px.height, y_align) / 2;
    info->tile_x_sa *= 2;
    info->tile_y_sa /= 2;
 }
@@ -1984,8 +1984,8 @@ try_blorp_blit(struct blorp_batch *batch,
          isl_get_interleaved_msaa_px_size_sa(params->dst.surf.samples);
       params->x0 = ROUND_DOWN_TO(params->x0, 2) * px_size_sa.width;
       params->y0 = ROUND_DOWN_TO(params->y0, 2) * px_size_sa.height;
-      params->x1 = ALIGN(params->x1, 2) * px_size_sa.width;
-      params->y1 = ALIGN(params->y1, 2) * px_size_sa.height;
+      params->x1 = align(params->x1, 2) * px_size_sa.width;
+      params->y1 = align(params->y1, 2) * px_size_sa.height;
 
       blorp_surf_fake_interleaved_msaa(batch->blorp->isl_dev, &params->dst);
 
@@ -2045,8 +2045,8 @@ try_blorp_blit(struct blorp_batch *batch,
       const unsigned y_align = params->dst.surf.samples != 0 ? 8 : 4;
       params->x0 = ROUND_DOWN_TO(params->x0, x_align) * 2;
       params->y0 = ROUND_DOWN_TO(params->y0, y_align) / 2;
-      params->x1 = ALIGN(params->x1, x_align) * 2;
-      params->y1 = ALIGN(params->y1, y_align) / 2;
+      params->x1 = align(params->x1, x_align) * 2;
+      params->y1 = align(params->y1, y_align) / 2;
 
       /* Retile the surface to Y-tiled */
       blorp_surf_retile_w_to_y(batch->blorp->isl_dev, &params->dst);

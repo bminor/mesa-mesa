@@ -37,7 +37,7 @@ ir3_const_ensure_imm_size(struct ir3_shader_variant *v, unsigned size)
    /* Immediates are uploaded in units of vec4 so make sure our buffer is large
     * enough.
     */
-   size = ALIGN(size, 4);
+   size = align(size, 4);
 
    /* Pre-a7xx, the immediates that get lowered to const registers are
     * emitted as part of the const state so the total size of immediates

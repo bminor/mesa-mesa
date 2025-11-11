@@ -472,7 +472,7 @@ void si_shader_dump_stats_for_shader_db(struct si_screen *screen, struct si_shad
                       "HSPatchOuts: %u ESOutputs: %u GSOutputs: %u VSOutputs: %u PSOutputs: %u "
                       "InlineUniforms: %u DivergentLoop: %u (%s, W%u)",
                       conf->num_sgprs, conf->num_vgprs, si_get_shader_binary_size(screen, shader),
-                      ALIGN(conf->lds_size, ac_shader_get_lds_alloc_granularity(screen->info.gfx_level)),
+                      align(conf->lds_size, ac_shader_get_lds_alloc_granularity(screen->info.gfx_level)),
                       conf->scratch_bytes_per_wave, shader->info.max_simd_waves,
                       conf->spilled_sgprs, conf->spilled_vgprs, shader->info.private_mem_vgprs,
                       num_ls_outputs, num_hs_outputs,

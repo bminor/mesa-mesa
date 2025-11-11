@@ -94,7 +94,7 @@ write_execlists_header(struct aub_file *aub, const char *name)
    app_name_len =
       snprintf(app_name, sizeof(app_name), "PCI-ID=0x%X %s",
                aub->pci_id, name);
-   app_name_len = ALIGN(app_name_len, sizeof(uint32_t));
+   app_name_len = align(app_name_len, sizeof(uint32_t));
 
    dwords = 5 + app_name_len / sizeof(uint32_t);
    dword_out(aub, CMD_MEM_TRACE_VERSION | (dwords - 1));
@@ -189,7 +189,7 @@ mem_trace_memory_write_header_out(struct aub_file *aub, uint64_t addr,
                                   uint32_t len, uint32_t addr_space,
                                   const char *desc)
 {
-   uint32_t dwords = ALIGN(len, sizeof(uint32_t)) / sizeof(uint32_t);
+   uint32_t dwords = align(len, sizeof(uint32_t)) / sizeof(uint32_t);
 
    if (aub->verbose_log_file) {
       fprintf(aub->verbose_log_file,

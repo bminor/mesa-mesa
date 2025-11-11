@@ -602,7 +602,7 @@ tu_descriptor_set_create(struct tu_device *device,
          &layout->binding[layout->binding_count - 1];
       if (binding->type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
          layout_size = binding->offset +
-            ALIGN(variable_count, 4 * A6XX_TEX_CONST_DWORDS);
+            align(variable_count, 4 * A6XX_TEX_CONST_DWORDS);
       } else {
          uint32_t stride = binding->size;
          layout_size = binding->offset + variable_count * stride;

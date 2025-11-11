@@ -467,7 +467,7 @@ brw_lower_find_live_channel(brw_shader &s)
           * specified quarter control as result.
           */
          if (inst->group > 0)
-            ubld.SHR(mask, mask, brw_imm_ud(ALIGN(inst->group, 8)));
+            ubld.SHR(mask, mask, brw_imm_ud(align(inst->group, 8)));
 
          ubld.AND(mask, exec_mask, mask);
          exec_mask = mask;

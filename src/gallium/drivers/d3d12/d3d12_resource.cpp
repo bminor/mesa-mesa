@@ -1199,11 +1199,11 @@ fill_buffer_location(struct d3d12_context *ctx,
       buf_loc.PlacedFootprint.Footprint.Height = res->base.b.height0;
       buf_loc.PlacedFootprint.Footprint.Depth = res->base.b.depth0;
    } else {
-      buf_loc.PlacedFootprint.Footprint.Width = ALIGN(trans->base.b.box.width,
+      buf_loc.PlacedFootprint.Footprint.Width = align(trans->base.b.box.width,
                                                       util_format_get_blockwidth(res->base.b.format));
-      buf_loc.PlacedFootprint.Footprint.Height = ALIGN(trans->base.b.box.height,
+      buf_loc.PlacedFootprint.Footprint.Height = align(trans->base.b.box.height,
                                                        util_format_get_blockheight(res->base.b.format));
-      buf_loc.PlacedFootprint.Footprint.Depth = ALIGN(depth,
+      buf_loc.PlacedFootprint.Footprint.Depth = align(depth,
                                                       util_format_get_blockdepth(res->base.b.format));
    }
 

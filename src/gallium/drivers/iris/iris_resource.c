@@ -2254,7 +2254,7 @@ iris_map_tiled_memcpy(struct iris_transfer *map)
    struct iris_resource *res = (struct iris_resource *) xfer->resource;
    struct isl_surf *surf = &res->surf;
 
-   xfer->stride = ALIGN(surf->row_pitch_B, 16);
+   xfer->stride = align(surf->row_pitch_B, 16);
    xfer->layer_stride = xfer->stride * box->height;
 
    unsigned x1, x2, y1, y2;

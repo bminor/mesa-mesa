@@ -45,7 +45,7 @@
 #define FILE_DEBUG_FLAG DEBUG_TEXTURE
 
 #define ALIGN_DOWN(a, b) ROUND_DOWN_TO(a, b)
-#define ALIGN_UP(a, b) ALIGN(a, b)
+#define ALIGN_UP(a, b) align(a, b)
 
 /* Tile dimensions.  Width and span are in bytes, height is in pixels (i.e.
  * unitless).  A "span" is the most number of bytes we can copy from linear

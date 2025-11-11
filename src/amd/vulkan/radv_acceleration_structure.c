@@ -162,7 +162,7 @@ radv_get_acceleration_structure_layout(struct radv_device *device,
       offset += bvh_size / 64 * 4;
 
    /* The BVH and hence bvh_offset needs 64 byte alignment for RT nodes. */
-   offset = ALIGN(offset, 64);
+   offset = align(offset, 64);
    accel_struct->bvh_offset = offset;
 
    /* root node */

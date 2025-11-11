@@ -527,7 +527,7 @@ brw_flag_mask(const brw_inst *inst, unsigned width)
    assert(util_is_power_of_two_nonzero(width));
    const unsigned start = (inst->flag_subreg * 16 + inst->group) &
                           ~(width - 1);
-   const unsigned end = start + ALIGN(inst->exec_size, width);
+   const unsigned end = start + align(inst->exec_size, width);
    return ((1 << DIV_ROUND_UP(end, 8)) - 1) & ~((1 << (start / 8)) - 1);
 }
 

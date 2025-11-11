@@ -299,7 +299,7 @@ anv_descriptor_data_size(enum anv_descriptor_data data,
          surface_size += ANV_SAMPLER_STATE_SIZE;
 
       if (data & ANV_DESCRIPTOR_SURFACE_SAMPLER) {
-         surface_size += ALIGN(ANV_SURFACE_STATE_SIZE + ANV_SAMPLER_STATE_SIZE,
+         surface_size += align(ANV_SURFACE_STATE_SIZE + ANV_SAMPLER_STATE_SIZE,
                                ANV_SURFACE_STATE_SIZE);
       }
    }
@@ -1037,7 +1037,7 @@ anv_descriptor_set_layout_descriptor_buffer_size(const struct anv_descriptor_set
    const struct anv_descriptor_set_binding_layout *dynamic_binding =
       set_layout_dynamic_binding(set_layout);
    if (dynamic_binding == NULL) {
-      *out_surface_size = ALIGN(set_layout->descriptor_buffer_surface_size,
+      *out_surface_size = align(set_layout->descriptor_buffer_surface_size,
                                 ANV_UBO_ALIGNMENT);
       *out_sampler_size = set_layout->descriptor_buffer_sampler_size;
       return;
@@ -1062,7 +1062,7 @@ anv_descriptor_set_layout_descriptor_buffer_size(const struct anv_descriptor_set
           var_desc_count * dynamic_binding->descriptor_sampler_stride;
    }
 
-   *out_surface_size = ALIGN(set_surface_size, ANV_UBO_ALIGNMENT);
+   *out_surface_size = align(set_surface_size, ANV_UBO_ALIGNMENT);
    *out_sampler_size = set_sampler_size;
 }
 

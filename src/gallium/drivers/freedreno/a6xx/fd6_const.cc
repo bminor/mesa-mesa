@@ -553,7 +553,7 @@ fd6_emit_link_map(struct fd_context *ctx, fd_cs &cs,
    if (CHIP == A7XX && producer->compiler->load_shader_consts_via_preamble) {
       const struct ir3_const_state *const_state = ir3_const_state(consumer);
       int base = const_state->primitive_map_ubo.idx;
-      uint32_t size = ALIGN(consumer->input_size, 4);
+      uint32_t size = align(consumer->input_size, 4);
 
       fd6_upload_emit_driver_ubo(ctx, cs, consumer, base, size, producer->output_loc);
    } else {

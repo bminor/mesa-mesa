@@ -228,7 +228,7 @@ ethosu_lower_concatenation(struct ethosu_subgraph *subgraph,
       if (tensor->layout == ETHOSU_LAYOUT_NHWC)
          operation->ofm.tiles.addresses[0] += poperation->input_tensors[i]->dims[3];
       else if (tensor->layout == ETHOSU_LAYOUT_NHCWB16)
-         operation->ofm.tiles.addresses[0] += poperation->input_tensors[i]->dims[2] * ALIGN(poperation->input_tensors[i]->dims[3], 16);
+         operation->ofm.tiles.addresses[0] += poperation->input_tensors[i]->dims[2] * align(poperation->input_tensors[i]->dims[3], 16);
       else
          assert(0 && "Unsupported layout");
    }

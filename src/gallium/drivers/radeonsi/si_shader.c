@@ -391,7 +391,7 @@ static void si_lower_ngg(struct si_shader *shader, nir_shader *nir,
                shader->info.nr_param_exports || shader->info.nr_prim_param_exports,
                &out_needs_scratch_ring,
                shader->wave_size,
-               ALIGN(max_workgroup_size, shader->wave_size),
+               align(max_workgroup_size, shader->wave_size),
                false,
                false);
       shader->info.uses_mesh_scratch_ring = out_needs_scratch_ring;
@@ -923,7 +923,7 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
 
    if (si_should_clear_lds(sel->screen, nir)) {
       const unsigned chunk_size = 16; /* max single store size */
-      const unsigned shared_size = ALIGN(nir->info.shared_size, chunk_size);
+      const unsigned shared_size = align(nir->info.shared_size, chunk_size);
       NIR_PASS(_, nir, nir_clear_shared_memory, shared_size, chunk_size);
    }
 

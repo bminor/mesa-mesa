@@ -1219,7 +1219,7 @@ remap_attr_reg(brw_shader &s,
    const bool per_prim = src.nr < prog_data->num_per_primitive_inputs;
    const unsigned base = urb_start +
       (per_prim ? 0 :
-       ALIGN(prog_data->num_per_primitive_inputs / 2,
+       align(prog_data->num_per_primitive_inputs / 2,
              reg_unit(s.devinfo)) * s.max_polygons);
    const unsigned idx = per_prim ? src.nr :
       src.nr - prog_data->num_per_primitive_inputs;

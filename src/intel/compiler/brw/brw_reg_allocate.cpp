@@ -52,7 +52,7 @@ brw_assign_regs_trivial(brw_shader &s)
    int reg_width = s.dispatch_width / 8;
 
    /* Note that compressed instructions require alignment to 2 registers. */
-   hw_reg_mapping[0] = ALIGN(s.first_non_payload_grf, reg_width);
+   hw_reg_mapping[0] = align(s.first_non_payload_grf, reg_width);
    for (i = 1; i <= s.alloc.count; i++) {
       hw_reg_mapping[i] = (hw_reg_mapping[i - 1] +
                            DIV_ROUND_UP(s.alloc.sizes[i - 1],
@@ -264,7 +264,7 @@ public:
        * for reg_width == 2.
        */
       int reg_width = fs->dispatch_width / 8;
-      payload_node_count = ALIGN(fs->first_non_payload_grf, reg_width);
+      payload_node_count = align(fs->first_non_payload_grf, reg_width);
 
       /* Get payload IP information */
       payload_last_use_ip = ralloc_array(mem_ctx, int, payload_node_count);
@@ -1180,7 +1180,7 @@ brw_reg_alloc::choose_spill_reg()
 brw_reg
 brw_reg_alloc::alloc_spill_reg(unsigned size, int ip)
 {
-   int vgrf = brw_allocate_vgrf_units(*fs, ALIGN(size, reg_unit(devinfo))).nr;
+   int vgrf = brw_allocate_vgrf_units(*fs, align(size, reg_unit(devinfo))).nr;
    int class_idx = DIV_ROUND_UP(size, reg_unit(devinfo)) - 1;
    int n = ra_add_node(g, compiler->reg_set.classes[class_idx]);
    assert(n == first_vgrf_node + vgrf);
@@ -1216,7 +1216,7 @@ brw_reg_alloc::spill_reg(unsigned spill_reg)
 {
    int size = fs->alloc.sizes[spill_reg];
    unsigned int spill_offset = fs->last_scratch;
-   assert(ALIGN(spill_offset, 16) == spill_offset); /* oword read/write req. */
+   assert(align(spill_offset, 16) == spill_offset); /* oword read/write req. */
 
    fs->spilled_any_registers = true;
 

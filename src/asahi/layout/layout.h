@@ -339,10 +339,10 @@ static inline bool
 ail_is_level_allocated_compressed(const struct ail_layout *layout,
                                   unsigned level)
 {
-   unsigned width_sa = ALIGN(
+   unsigned width_sa = align(
       ail_effective_width_sa(layout->width_px, layout->sample_count_sa), 16);
 
-   unsigned height_sa = ALIGN(
+   unsigned height_sa = align(
       ail_effective_height_sa(layout->height_px, layout->sample_count_sa), 16);
 
    return layout->compressed &&

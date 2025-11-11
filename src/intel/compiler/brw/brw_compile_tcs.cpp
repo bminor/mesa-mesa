@@ -263,7 +263,7 @@ brw_compile_tcs(const struct brw_compiler *compiler,
       return NULL;
 
    /* URB entry sizes are stored as a multiple of 64 bytes. */
-   vue_prog_data->urb_entry_size = ALIGN(output_size_bytes, 64) / 64;
+   vue_prog_data->urb_entry_size = align(output_size_bytes, 64) / 64;
 
    /* HS does not use the usual payload pushing from URB to GRFs,
     * because we don't have enough registers for a full-size payload, and

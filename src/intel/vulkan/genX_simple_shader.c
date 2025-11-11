@@ -682,7 +682,7 @@ genX(emit_simple_shader_dispatch)(struct anv_simple_shader *state,
 
 #else /* GFX_VERx10 < 125 */
       const uint32_t vfe_curbe_allocation =
-         ALIGN(prog_data->push.per_thread.regs * dispatch.threads +
+         align(prog_data->push.per_thread.regs * dispatch.threads +
                prog_data->push.cross_thread.regs, 2);
 
       /* From the Sky Lake PRM Vol 2a, MEDIA_VFE_STATE:

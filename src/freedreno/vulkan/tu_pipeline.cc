@@ -683,7 +683,7 @@ tu6_emit_link_map(struct tu_cs *cs,
                   enum a6xx_state_block sb)
 {
    const struct ir3_const_state *const_state = ir3_const_state(consumer);
-   uint32_t size = ALIGN(consumer->input_size, 4);
+   uint32_t size = align(consumer->input_size, 4);
 
    if (size == 0)
       return;

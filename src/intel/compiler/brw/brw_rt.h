@@ -233,7 +233,7 @@ brw_rt_compute_scratch_layout(struct brw_rt_scratch_layout *layout,
     */
    assert(size % 64 == 0);
    layout->sw_stack_start = size;
-   layout->sw_stack_size = ALIGN(sw_stack_size, 64);
+   layout->sw_stack_size = align(sw_stack_size, 64);
 
    /* Currently it's always the case that sw_stack_size is a power of
     * two, but power-of-two SW stack sizes are prone to causing

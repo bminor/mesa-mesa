@@ -16,7 +16,7 @@ fill_scale_and_biases(struct ethosu_subgraph *subgraph, struct ethosu_operation 
                                      PIPE_MAP_READ, &transfer_in);
    unsigned idx = 0;
 
-   *scales_size = ALIGN(operation->ofm.shape.depth * 10, 16);
+   *scales_size = align(operation->ofm.shape.depth * 10, 16);
    *scales = malloc(*scales_size);
    memset(*scales, 0, *scales_size);
 

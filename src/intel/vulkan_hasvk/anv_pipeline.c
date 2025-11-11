@@ -565,7 +565,7 @@ anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
           * used by the shader to chunk_size -- which does simplify the logic.
           */
          const unsigned chunk_size = 16;
-         const unsigned shared_size = ALIGN(nir->info.shared_size, chunk_size);
+         const unsigned shared_size = align(nir->info.shared_size, chunk_size);
          assert(shared_size <=
                 intel_compute_slm_calculate_size(compiler->devinfo->ver, nir->info.shared_size));
 

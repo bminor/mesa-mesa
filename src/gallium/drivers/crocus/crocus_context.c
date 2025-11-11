@@ -62,7 +62,7 @@ crocus_init_identifier_bo(struct crocus_context *ice)
       return false;
 
    ice->workaround_bo->kflags |= EXEC_OBJECT_CAPTURE;
-   ice->workaround_offset = ALIGN(
+   ice->workaround_offset = align(
       intel_debug_write_identifiers(bo_map, 4096, "Crocus"), 32);
 
    crocus_bo_unmap(ice->workaround_bo);

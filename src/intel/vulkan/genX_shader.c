@@ -1205,7 +1205,7 @@ emit_cs_shader(struct anv_batch *batch,
                                   &walker);
 #else
    const uint32_t vfe_curbe_allocation =
-      ALIGN(cs_prog_data->push.per_thread.regs * dispatch.threads +
+      align(cs_prog_data->push.per_thread.regs * dispatch.threads +
             cs_prog_data->push.cross_thread.regs, 2);
 
    anv_shader_emit(batch, shader, cs.gfx9.vfe, GENX(MEDIA_VFE_STATE), vfe) {

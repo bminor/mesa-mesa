@@ -105,7 +105,7 @@ compile_operation(struct rkt_ml_subgraph *subgraph,
 
       unsigned size =
          util_dynarray_num_elements(&regcfgs[i], uint64_t) * sizeof(uint64_t);
-      regcfg_total_size += ALIGN(size, 64);
+      regcfg_total_size += align(size, 64);
    }
 
    operation->regcmd = pipe_buffer_create(pcontext->screen, 0,
@@ -129,13 +129,13 @@ compile_operation(struct rkt_ml_subgraph *subgraph,
             util_dynarray_element(&regcfgs[i], uint64_t, reg_count - 3);
 
          uint64_t addr = rkt_resource(operation->regcmd)->phys_addr +
-                         regcmd_offset + ALIGN(size * sizeof(uint64_t), 64);
+                         regcmd_offset + align(size * sizeof(uint64_t), 64);
          *next_address_reg |= addr << 16;
 
          unsigned regs_to_fetch =
             util_dynarray_num_elements(&regcfgs[i + 1], uint64_t);
          regs_to_fetch -= 4;
-         regs_to_fetch = ALIGN(regs_to_fetch / 2, 2);
+         regs_to_fetch = align(regs_to_fetch / 2, 2);
          *reg_count_reg |= regs_to_fetch << 16;
       }
 
@@ -151,7 +151,7 @@ compile_operation(struct rkt_ml_subgraph *subgraph,
          rkt_dump_buffer(regcmd, "regcmd", 0, i, regcmd_offset,
                          (size + 4) * sizeof(uint64_t));
 
-      regcmd_offset += ALIGN(size * sizeof(uint64_t), 64);
+      regcmd_offset += align(size * sizeof(uint64_t), 64);
    }
 
    pipe_buffer_unmap(pcontext, transfer);

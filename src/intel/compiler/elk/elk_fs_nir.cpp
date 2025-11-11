@@ -5036,7 +5036,7 @@ fs_nir_emit_intrinsic(nir_to_elk_state &ntb,
             }
 
             const unsigned total_dwords =
-               ALIGN(instr->num_components, REG_SIZE * reg_unit(devinfo) / 4);
+               align(instr->num_components, REG_SIZE * reg_unit(devinfo) / 4);
             unsigned loaded_dwords = 0;
 
             const elk_fs_reg packed_consts =
@@ -5225,7 +5225,7 @@ fs_nir_emit_intrinsic(nir_to_elk_state &ntb,
       break;
 
    case nir_intrinsic_load_global_constant_uniform_block_intel: {
-      const unsigned total_dwords = ALIGN(instr->num_components,
+      const unsigned total_dwords = align(instr->num_components,
                                           REG_SIZE * reg_unit(devinfo) / 4);
       unsigned loaded_dwords = 0;
 
@@ -5360,7 +5360,7 @@ fs_nir_emit_intrinsic(nir_to_elk_state &ntb,
          srcs[SURFACE_LOGICAL_SRC_SURFACE] = elk_fs_reg(elk_imm_ud(GFX7_BTI_SLM));
       }
 
-      const unsigned total_dwords = ALIGN(instr->num_components,
+      const unsigned total_dwords = align(instr->num_components,
                                           REG_SIZE * reg_unit(devinfo) / 4);
       unsigned loaded_dwords = 0;
 
@@ -7002,7 +7002,7 @@ nir_to_elk(elk_fs_visitor *s)
    fs_nir_setup_outputs(ntb);
    fs_nir_setup_uniforms(ntb.s);
    fs_nir_emit_system_values(ntb);
-   ntb.s.last_scratch = ALIGN(ntb.nir->scratch_size, 4) * ntb.s.dispatch_width;
+   ntb.s.last_scratch = align(ntb.nir->scratch_size, 4) * ntb.s.dispatch_width;
 
    fs_nir_emit_impl(ntb, nir_shader_get_entrypoint((nir_shader *)ntb.nir));
 

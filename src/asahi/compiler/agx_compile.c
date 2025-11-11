@@ -3450,7 +3450,7 @@ agx_compile_function_nir(nir_shader *nir, nir_function_impl *impl,
     */
    if (ctx->any_scratch) {
       assert(!ctx->is_preamble && "preambles don't use scratch");
-      ctx->scratch_size_B = ALIGN(nir->scratch_size, 16);
+      ctx->scratch_size_B = align(nir->scratch_size, 16);
    }
 
    /* Stop the main shader or preamble shader after the exit block. For real
@@ -3509,7 +3509,7 @@ agx_compile_function_nir(nir_shader *nir, nir_function_impl *impl,
 
    if (ctx->scratch_size_B > 0) {
       /* Apple always allocate 40 more bytes in the entrypoint and align to 4. */
-      uint64_t stack_size = ALIGN(DIV_ROUND_UP(ctx->scratch_size_B, 4) + 10, 4);
+      uint64_t stack_size = align(DIV_ROUND_UP(ctx->scratch_size_B, 4) + 10, 4);
 
       assert(stack_size < INT16_MAX);
 

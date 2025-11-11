@@ -6073,7 +6073,7 @@ void lp_build_nir_soa_func(struct gallivm_state *gallivm,
 
    bld.shader = shader;
 
-   bld.scratch_size = ALIGN(shader->scratch_size, 8);
+   bld.scratch_size = align(shader->scratch_size, 8);
    if (params->scratch_ptr)
       bld.scratch_ptr = params->scratch_ptr;
    else if (shader->scratch_size) {

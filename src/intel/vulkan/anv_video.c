@@ -1396,7 +1396,7 @@ anv_video_get_image_mv_size(struct anv_device *device,
                  profile_list->pProfiles[i].videoCodecOperation == VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR) {
          unsigned w_mb = DIV_ROUND_UP(image->vk.extent.width, 32);
          unsigned h_mb = DIV_ROUND_UP(image->vk.extent.height, 32);
-         size = ALIGN(w_mb * h_mb, 2) << 6;
+         size = align(w_mb * h_mb, 2) << 6;
       } else if (profile_list->pProfiles[i].videoCodecOperation == VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR) {
          unsigned w_ctb = DIV_ROUND_UP(image->vk.extent.width, ANV_MAX_VP9_CTB_SIZE);
          unsigned h_ctb = DIV_ROUND_UP(image->vk.extent.height, ANV_MAX_VP9_CTB_SIZE);

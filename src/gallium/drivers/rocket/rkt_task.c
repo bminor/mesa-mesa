@@ -101,7 +101,7 @@ fill_task(struct rkt_ml_subgraph *subgraph,
 
    task->input_height = operation->input_height;
    task->input_channels =
-      ALIGN(MAX2(operation->input_channels, FEATURE_ATOMIC_SIZE),
+      align(MAX2(operation->input_channels, FEATURE_ATOMIC_SIZE),
             FEATURE_ATOMIC_SIZE);
    task->input_channels_real = operation->input_channels;
    task->input_zero_point = operation->input_zero_point;
@@ -111,11 +111,11 @@ fill_task(struct rkt_ml_subgraph *subgraph,
    task->output_height = operation->output_height;
 
    task->output_channels_real = operation->output_channels;
-   task->output_channels = ALIGN(MAX2(operation->output_channels, 32), 32);
+   task->output_channels = align(MAX2(operation->output_channels, 32), 32);
    if (operation->depthwise) {
       if (task->output_channels_real <= 32)
          task->output_channels *= 2;
-      task->output_channels = ALIGN(task->output_channels, 64);
+      task->output_channels = align(task->output_channels, 64);
    }
 
    task->output_zero_point = operation->output_zero_point;
@@ -170,7 +170,7 @@ fill_task(struct rkt_ml_subgraph *subgraph,
    if (operation->depthwise)
       task->weights_kernels = 1;
    else
-      task->weights_kernels = ALIGN(operation->output_channels, 2);
+      task->weights_kernels = align(operation->output_channels, 2);
 
    task->surfaces_per_row = task->output_width * task->output_height * 2;
    if (operation->depthwise)

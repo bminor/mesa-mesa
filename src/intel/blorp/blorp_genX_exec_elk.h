@@ -1882,7 +1882,7 @@ blorp_get_compute_push_const(struct blorp_batch *batch,
 {
    const struct elk_cs_prog_data *cs_prog_data = params->cs_prog_data;
    const unsigned push_const_size =
-      ALIGN(elk_cs_push_const_total_size(cs_prog_data, threads), 64);
+      align(elk_cs_push_const_total_size(cs_prog_data, threads), 64);
    assert(cs_prog_data->push.cross_thread.size +
           cs_prog_data->push.per_thread.size == sizeof(params->wm_inputs));
 
@@ -1981,7 +1981,7 @@ blorp_exec_compute(struct blorp_batch *batch, const struct blorp_params *params)
       vfe.URBEntryAllocationSize = GFX_VER >= 8 ? 2 : 0;
 
       const uint32_t vfe_curbe_allocation =
-         ALIGN(cs_prog_data->push.per_thread.regs * dispatch.threads +
+         align(cs_prog_data->push.per_thread.regs * dispatch.threads +
                cs_prog_data->push.cross_thread.regs, 2);
       vfe.CURBEAllocationSize = vfe_curbe_allocation;
    }

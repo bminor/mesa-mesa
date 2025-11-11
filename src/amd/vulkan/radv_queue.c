@@ -146,9 +146,9 @@ radv_sparse_image_bind_memory(struct radv_device *device, const VkSparseImageMem
                                         (uint64_t)bind_offset.x * surface->prt_tile_height * surface->prt_tile_depth) *
                                           bs;
 
-      uint32_t aligned_extent_width = ALIGN(bind_extent.width, surface->prt_tile_width);
-      uint32_t aligned_extent_height = ALIGN(bind_extent.height, surface->prt_tile_height);
-      uint32_t aligned_extent_depth = ALIGN(bind_extent.depth, surface->prt_tile_depth);
+      uint32_t aligned_extent_width = align(bind_extent.width, surface->prt_tile_width);
+      uint32_t aligned_extent_height = align(bind_extent.height, surface->prt_tile_height);
+      uint32_t aligned_extent_depth = align(bind_extent.depth, surface->prt_tile_depth);
 
       bool whole_subres = (bind_extent.height <= surface->prt_tile_height || aligned_extent_width == pitch) &&
                           (bind_extent.depth <= surface->prt_tile_depth ||

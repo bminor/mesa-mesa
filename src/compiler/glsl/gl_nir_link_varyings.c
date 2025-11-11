@@ -2093,7 +2093,7 @@ xfb_decl_store(struct xfb_decl *xfb_decl, const struct gl_constants *consts,
       if (max_member_alignment && has_xfb_qualifiers) {
          max_member_alignment[buffer] = MAX2(max_member_alignment[buffer],
                                              _mesa_gl_datatype_is_64bit(xfb_decl->type) ? 2 : 1);
-         info->Buffers[buffer].Stride = ALIGN(xfb_offset,
+         info->Buffers[buffer].Stride = align(xfb_offset,
                                               max_member_alignment[buffer]);
       } else {
          info->Buffers[buffer].Stride = xfb_offset;
@@ -2926,7 +2926,7 @@ varying_matches_assign_locations(struct varying_matches *vm,
           (previous_packing_class != vm->matches[i].packing_class) ||
           (vm->matches[i].packing_order == PACKING_ORDER_VEC3 &&
            dont_pack_vec3)) {
-         *location = ALIGN(*location, 4);
+         *location = align(*location, 4);
       }
 
       previous_var_xfb = var->data.is_xfb;
@@ -2967,7 +2967,7 @@ varying_matches_assign_locations(struct varying_matches *vm,
             break;
          }
 
-         *location = ALIGN(*location + 1, 4);
+         *location = align(*location + 1, 4);
          slot_end = *location + num_components - 1;
       }
 
@@ -3229,9 +3229,9 @@ tfeedback_candidate_generator(struct tfeedback_candidate_generator_state *state,
           * (c) each double-precision variable captured must be aligned to a
           *     multiple of eight bytes relative to the beginning of a vertex.
           */
-         state->xfb_offset_floats = ALIGN(state->xfb_offset_floats, 2);
+         state->xfb_offset_floats = align(state->xfb_offset_floats, 2);
          /* 64-bit members of structs are also aligned. */
-         state->varying_floats = ALIGN(state->varying_floats, 2);
+         state->varying_floats = align(state->varying_floats, 2);
       }
 
       candidate->xfb_offset_floats = state->xfb_offset_floats;

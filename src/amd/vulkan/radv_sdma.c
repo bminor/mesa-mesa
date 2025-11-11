@@ -134,7 +134,7 @@ radv_sdma_get_chunked_copy_info(const struct radv_device *const device, const st
 {
    const unsigned extent_horizontal_blocks = DIV_ROUND_UP(extent.width * img->texel_scale, img->blk_w);
    const unsigned extent_vertical_blocks = DIV_ROUND_UP(extent.height, img->blk_h);
-   const unsigned aligned_row_pitch = ALIGN(extent_horizontal_blocks, 4);
+   const unsigned aligned_row_pitch = align(extent_horizontal_blocks, 4);
    const unsigned aligned_row_bytes = aligned_row_pitch * img->bpp;
 
    /* Assume that we can always copy at least one full row at a time. */

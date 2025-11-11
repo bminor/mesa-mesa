@@ -229,7 +229,7 @@ crocus_resource_configure_main(const struct crocus_screen *screen,
        devinfo->ver < 6) {
       /* align row pitch to 4 so we can keep using BLT engine */
       row_pitch_B = util_format_get_stride(templ->format, templ->width0);
-      row_pitch_B = ALIGN(row_pitch_B, 4);
+      row_pitch_B = align(row_pitch_B, 4);
    }
 
    const struct isl_surf_init_info init_info = {
@@ -1437,7 +1437,7 @@ crocus_map_tiled_memcpy(struct crocus_transfer *map)
    struct crocus_resource *res = (struct crocus_resource *) xfer->resource;
    struct isl_surf *surf = &res->surf;
 
-   xfer->stride = ALIGN(surf->row_pitch_B, 16);
+   xfer->stride = align(surf->row_pitch_B, 16);
    xfer->layer_stride = xfer->stride * box->height;
 
    unsigned x1, x2, y1, y2;

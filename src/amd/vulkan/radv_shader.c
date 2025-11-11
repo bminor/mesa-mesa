@@ -760,7 +760,7 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
 
       if (nir->info.zero_initialize_shared_memory && nir->info.shared_size > 0) {
          const unsigned chunk_size = 16; /* max single store size */
-         const unsigned shared_size = ALIGN(nir->info.shared_size, chunk_size);
+         const unsigned shared_size = align(nir->info.shared_size, chunk_size);
          NIR_PASS(_, nir, nir_zero_initialize_shared_memory, shared_size, chunk_size);
       }
    }
@@ -945,7 +945,7 @@ radv_lower_ngg(struct radv_device *device, struct radv_shader_stage *ngg_stage,
                &ngg_stage->info.ngg_lds_scratch_size);
    } else if (nir->info.stage == MESA_SHADER_MESH) {
       /* ACO aligns the workgroup size to the wave size. */
-      unsigned hw_workgroup_size = ALIGN(info->workgroup_size, info->wave_size);
+      unsigned hw_workgroup_size = align(info->workgroup_size, info->wave_size);
 
       bool scratch_ring = false;
       NIR_PASS(_, nir, ac_nir_lower_ngg_mesh, &pdev->info, options.export_clipdist_mask, options.vs_output_param_offset,

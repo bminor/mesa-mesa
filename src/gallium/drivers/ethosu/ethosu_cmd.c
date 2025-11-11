@@ -90,7 +90,7 @@ emit_strides(
    if (tensor->layout == ETHOSU_LAYOUT_NHCWB16) {
       tensor_x = 16 * elem_size;
       tensor_c = tensor_x * tensor->shape.width;
-      tensor_y = elem_size * tensor->shape.width * ALIGN(tensor->shape.depth, 16);
+      tensor_y = elem_size * tensor->shape.width * align(tensor->shape.depth, 16);
    } else {
       tensor_c = elem_size;
       tensor_x = tensor->shape.depth * tensor_c;

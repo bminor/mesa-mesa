@@ -543,7 +543,7 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
 
    if (radv_shader_should_clear_lds(device, stage->nir)) {
       const unsigned chunk_size = 16; /* max single store size */
-      const unsigned shared_size = ALIGN(stage->nir->info.shared_size, chunk_size);
+      const unsigned shared_size = align(stage->nir->info.shared_size, chunk_size);
       NIR_PASS(_, stage->nir, nir_clear_shared_memory, shared_size, chunk_size);
    }
 

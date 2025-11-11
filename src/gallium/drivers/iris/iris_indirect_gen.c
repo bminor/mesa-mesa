@@ -398,7 +398,7 @@ emit_indirect_generate_draw(struct iris_batch *batch,
    float *vertices =
       upload_state(batch, ice->state.dynamic_uploader,
                    &ice->draw.generation.vertices,
-                   ALIGN(9 * sizeof(float), 8), 8);
+                   align(9 * sizeof(float), 8), 8);
 
    vertices[0] = x1; vertices[1] = y1; vertices[2] = z; /* v0 */
    vertices[3] = x0; vertices[4] = y1; vertices[5] = z; /* v1 */

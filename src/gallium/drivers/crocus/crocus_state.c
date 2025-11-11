@@ -329,11 +329,11 @@ stream_state(struct crocus_batch *batch,
              unsigned alignment,
              uint32_t *out_offset)
 {
-   uint32_t offset = ALIGN(batch->state.used, alignment);
+   uint32_t offset = align(batch->state.used, alignment);
 
    if (offset + size >= STATE_SZ && !batch->no_wrap) {
       crocus_batch_flush(batch);
-      offset = ALIGN(batch->state.used, alignment);
+      offset = align(batch->state.used, alignment);
    } else if (offset + size >= batch->state.bo->size) {
       const unsigned new_size =
          MIN2(batch->state.bo->size + batch->state.bo->size / 2,
@@ -6591,7 +6591,7 @@ crocus_upload_dirty_render_state(struct crocus_context *ice,
             struct crocus_resource *res = (void *) tgt->base.buffer;
             uint32_t start = tgt->base.buffer_offset;
 #if GFX_VER < 8
-            uint32_t end = ALIGN(start + tgt->base.buffer_size, 4);
+            uint32_t end = align(start + tgt->base.buffer_size, 4);
 #endif
             crocus_emit_cmd(batch, GENX(3DSTATE_SO_BUFFER), sob) {
                sob.SOBufferIndex = i;
@@ -8143,7 +8143,7 @@ crocus_upload_compute_state(struct crocus_context *ice,
          vfe.URBEntryAllocationSize = GFX_VER == 8 ? 2 : 0;
 
          vfe.CURBEAllocationSize =
-            ALIGN(cs_prog_data->push.per_thread.regs * dispatch.threads +
+            align(cs_prog_data->push.per_thread.regs * dispatch.threads +
                   cs_prog_data->push.cross_thread.regs, 2);
       }
    }
@@ -8159,15 +8159,15 @@ crocus_upload_compute_state(struct crocus_context *ice,
          elk_cs_push_const_total_size(cs_prog_data, dispatch.threads);
       uint32_t *curbe_data_map =
          stream_state(batch,
-                      ALIGN(push_const_size, 64), 64,
+                      align(push_const_size, 64), 64,
                       &curbe_data_offset);
       assert(curbe_data_map);
-      memset(curbe_data_map, 0x5a, ALIGN(push_const_size, 64));
+      memset(curbe_data_map, 0x5a, align(push_const_size, 64));
       crocus_fill_cs_push_const_buffer(cs_prog_data, dispatch.threads,
                                        curbe_data_map);
 
       crocus_emit_cmd(batch, GENX(MEDIA_CURBE_LOAD), curbe) {
-         curbe.CURBETotalDataLength = ALIGN(push_const_size, 64);
+         curbe.CURBETotalDataLength = align(push_const_size, 64);
          curbe.CURBEDataStartAddress = curbe_data_offset;
       }
    }

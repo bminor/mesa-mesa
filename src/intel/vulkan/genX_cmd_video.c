@@ -2630,7 +2630,7 @@ anv_av1_calculate_xstep_qn(struct anv_cmd_buffer *cmd_buffer,
    int32_t mib_size_log2 = seq_hdr->flags.use_128x128_superblock ?
       av1_max_mib_size_log2 : av1_min_mib_size_log2;
 
-   int32_t mi_cols = ALIGN(frameExtent.width, 8) >> mib_size_log2;
+   int32_t mi_cols = align(frameExtent.width, 8) >> mib_size_log2;
 
    int denom = std_pic_info->coded_denom + 9;
    unsigned downscaled_width = (frameExtent.width * 8 + denom / 2) / denom;
@@ -2638,8 +2638,8 @@ anv_av1_calculate_xstep_qn(struct anv_cmd_buffer *cmd_buffer,
    for (uint8_t i = 0; i < 2; i++) { /* i == 0 : luma, i == 1 : chroma */
       int subsampling_x = seq_hdr->pColorConfig->subsampling_x;
       int ssx = i & subsampling_x;
-      int downscaled = ALIGN(downscaled_width, 2) >> ssx;
-      int upscaled = ALIGN(frameExtent.width, 2) >> ssx;
+      int downscaled = align(downscaled_width, 2) >> ssx;
+      int upscaled = align(frameExtent.width, 2) >> ssx;
 
       int xstep_qn = ((downscaled << av1_rs_scale_subpel_bits) + upscaled / 2) / upscaled;
 
@@ -3275,8 +3275,8 @@ anv_vp9_decode_video(struct anv_cmd_buffer *cmd_buffer,
    anv_batch_emit(&cmd_buffer->batch, GENX(HCP_VP9_PIC_STATE), pic) {
       if (std_pic->flags.segmentation_enabled)
          assert(segmentation != NULL);
-      pic.FrameWidth = ALIGN(frame_width, 8) - 1;
-      pic.FrameHeight = ALIGN(frame_height, 8) - 1;
+      pic.FrameWidth = align(frame_width, 8) - 1;
+      pic.FrameHeight = align(frame_height, 8) - 1;
       /* STD_VIDEO_VP9_FRAME_TYPE_KEY == VP9_Key_frmae
        * STD_VIDEO_VP9_FRAME_TYPE_NON_KEY == VP9_InterFrame
        */

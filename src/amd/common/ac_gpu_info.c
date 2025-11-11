@@ -2317,8 +2317,8 @@ void ac_get_task_info(const struct radeon_info *info,
    /* Ensure that the addresses of each ring are 256 byte aligned. */
    task_info->payload_entry_size = payload_entry_size;
    task_info->num_entries = num_entries;
-   task_info->draw_ring_offset = ALIGN(AC_TASK_CTRLBUF_BYTES, 256);
-   task_info->payload_ring_offset = ALIGN(task_info->draw_ring_offset + draw_ring_bytes, 256);
+   task_info->draw_ring_offset = align(AC_TASK_CTRLBUF_BYTES, 256);
+   task_info->payload_ring_offset = align(task_info->draw_ring_offset + draw_ring_bytes, 256);
    task_info->bo_size_bytes = task_info->payload_ring_offset + payload_ring_bytes;
 }
 

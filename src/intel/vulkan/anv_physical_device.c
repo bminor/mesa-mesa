@@ -1888,7 +1888,7 @@ get_properties(const struct anv_physical_device *pdevice,
 
       /* NumPrim + Primitive Data List */
       const uint32_t max_indices_memory =
-         ALIGN(sizeof(uint32_t) +
+         align(sizeof(uint32_t) +
                sizeof(uint32_t) * props->maxMeshOutputVertices, 32);
 
       props->maxMeshOutputMemorySize = MIN2(max_urb_size - max_indices_memory, 32768);

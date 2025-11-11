@@ -1574,7 +1574,7 @@ brw_opt_combine_constants(brw_shader &s)
        * seem to have additional alignment requirements, so account for that
        * too.
        */
-      assert(reg.offset == ALIGN(reg.offset, get_alignment_for_imm(imm)));
+      assert(reg.offset == align(reg.offset, get_alignment_for_imm(imm)));
 
       struct brw_reg imm_reg = build_imm_reg_for_copy(imm);
 

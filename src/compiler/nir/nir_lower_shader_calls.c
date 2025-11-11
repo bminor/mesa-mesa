@@ -586,7 +586,7 @@ spill_ssa_defs_and_lower_shader_calls(nir_shader *shader, uint32_t num_calls,
                   def = nir_b2b32(&before, def);
 
                const unsigned comp_size = def->bit_size / 8;
-               offset = ALIGN(offset, comp_size);
+               offset = align(offset, comp_size);
 
                new_def = spill_fill(&before, &after, def,
                                     index, call_idx,
@@ -617,7 +617,7 @@ spill_ssa_defs_and_lower_shader_calls(nir_shader *shader, uint32_t num_calls,
 
          nir_builder *b = &before;
 
-         offset = ALIGN(offset, options->stack_alignment);
+         offset = align(offset, options->stack_alignment);
          max_scratch_size = MAX2(max_scratch_size, offset);
 
          /* First thing on the called shader's stack is the resume address
@@ -1642,11 +1642,11 @@ nir_opt_sort_and_pack_stack(nir_shader *shader,
 
       unsigned scratch_size = start_call_scratch;
       util_dynarray_foreach(&ops, struct scratch_item, item) {
-         item->new_offset = ALIGN(scratch_size, item->bit_size / 8);
+         item->new_offset = align(scratch_size, item->bit_size / 8);
          scratch_size = item->new_offset + (item->bit_size * item->num_components) / 8;
          _mesa_hash_table_u64_insert(value_id_to_item, item->value, item);
       }
-      shader->scratch_size = ALIGN(scratch_size, stack_alignment);
+      shader->scratch_size = align(scratch_size, stack_alignment);
 
       /* Update offsets in the instructions */
       nir_foreach_block_safe(block, impl) {

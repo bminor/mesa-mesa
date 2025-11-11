@@ -1366,8 +1366,8 @@ set_blit_scissor(struct fd_batch *batch, fd_cs &cs)
 
    blit_scissor.minx = 0;
    blit_scissor.miny = 0;
-   blit_scissor.maxx = ALIGN(pfb->width, 16);
-   blit_scissor.maxy = ALIGN(pfb->height, 4);
+   blit_scissor.maxx = align(pfb->width, 16);
+   blit_scissor.maxy = align(pfb->height, 4);
 
    fd_pkt4(cs, 2)
       .add(A6XX_RB_RESOLVE_CNTL_1(.x = blit_scissor.minx, .y = blit_scissor.miny))

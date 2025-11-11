@@ -1046,7 +1046,7 @@ ac_sqtt_dump_data(const struct radeon_info *rad_info, struct ac_sqtt_trace *sqtt
                                       sizeof(struct sqtt_code_object_database_record),
                                       record, &elf_size_calc, flags);
          /* Align to 4 bytes per the RGP file spec. */
-         code_object_record.size = ALIGN(elf_size_calc, 4);
+         code_object_record.size = align(elf_size_calc, 4);
          fseek(output, file_offset, SEEK_SET);
          fwrite(&code_object_record, sizeof(struct sqtt_code_object_database_record),
                 1, output);

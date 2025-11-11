@@ -89,7 +89,7 @@ static void pvr_image_init_physical_extent(struct pvr_image *image)
       if (image->vk.usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
                              VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
          image->physical_extent.width =
-            ALIGN(image->physical_extent.width,
+            align(image->physical_extent.width,
                   ROGUE_PBESTATE_REG_WORD0_LINESTRIDE_UNIT_SIZE);
       }
    }
@@ -110,11 +110,11 @@ static void pvr_image_setup_mip_levels(struct pvr_image *image)
    for (uint32_t i = 0; i < image->vk.mip_levels; i++) {
       struct pvr_mip_level *mip_level = &image->mip_levels[i];
 
-      mip_level->pitch = cpp * ALIGN(extent.width, extent_alignment);
-      mip_level->height_pitch = ALIGN(extent.height, extent_alignment);
+      mip_level->pitch = cpp * align(extent.width, extent_alignment);
+      mip_level->height_pitch = align(extent.height, extent_alignment);
       mip_level->size = image->vk.samples * mip_level->pitch *
                         mip_level->height_pitch *
-                        ALIGN(extent.depth, extent_alignment);
+                        align(extent.depth, extent_alignment);
       mip_level->offset = image->layer_size;
 
       image->layer_size += mip_level->size;
@@ -129,11 +129,11 @@ static void pvr_image_setup_mip_levels(struct pvr_image *image)
        * were present so we need to account for that in the `layer_size`.
        */
       while (extent.height != 1 || extent.width != 1 || extent.depth != 1) {
-         const uint32_t height_pitch = ALIGN(extent.height, extent_alignment);
-         const uint32_t pitch = cpp * ALIGN(extent.width, extent_alignment);
+         const uint32_t height_pitch = align(extent.height, extent_alignment);
+         const uint32_t pitch = cpp * align(extent.width, extent_alignment);
 
          image->layer_size += image->vk.samples * pitch * height_pitch *
-                              ALIGN(extent.depth, extent_alignment);
+                              align(extent.depth, extent_alignment);
 
          extent.height = u_minify(extent.height, 1);
          extent.width = u_minify(extent.width, 1);

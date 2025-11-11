@@ -52,7 +52,7 @@ elk_fs_visitor::assign_regs_trivial()
    int reg_width = dispatch_width / 8;
 
    /* Note that compressed instructions require alignment to 2 registers. */
-   hw_reg_mapping[0] = ALIGN(this->first_non_payload_grf, reg_width);
+   hw_reg_mapping[0] = align(this->first_non_payload_grf, reg_width);
    for (i = 1; i <= this->alloc.count; i++) {
       hw_reg_mapping[i] = (hw_reg_mapping[i - 1] +
                            DIV_ROUND_UP(this->alloc.sizes[i - 1],
@@ -325,7 +325,7 @@ public:
        */
       int reg_width = fs->dispatch_width / 8;
       rsi = util_logbase2(reg_width);
-      payload_node_count = ALIGN(fs->first_non_payload_grf, reg_width);
+      payload_node_count = align(fs->first_non_payload_grf, reg_width);
 
       /* Get payload IP information */
       payload_last_use_ip = ralloc_array(mem_ctx, int, payload_node_count);
@@ -940,7 +940,7 @@ elk_fs_reg_alloc::choose_spill_reg()
 elk_fs_reg
 elk_fs_reg_alloc::alloc_spill_reg(unsigned size, int ip)
 {
-   int vgrf = fs->alloc.allocate(ALIGN(size, reg_unit(devinfo)));
+   int vgrf = fs->alloc.allocate(align(size, reg_unit(devinfo)));
    int class_idx = DIV_ROUND_UP(size, reg_unit(devinfo)) - 1;
    int n = ra_add_node(g, compiler->fs_reg_sets[rsi].classes[class_idx]);
    assert(n == first_vgrf_node + vgrf);
@@ -975,7 +975,7 @@ elk_fs_reg_alloc::spill_reg(unsigned spill_reg)
 {
    int size = fs->alloc.sizes[spill_reg];
    unsigned int spill_offset = fs->last_scratch;
-   assert(ALIGN(spill_offset, 16) == spill_offset); /* oword read/write req. */
+   assert(align(spill_offset, 16) == spill_offset); /* oword read/write req. */
 
    /* Spills may use MRFs 13-15 in the SIMD16 case.  Our texturing is done
     * using up to 11 MRFs starting from either m1 or m2, and fb writes can use

@@ -945,7 +945,7 @@ namespace {
       assert(util_is_power_of_two_nonzero(width));
       const unsigned start = (inst->flag_subreg * 16 + inst->group) &
                              ~(width - 1);
-      const unsigned end = start + ALIGN(inst->exec_size, width);
+      const unsigned end = start + align(inst->exec_size, width);
       return ((1 << DIV_ROUND_UP(end, 8)) - 1) & ~((1 << (start / 8)) - 1);
    }
 
@@ -1525,7 +1525,7 @@ elk_fs_visitor::assign_urb_setup()
             const bool per_prim = inst->src[i].nr < prog_data->num_per_primitive_inputs;
             const unsigned base = urb_start +
                (per_prim ? 0 :
-                ALIGN(prog_data->num_per_primitive_inputs / 2,
+                align(prog_data->num_per_primitive_inputs / 2,
                       reg_unit(devinfo)));
             const unsigned idx = per_prim ? inst->src[i].nr :
                inst->src[i].nr - prog_data->num_per_primitive_inputs;
@@ -5296,7 +5296,7 @@ elk_fs_visitor::lower_find_live_channel()
           * specified quarter control as result.
           */
          if (inst->group > 0)
-            ubld.SHR(mask, mask, elk_imm_ud(ALIGN(inst->group, 8)));
+            ubld.SHR(mask, mask, elk_imm_ud(align(inst->group, 8)));
 
          ubld.AND(mask, exec_mask, mask);
          exec_mask = mask;
@@ -6003,7 +6003,7 @@ elk_fs_visitor::allocate_registers(bool allow_spilling)
              * field documentation, platforms prior to Haswell measure scratch
              * size linearly with a range of [1kB, 12kB] and 1kB granularity.
              */
-            prog_data->total_scratch = ALIGN(last_scratch, 1024);
+            prog_data->total_scratch = align(last_scratch, 1024);
             max_scratch_size = 12 * 1024;
          }
       }
@@ -6666,7 +6666,7 @@ elk_nir_populate_wm_prog_data(nir_shader *shader,
 static inline int
 elk_register_blocks(int reg_count)
 {
-   return ALIGN(reg_count, 16) / 16 - 1;
+   return align(reg_count, 16) / 16 - 1;
 }
 
 const unsigned *

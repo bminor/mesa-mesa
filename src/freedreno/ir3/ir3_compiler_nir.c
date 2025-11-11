@@ -6026,7 +6026,7 @@ ir3_compile_shader_nir(struct ir3_compiler *compiler,
       ir3_instr_move_before(unlock, end);
    }
 
-   so->pvtmem_size = ALIGN(so->pvtmem_size, compiler->pvtmem_per_fiber_align);
+   so->pvtmem_size = align(so->pvtmem_size, compiler->pvtmem_per_fiber_align);
 
    /* Note that max_bary counts inputs that are not bary.f'd for FS: */
    if (so->type == MESA_SHADER_FRAGMENT)

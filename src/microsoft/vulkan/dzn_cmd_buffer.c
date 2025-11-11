@@ -3516,7 +3516,7 @@ dzn_cmd_buffer_update_push_constants(struct dzn_cmd_buffer *cmdbuf, uint32_t bin
       &cmdbuf->state.push_constant.gfx : &cmdbuf->state.push_constant.compute;
 
    uint32_t offset = state->offset / 4;
-   uint32_t end = ALIGN(state->end, 4) / 4;
+   uint32_t end = align(state->end, 4) / 4;
    uint32_t count = end - offset;
 
    if (!count)

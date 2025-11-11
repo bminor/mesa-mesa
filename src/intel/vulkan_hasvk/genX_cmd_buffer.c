@@ -2666,7 +2666,7 @@ get_push_range_bound_size(struct anv_cmd_buffer *cmd_buffer,
       return (range->start + range->length) * 32;
 
    case ANV_DESCRIPTOR_SET_SHADER_CONSTANTS:
-      return ALIGN(shader->prog_data->const_data_size, ANV_UBO_ALIGNMENT);
+      return align(shader->prog_data->const_data_size, ANV_UBO_ALIGNMENT);
 
    default: {
       assert(range->set < MAX_SETS);

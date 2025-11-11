@@ -407,7 +407,7 @@ brw_append_insns(struct brw_codegen *p, unsigned nr_insn, unsigned alignment)
    assert(util_is_power_of_two_or_zero(sizeof(brw_eu_inst)));
    assert(util_is_power_of_two_or_zero(alignment));
    const unsigned align_insn = MAX2(alignment / sizeof(brw_eu_inst), 1);
-   const unsigned start_insn = ALIGN(p->nr_insn, align_insn);
+   const unsigned start_insn = align(p->nr_insn, align_insn);
    const unsigned new_nr_insn = start_insn + nr_insn;
 
    if (p->store_size < new_nr_insn) {

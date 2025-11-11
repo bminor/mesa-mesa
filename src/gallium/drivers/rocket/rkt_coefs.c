@@ -31,12 +31,12 @@ rkt_fill_weights(struct rkt_ml_subgraph *subgraph,
 
    input_channels = MAX2(input_channels, FEATURE_ATOMIC_SIZE);
 
-   output_channels = ALIGN(output_channels, 2);
+   output_channels = align(output_channels, 2);
    if (rkt_is_depthwise(poperation))
       output_channels = 1;
 
    weights_size = weights_width * weights_height * output_channels *
-                  ALIGN(input_channels, WEIGHT_ATOMIC_SIZE) * 2;
+                  align(input_channels, WEIGHT_ATOMIC_SIZE) * 2;
 
    rsc =
       pipe_buffer_create(pcontext->screen, 0, PIPE_USAGE_DEFAULT, weights_size);
@@ -62,7 +62,7 @@ rkt_fill_weights(struct rkt_ml_subgraph *subgraph,
                      unsigned oc = oc1 * WEIGHT_ATOMIC_SIZE + oc2;
                      unsigned ic = ic1 * input_channel_groups + ic2;
                      if (output_channels_real > 2 &&
-                         oc >= ALIGN(output_channels_real, 2))
+                         oc >= align(output_channels_real, 2))
                         continue;
 
                      if (oc >= output_channels_real)

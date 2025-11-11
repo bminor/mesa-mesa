@@ -18,11 +18,11 @@ _get_ifm_blocksize(struct ethosu_operation *operation, struct ethosu_block ofm_b
 
    // IFM block height
    int h = required_input_size(ofm_block.height, operation->kernel.stride_y, MIN2(operation->kernel.height, SUB_KERNEL_MAX.height));
-   h = ALIGN(h, OFM_UBLOCK.height);
+   h = align(h, OFM_UBLOCK.height);
 
    // IFM block width
    int w = required_input_size(ofm_block.width, operation->kernel.stride_x, MIN2(operation->kernel.width, SUB_KERNEL_MAX.width));
-   w = ALIGN(w, OFM_UBLOCK.width);
+   w = align(w, OFM_UBLOCK.width);
 
    ifm_block.height = h;
    ifm_block.width = w;
@@ -34,8 +34,8 @@ _get_ifm_blocksize(struct ethosu_operation *operation, struct ethosu_block ofm_b
 static bool
 try_block_config(struct ethosu_operation *operation, struct ethosu_block ofm_block, struct ethosu_block ifm_block, struct ethosu_shram_layout *layout)
 {
-   int ifm_bytes = ifm_block.width * ifm_block.height * ALIGN(ifm_block.depth, 8);
-   int ifm_banks = ALIGN(DIV_ROUND_UP(ifm_bytes, BANK_SIZE_BYTES) * 2, IFM_GRANULE);
+   int ifm_bytes = ifm_block.width * ifm_block.height * align(ifm_block.depth, 8);
+   int ifm_banks = align(DIV_ROUND_UP(ifm_bytes, BANK_SIZE_BYTES) * 2, IFM_GRANULE);
    int lut_bytes = operation->type == ETHOSU_OPERATION_TYPE_ELTWISE ? operation->eltwise.lut_bytes : 0;
    int lut_banks = MAX2(DIV_ROUND_UP(lut_bytes, 1024), SHRAM_RESERVED_END_BANKS);
    int lut_start = SHRAM_TOTAL_BANKS - lut_banks;
@@ -44,8 +44,8 @@ try_block_config(struct ethosu_operation *operation, struct ethosu_block ofm_blo
    int acc_start = lut_start;
 
    if (operation->type != ETHOSU_OPERATION_TYPE_ELTWISE) {
-      int acc_bytes = (ofm_block.width * ofm_block.height * ALIGN(ofm_block.depth, 8) * 32) / 8;
-      int acc_banks = ALIGN(DIV_ROUND_UP(acc_bytes, BANK_SIZE_BYTES) * 2, ACC_GRANULE);
+      int acc_bytes = (ofm_block.width * ofm_block.height * align(ofm_block.depth, 8) * 32) / 8;
+      int acc_banks = align(DIV_ROUND_UP(acc_bytes, BANK_SIZE_BYTES) * 2, ACC_GRANULE);
       acc_start -= acc_banks;
    } else {
       int ifm2_banks = ifm_banks; /* TODO: Fix for scalar eltwise */
@@ -89,12 +89,12 @@ find_block_config(struct ethosu_operation *operation)
    unsigned depth = MAX2(OFM_UBLOCK.depth, MIN2(search_space.depth, ARCH_SPLIT_DEPTH));
 
    if (depth < operation->ofm.shape.depth) {
-      depth = ALIGN(depth, ARCH_SPLIT_DEPTH);
+      depth = align(depth, ARCH_SPLIT_DEPTH);
    }
 
-   search_space.width = ALIGN(search_space.width, OFM_UBLOCK.width);
-   search_space.height = ALIGN(search_space.height, OFM_UBLOCK.height);
-   search_space.depth = ALIGN(search_space.depth, OFM_UBLOCK.depth);
+   search_space.width = align(search_space.width, OFM_UBLOCK.width);
+   search_space.height = align(search_space.height, OFM_UBLOCK.height);
+   search_space.depth = align(search_space.depth, OFM_UBLOCK.depth);
 
    while (depth <= search_space.depth) {
       bool wont_fit[search_space.height + 1][search_space.width + 1];
@@ -110,7 +110,7 @@ find_block_config(struct ethosu_operation *operation)
             struct ethosu_block ifm_block = _get_ifm_blocksize(operation, ofm_block);
 
             if (!is_equal_depth)
-               ifm_block.depth = ALIGN(MIN2(operation->ifm.shape.depth, operation->conv.part_kernel_first ? 16 : 32), IFM_UBLOCK.depth);
+               ifm_block.depth = align(MIN2(operation->ifm.shape.depth, operation->conv.part_kernel_first ? 16 : 32), IFM_UBLOCK.depth);
 
             // Try to fit the blocks in SHRAM
             struct ethosu_shram_layout layout = {0};
@@ -179,7 +179,7 @@ find_block_config(struct ethosu_operation *operation)
 
       depth += OFM_UBLOCK.depth;
       if (depth < operation->ofm.shape.depth) {
-         depth = ALIGN(depth, ARCH_SPLIT_DEPTH);
+         depth = align(depth, ARCH_SPLIT_DEPTH);
       }
    }
 

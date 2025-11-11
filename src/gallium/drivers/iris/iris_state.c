@@ -9385,7 +9385,7 @@ iris_upload_gpgpu_walker(struct iris_context *ice,
          vfe.URBEntryAllocationSize = 2;
 
          vfe.CURBEAllocationSize =
-            ALIGN(cs_data->push.per_thread.regs * dispatch.threads +
+            align(cs_data->push.per_thread.regs * dispatch.threads +
                   cs_data->push.cross_thread.regs, 2);
       }
    }
@@ -9403,15 +9403,15 @@ iris_upload_gpgpu_walker(struct iris_context *ice,
       uint32_t *curbe_data_map =
          stream_state(batch, ice->state.dynamic_uploader,
                       &ice->state.last_res.cs_thread_ids,
-                      ALIGN(push_const_size, 64), 64,
+                      align(push_const_size, 64), 64,
                       &curbe_data_offset);
       assert(curbe_data_map);
-      memset(curbe_data_map, 0x5a, ALIGN(push_const_size, 64));
+      memset(curbe_data_map, 0x5a, align(push_const_size, 64));
       iris_fill_cs_push_const_buffer(screen, shader, dispatch.threads,
                                      curbe_data_map);
 
       iris_emit_cmd(batch, GENX(MEDIA_CURBE_LOAD), curbe) {
-         curbe.CURBETotalDataLength = ALIGN(push_const_size, 64);
+         curbe.CURBETotalDataLength = align(push_const_size, 64);
          curbe.CURBEDataStartAddress = curbe_data_offset;
       }
    }

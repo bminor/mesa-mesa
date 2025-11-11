@@ -2289,9 +2289,9 @@ tu_setup_pvtmem(struct tu_device *dev,
          tu_bo_finish(dev, pvtmem_bo->bo);
 
       pvtmem_bo->per_fiber_size =
-         util_next_power_of_two(ALIGN(pvtmem_bytes, 512));
+         util_next_power_of_two(align(pvtmem_bytes, 512));
       pvtmem_bo->per_sp_size =
-         ALIGN(pvtmem_bo->per_fiber_size *
+         align(pvtmem_bo->per_fiber_size *
                   dev->physical_device->info->fibers_per_sp,
                1 << 12);
       uint32_t total_size =
@@ -2729,7 +2729,7 @@ tu_shader_create(struct tu_device *dev,
           * is allocated at the API level, and it's up to the user to ensure
           * that accesses are limited to those bounds.
           */
-         const unsigned shared_size = ALIGN(nir->info.shared_size, chunk_size);
+         const unsigned shared_size = align(nir->info.shared_size, chunk_size);
          NIR_PASS(_, nir, nir_zero_initialize_shared_memory, shared_size,
                   chunk_size);
       }

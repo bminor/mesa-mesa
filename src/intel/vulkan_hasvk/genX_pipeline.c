@@ -1885,7 +1885,7 @@ genX(compute_pipeline_emit)(struct anv_compute_pipeline *pipeline)
    const struct intel_cs_dispatch_info dispatch =
       elk_cs_get_dispatch_info(devinfo, cs_prog_data, NULL);
    const uint32_t vfe_curbe_allocation =
-      ALIGN(cs_prog_data->push.per_thread.regs * dispatch.threads +
+      align(cs_prog_data->push.per_thread.regs * dispatch.threads +
             cs_prog_data->push.cross_thread.regs, 2);
 
    const struct anv_shader_bin *cs_bin = pipeline->cs;

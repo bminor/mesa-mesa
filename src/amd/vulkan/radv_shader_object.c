@@ -620,7 +620,7 @@ radv_get_shader_binary_size(const struct radv_shader_binary *binary)
    size_t size = sizeof(uint32_t); /* has_binary */
 
    if (binary)
-      size += SHA1_DIGEST_LENGTH + 4 + ALIGN(binary->total_size, 4);
+      size += SHA1_DIGEST_LENGTH + 4 + align(binary->total_size, 4);
 
    return size;
 }

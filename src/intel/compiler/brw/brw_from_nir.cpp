@@ -7295,7 +7295,7 @@ brw_from_nir_emit_memory_access(nir_to_brw_state &ntb,
             components = last_component - first_read_component + 1;
          }
 
-         total = ALIGN(components, REG_SIZE * reg_unit(devinfo) / 4);
+         total = align(components, REG_SIZE * reg_unit(devinfo) / 4);
          dest = ubld.vgrf(BRW_TYPE_UD, total);
       } else {
          total = components * bld.dispatch_width();
@@ -7902,7 +7902,7 @@ brw_from_nir(brw_shader *s)
     */
    brw_from_nir_setup_outputs(ntb);
    brw_from_nir_emit_system_values(ntb);
-   ntb.s.last_scratch = ALIGN(ntb.nir->scratch_size, 4) * ntb.s.dispatch_width;
+   ntb.s.last_scratch = align(ntb.nir->scratch_size, 4) * ntb.s.dispatch_width;
 
    brw_from_nir_emit_impl(ntb, nir_shader_get_entrypoint((nir_shader *)ntb.nir));
 

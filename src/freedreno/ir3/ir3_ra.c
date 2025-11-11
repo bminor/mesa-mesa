@@ -1237,7 +1237,7 @@ compress_regs_left(struct ra_ctx *ctx, struct ra_file *file,
       }
 
       if (!(cur_reg->flags & IR3_REG_HALF))
-         physreg = ALIGN(physreg, 2);
+         physreg = align(physreg, 2);
 
       d("pushing reg %u physreg %u\n", cur_reg->name, physreg);
 
@@ -1330,7 +1330,7 @@ find_best_gap(struct ra_ctx *ctx, struct ra_file *file,
    BITSET_WORD *available =
       is_early_clobber(dst) ? file->available_to_evict : file->available;
 
-   unsigned start = ALIGN(file->start, alignment);
+   unsigned start = align(file->start, alignment);
    if (start + size > file_size)
       start = 0;
    unsigned candidate = start;

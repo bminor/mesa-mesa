@@ -1167,9 +1167,9 @@ create_nn_config(struct etna_ml_subgraph *subgraph, const struct etna_operation 
       unsigned in_image_tile_x_size = map->out_image_tile_x_size + weight_width - 1;
       unsigned in_image_tile_y_size = map->out_image_tile_y_size + weight_width - 1;
       image_cache_size = in_image_tile_x_size * in_image_tile_y_size;
-      image_cache_size = ALIGN(image_cache_size, 16);
+      image_cache_size = align(image_cache_size, 16);
       image_cache_size *= input_channels;
-      image_cache_size = ALIGN(image_cache_size, 128);
+      image_cache_size = align(image_cache_size, 128);
    }
 
    ML_DBG("coefficients_size 0x%x (%d) image_size 0x%x (%d)\n", coef_cache_size, coef_cache_size, image_cache_size, image_cache_size);
@@ -1182,7 +1182,7 @@ create_nn_config(struct etna_ml_subgraph *subgraph, const struct etna_operation 
       map->kernel_pattern_msb = 0x0;
       map->kernel_pattern_low = 0x0;
       map->kernel_pattern_high = 0x0;
-      map->kernel_cache_end_address = MAX2(MIN2(ALIGN(map->kernel_cache_start_address + coef_cache_size, 128), oc_sram_size), 0xa00);
+      map->kernel_cache_end_address = MAX2(MIN2(align(map->kernel_cache_start_address + coef_cache_size, 128), oc_sram_size), 0xa00);
    } else {
       /* Doesn't fit in the 512KB we have of on-chip SRAM */
       map->kernel_caching_mode = SRAM_CACHE_MODE_PARTIAL_CACHE;

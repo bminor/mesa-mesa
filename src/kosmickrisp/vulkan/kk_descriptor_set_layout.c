@@ -78,7 +78,7 @@ kk_descriptor_stride_align_for_type(
          *stride = MAX2(*stride, desc_stride);
          *alignment = MAX2(*alignment, desc_align);
       }
-      *stride = ALIGN(*stride, *alignment);
+      *stride = align(*stride, *alignment);
       break;
 
    default:
