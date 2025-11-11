@@ -6051,11 +6051,6 @@ bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
    if (nir->info.stage == MESA_SHADER_VERTEX) {
       if (pan_arch(gpu_id) <= 7)
          NIR_PASS(_, nir, pan_nir_lower_vertex_id);
-
-      nir_variable *psiz = nir_find_variable_with_location(
-         nir, nir_var_shader_out, VARYING_SLOT_PSIZ);
-      if (psiz != NULL)
-         psiz->data.precision = GLSL_PRECISION_MEDIUM;
    }
 
    /* Get rid of any global vars before we lower to scratch. */
@@ -6115,13 +6110,9 @@ bifrost_postprocess_nir(nir_shader *nir, unsigned gpu_id)
       NIR_PASS(_, nir, bifrost_nir_lower_load_output);
    } else if (nir->info.stage == MESA_SHADER_VERTEX) {
       NIR_PASS(_, nir, nir_lower_viewport_transform);
-      NIR_PASS(_, nir, nir_lower_point_size, 1.0, 0.0, nir_type_invalid);
+      NIR_PASS(_, nir, nir_lower_point_size, 1.0, 0.0,
+               pan_arch(gpu_id) >= 9 ? nir_type_float16 : nir_type_float32);
       NIR_PASS(_, nir, pan_nir_lower_noperspective_vs);
-
-      if (pan_arch(gpu_id) >= 9) {
-         NIR_PASS(_, nir, nir_lower_mediump_io, nir_var_shader_out,
-                  VARYING_BIT_PSIZ, false);
-      }
 
       /* nir_lower[_explicit]_io is lazy and emits mul+add chains even
        * for offsets it could figure out are constant.  Do some
