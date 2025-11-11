@@ -857,10 +857,6 @@ fn get_kernel_suggested_local_work_size_khr(
         return Err(CL_INVALID_GLOBAL_WORK_SIZE);
     }
 
-    if global_work_offset.is_null() {
-        return Err(CL_INVALID_GLOBAL_OFFSET);
-    }
-
     // CL_INVALID_VALUE if suggested_local_work_size is NULL.
     if suggested_local_work_size.is_null() {
         return Err(CL_INVALID_VALUE);
