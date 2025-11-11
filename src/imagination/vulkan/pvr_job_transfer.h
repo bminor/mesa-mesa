@@ -43,9 +43,11 @@ struct vk_sync;
 /** Valid if doing a DS merge with depth + stencil to depth + stencil. */
 #define PVR_TRANSFER_CMD_FLAGS_PICKD 0x00000400U
 
-VkResult pvr_transfer_job_submit(struct pvr_transfer_ctx *ctx,
-                                 struct pvr_sub_cmd_transfer *sub_cmd,
-                                 struct vk_sync *wait,
-                                 struct vk_sync *signal_sync);
+VkResult PVR_PER_ARCH(transfer_job_submit)(struct pvr_transfer_ctx *ctx,
+                                           struct pvr_sub_cmd_transfer *sub_cmd,
+                                           struct vk_sync *wait,
+                                           struct vk_sync *signal_sync);
+
+#define pvr_transfer_job_submit PVR_PER_ARCH(transfer_job_submit)
 
 #endif /* PVR_JOB_TRANSFER_H */

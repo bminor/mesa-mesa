@@ -11,10 +11,10 @@
 #include "pvr_pass.h"
 #include "pvr_query.h"
 
-void pvr_CmdResetQueryPool(VkCommandBuffer commandBuffer,
-                           VkQueryPool queryPool,
-                           uint32_t firstQuery,
-                           uint32_t queryCount)
+void PVR_PER_ARCH(CmdResetQueryPool)(VkCommandBuffer commandBuffer,
+                                     VkQueryPool queryPool,
+                                     uint32_t firstQuery,
+                                     uint32_t queryCount)
 {
    VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    struct pvr_query_info query_info;
@@ -64,14 +64,14 @@ void pvr_CmdResetQueryPool(VkCommandBuffer commandBuffer,
    };
 }
 
-void pvr_CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer,
-                                 VkQueryPool queryPool,
-                                 uint32_t firstQuery,
-                                 uint32_t queryCount,
-                                 VkBuffer dstBuffer,
-                                 VkDeviceSize dstOffset,
-                                 VkDeviceSize stride,
-                                 VkQueryResultFlags flags)
+void PVR_PER_ARCH(CmdCopyQueryPoolResults)(VkCommandBuffer commandBuffer,
+                                           VkQueryPool queryPool,
+                                           uint32_t firstQuery,
+                                           uint32_t queryCount,
+                                           VkBuffer dstBuffer,
+                                           VkDeviceSize dstOffset,
+                                           VkDeviceSize stride,
+                                           VkQueryResultFlags flags)
 {
    VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    struct pvr_query_info query_info;
@@ -151,10 +151,10 @@ pvr_cmd_buffer_state_get_view_count(const struct pvr_cmd_buffer_state *state)
    return view_count;
 }
 
-void pvr_CmdBeginQuery(VkCommandBuffer commandBuffer,
-                       VkQueryPool queryPool,
-                       uint32_t query,
-                       VkQueryControlFlags flags)
+void PVR_PER_ARCH(CmdBeginQuery)(VkCommandBuffer commandBuffer,
+                                 VkQueryPool queryPool,
+                                 uint32_t query,
+                                 VkQueryControlFlags flags)
 {
    VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
@@ -208,9 +208,9 @@ void pvr_CmdBeginQuery(VkCommandBuffer commandBuffer,
    }
 }
 
-void pvr_CmdEndQuery(VkCommandBuffer commandBuffer,
-                     VkQueryPool queryPool,
-                     uint32_t query)
+void PVR_PER_ARCH(CmdEndQuery)(VkCommandBuffer commandBuffer,
+                               VkQueryPool queryPool,
+                               uint32_t query)
 {
    VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    struct pvr_cmd_buffer_state *state = &cmd_buffer->state;

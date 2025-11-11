@@ -79,7 +79,7 @@ static int32_t pvr_mrt_alloc_from_buffer(const struct pvr_device_info *dev_info,
    return -1;
 }
 
-void pvr_init_mrt_desc(VkFormat format, struct usc_mrt_desc *desc)
+void PVR_PER_ARCH(init_mrt_desc)(VkFormat format, struct usc_mrt_desc *desc)
 {
    uint32_t pixel_size_in_chunks;
    uint32_t pixel_size_in_bits;
@@ -187,11 +187,11 @@ static VkResult pvr_alloc_mrt(const struct pvr_device_info *dev_info,
    return VK_SUCCESS;
 }
 
-VkResult
-pvr_init_usc_mrt_setup(struct pvr_device *device,
-                       uint32_t attachment_count,
-                       const VkFormat attachment_formats[attachment_count],
-                       struct usc_mrt_setup *setup)
+VkResult PVR_PER_ARCH(init_usc_mrt_setup)(
+   struct pvr_device *device,
+   uint32_t attachment_count,
+   const VkFormat attachment_formats[attachment_count],
+   struct usc_mrt_setup *setup)
 {
    const struct pvr_device_info *dev_info = &device->pdevice->dev_info;
    struct pvr_mrt_alloc_ctx alloc = { 0 };
@@ -230,8 +230,8 @@ fail:
    return result;
 }
 
-void pvr_destroy_mrt_setup(const struct pvr_device *device,
-                           struct usc_mrt_setup *setup)
+void PVR_PER_ARCH(destroy_mrt_setup)(const struct pvr_device *device,
+                                     struct usc_mrt_setup *setup)
 {
    if (!setup)
       return;
@@ -328,9 +328,9 @@ static void pvr_load_op_destroy(struct pvr_device *device,
    vk_free2(&device->vk.alloc, allocator, load_op);
 }
 
-void pvr_mrt_load_op_state_cleanup(const struct pvr_device *device,
-                                   const VkAllocationCallbacks *alloc,
-                                   struct pvr_load_op_state *state)
+void PVR_PER_ARCH(mrt_load_op_state_cleanup)(const struct pvr_device *device,
+                                             const VkAllocationCallbacks *alloc,
+                                             struct pvr_load_op_state *state)
 {
    if (!state)
       return;
@@ -441,9 +441,10 @@ pvr_mrt_add_missing_output_register_write(struct usc_mrt_setup *setup,
    return VK_SUCCESS;
 }
 
-VkResult pvr_mrt_load_ops_setup(struct pvr_cmd_buffer *cmd_buffer,
-                                const VkAllocationCallbacks *alloc,
-                                struct pvr_load_op_state **load_op_state)
+VkResult
+PVR_PER_ARCH(mrt_load_ops_setup)(struct pvr_cmd_buffer *cmd_buffer,
+                                 const VkAllocationCallbacks *alloc,
+                                 struct pvr_load_op_state **load_op_state)
 {
    const struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
    const struct pvr_dynamic_render_info *dr_info =
@@ -476,7 +477,7 @@ VkResult pvr_mrt_load_ops_setup(struct pvr_cmd_buffer *cmd_buffer,
    return result;
 }
 
-VkResult pvr_pds_unitex_state_program_create_and_upload(
+VkResult PVR_PER_ARCH(pds_unitex_state_program_create_and_upload)(
    struct pvr_device *device,
    const VkAllocationCallbacks *allocator,
    uint32_t texture_kicks,
@@ -591,9 +592,10 @@ static VkResult pvr_pds_fragment_program_create_and_upload(
    return VK_SUCCESS;
 }
 
-VkResult pvr_load_op_shader_generate(struct pvr_device *device,
-                                     const VkAllocationCallbacks *allocator,
-                                     struct pvr_load_op *load_op)
+VkResult
+PVR_PER_ARCH(load_op_shader_generate)(struct pvr_device *device,
+                                      const VkAllocationCallbacks *allocator,
+                                      struct pvr_load_op *load_op)
 {
    const struct pvr_device_info *dev_info = &device->pdevice->dev_info;
    const uint32_t cache_line_size = pvr_get_slc_cache_line_size(dev_info);

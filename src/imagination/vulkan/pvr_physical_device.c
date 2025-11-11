@@ -31,6 +31,7 @@
 #include "pvr_dump_info.h"
 #include "pvr_entrypoints.h"
 #include "pvr_instance.h"
+#include "pvr_macros.h"
 #include "pvr_winsys.h"
 #include "pvr_wsi.h"
 
@@ -894,12 +895,6 @@ pvr_get_cache_uuid(const struct pvr_physical_device *const pdevice,
 }
 
 static void
-pvr_physical_device_setup_formats(struct pvr_physical_device *const pdevice)
-{
-   pdevice->formats = pvr_get_format_table(&pdevice->num_formats);
-}
-
-static void
 pvr_physical_device_setup_uuids(struct pvr_physical_device *const pdevice)
 {
    const struct pvr_instance *instance = pdevice->instance;
@@ -964,6 +959,9 @@ static uint64_t pvr_compute_heap_size(void)
 
    return MAX2(available_ram, PVR_MAX_MEMORY_ALLOCATION_SIZE);
 }
+
+static void
+pvr_physical_device_setup_formats(struct pvr_physical_device *const pdevice);
 
 VkResult pvr_physical_device_init(struct pvr_physical_device *pdevice,
                                   struct pvr_instance *instance,
@@ -1186,13 +1184,38 @@ void pvr_GetPhysicalDeviceMemoryProperties2(
    }
 }
 
+#define PER_ARCH_FUNCS(arch)                                                  \
+   VkResult pvr_##arch##_create_device(                                       \
+      struct pvr_physical_device *physical_device,                            \
+      const VkDeviceCreateInfo *pCreateInfo,                                  \
+      const VkAllocationCallbacks *pAllocator,                                \
+      VkDevice *pDevice);                                                     \
+                                                                              \
+   void pvr_##arch##_destroy_device(struct pvr_device *device,                \
+                                    const VkAllocationCallbacks *pAllocator); \
+                                                                              \
+   const struct pvr_format *pvr_##arch##_get_format_table(unsigned *num_formats)
+
+PER_ARCH_FUNCS(rogue);
+
 VkResult pvr_CreateDevice(VkPhysicalDevice physicalDevice,
                           const VkDeviceCreateInfo *pCreateInfo,
                           const VkAllocationCallbacks *pAllocator,
                           VkDevice *pDevice)
 {
    VK_FROM_HANDLE(pvr_physical_device, pdevice, physicalDevice);
-   return pvr_create_device(pdevice, pCreateInfo, pAllocator, pDevice);
+
+   enum pvr_device_arch arch = pdevice->dev_info.ident.arch;
+   VkResult result = VK_ERROR_INITIALIZATION_FAILED;
+   PVR_ARCH_DISPATCH_RET(create_device,
+                         arch,
+                         result,
+                         pdevice,
+                         pCreateInfo,
+                         pAllocator,
+                         pDevice);
+
+   return result;
 }
 
 void pvr_DestroyDevice(VkDevice _device,
@@ -1200,7 +1223,18 @@ void pvr_DestroyDevice(VkDevice _device,
 {
    VK_FROM_HANDLE(pvr_device, device, _device);
 
-   pvr_destroy_device(device, pAllocator);
+   enum pvr_device_arch arch = device->pdevice->dev_info.ident.arch;
+   PVR_ARCH_DISPATCH(destroy_device, arch, device, pAllocator);
+}
+
+static void
+pvr_physical_device_setup_formats(struct pvr_physical_device *const pdevice)
+{
+   enum pvr_device_arch arch = pdevice->dev_info.ident.arch;
+   PVR_ARCH_DISPATCH_RET(get_format_table,
+                         arch,
+                         pdevice->formats,
+                         &pdevice->num_formats);
 }
 
 /* Leave this at the very end, to avoid leakage of HW-defs here */

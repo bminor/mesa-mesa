@@ -23,7 +23,6 @@
 #include "pvr_hw_pass.h"
 #include "pvr_image.h"
 #include "pvr_pass.h"
-#include "pvr_physical_device.h"
 #include "pvr_rt_dataset.h"
 #include "pvr_spm.h"
 
@@ -92,12 +91,12 @@ err_mutex_destroy:
    return false;
 }
 
-VkResult
-pvr_render_state_setup(struct pvr_device *device,
-                       const VkAllocationCallbacks *pAllocator,
-                       struct pvr_render_state *rstate,
-                       uint32_t render_count,
-                       const struct pvr_renderpass_hwsetup_render *renders)
+VkResult PVR_PER_ARCH(render_state_setup)(
+   struct pvr_device *device,
+   const VkAllocationCallbacks *pAllocator,
+   struct pvr_render_state *rstate,
+   uint32_t render_count,
+   const struct pvr_renderpass_hwsetup_render *renders)
 {
    struct pvr_spm_bgobj_state *spm_bgobj_state_per_render;
    struct pvr_spm_eot_state *spm_eot_state_per_render;
@@ -211,10 +210,11 @@ pvr_render_pass_get_scratch_buffer_size(struct pvr_device *device,
       rstate->height);
 }
 
-VkResult pvr_CreateFramebuffer(VkDevice _device,
-                               const VkFramebufferCreateInfo *pCreateInfo,
-                               const VkAllocationCallbacks *pAllocator,
-                               VkFramebuffer *pFramebuffer)
+VkResult
+PVR_PER_ARCH(CreateFramebuffer)(VkDevice _device,
+                                const VkFramebufferCreateInfo *pCreateInfo,
+                                const VkAllocationCallbacks *pAllocator,
+                                VkFramebuffer *pFramebuffer)
 {
    VK_FROM_HANDLE(pvr_render_pass, pass, pCreateInfo->renderPass);
    VK_FROM_HANDLE(pvr_device, device, _device);
@@ -288,9 +288,9 @@ err_free_framebuffer:
    return result;
 }
 
-void pvr_DestroyFramebuffer(VkDevice _device,
-                            VkFramebuffer _fb,
-                            const VkAllocationCallbacks *pAllocator)
+void PVR_PER_ARCH(DestroyFramebuffer)(VkDevice _device,
+                                      VkFramebuffer _fb,
+                                      const VkAllocationCallbacks *pAllocator)
 {
    VK_FROM_HANDLE(pvr_framebuffer, framebuffer, _fb);
    VK_FROM_HANDLE(pvr_device, device, _device);

@@ -165,20 +165,6 @@ static inline struct pvr_device *vk_to_pvr_device(struct vk_device *device)
    return container_of(device, struct pvr_device, vk);
 }
 
-VkResult pvr_create_device(struct pvr_physical_device *pdevice,
-                           const VkDeviceCreateInfo *pCreateInfo,
-                           const VkAllocationCallbacks *pAllocator,
-                           VkDevice *pDevice);
-
-void pvr_destroy_device(struct pvr_device *device,
-                        const VkAllocationCallbacks *pAllocator);
-
-uint32_t pvr_calc_fscommon_size_and_tiles_in_flight(
-   const struct pvr_device_info *dev_info,
-   const struct pvr_device_runtime_info *dev_runtime_info,
-   uint32_t fs_common_size,
-   uint32_t min_tiles_in_flight);
-
 VkResult pvr_device_tile_buffer_ensure_cap(struct pvr_device *device,
                                            uint32_t capacity);
 
@@ -187,11 +173,6 @@ static inline void pvr_device_free_tile_buffer_state(struct pvr_device *device)
    for (uint32_t i = 0; i < device->tile_buffer_state.buffer_count; i++)
       pvr_bo_free(device, device->tile_buffer_state.buffers[i]);
 }
-
-VkResult pvr_pds_compute_shader_create_and_upload(
-   struct pvr_device *device,
-   struct pvr_pds_compute_shader_program *program,
-   struct pvr_pds_upload *const pds_upload_out);
 
 VkResult pvr_bind_memory(struct pvr_device *device,
                          struct pvr_device_memory *mem,
@@ -231,5 +212,34 @@ void pvr_rstate_entry_remove(struct pvr_device *device,
 
 void pvr_render_targets_fini(struct pvr_render_target *render_targets,
                              uint32_t render_targets_count);
+
+#ifdef PVR_PER_ARCH
+
+VkResult PVR_PER_ARCH(create_device)(struct pvr_physical_device *pdevice,
+                                     const VkDeviceCreateInfo *pCreateInfo,
+                                     const VkAllocationCallbacks *pAllocator,
+                                     VkDevice *pDevice);
+
+void PVR_PER_ARCH(destroy_device)(struct pvr_device *device,
+                                  const VkAllocationCallbacks *pAllocator);
+
+uint32_t PVR_PER_ARCH(calc_fscommon_size_and_tiles_in_flight)(
+   const struct pvr_device_info *dev_info,
+   const struct pvr_device_runtime_info *dev_runtime_info,
+   uint32_t fs_common_size,
+   uint32_t min_tiles_in_flight);
+
+#   define pvr_calc_fscommon_size_and_tiles_in_flight \
+      PVR_PER_ARCH(calc_fscommon_size_and_tiles_in_flight)
+
+VkResult PVR_PER_ARCH(pds_compute_shader_create_and_upload)(
+   struct pvr_device *device,
+   struct pvr_pds_compute_shader_program *program,
+   struct pvr_pds_upload *const pds_upload_out);
+
+#   define pvr_pds_compute_shader_create_and_upload \
+      PVR_PER_ARCH(pds_compute_shader_create_and_upload)
+
+#endif /* PVR_PER_ARCH */
 
 #endif /* PVR_DEVICE_H */

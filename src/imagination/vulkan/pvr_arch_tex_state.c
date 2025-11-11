@@ -151,9 +151,9 @@ static uint32_t setup_pck_info(VkFormat vk_format)
    return pck_info;
 }
 
-VkResult pvr_pack_tex_state(struct pvr_device *device,
-                            const struct pvr_texture_state_info *info,
-                            struct pvr_image_descriptor *state)
+VkResult PVR_PER_ARCH(pack_tex_state)(struct pvr_device *device,
+                                      const struct pvr_texture_state_info *info,
+                                      struct pvr_image_descriptor *state)
 {
    const struct pvr_device_info *dev_info = &device->pdevice->dev_info;
    enum pvr_memlayout mem_layout;

@@ -41,10 +41,10 @@ static void pvr_adjust_non_compressed_view(const struct pvr_image *image,
    info->base_level = 0;
 }
 
-VkResult pvr_CreateImageView(VkDevice _device,
-                             const VkImageViewCreateInfo *pCreateInfo,
-                             const VkAllocationCallbacks *pAllocator,
-                             VkImageView *pView)
+VkResult PVR_PER_ARCH(CreateImageView)(VkDevice _device,
+                                       const VkImageViewCreateInfo *pCreateInfo,
+                                       const VkAllocationCallbacks *pAllocator,
+                                       VkImageView *pView)
 {
    VK_FROM_HANDLE(pvr_device, device, _device);
    struct pvr_texture_state_info info = { 0 };
@@ -182,9 +182,9 @@ err_vk_image_view_destroy:
    return result;
 }
 
-void pvr_DestroyImageView(VkDevice _device,
-                          VkImageView _iview,
-                          const VkAllocationCallbacks *pAllocator)
+void PVR_PER_ARCH(DestroyImageView)(VkDevice _device,
+                                    VkImageView _iview,
+                                    const VkAllocationCallbacks *pAllocator)
 {
    VK_FROM_HANDLE(pvr_device, device, _device);
    VK_FROM_HANDLE(pvr_image_view, iview, _iview);
@@ -195,10 +195,11 @@ void pvr_DestroyImageView(VkDevice _device,
    vk_image_view_destroy(&device->vk, pAllocator, &iview->vk);
 }
 
-VkResult pvr_CreateBufferView(VkDevice _device,
-                              const VkBufferViewCreateInfo *pCreateInfo,
-                              const VkAllocationCallbacks *pAllocator,
-                              VkBufferView *pView)
+VkResult
+PVR_PER_ARCH(CreateBufferView)(VkDevice _device,
+                               const VkBufferViewCreateInfo *pCreateInfo,
+                               const VkAllocationCallbacks *pAllocator,
+                               VkBufferView *pView)
 {
    VK_FROM_HANDLE(pvr_buffer, buffer, pCreateInfo->buffer);
    VK_FROM_HANDLE(pvr_device, device, _device);
@@ -264,9 +265,9 @@ err_vk_buffer_view_destroy:
    return result;
 }
 
-void pvr_DestroyBufferView(VkDevice _device,
-                           VkBufferView bufferView,
-                           const VkAllocationCallbacks *pAllocator)
+void PVR_PER_ARCH(DestroyBufferView)(VkDevice _device,
+                                     VkBufferView bufferView,
+                                     const VkAllocationCallbacks *pAllocator)
 {
    VK_FROM_HANDLE(pvr_buffer_view, bview, bufferView);
    VK_FROM_HANDLE(pvr_device, device, _device);

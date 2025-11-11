@@ -393,6 +393,13 @@ VkResult pvr_ResetDescriptorPool(VkDevice _device,
    return VK_SUCCESS;
 }
 
+#define PER_ARCH_FUNCS(arch)                                  \
+   void pvr_##arch##_descriptor_set_write_immutable_samplers( \
+      struct pvr_descriptor_set_layout *layout,               \
+      struct pvr_descriptor_set *set)
+
+PER_ARCH_FUNCS(rogue);
+
 static VkResult
 pvr_descriptor_set_create(struct pvr_device *device,
                           struct pvr_descriptor_pool *pool,
@@ -430,7 +437,8 @@ pvr_descriptor_set_create(struct pvr_device *device,
    list_addtail(&set->link, &pool->desc_sets);
 
    /* Setup immutable samplers. */
-   pvr_descriptor_set_write_immutable_samplers(layout, set);
+   enum pvr_device_arch arch = device->pdevice->dev_info.ident.arch;
+   PVR_ARCH_DISPATCH(descriptor_set_write_immutable_samplers, arch, layout, set);
 
    *descriptor_set_out = set;
 

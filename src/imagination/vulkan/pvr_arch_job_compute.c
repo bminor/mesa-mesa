@@ -212,10 +212,10 @@ static void pvr_compute_job_ws_submit_info_init(
    pvr_submit_info_flags_init(dev_info, sub_cmd, &submit_info->flags);
 }
 
-VkResult pvr_compute_job_submit(struct pvr_compute_ctx *ctx,
-                                struct pvr_sub_cmd_compute *sub_cmd,
-                                struct vk_sync *wait,
-                                struct vk_sync *signal_sync)
+VkResult PVR_PER_ARCH(compute_job_submit)(struct pvr_compute_ctx *ctx,
+                                          struct pvr_sub_cmd_compute *sub_cmd,
+                                          struct vk_sync *wait,
+                                          struct vk_sync *signal_sync)
 {
    struct pvr_winsys_compute_submit_info submit_info;
    struct pvr_device *device = ctx->device;

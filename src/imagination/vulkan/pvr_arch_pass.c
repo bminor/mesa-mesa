@@ -750,10 +750,11 @@ err_return:
    return result;
 }
 
-VkResult pvr_CreateRenderPass2(VkDevice _device,
-                               const VkRenderPassCreateInfo2 *pCreateInfo,
-                               const VkAllocationCallbacks *pAllocator,
-                               VkRenderPass *pRenderPass)
+VkResult
+PVR_PER_ARCH(CreateRenderPass2)(VkDevice _device,
+                                const VkRenderPassCreateInfo2 *pCreateInfo,
+                                const VkAllocationCallbacks *pAllocator,
+                                VkRenderPass *pRenderPass)
 {
    struct pvr_render_pass_attachment *attachments;
    VK_FROM_HANDLE(pvr_device, device, _device);
@@ -1058,9 +1059,9 @@ err_free_pass:
    return result;
 }
 
-void pvr_DestroyRenderPass(VkDevice _device,
-                           VkRenderPass _pass,
-                           const VkAllocationCallbacks *pAllocator)
+void PVR_PER_ARCH(DestroyRenderPass)(VkDevice _device,
+                                     VkRenderPass _pass,
+                                     const VkAllocationCallbacks *pAllocator)
 {
    VK_FROM_HANDLE(pvr_device, device, _device);
    VK_FROM_HANDLE(pvr_render_pass, pass, _pass);
@@ -1074,14 +1075,14 @@ void pvr_DestroyRenderPass(VkDevice _device,
                                     allocator,
                                     pass,
                                     pass->hw_setup->render_count);
-   pvr_destroy_renderpass_hwsetup(allocator, pass->hw_setup);
+   PVR_PER_ARCH(destroy_renderpass_hwsetup)(allocator, pass->hw_setup);
    vk_object_base_finish(&pass->base);
    vk_free2(&device->vk.alloc, pAllocator, pass);
 }
 
-void pvr_GetRenderAreaGranularity(VkDevice _device,
-                                  VkRenderPass renderPass,
-                                  VkExtent2D *pGranularity)
+void PVR_PER_ARCH(GetRenderAreaGranularity)(VkDevice _device,
+                                            VkRenderPass renderPass,
+                                            VkExtent2D *pGranularity)
 {
    VK_FROM_HANDLE(pvr_device, device, _device);
    const struct pvr_device_info *dev_info = &device->pdevice->dev_info;

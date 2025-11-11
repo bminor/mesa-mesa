@@ -9,11 +9,15 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+
 #include <vulkan/vulkan.h>
 
 #include "pvr_common.h"
+#include "pvr_macros.h"
 
 struct pvr_device;
+struct pvr_dynamic_render_info;
+struct pvr_cmd_buffer;
 
 /* Specifies the location of render target writes. */
 enum usc_mrt_resource_type {
@@ -92,17 +96,6 @@ struct usc_mrt_setup {
    uint32_t hash;
 };
 
-VkResult
-pvr_init_usc_mrt_setup(struct pvr_device *device,
-                       uint32_t attachment_count,
-                       const VkFormat attachment_formats[attachment_count],
-                       struct usc_mrt_setup *setup);
-
-void pvr_destroy_mrt_setup(const struct pvr_device *device,
-                           struct usc_mrt_setup *setup);
-
-void pvr_init_mrt_desc(VkFormat format, struct usc_mrt_desc *desc);
-
 /* Max render targets for the clears loads state in load op.
  * To account for resolve attachments, double the color attachments.
  */
@@ -150,6 +143,15 @@ struct pvr_load_op {
    uint32_t view_count;
 };
 
+struct pvr_load_op_state {
+   uint32_t load_op_count;
+
+   /* Load op array indexed by HW render view (not by the index in the view
+    * mask).
+    */
+   struct pvr_load_op *load_ops;
+};
+
 #define CHECK_MASK_SIZE(_struct_type, _field_name, _nr_bits)               \
    static_assert(sizeof(((struct _struct_type *)NULL)->_field_name) * 8 >= \
                     _nr_bits,                                              \
@@ -167,34 +169,54 @@ CHECK_MASK_SIZE(pvr_load_op,
 
 #undef CHECK_MASK_SIZE
 
-VkResult pvr_pds_unitex_state_program_create_and_upload(
+#ifdef PVR_PER_ARCH
+
+VkResult PVR_PER_ARCH(init_usc_mrt_setup)(
+   struct pvr_device *device,
+   uint32_t attachment_count,
+   const VkFormat attachment_formats[attachment_count],
+   struct usc_mrt_setup *setup);
+
+#   define pvr_init_usc_mrt_setup PVR_PER_ARCH(init_usc_mrt_setup)
+
+void PVR_PER_ARCH(destroy_mrt_setup)(const struct pvr_device *device,
+                                     struct usc_mrt_setup *setup);
+
+#   define pvr_destroy_mrt_setup PVR_PER_ARCH(destroy_mrt_setup)
+
+void PVR_PER_ARCH(init_mrt_desc)(VkFormat format, struct usc_mrt_desc *desc);
+
+#   define pvr_init_mrt_desc PVR_PER_ARCH(init_mrt_desc)
+
+VkResult PVR_PER_ARCH(pds_unitex_state_program_create_and_upload)(
    struct pvr_device *device,
    const VkAllocationCallbacks *allocator,
    uint32_t texture_kicks,
    uint32_t uniform_kicks,
    struct pvr_pds_upload *const pds_upload_out);
 
-VkResult pvr_load_op_shader_generate(struct pvr_device *device,
-                                     const VkAllocationCallbacks *allocator,
-                                     struct pvr_load_op *load_op);
+#   define pvr_pds_unitex_state_program_create_and_upload \
+      PVR_PER_ARCH(pds_unitex_state_program_create_and_upload)
 
-struct pvr_load_op_state {
-   uint32_t load_op_count;
+VkResult
+   PVR_PER_ARCH(load_op_shader_generate)(struct pvr_device *device,
+                                         const VkAllocationCallbacks *allocator,
+                                         struct pvr_load_op *load_op);
 
-   /* Load op array indexed by HW render view (not by the index in the view
-    * mask).
-    */
-   struct pvr_load_op *load_ops;
-};
+#   define pvr_load_op_shader_generate PVR_PER_ARCH(load_op_shader_generate)
 
-struct pvr_dynamic_render_info;
-struct pvr_cmd_buffer;
+VkResult PVR_PER_ARCH(mrt_load_ops_setup)(struct pvr_cmd_buffer *cmd_buffer,
+                                          const VkAllocationCallbacks *alloc,
+                                          struct pvr_load_op_state **state);
 
-VkResult pvr_mrt_load_ops_setup(struct pvr_cmd_buffer *cmd_buffer,
-                                const VkAllocationCallbacks *alloc,
-                                struct pvr_load_op_state **state);
-void pvr_mrt_load_op_state_cleanup(const struct pvr_device *device,
-                                   const VkAllocationCallbacks *alloc,
-                                   struct pvr_load_op_state *state);
+#   define pvr_mrt_load_ops_setup PVR_PER_ARCH(mrt_load_ops_setup)
 
-#endif
+void PVR_PER_ARCH(mrt_load_op_state_cleanup)(const struct pvr_device *device,
+                                             const VkAllocationCallbacks *alloc,
+                                             struct pvr_load_op_state *state);
+
+#   define pvr_mrt_load_op_state_cleanup PVR_PER_ARCH(mrt_load_op_state_cleanup)
+
+#endif /* PVR_PER_ARCH */
+
+#endif /* PVR_MRT_H */

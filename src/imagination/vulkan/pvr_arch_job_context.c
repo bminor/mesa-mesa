@@ -21,6 +21,8 @@
  * SOFTWARE.
  */
 
+#include "pvr_job_context.h"
+
 #include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -34,7 +36,6 @@
 #include "pvr_common.h"
 #include "pvr_csb.h"
 #include "pvr_device.h"
-#include "pvr_job_context.h"
 #include "pvr_macros.h"
 #include "pvr_mrt.h"
 #include "pvr_pass.h"
@@ -852,9 +853,9 @@ static void pvr_render_ctx_ws_create_info_init(
    pvr_render_ctx_ws_static_state_init(ctx, &create_info->static_state);
 }
 
-VkResult pvr_render_ctx_create(struct pvr_device *device,
-                               enum pvr_winsys_ctx_priority priority,
-                               struct pvr_render_ctx **const ctx_out)
+VkResult PVR_PER_ARCH(render_ctx_create)(struct pvr_device *device,
+                                         enum pvr_winsys_ctx_priority priority,
+                                         struct pvr_render_ctx **const ctx_out)
 {
    const uint64_t vdm_callstack_size =
       sizeof(uint64_t) * PVR_VDM_CALLSTACK_MAX_DEPTH;
@@ -919,7 +920,7 @@ err_vk_free_ctx:
    return result;
 }
 
-void pvr_render_ctx_destroy(struct pvr_render_ctx *ctx)
+void PVR_PER_ARCH(render_ctx_destroy)(struct pvr_render_ctx *ctx)
 {
    struct pvr_device *device = ctx->device;
 
@@ -1102,9 +1103,10 @@ static void pvr_compute_ctx_ws_create_info_init(
                                         &create_info->static_state);
 }
 
-VkResult pvr_compute_ctx_create(struct pvr_device *const device,
-                                enum pvr_winsys_ctx_priority priority,
-                                struct pvr_compute_ctx **const ctx_out)
+VkResult
+PVR_PER_ARCH(compute_ctx_create)(struct pvr_device *const device,
+                                 enum pvr_winsys_ctx_priority priority,
+                                 struct pvr_compute_ctx **const ctx_out)
 {
    struct pvr_winsys_compute_ctx_create_info create_info;
    struct pvr_compute_ctx *ctx;
@@ -1188,7 +1190,7 @@ err_free_ctx:
    return result;
 }
 
-void pvr_compute_ctx_destroy(struct pvr_compute_ctx *const ctx)
+void PVR_PER_ARCH(compute_ctx_destroy)(struct pvr_compute_ctx *const ctx)
 {
    struct pvr_device *device = ctx->device;
 
@@ -1303,9 +1305,10 @@ static void pvr_transfer_ctx_shaders_fini(struct pvr_device *device,
    pvr_transfer_frag_store_fini(device, &ctx->frag_store);
 }
 
-VkResult pvr_transfer_ctx_create(struct pvr_device *const device,
-                                 enum pvr_winsys_ctx_priority priority,
-                                 struct pvr_transfer_ctx **const ctx_out)
+VkResult
+PVR_PER_ARCH(transfer_ctx_create)(struct pvr_device *const device,
+                                  enum pvr_winsys_ctx_priority priority,
+                                  struct pvr_transfer_ctx **const ctx_out)
 {
    struct pvr_winsys_transfer_ctx_create_info create_info;
    struct pvr_transfer_ctx *ctx;
@@ -1382,7 +1385,7 @@ err_free_ctx:
    return result;
 }
 
-void pvr_transfer_ctx_destroy(struct pvr_transfer_ctx *const ctx)
+void PVR_PER_ARCH(transfer_ctx_destroy)(struct pvr_transfer_ctx *const ctx)
 {
    struct pvr_device *device = ctx->device;
 

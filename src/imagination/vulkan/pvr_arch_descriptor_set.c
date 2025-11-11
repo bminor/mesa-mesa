@@ -230,7 +230,7 @@ write_buffer_view(const struct pvr_descriptor_set *set,
    memcpy(desc_mapping, &buffer_view_state, sizeof(buffer_view_state));
 }
 
-void pvr_descriptor_set_write_immutable_samplers(
+void PVR_PER_ARCH(descriptor_set_write_immutable_samplers)(
    struct pvr_descriptor_set_layout *layout,
    struct pvr_descriptor_set *set)
 {
@@ -247,11 +247,12 @@ void pvr_descriptor_set_write_immutable_samplers(
    }
 }
 
-void pvr_UpdateDescriptorSets(VkDevice _device,
-                              uint32_t descriptorWriteCount,
-                              const VkWriteDescriptorSet *pDescriptorWrites,
-                              uint32_t descriptorCopyCount,
-                              const VkCopyDescriptorSet *pDescriptorCopies)
+void PVR_PER_ARCH(UpdateDescriptorSets)(
+   VkDevice _device,
+   uint32_t descriptorWriteCount,
+   const VkWriteDescriptorSet *pDescriptorWrites,
+   uint32_t descriptorCopyCount,
+   const VkCopyDescriptorSet *pDescriptorCopies)
 {
    VK_FROM_HANDLE(pvr_device, device, _device);
    const struct pvr_device_info *dev_info = &device->pdevice->dev_info;
@@ -416,7 +417,7 @@ void pvr_UpdateDescriptorSets(VkDevice _device,
    }
 }
 
-void pvr_UpdateDescriptorSetWithTemplate(
+void PVR_PER_ARCH(UpdateDescriptorSetWithTemplate)(
    VkDevice _device,
    VkDescriptorSet descriptorSet,
    VkDescriptorUpdateTemplate descriptorUpdateTemplate,

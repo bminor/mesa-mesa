@@ -6012,10 +6012,10 @@ static VkResult pvr_queue_transfer(struct pvr_transfer_ctx *ctx,
    return VK_SUCCESS;
 }
 
-VkResult pvr_transfer_job_submit(struct pvr_transfer_ctx *ctx,
-                                 struct pvr_sub_cmd_transfer *sub_cmd,
-                                 struct vk_sync *wait_sync,
-                                 struct vk_sync *signal_sync)
+VkResult PVR_PER_ARCH(transfer_job_submit)(struct pvr_transfer_ctx *ctx,
+                                           struct pvr_sub_cmd_transfer *sub_cmd,
+                                           struct vk_sync *wait_sync,
+                                           struct vk_sync *signal_sync)
 {
    list_for_each_entry_safe (struct pvr_transfer_cmd,
                              transfer_cmd,

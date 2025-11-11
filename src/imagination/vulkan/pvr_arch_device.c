@@ -86,7 +86,7 @@ static uint32_t pvr_get_simultaneous_num_allocs(
       return 4;
 }
 
-uint32_t pvr_calc_fscommon_size_and_tiles_in_flight(
+uint32_t PVR_PER_ARCH(calc_fscommon_size_and_tiles_in_flight)(
    const struct pvr_device_info *dev_info,
    const struct pvr_device_runtime_info *dev_runtime_info,
    uint32_t fs_common_size,
@@ -148,7 +148,7 @@ uint32_t pvr_calc_fscommon_size_and_tiles_in_flight(
    return MIN2(num_tile_in_flight, max_tiles_in_flight);
 }
 
-VkResult pvr_pds_compute_shader_create_and_upload(
+VkResult PVR_PER_ARCH(pds_compute_shader_create_and_upload)(
    struct pvr_device *device,
    struct pvr_pds_compute_shader_program *program,
    struct pvr_pds_upload *const pds_upload_out)
@@ -688,10 +688,10 @@ static void pvr_device_init_default_sampler_state(struct pvr_device *device)
    }
 }
 
-VkResult pvr_create_device(struct pvr_physical_device *pdevice,
-                           const VkDeviceCreateInfo *pCreateInfo,
-                           const VkAllocationCallbacks *pAllocator,
-                           VkDevice *pDevice)
+VkResult PVR_PER_ARCH(create_device)(struct pvr_physical_device *pdevice,
+                                     const VkDeviceCreateInfo *pCreateInfo,
+                                     const VkAllocationCallbacks *pAllocator,
+                                     VkDevice *pDevice)
 {
    uint32_t initial_free_list_size = PVR_GLOBAL_FREE_LIST_INITIAL_SIZE;
    struct pvr_instance *instance = pdevice->instance;
@@ -720,8 +720,11 @@ VkResult pvr_create_device(struct pvr_physical_device *pdevice,
    }
 
    vk_device_dispatch_table_from_entrypoints(&dispatch_table,
-                                             &pvr_device_entrypoints,
+                                             &PVR_PER_ARCH(device_entrypoints),
                                              true);
+   vk_device_dispatch_table_from_entrypoints(&dispatch_table,
+                                             &pvr_device_entrypoints,
+                                             false);
 
    vk_device_dispatch_table_from_entrypoints(&dispatch_table,
                                              &wsi_device_entrypoints,
@@ -920,8 +923,8 @@ err_out:
    return result;
 }
 
-void pvr_destroy_device(struct pvr_device *device,
-                        const VkAllocationCallbacks *pAllocator)
+void PVR_PER_ARCH(destroy_device)(struct pvr_device *device,
+                                  const VkAllocationCallbacks *pAllocator)
 {
    if (!device)
       return;

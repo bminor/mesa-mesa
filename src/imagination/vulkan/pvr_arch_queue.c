@@ -46,6 +46,7 @@
 #include "pvr_job_render.h"
 #include "pvr_job_transfer.h"
 #include "pvr_limits.h"
+#include "pvr_macros.h"
 #include "pvr_physical_device.h"
 #include "pvr_pipeline.h"
 
@@ -136,8 +137,8 @@ err_vk_queue_finish:
    return result;
 }
 
-VkResult pvr_queues_create(struct pvr_device *device,
-                           const VkDeviceCreateInfo *pCreateInfo)
+VkResult PVR_PER_ARCH(queues_create)(struct pvr_device *device,
+                                     const VkDeviceCreateInfo *pCreateInfo)
 {
    VkResult result;
 
@@ -169,7 +170,7 @@ VkResult pvr_queues_create(struct pvr_device *device,
    return VK_SUCCESS;
 
 err_queues_finish:
-   pvr_queues_destroy(device);
+   PVR_PER_ARCH(queues_destroy)(device);
    return result;
 }
 
@@ -193,7 +194,7 @@ static void pvr_queue_finish(struct pvr_queue *queue)
    vk_queue_finish(&queue->vk);
 }
 
-void pvr_queues_destroy(struct pvr_device *device)
+void PVR_PER_ARCH(queues_destroy)(struct pvr_device *device)
 {
    for (uint32_t q_idx = 0; q_idx < device->queue_count; q_idx++)
       pvr_queue_finish(&device->queues[q_idx]);
@@ -1014,10 +1015,10 @@ static VkResult pvr_driver_queue_submit(struct vk_queue *queue,
    return VK_SUCCESS;
 }
 
-VkResult pvr_QueueBindSparse(VkQueue _queue,
-                             uint32_t bindInfoCount,
-                             const VkBindSparseInfo *pBindInfo,
-                             VkFence fence)
+VkResult PVR_PER_ARCH(QueueBindSparse)(VkQueue _queue,
+                                       uint32_t bindInfoCount,
+                                       const VkBindSparseInfo *pBindInfo,
+                                       VkFence fence)
 {
    return VK_SUCCESS;
 }

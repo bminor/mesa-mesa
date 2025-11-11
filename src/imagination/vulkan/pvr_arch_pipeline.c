@@ -38,6 +38,7 @@
 #include "nir/nir_lower_blend.h"
 #include "pco/pco.h"
 #include "pco/pco_data.h"
+
 #include "pvr_bo.h"
 #include "pvr_csb.h"
 #include "pvr_csb_enum_helpers.h"
@@ -45,12 +46,14 @@
 #include "pvr_device.h"
 #include "pvr_entrypoints.h"
 #include "pvr_hw_pass.h"
+#include "pvr_macros.h"
 #include "pvr_pass.h"
 #include "pvr_pds.h"
 #include "pvr_physical_device.h"
 #include "pvr_robustness.h"
 #include "pvr_types.h"
 #include "pvr_usc.h"
+
 #include "util/log.h"
 #include "util/macros.h"
 #include "util/ralloc.h"
@@ -1145,13 +1148,13 @@ static void pvr_compute_pipeline_destroy(
    vk_free2(&device->vk.alloc, allocator, compute_pipeline);
 }
 
-VkResult
-pvr_CreateComputePipelines(VkDevice _device,
-                           VkPipelineCache pipelineCache,
-                           uint32_t createInfoCount,
-                           const VkComputePipelineCreateInfo *pCreateInfos,
-                           const VkAllocationCallbacks *pAllocator,
-                           VkPipeline *pPipelines)
+VkResult PVR_PER_ARCH(CreateComputePipelines)(
+   VkDevice _device,
+   VkPipelineCache pipelineCache,
+   uint32_t createInfoCount,
+   const VkComputePipelineCreateInfo *pCreateInfos,
+   const VkAllocationCallbacks *pAllocator,
+   VkPipeline *pPipelines)
 {
    VK_FROM_HANDLE(vk_pipeline_cache, cache, pipelineCache);
    VK_FROM_HANDLE(pvr_device, device, _device);
@@ -3179,13 +3182,13 @@ pvr_graphics_pipeline_create(struct pvr_device *device,
    return VK_SUCCESS;
 }
 
-VkResult
-pvr_CreateGraphicsPipelines(VkDevice _device,
-                            VkPipelineCache pipelineCache,
-                            uint32_t createInfoCount,
-                            const VkGraphicsPipelineCreateInfo *pCreateInfos,
-                            const VkAllocationCallbacks *pAllocator,
-                            VkPipeline *pPipelines)
+VkResult PVR_PER_ARCH(CreateGraphicsPipelines)(
+   VkDevice _device,
+   VkPipelineCache pipelineCache,
+   uint32_t createInfoCount,
+   const VkGraphicsPipelineCreateInfo *pCreateInfos,
+   const VkAllocationCallbacks *pAllocator,
+   VkPipeline *pPipelines)
 {
    VK_FROM_HANDLE(vk_pipeline_cache, cache, pipelineCache);
    VK_FROM_HANDLE(pvr_device, device, _device);
@@ -3211,9 +3214,9 @@ pvr_CreateGraphicsPipelines(VkDevice _device,
    Other functions
 *****************************************************************************/
 
-void pvr_DestroyPipeline(VkDevice _device,
-                         VkPipeline _pipeline,
-                         const VkAllocationCallbacks *pAllocator)
+void PVR_PER_ARCH(DestroyPipeline)(VkDevice _device,
+                                   VkPipeline _pipeline,
+                                   const VkAllocationCallbacks *pAllocator)
 {
    VK_FROM_HANDLE(pvr_pipeline, pipeline, _pipeline);
    VK_FROM_HANDLE(pvr_device, device, _device);

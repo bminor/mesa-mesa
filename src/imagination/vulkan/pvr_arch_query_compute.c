@@ -346,7 +346,8 @@ pvr_destroy_compute_query_program(struct pvr_device *device,
    pvr_bo_suballoc_free(program->usc_bo);
 }
 
-VkResult pvr_device_create_compute_query_programs(struct pvr_device *device)
+VkResult
+PVR_PER_ARCH(device_create_compute_query_programs)(struct pvr_device *device)
 {
    VkResult result;
 
@@ -388,7 +389,8 @@ err_destroy_availability_query_program:
    return result;
 }
 
-void pvr_device_destroy_compute_query_programs(struct pvr_device *device)
+void PVR_PER_ARCH(device_destroy_compute_query_programs)(
+   struct pvr_device *device)
 {
    pvr_destroy_compute_query_program(device, &device->availability_shader);
    pvr_destroy_compute_query_program(device, &device->copy_results_shader);
@@ -396,8 +398,9 @@ void pvr_device_destroy_compute_query_programs(struct pvr_device *device)
 }
 
 /* TODO: Split this function into per program type functions. */
-VkResult pvr_add_query_program(struct pvr_cmd_buffer *cmd_buffer,
-                               const struct pvr_query_info *query_info)
+VkResult
+PVR_PER_ARCH(add_query_program)(struct pvr_cmd_buffer *cmd_buffer,
+                                const struct pvr_query_info *query_info)
 {
    struct pvr_device *device = cmd_buffer->device;
    const struct pvr_compute_query_shader *query_prog;

@@ -28,6 +28,8 @@
 #include <stdint.h>
 #include <vulkan/vulkan.h>
 
+#include "pvr_macros.h"
+
 struct pvr_device;
 struct pvr_render_pass;
 
@@ -218,14 +220,24 @@ struct pvr_renderpass_hwsetup {
    bool *surface_allocate;
 };
 
-VkResult pvr_create_renderpass_hwsetup(
+#ifdef PVR_PER_ARCH
+
+VkResult PVR_PER_ARCH(create_renderpass_hwsetup)(
    struct pvr_device *device,
    const VkAllocationCallbacks *alloc,
    struct pvr_render_pass *pass,
    bool disable_merge,
    struct pvr_renderpass_hwsetup **const hw_setup_out);
 
-void pvr_destroy_renderpass_hwsetup(const VkAllocationCallbacks *alloc,
-                                    struct pvr_renderpass_hwsetup *hw_setup);
+#   define pvr_create_renderpass_hwsetup PVR_PER_ARCH(create_renderpass_hwsetup)
+
+void PVR_PER_ARCH(destroy_renderpass_hwsetup)(
+   const VkAllocationCallbacks *alloc,
+   struct pvr_renderpass_hwsetup *hw_setup);
+
+#   define pvr_destroy_renderpass_hwsetup \
+      PVR_PER_ARCH(destroy_renderpass_hwsetup)
+
+#endif
 
 #endif /* PVR_HW_PASS_H */

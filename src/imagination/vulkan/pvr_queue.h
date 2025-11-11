@@ -14,6 +14,7 @@
 #ifndef PVR_QUEUE_H
 #define PVR_QUEUE_H
 
+#include "pvr_macros.h"
 #include "vk_queue.h"
 
 #include "pvr_common.h"
@@ -41,8 +42,14 @@ struct pvr_queue {
 
 VK_DEFINE_HANDLE_CASTS(pvr_queue, vk.base, VkQueue, VK_OBJECT_TYPE_QUEUE)
 
-VkResult pvr_queues_create(struct pvr_device *device,
-                           const VkDeviceCreateInfo *pCreateInfo);
-void pvr_queues_destroy(struct pvr_device *device);
+#ifdef PVR_PER_ARCH
+VkResult PVR_PER_ARCH(queues_create)(struct pvr_device *device,
+                                     const VkDeviceCreateInfo *pCreateInfo);
+#   define pvr_queues_create PVR_PER_ARCH(queues_create)
+
+void PVR_PER_ARCH(queues_destroy)(struct pvr_device *device);
+#   define pvr_queues_destroy PVR_PER_ARCH(queues_destroy)
+
+#endif /* PVR_PER_ARCH */
 
 #endif /* PVR_QUEUE_H */

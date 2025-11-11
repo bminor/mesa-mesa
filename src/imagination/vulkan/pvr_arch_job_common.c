@@ -36,11 +36,12 @@
 #include "vk_format.h"
 #include "vk_object.h"
 
-void pvr_pbe_get_src_format_and_gamma(VkFormat vk_format,
-                                      enum pvr_pbe_gamma default_gamma,
-                                      bool with_packed_usc_channel,
-                                      uint32_t *const src_format_out,
-                                      enum pvr_pbe_gamma *const gamma_out)
+void PVR_PER_ARCH(pbe_get_src_format_and_gamma)(
+   VkFormat vk_format,
+   enum pvr_pbe_gamma default_gamma,
+   bool with_packed_usc_channel,
+   uint32_t *const src_format_out,
+   enum pvr_pbe_gamma *const gamma_out)
 {
    const struct util_format_description *desc =
       vk_format_description(vk_format);
@@ -79,7 +80,7 @@ void pvr_pbe_get_src_format_and_gamma(VkFormat vk_format,
    }
 }
 
-void pvr_pbe_pack_state(
+void PVR_PER_ARCH(pbe_pack_state)(
    const struct pvr_device_info *dev_info,
    const struct pvr_pbe_surf_params *surface_params,
    const struct pvr_pbe_render_params *render_params,
@@ -301,7 +302,7 @@ void pvr_pbe_pack_state(
  * total_tiles_in_flight so that CR_ISP_CTL can be fully packed in
  * pvr_render_job_ws_fragment_state_init().
  */
-void pvr_setup_tiles_in_flight(
+void PVR_PER_ARCH(setup_tiles_in_flight)(
    const struct pvr_device_info *dev_info,
    const struct pvr_device_runtime_info *dev_runtime_info,
    uint32_t msaa_mode,

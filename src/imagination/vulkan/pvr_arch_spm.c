@@ -36,7 +36,7 @@ struct pvr_spm_scratch_buffer {
    uint64_t size;
 };
 
-uint64_t pvr_spm_scratch_buffer_calc_required_size(
+uint64_t PVR_PER_ARCH(spm_scratch_buffer_calc_required_size)(
    const struct pvr_renderpass_hwsetup_render *renders,
    uint32_t render_count,
    uint32_t sample_count,
@@ -244,7 +244,7 @@ VkResult pvr_device_init_spm_load_state(struct pvr_device *device)
    return VK_SUCCESS;
 }
 
-void pvr_device_finish_spm_load_state(struct pvr_device *device)
+void PVR_PER_ARCH(device_finish_spm_load_state)(struct pvr_device *device)
 {
    pvr_bo_suballoc_free(device->spm_load_state.pds_programs);
    pvr_bo_suballoc_free(device->spm_load_state.usc_programs);
@@ -452,11 +452,11 @@ static VkResult pvr_pds_pixel_event_program_create_and_upload(
  * This sets up an EOT program to store the render pass'es on-chip and
  * off-chip tile data to the SPM scratch buffer on the EOT event.
  */
-VkResult
-pvr_spm_init_eot_state(struct pvr_device *device,
-                       struct pvr_spm_eot_state *spm_eot_state,
-                       const struct pvr_render_state *rstate,
-                       const struct pvr_renderpass_hwsetup_render *hw_render)
+VkResult PVR_PER_ARCH(spm_init_eot_state)(
+   struct pvr_device *device,
+   struct pvr_spm_eot_state *spm_eot_state,
+   const struct pvr_render_state *rstate,
+   const struct pvr_renderpass_hwsetup_render *hw_render)
 {
    const VkExtent2D framebuffer_size = {
       .width = rstate->width,
@@ -746,11 +746,11 @@ static VkResult pvr_pds_bgnd_program_create_and_upload(
    return VK_SUCCESS;
 }
 
-VkResult
-pvr_spm_init_bgobj_state(struct pvr_device *device,
-                         struct pvr_spm_bgobj_state *spm_bgobj_state,
-                         const struct pvr_render_state *rstate,
-                         const struct pvr_renderpass_hwsetup_render *hw_render)
+VkResult PVR_PER_ARCH(spm_init_bgobj_state)(
+   struct pvr_device *device,
+   struct pvr_spm_bgobj_state *spm_bgobj_state,
+   const struct pvr_render_state *rstate,
+   const struct pvr_renderpass_hwsetup_render *hw_render)
 {
    const VkExtent2D framebuffer_size = {
       .width = rstate->width,

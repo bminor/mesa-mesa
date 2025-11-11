@@ -60,4 +60,32 @@
 #   define pvr_assert(x)
 #endif
 
+#define PVR_ARCH_NAME(name, arch) pvr_##arch##_##name
+
+#define PVR_ARCH_DISPATCH(name, arch, ...)        \
+   do {                                           \
+      switch (arch) {                             \
+      case PVR_DEVICE_ARCH_ROGUE:                 \
+         PVR_ARCH_NAME(name, rogue)(__VA_ARGS__); \
+         break;                                   \
+      default:                                    \
+         UNREACHABLE("Unsupported architecture"); \
+      }                                           \
+   } while (0)
+
+#define PVR_ARCH_DISPATCH_RET(name, arch, ret, ...)     \
+   do {                                                 \
+      switch (arch) {                                   \
+      case PVR_DEVICE_ARCH_ROGUE:                       \
+         ret = PVR_ARCH_NAME(name, rogue)(__VA_ARGS__); \
+         break;                                         \
+      default:                                          \
+         UNREACHABLE("Unsupported architecture");       \
+      }                                                 \
+   } while (0)
+
+#if defined(PVR_BUILD_ARCH_ROGUE)
+#   define PVR_PER_ARCH(name) PVR_ARCH_NAME(name, rogue)
+#endif
+
 #endif /* PVR_MACROS_H */

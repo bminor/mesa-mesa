@@ -54,10 +54,10 @@ pvr_sampler_get_hw_addr_mode_from_vk(VkSamplerAddressMode addr_mode)
    }
 }
 
-VkResult pvr_CreateSampler(VkDevice _device,
-                           const VkSamplerCreateInfo *pCreateInfo,
-                           const VkAllocationCallbacks *pAllocator,
-                           VkSampler *pSampler)
+VkResult PVR_PER_ARCH(CreateSampler)(VkDevice _device,
+                                     const VkSamplerCreateInfo *pCreateInfo,
+                                     const VkAllocationCallbacks *pAllocator,
+                                     VkSampler *pSampler)
 {
    VK_FROM_HANDLE(pvr_device, device, _device);
    struct pvr_sampler *sampler;
@@ -219,9 +219,9 @@ err_out:
    return result;
 }
 
-void pvr_DestroySampler(VkDevice _device,
-                        VkSampler _sampler,
-                        const VkAllocationCallbacks *pAllocator)
+void PVR_PER_ARCH(DestroySampler)(VkDevice _device,
+                                  VkSampler _sampler,
+                                  const VkAllocationCallbacks *pAllocator)
 {
    VK_FROM_HANDLE(pvr_device, device, _device);
    VK_FROM_HANDLE(pvr_sampler, sampler, _sampler);

@@ -57,7 +57,8 @@ uint32_t pvr_get_pbe_accum_format_size_in_bytes(VkFormat vk_format)
    enum pvr_pbe_accum_format pbe_accum_format;
    uint32_t nr_components;
 
-   pbe_accum_format = pvr_get_pbe_accum_format(vk_format);
+   /* TODO: Decouple from arch-specific function */
+   pbe_accum_format = pvr_rogue_get_pbe_accum_format(vk_format);
    nr_components = vk_format_get_nr_components(vk_format);
 
    switch (pbe_accum_format) {
@@ -153,8 +154,9 @@ void pvr_get_hw_clear_color(
       int8_t i8[PVR_CLEAR_COLOR_ARRAY_SIZE * 4];
    } packed_val = { 0 };
 
+   /* TODO: Decouple from arch-specific function */
    const enum pvr_pbe_accum_format pbe_accum_format =
-      pvr_get_pbe_accum_format(vk_format);
+      pvr_rogue_get_pbe_accum_format(vk_format);
 
    static_assert(ARRAY_SIZE(value.uint32) == PVR_CLEAR_COLOR_ARRAY_SIZE,
                  "Size mismatch. Unknown/unhandled extra values.");
@@ -684,7 +686,8 @@ VkResult pvr_GetPhysicalDeviceImageFormatProperties2(
       case VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO:
          break;
       case VK_STRUCTURE_TYPE_IMAGE_STENCIL_USAGE_CREATE_INFO:
-         /* Nothing to do here, it's handled in pvr_get_image_format_properties
+         /* Nothing to do here, it's handled in
+          * PVR_PER_ARCH(get_image_format_properties)
           */
          break;
       default:

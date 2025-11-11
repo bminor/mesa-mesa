@@ -31,9 +31,11 @@ struct pvr_compute_ctx;
 struct pvr_sub_cmd_compute;
 struct vk_sync;
 
-VkResult pvr_compute_job_submit(struct pvr_compute_ctx *ctx,
-                                struct pvr_sub_cmd_compute *sub_cmd,
-                                struct vk_sync *wait,
-                                struct vk_sync *signal_sync);
+VkResult PVR_PER_ARCH(compute_job_submit)(struct pvr_compute_ctx *ctx,
+                                          struct pvr_sub_cmd_compute *sub_cmd,
+                                          struct vk_sync *wait,
+                                          struct vk_sync *signal_sync);
+
+#define pvr_compute_job_submit PVR_PER_ARCH(compute_job_submit)
 
 #endif /* PVR_JOB_COMPUTE_H */

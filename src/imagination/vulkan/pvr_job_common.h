@@ -29,7 +29,9 @@
 #include <vulkan/vulkan.h>
 
 #include "hwdef/rogue_hw_defs.h"
+
 #include "pvr_csb_enum_helpers.h"
+#include "pvr_macros.h"
 #include "pvr_types.h"
 
 enum pvr_pbe_gamma {
@@ -110,23 +112,31 @@ struct pvr_pbe_render_params {
    uint32_t mrt_index;
 };
 
-void pvr_pbe_pack_state(
+#ifdef PVR_PER_ARCH
+
+void PVR_PER_ARCH(pbe_pack_state)(
    const struct pvr_device_info *dev_info,
    const struct pvr_pbe_surf_params *surface_params,
    const struct pvr_pbe_render_params *render_params,
    uint32_t pbe_cs_words[static const ROGUE_NUM_PBESTATE_STATE_WORDS],
    uint64_t pbe_reg_words[static const ROGUE_NUM_PBESTATE_REG_WORDS]);
 
+#   define pvr_pbe_pack_state PVR_PER_ARCH(pbe_pack_state)
+
 /* Helper to calculate pvr_pbe_surf_params::gamma and
  * pvr_pbe_surf_params::source_format.
  */
-void pvr_pbe_get_src_format_and_gamma(VkFormat vk_format,
-                                      enum pvr_pbe_gamma default_gamma,
-                                      bool with_packed_usc_channel,
-                                      uint32_t *const src_format_out,
-                                      enum pvr_pbe_gamma *const gamma_out);
+void PVR_PER_ARCH(pbe_get_src_format_and_gamma)(
+   VkFormat vk_format,
+   enum pvr_pbe_gamma default_gamma,
+   bool with_packed_usc_channel,
+   uint32_t *const src_format_out,
+   enum pvr_pbe_gamma *const gamma_out);
 
-void pvr_setup_tiles_in_flight(
+#   define pvr_pbe_get_src_format_and_gamma \
+      PVR_PER_ARCH(pbe_get_src_format_and_gamma)
+
+void PVR_PER_ARCH(setup_tiles_in_flight)(
    const struct pvr_device_info *dev_info,
    const struct pvr_device_runtime_info *dev_runtime_info,
    uint32_t msaa_mode,
@@ -135,5 +145,9 @@ void pvr_setup_tiles_in_flight(
    uint32_t max_tiles_in_flight,
    uint32_t *const isp_ctl_out,
    uint32_t *const pixel_ctl_out);
+
+#   define pvr_setup_tiles_in_flight PVR_PER_ARCH(setup_tiles_in_flight)
+
+#endif /* PVR_PER_ARCH */
 
 #endif /* PVR_JOB_COMMON_H */

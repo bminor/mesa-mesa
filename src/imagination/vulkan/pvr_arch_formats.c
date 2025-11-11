@@ -255,14 +255,15 @@ static const struct pvr_pbe_format pvr_pbe_format_table[] = {
 #undef FORMAT
 #undef FORMAT_DEPTH_STENCIL
 
-const struct pvr_format *pvr_get_format_table(unsigned *num_formats)
+const struct pvr_format *PVR_PER_ARCH(get_format_table)(unsigned *num_formats)
 {
    assert(num_formats != NULL);
    *num_formats = ARRAY_SIZE(pvr_format_table);
    return pvr_format_table;
 }
 
-static inline const struct pvr_format *pvr_get_format(VkFormat vk_format)
+static inline const struct pvr_format *
+PVR_PER_ARCH(get_format)(VkFormat vk_format)
 {
    if (vk_format < ARRAY_SIZE(pvr_format_table) &&
        pvr_format_table[vk_format].bind != 0) {
@@ -283,9 +284,9 @@ pvr_get_pbe_format(VkFormat vk_format)
    return &pvr_pbe_format_table[vk_format];
 }
 
-uint32_t pvr_get_tex_format(VkFormat vk_format)
+uint32_t PVR_PER_ARCH(get_tex_format)(VkFormat vk_format)
 {
-   const struct pvr_format *pvr_format = pvr_get_format(vk_format);
+   const struct pvr_format *pvr_format = PVR_PER_ARCH(get_format)(vk_format);
    if (pvr_format) {
       return pvr_format->tex_format;
    }
@@ -293,10 +294,10 @@ uint32_t pvr_get_tex_format(VkFormat vk_format)
    return ROGUE_TEXSTATE_FORMAT_INVALID;
 }
 
-uint32_t pvr_get_tex_format_aspect(VkFormat vk_format,
-                                   VkImageAspectFlags aspect_mask)
+uint32_t PVR_PER_ARCH(get_tex_format_aspect)(VkFormat vk_format,
+                                             VkImageAspectFlags aspect_mask)
 {
-   const struct pvr_format *pvr_format = pvr_get_format(vk_format);
+   const struct pvr_format *pvr_format = PVR_PER_ARCH(get_format)(vk_format);
    if (pvr_format) {
       if (aspect_mask == VK_IMAGE_ASPECT_DEPTH_BIT)
          return pvr_format->depth_tex_format;
@@ -325,8 +326,9 @@ uint32_t pvr_get_pbe_accum_format(VkFormat vk_format)
    return pvr_get_pbe_format(vk_format)->accum_format;
 }
 
-bool pvr_format_is_pbe_downscalable(const struct pvr_device_info *dev_info,
-                                    VkFormat vk_format)
+bool PVR_PER_ARCH(format_is_pbe_downscalable)(
+   const struct pvr_device_info *dev_info,
+   VkFormat vk_format)
 {
    if (vk_format_is_int(vk_format)) {
       /* PBE downscale behavior for integer formats does not match Vulkan
@@ -336,7 +338,7 @@ bool pvr_format_is_pbe_downscalable(const struct pvr_device_info *dev_info,
       return false;
    }
 
-   switch (pvr_get_pbe_packmode(vk_format)) {
+   switch (PVR_PER_ARCH(get_pbe_packmode)(vk_format)) {
    default:
       return true;
    case ROGUE_PBESTATE_PACKMODE_F16:
