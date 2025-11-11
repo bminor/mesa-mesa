@@ -754,6 +754,11 @@ legalize_block(struct ir3_legalize_ctx *ctx, struct ir3_block *block)
       if (writes_addr1(n) && block->in_early_preamble)
          n->srcs[0]->flags |= IR3_REG_R;
 
+      if ((n->opc == OPC_SHPE) && (ctx->compiler->gen >= 8) &&
+          regmask_get_any_gpr(&state->needs_sy)) {
+         last_n = insert_nop_flags(ctx, state, last_n, &build, IR3_INSTR_SY);
+      }
+
       /* cat5+ does not have an (ss) bit, if needed we need to
        * insert a nop to carry the sync flag.  Would be kinda
        * clever if we were aware of this during scheduling, but
