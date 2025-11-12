@@ -7274,7 +7274,7 @@
         "description": "radv/video: Align each layer of encode DPB to 256",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "37e71a5cb24cd6053603ca64b67352e0c8e2fce8",
         "notes": null
