@@ -1560,6 +1560,7 @@ radv_enc_ctx2(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *in
          metadata_size += RENCODE_AV1_FRAME_CONTEXT_CDF_TABLE_SIZE;
          metadata_size += RENCODE_AV1_CDEF_ALGORITHM_FRAME_CONTEXT_SIZE;
       }
+      metadata_size = align(metadata_size, ENC_ALIGNMENT);
 
       uint32_t dpb_array_idx = res->baseArrayLayer + dpb_iv->vk.base_array_layer;
       uint64_t luma_va = dpb_img->bindings[0].addr + dpb_array_idx * (luma_size + chroma_size + metadata_size);
@@ -3272,17 +3273,20 @@ radv_video_get_enc_dpb_image(struct radv_device *device, const struct VkVideoPro
    }
 
    for (unsigned i = 0; i < num_reconstructed_pictures; i++) {
-      image->size += luma_size;
-      image->size += chroma_size;
+      unsigned metadata_size = 0;
       if (is_av1) {
-         image->size += RENCODE_AV1_FRAME_CONTEXT_CDF_TABLE_SIZE;
-         image->size += RENCODE_AV1_CDEF_ALGORITHM_FRAME_CONTEXT_SIZE;
+         metadata_size += RENCODE_AV1_FRAME_CONTEXT_CDF_TABLE_SIZE;
+         metadata_size += RENCODE_AV1_CDEF_ALGORITHM_FRAME_CONTEXT_SIZE;
       }
       if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_5) {
-         image->size += RENCODE_MAX_METADATA_BUFFER_SIZE_PER_FRAME;
+         metadata_size += RENCODE_MAX_METADATA_BUFFER_SIZE_PER_FRAME;
          if (has_h264_b_support)
-            image->size += colloc_bytes;
+            metadata_size += colloc_bytes;
       }
+
+      image->size += luma_size;
+      image->size += chroma_size;
+      image->size += align(metadata_size, ENC_ALIGNMENT);
    }
    image->alignment = ENC_ALIGNMENT;
 }
