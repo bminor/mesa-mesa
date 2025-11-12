@@ -6231,7 +6231,7 @@ lower_texel_buffer_fetch(nir_builder *b, nir_tex_instr *tex, void *data)
    b->cursor = nir_before_instr(&tex->instr);
 
    nir_def *res_handle = nir_imm_int(b, tex->texture_index);
-   nir_def *buf_index;
+   nir_def *buf_index = NULL;
    for (unsigned i = 0; i < tex->num_srcs; ++i) {
       switch (tex->src[i].src_type) {
       case nir_tex_src_coord:
