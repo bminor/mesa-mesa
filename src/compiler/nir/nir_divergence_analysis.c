@@ -1218,6 +1218,7 @@ instr_is_loop_invariant(nir_instr *instr, struct divergence_state *state)
    case nir_instr_type_tex:
       return nir_foreach_src(instr, src_invariant, state->loop);
    case nir_instr_type_call:
+   case nir_instr_type_cmat_call:
       return false;
    case nir_instr_type_phi:
    default:

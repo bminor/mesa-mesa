@@ -1348,6 +1348,7 @@ v3d_instr_delay_cb(nir_instr *instr, void *data)
    case nir_instr_type_deref:
    case nir_instr_type_jump:
    case nir_instr_type_call:
+   case nir_instr_type_cmat_call:
    case nir_instr_type_phi:
       return 1;
 

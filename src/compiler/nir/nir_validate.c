@@ -1081,6 +1081,16 @@ validate_call_instr(nir_call_instr *instr, validate_state *state)
 }
 
 static void
+validate_cmat_call_instr(nir_cmat_call_instr *instr, validate_state *state)
+{
+   validate_assert(state, instr->num_params == nir_cmat_call_op_params(instr->op, instr->callee));
+
+   for (unsigned i = 0; i < instr->num_params; i++) {
+      validate_src(&instr->params[i], state);
+   }
+}
+
+static void
 validate_const_value(nir_const_value *val, unsigned bit_size,
                      bool is_null_constant, validate_state *state)
 {
@@ -1226,6 +1236,10 @@ validate_instr(nir_instr *instr, validate_state *state)
 
    case nir_instr_type_call:
       validate_call_instr(nir_instr_as_call(instr), state);
+      break;
+
+   case nir_instr_type_cmat_call:
+      validate_cmat_call_instr(nir_instr_as_cmat_call(instr), state);
       break;
 
    case nir_instr_type_intrinsic:

@@ -2052,6 +2052,26 @@ print_call_instr(nir_call_instr *instr, print_state *state)
 }
 
 static void
+print_cmat_call_instr(nir_cmat_call_instr *instr, print_state *state)
+{
+   FILE *fp = state->fp;
+
+   print_no_dest_padding(state);
+
+   fprintf(fp, "cmat_call %s ", instr->callee->name);
+
+   for (unsigned i = 0; i < instr->num_params; i++) {
+      if (i != 0)
+         fprintf(fp, ", ");
+
+      if (instr->callee->params[i].name)
+         fprintf(fp, "%s ", instr->callee->params[i].name);
+
+      print_src(&instr->params[i], state, nir_type_invalid);
+   }
+}
+
+static void
 print_jump_instr(nir_jump_instr *instr, print_state *state)
 {
    FILE *fp = state->fp;
@@ -2168,6 +2188,10 @@ print_instr(const nir_instr *instr, print_state *state, unsigned tabs)
       print_call_instr(nir_instr_as_call(instr), state);
       break;
 
+   case nir_instr_type_cmat_call:
+      print_cmat_call_instr(nir_instr_as_cmat_call(instr), state);
+      break;
+
    case nir_instr_type_intrinsic:
       print_intrinsic_instr(nir_instr_as_intrinsic(instr), state);
       break;
@@ -2226,6 +2250,7 @@ block_has_instruction_with_dest(nir_block *block)
 
       case nir_instr_type_jump:
       case nir_instr_type_call:
+      case nir_instr_type_cmat_call:
          /* Doesn't define a new value. */
          break;
       }

@@ -489,6 +489,19 @@ clone_call(clone_state *state, const nir_call_instr *call)
    return ncall;
 }
 
+static nir_cmat_call_instr *
+clone_cmat_call(clone_state *state, const nir_cmat_call_instr *call)
+{
+   nir_function *ncallee = remap_global(state, call->callee);
+   nir_cmat_call_instr *ncall = nir_cmat_call_instr_create(state->ns, call->op, ncallee);
+   clone_debug_info(state, &ncall->instr, &call->instr);
+
+   for (unsigned i = 0; i < ncall->num_params; i++)
+      __clone_src(state, ncall, &ncall->params[i], &call->params[i]);
+   memcpy(ncall->const_index, call->const_index, sizeof(ncall->const_index));
+   return ncall;
+}
+
 static nir_instr *
 clone_instr(clone_state *state, const nir_instr *instr)
 {
@@ -511,6 +524,8 @@ clone_instr(clone_state *state, const nir_instr *instr)
       return &clone_jump(state, nir_instr_as_jump(instr))->instr;
    case nir_instr_type_call:
       return &clone_call(state, nir_instr_as_call(instr))->instr;
+   case nir_instr_type_cmat_call:
+      return &clone_cmat_call(state, nir_instr_as_cmat_call(instr))->instr;
    default:
       UNREACHABLE("bad instr type");
       return NULL;

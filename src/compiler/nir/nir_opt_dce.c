@@ -68,6 +68,7 @@ is_live(BITSET_WORD *defs_live, nir_instr *instr)
 {
    switch (instr->type) {
    case nir_instr_type_call:
+   case nir_instr_type_cmat_call:
    case nir_instr_type_jump:
       return true;
    case nir_instr_type_alu: {

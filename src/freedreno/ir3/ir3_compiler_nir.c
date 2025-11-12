@@ -4299,6 +4299,7 @@ emit_instr(struct ir3_context *ctx, nir_instr *instr)
       emit_phi(ctx, nir_instr_as_phi(instr));
       break;
    case nir_instr_type_call:
+   case nir_instr_type_cmat_call:
       ir3_context_error(ctx, "Unhandled NIR instruction type: %d\n",
                         instr->type);
       break;
@@ -4470,6 +4471,7 @@ instr_can_be_predicated(nir_instr *instr)
    case nir_instr_type_phi:
       return true;
    case nir_instr_type_call:
+   case nir_instr_type_cmat_call:
    case nir_instr_type_jump:
       return false;
    case nir_instr_type_intrinsic: {

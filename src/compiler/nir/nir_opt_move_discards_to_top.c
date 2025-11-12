@@ -241,6 +241,7 @@ opt_move_discards_to_top_impl(nir_function_impl *impl)
             continue;
 
          case nir_instr_type_call:
+         case nir_instr_type_cmat_call:
             instr->pass_flags = STOP_PROCESSING_INSTR_FLAG;
             /* We don't know what the function will do */
             goto break_all;

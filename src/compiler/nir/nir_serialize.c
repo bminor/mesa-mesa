@@ -1612,6 +1612,36 @@ read_call(read_ctx *ctx)
    return call;
 }
 
+static void
+write_cmat_call(write_ctx *ctx, const nir_cmat_call_instr *call)
+{
+   blob_write_uint32(ctx->blob, write_lookup_object(ctx, call->callee));
+
+   blob_write_uint32(ctx->blob, call->op);
+
+   for (unsigned i = 0; i < call->num_params; i++)
+      write_src(ctx, &call->params[i]);
+
+   for (unsigned i = 0; i < NIR_CMAT_CALL_MAX_CONST_INDEX; i++)
+      blob_write_uint32(ctx->blob, call->const_index[i]);
+}
+
+static nir_cmat_call_instr *
+read_cmat_call(read_ctx *ctx)
+{
+   nir_function *callee = read_object(ctx);
+   nir_cmat_call_op op = blob_read_uint32(ctx->blob);
+   nir_cmat_call_instr *call = nir_cmat_call_instr_create(ctx->nir, op, callee);
+
+   for (unsigned i = 0; i < call->num_params; i++)
+      read_src(ctx, &call->params[i]);
+
+   for (unsigned i = 0; i < NIR_CMAT_CALL_MAX_CONST_INDEX; i++)
+      call->const_index[i] = blob_read_uint32(ctx->blob);
+
+   return call;
+}
+
 enum nir_serialize_debug_info_flags {
    NIR_SERIALIZE_FILENAME = 1 << 0,
    NIR_SERIALIZE_VARIABLE_NAME = 1 << 1,
@@ -1717,6 +1747,10 @@ write_instr(write_ctx *ctx, const nir_instr *instr)
       blob_write_uint32(ctx->blob, instr->type);
       write_call(ctx, nir_instr_as_call(instr));
       break;
+   case nir_instr_type_cmat_call:
+      blob_write_uint32(ctx->blob, instr->type);
+      write_cmat_call(ctx, nir_instr_as_cmat_call(instr));
+      break;
    default:
       UNREACHABLE("bad instr type");
    }
@@ -1768,6 +1802,9 @@ read_instr(read_ctx *ctx, nir_block *block)
       break;
    case nir_instr_type_call:
       instr = &read_call(ctx)->instr;
+      break;
+   case nir_instr_type_cmat_call:
+      instr = &read_cmat_call(ctx)->instr;
       break;
    default:
       UNREACHABLE("bad instr type");

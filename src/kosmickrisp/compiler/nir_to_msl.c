@@ -1729,6 +1729,7 @@ instr_to_msl(struct nir_to_msl_ctx *ctx, nir_instr *instr)
       assert(!"We should have lowered derefs by now");
       break;
    case nir_instr_type_call:
+   case nir_instr_type_cmat_call:
       assert(!"We should have inlined all functions by now");
       break;
    case nir_instr_type_tex:

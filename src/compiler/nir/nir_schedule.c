@@ -477,6 +477,7 @@ nir_schedule_calculate_deps(nir_deps_state *state, nir_schedule_node *n)
       break;
 
    case nir_instr_type_call:
+   case nir_instr_type_cmat_call:
       UNREACHABLE("Calls should have been lowered");
       break;
 
@@ -1090,6 +1091,7 @@ nir_schedule_get_delay(nir_schedule_scoreboard *scoreboard, nir_instr *instr)
    case nir_instr_type_deref:
    case nir_instr_type_jump:
    case nir_instr_type_call:
+   case nir_instr_type_cmat_call:
    case nir_instr_type_phi:
       return 1;
 

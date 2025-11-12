@@ -947,6 +947,7 @@ typedef enum ENUM_PACKED {
    nir_instr_type_jump,
    nir_instr_type_undef,
    nir_instr_type_phi,
+   nir_instr_type_cmat_call,
 } nir_instr_type;
 
 typedef struct nir_instr {
@@ -1832,6 +1833,24 @@ typedef struct nir_call_instr {
    unsigned num_params;
    nir_src params[];
 } nir_call_instr;
+
+#define NIR_CMAT_CALL_MAX_CONST_INDEX 1
+
+typedef enum {
+   nir_cmat_call_op_none,
+} nir_cmat_call_op;
+
+typedef struct nir_cmat_call_instr {
+   nir_instr instr;
+
+   nir_cmat_call_op op;
+
+   nir_function *callee;
+   int const_index[NIR_CMAT_CALL_MAX_CONST_INDEX];
+
+   unsigned num_params;
+   nir_src params[];
+} nir_cmat_call_instr;
 
 #include "nir_intrinsics.h"
 
@@ -2872,6 +2891,8 @@ NIR_DEFINE_CAST(nir_instr_as_undef, nir_instr, nir_undef_instr, instr,
                 type, nir_instr_type_undef)
 NIR_DEFINE_CAST(nir_instr_as_phi, nir_instr, nir_phi_instr, instr,
                 type, nir_instr_type_phi)
+NIR_DEFINE_CAST(nir_instr_as_cmat_call, nir_instr, nir_cmat_call_instr, instr,
+                type, nir_instr_type_cmat_call)
 
 #define NIR_DEFINE_DEF_AS_INSTR(instr_type, suffix, cast)                    \
    static inline instr_type *nir_def_as_##cast(const nir_def *def)           \
@@ -4128,6 +4149,11 @@ nir_intrinsic_instr *nir_intrinsic_instr_create(nir_shader *shader,
 
 nir_call_instr *nir_call_instr_create(nir_shader *shader,
                                       nir_function *callee);
+
+int nir_cmat_call_op_params(nir_cmat_call_op op, nir_function *callee);
+nir_cmat_call_instr *nir_cmat_call_instr_create(nir_shader *shader,
+                                                nir_cmat_call_op op,
+                                                nir_function *callee);
 
 /** Creates a NIR texture instruction */
 nir_tex_instr *nir_tex_instr_create(nir_shader *shader, unsigned num_srcs);
