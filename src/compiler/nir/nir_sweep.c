@@ -164,6 +164,12 @@ sweep_impl(nir_shader *nir, nir_function_impl *impl)
 
    /* Wipe out all the metadata, if any. */
    nir_progress(true, impl, nir_metadata_none);
+
+   /* These will be reallocated if needed. NULL them out so we don't
+    * use-after-free later.
+    */
+   impl->dom_lca_info.table.table = NULL;
+   impl->dom_lca_info.block_from_idx = NULL;
 }
 
 static void

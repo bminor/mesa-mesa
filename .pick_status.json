@@ -1034,7 +1034,7 @@
         "description": "nir/sweep: fix use-after-free with dominance LCA",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "17876a00afabc9466162187c18f04080353575d2",
         "notes": null
