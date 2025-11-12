@@ -795,7 +795,7 @@ submit_queue(void *data, void *gdata, int thread_index)
       );
    }
 
-   simple_mtx_lock(&screen->queue_lock);
+   simple_mtx_lock(screen->queue_lock);
    VRAM_ALLOC_LOOP(result,
       VKSCR(QueueSubmit)(screen->queue, num_si, submit, VK_NULL_HANDLE),
       if (result != VK_SUCCESS) {
@@ -803,7 +803,7 @@ submit_queue(void *data, void *gdata, int thread_index)
          bs->is_device_lost = true;
       }
    );
-   simple_mtx_unlock(&screen->queue_lock);
+   simple_mtx_unlock(screen->queue_lock);
 
    unsigned i = 0;
    VkSemaphore *sem = bs->signal_semaphores.data;
