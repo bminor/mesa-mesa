@@ -158,6 +158,7 @@ panvk_per_arch(get_physical_device_extensions)(
       .EXT_load_store_op_none = true,
       .EXT_non_seamless_cube_map = true,
       .EXT_mutable_descriptor_type = PAN_ARCH >= 9,
+      .EXT_multisampled_render_to_single_sampled = true,
       .EXT_physical_device_drm = true,
       .EXT_pipeline_creation_cache_control = true,
       .EXT_pipeline_creation_feedback = true,
@@ -548,6 +549,9 @@ panvk_per_arch(get_physical_device_features)(
 
       /* VK_ARM_shader_core_builtins */
       .shaderCoreBuiltins = PAN_ARCH >= 9,
+
+      /* VK_EXT_multisampled_render_to_single_sampled */
+      .multisampledRenderToSingleSampled = true,
    };
 }
 

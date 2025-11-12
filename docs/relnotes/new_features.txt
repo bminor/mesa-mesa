@@ -19,3 +19,4 @@ sparseResidencyStandard2DBlockShape on panvk v10+
 VK_KHR_surface_maintenance1 promotion everywhere EXT is exposed
 VK_KHR_swapchain_maintenance1 promotion everywhere EXT is exposed
 VK_KHR_dynamic_rendering on PowerVR
+VK_EXT_multisampled_render_to_single_sampled on panvk
