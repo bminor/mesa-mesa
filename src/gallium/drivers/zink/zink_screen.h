@@ -203,8 +203,11 @@ zink_screen_get_pipeline_cache(struct zink_screen *screen, struct zink_program *
 void VKAPI_PTR
 zink_stub_function_not_loaded(void);
 
+/** Requires queue_lock to be held */
 bool
 zink_screen_debug_marker_begin(struct zink_screen *screen, const char *fmt, ...);
+
+/** Requires queue_lock to be held */
 void
 zink_screen_debug_marker_end(struct zink_screen *screen, bool emitted);
 
