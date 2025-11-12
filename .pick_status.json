@@ -864,7 +864,7 @@
         "description": "zink: Return zink_device in create_logical_device",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "015eda4a4186c75538a0aa915e380c5ce5863319",
         "notes": null
