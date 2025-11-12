@@ -3223,11 +3223,13 @@ anv_vp9_decode_video(struct anv_cmd_buffer *cmd_buffer,
    else
       num_segments = 8;
 
-   uint8_t loop_filter_level = loop_filter->loop_filter_level;
-
    for (uint32_t i = 0; i < num_segments; i++) {
       anv_batch_emit(&cmd_buffer->batch, GENX(HCP_VP9_SEGMENT_STATE), seg) {
          uint32_t qyac = std_pic->base_q_idx;
+         uint8_t lvl = loop_filter->loop_filter_level;
+         bool skip = false;
+         bool ref_enable = false;
+         uint16_t ref_val = 0;
 
          seg.SegmentID = i;
 
@@ -3237,9 +3239,23 @@ anv_vp9_decode_video(struct anv_cmd_buffer *cmd_buffer,
                   qyac = segmentation->FeatureData[i][val];
                   if (!segmentation->flags.segmentation_abs_or_delta_update)
                      qyac += std_pic->base_q_idx;
+               } else if (val == VP9_SEG_LVL_ALT_L) {
+                  lvl = segmentation->FeatureData[i][val];
+                  if (!std_pic->pSegmentation->flags.segmentation_abs_or_delta_update)
+                     lvl += loop_filter->loop_filter_level;
+                  lvl = CLAMP(lvl, 0, 63);
+               } else if (val == VP9_SEG_LVL_REF_FRAME) {
+                  ref_enable = true;
+                  ref_val = segmentation->FeatureData[i][val];
+               } else if (val == VP9_SEG_LVL_SKIP) {
+                  skip = true;
                }
             }
          }
+
+         seg.SegmentSkipped = skip;
+         seg.SegmentReferenceEnable = ref_enable;
+         seg.SegmentReference = ref_val;
 
          int16_t qmul[2][2] = { 0, };
          anv_calculate_qmul(vp9_pic_info, qyac, i, (int16_t *)qmul);
@@ -3252,43 +3268,47 @@ anv_vp9_decode_video(struct anv_cmd_buffer *cmd_buffer,
          if (loop_filter->flags.loop_filter_delta_enabled) {
             int shift = loop_filter->loop_filter_level >= 32;
 
-            if (loop_filter_level > 0) {
-               seg.FilterLevelRef0Mode0 = CLAMP(loop_filter_level +
-                     loop_filter->loop_filter_ref_deltas[0] * (1 << shift), 0, 63);
-               seg.FilterLevelRef0Mode1 = seg.FilterLevelRef0Mode0;
+            seg.FilterLevelRef0Mode0 = CLAMP(lvl +
+                  loop_filter->loop_filter_ref_deltas[0] * (1 << shift), 0, 63);
+            seg.FilterLevelRef0Mode1 = seg.FilterLevelRef0Mode0;
 
-               seg.FilterLevelRef1Mode0 = CLAMP(loop_filter_level +
-                     loop_filter->loop_filter_ref_deltas[1] * (1 <<shift) +
-                     loop_filter->loop_filter_mode_deltas[0] * (1 << shift), 0, 0x3f);
-               seg.FilterLevelRef1Mode1 = CLAMP(loop_filter_level +
-                     loop_filter->loop_filter_ref_deltas[1] * (1 <<shift)
-                     + loop_filter->loop_filter_mode_deltas[1] * (1 << shift), 0, 0x3f);
+            seg.FilterLevelRef1Mode0 = CLAMP(lvl +
+                  (loop_filter->loop_filter_ref_deltas[1] +
+                   loop_filter->loop_filter_mode_deltas[0]) * (1 << shift), 0, 0x3f);
+            seg.FilterLevelRef1Mode1 = CLAMP(lvl +
+                  (loop_filter->loop_filter_ref_deltas[1] +
+                   loop_filter->loop_filter_mode_deltas[1]) * (1 << shift), 0, 0x3f);
 
-               seg.FilterLevelRef2Mode0 = CLAMP(loop_filter_level +
-                     loop_filter->loop_filter_ref_deltas[2] * (1 <<shift) +
-                     loop_filter->loop_filter_mode_deltas[0] * (1 << shift), 0, 0x3f);
+            seg.FilterLevelRef2Mode0 = CLAMP(lvl +
+                  (loop_filter->loop_filter_ref_deltas[2] +
+                   loop_filter->loop_filter_mode_deltas[0]) * (1 << shift), 0, 0x3f);
 
-               seg.FilterLevelRef2Mode1 = CLAMP(loop_filter_level +
-                     loop_filter->loop_filter_ref_deltas[2] * (1 <<shift) +
-                     loop_filter->loop_filter_mode_deltas[1] * (1 << shift), 0, 0x3f);
+            seg.FilterLevelRef2Mode1 = CLAMP(lvl +
+                  (loop_filter->loop_filter_ref_deltas[2] +
+                   loop_filter->loop_filter_mode_deltas[1]) * (1 << shift), 0, 0x3f);
 
-               seg.FilterLevelRef3Mode0 = CLAMP(loop_filter_level +
-                     loop_filter->loop_filter_ref_deltas[3] * (1 <<shift) +
-                     loop_filter->loop_filter_mode_deltas[0] * (1 << shift), 0, 0x3f);
+            seg.FilterLevelRef3Mode0 = CLAMP(lvl +
+                  (loop_filter->loop_filter_ref_deltas[3] +
+                   loop_filter->loop_filter_mode_deltas[0]) * (1 << shift), 0, 0x3f);
 
-               seg.FilterLevelRef3Mode1 = CLAMP(loop_filter_level +
-                     loop_filter->loop_filter_ref_deltas[3] * (1 <<shift) +
-                     loop_filter->loop_filter_mode_deltas[1] * (1 << shift), 0, 0x3f);
+            seg.FilterLevelRef3Mode1 = CLAMP(lvl +
+                  (loop_filter->loop_filter_ref_deltas[3] +
+                   loop_filter->loop_filter_mode_deltas[1]) * (1 << shift), 0, 0x3f);
+
+            /* Clear filter level when filter level is zero in the picture param */
+            if (!loop_filter->loop_filter_level) {
+               seg.FilterLevelRef0Mode0 = 0;
+               seg.FilterLevelRef2Mode0 = 0;
             }
          } else {
-            seg.FilterLevelRef0Mode0 = loop_filter_level;
-            seg.FilterLevelRef0Mode1 = loop_filter_level;
-            seg.FilterLevelRef1Mode0 = loop_filter_level;
-            seg.FilterLevelRef1Mode1 = loop_filter_level;
-            seg.FilterLevelRef2Mode0 = loop_filter_level;
-            seg.FilterLevelRef2Mode1 = loop_filter_level;
-            seg.FilterLevelRef3Mode0 = loop_filter_level;
-            seg.FilterLevelRef3Mode1 = loop_filter_level;
+            seg.FilterLevelRef0Mode0 = lvl;
+            seg.FilterLevelRef0Mode1 = lvl;
+            seg.FilterLevelRef1Mode0 = lvl;
+            seg.FilterLevelRef1Mode1 = lvl;
+            seg.FilterLevelRef2Mode0 = lvl;
+            seg.FilterLevelRef2Mode1 = lvl;
+            seg.FilterLevelRef3Mode0 = lvl;
+            seg.FilterLevelRef3Mode1 = lvl;
          }
       }
    }
