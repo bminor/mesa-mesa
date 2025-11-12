@@ -12672,7 +12672,7 @@ radv_bind_graphics_shaders(struct radv_cmd_buffer *cmd_buffer)
    descriptors_state->need_indirect_descriptors = need_indirect_descriptors;
    descriptors_state->dynamic_offset_count = dynamic_offset_count;
    pc_state->need_upload = need_push_constants_upload;
-   pc_state->size = push_constant_size;
+   pc_state->size = align(push_constant_size, 4);
 
    if (pdev->info.gfx_level <= GFX9) {
       cmd_buffer->state.ia_multi_vgt_param = radv_compute_ia_multi_vgt_param(device, cmd_buffer->state.shaders);
@@ -15554,7 +15554,7 @@ radv_bind_compute_shader(struct radv_cmd_buffer *cmd_buffer, struct radv_shader_
    descriptors_state->need_indirect_descriptors = radv_shader_need_indirect_descriptors(shader);
    descriptors_state->dynamic_offset_count = shader_obj->dynamic_offset_count;
    pc_state->need_upload = radv_shader_need_push_constants_upload(shader);
-   pc_state->size = shader->info.push_constant_size;
+   pc_state->size = align(shader->info.push_constant_size, 4);
 
    assert(cs->b->cdw <= cdw_max);
 }
