@@ -1200,10 +1200,6 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
    struct poly_gs_info *gsi = &count->info.gs;
 
    if (indirect) {
-      /* TODO: size */
-      cmd->geom_indirect = hk_pool_alloc(cmd, 64, 4).gpu;
-
-      params.indirect_desc = cmd->geom_indirect;
       params.vs_grid[2] = params.gs_grid[2] = 1;
 
       if (gsi->shape == POLY_GS_SHAPE_DYNAMIC_INDEXED) {
@@ -1574,8 +1570,8 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
 
       if (agx_is_indirect(draw.b)) {
          return agx_draw_indexed_indirect(
-            cmd->geom_indirect, cmd->geom_index_buffer, cmd->geom_index_count,
-            index_size, true);
+            geometry_params + offsetof(struct poly_geometry_params, draw),
+            cmd->geom_index_buffer, cmd->geom_index_count, index_size, true);
       } else {
          return agx_draw_indexed(cmd->geom_index_count,
                                  cmd->geom_instance_count, 0, 0, 0,
@@ -1584,7 +1580,8 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
       }
    } else {
       if (agx_is_indirect(draw.b)) {
-         return agx_draw_indirect(cmd->geom_indirect);
+         return agx_draw_indirect(
+            geometry_params + offsetof(struct poly_geometry_params, draw));
       } else {
          return (struct agx_draw){
             .b = agx_3d(cmd->geom_index_count, cmd->geom_instance_count, 1),

@@ -144,7 +144,6 @@ hk_reset_cmd_buffer(struct vk_command_buffer *vk_cmd_buffer,
    cmd->current_cs.pre_gfx = NULL;
 
    assert(!cmd->in_meta);
-   cmd->geom_indirect = 0;
    cmd->geom_index_buffer = 0;
    cmd->geom_index_count = 0;
    cmd->geom_instance_count = 0;

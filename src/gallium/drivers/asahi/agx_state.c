@@ -3932,7 +3932,6 @@ agx_batch_geometry_params(struct agx_batch *batch, uint64_t input_index_buffer,
    };
 
    struct poly_geometry_params params = {
-      .indirect_desc = batch->geom_indirect,
       .flat_outputs =
          batch->ctx->stage[MESA_SHADER_FRAGMENT].shader->info.inputs_flat_shaded,
       .input_topology = info->mode,
@@ -5019,10 +5018,6 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
    agx_update_gs(ctx, info, indirect);
 
    if (ctx->gs) {
-      batch->geom_indirect = agx_pool_alloc_aligned_with_bo(
-                                &batch->pool, 64, 4, &batch->geom_indirect_bo)
-                                .gpu;
-
       batch->uniforms.geometry_params =
          agx_batch_geometry_params(batch, ib, ib_extent, info, draws, indirect);
 
@@ -5121,7 +5116,7 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
    struct pipe_draw_start_count_bias draw_gs;
 
    /* Wrap the pool allocation in a fake resource for meta-Gallium use */
-   struct agx_resource indirect_rsrc = {.bo = batch->geom_indirect_bo};
+   struct agx_resource indirect_rsrc = {.bo = batch->geom_params_bo};
    struct agx_resource index_rsrc = {};
 
    if (ctx->gs) {
@@ -5143,7 +5138,9 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
          indirect_gs = (struct pipe_draw_indirect_info){
             .draw_count = 1,
             .buffer = &indirect_rsrc.base,
-            .offset = batch->geom_indirect - indirect_rsrc.bo->va->addr,
+            .offset = batch->uniforms.geometry_params
+                    - indirect_rsrc.bo->va->addr
+                    + offsetof(struct poly_geometry_params, draw),
          };
 
          indirect = &indirect_gs;

@@ -209,10 +209,27 @@ poly_index_buffer_range_el(uint size_el, uint offset_el)
    return offset_el < size_el ? (size_el - offset_el) : 0;
 }
 
-struct poly_geometry_params {
-   /* Address of associated indirect draw buffer */
-   DEVICE(uint) indirect_desc;
+/* This must match VkDraw[Indexed]IndirectCommand
+ *
+ * The vertex/index_count and first_vertex/index fields line up, as does
+ * instance_count.  The only ones that don't are vertexOffset and
+ * firstInstance but we always set those to zero.
+ */
+struct poly_indirect_draw {
+   union {
+      uint32_t vertex_count;
+      uint32_t index_count;
+   };
+   uint32_t instance_count;
+   union {
+      uint32_t first_vertex;
+      uint32_t first_index;
+   };
+   uint32_t zeros[2];
+};
+static_assert(sizeof(struct poly_indirect_draw) == 5 * 4);
 
+struct poly_geometry_params {
    /* Address of count buffer. For an indirect draw, this will be written by the
     * indirect setup kernel.
     */
@@ -257,6 +274,9 @@ struct poly_geometry_params {
    uint32_t vs_grid[6];
    uint32_t gs_grid[6];
 
+   /* Indirect draw command */
+   struct poly_indirect_draw draw;
+
    /* Number of input primitives across all instances, calculated by the CPU for
     * a direct draw or the GS indirect setup kernel for an indirect draw.
     */
@@ -279,7 +299,7 @@ struct poly_geometry_params {
     */
    uint32_t input_topology;
 } PACKED;
-static_assert(sizeof(struct poly_geometry_params) == 82 * 4);
+static_assert(sizeof(struct poly_geometry_params) == 85 * 4);
 
 /* TCS shared memory layout:
  *
@@ -582,22 +602,19 @@ poly_gs_setup_indirect(uint64_t index_buffer, constant uint *draw,
 
    vp->outputs = vs_outputs;
 
-   /* Allocate the index buffer and write the draw consuming it */
-   global VkDrawIndexedIndirectCommand *cmd = (global void *)p->indirect_desc;
-
-   *cmd = (VkDrawIndexedIndirectCommand){
-      .indexCount = poly_gs_rast_vertices(shape, max_indices, prim_per_instance,
-                                          instance_count),
-      .instanceCount = poly_gs_rast_instances(
+   p->draw = (struct poly_indirect_draw) {
+      .index_count = poly_gs_rast_vertices(
+         shape, max_indices, prim_per_instance, instance_count),
+      .instance_count = poly_gs_rast_instances(
          shape, max_indices, prim_per_instance, instance_count),
    };
 
    if (shape == POLY_GS_SHAPE_DYNAMIC_INDEXED) {
-      cmd->firstIndex =
-         poly_heap_alloc_nonatomic_offs(heap, cmd->indexCount * 4) / 4;
+      const uint32_t index_offset =
+         poly_heap_alloc_nonatomic_offs(heap, p->draw.index_count * 4);
 
-      p->output_index_buffer =
-         (global uint *)(heap->base + (cmd->firstIndex * 4));
+      p->draw.first_index = index_offset / 4;
+      p->output_index_buffer = (global uint *)(heap->base + index_offset);
    }
 }
 

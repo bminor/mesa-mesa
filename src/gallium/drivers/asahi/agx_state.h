@@ -408,10 +408,6 @@ struct agx_batch {
    struct agx_draw_uniforms uniforms;
    struct agx_stage_uniforms stage_uniforms[MESA_SHADER_STAGES];
 
-   /* Indirect buffer allocated for geometry shader */
-   uint64_t geom_indirect;
-   struct agx_bo *geom_indirect_bo;
-
    /* Heap descriptor if dynamic allocation is required */
    uint64_t heap;
 
