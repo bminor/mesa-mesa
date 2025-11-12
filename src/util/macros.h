@@ -103,7 +103,7 @@
 #ifndef __GNUC__
    /* a grown-up compiler is required for the extra type checking: */
 #  define container_of(ptr, type, member)                               \
-      (type*)((uint8_t *)ptr - offsetof(type, member))
+      ((type*)((uint8_t *)ptr - offsetof(type, member)))
 #else
 #  define __same_type(a, b) \
       __builtin_types_compatible_p(__typeof__(a), __typeof__(b))
