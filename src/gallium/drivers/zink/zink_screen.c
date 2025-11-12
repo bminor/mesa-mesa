@@ -1460,13 +1460,19 @@ zink_destroy_screen(struct pipe_screen *pscreen)
    struct zink_screen *screen = zink_screen(pscreen);
 
    if (!screen->device_lost && screen->queue) {
+      // Multiple screens can share a queue, so we need to lock queue_lock even
+      // in the screen destructor
+      simple_mtx_lock(screen->queue_lock);
       VkResult result = VKSCR(QueueWaitIdle)(screen->queue);
+      simple_mtx_unlock(screen->queue_lock);
 
       if (result != VK_SUCCESS)
          mesa_loge("ZINK: vkQueueWaitIdle failed (%s)", vk_Result_to_str(result));
 
       if (screen->queue_sparse && screen->queue_sparse != screen->queue) {
+         simple_mtx_lock(screen->queue_lock);
          result = VKSCR(QueueWaitIdle)(screen->queue_sparse);
+         simple_mtx_unlock(screen->queue_lock);
 
          if (result != VK_SUCCESS)
             mesa_loge("ZINK: vkQueueWaitIdle failed (%s)", vk_Result_to_str(result));
