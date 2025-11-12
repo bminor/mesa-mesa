@@ -1339,12 +1339,17 @@ anv_shader_lower_nir(struct anv_device *device,
 
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
 
-   /* Ensure robustness, do this before brw_nir_lower_storage_image so that
-    * added image size intrinsics for bounds checkings are properly lowered
-    * for cube images.
-    */
-   NIR_PASS(_, nir, nir_lower_robust_access,
-            accept_64bit_atomic_cb, NULL);
+   /* Apply lowering for 64bit atomics pre-Xe2 */
+   const bool lower_64bit_atomics = compiler->devinfo->ver < 20;
+
+   if (lower_64bit_atomics) {
+      /* Ensure robustness, do this before brw_nir_lower_storage_image so that
+       * added image size intrinsics for bounds checkings are properly lowered
+       * for cube images.
+       */
+      NIR_PASS(_, nir, nir_lower_robust_access,
+               accept_64bit_atomic_cb, NULL);
+   }
 
    NIR_PASS(_, nir, brw_nir_lower_storage_image, compiler,
             &(struct brw_nir_lower_storage_image_opts) {
@@ -1358,13 +1363,15 @@ anv_shader_lower_nir(struct anv_device *device,
                   pdevice->instance->emulate_read_without_format,
             });
 
-   /* Switch from image to global */
-   NIR_PASS(_, nir, nir_lower_image_atomics_to_global,
-            accept_64bit_atomic_cb, NULL);
+   if (lower_64bit_atomics) {
+      /* Switch from image to global */
+      NIR_PASS(_, nir, nir_lower_image_atomics_to_global,
+               accept_64bit_atomic_cb, NULL);
 
-   /* Detile for global */
-   NIR_PASS(_, nir, brw_nir_lower_texel_address, compiler->devinfo,
-            pdevice->isl_dev.shader_tiling);
+      /* Detile for global */
+      NIR_PASS(_, nir, brw_nir_lower_texel_address, compiler->devinfo,
+               pdevice->isl_dev.shader_tiling);
+   }
 
    NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_global,
             nir_address_format_64bit_global);
