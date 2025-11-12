@@ -313,8 +313,9 @@ MoveState::downwards_move_clause(DownwardsCursor& cursor)
    /* RegisterDemand changes caused by the instructions being moved over. */
    RegisterDemand insert_diff = insert_demand - clause_end_demand + rar_dep;
 
-   /* Check the new demand of the instructions being moved over. */
-   if (RegisterDemand(cursor.total_demand - clause_diff).exceeds(max_registers))
+   /* Check the new demand of the instructions being moved over. If we somehow split total_demand
+    * into before and after rar_dep, we could make this more accurate. */
+   if (RegisterDemand(cursor.total_demand - clause_diff + rar_dep).exceeds(max_registers))
       return move_fail_pressure;
 
    /* Check max demand for the moved clause instructions. */
