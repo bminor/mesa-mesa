@@ -1357,8 +1357,10 @@ AluInstr::from_string(istream& is, ValueFactory& value_factory, AluGroup *group,
       if (op_descr.alu_opcode != op0_nop && op_descr.alu_opcode != op0_group_barrier) {
          if (dest)
             retval = new AluInstr(op_descr.alu_opcode, dest, sources, flags, slots);
-         else
+         else if (op_descr.nsrc < 3)
             retval = new AluInstr(op_descr.alu_opcode, chan, sources, flags);
+         else
+            retval = new AluInstr(op_descr.alu_opcode, value_factory.dummy_dest(chan), sources, flags, 1);
       } else {
          retval = new AluInstr(op_descr.alu_opcode, 0);
          for (auto f : flags)

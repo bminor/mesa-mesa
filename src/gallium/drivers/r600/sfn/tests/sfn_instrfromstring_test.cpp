@@ -222,12 +222,12 @@ TEST_F(TestInstrFromString, test_alu_muladd_neg3)
    add_dest_from_string("R1999.w");
    add_dest_from_string("R2000.y");
    AluInstr expect(op3_muladd_ieee,
-                   1,
-                   {new Register(1999, 3, pin_none),
-                    new Register(1998, 2, pin_none),
-                    new Register(2000, 1, pin_none)},
+                   new Register(g_registers_unused, 1, pin_chan),
+                   new Register(1999, 3, pin_none),
+                   new Register(1998, 2, pin_none),
+                   new Register(2000, 1, pin_none),
                    {alu_last_instr});
-   check("ALU MULADD_IEEE __.y : R1999.w R1998.z -R2000.y {L}", expect);
+   check("ALU MULADD_IEEE __.y@chan : R1999.w R1998.z -R2000.y {L}", expect);
 }
 
 TEST_F(TestInstrFromString, test_alu_mov_bs)
