@@ -349,9 +349,9 @@ kopper_CreateSwapchain(struct zink_screen *screen, struct kopper_displaytarget *
    if (error == VK_ERROR_NATIVE_WINDOW_IN_USE_KHR) {
       if (cdt->async)
          util_queue_finish(&screen->flush_queue);
-      simple_mtx_lock(&screen->queue_lock);
+      simple_mtx_lock(screen->queue_lock);
       VkResult wait_result = VKSCR(QueueWaitIdle)(screen->queue);
-      simple_mtx_unlock(&screen->queue_lock);
+      simple_mtx_unlock(screen->queue_lock);
       if (wait_result != VK_SUCCESS)
          mesa_loge("ZINK: vkQueueWaitIdle failed (%s)", vk_Result_to_str(wait_result));
       error = VKSCR(CreateSwapchainKHR)(screen->dev, &cswap->scci, NULL,
@@ -754,7 +754,7 @@ kopper_present(void *data, void *gdata, int thread_idx)
    VkResult error = VK_SUCCESS;
    cpi->info.pResults = &error;
 
-   simple_mtx_lock(&screen->queue_lock);
+   simple_mtx_lock(screen->queue_lock);
    if (screen->driver_workarounds.implicit_sync && cdt->type != KOPPER_WIN32) {
       if (!screen->fence) {
          VkFenceCreateInfo fci = {0};
@@ -771,13 +771,13 @@ kopper_present(void *data, void *gdata, int thread_idx)
 
       error = VKSCR(QueueSubmit)(screen->queue, 1, &si, screen->fence);
       if (!zink_screen_handle_vkresult(screen, error)) {
-         simple_mtx_unlock(&screen->queue_lock);
+         simple_mtx_unlock(screen->queue_lock);
          VKSCR(DestroySemaphore)(screen->dev, cpi->sem, NULL);
          goto out;
       }
       error = VKSCR(WaitForFences)(screen->dev, 1, &screen->fence, VK_TRUE, UINT64_MAX);
       if (!zink_screen_handle_vkresult(screen, error)) {
-         simple_mtx_unlock(&screen->queue_lock);
+         simple_mtx_unlock(screen->queue_lock);
          VKSCR(DestroySemaphore)(screen->dev, cpi->sem, NULL);
          goto out;
       }
@@ -787,7 +787,7 @@ kopper_present(void *data, void *gdata, int thread_idx)
    VkResult error2 = VKSCR(QueuePresentKHR)(screen->queue, &cpi->info);
    zink_screen_debug_marker_end(screen, screen->frame_marker_emitted);
    zink_screen_debug_marker_begin(screen, "frame");
-   simple_mtx_unlock(&screen->queue_lock);
+   simple_mtx_unlock(screen->queue_lock);
    swapchain->last_present = cpi->image;
    if (cpi->indefinite_acquire)
       p_atomic_dec(&swapchain->num_acquires);
@@ -1067,9 +1067,9 @@ zink_kopper_present_readback(struct zink_context *ctx, struct zink_resource *res
    si.waitSemaphoreCount = !!acquire;
    si.pWaitSemaphores = &acquire;
    si.pSignalSemaphores = &present;
-   simple_mtx_lock(&screen->queue_lock);
+   simple_mtx_lock(screen->queue_lock);
    VkResult error = VKSCR(QueueSubmit)(screen->queue, 1, &si, VK_NULL_HANDLE);
-   simple_mtx_unlock(&screen->queue_lock);
+   simple_mtx_unlock(screen->queue_lock);
    if (!zink_screen_handle_vkresult(screen, error))
       return false;
 
@@ -1077,9 +1077,9 @@ zink_kopper_present_readback(struct zink_context *ctx, struct zink_resource *res
    if (cdt->async)
       util_queue_fence_wait(&cdt->swapchain->present_fence);
 
-   simple_mtx_lock(&screen->queue_lock);
+   simple_mtx_lock(screen->queue_lock);
    error = VKSCR(QueueWaitIdle)(screen->queue);
-   simple_mtx_unlock(&screen->queue_lock);
+   simple_mtx_unlock(screen->queue_lock);
 
    simple_mtx_lock(&screen->semaphores_lock);
    util_dynarray_append(&screen->semaphores, acquire);

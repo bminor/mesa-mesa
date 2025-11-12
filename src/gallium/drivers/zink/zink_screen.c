@@ -1832,7 +1832,8 @@ update_queue_props(struct zink_screen *screen)
 static void
 init_queue(struct zink_screen *screen)
 {
-   simple_mtx_init(&screen->queue_lock, mtx_plain);
+   simple_mtx_init(&screen->queue_lock_storage, mtx_plain);
+   screen->queue_lock = &screen->queue_lock_storage;
    VKSCR(GetDeviceQueue)(screen->dev, screen->gfx_queue, 0, &screen->queue);
    if (screen->sparse_queue != screen->gfx_queue)
       VKSCR(GetDeviceQueue)(screen->dev, screen->sparse_queue, 0, &screen->queue_sparse);

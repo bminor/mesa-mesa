@@ -783,11 +783,11 @@ init_timeline_wait(struct zink_context *ctx, struct zink_resource *res, bool com
 
    if (zink_resource_usage_is_unflushed(res) && !zink_resource_usage_matches(res, ctx->bs)) {
       /* assuming this is a batch that is doing an async submit: unlock wait for that to finish */
-      simple_mtx_unlock(&screen->queue_lock);
+      simple_mtx_unlock(screen->queue_lock);
       /* note that this can deadlock if multi-context */
       zink_resource_usage_unflushed_wait(ctx, res, ZINK_RESOURCE_ACCESS_RW);
       /* make sure to lock again and take queue ownership */
-      simple_mtx_lock(&screen->queue_lock);
+      simple_mtx_lock(screen->queue_lock);
    }
    *wait = screen->sem;
    timeline.pWaitSemaphoreValues = &screen->curr_batch;
@@ -1024,7 +1024,7 @@ zink_bo_commit(struct zink_context *ctx, struct zink_resource *res, unsigned lev
    struct zink_bo *bo = res->obj->bo;
    VkSemaphore cur_sem = *sem;
 
-   simple_mtx_lock(&screen->queue_lock);
+   simple_mtx_lock(screen->queue_lock);
    simple_mtx_lock(&bo->lock);
    if (res->base.b.target == PIPE_BUFFER) {
       ok = buffer_bo_commit(ctx, res, box->x, box->width, commit, &cur_sem);
@@ -1242,7 +1242,7 @@ zink_bo_commit(struct zink_context *ctx, struct zink_resource *res, unsigned lev
 out:
 
    simple_mtx_unlock(&bo->lock);
-   simple_mtx_unlock(&screen->queue_lock);
+   simple_mtx_unlock(screen->queue_lock);
    *sem = cur_sem;
    return ok;
 }
