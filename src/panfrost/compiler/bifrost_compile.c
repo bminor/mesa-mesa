@@ -6218,14 +6218,7 @@ void bifrost_lower_texture_nir(nir_shader *nir, unsigned gpu_id)
 static bool
 lower_texel_buffer_fetch(nir_builder *b, nir_tex_instr *tex, void *data)
 {
-   switch (tex->op) {
-   case nir_texop_txf:
-   case nir_texop_txf_ms:
-      break;
-   default:
-      return false;
-   }
-   if (tex->sampler_dim != GLSL_SAMPLER_DIM_BUF)
+   if (tex->op != nir_texop_txf || tex->sampler_dim != GLSL_SAMPLER_DIM_BUF)
       return false;
 
    b->cursor = nir_before_instr(&tex->instr);
