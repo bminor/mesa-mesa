@@ -1215,11 +1215,6 @@ brw_nir_optimize(nir_shader *nir,
                  const struct intel_device_info *devinfo)
 {
    bool progress;
-   unsigned lower_flrp =
-      (nir->options->lower_flrp16 ? 16 : 0) |
-      (nir->options->lower_flrp32 ? 32 : 0) |
-      (nir->options->lower_flrp64 ? 64 : 0);
-
    unsigned long opt_line = 0;
    do {
       progress = false;
@@ -1295,15 +1290,6 @@ brw_nir_optimize(nir_shader *nir,
 
       LOOP_OPT(nir_lower_constant_convert_alu_types);
       LOOP_OPT(nir_opt_constant_folding);
-
-      if (lower_flrp != 0) {
-         LOOP_OPT(nir_lower_flrp, lower_flrp, false /* always_precise */);
-
-         /* Nothing should rematerialize any flrps, so we only need to do this
-          * lowering once.
-          */
-         lower_flrp = 0;
-      }
 
       LOOP_OPT(nir_opt_dead_cf);
       if (LOOP_OPT(nir_opt_loop)) {
@@ -1550,6 +1536,13 @@ brw_preprocess_nir(const struct brw_compiler *compiler, nir_shader *nir,
    OPT(nir_split_struct_vars, nir_var_function_temp);
 
    brw_nir_optimize(nir, devinfo);
+
+   unsigned lower_flrp =
+      (nir->options->lower_flrp16 ? 16 : 0) |
+      (nir->options->lower_flrp32 ? 32 : 0) |
+      (nir->options->lower_flrp64 ? 64 : 0);
+
+   OPT(nir_lower_flrp, lower_flrp, false /* always_precise */);
 
    struct nir_opt_16bit_tex_image_options options = {
       .rounding_mode = nir_rounding_mode_undef,
