@@ -5466,6 +5466,10 @@ brw_from_nir_emit_task_mesh_intrinsic(nir_to_brw_state &ntb, const brw_builder &
       dest = get_nir_def(ntb, instr->def);
 
    switch (instr->intrinsic) {
+   case nir_intrinsic_load_urb_output_handle_intel:
+      bld.MOV(retype(dest, BRW_TYPE_UD), payload.urb_output);
+      break;
+
    case nir_intrinsic_load_draw_id:
       dest = retype(dest, BRW_TYPE_UD);
       bld.MOV(dest, payload.extended_parameter_0);
@@ -5535,7 +5539,14 @@ brw_from_nir_emit_mesh_intrinsic(nir_to_brw_state &ntb,
    assert(s.stage == MESA_SHADER_MESH);
    const brw_task_mesh_thread_payload &payload = s.task_mesh_payload();
 
+   brw_reg dest;
+   if (nir_intrinsic_infos[instr->intrinsic].has_dest)
+      dest = get_nir_def(ntb, instr->def);
+
    switch (instr->intrinsic) {
+   case nir_intrinsic_load_urb_input_handle_intel:
+      bld.MOV(retype(dest, BRW_TYPE_UD), payload.task_urb_input);
+      break;
    case nir_intrinsic_store_per_primitive_output:
    case nir_intrinsic_store_per_vertex_output:
    case nir_intrinsic_store_output:
