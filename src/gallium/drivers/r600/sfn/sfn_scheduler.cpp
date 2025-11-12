@@ -581,7 +581,7 @@ BlockScheduler::schedule_alu(Shader::ShaderBlocks& out_blocks, ValueFactory& vf)
             }
             success = true;
          } else {
-            if (expected_ar_uses == 0) {
+            if (expected_ar_uses == 0 && !m_current_block->lds_group_active()) {
                start_new_block(out_blocks, Block::alu);
 
                if (!m_current_block->try_reserve_kcache(*group))
@@ -592,7 +592,7 @@ BlockScheduler::schedule_alu(Shader::ShaderBlocks& out_blocks, ValueFactory& vf)
             } else {
                sfn_log << SfnLog::schedule << "Don't add group because of " <<
                           m_current_block->expected_ar_uses()
-                       << "pending AR loads\n";
+                       << "pending AR loads or an active LDS group\n";
                group = nullptr;
             }
          }
