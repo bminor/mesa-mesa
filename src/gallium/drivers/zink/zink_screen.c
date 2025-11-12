@@ -145,6 +145,7 @@ struct zink_device {
    VkPhysicalDevice pdev;
    VkDevice dev;
    struct zink_device_info *info;
+   simple_mtx_t queue_lock;
 };
 
 static simple_mtx_t device_lock = SIMPLE_MTX_INITIALIZER;
@@ -1831,8 +1832,6 @@ update_queue_props(struct zink_screen *screen)
 static void
 init_queue(struct zink_screen *screen)
 {
-   simple_mtx_init(&screen->queue_lock_storage, mtx_plain);
-   screen->queue_lock = &screen->queue_lock_storage;
    VKSCR(GetDeviceQueue)(screen->dev, screen->gfx_queue, 0, &screen->queue);
    if (screen->sparse_queue != screen->gfx_queue)
       VKSCR(GetDeviceQueue)(screen->dev, screen->sparse_queue, 0, &screen->queue_sparse);
@@ -2759,6 +2758,7 @@ get_device(struct zink_screen *screen, VkDeviceCreateInfo *dci)
    zdev->refcount = 1;
    zdev->pdev = screen->pdev;
    zdev->dev = dev;
+   simple_mtx_init(&zdev->queue_lock, mtx_plain);
    _mesa_set_add(&device_table, zdev);
    simple_mtx_unlock(&device_lock);
    return zdev;
@@ -3522,9 +3522,11 @@ zink_internal_create_screen(const struct pipe_screen_config *config, int64_t dev
    init_driver_workarounds(screen);
    disable_features(screen);
 
-   screen->dev = zink_create_logical_device(screen)->dev;
-   if (!screen->dev)
+   struct zink_device *zdev = zink_create_logical_device(screen);
+   if (!zdev->dev)
       goto fail;
+   screen->dev = zdev->dev;
+   screen->queue_lock = &zdev->queue_lock;
 
    vk_device_uncompacted_dispatch_table_load(&screen->vk.device,
                                              screen->vk_GetDeviceProcAddr,
