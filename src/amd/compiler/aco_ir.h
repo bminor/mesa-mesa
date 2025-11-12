@@ -2127,6 +2127,7 @@ struct Block {
    edge_vec linear_succs;
    RegisterDemand register_demand = RegisterDemand();
    RegisterDemand live_in_demand = RegisterDemand();
+   RegisterDemand call_spills = RegisterDemand();
    uint32_t kind = 0;
    int32_t logical_idom = -1;
    int32_t linear_idom = -1;
@@ -2270,6 +2271,7 @@ public:
    std::vector<Block> blocks;
    std::vector<RegClass> temp_rc = {s1};
    RegisterDemand max_reg_demand = RegisterDemand();
+   RegisterDemand max_call_spills = RegisterDemand();
    ac_shader_config* config;
    struct aco_shader_info info;
    enum amd_gfx_level gfx_level;

@@ -175,6 +175,7 @@ process_live_temps_per_block(live_ctx& ctx, Block* block)
    RegisterDemand new_demand;
    unsigned num_linear_vgprs = 0;
    block->register_demand = RegisterDemand();
+   block->call_spills = RegisterDemand();
    IDSet live = compute_live_out(ctx, block);
 
    /* initialize register demand */
@@ -446,6 +447,9 @@ process_live_temps_per_block(live_ctx& ctx, Block* block)
             if (!insn->definitions[i].isKill())
                insn->call().caller_preserved_demand -= insn->definitions[i].getTemp();
          }
+
+         block->call_spills.update(insn->call().caller_preserved_demand -
+                                   insn->call().callee_preserved_limit);
       }
 
       operand_demand += new_demand;
@@ -507,6 +511,7 @@ process_live_temps_per_block(live_ctx& ctx, Block* block)
    block->live_in_demand = new_demand;
    block->register_demand.update(block->live_in_demand);
    ctx.program->max_reg_demand.update(block->register_demand);
+   ctx.program->max_call_spills.update(block->call_spills);
    ctx.handled_once = std::min(ctx.handled_once, block->index);
 
    assert(!block->linear_preds.empty() || (new_demand == RegisterDemand() && live.empty()));
@@ -648,7 +653,7 @@ update_vgpr_sgpr_demand(Program* program, const RegisterDemand new_demand)
    RegisterDemand limit = get_addr_regs_from_waves(program, program->min_waves);
 
    /* this won't compile, register pressure reduction necessary */
-   if (new_demand.exceeds(limit)) {
+   if (new_demand.exceeds(limit) || program->max_call_spills != RegisterDemand()) {
       program->num_waves = 0;
       program->max_reg_demand = new_demand;
    } else {
@@ -672,6 +677,7 @@ live_var_analysis(Program* program)
    program->live.memory.release();
    program->live.live_in.resize(program->blocks.size(), IDSet(program->live.memory));
    program->max_reg_demand = RegisterDemand();
+   program->max_call_spills = RegisterDemand();
    program->needs_vcc = program->gfx_level >= GFX10;
 
    live_ctx ctx;
