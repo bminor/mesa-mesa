@@ -55,7 +55,11 @@ nir_intrinsic_set_${name}(nir_intrinsic_instr *instr, ${data_type} val)
    assert(info->index_map[${enum}] > 0);
 % if "struct" in data_type:
    STATIC_ASSERT(sizeof(instr->const_index[0]) == sizeof(val));
+   /* NOTE: gcc has a a false positive here, silenced with the pragmas */
+   PRAGMA_DIAGNOSTIC_PUSH
+   PRAGMA_DIAGNOSTIC_IGNORED_GCC(-Wstringop-overflow)
    memcpy(&instr->const_index[info->index_map[${enum}] - 1], &val, sizeof(val));
+   PRAGMA_DIAGNOSTIC_POP
 % else:
    instr->const_index[info->index_map[${enum}] - 1] = val;
 % endif
