@@ -481,6 +481,10 @@ nir_opt_large_constants(nir_shader *shader,
       /* Fix up indices after we sorted. */
       info->var->index = i;
 
+      /* Don't bother with dead variables. */
+      if (info->constant_data_size == 0)
+         info->is_constant = false;
+
       if (!info->is_constant)
          continue;
 
@@ -529,6 +533,17 @@ nir_opt_large_constants(nir_shader *shader,
 
    nir_foreach_block(block, impl) {
       nir_foreach_instr_safe(instr, block) {
+         if (instr->type == nir_instr_type_deref) {
+            /* Ensure all derefs accessing the lowered arrays get removed. */
+            nir_deref_instr *deref = nir_instr_as_deref(instr);
+            if (!nir_deref_mode_is(deref, nir_var_function_temp))
+               continue;
+
+            nir_variable *var = nir_deref_instr_get_variable(deref);
+            if (var && var_infos[var->index].is_constant)
+               nir_deref_instr_remove_if_unused(deref);
+         }
+
          if (instr->type != nir_instr_type_intrinsic)
             continue;
 
