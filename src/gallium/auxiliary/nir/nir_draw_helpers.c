@@ -273,7 +273,7 @@ nir_lower_aaline_fs(struct nir_shader *shader, int *varying,
    state.line_width_input = line_width;
 
    nir_shader_instructions_pass(shader, lower_aaline_instr,
-                                nir_metadata_dominance, &state);
+                                nir_metadata_control_flow, &state);
 }
 
 typedef struct {

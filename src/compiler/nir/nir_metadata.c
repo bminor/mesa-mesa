@@ -75,6 +75,8 @@ nir_progress(bool progress, nir_function_impl *impl, nir_metadata preserved)
    if (!progress)
       preserved = nir_metadata_all;
 
+   if (!(preserved & nir_metadata_block_index))
+      assert(!(preserved & nir_metadata_dominance));
    if (!(preserved & nir_metadata_dominance))
       assert(!(preserved & nir_metadata_dominance_lca));
 

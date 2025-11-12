@@ -157,7 +157,7 @@ static bool
 remove_barriers(nir_shader *nir, bool is_compute)
 {
    return nir_shader_intrinsics_pass(nir, remove_barriers_impl,
-                                     nir_metadata_dominance,
+                                     nir_metadata_control_flow,
                                      (void*)is_compute);
 }
 

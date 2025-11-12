@@ -433,7 +433,7 @@ nir_lower_clip_vs(nir_shader *shader, unsigned ucp_enables, bool use_vars,
       lower_clip_vertex_var(&b, &state);
    }
 
-   return nir_progress(true, impl, nir_metadata_dominance);
+   return nir_progress(true, impl, nir_metadata_control_flow);
 }
 
 /*
@@ -582,7 +582,7 @@ lower_clip_fs(nir_function_impl *impl, unsigned ucp_enables,
       b.shader->info.fs.uses_discard = true;
    }
 
-   nir_progress(true, impl, nir_metadata_dominance);
+   nir_progress(true, impl, nir_metadata_control_flow);
 }
 
 static bool
