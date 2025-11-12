@@ -168,7 +168,7 @@ r300_optimize_nir(struct nir_shader *s, struct r300_screen *screen)
       progress = false;
       NIR_PASS(_, s, nir_lower_vars_to_ssa);
 
-      NIR_PASS(progress, s, nir_copy_prop);
+      NIR_PASS(progress, s, nir_opt_copy_prop);
       NIR_PASS(progress, s, r300_nir_lower_flrp);
       NIR_PASS(progress, s, nir_opt_algebraic);
       if (s->info.stage == MESA_SHADER_VERTEX) {

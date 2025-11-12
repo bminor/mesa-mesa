@@ -157,7 +157,7 @@ etna_optimize_loop(nir_shader *s)
       progress |= OPT(s, nir_opt_copy_prop_vars);
       progress |= OPT(s, nir_opt_shrink_stores, true);
       progress |= OPT(s, nir_opt_shrink_vectors, false);
-      progress |= OPT(s, nir_copy_prop);
+      progress |= OPT(s, nir_opt_copy_prop);
       progress |= OPT(s, nir_opt_dce);
       progress |= OPT(s, nir_opt_cse);
 
@@ -177,7 +177,7 @@ etna_optimize_loop(nir_shader *s)
           * things up if we want any hope of nir_opt_if or nir_opt_loop_unroll
           * to make progress.
           */
-         OPT(s, nir_copy_prop);
+         OPT(s, nir_opt_copy_prop);
          OPT(s, nir_opt_dce);
       }
       progress |= OPT(s, nir_opt_loop_unroll);
@@ -1318,7 +1318,7 @@ etna_compile_shader(struct etna_shader_variant *v)
    NIR_PASS(_, s, nir_opt_algebraic_late);
 
    NIR_PASS(_, s, nir_move_vec_src_uses_to_dest, false);
-   NIR_PASS(_, s, nir_copy_prop);
+   NIR_PASS(_, s, nir_opt_copy_prop);
    /* need copy prop after uses_to_dest, and before src mods: see
     * dEQP-GLES2.functional.shaders.random.all_features.fragment.95
     */

@@ -1548,7 +1548,7 @@ optimize_nir(struct nir_shader *s, struct zink_shader *zs, bool can_shrink)
       NIR_PASS(_, s, nir_lower_vars_to_ssa);
       NIR_PASS(progress, s, nir_lower_alu_to_scalar, filter_pack_instr, NULL);
       NIR_PASS(progress, s, nir_opt_copy_prop_vars);
-      NIR_PASS(progress, s, nir_copy_prop);
+      NIR_PASS(progress, s, nir_opt_copy_prop);
       NIR_PASS(progress, s, nir_opt_remove_phis);
       if (s->options->lower_int64_options) {
          NIR_PASS(progress, s, nir_lower_64bit_phis);
@@ -1579,7 +1579,7 @@ optimize_nir(struct nir_shader *s, struct zink_shader *zs, bool can_shrink)
       progress = false;
       NIR_PASS(progress, s, nir_opt_algebraic_late);
       if (progress) {
-         NIR_PASS(_, s, nir_copy_prop);
+         NIR_PASS(_, s, nir_opt_copy_prop);
          NIR_PASS(_, s, nir_opt_dce);
          NIR_PASS(_, s, nir_opt_cse);
       }

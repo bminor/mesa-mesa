@@ -1067,11 +1067,11 @@ brw_nir_optimize(nir_shader *nir,
 
       LOOP_OPT(nir_lower_alu_to_scalar, NULL, NULL);
 
-      LOOP_OPT(nir_copy_prop);
+      LOOP_OPT(nir_opt_copy_prop);
 
       LOOP_OPT(nir_lower_phis_to_scalar, NULL, NULL);
 
-      LOOP_OPT(nir_copy_prop);
+      LOOP_OPT(nir_opt_copy_prop);
       LOOP_OPT(nir_opt_dce);
       LOOP_OPT(nir_opt_cse);
       LOOP_OPT(nir_opt_combine_stores, nir_var_all);
@@ -1126,7 +1126,7 @@ brw_nir_optimize(nir_shader *nir,
           * things up if we want any hope of nir_opt_if or nir_opt_loop_unroll
           * to make progress.
           */
-         LOOP_OPT(nir_copy_prop);
+         LOOP_OPT(nir_opt_copy_prop);
          LOOP_OPT(nir_opt_dce);
       }
       LOOP_OPT_NOT_IDEMPOTENT(nir_opt_if, nir_opt_if_optimize_phi_true_false);
@@ -1961,11 +1961,11 @@ brw_vectorize_lower_mem_access(nir_shader *nir,
       OPT(nir_opt_load_store_vectorize, &options);
 
       OPT(nir_opt_constant_folding);
-      OPT(nir_copy_prop);
+      OPT(nir_opt_copy_prop);
 
       if (OPT(brw_nir_rebase_const_offset_ubo_loads)) {
          OPT(nir_opt_cse);
-         OPT(nir_copy_prop);
+         OPT(nir_opt_copy_prop);
 
          nir_load_store_vectorize_options ubo_options = {
             .modes = nir_var_mem_ubo,
@@ -1998,7 +1998,7 @@ brw_vectorize_lower_mem_access(nir_shader *nir,
       progress = false;
 
       OPT(nir_lower_pack);
-      OPT(nir_copy_prop);
+      OPT(nir_opt_copy_prop);
       OPT(nir_opt_dce);
       OPT(nir_opt_cse);
       OPT(nir_opt_algebraic);
@@ -2311,7 +2311,7 @@ brw_postprocess_nir_opts(nir_shader *nir, const struct brw_compiler *compiler,
    OPT(intel_nir_opt_peephole_imul32x16);
 
    if (OPT(nir_opt_comparison_pre)) {
-      OPT(nir_copy_prop);
+      OPT(nir_opt_copy_prop);
       OPT(nir_opt_dce);
       OPT(nir_opt_cse);
 
@@ -2339,7 +2339,7 @@ brw_postprocess_nir_opts(nir_shader *nir, const struct brw_compiler *compiler,
 
       if (progress) {
          OPT(nir_opt_constant_folding);
-         OPT(nir_copy_prop);
+         OPT(nir_opt_copy_prop);
          OPT(nir_opt_dce);
          OPT(nir_opt_cse);
       }
@@ -2352,12 +2352,12 @@ brw_postprocess_nir_opts(nir_shader *nir, const struct brw_compiler *compiler,
 
    while (OPT(nir_opt_algebraic_distribute_src_mods)) {
       OPT(nir_opt_constant_folding);
-      OPT(nir_copy_prop);
+      OPT(nir_opt_copy_prop);
       OPT(nir_opt_dce);
       OPT(nir_opt_cse);
    }
 
-   OPT(nir_copy_prop);
+   OPT(nir_opt_copy_prop);
    OPT(nir_opt_dce);
 
    nir_move_options move_all = nir_move_const_undef | nir_move_load_ubo |
@@ -2454,7 +2454,7 @@ brw_postprocess_nir_out_of_ssa(nir_shader *nir,
    }
 
    OPT(nir_lower_bool_to_int32);
-   OPT(nir_copy_prop);
+   OPT(nir_opt_copy_prop);
    OPT(nir_opt_dce);
 
    OPT(nir_lower_locals_to_regs, 32);

@@ -820,7 +820,7 @@ clc_spirv_to_dxil(struct clc_libclc *lib,
       do
       {
          progress = false;
-         NIR_PASS(progress, nir, nir_copy_prop);
+         NIR_PASS(progress, nir, nir_opt_copy_prop);
          NIR_PASS(progress, nir, nir_opt_copy_prop_vars);
          NIR_PASS(progress, nir, nir_opt_deref);
          NIR_PASS(progress, nir, nir_opt_dce);
@@ -849,7 +849,7 @@ clc_spirv_to_dxil(struct clc_libclc *lib,
       do
       {
          progress = false;
-         NIR_PASS(progress, nir, nir_copy_prop);
+         NIR_PASS(progress, nir, nir_opt_copy_prop);
          NIR_PASS(progress, nir, nir_opt_copy_prop_vars);
          NIR_PASS(progress, nir, nir_opt_deref);
          NIR_PASS(progress, nir, nir_opt_dce);
@@ -953,7 +953,7 @@ clc_spirv_to_dxil(struct clc_libclc *lib,
       do {
          progress = false;
          NIR_PASS(progress, nir, nir_opt_memcpy);
-         NIR_PASS(progress, nir, nir_copy_prop);
+         NIR_PASS(progress, nir, nir_opt_copy_prop);
          NIR_PASS(progress, nir, nir_opt_copy_prop_vars);
          NIR_PASS(progress, nir, nir_opt_deref);
          NIR_PASS(progress, nir, nir_opt_dce);

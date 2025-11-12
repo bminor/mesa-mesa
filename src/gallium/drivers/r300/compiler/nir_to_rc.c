@@ -2031,7 +2031,7 @@ nir_to_rc(struct nir_shader *s, struct pipe_screen *screen,
       progress = false;
       NIR_PASS(progress, s, nir_opt_algebraic_late);
       if (progress) {
-         NIR_PASS(_, s, nir_copy_prop);
+         NIR_PASS(_, s, nir_opt_copy_prop);
          NIR_PASS(_, s, nir_opt_dce);
          NIR_PASS(_, s, nir_opt_cse);
       }
@@ -2042,12 +2042,12 @@ nir_to_rc(struct nir_shader *s, struct pipe_screen *screen,
    }
 
    NIR_PASS(_, s, nir_lower_int_to_float);
-   NIR_PASS(_, s, nir_copy_prop);
+   NIR_PASS(_, s, nir_opt_copy_prop);
    NIR_PASS(_, s, r300_nir_post_integer_lowering);
    NIR_PASS(_, s, nir_lower_bool_to_float,
             is_r500 || s->info.stage == MESA_SHADER_FRAGMENT);
    /* bool_to_float generates MOVs for b2f32 that we want to clean up. */
-   NIR_PASS(_, s, nir_copy_prop);
+   NIR_PASS(_, s, nir_opt_copy_prop);
    /* CSE cleanup after late ftrunc lowering. */
    NIR_PASS(_, s, nir_opt_cse);
    /* At this point we need to clean;

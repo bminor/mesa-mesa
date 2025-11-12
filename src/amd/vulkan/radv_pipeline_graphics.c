@@ -1724,7 +1724,7 @@ radv_graphics_shaders_link_varyings(struct radv_shader_stage *stages, enum amd_g
       NIR_PASS(_, consumer, nir_lower_io_to_scalar, nir_var_shader_in, NULL, NULL);
 
       /* Eliminate useless vec->mov copies resulting from scalarization. */
-      NIR_PASS(_, producer, nir_copy_prop);
+      NIR_PASS(_, producer, nir_opt_copy_prop);
       NIR_PASS(_, producer, nir_opt_constant_folding);
    }
 

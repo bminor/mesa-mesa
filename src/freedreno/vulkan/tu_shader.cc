@@ -185,7 +185,7 @@ tu_spirv_to_nir_library(struct tu_device *dev,
    NIR_PASS(_, nir, nir_lower_returns);
    NIR_PASS(_, nir, nir_inline_functions);
    nir_remove_non_exported(nir);
-   NIR_PASS(_, nir, nir_copy_prop);
+   NIR_PASS(_, nir, nir_opt_copy_prop);
    NIR_PASS(_, nir, nir_opt_deref);
 
    /* We can't deal with constant data, get rid of it */
@@ -215,7 +215,7 @@ tu_spirv_to_nir_library(struct tu_device *dev,
     */
    NIR_PASS(_, nir, nir_lower_vars_to_ssa);
    NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
-   NIR_PASS(_, nir, nir_copy_prop);
+   NIR_PASS(_, nir, nir_opt_copy_prop);
    NIR_PASS(_, nir, nir_opt_dce);
    NIR_PASS(_, nir, nir_opt_cse);
    NIR_PASS(_, nir, nir_opt_gcm, true);
@@ -2999,7 +2999,7 @@ lower_io_to_scalar_early(nir_shader *nir, nir_variable_mode mask)
 
    if (progress) {
       /* Optimize the new vector code and then remove dead vars. */
-      NIR_PASS(_, nir, nir_copy_prop);
+      NIR_PASS(_, nir, nir_opt_copy_prop);
 
       if (mask & nir_var_shader_out) {
          /* Optimize swizzled movs of load_const for nir_link_opt_varyings's

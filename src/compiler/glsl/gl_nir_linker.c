@@ -76,7 +76,7 @@ gl_nir_opts(nir_shader *nir)
 
       NIR_PASS(_, nir, nir_lower_alu);
       NIR_PASS(_, nir, nir_lower_pack);
-      NIR_PASS(progress, nir, nir_copy_prop);
+      NIR_PASS(progress, nir, nir_opt_copy_prop);
       NIR_PASS(progress, nir, nir_opt_remove_phis);
       NIR_PASS(progress, nir, nir_opt_dce);
 
@@ -84,7 +84,7 @@ gl_nir_opts(nir_shader *nir)
       NIR_PASS(opt_loop_progress, nir, nir_opt_loop);
       if (opt_loop_progress) {
          progress = true;
-         NIR_PASS(progress, nir, nir_copy_prop);
+         NIR_PASS(progress, nir, nir_opt_copy_prop);
          NIR_PASS(progress, nir, nir_opt_dce);
       }
       NIR_PASS(progress, nir, nir_opt_if, 0);

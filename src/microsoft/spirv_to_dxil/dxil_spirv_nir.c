@@ -119,7 +119,7 @@ dxil_spirv_nir_prep(nir_shader *nir)
    NIR_PASS(_, nir, nir_lower_variable_initializers, nir_var_function_temp);
    NIR_PASS(_, nir, nir_lower_returns);
    NIR_PASS(_, nir, nir_inline_functions);
-   NIR_PASS(_, nir, nir_copy_prop);
+   NIR_PASS(_, nir, nir_opt_copy_prop);
    NIR_PASS(_, nir, nir_opt_deref);
 
    /* Pick off the single entrypoint that we want */
@@ -1064,7 +1064,7 @@ dxil_spirv_nir_passes(nir_shader *nir,
       do
       {
          progress = false;
-         NIR_PASS(progress, nir, nir_copy_prop);
+         NIR_PASS(progress, nir, nir_opt_copy_prop);
          NIR_PASS(progress, nir, nir_opt_copy_prop_vars);
          NIR_PASS(progress, nir, nir_opt_deref);
          NIR_PASS(progress, nir, nir_opt_dce);
@@ -1073,7 +1073,7 @@ dxil_spirv_nir_passes(nir_shader *nir,
          NIR_PASS(progress, nir, nir_opt_cse);
          if (nir_opt_loop(nir)) {
             progress = true;
-            NIR_PASS(progress, nir, nir_copy_prop);
+            NIR_PASS(progress, nir, nir_opt_copy_prop);
             NIR_PASS(progress, nir, nir_opt_dce);
          }
          NIR_PASS(progress, nir, nir_lower_vars_to_ssa);

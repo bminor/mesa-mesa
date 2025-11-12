@@ -707,13 +707,13 @@ elk_nir_optimize(nir_shader *nir, bool is_scalar,
          OPT(nir_opt_shrink_vectors, false);
       }
 
-      OPT(nir_copy_prop);
+      OPT(nir_opt_copy_prop);
 
       if (is_scalar) {
          OPT(nir_lower_phis_to_scalar, NULL, NULL);
       }
 
-      OPT(nir_copy_prop);
+      OPT(nir_opt_copy_prop);
       OPT(nir_opt_dce);
       OPT(nir_opt_cse);
       OPT(nir_opt_combine_stores, nir_var_all);
@@ -777,7 +777,7 @@ elk_nir_optimize(nir_shader *nir, bool is_scalar,
           * things up if we want any hope of nir_opt_if or nir_opt_loop_unroll
           * to make progress.
           */
-         OPT(nir_copy_prop);
+         OPT(nir_opt_copy_prop);
          OPT(nir_opt_dce);
       }
       OPT(nir_opt_if, nir_opt_if_optimize_phi_true_false);
@@ -1443,7 +1443,7 @@ elk_vectorize_lower_mem_access(nir_shader *nir,
       progress = false;
 
       OPT(nir_lower_pack);
-      OPT(nir_copy_prop);
+      OPT(nir_opt_copy_prop);
       OPT(nir_opt_dce);
       OPT(nir_opt_cse);
       OPT(nir_opt_algebraic);
@@ -1525,7 +1525,7 @@ elk_postprocess_nir(nir_shader *nir, const struct elk_compiler *compiler,
       OPT(intel_nir_opt_peephole_imul32x16);
 
    if (OPT(nir_opt_comparison_pre)) {
-      OPT(nir_copy_prop);
+      OPT(nir_opt_copy_prop);
       OPT(nir_opt_dce);
       OPT(nir_opt_cse);
 
@@ -1561,7 +1561,7 @@ elk_postprocess_nir(nir_shader *nir, const struct elk_compiler *compiler,
          if (is_scalar)
             OPT(nir_opt_constant_folding);
 
-         OPT(nir_copy_prop);
+         OPT(nir_opt_copy_prop);
          OPT(nir_opt_dce);
          OPT(nir_opt_cse);
       }
@@ -1586,12 +1586,12 @@ elk_postprocess_nir(nir_shader *nir, const struct elk_compiler *compiler,
       if (is_scalar)
          OPT(nir_opt_constant_folding);
 
-      OPT(nir_copy_prop);
+      OPT(nir_opt_copy_prop);
       OPT(nir_opt_dce);
       OPT(nir_opt_cse);
    }
 
-   OPT(nir_copy_prop);
+   OPT(nir_opt_copy_prop);
    OPT(nir_opt_dce);
 
    nir_move_options common = nir_move_const_undef | nir_move_load_input |
@@ -1623,7 +1623,7 @@ elk_postprocess_nir(nir_shader *nir, const struct elk_compiler *compiler,
    }
 
    OPT(nir_lower_bool_to_int32);
-   OPT(nir_copy_prop);
+   OPT(nir_opt_copy_prop);
    OPT(nir_opt_dce);
 
    OPT(nir_lower_locals_to_regs, 32);

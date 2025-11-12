@@ -1842,7 +1842,7 @@ v3d_attempt_compile(struct v3d_compile *c)
                  * this. We also want to run the lowering before v3d_optimize to
                  * clean-up redundant get_buffer_size calls produced in the pass.
                  */
-                NIR_PASS(_, c->s, nir_copy_prop);
+                NIR_PASS(_, c->s, nir_opt_copy_prop);
                 NIR_PASS(_, c->s, nir_opt_constant_folding);
 
                 NIR_PASS(_, c->s, nir_lower_robust_access,
@@ -1890,7 +1890,7 @@ v3d_attempt_compile(struct v3d_compile *c)
                 more_late_algebraic = false;
                 NIR_PASS(more_late_algebraic, c->s, nir_opt_algebraic_late);
                 NIR_PASS(_, c->s, nir_opt_constant_folding);
-                NIR_PASS(_, c->s, nir_copy_prop);
+                NIR_PASS(_, c->s, nir_opt_copy_prop);
                 NIR_PASS(_, c->s, nir_opt_dce);
                 NIR_PASS(_, c->s, nir_opt_cse);
         }

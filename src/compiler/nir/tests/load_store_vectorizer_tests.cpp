@@ -152,7 +152,7 @@ nir_load_store_vectorize_test::run_vectorizer(nir_variable_mode modes,
       nir_validate_shader(b->shader, NULL);
       if (cse)
          nir_opt_cse(b->shader);
-      nir_copy_prop(b->shader);
+      nir_opt_copy_prop(b->shader);
       nir_opt_algebraic(b->shader);
       nir_opt_constant_folding(b->shader);
    }

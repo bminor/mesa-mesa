@@ -788,7 +788,7 @@ vtn_function_emit(struct vtn_builder *b, struct vtn_function *func,
                            vtn_handle_phi_second_pass);
 
    if (func->nir_func->impl->structured)
-      nir_copy_prop_impl(impl);
+      nir_opt_copy_prop_impl(impl);
    nir_rematerialize_derefs_in_use_blocks_impl(impl);
 
    /*

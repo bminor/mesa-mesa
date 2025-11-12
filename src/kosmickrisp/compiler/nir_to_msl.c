@@ -1897,7 +1897,7 @@ msl_optimize_nir(struct nir_shader *nir)
       NIR_PASS(progress, nir, nir_opt_dce);
       NIR_PASS(progress, nir, nir_opt_cse);
       NIR_PASS(progress, nir, nir_opt_dead_cf);
-      NIR_PASS(progress, nir, nir_copy_prop);
+      NIR_PASS(progress, nir, nir_opt_copy_prop);
       NIR_PASS(progress, nir, nir_opt_deref);
       NIR_PASS(progress, nir, nir_opt_constant_folding);
       NIR_PASS(progress, nir, nir_opt_copy_prop_vars);
@@ -1917,7 +1917,7 @@ msl_optimize_nir(struct nir_shader *nir)
    NIR_PASS(_, nir, msl_nir_lower_algebraic_late);
    NIR_PASS(_, nir, nir_convert_from_ssa, true, false);
    nir_trivialize_registers(nir);
-   NIR_PASS(_, nir, nir_copy_prop);
+   NIR_PASS(_, nir, nir_opt_copy_prop);
 
    return progress;
 }

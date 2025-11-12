@@ -2155,7 +2155,7 @@ v3d_optimize_nir(struct v3d_compile *c, struct nir_shader *s)
 
                 NIR_PASS(progress, s, nir_lower_alu_to_scalar, NULL, NULL);
                 NIR_PASS(progress, s, nir_lower_phis_to_scalar, NULL, NULL);
-                NIR_PASS(progress, s, nir_copy_prop);
+                NIR_PASS(progress, s, nir_opt_copy_prop);
                 NIR_PASS(progress, s, nir_opt_remove_phis);
                 NIR_PASS(progress, s, nir_opt_dce);
                 NIR_PASS(progress, s, nir_opt_dead_cf);
@@ -2183,7 +2183,7 @@ v3d_optimize_nir(struct v3d_compile *c, struct nir_shader *s)
 
                 if (nir_opt_loop(s)) {
                    progress = true;
-                   NIR_PASS(progress, s, nir_copy_prop);
+                   NIR_PASS(progress, s, nir_opt_copy_prop);
                    NIR_PASS(progress, s, nir_opt_dce);
                 }
 

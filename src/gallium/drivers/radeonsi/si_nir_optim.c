@@ -180,7 +180,7 @@ si_nir_is_output_const_if_tex_is_const(nir_shader *shader, float *in, float *out
       bool progress;
       do {
          progress = false;
-         NIR_PASS(progress, shader, nir_copy_prop);
+         NIR_PASS(progress, shader, nir_opt_copy_prop);
          NIR_PASS(progress, shader, nir_opt_remove_phis);
          NIR_PASS(progress, shader, nir_opt_dce);
          NIR_PASS(progress, shader, nir_opt_dead_cf);

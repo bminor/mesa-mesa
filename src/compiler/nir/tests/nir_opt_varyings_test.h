@@ -268,11 +268,11 @@ protected:
 
    void optimize()
    {
-      NIR_PASS(_, b1->shader, nir_copy_prop);
+      NIR_PASS(_, b1->shader, nir_opt_copy_prop);
       NIR_PASS(_, b1->shader, nir_opt_dce);
       NIR_PASS(_, b1->shader, nir_opt_cse);
 
-      NIR_PASS(_, b2->shader, nir_copy_prop);
+      NIR_PASS(_, b2->shader, nir_opt_copy_prop);
       NIR_PASS(_, b2->shader, nir_opt_dce);
       NIR_PASS(_, b2->shader, nir_opt_cse);
    }

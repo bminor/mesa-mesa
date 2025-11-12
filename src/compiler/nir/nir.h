@@ -6294,8 +6294,8 @@ bool nir_minimize_call_live_states(nir_shader *shader);
 
 bool nir_opt_combine_stores(nir_shader *shader, nir_variable_mode modes);
 
-bool nir_copy_prop_impl(nir_function_impl *impl);
-bool nir_copy_prop(nir_shader *shader);
+bool nir_opt_copy_prop_impl(nir_function_impl *impl);
+bool nir_opt_copy_prop(nir_shader *shader);
 
 bool nir_opt_copy_prop_vars(nir_shader *shader);
 

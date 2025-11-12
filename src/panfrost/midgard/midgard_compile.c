@@ -475,7 +475,7 @@ optimise_nir(nir_shader *nir, unsigned quirks, bool is_blend)
 
       NIR_PASS(progress, nir, nir_lower_vars_to_ssa);
 
-      NIR_PASS(progress, nir, nir_copy_prop);
+      NIR_PASS(progress, nir, nir_opt_copy_prop);
       NIR_PASS(progress, nir, nir_opt_remove_phis);
       NIR_PASS(progress, nir, nir_opt_dce);
       NIR_PASS(progress, nir, nir_opt_dead_cf);
@@ -509,7 +509,7 @@ optimise_nir(nir_shader *nir, unsigned quirks, bool is_blend)
       NIR_PASS(progress, nir, nir_opt_dce);
       NIR_PASS(progress, nir, nir_opt_algebraic);
       NIR_PASS(progress, nir, nir_opt_constant_folding);
-      NIR_PASS(progress, nir, nir_copy_prop);
+      NIR_PASS(progress, nir, nir_opt_copy_prop);
    } while (progress);
 
    NIR_PASS(progress, nir, nir_opt_algebraic_late);
@@ -529,7 +529,7 @@ optimise_nir(nir_shader *nir, unsigned quirks, bool is_blend)
 
       NIR_PASS(progress, nir, nir_opt_dce);
       NIR_PASS(progress, nir, nir_opt_constant_folding);
-      NIR_PASS(progress, nir, nir_copy_prop);
+      NIR_PASS(progress, nir, nir_opt_copy_prop);
    } while (progress);
 
    /* Backend scheduler is purely local, so do some global optimizations

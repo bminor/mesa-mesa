@@ -1799,7 +1799,7 @@ TEST_F(nir_combine_stores_test, non_overlapping_stores)
    nir_validate_shader(b->shader, NULL);
 
    /* Clean up to verify from where the values in combined store are coming. */
-   nir_copy_prop(b->shader);
+   nir_opt_copy_prop(b->shader);
    nir_opt_dce(b->shader);
 
    ASSERT_EQ(count_intrinsics(nir_intrinsic_store_deref), 1);
@@ -1838,7 +1838,7 @@ TEST_F(nir_combine_stores_test, overlapping_stores)
    nir_validate_shader(b->shader, NULL);
 
    /* Clean up to verify from where the values in combined store are coming. */
-   nir_copy_prop(b->shader);
+   nir_opt_copy_prop(b->shader);
    nir_opt_dce(b->shader);
 
    ASSERT_EQ(count_intrinsics(nir_intrinsic_store_deref), 1);
@@ -1904,7 +1904,7 @@ TEST_F(nir_combine_stores_test, direct_array_derefs)
    nir_validate_shader(b->shader, NULL);
 
    /* Clean up to verify from where the values in combined store are coming. */
-   nir_copy_prop(b->shader);
+   nir_opt_copy_prop(b->shader);
    nir_opt_dce(b->shader);
 
    ASSERT_EQ(count_intrinsics(nir_intrinsic_store_deref), 1);

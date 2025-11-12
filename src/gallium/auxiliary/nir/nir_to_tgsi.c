@@ -3314,7 +3314,7 @@ ntt_optimize_nir(struct nir_shader *s, struct pipe_screen *screen,
       NIR_PASS(progress, s, nir_lower_vars_to_ssa);
       NIR_PASS(progress, s, nir_split_64bit_vec3_and_vec4);
 
-      NIR_PASS(progress, s, nir_copy_prop);
+      NIR_PASS(progress, s, nir_opt_copy_prop);
       NIR_PASS(progress, s, nir_opt_algebraic);
       NIR_PASS(progress, s, nir_opt_constant_folding);
       NIR_PASS(progress, s, nir_opt_remove_phis);
@@ -3948,7 +3948,7 @@ const void *nir_to_tgsi_options(struct nir_shader *s,
       progress = false;
       NIR_PASS(progress, s, nir_opt_algebraic_late);
       if (progress) {
-         NIR_PASS(_, s, nir_copy_prop);
+         NIR_PASS(_, s, nir_opt_copy_prop);
          NIR_PASS(_, s, nir_opt_dce);
          NIR_PASS(_, s, nir_opt_cse);
       }
@@ -3963,7 +3963,7 @@ const void *nir_to_tgsi_options(struct nir_shader *s,
       NIR_PASS(_, s, nir_lower_bool_to_float,
                !options->lower_cmp && !options->lower_fabs);
       /* bool_to_float generates MOVs for b2f32 that we want to clean up. */
-      NIR_PASS(_, s, nir_copy_prop);
+      NIR_PASS(_, s, nir_opt_copy_prop);
       NIR_PASS(_, s, nir_opt_dce);
    }
 

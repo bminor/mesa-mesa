@@ -310,7 +310,7 @@ int main(int argc, char **argv)
             OPT(nir_opt_cse);
             OPT(nir_opt_dead_cf);
             OPT(nir_lower_vars_to_ssa);
-            OPT(nir_copy_prop);
+            OPT(nir_opt_copy_prop);
             OPT(nir_opt_deref);
             OPT(nir_opt_constant_folding);
             OPT(nir_opt_copy_prop_vars);

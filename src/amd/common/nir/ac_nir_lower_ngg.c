@@ -959,7 +959,7 @@ prepare_shader_for_culling(nir_shader *shader, nir_function_impl *impl,
    do {
       /* These can't use NIR_PASS because NIR_DEBUG=serialize,clone invalidates pointers. */
       progress = nir_opt_undef(shader);
-      progress |= nir_copy_prop(shader);
+      progress |= nir_opt_copy_prop(shader);
       progress |= nir_opt_dce(shader);
       progress |= nir_opt_dead_cf(shader);
    } while (progress);
@@ -1780,7 +1780,7 @@ ac_nir_lower_ngg_nogs(nir_shader *shader, const ac_nir_lower_ngg_options *option
    do {
       /* These can't use NIR_PASS because NIR_DEBUG=serialize,clone invalidates pointers. */
       progress = nir_opt_undef(shader);
-      progress |= nir_copy_prop(shader);
+      progress |= nir_opt_copy_prop(shader);
       progress |= nir_opt_dce(shader);
       progress |= nir_opt_dead_cf(shader);
    } while (progress);

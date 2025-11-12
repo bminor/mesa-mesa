@@ -6210,7 +6210,7 @@ lp_build_nir_soa_prepasses(struct nir_shader *nir)
    do {
       progress = false;
       NIR_PASS(progress, nir, nir_lower_alu_to_scalar, NULL, NULL);
-      NIR_PASS(progress, nir, nir_copy_prop);
+      NIR_PASS(progress, nir, nir_opt_copy_prop);
       NIR_PASS(progress, nir, nir_opt_dce);
    } while (progress);
 

@@ -60,7 +60,7 @@ ir2_optimize_loop(nir_shader *s)
 
       OPT_V(s, nir_lower_vars_to_ssa);
       progress |= OPT(s, nir_opt_copy_prop_vars);
-      progress |= OPT(s, nir_copy_prop);
+      progress |= OPT(s, nir_opt_copy_prop);
       progress |= OPT(s, nir_opt_dce);
       progress |= OPT(s, nir_opt_cse);
       /* progress |= OPT(s, nir_opt_gcm, true); */
@@ -80,7 +80,7 @@ ir2_optimize_loop(nir_shader *s)
           * things up if we want any hope of nir_opt_if or nir_opt_loop_unroll
           * to make progress.
           */
-         OPT(s, nir_copy_prop);
+         OPT(s, nir_opt_copy_prop);
          OPT(s, nir_opt_dce);
       }
       progress |= OPT(s, nir_opt_loop_unroll);
@@ -1124,7 +1124,7 @@ ir2_nir_compile(struct ir2_context *ctx, bool binning)
    if (binning)
       cleanup_binning(ctx);
 
-   OPT_V(ctx->nir, nir_copy_prop);
+   OPT_V(ctx->nir, nir_opt_copy_prop);
    OPT_V(ctx->nir, nir_opt_dce);
    OPT_V(ctx->nir, nir_opt_move, nir_move_comparisons);
 

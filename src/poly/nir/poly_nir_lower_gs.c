@@ -1212,7 +1212,7 @@ poly_nir_lower_gs(nir_shader *gs, nir_shader **gs_count, nir_shader **gs_copy,
       NIR_PASS(progress, gs, nir_lower_variable_initializers,
                nir_var_shader_temp);
       NIR_PASS(progress, gs, nir_lower_vars_to_ssa);
-      NIR_PASS(progress, gs, nir_copy_prop);
+      NIR_PASS(progress, gs, nir_opt_copy_prop);
       NIR_PASS(progress, gs, nir_opt_constant_folding);
       NIR_PASS(progress, gs, nir_opt_algebraic);
       NIR_PASS(progress, gs, nir_opt_cse);
@@ -1307,7 +1307,7 @@ poly_nir_lower_gs(nir_shader *gs, nir_shader **gs_count, nir_shader **gs_copy,
       NIR_PASS(progress, gs, nir_lower_variable_initializers,
                nir_var_shader_temp);
       NIR_PASS(progress, gs, nir_lower_vars_to_ssa);
-      NIR_PASS(progress, gs, nir_copy_prop);
+      NIR_PASS(progress, gs, nir_opt_copy_prop);
       NIR_PASS(progress, gs, nir_opt_constant_folding);
       NIR_PASS(progress, gs, nir_opt_algebraic);
       NIR_PASS(progress, gs, nir_opt_cse);

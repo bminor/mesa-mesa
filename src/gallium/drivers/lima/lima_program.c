@@ -129,7 +129,7 @@ lima_program_optimize_vs_nir(struct nir_shader *s)
       NIR_PASS(_, s, nir_lower_vars_to_ssa);
       NIR_PASS(progress, s, nir_lower_alu_to_scalar, NULL, NULL);
       NIR_PASS(progress, s, nir_lower_phis_to_scalar, NULL, NULL);
-      NIR_PASS(progress, s, nir_copy_prop);
+      NIR_PASS(progress, s, nir_opt_copy_prop);
       NIR_PASS(progress, s, nir_opt_remove_phis);
       NIR_PASS(progress, s, nir_opt_dce);
       NIR_PASS(progress, s, nir_opt_dead_cf);
@@ -155,7 +155,7 @@ lima_program_optimize_vs_nir(struct nir_shader *s)
    NIR_PASS(progress, s, lima_nir_lower_ftrunc);
    NIR_PASS(_, s, nir_lower_bool_to_float, true);
 
-   NIR_PASS(_, s, nir_copy_prop);
+   NIR_PASS(_, s, nir_opt_copy_prop);
    NIR_PASS(_, s, nir_opt_dce);
    NIR_PASS(_, s, lima_nir_split_loads);
    NIR_PASS(_, s, nir_convert_from_ssa, true, false);
@@ -245,7 +245,7 @@ lima_program_optimize_fs_nir(struct nir_shader *s,
 
       NIR_PASS(_, s, nir_lower_vars_to_ssa);
       NIR_PASS(progress, s, nir_lower_alu_to_scalar, lima_alu_to_scalar_filter_cb, NULL);
-      NIR_PASS(progress, s, nir_copy_prop);
+      NIR_PASS(progress, s, nir_opt_copy_prop);
       NIR_PASS(progress, s, nir_opt_remove_phis);
       NIR_PASS(progress, s, nir_opt_dce);
       NIR_PASS(progress, s, nir_opt_dead_cf);
@@ -280,7 +280,7 @@ lima_program_optimize_fs_nir(struct nir_shader *s,
    NIR_PASS(_, s, nir_opt_algebraic_late);
    NIR_PASS(_, s, lima_nir_ppir_algebraic_late);
 
-   NIR_PASS(_, s, nir_copy_prop);
+   NIR_PASS(_, s, nir_opt_copy_prop);
    NIR_PASS(_, s, nir_opt_dce);
 
    NIR_PASS(_, s, nir_convert_from_ssa, true, false);

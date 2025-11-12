@@ -5613,7 +5613,7 @@ bi_optimize_loop_nir(nir_shader *nir, unsigned gpu_id, bool allow_copies)
 
       NIR_PASS(progress, nir, nir_lower_alu_width, bi_vectorize_filter, &gpu_id);
       NIR_PASS(progress, nir, nir_opt_vectorize, bi_vectorize_filter, &gpu_id);
-      NIR_PASS(progress, nir, nir_copy_prop);
+      NIR_PASS(progress, nir, nir_opt_copy_prop);
       NIR_PASS(progress, nir, nir_opt_dce);
       NIR_PASS(progress, nir, nir_opt_cse);
 
@@ -5638,7 +5638,7 @@ bi_optimize_loop_nir(nir_shader *nir, unsigned gpu_id, bool allow_copies)
           * if we want any hope of nir_opt_if or nir_opt_loop_unroll to make
           * progress.
           */
-         NIR_PASS(progress, nir, nir_copy_prop);
+         NIR_PASS(progress, nir, nir_opt_copy_prop);
          NIR_PASS(progress, nir, nir_opt_dce);
       }
 
@@ -5709,7 +5709,7 @@ bi_optimize_nir(nir_shader *nir, unsigned gpu_id, nir_variable_mode robust2_mode
       late_algebraic = false;
       NIR_PASS(late_algebraic, nir, nir_opt_algebraic_late);
       NIR_PASS(_, nir, nir_opt_constant_folding);
-      NIR_PASS(_, nir, nir_copy_prop);
+      NIR_PASS(_, nir, nir_opt_copy_prop);
       NIR_PASS(_, nir, nir_opt_dce);
       NIR_PASS(_, nir, nir_opt_cse);
    }
@@ -5735,7 +5735,7 @@ bi_optimize_nir(nir_shader *nir, unsigned gpu_id, nir_variable_mode robust2_mode
       late_algebraic = false;
       NIR_PASS(late_algebraic, nir, nir_opt_algebraic_late);
       NIR_PASS(_, nir, nir_opt_constant_folding);
-      NIR_PASS(_, nir, nir_copy_prop);
+      NIR_PASS(_, nir, nir_opt_copy_prop);
       NIR_PASS(_, nir, nir_opt_dce);
       NIR_PASS(_, nir, nir_opt_cse);
    }
@@ -6849,7 +6849,7 @@ bifrost_compile_shader_nir(nir_shader *nir,
          /* If shader output lower made progress, ensure to merge adjacent if that were added */
          if (shader_output_pass) {
             /* First we clean up and deduplicate added condition logic */
-            NIR_PASS(_, nir, nir_copy_prop);
+            NIR_PASS(_, nir, nir_opt_copy_prop);
             NIR_PASS(_, nir, nir_opt_dce);
             NIR_PASS(_, nir, nir_opt_cse);
 

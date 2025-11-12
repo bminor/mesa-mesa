@@ -328,7 +328,7 @@ ir3_optimize_loop(struct ir3_compiler *compiler,
       progress |= OPT(s, nir_lower_alu_to_scalar, NULL, NULL);
       progress |= OPT(s, nir_lower_phis_to_scalar, NULL, NULL);
 
-      progress |= OPT(s, nir_copy_prop);
+      progress |= OPT(s, nir_opt_copy_prop);
       progress |= OPT(s, nir_opt_deref);
       progress |= OPT(s, nir_opt_dce);
       progress |= OPT(s, nir_opt_cse);
@@ -412,7 +412,7 @@ ir3_optimize_loop(struct ir3_compiler *compiler,
           * things up if we want any hope of nir_opt_if or nir_opt_loop_unroll
           * to make progress.
           */
-         OPT(s, nir_copy_prop);
+         OPT(s, nir_opt_copy_prop);
          OPT(s, nir_opt_dce);
       }
       progress |= OPT(s, nir_opt_if, nir_opt_if_optimize_phi_true_false);
@@ -1376,7 +1376,7 @@ ir3_nir_lower_variant(struct ir3_shader_variant *so,
          OPT(s, nir_opt_16bit_tex_image, &opt_16bit_options);
       }
       OPT(s, nir_opt_constant_folding);
-      OPT(s, nir_copy_prop);
+      OPT(s, nir_opt_copy_prop);
       OPT(s, nir_opt_dce);
       OPT(s, nir_opt_cse);
    }

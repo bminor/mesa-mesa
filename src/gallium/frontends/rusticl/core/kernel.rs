@@ -619,7 +619,7 @@ fn opt_nir(nir: &mut NirShader, dev: &Device, has_explicit_types: bool) {
     while {
         let mut progress = false;
 
-        progress |= nir_pass!(nir, nir_copy_prop);
+        progress |= nir_pass!(nir, nir_opt_copy_prop);
         progress |= nir_pass!(nir, nir_opt_copy_prop_vars);
         progress |= nir_pass!(nir, nir_opt_dead_write_vars);
 
@@ -717,7 +717,7 @@ fn compile_nir_to_args(
     while {
         let mut progress = false;
         nir_pass!(nir, nir_split_var_copies);
-        progress |= nir_pass!(nir, nir_copy_prop);
+        progress |= nir_pass!(nir, nir_opt_copy_prop);
         progress |= nir_pass!(nir, nir_opt_copy_prop_vars);
         progress |= nir_pass!(nir, nir_opt_dead_write_vars);
         progress |= nir_pass!(nir, nir_opt_deref);

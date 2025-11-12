@@ -172,7 +172,7 @@ optimize_nir(nir_shader *nir, const struct nak_compiler *nak, bool allow_copies)
       OPT(nir, nir_opt_vectorize, vectorize_filter_cb, NULL);
       OPT(nir, nir_lower_phis_to_scalar, phi_vectorize_cb, NULL);
       OPT(nir, nir_lower_frexp);
-      OPT(nir, nir_copy_prop);
+      OPT(nir, nir_opt_copy_prop);
       OPT(nir, nir_opt_dce);
       OPT(nir, nir_opt_cse);
 
@@ -199,7 +199,7 @@ optimize_nir(nir_shader *nir, const struct nak_compiler *nak, bool allow_copies)
           * if we want any hope of nir_opt_if or nir_opt_loop_unroll to make
           * progress.
           */
-         OPT(nir, nir_copy_prop);
+         OPT(nir, nir_opt_copy_prop);
          OPT(nir, nir_opt_dce);
       }
       OPT(nir, nir_opt_if, nir_opt_if_optimize_phi_true_false);
@@ -1120,7 +1120,7 @@ nak_postprocess_nir(nir_shader *nir,
 
       if (progress) {
          OPT(nir, nir_opt_constant_folding);
-         OPT(nir, nir_copy_prop);
+         OPT(nir, nir_opt_copy_prop);
          OPT(nir, nir_opt_dce);
          OPT(nir, nir_opt_cse);
       }
@@ -1150,7 +1150,7 @@ nak_postprocess_nir(nir_shader *nir,
    if (nak->sm >= 73) {
       OPT(nir, nak_nir_mark_lcssa_invariants);
       if (OPT(nir, nak_nir_lower_non_uniform_ldcx, nak)) {
-         OPT(nir, nir_copy_prop);
+         OPT(nir, nir_opt_copy_prop);
          OPT(nir, nir_opt_dce);
       }
    }

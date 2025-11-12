@@ -590,7 +590,7 @@ nir_opt_reassociate_loop(nir_shader *nir, nir_reassociate_options in_opts)
 
             NIR_PASS(progress, nir, nir_opt_algebraic);
             NIR_PASS(progress, nir, nir_opt_constant_folding);
-            NIR_PASS(progress, nir, nir_copy_prop);
+            NIR_PASS(progress, nir, nir_opt_copy_prop);
             NIR_PASS(progress, nir, nir_opt_cse);
             NIR_PASS(progress, nir, nir_opt_dce);
             any_progress |= progress;

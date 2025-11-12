@@ -85,7 +85,7 @@ lp_build_opt_nir(struct nir_shader *nir)
       progress = false;
       NIR_PASS(progress, nir, nir_opt_algebraic_late);
       if (progress) {
-         NIR_PASS(_, nir, nir_copy_prop);
+         NIR_PASS(_, nir, nir_opt_copy_prop);
          NIR_PASS(_, nir, nir_opt_dce);
          NIR_PASS(_, nir, nir_opt_cse);
       }

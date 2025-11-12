@@ -119,7 +119,7 @@ ir3_context_init(struct ir3_compiler *compiler, struct ir3_shader *shader,
 
    if (vectorized) {
       NIR_PASS(_, ctx->s, nir_opt_undef);
-      NIR_PASS(_, ctx->s, nir_copy_prop);
+      NIR_PASS(_, ctx->s, nir_opt_copy_prop);
       NIR_PASS(_, ctx->s, nir_opt_dce);
 
       /* nir_opt_vectorize could replace swizzled movs with vectorized movs in a
