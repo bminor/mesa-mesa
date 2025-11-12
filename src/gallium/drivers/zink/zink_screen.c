@@ -3778,7 +3778,9 @@ zink_internal_create_screen(const struct pipe_screen_config *config, int64_t dev
    zink_tracing = screen->instance_info->have_EXT_debug_utils &&
                   (u_trace_is_enabled(U_TRACE_TYPE_PERFETTO) || u_trace_is_enabled(U_TRACE_TYPE_MARKERS));
 
+   simple_mtx_lock(screen->queue_lock);
    screen->frame_marker_emitted = zink_screen_debug_marker_begin(screen, "frame");
+   simple_mtx_unlock(screen->queue_lock);
 
    return screen;
 
@@ -3874,6 +3876,8 @@ void VKAPI_PTR zink_stub_function_not_loaded()
 bool
 zink_screen_debug_marker_begin(struct zink_screen *screen, const char *fmt, ...)
 {
+   simple_mtx_assert_locked(screen->queue_lock);
+
    if (!zink_tracing)
       return false;
 
@@ -3899,6 +3903,8 @@ zink_screen_debug_marker_begin(struct zink_screen *screen, const char *fmt, ...)
 void
 zink_screen_debug_marker_end(struct zink_screen *screen, bool emitted)
 {
+   simple_mtx_assert_locked(screen->queue_lock);
+
    if (emitted)
       VKSCR(QueueEndDebugUtilsLabelEXT)(screen->queue);
 }
