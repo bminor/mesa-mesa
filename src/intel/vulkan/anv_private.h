@@ -6583,6 +6583,7 @@ void anv_update_vp9_tables(struct anv_cmd_buffer *cmd,
                            const StdVideoVP9Segmentation *seg);
 
 void anv_calculate_qmul(const struct VkVideoDecodeVP9PictureInfoKHR *vp9_pic,
+                        uint32_t qyac,
                         uint32_t seg_id,
                         int16_t *ptr);
 

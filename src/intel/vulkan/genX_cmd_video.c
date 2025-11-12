@@ -2713,6 +2713,15 @@ anv_av1_decode_video(struct anv_cmd_buffer *cmd_buffer,
 }
 #endif
 
+enum vp9_seg_lvl_features
+{
+   VP9_SEG_LVL_ALT_Q = 0,        /* Use alternate Quantizer */
+   VP9_SEG_LVL_ALT_L = 1,        /* Use alternate loop filter value */
+   VP9_SEG_LVL_REF_FRAME = 2,    /* Optional Segment reference frame */
+   VP9_SEG_LVL_SKIP = 3,         /* Optional Segment (0,0) + skip mode */
+   VP9_SEG_LVL_MAX = 4           /* Number of segment features */
+};
+
 static uint8_t
 anv_vp9_get_ref_idx(const struct VkVideoDecodeInfoKHR *frame_info, int slot_id)
 {
@@ -3218,10 +3227,22 @@ anv_vp9_decode_video(struct anv_cmd_buffer *cmd_buffer,
 
    for (uint32_t i = 0; i < num_segments; i++) {
       anv_batch_emit(&cmd_buffer->batch, GENX(HCP_VP9_SEGMENT_STATE), seg) {
+         uint32_t qyac = std_pic->base_q_idx;
+
          seg.SegmentID = i;
 
+         if (std_pic->flags.segmentation_enabled && segmentation) {
+            u_foreach_bit(val, segmentation->FeatureEnabled[i]) {
+               if (val == VP9_SEG_LVL_ALT_Q) {
+                  qyac = segmentation->FeatureData[i][val];
+                  if (!segmentation->flags.segmentation_abs_or_delta_update)
+                     qyac += std_pic->base_q_idx;
+               }
+            }
+         }
+
          int16_t qmul[2][2] = { 0, };
-         anv_calculate_qmul(vp9_pic_info, i, (int16_t *)qmul);
+         anv_calculate_qmul(vp9_pic_info, qyac, i, (int16_t *)qmul);
 
          seg.LumaDCQuantScale = qmul[0][0];
          seg.LumaACQuantScale = qmul[0][1];

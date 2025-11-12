@@ -1319,26 +1319,13 @@ anv_update_vp9_tables(struct anv_cmd_buffer *cmd,
 
 void
 anv_calculate_qmul(const struct VkVideoDecodeVP9PictureInfoKHR *vp9_pic,
+                   uint32_t qyac,
                    uint32_t seg_id,
                    int16_t *ptr)
 {
    const StdVideoDecodeVP9PictureInfo *std_pic = vp9_pic->pStdPictureInfo;
-   const StdVideoVP9Segmentation *segmentation = std_pic->pSegmentation;
 
    uint32_t bpp_index = std_pic->pColorConfig->BitDepth > 8 ? 1 : 0;
-
-   uint32_t qyac;
-
-   if (std_pic->flags.segmentation_enabled && segmentation->FeatureEnabled[seg_id]) {
-      if (segmentation->flags.segmentation_abs_or_delta_update) {
-         /* FIXME. which lvl needs to be picked */
-         qyac = segmentation->FeatureData[seg_id][0] & 0xff;
-      } else {
-         qyac = (std_pic->base_q_idx + segmentation->FeatureData[seg_id][0]) & 0xff;
-      }
-   } else {
-      qyac = std_pic->base_q_idx & 0xff;
-   }
 
    uint32_t qydc = (qyac + std_pic->delta_q_y_dc) & 0xff;
    uint32_t quvdc = (qyac + std_pic->delta_q_uv_dc) & 0xff;
