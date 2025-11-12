@@ -1075,7 +1075,6 @@ CDX12EncHMFT::ConfigureBitstreamOutputSampleAttributes( IMFSample *pSample,
    HRESULT hr = S_OK;
    UINT32 uiFrameRateNumerator = pDX12EncodeContext->GetFrameRateNumerator();
    UINT32 uiFrameRateDenominator = pDX12EncodeContext->GetFrameRateDenominator();
-   UINT64 frameDuration = 0;
    GUID guidMajorType = { 0 };
    GUID guidSubType = { 0 };
    DWORD naluInfo[MAX_NALU_LENGTH_INFO_ENTRIES] = {};
@@ -1095,10 +1094,9 @@ CDX12EncHMFT::ConfigureBitstreamOutputSampleAttributes( IMFSample *pSample,
 
    // Set frame rate and timing
    CHECKHR_GOTO( MFSetAttributeRatio( pSample, MF_MT_FRAME_RATE, uiFrameRateNumerator, uiFrameRateDenominator ), done );
-   CHECKHR_GOTO( MFFrameRateToAverageTimePerFrame( uiFrameRateNumerator, uiFrameRateDenominator, &frameDuration ), done );
-   CHECKHR_GOTO( pSample->SetSampleTime( dwReceivedInput * frameDuration ), done );
-   CHECKHR_GOTO( pSample->SetSampleDuration( frameDuration ), done );
-   CHECKHR_GOTO( pSample->SetUINT64( MFSampleExtension_DecodeTimestamp, dwReceivedInput * frameDuration ), done );
+   CHECKHR_GOTO( pSample->SetSampleTime( pDX12EncodeContext->inputSampleTime ), done );
+   CHECKHR_GOTO( pSample->SetSampleDuration( pDX12EncodeContext->inputSampleDuration ), done );
+   CHECKHR_GOTO( pSample->SetUINT64( MFSampleExtension_DecodeTimestamp, pDX12EncodeContext->inputSampleTime ), done );
 
    // Set picture type and clean point
    CHECKHR_GOTO( pSample->SetUINT32( MFSampleExtension_VideoEncodePictureType, pDX12EncodeContext->GetPictureType() ), done );

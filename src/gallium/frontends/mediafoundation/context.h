@@ -33,7 +33,6 @@
 typedef class DX12EncodeContext
 {
  public:
-   ComPtr<IMFSample> spSample;
    void *pAsyncCookie = nullptr;
    reference_frames_tracker_dpb_async_token *pAsyncDPBToken = nullptr;
    struct pipe_fence_handle *pAsyncFence = NULL;
@@ -65,6 +64,9 @@ typedef class DX12EncodeContext
 
    UINT textureWidth = 0;    // width of input sample
    UINT textureHeight = 0;   // height of input sample
+
+   LONGLONG inputSampleTime = 0;
+   LONGLONG inputSampleDuration = 0;
 
    BOOL bROI = FALSE;
    ROI_AREA video_roi_area = {};

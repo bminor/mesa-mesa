@@ -44,6 +44,8 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
    UINT textureHeight = 0u;
    bool bReceivedDirtyRectBlob = false;
    uint32_t dirtyRectFrameNum = UINT32_MAX;
+   LONGLONG inputSampleTime = 0;
+   LONGLONG inputSampleDuration = 0;
 
    ComPtr<IMFDXGIBuffer> spDXGIBuffer;
    HANDLE hTexture = NULL;
@@ -66,7 +68,10 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
    CHECKNULL_GOTO( pDX12EncodeContext->pAsyncDPBToken = new reference_frames_tracker_dpb_async_token(), E_OUTOFMEMORY, done );
 
    CHECKHR_GOTO( pSample->GetBufferByIndex( 0, &pDX12EncodeContext->spMediaBuffer ), done );
-
+   CHECKHR_GOTO( pSample->GetSampleTime( &inputSampleTime ), done );
+   CHECKHR_GOTO( pSample->GetSampleDuration( &inputSampleDuration ), done );
+   pDX12EncodeContext->inputSampleTime = inputSampleTime;
+   pDX12EncodeContext->inputSampleDuration = inputSampleDuration;
    // If we can't get a DXGIBuffer out of this incoming buffer, then its a software-based buffer
    if( FAILED( pDX12EncodeContext->spMediaBuffer.As( &spDXGIBuffer ) ) )
    {
