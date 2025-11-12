@@ -1812,13 +1812,13 @@ ac_ngg_get_scratch_lds_size(mesa_shader_stage stage,
       } else if (can_cull) {
          /* 1 byte per wave per repack, max 8 waves */
          unsigned num_rep = compact_primitives ? 2 : 1;
-         scratch_lds_size = ALIGN(max_num_waves, 4u) * num_rep;
+         scratch_lds_size = align(max_num_waves, 4u) * num_rep;
       }
    } else {
       assert(stage == MESA_SHADER_GEOMETRY);
 
       /* Repacking output vertices at the end in ngg_gs_finale() uses 1 dword per 4 waves */
-      scratch_lds_size = ALIGN(max_num_waves, 4u);
+      scratch_lds_size = align(max_num_waves, 4u);
 
       /* For streamout:
        * - Repacking streamout vertices takes 1 dword per 4 waves per stream
@@ -1832,7 +1832,7 @@ ac_ngg_get_scratch_lds_size(mesa_shader_stage stage,
          const unsigned num_streams = 4;
          const unsigned num_so_buffers = 4;
          const unsigned streamout_scratch_size =
-            num_streams * ALIGN(max_num_waves, 4u) + num_streams * 4 + num_so_buffers * 4;
+            num_streams * align(max_num_waves, 4u) + num_streams * 4 + num_so_buffers * 4;
 
          scratch_lds_size += streamout_scratch_size;
       }

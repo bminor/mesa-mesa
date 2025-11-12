@@ -660,7 +660,7 @@ ngg_gs_build_streamout(nir_builder *b, lower_ngg_gs_state *s)
    nir_def *export_seq[4] = {0};
    nir_def *out_vtx_primflag[4] = {0};
 
-   const unsigned scratch_stride = ALIGN(s->max_num_waves, 4);
+   const unsigned scratch_stride = align(s->max_num_waves, 4);
    const unsigned scratch_base_off = scratch_stride;
    const unsigned num_streams = util_bitcount(info->streams_written);
 

@@ -1090,7 +1090,7 @@ handle_smaller_ms_api_workgroup(nir_builder *b,
     *    barrier on the extra waves.
     */
    assert(s->hw_workgroup_size % s->wave_size == 0);
-   bool scan_barriers = ALIGN(s->api_workgroup_size, s->wave_size) < s->hw_workgroup_size;
+   bool scan_barriers = align(s->api_workgroup_size, s->wave_size) < s->hw_workgroup_size;
    bool can_shrink_barriers = s->api_workgroup_size <= s->wave_size;
    bool need_additional_barriers = scan_barriers && !can_shrink_barriers;
 
@@ -1227,13 +1227,13 @@ ms_calculate_arrayed_output_layout(ms_out_mem_layout *l,
 {
    uint32_t lds_vtx_attr_size = util_bitcount64(l->lds.vtx_attr.mask) * max_vertices * 16;
    uint32_t lds_prm_attr_size = util_bitcount64(l->lds.prm_attr.mask) * max_primitives * 16;
-   l->lds.prm_attr.addr = ALIGN(l->lds.vtx_attr.addr + lds_vtx_attr_size, 16);
+   l->lds.prm_attr.addr = align(l->lds.vtx_attr.addr + lds_vtx_attr_size, 16);
    l->lds.total_size = l->lds.prm_attr.addr + lds_prm_attr_size;
 
    uint32_t scratch_ring_vtx_attr_size =
       util_bitcount64(l->scratch_ring.vtx_attr.mask) * max_vertices * 16;
    l->scratch_ring.prm_attr.addr =
-      ALIGN(l->scratch_ring.vtx_attr.addr + scratch_ring_vtx_attr_size, 16);
+      align(l->scratch_ring.vtx_attr.addr + scratch_ring_vtx_attr_size, 16);
 }
 
 static ms_out_mem_layout
@@ -1282,7 +1282,7 @@ ms_calculate_output_layout(const struct radeon_info *hw_info, unsigned api_share
                          ~cross_invocation_output_access;
 
    /* Workgroup information, see ms_workgroup_* for the layout. */
-   l.lds.workgroup_info_addr = ALIGN(l.lds.total_size, 16);
+   l.lds.workgroup_info_addr = align(l.lds.total_size, 16);
    l.lds.total_size = l.lds.workgroup_info_addr + 16;
 
    /* Per-vertex and per-primitive output attributes.
@@ -1290,7 +1290,7 @@ ms_calculate_output_layout(const struct radeon_info *hw_info, unsigned api_share
     * First, try to put all outputs into LDS (shared memory).
     * If they don't fit, try to move them to VRAM one by one.
     */
-   l.lds.vtx_attr.addr = ALIGN(l.lds.total_size, 16);
+   l.lds.vtx_attr.addr = align(l.lds.total_size, 16);
    l.lds.vtx_attr.mask = lds_per_vertex_output_mask;
    l.lds.prm_attr.mask = lds_per_primitive_output_mask;
    ms_calculate_arrayed_output_layout(&l, max_vertices, max_primitives);
@@ -1318,13 +1318,13 @@ ms_calculate_output_layout(const struct radeon_info *hw_info, unsigned api_share
 
    if (cross_invocation_indices) {
       /* Indices: flat array of 8-bit vertex indices for each primitive. */
-      l.lds.indices_addr = ALIGN(l.lds.total_size, 16);
+      l.lds.indices_addr = align(l.lds.total_size, 16);
       l.lds.total_size = l.lds.indices_addr + max_primitives * vertices_per_prim;
    }
 
    if (cross_invocation_cull_primitive) {
       /* Cull flags: array of 8-bit cull flags for each primitive, 1=cull, 0=keep. */
-      l.lds.cull_flags_addr = ALIGN(l.lds.total_size, 16);
+      l.lds.cull_flags_addr = align(l.lds.total_size, 16);
       l.lds.total_size = l.lds.cull_flags_addr + max_primitives;
    }
 
