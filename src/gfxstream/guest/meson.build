@@ -7,7 +7,7 @@
 
 with_vulkan_icd_dir = get_option('vulkan-icd-dir')
 if with_vulkan_icd_dir == ''
-  with_vulkan_icd_dir = join_paths(get_option('datadir'), 'vulkan/icd.d')
+    with_vulkan_icd_dir = join_paths(get_option('datadir'), 'vulkan/icd.d')
 endif
 
 #===============#
@@ -17,9 +17,9 @@ gfxstream_guest_args = ['-D_FILE_OFFSET_BITS=64']
 
 # Our internal guest build
 if host_machine.system() == 'windows'
-  gfxstream_guest_args += '-DWINDOWS_GUEST_BUILD'
+    gfxstream_guest_args += '-DWINDOWS_GUEST_BUILD'
 else
-  gfxstream_guest_args += '-DLINUX_GUEST_BUILD'
+    gfxstream_guest_args += '-DLINUX_GUEST_BUILD'
 endif
 # Include the gfxstream private VkStructureType definitions
 gfxstream_guest_args += '-DVK_GFXSTREAM_STRUCTURE_TYPE_EXT'
