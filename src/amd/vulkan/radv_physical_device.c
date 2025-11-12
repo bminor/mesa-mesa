@@ -1954,7 +1954,7 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
        * alignment is any lower. */
       .shaderGroupBaseAlignment = RADV_RT_HANDLE_SIZE,
       .shaderGroupHandleCaptureReplaySize = sizeof(struct radv_rt_capture_replay_handle),
-      .maxRayDispatchInvocationCount = 1024 * 1024 * 64,
+      .maxRayDispatchInvocationCount = 1 << 30, /* Required limit. */
       .shaderGroupHandleAlignment = 16,
       .maxRayHitAttributeSize = RADV_MAX_HIT_ATTRIB_SIZE,
 
