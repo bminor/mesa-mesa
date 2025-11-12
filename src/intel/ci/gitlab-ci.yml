@@ -27,7 +27,6 @@ anv-adl-vk:
     - .lava-acer-cbv514-1h-34uz-brya:x86_64
   variables:
     DEQP_SUITE: anv-adl
-  timeout: 30m
   parallel: 4
 
 anv-adl-vk-full:
@@ -101,7 +100,6 @@ anv-adl-angle:
   variables:
     DEQP_SUITE: anv-adl-angle
     GPU_VERSION: angle-anv-adl
-  timeout: 30m
   parallel: 5
 
 anv-adl-traces-restricted:
@@ -323,7 +321,6 @@ intel-adl-cl:
     GPU_VERSION: intel-adl
     VK_DRIVER: intel
     HWCI_START_WESTON: 1
-  timeout: 20m
 
 intel-adl-skqp:
   extends:
@@ -333,7 +330,6 @@ intel-adl-skqp:
     DEQP_SUITE: intel-adl-skqp
     VK_DRIVER: intel
     HWCI_START_XORG: 1
-  timeout: 30m
 
 intel-tgl-skqp:
   extends:
