@@ -5464,18 +5464,6 @@ anv_is_compressed_format_emulated(const struct anv_physical_device *pdevice,
                                               format) != VK_FORMAT_UNDEFINED;
 }
 
-static inline bool
-anv_is_storage_format_atomics_emulated(const struct intel_device_info *devinfo,
-                                       VkFormat format)
-{
-   /* No emulation required on Xe2+ */
-   if (devinfo->ver >= 20)
-      return false;
-
-   return format == VK_FORMAT_R64_SINT ||
-          format == VK_FORMAT_R64_UINT;
-}
-
 static inline struct isl_swizzle
 anv_swizzle_for_render(struct isl_swizzle swizzle)
 {
@@ -6088,6 +6076,7 @@ anv_image_ccs_op(struct anv_cmd_buffer *cmd_buffer,
 isl_surf_usage_flags_t
 anv_image_choose_isl_surf_usage(struct anv_physical_device *device,
                                 VkFormat vk_format,
+                                const VkImageFormatListCreateInfo *format_list_info,
                                 VkImageCreateFlags vk_create_flags,
                                 VkImageUsageFlags vk_usage,
                                 isl_surf_usage_flags_t isl_extra_usage,

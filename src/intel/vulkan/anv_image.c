@@ -203,9 +203,26 @@ memory_range_merge(struct anv_image_memory_range *a,
    a->size = MAX2(a->size, b.offset + b.size);
 }
 
+static bool
+format_list_has_64bit_format(const VkImageFormatListCreateInfo *format_list_info)
+{
+   /* Any block compatible format */
+   if (format_list_info == NULL)
+      return true;
+
+   for (uint32_t i = 0; i < format_list_info->viewFormatCount; i++) {
+      if (format_list_info->pViewFormats[i] == VK_FORMAT_R64_SINT ||
+          format_list_info->pViewFormats[i] == VK_FORMAT_R64_UINT)
+         return true;
+   }
+
+   return false;
+}
+
 isl_surf_usage_flags_t
 anv_image_choose_isl_surf_usage(struct anv_physical_device *device,
                                 VkFormat vk_format,
+                                const VkImageFormatListCreateInfo *format_list_info,
                                 VkImageCreateFlags vk_create_flags,
                                 VkImageUsageFlags vk_usage,
                                 isl_surf_usage_flags_t isl_extra_usage,
@@ -315,8 +332,14 @@ anv_image_choose_isl_surf_usage(struct anv_physical_device *device,
     * so don't set the flags when using sparse, as they affect which tiling
     * format ISL will choose.
     */
-   if (anv_is_storage_format_atomics_emulated(devinfo, vk_format) &&
-       (vk_create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) == 0) {
+   if (devinfo->ver < 20 &&
+       (vk_usage & VK_IMAGE_USAGE_STORAGE_BIT) &&
+       (vk_create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) == 0 &&
+       (vk_format == VK_FORMAT_R64_SINT ||
+        vk_format == VK_FORMAT_R64_UINT ||
+        ((vk_create_flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT) &&
+         vk_format_get_blocksizebits(vk_format) == 64 &&
+         format_list_has_64bit_format(format_list_info)))) {
       isl_usage |= ISL_SURF_USAGE_DISABLE_AUX_BIT |
                    ISL_SURF_USAGE_SOFTWARE_DETILING;
    }
@@ -1273,7 +1296,7 @@ add_all_surfaces_implicit_interleaved_arrays_layout(
       VkImageUsageFlags vk_usage = vk_image_usage(&image->vk, aspect);
       isl_surf_usage_flags_t isl_usage =
          anv_image_choose_isl_surf_usage(device->physical,
-                                         image->vk.format,
+                                         image->vk.format, format_list_info,
                                          image->vk.create_flags, vk_usage,
                                          isl_extra_usage_flags, aspect,
                                          image->vk.compr_flags);
@@ -1414,6 +1437,7 @@ add_all_surfaces_implicit_layout(
       isl_surf_usage_flags_t isl_usage =
          anv_image_choose_isl_surf_usage(device->physical,
                                          image->vk.format,
+                                         format_list_info,
                                          image->vk.create_flags, vk_usage,
                                          isl_extra_usage_flags, aspect,
                                          image->vk.compr_flags);
@@ -2104,6 +2128,7 @@ anv_image_init(struct anv_device *device, struct anv_image *image,
       isl_surf_usage_flags_t isl_usage =
          anv_image_choose_isl_surf_usage(device->physical,
                                          image->vk.format,
+                                         &emu_format_list_info,
                                          image->vk.create_flags,
                                          image->vk.usage,
                                          0,
