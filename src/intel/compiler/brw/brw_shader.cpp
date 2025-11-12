@@ -1256,17 +1256,29 @@ brw_allocate_registers(brw_shader &s, bool allow_spilling)
    if (s.failed)
       return;
 
+#define OPT(pass, ...) ({                                               \
+      pass_num++;                                                       \
+      bool this_progress = pass(s, ##__VA_ARGS__);                      \
+                                                                        \
+      if (this_progress)                                                \
+         s.debug_optimizer(nir, #pass, iteration, pass_num);            \
+                                                                        \
+      this_progress;                                                    \
+   })
+
+#define OPT_V(pass, ...) do {                                           \
+      pass_num++;                                                       \
+      pass(s, ##__VA_ARGS__);                                           \
+      s.debug_optimizer(nir, #pass, iteration, pass_num);               \
+   } while (false)
+
    int pass_num = 0;
+   int iteration = 96;
 
-   s.debug_optimizer(nir, "post_ra_alloc", 96, pass_num++);
+   s.debug_optimizer(nir, "post_ra_alloc", iteration, pass_num);
 
-   brw_opt_bank_conflicts(s);
-
-   s.debug_optimizer(nir, "bank_conflict", 96, pass_num++);
-
-   brw_schedule_instructions_post_ra(s);
-
-   s.debug_optimizer(nir, "post_ra_alloc_scheduling", 96, pass_num++);
+   OPT(brw_opt_bank_conflicts);
+   OPT_V(brw_schedule_instructions_post_ra);
 
    /* Lowering VGRF to FIXED_GRF is currently done as a separate pass instead
     * of part of assign_regs since both bank conflicts optimization and post
@@ -1276,14 +1288,10 @@ brw_allocate_registers(brw_shader &s, bool allow_spilling)
     * TODO: Change the passes above, then move this lowering to be part of
     * assign_regs.
     */
-   brw_lower_vgrfs_to_fixed_grfs(s);
+   OPT_V(brw_lower_vgrfs_to_fixed_grfs);
 
-   s.debug_optimizer(nir, "lowered_vgrfs_to_fixed_grfs", 96, pass_num++);
-
-   if (s.devinfo->ver >= 30) {
-      brw_lower_send_gather(s);
-      s.debug_optimizer(nir, "lower_send_gather", 96, pass_num++);
-   }
+   if (s.devinfo->ver >= 30)
+      OPT(brw_lower_send_gather);
 
    brw_shader_phase_update(s, BRW_SHADER_PHASE_AFTER_REGALLOC);
 
@@ -1313,9 +1321,7 @@ brw_allocate_registers(brw_shader &s, bool allow_spilling)
    if (s.failed)
       return;
 
-   brw_lower_scoreboard(s);
-
-   s.debug_optimizer(nir, "scoreboard", 96, pass_num++);
+   OPT(brw_lower_scoreboard);
 }
 
 #ifndef NDEBUG
