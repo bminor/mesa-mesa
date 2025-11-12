@@ -310,6 +310,7 @@ struct rvce_encoder {
 
    rvce_get_buffer get_buffer;
 
+   struct pipe_video_buffer *source_copy;
    struct pb_buffer_lean *handle;
    struct radeon_surf *luma;
    struct radeon_surf *chroma;
