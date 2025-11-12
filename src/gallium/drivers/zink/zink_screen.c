@@ -2731,7 +2731,7 @@ hack_it_up:
    return 1;
 }
 
-static VkDevice
+static struct zink_device*
 get_device(struct zink_screen *screen, VkDeviceCreateInfo *dci)
 {
    VkDevice dev = VK_NULL_HANDLE;
@@ -2747,7 +2747,7 @@ get_device(struct zink_screen *screen, VkDeviceCreateInfo *dci)
          continue;
       zdev->refcount++;
       simple_mtx_unlock(&device_lock);
-      return zdev->dev;
+      return zdev;
    }
 
    VkResult result = VKSCR(CreateDevice)(screen->pdev, dci, NULL, &dev);
@@ -2760,10 +2760,10 @@ get_device(struct zink_screen *screen, VkDeviceCreateInfo *dci)
    zdev->dev = dev;
    _mesa_set_add(&device_table, zdev);
    simple_mtx_unlock(&device_lock);
-   return dev;
+   return zdev;
 }
 
-static VkDevice
+static struct zink_device*
 zink_create_logical_device(struct zink_screen *screen)
 {
    VkDeviceQueueCreateInfo qci[2] = {0};
@@ -3521,7 +3521,7 @@ zink_internal_create_screen(const struct pipe_screen_config *config, int64_t dev
    init_driver_workarounds(screen);
    disable_features(screen);
 
-   screen->dev = zink_create_logical_device(screen);
+   screen->dev = zink_create_logical_device(screen)->dev;
    if (!screen->dev)
       goto fail;
 
