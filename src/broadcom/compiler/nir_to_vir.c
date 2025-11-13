@@ -2269,6 +2269,9 @@ v3d_optimize_nir(struct v3d_compile *c, struct nir_shader *s)
         NIR_PASS(progress, s, v3d_nir_lower_algebraic, c);
         NIR_PASS(progress, s, nir_opt_cse);
 
+        nir_opt_uub_options uub_options = {.opt_imul = true};
+        NIR_PASS(progress, s, nir_opt_uub, &uub_options);
+
         nir_move_options sink_opts =
                 nir_move_const_undef | nir_move_comparisons | nir_move_copies |
                 nir_move_load_ubo | nir_move_load_ssbo | nir_move_load_uniform;
