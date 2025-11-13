@@ -34,6 +34,7 @@
 
 #include "apple_cgl.h"
 #include "apple_glx.h"
+#include "util/os_misc.h"
 
 #ifndef OPENGL_FRAMEWORK_PATH
 #define OPENGL_FRAMEWORK_PATH "/System/Library/Frameworks/OpenGL.framework/Versions/A/OpenGL"
