@@ -21,10 +21,7 @@ radv_cs_emit_write_event_eop(struct radv_cmd_stream *cs, enum amd_gfx_level gfx_
                              unsigned event_flags, unsigned dst_sel, unsigned int_sel, unsigned data_sel, uint64_t va,
                              uint32_t new_fence, uint64_t gfx9_eop_bug_va)
 {
-   if (cs->hw_ip == AMD_IP_SDMA) {
-      ac_emit_sdma_fence(cs->b, va, new_fence);
-      return;
-   }
+   assert(cs->hw_ip == AMD_IP_GFX || cs->hw_ip == AMD_IP_COMPUTE);
 
    /* The EOP bug is specific to GFX9. Though, RadeonSI also implements it for GFX6-8 but it
     * shouldn't be necessary because it's using SURFACE_SYNC to flush L2. See
