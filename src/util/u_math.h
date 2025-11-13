@@ -707,9 +707,8 @@ align_uintptr(uintptr_t value, uintptr_t alignment)
 static inline size_t
 util_align_npot(size_t value, size_t alignment)
 {
-   if (value % alignment)
-      return value + (alignment - (value % alignment));
-   return value;
+   assert(alignment > 0);
+   return (value + alignment - 1) / alignment * alignment;
 }
 
 static inline size_t
