@@ -124,4 +124,8 @@ vk_to_pvr_descriptor_set_layout(struct vk_descriptor_set_layout *layout)
    return container_of(layout, struct pvr_descriptor_set_layout, vk);
 }
 
+void pvr_descriptor_set_write_immutable_samplers(
+   struct pvr_descriptor_set_layout *layout,
+   struct pvr_descriptor_set *set);
+
 #endif /* PVR_DESCRIPTOR_SET_H */
