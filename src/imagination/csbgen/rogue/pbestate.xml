@@ -256,7 +256,6 @@ SOFTWARE.
     <field name="size_z" start="52" end="55" type="SIZE"/>
     <field name="rotation" start="50" end="51" type="ROTATION_TYPE"/>
     <field name="linestride" start="34" end="49" type="uint">
-      <!-- FIXME: When pbe_stride_align_1pixel is present, this should be 1. -->
       <define name="UNIT_SIZE" value="2"/>
     </field>
     <field name="memlayout" start="32" end="33" type="MEMLAYOUT"/>

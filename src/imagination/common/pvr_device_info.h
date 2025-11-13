@@ -276,6 +276,7 @@ struct pvr_device_features {
    bool has_paired_tiles : 1;
    bool has_pbe2_in_xe : 1;
    bool has_pbe_filterable_f16 : 1;
+   bool has_pbe_stride_align_1pixel : 1;
    bool has_pbe_yuv : 1;
    bool has_pds_ddmadt : 1;
    bool has_roguexe : 1;
