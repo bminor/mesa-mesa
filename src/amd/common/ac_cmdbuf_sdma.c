@@ -123,3 +123,62 @@ ac_emit_sdma_copy_linear(struct ac_cmdbuf *cs, enum sdma_version sdma_ip_version
 
    return bytes_written;
 }
+
+static void
+ac_sdma_check_pitches(uint32_t pitch, uint32_t slice_pitch, uint32_t bpp, bool uses_depth)
+{
+   ASSERTED const uint32_t pitch_alignment = MAX2(1, 4 / bpp);
+   assert(pitch);
+   assert(pitch <= (1 << 14));
+   assert(util_is_aligned(pitch, pitch_alignment));
+
+   if (uses_depth) {
+      ASSERTED const uint32_t slice_pitch_alignment = 4;
+      assert(slice_pitch);
+      assert(slice_pitch <= (1 << 28));
+      assert(util_is_aligned(slice_pitch, slice_pitch_alignment));
+   }
+}
+
+void
+ac_emit_sdma_copy_linear_sub_window(struct ac_cmdbuf *cs, enum sdma_version sdma_ip_version,
+                                    const struct ac_sdma_surf_linear *src,
+                                    const struct ac_sdma_surf_linear *dst,
+                                    uint32_t width, uint32_t height, uint32_t depth)
+{
+   /* This packet is the same since SDMA v2.4, haven't bothered to check older versions.
+    * The main difference is the bitfield sizes:
+    *
+    * v2.4 - src/dst_pitch: 14 bits, rect_z: 11 bits
+    * v4.0 - src/dst_pitch: 19 bits, rect_z: 11 bits
+    * v5.0 - src/dst_pitch: 19 bits, rect_z: 13 bits
+    *
+    * We currently use the smallest limits (from SDMA v2.4).
+    */
+   assert(src->bpp == dst->bpp);
+   assert(util_is_power_of_two_nonzero(src->bpp));
+   ac_sdma_check_pitches(src->pitch, src->slice_pitch, src->bpp, false);
+   ac_sdma_check_pitches(dst->pitch, dst->slice_pitch, dst->bpp, false);
+
+   ac_cmdbuf_begin(cs);
+   ac_cmdbuf_emit(SDMA_PACKET(SDMA_OPCODE_COPY, SDMA_COPY_SUB_OPCODE_LINEAR_SUB_WINDOW, 0) |
+                  util_logbase2(src->bpp) << 29);
+   ac_cmdbuf_emit(src->va);
+   ac_cmdbuf_emit(src->va >> 32);
+   ac_cmdbuf_emit(src->offset.x | src->offset.y << 16);
+   ac_cmdbuf_emit(src->offset.z | (src->pitch - 1) << (sdma_ip_version >= SDMA_7_0 ? 16 : 13));
+   ac_cmdbuf_emit(src->slice_pitch - 1);
+   ac_cmdbuf_emit(dst->va);
+   ac_cmdbuf_emit(dst->va >> 32);
+   ac_cmdbuf_emit(dst->offset.x | dst->offset.y << 16);
+   ac_cmdbuf_emit(dst->offset.z | (dst->pitch - 1) << (sdma_ip_version >= SDMA_7_0 ? 16 : 13));
+   ac_cmdbuf_emit(dst->slice_pitch - 1);
+   if (sdma_ip_version == SDMA_2_0) {
+      ac_cmdbuf_emit(width | (height << 16));
+      ac_cmdbuf_emit(depth);
+   } else {
+      ac_cmdbuf_emit((width - 1) | (height - 1) << 16);
+      ac_cmdbuf_emit((depth - 1));
+   }
+   ac_cmdbuf_end();
+}

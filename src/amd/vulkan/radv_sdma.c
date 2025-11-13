@@ -390,16 +390,6 @@ radv_sdma_emit_copy_linear_sub_window(const struct radv_device *device, struct r
                                       const struct radv_sdma_surf *const src, const struct radv_sdma_surf *const dst,
                                       const VkExtent3D pix_extent)
 {
-   /* This packet is the same since SDMA v2.4, haven't bothered to check older versions.
-    * The main difference is the bitfield sizes:
-    *
-    * v2.4 - src/dst_pitch: 14 bits, rect_z: 11 bits
-    * v4.0 - src/dst_pitch: 19 bits, rect_z: 11 bits
-    * v5.0 - src/dst_pitch: 19 bits, rect_z: 13 bits
-    *
-    * We currently use the smallest limits (from SDMA v2.4).
-    */
-
    const struct radv_physical_device *pdev = radv_device_physical(device);
    VkOffset3D src_off = radv_sdma_pixel_offset_to_blocks(src->offset, src->blk_w, src->blk_h);
    VkOffset3D dst_off = radv_sdma_pixel_offset_to_blocks(dst->offset, dst->blk_w, dst->blk_h);
@@ -408,12 +398,6 @@ radv_sdma_emit_copy_linear_sub_window(const struct radv_device *device, struct r
    const unsigned dst_pitch = radv_sdma_pixels_to_blocks(dst->pitch, dst->blk_w);
    const unsigned src_slice_pitch = radv_sdma_pixel_area_to_blocks(src->slice_pitch, src->blk_w, src->blk_h);
    const unsigned dst_slice_pitch = radv_sdma_pixel_area_to_blocks(dst->slice_pitch, dst->blk_w, dst->blk_h);
-   const enum sdma_version ver = pdev->info.sdma_ip_version;
-
-   assert(src->bpp == dst->bpp);
-   assert(util_is_power_of_two_nonzero(src->bpp));
-   radv_sdma_check_pitches(src->pitch, src->slice_pitch, src->bpp, false);
-   radv_sdma_check_pitches(dst->pitch, dst->slice_pitch, dst->bpp, false);
 
    /* Adjust offset/extent for 96-bits formats because SDMA expects a power of two bpp. */
    const uint32_t texel_scale = src->texel_scale == 1 ? dst->texel_scale : src->texel_scale;
@@ -422,26 +406,35 @@ radv_sdma_emit_copy_linear_sub_window(const struct radv_device *device, struct r
    dst_off.x *= texel_scale;
    ext.width *= texel_scale;
 
-   ASSERTED unsigned cdw_end = radeon_check_space(device->ws, cs->b, 13);
+   const struct ac_sdma_surf_linear surf_src = {
+      .va = src->va,
+      .offset =
+         {
+            .x = src_off.x,
+            .y = src_off.y,
+            .z = src_off.z,
+         },
+      .bpp = src->bpp,
+      .pitch = src_pitch,
+      .slice_pitch = src_slice_pitch,
+   };
 
-   radeon_begin(cs);
-   radeon_emit(SDMA_PACKET(SDMA_OPCODE_COPY, SDMA_COPY_SUB_OPCODE_LINEAR_SUB_WINDOW, 0) | util_logbase2(src->bpp)
-                                                                                             << 29);
-   radeon_emit(src->va);
-   radeon_emit(src->va >> 32);
-   radeon_emit(src_off.x | src_off.y << 16);
-   radeon_emit(src_off.z | (src_pitch - 1) << (ver >= SDMA_7_0 ? 16 : 13));
-   radeon_emit(src_slice_pitch - 1);
-   radeon_emit(dst->va);
-   radeon_emit(dst->va >> 32);
-   radeon_emit(dst_off.x | dst_off.y << 16);
-   radeon_emit(dst_off.z | (dst_pitch - 1) << (ver >= SDMA_7_0 ? 16 : 13));
-   radeon_emit(dst_slice_pitch - 1);
-   radeon_emit((ext.width - 1) | (ext.height - 1) << 16);
-   radeon_emit((ext.depth - 1));
-   radeon_end();
+   const struct ac_sdma_surf_linear surf_dst = {
+      .va = dst->va,
+      .offset =
+         {
+            .x = dst_off.x,
+            .y = dst_off.y,
+            .z = dst_off.z,
+         },
+      .bpp = dst->bpp,
+      .pitch = dst_pitch,
+      .slice_pitch = dst_slice_pitch,
+   };
 
-   assert(cs->b->cdw == cdw_end);
+   radeon_check_space(device->ws, cs->b, 13);
+   ac_emit_sdma_copy_linear_sub_window(cs->b, pdev->info.sdma_ip_version, &surf_src, &surf_dst, ext.width, ext.height,
+                                       ext.depth);
 }
 
 static void

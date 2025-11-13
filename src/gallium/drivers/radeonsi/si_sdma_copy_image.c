@@ -234,27 +234,35 @@ bool cik_sdma_copy_texture(struct si_context *sctx, struct si_texture *sdst, str
         (copy_width != (1 << 14) && copy_height != (1 << 14)))) {
       struct radeon_cmdbuf *cs = sctx->sdma_cs;
 
-      radeon_begin(cs);
-      radeon_emit(SDMA_PACKET(SDMA_OPCODE_COPY, SDMA_COPY_SUB_OPCODE_LINEAR_SUB_WINDOW, 0) |
-                  (util_logbase2(bpp) << 29));
-      radeon_emit(src_address);
-      radeon_emit(src_address >> 32);
-      radeon_emit(0);
-      radeon_emit((src_pitch - 1) << 16);
-      radeon_emit(src_slice_pitch - 1);
-      radeon_emit(dst_address);
-      radeon_emit(dst_address >> 32);
-      radeon_emit(0);
-      radeon_emit((dst_pitch - 1) << 16);
-      radeon_emit(dst_slice_pitch - 1);
-      if (sctx->gfx_level == GFX7) {
-         radeon_emit(copy_width | (copy_height << 16));
-         radeon_emit(0);
-      } else {
-         radeon_emit((copy_width - 1) | ((copy_height - 1) << 16));
-         radeon_emit(0);
-      }
-      radeon_end();
+      const struct ac_sdma_surf_linear surf_src = {
+         .va = src_address,
+         .offset =
+            {
+               .x = 0,
+               .y = 0,
+               .z = 0,
+            },
+         .bpp = bpp,
+         .pitch = src_pitch,
+         .slice_pitch = src_slice_pitch,
+      };
+
+      const struct ac_sdma_surf_linear surf_dst = {
+         .va = dst_address,
+         .offset =
+            {
+               .x = 0,
+               .y = 0,
+               .z = 0,
+            },
+         .bpp = bpp,
+         .pitch = dst_pitch,
+         .slice_pitch = dst_slice_pitch,
+      };
+
+      ac_emit_sdma_copy_linear_sub_window(&cs->current, info->sdma_ip_version,
+                                          &surf_src, &surf_dst, copy_width,
+                                          copy_height, 1);
       return true;
    }
 

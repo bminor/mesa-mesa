@@ -33,6 +33,25 @@ ac_emit_sdma_copy_linear(struct ac_cmdbuf *cs, enum sdma_version sdma_ip_version
                          uint64_t src_va, uint64_t dst_va, uint64_t size,
                          bool tmz);
 
+struct ac_sdma_surf_linear {
+   uint64_t va;
+
+   struct {
+      uint32_t x;
+      uint32_t y;
+      uint32_t z;
+   } offset;
+
+   uint32_t bpp;
+   uint32_t pitch;
+   uint32_t slice_pitch;
+};
+
+void
+ac_emit_sdma_copy_linear_sub_window(struct ac_cmdbuf *cs, enum sdma_version sdma_ip_version,
+                                    const struct ac_sdma_surf_linear *src,
+                                    const struct ac_sdma_surf_linear *dst,
+                                    uint32_t width, uint32_t height, uint32_t depth);
 #ifdef __cplusplus
 }
 #endif
