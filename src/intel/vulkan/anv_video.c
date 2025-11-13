@@ -1262,7 +1262,8 @@ vp9_prob_buf_update(struct anv_video_session *vid,
          VP9_CTX_DEFAULT(uv_mode_probs);
       }
 
-      memcpy(ptr + INTER_MODE_PROBS_OFFSET, &ctx.inter_mode_probs, INTER_MODE_PROBS_SIZE);
+      memcpy(ptr + INTER_MODE_PROBS_OFFSET, (void *)&ctx.inter_mode_probs,
+             INTER_MODE_PROBS_SIZE);
    }
 
    /* Copy seg probs */
