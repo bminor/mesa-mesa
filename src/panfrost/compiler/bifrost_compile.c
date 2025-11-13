@@ -2561,6 +2561,50 @@ bi_emit_load_const(bi_builder *b, nir_load_const_instr *instr)
    }
 }
 
+
+static bool
+bi_byte_swizzle_from_nir_swizzle(unsigned *channels, unsigned comps,
+                                 enum bi_swizzle *out_swizzle)
+{
+   assert(comps == 4 || comps == 2);
+   unsigned index = 0;
+   for (unsigned i = 0; i < 4; i++) {
+      index = (index << 2) + channels[i * comps / 4];
+   }
+   switch (index) {
+#define B(b0, b1, b2, b3)                                                      \
+   case ((b0) << 6) | ((b1) << 4) | ((b2) << 2) | (b3):                        \
+      *out_swizzle = BI_SWIZZLE_B##b0##b1##b2##b3;                             \
+      return true;
+      B(0, 1, 0, 1);
+      B(0, 1, 2, 3);
+      B(2, 3, 0, 1);
+      B(2, 3, 2, 3);
+      B(0, 0, 0, 0);
+      B(1, 1, 1, 1);
+      B(2, 2, 2, 2);
+      B(3, 3, 3, 3);
+      B(0, 0, 1, 1);
+      B(2, 2, 3, 3);
+      B(1, 0, 3, 2);
+      B(3, 2, 1, 0);
+      B(0, 0, 2, 2);
+      B(1, 1, 0, 0);
+      B(2, 2, 0, 0);
+      B(3, 3, 0, 0);
+      B(2, 2, 1, 1);
+      B(3, 3, 1, 1);
+      B(1, 1, 2, 2);
+      B(3, 3, 2, 2);
+      B(0, 0, 3, 3);
+      B(1, 1, 3, 3);
+      B(1, 1, 2, 3);
+#undef B
+   default:
+      return false;
+   }
+}
+
 static bi_index
 bi_alu_src_index(bi_builder *b, nir_alu_src src, unsigned comps)
 {
@@ -2605,6 +2649,15 @@ bi_alu_src_index(bi_builder *b, nir_alu_src src, unsigned comps)
       for (unsigned i = 0; i < comps; ++i) {
          unoffset_srcs[i] = bi_src_index(&src.src);
          channels[i] = src.swizzle[i];
+      }
+
+      if (comps == 2 || comps == 4) {
+         enum bi_swizzle swizzle;
+         if (bi_byte_swizzle_from_nir_swizzle(channels, comps, &swizzle)) {
+            bi_index ret = bi_src_index(&src.src);
+            ret.swizzle = swizzle;
+            return ret;
+         }
       }
 
       bi_index temp = bi_temp(b->shader);
