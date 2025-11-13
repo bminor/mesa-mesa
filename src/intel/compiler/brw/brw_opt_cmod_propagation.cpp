@@ -120,7 +120,8 @@ cmod_propagate_cmp_to_add(const intel_device_info *devinfo, brw_inst *inst)
       if (scan_inst->opcode == BRW_OPCODE_ADD &&
           !scan_inst->predicate &&
           scan_inst->dst.is_contiguous() &&
-          scan_inst->exec_size == inst->exec_size) {
+          scan_inst->exec_size == inst->exec_size &&
+          scan_inst->group == inst->group) {
          bool negate;
 
          /* A CMP is basically a subtraction.  The result of the
@@ -295,7 +296,8 @@ opt_cmod_propagation_local(const intel_device_info *devinfo, bblock_t *block)
             if (scan_inst->predicate ||
                 !scan_inst->dst.is_contiguous() ||
                 scan_inst->dst.offset != inst->src[0].offset ||
-                scan_inst->exec_size != inst->exec_size)
+                scan_inst->exec_size != inst->exec_size ||
+                scan_inst->group != inst->group)
                break;
 
             /* If the write mask is different we can't propagate. */
