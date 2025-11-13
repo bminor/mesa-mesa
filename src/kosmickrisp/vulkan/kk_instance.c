@@ -114,15 +114,33 @@ kk_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
    instance->vk.physical_devices.enumerate = kk_enumerate_physical_devices;
    instance->vk.physical_devices.destroy = kk_physical_device_destroy;
 
-   /* TODO_KOSMICKRISP We need to fill instance->driver_build_sha */
+   const struct build_id_note *note =
+      build_id_find_nhdr_for_addr(kk_CreateInstance);
+   if (!note) {
+      result = vk_errorf(NULL, VK_ERROR_INITIALIZATION_FAILED,
+                         "Failed to find build-id");
+      goto fail_init;
+   }
+
+   unsigned build_id_len = build_id_length(note);
+   if (build_id_len != VK_UUID_SIZE) {
+      result = vk_errorf(
+         NULL, VK_ERROR_INITIALIZATION_FAILED,
+         "build-id size does not match expected size (VK_UUID_SIZE which is 16 bytes)");
+      goto fail_init;
+   }
+
+   static_assert(sizeof(instance->driver_build_sha) == VK_UUID_SIZE,
+                 "UUID size mismatch");
+   memcpy(instance->driver_build_sha, build_id_data(note), VK_UUID_SIZE);
 
    kk_process_debug_variable();
 
    *pInstance = kk_instance_to_handle(instance);
    return VK_SUCCESS;
 
-// fail_init:
-//    vk_instance_finish(&instance->vk);
+fail_init:
+   vk_instance_finish(&instance->vk);
 fail_alloc:
    vk_free(pAllocator, instance);
 

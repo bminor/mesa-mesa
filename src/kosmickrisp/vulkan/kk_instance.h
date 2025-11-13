@@ -16,7 +16,7 @@
 struct kk_instance {
    struct vk_instance vk;
 
-   uint8_t driver_build_sha[20];
+   uint8_t driver_build_sha[VK_UUID_SIZE];
    uint32_t force_vk_vendor;
 };
 
