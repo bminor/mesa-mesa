@@ -73,8 +73,8 @@ map_vs_part_uniform(nir_intrinsic_instr *intr, unsigned nr_attribs)
    case nir_intrinsic_load_base_instance:
       return AGX_ABI_VUNI_BASE_INSTANCE(nr_attribs);
 
-   case nir_intrinsic_load_input_assembly_buffer_poly:
-      return AGX_ABI_VUNI_INPUT_ASSEMBLY(nr_attribs);
+   case nir_intrinsic_load_vertex_param_buffer_poly:
+      return AGX_ABI_VUNI_VERTEX_PARAMS(nr_attribs);
 
    default:
       return -1;

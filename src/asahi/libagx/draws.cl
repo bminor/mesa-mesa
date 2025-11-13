@@ -36,9 +36,9 @@ libagx_predicate_indirect(global uint32_t *out, constant uint32_t *in,
 KERNEL(1)
 libagx_draw_without_adj(global VkDrawIndirectCommand *out,
                         global VkDrawIndirectCommand *in,
-                        global struct poly_ia_state *ia, uint64_t index_buffer,
-                        uint64_t index_buffer_range_el, int index_size_B,
-                        enum mesa_prim prim)
+                        global struct poly_vertex_params *vp,
+                        uint64_t index_buffer, uint64_t index_buffer_range_el,
+                        int index_size_B, enum mesa_prim prim)
 {
    *out = (VkDrawIndirectCommand){
       .vertexCount = libagx_remap_adj_count(in->vertexCount, prim),
@@ -49,10 +49,10 @@ libagx_draw_without_adj(global VkDrawIndirectCommand *out,
    if (index_size_B) {
       uint offs = in->firstVertex;
 
-      ia->index_buffer = poly_index_buffer(index_buffer, index_buffer_range_el,
+      vp->index_buffer = poly_index_buffer(index_buffer, index_buffer_range_el,
                                            offs, index_size_B);
 
-      ia->index_buffer_range_el =
+      vp->index_buffer_range_el =
          poly_index_buffer_range_el(index_buffer_range_el, offs);
    }
 }

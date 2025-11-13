@@ -128,7 +128,7 @@ struct PACKED agx_draw_uniforms {
    uint64_t vertex_outputs;
 
    /* Address of input assembly buffer if geom/tess is used, else 0 */
-   uint64_t input_assembly;
+   uint64_t vertex_params;
 
    /* Address of tessellation param buffer if tessellation is used, else 0 */
    uint64_t tess_params;

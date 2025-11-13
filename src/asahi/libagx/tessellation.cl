@@ -10,7 +10,7 @@ KERNEL(1)
 libagx_tess_setup_indirect(
    global struct poly_tess_params *p,
    global uint32_t *grids /* output: VS then TCS then tess */,
-   global struct poly_ia_state *ia /* output */, global uint32_t *indirect,
+   global struct poly_vertex_params *vp /* output */, global uint32_t *indirect,
    global uint64_t *vertex_output_buffer_ptr, uint64_t in_index_buffer,
    uint32_t in_index_buffer_range_el, uint32_t in_index_size_B,
    uint64_t vertex_outputs /* bitfield */,
@@ -54,8 +54,8 @@ libagx_tess_setup_indirect(
    *vertex_output_buffer_ptr = (uintptr_t)(blob + vb_offs);
    p->counts = (global uint32_t *)(blob + count_offs);
 
-   if (ia) {
-      ia->verts_per_instance = count;
+   if (vp) {
+      vp->verts_per_instance = count;
    }
 
    /* If indexing is enabled, the third word is the offset into the index buffer
@@ -66,11 +66,11 @@ libagx_tess_setup_indirect(
     * XXX: Deduplicate?
     */
    if (in_index_size_B) {
-      ia->index_buffer =
+      vp->index_buffer =
          poly_index_buffer(in_index_buffer, in_index_buffer_range_el,
                            indirect[2], in_index_size_B);
 
-      ia->index_buffer_range_el =
+      vp->index_buffer_range_el =
          poly_index_buffer_range_el(in_index_buffer_range_el, indirect[2]);
    }
 

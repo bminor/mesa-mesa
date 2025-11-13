@@ -26,8 +26,8 @@ poly_nir_load_vertex_id(nir_builder *b, nir_def *id, unsigned index_size_B)
     * vertex ID is just the index as-is.
     */
    if (index_size_B) {
-      nir_def *ia = nir_load_input_assembly_buffer_poly(b);
-      id = poly_load_index_buffer(b, ia, id, nir_imm_int(b, index_size_B));
+      nir_def *p = nir_load_vertex_param_buffer_poly(b);
+      id = poly_load_index_buffer(b, p, id, nir_imm_int(b, index_size_B));
    }
 
    /* Add the "start", either an index bias or a base vertex. This must happen

@@ -455,7 +455,7 @@ lower_uvs_index(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
    case nir_intrinsic_load_first_vertex:
    case nir_intrinsic_load_base_instance:
    case nir_intrinsic_load_draw_id:
-   case nir_intrinsic_load_input_assembly_buffer_poly: {
+   case nir_intrinsic_load_vertex_param_buffer_poly: {
       b->cursor = nir_instr_remove(&intrin->instr);
 
       unsigned base = AGX_ABI_VUNI_FIRST_VERTEX(*nr_vbos);
@@ -467,8 +467,8 @@ lower_uvs_index(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
          base = AGX_ABI_VUNI_DRAW_ID(*nr_vbos);
          size = 16;
       } else if (intrin->intrinsic ==
-                 nir_intrinsic_load_input_assembly_buffer_poly) {
-         base = AGX_ABI_VUNI_INPUT_ASSEMBLY(*nr_vbos);
+                 nir_intrinsic_load_vertex_param_buffer_poly) {
+         base = AGX_ABI_VUNI_VERTEX_PARAMS(*nr_vbos);
          size = 64;
       }
 

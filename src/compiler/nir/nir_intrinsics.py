@@ -1438,8 +1438,8 @@ system_value("vs_output_buffer_poly", 1, bit_sizes=[64])
 # so it can be dynamic with shader objects or constant folded with monolithic.
 system_value("vs_outputs_poly", 1, bit_sizes=[64])
 
-# Address of state for poly input assembly lowering for geometry/tessellation
-system_value("input_assembly_buffer_poly", 1, bit_sizes=[64])
+# Address of poly_vertex_param for vertex and tessellation evaluation
+system_value("vertex_param_buffer_poly", 1, bit_sizes=[64])
 
 # Address of the parameter buffer for poly geometry shaders
 system_value("geometry_param_buffer_poly", 1, bit_sizes=[64])

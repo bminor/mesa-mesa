@@ -1041,23 +1041,23 @@ hk_index_buffer(uint64_t index_buffer, uint size_el, uint offset_el,
 }
 
 static uint64_t
-hk_upload_ia_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
+hk_upload_vertex_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
 {
    assert(!agx_is_indirect(draw.b) && "indirect params written by GPU");
 
-   struct poly_ia_state ia = {.verts_per_instance = draw.b.count[0]};
+   struct poly_vertex_params params = {.verts_per_instance = draw.b.count[0]};
 
    if (draw.indexed) {
       unsigned index_size_B = agx_index_size_to_B(draw.index_size);
       unsigned range_el = agx_draw_index_range_el(draw);
 
-      ia.index_buffer = hk_index_buffer(agx_draw_index_buffer(draw), range_el,
-                                        0, index_size_B);
+      params.index_buffer = hk_index_buffer(agx_draw_index_buffer(draw),
+                                            range_el, 0, index_size_B);
 
-      ia.index_buffer_range_el = range_el;
+      params.index_buffer_range_el = range_el;
    }
 
-   return hk_pool_upload(cmd, &ia, sizeof(ia), 8);
+   return hk_pool_upload(cmd, &params, sizeof(params), 8);
 }
 
 static enum mesa_prim
@@ -1474,7 +1474,7 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
          .heap = hk_heap(cmd),
          .index_buffer = draw.index_buffer,
          .draw = draw.b.ptr,
-         .ia = desc->root.draw.input_assembly,
+         .vp = desc->root.draw.vertex_params,
          .p = desc->root.draw.geometry_params,
          .vs_outputs = vs->b.info.outputs,
          .prim = mode,
@@ -1608,7 +1608,7 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
          .p = state,
          .grids = gfx->tess.grids,
          .indirect = draw.b.ptr,
-         .ia = gfx->descriptors.root.draw.input_assembly,
+         .vp = gfx->descriptors.root.draw.vertex_params,
          .vertex_outputs = vs->b.info.outputs,
          .vertex_output_buffer_ptr =
             gfx->root + offsetof(struct hk_root_descriptor_table,
@@ -3061,9 +3061,9 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
       /* XXX: We should deduplicate this logic */
       bool indirect = agx_is_indirect(draw.b) || draw.restart;
 
-      desc->root.draw.input_assembly =
-         indirect ? hk_pool_alloc(cmd, sizeof(struct poly_ia_state), 4).gpu
-                  : hk_upload_ia_params(cmd, draw);
+      desc->root.draw.vertex_params =
+         indirect ? hk_pool_alloc(cmd, sizeof(struct poly_vertex_params), 4).gpu
+                  : hk_upload_vertex_params(cmd, draw);
       desc->root_dirty = true;
    }
 
@@ -3608,7 +3608,7 @@ hk_draw(struct hk_cmd_buffer *cmd, uint16_t draw_id, struct agx_draw draw_)
 
             libagx_draw_without_adj(
                cmd, agx_1d(1), AGX_BARRIER_ALL | AGX_PREGFX, out_draw,
-               draw.b.ptr, desc->root.draw.input_assembly, draw.index_buffer,
+               draw.b.ptr, desc->root.draw.vertex_params, draw.index_buffer,
                draw.indexed ? agx_draw_index_range_el(draw) : 0,
                draw.indexed ? agx_index_size_to_B(draw.index_size) : 0, prim);
 

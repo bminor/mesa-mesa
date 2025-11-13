@@ -171,7 +171,14 @@ poly_index_buffer(uint64_t index_buffer, uint size_el, uint offset_el,
 }
 #endif
 
-struct poly_ia_state {
+/** Parameters that feed a vertex (or tessellation evaluation) shader.
+ *
+ * From the perspective of libpoly, vertex and tessellation evaluation shaders
+ * are identical.  One just fets fed by the hardware's input assmebly (which
+ * may be emulated by the driver) and the other gets fed from the tessellator.
+ * However, from the perspective of a geometry dispatch, they are identical.
+ */
+struct poly_vertex_params {
    /* Index buffer if present. */
    uint64_t index_buffer;
 
@@ -183,7 +190,7 @@ struct poly_ia_state {
     */
    uint32_t verts_per_instance;
 } PACKED;
-static_assert(sizeof(struct poly_ia_state) == 4 * 4);
+static_assert(sizeof(struct poly_vertex_params) == 4 * 4);
 
 static inline uint
 poly_index_buffer_range_el(uint size_el, uint offset_el)
@@ -516,7 +523,7 @@ poly_increment_ia(global uint32_t *ia_vertices, global uint32_t *ia_primitives,
 static inline void
 poly_gs_setup_indirect(uint64_t index_buffer, constant uint *draw,
                        global uintptr_t *vertex_buffer /* output */,
-                       global struct poly_ia_state *ia /* output */,
+                       global struct poly_vertex_params *vp /* output */,
                        global struct poly_geometry_params *p /* output */,
                        global struct poly_heap *heap,
                        uint64_t vs_outputs /* Vertex (TES) output mask */,
@@ -530,7 +537,7 @@ poly_gs_setup_indirect(uint64_t index_buffer, constant uint *draw,
    uint vertex_count = draw[0];
    uint instance_count = draw[1];
 
-   ia->verts_per_instance = vertex_count;
+   vp->verts_per_instance = vertex_count;
 
    /* Calculate number of primitives input into the GS */
    uint prim_per_instance = u_decomposed_prims_for_vertices(prim, vertex_count);
@@ -551,10 +558,10 @@ poly_gs_setup_indirect(uint64_t index_buffer, constant uint *draw,
     * assembly we need to do it ourselves.
     */
    if (index_size_B) {
-      ia->index_buffer = poly_index_buffer(index_buffer, index_buffer_range_el,
+      vp->index_buffer = poly_index_buffer(index_buffer, index_buffer_range_el,
                                            draw[2], index_size_B);
 
-      ia->index_buffer_range_el =
+      vp->index_buffer_range_el =
          poly_index_buffer_range_el(index_buffer_range_el, draw[2]);
    }
 

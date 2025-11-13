@@ -70,8 +70,8 @@ struct hk_root_descriptor_table {
          /* Mask of outputs flowing VS->TCS, VS->GS, or TES->GS . */
          uint64_t vertex_outputs;
 
-         /* Address of input assembly buffer if geom/tess is used, else 0 */
-         uint64_t input_assembly;
+         /* Address of vertex param buffer if geom/tess is used, else 0 */
+         uint64_t vertex_params;
 
          /* Address of tessellation param buffer if tessellation used, else 0 */
          uint64_t tess_params;

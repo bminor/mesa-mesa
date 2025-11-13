@@ -1404,7 +1404,7 @@ lower_vs_before_gs(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    nir_def *buffer, *nr_verts, *instance_id, *primitive_id;
    if (b->shader->info.stage == MESA_SHADER_VERTEX) {
       buffer = nir_load_vs_output_buffer_poly(b);
-      nr_verts = poly_input_vertices(b, nir_load_input_assembly_buffer_poly(b));
+      nr_verts = poly_input_vertices(b, nir_load_vertex_param_buffer_poly(b));
    } else {
       assert(b->shader->info.stage == MESA_SHADER_TESS_EVAL);
 

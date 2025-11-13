@@ -305,7 +305,7 @@ poly_map_to_tri_strip_adj(uint id)
 }
 
 uint
-poly_load_index_buffer(constant struct poly_ia_state *p, uint id,
+poly_load_index_buffer(constant struct poly_vertex_params *p, uint id,
                        uint index_size)
 {
    return poly_load_index(p->index_buffer, p->index_buffer_range_el, id,
@@ -374,9 +374,9 @@ poly_geometry_input_address(constant struct poly_geometry_params *p, uint vtx,
 }
 
 unsigned
-poly_input_vertices(constant struct poly_ia_state *ia)
+poly_input_vertices(constant struct poly_vertex_params *p)
 {
-   return ia->verts_per_instance;
+   return p->verts_per_instance;
 }
 
 global uint *

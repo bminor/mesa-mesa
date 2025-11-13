@@ -3926,14 +3926,14 @@ agx_batch_geometry_params(struct agx_batch *batch, uint64_t input_index_buffer,
                           const struct pipe_draw_start_count_bias *draw,
                           const struct pipe_draw_indirect_info *indirect)
 {
-   struct poly_ia_state ia = {
+   struct poly_vertex_params vp = {
       .index_buffer = input_index_buffer,
       .index_buffer_range_el = index_buffer_size_B / info->index_size,
       .verts_per_instance = draw ? draw->count : 0,
    };
 
-   batch->uniforms.input_assembly =
-      agx_pool_upload_aligned(&batch->pool, &ia, sizeof(ia), 8);
+   batch->uniforms.vertex_params =
+      agx_pool_upload_aligned(&batch->pool, &vp, sizeof(vp), 8);
 
    struct poly_geometry_params params = {
       .indirect_desc = batch->geom_indirect,
@@ -4113,7 +4113,7 @@ agx_launch_gs_prerast(struct agx_batch *batch,
          .index_buffer_range_el = ib_extent / info->index_size,
          .draw = agx_indirect_buffer_ptr(batch, indirect),
          .vertex_buffer = batch->uniforms.vertex_output_buffer_ptr,
-         .ia = batch->uniforms.input_assembly,
+         .vp = batch->uniforms.vertex_params,
          .p = batch->uniforms.geometry_params,
          .heap = agx_batch_heap(batch),
          .vs_outputs = batch->uniforms.vertex_outputs,
@@ -4560,14 +4560,14 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
    if (info->index_size)
       ib = agx_index_buffer_ptr(batch, info, draws, &ib_extent);
 
-   struct poly_ia_state ia = {
+   struct poly_vertex_params vp = {
       .index_buffer = ib,
       .index_buffer_range_el = ib_extent,
       .verts_per_instance = draws ? draws->count : 0,
    };
 
-   batch->uniforms.input_assembly =
-      agx_pool_upload_aligned(&batch->pool, &ia, sizeof(ia), 8);
+   batch->uniforms.vertex_params =
+      agx_pool_upload_aligned(&batch->pool, &vp, sizeof(vp), 8);
 
    agx_upload_draw_params(batch, indirect, draws, info);
 
