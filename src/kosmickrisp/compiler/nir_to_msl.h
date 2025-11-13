@@ -11,7 +11,8 @@
 enum pipe_format;
 
 /* Assumes nir_shader_gather_info has been called beforehand. */
-char *nir_to_msl(nir_shader *shader, void *mem_ctx);
+char *nir_to_msl(nir_shader *shader, void *mem_ctx,
+                 uint64_t disabled_workarounds);
 
 /* Call this after all API-specific lowerings. It will bring the NIR out of SSA
  * at the end */

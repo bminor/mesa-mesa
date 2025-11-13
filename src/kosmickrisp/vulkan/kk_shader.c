@@ -652,7 +652,7 @@ kk_compile_shader(struct kk_device *dev, struct vk_shader_compile_info *info,
    }
    msl_optimize_nir(nir);
    modify_nir_info(nir);
-   shader->msl_code = nir_to_msl(nir, NULL);
+   shader->msl_code = nir_to_msl(nir, NULL, dev->disabled_workarounds);
    const char *entrypoint_name = nir_shader_get_entrypoint(nir)->function->name;
 
    /* We need to steal so it doesn't get destroyed with the nir. Needs to happen

@@ -177,7 +177,7 @@ main(int argc, char **argv)
    optimize(shader);
    nir_print_shader(shader, stdout);
 
-   char *msl_text = nir_to_msl(shader, shader);
+   char *msl_text = nir_to_msl(shader, shader, 0u);
 
    fputs(msl_text, stdout);
 

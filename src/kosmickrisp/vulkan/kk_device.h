@@ -100,6 +100,7 @@ struct kk_device {
 
    struct vk_meta_device meta;
 
+   uint64_t disabled_workarounds;
    bool gpu_capture_enabled;
 };
 

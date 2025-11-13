@@ -112,7 +112,11 @@ emit_local_vars(struct nir_to_msl_ctx *ctx, nir_shader *shader)
    }
    if (shader->scratch_size) {
       /* KK_WORKAROUND_1 */
-      P_IND(ctx, "uchar scratch[%d] = {0};\n", shader->scratch_size);
+      if (ctx->disabled_workarounds & BITFIELD64_BIT(1)) {
+         P_IND(ctx, "uchar scratch[%d];\n", shader->scratch_size);
+      } else {
+         P_IND(ctx, "uchar scratch[%d] = {0};\n", shader->scratch_size);
+      }
    }
    if (BITSET_TEST(shader->info.system_values_read,
                    SYSTEM_VALUE_HELPER_INVOCATION)) {
@@ -124,8 +128,7 @@ static bool
 is_register(nir_def *def)
 {
    return ((nir_def_is_intrinsic(def)) &&
-           (nir_def_as_intrinsic(def)->intrinsic ==
-            nir_intrinsic_load_reg));
+           (nir_def_as_intrinsic(def)->intrinsic == nir_intrinsic_load_reg));
 }
 
 static void
@@ -167,8 +170,7 @@ src_to_msl(struct nir_to_msl_ctx *ctx, nir_src *src)
    if (bitcast)
       P(ctx, "as_type<%s>(", bitcast);
    if (is_register(src->ssa)) {
-      nir_intrinsic_instr *instr =
-         nir_def_as_intrinsic(src->ssa);
+      nir_intrinsic_instr *instr = nir_def_as_intrinsic(src->ssa);
       if (src->ssa->bit_size != 1u) {
          P(ctx, "as_type<%s>(r%d)", msl_type_for_def(ctx->types, src->ssa),
            instr->src[0].ssa->index);
@@ -1357,7 +1359,11 @@ intrinsic_to_msl(struct nir_to_msl_ctx *ctx, nir_intrinsic_instr *instr)
       break;
    case nir_intrinsic_elect:
       /* KK_WORKAROUND_3 */
-      P(ctx, "simd_is_first() && (ulong)simd_ballot(true);\n");
+      if (ctx->disabled_workarounds & BITFIELD64_BIT(3)) {
+         P(ctx, "simd_is_first();\n");
+      } else {
+         P(ctx, "simd_is_first() && (ulong)simd_ballot(true);\n");
+      }
       break;
    case nir_intrinsic_read_first_invocation:
       P(ctx, "simd_broadcast_first(");
@@ -1782,10 +1788,14 @@ cf_node_to_metal(struct nir_to_msl_ctx *ctx, nir_cf_node *node)
       nir_loop *loop = nir_cf_node_as_loop(node);
       assert(!nir_loop_has_continue_construct(loop));
       /* KK_WORKAROUND_2 */
-      P_IND(ctx,
-            "for (uint64_t no_crash = 0u; no_crash < %" PRIu64
-            "; ++no_crash) {\n",
-            UINT64_MAX);
+      if (ctx->disabled_workarounds & BITFIELD64_BIT(2)) {
+         P_IND(ctx, "while (true) {\n");
+      } else {
+         P_IND(ctx,
+               "for (uint64_t no_crash = 0u; no_crash < %" PRIu64
+               "; ++no_crash) {\n",
+               UINT64_MAX);
+      }
       ctx->indentlevel++;
       foreach_list_typed(nir_cf_node, node, node, &loop->body) {
          cf_node_to_metal(ctx, node);
@@ -1979,7 +1989,7 @@ predeclare_ssa_values(struct nir_to_msl_ctx *ctx, nir_function_impl *impl)
 }
 
 char *
-nir_to_msl(nir_shader *shader, void *mem_ctx)
+nir_to_msl(nir_shader *shader, void *mem_ctx, uint64_t disabled_workarounds)
 {
    /* Need to rename the entrypoint here since hardcoded shaders used by vk_meta
     * don't go through the preprocess step since we are the ones creating them.
@@ -1989,6 +1999,7 @@ nir_to_msl(nir_shader *shader, void *mem_ctx)
    struct nir_to_msl_ctx ctx = {
       .shader = shader,
       .text = _mesa_string_buffer_create(mem_ctx, 1024),
+      .disabled_workarounds = disabled_workarounds,
    };
    nir_function_impl *impl = nir_shader_get_entrypoint(shader);
    msl_gather_info(&ctx);

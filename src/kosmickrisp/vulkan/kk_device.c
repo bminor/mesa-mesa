@@ -138,6 +138,31 @@ kk_sampler_heap_remove(struct kk_device *dev, struct kk_rc_sampler *rc)
    simple_mtx_unlock(&h->lock);
 }
 
+static void
+kk_parse_device_environment_options(struct kk_device *dev)
+{
+   dev->gpu_capture_enabled =
+      debug_get_bool_option("MESA_KK_GPU_CAPTURE", false);
+   if (dev->gpu_capture_enabled) {
+      const char *capture_directory =
+         debug_get_option("MESA_KK_GPU_CAPTURE_DIRECTORY", NULL);
+      mtl_start_gpu_capture(dev->mtl_handle, capture_directory);
+   }
+
+   const char *list = debug_get_option("MESA_KK_DISABLE_WORKAROUNDS", "");
+   const char *all_workarounds = "all";
+   const size_t all_len = strlen(all_workarounds);
+   for (unsigned n; n = strcspn(list, ","), *list; list += MAX2(1, n)) {
+      if (n == all_len && !strncmp(list, all_workarounds, n)) {
+         dev->disabled_workarounds = UINT64_MAX;
+         break;
+      }
+
+      int index = atoi(list);
+      dev->disabled_workarounds |= BITFIELD64_BIT(index);
+   }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL
 kk_CreateDevice(VkPhysicalDevice physicalDevice,
                 const VkDeviceCreateInfo *pCreateInfo,
@@ -211,15 +236,9 @@ kk_CreateDevice(VkPhysicalDevice physicalDevice,
    simple_mtx_init(&dev->user_heap_cache.mutex, mtx_plain);
    dev->user_heap_cache.handles = UTIL_DYNARRAY_INIT;
 
-   *pDevice = kk_device_to_handle(dev);
+   kk_parse_device_environment_options(dev);
 
-   dev->gpu_capture_enabled =
-      debug_get_bool_option("MESA_KK_GPU_CAPTURE", false);
-   if (dev->gpu_capture_enabled) {
-      const char *capture_directory =
-         debug_get_option("MESA_KK_GPU_CAPTURE_DIRECTORY", NULL);
-      mtl_start_gpu_capture(dev->mtl_handle, capture_directory);
-   }
+   *pDevice = kk_device_to_handle(dev);
 
    return VK_SUCCESS;
 
