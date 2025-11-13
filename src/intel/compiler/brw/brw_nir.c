@@ -232,18 +232,11 @@ remap_tess_levels_to_temporary(nir_builder *b, nir_intrinsic_instr *intrin, void
       state->inner_factors_var : state->outer_factors_var;
    if (nir_intrinsic_infos[intrin->intrinsic].has_dest) {
       b->cursor = nir_after_instr(&intrin->instr);
-      nir_def *new_val =
-         nir_load_array_var(b, var,
-                            nir_iadd_imm(b, nir_get_io_offset_src(intrin)->ssa,
-                                            nir_intrinsic_component(intrin)));
-      nir_def_replace(&intrin->def, new_val);
+      nir_def_replace(&intrin->def, nir_load_var(b, var));
    } else {
       b->cursor = nir_instr_remove(&intrin->instr);
-      nir_store_array_var(b, var,
-                          nir_iadd_imm(b, nir_get_io_offset_src(intrin)->ssa,
-                                          nir_intrinsic_component(intrin)),
-                          intrin->src[0].ssa,
-                          nir_intrinsic_write_mask(intrin));
+      nir_store_var(b, var, nir_pad_vector(b, intrin->src[0].ssa, 4),
+                    nir_intrinsic_write_mask(intrin));
    }
 
    return true;
@@ -256,11 +249,9 @@ remap_tess_levels_legacy_dynamic(nir_shader *nir,
    nir_function_impl *impl = nir_shader_get_entrypoint(nir);
 
    struct tess_levels_temporary_state state = {
-      .inner_factors_var = nir_local_variable_create(
-         impl, glsl_array_type(glsl_uint_type(), 2, 0),
+      .inner_factors_var = nir_local_variable_create(impl, glsl_vec4_type(),
          "__temp_inner_factors"),
-      .outer_factors_var = nir_local_variable_create(
-         impl, glsl_array_type(glsl_uint_type(), 4, 0),
+      .outer_factors_var = nir_local_variable_create(impl, glsl_vec4_type(),
          "__temp_outer_factors"),
    };
 
@@ -673,6 +664,8 @@ brw_nir_lower_tes_inputs(nir_shader *nir,
                          const struct intel_device_info *devinfo,
                          const struct intel_vue_map *vue_map)
 {
+   NIR_PASS(_, nir, nir_lower_tess_level_array_vars_to_vec);
+
    nir_foreach_shader_in_variable(var, nir)
       var->data.driver_location = var->data.location;
 
@@ -957,6 +950,8 @@ brw_nir_lower_tcs_outputs(nir_shader *nir,
                           const struct intel_vue_map *vue_map,
                           enum tess_primitive_mode tes_primitive_mode)
 {
+   NIR_PASS(_, nir, nir_lower_tess_level_array_vars_to_vec);
+
    nir_foreach_shader_out_variable(var, nir) {
       var->data.driver_location = var->data.location;
    }
