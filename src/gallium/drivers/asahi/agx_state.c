@@ -3932,9 +3932,6 @@ agx_batch_geometry_params(struct agx_batch *batch, uint64_t input_index_buffer,
       .verts_per_instance = draw ? draw->count : 0,
    };
 
-   batch->uniforms.vertex_params =
-      agx_pool_upload_aligned(&batch->pool, &vp, sizeof(vp), 8);
-
    struct poly_geometry_params params = {
       .indirect_desc = batch->geom_indirect,
       .flat_outputs =
@@ -4047,6 +4044,9 @@ agx_batch_geometry_params(struct agx_batch *batch, uint64_t input_index_buffer,
          batch->geom_index = params.output_index_buffer;
       }
    }
+
+   batch->uniforms.vertex_params =
+      agx_pool_upload_aligned(&batch->pool, &vp, sizeof(vp), 8);
 
    return agx_pool_upload_aligned_with_bo(&batch->pool, &params, sizeof(params),
                                           8, &batch->geom_params_bo);
@@ -4566,9 +4566,6 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
       .verts_per_instance = draws ? draws->count : 0,
    };
 
-   batch->uniforms.vertex_params =
-      agx_pool_upload_aligned(&batch->pool, &vp, sizeof(vp), 8);
-
    agx_upload_draw_params(batch, indirect, draws, info);
 
    /* Setup parameters */
@@ -4664,8 +4661,12 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
             .gpu;
    }
 
+   batch->uniforms.vertex_params =
+      agx_pool_upload_aligned(&batch->pool, &vp, sizeof(vp), 8);
+
    uint64_t state =
       agx_pool_upload_aligned(&batch->pool, &params, sizeof(params), 4);
+   batch->uniforms.tess_params = state;
 
    if (indirect) {
       perf_debug(dev, "Indirect tessellation");
@@ -4693,8 +4694,6 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
       tcs_grid = agx_grid_indirect_local(grids + 1 * grid_stride);
       tess_grid = agx_grid_indirect_local(grids + 2 * grid_stride);
    }
-
-   batch->uniforms.tess_params = state;
 
    agx_launch(batch, vs_grid, agx_workgroup(64, 1, 1), ctx->vs, ctx->linked.vs,
               MESA_SHADER_VERTEX, 0);
