@@ -7,25 +7,25 @@
 #include "poly/tessellator.h"
 
 uint
-poly_tcs_patch_vertices_in(constant struct poly_tess_args *p)
+poly_tcs_patch_vertices_in(constant struct poly_tess_params *p)
 {
    return p->input_patch_size;
 }
 
 uint
-poly_tes_patch_vertices_in(constant struct poly_tess_args *p)
+poly_tes_patch_vertices_in(constant struct poly_tess_params *p)
 {
    return p->output_patch_size;
 }
 
 uint
-poly_tcs_unrolled_id(constant struct poly_tess_args *p, uint3 wg_id)
+poly_tcs_unrolled_id(constant struct poly_tess_params *p, uint3 wg_id)
 {
    return (wg_id.y * p->patches_per_instance) + wg_id.x;
 }
 
 uint64_t
-poly_tes_buffer(constant struct poly_tess_args *p)
+poly_tes_buffer(constant struct poly_tess_params *p)
 {
    return p->tes_buffer;
 }
@@ -41,7 +41,7 @@ poly_tes_buffer(constant struct poly_tess_args *p)
  * Therefore we do a simple load. No bounds checking needed.
  */
 uint32_t
-poly_load_tes_index(constant struct poly_tess_args *p, uint32_t index)
+poly_load_tes_index(constant struct poly_tess_params *p, uint32_t index)
 {
    /* Swap second and third vertices of each triangle to flip winding order
     * dynamically if needed.
@@ -59,7 +59,7 @@ poly_load_tes_index(constant struct poly_tess_args *p, uint32_t index)
 }
 
 uintptr_t
-poly_tcs_out_address(constant struct poly_tess_args *p, uint patch_id,
+poly_tcs_out_address(constant struct poly_tess_params *p, uint patch_id,
                      uint vtx_id, gl_varying_slot location, uint nr_patch_out,
                      uint out_patch_size, uint64_t vtx_out_mask)
 {
@@ -82,7 +82,7 @@ tes_unrolled_patch_id(uint raw_id)
 }
 
 uint
-poly_tes_patch_id(constant struct poly_tess_args *p, uint raw_id)
+poly_tes_patch_id(constant struct poly_tess_params *p, uint raw_id)
 {
    return tes_unrolled_patch_id(raw_id) % p->patches_per_instance;
 }
@@ -94,7 +94,7 @@ tes_vertex_id_in_patch(uint raw_id)
 }
 
 float2
-poly_load_tess_coord(constant struct poly_tess_args *p, uint raw_id)
+poly_load_tess_coord(constant struct poly_tess_params *p, uint raw_id)
 {
    uint patch = tes_unrolled_patch_id(raw_id);
    uint vtx = tes_vertex_id_in_patch(raw_id);
@@ -110,7 +110,7 @@ poly_load_tess_coord(constant struct poly_tess_args *p, uint raw_id)
 }
 
 uintptr_t
-poly_tes_in_address(constant struct poly_tess_args *p, uint raw_id, uint vtx_id,
+poly_tes_in_address(constant struct poly_tess_params *p, uint raw_id, uint vtx_id,
                     gl_varying_slot location)
 {
    uint patch = tes_unrolled_patch_id(raw_id);
@@ -121,13 +121,13 @@ poly_tes_in_address(constant struct poly_tess_args *p, uint raw_id, uint vtx_id,
 }
 
 float4
-poly_tess_level_outer_default(constant struct poly_tess_args *p)
+poly_tess_level_outer_default(constant struct poly_tess_params *p)
 {
    return vload4(0, p->tess_level_outer_default);
 }
 
 float2
-poly_tess_level_inner_default(constant struct poly_tess_args *p)
+poly_tess_level_inner_default(constant struct poly_tess_params *p)
 {
    return vload2(0, p->tess_level_inner_default);
 }

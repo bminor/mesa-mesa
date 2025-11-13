@@ -8,7 +8,7 @@
 
 KERNEL(1)
 libagx_tess_setup_indirect(
-   global struct poly_tess_args *p,
+   global struct poly_tess_params *p,
    global uint32_t *grids /* output: VS then TCS then tess */,
    global struct poly_ia_state *ia /* output */, global uint32_t *indirect,
    global uint64_t *vertex_output_buffer_ptr, uint64_t in_index_buffer,

@@ -22,7 +22,7 @@
 #include "poly/cl/tessellator.h"
 
 KERNEL(64)
-libagx_tess_isoline(constant struct poly_tess_args *p,
+libagx_tess_isoline(constant struct poly_tess_params *p,
                     enum poly_tess_mode mode__2)
 {
    uint patch = cl_global_id.x;
@@ -30,14 +30,14 @@ libagx_tess_isoline(constant struct poly_tess_args *p,
 }
 
 KERNEL(64)
-libagx_tess_tri(constant struct poly_tess_args *p, enum poly_tess_mode mode__2)
+libagx_tess_tri(constant struct poly_tess_params *p, enum poly_tess_mode mode__2)
 {
    uint patch = cl_global_id.x;
    poly_tess_tri_process(p, patch, mode__2);
 }
 
 KERNEL(64)
-libagx_tess_quad(constant struct poly_tess_args *p, enum poly_tess_mode mode__2)
+libagx_tess_quad(constant struct poly_tess_params *p, enum poly_tess_mode mode__2)
 {
    uint patch = cl_global_id.x;
    poly_tess_quad_process(p, patch, mode__2);

@@ -27,7 +27,7 @@ struct poly_tess_point {
 };
 static_assert(sizeof(struct poly_tess_point) == 8);
 
-struct poly_tess_args {
+struct poly_tess_params {
    /* Heap to allocate tessellator outputs in */
    DEVICE(struct poly_heap) heap;
 
@@ -105,4 +105,4 @@ struct poly_tess_args {
     */
    uint32_t ccw;
 } PACKED;
-static_assert(sizeof(struct poly_tess_args) == 36 * 4);
+static_assert(sizeof(struct poly_tess_params) == 36 * 4);

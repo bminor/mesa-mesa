@@ -4575,7 +4575,7 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
    uint64_t heap = agx_batch_heap(batch);
    assert((tcs->tess.output_stride & 3) == 0 && "must be aligned");
 
-   struct poly_tess_args args = {
+   struct poly_tess_params params = {
       .heap = heap,
       .tcs_stride_el = tcs->tess.output_stride / 4,
       .statistic = agx_get_query_address(
@@ -4591,12 +4591,12 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
    };
 
    if (!point_mode && tes->tess.primitive != TESS_PRIMITIVE_ISOLINES) {
-      args.ccw = !tes->tess.ccw;
+      params.ccw = !tes->tess.ccw;
    }
 
-   memcpy(&args.tess_level_outer_default, ctx->default_outer_level,
+   memcpy(&params.tess_level_outer_default, ctx->default_outer_level,
           sizeof(ctx->default_outer_level));
-   memcpy(&args.tess_level_inner_default, ctx->default_inner_level,
+   memcpy(&params.tess_level_inner_default, ctx->default_inner_level,
           sizeof(ctx->default_inner_level));
 
    struct agx_grid vs_grid, tcs_grid, tess_grid;
@@ -4640,12 +4640,12 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
       struct agx_ptr blob =
          agx_pool_alloc_aligned_with_bo(&batch->pool, alloc, 4, &draw_bo);
 
-      args.tcs_buffer = blob.gpu + tcs_out_offs;
-      args.patches_per_instance = in_patches;
-      args.coord_allocs = blob.gpu + patch_coord_offs;
-      args.nr_patches = unrolled_patches;
-      args.out_draws = blob.gpu + draw_offs;
-      args.counts = blob.gpu + count_offs;
+      params.tcs_buffer = blob.gpu + tcs_out_offs;
+      params.patches_per_instance = in_patches;
+      params.coord_allocs = blob.gpu + patch_coord_offs;
+      params.nr_patches = unrolled_patches;
+      params.out_draws = blob.gpu + draw_offs;
+      params.counts = blob.gpu + count_offs;
 
       unsigned vb_size = poly_tcs_in_size(draws->count * info->instance_count,
                                           batch->uniforms.vertex_outputs);
@@ -4659,13 +4659,13 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
 
       tess_grid = agx_1d(unrolled_patches);
    } else if (indirect) {
-      args.out_draws =
+      params.out_draws =
          agx_pool_alloc_aligned_with_bo(&batch->pool, draw_stride, 4, &draw_bo)
             .gpu;
    }
 
    uint64_t state =
-      agx_pool_upload_aligned(&batch->pool, &args, sizeof(args), 4);
+      agx_pool_upload_aligned(&batch->pool, &params, sizeof(params), 4);
 
    if (indirect) {
       perf_debug(dev, "Indirect tessellation");
@@ -4746,7 +4746,7 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
 
    struct pipe_draw_indirect_info copy_indirect = {
       .buffer = &indirect_rsrc.base,
-      .offset = args.out_draws - draw_bo->va->addr,
+      .offset = params.out_draws - draw_bo->va->addr,
       .stride = draw_stride,
       .draw_count = 1,
    };

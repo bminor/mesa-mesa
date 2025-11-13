@@ -1231,7 +1231,7 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
 }
 
 static void
-hk_upload_tess_params(struct hk_cmd_buffer *cmd, struct poly_tess_args *out,
+hk_upload_tess_params(struct hk_cmd_buffer *cmd, struct poly_tess_params *out,
                       struct agx_draw draw)
 {
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
@@ -1246,7 +1246,7 @@ hk_upload_tess_params(struct hk_cmd_buffer *cmd, struct poly_tess_args *out,
          ? POLY_TESS_PARTITIONING_FRACTIONAL_ODD
          : POLY_TESS_PARTITIONING_FRACTIONAL_EVEN;
 
-   struct poly_tess_args args = {
+   struct poly_tess_params args = {
       .heap = hk_heap(cmd),
       .tcs_stride_el = tcs->info.tess.tcs_output_stride / 4,
       .statistic = hk_pipeline_stat_addr(
@@ -1485,7 +1485,7 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
 
       if (cmd->state.gfx.shaders[MESA_SHADER_TESS_EVAL]) {
          gsi.vertex_buffer = desc->root.draw.tess_params +
-                             offsetof(struct poly_tess_args, tes_buffer);
+                             offsetof(struct poly_tess_params, tes_buffer);
       } else {
          gsi.vertex_buffer = desc->root.root_desc_addr +
                              offsetof(struct hk_root_descriptor_table,
@@ -3095,7 +3095,7 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
 
    struct agx_ptr tess_args = {0};
    if (gfx->shaders[MESA_SHADER_TESS_EVAL]) {
-      tess_args = hk_pool_alloc(cmd, sizeof(struct poly_tess_args), 4);
+      tess_args = hk_pool_alloc(cmd, sizeof(struct poly_tess_params), 4);
       gfx->descriptors.root.draw.tess_params = tess_args.gpu;
       gfx->descriptors.root_dirty = true;
    }

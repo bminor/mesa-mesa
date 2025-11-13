@@ -367,7 +367,7 @@ libagx_prefix_sum_geom(constant struct poly_geometry_params *p)
 }
 
 KERNEL(1024)
-libagx_prefix_sum_tess(global struct poly_tess_args *p, global uint *c_prims,
+libagx_prefix_sum_tess(global struct poly_tess_params *p, global uint *c_prims,
                        global uint *c_invs, uint increment_stats__2)
 {
    local uint scratch[32];

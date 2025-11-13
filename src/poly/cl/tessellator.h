@@ -118,7 +118,7 @@ struct CHWTessellator {
 #define FXP_ONE_HALF      0x00008000
 
 static inline global float *
-tess_factors(constant struct poly_tess_args *p, uint patch)
+tess_factors(constant struct poly_tess_params *p, uint patch)
 {
    return p->tcs_buffer + (patch * p->tcs_stride_el);
 }
@@ -129,7 +129,7 @@ tess_factors(constant struct poly_tess_args *p, uint patch)
  * memory.
  */
 static inline global void *
-poly_draw(constant struct poly_tess_args *p, enum poly_tess_mode mode,
+poly_draw(constant struct poly_tess_params *p, enum poly_tess_mode mode,
           bool lines, uint patch, uint count)
 {
    if (mode == POLY_TESS_MODE_COUNT) {
@@ -152,7 +152,7 @@ poly_draw(constant struct poly_tess_args *p, enum poly_tess_mode mode,
 
 static inline void
 poly_draw_points(private struct CHWTessellator *ctx,
-                 constant struct poly_tess_args *p, uint patch, uint count)
+                 constant struct poly_tess_params *p, uint patch, uint count)
 {
    /* For points mode with a single draw, we need to generate a trivial index
     * buffer to stuff in the patch ID in the right place.
@@ -168,7 +168,7 @@ poly_draw_points(private struct CHWTessellator *ctx,
 }
 
 static inline void
-poly_draw_empty(constant struct poly_tess_args *p, enum poly_tess_mode mode,
+poly_draw_empty(constant struct poly_tess_params *p, enum poly_tess_mode mode,
                 uint patch)
 {
    if (mode == POLY_TESS_MODE_COUNT) {
@@ -181,7 +181,7 @@ poly_draw_empty(constant struct poly_tess_args *p, enum poly_tess_mode mode,
  * is recorded in the coord_allocs[] array, which is in elements.
  */
 static inline global struct poly_tess_point *
-poly_heap_alloc_points(constant struct poly_tess_args *p, uint patch,
+poly_heap_alloc_points(constant struct poly_tess_params *p, uint patch,
                        uint count)
 {
    /* If we're recording statistics, increment now. The statistic is for
@@ -720,7 +720,7 @@ StitchTransition(private struct CHWTessellator *ctx, int baseIndexOffset,
 }
 
 static inline void
-poly_tess_isoline_process(constant struct poly_tess_args *p, uint32_t patch,
+poly_tess_isoline_process(constant struct poly_tess_params *p, uint32_t patch,
                           enum poly_tess_mode mode)
 {
    enum poly_tess_partitioning partitioning = p->partitioning;
@@ -820,7 +820,7 @@ poly_tess_isoline_process(constant struct poly_tess_args *p, uint32_t patch,
 }
 
 static inline void
-poly_tess_tri_process(constant struct poly_tess_args *p, uint32_t patch,
+poly_tess_tri_process(constant struct poly_tess_params *p, uint32_t patch,
                       enum poly_tess_mode mode)
 {
    enum poly_tess_partitioning partitioning = p->partitioning;
@@ -1146,7 +1146,7 @@ poly_tess_tri_process(constant struct poly_tess_args *p, uint32_t patch,
 }
 
 static inline void
-poly_tess_quad_process(constant struct poly_tess_args *p, uint32_t patch,
+poly_tess_quad_process(constant struct poly_tess_params *p, uint32_t patch,
                        enum poly_tess_mode mode)
 {
    enum poly_tess_partitioning partitioning = p->partitioning;
