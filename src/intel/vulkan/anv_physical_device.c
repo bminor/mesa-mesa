@@ -1465,10 +1465,10 @@ get_properties(const struct anv_physical_device *pdevice,
       props->maxGeometryCount = (1u << 24) - 1;
       props->maxInstanceCount = (1u << 24) - 1;
       props->maxPrimitiveCount = (1u << 29) - 1;
-      props->maxPerStageDescriptorAccelerationStructures = UINT16_MAX;
-      props->maxPerStageDescriptorUpdateAfterBindAccelerationStructures = UINT16_MAX;
-      props->maxDescriptorSetAccelerationStructures = UINT16_MAX;
-      props->maxDescriptorSetUpdateAfterBindAccelerationStructures = UINT16_MAX;
+      props->maxPerStageDescriptorAccelerationStructures = desc_limits.max_resources;
+      props->maxPerStageDescriptorUpdateAfterBindAccelerationStructures = desc_limits.max_resources;
+      props->maxDescriptorSetAccelerationStructures = desc_limits.max_resources;
+      props->maxDescriptorSetUpdateAfterBindAccelerationStructures = desc_limits.max_resources;
       props->minAccelerationStructureScratchOffsetAlignment = 64;
    }
 
