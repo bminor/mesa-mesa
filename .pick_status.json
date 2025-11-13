@@ -7164,7 +7164,7 @@
         "description": "brw: fixup 64bit atomics emulation on 2D array images",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ce7208c3eeefc34193e79997a0447a90fd740453",
         "notes": null

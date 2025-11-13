@@ -125,6 +125,7 @@ static nir_def *
 image_tiled_address(nir_builder *b,
                     enum isl_tiling tiling,
                     enum glsl_sampler_dim dim,
+                    bool is_array,
                     unsigned bpp,
                     nir_def **coords,
                     nir_def *pitch,
@@ -137,6 +138,15 @@ image_tiled_address(nir_builder *b,
                        bpp,
                        1,
                        &tile_info);
+
+   /* With 2D images, the V coordinate should include the array layer since
+    * the TileId/IntraTile offset should be computed using the QPitch not
+    * being aligned to a tile's height.
+    */
+   if (dim == GLSL_SAMPLER_DIM_2D && is_array) {
+      coords[1] = nir_iadd(b, coords[1], nir_imul(b, qpitch, coords[2]));
+      coords[2] = nir_imm_int(b, 0);
+   }
 
    /* Compute the intra tile offset using the swizzle (swizzles use u,v,r,p
     * but we do not support msaa images)
@@ -174,6 +184,13 @@ image_tiled_address(nir_builder *b,
     * 5: Memory Data Formats:
     *
     *    "TileID = [(r » Cr) * (QPitch » Cv) + (v » Cv)] * (Pitch » Cu) + (u » Cu)"
+    *
+    * There is a different formula for 2D images:
+    *    "TileID = (v » Cv) * (Pitch » Cu) + (u » Cu)"
+    *    with v = (r * QPitch) + v
+    *
+    * But the 3D formula works for 2D with the array layer being moved into
+    * the V coordinate.
     */
    nir_def *tile_id =
       nir_iadd(b,
@@ -245,8 +262,8 @@ image_address(nir_builder *b,
    }
    nir_push_else(b, NULL);
    {
-      tiled_addr = image_tiled_address(b, tiling, dim, bpp,
-                                       coords, pitch, qpitch);
+      tiled_addr = image_tiled_address(b, tiling, dim, is_array,
+                                       bpp, coords, pitch, qpitch);
    }
    nir_pop_if(b, NULL);
 
