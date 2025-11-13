@@ -2615,3 +2615,23 @@ TEST_F(cmod_propagation_test, BFN_G_CMP_D_G)
 
    EXPECT_SHADERS_MATCH(bld, exp);
 }
+
+TEST_F(cmod_propagation_test, different_group)
+{
+   unsigned width = devinfo->ver >= 20 ? 32 : 16;
+   brw_builder bld = make_shader(MESA_SHADER_FRAGMENT, width);
+
+   brw_reg src0 = vgrf(bld, BRW_TYPE_UD);
+   brw_reg src1 = vgrf(bld, BRW_TYPE_UD);
+
+   /* Propagation should not happen. The second instructions writes the second
+    * half of the flags. Propagating that to the first instruction would
+    * incorrectly cause it to write the first half of the flags.
+    */
+   bld.group(width / 2, 1).MOV(src1, retype(src0, BRW_TYPE_D));
+
+   bld.group(width / 2, 0).MOV(bld.null_reg_d(), src1)
+      ->conditional_mod = BRW_CONDITIONAL_NZ;
+
+   EXPECT_NO_PROGRESS(brw_opt_cmod_propagation, bld);
+}

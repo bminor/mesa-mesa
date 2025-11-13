@@ -584,7 +584,7 @@
         "description": "brw/cmod: Don't propagate between instructions in different groups",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "95ac3b1daeaa7d40d49fa2e0bdef46346c2996d5",
         "notes": null
