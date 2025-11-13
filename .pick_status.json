@@ -264,7 +264,7 @@
         "description": "loader: Wrap nouveau_zink_predicate with HAVE_LIBDRM",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "265afd9bfde79fc461899f91ca13e78407f9b072",
         "notes": null
