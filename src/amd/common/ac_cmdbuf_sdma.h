@@ -24,6 +24,10 @@ void ac_emit_sdma_wait_mem(struct ac_cmdbuf *cs, uint32_t op, uint64_t va, uint3
 
 void ac_emit_sdma_write_data_head(struct ac_cmdbuf *cs, uint64_t va, uint32_t count);
 
+uint64_t
+ac_emit_sdma_constant_fill(struct ac_cmdbuf *cs, enum sdma_version sdma_ip_version,
+                           uint64_t va, uint64_t size, uint32_t value);
+
 #ifdef __cplusplus
 }
 #endif

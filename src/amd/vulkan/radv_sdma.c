@@ -404,41 +404,18 @@ radv_sdma_copy_memory(const struct radv_device *device, struct radv_cmd_stream *
 }
 
 void
-radv_sdma_fill_memory(const struct radv_device *device, struct radv_cmd_stream *cs, const uint64_t va,
-                      const uint64_t size, const uint32_t value)
+radv_sdma_fill_memory(const struct radv_device *device, struct radv_cmd_stream *cs, uint64_t va, uint64_t size,
+                      const uint32_t value)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
-   const uint32_t fill_size = 2; /* This means that the count is in dwords. */
-   const uint32_t constant_fill_header = SDMA_PACKET(SDMA_OPCODE_CONSTANT_FILL, 0, 0) | (fill_size & 0x3) << 30;
+   while (size > 0) {
+      radeon_check_space(device->ws, cs->b, 5);
+      uint64_t bytes_written = ac_emit_sdma_constant_fill(cs->b, pdev->info.sdma_ip_version, va, size, value);
 
-   /* This packet is the same since SDMA v2.4, haven't bothered to check older versions. */
-   const enum sdma_version ver = pdev->info.sdma_ip_version;
-   assert(ver >= SDMA_2_4);
-
-   /* Maximum allowed fill size depends on the GPU.
-    * Emit as many packets as necessary to fill all the bytes we need.
-    */
-   const uint64_t max_fill_bytes = BITFIELD64_MASK(ver >= SDMA_6_0 ? 30 : 22) & ~0x3;
-   const unsigned num_packets = DIV_ROUND_UP(size, max_fill_bytes);
-   ASSERTED unsigned cdw_max = radeon_check_space(device->ws, cs->b, num_packets * 5);
-
-   radeon_begin(cs);
-
-   for (unsigned i = 0; i < num_packets; ++i) {
-      const uint64_t offset = i * max_fill_bytes;
-      const uint64_t fill_bytes = MIN2(size - offset, max_fill_bytes);
-      const uint64_t fill_va = va + offset;
-
-      radeon_emit(constant_fill_header);
-      radeon_emit(fill_va);
-      radeon_emit(fill_va >> 32);
-      radeon_emit(value);
-      radeon_emit(fill_bytes - 1); /* Must be programmed in bytes, even if the fill is done in dwords. */
+      size -= bytes_written;
+      va += bytes_written;
    }
-
-   radeon_end();
-   assert(cs->b->cdw <= cdw_max);
 }
 
 static void
