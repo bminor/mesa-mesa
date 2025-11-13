@@ -139,6 +139,9 @@ iris_predicate(int fd, const char *driver)
 bool
 nouveau_zink_predicate(int fd, const char *driver)
 {
+#ifndef HAVE_LIBDRM
+   return true;
+#else
    /* Never load on nv proprietary driver */
    if (!drm_fd_is_nouveau(fd))
       return false;
@@ -191,6 +194,7 @@ nouveau_zink_predicate(int fd, const char *driver)
    if (!use_zink && !strcmp(driver, "nouveau"))
       return true;
    return false;
+#endif
 }
 
 
