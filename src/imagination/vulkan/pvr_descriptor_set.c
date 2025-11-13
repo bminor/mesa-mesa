@@ -400,6 +400,23 @@ write_sampler(const struct pvr_descriptor_set *set,
               const struct pvr_descriptor_set_layout_binding *binding,
               uint32_t elem);
 
+static void
+write_immutable_samplers(struct pvr_descriptor_set_layout *layout,
+                         struct pvr_descriptor_set *set)
+{
+   for (unsigned u = 0; u < layout->binding_count; ++u) {
+      const struct pvr_descriptor_set_layout_binding *binding =
+         &layout->bindings[u];
+
+      if (binding->type == VK_DESCRIPTOR_TYPE_SAMPLER &&
+          binding->immutable_samplers) {
+         for (uint32_t j = 0; j < binding->descriptor_count; j++) {
+            write_sampler(set, NULL, binding, j);
+         }
+      }
+   }
+}
+
 static VkResult
 pvr_descriptor_set_create(struct pvr_device *device,
                           struct pvr_descriptor_pool *pool,
@@ -437,17 +454,7 @@ pvr_descriptor_set_create(struct pvr_device *device,
    list_addtail(&set->link, &pool->desc_sets);
 
    /* Setup immutable samplers. */
-   for (unsigned u = 0; u < layout->binding_count; ++u) {
-      const struct pvr_descriptor_set_layout_binding *binding =
-         &layout->bindings[u];
-
-      if (binding->type == VK_DESCRIPTOR_TYPE_SAMPLER &&
-          binding->immutable_samplers) {
-         for (uint32_t j = 0; j < binding->descriptor_count; j++) {
-            write_sampler(set, NULL, binding, j);
-         }
-      }
-   }
+   write_immutable_samplers(layout, set);
 
    *descriptor_set_out = set;
 
