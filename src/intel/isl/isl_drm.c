@@ -300,13 +300,10 @@ isl_drm_modifier_get_score(const struct intel_device_info *devinfo,
 
       return 4;
    case I915_FORMAT_MOD_4_TILED_BMG_CCS:
-      if (devinfo->platform != INTEL_PLATFORM_BMG)
-         return 0;
-
-      if (INTEL_DEBUG(DEBUG_NO_CCS))
-         return 0;
-
-      return 4;
+      /* FIXME: Disable BMG modifier for
+       * https://gitlab.freedesktop.org/mesa/mesa/-/issues/13868
+       */
+      return 0;
    }
 }
 
