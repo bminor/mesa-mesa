@@ -1431,9 +1431,6 @@ system_value("ro_sink_address_poly", 1, bit_sizes=[64])
 # mesa_prim for the input topology (in a geometry shader)
 system_value("input_topology_poly", 1)
 
-# Pointer to the buffer passing outputs VS->TCS, VS->GS, or TES->GS linkage.
-system_value("vs_output_buffer_poly", 1, bit_sizes=[64])
-
 # Mask of VS->TCS, VS->GS, or TES->GS outputs. This is modelled as a sysval
 # so it can be dynamic with shader objects or constant folded with monolithic.
 system_value("vs_outputs_poly", 1, bit_sizes=[64])

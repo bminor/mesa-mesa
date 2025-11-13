@@ -59,11 +59,6 @@ struct poly_tess_params {
     */
    DEVICE(uint32_t) statistic;
 
-   /* When geom+tess used together, the buffer containing TES outputs (executed
-    * as a hardware compute shader).
-    */
-   uint64_t tes_buffer;
-
    /* Bitfield of TCS per-vertex outputs */
    uint64_t tcs_per_vertex_outputs;
 
@@ -105,4 +100,4 @@ struct poly_tess_params {
     */
    uint32_t ccw;
 } PACKED;
-static_assert(sizeof(struct poly_tess_params) == 36 * 4);
+static_assert(sizeof(struct poly_tess_params) == 34 * 4);

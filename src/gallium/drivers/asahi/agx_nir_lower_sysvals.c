@@ -184,9 +184,6 @@ lower_intrinsic(nir_builder *b, nir_intrinsic_instr *intr,
       return load_sysval_root(b, 1, 64, &u->vertex_params);
    case nir_intrinsic_load_geometry_param_buffer_poly:
       return load_sysval_root(b, 1, 64, &u->geometry_params);
-   case nir_intrinsic_load_vs_output_buffer_poly:
-      return nir_load_global_constant(
-         b, 1, 64, load_sysval_root(b, 1, 64, &u->vertex_output_buffer_ptr));
    case nir_intrinsic_load_vs_outputs_poly:
       return load_sysval_root(b, 1, 64, &u->vertex_outputs);
    case nir_intrinsic_load_tess_param_buffer_poly:

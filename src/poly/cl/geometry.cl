@@ -358,6 +358,12 @@ poly_pad_index_gs(global int *index_buffer, uint inv_index_offset,
 }
 
 uintptr_t
+poly_vertex_output_buffer(constant struct poly_vertex_params *p)
+{
+   return p->output_buffer;
+}
+
+uintptr_t
 poly_vertex_output_address(uintptr_t buffer, uint64_t mask, uint vtx,
                            gl_varying_slot location)
 {

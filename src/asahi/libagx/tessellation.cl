@@ -11,7 +11,7 @@ libagx_tess_setup_indirect(
    global struct poly_tess_params *p,
    global uint32_t *grids /* output: VS then TCS then tess */,
    global struct poly_vertex_params *vp /* output */, global uint32_t *indirect,
-   global uint64_t *vertex_output_buffer_ptr, uint64_t in_index_buffer,
+   uint64_t in_index_buffer,
    uint32_t in_index_buffer_range_el, uint32_t in_index_size_B,
    uint64_t vertex_outputs /* bitfield */,
 
@@ -51,7 +51,7 @@ libagx_tess_setup_indirect(
    p->coord_allocs = (global uint *)(blob + patch_coord_offs);
    p->nr_patches = unrolled_patches;
 
-   *vertex_output_buffer_ptr = (uintptr_t)(blob + vb_offs);
+   vp->output_buffer = (uintptr_t)(blob + vb_offs);
    p->counts = (global uint32_t *)(blob + count_offs);
 
    if (vp) {

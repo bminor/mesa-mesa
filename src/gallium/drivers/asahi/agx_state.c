@@ -4003,9 +4003,6 @@ agx_batch_geometry_params(struct agx_batch *batch, uint64_t input_index_buffer,
    params.vs_grid[5] = params.gs_grid[5] = 1;
 
    if (indirect) {
-      batch->uniforms.vertex_output_buffer_ptr =
-         agx_pool_alloc_aligned(&batch->pool, 8, 8).gpu;
-
       params.vs_grid[2] = params.gs_grid[2] = 1;
    } else {
       params.vs_grid[0] = draw->count;
@@ -4026,11 +4023,9 @@ agx_batch_geometry_params(struct agx_batch *batch, uint64_t input_index_buffer,
       }
 
       if (vb_size) {
-         uint64_t addr = agx_pool_alloc_aligned(&batch->pool, vb_size, 4).gpu;
-         batch->uniforms.vertex_output_buffer_ptr =
-            agx_pool_upload(&batch->pool, &addr, 8);
-
-         params.input_buffer = addr;
+         vp.output_buffer =
+            agx_pool_alloc_aligned(&batch->pool, vb_size, 4).gpu;
+         params.input_buffer = vp.output_buffer;
       }
 
       struct poly_gs_info *gsi = &batch->ctx->gs->gs;
@@ -4112,7 +4107,6 @@ agx_launch_gs_prerast(struct agx_batch *batch,
          .index_buffer = ib,
          .index_buffer_range_el = ib_extent / info->index_size,
          .draw = agx_indirect_buffer_ptr(batch, indirect),
-         .vertex_buffer = batch->uniforms.vertex_output_buffer_ptr,
          .vp = batch->uniforms.vertex_params,
          .p = batch->uniforms.geometry_params,
          .heap = agx_batch_heap(batch),
@@ -4646,9 +4640,7 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
 
       unsigned vb_size = poly_tcs_in_size(draws->count * info->instance_count,
                                           batch->uniforms.vertex_outputs);
-      uint64_t addr = agx_pool_alloc_aligned(&batch->pool, vb_size, 4).gpu;
-      batch->uniforms.vertex_output_buffer_ptr =
-         agx_pool_upload(&batch->pool, &addr, 8);
+      vp.output_buffer = agx_pool_alloc_aligned(&batch->pool, vb_size, 4).gpu;
 
       vs_grid = agx_3d(draws->count, info->instance_count, 1);
       tcs_grid = agx_3d(in_patches * tcs->tess.output_patch_size,
@@ -4661,8 +4653,9 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
             .gpu;
    }
 
-   batch->uniforms.vertex_params =
+   uint64_t vertex_state =
       agx_pool_upload_aligned(&batch->pool, &vp, sizeof(vp), 8);
+   batch->uniforms.vertex_params = vertex_state;
 
    uint64_t state =
       agx_pool_upload_aligned(&batch->pool, &params, sizeof(params), 4);
@@ -4673,7 +4666,6 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
 
       uint32_t grid_stride = sizeof(uint32_t) * 6;
 
-      uint64_t vertex_out_ptr = agx_pool_alloc_aligned(&batch->pool, 8, 8).gpu;
       uint64_t indirect_ptr = agx_indirect_buffer_ptr(batch, indirect);
 
       uint64_t tcs_statistic = agx_get_query_address(
@@ -4684,11 +4676,9 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
          agx_pool_alloc_aligned(&batch->pool, grid_stride * 3, 4).gpu;
 
       libagx_tess_setup_indirect(
-         batch, agx_1d(1), AGX_BARRIER_ALL, state, grids, 0 /* XXX: IA */,
-         indirect_ptr, vertex_out_ptr, 0, 0, 0 /* XXX: Index buffer */,
+         batch, agx_1d(1), AGX_BARRIER_ALL, state, grids, vertex_state,
+         indirect_ptr, 0, 0, 0 /* XXX: Index buffer */,
          ctx->vs->b.info.outputs, tcs_statistic);
-
-      batch->uniforms.vertex_output_buffer_ptr = vertex_out_ptr;
 
       vs_grid = agx_grid_indirect_local(grids + 0 * grid_stride);
       tcs_grid = agx_grid_indirect_local(grids + 1 * grid_stride);
@@ -4700,8 +4690,6 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
 
    agx_launch(batch, tcs_grid, agx_workgroup(tcs->tess.output_patch_size, 1, 1),
               ctx->tcs, NULL, MESA_SHADER_TESS_CTRL, 0);
-
-   batch->uniforms.vertex_output_buffer_ptr = 0;
 
    uint64_t c_prims = agx_get_query_address(
       batch, ctx->pipeline_statistics[PIPE_STAT_QUERY_C_PRIMITIVES]);

@@ -189,8 +189,11 @@ struct poly_vertex_params {
     * setup kernel for indirect. This is used for VS->GS and VS->TCS indexing.
     */
    uint32_t verts_per_instance;
+
+   /* Output buffer for vertex data */
+   uint64_t output_buffer;
 } PACKED;
-static_assert(sizeof(struct poly_vertex_params) == 4 * 4);
+static_assert(sizeof(struct poly_vertex_params) == 6 * 4);
 
 static inline uint
 poly_index_buffer_range_el(uint size_el, uint offset_el)
@@ -522,7 +525,6 @@ poly_increment_ia(global uint32_t *ia_vertices, global uint32_t *ia_primitives,
 
 static inline void
 poly_gs_setup_indirect(uint64_t index_buffer, constant uint *draw,
-                       global uintptr_t *vertex_buffer /* output */,
                        global struct poly_vertex_params *vp /* output */,
                        global struct poly_geometry_params *p /* output */,
                        global struct poly_heap *heap,
@@ -574,9 +576,10 @@ poly_gs_setup_indirect(uint64_t index_buffer, constant uint *draw,
          heap, p->input_primitives * p->count_buffer_stride);
    }
 
-   p->input_buffer =
+   const uintptr_t vertex_buffer =
       (uintptr_t)poly_heap_alloc_nonatomic(heap, vertex_buffer_size);
-   *vertex_buffer = p->input_buffer;
+   vp->output_buffer = vertex_buffer;
+   p->input_buffer = vertex_buffer;
 
    p->input_mask = vs_outputs;
 

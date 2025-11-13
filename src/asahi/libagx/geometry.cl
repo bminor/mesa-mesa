@@ -343,7 +343,6 @@ libagx_unroll_restart(global struct poly_heap *heap, uint64_t index_buffer,
 KERNEL(1)
 libagx_gs_setup_indirect(
    uint64_t index_buffer, constant uint *draw,
-   global uintptr_t *vertex_buffer /* output */,
    global struct poly_vertex_params *vp /* output */,
    global struct poly_geometry_params *p /* output */,
    global struct poly_heap *heap,
@@ -353,7 +352,7 @@ libagx_gs_setup_indirect(
    uint32_t prim /* Input primitive type, enum mesa_prim */,
    int is_prefix_summing, uint max_indices, enum poly_gs_shape shape)
 {
-   poly_gs_setup_indirect(index_buffer, draw, vertex_buffer, vp, p, heap,
+   poly_gs_setup_indirect(index_buffer, draw, vp, p, heap,
                           vs_outputs, index_size_B, index_buffer_range_el, prim,
                           is_prefix_summing, max_indices, shape);
 }

@@ -293,7 +293,8 @@ poly_load_per_vertex_input(nir_builder *b, nir_intrinsic_instr *intr,
       assert(b->shader->info.stage == MESA_SHADER_TESS_CTRL);
 
       /* TCS always preceded by VS so we use the VS state directly */
-      addr = poly_vertex_output_address(b, nir_load_vs_output_buffer_poly(b),
+      nir_def *vp = nir_load_vertex_param_buffer_poly(b);
+      addr = poly_vertex_output_address(b, poly_vertex_output_buffer(b, vp),
                                         nir_load_vs_outputs_poly(b), vertex,
                                         location);
    }
@@ -1401,18 +1402,14 @@ lower_vs_before_gs(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
    nir_def *location = nir_iadd_imm(b, intr->src[1].ssa, sem.location);
 
-   nir_def *buffer, *nr_verts, *instance_id, *primitive_id;
-   if (b->shader->info.stage == MESA_SHADER_VERTEX) {
-      buffer = nir_load_vs_output_buffer_poly(b);
-      nr_verts = poly_input_vertices(b, nir_load_vertex_param_buffer_poly(b));
-   } else {
-      assert(b->shader->info.stage == MESA_SHADER_TESS_EVAL);
+   nir_def *vp = nir_load_vertex_param_buffer_poly(b);
+   nir_def *buffer = poly_vertex_output_buffer(b, vp);
 
-      /* Instancing is unrolled during tessellation so nr_verts is ignored. */
-      nr_verts = nir_imm_int(b, 0);
-      buffer = poly_tes_buffer(b, nir_load_tess_param_buffer_poly(b));
-   }
+   /* Instancing is unrolled during tessellation so nr_verts is ignored. */
+   nir_def *nr_verts = b->shader->info.stage == MESA_SHADER_VERTEX ?
+                       poly_input_vertices(b, vp) : nir_imm_int(b, 0);
 
+   nir_def *instance_id, *primitive_id;
    if (b->shader->info.stage == MESA_SHADER_VERTEX &&
        !b->shader->info.vs.tes_poly) {
       primitive_id = nir_load_vertex_id_zero_base(b);

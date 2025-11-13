@@ -1041,11 +1041,14 @@ hk_index_buffer(uint64_t index_buffer, uint size_el, uint offset_el,
 }
 
 static uint64_t
-hk_upload_vertex_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
+hk_upload_vertex_params(struct hk_cmd_buffer *cmd,
+                        uint64_t vertex_output_buffer,
+                        struct agx_draw draw)
 {
-   assert(!agx_is_indirect(draw.b) && "indirect params written by GPU");
-
-   struct poly_vertex_params params = {.verts_per_instance = draw.b.count[0]};
+   struct poly_vertex_params params = {
+      .verts_per_instance = draw.b.count[0],
+      .output_buffer = vertex_output_buffer,
+   };
 
    if (draw.indexed) {
       unsigned index_size_B = agx_index_size_to_B(draw.index_size);
@@ -1097,7 +1100,9 @@ hk_rast_prim(struct hk_cmd_buffer *cmd)
 }
 
 static uint64_t
-hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
+hk_upload_geometry_params(struct hk_cmd_buffer *cmd,
+                          uint64_t vertex_output_buffer,
+                          struct agx_draw draw)
 {
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
    struct hk_descriptor_state *desc = &cmd->state.gfx.descriptors;
@@ -1122,7 +1127,7 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
       /* Overriden by the indirect setup kernel. As tess->GS is always indirect,
        * we can assume here that we're VS->GS.
        */
-      .input_buffer = desc->root.draw.vertex_output_buffer,
+      .input_buffer = vertex_output_buffer,
       .input_mask = desc->root.draw.vertex_outputs,
    };
 
@@ -1483,15 +1488,6 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
          .shape = count->info.gs.shape,
       };
 
-      if (cmd->state.gfx.shaders[MESA_SHADER_TESS_EVAL]) {
-         gsi.vertex_buffer = desc->root.draw.tess_params +
-                             offsetof(struct poly_tess_params, tes_buffer);
-      } else {
-         gsi.vertex_buffer = desc->root.root_desc_addr +
-                             offsetof(struct hk_root_descriptor_table,
-                                      draw.vertex_output_buffer);
-      }
-
       if (draw.indexed) {
          gsi.index_size_B = agx_index_size_to_B(draw.index_size);
          gsi.index_buffer_range_el = agx_draw_index_range_el(draw);
@@ -1610,9 +1606,6 @@ hk_launch_tess(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
          .indirect = draw.b.ptr,
          .vp = gfx->descriptors.root.draw.vertex_params,
          .vertex_outputs = vs->b.info.outputs,
-         .vertex_output_buffer_ptr =
-            gfx->root + offsetof(struct hk_root_descriptor_table,
-                                 draw.vertex_output_buffer),
          .tcs_statistic = hk_pipeline_stat_addr(
             cmd,
             VK_QUERY_PIPELINE_STATISTIC_TESSELLATION_CONTROL_SHADER_PATCHES_BIT),
@@ -3056,17 +3049,7 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
       gfx->dirty |= HK_DIRTY_VARYINGS;
    }
 
-   if (gfx->shaders[MESA_SHADER_TESS_EVAL] ||
-       gfx->shaders[MESA_SHADER_GEOMETRY] || linked_vs->sw_indexing) {
-      /* XXX: We should deduplicate this logic */
-      bool indirect = agx_is_indirect(draw.b) || draw.restart;
-
-      desc->root.draw.vertex_params =
-         indirect ? hk_pool_alloc(cmd, sizeof(struct poly_vertex_params), 4).gpu
-                  : hk_upload_vertex_params(cmd, draw);
-      desc->root_dirty = true;
-   }
-
+   uint64_t vertex_output_buffer = 0;
    if (gfx->shaders[MESA_SHADER_TESS_EVAL] ||
        gfx->shaders[MESA_SHADER_GEOMETRY]) {
 
@@ -3087,10 +3070,16 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
           *
           *    dEQP-VK.pipeline.monolithic.no_position.explicit_declarations.basic.single_view.v0_g1
           */
-         desc->root.draw.vertex_output_buffer =
-            vb_size ? hk_pool_alloc(cmd, vb_size, 4).gpu
-                    : AGX_SCRATCH_PAGE_ADDRESS;
+         vertex_output_buffer = vb_size ? hk_pool_alloc(cmd, vb_size, 4).gpu
+                                        : AGX_SCRATCH_PAGE_ADDRESS;
       }
+   }
+
+   if (gfx->shaders[MESA_SHADER_TESS_EVAL] ||
+       gfx->shaders[MESA_SHADER_GEOMETRY] || linked_vs->sw_indexing) {
+      desc->root.draw.vertex_params =
+         hk_upload_vertex_params(cmd, vertex_output_buffer, draw);
+      desc->root_dirty = true;
    }
 
    struct agx_ptr tess_args = {0};
@@ -3102,7 +3091,7 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
 
    if (gfx->shaders[MESA_SHADER_GEOMETRY]) {
       gfx->descriptors.root.draw.geometry_params =
-         hk_upload_geometry_params(cmd, draw);
+         hk_upload_geometry_params(cmd, vertex_output_buffer, draw);
 
       gfx->descriptors.root_dirty = true;
    }

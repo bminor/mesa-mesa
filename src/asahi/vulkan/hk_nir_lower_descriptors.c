@@ -424,9 +424,6 @@ lower_uvs_index(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
    case nir_intrinsic_load_geometry_param_buffer_poly:
       return lower_sysval_to_root_table(b, intrin, draw.geometry_params);
 
-   case nir_intrinsic_load_vs_output_buffer_poly:
-      return lower_sysval_to_root_table(b, intrin, draw.vertex_output_buffer);
-
    case nir_intrinsic_load_vs_outputs_poly:
       return lower_sysval_to_root_table(b, intrin, draw.vertex_outputs);
 

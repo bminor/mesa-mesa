@@ -64,9 +64,6 @@ struct hk_root_descriptor_table {
          uint32_t attrib_clamps[AGX_MAX_VBUFS];
          uint32_t attrib_strides[AGX_MAX_VBUFS];
 
-         /* Pointer to the VS->TCS, VS->GS, or TES->GS buffer. */
-         uint64_t vertex_output_buffer;
-
          /* Mask of outputs flowing VS->TCS, VS->GS, or TES->GS . */
          uint64_t vertex_outputs;
 
