@@ -1271,7 +1271,7 @@ vp9_prob_buf_update(struct anv_video_session *vid,
              sizeof(ctx.seg_tree_probs));
       memcpy(ctx.seg_pred_probs, seg->segmentation_pred_prob,
              sizeof(ctx.seg_pred_probs));
-      memcpy(ptr + SEG_PROBS_OFFSET, &ctx.seg_tree_probs,
+      memcpy(ptr + SEG_PROBS_OFFSET, (void *)&ctx.seg_tree_probs,
              SEG_TREE_PROBS + PREDICTION_PROBS);
    } else if (BITSET_TEST(vid->prob_tbl_set, 3)) {
       VP9_CTX_DEFAULT(seg_tree_probs);
