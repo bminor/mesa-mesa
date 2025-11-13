@@ -234,7 +234,6 @@ struct poly_geometry_params {
     * reflect the vertex shader for VS->GS or instead the tessellation
     * evaluation shader for TES->GS.
     */
-   uint64_t input_buffer;
    uint64_t input_mask;
 
    /* Location-indexed mask of flat outputs, used for lowering GL edge flags. */
@@ -278,7 +277,7 @@ struct poly_geometry_params {
     */
    uint32_t input_topology;
 } PACKED;
-static_assert(sizeof(struct poly_geometry_params) == 86 * 4);
+static_assert(sizeof(struct poly_geometry_params) == 84 * 4);
 
 /* TCS shared memory layout:
  *
@@ -576,10 +575,8 @@ poly_gs_setup_indirect(uint64_t index_buffer, constant uint *draw,
          heap, p->input_primitives * p->count_buffer_stride);
    }
 
-   const uintptr_t vertex_buffer =
+   vp->output_buffer =
       (uintptr_t)poly_heap_alloc_nonatomic(heap, vertex_buffer_size);
-   vp->output_buffer = vertex_buffer;
-   p->input_buffer = vertex_buffer;
 
    p->input_mask = vs_outputs;
 

@@ -364,19 +364,18 @@ poly_vertex_output_buffer(constant struct poly_vertex_params *p)
 }
 
 uintptr_t
-poly_vertex_output_address(uintptr_t buffer, uint64_t mask, uint vtx,
-                           gl_varying_slot location)
+poly_vertex_output_address(constant struct poly_vertex_params *p,
+                           uint64_t mask, uint vtx, gl_varying_slot location)
 {
    /* Written like this to let address arithmetic work */
-   return buffer + ((uintptr_t)poly_tcs_in_offs_el(vtx, location, mask)) * 16;
+   return p->output_buffer +
+      ((uintptr_t)poly_tcs_in_offs_el(vtx, location, mask)) * 16;
 }
 
-uintptr_t
-poly_geometry_input_address(constant struct poly_geometry_params *p, uint vtx,
-                            gl_varying_slot location)
+uint64_t
+poly_geometry_input_mask(constant struct poly_geometry_params *p)
 {
-   return poly_vertex_output_address(p->input_buffer, p->input_mask, vtx,
-                                     location);
+   return p->input_mask;
 }
 
 unsigned

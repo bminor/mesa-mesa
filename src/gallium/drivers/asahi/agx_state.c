@@ -4025,7 +4025,6 @@ agx_batch_geometry_params(struct agx_batch *batch, uint64_t input_index_buffer,
       if (vb_size) {
          vp.output_buffer =
             agx_pool_alloc_aligned(&batch->pool, vb_size, 4).gpu;
-         params.input_buffer = vp.output_buffer;
       }
 
       struct poly_gs_info *gsi = &batch->ctx->gs->gs;

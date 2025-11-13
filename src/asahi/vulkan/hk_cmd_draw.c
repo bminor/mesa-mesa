@@ -1100,9 +1100,7 @@ hk_rast_prim(struct hk_cmd_buffer *cmd)
 }
 
 static uint64_t
-hk_upload_geometry_params(struct hk_cmd_buffer *cmd,
-                          uint64_t vertex_output_buffer,
-                          struct agx_draw draw)
+hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
 {
    struct hk_device *dev = hk_cmd_buffer_device(cmd);
    struct hk_descriptor_state *desc = &cmd->state.gfx.descriptors;
@@ -1127,7 +1125,6 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd,
       /* Overriden by the indirect setup kernel. As tess->GS is always indirect,
        * we can assume here that we're VS->GS.
        */
-      .input_buffer = vertex_output_buffer,
       .input_mask = desc->root.draw.vertex_outputs,
    };
 
@@ -3091,7 +3088,7 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
 
    if (gfx->shaders[MESA_SHADER_GEOMETRY]) {
       gfx->descriptors.root.draw.geometry_params =
-         hk_upload_geometry_params(cmd, vertex_output_buffer, draw);
+         hk_upload_geometry_params(cmd, draw);
 
       gfx->descriptors.root_dirty = true;
    }

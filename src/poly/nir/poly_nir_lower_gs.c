@@ -285,19 +285,20 @@ poly_load_per_vertex_input(nir_builder *b, nir_intrinsic_instr *intr,
    nir_def *location = nir_iadd_imm(b, intr->src[1].ssa, sem.location);
    nir_def *addr;
 
+   nir_def *input_mask;
    if (b->shader->info.stage == MESA_SHADER_GEOMETRY) {
       /* GS may be preceded by VS or TES so specified as param */
-      addr = poly_geometry_input_address(
-         b, nir_load_geometry_param_buffer_poly(b), vertex, location);
+      input_mask = poly_geometry_input_mask(
+         b, nir_load_geometry_param_buffer_poly(b));
    } else {
       assert(b->shader->info.stage == MESA_SHADER_TESS_CTRL);
 
       /* TCS always preceded by VS so we use the VS state directly */
-      nir_def *vp = nir_load_vertex_param_buffer_poly(b);
-      addr = poly_vertex_output_address(b, poly_vertex_output_buffer(b, vp),
-                                        nir_load_vs_outputs_poly(b), vertex,
-                                        location);
+      input_mask = nir_load_vs_outputs_poly(b);
    }
+
+   nir_def *vp = nir_load_vertex_param_buffer_poly(b);
+   addr = poly_vertex_output_address(b, vp, input_mask, vertex, location);
 
    addr = nir_iadd_imm(b, addr, 4 * nir_intrinsic_component(intr));
    return nir_load_global_constant(b, intr->def.num_components,
@@ -1403,7 +1404,6 @@ lower_vs_before_gs(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    nir_def *location = nir_iadd_imm(b, intr->src[1].ssa, sem.location);
 
    nir_def *vp = nir_load_vertex_param_buffer_poly(b);
-   nir_def *buffer = poly_vertex_output_buffer(b, vp);
 
    /* Instancing is unrolled during tessellation so nr_verts is ignored. */
    nir_def *nr_verts = b->shader->info.stage == MESA_SHADER_VERTEX ?
@@ -1423,7 +1423,7 @@ lower_vs_before_gs(nir_builder *b, nir_intrinsic_instr *intr, void *data)
       nir_iadd(b, nir_imul(b, instance_id, nr_verts), primitive_id);
 
    nir_def *addr = poly_vertex_output_address(
-      b, buffer, nir_imm_int64(b, b->shader->info.outputs_written), linear_id,
+      b, vp, nir_imm_int64(b, b->shader->info.outputs_written), linear_id,
       location);
 
    assert(nir_src_bit_size(intr->src[0]) == 32);

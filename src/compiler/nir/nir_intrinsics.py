@@ -1436,6 +1436,10 @@ system_value("input_topology_poly", 1)
 system_value("vs_outputs_poly", 1, bit_sizes=[64])
 
 # Address of poly_vertex_param for vertex and tessellation evaluation
+# shaders.  In tessellation control shaders, this is the poly_vertex_param
+# for the vertex shader.  In geometry shaders, this is the poly_vertex_param
+# For whichever of vertex or tessellation evaluation shader preceeded the
+# geometry shader.
 system_value("vertex_param_buffer_poly", 1, bit_sizes=[64])
 
 # Address of the parameter buffer for poly geometry shaders
