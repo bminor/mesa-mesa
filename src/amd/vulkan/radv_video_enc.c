@@ -62,6 +62,26 @@ radv_probe_video_encode(struct radv_physical_device *pdev)
 {
    pdev->video_encode_enabled = false;
 
+   if (pdev->info.vcn_ip_version >= VCN_5_0_0) {
+      pdev->video_encode_enabled = true;
+      return;
+   } else if (pdev->info.vcn_ip_version >= VCN_4_0_0) {
+      if (pdev->info.vcn_enc_minor_version >= 22) {
+         pdev->video_encode_enabled = true;
+         return;
+      }
+   } else if (pdev->info.vcn_ip_version >= VCN_3_0_0) {
+      if (pdev->info.vcn_enc_minor_version >= 33) {
+         pdev->video_encode_enabled = true;
+         return;
+      }
+   } else if (pdev->info.vcn_ip_version >= VCN_2_0_0) {
+      if (pdev->info.vcn_enc_minor_version >= 24) {
+         pdev->video_encode_enabled = true;
+         return;
+      }
+   }
+
    struct radv_instance *instance = radv_physical_device_instance(pdev);
    pdev->video_encode_enabled = !!(instance->perftest_flags & RADV_PERFTEST_VIDEO_ENCODE);
 }
