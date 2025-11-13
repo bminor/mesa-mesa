@@ -189,4 +189,15 @@ struct pvr_load_op_state {
    struct pvr_load_op *load_ops;
 };
 
+struct pvr_dynamic_render_info;
+struct pvr_cmd_buffer;
+
+VkResult pvr_mrt_load_ops_setup(struct pvr_cmd_buffer *cmd_buffer,
+                                const VkAllocationCallbacks *alloc,
+                                struct pvr_load_op_state **state);
+void
+pvr_mrt_load_op_state_cleanup(const struct pvr_device *device,
+                              const VkAllocationCallbacks *alloc,
+                              struct pvr_load_op_state *state);
+
 #endif

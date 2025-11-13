@@ -23,6 +23,8 @@ struct pvr_render_target {
 };
 
 struct pvr_render_state {
+   struct list_head link;
+
    uint32_t width;
    uint32_t height;
    uint32_t layers;
@@ -51,29 +53,7 @@ struct pvr_framebuffer {
 
    uint32_t attachment_count;
    struct pvr_image_view **attachments;
-
-#if 0
-   /* Saved information from pCreateInfo. */
-   uint32_t width;
-   uint32_t height;
-   uint32_t layers;
-
-   /* Derived and other state. */
-   struct pvr_suballoc_bo *ppp_state_bo;
-   /* PPP state size in dwords. */
-   size_t ppp_state_size;
-
-   uint32_t render_targets_count;
-   struct pvr_render_target *render_targets;
-
-   struct pvr_spm_scratch_buffer *scratch_buffer;
-
-   uint32_t render_count;
-   struct pvr_spm_eot_state *spm_eot_state_per_render;
-   struct pvr_spm_bgobj_state *spm_bgobj_state_per_render;
-#else
    struct pvr_render_state *rstate;
-#endif
 };
 
 struct pvr_device;

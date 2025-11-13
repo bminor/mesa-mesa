@@ -991,6 +991,9 @@ pvr_create_device(struct pvr_physical_device *pdevice,
    device->global_cmd_buffer_submit_count = 0;
    device->global_queue_present_count = 0;
 
+   simple_mtx_init(&device->rs_mtx, mtx_plain);
+   list_inithead(&device->render_states);
+
    *pDevice = pvr_device_to_handle(device);
 
    return VK_SUCCESS;
@@ -1057,12 +1060,55 @@ err_out:
    return result;
 }
 
+void pvr_rstate_entry_add(struct pvr_device *device,
+                          struct pvr_render_state *rstate)
+{
+   simple_mtx_lock(&device->rs_mtx);
+   list_addtail(&rstate->link, &device->render_states);
+   simple_mtx_unlock(&device->rs_mtx);
+}
+
+void pvr_rstate_entry_remove(struct pvr_device *device,
+                             const struct pvr_render_state *rstate)
+{
+   simple_mtx_lock(&device->rs_mtx);
+   assert(rstate);
+
+   list_for_each_entry_safe (struct pvr_render_state,
+                             entry,
+                             &device->render_states,
+                             link) {
+      if (entry != rstate)
+         continue;
+
+      pvr_render_state_cleanup(device, rstate);
+      list_del(&entry->link);
+
+      vk_free(&device->vk.alloc, entry);
+   }
+
+   simple_mtx_unlock(&device->rs_mtx);
+}
+
 void
 pvr_destroy_device(struct pvr_device *device,
                    const VkAllocationCallbacks *pAllocator)
 {
    if (!device)
       return;
+
+   simple_mtx_lock(&device->rs_mtx);
+   list_for_each_entry_safe (struct pvr_render_state,
+                             rstate,
+                             &device->render_states,
+                             link) {
+      pvr_render_state_cleanup(device, rstate);
+      list_del(&rstate->link);
+
+      vk_free(&device->vk.alloc, rstate);
+   }
+   simple_mtx_unlock(&device->rs_mtx);
+   simple_mtx_destroy(&device->rs_mtx);
 
    pvr_border_color_table_finish(device);
    pvr_robustness_buffer_finish(device);
@@ -1929,6 +1975,7 @@ void pvr_render_state_cleanup(struct pvr_device *device,
    pvr_render_targets_fini(rstate->render_targets,
                            rstate->render_targets_count);
    pvr_bo_suballoc_free(rstate->ppp_state_bo);
+   vk_free(&device->vk.alloc, rstate->render_targets);
 }
 
 VkResult pvr_render_state_setup(
@@ -2128,6 +2175,7 @@ void pvr_DestroyFramebuffer(VkDevice _device,
       return;
 
    pvr_render_state_cleanup(device, framebuffer->rstate);
+   /* the render state is freed with the framebuffer */
 
    vk_object_base_finish(&framebuffer->base);
    vk_free2(&device->vk.alloc, pAllocator, framebuffer);

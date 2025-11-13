@@ -412,6 +412,9 @@ VkResult pvr_add_query_program(struct pvr_cmd_buffer *cmd_buffer,
    if (result != VK_SUCCESS)
       return result;
 
+   cmd_buffer->state.current_sub_cmd->is_dynamic_render = query_info->is_dynamic_render;
+   cmd_buffer->state.current_sub_cmd->is_suspend = query_info->is_suspend;
+
    switch (query_info->type) {
    case PVR_QUERY_TYPE_AVAILABILITY_WRITE:
       /* Adds a compute shader (fenced on the last 3D) that writes a non-zero

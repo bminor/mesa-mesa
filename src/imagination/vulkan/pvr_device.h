@@ -142,6 +142,9 @@ struct pvr_device {
    struct vk_sync *presignaled_sync;
 
    struct pvr_border_color_table *border_color_table;
+
+   simple_mtx_t rs_mtx;
+   struct list_head render_states;
 };
 
 struct pvr_device_memory {
@@ -220,5 +223,11 @@ VkResult pvr_gpu_upload_usc(struct pvr_device *device,
                             size_t code_size,
                             uint64_t code_alignment,
                             struct pvr_suballoc_bo **const pvr_bo_out);
+
+void pvr_rstate_entry_add(struct pvr_device *device,
+                          struct pvr_render_state *rstate);
+
+void pvr_rstate_entry_remove(struct pvr_device *device,
+                             const struct pvr_render_state *rstate);
 
 #endif /* PVR_DEVICE_H */

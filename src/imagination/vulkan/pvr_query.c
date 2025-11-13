@@ -410,7 +410,7 @@ pvr_cmd_buffer_state_get_view_count(const struct pvr_cmd_buffer_state *state)
    const struct pvr_sub_cmd_gfx *gfx_sub_cmd = &state->current_sub_cmd->gfx;
    const uint32_t hw_render_idx = gfx_sub_cmd->hw_render_idx;
    const struct pvr_renderpass_hwsetup_render *hw_render =
-      &render_pass_info->pass->hw_setup->renders[hw_render_idx];
+      pvr_pass_info_get_hw_render(render_pass_info, hw_render_idx);
    const uint32_t view_count = util_bitcount(hw_render->view_mask);
 
    assert(state->current_sub_cmd->type == PVR_SUB_CMD_TYPE_GRAPHICS);

@@ -37,6 +37,11 @@ struct pvr_query_pool {
 struct pvr_query_info {
    enum pvr_query_type type;
 
+   struct {
+      bool is_dynamic_render : 1;
+      bool is_suspend : 1;
+   };
+
    union {
       struct {
          uint32_t num_query_indices;

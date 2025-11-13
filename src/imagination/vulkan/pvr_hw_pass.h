@@ -189,6 +189,8 @@ struct pvr_renderpass_hwsetup_render {
 
    bool requires_frag_pr;
 
+   bool multiview_enabled;
+
    /* View mask for multiview. */
    uint32_t view_mask;
 

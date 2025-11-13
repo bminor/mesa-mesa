@@ -19,6 +19,7 @@
 #include "pvr_common.h"
 #include "pvr_framebuffer.h"
 #include "pvr_job_render.h"
+#include "pvr_hw_pass.h"
 #include "pvr_types.h"
 
 struct pvr_pds_upload;
@@ -113,7 +114,30 @@ struct pvr_transfer_cmd {
    struct pvr_cmd_buffer *cmd_buffer;
 };
 
+struct pvr_color_attachment_output_map {
+   uint32_t index_color;
+   uint32_t index_resolve;
+};
+
+struct pvr_dynamic_render_info {
+   /* Inputs */
+   struct pvr_render_pass_attachment *attachments;
+   uint32_t attachment_count;
+
+   /* Outputs */
+   struct pvr_color_attachment_output_map *color_attachments;
+   uint32_t color_attachment_count;
+
+   struct usc_mrt_setup *mrt_setup;
+
+   struct pvr_renderpass_hwsetup_render hw_render;
+};
+
 struct pvr_sub_cmd_gfx {
+   struct pvr_dynamic_render_info *dr_info;
+   struct pvr_renderpass_hwsetup_render *hw_render;
+   uint32_t attachment_count;
+
    const struct pvr_render_state *rstate;
 
    struct pvr_render_job job;
@@ -249,11 +273,16 @@ struct pvr_sub_cmd {
 
    enum pvr_sub_cmd_type type;
 
-   /* True if the sub_cmd is owned by this command buffer. False if taken from
-    * a secondary command buffer, in that case we are not supposed to free any
-    * resources associated with the sub_cmd.
-    */
-   bool owned;
+   struct {
+      /* True if the sub_cmd is owned by this command buffer. False if taken from
+       * a secondary command buffer, in that case we are not supposed to free any
+       * resources associated with the sub_cmd.
+       */
+      bool owned : 1;
+      bool is_dynamic_render : 1;
+      bool is_suspend : 1;
+      bool is_resume : 1;
+   };
 
    union {
       struct pvr_sub_cmd_gfx gfx;
@@ -267,6 +296,8 @@ struct pvr_render_pass_info {
    const struct pvr_render_pass *pass;
    struct pvr_framebuffer *framebuffer;
 
+   struct pvr_dynamic_render_info *dr_info;
+   struct pvr_renderpass_hwsetup_render *hw_render;
    struct pvr_render_state *rstate;
 
    uint32_t attachment_count;
@@ -274,6 +305,7 @@ struct pvr_render_pass_info {
 
    uint32_t subpass_idx;
    uint32_t current_hw_subpass;
+   uint32_t sample_count;
 
    VkRect2D render_area;
 
@@ -285,6 +317,10 @@ struct pvr_render_pass_info {
    bool process_empty_tiles;
    bool enable_bg_tag;
    uint32_t isp_userpass;
+
+   bool dynamic_render;
+   bool suspend;
+   bool resume;
 };
 
 struct pvr_ppp_state {
@@ -626,5 +662,9 @@ void pvr_calculate_vertex_cam_size(const struct pvr_device_info *dev_info,
 
 const struct pvr_renderpass_hwsetup_subpass *
 pvr_get_hw_subpass(const struct pvr_render_pass *pass, const uint32_t subpass);
+
+struct pvr_renderpass_hwsetup_render *
+pvr_pass_info_get_hw_render(const struct pvr_render_pass_info *render_pass_info,
+                            uint32_t idx);
 
 #endif /* PVR_CMD_BUFFER_H */

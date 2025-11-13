@@ -1834,7 +1834,7 @@ static VkResult pvr_add_deferred_rta_clear(struct pvr_cmd_buffer *cmd_buffer,
    struct pvr_render_pass_info *pass_info = &cmd_buffer->state.render_pass_info;
    struct pvr_sub_cmd_gfx *sub_cmd = &cmd_buffer->state.current_sub_cmd->gfx;
    const struct pvr_renderpass_hwsetup_render *hw_render =
-      &pass_info->pass->hw_setup->renders[sub_cmd->hw_render_idx];
+      pvr_pass_info_get_hw_render(pass_info, sub_cmd->hw_render_idx);
    const struct pvr_image_view *image_view;
    const struct pvr_image *image;
    uint32_t base_layer;
@@ -1871,6 +1871,12 @@ static VkResult pvr_add_deferred_rta_clear(struct pvr_cmd_buffer *cmd_buffer,
 
       assert(attachment->colorAttachment < hw_render->color_init_count);
       index = hw_render->color_init[attachment->colorAttachment].index;
+
+      image_view = pass_info->attachments[index];
+   } else if (cmd_buffer->state.current_sub_cmd->is_dynamic_render) {
+      const struct pvr_dynamic_render_info *dr_info = pass_info->dr_info;
+      const uint32_t index =
+         dr_info->color_attachments[attachment->colorAttachment].index_color;
 
       image_view = pass_info->attachments[index];
    } else {
@@ -1938,18 +1944,24 @@ static void pvr_clear_attachments(struct pvr_cmd_buffer *cmd_buffer,
 {
    const struct pvr_render_pass *pass = cmd_buffer->state.render_pass_info.pass;
    struct pvr_render_pass_info *pass_info = &cmd_buffer->state.render_pass_info;
-   const struct pvr_renderpass_hwsetup_subpass *hw_pass =
-      pvr_get_hw_subpass(pass, pass_info->subpass_idx);
    struct pvr_sub_cmd_gfx *sub_cmd = &cmd_buffer->state.current_sub_cmd->gfx;
    struct pvr_device_info *dev_info = &cmd_buffer->device->pdevice->dev_info;
-   struct pvr_render_subpass *sub_pass = &pass->subpasses[hw_pass->index];
+   const struct pvr_renderpass_hwsetup_subpass *hw_pass;
+   bool vs_has_rt_id_output, multiview_enabled;
    uint32_t vs_output_size_in_bytes;
-   bool vs_has_rt_id_output;
 
    /* TODO: This function can be optimized so that most of the device memory
     * gets allocated together in one go and then filled as needed. There might
     * also be opportunities to reuse pds code and data segments.
     */
+
+   if (pass) {
+      hw_pass = pvr_get_hw_subpass(pass, pass_info->subpass_idx);
+      multiview_enabled = pass->multiview_enabled;
+   } else {
+      multiview_enabled = pass_info->dr_info->hw_render.multiview_enabled;
+      hw_pass = NULL;
+   }
 
    assert(cmd_buffer->state.current_sub_cmd->type == PVR_SUB_CMD_TYPE_GRAPHICS);
 
@@ -1959,7 +1971,7 @@ static void pvr_clear_attachments(struct pvr_cmd_buffer *cmd_buffer,
    sub_cmd->empty_cmd = false;
 
    vs_has_rt_id_output = pvr_clear_needs_rt_id_output(dev_info,
-                                                      pass->multiview_enabled,
+                                                      multiview_enabled,
                                                       rect_count,
                                                       rects);
 
@@ -1978,6 +1990,7 @@ static void pvr_clear_attachments(struct pvr_cmd_buffer *cmd_buffer,
 
       if (attachment->aspectMask == VK_IMAGE_ASPECT_COLOR_BIT) {
          uint32_t packed_clear_color[PVR_CLEAR_COLOR_ARRAY_SIZE];
+         struct pvr_renderpass_hwsetup_render *hw_render;
          const struct usc_mrt_resource *mrt_resource;
          uint32_t global_attachment_idx;
          uint32_t local_attachment_idx;
@@ -1985,19 +1998,31 @@ static void pvr_clear_attachments(struct pvr_cmd_buffer *cmd_buffer,
 
          local_attachment_idx = attachment->colorAttachment;
 
+         assert(cmd_buffer->state.current_sub_cmd->is_dynamic_render ||
+                pass->hw_setup->render_count > 0);
+         hw_render =
+            pvr_pass_info_get_hw_render(&cmd_buffer->state.render_pass_info, 0);
+
+         /* TODO: verify that the hw_render if is_render_init is true is exclusive to
+          * a non dynamic rendering path.
+          */
          if (is_render_init) {
-            struct pvr_renderpass_hwsetup_render *hw_render;
-
-            assert(pass->hw_setup->render_count > 0);
-            hw_render = &pass->hw_setup->renders[0];
-
             mrt_resource =
                &hw_render->init_setup.mrt_resources[local_attachment_idx];
 
             assert(local_attachment_idx < hw_render->color_init_count);
             global_attachment_idx =
                hw_render->color_init[local_attachment_idx].index;
+         } else if (cmd_buffer->state.current_sub_cmd->is_dynamic_render) {
+            const struct pvr_dynamic_render_info *dr_info = pass_info->dr_info;
+
+            mrt_resource =
+               &dr_info->mrt_setup->mrt_resources[local_attachment_idx];
+            global_attachment_idx =
+               dr_info->color_attachments[local_attachment_idx].index_color;
          } else {
+            struct pvr_render_subpass *sub_pass = &pass->subpasses[hw_pass->index];
+
             mrt_resource = &hw_pass->setup.mrt_resources[local_attachment_idx];
 
             assert(local_attachment_idx < sub_pass->color_count);
@@ -2008,8 +2033,14 @@ static void pvr_clear_attachments(struct pvr_cmd_buffer *cmd_buffer,
          if (global_attachment_idx == VK_ATTACHMENT_UNUSED)
             continue;
 
-         assert(global_attachment_idx < pass->attachment_count);
-         format = pass->attachments[global_attachment_idx].vk_format;
+         if (cmd_buffer->state.current_sub_cmd->is_dynamic_render) {
+            const struct pvr_dynamic_render_info *dr_info = pass_info->dr_info;
+
+            format = dr_info->attachments[global_attachment_idx].vk_format;
+         } else {
+            assert(global_attachment_idx < pass->attachment_count);
+            format = pass->attachments[global_attachment_idx].vk_format;
+         }
 
          assert(format != VK_FORMAT_UNDEFINED);
 
@@ -2026,7 +2057,7 @@ static void pvr_clear_attachments(struct pvr_cmd_buffer *cmd_buffer,
                                                     vs_has_rt_id_output);
          if (result != VK_SUCCESS)
             return;
-      } else if (hw_pass->z_replicate != -1 &&
+      } else if (pass && hw_pass->z_replicate != -1 &&
                  attachment->aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) {
          const VkClearColorValue clear_color = {
             .float32 = { [0] = attachment->clearValue.depthStencil.depth, },
@@ -2140,14 +2171,19 @@ static void pvr_clear_attachments(struct pvr_cmd_buffer *cmd_buffer,
 
          if (!PVR_HAS_FEATURE(dev_info, gs_rta_support) &&
              (clear_rect->baseArrayLayer != 0 || clear_rect->layerCount > 1)) {
-            result = pvr_add_deferred_rta_clear(cmd_buffer,
-                                                attachment,
-                                                clear_rect,
-                                                is_render_init);
-            if (result != VK_SUCCESS)
-               return;
 
-            continue;
+            if (pass_info->attachments) {
+               result = pvr_add_deferred_rta_clear(cmd_buffer,
+                                                   attachment,
+                                                   clear_rect,
+                                                   is_render_init);
+               if (result != VK_SUCCESS)
+                  return;
+
+               continue;
+            } else {
+               pvr_finishme("incomplete support for deferred (emulated) RTA clears");
+            }
          }
 
          /* TODO: Allocate all the buffers in one go before the loop, and add

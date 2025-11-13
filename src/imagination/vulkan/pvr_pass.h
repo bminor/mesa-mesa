@@ -26,9 +26,13 @@ struct pvr_render_pass_attachment {
 
    VkAttachmentStoreOp store_op;
 
+   VkResolveModeFlagBits resolve_mode;
+
    VkAttachmentLoadOp stencil_load_op;
 
    VkAttachmentStoreOp stencil_store_op;
+
+   VkResolveModeFlagBits stencil_resolve_mode;
 
    VkFormat vk_format;
    uint32_t sample_count;
@@ -39,7 +43,11 @@ struct pvr_render_pass_attachment {
 
    /* Can this surface be resolved by the PBE. */
    bool is_pbe_downscalable;
+   bool is_depth;
+   bool is_stencil;
+   bool need_eot;
 
+   uint32_t resolve_target;
    uint32_t index;
 };
 

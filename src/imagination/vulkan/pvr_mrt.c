@@ -8,15 +8,20 @@
 
 #include "vk_log.h"
 
+#include "pvr_cmd_buffer.h"
 #include "pvr_csb.h"
 #include "pvr_device.h"
 #include "pvr_formats.h"
+#include "pvr_image.h"
+#include "pvr_mrt.h"
+#include "pvr_pass.h"
 #include "pvr_physical_device.h"
 
 #include "hwdef/rogue_hw_utils.h"
 #include "util/macros.h"
-
-#include "pvr_mrt.h"
+#include "vulkan/vulkan_core.h"
+#include "vulkan/runtime/vk_graphics_state.h"
+#include "vulkan/runtime/vk_image.h"
 
 /* Which parts of the output registers/a tile buffer are currently allocated. */
 struct pvr_mrt_alloc_mask {
@@ -237,6 +242,246 @@ pvr_destroy_mrt_setup(const struct pvr_device *device,
    vk_free(&device->vk.alloc, setup->mrt_resources);
 }
 
+static bool
+pvr_rendering_info_needs_load(const struct pvr_dynamic_render_info *dr_info)
+{
+   for (unsigned i = 0; i < dr_info->hw_render.color_init_count; i++) {
+      const uint32_t index = dr_info->hw_render.color_init[i].index;
+      if (index == VK_ATTACHMENT_UNUSED)
+         continue;
+
+      const VkAttachmentLoadOp op = dr_info->hw_render.color_init[i].op;
+      if (op == VK_ATTACHMENT_LOAD_OP_LOAD || op == VK_ATTACHMENT_LOAD_OP_CLEAR)
+         return true;
+   }
+
+   return false;
+}
+
+static VkResult pvr_mrt_load_op_init(struct pvr_device *device,
+                                     const VkAllocationCallbacks *alloc,
+                                     const struct pvr_render_pass_info *rp_info,
+                                     struct pvr_load_op *load_op,
+                                     uint32_t view_idx)
+{
+   const struct pvr_dynamic_render_info *dr_info = rp_info->dr_info;
+   VkResult result;
+
+   load_op->clears_loads_state.depth_clear_to_reg = PVR_NO_DEPTH_CLEAR_TO_REG;
+
+   assert(dr_info->hw_render.color_init_count <=
+          PVR_LOAD_OP_CLEARS_LOADS_MAX_RTS);
+   for (unsigned i = 0; i < dr_info->hw_render.color_init_count; i++) {
+      const struct pvr_renderpass_colorinit *color_init =
+         &dr_info->hw_render.color_init[i];
+      const struct pvr_image *image;
+
+      assert(color_init->index < rp_info->attachment_count);
+      load_op->clears_loads_state.dest_vk_format[i] =
+         rp_info->attachments[color_init->index]->vk.view_format;
+
+      image = pvr_image_view_get_image(rp_info->attachments[color_init->index]);
+      if (image->vk.samples > VK_SAMPLE_COUNT_1_BIT)
+         load_op->clears_loads_state.unresolved_msaa_mask |= BITFIELD_BIT(i);
+
+      switch (color_init->op) {
+      case VK_ATTACHMENT_LOAD_OP_CLEAR:
+         load_op->clears_loads_state.rt_clear_mask |= BITFIELD_BIT(i);
+         break;
+      case VK_ATTACHMENT_LOAD_OP_LOAD:
+         load_op->clears_loads_state.rt_load_mask |= BITFIELD_BIT(i);
+         break;
+      case VK_ATTACHMENT_LOAD_OP_DONT_CARE:
+      case VK_ATTACHMENT_LOAD_OP_NONE:
+         break;
+      default:
+         UNREACHABLE("unsupported loadOp");
+      }
+   }
+
+   load_op->clears_loads_state.mrt_setup = &dr_info->hw_render.init_setup;
+
+   result = pvr_load_op_shader_generate(device, alloc, load_op);
+   if (result != VK_SUCCESS) {
+      vk_free2(&device->vk.alloc, alloc, load_op);
+      return result;
+   }
+
+   load_op->view_indices[0] = view_idx;
+   load_op->view_count = 1;
+
+   load_op->is_hw_object = true;
+   load_op->hw_render = &dr_info->hw_render;
+
+   return VK_SUCCESS;
+}
+
+static void pvr_load_op_fini(struct pvr_load_op *load_op)
+{
+   pvr_bo_suballoc_free(load_op->pds_tex_state_prog.pvr_bo);
+   pvr_bo_suballoc_free(load_op->pds_frag_prog.pvr_bo);
+   pvr_bo_suballoc_free(load_op->usc_frag_prog_bo);
+}
+
+static void pvr_load_op_destroy(struct pvr_device *device,
+                                const VkAllocationCallbacks *allocator,
+                                struct pvr_load_op *load_op)
+{
+   pvr_load_op_fini(load_op);
+   vk_free2(&device->vk.alloc, allocator, load_op);
+}
+
+void
+pvr_mrt_load_op_state_cleanup(const struct pvr_device *device,
+                              const VkAllocationCallbacks *alloc,
+                              struct pvr_load_op_state *state)
+{
+   if (!state)
+      return;
+
+   while (state->load_op_count--) {
+      const uint32_t load_op_idx = state->load_op_count;
+      struct pvr_load_op *load_op = &state->load_ops[load_op_idx];
+
+      pvr_load_op_fini(load_op);
+   }
+
+   vk_free2(&device->vk.alloc, alloc, state);
+}
+
+static VkResult
+pvr_mrt_load_op_state_create(struct pvr_device *device,
+                             const VkAllocationCallbacks *alloc,
+                             const struct pvr_render_pass_info *rp_info,
+                             struct pvr_load_op_state **state)
+{
+   const struct pvr_dynamic_render_info *dr_info = rp_info->dr_info;
+   const uint32_t view_count = util_bitcount(dr_info->hw_render.view_mask);
+   struct pvr_load_op_state *load_op_state;
+   struct pvr_load_op *load_ops;
+   VkResult result;
+
+   VK_MULTIALLOC(ma);
+   vk_multialloc_add(&ma, &load_op_state, __typeof__(*load_op_state), 1);
+   vk_multialloc_add(&ma, &load_ops, __typeof__(*load_ops), view_count);
+
+   if (!vk_multialloc_zalloc(&ma, alloc, VK_SYSTEM_ALLOCATION_SCOPE_DEVICE))
+      return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
+
+   load_op_state->load_ops = load_ops;
+
+   u_foreach_bit (view_idx, dr_info->hw_render.view_mask) {
+      struct pvr_load_op *const load_op =
+         &load_op_state->load_ops[load_op_state->load_op_count];
+
+      result = pvr_mrt_load_op_init(device, alloc, rp_info, load_op, view_idx);
+      if (result != VK_SUCCESS)
+         goto err_load_op_state_cleanup;
+
+      load_op_state->load_op_count++;
+   }
+
+   *state = load_op_state;
+
+   return VK_SUCCESS;
+
+err_load_op_state_cleanup:
+   pvr_mrt_load_op_state_cleanup(device, alloc, load_op_state);
+
+   return result;
+}
+
+/* TODO: Can we gaurantee that if we have at least one render target there will
+ * be a render target allocated as a REG?
+ */
+static inline bool pvr_needs_output_register_writes(
+   const struct usc_mrt_setup *setup)
+{
+   for (uint32_t i = 0; i < setup->num_render_targets; i++) {
+      struct usc_mrt_resource *mrt_resource =
+         &setup->mrt_resources[i];
+
+      if (mrt_resource->type == USC_MRT_RESOURCE_TYPE_OUTPUT_REG)
+         return true;
+   }
+
+   return false;
+}
+
+static inline VkResult pvr_mrt_add_missing_output_register_write(
+   struct usc_mrt_setup *setup,
+   const VkAllocationCallbacks *alloc)
+{
+   const uint32_t last = setup->num_render_targets;
+   struct usc_mrt_resource *mrt_resources;
+
+   if (pvr_needs_output_register_writes(setup))
+      return VK_SUCCESS;
+
+   setup->num_render_targets++;
+
+   mrt_resources = vk_realloc(alloc,
+                              setup->mrt_resources,
+                              setup->num_render_targets *
+                                 sizeof(*mrt_resources),
+                              8U,
+                              VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+
+   if (!mrt_resources)
+      return VK_ERROR_OUT_OF_HOST_MEMORY;
+
+   setup->mrt_resources = mrt_resources;
+
+   mrt_resources[last].type = USC_MRT_RESOURCE_TYPE_OUTPUT_REG;
+   mrt_resources[last].reg.output_reg = 0U;
+   mrt_resources[last].reg.offset = 0U;
+   mrt_resources[last].intermediate_size = 4U;
+   mrt_resources[last].mrt_desc.intermediate_size = 4U;
+   mrt_resources[last].mrt_desc.priority = 0U;
+   mrt_resources[last].mrt_desc.valid_mask[0U] = ~0;
+   mrt_resources[last].mrt_desc.valid_mask[1U] = ~0;
+   mrt_resources[last].mrt_desc.valid_mask[2U] = ~0;
+   mrt_resources[last].mrt_desc.valid_mask[3U] = ~0;
+
+   return VK_SUCCESS;
+}
+
+VkResult pvr_mrt_load_ops_setup(struct pvr_cmd_buffer *cmd_buffer,
+                                const VkAllocationCallbacks *alloc,
+                                struct pvr_load_op_state **load_op_state)
+{
+   const struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
+   const struct pvr_dynamic_render_info *dr_info =
+      state->render_pass_info.dr_info;
+   struct pvr_device *device = cmd_buffer->device;
+   VkResult result = VK_SUCCESS;
+
+   if (dr_info->mrt_setup->num_tile_buffers) {
+      result = pvr_device_tile_buffer_ensure_cap(
+         device,
+         dr_info->mrt_setup->num_tile_buffers);
+
+      if (result != VK_SUCCESS)
+         return result;
+   }
+
+   if (!pvr_rendering_info_needs_load(dr_info))
+      return VK_SUCCESS;
+
+   result =
+      pvr_mrt_add_missing_output_register_write(dr_info->mrt_setup,
+                                                alloc);
+   if (result != VK_SUCCESS)
+      return result;
+
+   result = pvr_mrt_load_op_state_create(device,
+                                         alloc,
+                                         &state->render_pass_info,
+                                         load_op_state);
+
+   return result;
+}
+
 VkResult pvr_pds_unitex_state_program_create_and_upload(
    struct pvr_device *device,
    const VkAllocationCallbacks *allocator,
@@ -413,3 +658,4 @@ err_free_usc_frag_prog_bo:
 
    return result;
 }
+
