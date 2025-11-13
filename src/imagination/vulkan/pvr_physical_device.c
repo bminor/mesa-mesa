@@ -27,7 +27,6 @@
 #include "pco/pco.h"
 #include "pco_uscgen_programs.h"
 
-#include "pvr_border.h"
 #include "pvr_device.h"
 #include "pvr_dump_info.h"
 #include "pvr_entrypoints.h"
@@ -477,6 +476,9 @@ static uint32_t get_api_version(void)
    return VK_MAKE_API_VERSION(0, 1, 2, VK_HEADER_VERSION);
 }
 
+static unsigned
+get_custom_border_color_samplers(const struct pvr_device_info *dev_info);
+
 static bool pvr_physical_device_get_properties(
    const struct pvr_physical_device *const pdevice,
    struct vk_properties *const properties)
@@ -798,7 +800,8 @@ static bool pvr_physical_device_get_properties(
       .supportsNonZeroFirstInstance = true,
 
       /* VK_EXT_custom_border_color */
-      .maxCustomBorderColorSamplers = PVR_BORDER_COLOR_TABLE_NR_CUSTOM_ENTRIES,
+      .maxCustomBorderColorSamplers =
+         get_custom_border_color_samplers(&pdevice->dev_info),
 
       /* VkPhysicalDeviceDrmPropertiesEXT */
       .drmHasPrimary = true,
@@ -1189,4 +1192,14 @@ void pvr_DestroyDevice(VkDevice _device,
    VK_FROM_HANDLE(pvr_device, device, _device);
 
    pvr_destroy_device(device, pAllocator);
+}
+
+/* Leave this at the very end, to avoid leakage of HW-defs here */
+#include "pvr_border.h"
+
+static unsigned
+get_custom_border_color_samplers(const struct pvr_device_info *dev_info)
+{
+   assert(dev_info->ident.arch == PVR_DEVICE_ARCH_ROGUE);
+   return PVR_BORDER_COLOR_TABLE_NR_CUSTOM_ENTRIES;
 }

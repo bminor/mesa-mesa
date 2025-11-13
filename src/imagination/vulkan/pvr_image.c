@@ -29,7 +29,6 @@
 #include <string.h>
 
 #include "pvr_buffer.h"
-#include "pvr_csb.h"
 #include "pvr_device.h"
 #include "pvr_device_info.h"
 #include "pvr_entrypoints.h"
@@ -155,11 +154,7 @@ static void pvr_image_setup_mip_levels(struct pvr_image *image)
 }
 
 static unsigned
-get_pbe_stride_align(const struct pvr_device_info *dev_info)
-{
-   return PVR_HAS_FEATURE(dev_info, pbe_stride_align_1pixel) ?
-      1 : ROGUE_PBESTATE_REG_WORD0_LINESTRIDE_UNIT_SIZE;
-}
+get_pbe_stride_align(const struct pvr_device_info *dev_info);
 
 VkResult pvr_CreateImage(VkDevice _device,
                          const VkImageCreateInfo *pCreateInfo,
@@ -586,4 +581,14 @@ void pvr_DestroyBufferView(VkDevice _device,
       return;
 
    vk_buffer_view_destroy(&device->vk, pAllocator, &bview->vk);
+}
+
+/* Leave this at the very end, to avoid leakage of HW-defs here */
+#include "pvr_csb.h"
+
+static unsigned
+get_pbe_stride_align(const struct pvr_device_info *dev_info)
+{
+   return PVR_HAS_FEATURE(dev_info, pbe_stride_align_1pixel) ?
+      1 : ROGUE_PBESTATE_REG_WORD0_LINESTRIDE_UNIT_SIZE;
 }
