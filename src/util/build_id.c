@@ -21,13 +21,14 @@
  * IN THE SOFTWARE.
  */
 
-#ifdef HAVE_DL_ITERATE_PHDR
+#include "build_id.h"
+
+#if HAVE_BUILD_ID
 #include <dlfcn.h>
 #include <link.h>
 #include <stddef.h>
 #include <string.h>
 
-#include "build_id.h"
 #include "macros.h"
 
 #ifndef NT_GNU_BUILD_ID

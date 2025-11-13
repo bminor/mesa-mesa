@@ -303,7 +303,7 @@ disk_cache_init(struct zink_screen *screen)
    struct mesa_blake3 ctx;
    _mesa_blake3_init(&ctx);
 
-#ifdef HAVE_DL_ITERATE_PHDR
+#ifdef HAVE_BUILD_ID
    /* Hash in the zink driver build. */
    const struct build_id_note *note =
        build_id_find_nhdr_for_addr(disk_cache_init);

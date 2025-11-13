@@ -904,7 +904,7 @@ static void virgl_disk_cache_create(struct virgl_screen *screen)
    struct mesa_sha1 sha1_ctx;
    _mesa_sha1_init(&sha1_ctx);
 
-#ifdef HAVE_DL_ITERATE_PHDR
+#ifdef HAVE_BUILD_ID
    const struct build_id_note *note =
       build_id_find_nhdr_for_addr(virgl_disk_cache_create);
    assert(note);
