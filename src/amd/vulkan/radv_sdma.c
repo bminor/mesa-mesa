@@ -358,49 +358,16 @@ void
 radv_sdma_copy_memory(const struct radv_device *device, struct radv_cmd_stream *cs, uint64_t src_va, uint64_t dst_va,
                       uint64_t size)
 {
-   if (size == 0)
-      return;
-
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   const enum sdma_version ver = pdev->info.sdma_ip_version;
-   const unsigned max_size_per_packet = ver >= SDMA_5_2 ? SDMA_V5_2_COPY_MAX_BYTES : SDMA_V2_0_COPY_MAX_BYTES;
 
-   unsigned align = ~0u;
-   unsigned ncopy = DIV_ROUND_UP(size, max_size_per_packet);
+   while (size > 0) {
+      radeon_check_space(device->ws, cs->b, 7);
+      uint64_t bytes_written = ac_emit_sdma_copy_linear(cs->b, pdev->info.sdma_ip_version, src_va, dst_va, size, false);
 
-   assert(ver >= SDMA_2_0);
-
-   /* SDMA FW automatically enables a faster dword copy mode when
-    * source, destination and size are all dword-aligned.
-    *
-    * When source and destination are dword-aligned, round down the size to
-    * take advantage of faster dword copy, and copy the remaining few bytes
-    * with the last copy packet.
-    */
-   if ((src_va & 0x3) == 0 && (dst_va & 0x3) == 0 && size > 4 && (size & 0x3) != 0) {
-      align = ~0x3u;
-      ncopy++;
+      size -= bytes_written;
+      src_va += bytes_written;
+      dst_va += bytes_written;
    }
-
-   radeon_check_space(device->ws, cs->b, ncopy * 7);
-
-   radeon_begin(cs);
-
-   for (unsigned i = 0; i < ncopy; i++) {
-      unsigned csize = size >= 4 ? MIN2(size & align, max_size_per_packet) : size;
-      radeon_emit(SDMA_PACKET(SDMA_OPCODE_COPY, SDMA_COPY_SUB_OPCODE_LINEAR, 0));
-      radeon_emit(ver >= SDMA_4_0 ? csize - 1 : csize);
-      radeon_emit(0); /* src/dst endian swap */
-      radeon_emit(src_va);
-      radeon_emit(src_va >> 32);
-      radeon_emit(dst_va);
-      radeon_emit(dst_va >> 32);
-      dst_va += csize;
-      src_va += csize;
-      size -= csize;
-   }
-
-   radeon_end();
 }
 
 void

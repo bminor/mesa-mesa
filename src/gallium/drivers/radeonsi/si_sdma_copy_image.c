@@ -9,6 +9,7 @@
 #include "sid.h"
 #include "util/u_memory.h"
 #include "ac_formats.h"
+#include "ac_cmdbuf_sdma.h"
 
 static
 bool si_prepare_for_sdma_copy(struct si_context *sctx, struct si_texture *dst,struct si_texture *src)
@@ -56,7 +57,6 @@ static bool si_sdma_v4_v5_copy_texture(struct si_context *sctx, struct si_textur
                                        struct si_texture *ssrc)
 {
    bool is_v5 = sctx->gfx_level >= GFX10;
-   bool is_v5_2 = sctx->gfx_level >= GFX10_3;
    bool is_v7 = sctx->gfx_level >= GFX12;
    unsigned bpp = sdst->surface.bpe;
    uint64_t dst_address = sdst->buffer.gpu_address + sdst->surface.u.gfx9.surf_offset;
@@ -74,30 +74,20 @@ static bool si_sdma_v4_v5_copy_texture(struct si_context *sctx, struct si_textur
       struct radeon_cmdbuf *cs = sctx->sdma_cs;
 
       uint64_t bytes = (uint64_t)src_pitch * copy_height * bpp;
-      uint32_t chunk_size = 1u << (is_v5_2 ? 30 : 22);
-      uint32_t chunk_count = DIV_ROUND_UP(bytes, chunk_size);
 
       src_address += ssrc->surface.u.gfx9.offset[0];
       dst_address += sdst->surface.u.gfx9.offset[0];
 
-      radeon_begin(cs);
-      for (int i = 0; i < chunk_count; i++) {
-         uint32_t size = MIN2(chunk_size, bytes);
-         radeon_emit(SDMA_PACKET(SDMA_OPCODE_COPY,
-                                     SDMA_COPY_SUB_OPCODE_LINEAR,
-                                     (tmz ? 4 : 0)));
-         radeon_emit(size - 1);
-         radeon_emit(0);
-         radeon_emit(src_address);
-         radeon_emit(src_address >> 32);
-         radeon_emit(dst_address);
-         radeon_emit(dst_address >> 32);
+      while (bytes > 0) {
+         uint64_t bytes_written =
+            ac_emit_sdma_copy_linear(&cs->current, sctx->screen->info.sdma_ip_version,
+                                     src_address, dst_address, bytes, tmz);
 
-         src_address += size;
-         dst_address += size;
-         bytes -= size;
+         bytes -= bytes_written;
+         src_address += bytes_written;
+         dst_address += bytes_written;
       }
-      radeon_end();
+
       return true;
    }
 

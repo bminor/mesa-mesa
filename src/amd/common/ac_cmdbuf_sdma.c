@@ -86,3 +86,40 @@ ac_emit_sdma_constant_fill(struct ac_cmdbuf *cs, enum sdma_version sdma_ip_versi
 
    return bytes_written;
 }
+
+uint64_t
+ac_emit_sdma_copy_linear(struct ac_cmdbuf *cs, enum sdma_version sdma_ip_version,
+                         uint64_t src_va, uint64_t dst_va, uint64_t size,
+                         bool tmz)
+{
+   const unsigned max_size_per_packet =
+      sdma_ip_version >= SDMA_5_2 ? SDMA_V5_2_COPY_MAX_BYTES : SDMA_V2_0_COPY_MAX_BYTES;
+   uint32_t align = ~0u;
+
+   assert(sdma_ip_version >= SDMA_2_0);
+
+   /* SDMA FW automatically enables a faster dword copy mode when
+    * source, destination and size are all dword-aligned.
+    *
+    * When source and destination are dword-aligned, round down the size to
+    * take advantage of faster dword copy, and copy the remaining few bytes
+    * with the last copy packet.
+    */
+   if ((src_va & 0x3) == 0 && (dst_va & 0x3) == 0 && size > 4 && (size & 0x3) != 0) {
+      align = ~0x3u;
+   }
+
+   const uint64_t bytes_written = size >= 4 ? MIN2(size & align, max_size_per_packet) : size;
+
+   ac_cmdbuf_begin(cs);
+   ac_cmdbuf_emit(SDMA_PACKET(SDMA_OPCODE_COPY, SDMA_COPY_SUB_OPCODE_LINEAR, (tmz ? 4 : 0)));
+   ac_cmdbuf_emit(sdma_ip_version >= SDMA_4_0 ? bytes_written - 1 : bytes_written);
+   ac_cmdbuf_emit(0);
+   ac_cmdbuf_emit(src_va);
+   ac_cmdbuf_emit(src_va >> 32);
+   ac_cmdbuf_emit(dst_va);
+   ac_cmdbuf_emit(dst_va >> 32);
+   ac_cmdbuf_end();
+
+   return bytes_written;
+}
