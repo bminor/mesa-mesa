@@ -98,9 +98,14 @@ vn_ring_store_tail(struct vn_ring *ring)
 {
    /* the renderer is expected to load the tail with memory_order_acquire,
     * forming a release-acquire ordering
+    *
+    * To avoid incompatibility between the compiler implementations used by
+    * the driver and the renderer, seq_cst ordering is picked here, which has
+    * required a full mfence instruction. Then the renderer side acquire is
+    * ensured to be ordered after the cache flush of ring cs updates.
     */
    return atomic_store_explicit(ring->shared.tail, ring->cur,
-                                memory_order_release);
+                                memory_order_seq_cst);
 }
 
 uint32_t
