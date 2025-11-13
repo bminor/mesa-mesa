@@ -1942,6 +1942,16 @@
   <register name="COMP_CTX0_TRTT_VA_RANGE" length="1" num="0x4584">
     <field name="TR-VA Base" dword="0" bits="12:0" type="uint" />
   </register>
+  <register name="CS_CHICKEN1" length="1" num="0x2580">
+    <field name="Media And GPGPU Pre-emption Control" dword="0" bits="2:1" type="uint">
+      <value name="Mid-thread Pre-emption" value="0" />
+      <value name="Thread Group Pre-emption" value="1" />
+      <value name="Command Level Pre-emption" value="2" />
+    </field>
+    <field name="Disable Preemption and High Priority Pausing due to 3DPRIMITIVE Command" dword="0" bits="10:10" type="bool" />
+    <field name="Media And GPGPU Pre-emption Control Mask" dword="0" bits="18:17" type="uint" />
+    <field name="Disable Preemption and High Priority Pausing due to 3DPRIMITIVE Command Mask" dword="0" bits="26:26" type="bool" />
+  </register>
   <register name="FF_MODE" length="1" num="0x6210">
     <field name="Mesh Shader Autostrip Disable" dword="0" bits="15:15" type="bool" />
     <field name="Mesh Shader Partial Autostrip Disable" dword="0" bits="16:16" type="bool" />
