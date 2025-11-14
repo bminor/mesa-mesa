@@ -3987,7 +3987,7 @@ agx_batch_geometry_params(struct agx_batch *batch, uint64_t input_index_buffer,
     * & count buffers. GPU calculates and allocates for indirect draws.
     */
    batch->uniforms.vertex_outputs = batch->ctx->vs->b.info.outputs;
-   params.input_mask = batch->uniforms.vertex_outputs;
+   vp.outputs = batch->uniforms.vertex_outputs;
    params.count_buffer_stride = batch->ctx->gs->gs.count_words * 4;
 
    bool prefix_sum = batch->ctx->gs->gs.prefix_sum;
@@ -4557,6 +4557,7 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
       .index_buffer = ib,
       .index_buffer_range_el = ib_extent,
       .verts_per_instance = draws ? draws->count : 0,
+      .outputs = ctx->vs->b.info.outputs,
    };
 
    agx_upload_draw_params(batch, indirect, draws, info);

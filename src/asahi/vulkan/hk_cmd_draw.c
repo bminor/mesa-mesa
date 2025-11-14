@@ -1041,13 +1041,13 @@ hk_index_buffer(uint64_t index_buffer, uint size_el, uint offset_el,
 }
 
 static uint64_t
-hk_upload_vertex_params(struct hk_cmd_buffer *cmd,
-                        uint64_t vertex_output_buffer,
-                        struct agx_draw draw)
+hk_upload_vertex_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
 {
+   struct hk_graphics_state *gfx = &cmd->state.gfx;
+   struct hk_descriptor_state *desc = &cmd->state.gfx.descriptors;
+
    struct poly_vertex_params params = {
       .verts_per_instance = draw.b.count[0],
-      .output_buffer = vertex_output_buffer,
    };
 
    if (draw.indexed) {
@@ -1059,6 +1059,33 @@ hk_upload_vertex_params(struct hk_cmd_buffer *cmd,
 
       params.index_buffer_range_el = range_el;
    }
+
+   if (gfx->shaders[MESA_SHADER_TESS_EVAL] ||
+       gfx->shaders[MESA_SHADER_GEOMETRY]) {
+
+      struct hk_shader *vs = hk_bound_sw_vs(gfx);
+      params.outputs = vs->b.info.outputs;
+
+      /* XXX: We should deduplicate this logic */
+      bool indirect = agx_is_indirect(draw.b) || draw.restart;
+
+      if (!indirect) {
+         uint32_t verts = draw.b.count[0], instances = draw.b.count[1];
+         unsigned vb_size =
+            poly_tcs_in_size(verts * instances, vs->b.info.outputs);
+
+         /* Allocate if there are any outputs, or use the null sink to trap
+          * reads if there aren't. Those reads are undefined but should not
+          * fault. Affects:
+          *
+          *    dEQP-VK.pipeline.monolithic.no_position.explicit_declarations.basic.single_view.v0_g1
+          */
+         params.output_buffer = vb_size ? hk_pool_alloc(cmd, vb_size, 4).gpu
+                                        : AGX_SCRATCH_PAGE_ADDRESS;
+      }
+   }
+
+   desc->root.draw.vertex_outputs = params.outputs;
 
    return hk_pool_upload(cmd, &params, sizeof(params), 8);
 }
@@ -1121,11 +1148,6 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
    struct poly_geometry_params params = {
       .flat_outputs = fs->info.fs.interp.flat,
       .input_topology = mode,
-
-      /* Overriden by the indirect setup kernel. As tess->GS is always indirect,
-       * we can assume here that we're VS->GS.
-       */
-      .input_mask = desc->root.draw.vertex_outputs,
    };
 
    if (gfx->xfb_enabled) {
@@ -3046,36 +3068,9 @@ hk_flush_dynamic_state(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
       gfx->dirty |= HK_DIRTY_VARYINGS;
    }
 
-   uint64_t vertex_output_buffer = 0;
-   if (gfx->shaders[MESA_SHADER_TESS_EVAL] ||
-       gfx->shaders[MESA_SHADER_GEOMETRY]) {
-
-      struct hk_shader *vs = hk_bound_sw_vs(gfx);
-      desc->root.draw.vertex_outputs = vs->b.info.outputs;
-
-      /* XXX: We should deduplicate this logic */
-      bool indirect = agx_is_indirect(draw.b) || draw.restart;
-
-      if (!indirect) {
-         uint32_t verts = draw.b.count[0], instances = draw.b.count[1];
-         unsigned vb_size =
-            poly_tcs_in_size(verts * instances, vs->b.info.outputs);
-
-         /* Allocate if there are any outputs, or use the null sink to trap
-          * reads if there aren't. Those reads are undefined but should not
-          * fault. Affects:
-          *
-          *    dEQP-VK.pipeline.monolithic.no_position.explicit_declarations.basic.single_view.v0_g1
-          */
-         vertex_output_buffer = vb_size ? hk_pool_alloc(cmd, vb_size, 4).gpu
-                                        : AGX_SCRATCH_PAGE_ADDRESS;
-      }
-   }
-
    if (gfx->shaders[MESA_SHADER_TESS_EVAL] ||
        gfx->shaders[MESA_SHADER_GEOMETRY] || linked_vs->sw_indexing) {
-      desc->root.draw.vertex_params =
-         hk_upload_vertex_params(cmd, vertex_output_buffer, draw);
+      desc->root.draw.vertex_params = hk_upload_vertex_params(cmd, draw);
       desc->root_dirty = true;
    }
 

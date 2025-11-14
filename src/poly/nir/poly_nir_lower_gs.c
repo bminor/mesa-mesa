@@ -285,11 +285,12 @@ poly_load_per_vertex_input(nir_builder *b, nir_intrinsic_instr *intr,
    nir_def *location = nir_iadd_imm(b, intr->src[1].ssa, sem.location);
    nir_def *addr;
 
+   nir_def *vp = nir_load_vertex_param_buffer_poly(b);
+
    nir_def *input_mask;
    if (b->shader->info.stage == MESA_SHADER_GEOMETRY) {
       /* GS may be preceded by VS or TES so specified as param */
-      input_mask = poly_geometry_input_mask(
-         b, nir_load_geometry_param_buffer_poly(b));
+      input_mask = poly_vertex_outputs(b, vp);
    } else {
       assert(b->shader->info.stage == MESA_SHADER_TESS_CTRL);
 
@@ -297,7 +298,6 @@ poly_load_per_vertex_input(nir_builder *b, nir_intrinsic_instr *intr,
       input_mask = nir_load_vs_outputs_poly(b);
    }
 
-   nir_def *vp = nir_load_vertex_param_buffer_poly(b);
    addr = poly_vertex_output_address(b, vp, input_mask, vertex, location);
 
    addr = nir_iadd_imm(b, addr, 4 * nir_intrinsic_component(intr));

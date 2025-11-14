@@ -52,6 +52,7 @@ libagx_tess_setup_indirect(
    p->nr_patches = unrolled_patches;
 
    vp->output_buffer = (uintptr_t)(blob + vb_offs);
+   vp->outputs = vertex_outputs;
    p->counts = (global uint32_t *)(blob + count_offs);
 
    if (vp) {

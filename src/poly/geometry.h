@@ -192,8 +192,11 @@ struct poly_vertex_params {
 
    /* Output buffer for vertex data */
    uint64_t output_buffer;
+
+   /* Mask of outputs present in the output buffer */
+   uint64_t outputs;
 } PACKED;
-static_assert(sizeof(struct poly_vertex_params) == 6 * 4);
+static_assert(sizeof(struct poly_vertex_params) == 8 * 4);
 
 static inline uint
 poly_index_buffer_range_el(uint size_el, uint offset_el)
@@ -229,12 +232,6 @@ struct poly_geometry_params {
     * program.
     */
    DEVICE(uchar) xfb_base[POLY_MAX_SO_BUFFERS];
-
-   /* Address and present mask for the input to the geometry shader. These will
-    * reflect the vertex shader for VS->GS or instead the tessellation
-    * evaluation shader for TES->GS.
-    */
-   uint64_t input_mask;
 
    /* Location-indexed mask of flat outputs, used for lowering GL edge flags. */
    uint64_t flat_outputs;
@@ -277,7 +274,7 @@ struct poly_geometry_params {
     */
    uint32_t input_topology;
 } PACKED;
-static_assert(sizeof(struct poly_geometry_params) == 84 * 4);
+static_assert(sizeof(struct poly_geometry_params) == 82 * 4);
 
 /* TCS shared memory layout:
  *
@@ -578,7 +575,7 @@ poly_gs_setup_indirect(uint64_t index_buffer, constant uint *draw,
    vp->output_buffer =
       (uintptr_t)poly_heap_alloc_nonatomic(heap, vertex_buffer_size);
 
-   p->input_mask = vs_outputs;
+   vp->outputs = vs_outputs;
 
    /* Allocate the index buffer and write the draw consuming it */
    global VkDrawIndexedIndirectCommand *cmd = (global void *)p->indirect_desc;
