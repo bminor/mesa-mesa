@@ -52,6 +52,9 @@ radv_cs_emit_cp_dma(struct radv_device *device, struct radv_cmd_stream *cs, bool
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const bool cp_dma_use_L2 = (flags & CP_DMA_USE_L2) && pdev->info.cp_dma_use_L2;
+   const bool cp_dma_use_mall = pdev->info.gfx_level == GFX12;
+   /* GFX12: TC_L2 means MALL, which should always be set. */
+   const bool cp_dma_tc_l2_flag = cp_dma_use_L2 || cp_dma_use_mall;
    uint32_t header = 0, command = 0;
 
    assert(size <= cp_dma_max_byte_count(pdev->info.gfx_level));
@@ -72,12 +75,12 @@ radv_cs_emit_cp_dma(struct radv_device *device, struct radv_cmd_stream *cs, bool
    /* Src and dst flags. */
    if (pdev->info.gfx_level >= GFX9 && !(flags & CP_DMA_CLEAR) && src_va == dst_va)
       header |= S_411_DST_SEL(V_411_NOWHERE); /* prefetch only */
-   else if (cp_dma_use_L2)
+   else if (cp_dma_tc_l2_flag)
       header |= S_411_DST_SEL(V_411_DST_ADDR_TC_L2);
 
    if (flags & CP_DMA_CLEAR)
       header |= S_411_SRC_SEL(V_411_DATA);
-   else if (cp_dma_use_L2)
+   else if (cp_dma_tc_l2_flag)
       header |= S_411_SRC_SEL(V_411_SRC_ADDR_TC_L2);
 
    radeon_begin(cs);
@@ -90,7 +93,7 @@ radv_cs_emit_cp_dma(struct radv_device *device, struct radv_cmd_stream *cs, bool
       radeon_emit(dst_va >> 32); /* DST_ADDR_HI [31:0] */
       radeon_emit(command);
    } else {
-      assert(!cp_dma_use_L2);
+      assert(!cp_dma_tc_l2_flag);
       header |= S_411_SRC_ADDR_HI(src_va >> 32);
       radeon_emit(PKT3(PKT3_CP_DMA, 4, predicating));
       radeon_emit(src_va);                  /* SRC_ADDR_LO [31:0] */
