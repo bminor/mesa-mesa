@@ -115,16 +115,11 @@ vn_device_memory_import_dma_buf(struct vn_device *dev,
    const VkMemoryType *mem_type =
       &dev->physical_device->memory_properties
           .memoryTypes[alloc_info->memoryTypeIndex];
-   const VkMemoryDedicatedAllocateInfo *dedicated_info =
-      vk_find_struct_const(alloc_info->pNext, MEMORY_DEDICATED_ALLOCATE_INFO);
-   const bool is_dedicated =
-      dedicated_info && (dedicated_info->image != VK_NULL_HANDLE ||
-                         dedicated_info->buffer != VK_NULL_HANDLE);
 
    struct vn_renderer_bo *bo;
    VkResult result = vn_renderer_bo_create_from_dma_buf(
-      dev->renderer, is_dedicated ? alloc_info->allocationSize : 0, fd,
-      mem_type->propertyFlags, &bo);
+      dev->renderer, alloc_info->allocationSize, fd, mem_type->propertyFlags,
+      &bo);
    if (result != VK_SUCCESS)
       return result;
 

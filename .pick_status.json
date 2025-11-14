@@ -424,7 +424,7 @@
         "description": "venus: avoid re-imported dma-buf to have a larger map size",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "442f242a4953a10c558d9628eaadb79117648a23",
         "notes": null
