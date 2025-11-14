@@ -59,3 +59,5 @@ bool poly_nir_lower_tes(struct nir_shader *tes, bool to_hw_vs);
 uint64_t poly_tcs_per_vertex_outputs(const struct nir_shader *nir);
 
 unsigned poly_tcs_output_stride(const struct nir_shader *nir);
+
+bool poly_nir_lower_sysvals(struct nir_shader *nir);
