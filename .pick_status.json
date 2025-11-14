@@ -354,7 +354,7 @@
         "description": "brw: fix SIMD lowering of fp16 sampler message data with multiple components",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "61d6aea401743177e30d286ce6946525f30c8df9",
         "notes": null
