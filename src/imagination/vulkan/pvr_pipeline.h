@@ -228,6 +228,4 @@ pvr_stage_mask_dst(VkPipelineStageFlags2 stage_mask)
    return pvr_stage_mask(stage_mask);
 }
 
-size_t pvr_pds_get_max_descriptor_upload_const_map_size_in_bytes(void);
-
 #endif /* PVR_PIPELINE_H */

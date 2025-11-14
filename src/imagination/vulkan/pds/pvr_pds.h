@@ -948,6 +948,32 @@ struct pvr_pds_buffer {
 
 #define PVR_PDS_MAX_BUFFERS (24)
 
+/* Maximum memory allocation needed for const map entries in
+ * pvr_pds_generate_descriptor_upload_program().
+ * It must be >= 688 bytes. This size is calculated as the sum of:
+ *
+ *  1. Max. number of descriptor sets (8) * (
+ *         size of descriptor entry
+ *             (pvr_const_map_entry_descriptor_set) +
+ *         size of Common Store burst entry
+ *             (pvr_const_map_entry_literal32))
+ *
+ *  2. Max. number of PDS program buffers (24) * (
+ *         size of the largest buffer structure
+ *             (pvr_const_map_entry_constant_buffer) +
+ *         size of Common Store burst entry
+ *             (pvr_const_map_entry_literal32)
+ *
+ *  3. Size of DOUTU entry (pvr_const_map_entry_doutu_address)
+ */
+#define PVR_PDS_MAX_DESC_UPLOAD_BYTES                               \
+   (8 * (sizeof(struct pvr_const_map_entry_descriptor_set) +        \
+         sizeof(struct pvr_const_map_entry_literal32)) +            \
+           PVR_PDS_MAX_BUFFERS *                                    \
+              (sizeof(struct pvr_const_map_entry_constant_buffer) + \
+               sizeof(struct pvr_const_map_entry_literal32)) +      \
+           sizeof(struct pvr_const_map_entry_doutu_address));
+
 struct pvr_pds_descriptor_program_input {
    /* User-specified descriptor sets. */
    unsigned int descriptor_set_count;

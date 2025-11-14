@@ -65,8 +65,7 @@ pvr_create_compute_secondary_prog(struct pvr_device *device,
                                   unsigned const_shared_regs,
                                   struct pvr_compute_query_shader *query_prog)
 {
-   const size_t size =
-      pvr_pds_get_max_descriptor_upload_const_map_size_in_bytes();
+   const size_t size = PVR_PDS_MAX_DESC_UPLOAD_BYTES;
    struct pvr_pds_descriptor_program_input sec_pds_program;
    struct pvr_pds_info *info = &query_prog->info;
    uint32_t staging_buffer_size;

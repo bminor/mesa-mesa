@@ -465,39 +465,6 @@ static VkResult pvr_pds_vertex_attrib_programs_create_and_upload(
    return VK_SUCCESS;
 }
 
-size_t pvr_pds_get_max_descriptor_upload_const_map_size_in_bytes(void)
-{
-   /* Maximum memory allocation needed for const map entries in
-    * pvr_pds_generate_descriptor_upload_program().
-    * It must be >= 688 bytes. This size is calculated as the sum of:
-    *
-    *  1. Max. number of descriptor sets (8) * (
-    *         size of descriptor entry
-    *             (pvr_const_map_entry_descriptor_set) +
-    *         size of Common Store burst entry
-    *             (pvr_const_map_entry_literal32))
-    *
-    *  2. Max. number of PDS program buffers (24) * (
-    *         size of the largest buffer structure
-    *             (pvr_const_map_entry_constant_buffer) +
-    *         size of Common Store burst entry
-    *             (pvr_const_map_entry_literal32)
-    *
-    *  3. Size of DOUTU entry (pvr_const_map_entry_doutu_address)
-    */
-
-   /* FIXME: PVR_MAX_DESCRIPTOR_SETS is 4 and not 8. The comment above seems to
-    * say that it should be 8.
-    * Figure our a define for this or is the comment wrong?
-    */
-   return (8 * (sizeof(struct pvr_const_map_entry_descriptor_set) +
-                sizeof(struct pvr_const_map_entry_literal32)) +
-           PVR_PDS_MAX_BUFFERS *
-              (sizeof(struct pvr_const_map_entry_constant_buffer) +
-               sizeof(struct pvr_const_map_entry_literal32)) +
-           sizeof(struct pvr_const_map_entry_doutu_address));
-}
-
 static VkResult pvr_pds_descriptor_program_create_and_upload(
    struct pvr_device *const device,
    const VkAllocationCallbacks *const allocator,
@@ -506,8 +473,7 @@ static VkResult pvr_pds_descriptor_program_create_and_upload(
    pco_data *data,
    struct pvr_stage_allocation_descriptor_state *const descriptor_state)
 {
-   const size_t const_entries_size_in_bytes =
-      pvr_pds_get_max_descriptor_upload_const_map_size_in_bytes();
+   const size_t const_entries_size_in_bytes = PVR_PDS_MAX_DESC_UPLOAD_BYTES;
    struct pvr_pds_info *const pds_info = &descriptor_state->pds_info;
    struct pvr_pds_descriptor_program_input program = { 0 };
    struct pvr_const_map_entry *new_entries;
